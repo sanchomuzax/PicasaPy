@@ -2,7 +2,7 @@
 
 import pytest
 from picasapy.edit import EditSession
-from picasapy.ini.rect64 import Rect64
+from picasapy.ini.rect64 import Rect64, decode_rect64
 from picasapy.ini.retouch import RetouchPatch
 
 
@@ -988,3 +988,87 @@ class TestRedeyeRegions:
         session = session.clear_redeye()
         assert not session.has("redeye")
         assert session.has("autolight")
+
+
+class TestTobbszorosVagas:
+    """#1550: TÖBB `crop64`-et tartalmazó láncnál az UTOLSÓ a hatályos.
+
+    A szabály két, egymástól független bizonyítékon áll (mindkettőt a
+    #1550 körében újramértük):
+
+    1. **A render-lánc** (`render/chain.py`, #130) a bejárás közben
+       felülírja a `crop_op`-ot, tehát az UTOLSÓ `crop64`-et alkalmazza.
+       Mérve: 800×600-as képre a
+       `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;` lánc
+       **200×300**-at ad (az első szerint 400×300 lenne).
+    2. **Az éles korpusz** (859 `.picasa.ini`, 18 801 szekció): 38 lánc
+       tartalmaz egynél több `crop64`-et, és **38/38** esetben a
+       `crop=rect64(...)` tükör-kulcs az UTOLSÓT tükrözi, az elsőt
+       **nulla** esetben. (`crop64`-et tartalmazó lánc összesen 763, ebből
+       761-hez van `crop=`, mind a 761 az utolsót tükrözi.)
+
+    Ilyen láncot a PicasaPy maga nem hoz létre (a `set_crop` cserél), de a
+    felhasználó gyűjteményében a windowsos Picasa írt ilyeneket — ezeket
+    OLVASSUK.
+    """
+
+    ELSO = "0000000080008000"      # bal felső negyed: 0..0.5 × 0..0.5
+    UTOLSO = "c0008000ffffffff"    # jobb alsó sáv: 0.75..1.0 × 0.5..1.0
+
+    def test_ket_crop64_eseten_az_utolsot_adja(self):
+        session = EditSession.from_value(
+            f"crop64=1,{self.ELSO};bw=1;crop64=1,{self.UTOLSO};"
+        )
+        rect = session.crop()
+        assert rect is not None
+        assert rect == decode_rect64(self.UTOLSO), (
+            "a crop() nem az UTOLSÓ crop64-et adta — a render-lánc és a "
+            f"korpusz szerint az a hatályos; kapott: {rect}"
+        )
+
+    def test_harom_crop64_eseten_is_az_utolsot(self):
+        """Kettőnél több bejegyzésnél sem a középső nyer."""
+        kozepso = "20002000a000a000"
+        session = EditSession.from_value(
+            f"crop64=1,{self.ELSO};crop64=1,{kozepso};crop64=1,{self.UTOLSO};"
+        )
+        assert session.crop() == decode_rect64(self.UTOLSO)
+
+    def test_a_hatalyos_bejegyzes_a_render_lanceval_egyezik(self):
+        """A `crop()` és a render-lánc UGYANAZT a téglalapot használja.
+
+        Nem a render kimenetét méri (az a `tests/render` dolga), hanem azt,
+        hogy a két oldal ugyanabból a láncból ugyanazt az op-ot választja
+        ki — ez a #1550 lelete."""
+        from picasapy.ini.filters import parse_filters
+
+        lanc = f"crop64=1,{self.ELSO};bw=1;crop64=1,{self.UTOLSO};"
+        render_szerint = None
+        for op in parse_filters(lanc):
+            if op.name == "crop64":
+                render_szerint = op  # a chain.py-vel azonos „utolsó nyer"
+        assert render_szerint is not None
+        assert EditSession.from_value(lanc).crop() == decode_rect64(
+            render_szerint.params[1]
+        )
+
+    def test_hianyos_parameteru_utolso_bejegyzest_atlepi(self):
+        """A `crop64=1;` (2. paraméter nélkül) nem hatályos bejegyzés — a
+        szabály „az utolsó ÉRVÉNYES", a `crop_mirror_value()`-val
+        egyezően."""
+        session = EditSession.from_value(
+            f"crop64=1,{self.ELSO};crop64=1,{self.UTOLSO};crop64=1;"
+        )
+        assert session.crop() == decode_rect64(self.UTOLSO)
+
+    def test_a_crop_mirror_value_ugyanazt_adja(self):
+        """#1550: a #1544 `crop_mirror_value()`-ja és a `crop()` ugyanazt a
+        bejegyzést választja — a két úton nem térhet el a felület és a
+        lemezre írt tükör-kulcs."""
+        from picasapy.edit.effect_clipboard import crop_mirror_value
+        from picasapy.ini.rect64 import encode_rect64
+
+        lanc = f"crop64=1,{self.ELSO};bw=1;crop64=1,{self.UTOLSO};"
+        rect = EditSession.from_value(lanc).crop()
+        assert rect is not None
+        assert crop_mirror_value(lanc) == f"rect64({encode_rect64(rect)})"

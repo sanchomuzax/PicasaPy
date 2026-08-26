@@ -115,15 +115,38 @@ class EditSession:
         return EditSession(ops=tuple(new_ops))
 
     def crop(self) -> Rect64 | None:
-        """Az aktuális crop64 téglalap.
+        """A HATÁLYOS crop64 téglalap — a lánc UTOLSÓ érvényes bejegyzése.
+
+        **#1550 — miért az utolsó, és nem az első.** A láncban több `crop64`
+        is állhat: a PicasaPy maga nem gyárt ilyet (a `set_crop` cserél), a
+        felhasználó gyűjteményét viszont a windowsos Picasa írta. Korábban
+        ez a metódus az ELSŐT adta, ami két, egymástól független
+        bizonyítéknak mondott ellent:
+
+        1. **A render-lánc** (`render/chain.py`, #130) az UTOLSÓ `crop64`-et
+           alkalmazza — a bejárás felülírja a `crop_op`-ot. Mérve: 800×600-as
+           képre a `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;`
+           lánc **200×300**-at ad; az első szerint 400×300 lenne.
+        2. **Az éles korpusz** (859 `.picasa.ini`, 18 801 szekció): a 38
+           több-`crop64`-es láncnál **38/38** esetben a `crop=rect64(...)`
+           tükör-kulcs az UTOLSÓT tükrözi, az elsőt **nulla** esetben.
+
+        Így a szerkesztő felülete (`hasCrop`, `cropSelection`) és a mentés
+        (`_save`) ugyanazt a téglalapot használja, amit a kép ténylegesen
+        hordoz. A `crop_mirror_value()` (#1544) is erre az útra épül.
+
+        A lánc maga NEM módosul ettől: a korábbi `crop64`-ek bent maradnak,
+        ők a visszavonás alapja (`_seed_undo_from_chain`).
 
         Hibás/érvénytelen hex paraméternél is `None`-t ad (nem dob) — idegen
-        vagy sérült lánc olvasása se szökjön ki kivétellel (#301).
+        vagy sérült lánc olvasása se szökjön ki kivétellel (#301). A
+        2. paraméter nélküli (`crop64=1;`) bejegyzés nem hatályos: azt
+        átlépjük, és a lánc előbbi utolsó érvényes bejegyzése számít.
 
         Returns:
             Rect64 a dekódolt értékkel, vagy None ha nincs (érvényes) crop64.
         """
-        for op in self.ops:
+        for op in reversed(self.ops):
             if op.matches("crop64"):
                 if len(op.params) >= 2:
                     try:
