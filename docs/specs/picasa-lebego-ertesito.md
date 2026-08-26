@@ -431,3 +431,56 @@ következő jelölt.
 *Bizonyítottsági fok: **megerősített** a négy negatívumra (import-tábla +
 nyers hívásfeloldás a teljes `.text`-en) és a `0x006574f0` szerepére
 (diszasszemblálva, a konstans kiolvasva). **Nyitva**: a cella eltávolítása.*
+
+## ✅ A cella élettartama — MEGFEJTVE (2026-08-26)
+
+> ⚠️ **Ez a szakasz MEGDÖNTI a lap korábbi következtetését**, amely szerint
+> „nem időzítő és nem óra". **Óra** — csak a notifier modulján **kívül**.
+> A korábbi kör a `QueryPerformanceCounter`-hívókat a `0x0065xxxx` modulon
+> BELÜL kereste; a negatív találatot az egész mechanizmusra vonatkoztatta.
+
+### Az időforrás — `0x009a5210` (128 b)
+
+Nagyfelbontású 64 bites számláló (`call [0xc40298]` → `fild qword`),
+gyorstárazott kezdőértékkel (`0xd678f0`) és frekvenciával (`0xd678e8`)
+⇒ **másodperc `double`-ben, az indulás óta**.
+
+*(A pontos API-név nem adható ki: a `0xc40298` nem az importtáblában van,
+hanem futásidőben feltöltött mutatótábla.)*
+
+### A határidő írása — `0x00655d20` (291 b)
+
+A cellatömbön lépked (**lépésköz `0xc8` = 200 bájt/cella**), majd:
+
+| cím | művelet |
+|---|---|
+| `0x00655d96` | `fld dword [ebp+0xc]` — a kért **élettartam** (float, mp), hívási paraméter |
+| `0x00655dac` | ha `<= 0` → `[cella+0x12] = 1`, **határidő nélkül** |
+| `0x00655dc4` | `call 0x9a5210` — most |
+| `0x00655dc9` | `fadd [ebp+0xc]` |
+| `0x00655dcc` | `fstp qword [cella+0xb8]` — ⇐ **abszolút határidő** |
+
+### A lejárat ellenőrzése — `0x006575b0` (1714 b), képkockánként
+
+| cím | művelet |
+|---|---|
+| `0x0065770c` | `call 0x9a5210` — **képkockánként EGYSZER** |
+| `0x00657741` | `fcomp [cella+0xb8]` — a határidő 0? → kihagyja |
+| `0x0065775a` | `fcomp` — `most` vs határidő |
+| `0x00657769` | `call 0x655be0` — ⇐ **a cella eltávolítása** |
+
+Az eltávolító `0x00655be0` (311 b) ugyanazzal a `0xc8`-as lépésközzel
+dolgozik (`0x00655c36`), **kritikus szakaszon belül** (`0x00655cc3` /
+`0x00655cef`).
+
+### Két külön dolog
+
+**A 100%-ra állítás (`0x006574f0`) NEM távolítja el a cellát.** A cella a
+**határidejétől** tűnik el, nem a folyamatjelző állásától.
+
+### A `+0xc` float mező
+
+**[0,1]-re vágott** érték (`0x00659d64  fld1` + `fcom` + `fstp`), a másoló
+`0x00656a30:0x00656a46` viszi át. **Nem** az élettartam — az a `+0xb8`.
+
+Jegy: **#1130**.
