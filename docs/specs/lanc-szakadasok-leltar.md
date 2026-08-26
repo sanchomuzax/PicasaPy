@@ -43,6 +43,20 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
 | D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
 
+### Testvérlap: a #1052 néma tagjai
+
+Ez a leltár azt méri, **mit nem ér el a QML** — akkor is felveszi a tagot,
+ha Pythonból hívjuk. A **#1052** ennél szűkebbet kérdez: mit nem hív **sem
+a QML, sem a Python**. A két lista nem azonos, és a #1052 huszonhat
+kérdéses tagjának tételes döntése — tagonként HIBA / SZÁNDÉKOS / HALOTT,
+bizonyítékkal — külön lapon áll:
+[`nema-tagok-1052.md`](nema-tagok-1052.md).
+
+Onnan ide visszaható eredmény: a három `*Active` property (`enhanceActive`,
+`autolightActive`, `autocolorActive`) indoklása **HIBÁS volt** („a panel a
+saját állapotát tartja" — a QML-fában egyáltalán nincs ilyen property), és
+`FELVÁLTVA`-ra javítva: a #116 óta a csempe a `*Enabled` párt köti.
+
 ## 3. Elhatárolások — ezeket NE vegye fel senki hibaként
 
 | tag | miért nem hiba |
@@ -132,14 +146,14 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
-| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |
-| `editController` | `autolightActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
-| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
-| `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — a retusálás megléte bekötetlen |
+| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | FELVÁLTVA — a #116 az egygombos javításokról LEVETTE a „benyomva" állapotot; a csempe a párját, az enhanceEnabled-et köti (PhotoViewer.qml:291) |
+| `editController` | `autolightActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autolightEnabled-et köti (PhotoViewer.qml:292) |
+| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293) |
+| `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
-| `editController` | `hasCrop` | Property | `app/edit_controller.py` | MÉRVE — a vágás megléte bekötetlen |
+| `editController` | `hasCrop` | Property | `app/edit_controller.py` | MÉRVE — #1052: a vágás-panel „Alaphelyzet" gombja csak a KIJELÖLÉST törli, a mentett vágást nem; ez volna hozzá a jelző |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
-| `editController` | `clearCrop` | Slot | `app/edit_controller.py` | MÉRVE — a vágás törlése bekötetlen |
+| `editController` | `clearCrop` | Slot | `app/edit_controller.py` | MÉRVE — #1052: ugyanaz, a mentett vágás tényleges megszüntetése |
 | `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
 | `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |

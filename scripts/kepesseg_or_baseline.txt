@@ -77,13 +77,13 @@ controller.faceDetectionEnabledFor MÉRVE — a QML SAJÁT tükrét számolja (F
 controller.setExportMovieFull MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ
 editController.revision MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma
 editController.redeyeActive MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart
-editController.enhanceActive MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja
-editController.autolightActive MÉRVE — ugyanaz a minta
-editController.autocolorActive MÉRVE — ugyanaz a minta
-editController.hasRetouch MÉRVE — a retusálás megléte bekötetlen
+editController.enhanceActive FELVÁLTVA — a #116 az egygombos javításokról LEVETTE a „benyomva" állapotot; a csempe a párját, az enhanceEnabled-et köti (PhotoViewer.qml:291)
+editController.autolightActive FELVÁLTVA — ugyanaz: a csempe az autolightEnabled-et köti (PhotoViewer.qml:292)
+editController.autocolorActive FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293)
+editController.hasRetouch MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116)
 editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
-editController.hasCrop MÉRVE — a vágás megléte bekötetlen
-editController.clearCrop MÉRVE — a vágás törlése bekötetlen
+editController.hasCrop MÉRVE — #1052: a vágás-panel „Alaphelyzet" gombja csak a KIJELÖLÉST törli, a mentett vágást nem; ez volna hozzá a jelző
+editController.clearCrop MÉRVE — #1052: ugyanaz, a mentett vágás tényleges megszüntetése
 editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
 editController.isDeadLegacyEffect MÉRVE — az elavult effektek felismerése bekötetlen
 folderHierarchyController.expand MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve)

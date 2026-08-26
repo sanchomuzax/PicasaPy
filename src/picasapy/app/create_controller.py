@@ -249,6 +249,8 @@ class CreateMixin(BackgroundWorkerMixin):
         self._collage_seed += 1
         self.collageSeedChanged.emit()
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a magot a `shuffleCollage`
+    # lépteti, az eredmény a vásznon látszik — a szám maga nem való a felületre.
     @Property(int, notify=collageSeedChanged)
     def collageSeed(self) -> int:
         self._ensure_collage_wired()
