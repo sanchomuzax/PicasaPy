@@ -59,6 +59,15 @@ A táblát a `python scripts/kepesseg_or.py --leltar --ir` írja, az
 indoklásokat a `scripts/kepesseg_or_baseline.txt` adja. Kézzel ne
 szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` összeveti a kettőt.
 
+**A mérés terjedelmi számai (hány fájl, hány tag, hány alias) NEM ezen a
+lapon állnak** (#1508), hanem az őr futásának kimenetében — a CI `lint`
+jobjának naplójában. Amíg itt álltak, a bitre egyezést kérő teszt minden
+ágat megbuktatott, amelyik egyetlen új `.py`- vagy QML-fájlt hozzáadott,
+holott szakadás nem keletkezett: egy nap alatt négy PR és három
+merge-ütközés jött ebből. **A védelem nem gyengült**: az új szakadást az őr
+kilépőkódja fogja meg (`python scripts/kepesseg_or.py`, 1-es kód), nem
+ennek a lapnak a szövege.
+
 ⚠️ A 2026-08-25-i **kézi** mérés 52 tagot talált; az őr ugyanezen a fán
 **56**-ot. A különbség nem a fa változása, hanem a minősített keresés: a
 kézi mérés nem látta az `editController.revision`-t (a `photos.revision`
@@ -70,12 +79,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
-- vizsgált Python-fájl: **84**
-- vizsgált QML/JS-fájl: **142**
-- regisztrált kontextus-objektum: **19** (+1 nem QObject)
-- feloldott alias (fájl + név): **15**
-- kontextuson elérhető `@Slot`/`@Property` tag: **503**
-- ebből QML-ből NEM elérhető: **49**
+*A mérés terjedelme — hány Python-, hány QML-fájl, hány tag, hány*
+*alias — SZÁNDÉKOSAN nem itt áll, hanem az őr futásának kimenetében*
+*(CI-napló). Ld. #1508: a verziózott szám minden új fájltól elavult,*
+*valódi szakadás nélkül.*
+
+**Felületről el nem ért vezérlő-tag: 49.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|

@@ -649,6 +649,61 @@ def test_az_elteres_mindket_iranyt_jelzi() -> None:
 # -- 8. a leltár generált, nem kézi pillanatkép ----------------------------
 
 
+def test_uj_ures_py_fajl_nem_valtoztat_a_leltar_blokkon(tmp_path: Path) -> None:
+    """#1508 — egyetlen új fájltól NEM avulhat el a generált blokk.
+
+    A blokk fájl- és tagszámot hordozott, ezért MINDEN ág elbukott rajta,
+    amelyik akár egy üres `.py`-t hozzáadott — valódi szakadás nélkül.
+    Egy nap alatt négy PR és három merge-ütközés jött ebből (#1508).
+    """
+    gyoker = _fa(tmp_path, qml={"Main.qml": "Item { onClicked: controller.bekotott() }"})
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+
+    (gyoker / "ures_uj_modul.py").write_text("", encoding="utf-8")
+    (gyoker / "qml" / "UresUj.qml").write_text("Item {}\n", encoding="utf-8")
+
+    assert or_.leltar_tabla(or_.elemez(gyoker), {}, {}) == elotte
+
+
+def test_uj_BEKOTOTT_tag_sem_valtoztat_a_leltar_blokkon(tmp_path: Path) -> None:
+    """A tagszám is volatilis volt: egy szabályosan bekötött új `@Slot`
+    sem keletkeztet szakadást, tehát a blokknak sem szabad elmozdulnia."""
+    gyoker = _fa(tmp_path, qml={"Main.qml": "Item { onClicked: controller.bekotott() }"})
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+
+    (gyoker / "vezerlo.py").write_text(
+        VEZERLO + "\n    @Slot()\n    def frissBekotott(self):\n        pass\n",
+        encoding="utf-8",
+    )
+    (gyoker / "qml" / "Main.qml").write_text(
+        "Item { onClicked: controller.bekotott(); onFoo: controller.frissBekotott() }",
+        encoding="utf-8",
+    )
+
+    utana = or_.elemez(gyoker)
+    assert len(utana.tagok) == 3, "a fixtúra maga romlott el: nincs meg az új tag"
+    assert or_.leltar_tabla(utana, {}, {}) == elotte
+
+
+def test_a_szamok_a_ci_naploba_kerulnek(capsys: pytest.CaptureFixture[str]) -> None:
+    """A számok nem vesznek el: a verziózott lapról a FUTÁS kimenetébe
+    költöztek, ahol nincs mit karbantartani."""
+    assert or_.main([]) == 0
+    kimenet = capsys.readouterr().out
+    for reszlet in ("Python-fájl", "QML/JS-fájl", "kontextus-objektum", "tag", "alias"):
+        assert reszlet in kimenet, f"hiányzik a naplóból: {reszlet}"
+
+
+def test_a_valodi_leltar_blokkban_nincs_fajl_vagy_tagszam() -> None:
+    """A visszacsúszás őre: ha valaki visszateszi a számokat a lapra,
+    itt bukik el, nem három hónappal később egy idegen ágon."""
+    szoveg = VALODI_LELTAR.read_text(encoding="utf-8")
+    blokk = szoveg.split(or_.LELTAR_KEZDET)[1].split(or_.LELTAR_VEGE)[0]
+    for tiltott in ("vizsgált Python-fájl", "vizsgált QML/JS-fájl", "feloldott alias"):
+        assert tiltott not in blokk, f"volatilis szám került vissza a lapra: {tiltott}"
+
+
+
 def test_a_leltar_generalt_blokkja_naprakesz(valodi: or_.Elemzes) -> None:
     """A #1476 kikötése: a leltár az őrből álljon elő, ne kézzel.
 
