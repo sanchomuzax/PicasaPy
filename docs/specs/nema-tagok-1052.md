@@ -80,23 +80,23 @@ használja és nem is fogja · **BEKÖTVE** = a jegy óta felületet kapott.
 | `canUndoPasteAllEffects` | `app/photo_ops_controller.py` | HIBA | a „Paste All Effects" elvégezhető (`Main.qml:769`), a visszavonása nem | **#1475** |
 | `hasCrop` | `app/edit_controller.py` | **HIBA** | ld. 4. szakasz | **új** (A) |
 | `clearCrop` | `app/edit_controller.py` | **HIBA** | ld. 4. szakasz | **új** (A) |
-| `enhanceActive` | `app/edit_controller.py` | **HALOTT** | ld. 5. szakasz | **új** (B) |
-| `autolightActive` | `app/edit_controller.py` | **HALOTT** | ld. 5. szakasz | **új** (B) |
-| `autocolorActive` | `app/edit_controller.py` | **HALOTT** | ld. 5. szakasz | **új** (B) |
+| `enhanceActive` | `app/edit_controller.py` | **TÖRÖLVE** | ld. 5. szakasz | **#1529** (törölve) |
+| `autolightActive` | `app/edit_controller.py` | **TÖRÖLVE** | ld. 5. szakasz | **#1529** (törölve) |
+| `autocolorActive` | `app/edit_controller.py` | **TÖRÖLVE** | ld. 5. szakasz | **#1529** (törölve) |
 | `hasRetouch` | `app/edit_controller.py` | SZÁNDÉKOS | a docstring két célja közül a felirat az `undoLabel`-é (#465, `_push_undo("retouch")` a `:1294`-en), a csempe kiemelése pedig a NYITOTT eszközt jelzi (`EditorTabCommonFixes.qml:153` → `panel.retouchActive`), nem a mentett retusálást | — |
 | `canRenderEffect` | `app/edit_controller.py` | SZÁNDÉKOS | az „Örökség" fül a `legacyEffects` katalógus `enabled` mezőjét olvassa (`EditorLegacyTab.qml:82`), amit ugyanez a `can_offer_filter_control` tölt (`edit_controller.py:490`) | — |
 | `isDeadLegacyEffect` | `app/edit_controller.py` | SZÁNDÉKOS | ugyanaz a katalógus `dead` mezője (`EditorLegacyTab.qml:99`, `edit_controller.py:491`) | — |
 | `movePhoto` | `app/fileops_controller.py` | SZÁNDÉKOS | a felület a többes alakot hívja: `FileOpsDialogs.qml:49` → `fileOpsController.movePhotos(paths, dest, policy)` | — |
 | `renderPrintPreviewPdf` | `app/print_controller.py` | BEKÖTVE | `PrintDialog.qml:120` | #1472 |
-| `expand` | `app/folder_hierarchy_controller.py` | **HALOTT** | ld. 6. szakasz | **új** (C) |
-| `collapse` | `app/folder_hierarchy_controller.py` | **HALOTT** | ld. 6. szakasz | **új** (C) |
+| `expand` | `app/folder_hierarchy_controller.py` | **TÖRÖLVE** | ld. 6. szakasz | **#1530** (törölve) |
+| `collapse` | `app/folder_hierarchy_controller.py` | **TÖRÖLVE** | ld. 6. szakasz | **#1530** (törölve) |
 | `setSimplified` | `app/folder_hierarchy_controller.py` | SZÁNDÉKOS | **a jegy tévedett**: Pythonból hívjuk, `folder_hierarchy_controller.py:171` (`toggleSimplified` → `self.setSimplified(not self._simplified)`), a menü pedig a `toggleSimplified`-et | — |
 | `locationOfRow` | `app/geo_controller.py` | SZÁNDÉKOS | ugyanez az adat a `geoMarkers` listában megy át egyben (`geo_controller.py:37`, `PlacesMap.qml:11/46`); a bélyegkép pin-jelvénye a modell `hasGeo` mezőjéből jön (`ThumbDelegate.qml:34`) | — |
 | `isAvailable` | `app/face_scan_controller.py` | BEKÖTVE | `FaceScanDialog.qml:104` | #1473 |
 | `isEmbeddingAvailable` | `app/face_scan_controller.py` | BEKÖTVE | `FaceScanDialog.qml:106` | #1473 |
 | `unnamedAlbum` | `app/face_scan_controller.py` | BEKÖTVE | `FaceScanDialog.qml:115` | #1473 |
 | `setFolderDescription` | `app/controller.py` | SZÁNDÉKOS | a felület a mappát is átadó alakot hívja (`FolderPane.qml:1047`, `LightboxFeed.qml:554`), amit ez a slot maga is meghív (`controller.py:645`) | — |
-| `wastedPercent` | `app/compact_controller.py` | **HALOTT** | ld. 7. szakasz | **új** (D) |
+| `wastedPercent` | `app/compact_controller.py` | **TÖRÖLVE** | ld. 7. szakasz | **#1531** (törölve) |
 | `collageTitle` | `app/collage_save.py` | SZÁNDÉKOS | a felhasználó nem nevezi el a kollázst: a fájlnév a FORRÁSMAPPÁBÓL jön (`kollazs-eletciklus.md` 8.6, megerősítve exportált `.cxf`-fel); a `PISZKOZAT -- <név>` cím-előtagot a spec kifejezetten **tiltja** (ugyanott, 260. sor) | — |
 | `collageSeed` | `app/create_controller.py` | SZÁNDÉKOS | a magot a `shuffleCollage` lépteti (`create_controller.py:249`), a hatása a vásznon látszik; a felület a `shufflePictures`/`shuffleCollage` gombokat köti (`CollageRandomRow.qml:72`, `CreateDialogs.qml:124`) | — |
 
@@ -190,6 +190,12 @@ Visszavonás gombbal **visszabontható** — de csak úgy, hogy a fölötte lév
 
 ## 5. (B) A négy „gomb aktív állapota" property — a jegy feltevése MEGDŐLT
 
+✅ **Végrehajtva: #1529 (2026-08-26).** Az `enhanceActive`,
+`autolightActive`, `autocolorActive` property törölve a
+`edit_controller.py`-ból; a rájuk hivatkozó teszteket (7 assert,
+`tests/app/test_edit_controller.py`) `effectChainCounts`-ra írtuk át. A
+`redeyeActive` — mint alább is szerepel — SZÁNDÉKOS, MARADT.
+
 A #1052 azt vetette fel, hogy az eredeti Picasa a Fényerő/Színek/
 Retusálás gombokat **kiemelve** mutatja, ha az adott korrekció él, és ha
 ezt nálunk senki nem olvassa, a felhasználó nem látja, mi van
@@ -229,6 +235,14 @@ Hamis szerződést adni rosszabb, mint nem adni.
 
 ## 6. (C) `expand` / `collapse` — párhuzamos, hívó nélküli ág
 
+✅ **Végrehajtva: #1530 (2026-08-26), az 1. út (törlés).** Nem került elő
+jövőbeli hívó, ezért a két slot törölve a
+`folder_hierarchy_controller.py`-ból; a `toggle`/`expandAll`/`collapseAll`
+változatlanul a saját útjukon mennek. A csak `expand`-et hívó
+`test_expand_is_idempotent` (`tests/app/test_folder_hierarchy_controller.py`)
+törölve — a törölt szolgáltatás idempotenciáját őrizte, amihez nincs
+megmaradó nyilvános megfelelő (a `toggle` nem idempotens).
+
 A mappafa nyitogatásának **négy** kész útja van a vezérlőn; a felület
 hármat használ:
 
@@ -249,6 +263,11 @@ nyilat a **képváltásra** köti (208–219. sor), a mappafa ág-nyitogatásár
 nincs átképezhető rekesz.
 
 ## 7. (D) `wastedPercent` — az eredeti dialógus nem mutatja
+
+✅ **Végrehajtva: #1531 (2026-08-26).** A property törölve a
+`compact_controller.py`-ból; a mögöttes `wasted_percent()` függvényt az
+`isWorthCompacting()` továbbra is használja, ezen nem változtattunk. Nem
+volt rá teszt.
 
 - A tömörítés-dialógus **hű másolat**: `compacting.fen` = `appicon` +
   magyarázó `label` + `label name="status"` — **százalék nincs benne**

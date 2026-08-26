@@ -37,7 +37,7 @@ class TestBeginEdit:
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
         assert controller.redeyeActive is False
-        assert controller.enhanceActive is False
+        assert "enhance" not in controller.effectChainCounts
         assert controller.revision == 1
         assert controller.previewSource == "image://editpreview/1?rev=1"
 
@@ -45,7 +45,7 @@ class TestBeginEdit:
         ini = photo.parent / ".picasa.ini"
         ini.write_text("[IMG_0001.jpg]\nfilters=enhance=1;\n", encoding="utf-8")
         controller.beginEdit("1", str(photo))
-        assert controller.enhanceActive is True
+        assert controller.effectChainCounts.get("enhance") == 1
 
     def test_registers_with_preview_provider(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
@@ -112,7 +112,7 @@ class TestToggleTool:
         controller.toggleTool("enhance")
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=enhance=1;" in ini_text
-        assert controller.enhanceActive is True
+        assert controller.effectChainCounts.get("enhance") == 1
 
     def test_redeye_toggle_off_removes_key_when_chain_empty(self, controller, photo):
         controller.beginEdit("1", str(photo))
@@ -200,7 +200,7 @@ class TestOneShotLayering:
         controller.toggleTool("enhance")
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert ini_text.count("enhance=1;") == 1
-        assert controller.enhanceActive is True
+        assert controller.effectChainCounts.get("enhance") == 1
         controller.undo()
         assert controller.canUndo is False  # csak EGY undo-lépés keletkezett
 
@@ -465,7 +465,7 @@ class TestUndoRedoStack:
         assert ctl.undoAction == "enhance"   # utoljára jött → először megy
         ctl.undo()
         assert ctl.undoAction == "crop"
-        assert ctl.enhanceActive is False
+        assert "enhance" not in ctl.effectChainCounts
         assert ctl.hasCrop is True
         ctl.undo()
         assert ctl.hasCrop is False
@@ -482,7 +482,7 @@ class TestUndoRedoStack:
         ctl.redo()
         assert ctl.hasCrop is True
         ctl.redo()
-        assert ctl.enhanceActive is True
+        assert ctl.effectChainCounts.get("enhance") == 1
         assert ctl.canRedo is False
 
     def test_new_action_clears_redo(self, qt_app, tmp_path):
@@ -531,7 +531,7 @@ class TestPersistentUndoFromChain:
     def test_existing_chain_is_undoable_on_open(self, qt_app, tmp_path):
         """Aktív effekt mellett nem lehet szürke az Undo."""
         ctl = self._controller(tmp_path, "enhance=1;")
-        assert ctl.enhanceActive is True
+        assert ctl.effectChainCounts.get("enhance") == 1
         assert ctl.canUndo is True
 
     def test_layers_undo_in_reverse_chain_order(self, qt_app, tmp_path):

@@ -52,11 +52,6 @@ class CompactController(BackgroundWorkerMixin, QObject):
         """Fut-e éppen tömörítés (a Mégse gomb és a státusz-sor köti)."""
         return self._running
 
-    @Property(float, constant=True)
-    def wastedPercent(self) -> float:  # noqa: N802 — QML-property-stílus
-        """Mennyi hely nyerhető vissza (a `compactpercentage` bemenete)."""
-        return wasted_percent(self._index_db)
-
     @Slot(result=bool)
     def isWorthCompacting(self) -> bool:  # noqa: N802 — QML-slot-stílus
         """Érdemes-e most tömöríteni — a dialógus ezzel írja ki, hogy

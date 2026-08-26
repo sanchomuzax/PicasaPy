@@ -100,11 +100,10 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 43.**
+**Felületről el nem ért vezérlő-tag: 37.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
-| `compactController` | `wastedPercent` | Property | `app/compact_controller.py` | MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető |
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
 | `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
 | `controller` | `collageTitle` | Property | `app/collage_save.py` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
@@ -128,9 +127,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
-| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | FELVÁLTVA — a #116 az egygombos javításokról LEVETTE a „benyomva" állapotot; a csempe a párját, az enhanceEnabled-et köti (PhotoViewer.qml:291) |
-| `editController` | `autolightActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autolightEnabled-et köti (PhotoViewer.qml:292) |
-| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293) |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
@@ -142,8 +138,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
-| `folderHierarchyController` | `expand` | Slot | `app/folder_hierarchy_controller.py` | MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve) |
-| `folderHierarchyController` | `collapse` | Slot | `app/folder_hierarchy_controller.py` | MÉRVE — a fa egy ágának becsukása bekötetlen |
 | `startupStatus` | `busy` | Property | `app/startup_status.py` | MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja |
 | `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
 | `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |

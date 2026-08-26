@@ -45,14 +45,6 @@ class TestToggling:
         controller.toggle("")
         assert _paths(controller) == [""]
 
-    def test_expand_is_idempotent(self, controller):
-        controller.expand("")
-        before = _paths(controller)
-        controller.expand("")
-
-        assert _paths(controller) == before
-
-
 class TestTheTwoHierFolderCommands:
     """`Folder::ID_HIER_FOLDER_EXPAND` / `..._COLLAPSE`."""
 
