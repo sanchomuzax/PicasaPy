@@ -530,18 +530,6 @@ class EditController(QObject, BackgroundWorkerMixin):
     def redeyeActive(self) -> bool:
         return self._session.has("redeye")
 
-    @Property(bool, notify=toolsChanged)
-    def enhanceActive(self) -> bool:
-        return self._session.has("enhance")
-
-    @Property(bool, notify=toolsChanged)
-    def autolightActive(self) -> bool:
-        return self._session.has("autolight")
-
-    @Property(bool, notify=toolsChanged)
-    def autocolorActive(self) -> bool:
-        return self._session.has("autocolor")
-
     # -- retusálás (#148) ---------------------------------------------------
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a „Visszavonás: Retusálás"

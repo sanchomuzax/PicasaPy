@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.110] – 2026-08-26
+
+### Belső
+- **Hat használaton kívüli kódrészlet eltávolítva (#1529, #1530, #1531).**
+  Olyan belső részek, amiket a felületről már semmi nem szólított meg: egy
+  leváltott gombkiemelés-modell maradéka, a mappafa két nem használt ága, és
+  egy soha meg nem jelenített százalékérték. A felhasználó számára nem
+  változik semmi; a bekötetlen részek nyilvántartása 43-ról 37-re csökkent.
+
 ## [0.8.109] – 2026-08-26
 
 ### Belső
