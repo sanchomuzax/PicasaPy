@@ -349,9 +349,23 @@ felbontásból. Mért költség (Raspberry Pi 5, 120 kép, helyi lemez):
 ~68 ms/kép beolvasás+dekódolás, amihez a hisztogram ~21 ms-ot tesz hozzá
 egy ~0,2 Mpx-es raszteren; a besorolás tehát nem okoz TOVÁBBI lemez- vagy
 hálózati forgalmat, csak processzoridőt. Ismételt hívásra 0-t ad vissza, ha nincs több teendő — így
-háttérszálon, kis kötegekben, az indulást nem blokkolva futtatható
-(az induláskori bekötés — pl. `prune_in_background` mintájára — az
-integrátor feladata, ld. a #383 jegy jelentését).
+háttérszálon, kis kötegekben, az indulást nem blokkolva futtatható.
+
+A dekódolhatatlan fájl (törött JPEG, kiterjesztés szerint fényképnek
+látszó nem-kép) is KAP bejegyzést, üres tokenlistával — enélkül minden
+körben újra jelöltként jött vissza, és a „hívd, amíg 0-t nem ad" hajtó
+ciklus soha nem ért volna véget (#1500). A jelölt-lista az útvonal MELLETT
+az mtime/méret szerint is szűr, tehát az átszerkesztett kép színe
+újraszámolódik.
+
+**A hívó (#1500):** `app/color_index_controller.py` (`ColorIndexMixin`) —
+LUSTÁN, az első `color:`/`szín:` keresés pillanatában indul, nem
+indításkor: 81 ms/kép mellett egy 50 000 képes gyűjtemény átnézése több
+mint egy óra processzoridő, amit nem szabad ráterhelni arra, aki soha nem
+használ színkeresést. A háttérszál a `BackgroundWorkerMixin`-en át megy
+(#430/#438), megszakítható, és haladást jelez. Hiányos gyorsítótárral
+futó színkeresésnél a felület tájékoztató (nem hiba-) sávot mutat: a „0
+találat" és a „még nem számoltuk ki" NEM ugyanaz.
 
 **Keresés:** a `color:kék`/`szín:kék` token (mindkét nyelv egyenértékű,
 `src/picasapy/index/search_color.py`) a szabadszavas kereséstől

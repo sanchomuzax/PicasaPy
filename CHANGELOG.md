@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A szín szerinti keresés eddig semmit nem adott — mostantól működik
+  (#1500).** Ha a keresősávba azt írtad, hogy `szín:kék` (vagy
+  `color:blue`), a program mindig üres listát mutatott, akármilyen képek
+  voltak a gyűjteményben: a színek kiszámolása ugyanis soha nem indult el.
+  Mostantól az első ilyen keresésre a program a **háttérben** nekilát
+  átnézni a képeket, és amint végzett, **a találati lista magától
+  kiegészül** — nem kell újra begépelni a keresést. A munka nem akasztja
+  meg a programot, bármikor tovább lehet dolgozni közben, és az alsó
+  sávban látszik, hogy dolgozik valamin. Ha közben másra keresel rá, az
+  elkészült feltöltés nem rántja vissza a régi találatokat.
+- **Megmondja, ha még nem végzett a színek átnézésével (#1500).** Eddig a
+  „nincs ilyen színű képem" és az „ezt még ki sem számoltuk" ugyanúgy
+  nézett ki: üres lista, semmi magyarázat. Mostantól egy borostyánsárga
+  tájékoztató sáv írja ki, hány kép van már átnézve az összesből, és hogy
+  a lista magától ki fog egészülni, amint a feldolgozás elkészül. A sávon
+  ott a **Leállítás** gomb is: a képek átnézése nagy gyűjteménynél sokáig
+  tart, ezért bármikor megállítható — a már kiszámolt színek megmaradnak,
+  és a következő színkeresés onnan folytatja.
+- **A sérült vagy hibás képfájlok nem lassítják le a színek átnézését
+  (#1500).** A megnyithatatlan képeket a program egyszer megjelöli, és
+  utána békén hagyja őket, ahelyett hogy minden körben újra és újra
+  nekifutna.
+- **Az átszerkesztett képek színe frissül (#1500).** Ha egy képet
+  megváltoztatsz, a program a következő átnézéskor újraszámolja a színét,
+  így nem a régi színével marad kereshető.
+
 ## [0.8.100] – 2026-08-26
 
 ### Megváltozott

@@ -70,11 +70,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
-- vizsgált Python-fájl: **83**
+- vizsgált Python-fájl: **84**
 - vizsgált QML/JS-fájl: **142**
 - regisztrált kontextus-objektum: **19** (+1 nem QObject)
 - feloldott alias (fájl + név): **15**
-- kontextuson elérhető `@Slot`/`@Property` tag: **501**
+- kontextuson elérhető `@Slot`/`@Property` tag: **503**
 - ebből QML-ből NEM elérhető: **49**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
@@ -87,11 +87,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `collageTitle` | Property | `app/collage_save.py:114` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py:136` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
 | `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py:153` | MÉRVE — a mentett kollázs útja bekötetlen |
-| `controller` | `folderDateText` | Property | `app/controller.py:284` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
-| `controller` | `folderDescription` | Property | `app/controller.py:289` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
-| `controller` | `setShowHidden` | Slot | `app/controller.py:489` | FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml) |
-| `controller` | `restoreSession` | Slot | `app/controller.py:501` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
-| `controller` | `setFolderDescription` | Slot | `app/controller.py:632` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
+| `controller` | `folderDateText` | Property | `app/controller.py:290` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
+| `controller` | `folderDescription` | Property | `app/controller.py:295` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
+| `controller` | `setShowHidden` | Slot | `app/controller.py:495` | FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml) |
+| `controller` | `restoreSession` | Slot | `app/controller.py:507` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
+| `controller` | `setFolderDescription` | Slot | `app/controller.py:638` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
 | `controller` | `collageSeed` | Property | `app/create_controller.py:253` | MÉRVE — a véletlen elrendezés magja bekötetlen |
 | `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py:38` | #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll |
 | `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py:45` | #1475 — ugyanannak a vágólapnak a visszavonás-jelzője |

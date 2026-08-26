@@ -1638,6 +1638,9 @@ ApplicationWindow {
         // a sáv, de borostyán tónussal, hogy ne keveredjen az írás- és
         // szinkron-hibákkal.
         property bool notice: false
+        // #1500: épp a színkeresés feltöltéséről szól-e a sáv (csak ekkor
+        // frissítik a haladásjelzések a szövegét)
+        property bool colorNoticeActive: false
         color: errorBanner.notice ? "#b7791f" : "#c0392b"
         visible: errorBannerText.text.length > 0
         implicitWidth: errorBannerRow.implicitWidth + 16
@@ -1655,6 +1658,20 @@ ApplicationWindow {
                 font.pixelSize: Theme.fontSize
                 wrapMode: Text.WordWrap
                 Layout.maximumWidth: 480
+            }
+            // #1500/#1476: a színkeresés előkészítése akár egy órányi
+            // processzoridő — MUSZÁJ tudni leállítani. A gomb csak a
+            // színkeresés tájékoztatóján jelenik meg; a többi üzenetnek
+            // nincs mit leállítania.
+            PicasaButton {
+                objectName: "errorBannerStopButton"
+                visible: errorBanner.colorNoticeActive
+                text: qsTr("Stop")
+                onClicked: {
+                    controller.cancelColorIndex()
+                    errorBanner.colorNoticeActive = false
+                    errorBannerText.text = ""
+                }
             }
             PicasaButton {
                 objectName: "errorBannerCloseButton"
@@ -1683,6 +1700,27 @@ ApplicationWindow {
         function onGeoWriteFailed(message) {
             errorBanner.notice = false
             errorBannerText.text = message
+        }
+        // #1500: a színkeresés (`color:`/`szín:`) gyorsítótára még hiányos.
+        // TÁJÉKOZTATÁS (borostyán), nem hiba: az üres találati lista
+        // ilyenkor nem azt jelenti, hogy nincs ilyen színű kép, hanem hogy
+        // még nem számoltuk ki. A szöveget a vezérlő adja (számok vannak
+        // benne), a sáv csak megjeleníti.
+        function onColorIndexIncomplete(done, total) {
+            errorBanner.notice = true
+            errorBanner.colorNoticeActive = true
+            errorBannerText.text = controller.colorIndexNoticeText(done, total)
+        }
+        // A sáv számai ÉLŐBEN követik a háttérmunkát, amíg látszik. A
+        // `text.length > 0` őr azért kell, mert a sávot a saját időzítője
+        // (és a Bezárás gomb) kiüríti — egy későbbi haladásjelzés nem
+        // támaszthatja fel a felhasználó által eltüntetett üzenetet.
+        function onColorIndexProgress(done, total) {
+            if (errorBanner.colorNoticeActive && errorBannerText.text.length > 0)
+                errorBannerText.text = controller.colorIndexNoticeText(done, total)
+        }
+        function onColorIndexFinished(done, total) {
+            errorBanner.colorNoticeActive = false
         }
         // #459/5: nem elérhető mappa — tájékoztató üzenet néma bukás helyett
         function onFolderUnavailable(path) {
