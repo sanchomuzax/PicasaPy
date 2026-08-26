@@ -88,6 +88,11 @@ A `research/testdata/Picasa2/db3` valódi adatbázisából:
 Tíz elérhető fájlon a fenti algoritmus **mind a tízszer bitre azonos**
 értéket adott a tárolttal (169 KB-tól 1,88 MB-ig, JPG és PNG vegyesen).
 
+**Független újraellenőrzés (#1481 megvalósításakor, 2026-08-26):** ugyanez a
+menet tizenkét elérhető fájlon **12/12** bitpontos egyezést adott, a
+`picasapy.dedup.fastkey.picasa_fast_key` mai megvalósításától függetlenül
+újraírt referencia-kóddal.
+
 ---
 
 ## 3. Amit KIZÁRTAM — három téves jelölt
@@ -102,12 +107,26 @@ Tíz elérhető fájlon a fenti algoritmus **mind a tízszer bitre azonos**
 
 ## 4. Eredeti / nálunk / teendő
 
-| eredeti | nálunk MA | teendő |
+| eredeti | nálunk (#1481 után) | állapot |
 |---|---|---|
-| **fej+farok MD5**, 4+16834+16834 bájt olvasás | `dedup/exact.py:35` — **SHA-256 a TELJES fájlon** | átvenni a gyors kulcsot |
-| a méret a hash **bemenetének része** | nincs | átvenni |
-| 64 bites kulcs, `u64` oszlopban | nincs ilyen oszlopunk | tárolni |
-| gyorstárazás (ha megvan, nem számol) | — | átvenni |
+| **fej+farok MD5**, 4+16834+16834 bájt olvasás | `dedup/fastkey.py` — `picasa_fast_key()` | ✅ átvéve |
+| a méret a hash **bemenetének része** | ugyanúgy, `uint32_le` a puffer elején | ✅ átvéve |
+| a kulcs MONDJA KI a másodpéldányságot | nálunk csak **előszűrő**, ld. lent | ⚠️ szándékos eltérés |
+| 64 bites kulcs, `u64` oszlopban | nincs ilyen oszlopunk, futásidőben számol | ⬜ külön jegy (indexséma) |
+| gyorstárazás (ha megvan, nem számol) | csak körön belül (`duplicate_paths`) | ⬜ külön jegy (indexséma) |
+
+### A (b) döntés — a kulcs nálunk előszűrő, nem ítélet
+
+A `dedup/exact.py` három lépcsőt futtat: **méret → gyors kulcs → teljes
+SHA-256**. A kulcs csak *kizárni* tud (eltérő kulcs = biztosan eltérő
+tartalom); a másodpéldányságot továbbra is a teljes hash mondja ki.
+
+**Miért nem vettük át a gyengítést:** a rétegre két visszafordíthatatlan
+funkció épül — a Duplikátum-kezelő törölni ajánl (#287), az importálás pedig
+szótlanul kihagyja a jelöltet (#441). Egy 64 bites, csak a fájl két végét
+néző kulcs téves egyezése ott egy elveszett fényképet jelentene. Az eredeti
+Picasa ezt a kockázatot vállalta; nálunk a kulcs ára (~33 KB olvasás) így is
+töredéke a teljes olvasásnak, a pontosság viszont megmarad.
 
 **Miért számít:** egy 5 MB-os fényképnél az eredeti **33 KB-ot** olvas, mi
 **5 MB-ot**. Hálózati megosztáson (a felhasználó gyűjteménye NAS-on van) ez

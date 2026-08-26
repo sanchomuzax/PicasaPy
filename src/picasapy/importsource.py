@@ -18,8 +18,8 @@ szerint KÜLÖN "ÉÉÉÉ-HH-NN" mappákba bontva), `NAMING_TODAY` (egyetlen, a 
 dátum nevű mappa). Ld. `destination_subpath_for_mode`.
 
 A duplikátum-kizáráshoz (`duplicate_paths`) NEM új logika készült: a
-meglévő `picasapy.dedup.exact.file_content_hash`-re ül rá (tartalom-hash,
-méret-előszűréssel) — ugyanaz a mérce, mint a Duplikátum-kezelőé (#287)."""
+meglévő pontos-duplikátum rétegre ül rá (méret → Picasa gyors kulcs →
+teljes SHA-256) — ugyanaz a mérce, mint a Duplikátum-kezelőé (#287)."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from picasapy.dedup.exact import file_content_hash
+from picasapy.dedup.fastkey import picasa_fast_key
 from picasapy.metadata.reader import read_file_metadata
 from picasapy.scanner import media_kind_of, scan_tree
 from picasapy.timeline import resolve_date
@@ -183,15 +184,17 @@ def duplicate_paths(
     candidates: Sequence[ImportCandidate],
     library_paths: Iterable[Path],
 ) -> frozenset[Path]:
-    """A `candidates` közül azok elérési útjai, amelyek TARTALMA (SHA-256,
-    méret-előszűréssel — `picasapy.dedup.exact.file_content_hash`) megegyezik
+    """A `candidates` közül azok elérési útjai, amelyek TARTALMA megegyezik
     egy `library_paths`-beli (már indexelt, azaz "már importálva a
     Picasába") fájléval (#441, "Exclude Duplicates").
 
     NEM önálló duplikátum-logika: a meglévő pontos-duplikátum réteget
     (#31/#287, `dedup/exact.py`) használja fel, csak a jelölt/könyvtár
     két külön halmaza között, a `dedup.find_duplicates`-től eltérően (az a
-    kereső EGY halmazon belül csoportosít).
+    kereső EGY halmazon belül csoportosít). Ugyanaz a három lépcső is:
+    méret → Picasa gyors kulcs (#1481, ~33 KB/fájl) → teljes SHA-256. A
+    kimondó mérce a SHA-256 marad: egy téves egyezés itt azt jelentené,
+    hogy egy fénykép szótlanul kimarad az importálásból.
 
     Az olvashatatlan (törölt/elérhetetlen) fájlok szótlanul kimaradnak az
     összevetésből — sem duplikátumnak, sem egyedinek nem számítanak."""
@@ -205,9 +208,10 @@ def duplicate_paths(
     if not library_by_size:
         return frozenset()
 
-    # a könyvtárbeli fájlok hash-e csak akkor számol, ha tényleg kell
+    # a könyvtárbeli fájlok kulcsa/hash-e csak akkor számol, ha tényleg kell
     # (van jelölt AZONOS mérettel) — és utána újrafelhasználódik, ha több
     # jelölt is ugyanabba a mérethalmazba esik.
+    library_key_cache: dict[Path, int | None] = {}
     library_hash_cache: dict[Path, str | None] = {}
     duplicates: set[Path] = set()
     for candidate in candidates:
@@ -218,10 +222,23 @@ def duplicate_paths(
         same_size = library_by_size.get(size)
         if not same_size:
             continue
+        # 2. lépcső: a gyors kulcs a jelöltre és a könyvtárbeli társaira.
+        # Kulcs nélküli (üres vagy olvashatatlan) fájlnál nem szűrünk elő —
+        # döntsön a teljes hash, az adja a helyes választ üres fájlokra is.
+        candidate_key = picasa_fast_key(candidate.path)
+        kulcs_egyezok = []
+        for library_path in same_size:
+            if library_path not in library_key_cache:
+                library_key_cache[library_path] = picasa_fast_key(library_path)
+            if library_key_cache[library_path] == candidate_key:
+                kulcs_egyezok.append(library_path)
+        if not kulcs_egyezok:
+            continue
+        # 3. lépcső: csak a kulcs-egyezőkre megy el a teljes olvasás.
         candidate_hash = file_content_hash(candidate.path)
         if candidate_hash is None:
             continue
-        for library_path in same_size:
+        for library_path in kulcs_egyezok:
             if library_path not in library_hash_cache:
                 library_hash_cache[library_path] = file_content_hash(library_path)
             if library_hash_cache[library_path] == candidate_hash:

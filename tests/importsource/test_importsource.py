@@ -27,6 +27,8 @@ from picasapy.importsource import (
     duplicate_paths,
     scan_source,
 )
+from picasapy import importsource as importsource_module
+from picasapy.dedup.fastkey import FEJ_MERET, picasa_fast_key
 from support.jpeg_factory import make_jpeg
 
 
@@ -213,6 +215,61 @@ class TestDuplicatePaths:
         result = duplicate_paths(candidates, [library / "a.jpg"])
 
         assert result == frozenset({source / "a.jpg"})
+
+    def test_gyorskulcs_utkozes_nem_zar_ki_kepet(self, tmp_path):
+        """#1481 — azonos méret, azonos fej/farok, eltérő közép: NEM duplikátum.
+
+        A Picasa gyors kulcsa itt ütközik. Ha a kulcs mondaná ki az ítéletet,
+        egy külön fénykép szótlanul kimaradna az importálásból; a teljes
+        SHA-256 ezt megcáfolja."""
+        fej = bytes((i * 37 + 11) & 0xFF for i in range(FEJ_MERET))
+        farok = fej[::-1]
+        source = tmp_path / "kartya"
+        source.mkdir()
+        library = tmp_path / "konyvtar"
+        library.mkdir()
+        (source / "a.jpg").write_bytes(fej + b"\x00" * 5000 + farok)
+        (library / "b.jpg").write_bytes(fej + b"\xff" * 5000 + farok)
+        assert picasa_fast_key(source / "a.jpg") == picasa_fast_key(library / "b.jpg")
+        candidates = (ImportCandidate(path=source / "a.jpg", date=None),)
+
+        assert duplicate_paths(candidates, [library / "b.jpg"]) == frozenset()
+
+    def test_elteru_gyorskulcsnal_nincs_teljes_olvasas(self, tmp_path, monkeypatch):
+        """#1481 — azonos méretű, de eltérő kulcsú fájlpárra nem indul SHA-256."""
+        source = tmp_path / "kartya"
+        source.mkdir()
+        library = tmp_path / "konyvtar"
+        library.mkdir()
+        (source / "a.jpg").write_bytes(b"A" + b"\x00" * 50000)
+        (library / "b.jpg").write_bytes(b"B" + b"\x00" * 50000)
+
+        eredeti = importsource_module.file_content_hash
+        hivasok = []
+
+        def figyelo(path):
+            hivasok.append(path)
+            return eredeti(path)
+
+        monkeypatch.setattr(importsource_module, "file_content_hash", figyelo)
+        candidates = (ImportCandidate(path=source / "a.jpg", date=None),)
+
+        assert duplicate_paths(candidates, [library / "b.jpg"]) == frozenset()
+        assert hivasok == []
+
+    def test_ures_fajlok_tovabbra_is_duplikatumok(self, tmp_path):
+        """#1481 — a 0 bájtos fájlnak nincs gyors kulcsa; ettől nem eshet ki."""
+        source = tmp_path / "kartya"
+        source.mkdir()
+        library = tmp_path / "konyvtar"
+        library.mkdir()
+        (source / "a.jpg").write_bytes(b"")
+        (library / "b.jpg").write_bytes(b"")
+        candidates = (ImportCandidate(path=source / "a.jpg", date=None),)
+
+        assert duplicate_paths(candidates, [library / "b.jpg"]) == frozenset(
+            {source / "a.jpg"}
+        )
 
 
 class TestMediaFilter:
