@@ -25,6 +25,8 @@
 #   BELSŐ     — a terméken belül Pythonból hívjuk; a QML-nek nincs dolga vele
 #   FELVÁLTVA — a felület egy MÁSIK, bővebb alakot hív ugyanerre
 #   MÉRVE     — a #1476 bevezetésekor mért, még el nem döntött eset
+#   ELDÖNTVE  — megmérve az eredetihez képest: TUDATOSAN nem kap felületet
+#               (a hivatkozott ADR mondja meg, miért, és mi maradt nyitva)
 
 # -- #1473: az arcfelismerés keresési oldalának nincs belépési pontja ------
 
@@ -32,20 +34,38 @@
 emailController.prepareAttachments #1474 — a QML csak a beállítás-fül kliensválasztóját köti
 emailController.sendRows #1474 — a tényleges küldés sehonnan nem hívódik
 
-# -- A KÉP-SPECIFIKUS effektus-vágólap (#152) — a MÁSODIK, elérhetetlen út -
+# -- Az effektus-vágólap MÁSODIK rétege (#152) — ELDŐLT: marad, felület nélkül
 # A #1475 eldöntötte: a felület mögötti út a KÖTEGELT réteg
-# (`photo_ops_controller`), annak mind a négy tagja (copy/paste + a két
-# visszavonás) bekötést kapott, ezért innen kikerült. Az itt maradó öt tag a
-# #152-es, KÉP-SPECIFIKUS párhuzamos réteg (`effects_controller.py`), ami az
-# `AppController`-be van keverve, de a QML-ből elérhetetlen. NEM töröltük:
-# tud olyat, amit a kötegelt nem (a `crop64`-et is átviszi, és TÖBBSZINTŰ
-# undo-verme van a kötegelt egyetlen lépésével szemben) — a sorsáról külön
-# jegy dönt, addig itt áll.
-controller.hasEffectsClipboard MÉRVE — kép-specifikus effekt-vágólap (#152); külön jegyet vár
-controller.canUndoPasteEffects MÉRVE — ugyanannak a vágólapnak a visszavonás-jelzője
-controller.copyEffects MÉRVE — a másolás; a felület a KÖTEGELT copyAllEffects-et hívja
-controller.pasteEffects MÉRVE — a beillesztés; a felület a KÖTEGELT pasteAllEffects-et hívja
-controller.undoPasteEffects MÉRVE — a visszavonás; a felületé az undoPasteAllEffects
+# (`photo_ops_controller`), annak mind a négy tagja bekötést kapott, ezért
+# innen kikerült. Az itt maradó öt tag a #152-es párhuzamos réteg
+# (`effects_controller.py`), az `AppController`-be keverve (`controller.py:106`),
+# de a QML-ből elérhetetlen.
+#
+# A #1534 VISSZAFEJTETTE az eredeti kezelőket. Két dolog derült ki:
+#
+# 1) NINCS külön menüpont, amit ez a réteg kiszolgálhatna: a teljes
+#    parancstérképben (docs/specs/picasa-menu-parancsok.csv) pontosan KÉT
+#    effektus-vágólap parancs van, mindkettő a SZERKESZTÉS menüben. Az
+#    eredeti EGY parancsot ad, KÉTÁGÚ kezelővel (a szerkesztő nyitottsága
+#    választ ágat) — nem két külön funkciót. Saját menüpontot adni: HIBA.
+#
+# 2) Az eredeti a láncot EGÉSZBEN viszi át — a másolás/beillesztés teljes
+#    hívási útján NINCS szűrő-névre vonatkozó összehasonlítás, és a `crop64`
+#    sztringnek NULLA kódhivatkozása van a binárisban. Vagyis a VÁGÁS
+#    ÁTMEGY, és ennek a rétegnek a tartalmi szemantikája a HŰSÉGES — nem a
+#    bekötött kötegelté, amely a filterdesc.xml mode="history" oszlopából
+#    KÖVETKEZTETVE szűr, holott a kezelő ezt az attribútumot nem olvassa.
+#
+# Ezért NEM töröljük: ma ez a helyes viselkedés egyetlen megvalósítása. A
+# kötegelt réteg szűrésének javítása külön jegy dolga.
+# ⚠️ A többszintű undo-verme viszont az eredetiben NEM létezik (a
+# könyvtárnézeti beillesztés ott visszavonhatatlan) — azt nem kell átvinni.
+# Teljes indoklás: docs/decisions/effektus-vagolap-ket-reteg.md (ADR-007).
+controller.hasEffectsClipboard ELDÖNTVE (#1534) — nincs külön menüpont hozzá az eredetiben; a réteg a HŰSÉGES tartalmi viselkedés referenciája, ezért marad; ADR-007
+controller.canUndoPasteEffects ELDÖNTVE (#1534) — a verem többszintűsége az eredetiben nem létezik; nem kap felületet; ADR-007
+controller.copyEffects ELDÖNTVE (#1534) — a másolás; a felületé a KÖTEGELT copyAllEffects; ADR-007
+controller.pasteEffects ELDÖNTVE (#1534) — a beillesztés; a felületé a KÖTEGELT pasteAllEffects; ADR-007
+controller.undoPasteEffects ELDÖNTVE (#1534) — a visszavonás; az eredetiben nincs megfelelője; ADR-007
 
 # -- FELVÁLTVA: a felület egy másik, bővebb alakot hív ---------------------
 controller.setShowHidden FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml)

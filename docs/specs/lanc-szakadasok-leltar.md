@@ -51,7 +51,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | `fileops_controller.movePhoto` | egyes alak; a QML a `movePhotos` többes alakot használja |
 | `controller.statusText` | **él**, aliason át: `tray.ctl.statusText` (`TrayBar.qml:117`) |
 | `controller.setShowHidden` | a menü a `toggleShowHidden`-t hívja — szándékos |
-| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:47`-en át be van építve. A **kép-specifikus** vágólap (#152) áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller.py:545/560`). Ez **döntést kíván**, nem hibajavítást — ld. #1475 |
+| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:106`-on át be van építve. A #152-es réteg áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller.py:633/648/724`). A **#1534 eldöntötte**: saját menüpontot nem kap (az eredetiben EGY parancs van, kétágú kezelővel), de nem is törölhető — a láncot egészben átvivő szemantikája a **hűséges**, a bekötött kötegelté nem. Ld. `docs/decisions/effektus-vagolap-ket-reteg.md` (ADR-007) |
 
 ## 4. A teljes mért lista — GENERÁLT
 
@@ -116,11 +116,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
 | `controller` | `collageSeed` | Property | `app/create_controller.py` | MÉRVE — a véletlen elrendezés magja bekötetlen |
-| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | MÉRVE — kép-specifikus effekt-vágólap (#152); külön jegyet vár |
-| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | MÉRVE — ugyanannak a vágólapnak a visszavonás-jelzője |
-| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | MÉRVE — a másolás; a felület a KÖTEGELT copyAllEffects-et hívja |
-| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a beillesztés; a felület a KÖTEGELT pasteAllEffects-et hívja |
-| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a visszavonás; a felületé az undoPasteAllEffects |
+| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | ELDÖNTVE (#1534) — nincs külön menüpont hozzá az eredetiben; a réteg a HŰSÉGES tartalmi viselkedés referenciája, ezért marad; ADR-007 |
+| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | ELDÖNTVE (#1534) — a verem többszintűsége az eredetiben nem létezik; nem kap felületet; ADR-007 |
+| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | ELDÖNTVE (#1534) — a másolás; a felületé a KÖTEGELT copyAllEffects; ADR-007 |
+| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | ELDÖNTVE (#1534) — a beillesztés; a felületé a KÖTEGELT pasteAllEffects; ADR-007 |
+| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | ELDÖNTVE (#1534) — a visszavonás; az eredetiben nincs megfelelője; ADR-007 |
 | `controller` | `exportMovieFull` | Slot | `app/export_controller.py` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
 | `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |

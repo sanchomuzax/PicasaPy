@@ -1,9 +1,42 @@
-"""Effektlánc másolás/beillesztés (#152) — a Kép menü „Copy/Paste All
-Effects" pontjainak bekötése: az `EditSession.copy_effects()`/
-`paste_effects()` API-t emeli QML-slotokká, több kijelölt képre.
+"""Effektlánc másolás/beillesztés (#152) — az `EditSession.copy_effects()`/
+`paste_effects()` API QML-slotokká emelve, több kijelölt képre.
 
-Mixin-osztály: az `AppController` örökli, a `PhotoOpsMixin` batch-ini-írás
-mintáját (`_apply_batch`-hez hasonló, mappánkénti egyetlen írás) követve."""
+⚠️ **EZ A RÉTEG FELÜLET NÉLKÜL ÁLL — de NE töröld (#1534).**
+
+A modul korábbi docstringje azt állította, hogy ez „a Kép menü »Copy/Paste
+All Effects« pontjainak bekötése". Ez **tévedés volt**: a Picasa teljes,
+menüépítő kódból kinyert parancstérképében
+(`docs/specs/picasa-menu-parancsok.csv`) **pontosan két** effektus-vágólap
+parancs van, és mindkettő a **Szerkesztés** menüben ül
+(`ID_EDIT_COPYALLEFFECTS` / `ID_EDIT_PASTEALLEFFECTS`); a Kép menüben egy
+sincs. Nincs tehát külön menüpont, amit ez a réteg kiszolgálhatna — saját
+menüpontot adni neki **hiba lenne**.
+
+**Amiért mégis bent van:** a #1534 visszafejtette az eredeti kezelőket
+(`0x005fecd0` másolás, `0x005fefc0` beillesztés, a `"filters"` getter/setter
+`0x006af3e0`/`0x006af650`), és kiderült, hogy az eredeti a láncot
+**EGÉSZBEN** viszi át — a teljes úton **nincs egyetlen szűrő-névre
+vonatkozó összehasonlítás sem**, a `crop64` sztringnek nulla
+kódhivatkozása van. Vagyis a VÁGÁS ÁTMEGY, és ennek a rétegnek a „mindent
+átviszünk" tartalmi szemantikája a **hűséges** — nem a bekötött kötegelt
+rétegé (`photo_ops_controller.EffectClipboardMixin`, #426), amely a
+`filterdesc.xml` `mode="history"` oszlopából KÖVETKEZTETVE szűr, holott a
+másolás kezelője ezt az attribútumot soha nem olvassa.
+
+A kötegelt réteg szűrésének javítása **külön jegy dolga** (a tesztkészletét
+is átszabja); addig ez a réteg a helyes viselkedés referenciája.
+
+⚠️ A `_effects_undo_stack` **többszintű** verme viszont az eredetiben NEM
+létezik: a könyvtárnézeti beillesztés ott visszavonhatatlan (a binárisban
+nulla „undo"+„paste" felirat van). Ha ez a réteg egyszer a felület mögé
+kerül, a vermet nem kell átvinni.
+
+A teljes indoklás, a mérés és a nyitott kérdések:
+`docs/decisions/effektus-vagolap-ket-reteg.md` (ADR-007).
+
+Mixin-osztály: az `AppController` örökli (`controller.py:106`), a
+`PhotoOpsMixin` batch-ini-írás mintáját (`_apply_batch`-hez hasonló,
+mappánkénti egyetlen írás) követve."""
 
 from __future__ import annotations
 
