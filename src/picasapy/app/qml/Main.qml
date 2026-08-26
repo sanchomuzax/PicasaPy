@@ -745,6 +745,9 @@ ApplicationWindow {
         onSaveRequested: saveDialogs.openSave(window.selectedIndexes)
         onRevertRequested: saveDialogs.openRevert(window.selectedIndexes)
         onUndoSaveRequested: saveDialogs.openUndoSave(window.selectedIndexes)
+        // #1527: a mentés-család két új tagja
+        onSaveAsRequested: saveDialogs.openSaveAs(window.selectedIndex)
+        onSaveCopyRequested: saveDialogs.openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
@@ -1605,6 +1608,21 @@ ApplicationWindow {
         onCancelRequested: controller.cancelBatchEdit()
         x: parent.width - width - 24
         y: 56 + importPanel.height + 12
+    }
+
+    // #1527: a mentés folyamatjelzője. A mentés eddig is háttérszálon
+    // ment, de NÉMÁN — sok képnél a felhasználó nem tudta, dolgozik-e a
+    // program. A szöveg az eredeti két hivatalos alakja (egy fájl /
+    // több fájl), a százalék egy tizedesjegyre.
+    SaveProgressPanel {
+        id: saveProgressPanel
+        objectName: "saveProgressPanel"
+        z: 90
+        visible: controller ? controller.saveProgressActive : false
+        fileCount: controller ? controller.saveProgressFileCount : 0
+        percent: controller ? controller.saveProgressPercent : 0
+        x: parent.width - width - 24
+        y: 56 + importPanel.height + batchEditPanel.height + 24
     }
 
     // #211: lebegő „Teljesítmény-monitor" panel — a Súgó menüből

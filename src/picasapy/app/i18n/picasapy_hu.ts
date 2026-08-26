@@ -2861,18 +2861,71 @@ Would you like to rename or skip these files?</source>
     </message>
 </context>
 <context>
+    <name>SaveProgressPanel</name>
+    <message>
+        <source>Saving file %1%</source>
+        <translation>Fájl mentése: %1%</translation>
+    </message>
+    <message>
+        <source>Saving %1 files %2%</source>
+        <translation>%1 fájl mentése %2%</translation>
+    </message>
+</context>
+<context>
     <name>SaveDialogs</name>
+    <message>
+        <source>A backup of this file will be made.</source>
+        <translation>A program biztonsági másolatot készít erről a fájlról.</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Ne kérdezze újra</translation>
+    </message>
+    <message>
+        <source>Save As...</source>
+        <translation>Mentés másként…</translation>
+    </message>
+    <message>
+        <source>JPEG Files (*.jpg)</source>
+        <translation>JPEG-fájlok (*.jpg)</translation>
+    </message>
+    <message>
+        <source>WebP Files (*.webp)</source>
+        <translation>WebP-fájlok (*.webp)</translation>
+    </message>
+    <message>
+        <source>Unable to save file due to filename collision.</source>
+        <translation>A fájl mentése nem lehetséges. Már van ilyen nevű fájl.</translation>
+    </message>
+    <message>
+        <source>Cannot replace image. Please try again with a different filename.</source>
+        <translation>A képet nem lehet kicserélni. Próbálja újra másik fájlnévvel.</translation>
+    </message>
+    <message>
+        <source>Unable to save file due to a file format error.</source>
+        <translation>Fájlformázási hiba miatt a fájl nem menthető.</translation>
+    </message>
+    <message>
+        <source>Unable to save all files due to a disk error. The disk may be full or read-only.
+
+%1
+error(%2)</source>
+        <translation>Lemezhiba miatt nem lehetséges az összes fájl mentése. Lehet, hogy a lemez megtelt vagy írásvédett.
+
+%1
+hiba(%2)</translation>
+    </message>
     <message>
         <source>Save</source>
         <translation>Mentés</translation>
     </message>
     <message>
         <source>Save changes to disk?</source>
-        <translation>Menti a változtatásokat a lemezre?</translation>
+        <translation>Lemezre menti a módosításokat?</translation>
     </message>
     <message>
         <source>A backup of these files will be made.</source>
-        <translation>A fájlokról biztonsági másolat készül.</translation>
+        <translation>A program biztonsági másolatot készít ezekről a fájlokról.</translation>
     </message>
     <message>
         <source>These pictures contain edits PicasaPy cannot render yet: %1</source>

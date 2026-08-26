@@ -566,7 +566,16 @@ def _encode_image(suffix: str, image: np.ndarray, jpeg_quality: int) -> bytes:
     params: list[int] = []
     if ext in (".jpg", ".jpeg"):
         params = [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
-    ok, encoded = cv2.imencode(ext, image, params)
+    # #1527: az OpenCV NEM mindig `ok=False`-szal jelez. Ismeretlen
+    # kiterjesztésnél `cv2.error`-t DOB („could not find encoder for the
+    # specified extension"), ami eddig NYERSEN szökött ki a mentésből — a
+    # `save_controller._SAVE_ERRORS` sem fogta, mert a `cv2.error` nem
+    # `OSError`/`ValueError`. Ez a hivatalos „fájlformázási hiba" ága
+    # (`CFileSaveThread:filesaveerr3`), tehát ide `SaveError` való.
+    try:
+        ok, encoded = cv2.imencode(ext, image, params)
+    except cv2.error as hiba:
+        raise SaveError(f"A renderelt kép nem kódolható ide: {ext!r}") from hiba
     if not ok:
         raise SaveError(f"A renderelt kép nem kódolható ide: {ext!r}")
     return encoded.tobytes()

@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Működik a „Mentés másként…" és a „Másolat mentése" (#1527).** Mindkettő
+  ott volt a Fájl menüben, de nem csinált semmit. Mostantól a **Mentés
+  másként…** fájlválasztót nyit (JPEG és WebP), a **Másolat mentése** pedig
+  kérdezés nélkül `kep-001.jpg` alakú másolatot készít a kép mellé — pontosan
+  úgy, ahogy az eredeti Picasa (a program szétszedésével igazolva). Meglévő
+  fájlt **soha nem ír felül némán**, és ha a cél ugyanaz, mint a forrás, azt
+  külön megmondja.
+
 ### Javítva
 - **A képmappád áthelyezése után sem veszik el a könyvtárad (#1542).** Ha a
   programon belül magát a figyelt fő képmappádat helyezted át, a PicasaPy
@@ -21,6 +30,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   másodperc.) Ha közben a régi néven ismét áll egy mappa, a program
   óvatosabb: nem ír át semmit, csak naplóz — nem hagy abba némán egy létező
   mappát.
+- **A mentés-megerősítés a hivatalos szöveget és a helyes számot használja
+  (#1527).** Egy kijelölt képnél egyes számú, többnél többes számú a mondat,
+  és megjelent a **„többé ne kérdezd"** lehetőség, ami újraindítás után is
+  megmarad. A mentés közben látszik, hol tart, és három különböző hiba esetén
+  három **különböző** üzenet jön — lemezhibánál a fájlnévvel és a hibakóddal
+  együtt. Két korábbi, átfogalmazott mondat visszakerült az eredeti szövegre.
+- **A kimentett másolat azonnal megjelenik a rácsban (#1527).** Eddig csak
+  akkor vált láthatóvá, amikor a program magától újraolvasta a mappát.
 
 ## [0.8.112] – 2026-08-26
 

@@ -25,18 +25,25 @@ renderelőnk, és egy régi `.picasa.ini` bármikor hozhat ilyet.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import cv2
 import numpy as np
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Property, Signal, Slot, QUrl
 
 from picasapy.cvimage import read_image_bytes
 from picasapy.edit.save import SaveError, revert, save_edited, undo_save
+from picasapy.edit.save_copy import (
+    FileNameCollisionError,
+    next_copy_path,
+    save_copy,
+)
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniConflictError, IniSaveError
 from picasapy.render.chain import apply_filters, can_render_filter
 
+from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
 
 def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
@@ -91,6 +98,75 @@ class SaveMixin(BackgroundWorkerMixin):
     undoSaveFinished = Signal(int, int)
     #: az első néhány sikertelen fájl "név: ok" alakban
     saveFailedDetails = Signal(list)
+
+    # ── #1527 ─────────────────────────────────────────────────────────
+    #: „Másolat mentése" / „Mentés másként…" vége: (sikeres, sikertelen)
+    saveCopyFinished = Signal(int, int)
+    #: a HÁROM hivatalos hibaág: (ág, fájlnév, hibakód). Az ág-azonosítók
+    #: a `save_error_kind.py`-ban; a SZÖVEGET a `SaveDialogs.qml` adja,
+    #: mert a hivatalos feliratok fordítható erőforrások.
+    saveErrorOccurred = Signal(str, str, int)
+    #: a lebegő folyamat-panel állapota változott
+    saveProgressChanged = Signal()
+    #: háttérszálból jövő haladás — Qt sorolja a GUI-szálra
+    _saveProgressTick = Signal(int, int, int)  # (kész, összes, aktív?)
+
+    def _ensure_save_progress(self) -> None:
+        """Lusta állapot-inicializálás (a `BatchEffectMixin` mintája)."""
+        if getattr(self, "_save_progress_wired", False):
+            return
+        self._save_progress_wired = True
+        self._save_progress_done = 0
+        self._save_progress_total = 0
+        self._save_progress_active = False
+        self._saveProgressTick.connect(self._on_save_progress_tick)
+        # ⚠️ A fájl kiírása MÉG NEM láthatóság: a másolat addig nem jelenik
+        # meg a rácsban, amíg az index nem tud róla. Az ötperces
+        # újraolvasás és a mappa-pollozás előbb-utóbb behozná, de a
+        # felhasználó itt AZONNAL keresi a másolatát — ezért a művelet
+        # végén célzottan újraolvassuk a látott mappát (#1275 útján).
+        poll = getattr(self, "_poll_current_folder", None)
+        if poll is not None:
+            self.saveCopyFinished.connect(lambda _done, _failed: poll())
+
+    def _on_save_progress_tick(self, done: int, total: int, active: int) -> None:
+        self._save_progress_done = done
+        self._save_progress_total = total
+        self._save_progress_active = bool(active)
+        self.saveProgressChanged.emit()
+
+    @Property(bool, notify=saveProgressChanged)
+    def saveProgressActive(self) -> bool:  # noqa: N802 — QML-stílus
+        """Látszódjon-e a mentés folyamat-panelje."""
+        self._ensure_save_progress()
+        return self._save_progress_active
+
+    @Property(int, notify=saveProgressChanged)
+    def saveProgressFileCount(self) -> int:  # noqa: N802 — QML-stílus
+        """Hány fájlt ment a futó művelet — ettől függ, hogy a felület az
+        egyes vagy a többes számú hivatalos mondatot mutatja
+        (`progfile` / `progfiles`)."""
+        self._ensure_save_progress()
+        return self._save_progress_total
+
+    @Property(float, notify=saveProgressChanged)
+    def saveProgressPercent(self) -> float:  # noqa: N802 — QML-stílus
+        """A készültség százalékban.
+
+        ⚠️ A hivatalos formátum `%.1f%%` — EGY tizedesjegy (a #1527 jegy
+        „századpontos" megfogalmazása a `%.1f`-fel nem egyezik; a
+        formátumsztring az erősebb bizonyíték, azt követjük). A
+        kerekítést a felület végzi, itt a nyers arány áll."""
+        self._ensure_save_progress()
+        if self._save_progress_total <= 0:
+            return 0.0
+        return 100.0 * self._save_progress_done / self._save_progress_total
+
+    def _report_save_error(self, error: BaseException, path: Path) -> None:
+        """Egy mentés-hiba besorolása és felküldése a felületnek."""
+        self.saveErrorOccurred.emit(
+            save_error_kind(error), path.name, save_error_code(error)
+        )
 
     def _selected_records(self, rows):
         photos = self._photos.photos
@@ -174,11 +250,17 @@ class SaveMixin(BackgroundWorkerMixin):
         if not records:
             self.saveFinished.emit(0, 0)
             return
+        self._ensure_save_progress()
+        self._saveProgressTick.emit(0, len(records), 1)
 
         def worker():
             done, failed, details = 0, 0, []
             naplo: list[tuple[str, str]] = []
-            for path, rotate_steps, filters in records:
+            # #1527: ágonként EGY üzenet. Az eredeti sem sorolja fel a
+            # fájlokat: három külön mondata van, és a lemezhiba-ágon az
+            # ELSŐ érintett fájl neve + a hibakód jelenik meg.
+            jelentett_agak: set[str] = set()
+            for index, (path, rotate_steps, filters) in enumerate(records):
                 try:
                     rendered = _render_for_save(path, rotate_steps, filters)
                     save_edited(path, rendered, EditSession.from_value(filters))
@@ -186,18 +268,114 @@ class SaveMixin(BackgroundWorkerMixin):
                     failed += 1
                     if len(details) < _FAILED_DETAILS_LIMIT:
                         details.append(f"{path.name}: {error}")
+                    ag = save_error_kind(error)
+                    if ag not in jelentett_agak:
+                        jelentett_agak.add(ag)
+                        self._report_save_error(error, path)
                 else:
                     done += 1
                     # #750: a sikeres mentés ÜRES lánccal jelent a naplónak,
                     # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a `redo=`
                     # döntést a `_record_saved_state` docstringjében.
                     naplo.append((str(path), ""))
+                self._saveProgressTick.emit(index + 1, len(records), 1)
             self._record_saved_state(naplo)
+            self._saveProgressTick.emit(len(records), len(records), 0)
+            # #1527: a MENTÉS ága innentől a besorolt, hivatalos üzenetet
+            # adja (`saveErrorOccurred`), nem a nyers „név: ok" listát —
+            # az eredetiben is három konkrét mondat áll, nem felsorolás.
+            # A `details` a naplónak marad, hogy a bukás oka ne vesszen el.
             if details:
-                self.saveFailedDetails.emit(details)
+                logging.getLogger(__name__).warning(
+                    "mentés-hibák (#1527): %s", "; ".join(details)
+                )
             self.saveFinished.emit(done, failed)
 
         self._start_background(worker, name="picasapy-save")
+
+    # ── #1527: „Másolat mentése" és „Mentés másként…" ────────────────
+    #
+    # A két parancs a MÉRÉS szerint ugyanaz a művelet, egyetlen
+    # kapcsolóval (a bináris `0x005e6a20` bájt-paramétere) — ld.
+    # `picasapy.edit.save_copy` modul-docstringjét. Nálunk ez a kapcsoló
+    # az, hogy a hívó ad-e célútvonalat:
+    #
+    #   * `saveCopyRows(rows)`  — nem ad ⇒ a mért `-001` minta,
+    #     kérdés nélkül, TÖBB képre is (a menüpont felirata ellipszis
+    #     nélküli: `Save a Cop&y`).
+    #   * `saveRowAs(row, url)` — ad ⇒ a fájlválasztóból jött út, EGY
+    #     képre (`Save &As...`, ellipszissel).
+
+    @Slot(int, result=str)
+    def suggestedCopyUrl(self, row) -> str:  # noqa: N802 — QML-stílus
+        """A „Mentés másként…" fájlválasztójának alapértelmezett célja.
+
+        A mért `-001` mintát ajánljuk fel: a felhasználó átírhatja, de a
+        felkínált név sosem a forrásé — az eredeti is elutasítaná
+        (`IDS_CANT_SAVE_TO_SAME`)."""
+        records = self._selected_records([row])
+        if not records:
+            return ""
+        record = records[0]
+        return QUrl.fromLocalFile(
+            str(next_copy_path(Path(record.folder_path) / record.name))
+        ).toString()
+
+    @Slot(list)
+    def saveCopyRows(self, rows) -> None:  # noqa: N802 — QML-stílus
+        """„Másolat mentése": a szerkesztések beégetve ÚJ fájlba.
+
+        A forrás — se a képe, se az ini-bejegyzése — nem változik."""
+        self._save_copies(self._selected_records(rows), target=None)
+
+    @Slot(int, str)
+    def saveRowAs(self, row, target_url: str) -> None:  # noqa: N802 — QML-stílus
+        """„Mentés másként…": a felhasználó választotta célútvonalra."""
+        cel = QUrl(target_url).toLocalFile() if target_url else ""
+        if not cel:
+            # A fájlválasztó megszakítása NEM hiba — de a hívó (és a
+            # teszt) a befejezés-jelzésre vár, némán nem térhetünk vissza.
+            self.saveCopyFinished.emit(0, 0)
+            return
+        self._save_copies(self._selected_records([row]), target=Path(cel))
+
+    def _save_copies(self, records, *, target: Path | None) -> None:
+        """A másolat-mentés közös háttérszálas útja."""
+        items = [
+            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0), r.filters or "")
+            for r in records
+        ]
+        if not items:
+            self.saveCopyFinished.emit(0, 0)
+            return
+        self._ensure_save_progress()
+        self._saveProgressTick.emit(0, len(items), 1)
+
+        def worker():
+            done, failed = 0, 0
+            jelentett_agak: set[str] = set()
+            for index, (path, rotate_steps, filters) in enumerate(items):
+                try:
+                    rendered = _render_for_save(path, rotate_steps, filters)
+                    save_copy(
+                        path,
+                        rendered,
+                        EditSession.from_value(filters),
+                        target_path=target,
+                    )
+                except (*_SAVE_ERRORS, FileNameCollisionError) as error:
+                    failed += 1
+                    ag = save_error_kind(error)
+                    if ag not in jelentett_agak:
+                        jelentett_agak.add(ag)
+                        self._report_save_error(error, target or path)
+                else:
+                    done += 1
+                self._saveProgressTick.emit(index + 1, len(items), 1)
+            self._saveProgressTick.emit(len(items), len(items), 0)
+            self.saveCopyFinished.emit(done, failed)
+
+        self._start_background(worker, name="picasapy-save-copy")
 
     @Slot(list)
     def revertRowsToOriginal(self, rows) -> None:  # noqa: N802 — QML-stílus
