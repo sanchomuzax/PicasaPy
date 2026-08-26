@@ -17,9 +17,51 @@ Nincs benne fájlrendszer-olvasás: a mappalistát a hívó adja át (az index
 
 from __future__ import annotations
 
+import sys
+
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse.
+
+    A #1217 szabálya: a platform-döntés MODULSZINTŰ fogantyún át menjen, ne
+    nyers `os.name`/`platform.system()` hívással — különben a teszt nem
+    tudja kimondani, melyik ágat méri. A projekt saját őre fogta meg,
+    amikor ezt elsőre elrontottam."""
+    return sys.platform
+
+
+def _osszehasonlito_alak(path: str) -> str:
+    """A két útvonal ÖSSZEHASONLÍTÓ alakja (#1477).
+
+    ⚠️ A fa csomópontjai `/`-rel épülnek (a `build_hierarchy` így fűzi
+    össze a szinteket), a kijelölt mappa útvonala viszont a rendszertől
+    jön — Windowson `\\`-rel. A nyers `startswith` emiatt a MÁSODIK szint
+    után elhasal: a `C:/Users` nem előtagja a `C:\\Users\\...`-nak.
+
+    A CI windows-lába pontosan ezen bukott el: fanézetre váltás után a
+    kirajzolt sorok `['', 'C:', 'C:/Users']` maradtak, a kijelölt mappa
+    pedig nem látszott (#1454 őre fogta meg).
+
+    Windowson a kis-nagybetű sem számít (a fájlrendszer sem érzékeny rá),
+    POSIX-on viszont IGEN — ott két eltérő betűzésű mappa két különböző,
+    valódi mappa lehet, az összemosás adatvesztő volna."""
+    # ⚠️ A SORREND SZÁMÍT, és elsőre elrontottam: Windowson az
+    # `os.path.normcase` nemcsak kisbetűsít, hanem a `/`-t VISSZA is
+    # alakítja `\\`-re. Ha utána normalizálnánk az elválasztót, a POSIX
+    # alakú útvonalak (`/mnt/photo/...`) is szétesnének — a CI windows-lába
+    # pontosan ezen bukott el a javítás első változatában:
+    # `assert '/mnt/photo/Kepek/AI' in {'', '/'}`.
+    # Ezért előbb a kis-nagybetű, és CSAK UTÁNA az elválasztó.
+    # ⚠️ Nem `os.path.normcase`: az MAGA is platformfüggő (Linuxon
+    # azonosság), tehát a `_platform()` fogantyú kicserélése nem hatna rá,
+    # és a windowsos ágat Linuxon nem lehetne MÉRNI. Kifejezett kisbetűsítés
+    # kell — így a fogantyú tényleg eldönti, melyik ág fut.
+    alak = path.lower() if _platform().startswith("win") else path
+    return alak.replace("\\", "/")
 
 
 def _is_ancestor(candidate: str, target: str) -> bool:
@@ -31,9 +73,13 @@ def _is_ancestor(candidate: str, target: str) -> bool:
     """
     if not candidate or candidate == target:
         return False
-    if not target.startswith(candidate):
+    jelolt = _osszehasonlito_alak(candidate)
+    cel = _osszehasonlito_alak(target)
+    if jelolt == cel or not jelolt:
         return False
-    return candidate.endswith(("/", "\\")) or target[len(candidate)] in "/\\"
+    if not cel.startswith(jelolt):
+        return False
+    return jelolt.endswith("/") or cel[len(jelolt)] == "/"
 
 
 class FolderHierarchyController(QObject):

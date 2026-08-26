@@ -252,3 +252,64 @@ class TestTheIndexFeedsTheTree:
         assert sorok[str(gyoker / "nyar")]["count"] == 2
         # a nézet-gyökér a RÉSZFA összes fotóját összegzi
         assert sorok[""]["count"] == 3
+
+
+class TestOsLancWindowsUtvonallal:
+    """A fanézetre váltás Windowson is kinyitja a kijelölt ősláncát (#1477).
+
+    A fa csomópontjai `/`-rel épülnek, a kijelölt mappa útvonala viszont a
+    rendszertől jön — Windowson `\\`-rel. A nyers `startswith` emiatt a
+    második szint után elhasal.
+
+    ⚠️ Ez a hiba a CI windows-lábán bukott ki, és a #1454 saját őre fogta
+    meg: a kirajzolt sorok `['', 'C:', 'C:/Users']` maradtak, a kijelölt
+    mappa nem látszott. Linuxon a teszt zöld volt — ezért kell ez az őr
+    KIFEJEZETTEN a vegyes elválasztójú esetre, platformtól függetlenül.
+    """
+
+    @staticmethod
+    def _osok(cel: str) -> set[str]:
+        from picasapy.app.folder_hierarchy_controller import _is_ancestor
+
+        jeloltek = ("C:", "C:/Users", "C:/Users/sancho", "C:/Users/sanchoXYZ")
+        return {j for j in jeloltek if _is_ancestor(j, cel)}
+
+    def test_a_windows_elvalaszto_nem_szakitja_meg_a_lancot(self):
+        osok = self._osok("C:\\Users\\sancho\\Kepek")
+        assert osok == {"C:", "C:/Users", "C:/Users/sancho"}, (
+            "a `\\`-es célútvonalnál megszakadt az ősLánc — pontosan ez "
+            f"buktatta a CI windows-lábát; kapott: {sorted(osok)}"
+        )
+
+    def test_windows_agon_a_kis_nagybetu_sem_szamit(self, monkeypatch):
+        """A #1217 fogantyúján át MÉRJÜK a windowsos ágat is."""
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        assert modul._is_ancestor("C:/USERS", "C:\\users\\sancho\\Kepek")
+
+    def test_posix_agon_a_kis_nagybetu_SZAMIT(self, monkeypatch):
+        """POSIX-on két eltérő betűzésű mappa két KÜLÖNBÖZŐ mappa lehet —
+        az összemosás ott adatvesztő volna."""
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        assert not modul._is_ancestor("/MNT/photo", "/mnt/photo/2011")
+
+    def test_a_hasonlo_nevu_testver_NEM_os(self):
+        """A határon elválasztónak kell állnia — a régi garancia marad."""
+        assert "C:/Users/sanchoXYZ" not in self._osok("C:\\Users\\sancho\\Kepek")
+
+    def test_a_posix_ut_valtozatlanul_mukodik(self):
+        """⚠️ Ez az őr a javítás ELSŐ változatát is megfogta volna.
+
+        Ott a normalizálás sorrendje fordított volt, és Windowson az
+        `os.path.normcase` a `/`-t VISSZA alakítja `\\`-re — így a POSIX
+        alakú útvonalak szétestek. A CI windows-lába pontosan ezt adta:
+        `assert '/mnt/photo/Kepek/AI' in {'', '/'}`."""
+        from picasapy.app.folder_hierarchy_controller import _is_ancestor
+
+        assert _is_ancestor("/mnt/photo", "/mnt/photo/2011")
+        assert _is_ancestor("/mnt/photo", "/mnt/photo/Kepek/AI")
+        assert _is_ancestor("/mnt/photo/Kepek", "/mnt/photo/Kepek/AI")
+        assert not _is_ancestor("/mnt/photo", "/mnt/photoXYZ")

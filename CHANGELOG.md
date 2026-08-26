@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Windowson a fanézetre váltás után újra látszik a kiválasztott mappa
+  (#1477).** A bal hasáb fanézetében a program eddig csak két szintig
+  nyitotta ki a mappák sorát, a kiválasztott mappa pedig eltűnt a
+  szemünk elől. Az ok a Windows és a Linux eltérő útvonal-írásmódja volt.
+  (A Linuxon futó változatot ez sosem érintette.)
+
 ## [0.8.95] – 2026-08-25
 
 ### Javítva
