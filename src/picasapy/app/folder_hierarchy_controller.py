@@ -17,9 +17,30 @@ Nincs benne fájlrendszer-olvasás: a mappalistát a hívó adja át (az index
 
 from __future__ import annotations
 
+import os
+
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
+
+
+def _osszehasonlito_alak(path: str) -> str:
+    """A két útvonal ÖSSZEHASONLÍTÓ alakja (#1477).
+
+    ⚠️ A fa csomópontjai `/`-rel épülnek (a `build_hierarchy` így fűzi
+    össze a szinteket), a kijelölt mappa útvonala viszont a rendszertől
+    jön — Windowson `\\`-rel. A nyers `startswith` emiatt a MÁSODIK szint
+    után elhasal: a `C:/Users` nem előtagja a `C:\\Users\\...`-nak.
+
+    A CI windows-lába pontosan ezen bukott el: fanézetre váltás után a
+    kirajzolt sorok `['', 'C:', 'C:/Users']` maradtak, a kijelölt mappa
+    pedig nem látszott (#1454 őre fogta meg).
+
+    Windowson a kis-nagybetű sem számít (a fájlrendszer sem érzékeny rá),
+    POSIX-on viszont IGEN — ott két eltérő betűzésű mappa két különböző,
+    valódi mappa lehet, az összemosás adatvesztő volna."""
+    alak = path.replace("\\", "/")
+    return os.path.normcase(alak) if os.name == "nt" else alak
 
 
 def _is_ancestor(candidate: str, target: str) -> bool:
@@ -31,9 +52,13 @@ def _is_ancestor(candidate: str, target: str) -> bool:
     """
     if not candidate or candidate == target:
         return False
-    if not target.startswith(candidate):
+    jelolt = _osszehasonlito_alak(candidate)
+    cel = _osszehasonlito_alak(target)
+    if jelolt == cel or not jelolt:
         return False
-    return candidate.endswith(("/", "\\")) or target[len(candidate)] in "/\\"
+    if not cel.startswith(jelolt):
+        return False
+    return jelolt.endswith("/") or cel[len(jelolt)] == "/"
 
 
 class FolderHierarchyController(QObject):
