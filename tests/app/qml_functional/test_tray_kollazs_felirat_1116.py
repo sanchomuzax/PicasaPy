@@ -32,6 +32,10 @@ _TS_FORRAS = (
 #: táblájából átvett magyar (`outputlayout_text.tre`).
 FELIRAT = ("Collage", "Kollázs")
 SUGO = (
+    # ⚠️ CSAK a szöveg, a `qsTr(...)` burkolat NÉLKÜL: a #1420-ban a
+    # hívás két sorra tördelődött, és az egzakt alakra menő egyeztetés
+    # elbukott — miközben a súgó változatlanul ott volt. A felirat léte a
+    # követelmény, nem a forrás formázása.
     "Create a Photo Collage with your selection",
     "Készítsen fotókollázst a kijelölt képekből",
 )
@@ -40,7 +44,21 @@ SUGO = (
 class TestForrasszovegek:
     @pytest.mark.parametrize("angol", [FELIRAT[0], SUGO[0]])
     def test_a_qml_forditasra_jeloli(self, angol):
-        assert f'qsTr("{angol}")' in _QML_FORRAS
+        """A `qsTr(...)` burkolat és a szöveg KÜLÖN mérve.
+
+        ⚠️ Az egzakt `qsTr("…")` alakra menő egyeztetés a #1420-ban
+        elbukott, mert az elrendezés-átépítés a hívást két sorra tördelte —
+        miközben a súgó változatlanul ott volt, fordításra jelölve. Az őr
+        a KÖVETELMÉNYT mérje (a szöveg fordítható), ne a forrás
+        formázását."""
+        # a forrást szóköz-normalizálva nézzük: a sortörés és a behúzás
+        # a `qsTr(` után nem viselkedésbeli különbség
+        tomor = " ".join(_QML_FORRAS.split())
+        assert angol in tomor, "a felirat eltűnt a forrásból"
+        assert f'qsTr( "{angol}"' in tomor or f'qsTr("{angol}"' in tomor, (
+            f"ez a felirat nincs qsTr(...)-be csomagolva, tehat nem "
+            f"forditható: {angol}"
+        )
 
     def test_a_gombnak_van_szoveg_tulajdonsaga(self):
         """A felirat a `text`-en át jön, mint a Nyomtatás/Exportálás
@@ -59,27 +77,33 @@ class TestHivatalosMagyar:
 
 
 class TestKompaktKuszob:
-    def test_a_kuszob_mert_feliratszelessegbol_all(self):
-        """#406 invariánsa: a küszöb a MÉRT feliratszélességből áll, nem
-        fix képpontszámból — különben a szélesebb rendszerbetűvel
-        (windows-CI) kilógna a sáv.
+    def test_a_kuszob_MAR_NEM_feliratszelessegbol_all(self):
+        """⚠️ MEGFORDÍTOTT ŐR (#1420) — az eredeti állítás tárgytalan.
 
-        #1116-ban a Kollázs gombnak KÜLÖN, magasabb küszöbe volt, mert a
-        felirata a gomb MELLETT ült, és így szélesítette a sávot. A #1345
-        óta a kimeneti gombok fix 55 × 36 képpontosak, a felirat a gombon
-        BELÜL van: egyik kimeneti felirat sem szélesíti a sávot, ezért a
-        külön kollázs-küszöb megszűnt. A küszöb egyetlen felirat-függő
-        tagja a tartalomhoz igazodó zöld „Feltöltés" gomb maradt —
-        a mérés elve viszont VÁLTOZATLAN, és ezt őrizzük itt."""
-        assert "id: uploadLabelMetrics" in _QML_FORRAS
-        kuszob = _QML_FORRAS.split(
-            "readonly property real compactThreshold", 1
-        )[1].split("readonly property bool compact:", 1)[0]
-        assert "uploadLabelMetrics.width" in kuszob, (
-            "a küszöb nem mért feliratszélességből áll"
+        A #406 invariánsa az volt, hogy a küszöb a MÉRT feliratszélességből
+        álljon, különben a szélesebb rendszerbetűvel (windows-CI) kilógna a
+        sáv. Ez akkor helyes volt.
+
+        A #1420-ban a sáv a binárisból mért elrendezést kapta: a zöld
+        „Feltöltés" gomb is FIX méretű (141 × 35 egy 147 × 44-es helyen),
+        tehát a sávban **egyetlen felirat sem szélesít semmit**. A küszöb
+        ezért tiszta geometria lett — és ez nem visszalépés, hanem épp azt a
+        csapdát szünteti meg, amin a #1367 elbukott: ott a mért szélesség
+        helyben 850, a CI-futón 860 volt, mert a betű más.
+
+        Ez az őr ellenkező irányban áll helyt: ha valaki VISSZAHOZZA a
+        feliratszélesség-mérést a küszöbbe, itt bukik, és ezt a
+        magyarázatot kapja."""
+        assert "uploadLabelMetrics" not in _QML_FORRAS, (
+            "visszakerült a feliratszélesség-mérés a küszöbbe. A #1420 óta a "
+            "sáv geometriája fix (a zöld gomb is), tehát erre nincs szükség — "
+            "és a betűszélesség platformonként eltér (#1367: helyi 850 / CI 860)."
         )
         assert "collageLabelMetrics" not in _QML_FORRAS, (
             "a külön kollázs-küszöb a #1345 óta tárgytalan"
+        )
+        assert "separatorThreshold" in _QML_FORRAS, (
+            "a küszöbnek léteznie kell — csak már geometriából, nem betűből"
         )
 
     def test_a_kollazs_felirata_nem_kuszobhoz_kotott(self):
