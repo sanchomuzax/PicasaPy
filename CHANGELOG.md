@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A figyelt mappa vizsgálata cserélhető fogantyún át hív (#1560).** Tisztán
+  belső átalakítás, hogy a hálózati hibák (elavult kapcsolat, megszakadt
+  megosztás) tesztelhetők legyenek Windowson is. A program viselkedése nem
+  változik.
+
 ## [0.8.113] – 2026-08-26
 
 ### Hozzáadva
