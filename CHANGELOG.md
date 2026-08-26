@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.109] – 2026-08-26
 
 ### Belső
 - **Eldőlt, mi legyen a két effektus-vágólap sorsa (#1534).** A binárisból
