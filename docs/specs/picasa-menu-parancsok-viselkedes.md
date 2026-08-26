@@ -322,6 +322,36 @@ A mentés **háttérszálon** fut: **`CFileSaveThread`** (`0x0053a790`, 2880 b).
 | hiba 2 | fájlformátum (`filesaveerr3`) |
 | hiba 3 | lemezhiba, **fájlnévvel és hibakóddal** (`filesaveerr-win`) |
 
+#### A `Mentés másként…` és a `Másolat mentése` KÜLÖNBSÉGE (mérve, 2026-08-26)
+
+A 2026-08-24-i kör ezt „nem mértem"-ként hagyta nyitva. A bináris-index
+`xrefs` táblája és a helyi diszasszemblálás
+(`referencia/eszkozok/binaris/annot_disasm.py`) eldönti:
+
+* a parancs-diszpécser (`0x005cb990`) **ugyanazt** a `0x005e6a20`
+  függvényt (1757 b) hívja **mindkét** menüpontra (`call_count = 2`);
+* a függvény egyetlen bájt-paraméterre ágazik:
+  `0x005e6b6a  cmp byte ptr [esp+0x14d4], bl` → `je 0x5e6bb1`.
+
+| ág | viselkedés |
+|---|---|
+| param **== 0** — `ID_FILE_SAVEAS` | szűrőlistát épít: `CThumbUI::SaveAsFilterJPG` / `*.jpg`, és ha a forrás WebP (`[esp+0x44] == 0x1f`), `SaveAsFilterWebP` / `*.webp`; **fájlválasztót nyit** (`0x0097f1d0`, sztringjei: `"SaveFile"`, `"ytApp::JPEGFilter"`, `"Preferences"`); a megszakítás korai kilépés; ha a cél **azonos a forrással**, `IDS_CANT_SAVE_TO_SAME` („A képet nem lehet kicserélni. Próbálja újra másik fájlnévvel."); a létezés-ellenőrzés `0x00992ed0` (`"Exists"`) |
+| param **!= 0** — `ID_FILE_SAVEACOPY` | `call 0x00993650`, aminek EGYETLEN sztringje **`%s-%03lu`**, majd **`jmp 0x5e6f24`**: átugorja a fájlválasztót ÉS az azonosság-ellenőrzést |
+
+⇒ a **`Mentés másként…`** kérdez (ezért végződik a felirata pontokra:
+`Save &As...`), a **`Másolat mentése`** nem (`Save a Cop&y`, ellipszis
+nélkül), és a célnév `kep.jpg` → **`kep-001.jpg`**, ütközésnél `-002`.
+
+Mindkét ág a cél mappájának `.picasa.ini`-jén (`0x005e6f33`) és a KÖZÖS
+hibaüzeneten (`CThumbUI::FileSaveCopy:err`) fut át.
+
+**Nem mértük:** hogy a cél `.picasa.ini`-jébe MELY kulcsok kerülnek — a
+`0x005aafd0` (293 b) nem tartalmaz kulcsnevet. Nálunk ez dokumentált
+döntés (`picasapy.edit.save_copy`): a másolat `redo=` + `originhash`
+könyvelést kap, a forrás bejegyzése érintetlen marad. Eldöntené: egy
+valódi Picasa 3.9-cel készített „Másolat mentése" mellé exportált
+`.picasa.ini`.
+
 Jegy: **#1527**.
 
 ### 22. `ID_HELP_KEYBOARD_SHORTCUTS`

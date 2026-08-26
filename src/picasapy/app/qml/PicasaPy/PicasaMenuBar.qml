@@ -99,6 +99,13 @@ MenuBar {
     signal saveRequested()
     signal revertRequested()
     signal undoSaveRequested()
+    // #1527: a mentés-család két hiányzó tagja. Mérve (ld.
+    // `picasapy.edit.save_copy`): az eredetiben MINDKETTŐ ugyanaz a
+    // függvény, egyetlen kapcsolóval — a „Mentés másként…" fájlválasztót
+    // nyit (ezért végződik a felirata pontokra), a „Másolat mentése"
+    // nem kérdez, a nevet a `%s-%03lu` minta adja.
+    signal saveAsRequested()
+    signal saveCopyRequested()
     signal slideshowRequested()
     // #24: Időrend nézet (Ctrl+5)
     signal timelineRequested()
@@ -247,9 +254,24 @@ MenuBar {
             onTriggered: bar.undoSaveRequested()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): eltérő mentés-változatok
-        PicasaMenuItem { text: qsTr("Save As..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Save a Copy"); placeholder: true }
+        // #1527: a mentés-család két további tagja — ÉLŐ tételek. A
+        // különbségük MÉRT (`picasapy.edit.save_copy` modul-docstring):
+        // a „Mentés másként…" fájlválasztót nyit (ellipszis a
+        // feliratban), és az AKTUÁLIS képre hat, mert egy választó egy
+        // célt tud megnevezni; a „Másolat mentése" nem kérdez, a nevet
+        // a mért `-001` minta adja, és a teljes kijelölésre hat.
+        MenuItem {
+            objectName: "menuFileSaveAs"
+            text: qsTr("Save As...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.saveAsRequested()
+        }
+        MenuItem {
+            objectName: "menuFileSaveCopy"
+            text: qsTr("Save a Copy")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.saveCopyRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuFileExport"
@@ -283,7 +305,14 @@ MenuBar {
         // hiányzott (#324 audit): nyomtatott képek online rendelése
         PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        MenuItem { text: qsTr("E&xit"); onTriggered: Qt.quit() }
+        // #1527: a Fájl menü zárótétele. A jegy „nincs a menüben"-ként
+        // írta le — MÉRVE megvolt (2026-08-24), csak `objectName` nélkül,
+        // ezért egyetlen teszt sem érte el. A név most már fogja.
+        MenuItem {
+            objectName: "menuFileExit"
+            text: qsTr("E&xit")
+            onTriggered: Qt.quit()
+        }
     }
     Menu {
         title: qsTr("&Edit")
