@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Hozzáadva
+- **Visszavonható lett az összes effektus beillesztése és a csoportos
+  szerkesztés (#1475).** Ez a két művelet eddig elvégezhető volt, de
+  visszacsinálni nem lehetett: a program tudta, hogyan kell, csak nem volt
+  hozzá menüpont. Mostantól a **Szerkesztés** menü élén ott az „Az összes
+  effektus beillesztésének visszavonása" és a „Csoportos szerkesztés
+  visszavonása" — mindkettő szürke, ha épp nincs mit visszavonni. A kettő
+  külön él, mert két külön műveletsort vonnak vissza.
+
 ## [0.8.105] – 2026-08-26
 
 ### Javítva
