@@ -189,14 +189,6 @@ class FolderHierarchyController(QObject):
             self._expanded = self._expanded | {key}
         self._rebuild()
 
-    @Slot(str)
-    def expand(self, path: str) -> None:
-        self._set_expanded(self._expanded | {str(path)})
-
-    @Slot(str)
-    def collapse(self, path: str) -> None:
-        self._set_expanded(self._expanded - {str(path)})
-
     @Slot()
     def expandAll(self) -> None:
         """`Folder::ID_HIER_FOLDER_EXPAND` — „Expand All"."""
