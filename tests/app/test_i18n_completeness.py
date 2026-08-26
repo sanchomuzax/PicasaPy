@@ -77,6 +77,17 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "CollageSaveMixin",
         "None of the selected pictures could be read.",
     ): "AppController",
+    # #1500: a `ColorIndexMixin` (color_index_controller.py) ugyanez az
+    # eset — az `AppController`-be kevert szelet, tehát a színkeresés
+    # „még készül" tájékoztatója futásidőben az `AppController`
+    # kontextusban van lefordítva.
+    (
+        "ColorIndexMixin",
+        "Color search is still being prepared: {0} of {1} photos have been "
+        "analyzed so far. Photos that have not been analyzed yet cannot show "
+        "up in the results, but the list fills in on its own as soon as the "
+        "preparation finishes.",
+    ): "AppController",
 }
 
 

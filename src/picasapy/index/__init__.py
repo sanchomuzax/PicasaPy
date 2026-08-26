@@ -8,6 +8,7 @@ from .album_collage import (
 from .albums import AlbumRecord, album_photos, albums_in_index
 from .colors import (
     backfill_colors,
+    color_index_progress,
     compute_photo_color,
     load_color_tokens,
     paths_with_color,
@@ -93,6 +94,7 @@ __all__ = [
     "albums_with_collage",
     "all_photos",
     "backfill_colors",
+    "color_index_progress",
     "clear_faces",
     "compute_photo_color",
     "detected_face_count",
