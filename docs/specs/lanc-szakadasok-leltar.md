@@ -74,7 +74,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 - vizsgált QML/JS-fájl: **142**
 - regisztrált kontextus-objektum: **19** (+1 nem QObject)
 - feloldott alias (fájl + név): **15**
-- kontextuson elérhető `@Slot`/`@Property` tag: **501**
+- kontextuson elérhető `@Slot`/`@Property` tag: **505**
 - ebből QML-ből NEM elérhető: **49**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
