@@ -300,6 +300,121 @@ Item {
     assert _nema_kulcsok(gyoker) == {"other.py::done"}
 
 
+def test_a_masik_fajlbol_feltoltott_target_is_fogado(tmp_path: Path) -> None:
+    """#1496 — a `Connections` célja gyakran MÁSIK fájlból kapja az értékét.
+
+    A `FaceScanDialog.qml` pontosan így fogad tizenegy jelzést: a `faceScan`
+    tulajdonság a saját fájljában `null`, az értékét a `Main.qml` adja. Az őr
+    sokáig csak az azonos fájlon belüli aliast oldotta fel, ezért mind a
+    tizenegy fogadót NEM LÁTTA — az alapállapot-lista tizenegy HAMIS tételt
+    konzervált, és minden új, ugyanígy bekötött jelzés hamis riasztást adott.
+    """
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    (gyoker / "worker.py").write_text(
+        "from PySide6.QtCore import QObject, Signal\n\n"
+        "class Worker(QObject):\n"
+        "    done = Signal()\n",
+        encoding="utf-8",
+    )
+    # A párbeszéd: a cél a SAJÁT fájljában csak egy `null` alapértékű
+    # tulajdonság — itt semmi nem árulja el, melyik vezérlőről van szó.
+    (qml_dir / "Dialog.qml").write_text(
+        """\
+Window {
+    id: dialogWindow
+    property var handle: null
+    Connections {
+        target: dialogWindow.handle ? dialogWindow.handle : null
+        function onDone() {}
+    }
+}
+""",
+        encoding="utf-8",
+    )
+    # A kapcsolat CSAK innen látszik.
+    (qml_dir / "Main.qml").write_text(
+        """\
+Item {
+    readonly property var _worker:
+        typeof worker !== "undefined" ? worker : null
+    Dialog { id: dlg; handle: root._worker }
+}
+""",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == set()
+
+
+def test_a_keresztfajlos_feloldas_nem_tesz_elove_barmit(tmp_path: Path) -> None:
+    """A #1496-os bővítés nem moshatja el a valódi némaságot.
+
+    Ha a másik fájl egy MÁSIK vezérlőt ad át, az azonos nevű kezelő nem
+    teheti élővé a be nem kötött jelzést."""
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    for nev in ("worker", "other"):
+        (gyoker / f"{nev}.py").write_text(
+            "from PySide6.QtCore import QObject, Signal\n\n"
+            f"class {nev.title()}(QObject):\n"
+            "    done = Signal()\n",
+            encoding="utf-8",
+        )
+    (qml_dir / "Dialog.qml").write_text(
+        """\
+Window {
+    id: dialogWindow
+    property var handle: null
+    Connections {
+        target: dialogWindow.handle
+        function onDone() {}
+    }
+}
+""",
+        encoding="utf-8",
+    )
+    (qml_dir / "Main.qml").write_text(
+        """\
+Item {
+    Dialog { id: dlg; handle: worker }
+}
+""",
+        encoding="utf-8",
+    )
+
+    # A `worker` be van kötve, az `other` NEM — az őrnek ezt kell mondania.
+    assert _nema_kulcsok(gyoker) == {"other.py::done"}
+
+
+def test_az_egysoros_kotesek_kozul_a_MASODIK_is_latszik(tmp_path: Path) -> None:
+    """`Dialog { id: d; handle: worker }` — az `id:` felfalta a sor
+    maradékát, és a keresett átadás láthatatlan maradt (#1496 mérése)."""
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    (gyoker / "worker.py").write_text(
+        "from PySide6.QtCore import QObject, Signal\n\n"
+        "class Worker(QObject):\n"
+        "    done = Signal()\n",
+        encoding="utf-8",
+    )
+    (qml_dir / "Dialog.qml").write_text(
+        "Window {\n"
+        "    property var handle: null\n"
+        "    Connections { target: handle; function onDone() {} }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    (qml_dir / "Main.qml").write_text(
+        "Item { Dialog { id: d; handle: worker } }\n", encoding="utf-8"
+    )
+
+    assert _nema_kulcsok(gyoker) == set()
+
+
 def test_az_azonos_nevu_aliasok_qml_fajlonkent_kulon_oldodnek_fel(
     tmp_path: Path,
 ) -> None:

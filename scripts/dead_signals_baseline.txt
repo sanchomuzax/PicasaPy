@@ -28,18 +28,7 @@ app/compact_controller.py::compactStarted #1003 — a tömörítés indulását 
 app/create_controller.py::collagePreviewFailed #1003 — a kollázs-előnézet hibaüzenete elvész; át kell nézni, kell-e felületi jelzés
 app/dedup_controller.py::scanStarted #1003 — a másolatkereső indulását a felület nem jelzi (a scanProgress/scanFinished VISZONT be van kötve a DedupDialogban)
 app/email_controller.py::emailFailed #1003 — VISSZAIGAZOLT: az e-mail-küldés hibáját a felhasználó nem látja, pedig a jelzés saját docstringje kéri a UI-figyelmeztetést
-app/face_scan_controller.py::embeddingCancelled #1003 — az arclenyomatolás megszakítása; felületi visszajelzés nincs
-app/face_scan_controller.py::embeddingFailed #1003 — az arclenyomatolás hibája elvész
-app/face_scan_controller.py::embeddingFinished #1003 — a lenyomatolás eredménye (hány arc, hány csoport) elvész
-app/face_scan_controller.py::embeddingModelUnavailable #1003 — a hiányzó modell miatti tiszta kikapcsolásról a felhasználó nem kap tájékoztatást
-app/face_scan_controller.py::embeddingProgress #1003 — a lenyomatolás haladása; felületi folyamatjelző nincs
-app/face_scan_controller.py::embeddingStarted #1003 — a lenyomatolás indulását a felület nem jelzi
-app/face_scan_controller.py::modelUnavailable #1003 — az arcfelismerő modell hiányában némán kikapcsolunk; a felhasználó nem tudja meg, miért nincs találat
-app/face_scan_controller.py::scanCancelled #1003 — a FaceScanController megszakítását a DedupDialog azonos nevű kezelője korábban hamisan elfedte; saját QML-fogadó nincs
-app/face_scan_controller.py::scanFailed #1003 — az arcszkennelés hibáját a DedupDialog azonos nevű kezelője korábban hamisan elfedte; saját QML-fogadó nincs
-app/face_scan_controller.py::scanFinished #1003 — az arcszkennelés eredménye a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
 app/face_scan_controller.py::scanProgress #1003 — az arcszkennelés haladása a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
-app/face_scan_controller.py::scanStarted #1003 — az arcszkennelés indulását a felület nem jelzi
 app/fileops_controller.py::folderMoved #1003 — a mappa áthelyezése után a régi/új utat senki nem veszi át; át kell nézni, kell-e felületi frissítés
 app/import_source_controller.py::sourceScanStarted #1003 — az importforrás vizsgálatának indulását a felület nem jelzi
 app/photo_ops_controller.py::photoOpFinished #1003 — a fotóművelet vége; ma csak TESZT figyeli (ld. batch_effect_controller.py kommentjét), a felület nem

@@ -134,9 +134,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # megmondja, mi hiányzik — de a felhasználó (aki nem programozó) ettől
     # még nem jutott modellhez, mert a `download_model()` a termékkódból
     # sehonnan nem hívódott.
-    modelDownloadStarted = Signal()
     #: (siker, felhasználói mondat) — megszakításnál és hibánál is szól,
     #: néma bukás SEHOL.
+    #:
+    #: „Elindult" jelzés SZÁNDÉKOSAN NINCS (#1496 felülvizsgálat): a
+    #: letöltést egyedül a párbeszéd `startDownload()`-ja indítja, ami maga
+    #: állítja a `downloading` jelzőt — egy indulás-jelzés ugyanazt mondaná
+    #: el másodszor. Az indulást a `modelDownloadPercent` 0-ra váltása is
+    #: mutatja.
     modelDownloadFinished = Signal(bool, str)
     modelDownloadPercentChanged = Signal()
 
@@ -312,7 +317,6 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         stop_event = threading.Event()
         self._model_download_stop_event = stop_event
         self._set_model_download_percent(0)
-        self.modelDownloadStarted.emit()
         try:
             self._start_background(
                 self._run_model_download,

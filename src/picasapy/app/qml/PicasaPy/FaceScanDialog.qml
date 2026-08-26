@@ -216,8 +216,8 @@ Window {
             faceScanWindow.grouping = false
             faceScanWindow.refreshAvailability()
         }
-        // #1496
-        function onModelDownloadStarted() { faceScanWindow.downloading = true }
+        // #1496 — „elindult" kezelő SZÁNDÉKOSAN nincs: a `downloading`
+        // jelzőt a `startDownload()` állítja, ami az EGYETLEN indító út.
         function onModelDownloadFinished(ok, message) {
             faceScanWindow.downloading = false
             faceScanWindow.statusText = message
