@@ -240,6 +240,9 @@ def hue_histogram(
 
     buckets = np.asarray(_BUCKET_OF_HUE_DECADE, dtype=np.int64)[hue // 10]
     # A résbe eső (−1) képpontokat itt dobjuk el — a `bincount` nem tűrné.
+    # A `weights` miatt a `bincount` float64-et ad, de az összeg felső
+    # korlátja 255 × képpontszám, ami messze a float64 egész-pontos
+    # tartományán belül van — a végén tehát veszteség nélkül egészítünk.
     inside = buckets >= 0
     totals = np.bincount(
         buckets[inside],
