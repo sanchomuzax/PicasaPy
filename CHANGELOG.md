@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **Eldőlt, mi legyen a két effektus-vágólap sorsa (#1534).** A binárisból
+  igazolva: az eredeti Picasában egyetlen parancspár van, a beillesztés
+  **átviszi a vágást**, és **nincs hozzá visszavonás**. A felhasználó számára
+  most nem változik semmi — a döntés az `docs/decisions/` alatt él, a belőle
+  következő javítás önálló jegyen megy tovább.
+
 ## [0.8.106] – 2026-08-26
 
 
