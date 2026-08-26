@@ -32,16 +32,20 @@
 emailController.prepareAttachments #1474 — a QML csak a beállítás-fül kliensválasztóját köti
 emailController.sendRows #1474 — a tényleges küldés sehonnan nem hívódik
 
-# -- #1475: a visszavonás-műveleteknek nincs gombjuk -----------------------
-controller.canUndoBatchEdit #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll
-controller.undoBatchEdit #1475 — ugyanaz, a művelet maga
-controller.canUndoPasteAllEffects #1475 — a Paste All Effects visszavonása gomb nélkül áll
-controller.undoPasteAllEffects #1475 — ugyanaz, a művelet maga
-controller.hasEffectsClipboard #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll
-controller.canUndoPasteEffects #1475 — ugyanannak a vágólapnak a visszavonás-jelzője
-controller.copyEffects #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág
-controller.pasteEffects #1475 — ugyanaz, a beillesztés
-controller.undoPasteEffects #1475 — ugyanaz, a visszavonás
+# -- A KÉP-SPECIFIKUS effektus-vágólap (#152) — a MÁSODIK, elérhetetlen út -
+# A #1475 eldöntötte: a felület mögötti út a KÖTEGELT réteg
+# (`photo_ops_controller`), annak mind a négy tagja (copy/paste + a két
+# visszavonás) bekötést kapott, ezért innen kikerült. Az itt maradó öt tag a
+# #152-es, KÉP-SPECIFIKUS párhuzamos réteg (`effects_controller.py`), ami az
+# `AppController`-be van keverve, de a QML-ből elérhetetlen. NEM töröltük:
+# tud olyat, amit a kötegelt nem (a `crop64`-et is átviszi, és TÖBBSZINTŰ
+# undo-verme van a kötegelt egyetlen lépésével szemben) — a sorsáról külön
+# jegy dönt, addig itt áll.
+controller.hasEffectsClipboard MÉRVE — kép-specifikus effekt-vágólap (#152); külön jegyet vár
+controller.canUndoPasteEffects MÉRVE — ugyanannak a vágólapnak a visszavonás-jelzője
+controller.copyEffects MÉRVE — a másolás; a felület a KÖTEGELT copyAllEffects-et hívja
+controller.pasteEffects MÉRVE — a beillesztés; a felület a KÖTEGELT pasteAllEffects-et hívja
+controller.undoPasteEffects MÉRVE — a visszavonás; a felületé az undoPasteAllEffects
 
 # -- FELVÁLTVA: a felület egy másik, bővebb alakot hív ---------------------
 controller.setShowHidden FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml)
