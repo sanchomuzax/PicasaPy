@@ -113,6 +113,61 @@ class TestQueries:
         assert [p.name for p in search_photos(conn, "túra")] == ["alpha.jpg"]
 
 
+class TestOnlyId:
+    """#1515: az EGY KÉPRE szűkített keresés — a nézet tagság-kérdése.
+
+    A felület ezzel dönti el feliratmentés után, hogy a kép találat
+    maradt-e (`app/photo_ops_controller._refresh_if_dropped_from_search`).
+    A teljes lekérdezés a felhasználó gyűjteményén 597 ms, ez 6–11 ms;
+    a helyessége viszont a nézet helyességét dönti el, ezért őrizzük.
+    """
+
+    def _id(self, conn, name: str) -> int:
+        return conn.execute(
+            "SELECT id FROM photos WHERE name = ?", (name,)
+        ).fetchone()["id"]
+
+    def test_talalatra_szukitve_egy_elemet_ad(self, conn):
+        alpha = self._id(conn, "alpha.jpg")
+        hits = search_photos(conn, "naplemente", only_id=alpha)
+        assert [p.name for p in hits] == ["alpha.jpg"]
+
+    def test_nem_talalatra_szukitve_ures(self, conn):
+        beta = self._id(conn, "beta.jpg")
+        assert search_photos(conn, "naplemente", only_id=beta) == ()
+
+    def test_ismeretlen_id_ures(self, conn):
+        assert search_photos(conn, "naplemente", only_id=999_999) == ()
+
+    def test_mappanev_agat_is_szukiti(self, conn, tmp_path):
+        """⚠️ A szűkítés a MAPPANÉV-ágra is vonatkozik.
+
+        A `_text_search` WHERE-je „(FTS-egyezés VAGY mappanév-egyezés) ÉS
+        ez a kép" — zárójel nélkül az OR lazább kötése miatt az FTS-ág
+        kibújna a szűkítés alól, és egy MÁSIK kép találata alapján
+        mondanánk azt, hogy a kérdezett kép is találat. A felületen ettől a
+        kép NÉMÁN bennragadna a keresési nézetben.
+
+        Az eset: a „naplemente" egyszerre mappanév (új mappa) és az
+        `alpha.jpg` feliratának szava — a `gamma.jpg` viszont egyiknek sem
+        felel meg."""
+        root = tmp_path / "kepek"
+        (root / "naplemente").mkdir()
+        (root / "naplemente" / "delta.jpg").write_bytes(b"7")
+        sync_tree(conn, root)
+        osszes = {p.name for p in search_photos(conn, "naplemente")}
+        assert osszes == {"alpha.jpg", "delta.jpg"}, (
+            "a kiinduló állapot nem áll elő: kell FTS- ÉS mappanév-találat is"
+        )
+
+        gamma = self._id(conn, "gamma.jpg")
+        assert search_photos(conn, "naplemente", only_id=gamma) == ()
+        delta = self._id(conn, "delta.jpg")
+        assert [
+            p.name for p in search_photos(conn, "naplemente", only_id=delta)
+        ] == ["delta.jpg"]
+
+
 @pytest.fixture
 def suggest_conn(tmp_path):
     """Könyvtár javaslat-tesztekhez: mappák + virtuális albumok (#7)."""

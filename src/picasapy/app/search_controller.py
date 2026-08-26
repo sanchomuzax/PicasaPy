@@ -19,8 +19,18 @@ class SearchMixin:
 
     @Slot(str)
     def search(self, text: str) -> None:
-        """Szabadszavas keresés; üres szöveg vissza a mappa-feedhez."""
+        """Szabadszavas keresés; üres szöveg vissza a mappa-feedhez.
+
+        #1515: a keresés a CSILLAGOZOTT/ALBUM szűrőt is leváltja, ezért a
+        zöld eredménysávot (`filterActive`) kikapcsoljuk — ahogy a
+        `selectFolder` és a `clearFilter` is teszi. Enélkül a
+        Csillagozottakból a keresőmezőbe gépelve a sáv OTTMARADT a szűrő
+        elavult darabszámával, miközben a rács már a találatokat mutatta.
+        A keresésnek saját darabszáma van: a bal hasáb „Search results for
+        … (N)" fejléce (`searchResultCount`)."""
         query = text.strip()
+        self._filter_active = False
+        self._filter_status = ""
         with open_index(self._db_path) as conn:
             if not query:
                 records = (
