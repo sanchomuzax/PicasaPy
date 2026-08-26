@@ -830,3 +830,59 @@ Ellenőrző szkript (CI-be még nincs kötve, kézzel futtatható):
 kód szétcsúszik (törölt/átnevezett fájlra mutató tétel, vagy jelöletlenül
 maradt jegyzék-tétel; illetve fordítva: kódba került `SAJÁT FUNKCIÓ`
 jelölés, ami nincs felvéve a jegyzékbe).
+
+## Rádiócsoport-pásztázás a parancsdiszpécserben (2026-08-27)
+
+**Mire jó:** egy menü kizáró (rádiógombos) csoportját és a mögötte lévő
+**egyetlen beállító függvényt** percek alatt megtalálja — anélkül, hogy a
+parancsazonosítókat ki kellene nyerni (az a leképezés **kétszer
+megbukott**, ld. `picasa-menu-parancsok-viselkedes.md`).
+
+**A felismerés:** egy rádiócsoport minden tétele **ugyanazt a függvényt**
+hívja, **más konstanssal** vagy más sztringgel — és a kezelője **rövid**.
+
+**A recept:**
+
+```python
+# a diszpécser (0x005cb990) kezelő-blokkjai 'jmp 0x5cd9e6'-tel zárulnak
+blocks = split_on(r'jmp +0x5cd9e6')
+# jelölt: EGYETLEN call, legfeljebb ~8 sor
+for b in blocks:
+    if len(calls(b)) == 1 and len(b) <= 8:
+        group[call].append(immediates(b))
+# ahol egy call ≥4 rövid kezelőből jön, az rádiócsoport
+```
+
+**⛳ A módszer FOGA — ellenőrizd, hogy megtalálja a MÁR ISMERTEKET.**
+Az első futás (2026-08-27) 235 kezelő-blokkból hét csoportot adott, és
+**kettő közülük olyan volt, amit korábbi körök már megfejtettek**:
+
+| függvény | kezelők | mi ez | mikor fejtettük meg |
+|---|---:|---|---|
+| `0x0065b7b0` | 6 | **a hat színcímke** (a keresőmezőbe írja a tokent) | 2026-08-27, #1399 |
+| `0x00575130` | 4 | **a mappanézet gyökerei** | 2026-08-25, #1407 |
+| `0x005749e0` | 5 | **indexkép-felirat** (`captionmode` beállításkulcs) | most |
+| `0x005ff780` | 10 | index egy tízelemű vektorba (`[+0xebc]`) — **azonosítatlan** | — |
+| `0x005d30f0` | 5 | immediatok: 1, 2, 3, 5 — azonosítatlan | — |
+| `0x00575670` | 11 | azonosítatlan | — |
+| `0x009cd8a0` | 27 | panel/fül-váltó (`editpanel/tab3` is ezt hívja) | — |
+
+**Ez a két találat a módszer igazolása**: ha egy pásztázás nem hozza ki
+azt, amit már tudunk, akkor nem a binárisról mond valamit, hanem magáról a
+pásztázásról.
+
+### Amit a módszer NEM talál meg — és ez is eredmény
+
+A **nyolc megjelenítési mód** (`ID_VIEW_16`, `NORMAL`, `LCD`, `LINEAR`,
+`MAC`, `OV`, `PROJECTOR`, `RDESK`) **nem jött elő** csoportként ⇒ **nem
+közös beállítón keresztül** mennek. Ez érdemi szűkítés a #1409-hez: nem
+kell tovább keresni közös setter-t.
+
+### Két azonosítatlan csoport — nyom a következő körnek
+
+- **`0x005ff780`** (30 b): `eax` = 0…9 index egy vektorba
+  (`[this+0xebc]` adat, `[this+0xec0]` méret), majd `jmp 0x00773ce0`.
+  Tíz menüparancs indexeli. *(A **#454** „tíz gyorscímke" tétele
+  kézenfekvő jelölt — de **nem bizonyított**, és a `0x0077xxxx` sávban
+  nincs sztring, ami eldöntené.)*
+- **`0x005d30f0`** (171 b): 1, 2, 3, 5 értékekkel hívva.
