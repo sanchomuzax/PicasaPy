@@ -43,6 +43,20 @@ Ha új néma jelzést jelez: **kösd be** (QML-kezelő vagy `.connect`), vagy
 **töröld** a jelzést. A `scripts/dead_signals_baseline.txt` a bevezetéskori
 állapotot rögzíti, tételes indoklással — az a lista csak **rövidülhet**.
 
+Ugyanígy őrizzük azt is, hogy a vezérlőkön kész **képességekhez** legyen
+felületi út — ez a hibaosztály egyetlen napon négyszer harapott meg minket
+(#1454, #1468, #1471, #1472):
+
+```sh
+python scripts/kepesseg_or.py          # ugyanaz, amit a CI futtat
+python scripts/kepesseg_or.py --list   # a mai szakadások
+python scripts/kepesseg_or.py --leltar --ir  # a leltár frissítése
+```
+
+Ha új szakadást jelez: **kösd be** a QML-ből, **töröld** a tagot, vagy — ha
+a bekötetlenség tudatos — vedd fel indoklással a
+`scripts/kepesseg_or_baseline.txt`-be. Az a lista is csak **rövidülhet**.
+
 A tesztkészletet **a `scripts/run_tests.py`-vel futtasd**, ne közvetlenül a
 `pytest`-tel: a Qt/QML-tesztek egy processzben GIL-deadlockba ragadhatnak,
 ezért a szkript darabolva futtat. Gyors, célzott ellenőrzéshez a nem-Qt rész
