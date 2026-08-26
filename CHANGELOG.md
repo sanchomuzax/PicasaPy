@@ -28,6 +28,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (A **Mappa ▸ Bélyegképek nyomtatása…** továbbra sem működik: az egy
   lapra több képet tenne, amihez még nincs meg a program alatti motor.)
 
+### Módosítva
+- **Sokkal kevesebbet olvas a hálózatról a másodpéldány-keresés (#1481).**
+  Ha két fénykép fájlmérete véletlenül azonos, a program eddig mindkettőt
+  elejétől a végéig végigolvasta, hogy eldöntse, tényleg ugyanaz a kép-e —
+  hálózati meghajtón (NAS) ez lassú. Mostantól előbb csak a fájlok elejéből
+  és végéből olvas be egy-egy kis darabot (összesen ~33 kilobájtot), ahogy
+  az eredeti Picasa is teszi, és a teljes átolvasás csak akkor indul el, ha
+  ez a gyors ellenőrzés nem tudta megkülönböztetni a két fájlt. Ugyanez
+  gyorsítja az importálásnál a „Másodpéldányok kihagyása" ellenőrzést is.
+  A találatok **pontossága nem változik**: a program továbbra is csak akkor
+  mond két képet azonosnak, ha bitre azonosak — a gyors ellenőrzés csak
+  kizárni tud, kimondani nem.
+
 ## [0.8.96] – 2026-08-26
 
 ### Javítva

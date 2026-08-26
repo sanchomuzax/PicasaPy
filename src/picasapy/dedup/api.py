@@ -112,7 +112,8 @@ def find_duplicates(
     """Duplikátum- és hasonlóság-keresés a megadott képútvonalakon.
 
     Két független réteg fut:
-    1. **Pontos duplikátum** — tartalom-hash (SHA-256), méret-előszűrővel.
+    1. **Pontos duplikátum** — tartalom-hash (SHA-256), két előszűrővel:
+       méret, majd a Picasa fej+farok gyors kulcsa (#1481).
     2. **Perceptuálisan hasonló** — dHash + Hamming-távolság, `phash_threshold`
        küszöbbel (alapértelmezés: `DEFAULT_PHASH_THRESHOLD` = 10).
 
