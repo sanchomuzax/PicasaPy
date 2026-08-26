@@ -30,6 +30,10 @@
         <source>The print job could not be started.</source>
         <translation>A nyomtatási feladat nem indítható el.</translation>
     </message>
+    <message>
+        <source>None of the selected pictures could be printed: %1</source>
+        <translation>A kijelölt képek közül egyet sem lehetett kinyomtatni: %1</translation>
+    </message>
 </context>
 <context>
     <name>PrintDialog</name>
@@ -38,16 +42,20 @@
         <translation>Nyomtatás…</translation>
     </message>
     <message>
-        <source>Printing is unavailable: the Qt print support module is missing.</source>
-        <translation>A nyomtatás nem érhető el: hiányzik a Qt nyomtatás-támogató modulja.</translation>
+        <source>Printing is unavailable: the Qt print support module is missing. On Debian/Ubuntu you can install it with: sudo apt install python3-pyside6.qtprintsupport</source>
+        <translation>A nyomtatás nem érhető el: hiányzik a Qt nyomtatás-támogató modulja. Debian és Ubuntu alatt ezzel a paranccsal pótolható: sudo apt install python3-pyside6.qtprintsupport</translation>
     </message>
     <message>
         <source>No pictures to print.</source>
         <translation>Nincs nyomtatható kép.</translation>
     </message>
     <message>
-        <source>Choose a file to print into.</source>
-        <translation>Válassza ki, melyik fájlba nyomtassunk.</translation>
+        <source>Choose the target file.</source>
+        <translation>Válassza ki a célfájlt.</translation>
+    </message>
+    <message>
+        <source>These pictures could not be printed: %1</source>
+        <translation>Ezeket a képeket nem lehetett kinyomtatni: %1</translation>
     </message>
     <message>
         <source>Pictures to print: %1 (one per page)</source>

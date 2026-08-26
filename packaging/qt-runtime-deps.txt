@@ -25,3 +25,11 @@ libxkbcommon0
 # modul betöltése ezt húzza be — ha hiányzik, a videós rész némán más ágra
 # fut, mint a CI-ben.
 libpulse0
+
+# Qt nyomtatás-támogatás (#1472). A pip-es PySide6 wheel ezt a modult MAGA
+# hozza, a Debian/Ubuntu-féle csomag viszont modulokra bontja — és a
+# `bootstrap_env.sh` `pip install PySide6`-ja a MÁR TELEPÍTETT rendszer-
+# PySide6-ot késznek látja, tehát nem pótolja. Enélkül a nyomtatás
+# (Fájl ▸ Nyomtatás…, Ctrl+P) a saját telepítőutunkon Debianon némán
+# elérhetetlen marad. A pip-es úton a sor ártalmatlan duplikáció.
+python3-pyside6.qtprintsupport

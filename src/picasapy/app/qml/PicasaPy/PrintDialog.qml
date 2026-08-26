@@ -40,7 +40,15 @@ Window {
     // a rendszer nyomtatóinak neve; a választóban EGGYEL eltolva jelennek
     // meg, mert a 0. tétel a PDF-fájl
     property var printers: []
-    property int printerIndex: 0
+    // ⚠️ EGYETLEN igazságforrás: amit a választó MUTAT, oda megy a feladat.
+    // Korábban ez saját, írható property volt, a `ComboBox.currentIndex`-szel
+    // egyirányban szinkronizálva — és a Qt a modell rövidülésekor
+    // IMPERATÍVAN visszaállítja a `currentIndex`-et (felülütve a kötést),
+    // a saját property viszont a régi értéken maradt. Ha közben egy
+    // hálózati nyomtató lecsatlakozott, a párbeszéd „PDF-fájlba"-t mutatott,
+    // a `printRows` viszont lefutott az ALAPÉRTELMEZETT nyomtatóra: papír
+    // ment ki, magyarázat nélkül. A származtatott property ezt kizárja.
+    readonly property int printerIndex: printerBox.currentIndex
     readonly property bool pdfSelected: printWindow.printerIndex === 0
     readonly property string printerName:
         printWindow.pdfSelected
@@ -53,6 +61,9 @@ Window {
 
     property string lastError: ""
     property string lastResult: ""
+    // a feladatból kimaradt képek nevei (videó/RAW: a `QImage` nem nyitja
+    // meg őket, a rácsban viszont látszanak) — ld. `printSkipped`
+    property var lastSkipped: []
 
     readonly property bool canPrint:
         printWindow.ctl !== null
@@ -62,12 +73,22 @@ Window {
     function openForRows(targetRows) {
         printWindow.rows = targetRows ? targetRows : []
         printWindow.lastResult = ""
+        printWindow.lastSkipped = []
+        // ⚠️ a célfájl NEM élheti túl a bezárást. Ha megmaradna, a
+        // következő nyitáskor a gomb azonnal élő lenne, a `FileDialog` meg
+        // sem nyílna — tehát a Qt felülírás-kérdése sem —, és az előző PDF
+        // kérdés nélkül elveszne.
+        printWindow.pdfTarget = ""
         // #1472: ha a Qt nyomtatás-modulja hiányzik (Debian/Ubuntu külön
         // csomag, ld. `application.py`), a párbeszéd NEM néma: kimondja,
         // miért nem tud dolgozni, ahelyett hogy szürke gombot mutatna
+        // ⚠️ a tulajdonos NEM programozó: a puszta „hiányzik egy modul"
+        // neki zsákutca. Az üzenet ezért kimondja a telepítő parancsot is.
         printWindow.lastError = printWindow.ctl
             ? "" : qsTr("Printing is unavailable: the Qt print support "
-                        + "module is missing.")
+                        + "module is missing. On Debian/Ubuntu you can "
+                        + "install it with: "
+                        + "sudo apt install python3-pyside6.qtprintsupport")
         printWindow.printers = printWindow.ctl ? printWindow.ctl.listPrinters() : []
         printWindow.visible = true
     }
@@ -76,6 +97,7 @@ Window {
         if (!printWindow.ctl) return
         printWindow.lastError = ""
         printWindow.lastResult = ""
+        printWindow.lastSkipped = []
         // a gomb ilyenkor szürke, tehát ide kattintással nem lehet eljutni —
         // de a néma elutasítás annyira visszatérő hibánk, hogy a
         // programozott hívás se maradhat szótlan
@@ -85,7 +107,7 @@ Window {
         }
         if (printWindow.pdfSelected) {
             if (printWindow.pdfTarget.length === 0) {
-                printWindow.lastError = qsTr("Choose a file to print into.")
+                printWindow.lastError = qsTr("Choose the target file.")
                 return
             }
             printWindow.ctl.renderPrintPreviewPdf(
@@ -107,6 +129,9 @@ Window {
         function onPrintFailed(message) {
             printWindow.lastResult = ""
             printWindow.lastError = message
+        }
+        function onPrintSkipped(names) {
+            printWindow.lastSkipped = names
         }
     }
 
@@ -138,8 +163,8 @@ Window {
                 objectName: "printPrinterBox"
                 Layout.fillWidth: true
                 model: [qsTr("Print to a PDF file...")].concat(printWindow.printers)
-                currentIndex: printWindow.printerIndex
-                onActivated: printWindow.printerIndex = currentIndex
+                // a `currentIndex` a választó SAJÁTJA — a párbeszéd innen
+                // olvassa (`printerIndex`), nem fordítva (ld. ott)
             }
         }
 
@@ -208,6 +233,17 @@ Window {
                 currentIndex: 0
                 onActivated: printWindow.orientation = values[currentIndex]
             }
+        }
+
+        Text {
+            objectName: "printSkippedText"
+            visible: printWindow.lastSkipped.length > 0
+            text: qsTr("These pictures could not be printed: %1")
+                  .arg(printWindow.lastSkipped.join(", "))
+            color: Theme.brandRed
+            font.pixelSize: Theme.fontSize
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
         }
 
         Text {

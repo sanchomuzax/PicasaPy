@@ -468,9 +468,17 @@ ApplicationWindow {
     function openWebExport() { webExportDialog.open() }
     // #1472: nyomtatás — HÁROM belépési pont vezet ide (Fájl ▸ Nyomtatás…,
     // Ctrl+P, és a képtálca „Nyomtatás" gombja), ahogy az exportnál is.
-    // A nézőben a MEGJELENÍTETT kép a célpont (a tálca gombja ott is él),
-    // a rácsban a kijelölés — a `rotateTargetRow()` mintája.
+    // A célpont ugyanaz a HÁROM ág, mint a `rotateTargetRow()`-nál:
+    // diavetítés közben a VETÍTETT kép, a nézőben a MEGJELENÍTETT kép, a
+    // rácsban a kijelölés.
+    //
+    // ⚠️ A diavetítés ága nem elhagyható: a `startSlideshow()` NEM állítja
+    // a `viewerOpen`-t, tehát a menü és a Ctrl+P vetítés közben is
+    // engedélyezett marad — enélkül a felhasználó egy képet néz, és a
+    // RÁCS kijelölése menne nyomtatásra.
     function printTargetRows() {
+        if (slideshow.visible)
+            return slideshow.currentIndex >= 0 ? [slideshow.currentIndex] : []
         if (window.viewerOpen)
             return photoViewer.currentIndex >= 0
                 ? [photoViewer.currentIndex] : []

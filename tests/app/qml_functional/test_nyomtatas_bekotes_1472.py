@@ -29,8 +29,13 @@ from __future__ import annotations
 import re
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt
+import pathlib
+from pathlib import Path
+
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QUrl
 from PySide6.QtTest import QTest
+
+import picasapy.app
 
 # #664 mintája: a QtPrintSupport nem minden PySide6-telepítésben van benne
 # (a Debian/Ubuntu csomag modulokra bontja). Ahol hiányzik, ott a nyomtatás
@@ -83,17 +88,84 @@ def _menubol_nyit(window, qt_app):
     return _elem(window, "printDialog")
 
 
+def _sorok(parbeszed) -> list[int]:
+    """A párbeszéd `rows` property-je — a QML `var` lista `QJSValue`-ként jön."""
+    ertek = parbeszed.property("rows")
+    nyers = ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
+    return [int(r) for r in (nyers or [])]
+
+
 def _pdf_oldalszam(adat: bytes) -> int:
     """A PDF oldalobjektumainak száma — a `/Type /Pages` gyűjtőt kizárva."""
     return len(re.findall(rb"/Type\s*/Page[^s]", adat))
 
 
 class TestRegisztracio:
-    def test_a_printController_regisztralva_van(self, qml_app):
-        """A lánc első szeme: a vezérlő létezik és a QML látja."""
-        _window, _controller, engine = qml_app
+    """⚠️ A `qml_app` fixture a `support/print_wiring.py`-val MAGA
+    regisztrálja a vezérlőt, ezért egy `contextProperty(...) is not None`
+    állítás itt a saját conftestjét mérné, nem a terméket — mutációval
+    igazolva: az `application.py`-beli `setContextProperty` törlésére a
+    fájl összes többi tesztje zöld maradt. A TERMÉK bekötését ezért a
+    forrásban mérjük; a QML↔regisztráció összevetésének teljes őre
+    változatlanul a `tests/app/test_vezerlo_regisztracio_1066.py`.
+    """
 
-        assert engine.rootContext().contextProperty("printController") is not None
+    def test_az_application_py_letrehozza_es_regisztralja_a_vezerlot(self):
+        forras = (
+            Path(picasapy.app.__file__).parent / "application.py"
+        ).read_text(encoding="utf-8")
+
+        assert "PrintController(photo_source=" in forras, (
+            "a termékkód nem hozza létre a PrintControllert"
+        )
+        assert 'setContextProperty("printController"' in forras, (
+            "a termékkód nem regisztrálja a printControllert a QML felé"
+        )
+
+    def test_a_parbeszed_vezerlo_NELKUL_is_kimondja_a_hianyt(self, qt_app):
+        """A hiányzó `QtPrintSupport` ága (`ctl === null`) — a legfontosabb
+        kérdés, mert ezt a felhasználó gépén senki nem tudja kipróbálni.
+
+        A párbeszédet KÜLÖN motorba töltjük be, `printController`
+        regisztráció NÉLKÜL: pontosan az az állapot, ami a hiányos
+        Qt-telepítésen áll elő. Az elvárás nem az, hogy ne dőljön el —
+        hanem hogy MEGSZÓLALJON, és megmondja a teendőt is.
+        """
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        motor = QQmlEngine()
+        motor.addImportPath(str(Path(picasapy.app.__file__).parent / "qml"))
+        elem = QQmlComponent(
+            motor,
+            QUrl.fromLocalFile(
+                str(
+                    Path(picasapy.app.__file__).parent
+                    / "qml" / "PicasaPy" / "PrintDialog.qml"
+                )
+            ),
+        )
+        assert elem.status() == QQmlComponent.Status.Ready, elem.errorString()
+        parbeszed = elem.create()
+        assert parbeszed is not None
+
+        assert parbeszed.property("ctl") is None
+        QMetaObject.invokeMethod(
+            parbeszed,
+            "openForRows",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0]),
+        )
+        qt_app.processEvents()
+
+        uzenet = str(parbeszed.property("lastError"))
+        assert uzenet, "a párbeszéd NÉMÁN nyílt meg működő vezérlő nélkül"
+        assert "python3-pyside6.qtprintsupport" in uzenet, (
+            "az üzenet nem mondja meg, mit tegyen a felhasználó"
+        )
+        assert parbeszed.property("canPrint") is False
+        parbeszed.setProperty("visible", False)
+        parbeszed.deleteLater()
+        qt_app.processEvents()
 
 
 class TestBelepesiPontok:
@@ -190,6 +262,214 @@ class TestKimenet:
         eredmeny = _elem(window, "printResultText")
         assert eredmeny.property("visible") is True
         assert str(eredmeny.property("text")).strip()
+
+
+class TestCelpont:
+    """A nyomtatandó sorok HÁROM ágon dőlnek el (`Main.qml printTargetRows`)."""
+
+    def test_a_nezoben_a_LATOTT_kep_a_celpont(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+        nezo = _elem(window, "photoViewer")
+        nezo.setProperty("currentIndex", 1)
+        window.setProperty("viewerOpen", True)
+        qt_app.processEvents()
+
+        gomb = _elem(window, "trayPrintButton")
+        assert gomb.property("enabled") is True, (
+            "a nézőben a tálca nyomtatás-gombja nem él"
+        )
+        QMetaObject.invokeMethod(gomb, "clicked", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+        parbeszed = _elem(window, "printDialog")
+        assert _sorok(parbeszed) == [1], (
+            "a néző képe helyett a rács kijelölése ment nyomtatásra"
+        )
+
+    def test_diavetites_kozben_a_VETITETT_kep_a_celpont(self, qml_app, qt_app):
+        """A `startSlideshow()` NEM állítja a `viewerOpen`-t, tehát a menü és
+        a Ctrl+P vetítés közben is él — a célpont mégsem a rács lehet."""
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0, 1])
+        vetites = _elem(window, "slideshowView")
+        QMetaObject.invokeMethod(
+            window, "startSlideshow", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 1),
+        )
+        qt_app.processEvents()
+        assert vetites.property("visible") is True, "a diavetítés nem indult el"
+
+        QTest.keyClick(window, Qt.Key_P, Qt.ControlModifier)
+        qt_app.processEvents()
+
+        parbeszed = _elem(window, "printDialog")
+        assert _sorok(parbeszed) == [1], (
+            "diavetítés közben a RÁCS kijelölése ment nyomtatásra"
+        )
+
+
+class TestNyomtatoValasztas:
+    """⚠️ Amit a párbeszéd MUTAT, oda kell mennie a feladatnak.
+
+    A `printerIndex` korábban külön, írható property volt a
+    `ComboBox.currentIndex` mellett. A Qt a modell rövidülésekor
+    IMPERATÍVAN visszaállítja a `currentIndex`-et (felülütve a kötést) — a
+    külön property viszont a régi értéken maradt. Egy lecsatlakozó hálózati
+    nyomtató így oda vezetett, hogy a párbeszéd „PDF-fájlba"-t mutatott, és
+    közben a RENDSZER ALAPÉRTELMEZETT nyomtatójára ment ki papír.
+    """
+
+    def test_a_valaszto_es_a_celzott_nyomtato_egyutt_mozog(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        parbeszed.setProperty("printers", ["Alpha", "Beta"])
+        valaszto = _elem(window, "printPrinterBox")
+        valaszto.setProperty("currentIndex", 2)
+        qt_app.processEvents()
+
+        assert str(parbeszed.property("printerName")) == "Beta"
+        assert parbeszed.property("pdfSelected") is False
+
+    def test_a_lista_rovidulese_utan_a_kimenet_az_ELVART_helyre_megy(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """A mért forgatókönyv: „Beta" kiválasztva → a nyomtató eltűnik →
+        újranyitás. A választó ilyenkor a 0. tételre („PDF-fájlba…") esik
+        vissza; a kimenetnek is oda kell mennie."""
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        parbeszed.setProperty("printers", ["Alpha", "Beta"])
+        _elem(window, "printPrinterBox").setProperty("currentIndex", 2)
+        qt_app.processEvents()
+        assert str(parbeszed.property("printerName")) == "Beta"
+
+        # a párbeszéd bezárul, közben a nyomtató lecsatlakozik: az
+        # újranyitás a VALÓDI (itt üres) listával tölti újra a választót
+        QMetaObject.invokeMethod(
+            _elem(window, "printCloseButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        parbeszed = _menubol_nyit(window, qt_app)
+
+        assert parbeszed.property("pdfSelected") is True, (
+            "a választó PDF-et mutat, a párbeszéd mégis nyomtatót céloz"
+        )
+        assert str(parbeszed.property("printerName")) == ""
+        cel = tmp_path / "rovidult.pdf"
+        parbeszed.setProperty("pdfTarget", cel.as_uri())
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            _elem(window, "printStartButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        assert cel.exists(), (
+            "a párbeszéd PDF-et ígért, és nem PDF-be nyomtatott"
+        )
+
+
+class TestCelfajlNemRagad:
+    def test_ujranyitaskor_a_PDF_cel_ures(self, qml_app, qt_app, tmp_path):
+        """Ha a célfájl túlélné a bezárást, a gomb azonnal élő lenne, a
+        `FileDialog` meg sem nyílna — tehát a Qt felülírás-kérdése sem —, és
+        az előző PDF kérdés nélkül elveszne."""
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        parbeszed.setProperty("pdfTarget", (tmp_path / "elso.pdf").as_uri())
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            _elem(window, "printCloseButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        parbeszed = _menubol_nyit(window, qt_app)
+
+        assert str(parbeszed.property("pdfTarget")) == ""
+        assert _elem(window, "printStartButton").property("enabled") is False
+
+
+class TestReszlegesKihagyas:
+    """⚠️ „Kész", miközben egy kép kimaradt.
+
+    A `QImage` nem nyit meg videót és a legtöbb RAW-t — a rácsban viszont
+    MINDKETTŐ látszik (a bélyegkép elkészül), és a képtálca
+    nyomtatás-gombja rájuk is élő. A kihagyás korábban csak a naplóba
+    került: a `printFinished` sikert jelzett, a lap meg hiányzott.
+
+    Itt a második könyvtárbeli fájlt tesszük olvashatatlanná — a modellben
+    változatlanul benne van, tehát ugyanaz az eset, mint a videó/RAW.
+    """
+
+    @staticmethod
+    def _elrontja(controller, sor: int) -> str:
+        ut = pathlib.Path(str(controller.photos.filePathAt(sor)))
+        ut.write_bytes(b"ez nem kep")
+        return ut.name
+
+    def test_a_kihagyott_kepet_MEGNEVEZI_a_parbeszed(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _engine = qml_app
+        romlott = self._elrontja(controller, 1)
+        _kijelol(window, qt_app, [0, 1])
+        parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "reszleges.pdf"
+        parbeszed.setProperty("pdfTarget", cel.as_uri())
+        qt_app.processEvents()
+
+        QMetaObject.invokeMethod(
+            _elem(window, "printStartButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        # a jó kép kiment…
+        assert _pdf_oldalszam(cel.read_bytes()) == 1
+        # …de a kimaradt lapról a felhasználó is tud
+        figyelmeztetes = _elem(window, "printSkippedText")
+        assert figyelmeztetes.property("visible") is True, (
+            "egy kép kimaradt, és a párbeszéd sikert mutatott"
+        )
+        assert romlott in str(figyelmeztetes.property("text"))
+
+    def test_csak_olvashatatlan_kepeknel_az_uzenet_MEGNEVEZI_oket(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """A csak-videós kijelölésnél a „Nincs nyomtatható kép."
+        félrevezet: a felhasználó képeket JELÖLT KI, és lát is róluk
+        bélyegképet."""
+        window, controller, _engine = qml_app
+        elso = self._elrontja(controller, 0)
+        masodik = self._elrontja(controller, 1)
+        _kijelol(window, qt_app, [0, 1])
+        parbeszed = _menubol_nyit(window, qt_app)
+        parbeszed.setProperty("pdfTarget", (tmp_path / "semmi.pdf").as_uri())
+        qt_app.processEvents()
+
+        QMetaObject.invokeMethod(
+            _elem(window, "printStartButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        hiba = _elem(window, "printErrorText")
+        assert hiba.property("visible") is True
+        szoveg = str(hiba.property("text"))
+        assert elso in szoveg and masodik in szoveg, (
+            f"az üzenet nem nevezi meg a nyomtathatatlan képeket: {szoveg!r}"
+        )
 
 
 class TestNemaElutasitasNincs:
