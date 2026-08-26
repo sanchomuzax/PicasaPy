@@ -992,3 +992,26 @@ menet műterméke.
 kapcsoló és a `flags = 3` beolvasás:
 `picasa-ini-format.md` → „MEGFEJTVE: az újraolvasás kulcsa az INI FÁJL saját
 dátuma".
+
+
+## Az album-gyorstár és a tábla-jelzők (mérve 2026-08-26)
+
+Három fájl, amit korábbi körök nem dokumentáltak:
+
+| fájl | méret a mintában | mi ez |
+|---|---:|---|
+| `albumdata_0`, `catdata_0`, `imagedata_0` | **4 bájt** mindegyik | csak a `0x3FCCCCCD` mágikus szám — a logikai tábla **létezés-jelzője**, NEM sorszámláló |
+| `albums_index.db` | 28 472 b | **ugyanaz a szerkezet, mint a `thumbs_index.db`**: 20 bájt fejléc + **12 bájtos** rekordok; a darabszám a 8. bájton (**2371**), és `(28 472 − 20)/12 = 2371,0` bitre kijön |
+| `albums_0.db` | 7 480 128 b | a hozzá tartozó adattár; fejléc `0x3FCCCCCD` + `93` + `110`; **nincs benne JPEG- vagy PNG-fejléc** (0 találat az első 2 MB-ban), a bájtok 63 %-a nemnulla ⇒ **tömörítetlen** tartalom |
+
+⇒ Létezik **album-szintű** gyorstár, a bélyegkép-gyorstár formátumcsaládjában.
+
+### ⚠️ A `thumbs_index.db` NEM a `thumbindex.db` másik neve
+
+| fájl | magic | szerkezet |
+|---|---|---|
+| `thumbindex.db` | **`0x40466666`** | névindex: útvonalnév + 26 bájt + szülőindex |
+| `thumbs_index.db` | **`0x3FCCCCCD`** | gyorstár: 20 b fejléc + 12 b rekord (`(1 689 080 − 20)/12 = 140 755,0`) |
+
+A két fájl **egyszerre** van jelen a valódi adatmappában. A
+`pmpimport/importer.py:94` mégis aliasként kezeli őket — jegy: **#1489**.
