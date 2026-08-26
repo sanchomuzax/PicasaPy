@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import sqlite3
+import stat as stat_module
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -222,6 +223,31 @@ def sync_folder(
         folder_path == item or item in folder_path.parents for item in exclude_paths
     )
     scan = None if excluded else scan_folder(folder_path)
+    gyoker_baja = "" if excluded or scan is not None else _gyoker_baja(root_path)
+    if gyoker_baja:
+        # #1560: a takarítás bizonyítéka a GYÖKÉR. Ha az nem tudja
+        # bizonyítani, hogy a tároló ott van, alatta SEMMILYEN sort nem
+        # veszünk ki — ld. a `_gyoker_baja` docstringjét. A hibázás ára
+        # aszimmetrikus: egy elavult sor átmeneti kényelmetlenség, a
+        # kiürült index viszont a felhasználó teljes nyilvántartása.
+        row = conn.execute(
+            "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
+        ).fetchone()
+        if row is not None:
+            # a felhasználó ne néma üres rácsot lásson: a meglévő #459/5
+            # jelölés (halvány, dőlt sor + súgószöveg + tájékoztató sáv)
+            # kimondja, hogy a mappa most nem érhető el. A jelölés
+            # visszafordítható: az első sikeres scan törli (`_sync_folder`).
+            _set_folder_offline(conn, row["id"], True)
+        logger.warning(
+            "#1560: a figyelt gyökér (%s) %s — a(z) %s mappa indexsorait "
+            "NEM takarítjuk.",
+            root_path,
+            gyoker_baja,
+            folder_path,
+        )
+        conn.commit()
+        return
     if scan is None:
         # #459/5: a `scan_folder` a nem elérhető mappára is None-t ad — a
         # törlés előtt megkérdezzük, hogy tényleg eltűnt-e. A kizárt mappa
@@ -245,6 +271,83 @@ def sync_folder(
         _sync_folder(conn, scan)
         _store_scan_state(conn, scan)
     conn.commit()
+
+
+def _gyoker_baja(root_path: Path) -> str:
+    """Üres szöveg, ha a figyelt gyökér BIZONYÍTJA, hogy a tároló ott van;
+    különben a baj rövid megnevezése — naplózásra (#1560).
+
+    ## Miért a gyökér a takarítás bizonyítéka
+
+    A `folder_looks_offline` (#459/5) egyetlen mappáról dönt, és a hiányzó
+    mappát eltűntnek veszi. Ez a mappa-szintű próba önmagában két, MÉRT
+    adatvesztést enged át — mindkettőben a `sync_folder` vette ki a
+    sorokat, miközben a képek a lemezen sértetlenek voltak:
+
+    * **a figyelt gyökeret fájlkezelővel áthelyezték** (#1560): a #1275
+      tízmásodperces lekérdezése 9,2 s alatt 3 mappa / 3 fotóról 0 / 0-ra
+      ürítette az indexet;
+    * **a NAS lecsatolódott**: a csatolási pont üres könyvtárként ott
+      marad, tehát a gyökér sora túléli — az ALMAPPÁI viszont nem, mert
+      azokra a `folder_looks_offline` `FileNotFoundError`-t kap.
+
+    A közös ok: a mappa hiánya önmagában nem bizonyíték. Csak akkor jelent
+    valódi hiányt, ha a GYÖKÉR igazolja, hogy a tároló olvasható és nem
+    üres. Pontosan ez a `sync_tree` #132-es szabálya is — a `sync_folder`
+    eddig egyszerűen nem követte; ez a függvény hozza össze a kettőt.
+
+    Két baj van, és a jegy kifejezetten kéri az elhatárolásukat:
+
+    * **eltűnt** (`watched_root_missing`): ENOENT/ENOTDIR, vagy az út már
+      nem könyvtár — a horgony maga nincs meg;
+    * **elérhetetlen** (`folder_looks_offline`): a gyökér olvasása
+      elhasal (ESTALE, ENOTCONN, elvett jog), vagy teljesen üres — így néz
+      ki egy lecsatolt mount.
+
+    A kettő KÖVETKEZMÉNYE azonos (nem takarítunk), a naplóüzenetük más. A
+    védelem szigorúan HOZZÁAD: nincs olyan ág, ahol miatta törlődne sor,
+    ami eddig megmaradt volna. És nem is fagyasztja be az indexet: amint a
+    gyökér ismét olvasható és nem üres, a takarítás magától újraindul (ld.
+    `test_a_visszateres_utan_a_takaritas_ismet_fut`).
+    """
+    if watched_root_missing(root_path):
+        return "nincs meg a lemezen"
+    if folder_looks_offline(root_path):
+        return "jelenleg nem elérhető (üres vagy olvashatatlan)"
+    return ""
+
+
+def watched_root_missing(root: str | Path) -> bool:
+    """Igaz, ha MAGA a figyelt gyökér ELTŰNT a lemezről (#1560).
+
+    A `_gyoker_baja` két próbája közül ez az egyik; a másik a
+    `folder_looks_offline`. A kettő elhatárolása szándékos és szűk:
+
+    * **eltűnt** — `FileNotFoundError`/`NotADirectoryError` (ENOENT,
+      ENOTDIR), vagy az út létezik ugyan, de már NEM könyvtár. A horgony
+      maga nincs meg: ilyet lát a program, ha a felhasználó a fő
+      képmappáját fájlkezelővel áthelyezte vagy átnevezte.
+    * **elérhetetlen** — **minden más `OSError`** (lecsatolt mount,
+      `ESTALE`, `ENOTCONN`, elvett jog). Erre ez a függvény HAMISAT ad: az
+      eset nem ide tartozik, hanem a `folder_looks_offline`-hoz.
+
+    Az elhatárolásnak a NAPLÓÜZENETRE van hatása, a döntésre nincs: a
+    `_gyoker_baja` mindkét bajra visszatartja a takarítást. Külön mégis
+    érdemes tartani őket, mert a két ok mást jelent a felhasználónak (az
+    egyiket ő maga okozta, a másik a tárolóé), és mert egy jövőbeli
+    „keressük meg az új helyet" lépés (a #1542 `move_folder_tree`-je) csak
+    az ELTŰNT ágon indulhat el — az elérhetetlen mountot megkeresni nem
+    kell, vissza fog jönni.
+    """
+    try:
+        stat = os.stat(root)
+    except (FileNotFoundError, NotADirectoryError):
+        return True  # a horgony tényleg nincs meg
+    except OSError:
+        # elérhetetlen (levált mount, ESTALE, jogosultság): NEM eltűnt —
+        # innen a #459/5 ága viszi tovább
+        return False
+    return not stat_module.S_ISDIR(stat.st_mode)
 
 
 def folder_looks_offline(folder_path: Path) -> bool:

@@ -518,10 +518,26 @@ class TestSyncFolder:
         assert "video2.mp4" not in names  # az almappát nem járta újra
 
     def test_deleted_folder_removed_from_index(self, conn, library):
+        """⚠️ #1560: a KÖVETELMÉNY változatlan (a törölt mappa sora kikerül),
+        csak a gyökérnek életben kell maradnia a törlés után.
+
+        Eredetileg a `nyaralas` volt a könyvtár EGYETLEN tartalma, tehát a
+        `rmtree` után a gyökér teljesen üresen maradt. A #1560 óta ez a
+        takarítás visszatartását jelenti — pontosan úgy, ahogy a `sync_tree`
+        (#132) is kihagyja a takarítást üres gyökérnél. Mérve: a #1560 ELŐTT
+        a két ág ellentmondott egymásnak, ugyanebben a helyzetben a
+        `sync_tree` MEGTARTOTTA a `nyaralas` sorát, a `sync_folder` pedig
+        kivette. A testvérmappa attól választja el a valódi törlést a levált
+        mount látszatától, hogy a gyökér bizonyíthatóan olvasható és nem
+        üres. A teszt foga megmarad: a #1560 „M3"/„M6" mutációja (a kapu
+        mindig fog, illetve a mappát nézi a gyökér helyett) ezt a
+        követelményt bukja el."""
         import shutil
 
         from picasapy.index import sync_folder
 
+        (library / "tavasz").mkdir()
+        (library / "tavasz" / "IMG_7777.jpg").write_bytes(b"t" * 7)
         sync_tree(conn, library)
         shutil.rmtree(library / "nyaralas")
         sync_folder(conn, library, library / "nyaralas")
