@@ -31,10 +31,29 @@ aminek a jobb oldala a null-őr idiómán kívül SEMMI mást nem tartalmaz
 nem is vész el, mert abban a ``controller.searchActive`` hivatkozás
 minősített alakban ott van.
 
-Ha egy aliasnév TÖBB kontextus-objektumra is mutat (ilyen a `Connections`
-``target``-je), az őr eldobja: onnantól a rajta keresztüli hivatkozás nem
-számít élőnek. Ez a **konzervatív** irány — inkább hamis szakadást
-jelentsen, mint hamis életet.
+**Az alias hatóköre a FÁJL (#1490).** A QML-ben egy tulajdonság annak a
+komponensnek — azaz annak a fájlnak — a névterébe tartozik, amelyik
+DEKLARÁLJA. Az őr ezért fájlonként külön névteret tart. Enélkül egy
+gyakori rövidítés (`ctl`) két fájlban két különböző vezérlőre mutatva
+kétértelműnek látszott, és az őr — konzervatívan — MINDKETTŐT eldobta:
+egyetlen új fájl 20 élő hivatkozást tüntetett el a látóköréből, azaz
+ugyanennyi tagot mutatott volna hamisan „elérhetetlennek". Ez a ROSSZ
+irány: nem elhallgat hibát, hanem nem létezőt jelent.
+
+**Keresztfájlos átadás.** A `Main.qml`-ben álló
+``FolderHierarchyView { hierarchy: pane.hierarchyController }`` értékadás
+NEM a `Main.qml` névterét bővíti: a `hierarchy` tulajdonságot a
+`FolderHierarchyView.qml` deklarálja, tehát az álnév OTT él — ott is
+használják. Az őr ezért az ÉRTÉKADÁST a tulajdonságot DEKLARÁLÓ fájl(ok)
+névterébe könyveli, a jobb oldalát viszont az értékadás saját fájljának
+névterében oldja fel (így marad meg a `Main` → `FolderPane` →
+`FolderHierarchyView` lánc).
+
+Ha egy aliasnév EGY FÁJLON BELÜL több kontextus-objektumra is mutat (ilyen
+a `Connections` ``target``-je, vagy ugyanannak a komponensnek két, más-más
+vezérlőt kapó példánya), az őr eldobja: onnantól a rajta keresztüli
+hivatkozás nem számít élőnek. Ez a **konzervatív** irány — inkább hamis
+szakadást jelentsen, mint hamis életet.
 
 **Amit szándékosan NEM néz.** A Pythonból hívott, ``_``-sal kezdődő belső
 slotokat (jelzés-fogadók, nem felületi tagok). A tesztekből érkező
@@ -115,7 +134,18 @@ _BLOKKOMMENT = re.compile(r"/\*.*?\*/", re.S)
 #: KÖZÉPSŐ kettőspontja viszont nem — az nem sor eleje és nem `{`/`;` után áll.
 #: A jobb oldalt szándékosan NEM fogja csoportba: úgy a `finditer` egyetlen
 #: soron TÖBB kötést is megtalál.
-_KOTES = re.compile(r"(?:^|[{;])\s*(?:readonly\s+)?(?:property\s+(?:var|alias)\s+)?(\w+)\s*:")
+#:
+#: Az 1. csoport (a `property var`/`property alias` kulcsszó) azt mondja meg,
+#: DEKLARÁCIÓ-e a kötés — ettől függ az álnév hatóköre (#1490): a deklaráció
+#: a saját fájljában nyit nevet, a puszta értékadás a tulajdonságot deklaráló
+#: fájl(ok)ban.
+_KOTES = re.compile(
+    r"(?:^|[{;])\s*(?:readonly\s+)?(property\s+(?:var|alias)\s+)?(\w+)\s*:"
+)
+
+#: Tulajdonság-DEKLARÁCIÓ, kezdőérték nélkül is (`property var hierarchy`).
+#: Ez adja meg, MELYIK fájl névterébe tartozik egy kívülről beállított név.
+_TULAJDONSAG_DEKL = re.compile(r"\bproperty\s+(?:var|alias)\s+(\w+)\b")
 
 #: A kötés jobb oldala folytatódik a következő sorban, ha ezekre végződik.
 _FOLYTATAS_VEGE = ("?", ":", "(", "&&", "||", "!==", "===", "!=", "==", ",")
@@ -177,6 +207,22 @@ class ArvaOsztaly:
     tagszam: int
 
 
+@dataclass(frozen=True)
+class Kotes:
+    """Egy QML-kötés: hol áll, mit köt, és deklaráció-e.
+
+    A `deklaracio` dönti el az álnév hatókörét (#1490): a
+    ``property var ctl: controller`` a SAJÁT fájljában nyit nevet, a
+    puszta ``hierarchy: pane.hierarchyController`` értékadás viszont annak
+    a fájlnak a névterébe, amelyik a `hierarchy` tulajdonságot deklarálja.
+    """
+
+    fajl: str
+    bal: str
+    jobb: str
+    deklaracio: bool
+
+
 @dataclass
 class Elemzes:
     """Egy forrásfa mérési eredménye."""
@@ -184,8 +230,12 @@ class Elemzes:
     kontextusok: dict[str, str] = field(default_factory=dict)
     nem_qobject: list[str] = field(default_factory=list)
     feloldatlan: list[str] = field(default_factory=list)
-    aliasok: dict[str, str] = field(default_factory=dict)
-    tobbertelmu_alias: dict[str, set[str]] = field(default_factory=dict)
+    #: (QML-fájl, aliasnév) → kontextus-objektum. A kulcs azért PÁR, mert
+    #: az álnév hatóköre a fájl (#1490): ugyanaz a rövidítés két fájlban
+    #: két különböző vezérlőt jelenthet.
+    aliasok: dict[tuple[str, str], str] = field(default_factory=dict)
+    #: (QML-fájl, aliasnév) → a fájlon BELÜL kétértelmű célok; eldobva.
+    tobbertelmu_alias: dict[tuple[str, str], set[str]] = field(default_factory=dict)
     tagok: list[Tag] = field(default_factory=list)
     hivatkozott: set[tuple[str, str]] = field(default_factory=set)
     szakadasok: list[Tag] = field(default_factory=list)
@@ -386,56 +436,117 @@ def _alias_e(jobb_oldal: str, nevter_elem: str) -> bool:
     return bool(maradek) and set(maradek) <= {"@"}
 
 
-def _aliasok(
-    qml_szovegek: dict[str, str], kontextusok: set[str]
-) -> tuple[dict[str, str], dict[str, set[str]]]:
-    """Aliasnév → kontextus-objektum, tranzitívan (alias aliasa is alias).
+def _kotesek(qml_szovegek: dict[str, str], kontextusok: set[str]) -> list[Kotes]:
+    """A fa ÖSSZES alias-jelölt kötése, a fájljával és a fajtájával együtt.
 
-    A több kontextus-objektumra mutató neveket (`Connections.target`) az őr
-    eldobja, és külön visszaadja — azokon át nem számít élőnek semmi.
+    Kimarad, ami eleve nem lehet alias: a kontextus-objektum nevének
+    újrakötése, a `_NEM_ALIAS` tételei és a jelzéskezelők.
     """
-    # A kötések egyszeri kigyűjtése: (bal oldal, jobb oldal) párok. A
-    # tranzitív feloldás ezen a listán fut körökben, nem a fájlokon.
-    kotesek: list[tuple[str, str]] = []
-    for szoveg in qml_szovegek.values():
+    kotesek: list[Kotes] = []
+    for fajl, szoveg in qml_szovegek.items():
         sorok = szoveg.splitlines()
         for index, sor in enumerate(sorok):
             for egyezes in _KOTES.finditer(sor):
-                bal = egyezes.group(1)
+                bal = egyezes.group(2)
                 if bal in kontextusok or bal in _NEM_ALIAS or _JELZESKEZELO.match(bal):
                     continue
-                kotesek.append((bal, _kotes_jobb_oldala(sorok, index, sor[egyezes.end() :])))
+                kotesek.append(
+                    Kotes(
+                        fajl=fajl,
+                        bal=bal,
+                        jobb=_kotes_jobb_oldala(sorok, index, sor[egyezes.end() :]),
+                        deklaracio=egyezes.group(1) is not None,
+                    )
+                )
+    return kotesek
 
-    jelolt: dict[str, set[str]] = {}
-    #: név → kontextus-objektum; a kontextus-objektum önmagára mutat
-    nevter: dict[str, str] = {nev: nev for nev in kontextusok}
+
+def _deklaralo_fajlok(qml_szovegek: dict[str, str]) -> dict[str, set[str]]:
+    """Tulajdonságnév → azok a fájlok, amelyek DEKLARÁLJÁK.
+
+    Ez adja meg egy kívülről beállított név hatókörét: a `PrintDialog
+    { printCtl: printController }` értékadás a `Main.qml`-ben áll, de a
+    `printCtl` a `PrintDialog.qml` tulajdonsága — a rajta át vezető
+    hivatkozások is ott lesznek.
+    """
+    talalt: dict[str, set[str]] = {}
+    for fajl, szoveg in qml_szovegek.items():
+        for egyezes in _TULAJDONSAG_DEKL.finditer(szoveg):
+            talalt.setdefault(egyezes.group(1), set()).add(fajl)
+    return talalt
+
+
+def _ures_nevterek(
+    qml_szovegek: dict[str, str], kontextusok: set[str]
+) -> dict[str, dict[str, str]]:
+    """Fájlonkénti kiindulási névtér: a kontextus-objektumok önmagukra.
+
+    A `setContextProperty`-vel regisztrált nevek MINDEN fájlban látszanak —
+    csak az aliasok fájlfüggők.
+    """
+    alap = {nev: nev for nev in kontextusok}
+    return {fajl: dict(alap) for fajl in qml_szovegek}
+
+
+def _aliasok(
+    qml_szovegek: dict[str, str], kontextusok: set[str]
+) -> tuple[dict[tuple[str, str], str], dict[tuple[str, str], set[str]]]:
+    """(fájl, aliasnév) → kontextus-objektum, tranzitívan és FÁJLONKÉNT.
+
+    Két külön kérdést kell megválaszolni minden kötésre:
+
+    * **melyik fájl névterébe kerül a bal oldal?** Deklarációnál a sajátjába,
+      értékadásnál a tulajdonságot deklaráló fájl(ok)éba (#1490);
+    * **mit jelent a jobb oldal?** Azt mindig a kötés SAJÁT fájljának
+      névterében kell feloldani — így marad élő a `Main.qml` → `FolderPane`
+      → `FolderHierarchyView` lánc, ahol minden lépés más fájlban áll.
+
+    A fájlon BELÜL több kontextus-objektumra mutató neveket az őr eldobja,
+    és külön visszaadja — azokon át nem számít élőnek semmi.
+    """
+    kotesek = _kotesek(qml_szovegek, kontextusok)
+    deklaralok = _deklaralo_fajlok(qml_szovegek)
+
+    jelolt: dict[tuple[str, str], set[str]] = {}
+    nevterek = _ures_nevterek(qml_szovegek, kontextusok)
     for _ in range(5):  # a fában a láncok legfeljebb 2-3 hosszúak
         valtozott = False
-        for bal, jobb in kotesek:
-            for forras, cel in list(nevter.items()):
-                if bal == forras or not _alias_e(jobb, forras):
+        for kotes in kotesek:
+            cel_fajlok = (
+                {kotes.fajl} if kotes.deklaracio else deklaralok.get(kotes.bal, set())
+            )
+            if not cel_fajlok:
+                continue
+            for forras, cel in nevterek[kotes.fajl].items():
+                if kotes.bal == forras or not _alias_e(kotes.jobb, forras):
                     continue
-                if cel not in jelolt.get(bal, set()):
-                    jelolt.setdefault(bal, set()).add(cel)
-                    valtozott = True
-        nevter = {nev: nev for nev in kontextusok}
-        nevter.update(
-            {nev: next(iter(celok)) for nev, celok in jelolt.items() if len(celok) == 1}
-        )
+                for cel_fajl in cel_fajlok:
+                    kulcs = (cel_fajl, kotes.bal)
+                    if cel not in jelolt.get(kulcs, set()):
+                        jelolt.setdefault(kulcs, set()).add(cel)
+                        valtozott = True
+        nevterek = _ures_nevterek(qml_szovegek, kontextusok)
+        for (fajl, nev), celok in jelolt.items():
+            if len(celok) == 1:
+                nevterek[fajl][nev] = next(iter(celok))
         if not valtozott:
             break
-    aliasok = {nev: next(iter(celok)) for nev, celok in jelolt.items() if len(celok) == 1}
-    tobbertelmu = {nev: celok for nev, celok in jelolt.items() if len(celok) > 1}
+    aliasok = {kulcs: next(iter(celok)) for kulcs, celok in jelolt.items() if len(celok) == 1}
+    tobbertelmu = {kulcs: celok for kulcs, celok in jelolt.items() if len(celok) > 1}
     return aliasok, tobbertelmu
 
 
 def _hivatkozasok(
-    qml_szovegek: dict[str, str], nevter: dict[str, str]
+    qml_szovegek: dict[str, str], nevterek: dict[str, dict[str, str]]
 ) -> set[tuple[str, str]]:
-    """A QML-ben MINŐSÍTETT alakban előforduló `(kontextus, tag)` párok."""
+    """A QML-ben MINŐSÍTETT alakban előforduló `(kontextus, tag)` párok.
+
+    Minden fájlt a SAJÁT névterével néz végig (#1490): ugyanaz a rövidítés
+    a szomszéd fájlban másik vezérlőt — vagy semmit — jelenthet.
+    """
     talalt: set[tuple[str, str]] = set()
-    for szoveg in qml_szovegek.values():
-        for nev, kontextus in nevter.items():
+    for fajl, szoveg in qml_szovegek.items():
+        for nev, kontextus in nevterek[fajl].items():
             for egyezes in re.finditer(rf"\b{re.escape(nev)}\s*\.\s*(\w+)", szoveg):
                 talalt.add((kontextus, egyezes.group(1)))
     return talalt
@@ -468,8 +579,10 @@ def elemez(app_gyoker: Path) -> Elemzes:
             qml_szovegek[str(ut.relative_to(app_gyoker))] = _qml_szoveg(ut)
 
     aliasok, tobbertelmu = _aliasok(qml_szovegek, set(kontextusok))
-    nevter = {**{nev: nev for nev in kontextusok}, **aliasok}
-    hivatkozott = _hivatkozasok(qml_szovegek, nevter)
+    nevterek = _ures_nevterek(qml_szovegek, set(kontextusok))
+    for (fajl, nev), cel in aliasok.items():
+        nevterek[fajl][nev] = cel
+    hivatkozott = _hivatkozasok(qml_szovegek, nevterek)
 
     tagok: list[Tag] = []
     for qml_nev, osztaly in sorted(kontextusok.items()):
@@ -623,7 +736,7 @@ def leltar_tabla(
         f"- vizsgált QML/JS-fájl: **{elemzes.qml_fajlok}**",
         f"- regisztrált kontextus-objektum: **{len(elemzes.kontextusok)}**"
         f" (+{len(elemzes.nem_qobject)} nem QObject)",
-        f"- feloldott alias: **{len(elemzes.aliasok)}**",
+        f"- feloldott alias (fájl + név): **{len(elemzes.aliasok)}**",
         f"- kontextuson elérhető `@Slot`/`@Property` tag: **{len(elemzes.tagok)}**",
         f"- ebből QML-ből NEM elérhető: **{len(elemzes.szakadasok)}**",
         "",

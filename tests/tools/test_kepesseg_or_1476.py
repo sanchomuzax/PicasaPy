@@ -253,6 +253,104 @@ def test_a_tranzitiv_alias_is_bekotes(tmp_path: Path) -> None:
     assert "controller.bekotetlen" not in _szakadas_kulcsok(gyoker)
 
 
+# -- 3/b. #1490: az álnév hatóköre a FÁJL ---------------------------------
+
+
+def test_ugyanaz_az_aliasnev_ket_fajlban_ket_vezerlore(tmp_path: Path) -> None:
+    """A #1490 magja: a névütközés egyik fájl hivatkozásait sem olthatja ki.
+
+    A `ctl` rövidítést a valódi fában öt fájl használja. Amíg mind
+    ugyanarra a vezérlőre mutatott, a globális feloldás elfedte a hibát;
+    amint egy hatodik fájl MÁSRA kötötte, az őr kétértelműnek látta, és
+    — konzervatívan — MIND eldobta. Így 17-20 élő hivatkozás tűnt el a
+    látóköréből, azaz ugyanennyi tag látszott hamisan elérhetetlennek.
+    Ez a ROSSZ irány: nem elhallgat hibát, hanem nem létezőt jelent.
+    """
+    gyoker = _fa(
+        tmp_path,
+        vezerlok={"vezerlok.py": KET_VEZERLO},
+        alkalmazas=KET_REGISZTRACIO,
+        qml={
+            "Elso.qml": (
+                "Item {\n readonly property var ctl: elsoController\n"
+                " onClicked: ctl.cancelScan()\n}"
+            ),
+            "Masodik.qml": (
+                "Item {\n readonly property var ctl: masodikController\n"
+                " onClicked: ctl.cancelScan()\n}"
+            ),
+        },
+    )
+    assert _szakadas_kulcsok(gyoker) == set()
+
+
+def test_az_alias_nem_szivarog_at_masik_fajlba(tmp_path: Path) -> None:
+    """A hatókör MINDKÉT irányba vág: a szomszéd fájl `ctl`-je nem ez a `ctl`.
+
+    A globális feloldás itt hamis ÉLETET adott: a `Masik.qml` — ahol a
+    névnek semmi köze a vezérlőhöz — életben tartotta a `bekotetlen`
+    tagot.
+    """
+    gyoker = _fa(
+        tmp_path,
+        qml={
+            "Elso.qml": (
+                "Item {\n readonly property var ctl: controller\n"
+                " onClicked: ctl.bekotott()\n}"
+            ),
+            "Masik.qml": "Item { onClicked: ctl.bekotetlen() }",
+        },
+    )
+    assert "controller.bekotetlen" in _szakadas_kulcsok(gyoker)
+
+
+def test_a_fajlon_beluli_ketertelmuseg_tovabbra_is_eldob(tmp_path: Path) -> None:
+    """A konzervatív szabály FÁJLON BELÜL megmarad — ez a `Connections` esete.
+
+    Ha ugyanannak a komponensnek két példánya két KÜLÖNBÖZŐ vezérlőt kap,
+    a komponens fájljában a név tényleg kétértelmű: inkább hamis szakadás,
+    mint hamis élet.
+    """
+    gyoker = _fa(
+        tmp_path,
+        vezerlok={"vezerlok.py": KET_VEZERLO},
+        alkalmazas=KET_REGISZTRACIO,
+        qml={
+            "Main.qml": (
+                "Item {\n Panel { hid: elsoController }\n"
+                " Panel { hid: masodikController }\n}"
+            ),
+            "Panel.qml": "Item {\n property var hid: null\n onClicked: hid.cancelScan()\n}",
+        },
+    )
+    assert _szakadas_kulcsok(gyoker) == {
+        "elsoController.cancelScan",
+        "masodikController.cancelScan",
+    }
+
+
+def test_a_kereszfajlos_atadas_a_DEKLARALO_fajlba_kerul(tmp_path: Path) -> None:
+    """Az `import`-tal behozott komponens tulajdonsága a DEFINIÁLÓ fájlé.
+
+    `Main.qml`-ben áll a `PrintDialog { printCtl: printController }`
+    értékadás, de a `printCtl` a `PrintDialog.qml` névterébe tartozik —
+    a hivatkozás is ott lesz. A `Main.qml`-ben ugyanez a név NEM oldódik
+    fel.
+    """
+    gyoker = _fa(
+        tmp_path,
+        qml={
+            "Main.qml": "Item { Panel { hid: controller } }",
+            "Panel.qml": "Item {\n property var hid: null\n onClicked: hid.bekotetlen()\n}",
+            "Idegen.qml": "Item { onClicked: hid.bekotott() }",
+        },
+    )
+    # a DEKLARÁLÓ fájlban él…
+    assert "controller.bekotetlen" not in _szakadas_kulcsok(gyoker)
+    # …az idegen fájlban viszont nem
+    assert "controller.bekotott" in _szakadas_kulcsok(gyoker)
+
+
 def test_az_ertekkotes_nem_alias(tmp_path: Path) -> None:
     """`enabled: root.ctl !== null` LOGIKAI érték — nem viheti tovább a nevet."""
     gyoker = _fa(
@@ -454,6 +552,51 @@ def test_a_bekotes_kivetelekor_uj_szakadas_keletkezik(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert "controller.toggleShowHidden" in _szakadas_kulcsok(gyoker)
+
+
+def test_gyakori_rovidites_uj_fajlban_nem_olt_ki_hivatkozast(tmp_path: Path) -> None:
+    """#1490 a VALÓDI fán: egy új fájl nem VEHET EL meglévő hivatkozást.
+
+    A `ctl` rövidítést ma több fájl használja, mind a `controller`-re. A
+    #1472-ben a `PrintDialog` — újabbként — a `printController`-re kötötte
+    volna ugyanezt a nevet; a GLOBÁLIS feloldás ettől kétértelműnek látta,
+    és MIND eldobta: 453-ról 433-ra esett az élő hivatkozások száma, azaz
+    20 tag látszott volna hamisan elérhetetlennek. (A `PrintDialog.qml`
+    ezért kapott `printCtl` nevet — az a kitérő a #1472-höz tartozik.)
+
+    A próba ezt a HELYZETET állítja elő, nem a kitérőt bontja vissza: egy
+    vadonatúj fájl újrahasználja a `ctl` nevet egy másik vezérlőre. Az
+    állítás a lehető legélesebb: hivatkozás nem VESZHET el attól, hogy
+    valahol máshol felbukkan ugyanaz a rövidítés.
+    """
+    gyoker = _valodi_masolat(tmp_path)
+    hasznalok = [
+        ut
+        for ut in (gyoker / "qml").rglob("*.qml")
+        if "property var ctl:" in ut.read_text(encoding="utf-8")
+    ]
+    assert len(hasznalok) >= 2, (
+        "a próba előfeltevése eltűnt: a `ctl` rövidítést már nem használja "
+        "több fájl — válassz másik, ténylegesen megosztott nevet"
+    )
+    (gyoker / "qml" / "PicasaPy" / "UjParbeszed1490.qml").write_text(
+        "import QtQuick\n"
+        "Item {\n"
+        "    readonly property var ctl: printController\n"
+        "    Component.onCompleted: ctl.listPrinters()\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    eredeti = or_.elemez(VALODI_APP)
+    bovitett = or_.elemez(gyoker)
+    elveszett = eredeti.hivatkozott - bovitett.hivatkozott
+    assert elveszett == set(), (
+        "egyetlen új fájl hivatkozásokat oltott ki — pontosan ez a #1490 hibája: "
+        f"{sorted(elveszett)}"
+    )
+    assert len(bovitett.szakadasok) <= len(eredeti.szakadasok), (
+        "a névütközéstől HAMIS szakadások keletkeztek"
+    )
 
 
 # -- 7. az alapállapot-lista fegyelme --------------------------------------
