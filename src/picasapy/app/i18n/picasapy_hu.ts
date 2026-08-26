@@ -9,6 +9,92 @@
     </message>
 </context>
 <context>
+    <name>FaceScanController</name>
+    <message>
+        <source>The face recognition model file is missing, so this step cannot run. Copy the file &quot;{0}&quot; into this folder: {1} — or point the {2} environment variable at it — and then restart PicasaPy.</source>
+        <translation>Hiányzik az arcfelismerő modellfájl, ezért ez a lépés nem futtatható. Másolja a(z) „{0}” fájlt ebbe a mappába: {1} — vagy állítsa rá a(z) {2} környezeti változót —, majd indítsa újra a PicasaPy-t.</translation>
+    </message>
+</context>
+<context>
+    <name>FaceScanDialog</name>
+    <message>
+        <source>Find Faces</source>
+        <translation>Arcok keresése</translation>
+    </message>
+    <message>
+        <source>Finished: %1 face(s) found in %2 checked picture(s).</source>
+        <translation>Kész: %2 átnézett képen összesen %1 arc található.</translation>
+    </message>
+    <message>
+        <source>Finished: no faces were found in %1 checked picture(s).</source>
+        <translation>Kész: a(z) %1 átnézett képen egyetlen arc sincs.</translation>
+    </message>
+    <message>
+        <source>Search cancelled. The faces found so far are kept.</source>
+        <translation>A keresés megszakadt. Az eddig megtalált arcok megmaradnak.</translation>
+    </message>
+    <message>
+        <source>The search failed: %1</source>
+        <translation>A keresés nem sikerült: %1</translation>
+    </message>
+    <message>
+        <source>Grouping finished: %1 face(s) compared, %2 sorted into groups.</source>
+        <translation>A csoportosítás kész: %1 arc összehasonlítva, ebből %2 került csoportba.</translation>
+    </message>
+    <message>
+        <source>Grouping cancelled. The groups made so far are kept.</source>
+        <translation>A csoportosítás megszakadt. Az eddig elkészült csoportok megmaradnak.</translation>
+    </message>
+    <message>
+        <source>The grouping failed: %1</source>
+        <translation>A csoportosítás nem sikerült: %1</translation>
+    </message>
+    <message>
+        <source>PicasaPy goes through the pictures of your library and looks for faces. Pictures that already carry a name tag are left untouched. You can close this window while the search runs: the work continues, and the progress stays visible next to the Unnamed album.</source>
+        <translation>A PicasaPy végigmegy a könyvtár képein, és arcokat keres rajtuk. Azokhoz a képekhez, amelyeken már van névcímke, nem nyúl. A keresés közben ez az ablak bezárható: a munka tovább fut, a haladás pedig a Névtelenek album mellett is látszik.</translation>
+    </message>
+    <message>
+        <source>Searching...</source>
+        <translation>Keresés…</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Scanning for faces... %1% complete</source>
+        <translation>Arcok keresése… %1% kész</translation>
+    </message>
+    <message>
+        <source>Scanning for faces...</source>
+        <translation>Arcok keresése…</translation>
+    </message>
+    <message>
+        <source>As a second step PicasaPy can compare the faces it found and put the similar ones into the same group, so a whole group can be given a name at once.</source>
+        <translation>Második lépésként a PicasaPy összehasonlíthatja a megtalált arcokat, és a hasonlókat egy csoportba teheti — így egy egész csoport egyszerre nevezhető el.</translation>
+    </message>
+    <message>
+        <source>Grouping...</source>
+        <translation>Csoportosítás…</translation>
+    </message>
+    <message>
+        <source>Group Faces</source>
+        <translation>Arcok csoportosítása</translation>
+    </message>
+    <message>
+        <source>Grouping faces... %1 / %2</source>
+        <translation>Arcok csoportosítása… %1 / %2</translation>
+    </message>
+    <message>
+        <source>Pictures with unnamed faces: %1 — they are waiting in the Unnamed album, in the left pane.</source>
+        <translation>Névtelen arcot tartalmazó képek: %1 — a bal hasáb Névtelenek albumában várnak.</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
     <name>PrintController</name>
     <message>
         <source>No pictures to print.</source>
@@ -3963,6 +4049,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Find Faces...</source>
+        <translation>Arcok keresése…</translation>
+    </message>
     <message>
         <source>Export to Google Earth File</source>
         <translation>Exportálás Google Earth-fájlba</translation>

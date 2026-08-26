@@ -71,6 +71,11 @@ MenuBar {
     signal optionsRequested()
     // #287: Duplikátum-kereső ablak megnyitása
     signal dedupRequested()
+    // #1473: Arckeresés — az `Eszközök` menü tétele. Az eredetiben ez nem
+    // menüpont volt, hanem alapból bekapcsolt háttérszál
+    // (`BgFaceDetectThread`, ld. docs/specs/picasa-arcfelismeres.md 1.1);
+    // nálunk háttérmotor híján ez a belépési pont (FaceScanDialog.qml).
+    signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
     signal compactDatabaseRequested()
@@ -809,6 +814,16 @@ MenuBar {
             objectName: "menuToolsDedup"
             text: qsTr("Find Duplicates...")
             onTriggered: bar.dedupRequested()
+        }
+        // #1473: az arckeresés a duplikátum-kereső mellé kerül, mert
+        // ugyanaz a fajta munka: az egész könyvtárat végigolvasó, hosszú,
+        // megszakítható keresés saját ablakkal. A tétel MINDIG él — ha a
+        // modell hiányzik, azt a megnyíló ablak MONDJA MEG; egy szürke
+        // menüpont nem tudja megmagyarázni magát (néma tiltás, #1473).
+        MenuItem {
+            objectName: "menuToolsFaceScan"
+            text: qsTr("Find Faces...")
+            onTriggered: bar.faceScanRequested()
         }
         MenuSeparator {}
         // hiányzott (#324 audit)

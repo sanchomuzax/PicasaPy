@@ -39,7 +39,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | # | terület | a háttér | a felület | jegy |
 |---|---|---|---|---|
 | A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
-| B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről | #1473 |
+| B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | ~~egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről~~ — **BEKÖTVE (#1473)**: `FaceScanDialog.qml`, élő `Eszközök ▸ Arcok keresése…`, megszakítható keresés és csoportosítás, hiányzó modellnél INDOKOLT tiltás. ⚠️ A modellfájl beszerzésére viszont továbbra sincs felületi út — a funkció friss telepítésen ezért végig szürke marad (külön jegy kell rá) | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
 | D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
 
@@ -71,11 +71,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
 - vizsgált Python-fájl: **83**
-- vizsgált QML/JS-fájl: **141**
+- vizsgált QML/JS-fájl: **142**
 - regisztrált kontextus-objektum: **19** (+1 nem QObject)
-- feloldott alias: **11**
-- kontextuson elérhető `@Slot`/`@Property` tag: **499**
-- ebből QML-ből NEM elérhető: **56**
+- feloldott alias: **12**
+- kontextuson elérhető `@Slot`/`@Property` tag: **501**
+- ebből QML-ből NEM elérhető: **49**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -120,13 +120,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py:2130` | BELSŐ — az application.py:892 hívja leálláskor |
 | `emailController` | `prepareAttachments` | Slot | `app/email_controller.py:199` | #1474 — a QML csak a beállítás-fül kliensválasztóját köti |
 | `emailController` | `sendRows` | Slot | `app/email_controller.py:231` | #1474 — a tényleges küldés sehonnan nem hívódik |
-| `faceScanController` | `isAvailable` | Slot | `app/face_scan_controller.py:155` | #1473 — az arckeresésnek nincs belépési pontja |
-| `faceScanController` | `isEmbeddingAvailable` | Slot | `app/face_scan_controller.py:160` | #1473 — az arclenyomatolásnak nincs belépési pontja |
-| `faceScanController` | `scanForFaces` | Slot | `app/face_scan_controller.py:178` | #1473 — a keresés maga; se menü, se gomb nem indítja |
-| `faceScanController` | `cancelScan` | Slot | `app/face_scan_controller.py:197` | #1473 — a megszakítás; a naiv keresés a dedupController.cancelScan miatt élőnek látta |
-| `faceScanController` | `unnamedAlbum` | Slot | `app/face_scan_controller.py:204` | #1473 — a Névtelenek album lekérdezése bekötetlen |
-| `faceScanController` | `computeEmbeddings` | Slot | `app/face_scan_controller.py:422` | #1473 — a lenyomatolás indítása bekötetlen |
-| `faceScanController` | `cancelEmbedding` | Slot | `app/face_scan_controller.py:439` | #1473 — a lenyomatolás megszakítása bekötetlen |
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py:82` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py:104` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py:157` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |

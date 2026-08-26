@@ -163,6 +163,7 @@ def test_az_azonos_nevu_tagot_nem_keveri_ossze(tmp_path: Path) -> None:
 
     A valóságban ez a `dedupController.cancelScan` és a
     `faceScanController.cancelScan` — a #1476 szerzője maga is beleesett.
+    (Az arckeresésit a #1473 azóta bekötötte; a csapda maga változatlan.)
     """
     gyoker = _fa(
         tmp_path,
@@ -365,6 +366,11 @@ def test_a_valodi_fan_erdemi_mennyiseget_nez_at(valodi: or_.Elemzes) -> None:
         ("startupStatus", "statusText", "aliason át: statusBridge.statusText"),
         ("editController", "applyEffect", "a szerkesztő gombjai hívják"),
         ("dedupController", "cancelScan", "a másolatkereső párbeszéd Mégse gombja"),
+        # #1473: a NÉVIKREK másik fele — 2026-08-26 óta ez is élő, méghozzá
+        # kétlépcsős aliason át (`window._faceScanController` → a párbeszéd
+        # `faceScan` tulajdonsága). Pozitív kontrollnak ezért ERŐSEBB, mint
+        # a régi helye volt: ha az alias-feloldás elromlik, itt bukik.
+        ("faceScanController", "cancelScan", "az arckereső párbeszéd Mégse gombja"),
         ("fileOpsController", "movePhotos", "a fájlműveleti párbeszéd"),
         ("folderHierarchyController", "expandAll", "kétlépcsős aliason át"),
         ("importSourceController", "toggleStar", "az importáló nézet csillaga"),
@@ -388,7 +394,9 @@ def test_az_ikertag_elo_parja_valoban_elo(valodi: or_.Elemzes, kontextus: str, t
 @pytest.mark.parametrize(
     ("kontextus", "tag", "mit_lat_a_naiv_kereses"),
     [
-        ("faceScanController", "cancelScan", "a dedupController.cancelScan hívásait"),
+        # ⚠️ A `faceScanController.cancelScan` 2026-08-26-ig ITT állt: a
+        # #1473 azóta bekötötte, tehát élő — a pozitív kontrollok között
+        # szerepel. A csapda maga változatlan, ezt a párja mutatja.
         ("editController", "revision", "a controller.photos.revision kötéseket"),
     ],
 )

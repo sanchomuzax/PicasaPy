@@ -2,10 +2,16 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// #350: "Name Tags" fül (options.fen) — V3/arcfelismerés hatókör. A
-// PicasaPy-ban ma nincs arcfelismerő/javaslattevő motor (FacesOverlay.qml
-// csak a MEGLÉVŐ, `.picasa.ini`-ből betöltött arc-régiókat jeleníti meg,
-// nem detektál), ezért a teljes fül tiltott.
+// #350: "Name Tags" fül (options.fen) — V3/arcfelismerés hatókör.
+//
+// #1473 (helyesbítés): arcfelismerő motorunk MÁR VAN
+// (`face_scan_controller.py` + YuNet/SFace), és `Eszközök ▸ Arcok
+// keresése…` alól indítható is. A fül attól még tiltott marad: az ITT
+// felsorolt BEÁLLÍTÁSOK egyike sincs bekötve — nincs háttérszál, amit
+// ki-be lehetne kapcsolni (az eredeti `BgFaceDetectThread`-je), és a két
+// küszöb (`FRSuggestionThreshold`/`FRSortThreshold`) sem jut el a
+// csoportosításig. A fül élesítése ezek bekötését jelenti, nem a motor
+// megírását.
 ColumnLayout {
     id: root
     spacing: 10
