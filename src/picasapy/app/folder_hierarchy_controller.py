@@ -39,8 +39,15 @@ def _osszehasonlito_alak(path: str) -> str:
     Windowson a kis-nagybetű sem számít (a fájlrendszer sem érzékeny rá),
     POSIX-on viszont IGEN — ott két eltérő betűzésű mappa két különböző,
     valódi mappa lehet, az összemosás adatvesztő volna."""
-    alak = path.replace("\\", "/")
-    return os.path.normcase(alak) if os.name == "nt" else alak
+    # ⚠️ A SORREND SZÁMÍT, és elsőre elrontottam: Windowson az
+    # `os.path.normcase` nemcsak kisbetűsít, hanem a `/`-t VISSZA is
+    # alakítja `\\`-re. Ha utána normalizálnánk az elválasztót, a POSIX
+    # alakú útvonalak (`/mnt/photo/...`) is szétesnének — a CI windows-lába
+    # pontosan ezen bukott el a javítás első változatában:
+    # `assert '/mnt/photo/Kepek/AI' in {'', '/'}`.
+    # Ezért előbb a kis-nagybetű, és CSAK UTÁNA az elválasztó.
+    alak = os.path.normcase(path) if os.name == "nt" else path
+    return alak.replace("\\", "/")
 
 
 def _is_ancestor(candidate: str, target: str) -> bool:

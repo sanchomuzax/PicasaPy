@@ -286,7 +286,15 @@ class TestOsLancWindowsUtvonallal:
         assert "C:/Users/sanchoXYZ" not in self._osok("C:\\Users\\sancho\\Kepek")
 
     def test_a_posix_ut_valtozatlanul_mukodik(self):
+        """⚠️ Ez az őr a javítás ELSŐ változatát is megfogta volna.
+
+        Ott a normalizálás sorrendje fordított volt, és Windowson az
+        `os.path.normcase` a `/`-t VISSZA alakítja `\\`-re — így a POSIX
+        alakú útvonalak szétestek. A CI windows-lába pontosan ezt adta:
+        `assert '/mnt/photo/Kepek/AI' in {'', '/'}`."""
         from picasapy.app.folder_hierarchy_controller import _is_ancestor
 
         assert _is_ancestor("/mnt/photo", "/mnt/photo/2011")
+        assert _is_ancestor("/mnt/photo", "/mnt/photo/Kepek/AI")
+        assert _is_ancestor("/mnt/photo/Kepek", "/mnt/photo/Kepek/AI")
         assert not _is_ancestor("/mnt/photo", "/mnt/photoXYZ")
