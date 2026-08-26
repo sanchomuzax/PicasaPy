@@ -179,7 +179,17 @@ class PrintController(QObject):
             if orientation_for_job == PrintOrientation.LANDSCAPE
             else QPageLayout.Orientation.Portrait
         )
-        self._paint_pages(printer, images, mode)
+        # #1472: a `_paint_pages` `RuntimeError`-t dob, ha a Qt nem tudja
+        # elindítani a feladatot (nem írható PDF-célfájl, elérhetetlen
+        # nyomtató). Amíg a vezérlő nem volt bekötve, ez senkit nem zavart;
+        # QML-slotból viszont a kivétel NÉMÁN elvész (csak a naplóba kerül),
+        # és a felhasználó egy néma párbeszédet néz. Jelzést kell kapnia.
+        try:
+            self._paint_pages(printer, images, mode)
+        except RuntimeError:
+            _log.exception("nyomtatás: a feladat nem indítható")
+            self.printFailed.emit(self.tr("The print job could not be started."))
+            return False
         return True
 
     @staticmethod

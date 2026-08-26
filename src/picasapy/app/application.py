@@ -69,6 +69,16 @@ from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
 from .models import sorted_folder_rows
+# #1472: a nyomtatás vezérlője. Az import VÉDETT, mert a
+# `print_controller` a `PySide6.QtPrintSupport`-ra épül, azt pedig a
+# Debian/Ubuntu-féle rendszercsomag KÜLÖN modulba teszi (a pip-es wheel —
+# és így a CI — mindent hoz, ld. #664). Egy csupasz import ilyen gépen az
+# egész alkalmazás indulását megölné egy nyomtatás miatt; a felület a
+# hiányt nem hallgatja el, ld. `PrintDialog.qml` `openForRows`.
+try:
+    from .print_controller import PrintController
+except ImportError:  # pragma: no cover — csak a hiányos Qt-telepítésen fut
+    PrintController = None
 from .platform_storage import (
     MigrationNotice,
     StorageAlreadyRunning,
@@ -744,6 +754,16 @@ def run(argv: list[str]) -> int:
 
     email_controller = EmailController(photo_source=_lathato_fotok)
     web_export_controller = WebExportController(photo_source=_lathato_fotok)
+    # #1472: a nyomtatás vezérlője — UGYANARRA a `photo_source`-ra épül
+    # (a `printRows`/`renderPrintPreviewPdf` sorindexei a látható fotók
+    # listájába mutatnak). Ez a vezérlő 213 sor kész kóddal és két
+    # tesztfájllal SOHA nem jött létre a futó alkalmazásban, ezért a
+    # Ctrl+P és a képtálca „Nyomtatás" gombja halott volt.
+    print_controller = (
+        PrintController(photo_source=_lathato_fotok)
+        if PrintController is not None
+        else None
+    )
 
     # Import forrásból (#23): külső mappa (kártya/fényképezőgép) képeinek
     # másolása/áthelyezése a könyvtárba — a thumbnail-providerrel adja az
@@ -808,6 +828,8 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "webExportController", web_export_controller
     )
+    # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
+    engine.rootContext().setContextProperty("printController", print_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     relocate_controller = RelocateController(
         data_dir / "index.db", cache_dir / "thumbs", config_dir

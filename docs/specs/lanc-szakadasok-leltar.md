@@ -37,7 +37,7 @@ bekötve**. Aki ezt a leltárt frissíti, **objektumnévvel együtt keressen.**
 
 | # | terület | a háttér | a felület | jegy |
 |---|---|---|---|---|
-| A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | **soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder` | #1472 |
+| A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
 | B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
 | D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
@@ -94,9 +94,9 @@ A „Python" oszlop a **más fájlból** jövő hivatkozásokat számolja, a
 | `collage_save.py` | 114 | Property | `collageTitle` | 0 | 4 |
 | `collage_save.py` | 136 | Slot | `setCollageTitle` | 1 | 1 |
 | `collage_save.py` | 153 | Slot | `setCollageSavedPath` | 0 | 2 |
-| `print_controller.py` | 83 | Slot | `listPrinters` | 0 | 1 |
-| `print_controller.py` | 98 | Slot | `renderPrintPreviewPdf` | 0 | 8 |
-| `print_controller.py` | 118 | Slot | `printRows` | 0 | 3 |
+| `print_controller.py` | 83 | Slot | `listPrinters` | ~~0~~ 1 (#1472) | 1 |
+| `print_controller.py` | 98 | Slot | `renderPrintPreviewPdf` | ~~0~~ 1 (#1472) | 8 |
+| `print_controller.py` | 118 | Slot | `printRows` | ~~0~~ 1 (#1472) | 3 |
 | `email_controller.py` | 199 | Slot | `prepareAttachments` | 0 | 6 |
 | `email_controller.py` | 231 | Slot | `sendRows` | 0 | 6 |
 | `export_controller.py` | 144 | Slot | `exportMovieFull` | 0 | 4 |

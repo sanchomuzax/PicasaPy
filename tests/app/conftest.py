@@ -6,6 +6,7 @@ import pytest
 
 from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
+from support.print_wiring import wire_print
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -191,6 +192,11 @@ def _build_qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
     )
+    # #1472: a nyomtatás vezérlője — az application.py bekötésének tükre.
+    # A `Main.qml` `PrintDialog`-ja `typeof`-őr mögül hivatkozik rá, tehát
+    # enélkül a nyomtatás felületi útja NÉMÁN méretlen maradna.
+    # a névre kötés életben tartja a vezérlőt, amíg a motor él
+    _print_controller = wire_print(engine, lambda: controller.photos.photos)
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     # #189: a splash-híd — a funkcionális tesztek kész (ready) állapotból

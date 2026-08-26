@@ -76,6 +76,10 @@ MenuBar {
     signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
+    // #1472: Fájl ▸ Nyomtatás… (Ctrl+P) — a párbeszéd a Main.qml-ben él,
+    // ugyanúgy, mint az exportnál; a képtálca „Nyomtatás" gombja
+    // (TrayBar.printRequested) ugyanoda vezet
+    signal printRequested()
     // #351: Mappa → Exportálás weboldalként… (webexport.fen)
     signal webExportRequested()
     // #530: Google Earth-export a kijelölt (geocímkézett) képekből
@@ -153,6 +157,15 @@ MenuBar {
         sequence: "Delete"
         enabled: bar.photoActionsEnabled
         onActivated: bar.deleteRequested()
+    }
+    // #1472: a Ctrl+P eddig SEHOL nem létezett — a menüfelirat hirdette,
+    // de billentyű nem tartozott hozzá. A feliratot itt szó szerint
+    // követjük (nem `StandardKey.Print`), hogy a kettő ne csúszhasson el.
+    Shortcut {
+        objectName: "shortcutPrint"
+        sequence: "Ctrl+P"
+        enabled: bar.photoActionsEnabled
+        onActivated: bar.printRequested()
     }
 
     Menu {
@@ -239,7 +252,14 @@ MenuBar {
             onTriggered: bar.deleteRequested()
         }
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Print...") + "\tCtrl+P"; placeholder: true }
+        // #1472: ÉLŐ tétel — a `print_controller.py` 213 sora addig
+        // elérhetetlen volt, mert ez a pont helyfoglaló maradt
+        MenuItem {
+            objectName: "menuFilePrint"
+            text: qsTr("Print...") + "\tCtrl+P"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.printRequested()
+        }
         PicasaMenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; placeholder: true }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
         PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: false; retired: true }  // #638
@@ -624,6 +644,12 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Show"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit)
+        // #1472: SZÁNDÉKOSAN marad helyfoglaló. Ez KONTAKTLAP (több
+        // bélyegkép EGY oldalon), a `print_controller.py` viszont egy
+        // képet tesz egy oldalra — mögötte nincs motor. Élővé téve a
+        // felhasználó képenként egy teli lapot kapna, ami rosszabb a
+        // szürke tételnél. A kontaktlap külön jegy (`print.fen` /
+        // `reviewprint.fen` sablonrendszer).
         PicasaMenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; placeholder: true }
         MenuItem {
             objectName: "menuFolderWebExport"

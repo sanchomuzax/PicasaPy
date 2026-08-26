@@ -82,6 +82,7 @@ OptionsTabNetwork 1.0 OptionsTabNetwork.qml
 OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 WebExportDialog 1.0 WebExportDialog.qml
+PrintDialog 1.0 PrintDialog.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml

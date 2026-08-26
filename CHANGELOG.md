@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Hozzáadva
+- **Végre lehet nyomtatni a képeket (#1472).** A **Fájl ▸ Nyomtatás…**
+  menüpont eddig szürke volt, a hozzá hirdetett **Ctrl+P** billentyű pedig
+  egyáltalán nem működött, és a képek alatti sávban lévő **Nyomtatás** gomb
+  is némán semmit nem csinált — pedig a nyomtatás motorja már régóta kész
+  volt a program belsejében, csak semmi nem vezetett hozzá. Mostantól
+  mindhárom út ugyanazt a nyomtatási ablakot nyitja meg a kijelölt képekre
+  (a nagyítós nézetben az éppen látott képre). Az ablakban kiválasztható a
+  nyomtató, vagy — ha nincs telepített nyomtató — a képek **PDF-fájlba**
+  is nyomtathatók; megadható, hogy a teljes kép férjen a lapra, vagy
+  töltse ki azt vágással, és hogy a lap álló, fekvő vagy a képhez igazodó
+  legyen. Egy kép egy lapra kerül. Ha a nyomtatás nem sikerül, az ablak
+  most már kiírja, miért — eddig ilyenkor sem történt semmi, magyarázat
+  nélkül. (A **Mappa ▸ Bélyegképek nyomtatása…** továbbra sem működik: az
+  egy lapra több képet tenne, amihez még nincs meg a program alatti
+  motor.)
+
 ## [0.8.96] – 2026-08-26
 
 ### Javítva
