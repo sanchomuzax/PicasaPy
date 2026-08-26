@@ -39,7 +39,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | # | terület | a háttér | a felület | jegy |
 |---|---|---|---|---|
 | A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
-| B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | ~~egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről~~ — **BEKÖTVE (#1473)**: `FaceScanDialog.qml`, élő `Eszközök ▸ Arcok keresése…`, megszakítható keresés és csoportosítás, hiányzó modellnél INDOKOLT tiltás. ~~⚠️ A modellfájl beszerzésére viszont továbbra sincs felületi út — a funkció friss telepítésen ezért végig szürke marad (külön jegy kell rá)~~ — **A MODELL IS LETÖLTHETŐ A FELÜLETRŐL (#1496)**: `downloadModels` / `cancelModelDownload` / `modelDownloadPercent` / `modelDownloadOffer` a hiányt jelző szöveg mellett, haladásjelzővel, megszakíthatóan, méret + SHA-256 épség-ellenőrzéssel | #1473, #1496 |
+| B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | ~~egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről~~ — **BEKÖTVE (#1473)**: `FaceScanDialog.qml`, élő `Eszközök ▸ Arcok keresése…`, megszakítható keresés és csoportosítás, hiányzó modellnél INDOKOLT tiltás. ⚠️ A modellfájl beszerzésére viszont továbbra sincs felületi út — a funkció friss telepítésen ezért végig szürke marad (külön jegy kell rá) | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
 | D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
 
@@ -59,6 +59,15 @@ A táblát a `python scripts/kepesseg_or.py --leltar --ir` írja, az
 indoklásokat a `scripts/kepesseg_or_baseline.txt` adja. Kézzel ne
 szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` összeveti a kettőt.
 
+**A mérés terjedelmi számai (hány fájl, hány tag, hány alias) NEM ezen a
+lapon állnak** (#1508), hanem az őr futásának kimenetében — a CI `lint`
+jobjának naplójában. Amíg itt álltak, a bitre egyezést kérő teszt minden
+ágat megbuktatott, amelyik egyetlen új `.py`- vagy QML-fájlt hozzáadott,
+holott szakadás nem keletkezett: egy nap alatt négy PR és három
+merge-ütközés jött ebből. **A védelem nem gyengült**: az új szakadást az őr
+kilépőkódja fogja meg (`python scripts/kepesseg_or.py`, 1-es kód), nem
+ennek a lapnak a szövege.
+
 ⚠️ A 2026-08-25-i **kézi** mérés 52 tagot talált; az őr ugyanezen a fán
 **56**-ot. A különbség nem a fa változása, hanem a minősített keresés: a
 kézi mérés nem látta az `editController.revision`-t (a `photos.revision`
@@ -70,12 +79,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
-- vizsgált Python-fájl: **84**
-- vizsgált QML/JS-fájl: **142**
-- regisztrált kontextus-objektum: **19** (+1 nem QObject)
-- feloldott alias (fájl + név): **15**
-- kontextuson elérhető `@Slot`/`@Property` tag: **507**
-- ebből QML-ből NEM elérhető: **49**
+*A mérés terjedelme — hány Python-, hány QML-fájl, hány tag, hány*
+*alias — SZÁNDÉKOSAN nem itt áll, hanem az őr futásának kimenetében*
+*(CI-napló). Ld. #1508: a verziózott szám minden új fájltól elavult,*
+*valódi szakadás nélkül.*
+
+**Felületről el nem ért vezérlő-tag: 49.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|

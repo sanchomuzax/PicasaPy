@@ -80,6 +80,15 @@ ezért minden futáskor kimondja, hogy talált kontextus-objektumot, tagot,
 QML-fájlt ÉS élő hivatkozást is; ha bármelyik nulla, **2-es kilépési
 kóddal megáll**, nem „hibátlant" jelent.
 
+**A generált leltárba nem kerül volatilis szám (#1508).** A blokk sokáig
+fájl- és tagszámot is hordozott, és egy teszt bitre egyezést követelt tőle.
+Ettől **minden ág elbukott, amelyik akár egyetlen `.py`- vagy QML-fájlt
+hozzáadott** — valódi szakadás nélkül; egy nap alatt négy PR és három
+merge-ütközés jött belőle. A számok azóta a futás KIMENETÉBEN állnak
+(CI-napló), ahol nincs mit karbantartani; a lapon csak a lényegi tartalom
+marad: maga a szakadás-lista. A védelmet ez nem gyengíti — az új szakadást
+az őr **kilépőkódja** fogja meg, nem a dokumentum szövege.
+
 Használat::
 
     python scripts/kepesseg_or.py            # ellenőrzés (CI)
@@ -732,13 +741,12 @@ def leltar_tabla(
         "*Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*",
         "*Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*",
         "",
-        f"- vizsgált Python-fájl: **{elemzes.py_fajlok}**",
-        f"- vizsgált QML/JS-fájl: **{elemzes.qml_fajlok}**",
-        f"- regisztrált kontextus-objektum: **{len(elemzes.kontextusok)}**"
-        f" (+{len(elemzes.nem_qobject)} nem QObject)",
-        f"- feloldott alias (fájl + név): **{len(elemzes.aliasok)}**",
-        f"- kontextuson elérhető `@Slot`/`@Property` tag: **{len(elemzes.tagok)}**",
-        f"- ebből QML-ből NEM elérhető: **{len(elemzes.szakadasok)}**",
+        "*A mérés terjedelme — hány Python-, hány QML-fájl, hány tag, hány*",
+        "*alias — SZÁNDÉKOSAN nem itt áll, hanem az őr futásának kimenetében*",
+        "*(CI-napló). Ld. #1508: a verziózott szám minden új fájltól elavult,*",
+        "*valódi szakadás nélkül.*",
+        "",
+        f"**Felületről el nem ért vezérlő-tag: {len(elemzes.szakadasok)}.**",
         "",
         "| kontextus-objektum | tag | fajta | hely | indoklás |",
         "|---|---|---|---|---|",
@@ -802,10 +810,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  * {hiba}", file=sys.stderr)
         return 2
 
+    # A mérés terjedelme ITT jelenik meg, és NEM a verziózott leltárban
+    # (#1508): a napló magától frissül, a dokumentumot kézzel kellett
+    # utánaigazítani minden új fájl után.
     print(
         f"átnézve: {elemzes.py_fajlok} Python-fájl, {elemzes.qml_fajlok} QML/JS-fájl, "
-        f"{len(elemzes.kontextusok)} kontextus-objektum, {len(elemzes.tagok)} tag, "
-        f"{len(elemzes.hivatkozott)} élő minősített hivatkozás"
+        f"{len(elemzes.kontextusok)} kontextus-objektum "
+        f"(+{len(elemzes.nem_qobject)} nem QObject), {len(elemzes.aliasok)} feloldott alias, "
+        f"{len(elemzes.tagok)} tag, {len(elemzes.hivatkozott)} élő minősített hivatkozás, "
+        f"{len(elemzes.szakadasok)} szakadás"
     )
 
     if beallitas.list:
