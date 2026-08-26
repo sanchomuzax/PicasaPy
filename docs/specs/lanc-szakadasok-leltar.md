@@ -132,10 +132,10 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
-| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |
-| `editController` | `autolightActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
-| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
-| `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — a retusálás megléte bekötetlen |
+| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | FELVÁLTVA — a #116 az egygombos javításokról LEVETTE a „benyomva" állapotot; a csempe a párját, az enhanceEnabled-et köti (PhotoViewer.qml:291) |
+| `editController` | `autolightActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autolightEnabled-et köti (PhotoViewer.qml:292) |
+| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293) |
+| `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
 | `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |

@@ -153,6 +153,8 @@ class FolderHierarchyController(QObject):
         """
         return self._simplified
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a menü a `toggleSimplified`-et
+    # hívja, és AZ hívja ezt — a beállító ág tehát a felületről elérhető.
     @Slot(bool)
     def setSimplified(self, value: bool) -> None:
         if bool(value) == self._simplified:

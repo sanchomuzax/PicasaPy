@@ -110,6 +110,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
 
     # -- property-k (8.1) --------------------------------------------------
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a kollázs nevét a felhasználó
+    # nem gépeli be — a fájlnév a FORRÁSMAPPÁBÓL jön (kollazs-eletciklus.md 8.6),
+    # ez a property csak a mentés bemenete.
     @Property(str, notify=collageTitleChanged)
     def collageTitle(self) -> str:
         """A kollázs címe — ebből lesz a kimeneti fájl neve (spec 9.1).
