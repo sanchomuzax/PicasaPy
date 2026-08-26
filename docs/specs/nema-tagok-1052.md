@@ -73,10 +73,10 @@ használja és nem is fogja · **BEKÖTVE** = a jegy óta felületet kapott.
 
 | tag | hely | döntés | bizonyíték | jegy |
 |---|---|---|---|---|
-| `copyEffects` | `app/effects_controller.py` | HIBA | két párhuzamos effekt-vágólap; a menü a KÖTEGELT úton megy (`photo_ops_controller.py:545/560`), ez a kép-specifikus ág UI nélkül áll | **#1475** (meglévő) |
-| `hasEffectsClipboard` | `app/effects_controller.py` | HIBA | ugyanaz a vágólap, a jelzője | **#1475** |
-| `canUndoPasteEffects` | `app/effects_controller.py` | HIBA | ugyanaz, a visszavonás jelzője | **#1475** |
-| `undoPasteEffects` | `app/effects_controller.py` | HIBA | ugyanaz, a művelet | **#1475** |
+| `copyEffects` | `app/effects_controller.py` | **SZÁNDÉKOS** (a #1052 HIBA-verdiktje MEGDŐLT) | ld. 3.1 szakasz | **#1534** (eldöntve) |
+| `hasEffectsClipboard` | `app/effects_controller.py` | **SZÁNDÉKOS** | ugyanaz a vágólap, a jelzője | **#1534** |
+| `canUndoPasteEffects` | `app/effects_controller.py` | **SZÁNDÉKOS** | ugyanaz, a visszavonás jelzője | **#1534** |
+| `undoPasteEffects` | `app/effects_controller.py` | **SZÁNDÉKOS** | ugyanaz, a művelet | **#1534** |
 | `canUndoPasteAllEffects` | `app/photo_ops_controller.py` | HIBA | a „Paste All Effects" elvégezhető (`Main.qml:769`), a visszavonása nem | **#1475** |
 | `hasCrop` | `app/edit_controller.py` | **HIBA** | ld. 4. szakasz | **új** (A) |
 | `clearCrop` | `app/edit_controller.py` | **HIBA** | ld. 4. szakasz | **új** (A) |
@@ -105,6 +105,52 @@ használja és nem is fogja · **BEKÖTVE** = a jegy óta felületet kapott.
 
 A kilenc SZÁNDÉKOS eset **kódkommentet kapott** a tag fölé, hogy a
 következő olvasó ne tegye fel újra a kérdést.
+
+### 3.1 A négy effektus-vágólap tag verdiktje MEGVÁLTOZOTT (#1534, 2026-08-26)
+
+A #1052 ezt a négy tagot **HIBA**-ként könyvelte el: „két párhuzamos
+effekt-vágólap van, a menü a kötegelt úton megy, ez a kép-specifikus ág UI
+nélkül áll". A #1534 visszafejtette az eredeti kezelőket — és **két
+meglepetést** hozott.
+
+**1. Nincs külön menüpont, amit ez a réteg kiszolgálhatna.**
+
+A menüépítő kódjából kinyert TELJES parancstérképben
+(`picasa-menu-parancsok.csv`, proveniencia: `picasa-menu-leltar.md` 7.)
+**pontosan két** effektus-vágólap parancs van, mindkettő a **Szerkesztés**
+menüben (`ID_EDIT_COPYALLEFFECTS` / `ID_EDIT_PASTEALLEFFECTS`); a Kép
+menüben (`eMenuPicture`, 19 parancs) egy sincs.
+
+Az eredeti ráadásul **egy** parancsot ad **kétágú** kezelővel: a
+diszpécser (`0x005cb990`) ugyanazt a kezelőpárt hívja, és a kezelő
+megnézi, látszik-e az `"editpanel/preview"` — ha igen, a **nyitott
+egyetlen** képre dolgozik az élő szűrővermen, ha nem, a **kijelölésre**
+(másolásnál pontosan egy kép, `IDS_SELECT_ONE_ONLY`). Vagyis nem két
+funkció, hanem egy parancs két ága. ⇒ A négy tagnak **nem hiba**, hogy a
+QML nem hivatkozza; saját menüpontot adni nekik **hiba lenne**.
+
+**2. A réteg tartalmi viselkedése viszont a HŰSÉGES — a bekötötté nem.**
+
+A másoló (`0x005fecd0`) és a beillesztő (`0x005fefc0`) a `filters` láncot
+**egészben** mozgatja; a teljes hívási úton **nincs egyetlen szűrő-névre
+vonatkozó összehasonlítás sem**. Függetlenül ellenőrizve a bináris-indexből:
+a `"filters"` sztringnek 33 kódhivatkozása van (köztük a getter/setter
+`0x006af3e0`/`0x006af650`), a **`crop64` sztringnek NULLA** — a program
+sehol nem hasonlít össze semmit ezzel a névvel.
+
+⇒ **Az eredeti beillesztés átviszi a vágást.** A bekötött kötegelt réteg
+(`photo_ops_controller.py:633/648/724`) viszont **kiszűri** — a
+`filterdesc.xml` `mode="history"` oszlopából következtetve, holott a
+másolás kezelője ezt az attribútumot soha nem olvassa. Ez a kötegelt réteg
+**hibája**, önálló jegyet kíván; a #152-es réteg addig a helyes viselkedés
+egyetlen megvalósítása, ezért **nem törölhető**.
+
+⚠️ A `_effects_undo_stack` többszintűsége viszont az eredetiben **nem
+létezik**: a könyvtárnézeti beillesztés ott visszavonhatatlan (a binárisban
+nulla olyan felirat van, amiben az „undo" és a „paste" együtt szerepel).
+
+A döntés, a mérés és a nyitott kérdések:
+**`docs/decisions/effektus-vagolap-ket-reteg.md` (ADR-007)**.
 
 ## 4. (A) A vágás „Alaphelyzet" gombja nem szünteti meg a mentett vágást
 
