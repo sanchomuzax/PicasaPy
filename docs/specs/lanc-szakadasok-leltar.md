@@ -112,8 +112,8 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py:129` | MÉRVE — a sor helyadata bekötetlen |
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py:682` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py:721` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
-| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py:577` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
-| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py:673` | #1475 — ugyanaz, a művelet maga |
+| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py:628` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
+| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py:724` | #1475 — ugyanaz, a művelet maga |
 | `editController` | `revision` | Property | `app/edit_controller.py:426` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py:530` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
 | `editController` | `enhanceActive` | Property | `app/edit_controller.py:534` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |
