@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import logging
 import os
-import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -83,24 +82,13 @@ def download_model(
 
     SOHA nem hívódik automatikusan — sem induláskor, sem tesztben, sem a
     `FaceEmbedder`-ből. Hálózat/lemez-hiba esetén csendesen `False`-t ad
-    vissza, nem dob kivételt (`detector.download_model` mintája)."""
-    target = Path(dest) if dest is not None else default_model_path()
-    try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.with_suffix(target.suffix + ".part")
-        with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310
-            payload = response.read()
-        tmp.write_bytes(payload)
-        tmp.replace(target)
-        return True
-    except (OSError, ValueError) as error:
-        logger.warning(
-            "Az arc-lenyomat modell letöltése sikertelen (%s) — a funkció "
-            "kikapcsolva marad, a modell kézzel is elhelyezhető: %s",
-            error,
-            target,
-        )
-        return False
+    vissza, nem dob kivételt (`detector.download_model` mintája).
+
+    #1496: a törzse ma az ELLENŐRZŐ letöltőé (méret + SHA-256) — az
+    indoklás a `detector.download_model` docstringjében."""
+    from .model_download import EMBEDDER_SPEC, download_spec
+
+    return download_spec(EMBEDDER_SPEC, dest=dest, url=url, timeout=timeout).ok
 
 
 def _detection_to_row(detection: FaceDetection) -> np.ndarray:
