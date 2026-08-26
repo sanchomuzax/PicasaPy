@@ -73,6 +73,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 
@@ -81,6 +82,19 @@ import pytest
 from support.jpeg_factory import make_jpeg
 
 _ROOTKENT_FUT = hasattr(os, "geteuid") and os.geteuid() == 0
+
+#: ⚠️ A `chmod(0o000)` csak POSIX-on korlátoz. Windowson a könyvtár-jogokat
+#: ACL-ek adják, a `chmod` gyakorlatilag hatástalan: a `stat` simán sikerül,
+#: és a rá épülő „a stat tényleg elhasal" állítás üresen bukik. A
+#: 2026-08-26-i windows-lábon pontosan ez történt:
+#: `Failed: DID NOT RAISE PermissionError`.
+#:
+#: A jogosultság-alapú tesztek ezért POSIX-ra korlátozódnak — de a mutációt
+#: ÖLŐ állítást platformfüggetlen párjuk is őrzi
+#: (`test_a_stat_BARMILYEN_HIBAJA_nem_eltunt`), ami magát az `os.stat`-ot
+#: cseréli le. Így a windows-láb sem marad fedezet nélkül; ez a #1217
+#: tanulsága: platform-feltevés ne maradjon őrizetlenül a tesztben.
+_WINDOWSON = sys.platform.startswith("win")
 
 
 def _var(qt_app, feltetel, masodperc: float = 20.0) -> bool:
@@ -213,6 +227,7 @@ class TestAGyokerEltunesenekFelismerese:
         assert folder_looks_offline(mount) is True
 
     @pytest.mark.skipif(_ROOTKENT_FUT, reason="rootként a jogosultság nem korlátoz")
+    @pytest.mark.skipif(_WINDOWSON, reason="a chmod Windowson nem korlátoz — ld. _WINDOWSON")
     def test_az_ELERHETETLEN_gyoker_NEM_eltunt(self, tmp_path):
         """⚠️ A másik elérhetetlen alak: a `stat` MAGA hasal el (`EACCES`,
         `ESTALE`, `ENOTCONN`). Ezt csak úgy lehet valósághűen előállítani,
@@ -236,6 +251,38 @@ class TestAGyokerEltunesenekFelismerese:
             )
         finally:
             zart.chmod(0o755)
+
+    def test_a_stat_BARMILYEN_HIBAJA_nem_eltunt(self, monkeypatch, tmp_path):
+        """Ugyanaz az állítás, jogosultság nélkül — így a WINDOWS-lábon is fut.
+
+        A fenti teszt a valósághű utat járja (bejárhatatlan szülő), de a
+        `chmod` Windowson hatástalan, ezért ott kimarad. Az `except OSError`
+        ágra írt mutációt (`return True`) viszont ott is meg kell ölni,
+        különben a windows-láb fedezet nélkül marad — a #1217 tanulsága
+        szerint a platform-feltevés a tesztben a legdrágább.
+
+        Ezért itt magát az `os.stat`-ot cseréljük: minden olyan `OSError`,
+        ami NEM `FileNotFoundError`/`NotADirectoryError`, „elérhetetlen"
+        marad, nem „eltűnt"."""
+        from picasapy.index import sync as sync_modul
+
+        gyoker = tmp_path / "nas"
+        gyoker.mkdir()
+
+        for hiba in (
+            PermissionError(13, "Permission denied"),
+            OSError(116, "Stale file handle"),
+            OSError(107, "Transport endpoint is not connected"),
+        ):
+
+            def hasal(_ut, _h=hiba):
+                raise _h
+
+            monkeypatch.setattr(sync_modul.os, "stat", hasal)
+            assert sync_modul.watched_root_missing(gyoker) is False, (
+                f"a(z) {hiba!r} hibát eltűntnek minősítettük"
+            )
+            monkeypatch.undo()
 
 
 class TestASyncFolderNemTorolEltuntGyokerAlatt:
@@ -319,6 +366,7 @@ class TestASyncFolderNemTorolEltuntGyokerAlatt:
         )
 
     @pytest.mark.skipif(_ROOTKENT_FUT, reason="rootként a jogosultság nem korlátoz")
+    @pytest.mark.skipif(_WINDOWSON, reason="a chmod Windowson nem korlátoz — ld. _WINDOWSON")
     def test_az_ELERHETETLEN_gyoker_alatt_is_megmaradnak_a_sorok(
         self, tmp_path, konyvtar
     ):
