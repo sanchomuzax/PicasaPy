@@ -41,7 +41,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
 | B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | ~~egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről~~ — **BEKÖTVE (#1473)**: `FaceScanDialog.qml`, élő `Eszközök ▸ Arcok keresése…`, megszakítható keresés és csoportosítás, hiányzó modellnél INDOKOLT tiltás. ⚠️ A modellfájl beszerzésére viszont továbbra sincs felületi út — a funkció friss telepítésen ezért végig szürke marad (külön jegy kell rá) | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
-| D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
+| D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `undoBatchEdit`, `canUndoBatchEdit` | ~~nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA**~~ — **BEKÖTVE (#1475)**: a **Szerkesztés menü élén** két, művelet szerint nevesített tétel („Az összes effektus beillesztésének visszavonása", „Csoportos szerkesztés visszavonása") — ott, ahol az eredetiben az `eMenuEdit::ID_UNDO` áll —, mindegyik a SAJÁT `canUndo…`-jától szürkülve. ⚠️ A lelet **hármat** sorolt, valójában **négy** tag állt bekötetlenül: az `undoBatchEdit` maga is. A `Ctrl+Z` SZÁNDÉKOSAN maradt ki: két külön verem mellett nem dönthető el egyértelműen, melyiket sütné el | #1475 |
 
 ## 3. Elhatárolások — ezeket NE vegye fel senki hibaként
 
@@ -51,7 +51,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | `fileops_controller.movePhoto` | egyes alak; a QML a `movePhotos` többes alakot használja |
 | `controller.statusText` | **él**, aliason át: `tray.ctl.statusText` (`TrayBar.qml:117`) |
 | `controller.setShowHidden` | a menü a `toggleShowHidden`-t hívja — szándékos |
-| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:47`-en át be van építve. A **kép-specifikus** vágólap (#152) áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller.py:545/560`). Ez **döntést kíván**, nem hibajavítást — ld. #1475 |
+| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:47`-en át be van építve. A **kép-specifikus** vágólap (#152) áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller`). A #1475 **eldöntötte**: a felület mögötti út a KÖTEGELT réteg — az eredetiben sincs külön kép-szintű effektus-vágólap, a művelet a *kijelölésre* hat. A kép-specifikus ág **megmarad**, mert tud kettőt, amit a kötegelt nem: átviszi a `crop64`-et, és **többszintű** undo-verme van (a kötegelté egyetlen lépés). A sorsáról **külön jegy** dönt |
 
 ## 4. A teljes mért lista — GENERÁLT
 
@@ -100,14 +100,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 49.**
+**Felületről el nem ért vezérlő-tag: 45.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
 | `compactController` | `wastedPercent` | Property | `app/compact_controller.py` | MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető |
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
-| `controller` | `canUndoBatchEdit` | Property | `app/batch_effect_controller.py` | #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll |
-| `controller` | `undoBatchEdit` | Slot | `app/batch_effect_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
 | `controller` | `collageTitle` | Property | `app/collage_save.py` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
@@ -118,18 +116,16 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
 | `controller` | `collageSeed` | Property | `app/create_controller.py` | MÉRVE — a véletlen elrendezés magja bekötetlen |
-| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll |
-| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | #1475 — ugyanannak a vágólapnak a visszavonás-jelzője |
-| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág |
-| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a beillesztés |
-| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a visszavonás |
+| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | MÉRVE — kép-specifikus effekt-vágólap (#152); külön jegyet vár |
+| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | MÉRVE — ugyanannak a vágólapnak a visszavonás-jelzője |
+| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | MÉRVE — a másolás; a felület a KÖTEGELT copyAllEffects-et hívja |
+| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a beillesztés; a felület a KÖTEGELT pasteAllEffects-et hívja |
+| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a visszavonás; a felületé az undoPasteAllEffects |
 | `controller` | `exportMovieFull` | Slot | `app/export_controller.py` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
 | `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
-| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
-| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
 | `editController` | `enhanceActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |

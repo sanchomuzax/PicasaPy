@@ -125,6 +125,20 @@ MenuBar {
     property bool hasAllEffectsClipboard: false
     signal copyAllEffectsRequested()
     signal pasteAllEffectsRequested()
+    // #1475: a KÉT kötegelt visszavonás vezérlője. Az eredetiben a
+    // Szerkesztés menü ÉLÉN áll a visszavonás (`eMenuEdit::ID_UNDO`, ld.
+    // `docs/specs/picasa-hu-terminology.md`), és a felirat megnevezi a
+    // visszavonandó műveletet (a `CFilterStackUI` `undoname` kulcsa záró
+    // szóközzel áll, ld. `app/edit_action_names.py`). Nálunk a #465 óta
+    // HÁROM külön verem van, ezért nem EGY általános „Visszavonás" áll itt,
+    // hanem művelet szerint nevesített tétel, mindegyik a SAJÁT
+    // `canUndo…`-jától függően szürkülve. Kijelöléstől SZÁNDÉKOSAN nem
+    // függenek: a visszavonandó köteg a művelet óta megjegyzett képekre
+    // hat, nem a mostani kijelölésre.
+    property bool canUndoPasteAllEffects: false
+    property bool canUndoBatchEdit: false
+    signal undoPasteAllEffectsRequested()
+    signal undoBatchEditRequested()
     // #425: Kép ▸ Csoportos szerkesztés — a kijelölt N kép mindegyikére
     // egyszerre alkalmazott egykattintásos effekt (`controller.
     // applyEffectMany`); a `name` a `batch_effect_controller._KNOWN_EFFECTS`
@@ -273,6 +287,22 @@ MenuBar {
     }
     Menu {
         title: qsTr("&Edit")
+        // #1475: a visszavonás a menü ÉLÉN — ide teszi az eredeti is
+        // (`eMenuEdit::ID_UNDO`). A felirat megnevezi a műveletet, hogy a
+        // felhasználó ne vaktában nyomja meg.
+        MenuItem {
+            objectName: "menuEditUndoPasteAllEffects"
+            text: qsTr("Undo Paste All Effects")
+            enabled: bar.canUndoPasteAllEffects
+            onTriggered: bar.undoPasteAllEffectsRequested()
+        }
+        MenuItem {
+            objectName: "menuEditUndoBatchEdit"
+            text: qsTr("Undo Batch Edit")
+            enabled: bar.canUndoBatchEdit
+            onTriggered: bar.undoBatchEditRequested()
+        }
+        MenuSeparator {}
         // hiányzott (#324 audit): a szabvány vágólap-műveletek
         PicasaMenuItem {
             objectName: "menuEditCut"

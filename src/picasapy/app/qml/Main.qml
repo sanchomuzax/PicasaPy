@@ -767,15 +767,22 @@ ApplicationWindow {
         hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
         onCopyAllEffectsRequested: controller.copyAllEffects(window.selectedRows())
         onPasteAllEffectsRequested: controller.pasteAllEffects(window.selectedRows())
+        // #1475: a két kötegelt visszavonás — a Szerkesztés menü élén álló
+        // tételek. Kijelölés-független: a köteg a SAJÁT, művelet idején
+        // rögzített képlistáját állítja vissza.
+        canUndoPasteAllEffects: controller ? controller.canUndoPasteAllEffects : false
+        canUndoBatchEdit: controller ? controller.canUndoBatchEdit : false
+        onUndoPasteAllEffectsRequested: controller.undoPasteAllEffects()
+        onUndoBatchEditRequested: controller.undoBatchEdit()
         // #425: Kép ▸ Csoportos szerkesztés — a `batch_effect_controller.
         // BatchEffectMixin`-t hívja, ugyanazon a rács-sorindex mintán
         // a forgatás a MEGLÉVŐ (szinkron, gyors) rotateRightMany/
         // rotateLeftMany úton fut, nem az applyEffectMany háttérszálán —
         // a `filters=`-t bővítő 7 effekttől eltérően nem igényel ini-
         // láncbővítést, csak a rotate= kulcs cseréjét (ld. PhotoOpsMixin).
-        // A kötegelt visszavonás (`controller.undoBatchEdit`/
-        // `canUndoBatchEdit`) egyelőre — a #426/#152 „Paste All Effects"
-        // undóihoz hasonlóan — csak a vezérlőn elérhető, UI-gomb nélkül.
+        // A köteg visszavonása a Szerkesztés menü „Csoportos szerkesztés
+        // visszavonása" tételén megy (#1475) — a forgatás NEM kerül a
+        // kötegelt undo-verembe, mert a rotate= külön kulcs.
         onBatchApplyEffectRequested: (name) => {
             if (name === "rotate_cw") controller.rotateRightMany(window.selectedRows())
             else if (name === "rotate_ccw") controller.rotateLeftMany(window.selectedRows())
