@@ -19,9 +19,11 @@ def parse_color_terms(query: str) -> tuple[str, tuple[str, ...]]:
     """A `query` szétbontása: `(maradék_szabadszöveg, talált_színtokenek)`.
 
     Több `color:`/`szín:` token esetén a színek EGYMÁSSAL VAGY (OR)
-    kapcsolatban állnak (egy képnek csak egy átlagszíne van, az ÉS
-    kapcsolat sosem adna találatot) — a maradék szöveggel viszont ÉS
-    (a meglévő FTS-keresés szemantikájával összhangban)."""
+    kapcsolatban állnak — a maradék szöveggel viszont ÉS (a meglévő
+    FTS-keresés szemantikájával összhangban). Egy képnek egy hue-vödre
+    van, tehát két KÜLÖNBÖZŐ színnév ÉS-elve sosem adna találatot; az
+    akromatikus kép viszont egyszerre illeszkedik a `black`, `white` és
+    `gray` tokenre (#1480)."""
     remaining: list[str] = []
     colors: list[str] = []
     for token in query.split():

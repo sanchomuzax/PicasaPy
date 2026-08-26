@@ -28,6 +28,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **Keskenyebb ablakban is használható marad a sáv (#1420).** A program
   ablaka mostantól 900 helyett **800 képpont** szélességig húzható össze
   anélkül, hogy bármelyik alsó gomb kicsúszna a képernyőről.
+### Javítva
+- **A szín szerinti keresés mostantól úgy válogat, ahogy az eredeti Picasa
+  (#1480).** Eddig a program egyetlen színt számolt ki minden képhez — az
+  egész kép átlagát —, és azt sorolta be. Egy naplementés fényképnél ez
+  például barnás átlagot ad, holott a képen a narancs a meghatározó, így a
+  kép nem jött elő a narancsra keresve. Mostantól a program végignézi a
+  kép minden képpontját, és azt a színt választja, amelyikből a képen a
+  legtöbb, legélénkebb folt van — pontosan úgy, ahogy az eredeti Picasa
+  tette. Ennek látható következménye, hogy **más képek jönnek majd elő** a
+  `szín:kék`-féle keresésre, mint eddig; a fakó, szürkés képpontok
+  egyáltalán nem számítanak bele a döntésbe. A **fekete**, a **fehér** és a
+  **szürke** ezentúl ugyanazt a képhalmazt adja: az eredeti sem tett
+  köztük különbséget, a színtelen képek mindháromra előjönnek. A korábban
+  kiszámolt (rossz módszerrel készült) besorolásokat a program eldobja és
+  újraszámolja.
 
 ## [0.8.97] – 2026-08-26
 

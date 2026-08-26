@@ -85,6 +85,14 @@ class TestSearchIntegration:
         names = {r.name for r in search_photos(color_conn, "color:gray")}
         assert names == {"szurke.jpg"}
 
+    @pytest.mark.parametrize("token", ["color:black", "color:white", "color:gray"])
+    def test_all_three_achromatic_tokens_find_the_gray_photo(self, color_conn, token):
+        """#1480: az eredeti a fekete/fehér/szürke között nem tesz
+        különbséget — mindhárom token ugyanazt a képet adja."""
+        backfill_colors(color_conn, limit=10)
+        names = {r.name for r in search_photos(color_conn, token)}
+        assert names == {"szurke.jpg"}
+
     def test_multiple_color_tokens_are_ored(self, color_conn):
         backfill_colors(color_conn, limit=10)
         names = {r.name for r in search_photos(color_conn, "color:red color:blue")}
