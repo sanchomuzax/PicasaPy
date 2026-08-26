@@ -3329,6 +3329,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Stop</source>
+        <translation>Leállítás</translation>
+    </message>
+    <message>
         <location filename="../qml/Main.qml"/>
         <source>Collage</source>
         <translation>Kollázs</translation>

@@ -92,7 +92,7 @@ class TestValodiUt:
             "friss indexen még nincs kiszámolt szín"
         )
         # a keresés MAGA indította el a feltöltést (nincs külön gomb)
-        assert controller.colorIndexRunning(), (
+        assert controller.color_index_fut(), (
             "a színkeresés nem indította el a gyorsítótár feltöltését — "
             "a funkció néma marad"
         )
@@ -103,7 +103,7 @@ class TestValodiUt:
         assert _talalat_nevek(controller) == {"piros.jpg"}
 
     def test_a_feltoltes_a_teljes_konyvtarat_lefedi(self, controller):
-        controller.startColorIndex()
+        controller.start_color_index()
         assert controller.waitForBackgroundWorkers(60.0)
         from picasapy.index import color_index_progress, open_index
 
@@ -177,7 +177,7 @@ class TestNemNema:
         )
 
     def test_kesz_gyorsitotarnal_nincs_figyelmeztetes(self, controller):
-        controller.startColorIndex()
+        controller.start_color_index()
         assert controller.waitForBackgroundWorkers(60.0)
         latott: list = []
         controller.colorIndexIncomplete.connect(lambda *a: latott.append(a))
@@ -186,7 +186,7 @@ class TestNemNema:
 
     def test_szoveges_kereses_nem_indit_feltoltest(self, controller):
         controller.search("piros")
-        assert not controller.colorIndexRunning(), (
+        assert not controller.color_index_fut(), (
             "szín nélküli keresés nem indíthat 81 ms/képes háttérmunkát"
         )
 
@@ -204,14 +204,14 @@ class TestJelzoNemRagadBe:
 
         monkeypatch.setattr(wt, "_Thread", nem_indul)
         with pytest.raises(RuntimeError):
-            controller.startColorIndex()
-        assert not controller.colorIndexRunning(), (
+            controller.start_color_index()
+        assert not controller.color_index_fut(), (
             "a futásjelző igazon ragadt — innentől a színkeresés soha "
             "többé nem töltené fel a gyorsítótárat"
         )
 
         monkeypatch.undo()
-        controller.startColorIndex()
+        controller.start_color_index()
         assert controller.waitForBackgroundWorkers(60.0)
         controller.search("color:blue")
         assert _talalat_nevek(controller) == {"kek.jpg"}
@@ -227,15 +227,15 @@ class TestJelzoNemRagadBe:
             wt, "_Thread", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("nincs szál"))
         )
         controller.search("color:red")  # nem dobhat
-        assert not controller.colorIndexRunning()
+        assert not controller.color_index_fut()
 
 
 class TestMegszakithato:
     def test_a_megszakitas_leallitja_a_feltoltest(self, controller):
-        controller.startColorIndex()
+        controller.start_color_index()
         controller.cancelColorIndex()
         assert controller.waitForBackgroundWorkers(60.0)
-        assert not controller.colorIndexRunning()
+        assert not controller.color_index_fut()
 
     def test_ket_inditas_egy_szalat_ad(self, controller, monkeypatch):
         inditasok: list = []
@@ -244,8 +244,8 @@ class TestMegszakithato:
             "_start_background",
             lambda *a, **k: inditasok.append(k.get("name")),
         )
-        controller.startColorIndex()
-        controller.startColorIndex()
+        controller.start_color_index()
+        controller.start_color_index()
         assert inditasok == ["picasapy-szinindex"]
         controller._color_index_running = False
 
@@ -259,7 +259,7 @@ class TestHaladas:
         controller.colorIndexProgress.connect(
             lambda kesz, osszes: latott.append((kesz, osszes))
         )
-        controller.startColorIndex()
+        controller.start_color_index()
         assert controller.waitForBackgroundWorkers(60.0)
         hatarido = time.monotonic() + 5.0
         while time.monotonic() < hatarido and latott[-1:] != [(3, 3)]:
@@ -276,7 +276,7 @@ class TestHaladas:
         controller.colorIndexFinished.connect(
             lambda kesz, osszes: vegek.append((kesz, osszes))
         )
-        controller.startColorIndex()
+        controller.start_color_index()
         assert controller.waitForBackgroundWorkers(60.0)
         hatarido = time.monotonic() + 5.0
         while time.monotonic() < hatarido and not vegek:

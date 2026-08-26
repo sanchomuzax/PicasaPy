@@ -22,7 +22,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   „nincs ilyen színű képem" és az „ezt még ki sem számoltuk" ugyanúgy
   nézett ki: üres lista, semmi magyarázat. Mostantól egy borostyánsárga
   tájékoztató sáv írja ki, hány kép van már átnézve az összesből, és hogy
-  a lista magától ki fog egészülni, amint a feldolgozás elkészül.
+  a lista magától ki fog egészülni, amint a feldolgozás elkészül. A sávon
+  ott a **Leállítás** gomb is: a képek átnézése nagy gyűjteménynél sokáig
+  tart, ezért bármikor megállítható — a már kiszámolt színek megmaradnak,
+  és a következő színkeresés onnan folytatja.
 - **A sérült vagy hibás képfájlok nem lassítják le a színek átnézését
   (#1500).** A megnyithatatlan képeket a program egyszer megjelöli, és
   utána békén hagyja őket, ahelyett hogy minden körben újra és újra

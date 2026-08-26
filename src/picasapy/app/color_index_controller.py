@@ -10,6 +10,21 @@ feltöltő `index.backfill_colors()`-nak **nem volt éles hívója**: csak a
 tesztek hívták. A keresősávba írt `szín:kék` ezért MINDIG nulla találatot
 adott, néma, üres találati listával. Ez a modul a hiányzó hívó.
 
+## Mi látszik a QML felé (#1476, a képesség-őr)
+
+Két tag QML-es, mindkettő bekötve: a `cancelColorIndex` (a sáv Leállítás
+gombja) és a `colorIndexNoticeText` (a sáv szövegforrása) — plusz a három
+jelzés, amire a `Main.qml` `Connections` blokkja köt. Az INDÍTÁS és a
+futásjelző
+SZÁNDÉKOSAN nem `@Slot`: a feltöltést a keresés indítja Pythonból, a sáv
+állapotát pedig a QML a saját `colorNoticeActive` jelzőjéből tartja
+(deklaratívan, a jelzésekre), nem lekérdezéssel. Bekötetlen `@Slot`-ot
+nem hagyunk a vezérlőn — a képesség-őr baseline-listája csak rövidülhet.
+
+Ha később kiderül, hogy kézzel is érdemes elindítani (pl. Beállítások
+„Színkeresés előkészítése most"), az önálló belépési pont: külön jegy,
+és akkor kap `@Slot`-ot.
+
 ## Mikor fut
 
 **Lustán, a színkeresés pillanatában** — nem indításkor. A #1480 mérése
@@ -26,7 +41,11 @@ indokolt.
   #505 alsó kék sávja is magától megjelenik.
 - **Kötegelve**: a `backfill_colors` `_KOTEG_MERET` képenként commitol, a
   megszakított futás munkája nem vész el.
-- **Megszakíthatóan**: `cancelColorIndex()` — kép-kötegek határán áll meg.
+- **Megszakíthatóan**: a tájékoztató sáv **Leállítás** gombja hívja a
+  `cancelColorIndex()` slotot — kép-kötegek határán áll meg. Egy órányi
+  processzoridőt nem szabad úgy elindítani, hogy ne lehessen leállítani
+  (#1476: a „megszakítható" a felhasználó felől csak akkor igaz, ha van
+  mivel).
 - **Haladásjelzéssel**: a `colorIndexProgress(kész, összes)` jelzésre a
   tájékoztató sáv számai élőben frissülnek, a futás egészét pedig a #505
   alsó kék sávja mutatja (ez a projekt bevett válasza a hosszú
@@ -102,21 +121,26 @@ class ColorIndexMixin(BackgroundWorkerMixin):
 
     # ------------------------------------------------------------- lekérdezés
 
-    @Slot(result=bool)
-    def colorIndexRunning(self) -> bool:  # noqa: N802 — QML-slot-stílus
+    def color_index_fut(self) -> bool:
         """Fut-e éppen a színgyorsítótár feltöltése?
 
         A FUTÁSJELZŐT kérdezi, nem a szál életjelét: a kapu (két egyidejű
         index-író elkerülése) ezen a jelzőn áll, tehát az őrnek is ezt
-        kell látnia."""
+        kell látnia.
+
+        NEM `@Slot`: a felület nem kérdezi le — a sáv a jelzésekből tartja
+        a saját állapotát (ld. modul-docstring, #1476)."""
         return bool(getattr(self, "_color_index_running", False))
 
     # ------------------------------------------------------------- vezérlés
 
-    @Slot()
-    def startColorIndex(self) -> None:  # noqa: N802 — QML-slot-stílus
-        """A feltöltés elindítása háttérszálon; ha már fut, nem csinál semmit."""
-        if self.colorIndexRunning():
+    def start_color_index(self) -> None:
+        """A feltöltés elindítása háttérszálon; ha már fut, nem csinál semmit.
+
+        NEM `@Slot`: az egyetlen indító a keresés (`_note_color_search`),
+        Pythonból. Kézi indítógomb ma nincs — ha lesz, önálló jegy
+        (ld. modul-docstring, #1476)."""
+        if self.color_index_fut():
             return
         self._ensure_color_index_wired()
         stop_event = threading.Event()
@@ -173,6 +197,8 @@ class ColorIndexMixin(BackgroundWorkerMixin):
     def cancelColorIndex(self) -> None:  # noqa: N802 — QML-slot-stílus
         """A folyamatban lévő feltöltés megszakítása köteg-határon.
 
+        A tájékoztató sáv **Leállítás** gombja hívja (`Main.qml`).
+
         A már kiszámolt színek az indexben maradnak (a `backfill_colors`
         kötegenként commitol), tehát a következő indítás onnan folytatja."""
         stop_event = self._color_index_stop_event
@@ -196,7 +222,7 @@ class ColorIndexMixin(BackgroundWorkerMixin):
             return
         self.colorIndexIncomplete.emit(kesz, osszes)
         try:
-            self.startColorIndex()
+            self.start_color_index()
         except Exception:
             # A szálindítás bukása NEM teheti tönkre magát a keresést: a
             # szöveges találatoknak akkor is meg kell jönniük. A jelzőt a

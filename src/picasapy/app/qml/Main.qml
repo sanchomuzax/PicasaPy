@@ -1659,6 +1659,20 @@ ApplicationWindow {
                 wrapMode: Text.WordWrap
                 Layout.maximumWidth: 480
             }
+            // #1500/#1476: a színkeresés előkészítése akár egy órányi
+            // processzoridő — MUSZÁJ tudni leállítani. A gomb csak a
+            // színkeresés tájékoztatóján jelenik meg; a többi üzenetnek
+            // nincs mit leállítania.
+            PicasaButton {
+                objectName: "errorBannerStopButton"
+                visible: errorBanner.colorNoticeActive
+                text: qsTr("Stop")
+                onClicked: {
+                    controller.cancelColorIndex()
+                    errorBanner.colorNoticeActive = false
+                    errorBannerText.text = ""
+                }
+            }
             PicasaButton {
                 objectName: "errorBannerCloseButton"
                 text: qsTr("Close")

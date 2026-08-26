@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import time
 
+import threading
+
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
 
@@ -40,6 +42,16 @@ def _lecsengetes(qt_app, masodperc: float = 0.5) -> None:
     while _ido.monotonic() < hatarido:
         qt_app.processEvents()
         _ido.sleep(0.02)
+
+
+def _kattint(gomb, qt_app, mit="a gomb"):
+    """A VALÓDI vezérlő aktiválása — előbb megkövetelve, hogy látszódjon és
+    engedélyezett legyen. Egy rejtett/letiltott gombon a `clicked`
+    kibocsátása „sikerülne", miközben a felület néma és hatástalan (#1473)."""
+    assert gomb.property("visible") is True, f"{mit} nem látszik"
+    assert gomb.property("enabled") is True, f"{mit} le van tiltva"
+    QMetaObject.invokeMethod(gomb, "clicked", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
 
 
 def _beir(mezo, szoveg, qt_app):
@@ -93,5 +105,88 @@ class TestSzinkeresesTajekoztatoSav:
         _lecsengetes(qt_app, 0.3)
 
         assert not sav_szoveg.property("text")
-        assert not controller.colorIndexRunning()
+        assert not controller.color_index_fut()
         _lecsengetes(qt_app)
+
+
+class TestLeallitasGomb:
+    """#1476: a „megszakítható" a felhasználó felől csak akkor igaz, ha van
+    mivel. A gomb LÉTE kevés — a mérés az, hogy a munka tényleg megáll."""
+
+    def test_a_leallitas_gomb_tenyleg_megallitja_a_feldolgozast(
+        self, qml_app, monkeypatch
+    ):
+        """A gombra kattintás után a HÁTRALÉVŐ képeket nem dolgozza fel.
+
+        A mérés a KIMENETEN áll: hány kép kapott sort a `photo_colors`
+        táblában, és hányszor hívódott a besorolás. A jelzés kimenetele
+        önmagában semmit nem bizonyítana — a szál attól még végigfuthatna.
+        """
+        import picasapy.app.color_index_controller as cim
+        import picasapy.index.colors as colors_modul
+        from picasapy.index import color_index_progress, open_index
+
+        window, controller, engine = qml_app
+        from PySide6.QtGui import QGuiApplication
+
+        qt_app = QGuiApplication.instance()
+
+        # Képenként EGY köteg — így van hova beékelődni a megszakításnak.
+        monkeypatch.setattr(cim, "_KOTEG_MERET", 1)
+        elenged = threading.Event()
+        hivasok: list[str] = []
+        eredeti = colors_modul.compute_photo_color
+
+        def lassu_besorolas(path):
+            hivasok.append(str(path))
+            elenged.wait(20.0)
+            return eredeti(path)
+
+        monkeypatch.setattr(colors_modul, "compute_photo_color", lassu_besorolas)
+
+        with open_index(controller._db_path) as conn:
+            _, osszes = color_index_progress(conn)
+        assert osszes >= 2, "a méréshez legalább két fénykép kell"
+
+        mezo = _elem(window, "searchField")
+        _beir(mezo, "szín:kék", qt_app)
+
+        # megvárjuk, hogy az ELSŐ kép feldolgozása tényleg elinduljon
+        hatarido = time.monotonic() + 10.0
+        while time.monotonic() < hatarido and not hivasok:
+            qt_app.processEvents()
+            time.sleep(0.02)
+        assert hivasok, "a feltöltés el sem indult"
+
+        _kattint(_elem(window, "errorBannerStopButton"), qt_app, "a Leállítás gomb")
+        elenged.set()
+        assert controller.waitForBackgroundWorkers(30.0)
+
+        assert len(hivasok) == 1, (
+            "a Leállítás után is tovább dolgozott a háttérszál "
+            f"({len(hivasok)} kép) — a gomb hatástalan"
+        )
+        with open_index(controller._db_path) as conn:
+            kesz, osszes_utana = color_index_progress(conn)
+        assert kesz == 1, f"{kesz} kép készült el 1 helyett"
+        assert kesz < osszes_utana, "a megszakítás után nem maradhat kész az egész"
+        # a már kiszámolt kép munkája NEM veszett el (kötegenkénti commit)
+        assert _elem(window, "errorBannerText").property("text") == ""
+        _lecsengetes(qt_app)
+
+    def test_a_gomb_csak_a_szinkereses_uzenetenel_latszik(self, qml_app):
+        """Más üzeneteknek nincs mit leállítaniuk — a gomb ne zavarjon be."""
+        window, controller, engine = qml_app
+        from PySide6.QtGui import QGuiApplication
+
+        qt_app = QGuiApplication.instance()
+        gomb = _elem(window, "errorBannerStopButton")
+        assert gomb.property("visible") is False
+
+        controller.folderUnavailable.emit("/nincs/ilyen")
+        qt_app.processEvents()
+        assert _elem(window, "errorBannerText").property("text"), "nem jött üzenet"
+        assert gomb.property("visible") is False, (
+            "a Leállítás gomb egy nem-színkeresési üzeneten is megjelent"
+        )
+        _lecsengetes(qt_app, 0.2)
