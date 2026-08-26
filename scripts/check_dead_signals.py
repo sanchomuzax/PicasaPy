@@ -23,6 +23,23 @@ nincs fogadója). A szkript az egész osztályt egyszerre méri.
 ``notify=`` hivatkozik): azokat a QML-kötések némán fogyasztják, ott a
 hiányzó kezelő a normális állapot.
 
+**Keresztfájlos átadás (#1496).** A `Connections` célja gyakran nem maga a
+kontextus-objektum, hanem egy tulajdonság, amit egy MÁSIK fájl tölt fel::
+
+    // Main.qml
+    FaceScanDialog { faceScan: window._faceScanController }
+    // FaceScanDialog.qml
+    Connections { target: faceScanWindow.faceScan; function onScanFinished() {…} }
+
+Az őr sokáig csak az AZONOS fájlon belüli aliasokat oldotta fel, ezért az
+ilyen kötést nem látta: a `faceScan` jobb oldala a saját fájljában a
+deklaráció alapértéke (`null`). Ez **hamis riasztás** volt — a
+`FaceScanDialog.qml` tizenegy jelzést fogad, és mindegyik „némának"
+látszott. Az őr ezért — a `kepesseg_or.py` már bevált szabályát követve —
+az ÉRTÉKADÁST annak a fájlnak a névterébe könyveli, amelyik a tulajdonságot
+DEKLARÁLJA, a jobb oldalát viszont az értékadás saját fájljában oldja fel
+(így marad meg a `Main` → `FaceScanDialog` lánc).
+
 **Amit NEM ismer fel** (ha ilyen kerül a kódba, hamis riasztást ad, és a
 felismerést ide kell felvenni): a `getattr(obj, "jelzesNev").connect(...)`
 alakú, névből összerakott kötés, és a Qt4-es `QObject.connect(sender,
@@ -73,16 +90,36 @@ _CLASS_DECL = re.compile(r"^[ \t]*class\s+(\w+)", re.M)
 #: ``Property(..., notify=jelzesNev)`` — a property-értesítő jelzések.
 _NOTIFY = re.compile(r"notify\s*=\s*(\w+)")
 
+#: Jelzéskezelő (`onClicked:`) — sosem érték-átadás.
+_JELZESKEZELO = re.compile(r"on[A-Z]")
+
+#: QML tulajdonság-DEKLARÁCIÓ (`property var faceScan: null`). Ez mondja
+#: meg, MELYIK fájl névterébe tartozik egy kívülről beállított név.
+_QML_PROPERTY_DECL = re.compile(r"\bproperty\s+(?:var|alias)\s+(\w+)\b")
+
+#: Egy QML-értékadás bal oldala (`faceScan: …`). A `(?:^|[{;])` előtag miatt
+#: az egysoros alak is látszik (`FaceScanDialog { faceScan: x }`), a ternáris
+#: `cond ? a : b` középső kettőspontja viszont nem.
+_QML_ASSIGNMENT = re.compile(
+    # A jobb oldal a `;`-nél VÉGET ÉR. Enélkül az egysoros
+    # `Dialog { id: d; faceScan: x }` első találata (`id`) felfalná a sor
+    # maradékát, és a MÁSODIK értékadás — épp a keresett — láthatatlan lenne.
+    r"(?:^|[{;])\s*(?:readonly\s+)?(?:property\s+(?:var|alias)\s+)?(\w+)\s*:\s*([^\n;]*)",
+    re.M,
+)
+
 #: Az alapállapot FELSŐ korlátja — a legutóbbi teljes audit tételszáma.
 #:
 #: Az „új néma jelzés = piros CI" szabályt egy sor beírásával ki lehetne
 #: kerülni. Ez a plafon ezt teszi TUDATOS lépéssé: új tételhez a számot is
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak indoklással.
-# A plafon a célhoz kötött QML-fogadóellenőrzés utáni mai lista hossza.
-# Csak LEFELÉ szabad módosítani: ez akadályozza meg, hogy valaki egy új
-# néma jelzést a listába írva kerülje meg az őrt.
-MAX_BASELINE_ENTRIES = 27
+# A plafon a keresztfájlos fogadóellenőrzés (#1496) utáni mai lista hossza:
+# a `FaceScanDialog.qml` tizenegy fogadója addig láthatatlan volt, ezért a
+# lista tizenegy HAMIS tételt konzervált. Csak LEFELÉ szabad módosítani: ez
+# akadályozza meg, hogy valaki egy új néma jelzést a listába írva kerülje
+# meg az őrt.
+MAX_BASELINE_ENTRIES = 12
 
 
 @dataclass(frozen=True)
@@ -225,32 +262,91 @@ def _property_rhs(qml_text: str, name: str) -> str | None:
     return "\n".join(parts)
 
 
-def _connection_targets(block: str, qml_text: str) -> set[str]:
-    """A `target:` kifejezés azonosítói, fájlhelyes alias-feloldással."""
-    target = re.search(r"\btarget\s*:\s*([^\n;]+)", block)
-    if target is None:
-        return set()
-    names = set(re.findall(r"\b[A-Za-z_]\w*\b", target.group(1)))
+def _qml_declaring_files(qml_texts: dict[str, str]) -> dict[str, set[str]]:
+    """Tulajdonságnév → azok a fájlok, amelyek DEKLARÁLJÁK.
+
+    Egy `faceScan: …` értékadás nem az értékadó fájl névterét bővíti, hanem
+    azét, amelyik a `property var faceScan`-t deklarálja (#1496)."""
+    declaring: dict[str, set[str]] = {}
+    for path, text in qml_texts.items():
+        for match in _QML_PROPERTY_DECL.finditer(text):
+            declaring.setdefault(match.group(1), set()).add(path)
+    return declaring
+
+
+def _external_alias_tokens(qml_texts: dict[str, str]) -> dict[str, dict[str, set[str]]]:
+    """Fájl → {tulajdonságnév → a KÍVÜLRŐL kapott érték azonosítói}.
+
+    A jobb oldalt az ÉRTÉKADÁS saját fájljában oldjuk fel (ott él a
+    `_faceScanController`-féle alias), a találatot viszont a tulajdonságot
+    DEKLARÁLÓ fájl(ok) névterébe könyveljük.
+
+    Ez csak BŐVÍTI a felismert célokat, tehát kizárólag hamis riasztást tud
+    megszüntetni — néma jelzést elrejteni nem. Ezért nem kell a
+    `kepesseg_or.py` kétértelműség-eldobó szabálya sem."""
+    declaring = _qml_declaring_files(qml_texts)
+    external: dict[str, dict[str, set[str]]] = {path: {} for path in qml_texts}
+    # A KÖNYVELÉS célja a deklaráló fájl, nem az értékadóé — az értékadás
+    # helye csak a jobb oldal feloldásához kell (`_resolve_in_file`).
+    for text in qml_texts.values():
+        for match in _QML_ASSIGNMENT.finditer(text):
+            name, rhs = match.group(1), match.group(2)
+            if _JELZESKEZELO.match(name):
+                continue  # `onClicked:` — sosem érték-átadás
+            targets = declaring.get(name)
+            if not targets:
+                continue
+            tokens = set(re.findall(r"\b[A-Za-z_]\w*\b", rhs))
+            tokens |= _resolve_in_file(tokens, text)
+            for owner in targets:
+                external[owner].setdefault(name, set()).update(tokens)
+    return external
+
+
+def _resolve_in_file(names: set[str], qml_text: str) -> set[str]:
+    """A nevek tranzitív feloldása EGY fájl saját tulajdonságain át."""
+    resolved: set[str] = set(names)
     pending = list(names)
     while pending:
         name = pending.pop()
         rhs = _property_rhs(qml_text, name)
         if rhs is None:
             continue
-        for resolved in re.findall(r"\b[A-Za-z_]\w*\b", rhs):
-            if resolved not in names:
-                names.add(resolved)
-                pending.append(resolved)
+        for token in re.findall(r"\b[A-Za-z_]\w*\b", rhs):
+            if token not in resolved:
+                resolved.add(token)
+                pending.append(token)
+    return resolved
+
+
+def _connection_targets(
+    block: str, qml_text: str, external: dict[str, set[str]] | None = None
+) -> set[str]:
+    """A `target:` kifejezés azonosítói, alias-feloldással.
+
+    Előbb a SAJÁT fájl tulajdonságain át (`_resolve_in_file`), majd — ha az
+    adott nevet egy másik fájl tölti fel — a keresztfájlos névtéren át is
+    (`external`, #1496)."""
+    target = re.search(r"\btarget\s*:\s*([^\n;]+)", block)
+    if target is None:
+        return set()
+    names = set(re.findall(r"\b[A-Za-z_]\w*\b", target.group(1)))
+    names |= _resolve_in_file(names, qml_text)
+    if external:
+        for name in tuple(names):
+            names |= external.get(name, set())
     return names
 
 
-def _qml_receivers(qml_text: str) -> list[tuple[set[str], set[str]]]:
+def _qml_receivers(
+    qml_text: str, external: dict[str, set[str]] | None = None
+) -> list[tuple[set[str], set[str]]]:
     """QML `Connections`-fogadók indexe a saját fájl targetjeivel."""
     blocks = _connections_blocks(qml_text)
     connected: list[tuple[set[str], set[str]]] = []
     for block in blocks:
         handlers = set(re.findall(r"\bon[A-Z]\w*\b", block))
-        connected.append((_connection_targets(block, qml_text), handlers))
+        connected.append((_connection_targets(block, qml_text, external), handlers))
     return connected
 
 
@@ -326,10 +422,18 @@ def scan(root: Path) -> Report:
     """A teljes vizsgálat egy forrásfán."""
     python_text = _joined_text(root, "*.py")
     qml_text = _joined_text(root, "*.qml")
+    qml_by_path = {
+        path.relative_to(root).as_posix(): _read_text(path)
+        for path in sorted(root.rglob("*.qml"))
+    }
+    # #1496: a `Connections { target: … }` célja gyakran egy MÁSIK fájlból
+    # feltöltött tulajdonság — enélkül a lánc láthatatlan, és az őr hamisan
+    # némának jelenti a valóban bekötött jelzéseket.
+    external = _external_alias_tokens(qml_by_path)
     qml_receivers = [
         receiver
-        for path in root.rglob("*.qml")
-        for receiver in _qml_receivers(_read_text(path))
+        for path, text in qml_by_path.items()
+        for receiver in _qml_receivers(text, external.get(path))
     ]
     python_by_path = {
         path.relative_to(root).as_posix(): _read_text(path)

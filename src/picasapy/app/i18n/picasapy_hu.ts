@@ -11,8 +11,48 @@
 <context>
     <name>FaceScanController</name>
     <message>
-        <source>The face recognition model file is missing, so this step cannot run. Copy the file &quot;{0}&quot; into this folder: {1} — or point the {2} environment variable at it — and then restart PicasaPy.</source>
-        <translation>Hiányzik az arcfelismerő modellfájl, ezért ez a lépés nem futtatható. Másolja a(z) „{0}” fájlt ebbe a mappába: {1} — vagy állítsa rá a(z) {2} környezeti változót —, majd indítsa újra a PicasaPy-t.</translation>
+        <source>The face recognition model file is missing, so this step cannot run. Press &quot;Download the model&quot; below, and PicasaPy will get it for you. If you would rather do it by hand: copy the file &quot;{0}&quot; into this folder — {1} — or point the {2} environment variable at it, and then restart PicasaPy.</source>
+        <translation>Hiányzik az arcfelismerő modellfájl, ezért ez a lépés nem futtatható. Nyomja meg alább a „Modell letöltése” gombot, és a PicasaPy letölti Önnek. Ha inkább kézzel intézné: másolja a(z) „{0}” fájlt ebbe a mappába — {1} —, vagy állítsa rá a(z) {2} környezeti változót, majd indítsa újra a PicasaPy-t.</translation>
+    </message>
+    <message>
+        <source>PicasaPy downloads the model file from the OpenCV Zoo project ({0} MB in total). Licence: {1} — free to use. The file is saved here: {2}</source>
+        <translation>A PicasaPy az OpenCV Zoo projektből tölti le a modellfájlt (összesen {0} MB). Licenc: {1} — szabadon használható. A fájl ide kerül: {2}</translation>
+    </message>
+    <message>
+        <source>The model file is already in place, but PicasaPy could not load it. It may be damaged: delete it from {0} and download it again.</source>
+        <translation>A modellfájl a helyén van, de a PicasaPy nem tudta betölteni. Elképzelhető, hogy sérült: törölje innen — {0} —, majd töltse le újra.</translation>
+    </message>
+    <message>
+        <source>The download could not be started.</source>
+        <translation>A letöltést nem sikerült elindítani.</translation>
+    </message>
+    <message>
+        <source>The download failed: {0}</source>
+        <translation>A letöltés nem sikerült: {0}</translation>
+    </message>
+    <message>
+        <source>There was nothing to download.</source>
+        <translation>Nem volt mit letölteni.</translation>
+    </message>
+    <message>
+        <source>The face recognition model has been downloaded. You can start the search now.</source>
+        <translation>Az arcfelismerő modell letöltődött. Most már elindíthatja a keresést.</translation>
+    </message>
+    <message>
+        <source>The download was cancelled. Nothing was saved.</source>
+        <translation>A letöltést megszakította. Semmi nem került a gépre.</translation>
+    </message>
+    <message>
+        <source>The downloaded file was damaged, so PicasaPy threw it away instead of using it — a damaged model would find faces wrongly. Please try again.</source>
+        <translation>A letöltött fájl sérült volt, ezért a PicasaPy eldobta ahelyett, hogy használta volna: egy sérült modell rosszul találná meg az arcokat. Próbálja meg újra.</translation>
+    </message>
+    <message>
+        <source>The model could not be saved to disk: {0}</source>
+        <translation>A modellt nem sikerült a lemezre menteni: {0}</translation>
+    </message>
+    <message>
+        <source>PicasaPy could not reach the download source. Check your internet connection and try again.</source>
+        <translation>A PicasaPy nem éri el a letöltés forrását. Ellenőrizze az internetkapcsolatot, és próbálja meg újra.</translation>
     </message>
 </context>
 <context>
@@ -92,6 +132,22 @@
     <message>
         <source>Close</source>
         <translation>Bezárás</translation>
+    </message>
+    <message>
+        <source>Download the model</source>
+        <translation>Modell letöltése</translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation>Letöltés…</translation>
+    </message>
+    <message>
+        <source>Downloading the model... %1% complete</source>
+        <translation>A modell letöltése… %1% kész</translation>
+    </message>
+    <message>
+        <source>Downloading the model...</source>
+        <translation>A modell letöltése…</translation>
     </message>
 </context>
 <context>

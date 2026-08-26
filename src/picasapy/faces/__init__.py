@@ -48,25 +48,41 @@ from .detector import (
     resolve_model_path,
 )
 from .embedder import EMBEDDING_DIM, FaceEmbedder
+from .model_download import (
+    MODEL_SPECS,
+    DownloadResult,
+    ModelSpec,
+    download_missing,
+    download_spec,
+    missing_specs,
+    total_missing_bytes,
+)
 
 __all__ = [
     "DEFAULT_CLUSTER_THRESHOLD",
     "DEFAULT_SUGGEST_THRESHOLD",
     "EMBEDDING_DIM",
+    "MODEL_SPECS",
     "PICASA_STEPS",
     "AlignedFaceGeometry",
     "AssignmentResult",
+    "DownloadResult",
     "FaceDetection",
     "FaceDetector",
     "FaceEmbedder",
     "FaceGroupCentroid",
     "FaceLandmarks",
+    "ModelSpec",
     "assign_face",
     "compute_alignment_geometry",
     "cosine_similarity",
     "default_model_path",
+    "download_missing",
     "download_model",
+    "download_spec",
     "eye_aligned_face_crop",
+    "missing_specs",
     "resolve_model_path",
     "step_to_threshold",
+    "total_missing_bytes",
 ]

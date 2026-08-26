@@ -213,6 +213,20 @@ A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
 
 A projekt [Semantic Versioning](https://semver.org/)-t követ. A `0.x` verziók **instabilak**, a köztük lévő API- és formátum-változások nincsenek garantálva visszafelé kompatibilisnek. Lásd a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalt.
 
+## Az arcfelismerő modellek
+
+Az arcfelismerés két **ONNX-modellfájlt** használ, amelyek **nincsenek benne a csomagban** (együtt ~37 MB, és nem a mi művünk). A programon belül az **Eszközök ▸ Arcok keresése…** ablak **Modell letöltése** gombja hozza le őket; kézzel is elhelyezhetők, de nem kell.
+
+| modell | fájl | méret | licenc |
+| --- | --- | --- | --- |
+| **YuNet** — arc-detektálás | `face_detection_yunet_2023mar.onnx` | 232 589 bájt (~227 KB) | [MIT](https://github.com/opencv/opencv_zoo/blob/main/models/face_detection_yunet/LICENSE) |
+| **SFace** — arc-lenyomat, csoportosítás | `face_recognition_sface_2021dec.onnx` | 38 696 353 bájt (~36,9 MB) | [Apache-2.0](https://github.com/opencv/opencv_zoo/blob/main/models/face_recognition_sface/LICENSE) |
+
+- **Forrás**: az [OpenCV Zoo](https://github.com/opencv/opencv_zoo) projekt (`models/` mappa, `main` ág). Mindkét licenc permisszív, tehát a projekt GPL-3.0 licencével összefér.
+- **Hova kerül**: `$XDG_DATA_HOME/picasapy/models/` (alapból `~/.local/share/picasapy/models/`). A `PICASAPY_FACE_MODEL`, illetve `PICASAPY_FACE_EMBED_MODEL` környezeti változóval máshová is mutathat.
+- **Épség-ellenőrzés**: a letöltött fájl **méretét és SHA-256 ellenőrzőösszegét** a program összeveti a kódban rögzített értékkel, és csak egyezés esetén teszi a helyére. Csonka modellel az arckeresés némán *rosszul* működne, ezért a hibás fájlt eldobja. (A modellek Git LFS-ben élnek: a `raw.githubusercontent.com` a fájl helyett egy 131 bájtos szövegmutatót ad — az ellenőrzés ezt is kifogja.)
+- **Más forrás** (pl. zárt hálózaton belüli tükör) a `PICASAPY_MODEL_BASE_URL` környezeti változóval adható meg; a modellek relatív útvonala ehhez fűződik hozzá.
+
 ## Licenc
 
 [GPL-3.0](LICENSE) — szabadon megosztható és módosítható; a GPL-es referencia-repókból portolt kódrészletek attribúcióval szerepelnek.
