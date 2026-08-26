@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Nem marad félkész kollázs a régi mappában (#1387).** Ha elmentetted egy
+  kollázs piszkozatát, majd átállítottad, hova mentsen a program, és csak
+  utána fejezted be a munkát, a régi helyen ottmaradt egy befejezetlen
+  kollázs — az a mappa örökre félkész munkát mutatott, pedig az már máshol
+  elkészült. Mostantól a program onnan takarít, ahol a piszkozat valóban
+  van. A Picasa saját, szürke helykitöltő képéhez továbbra sem nyúlunk: az
+  nem a mi fájlunk.
+
 ## [0.8.104] – 2026-08-26
 
 ### Javítva
