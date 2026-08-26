@@ -67,6 +67,7 @@ from .schema import SCHEMA_VERSION
 from .sync import (
     add_removed_folder,
     clear_removed_folders_under,
+    folder_looks_offline,
     folder_paths_under,
     folder_scan_stamps,
     move_folder_tree,
@@ -76,6 +77,7 @@ from .sync import (
     sync_folder,
     sync_tree,
     update_photo_fields,
+    watched_root_missing,
 )
 
 __all__ = [
@@ -147,4 +149,6 @@ __all__ = [
     "unignore_faces",
     "unnamed_faces",
     "update_photo_fields",
+    "folder_looks_offline",
+    "watched_root_missing",
 ]

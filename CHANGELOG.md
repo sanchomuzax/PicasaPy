@@ -17,6 +17,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   külön megmondja.
 
 ### Javítva
+- **Ha a képmappád eltűnik a helyéről, a könyvtárad akkor sem vész el
+  (#1560).** Eddig elég volt a fő képmappádat a **fájlkezelővel** máshova
+  helyezni: a PicasaPy tíz másodpercenkénti ellenőrző köre azt látta, hogy a
+  mappák nincsenek ott, és **kiürítette a nyilvántartást**. (Mérve: 3 mappa /
+  3 kép → 0 / 0 **9,2 másodperc** alatt, a program alapbeállításával; a
+  fényképek magukon a lemezen végig sértetlenek voltak.) Mostantól a program
+  a **fő képmappát tekinti bizonyítéknak**: ha az maga nincs meg, alatta
+  egyetlen sort sem töröl a nyilvántartásból — a mappák a bal hasábon
+  maradnak, „jelenleg nem elérhető" jelöléssel, és a rájuk lépve megjelenő
+  tájékoztató sáv elmondja, mi a helyzet. Ugyanez véd a **lecsatolt hálózati
+  meghajtónál** is: korábban ilyenkor az almappáid sorai eltűntek (mérve:
+  2 mappa / 2 kép → 1 / 1), most megmaradnak. Amint a mappa ismét a helyén
+  van, minden magától visszaáll.
 - **A képmappád áthelyezése után sem veszik el a könyvtárad (#1542).** Ha a
   programon belül magát a figyelt fő képmappádat helyezted át, a PicasaPy
   továbbra is a régi, már nem létező helyet kereste — és a szokásos
