@@ -67,28 +67,50 @@ class TestMinimalisAblakszelesseg:
     def test_a_mert_allando_fedi_az_ELO_kompakt_igenyt(self, qml_app, qt_app):
         """A `requiredWidth` MÉRT állandó — ez az őr méri újra élőben.
 
-        Nem köthettük közvetlenül a sor `implicitWidth`-éhez: az a mindenkori
-        MÓDOT tükrözi, a mód viszont a szélességtől függ — visszacsatolás
-        lenne, és az ablak soha nem váltana kompaktra.
+        #1420: a sáv egyetlen `RowLayout`-ja megszűnt (36,5 %-os osztópont),
+        ezért az „egy sor implicitWidth-je" nem mérhető többé. Ami helyette
+        mérhető — és erősebb is —: a minimumra állított ablakban a
+        LEGJOBBSZÉLSŐ elem (a műveletsor) tényleges jobb széle beleférjen a
+        sávba. Ha egy elem megnő (betű, fordítás, új gomb), ez bukik el, és
+        akkor az állandót kell emelni, nem ezt a tesztet lazítani.
 
-        Ezért itt kompakt módba állítjuk az ablakot, LEMÉRJÜK a sor tényleges
-        igényét, és azt állítjuk, hogy az állandó fedi. Ha a betű vagy a
-        fordítás nő, ez bukik el — és akkor az állandót kell emelni, nem ezt
-        a tesztet lazítani."""
+        Az állandó ma tiszta geometria (nincs benne feliratszélesség), de
+        épp ezért kell ÉLŐ mérés: a levezetés csak addig igaz, amíg minden
+        elem tényleg fix méretű marad.
+        """
         window = qml_app[0]
         sav = _gyerek(window, "trayMainBar")
-        sor = _gyerek(window, "trayRowLayout")
+        sor = _gyerek(window, "trayActionRow")
 
-        window.setProperty("width", 900)
+        window.setProperty("width", sav.property("requiredWidth"))
         for _ in range(4):
             qt_app.processEvents()
-        assert sav.property("compact") is True, "900 px-en kompakt módot vártunk"
-
-        # a margókat a sor és a sáv szélességének különbségéből vesszük:
-        # a `QQuickAnchors` nem konvertálható Pythonra
-        margok = sav.property("width") - sor.property("width")
-        elo_igeny = sor.property("implicitWidth") + margok
-        assert sav.property("requiredWidth") >= elo_igeny - TURES, (
-            f"a mért állandó ({sav.property('requiredWidth')}) már nem fedi a "
-            f"sáv élő kompakt igényét ({elo_igeny}) — emeld az állandót"
+        assert sav.property("compact") is True, (
+            "a mért minimumon kompakt módot vártunk"
         )
+
+        jobb_szel = _jobb_szel(sor)
+        hatar = sav.property("width") - sav.property("rightMargin")
+        assert jobb_szel <= hatar + TURES, (
+            f"a műveletsor jobb széle ({jobb_szel}) túllóg a sáv "
+            f"jobb margóján ({hatar}) — emeld a `requiredWidth`-et"
+        )
+
+    def test_a_minimumon_a_felso_sor_is_befer(self, qml_app, qt_app):
+        """#1420: a jobb sáv FELSŐ sora (★ / forgatás / nagyítás-csúszka)
+        betűfüggő tételeket is tartalmaz (a − és + jelek), ezért külön
+        mérjük — ez a maradék hely, ahol a platform betűje még számít."""
+        window = qml_app[0]
+        sav = _gyerek(window, "trayMainBar")
+        window.setProperty("width", sav.property("requiredWidth"))
+        for _ in range(4):
+            qt_app.processEvents()
+        csillagok = _gyerek(window, "trayStarGroup")
+        nagyitas = _gyerek(window, "trayZoomGroup")
+        assert _jobb_szel(csillagok) <= nagyitas.mapToScene(
+            QPointF(0, 0)
+        ).x() + TURES, (
+            "a csillag/forgatás csoport a minimumon belelóg a "
+            "nagyítás-csúszkába"
+        )
+        assert _jobb_szel(nagyitas) <= sav.property("width") + TURES

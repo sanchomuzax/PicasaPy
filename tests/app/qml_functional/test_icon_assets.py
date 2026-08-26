@@ -70,6 +70,9 @@ _EXPECTED_ICONS = (
     "faces-badge.svg",
     "face-suggestion-badge.svg",
     "tray-clear.svg",
+    # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
+    # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
+    "tray-addto.svg",
 )
 
 # a szerkesztő "Gyakori javítások" fülének ikonjai (#411, + #464: a

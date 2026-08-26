@@ -151,6 +151,32 @@ között 30 px, tehát ott **csoporthatár** van.
 
 ## 5. Az alsó sáv (105 px) — `basecontrolset`
 
+> ✅ **Képernyőképen VISSZAMÉRVE (#1420, 2026-08-26.)** —
+> `research/testdata/screenshot/Képernyőkép 2026-07-18 145027.png`
+> (1918 × 1030; az ablak alja 2 képponttal le van vágva, ezért látszik a
+> sáv 105 helyett 103 képpontja). A sáv teteje y = 927.
+>
+> | elem | kényszerből várt | a képen mérve |
+> |---|---|---|
+> | `infotext` | y 0…14 | y 927…943 (kék csík) |
+> | `scratchback` | x 5 … .365·W−15 = 685 · **81 px magas** | **x 5…684**, **y 947…1027** |
+> | `separator` | x .365·W−3 = 697 … W−17 = 1901, y 50…52 | **x 697…1902, y 977…978** |
+> | `webupload` | 141 px, .365·W−5 körül | **x 697…837 = 141**, y 988…1022 = **35** |
+> | `outputs` | .365·W+140 = 840 | az 1. gomb közepe **867,5** = 840 + 55/2 |
+> | `startoggle`/`rotate*` | 36 × 22, .365·W-tól | **697…732 · 738…773 · 775…810**, y 947…968 |
+> | három tálca-gomb | 34 széles, egymás alatt | **x 644…677**, y 952…973 · 973…993 · 1001…1022 |
+>
+> ⚠️ **Egy eltérés a respack rétegfejlécétől:** a kimeneti gombok a képen
+> **55 képpontos osztásközzel** követik egymást (a három felirat közepe
+> 867,5 · 922,5 · 977,5), nem 59-cel. A `docs/specs/picasa-keptalca.md`
+> 11. pontja a cellát 59 × 40-nek, a gombot 55 × 36-nak méri — a ténylegesen
+> KIRAJZOLT sorban tehát a cellák nem a saját szélességükkel követik
+> egymást, hanem a gomb 55 képpontjával. A PicasaPy ma (a #1345 óta) 59-es
+> osztásközt használ; ez 4 képponttal szellősebb az eredetinél. A #1420
+> ezt SZÁNDÉKOSAN nem változtatta meg (a #1345 őreinek területe), de a
+> lelet itt rögzítve marad.
+
+
 ### 5.1 A szerkezeti kulcs: a 36,5 %-os osztópont
 
 A sáv két részre oszlik, az ablakszélesség **0,365-szörösénél**. Ez öt
@@ -170,7 +196,8 @@ elemnél ismétlődik (`thumbui.tre`):
 (y 429..443), és 20-20 px margóval a két szélén.
 
 > A mai `TrayBar.qml` `infoBar` **20 px** — ez **szándékos és dokumentált**
-> eltérés (olvashatóság, `design-guide.md`). Marad.
+> eltérés (olvashatóság, `design-guide.md`). Marad, és a 105-be pontosan
+> beleillik: 20 (csík) + 81 (képtálca) + 4 (alsó hézag) = 105 (#1420).
 
 ### 5.3 A képtálca (bal oldal)
 
@@ -259,8 +286,8 @@ hézag nélkül:
       skálázódik** rész ✅ megvan és mérve van (#587)
 - [ ] elválasztó **8 px**, fogantyú **8 × 47**
 - [x] felső sáv **35 px** ✅ (#587)
-- [ ] alsó sáv **105 px** (ma 20 + 52 = 72) — a magassággal EGYÜTT a
-      tálca-tartalmat is át kell építeni, különben holt sáv keletkezik
+- [x] alsó sáv **105 px** ✅ (#1420) — 20 (infó-csík) + 85; a
+      tálca-tartalom a magassággal EGYÜTT épült át, holt sáv nélkül
 - [ ] a nézetváltó gombok **132 × 29 / 132 × 28**
 - [x] `importbutton` **111 × 22** ✅ (#587)
 - [ ] `newalbum` / `newfolder` **29 × 22**, `flatview` / `folderview`
@@ -268,14 +295,15 @@ hézag nélkül:
 - [x] keresősáv **388 × 30** ✅ (#587)
 - [ ] a bal panel listája **9 px** bal, **5 px** jobb margóval
 - [ ] a rács melletti lebegő gombok **14 × 14**, **15 px** osztásközzel
-- [ ] az alsó sáv a **36,5 %**-os pontnál válik ketté
-- [ ] képtálca **81 px** magas, a bélyegképsor jobbján **50 px** a három
-      gombnak, a „Kijelölés" felirat **középen**
-- [ ] `startoggle` / `rotateleft` / `rotateright` **36 × 22**
-- [ ] nagyítás-csúszka **127 × 27**, nagyító **25 × 19**
+- [x] az alsó sáv a **36,5 %**-os pontnál válik ketté ✅ (#1420)
+- [x] képtálca **81 px** magas, a bélyegképsor jobbján **50 px** a három
+      gombnak, a „Kijelölés" felirat **középen** ✅ (#1420)
+- [x] `startoggle` / `rotateleft` / `rotateright` **36 × 22** ✅ (#1420)
+- [~] nagyítás-csúszka **127** ✅ (#1420); a nagyító (`loupehit` 25 × 19)
+      még hiányzik
 - [ ] a négy kerek kapcsoló **60 × 24** egyenként, hézag nélkül (ma hiányzik)
-- [ ] zöld gomb **141 × 35** egy **147 × 44**-es helyen
-- [ ] `separator` **2 px**, a 36,5 %-tól jobbra
+- [x] zöld gomb **141 × 35** egy **147 × 44**-es helyen ✅ (#1420)
+- [x] `separator` **2 px**, a 36,5 %-tól jobbra ✅ (#1420)
 
 **Kirajzolt teszt kötelező** (`tests/app/qml_functional/` minta), és a
 javítás nélkül el kell buknia.
