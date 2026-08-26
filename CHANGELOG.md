@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.100] – 2026-08-26
 
+### Megváltozott
+- **A képek alatti sáv az eredeti Picasa elrendezését kapta meg (#1420).**
+  Eddig egy 72 képpont magas, egysoros csík volt: a kijelölt képek pici,
+  20 × 20 képpontos bélyegképekben sorakoztak benne, a zöld **Feltöltés**
+  gomb pedig egészen a jobb szélre volt szorulva, a Nyomtatás/E-mail/
+  Exportálás gombok mögé. Mostantól a sáv **105 képpont** magas, és a
+  Picasáéval azonos módon oszlik ketté: a bal harmadában egy külön
+  keretezett **képtálca** ül (81 képpont magas), amelyben a kijelölt
+  képek immár **nagy, jól kivehető bélyegképként** látszanak, jobb szélén
+  pedig egymás alatt a három tálca-gomb (megtartás, ürítés, albumhoz
+  adás). A jobb oldalon felül a csillag, a két forgatás és a
+  nagyítás-csúszka; alattuk — egy vékony elválasztó vonal alatt — a zöld
+  **Feltöltés** gomb, közvetlenül utána a Nyomtatás/E-mail/Exportálás
+  gombsor, ahogy az eredetiben.
+- **A tálca „Albumhoz adás" gombja ikonossá vált (#1420).** Az eredeti
+  Picasában ennek a három tálca-gombnak egyikén sincs felirat, csak ikon
+  és buboréksúgó — most nálunk is így van; a gomb fölé húzva a súgó
+  továbbra is kiírja, mit csinál.
+- **Keskenyebb ablakban is használható marad a sáv (#1420).** A program
+  ablaka mostantól 900 helyett **800 képpont** szélességig húzható össze
+  anélkül, hogy bármelyik alsó gomb kicsúszna a képernyőről.
 ### Javítva
 - **A szín szerinti keresés mostantól úgy válogat, ahogy az eredeti Picasa
   (#1480).** Eddig a program egyetlen színt számolt ki minden képhez — az

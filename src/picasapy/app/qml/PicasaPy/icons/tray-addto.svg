@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" width="30" height="20">
+  <!-- PicasaPy sajat rajz (#1420): "Albumhoz adas" (thumbui/addtobuttcon)
+       a keptalca harom gombos oszlopanak harmadik gombja. A valodi Picasa
+       kepernyokepen (2026-07-18 145027) ez egy kek konyv/album, mellette
+       lefele mutato haromszog (dropup_icon 16x18 + addto_arrow 7x4). -->
+  <path d="M4 3.2 L6.8 2 L6.8 18 L4 16.8 Z" fill="#3f4a55"/>
+  <path d="M6.8 2 L17.5 2 L17.5 18 L6.8 18 Z" fill="#79aade"/>
+  <path d="M6.8 2 L17.5 2 L17.5 4.4 L6.8 4.4 Z" fill="#a9cbeb"/>
+  <path d="M8.6 6.6 L15.7 6.6 M8.6 9.4 L15.7 9.4 M8.6 12.2 L13.6 12.2"
+        stroke="#4d7ba8" stroke-width="1" stroke-linecap="round"/>
+  <path d="M21 8.2 L27.4 8.2 L24.2 12.6 Z" fill="#3f4a55"/>
+</svg>

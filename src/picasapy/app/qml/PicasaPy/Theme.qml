@@ -69,6 +69,12 @@ QtObject {
     readonly property color infoBarText: "#ffffff"
     readonly property color trayBg: dark ? "#262626" : "#f8f8f8"
     readonly property color trayBorder: dark ? "#3c3c3c" : "#d0d0c8"
+    // #1420: a képtálca doboza (`thumbui/scratchback`) az eredetiben KÜLÖN,
+    // világosabb panel a sáv hátterén — a valódi Picasa képernyőképén mérve
+    // a sáv #eaeaea, a doboz #f8f8f8, a kerete #dfdfdf. Nálunk a sáv MÁR
+    // #f8f8f8, ezért a dobozt egy fokkal világosabbra tesszük: a KÜLÖNBSÉG
+    // iránya (a doboz világosabb a sávnál) marad az eredetié.
+    readonly property color trayPanelBg: dark ? "#303030" : "#ffffff"
     readonly property color viewerBg: dark ? "#1a1a1a" : "#808080"
 
     // #900: a kijelölésen KÍVÜLI terület elsötétítése a szerkesztő

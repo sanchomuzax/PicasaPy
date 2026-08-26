@@ -6,6 +6,33 @@ import QtQuick.Layouts
 // animációval, #70) + kijelölés-tálca a művelet-gombokkal (Picasa).
 // A kijelölés-állapot a főablaké (appWindow); a néző aktuális sorát a
 // viewerIndex tulajdonság hozza.
+//
+// #1420: a sáv az EREDETI geometriáját kapta meg. A `thumbui.tre`
+// `publishbottom`-ja **−105**, tehát a sáv 105 képpont magas — de a
+// magasságot ÖNMAGÁBAN emelni hiba lett volna, mert holt sávot adott
+// volna. Az eredetiben a 105 képpontot tartalom tölti ki, és a sáv az
+// ablakszélesség **0,365-szörösénél** válik ketté:
+//
+//     ┌────────────────────────── 105 px ──────────────────────────┐
+//     │ kék infó-csík (nálunk 20, az eredetiben 14 — szándékos)     │
+//     ├───────────── 36,5 % ─────┬─────────────────────────────────┤
+//     │ képtálca (81 px magas)   │ ★ ↺ ↻ … − nagyítás +            │
+//     │  bélyegképsor + 3 gomb   ├─ elválasztó (y 50…52) ──────────┤
+//     │                          │ [zöld 141×35] [Nyomtatás/E-mail…]│
+//     └──────────────────────────┴─────────────────────────────────┘
+//
+// Minden szám a Picasa saját elrendezés-forrásából jön (`respack.yt` →
+// `thumbui.tre`), és VISSZA VAN MÉRVE egy valódi Picasa-képernyőképen
+// (`research/testdata/screenshot/Képernyőkép 2026-07-18 145027.png`,
+// 1918 px széles ablak; 0,365 × 1918 = 700,07):
+//
+//   scratchback   x 5…684        (kényszer: 5 … .365−15)   y 947…1027 = 81
+//   separator     x 697…1902     (kényszer: .365−3 … −17)  y 977…978
+//   webupload     x 697…837 =141                            y 988…1022 = 35
+//   outputs 1. gomb közepe x 867,5 = (.365·W + 140) + 55/2
+//   startoggle/rotateleft/rotateright  x 697…732 · 738…773 · 775…810 (36×22)
+//
+// A normatív lap: `docs/specs/konyvtar-ablak-meretek.md` 5. fejezet.
 Column {
     id: tray
 
@@ -56,8 +83,14 @@ Column {
             : []
 
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
+    //
+    // #1420: az eredetiben ez a `thumbui/infotext` — a 105 képpontos sáv
+    // LEGTETEJE, 14 képpont magasan. Nálunk 20: szándékos és dokumentált
+    // eltérés (olvashatóság, `design-guide.md`), és a 105-be pontosan
+    // beleillik: 20 (csík) + 81 (képtálca) + 4 (alsó hézag) = 105.
     Rectangle {
         id: infoBar
+        objectName: "trayInfoBar"
         width: parent.width; height: 20
         color: Theme.infoBar
         clip: true
@@ -149,170 +182,180 @@ Column {
                 tray.appWindow.selectedIndex = rest.length > 0 ? rest[0] : -1
             }
         }
-        width: parent.width; height: 52
+        // #1420: 20 (infó-csík) + 85 = 105 — a `publishbottom` = −105.
+        width: parent.width; height: 85
         color: Theme.trayBg
 
-        // #406: szűk ablaknál (pl. fél képernyő) a sáv ne lógjon ki — a
-        // küszöb alatt a kijelölés-előnézet és a csúszka zsugorodik, a
-        // zöld Feltöltés gomb ikon-only lesz, a csoportelválasztók pedig
-        // elmaradnak.
-        //
-        // #1345: a KIMENETI GOMBOK feliratai kikerültek ebből a
-        // számításból. A gombok azóta FIX 55 × 36 képpontosak (a felirat
-        // az ikon alatt, a gombon BELÜL ül), tehát a feliratuk semmivel
-        // nem szélesíti a sávot — hiába rejtenénk el, egyetlen képpontot
-        // sem nyernénk vele, csak információt veszítenénk. Egyedül a zöld
-        // Feltöltés gomb maradt tartalomhoz igazodó szélességű, ezért
-        // csak annak a feliratát mérjük.
-        //
-        // A küszöb NEM fix pixelérték: a felirat tényleges szélessége
-        // betűkészlet- és NYELVFÜGGŐ (a windows-CI éppen ezen bukott el
-        // — ott a szélesebb rendszerbetűvel 1280 px-en is kilógott a
-        // sáv). A `TextMetrics` nem függ az elrendezéstől, így
-        // kötés-hurok sem keletkezik.
-        TextMetrics {
-            id: uploadLabelMetrics
-            font.pixelSize: Theme.fontSize
-            text: qsTr("Upload to Google Photos")
-        }
-        // A fix (felirat-független) elemek helyigénye: kijelölés-előnézet,
-        // ikonsorok, a kimeneti gombok cellái, csúszka, térközök.
-        // INVARIÁNS, amiért ez biztonságos: a bő elrendezés tényleges
-        // igénye = fix + a Feltöltés felirata; a küszöb = költségvetés +
-        // ugyanaz a felirat. Bő módba csak `width >= küszöb` esetén
-        // váltunk, és ekkor width >= költségvetés + felirat >= fix +
-        // felirat = igény — vagyis a tartalom elfér. A bizonyítás
-        // annyiban nem teljes, hogy a „fix" részben is van néhány apró,
-        // betűfüggő tétel (ld. lentebb); azokra a költségvetés ráhagyása
-        // felel.
-        //
-        // #1345: újramérve a három képes kijelöléssel (a legdrágább eset,
-        // mert ilyenkor látszik a 200 px-es kijelölés-előnézet). A bő sáv
-        // tényleges igénye 1221 px, ebből a Feltöltés felirata 133 px,
-        // tehát a fix rész 1088. Felfelé kerekítve 1120-ra: a 32 képpont
-        // ráhagyás azokat az apró, szintén betűfüggő tételeket fedi,
-        // amelyek nem külön mértek (az „Add to" gomb felirata, a ± jelek)
-        // — ugyanaz a ráhagyás, mint a #1116 előtti 1040-es értéknél.
-        readonly property real compactBudget: 1120
-        // A küszöb kívülről is olvasható (teszt), hogy a „széles ablak"
-        // esetet ne fix pixelértékkel kelljen megadni — az platform- és
-        // nyelvfüggő lenne (a windows-CI éppen ezen bukott el 1280-on).
-        readonly property real compactThreshold: compactBudget
-                                        + uploadLabelMetrics.width
-        readonly property bool compact: width < compactThreshold
-        // #1345: a két csoportelválasztó két TELJES cellát (2 × 59 px)
-        // tesz a sávba. Az eredetiben a `morebutton`/`overflow` gondozza
-        // a helyhiányt; amíg az nincs meg, a legolcsóbb hű viselkedés az,
-        // ha az elválasztók csak ott jelennek meg, ahol ez a többlet is
-        // bizonyíthatóan elfér.
+        // ---------------------------------------------------------------
+        // #1420: a sáv MÉRT szerkezeti állandói (`thumbui.tre`)
+        // ---------------------------------------------------------------
+        //: az osztópont: a sáv öt eleménél ismétlődő `.365` szorzó
+        readonly property real splitRatio: 0.365
+        //: az osztópont képpontban (kerekítve, hogy a doboz-szélek élesek
+        //: maradjanak) — a mérő őr ezt olvassa vissza
+        readonly property real splitX: Math.round(width * splitRatio)
+        //: `outputs` / `separator` jobb margója: `XConstraint 1, 1, -10`
+        readonly property int rightMargin: 10
+        //: `outputs`: `XConstraint 0, .365, 140` — a zöld gomb helye után
+        readonly property int outputsOffset: 140
+        //: #1345: egy kimeneti gomb cellája (`outputlayout/docbounds`)
         readonly property int actionCellWidth: 59
-        // #1367: a sáv MÉRT szélesség-igénye kompakt módban. A #1345 fix
-        // cellái miatt a gombok többé nem zsugorodnak, tehát a sáv igénye
-        // 722-ről ~830 képpontra nőtt; ez alatt a jobb szélső elem (a zöld
-        // „Feltöltés…") kicsúszik a látható területről.
+        //: a MEGLÉVŐ hat kimeneti gomb (nyomtatás, e-mail, exportálás,
+        //: megosztás, kollázs, film) — a hiányzó `shop`/`blog`/`morebutton`
+        //: nélkül (`docs/specs/ui-lefedettseg.md`)
+        readonly property int actionCellCount: 6
+        //: a `splitX` kerekítése és a szegélyek fél képpontjai miatti
+        //: ráhagyás — enélkül a küszöb pontosan a határon állna
+        readonly property int roundingReserve: 4
+
+        //: hány képpont széles ablak kell ahhoz, hogy az osztóponttól
+        //: jobbra `cellak` darab cella elférjen. Levezetés: a jobb sáv
+        //: szélessége `(1 − .365)·W − 10`, ebbe kell beleférnie a 140-es
+        //: eltolásnak és a celláknak.
+        function windowWidthFor(cellak) {
+            return Math.ceil(
+                (trayMainBar.rightMargin + trayMainBar.outputsOffset
+                 + cellak * trayMainBar.actionCellWidth
+                 + trayMainBar.roundingReserve)
+                / (1 - trayMainBar.splitRatio))
+        }
+
+        // #1367 ÚJRAMÉRVE (#1420): a sáv szélesség-igénye. A #1345 óta
+        // minden kimeneti gomb FIX 55 × 36 egy 59 × 40-es cellában, a zöld
+        // gomb pedig (#1420) fix 141 × 35 — vagyis a sáv igénye TISZTA
+        // GEOMETRIA lett: feliratszélesség NINCS benne.
         //
-        // ⚠️ NEM beégetett szám: a Qt számolja a TÉNYLEGES tartalomból
-        // (`implicitWidth`), tehát a másik platformon a helyi betűvel mér —
-        // épp azt a csapdát kerülve, amin a windows-CI egyszer már elbukott
-        // (ld. a `compactThreshold` kommentjét). A `Main.qml` erre köti az
-        // ablak `minimumWidth`-ét, ugyanúgy, ahogy a magasságot a
-        // `photoViewer.requiredHeight`-re (#641).
+        // Ez érdemi javulás a korábbi, betűfüggő becsléshez képest: a
+        // #1367 kommentje azt rögzítette, hogy a régi érték a fejlesztői
+        // gépen 850, a CI ubuntu-futóján 860 volt, és ezért kellett rá egy
+        // 900-as ráhagyásos padló. Most a szám levezethető, és az őr
+        // (`test_also_sav_elrendezes_1420.py`) ÉLŐBEN visszaméri, hogy a
+        // minimumra állított ablakban tényleg nem lóg ki semmi — ha egy
+        // betűfüggő elem (a − / + jelek) mégis megnőne, ott bukik el.
+        readonly property real requiredWidth: windowWidthFor(actionCellCount)
+        // #1345 ÚJRAMÉRVE (#1420): a két csoportelválasztó két TELJES
+        // cellát tesz a sorba; a küszöb az a szélesség, ahol ez a többlet
+        // is elfér. A korábbi `compactBudget = 1120` a RÉGI, egysoros
+        // elrendezésre volt mérve (a bő sáv igénye 1221, ebből a Feltöltés
+        // felirata 133) — az a szám az új sávban értelmét vesztette, mert
+        // a felirat többé nem szélesíti a sávot.
+        readonly property real separatorThreshold:
+            windowWidthFor(actionCellCount + 2)
+        readonly property bool separatorsVisible: width >= separatorThreshold
+        // A `compact` mostantól EGYETLEN dolgot jelent: a sáv szűk ahhoz,
+        // hogy a két csoportelválasztó is elférjen. Minden más elem FIX
+        // méretű lett (#1345 gombcellák, #1420 zöld gomb és csúszka), ezért
+        // nincs több zsugorodó tétel — és nincs több betűfüggő küszöb sem.
         //
-        // Az eredetiben a helyhiányt a `morebutton`/overflow gondozná — az
-        // nálunk még nincs meg (#1367 hosszú útja).
-        //
-        // ⚠️ Miért KONSTANS, és nem `trayRowLayout.implicitWidth`: az
-        // `implicitWidth` a MINDENKORI módot tükrözi (bő módban 1221), a
-        // `compact` viszont a szélességtől függ — a kettőt összekötve
-        // visszacsatolás keletkezne, és az ablak soha nem tudna kompakt
-        // módba váltani. A szám ezért MÉRT állandó (kompakt mód: a sor
-        // igénye + margók). A szám PLATFORMFÜGGŐ: a fejlesztői gépen 850, a
-        // CI ubuntu-futóján 860 — a betű más. Ezért nem a mért érték áll
-        // itt, hanem egy RÁHAGYÁSOS padló (900), és az őr ÉLŐBEN újraméri:
-        // ha a betű vagy a fordítás nő, a teszt elbukik, és ezt kell emelni.
-        // Ugyanez a minta, mint a `compactBudget`-nél.
-        readonly property real requiredWidth: 900
-        readonly property bool separatorsVisible:
-            width >= compactThreshold + 2 * actionCellWidth
+        // ⚠️ A csúszka szélessége SZÁNDÉKOSAN nem függ ettől: amíg függött,
+        // a jobb felső sarokhoz zárt csoport szélessége a küszöb átlépésekor
+        // egy képfrissítésnyi időre elavult maradt, és a csúszka kilógott a
+        // sávból (a #1420 szigorított kilógás-őre fogta meg). A `.tre`
+        // amúgy is FIX 127 × 27-es `scalecontainer`-t ad.
+        readonly property real compactThreshold: separatorThreshold
+        readonly property bool compact: width < compactThreshold
 
         Rectangle {
             width: parent.width; height: 1
             color: Theme.trayBorder
         }
-        RowLayout {
-            id: trayRowLayout
-            objectName: "trayRowLayout"
-            anchors.fill: parent
-            anchors.leftMargin: 10; anchors.rightMargin: 10
-            spacing: trayMainBar.compact ? 4 : 8
 
-            // kijelölés-tálca: a kijelölt képek miniatűrjei (Picasa) —
-            // #406: kompakt módban zsugorodik (Layout.fillWidth), hogy
-            // helyet adjon a jobb oldali gomboknak.
-            // #455: ha a tálcán van MEGTARTOTT kép (a mappaváltást is
-            // túlélő `TrayMixin`-halmaz), az előnézet AZOKAT mutatja —
-            // mappától függetlenül (`heldThumbUrlAt`); tartott kép
-            // híján a régi viselkedés (a jelenlegi kijelölés) marad.
-            Item {
-                id: trayPreview
-                Layout.preferredWidth: trayMainBar.compact ? 70 : 200
-                Layout.preferredHeight: 46
-                readonly property int heldCount: tray.ctl ? tray.ctl.heldCount : 0
-                Flow {
-                    anchors.fill: parent
-                    spacing: 2
-                    clip: true
-                    Repeater {
-                        objectName: "trayPreviewRepeater"
-                        // #718: null-őr — az appWindow (a Main.qml
-                        // `window`-ja) az engine-leépítés közben átmenetileg
-                        // null lehet, miközben ez a kötés utoljára
-                        // kiértékelődik (ld. a fenti `ctl` docstringje).
-                        // NEM elég csak az appWindow-t vizsgálni: a
-                        // leépítés egy köztes állapotában az ablak MÁR
-                        // létezik, a `selectedIndexes` viszont még
-                        // `undefined` — ezt a `.length` olvasása
-                        // TypeError-ral bünteti. (Ez a maradék hiba a
-                        // teszt lefutása UTÁN, a késleltetett törlési sor
-                        // ürítésekor jelentkezett, ezért az őr sem látta.)
-                        model: trayPreview.heldCount > 0
-                            ? trayPreview.heldCount
-                            : tray.selectedIndexesOrEmpty.length
-                        delegate: Image {
-                            objectName: "trayPreviewThumb"
-                            required property int index
-                            width: 20; height: 20
-                            source: !tray.ctl || !tray.appWindow ? ""
-                                : trayPreview.heldCount > 0
-                                  ? tray.ctl.heldThumbUrlAt(index)
-                                  : tray.ctl.photos.thumbUrlAt(
-                                        Number(tray.appWindow.selectedIndexes[index]))
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                        }
+        // ===============================================================
+        // BAL OLDAL — a képtálca (`thumbui/scratchback`)
+        //   XConstraint 0, 0, 5 · XConstraint 1, .365, -15 · m_offsetB
+        //   81 képpont magas: a sáv tetejétől 20, aljától 4
+        // ===============================================================
+        Rectangle {
+            id: trayScratchBack
+            objectName: "trayScratchBack"
+            x: 5
+            y: 0
+            width: Math.max(0, trayMainBar.splitX - 15 - x)
+            height: 81
+            color: Theme.trayPanelBg
+            border.width: 1
+            border.color: Theme.trayBorder
+            radius: 2
+            clip: true
+
+            //: #455: a mappaváltást is túlélő, MEGTARTOTT képek száma
+            readonly property int heldCount: tray.ctl ? tray.ctl.heldCount : 0
+
+            // a bélyegképsor (`thumbui/scratch`): 5 képpont belső margó,
+            // JOBBRÓL 50 képpont marad szabadon a három gombnak
+            Row {
+                id: trayScratchStrip
+                objectName: "trayScratchStrip"
+                x: 5
+                y: 5
+                width: Math.max(0, parent.width - 5 - 50)
+                height: parent.height - 10
+                spacing: 2
+                clip: true
+                Repeater {
+                    objectName: "trayPreviewRepeater"
+                    // #718: null-őr — az appWindow (a Main.qml
+                    // `window`-ja) az engine-leépítés közben átmenetileg
+                    // null lehet, miközben ez a kötés utoljára
+                    // kiértékelődik (ld. a fenti `ctl` docstringje).
+                    // NEM elég csak az appWindow-t vizsgálni: a
+                    // leépítés egy köztes állapotában az ablak MÁR
+                    // létezik, a `selectedIndexes` viszont még
+                    // `undefined` — ezt a `.length` olvasása
+                    // TypeError-ral bünteti.
+                    model: trayScratchBack.heldCount > 0
+                        ? trayScratchBack.heldCount
+                        : tray.selectedIndexesOrEmpty.length
+                    delegate: Image {
+                        objectName: "trayPreviewThumb"
+                        required property int index
+                        // #1420: az eredeti tálcáján a bélyegképek a doboz
+                        // TELJES belső magasságát kitöltik (a képernyőképen
+                        // ~70 képpont), oldalarányt tartva — a korábbi
+                        // 20 × 20-as rács a 81 képpontos dobozban holt
+                        // helyet hagyott volna.
+                        height: trayScratchStrip.height
+                        width: implicitHeight > 0
+                               ? Math.round(height * implicitWidth
+                                            / implicitHeight)
+                               : height
+                        source: !tray.ctl || !tray.appWindow ? ""
+                            : trayScratchBack.heldCount > 0
+                              ? tray.ctl.heldThumbUrlAt(index)
+                              : tray.ctl.photos.thumbUrlAt(
+                                    Number(tray.appWindow.selectedIndexes[index]))
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
                     }
                 }
-                Text {
-                    // #718: ld. a Repeater fenti null-őrét — ugyanaz a
-                    // teardown-ablak érinti ezt a kötést is.
-                    visible: trayPreview.heldCount === 0
-                             && tray.selectedIndexesOrEmpty.length === 0
-                    anchors.centerIn: parent
-                    text: qsTr("Selection")
-                    color: Theme.placeholderText
-                    font.pixelSize: Theme.fontSize
-                }
             }
-            // #455: a Picasa 3-gombos oszlopa (design-guide.md tálca-audit,
-            // 5.2/5.3-2. pont) — a zöld pin ("Kijelölés megtartása" / Hold
-            // Selection) és a piros kör ("Tálca ürítése" / Clear Tray) a
-            // TrayMixin-t köti be. A HARMADIK gomb (kék könyv+nyíl,
-            // "Add to" album) NEM készül el ebben a lépcsőben — a
-            // tálcán tartott képek albumhoz adása külön jegy (a
-            // modul-docstring "NINCS ebben a lépcsőben" szakasza).
+            // `thumbui/scratchlabel` — „Kijelölés", `m_centerXY`: üres
+            // tálcánál a felirat a doboz KÖZEPÉN áll, nem a bal szélén
+            Text {
+                objectName: "trayScratchLabel"
+                // #718: ld. a Repeater fenti null-őrét — ugyanaz a
+                // teardown-ablak érinti ezt a kötést is.
+                visible: trayScratchBack.heldCount === 0
+                         && tray.selectedIndexesOrEmpty.length === 0
+                anchors.centerIn: parent
+                text: qsTr("Selection")
+                color: Theme.placeholderText
+                font.pixelSize: Theme.fontSize
+            }
+
+            // #455/#1420: a Picasa 3-gombos OSZLOPA a bélyegképsor jobbján
+            // fenntartott 50 képpontban (`scratchhold` 34 × 22,
+            // `scratchclear` 34 × 20, `addtobuttcon` 34 × 22 — mind
+            // `m_offsetRT` a `scratchback`-en). A gombokon az eredetiben
+            // NINCS felirat: a `thumbui_text.tre`-ben mindhárom `Label`
+            // sora ki van kommentelve, csak a `Tooltip` él.
             PicasaButton {
                 id: trayHoldBtn
                 objectName: "trayHoldButton"
+                x: parent.width - 5 - width
+                y: 5
+                width: 34
+                height: 22
                 // #718: null-őr — ld. a fenti `ctl` docstringje.
                 enabled: tray.appWindow
                          ? (!tray.appWindow.viewerOpen
@@ -320,7 +363,6 @@ Column {
                          : false
                 onClicked: tray.ctl && tray.appWindow && tray.ctl.holdRows(
                     tray.appWindow.selectedIndexes)
-                Layout.preferredWidth: 26
                 ToolTip.text: qsTr("Hold Selection")
                 ToolTip.visible: trayHoldBtn.hovered
                 ToolTip.delay: 500
@@ -329,8 +371,7 @@ Column {
                     // #1188: a `Control` a contentItem geometriáját maga
                     // állítja be (az `anchors.centerIn` ezért hatástalan
                     // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült.
                     fillMode: Image.PreserveAspectFit
                     source: "icons/hold-pin.svg"
                     sourceSize: Qt.size(28, 28)
@@ -340,19 +381,18 @@ Column {
             PicasaButton {
                 id: trayClearBtn
                 objectName: "trayClearButton"
-                enabled: trayPreview.heldCount > 0
+                x: parent.width - 5 - width
+                y: 27
+                width: 34
+                height: 20
+                enabled: trayScratchBack.heldCount > 0
                 onClicked: trayClearConfirm.open()
-                Layout.preferredWidth: 26
                 ToolTip.text: qsTr("Clear Tray")
                 ToolTip.visible: trayClearBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
                     objectName: "trayClearIcon"
-                    // #1188: a `Control` a contentItem geometriáját maga
-                    // állítja be (az `anchors.centerIn` ezért hatástalan
-                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    // #1188: ld. a `trayHoldBtn` indoklását fentebb.
                     fillMode: Image.PreserveAspectFit
                     source: "icons/tray-clear.svg"
                     sourceSize: Qt.size(28, 28)
@@ -363,222 +403,384 @@ Column {
             // Az eredetiben felfelé nyíló menüből választható az album; itt
             // a meglévő album-listát (`controller.albums`) kínáljuk fel,
             // ugyanabban a sorrendben, mint a kép-kontextusmenü.
+            //
+            // #1420: a gomb IKON-ONLY lett, mert az eredeti tálcájában a
+            // 34 képpontos oszlopban ül, és ott sincs felirata — a jelentést
+            // a buboréksúgó hordozza (`thumbui_text.tre`: *Add selected
+            // items to an Album*).
             PicasaButton {
                 id: trayAddToBtn
                 objectName: "trayAddToButton"
-                text: qsTr("Add to")
+                x: parent.width - 5 - width
+                y: 54
+                width: 34
+                height: 22
                 // #718: null-őr — `tray.ctl` a leépítés végén lehet igaz úgy
                 // is, hogy az `albums` lista már nem érhető el (undefined).
                 // A `!!` a láncolt `&&` esetleges `undefined` eredményét
                 // valódi bool-lá kényszeríti (a `bool`-property-hez az
                 // `undefined` hozzárendelése önmagában is szkripthiba).
-                enabled: !!(trayPreview.heldCount > 0
+                enabled: !!(trayScratchBack.heldCount > 0
                          && tray.ctl && tray.ctl.albums
                          && tray.ctl.albums.length > 0)
                 onClicked: trayAddToMenu.popup()
                 ToolTip.text: qsTr("Add the pictures in the tray to an album")
                 ToolTip.visible: trayAddToBtn.hovered
                 ToolTip.delay: 500
+                contentItem: Image {
+                    objectName: "trayAddToIcon"
+                    fillMode: Image.PreserveAspectFit
+                    source: "icons/tray-addto.svg"
+                    sourceSize: Qt.size(30, 20)
+                    opacity: trayAddToBtn.enabled ? 1.0 : 0.5
+                }
             }
-            Menu {
-                id: trayAddToMenu
-                objectName: "trayAddToMenu"
-                Repeater {
-                    model: tray.ctl ? tray.ctl.albums : []
-                    delegate: MenuItem {
-                        required property var modelData
-                        text: modelData.name
-                        onTriggered: tray.ctl.addHeldToAlbum(modelData.token)
+        }
+
+        Menu {
+            id: trayAddToMenu
+            objectName: "trayAddToMenu"
+            Repeater {
+                model: tray.ctl ? tray.ctl.albums : []
+                delegate: MenuItem {
+                    required property var modelData
+                    text: modelData.name
+                    onTriggered: tray.ctl.addHeldToAlbum(modelData.token)
+                }
+            }
+        }
+
+        // #455: a Picasa saját szövegű rákérdezése ürítéskor —
+        // „Would you like to clear your old held items from the
+        // tray?" → „Clear Tray" / „Don't Clear" (az issue kutatása
+        // szerint ez a szöveg). Az általános `ConfirmDialog` Igen/
+        // Nem/Mégse feliratai NEM egyeznek ezekkel, ezért itt egyedi,
+        // egyszerű dialógus.
+        Dialog {
+            id: trayClearConfirm
+            objectName: "trayClearConfirmDialog"
+            modal: true
+            anchors.centerIn: parent ? Overlay.overlay : undefined
+            title: qsTr("Clear Tray")
+            Text {
+                Layout.preferredWidth: 280
+                text: qsTr(
+                    "Would you like to clear your old held items"
+                    + " from the tray?")
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            footer: RowLayout {
+                spacing: 8
+                Item { Layout.fillWidth: true }
+                PicasaButton {
+                    objectName: "trayClearConfirmYesButton"
+                    text: qsTr("Clear Tray")
+                    accent: Theme.picasaGreen
+                    onClicked: {
+                        tray.ctl && tray.ctl.clearHeld()
+                        trayClearConfirm.close()
                     }
                 }
-            }
-
-            // #455: a Picasa saját szövegű rákérdezése ürítéskor —
-            // „Would you like to clear your old held items from the
-            // tray?" → „Clear Tray" / „Don't Clear" (az issue kutatása
-            // szerint ez a szöveg). Az általános `ConfirmDialog` Igen/
-            // Nem/Mégse feliratai NEM egyeznek ezekkel, ezért itt egyedi,
-            // egyszerű dialógus.
-            Dialog {
-                id: trayClearConfirm
-                objectName: "trayClearConfirmDialog"
-                modal: true
-                anchors.centerIn: parent ? Overlay.overlay : undefined
-                title: qsTr("Clear Tray")
-                Text {
-                    Layout.preferredWidth: 280
-                    text: qsTr(
-                        "Would you like to clear your old held items"
-                        + " from the tray?")
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
+                PicasaButton {
+                    objectName: "trayClearConfirmNoButton"
+                    text: qsTr("Don't Clear")
+                    onClicked: trayClearConfirm.close()
                 }
-                footer: RowLayout {
-                    spacing: 8
-                    Item { Layout.fillWidth: true }
+                Item { width: 8 }
+            }
+        }
+
+        // ===============================================================
+        // JOBB OLDAL — az osztóponttól a jobb szélig (`bcenterright`:
+        //   `XConstraint 0, .365, 0`; `outputs`: `1, 1, -10`)
+        // Két sor: fent a csillag/forgatás/nagyítás, lent — az y 50…52-es
+        // elválasztó alatt — a zöld gomb és a műveletsor.
+        // ===============================================================
+        Item {
+            id: trayRightPane
+            objectName: "trayRightPane"
+            x: trayMainBar.splitX
+            y: 0
+            width: Math.max(
+                0, trayMainBar.width - trayMainBar.rightMargin - x)
+            height: parent.height
+
+            // --- felső sor (a sáv tetejétől 20…42 → itt 0…22) ---
+            Item {
+                id: trayTopRow
+                objectName: "trayTopRow"
+                width: parent.width
+                height: 22
+
+                // `startoggle` · `rotateleft` · `rotateright`: 36 × 22
+                // egyenként, a csillag után 5 képpont hézag, a két forgatás
+                // 37 képpontos osztásközzel (mérve: 697…732 · 738…773 ·
+                // 775…810 egy 1918 képpontos ablakban).
+                Row {
+                    id: trayStarGroup
+                    objectName: "trayStarGroup"
+                    x: 0
+                    height: parent.height
+                    spacing: 1
+
                     PicasaButton {
-                        objectName: "trayClearConfirmYesButton"
-                        text: qsTr("Clear Tray")
-                        accent: Theme.picasaGreen
-                        onClicked: {
-                            tray.ctl && tray.ctl.clearHeld()
-                            trayClearConfirm.close()
+                        id: trayStar
+                        width: 36
+                        height: 22
+                        anchors.verticalCenter: parent.verticalCenter
+                        // #718: null-őr — ld. a fenti `ctl` docstringje;
+                        // appWindow hiányában a célsor -1 (nincs cél).
+                        readonly property int targetRow: tray.appWindow
+                            ? (tray.appWindow.viewerOpen
+                               ? tray.viewerIndex : tray.appWindow.selectedIndex)
+                            : -1
+                        readonly property bool multi: tray.appWindow
+                            ? (!tray.appWindow.viewerOpen
+                               && tray.appWindow.selectedIndexes.length > 1)
+                            : false
+                        enabled: tray.appWindow
+                                 ? (tray.appWindow.viewerOpen
+                                    || tray.appWindow.selectedIndex >= 0)
+                                 : false
+                        onClicked: multi
+                                   ? controller.toggleStarMany(
+                                         tray.appWindow.selectedIndexes)
+                                   : controller.toggleStar(targetRow)
+                        contentItem: Text {
+                            objectName: "trayStarLabel"
+                            text: "★"
+                            font.pixelSize: 15
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            // arany, ha a kiválasztott kép csillagos; egyébként
+                            // világos kontúr-csillag (Picasa-minta, nem fekete!)
+                            color: (tray.ctl
+                                    ? (tray.ctl.photos.revision,
+                                       tray.ctl.photos.starAt(trayStar.targetRow))
+                                    : false)
+                                   ? Theme.starYellow : "#ffffff"
+                            style: Text.Outline
+                            styleColor: "#9a9a9a"
+                        }
+                    }
+                    //: a csillag utáni 5 képpontos hézag (a `spacing` 1-ből
+                    //: már megvan egy)
+                    Item { width: 4; height: 1 }
+                    PicasaButton {
+                        id: trayRotateLeftBtn
+                        objectName: "trayRotateLeft"
+                        text: "↺"
+                        width: 36
+                        height: 22
+                        anchors.verticalCenter: parent.verticalCenter
+                        // #103: csak-videó kijelölésnél tiltva (photos.revision:
+                        // modell-frissüléskor újraértékelt kötés)
+                        // #718: null-őr — az appWindow (`window`) az engine-
+                        // leépítés közben átmenetileg null lehet.
+                        enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
+                                  tray.appWindow
+                                  ? ((tray.appWindow.viewerOpen
+                                      || tray.appWindow.selectedIndex >= 0)
+                                     && !tray.appWindow.rotateTargetsAllVideo())
+                                  : false)
+                        onClicked: trayStar.multi
+                                   ? controller.rotateLeftMany(
+                                         tray.appWindow.selectedIndexes)
+                                   : controller.rotateLeft(trayStar.targetRow)
+                        // #314: a PicasaButton alap-krómja nem témavezérelt —
+                        // mindig világos bevel-gomb. Az alapértelmezett
+                        // contentItem az `ink`-et használná, ami sötét témán
+                        // kivilágosodik és eltűnne a világos gombháttéren.
+                        contentItem: Text {
+                            objectName: "trayRotateLeftLabel"
+                            text: trayRotateLeftBtn.text
+                            font: trayRotateLeftBtn.font
+                            color: trayRotateLeftBtn.enabled
+                                   ? Theme.iconInk : "#9a9a9a"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                     }
                     PicasaButton {
-                        objectName: "trayClearConfirmNoButton"
-                        text: qsTr("Don't Clear")
-                        onClicked: trayClearConfirm.close()
+                        id: trayRotateRightBtn
+                        objectName: "trayRotateRight"
+                        text: "↻"
+                        width: 36
+                        height: 22
+                        anchors.verticalCenter: parent.verticalCenter
+                        // #718: null-őr — ld. trayRotateLeftBtn indoklása.
+                        enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
+                                  tray.appWindow
+                                  ? ((tray.appWindow.viewerOpen
+                                      || tray.appWindow.selectedIndex >= 0)
+                                     && !tray.appWindow.rotateTargetsAllVideo())
+                                  : false)
+                        onClicked: trayStar.multi
+                                   ? controller.rotateRightMany(
+                                         tray.appWindow.selectedIndexes)
+                                   : controller.rotateRight(trayStar.targetRow)
+                        // #314: ld. trayRotateLeftBtn indoklása fentebb.
+                        contentItem: Text {
+                            objectName: "trayRotateRightLabel"
+                            text: trayRotateRightBtn.text
+                            font: trayRotateRightBtn.font
+                            color: trayRotateRightBtn.enabled
+                                   ? Theme.iconInk : "#9a9a9a"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
-                    Item { width: 8 }
+                }
+
+                // `scale_group` — nagyítás-csúszka − / + jelekkel
+                // (kézikönyv 06), a sáv jobb felső sarkához zárva
+                // (`m_offsetRT` a `basecontrolset`-en)
+                Row {
+                    id: trayZoomGroup
+                    objectName: "trayZoomGroup"
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 6
+
+                    Text {
+                        text: "−"
+                        color: Theme.textGray
+                        font.pixelSize: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    PicasaSlider {
+                        id: sizeSlider
+                        // #718: null-őr — appWindow hiányában egy
+                        // tetszőleges, a [from, to] tartományba eső érték.
+                        from: 72; to: 256
+                        value: tray.appWindow ? tray.appWindow.thumbSize : 128
+                        //: `thumbui/scalecontainer` — FIX 127 képpont
+                        width: 127
+                        anchors.verticalCenter: parent.verticalCenter
+                        onMoved: tray.appWindow
+                                 && (tray.appWindow.thumbSize = value)
+                    }
+                    Text {
+                        text: "+"
+                        color: Theme.textGray
+                        font.pixelSize: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
             }
 
-            PicasaButton {
-                id: trayStar
-                // #718: null-őr — ld. a fenti `ctl` docstringje; appWindow
-                // hiányában a célsor -1 (nincs cél), a gomb letiltva.
-                readonly property int targetRow: tray.appWindow
-                    ? (tray.appWindow.viewerOpen
-                       ? tray.viewerIndex : tray.appWindow.selectedIndex)
-                    : -1
-                readonly property bool multi: tray.appWindow
-                    ? (!tray.appWindow.viewerOpen
-                       && tray.appWindow.selectedIndexes.length > 1)
-                    : false
-                enabled: tray.appWindow
-                         ? (tray.appWindow.viewerOpen
-                            || tray.appWindow.selectedIndex >= 0)
-                         : false
-                Layout.preferredWidth: 34
-                onClicked: multi
-                           ? controller.toggleStarMany(
-                                 tray.appWindow.selectedIndexes)
-                           : controller.toggleStar(targetRow)
-                contentItem: Text {
-                    objectName: "trayStarLabel"
-                    text: "★"
-                    font.pixelSize: 15
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    // arany, ha a kiválasztott kép csillagos; egyébként
-                    // világos kontúr-csillag (Picasa-minta, nem fekete!)
-                    color: (tray.ctl
-                            ? (tray.ctl.photos.revision,
-                               tray.ctl.photos.starAt(trayStar.targetRow))
-                            : false)
-                           ? Theme.starYellow : "#ffffff"
-                    style: Text.Outline
-                    styleColor: "#9a9a9a"
+            // `thumbui/separator`: 2 képpont, `0, .365, -3` … `1, 1, -17`,
+            // y 50…52 a sáv tetejétől — nálunk (a 20-as infó-csík alatt)
+            // y 30…32.
+            Rectangle {
+                objectName: "traySeparator"
+                x: -3
+                y: 30
+                width: Math.max(0, parent.width - 4)
+                height: 2
+                color: Theme.trayBorder
+            }
+
+            // `thumbui/webupload_rect`: 147 × 44 az osztóponttól 5
+            // képponttal balra, benne a 141 × 35-ös gomb.
+            //
+            // ⚠️ A kényszerek (`0, .365, -5` … `1, .365, 140`) 145
+            // képpontot adnak, a respack rétegfejléce 147-et. A KETTŐ
+            // KÖZÖTTI 2 képpont a hely ÜRES jobb margója: a benne
+            // középre zárt 141-es gomb jobb széle így is az osztópont +
+            // 139-nél van, tehát a +140-nél kezdődő műveletsorral nem
+            // ütközik. A képernyőképen a gomb 697…837 — az osztópont
+            // (700,07) − 3-tól, pontosan 141 képpont szélesen.
+            Item {
+                id: trayUploadSlot
+                objectName: "trayUploadSlot"
+                x: -5
+                y: 36
+                width: 147
+                height: 44
+
+                // az egyetlen zöld elsődleges tett (kézikönyv 01/08)
+                PicasaButton {
+                    id: trayUploadBtn
+                    objectName: "trayUploadButton"
+                    anchors.centerIn: parent
+                    width: 141
+                    height: 35
+                    text: qsTr("Upload to Google Photos")
+                    enabled: false
+                    accent: Theme.picasaGreen
+                    ToolTip.text: trayUploadBtn.text
+                    ToolTip.visible: trayUploadBtn.hovered
+                    ToolTip.delay: 500
+                    // #1420: a gomb FIX 141 × 35, a felirat pedig KÉT SORBA
+                    // tördel benne — pontosan úgy, ahogy az eredetin
+                    // („Feltöltés a Google / Fotókba"). A `PicasaButton`
+                    // `Text.Wrap` + `Text.Fit` + `clip` hármasa (#992) itt
+                    // is véd: elidálni nem elidál, és a gombon kívülre sem
+                    // folyhat. Ezért nincs többé ikon-only kompakt mód: a
+                    // gomb szélessége már nem az ablakszélesség függvénye.
+                    contentItem: Row {
+                        spacing: 5
+                        Image {
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: "icons/upload.svg"
+                            sourceSize: Qt.size(18, 14)
+                        }
+                        Text {
+                            objectName: "trayUploadLabel"
+                            width: trayUploadBtn.width - 2 * 5 - 18 - 5
+                            // ⚠️ EXPLICIT magasság kell: enélkül a `Text`
+                            // magassága a saját `contentHeight`-je, a
+                            // `Text.Fit` pedig ebbe a körbe futva a
+                            // ZSUGORÍTOTT, EGYSOROS megoldást választja
+                            // (mérve: 9 képpontos betű, egy sor) a
+                            // teljes méretű, kétsoros helyett.
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            text: trayUploadBtn.text
+                            font: trayUploadBtn.font
+                            color: "white"
+                            wrapMode: Text.Wrap
+                            elide: Text.ElideNone
+                            fontSizeMode: Text.Fit
+                            minimumPixelSize: trayUploadBtn.minimumLabelPixelSize
+                            minimumPointSize: trayUploadBtn.minimumLabelPixelSize
+                            horizontalAlignment: Text.AlignHCenter
+                            lineHeightMode: Text.ProportionalHeight
+                            lineHeight: 10 / 12
+                            clip: true
+                        }
+                    }
                 }
             }
-            PicasaButton {
-                id: trayRotateLeftBtn
-                objectName: "trayRotateLeft"
-                text: "↺"
-                // #103: csak-videó kijelölésnél tiltva (photos.revision:
-                // modell-frissüléskor újraértékelt kötés)
-                // #718: null-őr — az appWindow (`window`) az engine-
-                // leépítés közben átmenetileg null lehet (ld. a `ctl`
-                // docstringje); ilyenkor a gomb egyszerűen letiltva marad.
-                enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
-                          tray.appWindow
-                          ? ((tray.appWindow.viewerOpen
-                              || tray.appWindow.selectedIndex >= 0)
-                             && !tray.appWindow.rotateTargetsAllVideo())
-                          : false)
-                Layout.preferredWidth: 34
-                onClicked: trayStar.multi
-                           ? controller.rotateLeftMany(
-                                 tray.appWindow.selectedIndexes)
-                           : controller.rotateLeft(trayStar.targetRow)
-                // #314: a PicasaButton alap-krómja (PicasaButton.qml) nem
-                // témavezérelt — mindig világos bevel-gomb. Az alapértelmezett
-                // contentItem az `ink`-et használná, ami sötét témán
-                // kivilágosodik és eltűnne a világos gombháttéren; itt a
-                // fix `Theme.iconInk`-kel felülírjuk (letiltva marad a
-                // PicasaButton eredeti, szintén rögzített szürkéje).
-                contentItem: Text {
-                    objectName: "trayRotateLeftLabel"
-                    text: trayRotateLeftBtn.text
-                    font: trayRotateLeftBtn.font
-                    color: trayRotateLeftBtn.enabled ? Theme.iconInk : "#9a9a9a"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-            PicasaButton {
-                id: trayRotateRightBtn
-                objectName: "trayRotateRight"
-                text: "↻"
-                // #718: null-őr — ld. trayRotateLeftBtn indoklása fentebb.
-                enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
-                          tray.appWindow
-                          ? ((tray.appWindow.viewerOpen
-                              || tray.appWindow.selectedIndex >= 0)
-                             && !tray.appWindow.rotateTargetsAllVideo())
-                          : false)
-                Layout.preferredWidth: 34
-                onClicked: trayStar.multi
-                           ? controller.rotateRightMany(
-                                 tray.appWindow.selectedIndexes)
-                           : controller.rotateRight(trayStar.targetRow)
-                // #314: ld. trayRotateLeftBtn indoklása fentebb.
-                contentItem: Text {
-                    objectName: "trayRotateRightLabel"
-                    text: trayRotateRightBtn.text
-                    font: trayRotateRightBtn.font
-                    color: trayRotateRightBtn.enabled ? Theme.iconInk : "#9a9a9a"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-            Item { Layout.fillWidth: true }
-            // nagyítás-csúszka − / + jelekkel (kézikönyv 06) — #406:
-            // kompakt módban a csúszka is keskenyebb, hogy jusson hely
-            // a jobb oldali gomboknak
-            Text { text: "−"; color: Theme.textGray; font.pixelSize: 13 }
-            PicasaSlider {
-                id: sizeSlider
-                // #718: null-őr — ld. a fenti `ctl` docstringje; appWindow
-                // hiányában egy tetszőleges, a [from, to] tartományba eső
-                // érték (a csúszka úgyis leépülőben van ekkor).
-                from: 72; to: 256
-                value: tray.appWindow ? tray.appWindow.thumbSize : 128
-                Layout.preferredWidth: trayMainBar.compact ? 90 : 140
-                onMoved: tray.appWindow && (tray.appWindow.thumbSize = value)
-            }
-            Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
-            Item { width: trayMainBar.compact ? 4 : 10 }
-            // #1345: a cellák EGYMÁS MELLETT, külön térköz nélkül —
-            // az eredetiben a 2-2 képpontos cellamargó ADJA a gombok
-            // közötti hézagot (4 képpont), a sáv `spacing`-je nem adódik
-            // hozzá. Ezért a csoport saját, nulla térközű sora.
+
+            // `thumbui/outputs`: `XConstraint 0, .365, 140` … `1, 1, -10`
+            //
+            // #1345: a cellák EGYMÁS MELLETT, külön térköz nélkül — az
+            // eredetiben a 2-2 képpontos cellamargó ADJA a gombok közötti
+            // hézagot, a sáv `spacing`-je nem adódik hozzá.
             Row {
+                id: trayActionRow
                 objectName: "trayActionRow"
-                Layout.alignment: Qt.AlignVCenter
+                // a 40 képpontos cellák a zöld gomb 44-es helyére
+                // függőlegesen középre: 36 + (44 − 40) / 2 = 38
+                x: trayMainBar.outputsOffset
+                y: 38
                 spacing: 0
 
                 // #1345: a kimeneti sáv gombjai a `respack.yt` MÉRT
                 // geometriájával — mindegyik **55 × 36** képpont, egy
-                // **59 × 40**-es cellában (`TrayActionCell`, 2-2 képpont margó
-                // körbe; `docs/specs/picasa-keptalca.md` 11.). A méret FIX: a
-                // rétegfejlécek mind a kilenc gombra bájtra azonosak, tehát a
-                // sáv nem skálázhatja őket az ablakkal.
+                // **59 × 40**-es cellában (`TrayActionCell`;
+                // `docs/specs/picasa-keptalca.md` 11.).
                 //
                 // A sorrend a respack DEKLARÁCIÓS sorrendje (spec 7.):
-                // print → email → export → [shop] → hello → [blog] → collage →
-                // movie → [morebutton]. A szögletes zárójelben álló három gomb
-                // nálunk MÉG NINCS MEG (`docs/specs/ui-lefedettseg.md`
-                // `outputlayout` hiánylistája: `orderbutton`, `blogger`,
-                // `morebutton`) — a meglévők egymáshoz képesti sorrendje
-                // viszont az eredetié. A zöld „Feltöltés" (`webupload`) nem
-                // tartozik a mért kilenc közé, ezért marad a saját méretén.
-                //
-                // #361: a gombok saját SVG-ikonnal (PBZ-leltár:
-                // outputlayout/pbutton, /ebutton, /folderbutton, /sharewith,
-                // /collage, /movie).
+                // print → email → export → [shop] → hello → [blog] →
+                // collage → movie → [morebutton]. A szögletes zárójelben
+                // álló három gomb nálunk MÉG NINCS MEG
+                // (`docs/specs/ui-lefedettseg.md` `outputlayout`
+                // hiánylistája).
                 TrayActionCell {
                     TrayActionButton {
                         id: trayPrintBtn
@@ -598,10 +800,7 @@ Column {
                                  : false
                         onClicked: tray.printRequested()
                         // #1345: a felirat a fix méretű gombon BELÜL ül,
-                        // ezért minden ablakszélességen látszik. Ha nagyon
-                        // szűk helyre szorul, a betű zsugorodik — a teljes
-                        // szöveget ezért a buboréksúgó is kiírja (a MÁR
-                        // fordított gombfeliratot használjuk, nem új qsTr-t).
+                        // ezért minden ablakszélességen látszik.
                         ToolTip.text: trayPrintBtn.text
                         ToolTip.visible: trayPrintBtn.hovered
                         ToolTip.delay: 500
@@ -661,23 +860,19 @@ Column {
                         iconObjectName: "trayShareIcon"
                     }
                 }
-                // #1345: a csoportelválasztó (`outputlayout/separator`), 2 × 27
-                // képpont a saját 59 × 40-es cellájában. Szűk ablakban elmarad:
-                // a fix méretű cellák mellett ez a 118 képpont az, ami a
-                // kompakt sávba már nem fér bele (az eredetiben erre való a
-                // `morebutton`/`overflow`, ami nálunk még nincs meg).
+                // #1345: a csoportelválasztó (`outputlayout/separator`),
+                // 2 × 27 képpont a saját 59 × 40-es cellájában. Szűk
+                // ablakban elmarad: a fix méretű cellák mellett ez a 118
+                // képpont az, ami már nem fér be (az eredetiben erre való
+                // a `morebutton`/`overflow`, ami nálunk még nincs meg).
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
                 // #361: Kollázs / Film — a PBZ-leltár szerint
                 // (outputlayout/collage, /makemovie) az eredeti kimeneti
-                // sávnak is részei; a tényleges Létrehozás-funkció a
-                // Create-menü mellett innen is indítható (collage/movie
-                // signal → Main.qml → CreateDialogs).
+                // sávnak is részei.
                 //
                 // #1116: a Kollázs gomb felirata és buboréksúgója NEM új
                 // fordítás, hanem átvétel a Picasa saját honosítási
-                // táblájából (`outputlayout_text.tre`): „Collage" →
-                // „Kollázs", `Create a Photo Collage with your selection` →
-                // „Készítsen fotókollázst a kijelölt képekből".
+                // táblájából (`outputlayout_text.tre`).
                 TrayActionCell {
                     TrayActionButton {
                         id: trayCollageBtn
@@ -694,9 +889,9 @@ Column {
                                  : false
                         onClicked: tray.collageRequested()
                         // #1116: az eredeti súgója a művelet MONDATA, nem a
-                        // gombfelirat ismétlése — ezért (a Nyomtatás/Exportálás
-                        // gombtól eltérően) kompakt módon kívül is látszik.
-                        ToolTip.text: qsTr("Create a Photo Collage with your selection")
+                        // gombfelirat ismétlése.
+                        ToolTip.text: qsTr(
+                            "Create a Photo Collage with your selection")
                         ToolTip.visible: trayCollageBtn.hovered
                         ToolTip.delay: 500
                     }
@@ -717,36 +912,6 @@ Column {
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
-            }
-            // az egyetlen zöld elsődleges tett — jobbra igazítva,
-            // a képernyő vizuális súlypontja (kézikönyv 01/08) — #406:
-            // kompakt módban ez is ikon-only (a leghosszabb felirat,
-            // enélkül fér csak el a sáv szűk ablaknál)
-            PicasaButton {
-                id: trayUploadBtn
-                objectName: "trayUploadButton"
-                text: qsTr("Upload to Google Photos")
-                enabled: false
-                accent: Theme.picasaGreen
-                ToolTip.text: trayUploadBtn.text
-                ToolTip.visible: trayMainBar.compact && trayUploadBtn.hovered
-                ToolTip.delay: 500
-                contentItem: Row {
-                    spacing: trayMainBar.compact ? 0 : 5
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        source: "icons/upload.svg"
-                        sourceSize: Qt.size(14, 14)
-                    }
-                    Text {
-                        objectName: "trayUploadLabel"
-                        visible: !trayMainBar.compact
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: trayUploadBtn.text
-                        font: trayUploadBtn.font
-                        color: "white"
-                    }
-                }
             }
         }
     }

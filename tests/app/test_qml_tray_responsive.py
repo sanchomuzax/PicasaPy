@@ -1,14 +1,21 @@
 """#406: a TrayBar (alsó sáv) legyen reszponzív — szűk ablaknál a
-zoom-csúszka és a kijelölés-előnézet zsugorodjon, a zöld „Feltöltés"
-gomb essen vissza ikon-only módra, és SEMMI ne lógjon ki a sáv jobb
-széléből (kilógás-őr). A `test_qml_tray_print_email.py` betöltési
-mintáját követi (önálló TrayBar, controller nélkül).
+zoom-csúszka zsugorodjon, és SEMMI ne lógjon ki a sáv jobb széléből
+(kilógás-őr). A `test_qml_tray_print_email.py` betöltési mintáját követi
+(önálló TrayBar, controller nélkül).
 
 #1345: a kimeneti gombok (Nyomtatás, E-mail, Exportálás, Kollázs, Film,
 Megosztás) MÁR NEM esnek vissza ikon-only módra — fix 55 × 36 képpontos
 gombok lettek, amelyekben a felirat az ikon alatt, a gombon BELÜL ül,
 tehát nem szélesítik a sávot. Szűk ablakban helyettük a két
-csoportelválasztó marad el."""
+csoportelválasztó marad el.
+
+#1420: a sáv EGYETLEN `RowLayout`-ja megszűnt — a 36,5 %-os osztópont
+mentén két rész lett belőle (képtálca | jobb sáv két sorral), ezért a
+kilógás-őr nem egy sor gyerekeit járja be, hanem a sáv TELJES
+elemfáját. A zöld gomb pedig fix 141 × 35, tehát nincs többé ikon-only
+kompakt módja: a felirata a gombon BELÜL tördel két sorba, ahogy az
+eredetin. Ami maradt kompaktnak: a nagyítás-csúszka és a két
+csoportelválasztó."""
 
 from __future__ import annotations
 
@@ -117,29 +124,36 @@ class TestTrayBarNoOverflowAtNarrowWidth:
     jobbra — sem kijelöléssel, sem néző-nézetben."""
 
     def _assert_no_overflow(self, tray, qt_app, expected_width=900):
+        """#1420: a sáv TELJES elemfáját járjuk be, nem egy sor gyerekeit.
+
+        A régi változat a `trayRowLayout` közvetlen gyerekeire nézett; az
+        az egyetlen sor a 36,5 %-os osztóponttal megszűnt. A bejárás így
+        SZIGORÚBB lett: a beágyazott elemek (a műveletsor cellái, a zöld
+        gomb a helyén belül) is a mérés alá esnek."""
         for _ in range(3):
             qt_app.processEvents()
         bar = _child(tray, "trayMainBar")
-        row = _child(tray, "trayRowLayout")
         assert bar.property("width") == pytest.approx(expected_width)
         overflowing = []
-        for child in row.children():
-            meta = child.metaObject()
-            if meta is None or not meta.indexOfProperty("visible") >= 0:
-                continue
-            if not child.property("visible"):
-                continue
-            w = child.property("width")
-            if w is None:
-                continue
-            # a gyerek jobb szélét a tálca-Rectangle koordinátarendszerébe
-            # térképezzük (mapToItem), hogy a RowLayout margóit is
-            # figyelembe vegyük
-            right_edge = child.mapToItem(bar, w, 0).x()
-            if right_edge > bar.property("width") + 0.5:
-                overflowing.append(
-                    (child.objectName(), right_edge, bar.property("width"))
-                )
+
+        def walk(item):
+            for child in item.childItems():
+                if not child.property("visible"):
+                    continue
+                w = child.property("width")
+                if w:
+                    right_edge = child.mapToItem(bar, w, 0).x()
+                    if right_edge > bar.property("width") + 0.5:
+                        overflowing.append(
+                            (
+                                child.objectName() or child.metaObject().className(),
+                                right_edge,
+                                bar.property("width"),
+                            )
+                        )
+                walk(child)
+
+        walk(bar)
         assert overflowing == [], f"kilógó gyerekek: {overflowing}"
 
     def test_no_overflow_with_grid_selection(self, app_module, qt_app):
@@ -182,9 +196,10 @@ class TestTrayBarNoOverflowAtNarrowWidth:
         for _ in range(3):
             qt_app.processEvents()
         bar = _child(tray, "trayMainBar")
-        szeles = bar.property("compactThreshold") + 2 * bar.property(
-            "actionCellWidth"
-        )
+        # #1420: a küszöb nem „a kompakt küszöb + két cella" többé — a két
+        # cella a jobb sávban ül, ami az ablak 63,5 %-a, tehát az ablakban
+        # mérve többe kerül. A komponens maga adja meg a mért küszöböt.
+        szeles = bar.property("separatorThreshold")
         tray.setProperty("width", szeles)
         for _ in range(3):
             qt_app.processEvents()

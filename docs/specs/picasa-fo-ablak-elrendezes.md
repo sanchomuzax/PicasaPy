@@ -173,7 +173,8 @@ A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
 | felső sáv | 35 px | **35 px** (#587 előtt 34) | ✅ |
 | `importbutton` | 111 × 22 | **111 × 22** (#587 előtt 100 × 24) | ✅ |
 | `searchcontainer` | 388 × 30 | **388 × 30** (#587 előtt 300 × 24) | ✅ |
-| alsó sáv | 105 px | 20 + 52 = **72 px** | ❌ **nyitva** — a magasság önmagában holt sávot adna: a tálca-tartalom (36,5 %-os osztópont, 81 px-es képtálca) is átépítendő |
+| alsó sáv | 105 px | 20 + 85 = **105 px** | ✅ (#1420) — a magassággal EGYÜTT a tálca-tartalom is átépült: 36,5 %-os osztópont, 81 px-es képtálca, 141 × 35-ös zöld gomb |
+| a sáv belső osztása | 36,5 % | **36,5 %** | ✅ (#1420) — képtálca \| zöld gomb \| műveletsor |
 
 > **A `design-guide.md` két, egymásnak ellentmondó értéket tartalmazott**
 > (386 px ≈ 20 %, illetve 210 px ≈ 26 %), és azt írta, hogy „arányosan
