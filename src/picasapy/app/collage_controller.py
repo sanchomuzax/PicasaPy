@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Sequence
+from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtGui import QColor, QGuiApplication
@@ -163,6 +164,15 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         # a legutóbb kiírt kollázs útvonala — ebből lesz a „Meglévő cseréje"
         # ága (spec 9.2). Üres szöveg = még nem mentettük ezt a kollázst.
         self._collage_panel_saved_path = ""
+        # #1387: a MOST NYITOTT piszkozat TÉNYLEGES mappája — ahol az
+        # `autosave.cxf` ténylegesen fekszik, NEM feltétlenül a jelenleg
+        # BEÁLLÍTOTT Kollázsok-mappa (`OUTPUT_DIR_KEY`). A kettő szétválhat,
+        # ha a felhasználó a piszkozat mentése UTÁN átállítja a kimeneti
+        # mappát: a takarítás enélkül a rossz (új) helyen keresné a régi
+        # piszkozatot, és az árván maradna a réginél. `None` = nincs
+        # ismert, ettől eltérő tényleges hely (friss panel, még nincs
+        # piszkozat) — ilyenkor a beállított mappa a helyes válasz.
+        self._collage_panel_draft_source_dir: Path | None = None
         # a megszakítás EGYETLEN jelzője. Esemény, nem bool: a háttérszál
         # olvassa, a felület írja, és a `threading.Event` pont ezt a
         # találkozást teszi biztonságossá zár nélkül.
@@ -433,6 +443,10 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._ensure_collage_panel()
         self._collage_panel_frame_center = -1
         self._set_saved_path("")
+        # #1387: friss, forrásalbumból induló kollázs — nincs hozzá TÉNYLEGES
+        # piszkozat-mappa, amíg a felhasználó nem ment. A korábbi (más
+        # képről nyitott) piszkozat mappája itt nem élhet tovább.
+        self._collage_panel_draft_source_dir = None
         sources = self._sources_from_rows(rows)
         self.setCollageTitle(self._title_from_sources(sources))
         self._apply_source_album_fields(sources)

@@ -92,7 +92,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py:61` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
 | `controller` | `canUndoBatchEdit` | Property | `app/batch_effect_controller.py:158` | #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll |
 | `controller` | `undoBatchEdit` | Slot | `app/batch_effect_controller.py:388` | #1475 — ugyanaz, a művelet maga |
-| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py:335` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
+| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py:345` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
 | `controller` | `collageTitle` | Property | `app/collage_save.py:114` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py:136` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
 | `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py:153` | MÉRVE — a mentett kollázs útja bekötetlen |

@@ -264,11 +264,27 @@ kimondta, hogy ez a formátumsztring **máshol** használatos, a piszkozatot
 pedig a KÉPBE rajzolt felirat jelöli — amit a tulajdonos képernyőképe is
 így mutat. A két jelölés együtt kétszeres volna.
 
-⚠️ **Ismert korlát:** a befejezés utáni takarítás
-(`_discard_draft_after_render`) a BEÁLLÍTOTT Kollázsok-mappából dobja el az
-`autosave.cxf`-et. Ha a felhasználó a piszkozat mentése után átállítja a
-kimeneti mappát, a régi automentés árván marad — és a valódi Picasa arra
-`autosave.jpg`-t gyárt (8.3, #1100).
+✅ **A korábbi korlát megszűnt (2026-08-26, #1387):** a befejezés utáni
+takarítás (`_discard_draft_after_render`) korábban a BEÁLLÍTOTT
+Kollázsok-mappából dobta el az `autosave.cxf`-et. Ha a felhasználó a
+piszkozat mentése után átállította a kimeneti mappát, a régi automentés
+árván maradt — és a valódi Picasa arra `autosave.jpg`-t gyártott (8.3,
+#1100).
+
+A javítás: a vezérlő eltárolja, honnan jött a MOST NYITOTT piszkozat
+TÉNYLEGESEN (`_collage_panel_draft_source_dir` — a `saveCollageDraft`
+sikeres írása, az `openCollageProject` piszkozat-ága, illetve a
+`restoreCollageDraft` állítja be). A takarítás EZT a mappát használja, a
+beállítottat csak akkor, ha a menetben még nem volt ismert tényleges hely
+(friss panel). Kód: `picasapy/app/collage_save.py`
+(`_discard_draft_after_render`, `saveCollageDraft`, `openCollageProject`,
+`restoreCollageDraft`); a `picasapy/app/collage_controller.py`
+`_ensure_collage_panel`-je hozza létre a mezőt.
+
+**Az `autosave.jpg` döntése változatlan (#1100 alapján):** ha a régi
+helyen a valódi Picasa már ráírta a saját szürke helykitöltőjét, az NEM a
+mi fájlunk — a takarítás csak az `autosave.cxf`-et törli néven, az
+`autosave.jpg`-hez nem nyúl.
 
 ---
 

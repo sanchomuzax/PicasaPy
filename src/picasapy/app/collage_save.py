@@ -538,20 +538,35 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         Vagyis a mi maradékunk SZEMETET GYÁRTAT a valódi Picasával. A
         piszkozat a véglegesítéssel betöltötte a szerepét.
 
+        ⚠️ #1387: a takarítás a piszkozat TÉNYLEGES mappájából dob el, NEM a
+        jelenleg BEÁLLÍTOTT Kollázsok-mappából. A kettő szétválhat, ha a
+        felhasználó a piszkozat mentése UTÁN, a befejezés ELŐTT átállítja a
+        kimeneti mappát (`finishCollageDraft` egy MÁSHOL fekvő piszkozatot
+        nyit meg és véglegesít, ld. `openCollageProject`/`saveCollageDraft`
+        — mindkettő frissíti `_collage_panel_draft_source_dir`-t). Ha nincs
+        ismert tényleges hely (a panel még sosem mentett/nyitott piszkozatot
+        ebben a menetben), a beállított mappa marad a válasz — ez az eredeti,
+        egyszerű eset, ahol a kettő úgyis ugyanaz.
+
         A beállításból is kivezetjük: ha csak a fájlt törölnénk, a program
         indításkor még mindig felajánlaná a helyreállítást, és a felhasználó
         egy nem létező munkát „állítana helyre".
 
         ⚠️ A már ott lévő, PICASA által írt `autosave.jpg`-hez NEM nyúlunk —
-        az nem a mi fájlunk, a felhasználó mappájában van.
+        az nem a mi fájlunk, a felhasználó mappájában van (#1100 döntése;
+        #1387 alatt is érvényben marad, hiszen csak az `autosave.cxf`-et
+        töröljük néven, nem a mappa teljes tartalmát).
 
         A hiba nyelt: a kollázs ekkor már a lemezen van, és egy takarítási
         gond nem teheti kudarccá a mentést."""
+        mappa = self._collage_panel_draft_source_dir or self._collage_panel_draft_dir()
         try:
-            discard_autosave(self._collage_panel_draft_dir())
+            discard_autosave(mappa)
         except OSError as hiba:
             logger.warning("A piszkozat nem takarítható el: %s", hiba)
             return
+        finally:
+            self._collage_panel_draft_source_dir = None
         beallitas = self._get_settings()
         beallitas.remove(prefs.AUTOSAVE_KEY)
         # #1125: a helykitöltő szerepe is véget ért — a kész kollázs
@@ -620,6 +635,10 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             logger.warning("A kollázs-piszkozat nem írható: %s", hiba)
             return
         self._get_settings().setValue(prefs.AUTOSAVE_KEY, str(ut))
+        # #1387: ez a mappa a piszkozat TÉNYLEGES helye, függetlenül attól,
+        # hogy a beállítás később megváltozik-e — a befejezéskori takarítás
+        # ezt használja, nem a mindenkori beállítást.
+        self._collage_panel_draft_source_dir = ut.parent
         self._write_draft_placeholder(nodes, ut.parent)
         self.collageDraftSaved.emit(str(ut))
 
@@ -706,12 +725,17 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         Az oldalFORMÁTUM nem áll vissza (a `.cxf` arányt tárol, nem
         menü-kulcsot) — a lap alakja a tájolásból és a jelenlegi formátumból
         áll össze. A csomópontok arányosan érkeznek, tehát a kép a lapon
-        marad akkor is, ha a formátum közben más lett."""
+        marad akkor is, ha a formátum közben más lett.
+
+        #1387: a beolvasott mappa itt a TÉNYLEGES piszkozat-hely is —
+        eltároljuk, hogy a befejezéskori takarítás akkor is ide nyúljon
+        vissza, ha a beállított Kollázsok-mappa időközben megváltozik."""
         self._ensure_collage_panel()
         mappa = self._collage_panel_draft_dir()
         projekt = read_autosave(mappa)
         if projekt is None:
             return
+        self._collage_panel_draft_source_dir = mappa
         self._apply_cxf_project(projekt, saved_path="")
         meglevo = self._draft_placeholder_path(mappa)
         if meglevo.exists():
@@ -759,10 +783,19 @@ class CollageSaveMixin(BackgroundWorkerMixin):
 
         A `saved_path` a MEGNYITOTT képre áll, tehát a „Létrehozás" a
         meglévő fájlt írja felül, nem újat számoz mellé: a felhasználó
-        ugyanazt a kollázst szerkeszti tovább, nem másolatot készít."""
+        ugyanazt a kollázst szerkeszti tovább, nem másolatot készít.
+
+        ⚠️ #1387: ha PISZKOZAT nyílik meg, a mappáját (ahol az `autosave.cxf`
+        ténylegesen fekszik) megjegyezzük — a `finishCollageDraft` (a
+        `createCollage` befejező hívása) ebből a TÉNYLEGES mappából takarít,
+        nem a jelenleg beállítottból. Kész kollázs megnyitásakor nincs
+        aktív piszkozat, ezért töröljük a korábbi jegyzetet."""
         utvonal = self._collage_project_path(image_path)
+        piszkozat_mappa: Path | None = None
         if utvonal is None:
             utvonal = draft_project_path(image_path)
+            if utvonal is not None:
+                piszkozat_mappa = utvonal.parent
         if utvonal is None:
             return
         try:
@@ -774,6 +807,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             )
             return
         self._ensure_collage_panel()
+        self._collage_panel_draft_source_dir = piszkozat_mappa
         self._apply_cxf_project(projekt, saved_path=str(image_path))
 
     def _collage_project_path(self, image_path: str) -> Path | None:
