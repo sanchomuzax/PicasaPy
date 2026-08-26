@@ -46,6 +46,10 @@ class FileOpsController(QObject):
 
     photoRenamed = Signal(str, str)  # (régi_út, új_út)
     photoMoved = Signal(str, str)  # (régi_út, új_út)
+    # #1522: (forrás_út, másolat_út) — a másolat célzott indexelése. Külön
+    # jelzés, nem a `photoMoved`: ott a FORRÁS is megváltozik (eltűnik), itt
+    # érintetlen marad, tehát a forrásmappa újraolvasása fölösleges munka.
+    photoCopied = Signal(str, str)
     photoDeleted = Signal(str)  # (törölt_út)
     operationFailed = Signal(str, str)  # (művelet, hibaüzenet)
     # (művelet, kész, kihagyott, hibás, első_hiba_oka) — a köteg EGYETLEN
@@ -143,9 +147,29 @@ class FileOpsController(QObject):
             self.operationFailed.emit(operation, str(error))
             return
         if operation == "move":
-            # a rács csak így tudja levenni az elmozdított elemeket
+            # MINDKÉT mappa változott, ezért mindkét út kimegy: a forrásból
+            # eltűnt, a célban megjelent a kép. A jelzésnek nincs QML-oldali
+            # feliratkozója — a rácsot a `wire_fileops` célzott resyncje
+            # frissíti (#15).
             for source, target in result.done:
                 self.photoMoved.emit(str(source), str(target))
+        elif operation == "copy":
+            # #1522: a másolás UGYANÚGY célzott újraolvasást kér, mint az
+            # áthelyezés — a figyelőre itt sem építünk.
+            #
+            # Mérés (valódi vezérlő, produkciós FOLDER_POLL_MS): a másolat a
+            # LÁTOTT mappában a #1275 lekérdezéssel ~9,8 s alatt jött be, a
+            # feedben MÁR SZEREPLŐ mappában a #1435 sweep-pel ugyanennyi
+            # alatt — de egy MÉG NEM INDEXELT célmappát egyik sem nézi,
+            # ezért ott a másolat az ötperces rescanig láthatatlan maradt.
+            # Ugyanaz áthelyezéssel: 0,06 s.
+            #
+            # A figyelő ezt csak akkor fedi el, ha él: a `LibraryWatcher`
+            # csak az INDULÁSKOR létező gyökereket veszi fel, és az inotify
+            # figyelőkerete nagy gyűjteménynél elfogyhat. Őr:
+            # `tests/app/test_masolas_resync_1522.py`.
+            for source, target in result.done:
+                self.photoCopied.emit(str(source), str(target))
         # #459: EGY összegzés a köteg végén, nem fájlonkénti ablak
         self.batchFinished.emit(
             operation,

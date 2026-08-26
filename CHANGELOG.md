@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+
+### Javítva
+- **A másolt képek azonnal megjelennek (#1522).** Ha egy képet olyan mappába
+  másoltál, amit a program még nem ismert, a másolat **percekig láthatatlan
+  maradt** — odanavigálva üres mappát láttál. (Áthelyezésnél ez már eddig is
+  rendben volt: mérve 0,06 másodperc, másolásnál 25 másodperc alatt sem
+  jelent meg.) Mostantól a másolás is azonnal beolvastatja a célmappát.
 ### Hozzáadva
 - **Visszavonható lett az összes effektus beillesztése és a csoportos
   szerkesztés (#1475).** Ez a két művelet eddig elvégezhető volt, de
