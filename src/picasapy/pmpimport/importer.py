@@ -88,11 +88,39 @@ def iter_photo_records(
     return tuple(records)
 
 
+_THUMB_INDEX_NAME = "thumbindex.db"
+_THUMB_CACHE_INDEX_NAME = "thumbs_index.db"
+
+
 def _find_thumb_index(db3_dir: Path) -> Path:
-    """thumbindex.db vagy thumbs_index.db — kis-nagybetű-független keresés
-    (MEMORY.md: élesben kisbetűs fájlnevek is előfordulnak)."""
-    wanted = {"thumbindex.db", "thumbs_index.db"}
+    """`thumbindex.db` keresése kis-nagybetű-független módon (MEMORY.md:
+    élesben kisbetűs fájlnevek is előfordulnak).
+
+    ⚠️ A `thumbs_index.db` NEM alternatív név: az egy másik formátumú
+    (magic `0x3FCCCCCD`) bélyegkép-gyorstár-index, amit ez a parser nem
+    tud beolvasni — a kettő egyszerre is jelen lehet a db3 könyvtárban
+    (#1489). Ha csak a gyorstár van jelen, a hibaüzenet ezt nevesíti,
+    hogy a felhasználó ne "érvénytelen magic" hibát kapjon egy egyébként
+    ép adatmappára.
+    """
+    found_cache_index = False
     for path in sorted(db3_dir.iterdir()):
-        if path.name.casefold() in wanted:
+        name = path.name.casefold()
+        if name == _THUMB_INDEX_NAME:
             return path
-    raise FileNotFoundError(f"Nincs thumbindex a db3 könyvtárban: {db3_dir}")
+        if name == _THUMB_CACHE_INDEX_NAME:
+            found_cache_index = True
+    cache_hint = (
+        f" A mappában van egy {_THUMB_CACHE_INDEX_NAME} nevű fájl, de az a "
+        "bélyegkép-gyorstár indexe, nem a névindex — ez nem helyettesíti "
+        f"a hiányzó {_THUMB_INDEX_NAME}-t."
+        if found_cache_index
+        else ""
+    )
+    raise FileNotFoundError(
+        f"Nem található {_THUMB_INDEX_NAME} névindex a db3 könyvtárban: "
+        f"{db3_dir}.{cache_hint} Ellenőrizze, hogy a teljes Picasa "
+        "adatbázis-mappát (db3) átmásolta-e; ha a fájl valóban hiányzik, "
+        "indítsa el az eredeti Picasát azon a gépen, hogy újraépítse az "
+        "adatbázist, majd próbálja meg újra az importot."
+    )

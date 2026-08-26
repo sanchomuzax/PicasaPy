@@ -1,6 +1,8 @@
 """iter_photo_records + parse_deferred_region: a db3-only adatok
 kinyerése helyi útvonalakkal (#1)."""
 
+import struct
+
 import pytest
 
 from picasapy.pmpimport import (
@@ -111,7 +113,9 @@ class TestIterPhotoRecords:
 
     def test_case_insensitive_index_filename(self, tmp_path, remapper):
         # MEMORY.md: élesben kisbetűs fájlnevek is előfordulnak
-        _write_db3(tmp_path, index_name="Thumbs_Index.db")
+        # (a fájl neve maga "thumbindex.db" — a "thumbs_index.db" NEM
+        # ugyanaz a fájl, ld. #1489)
+        _write_db3(tmp_path, index_name="ThumbIndex.DB")
         assert len(iter_photo_records(tmp_path, remapper)) == 2
 
     def test_missing_index_raises(self, tmp_path, remapper):
@@ -120,6 +124,37 @@ class TestIterPhotoRecords:
         )
         with pytest.raises(FileNotFoundError):
             iter_photo_records(tmp_path, remapper)
+
+    def test_only_thumbs_cache_present_gives_helpful_message(
+        self, tmp_path, remapper
+    ):
+        # #1489: a `thumbs_index.db` a bélyegkép-gyorstár indexe (magic
+        # 0x3FCCCCCD), NEM a névindex alternatív neve. Ha csak ez van
+        # jelen, a hiba nevezze meg a hiányzó fájlt, és ne "érvénytelen
+        # magic"-ként bukjon (azt a felhasználó nem tudja értelmezni).
+        (tmp_path / "thumbs_index.db").write_bytes(
+            struct.pack("<III", 0x3FCCCCCD, 0, 0)
+        )
+        with pytest.raises(FileNotFoundError) as exc_info:
+            iter_photo_records(tmp_path, remapper)
+        message = str(exc_info.value)
+        assert "thumbindex.db" in message
+        assert "magic" not in message.lower()
+
+    def test_thumbindex_found_even_when_cache_sorts_first(
+        self, tmp_path, remapper
+    ):
+        # A sima sorted() véletlenül "thumbindex.db" < "thumbs_index.db"
+        # sorrendet ad — ez a teszt ezt a szerencsét zárja ki: a
+        # gyorstár-fájl nagybetűs kezdéssel ASCII szerint MEGELŐZI a
+        # kisbetűs névindexet a bejárási sorrendben, mégis a névindexnek
+        # kell visszajönnie.
+        _write_db3(tmp_path)
+        (tmp_path / "Thumbs_Index.DB").write_bytes(
+            struct.pack("<III", 0x3FCCCCCD, 0, 0)
+        )
+        records = iter_photo_records(tmp_path, remapper)
+        assert len(records) == 2
 
     def test_broken_deferredregion_does_not_break_import(self, tmp_path, remapper):
         _write_db3(tmp_path)
