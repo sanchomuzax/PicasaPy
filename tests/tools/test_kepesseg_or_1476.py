@@ -19,6 +19,7 @@ fájl, …nál több tag), nem pontos számok: a pontos szám holnap avul, a
 
 from __future__ import annotations
 
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -702,6 +703,137 @@ def test_a_valodi_leltar_blokkban_nincs_fajl_vagy_tagszam() -> None:
     for tiltott in ("vizsgált Python-fájl", "vizsgált QML/JS-fájl", "feloldott alias"):
         assert tiltott not in blokk, f"volatilis szám került vissza a lapra: {tiltott}"
 
+
+# -- 8/b. a POZÍCIÓ nem egyenlőségi feltétel (#1523) ------------------------
+#
+# A #1508 kivette a terjedelmi számokat, de a rothadás másik alakja megmaradt:
+# a tábla `hely` oszlopa `fájl:sor` volt, a `test_a_leltar_generalt_blokkja_
+# naprakesz` pedig bitre egyezést kért. Egy szakadást tartalmazó fájlban
+# ELEGENDŐ VOLT EGYETLEN SORT BESZÚRNI ahhoz, hogy a készlet elbukjon —
+# szakadás nélkül. 2026-08-26-án két PR (#1520, #1521) fizetett ezért egy
+# fölösleges kört. Az alábbi tesztek a NEGATÍV oldalt rögzítik (a pozíció ne
+# számítson), a 8/c. szakasz pedig a POZITÍV kontrollt (a tartalom számítson) —
+# a kettő együtt ér valamit: pozitív kontroll nélkül a „nincs eltérés" üres
+# halmazon is igaz volna.
+
+
+def test_egyetlen_sor_beszurasa_nem_valtoztat_a_leltar_blokkon(tmp_path: Path) -> None:
+    """#1523 — a sorok tolódása NEM szakadás, tehát nem is buktathat."""
+    gyoker = _fa(tmp_path)
+    elotte_elemzes = or_.elemez(gyoker)
+    elotte = or_.leltar_tabla(elotte_elemzes, {}, {})
+    eredeti_sor = next(t for t in elotte_elemzes.szakadasok if t.nev == "bekotetlen").sor
+
+    vezerlo = gyoker / "vezerlo.py"
+    vezerlo.write_text("# egyetlen új sor a fájl elején\n" + VEZERLO, encoding="utf-8")
+
+    utana_elemzes = or_.elemez(gyoker)
+    eltolt_sor = next(t for t in utana_elemzes.szakadasok if t.nev == "bekotetlen").sor
+    assert eltolt_sor == eredeti_sor + 1, (
+        "a fixtúra romlott el: az őr nem is érzékelte a sor eltolódását"
+    )
+
+    assert or_.leltar_tabla(utana_elemzes, {}, {}) == elotte
+
+
+def test_a_valodi_leltar_blokkban_nincs_sorszam() -> None:
+    """A visszacsúszás őre (#1523): ha valaki visszateszi a sorszámot a
+    `hely` oszlopba, itt bukik el — nem egy idegen ág piros CI-jában."""
+    szoveg = VALODI_LELTAR.read_text(encoding="utf-8")
+    blokk = szoveg.split(or_.LELTAR_KEZDET)[1].split(or_.LELTAR_VEGE)[0]
+    talalatok = re.findall(r"`app/[^`]+\.py:\d+`", blokk)
+    assert talalatok == [], f"sorszám került vissza a lapra: {talalatok[:3]}"
+    assert "app/" in blokk, "üresen igaz teszt: a blokkban egyáltalán nincs fájlnév"
+
+
+def test_a_valodi_leltar_blokkban_nincs_osztaly_tagszam() -> None:
+    """Ugyanez a rothadás az árva osztályok tábláján: a `tag` oszlop
+    DARABSZÁM volt, tehát a `models.py`-ba tett új `@Slot` elmozdította a
+    lapot, holott az őr összevetése csak az osztály NEVÉT nézi."""
+    szoveg = VALODI_LELTAR.read_text(encoding="utf-8")
+    blokk = szoveg.split(or_.LELTAR_KEZDET)[1].split(or_.LELTAR_VEGE)[0]
+    assert "PhotoGridModel" in blokk, "üresen igaz teszt: nincs árva osztály a lapon"
+    arva_sorok = [s for s in blokk.splitlines() if "app/models.py" in s]
+    assert arva_sorok, "üresen igaz teszt: nincs árvaosztály-sor"
+    for sor in arva_sorok:
+        assert not re.search(r"\|\s*\d+\s*\|", sor), f"tagszám került vissza: {sor}"
+
+
+def test_uj_tag_az_arva_osztalyon_nem_valtoztat_a_leltar_blokkon(tmp_path: Path) -> None:
+    """A `models.py` mért forró fájl: egy új modell-tag nem szakadás."""
+    modell = (
+        "from PySide6.QtCore import Property, QObject, Slot\n\n\n"
+        "class Modell(QObject):\n"
+        "    @Slot()\n"
+        "    def egy(self):\n        pass\n"
+    )
+    gyoker = _fa(tmp_path, vezerlok={"vezerlo.py": VEZERLO, "models.py": modell})
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    assert "Modell" in elotte, "a fixtúra romlott el: nincs árva osztály"
+
+    (gyoker / "models.py").write_text(
+        modell + "\n    @Slot()\n    def ketto(self):\n        pass\n", encoding="utf-8"
+    )
+    utana = or_.elemez(gyoker)
+    arva = next(a for a in utana.arva_osztalyok if a.nev == "Modell")
+    assert arva.tagszam == 2, "a fixtúra romlott el: nem nőtt a tagszám"
+
+    assert or_.leltar_tabla(utana, {}, {}) == elotte
+
+
+# -- 8/c. POZITÍV KONTROLL: a tartalom viszont buktasson --------------------
+#
+# A 8/b. tesztjei „nincs eltérés" alakúak, tehát üres halmazon is zöldek
+# volnának. Az alábbi három állítás a fogat őrzi: ha valaki a pozíció
+# kivétele közben a TARTALMAT is kilazítja, itt bukik el.
+
+
+def test_uj_szakadas_megvaltoztatja_a_leltar_blokkot(tmp_path: Path) -> None:
+    gyoker = _fa(tmp_path)
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+
+    (gyoker / "vezerlo.py").write_text(
+        VEZERLO + "\n    @Slot()\n    def frissBekotetlen(self):\n        pass\n",
+        encoding="utf-8",
+    )
+    utana = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    assert utana != elotte, "az ÚJ szakadás nem látszik a leltáron"
+    assert "frissBekotetlen" in utana
+
+
+def test_a_szakadas_eltunese_megvaltoztatja_a_leltar_blokkot(tmp_path: Path) -> None:
+    gyoker = _fa(tmp_path)
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    assert "bekotetlen" in elotte
+
+    (gyoker / "qml" / "Main.qml").write_text(
+        "Item { onClicked: controller.bekotetlen() }", encoding="utf-8"
+    )
+    utana = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    assert utana != elotte, "a MEGSZŰNT szakadás nem látszik a leltáron"
+    assert "`bekotetlen`" not in utana
+
+
+def test_az_indoklas_valtozasa_megvaltoztatja_a_leltar_blokkot(tmp_path: Path) -> None:
+    """Az indoklás a lap tartalmi védelmének része: a néma átírása
+    ugyanúgy buktasson, mint egy új szakadás."""
+    gyoker = _fa(tmp_path)
+    elemzes = or_.elemez(gyoker)
+    egy = or_.leltar_tabla(elemzes, {"controller.bekotetlen": "RÉGI indoklás"}, {})
+    masik = or_.leltar_tabla(elemzes, {"controller.bekotetlen": "ÚJ indoklás"}, {})
+    assert egy != masik, "az indoklás átírása némán átmenne"
+    assert "RÉGI indoklás" in egy and "ÚJ indoklás" in masik
+
+
+def test_a_fajlnev_valtozasa_megvaltoztatja_a_leltar_blokkot(tmp_path: Path) -> None:
+    """A fájlnév MARAD a táblában (az adja a tájékozódást) — és mivel
+    marad, a költöztetést is meg kell fognia."""
+    gyoker = _fa(tmp_path)
+    elotte = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    (gyoker / "vezerlo.py").rename(gyoker / "athelyezett_vezerlo.py")
+    utana = or_.leltar_tabla(or_.elemez(gyoker), {}, {})
+    assert utana != elotte, "a fájl átnevezése némán átmenne"
+    assert "athelyezett_vezerlo.py" in utana
 
 
 def test_a_leltar_generalt_blokkja_naprakesz(valodi: or_.Elemzes) -> None:

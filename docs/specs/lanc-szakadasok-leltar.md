@@ -59,14 +59,28 @@ A táblát a `python scripts/kepesseg_or.py --leltar --ir` írja, az
 indoklásokat a `scripts/kepesseg_or_baseline.txt` adja. Kézzel ne
 szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` összeveti a kettőt.
 
-**A mérés terjedelmi számai (hány fájl, hány tag, hány alias) NEM ezen a
-lapon állnak** (#1508), hanem az őr futásának kimenetében — a CI `lint`
-jobjának naplójában. Amíg itt álltak, a bitre egyezést kérő teszt minden
-ágat megbuktatott, amelyik egyetlen új `.py`- vagy QML-fájlt hozzáadott,
-holott szakadás nem keletkezett: egy nap alatt négy PR és három
-merge-ütközés jött ebből. **A védelem nem gyengült**: az új szakadást az őr
-kilépőkódja fogja meg (`python scripts/kepesseg_or.py`, 1-es kód), nem
-ennek a lapnak a szövege.
+### Ami erről a lapról SZÁNDÉKOSAN hiányzik — és hol van helyette
+
+| kimarad | miért | hol találod |
+|---|---|---|
+| a mérés terjedelme (hány fájl, tag, alias) | #1508 — minden új `.py`/QML-fájltól elavult | az őr futásának kimenete (CI `lint`-napló) |
+| a tagok **pontos sora** | #1523 — egy fölötte beszúrt sortól elavult | `python scripts/kepesseg_or.py --list`, és az új szakadás hibaüzenete |
+| az árva osztályok **tagszáma** | #1523 — a `models.py` forró fájl, minden új modell-tagtól elavult | ugyanott, `--list` |
+
+Amíg ezek itt álltak, a bitre egyezést kérő teszt olyan ágakat is
+megbuktatott, amelyek **szakadást nem okoztak**: a #1508 előtt minden ág,
+amelyik egyetlen fájlt hozzáadott (egy nap alatt négy PR, három
+merge-ütközés); utána minden ág, amelyik **egyetlen sort beszúrt** egy
+szakadást tartalmazó fájlba (2026-08-26: #1520 és #1521, fejenként egy
+fölösleges piros CI → `--ir` → új push kör).
+
+**A fájlnév marad** — tagnévvel együtt `grep -n "<tagnév>" src/picasapy/app/<fájl>`
+pontos találatot ad, és nem mozdul el egy fölötte beszúrt sortól.
+
+**A védelem nem gyengült.** Ami a lapon áll, az bitre egyezik: a szakadás
+azonossága — kontextus-objektum, tag, fajta, fájl és **indoklás**. Új vagy
+eltűnt szakadásra, sőt átírt indoklásra is bukik a készlet, az őr pedig
+1-es kilépőkóddal áll meg (`python scripts/kepesseg_or.py`).
 
 ⚠️ A 2026-08-25-i **kézi** mérés 52 tagot talált; az őr ugyanezen a fán
 **56**-ot. A különbség nem a fa változása, hanem a minősített keresés: a
@@ -79,71 +93,73 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
-*A mérés terjedelme — hány Python-, hány QML-fájl, hány tag, hány*
-*alias — SZÁNDÉKOSAN nem itt áll, hanem az őr futásának kimenetében*
-*(CI-napló). Ld. #1508: a verziózott szám minden új fájltól elavult,*
-*valódi szakadás nélkül.*
+*Ami ezen a lapon SZÁNDÉKOSAN nem áll: a mérés terjedelme (hány*
+*Python-, hány QML-fájl, hány tag, hány alias — #1508), a tagok*
+*PONTOS SORA és az árva osztályok tagszáma (#1523). Mindhárom a*
+*futás kimenetében van (CI-napló, `--list`), mert a verziózott szám*
+*minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
+*A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
 **Felületről el nem ért vezérlő-tag: 49.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
-| `compactController` | `wastedPercent` | Property | `app/compact_controller.py:56` | MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető |
-| `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py:61` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
-| `controller` | `canUndoBatchEdit` | Property | `app/batch_effect_controller.py:158` | #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll |
-| `controller` | `undoBatchEdit` | Slot | `app/batch_effect_controller.py:388` | #1475 — ugyanaz, a művelet maga |
-| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py:345` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
-| `controller` | `collageTitle` | Property | `app/collage_save.py:114` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
-| `controller` | `setCollageTitle` | Slot | `app/collage_save.py:136` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
-| `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py:153` | MÉRVE — a mentett kollázs útja bekötetlen |
-| `controller` | `folderDateText` | Property | `app/controller.py:290` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
-| `controller` | `folderDescription` | Property | `app/controller.py:295` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
-| `controller` | `setShowHidden` | Slot | `app/controller.py:495` | FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml) |
-| `controller` | `restoreSession` | Slot | `app/controller.py:507` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
-| `controller` | `setFolderDescription` | Slot | `app/controller.py:638` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
-| `controller` | `collageSeed` | Property | `app/create_controller.py:253` | MÉRVE — a véletlen elrendezés magja bekötetlen |
-| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py:38` | #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll |
-| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py:45` | #1475 — ugyanannak a vágólapnak a visszavonás-jelzője |
-| `controller` | `copyEffects` | Slot | `app/effects_controller.py:50` | #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág |
-| `controller` | `pasteEffects` | Slot | `app/effects_controller.py:65` | #1475 — ugyanaz, a beillesztés |
-| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py:141` | #1475 — ugyanaz, a visszavonás |
-| `controller` | `exportMovieFull` | Slot | `app/export_controller.py:144` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
-| `controller` | `setExportMovieFull` | Slot | `app/export_controller.py:154` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
-| `controller` | `locationOfRow` | Slot | `app/geo_controller.py:129` | MÉRVE — a sor helyadata bekötetlen |
-| `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py:682` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
-| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py:721` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
-| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py:628` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
-| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py:724` | #1475 — ugyanaz, a művelet maga |
-| `editController` | `revision` | Property | `app/edit_controller.py:426` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
-| `editController` | `redeyeActive` | Property | `app/edit_controller.py:530` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
-| `editController` | `enhanceActive` | Property | `app/edit_controller.py:534` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |
-| `editController` | `autolightActive` | Property | `app/edit_controller.py:538` | MÉRVE — ugyanaz a minta |
-| `editController` | `autocolorActive` | Property | `app/edit_controller.py:542` | MÉRVE — ugyanaz a minta |
-| `editController` | `hasRetouch` | Property | `app/edit_controller.py:548` | MÉRVE — a retusálás megléte bekötetlen |
-| `editController` | `hasFinetune` | Property | `app/edit_controller.py:837` | MÉRVE — a finomhangolás megléte bekötetlen |
-| `editController` | `hasCrop` | Property | `app/edit_controller.py:842` | MÉRVE — a vágás megléte bekötetlen |
-| `editController` | `redoAction` | Property | `app/edit_controller.py:875` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
-| `editController` | `clearCrop` | Slot | `app/edit_controller.py:1057` | MÉRVE — a vágás törlése bekötetlen |
-| `editController` | `canRenderEffect` | Slot | `app/edit_controller.py:1702` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
-| `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py:1718` | MÉRVE — az elavult effektek felismerése bekötetlen |
-| `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py:2130` | BELSŐ — az application.py:892 hívja leálláskor |
-| `emailController` | `prepareAttachments` | Slot | `app/email_controller.py:199` | #1474 — a QML csak a beállítás-fül kliensválasztóját köti |
-| `emailController` | `sendRows` | Slot | `app/email_controller.py:231` | #1474 — a tényleges küldés sehonnan nem hívódik |
-| `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py:82` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
-| `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py:104` | BELSŐ — az application.py:704 tölti fel a fát |
-| `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py:157` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
-| `folderHierarchyController` | `expand` | Slot | `app/folder_hierarchy_controller.py:191` | MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve) |
-| `folderHierarchyController` | `collapse` | Slot | `app/folder_hierarchy_controller.py:195` | MÉRVE — a fa egy ágának becsukása bekötetlen |
-| `startupStatus` | `busy` | Property | `app/startup_status.py:63` | MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja |
-| `startupStatus` | `report` | Slot | `app/startup_status.py:77` | BELSŐ — az indítás lépéseit az application.py jelenti be |
-| `startupStatus` | `finish` | Slot | `app/startup_status.py:89` | BELSŐ — az indítás végét az application.py jelenti be |
+| `compactController` | `wastedPercent` | Property | `app/compact_controller.py` | MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető |
+| `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
+| `controller` | `canUndoBatchEdit` | Property | `app/batch_effect_controller.py` | #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll |
+| `controller` | `undoBatchEdit` | Slot | `app/batch_effect_controller.py` | #1475 — ugyanaz, a művelet maga |
+| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
+| `controller` | `collageTitle` | Property | `app/collage_save.py` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
+| `controller` | `setCollageTitle` | Slot | `app/collage_save.py` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
+| `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py` | MÉRVE — a mentett kollázs útja bekötetlen |
+| `controller` | `folderDateText` | Property | `app/controller.py` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
+| `controller` | `folderDescription` | Property | `app/controller.py` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
+| `controller` | `setShowHidden` | Slot | `app/controller.py` | FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml) |
+| `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
+| `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
+| `controller` | `collageSeed` | Property | `app/create_controller.py` | MÉRVE — a véletlen elrendezés magja bekötetlen |
+| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll |
+| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | #1475 — ugyanannak a vágólapnak a visszavonás-jelzője |
+| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág |
+| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a beillesztés |
+| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a visszavonás |
+| `controller` | `exportMovieFull` | Slot | `app/export_controller.py` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
+| `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
+| `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |
+| `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
+| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
+| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
+| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py` | #1475 — ugyanaz, a művelet maga |
+| `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
+| `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
+| `editController` | `enhanceActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja |
+| `editController` | `autolightActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
+| `editController` | `autocolorActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
+| `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — a retusálás megléte bekötetlen |
+| `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
+| `editController` | `hasCrop` | Property | `app/edit_controller.py` | MÉRVE — a vágás megléte bekötetlen |
+| `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
+| `editController` | `clearCrop` | Slot | `app/edit_controller.py` | MÉRVE — a vágás törlése bekötetlen |
+| `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
+| `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
+| `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |
+| `emailController` | `prepareAttachments` | Slot | `app/email_controller.py` | #1474 — a QML csak a beállítás-fül kliensválasztóját köti |
+| `emailController` | `sendRows` | Slot | `app/email_controller.py` | #1474 — a tényleges küldés sehonnan nem hívódik |
+| `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
+| `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
+| `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
+| `folderHierarchyController` | `expand` | Slot | `app/folder_hierarchy_controller.py` | MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve) |
+| `folderHierarchyController` | `collapse` | Slot | `app/folder_hierarchy_controller.py` | MÉRVE — a fa egy ágának becsukása bekötetlen |
+| `startupStatus` | `busy` | Property | `app/startup_status.py` | MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja |
+| `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
+| `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |
 
 **QML-tagot hordozó, de kontextusból el nem ért osztályok:**
 
-| osztály | hely | tag | indoklás |
-|---|---|---:|---|
-| `FolderListModel` | `app/models.py` | 3 | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
-| `PhotoGridModel` | `app/models.py` | 15 | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
+| osztály | hely | indoklás |
+|---|---|---|
+| `FolderListModel` | `app/models.py` | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
+| `PhotoGridModel` | `app/models.py` | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
 
 <!-- KEPESSEG_OR:VEGE -->
 

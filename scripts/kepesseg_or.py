@@ -89,6 +89,27 @@ merge-ütközés jött belőle. A számok azóta a futás KIMENETÉBEN állnak
 marad: maga a szakadás-lista. A védelmet ez nem gyengíti — az új szakadást
 az őr **kilépőkódja** fogja meg, nem a dokumentum szövege.
 
+**A generált leltárban a POZÍCIÓ nem egyenlőségi feltétel (#1523).** A #1508
+kivette a terjedelmi számokat, de a rothadás másik alakja megmaradt: a tábla
+`hely` oszlopa `fájl:sor` volt, az árva osztályoké darabszámot hordozott, és a
+`test_a_leltar_generalt_blokkja_naprakesz` bitre egyezést kért. Ettől **egyetlen
+sor beszúrása** egy olyan fájlba, amelyben történetesen van szakadás, megbuktatta
+a készletet — szakadás nélkül. 2026-08-26-án két PR (#1520, #1521) fizetett
+ezért egy fölösleges kört (piros CI → `--ir` → új push → új CI), és merge-ütközést
+is termelt.
+
+A szabály tehát: **a lapon a szakadás AZONOSSÁGA áll** (kontextus-objektum, tag,
+fajta, fájl, indoklás) — ez a valódi védelem, és ez bitre egyezik. A **pontos sor
+és a tagszám a futás kimenetében** van (`--list`, illetve az új szakadás
+hibaüzenete), ahol minden futáskor frissen mérve áll, és nincs mit karbantartani.
+A fájlnév azért MARAD a lapon, mert tagnévvel együtt `grep -n`-nel pontos
+találatot ad, és nem mozdul el egy fölötte beszúrt sortól.
+
+Aki vissza akarja tenni a sorszámot: a lapra írt sor a következő idegen ág
+piros CI-jában bukik ki, nem itt. Két visszacsúszás-őr tiltja
+(`test_a_valodi_leltar_blokkban_nincs_sorszam`,
+`…_nincs_osztaly_tagszam`).
+
 Használat::
 
     python scripts/kepesseg_or.py            # ellenőrzés (CI)
@@ -741,10 +762,12 @@ def leltar_tabla(
         "*Ezt a blokkot a `python scripts/kepesseg_or.py --leltar --ir` írja.*",
         "*Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*",
         "",
-        "*A mérés terjedelme — hány Python-, hány QML-fájl, hány tag, hány*",
-        "*alias — SZÁNDÉKOSAN nem itt áll, hanem az őr futásának kimenetében*",
-        "*(CI-napló). Ld. #1508: a verziózott szám minden új fájltól elavult,*",
-        "*valódi szakadás nélkül.*",
+        "*Ami ezen a lapon SZÁNDÉKOSAN nem áll: a mérés terjedelme (hány*",
+        "*Python-, hány QML-fájl, hány tag, hány alias — #1508), a tagok*",
+        "*PONTOS SORA és az árva osztályok tagszáma (#1523). Mindhárom a*",
+        "*futás kimenetében van (CI-napló, `--list`), mert a verziózott szám*",
+        "*minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*",
+        "*A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*",
         "",
         f"**Felületről el nem ért vezérlő-tag: {len(elemzes.szakadasok)}.**",
         "",
@@ -754,20 +777,27 @@ def leltar_tabla(
     for tag in elemzes.szakadasok:
         indoklas = baseline.get(tag.kulcs, "**ÚJ — nincs indoklás**")
         sorok.append(
+            # A PONTOS SOR SZÁNDÉKOSAN HIÁNYZIK (#1523) — ld. a modul
+            # docstringjét. A fájlnév + tagnév `grep -n`-nel pontos, és
+            # nem avul el minden fölötte beszúrt sortól.
             f"| `{tag.kontextus}` | `{tag.nev}` | {tag.fajta} "
-            f"| `app/{tag.fajl}:{tag.sor}` | {indoklas} |"
+            f"| `app/{tag.fajl}` | {indoklas} |"
         )
     if elemzes.arva_osztalyok:
         sorok += [
             "",
             "**QML-tagot hordozó, de kontextusból el nem ért osztályok:**",
             "",
-            "| osztály | hely | tag | indoklás |",
-            "|---|---|---:|---|",
+            "| osztály | hely | indoklás |",
+            "|---|---|---|",
         ]
         for arva in elemzes.arva_osztalyok:
+            # A tagszám is volatilis volt (#1523): a `models.py` mért forró
+            # fájl, egy új modell-tag elmozdította a lapot — miközben az őr
+            # összevetése csak az osztály NEVÉT nézi. A darabszám a futás
+            # kimenetében áll (`--list`).
             sorok.append(
-                f"| `{arva.nev}` | `app/{arva.fajl}` | {arva.tagszam} "
+                f"| `{arva.nev}` | `app/{arva.fajl}` "
                 f"| {osztaly_baseline.get(arva.nev, '**ÚJ — nincs indoklás**')} |"
             )
     return "\n".join([*sorok, "", LELTAR_VEGE])
