@@ -466,6 +466,10 @@ Rectangle {
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
+    // #1528: van-e mit alaphelyzetbe állítani — a húzott kijelölés VAGY a
+    // mentett vágás megléte. A hívó (PhotoViewer) tölti: a panel sem az
+    // overlayt, sem a kontrollert nem ismeri.
+    property bool cropResetEnabled: false
     // #448: automatikus vágás-javaslatok — a hívó (PhotoViewer) tölti a
     // kontrollerből (`{key, x, y, w, h}` elemek), és a `cropSuggestionChosen`
     // jelre alkalmazza a kijelölést.

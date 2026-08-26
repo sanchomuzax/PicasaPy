@@ -321,6 +321,13 @@ ColumnLayout {
         label: qsTr("Reset")
         // #741: az eredetin a `cropdiscard` egyedül, KÖZÉPEN áll (x 90)
         Layout.alignment: Qt.AlignHCenter
+        // #1528: nincs mit elvetni → tiltott, a `retouchResetButton`
+        // mintájára. A feltételt a hívó számolja (kijelölés VAGY mentett
+        // vágás), mert a panel egyiket sem ismeri.
+        buttonEnabled: panel.cropResetEnabled
+        //: az eredeti `editpanel/cropdiscard` buboréksúgója
+        //: (editpaneltext.tre 234-235)
+        tooltip: qsTr("Discards any applied cropping")
         onButtonClicked: panel.cropResetRequested()
     }
 

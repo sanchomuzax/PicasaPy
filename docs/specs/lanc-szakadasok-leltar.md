@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 49.**
+**Felületről el nem ért vezérlő-tag: 47.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -137,9 +137,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `autocolorActive` | Property | `app/edit_controller.py` | MÉRVE — ugyanaz a minta |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — a retusálás megléte bekötetlen |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
-| `editController` | `hasCrop` | Property | `app/edit_controller.py` | MÉRVE — a vágás megléte bekötetlen |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
-| `editController` | `clearCrop` | Slot | `app/edit_controller.py` | MÉRVE — a vágás törlése bekötetlen |
 | `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
 | `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |

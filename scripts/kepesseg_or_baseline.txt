@@ -82,8 +82,6 @@ editController.autolightActive MÉRVE — ugyanaz a minta
 editController.autocolorActive MÉRVE — ugyanaz a minta
 editController.hasRetouch MÉRVE — a retusálás megléte bekötetlen
 editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
-editController.hasCrop MÉRVE — a vágás megléte bekötetlen
-editController.clearCrop MÉRVE — a vágás törlése bekötetlen
 editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
 editController.isDeadLegacyEffect MÉRVE — az elavult effektek felismerése bekötetlen
 folderHierarchyController.expand MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve)

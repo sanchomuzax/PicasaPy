@@ -5735,6 +5735,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Discards any applied cropping</source>
+        <translation>Az összes alkalmazott vágás elvetése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
         <source>Landscape</source>
         <translation>Fekvő</translation>
     </message>

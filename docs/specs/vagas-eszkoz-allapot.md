@@ -183,6 +183,30 @@ sincs ilyen kapcsoló: **az eredetiben nem volt harmadoló segédrács.** A
 kódban sincs (`grep -i thirds|harmadol` a QML-en: 0 találat). Ha egyszer
 kap ilyet a PicasaPy, az **saját kiegészítés**, nem az eredeti utánzása.
 
+## 4/b. Lezárt nyitott kérdés: mit tesz az „Alaphelyzet"? (#1528)
+
+A #1528 nyitó kérdése az volt, hogy az eredeti „Alaphelyzet" a MENTETT
+vágást szünteti-e meg, vagy csak a húzott kijelölést. **A választ az
+eredeti saját szövegforrása adja, nem következtetés:**
+
+| forrás | sor | szöveg |
+|---|---|---|
+| `referencia/tre-eroforrasok/editpaneltext.tre` | 231–235 | `Label editpanel/cropdiscard` → **Reset**; `Tooltip editpanel/cropdiscard` → **„Discards any applied cropping"** |
+| `referencia/panel-feliratok-hu.tsv` | 4981–4982 | **„Alaphelyzet"** / **„Az összes alkalmazott vágás elvetése"** |
+
+Az „applied" / „alkalmazott" szó zárja a kérdést: a gomb a **ténylegesen
+alkalmazott** vágást veti el, nem a félkész kijelölést. Ezt erősíti a
+testvér-vezérlő is: a `redeyediscard` buboréksúgója „Undo Red-Eye changes"
+(`ui-audit-editor.md` 975), tehát ott is a már elvégzett korrekciót veszi
+le.
+
+**A PicasaPy ehhez igazodik (#1528):** az `onCropResetRequested`
+(`app/qml/PicasaPy/PhotoViewer.qml`) a kijelölés nullázása MELLETT az
+`editController.clearCrop()`-ot is hívja, ha van mentett vágás; a gomb
+pedig tiltott, ha nincs mit elvetni (`cropResetEnabled` — kijelölés VAGY
+`hasCrop`). Az elvetés a szokásos visszavonás-veremre kerül `crop` néven,
+tehát a Visszavonás gomb visszahozza (#465).
+
 ## 5. Amit az eredetiből átvettünk, és megvan
 
 - **Kiegyenesítés-figyelmeztetés** (`IDS_WARN_CROP_ACCURACY`) — szó szerinti
