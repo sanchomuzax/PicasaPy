@@ -197,3 +197,41 @@ kétágú kezelőjéhez hasonlóan — a szerkesztő nyitottsága szerint válas
 
 Egyik nyitott kérdés sem érinti a fenti döntéseket: az 1. a **kötegelt**
 réteg javításának részletkérdése, a 2. a szerkesztő vermét illeti.
+
+### Az 1. kérdés LEZÁRVA (#1544, 2026-08-26)
+
+Az itt nyitva hagyott kérdést a #1544 javítása mérte ki. A nyitott
+megfogalmazás egy ponton **pontatlan** volt: „a renderelést nem a
+`filters=`-beli `crop64`, hanem a külön `crop=` kulcs hajtja" — ez az
+EREDETI Picasára igaz, **nálunk viszont nem**. Mérve:
+
+* a mi könyvtár-nézetünk bélyegképét a `ThumbnailCache.get_or_create_edited`
+  állítja elő, kizárólag a `photo.filters` láncból
+  (`app/thumbnail_provider.py` → `thumbs/cache.py:202`), és a
+  `render.apply_filters` a lánc effektív `crop64`-jét ALKALMAZZA is
+  (mérés: 800×600 kép + `crop64=1,45930000ba03defe;` ⇒ 364×523);
+* a `crop=` kulcsot a teljes `src/` fában **senki nem olvassa**
+  renderelés/indexelés céljából — csak írjuk (`edit_controller._save()`,
+  `effects_controller._write_session()`, `batch_effect_controller`), és
+  visszavonáshoz olvassuk vissza a saját korábbi értékünket.
+
+⇒ **A célkép nálunk a lánc átvitelétől már vágottnak látszik**, `crop=`
+nélkül is. A tükör-kulcsot mégis írjuk, két okból:
+
+1. **Picasa-paritás.** Az éles korpuszon (18 801 szekció, 5658 lánc)
+   763 láncban van `crop64`; ebből 761-hez tartozik `crop=` is, és mind a
+   761 esetben az értéke **pontosan a lánc UTOLSÓ `crop64`-je**. A 38
+   darab több-`crop64`-es láncnál is 38/38 az utolsót tükrözi, az elsőt
+   nulla. `crop64` nélküli `crop=` **nulla** esetben fordul elő. A
+   tükör-kulcs elhagyásával ugyanaz a NAS-mappa a windowsos Picasában
+   vágatlan képet mutatna.
+2. **Belső következetesség.** Minden más írónk együtt tartja a két
+   kulcsot; a beillesztés lett volna az egyetlen, amelyik szétcsúsztatja.
+
+A 761/763 arány *magyarázatát* is megnéztük: a két kivétel (`.picasa.ini`
+2012-es, `backuphash`/`moddate`/`IIDLIST_…` kulcsokkal) **nem** lehet
+beillesztés nyoma, mert a két lánc egymástól is különbözik (`fill=1,0.261682`
+vs. `fill=1,0.205607`) — beillesztéskor azonosnak kellene lenniük.
+
+A 2. kérdés (a szerkesztő vermének rétegzése) továbbra is nyitott.
+

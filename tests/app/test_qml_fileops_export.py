@@ -515,11 +515,23 @@ class TestCopyPasteEffectsMenu:
         assert "[b.jpg]" in ini_text
         assert "filters=BRIT=1,e50,0.20;" in ini_text.split("[b.jpg]")[1]
 
-    def test_crop_and_redeye_are_not_transferred(self, qml_app, qt_app):
-        """#426 elfogadási kritérium: a kivágás/vörösszem/retus régióhoz/
-        képhez kötött, ezért az „Az összes effektus beillesztése" ezeket
-        NEM viheti át — ellentétben a #152-es (Kép menü) korábbi
-        motorjával, amely a crop64-et is átvinné."""
+    def test_crop_and_redeye_are_transferred(self, qml_app, qt_app):
+        """#1544: a kivágás és a vörösszem-javítás IS átmegy.
+
+        A teszt korábbi állítása (`test_crop_and_redeye_are_not_transferred`)
+        az volt, hogy a `crop64`/`redeye` képhez kötött, ezért nem vihető át.
+        Ez **téves** volt: a #1534 a `Picasa3.exe` diszasszemblálásával
+        igazolta, hogy a másolás (`0x005fecd0`) és a beillesztés
+        (`0x005fefc0`) teljes hívási útján nincs szűrő-névre vonatkozó
+        összehasonlítás, és a bináris-indexben a `crop64` sztringnek NULLA
+        kódhivatkozása van. Az eredeti a `filters` láncot egészében írja
+        vissza — a szűrés a mi saját, a `filterdesc.xml` `mode="history"`
+        oszlopából KÖVETKEZTETETT szabályunk volt.
+
+        A `crop=rect64(...)` tükör-kulcs is követi a láncot: a `filters=`-beli
+        `crop64` az eredetiben önmagában nem vág (`docs/specs/
+        filters-decoded.md`), tehát e nélkül ugyanaz a mappa a windowsos
+        Picasában vágatlan képet mutatna."""
         window, controller, lib, _engine = qml_app
         (lib / ".picasa.ini").write_text(
             "[a.jpg]\n"
@@ -550,6 +562,9 @@ class TestCopyPasteEffectsMenu:
 
         ini_text = (lib / ".picasa.ini").read_text(encoding="utf-8")
         b_block = ini_text.split("[b.jpg]")[1]
-        assert "enhance=1" in b_block
-        assert "crop64" not in b_block
-        assert "redeye" not in b_block
+        assert (
+            "filters=enhance=1;crop64=1,45930000ba03defe;redeye=1;" in b_block
+        ), f"a beillesztés nem a teljes láncot vitte át:\n{b_block}"
+        assert "crop=rect64(45930000ba03defe)" in b_block, (
+            f"a `crop=` tükör-kulcs nem került a célképre:\n{b_block}"
+        )

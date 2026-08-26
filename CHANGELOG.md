@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Az „Összes effektus beillesztése" végre a teljes szerkesztést átviszi
+  (#1544).** Eddig némán eldobta a **vágást** és a **vörösszem-javítást**: azt
+  hitted, átvitted a szerkesztést a másik képre, és mást kaptál — a kép mérete
+  se lett ugyanaz. Ez a szűrés a mi találmányunk volt; az eredeti Picasa a
+  láncot egészében viszi át (a program szétszedésével igazolva). A művelet
+  egyetlen lépésben visszavonható marad.
+
 ## [0.8.110] – 2026-08-26
 
 ### Belső

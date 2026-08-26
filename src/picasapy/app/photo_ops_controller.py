@@ -19,16 +19,25 @@ függvényeit hívja mutate-ként.
 
 #426: „Az összes effektus másolása/beillesztése" (Szerkesztés menü) — az
 `EffectClipboardMixin` a `picasapy.edit.effect_clipboard` tiszta logikáját
-köti QML-slotokká. FONTOS: ez SZÁNDÉKOSAN külön a `picasapy.app.
-effects_controller.EffectsClipboardMixin`-től (#152, „Copy/Paste All
-Effects", a Kép menüből) — az a `crop64`-et IS átviszi (Picasa
-„pillanatkép"-jellegű, egy-képes variánsa), ez a szelet viszont a #426
-jegyben leírt hivatalos „Az összes effektus másolása/beillesztése"
-viselkedést valósítja meg, ami a `crop64`/`crop`/`redeye`/`retouch`/
-`moviestart`/`movieend` bejegyzéseket KIFEJEZETTEN kihagyja (ld.
-`effect_clipboard` modul docstringje). A két funkció más Picasa menüponthoz
-(más `ID_EDIT_*` erőforráshoz) tartozik, ezért a két vágólap-állapot is
-szándékosan független egymástól."""
+köti QML-slotokká. Ez a réteg van a felületre kötve (`Main.qml:767–775`,
+`PicasaMenuBar.qml:296–325`).
+
+#1544: ez a réteg a `crop64`/`crop`/`redeye`/`retouch`/`moviestart`/
+`movieend` bejegyzéseket korábban KIHAGYTA a másolásból, a `filterdesc.xml`
+`mode="history"` oszlopából KÖVETKEZTETVE. A #1534 a `Picasa3.exe`
+diszasszemblálásával igazolta, hogy az eredeti másolás-kezelője ezt az
+attribútumot soha nem olvassa — a lánc EGÉSZÉBEN megy át, a vágással
+együtt. A szűrés megszűnt; az indoklás az `effect_clipboard` modul
+docstringjében, a döntés a `docs/decisions/effektus-vagolap-ket-reteg.md`-ben.
+
+⚠️ A korábbi állítás, hogy ez és a `picasapy.app.effects_controller.
+EffectsClipboardMixin` (#152) MÁS Picasa-menüponthoz (más `ID_EDIT_*`
+erőforráshoz) tartozna, TÉVES volt: az eredetiben **egy** parancspár van
+(`ID_EDIT_COPYALLEFFECTS`/`ID_EDIT_PASTEALLEFFECTS`, a Szerkesztés menüben),
+kétágú kezelővel — a Kép menüben egy sincs. A #152 réteg felület nélküli
+referencia-megvalósítás marad (ADR-007 2. döntés), a két vágólap-állapot
+pedig azért független, mert a két réteg külön él, nem mert két parancs
+volna."""
 
 from __future__ import annotations
 
@@ -37,7 +46,11 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
-from picasapy.edit.effect_clipboard import copy_all_effects, paste_all_effects
+from picasapy.edit.effect_clipboard import (
+    copy_all_effects,
+    crop_mirror_value,
+    paste_all_effects,
+)
 from picasapy.fileops import RenameItem, preview_name, rename_photos_many
 from picasapy.index import (
     open_index,
@@ -611,11 +624,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not hasattr(self, "_effect_clipboard_value"):
             self._effect_clipboard_value: str | None = None
             # egyetlen visszavonási lépés (#426 elfogadási kritérium): az
-            # utolsó beillesztés ELŐTTI (mappa, fájlnév, nyers filters=)
-            # hármasainak listája; None = nincs (törölve/le nem futott)
-            self._effect_clipboard_undo: list[tuple[str, str, str | None]] | None = (
-                None
-            )
+            # utolsó beillesztés ELŐTTI (mappa, fájlnév, nyers filters=,
+            # nyers crop=) NÉGYESEINEK listája; None = nincs (törölve/le nem
+            # futott). #1544: a `crop=` tükör-kulcs is a négyesbe került —
+            # enélkül a visszavonás a régi láncot adná vissza az ÚJ vágással
+            # (ugyanaz a hiba, amit a #465 a köteges úton javított).
+            self._effect_clipboard_undo: (
+                list[tuple[str, str, str | None, str | None]] | None
+            ) = None
 
     @Property(bool, notify=allEffectsClipboardChanged)
     def hasAllEffectsClipboard(self) -> bool:
@@ -631,10 +647,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
     @Slot(list)
     def copyAllEffects(self, rows) -> None:
-        """„Az összes effektus másolása": a kijelölés ELSŐ képének szűrt
-        `filters=` lánca (a kép-/régióspecifikus bejegyzések nélkül, ld.
-        `picasapy.edit.effect_clipboard`) kerül az alkalmazás-szintű
-        vágólapra. Tiszta lekérdezés — nem ír semmit."""
+        """„Az összes effektus másolása": a kijelölés ELSŐ képének TELJES
+        `filters=` lánca kerül az alkalmazás-szintű vágólapra — a vágással
+        (`crop64`) és a régió-adatokkal (`redeye`/`retouch`) együtt, ahogy az
+        eredeti Picasa másolója teszi (#1544; a szűrés a `mode="history"`
+        oszlopból következtetett, téves szabály volt, ld.
+        `picasapy.edit.effect_clipboard`). Tiszta lekérdezés — nem ír semmit."""
         self._ensure_effect_clipboard()
         photos = self._photos.photos
         valid_rows = [int(r) for r in rows if 0 <= int(r) < len(photos)]
@@ -651,11 +669,29 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         Mappánként EGYETLEN ini-írás (a `_apply_batch`/`effects_controller.
         EffectsClipboardMixin.pasteEffects` mintája): a beillesztés előtti
-        nyers `filters=` értékek egyetlen undo-lépésként kerülnek a verembe,
-        hogy a teljes köteg egy `undoPasteAllEffects()` hívással
+        nyers `filters=` és `crop=` értékek egyetlen undo-lépésként kerülnek
+        a verembe, hogy a teljes köteg egy `undoPasteAllEffects()` hívással
         visszavonható legyen. Nincs háttérszál — az ini-írás gyors (nincs
         képfeldolgozás), a `_apply_batch`/`EffectsClipboardMixin.
-        pasteEffects` szinkron mintáját követi."""
+        pasteEffects` szinkron mintáját követi.
+
+        #1544: a lánccal EGYÜTT jár a `crop=rect64(...)` tükör-kulcs is (az
+        `edit_controller._save()`/`effects_controller._write_session()`
+        szabálya szerint). A `filters=`-beli `crop64` az EREDETI Picasában
+        önmagában nem vág — a renderelést a `crop=` hajtja —, ezért e nélkül
+        ugyanaz a NAS-mappa a windowsos Picasában vágatlan képet mutatna.
+        Vágás nélküli lánc beillesztésekor a célkép meglévő `crop=` kulcsa
+        TÖRLŐDIK: `crop64` nélküli `crop=` az éles korpuszban nulla esetben
+        fordul elő (761-ből).
+
+        ⚠️ **Más méretarányú célkép.** A `crop64` rect64-koordinátái
+        relatívak ([0..1]), ezért a vágás a más alakú célképre is érvényes
+        marad — arányosan ugyanazt a részt jelöli ki, sosem lóg ki a képből,
+        és nem hibázik. A KOMPOZÍCIÓ más lesz (mérve: ugyanaz a rect 800×600
+        képen 364×523, 600×800-on 273×697 kivágást ad), adat viszont nem
+        vész el: az eredeti JPEG érintetlen, a `.picasa.ini` nem destruktív,
+        és a művelet visszavonható. Az eredeti Picasa beillesztője sem tesz
+        célkép-méret szerinti kivételt."""
         self._ensure_effect_clipboard()
         if self._effect_clipboard_value is None:
             return
@@ -665,16 +701,19 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             return
         clipboard_value = self._effect_clipboard_value
         new_value = paste_all_effects(clipboard_value)
+        # #1544: a lánccal együtt járó `crop=` tükör-kulcs — minden célképre
+        # ugyanaz, ezért egyszer számoljuk ki.
+        new_crop = crop_mirror_value(new_value)
 
         by_folder: dict[str, list] = {}
         for photo in valid:
             by_folder.setdefault(photo.folder_path, []).append(photo)
 
-        undo_batch: list[tuple[str, str, str | None]] = []
+        undo_batch: list[tuple[str, str, str | None, str | None]] = []
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                entries: list[tuple[str, str, str | None]] = []
+                entries: list[tuple[str, str, str | None, str | None]] = []
 
                 # B023: az `entries` alapértelmezett argumentumként kötve —
                 # a mutate szinkron fut, mielőtt a következő iteráció
@@ -682,11 +721,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 def mutate(
                     document, folder=folder, folder_photos=folder_photos, entries=entries
                 ):
-                    fresh: list[tuple[str, str, str | None]] = []
+                    fresh: list[tuple[str, str, str | None, str | None]] = []
                     for photo in folder_photos:
                         section = document.section(photo.name)
                         prev = section.get("filters") if section else None
-                        fresh.append((folder, photo.name, prev))
+                        prev_crop = section.get("crop") if section else None
+                        fresh.append((folder, photo.name, prev, prev_crop))
                         if new_value:
                             # #643: a vágólapról ÁTVITT lánc — az idegen tag
                             # nem most keletkezik, ezért nem utasítjuk vissza.
@@ -695,6 +735,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                             )
                         else:
                             document = document.with_removed(photo.name, "filters")
+                        if new_crop is not None:
+                            document = document.with_value(
+                                photo.name, "crop", new_crop
+                            )
+                        else:
+                            document = document.with_removed(photo.name, "crop")
                     entries[:] = fresh
                     return document
 
@@ -723,30 +769,40 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     @Slot()
     def undoPasteAllEffects(self) -> None:
         """Az utolsó „Az összes effektus beillesztése" visszavonása — minden
-        érintett kép `filters=` kulcsa visszaáll a beillesztés előtti (nyers)
-        értékre (#426 elfogadási kritérium: egyetlen visszavonási lépés)."""
+        érintett kép `filters=` ÉS `crop=` kulcsa visszaáll a beillesztés
+        előtti (nyers) értékre (#426 elfogadási kritérium: egyetlen
+        visszavonási lépés).
+
+        #1544: a `crop=` azért van itt, mert a beillesztés is írja. Enélkül a
+        visszavonás a RÉGI láncot adná vissza az ÚJ vágással — a célkép a
+        windowsos Picasában olyan rect szerint vágódna, aminek a láncában
+        nincs párja."""
         self._ensure_effect_clipboard()
         if not self._effect_clipboard_undo:
             return
         batch = self._effect_clipboard_undo
         self._effect_clipboard_undo = None
 
-        by_folder: dict[str, list[tuple[str, str | None]]] = {}
-        for folder, name, prev_filters in batch:
-            by_folder.setdefault(folder, []).append((name, prev_filters))
+        by_folder: dict[str, list[tuple[str, str | None, str | None]]] = {}
+        for folder, name, prev_filters, prev_crop in batch:
+            by_folder.setdefault(folder, []).append((name, prev_filters, prev_crop))
 
         with open_index(self._db_path) as conn:
             for folder, entries in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
 
                 def mutate(document, entries=entries):
-                    for name, prev_filters in entries:
+                    for name, prev_filters, prev_crop in entries:
                         if prev_filters is not None:
                             document = document.with_value(
                                 name, "filters", prev_filters, carried=True  # #643
                             )
                         else:
                             document = document.with_removed(name, "filters")
+                        if prev_crop is not None:
+                            document = document.with_value(name, "crop", prev_crop)
+                        else:
+                            document = document.with_removed(name, "crop")
                     return document
 
                 try:
@@ -759,7 +815,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 self.recordSavedChains(
                     [
                         (str(Path(folder) / name), prev_filters or "")
-                        for name, prev_filters in entries
+                        for name, prev_filters, _prev_crop in entries
                     ]
                 )
                 self._sync_tree(conn, folder)
