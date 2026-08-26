@@ -1,104 +1,126 @@
-"""`effect_clipboard` — a "mit viszünk át" szabály és a másolás/beillesztés
-tiszta logikája (#426)."""
+"""`effect_clipboard` — „Az összes effektus másolása/beillesztése" tiszta
+logikája (#426, javítva a #1544-ben).
+
+## Miért íródott át ez a fájl (#1544)
+
+A korábbi tesztkészlet a lánc **szűrését** rögzítette: azt állította, hogy a
+`crop64`/`crop`/`redeye`/`retouch`/`save`/`rot`/`picnik`/`moviestart`/
+`movieend` bejegyzések nem mennek át. Ez az állítás **téves volt**. A #426
+a `filterdesc.xml` `mode="history"`/`persist` oszlopából KÖVETKEZTETTE a
+kizárást, holott az eredeti Picasa másolás-kezelője ezt az attribútumot
+soha nem olvassa:
+
+* a `Picasa3.exe` másolójának (`0x005fecd0`) és beillesztőjének
+  (`0x005fefc0`) teljes hívási útján **nincs szűrő-névre vonatkozó
+  összehasonlítás** — sem fehér-, sem feketelista;
+* függetlenül a bináris-indexből: a `"filters"` sztringnek **33**
+  kódhivatkozása van (köztük a `0x006af3e0`/`0x006af650` getter/setter),
+  a `crop64` sztringnek **nulla** ⇒ a program sehol nem hasonlít össze
+  semmit ezzel a névvel.
+
+Bizonyíték és döntés: `docs/decisions/effektus-vagolap-ket-reteg.md` (#1534).
+"""
 
 from picasapy.edit.effect_clipboard import (
-    EXCLUDED_FILTER_NAMES,
     copy_all_effects,
-    is_transferable,
+    crop_mirror_value,
     paste_all_effects,
 )
 
 
-class TestExcludedFilterNames:
-    """A gépi szabály (`filterdesc` `mode="history"`/`persist="1"`) pontosan
-    a #426 jegyben megnevezett halmazt adja."""
-
-    def test_matches_issue_exclusion_list(self):
-        # docs/specs/filterdesc-registry.md alapján levezetett halmaz — a
-        # crop64/crop/redeye/retouch a mode="history" (redeye/retouch
-        # ráadásul persist="1" is), a save/rot a history-only könyvelés
-        # további tagjai, a moviestart/movieend pedig a modul docstringjében
-        # dokumentált, explicit kiegészítés.
-        assert EXCLUDED_FILTER_NAMES == frozenset(
-            {
-                "save",
-                "crop64",
-                "crop",
-                "redeye",
-                "retouch",
-                "picnik",
-                "rot",
-                "moviestart",
-                "movieend",
-            }
-        )
-
-    def test_issue_named_entries_all_excluded(self):
-        # a jegy szövegében kifejezetten megnevezett öt bejegyzés mindegyike
-        # benne van — ez a legszorosabb elfogadási kritérium
-        for name in ("crop64", "crop", "redeye", "retouch", "moviestart", "movieend"):
-            assert not is_transferable(name)
-
-    def test_ordinary_effects_transferable(self):
-        for name in ("finetune2", "sat", "Vignette", "unsharp2", "glow2", "enhance"):
-            assert is_transferable(name)
-
-    def test_case_insensitive(self):
-        assert not is_transferable("CROP64")
-        assert not is_transferable("ReDeYe")
-
-
 class TestCopyAllEffects:
-    def test_strips_excluded_entries(self):
-        chain = (
-            "enhance=1;crop64=1,45930000ba03defe;"
-            "finetune2=1,0.333333,0.176842,0.193684,00000000,0.000000;"
-            "redeye=1;retouch=1,10000000f1ddff49;"
-        )
-        result = copy_all_effects(chain)
-        assert "crop64" not in result
-        assert "redeye" not in result
-        assert "retouch" not in result
-        assert result == (
-            "enhance=1;"
-            "finetune2=1,0.333333,0.176842,0.193684,00000000,0.000000;"
-        )
+    """A másolás NEM szűr — a lánc egészében kerül a vágólapra."""
 
-    def test_preserves_order_of_kept_entries(self):
-        chain = "sat=1,0.2;contrast=1,0.1;Vignette=1,35.0,1.4,0.0,00000000;"
-        assert copy_all_effects(chain) == chain
+    def test_a_teljes_lancot_atveszi(self):
+        """A jegy (#1544) mért lánca: a `crop64` és a `redeye` is átmegy.
 
-    def test_none_input_gives_empty_chain(self):
+        A régi teszt (`test_strips_excluded_entries`) ennek az ELLENKEZŐJÉT
+        állította — a bináris-bizonyíték szerint tévesen."""
+        lanc = (
+            "crop64=1,45930000ba03defe;bw=1;sepia=1;redeye=1,abc;"
+            "tilt=1,0.500000,0.200000;"
+        )
+        assert copy_all_effects(lanc) == lanc
+
+    def test_a_regi_kizart_nevek_mind_atmennek(self):
+        """A #426 kizárási listájának MINDEN tagja átvihető.
+
+        A régi `test_issue_named_entries_all_excluded` ugyanezt a hat nevet
+        sorolta fel — azzal az állítással, hogy egyik sem megy át."""
+        lanc = (
+            "save=1;crop64=1,45930000ba03defe;crop=1;redeye=1;"
+            "retouch=1,10000000f1ddff49;picnik=1;rot=1;"
+            "moviestart=1,0.1;movieend=1,0.9;"
+        )
+        assert copy_all_effects(lanc) == lanc
+
+    def test_megorzi_a_sorrendet(self):
+        lanc = "sat=1,0.2;contrast=1,0.1;Vignette=1,35.0,1.4,0.0,00000000;"
+        assert copy_all_effects(lanc) == lanc
+
+    def test_none_bemenet_ures_lancot_ad(self):
         assert copy_all_effects(None) == ""
 
-    def test_empty_input_gives_empty_chain(self):
+    def test_ures_bemenet_ures_lancot_ad(self):
         assert copy_all_effects("") == ""
 
-    def test_all_excluded_gives_empty_chain(self):
-        chain = "crop64=1,45930000ba03defe;redeye=1;"
-        assert copy_all_effects(chain) == ""
+    def test_ismeretlen_szuronev_is_atmegy(self):
+        # ismeretlen (jövőbeli) szűrőnév a round-trip elv szerint átmegy
+        lanc = "brandNewFilter=1,1.0;"
+        assert copy_all_effects(lanc) == lanc
 
-    def test_unknown_filter_name_is_transferable(self):
-        # ismeretlen (jövőbeli) szűrőnév a round-trip elv szerint átmegy,
-        # nem dobódik el hallgatólagosan
-        chain = "brandNewFilter=1,1.0;"
-        assert copy_all_effects(chain) == chain
+    def test_a_hianyzo_zaro_pontosvesszot_potolja(self):
+        """Az egyetlen megengedett normalizálás: a Picasa maga is mindig
+        lezárja a láncot pontosvesszővel."""
+        assert copy_all_effects("bw=1") == "bw=1;"
 
 
 class TestPasteAllEffects:
-    def test_returns_clipboard_value_verbatim(self):
-        clipboard = "sat=1,0.2;contrast=1,0.1;"
-        assert paste_all_effects(clipboard) == clipboard
+    def test_a_vagolap_erteket_valtozatlanul_adja(self):
+        vagolap = "sat=1,0.2;contrast=1,0.1;"
+        assert paste_all_effects(vagolap) == vagolap
 
-    def test_empty_clipboard_clears_target(self):
+    def test_ures_vagolap_torli_a_cel_lancat(self):
         assert paste_all_effects("") == ""
 
-    def test_roundtrip_copy_then_paste_excludes_geometry(self):
-        source_chain = (
-            "crop64=1,45930000ba03defe;sat=1,0.2;retouch=1,10000000f1ddff49;"
+    def test_masolas_majd_beillesztes_a_GEOMETRIAT_is_atviszi(self):
+        """A körút vége: a célkép ugyanazt a láncot kapja, a vágással és a
+        régió-adatokkal együtt.
+
+        A régi `test_roundtrip_copy_then_paste_excludes_geometry` azt
+        állította, hogy a `crop64` és a `retouch` elveszik — az eredeti
+        Picasa viszont a `filters` sztringet EGÉSZBEN írja vissza."""
+        forras = "crop64=1,45930000ba03defe;sat=1,0.2;retouch=1,10000000f1ddff49;"
+        assert paste_all_effects(copy_all_effects(forras)) == forras
+
+
+class TestCropMirrorValue:
+    """A `crop=` tükör-kulcs értéke a láncból (#1544).
+
+    A rendereléshez az eredeti Picasa a külön `crop=rect64(...)` kulcsot
+    olvassa (`docs/specs/filters-decoded.md`), és az ÉLES korpuszban
+    (18 801 szekció, 5658 lánc) **761/761** esetben a `crop=` értéke pontosan
+    a lánc UTOLSÓ `crop64`-jének hexe — nulla kivétellel. A beillesztésnek
+    ezért a tükör-kulcsot is követnie kell."""
+
+    def test_a_lanc_crop64_ebol_szarmazik(self):
+        assert (
+            crop_mirror_value("crop64=1,45930000ba03defe;bw=1;")
+            == "rect64(45930000ba03defe)"
         )
-        clipboard = copy_all_effects(source_chain)
-        target_result = paste_all_effects(clipboard)
-        assert "crop64" not in target_result
-        assert "retouch" not in target_result
-        assert target_result == "sat=1,0.2;"
+
+    def test_az_UTOLSO_crop64_szamit(self):
+        """Több crop64-es (valódi Picasa-)láncnál az effektív az utolsó —
+        ugyanaz a szabály, mint a renderelésben (#130)."""
+        lanc = "crop64=1,45930000ba03defe;bw=1;crop64=1,1b7c0000dbbdffff;"
+        assert crop_mirror_value(lanc) == "rect64(1b7c0000dbbdffff)"
+
+    def test_crop64_nelkuli_lanc_eseten_nincs_tukorkulcs(self):
+        assert crop_mirror_value("bw=1;sepia=1;") is None
+
+    def test_ures_lanc_eseten_nincs_tukorkulcs(self):
+        assert crop_mirror_value("") is None
+
+    def test_hibas_hex_eseten_nincs_tukorkulcs(self):
+        """#301: sérült/idegen lánc olvasása nem szökhet ki kivétellel."""
+        assert crop_mirror_value("crop64=1,zzz;") is None

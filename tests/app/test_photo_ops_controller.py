@@ -1,8 +1,16 @@
-"""`PhotoOpsMixin` — „Az összes effektus másolása/beillesztése" (#426).
+"""`PhotoOpsMixin` — „Az összes effektus másolása/beillesztése" (#426, a
+lánc-átvitel szemantikája javítva a #1544-ben).
 
 A vezérlő-oldali kötegelt írást/visszavonást teszteli AppControlleren
 keresztül (a `test_rename_many_controller.py` fixtúra-mintája).
+
+⚠️ Ez a fájl a vezérlő metódusait KÖZVETLENÜL hívja, tehát akkor is zöld
+lenne, ha a menütétel tiltott vagy takart. A menüpontról indított, lemezre
+írt `.picasa.ini`-t mérő őr külön fájlban van:
+`tests/app/qml_functional/test_effektus_beillesztes_vagas_1544.py`.
 """
+
+import configparser
 
 import pytest
 from PySide6.QtCore import QEventLoop, QTimer
@@ -80,8 +88,15 @@ def _ini_text(folder) -> str:
     return (folder / ".picasa.ini").read_text(encoding="utf-8")
 
 
+def _ini_section(folder, name: str) -> dict[str, str]:
+    """Egy képszekció kulcs–érték párjai a lemezre írt `.picasa.ini`-ből."""
+    parser = configparser.ConfigParser(interpolation=None, strict=False)
+    parser.read(folder / ".picasa.ini", encoding="utf-8")
+    return dict(parser[name]) if parser.has_section(name) else {}
+
+
 class TestCopyAllEffects:
-    def test_copies_filtered_chain_to_clipboard(self, controller):
+    def test_copies_chain_to_clipboard(self, controller):
         assert controller.hasAllEffectsClipboard is False
         controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
         assert controller.hasAllEffectsClipboard is True
@@ -97,26 +112,74 @@ class TestCopyAllEffects:
 
 
 class TestPasteAllEffects:
-    def test_applies_filtered_chain_overwriting_existing(self, controller, library):
+    def test_applies_whole_chain_overwriting_existing(self, controller, library):
+        """#1544: a TELJES lánc megy át, felülírva a cél saját láncát.
+
+        A korábbi `test_applies_filtered_chain_overwriting_existing` azt
+        állította, hogy a `crop64`/`redeye`/`retouch` NEM megy át. Ez az
+        állítás téves volt: a #1534 a `Picasa3.exe` diszasszemblálásával
+        igazolta, hogy a másolás (`0x005fecd0`) és a beillesztés
+        (`0x005fefc0`) hívási útján nincs szűrő-névre vonatkozó
+        összehasonlítás — a bináris-indexben a `"filters"` sztringnek 33
+        kódhivatkozása van, a `crop64`-nek nulla. A szűrés a
+        `filterdesc.xml` `mode="history"` oszlopából KÖVETKEZTETETT, saját
+        szabály volt."""
         controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
         controller.pasteAllEffects(_rows_by_name(controller, "b.jpg", "c.jpg"))
 
         text = _ini_text(library)
         assert "[b.jpg]" in text
-        # a b.jpg saját sat= láncát felülírta a beillesztés
+        # a b.jpg saját sat= láncát felülírta az a.jpg TELJES lánca
         expected = (
-            "enhance=1;"
+            "enhance=1;crop64=1,45930000ba03defe;"
             "finetune2=1,0.333333,0.176842,0.193684,00000000,0.000000;"
+            "redeye=1;retouch=1,10000000f1ddff49;"
         )
-        assert f"filters={expected}" in text
-        # a crop64/redeye/retouch NEM ment át
         lines = text.splitlines()
         b_index = lines.index("[b.jpg]")
         c_index = lines.index("[c.jpg]")
         b_block = "\n".join(lines[b_index:c_index])
-        assert "crop64" not in b_block
-        assert "redeye" not in b_block
-        assert "retouch" not in b_block
+        assert f"filters={expected}" in b_block
+        assert "sat=1,-0.2" not in b_block, "a cél régi lánca nem íródott felül"
+
+    def test_writes_the_crop_mirror_key(self, controller, library):
+        """#1544: a `crop=rect64(...)` tükör-kulcs a lánccal együtt jár.
+
+        A `filters=`-beli `crop64` az EREDETI Picasában önmagában nem vág —
+        a renderelést a külön `crop=` kulcs hajtja
+        (`docs/specs/filters-decoded.md`) —, ezért e nélkül ugyanaz a mappa
+        a windowsos Picasában vágatlan képet mutatna."""
+        controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+
+        assert (
+            _ini_section(library, "b.jpg").get("crop")
+            == "rect64(45930000ba03defe)"
+        )
+
+    def test_chain_without_crop_removes_the_targets_crop_key(
+        self, controller, library
+    ):
+        """Ellenkező irányú őr: vágás NÉLKÜLI lánc beillesztésekor a célkép
+        meglévő `crop=` kulcsa is eltűnik — a teljes csere szemantikája
+        szerint. `crop64` nélküli `crop=` kulcs az éles korpuszban 761-ből
+        nulla esetben fordul elő."""
+        controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+        assert "crop=rect64" in _ini_text(library)
+
+        # a c.jpg-ről másolunk: neki nincs lánca, tehát a b.jpg mindkét
+        # kulcsának el kell tűnnie
+        controller.copyAllEffects(_rows_by_name(controller, "c.jpg"))
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+
+        szekcio = _ini_section(library, "b.jpg")
+        assert "crop" not in szekcio, (
+            f"a célkép régi `crop=` kulcsa bent maradt: {szekcio!r}"
+        )
+        assert "filters" not in szekcio, (
+            f"a célkép régi lánca bent maradt: {szekcio!r}"
+        )
 
     def test_without_clipboard_is_noop(self, controller, library):
         before = _ini_text(library)
@@ -197,11 +260,30 @@ class TestUndoPasteAllEffects:
         controller.pasteAllEffects(_rows_by_name(controller, "b.jpg", "c.jpg"))
         controller.undoPasteAllEffects()
 
-        text = _ini_text(library)
-        assert "filters=sat=1,-0.2;" in text
+        assert _ini_section(library, "b.jpg").get("filters") == "sat=1,-0.2;"
         # c.jpg-nek eredetileg nem volt filters= kulcsa -> visszavonás után
         # a beillesztett (a.jpg-ből másolt) lánc sehol nem maradhat bent
-        assert "enhance=1;finetune2" not in text
+        assert "filters" not in _ini_section(library, "c.jpg")
+
+    def test_restores_the_crop_mirror_key_too(self, controller, library):
+        """#1544: a beillesztés a `crop=` kulcsot is írja, tehát a
+        visszavonásnak azt is vissza kell vennie.
+
+        Enélkül a célkép a RÉGI lánccal, de az ÚJ vágással maradna — a
+        windowsos Picasa olyan rect szerint vágná, aminek a láncban nincs
+        párja. (Ugyanez a hiba volt a #465 köteges útján.)"""
+        controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+        assert "crop" in _ini_section(library, "b.jpg")
+
+        controller.undoPasteAllEffects()
+
+        szekcio = _ini_section(library, "b.jpg")
+        assert szekcio.get("filters") == "sat=1,-0.2;"
+        assert "crop" not in szekcio, (
+            "a beillesztett vágás a visszavonás után is a célképen maradt: "
+            f"{szekcio!r}"
+        )
 
     def test_without_prior_paste_is_noop(self, controller, library):
         before = _ini_text(library)

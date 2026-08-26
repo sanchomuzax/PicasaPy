@@ -2,219 +2,76 @@
 képek között (#426, Picasa `ID_EDIT_COPYALLEFFECTS`/`ID_EDIT_PASTEALLEFFECTS`).
 
 Ez a modul KIZÁRÓLAG tiszta logikát tartalmaz (nincs fájl-I/O, nincs Qt-
-függés): a `filters=` lánc szűrését és a beillesztendő értéket adja vissza.
-Az alkalmazás-szintű vágólap ÁLLAPOTA (mit másoltunk utoljára) és a
-mappánkénti kötegelt ini-írás a vezérlő-oldalon van
+függés). Az alkalmazás-szintű vágólap ÁLLAPOTA (mit másoltunk utoljára) és
+a mappánkénti kötegelt ini-írás a vezérlő-oldalon van
 (`picasapy.app.photo_ops_controller.EffectClipboardMixin`).
 
-## Mit NEM viszünk át — és honnan jön ez a szabály
+## A lánc EGÉSZBEN megy át — és miért nem szűrünk (#1544)
 
-A Picasa a "Copy All Effects" művelethez a `crop64`/`crop` (kép-specifikus
-geometria), `redeye`/`retouch` (kép-specifikus RÉGIÓ), valamint a
-`moviestart`/`movieend` (klip-specifikus vágópont) bejegyzéseket NEM viszi
-át — ezek nem "hangulat", hanem az adott képhez kötött adat.
+A #426 eredeti megvalósítása a `crop64`/`crop` (geometria),
+`redeye`/`retouch` (régió-adat), `save`/`rot`/`picnik` (könyvelés) és
+`moviestart`/`movieend` (klip-vágópont) bejegyzéseket KIHAGYTA a másolásból.
+Ezt a szabályt a `filterdesc.xml` `mode="history"`/`persist` oszlopaiból
+KÖVETKEZTETTÜK — nem mérésből. A következtetés kézenfekvő volt, de **téves**:
 
-A hivatalos forrás a `filterdesc.xml` szűrő-regiszter (Picasa
-3.9.141.259), amelyet a `docs/specs/filterdesc-registry.md` tár fel: a
-regiszter minden szűrőhöz tárol egy `mode` attribútumot (`history` = nem
-képi művelet, csak az előzményben él) és egy `persist` jelzőt (régió-adatot
-őriz). A `docs/specs/filterdesc-registry.md` "2. A teljes regiszter"
-táblázata szerint:
+* a `Picasa3.exe` másolójának (`0x005fecd0`) és beillesztőjének
+  (`0x005fefc0`) teljes hívási útján **nincs szűrő-névre vonatkozó
+  összehasonlítás** — sem fehér-, sem feketelista;
+* függetlenül, a bináris-indexből ellenőrizve: a `"filters"` sztringnek
+  **33** kódhivatkozása van (köztük a `0x006af3e0`/`0x006af650`
+  getter/setter), a `crop64` sztringnek **nulla** ⇒ a program sehol nem
+  hasonlít össze semmit ezzel a névvel, tehát nem is szűrhet rá;
+* a `mode` attribútum valóban létezik, de a szerkesztési ELŐZMÉNY
+  megjelenítését vezérli, nem a vágólapot.
 
-* `mode="history"`: `save`, `crop64`, `crop`, `redeye`, `retouch`,
-  `picnik`, `rot`
-* `persist` jelző: `redeye`, `retouch`, `picnik` (a fentiek részhalmaza)
+A szűrés tehát saját találmány volt, és funkciót vett el: a felhasználó azt
+hitte, átvitte a szerkesztést, és némán mást kapott. Bizonyíték és döntés:
+`docs/decisions/effektus-vagolap-ket-reteg.md` (#1534), jegy: #1544.
 
-A `_FILTER_REGISTRY` lenti táblázata ezt a két oszlopot (mode, persist)
-tükrözi, VERBATIM átvéve a specifikáció táblázatából — futásidőben a
-`filterdesc.xml` maga NEM érhető el (a `research/` fa, ahonnan a
-specifikáció készült, nincs benne ebben a repóban, és nincs hozzá
-regiszter-olvasó kód sem a `tools/picasa/` alatt). Emiatt ez egy kódba
-zárt, TESZTELT pillanatkép, nem futásidejű XML-olvasás — ha egyszer a
-runtime `filterdesc.xml` és egy hozzá tartozó olvasó elérhetővé válik, ezt
-a táblázatot azzal kell felváltani/ellenőrizni.
+## A `crop=` tükör-kulcs
 
-A `mode="history"`/`persist` szabály MECHANIKUSAN kiadja a `crop64`/`crop`/
-`redeye`/`retouch` négyest (plusz a nem-effekt `save`/`rot`/`picnik`
-bejegyzéseket, amelyeket szintén ártalmatlan kizárni: ezek sosem
-"hangulat"-effektek, csak könyvelési/history-bejegyzések). A
-`moviestart`/`movieend` viszont a jelenleg kinyert táblázatban
-`mode="oneclick"`-ként szerepel, flag nélkül — a specifikáció 1.2
-szakasza (History módú szűrők felsorolása) sem említi őket. Ez a
-specifikáció-kivonat hiányossága: a `moviestart`/`movieend` a Picasa
-mozgófilm-eszközének klip-specifikus kezdő-/végpontja, ugyanolyan
-kép-/klip-kötött adat, mint a `redeye`/`retouch` régiói — ezért a #426
-jegy kifejezetten kizárja őket. Mivel ezt a jelenleg elérhető
-`mode`/`persist` oszlopokból nem lehet levezetni, ez a két név egy
-explicit, dokumentált KIEGÉSZÍTÉS (`_MANUAL_EXCLUSIONS`) a mechanikus
-szabály fölött — ha a teljes `filterdesc.xml` egyszer futásidőben
-elérhető lesz, ellenőrizendő, hogy van-e rájuk saját, eddig fel nem
-tárt jelző, és ha igen, a kiegészítés törölhető.
+A `filters=` láncban ülő `crop64` az EREDETI Picasában önmagában nem vág —
+a renderelést a képszekció külön `crop=rect64(...)` kulcsa hajtja
+(`docs/specs/filters-decoded.md` 1. kör). Ezért a lánc átvitelekor a
+tükör-kulcsot is követni kell; az értékét a `crop_mirror_value()` adja.
+(A `.picasa.ini`-be írás maga a vezérlő dolga, az `ini/` csomag API-ján át.)
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from picasapy.ini.filters import parse_filters, serialize_filters
-
-
-@dataclass(frozen=True)
-class _FilterFlags:
-    """Egy szűrő `filterdesc.xml`-beli `mode`/`persist` jelzője."""
-
-    mode: str
-    persist: bool = False
-
-
-# forrás: docs/specs/filterdesc-registry.md, "2. A teljes regiszter"
-# táblázata (Picasa 3.9.141.259 `filterdesc.xml`-ből kinyerve, 2026-08-06) —
-# csak a `mode`/`persist` oszlopok, verbatim. Lásd a modul docstringjét.
-_FILTER_REGISTRY: dict[str, _FilterFlags] = {
-    "save": _FilterFlags("history"),
-    "crop64": _FilterFlags("history"),
-    "crop": _FilterFlags("history"),
-    "redeye": _FilterFlags("history", persist=True),
-    "retouch": _FilterFlags("history", persist=True),
-    "picnik": _FilterFlags("history", persist=True),
-    "rot": _FilterFlags("history"),
-    "debug": _FilterFlags("effect"),
-    "triple": _FilterFlags("soft"),
-    "triple2": _FilterFlags("soft"),
-    "triple3": _FilterFlags("soft"),
-    "finetune": _FilterFlags("soft"),
-    "finetune2": _FilterFlags("soft"),
-    "colorfix": _FilterFlags("soft"),
-    "autobacklight": _FilterFlags("oneclick"),
-    "autolight": _FilterFlags("oneclick"),
-    "autocolor": _FilterFlags("oneclick"),
-    "bw": _FilterFlags("oneclick"),
-    "enhance": _FilterFlags("oneclick"),
-    "warm": _FilterFlags("oneclick"),
-    "grain": _FilterFlags("oneclick"),
-    "grain2": _FilterFlags("oneclick"),
-    "sepia": _FilterFlags("oneclick"),
-    "unsharp": _FilterFlags("effect"),
-    "unsharp2": _FilterFlags("effect"),
-    "autocontrast": _FilterFlags("oneclick"),
-    "tilt": _FilterFlags("tool"),
-    "rainbow": _FilterFlags("tool"),
-    "radblur": _FilterFlags("effect"),
-    "radsat": _FilterFlags("effect"),
-    "linblur": _FilterFlags("effect"),
-    "ansel": _FilterFlags("effect"),
-    "tint": _FilterFlags("effect"),
-    "dir_tint": _FilterFlags("effect"),
-    "radtint": _FilterFlags("effect"),
-    "glow": _FilterFlags("effect"),
-    "glow2": _FilterFlags("effect"),
-    "sat": _FilterFlags("effect"),
-    "colortemp": _FilterFlags("effect"),
-    "shadow": _FilterFlags("effect"),
-    "blur": _FilterFlags("effect"),
-    "contrast": _FilterFlags("effect"),
-    "gamma": _FilterFlags("effect"),
-    "backlight": _FilterFlags("effect"),
-    "fill": _FilterFlags("soft"),
-    "whitept": _FilterFlags("effect"),
-    "dir_sat": _FilterFlags("effect"),
-    "dir_brite": _FilterFlags("effect"),
-    "dir_sharp": _FilterFlags("effect"),
-    "focalpixelate": _FilterFlags("effect"),
-    "Boost": _FilterFlags("effect"),
-    "Border": _FilterFlags("effect"),
-    "Cinemascope": _FilterFlags("effect"),
-    "Comicize": _FilterFlags("effect"),
-    "CrossProcess": _FilterFlags("effect"),
-    "DropShadow": _FilterFlags("effect"),
-    "PicnikFocalPixelate": _FilterFlags("effect"),
-    "FocalZoom": _FilterFlags("effect"),
-    "PicnikGrain": _FilterFlags("effect"),
-    "HDR": _FilterFlags("effect"),
-    "HeatMap": _FilterFlags("effect"),
-    "Holga": _FilterFlags("effect"),
-    "Invert": _FilterFlags("effect"),
-    "IR": _FilterFlags("effect"),
-    "LocalContrast": _FilterFlags("effect"),
-    "Lomo": _FilterFlags("effect"),
-    "Matte": _FilterFlags("effect"),
-    "MuseumMatte": _FilterFlags("effect"),
-    "Neon": _FilterFlags("effect"),
-    "NightVision": _FilterFlags("effect"),
-    "Orton": _FilterFlags("effect"),
-    "PencilSketch": _FilterFlags("effect"),
-    "Pixelate": _FilterFlags("effect"),
-    "Polaroid": _FilterFlags("effect"),
-    "QuantizePalette": _FilterFlags("effect"),
-    "ReanimatedEyeColor": _FilterFlags("effect"),
-    "RoundedEdges": _FilterFlags("effect"),
-    "Sixties": _FilterFlags("effect"),
-    "Soften": _FilterFlags("effect"),
-    "PicnikTint": _FilterFlags("effect"),
-    "TwoTone": _FilterFlags("effect"),
-    "Vignette": _FilterFlags("effect"),
-    "moviestart": _FilterFlags("oneclick"),
-    "movieend": _FilterFlags("oneclick"),
-}
-
-# Gépi szabály: history módú VAGY régió-adatot (persist) őrző szűrő nem
-# vihető át képek között (docs/specs/filterdesc-registry.md 1.2/1.3 szakasz).
-_MECHANICALLY_EXCLUDED: frozenset[str] = frozenset(
-    name
-    for name, flags in _FILTER_REGISTRY.items()
-    if flags.mode == "history" or flags.persist
-)
-
-# Explicit kiegészítés a jelenlegi (csak mode/persist oszlopokat tartalmazó)
-# regiszter-kivonat hiányossága miatt — ld. a modul docstringjét.
-_MANUAL_EXCLUSIONS: frozenset[str] = frozenset({"moviestart", "movieend"})
-
-#: A #426 "mit NE vigyen át" szabálya szerint kizárt szűrőnevek —
-#: `mode="history"`/`persist="1"` a `filterdesc` regiszterből, plusz a
-#: dokumentált `_MANUAL_EXCLUSIONS` kiegészítés.
-EXCLUDED_FILTER_NAMES: frozenset[str] = _MECHANICALLY_EXCLUDED | _MANUAL_EXCLUSIONS
-
-_EXCLUDED_FOLDED: frozenset[str] = frozenset(
-    name.casefold() for name in EXCLUDED_FILTER_NAMES
-)
-
-
-def is_transferable(filter_name: str) -> bool:
-    """Igaz, ha `filter_name` átvihető képek között (nincs az
-    `EXCLUDED_FILTER_NAMES` halmazban, kis-nagybetű-tűrően)."""
-    return filter_name.casefold() not in _EXCLUDED_FOLDED
+from picasapy.ini.rect64 import decode_rect64, encode_rect64
 
 
 def copy_all_effects(filters_value: str | None) -> str:
     """„Az összes effektus másolása": a `filters=` lánc vágólap-tartalma.
 
-    A kép-/régióspecifikus bejegyzéseket (`EXCLUDED_FILTER_NAMES`) kihagyja,
-    a maradékot az eredeti sorrendben, serializálva adja vissza — ez kerül
-    az alkalmazás-szintű vágólapra.
+    A láncot EGÉSZBEN veszi át — a vágást (`crop64`), a régió-adatokat
+    (`redeye`/`retouch`) és az ismeretlen (jövőbeli/idegen) bejegyzéseket is
+    —, ahogy az eredeti Picasa másolója teszi a teljes `filters` sztringgel.
+    Az egyetlen normalizálás a parse/serialize körúté: a hiányzó záró
+    pontosvessző pótlása (a Picasa maga is mindig kiírja).
 
     Args:
         filters_value: A forráskép nyers `filters=` értéke (`None`/üres
             string üres láncot jelent).
 
     Returns:
-        A vágólapra teendő, már szűrt `filters=` érték (üres eredmény esetén
-        üres string).
+        A vágólapra teendő `filters=` érték (üres eredmény esetén üres
+        string).
     """
-    ops = parse_filters(filters_value or "")
-    kept = tuple(op for op in ops if is_transferable(op.name))
-    return serialize_filters(kept)
+    return serialize_filters(parse_filters(filters_value or ""))
 
 
 def paste_all_effects(clipboard_value: str) -> str:
     """„Az összes effektus beillesztése": a cél `filters=` értéke a
     beillesztés UTÁN.
 
-    A vágólap tartalma a másoláskor MÁR szűrve lett (`copy_all_effects`),
-    ezért a beillesztés a TELJES cél-láncot erre cseréli — a Picasa
-    "felülírva a meglévő láncot" viselkedése (#426). Ha a cél képnek saját
-    `crop64`/`redeye`/`retouch` bejegyzése volt, az is elvész: a #426 jegy
-    kifejezetten teljes csere-műveletként írja le a beillesztést, nem
-    rétegzést/összefésülést.
+    A beillesztés TELJES CSERE, nem rétegzés: a célkép meglévő lánca —
+    a saját vágásával és régió-adataival együtt — eltűnik, a helyére a
+    vágólap lánca kerül. Ez az eredeti Picasa viselkedése (a beillesztő a
+    teljes `filters` sztringet írja vissza), és a művelet a
+    `undoPasteAllEffects`-szel visszavonható.
 
     Args:
         clipboard_value: Egy korábbi `copy_all_effects()` hívás eredménye.
@@ -225,3 +82,40 @@ def paste_all_effects(clipboard_value: str) -> str:
         finomításokra hagy egy nevesített csatlakozási pontot).
     """
     return clipboard_value
+
+
+def crop_mirror_value(filters_value: str | None) -> str | None:
+    """A lánchoz tartozó `crop=` tükör-kulcs értéke, vagy `None`.
+
+    A renderelést az eredeti Picasában nem a láncbeli `crop64`, hanem a
+    képszekció külön `crop=rect64(...)` kulcsa hajtja
+    (`docs/specs/filters-decoded.md`). A tükrözés szabálya MÉRVE, az éles
+    korpuszon (18 801 szekció, 5658 `filters=` lánc):
+
+    * 763 láncban van `crop64`, ebből **761**-hez tartozik `crop=` kulcs, és
+      mind a 761 esetben az értéke **pontosan a lánc UTOLSÓ `crop64`-je**;
+    * a 38 darab TÖBB `crop64`-et tartalmazó láncnál is **38/38** az
+      utolsót tükrözi, az elsőt **nulla** — ezért nem az
+      `EditSession.crop()`-ot használjuk (az az ELSŐ crop64-et adja), hanem
+      ugyanazt az „utolsó nyer" szabályt, amit a render-lánc is követ (#130,
+      `render/chain.py`);
+    * `crop64` nélküli láncnál egyetlen `crop=` kulcs sincs (0/761).
+
+    Args:
+        filters_value: Egy `filters=` lánc (`None`/üres = nincs lánc).
+
+    Returns:
+        `"rect64(<hex>)"`, ha a láncban van érvényes `crop64`; egyébként
+        `None`. Sérült/idegen hex-paraméternél is `None` (nem dob) — a
+        #301-elv szerint.
+    """
+    utolso = None
+    for op in parse_filters(filters_value or ""):
+        if op.matches("crop64") and len(op.params) >= 2:
+            utolso = op
+    if utolso is None:
+        return None
+    try:
+        return f"rect64({encode_rect64(decode_rect64(utolso.params[1]))})"
+    except ValueError:
+        return None
