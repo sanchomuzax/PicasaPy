@@ -71,8 +71,11 @@ Rectangle {
     // A kötés felülírható (a hasábot önmagában rajzoló próbák élnek vele),
     // vezérlő nélkül pedig a lapos lista az alapállapot.
     property var hierarchyController: null
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
     property bool treeViewMode:
-        pane.hierarchyController ? pane.hierarchyController.treeView : false
+        (pane.hierarchyController && pane.hierarchyController.treeView !== undefined)
+            ? pane.hierarchyController.treeView : false
     // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
     readonly property int hierarchyRowCount:
         pane.hierarchyController ? pane.hierarchyController.rows.length : 0

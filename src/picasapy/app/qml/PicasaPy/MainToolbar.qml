@@ -100,8 +100,11 @@ Rectangle {
                 Rectangle {
                     // #305: null-őr — a controller a QML-engine
                     // leépítésekor átmenetileg null lehet
+                    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+                    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
                     readonly property bool ctlFilterActive:
-                        controller ? controller.filterActive : false
+                        (controller && controller.filterActive !== undefined)
+                            ? controller.filterActive : false
                     width: 22; height: 20; radius: 2
                     color: ctlFilterActive ? "#ffffff" : "transparent"
                     border.width: ctlFilterActive ? 1 : 0

@@ -266,9 +266,12 @@ Window {
         CheckBox {
             objectName: "importSourceAutoExcludeCheckBox"
             text: qsTr("Exclude Duplicates")
-            checked: typeof importSourceController !== "undefined"
-                     && importSourceController
-                     ? importSourceController.autoExclude : false
+            // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+            // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+            checked:
+                (typeof importSourceController !== "undefined" && importSourceController
+                    && importSourceController.autoExclude !== undefined)
+                        ? importSourceController.autoExclude : false
             onToggled: importSourceController.setAutoExclude(checked)
         }
         Text {

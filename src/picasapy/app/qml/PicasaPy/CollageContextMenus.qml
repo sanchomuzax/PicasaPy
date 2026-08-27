@@ -45,8 +45,11 @@ Item {
         menus.controller && menus.controller.collageSelection
             ? menus.controller.collageSelection.length : 0
 
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
     readonly property int clipCount:
-        menus.controller ? menus.controller.collageClipCount : 0
+        (menus.controller && menus.controller.collageClipCount !== undefined)
+            ? menus.controller.collageClipCount : 0
 
     function can(name) {
         return menus.capabilities[name] === true

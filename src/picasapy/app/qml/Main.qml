@@ -1232,8 +1232,10 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 26
-                    // #305: null-őr
-                    visible: controller ? controller.filterActive : false
+                    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+                    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+                    visible: (controller && controller.filterActive !== undefined)
+                        ? controller.filterActive : false
                     color: "#5aa865"
                     RowLayout {
                         anchors.fill: parent
@@ -1310,10 +1312,9 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            // #305: null-őr
-                            visible: controller
-                                ? (controller.searchActive && !window.unnamedFacesOpen)
-                                : false
+                            // #305/#1572: null-őr
+                            visible: (controller && controller.searchActive !== undefined)
+                                ? (controller.searchActive && !window.unnamedFacesOpen) : false
                             model: controller ? controller.searchGroups : []
                             spacing: 0
 
@@ -1582,8 +1583,9 @@ ApplicationWindow {
         id: importPanel
         objectName: "importProgressPanel"
         z: 90
-        // #305: null-őr
-        visible: controller ? controller.importPanelVisible : false
+        // #305/#1572: null-őr
+        visible: (controller && controller.importPanelVisible !== undefined)
+            ? controller.importPanelVisible : false
         folderName: controller ? controller.importFolderName : ""
         doneCount: controller ? controller.importDoneCount : 0
         totalCount: controller ? controller.importTotalCount : 0
@@ -1601,7 +1603,8 @@ ApplicationWindow {
         id: batchEditPanel
         objectName: "batchEditProgressPanel"
         z: 90
-        visible: controller ? controller.batchEditActive : false
+        visible: (controller && controller.batchEditActive !== undefined)
+            ? controller.batchEditActive : false
         folderName: controller ? controller.batchEditFolderName : ""
         doneCount: controller ? controller.batchEditDoneCount : 0
         totalCount: controller ? controller.batchEditTotalCount : 0
@@ -1618,7 +1621,8 @@ ApplicationWindow {
         id: saveProgressPanel
         objectName: "saveProgressPanel"
         z: 90
-        visible: controller ? controller.saveProgressActive : false
+        visible: (controller && controller.saveProgressActive !== undefined)
+            ? controller.saveProgressActive : false
         fileCount: controller ? controller.saveProgressFileCount : 0
         percent: controller ? controller.saveProgressPercent : 0
         x: parent.width - width - 24
@@ -1631,8 +1635,9 @@ ApplicationWindow {
         id: perfPanel
         objectName: "perfMonitorPanel"
         z: 90
-        // #305: null-őr
-        visible: controller ? controller.perfMonitorEnabled : false
+        // #305/#1572: null-őr
+        visible: (controller && controller.perfMonitorEnabled !== undefined)
+            ? controller.perfMonitorEnabled : false
         cpuPercent: controller ? controller.perfCpuPercent : 0
         rssMb: controller ? controller.perfRssMb : 0
         topActivity: controller ? controller.perfTopActivity : ""

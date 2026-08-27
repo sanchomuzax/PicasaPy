@@ -82,11 +82,15 @@ Item {
     // A lap oldalaránya: MAGASSÁG / SZÉLESSÉG (spec 8.1 `collagePageRatio`).
     // Vezérlő nélkül a 4:3 fekvő alapállás — a `.tre`-ben a fekvő az előre
     // lenyomott (spec 9.3).
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
     readonly property real pageRatio:
-        panel.controller ? panel.controller.collagePageRatio : 0.75
+        (panel.controller && panel.controller.collagePageRatio !== undefined)
+            ? panel.controller.collagePageRatio : 0.75
 
     readonly property int clipCount:
-        panel.controller ? panel.controller.collageClipCount : 0
+        (panel.controller && panel.controller.collageClipCount !== undefined)
+            ? panel.controller.collageClipCount : 0
 
     // A lap téglalapja a VÁSZON koordinátarendszerében: a `previewinset`-be
     // arányosan illesztve, középen, egész képpontra kerekítve.

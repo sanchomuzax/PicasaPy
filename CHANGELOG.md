@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A felület vezérlői akkor sem tűnhetnek el némán, ha egy háttéradat
+  hiányzik (#1572).** A program 27 helyen — a menüsor pipáitól a
+  kollázs-panelen és az arckeresés folyamatjelzőjén át a tálca
+  számlálójáig — úgy olvasott ki egy háttérbeli állapotot, hogy csak arra
+  volt felkészülve, ha maga a háttérmodul hiányzik, arra nem, ha az adott
+  **adat** hiányzik belőle. Ilyenkor a Qt hibát dobott, és a felület
+  érintett darabja megjelenítés helyett üresen maradt. Mind a 27 hely
+  egységes, védett alakot kapott: hiányzó adatnál a látható alapérték
+  marad érvényben.
+
+  Hogy ez ne térhessen vissza, a hibát mostantól gépi ellenőrzés fogja meg
+  minden változtatásnál (`scripts/qml_undefined_or.py`) — ugyanez a
+  hibaosztály korábban négy teljes fejlesztői kört vitt el egyetlen
+  javításon.
+
 ## [0.8.116] – 2026-08-27
 
 ### Javítva
