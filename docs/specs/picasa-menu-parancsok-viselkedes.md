@@ -776,3 +776,22 @@ elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
 elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
 adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
 diszasszemblálása kell.*
+
+### 32.4 Negatív eredmények — ezeket NE járja újra a következő kör
+
+A determinisztikus sor három tétele mérés után rendben találtatott:
+
+| parancs | eredeti felirat | nálunk (mérve) |
+|---|---|---|
+| `ID_FILE_REVERT` | Rever&t / Vissz&aállítás | ✅ **él** — `PicasaMenuBar.qml:322` (`menuFileRevert`), a jelet a `Main.qml:785`, `:1009`, `:1898` fogadja, mindhárom a `saveDialogs.openRevert`-re megy. Az eredetiben négy belépési pont van (Fájl menü + három `AlbumPhoto::` helyi menü) — nálunk is több felületről elérhető. |
+| `ID_PICTURE_AUTO_COLOR` | &Auto Color / &Automatikus szín | ✅ **él** — `PicasaMenuBar.qml:998-1003` (`menuBatchAutoColor`) → `batchApplyEffectRequested("autocolor")`; az effekt regisztrálva: `render/registry_data.py:134`. |
+| `ID_FILE_DELETEFROMDISK` | &Delete from Disk… | ✅ **feltárva** — a viselkedése a `picasa-gyorsbillentyuk.md` 5. szakaszában van (nézetfüggő parancs), a megvalósítás a #1608/#1619 után háromágú. |
+
+### 32.5 Egy szerkezeti eltérés, jegy nélkül
+
+Az eredetiben az `ID_ONLINE_ACTIONS` **almenü** fogja össze a három online
+parancsot (Google Fotók feltöltés, Lighthouse, HTML-oldal). Nálunk ezek a
+mappa-menüben **laposan** állnak; az `AlbumContextMenu.qml:107` viszont ismeri
+az „Online Actions" csoportot. Ez apró, önmagában nem indokol jegyet —
+**a következő kör, amelyik a mappa-menühöz nyúl, vigye át** a csoportosítást
+az album-menü mintájára.
