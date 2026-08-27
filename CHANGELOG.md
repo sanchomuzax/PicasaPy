@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Hozzáadva
+- **Megnyílt a `Nézet ▸ Megjelenítési mód` almenü (#1575).** Eddig ott volt
+  a menüben, de üresen és szürkén: rákattintva semmi nem történt. Mostantól
+  kinyílik, és — pontosan úgy, ahogy az eredeti Picasában — **tizenegy
+  megjelenítési módot** kínál egyetlen, egymást kizáró listában
+  (Automatikus; 24 bites; 16 bites (szemcsézett); Távoli asztal; LCD
+  fehérpont; Projektor mód; Túlcsordult képpontok megjelenítése; Mac gamma;
+  Lineáris gamma; Szépia; Fekete-fehér). Mindig pontosan egy van kipipálva,
+  és a már kiválasztott módra újra rákattintva a pipa **nem tűnik el** — ez
+  a menüfajta korábbi visszatérő hibája volt. Induláskor az `Automatikus`
+  az aktív, és a választás — ahogy az eredetiben is — nem marad meg a
+  következő indulásra.
+
+  Ez a lépés a menü **szerkezetét** hozza; hogy az egyes módok a képet
+  ténylegesen hogyan színezik át (sötétítés vetítéshez, a kiégett részek
+  jelölése, gammák), azt a következő fejlesztések adják hozzá.
+
 ## [0.8.117] – 2026-08-27
 
 ### Javítva
