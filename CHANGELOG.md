@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **A tesztfuttatás szabálya mostantól kapu, nem kérés (#1649).** Eddig a
+  dokumentáció kérte, hogy a teszteket a projekt futtatójával indítsuk — és a
+  kérés 2026-08-15-én megbukott: öt párhuzamos munkamenet **5,8 GB**
+  ideiglenes fájlt hagyott a lemezen, amitől nem ők, hanem a *többi*,
+  egyszerre futó munkamenet borult fel, érthető hibaüzenet nélkül. Mostantól
+  a rossz parancs el sem indul, és a hibaüzenet megmondja, mit kell helyette
+  írni.
+
 ### Javítva
 - **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
   semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
@@ -17,6 +26,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   fájlválasztót nyit; a kijelölt fájl(ok) szülőmappája a MEGLÉVŐ
   „Mappa hozzáadása a Picasához…" belépési ponton (`addWatchedFolder`)
   kerül a könyvtárba, tartósan figyelve.
+- **A megjelenítési mód némán elveszhetett a nagy nézőben (#1598).** A
+  `Nézet ▸ Megjelenítési mód` átalakítói csak azon az úton jutnak a
+  képernyőre, amelyen a néző a szerkesztés élő előnézetét kéri. Ha ez az
+  előnézet éppen nem élt, a néző a nyers képfájlt rajzolta ki — azon pedig a
+  mód nem látszik, és a menüpont **hatástalan maradt, minden jelzés nélkül**.
+  Mostantól módváltáskor a néző maga gondoskodik róla, hogy a képet azon az
+  úton kapja, amelyen a mód is átjut. A javítást olyan ellenőrzés őrzi, amely
+  a **ténylegesen kirajzolt ablak képpontjait** olvassa vissza — nem a
+  képszolgáltató kimenetét, ahogy eddig.
 - **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
   visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
   oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont

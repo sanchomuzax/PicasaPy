@@ -1085,3 +1085,265 @@ eldönti a kérdést dekompiláció nélkül.
 
 *Bizonyítottsági fok: **megerősített** a három kizárás; **feltételes** az
 `albums.db` mint hordozó — jelöltként megnevezve, nem bizonyítva.*
+
+### Kiegészítés (2026-08-27, este) — a `db3` KIMERÍTŐEN átnézve
+
+A tulajdonos leadta az élő `db3`-at abban az állapotban, ahol egy képet
+kézzel a 4. helyről a 2.-ra húzott. A sorrend **sehol nem található**:
+
+| hol | mi döntötte el |
+|---|---|
+| `.picasa.ini` | a művelet után is 65 bájt, 19:33-as időbélyeg — érintetlen |
+| **mind az 59 `imagedata_*` oszlop** | a négy képünk indexén (2899–2902) végigsöpörve: **egyetlen** oszlopban sincs négy megkülönböztető érték az `avgcolor`-on kívül (az a színátlag) |
+| `albums_0.db` / `albums_index.db` | ez **gyorsítótár**, nem tagsági lista: az `albums_index.db` magicje `0x3FCCCCCD`, a 20+12 bájtos gyorsítótár-elrendezés — album-INDEXKÉPEKET tárol |
+| `thumbindex.db` | névsorrendben tartja a négy fájlt (`…jpg`, `-001`, `-002`, `-003`) — katalógus, nem megjelenítési sorrend |
+| `repository.dat` | mappa-útvonalak jegyzéke |
+| `starlist.txt`, `scanlist.txt`, `saverlist.txt`, `tags.txt`, `facetags.txt` | csillagozás, beolvasási lista, mentési sor, címkék — sorrend egyikben sem |
+| `Picasa2Albums/` | mindössze `watchedfolders.txt` + `frexcludefolders.txt` |
+| `Preferences\…` registry | ellenpróbával igazolt negatívum (nyolc másik kulcsot ugyanaz a lekérdezés megtalál) |
+
+A mappa a teljes `db3`-ban **három** helyen fordul elő:
+`albumdata_filename.pmp`, `albumdata_name.pmp`, `thumbindex.db`.
+
+### A binárisból: a kézi sorrend neve „PRIORITÁS"
+
+Amiért a kulcsszavas keresés („sort", „order", „manual") nem talált: a Picasa
+ezt **prioritásnak** hívja. A `0x0071c4f0` a rendezési állapotszöveget írja ki,
+és hat módot ismer:
+
+| kulcs | felirat (hivatalos magyar) |
+|---|---|
+| `CSelectionNode::SortDateA` | Rendezés hozzáférési dátum alapján |
+| `CSelectionNode::SortDateC` | Rendezés létrehozási dátum alapján |
+| `CSelectionNode::SortSize` | Rendezés méret alapján |
+| `CSelectionNode::SortName` | Rendezés név alapján |
+| `CSelectionNode::SortColor` | Rendezés szín alapján |
+| **`CSelectionNode::SortPrior`** | **Rendezés prioritás szerint** |
+
+⚠️ A `catdata_catpri` (kategória-prioritás) oszlop **létezik**, de az a
+KATEGÓRIÁKÉ, nem a képeké. Kép-prioritás oszlop a db3 sémájában
+(`0x00415790` teljes felsorolása) **nincs**.
+
+### A maradék hipotézis — és a triviális próba, ami eldönti
+
+Minden negatív eredmény egyetlen magyarázattal fér össze: **a kézi sorrend
+munkamenetre szól, nem íródik ki.** A `CSelectionNode` neve is erre utal — a
+kijelölési/nézeti csomópont futásidejű állapota.
+
+**A próba:** indítsd újra a Picasát, és nézd meg, megmaradt-e a sorrend. Ha
+igen, van valahol egy tároló, amit még nem találtunk; ha nem, a kérdés
+lezárul, és nekünk sem kell megvalósítani.
+
+*Bizonyítottsági fok: **megerősített** a nyolc kizárás és a „prioritás"
+elnevezés; **feltételes** a munkamenet-hipotézis — az újraindítási próba
+dönti el.*
+
+---
+
+## A `db3` fájljainak ÉLETCIKLUSA: ki olvassa, ki írja, mikor (2026-08-27)
+
+A tulajdonos kérdésére: *„A többi fájl lekutatását nem végzed el, mikor
+olvasódnak vagy íródnak?"* — jogos, ez a „mit csinál az adattal" kérdés.
+
+Az élő `db3` **84 fájlt** tartalmaz: **59 PMP-oszlop** és **25 egyéb**.
+
+### 1. A perzisztencia-modell: BIZTONSÁGOS ÍRÁS két mappán át
+
+A Picasa nem az élő adatbázisba ír közvetlenül. Három mappa van:
+
+| mappa | szerep |
+|---|---|
+| `#db3\` | az **élő** adatbázis (23 függvény hivatkozik rá) |
+| `#tmp\` | az **átmeneti** másolat, ide megy a kiírás |
+| `#contacts\` | a névjegyek külön tárolója |
+
+A kiíró (`0x0041ba40`) a `#tmp\`-be ír, majd visszamásol a `#db3\`-ba, és egy
+**`_lock.lck`** fájllal jelöli az állapotot. Ha a visszamásolás elbukik, a
+zárfájl bennmarad, és a benne lévő szöveg elmagyarázza, mi történt:
+
+> *„The presence of this file indicates that the database has been persisted
+> successfully but there was a failure copying these files back to the active
+> db directory."*
+
+Ez a minta a mi `ini/` sávunk „atomi írás" elvének a db3-beli megfelelője.
+
+### 2. A kiírás HÁROMFÉLE módon indul
+
+| kiváltó | cím | mit jelent |
+|---|---|---|
+| **kézi menüparancs** | `0x00577a60`, a parancskezelőből (`0x005cb990`) | végén üzenet: `IDS_DB_SAVED` = **„Adatbázis mentve"**; hibánál `IDS_PERSIST_ERR` |
+| **tömörítéssel** | `0x0041b020` (`Always Compact`), `0x00403750` (`compactpercentage`) | a kiírás közben tömörít; a `compactpercentage` a küszöb |
+| **aszinkron** | `AsynchronousPersist` beállítás (`0x0041ee10`) | a kiírás háttérszálon fut-e |
+
+### 3. A betöltő verzió-migrációt is végez
+
+A betöltő (`0x0041ee10`, hívója `0x00402f90`) három séma-verziókulcsot olvas
+a `Preferences`-ből: **`gpsversion`**, **`colorspaceversion`**,
+**`rawversion`**, továbbá a `FixShortPathNames` kapcsolót. Vagyis a db3-nak
+**verziózott sémája** van, és a betöltés migrál.
+
+### 4. Fájlonkénti leltár — olvasó, író, időzítés
+
+| fájl | író | olvasó | mikor |
+|---|---|---|---|
+| `tags.txt` | `0x006c0e00` | `0x006c0f20` | a kiíró/betöltő hívja (perzisztencia) |
+| `facetags.txt` | `0x006ba000` | `0x006ba160` | ua. |
+| `starlist.txt` | `0x0041ba40`, `0x004a82d0` | — | a kiíróval együtt; teljes útvonalak soronként |
+| `saverlist.txt` | `0x0041ba40`, `0x004a82d0`, `0x00531a20` | — | ua. |
+| `scanlist.txt` | `0x004f61c0` (hívó `0x004f54b0`) | `0x004f6380` (hívó `0x004183c0`) | a beolvasás-kezelő; formátuma `+`/`-` előtagos meghajtólista |
+| `repository.dat` | `0x00414100` (hívói `0x00415790`, `0x004a4c80`) | ua. | a **mappa-útvonalak jegyzéke**; a séma-regisztrálóból |
+| `wordhash.dat` | `0x004db4f0` | **`0x004db720`** | a **keresési szóindex** (`.\thumblab\CIndexer.cpp`); az olvasó saját hibaüzenetekkel: *„wordhash.dat file: excess data"*, *„wordhash.dat: incorrect entity count"* |
+| `usernames.dat` | `0x00415790` | ua. | a séma-regisztrálóból, a `m_usernameRepository`-hoz |
+
+A `*_index.db` / `*_0.db` párok (thumbs, thumbs2, bigthumbs, previews,
+albums, facetemplatesV2, profilephotos) **gyorsítótárak** — a
+`0x3FCCCCCD` magic és a 20+12 bájtos index-elrendezés azonosítja őket.
+
+### 5. Az `.ioq` írási sorok
+
+A séma-regisztráló három írási sort is megnevez:
+`ioqueue\slingshot.ioq`, `ioqueue\filesafe.ioq`, `ioqueue\albumsafe.ioq`.
+Ezek a kiírás előtti pufferek. **Az élő `db3`-ban nem szerepeltek** — vagyis
+a Picasa kilépéskor kiüríti őket.
+
+### 6. ⚠️ Egy FÉLREFORDÍTÁS az eredeti magyar felületén
+
+| kulcs | angol | hivatalos magyar | a helyes jelentés |
+|---|---|---|---|
+| `IDS_PERSIST_ERR` | `Error persisting: %d` | **„Fennálló hiba: %d"** | *„Hiba a mentés során: %d"* |
+
+A fordító a **`persisting`** (kiírás/megőrzés) szót **`persistent`**-nek
+(fennálló, tartós) olvasta. Ez a harmadik bizonyított félrefordítás a #620
+kettője mellé. **Nálunk a helyes fordítást kell használni** — a felület
+egyezésének elve a szó szerinti hibák átvételére nem terjed ki.
+
+*Bizonyítottsági fok: **megerősített** minden cím és fájlnév-hozzárendelés
+(bináris index `string_xrefs` + `xrefs`), valamint a két felirat
+(`stringres-en-hu.tsv`). **Feltételes** a `starlist.txt`/`saverlist.txt`
+irányának „csak író" jellege: olvasót nem találtam hozzájuk, de a negatív
+eredményt nem ellenőriztem második lekérdezési alakkal.*
+
+### A leltár utolsó négy fehér foltja — lezárva (2026-08-27)
+
+A körben átadott 86 fájlból négyről nem volt egy szó sem a specekben:
+
+| fájl | mi ez | bizonyíték |
+|---|---|---|
+| `albumdata_<fiók>_lh.pmp` | az album **online azonosítója** fiókonként. Az `lh` = **Lighthouse**, a Google online fotószolgáltatásának belső neve (`lighthouse://`, `lighthouse://album/%s`, `UploadToLighthouse::YesButton/CancelButton/DontWarn/NonJpegs`) | típus `0x04` (u64), 105 rekord |
+| `imagedata_<fiók>_lhlist.pmp` | képenként az online albumok listája, ahova fel lett töltve | típus `0x00` (sztring), 2612 rekord |
+| `facetemplatesV2_0.db` + `_index.db` | arcfelismerési sablonok gyorsítótára, **második formátumverzió** | a `0x004887c0` még a V1 neveket ismeri (`facetemplates_0.db`, `facetemplates_index.db`), a séma-regisztráló (`0x00415790`) már a `facetemplatesV2.db`-t — tehát **volt formátumváltás** |
+
+⚠️ **A két `_lh` oszlop neve FIÓKFÜGGŐ**: a Google-fiók nevét tartalmazza
+(`albumdata_<fiók>_lh`). Egy beolvasó nem keresheti fix néven — mintára kell
+illesztenie (`albumdata_*_lh`, `imagedata_*_lhlist`).
+
+Ezzel a **86-ból 86** fájl azonosítva van abban az értelemben, hogy tudjuk,
+MI az. Az életciklusuk viszont nem egyformán feltárt — ld. a következő szakaszt.
+
+### ⛔ AMI MÉG NINCS FELTÁRVA: a gyorsítótárak írási útja
+
+A fenti életciklus-táblázat a **perzisztált** adatra érvényes (PMP-oszlopok,
+szöveges listák): ezeket a kiíró `0x0041ba40` írja a `#tmp\`-n át, és a
+betöltő `0x0041ee10` olvassa.
+
+**A gyorsítótárakra ez NEM igaz**, és az ő írási útjuk nincs megmérve:
+
+| fájl | mit tudunk | mit NEM |
+|---|---|---|
+| `thumbs_0.db` + `_index.db` | indexkép-gyorsítótár, `0x3FCCCCCD` magic, 20+12 elrendezés | ki írja, mikor, mi váltja ki az újragenerálást |
+| `thumbs2_0.db` + `_index.db` | ua., második méret | ua. |
+| `bigthumbs_0.db` + `_index.db` | ua., nagy méret | ua. |
+| `previews_0.db` + `_index.db` | előnézetek (18,6 MB — a legnagyobb) | ua. |
+| `albums_0.db` + `_index.db` | album-indexképek | ua. |
+| `facetemplatesV2_0.db` + `_index.db` | arcsablonok | ua. |
+| `profilephotos_0.db` | profilképek (4 bájt = üres) | ua. |
+| `thumbindex.db` | **név**-katalógus (`0x40466666` magic), névsorrendben | ki írja és mikor |
+
+Ez a szakasz MEGDŐLT — a mérés elkészült, ld. „A gyorsítótárak ÍRÁSI ÚTJA” alább. Jegy: **#1651**.
+
+---
+
+## A gyorsítótárak ÍRÁSI ÚTJA — megmérve (2026-08-27)
+
+Az előző szakasz még azt írta, hogy ez nincs feltárva. **Most már van.**
+
+### 1. A `thumbindex.db` INDULÁSKOR nyílik
+
+A hívási lánc: a betöltő **`0x0041ee10`** → **`0x004f46b0`** → `0x004f2d90`.
+
+- `0x004f46b0` beolvassa a **`ForceThumbUpdate`** beállítást a `Preferences`-ből
+  (ez kényszeríti az indexképek újragenerálását), és a `UseTraceFile`-t;
+- `0x004f2d90` kezeli a `thumbindex.db`-t és a **`thumbindex.tid`** kísérőfájlt.
+
+Vagyis az indexkép-katalógus **nem külön eseményre**, hanem a db3 betöltésének
+részeként nyílik és ellenőrződik — ugyanabban a lépésben, mint a séma-migráció.
+
+### 2. A gyorsítótár-rekord MEZŐI — kiolvasva a diagnosztikából
+
+A `0x004f25f0` egy diagnosztikai CSV-t tud írni (`WriteDirscannerCSV`
+beállítás), és a fejléce **közvetlenül megadja a rekordszerkezetet**:
+
+```
+Name,Creation Time,Access Time,Size,Type,Dirty,Valid
+"%s",%f,%f,%d,%d,%d,%d
+```
+
+| mező | szerep |
+|---|---|
+| `Name` | a fájl neve |
+| `Creation Time`, `Access Time` | lebegőpontos időbélyegek |
+| `Size`, `Type` | méret és típus |
+| **`Dirty`** | **újra kell írni** |
+| **`Valid`** | **érvényes-e még** |
+
+⇒ **Az újragenerálást ez a két jelölő vezérli**, nem közvetlen
+mtime-összevetés a rajzoláskor.
+
+### 3. HÁROM pillanat, ahol a szkenner állapota kiíródik
+
+Ugyanaz a függvény három külön fájlnevet ismer:
+
+| fájl | mikor |
+|---|---|
+| `dirscanner-start.csv` | induláskor |
+| `dirscanner-up.csv` | amikor a szkenner „feláll" |
+| `dirscanner-shutdown.csv` | leálláskor |
+
+Hívói: `0x004f46b0` (a betöltő útja), `0x004f54b0` (ugyanaz, ami a
+`scanlist.txt`-t írja), `0x004e9b00` (`DirscanRegression` — **regressziós
+tesztkeret** a szkennerhez).
+
+### 4. A szkenner objektumcsaládja
+
+| cím | név |
+|---|---|
+| `0x004e2f60` | `Dirscanner` |
+| `0x004e9b00` | `DirscanRegression` |
+| `0x006a8650` | `ytDirScannerWindows` (platformréteg) |
+
+### 5. ⭐ REJTETT BELSŐ HTTP-SZERVER — eddig ismeretlen
+
+A `0x004ca660` egy **HTTP-útvonaltáblát** tartalmaz, a `0x004c2af0` pedig egy
+teljes HTML-oldalt szolgál ki („Picasa %s Debug"):
+
+| útvonal | mire |
+|---|---|
+| `/albumlist`, `/album`, `/albumfeed` | albumlista és -tartalom |
+| `/indexfeed`, `/globalfeed` | RSS-hírcsatornák |
+| `/search`, `/msearch` | keresés |
+| `/filesigs`, `/albumsigs` | fájl- és album-**aláírások** |
+| **`/ge?BBOX=`** | **Google Earth** — befoglaló téglalap szerinti lekérdezés |
+
+A hibakereső lap egy legördülővel a **három tábla** közt vált — `album`,
+`file`, `cat` (azaz `albumdata`, `imagedata`, `catdata`) —, szűrőt kínál,
+60 másodpercenként frissül, és a sorokban ott a **`Dirty`** oszlop. A képekre
+mutató hivatkozás a saját `picasa://showimgtmp/?%d` protokollal nyílik. Van
+benne sorkorlát is: *„Wrote maximum number of rows (not exploding your
+browser)"*.
+
+Ez magyarázza a `feed.rss` és a `View Online.url` fájlokat is
+(`CLighthouseRSS`, `0x005ed650`).
+
+*Bizonyítottsági fok: **megerősített** — minden cím, beállításnév,
+útvonal és a CSV-fejléc a bináris index `string_xrefs`/`xrefs` tábláiból.
+**Nincs megmérve**: a szerver portja és az, hogy mi kapcsolja be.*
