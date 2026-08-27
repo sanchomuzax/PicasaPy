@@ -94,6 +94,17 @@ bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vag
 második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
 lehetőleg különböző sávokból végy jegyeket.
 
+## 📐 Élő állapotlap — a kör végén frissítsd
+
+A tulajdonos egyetlen olvasható lapon látja a projekt állapotát:
+`docs/allapotlap.md` tartalmazza a **címét és a frissítés menetét**. A lapot
+**nem írjuk, hanem újraszámoljuk** — `python3 scripts/allapotlap.py` —, majd
+**ugyanarra a címre** publikáljuk (`Artifact` hívás `url` mezője). Új cím =
+a felhasználó régi linkje elavul, ezért soha ne publikáld `url` nélkül.
+
+Ha a köröd jegyet nyitott vagy zárt, a kör végén frissítsd. Bármelyik
+session megteheti; a szkript csak olvas.
+
 ## Fejlesztés
 
 - Python 3.12+, PySide6 (Qt 6) + QML, OpenCV a képfeldolgozáshoz.

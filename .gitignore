@@ -103,3 +103,4 @@ tools/histogram/out/
 # publikus repó része. A klón maga a checkouton kívül van (/workspace/… ill. ~/…).
 .claude/skills/
 .agents/skills/
+docs/allapotlap.html
