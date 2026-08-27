@@ -58,6 +58,7 @@ DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 AddFileDialog 1.0 AddFileDialog.qml
+TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
 EditOverwriteDialog 1.0 EditOverwriteDialog.qml

@@ -43,12 +43,16 @@ kiszámolva, hogy a konstans elrontása is bukást okozzon
 
 ## Amit ez a fájl SZÁNDÉKOSAN nem követel meg
 
-A hét meg nem valósított mód (`auto`, `normal`, `dither16`, `rdesk`, `mac`,
-`sepia`, `bw`) a **#1579** dolga. Az itteni `TestMegNemValositottModok`
-tételesen felsorolja mind a hetet, és azt állítja, hogy a rács képe NEM
-változik — vagyis ha valamelyik később megvalósul, ez a teszt szól, és az
-elvárást a #1579 írja át. Ez nem ellentmond a #1596-nak: ott a lánc
-hiányzott, itt a képpont-szabály hiányzik.
+Az öt meg nem valósított mód (`auto`, `normal`, `dither16`, `rdesk`, `mac`)
+a **#1579** dolga. Az itteni `TestMegNemValositottModok` tételesen
+felsorolja mind az ötöt, és azt állítja, hogy a rács képe NEM változik —
+vagyis ha valamelyik később megvalósul, ez a teszt szól, és az elvárást a
+#1579 írja át. Ez nem ellentmond a #1596-nak: ott a lánc hiányzott, itt a
+képpont-szabály hiányzik.
+
+A `sepia` és a `bw` a **#1657** óta KIKERÜLT ebből a névsorból: azok ma már
+mozdítanak képpontot, és a rácson is hatnak — a mérésüket a
+`test_szepia_bw_a_kepernyon_es_a_racson_1657.py` végzi.
 """
 
 from __future__ import annotations
@@ -265,11 +269,13 @@ class TestRacsKeppontok:
 
 
 class TestMegNemValositottModok:
-    """A hét, ma képpontot NEM mozdító tétel — a #1579 dolga.
+    """Az öt, ma képpontot NEM mozdító tétel — a #1579 dolga.
 
     Itt SZÁNDÉKOSAN azt állítjuk, hogy a rács képe változatlan: a #1596
     hatóköre a LÁNC, nem a képpont-szabály. Ha a #1579 valamelyiket
     megvalósítja, ez a teszt szól, és az elvárást ott kell átírni.
+
+    A `sepia`/`bw` a #1657 óta NEM tartozik ide.
     """
 
     @pytest.mark.parametrize(
@@ -280,8 +286,6 @@ class TestMegNemValositottModok:
             (TETEL_16BIT, "dither16"),
             (TETEL_TAVOLI_ASZTAL, "rdesk"),
             (TETEL_MAC, "mac"),
-            (TETEL_SZEPIA, "sepia"),
-            (TETEL_FEKETE_FEHER, "bw"),
         ],
     )
     def test_a_racs_kepe_valtozatlan(self, racs, qt_app, tetel, mod):

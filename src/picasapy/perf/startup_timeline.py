@@ -223,12 +223,24 @@ class StartupTimeline:
 
 def start_startup_timeline(
     environ: Mapping[str, str] | None = None,
+    *,
+    forced: bool = False,
+    clock=time.perf_counter,
 ) -> StartupTimeline:
     """A környezet alapján bekapcsolt (vagy no-op) idővonal.
 
     Kikapcsolva is példányt ad: a hívási helyeken így nincs `if`-ág, és a
-    mérőpontok a forrásban akkor is olvashatók, ha épp nem mérünk."""
-    return StartupTimeline(enabled=timeline_enabled(environ))
+    mérőpontok a forrásban akkor is olvashatók, ha épp nem mérünk.
+
+    #1654: a `forced` a környezeti változótól FÜGGETLEN bekapcsolási út —
+    a tartós „tesztüzem" beállítás és a `--tesztuzem` parancssori kapcsoló
+    ezen jön be. A tulajdonos nem fejlesztő, nem állít env-et; a mérésnek
+    magától kell megtörténnie a KÖVETKEZŐ induláskor.
+
+    A `clock` a determinista teszteléshez cserélhető."""
+    return StartupTimeline(
+        enabled=bool(forced) or timeline_enabled(environ), clock=clock
+    )
 
 
 __all__ = [

@@ -59,6 +59,7 @@ from .models import FolderListModel, PhotoGridModel, folder_order
 from .people_controller import PeopleMixin
 from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
+from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
 from .side_pane_controller import SidePaneMixin
@@ -107,6 +108,9 @@ class AppController(
     SaveMixin,
     EffectsClipboardMixin,
     PerfMonitorMixin,
+    # #1654: TARTÓS tesztüzem — a #211-gyel szemben túléli a kilépést,
+    # és a KÖVETKEZŐ indulást naplózza az első ezredmásodperctől
+    TesztuzemMixin,
     AppearanceMixin,
     LanguageMixin,
     # #1575: Nézet ▸ Megjelenítési mód — a tizenegy tagú kizáró
@@ -230,6 +234,8 @@ class AppController(
         # #211: kapcsolható teljesítmény-monitor — alapból KI, semmi extra
         # költség (PerfMonitorMixin saját inicializáló-metódusa)
         self._init_perf_monitor()
+        # #1654: tartós tesztüzem — két olcsó olvasás, semmi több
+        self._init_tesztuzem()
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
         self._init_language()

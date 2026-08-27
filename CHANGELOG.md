@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.128] – 2026-08-27
 
 ### Hozzáadva
 - **A Képtálca mostantól tényleg gyűjtő: a képek több mappából is
@@ -20,6 +20,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nem csak azt, ami épp a képernyőn ki van jelölve, és a **mappába
   exportálás is a tálca tartalmán** dolgozik — akkor is, ha a képek fele már
   nem is látszik a rácsban.
+- **Tesztüzem: a program mostantól meg tudja mérni a saját indulását
+  (#1654).** Eddig épp az indulásról nem volt adatunk arról a gépről, ahol
+  lassú: a Teljesítmény-monitor csak menet közben kapcsolható be, mire pedig
+  a menüig eljutunk, az indulás rég lezajlott. Az új `Súgó ▸ Tesztüzem`
+  kapcsoló **megmarad kilépés után is**, és a **következő** indítást méri
+  végig, az első pillanattól. Amíg be van kapcsolva, a menüsorban piros
+  „TESZTÜZEM" felirat emlékeztet rá, hogy ne maradjon véletlenül bekapcsolva.
+  A mérés végén `Súgó ▸ Napló elküldése` egyetlen kattintással a közös
+  hálózati mappába teszi a naplót, és az elérési útját a vágólapra is
+  másolja; ha a hálózati mappa épp nem elérhető, a program megmondja, és
+  felajánlja, hogy hova mentse helyette. A napló **semmilyen mappanevet,
+  fájlnevet és felhasználónevet nem tartalmaz** — csak időket és
+  darabszámokat (hány mappa, hány kép), mert a gyanú szerint az indulás a
+  könyvtár méretével lassul.
 - **A lassú indulás okát mostantól Windowson is meg tudjuk mérni (#1653).** A
   tulajdonos jelentése szerint a program Windows alatt 33 másodperc után
   jelenik meg, míg a fejlesztői gépen 5 alatt — a különbséget eddig soha nem
@@ -50,6 +64,31 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   („Kijelölés megtartása", „Kijelölés eltávolítása") pedig a rács
   kijelölését szűkítette ahelyett, hogy a tálcára hatott volna — mostantól
   tényleg a tálcára tesz, illetve arról vesz le.
+- **A „Napló elküldése" gomb összeomlott, ha a közös mappa jelszót kért
+  (#1668).** A tulajdonos gépén az első éles használatnál hibaüzenet
+  ugrott fel a képernyőre a napló átadása helyett: Windowson egy
+  hitelesítetlen hálózati mappa nem azt mondja, hogy „nincs ilyen", hanem
+  hibát dob. A beépített „Mentés másként…" tartalék, ami pontosan erre az
+  esetre készült, így nem jutott szóhoz. Mostantól minden ilyen akadály —
+  jelszókérés, időtúllépés, hálózati hiba — ugyanazt jelenti: a megosztás
+  nem érhető el, tehát a program a mentési tartalékot ajánlja.
+- **A közös mappát mostantól a NAS NEVE azonosítja, nem az IP-címe
+  (#1668).** Az IP-cím hálózatonként más; a gépnév távoli kapcsolaton át is
+  feloldódik, tehát a napló nemcsak otthonról adható át. Ellenőrzés őrzi,
+  hogy IP-cím ne kerülhessen vissza a programba.
+- **A Szépia és a Fekete-fehér megjelenítési mód nem csinált semmit
+  (#1657).** A `Nézet ▸ Megjelenítési mód` tizenegy tételéből eddig csak
+  négy hatott; a tulajdonos épp a leglátványosabbat, a **Szépiát**
+  próbálta ki, és a kép meg sem rezdült. A menü tehát olyat kínált, ami
+  nem működött — ezt korábban sehol nem mondtuk ki. Mostantól mindkét mód
+  valóban átszínezi a képet, **a nagy nézőben és a könyvtár rácsán
+  egyaránt**, ugyanazzal a számítással, amit az eredeti Picasa használ.
+
+  Fontos, hogy ez **csak a képernyőre hat**: a fényképeket a lemezen nem
+  írja át, és nem kerül bele a képek beállításai közé sem. Aki tartósan,
+  a mentett képen akar szépiát vagy fekete-fehéret, azt továbbra is a
+  szerkesztő azonos nevű effektjével teheti — a kettő szándékosan külön
+  dolog, és nem is egyforma az eredményük.
 - **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
   semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
   előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata

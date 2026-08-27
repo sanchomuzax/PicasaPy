@@ -40,6 +40,7 @@ MenuBar {
             color: Theme.chromeBorder
         }
         Text {
+            id: signInLink
             objectName: "menuBarSignInLink"
             anchors.right: parent.right
             anchors.rightMargin: 10
@@ -48,6 +49,31 @@ MenuBar {
             color: Theme.linkBlue
             font.pixelSize: Theme.fontSize
             font.underline: true
+        }
+        // #1654: a tesztüzem LÁTHATÓ állapot. A menüben ülő pipa ehhez
+        // kevés — ahhoz ki kell nyitni a menüt. A felhasználó ne felejtse
+        // bekapcsolva észrevétlenül: amíg a mód él, a menüsáv jobb szélén
+        // állandó, figyelmeztető feliratot lát.
+        Text {
+            objectName: "menuBarTesztuzemBadge"
+            anchors.right: signInLink.left
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            visible: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            text: qsTr("TEST MODE — logging startup")
+            color: "#c0392b"
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            // A jelzés egyben KIKAPCSOLÓ is: a felhasználónak ne kelljen
+            // visszakeresnie a Súgó menüt ahhoz, hogy megszabaduljon a
+            // módtól, amiről épp most jutott eszébe, hogy bekapcsolva van.
+            MouseArea {
+                objectName: "menuBarTesztuzemBadgeArea"
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: bar.ctl.setTesztuzemEnabled(false)
+            }
         }
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
@@ -1284,6 +1310,35 @@ MenuBar {
             checked: (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
                 ? bar.ctl.perfMonitorEnabled : false
             onTriggered: controller.togglePerfMonitor()
+        }
+        // #1654: TARTÓS tesztüzem. A Teljesítmény-monitorral szemben ez
+        // TÚLÉLI a kilépést, és a KÖVETKEZŐ indulást naplózza az első
+        // ezredmásodperctől — az indulás az egyetlen szakasz, amit
+        // menetközbeni kapcsolóval elvből nem lehet megmérni (#1653).
+        MenuItem {
+            objectName: "menuHelpTesztuzem"
+            text: qsTr("Test Mode (logs the next startup)")
+            checkable: true
+            checked: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            onTriggered: bar.ctl.toggleTesztuzem()
+        }
+        // Egykattintásos átadás — CSAK tesztüzemben látszik. A `height`
+        // nullázása azért kell, mert a rejtett MenuItem különben üres
+        // sávot hagyna a Súgó menüben.
+        MenuItem {
+            objectName: "menuHelpSendLog"
+            // ⚠️ A láthatóság feltétele SAJÁT tulajdonságban él, nem
+            // közvetlenül a `visible`-ben: a QQuickItem `visible`-je az
+            // EFFEKTÍV láthatóságot adja vissza, ami csukott menünél
+            // mindig hamis — a kötés helyessége azon nem mérhető.
+            readonly property bool tesztuzemAktiv:
+                (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            text: qsTr("Send Log...")
+            visible: tesztuzemAktiv
+            height: tesztuzemAktiv ? implicitHeight : 0
+            onTriggered: bar.ctl.tesztuzemNaploAtadasa()
         }
         MenuItem {
             text: qsTr("About PicasaPy")
