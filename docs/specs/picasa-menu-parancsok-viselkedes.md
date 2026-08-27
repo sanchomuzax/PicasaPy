@@ -698,3 +698,81 @@ négy helyi menü (`FolderPhotoWin` ×3, `AlbumPhotoWin` ×2).
 *Bizonyítottsági fok: **megerősített** — minden felirat a hivatalos
 `stringres-en-hu.tsv`-ből, minden cím a bináris indexből; a „nálunk" oszlop
 mind mérve.*
+
+---
+
+## 32. tétel — a MAPPA helyi menüje, mind a 18 tétel (2026-08-27)
+
+Forrás: `0x007319f0` **szűretlen** sztringlistája + `stringres-en-hu.tsv`.
+
+> ⚠️ **Módszertani figyelmeztetés.** Az első lekérdezésem `LIKE` szűrővel ment
+> (`'%folder%'`, `'%Remove%'`, `']%'`), és **13 tételt** adott — a valóság 18.
+> A szűrt lekérdezés NEM elemlista. A skill „teljes elemlista, nem minta"
+> követelménye pontosan ezért van.
+
+### 32.1 A teljes lista
+
+| # | azonosító | angol | magyar (hivatalos) | nálunk |
+|---|---|---|---|---|
+| 1 | `ID_HIER_FOLDER_EXPAND` | Expand All | Az összes részletes nézete | ✅ `FolderHierarchyView.qml:180` |
+| 2 | `ID_HIER_FOLDER_COLLAPSE` | Collapse All | Az összes kicsinyítése | ✅ `FolderHierarchyView.qml:185` |
+| 3 | `ID_ALBUM_EDITCAPTIONS` | &Edit Folder Description… | &Mappaleírás szerkesztése… | ✅ `:69` |
+| 4 | `ID_ALBUM_SELECTALLPICTURES` | Select &All Pictures | — | ✅ `:78` (`Ctrl+A`) |
+| 5 | `ID_CLEAR_SELECTION` | &Clear Selection | &Kijelölés törlése | ✅ `:83` (`Ctrl+D`) |
+| 6 | `ID_SELECT_INVERT` | &Invert Selection | — | ✅ `:88` (`Ctrl+I`) |
+| 7 | `ID_ALBUM_MOVETOCOLLECTION` | Mo&ve to Collection | Át&helyezés gyűjteménybe | ✅ `:108` |
+| 8 | `ID_REFRESH_THUMB` | Refresh &Thumbnails | &Indexképek frissítése | ✅ `:118` |
+| 9 | `SortFolderBy` | S&ort Folder By | Mappa r&endezésének alapja | ✅ `:139`–`:176` |
+| 10 | `ID_HIDEENTIREALBUM` | &Hide Folder | Mappa e&lrejtése | ❌ **`placeholder: true`** (`:191`) |
+| 11 | `ID_UNHIDEENTIREALBUM` | &Unhide Folder | Mappa m&egjelenítése | ❌ ugyanaz a tétel, váltakozó felirattal |
+| 12 | `ID_ALBUM_LOCATEONDISK` | &Locate on Disk | &Keresés a lemezen | ✅ `:199` |
+| 13 | `ID_MANAGE_ALBUM` | **&Remove from Picasa…** | **&Eltávolítás a Picasából…** | ✅ `:204` |
+| 14 | `ID_MOVEFOLDER` | &Move Folder… | &Mappa áthelyezése… | ✅ `:216` |
+| 15 | `ID_ALBUM_DELETE` | &Delete Folder… | &Mappa törlése… | ❌ **`placeholder: true`** (`:222`) |
+| 16 | `ID_ONLINE_ACTIONS` | Online Actions (almenü) | — | ⚠️ nálunk laposan, csoport nélkül |
+| 17 | `ID_ALBUM_MAKE_WEB` | E&xport as HTML Page… | — | ✅ `:241` (#534 szerint a funkció hiányzik) |
+| 18 | `ID_ALBUM_FILTERFACES` | &Add name tags | — | ❌ `placeholder: true` (`:247`) — #26 |
+
+Az `Online Actions` almenü alatt: `ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`,
+`ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`, `ID_ALBUM_MAKE_WEB`. Nálunk az `AlbumContextMenu.qml:107`
+ismeri az „Online Actions" csoportot, a MAPPA menüjében viszont nincs meg.
+
+### 32.2 Két félrevezető azonosító
+
+| azonosító | amit sugall | amit TÉNYLEG jelent |
+|---|---|---|
+| `ID_MANAGE_ALBUM` | album kezelése | **„Eltávolítás a Picasából…"** — a mappa kikerül a figyelésből, a fájlok a lemezen maradnak |
+| `ID_MOVEFOLDER` | egy felirat | **kettő**: `Folder::` felületen „Mappa áthelyezése…", `eMenuLabelFolder::` felületen csak „Áthelyezés…" |
+
+Ez a 31.1 tanulságának folytatása: **az azonosítóból soha ne állíts jelentést,
+ha van hozzá `stringres` felirat.**
+
+### 32.3 A „Mappa elrejtése" TÖBB, mint egy jelölő
+
+A binárisból három, egymásra épülő réteg olvasható ki:
+
+1. **`]hidden` token** — 11 függvény hivatkozik rá (`0x0041c340`, `0x00422ce0`,
+   `0x004a51f0` és mások). Ez a rejtett elemek jelölése.
+2. **„Rejtett mappák" gyűjtemény** (`IDS_HIDDEN` = `Hidden Folders`,
+   6 hivatkozás: `0x00402f90`, `0x004a1560`, `0x004a8b10`, `0x00537fb0`,
+   `0x005ec130`, `0x005ee2a0`) — a rejtett mappák ide kerülnek, nem tűnnek el.
+3. **Jelszavas védelem** — `IDS_PROMPT_HIDDEN_PWD_MESSAGE` /
+   `IDS_WARN_NO_HIDDEN_PWD`: *„A »Rejtett mappák« gyűjteményt jelenleg nem védi
+   jelszó. Szeretne most megadni egy jelszót?"*
+
+Továbbá a `ShowHidden` beállítás (`0x00440af0`, `0x005643e0`, `0x005c9300`,
+`0x0067bda0`) kapcsolja a megjelenítést.
+
+**Vagyis az elrejtés adatvédelmi funkció**, nem csak nézeti szűrő.
+
+**Nálunk (mérve):** a fotó-szintű `hidden` oszlop megvan
+(`index/schema.py:225`), a `showHidden` beállítás is
+(`app/controller.py:500`), sőt a lemezes elrejtés kérdése is
+(`photo_ops_controller.py:105`, #459 — „Fájlok elrejtése"). **Mappa-szintű
+elrejtés viszont sehol nincs** (`grep hide_folder|folder_hidden` a `src/`-ben:
+üres), és a menütétel néma.
+
+*Bizonyítottsági fok: **megerősített** a 18 tétel, a feliratok és a három
+elrejtés-réteg. **Nincs mérve**, hogy a mappa elrejtése a `.picasa.ini`-be, az
+adatbázisba vagy mindkettőbe ír-e — ehhez a `0x0040cd10` környékének
+diszasszemblálása kell.*
