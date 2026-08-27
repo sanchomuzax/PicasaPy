@@ -20,7 +20,7 @@ def _library(tmp_path, ini_body: str | None = None, count: int = 1):
 
 
 def _crop_ini(names) -> str:
-    value = EditSession().set_crop(
+    value = EditSession().append_crop(
         Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
     ).to_value()
     return "".join(f"[{name}]\nfilters={value}\n" for name in names)

@@ -3,8 +3,7 @@ UTOLSÓ a hatályos, a felület is azt mutassa és mentse.
 
 ## Honnan van ilyen lánc?
 
-A PicasaPy maga nem gyárt ilyet (a `set_crop` a helyén cserél), de a
-felhasználó gyűjteményét a **windowsos Picasa** írta: az éles korpuszban
+A felhasználó gyűjteményét a **windowsos Picasa** írta: az éles korpuszban
 (859 `.picasa.ini`, 18 801 szekció) **38** lánc tartalmaz egynél több
 `crop64`-et. Ezeket mi OLVASSUK — a teszt ezért egy kézzel elhelyezett,
 valósághű `.picasa.ini`-vel indul, nem a felületen gyártja a láncot.

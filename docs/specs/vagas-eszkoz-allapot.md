@@ -207,6 +207,25 @@ pedig tiltott, ha nincs mit elvetni (`cropResetEnabled` — kijelölés VAGY
 `hasCrop`). Az elvetés a szokásos visszavonás-veremre kerül `crop` néven,
 tehát a Visszavonás gomb visszahozza (#465).
 
+## 4/c. Lezárt nyitott kérdés: az Alkalmaz HALMOZ, nem von össze (#1553)
+
+A #1550 mérése közben derült ki, hogy a vágó-eszköz **Alkalmaz** gombja
+összevonta a szerkesztési láncot egyetlen `crop64`-re, tehát egy
+Picasa-eredetű, több-vágásos képnél (a korpuszban **38** ilyen) az **első
+Alkalmaz eldobta a korábbi vágás-rétegeket**. Mérve, a valódi gombra
+kattintva: `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;` +
+Alkalmaz → `crop64=1,40004000c000c000;bw=1;`.
+
+**Az eredeti halmoz** — a bizonyítás (a `filters=` mint visszavonás-verem a
+binárisban, a `Recrop`/„Vágás megismétlése" felirat, és a Picasa saját
+`redo=` sora két `crop64`-gyel) teljes terjedelmében:
+`filters-decoded.md` → „Az ÍRÁS oldala: az újravágás HALMOZ (#1553)".
+
+A PicasaPy ehhez igazodik: az `EditSession.append_crop()` a lánc végére fűz,
+a Visszavonás rétegenként bont vissza (az újravágás visszavonása a KORÁBBI
+vágást hozza vissza), a `crop=` tükörkulcs pedig továbbra is az utolsót
+tükrözi. Őr: `tests/app/qml_functional/test_vagas_halmozas_1553.py`.
+
 ## 5. Amit az eredetiből átvettünk, és megvan
 
 - **Kiegyenesítés-figyelmeztetés** (`IDS_WARN_CROP_ACCURACY`) — szó szerinti

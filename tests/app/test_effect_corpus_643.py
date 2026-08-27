@@ -90,7 +90,7 @@ class TestEszkozokKorpusz:
     @pytest.mark.parametrize(
         ("cimke", "keszit"),
         [
-            ("crop64", lambda s: s.set_crop(Rect64(0.1, 0.1, 0.9, 0.9))),
+            ("crop64", lambda s: s.append_crop(Rect64(0.1, 0.1, 0.9, 0.9))),
             ("tilt", lambda s: s.set_tilt(0.3, 1.1)),
             (
                 "finetune2",

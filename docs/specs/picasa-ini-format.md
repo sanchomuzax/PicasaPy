@@ -126,7 +126,7 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 
 | Szűrő | Paraméterek | Leírás |
 |---|---|---|
-| `crop64` | `1,RECT64` | kivágás — a Picasa MELLÉ külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); ilyenkor az **utolsó** a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550) |
+| `crop64` | `1,RECT64` | kivágás — a Picasa MELLÉ külön `crop=rect64(...)` kulcsot is ír. Egy láncban TÖBB is lehet (élesben 38 ilyen lánc); ilyenkor az **utolsó** a hatályos, a korábbiak csak történet — ld. `filters-decoded.md`, „Több `crop64` a láncban” (#1550). Az újravágás **hozzáfűz**, nem cserél (#1553) — ugyanott, „Az ÍRÁS oldala” |
 | `tilt` | `1,!szög,!skála` | döntés; a skála-mező élesben jellemzően `0.000000` = „számítsd ki a kitöltő skálát" (#73) |
 | `redeye` | `1` | vörösszem-eltávolítás |
 | `enhance` | `1` | „I'm Feeling Lucky" automata |

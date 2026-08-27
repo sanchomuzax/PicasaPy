@@ -97,8 +97,42 @@ class EditSession:
         """
         return serialize_filters(tuple(canonicalize_op(op) for op in self.ops))
 
-    def set_crop(self, rect: Rect64) -> EditSession:
-        """Crop64 beállítása vagy cseréje: a láncban legfeljebb egy lehet.
+    def append_crop(self, rect: Rect64) -> EditSession:
+        """Új `crop64` réteg a lánc VÉGÉRE — a korábbiak érintetlenül maradnak.
+
+        **#1553 — miért halmozás, és nem csere.** A metódus 2026-08-27-ig
+        `set_crop` néven a `_with_single_layer` „legfeljebb egy réteg"
+        szabályát követte. Ez a szabály a #19/#47 eredeti kódjából jött,
+        bizonyíték nélkül (a #302 csak közös helperbe emelte). Egy
+        Picasa-eredetű, több-vágásos láncnál az ELSŐ Alkalmaz eldobta a
+        korábbi `crop64`-eket; mérve, a valódi gombra kattintva:
+        `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;` +
+        Alkalmaz → `crop64=1,40004000c000c000;bw=1;`.
+
+        Az eredeti Picasa HALMOZ; három, egymástól független bizonyíték:
+
+        1. **A `filters=` MAGA a visszavonás-verem.** A `CFilterStackUI`
+           frissítője (`Picasa3.exe`, `0x006ad530`) a visszavonás-listát a
+           `"filters"`, az újra-listát a `"redo"` tulajdonságból építi —
+           ugyanaz a `0x0069f510` hívás, két kulccsal —, és a Visszavonás
+           felirata a lánc UTOLSÓ elemének a neve (`0x00753c46`). Egy
+           meglévő elem helyben cserélése az előzményt semmisítené meg.
+        2. **Az eredeti saját felirat-párja:** `IDS_CROP_LABEL` = „Crop" és
+           `IDS_RECROP_LABEL` = „Recrop" (magyarul **„Vágás megismétlése"**).
+           A `0x007533b0` a `0x006b0140` („van-e már érvényes vágás")
+           válasza szerint választ köztük: az újravágás önálló, névvel bíró
+           művelet, nem a meglévő vágás átírása.
+        3. **Az éles korpusz:** 38 lánc tartalmaz több `crop64`-et, 33-ban a
+           két téglalap átfedése IoU > 0,5 (ugyanaz a kivágás újraigazítva),
+           14-ben további szűrők állnak az utolsó `crop64` UTÁN. A
+           `scan0016.png` szekcióban maga a Picasa írt egy
+           `redo=crop64=1,14effffdca5;enhance=1;crop64=1,ffffdca5;` sort — a
+           redo-verem csak Visszavonásra töltődik, tehát ez a lánc valóban a
+           Picasa `filters=` visszavonás-verme volt.
+
+        A HATÁLYOS vágás továbbra is az utolsó (`crop()`, #1550), tehát a
+        render és a `crop=` tükörkulcs változatlan; csak az előzmény marad
+        meg mellette.
 
         Args:
             rect: Az új Rect64 téglalap.
@@ -107,7 +141,7 @@ class EditSession:
             Új EditSession.
         """
         new_op = _new_op("crop64", ("1", encode_rect64(rect)))
-        return self._with_single_layer(lambda op: op.matches("crop64"), new_op)
+        return EditSession(ops=self.ops + (new_op,))
 
     def clear_crop(self) -> EditSession:
         """Crop64 eltávolítása."""
@@ -118,8 +152,8 @@ class EditSession:
         """A HATÁLYOS crop64 téglalap — a lánc UTOLSÓ érvényes bejegyzése.
 
         **#1550 — miért az utolsó, és nem az első.** A láncban több `crop64`
-        is állhat: a PicasaPy maga nem gyárt ilyet (a `set_crop` cserél), a
-        felhasználó gyűjteményét viszont a windowsos Picasa írta. Korábban
+        is állhat: a felhasználó gyűjteményét a windowsos Picasa írta, és a
+        PicasaPy maga is halmoz újravágáskor (`append_crop`, #1553). Korábban
         ez a metódus az ELSŐT adta, ami két, egymástól független
         bizonyítéknak mondott ellent:
 
@@ -398,9 +432,11 @@ class EditSession:
         helyén cserélődik, a további egyezők eldobódnak; ha nincs egyező
         tag, `new_op` a lánc végére kerül.
 
-        Közös implementáció a crop64/tilt/finetune „legfeljebb egy réteg,
+        Közös implementáció a tilt/finetune/retouch „legfeljebb egy réteg,
         a helyén cserélve" szabályához (#302) — a `toggle()` ettől eltérően
-        MINDEN egyezőt eltávolít, ezért nem ezt a helpert használja."""
+        MINDEN egyezőt eltávolít, ezért nem ezt a helpert használja. A
+        `crop64` 2026-08-27 óta NEM tartozik ide: az eredeti Picasa halmozza
+        a vágásokat, ld. `append_crop` (#1553)."""
         new_ops = []
         replaced = False
         for op in self.ops:

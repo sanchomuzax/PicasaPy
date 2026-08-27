@@ -11,7 +11,7 @@ def _library_with_crop(tmp_path):
     lib = tmp_path / "kepek"
     lib.mkdir()
     make_jpeg(lib / "a.jpg", size=(320, 160))
-    value = EditSession().set_crop(
+    value = EditSession().append_crop(
         Rect64(left=0.0, top=0.0, right=0.5, bottom=1.0)
     ).to_value()
     (lib / ".picasa.ini").write_text(

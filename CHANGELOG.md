@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Az újravágás többé nem törli a korábbi vágásokat (#1553).** Ha egy képet
+  még a windowsos Picasában vágtak meg többször, a vágó-eszköz **Alkalmaz**
+  gombja eddig az **első** kattintásra eldobta a régebbi vágás-rétegeket, és
+  velük a rájuk épülő visszavonási lépéseket. (A felhasználó gyűjteményében
+  **38** ilyen kép van.) Mostantól az új vágás a szerkesztési történet
+  végére kerül, a régiek megmaradnak, és a Visszavonás lépésenként bont
+  vissza: az újravágás visszavonása a **korábbi vágást** hozza vissza, nem a
+  vágatlan képet. A képen látható kivágás nem változik — továbbra is a
+  legutolsó vágás a hatályos.
+
+  Hogy ez az eredeti Picasa viselkedése, három forrásból derült ki: a
+  program saját szerkesztési láncából (az maga a visszavonás-verem), az
+  eredeti „Vágás megismétlése" feliratából, és abból, hogy a felhasználó
+  gyűjteményében maga a Picasa hagyott hátra ilyen, kétszer vágott láncot.
+
+  Ráadás: ha a kijelölésen semmit nem igazít az ember, az Alkalmaz most már
+  egyáltalán nem nyúl a fájlhoz.
+
 ## [0.8.115] – 2026-08-27
 
 ### Javítva
