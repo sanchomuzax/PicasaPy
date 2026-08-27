@@ -24,6 +24,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ténylegesen hogyan színezik át (sötétítés vetítéshez, a kiégett részek
   jelölése, gammák), azt a következő fejlesztések adják hozzá.
 
+- **Megmutatja, hol égett ki a kép (#1576).** A `Nézet ▸ Megjelenítési mód ▸
+  Túlcsordult képpontok megjelenítése` bekapcsolva a **teljesen fehérré vált**
+  képpontokat világos lazacpirosra (`#FF7F7F`) festi a nézőben. Erős fény
+  vagy túlhúzott „Kitöltő fény" után szabad szemmel nem látszik, hogy egy
+  fehér folt még őriz-e rajzolatot, vagy már menthetetlenül kiégett — ez a
+  mód egyetlen kattintással megmutatja.
+
+  Ahogy az eredeti Picasában: a jelölés **csak a képernyőn** jelenik meg, a
+  mentett és az exportált fájlt nem érinti, és más módra váltva azonnal
+  eltűnik. A küszöb szándékosan szigorú — csak a tökéletesen fehér képpont
+  számít túlcsordulónak, a hajszálnyival sötétebb már nem —, mert az eredeti
+  is pontosan így működik.
+
 ## [0.8.117] – 2026-08-27
 
 ### Javítva

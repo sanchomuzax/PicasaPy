@@ -101,3 +101,35 @@ class DisplayModeMixin:
             return
         self._display_mode = mode
         self.displayModeChanged.emit()
+
+
+def wire_display_mode(controller, edit_controller, preview_provider):
+    """A mód ÁTVEZETÉSE a megjelenítési útra (#1576).
+
+    Három szereplő, egy irány:
+
+    1. a vezérlő (`DisplayModeMixin`) tartja, melyik mód aktív,
+    2. az edit-előnézet **szolgáltatója** teszi rá a hatást a KIADOTT képre
+       (a tárolt képet érintetlenül hagyva, ld. ott a docstringet),
+    3. az `EditController` lépteti a `previewSource` cache-busterét, hogy a
+       QML tényleg újrakérje a képet.
+
+    A `wire_fileops()` mintájára KÜLÖN, nevesített bekötés: az
+    `application.py` és a QML-funkcionális tesztek conftestjei ugyanezt az
+    egy hívást használják, így a féloldalas tükrözés (a teszt-oldali
+    bekötés elmaradása) nem tud észrevétlenül becsúszni.
+
+    A kezdeti állapotot is átviszi — enélkül a szolgáltató a vezérlőtől
+    eltérő módban indulna, amíg a felhasználó nem vált egyet.
+
+    A visszaadott függvény a bekötött átvezető (a hívó életben tarthatja,
+    illetve tesztből közvetlenül is meghívhatja).
+    """
+
+    def _atvezet() -> None:
+        preview_provider.set_display_mode(controller.displayMode)
+        edit_controller.refresh_displayed_image()
+
+    _atvezet()
+    controller.displayModeChanged.connect(_atvezet)
+    return _atvezet

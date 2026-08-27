@@ -26,6 +26,10 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters, count_redeye_spots
+from picasapy.render.display_modes import (
+    apply_display_mode,
+    display_mode_changes_pixels,
+)
 from picasapy.render.text_fonts import DEFAULT_FAMILY
 from picasapy.render.text_overlay import apply_text_overlay
 
@@ -131,6 +135,37 @@ class EditPreviewProvider(QQuickImageProvider):
         # Így nincs olyan zár, amin a GUI-szál render-hosszan állhatna —
         # a #514 első változata épp ezt hozta vissza egy másik ajtón.
         self._lock = threading.Lock()
+        # Megjelenítési mód (#1576): KÉPERNYŐRE ható átalakító, a `Nézet ▸
+        # Megjelenítési mód` almenüből (#1575). SZÁNDÉKOSAN nem a
+        # `register()`-ben, tárolás előtt alkalmazzuk, hanem a
+        # `requestImage()`-ben, a tárolt képet ÉRINTETLENÜL hagyva:
+        #
+        # * a `_images`/`_prefix_cache`/`_sources` rekeszek tiszták maradnak,
+        #   így a mód kikapcsolása után a kép BÁJTRA az eredeti (a beégetett
+        #   jelölés különben ott ragadna a gyorsítótárban),
+        # * a hisztogram (#25) és a pipetta (#464) a VALÓDI képet méri, nem
+        #   a képernyő figyelmeztető színét,
+        # * a mód váltásához nem kell újrarenderelni (dekód + filter-lánc),
+        #   elég a QML-lel újrakéretni a képet.
+        #
+        # A `requestImage` a Qt kép-betöltő szálán fut, ezért az érték a
+        # meglévő (rövid tartású) `_lock` alatt cserélődik és olvasódik.
+        self._display_mode = ""
+
+    def set_display_mode(self, mode: str) -> None:
+        """A megjelenítési mód beállítása (#1576) — csak a KÉPERNYŐRE hat.
+
+        A hívó a `wire_display_mode()` (ld.
+        `picasapy.app.display_mode_controller`); a mentett/exportált képet
+        ez az érték soha nem érinti."""
+        with self._lock:
+            self._display_mode = str(mode or "")
+
+    @property
+    def display_mode(self) -> str:
+        """Az érvényes megjelenítési mód azonosítója (üres: nincs hatás)."""
+        with self._lock:
+            return self._display_mode
 
     def register(
         self,
@@ -500,6 +535,7 @@ class EditPreviewProvider(QQuickImageProvider):
                 image = self._gpu_lut_images.get(key, QImage())
             else:
                 image = self._images.get(key, QImage())
+            display_mode = self._display_mode
         if image.isNull() and not (is_gpu_prefix or is_gpu_lut):
             image = _placeholder()
         # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
@@ -521,6 +557,24 @@ class EditPreviewProvider(QQuickImageProvider):
                 image = image.scaledToWidth(width, smooth)
             elif height > 0:
                 image = image.scaledToHeight(height, smooth)
+        # Megjelenítési mód (#1576) — az UTOLSÓ lépés, a méretezés UTÁN.
+        #
+        # A sorrend nem közömbös: a méretezés simító (SmoothTransformation),
+        # tehát előbb jelölve a lazacpiros belekeveredne a szomszédokba, és
+        # a képernyőn se a jelölőszín, se az eredeti fehér nem maradna meg.
+        # Az eredetiben is a KIRAJZOLÁS a hely (`0x009e285d`), vagyis a
+        # ténylegesen látható képpontokon dől el, mi számít kifehéredettnek.
+        #
+        # A GPU-ágak (`gpuprefix=1`/`gpulut=1`) KIMARADNAK: a LUT adat, nem
+        # kép — átfestve a shader hibás tábláról mintavételezne.
+        if (
+            not (is_gpu_prefix or is_gpu_lut)
+            and display_mode_changes_pixels(display_mode)
+            and not image.isNull()
+        ):
+            image = _rgb_array_to_qimage(
+                apply_display_mode(_qimage_to_rgb_array(image), display_mode)
+            )
         if size is not None:
             size.setWidth(image.width())
             size.setHeight(image.height())
