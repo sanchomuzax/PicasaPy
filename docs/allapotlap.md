@@ -70,3 +70,25 @@ fejlesztők kezelni, és így elvesznek, nem frissülnek."*
 
 Egy mért lap nem tud elavulni. Legfeljebb régi lehet — és a dátumát a
 fejlécében kiírja, tehát az is látszik.
+
+
+## Kommentek: automatikus értesítés NINCS
+
+Ha valaki megosztott lapon hozzászól, arról **nem érkezik értesítés**, és
+nincs figyelő folyamat sem. A kommentet **külön le kell kérni**:
+
+```
+Artifact(action="comments", url="<a lap címe>")
+```
+
+**Ezért a lekérés a kör végi frissítéshez van kötve:** a
+`scripts/artifactok.py` kiírja a két kész `comments` hívást, hogy ne
+emlékezetből múljon. Ez az egyetlen pillanat, amikor ez rendszeresen
+megtörténik.
+
+Két dolgot érdemes tudni a válaszokról:
+
+* **„comments are not available on this artifact right now"** — a lap nincs
+  megosztva senkivel, tehát nincs is hol kommentelni. Ez nem hiba.
+* **Válaszolni csak olyan szálba lehet, ahol valaki `@claude`-ot említett.**
+  Olvasni minden szálat lehet, de a válasz emberi engedélyhez kötött.

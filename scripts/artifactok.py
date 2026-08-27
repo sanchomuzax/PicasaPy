@@ -29,15 +29,17 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
 LAPOK = [
-    ("állapotlap", "allapotlap.py", REPO / "docs" / "allapotlap.html"),
-    ("bináris térkép", "binaris_terkep.py", REPO / "docs" / "binaris-terkep.html"),
+    ("állapotlap", "allapotlap.py", REPO / "docs" / "allapotlap.html",
+     "https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e"),
+    ("bináris térkép", "binaris_terkep.py", REPO / "docs" / "binaris-terkep.html",
+     "https://claude.ai/code/artifact/3e4aac90-5195-45c3-ba94-661d26824f94"),
 ]
 
 
 def main() -> int:
     kihagyva, hibas = [], []
     print("=" * 66)
-    for nev, szkript, ki in LAPOK:
+    for nev, szkript, ki, _url in LAPOK:
         print(f"\n▶  {nev}  ({szkript})")
         futas = subprocess.run(
             [sys.executable, str(REPO / "scripts" / szkript), "--ki", str(ki)],
@@ -59,6 +61,14 @@ def main() -> int:
         return 3
     print("✅ Mindkét lap újraszámolva.")
     print("   Publikáld ŐKET a fent kiírt címekre — url NÉLKÜL új lap jön létre!")
+    print()
+    print("📬 ÉS KÉRD LE A KOMMENTEKET IS — automatikus értesítés NINCS.")
+    print("   Ez az EGYETLEN pillanat, amikor ez rendszeresen megtörténik:")
+    for nev, _sz, _ki, url in LAPOK:
+        print(f"     Artifact(action=\"comments\", url=\"{url}\")   # {nev}")
+    print("   Ha a válasz »comments are not available«, a lap nincs megosztva —")
+    print("   ez nem hiba, csak nincs hol kommentelni.")
+    print("   Válaszolni CSAK olyan szálba lehet, ahol valaki @claude-ot említett.")
     return 0
 
 
