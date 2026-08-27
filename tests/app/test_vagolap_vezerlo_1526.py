@@ -33,6 +33,10 @@ from picasapy.fileops.clipboard import (
     uri_list_payload,
 )
 
+# A vágólapot tesztenként el kell engedni, különben a folyamat SIGSEGV-vel
+# áll le (#1526) — az indoklás a fixture docstringjében.
+pytestmark = pytest.mark.usefixtures("vagolap_elengedese")
+
 
 class HamisVagolap(QObject):
     """Folyamaton belüli vágólap-utánzat: annyit tud, amennyit használunk.

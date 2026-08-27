@@ -47,6 +47,12 @@ from picasapy.fileops.clipboard import (
     paths_from_uri_list,
 )
 
+import pytest
+
+
+# A vágólapot tesztenként el kell engedni, különben a folyamat SIGSEGV-vel
+# áll le (#1526) — az indoklás a fixture docstringjében.
+pytestmark = pytest.mark.usefixtures("vagolap_elengedese")
 
 def _elem(root, nev: str) -> QObject:
     obj = root.findChild(QObject, nev)

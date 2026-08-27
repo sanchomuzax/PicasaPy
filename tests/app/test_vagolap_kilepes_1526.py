@@ -56,6 +56,10 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QGuiApplication
 app = QGuiApplication([])
 from picasapy.app.fileops_controller import FileOpsController
+
+# A vágólapot tesztenként el kell engedni, különben a folyamat SIGSEGV-vel
+# áll le (#1526) — az indoklás a fixture docstringjében.
+pytestmark = pytest.mark.usefixtures("vagolap_elengedese")
 vezerlo = FileOpsController()
 getattr(vezerlo, sys.argv[1])([sys.argv[2]])
 QTimer.singleShot(0, app.quit)

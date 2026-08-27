@@ -13,59 +13,35 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 @pytest.fixture(scope="session")
 def qt_app():
-    """A folyamat egyetlen Qt-alkalmazása.
-
-    #1526: a lebontáskor LE KELL VENNI a vágólapról a Pythonban létrehozott
-    `QMimeData`-t, különben a tesztfolyamat **SIGSEGV**-vel áll le — a
-    tesztek zölden lefutnak, és a hiba CSAK a kilépőkódban látszik
-    (`pytest -q` „11 passed"-et ír, a kilépőkód 139). A `run_tests.py`
-    ilyenkor hibás részfutást jelent, a CI pedig pirosat.
-
-    Mérve (2026-08-27, PySide6, offscreen, Qt-n kívüli kód nélkül):
-
-    | mi áll a vágólapon a folyamat leállásakor | kilépőkód |
-    |---|---|
-    | semmi, vagy `setText()` (a `QMimeData`-t a Qt hozza létre C++-ban) | 0 |
-    | Pythonban létrehozott `QMimeData` | **139 (SIGSEGV)** |
-    | ugyanaz, de előtte `clear()`/`setText()` | 0 |
-
-    A Python-oldali hivatkozás megtartása vagy eldobása (`del` +
-    `gc.collect()`), a `setParent()`, a `shiboken6.invalidate()` és a
-    `setUrls()` egyike sem segít; tulajdonjog-átadó hívást ez a `shiboken6`
-    nem kínál. Az egyetlen működő fogás: a leállás pillanatában ne a
-    Pythonban gyártott `QMimeData` legyen a vágólapon.
-
-    A TERMÉK ugyanezt a `QGuiApplication.aboutToQuit`-on végzi
-    (`FileOpsController._release_clipboard`) — az viszont a tesztekben nem
-    sül el, mert a tesztfolyamat sosem hívja az `app.quit()`-ot. Ezért kell
-    itt is, a fixture lebontásában.
-
-    SZÁNDÉKOSAN itt van, nem az egyes vágólapos tesztfájlokban: így minden
-    jövőbeli teszt is védve van, amelyik `QMimeData`-t tesz a vágólapra —
-    az a hibaosztály ugyanis némán, a kilépőkódban jelentkezik.
-    """
+    """A folyamat egyetlen Qt-alkalmazása."""
     from PySide6.QtGui import QGuiApplication
 
     app = QGuiApplication.instance() or QGuiApplication([])
     yield app
 
 
-@pytest.fixture(autouse=True)
-def _vagolap_elengedese():
-    """A Pythonban gyártott `QMimeData` levétele a vágólapról — TESZTENKÉNT.
+@pytest.fixture
+def vagolap_elengedese():
+    """A Pythonban gyártott `QMimeData` levétele a vágólapról, TESZT UTÁN.
 
-    ⚠️ A lebontás HELYE mérés eredménye, nem ízlés. Először a session-szintű
-    `qt_app` fixture végén állt; ott a `clear()` a QML-motorok GLOBÁLIS
-    lebontásának pillanatában futott, és a #1260 őre elé sodorta az addig
-    csak a stderr-re menő, lebontáskori QML-hibákat („Property 'endEdit' …
-    is not a function", „Cannot read property 'length' of undefined").
-    Mérve: a CI-n ettől HAT darab bukott el, három KÜLÖNBÖZŐ, a vágólappal
-    nem is érintkező tesztfájlon (`test_qml_hidden.py`,
-    `test_qml_fileops_export.py`, `test_vagolap_parancsok_1526.py`).
+    ⚠️ **Opt-in, és ez mérés eredménye — ne tedd globálissá.** #1526:
 
-    Tesztenként futtatva a vágólap akkor ürül, amikor még minden él: a
-    lebontási zaj a helyén marad, a SIGSEGV pedig ugyanúgy elmarad —
-    mutációval igazolva (a törzs kivételével a vágólapos fájl újra 139).
+    * `QMimeData`-val a vágólapon a folyamat **SIGSEGV**-vel áll le (exit
+      139), miközben a `pytest -q` „N passed"-et ír — a hiba CSAK a
+      kilépőkódban látszik. Mérve: nyolc soros, Qt-n kívüli kód nélküli
+      reprodukció is elég hozzá; `setText()`-tel vagy üres vágólappal 0.
+    * A `session`-szintű `qt_app` lebontásába téve a `clear()` a
+      QML-motorok GLOBÁLIS lebontásakor fut, és a #1260 őre elé sodorja az
+      addig csak stderr-re menő, lebontáskori QML-hibákat → **hat darab
+      bukott el** három, a vágólappal nem is érintkező fájlon.
+    * `autouse=True`-val minden `tests/app/` tesztre ráterítve **még
+      rosszabb**: a CI-n hét darab bukott, tucatnyi független fájlon,
+      részben `-11`-gyel.
+
+    Ezért csak azok a fájlok kérik, amelyek tényleg tesznek `QMimeData`-t a
+    vágólapra. A TERMÉK a maga oldalán a `QGuiApplication.aboutToQuit`-on
+    engedi el (`FileOpsController._release_clipboard`); az a tesztekben nem
+    sül el, mert a tesztfolyamat sosem hív `app.quit()`-ot.
     """
     yield
     from PySide6.QtGui import QGuiApplication
