@@ -57,3 +57,29 @@ class SzinkronKepSzolgaltato(QQuickImageProvider):
             size.setWidth(kep.width())
             size.setHeight(kep.height())
         return kep
+
+
+class SzinkronValodiBelyegkep(QQuickImageProvider):
+    """A VALÓDI `ThumbnailProvider` szinkron burka (#1596).
+
+    A fenti `SzinkronKepSzolgaltato` **egyszínű** képet ad, tehát a rács
+    kirajzolt képpontjairól semmit nem árul el: bármit tesz a termékkód a
+    bélyegképpel, a teszt ugyanazt a lapos szürkét látná. A #1596 viszont
+    pontosan azt kérdezi, hogy a rácsra kirajzolt KÉPPONTOK követik-e a
+    megjelenítési módot.
+
+    Ez a burok ezért a **valódi** szolgáltató szinkron render-magját
+    (`ThumbnailProvider.requestImage`) hívja — ugyanazt, amit éles
+    futásban a pool-feladat (`_ThumbJob.run`) hív. A láncból egyedül a
+    `QThreadPool`-ugrás marad ki, vagyis pontosan az a rész, amit a
+    QML-funkcionális tesztekből a #1457 óta szándékosan kihagyunk (ld. a
+    fenti osztály docstringjét). Minden más — a lemez-gyorstár, a
+    filters-lánc, a forgatás, az URL értelmezése — a termékkód.
+    """
+
+    def __init__(self, provider) -> None:
+        super().__init__(QQuickImageProvider.ImageType.Image)
+        self._provider = provider
+
+    def requestImage(self, image_id, size, requested_size):  # noqa: N802 (Qt API)
+        return self._provider.requestImage(image_id, size, requested_size)
