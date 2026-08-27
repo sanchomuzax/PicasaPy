@@ -529,3 +529,57 @@ Az `eMenuLabelFolder` 13 tételéből az **egyetlen**, ami nálunk sehol
 nincs. Az indexkép-**elrendezés** viszont kész
 (`collage/contact_sheet.py`), a nyomtatás pedig a **#1472** előfeltétele.
 Jegy: **#1590**.
+
+## A 29. adag (2026-08-27) — Ajándék CD, kollázs, diavetítés, kijelölés, címke-felirat
+
+### `ID_BURNCD` — HATÓKÖRÖN KÍVÜL
+
+A `0x0066fae0` (439 b) **négy fájlt** másol a lemezre: `PicasaCD.exe`
+(windowsos önindító nézőprogram), `Picasa CD Slideshow.app` (macOS), és a
+nézőprogram felületleírói (`cdgo.ui`, `cdgo.tre`).
+
+⇒ Az Ajándék CD **nem fényképexport**, hanem egy **szállított
+nézőprogram** lemezre égetése. Linuxon nem átvehető. Jegy: **#32**.
+
+**Amit MÁSHOVA ad:** az Ajándék CD és a **Biztonsági mentés** ugyanazt a
+panelt használja (`il_BurnPanel`) — a mentés tizenkét hivatalos magyar
+felirata a **#440**-hez került, köztük a `BackupCopy::1` =
+„Fájlok másolása (**%2$d/%1$d**)", **fordított** argumentumsorrenddel.
+
+### `ID_COLLAGEMAKER` — a parancs egy menüben, de KÉT belépési pont
+
+A parancsazonosító csak az `eMenuCreate`-ben van („&Képkollázs…"), de a
+kollázs **gombbal** is indul: **`outputlayout/collage`** (`0x00574100`,
+`0x005d9cc0`). A `0x005d9cc0` az **alsó műveletsáv** vezérlő-listája —
+ugyanott van a `makemovie`, `sharewith`, `save`, `orderbutton` és
+`action/createmovie` is. Jegy: **#1006**.
+
+### `ID_ALBUM_SLIDESHOW` vs `ID_VIEW_SLIDESHOW` — KÉT külön parancs
+
+| parancs | menü | felirat |
+|---|---|---|
+| `eMenuView::ID_VIEW_SLIDESHOW` | Nézet | **&Diavetítés** |
+| `eMenuLabelFolder::ID_ALBUM_SLIDESHOW` | mappa helyi menüje | **&Diavetítés megtekintése** |
+
+✅ **Nálunk mindkettő megvan**, helyes felirattal és **Ctrl+4**-gyel
+(`PicasaMenuBar.qml:433` és `:787`). **Nincs teendő.**
+
+### `ID_CLEAR_SELECTION` — NÉGY névtér, azonos jelentés
+
+`Album::`, `Folder::`, `PplAlbum::` → „&Kijelölés törlése";
+`eMenuEdit::` → „Kijelölés &törlése" *(a gyorsbillentyű-aláhúzás más
+betűn — a menüsávban a `t`, a helyi menükben a `K`)*.
+
+✅ **Nálunk mind a négy helyen megvan** (`PicasaMenuBar`,
+`AlbumContextMenu`, `FolderContextMenu`, `PeopleAlbumContextMenu`),
+Ctrl+D-vel. **Nincs teendő.**
+
+*(A szomszédos `ID_SELECTSTAR` = „Csillagozottak kijelölése" szintén
+megvan nálunk — `selection.js:62`, #426.)*
+
+### `ID_CAPTAG` — az indexkép-felirat „Címkék" módja
+
+Az `eMenuView::ID_CAPTAG` = „&Címkék" a **felirat-mód** ötös
+rádiócsoport tagja (`captionmode` beállításkulcs, ld. a 22. adagot).
+✅ **Nálunk megvan és tartós** (`controller.py:481`, `view/thumbCaption`).
+**Nincs teendő.**
