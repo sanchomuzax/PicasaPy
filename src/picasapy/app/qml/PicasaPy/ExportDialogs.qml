@@ -587,7 +587,16 @@ Item {
                : qsTr("Export to Google Earth File")
         onAccepted: {
             if (typeof controller === "undefined" || !controller) return
-            var mappa = selectedFolder.toString().replace(/^file:\/\//, "")
+            // ⚠️ #1626: a `file://` előtag NYERS levágása Windowson
+            // `/C:/Users/…`-t hagy maga után (a `file:///C:/…` alakból),
+            // amiből a Python `Path` `\C:\Users\…` lesz — a `mkdir` ezen
+            // `WinError 123`-mal elhasal, és a KML SOHA nem készül el (a
+            // windows-CI-láb fogta meg, #1626). Az URL-t érintetlenül adjuk
+            // át: a `to_local_path` (`formatting.py`) a `QUrl.toLocalFile()`-lel
+            // oldja fel, ami a meghajtóbetűs alakot is helyesen kezeli. A
+            // többi párbeszéd (import, webexport, adatbázis-áthelyezés,
+            // mappa-mozgatás) is pontosan így, nyers URL-lel hív.
+            var mappa = selectedFolder.toString()
             if (earthTargetDialog.viewAfter)
                 controller.viewGoogleEarth(
                     dialogs.appWindow.selectedIndexes, mappa, "")

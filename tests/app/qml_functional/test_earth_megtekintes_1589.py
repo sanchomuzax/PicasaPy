@@ -33,6 +33,8 @@ import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
 
 import picasapy.app.export_controller as export_controller
+import picasapy.app.formatting as formatting
+from picasapy.export.earth import EarthExportReport
 
 
 def _elem(root, nev):
@@ -163,6 +165,34 @@ class TestKimenet:
         )
         assert megnyitasok == [str(kml)]
 
+    def test_a_kettoskeresztes_mappanev_is_celba_er(self, qml_app, qt_app, tmp_path, megnyitasok):
+        """#1626 mellékfogása: a `#` a mappanévben.
+
+        A célmappát URL-ként kapjuk. A régi kód a `file://` előtagot nyersen
+        levágta, a MARADÉK viszont URL maradt — benne a `%23`-ra kódolt
+        `#`-tel —, tehát a KML egy `nyár %231` nevű, ÚJ mappába került
+        volna. Most a `QUrl.toLocalFile()` dekódol, ezért a fájl oda kerül,
+        ahova a felhasználó mutatott. (Ez az ág Linuxon is hibás volt, csak
+        nem mérte senki.)"""
+        window, controller, _engine = qml_app
+        _geocimkez(controller, qt_app, [0])
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "nyár #1"
+
+        _celmappat_valaszt(parbeszed, qt_app, cel)
+
+        kml = cel / "doc.kml"
+        _var(
+            qt_app,
+            kml.exists,
+            uzenet=(
+                "a `#`-et tartalmazó nevű célmappába nem került KML — a "
+                "százalékos kódolás feloldatlan maradt (#1626)"
+            ),
+        )
+        assert megnyitasok == [str(kml)]
+
     def test_az_EXPORT_tetel_ugyanazt_irja_ki_de_NEM_nyitja_meg(
         self, qml_app, qt_app, tmp_path, megnyitasok
     ):
@@ -252,3 +282,84 @@ class TestNemaElutasitasNincs:
         assert str(cel / "doc.kml") in str(szoveg.property("text")), (
             "az üzenet nem mondja meg, hova került a fájl"
         )
+
+
+class TestAWindowsosCelmappaUt:
+    """#1626: a célmappa-URL windowsos alakja — LINUXON mérve.
+
+    ## A mért hiba
+
+    A windows-CI-láb (futás `33079269994`, `windows-latest 1/4`) nem
+    „lassú"-t jelzett, hanem KIVÉTELT a háttérszálon::
+
+        OSError: [WinError 123] The filename, directory name, or volume
+        label syntax is incorrect:
+        '\\C:\\Users\\runneradmin\\…\\earth-megtekintes'
+
+    A vezető backslash a `\\C:` előtt a lelet. A `FolderDialog`
+    `file:///C:/Users/…` alakú URL-t ad; az `ExportDialogs.qml` ebből a
+    `file://`-t NYERSEN levágta, így `/C:/Users/…` maradt, amiből a
+    `Path` `\\C:\\Users\\…`-t csinál. A `mkdir` ezen elhasal, tehát a
+    `doc.kml` SOHA nem készült el — nem teszthiba volt, hanem termékhiba.
+
+    ## Miért mérhető ez Linuxon
+
+    A `QUrl.toLocalFile()` a meghajtóbetű elé tett perjelet csak Windowson
+    szedi le (`#ifdef Q_OS_WIN`), ezért a `to_local_path` ezt a lépést a
+    `_platform()` fogantyún át MAGA is elvégzi (#1217 mintája). A fogantyú
+    átállításával itt, Linuxon fut a windowsos ág — a #1560 hibáját
+    (windowsos ág, ami a windows-lábon üresen zöld) elkerülve.
+
+    Mutációval mérve: a QML-beli `file://`-levágó `replace(…)` visszatétele
+    ezt az állítást megbuktatja (`/C:/Temp/pp-1626`), a fájl többi tesztje
+    viszont zöld marad — az őr tehát valóban ezt az ágat fogja.
+    """
+
+    def test_a_meghajtobetus_URL_bol_meghajtobetus_ut_lesz(
+        self, qml_app, qt_app, monkeypatch, megnyitasok
+    ):
+        window, controller, _engine = qml_app
+        monkeypatch.setattr(formatting, "_platform", lambda: "win32")
+        rogzitett: list[str] = []
+
+        def hamis_export(records, cel, folder_name=""):
+            """A motor NEM ír lemezre — csak az utat rögzítjük.
+
+            Windowson a valódi `mkdir` itt hasalt el; Linuxon egy
+            `C:/…` út a munkakönyvtárba írna szemetet."""
+            rogzitett.append(str(cel))
+            return EarthExportReport(
+                kml_path=None, placemarks=0, skipped_without_location=0
+            )
+
+        monkeypatch.setattr(
+            export_controller, "export_google_earth", hamis_export
+        )
+        _geocimkez(controller, qt_app, [0])
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+
+        # a windowsos FolderDialog PONT ezt az alakot adja vissza
+        parbeszed.setProperty(
+            "selectedFolder", QUrl("file:///C:/Temp/pp-1626")
+        )
+        QMetaObject.invokeMethod(
+            parbeszed, "accepted", Qt.ConnectionType.DirectConnection
+        )
+        parbeszed.setProperty("visible", False)
+        qt_app.processEvents()
+
+        _var(
+            qt_app,
+            lambda: bool(rogzitett),
+            uzenet="a vezérlő el sem jutott a motorig",
+        )
+        assert rogzitett == ["C:/Temp/pp-1626"], (
+            "a windowsos célmappa-URL-ből hibás út lett — a vezető perjel "
+            "miatt Windowson `\\C:\\Temp\\…` keletkezik, amin a `mkdir` "
+            "`WinError 123`-mal elhasal, és a KML nem készül el (#1626)"
+        )
+        assert megnyitasok == [], (
+            "a KML el sem készült, mégis megnyitást kísérelt a program"
+        )
+

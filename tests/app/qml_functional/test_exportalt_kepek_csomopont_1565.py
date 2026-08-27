@@ -102,7 +102,7 @@ def exportalt_hasab(qt_app, tmp_path):
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
 
-    library = tmp_path / "kepek"
+    library = tmp_path / "konyvtar"
     (library / "forras").mkdir(parents=True)
     for i in range(1, 4):
         make_jpeg(library / "forras" / f"IMG_{i:04d}.jpg", size=(20, 20))
@@ -137,6 +137,15 @@ def exportalt_hasab(qt_app, tmp_path):
     ctl.exportRows([0, 1, 2], str(cel), 0, 85, False, "", False, False)
     assert _var(qt_app, lambda: kesz, 60.0), "az export nem futott le"
     assert len(list(cel.glob("*.jpg"))) == 3, f"az export nem írt fájlt: {kesz}"
+    # ⚠️ #1626: az előfeltétel KIMONDVA. A könyvtár korábban `kepek`, a cél
+    # `Kepek/…` nevet kapott — Linuxon két mappa, Windowson UGYANAZ, tehát a
+    # cél a figyelt gyökér ALÁ került, és a teszt mást mért, mint amit állít
+    # (a windows-láb ezen bukott). A `_root_for_folder` `resolve()`-ol, így
+    # ez az ellenőrzés mindkét platformon a valódi helyzetet nézi.
+    assert ctl._root_for_folder(str(cel)) is None, (
+        f"az exportcél ({cel}) a figyelt gyökér ALATT van — ez a fájl a "
+        "gyökereken KÍVÜLI célt méri (#1626)"
+    )
 
     engine = QQmlEngine()
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
@@ -214,18 +223,22 @@ class TestAzExportaltKepekSoraraKattintva:
 
     def test_a_racs_megtelik_az_exportalt_kepekkel(self, exportalt_hasab, qt_app):
         """A jegy állítása: a csomópont NE tartósan üres rácsot nyisson."""
-        from pathlib import Path
+        # #1626: `path_key`, nem nyers sztring — az indexben a feloldott
+        # alak áll, és Windowson a kis-nagybetűs írásmód a lemezről jön
+        from picasapy.paths import path_key
 
         view, pane, ctl, cel = exportalt_hasab
         sor = _repeater_item(pane, "exportedFolderRepeater", 0)
 
         _kattints(qt_app, view, sor)
 
+        cel_kulcs = path_key(str(cel))
+
         def latszik():
             return sum(
                 1
                 for p in ctl.photos.photos
-                if str(Path(p.folder_path)) == str(cel)
+                if path_key(p.folder_path) == cel_kulcs
             )
 
         assert _var(qt_app, lambda: latszik() == 3), (
