@@ -136,11 +136,17 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "lcd", "projector", "mac",
-         "linear", "sepia", "bw", "", "ismeretlen"],
+        ["auto", "normal", "dither16", "rdesk", "mac", "sepia", "bw", "",
+         "ismeretlen"],
     )
     def test_a_tobbi_mod_ma_atenged(self, mode):
-        """A #1577/#1578 hozza a többi mód képpont-hatását — addig átereszt."""
+        """A még megvalósítatlan módokra átereszt.
+
+        A `lcd`/`projector` (#1577) és a `linear` (#1578) azóta KIKERÜLT
+        ebből a névsorból — a képpont-szabályukat a
+        `tests/render/test_display_modes_1577_1578.py` őrzi. A maradék
+        (`dither16`, `rdesk`, `mac`, `sepia`, `bw`) külön jegyeké.
+        """
         forras = _raszter((255, 255, 255), (0, 0, 0))
         eredmeny = apply_display_mode(forras, mode)
         assert np.array_equal(eredmeny, forras)
