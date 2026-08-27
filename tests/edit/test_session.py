@@ -42,11 +42,11 @@ class TestEditSessionBasics:
 class TestCrop:
     """crop64 szűrő kezelése."""
 
-    def test_set_crop_empty(self):
+    def test_append_crop_empty(self):
         """crop64 hozzáadása üres lánchoz."""
         session = EditSession.from_value("")
         rect = Rect64(0.1, 0.2, 0.8, 0.9)
-        new_session = session.set_crop(rect)
+        new_session = session.append_crop(rect)
 
         # Új objektum, immutabilitás
         assert new_session is not session
@@ -60,20 +60,37 @@ class TestCrop:
         assert abs(decoded.bottom - rect.bottom) < 0.001
         assert new_session.to_value().startswith("crop64=1,")
 
-    def test_set_crop_replaces_existing(self):
-        """Meglévő crop64-et lecserél, helyben."""
-        value = "enhance=1;crop64=1,10000000f1ddff49;autolight=1;"
+    def test_append_crop_megtartja_a_korabbi_vagast(self):
+        """#1553: az újravágás a lánc VÉGÉRE fűz, a korábbi `crop64` marad.
+
+        Ez a teszt 2026-08-27-ig az ELLENKEZŐJÉT rögzítette
+        (`test_set_crop_replaces_existing`: „meglévő crop64-et lecserél,
+        helyben"). A csere szabálya a #19/#47 eredeti kódjából jött,
+        bizonyíték nélkül; az eredeti Picasa HALMOZ — a `filters=` maga a
+        visszavonás-verem (`Picasa3.exe` `0x006ad530`), az újravágásnak
+        önálló felirata van (`IDS_RECROP_LABEL` = „Recrop"), és az éles
+        korpusz redo-verme is két `crop64`-et őriz. Részletesen:
+        `EditSession.append_crop`."""
+        elso = "10000000f1ddff49"
+        value = f"enhance=1;crop64=1,{elso};autolight=1;"
         session = EditSession.from_value(value)
 
         new_rect = Rect64(0.25, 0.35, 0.75, 0.95)
-        new_session = session.set_crop(new_rect)
+        new_session = session.append_crop(new_rect)
 
-        # enhance és autolight maradnak, crop64 cseréje
         result = new_session.to_value()
         assert "enhance=1;" in result
         assert "autolight=1;" in result
+        # a korábbi vágás NEM tűnhet el — ez a jegy adatbiztonsági magja
+        assert f"crop64=1,{elso};" in result, (
+            f"az újravágás eldobta a korábbi crop64-et: {result!r}"
+        )
+        # …és az új a lánc legvégén áll
+        assert result.split(";")[-2].startswith("crop64=1,"), (
+            f"az új crop64 nem a lánc végére került: {result!r}"
+        )
 
-        # Hex kerekítési tolerancia
+        # a HATÁLYOS vágás az új (hex kerekítési tolerancia)
         decoded = new_session.crop()
         assert decoded is not None
         assert abs(decoded.left - new_rect.left) < 0.001
@@ -81,9 +98,22 @@ class TestCrop:
         assert abs(decoded.right - new_rect.right) < 0.001
         assert abs(decoded.bottom - new_rect.bottom) < 0.001
 
-        # crop64 az eredeti helyén marad (harmadik)
-        parts = result.split(";")
-        assert any("crop64=" in p for p in parts)
+    def test_append_crop_tobb_vagasos_picasa_lancon(self):
+        """A jegy konkrét esete: Picasa-eredetű, KÉT `crop64`-es lánc."""
+        a, b = "0000000080008000", "c0008000ffffffff"
+        session = EditSession.from_value(f"crop64=1,{a};bw=1;crop64=1,{b};")
+
+        eredmeny = session.append_crop(Rect64(0.25, 0.25, 0.75, 0.75))
+
+        cropok = [
+            elem.split(",", 1)[1]
+            for elem in eredmeny.to_value().split(";")
+            if elem.startswith("crop64=")
+        ]
+        assert cropok[:2] == [a, b], (
+            f"a Picasa-eredetű rétegek nem maradtak meg: {cropok}"
+        )
+        assert len(cropok) == 3
 
     def test_clear_crop(self):
         """crop64 eltávolítása."""
@@ -466,7 +496,7 @@ class TestImmutability:
         """Minden operáció új objektumot ad."""
         session = EditSession.from_value("enhance=1;")
 
-        session2 = session.set_crop(Rect64(0.1, 0.2, 0.8, 0.9))
+        session2 = session.append_crop(Rect64(0.1, 0.2, 0.8, 0.9))
         assert session2 is not session
         assert session.is_empty() or "crop64" not in session.to_value()
         assert "crop64" in session2.to_value()
@@ -501,7 +531,7 @@ class TestComplexScenarios:
 
         # crop64 módosítása
         new_rect = Rect64(0.2, 0.3, 0.7, 0.8)
-        session2 = session.set_crop(new_rect)
+        session2 = session.append_crop(new_rect)
 
         # finetune2 megmarad
         assert "finetune2=" in session2.to_value()
@@ -553,7 +583,7 @@ class TestComplexScenarios:
 
         # 2. crop beállítása
         rect1 = Rect64(0.1, 0.2, 0.8, 0.9)
-        session = session.set_crop(rect1)
+        session = session.append_crop(rect1)
         decoded = session.crop()
         assert decoded is not None
         assert abs(decoded.left - rect1.left) < 0.001
@@ -563,7 +593,7 @@ class TestComplexScenarios:
 
         # 3. crop módosítása
         rect2 = Rect64(0.2, 0.3, 0.7, 0.8)
-        session = session.set_crop(rect2)
+        session = session.append_crop(rect2)
         decoded = session.crop()
         assert decoded is not None
         assert abs(decoded.left - rect2.left) < 0.001
@@ -674,7 +704,7 @@ class TestEdgeCases:
         session = EditSession.from_value(value)
 
         new_rect = Rect64(0.5, 0.5, 0.9, 0.9)
-        session = session.set_crop(new_rect)
+        session = session.append_crop(new_rect)
 
         # A sorrend: enhance, crop64 (módosított), autolight
         result = session.to_value()
@@ -1007,9 +1037,8 @@ class TestTobbszorosVagas:
        **nulla** esetben. (`crop64`-et tartalmazó lánc összesen 763, ebből
        761-hez van `crop=`, mind a 761 az utolsót tükrözi.)
 
-    Ilyen láncot a PicasaPy maga nem hoz létre (a `set_crop` cserél), de a
-    felhasználó gyűjteményében a windowsos Picasa írt ilyeneket — ezeket
-    OLVASSUK.
+    Ilyen láncot a felhasználó gyűjteményében a windowsos Picasa írt, és a
+    #1553 óta a PicasaPy maga is (az újravágás halmoz).
     """
 
     ELSO = "0000000080008000"      # bal felső negyed: 0..0.5 × 0..0.5

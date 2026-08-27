@@ -5,6 +5,7 @@ import sys
 
 import pytest
 
+from picasapy.ini.rect64 import encode_rect64
 from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
 from support.jpeg_factory import make_jpeg
 
@@ -386,16 +387,50 @@ class TestCropToolPreview:
         with pytest.raises(ValueError):
             controller.exitCropTool()
 
-    def test_reopen_and_reapply_replaces_crop_in_place(self, controller, photo):
-        """A vágás folytatható: az új téglalap a régi HELYÉRE kerül, nem
-        fűződik hozzá második crop64."""
+    def test_reopen_and_reapply_appends_second_crop(self, controller, photo):
+        """#1553: az újravágás a lánc VÉGÉRE fűz — a korábbi `crop64` marad.
+
+        Ez az állítás 2026-08-27-ig a fordítottja volt
+        (`test_reopen_and_reapply_replaces_crop_in_place`, „az új téglalap a
+        régi HELYÉRE kerül"). Az eredeti Picasa halmoz: a `filters=` maga a
+        visszavonás-verem (`Picasa3.exe` `0x006ad530`), az újravágásnak
+        önálló felirata van (`IDS_RECROP_LABEL` = „Recrop"), és az éles
+        korpusz redo-verme is két `crop64`-et őriz. Bizonyíték:
+        `EditSession.append_crop` docstringje."""
         controller.beginEdit("1", str(photo))
         controller.applyCrop(0.0, 0.0, 0.5, 0.5)
         controller.enterCropTool()
         controller.applyCrop(0.1, 0.1, 0.4, 0.4)
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        assert ini_text.count("crop64=") == 1
+        assert ini_text.count("crop64=") == 2, (
+            "az újravágás eldobta az előző vágás rétegét:\n" + ini_text
+        )
+        # a tükör-kulcs az UTOLSÓ (hatályos) vágást mutatja (#1544/#1550)
         assert "crop=rect64(" in ini_text
+        hatalyos = controller._session.crop()
+        assert hatalyos is not None
+        assert f"crop=rect64({encode_rect64(hatalyos)})" in ini_text
+
+    def test_valtozatlan_kijelolesnel_az_alkalmaz_nem_ir(self, controller, photo):
+        """Ellenkező irányú őr a halmozáshoz (#1553): ha a felhasználó a
+        kijelölésen semmit nem igazít, az Alkalmaz ne hizlalja a láncot egy
+        hatástalan, duplikált réteggel — és ne is nyúljon a fájlhoz."""
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        ini_elotte = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        undo_elotte = controller.canUndo
+
+        controller.enterCropTool()
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+
+        ini_utana = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert ini_utana == ini_elotte, (
+            "a változtatás nélküli Alkalmaz módosította az init:\n"
+            f"  előtte: {ini_elotte!r}\n  utána : {ini_utana!r}"
+        )
+        assert controller.canUndo == undo_elotte, (
+            "a változtatás nélküli Alkalmaz fölösleges visszavonás-lépést tolt"
+        )
 
 
 class TestPreviewTilt:

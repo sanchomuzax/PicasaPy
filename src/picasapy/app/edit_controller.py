@@ -1038,8 +1038,20 @@ class EditController(QObject, BackgroundWorkerMixin):
                 f"A clampelt crop üres lenne: ({left}, {top}, {right}, {bottom})"
             )
         rect = Rect64(left=left, top=top, right=right, bottom=bottom)
+        # #1553: az új vágás a lánc VÉGÉRE kerül, a korábbi `crop64`-ek
+        # megmaradnak (az eredeti Picasa halmoz — a bizonyíték az
+        # `EditSession.append_crop` docstringjében). Kivétel a VÁLTOZATLAN
+        # kijelölés: ha a felhasználó semmit nem igazított, az Alkalmaz ne
+        # hizlalja a láncot egy hatástalan, duplikált réteggel. Ez saját,
+        # óvatossági döntés (az eredetiről erre nincs adatunk), és semmit nem
+        # dob el; cserébe a #1550 elvárása („a változtatás nélküli Alkalmaz
+        # nem írhatja át a képet") a fájl szintjén is teljesül: ilyenkor
+        # hozzá sem nyúlunk az inihez.
+        hatalyos = self._session.crop()
+        if hatalyos is not None and encode_rect64(hatalyos) == encode_rect64(rect):
+            return
         self._push_undo("crop")
-        self._session = self._session.set_crop(rect)
+        self._session = self._session.append_crop(rect)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()

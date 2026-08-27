@@ -92,7 +92,7 @@ class TestModositottLancRoundTrip:
     def test_crop_beallitas_utan_is_kanonikus(self):
         from picasapy.ini.rect64 import decode_rect64
 
-        session = EditSession.from_value("VIGNETTE=1;").set_crop(
+        session = EditSession.from_value("VIGNETTE=1;").append_crop(
             decode_rect64("45930000ba03defe")
         )
         assert session.to_value().startswith("Vignette=1;crop64=1,")

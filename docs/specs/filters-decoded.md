@@ -57,6 +57,63 @@ utolsót használja. Őr: `tests/app/qml_functional/test_tobbszoros_vagas_1550.p
 bejegyzéseket a `.picasa.ini`-ből **nem takarítjuk ki** és nem migráljuk —
 a round-trip elv és a rétegenkénti visszavonás egyaránt a teljes láncra épül.
 
+#### Az ÍRÁS oldala: az újravágás HALMOZ (#1553)
+
+A #1550 csak az olvasást döntötte el. Az írás oldalán a PicasaPy 2026-08-27-ig
+**összevonta** a láncot: a vágó-eszköz **Alkalmaz** gombja a meglévő `crop64`
+helyére írta az újat, és a további `crop64`-eket eldobta („legfeljebb egy
+réteg"). Mérve, a valódi gombra kattintva, egy Picasa-eredetű láncon:
+
+```
+előtte: crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;
+utána : crop64=1,40004000c000c000;bw=1;
+```
+
+Vagyis az ELSŐ Alkalmaz eldobta a felhasználó mindkét, Picasában készült
+vágás-rétegét — az éles korpuszban **38** ilyen kép van. Ez a szabály a
+#19/#47 eredeti kódjából jött, bizonyíték nélkül (a #302 csak közös helperbe
+emelte).
+
+**Az eredeti Picasa halmoz.** Három, egymástól független bizonyíték:
+
+1. **A `filters=` MAGA a visszavonás-verem.** A `CFilterStackUI` frissítője
+   (`Picasa3.exe`, `0x006ad530`) két listát épít ugyanazzal a hívással
+   (`0x0069f510`), csak más tulajdonság-kulccsal: a visszavonás-listát a
+   **`filters`**, az újra-listát a **`redo`** kulcsból. A Visszavonás gomb
+   felirata a lánc **UTOLSÓ** elemének a neve (`0x00753c46`: az elemtömb
+   utolsó tagjának `[+0x10]` metódusa). Egy meglévő elem HELYBEN cserélése
+   tehát a visszavonás-előzményt semmisítené meg — a formátum saját
+   szemantikája követeli meg a hozzáfűzést.
+2. **Az eredeti saját felirat-párja.** `IDS_CROP_LABEL` = „Crop", és mellette
+   külön `IDS_RECROP_LABEL` = „Recrop" — magyarul **„Vágás megismétlése"**
+   (`referencia/stringres-en-hu.tsv` 1506 és 1662). A `0x007533b0` a
+   `0x006b0140` visszatérési értéke szerint választ a kettő közül; az a
+   függvény azt adja meg, van-e már érvényes vágás-téglalap
+   (`[+0x240..0x24c]`). Az újravágás tehát az eredetiben **önálló, névvel
+   bíró művelet**, nem a meglévő vágás átírása.
+3. **Az éles korpusz alakja.** A 38 több-`crop64`-es láncból **33-ban** a két
+   téglalap átfedése IoU > 0,5 (ugyanannak a kivágásnak az újraigazítása,
+   nem két független vágás), és **14-ben további szűrők állnak az utolsó
+   `crop64` UTÁN**. Az „Összes effektus beillesztése" (#1544) a lánc VÉGÉRE
+   fűz, tehát azt nem magyarázza. A döntő eset a `scan0016.png` szekció,
+   ahol maga a Picasa írta ki:
+   `redo=crop64=1,14effffdca5;enhance=1;crop64=1,ffffdca5;` — a redo-verem
+   **kizárólag Visszavonás hatására** töltődik, tehát ez a lánc valóban a
+   Picasa `filters=` visszavonás-verme volt, két `crop64`-gyel, amelyek CSAK
+   a felső élükben térnek el (334 → 0). Ilyet beillesztés nem gyárt.
+
+Ennek megfelelően az `EditSession.append_crop()` (korábban `set_crop`) a lánc
+**végére** fűz, a korábbi rétegek érintetlenek maradnak, és a `crop=`
+tükör-kulcs továbbra is az utolsót tükrözi. A visszavonás így rétegenként
+bont vissza: az újravágás Visszavonása a KORÁBBI vágást hozza vissza, nem a
+vágatlan képet. Őr: `tests/app/qml_functional/test_vagas_halmozas_1553.py`.
+
+**Egy dolog a mi döntésünk, nem az eredetié:** ha a felhasználó a
+kijelölésen semmit nem igazít, a változatlan Alkalmaz **nem** fűz duplikált
+réteget, és nem nyúl a fájlhoz (`EditController.applyCrop`). Erről az
+eredetiről nincs adatunk; óvatossági döntés, ami semmit nem dob el, viszont
+megakadályozza, hogy a lánc minden felesleges gombnyomástól hízzon.
+
 ### `bw` = Rec.601 luma
 
 Mért súlyok az RGB rámpákból: R **0,3005**, G **0,5877**, B **0,1102**
