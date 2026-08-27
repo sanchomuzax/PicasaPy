@@ -5,7 +5,11 @@
 > 2026-08-26-i mérés szerint a 175 nyitott jegyből **87 (49 %)**
 > óta senki hozzá sem nyúlt, amióta megnyílt.
 
-**66 / 140** parancs viselkedése van feltárva (**47 %**), 14 pedig hatókörön kívül.
+## ⛔ 74 parancs viselkedése ISMERETLEN
+
+**66 / 140** van feltárva (**47 %**) — vagyis **74** parancsról NEM tudjuk, mit csinál. (14 tétel hatókörön kívül.)
+
+> ⚠️ A „csak említve” NEM azt jelenti, hogy ismerjük. Azt jelenti, > hogy a neve leírva szerepel valahol — a **viselkedése nincs feltárva**.
 
 | állapot | darab | mit jelent |
 |---|---:|---|

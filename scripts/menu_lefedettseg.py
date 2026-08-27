@@ -108,8 +108,14 @@ def markdown(m: dict) -> str:
         "> 2026-08-26-i mérés szerint a 175 nyitott jegyből **87 (49 %)**",
         "> óta senki hozzá sem nyúlt, amióta megnyílt.",
         "",
-        f"**{kesz} / {hatokor}** parancs viselkedése van feltárva "
-        f"(**{100 * kesz // hatokor} %**), {len(m['hatokoron_kivul'])} pedig hatókörön kívül.",
+        f"## ⛔ {hatokor - kesz} parancs viselkedése ISMERETLEN",
+        "",
+        f"**{kesz} / {hatokor}** van feltárva (**{100 * kesz // hatokor} %**) — "
+        f"vagyis **{hatokor - kesz}** parancsról NEM tudjuk, mit csinál. "
+        f"({len(m['hatokoron_kivul'])} tétel hatókörön kívül.)",
+        "",
+        "> ⚠️ A „csak említve” NEM azt jelenti, hogy ismerjük. Azt jelenti, "
+        "> hogy a neve leírva szerepel valahol — a **viselkedése nincs feltárva**.",
         "",
         "| állapot | darab | mit jelent |",
         "|---|---:|---|",
