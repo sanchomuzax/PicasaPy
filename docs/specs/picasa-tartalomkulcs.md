@@ -159,3 +159,63 @@ gyorstárazás. **Elvetve, méréssel**: mindhárom téves jelölt a 3. pontban.
 ```
 Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
+
+---
+
+## A MÁSOLAT ÖRÖKLI a forrás `originfast`-ját — mérve (2026-08-27)
+
+A tartalomkulcsot eddig úgy írtuk le, hogy a fájl **saját** bájtjaiból számol
+(10/10 igazolva). Ez igaz a beolvasott fájlokra, de **nem a Picasa által
+készített másolatokra**.
+
+### A mérés
+
+A tulajdonos leadta az élő `db3`-at
+(`research/testdata/1557-masolat-mentese/db3.zip`), egy mappával, amelyben egy
+eredeti kép és **három** „Másolat mentése" kimenete van.
+
+| index | méret | `originfast` |
+|---|---|---|
+| 2896 | 5120×3840 | `0x438f292cd28e7862` |
+| 2897 | 5120×3840 | `0x30a3a5cac3a177bb` |
+| 2898 | 0×0 | `0x0` |
+| **2899** | **1600×1200** | **`0x08637e41c12b8eaa`** |
+| **2900** | **1600×1200** | **`0x08637e41c12b8eaa`** |
+| **2901** | **1600×1200** | **`0x08637e41c12b8eaa`** |
+| **2902** | **1600×1200** | **`0x08637e41c12b8eaa`** |
+
+A négy utolsó rekord mérete pontosan a mi négy fájlunké (a szomszédok
+5120×3840-esek), és **mind a négy ugyanazt a `originfast`-ot viseli**.
+
+Az az érték a **forrásfájlé**: a `chart_color__b050.jpg` saját bájtjaiból
+számolva `0x08637e41c12b8eaa` — a képlet tehát a forrásra **változatlanul
+érvényes**.
+
+### Miért ez lelet
+
+A három másolat bájtjai **nem** azonosak a forráséval:
+
+| fájl | méret | eltérés a forrástól |
+|---|---|---|
+| `…-001.jpg` | 144 796 B | újrakódolás (átlag 0,08) |
+| `…-002.jpg` | 228 288 B | **beégetett `autolight`** (átlag 5,21; a képpontok 99,9 %-a) |
+| `…-003.jpg` | 227 898 B | ua. |
+
+Saját bájtjaikból számolva **három különböző** MD5 jönne ki. Egyetlen közös
+érték csak úgy lehetséges, ha a Picasa **átmásolja** a forrás értékét a
+másolat rekordjába.
+
+### A következmény
+
+Az `originfast` neve pontos: **„origin"**, nem „content". A mező a
+**származást** azonosítja, nem a fájl pillanatnyi tartalmát — ezért marad
+azonos egy szerkesztett másolaton is. Ez az, ami lehetővé teszi, hogy a
+Picasa a másolatot a forrásához kösse.
+
+⚠️ **A 10/10-es igazolásunk NEM dőlt meg** — az beolvasott, nem származtatott
+fájlokra vonatkozott, és azokra érvényes marad. A leírás egészül ki: a
+képlet a fájl **első** felvételekor fut, származtatott másolatnál a forrás
+értéke öröklődik.
+
+*Bizonyítottsági fok: **megerősített** — valódi, élő Picasa-adatbázison mérve,
+a méret-oszloppal függetlenül azonosított rekordokon.*
