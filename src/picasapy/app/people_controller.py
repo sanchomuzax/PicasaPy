@@ -49,6 +49,10 @@ class PeopleMixin:
     személyek listája, és egy névre kattintva a rá kitaggelt fotók."""
 
     peopleChanged = Signal()
+    # #1608: a NÉZET váltása (mappa ↔ album ↔ személy). Külön jel, mert a
+    # `currentPersonName` a nézettől függ, nem az Emberek-LISTÁTÓL — a
+    # `peopleChanged`-re kötve a QML-kötés némán elavult (ld. `_init_people`).
+    personViewChanged = Signal()
 
     @Property("QVariant", notify=peopleChanged)
     def people(self):
@@ -59,16 +63,30 @@ class PeopleMixin:
             for person in self._people
         ]
 
-    @Property(str, notify=peopleChanged)
+    @Property(str, notify=personViewChanged)
     def currentPersonName(self):
         """Az aktív személy neve (a bal hasáb kijelöléséhez) — a
-        `currentAlbumToken` mintájára."""
+        `currentAlbumToken` mintájára, a jelzése is (ld. `_init_people`)."""
         mode, param = self._view_mode
         return param if mode == "person" else ""
 
     def _init_people(self) -> None:
         """A konstruktorból hívandó kezdeti állapot (a `people` mezőé)."""
         self._people: tuple = ()
+        # #1608: a `currentPersonName` a NÉZETTEL változik, a `peopleChanged`
+        # viszont csak az Emberek-LISTA frissülésekor megy ki
+        # (`_load_people`). Emiatt a rá épülő QML-kötések a nézetváltás után
+        # NÉMÁN elavultak: a menüsáv és a helyi menü a régi (jellemzően üres)
+        # nevet látta, amíg egy háttér-szinkron véletlenül helyre nem tette.
+        # A nézetváltás közös jele a `statusChanged`: minden `_show()` végén
+        # kimegy (`_update_status`) — ugyanaz, amire a `currentAlbumToken`
+        # épül, ezért a kettő ettől kezdve EGYSZERRE frissül.
+        # A `getattr` azért kell, mert a mixin ÖNÁLLÓAN is tesztelt egy
+        # minimális hoston (`tests/app/test_people_controller.py`), ahol
+        # `statusChanged` nincs.
+        status_changed = getattr(self, "statusChanged", None)
+        if status_changed is not None:
+            status_changed.connect(self.personViewChanged)
 
     def _load_people(self, conn) -> None:
         """Az Emberek-lista frissítése — a `_load_albums` mintájára, ugyanott

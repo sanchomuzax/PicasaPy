@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **ADATVESZTÉS: album-nézetben a `Delete` billentyű a lemezről törölt
+  (#1608).** Ha egy albumot nézve kijelölt egy képet és megnyomta a
+  `Delete`-et, a program a **fájlt tette a Lomtárba** — pedig az eredeti
+  Picasa ilyenkor csak az albumból veszi ki a képet, a fájl a lemezen
+  marad. Mostantól a `Delete` azt csinálja, amit a nézet kíván: mappában
+  továbbra is lemezről töröl, albumban „Eltávolítás az albumból",
+  Emberek-albumban „Eltávolítás az Emberek albumból". A `Fájl` menü
+  tételének **felirata is együtt vált a nézettel**, hogy előre látszódjon,
+  mi fog történni.
+
+- **Az Emberek-album helyi menüjének tételei nem jelentek meg (#1608).**
+  Egy személy albumára váltva a jobbklikk-menü „Eltávolítás az Emberek
+  albumból" és „Hozzáadás az Emberek albumhoz" tétele **rejtve maradt**,
+  amíg egy háttéri frissítés véletlenül elő nem hozta. A program most
+  azonnal észreveszi a nézetváltást.
+
 ## [0.8.122] – 2026-08-27
 
 ### Hozzáadva

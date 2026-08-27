@@ -102,6 +102,38 @@ MenuBar {
     signal movieRequested()
     signal locateRequested()
     signal deleteRequested()
+    // #1608: a `0x9c9a` parancs jelentése NÉZETFÜGGŐ (spec 5., két
+    // független forrás: a `stringres` gyorsbillentyű-mezői és a #1154
+    // rekord-mérése). Mappában „Törlés a lemezről" (Lomtár), albumban
+    // „Eltávolítás az albumból", Emberek-albumban „Eltávolítás az
+    // Emberek albumból" — az utóbbi kettőnél a fájl A LEMEZEN MARAD.
+    // A `Delete` eddig feltétel nélkül törölt: ez ADATVESZTÉS volt.
+    signal removeFromAlbumRequested()
+    signal removeFromPeopleAlbumRequested()
+    // A NÉZET azonosítói — a hívó (Main.qml) tölti a vezérlőből. Üres
+    // mindkettő = mappa-nézet; a kettő kizárja egymást (a vezérlő
+    // `_view_mode`-ja egyetlen érték, ld. controller.py `currentAlbumToken`
+    // és people_controller.py `currentPersonName`).
+    property string currentAlbumToken: ""
+    property string currentPersonName: ""
+    // A felirat és a művelet EGYETLEN helyen dől el, hogy a kettő ne
+    // csúszhasson el egymástól (a menütétel azt csinálja, amit ígér).
+    readonly property string deleteCommandText:
+        bar.currentPersonName !== ""
+            ? qsTr("Remove from People Album")
+            : (bar.currentAlbumToken !== ""
+                ? qsTr("Remove from Album")
+                : qsTr("Delete from Disk"))
+    // A `Delete` billentyű és a Fájl ▸ tétel KÖZÖS belépője (#1608) — így
+    // a kettő nem tud különböző dolgot csinálni.
+    function activateDeleteCommand() {
+        if (bar.currentPersonName !== "")
+            bar.removeFromPeopleAlbumRequested()
+        else if (bar.currentAlbumToken !== "")
+            bar.removeFromAlbumRequested()
+        else
+            bar.deleteRequested()
+    }
     // #444: a NÉGY mentés-művelet közül három (a negyedik, az „Összes
     // szerkesztés visszavonása" a Kép menüben él, #465)
     signal saveRequested()
@@ -190,7 +222,8 @@ MenuBar {
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
         enabled: bar.photoActionsEnabled
-        onActivated: bar.deleteRequested()
+        // #1608: nézetfüggő — albumban NEM töröl lemezről
+        onActivated: bar.activateDeleteCommand()
     }
     // #1472: a Ctrl+P eddig SEHOL nem létezett — a menüfelirat hirdette,
     // de billentyű nem tartozott hozzá. A feliratot itt szó szerint
@@ -307,9 +340,10 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuFileDelete"
-            text: qsTr("Delete from Disk") + "\tDelete"
+            // #1608: a felirat a nézettel EGYÜTT vált
+            text: bar.deleteCommandText + "\tDelete"
             enabled: bar.photoActionsEnabled
-            onTriggered: bar.deleteRequested()
+            onTriggered: bar.activateDeleteCommand()
         }
         MenuSeparator {}
         // #1472: ÉLŐ tétel — a `print_controller.py` 213 sora addig

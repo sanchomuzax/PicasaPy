@@ -632,3 +632,41 @@ parancs jelentése akkor is nézetfüggő, ha a billentyű felülete vitatott.
 *Bizonyítottsági fok: **megerősített** a parancs nézetfüggő jelentése (a
 szövegforrás és a 4. szakasz rekord-mérése egybehangzóan);
 **nyitva** a rács-menü és a kép helyi menüje közti billentyű-határ.*
+
+### A menüsáv ága JAVÍTVA (#1608, 2026-08-27)
+
+A `PicasaMenuBar` `Delete` billentyűje és a `Fájl ▸` tétele ettől kezdve
+egyetlen közös belépőn (`activateDeleteCommand()`) megy át, és a nézet
+szerint ágazik el — a **felirat is** (`deleteCommandText`):
+
+| nézet | felirat | mit hív |
+|---|---|---|
+| mappa | Törlés lemezről | `deleteRequested()` → Lomtár |
+| album | Eltávolítás az albumból | `removeFromAlbumRequested()` |
+| Emberek-album | Eltávolítás az Emberek albumból | `removeFromPeopleAlbumRequested()` |
+
+Mérve mindhárom nézetre, valódi billentyűeseménnyel, és a „lemezen marad"
+állítás a fájl létezésén (`tests/app/qml_functional/test_album_delete_billentyu_1608.py`).
+
+### A HELYI menü ága — mérve, MÁS a hibaalak (2026-08-27)
+
+A kép helyi menüje (`PhotoContextMenu.qml`) nézetenként mérve:
+
+| nézet | „Törlés lemezről" tétel | eltávolító tétel |
+|---|---|---|
+| mappa | látszik, `\tCtrl+Delete` | — |
+| album | **látszik**, `\tCtrl+Delete` | „Eltávolítás az albumból", **billentyű nélkül** |
+| Emberek-album | **látszik**, `\tCtrl+Delete` | „Eltávolítás az Emberek albumból", **billentyű nélkül** |
+
+Az eredetiben (4. szakasz, `0x00731050` és `0x007355c0`) ezekben a
+nézetekben **egyetlen** ilyen tétel van: ugyanaz a `Ctrl+Delete`,
+**átcímkézve** eltávolításra. Nálunk tehát két eltérés van:
+
+1. album- és Emberek-nézetben **is kínálunk** „Törlés lemezről /
+   `Ctrl+Delete`" tételt, amit az eredeti ott nem ad;
+2. a `Main.qml` `shortcutDeleteFromDiskGrid` (`Ctrl+Delete` a rácsban)
+   **nézettől függetlenül** lemezről töröl — ez a #1608 hibaosztálya a
+   másik felületen.
+
+A feliratok maguk HELYESEK, és az eltávolító tételek műveletei is. Ez a
+két pont ezért **külön jegy** tárgya; ez a lap rögzíti a mérést.

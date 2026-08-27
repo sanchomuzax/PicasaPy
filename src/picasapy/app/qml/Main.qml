@@ -754,6 +754,20 @@ ApplicationWindow {
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
+        // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
+        // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
+        currentAlbumToken: controller ? controller.currentAlbumToken : ""
+        currentPersonName: controller ? controller.currentPersonName : ""
+        onRemoveFromAlbumRequested: {
+            if (controller)
+                controller.removeRowsFromAlbum(
+                    window.selectedRows(), controller.currentAlbumToken)
+        }
+        onRemoveFromPeopleAlbumRequested: {
+            if (controller) removePeopleFacesDialog.openFor(
+                window.selectedRows(), controller.currentPersonName)
+        }
         // #444: a nem-destruktív mentés három fokozata — a megerősítések és
         // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
         hasSavedBackup: controller
