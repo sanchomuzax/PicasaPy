@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.120] – 2026-08-27
 
 ### Hozzáadva
 - **Projektor mód és LCD fehérpont — előnézet halványabb kijelzőre (#1577).**
