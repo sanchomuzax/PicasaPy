@@ -49,6 +49,10 @@ from picasapy.scanner import (
 )
 
 from .busy_registry import get_app_busy_registry
+from .exported_folders import (
+    EXPORTED_FOLDERS_SETTINGS_KEY,
+    existing_exported_folders,
+)
 from .folder_freshness import next_sweep_batch, stale_folders
 from .folder_manager_save_controller import FolderManagerSaveMixin
 from .formatting import to_local_path
@@ -1387,8 +1391,14 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         self._outputWritten.emit(str(path))
 
     def _on_output_written(self, path: str) -> None:
-        """A kimenet-jelzés fogadója — már a GUI-szálon."""
+        """A kimenet-jelzés fogadója — már a GUI-szálon.
+
+        Két, egymást KIZÁRÓ ág: a figyelt gyökér alatti kimenetet a #1539
+        célzott újraolvasása viszi (`resyncOutputFolder`), a figyelt körön
+        kívülit pedig — de KIZÁRÓLAG akkor, ha nyilvántartott exportcél —
+        a #1565 saját-gyökeres indexelése."""
         self.resyncOutputFolder(path)
+        self.indexExportedFolder(path)
 
     # SZÁNDÉKOSAN nincs `@Slot`: a hívók PYTHON-oldaliak (a vezérlő saját
     # szeletei és a `wire_dedup`), a QML soha nem hívja. Slotként a
@@ -1428,5 +1438,115 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         helyi = to_local_path(path) or str(path)
         mappa = str(Path(normalize_path(helyi)).parent)
         if self._root_for_folder(mappa) is None:
-            return  # figyelt körön kívül — nem indexeljük
+            return  # figyelt körön kívül — a #1565 exportcél-ága viszi
         self.resyncFolder(mappa)
+
+    # SZÁNDÉKOSAN nincs `@Slot`: a hívó PYTHON-oldali (`_on_output_written`),
+    # a QML soha nem hívja — ugyanaz a döntés, mint a `resyncOutputFolder`-nél.
+    def indexExportedFolder(self, path) -> None:  # noqa: N802 — QML-stílusú név
+        """A NYILVÁNTARTOTT exportcél felvétele az indexbe, SAJÁT
+        GYÖKÉRKÉNT (#1565).
+
+        ## Miért kell külön ág
+
+        Az export alapértelmezett célja (`<Képek>/Picasa/Exports`) MINDEN
+        figyelt gyökéren kívül van, tehát a #1539 célzott újraolvasása oda
+        nem nyúl (`resyncOutputFolder` gyökér-kapuja) — a `sync_folder`-nek
+        amúgy is kell egy gyökér, ami alá a mappa tartozik. A bal hasáb
+        „Exportált képek" sora viszont a FÁJLRENDSZERBŐL listáz, a
+        `selectFolder` pedig KIZÁRÓLAG az indexből olvas: a felhasználó
+        rákattint, és tartósan üres rácsot kap.
+
+        Mérve (valódi vezérlő, produkciós időzítők, három kép a lemezen):
+        **0 látszott** mindhárom időzítés-állásban — figyelővel BEKAPCSOLVA
+        is, 25 s alatt sem. Ez különbözteti meg a #1522/#1538/#1539
+        családtól: ott a figyelő behozta a kimenetet, itt soha nem hozza.
+
+        ## Miért ez az irány, és nem a csomópont elvétele
+
+        Az eredetiben az exportált mappa a KÖNYVTÁR RÉSZE. Az
+        `IDS_EXPORTED_CATEGORY` (= „Exported Pictures" / „Exportált képek")
+        a binárisban abban a kategória-táblában áll (`FUN_004a1560`), amely
+        a `Folders on Disk` / `IDS_FOLDERS`, a `Projects (internal)` /
+        `IDS_PROJECTS` és az `Other Stuff` / `IDS_DEFAULTCAT` párokat is
+        felsorolja — vagyis ugyanolyan `P2category` **könyvtár-kategória**,
+        mint a lemezen álló mappáké, nem külön nézet. A 859 fájlos valódi
+        ini-korpuszban három mappa hordozza is ezt az értéket
+        (`picasapy.ini.folder_category`).
+
+        ## A kapu: NYILVÁNTARTOTT exportcél, nem „bármi, ami kívül van"
+
+        A gyökér MAGA a célmappa, ahogy a `collage_save._index_saved_collage`
+        teszi — így egyetlen mappa kerül be, nem részfa, és a felhasználó
+        **figyelt mappáihoz nem nyúlunk**: a `WatchedFolders.txt` a könyvtár
+        horgonya (#1542/#1560), egy exportcél miatt nem bővítjük. Az
+        exportcélok ezért KÜLÖN kategória: a beállításokban élő, korlátos
+        (`MAX_EXPORTED_FOLDERS`), létezésre szűrt nyilvántartásból
+        (`exported_folders.py`, #457) dolgozunk — abba pedig csak az kerül,
+        ahova a felhasználó ténylegesen exportált.
+
+        Ez a kapu tartja meg a #1539 határát is: a figyelt körön kívülre
+        mentett kollázs/film/másolat továbbra sem indexelődik, mert nincs
+        benne a nyilvántartásban.
+
+        ## A kétszeres indexelés — mérve, és itt NEM ártalom
+
+        A #1539 kimondta, hogy a webexport kicsinyített példányainak
+        indexelése ÁRTANA: ugyanaz a kép kétszer. Az exportált mappára a
+        „kétszer" tényszerűen igaz (az eredeti a figyelt gyökér alatt, a
+        méretezett másolat az exportcélban), de itt nem hiba, három okból:
+        (1) az eredeti Picasa is pontosan ezt teszi — az exportált mappa
+        könyvtár-kategóriát kap; (2) a #1539 óta a figyelt gyökér ALÁ
+        exportált kép már ma is bejön a másolatával együtt
+        (`test_a_figyelt_gyoker_ala_exportalt_kep_megjelenik`: 2 kép + 1
+        export = 3 sor), tehát a mostani állapot nem „egyszeres", hanem
+        következetlen — ugyanaz az export a cél HELYÉTŐL függően viselkedik
+        másképp; (3) a webexport `thumbnail/` és
+        `image/` mappája gépi segédanyag egy HTML-oldalhoz, az exportált
+        mappa viszont a felhasználó által megnevezett, önállóan böngészendő
+        album.
+
+        ## A gyökér-kapu KORAI KILÉPÉS, nem a helyesség őre
+
+        A figyelt gyökér alatti célt a #1539 ága már elviszi, tehát a
+        `_root_for_folder` sor kivétele az eredményt nem rontaná el — csak
+        minden ilyen export fölöslegesen nyitna egy második index-
+        kapcsolatot ugyanarra a mappára. Ezt ezért KÜLÖN állítás őrzi
+        (`test_a_figyelt_gyoker_alatti_exportcel_nem_indexelodik_ketszer`):
+        nélküle a sor mérhetően, némán eltávolítható volt.
+
+        A hiba nem buktathat el semmit: a képek a lemezen vannak, egy
+        index-gond miatt nem mondunk kudarcot (a `_index_saved_collage`
+        azonos szabálya)."""
+        helyi = to_local_path(path) or str(path)
+        if not helyi:
+            return
+        mappa = Path(normalize_path(helyi)).parent
+        if self._root_for_folder(str(mappa)) is not None:
+            return  # figyelt gyökér alatt — azt a #1539 ága vitte
+        if path_key(str(mappa)) not in self._exported_folder_keys():
+            return  # nem nyilvántartott exportcél — a #1539 határa marad
+        try:
+            with open_index(self._db_path) as conn:
+                sync_folder(conn, mappa, mappa)
+        except Exception:  # noqa: BLE001 - index-gond nem buktathat exportot
+            logger.warning(
+                "Az exportcél nem került az indexbe: %s", mappa, exc_info=True
+            )
+            return
+        # a rács a `syncFinished`-re olvassa újra a feedet (`_reload_after_sync`)
+        self.syncFinished.emit()
+
+    def _exported_folder_keys(self) -> set[str]:
+        """A nyilvántartott, MA IS LÉTEZŐ exportcélok összehasonlítható
+        kulcsai (#1565).
+
+        `path_key`-jel, mert az összehasonlítás másik oldala egy
+        normalizált út: a nyilvántartásba a felhasználó által választott
+        alak kerül, ami ugyanarra a mappára mutathat más írásmóddal."""
+        return {
+            path_key(mappa)
+            for mappa in existing_exported_folders(
+                self._get_settings().value(EXPORTED_FOLDERS_SETTINGS_KEY)
+            )
+        }

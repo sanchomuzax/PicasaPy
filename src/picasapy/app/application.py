@@ -47,6 +47,10 @@ from .confirm_settings_bridge import ConfirmSettingsBridge
 from .controller import AppController
 from .data_location import read_data_root
 from .error_log import error_log_path, install_error_log
+from .exported_folders import (
+    EXPORTED_FOLDERS_SETTINGS_KEY,
+    existing_exported_folders,
+)
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
 from . import collage_output, collage_prefs
@@ -184,6 +188,44 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
         logging.getLogger(__name__).warning(
             "a Kollázsok mappa indulási felvétele hibára futott", exc_info=True
         )
+
+
+def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
+    """A nyilvántartott exportcélok visszavétele az indexbe INDULÁSKOR
+    (#1565) — a `_onjavito_kollazsmappa` (#1075) párja.
+
+    ⚠️ **Enélkül a javítás egyetlen munkamenetig élne.** A közvetlenül
+    előtte futó `prune_foreign_folders` (#58) MINDEN olyan mappát töröl az
+    indexből, amely egyik figyelt gyökér alatt sincs — az exportcél pedig
+    épp ilyen (`<Képek>/Picasa/Exports`). A felhasználó tehát exportálás
+    után látná a képeit, a következő indításnál viszont az „Exportált
+    képek" ismét üres rácsot nyitna. Ugyanez a szerkezet tartja bent a
+    Kollázsok mappát is.
+
+    A forrás a korlátos, létezésre szűrt nyilvántartás (`exported_folders`,
+    #457) — figyelt gyökeret NEM veszünk fel a felhasználó nevében, a
+    `WatchedFolders.txt` érintetlen marad. A gyökér mindig MAGA a célmappa,
+    tehát egyetlen mappa kerül be, nem részfa.
+
+    A hiba nyelt (az indulás soha nem hiúsulhat meg tőle), de naplózva."""
+    try:
+        mappak = existing_exported_folders(
+            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
+        )
+    except Exception:  # noqa: BLE001 - olvashatatlan beállítás sem állíthat meg
+        logging.getLogger(__name__).warning(
+            "az exportcélok nyilvántartása nem olvasható", exc_info=True
+        )
+        return
+    for mappa in mappak:
+        try:
+            sync_folder(conn, Path(mappa), Path(mappa))
+        except Exception:  # noqa: BLE001 - egy rossz cél ne vigye el a többit
+            logging.getLogger(__name__).warning(
+                "az exportcél indulási felvétele hibára futott: %s",
+                mappa,
+                exc_info=True,
+            )
 
 
 def _data_dir(platform: str | None = None) -> Path:
@@ -664,6 +706,9 @@ def run(argv: list[str]) -> int:
         with open_index(data_dir / "index.db") as conn:
             prune_foreign_folders(conn, roots)
             _onjavito_kollazsmappa(conn, QSettings())
+            # #1565: az exportcélok is a gyökereken KÍVÜL élnek — a fenti
+            # takarítás különben minden indításkor kidobná őket
+            _ujraindexelt_exportcelok(conn, QSettings())
     except sqlite3.DatabaseError:
         # #449: az eredeti sem omlott össze némán és nem javított titokban —
         # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa

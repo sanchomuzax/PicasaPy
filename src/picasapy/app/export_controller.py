@@ -404,14 +404,14 @@ class ExportMixin(BackgroundWorkerMixin):
             # 25 s alatt sem jelent meg. Elég EGY fájlt bejelenteni: az
             # export mind egyetlen mappába ír.
             #
-            # ⚠️ Ez a figyelt körön KÍVÜLI célt (az export ALAPÉRTELMEZETT
-            # helyét, `<Képek>/Picasa/Exports`) SZÁNDÉKOSAN nem érinti — oda
-            # a `resyncOutputFolder` nem nyúl, mert egy exportcél miatt nem
-            # bővítjük a felhasználó figyelt mappáit. Az „Exportált képek"
-            # bal hasáb-sora ezért ott ma is ÜRES rácsot nyit; annak
-            # megoldása a `collage_save._index_saved_collage` mintája
-            # (a célmappa SAJÁT gyökérként indexelve) — más mechanizmus,
-            # önálló jegyre való.
+            # #1565: ugyanez a bejelentés viszi a figyelt körön KÍVÜLI célt
+            # is (az export ALAPÉRTELMEZETT helyét,
+            # `<Képek>/Picasa/Exports`) — ott a `resyncOutputFolder`
+            # szándékosan kilép, és az `indexExportedFolder` veszi át: a
+            # célmappa SAJÁT GYÖKÉRKÉNT kerül az indexbe. Figyelt gyökeret
+            # ez sem vesz fel a felhasználó nevében; a kapu az „Exportált
+            # képek" nyilvántartása, amibe a fenti sor épp most tette be a
+            # célt — ezért kell a `_remember_exported_folder` ELŐBB.
             if report.exported:
                 self.noteOutputWritten(str(report.exported[0]))
             self.exportFinished.emit(len(report.exported), len(report.failed))

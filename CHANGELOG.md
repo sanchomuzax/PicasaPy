@@ -33,6 +33,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   helyette egy gamma-képletet számolni, de az mérhetően más képet adna: az
   eredeti táblázat nem képletből származik.
 
+### Javítva
+- **Az „Exportált képek" alatt már ott vannak a képek (#1565).** Aki mappába
+  exportált, majd a bal hasáb „Exportált képek" sorára kattintott, **tartósan
+  üres rácsot** kapott — akkor is, ha a mappában ott sorakoztak a frissen
+  kiírt képei. Nem lassulás volt: a képek soha nem jelentek meg, se egy perc,
+  se egy nap múlva. Mérve: három exportált képből **nulla** látszott, és a
+  mappafigyelő bekapcsolva sem segített.
+
+  Az ok, hétköznapi nyelven: az export alapértelmezett helye
+  (`Képek/Picasa/Exportálások`) a felhasználó **figyelt mappáin kívülre**
+  esik, a program pedig a rácsra csak azt teszi ki, amit ismer. A bal hasáb
+  sora közben megjelent — a felület tehát olyat kínált, amit a program nem
+  tudott megmutatni.
+
+  Mostantól az exportált mappa **bekerül a könyvtárba** (ahogy az eredeti
+  Picasában is: ott az „Exported Pictures" ugyanolyan könyvtár-kategória,
+  mint a lemezen álló mappáké), és a következő indításnál sem esik ki
+  belőle. A **figyelt mappák listája változatlan marad**: az exportcélokat
+  külön tartjuk nyilván, a beállítás nem módosul a felhasználó háta mögött.
+
 ## [0.8.118] – 2026-08-27
 
 ### Hozzáadva

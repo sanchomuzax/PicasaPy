@@ -689,6 +689,35 @@ könyvtárban**, az **„Exportált képek"** csoport alá — ugyanaz a
 mechanizmus, mint amivel a kollázsok a „Projektek" alá kerülnek.
 *(A `0x0073f877` feltétele: a kimeneti mód nem 0 és nem 1.)*
 
+#### 12.5/b A megerősítés: „Exported Pictures" egy KATEGÓRIA-tábla tagja (#1565)
+
+A fenti következtetés önmagában egyetlen sztringbetöltésen állt. Független
+megerősítés a `FUN_004a1560`-ból: ez a rutin egy **név → honosított címke**
+táblát épít, és az `"Exported Pictures"` / `IDS_EXPORTED_CATEGORY` pár
+pontosan ugyanabban a felsorolásban áll, mint
+
+| angol név | erőforrás-kulcs |
+|---|---|
+| `My Albums` | `IDS_GOODCAT` |
+| `Folders on Disk` | `IDS_FOLDERS` |
+| **`Exported Pictures`** | **`IDS_EXPORTED_CATEGORY`** |
+| `Labels` | `IDS_VIRTUALCAT` |
+| `From Hello` | `IDS_HELLOCAT` |
+| `Downloaded Albums` | `IDS_WEBCAT` |
+| `Other Stuff` | `IDS_DEFAULTCAT` |
+| `Edited Pictures` | `IDS_PICASAEDITSCAT` |
+| `Hidden Folders` | `IDS_HIDDEN` |
+| `Projects (internal)` | `IDS_PROJECTS` |
+
+Ezek a `.picasa.ini` **`[Picasa] P2category`** értékei (#1029). Az
+„Exported Pictures" tehát nem külön, fájlrendszerből listázó nézet, hanem
+ugyanolyan **könyvtár-kategória**, mint a lemezen álló mappáké — a 859
+fájlos valódi ini-korpuszban három mappa hordozza is ezt az értéket.
+
+➡️ **Következmény nálunk (#1565):** az exportált mappának az INDEXBEN a
+helye, különben a bal hasáb „Exportált képek" sora tartósan üres rácsot
+nyit. A megvalósítás a `library_controller.indexExportedFolder`.
+
 ### 12.6 A kicsi képeket NEM nagyítja fel
 
 A `UpsizeSmallImages` beállítás beolvasása `0x0073f82b`-nél, az alapérték
