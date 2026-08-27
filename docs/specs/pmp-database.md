@@ -1259,4 +1259,91 @@ betöltő `0x0041ee10` olvassa.
 | `profilephotos_0.db` | profilképek (4 bájt = üres) | ua. |
 | `thumbindex.db` | **név**-katalógus (`0x40466666` magic), névsorrendben | ki írja és mikor |
 
-Ez **nyitott kérdés**, jegyben: **#1650**.
+Ez a szakasz MEGDŐLT — a mérés elkészült, ld. „A gyorsítótárak ÍRÁSI ÚTJA” alább. Jegy: **#1651**.
+
+---
+
+## A gyorsítótárak ÍRÁSI ÚTJA — megmérve (2026-08-27)
+
+Az előző szakasz még azt írta, hogy ez nincs feltárva. **Most már van.**
+
+### 1. A `thumbindex.db` INDULÁSKOR nyílik
+
+A hívási lánc: a betöltő **`0x0041ee10`** → **`0x004f46b0`** → `0x004f2d90`.
+
+- `0x004f46b0` beolvassa a **`ForceThumbUpdate`** beállítást a `Preferences`-ből
+  (ez kényszeríti az indexképek újragenerálását), és a `UseTraceFile`-t;
+- `0x004f2d90` kezeli a `thumbindex.db`-t és a **`thumbindex.tid`** kísérőfájlt.
+
+Vagyis az indexkép-katalógus **nem külön eseményre**, hanem a db3 betöltésének
+részeként nyílik és ellenőrződik — ugyanabban a lépésben, mint a séma-migráció.
+
+### 2. A gyorsítótár-rekord MEZŐI — kiolvasva a diagnosztikából
+
+A `0x004f25f0` egy diagnosztikai CSV-t tud írni (`WriteDirscannerCSV`
+beállítás), és a fejléce **közvetlenül megadja a rekordszerkezetet**:
+
+```
+Name,Creation Time,Access Time,Size,Type,Dirty,Valid
+"%s",%f,%f,%d,%d,%d,%d
+```
+
+| mező | szerep |
+|---|---|
+| `Name` | a fájl neve |
+| `Creation Time`, `Access Time` | lebegőpontos időbélyegek |
+| `Size`, `Type` | méret és típus |
+| **`Dirty`** | **újra kell írni** |
+| **`Valid`** | **érvényes-e még** |
+
+⇒ **Az újragenerálást ez a két jelölő vezérli**, nem közvetlen
+mtime-összevetés a rajzoláskor.
+
+### 3. HÁROM pillanat, ahol a szkenner állapota kiíródik
+
+Ugyanaz a függvény három külön fájlnevet ismer:
+
+| fájl | mikor |
+|---|---|
+| `dirscanner-start.csv` | induláskor |
+| `dirscanner-up.csv` | amikor a szkenner „feláll" |
+| `dirscanner-shutdown.csv` | leálláskor |
+
+Hívói: `0x004f46b0` (a betöltő útja), `0x004f54b0` (ugyanaz, ami a
+`scanlist.txt`-t írja), `0x004e9b00` (`DirscanRegression` — **regressziós
+tesztkeret** a szkennerhez).
+
+### 4. A szkenner objektumcsaládja
+
+| cím | név |
+|---|---|
+| `0x004e2f60` | `Dirscanner` |
+| `0x004e9b00` | `DirscanRegression` |
+| `0x006a8650` | `ytDirScannerWindows` (platformréteg) |
+
+### 5. ⭐ REJTETT BELSŐ HTTP-SZERVER — eddig ismeretlen
+
+A `0x004ca660` egy **HTTP-útvonaltáblát** tartalmaz, a `0x004c2af0` pedig egy
+teljes HTML-oldalt szolgál ki („Picasa %s Debug"):
+
+| útvonal | mire |
+|---|---|
+| `/albumlist`, `/album`, `/albumfeed` | albumlista és -tartalom |
+| `/indexfeed`, `/globalfeed` | RSS-hírcsatornák |
+| `/search`, `/msearch` | keresés |
+| `/filesigs`, `/albumsigs` | fájl- és album-**aláírások** |
+| **`/ge?BBOX=`** | **Google Earth** — befoglaló téglalap szerinti lekérdezés |
+
+A hibakereső lap egy legördülővel a **három tábla** közt vált — `album`,
+`file`, `cat` (azaz `albumdata`, `imagedata`, `catdata`) —, szűrőt kínál,
+60 másodpercenként frissül, és a sorokban ott a **`Dirty`** oszlop. A képekre
+mutató hivatkozás a saját `picasa://showimgtmp/?%d` protokollal nyílik. Van
+benne sorkorlát is: *„Wrote maximum number of rows (not exploding your
+browser)"*.
+
+Ez magyarázza a `feed.rss` és a `View Online.url` fájlokat is
+(`CLighthouseRSS`, `0x005ed650`).
+
+*Bizonyítottsági fok: **megerősített** — minden cím, beállításnév,
+útvonal és a CSV-fejléc a bináris index `string_xrefs`/`xrefs` tábláiból.
+**Nincs megmérve**: a szerver portja és az, hogy mi kapcsolja be.*
