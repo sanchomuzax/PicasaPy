@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **A tesztfuttatás szabálya mostantól kapu, nem kérés (#1649).** Eddig a
+  dokumentáció kérte, hogy a teszteket a projekt futtatójával indítsuk — és a
+  kérés 2026-08-15-én megbukott: öt párhuzamos munkamenet **5,8 GB**
+  ideiglenes fájlt hagyott a lemezen, amitől nem ők, hanem a *többi*,
+  egyszerre futó munkamenet borult fel, érthető hibaüzenet nélkül. Mostantól
+  a rossz parancs el sem indul, és a hibaüzenet megmondja, mit kell helyette
+  írni.
+
 ### Javítva
 - **A megjelenítési mód némán elveszhetett a nagy nézőben (#1598).** A
   `Nézet ▸ Megjelenítési mód` átalakítói csak azon az úton jutnak a
