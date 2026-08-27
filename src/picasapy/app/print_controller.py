@@ -1,8 +1,10 @@
 """PrintController: kijelölt képek nyomtatása (#32, RÉSZLEGES kör) —
 egyszerű, Picasa-szellemű elrendezés (teljes oldal / oldalhoz igazítva,
-egy kép egy oldal). A Picasa teljes nyomtatási sablonrendszere
-(`print.fen`/`reviewprint.fen`, kontaktlap, több kép egy oldalon) NEM
-ebben a körben készül el.
+egy kép egy oldal), és #1590 óta az INDEXKÉP is (több bélyegkép egy
+lapon, `printContactSheet`). A Picasa teljes nyomtatási sablonrendszere
+(`print.fen`/`reviewprint.fen`, a `ytPrintSizes` mind a 17 mérete) NEM
+ebben a körben készül el — a `ytPrintSizes::eContact` („Indexképek")
+viszont igen.
 
 Önálló QObject — a `WebExportController`/`RelocateController` mintáját
 követve NEM az `AppController` mixinje, hogy a `controller.py`/`Main.qml`
@@ -35,11 +37,16 @@ import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRectF, Signal, Slot
-from PySide6.QtGui import QImage, QPageLayout, QPainter
+from PySide6.QtCore import QObject, QRectF, Qt, Signal, Slot
+from PySide6.QtGui import QFont, QImage, QPageLayout, QPainter
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
 from picasapy.index import PhotoRecord
+from picasapy.printing.contact_sheet import (
+    DEFAULT_COLUMNS,
+    header_rect,
+    sheet_pages,
+)
 from picasapy.printing.layout import (
     PageGeometry,
     PrintFitMode,
@@ -90,14 +97,19 @@ class PrintController(QObject):
         (ld. a modul docstringje) a QML saját választólistájához."""
         return list(QPrinterInfo.availablePrinterNames())
 
-    def _resolve_paths(self, rows: Sequence[int]) -> list[Path]:
+    def _resolve_records(self, rows: Sequence[int]) -> list[PhotoRecord]:
         photos = tuple(self._photo_source())
-        paths: list[Path] = []
-        for row in rows:
-            index = int(row)
-            if 0 <= index < len(photos):
-                paths.append(Path(photos[index].folder_path) / photos[index].name)
-        return paths
+        return [
+            photos[int(row)]
+            for row in rows
+            if 0 <= int(row) < len(photos)
+        ]
+
+    def _resolve_paths(self, rows: Sequence[int]) -> list[Path]:
+        return [
+            Path(record.folder_path) / record.name
+            for record in self._resolve_records(rows)
+        ]
 
     @Slot(list, str, str, str, result=bool)
     def renderPrintPreviewPdf(
@@ -138,6 +150,195 @@ class PrintController(QObject):
         if ok:
             self.printFinished.emit(printer.printerName() or self.tr("default printer"))
         return ok
+
+    # -- Indexkép-nyomtatás (#1590) -------------------------------------
+
+    @Slot(list, int, str, result=bool)
+    def renderContactSheetPdf(self, rows, columns: int, output_path: str) -> bool:
+        """#1590: indexkép PDF-be — a `renderPrintPreviewPdf` párja.
+
+        Ugyanaz a rajzoló fut, mint az élő nyomtatásnál (`_run_contact_sheet`),
+        ezért a PDF nem „előnézet", hanem BIZONYÍTÉK: amit itt látsz, az megy
+        a papírra."""
+        target = to_local_path(output_path)
+        if not target:
+            self.printFailed.emit(self.tr("Invalid output path."))
+            return False
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        printer.setOutputFileName(target)
+        ok = self._run_contact_sheet(printer, rows, columns)
+        if ok:
+            self.printFinished.emit(target)
+        return ok
+
+    @Slot(list, str, int, result=bool)
+    def printContactSheet(self, rows, printer_name: str, columns: int) -> bool:
+        """#1590: `ID_FILE_PRINTCONTACTSHEET` — több bélyegkép EGY lapon.
+
+        Az eredetiben ez nem külön párbeszéd, hanem NYOMTATÁSI MÉRET
+        (`ytPrintSizes::eContact`, „Indexképek"), ezért nálunk is a
+        nyomtatás-párbeszéd egyik elrendezése, nem külön ablak.
+        """
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        if printer_name:
+            info = QPrinterInfo.printerInfo(printer_name)
+            if info.isNull():
+                self.printFailed.emit(
+                    self.tr("Unknown printer: %1").replace("%1", printer_name)
+                )
+                return False
+            printer.setPrinterName(printer_name)
+        ok = self._run_contact_sheet(printer, rows, columns)
+        if ok:
+            self.printFinished.emit(printer.printerName() or self.tr("default printer"))
+        return ok
+
+    def _header_lines(self, records: Sequence[PhotoRecord]) -> tuple[str, str]:
+        """A nyomtatott indexkép fejlécének KÉT sora.
+
+        ⚠️ Ez NEM a kollázs-indexkép fejléce. Az eredeti nyomtatója
+        CÍMKÉZETT mezőket rajzol — `ytPrinter::contactsheetalbum` = „Album:"
+        és `ytPrinter::contactsheetdate` = „Dátum:" —, míg a kollázs a
+        `CContactSheetTheme::subtitle_format` („%1$d kép, %2$s") mintát
+        követi. A #1590 jegy „ugyanaz, mint a kollázs" előírása ezen a
+        ponton MEGDŐLT; a rács viszont tényleg közös
+        (`printing.contact_sheet` a `collage.layout`-ra épül).
+
+        Album híján az eredeti `ytPrinter::unnamedalbum` = „Név nélküli
+        album" felirata áll a helyén."""
+        album = ""
+        datum = ""
+        if records:
+            album = Path(records[0].folder_path).name
+            nyers = (records[0].taken_at or "").strip()
+            # a `taken_at` ISO-alakú („2023-11-04 18:20:11"); a fejlécen a
+            # NAP elég — az óra-percnek egy egész lapra nézve nincs értelme
+            datum = nyers[:10]
+        if not album:
+            album = self.tr("Unnamed Album")
+        fejlec = self.tr("Album:") + " " + album
+        alcim = (self.tr("Date:") + " " + datum) if datum else ""
+        return fejlec, alcim
+
+    def _run_contact_sheet(
+        self, printer: QPrinter, rows: Sequence[int], columns: int
+    ) -> bool:
+        """Az indexkép-feladat közös útja (PDF és élő nyomtató egyaránt)."""
+        records = self._resolve_records(rows)
+        paths = [Path(r.folder_path) / r.name for r in records]
+        if not paths:
+            self.printFailed.emit(self.tr("No pictures to print."))
+            return False
+        # #1072: a befejezetlen kollázs itt sem nyomtatható — ugyanaz a
+        # kapu, mint a képenkénti nyomtatásnál (`_run`)
+        if self._draft_guard.first_draft(paths) is not None:
+            self.printFailed.emit(self._draft_guard.restriction_message())
+            return False
+        oszlopok = int(columns) if int(columns or 0) > 0 else DEFAULT_COLUMNS
+
+        images: list[QImage] = []
+        maradok: list[PhotoRecord] = []
+        skipped: list[str] = []
+        for record, path in zip(records, paths, strict=True):
+            image = QImage(str(path))
+            if image.isNull():
+                _log.warning("indexkép: nem dekódolható kép — kihagyva: %s", path)
+                skipped.append(path.name)
+                continue
+            images.append(image)
+            maradok.append(record)
+        if not images:
+            if skipped:
+                self.printFailed.emit(
+                    self.tr("None of the selected pictures could be printed: %1")
+                    .replace("%1", ", ".join(skipped))
+                )
+            else:
+                self.printFailed.emit(self.tr("No pictures to print."))
+            return False
+        if skipped:
+            self.printSkipped.emit(skipped)
+
+        # ⚠️ az indexkép tájolása NEM a képekhez igazodik: egy lapon sok kép
+        # van, tehát nincs olyan, hogy „a kép tájolása". Marad a papír
+        # alapértelmezett (portré) állása — ezt kínálja az eredeti is.
+        printer.setPageOrientation(QPageLayout.Orientation.Portrait)
+        fejlec, alcim = self._header_lines(maradok)
+        try:
+            self._paint_contact_sheet(printer, images, oszlopok, fejlec, alcim)
+        except (RuntimeError, ValueError):
+            _log.exception("indexkép-nyomtatás: a feladat nem indítható")
+            self.printFailed.emit(self.tr("The print job could not be started."))
+            return False
+        return True
+
+    @staticmethod
+    def _paint_contact_sheet(
+        printer: QPrinter,
+        images: Sequence[QImage],
+        columns: int,
+        header: str,
+        subtitle: str,
+    ) -> None:
+        painter = QPainter()
+        if not painter.begin(printer):
+            raise RuntimeError("A nyomtatási feladat nem indítható")
+        try:
+            margin_px = _MARGIN_MM / 25.4 * printer.resolution()
+            rect = printer.pageRect(QPrinter.Unit.DevicePixel)
+            margin = min(margin_px, rect.width() / 2 - 1, rect.height() / 2 - 1)
+            page = PageGeometry(
+                width=rect.width(), height=rect.height(), margin=max(margin, 0)
+            )
+            lapok = sheet_pages(len(images), page, columns)
+            fx, fy, fw, fh = header_rect(page)
+            cim_font = QFont(painter.font())
+            cim_font.setPixelSize(max(8, int(fh * 0.42)))
+            alcim_font = QFont(cim_font)
+            alcim_font.setPixelSize(max(7, int(fh * 0.28)))
+            for lap_index, lap in enumerate(lapok):
+                if lap_index > 0:
+                    printer.newPage()
+                painter.setFont(cim_font)
+                painter.drawText(
+                    QRectF(rect.x() + fx, rect.y() + fy, fw, fh * 0.6),
+                    int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+                    header,
+                )
+                if subtitle:
+                    painter.setFont(alcim_font)
+                    painter.drawText(
+                        QRectF(
+                            rect.x() + fx, rect.y() + fy + fh * 0.6, fw, fh * 0.4
+                        ),
+                        int(
+                            Qt.AlignmentFlag.AlignLeft
+                            | Qt.AlignmentFlag.AlignVCenter
+                        ),
+                        subtitle,
+                    )
+                for cell_index, cell in enumerate(lap.placements):
+                    image = images[lap.first + cell_index]
+                    # a cella TELJES képet mutat (nincs vágás — ez az
+                    # indexkép lényege), arányosan, középre igazítva
+                    cella = PageGeometry(
+                        width=cell.width, height=cell.height, margin=0.0
+                    )
+                    hely = compute_print_layout(
+                        cella, image.width(), image.height(), PrintFitMode.FIT
+                    )
+                    painter.drawImage(
+                        QRectF(
+                            rect.x() + cell.x + hely.x,
+                            rect.y() + cell.y + hely.y,
+                            hely.width,
+                            hely.height,
+                        ),
+                        image,
+                    )
+        finally:
+            painter.end()
 
     def _run(
         self, printer: QPrinter, rows: Sequence[int], fit_mode: str, orientation: str

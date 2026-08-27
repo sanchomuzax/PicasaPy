@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Property, QStandardPaths, Signal, Slot
+from PySide6.QtCore import Property, QStandardPaths, QUrl, Signal, Slot
+from PySide6.QtGui import QDesktopServices
 
 from picasapy.export.earth import export_google_earth
 from picasapy.export import (
@@ -38,6 +39,13 @@ from .exported_folders import (
     remember_exported_folder,
 )
 from .worker_thread import BackgroundWorkerMixin
+
+#: #1589: a rendszer társított programjának indítása — MODULSZINTŰ fogantyú
+#: (a `version._run`, `index.sync._stat` és a `fileops.reveal._run` mintája).
+#: A teszt EZT cseréli ki: a `QDesktopServices` globális osztályát átírni
+#: tilos, arra külön őrünk van (#1375), és egy elszabadult teszt valódi
+#: Google Earth-öt (vagy böngészőt) indítana a fejlesztő gépén.
+_open_url = QDesktopServices.openUrl
 
 
 #: az eredeti fájlnév-tisztítása (`0x009946f0`): a Windows tiltott
@@ -76,6 +84,12 @@ class ExportMixin(BackgroundWorkerMixin):
     # nem készült), a térképre került képek száma, és hány maradt ki
     # koordináta híján (ezt a felhasználónak meg kell tudni mondani).
     earthExportFinished = Signal(str, int, int)
+    # #1589: a „Megtekintés a Google Earth programban…" ága. Ugyanaz a
+    # kiírás, MÁS folytatás: a felület ezután megnyittatja a fájlt
+    # (`openKml`). Azért külön jelzés, mert a megnyitást a FŐSZÁLON kell
+    # kérni — a háttérszálból indított `QDesktopServices.openUrl` nem
+    # biztonságos.
+    earthViewReady = Signal(str, int, int)
     # #457: „Exportált képek" — az exportált célmappák listája változott.
     # Az eredeti külön csomópont alá gyűjtötte őket a navigációban: az
     # export így NYOMON KÖVETHETŐ maradt, nem tűnt el a fájlrendszerben.
@@ -440,13 +454,30 @@ class ExportMixin(BackgroundWorkerMixin):
         A `doc.kml` ráadásul nem is indexelt médiatípus. A rendeltetési
         hely a Google Earth, nem a PicasaPy könyvtára.
         """
+        self._earth_export(rows, target_dir, folder_name, self.earthExportFinished)
+
+    @Slot(list, str, str)
+    def viewGoogleEarth(self, rows, target_dir: str, folder_name: str = "") -> None:
+        """#1589: `ID_VIEW_EARTH` — ugyanaz a KML, de utána MEGNYITJUK.
+
+        Az eredetiben KÉT külön menütétel van ugyanarra a kiírásra: az
+        `ID_EXPORT_EARTH` csak kiírja a fájlt, az `ID_VIEW_EARTH` kiírja
+        **és megnyitja** (`docs/specs/picasa-menu-parancsok-viselkedes.md`
+        `ID_VIEW_EARTH` szakasza). Ezért nincs itt külön motor: ugyanaz az
+        `_earth_export` fut, csak a befejező jelzés más — a felület a
+        `earthViewReady`-re hívja az `openKml`-t.
+        """
+        self._earth_export(rows, target_dir, folder_name, self.earthViewReady)
+
+    def _earth_export(self, rows, target_dir: str, folder_name: str, kesz) -> None:
+        """A két Google Earth-menütétel KÖZÖS útja; `kesz` a záró jelzés."""
         target = to_local_path(target_dir)
         photos = self._photos.photos
         records = tuple(
             photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
         )
         if not records or not target:
-            self.earthExportFinished.emit("", 0, 0)
+            kesz.emit("", 0, 0)
             return
 
         cel = Path(target)
@@ -454,7 +485,7 @@ class ExportMixin(BackgroundWorkerMixin):
 
         def worker():
             report = export_google_earth(records, cel, folder_name=nev)
-            self.earthExportFinished.emit(
+            kesz.emit(
                 str(report.kml_path) if report.kml_path else "",
                 report.placemarks,
                 report.skipped_without_location,
@@ -462,6 +493,26 @@ class ExportMixin(BackgroundWorkerMixin):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-earth-export")
+
+    @Slot(str, result=bool)
+    def openKml(self, kml_path: str) -> bool:
+        """#1589: a kiírt KML átadása a rendszer társított programjának.
+
+        Igazat ad, ha a megnyitás elindult. HAMISAT ad, ha nincs társítva
+        program — a felületnek ezt KI KELL MONDANIA, mert különben a
+        „Megtekintés…" némán hatástalan marad (#936).
+
+        ⚠️ Az eredeti a Windows-registryből olvassa a Google Earth
+        verzióját, és két külön ágon („telepítenie kell" / „frissítenie
+        kell") kínálja a `http://earth.google.com` címet. Linuxon nincs
+        registry, és a #1589 döntése szerint a Google letöltőoldalára
+        mutató hivatkozást NEM vesszük át — marad az egyetlen, mérhető ág:
+        elindult-e a társított program.
+        """
+        local = to_local_path(kml_path)
+        if not local or not Path(local).exists():
+            return False
+        return bool(_open_url(QUrl.fromLocalFile(local)))
 
     # -- „Exportált képek" (#457) --------------------------------------------
 

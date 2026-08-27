@@ -485,6 +485,18 @@ ApplicationWindow {
         return window.selectedRows()
     }
     function openPrint() { printDialog.openForRows(window.printTargetRows()) }
+    // #1590: Mappa ▸ Bélyegképek nyomtatása… — ugyanaz a párbeszéd,
+    // indexkép-elrendezésre állítva. Kijelölés nélkül a MEGNYITOTT MAPPA
+    // egésze a célpont: az eredetiben ez a parancs a mappa/album tétele,
+    // nem a kijelölésé.
+    function openContactSheetPrint() {
+        var sorok = window.printTargetRows()
+        // a `_groupRows` a MEGNYITOTT mappa sorai (nem az egész rácsé,
+        // ha az több mappát mutat) — pontosan az, amire a mappa-menü
+        // tétele vonatkozik
+        if (sorok.length === 0) sorok = window._groupRows()
+        printDialog.openForContactSheet(sorok)
+    }
     // #422: a mappa-kontextusmenünek HÁROM megnyitási pontja van (a rács
     // üres területe, a bal panel mappa-sora, a rács mappa-fejléce), és
     // mindhárom UGYANAZT a menüt nyitja. A menü a FolderPane-ben él; a
@@ -712,6 +724,8 @@ ApplicationWindow {
         onWebExportRequested: webExportDialog.open()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
         onEarthExportRequested: exportDialogs.openGoogleEarth()
+        // #1589: ugyanaz a párbeszéd, de a kiírás után MEGNYITJA a fájlt
+        onEarthViewRequested: exportDialogs.openGoogleEarth(true)
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
@@ -733,6 +747,8 @@ ApplicationWindow {
         onExportRequested: exportDialogs.openForSelection()
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
+        // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
+        onPrintContactSheetRequested: window.openContactSheetPrint()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)

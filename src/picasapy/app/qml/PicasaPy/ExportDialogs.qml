@@ -20,8 +20,20 @@ Item {
     // #530: Google Earth-export — a kijelölt képek közül a GEOCÍMKÉZETTEK
     // kerülnek térképre. A célmappa-választón kívül nincs beállítás: az
     // eredetiben sem volt, a bélyegkép-méretet a buborék szabja meg.
-    function openGoogleEarth() {
-        if (dialogs.appWindow.selectedIndexes.length === 0) return
+    //
+    // #1589: `viewAfter === true` esetén a kiírás UTÁN megnyitjuk a fájlt
+    // (`ID_VIEW_EARTH`), egyébként csak kiírjuk (`ID_EXPORT_EARTH`).
+    function openGoogleEarth(viewAfter) {
+        // ⚠️ #1589: kijelölés nélkül ez a függvény korábban NÉMÁN
+        // visszatért — a felhasználó rákattintott a menüpontra, és nem
+        // történt semmi. Az eredeti ilyenkor MEGSZÓLAL
+        // (`PublishToEarth::NoTagged`), ezért mi is.
+        if (dialogs.appWindow.selectedIndexes.length === 0) {
+            earthResultDialog.message = qsTr("No geotagged images to export.")
+            earthResultDialog.open()
+            return
+        }
+        earthTargetDialog.viewAfter = viewAfter === true
         earthTargetDialog.open()
     }
 
@@ -567,12 +579,21 @@ Item {
     FolderDialog {
         id: earthTargetDialog
         objectName: "earthTargetDialog"
-        title: qsTr("Export to Google Earth File")
+        // #1589: melyik menütétel nyitotta — a „Megtekintés…" ág a kiírás
+        // után megnyittatja a fájlt, az „Exportálás…" nem
+        property bool viewAfter: false
+        title: earthTargetDialog.viewAfter
+               ? qsTr("View in Google Earth...")
+               : qsTr("Export to Google Earth File")
         onAccepted: {
             if (typeof controller === "undefined" || !controller) return
             var mappa = selectedFolder.toString().replace(/^file:\/\//, "")
-            controller.exportGoogleEarth(
-                dialogs.appWindow.selectedIndexes, mappa, "")
+            if (earthTargetDialog.viewAfter)
+                controller.viewGoogleEarth(
+                    dialogs.appWindow.selectedIndexes, mappa, "")
+            else
+                controller.exportGoogleEarth(
+                    dialogs.appWindow.selectedIndexes, mappa, "")
         }
     }
 
@@ -622,6 +643,28 @@ Item {
                 message += "\n" + qsTr("%1 pictures were left out: they have no location.")
                     .arg(skipped)
             earthResultDialog.message = message
+            earthResultDialog.open()
+        }
+        // #1589: a „Megtekintés a Google Earth programban…" ága. A
+        // megnyitást SZÁNDÉKOSAN itt, a főszálon kérjük — a háttérszálból
+        // indított `QDesktopServices.openUrl` nem biztonságos.
+        function onEarthViewReady(kmlPath, placemarks, skipped) {
+            if (kmlPath.length === 0) {
+                earthResultDialog.message =
+                    qsTr("No geotagged images to export.")
+                earthResultDialog.open()
+                return
+            }
+            if (typeof controller === "undefined" || !controller) return
+            if (controller.openKml(kmlPath))
+                return
+            // néma hatástalanság helyett megmondjuk, mi történt: a fájl
+            // KÉSZ, csak nincs mivel megnyitni (nincs telepítve Google
+            // Earth vagy más KML-kezelő)
+            earthResultDialog.message =
+                qsTr("The Google Earth file was written to %1, but this "
+                     + "computer has no program associated with it.")
+                    .arg(kmlPath)
             earthResultDialog.open()
         }
     }

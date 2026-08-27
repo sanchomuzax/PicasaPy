@@ -221,6 +221,8 @@ class TestGyorsbillentyuk:
             ("shortcutDeleteFromDisk", "Delete"),
             # #1472: a Ctrl+P eddig csak FELIRAT volt a Nyomtatás… tételen
             ("shortcutPrint", "Ctrl+P"),
+            # #1590: ugyanez az Indexképek nyomtatása… Ctrl+Shift+P-jével
+            ("shortcutPrintContactSheet", "Ctrl+Shift+P"),
         ):
             shortcut = window.findChild(QObject, name)
             assert shortcut is not None, name
@@ -249,11 +251,12 @@ class TestGyorsbillentyuk:
         """Az inaktív pontok (pl. Ctrl+N, Ctrl+X, F1...) csak a feliratban
         jelennek meg — nem szabad hozzájuk élő `Shortcut {}` elemet kötni.
         Az egyetlen forrás-elhelyezésű `Shortcut` blokk a fájl elején van,
-        pontosan 5 elemmel (a fenti öt aktív tételhez). A szám #1472-ben
-        nőtt négyről ötre: a `Nyomtatás…` tétel élővé vált, tehát a
-        Ctrl+P-nek is élő billentyűt kellett kapnia."""
+        pontosan 6 elemmel (a fenti hat aktív tételhez). A szám #1472-ben
+        nőtt négyről ötre (a `Nyomtatás…` tétel élővé vált, tehát a
+        Ctrl+P-nek is élő billentyűt kellett kapnia), a #1590-ben pedig
+        ötről hatra (`Indexképek nyomtatása…`, Ctrl+Shift+P)."""
         src = _source()
-        assert src.count("Shortcut {") == 5
+        assert src.count("Shortcut {") == 6
 
 
 class TestMukodoTetelekBillentyui:
