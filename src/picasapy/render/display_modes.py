@@ -70,12 +70,64 @@ egyszerűsítés, hanem paritás-vesztés — a
 `tests/render/test_display_modes_1577_1578.py::TestNemKeplet` ezt tételesen
 őrzi.
 
-## A maradék hét mód
+## `bw` — Fekete-fehér (megjelenítési mód) (#1657)
 
-A `dither16`, `rdesk`, `mac`, `sepia`, `bw` (és a no-op `auto`/`normal`)
-külön jegyeké. Addig az `apply_display_mode` ezekre **átereszt** — a
-menütétel a #1575 óta kattintható, de képpontot nem mozdít. Ez szándékosan
-NÉMA áteresztés: a menüt nem az itteni névsor tiltja le.
+**MÉRVE** (`0x009e89a0`, 90 bájt; spec 5.7):
+
+```
+Y = (77·R + 151·G + 28·B) >> 8          (77 + 151 + 28 = 256)
+B' = G' = R' = Y                          A' = A
+```
+
+Egész, 8 bites BT.601-közeli luma. A súlyok összege pontosan 256, tehát a
+`>> 8` nem veszít fényerőt: a szürke bemenet önmagát adja vissza
+(`Y(g,g,g) = g`), a fehér pedig 255 marad.
+
+⚠️ **Ez NEM a szerkesztő `bw` effektje.** Az (`render/color.py:apply_bw`) a
+mentett képre ír és a `filters=` láncba kerül; ez itt csak a képernyőre
+hat, a fájlhoz és a `.picasa.ini`-hez nem nyúl. A két képlet ráadásul
+KÜLÖNBÖZIK (amaz lebegőpontos Rec.601), tehát a kimenetük sem azonos —
+összevonni paritás-vesztés volna.
+
+## `sepia` — Szépia (megjelenítési mód) (#1657)
+
+**MÉRVE** — a konstansok és a MŰVELETSOR (`0x009e8850`, 336 bájt; spec 5.8).
+Csatornánként, egész aritmetikával, a `Y` fenti lumájából kiindulva:
+
+```
+1.  Y   = (77·R + 151·G + 28·B) >> 8        mindhárom csatornára szétterítve
+2.  v1  = 255 − ((255 − Y) · 218) >> 8      világosítás
+3.  m   = 0xFF, ha v1 ≥ 128, különben 0x00  (a mért ((v1>>7) & 0x010101)·0xFF)
+4.  v2  = (v1 xor m) · 2
+    ki  = ((v2 · (c xor m)) >> 8) xor m     c = a #9B7D63 adott csatornája
+```
+
+🔴 **A lépéssort valósítjuk meg, NEM a nevet.** A spec 5.8 kimondja: a
+konstansok mértek, de az „ez overlay-keverés" a kutató **olvasata**. Egy
+kész overlay-rutin behívása azért tilos, mert a szokásos overlay `/255`-tel
+normalizál, a mért kód viszont `>> 8`-cal — az eltérés csatornánként ±1,
+és épp az a paritás, amiért a mód létezik.
+
+Két dolog, ami elsőre hibának látszik, de mért viselkedés:
+
+* **A fekete nem fekete marad.** A 2. lépés a 0-t 38-ra emeli
+  (`255 − (255·218 >> 8) = 255 − 217`), így a kimenet `(46, 37, 29)` — sötét
+  barna. Ez a szépia lényege, nem levágási hiba.
+* **A fehér fehér marad.** `Y = 255 → v1 = 255 → m = 0xFF → v2 = 0`, tehát
+  mindhárom csatorna `0 xor 0xFF = 255`. A mód nem tudja beszínezni a
+  kifehéredett foltot.
+
+A `v1` értékkészlete **38…255**, tehát a 3. lépés maszkja mindkét irányban
+előfordul: a váltás pontosan `Y = 104` (`v1 = 127`, `m = 0`) és `Y = 105`
+(`v1 = 128`, `m = 0xFF`) között van.
+
+## A maradék öt mód
+
+A `dither16`, `rdesk`, `mac` (és a no-op `auto`/`normal`) külön jegyeké — a
+`sepia` és a `bw` a #1657 óta KIKERÜLT ebből a névsorból. A maradékra az
+`apply_display_mode` **átereszt**: a menütétel a #1575 óta kattintható, de
+képpontot nem mozdít. Ez szándékosan NÉMA áteresztés: a menüt nem az itteni
+névsor tiltja le.
 
 ## Miért `cv2.LUT`, és nem numpy-indexelés?
 
@@ -90,6 +142,24 @@ Az `apply_display_mode` teljes hívása ugyanezen a képen (a tábla építésé
 is beleértve): `projector` **17 ms**, `lcd` **23 ms**, `linear` **22 ms**
 (a `overflow` összevetésül 38 ms). A néző valódi előnézeti méretén
 (2560×1920) rendre 6, 6 és 7 ms.
+
+A `bw` és a `sepia` **drágább**, és ez tudatosan vállalt ár: a luma három
+csatorna súlyozott összege, ami nem fér 8 bitre, tehát kell egy uint16
+köztes tömb (4000×3000-nél 72 MB). Mérve ugyanott: `bw` **~112 ms**,
+`sepia` **~118 ms**; a néző előnézeti méretén (2560×1920) **~50** és
+**~54 ms**. Négy alternatívát mértem — `cv2.split` + csatornánkénti
+`cv2.LUT` + `cv2.add` (131 ms), `cv2.transform` összegzés (144 ms),
+`cv2.cvtColor(GRAY2RGB)` szétterítés (119–125 ms), 64–512 soros sávokra
+bontás (95–127 ms) —, **egyik sem gyorsabb**, tehát a legegyszerűbb alak
+maradt. A naiv numpy út (`.astype(uint32)` + szorzás) 303 ms, azaz
+2,7-szeres.
+
+🔴 **A lassúságot NE lebegőpontos úttal „javítsa" senki.** A
+`cv2.addWeighted`, a `cv2.transform` float mátrixszal és a
+`cv2.cvtColor(RGB2GRAY)` mind **kerekít** (az utóbbi ráadásul más
+súlyokkal: 0,299/0,587/0,114 a mért 77/151/28 ⇒ 0,3008/0,5898/0,1094
+helyett). A mért kód `>> 8`-cal **csonkol** — a csere csatornánként ±1
+eltérést adna az eredetitől, azaz paritás-vesztés volna.
 """
 
 from __future__ import annotations
@@ -112,6 +182,23 @@ LCD_MODE = "lcd"
 
 #: `ID_VIEW_LINEAR` módazonosítója.
 LINEAR_GAMMA_MODE = "linear"
+
+#: `ID_VIEW_BW` módazonosítója.
+BW_MODE = "bw"
+
+#: `ID_VIEW_SEPIA` módazonosítója.
+SEPIA_MODE = "sepia"
+
+#: A luma egész súlyai R, G, B sorrendben — MÉRVE `0x009e89a0` (spec 5.7).
+#: Az összegük pontosan **256**, ezért a `>> 8` fényerő-semleges.
+LUMA_WEIGHTS_RGB: tuple[int, int, int] = (77, 151, 28)
+
+#: A szépia 2. lépésének világosító szorzója — MÉRVE `0xDA` (spec 5.8).
+SEPIA_LIGHTEN_MULTIPLIER = 218
+
+#: A szépia keverőszíne R, G, B sorrendben — MÉRVE `0x9B7D63` (spec 5.8),
+#: azaz `#9B7D63` = RGB(155, 125, 99).
+SEPIA_BLEND_RGB: tuple[int, int, int] = (0x9B, 0x7D, 0x63)
 
 #: A projektor mód szorzója — MÉRVE `0x009e8a10`: `0xDC` (spec 5.5).
 PROJECTOR_MULTIPLIER = 220
@@ -148,6 +235,56 @@ LINEAR_GAMMA_LUT: tuple[int, ...] = (
 #: A gamma-tábla `cv2.LUT`-kész alakja — egyszer épül fel, modulszinten.
 _LINEAR_GAMMA_TABLE: np.ndarray = np.array(LINEAR_GAMMA_LUT, dtype=np.uint8)
 
+
+def _luma_tabla() -> np.ndarray:
+    """Csatornánkénti `súly · érték` tábla uint16-ban (spec 5.7 1. fele).
+
+    `cv2.LUT`-kész `(1, 256, 3)` alak. A **uint16** kimenet szándékos: a
+    legnagyobb részszorzat `151 · 255 = 38505` nem férne 8 bitre, a három
+    csatorna összege (`65280`) viszont még uint16-ban is elfér, tehát az
+    összegzés túlcsordulás nélkül, **egészben** elvégezhető.
+    """
+    ertekek = np.arange(256, dtype=np.uint16)
+    tabla = np.empty((1, 256, 3), dtype=np.uint16)
+    for csatorna, suly in enumerate(LUMA_WEIGHTS_RGB):
+        tabla[0, :, csatorna] = ertekek * np.uint16(suly)
+    return tabla
+
+
+def _szepia_tabla() -> np.ndarray:
+    """A szépia 2–4. lépése `Y`-nal indexelt `(1, 256, 3)` uint8 táblává.
+
+    A szépia teljes egészében a lumából származik (az 1. lépés mindhárom
+    csatornára ugyanazt az `Y`-t teríti szét), ezért a maradék három lépés
+    **egyetlen, 256 soros keresőtáblává** előszámolható — a képpontonkénti
+    munka így egy `cv2.LUT` hívás.
+
+    A számítás végig `int32`-n megy, de minden lépés a mért **egész**
+    aritmetika: `>> 8` levágás, nem osztás és nem kerekítés.
+    """
+    y = np.arange(256, dtype=np.int32)
+    # 2. lépés — világosítás: xor 0xFF → ·218 → >>8 → xor 0xFF.
+    v1 = 255 - (((255 - y) * SEPIA_LIGHTEN_MULTIPLIER) >> 8)
+    # 3. lépés — a mért `((v1 >> 7) & 0x010101) · 0xFF` csatornánkénti alakja:
+    # 0xFF, ha az érték felső bitje áll (≥ 128), különben 0x00.
+    maszk = ((v1 >> 7) & 1) * 0xFF
+    # 4. lépés — a maszkkal tükrözött érték kétszerese.
+    v2 = (v1 ^ maszk) * 2
+    tabla = np.empty((1, 256, 3), dtype=np.uint8)
+    for csatorna, keveroszin in enumerate(SEPIA_BLEND_RGB):
+        # …szorzás a szintén tükrözött keverőszínnel, `>> 8`, majd vissza.
+        tabla[0, :, csatorna] = (((v2 * (keveroszin ^ maszk)) >> 8) ^ maszk).astype(
+            np.uint8
+        )
+    return tabla
+
+
+#: A luma-súlytábla — egyszer épül fel, modulszinten.
+_LUMA_TABLE: np.ndarray = _luma_tabla()
+
+#: A szépia `Y → (R, G, B)` táblája — egyszer épül fel, modulszinten.
+_SEPIA_TABLE: np.ndarray = _szepia_tabla()
+
 #: Módazonosító → a hozzá tartozó sötétítő szorzó (spec 5.4/5.5).
 _DARKEN_MULTIPLIERS: dict[str, int] = {
     PROJECTOR_MODE: PROJECTOR_MULTIPLIER,
@@ -157,7 +294,7 @@ _DARKEN_MULTIPLIERS: dict[str, int] = {
 #: Az a néhány mód, amely MA ténylegesen átírja a képpontokat. A hívó ebből
 #: tudja, hogy megéri-e egyáltalán a képet numpy-tömbbé alakítania.
 PIXEL_AFFECTING_MODES: frozenset[str] = frozenset(
-    {OVERFLOW_MODE, PROJECTOR_MODE, LCD_MODE, LINEAR_GAMMA_MODE}
+    {OVERFLOW_MODE, PROJECTOR_MODE, LCD_MODE, LINEAR_GAMMA_MODE, BW_MODE, SEPIA_MODE}
 )
 
 def display_mode_changes_pixels(mode: str) -> bool:
@@ -260,6 +397,60 @@ def apply_linear_gamma(rgb: np.ndarray) -> np.ndarray:
     return _tablat_alkalmaz(rgb, _LINEAR_GAMMA_TABLE)
 
 
+def luma(rgb: np.ndarray) -> np.ndarray:
+    """A mért egész luma `(H, W)` uint8 síkja: `(77·R + 151·G + 28·B) >> 8`.
+
+    A számítás **végig egész**: a csatornánkénti szorzatokat egy uint16
+    kimenetű `cv2.LUT` adja, az összegzés uint16-ban megy (a legnagyobb
+    lehetséges összeg `65280`, tehát nem csordul túl), és a `>> 8` levágás
+    — nem kerekítés. Lebegőpontos úton (`cv2.addWeighted`, `cv2.transform`
+    float mátrixszal) a kerekítés miatt csatornánként ±1 eltérés keletkezne
+    az eredetitől.
+    """
+    sulyozott = cv2.LUT(rgb, _LUMA_TABLE)
+    osszeg = sulyozott[:, :, 0] + sulyozott[:, :, 1] + sulyozott[:, :, 2]
+    return (osszeg >> 8).astype(np.uint8)
+
+
+def apply_display_bw(rgb: np.ndarray) -> np.ndarray:
+    """Fekete-fehér MEGJELENÍTÉSI mód: a luma mindhárom csatornára (spec 5.7).
+
+    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**. A
+    bemenetet SOHA nem írjuk át helyben: a hívó (edit-előnézet)
+    gyorsítótárazott köztes eredményt ad át, és annak megmérgezése a mód
+    kikapcsolása után is szürkén hagyná a képet.
+
+    ⚠️ **Nem azonos a szerkesztő `bw` effektjével** (`render/color.py`):
+    az a mentett képre ír és a `filters=` láncba kerül, ez csak a
+    képernyőre hat. A képletük is különbözik, ld. a modul-docstringet.
+    """
+    if not _rgb_kep_e(rgb):
+        return rgb
+    if rgb.size == 0:
+        return rgb.copy()
+    szurke = luma(rgb)
+    return cv2.merge((szurke, szurke, szurke))
+
+
+def apply_display_sepia(rgb: np.ndarray) -> np.ndarray:
+    """Szépia MEGJELENÍTÉSI mód: a mért négylépéses műveletsor (spec 5.8).
+
+    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
+
+    Az 1. lépés a fekete-fehér móddal azonos luma, a 2–4. lépés pedig
+    `Y`-tól függ csak, ezért egyetlen előszámolt táblából (`_SEPIA_TABLE`)
+    olvasható ki. A lépéssort ld. a modul-docstringben: **a nevét
+    („overlay") nem valósítjuk meg, csak a mért műveleteket** — a szokásos
+    overlay `/255`-tel normalizál, a mért kód `>> 8`-cal.
+
+    ⚠️ **Nem azonos a szerkesztő `sepia` effektjével** (`render/color.py`):
+    az a mentett képre ír, ez csak a képernyőre hat.
+    """
+    if not _rgb_kep_e(rgb):
+        return rgb
+    return _tablat_alkalmaz(apply_display_bw(rgb), _SEPIA_TABLE)
+
+
 def apply_display_mode(rgb: np.ndarray | None, mode: str) -> np.ndarray | None:
     """A megjelenítési mód alkalmazása a MEGJELENÍTENDŐ képre.
 
@@ -275,4 +466,8 @@ def apply_display_mode(rgb: np.ndarray | None, mode: str) -> np.ndarray | None:
         return darken(rgb, multiplier)
     if mode == LINEAR_GAMMA_MODE:
         return apply_linear_gamma(rgb)
+    if mode == BW_MODE:
+        return apply_display_bw(rgb)
+    if mode == SEPIA_MODE:
+        return apply_display_sepia(rgb)
     return rgb

@@ -17,6 +17,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A Szépia és a Fekete-fehér megjelenítési mód nem csinált semmit
+  (#1657).** A `Nézet ▸ Megjelenítési mód` tizenegy tételéből eddig csak
+  négy hatott; a tulajdonos épp a leglátványosabbat, a **Szépiát**
+  próbálta ki, és a kép meg sem rezdült. A menü tehát olyat kínált, ami
+  nem működött — ezt korábban sehol nem mondtuk ki. Mostantól mindkét mód
+  valóban átszínezi a képet, **a nagy nézőben és a könyvtár rácsán
+  egyaránt**, ugyanazzal a számítással, amit az eredeti Picasa használ.
+
+  Fontos, hogy ez **csak a képernyőre hat**: a fényképeket a lemezen nem
+  írja át, és nem kerül bele a képek beállításai közé sem. Aki tartósan,
+  a mentett képen akar szépiát vagy fekete-fehéret, azt továbbra is a
+  szerkesztő azonos nevű effektjével teheti — a kettő szándékosan külön
+  dolog, és nem is egyforma az eredményük.
 - **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
   semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
   előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata
