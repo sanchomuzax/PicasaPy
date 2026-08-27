@@ -7,10 +7,11 @@ import QtQuick.Layouts
 // Nyomtatás…` (Ctrl+P) és a képtálca „Nyomtatás" gombja ezt nyitja.
 //
 // ⚠️ Ez NEM a Picasa teljes nyomtatási sablonrendszere (`print.fen` /
-// `reviewprint.fen`: kontaktlap, több kép egy oldalon, állítható margó).
-// A `print_controller.py` egy képet tesz egy oldalra — a párbeszéd
-// ennyit kínál, és nem ígér többet. A `Mappa ▸ Bélyegképek nyomtatása…`
-// ezért marad helyfoglaló: az kontaktlap, ami mögött nincs motor.
+// `reviewprint.fen`, a `ytPrintSizes` mind a 17 mérete, állítható margó).
+// KÉT elrendezést kínál: „képenként egy lap" és — #1590 óta — „indexkép"
+// (több bélyegkép egy lapon). Az eredetiben az indexkép sem külön ablak,
+// hanem NYOMTATÁSI MÉRET (`ytPrintSizes::eContact` = „Indexképek"), ezért
+// itt is elrendezés-választó, nem másik párbeszéd.
 //
 // A nyomtató-választó SAJÁT lista, nem a natív `QPrintDialog`: az app
 // `QGuiApplication`-t használ, a natív párbeszéd viszont `QWidget`-alapú,
@@ -66,6 +67,12 @@ Window {
     property string fitMode: "fit"          // PrintFitMode.FIT / .FILL
     property string orientation: "auto"     // PrintOrientation
 
+    // #1590: indexkép-elrendezés (több bélyegkép egy lapon). A rács
+    // oszlopszáma a felhasználóé — az eredeti nyomtatási előnézetéből ez
+    // nem volt kiolvasható, a `stringres`-ben sincs rá kulcs (DÖNTÉS).
+    property bool contactSheet: false
+    property int contactColumns: 4
+
     property string lastError: ""
     property string lastResult: ""
     // a feladatból kimaradt képek nevei (videó/RAW: a `QImage` nem nyitja
@@ -77,10 +84,21 @@ Window {
         && printWindow.rows.length > 0
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
 
+    // #1590: a `Mappa ▸ Bélyegképek nyomtatása…` belépési pontja —
+    // ugyanaz a párbeszéd, indexkép-elrendezésre állítva
+    function openForContactSheet(targetRows) {
+        printWindow.openForRows(targetRows)
+        printWindow.contactSheet = true
+    }
+
     function openForRows(targetRows) {
         printWindow.rows = targetRows ? targetRows : []
         printWindow.lastResult = ""
         printWindow.lastSkipped = []
+        // ⚠️ #1590: az elrendezés NEM élheti túl a bezárást. Ha az
+        // indexkép-mód megmaradna, a Ctrl+P legközelebb szó nélkül
+        // indexképet nyomtatna — a felhasználó meg képenként egy lapot vár.
+        printWindow.contactSheet = false
         // ⚠️ a célfájl NEM élheti túl a bezárást. Ha megmaradna, a
         // következő nyitáskor a gomb azonnal élő lenne, a `FileDialog` meg
         // sem nyílna — tehát a Qt felülírás-kérdése sem —, és az előző PDF
@@ -117,9 +135,21 @@ Window {
                 printWindow.lastError = qsTr("Choose the target file.")
                 return
             }
+            if (printWindow.contactSheet) {
+                printWindow.printCtl.renderContactSheetPdf(
+                    printWindow.rows, printWindow.contactColumns,
+                    printWindow.pdfTarget)
+                return
+            }
             printWindow.printCtl.renderPrintPreviewPdf(
                 printWindow.rows, printWindow.fitMode,
                 printWindow.orientation, printWindow.pdfTarget)
+            return
+        }
+        if (printWindow.contactSheet) {
+            printWindow.printCtl.printContactSheet(
+                printWindow.rows, printWindow.printerName,
+                printWindow.contactColumns)
             return
         }
         printWindow.printCtl.printRows(
@@ -150,10 +180,53 @@ Window {
         Text {
             objectName: "printSelectionText"
             Layout.fillWidth: true
-            text: qsTr("Pictures to print: %1 (one per page)")
-                  .arg(printWindow.rows.length)
+            text: printWindow.contactSheet
+                  ? qsTr("Pictures to print: %1 (contact sheet)")
+                        .arg(printWindow.rows.length)
+                  : qsTr("Pictures to print: %1 (one per page)")
+                        .arg(printWindow.rows.length)
             font.pixelSize: Theme.fontSize
             color: Theme.ink
+        }
+
+        // -- elrendezés (#1590) -------------------------------------------
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 2
+            Text {
+                text: qsTr("Layout:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            RowLayout {
+                spacing: 16
+                RadioButton {
+                    objectName: "printOnePerPageRadio"
+                    text: qsTr("One picture per page")
+                    checked: !printWindow.contactSheet
+                    onClicked: printWindow.contactSheet = false
+                }
+                RadioButton {
+                    objectName: "printContactSheetRadio"
+                    text: qsTr("Contact sheet")
+                    checked: printWindow.contactSheet
+                    onClicked: printWindow.contactSheet = true
+                }
+                Text {
+                    visible: printWindow.contactSheet
+                    text: qsTr("Columns:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                SpinBox {
+                    objectName: "printContactColumnsBox"
+                    visible: printWindow.contactSheet
+                    from: 1
+                    to: 10
+                    value: printWindow.contactColumns
+                    onValueModified: printWindow.contactColumns = value
+                }
+            }
         }
 
         // -- nyomtató (vagy PDF-fájl) ------------------------------------
@@ -197,8 +270,12 @@ Window {
         }
 
         // -- illesztés ----------------------------------------------------
+        // #1590: az indexképnél nincs értelme — ott MINDIG a teljes kép
+        // látszik a cellában (ez az indexkép lényege), és a tájolást sem a
+        // képek szabják meg, mert egy lapon sok kép van
         ColumnLayout {
             Layout.fillWidth: true
+            visible: !printWindow.contactSheet
             spacing: 2
             Text {
                 text: qsTr("Fit to page:")
@@ -225,6 +302,7 @@ Window {
         // -- tájolás ------------------------------------------------------
         ColumnLayout {
             Layout.fillWidth: true
+            visible: !printWindow.contactSheet
             spacing: 2
             Text {
                 text: qsTr("Orientation:")

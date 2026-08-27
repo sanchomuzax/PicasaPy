@@ -5,6 +5,36 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Hozzáadva
+- **Megtekintés a Google Earth programban… (#1589).** Az `Eszközök ▸
+  Geocímke` almenü új tétele: ugyanazt a Google Earth-fájlt írja ki, mint
+  az `Exportálás Google Earth-fájlba`, de utána **meg is nyitja** a
+  rendszer társított programjával. Az eredeti Picasában is két külön
+  menüpont volt erre a kettőre. Ha a gépen nincs mivel megnyitni a fájlt,
+  a program **megmondja**, hova került — nem marad néma.
+
+- **Indexképek nyomtatása (#1590).** A `Mappa ▸ Indexképek nyomtatása…`
+  (`Ctrl+Shift+P`) eddig szürke, kattinthatatlan menüpont volt. Mostantól
+  működik: több bélyegképet tesz **egy lapra**, fejlécében a mappa nevével
+  és dátumával, ahogy az eredeti Picasa nyomtatója. Az oszlopszám a
+  nyomtatás párbeszédében állítható; kijelölés nélkül a **megnyitott mappa
+  egésze** kerül a lapokra, kijelöléssel csak a kijelöltek.
+
+### Javítva
+- **A Google Earth-export eddig sosem működött a futó programban (#1589).**
+  Két, egymástól független hiba volt benne, és egyik sem látszott a
+  tesztekben. Egyrészt a program a saját geocímkéit (amiket a Helyek-panelen
+  vagy a térképre kattintva ad a képeknek) **nem vette figyelembe** — csak
+  a fényképezőgép rögzítette GPS-adatot —, ezért a legtöbb felhasználónak
+  „egyetlen képnek sincs helye" üzenet jött. Másrészt az export a
+  háttérben azonnal elhasalt, mielőtt bármit kiírt volna, így a
+  menüpontra kattintva **soha nem készült fájl**. Mindkettő javítva.
+
+- **Kijelölés nélkül a Google Earth-menüpontok némán nem csináltak
+  semmit.** Most kimondják, hogy nincs mit exportálni.
+
 ## [0.8.120] – 2026-08-27
 
 ### Hozzáadva

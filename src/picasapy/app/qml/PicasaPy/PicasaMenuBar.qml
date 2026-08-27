@@ -85,10 +85,18 @@ MenuBar {
     // ugyanúgy, mint az exportnál; a képtálca „Nyomtatás" gombja
     // (TrayBar.printRequested) ugyanoda vezet
     signal printRequested()
+    // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P) —
+    // `eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET`. Ugyanaz a
+    // nyomtatás-párbeszéd nyílik, indexkép-elrendezésre állítva.
+    signal printContactSheetRequested()
     // #351: Mappa → Exportálás weboldalként… (webexport.fen)
     signal webExportRequested()
     // #530: Google Earth-export a kijelölt (geocímkézett) képekből
     signal earthExportRequested()
+    // #1589: `ID_VIEW_EARTH` — ugyanaz a KML, de utána MEG IS NYITJA a
+    // rendszer társított programjával. Az eredetiben KÉT külön menütétel
+    // van; a párbeszédet itt is a hívó (Main.qml) nyitja.
+    signal earthViewRequested()
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
@@ -192,6 +200,17 @@ MenuBar {
         sequence: "Ctrl+P"
         enabled: bar.photoActionsEnabled
         onActivated: bar.printRequested()
+    }
+    // #1590: a Mappa-menü felirata Ctrl+Shift+P-t hirdet
+    // (`docs/specs/picasa-gyorsbillentyuk.md` 25. sora is ezt mondja) —
+    // ne maradjon puszta felirat, ahogy a Ctrl+P is az volt a #1472-ig.
+    // ⚠️ A menütételtől ELTÉRŐEN itt VAN feltétel: a gyorsbillentyűnek
+    // nincs hova visszajeleznie, ha nincs mit nyomtatni.
+    Shortcut {
+        objectName: "shortcutPrintContactSheet"
+        sequence: "Ctrl+Shift+P"
+        enabled: bar.photoActionsEnabled
+        onActivated: bar.printContactSheetRequested()
     }
 
     Menu {
@@ -874,13 +893,18 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Show"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit)
-        // #1472: SZÁNDÉKOSAN marad helyfoglaló. Ez KONTAKTLAP (több
-        // bélyegkép EGY oldalon), a `print_controller.py` viszont egy
-        // képet tesz egy oldalra — mögötte nincs motor. Élővé téve a
-        // felhasználó képenként egy teli lapot kapna, ami rosszabb a
-        // szürke tételnél. A kontaktlap külön jegy (`print.fen` /
-        // `reviewprint.fen` sablonrendszer).
-        PicasaMenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; placeholder: true }
+        // #1590: ÉLŐ tétel. A #1472 még szándékosan hagyta helyfoglalónak,
+        // mert a `print_controller.py` egy képet tett egy oldalra; a
+        // #1590-ben megépült az indexkép-rajzoló (`printing/contact_sheet.py`
+        // + `PrintController.printContactSheet`), tehát a tétel mögött MOST
+        // MÁR van motor. A rácsot a kollázs indexkép-elrendezése adja, a
+        // fejlécet viszont az eredeti NYOMTATÓJA („Album:" / „Dátum:") —
+        // a kettő az eredetiben sem azonos.
+        MenuItem {
+            objectName: "menuFolderPrintContactSheet"
+            text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"
+            onTriggered: bar.printContactSheetRequested()
+        }
         MenuItem {
             objectName: "menuFolderWebExport"
             text: qsTr("Export as HTML Page...")
@@ -1070,6 +1094,23 @@ MenuBar {
                 objectName: "menuToolsExportEarth"
                 text: qsTr("Export to Google Earth File")
                 onTriggered: bar.earthExportRequested()
+            }
+            // #1589: `eMenuTools::ID_VIEW_EARTH` = „View in Google Earth..."
+            // / „Megtekintés a Google Earth programban...". Az export
+            // MELLETT áll, mert az eredetiben is két külön tétel ez a
+            // kettő: az egyik csak kiírja a fájlt, ez kiírja ÉS megnyitja.
+            //
+            // ⚠️ MÉRVE, hogy a tétel NEM szürkül el geocímke híján. Az
+            // eredeti ilyenkor BESZÉL, nem tilt: `PublishToEarth::NoTagged`
+            // („Nincsenek exportálható geocímkézett képek") és
+            // `PublishToEarth::Tag` („Nem minden kijelölt elem tartalmaz
+            // geocímke jellegű információt… Megcímkézi most a képeket?").
+            // Ez egybevág a #1473 döntésével: egy szürke menüpont nem tudja
+            // megmagyarázni magát.
+            MenuItem {
+                objectName: "menuToolsViewEarth"
+                text: qsTr("View in Google Earth...")
+                onTriggered: bar.earthViewRequested()
             }
         }
         Menu {

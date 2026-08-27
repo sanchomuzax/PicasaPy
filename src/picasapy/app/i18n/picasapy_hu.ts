@@ -176,6 +176,18 @@
         <source>None of the selected pictures could be printed: %1</source>
         <translation>A kijelölt képek közül egyet sem lehetett kinyomtatni: %1</translation>
     </message>
+    <message>
+        <source>Album:</source>
+        <translation>Album:</translation>
+    </message>
+    <message>
+        <source>Date:</source>
+        <translation>Dátum:</translation>
+    </message>
+    <message>
+        <source>Unnamed Album</source>
+        <translation>Név nélküli album</translation>
+    </message>
 </context>
 <context>
     <name>PrintDialog</name>
@@ -202,6 +214,26 @@
     <message>
         <source>Pictures to print: %1 (one per page)</source>
         <translation>Nyomtatandó képek: %1 (oldalanként egy)</translation>
+    </message>
+    <message>
+        <source>Pictures to print: %1 (contact sheet)</source>
+        <translation>Nyomtatandó képek: %1 (indexkép)</translation>
+    </message>
+    <message>
+        <source>Layout:</source>
+        <translation>Elrendezés:</translation>
+    </message>
+    <message>
+        <source>One picture per page</source>
+        <translation>Képenként egy lap</translation>
+    </message>
+    <message>
+        <source>Contact sheet</source>
+        <translation>Indexképek</translation>
+    </message>
+    <message>
+        <source>Columns:</source>
+        <translation>Oszlopok:</translation>
     </message>
     <message>
         <source>Printer:</source>
@@ -2537,6 +2569,18 @@
         <translation>Hiba</translation>
     </message>
     <message>
+        <source>View in Google Earth...</source>
+        <translation>Megtekintés a Google Earth programban…</translation>
+    </message>
+    <message>
+        <source>No geotagged images to export.</source>
+        <translation>Nincsenek exportálható geocímkézett képek</translation>
+    </message>
+    <message>
+        <source>The Google Earth file was written to %1, but this computer has no program associated with it.</source>
+        <translation>A Google Earth-fájl elkészült (%1), de ezen a gépen nincs hozzá társítva program.</translation>
+    </message>
+    <message>
         <source>Export movies using:</source>
         <translation>Filmek exportálása:</translation>
     </message>
@@ -4173,6 +4217,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <source>Export to Google Earth File</source>
         <translation>Exportálás Google Earth-fájlba</translation>
+    </message>
+    <message>
+        <source>View in Google Earth...</source>
+        <translation>Megtekintés a Google Earth programban…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>

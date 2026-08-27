@@ -1,0 +1,254 @@
+"""A „Megtekintés a Google Earth programban…" útja VÉGIG: menüpont →
+célmappa → vezérlő → LEMEZRE ÍRT KML → a társított program indítása (#1589).
+
+## A lelet
+
+A KML-előállítás kész volt (`export/earth.py:67`, `export/kml.py:157`), és
+az `Exportálás Google Earth-fájlba` menüpont is élt — a **második**
+menütétel viszont hiányzott. Az eredetiben `eMenuTools` névtérben KÉT
+Google Earth-tétel van: az `ID_EXPORT_EARTH` **csak kiírja** a fájlt, az
+`ID_VIEW_EARTH` kiírja **és megnyitja**.
+
+## Miért ilyen ez a teszt
+
+A vezérlő metódusait közvetlenül hívni itt semmit nem érne: a hibaosztály
+pontosan az, hogy a kész motorhoz nem vezet felületi út (#1472/#1476).
+Ezért a VALÓDI menütételt aktiválja, a VALÓDI célmappa-párbeszédet fogadja
+el, és a végén a **lemezre írt** `doc.kml`-t méri.
+
+## A külső program
+
+A megnyitást a termék modulszintű `_open_url` fogantyúja végzi
+(`export_controller.py`). A teszt EZT cseréli ki — a `QDesktopServices`
+globális osztályát átírni tilos (#1375), és egy elszabadult teszt valódi
+Google Earth-öt indítana a fejlesztő gépén.
+"""
+
+from __future__ import annotations
+
+import time
+from pathlib import Path
+
+import pytest
+from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+
+import picasapy.app.export_controller as export_controller
+
+
+def _elem(root, nev):
+    obj = root.findChild(QObject, nev)
+    assert obj is not None, f"{nev} nem található"
+    return obj
+
+
+def _kijelol(window, qt_app, sorok):
+    window.setProperty("selectedIndexes", list(sorok))
+    window.setProperty("selectedIndex", sorok[0] if sorok else -1)
+    qt_app.processEvents()
+
+
+def _var(qt_app, feltetel, masodperc=20.0, uzenet="időtúllépés"):
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if feltetel():
+            return
+        time.sleep(0.01)
+    qt_app.processEvents()
+    assert feltetel(), uzenet
+
+
+def _menubol_nyit(window, qt_app, nev="menuToolsViewEarth"):
+    """A VALÓDI menütétel aktiválása — előbb megkövetelve, hogy a
+    felhasználó egyáltalán rá tudjon kattintani."""
+    tetel = _elem(window, nev)
+    assert tetel.property("enabled") is True, (
+        f"a(z) {nev} menüpont le van tiltva — a felhasználó nem éri el"
+    )
+    assert not tetel.property("placeholder"), (
+        f"a(z) {nev} menüpont helyfoglaló (#416), tehát halott"
+    )
+    QMetaObject.invokeMethod(tetel, "triggered", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
+    return _elem(window, "earthTargetDialog")
+
+
+def _celmappat_valaszt(parbeszed, qt_app, mappa: Path):
+    """A célmappa-párbeszéd elfogadása — a felhasználó „Kiválaszt" gombja."""
+    mappa.mkdir(parents=True, exist_ok=True)
+    parbeszed.setProperty("selectedFolder", QUrl.fromLocalFile(str(mappa)))
+    QMetaObject.invokeMethod(
+        parbeszed, "accepted", Qt.ConnectionType.DirectConnection
+    )
+    parbeszed.setProperty("visible", False)
+    qt_app.processEvents()
+
+
+@pytest.fixture
+def megnyitasok(monkeypatch):
+    """A társított program indításának fogantyúja — nem indul semmi."""
+    hivasok: list[str] = []
+
+    def hamis_open_url(url):
+        hivasok.append(url.toLocalFile())
+        return True
+
+    monkeypatch.setattr(export_controller, "_open_url", hamis_open_url)
+    return hivasok
+
+
+def _geocimkez(controller, qt_app, sorok, szelesseg=47.4979, hosszusag=19.0402):
+    """A kijelölés geocímkézése a TERMÉK útján (`.picasa.ini` `geotag=`)."""
+    controller.setGeotagRows(list(sorok), szelesseg, hosszusag)
+    qt_app.processEvents()
+    _var(
+        qt_app,
+        lambda: controller.photos.photos[sorok[0]].location is not None,
+        uzenet="a geocímke nem került a képre",
+    )
+
+
+class TestBelepesiPont:
+    def test_a_menupont_megnyitja_a_celmappa_valasztot(self, qml_app, qt_app):
+        window, controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+
+        parbeszed = _menubol_nyit(window, qt_app)
+
+        assert parbeszed.property("visible") is True
+        assert parbeszed.property("viewAfter") is True, (
+            "a Megtekintés… ág az EXPORT útjára tévedt"
+        )
+        parbeszed.setProperty("visible", False)
+        qt_app.processEvents()
+
+    def test_az_export_tetel_ugyanezt_a_valasztot_MEGNYITAS_NELKUL_nyitja(
+        self, qml_app, qt_app
+    ):
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0])
+
+        parbeszed = _menubol_nyit(window, qt_app, "menuToolsExportEarth")
+
+        assert parbeszed.property("viewAfter") is False
+        parbeszed.setProperty("visible", False)
+        qt_app.processEvents()
+
+
+class TestKimenet:
+    """A lánc utolsó szeme: a menüpont LEMEZRE ÍRT fájlt ad, és megnyitja."""
+
+    def test_a_menupont_kiirja_a_doc_kml_t_es_MEGNYITJA(
+        self, qml_app, qt_app, tmp_path, megnyitasok
+    ):
+        window, controller, _engine = qml_app
+        _geocimkez(controller, qt_app, [0])
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "earth-megtekintes"
+
+        _celmappat_valaszt(parbeszed, qt_app, cel)
+
+        kml = cel / "doc.kml"
+        _var(qt_app, kml.exists, uzenet="a menüpont NEM írt KML-t a lemezre")
+        szoveg = kml.read_text(encoding="utf-8")
+        # a kiírt KML valóban a geocímkézett képet hordozza
+        assert "<Placemark" in szoveg
+        assert "19.0402" in szoveg, szoveg[:400]
+
+        _var(
+            qt_app,
+            lambda: bool(megnyitasok),
+            uzenet="a KML elkészült, de a program NEM nyitotta meg",
+        )
+        assert megnyitasok == [str(kml)]
+
+    def test_az_EXPORT_tetel_ugyanazt_irja_ki_de_NEM_nyitja_meg(
+        self, qml_app, qt_app, tmp_path, megnyitasok
+    ):
+        """A két tétel különbsége MÉRVE: ugyanaz a fájl, más folytatás."""
+        window, controller, _engine = qml_app
+        _geocimkez(controller, qt_app, [0])
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app, "menuToolsExportEarth")
+        cel = tmp_path / "earth-export"
+
+        _celmappat_valaszt(parbeszed, qt_app, cel)
+
+        _var(
+            qt_app,
+            (cel / "doc.kml").exists,
+            uzenet="az export menüpont NEM írt KML-t",
+        )
+        # …és az exportálás után SEMMIT nem indít el
+        qt_app.processEvents()
+        assert megnyitasok == [], "az Exportálás… megnyitotta a fájlt"
+
+
+class TestNemaElutasitasNincs:
+    """A projekt visszatérő hibaosztálya: a felület elfogadja a parancsot,
+    aztán némán nem történik semmi."""
+
+    def test_kijeloles_nelkul_a_menupont_MEGSZOLAL(self, qml_app, qt_app):
+        """Az eredeti sem tilt, hanem beszél (`PublishToEarth::NoTagged`)."""
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [])
+
+        tetel = _elem(window, "menuToolsViewEarth")
+        assert tetel.property("enabled") is True
+        QMetaObject.invokeMethod(
+            tetel, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        szoveg = _elem(window, "earthResultText")
+        assert "No geotagged images to export." in str(szoveg.property("text")), (
+            "kijelölés nélkül a menüpont némán nem csinált semmit"
+        )
+
+    def test_geocimke_nelkuli_kijelolesnel_MEGSZOLAL(
+        self, qml_app, qt_app, tmp_path, megnyitasok
+    ):
+        window, _controller, _engine = qml_app
+        _kijelol(window, qt_app, [0, 1])
+        parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "nincs-geo"
+
+        _celmappat_valaszt(parbeszed, qt_app, cel)
+
+        szoveg = _elem(window, "earthResultText")
+        _var(
+            qt_app,
+            lambda: "No geotagged images to export."
+            in str(szoveg.property("text")),
+            uzenet="geocímke nélkül a menüpont némán nem csinált semmit",
+        )
+        assert not (cel / "doc.kml").exists()
+        assert megnyitasok == []
+
+    def test_ha_nincs_tarsitott_program_a_felulet_KIMONDJA(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
+        """A `QDesktopServices.openUrl` hamisat ad, ha nincs mivel megnyitni
+        a fájlt. A felhasználónak ilyenkor is tudnia kell, hogy a fájl KÉSZ."""
+        window, controller, _engine = qml_app
+        monkeypatch.setattr(export_controller, "_open_url", lambda url: False)
+        _geocimkez(controller, qt_app, [0])
+        _kijelol(window, qt_app, [0])
+        parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "nincs-program"
+
+        _celmappat_valaszt(parbeszed, qt_app, cel)
+
+        szoveg = _elem(window, "earthResultText")
+        _var(
+            qt_app,
+            lambda: "no program associated" in str(szoveg.property("text")),
+            uzenet=(
+                "nem volt mivel megnyitni a KML-t, és a felület NEM szólt róla"
+            ),
+        )
+        assert (cel / "doc.kml").exists(), "a fájlnak akkor is el kell készülnie"
+        assert str(cel / "doc.kml") in str(szoveg.property("text")), (
+            "az üzenet nem mondja meg, hova került a fájl"
+        )
