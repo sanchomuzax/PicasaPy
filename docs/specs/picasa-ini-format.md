@@ -1907,3 +1907,71 @@ egyező valódi adat + a `GetFileTime` hívás a modulban); a `flags = 3`
 **megerősített** (diszasszemblálva). **Nem találtam meg** magát az
 összehasonlító utasítást — az `inisync` ↔ aktuális fájlidő vetést a
 mérésből és a modulból következtetem, nem közvetlen kódolvasásból.*
+
+---
+
+## A „Másolat mentése” NEM ír a `.picasa.ini`-be — MÉRVE (2026-08-27)
+
+A #1527 a binárisból mindent kimért, amit lehetett, egy kérdés kivételével:
+**mely kulcsok kerülnek a másolat `.picasa.ini`-jébe.** A #1527 erre
+**döntést** hozott (nem mérést): `redo=` + `originhash` igen, `filters=` nem.
+
+**A döntés MEGDŐLT.** A valódi Picasa 3.9 **semmit nem ír.**
+
+### A mérés
+
+Mérőanyag: `research/testdata/1557-masolat-mentese/`, a tulajdonos windowsos
+Picasa 3.9-éből, két lépésben rögzítve.
+
+| idő | esemény | `.picasa.ini` |
+|---|---|---|
+| 19:30 | „Másolat mentése” **szerkesztetlen** képről → `…-001.jpg` | **nem jött létre** |
+| 19:33 | auto kontraszt effekt a FORRÁSRA | **ekkor keletkezett** (65 bájt) |
+| 19:35 | „Másolat mentése” **szerkesztett** képről → `…-002.jpg` | **változatlan** (65 bájt, 19:33-as időbélyeg) |
+
+A fájl teljes tartalma a művelet UTÁN is:
+
+```ini
+[chart_color__b050.jpg]
+filters=autolight=1;
+backuphash=58355
+```
+
+Vagyis: **a másolat egyik esetben sem kapott saját szakaszt**, és a forrás
+szakasza sem változott.
+
+### Hogy a második másolat tényleg szerkesztett volt — bizonyítva
+
+Képponti összevetés a forráshoz képest:
+
+| fájl | átlagos eltérés | eltérő képpont | értelmezés |
+|---|---|---|---|
+| `…-001.jpg` | 0,08 | 7,3 % | **újrakódolási zaj** — nem volt szerkesztés |
+| `…-002.jpg` | **5,21** | **99,9 %** | **az `autolight` beleégett** |
+
+Tehát a döntő eset (szerkesztett kép másolása) valóban lefutott, és az ini
+**akkor sem** változott.
+
+### Két további megerősítés ugyanebből a mintából
+
+1. **A névképzés helyes:** `chart_color__b050.jpg` → `-001` → `-002`, a
+   `%s-%03lu` minta szerint.
+2. **A forrás érintetlen marad:** a forrásfájlban EXIF sincs, Picasa-jelölés
+   sincs — a #1527 döntésének ez a fele **áll**.
+
+### Amit a másolat MÉGIS kap — de a képfájlban, nem az ini-ben
+
+`Software='Picasa'`, `Artist='Picasa'`, `DateTime=<a másolás ideje>`, továbbá
+XMP (`dc:creator='Picasa'`, `xmp:ModifyDate`, és `exif:DateTimeOriginal` =
+**a forrás eredeti dátuma**) és egy `Photoshop 3.0 8BIM` blokk. Nálunk egyik
+sincs → **#1642**.
+
+### Nálunk (mérve)
+
+`src/picasapy/edit/save_copy.py` a #1527 döntése szerint **`redo=` +
+`originhash`-t ír** a cél `.picasa.ini`-jébe (`:94-96`, `:133`). Ez a mérés
+szerint **több, mint amit az eredeti csinál** — és a kétirányú
+ini-kompatibilitás a projekt magígérete, tehát ez valódi eltérés. → **#1643**
+
+*Bizonyítottsági fok: **megerősített** — valódi Picasa 3.9 kimenetén mérve,
+a fájlok a repóban vannak.*

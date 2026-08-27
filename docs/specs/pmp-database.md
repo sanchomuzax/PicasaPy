@@ -1015,3 +1015,73 @@ Három fájl, amit korábbi körök nem dokumentáltak:
 
 A két fájl **egyszerre** van jelen a valódi adatmappában. A
 `pmpimport/importer.py:94` mégis aliasként kezeli őket — jegy: **#1489**.
+
+---
+
+## Új oszlop: `albumdata_unread` — és valószínűleg ez a KÖVÉR mappanév (2026-08-27)
+
+A tulajdonos élő megfigyelése indította: *„amikor létrejött egy új kép, a
+másolat, és a Picasa észrevette és importálta, a mappa neve a bal sávban
+kövér (bold) szövegű lett."*
+
+### A mező
+
+| tulajdonság | érték |
+|---|---|
+| fájl | `albumdata_unread.pmp` |
+| PMP-típuskód | **`0x03`** (1 bájt/rekord — a már ismert bájt-típus, ld. `albumdata_hascollage`) |
+| rekordszám | 2366 (a tulajdonos valódi adatában) |
+| értékkészlet | **logikai**: 2036 × `0`, **330 × `1`** |
+| regisztráció | `0x00415790` — a db3 séma-felsoroló, ahol a `token`, `filename`, `category`, `description`, `location`, `hascollage`, `inisync` oszlopok is állnak |
+
+**Ez a mező eddig NEM szerepelt a leltárunkban.**
+
+### Az értelmezés
+
+Az „unread" (olvasatlan) per-album logikai jelölő. A tulajdonos megfigyelése
+szerint a mappa neve pontosan akkor lett kövér, amikor a Picasa **új képet
+vett észre és importált** a mappába — vagyis a jelölő „ebben a mappában
+olyasmi van, amit még nem néztél meg" jelentésű, és a bal hasáb **kövér
+szedéssel** jeleníti meg.
+
+Hogy a mennyiség is stimmel: 330 megjelölt album 2366-ból — ez reális arány
+egy élő gyűjteményben, ahol a felhasználó nem nézett meg mindent.
+
+*Bizonyítottsági fok: **megerősített** a mező léte, típusa, értékkészlete és
+db3-beli regisztrációja. **Erős, de nem megerősített** az összekötés a kövér
+szedéssel: a tulajdonos élő megfigyelése és a mező neve támasztja alá, de a
+megjelenítő oldalt (melyik rajzoló olvassa) nem mértem. A `Praxis Semi
+Bold/Heavy` betűkészlet több UI-függvényben jelen van (`0x0072efa0`,
+`0x007ce960` és mások), de nincs bizonyítva, hogy EZ olvassa az `unread`-et.*
+
+---
+
+## A KÉZI (fogd-és-vidd) sorrend NEM a `.picasa.ini`-ben van — hol van?
+
+A tulajdonos élő megfigyelése: *„amennyiben az indexképek sorrendjét
+állítom, fogd és vidd egérrel, abban az esetben a Picasa ini nem változik, de
+a megváltoztatott sorrend megmarad."*
+
+### Amit KIZÁRTAM — mindegyik mért negatív eredmény
+
+| hipotézis | mi döntötte el |
+|---|---|
+| a `.picasa.ini`-ben van | **a tulajdonos élő mérése**: a fájl nem változik |
+| `Preferences\…` registry-kulcsban van | a `string_xrefs`-ben **nincs** rendezésre utaló `Preferences` kulcs — és ez érvényes negatívum, mert az **ellenpróba működik**: nyolc másik `Preferences\…` kulcsot (`HotFolders`, `Plugins\`, `RSSDownload`, `Buttons\Exclude`, `Buttons\UserConfig`, `AspectRatios`, `PrinterData`) a lekérdezés megtalál |
+| külön PMP-oszlopban van | a valódi `Picasa2/db3/` **55 PMP-fájlja** végignézve — nincs `sort`/`order`/`position`/`rank` nevű oszlop |
+
+### Ami MARAD
+
+A sorrendnek a **db3-ban** kell lennie, PMP-oszlopon kívül. A legvalószínűbb
+hordozó az **`albums.db`** (a `0x00415790`-ben a PMP-oszlopok mellett
+regisztrált külön adatbázisfájl), ahol a sorrend **implicit** lehet: az album
+tagsági listájának rekord-sorrendje. Másodlagos jelölt a `thumbindex.db`
+(`0x004f2d90`, `0x004f46b0`, `0x004f54b0`).
+
+**A következő konkrét lépés** (nem drága): a tulajdonos készít másolatot a
+`db3` mappáról a sorrend átrendezése ELŐTT és UTÁN; a két állapot bináris
+összevetése megmutatja, melyik fájl és melyik bájttartomány változott. Ez
+eldönti a kérdést dekompiláció nélkül.
+
+*Bizonyítottsági fok: **megerősített** a három kizárás; **feltételes** az
+`albums.db` mint hordozó — jelöltként megnevezve, nem bizonyítva.*
