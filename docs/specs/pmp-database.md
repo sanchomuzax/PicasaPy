@@ -1222,3 +1222,41 @@ egyezésének elve a szó szerinti hibák átvételére nem terjed ki.
 (`stringres-en-hu.tsv`). **Feltételes** a `starlist.txt`/`saverlist.txt`
 irányának „csak író" jellege: olvasót nem találtam hozzájuk, de a negatív
 eredményt nem ellenőriztem második lekérdezési alakkal.*
+
+### A leltár utolsó négy fehér foltja — lezárva (2026-08-27)
+
+A körben átadott 86 fájlból négyről nem volt egy szó sem a specekben:
+
+| fájl | mi ez | bizonyíték |
+|---|---|---|
+| `albumdata_<fiók>_lh.pmp` | az album **online azonosítója** fiókonként. Az `lh` = **Lighthouse**, a Google online fotószolgáltatásának belső neve (`lighthouse://`, `lighthouse://album/%s`, `UploadToLighthouse::YesButton/CancelButton/DontWarn/NonJpegs`) | típus `0x04` (u64), 105 rekord |
+| `imagedata_<fiók>_lhlist.pmp` | képenként az online albumok listája, ahova fel lett töltve | típus `0x00` (sztring), 2612 rekord |
+| `facetemplatesV2_0.db` + `_index.db` | arcfelismerési sablonok gyorsítótára, **második formátumverzió** | a `0x004887c0` még a V1 neveket ismeri (`facetemplates_0.db`, `facetemplates_index.db`), a séma-regisztráló (`0x00415790`) már a `facetemplatesV2.db`-t — tehát **volt formátumváltás** |
+
+⚠️ **A két `_lh` oszlop neve FIÓKFÜGGŐ**: a Google-fiók nevét tartalmazza
+(`albumdata_<fiók>_lh`). Egy beolvasó nem keresheti fix néven — mintára kell
+illesztenie (`albumdata_*_lh`, `imagedata_*_lhlist`).
+
+Ezzel a **86-ból 86** fájl azonosítva van abban az értelemben, hogy tudjuk,
+MI az. Az életciklusuk viszont nem egyformán feltárt — ld. a következő szakaszt.
+
+### ⛔ AMI MÉG NINCS FELTÁRVA: a gyorsítótárak írási útja
+
+A fenti életciklus-táblázat a **perzisztált** adatra érvényes (PMP-oszlopok,
+szöveges listák): ezeket a kiíró `0x0041ba40` írja a `#tmp\`-n át, és a
+betöltő `0x0041ee10` olvassa.
+
+**A gyorsítótárakra ez NEM igaz**, és az ő írási útjuk nincs megmérve:
+
+| fájl | mit tudunk | mit NEM |
+|---|---|---|
+| `thumbs_0.db` + `_index.db` | indexkép-gyorsítótár, `0x3FCCCCCD` magic, 20+12 elrendezés | ki írja, mikor, mi váltja ki az újragenerálást |
+| `thumbs2_0.db` + `_index.db` | ua., második méret | ua. |
+| `bigthumbs_0.db` + `_index.db` | ua., nagy méret | ua. |
+| `previews_0.db` + `_index.db` | előnézetek (18,6 MB — a legnagyobb) | ua. |
+| `albums_0.db` + `_index.db` | album-indexképek | ua. |
+| `facetemplatesV2_0.db` + `_index.db` | arcsablonok | ua. |
+| `profilephotos_0.db` | profilképek (4 bájt = üres) | ua. |
+| `thumbindex.db` | **név**-katalógus (`0x40466666` magic), névsorrendben | ki írja és mikor |
+
+Ez **nyitott kérdés**, jegyben: **#1650**.
