@@ -8,25 +8,38 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.124] – 2026-08-27
 
 ### Javítva
-- **Gyorsabb indulás nagy gyűjteménynél (#1601).** A tulajdonos azt
-  jelentette, hogy a program „egyre lassabban" indul. Megmértük: az
-  induláskor a bal hasáb két listája — az **Emberek** és a **Projektek** —
-  végigolvasta a könyvtár **összes** `.picasa.ini` fájlját, egymástól
-  függetlenül, tehát mindent kétszer, ráadásul a felület szálán. Ez a
-  munka a mappák számával nőtt (5 000 mappánál 5,3 másodperc, az összes
-  induláskori munka 94%-a), és a mappák száma soha nem csökken — innen
-  jött az „egyre lassabb". Mostantól a két lista **egyetlen** olvasásból
-  áll elő, és az olvasás a **háttérben** fut: az ablak nem áll meg tőle.
-  Mérve, 1 000 mappás gyűjteményen: a betöltésre várakozás 751 → 343 ms.
-  A két lista tartalma változatlan, csak egy pillanattal később jelenik
-  meg — ugyanúgy, ahogy egy frissen felvett mappánál is.
+- **ADATVESZTÉS: album-nézetben a `Delete` billentyű a lemezről törölt
+  (#1608).** Ha egy albumot nézve kijelölt egy képet és megnyomta a
+  `Delete`-et, a program a **fájlt tette a Lomtárba** — pedig az eredeti
+  Picasa ilyenkor csak az albumból veszi ki a képet, a fájl a lemezen
+  marad. Mostantól a `Delete` azt csinálja, amit a nézet kíván: mappában
+  továbbra is lemezről töröl, albumban „Eltávolítás az albumból",
+  Emberek-albumban „Eltávolítás az Emberek albumból". A `Fájl` menü
+  tételének **felirata is együtt vált a nézettel**, hogy előre látszódjon,
+  mi fog történni.
 
-### Hozzáadva
-- **Indulási időmérés a hibakereséshez (#1601).** A
-  `PICASAPY_STARTUP_TIMELINE=1` beállítással a program indulás után egy
-  egyszerű, **átküldhető szöveges kimutatást** ír arról, melyik lépés
-  mennyi ideig tartott. Alapból ki van kapcsolva, és kikapcsolva nem
-  kerül semmibe. A kimutatás nem tartalmaz fájlneveket és útvonalakat.
+- **ADATVESZTÉS: a rács `Ctrl+Delete` billentyűje album-nézetben is a
+  lemezről törölt (#1619).** Ugyanaz a hiba, mint a #1608-ban, csak a
+  másik billentyűn: a bélyegkép-rácsban a `Ctrl+Delete` **nem nézte meg,
+  mit mutat éppen a rács**, és album- vagy Emberek-album-nézetben is a
+  Lomtárba tette a fájlt. Mostantól ez a billentyű is azt teszi, amit a
+  nézet kíván — mappában törli a lemezről, albumban csak az albumból
+  veszi ki, Emberek-albumban csak az arc-címkét szedi le.
+
+- **A jobbklikk-menü album-nézetben is „Törlés lemezről"-t kínált
+  (#1619).** Egy albumot vagy egy személy albumát nézve a képre
+  jobbklikkelve **két** hasonló tétel jelent meg: az „Eltávolítás az
+  albumból" mellett egy „Törlés lemezről / `Ctrl+Delete`" is. Az eredeti
+  Picasa ezekben a nézetekben **egyetlen** tételt ad, ugyanazzal a
+  `Ctrl+Delete` billentyűvel, csak a nézethez illő felirattal. Nálunk is
+  így lett: album- és Emberek-nézetben eltűnt a „Törlés lemezről", és a
+  `Ctrl+Delete` az eltávolító tételre került.
+
+- **Az Emberek-album helyi menüjének tételei nem jelentek meg (#1608).**
+  Egy személy albumára váltva a jobbklikk-menü „Eltávolítás az Emberek
+  albumból" és „Hozzáadás az Emberek albumhoz" tétele **rejtve maradt**,
+  amíg egy háttéri frissítés véletlenül elő nem hozta. A program most
+  azonnal észreveszi a nézetváltást.
 
 ## [0.8.122] – 2026-08-27
 
