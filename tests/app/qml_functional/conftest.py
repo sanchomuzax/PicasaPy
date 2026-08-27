@@ -61,7 +61,14 @@ def _module_user_folder_guard():
     yield from user_folder_guard()
 
 
-def _build_qml_app(qt_app, tmp_path):
+def _build_qml_app(
+    qt_app,
+    tmp_path,
+    *,
+    kepeket_keszit=None,
+    belyegkep_meret: int = 32,
+    valodi_belyegkep: bool = False,
+):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
     A fixture-wrapper dönti el a teszt- vagy modulszintű életciklust; az
@@ -90,8 +97,14 @@ def _build_qml_app(qt_app, tmp_path):
 
     lib = tmp_path / "kepek"
     lib.mkdir()
-    make_jpeg(lib / "a.jpg", size=(320, 160))
-    make_jpeg(lib / "b.jpg", size=(100, 100))
+    # #1596: a hívó saját próbaképeket kérhet — a rács KIRAJZOLT
+    # képpontjait mérő tesztnek ellenőrzött (egyenletes) képek kellenek,
+    # a piros `make_jpeg`-minta arra alkalmatlan.
+    if kepeket_keszit is not None:
+        kepeket_keszit(lib)
+    else:
+        make_jpeg(lib / "a.jpg", size=(320, 160))
+        make_jpeg(lib / "b.jpg", size=(100, 100))
     db = tmp_path / "index.db"
     with open_index(db) as conn:
         sync_tree(conn, lib)
@@ -111,7 +124,9 @@ def _build_qml_app(qt_app, tmp_path):
         settings.setValue(
             collage_prefs.OUTPUT_DIR_KEY, str(tmp_path / "kollazs-kimenet")
         )
-    provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+    provider = ThumbnailProvider(
+        ThumbnailCache(tmp_path / "thumbs", size=belyegkep_meret)
+    )
     controller = AppController(db, (str(lib),), provider, settings=settings)
     # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az
     # elszigetelt settings, mint a controlleré
@@ -138,9 +153,20 @@ def _build_qml_app(qt_app, tmp_path):
     # #999-es összeomlás-osztályt hoznák be, haszon nélkül — ezek a
     # tesztek a felület bekötését mérik, nem a bélyegkép-készítést.
     # Az aszinkron utat saját, motor nélküli tesztek fedik.
-    from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
+    from support.szinkron_kepszolgaltato import (
+        SzinkronKepSzolgaltato,
+        SzinkronValodiBelyegkep,
+    )
 
-    engine.addImageProvider("thumbs", SzinkronKepSzolgaltato())
+    # #1596: a `valodi_belyegkep` hívók a TERMÉK render-magját kapják (a
+    # pool-ugrás nélkül) — enélkül a rács képpontjai a lapos helyettesítő
+    # képet mutatnák, és a megjelenítési mód hatása méretlen maradna.
+    engine.addImageProvider(
+        "thumbs",
+        SzinkronValodiBelyegkep(provider)
+        if valodi_belyegkep
+        else SzinkronKepSzolgaltato(),
+    )
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
@@ -272,3 +298,52 @@ def qml_app_module(
     """
     root = tmp_path_factory.mktemp("qml-app-module")
     yield from _build_qml_app(qt_app, root)
+
+
+#: A #1596 próbaképeinek egyenletes tónusa — a rácson EZT mérjük.
+PROBA_HATTER = 200
+#: A második próbakép tisztán fehér: a túlcsordulás-jelölésnek kell hova
+#: látszania (a `200`-as képen az eredeti szerint NEM jelöl semmit).
+PROBA_FEHER = 255
+
+
+def _proba_kepek(lib) -> None:
+    """Két EGYENLETES próbakép a rács képpont-méréséhez (#1596).
+
+    Miért egyenletes, és miért két külön fájl? Mert a bélyegkép útja
+    kétszer is átméretez (a gyorstár 256 px-re kicsinyít, majd a QML
+    `Image` a cellába), és a JPEG is veszteséges. Egy éles él (pl. fehér
+    sáv szürke háttéren) mindkét helyen elmosódna, és a mérés csak tűréssel
+    volna kimondható. Két egyenletes képen viszont a teljes lánc BITRE
+    pontos — mérve (#1596): mindkét bélyegkép egyetlen színt tartalmaz.
+    """
+    import cv2
+    import numpy as np
+
+    minta = [("a.jpg", PROBA_HATTER), ("b.jpg", PROBA_FEHER)]
+    for nev, tonus in minta:
+        kep = np.full((160, 320, 3), tonus, dtype=np.uint8)
+        assert cv2.imwrite(
+            str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+        ), nev
+
+
+@pytest.fixture
+def qml_app_valodi_belyegkep(qt_app, tmp_path):
+    """Teljes app a VALÓDI bélyegkép-szolgáltatóval és próbaképekkel (#1596).
+
+    A `qml_app` helyettesítő szolgáltatót regisztrál (`thumbs` → egyszínű
+    kép), ezért azzal a rácsra kirajzolt képpontokról semmit nem lehet
+    állítani. Ez a fixture a termék render-magját köti be, és két
+    egyenletes tónusú próbaképet tesz a könyvtárba (ld. `_proba_kepek`).
+    """
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_proba_kepek,
+        # a termék alapértelmezése (`ThumbnailCache` size=256): a rács
+        # cellájánál nagyobb, tehát a QML `Image` csak KICSINYÍT — ez a
+        # #83 óta a valódi működés
+        belyegkep_meret=256,
+        valodi_belyegkep=True,
+    )

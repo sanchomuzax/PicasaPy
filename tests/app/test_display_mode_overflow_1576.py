@@ -329,16 +329,40 @@ class TestBelyegkepGyorstar:
             "kikapcsolása után is festve maradna (BLOKKOLÓ)"
         )
 
-    def test_a_belyegkep_ut_nem_is_ismeri_a_modot(self):
-        """Forrásszintű őr: a bélyegkép-ág egyáltalán nem hivatkozik rá."""
+    def test_a_belyegkep_render_magja_nem_ismeri_a_modot(self):
+        """Forrásszintű őr: a gyorstárakat TÖLTŐ kód nem ismeri a módot.
+
+        ⚠️ Ez az őr a #1596-ban SZŰKÜLT. Eredetileg azt követelte meg, hogy
+        a `thumbnail_provider` modul EGÉSZE ne hivatkozzon a módra — ez a
+        #1576 hatókör-döntését („a mód csak a nagy nézőre hat") tükrözte.
+        A #1596 ezt a döntést szándékosan megfordította: mérve, a rácson
+        mind a tizenegy tétel hatástalan volt, holott az eredetiben a kampó
+        helye az ablak újrarajzolása, vagyis GLOBÁLIS.
+
+        Amit az őr véd, változatlan: **a gyorstár nem tárolhatja el a
+        festett képet**. Ezért a mérce most pontosan az a két hely, amelyik
+        gyorstárat tölt — a lemezes `thumbs.cache`, és a provider
+        `_render()` magja (ez írja a `_FilteredThumbMemo` rekeszt is). A
+        festés a `requestImage()`-ben, ezek UTÁN fut.
+
+        A viselkedést (nem a forrást) a
+        `tests/app/test_display_mode_racs_1596.py::TestGyorstarTisztasag`
+        méri: a #1596 mutációs próbája szerint a festés `_render()`-be
+        mozgatását ott a szűrt-bélyegkép őre elkapja.
+        """
         import inspect
 
-        from picasapy.app import thumbnail_provider
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
         from picasapy.thumbs import cache
 
-        for modul in (thumbnail_provider, cache):
-            forras = inspect.getsource(modul)
-            assert "display_mode" not in forras, (
-                f"{modul.__name__} hivatkozik a megjelenítési módra — a "
-                "gyorstár a jelölt képet tárolná el"
-            )
+        assert "display_mode" not in inspect.getsource(cache), (
+            "a lemezes bélyegkép-gyorstár hivatkozik a megjelenítési módra "
+            "— a jelölt képet írná a lemezre (BLOKKOLÓ)"
+        )
+        assert "display_mode" not in inspect.getsource(
+            ThumbnailProvider._render
+        ), (
+            "a bélyegkép RENDER-MAGJA hivatkozik a megjelenítési módra — ez "
+            "a mag tölti a lemezes és a memóriabeli gyorstárat is, tehát a "
+            "festés beleégne (BLOKKOLÓ)"
+        )

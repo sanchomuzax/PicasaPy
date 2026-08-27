@@ -20,6 +20,7 @@ from PySide6.QtCore import (
 
 from picasapy.index import PhotoRecord
 
+from .display_mode_paint import display_mode_url_suffix
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
@@ -231,9 +232,9 @@ def _has_edits(photo: PhotoRecord) -> bool:
     return bool(photo.filters and photo.filters.strip())
 
 
-def _thumb_url(photo: PhotoRecord) -> str:
+def _thumb_url(photo: PhotoRecord, display_mode: str = "") -> str:
     """Thumb-URL forgatás-, szerkesztés- és FÁJLVÁLTOZÁS-érzékeny
-    cache-busterrel (#59, #1186).
+    cache-busterrel (#59, #1186), megjelenítési mód-cimkével (#1596).
 
     ⚠️ Az `mtime_ns`/`size` nélkül a felülírt fájl URL-je változatlan
     marad (ugyanaz a sor, forgatás és lánc), a Qt pedig URL szerint
@@ -242,12 +243,22 @@ def _thumb_url(photo: PhotoRecord) -> str:
     hármasra kulcsol, csak épp senki nem kérte el az újat. A tulajdonos
     ezt a kollázs véglegesítésekor látta (a „PISZKOZAT" felirat ottmaradt
     a bélyegképen), de minden külső felülírásra igaz volt.
+
+    A `display_mode` (#1596) pontosan ugyanezért kell: a `Nézet ▸
+    Megjelenítési mód` a KIRAJZOLT képpontokat írja át, tehát a mód
+    ugyanúgy az URL része, mint a forgatás. Képpontot nem mozdító módra a
+    cimke elmarad, vagyis az URL bájtra a mód bevezetése előtti — a rendes
+    használat semmivel nem lassul, a módból kilépve pedig a Qt gyorstárában
+    már ott lévő, festetlen kép jelenik meg azonnal. A cimkét a
+    `thumbnail_provider` olvassa vissza; a két felet a
+    `display_mode_paint` tartja együtt.
     """
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
     return (
         f"image://thumbs/{photo.id}"
         f"?r={photo.rotate_steps}&f={filters_tag}"
         f"&m={photo.mtime_ns}&s={photo.size}"
+        f"{display_mode_url_suffix(display_mode)}"
     )
 
 
@@ -332,6 +343,11 @@ class PhotoGridModel(QAbstractListModel):
         self._folder_photo_sort = DEFAULT_SORT_MODE
         self._folder_photo_sort_reverse = False
         self._folder_photo_sort_active = None
+        # #1596: a `Nézet ▸ Megjelenítési mód` aktív tétele. A modell csak
+        # az URL-cimkét adja hozzá (`display_mode_url_suffix`); a képpontokat
+        # a `thumbnail_provider` írja át. Amíg senki nem állította be, a
+        # bélyegkép-URL-ek bájtra a mód bevezetése előttiek.
+        self._display_mode = ""
 
     def set_folder_photo_sort(
         self, sort_mode: str, reverse: bool, is_active=None
@@ -346,6 +362,30 @@ class PhotoGridModel(QAbstractListModel):
         self._folder_photo_sort_active = is_active
         if self._photos:
             self.set_photos(self._photos)
+
+    def set_display_mode(self, mode: str) -> None:
+        """A megjelenítési mód átvezetése a rács bélyegkép-URL-jeire (#1596).
+
+        A hívó a `wire_display_mode()`. A LÁTHATÓ cellákat azonnal
+        frissíti: a `revision` lépése hajtja a feed `itemAt()`-mintáját
+        (`LightboxFeed.qml`), a `dataChanged` pedig a modell-szerepekből
+        kötő nézeteket (`TrayBar`, csoportos találati rács).
+
+        Azonos értéknél NEM jelez — a rács újrakötése minden látható
+        bélyegkép újrakérése, azt fölöslegesen kiváltani drága.
+        """
+        mode = str(mode or "")
+        if mode == self._display_mode:
+            return
+        self._display_mode = mode
+        self._revision += 1
+        self.revisionChanged.emit()
+        if self._photos:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(len(self._photos) - 1, 0),
+                [self.ThumbUrlRole],
+            )
 
     def _in_folder_photo_order(
         self, photos: tuple[PhotoRecord, ...]
@@ -435,7 +475,7 @@ class PhotoGridModel(QAbstractListModel):
         if not 0 <= row < len(self._photos):
             return ""
         photo = self._photos[row]
-        return _thumb_url(photo)
+        return _thumb_url(photo, self._display_mode)
 
     @Slot(int, result="QVariantMap")
     def itemAt(self, row: int) -> dict:
@@ -447,7 +487,7 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return {
             "name": photo.name,
-            "thumbUrl": _thumb_url(photo),
+            "thumbUrl": _thumb_url(photo, self._display_mode),
             "star": photo.star,
             "caption": photo.caption or "",
             "isVideo": photo.kind == "video",
@@ -664,7 +704,7 @@ class PhotoGridModel(QAbstractListModel):
             return photo.name
         if role == self.ThumbUrlRole:
             # cache-buster: forgatás/szerkesztés után új URL → friss kép (#59)
-            return _thumb_url(photo)
+            return _thumb_url(photo, self._display_mode)
         if role == self.StarRole:
             return photo.star
         if role == self.CaptionRole:
