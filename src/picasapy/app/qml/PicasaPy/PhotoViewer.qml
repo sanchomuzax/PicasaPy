@@ -486,13 +486,9 @@ Rectangle {
     // Ugyanazt az utat hívja, mint a jobbklikk-menü "Törlés lemezről"
     // tétele (onDeleteRequested lent).
     //
-    // ⚠️ ISMERT MARADVÁNY: a Main.qml `shortcutDeleteFromDiskViewer`
-    // Shortcutja (TILTOTT fájl ehhez a jegyhez) MÉG mindig a puszta
-    // "Delete"-re figyel — a #422-es, azóta felülírt feltételezés
-    // (spec 3.) szerint kötve. A helyes érték "Ctrl+Delete" volna (a
-    // fenti Ctrl+Delete-tel egy irányba mutatva); egysoros javítás, de
-    // ezt a jegyet a Main.qml szerkesztésétől eltiltották — az
-    // integrátornak kell elvégeznie.
+    // A `Main.qml` `shortcutDeleteFromDiskViewer`-e ezzel egy irányba
+    // mutat: ott is `Ctrl+Delete` (#1418). A korábbi, puszta `Delete`
+    // a #422 azóta felülírt feltételezéséből jött.
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()

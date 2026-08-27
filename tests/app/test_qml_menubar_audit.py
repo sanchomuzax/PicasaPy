@@ -251,12 +251,13 @@ class TestGyorsbillentyuk:
         """Az inaktív pontok (pl. Ctrl+N, Ctrl+X, F1...) csak a feliratban
         jelennek meg — nem szabad hozzájuk élő `Shortcut {}` elemet kötni.
         Az egyetlen forrás-elhelyezésű `Shortcut` blokk a fájl elején van,
-        pontosan 6 elemmel (a fenti hat aktív tételhez). A szám #1472-ben
+        pontosan 7 elemmel (a fenti hét aktív tételhez). A szám #1472-ben
         nőtt négyről ötre (a `Nyomtatás…` tétel élővé vált, tehát a
-        Ctrl+P-nek is élő billentyűt kellett kapnia), a #1590-ben pedig
-        ötről hatra (`Indexképek nyomtatása…`, Ctrl+Shift+P)."""
+        Ctrl+P-nek is élő billentyűt kellett kapnia), a #1590-ben ötről
+        hatra (`Indexképek nyomtatása…`, Ctrl+Shift+P), a #1615-ben pedig
+        hatról hétre (`Importálás forrása…`, Ctrl+M)."""
         src = _source()
-        assert src.count("Shortcut {") == 6
+        assert src.count("Shortcut {") == 7
 
 
 class TestMukodoTetelekBillentyui:

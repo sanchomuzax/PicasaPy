@@ -751,6 +751,9 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
+        // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
+        // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
+        onImportSourceRequested: importSourceDialog.open()
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
