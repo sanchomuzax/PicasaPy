@@ -5,6 +5,36 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A program indulásának háromnegyedét egyetlen, fölösleges lépés vitte el
+  (#1667).** A tulajdonos gépén az indulás **10,8 másodpercig** tartott, és
+  ebből **8,4 másodperc** — a teljes idő 77,8%-a — egyetlen tételre ment el:
+  a program minden egyes indításkor **újraolvasta az összes exportált
+  képet**. Nem azért, mert sok volt belőlük (mindössze 16 mappa és 421 kép
+  volt a könyvtárban), hanem mert a program két, egymásnak ellentmondó
+  dolgot csinált közvetlenül egymás után: előbb kidobta az exportmappákat a
+  nyilvántartásából (mert azok a figyelt mappákon kívül vannak), majd
+  rögtön újra be is olvasta őket — immár a nulláról, minden egyes fájlt
+  megnyitva. Windowson minden ilyen fájlmegnyitás a valós idejű
+  vírusvizsgálaton megy át, ezért lett a helyben ezredmásodperces munkából
+  ott több másodperc.
+
+  Mostantól a program **nem dobja ki, amit egy pillanattal később úgyis
+  vissza akar tenni**: a nyilvántartott exportmappák megmaradnak, tehát
+  nincs mit újraolvasni. Ami ezután is fut — az időközben, kikapcsolt
+  program mellett bekerült új képek felvétele —, az már **az ablak
+  megjelenése után** történik, tehát nem tartja vissza a felületet.
+
+  Mérve, ugyanazon a gépen, ugyanazzal a könyvtárral (4 exportmappa,
+  180 kép): a lépés **180 fájlmegnyitása nullára**, ideje **72
+  ezredmásodpercről 12-re** csökkent, és lekerült az indulás kritikus
+  útjáról. Az „Exportált képek" csomópont változatlanul mutatja a figyelt
+  mappákon kívülre exportált képeket (#1565) — erre külön ellenőrzés
+  vigyáz, ahogy arra is, hogy ez a lépés ne kerülhessen vissza az ablak
+  megjelenése elé.
+
 ## [0.8.128] – 2026-08-27
 
 ### Hozzáadva
