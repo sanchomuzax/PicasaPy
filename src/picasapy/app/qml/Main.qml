@@ -667,7 +667,11 @@ ApplicationWindow {
         objectName: "shortcutDeleteFromDiskGrid"
         sequence: "Ctrl+Delete"
         enabled: !window.viewerOpen && window.selectedRows().length > 0
-        onActivated: fileOpsDialogs.openDelete(window.selectedPaths())
+        // #1619: a `Ctrl+Delete` UGYANAZ a parancs (`0x9c9a`), csak másik
+        // belépő — ezért a #1608-ban készült KÖZÖS elágazáson megy át,
+        // nem másolt logikán. Albumban/Emberek-albumban eltávolít, nem
+        // lemezről töröl (spec 5.); mappában változatlanul töröl.
+        onActivated: picasaMenuBar.activateDeleteCommand()
     }
     // #422: a nézőben PUSZTA Delete törli a lemezről (spec 3.) — ott nincs
     // ütközés, mert a rács album-parancsai nem élnek
@@ -699,6 +703,8 @@ ApplicationWindow {
         }
     }
     menuBar: PicasaMenuBar {
+        // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
+        id: picasaMenuBar
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
         // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
@@ -754,6 +760,20 @@ ApplicationWindow {
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
+        // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
+        // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
+        currentAlbumToken: controller ? controller.currentAlbumToken : ""
+        currentPersonName: controller ? controller.currentPersonName : ""
+        onRemoveFromAlbumRequested: {
+            if (controller)
+                controller.removeRowsFromAlbum(
+                    window.selectedRows(), controller.currentAlbumToken)
+        }
+        onRemoveFromPeopleAlbumRequested: {
+            if (controller) removePeopleFacesDialog.openFor(
+                window.selectedRows(), controller.currentPersonName)
+        }
         // #444: a nem-destruktív mentés három fokozata — a megerősítések és
         // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
         hasSavedBackup: controller

@@ -26,3 +26,13 @@ A két kiegészítő gomb eltávolítása elrejtené a már támogatott migráci
 nehezebbé tenné egy nem látható vagy még be nem töltött mappa felvételét.
 Mindkettő hozzáadó művelet; az OK/Mégse tranzakciós szabály az általuk
 kezdeményezett mappamódosításra is érvényes.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/FolderManagerDialog.qml`
+- **Őrzi:** `tests/app/test_qml_folder_manager.py`

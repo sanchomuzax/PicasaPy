@@ -4211,6 +4211,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Remove from Album</source>
+        <translation>Eltávolítás az albumból</translation>
+    </message>
+    <message>
+        <source>Remove from People Album</source>
+        <translation>Eltávolítás az Emberek albumból</translation>
+    </message>
+    <message>
         <source>Find Faces...</source>
         <translation>Arcok keresése…</translation>
     </message>
