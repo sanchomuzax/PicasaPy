@@ -31,8 +31,14 @@ Menu {
     // #1526: null-őr (#305 mintája) — a menü önmagában is betölthető
     readonly property var appCtl:
         (typeof controller !== "undefined") ? controller : null
+    // ⚠️ A `!== undefined` őr NEM felesleges: a `controller` több QML-próbában
+    // olyan tömb (stub), amelyen ez a tulajdonság nincs meg — ilyenkor a
+    // kifejezés `undefined`-ot adna, és a QML `Unable to assign [undefined] to
+    // bool` szkripthibát dob, amire a #1260 őre a fixture-életciklusban bukik.
     readonly property bool autoCompleteOn:
-        menu.appCtl ? menu.appCtl.autoComplete : true
+        (menu.appCtl && menu.appCtl.autoComplete !== undefined)
+            ? menu.appCtl.autoComplete === true
+            : true
 
     readonly property bool hasSelection: menu.target
         && menu.target.selectedText !== undefined
