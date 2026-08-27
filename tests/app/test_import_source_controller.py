@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QEventLoop, QSettings, QTimer
+from PySide6.QtCore import QCoreApplication, QSettings
 
 from picasapy.ini import load_document
 from picasapy.thumbs import ThumbnailCache
@@ -16,11 +16,34 @@ from picasapy.thumbs import ThumbnailCache
 from support.jpeg_factory import make_jpeg
 
 
-def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+def _megvar_hattermunkat(controller) -> None:
+    """DETERMINISZTIKUS szinkronpont a háttérszálas hívások után (#1634).
+
+    A korábbi minta egy `QEventLoop`-ot indított, és egy 5 másodperces
+    `QTimer.singleShot(5000, ...quit)`-tal „biztosította", hogy ne akadjon
+    be. Csakhogy az időzítő nem hibaág volt, hanem a hurok MÁSODIK, NÉMA
+    kijárata: ha a jelzés lassabban ért oda, a teszt nem időtúllépést
+    jelentett, hanem azt, hogy a jelzés ELMARADT. A windows-lábon pontosan
+    ez történt (futás `33085887241`)::
+
+        assert events == ["started", "finished"]
+        AssertionError: assert ['started'] == ['started', 'finished']
+
+    …miközben ugyanannak a tesztnek a fixture-teardownja sikeresen
+    bevárta a szálat, tehát a munka rendben LEFUTOTT, csak későn. Ugyanez
+    a minta tette a `test_a_failed_scan_is_not_remembered`-et állandó,
+    ~5 másodperces tesztté: ott sosem jön `sourceScanFinished`, tehát
+    mindig a teljes időzítőt kivárta — helyben mérve ez volt a fájl
+    leglassabb tesztje (4,75 s a 7,98 s-ból).
+
+    Itt a szinkronpont maga a szál BEVÁRÁSA (`join`), utána a közben
+    sorba állított Qt-jelzések kihajtása. Nincs `sleep`, és nincs olyan
+    időkorlát, amin átcsúszva a teszt hamis leletet mondana: ha a bevárás
+    mégsem sikerül, SAJÁT, beszédes hibaüzenetet ad."""
+    assert controller.waitForBackgroundWorkers(30.0), (
+        "az import-forrás háttérszála nem állt le"
+    )
+    QCoreApplication.processEvents()
 
 
 @pytest.fixture
@@ -80,9 +103,8 @@ def _scan(controller, folder: str):
     controller.sourceScanFinished.connect(
         lambda items, count: (items_seen.append(items), counts_seen.append(count))
     )
-    loop = _quit_on(controller.sourceScanFinished)
     controller.scanSource(folder)
-    loop.exec()
+    _megvar_hattermunkat(controller)
     return items_seen[0] if items_seen else None, counts_seen[0] if counts_seen else None
 
 
@@ -97,9 +119,8 @@ class TestScanSource:
         controller.sourceScanFinished.connect(
             lambda items, count: events.append("finished")
         )
-        loop = _quit_on(controller.sourceScanFinished)
         controller.scanSource(str(source))
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert events == ["started", "finished"]
 
@@ -134,9 +155,8 @@ class TestScanSource:
     def test_missing_source_emits_scan_failed(self, controller, tmp_path):
         messages = []
         controller.sourceScanFailed.connect(lambda msg: messages.append(msg))
-        loop = _quit_on(controller.sourceScanFailed)
         controller.scanSource(str(tmp_path / "nincs-ilyen"))
-        loop.exec()
+        _megvar_hattermunkat(controller)
         assert len(messages) == 1
         assert messages[0]
 
@@ -352,9 +372,8 @@ class TestIndividualSelection:
         controller.importFinished.connect(
             lambda copied, failed: finished.append((copied, failed))
         )
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert finished == [(1, 0)]
         assert (dest / "2024-03-06" / "b.jpg").exists()
@@ -376,9 +395,8 @@ class TestRunImportNamingModes:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         target = dest / "2024-03-05" / "a.jpg"
         assert target.exists()
@@ -394,9 +412,8 @@ class TestRunImportNamingModes:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "manual", "Nyaralás", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert (dest / "Nyaralás" / "a.jpg").exists()
         assert (dest / "Nyaralás" / "b.jpg").exists()
@@ -414,9 +431,8 @@ class TestRunImportNamingModes:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "today", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         today_folder = dest / date.today().isoformat()
         assert (today_folder / "a.jpg").exists()
@@ -436,9 +452,8 @@ class TestRunImportNamingModes:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         subfolder = f"{expected.year:04d}-{expected.month:02d}-{expected.day:02d}"
         assert (dest / subfolder / "a.jpg").exists()
@@ -485,9 +500,8 @@ class TestRunImportNamingModes:
         controller.importFinished.connect(
             lambda copied, failed: finished.append((copied, failed))
         )
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert finished == [(1, 1)]
         assert (dest / "2024-03-06" / "b.jpg").exists()
@@ -507,9 +521,8 @@ class TestAfterCopying:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert (source / "a.jpg").exists()
 
@@ -523,9 +536,8 @@ class TestAfterCopying:
 
         _scan(controller, str(source))
         controller.excludeFile(str(source / "b.jpg"))  # b.jpg NEM importálódik
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "delete_copied")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert not (source / "a.jpg").exists()  # importálva -> törölve
         assert (source / "b.jpg").exists()  # ki volt zárva -> megmarad
@@ -541,9 +553,8 @@ class TestAfterCopying:
         dest.mkdir()
 
         _scan(controller, str(source))
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "delete_copied")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         source_doc = load_document(source / ".picasa.ini")
         assert source_doc.section("a.jpg") is None
@@ -560,9 +571,8 @@ class TestAfterCopying:
 
         _scan(controller, str(source))
         controller.excludeFile(str(source / "b.jpg"))  # b.jpg NEM importálódik
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "delete_all")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert not (source / "a.jpg").exists()
         assert not (source / "b.jpg").exists()  # "everything on card"
@@ -593,9 +603,8 @@ class TestAfterCopying:
 
         monkeypatch.setattr(controller_module, "copy_photo", copy_but_fail_on_b)
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "delete_all")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert not (source / "a.jpg").exists()  # átjutott -> törölhető
         assert (source / "b.jpg").exists()  # bukott -> MARAD
@@ -621,9 +630,8 @@ class TestAfterCopying:
 
         monkeypatch.setattr(controller_module, "copy_photo", failing_copy)
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "delete_all")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert (source / "a.jpg").exists()
 
@@ -651,9 +659,8 @@ class TestBackgroundThreadTeardown:
         dest.mkdir()
         _scan(controller, str(source))
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
@@ -737,9 +744,8 @@ class TestRotateAndStarBeforeImport:
         controller.rotateFile(items[0]["path"], 1)
         controller.toggleStar(items[0]["path"])
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         copied_ini = dest / "2024-03-05" / ".picasa.ini"
         assert copied_ini.exists()
@@ -757,9 +763,8 @@ class TestRotateAndStarBeforeImport:
         dest.mkdir()
         _scan(controller, str(source))
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "date", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert (dest / "2024-03-05" / "a.jpg").exists()
         assert not (dest / "2024-03-05" / ".picasa.ini").exists()
@@ -780,9 +785,8 @@ class TestImportSpeed:
         speeds = []
         controller.importSpeed.connect(speeds.append)
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "today", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         # fájlonként egy jelzés, és a sebesség sosem negatív
         assert len(speeds) == 2
@@ -801,9 +805,8 @@ class TestImportSpeed:
         speeds = []
         controller.importSpeed.connect(speeds.append)
 
-        loop = _quit_on(controller.importFinished)
         controller.runImport(str(dest), "today", "", "leave")
-        loop.exec()
+        _megvar_hattermunkat(controller)
 
         assert speeds == [0.0]
 
