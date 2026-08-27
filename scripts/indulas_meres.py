@@ -300,15 +300,44 @@ def _betoltott_natív_fajlok() -> set[str]:
         import ctypes
         from ctypes import wintypes
 
+        # ⚠️ Az `argtypes`/`restype` KÖTELEZŐ. Nélkülük a ctypes a
+        # `GetCurrentProcess()` 64 bites ál-fogantyúját 32 bitesre vágja,
+        # az `EnumProcessModules` némán hamissal tér vissza, a mérés pedig
+        # **0 natív modult** jelent — pontosan ez történt (33106695173:
+        # `windows-latest ... 0 fájl 0.0 MB`, miközben a folyamat
+        # nyilvánvalóan betöltötte a Qt- és OpenCV-DLL-eket). A néma nulla
+        # rosszabb a hibánál: méréseredménynek látszik.
         psapi = ctypes.WinDLL("psapi", use_last_error=True)
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.argtypes = []
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        psapi.EnumProcessModules.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.HMODULE),
+            wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        psapi.EnumProcessModules.restype = wintypes.BOOL
+        psapi.GetModuleFileNameExW.argtypes = [
+            wintypes.HANDLE,
+            wintypes.HMODULE,
+            wintypes.LPWSTR,
+            wintypes.DWORD,
+        ]
+        psapi.GetModuleFileNameExW.restype = wintypes.DWORD
+
         fogantyu = kernel32.GetCurrentProcess()
         tomb = (wintypes.HMODULE * 8192)()
         kellett = wintypes.DWORD()
         if not psapi.EnumProcessModules(
             fogantyu, tomb, ctypes.sizeof(tomb), ctypes.byref(kellett)
         ):
-            return utak
+            raise OSError(
+                "EnumProcessModules elbukott "
+                f"(GetLastError={ctypes.get_last_error()}) — a natív "
+                "modulok leltára nem mérhető. Üres eredményt NEM adunk "
+                "vissza: az méréseredménynek látszana."
+            )
         darab = kellett.value // ctypes.sizeof(wintypes.HMODULE)
         puffer = ctypes.create_unicode_buffer(32768)
         for i in range(min(darab, len(tomb))):
@@ -356,6 +385,13 @@ def _leltar(modul: str) -> str:
     }
     py_darab, py_bajt = _bajtok(py_utak)
     nat_darab, nat_bajt = _bajtok(_betoltott_natív_fajlok())
+    # Az ÜRES mérés maga is hiba (a projekt őreinek bevett szabálya): egy
+    # Python-processz mindig tart betöltött natív modult (maga az
+    # értelmező), tehát a nulla csak mérési hibát jelenthet.
+    if nat_darab == 0:
+        raise RuntimeError(
+            "a natív modulok leltára ÜRES — ez mérési hiba, nem eredmény"
+        )
     return json.dumps(
         {
             "modul": modul or "(semmi)",
