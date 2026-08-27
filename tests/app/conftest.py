@@ -48,6 +48,30 @@ def qt_app():
 
     app = QGuiApplication.instance() or QGuiApplication([])
     yield app
+
+
+@pytest.fixture(autouse=True)
+def _vagolap_elengedese():
+    """A Pythonban gyártott `QMimeData` levétele a vágólapról — TESZTENKÉNT.
+
+    ⚠️ A lebontás HELYE mérés eredménye, nem ízlés. Először a session-szintű
+    `qt_app` fixture végén állt; ott a `clear()` a QML-motorok GLOBÁLIS
+    lebontásának pillanatában futott, és a #1260 őre elé sodorta az addig
+    csak a stderr-re menő, lebontáskori QML-hibákat („Property 'endEdit' …
+    is not a function", „Cannot read property 'length' of undefined").
+    Mérve: a CI-n ettől HAT darab bukott el, három KÜLÖNBÖZŐ, a vágólappal
+    nem is érintkező tesztfájlon (`test_qml_hidden.py`,
+    `test_qml_fileops_export.py`, `test_vagolap_parancsok_1526.py`).
+
+    Tesztenként futtatva a vágólap akkor ürül, amikor még minden él: a
+    lebontási zaj a helyén marad, a SIGSEGV pedig ugyanúgy elmarad —
+    mutációval igazolva (a törzs kivételével a vágólapos fájl újra 139).
+    """
+    yield
+    from PySide6.QtGui import QGuiApplication
+
+    if QGuiApplication.instance() is None:
+        return
     board = QGuiApplication.clipboard()
     if board is not None:
         board.clear()
