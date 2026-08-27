@@ -35,8 +35,11 @@ JELOLO = (255, 127, 127)
 
 #: A menütétel `objectName`-je (a #1575 névsorából).
 TETEL = "menuViewDisplayModeOverflow"
-#: Kontroll: egy másik, ma képpontot NEM mozdító mód.
-MASIK_TETEL = "menuViewDisplayModeProjector"
+#: Kontroll: egy másik, képpontot NEM mozdító mód. SZÁNDÉKOSAN a 24 bites
+#: (spec 5.1: nincs átalakító) — a korábbi „Projektor mód" a #1577 óta
+#: sötétít, tehát kontrollnak alkalmatlan lett.
+MASIK_TETEL = "menuViewDisplayModeNormal"
+MASIK_MOD = "normal"
 
 FEHER = (255, 255, 255)
 
@@ -140,7 +143,7 @@ class TestMenubolVezerelve:
 
         _kattint(window, MASIK_TETEL)
         qt_app.processEvents()
-        assert controller.property("displayMode") == "projector"
+        assert controller.property("displayMode") == MASIK_MOD
         szinek = keres()
         assert JELOLO not in szinek, (
             "a jelölés a mód elhagyása után is a képen maradt"

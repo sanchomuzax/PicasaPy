@@ -142,9 +142,12 @@ class TestMegjelenitettKep:
         )
 
     @pytest.mark.parametrize(
-        "mode", ["auto", "normal", "dither16", "lcd", "projector", "bw"]
+        "mode", ["auto", "normal", "dither16", "rdesk", "mac", "sepia", "bw"]
     )
     def test_barmely_masik_mod_erintetlenul_hagy(self, szolgaltato, mode):
+        """A `lcd`/`projector` (#1577) és a `linear` (#1578) azóta KIKERÜLT
+        innen: azok ma már mozdítanak képpontot, a szerződésüket a
+        `tests/app/test_display_mode_sotetites_gamma_1577_1578.py` őrzi."""
         eredeti = _keres(szolgaltato)
         szolgaltato.set_display_mode(mode)
         assert np.array_equal(_keres(szolgaltato), eredeti)
