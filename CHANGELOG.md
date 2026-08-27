@@ -43,6 +43,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A „Napló elküldése" gomb összeomlott, ha a közös mappa jelszót kért
+  (#1668).** A tulajdonos gépén az első éles használatnál hibaüzenet
+  ugrott fel a képernyőre a napló átadása helyett: Windowson egy
+  hitelesítetlen hálózati mappa nem azt mondja, hogy „nincs ilyen", hanem
+  hibát dob. A beépített „Mentés másként…" tartalék, ami pontosan erre az
+  esetre készült, így nem jutott szóhoz. Mostantól minden ilyen akadály —
+  jelszókérés, időtúllépés, hálózati hiba — ugyanazt jelenti: a megosztás
+  nem érhető el, tehát a program a mentési tartalékot ajánlja.
+- **A közös mappát mostantól a NAS NEVE azonosítja, nem az IP-címe
+  (#1668).** Az IP-cím hálózatonként más; a gépnév távoli kapcsolaton át is
+  feloldódik, tehát a napló nemcsak otthonról adható át. Ellenőrzés őrzi,
+  hogy IP-cím ne kerülhessen vissza a programba.
 - **A Szépia és a Fekete-fehér megjelenítési mód nem csinált semmit
   (#1657).** A `Nézet ▸ Megjelenítési mód` tizenegy tételéből eddig csak
   négy hatott; a tulajdonos épp a leglátványosabbat, a **Szépiát**

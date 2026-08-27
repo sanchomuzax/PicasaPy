@@ -61,7 +61,11 @@ NAPLO_ALMAPPA = "picasapy-naplo"
 MEGOSZTAS_LINUX = "/mnt/nas"
 
 #: Ugyanaz a megosztás Windowsról, UNC-alakban.
-MEGOSZTAS_WINDOWS = "//192.168.50.187/lemez"
+#:
+#: ⚠️ GÉPNÉV, NEM IP-cím (#1668). A tulajdonos Tailscale-en át is eléri a
+#: NAS-t; ott az IP-cím hálózatonként más, a gépnév viszont mindenhonnan
+#: feloldódik. Beégetett IP-vel a napló otthonról működne, máshonnan nem.
+MEGOSZTAS_WINDOWS = "//DS215j/lemez"
 
 #: Az indulási napló fájlnév-előtagja a helyi gyorstárban (`default_log_dir`).
 #: A `StartupTimeline.write()` ugyanezt használja — az „elküldés" ezért
@@ -255,12 +259,22 @@ def megosztas_elerheto(
     napló némán a helyi lemezre kerülne, a felhasználó pedig azt hinné,
     hogy átadta — és a fejlesztés hiába várná.
 
-    UNC-útvonalon (Windows) nincs mit csatolni: ott a létezés a mérce."""
+    UNC-útvonalon (Windows) nincs mit csatolni: ott a létezés a mérce.
+
+    ⚠️ #1668: Windowson egy HITELESÍTETLEN UNC-útvonalon az `is_dir()` nem
+    `False`-t ad, hanem `OSError`-t dob (`WinError 1326` — „Helytelen a
+    felhasználónév vagy a jelszó"). A tulajdonos gépén ez az első éles
+    használatnál a felületre dobott kivételt, ahelyett hogy a „Mentés
+    másként…" tartalék jutott volna szóhoz. Minden `OSError` (hitelesítés,
+    időtúllépés, hálózat) ugyanazt jelenti nekünk: **nem elérhető**."""
     szoveg = str(gyoker)
     unc_e = unc if unc is not None else (szoveg.startswith(("//", "\\\\")))
-    if not gyoker.is_dir():
+    try:
+        if not gyoker.is_dir():
+            return False
+        return True if unc_e else bool(ismount(szoveg))
+    except OSError:
         return False
-    return True if unc_e else bool(ismount(szoveg))
 
 
 def naplo_celmappa(gyoker: Path) -> Path:
@@ -293,9 +307,13 @@ def legutobbi_indulasi_naplo(mappa: Path) -> Path | None:
     A fájlnevek időbélyege rendezhető (`indulas-ÉÉÉÉHHNN-óóppmm.txt`),
     ezért a névsorrend egyben időrend is — nem kell `stat`-olni."""
     mappa = Path(mappa)
-    if not mappa.is_dir():
+    # #1668: ugyanaz a hibaosztály — a gyorstár is állhat hálózati profilon.
+    try:
+        if not mappa.is_dir():
+            return None
+        jeloltek = sorted(mappa.glob(f"{INDULASI_NAPLO_ELOTAG}*.txt"))
+    except OSError:
         return None
-    jeloltek = sorted(mappa.glob(f"{INDULASI_NAPLO_ELOTAG}*.txt"))
     return jeloltek[-1] if jeloltek else None
 
 

@@ -5,7 +5,7 @@ import QtQuick.Dialogs
 //
 // Az alapeset az egykattintásos átadás: a `Súgó ▸ Napló elküldése` a
 // naplót a NAS közös mappájába (`/mnt/nas`, Windowson
-// `//192.168.50.187/lemez`) másolja, a rögzített `picasapy-naplo/`
+// `//DS215j/lemez`) másolja, a rögzített `picasapy-naplo/`
 // almappába. Ha a megosztás nincs csatlakoztatva, a felhasználó nem
 // maradhat üres kézzel: a vezérlő `tesztuzemMentesMaskentKert` jelzése
 // nyitja ezt a párbeszédet, és a napló oda kerül, ahova a felhasználó

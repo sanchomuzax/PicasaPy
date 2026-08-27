@@ -14,7 +14,7 @@ indulás mér, az első ezredmásodperctől (ld. `application._indulasi_idovonal
 ## Átadás — egy kattintás, semmi hálózat
 
 `Súgó ▸ Napló elküldése` a legutóbbi indulási naplót a NAS közös mappájába
-másolja (`/mnt/nas`, Windowson `//192.168.50.187/lemez`), a rögzített
+másolja (`/mnt/nas`, Windowson `//DS215j/lemez`), a rögzített
 `picasapy-naplo/` almappába, időbélyeges néven, és az útvonalat a
 vágólapra is felteszi. **Semmilyen hálózati feltöltés, külső szolgáltatás
 vagy hitelesítés nincs benne** — fájlmásolás egy csatolt megosztásra.
