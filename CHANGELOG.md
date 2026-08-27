@@ -35,6 +35,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   lépésben érdemes bevezetni, nem néhány tételen.)
 
 ### Javítva
+- **Nem omlik össze a program kilépéskor, ha előtte képet másoltunk a
+  vágólapra (#1526).** A hibát a vágólap-parancsok bevezetése hozta be, még
+  kiadás előtt: „másolok pár képet, majd bezárom a PicasaPy-t" után a
+  folyamat a leállás közben elszállt, és a leállításkor mentett
+  beállítások (ablakméret, utoljára megnyitott mappa) elveszhettek.
+  Következmény: kilépés után a vágólapon a fájlok helyett a **fájlok
+  útvonala marad szövegként** — a képeket tehát a program bezárása előtt
+  kell beilleszteni a fájlkezelőbe.
 - **Az újravágás többé nem törli a korábbi vágásokat (#1553).** Ha egy képet
   még a windowsos Picasában vágtak meg többször, a vágó-eszköz **Alkalmaz**
   gombja eddig az **első** kattintásra eldobta a régebbi vágás-rétegeket, és

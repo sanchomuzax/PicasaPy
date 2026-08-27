@@ -111,6 +111,10 @@ class FileOpsController(QObject):
         board = _clipboard()
         if board is not None:
             board.dataChanged.connect(self.clipboardChanged)
+        # #1526: ÖSSZEOMLÁS-ELHÁRÍTÁS kilépéskor — ld. `_release_clipboard`
+        app = QGuiApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self._release_clipboard)
 
     # -- vágólap (#1526) -----------------------------------------------------
     #
@@ -190,6 +194,7 @@ class FileOpsController(QObject):
         board = _clipboard()
         if board is not None:
             board.clear()
+        self._clipboard_is_ours = False
 
     def _put_files(self, paths: list, effect: str) -> None:
         local = [Path(text) for text in (_to_local_path(str(p)) for p in paths) if text]
@@ -199,11 +204,68 @@ class FileOpsController(QObject):
         data = QMimeData()
         data.setData(URI_LIST, uri_list_payload(local))
         data.setData(GNOME_COPIED_FILES, gnome_payload(local, effect))
-        # ⚠️ a `setMimeData` ÁTVESZI a tulajdonjogot — a `data`-ra ezért nem
-        # tartunk Python-hivatkozást a hívás után (mérve: egy modulszinten
-        # életben tartott `QMimeData` a folyamat leállásakor SIGSEGV-hez
-        # vezet).
         board.setMimeData(data)
+        # kilépéskor ezt a hasznos terhet le kell venni, ld. `_release_clipboard`
+        self._clipboard_is_ours = True
+
+    #: A vágólapon a MI hasznos terhünk áll-e. Csak a kilépési elhárítás
+    #: használja — nem menüfeltétel (arra a `hasClipboardFiles` való, ami a
+    #: kívülről érkező másolást is látja).
+    _clipboard_is_ours = False
+
+    def _release_clipboard(self) -> None:
+        """Kilépéskor leveszi a vágólapról a SAJÁT `QMimeData`-nkat (#1526).
+
+        ## Miért kell, és mit mértünk
+
+        A PySide6 `QClipboard.setMimeData()` átveszi ugyan a C++-oldali
+        tulajdonjogot, de a Python-oldali csomagoló nyilvántartásban marad:
+        ha a folyamat úgy áll le, hogy a vágólapon EGY PYTHONBAN LÉTREHOZOTT
+        `QMimeData` ül, a leállás **SIGSEGV**-vel végződik. Mérve
+        (2026-08-27, PySide6, offscreen; minimális, Qt-n kívüli kód nélküli
+        próba):
+
+        | mit hagyunk a vágólapon kilépéskor | kilépőkód |
+        |---|---|
+        | semmit / `setText()` (a `QMimeData`-t a Qt hozza létre C++-ban) | 0 |
+        | Pythonban létrehozott `QMimeData` | **139 (SIGSEGV)** |
+        | ugyanaz, de előtte `clear()` vagy `setText()` | 0 |
+
+        A Python-oldali hivatkozás megtartása vagy eldobása (`del` +
+        `gc.collect()`), a `setParent()`, a `shiboken6.invalidate()` és a
+        `setUrls()` **egyike sem segít** — mind a három 139. A `shiboken6`
+        ebben a kiadásban nem kínál tulajdonjog-átadó hívást. Az EGYETLEN
+        működő fogás tehát: a kilépés pillanatában ne a mi
+        `QMimeData`-nk legyen a vágólapon.
+
+        A termékben ez nem elméleti: „másolok néhány képet, majd bezárom a
+        PicasaPy-t" ⇒ a folyamat összeomlik a leállás közben, és a
+        leállításkor futó munka (pl. a `QSettings` kiírása) elveszhet.
+
+        ## Mit veszítünk vele
+
+        A hasznos terhet **sima szöveggé fokozzuk le** (az útvonalak
+        soronként), nem töröljük: így ha egy vágólapkezelő átveszi a
+        tartalmat a kilépéskor, marad valami használható. A FÁJLOK viszont
+        a kilépés után már nem illeszthetők be fájlkezelőbe. Linuxon ez
+        többnyire amúgy is így van (a vágólap tartalma a tulajdonos
+        alkalmazással együtt szűnik meg, hacsak nincs vágólapkezelő), de
+        ahol lett volna átvétel, ott ez valódi veszteség — a kilépéskori
+        összeomlás elkerüléséért cserébe.
+
+        Csak akkor nyúlunk a vágólaphoz, ha MÉG MINDIG a mi terhünk áll
+        rajta: ha közben egy másik alkalmazás lett a tulajdonos, a
+        tartalmát elvenni durva hiba volna.
+        """
+        if not self._clipboard_is_ours:
+            return
+        board = _clipboard()
+        data = board.mimeData() if board is not None else None
+        if data is None or not data.hasFormat(GNOME_COPIED_FILES):
+            return  # már más alkalmazásé a vágólap — nem nyúlunk hozzá
+        paths = paths_from_uri_list(bytes(data.data(URI_LIST)))
+        board.setText("\n".join(str(path) for path in paths))
+        self._clipboard_is_ours = False
 
     def _clipboard_paths(self) -> list[Path]:
         board = _clipboard()
