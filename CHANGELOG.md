@@ -8,6 +8,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Hozzáadva
+- **A Képtálca mostantól tényleg gyűjtő: a képek több mappából is
+  összeszedhetők (#455).** Az alsó sáv bal oldalán ülő tálca eddig csak akkor
+  tartalmazott valamit, ha külön ráraktad a képet. Mostantól — ahogy az
+  eredeti Picasában — **a kijelölés magától a tálcára kerül**, a
+  „Kijelölés megtartása" gomb pedig **rögzíti**, amit már összeválogattál: a
+  következő kattintás azt nem söpri el. Így nyugodtan átmehetsz másik
+  mappába, kereshetsz is közben — a rögzített képek a tálcán maradnak, és a
+  rácsban külön jelvény mutatja, melyek azok. A **kék állapotsor** ettől
+  kezdve a tálca egészét összesíti (darabszám, dátumtartomány, összméret),
+  nem csak azt, ami épp a képernyőn ki van jelölve, és a **mappába
+  exportálás is a tálca tartalmán** dolgozik — akkor is, ha a képek fele már
+  nem is látszik a rácsban.
 - **A lassú indulás okát mostantól Windowson is meg tudjuk mérni (#1653).** A
   tulajdonos jelentése szerint a program Windows alatt 33 másodperc után
   jelenik meg, míg a fejlesztői gépen 5 alatt — a különbséget eddig soha nem
@@ -29,6 +41,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A tálca ürítése rossz kérdést tett fel, a jobbklikk-menüje pedig mást
+  csinált, mint amit ígért (#455).** A „Törlés" gomb eddig azt kérdezte,
+  hogy „szeretné-e üríteni a korábban megtartott elemeket" — az eredetiben
+  ez egy egészen másik, külön felkínált takarítás szövege. A teljes ürítés
+  helyes kérdése: *„Ezzel a művelettel a teljes tálcát kiüríti. Biztosan ezt
+  szeretné tenni?"*. A tálcán jobb gombbal előhívott menü két parancsa
+  („Kijelölés megtartása", „Kijelölés eltávolítása") pedig a rács
+  kijelölését szűkítette ahelyett, hogy a tálcára hatott volna — mostantól
+  tényleg a tálcára tesz, illetve arról vesz le.
 - **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
   semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
   előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata
