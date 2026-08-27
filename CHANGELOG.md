@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **A döntéseink mostantól a kódhoz vannak kötve (#1623).** A
+  `docs/decisions/` alatt tizenegy lap rögzíti, mit határoztunk el — de
+  eddig semmi nem kötötte őket a megvalósításukhoz, és a döntés csendben
+  elmozdulhatott a kód alól. Kétszer meg is történt: a #650-ben a fájl
+  saját kommentje mást mondott, mint a kód, a #616-ban pedig visszatért egy
+  görgethető keret, amit a #422 kifejezetten elvetett — mert senki nem
+  tudott róla. Mostantól minden döntési lap megnevezi, **mi valósítja meg
+  és mi őrzi**, és a CI ellenőrzi, hogy a megnevezett fájlok tényleg
+  léteznek, hogy a hivatkozott döntési lapok megvannak, és hogy visszavont
+  döntéshez nem tartozik élő megvalósítás. A bevezetés két elgépelt
+  tesztútvonalat azonnal ki is szűrt.
+
 ### Javítva
 - **Gyorsabb indulás nagy gyűjteménynél (#1601).** A tulajdonos azt
   jelentette, hogy a program „egyre lassabban" indul. Megmértük: az

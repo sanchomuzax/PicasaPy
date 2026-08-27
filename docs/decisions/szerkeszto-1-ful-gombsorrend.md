@@ -95,3 +95,13 @@ visszahozni tilos, és **ez itt egy elvetett irány**.
 forrás-sorrendet, és külön teszt őrzi, hogy a Kreatív készlet csempéje nincs
 jelen. **Ha egy jövőbeli kör „javítani" akarja a sorrendet, ez a teszt fog
 elbukni — és akkor ezt a lapot kell elolvasni, nem a tesztet átírni.**
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/EditorTabCommonFixes.qml`
+- **Őrzi:** `tests/app/qml_functional/test_editor_464.py`

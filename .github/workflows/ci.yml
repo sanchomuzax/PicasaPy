@@ -368,6 +368,25 @@ jobs:
         # (0 QML-fájl / vezérlő / őrzött hivatkozás → 2-es kilépési kód).
         run: python scripts/qml_undefined_or.py
 
+      - name: Döntés ↔ kód kötés őre (#1623)
+        # A `docs/decisions/` lapjai NORMATÍV döntéseket rögzítenek, a `src/`
+        # megvalósítja őket — de a kettő ma csendben elcsúszhat egymástól.
+        # Két megtörtént esetünk van rá: a #650 (a komment mást mondott, mint
+        # a kód) és a #616↔#422 (egy kifejezetten ELVETETT megoldás
+        # visszatért, mert senki nem tudott a korábbi döntésről; a tesztje
+        # ráadásul a hibát rögzítette szerződésként).
+        #
+        # A `scripts/check_protected_features.py` általánosítása, négy
+        # irányban: minden lapnak van gépi `## Kötés` szakasza; a benne
+        # megnevezett modul/teszt LÉTEZIK; a fában hivatkozott döntési lap
+        # létezik; és VISSZAVONVA státuszú döntéshez nem tartozhat élő
+        # megvalósítás (ez a #616-osztály őre).
+        #
+        # Amit NEM állít: szemantikai megfelelést. Hogy a megnevezett modul
+        # tényleg azt csinálja-e, amit a döntés mond, gépileg nem dönthető el
+        # — az őr jelölt éleket ellenőriz, nem garanciát ad.
+        run: python scripts/check_decision_links.py
+
       - name: "Menü-lefedettség: nem csökkenhet"
         # A LISTÁS JEGYEK ELROHADNAK. 2026-08-26-i mérés: a 175 nyitott
         # jegyből 87 (49 %) óta senki hozzá sem nyúlt, amióta megnyílt.

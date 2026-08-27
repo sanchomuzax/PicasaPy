@@ -114,3 +114,13 @@ eltérést, mert a rekeszérték nemzetközi fotós jelölés (a gépházon, az
 objektíven és a fotós szaknyelvben is `f/2.8`), és mert az eredeti program
 bizonyíthatóan így írta. A PicasaPy célja a Picasa újraírása, nem a
 helyesírási szabályzat követése ott, ahol a kettő ütközik.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/formatting.py`
+- **Őrzi:** `tests/app/test_formatting.py`

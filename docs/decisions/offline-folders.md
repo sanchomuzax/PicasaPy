@@ -72,3 +72,13 @@ tévedve órákig tartó újraépítés és elveszett metaadat lenne a következ
   azok viszont üzenettel, nem némán.
 - **Nem törlünk semmit automatikusan.** A végleges eltávolítás mindig
   explicit felhasználói művelet marad.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/index/schema.py`, `src/picasapy/app/library_controller.py`
+- **Őrzi:** `tests/index/test_offline_folders.py`, `tests/app/test_folder_pane_offline_459.py`, `tests/app/test_offline_folder_notice_459.py`
