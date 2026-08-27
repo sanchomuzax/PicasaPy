@@ -110,7 +110,13 @@ Menu {
     }
     MenuItem {
         objectName: "contextMenuRemoveFromAlbum"
-        text: qsTr("Remove from Album")
+        // #1619: a gyorsbillentyű IDE tartozik, nem külön „Törlés
+        // lemezről" tételre. Az eredetiben (spec 4., `0x00731050`, és
+        // `ui-audit-context-menus.md` 6.1) ez UGYANAZ a parancsrekesz,
+        // mint a mappa-nézet „Törlés lemezről"-e — `AlbumPhoto::
+        // ID_FILE_DELETEFROMDISK`, csak átcímkézve. Ezért album-nézetben
+        // egyetlen ilyen tétel van, és az viszi a `Ctrl+Delete`-et.
+        text: qsTr("Remove from Album") + "\tCtrl+Delete"
         // csak album-nézetben (#9): a rács ott az adott album tagjait
         // mutatja, ott van értelme a kijelölés kivételének
         visible: menu.currentAlbumToken !== ""
@@ -122,7 +128,9 @@ Menu {
     // épp egy személy albumát mutatja — ott van értelmük.
     MenuItem {
         objectName: "contextMenuRemoveFromPeopleAlbum"
-        text: qsTr("Remove from People Album")
+        // #1619: ugyanaz a rekesz átcímkézve (spec 4., `0x007355c0`), a
+        // `Ctrl+Delete` ezért ITT él az Emberek-albumban
+        text: qsTr("Remove from People Album") + "\tCtrl+Delete"
         visible: menu.personName !== ""
         onTriggered: menu.removeFromPeopleAlbumRequested()
     }
@@ -272,6 +280,11 @@ Menu {
         // Delete a menüsávé (spec 4.). A valódi billentyű a Main.qml
         // `shortcutDeleteFromDiskGrid` Shortcutja (#422-ből, változatlan).
         text: qsTr("Delete from Disk") + "\tCtrl+Delete"
+        // #1619: ADATVESZTÉS volt — album- és Emberek-nézetben is
+        // kínáltuk, holott az eredeti ott EGYÁLTALÁN nem ad lemezről
+        // törlést a kép helyi menüjében: ott ugyanez a parancsrekesz
+        // eltávolításra van átcímkézve (ld. fentebb a két tételt).
+        visible: menu.currentAlbumToken === "" && menu.personName === ""
         onTriggered: menu.deleteRequested()
     }
     MenuItem {

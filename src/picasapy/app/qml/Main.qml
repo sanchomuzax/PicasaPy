@@ -667,7 +667,11 @@ ApplicationWindow {
         objectName: "shortcutDeleteFromDiskGrid"
         sequence: "Ctrl+Delete"
         enabled: !window.viewerOpen && window.selectedRows().length > 0
-        onActivated: fileOpsDialogs.openDelete(window.selectedPaths())
+        // #1619: a `Ctrl+Delete` UGYANAZ a parancs (`0x9c9a`), csak másik
+        // belépő — ezért a #1608-ban készült KÖZÖS elágazáson megy át,
+        // nem másolt logikán. Albumban/Emberek-albumban eltávolít, nem
+        // lemezről töröl (spec 5.); mappában változatlanul töröl.
+        onActivated: picasaMenuBar.activateDeleteCommand()
     }
     // #422: a nézőben PUSZTA Delete törli a lemezről (spec 3.) — ott nincs
     // ütközés, mert a rács album-parancsai nem élnek
@@ -699,6 +703,8 @@ ApplicationWindow {
         }
     }
     menuBar: PicasaMenuBar {
+        // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
+        id: picasaMenuBar
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
         // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —

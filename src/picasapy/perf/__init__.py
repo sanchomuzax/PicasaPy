@@ -8,6 +8,12 @@ from __future__ import annotations
 
 from .collector import PerfCollector, PerfSample, read_proc_cpu_rss
 from .logwriter import PerfLogWriter, default_log_dir, sample_to_dict, session_header
+from .startup_timeline import (
+    STARTUP_TIMELINE_ENV,
+    StartupTimeline,
+    start_startup_timeline,
+    timeline_enabled,
+)
 
 __all__ = [
     "PerfCollector",
@@ -17,4 +23,8 @@ __all__ = [
     "default_log_dir",
     "sample_to_dict",
     "session_header",
+    "STARTUP_TIMELINE_ENV",
+    "StartupTimeline",
+    "start_startup_timeline",
+    "timeline_enabled",
 ]

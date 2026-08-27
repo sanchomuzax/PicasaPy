@@ -146,3 +146,13 @@ utólag pótolandó adósságként:
 - további, a fentieken túli, teljesen saját ötletű effektek (nem a
   binárisban talált, csak a felületén hiányzó `Glimmer`-szűrők
   előhívása — az az `EditorLegacyTab.qml` fenti tétele).
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `scripts/check_protected_features.py`
+- **Őrzi:** `tests/tools/test_check_protected_features_1187.py`

@@ -70,6 +70,35 @@ python scripts/qml_undefined_or.py          # ugyanaz, amit a CI futtat
 python scripts/qml_undefined_or.py --list   # a mai védtelen kötések
 ```
 
+A negyedik őr a **döntés ↔ kód kötést** tartja karban. A `docs/decisions/`
+lapjai normatív döntéseket rögzítenek — mit határoztunk el —, a `src/` pedig
+megvalósítja őket; a kettő azonban csendben elcsúszhat. A #650-ben a fájl
+saját kommentje mást mondott, mint a kód, és az átnézés a kommentet olvasta;
+a #616-ban egy javítás visszahozta azt a görgethető keretet, amit a #422
+kifejezetten **elvetett** — mert senki nem tudott róla.
+
+Ezért minden döntési lap végén ott egy gépi **`## Kötés`** szakasz:
+
+```markdown
+## Kötés
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/formatting.py`
+- **Őrzi:** `tests/app/test_formatting.py`
+```
+
+A `nincs megvalósítva` és a `nincs őr` **érvényes** kitöltés — az az
+információ, hogy egy döntésnek nincs megvalósítása, önmagában is érték.
+A `VISSZAVONVA` státuszhoz viszont **nem tartozhat** élő `Megvalósítja`:
+az azt jelentené, hogy egy elvetett döntés visszatért a kódba.
+
+```sh
+python scripts/check_decision_links.py      # ugyanaz, amit a CI futtat
+```
+
+**Ha a megvalósítás átkerül máshova, a `## Kötés`-t is vezesd át** —
+az elárvult hivatkozás rosszabb a semminél, mert hamis biztonságérzetet ad.
+
 Ha védtelen kötést jelez, írd át erre az alakra:
 
 ```qml

@@ -61,6 +61,7 @@ from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
+from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
@@ -130,6 +131,10 @@ class AppController(
     # #1029: a bal hasáb Projektek gyűjteménye — a `.picasa.ini`
     # `P2category=Projects (internal)` mappái
     ProjectFoldersMixin,
+    # #1601: a fenti KETTŐ betöltése EGY ini-söpréssel, és induláskor a
+    # felület szálán kívül — mérve ez volt az indulás szinkron munkájának
+    # 94%-a (ld. `side_pane_controller.py` mérési táblája)
+    SidePaneMixin,
     TrayMixin,
     QObject,
 ):
@@ -864,7 +869,14 @@ class AppController(
         visszatérve a feed így a megnyitás előtti pozícióján marad."""
         self._reload(preserve_scroll=True)
 
-    def _reload(self, preserve_scroll: bool = False) -> None:
+    def _reload(
+        self, preserve_scroll: bool = False, defer_collections: bool = False
+    ) -> None:
+        """#1601: `defer_collections=True` esetén a hasáb két ini-alapú
+        gyűjteménye (Emberek, Projektek) NEM töltődik be itt — az indulás
+        használja így, hogy a `.picasa.ini`-söprés ne a felület szálán
+        blokkoljon. Az elmaradt betöltést a háttér-szinkron végi
+        `_reload_after_sync()` hozza be (ld. `side_pane_controller.py`)."""
         # a háttér-sync külső ini-változást is hozhat — a leírás-cache
         # elavulhatott, a fejlécek olvassák újra
         self._descriptions.clear()
@@ -877,10 +889,11 @@ class AppController(
             with open_index(self._db_path) as conn:
                 self._folders.load(conn)  # #321: a fa sorrendje rögzített
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
-                self._load_people(conn)  # #26: a bal hasáb Emberek gyűjteménye
-                # #1029: a Projektek gyűjtemény (P2category) — a hasáb
-                # ne maradjon üres a háttér-szinkron után sem
-                self._load_project_folders(conn)
+                # #26 (Emberek) + #1029 (Projektek): mindkettő a `.picasa.ini`-kből
+                # él, ezért EGY söprésből áll elő (#1601). Induláskor pedig
+                # egyáltalán nem itt, hanem a háttér-szinkron szálán.
+                if not defer_collections:
+                    self._load_side_pane(conn)
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.

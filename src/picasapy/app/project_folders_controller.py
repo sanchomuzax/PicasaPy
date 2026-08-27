@@ -1,9 +1,10 @@
 """#1029: a bal hasáb **Projektek** gyűjteménye — controller-szelet.
 
 A `PeopleMixin` (#26) mintáját követő mixin: az `AppController` örökli, az
-állapotát a `_reload()` frissíti (a `_load_albums`/`_load_people` mellett),
-így a háttér-szinkron után is friss marad — a frissen mentett kollázs
-mappája a következő szinkronnal magától megjelenik a hasábon.
+állapotát a `_reload()` frissíti (#1601 óta az Emberek gyűjteménnyel
+KÖZÖS ini-söprésből, ld. `side_pane_controller.py`), így a háttér-
+szinkron után is friss marad — a frissen mentett kollázs mappája a
+következő szinkronnal magától megjelenik a hasábon.
 
 A gyűjtemény tartalmának forrása a `.picasa.ini` `[Picasa]` `P2category`
 kulcsa (`picasapy.index.project_folders`); a kattintás NEM kap saját utat:
@@ -28,8 +29,11 @@ class ProjectFoldersMixin:
         self._project_folders: tuple = ()
 
     def _load_project_folders(self, conn) -> None:
-        """A Projektek-lista frissítése — ugyanott hívandó, ahol a
-        mappalista és az albumlista frissül (`_reload()`)."""
+        """CSAK a Projektek-lista frissítése, saját ini-söpréssel.
+
+        ⚠️ #1601: a `_reload()` már NEM ezt hívja, hanem a
+        `SidePaneMixin._load_side_pane`-t — az az Emberek gyűjteménnyel
+        KÖZÖS, egyetlen `.picasa.ini`-söprésből állítja elő mindkettőt."""
         self._project_folders = project_folders(conn)
         self.projectFoldersChanged.emit()
 

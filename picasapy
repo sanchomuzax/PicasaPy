@@ -6,11 +6,16 @@ Gyökér nélkül a ~/.config/picasapy/WatchedFolders.txt-ből olvas.
 """
 
 import sys
+import time
 from pathlib import Path
+
+# #1601: a legelső saját sorunk — ebből látszik a PySide6-import ideje is az
+# indulási idővonalon (`PICASAPY_STARTUP_TIMELINE=1`).
+_ENTRY_AT = time.monotonic()
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from picasapy.app.application import run
 
 if __name__ == "__main__":
-    sys.exit(run(sys.argv))
+    sys.exit(run(sys.argv, entry_at=_ENTRY_AT))

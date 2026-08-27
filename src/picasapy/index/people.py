@@ -21,12 +21,11 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
-from pathlib import Path
 
-from picasapy.ini import contacts_of, load_document, parse_faces
+from picasapy.ini import IniDocument, contacts_of, parse_faces
 from picasapy.ini.faces import Face
-from picasapy.scanner import PICASA_INI_NAME
 
+from .folder_ini import sweep_folder_inis
 from .queries import _SELECT, PhotoRecord, _records
 
 
@@ -38,14 +37,28 @@ class PersonRecord:
     photo_count: int
 
 
-def people_in_index(conn: sqlite3.Connection) -> tuple[PersonRecord, ...]:
+#: Egy mappa arc-adata: (mappa, {person_id.casefold(): név}, {fájlnév: arcok}).
+FaceData = tuple[str, dict[str, str], dict[str, tuple[Face, ...]]]
+
+
+def people_in_index(
+    conn: sqlite3.Connection,
+    face_data: tuple[FaceData, ...] | None = None,
+) -> tuple[PersonRecord, ...]:
     """A könyvtárban előforduló, NÉVVEL ellátott személyek — NÉV szerint
     rendezve (kis-nagybetű-tűrően), a Picasa-hasáb mintájára.
 
     Egy fotón belül ugyanaz a név csak egyszer számít (két arc-régió is
-    tartozhatna rá, de a darabszám fotókat számol, nem arc-régiókat)."""
+    tartozhatna rá, de a darabszám fotókat számol, nem arc-régiókat).
+
+    #1601: a `face_data` a MÁR BEGYŰJTÖTT arc-adat — a hívó így megoszthatja
+    az ini-söprést a Projektek gyűjteménnyel (`index/side_pane.py`), és a
+    `.picasa.ini`-ket nem kell kétszer végigolvasni. `None` esetén a
+    viselkedés változatlan: maga söpör."""
     counts: dict[str, int] = {}
-    for _folder_path, names, faces_by_file in _iter_face_data(conn):
+    for _folder_path, names, faces_by_file in (
+        _iter_face_data(conn) if face_data is None else face_data
+    ):
         for faces in faces_by_file.values():
             seen: set[str] = set()
             for face in faces:
@@ -121,27 +134,25 @@ def _resolve_name(face: Face, names: dict[str, str]) -> str | None:
     return names.get(face.contact_id.casefold())
 
 
-def _iter_face_data(
-    conn: sqlite3.Connection,
-) -> tuple[tuple[str, dict[str, str], dict[str, tuple[Face, ...]]], ...]:
-    """(mappa, {person_id.casefold(): név}, {fájlnév: arcok}) hármasok a
-    `has_ini=1` mappákra — olvashatatlan/hibás ini-t csendben kihagy (a
-    könyvtár másik folyamat általi éppen-írása ne omlassza össze a listát)."""
-    result = []
-    for row in conn.execute("SELECT path FROM folders WHERE has_ini = 1"):
-        folder_path = row["path"]
-        ini_path = Path(folder_path) / PICASA_INI_NAME
-        try:
-            document = load_document(ini_path)
-        except (OSError, ValueError):
-            continue
+class FaceDataCollector:
+    """#1601: a `sweep_folder_inis` fogyasztója az Emberek-gyűjteményhez.
+
+    Külön osztály, mert a söprést MEGOSZTJUK a Projektek gyűjteménnyel
+    (`index/side_pane.py`): a `.picasa.ini`-t így mappánként egyszer
+    olvassuk, nem kétszer. A törzse változatlanul a korábbi
+    `_iter_face_data` ciklusmagja."""
+
+    def __init__(self) -> None:
+        self.rows: list[FaceData] = []
+
+    def __call__(self, folder_path: str, document: IniDocument) -> None:
         names = {
             contact.person_id.casefold(): contact.name
             for contact in contacts_of(document)
             if contact.name
         }
         if not names:
-            continue
+            return
         faces_by_file: dict[str, tuple[Face, ...]] = {}
         for section in document.file_sections():
             raw_faces = section.get("faces")
@@ -153,5 +164,15 @@ def _iter_face_data(
                 continue
             faces_by_file[section.name] = faces
         if faces_by_file:
-            result.append((folder_path, names, faces_by_file))
-    return tuple(result)
+            self.rows.append((folder_path, names, faces_by_file))
+
+
+def _iter_face_data(
+    conn: sqlite3.Connection,
+) -> tuple[FaceData, ...]:
+    """(mappa, {person_id.casefold(): név}, {fájlnév: arcok}) hármasok a
+    `has_ini=1` mappákra — olvashatatlan/hibás ini-t csendben kihagy (a
+    könyvtár másik folyamat általi éppen-írása ne omlassza össze a listát)."""
+    collector = FaceDataCollector()
+    sweep_folder_inis(conn, (collector,))
+    return tuple(collector.rows)

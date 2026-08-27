@@ -201,3 +201,50 @@ class TestAProgramSzerzodese:
 def test_a_kulcs_neve_nem_valtozott():
     """Az őr a kulcson át fog: ha átnevezik, itt derüljön ki."""
     assert OUTPUT_DIR_KEY == "collage/outputDir"
+
+
+class TestAMeghajtobetusUrlLinuxonIsMerheto:
+    """#1626: a `file:///C:/...` URL feloldása — a WINDOWSOS ág, Linuxon.
+
+    A Qt a meghajtóbetű elé tett perjelet csak Windowson szedi le
+    (`QUrlPrivate::toLocalFile`, `#ifdef Q_OS_WIN`), ezért a `to_local_path`
+    ezt a lépést a `_platform()` fogantyún át maga is elvégzi (#1217). Így
+    az az ág, amelyik a #1626-ban éles hibát okozott, itt, Linuxon is
+    mérhető — nem kell hozzá windows-CI-kör.
+
+    A mért hiba: az `ExportDialogs.qml` a `file://` előtagot nyersen
+    levágta, `/C:/Users/...` maradt, és a `mkdir` `WinError 123`-mal
+    elhasalt — a Google Earth-KML SOHA nem készült el a windows-lábon.
+    """
+
+    def test_windowson_a_meghajtobetu_elol_eltunik_a_per(self, monkeypatch):
+        from picasapy.app import formatting
+
+        monkeypatch.setattr(formatting, "_platform", lambda: "win32")
+
+        assert formatting.to_local_path("file:///C:/Temp/pp") == "C:/Temp/pp"
+
+    def test_a_posix_ut_valtozatlan_marad_a_windowsos_agon_is(self, monkeypatch):
+        """A meghajtó-levágás nem eshet rá közönséges POSIX útra."""
+        from picasapy.app import formatting
+
+        monkeypatch.setattr(formatting, "_platform", lambda: "win32")
+
+        assert formatting.to_local_path("file:///tmp/kep.jpg") == "/tmp/kep.jpg"
+
+    def test_a_posix_agon_nem_nyulunk_a_meghajtobetus_alakhoz(self, monkeypatch):
+        """POSIX-on a `/C:/…` VALÓDI (bár szokatlan) útvonal lehet — a
+        levágás ott adatvesztő volna, ezért a fogantyú dönt, nem a minta."""
+        from picasapy.app import formatting
+
+        monkeypatch.setattr(formatting, "_platform", lambda: "linux")
+
+        assert formatting.to_local_path("file:///C:/Temp/pp") == "/C:/Temp/pp"
+
+    def test_a_nyers_ut_erintetlen_marad(self):
+        """Csak a `file:`-előtagos bemenetet oldjuk fel — a sima útvonalat
+        nem. (A #1626 hibás alakja pont ilyen volt: `/C:/Temp/pp`.)"""
+        from picasapy.app import formatting
+
+        assert formatting.to_local_path("/C:/Temp/pp") == "/C:/Temp/pp"
+

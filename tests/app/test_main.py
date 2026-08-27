@@ -10,8 +10,9 @@ from picasapy.app import __main__ as entrypoint
 def test_main_calls_run_with_sys_argv(monkeypatch):
     captured = {}
 
-    def fake_run(argv):
+    def fake_run(argv, *, entry_at=None):
         captured["argv"] = argv
+        captured["entry_at"] = entry_at
         return 0
 
     monkeypatch.setattr(entrypoint, "run", fake_run)
@@ -21,10 +22,13 @@ def test_main_calls_run_with_sys_argv(monkeypatch):
 
     assert entrypoint.main() == 0
     assert captured["argv"] == ["picasapy", "/mnt/nas/fotok"]
+    # #1601: a belépési pont átadja a saját indulási időbélyegét — enélkül
+    # az idővonalról hiányozna a PySide6-import ideje
+    assert captured["entry_at"] == entrypoint._ENTRY_AT
 
 
 def test_main_returns_runs_exit_code(monkeypatch):
-    monkeypatch.setattr(entrypoint, "run", lambda argv: 3)
+    monkeypatch.setattr(entrypoint, "run", lambda argv, *, entry_at=None: 3)
     monkeypatch.setattr(entrypoint.sys, "argv", ["picasapy"])
 
     assert entrypoint.main() == 3

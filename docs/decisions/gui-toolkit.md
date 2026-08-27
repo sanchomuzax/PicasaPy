@@ -50,3 +50,13 @@ Wayland/labwc, Raspberry Connect-en át értékelve):
 - A GTK4 demó megmarad a repóban összehasonlítási alapnak.
 - Kockázat (elfogadva): a QML-hez QML-tudás kell; a Widgets-fallback
   (QListView + delegate) bármikor nyitva áll ugyanabban a lib-ben.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `pyproject.toml`, `src/picasapy/app/qml/Main.qml`
+- **Őrzi:** nincs őr

@@ -49,3 +49,13 @@ Ott van levezetve a 2. pont (hét fül) számszerű következménye is:
 
 A javítás jegye: **#741**. A mérés forrása a `respack.yt` rétegtéglalapjai —
 nem képernyőkép.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/Main.qml`
+- **Őrzi:** `tests/app/qml_functional/test_editor_panel_geometry_741.py`
