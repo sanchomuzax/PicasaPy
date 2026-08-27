@@ -114,6 +114,15 @@ jobs:
         shell: bash
         run: python scripts/indulas_meres.py --io-terheles
 
+      - name: Az I/O-őr próbája ezen a platformon (#1653)
+        # A `tests/perf/test_indulas_io_terheles_1653.py` a rendes
+        # tesztkészlet része, tehát PR-en úgyis lefut — de az őr küszöbeit
+        # HÁROM platform mérése adta, és a windowsos számokat itt lehet a
+        # leggyorsabban visszaellenőrizni, mielőtt a küszöb a főágra kerül.
+        if: matrix.meret == 'ures'
+        shell: bash
+        run: python -m pytest tests/perf/test_indulas_io_terheles_1653.py -q
+
       - name: Indulási idővonal — üres könyvtár
         if: matrix.meret == 'ures'
         shell: bash

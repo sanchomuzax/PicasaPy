@@ -16,7 +16,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   vezérlőkkel), és készült egy mérés, amely ugyanezt a bontást a Windows- és
   a Linux-gépen is felveszi, ugyanazon a napon, ugyanazzal a kóddal. Az
   időmérő továbbra is alapból ki van kapcsolva, és kikapcsolva semmibe nem
-  kerül.
+  kerül. A mérés eredménye: a program indulása **nem a számítás, hanem a
+  fájlbeolvasás miatt lassú** — minden indításkor mintegy 290 MB program-
+  és könyvtárfájlt kell beolvasni. Új ellenőrzés vigyáz arra, hogy ez a
+  mennyiség ne nőjön tovább észrevétlenül.
 - **A tesztfuttatás szabálya mostantól kapu, nem kérés (#1649).** Eddig a
   dokumentáció kérte, hogy a teszteket a projekt futtatójával indítsuk — és a
   kérés 2026-08-15-én megbukott: öt párhuzamos munkamenet **5,8 GB**
