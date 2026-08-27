@@ -450,3 +450,41 @@ címkét". Jegy: **#1406**.
 
 *(`ID_DELETE_EMPTY_ALBUMS` — „Üres **online** albumok törlése…" ⇒ Picasa
 Web, **hatókörön kívül**; a `menu_lefedettseg.py` kizáró listájára került.)*
+
+## A 27. adag — a Megjelenítési mód nyolc tétele (2026-08-27)
+
+> ⚠️ **Előzmény:** hét kizárt irány után arra jutottam, hogy „valószínűleg
+> nincs megvalósítva", és azt javasoltam, ne építsük meg. **A tulajdonos
+> élesben megcáfolta** („tökéletesen működik, a két gamma is külön-külön").
+> A tanulság a `binaris-regeszet-modszertan.md`-ben.
+
+### A mechanizmus: cserélhető képpont-transzformáció
+
+```
+0x00575670(ecx = FÜGGVÉNYMUTATÓ)     ; 292 b
+   [view+0x254] = ecx                 ; a transzformáció eltárolása
+   or [view+8], 7                     ; piszkos jelzők → újrarajzolás
+```
+
+A diszpécser **tíz kis kernelt** telepít ide, **tizenegy** menüparancsból
+(8 összefüggő: `0x005cbc40`–`0x005cbcc5`, plusz `0x005cc746`, `0x005cc757`).
+A Megjelenítési mód almenü **11 tételes** ⇒ egyhez nincs kernel, kézenfekvően
+az **„Automatikus"** (törli a felülbírálást) — **feltevés**.
+
+### A kernelek — a TARTALMUKBÓL azonosítva
+
+| kernel | mit csinál | bizonyíték |
+|---|---|---|
+| `0x9e8810` | a **tiszta fehér** képpontot (`&0xFFFFFF==0xFFFFFF`) `0xFFFF7F7F`-re cseréli | `0x009e8829`–`0x009e8831` ⇒ **túlcsordulás-jelzés** |
+| `0x9e8b80` | beolvassa a képernyő **színmélységét** (`[0xd33958]`, forrás: `GetDeviceCaps(BITSPIXEL)` a `0x0097e030`-ban) | ⇒ **színmélység-ág** |
+| `0x9e8b40`, `0x9e8b60` | **gamma 2,2** (`0xcf4140`) + `0x00aa3f80` | ⇒ **gamma-ág** |
+| `0x9e8850`, `0x9e89a0` | zöld-súly **151/256** (`imul …, 0x97`) | ⇒ **monokróm-jellegű** |
+| `0x9e8a10` | csatorna-skálázás `0xdc` (220) | színtranszformáció |
+| `0x9e8a70`, `0x9e8ad0`, `0x9e8b90` | nem jellemezve | — |
+
+**Nem tartós**: nincs beállításkulcs (két eltérő alakú lekérdezés), nincs
+pipa-frissítő (mind a 13 `CheckMenuItem`-hívó megnézve).
+
+⚠️ **A menüpont↔kernel párosítást NEM adom ki** — ahhoz a
+parancsazonosítók kellenének, ami a projektben tiltott. A megvalósítói
+kör mérje ki. Jegy: **#1409**.
