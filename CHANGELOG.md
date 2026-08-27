@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **A megjelenítési mód némán elveszhetett a nagy nézőben (#1598).** A
+  `Nézet ▸ Megjelenítési mód` átalakítói csak azon az úton jutnak a
+  képernyőre, amelyen a néző a szerkesztés élő előnézetét kéri. Ha ez az
+  előnézet éppen nem élt, a néző a nyers képfájlt rajzolta ki — azon pedig a
+  mód nem látszik, és a menüpont **hatástalan maradt, minden jelzés nélkül**.
+  Mostantól módváltáskor a néző maga gondoskodik róla, hogy a képet azon az
+  úton kapja, amelyen a mód is átjut. A javítást olyan ellenőrzés őrzi, amely
+  a **ténylegesen kirajzolt ablak képpontjait** olvassa vissza — nem a
+  képszolgáltató kimenetét, ahogy eddig.
 - **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
   visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
   oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont
