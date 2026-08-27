@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Kiadatlan]
+## [Nem kiadott]
 
 ### Hozzáadva
 - **A lassú indulás okát mostantól Windowson is meg tudjuk mérni (#1653).** A
@@ -29,6 +29,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
+  semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
+  előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata
+  mégis `Ctrl+O`-t hirdetett. Itt a mögöttes funkció (egyedi kép-/videófájlok
+  felvétele natív fájlválasztóval) korábban egyáltalán nem létezett sem a
+  menüből, sem máshonnan. Mostantól a menüpont és a `Ctrl+O` egy natív
+  fájlválasztót nyit; a kijelölt fájl(ok) szülőmappája a MEGLÉVŐ
+  „Mappa hozzáadása a Picasához…" belépési ponton (`addWatchedFolder`)
+  kerül a könyvtárba, tartósan figyelve.
 - **A megjelenítési mód némán elveszhetett a nagy nézőben (#1598).** A
   `Nézet ▸ Megjelenítési mód` átalakítói csak azon az úton jutnak a
   képernyőre, amelyen a néző a szerkesztés élő előnézetét kéri. Ha ez az
@@ -38,6 +47,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   úton kapja, amelyen a mód is átjut. A javítást olyan ellenőrzés őrzi, amely
   a **ténylegesen kirajzolt ablak képpontjait** olvassa vissza — nem a
   képszolgáltató kimenetét, ahogy eddig.
+- **A Nézet ▸ Megjelenítési mód tételei a könyvtár rácsán semmit nem
+  csináltak (#1596).** A módok (Projektor mód, LCD fehérpont, Lineáris
+  gamma, Túlcsordult képpontok) eddig csak a nagy nézőben hatottak. Aki a
+  rácsban böngészve kapcsolt át — vagyis a legtöbb felhasználó —,
+  **mind a tizenegy tételt hatástalannak látta**, mert a rács más úton
+  kapja a képet, mint a nagy néző. Mostantól a mód a könyvtár rácsán is
+  látszik, és az átkapcsolás a látható bélyegképeket azonnal frissíti. A
+  mód **nem ég bele** a tárolt bélyegképbe: kikapcsolva a kép azonnal
+  visszaáll, az exportba és a webalbumba pedig változatlanul nem
+  szivárog át. A gyorsítótár úgy tartja külön a módokat, hogy oda-vissza
+  kapcsolgatva nincs újrarajzolási költség, mód nélkül pedig a rács
+  ugyanolyan gyors marad, mint eddig (mérve: a bélyegkép-kiszolgálás
+  0,60 → 0,61 ms/kép mód nélkül, 1,25–1,36 ms/kép bekapcsolt módban).
 - **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
   visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
   oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont

@@ -754,6 +754,8 @@ ApplicationWindow {
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
+        // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O
+        onAddFileRequested: addFileDialog.open()
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
@@ -892,6 +894,8 @@ ApplicationWindow {
     PicasaImportDialog { id: picasaImportDialog }
     // Import forrásból (#23): az eszköztár "Import" gombja nyitja
     ImportSourceDialog { id: importSourceDialog }
+    // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — natív fájlválasztó
+    AddFileDialog { id: addFileDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
     // #449: első indítás — az eredeti EGYETLEN kérdést tett fel (teljes gép

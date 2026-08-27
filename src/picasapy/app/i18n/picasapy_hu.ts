@@ -5576,6 +5576,28 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <!-- #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — a felirat és a
+         szűrő-szókészlet szándékosan MEGEGYEZIK a fenti ImportSourceDialog
+         szövegeivel (a Qt QML-fordítás kontextusonként, azaz QML-
+         típusonként keres fordítást, ezért a duplikálás szükséges). -->
+    <name>AddFileDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/AddFileDialog.qml" line="30"/>
+        <source>Add File to Picasa...</source>
+        <translation>Fájl felvétele a Picasába…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/AddFileDialog.qml" line="36"/>
+        <source>Picture and Movie Files</source>
+        <translation>Kép- és filmfájlok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/AddFileDialog.qml" line="40"/>
+        <source>All Files</source>
+        <translation>Minden fájl</translation>
+    </message>
+</context>
+<context>
     <name>TimelineController</name>
     <message>
         <location filename="../timeline_controller.py" line="96"/>

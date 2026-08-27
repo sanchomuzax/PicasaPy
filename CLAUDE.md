@@ -94,13 +94,19 @@ bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vag
 második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
 lehetőleg különböző sávokból végy jegyeket.
 
-## 📐 Élő állapotlap — a kör végén frissítsd
+## 📐 Élő artifactok — a kör végén frissítsd
 
-A tulajdonos egyetlen olvasható lapon látja a projekt állapotát:
-`docs/allapotlap.md` tartalmazza a **címét és a frissítés menetét**. A lapot
-**nem írjuk, hanem újraszámoljuk** — `python3 scripts/allapotlap.py` —, majd
-**ugyanarra a címre** publikáljuk (`Artifact` hívás `url` mezője). Új cím =
-a felhasználó régi linkje elavul, ezért soha ne publikáld `url` nélkül.
+A tulajdonos **két** olvasható lapot kap: az **állapotlapot** (hol tart a
+projekt) és a **bináris térképet** (mennyit fejtettünk vissza, és hol). A
+címeik és a menet a `docs/allapotlap.md`-ben. Egyiket sem írjuk kézzel —
+**újraszámoljuk**, egyetlen paranccsal:
+
+```
+python3 scripts/artifactok.py
+```
+
+majd mindkettőt **a kiírt címre** publikáljuk (`Artifact` hívás `url` mezője).
+Új cím = a felhasználó régi linkje elavul, ezért soha ne publikáld `url` nélkül.
 
 Ha a köröd jegyet nyitott vagy zárt, a kör végén frissítsd. Bármelyik
 session megteheti; a szkript csak olvas.
