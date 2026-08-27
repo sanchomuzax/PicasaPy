@@ -28,14 +28,6 @@
 name: Indulási idő mérése (#1653)
 
 on:
-  # ⚠️ IDEIGLENES, a mérés ágára szűkítve. A GitHub a `workflow_dispatch`-et
-  # csak akkor látja, ha a fájl MÁR a főágon van — új workflow-t tehát a
-  # saját ágáról nem lehet kézzel indítani (mérve: HTTP 404). Amíg a #1653
-  # ága nyitva van, ez a `push`-kapu adja a futtatás lehetőségét; a
-  # beolvasztáskor TÖRLENDŐ, utána a `workflow_dispatch` veszi át.
-  # Más ágakra nem hat, tehát semmilyen PR-t nem lassít.
-  push:
-    branches: [perf/1653-windows-indulas]
   workflow_dispatch:
     inputs:
       mappa_szam:
