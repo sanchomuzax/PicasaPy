@@ -446,7 +446,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 `…/DocumentTabStrip.qml`, `…/PhotoViewer.qml`,
 `…/SlideshowView.qml`, `…/LightboxFeed.qml`, `…/CollageCanvas.qml`.
 
-**Nálunk ma 19 `Shortcut` elem van**, 17 különböző kombinációval.
+**Nálunk ma 20 `Shortcut` elem van**, 18 különböző kombinációval.
 
 | billentyű | eredeti funkció | nálunk | hol |
 |---|---|---|---|
@@ -470,7 +470,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 | `Esc` | Visszatérés a könyvtárhoz | ⚠️ **eltér** – nálunk a `DocumentTabStrip` projektlap-váltása, a nézőben `Keys.onEscapePressed` | `DocumentTabStrip.qml:115`, `PhotoViewer.qml:471` |
 | `Home` / `End` | első/utolsó kép a mappában | ✅ megvan | `LightboxFeed.qml:218` |
 | `Ctrl+N` | Új album | ❌ **hiányzik** | — |
-| `Ctrl+O` | Fájl felvétele a Picasába | ❌ hiányzik | — |
+| `Ctrl+O` | Fájl felvétele a Picasába | ✅ megvan (#1633) | `PicasaMenuBar.qml:276` |
 | `Ctrl+M` | Importálás forrása | ✅ megvan (#1615) | `PicasaMenuBar.qml:263` |
 | `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | ❌ hiányzik | — |
 | `Ctrl+P` | Nyomtatás | ✅ megvan (#1472) | `PicasaMenuBar.qml:237` |
@@ -503,8 +503,8 @@ rekordja **28 egyedi** kombinációt takar (az `F2`, a `Ctrl+3`, a `Ctrl+4`
 helyi menüben élő (`Enter`, `Esc`, `Ctrl+H`, `Ctrl+Delete`) és a rács
 `Home` / `End` billentyűje — **összesen 34**.
 
-Ebből nálunk: **19 megvan**, **2 eltér** (`Delete`, `Esc`),
-**13 hiányzik**.
+Ebből nálunk: **20 megvan**, **2 eltér** (`Delete`, `Esc`),
+**12 hiányzik**.
 
 ---
 

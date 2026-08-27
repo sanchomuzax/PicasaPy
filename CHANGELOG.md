@@ -17,6 +17,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
+  semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
+  előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata
+  mégis `Ctrl+O`-t hirdetett. Itt a mögöttes funkció (egyedi kép-/videófájlok
+  felvétele natív fájlválasztóval) korábban egyáltalán nem létezett sem a
+  menüből, sem máshonnan. Mostantól a menüpont és a `Ctrl+O` egy natív
+  fájlválasztót nyit; a kijelölt fájl(ok) szülőmappája a MEGLÉVŐ
+  „Mappa hozzáadása a Picasához…" belépési ponton (`addWatchedFolder`)
+  kerül a könyvtárba, tartósan figyelve.
 - **A megjelenítési mód némán elveszhetett a nagy nézőben (#1598).** A
   `Nézet ▸ Megjelenítési mód` átalakítói csak azon az úton jutnak a
   képernyőre, amelyen a néző a szerkesztés élő előnézetét kéri. Ha ez az
