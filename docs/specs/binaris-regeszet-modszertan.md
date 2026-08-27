@@ -997,3 +997,59 @@ azonosítani** (`rtti` tábla), mielőtt jelentést írnál róla. A meglévő
 figyelmeztetés — *„a struktúra-offszet alapú nyom félrevezet"* — az új
 szerszámmal **még könnyebben** megharap, mert most már gyorsan eljutsz
 konstruktorokig, ahol számok hevernek.
+
+### 14/f. Külső módszertani visszacsatolás — mit javasol a szakirodalom (2026-08-27)
+
+A `+0x54` offszet körüli zsákutca után a tulajdonos rákérdeztetett egy külső,
+LLM-támogatott visszafejtésről szóló forrásgyűjteményre (NotebookLM).
+
+**Negatív eredmény elöl:** a gyűjtemény **semmit nem tud a Picasáról** — se a
+`CLocalServer`-ről, se a portról, se a rejtett beállításokról. Módszertani
+irodalom, nem termékdokumentáció. A konkrét portszám tehát **nem** onnan fog
+megjönni.
+
+#### A saját tévedésünknek NEVE van a szakirodalomban
+
+A majdnem-hiba — hogy a konstruktorban talált `0xc365`-öt „a portnak"
+neveztem volna — a *RARE* (Representation-Confusion Attacks in Reverse
+Engineering) osztályozásában **„evidence confusion"**: a folyamat **helyesen
+kinyert** megfigyelést olyan szerepbe emel, amihez nincs meg a szükséges
+alátámasztás. A hangsúly azon van, hogy **a kinyerés helyessége nem elég** —
+a származást (provenance) végig kell vinni a jelentésig.
+
+#### Amit ebből ÁTVESZÜNK: minden konstans mellé származás-mezők
+
+A javaslat szerint minden talált értékhez rögzítendő:
+
+| mező | nálunk mit jelentene |
+|---|---|
+| **`exact_root`** | **melyik függvény írta be** — ez a mi esetünkben azonnal eldöntötte volna: `FUN_004c0d10` a `CIndexer` konstruktorát hívja, nem a socketét |
+| `location` | a pontos cím (`0x004c0d38`) |
+| `support_type` | `structural` (statikus konstans) vs. `behavioral` (futásidejű mérés) |
+| `reachability` | `present` / `referenced` / `reachable` / `executed` |
+| `payload_origin` | a binárisból jött, nem a mi állításunk |
+
+**A gyakorlati szabály:** egy konstansra addig NEM szabad funkcionális nevet
+adni, amíg az `exact_root` objektumát a **vtáblájából** nem azonosítottuk.
+
+#### A javasolt technikák, költség szerint
+
+| technika | mit ad | mibe kerül |
+|---|---|---|
+| **struktúra-szintézis mezőelérési mintákból** (Kong) | egy vtáblához tartozó ÖSSZES metódus `[reg+0xNN]` hozzáféréseit összegyűjti, és **globálisan** egyezteti az offszet jelentését | olcsó, statikus — **a mi eszközeinkkel megépíthető** |
+| **AST-alapú könnyű adatfolyam-követés** (ReCopilot) | a dekompilált pszeudokód szintaxisfáján követi a mutatót és aliasait, függvényhatáron át is | közepes; dekompilátor kell hozzá |
+| **decompiler API MCP-n át** (GhidraMCP, re-mcp, BinAssist) | típuskönyvtárak, típus-kényszerítés, automatikus struktúra-rekonstrukció | Ghidra/IDA kell |
+| **szimbolikus végrehajtás** (angr) | `bind()`-tól visszafelé igazolt bizonyítéklánc | drága, útvonal-robbanás fenyeget |
+
+⚠️ A forrás adott egy angr-vázlatot is, de **nem ellenőriztem**, és van benne
+legalább egy gyanús API-név (`func.preducers`; az angr-ben `predecessors`).
+Kódként nem vettem át.
+
+#### A KÖVETKEZŐ LÉPÉS nálunk — a legolcsóbb ág
+
+A Kong-féle **struktúra-szintézis** a mi meglévő szerszámainkból összerakható:
+`rtti` (vtábla) → `find_data_refs.py` (a konstruktor és a metódusok) →
+`annot_disasm.py` (a `[reg+0xNN]` hozzáférések összegyűjtése). Ebből
+osztályonként **egy offszet-térkép** készülne, bizonyítékkal mezőnként — és
+pontosan ez zárná ki azt a hibát, ami minket négyszer megharapott
+(`[+0xd8]`, `[+0xdc]`, `+0x54`, `0xc365`).
