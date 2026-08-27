@@ -226,6 +226,24 @@ class ExportMixin(BackgroundWorkerMixin):
                     return True
         return False
 
+    @Slot(result=bool)
+    def trayHasVideo(self) -> bool:
+        """Van-e film a KÉPTÁLCÁN (#455 · #1166).
+
+        A film-rádiók engedélyezését eddig `useTray ? true` alakban
+        rövidítette a párbeszéd: amíg a tálca csak külön művelettel telt
+        meg, ez ritka és láthatatlan pontatlanság volt. A #455 óta a tálca
+        a kijelölés tükre, tehát MINDIG az a forrás — a rövidítés így
+        minden exportnál engedélyezte volna a film-rádiókat, film nélkül is.
+        """
+        felold = getattr(self, "_tray_records", None)
+        if felold is None:
+            return False
+        return any(
+            Path(record.name).suffix.lower() in VIDEO_EXTENSIONS
+            for record in felold()
+        )
+
     def _export_error_text(self, kind: str) -> str:
         """A köteg-szintű hiba fajtájából az EREDETI Picasa üzenete (#1166).
 
