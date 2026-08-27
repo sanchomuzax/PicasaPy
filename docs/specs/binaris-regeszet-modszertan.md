@@ -887,33 +887,59 @@ kell tovább keresni közös setter-t.
   nincs sztring, ami eldöntené.)*
 - **`0x005d30f0`** (171 b): 1, 2, 3, 5 értékekkel hívva.
 
-### Konstans-párosítás — negatívum kimutatása bitpontos mintakereséssel
+### ⛔ Konstans-párosítás — MEGBUKOTT AZ ELSŐ ÉLES HASZNÁLATÁN
 
-**Mire jó:** eldönteni, hogy egy menüpont-készlet **meg van-e valósítva**,
-amikor a szokásos utak (beállításkulcs, közös setter, pipa-frissítő) mind
-üresek.
+**Ezt a módszert 2026-08-27-én írtam ide, és ugyanaznap MEGDŐLT.**
+Meghagyom, mert a bukása tanulságosabb, mint a módszer maga.
 
-**A felismerés:** ha két menüpont **egy fogalom két értékét** kínálja
-(pl. „Lineáris gamma (2,2)" és „Mac gamma (1,6)"), akkor a megvalósításuk
-**egy helyen** használja mindkét konstanst. Ha soha nem találkoznak, a
-funkció nincs megépítve.
+**Az ötlet volt:** ha két menüpont egy fogalom két értékét kínálja
+(„Lineáris gamma (2,2)", „Mac gamma (1,6)"), akkor a megvalósításuk egy
+helyen használja mindkét konstanst; ha soha nem találkoznak, a funkció
+nincs megépítve.
 
-**A recept** (percek):
+**A mérés ezt adta:** a `2.2f`-re két hivatkozás, az `1.6f`-re egy (plusz
+egy hivatkozás nélküli), **külön függvényekben** ⇒ arra jutottam, hogy a
+nyolc megjelenítési mód nincs megvalósítva, és azt javasoltam, **ne
+fordítsunk rá munkát**.
 
-```python
-pat = struct.pack('<f', 1.6)          # és '<d' a double-re is!
-hits = [off2va(m.start()) for m in re.finditer(re.escape(pat), exe_bytes)]
-# majd a .text-ben a CÍMRE hivatkozó helyek:
-refs = [tva+m.start() for m in re.finditer(struct.pack('<I', va), text_bytes)]
+**A tulajdonos kipróbálta a futó Picasa 3-ban:** *„Változik, tökéletesen
+működik… a két Gamma mód is külön-külön működik."*
+
+### A bukás KÉT külön oka — mindkettő általános
+
+**1. Csak az egyik ábrázolást kerestem.**
+
+| érték | ábrázolás | hivatkozás |
+|---|---|---:|
+| 2,2 | `float` | 2 — **ezt találtam** |
+| **2,2** | **`double`** | **4** — **ezt nem** |
+
+A négy `double`-hivatkozásból kettő épp a **színkezelés magjában** van
+(`0x00a3df50`, `0x00a3e3f0`). **Mindig keresd `<f` ÉS `<d` alakban is** —
+és gondolj a származtatott alakokra (`1/gamma`, arányok) is.
+
+**2. A hiányzó konstans-pár NEM jelent hiányzó funkciót.**
+
+Ez a mélyebb hiba. A gamma **paraméterként** utazik:
+
+```
+0x00a3e01c  fld qword ptr [0xcf3d18]   ; a gamma
+0x00a3e02f  call 0x00af7150            ; cmsBuildGamma  ⇐ lcms
 ```
 
-**Bizonyíték (2026-08-27, #1409):** a nyolc megjelenítési módról hét
-kizárt irány után is nyitva volt a kérdés. A konstans-párosítás
-másodpercek alatt megmutatta: `1.6f` **kétszer** van a `.rdata`-ban, az
-egyikre **nulla** hivatkozás, a másikra egy — és a `2.2f` **teljesen más**
-függvényből. A két gamma **soha nem találkozik** ⇒ a gamma-váltás nem épült
-meg.
+Egy paraméterezett API-nál (lcms, OpenGL, bármi) a két „mód" ugyanazt a
+hívást használja **más értékkel** — tehát a két konstansnak **soha nem
+kell találkoznia**. A módszer épp a jól megírt kódot minősíti hiányzónak.
 
-⚠️ **Ez negatívumot valószínűsít, nem bizonyít.** Binárisban a „nincs
-megvalósítva" nehezen bizonyítható; a lelet mellé **külső ellenőrzés**
-kell (a tulajdonos futó Picasájában egy kattintás-sorozat).
+### ⛳ A szabály, ami ebből marad
+
+> **Konstans hiányából SOHA ne következtess funkció hiányára.**
+> A hiány azt jelenti, hogy máshol van — tipikusan egy paraméterezett
+> rétegben. Negatívumot binárisban csak akkor mondj ki, ha **külső
+> ellenőrzés** (a tulajdonos futó Picasája) is megerősíti — és akkor is
+> ő mondja ki, ne te.
+
+**Ami a módszerből használható marad:** a bitpontos mintakeresés jó
+eszköz egy konstans **megtalálására** (`<f` és `<d` alakban egyaránt) —
+csak a **negatív** következtetésre alkalmatlan.
+
