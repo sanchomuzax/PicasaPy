@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Hozzáadva
+- **A lassú indulás okát mostantól Windowson is meg tudjuk mérni (#1653).** A
+  tulajdonos jelentése szerint a program Windows alatt 33 másodperc után
+  jelenik meg, míg a fejlesztői gépen 5 alatt — a különbséget eddig soha nem
+  mértük. A beépített indulási időmérő mostantól **külön mutatja a felület
+  motorjának felállítását** (eddig egy közös tételbe olvadt bele a
+  vezérlőkkel), és készült egy mérés, amely ugyanezt a bontást a Windows- és
+  a Linux-gépen is felveszi, ugyanazon a napon, ugyanazzal a kóddal. Az
+  időmérő továbbra is alapból ki van kapcsolva, és kikapcsolva semmibe nem
+  kerül.
 - **A tesztfuttatás szabálya mostantól kapu, nem kérés (#1649).** Eddig a
   dokumentáció kérte, hogy a teszteket a projekt futtatójával indítsuk — és a
   kérés 2026-08-15-én megbukott: öt párhuzamos munkamenet **5,8 GB**

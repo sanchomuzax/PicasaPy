@@ -1,0 +1,110 @@
+# Indulási idő mérése Windowson ÉS Linuxon — #1653
+#
+# ⚠️ MIÉRT KÜLÖN WORKFLOW, és miért NEM a `ci.yml` tesztmátrixában:
+# ez a munka elindítja a teljes alkalmazást és percekig fut. Minden PR-en
+# lefuttatva a sort dugítaná el, cserébe semmit nem védene — ez MÉRÉS, nem
+# ellenőrzés. A `workflow_dispatch` miatt kézzel indítható:
+#
+#   gh workflow run indulas-meres.yml --ref <ág>
+#   gh run watch <id> ; gh run view <id> --log
+#
+# MIT MÉR. A tulajdonos Windowson 33 s (második indításnál 25 s) indulást
+# jelentett, a fejlesztői gépen (Linux, RPi5) a mérés 5,18 s
+# (`docs/benchmarks/2026-08-27-indulasi-ido-1601.md`). A különbség
+# ~6x, Windows-specifikus, és soha nem mértük. Itt UGYANAZ a bontás készül
+# el mindkét platformon, ugyanazon a napon, ugyanazzal a kóddal — a kettő
+# KÜLÖNBSÉGE a lelet.
+#
+# HÁROM DIMENZIÓ:
+#   1. platform  — ubuntu-latest vs windows-latest
+#   2. könyvtárméret — üres vs 1000 mappa (a tulajdonos szerint az indulás
+#      „egyre lassabb", tehát a méretfüggés kiemelt gyanú)
+#   3. hideg/meleg — mappaméretenként két egymást követő indítás (a
+#      tulajdonos 33 s / 25 s párosa)
+#
+# AMIT INNEN NEM LEHET ELDÖNTENI: a Windows Defender valós idejű vizsgálata
+# és a hálózati (NAS) útvonal a TULAJDONOS gépén. A GitHub-futón nincs
+# ugyanaz a Defender-konfiguráció, és a lemez helyi SSD.
+name: Indulási idő mérése (#1653)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mappa_szam:
+        description: A nagy szintetikus könyvtár mappáinak száma
+        required: false
+        default: "1000"
+      futasok:
+        description: Hány egymást követő indítás méretenként (1. hideg)
+        required: false
+        default: "2"
+
+jobs:
+  meres:
+    name: Indulás (${{ matrix.os }}, ${{ matrix.meret }})
+    runs-on: ${{ matrix.os }}
+    # Két indítás × két méret, plusz a könyvtár felépítése. A windowsos
+    # futón a fájlműveletek lassabbak; bőven fölé lőve, hogy a MÉRÉS ne a
+    # korlátba fusson — de a beragadt futás továbbra is elvágódjon.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        meret: [ures, nagy]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Linux Qt futtatókörnyezet
+        if: runner.os == 'Linux'
+        # Ugyanaz a lista, mint mindenhol máshol — tételes lista ide nem
+        # kerülhet (tests/test_kornyezet_szinkron.py).
+        run: |
+          for kiserlet in 1 2 3; do
+            timeout 180 sudo apt-get update && break
+            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
+            sleep 5
+          done
+          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
+
+      - name: Python-függőségek
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py --all)
+
+      - name: Az importlánc bontása (-X importtime)
+        # Csak az egyik méret-lábon: az importlánc nem függ a könyvtártól.
+        # Ez az EGYETLEN mód, amivel az idővonal első szakasza
+        # („Python- és PySide6-modulok betöltése") felbontható anélkül,
+        # hogy a termékkódba mérőpontot kellene tenni.
+        if: matrix.meret == 'ures'
+        shell: bash
+        run: python scripts/indulas_meres.py --importtime
+
+      - name: Indulási idővonal — üres könyvtár
+        if: matrix.meret == 'ures'
+        shell: bash
+        run: |
+          python scripts/indulas_meres.py \
+            --mappa-szam 0 \
+            --futasok "${{ inputs.futasok || '2' }}" \
+            --cimke "${{ matrix.os }} · üres könyvtár"
+
+      - name: Indulási idővonal — nagy könyvtár
+        if: matrix.meret == 'nagy'
+        shell: bash
+        run: |
+          python scripts/indulas_meres.py \
+            --mappa-szam "${{ inputs.mappa_szam || '1000' }}" \
+            --futasok "${{ inputs.futasok || '2' }}" \
+            --cimke "${{ matrix.os }} · nagy könyvtár"
