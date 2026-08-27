@@ -155,7 +155,15 @@ class DedupController(BackgroundWorkerMixin, QObject):
     scanFinished = Signal(list)  # csoportok (dict-ek listája)
     scanCancelled = Signal()  # a felhasználó megszakította a keresést
     scanFailed = Signal(str)  # hibaüzenet (pl. olvashatatlan index)
-    itemResolved = Signal(str)  # (feloldott elem útvonala) — a QML ebből törli a sorból
+    # (feloldott elem útvonala) — a QML ebből törli a sorból, ÉS a #1539 óta
+    # a `wire_dedup` ebből olvassa újra a FORRÁSMAPPÁT: a feloldott kép
+    # (kukázva vagy elmozgatva) onnan mindkét ágon eltűnt.
+    itemResolved = Signal(str)
+    # #1539: (forrás_út, új_út) — a duplikátum ÁTHELYEZVE a „Duplikátumok"
+    # almappába. Külön jelzés az `itemResolved` mellé, mert az csak a
+    # forrást ismeri: a CÉLMAPPA frissen létrehozott, sosem indexelt
+    # könyvtár, azt is újra kell olvasni, különben a képek eltűnnek.
+    photoRelocated = Signal(str, str)
     operationFailed = Signal(str, str)  # (útvonal, hibaüzenet)
 
     def __init__(self, db_path: Path, provider) -> None:
@@ -372,8 +380,12 @@ class DedupController(BackgroundWorkerMixin, QObject):
             dest_folder = source.parent / DUPLICATES_SUBFOLDER_NAME
             try:
                 dest_folder.mkdir(exist_ok=True)
-                move_photo(source, dest_folder)
+                moved = move_photo(source, dest_folder)
             except OSError as error:
                 self.operationFailed.emit(path, str(error))
                 continue
+            # #1539: a CÉLMAPPA frissen jött létre, tehát az indexben nincs
+            # benne. A `move_photo` a tényleges (ütközésnél átnevezett)
+            # célutat adja vissza — azt küldjük ki, nem a kiszámítottat.
+            self.photoRelocated.emit(path, str(moved))
             self.itemResolved.emit(path)

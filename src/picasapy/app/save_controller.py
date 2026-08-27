@@ -121,10 +121,26 @@ class SaveMixin(BackgroundWorkerMixin):
         self._save_progress_active = False
         self._saveProgressTick.connect(self._on_save_progress_tick)
         # ⚠️ A fájl kiírása MÉG NEM láthatóság: a másolat addig nem jelenik
-        # meg a rácsban, amíg az index nem tud róla. Az ötperces
-        # újraolvasás és a mappa-pollozás előbb-utóbb behozná, de a
-        # felhasználó itt AZONNAL keresi a másolatát — ezért a művelet
-        # végén célzottan újraolvassuk a látott mappát (#1275 útján).
+        # meg a rácsban, amíg az index nem tud róla, a `selectFolder` pedig
+        # kizárólag az indexből olvas.
+        #
+        # #1539: az INDEX helyessége innentől NEM ezen a kötésen múlik. A
+        # célmappát a `_save_copies` workere jelenti be fájlonként
+        # (`noteOutputWritten`), a TÉNYLEGES célútvonallal.
+        #
+        # Miért kellett ez: a lenti kötés a LÁTOTT mappát olvassa újra. A
+        # „Másolat mentése" mellett az történetesen a célmappa is, tehát
+        # véletlenül jó volt — a #1527-tel érkezett „Mentés másként…"
+        # viszont a fájlválasztóból BÁRHOVA mutathat, és ott a program a
+        # rossz mappát frissítette. Mérve (figyelő nélkül): a más mappába
+        # mentett másolat 25 s alatt sem jelent meg.
+        #
+        # A kötés mégis MEGMARAD, két okból: ez frissíti a felhasználó által
+        # ÉPP NÉZETT mappa nézetét a művelet végén (a #1527 szándéka), és ez
+        # a `saveCopyFinished` egyetlen fogyasztója — QML-oldali kezelője
+        # NINCS, tehát elhagyva néma jelzés lenne belőle (#1003). Hogy a
+        # befejezésnek van-e FELÜLETI visszajelzése, az önálló kérdés.
+        self._ensure_output_resync_wired()
         poll = getattr(self, "_poll_current_folder", None)
         if poll is not None:
             self.saveCopyFinished.connect(lambda _done, _failed: poll())
@@ -357,7 +373,7 @@ class SaveMixin(BackgroundWorkerMixin):
             for index, (path, rotate_steps, filters) in enumerate(items):
                 try:
                     rendered = _render_for_save(path, rotate_steps, filters)
-                    save_copy(
+                    eredmeny = save_copy(
                         path,
                         rendered,
                         EditSession.from_value(filters),
@@ -371,6 +387,8 @@ class SaveMixin(BackgroundWorkerMixin):
                         self._report_save_error(error, target or path)
                 else:
                     done += 1
+                    # #1539: a TÉNYLEGES célút megy be, nem a látott mappa
+                    self.noteOutputWritten(str(eredmeny.target_path))
                 self._saveProgressTick.emit(index + 1, len(items), 1)
             self._saveProgressTick.emit(len(items), len(items), 0)
             self.saveCopyFinished.emit(done, failed)
