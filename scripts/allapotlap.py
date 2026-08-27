@@ -195,8 +195,13 @@ def epits(a: dict) -> str:
     # Az `_osszesit` teljes jegy-szótárakat ad vissza (nem csak számokat),
     # ezért közvetlenül átadhatók a listázónak.
     var_rank = ossz.get("felhasznalora_var") or []
-    blokkolt = ossz.get("blokkolt") or []
+    blokkolt_mind = ossz.get("blokkolt") or []
     binaris = ossz.get("binaris_kutathato") or []
+    # A `binaris_kutathato` a `blokkolt` RÉSZHALMAZA. Ha mindkettőt kiírjuk,
+    # ugyanaz a jegy kétszer jelenik meg a szakaszban (#1664: a #1276 és a
+    # #1153 így duplázódott). Ezért particionálunk: egy jegy egy csoportba.
+    _binaris_szamok = {j["number"] for j in binaris}
+    blokkolt = [j for j in blokkolt_mind if j["number"] not in _binaris_szamok]
     erintetlen_regi = sorted(a["erintetlen"], key=lambda x: x["created"])[:10]
 
     hiba = ("" if a["jegyek"] else
@@ -224,14 +229,16 @@ def epits(a: dict) -> str:
 
   <section>
     <div class="section-head">
-      <h2>Ez vár rád</h2>
-      <p>Ezeken nélküled nem tudunk továbbmenni. Mindegyiknél a jegy leírja,
-         pontosan mi kell.</p>
+      <h2>Mi áll, és kin múlik</h2>
+      <p>Csak az első csoport az, ami <em>nélküled</em> nem megy tovább — ott a
+         jegy leírja, pontosan mi kell. A másik kettő nem rád vár; azért van
+         itt, hogy lásd, mi áll és min múlik. Egy jegy csak egy csoportban
+         szerepel.</p>
     </div>
     <div class="groups">
 {_jegylista("Rád vár", "Legtöbbször egy export vagy egy képernyőkép a windowsos Picasából.", var_rank, "warn")}
-{_jegylista("Blokkolt", "Külső akadály miatt áll — nem felejtés.", blokkolt, "crit")}
-{_jegylista("Ebből bináris kutatás oldja fel", "Ezekhez nem a te gépedre van szükség, hanem az eredeti Picasa visszafejtésére — ezen tudunk dolgozni magunktól.", binaris, "ok")}
+{_jegylista("Külső akadályon áll", "Nem felejtés — valami rajtunk kívül álló hiányzik hozzá.", blokkolt, "crit")}
+{_jegylista("Bináris kutatás oldja fel", "Ehhez nem a te gépedre van szükség, hanem az eredeti Picasa visszafejtésére — ezen tudunk dolgozni magunktól.", binaris, "ok")}
     </div>
   </section>
 
