@@ -57,6 +57,32 @@ Ha új szakadást jelez: **kösd be** a QML-ből, **töröld** a tagot, vagy —
 a bekötetlenség tudatos — vedd fel indoklással a
 `scripts/kepesseg_or_baseline.txt`-be. Az a lista is csak **rövidülhet**.
 
+A harmadik őr a **védtelen QML-kötéseket** fogja meg: azt, ha egy
+vezérlő-tulajdonság `!== undefined` ellenőrzés nélkül kerül `bool`/`int`/
+`real` típusú property-be. A QML-próbák nagy része **stub-vezérlővel** fut,
+amelyen a frissen bevezetett tulajdonság nincs meg — a kifejezés
+`undefined`, a QML `Unable to assign [undefined] to bool` hibát dob, és a
+#1260 őre olyan tesztfájlokon is bukik, amelyeknek a változtatáshoz semmi
+közük. A #1526-on ez négy teljes kört vitt el (#1572):
+
+```sh
+python scripts/qml_undefined_or.py          # ugyanaz, amit a CI futtat
+python scripts/qml_undefined_or.py --list   # a mai védtelen kötések
+```
+
+Ha védtelen kötést jelez, írd át erre az alakra:
+
+```qml
+// HIBÁS: csak az OBJEKTUM hiányára véd
+visible: controller ? controller.filterActive : false
+// HELYES: a hiányzó TULAJDONSÁGRA is
+visible: (controller && controller.filterActive !== undefined)
+    ? controller.filterActive : false
+```
+
+A `scripts/qml_undefined_or_baseline.txt` ma **üres** (a #1572 mind a 27
+előfordulást javította), és a plafonja nulla — az a lista sem hízhat.
+
 A tesztkészletet **a `scripts/run_tests.py`-vel futtasd**, ne közvetlenül a
 `pytest`-tel: a Qt/QML-tesztek egy processzben GIL-deadlockba ragadhatnak,
 ezért a szkript darabolva futtat. Gyors, célzott ellenőrzéshez a nem-Qt rész

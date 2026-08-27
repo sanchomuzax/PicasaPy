@@ -453,7 +453,9 @@ MenuBar {
             objectName: "menuViewHidden"
             text: qsTr("Hidden Pictures")
             checkable: true
-            checked: bar.ctl ? bar.ctl.showHidden : false
+            // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+            // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+            checked: (bar.ctl && bar.ctl.showHidden !== undefined) ? bar.ctl.showHidden : false
             onTriggered: controller.toggleShowHidden()
         }
         // hiányzott (#324 audit): színprofil-kezelés kapcsoló
@@ -463,7 +465,7 @@ MenuBar {
             objectName: "menuViewDarkTheme"
             text: qsTr("Dark Theme")
             checkable: true
-            checked: bar.ctl ? bar.ctl.darkTheme : false
+            checked: (bar.ctl && bar.ctl.darkTheme !== undefined) ? bar.ctl.darkTheme : false
             onTriggered: controller.toggleDarkTheme()
         }
         MenuSeparator {}
@@ -565,9 +567,11 @@ MenuBar {
             // A vezérlő állapota EGY helyen — a tételek pipái ezt olvassák,
             // és a kattintás utáni visszakötés is erre hivatkozik.
             readonly property bool treeMode:
-                bar.folderViewCtl ? bar.folderViewCtl.treeView : false
+                (bar.folderViewCtl && bar.folderViewCtl.treeView !== undefined)
+                    ? bar.folderViewCtl.treeView : false
             readonly property bool simplifiedMode:
-                bar.folderViewCtl ? bar.folderViewCtl.simplified : false
+                (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
+                    ? bar.folderViewCtl.simplified : false
 
             // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
             // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
@@ -697,7 +701,8 @@ MenuBar {
                 objectName: "menuFolderSortReverse"
                 text: qsTr("Reverse sort")
                 checkable: true
-                checked: bar.ctl ? bar.ctl.folderSortReverse : false
+                checked: (bar.ctl && bar.ctl.folderSortReverse !== undefined)
+                    ? bar.ctl.folderSortReverse : false
                 onTriggered: controller.toggleFolderSortReverse()
             }
         }
@@ -995,7 +1000,8 @@ MenuBar {
             objectName: "menuHelpPerfMonitor"
             text: qsTr("Performance Monitor")
             checkable: true
-            checked: bar.ctl ? bar.ctl.perfMonitorEnabled : false
+            checked: (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
+                ? bar.ctl.perfMonitorEnabled : false
             onTriggered: controller.togglePerfMonitor()
         }
         MenuItem {

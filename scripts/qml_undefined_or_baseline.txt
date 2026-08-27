@@ -1,0 +1,23 @@
+# A védtelen QML-kötések DOKUMENTÁLT ALAPÁLLAPOTA — #1572
+#
+# Az őr: scripts/qml_undefined_or.py (a CI `lint` jobjában fut).
+#
+# Ez a lista azokat a `bool`/`int`/`real` célú QML-kötéseket rögzítené,
+# amelyek egy vezérlő-tulajdonságot `!== undefined` őr NÉLKÜL adnak át. Ma
+# ÜRES: a #1572 a bevezetéskor talált mind a 27 előfordulást javította
+# (14 QML-fájlban), tehát nincs mit konzerválni.
+#
+# A LISTA CSAK RÖVIDÜLHET:
+#   * ÚJ védtelen kötés → az őr bukik. Írd át a védett alakra:
+#         valami: (ctl && ctl.tulajdonsag !== undefined)
+#             ? ctl.tulajdonsag === true : false
+#     Ide felvenni csak akkor szabad, ha a védtelenség TUDATOS döntés — és
+#     akkor is indoklással.
+#   * A lista HOSSZA sem nőhet: a felső korlát a szkriptben áll
+#     (MAX_BASELINE_ENTRIES, ma 0), ezért új tételhez a számot is emelni
+#     kell — azt pedig a felülvizsgálat látja.
+#   * Ha egy tétel védett lesz, a sorát TÖRÖLNI kell: az őr az elavult
+#     bejegyzésre is bukik, hogy a lista ne konzerválja a múltat.
+#
+# Formátum soronként:  <fájl>::<tulajdonság>::<objektum>.<tag>  <jegyszám vagy indoklás>
+# Indoklás nélküli sor HIBA — a néma engedély pontosan az, ami ide nem kell.

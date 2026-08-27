@@ -79,13 +79,17 @@ Window {
     // a „Névtelenek" album tartalma a keresés után (`unnamedAlbum()`)
     property var foundPhotos: []
 
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
     readonly property int scanPercent:
-        faceScanWindow.faceScan ? faceScanWindow.faceScan.scanPercent : -1
+        (faceScanWindow.faceScan && faceScanWindow.faceScan.scanPercent !== undefined)
+            ? faceScanWindow.faceScan.scanPercent : -1
 
     // #1496: a letöltés haladása (−1, ha nem fut) — DEKLARATÍV kötés, a
     // `scanPercent` mintája szerint.
     readonly property int downloadPercent:
-        faceScanWindow.faceScan ? faceScanWindow.faceScan.modelDownloadPercent : -1
+        (faceScanWindow.faceScan && faceScanWindow.faceScan.modelDownloadPercent !== undefined)
+            ? faceScanWindow.faceScan.modelDownloadPercent : -1
 
     // ⚠️ A vezérlő tagjait MINDIG a `faceScanWindow.faceScan.<tag>` teljes
     // alakban hívjuk, soha nem egy `var ctlr = …` helyi változón át: a

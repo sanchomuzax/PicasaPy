@@ -20,9 +20,12 @@ Window {
     height: 240
     color: Theme.canvasBg
 
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
     readonly property bool running:
-        typeof compactController !== "undefined" && compactController
-            ? compactController.running : false
+        (typeof compactController !== "undefined" && compactController
+            && compactController.running !== undefined)
+                ? compactController.running : false
 
     property string lastError: ""
     property bool lastCancelled: false

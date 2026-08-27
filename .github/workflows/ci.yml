@@ -348,6 +348,26 @@ jobs:
         # vizsgálat lett üres (0 kontextus/tag/QML-fájl → 2-es kilépési kód).
         run: python scripts/kepesseg_or.py
 
+      - name: Védtelen QML-kötések őre (#1572)
+        # Ugyanide illik, mint a másik két őr: tisztán statikus, Qt nélkül
+        # fut, másodpercek alatt kész.
+        #
+        # Mit fog meg: a `bool`/`int`/`real` célú QML-kötést, amely egy
+        # vezérlő-tulajdonságot `!== undefined` őr NÉLKÜL ad át. A
+        # QML-próbák nagy része STUB-vezérlővel fut, amelyen a frissen
+        # bevezetett tulajdonság nincs meg — a kifejezés `undefined`, a QML
+        # `Unable to assign [undefined] to bool` hibát dob, és a #1260 őre a
+        # fixture-életciklusban bukik. Olyan tesztfájlokon is, amelyeknek a
+        # változtatáshoz semmi közük: a #1526-on négy körön át 8/6/7/6
+        # CI-darab bukott el emiatt, 1 → 3 → ~12 → 9 független tesztfájlon.
+        #
+        # A mai fa TISZTA (a #1572 mind a 27 előfordulást javította), ezért
+        # a `scripts/qml_undefined_or_baseline.txt` ÜRES és a plafon nulla.
+        # A lépés akkor bukik, ha ÚJ védtelen kötés keletkezik, ha a lista
+        # elavult tételt tartalmaz, vagy ha maga a vizsgálat lett üres
+        # (0 QML-fájl / vezérlő / őrzött hivatkozás → 2-es kilépési kód).
+        run: python scripts/qml_undefined_or.py
+
       - name: "Menü-lefedettség: nem csökkenhet"
         # A LISTÁS JEGYEK ELROHADNAK. 2026-08-26-i mérés: a 175 nyitott
         # jegyből 87 (49 %) óta senki hozzá sem nyúlt, amióta megnyílt.

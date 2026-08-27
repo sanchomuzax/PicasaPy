@@ -105,7 +105,9 @@ Column {
         Rectangle {
             id: busySweep
             objectName: "busySweep"
-            visible: tray.ctl ? tray.ctl.isWorking : false
+            // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+            // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+            visible: (tray.ctl && tray.ctl.isWorking !== undefined) ? tray.ctl.isWorking : false
             width: Math.max(80, infoBar.width / 5)
             height: infoBar.height
             gradient: Gradient {
@@ -279,7 +281,8 @@ Column {
             clip: true
 
             //: #455: a mappaváltást is túlélő, MEGTARTOTT képek száma
-            readonly property int heldCount: tray.ctl ? tray.ctl.heldCount : 0
+            readonly property int heldCount: (tray.ctl && tray.ctl.heldCount !== undefined)
+                ? tray.ctl.heldCount : 0
 
             // a bélyegképsor (`thumbui/scratch`): 5 képpont belső margó,
             // JOBBRÓL 50 képpont marad szabadon a három gombnak

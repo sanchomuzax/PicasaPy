@@ -41,7 +41,10 @@ Item {
     property var controller: null
 
     readonly property var nodesModel: controller ? controller.collageNodes : null
-    readonly property int nodeCount: controller ? controller.collageClipCount : 0
+    // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+    // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+    readonly property int nodeCount: (controller && controller.collageClipCount !== undefined)
+        ? controller.collageClipCount : 0
     readonly property var capabilities: controller ? controller.collageCapabilities : ({})
 
     //: Képpont / lapegység (spec 6.1). A lap belső szélessége 1024 EGYSÉG.

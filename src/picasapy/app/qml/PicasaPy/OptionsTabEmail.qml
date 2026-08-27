@@ -33,7 +33,10 @@ ColumnLayout {
         objectName: "optionsMailDefaultRadio"
         text: qsTr("Use this computer's default email program")
         ButtonGroup.group: mailGroup
-        checked: root.mailCtl ? root.mailCtl.useDefaultClient : true
+        // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
+        // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+        checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
+            ? root.mailCtl.useDefaultClient : true
         onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(true)
     }
     RadioButton {
