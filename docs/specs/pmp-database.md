@@ -1085,3 +1085,55 @@ eldönti a kérdést dekompiláció nélkül.
 
 *Bizonyítottsági fok: **megerősített** a három kizárás; **feltételes** az
 `albums.db` mint hordozó — jelöltként megnevezve, nem bizonyítva.*
+
+### Kiegészítés (2026-08-27, este) — a `db3` KIMERÍTŐEN átnézve
+
+A tulajdonos leadta az élő `db3`-at abban az állapotban, ahol egy képet
+kézzel a 4. helyről a 2.-ra húzott. A sorrend **sehol nem található**:
+
+| hol | mi döntötte el |
+|---|---|
+| `.picasa.ini` | a művelet után is 65 bájt, 19:33-as időbélyeg — érintetlen |
+| **mind az 59 `imagedata_*` oszlop** | a négy képünk indexén (2899–2902) végigsöpörve: **egyetlen** oszlopban sincs négy megkülönböztető érték az `avgcolor`-on kívül (az a színátlag) |
+| `albums_0.db` / `albums_index.db` | ez **gyorsítótár**, nem tagsági lista: az `albums_index.db` magicje `0x3FCCCCCD`, a 20+12 bájtos gyorsítótár-elrendezés — album-INDEXKÉPEKET tárol |
+| `thumbindex.db` | névsorrendben tartja a négy fájlt (`…jpg`, `-001`, `-002`, `-003`) — katalógus, nem megjelenítési sorrend |
+| `repository.dat` | mappa-útvonalak jegyzéke |
+| `starlist.txt`, `scanlist.txt`, `saverlist.txt`, `tags.txt`, `facetags.txt` | csillagozás, beolvasási lista, mentési sor, címkék — sorrend egyikben sem |
+| `Picasa2Albums/` | mindössze `watchedfolders.txt` + `frexcludefolders.txt` |
+| `Preferences\…` registry | ellenpróbával igazolt negatívum (nyolc másik kulcsot ugyanaz a lekérdezés megtalál) |
+
+A mappa a teljes `db3`-ban **három** helyen fordul elő:
+`albumdata_filename.pmp`, `albumdata_name.pmp`, `thumbindex.db`.
+
+### A binárisból: a kézi sorrend neve „PRIORITÁS"
+
+Amiért a kulcsszavas keresés („sort", „order", „manual") nem talált: a Picasa
+ezt **prioritásnak** hívja. A `0x0071c4f0` a rendezési állapotszöveget írja ki,
+és hat módot ismer:
+
+| kulcs | felirat (hivatalos magyar) |
+|---|---|
+| `CSelectionNode::SortDateA` | Rendezés hozzáférési dátum alapján |
+| `CSelectionNode::SortDateC` | Rendezés létrehozási dátum alapján |
+| `CSelectionNode::SortSize` | Rendezés méret alapján |
+| `CSelectionNode::SortName` | Rendezés név alapján |
+| `CSelectionNode::SortColor` | Rendezés szín alapján |
+| **`CSelectionNode::SortPrior`** | **Rendezés prioritás szerint** |
+
+⚠️ A `catdata_catpri` (kategória-prioritás) oszlop **létezik**, de az a
+KATEGÓRIÁKÉ, nem a képeké. Kép-prioritás oszlop a db3 sémájában
+(`0x00415790` teljes felsorolása) **nincs**.
+
+### A maradék hipotézis — és a triviális próba, ami eldönti
+
+Minden negatív eredmény egyetlen magyarázattal fér össze: **a kézi sorrend
+munkamenetre szól, nem íródik ki.** A `CSelectionNode` neve is erre utal — a
+kijelölési/nézeti csomópont futásidejű állapota.
+
+**A próba:** indítsd újra a Picasát, és nézd meg, megmaradt-e a sorrend. Ha
+igen, van valahol egy tároló, amit még nem találtunk; ha nem, a kérdés
+lezárul, és nekünk sem kell megvalósítani.
+
+*Bizonyítottsági fok: **megerősített** a nyolc kizárás és a „prioritás"
+elnevezés; **feltételes** a munkamenet-hipotézis — az újraindítási próba
+dönti el.*
