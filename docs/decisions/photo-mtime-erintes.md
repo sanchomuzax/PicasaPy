@@ -80,3 +80,13 @@ bekapcsolhatóan: `PICASAPY_TOUCH_PHOTO_MTIME=1`.**
   viszi tovább.
 - Nyitva marad: a windowsos próba (blokkolt, a felhasználó gépén futó
   eredeti Picasát igényel).
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/ini/photo_touch.py`
+- **Őrzi:** `tests/ini/test_photo_touch_643.py`

@@ -72,3 +72,13 @@ A fül nem tesz semmit „elérhetővé", aminek nincs modellje: a szürke gombo
 akkor válnak élővé, amikor a natív kernelük megfejtése (#568 és utódai)
 elkészül. A fül csak a **helyet** adja meg nekik — és addig is a
 **láthatóságot**, ami eddig hiányzott.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/EditorLegacyTab.qml`
+- **Őrzi:** `tests/app/qml_functional/test_editor_legacy_tab_571.py`

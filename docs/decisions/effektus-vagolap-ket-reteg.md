@@ -235,3 +235,12 @@ vs. `fill=1,0.205607`) — beillesztéskor azonosnak kellene lenniük.
 
 A 2. kérdés (a szerkesztő vermének rétegzése) továbbra is nyitott.
 
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/edit/effect_clipboard.py`, `src/picasapy/app/effects_controller.py`
+- **Őrzi:** `tests/edit/test_effect_clipboard.py`, `tests/app/qml_functional/test_effektus_beillesztes_vagas_1544.py`

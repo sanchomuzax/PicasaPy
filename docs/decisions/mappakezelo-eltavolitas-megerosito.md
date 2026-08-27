@@ -58,3 +58,13 @@ viselkedés szándékos.
   komment ezt az ADR-t linkeli.
 - `#1161` — a Mappakezelő teljes feltárása, ahol a HELYESBÍTÉS
   megtörtént.
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/FolderManagerDialog.qml`, `src/picasapy/app/folder_tree_controller.py`
+- **Őrzi:** `tests/app/test_qml_folder_manager.py`
