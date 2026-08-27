@@ -886,3 +886,34 @@ kell tovább keresni közös setter-t.
   kézenfekvő jelölt — de **nem bizonyított**, és a `0x0077xxxx` sávban
   nincs sztring, ami eldöntené.)*
 - **`0x005d30f0`** (171 b): 1, 2, 3, 5 értékekkel hívva.
+
+### Konstans-párosítás — negatívum kimutatása bitpontos mintakereséssel
+
+**Mire jó:** eldönteni, hogy egy menüpont-készlet **meg van-e valósítva**,
+amikor a szokásos utak (beállításkulcs, közös setter, pipa-frissítő) mind
+üresek.
+
+**A felismerés:** ha két menüpont **egy fogalom két értékét** kínálja
+(pl. „Lineáris gamma (2,2)" és „Mac gamma (1,6)"), akkor a megvalósításuk
+**egy helyen** használja mindkét konstanst. Ha soha nem találkoznak, a
+funkció nincs megépítve.
+
+**A recept** (percek):
+
+```python
+pat = struct.pack('<f', 1.6)          # és '<d' a double-re is!
+hits = [off2va(m.start()) for m in re.finditer(re.escape(pat), exe_bytes)]
+# majd a .text-ben a CÍMRE hivatkozó helyek:
+refs = [tva+m.start() for m in re.finditer(struct.pack('<I', va), text_bytes)]
+```
+
+**Bizonyíték (2026-08-27, #1409):** a nyolc megjelenítési módról hét
+kizárt irány után is nyitva volt a kérdés. A konstans-párosítás
+másodpercek alatt megmutatta: `1.6f` **kétszer** van a `.rdata`-ban, az
+egyikre **nulla** hivatkozás, a másikra egy — és a `2.2f` **teljesen más**
+függvényből. A két gamma **soha nem találkozik** ⇒ a gamma-váltás nem épült
+meg.
+
+⚠️ **Ez negatívumot valószínűsít, nem bizonyít.** Binárisban a „nincs
+megvalósítva" nehezen bizonyítható; a lelet mellé **külső ellenőrzés**
+kell (a tulajdonos futó Picasájában egy kattintás-sorozat).
