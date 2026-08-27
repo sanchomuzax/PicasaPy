@@ -35,6 +35,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **Kijelölés nélkül a Google Earth-menüpontok némán nem csináltak
   semmit.** Most kimondják, hogy nincs mit exportálni.
 
+- **A „Mentés másként…" és a „Másolat mentése" végre megmondja, hogy kész
+  van (#1566).** A két parancs eddig **teljesen némán** dolgozott: a másolat
+  ott volt a lemezen, a képernyőn viszont semmi nem jelezte, hogy elkészült
+  — se értesítés, se üzenet. A „Mentés másként…"-nél ez a legrosszabb, mert
+  az bárhova írhat: ha a felhasználó a képek mappáján kívülre mentett, a
+  fájlnak **semmilyen nyoma nem maradt** a felületen.
+
+  Mostantól a mentés végén a jobb alsó sarokban felvillan a lebegő értesítő
+  („A másolat mentve" / „2 másolat mentve"), és **rákattintva a program oda
+  ugrik, ahova a másolat került**. Ha a mentés nem sikerült vagy a
+  felhasználó elvetette a fájlválasztót, az értesítés — helyesen — nem
+  jelenik meg; a hibáról továbbra is a saját üzenete szól.
+
 ## [0.8.120] – 2026-08-27
 
 ### Hozzáadva

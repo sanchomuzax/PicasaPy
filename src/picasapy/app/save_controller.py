@@ -102,6 +102,26 @@ class SaveMixin(BackgroundWorkerMixin):
     # ── #1527 ─────────────────────────────────────────────────────────
     #: „Másolat mentése" / „Mentés másként…" vége: (sikeres, sikertelen)
     saveCopyFinished = Signal(int, int)
+
+    # ── #1566 ─────────────────────────────────────────────────────────
+    #: A másolat-mentés FELÜLETI visszajelzése: (hány sikerült, az utolsó
+    #: célfájl útja). A lebegő értesítősáv (#1129) fogadja.
+    #:
+    #: Miért KÜLÖN jelzés, és nem a `saveCopyFinished` bővítése:
+    #:
+    #: 1. A `saveCopyFinished(int, int)` szignatúráját két beolvadt jegy
+    #:    kötései és tesztjei rögzítik (#1527 menüpont-tesztjei, #1539
+    #:    újraolvasás-kötése) — a bővítése azokat törné.
+    #: 2. A sávnak a darabszámon felül a CÉLÚTVONAL is kell, különben a
+    #:    cella kattintása néma no-op: a `NotifierCell` a hasznos adat
+    #:    MAPPÁJÁRA navigál. Épp ez a jegy tétje — a „Mentés másként…"
+    #:    bárhova írhat, és ott a fájlnak a rácsban sem marad nyoma.
+    #:
+    #: Ugyanaz az alak, mint a kollázsnál: a gépies befejezés-jelzés és a
+    #: felhasználónak szóló, ÚTVONALAT vivő jelzés
+    #: (`collageDesktopBackgroundReady`) ott is két külön jelzés.
+    saveCopyReady = Signal(int, str)
+
     #: a HÁROM hivatalos hibaág: (ág, fájlnév, hibakód). Az ág-azonosítók
     #: a `save_error_kind.py`-ban; a SZÖVEGET a `SaveDialogs.qml` adja,
     #: mert a hivatalos feliratok fordítható erőforrások.
@@ -369,6 +389,12 @@ class SaveMixin(BackgroundWorkerMixin):
 
         def worker():
             done, failed = 0, 0
+            # #1566: az UTOLSÓ ténylegesen kiírt célfájl — ez lesz az
+            # értesítés kattintási célja. Több képnél a mappájuk közös (a
+            # `-001` minta a forrás mellé ír), a „Mentés másként…" pedig
+            # eleve EGY képre hat, tehát az utolsó út mindig jó mappára
+            # mutat.
+            utolso_cel = ""
             jelentett_agak: set[str] = set()
             for index, (path, rotate_steps, filters) in enumerate(items):
                 try:
@@ -387,10 +413,16 @@ class SaveMixin(BackgroundWorkerMixin):
                         self._report_save_error(error, target or path)
                 else:
                     done += 1
+                    utolso_cel = str(eredmeny.target_path)
                     # #1539: a TÉNYLEGES célút megy be, nem a látott mappa
-                    self.noteOutputWritten(str(eredmeny.target_path))
+                    self.noteOutputWritten(utolso_cel)
                 self._saveProgressTick.emit(index + 1, len(items), 1)
             self._saveProgressTick.emit(len(items), len(items), 0)
+            # #1566: a FELÜLETI visszajelzés ELŐBB megy ki, mint a gépies
+            # befejezés-jelzés. Mindkettő a GUI-szálra sorolódik, sorrendben
+            # — így a `saveCopyFinished`-re váró hívó (és teszt) számára az
+            # értesítés már kézbesítve van, nem versenyeznek.
+            self.saveCopyReady.emit(done, utolso_cel)
             self.saveCopyFinished.emit(done, failed)
 
         self._start_background(worker, name="picasapy-save-copy")
