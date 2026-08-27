@@ -86,6 +86,11 @@ MenuBar {
     // (`ImportSourceDialog`) a Main.qml-ben él, és ugyanaz a példány, amit
     // az eszköztár „Import" gombja nyit — a menü NEM külön utat jár.
     signal importSourceRequested()
+    // #1633: Fájl ▸ Fájl felvétele a Picasába… (Ctrl+O) —
+    // `ID_FILE_OPEN`, `cmd 0xe101` (ld. `AddFileDialog.qml` fejléce a
+    // teljes indoklásért — ugyanaz a hibaosztály, mint a Ctrl+M volt a
+    // #1615 előtt). A párbeszéd a Main.qml-ben él.
+    signal addFileRequested()
     // #1472: Fájl ▸ Nyomtatás… (Ctrl+P) — a párbeszéd a Main.qml-ben él,
     // ugyanúgy, mint az exportnál; a képtálca „Nyomtatás" gombja
     // (TrayBar.printRequested) ugyanoda vezet
@@ -264,6 +269,14 @@ MenuBar {
         sequence: "Ctrl+M"
         onActivated: bar.importSourceRequested()
     }
+    // #1633: a Fájl-menü felirata Ctrl+O-t hirdet — ugyanaz a
+    // hibaosztály, mint a Ctrl+M volt a #1615 előtt. Feltétel nélkül él,
+    // mint maga a menüpont (a fájlválasztó nem függ kijelöléstől).
+    Shortcut {
+        objectName: "shortcutAddFile"
+        sequence: "Ctrl+O"
+        onActivated: bar.addFileRequested()
+    }
 
     Menu {
         title: qsTr("&File")
@@ -284,7 +297,13 @@ MenuBar {
             text: qsTr("Add Folder to Picasa...")
             onTriggered: bar.folderManagerRequested()
         }
-        PicasaMenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; placeholder: true }
+        // #1633: ÉLŐ tétel. A fájlválasztó nem függ kijelöléstől, ezért
+        // nincs `enabled` feltétele — ugyanúgy, mint az Importálás forrása…
+        MenuItem {
+            objectName: "menuFileAddFile"
+            text: qsTr("Add File to Picasa...") + "\tCtrl+O"
+            onTriggered: bar.addFileRequested()
+        }
         // #1615: ÉLŐ tétel. Az importálás nem függ kijelöléstől (a forrást
         // maga a párbeszéd kérdezi meg), ezért — a Nyomtatás…-tól eltérően
         // — nincs `enabled` feltétele.
