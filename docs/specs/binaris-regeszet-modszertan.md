@@ -943,3 +943,57 @@ kell találkoznia**. A módszer épp a jól megírt kódot minősíti hiányzón
 eszköz egy konstans **megtalálására** (`<f` és `<d` alakban egyaránt) —
 csak a **negatív** következtetésre alkalmatlan.
 
+
+
+---
+
+## 14/e. Adat-hivatkozás keresése — a vtábla-konstruktorokhoz (2026-08-27)
+
+**A hézag.** A bináris index `xrefs` táblája csak **kód**-hivatkozásokat
+tartalmaz (`call`, `jmp`). Egy vtábla címét viszont a konstruktor
+**adatként** írja be az objektumba:
+
+```asm
+mov dword ptr [ecx], offset CLocalServer::vftable
+```
+
+Ez az `xrefs`-ben **nem látszik**, ezért egy osztály konstruktora az indexből
+nem található meg. Ez konkrétan megakasztott egy kört: a `CLocalServer`
+preferált portját kerestük, és a lánc itt szakadt el.
+
+**A szerszám** (a privát repóban, a másik kettő mellett):
+
+```bash
+./venv-dis/bin/python find_data_refs.py 0x00c85814
+```
+
+Minden 4 bájtos little-endian előfordulást megkeres a kódszakaszokban, és
+mindegyikhez megmondja a **tartalmazó függvényt** az indexből, plusz a kész
+`annot_disasm.py` parancsot.
+
+**A menet egy osztály belsejéhez:**
+
+1. `rtti` tábla → a vtábla címe
+2. `find_data_refs.py` → a konstruktor és a destruktor
+3. `annot_disasm.py` a konstruktorra → a tagváltozók kezdőértékei
+
+### ⛔ A csapda, ami ugyanabban a körben majdnem elkapott
+
+A `CLocalServer` konstruktorában (`FUN_004c0d10`) ott volt egy
+`push 0xc365` — kézenfekvő lett volna **portnak** nevezni (50021), hiszen
+épp portot kerestünk.
+
+**Nem az volt.** Az érték egy **beágyazott `CIndexer`** objektumhoz ment
+(vtábla `0xc85fa0`), miközben a szerver-socket `ytSocket`/`ytHTTPd`
+(`0x00c85794` / `0x00c857d4`) — **másik osztály**. Ugyanaz a `+0x54`/`+0x58`
+offszet a két objektumon mást jelent: az egyiken port és cím, a másikon a
+szótár mérete. Az 50021 végül a **szóhasító szótár mérete** lett (a
+`wordhash.dat` `Inconsistent dictionary.PoolSize()` hibaüzenete és a szám
+prím volta is ezt támasztja alá).
+
+**A szabály tehát kiegészül:** a `find_data_refs.py` megtalálja a
+konstruktort, de a benne talált érték **objektumát a vtáblájából kell
+azonosítani** (`rtti` tábla), mielőtt jelentést írnál róla. A meglévő
+figyelmeztetés — *„a struktúra-offszet alapú nyom félrevezet"* — az új
+szerszámmal **még könnyebben** megharap, mert most már gyorsan eljutsz
+konstruktorokig, ahol számok hevernek.
