@@ -89,11 +89,17 @@ def merd() -> dict:
 def kovetkezo_ot(m: dict) -> list[str]:
     """A soron következő öt — determinisztikusan, hogy ne kelljen VÁLASZTANI.
 
-    Előbb a `sehol` (semmit nem tudunk róla), utána a `csak_nev`. Ezen
-    belül ábécésorrend: bárki futtatja, ugyanazt az ötöt kapja, tehát két
-    kör nem ütközik, és nem kell egyeztetni.
+    Előbb a `sehol` (semmit nem tudunk róla), aztán a `csak_nev`, végül az
+    `erdemi` — amiről van valami leírás, de a VISELKEDÉSE nincs feltárva.
+    Ezen belül ábécésorrend: bárki futtatja, ugyanazt az ötöt kapja, tehát
+    két kör nem ütközik, és nem kell egyeztetni.
+
+    ⚠️ Az `erdemi` NEM hagyható ki. 2026-08-27-én a lista kiürült (a `sehol`
+    0-ra, a `csak_nev` 1-re fogyott), miközben **74 parancs viselkedése
+    ismeretlen** volt — a mechanizmus pont akkor állt volna le, amikor a
+    nehezebb fele kezdődik. A tulajdonos vette észre.
     """
-    return (m["sehol"] + m["csak_nev"])[:5]
+    return (m["sehol"] + m["csak_nev"] + m["erdemi"])[:5]
 
 
 def markdown(m: dict) -> str:

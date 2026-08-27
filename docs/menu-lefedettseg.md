@@ -25,6 +25,10 @@ Determinisztikus sorrend — bárki futtatja, ugyanezt kapja, tehát
 két kör nem ütközik és nem kell egyeztetni.
 
 - [ ] `ID_VIEW_EARTH`
+- [ ] `ID_ALBUM_DELETE`
+- [ ] `ID_ALBUM_EDITCAPTIONS`
+- [ ] `ID_ALBUM_LOCATEONDISK`
+- [ ] `ID_ALBUM_SELECTALLPICTURES`
 
 ## ⛔ Sehol nem említett (0)
 
