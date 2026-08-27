@@ -238,22 +238,47 @@ Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancso
 
 ### Példa: a Nézet menü megjelenítési módjai
 
+> 🟢 **JAVÍTVA 2026-08-27-én (#1409).** Az itt korábban állt tábla **egy
+> rekorddal el volt csúszva** — pontosan az a hiba, amire ez a szakasz
+> feljebb figyelmeztet. A csúszás oka: a fordító a rekord `+0x0a`
+> parancsazonosítóját a **KÖVETKEZŐ** rekord feliratának betöltése után
+> írja ki, ezért a `push "…kulcs"` és a rá következő `mov word ptr
+> […+0x0a]` **nem** tartozik össze. A helyes horgony a `mov dword ptr
+> [<cím>], eax` — az adja a rekord kezdőcímét.
+>
+> 🟢 **A „ne legyen harmadik próbálkozás" tanács ELAVULT.** A javított
+> horgonnyal újramérve **épp az a négy horgony, amelyen a korábbi szabály
+> 1/4-et adott, mind a négy egyezik**: `ID_VIEW_MYPICTURES` `0x9db7`
+> (`0x0055a26d`) · `ID_VIEW_FOLDERS` `0x9db6` (`0x0055a385`) ·
+> `ID_VIEW_ALL` `0x9db9` (`0x0055a3cf`) · `ID_VIEW_WATCHED` `0x9db8`
+> (`0x0055a671`). A leképezés tehát **nem szabálytalan**. *(A teljes
+> oszlop újbóli kinyerése külön jegy tárgya — a szabály ellenőrzött, az
+> oszlop nem.)*
+>
+> Az alábbi tábla **négy független szemantikai horgonnyal is igazolt** (a
+> viselkedésből visszafelé, nem a szabályból): `0x9d55` a tiszta fehér
+> képpontokat színezi át, `0x9d18` véletlen zajt kever, `0x9d1e`-hez nincs
+> átalakító, `0x9dbc`-t a távoli asztal észlelése állítja be. Részletek:
+> **[picasa-megjelenitesi-modok.md](picasa-megjelenitesi-modok.md)**.
+
 | parancs | azonosító | felirat |
 |---|---|---|
-| `ID_VIEW_RDESK` | `0x9d18` | &Remote Desktop |
-| `ID_VIEW_OV` | `0x9d19` | &Show overflow pixels |
-| `ID_VIEW_LINEAR` | `0x9d1a` | Linear &Gamma (2.2) |
-| `ID_VIEW_16` | `0x9d1e` | &16-bit (dithered) |
-| `ID_VIEW_NORMAL` | `0x9d1f` | &24-bit |
-| `ID_VIEW_PROJECTOR` | `0x9d20` | &Projector Mode |
-| `ID_VIEW_MAC` | `0x9d55` | &Mac Gamma (1.6) |
-| `ID_VIEW_LCD` | `0x9dbc` | &LCD Whitepoint |
-| `ID_VIEW_FOLDERS` | *(a kinyerés nem adta)* | &Flat Folder View |
+| `ID_VIEW_16` | `0x9d18` | &16-bit (dithered) |
+| `ID_VIEW_PROJECTOR` | `0x9d19` | &Projector Mode |
+| `ID_VIEW_MAC` | `0x9d1a` | &Mac Gamma (1.6) |
+| `ID_VIEW_SEPIA` | `0x9d1b` | &Sepia |
+| `ID_VIEW_BW` | `0x9d1c` | &Black and White |
+| `ID_VIEW_LINEAR` | `0x9d1d` | Linear &Gamma (2.2) |
+| `ID_VIEW_NORMAL` | `0x9d1e` | &24-bit |
+| `ID_VIEW_AUTO` | `0x9d1f` | &Automatic |
+| `ID_VIEW_LCD` | `0x9d20` | &LCD Whitepoint |
+| `ID_VIEW_OV` | `0x9d55` | &Show overflow pixels |
+| `ID_VIEW_RDESK` | `0x9dbc` | &Remote Desktop |
 
-A `0x9d18`–`0x9d20` **összefüggő blokk** — erős jel arra, hogy ezek egy
-csoportot alkotnak; a `MAC` és az `LCD` külön tartományban van, tehát
-később kerültek be. *(A rádió/kapcsoló besorolás **még nincs kimérve** —
-ez a #1409 tárgya.)*
+A `0x9d18`–`0x9d20` **összefüggő kilences blokk**; az `OV` és az `RDESK`
+külön tartományban van, tehát később kerültek be. A **rádió/kapcsoló
+kérdés eldőlt**: mind a tizenegy **egyetlen kizáró rádiócsoport** tagja
+(`0x00575670`), nincs köztük független kapcsoló.
 
 *Bizonyítottsági fok: **megerősített** a menüépítő címére, a rekord-alakra
 és a kinyert azonosítókra (diszasszemblálva + gépi kinyerés). A CSV

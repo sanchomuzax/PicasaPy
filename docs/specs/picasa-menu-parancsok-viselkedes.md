@@ -211,23 +211,42 @@ helyi menüje).
 **Szöveg elrejtése/megjelenítése**: **két külön parancs**
 (`ID_PICTURE_HIDE_TEXT` / `ID_PICTURE_SHOW_TEXT`), nem egy kapcsoló.
 
-**`ID_VIEW_AUTO`**: **nem sikerült besorolni** — nem tagja a tizenegyes
-megjelenítési-mód tömbnek, és nem illik az „Indexkép felirata" négyeséhez.
-Nyitva marad.
+**`ID_VIEW_AUTO`**: ~~nem sikerült besorolni~~ — 🟢 **LEZÁRVA 2026-08-27
+(#1409):** igenis tagja a kizáró tömbnek, méghozzá az **első** eleme
+(`0x9d1f`, `0x005756e0`), és ő az **alapértelmezett** megjelenítési mód.
+Ld. [picasa-megjelenitesi-modok.md](picasa-megjelenitesi-modok.md).
 
 ---
 
 ## A 11–15. adag leletei (2026-08-25, este)
 
 **`ID_VIEW_AUTO`** a „Megjelenítési mód" almenü **első** tétele (a
-menüépítőben közvetlenül a 24 bites előtt) ⇒ a menüben **12** tétel, a
-kezelő kizáró-tömbjében **11**; az „Automatikus" nincs a tömbben.
+menüépítőben közvetlenül a 24 bites előtt).
 
-**A parancsazonosító-térkép MÁSODSZOR is megbukott.** A rekord felirata a
-saját kulcsától jön, az azonosítója a **következő** kulcs pushja után —
-ebből egy „az előző kulcsé" szabály következne, de az független horgonyon
-**1/4**-et adott. **A leképezés szabálytalan; ne legyen harmadik
-próbálkozás.**
+> 🔴 **Az itt korábban állt két állítás MEGDŐLT (2026-08-27, #1409):**
+> „a menüben 12 tétel, a kizáró tömbben 11, az Automatikus nincs benne" —
+> **mindkét fele téves**. Mérve: az almenü-tömb **15 rekord** (11 tétel +
+> 4 elválasztó, `mov dword ptr [0xd6e12c], 0xf`), a kizáró tömb **11
+> elemű**, és az `ID_VIEW_AUTO` (`0x9d1f`) **az első eleme**
+> (`0x005756e0`).
+
+**A parancsazonosító-térkép kétszer megbukott — harmadszorra sikerült
+(2026-08-27, #1409),** de csak a Megjelenítési mód almenüre, és nem
+szabály-alkalmazással, hanem **viselkedésből visszafelé**. A helyes
+társítási horgony nem a `push "…kulcs"`, hanem a `mov dword ptr [<cím>],
+eax` (ez adja a rekord kezdőcímét); a `+0x0a` ahhoz tartozik. Négy
+független szemantikai ellenőrzéssel igazolva — ld.
+[picasa-megjelenitesi-modok.md](picasa-megjelenitesi-modok.md) 3. szakasz.
+🟢 **Kontroll-mérve, 4/4:** épp azt a négy horgonyt
+(`ID_VIEW_MYPICTURES` `0x9db7` · `ID_VIEW_FOLDERS` `0x9db6` ·
+`ID_VIEW_ALL` `0x9db9` · `ID_VIEW_WATCHED` `0x9db8`), amelyen a korábbi
+szabály **1/4**-et adott, a javított horgony **mind a négyet** eltalálja
+(`0x0055a26d`, `0x0055a385`, `0x0055a3cf`, `0x0055a671`). ⇒ **a leképezés
+NEM szabálytalan** — rossz horgonyt használtunk.
+
+**Az egész menüsorra kiterjedő kinyerést viszont nem futtattam le**: a
+szabály ellenőrzött, az oszlop nem. Aki más menüre kér azonosítót,
+ugyanígy horgonyozza le egyenként.
 
 **A `Shortcuts` valószínűleg nem almenü**, hanem gyűjtő-fejléc a
 gyorsbillentyűs nézet-tételekhez — a utána épülő négy tétel közül a
@@ -372,7 +391,15 @@ ellenőrzés: `ls` és rekurzív `find`, nulla találat). Jegy: **#442**.
 ### 23. `ID_VIEW_SEPIA` · `ID_VIEW_BW` — ⚠️ NEM megjelenítési módok
 
 **Helyesbítés**: a 2026-08-26-i kör tíz „megjelenítési módot" említett;
-ebből **kettő effektust alkalmaz**. Ez magyarázza, hogy az `ID_VIEW_BW`
+ebből **kettő effektust alkalmaz**.
+
+> ⚠️ **Pontosítás 2026-08-27-én (#1409):** a `ID_VIEW_BW` / `ID_VIEW_SEPIA`
+> **fordítási kulcs** két külön parancson ül. A Kép menüben (`0x9d4c`,
+> `0x9d4a`) valóban **effektust** alkalmaz — ez az alábbi leírás. A
+> `Nézet ▸ Megjelenítési mód` almenüben ugyanez a kulcs **más
+> azonosítóval** (`0x9d1c`, `0x9d1b`) szerepel, és ott **valódi
+> megjelenítési mód** (képsoronkénti átalakító, nem ír a `.picasa.ini`-be).
+> Ld. [picasa-megjelenitesi-modok.md](picasa-megjelenitesi-modok.md). Ez magyarázza, hogy az `ID_VIEW_BW`
 **három** menüpozícióban van, és hogy a `&Szépia` felirat **két**
 parancshoz tartozik (`ID_PICTURE_SEPIA`, `ID_VIEW_SEPIA`).
 
