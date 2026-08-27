@@ -1347,3 +1347,62 @@ Ez magyarázza a `feed.rss` és a `View Online.url` fájlokat is
 *Bizonyítottsági fok: **megerősített** — minden cím, beállításnév,
 útvonal és a CSV-fejléc a bináris index `string_xrefs`/`xrefs` tábláiból.
 **Nincs megmérve**: a szerver portja és az, hogy mi kapcsolja be.*
+
+### 5/b A rejtett HTTP-szerver RÉSZLETEI — port és bekapcsolók (2026-08-27)
+
+#### Tizennégy útvonal (a `0x004ca660` táblájából, teljes)
+
+| csoport | útvonalak |
+|---|---|
+| album | `/albumlist`, `/album`, `/albumfeed` |
+| hírcsatorna | `/indexfeed`, `/globalfeed` |
+| keresés | `/search`, `/msearch` |
+| aláírások | `/filesigs`, `/albumsigs` |
+| Google Earth | **`/ge?BBOX=`** |
+| egyéb | `/tags`, `/decimate` |
+| **hibakereső** | **`/albumdebug`**, **`/dbdebug`** |
+
+#### Médiakiszolgálás — a képek is HTTP-n mennek
+
+A `0x00533de0` három URL-mintát ismer:
+
+```
+http://localhost:%d/%s/thumb/%s.jpg
+http://localhost:%d/%s/image/%s.jpg
+http://localhost:%d/%s/original/%s
+```
+
+⇒ a szerver **indexképet, teljes képet és eredetit** is kiszolgál. Az alap
+alak (`http://localhost:%d/%s/`) a `0x004cd010`-ben és a `0x0073bd40`-ben is ott van.
+
+#### A kérés-kezelő és a biztonsági kapu (`0x004cbc60`)
+
+| beállítás / szöveg | jelentés |
+|---|---|
+| **`AllowRemoteWeb`** | ha nincs bekapcsolva, a szerver **csak localhostot** szolgál ki: *„Not allowed, this server supports localhost only."* |
+| **`DAVSupport`** | **WebDAV**-támogatás kapcsolója |
+| **`EnableTester`** | engedélyezi a `POST /tester` végpontot |
+| `WWW-Authenticate: Basic realm="Picasa"` · `Unauthorized` · `Please provide a valid password` | **HTTP Basic hitelesítés** — a szerver jelszót kérhet |
+| `GET /favicon.ico` → `image/x-icon` | saját favicont szolgál ki |
+
+Vagyis a Picasa egy **hitelesítéssel és WebDAV-val is rendelkező, hálózatra
+kinyitható webszervert** hordoz — alapból localhostra zárva.
+
+#### A PORT — nincs nevesített beállítása
+
+Az összes URL-minta `%d`-t használ, tehát a port **futásidejű érték**. A
+`Preferences` kulcsok közt **nincs** port-nevű bejegyzés.
+
+⚠️ Ez **érvényes negatívum**: a nevesített kulcsok megtalálhatók ugyanezzel a
+lekérdezéssel (`compactpercentage`, `FRSortThreshold`, `AllowRemoteWeb`,
+`DAVSupport`, `EnableTester`), tehát ha lenne `WebPort`-féle kulcs, kijönne.
+
+**Amit ebből NEM szabad következtetni:** hogy nincs port-beállítás. A #1409
+tanulsága szerint *konstans hiányából soha ne következtess funkció hiányára* —
+az érték lehet **számliterál a kódban** (a sztringtárban láthatatlan), vagy a
+rendszertől kért **szabad port** (bind 0-ra). A kettő közti döntéshez a
+figyelő felállításának diszasszemblálása kell.
+
+*Bizonyítottsági fok: **megerősített** a tizennégy útvonal, a három
+kapcsoló, a Basic hitelesítés és a localhost-korlát. **Nyitva**: a port
+konkrét eredete.*
