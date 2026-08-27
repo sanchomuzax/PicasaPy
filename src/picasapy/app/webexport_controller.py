@@ -113,7 +113,14 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         `<=0` = eredeti méret (a `webexport.fen` "0 = original" mintája,
         az `export.fen`-nel egyező konvenció). `album_name` a cím-mező
         (`webexport.fen` "edit") tartalma — a generált oldalak
-        `<%albumName%>`-je ez lesz."""
+        `<%albumName%>`-je ez lesz.
+
+        #1539: célzott index-újraolvasás SZÁNDÉKOSAN nincs. A kimenet egy
+        WEBOLDAL (HTML + `thumbnail/` és `image/` segédmappák), amit a
+        felhasználó böngészőben vagy feltöltve néz meg — nem a PicasaPy
+        rácsán. A generált méretezett példányokat beindexelni kifejezetten
+        káros volna: ugyanaz a kép jelenne meg többször, két külön
+        felbontásban."""
         target = to_local_path(target_dir)
         if not target:
             self.webExportFailed.emit(self.tr("Choose a target folder first."))

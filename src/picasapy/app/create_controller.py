@@ -271,6 +271,8 @@ class CreateMixin(BackgroundWorkerMixin):
         elrendezéseivel.
         """
         self._ensure_collage_wired()
+        # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
+        self._ensure_output_resync_wired()
         sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
@@ -312,6 +314,11 @@ class CreateMixin(BackgroundWorkerMixin):
                 return
             # a mentés sikerült: a piszkozat betöltötte a szerepét
             self._drop_collage_draft()
+            # #1539: a kollázs a figyelt gyökér alatti, MÉG NEM INDEXELT
+            # mappába is mehet (a fájlválasztó nincs korlátozva). Mérve: a
+            # figyelő nélkül 25 s alatt sem jelent meg — a #1275 lekérdezés
+            # a LÁTOTT mappát nézi, a kollázs viszont egy másikba került.
+            self.noteOutputWritten(str(path))
             self.collageFinished.emit(
                 str(path),
                 len(report.used),
@@ -329,6 +336,8 @@ class CreateMixin(BackgroundWorkerMixin):
         """Diavetítés-videó a kijelölt képekből (MP4).
 
         `height`: a videó magassága (720/1080); a szélesség 16:9-ből jön."""
+        # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
+        self._ensure_output_resync_wired()
         sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
@@ -367,6 +376,9 @@ class CreateMixin(BackgroundWorkerMixin):
                     self.tr("None of the selected pictures could be read.")
                 )
                 return
+            # #1539: az `.mp4` INDEXELT médiatípus (scanner/filetypes.py),
+            # tehát a rácsra való — ugyanaz a helyzet, mint a kollázsnál.
+            self.noteOutputWritten(str(report.target))
             self.movieFinished.emit(
                 str(report.target),
                 len(report.used),

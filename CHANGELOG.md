@@ -5,6 +5,31 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A duplikátumok, a kollázs, a filmexport és a „Mentés másként…" eredménye
+  is azonnal megjelenik (#1539).** Ezek a műveletek olyan mappába is írhatnak,
+  amiről a program nyilvántartása még nem tud — a duplikátum-kezelő például
+  maga hozza létre a „Duplikátumok" mappát, a kollázs és a film
+  fájlválasztójában pedig bármilyen mappa megadható. Ilyenkor a kész kép vagy
+  film **egyáltalán nem jelent meg**, csak amikor a program öt percenként
+  magától körbenézett. (Mérve, valódi programmal: mind a négy esetben **25
+  másodperc alatt sem** jelent meg semmi, ha a mappafigyelő nem tudott
+  segíteni — az pedig gyakoribb, mint hinnénk: hálózati megosztáson és nagy
+  gyűjteménynél is kimaradhat. Most mindegyik eset **század­másodpercen belül**
+  megjelenik.)
+
+  A **„Mentés másként…"** esete volt a legalattomosabb: a program frissített
+  is — csak épp azt a mappát, amit a felhasználó **nézett**, nem azt, ahova
+  valójában mentett. Amíg a másolat ugyanabba a mappába ment, ez véletlenül
+  jól működött; a fájlválasztóval máshova mentve viszont a kép láthatatlan
+  maradt.
+
+  Ráadásul a duplikátumok elmozgatása után a képek sorai a **régi helyükön**
+  is ottragadtak (mérve: 10,3 másodpercig, mappafigyelő nélkül pedig
+  egyáltalán nem tűntek el) — ez is rendbe jött.
+
 ## [0.8.114] – 2026-08-27
 
 ### Belső

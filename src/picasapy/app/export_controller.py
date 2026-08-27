@@ -379,6 +379,8 @@ class ExportMixin(BackgroundWorkerMixin):
         # MÉG az export előtt, hogy egy félbeszakadt művelet célja se
         # vesszen el a felhasználó szeme elől
         self._remember_exported_folder(target)
+        # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
+        self._ensure_output_resync_wired()
 
         def worker():
             report = export_photos(
@@ -397,6 +399,21 @@ class ExportMixin(BackgroundWorkerMixin):
                 if fejlec:
                     details = [fejlec, *details]
                 self.exportFailedDetails.emit(details)
+            # #1539: ha a cél a figyelt gyökér ALATT van, célzott
+            # újraolvasás kell — mérve, figyelő nélkül az exportált kép
+            # 25 s alatt sem jelent meg. Elég EGY fájlt bejelenteni: az
+            # export mind egyetlen mappába ír.
+            #
+            # ⚠️ Ez a figyelt körön KÍVÜLI célt (az export ALAPÉRTELMEZETT
+            # helyét, `<Képek>/Picasa/Exports`) SZÁNDÉKOSAN nem érinti — oda
+            # a `resyncOutputFolder` nem nyúl, mert egy exportcél miatt nem
+            # bővítjük a felhasználó figyelt mappáit. Az „Exportált képek"
+            # bal hasáb-sora ezért ott ma is ÜRES rácsot nyit; annak
+            # megoldása a `collage_save._index_saved_collage` mintája
+            # (a célmappa SAJÁT gyökérként indexelve) — más mechanizmus,
+            # önálló jegyre való.
+            if report.exported:
+                self.noteOutputWritten(str(report.exported[0]))
             self.exportFinished.emit(len(report.exported), len(report.failed))
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
@@ -415,6 +432,13 @@ class ExportMixin(BackgroundWorkerMixin):
 
         Háttérszálon fut (a bélyegképek NAS-on percekig tarthatnak), a végén
         `earthExportFinished(kmlPath, helyjelzők, kihagyottak)`.
+
+        #1539: itt SZÁNDÉKOSAN nincs célzott újraolvasás, és ez nem
+        feledékenység. A kimenet nem böngészendő fotógyűjtemény, hanem egy
+        `doc.kml` + a hozzá tartozó `thumbs/` segédmappa: a bélyegképek a
+        térkép helyjelzőinek buborékképei, önmagukban nem valók a rácsra.
+        A `doc.kml` ráadásul nem is indexelt médiatípus. A rendeltetési
+        hely a Google Earth, nem a PicasaPy könyvtára.
         """
         target = to_local_path(target_dir)
         photos = self._photos.photos

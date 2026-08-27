@@ -26,7 +26,7 @@ import threading
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, Qt, Signal, Slot
 
 from picasapy.index import (
     clear_removed_folders_under,
@@ -156,6 +156,16 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
     # (Mappakezelő), az megjeleníti; a többi hívó figyelmen kívül
     # hagyja.
     watchedFolderRejected = Signal(str, str)
+
+    # #1539: EGY frissen kiírt fájl útja — BELSŐ jelzés, a `noteOutputWritten`
+    # bocsátja ki, a `_on_output_written` fogadja. Azért jelzés és nem
+    # közvetlen hívás, mert a kiírás HÁTTÉRSZÁLON történik (kollázs,
+    # filmexport, másolat-mentés), az index-munkát viszont a GUI-szálon kell
+    # elindítani: a `_on_folders_dirty` futásjelzőt állít és saját
+    # worker-szálat indít, két szálból hívva ezek versenyeznének. A
+    # `QueuedConnection` pontosan ezt a szálváltást végzi el — ugyanaz a
+    # minta, amit a `collage_save.py` `_workerOutcome`-ja használ.
+    _outputWritten = Signal(str)
 
     # -- busy-állapot (#70, #505) --------------------------------------------
 
@@ -1345,3 +1355,78 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             return ()
         with open_index(self._db_path) as conn:
             return folder_paths_under(conn, folder)
+
+    # -- #1539: a FRISSEN KIÍRT kimenet célzott újraolvasása -----------------
+    #
+    # A hibaosztály ugyanaz, mint a #1522-nél és a #1538-nál: a fájl a
+    # lemezen van, de az INDEX nem tud róla, a `selectFolder` pedig kizárólag
+    # az indexből olvas — a felhasználó üres mappát lát. A #1275 lekérdezés
+    # itt nem segít: az a LÁTOTT mappát nézi, a kimenet viszont épp egy
+    # MÁSIKBA megy.
+
+    def _ensure_output_resync_wired(self) -> None:
+        """A belső kimenet-jelzés bekötése — SORBA ÁLLÍTOTT kapcsolattal.
+
+        A GUI-szálon hívandó, a háttérszál indítása ELŐTT (a
+        `collage_save._ensure_worker_bridge` mintája). Idempotens."""
+        if getattr(self, "_output_resync_wired", False):
+            return
+        self._output_resync_wired = True
+        self._outputWritten.connect(
+            self._on_output_written, Qt.ConnectionType.QueuedConnection
+        )
+
+    def noteOutputWritten(self, path) -> None:  # noqa: N802 — QML-stílusú név
+        """Bejelenti, hogy egy FRISSEN KIÍRT fájl a lemezen van (#1539).
+
+        HÁTTÉRSZÁLBÓL IS hívható: csak jelzést bocsát ki, az érdemi munka a
+        GUI-szálon fut (`_on_output_written`). A hívónak előbb a GUI-szálon
+        meg kell hívnia a `_ensure_output_resync_wired()`-et."""
+        if not path:
+            return
+        self._outputWritten.emit(str(path))
+
+    def _on_output_written(self, path: str) -> None:
+        """A kimenet-jelzés fogadója — már a GUI-szálon."""
+        self.resyncOutputFolder(path)
+
+    # SZÁNDÉKOSAN nincs `@Slot`: a hívók PYTHON-oldaliak (a vezérlő saját
+    # szeletei és a `wire_dedup`), a QML soha nem hívja. Slotként a
+    # `kepesseg_or.py` joggal jelezné felületről elérhetetlen képességnek —
+    # ugyanaz a döntés, mint a `resyncMovedFolder`-nél (#1538).
+    def resyncOutputFolder(self, path) -> None:  # noqa: N802 — QML-stílusú név
+        """Egy frissen kiírt FÁJL MAPPÁJÁNAK célzott újraolvasása (#1539).
+
+        ⚠️ A paraméter **fájlút**, nem mappa — a `.parent` itt tehát HELYES,
+        szemben a #1538-cal, ahol ugyanez a lépés csapda volt. Ott egy MAPPA
+        érkezett, és a `.parent` a SZÜLŐJÉT olvasta volna újra; itt a
+        kollázs, a film, a másolat és az elmozgatott duplikátum mind
+        konkrét fájl, aminek a mappája pontosan a megváltozott könyvtár.
+        Rekurzióra sincs szükség (a #1538 másik csapdája): a művelet
+        EGYETLEN mappába ír, nem részfát mozgat.
+
+        A figyelt körön kívülre írt kimenet SZÁNDÉKOSAN kimarad (a #1522
+        azonos szabálya): egy exportcél miatt nem bővítjük a felhasználó
+        figyelt mappáit, és a `sync_folder`-nek amúgy is kell egy gyökér,
+        ami alá a mappa tartozik.
+
+        ⚠️ Az itteni kapu KORAI KILÉPÉS, nem a helyesség őre: ugyanezt a
+        `_root_for_folder` próbát a `_on_folders_dirty` worker-ága is
+        elvégzi, tehát a sor kivétele a NYILVÁNTARTÁST nem rontaná el
+        (mutációval mérve: mind a tíz teszt zöld marad nélküle). Azért van
+        mégis itt, mert enélkül MINDEN figyelt körön kívüli export
+        fölöslegesen ütemezne egy háttérszálat és egy index-megnyitást —
+        és épp az a gyakori eset (az export alapértelmezett célja a figyelt
+        gyökereken kívülre mutat). Ezt az `_on_folders_dirty` szintjén
+        őrizzük teszttel (`test_a_kivulre_irt_kimenet_nem_utemez_munkat`).
+
+        Ez a `wire_fileops.refresh()` vezérlő-oldali párja. Azért van két
+        helyen, mert a `wire_fileops` egy KÜLSŐ QObject (`FileOpsController`)
+        jelzéseit köti be, és csak a `watchedFolders` + `resyncFolder`
+        felületet használja belőlünk; a kollázs, a film és a mentés viszont
+        MAGÁNAK a vezérlőnek a szeletei, azoknak nincs mit bekötni."""
+        helyi = to_local_path(path) or str(path)
+        mappa = str(Path(normalize_path(helyi)).parent)
+        if self._root_for_folder(mappa) is None:
+            return  # figyelt körön kívül — nem indexeljük
+        self.resyncFolder(mappa)

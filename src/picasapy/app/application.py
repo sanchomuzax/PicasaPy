@@ -532,6 +532,33 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     )
 
 
+def wire_dedup(dedup: DedupController, controller: AppController) -> None:
+    """A duplikátum-kezelő utáni index-frissítés (#1539).
+
+    A dedup mindkét feloldó művelete a LEMEZT változtatja meg, az indexnek
+    viszont eddig egyikről sem szólt: az `itemResolved`-nek egyetlen
+    fogyasztója volt, a dialógus sorát levevő QML-kezelő.
+
+    Mérve (valódi vezérlő, produkciós `FOLDER_POLL_MS`, figyelő nélkül): a
+    „Duplikátumok" almappába mozgatott kép **25 s alatt sem jelent meg**, a
+    forrásmappából pedig 10,3 s-ig (a #1275 lekérdezéssel), illetve
+    egyáltalán nem (anélkül) tűnt el a sora.
+
+    Két jelzés kell, mert két mappa változik:
+
+    * `itemResolved` — a FORRÁSMAPPA, mindkét ágon (kukázás és áthelyezés
+      is onnan viszi el a képet);
+    * `photoRelocated` — a CÉLMAPPA, ami frissen létrehozott, sosem
+      indexelt könyvtár (a #1522 alakja).
+
+    A `deleteOthers` ágán SZÁNDÉKOSAN nincs második kötés: a Kuka nem a
+    figyelt körben van, oda nincs mit újraolvasni."""
+    dedup.itemResolved.connect(controller.resyncOutputFolder)
+    dedup.photoRelocated.connect(
+        lambda _source, new: controller.resyncOutputFolder(new)
+    )
+
+
 def _configured_language() -> str:
     """A betöltendő nyelv: a környezeti változó nyer, utána a mentett
     beállítás, végül az alapértelmezés (#333).
@@ -752,6 +779,9 @@ def run(argv: list[str]) -> int:
     # a DedupDialog.qml-nek adja a csoportokat, a thumbnail-providernél
     # regisztrálja az érintett fotókat
     dedup_controller = DedupController(data_dir / "index.db", provider)
+    # #1539: a feloldás után a forrás- ÉS a célmappa is célzott
+    # újraolvasást kap — enélkül a „Duplikátumok" mappa képei eltűnnek
+    wire_dedup(dedup_controller, controller)
 
     # #1066: a levelezés és a webexportálás vezérlője. Mindkettő a JELENLEG
     # látható fotókat kéri (`photo_source`), ahogy a saját docstringjük
