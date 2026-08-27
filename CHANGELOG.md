@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Windowson nem készült el a Google Earth-fájl (#1626).** A „Megtekintés a
+  Google Earth programban…" és az „Exportálás Google Earth-fájlba" a
+  célmappa kiválasztása után Windowson **némán nem írt semmit**: a
+  mappaválasztótól kapott helyet a program hibás alakra fordította
+  (`\C:\Users\…`), és a mappa létrehozása ezen elakadt. Linuxon ugyanez
+  végig működött, ezért a hiba a fejlesztés során nem látszott. Mostantól a
+  választott hely érintetlenül jut el a fájlkiíráshoz, és a hibás alak
+  visszatérését olyan ellenőrzés őrzi, amely **Linuxon is a windowsos utat
+  méri** — nem kell hozzá windowsos gép.
 - **ADATVESZTÉS: album-nézetben a `Delete` billentyű a lemezről törölt
   (#1608).** Ha egy albumot nézve kijelölt egy képet és megnyomta a
   `Delete`-et, a program a **fájlt tette a Lomtárba** — pedig az eredeti
