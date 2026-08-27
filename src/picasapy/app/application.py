@@ -64,6 +64,7 @@ from .language_controller import (
     LANGUAGE_KEY,
     coerce_language,
 )
+from .display_mode_controller import wire_display_mode
 from .fileops_controller import FileOpsController
 from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
@@ -716,6 +717,13 @@ def run(argv: list[str]) -> int:
     # fájlműveletek (#15): kontextusmenü/F2 híd + resync a műveletek után
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
+
+    # megjelenítési mód (#1575/#1576): a `Nézet ▸ Megjelenítési mód` almenü
+    # állapota a KÉPERNYŐRE ható átalakítóig. A visszaadott átvezetőt névre
+    # kötjük, hogy a kapcsolat a motor életében biztosan éljen.
+    _display_mode_bridge = wire_display_mode(
+        controller, edit_controller, edit_preview
+    )
 
     # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — a
     # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír

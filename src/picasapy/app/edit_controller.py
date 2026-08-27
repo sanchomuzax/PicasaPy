@@ -947,6 +947,25 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
 
+    def refresh_displayed_image(self) -> None:
+        """A megjelenített kép ÚJRAKÉRETÉSE a QML-lel, újrarenderelés nélkül.
+
+        A `Nézet ▸ Megjelenítési mód` váltásakor hívódik (#1576): a
+        szolgáltató a tárolt (érintetlen) képre a KÉRÉS pillanatában teszi rá
+        a mód hatását, tehát sem dekódolni, sem a `filters=` láncot
+        újrafuttatni nem kell — elég a `previewSource` `?rev=` cache-busterét
+        léptetni, különben a QML a saját kép-gyorstárából a régi, jelöletlen
+        képet tartaná meg.
+
+        Nyitott szerkesztés nélkül no-op (a mód a rácsból is váltható).
+
+        SZÁNDÉKOSAN nem `@Slot`: a hívó a Python-oldali `wire_display_mode()`,
+        a QML-nek nincs dolga vele — `@Slot`-ként a `kepesseg_or.py` (joggal)
+        felületről elérhetetlen vezérlő-tagként jelentené."""
+        if not self._photo_id:
+            return
+        self._bump_revision()
+
     @Slot()
     def endEdit(self) -> None:
         """Szerkesztés lezárása: leregisztrálás a previewnél, állapot ürítése.

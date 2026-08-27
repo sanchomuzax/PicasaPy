@@ -121,6 +121,11 @@ def _build_qml_app(qt_app, tmp_path):
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    # megjelenítési mód (#1575/#1576) — az application.py bekötésének tükre.
+    # A név életben tartja az átvezetőt, amíg a motor él.
+    _display_mode_bridge = app_module.wire_display_mode(
+        controller, edit_controller, edit_preview
+    )
     # #1457: az effekt-bélyegkép szolgáltatót itt SZÁNDÉKOSAN nem hozzuk
     # létre. A motor szinkron szolgáltatót kap (ld. lentebb), tehát a
     # valódi, pool-szálas változatra ezekben a tesztekben nincs szükség —
