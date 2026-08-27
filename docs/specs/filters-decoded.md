@@ -4693,3 +4693,107 @@ másolja a blokkot az objektum mezőibe; ott derül ki a leképezés.
 
 *Bizonyítottsági fok: **megerősített** a kötő helye, a hat érték és a
 `Comicize` hét tartalékon futó attribútuma; **nyitva** a hozzárendelés.*
+
+---
+
+## Keverési módok teljes leltára és két kompozíció-megfejtés (2026-08-27)
+
+Az előzmény a **#1605** (Ghoul Eye): ott a mi kódunk `multiply`-t használt,
+ahol az eredeti `SCREEN`-t. A kérdés adódott: **hány másik effektnél tér el
+a keverési mód?** Ezért a `filterdesc.xml` MINDEN `BlendMode` attribútumát
+kigyűjtöttem, és összevetettem a `src/picasapy/render/` megvalósításokkal.
+
+### A leltár — 11 effekt fix keverési móddal
+
+| effekt | eredeti mód(ok) | nálunk | egyezik |
+|---|---|---|---|
+| `Cinemascope` | multiply | multiply (`glimmer_creative.py:50`) | ✅ |
+| `CrossProcess` | multiply | multiply (`effects_creative_tone.py:129`) | ✅ |
+| `Holga` | multiply | multiply (`glimmer_creative.py:130`) | ✅ |
+| `Neon` | multiply | multiply (`glimmer_creative.py:247`) | ✅ |
+| `Sixties` | multiply | multiply (`glimmer_tone.py:175`) | ✅ |
+| `NightVision` | lighten | lighten (`glimmer_tone.py:223`) | ✅ |
+| `Orton` | overlay | overlay (`glimmer_creative.py:92`) | ✅ |
+| `PencilSketch` | add + overlay | add + overlay (`effects_artistic.py:141`) | ✅ |
+| `LocalContrast` | subtract ×3 + add | *más alakban* — ld. lentebb | ✅ (levezetve) |
+| `Comicize` | darken, **multiply**, add ×2, darken | darken ×3, **multiply hiányzik** | ⚠️ ld. lentebb |
+| `ReanimatedEyeColor` | lighten + **screen** | multiply | ❌ **#1605** |
+
+Három effekt módja **futásidőben változó**, ezért nem hasonlítható így:
+`PicnikGrain` (`{_radioLighten.selected?7:5}`), `Pixelate`
+(`{_sldrBlendMode.value}`), `PicnikTint` (`{_cbBlendMode.liveValue}`).
+
+> ⚠️ **Módszertani figyelmeztetés a következő körnek.** Az első,
+> automatizált összevetésem **mind a 11 effektre „nálunk nincs ilyen mód"-ot
+> adott** — vagyis csupa hamis riasztást. Az ok: a mi kódunk a módokat
+> gyakran **nem sztringként** írja le (a darken nálunk `np.minimum`), vagy
+> egy segédfüggvénybe delegálja. A táblázat fenti alakja **kézi
+> ellenőrzéssel** készült. Egy „mindenre eltérést" jelző pásztázó eredménye
+> önmagában soha nem lelet.
+
+### `LocalContrast` — a két „illesztett" konstansunk MEGFEJTVE
+
+A `filterdesc.xml` teljes csővezetéke (`<filter id="LocalContrast">`):
+
+```
+orig := be
+current := Blur(xblur=Radius, yblur=Radius, quality=3);   blur := current
+NestedImageOperation BlendMode="subtract":       # kivonva a külsőből
+    GetVar orig BlendMode="subtract"             #   blur − orig
+    MultiplyColorMatrix Multiplier=Contrast      #   ·C
+NestedImageOperation BlendMode="add":            # hozzáadva a külsőhöz
+    GetVar orig                                  #   (csere orig-ra)
+    GetVar blur BlendMode="subtract"             #   orig − blur
+    MultiplyColorMatrix Multiplier=Contrast      #   ·C
+```
+
+Csúszkák: `Radius` `[1,3 .. 40]` alap 15; `Contrast` `[1 .. 3]` alap 1,5.
+
+**A kompozíció** — a két blokk 8 bites, TELÍTŐDŐ (clamp) művelet, ezért nem
+redundáns: az első csak ott hat, ahol `blur > orig`, a második csak ott,
+ahol `orig > blur`. A kettő együtt az előjeles élesítés két fele:
+
+```
+ki = blur + C·(orig − blur)   =   orig + (C−1)·(orig − blur)
+```
+
+Ebből **két, eddig pusztán goldenre illesztett konstansunk levezethető**:
+
+1. **`Contrast − 1` eltolás** (`LOCAL_CONTRAST_STRENGTH_OFFSET = 1.0`,
+   `glimmer_tone.py:114`) — a #688 MÉRTE, hogy `Contrast = 1`-nél a kimenet
+   bitre azonos a bemenettel. A fenti képlet ezt **algebrailag megadja**:
+   `C = 1`-nél `ki = orig`. A mérés helyes volt, most már oka is van.
+2. **`Radius/2` Gauss-szigma** (`LOCAL_CONTRAST_RADIUS_FACTOR`) — a #545
+   MÉRTE, hogy a tényleges szigma a `Radius` fele. Az XML `quality="3"`,
+   azaz **háromszoros dobozelmosás**; annak szórása `σ² = 3(w²−1)/12`,
+   nagy `w`-re `σ ≈ w/2`. A mért felezés tehát a Flash-örökségű
+   háromlépéses dobozelmosás pontos következménye, nem illesztési műtermék.
+
+**Ami NEM vezethető le:** a `local_contrast()` harmadik tagja,
+a `+ 2,9·strength` világosítás (`LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH`,
+`glimmer_ops.py:391`). Az XML csővezetékében **ennek nincs megfelelője**.
+A #545 mérése szerint javítja az illeszkedést (12,6 → 2,58), tehát valamit
+helyettesít — a legvalószínűbb jelölt a **telítődés aszimmetriája**: az
+eredeti a két félben 8 biten vág, mi végig lebegőpontosan számolunk.
+Ez **nyitott kérdés**, jegyben: a mérés áll, a magyarázat nem.
+
+*Bizonyítottsági fok: **megerősített** a csővezeték és a két konstans
+levezetése (a forrás a Picasa saját `filterdesc.xml`-je); **feltételes** a
+világosító tag telítődés-eredetű magyarázata — nincs megmérve.*
+
+### `Comicize` — három eltérés az eredetitől
+
+A `<filter id="Comicize">` csővezetékéből három olyan lépés hiányzik vagy
+tér el nálunk (`effects_artistic.py:181`), amit a #1351 és a #785 sem fed:
+
+| lépés | eredeti | nálunk |
+|---|---|---|
+| a raszterblokk felvitele a képre | `_opColorSpots` **`BlendMode="multiply"`**, `BlendAlpha="{0.5-DotFade/200}"` | `np.minimum` = **darken**, azonos alfával (`:253`) |
+| a blokk első művelete | `GlowImageOperation color="0" glowalpha="1" xblur="{35·0,02·max(W,H)/2}"` — nagy sugarú **fekete ragyogás** | **nincs** |
+| a küszöbgörbék | két `AdjustCurvesImageOperation`: a fő görbe ötpontos spline `[{0,0},{24,24},{48,48},{90+DotContrast·1,5,254},{255,255}]`, az ágankénti pedig kemény küszöb `[{0,0},{150,0},{160,255},{255,255}]` | egyetlen lineáris skálázás `darkened·255/upper` (`:234`), ágankénti küszöb nincs |
+
+A csemperács, a csempeméret-képlet, a fél csempés eltolás és az ágak
+egyesítése (`darken`) **egyezik** — azokat a #569 helyesen fejtette meg.
+
+*Bizonyítottsági fok: **megerősített** — mindhárom sor a `filterdesc.xml`
+szó szerinti tartalma. A #685 mérőkészletén a hatásuk NINCS megmérve.*
