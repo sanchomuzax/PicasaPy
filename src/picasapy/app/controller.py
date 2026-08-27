@@ -40,6 +40,7 @@ from .busy_registry import get_app_busy_registry
 from .collage_controller import CollageMixin
 from .color_index_controller import ColorIndexMixin
 from .language_controller import LanguageMixin
+from .display_mode_controller import DisplayModeMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
 from .custom_collections_controller import CustomCollectionsMixin
@@ -107,6 +108,10 @@ class AppController(
     PerfMonitorMixin,
     AppearanceMixin,
     LanguageMixin,
+    # #1575: Nézet ▸ Megjelenítési mód — a tizenegy tagú kizáró
+    # csoport állapota. A szelet nem perzisztens (mérve: az eredeti
+    # sem tárolja el), ezért csak egy `_init_display_mode()` kell.
+    DisplayModeMixin,
     CreateMixin,
     # #985: a Kollázs-LAP vezérlője (#920 sorozat). A `CollageMixin` maga
     # örökli a `CollageSaveMixin`-t (`class CollageMixin(CollageSaveMixin)`,
@@ -223,6 +228,7 @@ class AppController(
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
         self._init_language()
+        self._init_display_mode()
         # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a PeopleMixin
         # saját kezdeti állapota (`people` property üres listával indul,
         # a `_reload()` tölti fel az indexből)

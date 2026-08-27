@@ -469,10 +469,171 @@ MenuBar {
             onTriggered: controller.toggleDarkTheme()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
+        // #1575: a Megjelenítési mód almenü — 11 tétel + 4 elválasztó
+        // (15 rekord), a `docs/specs/picasa-megjelenitesi-modok.md` 1.
+        // szakaszának SORRENDJÉBEN. A tartalom a binárisból mérve
+        // (`0x0055ab62`–`0x0055abd4`); a korábbi „a screenshotokból nem
+        // derül ki" komment 2026-08-27 óta elavult.
+        //
+        // Mind a tizenegy EGYETLEN kizáró csoport tagja (mérve,
+        // `0x00575670`) — kapcsoló egy sincs köztük, tehát a
+        // „Túlcsordult képpontok" és a „Projektor mód" sem kombinálható a
+        // gammákkal. A pipa ezért végig a `bar.ctl.displayMode`-ra köt.
+        //
+        // ⚠️ RÁDIÓ-CSAPDA (ld. a `Thumbnail Caption` alatti magyarázatot és
+        // a #1464/#1468-at): a valódi kattintás előbb IMPERATÍVAN átbillenti
+        // a `checked`-et, és a `setDisplayMode` azonos értéknél
+        // SZÁNDÉKOSAN nem jelez — a kötés tehát magától soha nem értékelődne
+        // újra. Ezért minden tétel a jelzés után VISSZAKÖTI a `checked`-et.
+        //
+        // A VÁZ szintjén mind a tizenegy MŰKÖDIK: pipázódik, és a módot
+        // beállítja a vezérlőn. A képpont-hatásuk külön jegyeké
+        // (#1576/#1577/#1578); a `24 bites` és — 24 bites képernyőn — az
+        // `Automatikus` az eredetiben is no-op.
+        //
+        // A `&`-gyorsítóbetűket a spec 1. szakasza tartalmazza; ide
+        // SZÁNDÉKOSAN nem kerültek be: ebben a fájlban ma csak a hét
+        // FŐMENÜ-cím visel mnemonikot, a 130+ tétel egyike sem, és egyetlen
+        // almenüt kiemelni következetlenséget szülne. Ez külön jegy dolga.
         Menu {
+            objectName: "menuViewDisplayMode"
             title: qsTr("Display Mode")
-            enabled: false
+            MenuItem {
+                objectName: "menuViewDisplayModeAuto"
+                text: qsTr("Automatic")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "auto"
+                onTriggered: {
+                    controller.setDisplayMode("auto")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "auto"
+                    })
+                }
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuViewDisplayModeNormal"
+                text: qsTr("24-bit")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "normal"
+                onTriggered: {
+                    controller.setDisplayMode("normal")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "normal"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayMode16Bit"
+                text: qsTr("16-bit (dithered)")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "dither16"
+                onTriggered: {
+                    controller.setDisplayMode("dither16")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "dither16"
+                    })
+                }
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuViewDisplayModeRemoteDesktop"
+                text: qsTr("Remote Desktop")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "rdesk"
+                onTriggered: {
+                    controller.setDisplayMode("rdesk")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "rdesk"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayModeLcd"
+                text: qsTr("LCD Whitepoint")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "lcd"
+                onTriggered: {
+                    controller.setDisplayMode("lcd")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "lcd"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayModeProjector"
+                text: qsTr("Projector Mode")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "projector"
+                onTriggered: {
+                    controller.setDisplayMode("projector")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "projector"
+                    })
+                }
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuViewDisplayModeOverflow"
+                text: qsTr("Show overflow pixels")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "overflow"
+                onTriggered: {
+                    controller.setDisplayMode("overflow")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "overflow"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayModeMacGamma"
+                text: qsTr("Mac Gamma (1.6)")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "mac"
+                onTriggered: {
+                    controller.setDisplayMode("mac")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "mac"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayModeLinearGamma"
+                text: qsTr("Linear Gamma (2.2)")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "linear"
+                onTriggered: {
+                    controller.setDisplayMode("linear")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "linear"
+                    })
+                }
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuViewDisplayModeSepia"
+                text: qsTr("Sepia")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "sepia"
+                onTriggered: {
+                    controller.setDisplayMode("sepia")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "sepia"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewDisplayModeBlackWhite"
+                text: qsTr("Black and White")
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "bw"
+                onTriggered: {
+                    controller.setDisplayMode("bw")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "bw"
+                    })
+                }
+            }
         }
         // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
         // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV

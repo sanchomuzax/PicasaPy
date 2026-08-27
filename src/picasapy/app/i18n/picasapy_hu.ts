@@ -4703,6 +4703,61 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Megjelenítési mód</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Automatic</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>24-bit</source>
+        <translation>24 bites</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>16-bit (dithered)</source>
+        <translation>16 bites (szemcsézett)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Remote Desktop</source>
+        <translation>Távoli asztal</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>LCD Whitepoint</source>
+        <translation>LCD fehérpont</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Projector Mode</source>
+        <translation>Projektor mód</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Show overflow pixels</source>
+        <translation>Túlcsordult képpontok megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Mac Gamma (1.6)</source>
+        <translation>Mac gamma (1.6)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Linear Gamma (2.2)</source>
+        <translation>Lineáris gamma (2.2)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Sepia</source>
+        <translation>Szépia</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
+        <source>Black and White</source>
+        <translation>Fekete-fehér</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374"/>
         <source>Show</source>
         <translation>Megjelenítés</translation>
