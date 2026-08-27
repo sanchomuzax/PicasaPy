@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Kiadatlan]
+
+### Javítva
+- **Az állapotlap „Ez vár rád" része félrevezetett (#1664).** A tulajdonos
+  jelezte, hogy kaotikus. Két hiba volt benne: ugyanaz a jegy **kétszer**
+  szerepelt (a „bináris kutatás oldja fel" lista a blokkoltak részhalmaza,
+  mégis mellé került), a szakasz címe pedig azt ígérte, hogy minden alatta
+  lévő tétel a tulajdonosra vár — holott épp az ellenkezője igaz volt rájuk.
+  Mostantól egy jegy pontosan egy csoportban szerepel, és a cím megmondja,
+  hogy csak az első csoport az, ami nélküle áll.
+
 ## [0.8.128] – 2026-08-27
 
 ### Hozzáadva
