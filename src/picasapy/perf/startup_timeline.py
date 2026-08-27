@@ -27,7 +27,10 @@ fájlt megnyithatja és elolvashatja, mielőtt elküldi.
 
 from __future__ import annotations
 
-import platform as _platform
+# ⚠️ NEM `as _platform`: a projektben a `_platform` a CSERÉLHETŐ FOGANTYÚ
+# neve (#1217, `sys.platform`-ot ad), és a `test_szabalykonyv_szinkron`
+# őre joggal bukik rá, ha ugyanaz a név mást jelent.
+import platform as _platform_modul
 import time
 from collections.abc import Mapping
 from contextlib import contextmanager
@@ -175,7 +178,7 @@ class StartupTimeline:
         sorok = [
             "PicasaPy — indulási idővonal (#1601)",
             f"verzió: {app_version or 'ismeretlen'}",
-            f"rendszer: {_platform.platform()} · Python {_platform.python_version()}"
+            f"rendszer: {_platform_modul.platform()} · Python {_platform_modul.python_version()}"
             + (f" · Qt {qt_version}" if qt_version else ""),
             f"mérés kezdete: {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
             "",
