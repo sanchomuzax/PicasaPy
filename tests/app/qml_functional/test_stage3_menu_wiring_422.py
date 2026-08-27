@@ -98,24 +98,37 @@ class TestTagMenuWiring:
 
 
 class TestTrayMenuWiring:
-    def test_keep_selection_narrows_to_the_anchor(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    # ⚠️ #455-ben ÁTÍRVA. A két korábbi őr a MI feltevésünket rögzítette,
+    # nem az eredeti viselkedést: a #422 körében a képtálcának még nyoma
+    # sem volt, ezért a `Tray` helyi menü két parancsa a rács kijelölését
+    # szűkítette. A `docs/specs/picasa-keptalca.md` 3. és 12. szakasza
+    # azóta kimérte, hogy a parancs BELSŐ neve
+    # `Tray::ID_PICTURE_HOLDINPICTURETRAY` („tartsd a képtálcán"), a párja
+    # `Tray::ID_REMOVE_SELECTION` — vagyis mindkettő a TÁLCÁRA hat. A régi
+    # állítás megfordítva marad meg őrként: a kijelölés NEM változhat.
+    def test_keep_selection_holds_the_rows_in_the_tray(self, qml_app, qt_app):
+        window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 1)
         qt_app.processEvents()
         _child(window, "trayContextMenu").keepSelectionRequested.emit()
         qt_app.processEvents()
-        assert _selected(window) == [1]
+        assert controller.isHeldAt(0) is True
+        assert controller.isHeldAt(1) is True
+        assert _selected(window) == [0, 1]
 
-    def test_remove_selection_drops_the_anchor(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+    def test_remove_selection_takes_the_rows_off_the_tray(self, qml_app, qt_app):
+        window, controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 1)
         qt_app.processEvents()
+        _child(window, "trayContextMenu").keepSelectionRequested.emit()
+        qt_app.processEvents()
         _child(window, "trayContextMenu").removeSelectionRequested.emit()
         qt_app.processEvents()
-        assert _selected(window) == [0]
-        assert window.property("selectedIndex") == 0
+        assert controller.isHeldAt(0) is False
+        assert controller.isHeldAt(1) is False
+        assert controller.heldCount == 0
 
     def test_tray_has_its_own_right_click_handler(self, qml_app, qt_app):
         window, _controller, _engine = qml_app

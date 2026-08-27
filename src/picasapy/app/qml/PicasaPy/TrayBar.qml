@@ -82,6 +82,40 @@ Column {
             ? tray.appWindow.selectedIndexes
             : []
 
+    // =====================================================================
+    // #455: A KIJELÖLÉS AUTOMATIKUSAN A TÁLCÁBA KERÜL
+    // =====================================================================
+    // Az eredeti tálcája **a kijelölés meghosszabbítása** volt, nem külön
+    // kosár: alapból a kijelölést mutatta, és a „Hold" fagyasztotta be,
+    // hogy másik mappából is lehessen hozzátenni
+    // (`thumbui/single_action_message` köre, `docs/specs/picasa-keptalca.md`).
+    //
+    // A tükrözés ITT történik, nem a `Main.qml`-ben: a tálca a sáv
+    // felelőssége, és így a forró főablak-fájl érintetlen marad. A
+    // `typeof`-őr azért kell, mert a sáv teszt-kettős vezérlőkkel is
+    // betöltődik (`scripts/qml_undefined_or.py`).
+    function syncTraySelection() {
+        if (tray.ctl && typeof tray.ctl.syncSelection === "function")
+            tray.ctl.syncSelection(tray.selectedIndexesOrEmpty)
+    }
+    onSelectedIndexesOrEmptyChanged: tray.syncTraySelection()
+    Component.onCompleted: tray.syncTraySelection()
+
+    //: A tálca elemszáma (a rögzített ÉS a kijelölésből tükrözött együtt).
+    //: Ez a KÖTÉSI FÜGGŐSÉG is: a `trayInfo()`/`isHeldAt()` függvényhívások
+    //: önmagukban nem hoznak létre függőséget, a `heldCount` olvasása igen.
+    readonly property int trayCount:
+        (tray.ctl && tray.ctl.heldCount !== undefined) ? tray.ctl.heldCount : 0
+
+    //: #455: a kék infó-sáv a TÁLCÁRÓL ír (`il_GetSelectionInfo`). A
+    //: műveletsor a tálca tartalmán dolgozik, tehát a darabszámnak, a
+    //: dátumtartománynak és az összméretnek is azt kell összesítenie —
+    //: a más mappából tartott képekkel együtt, amiket a rács nem is mutat.
+    readonly property string trayInfoText:
+        (tray.trayCount > 0 && tray.ctl
+         && typeof tray.ctl.trayInfo === "function")
+            ? tray.ctl.trayInfo() : ""
+
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     //
     // #1420: az eredetiben ez a `thumbui/infotext` — a 105 képpontos sáv
@@ -140,16 +174,22 @@ Column {
             // várakozás MINDEN mást megelőz: a kollázs lapja közben be is
             // zárulhat, és a felhasználó máshol nézelődik, miközben a munka
             // fut — az eredeti éppen ezért a KÖNYVTÁRNÉZETBEN mondja ki.
+            //
+            // #455: a nézőn kívül a TÁLCA az elsődleges forrás — a tálca a
+            // kijelölés tükre, plusz a máshonnan MEGTARTOTT képek, amiket a
+            // rács sorindexei nem is tudnak leírni. Üres tálcánál minden
+            // marad a mai ágakon (a `trayInfoText` ilyenkor üres).
             text: (!tray.ctl || !tray.appWindow) ? ""
                   : (tray.ctl.collageRendering === true ? tray.collageWaitText
                   : (tray.appWindow.viewerOpen
                   ? tray.ctl.viewerInfo(tray.viewerIndex)
+                  : (tray.trayInfoText !== "" ? tray.trayInfoText
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
                      : (tray.appWindow.selectedIndexes.length > 1
                         && typeof tray.ctl.selectionInfo === "function"
                         ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
-                        : tray.ctl.statusText))))
+                        : tray.ctl.statusText)))))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true
@@ -168,20 +208,19 @@ Column {
         }
         TrayContextMenu {
             id: trayContextMenu
-            // „Kijelölés megtartása": a kijelölés a jelenlegi
-            // horgony-képre szűkül; „eltávolítása": az kikerül belőle
+            // #455: a `Tray` helyi menü két parancsa a TÁLCÁRA hat, nem a
+            // rács kijelölésére. Korábban a „megtartás" a horgony-képre
+            // SZŰKÍTETTE a kijelölést, az „eltávolítás" pedig kivette
+            // belőle — a `Tray::ID_PICTURE_HOLDINPICTURETRAY` belső neve
+            // („tartsd a képtálcán") és a spec 3. szakasza szerint viszont
+            // ez a tálca rögzítése, illetve a tálcáról való levétel.
             onKeepSelectionRequested: {
-                var row = tray.appWindow.selectedIndex
-                if (row >= 0) tray.appWindow.selectedIndexes = [row]
+                if (tray.ctl && typeof tray.ctl.holdRows === "function")
+                    tray.ctl.holdRows(tray.selectedIndexesOrEmpty)
             }
             onRemoveSelectionRequested: {
-                var anchor = tray.appWindow.selectedIndex
-                var rest = []
-                var current = tray.appWindow.selectedIndexes
-                for (var k = 0; k < current.length; ++k)
-                    if (Number(current[k]) !== anchor) rest.push(current[k])
-                tray.appWindow.selectedIndexes = rest
-                tray.appWindow.selectedIndex = rest.length > 0 ? rest[0] : -1
+                if (tray.ctl && typeof tray.ctl.removeHeldRows === "function")
+                    tray.ctl.removeHeldRows(tray.selectedIndexesOrEmpty)
             }
         }
         // #1420: 20 (infó-csík) + 85 = 105 — a `publishbottom` = −105.
@@ -280,9 +319,9 @@ Column {
             radius: 2
             clip: true
 
-            //: #455: a mappaváltást is túlélő, MEGTARTOTT képek száma
-            readonly property int heldCount: (tray.ctl && tray.ctl.heldCount !== undefined)
-                ? tray.ctl.heldCount : 0
+            //: #455: a tálca elemszáma (a gyökér `trayCount`-jából — egy
+            //: helyen olvassuk a vezérlőt, hogy a null-őr se duplázódjon)
+            readonly property int heldCount: tray.trayCount
 
             // a bélyegképsor (`thumbui/scratch`): 5 képpont belső margó,
             // JOBBRÓL 50 képpont marad szabadon a három gombnak
@@ -453,12 +492,26 @@ Column {
             }
         }
 
-        // #455: a Picasa saját szövegű rákérdezése ürítéskor —
-        // „Would you like to clear your old held items from the
-        // tray?" → „Clear Tray" / „Don't Clear" (az issue kutatása
-        // szerint ez a szöveg). Az általános `ConfirmDialog` Igen/
-        // Nem/Mégse feliratai NEM egyeznek ezekkel, ezért itt egyedi,
-        // egyszerű dialógus.
+        // #455: a Picasa saját szövegű rákérdezése a TELJES ürítésre.
+        //
+        // ⚠️ JAVÍTVA (2026-08-27): itt korábban a MÁSIK párbeszéd szövege
+        // állt („Would you like to clear your old held items from the
+        // tray?" → „Clear Tray" / „Don't Clear"). A `picasa-keptalca.md` 4.
+        // szakasza kimutatta, hogy **két, egymástól különböző** párbeszéd
+        // van, és ez itt a másik:
+        //
+        //   4.1 TELJES ürítés — `IDS_CLEARTRAY`: „This will clear your
+        //       entire tray. Are you sure you want to do this?", igen-gomb
+        //       `IDS_CLEARTRAY_YES_BUTTON` = „Clear Tray" („Törlés a
+        //       tálcáról"). **EZ tartozik a Törlés gombhoz.**
+        //   4.2 a RÉGÓTA tartott elemek — `il_ClearFromTray`: nem a Törlés
+        //       gomb megerősítése, hanem külön FELKÍNÁLT takarítás, aminek
+        //       a küszöbe darabszám-növekedés (spec 13.). A szabálya kész
+        //       és tesztelt a magban (`tray.needs_old_items_prompt`), de a
+        //       megjelenés pillanata nincs kimérve, ezért nem építjük meg.
+        //
+        // Az általános `ConfirmDialog` Igen/Nem/Mégse feliratai nem
+        // egyeznek az eredetivel, ezért itt egyedi, egyszerű dialógus.
         Dialog {
             id: trayClearConfirm
             objectName: "trayClearConfirmDialog"
@@ -466,10 +519,11 @@ Column {
             anchors.centerIn: parent ? Overlay.overlay : undefined
             title: qsTr("Clear Tray")
             Text {
+                objectName: "trayClearConfirmText"
                 Layout.preferredWidth: 280
                 text: qsTr(
-                    "Would you like to clear your old held items"
-                    + " from the tray?")
+                    "This will clear your entire tray."
+                    + " Are you sure you want to do this?")
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
@@ -477,18 +531,26 @@ Column {
             footer: RowLayout {
                 spacing: 8
                 Item { Layout.fillWidth: true }
+                //: A megerősítő gomb hivatalos magyarja MÁS, mint a
+                //: párbeszéd címéé: `IDS_CLEARTRAY_YES_BUTTON` = „Törlés a
+                //: tálcáról". Ugyanaz a forrásszöveg, más fordítás — ezért
+                //: kap megkülönböztető második paramétert.
                 PicasaButton {
                     objectName: "trayClearConfirmYesButton"
-                    text: qsTr("Clear Tray")
+                    text: qsTr("Clear Tray", "IDS_CLEARTRAY_YES_BUTTON")
                     accent: Theme.picasaGreen
                     onClicked: {
                         tray.ctl && tray.ctl.clearHeld()
                         trayClearConfirm.close()
                     }
                 }
+                //: A visszalépő gomb felirata NEM az eredeti „Don't Clear" —
+                //: az a 4.2 párbeszédhez tartozik (ld. fent). A teljes
+                //: ürítés kérdésének nemleges gombja nincs kimérve, ezért a
+                //: program általános „Mégse"-jét használjuk.
                 PicasaButton {
                     objectName: "trayClearConfirmNoButton"
-                    text: qsTr("Don't Clear")
+                    text: qsTr("Cancel")
                     onClicked: trayClearConfirm.close()
                 }
                 Item { width: 8 }
