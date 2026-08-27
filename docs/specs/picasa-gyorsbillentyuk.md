@@ -471,13 +471,13 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 | `Home` / `End` | első/utolsó kép a mappában | ✅ megvan | `LightboxFeed.qml:218` |
 | `Ctrl+N` | Új album | ❌ **hiányzik** | — |
 | `Ctrl+O` | Fájl felvétele a Picasába | ❌ hiányzik | — |
-| `Ctrl+M` | Importálás forrása | ❌ hiányzik | — |
+| `Ctrl+M` | Importálás forrása | ✅ megvan (#1615) | `PicasaMenuBar.qml:263` |
 | `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | ❌ hiányzik | — |
-| `Ctrl+P` | Nyomtatás | ❌ hiányzik | — |
+| `Ctrl+P` | Nyomtatás | ✅ megvan (#1472) | `PicasaMenuBar.qml:237` |
 | `Ctrl+E` | E-mail | ❌ hiányzik | — |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Kivágás/Másolás/Beillesztés | ❌ hiányzik | — |
 | `Ctrl+3` | Szerkesztési nézet / Megjelenítés és szerkesztés | ❌ hiányzik | — |
-| `Ctrl+Shift+P` | Indexképek nyomtatása | ❌ hiányzik | — |
+| `Ctrl+Shift+P` | Indexképek nyomtatása | ✅ megvan (#1590) | `PicasaMenuBar.qml:248` |
 | `Ctrl+H` | Kijelölés megtartása a tálcán | ❌ hiányzik | — |
 | `F1` | Súgó | ❌ hiányzik | — |
 | **`Enter`** | Megjelenítés és szerkesztés (rácsból a nézőbe) | ✅ megvan (#1417) – a rács `Keys.onPressed` ága ugyanazt az `openRequested` jelet adja, mint a dupla kattintás | `LightboxFeed.qml:227` |

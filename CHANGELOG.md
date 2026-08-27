@@ -8,6 +8,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **A Fájl ▸ Importálás forrása… menüpont és a `Ctrl+M` nem csinált semmit
+  (#1615).** Az importálás régóta készen volt, de csak az eszköztár „Import"
+  gombjából lehetett elindítani. A Fájl menü tétele szürke, kattinthatatlan
+  helyfoglaló volt, a felirata mégis `Ctrl+M`-et hirdetett — ilyen billentyű
+  viszont sehol nem élt a programban. Aki a menüből próbálkozott, joggal
+  hitte, hogy az importálás nem működik. Mostantól a menüpont és a `Ctrl+M`
+  is **ugyanazt az importálás-ablakot** nyitja meg, amit az eszköztár gombja.
 - **Windowson nem készült el a Google Earth-fájl (#1626).** A „Megtekintés a
   Google Earth programban…" és az „Exportálás Google Earth-fájlba" a
   célmappa kiválasztása után Windowson **némán nem írt semmit**: a

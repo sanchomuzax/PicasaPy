@@ -81,6 +81,11 @@ MenuBar {
     signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
+    // #1615: Fájl ▸ Importálás forrása… (Ctrl+M) —
+    // `eMenuFile::ID_FILE_IMPORTPICTURE`, `cmd 0x9c91`. A párbeszéd
+    // (`ImportSourceDialog`) a Main.qml-ben él, és ugyanaz a példány, amit
+    // az eszköztár „Import" gombja nyit — a menü NEM külön utat jár.
+    signal importSourceRequested()
     // #1472: Fájl ▸ Nyomtatás… (Ctrl+P) — a párbeszéd a Main.qml-ben él,
     // ugyanúgy, mint az exportnál; a képtálca „Nyomtatás" gombja
     // (TrayBar.printRequested) ugyanoda vezet
@@ -245,6 +250,20 @@ MenuBar {
         enabled: bar.photoActionsEnabled
         onActivated: bar.printContactSheetRequested()
     }
+    // #1615: a Fájl-menü felirata Ctrl+M-et hirdet (a #1154 MÉRTE a
+    // menüsáv gyorsbillentyű-táblájából: `0xd6d9b0`, `cmd 0x9c91`) — ne
+    // maradjon puszta felirat. Feltétel nélkül él, mint maga a menüpont.
+    //
+    // Szövegmező-ütközés (#1526/#1571): a Qt a leütést előbb
+    // `ShortcutOverride`-ként ajánlja fel a fókuszált elemnek, és a
+    // `QQuickTextInput` csak az általa KEZELT billentyűket fogadja el. A
+    // `Ctrl+M` nem ilyen, tehát a keresőmezőben állva is ez nyer — MÉRVE:
+    // `tests/app/qml_functional/test_import_menupont_1615.py`.
+    Shortcut {
+        objectName: "shortcutImportFrom"
+        sequence: "Ctrl+M"
+        onActivated: bar.importSourceRequested()
+    }
 
     Menu {
         title: qsTr("&File")
@@ -266,7 +285,14 @@ MenuBar {
             onTriggered: bar.folderManagerRequested()
         }
         PicasaMenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; placeholder: true }
-        PicasaMenuItem { text: qsTr("Import From...") + "\tCtrl+M"; placeholder: true }
+        // #1615: ÉLŐ tétel. Az importálás nem függ kijelöléstől (a forrást
+        // maga a párbeszéd kérdezi meg), ezért — a Nyomtatás…-tól eltérően
+        // — nincs `enabled` feltétele.
+        MenuItem {
+            objectName: "menuFileImportFrom"
+            text: qsTr("Import From...") + "\tCtrl+M"
+            onTriggered: bar.importSourceRequested()
+        }
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
         PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
