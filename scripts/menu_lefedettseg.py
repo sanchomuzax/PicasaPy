@@ -43,10 +43,11 @@ VISELKEDES_LAP = "picasa-menu-parancsok-viselkedes.md"
 
 #: Nem építjük meg — a Picasa Web / Google+ / YouTube szolgáltatások 2016
 #: (az `ID_DELETE_EMPTY_ALBUMS` felirata kimondja: „Üres ONLINE albumok törlése";
-#:  az `ID_BURNCD` egy szállított windowsos/mac nézőprogramot éget lemezre — #32)
+#:  az `ID_BURNCD` egy szállított windowsos/mac nézőprogramot éget lemezre — #32;
+#:  az `ID_EXPORT_SENDTOBLOGGER` a Blogger-feltöltés, a szolgáltatás halott)
 #: óta nem léteznek, a CD-írás és a telepítő-kezelés nem a mi dolgunk.
 HATOKORON_KIVUL = re.compile(
-    r"^ID_(FTPWEB|GETMYSTUFF|TOOLS_BATCH_UPLOAD|TOOLS_COLLAB|TOOLS_YOUTUBE|DELETE_EMPTY_ALBUMS|BURNCD"
+    r"^ID_(FTPWEB|GETMYSTUFF|TOOLS_BATCH_UPLOAD|TOOLS_COLLAB|TOOLS_YOUTUBE|DELETE_EMPTY_ALBUMS|BURNCD|EXPORT_SENDTOBLOGGER"
     r"|EXPORT_EARTH|HELP_UNINSTALL|HELP_CHECK_FOR_UPDATES|HELP_PICASA_FORUMS"
     r"|HELP_PICASA_README|HELP_RELEASENOTES|HELP_PRIVACY|HELP_DEFAULT)$"
 )

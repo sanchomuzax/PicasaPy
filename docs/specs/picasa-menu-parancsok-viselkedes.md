@@ -583,3 +583,56 @@ Az `eMenuView::ID_CAPTAG` = „&Címkék" a **felirat-mód** ötös
 rádiócsoport tagja (`captionmode` beállításkulcs, ld. a 22. adagot).
 ✅ **Nálunk megvan és tartós** (`controller.py:481`, `view/thumbCaption`).
 **Nincs teendő.**
+
+## A 30. adag (2026-08-27) — másodpéldány-szűrő, arc-filmek, és a KÉT rendezés-készlet
+
+### ⚠️ Helyesbítés: az `eMenuLabelFolder` a MAPPA FŐMENÜ
+
+A 28. adagban „label-mappa helyi menüjének" neveztem. **Téves.** A
+`stringres` szerint a felirata **`&Folder` / `&Mappa`** — a nyolc
+menüsáv-tétel egyike: `&Fájl`, `Sz&erkesztés`, `&Nézet`, **`&Mappa`**,
+`&Kép`, `&Eszközök`, `&Létrehozás`, `&Súgó`.
+
+### ⛔ KÉT rendezés-készlet, és nem cserélhetők fel
+
+| | parancsok | tételek | felirat | hol |
+|---|---|---:|---|---|
+| **A** | `ID_DATESORT`, `ID_NAMESORT`, `ID_SIZESORT`, `ID_REVERSESORT` | **4** | **rövid**: &Dátum · &Név · &Méret · &Fordított sorrend | **Mappa menü**, `Folder::SortFolderBy`, `Album::SortAlbumBy` |
+| **B** | `ID_VIEWBYDATE/NAME/SIZE/RECENT`, `ID_VIEWREVERSE` | **5** | **hosszú**: „Rendezés létrehozási dátum alapján" … | **Nézet menü**, bal hasáb (`AlbumList::`) |
+
+⇒ A **„legutóbbi változtatások"** CSAK a B készletben létezik.
+
+Ugyanaz a parancs a két helyen **más feliratot** kap:
+`eMenuView::ID_VIEWBYDATE` = „Rendezés **létrehozási** dátum alapján",
+`AlbumList::ID_VIEWBYDATE` = „Rendezés **dátum** alapján".
+
+Nálunk a **Mappa menü a B készletet használja** (hiba, **#1595**), a
+`FolderContextMenu` viszont **helyesen** az A-t.
+
+### `ID_DUPES` — SZŰRŐ, nem párbeszéd
+
+A kezelő (`0x005ccc14`–`0x005ccc3c`) három lépés, egyik sem nyit ablakot:
+megjeleníti a **keresősávot** (`searchcontainer/searchbutton`), bekapcsolja
+a **másodpéldány-opciót** (`searchoptions/dupesearch`), és **újraépíti a
+listát** (`0x0065b840` — ugyanaz, amit a színkeresés is hív).
+
+⇒ A találatok a **fő rácsban** jelennek meg. A felirat is ezt mondja:
+„Fájlok másodpéldányainak **megjelenítése**". Nálunk `DedupDialog`
+nyílik. Jegy: **#1398**.
+
+### `ID_FACES` · `ID_FACESRANDOM` — a Film almenü két arc-tétele
+
+Névtér: **`eMenuCreateMovie`** (a `Létrehozás ▸ Film` almenü).
+
+| parancs | magyar | bemenet |
+|---|---|---|
+| `ID_FACES` | „A kijelölésben lévő arcokból…" | az aktuális **kijelölés** |
+| `ID_FACESRANDOM` | „Az Emberek albumból…" | az **Emberek albumok** |
+
+⚠️ A `RANDOM` utótag **nem a felirat része**; hogy a válogatás
+véletlenszerű-e, **nem mérve**. Jegy: **#1408**.
+
+### `ID_EXPORT_SENDTOBLOGGER` — HATÓKÖRÖN KÍVÜL
+
+„Közzététel a Bloggeren…" — a szolgáltatás halott. A
+`menu_lefedettseg.py` kizáró listájára került.
