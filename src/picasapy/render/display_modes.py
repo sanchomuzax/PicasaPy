@@ -406,6 +406,12 @@ def luma(rgb: np.ndarray) -> np.ndarray:
     — nem kerekítés. Lebegőpontos úton (`cv2.addWeighted`, `cv2.transform`
     float mátrixszal) a kerekítés miatt csatornánként ±1 eltérés keletkezne
     az eredetitől.
+
+    ⚠️ **Előfeltétel:** a bemenet `(H, W, 3)` uint8, nem üres tömb — ez a
+    függvény NEM ellenőriz. A védett belépési pont az `apply_display_bw`.
+    Szándékosan nincs a `picasapy.render` csomagszintű névterében sem: ott
+    a `luma` név összekeverhető volna a `glimmer_ops` LEBEGŐPONTOS,
+    Rec.601-es `luma`-jával, ami egészen mást számol.
     """
     sulyozott = cv2.LUT(rgb, _LUMA_TABLE)
     osszeg = sulyozott[:, :, 0] + sulyozott[:, :, 1] + sulyozott[:, :, 2]

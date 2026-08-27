@@ -38,7 +38,6 @@ from picasapy.render.display_modes import (
     apply_linear_gamma,
     darken,
     display_mode_changes_pixels,
-    luma,
     mark_overflow,
 )
 from picasapy.render.directional import (
@@ -192,7 +191,6 @@ __all__ = [
     "count_redeye_spots",
     "clamp_slider_value",
     "get_filter_spec",
-    "luma",
     "mark_overflow",
     "parse_neutral_argb",
     "parse_rgb_hex",
