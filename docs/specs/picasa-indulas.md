@@ -101,15 +101,15 @@ ott a felhasználó mozgatja a saját adatbázisát, itt a program **magától
 
 | lépés | eredeti | nálunk |
 |---|---|---|
-| egypéldány-zár | GUID (feltételes) | ✅ `_acquire_instance_lock` (`:346`) |
+| egypéldány-zár | GUID (feltételes) | ✅ `_acquire_instance_lock` (`:347`) |
 | indítókép | `SplashThread`, `/nosplash` | ✅ `_remaining_splash_ms` (`:435`) |
-| adat-/gyorsítótár-/beállításmappa | `AppLocalDataPath` | ✅ `_data_dir`/`_cache_dir`/`_config_dir` (`:231`–`:256`) |
-| tárolás előkészítése | — | ✅ `_bootstrap_storage` (`:261`) |
-| első beolvasás | — | ✅ `_start_initial_scan` (`:443`) |
-| hibanapló felajánlása | ✅ (#449) | ✅ `_offer_error_log` (`:322`) |
+| adat-/gyorsítótár-/beállításmappa | `AppLocalDataPath` | ✅ `_data_dir`/`_cache_dir`/`_config_dir` |
+| tárolás előkészítése | — | ✅ `_bootstrap_storage` (`:262`) |
+| első beolvasás | — | ✅ `_start_initial_scan` (`:444`) |
+| hibanapló felajánlása | ✅ (#449) | ✅ `_offer_error_log` (`:323`) |
 | **környezet-előfeltétel** | 800×600/16 bit + MMX, saját üzenettel | ❌ nincs |
 | **indítási kapuk** | `Picasa2Installing`, `Picasa2NoLaunch` | ❌ nincs |
-| **nyomkövetési kapcsoló** | `UseTraceFile` → `picasatrace.txt` | ❌ nincs (az `error_log.py` szándékosan tömör) |
+| **nyomkövetési kapcsoló** | `UseTraceFile` → `picasatrace.txt` | ✅ **van, 2026-08-27 óta**: a #1601 indulási idővonala (`perf/startup_timeline.py`, `start_startup_timeline`), alapból kikapcsolva — ugyanaz a minta |
 | **korábbi telepítés átvétele** | Windows.old, két alak | ❌ nincs |
 | frissítés-ellenőrzés | `LastUpdateCheck` | ❌ nincs (nem is kell — nem frissítünk így) |
 
@@ -119,3 +119,13 @@ ott a felhasználó mozgatja a saját adatbázisát, itt a program **magától
 hivatkozásokat, nem utasítás-sorrendben, ezért a fenti csoportosítás
 tematikus, nem időrendi. Aki a sorrendre épít, annak előbb a `0x004051b0`-t
 kell diszasszemblálnia (`annot_disasm.py 0x004051b0 <méret>`).
+
+## 7. Helyesbítés — a lap egyik sora már íráskor elavult
+
+A 5. szakasz „nyomkövetési kapcsoló" sorát **eredetileg „nincs"-re írtam**.
+Húsz perccel korábban azonban beolvadt a #1601 (`perf: indulási idővonal`),
+amely pontosan ezt a mintát vezette be: alapból kikapcsolt, opcionálisan
+bekapcsolható indulási napló. A sor javítva.
+
+Ez a lap saját példája a projekt szabályára: **a mért állapot romlandó**. Aki
+ebből a táblából dolgozik, a „nálunk" oszlopot mérje újra, ne vegye készpénznek.
