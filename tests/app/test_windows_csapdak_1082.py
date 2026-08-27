@@ -64,6 +64,7 @@ QML-keresésének mintájára.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -78,6 +79,20 @@ WINDOWSOS_UT = r"C:\Users\runneradmin\AppData\Local\Temp\pytest-0\kollazsok"
 
 def _ini(tmp_path: Path) -> Path:
     return tmp_path / "settings.ini"
+
+
+def _nativ(posix_alak: str) -> str:
+    """A várt útvonal a FUTTATÓ platform natív írásmódjában (#1634).
+
+    A `to_local_path` a végén `str(Path(...))`-ot ad vissza, tehát Windowson
+    VISSZAperjelre vált. Egy per-jeles sztringet beégetni ezért nem mérce,
+    hanem platform-feltevés — a #1626 négy állítása pontosan ezen bukott el a
+    windows-lábon, miközben a program helyesen működött.
+
+    A várt értéket ugyanazzal a normalizálással állítjuk elő, amivel a
+    termék is dolgozik: így a mérce a KÉT írásmód különbségére vak, a
+    tartalmi eltérésre viszont nem."""
+    return str(Path(posix_alak))
 
 
 class TestASzabalyosIras:
@@ -215,6 +230,28 @@ class TestAMeghajtobetusUrlLinuxonIsMerheto:
     A mért hiba: az `ExportDialogs.qml` a `file://` előtagot nyersen
     levágta, `/C:/Users/...` maradt, és a `mkdir` `WinError 123`-mal
     elhasalt — a Google Earth-KML SOHA nem készült el a windows-lábon.
+
+    ## #1634 — a fogantyú jó volt, a MÉRCE maradt POSIX-alakú
+
+    Ez a négy állítás eredetileg BEÉGETETT, per-jeles sztringgel mért
+    (`== "C:/Temp/pp"`), és mind a négy elbukott a windows-lábon (futás
+    `33085887241`) — miközben a program pontosan azt csinálta, amit kell:
+
+    | bemenet | `_platform()` | linux | windows |
+    |---|---|---|---|
+    | `file:///C:/Temp/pp` | `win32` | `C:/Temp/pp` | `C:\\Temp\\pp` |
+    | `file:///tmp/kep.jpg` | `win32` | `/tmp/kep.jpg` | `\\tmp\\kep.jpg` |
+    | `/C:/Temp/pp` | — | `/C:/Temp/pp` | `\\C:\\Temp\\pp` |
+
+    A javítás NEM az állítás gyengítése: a várt értéket ugyanazzal a
+    `Path`-normalizálással állítjuk elő (`_nativ`), amivel a termék is
+    dolgozik, a lényeget pedig — hogy a meghajtóbetű elé nem kerülhet
+    perjel — egy szeparátor-független `PureWindowsPath`-állítás mondja ki.
+
+    A MÉRŐ láb a linuxos: a vezető perjel visszatétele (a `_platform()`-
+    kapuzott levágás törlése) itt megbuktatja az első állítást, Windowson
+    viszont a Qt már maga elvégezte a levágást, tehát ott nem is látszana.
+    Pontosan ezért íródott ez az osztály Linuxra.
     """
 
     def test_windowson_a_meghajtobetu_elol_eltunik_a_per(self, monkeypatch):
@@ -222,7 +259,12 @@ class TestAMeghajtobetusUrlLinuxonIsMerheto:
 
         monkeypatch.setattr(formatting, "_platform", lambda: "win32")
 
-        assert formatting.to_local_path("file:///C:/Temp/pp") == "C:/Temp/pp"
+        eredmeny = formatting.to_local_path("file:///C:/Temp/pp")
+
+        assert eredmeny == _nativ("C:/Temp/pp")
+        # …és a szeparátortól FÜGGETLENÜL: a meghajtóbetű az út ELEJÉN áll.
+        # A `/C:/…` alakra ez üres meghajtót adna — épp az a #1626 hibája.
+        assert PureWindowsPath(eredmeny).drive == "C:"
 
     def test_a_posix_ut_valtozatlan_marad_a_windowsos_agon_is(self, monkeypatch):
         """A meghajtó-levágás nem eshet rá közönséges POSIX útra."""
@@ -230,21 +272,104 @@ class TestAMeghajtobetusUrlLinuxonIsMerheto:
 
         monkeypatch.setattr(formatting, "_platform", lambda: "win32")
 
-        assert formatting.to_local_path("file:///tmp/kep.jpg") == "/tmp/kep.jpg"
+        assert formatting.to_local_path("file:///tmp/kep.jpg") == _nativ(
+            "/tmp/kep.jpg"
+        )
 
     def test_a_posix_agon_nem_nyulunk_a_meghajtobetus_alakhoz(self, monkeypatch):
         """POSIX-on a `/C:/…` VALÓDI (bár szokatlan) útvonal lehet — a
-        levágás ott adatvesztő volna, ezért a fogantyú dönt, nem a minta."""
+        levágás ott adatvesztő volna, ezért a fogantyú dönt, nem a minta.
+
+        A mérce itt a Qt SAJÁT kimenete: a posix ág nem tehet hozzá és nem
+        vehet el belőle semmit, csak normalizál. Linuxon ez a valódi mérés
+        (a Qt `/C:/Temp/pp`-t ad, tehát a fölösleges levágás azonnal
+        látszana); Windowson a Qt maga már levágta a perjelet, ott az
+        állítás annyit mond, hogy utólag mi sem nyúltunk hozzá. A mérő láb
+        tehát a linuxos — ezért is íródott ide ez az osztály."""
         from picasapy.app import formatting
 
         monkeypatch.setattr(formatting, "_platform", lambda: "linux")
+        qt_alak = QUrl("file:///C:/Temp/pp").toLocalFile()
 
-        assert formatting.to_local_path("file:///C:/Temp/pp") == "/C:/Temp/pp"
+        assert formatting.to_local_path("file:///C:/Temp/pp") == _nativ(qt_alak)
 
     def test_a_nyers_ut_erintetlen_marad(self):
         """Csak a `file:`-előtagos bemenetet oldjuk fel — a sima útvonalat
-        nem. (A #1626 hibás alakja pont ilyen volt: `/C:/Temp/pp`.)"""
+        nem. (A #1626 hibás alakja pont ilyen volt: `/C:/Temp/pp`.)
+
+        „Érintetlen" itt az ÚTVONALRA értendő, nem a karakterekre: a
+        `Path`-normalizálás Windowson a szeparátort így is átírja
+        (`\\C:\\Temp\\pp`) — a vezető perjelet viszont nem szedi le."""
         from picasapy.app import formatting
 
-        assert formatting.to_local_path("/C:/Temp/pp") == "/C:/Temp/pp"
+        assert formatting.to_local_path("/C:/Temp/pp") == _nativ("/C:/Temp/pp")
 
+
+class TestNincsBeegetettPerjelesMerce:
+    """3. csapda: a `to_local_path` VÁRT értékét beégetni platform-feltevés.
+
+    Ez az igazi őr a #1634-re — ugyanaz a szerep, mint a
+    `TestNincsTobbKeziIni`-é a #1082-re. Az egyes állítások javítása
+    egyszeri; azt, hogy a hibaosztály ne jöjjön vissza, csak egy
+    fájlokon átfutó ellenőrzés tudja.
+
+    A tiltott alak: `to_local_path(...) == "…/…"`, azaz szeparátort
+    tartalmazó SZTRING-irodalom a jobb oldalon. A helyes alak a `_nativ()`
+    (vagy bármi, ami a várt értéket `Path`-on át állítja elő).
+
+    ⚠️ A SAJÁT fájlját kihagyja — ahogy a `TestNincsTobbKeziIni` is —, mert
+    az alábbi két önteszt épp a tiltott alakot tartalmazza szövegként. A
+    fájlon belüli visszaesést tehát nem ez fogja meg, hanem a
+    `TestAMeghajtobetusUrlLinuxonIsMerheto` `PureWindowsPath`-állítása.
+    """
+
+    #: A tiltott alak. Csak a szeparátort TARTALMAZÓ irodalomra szólal meg:
+    #: a `to_local_path("") == ""` szabályos, ott nincs mit normalizálni.
+    _MINTA = re.compile(
+        r"""to_local_path\([^\n]*\)\s*==\s*(?:r?["'])[^"'\n]*[/\\][^"'\n]*["']"""
+    )
+
+    def _talalatok(self) -> list[str]:
+        gyoker = Path(__file__).resolve().parents[1]
+        talalatok = []
+        for ut in gyoker.rglob("test_*.py"):
+            if ut.name == Path(__file__).name:
+                continue
+            sorok = ut.read_text(encoding="utf-8").splitlines()
+            elozo_talalat = 0
+            for szam in range(1, len(sorok) + 1):
+                # a hívás a következő sorra is átcsúszhat (a formázó tördeli)
+                kornyek = " ".join(sorok[szam - 1 : szam + 1])
+                if not self._MINTA.search(kornyek):
+                    continue
+                # a kétsoros ablak ugyanazt a hibát kétszer látná meg
+                if szam - 1 == elozo_talalat:
+                    continue
+                elozo_talalat = szam
+                talalatok.append(f"{ut.relative_to(gyoker)}:{szam}")
+        return talalatok
+
+    def test_egyetlen_teszt_sem_eget_be_perjeles_mercet(self):
+        talalatok = self._talalatok()
+
+        assert not talalatok, (
+            "beégetett, per-jeles várt érték a to_local_path mellett — "
+            "Windowson a visszaperjel miatt elbukik (#1634); állítsd elő "
+            "`str(Path(...))`-szal: " + ", ".join(talalatok)
+        )
+
+    def test_az_or_FELISMERI_a_regi_hibas_alakot(self):
+        """Az őr foga: a #1634-ben bukott sorokat tényleg megfogja."""
+        assert self._MINTA.search(
+            'assert formatting.to_local_path("file:///C:/Temp/pp") == "C:/Temp/pp"'
+        )
+        assert self._MINTA.search(
+            'assert to_local_path("file:///tmp/kep.jpg") == "/tmp/kep.jpg"'
+        )
+
+    def test_az_or_NEM_szol_a_helyes_alakra(self):
+        """…és nem szól arra, ami platformfüggetlenül állítja elő a mércét."""
+        assert not self._MINTA.search(
+            'assert to_local_path("file:///C:/Temp/pp") == _nativ("C:/Temp/pp")'
+        )
+        assert not self._MINTA.search('assert to_local_path("") == ""')
