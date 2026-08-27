@@ -104,20 +104,34 @@ class DisplayModeMixin:
 
 
 def wire_display_mode(controller, edit_controller, preview_provider):
-    """A mód ÁTVEZETÉSE a megjelenítési útra (#1576).
+    """A mód ÁTVEZETÉSE a megjelenítési útra (#1576, #1596).
 
-    Három szereplő, egy irány:
+    Négy szereplő, egy irány:
 
     1. a vezérlő (`DisplayModeMixin`) tartja, melyik mód aktív,
     2. az edit-előnézet **szolgáltatója** teszi rá a hatást a KIADOTT képre
        (a tárolt képet érintetlenül hagyva, ld. ott a docstringet),
     3. az `EditController` lépteti a `previewSource` cache-busterét, hogy a
-       QML tényleg újrakérje a képet.
+       QML tényleg újrakérje a képet,
+    4. a **rács modellje** mód-cimkét tesz a bélyegkép-URL-ekre, és
+       újraköti a látható cellákat (#1596).
+
+    A 4. lépés nélkül a menü a KÖNYVTÁR RÁCSÁN semmit nem csinál: a 2–3.
+    pont csak a nagy nézőt ellátó `editpreview` úton hat, a rács viszont a
+    `thumbs` szolgáltatóból rajzol. Mérve (#1596): a rácson mind a
+    tizenegy tétel képpontra azonos felvételt adott.
 
     A `wire_fileops()` mintájára KÜLÖN, nevesített bekötés: az
     `application.py` és a QML-funkcionális tesztek conftestjei ugyanezt az
     egy hívást használják, így a féloldalas tükrözés (a teszt-oldali
     bekötés elmaradása) nem tud észrevétlenül becsúszni.
+
+    ⚠️ A rács modelljét SZÁNDÉKOSAN a vezérlőtől kérjük el, nem külön
+    paraméterben. Új paraméter esetén minden hívóhelyet át kellene írni —
+    és épp az a féloldalas tükrözés fenyegetne, ami ellen ez a függvény
+    készült. Az `AppController.photos` mindig létezik; a `getattr` a
+    #1575/#1576/#1577 vezérlő-csonkjai miatt van, amelyek csak a
+    `DisplayModeMixin`-t példányosítják, rács nélkül.
 
     A kezdeti állapotot is átviszi — enélkül a szolgáltató a vezérlőtől
     eltérő módban indulna, amíg a felhasználó nem vált egyet.
@@ -125,10 +139,14 @@ def wire_display_mode(controller, edit_controller, preview_provider):
     A visszaadott függvény a bekötött átvezető (a hívó életben tarthatja,
     illetve tesztből közvetlenül is meghívhatja).
     """
+    photo_model = getattr(controller, "photos", None)
 
     def _atvezet() -> None:
-        preview_provider.set_display_mode(controller.displayMode)
+        mode = controller.displayMode
+        preview_provider.set_display_mode(mode)
         edit_controller.refresh_displayed_image()
+        if photo_model is not None:
+            photo_model.set_display_mode(mode)
 
     _atvezet()
     controller.displayModeChanged.connect(_atvezet)

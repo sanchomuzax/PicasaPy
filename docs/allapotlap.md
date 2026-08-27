@@ -1,11 +1,25 @@
-# Élő állapotlap
+# Élő artifactok
 
-Egy olvasható oldal arról, **hol tart a projekt most** — a tulajdonosnak, nem
-fejlesztőknek. A `docs/specs/` 68 lapja és 43 ezer sora nem alkalmas erre.
+Két olvasható oldal a tulajdonosnak, nem fejlesztőknek. A `docs/specs/`
+69 lapja és 43 ezer sora nem alkalmas erre.
 
-**A lap címe (ez nem változik):**
+| lap | mit mutat | cím (ez nem változik) |
+|---|---|---|
+| **Állapotlap** | hol tart a projekt: jegyek, menü-lefedettség, rothadás | <https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e> |
+| **Bináris térkép** | mennyit fejtettünk vissza a Picasából, és hol | <https://claude.ai/code/artifact/3e4aac90-5195-45c3-ba94-661d26824f94> |
 
-<https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e>
+## Frissítés — EGY paranccsal, mindkettő
+
+```bash
+python3 scripts/artifactok.py
+```
+
+Kiírja mindkét lap fájlját ÉS a hozzá tartozó címet. Utána publikálni kell
+őket a **kiírt címekre** (`Artifact` hívás, `url` mező) — enélkül új lap jön
+létre, és a felhasználó régi linkje elavul.
+
+⚠️ A bináris térképhez kell a **privát** agent-repó bináris indexe. Ha nincs
+meg, a szkript `3`-mal lép ki és megmondja — féllábú lapot nem ír.
 
 ## Mit mutat
 

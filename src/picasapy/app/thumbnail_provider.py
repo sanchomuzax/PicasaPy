@@ -55,6 +55,10 @@ from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
 from picasapy.ini.filters import serialize_filters
 from picasapy.thumbs import ThumbnailCache
+from .display_mode_paint import (
+    apply_display_mode_to_qimage,
+    display_mode_from_thumb_id,
+)
 from .worker_thread import register_pool_owner
 
 # #151/7: közös konstans — az edit-előnézet provider is ezt importálja,
@@ -411,6 +415,24 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
                 image = QImage()
             if image.isNull():
                 image = _placeholder()
+            # Megjelenítési mód (#1596) — a render-mag UTÁN, a gyorstárakat
+            # ÉRINTETLENÜL hagyva.
+            #
+            # A sorrend a jegy lényege: a `_render` írja a lemezes
+            # bélyegképet és a `_FilteredThumbMemo` rekeszét. Ha a festés
+            # ELŐBB futna, a mód BELEÉGNE a tárolt bélyegképbe — kikapcsolva
+            # is festve maradna a kép, és a webexport/kollázs is a képernyő
+            # figyelmeztető színét vinné tovább. A mód megjelenítési
+            # átalakító, nem a bélyegkép tartalma.
+            #
+            # A mód magából az URL-ből jön (`&d=<mód>`), nem a szolgáltató
+            # állapotából: így az URL egyértelműen meghatározza a
+            # képpontokat, és egy gyors módváltás nem tud rossz módú képet
+            # beragasztani a Qt URL-kulcsú gyorstárába. Ld.
+            # `display_mode_paint` modul-docstring.
+            image = apply_display_mode_to_qimage(
+                image, display_mode_from_thumb_id(photo_id)
+            )
             if size is not None:
                 size.setWidth(image.width())
                 size.setHeight(image.height())

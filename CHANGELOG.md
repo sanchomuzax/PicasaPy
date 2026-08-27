@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Kiadatlan]
+## [Nem kiadott]
 
 ### Hozzáadva
 - **Tesztüzem: a program mostantól meg tudja mérni a saját indulását
@@ -49,6 +49,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   úton kapja, amelyen a mód is átjut. A javítást olyan ellenőrzés őrzi, amely
   a **ténylegesen kirajzolt ablak képpontjait** olvassa vissza — nem a
   képszolgáltató kimenetét, ahogy eddig.
+- **A Nézet ▸ Megjelenítési mód tételei a könyvtár rácsán semmit nem
+  csináltak (#1596).** A módok (Projektor mód, LCD fehérpont, Lineáris
+  gamma, Túlcsordult képpontok) eddig csak a nagy nézőben hatottak. Aki a
+  rácsban böngészve kapcsolt át — vagyis a legtöbb felhasználó —,
+  **mind a tizenegy tételt hatástalannak látta**, mert a rács más úton
+  kapja a képet, mint a nagy néző. Mostantól a mód a könyvtár rácsán is
+  látszik, és az átkapcsolás a látható bélyegképeket azonnal frissíti. A
+  mód **nem ég bele** a tárolt bélyegképbe: kikapcsolva a kép azonnal
+  visszaáll, az exportba és a webalbumba pedig változatlanul nem
+  szivárog át. A gyorsítótár úgy tartja külön a módokat, hogy oda-vissza
+  kapcsolgatva nincs újrarajzolási költség, mód nélkül pedig a rács
+  ugyanolyan gyors marad, mint eddig (mérve: a bélyegkép-kiszolgálás
+  0,60 → 0,61 ms/kép mód nélkül, 1,25–1,36 ms/kép bekapcsolt módban).
 - **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
   visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
   oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont
