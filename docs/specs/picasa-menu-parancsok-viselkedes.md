@@ -636,3 +636,65 @@ véletlenszerű-e, **nem mérve**. Jegy: **#1408**.
 
 „Közzététel a Bloggeren…" — a szolgáltatás halott. A
 `menu_lefedettseg.py` kizáró listájára került.
+
+---
+
+## 31. tétel — a Fájl menü öt parancsa (2026-08-27)
+
+A menü-lefedettségi mérés determinisztikus sorából a következő öt:
+`ID_FILE_EXPORTTOFOLDER`, `ID_FILE_IMPORTPICTURE`, `ID_FILE_LOCATEONDISK`,
+`ID_FILE_NEWFOLDER`, `ID_FILE_NEWLABEL`.
+
+### 31.1 A feliratok — két azonosító FÉLREVEZET
+
+| azonosító | angol felirat | magyar (hivatalos) |
+|---|---|---|
+| `ID_FILE_EXPORTTOFOLDER` | `Export Pi&cture to Folder...` | Kép e&xportálása mappába… |
+| `ID_FILE_IMPORTPICTURE` | `&Import From...` | &Importálás forrása… |
+| `ID_FILE_NEWFOLDER` | **`Mo&ve to New Folder...`** | **Áthel&yezés új mappába…** |
+| `ID_FILE_NEWLABEL` | **`&New Album...`** | **Ú&j album…** |
+| `eMenuFileWin::ID_FILE_LOCATEONDISK` | `&Locate on Disk` | &Keresés a lemezen |
+| `eMenuFileMac::ID_FILE_LOCATEONDISK` | `Show in Finder` | Megjelenítés a Finder alkalmazásban |
+
+⚠️ **A `NEWFOLDER` nem mappát hoz létre**, hanem a kijelölt képeket
+**áthelyezi** egy új mappába. A `NEWLABEL` pedig **albumot** csinál (a
+Picasa belső neve az albumra: „label"). Az azonosítóból egyik jelentés sem
+olvasható ki — ez a `[[menufelirat-nem-funkcio]]` csapdájának a fordítottja:
+itt a *név* félrevezet, nem a felirat.
+
+⚠️ **A `LOCATEONDISK` felirata PLATFORMFÜGGŐ** (`Win` / `Mac` utótagú
+kulcsok). Linuxra az eredeti nem ad feliratot — ez döntést igényel.
+
+### 31.2 A „Keresés" HÁROMTÉTELES ALMENÜ, nem egy parancs
+
+A rács helyi menüjében (`CThumbUI`, `0x0056c5a0` / `0x0056e1c0`) a
+`CThumbUI::locatemenu` = **„Keresés"** egy almenü, három gyerekkel:
+
+| kulcs | felirat | mit csinál |
+|---|---|---|
+| `CThumbUI::locateondiskmenu` | `&Fájl a lemezen\tCtrl+Enter` | a fájlt mutatja meg a fájlkezelőben |
+| `CThumbUI::locateorigondiskmenu_win` | `Eredeti &a lemezen` | **az EREDETIT** (`.picasaoriginals`) mutatja meg |
+| `IDS_LOCATE_SOURCE_IMAGE` | `Keresés a Picasában` | album-nézetből a kép **valódi mappájára** ugrik |
+
+Mac-en a második `CThumbUI::locateorigondiskmenu_mac` = „Eredeti fájlok
+megjelenítése a Finder alkalmazásban".
+
+Ezen felül **külön parancs** van a mappára/albumra:
+`FolderWin::ID_ALBUM_LOCATEONDISK` (`0x007319f0`, `0x00733a40`).
+
+**Öt belépési pont** hordozza az `ID_FILE_LOCATEONDISK`-et: a Fájl menü és
+négy helyi menü (`FolderPhotoWin` ×3, `AlbumPhotoWin` ×2).
+
+### 31.3 Nálunk (mérve, 2026-08-27)
+
+| parancs | nálunk | állapot |
+|---|---|---|
+| `EXPORTTOFOLDER` | él, `Ctrl+Shift+S` bekötve (`Main.qml:661`) | ✅ |
+| `NEWLABEL` | menütétel él; a hirdetett **`Ctrl+N` NINCS bekötve** | ⚠️ |
+| `IMPORTPICTURE` | `placeholder: true` (`PicasaMenuBar.qml:236`), a `Ctrl+M` sincs — **pedig az `ImportSourceDialog` létezik és az eszköztárból működik** (`MainToolbar.qml:65`) | ❌ |
+| `NEWFOLDER` | `placeholder: true` (`PicasaMenuBar.qml:244`) | ❌ |
+| `LOCATEONDISK` | **egyetlen, lapos tétel** négy felületen; nincs almenü, nincs „Eredeti a lemezen", nincs „Keresés a Picasában" | ❌ |
+
+*Bizonyítottsági fok: **megerősített** — minden felirat a hivatalos
+`stringres-en-hu.tsv`-ből, minden cím a bináris indexből; a „nálunk" oszlop
+mind mérve.*
