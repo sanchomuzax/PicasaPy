@@ -187,6 +187,13 @@ def _egy_futas(
     tehát összemérhető azzal, amit a felhasználó „vár"."""
     env = _izolalt_kornyezet(alap)
     naplo_konyvtar = Path(env["XDG_CACHE_HOME"]) / "picasapy" / "perf"
+    # ⚠️ A KORÁBBI futások jelentéseit számon kell tartani. Az adat- és
+    # gyorstárkönyvtár szándékosan MEGMARAD a futások között (a 2. indítás
+    # így lát meleg indexet), és a jelentések is ugyanoda gyűlnek. Az első
+    # változat egyszerűen a legfrissebb `indulas-*.txt`-t vette — mérve
+    # (33105116153) a 2. indítás az 1. jelentését olvasta vissza: azonos
+    # szakaszok, 0,0 mp faliórai idő. Csak ÚJ fájlt fogadunk el.
+    mar_volt = set(naplo_konyvtar.glob("indulas-*.txt"))
     kimenet = alap / "kimenet.txt"
     indult = time.monotonic()
     with kimenet.open("wb") as ki:
@@ -201,7 +208,9 @@ def _egy_futas(
             hatarido = indult + idokorlat
             jelentes_fajl: Path | None = None
             while time.monotonic() < hatarido:
-                talalt = sorted(naplo_konyvtar.glob("indulas-*.txt"))
+                talalt = sorted(
+                    set(naplo_konyvtar.glob("indulas-*.txt")) - mar_volt
+                )
                 if talalt:
                     jelentes_fajl = talalt[-1]
                     break
@@ -280,7 +289,22 @@ def _importtime() -> str:
     return "\n".join(fej)
 
 
+def _utf8_kimenet() -> None:
+    """A saját `stdout`/`stderr` UTF-8-ra állítása.
+
+    ⚠️ Windowson a Python a cső mögött a rendszer kódlapját (cp1252)
+    választja, és a jelentés magyar szövege ott `UnicodeEncodeError`-t ad —
+    a mérés a KIÍRÁSNÁL bukik el, miután már lefutott (mérve: 33105116153,
+    `'\\u0151' ... maps to <undefined>`). A munkafolyamat `PYTHONUTF8`-a
+    kevés: ez a szkript helyben, saját magának is garantálja."""
+    for folyam in (sys.stdout, sys.stderr):
+        rekonfiguralas = getattr(folyam, "reconfigure", None)
+        if rekonfiguralas is not None:
+            rekonfiguralas(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_kimenet()
     ertelmezo = argparse.ArgumentParser(description=__doc__)
     ertelmezo.add_argument(
         "--mappa-szam",

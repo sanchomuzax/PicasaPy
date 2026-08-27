@@ -60,6 +60,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         meret: [ures, nagy]
+    env:
+      # A napló magyar szöveget tartalmaz; Windowson a Python cső mögött
+      # cp1252-t választana, és a kiírás elszállna (a szkript maga is
+      # átállítja a folyamait, ez a második öv).
+      PYTHONUTF8: "1"
 
     steps:
       - name: Checkout
