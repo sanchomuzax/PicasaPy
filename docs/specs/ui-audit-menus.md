@@ -93,7 +93,7 @@ tartalmilag megegyeznek a Mappa-éval.
 | Kis képek *(feltehetően „Thumbnails Only")* | — | **nem** | hiányzik; pontos jelentése a képekből nem egyértelmű, valószínűleg mappacím nélküli indexkép-rács |
 | Rejtett képek | — | igen | megvan, működik |
 | Színkezelés használata | — | **nem** | hiányzik (színprofil-kezelés kapcsoló) |
-| Megjelenítési mód ▸ (almenü) | — | **nem** | teljes almenü hiányzik, tartalma a képekből nem derül ki |
+| Megjelenítési mód ▸ (almenü) | — | **nem** | az almenü nálunk üres és letiltott. ⚠️ A „tartalma a képekből nem derül ki” megjegyzés 2026-08-27-én ELAVULT (#1409): a tartalom **a binárisból megvan** — 11 tétel + 4 elválasztó, egyetlen kizáró rádiócsoport, tételenként kimért algoritmussal. Ld. `docs/specs/picasa-megjelenitesi-modok.md` |
 | Indexkép felirata ▸ (almenü) | — | igen | `Thumbnail Caption` almenü, tartalma egyezik (Nincs/Fájlnév/Felirat/Címkék/Felbontás) |
 | Mappanézet ▸ (almenü) | — | igen | `Folder View` almenü. ⚠️ A „tartalma egyezik” állítás TÉVES VOLT (#1454): az eredetiben itt nem rendezés, hanem három szerkezeti tétel áll (Egyszerű mappanézet · Fanézet · Egyszerűsített fanézet) — ld. `docs/specs/picasa-mappanezet.md` |
 
