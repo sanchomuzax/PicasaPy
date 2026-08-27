@@ -1137,3 +1137,88 @@ lezárul, és nekünk sem kell megvalósítani.
 *Bizonyítottsági fok: **megerősített** a nyolc kizárás és a „prioritás"
 elnevezés; **feltételes** a munkamenet-hipotézis — az újraindítási próba
 dönti el.*
+
+---
+
+## A `db3` fájljainak ÉLETCIKLUSA: ki olvassa, ki írja, mikor (2026-08-27)
+
+A tulajdonos kérdésére: *„A többi fájl lekutatását nem végzed el, mikor
+olvasódnak vagy íródnak?"* — jogos, ez a „mit csinál az adattal" kérdés.
+
+Az élő `db3` **84 fájlt** tartalmaz: **59 PMP-oszlop** és **25 egyéb**.
+
+### 1. A perzisztencia-modell: BIZTONSÁGOS ÍRÁS két mappán át
+
+A Picasa nem az élő adatbázisba ír közvetlenül. Három mappa van:
+
+| mappa | szerep |
+|---|---|
+| `#db3\` | az **élő** adatbázis (23 függvény hivatkozik rá) |
+| `#tmp\` | az **átmeneti** másolat, ide megy a kiírás |
+| `#contacts\` | a névjegyek külön tárolója |
+
+A kiíró (`0x0041ba40`) a `#tmp\`-be ír, majd visszamásol a `#db3\`-ba, és egy
+**`_lock.lck`** fájllal jelöli az állapotot. Ha a visszamásolás elbukik, a
+zárfájl bennmarad, és a benne lévő szöveg elmagyarázza, mi történt:
+
+> *„The presence of this file indicates that the database has been persisted
+> successfully but there was a failure copying these files back to the active
+> db directory."*
+
+Ez a minta a mi `ini/` sávunk „atomi írás" elvének a db3-beli megfelelője.
+
+### 2. A kiírás HÁROMFÉLE módon indul
+
+| kiváltó | cím | mit jelent |
+|---|---|---|
+| **kézi menüparancs** | `0x00577a60`, a parancskezelőből (`0x005cb990`) | végén üzenet: `IDS_DB_SAVED` = **„Adatbázis mentve"**; hibánál `IDS_PERSIST_ERR` |
+| **tömörítéssel** | `0x0041b020` (`Always Compact`), `0x00403750` (`compactpercentage`) | a kiírás közben tömörít; a `compactpercentage` a küszöb |
+| **aszinkron** | `AsynchronousPersist` beállítás (`0x0041ee10`) | a kiírás háttérszálon fut-e |
+
+### 3. A betöltő verzió-migrációt is végez
+
+A betöltő (`0x0041ee10`, hívója `0x00402f90`) három séma-verziókulcsot olvas
+a `Preferences`-ből: **`gpsversion`**, **`colorspaceversion`**,
+**`rawversion`**, továbbá a `FixShortPathNames` kapcsolót. Vagyis a db3-nak
+**verziózott sémája** van, és a betöltés migrál.
+
+### 4. Fájlonkénti leltár — olvasó, író, időzítés
+
+| fájl | író | olvasó | mikor |
+|---|---|---|---|
+| `tags.txt` | `0x006c0e00` | `0x006c0f20` | a kiíró/betöltő hívja (perzisztencia) |
+| `facetags.txt` | `0x006ba000` | `0x006ba160` | ua. |
+| `starlist.txt` | `0x0041ba40`, `0x004a82d0` | — | a kiíróval együtt; teljes útvonalak soronként |
+| `saverlist.txt` | `0x0041ba40`, `0x004a82d0`, `0x00531a20` | — | ua. |
+| `scanlist.txt` | `0x004f61c0` (hívó `0x004f54b0`) | `0x004f6380` (hívó `0x004183c0`) | a beolvasás-kezelő; formátuma `+`/`-` előtagos meghajtólista |
+| `repository.dat` | `0x00414100` (hívói `0x00415790`, `0x004a4c80`) | ua. | a **mappa-útvonalak jegyzéke**; a séma-regisztrálóból |
+| `wordhash.dat` | `0x004db4f0` | **`0x004db720`** | a **keresési szóindex** (`.\thumblab\CIndexer.cpp`); az olvasó saját hibaüzenetekkel: *„wordhash.dat file: excess data"*, *„wordhash.dat: incorrect entity count"* |
+| `usernames.dat` | `0x00415790` | ua. | a séma-regisztrálóból, a `m_usernameRepository`-hoz |
+
+A `*_index.db` / `*_0.db` párok (thumbs, thumbs2, bigthumbs, previews,
+albums, facetemplatesV2, profilephotos) **gyorsítótárak** — a
+`0x3FCCCCCD` magic és a 20+12 bájtos index-elrendezés azonosítja őket.
+
+### 5. Az `.ioq` írási sorok
+
+A séma-regisztráló három írási sort is megnevez:
+`ioqueue\slingshot.ioq`, `ioqueue\filesafe.ioq`, `ioqueue\albumsafe.ioq`.
+Ezek a kiírás előtti pufferek. **Az élő `db3`-ban nem szerepeltek** — vagyis
+a Picasa kilépéskor kiüríti őket.
+
+### 6. ⚠️ Egy FÉLREFORDÍTÁS az eredeti magyar felületén
+
+| kulcs | angol | hivatalos magyar | a helyes jelentés |
+|---|---|---|---|
+| `IDS_PERSIST_ERR` | `Error persisting: %d` | **„Fennálló hiba: %d"** | *„Hiba a mentés során: %d"* |
+
+A fordító a **`persisting`** (kiírás/megőrzés) szót **`persistent`**-nek
+(fennálló, tartós) olvasta. Ez a harmadik bizonyított félrefordítás a #620
+kettője mellé. **Nálunk a helyes fordítást kell használni** — a felület
+egyezésének elve a szó szerinti hibák átvételére nem terjed ki.
+
+*Bizonyítottsági fok: **megerősített** minden cím és fájlnév-hozzárendelés
+(bináris index `string_xrefs` + `xrefs`), valamint a két felirat
+(`stringres-en-hu.tsv`). **Feltételes** a `starlist.txt`/`saverlist.txt`
+irányának „csak író" jellege: olvasót nem találtam hozzájuk, de a negatív
+eredményt nem ellenőriztem második lekérdezési alakkal.*
