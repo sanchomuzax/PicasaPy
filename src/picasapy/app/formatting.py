@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QDate, QDateTime, QLocale, QUrl
@@ -36,15 +37,40 @@ PATH_TAIL = re.compile(r"[/\\]")
 _EXIF_LOCALE = QLocale.c()
 
 
+def _platform() -> str:
+    """Cserélhető platform-fogantyú (#1217).
+
+    A `to_local_path` windowsos ága enélkül CSAK Windowson volna mérhető —
+    a #1626 pontosan attól maradt észrevétlen, hogy a hiba a windows-lábon
+    keletkezett, a fejlesztés viszont Linuxon folyt."""
+    return sys.platform
+
+
+#: Meghajtóbetűs útvonal elé tett per (`/C:/Users/...`) — a `file:///C:/...`
+#: alakú URL-ek természetes maradéka.
+_MEGHAJTOS_ELOTAG = re.compile(r"^/[A-Za-z]:(?:[/\\]|$)")
+
+
 def to_local_path(path_or_url: str) -> str:
     """file:// URL vagy sima útvonal → OS-natív lokális útvonal.
 
     A QUrl.toLocalFile Windowson per-jeles utat ad (C:/...) — a Path-on
     átfuttatás normalizálja, különben ugyanaz a mappa két alakban
-    szerepelhetne a figyeltek közt."""
+    szerepelhetne a figyeltek közt.
+
+    ⚠️ #1626: a Qt a meghajtóbetű ELÉ tett perjelet (`file:///C:/x` →
+    `/C:/x`) csak Windowson szedi le — a `QUrlPrivate::toLocalFile`
+    megfelelő ága `#ifdef Q_OS_WIN` alatt áll. Ezt itt a `_platform()`
+    fogantyún át magunk is elvégezzük: Windowson a Qt már megtette, tehát
+    a minta nem is illeszkedik, Linuxon viszont a fogantyú átállításával a
+    **windowsos ág mérhetővé válik**. A `\\C:\\...` alakon a `mkdir`
+    `WinError 123`-mal elhasal — a #1626-ban emiatt nem készült el a KML.
+    """
     text = path_or_url.strip()
     if text.startswith("file:"):
         text = QUrl(text).toLocalFile()
+        if _platform().startswith("win") and _MEGHAJTOS_ELOTAG.match(text):
+            text = text[1:]
     return str(Path(text)) if text else ""
 
 

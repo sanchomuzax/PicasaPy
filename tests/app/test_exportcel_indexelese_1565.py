@@ -101,7 +101,7 @@ def egyseg(qt_app, tmp_path):
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
 
-    library = tmp_path / "kepek"
+    library = tmp_path / "konyvtar"
     (library / "forras").mkdir(parents=True)
     for i in range(1, 4):
         make_jpeg(library / "forras" / f"IMG_{i:04d}.jpg")
@@ -131,19 +131,49 @@ def egyseg(qt_app, tmp_path):
     assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
 
 
+def _kivul_all(ctl, cel) -> None:
+    """A mérés ELŐFELTÉTELE, kimondva: a cél a figyelt gyökereken KÍVÜL áll.
+
+    ⚠️ #1626: ez korábban hallgatólagos volt, és a windows-lábon NEM
+    teljesült. A könyvtár `kepek`, az exportcél `Kepek/Picasa/Exports/…`
+    nevet kapott — Linuxon két külön mappa, Windowson viszont UGYANAZ (a
+    fájlrendszer nem kis-nagybetűérzékeny). Az exportcél így a figyelt
+    gyökér ALÁ került, a `_root_for_folder` kapuja kilépett, és a fájl négy
+    tesztje elbukott — nem termékhiba miatt, hanem mert a mérés mást mért,
+    mint amit állít.
+
+    A `_root_for_folder` `Path.resolve()`-ot használ, tehát ez az
+    ellenőrzés mindkét platformon a VALÓDI helyzetet nézi: a névütközés
+    visszatérése itt csattan, nem négy homályos állításban."""
+    assert ctl._root_for_folder(str(cel)) is None, (
+        f"az exportcél ({cel}) a figyelt gyökér ALATT van — ez a fájl a "
+        "gyökereken KÍVÜLI célt méri, tehát így üresen zöld vagy hamisan "
+        "piros lenne (#1626)"
+    )
+
+
 def _exportalj(ctl, qt_app, cel) -> None:
     kesz = []
     ctl.exportFinished.connect(lambda *a: kesz.append(a))
     ctl.exportRows([0, 1, 2], str(cel), 0, 85, False, "", False, False)
     assert _var(qt_app, lambda: kesz, 60.0), "az export nem futott le"
     assert len(list(cel.glob("*.jpg"))) == 3, f"az export nem írt fájlt: {kesz}"
+    _kivul_all(ctl, cel)
 
 
 def _latszik(ctl, cel) -> int:
-    from pathlib import Path
+    """Hány kép látszik a rácson a `cel` mappából.
 
+    ⚠️ #1626: `path_key`-jel, nem nyers sztringgel. Az indexben a
+    `normalize_path` FELOLDOTT alakja áll, a teszt viszont a maga építette
+    utat ismeri — Windowson a kettő írásmódja eltérhet (a lemezről visszaadott
+    kis-nagybetű), és a hasonlítás akkor is 0-t adna, ha a képek ott vannak.
+    A `path_key` a projekt saját „ugyanaz a mappa" kulcsa."""
+    from picasapy.paths import path_key
+
+    cel_kulcs = path_key(str(cel))
     return sum(
-        1 for p in ctl.photos.photos if str(Path(p.folder_path)) == str(cel)
+        1 for p in ctl.photos.photos if path_key(p.folder_path) == cel_kulcs
     )
 
 
@@ -257,6 +287,7 @@ class TestAzExportaltKepekCsomopontNemUresRacsotNyit:
         kivul = tmp_path / "Kepek" / "Picasa" / "Exports" / "tel"
         kivul.mkdir(parents=True)
         make_jpeg(kivul / "IMG_0001.jpg")
+        _kivul_all(ctl, kivul)
         ctl._get_settings().setValue(EXPORTED_FOLDERS_SETTINGS_KEY, [str(kivul)])
         jelzesek = []
         ctl.syncFinished.connect(lambda: jelzesek.append(1))
@@ -279,12 +310,19 @@ class TestAzExportcelTuleliAzIndulasiTakaritast:
         from picasapy.app.exported_folders import EXPORTED_FOLDERS_SETTINGS_KEY
         from picasapy.index import open_index, prune_foreign_folders, sync_folder
 
-        library = tmp_path / "kepek"
+        library = tmp_path / "konyvtar"
         library.mkdir()
         make_jpeg(library / "IMG_0001.jpg")
         cel = tmp_path / "Kepek" / "Picasa" / "Exports" / "nyar"
         cel.mkdir(parents=True)
         make_jpeg(cel / "IMG_0001.jpg")
+        # #1626: itt nincs vezérlő, tehát a `_kivul_all` helyett kézzel —
+        # ugyanaz az előfeltétel, ugyanazzal a `resolve()`-os összevetéssel
+        assert not cel.resolve().is_relative_to(library.resolve()), (
+            f"az exportcél ({cel}) a figyelt gyökér ALATT van — a "
+            "`prune_foreign_folders` ki sem dobná, tehát a teszt üresen "
+            "zöld lenne (#1626)"
+        )
 
         settings = QSettings(
             str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
@@ -301,7 +339,7 @@ class TestAzExportcelTuleliAzIndulasiTakaritast:
                 row["path"] for row in conn.execute("SELECT path FROM folders")
             ]
 
-        assert str(cel) in maradt, (
+        assert str(cel.resolve()) in maradt, (
             "az indulási takarítás után az exportcél kiesett az indexből — "
             "az Exportált képek csomópontja a következő indítástól ismét "
             "üres rácsot nyitna (#1565)"
