@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
+  semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
+  előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata
+  mégis `Ctrl+O`-t hirdetett. Itt a mögöttes funkció (egyedi kép-/videófájlok
+  felvétele natív fájlválasztóval) korábban egyáltalán nem létezett sem a
+  menüből, sem máshonnan. Mostantól a menüpont és a `Ctrl+O` egy natív
+  fájlválasztót nyit; a kijelölt fájl(ok) szülőmappája a MEGLÉVŐ
+  „Mappa hozzáadása a Picasához…" belépési ponton (`addWatchedFolder`)
+  kerül a könyvtárba, tartósan figyelve.
 - **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
   visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
   oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont
