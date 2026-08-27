@@ -7958,6 +7958,14 @@ Restore it to continue where you left off. If you discard it, the draft is delet
         <source>The collage is ready (click here)</source>
         <translation>A kollázs kész (kattintson ide)</translation>
     </message>
+    <message>
+        <source>Copy saved</source>
+        <translation>A másolat mentve</translation>
+    </message>
+    <message>
+        <source>%1 copies saved</source>
+        <translation>%1 másolat mentve</translation>
+    </message>
 </context>
 <context>
     <name>CollageDialogs</name>

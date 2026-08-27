@@ -148,6 +148,15 @@ Window {
     readonly property string lastPayload:
         cellak.count > 0 ? cellak.get(cellak.count - 1).payload : ""
 
+    //: #1566: a legutóbbi értesítés két SZÖVEGSORA. Ugyanaz az ok, mint a
+    //: `lastPayload`-nál: a `Repeater` delegáltjait a `findChild` nem
+    //: találja meg, tehát a MEGJELENŐ feliratot csak innen lehet mérni —
+    //: márpedig a #1566 tétje épp a felirat, nem a jelzés kibocsátása.
+    readonly property string lastTitle:
+        cellak.count > 0 ? cellak.get(cellak.count - 1).title : ""
+    readonly property string lastHint:
+        cellak.count > 0 ? cellak.get(cellak.count - 1).hint : ""
+
     // ------------------------------------------------------------------
     // Az ablak
     // ------------------------------------------------------------------
@@ -278,6 +287,38 @@ Window {
             notifier.notify("collage",
                             qsTr("The collage is ready (click here)"),
                             "", path)
+        }
+
+        //: #1566: a „Mentés másként…" és a „Másolat mentése" vége. Eddig a
+        //: két parancsnak SEMMILYEN felületi visszajelzése nem volt: a
+        //: `saveCopyFinished` egyetlen fogyasztója a #1539 gépies
+        //: újraolvasás-kötése, ami a nyilvántartást frissíti, nem a
+        //: felhasználót tájékoztatja.
+        //:
+        //: ⚠️ A FELIRAT A MI DÖNTÉSÜNK, nem hivatalos Picasa-erőforrás. A
+        //: `stringres` mentés-családja (25 bejegyzés, `CThumbUI::FileSave*`
+        //: + `CFileSave*`) folyamatjelzést (`progprep`, `progress`,
+        //: `progfile`, `progfiles`), megerősítést, formátumváltást és
+        //: hibaágakat tartalmaz — BEFEJEZÉS-ÜZENETET NEM. (A „Mentés kész"
+        //: / „A mentés elkészült" magyar mondatok hamis barátok: az
+        //: `il_BurnPanel::Backup*`, azaz a CD-s biztonsági mentés
+        //: feliratai.) A mondat alakja mégis az eredetit követi: külön
+        //: egyes és többes szám, ahogy a `progfile`/`progfiles` és a
+        //: `messagetag1`/`messagetagX` páros is.
+        //:
+        //: A második sor viszont HIVATALOS: `CThumbUI::clickview` — ugyanaz
+        //: a felirat, amit az importálás kész-értesítése is használ.
+        function onSaveCopyReady(saved, targetPath) {
+            //: Egyetlen sikeres mentés sem volt: a művelet vagy meg lett
+            //: szakítva, vagy elbukott — az utóbbit a `SaveDialogs.qml`
+            //: hibaágai mondják el. „Kész" értesítés ilyenkor hazugság.
+            if (saved <= 0)
+                return
+            notifier.notify("save-copy",
+                            saved === 1
+                                ? qsTr("Copy saved")
+                                : qsTr("%1 copies saved").arg(saved),
+                            qsTr("click to view"), targetPath)
         }
     }
 }
