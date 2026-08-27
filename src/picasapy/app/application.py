@@ -933,6 +933,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         index_path=data_dir / "index.db",
     )
 
+    # #1653: a QML-MOTOR létrehozása külön szakasz. Az eddigi közös
+    # mérőpont („a többi vezérlő létrehozása és regisztrálása") egyben
+    # mérte a vezérlők konstruktorait, a `QQmlApplicationEngine()`-t és a
+    # kontextus-tulajdonságok bekötését. A jegyben felsorolt windowsos
+    # gyanúk közül a **Qt plugin-keresés** kizárólag a motor
+    # létrehozásakor jelentkezne — összevont szakaszban láthatatlan.
+    timeline.mark("a többi vezérlő létrehozása")
     engine = QQmlApplicationEngine()
 
     # Nyelvváltás futásidőben (#333): a régi fordító le, az új fel, majd a
@@ -959,6 +966,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # (lusta init), mert a kollázs állapota is ott él.
     engine.addImageProvider("collagepreview", controller.collage_preview_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))
+    # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
+    # + import-útvonal); innentől már csak kontextus-bekötés következik.
+    timeline.mark("QML-motor létrehozása és import-útvonalak")
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty(
@@ -1023,7 +1033,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
     # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
     engine.rootContext().setContextProperty("startupStatus", startup_status)
-    timeline.mark("a többi vezérlő létrehozása és regisztrálása")
+    timeline.mark("vezérlők regisztrálása a QML-kontextusban")
     with timeline.phase("QML betöltése (Main.qml)"):
         engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():

@@ -2228,3 +2228,98 @@ egy értelmetlen, mindent lefedő keretet.
 a maszkok bitenkénti kiszámítása) és arra, hogy nem öröklés adja
 (vtable-rekesz összevetés). **Levezetett, nem megerősített**: a „miért épp
 a rácsokon" szerkezeti indoklás.*
+
+---
+
+## A „Klipek" fül MEGFEJTVE: a lista a FEL NEM HASZNÁLT képeké (2026-08-27)
+
+A #1276 és a #1153 is blokkolt volt, mert a fül tartalmának forrása nem volt
+ismert. **Most megvan, és megfordítja az eddigi feltevésünket.**
+
+### A döntő bizonyíték: a csík saját neve
+
+`referencia/tre-eroforrasok/collagepaneltext.tre`:
+
+```
+Label collagepanel/filmstrip_title
+#Unused Pictures
+```
+
+A felirat ki van kapcsolva (`#` előtag), de **az elem neve megmarad**: a
+Klipek fül filmszalagja a **FEL NEM HASZNÁLT képeket** mutatja — azokat,
+amelyek még NINCSENEK a kollázson.
+
+### A három gomb súgója ugyanezt mondja
+
+| elem | felirat | súgó |
+|---|---|---|
+| `collagepanel/addclips` | `+` | **„Add selected clips to the collage"** |
+| `collagepanel/deleteclips` | `–` | **„Remove selected clips from the tray"** |
+| `collagepanel/getmoreclips` | „Get more…" | **„Get more clips from the Library"** |
+
+A három együtt egy zárt munkafolyamat: a **tálcába** a Könyvtárból hozol
+képet („Get more…"), a tálcáról a kollázsra teszed (`+`), vagy kiveszed a
+**tálcáról** (`–`). A fül tehát **készlet**, amiből válogatsz — nem a
+kollázs tartalma, és nem is egyszerűen „a mappa képei".
+
+### A „Klipek (N)" szám — a bináris megerősíti
+
+A fülfeliratot a `0x0083b890` állítja be (`collageUI::tab2_title` =
+„Klipek (%d)"), a számot **paraméterként** kapja. A hívó `0x0083b590`
+számláló hurka:
+
+```asm
+mov  eax, [ecx + 0x330]      ; a tömb mérete
+shr  eax, 1                  ; → elemszám
+mov  edx, [ecx + 0x32c]      ; a tömb
+ciklus:
+mov  ecx, [edx]              ; elem
+test ecx, ecx
+je   tovabb                  ; üres helyet kihagy
+cmp  byte ptr [ecx + 0x5a], 0
+jne  tovabb                  ; ⭐ ha a jelölő NEM nulla → KIHAGYJA
+add  esi, 1                  ; különben SZÁMOLJA
+```
+
+Vagyis a szám **nem a tömb hossza**, hanem azoké az elemeké, amelyeknél egy
+bájt-jelölő nulla. Ez pontosan illeszkedik az „Unused Pictures"
+elnevezéshez: a jelölő a **felhasználtságot** jelzi, és a fül a fel nem
+használtakat számolja.
+
+⚠️ A `+0x5a` jelentését **NEM** nevezem meg biztosnak: a jelölő az elem
+osztályához tartozik, nem a `CCollageUI`-hoz (az `offset_map.py` a
+`CCollageUI`-n nem is találta), és egyetlen helyen fordul elő. A
+„felhasználtság" olvasat a `filmstrip_title` nevéből és a súgókból jön, nem
+az offszetből.
+
+### Nálunk (mérve, `CollageClipsTab.qml`)
+
+**Egyetlen sor okozza mind a három jelentett tünetet:**
+
+```qml
+138:  model: tab.controller ? tab.controller.collageNodes : null
+```
+
+A `collageNodes` a kollázson **MÁR RAJTA LÉVŐ** elemek — vagyis pontosan a
+**fordítottja** annak, amit mutatni kellene.
+
+| a felhasználó tünete | miért következik ebből |
+|---|---|
+| „semmit sem mutat" | ha az újranyitott kollázsnak nincs csomópontja (#1248, #1274), a lista üres — miközben a helyes tartalom, a fel nem használt képek, ott volna |
+| „nem lehet új képet hozzáadni" | a modellben CSAK a már felhasznált képek vannak; ami még nincs a kollázson, meg sem jelenik, tehát ki sem jelölhető |
+| „nem frissülnek az indexképek" | a lista a kollázs változásaira frissül, nem a készletére |
+
+**Ami VISZONT megvan nálunk** (és a #1276 tévesen hiányolta): a „Továbbiak…"
+gomb (`:70`), a `+` (`:102`) és a `–` (`:116`), mindhárom a helyes súgóval.
+
+### A #1276 feltevése MEGDŐLT
+
+A jegy azt írta: *„az eredeti Picasa a mappában lévő képeket mutatja"*. Ez
+**nem pontos**. Nem a mappa képeit mutatja, hanem a **tálca fel nem használt
+képeit** — a mappából a „Get more…" hoz be képeket a tálcára. A különbség
+gyakorlati: a „Get more…" után a tálca tartalma nem azonos a mappáéval.
+
+*Bizonyítottsági fok: **megerősített** a csík rendeltetése (a `.tre`
+elemneve és a három súgó egybehangzóan), a számláló hurok és a mi
+megvalósításunk mért állapota. **Feltételes** a `+0x5a` jelölő pontos
+jelentése.*

@@ -96,6 +96,13 @@ def _munkasor() -> dict[str, int] | None:
 def _osszesit(jegyek: list[dict]) -> dict:
     var_rank = [i for i in jegyek if "felhasználóra-vár" in i["labels"]]
     blokkolt = [i for i in jegyek if "blocked" in i["labels"]]
+    # A tulajdonos kérdése az állapotlapon (2026-08-27): a blokkoltak közül
+    # melyikre érdemes bináris kutatást indítani? A válasz nem vélemény,
+    # hanem a jegyen rögzített CÍMKE — ugyanúgy, ahogy a `blocked` és a
+    # `felhasználóra-vár` is az. Amit bináris visszafejtés old fel, azt NEM
+    # a felhasználó gépe fogja: azon tudunk dolgozni éjjel is.
+    binaris_kutathato = [i for i in blokkolt
+                         if "bináris-kutatható" in i["labels"]]
     keszen = [i for i in jegyek
               if "ready" in i["labels"] and "blocked" not in i["labels"]
               and "felhasználóra-vár" not in i["labels"]]
@@ -110,6 +117,7 @@ def _osszesit(jegyek: list[dict]) -> dict:
         "osszes_nyitott": len(jegyek),
         "felhasznalora_var": var_rank,
         "blokkolt": blokkolt,
+        "binaris_kutathato": binaris_kutathato,
         "elovehetp": keszen,
         "next_up": kovetkezo,
         "prioritas": dict(sorted(prio.items())),
