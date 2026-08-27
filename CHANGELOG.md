@@ -18,6 +18,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   tételének **felirata is együtt vált a nézettel**, hogy előre látszódjon,
   mi fog történni.
 
+- **ADATVESZTÉS: a rács `Ctrl+Delete` billentyűje album-nézetben is a
+  lemezről törölt (#1619).** Ugyanaz a hiba, mint a #1608-ban, csak a
+  másik billentyűn: a bélyegkép-rácsban a `Ctrl+Delete` **nem nézte meg,
+  mit mutat éppen a rács**, és album- vagy Emberek-album-nézetben is a
+  Lomtárba tette a fájlt. Mostantól ez a billentyű is azt teszi, amit a
+  nézet kíván — mappában törli a lemezről, albumban csak az albumból
+  veszi ki, Emberek-albumban csak az arc-címkét szedi le.
+
+- **A jobbklikk-menü album-nézetben is „Törlés lemezről"-t kínált
+  (#1619).** Egy albumot vagy egy személy albumát nézve a képre
+  jobbklikkelve **két** hasonló tétel jelent meg: az „Eltávolítás az
+  albumból" mellett egy „Törlés lemezről / `Ctrl+Delete`" is. Az eredeti
+  Picasa ezekben a nézetekben **egyetlen** tételt ad, ugyanazzal a
+  `Ctrl+Delete` billentyűvel, csak a nézethez illő felirattal. Nálunk is
+  így lett: album- és Emberek-nézetben eltűnt a „Törlés lemezről", és a
+  `Ctrl+Delete` az eltávolító tételre került.
+
 - **Az Emberek-album helyi menüjének tételei nem jelentek meg (#1608).**
   Egy személy albumára váltva a jobbklikk-menü „Eltávolítás az Emberek
   albumból" és „Hozzáadás az Emberek albumhoz" tétele **rejtve maradt**,

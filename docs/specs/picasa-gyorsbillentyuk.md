@@ -670,3 +670,52 @@ nézetekben **egyetlen** ilyen tétel van: ugyanaz a `Ctrl+Delete`,
 
 A feliratok maguk HELYESEK, és az eltávolító tételek műveletei is. Ez a
 két pont ezért **külön jegy** tárgya; ez a lap rögzíti a mérést.
+
+### A RÁCS ága JAVÍTVA (#1619, 2026-08-27)
+
+**A mai állapot mérése a javítás előtt** (a rács `Ctrl+Delete`-je, valódi
+billentyűeseménnyel, a megnyíló megerősítőt is lenyomva):
+
+| nézet | mit tett a rács `Ctrl+Delete`-je | a fájl a lemezen |
+|---|---|---|
+| mappa | törlés-megerősítőt nyitott, megerősítve a Lomtárba tett | **eltűnt** (helyes) |
+| album | UGYANAZT | **eltűnt** — ADATVESZTÉS |
+| Emberek-album | UGYANAZT | **eltűnt** — ADATVESZTÉS |
+
+Az album-tagság ráadásul **érintetlen maradt**: a `.picasa.ini`
+`albums=` sora megmaradt, tehát a művelet nem is azt tette, amit a
+felhasználó kért.
+
+**A javítás.** A `Ctrl+Delete` UGYANAZ a parancs (`0x9c9a`), csak másik
+belépő, ezért a #1608-ban készült **közös elágazáson** megy át
+(`PicasaMenuBar.activateDeleteCommand()`) — nem másolt logikán, így a
+kettő nem tud különböző dolgot csinálni:
+
+| nézet | mit hív | a fájl |
+|---|---|---|
+| mappa | `deleteRequested()` → Lomtár | törlődik |
+| album | `removeFromAlbumRequested()` | **marad** |
+| Emberek-album | `removeFromPeopleAlbumRequested()` | **marad** |
+
+A **helyi menü** pedig nézetenként egyetlen, átcímkézett tételt kínál —
+ahogy az eredeti `0x00730790` / `0x00731050` / `0x007355c0`:
+
+| nézet | a `Ctrl+Delete`-et viselő tétel | „Törlés lemezről" tétel |
+|---|---|---|
+| mappa | „Törlés lemezről\tCtrl+Delete" | ez maga |
+| album | „Eltávolítás az albumból\tCtrl+Delete" | **nincs** |
+| Emberek-album | „Eltávolítás az Emberek albumból\tCtrl+Delete" | **nincs** |
+
+Ez egybevág a `ui-audit-context-menus.md` 6.1-gyel is: az
+`AlbumPhoto::ID_FILE_DELETEFROMDISK` felirata a string-táblában **„Remove
+from Album"** — vagyis a két tétel az eredetiben EGY parancsrekesz.
+
+Őr: `tests/app/qml_functional/test_racs_ctrl_delete_1619.py` — valódi
+`Ctrl+Delete` billentyűeseménnyel ÉS a helyi menüpont aktiválásával, a
+megerősítőt végigvive, a „lemezen marad" a `Path.exists()`-en mérve.
+Kétirányú mutáció: az elágazást kivéve 6 teszt bukik (köztük a
+lemez-szintű), a „soha ne törölj" változattal 5 mappa-nézeti teszt.
+
+*Marad nyitva* (a fentebbi „Amit ez NEM dönt el" szakasz): a `CThumbUI`
+rács-menü `\tDelete`-je és a kép helyi menüje `Ctrl+Delete`-je közti
+pontos felület-határ.
