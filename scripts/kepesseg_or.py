@@ -142,7 +142,11 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak
 #: indoklással.
-MAX_BASELINE_ENTRIES = 37
+# #455: 37 → 40. A képtálca modellje EGY jeggyel a felülete előtt készült
+# el: a `trayItems`/`trayUnusedCount`/`setTrayUsed` a kollázs „Klipek"
+# lapjának bemenete, és a #1276 köti be. Ha az megvan, a három sor
+# TÖRLENDŐ, és ez a szám vissza 37-re.
+MAX_BASELINE_ENTRIES = 40
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
 MAX_OSZTALY_ENTRIES = 3

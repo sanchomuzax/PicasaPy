@@ -5173,14 +5173,20 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Tálca ürítése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/TrayBar.qml" line="266"/>
-        <source>Would you like to clear your old held items from the tray?</source>
-        <translation>Szeretné üríteni a tálcán korábban megtartott elemeket?</translation>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>This will clear your entire tray. Are you sure you want to do this?</source>
+        <translation>Ezzel a művelettel a teljes tálcát kiüríti. Biztosan ezt szeretné tenni?</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/TrayBar.qml" line="279"/>
-        <source>Don&apos;t Clear</source>
-        <translation>Ne ürítse</translation>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Clear Tray</source>
+        <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
+        <translation>Törlés a tálcáról</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
     </message>
 </context>
 <context>

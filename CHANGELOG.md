@@ -38,6 +38,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.128] – 2026-08-27
 
 ### Hozzáadva
+- **A Képtálca mostantól tényleg gyűjtő: a képek több mappából is
+  összeszedhetők (#455).** Az alsó sáv bal oldalán ülő tálca eddig csak akkor
+  tartalmazott valamit, ha külön ráraktad a képet. Mostantól — ahogy az
+  eredeti Picasában — **a kijelölés magától a tálcára kerül**, a
+  „Kijelölés megtartása" gomb pedig **rögzíti**, amit már összeválogattál: a
+  következő kattintás azt nem söpri el. Így nyugodtan átmehetsz másik
+  mappába, kereshetsz is közben — a rögzített képek a tálcán maradnak, és a
+  rácsban külön jelvény mutatja, melyek azok. A **kék állapotsor** ettől
+  kezdve a tálca egészét összesíti (darabszám, dátumtartomány, összméret),
+  nem csak azt, ami épp a képernyőn ki van jelölve, és a **mappába
+  exportálás is a tálca tartalmán** dolgozik — akkor is, ha a képek fele már
+  nem is látszik a rácsban.
 - **Tesztüzem: a program mostantól meg tudja mérni a saját indulását
   (#1654).** Eddig épp az indulásról nem volt adatunk arról a gépről, ahol
   lassú: a Teljesítmény-monitor csak menet közben kapcsolható be, mire pedig
@@ -73,6 +85,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A tálca ürítése rossz kérdést tett fel, a jobbklikk-menüje pedig mást
+  csinált, mint amit ígért (#455).** A „Törlés" gomb eddig azt kérdezte,
+  hogy „szeretné-e üríteni a korábban megtartott elemeket" — az eredetiben
+  ez egy egészen másik, külön felkínált takarítás szövege. A teljes ürítés
+  helyes kérdése: *„Ezzel a művelettel a teljes tálcát kiüríti. Biztosan ezt
+  szeretné tenni?"*. A tálcán jobb gombbal előhívott menü két parancsa
+  („Kijelölés megtartása", „Kijelölés eltávolítása") pedig a rács
+  kijelölését szűkítette ahelyett, hogy a tálcára hatott volna — mostantól
+  tényleg a tálcára tesz, illetve arról vesz le.
+- **A „Napló elküldése" gomb összeomlott, ha a közös mappa jelszót kért
+  (#1668).** A tulajdonos gépén az első éles használatnál hibaüzenet
+  ugrott fel a képernyőre a napló átadása helyett: Windowson egy
+  hitelesítetlen hálózati mappa nem azt mondja, hogy „nincs ilyen", hanem
+  hibát dob. A beépített „Mentés másként…" tartalék, ami pontosan erre az
+  esetre készült, így nem jutott szóhoz. Mostantól minden ilyen akadály —
+  jelszókérés, időtúllépés, hálózati hiba — ugyanazt jelenti: a megosztás
+  nem érhető el, tehát a program a mentési tartalékot ajánlja.
+- **A közös mappát mostantól a NAS NEVE azonosítja, nem az IP-címe
+  (#1668).** Az IP-cím hálózatonként más; a gépnév távoli kapcsolaton át is
+  feloldódik, tehát a napló nemcsak otthonról adható át. Ellenőrzés őrzi,
+  hogy IP-cím ne kerülhessen vissza a programba.
 - **A Szépia és a Fekete-fehér megjelenítési mód nem csinált semmit
   (#1657).** A `Nézet ▸ Megjelenítési mód` tizenegy tételéből eddig csak
   négy hatott; a tulajdonos épp a leglátványosabbat, a **Szépiát**
