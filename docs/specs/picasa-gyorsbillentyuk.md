@@ -575,3 +575,60 @@ utasításfolyamán végigmenve követni kell az `esp`-eltolást, a
 `0x009ae560(kulcs, alapértelmezés)` hívásokat és a rekordmezőkbe írt
 konstansokat — a `+0x04…+0x0a` mezők a **következő** tétel blokkjában
 íródnak ki.
+
+---
+
+## 5. A `Delete` billentyű KONTEXTUSFÜGGŐ: albumban nem lemezről töröl (2026-08-27)
+
+A 3.3 szakasz azt írta le, hogy **egy parancs két billentyűn** ül
+(`0x9c9a`: menüsávban `Delete`, helyi menükben `Ctrl+Delete`). Kimaradt
+belőle a másik irány: **ugyanaz a billentyű két parancson**, a nézettől
+függően.
+
+### A bizonyíték
+
+A hivatalos szövegforrásban (`stringres-en-hu.tsv`) a két tétel
+**azonos gyorsbillentyűt hirdet**:
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `IDS_DELETE_FROM_DISK` | `Delete from Disk\tDelete` | `Törlés lemezről\tDelete` |
+| `IDS_REMOVE_FROM_LABEL` | `Remove from Album\tDelete` | `Eltávolítás az albumból\tTörlés` |
+
+és a bináris index szerint **ugyanabban a menüépítőben** ülnek —
+`0x0056c5a0` és `0x0056e1c0`, ez a `CThumbUI` rács-menüje (ugyanitt van
+`CThumbUI::locateondiskmenu`, `ThumbUI::PeopleCMEmpty`,
+`IDS_LOCATE_ON_DISK`).
+
+Ezt megerősíti a helyi menük oldaláról a 4. szakasz mérése is: a
+`0x00731050` (album-nézetbeli kép helyi menüje) **ugyanazt a
+`cmd 0x9c9a`-t** hordozza, csak a felirata **„Eltávolítás az albumból"**;
+a `0x007355c0`-n (Emberek-album) pedig „Eltávolítás az Emberek albumból".
+
+**Vagyis a `0x9c9a` parancs jelentése a NÉZETTŐL függ:**
+
+| nézet | a parancs jelentése | mit csinál az adattal |
+|---|---|---|
+| mappa | Törlés a lemezről | Lomtárba (`SHFileOperationW`, `0x009b1d50`) |
+| album | Eltávolítás az albumból | a fájl **marad a lemezen** |
+| Emberek-album | Eltávolítás az Emberek albumból | a fájl **marad a lemezen** |
+
+### Amit ez NEM dönt el
+
+A `CThumbUI` menüje `\tDelete`-et hirdet, a 4. szakasz rekord-mérése
+viszont a kép helyi menüjére `Ctrl+Delete`-et adott. A kettő **más
+felület** (rács-menü vs. kép helyi menüje), de a szétválásuk pontos
+határa nincs megmérve — ehhez a `0x0056c5a0` rekord-ciklusának
+diszasszemblálása kell. Ez **nem befolyásolja** a fenti megállapítást: a
+parancs jelentése akkor is nézetfüggő, ha a billentyű felülete vitatott.
+
+### Nálunk (mérve, 2026-08-27)
+
+`PicasaMenuBar.qml:189-194` — a `Delete` **feltétel nélkül**
+`bar.deleteRequested()`-et hív, azaz mindig lemezről töröl. Album-nézetre
+**nincs elágazás**. Az „Eltávolítás az albumból" tétel létezik
+(`PhotoContextMenu.qml:117`), de a billentyűhöz nincs kötve.
+
+*Bizonyítottsági fok: **megerősített** a parancs nézetfüggő jelentése (a
+szövegforrás és a 4. szakasz rekord-mérése egybehangzóan);
+**nyitva** a rács-menü és a kép helyi menüje közti billentyű-határ.*
