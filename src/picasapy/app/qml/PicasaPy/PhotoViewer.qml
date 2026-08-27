@@ -266,6 +266,34 @@ Rectangle {
         editController.beginEdit(photosModel.idAt(currentIndex),
                                  photosModel.filePathAt(currentIndex))
     }
+    // #1598: a megjelenítési mód (`Nézet ▸ Megjelenítési mód`) KIZÁRÓLAG az
+    // `editpreview` szolgáltatón át jut a képernyőre. A lenti `photo.source`
+    // kötés viszont a NYERS fájl URL-jére esik vissza, ha nincs élő
+    // szerkesztési munkamenet (`editCtl.previewSource` üres) — a nyers fájlon
+    // pedig a mód nem látszik. Mérve (#1598, a kirajzolt képpontokon): ilyen
+    // állapotban a módváltás NÉMÁN elveszik, vagyis a felület olyat kínál,
+    // ami nem hat. A tulajdonos jelentése („egyáltalán nem működik egyik
+    // sem") pontosan ilyen alakú.
+    //
+    // A `beginEditCurrent()` a néző megnyitásakor és lapozáskor amúgy is
+    // lefut, tehát a visszaesés a rendes úton nem áll elő; a munkamenetet
+    // viszont kívülről is le lehet zárni (`endEdit`), és a felhasználó
+    // ilyenkor is a menüből vált módot. Ezért a váltás pillanatában
+    // ÚJRANYITJUK a munkamenetet, ahelyett hogy a nyers fájl elnyelné.
+    //
+    // Nem tud körbe járni: a `beginEdit` után a `previewSource` nem üres, a
+    // `displayModeChanged` pedig csak VALÓDI módváltásnál szól (ld.
+    // `display_mode_controller.py` modul-docstring). Videón nem fut le — ott
+    // a fotó-Image rejtett, és a `beginEditCurrent()` is `endEdit`-et hív.
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        function onDisplayModeChanged() {
+            if (viewer.visible && !viewer.isCurrentVideo
+                    && viewer.editCtl && viewer.editCtl.previewSource === "")
+                viewer.beginEditCurrent()
+        }
+    }
+
     // Döntés-csúszka szinkronja a mentett tilt-értékkel (#131): a value
     // beállítását elnyomjuk, hogy az onValueChanged NE váltson ki
     // previewTilt-et — a szinkron csak a csúszkát mozgatja, az előnézet
