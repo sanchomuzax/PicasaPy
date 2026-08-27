@@ -15,6 +15,7 @@ from picasapy.export import (
     export_photos,
     resolve_export_quality,
 )
+from picasapy.export.exporter import _apply_watermark, _watermark_font_size_px
 from support.jpeg_factory import make_jpeg
 
 
@@ -390,6 +391,127 @@ class TestWatermark:
             ExportSettings(watermark_text="PicasaPy"),
         )
         assert report.exported[0].read_bytes() != original
+
+
+class TestWatermarkFontSize:
+    """#1603: a betűméret = max(12, a HOSSZABB oldal // 50) képpont, a
+    `0x0045c4b0` dekompilálásából. Az öt referenciaméret és a két
+    határeset (minimum 12, a hosszabb — nem a szélesebb/keskenyebb —
+    oldal) IRODALMI (a jegyben kiírt) értékekkel, nem a képletből
+    visszaszámolva."""
+
+    @pytest.mark.parametrize(
+        ("width", "height", "expected_px"),
+        [
+            (4000, 3000, 80),
+            (3000, 2000, 60),
+            (1600, 1200, 32),
+            (1024, 768, 20),
+            (640, 480, 12),
+        ],
+    )
+    def test_reference_sizes_from_the_issue(self, width, height, expected_px):
+        assert _watermark_font_size_px(width, height) == expected_px
+
+    def test_minimum_is_12_even_for_a_tiny_image(self):
+        # 100 // 50 = 2 lenne alsó korlát nélkül
+        assert _watermark_font_size_px(100, 40) == 12
+
+    def test_just_above_the_minimum_is_not_clamped(self):
+        # 650 // 50 = 13 > 12 — a minimum itt nem lép közbe
+        assert _watermark_font_size_px(650, 400) == 13
+
+    def test_uses_the_longer_side_regardless_of_orientation(self):
+        # fekvő és álló kép ugyanazzal a hosszabb oldallal ugyanazt a
+        # méretet kapja — sem a szélesség, sem a magasság önmagában nem
+        # döntő, csak a kettő maximuma
+        assert _watermark_font_size_px(5000, 100) == 100
+        assert _watermark_font_size_px(100, 5000) == 100
+
+
+class TestWatermarkHeightThreshold:
+    """#1603: 32 képpontnál ALACSONYABB MAGASSÁGÚ képre nincs vízjel — a
+    dekompilált kód kifejezetten a magasságot vizsgálja (`cmp ecx, 0x20`
+    az `[esi+0xc]` mezőn), nem a szélességet és nem a rövidebb oldalt."""
+
+    def test_height_31_gets_no_watermark(self):
+        image = np.zeros((31, 200, 3), dtype=np.uint8)
+        result = _apply_watermark(image, "PicasaPy")
+        assert np.array_equal(result, image)
+
+    def test_height_32_gets_a_watermark(self):
+        image = np.zeros((32, 200, 3), dtype=np.uint8)
+        result = _apply_watermark(image, "PicasaPy")
+        assert not np.array_equal(result, image)
+
+    def test_a_narrow_but_tall_image_still_gets_a_watermark(self):
+        # a szélesség 25 (jóval 32 alatt, és szűkebb a margónál is), de a
+        # döntő a MAGASSÁG — ez a méretszabály forrásától (a hosszabb
+        # oldal) FÜGGETLEN teszt
+        image = np.zeros((200, 25, 3), dtype=np.uint8)
+        result = _apply_watermark(image, "PicasaPy")
+        assert not np.array_equal(result, image)
+
+    def test_no_watermark_survives_the_full_export_pipeline(self, tmp_path):
+        # A JPEG-újrakódolás önmagában is módosít képpontokat (veszteséges
+        # tömörítés) — ezért itt NEM bájtazonosságot, hanem azt nézzük,
+        # hogy a (különben fekete) jobb fél nem fényesedik fel, ahogy a
+        # meglévő `test_no_watermark_by_default_leaves_image_untouched` is
+        # teszi.
+        source = _make_half_and_half(tmp_path / "alacsony.png", width=200, height=31)
+        report = export_photos(
+            [ExportItem(source)],
+            tmp_path / "out",
+            ExportSettings(watermark_text="PicasaPy"),
+        )
+        exported = _read_image(report.exported[0])
+        assert exported[:, 100:].mean() < 5  # jobb fél változatlanul fekete
+
+
+class TestWatermarkTypeface:
+    """#1603: Arial, 600-as vastagság (félkövér), méretezés 1.0 — a
+    `0x0045c52a`–`0x0045c53c` szakaszból. A konkrét betűfájl gépenként más
+    (Arial/Liberation/DejaVu, ld. `render.text_fonts`), ezért itt NEM a
+    kirajzolt alakot, hanem azt ellenőrizzük, hogy a hívás a helyes
+    családot és vastagságot KÉRI a betűbetöltőtől — ez a rész gépfüggetlen
+    és determinisztikus, `load_font` kicserélésével (CI-biztos)."""
+
+    def test_requests_arial_bold_at_the_computed_size(self, monkeypatch):
+        calls = []
+
+        def fake_load_font(family, size_px, *, bold=False, italic=False):
+            calls.append((family, size_px, bold, italic))
+            return None  # a Hershey-visszaesésre futtatjuk, alak nem számít
+
+        monkeypatch.setattr(
+            "picasapy.export.exporter.load_font", fake_load_font
+        )
+        image = np.zeros((1200, 1600, 3), dtype=np.uint8)
+        _apply_watermark(image, "PicasaPy")
+        assert calls == [("arial", 32, True, False)]
+
+
+class TestWatermarkMargin:
+    """#1603: a margó mind a négy oldalon a betűmérettel egyenlő — a
+    dekompilált kód a jobb/alsó élet `szélesség - betűméret` /
+    `magasság - betűméret` pontra teszi, ezért az utolsó `margó` oszlop/
+    sor teljesen érintetlen kell maradjon.
+
+    A teszt szándékosan NEM a betű alakját nézi (az Arial/Liberation/
+    DejaVu helyettesítés gépenként eltér — ld. `render.text_fonts`),
+    hanem kizárólag a MÉRETET/ELHELYEZÉST: melyik képpontok változtak."""
+
+    @pytest.mark.parametrize(("width", "height"), [(1600, 1200), (4000, 3000)])
+    def test_nothing_changes_beyond_the_margin_box(self, width, height):
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+        result = _apply_watermark(image, "PicasaPy")
+        margin = _watermark_font_size_px(width, height)
+        changed = np.any(result != image, axis=-1)
+        ys, xs = np.nonzero(changed)
+        assert xs.size > 0, "a vízjelnek kell módosítania valamit"
+        # az utolsó `margin` oszlop/sor (a jobb/alsó margó-sáv) érintetlen
+        assert xs.max() <= width - margin
+        assert ys.max() <= height - margin
 
 
 class TestQualityPresets:
