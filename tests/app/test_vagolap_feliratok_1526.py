@@ -9,20 +9,29 @@ A QML-funkcionális teszt nem tudja ezt mérni: a fixture nem telepít
 `QTranslator`-t, tehát ott a `qsTr()` az ANGOL forrássztringet adja. Ez a
 fájl ezért közvetlenül a `picasapy_hu.ts`-t olvassa — a #1527 mintája.
 
-## Miért van `&` a feliratokban
+## Miért van `&` a helyi menüben, és miért NINCS a főmenüben
 
-Az eredeti feliratok gyorsbillentyű-jelölővel érkeznek (`Cu&t` → `&Kivágás`),
-és a Qt/QML ugyanezt az `&`-konvenciót használja: a `MenuItem` mnemonik-tudatos
-címkét rajzol, tehát az ampersand aláhúzást jelöl, nem betűt (#757). A jelölő
-elhagyása néma funkcióvesztés volna: a billentyűzetes navigáció szűnne meg.
+Az eredeti feliratok szinte mind gyorsbillentyű-jelölővel érkeznek — a
+menü-CSV 177 angol feliratából **141**, a magyarból **139** tartalmaz `&`-et.
+A PicasaPy viszont ezt **eddig csak a menük CÍMÉRE** vette át: a
+`PicasaMenuBar.qml` 142 `qsTr()` felirata közül a #1526 előtt kilencben volt
+`&` — a nyolc menücím (`&File`, `&Edit`, …) és az `E&xit`. A tételek szintjén
+tehát a projekt következetesen mnemonik NÉLKÜL dolgozik; a #1527 tegnap a
+`Save As...`-t is így vette át, holott a CSV-ben `Save &As...` áll.
 
-## Miért csak a MAGYAR oldalon van `&` a szövegmező-menüben
+Emiatt a #1526 első köre TÉVEDETT, amikor a `Cut`/`Copy`/`Paste` tételekre
+egyedül rátette az ampersandot: 133 tétel közül háromnak lett aláhúzása, a
+menü Alt-navigációja ettől nem lett használható, csak egyenetlen. A
+mnemonikok menüszintű bevezetése ÖNÁLLÓ, menü-egészre kiterjedő munka (133
+felirat + minden helyi menü + a `.ts`), nem a vágólap-jegy mellékhatása.
 
-A főmenü ANGOL alakja is dokumentált (`Cu&t`, `&Copy`, `&Paste`), ezért ott a
-forrássztring is a hivatalos alakot követi. Az `Address` névtér angol
-oszlopát viszont NEM mértük — csak a magyart. Találgatott angol mnemonikot
-nem írunk a forrásba; a magyar oldal a hivatalos szöveg, és a felhasználó azt
-látja.
+A **szövegmező-helyimenü** más eset, és ezért marad mnemonikos: ott
+MIND A HÉT tétel hivatalos magyar felirata `&`-es (a jegy tételes táblája),
+tehát a menü önmagában teljes és következetes — a billentyűs navigáció
+végig működik benne.
+
+Az `Address` névtér ANGOL oszlopát nem mértük, csak a magyart; találgatott
+angol mnemonikot nem írunk a forrásba.
 """
 
 from __future__ import annotations
@@ -39,10 +48,11 @@ _TS_PATH = (
 
 #: (kontextus, forrássztring) -> a HIVATALOS magyar felirat.
 HIVATALOS: dict[tuple[str, str], str] = {
-    # -- eMenuEdit (docs/specs/picasa-menu-parancsok.csv)
-    ("PicasaMenuBar", "Cu&t"): "&Kivágás",
-    ("PicasaMenuBar", "&Copy"): "&Másolás",
-    ("PicasaMenuBar", "&Paste"): "&Beillesztés",
+    # -- eMenuEdit (docs/specs/picasa-menu-parancsok.csv), a projekt
+    # tétel-szintű konvenciója szerint mnemonik NÉLKÜL (ld. a docstringet)
+    ("PicasaMenuBar", "Cut"): "Kivágás",
+    ("PicasaMenuBar", "Copy"): "Másolás",
+    ("PicasaMenuBar", "Paste"): "Beillesztés",
     ("PicasaMenuBar", "Copy Text"): "Szöveg másolása",
     ("PicasaMenuBar", "Paste Text"): "Szöveg beillesztése",
     # -- Address (stringres-en-hu.tsv, a #1526 jegy táblája)
@@ -96,16 +106,22 @@ def test_a_szovegmezo_menu_MIND_A_HET_tetelenek_van_mnemonikja(forditasok):
     assert hiany == [], f"mnemonik nélküli feliratok: {hiany}"
 
 
-def test_a_regi_mnemonik_nelkuli_alakok_eltuntek(forditasok):
-    """Visszavonás-őr: ha valaki „egyszerűsítésként" leszedi az
-    ampersandokat, ez bukik (a #1045 tanulsága: a visszavonáshoz ellenkező
-    irányú őr kell)."""
+def test_a_fomenu_tetelei_NEM_kapnak_kulon_mnemonikot(forditasok):
+    """Ellenkező irányú őr (#1045 tanulsága).
+
+    A #1526 első köre pont ezt rontotta el: három tételre rátette az
+    ampersandot, amitől a menü egyenetlen lett, és a
+    `test_qml_menubar_audit` mintaillesztése is elhasalt. Amíg a mnemonikok
+    menü-egészre kiterjedő bevezetése meg nem történik (önálló jegy), a
+    Szerkesztés menü vágólap-tételei mnemonik NÉLKÜL állnak — ez az őr
+    fogja meg, ha valaki megint csak néhányat lát el vele."""
     tiltott = {
-        ("PicasaMenuBar", "Cut"),
-        ("PicasaMenuBar", "Copy"),
-        ("PicasaMenuBar", "Paste"),
+        ("PicasaMenuBar", "Cu&t"),
+        ("PicasaMenuBar", "&Copy"),
+        ("PicasaMenuBar", "&Paste"),
     }
     maradt = sorted(kulcs for kulcs in tiltott if kulcs in forditasok)
     assert maradt == [], (
-        f"mnemonik nélküli RÉGI forrássztringek maradtak a .ts-ben: {maradt}"
+        "a főmenü vágólap-tételei külön mnemonikot kaptak, a többi 130 tétel "
+        f"viszont nem — ettől a menü egyenetlen lesz: {maradt}"
     )

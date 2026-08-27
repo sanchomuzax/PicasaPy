@@ -18,6 +18,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   másolt vagy kivágott fájlokat hoz be az éppen nyitott mappába. Ha a
   célmappában már van azonos nevű fájl, a program ugyanúgy megkérdezi,
   átnevezze-e vagy kihagyja: meglévő kép soha nem íródik felül.
+  A **Ctrl+X / Ctrl+C / Ctrl+V** billentyű is működik — a menü eddig
+  hirdette őket, de nem volt mögöttük semmi. Szövegmezőben gépelve
+  változatlanul a mező kapja meg őket, nem a képek.
 - **Szöveg másolása / beillesztése (#1526).** A két menüpont a *feliratra*
   hat: a másolás az aktuális kép feliratát teszi a vágólapra, a
   beillesztés a vágólap szövegét írja a teljes kijelölés feliratába.
@@ -26,9 +29,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   szürke volt; mostantól valódi kapcsoló, és kikapcsolva sem a keresőmező,
   sem az arcnév-mező javaslatlistája nem nyílik le. A beállítás megmarad a
   következő indításig.
-- A vágólap-parancsok és a szövegmezők helyi menüje mostantól a **hivatalos
-  magyar Picasa-feliratokkal**, gyorsbillentyű-jelöléssel jelennek meg
-  (#1526).
+- A szövegmezők helyi menüje mostantól a **hivatalos magyar
+  Picasa-feliratokkal**, gyorsbillentyű-aláhúzással jelenik meg (#1526).
+  (A főmenü tételei továbbra is aláhúzás nélkül — azt menüszinten, külön
+  lépésben érdemes bevezetni, nem néhány tételen.)
 
 ### Javítva
 - **Az újravágás többé nem törli a korábbi vágásokat (#1553).** Ha egy képet

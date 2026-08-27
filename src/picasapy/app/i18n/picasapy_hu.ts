@@ -4654,18 +4654,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139"/>
-        <source>Cu&amp;t</source>
-        <translation>&amp;Kivágás</translation>
+        <source>Cut</source>
+        <translation>Kivágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140"/>
-        <source>&amp;Copy</source>
-        <translation>&amp;Másolás</translation>
+        <source>Copy</source>
+        <translation>Másolás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141"/>
-        <source>&amp;Paste</source>
-        <translation>&amp;Beillesztés</translation>
+        <source>Paste</source>
+        <translation>Beillesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157"/>

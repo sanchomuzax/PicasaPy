@@ -246,14 +246,17 @@ class TestGyorsbillentyuk:
         assert normal.property("enabled") is True
 
     def test_inaktiv_tetelekhez_nincs_uj_elo_shortcut_objektum(self):
-        """Az inaktív pontok (pl. Ctrl+N, Ctrl+X, F1...) csak a feliratban
-        jelennek meg — nem szabad hozzájuk élő `Shortcut {}` elemet kötni.
-        Az egyetlen forrás-elhelyezésű `Shortcut` blokk a fájl elején van,
-        pontosan 5 elemmel (a fenti öt aktív tételhez). A szám #1472-ben
-        nőtt négyről ötre: a `Nyomtatás…` tétel élővé vált, tehát a
-        Ctrl+P-nek is élő billentyűt kellett kapnia."""
+        """Az inaktív pontok (pl. Ctrl+N, F1...) csak a feliratban jelennek
+        meg — nem szabad hozzájuk élő `Shortcut {}` elemet kötni. Az
+        egyetlen forrás-elhelyezésű `Shortcut` blokk a fájl elején van.
+
+        A szám a MŰKÖDŐ, billentyűt hirdető tételekkel együtt nő: #1472-ben
+        négyről ötre (a `Nyomtatás…` élővé vált), #1526-ban ötről nyolcra
+        (a `Kivágás`/`Másolás`/`Beillesztés` élővé vált, tehát a
+        Ctrl+X/C/V-nek is élő billentyűt kellett kapnia — különben a
+        `TestMukodoTetelekBillentyui` őre bukna)."""
         src = _source()
-        assert src.count("Shortcut {") == 5
+        assert src.count("Shortcut {") == 8
 
 
 class TestMukodoTetelekBillentyui:

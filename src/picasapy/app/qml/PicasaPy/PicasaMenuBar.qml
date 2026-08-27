@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
 
 // A Picasa 3.9 teljes menüszerkezete (a magyar 3.9-ből dokumentálva,
 // ld. docs/specs/ui-audit-menus.md, #324/#327). A még nem implementált
@@ -207,6 +208,60 @@ MenuBar {
         enabled: bar.photoActionsEnabled
         onActivated: bar.printRequested()
     }
+    // #1526: a vágólap-család billentyűi. A menü ELEDDIG IS hirdette a
+    // Ctrl+X/C/V-t, de a tételek helyfoglalók voltak — az élővé tételükkel
+    // a hirdetett billentyű hazuggá vált volna (`test_qml_menubar_audit`
+    // `TestMukodoTetelekBillentyui` őre).
+    //
+    // MÉRVE (2026-08-27, offscreen, valódi `QTest.keyClick`), mert a
+    // kézenfekvő feltevés — „a Ctrl+C elvenné a szövegmezőktől" — HAMIS:
+    //
+    // | fókusz | Shortcut tüzel? | a mező saját művelete |
+    // |---|---|---|
+    // | szerkeszthető `TextField`/`TextArea` | NEM | lefut (Qt `ShortcutOverride`) |
+    // | `readOnly: true` mező | **IGEN** ⚠️ | elmarad |
+    // | rács (nem szövegelem) | igen | – |
+    //
+    // A Qt tehát magától megvédi a SZERKESZTHETŐ mezőt (a fókuszált
+    // szövegelem a `ShortcutOverride` eseményen elveszi a szabványos
+    // szerkesztő-billentyűket), a csak-olvashatót viszont NEM: ott a
+    // Ctrl+C a képfájlokat tenné a vágólapra a kijelölt útvonal helyett.
+    // Ezt zárja ki a `textInputHasFocus` őr.
+    //
+    // ⚠️ Az őr MA VÉDEKEZŐ, és ezt is mértük: a négy csak-olvasható mezőnk
+    // közül három a Beállítások önálló `Window`-jában él (oda a főablak
+    // `Shortcut`-jai el sem érnek), a negyedik modális `Dialog` popupban
+    // (az elnyeli a billentyűt) — vagyis a mai felületen nincs út, ahol az
+    // őr hatna. A mérőpadon viszont a hibás ág BIZONYÍTOTTAN létezik, és
+    // egy jövőbeli, nem-modális útvonal-kijelző azonnal ráfutna. Az őr
+    // foga a `test_vagolap_billentyuk_1526.py`
+    // `test_szovegmezo_fokuszban_MIND_A_HAROM_tiltott` tesztjén van.
+    readonly property var focusedItem: bar.Window.activeFocusItem
+    //: szövegbeviteli elemen áll-e a fókusz — minden TextInput/TextEdit
+    //: leszármazottnak van `cursorPosition`-je, más elemnek nincs
+    readonly property bool textInputHasFocus:
+        bar.focusedItem !== null && bar.focusedItem !== undefined
+        && bar.focusedItem.cursorPosition !== undefined
+    Shortcut {
+        objectName: "shortcutCut"
+        sequence: "Ctrl+X"
+        enabled: bar.photoActionsEnabled && !bar.textInputHasFocus
+        onActivated: bar.cutRequested()
+    }
+    Shortcut {
+        objectName: "shortcutCopy"
+        sequence: "Ctrl+C"
+        enabled: bar.photoActionsEnabled && !bar.textInputHasFocus
+        onActivated: bar.copyRequested()
+    }
+    Shortcut {
+        objectName: "shortcutPaste"
+        sequence: "Ctrl+V"
+        // kijelöléstől FÜGGETLEN, mint a menüpont: a beillesztés a
+        // MAPPÁBA tesz, nem a kijelölésre hat
+        enabled: bar.canPasteFiles && !bar.textInputHasFocus
+        onActivated: bar.pasteRequested()
+    }
 
     Menu {
         title: qsTr("&File")
@@ -353,19 +408,19 @@ MenuBar {
         // adja vissza ugyanezt (ld. `picasapy.fileops.clipboard`).
         MenuItem {
             objectName: "menuEditCut"
-            text: qsTr("Cu&t") + "\tCtrl+X"
+            text: qsTr("Cut") + "\tCtrl+X"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.cutRequested()
         }
         MenuItem {
             objectName: "menuEditCopy"
-            text: qsTr("&Copy") + "\tCtrl+C"
+            text: qsTr("Copy") + "\tCtrl+C"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.copyRequested()
         }
         MenuItem {
             objectName: "menuEditPaste"
-            text: qsTr("&Paste") + "\tCtrl+V"
+            text: qsTr("Paste") + "\tCtrl+V"
             // kijelöléstől FÜGGETLEN: a beillesztés a MAPPÁBA tesz, nem a
             // kijelölésre hat — a feltétel az, hogy legyen mit beilleszteni
             enabled: bar.canPasteFiles
