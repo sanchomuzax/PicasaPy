@@ -8,6 +8,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Hozzáadva
+- **Tesztüzem: a program mostantól meg tudja mérni a saját indulását
+  (#1654).** Eddig épp az indulásról nem volt adatunk arról a gépről, ahol
+  lassú: a Teljesítmény-monitor csak menet közben kapcsolható be, mire pedig
+  a menüig eljutunk, az indulás rég lezajlott. Az új `Súgó ▸ Tesztüzem`
+  kapcsoló **megmarad kilépés után is**, és a **következő** indítást méri
+  végig, az első pillanattól. Amíg be van kapcsolva, a menüsorban piros
+  „TESZTÜZEM" felirat emlékeztet rá, hogy ne maradjon véletlenül bekapcsolva.
+  A mérés végén `Súgó ▸ Napló elküldése` egyetlen kattintással a közös
+  hálózati mappába teszi a naplót, és az elérési útját a vágólapra is
+  másolja; ha a hálózati mappa épp nem elérhető, a program megmondja, és
+  felajánlja, hogy hova mentse helyette. A napló **semmilyen mappanevet,
+  fájlnevet és felhasználónevet nem tartalmaz** — csak időket és
+  darabszámokat (hány mappa, hány kép), mert a gyanú szerint az indulás a
+  könyvtár méretével lassul.
 - **A tesztfuttatás szabálya mostantól kapu, nem kérés (#1649).** Eddig a
   dokumentáció kérte, hogy a teszteket a projekt futtatójával indítsuk — és a
   kérés 2026-08-15-én megbukott: öt párhuzamos munkamenet **5,8 GB**
