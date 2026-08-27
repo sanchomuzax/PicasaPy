@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.122] – 2026-08-27
 
 ### Hozzáadva
 - **Megtekintés a Google Earth programban… (#1589).** Az `Eszközök ▸
