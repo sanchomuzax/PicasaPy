@@ -196,6 +196,7 @@ def epits(a: dict) -> str:
     # ezért közvetlenül átadhatók a listázónak.
     var_rank = ossz.get("felhasznalora_var") or []
     blokkolt = ossz.get("blokkolt") or []
+    binaris = ossz.get("binaris_kutathato") or []
     erintetlen_regi = sorted(a["erintetlen"], key=lambda x: x["created"])[:10]
 
     hiba = ("" if a["jegyek"] else
@@ -230,6 +231,7 @@ def epits(a: dict) -> str:
     <div class="groups">
 {_jegylista("Rád vár", "Legtöbbször egy export vagy egy képernyőkép a windowsos Picasából.", var_rank, "warn")}
 {_jegylista("Blokkolt", "Külső akadály miatt áll — nem felejtés.", blokkolt, "crit")}
+{_jegylista("Ebből bináris kutatás oldja fel", "Ezekhez nem a te gépedre van szükség, hanem az eredeti Picasa visszafejtésére — ezen tudunk dolgozni magunktól.", binaris, "ok")}
     </div>
   </section>
 
@@ -347,6 +349,7 @@ _STILUS = """<style>
            border-left:2px solid var(--rule); }
   .group.warn { border-left-color:var(--warn); }
   .group.crit { border-left-color:var(--crit); }
+  .group.ok { border-left-color:var(--accent); }
   .note { margin:0; font-size:0.85rem; color:var(--ink-faint); }
   .empty { margin:0; font-size:0.9rem; color:var(--ink-faint); font-style:italic; }
 
