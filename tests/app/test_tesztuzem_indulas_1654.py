@@ -171,3 +171,58 @@ class TestASorrendAForrasban:
         assert ujrakotes.start() < feloldas, (
             "a gyökér-feloldás megelőzi az argv megtisztítását"
         )
+
+
+class TestKikapcsolvaKoltsegmentes:
+    """⚠️ A jegy DoD-ja: „Kikapcsolva a mérés KÖLTSÉGMENTES".
+
+    A #1601 mérése (0,2 µs/hívás) a szakasz-bejelentésekre vonatkozik; ez
+    az őr a #1654 ÚJ költségét méri: a napló összeállítása a könyvtár
+    méretét is megkérdezi az indextől, és az egy SQLite-nyitás minden
+    induláskor. Kikapcsolt tesztüzemben ennek meg sem szabad történnie."""
+
+    def test_kikapcsolva_a_konyvtarmeret_lekerdezese_EL_SEM_INDUL(self, tmp_path):
+        idovonal, _argv = app_module._indulasi_idovonal(
+            ["picasapy"], settings=_Beallitasok(), environ={}
+        )
+        hivasok = []
+
+        def _kepszamok():
+            hivasok.append(True)
+            return (1, 2, 3)
+
+        app_module._jelentsd_az_idovonalat(idovonal, _kepszamok)
+
+        assert hivasok == [], (
+            "kikapcsolt tesztüzemben is megnyitottuk az indexet a "
+            "könyvtárméretért — ez minden induláskor fizetendő költség"
+        )
+
+    def test_kikapcsolva_nem_ir_naplot(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(app_module, "default_log_dir", lambda: tmp_path)
+        idovonal, _argv = app_module._indulasi_idovonal(
+            ["picasapy"], settings=_Beallitasok(), environ={}
+        )
+        app_module._jelentsd_az_idovonalat(idovonal, lambda: (1,))
+        assert list(tmp_path.iterdir()) == []
+
+    def test_bekapcsolva_VISZONT_ir_es_a_meret_is_benne_van(
+        self, tmp_path, monkeypatch, qt_app
+    ):
+        """A kikapcsolt ág üressége csak akkor bizonyít, ha a bekapcsolt
+        ág tényleg dolgozik — különben egy soha nem működő funkció is
+        „költségmentes"."""
+        monkeypatch.setattr(app_module, "default_log_dir", lambda: tmp_path)
+        idovonal, _argv = app_module._indulasi_idovonal(
+            ["picasapy", "--tesztuzem"], settings=_Beallitasok(), environ={}
+        )
+        idovonal.mark("próbaszakasz")
+
+        app_module._jelentsd_az_idovonalat(idovonal, lambda: (10, 20, 12))
+
+        naplok = list(tmp_path.glob("indulas-*.txt"))
+        assert len(naplok) == 1
+        szoveg = naplok[0].read_text(encoding="utf-8")
+        assert "próbaszakasz" in szoveg
+        assert "42" in szoveg, "a képek darabszáma nem került a naplóba"
+        assert "3" in szoveg, "a mappák darabszáma nem került a naplóba"
