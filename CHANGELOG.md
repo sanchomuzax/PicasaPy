@@ -8,6 +8,34 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Hozzáadva
+- **Projektor mód és LCD fehérpont — előnézet halványabb kijelzőre (#1577).**
+  A `Nézet ▸ Megjelenítési mód` két új tétele egyenletesen sötétíti a
+  nézőben látható képet: a **Projektor mód** mintegy 14 százalékkal, az
+  **LCD fehérpont** mintegy 4 százalékkal. Vetítés vagy prezentáció előtt
+  így előre látszik, hogyan fognak festeni a képek egy halványabb
+  kimeneten, anélkül hogy magukhoz a képekhez hozzá kellene nyúlni.
+
+  A sötétítés — ahogy az eredeti Picasában — **csak a képernyőre** hat: a
+  mentett és az exportált fájl, valamint a bélyegképek változatlanok, és
+  más módra váltva a hatás azonnal eltűnik. Az „LCD fehérpont" a neve
+  ellenére **nem** állít színhőmérsékletet: az eredeti mindhárom
+  színcsatornát ugyanannyival halványítja, tehát színeltolás nincs — ezt
+  szándékosan hűen követjük.
+
+- **Lineáris gamma (2.2) — a sötét részletek átnézése (#1578).** A
+  `Nézet ▸ Megjelenítési mód ▸ Lineáris gamma (2.2)` a csoport egyetlen
+  világosító módja: felhozza az árnyékokat, hogy látni lehessen, van-e még
+  rajzolat a sötét részeken. A világosítás **csak a nézőben** történik, a
+  fájl érintetlen marad.
+
+  Az átalakítás pontosan azt a táblázatot használja, amelyet az eredeti
+  Picasa is — a programból kimérve, értékről értékre. Kézenfekvő lett volna
+  helyette egy gamma-képletet számolni, de az mérhetően más képet adna: az
+  eredeti táblázat nem képletből származik.
+
+## [0.8.118] – 2026-08-27
+
+### Hozzáadva
 - **Megnyílt a `Nézet ▸ Megjelenítési mód` almenü (#1575).** Eddig ott volt
   a menüben, de üresen és szürkén: rákattintva semmi nem történt. Mostantól
   kinyílik, és — pontosan úgy, ahogy az eredeti Picasában — **tizenegy
@@ -36,31 +64,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   eltűnik. A küszöb szándékosan szigorú — csak a tökéletesen fehér képpont
   számít túlcsordulónak, a hajszálnyival sötétebb már nem —, mert az eredeti
   is pontosan így működik.
-
-- **Projektor mód és LCD fehérpont — előnézet halványabb kijelzőre (#1577).**
-  A `Nézet ▸ Megjelenítési mód` két új tétele egyenletesen sötétíti a
-  nézőben látható képet: a **Projektor mód** mintegy 14 százalékkal, az
-  **LCD fehérpont** mintegy 4 százalékkal. Vetítés vagy prezentáció előtt
-  így előre látszik, hogyan fognak festeni a képek egy halványabb
-  kimeneten, anélkül hogy magukhoz a képekhez hozzá kellene nyúlni.
-
-  A sötétítés — ahogy az eredeti Picasában — **csak a képernyőre** hat: a
-  mentett és az exportált fájl, valamint a bélyegképek változatlanok, és
-  más módra váltva a hatás azonnal eltűnik. Az „LCD fehérpont" a neve
-  ellenére **nem** állít színhőmérsékletet: az eredeti mindhárom
-  színcsatornát ugyanannyival halványítja, tehát színeltolás nincs — ezt
-  szándékosan hűen követjük.
-
-- **Lineáris gamma (2.2) — a sötét részletek átnézése (#1578).** A
-  `Nézet ▸ Megjelenítési mód ▸ Lineáris gamma (2.2)` a csoport egyetlen
-  világosító módja: felhozza az árnyékokat, hogy látni lehessen, van-e még
-  rajzolat a sötét részeken. A világosítás **csak a nézőben** történik, a
-  fájl érintetlen marad.
-
-  Az átalakítás pontosan azt a táblázatot használja, amelyet az eredeti
-  Picasa is — a programból kimérve, értékről értékre. Kézenfekvő lett volna
-  helyette egy gamma-képletet számolni, de az mérhetően más képet adna: az
-  eredeti táblázat nem képletből származik.
 
 ## [0.8.117] – 2026-08-27
 
