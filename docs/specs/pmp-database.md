@@ -1406,3 +1406,61 @@ figyelő felállításának diszasszemblálása kell.
 *Bizonyítottsági fok: **megerősített** a tizennégy útvonal, a három
 kapcsoló, a Basic hitelesítés és a localhost-korlát. **Nyitva**: a port
 konkrét eredete.*
+
+#### A PORT — DISSZASSZEMBLÁLVA (`0x00a5b180`)
+
+Az osztály neve **`CLocalServer`** (RTTI: `CLocalServer::vftable`
+`0x00c85814`, metódusa a már ismert kérés-kezelő `0x004cbc60`).
+
+A figyelő felállítása ordinál szerint importált WS2_32-hívásokkal megy
+(`Ordinal_2` = `bind`, `Ordinal_13` = `listen`, `Ordinal_9` = `htons`):
+
+```asm
+push 0 ; push 1 ; push 2      ; socket(AF_INET=2, SOCK_STREAM=1, 0)
+call 0xc06e60
+mov  [esi+0x50], eax          ; a socket
+
+lea  edi, [esi+0x64]          ; sockaddr_in
+mov  word ptr [edi], 2        ; sin_family = AF_INET
+mov  eax, [esi+0x58]          ; a CÍM tagváltozóból
+call 0xc06e54                 ; inet_addr / htonl
+mov  [esi+0x68], eax          ; sin_addr
+
+movzx ecx, word ptr [esi+0x54]; ⭐ a PORT: 16 bites tagváltozó
+call 0xc06e4e                 ; htons()
+mov  word ptr [esi+0x66], ax  ; sin_port
+
+push 0x10 ; push edi ; push edx
+call 0xc06e72                 ; bind()
+test eax, eax
+jge  siker
+    cmp dword ptr [esi+0x54], 0
+    je  hiba                  ; ha MÁR 0 volt → tényleges hiba, -1
+    mov dword ptr [esi+0x54], 0   ; ⭐ különben NULLÁZZA a portot
+    jmp [vtbl+0x28]               ;    és ÚJRAPRÓBÁLJA
+siker:
+push 5 ; push eax
+call 0xc06e96                 ; listen(sock, backlog=5)
+```
+
+**A válasz tehát: nincs rögzített port.** A `CLocalServer` egy preferált
+értékkel próbál kötni; ha az foglalt, **nullára állítja a portot és
+újrapróbálja** — a 0 a Windows-nak azt jelenti, hogy *adj egy szabad
+efemer portot*. Ezért használ **minden** URL-minta `%d`-t a binárisban: a
+port futásidőben dől el, statikusan nem is tudható.
+
+További rögzített tények: a figyelési sor hossza **5**; a kötési cím külön
+tagváltozóból (`+0x58`) jön, tehát a `localhost`-ra kötés is adat, nem
+beégetett érték — ez illeszkedik az `AllowRemoteWeb` kapcsolóhoz.
+
+**Amit NEM sikerült megállapítani:** a **preferált** kezdőérték (a
+konstruktorban beállított immediate). A `+0x54` offszetre való vadászat
+zsákutca volt — a jelöltek veremeltolásnak bizonyultak. A projekt
+módszertani szabálya szerint (*„a struktúra-offszet alapú nyom félrevezet"*)
+itt megálltam, ahelyett hogy hamis találatot jelentenék. A konstruktor
+megtalálásához a vtábla adat-hivatkozásait kellene végigmenni, ami a mostani
+indexből nem elérhető.
+
+*Bizonyítottsági fok: **megerősített** a teljes felállítási sorrend, a
+tartalék-ág és a backlog (a diszasszemblált kódból); **nyitva** a preferált
+kezdő portszám.*
