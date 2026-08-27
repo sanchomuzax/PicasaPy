@@ -328,6 +328,55 @@ def _proba_kepek(lib) -> None:
         ), nev
 
 
+#: A #1657 próbaképeinek egyenletes SZÍNE. A #1596 két képe szürke, azon a
+#: fekete-fehér mód definíció szerint nem látszana (a luma-súlyok összege
+#: 256, tehát a szürke önmagát adja vissza) — a szépiához és a B&W-hez
+#: színes minta kell.
+#:
+#: A két szín nem tetszőleges. Három feltételt együtt teljesítenek:
+#:
+#: 1. a szépia maszk-ágának KÉT OLDALÁRA esnek (`v1 = 132` és `v1 = 93`);
+#: 2. **mutáció-érzékenyek**: mind a hét mért konstans (`77`, `151`, `28`,
+#:    `218`, és a keverőszín három bájtja) ±1-es elrontása MEGVÁLTOZTATJA a
+#:    kimenetüket. Az első jelölt-pár (`(160,96,32)`/`(60,90,40)`) épp ezen
+#:    bukott el: a lumájuk `>> 8` után véletlenül ugyanaz maradt ±1-nél,
+#:    így a rács-teszt zöld maradt volna elrontott konstansokkal is;
+#: 3. JPEG q100 mellett bitre túlélik a kódolást — mérve, a #1596
+#:    egyenletes-tónus érvelése szerint.
+PROBA_SZIN_VILAGOS = (16, 156, 129)
+PROBA_SZIN_SOTET = (16, 89, 70)
+
+
+def _szines_proba_kepek(lib) -> None:
+    """Két EGYENLETES, SZÍNES próbakép a rács képpont-méréséhez (#1657)."""
+    import cv2
+    import numpy as np
+
+    minta = [("a.jpg", PROBA_SZIN_VILAGOS), ("b.jpg", PROBA_SZIN_SOTET)]
+    for nev, szin in minta:
+        # az OpenCV BGR-ben ír, a megadott tónus RGB-ben értendő
+        kep = np.full((160, 320, 3), tuple(reversed(szin)), dtype=np.uint8)
+        assert cv2.imwrite(
+            str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+        ), nev
+
+
+@pytest.fixture
+def qml_app_szines_belyegkep(qt_app, tmp_path):
+    """Teljes app a VALÓDI bélyegkép-szolgáltatóval, SZÍNES próbaképekkel.
+
+    A `qml_app_valodi_belyegkep` két képe szürke; a #1657 két módja közül a
+    fekete-fehér azon nem mérhető. Minden más ugyanaz.
+    """
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_szines_proba_kepek,
+        belyegkep_meret=256,
+        valodi_belyegkep=True,
+    )
+
+
 @pytest.fixture
 def qml_app_valodi_belyegkep(qt_app, tmp_path):
     """Teljes app a VALÓDI bélyegkép-szolgáltatóval és próbaképekkel (#1596).

@@ -312,11 +312,14 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "mac", "sepia", "bw", "",
-         "ismeretlen"],
+        ["auto", "normal", "dither16", "rdesk", "mac", "", "ismeretlen"],
     )
     def test_a_tobbi_mod_meg_atenged(self, mode):
-        """A `dither16`/`rdesk`/`mac`/`sepia`/`bw` külön jegyeké."""
+        """A `dither16`/`rdesk`/`mac` külön jegyeké.
+
+        A `sepia` és a `bw` a #1657 óta KIKERÜLT innen — a
+        képpont-szabályukat a `test_display_modes_szepia_bw_1657.py` őrzi.
+        """
         forras = _raszter((255, 255, 255), (0, 0, 0), (128, 64, 32))
         assert np.array_equal(apply_display_mode(forras, mode), forras)
         assert display_mode_changes_pixels(mode) is False

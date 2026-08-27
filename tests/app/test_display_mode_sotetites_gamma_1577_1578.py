@@ -145,8 +145,9 @@ class TestMegjelenitettKep:
             "valahol beleégett egy gyorsítótárba"
         )
 
+    #: A `sepia`/`bw` a #1657 óta NEM tartozik ide — képpontot mozdít.
     @pytest.mark.parametrize("mode", ["auto", "normal", "dither16", "rdesk",
-                                      "mac", "sepia", "bw"])
+                                      "mac"])
     def test_a_tobbi_mod_erintetlenul_hagy(self, szolgaltato, mode):
         eredeti = _keres(szolgaltato)
         szolgaltato.set_display_mode(mode)
