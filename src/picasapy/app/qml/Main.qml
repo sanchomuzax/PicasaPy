@@ -775,10 +775,17 @@ ApplicationWindow {
         // beillesztés pedig a meglévő, ÜTKÖZÉS-KEZELT kötegen
         // (`FileOpsDialogs.startBatch`) — így egy azonos nevű fájl a
         // célmappában nem veszhet el.
-        canPasteFiles: fileOpsController
-            ? fileOpsController.hasClipboardFiles : false
-        canPasteText: fileOpsController
-            ? fileOpsController.hasClipboardText : false
+        // ⚠️ A `!== undefined` őr NEM felesleges: a `fileOpsController` több
+        // QML-próbában stub, amelyen ez a tulajdonság nincs meg — ilyenkor a
+        // kifejezés `undefined`-ot adna, és a QML `Unable to assign
+        // [undefined] to bool` szkripthibát dob, amire a #1260 őre a
+        // fixture-életciklusban bukik (mérve: 8 CI-darab, 9 független fájl).
+        canPasteFiles: (fileOpsController
+            && fileOpsController.hasClipboardFiles !== undefined)
+            ? fileOpsController.hasClipboardFiles === true : false
+        canPasteText: (fileOpsController
+            && fileOpsController.hasClipboardText !== undefined)
+            ? fileOpsController.hasClipboardText === true : false
         onCutRequested: fileOpsController.cutToClipboard(window.selectedPaths())
         onCopyRequested: fileOpsController.copyToClipboard(window.selectedPaths())
         onPasteRequested: fileOpsDialogs.pasteFromClipboard()
@@ -950,7 +957,8 @@ ApplicationWindow {
         // #1526: az „Automatikus kitöltés" (szövegmező-helyimenü) kapcsolja
         visible: suggestions.length > 0 && toolbar.searchText.length > 0
                  && !window.viewerOpen && window.libraryFrameVisible
-                 && (controller ? controller.autoComplete : true)
+                 && ((controller && controller.autoComplete !== undefined)
+                     ? controller.autoComplete === true : true)
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
                 toolbar.clearSearch()
