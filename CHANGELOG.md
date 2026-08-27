@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Gyorsabb indulás nagy gyűjteménynél (#1601).** A tulajdonos azt
+  jelentette, hogy a program „egyre lassabban" indul. Megmértük: az
+  induláskor a bal hasáb két listája — az **Emberek** és a **Projektek** —
+  végigolvasta a könyvtár **összes** `.picasa.ini` fájlját, egymástól
+  függetlenül, tehát mindent kétszer, ráadásul a felület szálán. Ez a
+  munka a mappák számával nőtt (5 000 mappánál 5,3 másodperc, az összes
+  induláskori munka 94%-a), és a mappák száma soha nem csökken — innen
+  jött az „egyre lassabb". Mostantól a két lista **egyetlen** olvasásból
+  áll elő, és az olvasás a **háttérben** fut: az ablak nem áll meg tőle.
+  Mérve, 1 000 mappás gyűjteményen: a betöltésre várakozás 751 → 343 ms.
+  A két lista tartalma változatlan, csak egy pillanattal később jelenik
+  meg — ugyanúgy, ahogy egy frissen felvett mappánál is.
+
+### Hozzáadva
+- **Indulási időmérés a hibakereséshez (#1601).** A
+  `PICASAPY_STARTUP_TIMELINE=1` beállítással a program indulás után egy
+  egyszerű, **átküldhető szöveges kimutatást** ír arról, melyik lépés
+  mennyi ideig tartott. Alapból ki van kapcsolva, és kikapcsolva nem
+  kerül semmibe. A kimutatás nem tartalmaz fájlneveket és útvonalakat.
+
 ## [0.8.122] – 2026-08-27
 
 ### Hozzáadva
