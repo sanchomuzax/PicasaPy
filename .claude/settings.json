@@ -53,6 +53,15 @@
             "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/jegycim_or.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/basetemp_kapu.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

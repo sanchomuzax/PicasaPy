@@ -96,6 +96,32 @@ az azt jelentené, hogy egy elvetett döntés visszatért a kódba.
 python scripts/check_decision_links.py      # ugyanaz, amit a CI futtat
 ```
 
+### A tesztfuttatás kapuja — hook, nem ajánlás
+
+A `scripts/hooks/basetemp_kapu.py` **blokkolja** a csupasz pytest-hívást
+közös `--basetemp` nélkül. Használd a projekt futtatóját:
+
+```sh
+python scripts/run_tests.py
+```
+
+Ha tényleg fájlonként futtatsz, adj közös basetempet:
+
+```sh
+BT="$SCRATCH/bt"; mkdir -p "$BT"
+python3 -m pytest <fájl> -q --basetemp="$BT"
+```
+
+**Miért kapu, és nem szabály a dokumentációban:** a szabály eddig is le volt
+írva, és 2026-08-15-én mégis megsérült — öt párhuzamos kör **5,8 GB**-ot
+hagyott a tmpfs-en, mert a pytest a „tartsd meg az utolsó hármat" takarítást
+basetemp-enként végzi. A kár nem a vétkes körnél jelentkezik, hanem a
+**párhuzamosan futó** munkameneteknél, némán.
+
+A `--help`, `--version` és `--collect-only` alakok átmennek (nem hoznak létre
+ideiglenes könyvtárat), és a parancs szövegében előforduló puszta említés
+(`grep`) sem blokkol.
+
 **Ha a megvalósítás átkerül máshova, a `## Kötés`-t is vezesd át** —
 az elárvult hivatkozás rosszabb a semminél, mert hamis biztonságérzetet ad.
 
