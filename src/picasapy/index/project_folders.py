@@ -18,11 +18,12 @@ mert az a mappa fotóit számolja, nem az ini sorait.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
 
-from picasapy.ini import is_projects_category, load_document, read_folder_category
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.ini import IniDocument, is_projects_category, read_folder_category
+
+from .folder_ini import sweep_folder_inis
 
 
 @dataclass(frozen=True)
@@ -34,30 +35,53 @@ class ProjectFolder:
     photo_count: int
 
 
+class ProjectFolderCollector:
+    """#1601: a `sweep_folder_inis` fogyasztója a Projektek gyűjteményhez.
+
+    Csak az ÚTVONALAKAT gyűjti — a darabszám az indexből jön, egyetlen
+    `GROUP BY`-jal (`_photo_counts`), nem ini-nként. Külön osztály, mert a
+    söprést megosztjuk az Emberek gyűjteménnyel (`index/side_pane.py`)."""
+
+    def __init__(self) -> None:
+        self.paths: list[str] = []
+
+    def __call__(self, folder_path: str, document: IniDocument) -> None:
+        if is_projects_category(read_folder_category(document)):
+            self.paths.append(folder_path)
+
+
+def project_folders_from_paths(
+    conn: sqlite3.Connection, paths: Iterable[str]
+) -> tuple[ProjectFolder, ...]:
+    """A begyűjtött projekt-útvonalakból a hasáb sorai, névre rendezve.
+
+    Az ini-olvasás itt már megtörtént (`ProjectFolderCollector`); ez a
+    függvény csak az index-beli darabszámot teszi mellé."""
+    counts = _photo_counts(conn)
+    folders = [
+        ProjectFolder(
+            path=path,
+            name=_display_name(path),
+            photo_count=counts.get(path, 0),
+        )
+        for path in paths
+    ]
+    return tuple(sorted(folders, key=lambda folder: folder.name.casefold()))
+
+
 def project_folders(conn: sqlite3.Connection) -> tuple[ProjectFolder, ...]:
     """A Projektek gyűjtemény mappái — NÉV szerint rendezve (kis-nagybetű-
     tűrően), a hasáb többi gyűjteményének mintájára.
 
     Olvashatatlan vagy időközben eltűnt ini-t csendben kihagy: a könyvtár
-    másik folyamat általi éppen-írása ne omlassza össze a listát."""
-    counts = _photo_counts(conn)
-    folders = []
-    for row in conn.execute("SELECT path FROM folders WHERE has_ini = 1"):
-        folder_path = row["path"]
-        try:
-            document = load_document(Path(folder_path) / PICASA_INI_NAME)
-        except (OSError, ValueError):
-            continue
-        if not is_projects_category(read_folder_category(document)):
-            continue
-        folders.append(
-            ProjectFolder(
-                path=folder_path,
-                name=_display_name(folder_path),
-                photo_count=counts.get(folder_path, 0),
-            )
-        )
-    return tuple(sorted(folders, key=lambda folder: folder.name.casefold()))
+    másik folyamat általi éppen-írása ne omlassza össze a listát.
+
+    #1601: aki az Emberek gyűjteményt IS betölti, ne ezt hívja, hanem a
+    `index/side_pane.load_side_pane_collections`-t — az egyetlen söpréssel
+    állítja elő mindkettőt."""
+    collector = ProjectFolderCollector()
+    sweep_folder_inis(conn, (collector,))
+    return project_folders_from_paths(conn, collector.paths)
 
 
 def _photo_counts(conn: sqlite3.Connection) -> dict[str, int]:
