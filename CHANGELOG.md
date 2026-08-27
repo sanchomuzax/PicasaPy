@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.116] – 2026-08-27
 
 ### Hozzáadva
 - **Működik a Szerkesztés menü Kivágás / Másolás / Beillesztés parancsa
