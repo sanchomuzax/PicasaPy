@@ -109,7 +109,7 @@ ott a felhasználó mozgatja a saját adatbázisát, itt a program **magától
 | hibanapló felajánlása | ✅ (#449) | ✅ `_offer_error_log` (`:323`) |
 | **környezet-előfeltétel** | 800×600/16 bit + MMX, saját üzenettel | ❌ nincs |
 | **indítási kapuk** | `Picasa2Installing`, `Picasa2NoLaunch` | ❌ nincs |
-| **nyomkövetési kapcsoló** | `UseTraceFile` → `picasatrace.txt` | ✅ **van, 2026-08-27 óta**: a #1601 indulási idővonala (`perf/startup_timeline.py`, `start_startup_timeline`), alapból kikapcsolva — ugyanaz a minta |
+| **nyomkövetési kapcsoló** | `UseTraceFile` → `picasatrace.txt` | ✅ **van, 2026-08-27 óta**: a #1601 indulási idővonala (`perf/startup_timeline.py`, `start_startup_timeline`), alapból kikapcsolva — ugyanaz a minta. A #1654 óta a kapcsoló TARTÓS is (`Súgó ▸ Tesztüzem`, `QSettings` `diagnostics/tesztuzem`, `--tesztuzem`), tehát az eredetihez hasonlóan a KÖVETKEZŐ indulás naplózható — ez az eredeti `UseTraceFile` registry-kapcsolójának pontos megfelelője |
 | **korábbi telepítés átvétele** | Windows.old, két alak | ❌ nincs |
 | frissítés-ellenőrzés | `LastUpdateCheck` | ❌ nincs (nem is kell — nem frissítünk így) |
 

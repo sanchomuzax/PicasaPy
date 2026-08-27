@@ -34,6 +34,15 @@ from PySide6.QtQuickControls2 import QQuickStyle
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.index.sync import sync_folder
 from picasapy.perf import default_log_dir, start_startup_timeline
+from picasapy.perf.logwriter import session_header
+from picasapy.perf.tesztuzem import (
+    argv_kapcsolo_nelkul,
+    argv_tesztuzem,
+    irj_indulasi_naplot,
+    konyvtar_merete,
+    naplo_szovege,
+    tesztuzem_bekapcsolva,
+)
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
@@ -635,13 +644,42 @@ def _install_translator(
     return None
 
 
-def _jelentsd_az_idovonalat(timeline) -> None:
-    """#1601: az indulási idővonal kiírása — kikapcsolva NEM CSINÁL SEMMIT.
+def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
+    """A mappánkénti képdarabszámok az indexből — CSAK SZÁMOK.
+
+    ⚠️ Adatvédelem (#211/#1654): a mappanevek és útvonalak itt SZÁNDÉKOSAN
+    eldobódnak, még mielőtt a naplóösszeállítóhoz érnének. A #1653 fő
+    gyanúja a méretfüggés, ahhoz pedig a darabszám elég.
+
+    Hibánál üres sorozat: egy diagnosztika nem dönthet el egy indulást."""
+    try:
+        with open_index(data_dir / "index.db") as conn:
+            return tuple(
+                int(count) for _name, _path, count, *_rest in sorted_folder_rows(conn)
+            )
+    except sqlite3.DatabaseError:
+        logging.getLogger(__name__).warning(
+            "a könyvtárméret leolvasása hibára futott", exc_info=True
+        )
+        return ()
+
+
+def _jelentsd_az_idovonalat(timeline, kepszamok=None) -> None:
+    """#1601/#1654: az indulási napló kiírása — kikapcsolva NEM CSINÁL SEMMIT.
 
     Két helyre megy, mert két különböző igényt szolgál ki: a `stderr`-re a
     fejlesztő/terminálból indító lát azonnal, a fájlt pedig a felhasználó
-    tudja **átküldeni** (az útvonalát ezért kiírjuk). A jelentés nem
-    tartalmaz fájlnevet és teljes útvonalat, ld. `perf/startup_timeline.py`.
+    tudja **átküldeni** (`Súgó ▸ Napló elküldése`, #1654) — az útvonalát
+    ezért kiírjuk.
+
+    A napló három rétegből áll (#1654/3): a `perf/logwriter.py`
+    session-fejléce, a #1601 szakaszos bontása, és a könyvtár mérete
+    darabszámban. A `kepszamok` egy KÉSLELTETETT hívható (a mappánkénti
+    képdarabszámokat adja) — kikapcsolt mérésnél meg sem hívjuk, tehát az
+    indexlekérdezés költsége sem merül fel.
+
+    A jelentés nem tartalmaz fájlnevet, teljes útvonalat és
+    felhasználónevet, ld. `perf/tesztuzem.py` (`utvonalmentes`).
 
     Hibája soha nem akadályozhatja az indulást — egy diagnosztika nem
     fontosabb a programnál."""
@@ -650,19 +688,58 @@ def _jelentsd_az_idovonalat(timeline) -> None:
     try:
         from PySide6.QtCore import qVersion
 
-        report = timeline.render(
-            app_version=version_string(), qt_version=qVersion()
+        szoveg = naplo_szovege(
+            idovonal_jelentes=timeline.render(
+                app_version=version_string(), qt_version=qVersion()
+            ),
+            fejlec=session_header(version_string(), qVersion() or ""),
+            meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
         )
-        print(report, file=sys.stderr)
-        target = timeline.write(
-            default_log_dir(), app_version=version_string(), qt_version=qVersion()
-        )
+        print(szoveg, file=sys.stderr)
+        target = irj_indulasi_naplot(szoveg, default_log_dir())
         if target is not None:
-            print(f"Az indulási idővonal ide került: {target}", file=sys.stderr)
+            print(f"Az indulási napló ide került: {target}", file=sys.stderr)
     except Exception:  # noqa: BLE001 - a diagnosztika sosem viheti el az appot
         logging.getLogger(__name__).warning(
             "az indulási idővonal kiírása hibára futott", exc_info=True
         )
+
+
+def _indulasi_idovonal(
+    argv: list[str],
+    *,
+    settings=None,
+    environ: Mapping[str, str] | None = None,
+    entry_at: float | None = None,
+    clock=time.perf_counter,
+) -> tuple[object, list[str]]:
+    """A `run()` LEGELSŐ érdemi lépése: mérünk-e, és mivel indulunk (#1654).
+
+    Három, egyenrangú bekapcsolási út van — bármelyik elég:
+
+    * a **tartós tesztüzem** (`QSettings`), amit a `Súgó ▸ Tesztüzem`
+      menüpont állít, és ami TÚLÉLI a kilépést. Ez az a bejárat, amit a
+      tulajdonos használ: bekapcsolja, kilép, és a KÖVETKEZŐ indulás
+      magától méri magát;
+    * a `--tesztuzem` **parancssori kapcsoló** — csak erre a futásra, a
+      beállítást nem írja át (fejlesztői és CI-oldal);
+    * a `PICASAPY_STARTUP_TIMELINE=1` **környezeti változó** (#1601), amire
+      a #1653 windowsos CI-mérése épül.
+
+    A visszaadott argumentumlistából a `--tesztuzem` kikerül: az
+    `_resolve_roots` MINDEN `argv[1:]` elemet figyelt gyökérnek vesz, tehát
+    bennhagyva egy `--tesztuzem` nevű mappát próbálnánk indexelni.
+
+    ⚠️ Az `entry_at` szakaszát ITT zárjuk le, közvetlenül a példány
+    létrehozása után: a naplózás így az ELSŐ ezredmásodperctől — a Python-
+    és PySide6-importoktól — fut, nem csak innentől."""
+    if settings is None:
+        settings = QSettings("PicasaPy", "PicasaPy")
+    tesztuzem = argv_tesztuzem(argv) or tesztuzem_bekapcsolva(settings)
+    timeline = start_startup_timeline(environ, forced=tesztuzem, clock=clock)
+    if entry_at is not None:
+        timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
+    return timeline, argv_kapcsolo_nelkul(argv)
 
 
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
@@ -673,11 +750,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     maga a Python- és PySide6-import, mielőtt idáig eljutnánk. `None`
     esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
 
-    Az idővonal alapból KI van kapcsolva; a `PICASAPY_STARTUP_TIMELINE=1`
-    környezeti változó kapcsolja be (ld. `perf/startup_timeline.py`)."""
-    timeline = start_startup_timeline()
-    if entry_at is not None:
-        timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
+    Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
+    (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
+    környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
+    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
 
     # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
     # Fusion stílus + explicit világos paletta; Linuxon/macOS-en a saját,
@@ -1060,7 +1136,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 startup_status, controller, storage_bootstrap.migration_notice
             )
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
-        _jelentsd_az_idovonalat(timeline)
+        _jelentsd_az_idovonalat(timeline, lambda: _indexelt_kepszamok(data_dir))
         QTimer.singleShot(
             _remaining_splash_ms(elapsed_ms), startup_status.finish
         )
