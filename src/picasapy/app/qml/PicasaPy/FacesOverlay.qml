@@ -385,7 +385,11 @@ Item {
         Column {
             id: suggestionsColumn
             objectName: "faceNameSuggestions"
+            // #1526: az „Automatikus kitöltés" (szövegmező-helyimenü) is
+            // kapcsolja — kikapcsolva egyetlen javaslat-lista sem nyílik
             visible: matches.length > 0
+                     && ((typeof controller !== "undefined" && controller)
+                         ? controller.autoComplete : true)
             // #402: a nameField a Row gyereke, nem testvér — a horgony a
             // testvér nameRow-ra kell mutasson (QML-anchor-szabály)
             anchors.top: nameRow.bottom

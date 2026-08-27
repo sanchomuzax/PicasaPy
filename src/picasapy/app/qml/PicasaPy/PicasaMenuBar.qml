@@ -132,6 +132,20 @@ MenuBar {
     property bool hasAllEffectsClipboard: false
     signal copyAllEffectsRequested()
     signal pasteAllEffectsRequested()
+    // #1526: a vágólap-család. A Kivágás/Másolás a kijelölt képek FÁJLJAIT
+    // teszi a vágólapra (a Kivágás „mozgatás" jelzéssel), a Beillesztés az
+    // AKTUÁLIS MAPPÁBA hoz be fájlokat — akár egy fájlkezelőből is. A
+    // `canPasteFiles`/`canPasteText` a `fileOpsController` vágólap-
+    // állapotához van kötve (Main.qml), ezért a kívülről érkező másolás is
+    // felébreszti a menüpontot.
+    property bool canPasteFiles: false
+    property bool canPasteText: false
+    signal cutRequested()
+    signal copyRequested()
+    signal pasteRequested()
+    // a SZÖVEG (felirat) vágólapja — külön család, ld. a menü tételeit
+    signal copyTextRequested()
+    signal pasteTextRequested()
     // #1475: a KÉT kötegelt visszavonás vezérlője. Az eredetiben a
     // Szerkesztés menü ÉLÉN áll a visszavonás (`eMenuEdit::ID_UNDO`, ld.
     // `docs/specs/picasa-hu-terminology.md`), és a felirat megnevezi a
@@ -332,14 +346,31 @@ MenuBar {
             onTriggered: bar.undoBatchEditRequested()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): a szabvány vágólap-műveletek
-        PicasaMenuItem {
+        // #1526: ÉLŐ tételek. Az eredeti a Másolás/Kivágás alatt FÁJLOKAT
+        // tesz a vágólapra (nyolc shell-formátumot regisztrál indításkor),
+        // és a kettő különbségét a `Preferred DropEffect` hordozza —
+        // Linuxon a `text/uri-list` + `x-special/gnome-copied-files` páros
+        // adja vissza ugyanezt (ld. `picasapy.fileops.clipboard`).
+        MenuItem {
             objectName: "menuEditCut"
-            text: qsTr("Cut") + "\tCtrl+X"
-            placeholder: true
+            text: qsTr("Cu&t") + "\tCtrl+X"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.cutRequested()
         }
-        PicasaMenuItem { text: qsTr("Copy") + "\tCtrl+C"; placeholder: true }
-        PicasaMenuItem { text: qsTr("Paste") + "\tCtrl+V"; placeholder: true }
+        MenuItem {
+            objectName: "menuEditCopy"
+            text: qsTr("&Copy") + "\tCtrl+C"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.copyRequested()
+        }
+        MenuItem {
+            objectName: "menuEditPaste"
+            text: qsTr("&Paste") + "\tCtrl+V"
+            // kijelöléstől FÜGGETLEN: a beillesztés a MAPPÁBA tesz, nem a
+            // kijelölésre hat — a feltétel az, hogy legyen mit beilleszteni
+            enabled: bar.canPasteFiles
+            onTriggered: bar.pasteRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuEditCopyEffects"
@@ -354,9 +385,22 @@ MenuBar {
             onTriggered: bar.pasteAllEffectsRequested()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): feliratszöveg vágólap-műveletei
-        PicasaMenuItem { text: qsTr("Copy Text"); placeholder: true }
-        PicasaMenuItem { text: qsTr("Paste Text"); placeholder: true }
+        // #1526: ÉLŐ tételek — a FELIRATRA hatnak, nem a fájlra. A
+        // „Szöveg másolása" az aktuális kép feliratát teszi a vágólapra
+        // (sima szövegként), a „Szöveg beillesztése" a vágólap szövegét
+        // írja a TELJES kijelölés feliratába.
+        MenuItem {
+            objectName: "menuEditCopyText"
+            text: qsTr("Copy Text")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.copyTextRequested()
+        }
+        MenuItem {
+            objectName: "menuEditPasteText"
+            text: qsTr("Paste Text")
+            enabled: bar.photoActionsEnabled && bar.canPasteText
+            onTriggered: bar.pasteTextRequested()
+        }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Select All") + "\tCtrl+A"

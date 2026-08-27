@@ -96,16 +96,22 @@ class TestMenuItems:
         for name in ("textMenuCut", "textMenuCopy", "textMenuDelete"):
             assert menu.findChild(QObject, name).property("enabled") is True, name
 
-    def test_auto_complete_is_a_marked_placeholder(self, qml_engine, qt_app):
-        """Nincs mögötte réteg — helyőrzőként jelenik meg (#416), nem néma
-        no-opként."""
+    def test_auto_complete_is_a_real_toggle(self, qml_engine, qt_app):
+        """#1526: a tétel ÉLŐ kapcsoló lett (a `controller.autoComplete`
+        perzisztens beállítására kötve) — a #422-es helyfoglaló megszűnt.
+
+        Itt, `controller` nélkül betöltve a tétel szándékosan tiltott: a
+        menü önmagában is betölthető kell legyen (`typeof`-őr), de kapcsolni
+        csak a valódi alkalmazásban lehet — azt a
+        `test_automatikus_kitoltes_1526.py` méri, a teljes appon."""
         root = _load(qml_engine, self._MENU)
         qt_app.processEvents()
         item = root.findChild(QObject, "menu").findChild(
             QObject, "textMenuAutoComplete"
         )
-        assert item.property("placeholder") is True
-        assert item.property("enabled") is False
+        assert not item.property("placeholder")
+        assert item.property("checkable") is True
+        assert item.property("enabled") is False  # nincs controller
 
 
 class TestEveryTextFieldHasTheMenu:

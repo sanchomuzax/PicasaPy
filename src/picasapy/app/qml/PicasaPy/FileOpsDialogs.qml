@@ -50,6 +50,33 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
+    // #1526: Szerkesztés ▸ Beillesztés — a vágólapon lévő fájlok az
+    // AKTUÁLIS mappába. SZÁNDÉKOSAN a `startBatch`-en megy, nem külön úton:
+    //
+    //  * névütközésnél a meglévő „Átnevezés / Kihagyás" párbeszéd nyílik,
+    //    tehát meglévő fájl SOHA nem íródik felül némán;
+    //  * a beérkezett fájl a `photoCopied`/`photoMoved` jelzésen keresztül
+    //    célzott újraolvasást kap (#1522/#1539), tehát azonnal látszik.
+    //
+    // Kivágás után a vágólapot ürítjük: a mozgatás egyszer hajtható végre,
+    // a fájl a második beillesztéskor már nem lenne a forráson.
+    function pasteFromClipboard() {
+        var dest = controller ? controller.currentFolder : ""
+        if (dest.length === 0) return
+        var paths = fileOpsController.clipboardPaths()
+        var move = fileOpsController.clipboardEffect() === "cut"
+        if (move) {
+            // ugyanabba a mappába „mozgatni" értelmetlen — a fájl nem
+            // kaphatna `-1` utótagot csak azért, mert saját magával ütközik
+            paths = paths.filter(function(p) {
+                return p.substring(0, p.lastIndexOf("/")) !== dest
+            })
+        }
+        if (paths.length === 0) return
+        dialogs.startBatch(move ? "move" : "copy", paths, dest)
+        if (move) fileOpsController.clearClipboard()
+    }
+
     // #9 (2. lépés): új album neve — a rows a kijelölés sorindexei, amelyek
     // a controller.createAlbum(name, rows) hívásba kerülnek elfogadáskor
     function openNewAlbum(rows) {

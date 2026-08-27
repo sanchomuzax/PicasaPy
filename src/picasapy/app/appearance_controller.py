@@ -16,6 +16,7 @@ from __future__ import annotations
 from PySide6.QtCore import Property, Signal, Slot
 
 from .folder_photo_sort_controller import FolderPhotoSortMixin
+from .text_input_controller import TextInputMixin
 
 # A QSettings-kulcs — a `view/` névtér a többi nézet-beállításé is
 # (folderSort, thumbCaption, showHidden).
@@ -35,13 +36,16 @@ def coerce_dark_flag(value) -> bool:
     return False
 
 
-class AppearanceMixin(FolderPhotoSortMixin):
+class AppearanceMixin(FolderPhotoSortMixin, TextInputMixin):
     """`darkTheme` kapcsoló — perzisztens, jelzéssel a QML-kötéseknek.
 
     #1436: a mappán belüli képsorrend szelete (`FolderPhotoSortMixin`) is
     innen kapcsolódik az `AppController`-hez — mindkettő `view/` névtérbeli,
     perzisztens nézet-beállítás, és az `AppController` bázislistája a forró
     `controller.py`-ban él (a `CollageMixin` ugyanígy hozza a szeleteit).
+
+    #1526: ugyanezen az úton jön az „Automatikus kitöltés" kapcsoló
+    (`TextInputMixin`) — szintén `view/` névtérbeli, perzisztens beállítás.
     """
 
     darkThemeChanged = Signal()
@@ -51,6 +55,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
         __init__-et — ez a repó konvenciója, ld. PerfMonitorMixin)."""
         self._dark_theme = coerce_dark_flag(self._get_settings().value(DARK_THEME_KEY))
         self._init_folder_photo_sort()  # #1436
+        self._init_text_input()  # #1526
 
     @Property(bool, notify=darkThemeChanged)
     def darkTheme(self) -> bool:

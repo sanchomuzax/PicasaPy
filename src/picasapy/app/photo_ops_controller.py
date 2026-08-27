@@ -58,29 +58,26 @@ from picasapy.index import (
     search_photos,
     update_photo_fields,
 )
-from picasapy.ini import (
-    FilterWriteError,
-    IniConflictError,
-    IniSaveError,
-    update_document,
-)
+from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.albums import ensure_album, with_album, without_album
-from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 
+from .caption_ops_controller import WRITE_ERRORS, CaptionOpsMixin, write_caption
 from .worker_thread import BackgroundWorkerMixin
 
-# #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
-# felhasználó a megszokott hibacsatornán kap jelzést, nem néma adatvesztés.
-# #643: a round-trip őr visszautasítása (`FilterWriteError`) ugyanígy KEZELT
-# hiba — a szövege már magyar, felhasználónak szóló mondat (ld.
-# `ini/filter_guard.py`), tehát a hibasávban olvashatóan jelenik meg. Nélküle
-# nyers Python-kivételként bukna ki a háttérszálon: néma bukás a felületen.
-_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError, FilterWriteError)
+# #137/#643: a kezelt írási hibák — a lista a `caption_ops_controller`-ben
+# él (ez a modul annak a leszármazottja), hogy az egyes és a KÖTEGELT
+# feliratírás ugyanazt a halmazt kezelje. A régi név megmarad, mert a modul
+# több tucat helyen hivatkozik rá.
+_WRITE_ERRORS = WRITE_ERRORS
 
 
-class PhotoOpsMixin(BackgroundWorkerMixin):
-    """Csillag, felirat, forgatás és elrejtés — egyesével és kötegelten."""
+class PhotoOpsMixin(CaptionOpsMixin, BackgroundWorkerMixin):
+    """Csillag, felirat, forgatás és elrejtés — egyesével és kötegelten.
+
+    #1526: a KÖTEGELT feliratírás (`setCaptionMany`) a `CaptionOpsMixin`-ben
+    él — az egyes és a többes út ugyanazon a `write_caption()` magon fut.
+    """
 
     # #141: a háttérszálas ini-írás/index-UPDATE eredménye — a rács-sor
     # frissítését a GUI-szálra tereli (Qt automatikusan sorba állítja a
@@ -312,23 +309,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not 0 <= row < len(photos):
             return
         photo = photos[row]
-        text = text.strip()
-        is_jpeg = photo.name.lower().endswith((".jpg", ".jpeg"))
 
         def perform() -> dict:
-            if is_jpeg:
-                path = Path(photo.folder_path) / photo.name
-                if write_iptc_caption(path, text):
-                    return {"caption_file": text or None}
-            ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-
-            def mutate(document):
-                if text:
-                    return document.with_value(photo.name, "caption", text)
-                return document.with_removed(photo.name, "caption")
-
-            update_document(ini_path, mutate, backup=True)
-            return {"caption_ini": text or None}
+            # #1526: KÖZÖS mag a kötegelt úttal (`setCaptionMany`) — az
+            # IPTC/ini döntés és az üres-szöveg-törlés egy helyen él
+            return write_caption(photo.folder_path, photo.name, text)
 
         self._run_photo_write(
             photo.id,

@@ -770,6 +770,24 @@ ApplicationWindow {
         hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
         onCopyAllEffectsRequested: controller.copyAllEffects(window.selectedRows())
         onPasteAllEffectsRequested: controller.pasteAllEffects(window.selectedRows())
+        // #1526: a vágólap-család. A fájlos ág a `fileOpsController`-en megy
+        // (az birtokolja a vágólap-varratot és a fájlműveleteket), a
+        // beillesztés pedig a meglévő, ÜTKÖZÉS-KEZELT kötegen
+        // (`FileOpsDialogs.startBatch`) — így egy azonos nevű fájl a
+        // célmappában nem veszhet el.
+        canPasteFiles: fileOpsController
+            ? fileOpsController.hasClipboardFiles : false
+        canPasteText: fileOpsController
+            ? fileOpsController.hasClipboardText : false
+        onCutRequested: fileOpsController.cutToClipboard(window.selectedPaths())
+        onCopyRequested: fileOpsController.copyToClipboard(window.selectedPaths())
+        onPasteRequested: fileOpsDialogs.pasteFromClipboard()
+        // a SZÖVEG (felirat) ága: a másolás az AKTUÁLIS kép feliratát adja,
+        // a beillesztés a TELJES kijelölésre ír (a pasteAllEffects mintája)
+        onCopyTextRequested: fileOpsController.setClipboardText(
+            controller.photos.captionAt(window.selectedIndex))
+        onPasteTextRequested: controller.setCaptionMany(
+            window.selectedRows(), fileOpsController.clipboardText())
         // #1475: a két kötegelt visszavonás — a Szerkesztés menü élén álló
         // tételek. Kijelölés-független: a köteg a SAJÁT, művelet idején
         // rögzített képlistáját állítja vissza.
@@ -929,8 +947,10 @@ ApplicationWindow {
         // #1026: a keresődoboz a könyvtár keretének része, tehát a buborék
         // sem úszhat rá a projekt-lapra (a beírt szöveg megmarad, ezért a
         // hosszra kötött feltétel önmagában igazat adna)
+        // #1526: az „Automatikus kitöltés" (szövegmező-helyimenü) kapcsolja
         visible: suggestions.length > 0 && toolbar.searchText.length > 0
                  && !window.viewerOpen && window.libraryFrameVisible
+                 && (controller ? controller.autoComplete : true)
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
                 toolbar.clearSearch()

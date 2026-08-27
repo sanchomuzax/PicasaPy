@@ -4654,18 +4654,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139"/>
-        <source>Cut</source>
-        <translation>Kivágás</translation>
+        <source>Cu&amp;t</source>
+        <translation>&amp;Kivágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140"/>
-        <source>Copy</source>
-        <translation>Másolás</translation>
+        <source>&amp;Copy</source>
+        <translation>&amp;Másolás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141"/>
-        <source>Paste</source>
-        <translation>Beillesztés</translation>
+        <source>&amp;Paste</source>
+        <translation>&amp;Beillesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157"/>
@@ -5837,37 +5837,37 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Auto-Complete</source>
-        <translation>Automatikus kitöltés</translation>
+        <translation>&amp;Automatikus kitöltés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Copy</source>
-        <translation>Másolás</translation>
+        <translation>&amp;Másolás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Cut</source>
-        <translation>Kivágás</translation>
+        <translation>&amp;Kivágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Delete</source>
-        <translation>Törlés</translation>
+        <translation>&amp;Törlés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Paste</source>
-        <translation>Beillesztés</translation>
+        <translation>&amp;Beillesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Select All</source>
-        <translation>Az összes kijelölése</translation>
+        <translation>Az ö&amp;sszes kijelölése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Undo</source>
-        <translation>Visszavonás</translation>
+        <translation>&amp;Visszavonás</translation>
     </message>
 </context>
 <context>

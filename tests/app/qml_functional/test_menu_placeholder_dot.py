@@ -13,9 +13,11 @@ class TestPlaceholderMenuItemek:
 
     def test_placeholder_pont_lathato(self, qml_app):
         window, _controller, _engine = qml_app
+        # #1526: a `menuEditCut` KIKERÜLT innen — a vágólap-parancsok
+        # bekötésével megszűnt helyfoglalónak lenni (lent, a működő
+        # tételek közt szerepel).
         for name in (
             "menuFileNewAlbum",
-            "menuEditCut",
             "menuViewThumbnailsOnly",
         ):
             item = window.findChild(QObject, name)
@@ -51,6 +53,12 @@ class TestMukodoMenuItemekValtozatlanok:
             "menuFileLocate",
             "menuEditCopyEffects",
             "menuViewDarkTheme",
+            # #1526: az öt vágólap-parancs
+            "menuEditCut",
+            "menuEditCopy",
+            "menuEditPaste",
+            "menuEditCopyText",
+            "menuEditPasteText",
         ):
             item = window.findChild(QObject, name)
             assert item is not None, name

@@ -14,9 +14,11 @@ import QtQuick.Controls
 //    állandó marad, az izommemória működik);
 //  * a csoportosítást elválasztók adják (visszavonás · vágólap · kijelölés).
 //
-// Az „Automatikus kitöltés" a Picasa címsor-kiegészítése; nálunk nincs
-// mögötte réteg, ezért `PicasaMenuItem` helyfoglalóként jelenik meg — így
-// ránézésre is látszik, hogy a helye megvan, de még nem működik (#416).
+// #1526: az „Automatikus kitöltés" ÉLŐ kapcsoló lett. A beállítás a
+// `controller.autoComplete` (perzisztens, `view/autoComplete`), és két
+// VALÓDI javaslat-felületet kapcsol: a keresőmező buborékját (#7) és az
+// arcnév-mező ismert-név listáját (#147). A `typeof`-őr azért kell, mert a
+// menüt önmagában betöltő próbák nem regisztrálnak `controller`-t.
 //
 // Használat: a mezőre tett MouseArea (jobb gomb) hívja a `popupFor(mező)`-t.
 Menu {
@@ -25,6 +27,12 @@ Menu {
 
     //: a mező, amire a menü vonatkozik — a `popupFor()` állítja be
     property var target: null
+
+    // #1526: null-őr (#305 mintája) — a menü önmagában is betölthető
+    readonly property var appCtl:
+        (typeof controller !== "undefined") ? controller : null
+    readonly property bool autoCompleteOn:
+        menu.appCtl ? menu.appCtl.autoComplete : true
 
     readonly property bool hasSelection: menu.target
         && menu.target.selectedText !== undefined
@@ -82,8 +90,14 @@ Menu {
         enabled: menu.target && menu.target.length > 0
         onTriggered: menu.target.selectAll()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "textMenuAutoComplete"
         text: qsTr("Auto-Complete")
+        checkable: true
+        // a pipa a MENTETT beállítást mutatja, tehát az újraindítást is
+        // túléli; a kapcsoló minden mező helyi menüjében ugyanazt állítja
+        checked: menu.autoCompleteOn
+        enabled: menu.appCtl !== null
+        onTriggered: menu.appCtl.setAutoComplete(!menu.autoCompleteOn)
     }
 }

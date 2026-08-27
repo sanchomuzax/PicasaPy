@@ -7,6 +7,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Működik a Szerkesztés menü Kivágás / Másolás / Beillesztés parancsa
+  (#1526).** Eddig mind az öt vágólap-parancs szürke, kattinthatatlan
+  helykitöltő volt. Mostantól a **Másolás** a kijelölt képek *fájljait*
+  teszi a vágólapra, tehát a kép közvetlenül beilleszthető egy
+  fájlkezelőbe vagy egy másik programba; a **Kivágás** ugyanezt teszi, de
+  „áthelyezés" jelöléssel, így a beillesztés a képet *átmozgatja*, nem
+  lemásolja; a **Beillesztés** pedig kívülről — például a Fájlkezelőből —
+  másolt vagy kivágott fájlokat hoz be az éppen nyitott mappába. Ha a
+  célmappában már van azonos nevű fájl, a program ugyanúgy megkérdezi,
+  átnevezze-e vagy kihagyja: meglévő kép soha nem íródik felül.
+- **Szöveg másolása / beillesztése (#1526).** A két menüpont a *feliratra*
+  hat: a másolás az aktuális kép feliratát teszi a vágólapra, a
+  beillesztés a vágólap szövegét írja a teljes kijelölés feliratába.
+- **Kikapcsolható automatikus kitöltés (#1526).** A szövegmezők
+  jobbklikk-menüjének hetedik tétele — „Automatikus kitöltés" — eddig
+  szürke volt; mostantól valódi kapcsoló, és kikapcsolva sem a keresőmező,
+  sem az arcnév-mező javaslatlistája nem nyílik le. A beállítás megmarad a
+  következő indításig.
+- A vágólap-parancsok és a szövegmezők helyi menüje mostantól a **hivatalos
+  magyar Picasa-feliratokkal**, gyorsbillentyű-jelöléssel jelennek meg
+  (#1526).
+
 ### Javítva
 - **Az újravágás többé nem törli a korábbi vágásokat (#1553).** Ha egy képet
   még a windowsos Picasában vágtak meg többször, a vágó-eszköz **Alkalmaz**
