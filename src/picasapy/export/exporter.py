@@ -19,13 +19,14 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageDraw, UnidentifiedImageError
 
 from picasapy.cvimage import read_image_bytes, scale_down
 from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
+from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -487,29 +488,85 @@ def _is_noop_copy(
     )
 
 
+# #1603: a vízjel geometriai szabályai a `0x0045c4b0` dekompilálásából
+# (955 bájt; hívja: `CPreparedDBImage` a `0x007948c0`-n, a `0x0045c430`-on
+# át). Az állítás, hogy ezek a paraméterek „nem rekonstruálhatók" — MEGDŐLT.
+#: 32 képpontnál ALACSONYABB MAGASSÁGÚ (nem a szélesség — ld. `cmp ecx,
+#: 0x20` az `[esi+0xc]` = magasság mezőn) képre nem kerül vízjel; az
+#: eredeti ilyenkor a 4-es hibakóddal tér vissza.
+_WATERMARK_MIN_HEIGHT = 32
+#: A betűméret alsó korlátja (`mov ebx, 0xc`), hogy nagyon kis képen se
+#: legyen a felirat olvashatatlanul apró.
+_WATERMARK_MIN_FONT_SIZE = 12
+#: A betűméretet a kép HOSSZABB oldalából adja, egész osztással
+#: (`0x51eb851f`-es szorzó + `shr edx, 4` ≡ osztás 50-nel).
+_WATERMARK_FONT_DIVISOR = 50
+#: A mérés (#1603) átlátszatlan fehéret mutatott (`0xffffffff`,
+#: `[esp+0x88]`) — ez a jegy leggyengébb (bár „erős") bizonyítékú
+#: állítása, mert a `0xFFFFFFFF` elméletileg „nincs színkulcs" jelölő is
+#: lehetne. Egy windowsos referencia-export döntené el megnyugtatóan
+#: (a kérdés a jegyben BLOKKOLTKÉNT szerepel); addig a mért értéket
+#: (átlátszatlan, nincs alfa-keverés) visszük át — ez a korábbi
+#: `alpha = 0.6` közelítést váltja fel.
+_WATERMARK_COLOR = (255, 255, 255)
+
+
+def _watermark_font_size_px(width: int, height: int) -> int:
+    """A vízjel betűmérete képpontban (#1603): a kép HOSSZABB oldalából,
+    egész osztással 50-nel, de legalább 12 képpont."""
+    return max(_WATERMARK_MIN_FONT_SIZE, max(width, height) // _WATERMARK_FONT_DIVISOR)
+
+
 def _apply_watermark(image: np.ndarray, text: str | None) -> np.ndarray:
-    """A vízjelszöveg beégetése a jobb alsó sarokba, fehér, félig átlátszó
-    (#369, a Picasa mintáját közelítve — a pontos betűtípus/méret a Picasa
-    forráskódja nélkül nem rekonstruálható, ez egy olvasható, arányos
-    közelítés). Üres/`None` szöveg esetén a kép változatlan."""
+    """A vízjelszöveg beégetése a jobb alsó sarokba (#369, pontosítva #1603).
+
+    A paraméterek a Picasa `0x0045c4b0` függvényéből visszafejtettek:
+    Arial, 600-as vastagság (félkövér), méretezés 1.0; betűméret =
+    `max(12, hosszabb oldal // 50)` képpont; a margó mind a négy oldalon a
+    betűmérettel egyenlő, ezért a szöveg jobb éle és alsó (leszálló) éle a
+    `(szélesség - betűméret, magasság - betűméret)` pontra esik. 32
+    képpontnál alacsonyabb MAGASSÁGÚ képre nem kerül vízjel (az eredeti
+    ilyenkor a 4-es hibakóddal tér vissza — itt a kép egyszerűen
+    változatlan marad). Üres/`None` szöveg esetén szintén nincs változás.
+
+    Ha a gépen nincs használható TrueType-betű (pl. csupasz CI-kép), a
+    rajzolás Hershey-visszaesésre vált (ld. `render.text_fonts.load_font`)
+    — a méret/elhelyezés szabályai ilyenkor is érvényben maradnak, csak a
+    betű ALAKJA közelítő, nem az eredeti Arial."""
     if not text:
         return image
     height, width = image.shape[:2]
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = max(0.5, min(width, height) / 500)
+    if height < _WATERMARK_MIN_HEIGHT:
+        return image
+    size = _watermark_font_size_px(width, height)
+    margin = size
+    anchor = (width - margin, height - margin)
+    font = load_font(DEFAULT_FAMILY, size, bold=True)
+    if font is not None:
+        pil_image = Image.fromarray(image)
+        draw = ImageDraw.Draw(pil_image)
+        # "rd" = jobb (right) + leszálló (descender) horgony: a szöveg
+        # jobb és alsó éle pontosan az `anchor`-ra esik, ahogy a
+        # dekompilált margó-számítás (jobb = szélesség-betűméret, alsó =
+        # magasság-betűméret) is mutatja.
+        draw.text(anchor, text, font=font, fill=_WATERMARK_COLOR, anchor="rd")
+        return np.asarray(pil_image)
+    # Hershey-visszaesés: nincs TrueType a gépen. A DUPLEX vaskosabb
+    # vonala közelebb áll a 600-as vastagsághoz, mint a vékony SIMPLEX; a
+    # méretezés a betűméret cél-nagybetű-magasságára hangolt.
+    font_face = cv2.FONT_HERSHEY_DUPLEX
+    font_scale = size / 22
     thickness = max(1, round(font_scale * 2))
-    (text_width, text_height), _baseline = cv2.getTextSize(
-        text, font, font_scale, thickness
+    (text_width, _text_height), baseline = cv2.getTextSize(
+        text, font_face, font_scale, thickness
     )
-    margin = max(6, round(min(width, height) * 0.02))
-    x = max(0, width - text_width - margin)
-    y = max(text_height, height - margin)
-    overlay = image.copy()
+    origin = (anchor[0] - text_width, anchor[1] - baseline)
+    result = image.copy()
     cv2.putText(
-        overlay, text, (x, y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA
+        result, text, origin, font_face, font_scale, _WATERMARK_COLOR,
+        thickness, cv2.LINE_AA,
     )
-    alpha = 0.6  # félig átlátszó, a Picasa alapértelmezett mintájához hasonlóan
-    return cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
+    return result
 
 
 def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndarray:

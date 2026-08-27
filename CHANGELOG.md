@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **Az exportált képekre 1,5–1,75-ször túl nagy vízjel került (#1603).** A
+  visszafejtett eredeti Picasa-képlet szerint a betűméret a kép hosszabb
+  oldalából jön (`max(12, hosszabb oldal / 50)` képpont), a mi kódunk viszont
+  a RÖVIDEBB oldalból, tízszer nagyobb osztóval számolt, és az OpenCV
+  vonalas betűkészletét használta a valódi Arial helyett — ez adta a
+  túlméretezést. Mostantól a betűméret, a margó (a betűmérettel egyenlő
+  minden oldalon) és a betűtípus (félkövér Arial, Liberation/DejaVu-
+  helyettesítéssel) is a mért képletet követi, és 32 képpontnál alacsonyabb
+  képre — mint az eredetiben — nem kerül vízjel.
 - **A Fájl ▸ Importálás forrása… menüpont és a `Ctrl+M` nem csinált semmit
   (#1615).** Az importálás régóta készen volt, de csak az eszköztár „Import"
   gombjából lehetett elindítani. A Fájl menü tétele szürke, kattinthatatlan
