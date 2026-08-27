@@ -33,6 +33,7 @@ from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.index.sync import sync_folder
+from picasapy.perf import default_log_dir, start_startup_timeline
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
@@ -634,7 +635,50 @@ def _install_translator(
     return None
 
 
-def run(argv: list[str]) -> int:
+def _jelentsd_az_idovonalat(timeline) -> None:
+    """#1601: az indulási idővonal kiírása — kikapcsolva NEM CSINÁL SEMMIT.
+
+    Két helyre megy, mert két különböző igényt szolgál ki: a `stderr`-re a
+    fejlesztő/terminálból indító lát azonnal, a fájlt pedig a felhasználó
+    tudja **átküldeni** (az útvonalát ezért kiírjuk). A jelentés nem
+    tartalmaz fájlnevet és teljes útvonalat, ld. `perf/startup_timeline.py`.
+
+    Hibája soha nem akadályozhatja az indulást — egy diagnosztika nem
+    fontosabb a programnál."""
+    if not timeline.enabled:
+        return
+    try:
+        from PySide6.QtCore import qVersion
+
+        report = timeline.render(
+            app_version=version_string(), qt_version=qVersion()
+        )
+        print(report, file=sys.stderr)
+        target = timeline.write(
+            default_log_dir(), app_version=version_string(), qt_version=qVersion()
+        )
+        if target is not None:
+            print(f"Az indulási idővonal ide került: {target}", file=sys.stderr)
+    except Exception:  # noqa: BLE001 - a diagnosztika sosem viheti el az appot
+        logging.getLogger(__name__).warning(
+            "az indulási idővonal kiírása hibára futott", exc_info=True
+        )
+
+
+def run(argv: list[str], *, entry_at: float | None = None) -> int:
+    """Az alkalmazás indítása.
+
+    #1601: az `entry_at` a belépési pont (`__main__.py`) legelső saját
+    sorában olvasott `time.monotonic()` — ebből látszik, mennyit visz el
+    maga a Python- és PySide6-import, mielőtt idáig eljutnánk. `None`
+    esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
+
+    Az idővonal alapból KI van kapcsolva; a `PICASAPY_STARTUP_TIMELINE=1`
+    környezeti változó kapcsolja be (ld. `perf/startup_timeline.py`)."""
+    timeline = start_startup_timeline()
+    if entry_at is not None:
+        timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
+
     # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
     # Fusion stílus + explicit világos paletta; Linuxon/macOS-en a saját,
     # világos QML-dialógusok a rendszer sötét mappaválasztója helyett.
@@ -648,6 +692,7 @@ def run(argv: list[str]) -> int:
     # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
     _set_windows_app_id()
 
+    timeline.mark("Qt-stílus és platform-kapcsolók")
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
@@ -657,8 +702,11 @@ def run(argv: list[str]) -> int:
         pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
     app.setWindowIcon(QIcon(str(_window_icon_path())))
+    timeline.mark("Qt-alkalmazás létrehozása")
     _install_ui_font(app)
+    timeline.mark("felület-betűtípus betöltése")
     _install_translator(app)
+    timeline.mark("fordítás betöltése")
 
     # #1076: Windowson a legacy konfigurációból feloldott EFFEKTÍV
     # adatgyökeret még a migráció előtt zárjuk. A bootstrap az útvonalakat
@@ -674,6 +722,7 @@ def run(argv: list[str]) -> int:
     except StorageMigrationError as error:
         print(str(error), file=sys.stderr)
         return 1
+    timeline.mark("tárhely előkészítése (zár + migráció)")
 
     # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-
     # üzenetek is látsszanak; helyi változóban tartva (GC ellen).
@@ -685,7 +734,8 @@ def run(argv: list[str]) -> int:
         requires_confirmation=True,
     )
 
-    roots = _resolve_roots(argv)
+    with timeline.phase("figyelt gyökerek beolvasása (WatchedFolders.txt)"):
+        roots = _resolve_roots(argv)
     data_dir = storage_bootstrap.data_dir
     cache_dir = storage_bootstrap.cache_dir
     config_dir = storage_bootstrap.config_dir
@@ -693,8 +743,10 @@ def run(argv: list[str]) -> int:
     # #449: hibanapló — a WARNING és súlyosabb üzenetek fájlba is mennek,
     # hogy adatbázis-hiba esetén legyen mit felajánlani megtekintésre
     error_log = install_error_log(data_dir) or error_log_path(data_dir)
+    timeline.mark("hibanapló előkészítése")
 
     _install_desktop_entry()
+    timeline.mark("asztali bejegyzés telepítése")
 
     # Ottragadt gyökerek takarítása (#58): az indexben csak a most figyelt
     # mappák maradhatnak — a korábbi futások (pl. régi parancssori argumentum)
@@ -704,11 +756,18 @@ def run(argv: list[str]) -> int:
     )
     try:
         with open_index(data_dir / "index.db") as conn:
-            prune_foreign_folders(conn, roots)
-            _onjavito_kollazsmappa(conn, QSettings())
+            # #1601: a `mark` az ELŐZŐ bejelentés óta eltelt időt zárja le —
+            # itt tehát pontosan a fenti `open_index` (séma + migráció)
+            # költségét, anélkül hogy a `with`-et szét kellene szedni.
+            timeline.mark("index megnyitása (séma + migráció)")
+            with timeline.phase("ottragadt mappák takarítása (#58)"):
+                prune_foreign_folders(conn, roots)
+            with timeline.phase("Kollázsok mappa önjavítása (#1075)"):
+                _onjavito_kollazsmappa(conn, QSettings())
             # #1565: az exportcélok is a gyökereken KÍVÜL élnek — a fenti
             # takarítás különben minden indításkor kidobná őket
-            _ujraindexelt_exportcelok(conn, QSettings())
+            with timeline.phase("exportcélok visszavétele (#1565)"):
+                _ujraindexelt_exportcelok(conn, QSettings())
     except sqlite3.DatabaseError:
         # #449: az eredeti sem omlott össze némán és nem javított titokban —
         # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa
@@ -722,6 +781,7 @@ def run(argv: list[str]) -> int:
     startup_status.report(
         QCoreApplication.translate("startup", "Loading photo library…")
     )
+    timeline.mark("index előkészítése — utómunka")
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
         ThumbnailCache(
@@ -738,6 +798,7 @@ def run(argv: list[str]) -> int:
         exclude_file=_exclude_folders_path(),
         face_excluded=read_exclude_folders(_exclude_folders_path()),
     )
+    timeline.mark("bélyegkép-gyorstár és fővezérlő létrehozása")
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva
     # rendereli a képet; a hidat az EditController adja a QML-nek
@@ -819,7 +880,8 @@ def run(argv: list[str]) -> int:
             )
 
     controller.syncFinished.connect(_reload_folder_hierarchy)
-    _reload_folder_hierarchy()
+    with timeline.phase("a bal hasáb mappafájának betöltése"):
+        _reload_folder_hierarchy()
 
     # Időrend nézet (#24, Ctrl+5): a teljes könyvtár év/hónap szerinti
     # csoportosítása — a MEGLÉVŐ (AppControllerrel közös) thumbnail-
@@ -961,7 +1023,9 @@ def run(argv: list[str]) -> int:
     # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
     # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
     engine.rootContext().setContextProperty("startupStatus", startup_status)
-    engine.load(str(_APP_DIR / "qml" / "Main.qml"))
+    timeline.mark("a többi vezérlő létrehozása és regisztrálása")
+    with timeline.phase("QML betöltése (Main.qml)"):
+        engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         return 1
 
@@ -981,10 +1045,12 @@ def run(argv: list[str]) -> int:
 
     def _start_and_finish() -> None:
         first_frame_at = time.monotonic()
-        _start_initial_scan(
-            startup_status, controller, storage_bootstrap.migration_notice
-        )
+        with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
+            _start_initial_scan(
+                startup_status, controller, storage_bootstrap.migration_notice
+            )
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
+        _jelentsd_az_idovonalat(timeline)
         QTimer.singleShot(
             _remaining_splash_ms(elapsed_ms), startup_status.finish
         )
@@ -994,6 +1060,7 @@ def run(argv: list[str]) -> int:
         if splash_state["started"]:
             return
         splash_state["started"] = True
+        timeline.mark("az ablak első kirajzolt képkockája")
         QTimer.singleShot(0, _start_and_finish)
 
     window.frameSwapped.connect(_on_first_frame)

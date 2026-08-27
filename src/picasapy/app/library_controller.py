@@ -358,7 +358,14 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                 len(report.skipped),
                 ", ".join(key for key, _reason in report.skipped),
             )
-        self._reload()
+        # #1601: a hasáb két ini-alapú gyűjteménye (Emberek, Projektek) itt
+        # SZÁNDÉKOSAN kimarad. Mérve ez volt az induláskori szinkron munka
+        # 94%-a — mindkettő a `has_ini=1` mappák `.picasa.ini`-jét olvassa
+        # végig, tehát a könyvtár méretével romlik („egyre lassabb"). A
+        # betöltést az alább induló háttér-szinkron szála végzi el, és a
+        # `syncFinished` → `_reload_after_sync()` hozza be (a lista addig
+        # üres, ugyanúgy, ahogy egy frissen felvett mappa esetén is).
+        self._reload(defer_collections=True)
         if not self._current_folder:
             self.restoreSession()
         self.rescan()
@@ -1109,6 +1116,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                         self._sync_folder_manager_tree(conn, root, progress=progress)
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
                         errors.append(f"{root}: {error}")
+                # #1601: a hasáb ini-alapú gyűjteményei MÉG ITT, a
+                # háttérszálon állnak elő — a `syncFinished` utáni
+                # `_reload()` így csak átveszi őket, és a felület szála
+                # egyetlen `.picasa.ini`-t sem olvas. A söprés a szinkron
+                # UTÁN fut, hogy a frissen felvett mappák is benne legyenek.
+                self._precompute_side_pane(conn)
         except Exception as error:  # pl. index-migrációs hiba
             errors.append(str(error))
         finally:

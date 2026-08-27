@@ -89,8 +89,13 @@ class PeopleMixin:
             status_changed.connect(self.personViewChanged)
 
     def _load_people(self, conn) -> None:
-        """Az Emberek-lista frissítése — a `_load_albums` mintájára, ugyanott
-        (a háttér-szinkron utáni `_reload()`-ban) hívandó."""
+        """CSAK az Emberek-lista frissítése, saját ini-söpréssel.
+
+        ⚠️ #1601: a `_reload()` már NEM ezt hívja, hanem a
+        `SidePaneMixin._load_side_pane`-t — az a Projektek gyűjteménnyel
+        KÖZÖS, egyetlen `.picasa.ini`-söprésből állítja elő mindkettőt (a
+        két külön hívás minden ini-t kétszer olvasott végig). Ez a metódus
+        akkor való, ha tényleg csak az Emberek lista változott."""
         self._people = people_in_index(conn)
         self.peopleChanged.emit()
 
