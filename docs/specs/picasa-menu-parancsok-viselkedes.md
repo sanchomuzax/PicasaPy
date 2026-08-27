@@ -488,3 +488,44 @@ pipa-frissítő (mind a 13 `CheckMenuItem`-hívó megnézve).
 ⚠️ **A menüpont↔kernel párosítást NEM adom ki** — ahhoz a
 parancsazonosítók kellenének, ami a projektben tiltott. A megvalósítói
 kör mérje ki. Jegy: **#1409**.
+
+## A 28. adag (2026-08-27) — Google Earth és a kontextusfüggő album-feliratok
+
+### `ID_VIEW_EARTH` — kiírja a KML-t ÉS megnyitja
+
+Két külön tétel van az `eMenuTools`-ban: az `ID_EXPORT_EARTH`
+(„Exportálás Google Earth-fájlba") **csak kiírja**, az `ID_VIEW_EARTH`
+(„Megtekintés a Google Earth programban…") **kiírja és megnyitja**.
+
+Hiányzó program esetén a `0x005ff930` (376 b) párbeszédet nyit, **két
+külön ággal**: `InstallEarth:message_install` („telepítenie kell") és
+`message_update` („frissítenie kell"). Cím: „Figyelmeztetés"; gombok:
+**„További információ…"** (→ `http://earth.google.com`) és **„Mégse"**.
+Jegy: **#1589**.
+
+### `ID_ALBUM_DELETE` · `EDITCAPTIONS` · `SELECTALLPICTURES` · `LOCATEONDISK` — KONTEXTUSFÜGGŐ felirat
+
+Ugyanaz a parancsazonosító **más feliratot** kap névtér szerint:
+
+| parancs | `Folder::` | `Album::` | `PplAlbum::` | `eMenuLabelFolder::` |
+|---|---|---|---|---|
+| `ID_ALBUM_DELETE` | Mappa törlése… | Album törlése | Az Emberek album törlése | Törlés… |
+| `ID_ALBUM_EDITCAPTIONS` | Mappaleírás szerk.… | Albumleírás szerk.… | Az Emberek album szerk.… | Leírás szerk.… |
+| `ID_ALBUM_SELECTALLPICTURES` | — | Az összes kép kijelölése | Az összes kijelölése | — |
+| `ID_ALBUM_LOCATEONDISK` | Keresés a lemezen (`FolderWin::`) | — | — | — |
+
+*(Macen az `ID_ALBUM_LOCATEONDISK` = „Megjelenítés a Finder alkalmazásban" — hatókörön kívül.)*
+
+A helyi menük építői: `0x007319f0` (mappa), `0x00732160` (album),
+`0x007359e0` (Emberek album), `0x00733a40`.
+
+✅ **Nálunk 11/13 felirat HELYES** (gépi összevetés a `stringres`-szel):
+a `FolderContextMenu`, `AlbumContextMenu` és `PeopleAlbumContextMenu`
+mind a saját alakját használja. **Nincs teendő.**
+
+### `ID_FILE_PRINTCONTACTSHEET` — „Indexképek nyomtatása…"
+
+Az `eMenuLabelFolder` 13 tételéből az **egyetlen**, ami nálunk sehol
+nincs. Az indexkép-**elrendezés** viszont kész
+(`collage/contact_sheet.py`), a nyomtatás pedig a **#1472** előfeltétele.
+Jegy: **#1590**.
