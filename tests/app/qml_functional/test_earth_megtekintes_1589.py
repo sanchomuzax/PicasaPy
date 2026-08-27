@@ -27,7 +27,7 @@ Google Earth-öt indítana a fejlesztő gépén.
 from __future__ import annotations
 
 import time
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
@@ -88,11 +88,19 @@ def _celmappat_valaszt(parbeszed, qt_app, mappa: Path):
 
 @pytest.fixture
 def megnyitasok(monkeypatch):
-    """A társított program indításának fogantyúja — nem indul semmi."""
-    hivasok: list[str] = []
+    """A társított program indításának fogantyúja — nem indul semmi.
+
+    Az utat `Path`-ként jegyezzük fel, nem sztringként. A
+    `QUrl.toLocalFile()` Windowson is PER-jeles alakot ad
+    (`C:/Users/…/doc.kml`), a `str(Path(...))` viszont visszaperjelest —
+    ugyanaz a fájl, kétféle írásmód (a #1082 2. csapdája). Sztringként
+    összevetve a windows-láb elbukott (#1634, futás `33085887241`);
+    `Path`-ot `Path`-tal mérve a mérce platformfüggetlen, és a fájl
+    AZONOSSÁGÁRA kérdez, nem az írásmódjára."""
+    hivasok: list[Path] = []
 
     def hamis_open_url(url):
-        hivasok.append(url.toLocalFile())
+        hivasok.append(Path(url.toLocalFile()))
         return True
 
     monkeypatch.setattr(export_controller, "_open_url", hamis_open_url)
@@ -163,7 +171,7 @@ class TestKimenet:
             lambda: bool(megnyitasok),
             uzenet="a KML elkészült, de a program NEM nyitotta meg",
         )
-        assert megnyitasok == [str(kml)]
+        assert megnyitasok == [kml]
 
     def test_a_kettoskeresztes_mappanev_is_celba_er(self, qml_app, qt_app, tmp_path, megnyitasok):
         """#1626 mellékfogása: a `#` a mappanévben.
@@ -191,7 +199,7 @@ class TestKimenet:
                 "százalékos kódolás feloldatlan maradt (#1626)"
             ),
         )
-        assert megnyitasok == [str(kml)]
+        assert megnyitasok == [kml]
 
     def test_az_EXPORT_tetel_ugyanazt_irja_ki_de_NEM_nyitja_meg(
         self, qml_app, qt_app, tmp_path, megnyitasok
@@ -311,8 +319,17 @@ class TestAWindowsosCelmappaUt:
     (windowsos ág, ami a windows-lábon üresen zöld) elkerülve.
 
     Mutációval mérve: a QML-beli `file://`-levágó `replace(…)` visszatétele
-    ezt az állítást megbuktatja (`/C:/Temp/pp-1626`), a fájl többi tesztje
-    viszont zöld marad — az őr tehát valóban ezt az ágat fogja.
+    ezt az állítást megbuktatja (`/C:/Temp/pp-1626`), és ugyanígy a
+    `formatting.to_local_path` meghajtóbetű-levágásának törlése is — az őr
+    tehát valóban ezt az ágat fogja.
+
+    ## #1634 — a várt értéket ELŐÁLLÍTJUK
+
+    Az állítás eredetileg a per-jeles `"C:/Temp/pp-1626"` sztringet égette
+    be, és a windows-lábon elbukott: a `to_local_path` `str(Path(...))`-ot
+    ad, ott tehát `C:\\Temp\\pp-1626`-ot. A mérce most ugyanazon a
+    normalizáláson megy át, mint a termék kimenete, a lényeget pedig egy
+    szeparátor-független `PureWindowsPath`-állítás mondja ki.
     """
 
     def test_a_meghajtobetus_URL_bol_meghajtobetus_ut_lesz(
@@ -354,11 +371,15 @@ class TestAWindowsosCelmappaUt:
             lambda: bool(rogzitett),
             uzenet="a vezérlő el sem jutott a motorig",
         )
-        assert rogzitett == ["C:/Temp/pp-1626"], (
+        # a várt értéket ELŐÁLLÍTJUK, nem beégetjük: a `to_local_path`
+        # `str(Path(...))`-ot ad, ami Windowson visszaperjeles (#1634)
+        assert rogzitett == [str(Path("C:/Temp/pp-1626"))], (
             "a windowsos célmappa-URL-ből hibás út lett — a vezető perjel "
             "miatt Windowson `\\C:\\Temp\\…` keletkezik, amin a `mkdir` "
             "`WinError 123`-mal elhasal, és a KML nem készül el (#1626)"
         )
+        # …és a szeparátortól függetlenül: a meghajtóbetű az út ELEJÉN áll
+        assert PureWindowsPath(rogzitett[0]).drive == "C:"
         assert megnyitasok == [], (
             "a KML el sem készült, mégis megnyitást kísérelt a program"
         )
