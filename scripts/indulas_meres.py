@@ -289,6 +289,142 @@ def _importtime() -> str:
     return "\n".join(fej)
 
 
+def _betoltott_natív_fajlok() -> set[str]:
+    """A processzbe BETÖLTÖTT natív modulok (DLL / .so) útvonalai.
+
+    Windowson `EnumProcessModules` (psapi), máshol a `/proc/self/maps`. A
+    kettő ugyanazt a kérdést válaszolja meg — *mennyi gépi kódot kellett a
+    lemezről beolvasni* —, ezért a két platform száma összemérhető."""
+    utak: set[str] = set()
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        fogantyu = kernel32.GetCurrentProcess()
+        tomb = (wintypes.HMODULE * 8192)()
+        kellett = wintypes.DWORD()
+        if not psapi.EnumProcessModules(
+            fogantyu, tomb, ctypes.sizeof(tomb), ctypes.byref(kellett)
+        ):
+            return utak
+        darab = kellett.value // ctypes.sizeof(wintypes.HMODULE)
+        puffer = ctypes.create_unicode_buffer(32768)
+        for i in range(min(darab, len(tomb))):
+            if psapi.GetModuleFileNameExW(
+                fogantyu, tomb[i], puffer, len(puffer)
+            ):
+                utak.add(puffer.value)
+        return utak
+    try:
+        sorok = Path("/proc/self/maps").read_text().splitlines()
+    except OSError:
+        return utak
+    for sor in sorok:
+        mezok = sor.split(maxsplit=5)
+        if len(mezok) == 6 and mezok[5].startswith("/"):
+            utak.add(mezok[5])
+    return utak
+
+
+def _bajtok(utak: set[str]) -> tuple[int, int]:
+    """`(fájlszám, összes bájt)` — a nem olvasható tételeket kihagyva."""
+    darab = 0
+    bajt = 0
+    for ut in utak:
+        try:
+            bajt += Path(ut).stat().st_size
+        except OSError:
+            continue
+        darab += 1
+    return darab, bajt
+
+
+def _leltar(modul: str) -> str:
+    """Egy import fájl- és bájtterhelése, gépi olvasásra.
+
+    A GYERMEK processz futtatja: importálja a modult (üres név = semmit),
+    majd leltárba veszi, mennyi Python-forrást és mennyi natív kódot
+    kellett hozzá betölteni."""
+    if modul:
+        __import__(modul)
+    py_utak = {
+        getattr(m, "__file__", None) or ""
+        for m in list(sys.modules.values())
+        if getattr(m, "__file__", None)
+    }
+    py_darab, py_bajt = _bajtok(py_utak)
+    nat_darab, nat_bajt = _bajtok(_betoltott_natív_fajlok())
+    return json.dumps(
+        {
+            "modul": modul or "(semmi)",
+            "python_fajl": py_darab,
+            "python_bajt": py_bajt,
+            "nativ_fajl": nat_darab,
+            "nativ_bajt": nat_bajt,
+        },
+        ensure_ascii=False,
+    )
+
+
+#: Az indulási importlánc terhelésének bontása — mindegyik SAJÁT
+#: processzben mérve, hogy a modulok ne fedjék egymást.
+_TERHELES_LEPCSOK = (
+    "",
+    "cv2",
+    "PySide6.QtQuick",
+    "picasapy.app.application",
+)
+
+
+def _io_terheles() -> str:
+    """Mennyi fájlt és mennyi bájtot kell beolvasni az induláshoz.
+
+    **Miért ez a döntő szám.** A tulajdonos gépén a szakasz-idők nem a
+    processzoron múlnak: az indulás fájlbeolvasás-korlátos. Bármi, ami a
+    fájlonkénti vagy bájtonkénti költséget megszorozza — valós idejű
+    vírusvizsgálat, hálózati meghajtó, forgólemez, hideg lapgyorstár —
+    közvetlenül ennyivel szorozza az indulást is. A `cv2` súlya ebben a
+    leltárban mondja meg, mennyit ér a #1611."""
+    sorok = ["", "== indulási I/O-terhelés (importonként, külön processzben) ==", ""]
+    sorok.append(
+        f"{'import':32} {'py fájl':>8} {'py MB':>8} {'natív fájl':>11} {'natív MB':>9}"
+    )
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(_SRC), os.environ.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    env["PYTHONUTF8"] = "1"
+    for modul in _TERHELES_LEPCSOK:
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "--leltar",
+                modul,
+            ],
+            cwd=str(_REPO),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=900,
+        )
+        try:
+            adat = json.loads(proc.stdout.strip().splitlines()[-1])
+        except (ValueError, IndexError):
+            sorok.append(f"{modul or '(semmi)':32}  — a mérés elbukott: {proc.stderr[:200]}")
+            continue
+        sorok.append(
+            f"{adat['modul']:32} {adat['python_fajl']:8d} "
+            f"{adat['python_bajt'] / 1_048_576:8.1f} "
+            f"{adat['nativ_fajl']:11d} {adat['nativ_bajt'] / 1_048_576:9.1f}"
+        )
+    return "\n".join(sorok)
+
+
 def _utf8_kimenet() -> None:
     """A saját `stdout`/`stderr` UTF-8-ra állítása.
 
@@ -332,10 +468,28 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="csak az importlánc bontása (a program nem indul el)",
     )
+    ertelmezo.add_argument(
+        "--io-terheles",
+        action="store_true",
+        help="hány fájlt és hány bájtot kell beolvasni az induláshoz",
+    )
+    ertelmezo.add_argument(
+        "--leltar",
+        default=None,
+        help="BELSŐ: a gyermek processz módja az --io-terheles méréshez",
+    )
     args = ertelmezo.parse_args(argv)
+
+    if args.leltar is not None:
+        print(_leltar(args.leltar), flush=True)
+        return 0
 
     if args.importtime:
         print(_importtime(), flush=True)
+        return 0
+
+    if args.io_terheles:
+        print(_io_terheles(), flush=True)
         return 0
 
     cimke = args.cimke or f"{args.mappa_szam} mappa"

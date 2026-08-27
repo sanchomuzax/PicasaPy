@@ -104,6 +104,16 @@ jobs:
         shell: bash
         run: python scripts/indulas_meres.py --importtime
 
+      - name: Az indulás I/O-terhelése (fájlszám és bájt)
+        # Szintén csak az egyik méret-lábon. Ez a DÖNTŐ szám: az indulás
+        # nem processzor-, hanem fájlbeolvasás-korlátos, tehát bármi, ami
+        # a bájtonkénti költséget megszorozza (valós idejű vírusvizsgálat,
+        # hálózati meghajtó, forgólemez, hideg lapgyorstár), közvetlenül
+        # ennyivel szorozza az indulást is.
+        if: matrix.meret == 'ures'
+        shell: bash
+        run: python scripts/indulas_meres.py --io-terheles
+
       - name: Indulási idővonal — üres könyvtár
         if: matrix.meret == 'ures'
         shell: bash
