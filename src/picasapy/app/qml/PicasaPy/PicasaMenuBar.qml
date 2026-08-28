@@ -665,30 +665,22 @@ MenuBar {
                     })
                 }
             }
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayMode16Bit"
                 text: qsTr("16-bit (dithered)")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "dither16"
-                onTriggered: {
-                    controller.setDisplayMode("dither16")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "dither16"
-                    })
-                }
+                // #1658: megvalósítható (a szabály MÉRVE van: MT-zaj +0…7/0…3/0…7,
+                // telítő), de 16 bites képernyő ma nincs — ezért helyfoglaló,
+                // nem nyugdíjazott: ha egyszer értelmet nyer, bekötjük.
+                placeholder: true
             }
             MenuSeparator {}
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayModeRemoteDesktop"
                 text: qsTr("Remote Desktop")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "rdesk"
-                onTriggered: {
-                    controller.setDisplayMode("rdesk")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "rdesk"
-                    })
-                }
+                // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL (RDP-specifikus,
+                // 3-3-3 bites levágás) — sosem kötjük be, tehát nyugdíjazott.
+                placeholder: false
+                retired: true
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLcd"
@@ -727,17 +719,13 @@ MenuBar {
                     })
                 }
             }
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayModeMacGamma"
                 text: qsTr("Mac Gamma (1.6)")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "mac"
-                onTriggered: {
-                    controller.setDisplayMode("mac")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "mac"
-                    })
-                }
+                // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL, amíg nincs
+                // referencia-mérés (futásidő-függő, ld. 5.10) — nyugdíjazott.
+                placeholder: false
+                retired: true
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLinearGamma"

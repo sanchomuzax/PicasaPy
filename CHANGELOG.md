@@ -8,6 +8,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.130] – 2026-08-28
 
 ### Javítva
+- **A Megjelenítési mód menü már nem kínál olyan tételt, ami nem csinál
+  semmit (#1658).** A tulajdonos kétszer is hiába próbálta a módokat: a
+  tizenegy tételből hét nem volt megvalósítva, és **egyik sem volt
+  jelölve** — így a működők is halottnak látszottak. Mostantól a
+  „16 bites (szemcsézett)" halvány helyfoglaló (megvalósítható, de 16 bites
+  képernyő ma nincs), a „Távoli asztal" és a „Mac gamma" pedig véglegesen
+  szürke: ezeket a program szándékosan nem valósítja meg. Ellenőrzés őrzi,
+  hogy jelöletlen, mégis kattintható mód ne kerülhessen vissza a menübe.
 - **A menüsáv TESZTÜZEM felirata Windowson nem volt kikapcsolható (#1676).**
   A felirat egyben kikapcsoló gomb, de a menüsáv háttérrétegében ült, a
   menüpontok alatt. Windowson a felirat majdnem kétszer olyan széles, ezért
