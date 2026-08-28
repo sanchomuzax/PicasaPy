@@ -338,10 +338,38 @@ class TestAVisszavetelNincsAKritikusUton:
         )
 
     def test_a_takaritas_a_vedett_gyokereket_kapja(self):
-        """A javítás másik fele: a takarítás ki sem dobja az exportcélt."""
-        run_fa = self._run_fa()
-        takaritasok = self._hivasok(run_fa, "prune_foreign_folders")
-        assert takaritasok, "a `run()` nem takarít induláskor (#58)"
+        """A javítás másik fele: a takarítás ki sem dobja az exportcélt.
+
+        #1716 óta a takarítás HÍVÁSA a `run()`-ból a `_ottragadt_mappak_
+        takaritasa` wrapperbe költözött (az első képkocka utánra, ld.
+        `tests/perf/test_takaritas_utrol_1716.py`) — a `prune_foreign_
+        folders` tehát már nem a `run()` szintaxisfájában, hanem EBBEN a
+        wrapperben hívódik. Ez az őr ezért a wrapper AST-jét nézi, nem a
+        `run()`-ét; az ELHELYEZÉST (hogy ez a wrapper hol fut) a #1716
+        fájlja őrzi."""
+        from picasapy.app import application
+
+        modul = ast.parse(
+            Path(application.__file__).read_text(encoding="utf-8")
+        )
+        takaritas_fa = next(
+            (
+                node
+                for node in modul.body
+                if isinstance(node, ast.FunctionDef)
+                and node.name == "_ottragadt_mappak_takaritasa"
+            ),
+            None,
+        )
+        assert takaritas_fa is not None, (
+            "nincs `_ottragadt_mappak_takaritasa` az application.py-ban — "
+            "a #58 takarítás wrappere elveszett (#1716)"
+        )
+        takaritasok = self._hivasok(takaritas_fa, "prune_foreign_folders")
+        assert takaritasok, (
+            "a `_ottragadt_mappak_takaritasa` nem hívja a "
+            "`prune_foreign_folders`-t — a #58 takarítás elveszett"
+        )
         for hivas in takaritasok:
             argumentumok = [ast.dump(arg) for arg in hivas.args]
             assert any("_takaritas_gyokerei" in arg for arg in argumentumok), (

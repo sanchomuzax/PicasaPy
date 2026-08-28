@@ -455,17 +455,29 @@ class TestAzExportcelTuleliAzIndulasiTakaritast:
         2. a visszavétel (az önjavító ág) továbbra is elindul valahonnan.
 
         Hogy a 2. pont HOL fut, azt a #1667 elhelyezés-őre állítja
-        (`tests/perf/test_exportcelok_indulas_1667.py`)."""
+        (`tests/perf/test_exportcelok_indulas_1667.py`).
+
+        #1716 óta a takarítás HÍVÁSA a `run()`-ból egy külön wrapperbe
+        (`_ottragadt_mappak_takaritasa`) költözött — az első képkocka
+        utánra (ld. `tests/perf/test_takaritas_utrol_1716.py`). A
+        `run()` forrása ezért már a wrappert hívja, nem közvetlenül a
+        `prune_foreign_folders`-t; a védett-gyökér-állítást a wrapper
+        SAJÁT forrásában ellenőrizzük."""
         import inspect
 
         from picasapy.app import application
 
         forras = inspect.getsource(application.run)
 
-        assert "prune_foreign_folders(" in forras, (
-            "a `run()` egyáltalán nem takarít induláskor (#58)"
+        assert "_ottragadt_mappak_takaritasa(" in forras, (
+            "a `run()` egyáltalán nem takarít induláskor (#58) — a #1716 "
+            "óta a `_ottragadt_mappak_takaritasa` wrapperen át kellene "
+            "hívnia"
         )
-        assert "_takaritas_gyokerei(roots" in forras, (
+        takaritas_forras = inspect.getsource(
+            application._ottragadt_mappak_takaritasa
+        )
+        assert "_takaritas_gyokerei(roots" in takaritas_forras, (
             "a `prune_foreign_folders` NEM a védett gyökereket kapja — a "
             "takarítás minden induláskor kidobja a nyilvántartott "
             "exportcélokat, és a visszaépítés újraolvassa az összes "
