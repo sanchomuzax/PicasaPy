@@ -1051,6 +1051,49 @@ def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
     conn.commit()
 
 
+def _resolved_protected_roots(roots: tuple[str | Path, ...]) -> tuple[Path, ...]:
+    """A védett gyökerek FELOLDÁSA, kihagyva a pontosan egyező ismétlést
+    (#1706).
+
+    **Miért ez a lépés önmagában.** A `normalize_path` `Path.resolve()`-ot
+    hív, ami minden útvonal-komponensre `stat`/`lstat` rendszerhívást
+    jelent. MÉRVE (#1706, helyi lemezen, 21 gyökér): 20 nyilvántartott
+    exportcél feloldása **83** ilyen hívást igényelt — kb. 4/gyökér —,
+    miközben az utána következő SQL-összevetés (`_is_under`, tiszta Python)
+    ugyanazon a gépen **mikroszekundumos**, akkor is, ha a `folders` tábla
+    több száz sort tartalmaz. Hálózati megosztáson (a tulajdonos NAS-on
+    tartja a könyvtárát) ez a rendszerhívásonkénti költség dominál — ez a
+    #1706 mérésének fő eredménye.
+
+    **Amit ez a függvény tesz.** A nyilvántartott exportcélok listája
+    (`MAX_EXPORTED_FOLDERS = 20`) idővel PONTOSAN EGYEZŐ útvonalat is
+    tartalmazhat (pl. két különböző munkamenetből ugyanarra a célra
+    exportálva, mielőtt a `remember_exported_folder` dedupolt volna, vagy
+    egy figyelt gyökér, ami véletlenül megegyezik egy korábbi exportcéllal)
+    — az ilyen ismétlést a feloldás ELŐTT szűrjük ki, nyers
+    szövegösszehasonlítással (nem érinti a lemezt). Ez BIZTOSAN biztonságos:
+    ugyanaz a nyers string ugyanarra a feloldott útra vezet, tehát a
+    kihagyás a végeredményt nem változtatja, csak a felesleges
+    rendszerhívást takarítja meg.
+
+    **Amit ez a függvény SZÁNDÉKOSAN NEM tesz.** Nem próbálja kitalálni
+    (útvonal-előtag alapján, feloldás nélkül), hogy egy exportcél egy másik
+    védett gyökér ALATT van-e — az ilyen heurisztika egy szimbolikus linkkel
+    tévedhetne, és a #1667/#1560 védelme éppen az, hogy egy exportcél
+    SOHA ne essen áldozatul a takarításnak. A fennmaradó, nagyobb nyereség
+    (a feloldás cache-elése munkamenetek között) külön jegyet igényel — ld.
+    #1706 jelentése."""
+    resolved: list[Path] = []
+    latott: set[str] = set()
+    for root in roots:
+        nyers = str(root)
+        if nyers in latott:
+            continue
+        latott.add(nyers)
+        resolved.append(Path(normalize_path(root)))
+    return tuple(resolved)
+
+
 def prune_foreign_folders(
     conn: sqlite3.Connection, roots: tuple[str | Path, ...]
 ) -> None:
@@ -1060,11 +1103,14 @@ def prune_foreign_folders(
     parancssori argumentum) mappái ne jelenjenek meg a bal hasábban. Üres
     gyökérlistával nem csinál semmit — védekezés, nehogy egy hiányzó
     WatchedFolders.txt csendben kiürítse az egész indexet. Explicit
-    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak."""
+    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak.
+
+    A gyökerek feloldása (`_resolved_protected_roots`, #1706) kihagyja a
+    pontosan egyező ismétlést — ld. ott a mérést és az indoklást."""
     if not roots:
         return
     _ensure_scan_state(conn)
-    root_paths = tuple(Path(normalize_path(root)) for root in roots)
+    root_paths = _resolved_protected_roots(roots)
     stale = [
         (row["id"], row["path"])
         for row in conn.execute("SELECT id, path FROM folders")
