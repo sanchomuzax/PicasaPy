@@ -8,6 +8,21 @@ munkamásolatok és a szerveroldali beolvasztás miatt a szövegek zömét nem l
 16 óra alatt 11 magyar szöveget hozó commitból egyet sem. Ezért az ellenőrzés
 ide, a PR-be költözött, ahol MINDEN változás áthalad.
 
+⚠️ MIT NEM ELLENŐRIZ (#1708). Ez az őr a változásban megjelenő MAGYAR
+SZÖVEGEK helyességét nézi — NEM azt, hogy minden felirathoz VAN-E fordítás.
+A kettő külön kérdés, és a „nincs új magyar felületi szöveg" válasz nem
+jelenti, hogy nincs lefordítatlan felirat.
+
+Bizonyíték (#1614, 2026-08-28): két új `qsTr()` felirat lefordítatlanul ment
+volna ki, mert MINDKÉT szöveg szerepelt már a `.ts`-ben — csak MÁS
+kontextusban (a Qt fordítási egységei kontextushoz kötöttek). Ez az őr
+jelentette: „nincs új felhasználónak látszó szöveg" — és igaza is volt, mert
+a szöveg nem volt új, csak a helye. A hiányt a
+`tests/app/test_i18n_completeness.py` fogta meg a CI-n.
+
+⇒ A teljességet MINDIG a `test_i18n_completeness.py` mondja meg. Ez az őr és
+az a teszt nem helyettesíti egymást.
+
 Szándékosan tanácsadó: sosem bukatja el a build-et. A hunspell a nem létező
 szóalakokat és az idegen szavakat fogja meg; a nyelvhelyesség finomabb
 kérdéseit (stílus, egyeztetés) nem — arra az emberi olvasás való.
@@ -148,7 +163,12 @@ def main() -> int:
 
     szovegek = magyar_szovegek(_diff(args.tartomany))
     if not szovegek:
+        # #1708: a válasz félreérthető volt — az agent ebből arra jutott,
+        # hogy nincs fordítanivaló, holott két felirat lefordítatlan maradt
+        # (más kontextusban már létező szöveg). Mondjuk ki a hatókört.
         print("Nincs új magyar felületi szöveg ebben a változásban.")
+        print("  (Ez NEM jelenti, hogy minden felirat le van fordítva — "
+              "azt a tests/app/test_i18n_completeness.py mondja meg.)")
         return 0
     gyanus = [sz for sz in _hunspell(_szavak(szovegek))
               if sz.lower() not in _sajat_szavak()]
