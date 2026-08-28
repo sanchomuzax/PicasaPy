@@ -29,8 +29,10 @@ from __future__ import annotations
 
 import argparse
 import html
+import json
+import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -79,6 +81,53 @@ def _erintetlen(jegyek: list[dict]) -> list[dict]:
     ]
 
 
+def _kiadasok(darab: int = 6) -> list[dict]:
+    """A legutóbbi kiadások a `gh`-ból: verzió + időpont.
+
+    A lap fő célja, hogy a tulajdonos EGY helyen lássa, mi történt — enélkül
+    a GitHubot kell böngésznie (#1695)."""
+    try:
+        nyers = subprocess.run(
+            ["gh", "release", "list", "--limit", str(darab),
+             "--json", "tagName,publishedAt"],
+            cwd=REPO, capture_output=True, text=True, timeout=60, check=True,
+        ).stdout
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            FileNotFoundError) as hiba:
+        print(f"⚠️  A kiadások nem kérdezhetők le ({hiba.__class__.__name__}).",
+              file=sys.stderr)
+        return []
+    return [
+        {"verzio": k["tagName"], "mikor": (k.get("publishedAt") or "")[:16].replace("T", " ")}
+        for k in json.loads(nyers)
+    ]
+
+
+def _frissen_lezart(orak: int = 24, darab: int = 20) -> list[dict]:
+    """Az elmúlt `orak` órában lezárt jegyek — EZ mutatja, mi történt."""
+    hatar = (datetime.now(timezone.utc) - timedelta(hours=orak)).isoformat()
+    try:
+        nyers = subprocess.run(
+            ["gh", "issue", "list", "--state", "closed", "--limit", "120",
+             "--json", "number,title,closedAt,labels"],
+            cwd=REPO, capture_output=True, text=True, timeout=90, check=True,
+        ).stdout
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            FileNotFoundError) as hiba:
+        print(f"⚠️  A lezárt jegyek nem kérdezhetők le "
+              f"({hiba.__class__.__name__}).", file=sys.stderr)
+        return []
+    frissek = [
+        {"number": j["number"], "title": j["title"],
+         "labels": {c["name"] for c in j["labels"]},
+         "closed": j.get("closedAt", "")}
+        for j in json.loads(nyers)
+        if (j.get("closedAt") or "") >= hatar
+    ]
+    frissek.sort(key=lambda j: j["closed"], reverse=True)
+    return frissek[:darab]
+
+
 def gyujts() -> dict:
     """Minden mért adat egyetlen szótárban. Hálózati hiba esetén a
     jegy-szakasz üres marad — a lap ilyenkor is elkészül, és jelzi."""
@@ -94,6 +143,8 @@ def gyujts() -> dict:
         "erintetlen": erintetlen,
         "spec": _spec_statisztika(),
         "spec_kerdesek": _spec_nyitott_kerdesek(),
+        "kiadasok": _kiadasok(),
+        "frissen_lezart": _frissen_lezart(),
         "ideje": datetime.now(timezone.utc).astimezone(),
     }
 
@@ -166,6 +217,56 @@ def _jegylista(cim: str, leiras: str, jegyek: list[dict], oszt: str) -> str:
             f'      </div>')
 
 
+def _mi_tortent_szakasz(a: dict) -> str:
+    """„Mi történt" — kiadások és a friss lezárások EGY helyen.
+
+    A tulajdonos kérése (2026-08-28): *„Az artifact egyik fő célja, hogy az
+    ember lássam, mi történt az éjszaka. Kiment pár release, és semmit sem
+    látok ebből olvasható módon, a githubot kell böngésszem."* A lap eddig
+    csak az ÁLLAPOTOT mutatta, a TÖRTÉNÉST nem."""
+    kiadasok = a.get("kiadasok") or []
+    lezart = a.get("frissen_lezart") or []
+    if not kiadasok and not lezart:
+        return ""
+
+    kiadas_sorok = "".join(
+        f'          <li><span class="num">{_e(k["verzio"])}</span>'
+        f'<span class="txt">{_e(k["mikor"])}</span></li>\n'
+        for k in kiadasok
+    ) or '          <li><span class="txt">Nincs adat.</span></li>\n'
+
+    lezart_sorok = "".join(
+        f'          <li><span class="num">#{j["number"]}</span>'
+        f'<span class="txt">{_e(j["title"])}</span></li>\n'
+        for j in lezart
+    ) or '          <li><span class="txt">Az elmúlt napban egy sem.</span></li>\n'
+
+    return f"""
+  <section>
+    <div class="section-head">
+      <h2>Mi történt</h2>
+      <p>A legutóbbi kiadások és az elmúlt 24 óra lezárt jegyei — hogy ne a
+         GitHubot kelljen böngészni. A lezárás azt jelenti: beolvadt és
+         kiment.</p>
+    </div>
+    <div class="groups">
+      <div class="group ok">
+        <h3>Kiadások</h3>
+        <p class="note">A legfrissebb elöl.</p>
+        <ul class="tickets">
+{kiadas_sorok}        </ul>
+      </div>
+      <div class="group">
+        <h3>Lezárt jegyek (24 óra)</h3>
+        <p class="note">Összesen {len(lezart)} tétel.</p>
+        <ul class="tickets">
+{lezart_sorok}        </ul>
+      </div>
+    </div>
+  </section>
+"""
+
+
 def _kovetkezo_szakasz(a: dict) -> str:
     if not a["kovetkezo"]:
         return ('      <p class="empty">Nincs több feltáratlan menüparancs — '
@@ -226,6 +327,7 @@ def epits(a: dict) -> str:
   </header>
 {hiba}
 {_szamsor(a)}
+{_mi_tortent_szakasz(a)}
 
   <section>
     <div class="section-head">
