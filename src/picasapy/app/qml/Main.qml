@@ -720,6 +720,9 @@ ApplicationWindow {
         onSelectStarredRequested: window.selectStarred()
         onSelectAllRequested: window.selectAll()
         onClearSelectionRequested: window.clearSelection()
+        // #1686: UGYANAZ a belépő, amit a Ctrl+I és a mappahasáb helyi
+        // menüje is hív — nincs másolt logika.
+        onInvertSelectionRequested: window.invertSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
         // #1473: Eszközök → Arcok keresése…
