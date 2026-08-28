@@ -275,7 +275,9 @@ class TestMegNemValositottModok:
     hatóköre a LÁNC, nem a képpont-szabály. Ha a #1579 valamelyiket
     megvalósítja, ez a teszt szól, és az elvárást ott kell átírni.
 
-    A `sepia`/`bw` a #1657 óta NEM tartozik ide.
+    A `sepia`/`bw` a #1657 óta NEM tartozik ide, a `dither16`/`rdesk`/`mac`
+    pedig a #1658 óta: azok jelölt, letiltott tételek, rájuk kattintani sem
+    lehet — a rács változatlanságát ott a letiltás garantálja.
     """
 
     @pytest.mark.parametrize(
@@ -283,9 +285,11 @@ class TestMegNemValositottModok:
         [
             (TETEL_AUTO, "auto"),
             (TETEL_24BIT, "normal"),
-            (TETEL_16BIT, "dither16"),
-            (TETEL_TAVOLI_ASZTAL, "rdesk"),
-            (TETEL_MAC, "mac"),
+            # ⚠️ #1658: a `dither16`, az `rdesk` és a `mac` tétele MA jelölt és
+            # LETILTOTT — kattintani sem lehet rájuk, tehát módot sem állítanak.
+            # A rács változatlanságát rájuk a letiltás garantálja (a
+            # `test_megjelenitesi_mod_jelolesek_1658.py` méri); itt csak a két
+            # SZÁNDÉKOS üresjárat marad, amelyik tényleg választható.
         ],
     )
     def test_a_racs_kepe_valtozatlan(self, racs, qt_app, tetel, mod):
