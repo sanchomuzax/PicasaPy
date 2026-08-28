@@ -86,7 +86,32 @@ másodpéldány a Picasában."*, `WipeCardMultiDupes`, `WipeCardMultiExcluded`,
 
 ⇒ **Aszinkron feladatsor** dolgozik rajta importálás közben, nem a fő szálon.
 
-## 5. Ami NYITVA marad
+## 5. A duplikátum-áthelyezés (`moveOthersToDuplicatesFolder`) is a MI TÖBBLETÜNK
+
+*2026-08-28, #1697 (a #1539 kiegészítése).*
+
+A `DedupDialog` nem-destruktív feloldása — a csoport nem megtartandó tagjai
+a forrásmappa `Duplikátumok` alkönyvtárába kerülnek
+(`app/dedup_controller.py:DedupController.moveOthersToDuplicatesFolder`) —
+**szintén a mi kiegészítésünk, nem a Picasa viselkedésének másolása.** Ahogy
+az 1. pont leszögezi: az eredeti `ID_DUPES` **SZŰRŐ**, a találatok a fő
+rácsban jelennek meg — az eredeti **semmilyen fájlműveletet nem végez** a
+másodpéldányokon. A gyűjtőmappába áthelyezés tehát önálló döntés, aminek
+NINCS mihez igazodnia a binárisban; egy jövőbeli kör ezért **ne keressen**
+hozzá bináris mintát.
+
+**A `Duplikátumok` mappa SZÁNDÉKOSAN nincs kizárva a beolvasásból**
+(`scanner/name_filters.py`) — ellentétben a Picasa saját generált
+mappáival (`.picasaoriginals`, `.Picasa3Temp`), amiket az eredeti kizár. Ha
+kizárnánk, a `Duplikátumok` mappában futtatott duplikátum-keresés (ami
+ott ténylegesen hasznos: oda kerülhetnek másodpéldányok több forrásmappából
+is) többé nem találna semmit. A kizárás helyett a védelem az ÁTHELYEZÉS
+műveletébe került: ha a forrásmappa NEVE (kis-nagybetű-függetlenül, ld.
+#1682) már a gyűjtőmappáé, az áthelyezés a fájlt helyben hagyja, és a
+felhasználó egyértelmű üzenetet kap — a néma beágyazás (`Duplikátumok/
+Duplikátumok`) éppúgy hiba lenne, mint a néma hatástalanság.
+
+## 6. Ami NYITVA marad
 
 **Mi alapján dönt másodpéldányról?** A `0x00513680` szálnak a saját nevén
 kívül nincs sztringje, és **az `originhash` szó a bináris szövegtárában nem

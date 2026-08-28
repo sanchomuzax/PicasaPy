@@ -18,6 +18,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   szürke marad, érvénytelen (üres, csak szóköz, vagy Windowson tiltott
   karaktert tartalmazó) vagy már foglalt névnél pedig érthető
   hibaüzenet jelenik meg, és semmi nem mozdul a lemezen.
+- **A duplikátumok mappája egymásba ágyazódhatott (#1697).** A
+  „Duplikátumok" gyűjtőmappából újra futtatott áthelyezés
+  `Duplikátumok\Duplikátumok` szerkezetet hozott létre, mert a program a
+  saját gyűjtőmappáját közönséges fotómappaként dolgozta fel. Mostantól,
+  ha a kép már egy „Duplikátumok" nevű mappában van (kis- és
+  nagybetűtől függetlenül, a felhasználó saját maga által létrehozott
+  ilyen nevű mappára is), az áthelyezés a helyén hagyja a fájlt, és
+  egyértelmű üzenetet ír ki — a duplikátum-keresés a mappában továbbra is
+  működik, csak a beágyazó áthelyezést tiltjuk.
 - **Az állapotlap „Ez vár rád" része félrevezetett (#1664).** A tulajdonos
   jelezte, hogy kaotikus. Két hiba volt benne: ugyanaz a jegy **kétszer**
   szerepelt (a „bináris kutatás oldja fel" lista a blokkoltak részhalmaza,

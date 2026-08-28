@@ -67,6 +67,23 @@ from .worker_thread import BackgroundWorkerMixin
 # létrehozva, ha még nincs (ld. `_move_one`).
 DUPLICATES_SUBFOLDER_NAME = "Duplikátumok"
 
+# #1697: a felhasználói jelentés szerint a `Duplikátumok` mappából ismét
+# lefuttatott áthelyezés `Duplikátumok/Duplikátumok` beágyazott szerkezetet
+# hozott létre — a mappa nincs kizárva a beolvasásból (ez SZÁNDÉKOS, ld.
+# `_is_duplicates_collector` docstringje), ezért közönséges fotómappaként
+# újra feldolgozható. EZ A FUNKCIÓ (a másodpéldányok gyűjtőmappába
+# áthelyezése) a MI kiegészítésünk, nem a Picasa viselkedésének másolása —
+# a Picasa `ID_DUPES` parancsa csak SZŰRŐ, fájlműveletet nem végez (ld.
+# `docs/specs/picasa-kereses-modok.md`). A beágyazás elleni védelem tehát
+# saját döntés: ha a forrásmappa NEVE (nem az, hogy mi hoztuk-e létre) már
+# a gyűjtőmappáé, a fájl HELYBEN MARAD, és a felhasználó a meglévő
+# `operationFailed` csatornán EGYÉRTELMŰ üzenetet kap — néma hatástalanság
+# éppolyan hiba lenne, mint a néma beágyazás.
+_ALREADY_IN_COLLECTOR_MESSAGE = (
+    'This picture is already inside a "Duplikátumok" folder; leaving it '
+    "in place instead of nesting the folder inside itself."
+)
+
 # #298: a dedup-előnézetek SAJÁT id-tartománya a thumbnail-providerben.
 # A valódi indexbeli fotók id-je mindig pozitív; az Import-forrás előnézete
 # a -1-től lefelé tartó sávot használja (`import_source_controller.py`),
@@ -80,6 +97,17 @@ DEDUP_THUMB_ID_BASE = -1_000_000
 _HASH_FLUSH_SIZE = 200
 
 _log = logging.getLogger(__name__)
+
+
+def _is_duplicates_collector(folder: Path) -> bool:
+    """Igaz, ha `folder` SAJÁT NEVE megegyezik a duplikátum-gyűjtőmappa
+    nevével — kis-nagybetű-független teljes egyezéssel (Windowson a
+    `duplikátumok` és a `Duplikátumok` UGYANAZ a könyvtár, #1682).
+
+    A NÉVRE illesztünk, nem arra, hogy MI hoztuk-e létre a mappát: a
+    felhasználó saját kezűleg készített `Duplikátumok` mappájára is ugyanez
+    a védelem vonatkozzon (#1697)."""
+    return folder.name.casefold() == DUPLICATES_SUBFOLDER_NAME.casefold()
 
 
 def _photo_path(photo: PhotoRecord) -> str:
@@ -372,11 +400,20 @@ class DedupController(BackgroundWorkerMixin, QObject):
         "Duplikátumok" alkönyvtárába kerül (mappánként létrehozva, ha még
         nincs). Így a különböző mappákból származó duplikátumok is a
         saját kontextusukban maradnak, nem egy közös, helyfüggetlen
-        gyűjtőmappában."""
+        gyűjtőmappában.
+
+        #1697: ha a FORRÁSMAPPA maga már a gyűjtőmappa (a felhasználó a
+        `Duplikátumok` mappában futtatja a feloldást), az áthelyezés nem
+        hoz létre beágyazott `Duplikátumok/Duplikátumok` szerkezetet — a
+        fájl helyben marad, és `operationFailed`-en egyértelmű üzenetet
+        kap a felhasználó (ld. `_is_duplicates_collector`)."""
         for path in paths:
             if path == keep_path:
                 continue
             source = Path(path)
+            if _is_duplicates_collector(source.parent):
+                self.operationFailed.emit(path, self.tr(_ALREADY_IN_COLLECTOR_MESSAGE))
+                continue
             dest_folder = source.parent / DUPLICATES_SUBFOLDER_NAME
             try:
                 dest_folder.mkdir(exist_ok=True)
