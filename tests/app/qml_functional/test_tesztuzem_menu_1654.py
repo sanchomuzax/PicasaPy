@@ -20,6 +20,32 @@ def _tetel(window, nev):
     return obj
 
 
+def _atfedo_elemek(window, pont):
+    """#1676: minden LÁTHATÓ, névvel ellátott QML-elem, aminek a
+    (ablak-koordinátás) befoglalója tartalmazza a pontot — a windowsos
+    néma kattintás-elvétés diagnózisához: ha valami MÁS fedi a jelvényt,
+    ez a lista megmutatja, mi és milyen z-értékkel."""
+    talalatok = []
+    for item in window.findChildren(QObject):
+        get = getattr(item, "mapFromScene", None)
+        if get is None:
+            continue
+        try:
+            if item.property("visible") is not True:
+                continue
+            szelesseg = item.property("width")
+            magassag = item.property("height")
+            if not szelesseg or not magassag or szelesseg <= 0 or magassag <= 0:
+                continue
+            helyi = item.mapFromScene(pont)
+            if 0 <= helyi.x() <= szelesseg and 0 <= helyi.y() <= magassag:
+                nev = item.objectName() or item.metaObject().className()
+                talalatok.append(f"{nev} (z={item.property('z')})")
+        except Exception:  # noqa: BLE001 - diagnosztika, nem szabad elszállnia
+            continue
+    return talalatok
+
+
 def _kattints(tetel):
     """A valódi kattintás mindkét lépése, a QML sorrendjében.
 
@@ -178,6 +204,8 @@ class TestLathatoAllapot:
             f"{jelzes.property('width'):.1f})"
         )
 
+        terulet = _tetel(window, "menuBarTesztuzemBadgeArea")
+
         QTest.mouseClick(
             window,
             Qt.MouseButton.LeftButton,
@@ -186,8 +214,25 @@ class TestLathatoAllapot:
         )
         qt_app.processEvents()
 
+        # #1676 2. kör: az ELSŐ mérőkör (a kattintási pont az ablakon
+        # belül van) NEM fogta meg a windowsos hibát — a diagnózist ki
+        # kell terjeszteni arra, MI fedheti a jelvényt, és milyen
+        # állapotban van az ablak/a jelvény/a kattintási terület a
+        # kattintás pillanatában. Csak a bukás esetén épül fel (az
+        # `assert` második tagja csak akkor értékelődik ki).
         assert controller.tesztuzemEnabled is False, (
-            "a menüsáv TESZTÜZEM feliratára kattintva nem kapcsolt ki a mód"
+            "a menüsáv TESZTÜZEM feliratára kattintva nem kapcsolt ki a mód — "
+            f"ablak: aktív={window.isActive()} látható={window.isVisible()} "
+            f"kitett={window.isExposed()}; "
+            f"felirat: látható={jelzes.property('visible')} "
+            f"engedélyezett={jelzes.property('enabled')} "
+            f"opacity={jelzes.property('opacity')} z={jelzes.property('z')} "
+            f"x={jelzes.property('x'):.1f} y={jelzes.property('y'):.1f} "
+            f"szél={jelzes.property('width'):.1f} mag={jelzes.property('height'):.1f}; "
+            f"terület: látható={terulet.property('visible')} "
+            f"engedélyezett={terulet.property('enabled')} z={terulet.property('z')}; "
+            f"a pontot ({kozep.x():.1f}, {kozep.y():.1f}) fedő elemek: "
+            f"{_atfedo_elemek(window, kozep)}"
         )
         assert jelzes.property("visible") is False
 
