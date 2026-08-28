@@ -296,6 +296,54 @@ def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
         )
 
 
+def _ottragadt_mappak_takaritasa(
+    index_db: Path, roots: tuple[str, ...], settings: QSettings
+) -> None:
+    """A #58 takarítás SAJÁT kapcsolaton, az első képkocka UTÁN (#1716).
+
+    Eddig ez a lépés a kritikus úton futott: a védett gyökerek (figyelt
+    mappák + nyilvántartott exportcélok) száma × a hálózati `stat` ára —
+    a tulajdonos gépén MÉRVE 2 293,9 ms (a #1706 modellje szerint 10
+    gyökér × ~4 `lstat`, NAS-on ~47 ms/hívás). A feloldás ára ELKERÜL-
+    HETETLEN (#1706/#1667 óta a nyilvántartott exportcélokat létezés-
+    ellenőrzés nélkül kell védeni), tehát nem OLCSÓBB lett, hanem ODÉBB
+    került — pontosan a `_exportcelok_visszavetele` (#1667) mintája.
+
+    A törlés (`folders`/`photos`/`folder_scan_state`) nem sürgős: ottragadt
+    (a figyelt gyökereken kívülre került) mappákat takarít, ami a felület
+    megjelenése UTÁN ugyanúgy elvégezhető.
+
+    ## Versenyhelyzet a háttér-szinkronnal (#1716)
+
+    ⚠️ A `_start_and_finish` ezt a lépést a `_start_initial_scan` (tehát a
+    `controller.start()` → `rescan()`) ELŐTT hívja, és ez a sorrend a
+    SZINKRONPONT — nem zár. A `rescan()` saját SQLite-kapcsolattal futó
+    HÁTTÉRSZÁLAT indít (`_sync_worker`, ld. `library_controller.py`), ami
+    ugyanazokat a táblákat írja. Ha a takarítás ezután (vagy azzal egy
+    időben) futna, a törlés versenyhelyzetbe kerülne a szál írásával: egy
+    épp szinkronizált mappa sora eltűnhetne a lába alól. Mivel a takarítás
+    a FŐSZÁLON, egyetlen tranzakcióban fut és `commit()`-tal lezárul,
+    MIELŐTT a `controller.start()` egyáltalán meghívná a `rescan()`-t, a
+    háttérszál a takarítás befejezése előtt még nem is létezik — a
+    sorrend tehát garantálja a kizárást, zár nélkül. Az elhelyezés-őr
+    (`tests/perf/test_takaritas_utrol_1716.py`) ezt a sorrendet fagyasztja
+    be: ha a hívás a `_start_initial_scan` MÖGÉ kerülne, az őr bukik.
+
+    A bal hasáb mappafája (`_reload_folder_hierarchy`) a takarítás ELŐTT,
+    az első képkocka előtt egyszer már feltöltődött — a takarítás után
+    ezért a hívó azonnal újratölti, hogy a nézet ne mutasson egy már
+    törölt, ottragadt mappát a következő szinkron végéig.
+
+    A hiba nyelt (a takarítás soha nem hiúsulhat meg tőle), de naplózva."""
+    try:
+        with open_index(index_db) as conn:
+            prune_foreign_folders(conn, _takaritas_gyokerei(roots, settings))
+    except Exception:  # noqa: BLE001 - a felület már áll, ez csak karbantartás
+        logging.getLogger(__name__).warning(
+            "az ottragadt mappák takarítása hibára futott", exc_info=True
+        )
+
+
 def _data_dir(platform: str | None = None) -> Path:
     """Az index-SQLite (+ zárolófájl) mappája — ha a "Move Database"
     dialóguson (#368) keresztül egyszer már áthelyezésre került, az
@@ -900,16 +948,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             # itt tehát pontosan a fenti `open_index` (séma + migráció)
             # költségét, anélkül hogy a `with`-et szét kellene szedni.
             timeline.mark("index megnyitása (séma + migráció)")
-            with timeline.phase("ottragadt mappák takarítása (#58)"):
-                # #1565/#1667: az exportcélok a gyökereken KÍVÜL élnek, de a
-                # #1565 óta saját gyökérként indexeltek — a takarítás elől
-                # VÉDETTEK. Enélkül minden induláskor kidobnánk és nulláról
-                # olvasnánk vissza őket (mérve 180 EXIF-nyitás; a tulajdonos
-                # gépén 8,4 s, az indulás 77,8%-a). A visszavétel maga már
-                # nincs itt: az első képkocka után fut (`_start_and_finish`).
-                prune_foreign_folders(
-                    conn, _takaritas_gyokerei(roots, QSettings())
-                )
+            # #1716: az ottragadt mappák takarítása (#58) NEM itt fut többé —
+            # a védett gyökerek (figyelt mappák + nyilvántartott exportcélok)
+            # száma × a hálózati `stat` ára miatt ez volt a legnagyobb tétel,
+            # ami még a kritikus úton maradt (mérve 2 293,9 ms). A takarítás
+            # az első képkocka UTÁN fut (`_start_and_finish` →
+            # `_ottragadt_mappak_takaritasa`), a `_exportcelok_visszavetele`
+            # (#1667) mintájára — ld. ott a versenyhelyzet indoklását.
             with timeline.phase("Kollázsok mappa önjavítása (#1075)"):
                 _onjavito_kollazsmappa(conn, QSettings())
     except sqlite3.DatabaseError:
@@ -1199,8 +1244,21 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     def _start_and_finish() -> None:
         first_frame_at = time.monotonic()
-        # #1667: az exportcélok visszavétele NEM a kritikus úton — az ablak
-        # már látszik, mire ez a karbantartás elindul.
+        # #1667/#1716: az induláskori indexkarbantartás NEM a kritikus
+        # úton — az ablak már látszik, mire ez elindul. A takarítás (#58)
+        # ELŐBB fut, mint a `_start_initial_scan` (`controller.start()` →
+        # `rescan()`): az utóbbi indítja a háttér-szinkron szálat, ami
+        # SAJÁT kapcsolattal írja ugyanazt az indexet. Amíg ez a sorrend
+        # áll, a háttérszál a takarítás `commit()`-ja UTÁN keletkezik —
+        # tehát a kettő SOHA nem ír egyszerre (ld. `_ottragadt_mappak_
+        # takaritasa` docstringje a versenyhelyzet indoklásáért).
+        with timeline.phase("ottragadt mappák takarítása (#58)"):
+            _ottragadt_mappak_takaritasa(data_dir / "index.db", roots, QSettings())
+        # a bal hasáb mappafája az első képkocka ELŐTT, még a takarítatlan
+        # indexből töltődött fel (ld. lent) — a takarítás után azonnal
+        # újratöltjük, hogy ne mutasson ottragadt mappát a következő
+        # szinkron végéig.
+        _reload_folder_hierarchy()
         with timeline.phase("exportcélok visszavétele (#1565)"):
             _exportcelok_visszavetele(data_dir / "index.db", QSettings())
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):

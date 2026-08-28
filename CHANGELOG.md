@@ -45,6 +45,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   feloldást) igényelt — hálózati meghajtón ez közvetlenül az indulási időt
   hosszabbította. Mostantól egy pontosan egyező útvonal csak egyszer
   oldódik fel, a védelem (#1667/#1565) változatlan.
+- **Az ottragadt mappák induláskori takarítása feltartotta a program
+  ablakának megjelenését (#1716).** Ez a lépés hálózati könyvtárnál a
+  figyelt mappák és a nyilvántartott exportcélok számával arányosan
+  lassult — a tulajdonos gépén mérve 2,3 másodpercig. A takarítás
+  szerepe (az induláskor már nem figyelt mappák eltüntetése az
+  előzményekből) nem sürgős, ezért mostantól az ablak megjelenése UTÁN
+  fut, ugyanúgy, ahogy az exportcélok pótlólagos betöltése is (#1667) —
+  az ablak ezzel a mért idővel hamarabb látszik, a takarítás funkciója
+  változatlan.
+
 ## [0.8.132] – 2026-08-28
 
 ### Javítva
