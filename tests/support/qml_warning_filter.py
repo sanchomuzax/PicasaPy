@@ -36,6 +36,14 @@ QML_SCRIPT_ERROR_PATTERNS = (
     # Mindig a mi kódunk hibája (névütközés), platformfüggetlen — sose
     # buktatná el hamisan a CI-t.
     "overrides a member of the base object",
+    # #1697: `QML QQuickText: Cannot anchor to an item that isn't a parent or
+    # sibling.` — a kötés a KOMPONENS létrehozásakor értékelődik ki, tehát
+    # egy futásidejű `parent`-átállítás ELŐTTI állapotra kell érvényesnek
+    # lennie. Ez mindig a MI kötésünk hibája, platformfüggetlen, és a hatása
+    # néma: az elem odakerül, ahova az alapértelmezés teszi, nem oda, ahova
+    # szántuk. A tulajdonos konzolján jelent meg minden induláskor, kétszer —
+    # a tesztek addig nem fogták meg, mert ez a minta hiányzott innen.
+    "Cannot anchor to an item",
 )
 
 

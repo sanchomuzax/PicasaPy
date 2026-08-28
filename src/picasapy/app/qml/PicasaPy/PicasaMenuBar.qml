@@ -72,11 +72,20 @@ MenuBar {
             // belőle), és plain vizuális gyerekként a `z` már a tételek
             // fölé emeli. Emiatt viszont a `signInLink` MÁR NEM testvér,
             // tehát a jobb margót számolni kell.
+            // ⚠️ #1697: az `anchors` a `bar`-ra hivatkozva figyelmeztetést
+            // dobott MINDEN induláskor („Cannot anchor to an item that isn't
+            // a parent or sibling"), mert a kötések a KOMPONENS
+            // létrehozásakor kiértékelődnek — akkor viszont a szülő még a
+            // háttér-téglalap, a `bar` pedig annak sem szülője, sem
+            // testvére. A `parent`-re hivatkozva a kötés MINDKÉT állapotban
+            // érvényes: előbb a háttérre (az kitölti a sávot), a
+            // reparentálás után a menüsávra — és újra is értékelődik, mert
+            // a `parent` maga is tulajdonság.
             Component.onCompleted: parent = bar
             z: 3
-            anchors.right: bar.right
+            anchors.right: parent.right
             anchors.rightMargin: signInLink.width + 26  // 10 (signIn) + 16 (rés)
-            anchors.verticalCenter: bar.verticalCenter
+            anchors.verticalCenter: parent.verticalCenter
             visible: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
                 ? bar.ctl.tesztuzemEnabled : false
             text: qsTr("TEST MODE — logging startup")
