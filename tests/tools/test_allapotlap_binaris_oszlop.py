@@ -57,14 +57,29 @@ class TestLap:
                 "ideje": datetime(2026, 8, 27, tzinfo=timezone.utc)}
 
     def test_a_lapon_megjelenik_a_harmadik_oszlop(self):
+        # ⚠️ #1664/#1681: a szakasz címei megváltoztak, mert a régi
+        # „Ez vár rád" cím ellentmondott a tartalmának, és a két csoport
+        # DUPLÁN sorolta ugyanazt a jegyet. A csoport itt már particionált:
+        # „Ebből bináris kutatás…" → „Bináris kutatás oldja fel".
         lap = epits(self._adat([BLOKKOLT_KUTATHATO, BLOKKOLT_FELHASZNALOS]))
-        assert "Ebből bináris kutatás oldja fel" in lap
+        assert "Bináris kutatás oldja fel" in lap
         assert "#1153" in lap
 
     def test_a_cimke_nelkuli_nem_kerul_a_harmadik_oszlopba(self):
         """A #684-et a felhasználó exportja oldja fel, nem visszafejtés —
-        a Blokkolt oszlopban ott van, a harmadikban nem."""
+        a „Külső akadályon áll" csoportban ott van, a harmadikban nem."""
         lap = epits(self._adat([BLOKKOLT_FELHASZNALOS]))
-        harmadik = lap.split("Ebből bináris kutatás oldja fel", 1)[1]
+        harmadik = lap.split("Bináris kutatás oldja fel", 1)[1]
         assert "#684" not in harmadik.split("</div>", 2)[0]
         assert "#684" in lap
+
+    def test_egy_jegy_CSAK_EGY_csoportban_szerepel(self):
+        """#1664: a duplázás volt a jelentett hiba — ez őrzi, hogy ne térjen
+        vissza. A `bináris-kutatható` jegy a harmadik csoportba tartozik, a
+        „Külső akadályon áll" listából KI kell maradnia."""
+        lap = epits(self._adat([BLOKKOLT_KUTATHATO, BLOKKOLT_FELHASZNALOS]))
+        szakasz = lap.split("Mi áll, és kin múlik", 1)[1].split("</section>", 1)[0]
+        assert szakasz.count("#1153") == 1, (
+            "a bináris-kutatható jegy KÉTSZER szerepel a szakaszban (#1664)"
+        )
+        assert szakasz.count("#684") == 1
