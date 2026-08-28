@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.132] – 2026-08-28
 
 ### Javítva
+- **Két figyelmeztetés tűnt el az indításkor (#1697).** A menüsáv
+  TESZTÜZEM-felirata minden indulásnál hibaüzenetet írt a konzolra
+  („Cannot anchor to an item…"), mert az elhelyezését leíró kötés még a
+  régi szülőre hivatkozott. A felirat a helyén volt, de az üzenet joggal
+  zavart; mostantól nincs.
 - **A Szerkesztés ▸ „Kijelölés megfordítása" menüpont nem volt
   kattintható (#1686).** A `Ctrl+I` billentyű régóta működött, a menüpont
   viszont szürke helyfoglaló volt — a funkciót így csak az érte el, aki
