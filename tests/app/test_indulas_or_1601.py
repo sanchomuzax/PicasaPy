@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QCoreApplication, QSettings
 
 from picasapy.index import open_index, sync_tree
 from picasapy.index.side_pane import load_side_pane_collections
@@ -53,7 +53,17 @@ _NAGY = 400
 _SZEKCIO_PER_INI = 22
 
 #: A megengedett növekmény EGY teljes ini-söprés idejéhez mérve.
-_MEGENGEDETT_HANYAD = 0.5
+#:
+#: ⚠️ #1689: 0,5 → 1,0. A 0,5 a CI terhelése alatt **51%-on** megbukott
+#: (120 ms növekmény, 235 ms söprés), pedig a termék jó volt. Az arány
+#: önkalibráló ugyan, de a két mérés NEM egyszerre készül: egy közben
+#: beérkező terhelés az egyiket jobban torzítja, mint a másikat.
+#:
+#: A szűk küszöb szerepét átvette a fölötte álló, DETERMINISZTIKUS
+#: munkamennyiség-őr (nulla főszáli ini-olvasás). Ez az időarányos mérce
+#: durva hálóként marad: a mért regresszió 179% volt, tehát az 1,0 azt
+#: bőven megfogja, flaky-ség nélkül.
+_MEGENGEDETT_HANYAD = 1.0
 
 _ROY = "b8e4117cf1d6615b"
 _ANNA = "a1a2a3a4a5a6a7a8"
@@ -121,6 +131,65 @@ def _indulas_blokkolo_ms(base, lib, db) -> float:
         controller.waitForBackgroundWorkers(120.0)
 
 
+def _fosz_ali_ini_olvasasok(base, lib, db) -> int:
+    """Hány `.picasa.ini`-t olvas a FŐSZÁL a `start()` alatt? — #1689.
+
+    Ez a MUNKAMENNYISÉG-mérce. Az időarányos őr (lentebb) a CI terhelése
+    alatt megbukott 51%-on az 50%-os küszöbnél, pedig a termék jó volt:
+    az arány önkalibráló ugyan, de a két mérés NEM egyszerre készül,
+    tehát egy közben beérkező terhelés az egyiket jobban torzítja.
+
+    A munkamennyiség ezzel szemben determinisztikus: a #1601 óta az
+    ini-söprésnek a háttérszálon kell futnia, tehát a főszálon NULLA
+    ini-olvasásnak kell történnie — a könyvtár méretétől függetlenül.
+    """
+    import threading
+
+    from picasapy.index import folder_ini
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.thumbs import ThumbnailCache
+
+    fosz = threading.get_ident()
+    szamlalo = {"fosz": 0, "hatter": 0}
+    eredeti = folder_ini.load_document
+
+    def merve(*args, **kwargs):
+        kulcs = "fosz" if threading.get_ident() == fosz else "hatter"
+        szamlalo[kulcs] += 1
+        return eredeti(*args, **kwargs)
+
+    folder_ini.load_document = merve
+    try:
+        settings = QSettings(
+            str(base / "settings.ini"), QSettings.Format.IniFormat
+        )
+        controller = AppController(
+            db,
+            (str(lib),),
+            ThumbnailProvider(ThumbnailCache(base / "thumbs", size=32)),
+            settings=settings,
+            watched_file=base / "WatchedFolders.txt",
+        )
+        try:
+            controller.start()
+            # ⚠️ A `start()` VISSZATÉRÉSE nem elég mérési ablak: a hasáb
+            # frissítése a felület szálán a `syncFinished` UTÁN fut. Ha csak
+            # a `start()`-ig mérnénk, a számláló akkor is nulla lenne, ha a
+            # főszál később mégis maga söpri az ini-ket — az őrnek nem volna
+            # foga. (Ezt mutációval ellenőriztük: a letét kiürítésével a
+            # szűkebb ablak NEM bukott el.)
+            controller.waitForBackgroundWorkers(120.0)
+            for _ in range(20):
+                QCoreApplication.processEvents()
+            return szamlalo["fosz"]
+        finally:
+            controller.shutdown()
+            controller.waitForBackgroundWorkers(120.0)
+    finally:
+        folder_ini.load_document = eredeti
+
+
 def _sopres_ms(db) -> float:
     """A referencia: EGY teljes `.picasa.ini`-söprés ugyanezen a gépen."""
     with open_index(db) as conn:
@@ -131,6 +200,26 @@ def _sopres_ms(db) -> float:
 
 
 class TestIndulasNemSkalazodikAzIniSopressel:
+    def test_a_foszal_egyetlen_ini_t_sem_olvas_indulaskor(self, qt_app, tmp_path):
+        """#1689: MUNKAMENNYISÉG-mérce — terheléstől független.
+
+        A #1601 óta az ini-söprés a háttér-szinkron szálán fut. A főszálon
+        tehát NULLA `.picasa.ini`-olvasásnak kell történnie, és ez a szám a
+        könyvtár méretével sem nőhet.
+        """
+        kicsi = _konyvtar_es_index(tmp_path, "kicsi_db", _KICSI)
+        nagy = _konyvtar_es_index(tmp_path, "nagy_db", _NAGY)
+
+        kicsi_olvasas = _fosz_ali_ini_olvasasok(*kicsi)
+        nagy_olvasas = _fosz_ali_ini_olvasasok(*nagy)
+
+        assert nagy_olvasas == kicsi_olvasas == 0, (
+            f"a főszál ini-t olvas az induláskor: {_KICSI} mappa → "
+            f"{kicsi_olvasas} olvasás, {_NAGY} mappa → {nagy_olvasas}. "
+            "A #1601 óta az ini-söprésnek a háttér-szinkron szálán kell "
+            "futnia, nem a felület szálán."
+        )
+
     def test_a_blokkolo_indulas_novekmenye_a_sopres_tort_resze(
         self, qt_app, tmp_path
     ):
