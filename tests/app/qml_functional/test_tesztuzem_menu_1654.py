@@ -206,6 +206,7 @@ class TestLathatoAllapot:
 
         terulet = _tetel(window, "menuBarTesztuzemBadgeArea")
 
+
         QTest.mouseClick(
             window,
             Qt.MouseButton.LeftButton,
@@ -235,6 +236,34 @@ class TestLathatoAllapot:
             f"{_atfedo_elemek(window, kozep)}"
         )
         assert jelzes.property("visible") is False
+
+
+    def test_a_jelveny_a_menutetelek_FOLOTT_van(self, qml_app, qt_app):
+        """#1676: a néma elvétés oka a RÉTEGSORREND volt, nem a geometria.
+
+        A `Control.background` mindig a `contentItem` ALATT van, a
+        menütételek pedig a `contentItem`-ben ülnek. Amíg a jelvény a
+        háttérrétegben volt, elég volt egy szélesebb betűkészlet (Windowson
+        a felirat 324 px a linuxos 174 helyett), és a legjobboldalibb
+        `MenuBarItem` ELVETTE a kattintást — a kikapcsoló gomb némán
+        hatástalan lett. Ez az őr platformfüggetlen: a SZERKEZETET méri,
+        nem a betűmetrikát, ezért Linuxon is bukik, ha valaki visszateszi.
+        """
+        window, controller, _engine = qml_app
+        controller.setTesztuzemEnabled(True)
+        qt_app.processEvents()
+        jelzes = _tetel(window, "menuBarTesztuzemBadge")
+        szulo = jelzes.parentItem()
+        assert szulo is not None
+        osztaly = szulo.metaObject().className()
+        assert "MenuBar" in osztaly, (
+            "a TESZTÜZEM jelvény szülője nem a menüsáv, hanem "
+            f"{osztaly} — ha ez a háttérréteg, a menütételek elveszik a "
+            "kattintást (#1676)"
+        )
+        assert jelzes.z() > 0, (
+            f"a jelvény z-értéke {jelzes.z()} — a menütételek fölé kell kerülnie"
+        )
 
 
 class TestAVisszajelzesEsATartalek:
