@@ -301,12 +301,21 @@ class TestAzExportcelTuleliAzIndulasiTakaritast:
     """A `prune_foreign_folders` (#58) minden figyelt gyökéren kívüli
     mappát töröl INDULÁSKOR. Enélkül az exportcél a következő indításig
     élne, és a hiba visszatérne — a kollázsnál ezt a
-    `_onjavito_kollazsmappa` (#1075) oldja meg."""
+    `_onjavito_kollazsmappa` (#1075) oldja meg.
+
+    #1667: a túlélést azóta NEM a takarítás utáni visszaépítés adja, hanem
+    az, hogy a takarítás a nyilvántartott exportcélokat VÉDETT gyökérként
+    kapja meg (`_takaritas_gyokerei`). A régi szerkezet minden induláskor
+    kidobta és nulláról olvasta vissza az exportált képeket — a tulajdonos
+    gépén 8,4 másodpercért."""
 
     def test_ujraindulas_utan_is_latszik(self, qt_app, tmp_path):
         from PySide6.QtCore import QSettings
 
-        from picasapy.app.application import _ujraindexelt_exportcelok
+        from picasapy.app.application import (
+            _takaritas_gyokerei,
+            _ujraindexelt_exportcelok,
+        )
         from picasapy.app.exported_folders import EXPORTED_FOLDERS_SETTINGS_KEY
         from picasapy.index import open_index, prune_foreign_folders, sync_folder
 
@@ -332,41 +341,137 @@ class TestAzExportcelTuleliAzIndulasiTakaritast:
         with open_index(tmp_path / "index.db") as conn:
             sync_folder(conn, library, library)
             sync_folder(conn, cel, cel)
-            # így indul a program: a takarítás mindent kidob a gyökereken kívül
-            prune_foreign_folders(conn, (str(library),))
+            # így indul a program: a takarítás a VÉDETT gyökereket kapja
+            # (#1667), a visszavétel pedig az első képkocka után fut
+            prune_foreign_folders(
+                conn, _takaritas_gyokerei((str(library),), settings)
+            )
             _ujraindexelt_exportcelok(conn, settings)
             maradt = [
                 row["path"] for row in conn.execute("SELECT path FROM folders")
             ]
+            kepek = conn.execute(
+                "SELECT COUNT(*) FROM photos p JOIN folders f"
+                " ON f.id = p.folder_id WHERE f.path = ?",
+                (str(cel.resolve()),),
+            ).fetchone()[0]
 
         assert str(cel.resolve()) in maradt, (
             "az indulási takarítás után az exportcél kiesett az indexből — "
             "az Exportált képek csomópontja a következő indítástól ismét "
             "üres rácsot nyitna (#1565)"
         )
+        assert kepek == 1, (
+            "az exportcél mappasora megmaradt, de a KÉPEI nem — az "
+            "Exportált képek csomópontja üres rácsot nyitna (#1565/#1667)"
+        )
 
+    def test_az_indexbe_meg_be_nem_kerult_exportcel_indulaskor_bekerul(
+        self, qt_app, tmp_path
+    ):
+        """A visszavétel ÖNJAVÍTÓ szerepe — ezt a védelem nem pótolja.
+
+        MÉRVE (#1667 mutációs próba): a fenti
+        `test_ujraindulas_utan_is_latszik` a `_ujraindexelt_exportcelok`
+        kiürítésével is ZÖLD maradt, mert azt a helyzetet a #1667 óta a
+        takarítás-védelem tartja. A funkciónak viszont maradt egy olyan
+        fele, amit CSAK a visszavétel tud:
+
+        * a felhasználó a program KIKAPCSOLT állapotában (vagy egy másik
+          gépről, NAS-on) tett képet az exportmappába;
+        * az index egy régebbi verzióval készült, amely a célt még
+          kitakarította;
+        * az exportcél sosem került be, mert az exportot végző munkamenet
+          összeomlott.
+
+        Mindháromban a mappa a lemezen ott van, az indexben nincs. Ha a
+        visszavétel nem fut le, az „Exportált képek" üres rácsot nyit —
+        pontosan a #1565 eredeti hibája."""
+        from PySide6.QtCore import QSettings
+
+        from picasapy.app.application import (
+            _takaritas_gyokerei,
+            _ujraindexelt_exportcelok,
+        )
+        from picasapy.app.exported_folders import EXPORTED_FOLDERS_SETTINGS_KEY
+        from picasapy.index import open_index, prune_foreign_folders, sync_folder
+
+        library = tmp_path / "konyvtar"
+        library.mkdir()
+        make_jpeg(library / "IMG_0001.jpg")
+        cel = tmp_path / "Kepek" / "Picasa" / "Exports" / "tel"
+        cel.mkdir(parents=True)
+        make_jpeg(cel / "IMG_0007.jpg")
+
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        settings.setValue(EXPORTED_FOLDERS_SETTINGS_KEY, [str(cel)])
+
+        with open_index(tmp_path / "index.db") as conn:
+            # SZÁNDÉKOSAN csak a könyvtár kerül be: az exportcél az
+            # indexben MÉG NINCS BENNE
+            sync_folder(conn, library, library)
+            elozetes = [
+                row["path"] for row in conn.execute("SELECT path FROM folders")
+            ]
+            assert str(cel.resolve()) not in elozetes, (
+                "a próba előfeltétele, hogy az exportcél még ne legyen az "
+                "indexben — különben a teszt üresen zöld"
+            )
+
+            prune_foreign_folders(
+                conn, _takaritas_gyokerei((str(library),), settings)
+            )
+            _ujraindexelt_exportcelok(conn, settings)
+
+            kepek = [
+                row["name"]
+                for row in conn.execute(
+                    "SELECT p.name FROM photos p JOIN folders f"
+                    " ON f.id = p.folder_id WHERE f.path = ?",
+                    (str(cel.resolve()),),
+                )
+            ]
+
+        assert kepek == ["IMG_0007.jpg"], (
+            "az indexben addig nem szereplő exportcél az indulás után sem "
+            "került be — az Exportált képek csomópont üres rácsot nyit "
+            f"(#1565). Az indexben talált képek: {kepek}"
+        )
 
     def test_az_indulasi_ag_hivja_is(self):
         """A LÁNC, nem a végpont: az induláskor tényleg meg kell hívni.
 
         A törzs önmagában semmit nem ér, ha a `run()` nem hívja — ez az a
         csapda, amit a projekt már megjárt („mérd a bekötés LÁNCÁT, ne a
-        végpontokat"). A hívás SORRENDJE is állítás: a takarítás UTÁN kell
-        futnia, különben a `prune_foreign_folders` épp azt dobná ki, amit
-        az imént tettünk vissza."""
+        végpontokat").
+
+        #1667 óta KÉT állítás tartja a funkciót, és a sorrend-állítás
+        helyébe a védelem lépett:
+
+        1. a takarítás a VÉDETT gyökereket kapja (`_takaritas_gyokerei`),
+           tehát ki sem dobja az exportcélt;
+        2. a visszavétel (az önjavító ág) továbbra is elindul valahonnan.
+
+        Hogy a 2. pont HOL fut, azt a #1667 elhelyezés-őre állítja
+        (`tests/perf/test_exportcelok_indulas_1667.py`)."""
         import inspect
 
         from picasapy.app import application
 
         forras = inspect.getsource(application.run)
-        takaritas = forras.find("prune_foreign_folders(conn, roots)")
-        visszavetel = forras.find("_ujraindexelt_exportcelok(conn")
 
-        assert visszavetel != -1, (
-            "a `run()` nem hívja az exportcélok indulási visszavételét — "
-            "a mechanizmus megvan, csak senki nem indítja el (#1565)"
+        assert "prune_foreign_folders(" in forras, (
+            "a `run()` egyáltalán nem takarít induláskor (#58)"
         )
-        assert takaritas != -1 and takaritas < visszavetel, (
-            "az exportcélok visszavétele a `prune_foreign_folders` ELŐTT "
-            "fut — a takarítás rögtön ki is dobná őket"
+        assert "_takaritas_gyokerei(roots" in forras, (
+            "a `prune_foreign_folders` NEM a védett gyökereket kapja — a "
+            "takarítás minden induláskor kidobja a nyilvántartott "
+            "exportcélokat, és a visszaépítés újraolvassa az összes "
+            "exportált képet (#1667)"
+        )
+        assert "_exportcelok_visszavetele(" in forras, (
+            "a `run()` nem hívja az exportcélok visszavételét — a "
+            "mechanizmus megvan, csak senki nem indítja el (#1565)"
         )
