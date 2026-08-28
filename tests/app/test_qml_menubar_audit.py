@@ -42,7 +42,11 @@ def _source() -> str:
 HIANYZOTT_TETELEK = [
     # Fájl
     ("Import From Google Photos...", None),
-    ("Open File(s) in Editor", "Ctrl+Shift+O"),
+    # ⚠️ #1616: a gyorsbillentyű KIKERÜLT a feliratból. A funkciónak nyoma
+    # sincs a kódban, a tétel helyfoglaló — és a #1616 szabálya szerint
+    # nem hirdetünk olyat, ami nincs bekötve. Amint a funkció elkészül,
+    # a felirat és az élő `Shortcut` EGYSZERRE kerül vissza.
+    ("Open File(s) in Editor", None),
     ("Move to New Folder...", None),
     ("Save As...", None),
     ("Save a Copy", None),
@@ -258,7 +262,12 @@ class TestGyorsbillentyuk:
         hétre (`Importálás forrása…`, Ctrl+M), a #1633-ban pedig hétről
         nyolcra (`Fájl felvétele a Picasába…`, Ctrl+O)."""
         src = _source()
-        assert src.count("Shortcut {") == 8
+        # #1616: a `Ctrl+N` (Új album…) bekötésével nyolcról KILENCRE nőtt.
+        # A darabszám önmagában gyenge mérce — nem mondja meg, MELYIK
+        # hiányzik —, de olcsó jelzés arra, ha valaki némán kivesz egyet.
+        # A tartalmi ellenőrzést a `test_gyorsbillentyuk_1616.py` söprő őre
+        # végzi: az minden ÉLŐ menütételre megköveteli az élő `Shortcut`-ot.
+        assert src.count("Shortcut {") == 9
 
 
 class TestMukodoTetelekBillentyui:
