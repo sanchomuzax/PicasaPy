@@ -8,6 +8,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A Megjelenítési mód menü már nem kínál olyan tételt, ami nem csinál
+  semmit (#1658).** A tulajdonos kétszer is hiába próbálta a módokat: a
+  tizenegy tételből hét nem volt megvalósítva, és **egyik sem volt
+  jelölve** — így a működők is halottnak látszottak. Mostantól a
+  „16 bites (szemcsézett)" halvány helyfoglaló (megvalósítható, de 16 bites
+  képernyő ma nincs), a „Távoli asztal" és a „Mac gamma" pedig véglegesen
+  szürke: ezeket a program szándékosan nem valósítja meg. Ellenőrzés őrzi,
+  hogy jelöletlen, mégis kattintható mód ne kerülhessen vissza a menübe.
 - **A program indulásának háromnegyedét egyetlen, fölösleges lépés vitte el
   (#1667).** A tulajdonos gépén az indulás **10,8 másodpercig** tartott, és
   ebből **8,4 másodperc** — a teljes idő 77,8%-a — egyetlen tételre ment el:
