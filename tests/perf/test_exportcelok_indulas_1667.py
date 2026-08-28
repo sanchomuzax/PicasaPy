@@ -138,7 +138,16 @@ def konyvtar(tmp_path):
     gyoker.mkdir()
     make_jpeg(gyoker / "IMG_0001.jpg", size=(32, 24))
 
-    exportok = tmp_path / "Kepek" / "Picasa" / "Exports"
+    # ⚠️ #1682: a célmappa neve NEM lehet a figyelt gyökér nevének más
+    # kis/nagybetűs alakja. Windowson a fájlrendszer kis/nagybetűre
+    # érzéketlen, ezért a `Kepek` és a `kepek` UGYANAZ a könyvtár — a
+    # `resolve()` egy alakra hozza őket, és az exportcél a gyökér ALÁ
+    # kerül. Linuxon két külön mappa, ezért a hiba ott nem látszott: a
+    # windows-láb bukott el (futás 33132427675).
+    #
+    # A lenti önellenőrzés fogta meg — ez a fixture pozitív kontrollja, és
+    # pontosan azt tette, amiért beírtuk.
+    exportok = tmp_path / "exportcelok" / "Picasa" / "Exports"
     celok = []
     for i in range(_EXPORTCEL_SZAM):
         cel = exportok / f"export{i}"
