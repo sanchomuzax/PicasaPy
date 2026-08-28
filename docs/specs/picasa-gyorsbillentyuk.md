@@ -469,12 +469,12 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 | `Ctrl+Enter` | Keresés a lemezen | ✅ megvan (`Ctrl+Return`) | `PicasaMenuBar.qml:140` |
 | `Esc` | Visszatérés a könyvtárhoz | ⚠️ **eltér** – nálunk a `DocumentTabStrip` projektlap-váltása, a nézőben `Keys.onEscapePressed` | `DocumentTabStrip.qml:115`, `PhotoViewer.qml:471` |
 | `Home` / `End` | első/utolsó kép a mappában | ✅ megvan | `LightboxFeed.qml:218` |
-| `Ctrl+N` | Új album | ❌ **hiányzik** | — |
+| `Ctrl+N` | Új album | ✅ megvan (#1616) | `PicasaMenuBar.qml` `shortcutNewAlbum` |
 | `Ctrl+O` | Fájl felvétele a Picasába | ✅ megvan (#1633) | `PicasaMenuBar.qml:276` |
 | `Ctrl+M` | Importálás forrása | ✅ megvan (#1615) | `PicasaMenuBar.qml:263` |
-| `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | ❌ hiányzik | — |
+| `Ctrl+Shift+O` | Fájl(ok) megnyitása szerkesztőben | ❌ hiányzik — a felirat #1616 óta NEM hirdeti (a funkció teljesen hiányzik, nem csak a billentyű) | — |
 | `Ctrl+P` | Nyomtatás | ✅ megvan (#1472) | `PicasaMenuBar.qml:237` |
-| `Ctrl+E` | E-mail | ❌ hiányzik | — |
+| `Ctrl+E` | E-mail | ❌ hiányzik — a felirat #1616 óta NEM hirdeti (a `TrayBar.emailRequested()` jelzés sehova nincs bekötve) | — |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Kivágás/Másolás/Beillesztés | ❌ hiányzik | — |
 | `Ctrl+3` | Szerkesztési nézet / Megjelenítés és szerkesztés | ❌ hiányzik | — |
 | `Ctrl+Shift+P` | Indexképek nyomtatása | ✅ megvan (#1590) | `PicasaMenuBar.qml:248` |
@@ -543,14 +543,21 @@ A jegycím-szabály szerint mindegyikben nevesítve van a funkció:
    félkövér, alapértelmezett tétele (`cmd 0x9ca0`).
 2. **A Ctrl+3 átvált a szerkesztési nézetre** — az eredetiben a Nézet- és
    a Kép-menüből is (`0x9c8f`, illetve `0x9ca0`).
-3. **A Ctrl+N létrehoz egy új albumot a menüsávból** — a menüpont
-   megvan, gyorsbillentyű nincs hozzákötve.
-4. **A Ctrl+O és a Ctrl+M megnyitja a felvétel- és az importálás-párbeszédet** —
-   a két Fájl-menüpont ma inaktív, billentyű nélkül.
+3. ✅ **MEGVAN (#1616).** ~~A Ctrl+N létrehoz egy új albumot a
+   menüsávból~~ — a fenti állítás („a menüpont megvan, gyorsbillentyű
+   nincs hozzákötve") a mai kódon TÉVES volt: a menütétel is
+   `placeholder` volt, nem csak a billentyű hiányzott (MÉRVE:
+   `git log -S'menuFileNewAlbum'`). A #1616 mindkettőt bekötötte, a
+   meglévő `newAlbumDialog`/`controller.createAlbum` útvonalra.
+4. ✅ **MEGVAN** — a Ctrl+O (#1633) és a Ctrl+M (#1615) megnyitja a
+   felvétel- és az importálás-párbeszédet.
 5. **A Ctrl+Shift+O megnyitja a kijelölt fájlokat külső szerkesztőben** —
-   a funkció nálunk teljesen hiányzik.
-6. **A Ctrl+P és a Ctrl+E elindítja a nyomtatást, illetve az e-mailezést** —
-   a menüpontok inaktívak.
+   a funkció nálunk teljesen hiányzik. A #1616 a feliratból kivette a
+   gyorsbillentyűt (addig hirdetett, de soha nem élt) — ez a jegy
+   önmagában továbbra is nyitott.
+6. ✅ **A Ctrl+P megvan (#1472).** A Ctrl+E (e-mailezés) továbbra is
+   nyitott — a `TrayBar.emailRequested()` jelzés sehova nincs bekötve; a
+   #1616 a feliratból kivette a gyorsbillentyűt.
 7. **A Ctrl+Shift+P kinyomtatja az indexképeket a mappamenüből.**
 8. **A Ctrl+H megtartja a kijelölést a képtálcán** — a tálca helyi menüjének
    egyetlen saját gyorsbillentyűje.

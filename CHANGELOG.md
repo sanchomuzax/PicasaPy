@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A Fájl ▸ Új album… menüpont és a Ctrl+N eddig semmit nem csinált,
+  holott a párbeszéd maga régóta kész volt (#1616).** A menüpont szürkén,
+  kattinthatatlanul állt, a felirat mégis `Ctrl+N`-et hirdetett — aki
+  begépelte, nem történt semmi. A javítás a már meglévő „Új album…"
+  párbeszédre köti mindkettőt (ugyanarra, amit a képek helyi menüjének
+  „Új album…" tétele is nyit), így a Fájl menüből és a billentyűvel is
+  létrehozható új album a kijelölt képekből. Két hasonló felirat
+  („Fájl(ok) megnyitása szerkesztőben" — Ctrl+Shift+O, és „E-mail…" —
+  Ctrl+E) továbbra sem működik, de a gyorsbillentyűt a feliratuk mostantól
+  nem hirdeti, amíg a mögöttes funkció nincs kész.
+
 ## [0.8.130] – 2026-08-28
 
 ### Javítva

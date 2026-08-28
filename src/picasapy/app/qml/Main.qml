@@ -751,6 +751,11 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
+        // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
+        // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
+        // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
+        // helyi menü példányán)
+        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
