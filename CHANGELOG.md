@@ -15,10 +15,92 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   lévő tétel a tulajdonosra vár — holott épp az ellenkezője igaz volt rájuk.
   Mostantól egy jegy pontosan egy csoportban szerepel, és a cím megmondja,
   hogy csak az első csoport az, ami nélküle áll.
+## [0.8.132] – 2026-08-28
+
+### Javítva
+- **A Fájl ▸ Új album… menüpont és a Ctrl+N eddig semmit nem csinált,
+  holott a párbeszéd maga régóta kész volt (#1616).** A menüpont szürkén,
+  kattinthatatlanul állt, a felirat mégis `Ctrl+N`-et hirdetett — aki
+  begépelte, nem történt semmi. A javítás a már meglévő „Új album…"
+  párbeszédre köti mindkettőt (ugyanarra, amit a képek helyi menüjének
+  „Új album…" tétele is nyit), így a Fájl menüből és a billentyűvel is
+  létrehozható új album a kijelölt képekből. Két hasonló felirat
+  („Fájl(ok) megnyitása szerkesztőben" — Ctrl+Shift+O, és „E-mail…" —
+  Ctrl+E) továbbra sem működik, de a gyorsbillentyűt a feliratuk mostantól
+  nem hirdeti, amíg a mögöttes funkció nincs kész.
+
+## [0.8.130] – 2026-08-28
+
+### Javítva
+- **A Megjelenítési mód menü már nem kínál olyan tételt, ami nem csinál
+  semmit (#1658).** A tulajdonos kétszer is hiába próbálta a módokat: a
+  tizenegy tételből hét nem volt megvalósítva, és **egyik sem volt
+  jelölve** — így a működők is halottnak látszottak. Mostantól a
+  „16 bites (szemcsézett)" halvány helyfoglaló (megvalósítható, de 16 bites
+  képernyő ma nincs), a „Távoli asztal" és a „Mac gamma" pedig véglegesen
+  szürke: ezeket a program szándékosan nem valósítja meg. Ellenőrzés őrzi,
+  hogy jelöletlen, mégis kattintható mód ne kerülhessen vissza a menübe.
+- **A menüsáv TESZTÜZEM felirata Windowson nem volt kikapcsolható (#1676).**
+  A felirat egyben kikapcsoló gomb, de a menüsáv háttérrétegében ült, a
+  menüpontok alatt. Windowson a felirat majdnem kétszer olyan széles, ezért
+  benyúlt a menüpontok alá, és azok elvették a kattintást — a gomb némán
+  hatástalan volt. Mostantól a felirat a menüpontok fölött van.
+- **A program indulásának háromnegyedét egyetlen, fölösleges lépés vitte el
+  (#1667).** A tulajdonos gépén az indulás **10,8 másodpercig** tartott, és
+  ebből **8,4 másodperc** — a teljes idő 77,8%-a — egyetlen tételre ment el:
+  a program minden egyes indításkor **újraolvasta az összes exportált
+  képet**. Nem azért, mert sok volt belőlük (mindössze 16 mappa és 421 kép
+  volt a könyvtárban), hanem mert a program két, egymásnak ellentmondó
+  dolgot csinált közvetlenül egymás után: előbb kidobta az exportmappákat a
+  nyilvántartásából (mert azok a figyelt mappákon kívül vannak), majd
+  rögtön újra be is olvasta őket — immár a nulláról, minden egyes fájlt
+  megnyitva. Windowson minden ilyen fájlmegnyitás a valós idejű
+  vírusvizsgálaton megy át, ezért lett a helyben ezredmásodperces munkából
+  ott több másodperc.
+
+  Mostantól a program **nem dobja ki, amit egy pillanattal később úgyis
+  vissza akar tenni**: a nyilvántartott exportmappák megmaradnak, tehát
+  nincs mit újraolvasni. Ami ezután is fut — az időközben, kikapcsolt
+  program mellett bekerült új képek felvétele —, az már **az ablak
+  megjelenése után** történik, tehát nem tartja vissza a felületet.
+
+  Mérve, ugyanazon a gépen, ugyanazzal a könyvtárral (4 exportmappa,
+  180 kép): a lépés **180 fájlmegnyitása nullára**, ideje **72
+  ezredmásodpercről 12-re** csökkent, és lekerült az indulás kritikus
+  útjáról. Az „Exportált képek" csomópont változatlanul mutatja a figyelt
+  mappákon kívülre exportált képeket (#1565) — erre külön ellenőrzés
+  vigyáz, ahogy arra is, hogy ez a lépés ne kerülhessen vissza az ablak
+  megjelenése elé.
 
 ## [0.8.128] – 2026-08-27
 
 ### Hozzáadva
+- **A Képtálca mostantól tényleg gyűjtő: a képek több mappából is
+  összeszedhetők (#455).** Az alsó sáv bal oldalán ülő tálca eddig csak akkor
+  tartalmazott valamit, ha külön ráraktad a képet. Mostantól — ahogy az
+  eredeti Picasában — **a kijelölés magától a tálcára kerül**, a
+  „Kijelölés megtartása" gomb pedig **rögzíti**, amit már összeválogattál: a
+  következő kattintás azt nem söpri el. Így nyugodtan átmehetsz másik
+  mappába, kereshetsz is közben — a rögzített képek a tálcán maradnak, és a
+  rácsban külön jelvény mutatja, melyek azok. A **kék állapotsor** ettől
+  kezdve a tálca egészét összesíti (darabszám, dátumtartomány, összméret),
+  nem csak azt, ami épp a képernyőn ki van jelölve, és a **mappába
+  exportálás is a tálca tartalmán** dolgozik — akkor is, ha a képek fele már
+  nem is látszik a rácsban.
+- **Tesztüzem: a program mostantól meg tudja mérni a saját indulását
+  (#1654).** Eddig épp az indulásról nem volt adatunk arról a gépről, ahol
+  lassú: a Teljesítmény-monitor csak menet közben kapcsolható be, mire pedig
+  a menüig eljutunk, az indulás rég lezajlott. Az új `Súgó ▸ Tesztüzem`
+  kapcsoló **megmarad kilépés után is**, és a **következő** indítást méri
+  végig, az első pillanattól. Amíg be van kapcsolva, a menüsorban piros
+  „TESZTÜZEM" felirat emlékeztet rá, hogy ne maradjon véletlenül bekapcsolva.
+  A mérés végén `Súgó ▸ Napló elküldése` egyetlen kattintással a közös
+  hálózati mappába teszi a naplót, és az elérési útját a vágólapra is
+  másolja; ha a hálózati mappa épp nem elérhető, a program megmondja, és
+  felajánlja, hogy hova mentse helyette. A napló **semmilyen mappanevet,
+  fájlnevet és felhasználónevet nem tartalmaz** — csak időket és
+  darabszámokat (hány mappa, hány kép), mert a gyanú szerint az indulás a
+  könyvtár méretével lassul.
 - **A lassú indulás okát mostantól Windowson is meg tudjuk mérni (#1653).** A
   tulajdonos jelentése szerint a program Windows alatt 33 másodperc után
   jelenik meg, míg a fejlesztői gépen 5 alatt — a különbséget eddig soha nem
@@ -40,6 +122,40 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   írni.
 
 ### Javítva
+- **A tálca ürítése rossz kérdést tett fel, a jobbklikk-menüje pedig mást
+  csinált, mint amit ígért (#455).** A „Törlés" gomb eddig azt kérdezte,
+  hogy „szeretné-e üríteni a korábban megtartott elemeket" — az eredetiben
+  ez egy egészen másik, külön felkínált takarítás szövege. A teljes ürítés
+  helyes kérdése: *„Ezzel a művelettel a teljes tálcát kiüríti. Biztosan ezt
+  szeretné tenni?"*. A tálcán jobb gombbal előhívott menü két parancsa
+  („Kijelölés megtartása", „Kijelölés eltávolítása") pedig a rács
+  kijelölését szűkítette ahelyett, hogy a tálcára hatott volna — mostantól
+  tényleg a tálcára tesz, illetve arról vesz le.
+- **A „Napló elküldése" gomb összeomlott, ha a közös mappa jelszót kért
+  (#1668).** A tulajdonos gépén az első éles használatnál hibaüzenet
+  ugrott fel a képernyőre a napló átadása helyett: Windowson egy
+  hitelesítetlen hálózati mappa nem azt mondja, hogy „nincs ilyen", hanem
+  hibát dob. A beépített „Mentés másként…" tartalék, ami pontosan erre az
+  esetre készült, így nem jutott szóhoz. Mostantól minden ilyen akadály —
+  jelszókérés, időtúllépés, hálózati hiba — ugyanazt jelenti: a megosztás
+  nem érhető el, tehát a program a mentési tartalékot ajánlja.
+- **A közös mappát mostantól a NAS NEVE azonosítja, nem az IP-címe
+  (#1668).** Az IP-cím hálózatonként más; a gépnév távoli kapcsolaton át is
+  feloldódik, tehát a napló nemcsak otthonról adható át. Ellenőrzés őrzi,
+  hogy IP-cím ne kerülhessen vissza a programba.
+- **A Szépia és a Fekete-fehér megjelenítési mód nem csinált semmit
+  (#1657).** A `Nézet ▸ Megjelenítési mód` tizenegy tételéből eddig csak
+  négy hatott; a tulajdonos épp a leglátványosabbat, a **Szépiát**
+  próbálta ki, és a kép meg sem rezdült. A menü tehát olyat kínált, ami
+  nem működött — ezt korábban sehol nem mondtuk ki. Mostantól mindkét mód
+  valóban átszínezi a képet, **a nagy nézőben és a könyvtár rácsán
+  egyaránt**, ugyanazzal a számítással, amit az eredeti Picasa használ.
+
+  Fontos, hogy ez **csak a képernyőre hat**: a fényképeket a lemezen nem
+  írja át, és nem kerül bele a képek beállításai közé sem. Aki tartósan,
+  a mentett képen akar szépiát vagy fekete-fehéret, azt továbbra is a
+  szerkesztő azonos nevű effektjével teheti — a kettő szándékosan külön
+  dolog, és nem is egyforma az eredményük.
 - **A Fájl ▸ Fájl felvétele a Picasába… menüpont és a `Ctrl+O` nem csinált
   semmit (#1633).** Ugyanaz a hibaosztály, mint a `Ctrl+M` volt a #1615
   előtt: a menüpont szürke, kattinthatatlan helyfoglaló volt, a felirata

@@ -22,7 +22,6 @@ from picasapy.export import (
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 
-from picasapy.index import open_index, photo_by_id
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 from .formatting import to_local_path
@@ -227,6 +226,24 @@ class ExportMixin(BackgroundWorkerMixin):
                     return True
         return False
 
+    @Slot(result=bool)
+    def trayHasVideo(self) -> bool:
+        """Van-e film a KÉPTÁLCÁN (#455 · #1166).
+
+        A film-rádiók engedélyezését eddig `useTray ? true` alakban
+        rövidítette a párbeszéd: amíg a tálca csak külön művelettel telt
+        meg, ez ritka és láthatatlan pontatlanság volt. A #455 óta a tálca
+        a kijelölés tükre, tehát MINDIG az a forrás — a rövidítés így
+        minden exportnál engedélyezte volna a film-rádiókat, film nélkül is.
+        """
+        felold = getattr(self, "_tray_records", None)
+        if felold is None:
+            return False
+        return any(
+            Path(record.name).suffix.lower() in VIDEO_EXTENSIONS
+            for record in felold()
+        )
+
     def _export_error_text(self, kind: str) -> str:
         """A köteg-szintű hiba fajtájából az EREDETI Picasa üzenete (#1166).
 
@@ -337,18 +354,17 @@ class ExportMixin(BackgroundWorkerMixin):
         )
 
     def _held_export_items(self) -> tuple[ExportItem, ...]:
-        held = list(getattr(self, "_held_ids", ()) or ())
-        if not held:
+        """A tálca tartalma export-tételként, beszúrási sorrendben.
+
+        A rekordokat a `TrayMixin._tray_records()` oldja fel: a nyitott
+        mappa képeit a memóriabeli modellből, a máshonnan tartottakat az
+        indexből (egyetlen kapcsolatban, megjegyezve). Az időközben eltűnt
+        kép ott egyszerűen kimarad — nem hiba, és nem akaszt meg köteget.
+        """
+        felold = getattr(self, "_tray_records", None)
+        if felold is None:
             return ()
-        items = []
-        with open_index(self._db_path) as conn:
-            for photo_id in held:
-                record = photo_by_id(conn, photo_id)
-                # az időközben eltűnt kép egyszerűen kimarad (a heldPaths
-                # ugyanezt teszi) — nem hiba, és nem is akaszt meg semmit
-                if record is not None:
-                    items.append(_export_item(record))
-        return tuple(items)
+        return tuple(_export_item(record) for record in felold())
 
     def _export_items(self, items, target_dir: str, max_dimension: int,
                       jpeg_quality: int, add_numbers: bool,

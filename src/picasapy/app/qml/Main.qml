@@ -751,6 +751,11 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
+        // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
+        // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
+        // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
+        // helyi menü példányán)
+        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
@@ -896,6 +901,9 @@ ApplicationWindow {
     ImportSourceDialog { id: importSourceDialog }
     // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — natív fájlválasztó
     AddFileDialog { id: addFileDialog }
+    // #1654: a tesztüzem naplójának „Mentés másként…" tartaléka —
+    // csak akkor nyílik meg, ha a NAS közös mappája nem érhető el
+    TesztuzemNaploDialog { id: tesztuzemNaploDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
     // #449: első indítás — az eredeti EGYETLEN kérdést tett fel (teljes gép
@@ -1804,6 +1812,20 @@ ApplicationWindow {
             errorBanner.colorNoticeActive = false
         }
         // #459/5: nem elérhető mappa — tájékoztató üzenet néma bukás helyett
+        // #1654: a tesztüzem visszajelzései. TÁJÉKOZTATÁS (borostyán),
+        // nem hiba: a bekapcsolás („a naplózás a következő indításnál
+        // kezdődik"), a napló átadása és a mentés eredménye jár erre.
+        function onTesztuzemUzenet(uzenet) {
+            errorBanner.notice = true
+            errorBannerText.text = uzenet
+        }
+        // A közös mappa nem érhető el — a felhasználó nem maradhat üres
+        // kézzel: az üzenet mellé azonnal nyílik a „Mentés másként…".
+        function onTesztuzemMentesMaskentKert(uzenet) {
+            errorBanner.notice = true
+            errorBannerText.text = uzenet
+            tesztuzemNaploDialog.open()
+        }
         function onFolderUnavailable(path) {
             errorBanner.notice = true
             errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")

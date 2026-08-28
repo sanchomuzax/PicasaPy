@@ -54,6 +54,21 @@ TETELEK: tuple[tuple[str, str], ...] = (
 
 NEVEK: tuple[str, ...] = tuple(nev for nev, _ in TETELEK)
 
+#: ⚠️ #1658 — EZ A JEGY MEGVÁLTOZTATTA A #1575 SZERZŐDÉSÉT.
+#:
+#: A #1575 eredetileg azt kötötte ki, hogy „kattinthatatlan helyfoglalót nem
+#: hagyunk", mert „a kizáró csoport épp attól kizáró, hogy minden tagja
+#: választható". A tulajdonos kétszer is hiába próbálta a módokat (#1598, majd
+#: RPi5-ön a 0.8.127-tel): a menü olyat kínált, ami nem csinál semmit, és
+#: **semmi nem jelezte**. A #1658 ezért megfordította a döntést — a
+#: választhatóság kevesebbet ér, mint az őszinteség arról, mi működik.
+#:
+#: Ez a három tétel MA nincs megvalósítva, tehát jelölt és letiltott:
+NEM_MEGVALOSITOTT: frozenset[str] = frozenset(
+    {"menuViewDisplayMode16Bit", "menuViewDisplayModeRemoteDesktop",
+     "menuViewDisplayModeMacGamma"}
+)
+
 #: A 15 rekord: 11 tétel + 4 elválasztó, a spec 1. szakasza szerint.
 VART_SZERKEZET: tuple[str, ...] = (
     "menuViewDisplayModeAuto",
@@ -156,20 +171,29 @@ class TestSzerkezet:
         assert len(szerkezet) == 15
         assert szerkezet.count("<elvalaszto>") == 4
 
-    def test_egyik_tetel_sem_helyfoglalo(self, qml_app):
-        """A váz szintjén MINDEGYIK tétel működik: kattintható, pipázódik.
+    def test_a_megvalositott_tetelek_kattinthatok(self, qml_app):
+        """Ami MŰKÖDIK, az kattintható és pipázható.
 
-        A képpont-hatás külön jegy, de kattinthatatlan helyfoglalót nem
-        hagyunk — a kizáró csoport épp attól kizáró, hogy minden tagja
-        választható.
+        ⚠️ #1658: ez a teszt korábban MINDEN tételre ezt állította. A
+        megfordítás indoklása a `NEM_MEGVALOSITOTT` melletti megjegyzésben áll.
         """
         window, _controller, _engine = qml_app
         for nev in NEVEK:
+            if nev in NEM_MEGVALOSITOTT:
+                continue
             item = _child(window, nev)
             assert item.property("enabled") is True, f"{nev} letiltott"
             assert item.property("checkable") is True, f"{nev} nem pipázható"
             assert not item.property("placeholder"), f"{nev} helyfoglalónak jelölt"
-            assert item.findChild(QObject, "placeholderDot") is None, nev
+
+    def test_a_meg_nem_valositott_tetelek_jeloltek_es_tiltottak(self, qml_app):
+        """#1658: ami nem működik, azt a felhasználó LÁSSA is annak."""
+        window, _controller, _engine = qml_app
+        for nev in NEM_MEGVALOSITOTT:
+            item = _child(window, nev)
+            assert item.property("enabled") is False, f"{nev} kattintható maradt"
+            jelolt = bool(item.property("placeholder")) or bool(item.property("retired"))
+            assert jelolt, f"{nev} letiltott, de JELÖLETLEN — a felhasználó nem érti, miért"
 
 
 class TestKizaroCsoport:
@@ -180,7 +204,12 @@ class TestKizaroCsoport:
         assert controller.property("displayMode") == "auto"
         _egyetlen_pipa(window, "menuViewDisplayModeAuto")
 
-    @pytest.mark.parametrize("nev,mode", [t for t in TETELEK if t[1] != "auto"])
+    @pytest.mark.parametrize(
+        "nev,mode",
+        # #1658: a letiltott tételekre kattintani sem lehet, tehát módot
+        # sem állítanak — őket a fenti szerkezeti teszt fedi.
+        [t for t in TETELEK if t[1] != "auto" and t[0] not in NEM_MEGVALOSITOTT],
+    )
     def test_a_valtas_beallitja_a_modot_es_egyetlen_pipat_hagy(
         self, qml_app, qt_app, nev, mode
     ):

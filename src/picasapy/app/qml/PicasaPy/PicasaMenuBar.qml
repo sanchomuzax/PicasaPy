@@ -40,6 +40,7 @@ MenuBar {
             color: Theme.chromeBorder
         }
         Text {
+            id: signInLink
             objectName: "menuBarSignInLink"
             anchors.right: parent.right
             anchors.rightMargin: 10
@@ -48,6 +49,49 @@ MenuBar {
             color: Theme.linkBlue
             font.pixelSize: Theme.fontSize
             font.underline: true
+        }
+        // #1654: a tesztüzem LÁTHATÓ állapot. A menüben ülő pipa ehhez
+        // kevés — ahhoz ki kell nyitni a menüt. A felhasználó ne felejtse
+        // bekapcsolva észrevétlenül: amíg a mód él, a menüsáv jobb szélén
+        // állandó, figyelmeztető feliratot lát.
+        Text {
+            id: tesztuzemBadge
+            objectName: "menuBarTesztuzemBadge"
+            // #1676: a jelvény a menütételek FÖLÉ kerül. A `background` a
+            // `Control`-ban mindig a `contentItem` ALATT van, a menütételek
+            // pedig a `contentItem`-ben ülnek. Windowson a felirat majdnem
+            // kétszer olyan széles (324 px a linuxos 174 helyett), ezért
+            // benyúlik a menütételek alá, és a legjobboldalibb `MenuBarItem`
+            // ELVESZI a kattintást — a felirat kikapcsoló gombja némán
+            // hatástalan lett. MÉRVE a windowsos CI-n: a pontot fedő elemek
+            // közt ott a `MenuBarItem_QMLTYPE_185`, miközben az ablak aktív,
+            // a jelvény látható és engedélyezett.
+            //
+            // A `parent` futásidejű átállítása megkerüli a `Container`
+            // alapértelmezett tulajdonságát (különben menütétel lenne
+            // belőle), és plain vizuális gyerekként a `z` már a tételek
+            // fölé emeli. Emiatt viszont a `signInLink` MÁR NEM testvér,
+            // tehát a jobb margót számolni kell.
+            Component.onCompleted: parent = bar
+            z: 3
+            anchors.right: bar.right
+            anchors.rightMargin: signInLink.width + 26  // 10 (signIn) + 16 (rés)
+            anchors.verticalCenter: bar.verticalCenter
+            visible: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            text: qsTr("TEST MODE — logging startup")
+            color: "#c0392b"
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            // A jelzés egyben KIKAPCSOLÓ is: a felhasználónak ne kelljen
+            // visszakeresnie a Súgó menüt ahhoz, hogy megszabaduljon a
+            // módtól, amiről épp most jutott eszébe, hogy bekapcsolva van.
+            MouseArea {
+                objectName: "menuBarTesztuzemBadgeArea"
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: bar.ctl.setTesztuzemEnabled(false)
+            }
         }
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
@@ -81,6 +125,11 @@ MenuBar {
     signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
+    // #1616: Fájl ▸ Új album… (Ctrl+N) — a dialógus (`newAlbumDialog`,
+    // FileOpsDialogs.qml) a Main.qml-ben él, és ugyanazt a
+    // `fileOpsDialogs.openNewAlbum(...)` belépőt hívja, amit a rács helyi
+    // menüjének „Új album…" tétele is (PhotoContextMenu.newAlbumRequested).
+    signal newAlbumRequested()
     // #1615: Fájl ▸ Importálás forrása… (Ctrl+M) —
     // `eMenuFile::ID_FILE_IMPORTPICTURE`, `cmd 0x9c91`. A párbeszéd
     // (`ImportSourceDialog`) a Main.qml-ben él, és ugyanaz a példány, amit
@@ -277,13 +326,40 @@ MenuBar {
         sequence: "Ctrl+O"
         onActivated: bar.addFileRequested()
     }
+    // #1616: a Fájl-menü felirata Ctrl+N-et hirdet — ugyanaz a hibaosztály,
+    // mint a Ctrl+M/Ctrl+O volt. A kijelölés-függés (`photoActionsEnabled`)
+    // itt SZÁNDÉKOS, eltérően a Ctrl+M/Ctrl+O-tól: a `createAlbum` üres
+    // kijelölésnél nem hoz létre semmit (üres tokent ad vissza), tehát a
+    // billentyűnek sincs mit csinálnia — ugyanaz a feltétel, mint a
+    // menütételen.
+    Shortcut {
+        objectName: "shortcutNewAlbum"
+        sequence: "Ctrl+N"
+        enabled: bar.photoActionsEnabled
+        onActivated: bar.newAlbumRequested()
+    }
 
     Menu {
         title: qsTr("&File")
-        PicasaMenuItem {
+        // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt —
+        // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
+        // óta, tehát a #1616 jegy „a tétel él, csak a billentyű néma"
+        // állítása a mai kódon TÉVES. A funkció maga viszont NEM hiányzik:
+        // a `newAlbumDialog` (FileOpsDialogs.qml) és a `controller.
+        // createAlbum(name, rows)` már kész és élesen működik a rács
+        // helyi menüjéből (`PhotoContextMenu.newAlbumRequested` →
+        // `fileOpsDialogs.openNewAlbum(window.selectedRows())`, Main.qml).
+        // Ugyanaz a hibaosztály, mint a #1615/#1633: hiányzó BEKÖTÉS, nem
+        // hiányzó funkció — ezért itt a Ctrl+M/Ctrl+O mintáját követjük:
+        // a Fájl-menü tétele és a Ctrl+N UGYANAZT a dialógust nyitja.
+        // Kijelölés nélkül a `createAlbum` üres tokent ad vissza (nincs
+        // mit albumba tenni), ezért a `photoActionsEnabled`-hez kötve él,
+        // mint a többi kijelölés-függő tétel.
+        MenuItem {
             objectName: "menuFileNewAlbum"
             text: qsTr("New Album...") + "\tCtrl+N"
-            placeholder: true
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.newAlbumRequested()
         }
         // ⚠️ #1200: ez NEM külön funkció és NEM mappaválasztó — az
         // eredetiben EZ A MENÜPONT nyitja meg a Mappakezelőt:
@@ -316,7 +392,9 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
         // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
-        PicasaMenuItem { text: qsTr("Open File(s) in Editor") + "\tCtrl+Shift+O"; placeholder: true }
+        // #1616: a felirat Ctrl+Shift+O-t hirdetett, de a funkció teljesen
+        // hiányzik (a tétel helyfoglaló) — a billentyű lekerült a feliratról.
+        PicasaMenuItem { text: qsTr("Open File(s) in Editor"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): mappa áthelyezés a fájlműveletek csoportjában
         PicasaMenuItem { text: qsTr("Move to New Folder..."); placeholder: true }
@@ -399,7 +477,11 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.printRequested()
         }
-        PicasaMenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; placeholder: true }
+        // #1616: a felirat Ctrl+E-t hirdetett, de a `TrayBar.emailRequested()`
+        // jelzés MÉRVE nincs sehova bekötve (ld. `email_controller.py`
+        // fejléce — a bekötés az integrátor teendője, még nem történt meg),
+        // tehát ez a menütétel is helyfoglaló — a billentyű lekerült.
+        PicasaMenuItem { text: qsTr("E-Mail..."); placeholder: true }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
         PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
@@ -621,30 +703,22 @@ MenuBar {
                     })
                 }
             }
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayMode16Bit"
                 text: qsTr("16-bit (dithered)")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "dither16"
-                onTriggered: {
-                    controller.setDisplayMode("dither16")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "dither16"
-                    })
-                }
+                // #1658: megvalósítható (a szabály MÉRVE van: MT-zaj +0…7/0…3/0…7,
+                // telítő), de 16 bites képernyő ma nincs — ezért helyfoglaló,
+                // nem nyugdíjazott: ha egyszer értelmet nyer, bekötjük.
+                placeholder: true
             }
             MenuSeparator {}
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayModeRemoteDesktop"
                 text: qsTr("Remote Desktop")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "rdesk"
-                onTriggered: {
-                    controller.setDisplayMode("rdesk")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "rdesk"
-                    })
-                }
+                // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL (RDP-specifikus,
+                // 3-3-3 bites levágás) — sosem kötjük be, tehát nyugdíjazott.
+                placeholder: false
+                retired: true
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLcd"
@@ -683,17 +757,13 @@ MenuBar {
                     })
                 }
             }
-            MenuItem {
+            PicasaMenuItem {
                 objectName: "menuViewDisplayModeMacGamma"
                 text: qsTr("Mac Gamma (1.6)")
-                checkable: true
-                checked: bar.ctl && bar.ctl.displayMode === "mac"
-                onTriggered: {
-                    controller.setDisplayMode("mac")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.displayMode === "mac"
-                    })
-                }
+                // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL, amíg nincs
+                // referencia-mérés (futásidő-függő, ld. 5.10) — nyugdíjazott.
+                placeholder: false
+                retired: true
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLinearGamma"
@@ -1284,6 +1354,35 @@ MenuBar {
             checked: (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
                 ? bar.ctl.perfMonitorEnabled : false
             onTriggered: controller.togglePerfMonitor()
+        }
+        // #1654: TARTÓS tesztüzem. A Teljesítmény-monitorral szemben ez
+        // TÚLÉLI a kilépést, és a KÖVETKEZŐ indulást naplózza az első
+        // ezredmásodperctől — az indulás az egyetlen szakasz, amit
+        // menetközbeni kapcsolóval elvből nem lehet megmérni (#1653).
+        MenuItem {
+            objectName: "menuHelpTesztuzem"
+            text: qsTr("Test Mode (logs the next startup)")
+            checkable: true
+            checked: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            onTriggered: bar.ctl.toggleTesztuzem()
+        }
+        // Egykattintásos átadás — CSAK tesztüzemben látszik. A `height`
+        // nullázása azért kell, mert a rejtett MenuItem különben üres
+        // sávot hagyna a Súgó menüben.
+        MenuItem {
+            objectName: "menuHelpSendLog"
+            // ⚠️ A láthatóság feltétele SAJÁT tulajdonságban él, nem
+            // közvetlenül a `visible`-ben: a QQuickItem `visible`-je az
+            // EFFEKTÍV láthatóságot adja vissza, ami csukott menünél
+            // mindig hamis — a kötés helyessége azon nem mérhető.
+            readonly property bool tesztuzemAktiv:
+                (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                ? bar.ctl.tesztuzemEnabled : false
+            text: qsTr("Send Log...")
+            visible: tesztuzemAktiv
+            height: tesztuzemAktiv ? implicitHeight : 0
+            onTriggered: bar.ctl.tesztuzemNaploAtadasa()
         }
         MenuItem {
             text: qsTr("About PicasaPy")

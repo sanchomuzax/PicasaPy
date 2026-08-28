@@ -4673,6 +4673,22 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Performance Monitor</source>
         <translation>Teljesítmény-monitor</translation>
     </message>
+    <!-- #1654: tartós tesztüzem — a KÖVETKEZŐ indulást naplózza -->
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291"/>
+        <source>Test Mode (logs the next startup)</source>
+        <translation>Tesztüzem (a következő indulást naplózza)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303"/>
+        <source>Send Log...</source>
+        <translation>Napló elküldése…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58"/>
+        <source>TEST MODE — logging startup</source>
+        <translation>TESZTÜZEM — az indulás naplózása folyik</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287"/>
         <source>About PicasaPy</source>
@@ -5157,14 +5173,20 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Tálca ürítése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/TrayBar.qml" line="266"/>
-        <source>Would you like to clear your old held items from the tray?</source>
-        <translation>Szeretné üríteni a tálcán korábban megtartott elemeket?</translation>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>This will clear your entire tray. Are you sure you want to do this?</source>
+        <translation>Ezzel a művelettel a teljes tálcát kiüríti. Biztosan ezt szeretné tenni?</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/TrayBar.qml" line="279"/>
-        <source>Don&apos;t Clear</source>
-        <translation>Ne ürítse</translation>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Clear Tray</source>
+        <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
+        <translation>Törlés a tálcáról</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
     </message>
 </context>
 <context>
@@ -5593,6 +5615,27 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/AddFileDialog.qml" line="40"/>
+        <source>All Files</source>
+        <translation>Minden fájl</translation>
+    </message>
+</context>
+<context>
+    <!-- #1654: a tesztüzem naplójának „Mentés másként…" tartaléka. A
+         szűrő-szókészlet szándékosan megegyezik a többi fájlválasztóéval
+         (a Qt QML-típusonként keres fordítást, ezért a duplikálás kell). -->
+    <name>TesztuzemNaploDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="19"/>
+        <source>Save Log As...</source>
+        <translation>Napló mentése másként…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22"/>
+        <source>Text Files</source>
+        <translation>Szövegfájlok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TesztuzemNaploDialog.qml" line="22"/>
         <source>All Files</source>
         <translation>Minden fájl</translation>
     </message>

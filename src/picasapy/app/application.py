@@ -34,6 +34,15 @@ from PySide6.QtQuickControls2 import QQuickStyle
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.index.sync import sync_folder
 from picasapy.perf import default_log_dir, start_startup_timeline
+from picasapy.perf.logwriter import session_header
+from picasapy.perf.tesztuzem import (
+    argv_kapcsolo_nelkul,
+    argv_tesztuzem,
+    irj_indulasi_naplot,
+    konyvtar_merete,
+    naplo_szovege,
+    tesztuzem_bekapcsolva,
+)
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
@@ -51,6 +60,7 @@ from .error_log import error_log_path, install_error_log
 from .exported_folders import (
     EXPORTED_FOLDERS_SETTINGS_KEY,
     existing_exported_folders,
+    registered_exported_folders,
 )
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
@@ -227,6 +237,63 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
                 mappa,
                 exc_info=True,
             )
+
+
+def _takaritas_gyokerei(
+    roots: tuple[str | Path, ...], settings: QSettings
+) -> tuple[str, ...]:
+    """A #58 induláskori takarítás VÉDETT gyökerei (#1667).
+
+    A figyelt gyökerek mellé a **nyilvántartott exportcélok** is bekerülnek.
+    Az exportcél a #1565 óta SAJÁT GYÖKÉRKÉNT van indexelve — a takarítás
+    szempontjából tehát pontosan olyan jogos horgony, mint egy figyelt
+    mappa, nem „ottragadt idegen mappa".
+
+    ## Miért ez a #1667 javítása
+
+    A takarítás eddig minden induláskor kidobta az exportcélok mappa- ÉS
+    fotósorait (a `folder_scan_state`-tel együtt), a rá következő
+    `_ujraindexelt_exportcelok` pedig NULLÁRÓL építette vissza őket. Az
+    üres `photos` tábla miatt a `_sync_folder` inkrementális kihagyása nem
+    tudott működni: minden exportált képre lefutott a (drága) EXIF/IPTC-
+    olvasás. MÉRVE (RPi5, 4 exportcél / 180 kép): **180 fájlnyitás
+    indulásonként**; a védelemmel **0**. A tulajdonos gépén ugyanez a
+    szakasz **8 406 ms** volt — az indulás 77,8%-a (#1667).
+
+    ## Amit a védelem nem tesz meg
+
+    A már nem NYILVÁNTARTOTT exportcél (kiesett a 20 elemű listából)
+    továbbra is kitakarítódik. A nyilvántartott, de a lemezen épp nem
+    látható cél viszont bent marad: a hiány nem bizonyíték (#1560), és a
+    listát szándékosan nem szűrjük létezésre — ld.
+    `registered_exported_folders`."""
+    return (
+        *(str(root) for root in roots),
+        *registered_exported_folders(
+            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
+        ),
+    )
+
+
+def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
+    """A #1565 visszavétele SAJÁT kapcsolaton, az első képkocka UTÁN (#1667).
+
+    Az indexkarbantartásnak semmi köze ahhoz, hogy az ablak megjelenjen —
+    a #1601 ugyanezért tolta a könyvtár betöltését a `frameSwapped` mögé.
+    A `_takaritas_gyokerei` védelme óta ez a lépés önjavítás: azt hozza
+    rendbe, ami a program KIKAPCSOLT állapotában változott (új fájl az
+    exportmappában), illetve azt, amit egy korábbi verzió takarítása még
+    kidobott.
+
+    A hiba nyelt — egy önjavítás soha nem viheti el a felületet —, de
+    naplózva."""
+    try:
+        with open_index(index_db) as conn:
+            _ujraindexelt_exportcelok(conn, settings)
+    except Exception:  # noqa: BLE001 - a felület már áll, ez csak karbantartás
+        logging.getLogger(__name__).warning(
+            "az exportcélok visszavétele hibára futott", exc_info=True
+        )
 
 
 def _data_dir(platform: str | None = None) -> Path:
@@ -635,13 +702,42 @@ def _install_translator(
     return None
 
 
-def _jelentsd_az_idovonalat(timeline) -> None:
-    """#1601: az indulási idővonal kiírása — kikapcsolva NEM CSINÁL SEMMIT.
+def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
+    """A mappánkénti képdarabszámok az indexből — CSAK SZÁMOK.
+
+    ⚠️ Adatvédelem (#211/#1654): a mappanevek és útvonalak itt SZÁNDÉKOSAN
+    eldobódnak, még mielőtt a naplóösszeállítóhoz érnének. A #1653 fő
+    gyanúja a méretfüggés, ahhoz pedig a darabszám elég.
+
+    Hibánál üres sorozat: egy diagnosztika nem dönthet el egy indulást."""
+    try:
+        with open_index(data_dir / "index.db") as conn:
+            return tuple(
+                int(count) for _name, _path, count, *_rest in sorted_folder_rows(conn)
+            )
+    except sqlite3.DatabaseError:
+        logging.getLogger(__name__).warning(
+            "a könyvtárméret leolvasása hibára futott", exc_info=True
+        )
+        return ()
+
+
+def _jelentsd_az_idovonalat(timeline, kepszamok=None) -> None:
+    """#1601/#1654: az indulási napló kiírása — kikapcsolva NEM CSINÁL SEMMIT.
 
     Két helyre megy, mert két különböző igényt szolgál ki: a `stderr`-re a
     fejlesztő/terminálból indító lát azonnal, a fájlt pedig a felhasználó
-    tudja **átküldeni** (az útvonalát ezért kiírjuk). A jelentés nem
-    tartalmaz fájlnevet és teljes útvonalat, ld. `perf/startup_timeline.py`.
+    tudja **átküldeni** (`Súgó ▸ Napló elküldése`, #1654) — az útvonalát
+    ezért kiírjuk.
+
+    A napló három rétegből áll (#1654/3): a `perf/logwriter.py`
+    session-fejléce, a #1601 szakaszos bontása, és a könyvtár mérete
+    darabszámban. A `kepszamok` egy KÉSLELTETETT hívható (a mappánkénti
+    képdarabszámokat adja) — kikapcsolt mérésnél meg sem hívjuk, tehát az
+    indexlekérdezés költsége sem merül fel.
+
+    A jelentés nem tartalmaz fájlnevet, teljes útvonalat és
+    felhasználónevet, ld. `perf/tesztuzem.py` (`utvonalmentes`).
 
     Hibája soha nem akadályozhatja az indulást — egy diagnosztika nem
     fontosabb a programnál."""
@@ -650,19 +746,58 @@ def _jelentsd_az_idovonalat(timeline) -> None:
     try:
         from PySide6.QtCore import qVersion
 
-        report = timeline.render(
-            app_version=version_string(), qt_version=qVersion()
+        szoveg = naplo_szovege(
+            idovonal_jelentes=timeline.render(
+                app_version=version_string(), qt_version=qVersion()
+            ),
+            fejlec=session_header(version_string(), qVersion() or ""),
+            meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
         )
-        print(report, file=sys.stderr)
-        target = timeline.write(
-            default_log_dir(), app_version=version_string(), qt_version=qVersion()
-        )
+        print(szoveg, file=sys.stderr)
+        target = irj_indulasi_naplot(szoveg, default_log_dir())
         if target is not None:
-            print(f"Az indulási idővonal ide került: {target}", file=sys.stderr)
+            print(f"Az indulási napló ide került: {target}", file=sys.stderr)
     except Exception:  # noqa: BLE001 - a diagnosztika sosem viheti el az appot
         logging.getLogger(__name__).warning(
             "az indulási idővonal kiírása hibára futott", exc_info=True
         )
+
+
+def _indulasi_idovonal(
+    argv: list[str],
+    *,
+    settings=None,
+    environ: Mapping[str, str] | None = None,
+    entry_at: float | None = None,
+    clock=time.perf_counter,
+) -> tuple[object, list[str]]:
+    """A `run()` LEGELSŐ érdemi lépése: mérünk-e, és mivel indulunk (#1654).
+
+    Három, egyenrangú bekapcsolási út van — bármelyik elég:
+
+    * a **tartós tesztüzem** (`QSettings`), amit a `Súgó ▸ Tesztüzem`
+      menüpont állít, és ami TÚLÉLI a kilépést. Ez az a bejárat, amit a
+      tulajdonos használ: bekapcsolja, kilép, és a KÖVETKEZŐ indulás
+      magától méri magát;
+    * a `--tesztuzem` **parancssori kapcsoló** — csak erre a futásra, a
+      beállítást nem írja át (fejlesztői és CI-oldal);
+    * a `PICASAPY_STARTUP_TIMELINE=1` **környezeti változó** (#1601), amire
+      a #1653 windowsos CI-mérése épül.
+
+    A visszaadott argumentumlistából a `--tesztuzem` kikerül: az
+    `_resolve_roots` MINDEN `argv[1:]` elemet figyelt gyökérnek vesz, tehát
+    bennhagyva egy `--tesztuzem` nevű mappát próbálnánk indexelni.
+
+    ⚠️ Az `entry_at` szakaszát ITT zárjuk le, közvetlenül a példány
+    létrehozása után: a naplózás így az ELSŐ ezredmásodperctől — a Python-
+    és PySide6-importoktól — fut, nem csak innentől."""
+    if settings is None:
+        settings = QSettings("PicasaPy", "PicasaPy")
+    tesztuzem = argv_tesztuzem(argv) or tesztuzem_bekapcsolva(settings)
+    timeline = start_startup_timeline(environ, forced=tesztuzem, clock=clock)
+    if entry_at is not None:
+        timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
+    return timeline, argv_kapcsolo_nelkul(argv)
 
 
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
@@ -673,11 +808,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     maga a Python- és PySide6-import, mielőtt idáig eljutnánk. `None`
     esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
 
-    Az idővonal alapból KI van kapcsolva; a `PICASAPY_STARTUP_TIMELINE=1`
-    környezeti változó kapcsolja be (ld. `perf/startup_timeline.py`)."""
-    timeline = start_startup_timeline()
-    if entry_at is not None:
-        timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
+    Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
+    (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
+    környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
+    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
 
     # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
     # Fusion stílus + explicit világos paletta; Linuxon/macOS-en a saját,
@@ -761,13 +895,17 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             # költségét, anélkül hogy a `with`-et szét kellene szedni.
             timeline.mark("index megnyitása (séma + migráció)")
             with timeline.phase("ottragadt mappák takarítása (#58)"):
-                prune_foreign_folders(conn, roots)
+                # #1565/#1667: az exportcélok a gyökereken KÍVÜL élnek, de a
+                # #1565 óta saját gyökérként indexeltek — a takarítás elől
+                # VÉDETTEK. Enélkül minden induláskor kidobnánk és nulláról
+                # olvasnánk vissza őket (mérve 180 EXIF-nyitás; a tulajdonos
+                # gépén 8,4 s, az indulás 77,8%-a). A visszavétel maga már
+                # nincs itt: az első képkocka után fut (`_start_and_finish`).
+                prune_foreign_folders(
+                    conn, _takaritas_gyokerei(roots, QSettings())
+                )
             with timeline.phase("Kollázsok mappa önjavítása (#1075)"):
                 _onjavito_kollazsmappa(conn, QSettings())
-            # #1565: az exportcélok is a gyökereken KÍVÜL élnek — a fenti
-            # takarítás különben minden indításkor kidobná őket
-            with timeline.phase("exportcélok visszavétele (#1565)"):
-                _ujraindexelt_exportcelok(conn, QSettings())
     except sqlite3.DatabaseError:
         # #449: az eredeti sem omlott össze némán és nem javított titokban —
         # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa
@@ -1055,12 +1193,16 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     def _start_and_finish() -> None:
         first_frame_at = time.monotonic()
+        # #1667: az exportcélok visszavétele NEM a kritikus úton — az ablak
+        # már látszik, mire ez a karbantartás elindul.
+        with timeline.phase("exportcélok visszavétele (#1565)"):
+            _exportcelok_visszavetele(data_dir / "index.db", QSettings())
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
             _start_initial_scan(
                 startup_status, controller, storage_bootstrap.migration_notice
             )
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
-        _jelentsd_az_idovonalat(timeline)
+        _jelentsd_az_idovonalat(timeline, lambda: _indexelt_kepszamok(data_dir))
         QTimer.singleShot(
             _remaining_splash_ms(elapsed_ms), startup_status.finish
         )

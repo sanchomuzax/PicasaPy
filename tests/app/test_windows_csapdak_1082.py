@@ -198,13 +198,55 @@ class TestAProgramSzerzodese:
     Ez az, amit a program tényleg csinál, és ez az, ami platformfüggetlenül
     a NATÍV alakot adja vissza — mert a `to_local_path` `Path`-on futtat át.
     Ha valaki ezt a normalizálást kiveszi, itt derül ki, nem a windows-CI-n
-    két nappal később."""
+    két nappal később.
+
+    #1687: a lista az URL-ben KÜLÖN JELENTÉSSEL bíró karaktereket sorolja
+    fel (töredékjel, kódolásjel, lekérdezés-elválasztó, whitespace-kódolás,
+    ékezet-kódolás, és a Windows-cmd-ben is speciális `&`) — a `?` és a `&`
+    itt szabad, mert ez a teszt NEM ír a lemezre (tiszta sztring/URL
+    kerekítés), a valódi mappalétrehozást igénylő úton (#1626-eset) viszont
+    a `?` Windows-illegális fájlnév-karakter, ezért ott (a QML-funkcionális
+    tesztben) nem szerepelhet."""
 
     @pytest.mark.parametrize(
-        "nev", ["a.jpg", "kép #1.jpg", "árvíztűrő tükörfúrógép.jpg"]
+        "nev",
+        [
+            "a.jpg",
+            "kép #1.jpg",
+            "árvíztűrő tükörfúrógép.jpg",
+            "100% kész.jpg",
+            "kérdés?.jpg",
+            "a+b.jpg",
+            "szóköz köztük.jpg",
+            "[zárójel].jpg",
+            "és&vagy.jpg",
+        ],
     )
     def test_a_ket_iranyt_egymas_utan_futtatva_azonossag(self, tmp_path, nev):
         ut = str(tmp_path / nev)
+
+        assert to_local_path(to_file_url(ut).toString()) == ut
+
+    @pytest.mark.parametrize(
+        "nev",
+        [
+            "kép #1.jpg",
+            "100% kész.jpg",
+            "kérdés?.jpg",
+            "a+b.jpg",
+            "szóköz köztük.jpg",
+            "[zárójel].jpg",
+            "és&vagy.jpg",
+        ],
+    )
+    def test_a_ket_irany_windowsos_agon_is_azonossag(self, monkeypatch, nev):
+        """Ugyanaz a kerekítés, a windowsos ágra kényszerítve (#1217
+        fogantyú) — Linuxon mérve, mert a windows-CI csak utólag mondaná
+        meg."""
+        from picasapy.app import formatting
+
+        monkeypatch.setattr(formatting, "_platform", lambda: "win32")
+        ut = str(PureWindowsPath(r"C:\Users\runneradmin\nyár") / nev)
 
         assert to_local_path(to_file_url(ut).toString()) == ut
 

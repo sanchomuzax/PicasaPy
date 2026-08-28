@@ -180,8 +180,13 @@ Item {
             exportWatermarkField.text = prefs.watermarkText
 
             exportDialog.movieFull = prefs.movieFull
+            // #455: a tálcából a TÉNYLEGES tartalmat kérdezzük. Korábban
+            // itt `useTray ? true` állt — amíg a tálca csak külön
+            // művelettel telt meg, ez ritka pontatlanság volt; mióta a
+            // tálca a kijelölés tükre, minden exportnál engedélyezte
+            // volna a film-rádiókat, film nélkül is.
             exportDialog.hasVideo = exportDialog.useTray
-                ? true
+                ? controller.trayHasVideo()
                 : controller.selectionHasVideo(
                       dialogs.appWindow.selectedIndexes)
             standardButton(Dialog.Ok).enabled = Qt.binding(

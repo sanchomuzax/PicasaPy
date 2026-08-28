@@ -136,16 +136,16 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "mac", "sepia", "bw", "",
-         "ismeretlen"],
+        ["auto", "normal", "dither16", "rdesk", "mac", "", "ismeretlen"],
     )
     def test_a_tobbi_mod_ma_atenged(self, mode):
         """A még megvalósítatlan módokra átereszt.
 
         A `lcd`/`projector` (#1577) és a `linear` (#1578) azóta KIKERÜLT
         ebből a névsorból — a képpont-szabályukat a
-        `tests/render/test_display_modes_1577_1578.py` őrzi. A maradék
-        (`dither16`, `rdesk`, `mac`, `sepia`, `bw`) külön jegyeké.
+        `tests/render/test_display_modes_1577_1578.py` őrzi —, a `sepia` és
+        a `bw` pedig a #1657 óta (`test_display_modes_szepia_bw_1657.py`).
+        A maradék (`dither16`, `rdesk`, `mac`) külön jegyeké.
         """
         forras = _raszter((255, 255, 255), (0, 0, 0))
         eredmeny = apply_display_mode(forras, mode)
@@ -156,8 +156,8 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode,vart",
-        [("overflow", True), ("auto", False), ("normal", False), ("bw", False),
-         ("", False), ("ismeretlen", False)],
+        [("overflow", True), ("auto", False), ("normal", False),
+         ("bw", True), ("sepia", True), ("", False), ("ismeretlen", False)],
     )
     def test_a_kepponthatas_lekerdezheto(self, mode, vart):
         """A hívó ebből tudja, kell-e egyáltalán másolatot készítenie."""
