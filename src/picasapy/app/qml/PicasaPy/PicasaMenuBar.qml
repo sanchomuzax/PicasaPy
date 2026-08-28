@@ -109,6 +109,11 @@ MenuBar {
     signal selectStarredRequested()
     signal selectAllRequested()
     signal clearSelectionRequested()
+    // #1686: a `Ctrl+I` MÁR MŰKÖDÖTT (Main.qml globális `Shortcut`-ja), csak
+    // a menütétel volt helyfoglaló — a funkciót tehát csak az érte el, aki
+    // ismerte a billentyűt. A #1616 söprő őre ezt nem foghatta meg: az a
+    // helyfoglaló tételeket szándékosan kizárja (ott a felirat nem ígéret).
+    signal invertSelectionRequested()
     signal folderManagerRequested()
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
     // megnyitását a Main.qml köti be (forró fájl, az integrátor dolga)
@@ -546,7 +551,11 @@ MenuBar {
             text: qsTr("Select Starred")
             onTriggered: bar.selectStarredRequested()
         }
-        PicasaMenuItem { text: qsTr("Invert Selection") + "\tCtrl+I"; placeholder: true }
+        MenuItem {
+            objectName: "menuEditInvertSelection"
+            text: qsTr("Invert Selection") + "\tCtrl+I"
+            onTriggered: bar.invertSelectionRequested()
+        }
         MenuItem {
             text: qsTr("Clear Selection") + "\tCtrl+D"
             onTriggered: bar.clearSelectionRequested()

@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.132] – 2026-08-28
 
 ### Javítva
+- **A Szerkesztés ▸ „Kijelölés megfordítása" menüpont nem volt
+  kattintható (#1686).** A `Ctrl+I` billentyű régóta működött, a menüpont
+  viszont szürke helyfoglaló volt — a funkciót így csak az érte el, aki
+  ismerte a billentyűt. Mostantól a menüpont ugyanazt csinálja, mint a
+  billentyű.
 - **A Fájl ▸ Új album… menüpont és a Ctrl+N eddig semmit nem csinált,
   holott a párbeszéd maga régóta kész volt (#1616).** A menüpont szürkén,
   kattinthatatlanul állt, a felirat mégis `Ctrl+N`-et hirdetett — aki

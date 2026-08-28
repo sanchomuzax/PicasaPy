@@ -365,7 +365,12 @@ class TestSweepOr:
         menu_forras = forrasok[str(_MENU_QML)]
         tetelek = list(_menu_tetelek(menu_forras))
         helyfoglalo_hirdetok = [t for t in tetelek if t["placeholder"]]
-        assert len(helyfoglalo_hirdetok) >= 8, (
+        # ⚠️ #1686: 8 → 7. A „Kijelölés megfordítása" (Ctrl+I) tétele ÉLŐVÉ
+        # vált — a billentyű már régóta működött, csak a menüpont volt
+        # helyfoglaló. Ez a kontroll pontosan úgy viselkedett, ahogy kell:
+        # megszólalt, és a hibaüzenete kérdezte meg, hogy „tényleg javult
+        # valami". Igen, javult; ezért csökken a szám, nem a mérés tört el.
+        assert len(helyfoglalo_hirdetok) >= 7, (
             "a mérésnek meg kell találnia a spec szerinti kilenc "
             "hatókörön-kívüli helyfoglaló tételt — ha ez a szám lecsökkent, "
             "vagy a regex tört el, vagy tényleg javult valami (ellenőrizd!)"
