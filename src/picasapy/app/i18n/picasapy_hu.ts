@@ -2759,6 +2759,10 @@
 <context>
     <name>FileOpsDialogs</name>
     <message>
+        <source>Move to New Folder...</source>
+        <translation>Áthelyezés új mappába…</translation>
+    </message>
+    <message>
         <source>Copying Files</source>
         <translation>Fájlok másolása</translation>
     </message>
@@ -3242,6 +3246,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <message>
         <source>Choose a destination folder first.</source>
         <translation>Előbb válassza ki a célmappát.</translation>
+    </message>
+    <message>
+        <source>Select at least one picture first.</source>
+        <translation>Előbb jelöljön ki legalább egy képet.</translation>
     </message>
 </context>
 <context>

@@ -8,6 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **A Fájl ▸ „Áthelyezés új mappába…" menüpont eddig semmit nem
+  csinált (#1614).** A tétel szürkén, kattinthatatlanul állt — pedig a
+  neve ELLENÉRE nem új, üres mappát hoz létre, hanem a kijelölt képeket
+  helyezi át egy olyan mappába, amit a felhasználó most nevez el.
+  Mostantól kattintásra egy névmezős párbeszéd kéri a mappa nevét (mint
+  az „Új album…"), és a képek — a `.picasa.ini` bejegyzésükkel együtt —
+  átkerülnek az így létrehozott mappába; üres kijelölésnél a tétel
+  szürke marad, érvénytelen (üres, csak szóköz, vagy Windowson tiltott
+  karaktert tartalmazó) vagy már foglalt névnél pedig érthető
+  hibaüzenet jelenik meg, és semmi nem mozdul a lemezen.
 - **A duplikátumok mappája egymásba ágyazódhatott (#1697).** A
   „Duplikátumok" gyűjtőmappából újra futtatott áthelyezés
   `Duplikátumok\Duplikátumok` szerkezetet hozott létre, mert a program a

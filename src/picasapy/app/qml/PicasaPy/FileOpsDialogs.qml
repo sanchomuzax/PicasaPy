@@ -30,6 +30,12 @@ Item {
         moveFolderDialog.paths = paths
         if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
     }
+    // #1614: Fájl ▸ Áthelyezés új mappába… — a `newAlbumDialog` mintáját
+    // követi (egyetlen névmező), mert a párbeszéd pontos alakjára nincs
+    // erősebb bizonyíték (ld. a jegy „Bizonyítottsági fok" szakasza).
+    function openMoveToNewFolder(paths) {
+        moveToNewFolderDialog.openFor(paths)
+    }
     function openDelete(paths) {
         deleteConfirmDialog.openFor(paths)
     }
@@ -235,6 +241,48 @@ Item {
         TextField {
             id: newAlbumField
             objectName: "newAlbumField"
+            width: 300
+            font.pixelSize: Theme.fontSize
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
+        }
+    }
+
+    // #1614: Fájl ▸ Áthelyezés új mappába… — a `newAlbumDialog` mintáját
+    // követő egyetlen névmező. A tényleges névellenőrzés (üres/csak
+    // szóköz/Windows-tiltott karakter) és a mappa létrehozása a
+    // `fileOpsController.moveSelectionToNewFolder`-ben történik — hiba
+    // esetén a szokásos `operationFailed` → `fileOpsErrorDialog` úton jut
+    // el a felhasználóhoz, ezért itt nincs saját hibaágra szükség.
+    Dialog {
+        id: moveToNewFolderDialog
+        objectName: "moveToNewFolderDialog"
+        title: qsTr("Move to New Folder...")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property var paths: []
+        function openFor(pathList) {
+            if (!pathList || pathList.length === 0) return
+            paths = pathList
+            moveToNewFolderField.text = ""
+            open()
+            moveToNewFolderField.forceActiveFocus()
+        }
+        // ⚠️ SZÁNDÉKOSAN nincs `clearSelection()` itt (eltérően a
+        // `runBatch`-től): a mappa létrehozása ELŐBB fut, mint bármelyik
+        // kép mozdulna — érvénytelen név vagy már foglalt célmappa esetén
+        // EGYETLEN fájl sem mozdul, tehát a kijelölés ürítése félrevezető
+        // volna. Sikeres áthelyezésnél a `wire_fileops` resyncje úgyis
+        // frissíti a rácsot; a kijelölés megmaradása itt nem hibaosztály.
+        onAccepted: {
+            if (fileOpsController)
+                fileOpsController.moveSelectionToNewFolder(
+                    paths, moveToNewFolderField.text.trim())
+        }
+        TextField {
+            id: moveToNewFolderField
+            objectName: "moveToNewFolderField"
             width: 300
             font.pixelSize: Theme.fontSize
             // #422: jobbklikk-menü (Picasa `Address`)
