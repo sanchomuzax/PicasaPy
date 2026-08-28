@@ -13,8 +13,11 @@ class TestPlaceholderMenuItemek:
 
     def test_placeholder_pont_lathato(self, qml_app):
         window, _controller, _engine = qml_app
+        # ⚠️ #1616: a `menuFileNewAlbum` KIKERÜLT ebből a listából — az
+        # „Új album…" azóta ÉLŐ menüpont (`Ctrl+N`-nel együtt). Ez a teszt
+        # a JELÖLÉST méri, nem konkrét tételeket; ha egy példa bekötést kap,
+        # itt kell másikat választani, nem a jelölést visszatenni rá.
         for name in (
-            "menuFileNewAlbum",
             "menuEditCut",
             "menuViewThumbnailsOnly",
         ):
@@ -31,7 +34,9 @@ class TestPlaceholderMenuItemek:
 
     def test_placeholder_felirat_halvanyabb(self, qml_app):
         window, _controller, _engine = qml_app
-        item = window.findChild(QObject, "menuFileNewAlbum")
+        # #1616: a korábbi példa (`menuFileNewAlbum`) élővé vált, ezért
+        # egy MA IS helyfoglaló tételen mérünk.
+        item = window.findChild(QObject, "menuEditCut")
         content = item.property("contentItem")
         assert content is not None
         # a felirat színe a Theme.textGray tokent használja (alap/világos
