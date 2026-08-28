@@ -154,6 +154,15 @@ MenuBar {
     // teljes indoklásért — ugyanaz a hibaosztály, mint a Ctrl+M volt a
     // #1615 előtt). A párbeszéd a Main.qml-ben él.
     signal addFileRequested()
+    // #1614: Fájl ▸ Áthelyezés új mappába… — `eMenuFile::ID_FILE_NEWFOLDER`.
+    // A parancs NEVE félrevezet: nem mappát hoz létre, hanem a kijelölt
+    // képeket helyezi át egy újba (a hivatalos magyar felirat ezt mondja
+    // ki: `stringres-en-hu.tsv` — „Áthel&yezés új mappába…"). A dialógus
+    // (`moveToNewFolderDialog`, FileOpsDialogs.qml) a Main.qml-ben él, és
+    // csak a NEVET kéri — a helyet (a kijelölés mappáját) a
+    // `FileOpsController.moveSelectionToNewFolder` választja, ugyanúgy,
+    // mint az „Új album…" (#1616) a saját dialógusánál.
+    signal moveToNewFolderRequested()
     // #1472: Fájl ▸ Nyomtatás… (Ctrl+P) — a párbeszéd a Main.qml-ben él,
     // ugyanúgy, mint az exportnál; a képtálca „Nyomtatás" gombja
     // (TrayBar.printRequested) ugyanoda vezet
@@ -410,8 +419,18 @@ MenuBar {
         // hiányzik (a tétel helyfoglaló) — a billentyű lekerült a feliratról.
         PicasaMenuItem { text: qsTr("Open File(s) in Editor"); placeholder: true }
         MenuSeparator {}
-        // hiányzott (#324 audit): mappa áthelyezés a fájlműveletek csoportjában
-        PicasaMenuItem { text: qsTr("Move to New Folder..."); placeholder: true }
+        // #1614: ÉLŐ tétel — MÉRVE (`git log -S'ID_FILE_NEWFOLDER'`) a
+        // tétel a #324 audit óta helyfoglaló volt, holott a parancs neve
+        // ELLENÉRE nem mappa-létrehozás, hanem a kijelölt képek áthelyezése
+        // (ld. a `moveToNewFolderRequested` jelzés fenti megjegyzését). A
+        // kijelölés-függés (`photoActionsEnabled`) ugyanaz a minta, mint az
+        // „Új album…"-nál (#1616): kijelölés nélkül nincs mit áthelyezni.
+        MenuItem {
+            objectName: "menuFileMoveToNewFolder"
+            text: qsTr("Move to New Folder...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.moveToNewFolderRequested()
+        }
         MenuItem {
             objectName: "menuFileRename"
             text: qsTr("Rename...") + "\tF2"

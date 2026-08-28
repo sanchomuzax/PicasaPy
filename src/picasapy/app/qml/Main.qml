@@ -764,6 +764,11 @@ ApplicationWindow {
         onImportSourceRequested: importSourceDialog.open()
         // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O
         onAddFileRequested: addFileDialog.open()
+        // #1614: Fájl ▸ Áthelyezés új mappába… — a `moveToNewFolderDialog`
+        // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
+        // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
+        onMoveToNewFolderRequested:
+            fileOpsDialogs.openMoveToNewFolder(window.selectedPaths())
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)

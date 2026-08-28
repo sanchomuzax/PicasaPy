@@ -16,6 +16,11 @@ from .copy import copy_photo
 from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
 from .move_folder import FolderMoveError, move_folder
+from .new_folder import (
+    InvalidFolderNameError,
+    create_folder_for_move,
+    validate_folder_name,
+)
 from .originals import (
     OriginalMove,
     move_preserved_originals,
@@ -39,12 +44,14 @@ __all__ = [
     "RENAME",
     "SKIP",
     "BatchResult",
+    "InvalidFolderNameError",
     "OriginalMove",
     "RenameItem",
     "TrashUnavailableError",
     "conflicting_names",
     "copy_photo",
     "copy_photos",
+    "create_folder_for_move",
     "delete_permanently",
     "delete_to_trash",
     "find_trash_dir",
@@ -66,4 +73,5 @@ __all__ = [
     "reveal_in_file_manager",
     "trash_available",
     "undo_original_moves",
+    "validate_folder_name",
 ]

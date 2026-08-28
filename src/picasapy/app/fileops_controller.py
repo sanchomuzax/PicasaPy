@@ -16,8 +16,11 @@ from PySide6.QtCore import QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.fileops import (
+    RENAME,
+    InvalidFolderNameError,
     conflicting_names,
     copy_photos,
+    create_folder_for_move,
     delete_permanently,
     delete_to_trash,
     move_folder,
@@ -27,6 +30,7 @@ from picasapy.fileops import (
     rename_photo,
     reveal_in_file_manager,
     trash_available,
+    validate_folder_name,
 )
 from picasapy.fileops.move_folder import FolderMoveError
 from picasapy.ini import IniConflictError, IniSaveError
@@ -126,6 +130,49 @@ class FileOpsController(QObject):
         Az eredeti a KÉPEK áthelyezésére ugyanazt a rename/skip párbeszédet
         adta, mint a másolásra — ezért fut a kettő ugyanazon a magon."""
         self._run_batch("move", move_photos, paths, dest_folder, policy)
+
+    @Slot(list, str)
+    def moveSelectionToNewFolder(self, paths: list, name: str) -> None:
+        """Fájl ▸ Áthelyezés új mappába… (#1614, `ID_FILE_NEWFOLDER`).
+
+        A parancs neve félrevezet: NEM mappát hoz létre önmagában, hanem a
+        kijelölt képeket helyezi át egy ÚJ mappába, amit a felhasználó
+        NEVEZ el — a helyét (a kijelölés ELSŐ elemének jelenlegi mappáját)
+        a program választja, ezért a dialógus csak egy nevet kér, mint az
+        „Új album…" (`newAlbumDialog`).
+
+        A tényleges mozgatás a MEGLÉVŐ kötegelt úton fut (`_run_batch` →
+        `move_photos`), pontosan úgy, mint a „Áthelyezés…" (#457): a
+        `.picasa.ini` bejegyzések a képekkel költöznek, és a haladás-/
+        összegző jelzés (`batchProgress`/`batchFinished`) is ugyanaz. Az
+        index-frissítés a `wire_fileops` MÁR MEGLÉVŐ célzott resyncjén
+        megy (`photoMoved` → `resyncFolder`) — ez a brand-new (még sosem
+        indexelt) célmappát is kezeli, ahogy a #1522 másolás-tesztje is
+        megméri.
+
+        Az új mappa nevét ELLENŐRIZZÜK, mielőtt bármi a lemezre kerülne
+        (üres/csak szóköz/Windows-tiltott karakter — #1700 hibaosztálya),
+        és azt is, hogy a célmappa MÁR NE létezzen — egyik hiba se essen
+        némán, mindkettő az `operationFailed`-en át jut el a felhasználóhoz
+        (`fileOpsErrorDialog`, ugyanaz a csatorna, mint minden más
+        fájlművelet-hibánál)."""
+        if not paths:
+            self.operationFailed.emit(
+                "move_to_new_folder", self.tr("Select at least one picture first.")
+            )
+            return
+        try:
+            folder_name = validate_folder_name(name)
+        except InvalidFolderNameError as error:
+            self.operationFailed.emit("move_to_new_folder", str(error))
+            return
+        parent = Path(_to_local_path(paths[0]) or paths[0]).parent
+        try:
+            target = create_folder_for_move(parent, folder_name)
+        except OSError as error:
+            self.operationFailed.emit("move_to_new_folder", str(error))
+            return
+        self._run_batch("move", move_photos, paths, str(target), RENAME)
 
     def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
         dest = Path(_to_local_path(dest_folder))
