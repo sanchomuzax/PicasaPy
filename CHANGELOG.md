@@ -34,6 +34,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   lévő tétel a tulajdonosra vár — holott épp az ellenkezője igaz volt rájuk.
   Mostantól egy jegy pontosan egy csoportban szerepel, és a cím megmondja,
   hogy csak az első csoport az, ami nélküle áll.
+- **Az ottragadt mappák induláskori takarítása fölöslegesen dolgozott, ha a
+  nyilvántartott exportcélok között pontosan egyező útvonal ismétlődött
+  (#1706).** Minden ilyen ismétlés külön fájlrendszer-hívást (útvonal-
+  feloldást) igényelt — hálózati meghajtón ez közvetlenül az indulási időt
+  hosszabbította. Mostantól egy pontosan egyező útvonal csak egyszer
+  oldódik fel, a védelem (#1667/#1565) változatlan.
 ## [0.8.132] – 2026-08-28
 
 ### Javítva
