@@ -203,6 +203,7 @@ def naplo_szovege(
     idovonal_jelentes: str,
     fejlec: Mapping[str, Any],
     meret: KonyvtarMeret,
+    vedett_gyokerek: int | None = None,
 ) -> str:
     """A tesztüzem naplójának teljes szövege (#1654/3).
 
@@ -227,6 +228,16 @@ def naplo_szovege(
         "A könyvtár mérete (a #1653 méretfüggés-gyanújához):",
         f"  indexelt mappák:  {meret.mappak}",
         f"  indexelt képek:   {meret.kepek}",
+    ]
+    # #1712: a #1706 MÉRÉSE szerint a takarítás és az exportcél-visszavétel
+    # költsége NEM az indexelt mappák számával skálázik, hanem a VÉDETT
+    # GYÖKEREKÉVEL (figyelt mappák + nyilvántartott exportcélok). Ez a szám
+    # eddig sehol nem szerepelt, ezért a naplóból nem lehetett eldönteni,
+    # mi drágult meg. Csak DARABSZÁM — útvonal nélkül, a #1654 garanciája
+    # szerint.
+    if vedett_gyokerek is not None:
+        sorok.append(f"  védett gyökerek:  {vedett_gyokerek}")
+    sorok += [
         "",
         "A napló SEMMILYEN elérési utat, fájlnevet és felhasználónevet",
         "nem tartalmaz — kizárólag darabszámokat és időket.",

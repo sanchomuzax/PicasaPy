@@ -722,7 +722,7 @@ def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
         return ()
 
 
-def _jelentsd_az_idovonalat(timeline, kepszamok=None) -> None:
+def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> None:
     """#1601/#1654: az indulási napló kiírása — kikapcsolva NEM CSINÁL SEMMIT.
 
     Két helyre megy, mert két különböző igényt szolgál ki: a `stderr`-re a
@@ -752,6 +752,12 @@ def _jelentsd_az_idovonalat(timeline, kepszamok=None) -> None:
             ),
             fejlec=session_header(version_string(), qVersion() or ""),
             meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
+            # #1712: a #1706 szerint EZ a szám a domináns tényező, nem a
+            # mappáké — késleltetve hívjuk, hogy kikapcsolt tesztüzemben
+            # ne kerüljön semmibe.
+            vedett_gyokerek=(
+                len(vedett_gyokerek()) if vedett_gyokerek is not None else None
+            ),
         )
         print(szoveg, file=sys.stderr)
         target = irj_indulasi_naplot(szoveg, default_log_dir())
@@ -1202,7 +1208,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 startup_status, controller, storage_bootstrap.migration_notice
             )
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
-        _jelentsd_az_idovonalat(timeline, lambda: _indexelt_kepszamok(data_dir))
+        _jelentsd_az_idovonalat(
+            timeline,
+            lambda: _indexelt_kepszamok(data_dir),
+            lambda: _takaritas_gyokerei(roots, QSettings()),
+        )
         QTimer.singleShot(
             _remaining_splash_ms(elapsed_ms), startup_status.finish
         )

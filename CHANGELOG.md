@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Javítva
+- **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
+  mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
+  számától függ, hanem attól, hány exportcélt tart nyilván a program — ez a
+  szám eddig sehol nem látszott, ezért a naplóból nem lehetett eldönteni, mi
+  drágult meg. Továbbra is csak darabszám kerül a naplóba, útvonal nélkül.
 - **A Fájl ▸ „Áthelyezés új mappába…" menüpont eddig semmit nem
   csinált (#1614).** A tétel szürkén, kattinthatatlanul állt — pedig a
   neve ELLENÉRE nem új, üres mappát hoz létre, hanem a kijelölt képeket
