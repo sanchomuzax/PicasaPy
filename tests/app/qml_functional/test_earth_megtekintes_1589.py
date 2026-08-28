@@ -173,20 +173,52 @@ class TestKimenet:
         )
         assert megnyitasok == [kml]
 
-    def test_a_kettoskeresztes_mappanev_is_celba_er(self, qml_app, qt_app, tmp_path, megnyitasok):
-        """#1626 mellékfogása: a `#` a mappanévben.
+    @pytest.mark.parametrize(
+        "jel",
+        [
+            pytest.param("#", id="kettoskereszt"),
+            pytest.param("%", id="szazalek"),
+            pytest.param("?", id="kerdojel"),
+            pytest.param("+", id="plusz"),
+            pytest.param(" ", id="szokoz"),
+            pytest.param("é", id="ekezet"),
+            pytest.param("[", id="szogletes"),
+            pytest.param("&", id="es-jel"),
+        ],
+    )
+    def test_a_kettoskeresztes_mappanev_is_celba_er(
+        self, qml_app, qt_app, tmp_path, megnyitasok, jel
+    ):
+        """#1626 mellékfogása: URL-veszélyes karakterek a mappanévben.
 
         A célmappát URL-ként kapjuk. A régi kód a `file://` előtagot nyersen
         levágta, a MARADÉK viszont URL maradt — benne a `%23`-ra kódolt
         `#`-tel —, tehát a KML egy `nyár %231` nevű, ÚJ mappába került
         volna. Most a `QUrl.toLocalFile()` dekódol, ezért a fájl oda kerül,
         ahova a felhasználó mutatott. (Ez az ág Linuxon is hibás volt, csak
-        nem mérte senki.)"""
+        nem mérte senki.)
+
+        #1687: ez a teszt korábban a KML **elkészülte** után rögtön a
+        `megnyitasok`-ot vizsgálta, anélkül hogy MEGVÁRTA volna, hogy a
+        `earthViewReady` — egy háttérszálról érkező, ezért Qt-queued —
+        jelzés ténylegesen célba érjen a főszálon. A fájlírás és a jelzés
+        kiadása a worker-szálon szekvenciális, de a jelzés KÉZBESÍTÉSE a
+        főszál eseményhurkán át külön lépés — a kml.exists() tehát MINDIG
+        korábban vagy egyidejűleg válik igazzá, mint ahogy `megnyitasok`
+        feltöltődik, sosem később. Mért rés (ezen a gépen, terhelés
+        nélkül): 0,0003–1,8 ms — apró, de NEM nulla, tehát valódi
+        verseny, amit egy lassabb/foglaltabb gép (pl. Windows-runner)
+        kitágíthat. Mutáció: a hiányzó várakozást visszaállítva, 2
+        könnyű CPU-terhelő szállal szimulálva a foglalt CI-gépet, 15
+        futásból 9 elszállt (60%) — pontosan az #1687-ben látott
+        `assert megnyitasok == []` mintával, hozzáadva a második
+        `_var`-t 15/15 zöld lett. A `#` tehát NEM az útvonalkezelésben,
+        hanem a teszt SORRENDJÉBEN okozta a hibát."""
         window, controller, _engine = qml_app
         _geocimkez(controller, qt_app, [0])
         _kijelol(window, qt_app, [0])
         parbeszed = _menubol_nyit(window, qt_app)
-        cel = tmp_path / "nyár #1"
+        cel = tmp_path / f"nyár {jel}1"
 
         _celmappat_valaszt(parbeszed, qt_app, cel)
 
@@ -195,8 +227,17 @@ class TestKimenet:
             qt_app,
             kml.exists,
             uzenet=(
-                "a `#`-et tartalmazó nevű célmappába nem került KML — a "
-                "százalékos kódolás feloldatlan maradt (#1626)"
+                f"a(z) {jel!r} karaktert tartalmazó nevű célmappába nem "
+                "került KML — a százalékos kódolás feloldatlan maradt "
+                "(#1626)"
+            ),
+        )
+        _var(
+            qt_app,
+            lambda: bool(megnyitasok),
+            uzenet=(
+                "a KML elkészült, de a program NEM nyitotta meg — "
+                f"a mappanévben lévő {jel!r} karakter miatt (#1687)"
             ),
         )
         assert megnyitasok == [kml]
