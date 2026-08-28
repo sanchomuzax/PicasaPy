@@ -239,6 +239,93 @@ class TestMoveOthersToDuplicatesFolder:
         assert failures[0][0] == str(missing)
 
 
+class TestMoveIntoCollectorFolderItself:
+    """#1697: a felhasználó jelentése szerint a `Duplikátumok` mappából
+    ismét áthelyezve `Duplikátumok/Duplikátumok` beágyazott szerkezet jött
+    létre. Ha a forrásmappa MAGA már a gyűjtőmappa, a fájl helyben marad
+    (nincs mit tenni), és `operationFailed`-en EGYÉRTELMŰ üzenetet kap a
+    felhasználó — néma hatástalanság éppúgy hiba lenne, mint a beágyazás."""
+
+    def test_does_not_create_nested_duplicates_folder(self, controller, tmp_path):
+        lib = tmp_path / "kepek"
+        collector = lib / "Duplikátumok"
+        collector.mkdir(parents=True)
+        keep = make_jpeg(collector / "keep.jpg", size=(40, 20))
+        other = collector / "masolat.jpg"
+        other.write_bytes(keep.read_bytes())
+
+        controller.moveOthersToDuplicatesFolder([str(keep), str(other)], str(keep))
+
+        assert other.exists()  # helyben marad
+        assert not (collector / "Duplikátumok").exists()  # nincs beágyazás
+
+    def test_reports_a_clear_message_instead_of_silent_inaction(
+        self, controller, tmp_path
+    ):
+        lib = tmp_path / "kepek"
+        collector = lib / "Duplikátumok"
+        collector.mkdir(parents=True)
+        keep = make_jpeg(collector / "keep.jpg", size=(40, 20))
+        other = collector / "masolat.jpg"
+        other.write_bytes(keep.read_bytes())
+
+        failures = []
+        controller.operationFailed.connect(
+            lambda path, msg: failures.append((path, msg))
+        )
+        resolved = []
+        controller.itemResolved.connect(lambda path: resolved.append(path))
+        controller.moveOthersToDuplicatesFolder([str(keep), str(other)], str(keep))
+
+        assert len(failures) == 1
+        assert failures[0][0] == str(other)
+        assert failures[0][1]  # NEM üres — a néma elutasítás is hiba
+        assert "Duplikátumok" in failures[0][1]
+        assert resolved == []  # nem "megoldott", mert nem történt semmi
+
+    def test_matches_by_name_case_insensitively(self, controller, tmp_path):
+        """Windowson a `duplikátumok` és a `Duplikátumok` UGYANAZ a
+        könyvtár (#1682) — az illesztés kis-nagybetűre érzéketlen kell
+        legyen, nem csak a mi saját írásmódunkra."""
+        lib = tmp_path / "kepek"
+        collector = lib / "duplikátumok"  # kisbetűs 'd', felhasználó hozta létre
+        collector.mkdir(parents=True)
+        keep = make_jpeg(collector / "keep.jpg", size=(40, 20))
+        other = collector / "masolat.jpg"
+        other.write_bytes(keep.read_bytes())
+
+        controller.moveOthersToDuplicatesFolder([str(keep), str(other)], str(keep))
+
+        assert other.exists()
+        assert not (collector / "Duplikátumok").exists()
+        assert not (collector / "duplikátumok").exists()
+
+    def test_search_still_works_inside_the_collector_folder(
+        self, make_controller, tmp_path, provider
+    ):
+        """A jegy 2. elvárása: a `Duplikátumok` mappában a KERESÉS
+        továbbra is működjön — csak a beágyazó áthelyezést tiltjuk."""
+        lib = tmp_path / "kepek"
+        collector = lib / "Duplikátumok"
+        collector.mkdir(parents=True)
+        original = make_jpeg(collector / "a.jpg", size=(40, 20))
+        (collector / "b.jpg").write_bytes(original.read_bytes())
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, lib)
+
+        dedup = make_controller(db, provider)
+        results = []
+        dedup.scanFinished.connect(lambda groups: results.append(groups))
+        loop = _quit_on(dedup.scanFinished)
+        dedup.scanFolder(str(collector))
+        loop.exec()
+
+        assert len(results) == 1
+        exact = [g for g in results[0] if g["kind"] == "exact"]
+        assert len(exact) == 1
+
+
 class TestDeleteOthers:
     def test_deletes_every_item_except_keep(self, controller, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))

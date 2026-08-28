@@ -5274,6 +5274,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Choose a folder to search for duplicates in.</source>
         <translation>Válassz mappát, amelyben duplikátumokat keresünk.</translation>
     </message>
+    <message>
+        <location filename="../dedup_controller.py" line="415"/>
+        <source>This picture is already inside a &quot;Duplikátumok&quot; folder; leaving it in place instead of nesting the folder inside itself.</source>
+        <translation>Ez a kép már a „Duplikátumok” mappában van; helyben hagyva, nehogy a mappa önmagába ágyazódjon.</translation>
+    </message>
 </context>
 <context>
     <name>DedupDialog</name>
