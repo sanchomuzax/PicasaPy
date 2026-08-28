@@ -20,6 +20,32 @@ def _tetel(window, nev):
     return obj
 
 
+def _atfedo_elemek(window, pont):
+    """#1676: minden LÁTHATÓ, névvel ellátott QML-elem, aminek a
+    (ablak-koordinátás) befoglalója tartalmazza a pontot — a windowsos
+    néma kattintás-elvétés diagnózisához: ha valami MÁS fedi a jelvényt,
+    ez a lista megmutatja, mi és milyen z-értékkel."""
+    talalatok = []
+    for item in window.findChildren(QObject):
+        get = getattr(item, "mapFromScene", None)
+        if get is None:
+            continue
+        try:
+            if item.property("visible") is not True:
+                continue
+            szelesseg = item.property("width")
+            magassag = item.property("height")
+            if not szelesseg or not magassag or szelesseg <= 0 or magassag <= 0:
+                continue
+            helyi = item.mapFromScene(pont)
+            if 0 <= helyi.x() <= szelesseg and 0 <= helyi.y() <= magassag:
+                nev = item.objectName() or item.metaObject().className()
+                talalatok.append(f"{nev} (z={item.property('z')})")
+        except Exception:  # noqa: BLE001 - diagnosztika, nem szabad elszállnia
+            continue
+    return talalatok
+
+
 def _kattints(tetel):
     """A valódi kattintás mindkét lépése, a QML sorrendjében.
 
@@ -163,6 +189,24 @@ class TestLathatoAllapot:
         jelzes = _tetel(window, "menuBarTesztuzemBadge")
         kozep = jelzes.mapToScene(jelzes.boundingRect().center())
 
+        # #1676: a windows-lábon a kattintás némán elment a semmibe — a
+        # `QTest.mouseClick` nem jelez hibát, ha a pont az ablakon KÍVÜL
+        # esik, csak a lenti "nem kapcsolt ki" állítás bukik, beszédes ok
+        # nélkül. Ez az ellenőrzés a pontot MÉRI a kattintás előtt, hogy a
+        # hiba a valódi okára (geometria) mutasson, ne a tünetére.
+        assert (
+            0 <= kozep.x() <= window.width() and 0 <= kozep.y() <= window.height()
+        ), (
+            "PicasaMenuBar.qml:57 — a TESZTÜZEM felirat középpontja "
+            f"({kozep.x():.1f}, {kozep.y():.1f}) az ablakon kívül esik "
+            f"(ablak: {window.width()}x{window.height()}, felirat "
+            f"x={jelzes.property('x'):.1f} szélesség="
+            f"{jelzes.property('width'):.1f})"
+        )
+
+        terulet = _tetel(window, "menuBarTesztuzemBadgeArea")
+
+
         QTest.mouseClick(
             window,
             Qt.MouseButton.LeftButton,
@@ -171,10 +215,55 @@ class TestLathatoAllapot:
         )
         qt_app.processEvents()
 
+        # #1676 2. kör: az ELSŐ mérőkör (a kattintási pont az ablakon
+        # belül van) NEM fogta meg a windowsos hibát — a diagnózist ki
+        # kell terjeszteni arra, MI fedheti a jelvényt, és milyen
+        # állapotban van az ablak/a jelvény/a kattintási terület a
+        # kattintás pillanatában. Csak a bukás esetén épül fel (az
+        # `assert` második tagja csak akkor értékelődik ki).
         assert controller.tesztuzemEnabled is False, (
-            "a menüsáv TESZTÜZEM feliratára kattintva nem kapcsolt ki a mód"
+            "a menüsáv TESZTÜZEM feliratára kattintva nem kapcsolt ki a mód — "
+            f"ablak: aktív={window.isActive()} látható={window.isVisible()} "
+            f"kitett={window.isExposed()}; "
+            f"felirat: látható={jelzes.property('visible')} "
+            f"engedélyezett={jelzes.property('enabled')} "
+            f"opacity={jelzes.property('opacity')} z={jelzes.property('z')} "
+            f"x={jelzes.property('x'):.1f} y={jelzes.property('y'):.1f} "
+            f"szél={jelzes.property('width'):.1f} mag={jelzes.property('height'):.1f}; "
+            f"terület: látható={terulet.property('visible')} "
+            f"engedélyezett={terulet.property('enabled')} z={terulet.property('z')}; "
+            f"a pontot ({kozep.x():.1f}, {kozep.y():.1f}) fedő elemek: "
+            f"{_atfedo_elemek(window, kozep)}"
         )
         assert jelzes.property("visible") is False
+
+
+    def test_a_jelveny_a_menutetelek_FOLOTT_van(self, qml_app, qt_app):
+        """#1676: a néma elvétés oka a RÉTEGSORREND volt, nem a geometria.
+
+        A `Control.background` mindig a `contentItem` ALATT van, a
+        menütételek pedig a `contentItem`-ben ülnek. Amíg a jelvény a
+        háttérrétegben volt, elég volt egy szélesebb betűkészlet (Windowson
+        a felirat 324 px a linuxos 174 helyett), és a legjobboldalibb
+        `MenuBarItem` ELVETTE a kattintást — a kikapcsoló gomb némán
+        hatástalan lett. Ez az őr platformfüggetlen: a SZERKEZETET méri,
+        nem a betűmetrikát, ezért Linuxon is bukik, ha valaki visszateszi.
+        """
+        window, controller, _engine = qml_app
+        controller.setTesztuzemEnabled(True)
+        qt_app.processEvents()
+        jelzes = _tetel(window, "menuBarTesztuzemBadge")
+        szulo = jelzes.parentItem()
+        assert szulo is not None
+        osztaly = szulo.metaObject().className()
+        assert "MenuBar" in osztaly, (
+            "a TESZTÜZEM jelvény szülője nem a menüsáv, hanem "
+            f"{osztaly} — ha ez a háttérréteg, a menütételek elveszik a "
+            "kattintást (#1676)"
+        )
+        assert jelzes.z() > 0, (
+            f"a jelvény z-értéke {jelzes.z()} — a menütételek fölé kell kerülnie"
+        )
 
 
 class TestAVisszajelzesEsATartalek:

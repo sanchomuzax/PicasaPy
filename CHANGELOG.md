@@ -16,6 +16,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   képernyő ma nincs), a „Távoli asztal" és a „Mac gamma" pedig véglegesen
   szürke: ezeket a program szándékosan nem valósítja meg. Ellenőrzés őrzi,
   hogy jelöletlen, mégis kattintható mód ne kerülhessen vissza a menübe.
+- **A menüsáv TESZTÜZEM felirata Windowson nem volt kikapcsolható (#1676).**
+  A felirat egyben kikapcsoló gomb, de a menüsáv háttérrétegében ült, a
+  menüpontok alatt. Windowson a felirat majdnem kétszer olyan széles, ezért
+  benyúlt a menüpontok alá, és azok elvették a kattintást — a gomb némán
+  hatástalan volt. Mostantól a felirat a menüpontok fölött van.
 - **A program indulásának háromnegyedét egyetlen, fölösleges lépés vitte el
   (#1667).** A tulajdonos gépén az indulás **10,8 másodpercig** tartott, és
   ebből **8,4 másodperc** — a teljes idő 77,8%-a — egyetlen tételre ment el:

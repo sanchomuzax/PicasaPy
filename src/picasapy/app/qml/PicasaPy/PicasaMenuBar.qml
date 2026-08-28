@@ -55,10 +55,28 @@ MenuBar {
         // bekapcsolva észrevétlenül: amíg a mód él, a menüsáv jobb szélén
         // állandó, figyelmeztető feliratot lát.
         Text {
+            id: tesztuzemBadge
             objectName: "menuBarTesztuzemBadge"
-            anchors.right: signInLink.left
-            anchors.rightMargin: 16
-            anchors.verticalCenter: parent.verticalCenter
+            // #1676: a jelvény a menütételek FÖLÉ kerül. A `background` a
+            // `Control`-ban mindig a `contentItem` ALATT van, a menütételek
+            // pedig a `contentItem`-ben ülnek. Windowson a felirat majdnem
+            // kétszer olyan széles (324 px a linuxos 174 helyett), ezért
+            // benyúlik a menütételek alá, és a legjobboldalibb `MenuBarItem`
+            // ELVESZI a kattintást — a felirat kikapcsoló gombja némán
+            // hatástalan lett. MÉRVE a windowsos CI-n: a pontot fedő elemek
+            // közt ott a `MenuBarItem_QMLTYPE_185`, miközben az ablak aktív,
+            // a jelvény látható és engedélyezett.
+            //
+            // A `parent` futásidejű átállítása megkerüli a `Container`
+            // alapértelmezett tulajdonságát (különben menütétel lenne
+            // belőle), és plain vizuális gyerekként a `z` már a tételek
+            // fölé emeli. Emiatt viszont a `signInLink` MÁR NEM testvér,
+            // tehát a jobb margót számolni kell.
+            Component.onCompleted: parent = bar
+            z: 3
+            anchors.right: bar.right
+            anchors.rightMargin: signInLink.width + 26  // 10 (signIn) + 16 (rés)
+            anchors.verticalCenter: bar.verticalCenter
             visible: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
                 ? bar.ctl.tesztuzemEnabled : false
             text: qsTr("TEST MODE — logging startup")
