@@ -163,6 +163,21 @@ class TestLathatoAllapot:
         jelzes = _tetel(window, "menuBarTesztuzemBadge")
         kozep = jelzes.mapToScene(jelzes.boundingRect().center())
 
+        # #1676: a windows-lábon a kattintás némán elment a semmibe — a
+        # `QTest.mouseClick` nem jelez hibát, ha a pont az ablakon KÍVÜL
+        # esik, csak a lenti "nem kapcsolt ki" állítás bukik, beszédes ok
+        # nélkül. Ez az ellenőrzés a pontot MÉRI a kattintás előtt, hogy a
+        # hiba a valódi okára (geometria) mutasson, ne a tünetére.
+        assert (
+            0 <= kozep.x() <= window.width() and 0 <= kozep.y() <= window.height()
+        ), (
+            "PicasaMenuBar.qml:57 — a TESZTÜZEM felirat középpontja "
+            f"({kozep.x():.1f}, {kozep.y():.1f}) az ablakon kívül esik "
+            f"(ablak: {window.width()}x{window.height()}, felirat "
+            f"x={jelzes.property('x'):.1f} szélesség="
+            f"{jelzes.property('width'):.1f})"
+        )
+
         QTest.mouseClick(
             window,
             Qt.MouseButton.LeftButton,
