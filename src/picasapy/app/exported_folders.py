@@ -48,6 +48,28 @@ def remember_exported_folder(existing, folder: str | Path) -> list[str]:
     return [path, *remaining][:MAX_EXPORTED_FOLDERS]
 
 
+def registered_exported_folders(values) -> tuple[str, ...]:
+    """A nyilvántartott exportcélok — **létezés-ellenőrzés NÉLKÜL** (#1667).
+
+    Az `existing_exported_folders` párja. A különbség szándékos, és két
+    okból nem hagyható el:
+
+    * **Nem nyúl a lemezhez.** Ez a lista az induláskori takarítás
+      (`prune_foreign_folders`, #58) védett gyökereit adja, ami az indulás
+      kritikus útján fut. Húsz `is_dir()` egy hálózati exportcélon
+      másodpercekbe kerülhet — a védelemhez pedig nem kell tudni, hogy a
+      mappa MOST ott van-e.
+    * **A hiány nem bizonyíték** (#1560). Egy lecsatolt NAS vagy egy
+      leválasztott külső lemez exportcélja „nem létezőnek" látszik, de a
+      képek megvannak. Ha a hiánya miatt kitakarítanánk az indexből, a
+      visszatéréskor a teljes újraolvasás következne — pontosan az a kár,
+      amit a #1560 leír.
+
+    A navigációs csomópont ettől függetlenül a létezőket mutatja: ott az
+    `existing_exported_folders` a helyes választás."""
+    return tuple(_clean(values))
+
+
 def existing_exported_folders(values) -> list[str]:
     """A listából csak azok, amelyek MA IS léteznek.
 
@@ -60,5 +82,6 @@ __all__ = [
     "EXPORTED_FOLDERS_SETTINGS_KEY",
     "MAX_EXPORTED_FOLDERS",
     "existing_exported_folders",
+    "registered_exported_folders",
     "remember_exported_folder",
 ]

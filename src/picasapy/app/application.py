@@ -60,6 +60,7 @@ from .error_log import error_log_path, install_error_log
 from .exported_folders import (
     EXPORTED_FOLDERS_SETTINGS_KEY,
     existing_exported_folders,
+    registered_exported_folders,
 )
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
@@ -236,6 +237,63 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
                 mappa,
                 exc_info=True,
             )
+
+
+def _takaritas_gyokerei(
+    roots: tuple[str | Path, ...], settings: QSettings
+) -> tuple[str, ...]:
+    """A #58 induláskori takarítás VÉDETT gyökerei (#1667).
+
+    A figyelt gyökerek mellé a **nyilvántartott exportcélok** is bekerülnek.
+    Az exportcél a #1565 óta SAJÁT GYÖKÉRKÉNT van indexelve — a takarítás
+    szempontjából tehát pontosan olyan jogos horgony, mint egy figyelt
+    mappa, nem „ottragadt idegen mappa".
+
+    ## Miért ez a #1667 javítása
+
+    A takarítás eddig minden induláskor kidobta az exportcélok mappa- ÉS
+    fotósorait (a `folder_scan_state`-tel együtt), a rá következő
+    `_ujraindexelt_exportcelok` pedig NULLÁRÓL építette vissza őket. Az
+    üres `photos` tábla miatt a `_sync_folder` inkrementális kihagyása nem
+    tudott működni: minden exportált képre lefutott a (drága) EXIF/IPTC-
+    olvasás. MÉRVE (RPi5, 4 exportcél / 180 kép): **180 fájlnyitás
+    indulásonként**; a védelemmel **0**. A tulajdonos gépén ugyanez a
+    szakasz **8 406 ms** volt — az indulás 77,8%-a (#1667).
+
+    ## Amit a védelem nem tesz meg
+
+    A már nem NYILVÁNTARTOTT exportcél (kiesett a 20 elemű listából)
+    továbbra is kitakarítódik. A nyilvántartott, de a lemezen épp nem
+    látható cél viszont bent marad: a hiány nem bizonyíték (#1560), és a
+    listát szándékosan nem szűrjük létezésre — ld.
+    `registered_exported_folders`."""
+    return (
+        *(str(root) for root in roots),
+        *registered_exported_folders(
+            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
+        ),
+    )
+
+
+def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
+    """A #1565 visszavétele SAJÁT kapcsolaton, az első képkocka UTÁN (#1667).
+
+    Az indexkarbantartásnak semmi köze ahhoz, hogy az ablak megjelenjen —
+    a #1601 ugyanezért tolta a könyvtár betöltését a `frameSwapped` mögé.
+    A `_takaritas_gyokerei` védelme óta ez a lépés önjavítás: azt hozza
+    rendbe, ami a program KIKAPCSOLT állapotában változott (új fájl az
+    exportmappában), illetve azt, amit egy korábbi verzió takarítása még
+    kidobott.
+
+    A hiba nyelt — egy önjavítás soha nem viheti el a felületet —, de
+    naplózva."""
+    try:
+        with open_index(index_db) as conn:
+            _ujraindexelt_exportcelok(conn, settings)
+    except Exception:  # noqa: BLE001 - a felület már áll, ez csak karbantartás
+        logging.getLogger(__name__).warning(
+            "az exportcélok visszavétele hibára futott", exc_info=True
+        )
 
 
 def _data_dir(platform: str | None = None) -> Path:
@@ -837,13 +895,17 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             # költségét, anélkül hogy a `with`-et szét kellene szedni.
             timeline.mark("index megnyitása (séma + migráció)")
             with timeline.phase("ottragadt mappák takarítása (#58)"):
-                prune_foreign_folders(conn, roots)
+                # #1565/#1667: az exportcélok a gyökereken KÍVÜL élnek, de a
+                # #1565 óta saját gyökérként indexeltek — a takarítás elől
+                # VÉDETTEK. Enélkül minden induláskor kidobnánk és nulláról
+                # olvasnánk vissza őket (mérve 180 EXIF-nyitás; a tulajdonos
+                # gépén 8,4 s, az indulás 77,8%-a). A visszavétel maga már
+                # nincs itt: az első képkocka után fut (`_start_and_finish`).
+                prune_foreign_folders(
+                    conn, _takaritas_gyokerei(roots, QSettings())
+                )
             with timeline.phase("Kollázsok mappa önjavítása (#1075)"):
                 _onjavito_kollazsmappa(conn, QSettings())
-            # #1565: az exportcélok is a gyökereken KÍVÜL élnek — a fenti
-            # takarítás különben minden indításkor kidobná őket
-            with timeline.phase("exportcélok visszavétele (#1565)"):
-                _ujraindexelt_exportcelok(conn, QSettings())
     except sqlite3.DatabaseError:
         # #449: az eredeti sem omlott össze némán és nem javított titokban —
         # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa
@@ -1131,6 +1193,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     def _start_and_finish() -> None:
         first_frame_at = time.monotonic()
+        # #1667: az exportcélok visszavétele NEM a kritikus úton — az ablak
+        # már látszik, mire ez a karbantartás elindul.
+        with timeline.phase("exportcélok visszavétele (#1565)"):
+            _exportcelok_visszavetele(data_dir / "index.db", QSettings())
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
             _start_initial_scan(
                 startup_status, controller, storage_bootstrap.migration_notice
