@@ -26,6 +26,7 @@ Google Earth-öt indítana a fejlesztő gépén.
 
 from __future__ import annotations
 
+import sys
 import time
 from pathlib import Path, PureWindowsPath
 
@@ -35,6 +36,11 @@ from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
 import picasapy.app.export_controller as export_controller
 import picasapy.app.formatting as formatting
 from picasapy.export.earth import EarthExportReport
+
+#: #1700: Windowson tiltott fájlnév-karakterek: `<>:"/\|?*`. Ez a fájl
+#: LEMEZRE ír, ezért a `?` esetét ott ki kell hagyni — az URL-kerekítést
+#: viszont lemez nélkül a `tests/app/test_windows_csapdak_1082.py` méri rá.
+_WINDOWSON = sys.platform.startswith("win")
 
 
 def _elem(root, nev):
@@ -178,7 +184,17 @@ class TestKimenet:
         [
             pytest.param("#", id="kettoskereszt"),
             pytest.param("%", id="szazalek"),
-            pytest.param("?", id="kerdojel"),
+            # ⚠️ #1700: a `?` Windowson TILTOTT fájlnév-karakter — a mappa
+            # létrehozása `WinError 123`-mal elhasal, mielőtt a mérés
+            # egyáltalán elkezdődne. Ez a teszt LEMEZRE ír, ezért itt nem
+            # szerepelhet. Az URL-kerekítést viszont rá is mérjük, csak
+            # lemez nélkül: `tests/app/test_windows_csapdak_1082.py`.
+            pytest.param(
+                "?", id="kerdojel",
+                marks=pytest.mark.skipif(
+                    _WINDOWSON, reason="a `?` Windowson tiltott fájlnévben"
+                ),
+            ),
             pytest.param("+", id="plusz"),
             pytest.param(" ", id="szokoz"),
             pytest.param("é", id="ekezet"),
