@@ -5,7 +5,22 @@
 ## A döntés
 
 A PicasaPy **saját**, az eredeti Picasa 3-ban nem létező menüparancsai a
-menüben, a **jobb szélen kis kék pöttyöt** kapnak.
+menüben **látható jelölést** kapnak. A jelölés formája **kék**, a konkrét
+megvalósítás a megvalósító körre van bízva — a tulajdonos szavaival:
+*„Lehet felőlem a menü színe is más, ami egyszerűbb."*
+
+Két megengedett alak:
+
+| alak | mikor válaszd |
+|---|---|
+| **a tétel szövege kék** | ha egyszerűbb — és a mérés szerint az |
+| kis kék korong a jobb szélen | csak ha a színezés valamiért nem járható |
+
+⚠️ **A jobb szél már foglalt.** A menüfeliratok gyorsbillentyűt is
+hordoznak (`"Új album…" + "\tCtrl+N"` — a `PicasaMenuBar.qml`-ben több
+tucat ilyen tétel van), és azt a Qt a **jobb szélre** igazítja. Egy ott
+elhelyezett pötty ezzel versenyezne. Ezért az alapértelmezés a
+**színezés**.
 
 ## Miért kellett dönteni
 
@@ -47,5 +62,5 @@ mi kiegészítéseinktől. Ez két konkrét kárt okoz:
 - **Megvalósítja:** nincs megvalósítva
 - **Őrzi:** nincs őr
 
-*(A megvalósítás jegye: #1698. A `Megvalósítja` és `Őrzi` sort az a kör
+*(A megvalósítás jegye: #1701. A `Megvalósítja` és `Őrzi` sort az a kör
 tölti ki, amelyik megépíti.)*
