@@ -1341,8 +1341,32 @@ darabol tovább**. A `−1`-et **mind a négy koordinátára** külön ellenőrz
 benne illesztett szám — a vágás **tisztán geometriai** (felezés és
 középpont).
 
-*Bizonyítottsági fok: megerősített a levél-ágra · erős arra, hogy a
-maradék a kényszer nélküli rekurzív darabolás.*
+##### A rekurzív darabolás MEGERŐSÍTVE (2026-08-30, olcsó diszasszemblálás)
+
+A `0x00897af0` két konstansát eddig a vágás jeleként említettük; a
+teljes törzs végighaladva a **nem-levél (belső) ág** is tételes:
+
+| ág | cím | tartalom |
+|---|---|---|
+| levél | `0x00897b1c` | kényszeres kép → `elfogad` (`0x891fc0`), `vtbl+0x1c` frissítés, `[+0x31]=1` — a spec fenti levél-ág |
+| egyszeres | `0x00897bf4` (`edx==1`) | a kép beszúrása a gyerekbe a csomópont saját category-slotján át (`vtbl+0x44`), majd frissítés |
+| **rekurzív** | `0x00897c2b` | `call 0x89e140` (8524 b: a **cella-vágás és gyerek-beszúrás** — `[edi+0xc]/[edi+0x10]` levél-vizsgálat, `0x89b790` a vágás); a darabszám **felezése** (`0x00897c5c shr ebx,1`); `0x00897c62 jne` — a maradéktól függően egy- vagy kétvágás; a bal/jobb gyerekekbe `push 2` („2. mód", `0x00897ce6`) |
+
+A három konstans szerepe a törzsben:
+
+| konstans | ahol dönt | szerep |
+|---|---|---|
+| `−1,0` (`0xcf3ed0`) | `0x00897b6b`–`0x00897b8e` | a kényszer-téglalap „nincs" állapota |
+| `0,5` (`0xc72150`) | `0x008983ae` (`fdiv` szél/mag, majd `fcomp`) | **a kép keskenyebb, mint a cella fele** → keskeny-illesztés ága |
+| `2,0` (`0xc7d9d0`) | `0x00898849` (ugyanaz a képlet) | **a kép szélesebb, mint a cella kétszerese** → széles-illesztés ága |
+
+Azaz a beillesztés arány-vizsgálata a < 0,5 és > 2,0 tartományokkal
+választ ágat — ugyanaz a logika, amit a célfüggvény (`0x00893570`) az
+illesztésnél használ.
+
+*Bizonyítottsági fok: **megerősített** a levél-ágra és a rekurzív ágra,
+a konstans-szerepekre és az egyszeres esetre — a törzs szó szerinti
+átfésülésével.*
 
 ##### ~~Ami NYITVA marad~~ → MEGVÁLASZOLVA (2026-08-18)
 
@@ -1431,7 +1455,9 @@ vezettük le lépésről lépésre.*
 
 *Bizonyítottsági fok: **megerősített** az adatszerkezetre (`+0x38…+0x48`), a
 keresés időkorlátos szerkezetére, a visszaírásra és a vtable-eltérésekre ·
-**nyitott** a `0x00897af0` vágási szabálya.*
+**megerősített** a `0x00897af0` vágási szabályára (a levél-, az egyszeres és
+a rekurzív ágra) a 2026-08-30-i törzs-átfésüléssel (ld. a fenti új
+szakaszt).*
 
 
 #### 1.9.13 Ami még nyitott
