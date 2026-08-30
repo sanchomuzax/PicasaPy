@@ -43,7 +43,25 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-INDEX = Path.home() / "picasapy-agent" / "referencia" / "binary-index" / "picasa3-index.sqlite"
+#: A privát agent-repó lehetséges helyei. A `bootstrap_env.sh` és a CLAUDE.md
+#: szerint felhős munkamenetben `/workspace/picasapy-agent`, helyi gépen
+#: `~/picasapy-agent` — ezért MINDKETTŐT nézni kell. Amíg csak a home-ot
+#: néztük, egy felhős kör hiába klónozta a repót: a lap csendben kimaradt, és
+#: emiatt csúszott el a bináris térkép frissítése az állapotlapétól.
+AGENT_HELYEK = (Path.home() / "picasapy-agent", Path("/workspace/picasapy-agent"))
+INDEX_RESZUT = Path("referencia") / "binary-index" / "picasa3-index.sqlite"
+
+
+def _index_utvonal() -> Path:
+    """Az első létező bináris index; ha egyik sincs meg, az elsődleges hely."""
+    for gyoker in AGENT_HELYEK:
+        jelolt = gyoker / INDEX_RESZUT
+        if jelolt.exists():
+            return jelolt
+    return AGENT_HELYEK[0] / INDEX_RESZUT
+
+
+INDEX = _index_utvonal()
 SPEC_DIR = REPO / "docs" / "specs"
 
 #: A publikált artifact címe. MÁSIK munkamenetből frissítve EZT kell átadni az
@@ -141,8 +159,9 @@ def _kiemelt_jegyek() -> set[int]:
 def gyujts() -> dict:
     if not INDEX.exists():
         raise FileNotFoundError(
-            f"A bináris index nincs meg: {INDEX}\n"
-            "Ez a PRIVÁT agent-repóban él; klónozd a `picasapy-agent`-et."
+            "A bináris index nincs meg. Keresett helyek:\n  "
+            + "\n  ".join(str(gy / INDEX_RESZUT) for gy in AGENT_HELYEK)
+            + "\nEz a PRIVÁT agent-repóban él; klónozd a `picasapy-agent`-et."
         )
     con = sqlite3.connect(f"file:{INDEX}?mode=ro", uri=True)
     try:
