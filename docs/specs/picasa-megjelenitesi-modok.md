@@ -475,6 +475,92 @@ Sávszélesség-takarékos poszterizálás RDP-munkamenetre. *(Linuxon
 
 ---
 
+## 5.12 `ID_VIEW_COLOR_MANAGED` — Színkezelés használata (LEZÁRVA 2026-08-30, #1582)
+
+*NY-5 megválaszolva az olcsó lánccal (menürekord → parancsazonosító →
+diszpécser-ugrótábla → kezelő tartalma → pipa-szinkron), dekompiláció
+nélkül.*
+
+**A kapcsoló életciklusa:**
+
+| kérdés | válasz | bizonyíték |
+|---|---|---|
+| kapcsoló-e | **IGEN, önálló kapcsoló** — nem tagja a 11-es rádiócsoportnak (a #1409 kizárása helyes) | kezelő `0x005c95a0`, a diszpécser `0x005cb990` külön ága hívja (`0x005cc615`) |
+| hol tárolódik | `Preferences\EnableColorManagement` (a `SOFTWARE\Google\Picasa\Picasa2\Preferences\` gyökéren) | a 0x005c95a0: `push "EnableColorManagement"+"Preferences"` → Get/SetPreference (`0x407a20`/`0x401900`) |
+| alapértelmezés | **0 = ki** | a GetPreference default-ja `0` (`0x005c95bf`) |
+| mit csinál a kezelő | beolvas → beállít → **pipa-szinkron** (`0x5c90f0`) → **a szerkesztő-előnézet újraépítése** | `[0xd67920]` (a színkezelés-objektum) `+0x5c` mezőjébe ír; `editpanel/previewclip2` (`0x005c966a`); a `[esi+0x327c/0x3280]` struktúrák nullázása; `[esi+0xdbd]=1` dirty-jelző (`0x005c9719`) |
+| ICC-profil forrása | **a JPEG-be beágyazott metaadat-tagok**: `icc_camera_profile` és `icc_camera_to_tone_matrix` (3×3 float-mátrix), a `CaptProf_color_matrix` mellett | a `0x008bfb10` tag-feloldó `repe cmpsb` névhasonlításai (`0x008bfc09`, `0x008bfd12`); a mezők `[+0x360]/[+0x37c]` |
+
+**A pipa-állapot-szinkron** (`0x5c90f0`, a CheckMenuItem import `0xc40810`):
+
+| mező/kulcs | pipa az ID-n |
+|---|---|
+| `[ebp+0x3188]` (ShowHidden) | `0x9c9e` |
+| `Preferences\Show only big images` | `0x9cd8` |
+| `Preferences\EnableColorManagement` | **`0x9d72`** |
+| `editpanel/preview`-feltétel | `0x9d2a` |
+| a `searchcontainer/searchbutton`-feltétel | `0x9d2b` |
+| `thumbui/fullview`-feltétel | `0x9c8f` |
+
+**❗ Két váratlan melléklelet — óvatosan a menü-felirat ↔ ID párosítással:**
+
+1. A `Use Color Management` menürekordhoz a menüépítőben levezetett
+   `0x9c9e` funkcionálisan a **`Preferences\ShowHidden`** kapcsolót
+   kapcsolja (`0x5c9300`), **nem** az EnableColorManagement-et. A kezelő
+   literálja dönt: a 0x9c9e ága `ShowHidden` get/set-et hív (`0x005c9304`).
+2. Az EnableColorManagement pipája a **`0x9d72`**-n ül (`0x5c90f0` 3.
+   blokkjában, `0x005c9197`–`0x005c91cc`); a 0x9d72 a menüépítőben a
+   `&Display Mode` rekordján tűnik fel — de a #1581 szerint a menüépítő
+   felirata a KÖVETKEZŐ rekordba csúszhat, a felirat↔ID párosításnak ez a
+   sávja megbízhatatlan.
+
+**A két megbízható horgony** (a kezelő tartalma és a pipa-szinkron)
+függetlenül ugyanazt a párt adja: `0x9c9e`↔ShowHidden és `0x9d72`↔
+EnableColorManagement. Ami mégis képernyőképet igényel: a látható
+menü-feliratok és a pipák pontos párosítása (blokkolt a #1582-ben).
+
+**A diszpécser teljes kezelő-térképe (módszertanilag értékes melléktermék):**
+
+*1. switch (byte-tábla `0x5cdb34`, dword-tábla `0x5cd9fc`, lefedés 0x9c42–0x9d40):*
+
+| ID | bit | kezelő | tartalom |
+|---|---|---|---|
+| `0x9c8f` | 68 | `0x5cbb50` | `searchcontainer/searchbutton` → `0x5c90f0` |
+| `0x9c9e` | 9 | `0x5cbbad` | **`0x5c9300` = ShowHidden** |
+| `0x9cd8` | 55 | `0x5cbbb9` | `0x5c94e0` = Show only big images |
+| `0x9d1f` | 65 | `0x5cbc3e` | AUTO (átalakító-setter, lásd 6. szakasz) |
+| `0x9d2a` | – | – | SMALLTHUMBNAILS (pipa-szinkron, 0x5c90f0) |
+| `0x9d2b` | – | – | SMALL (pipa-szinkron) |
+| `0x9d72` | – | – | **Display Mode felirat / EnableColorManagement pipa** |
+
+*2. switch (byte-tábla `0x5cde04`, dword-tábla `0x5cdc30`, lefedés 0x9d44–0xa02c — a teljes menüsáv-diszpécser):*
+
+| ID | bit |
+|---|---|
+| `0x9d5d` | `0x5cc5bb` `thumbui/newalbum` (Új album) |
+| `0x9d5e` | `0x5cc5ca` `0x5e9940` |
+| `0x9d5f` | `0x5cc609` `0x65ab50` |
+| `0x9d60` | `0x5cc5d5` `0x5fecd0(0)` |
+| `0x9d61` | `0x5cc5e2` `0x5fefc0(0)` |
+| **`0x9d62`** | **`0x5cc615` → `0x5c95a0` = EnableColorManagement** |
+| `0x9d63` | `0x5cccc3` |
+| `0x9d64` | `0x5cc4f3` |
+| `0x9d65` | `0x5cccfc` |
+| `0x9d66` | `0x5cccf2` |
+| `0x9d67` | `0x5cc88b` |
+
+**Eredeti / nálunk / teendő:**
+
+| | eredeti | nálunk ma | teendő |
+|---|---|---|---|
+| menütétel | „Színkezelés használata" kapcsoló, pipa | placeholder (`PicasaMenuBar.qml`) | kapcsoló a `Preferences\EnableColorManagement`-re (alap 0) |
+| hatás | bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott ICC / 3×3 mátrix hatályosul | nincs | az előnézet-újraépítés a `filters=`-lánchoz hasonló érvényesítés |
+| tárolás | `Preferences\EnableColorManagement` | – | a beállítás-tárolónkba |
+
+*Bizonyítottsági fok: **megerősített** minden állítás, ami mellett `0x…`
+cím áll (a függvénytörzsek szó szerinti tartalma); a menü-felirat ↔
+azonosító párosítás — **blokkolt**, képernyőkép kell hozzá.*
+
 ## 6. Tárolás, alapértelmezés, indulási állapot
 
 **MÉRVE — a mód NEM tárolódik el sehol.** A `0x00575670` (az egyetlen
@@ -531,9 +617,10 @@ tényleges alapállapot minden nem 32 bites képernyőn is.
 
 ## 8. Nyitott kérdések — és mi döntené el
 
-Ezekre **nincs bizonyítékom**, ezért nem döntök. Mindegyiknél ott van a
-javasolt referencia-mérés a windowsos Picasából (a családi NAS közös
-mappáján át, ld. `tesztkepek-nas-mappan-at`).
+*(NY-5 hivatkozott részletek: a 5.12 szakasz — 2026-08-30.)*
+
+Ez a szakasz nem dönt, csak azt mondja meg, mi döntené el. Az itt lezárt
+NY-5 az **5.12**-ben kapott választ.
 
 | # | a kérdés | miért nem dőlt el statikusan | mi döntené el |
 |---|---|---|---|
@@ -541,7 +628,7 @@ mappáján át, ld. `tesztkepek-nas-mappan-at`).
 | **NY-2** | **Miért ≈ gamma 1,44 a „Lineáris gamma (2.2)" táblája?** | A `2.2` float itt csak a tábla **kiválasztó kulcsa**; a tábla a binárisban előre kitöltve érkezik, a generátora nincs a kódban. | Nem kell eldönteni a megvalósításhoz: **a mért 256 bájtos tábla a szerződés** (5.9). Csak akkor számít, ha valaki képletet akar illeszteni — akkor egy szürkeék képernyőképe a windowsos Picasából ellenőrizné a táblát. |
 | **NY-3** | **Mit csinál valójában a `Mac gamma (1.6)`?** | A `0.0f` kulcs egy **megosztott, lustán feltöltődő** táblát (`0x00d32cd0`) választ, amit egy másik gamma-alkalmazó (`0x00aa40a0`, 8 hívó) is használhat, futásidőben kapott gammával. Ha az fut előbb, a Mac gamma az ő tábláját kapja; ha nem, a saját feltöltése `1/0.0 = +∞` kitevővel megy. | Semleges **szürkeékre** kapcsolni a `Mac gamma (1.6)`-ot **közvetlenül indítás után**, majd **néhány kép megnyitása után is**, és képernyőkép mindkettőről. Ha a két kép eltér, a mód futásidő-függő ⇒ nálunk **nem reprodukálandó**. |
 | **NY-4** | **Látszik-e a mód diavetítésben / teljes képernyőn?** | Nem néztem meg, hogy a `0x009e1c40` rajzolóút szolgálja-e azokat a nézeteket. | `Projektor mód` bekapcsolása, majd diavetítés indítása — látszik-e a sötétítés. *(Ez a mód gyakorlati értelme is: vetítéskor kellene hatnia.)* |
-| **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | Külön menütétel a Nézet menü törzsében (`0x0055aaff`), **nem** tagja a rádiócsoportnak; nem tártam fel. | Önálló kör; nálunk ma placeholder (`PicasaMenuBar.qml`). |
+| **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | **LEZÁRVA (2026-08-30, #1582)** — lásd az **5.12** szakaszt: önálló kapcsoló, `Preferences\EnableColorManagement`, alap 0; bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott `icc_camera_profile`/`icc_camera_to_tone_matrix` metaadat-tagok a forrás. | kapcsoló megvalósítása; a menü-felirat párosítás képernyőképet igényel (blokkolt) |
 | **NY-6** | **A 16 bites szemcsézés pixelhű reprodukálhatósága.** | Az MT19937-változat vetőmagozását (`0x00aa2930`) nem néztem meg. | Csak akkor kell, ha valaki bitre egyező szemcsét akar — a **statisztika** (egyenletes 0…7 / 0…3 / 0…7) ehhez nem szükséges, az mérve van. |
 
 ⚠️ **Amit szándékosan NEM állítok:** hogy az „LCD fehérpont" fehérpontot
@@ -553,8 +640,9 @@ színhőmérséklet-korrekció nincs benne. A felirat ellentmond a kódnak; a
 ## 9. Amit NEM vizsgáltam
 
 *(Ami ide tartozna, de már a 8. szakasz nyitott kérdései közt szerepel a
-javasolt méréssel: export/nyomtatás · diavetítés · `ID_VIEW_COLOR_MANAGED`
-· a `0x00aa40a0` nyolc hívója · az MT-vetőmagozás.)*
+javasolt méréssel: export/nyomtatás · diavetítés · a `0x00aa40a0` nyolc
+hívója · az MT-vetőmagozás — és az 5.12-ben az EnableColorManagement
+felirathoz rendelt parancsazonosító kérdése, amely blokkolt.)*
 
 1. **A megjelenítő objektum osztálya és életciklusa.** A `+0x254` horog
    egy általános rajzfelület-osztályon ül (más felületek is állítanak
