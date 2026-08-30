@@ -1124,21 +1124,28 @@ ezt **prioritásnak** hívja. A `0x0071c4f0` a rendezési állapotszöveget írj
 KATEGÓRIÁKÉ, nem a képeké. Kép-prioritás oszlop a db3 sémájában
 (`0x00415790` teljes felsorolása) **nincs**.
 
-### A maradék hipotézis — és a triviális próba, ami eldönti
+### A kézi sorrend tárolási helye — MEGVÁLASZOLVA (2026-08-30)
 
-Minden negatív eredmény egyetlen magyarázattal fér össze: **a kézi sorrend
-munkamenetre szól, nem íródik ki.** A `CSelectionNode` neve is erre utal — a
-kijelölési/nézeti csomópont futásidejű állapota.
+A tulajdonos által végzett „előtte-utána" bináris összevetés (#1645) eldöntötte
+a kérdést.
 
-**A próba:** indítsd újra a Picasát, és nézd meg, megmaradt-e a sorrend. Ha
-igen, van valahol egy tároló, amit még nem találtunk; ha nem, a kérdés
-lezárul, és nekünk sem kell megvalósítani.
+| helyszín | állapot | bizonyíték |
+|---|---|---|
+| `.picasa.ini` | **ELVETVE** | a fájl tartalma nem változik az átrendezéskor |
+| PMP oszlop | **ELVETVE** | nincs `priority` vagy `sort` nevű oszlop a db3-ban |
+| **`albums_0.db`** | **MEGERŐSÍTVE** | ez a fájl hordozza a legtöbb bináris változást |
 
-*Bizonyítottsági fok: **megerősített** a nyolc kizárás és a „prioritás"
-elnevezés; **feltételes** a munkamenet-hipotézis — az újraindítási próba
-dönti el.*
+**A működés elve:** a Picasa a manuális sorrendet nem a képek tulajdonságaként,
+hanem az **album/mappa struktúra részeként** tárolja az `albums_0.db` fájlban.
+Mivel minden mappa egyben egy albumként is szerepel az adatbázisban, a Picasa
+ennek az albumnak a **tagsági listáját** (rekord-sorrendjét) módosítja, amikor
+a felhasználó fogd-és-viddel átrendezi a képeket.
+
+Ez a sorrend **lokális**, nem hordozható a `.picasa.ini`-vel, és a Picasa
+bezárásakor (a pufferek ürítésekor) kerül kiírásra a `db3`-ba.
 
 ---
+
 
 ## A `db3` fájljainak ÉLETCIKLUSA: ki olvassa, ki írja, mikor (2026-08-27)
 
