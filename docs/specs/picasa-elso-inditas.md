@@ -244,20 +244,45 @@ hívója az indulás-rutin**. Belül:
 > ki a `scanlist.txt` írója (`0x004f61c0`,
 > `picasa-mappakezelo.md` 11.3).
 
-**A két ág olvasata:** a **szűkített** ág a Windows-rendszermappa-feloldón
-megy (`MyPictures` / `Desktop` / `MyDocuments`) — pontosan azt a hármat,
-amit a felirat ígér („Keresés csak a Dokumentumok és a Képek mappában,
-valamint az asztalon"); a **teljes gép** ág a `0x004fe460` igaz ágán egy
-dinamikusan bővülő listát épít. A valódi `scanlist.txt`-mintánkban
-(`research/testdata/Picasa2/db3/`) éppen **négy `+` sor** áll, mind
-**meghajtó-gyökér** (`+C:\`, `+L:\`, `+E:\`, `+D:\`) — ez a „teljes gép"
-választás lenyomata.
+**A két ág — DEKOMPILÁLVA végigolvasva (2026-08-30):** a `0x004fdd10`
+dekompilált kódja (`script-DecompileInitialscan.log`, [165] függvény)
+**megerősíti** a teljes szerkezetet:
+
+1. **Bevezető** (`0x004fdd36`–): `FUN_009966a0(&local_38)` = **My Pictures**,
+   majd `FUN_00996230(&local_40)` = **My Documents** feloldása és
+   **kis-nagybetű-független összehasonlító rendezése** (a `0x004fe1a0`
+   tájékán `cVar3 + ' '`/`cVar2 + ' '` ág — `_stricmp`-szerű).
+2. **A „teljes gép" jelző elágazása** (`param_2` = a hívó `dl` jelzője):
+   ```c
+   if ((char)param_2 == '\0') {   // SZŰKÍTETT: a szűkített ág — a feloldott mappák
+       ... 3 rendszermappa a listaban ...
+   } else {                       // TELJES GÉP: dinamikusan bővülő lista
+       GetLogicalDrives();        // 0x004fde0x: a meghajtó-lekérdezés
+       FUN_006dabf0(&local_c,3,1);  // FIXED (3) meghajtók, FAT/FAT32/NTFS szűrő
+       FUN_006dabf0(&local_14,4,1);  // REMOTE (4) meghajtók, ugyanaz a szűrő
+   }
+   ```
+3. **`FUN_006dabf0` (a meghajtó-felsoroló, 1092 bájt)** — a `GetLogicalDrives()`
+   biteket `C:`-tól lépteti, `GetDriveTypeA`-val szűr (paraméter: 3=FIXED,
+   4=REMOTE), és a `param_3 == 1` esetén `GetVolumeInformationA` +
+   `__stricmp(..., "FAT"/"FAT32"/"NTFS")`-sel a fájlrendszert is ellenőrzi.
+4. **A befejező ciklus** a `+0x364..0x368` feladat-mezőket tölti
+   (`FUN_004ef8f0`, típuskód 9 = `FUN_004e5210`), és a meghajtó-gyökereket
+   (`+C:\`, `+L:\`… alakú bejegyzéseket) a `scanlist.txt`-író
+   (`0x004f61c0`) menti ki.
+
+> **A valódi `scanlist.txt`-mintánkban** (`research/testdata/Picasa2/db3/`)
+> éppen **négy `+` sor** áll, mind **meghajtó-gyökér** (`+C:\`, `+L:\`,
+> `+E:\`, `+D:\`) — ez a „teljes gép" választás lenyomata, és a dekompilált
+> kód most pontosan ezt az alakot ígéri (a `FUN_006dabf0` a
+> `X:\` formátumú gyökereket adja, a `"X:\"` sztring a `0xc87530`-n).
 
 *Bizonyítottsági fok: **megerősített** a láncra (a kód minden lépése,
-a közös `+0xf8` tároló, az elágazás helye) · **erős** arra, hogy a
-szűkített ág a három rendszermappát, a teljes ág a meghajtó-gyökereket
-teszi be (a feloldó-tábla, a felirat és a valódi mintafájl együtt) —
-az ágak elemenkénti végigolvasása nem történt meg.*
+a közös `+0xf8` tároló, az elágazás helye) és **megerősített** a két ágra
+(a szűkített = három rendszermappa, a teljes = FIXED+REMOTE
+meghajtó-gyökerek FAT/FAT32/NTFS szűrővel) — a `0x004fdd10` és a
+`FUN_006dabf0` dekompilált végigolvasása alapján, a felirat- és
+mintafájl-bizonyítékokkal együtt.*
 
 ### 6.6 Mi dönti el, MELYIK szövegkészlet jelenik meg (U2)
 
@@ -279,30 +304,62 @@ szövegkészletet:
 | **0** | 1 | **`Text1` — MIGRÁCIÓ** |
 | **1** | 0 | **`Text2` — TISZTA TELEPÍTÉS** |
 
-Az indulás-rutin (`0x0040d3c0`) így tölti fel:
+Az indulás-rutin (`0x0040d3c0`) így tölti fel — **az assembly igazolja**
+(`script-DecompileAssembly.log`, „indulas-rutin: sztringvizsgalat", és a
+koordinátor-hívás `00403ebe LEA EDX,[EBX+0x101c]`):
 
 ```asm
-0x0040d40b  [ebx] = 0                       ; ebx = a rekesz ( = [esi+8] )
+; a koordinátor (0x004039f0) hívása:
+00403eb4  mov ecx, [ebx+0x102c]   ; param_1 = a fő objektum
+00403ebe  lea edx, [ebx+0x101c]   ; param_2 = a +0x101c blokk címe ★
+00403ec4  call 0x0040d3c0
+
+; az indulás-rutin eleje:
+mov edi, ecx                      ; EDI = param_1 (a fő objektum)
+mov esi, edx                      ; ESI = param_2 (a +0x101c blokk)
 ...
-0x0040d434  eax = [esi+4]                   ; ← a VIZSGALT SZTRING
-0x0040d43a  test eax, eax        / je 0x40d458
-0x0040d442  test dword [eax], 0xffffff00 / je 0x40d458   ; ervenyes sztring?
-0x0040d44a  cmp byte [eax+4], 0  / je 0x40d458           ; nem ures?
-0x0040d450  [ebx] = 0                       ; ← VAN ilyen -> MIGRACIO
-0x0040d458  [ebx] = 1                       ; ← nincs   -> TISZTA TELEPITES
+cmp byte ptr [esi], 0x0           ; [+0x101c] == 0?  (nincs #db3\ találat)
+; a döntés:
+mov eax, [esi+0x4]                ; eax = [+0x1020] — a VIZSGÁLT SZTRING
+test eax, eax        / jz 0x40d458
+test dword ptr [eax], 0xffffff00 / jz 0x40d458   ; érvényes sztring-csomag?
+cmp byte ptr [eax+0x4], 0  / jz 0x40d458         ; nem üres?
+mov dword ptr [ebx], 0            ; ← VAN ilyen -> MIGRÁCIÓ
+jmp 0x40d45e
+mov dword ptr [ebx], 1            ; ← nincs   -> TISZTA TELEPÍTÉS
 ```
 
-**A vizsgált sztring forrása** a `0x00406c00` (1362 bájt) — az
-**adatbázis- és migráció-felderítő** —, ami a fő objektum `+0x101c`
-hármasát tölti (`0x00402960`: `+0x101c` bájt, **`+0x1020` a sztring**,
-`+0x1024` a rekesz). A felderítés forrásai:
+**A vizsgált sztring a `+0x1020`**, amit a `0x00406c00` (1362 bájt) — az
+**adatbázis- és migráció-felderítő** — tölt a p1import ágon, **a feltöltés
+pontos helye (2026-08-30, dekompilált + assembly):**
+
+```asm
+; 0x00406ee9 — a p1import ág végén (az AppPath-ellenőrzés SIKERÁGA):
+lea eax, [ebp+0x1020]             ; ★ a CÉL = +0x1020
+lea esi, [esp+0x18]               ; a forrás (a felderített út)
+call 0x005c2100                   ; a sztring-másolás a +0x1020-ba
+```
+
+A p1import ág logikája (a dekompilált `FUN_00406c00`-ból):
+
+| lépés | utasítás | mi történik |
+|---|---|---|
+| 1 | `FUN_00981c30()` → `FUN_00406770()` | **Windows Vista+** (GetVersionExA, major 6) → a **Windows.old**-felderítő is fut |
+| 2 | `FUN_00992db0("#db3\\")` → `[+0x101c]` | a **`#db3\` mappa megléte** a `[+0x101c]` bájtba |
+| 3 | Ctrl+Shift+Alt → `IDS_DB_DELETE_WARNING` → `[+0x101d]` | a törlés-jelző (nem a panel része) |
+| 4 | **p1import**: ha nincs `Preferences\p1import` **és** `[+0x101c]==0` | Lifescape-registry (`SOFTWARE\Lifescape Solutions Inc.\Picasa\Runtime\`) → `AppPath` beolvasása → ha érvényes és a felderített út létezik → **`[+0x1020] = az út`** |
+| 5 | **p2import**: ha nincs `Preferences\p2import` **és** `[+0x101c]==0` | `FUN_00994400(...)` → `[+0x101c] = (eredmény == 0)` — a `#db2\` megléte |
+| 6 | **p3import**: ugyanaz a minta | `[+0x101c] = (eredmény == 0)` |
+
+A felderítés forrásai:
 
 | forrás | mi ez |
 |---|---|
-| **`SOFTWARE\Lifescape Solutions Inc.\Picasa\Runtime\`** | a **Picasa 1** (Lifescape) registry-ága |
+| **`SOFTWARE\Lifescape Solutions Inc.\Picasa\Runtime\`** | a **Picasa 1** (Lifescape) registry-ága + `AppPath` |
 | **`#db2\`** | a **régi** adatbázismappa (a mai a `#db3\`) |
 | **`p1import` / `p2import` / `p3import`** | `Preferences`-jelzők: Picasa 1 / 2 / 3 importja |
-| `AppPath`, `index-thumbs.db`, `thumbs_index.db` | a régi indexfájlok |
+| **`C:\Windows.old\Documents and Settings\$$\Local Settings\Application Data\Google\`** (+ `Picasa2Albums`) | **Windows.old-migráció** (Vista-fejlesztői felderítés, a `FUN_00406770` — **új a specben**) |
+| `index-thumbs.db`, `thumbs_index.db` | a régi indexfájlok |
 
 *(Ugyanitt lakik az `IDS_DB_DELETE_WARNING` az **„Adatbázis törlése" /
 „Ne törölje"** gombokkal, és egy „special key combination" indítási
@@ -313,10 +370,15 @@ mód szövege — ezek nem az `initialscan` részei.)*
 > az ág fut, mint a felhasználó „csak ezek a mappák" választásánál.
 
 *Bizonyítottsági fok: **megerősített** a döntési szabályra (a konstruktor
-és az indulás-rutin minden utasítása) és a felderítő forrásaira (a
-`0x00406c00` sztringkészlete) · **erős** arra, hogy a `+0x1020` sztring
-maga a felderített régi telepítés jelölője — a feltöltés pontos helye a
-`0x00406c00`-n belül nincs végigolvasva.*
+és az indulás-rutin minden utasítása — dekompilálva
+`script-DecompileInitialscan.log` [659] és az assembly
+`00403ebe LEA EDX,[EBX+0x101c]`), a felderítő forrásaira (a
+`0x00406c00` sztringkészlete) **és** a `+0x1020` feltöltésének pontos
+helyére (`0x00406ee9`–`0x00406ef3`: `LEA EAX,[EBP+0x1020]` +
+`call 0x005c2100`). Új, korábban nem dokumentált részlet: a
+**Windows.old**-felderítő (`FUN_00406770`, `C:\Windows.old\...\Google\`
++ `Picasa2Albums`), ami **csak Windows Vista+** rendszereken fut
+(`FUN_00981c30` = `GetVersionExA`, major 6).*
 
 ### 6.7 Hol jelenik meg, és mi történik bezáráskor (U3)
 

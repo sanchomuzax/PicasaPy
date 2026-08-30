@@ -257,10 +257,15 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 1. ~~Mit ír a két rádió?~~ — **LEZÁRVA** (6.1): a panel nem ír fájlt,
    **−1/1/2 kódot** ad vissza. Ami MARAD: hol lesz ebből
    `scanlist.txt`-bejegyzés (`0x0040d6e3`-tól).
-2. **Mi dönti el, melyik szövegkészlet** (`Text1` migráció / `Text2`
-   tiszta telepítés) jelenik meg — a „van-e korábbi Picasa" vizsgálat helye.
-3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
-   történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
+2. ~~Mi dönti el, melyik szövegkészlet~~ (`Text1` migráció / `Text2`
+   tiszta telepítés) jelenik meg — **LEZÁRVA** (6.6): a felderítő
+   `0x00406c00` a `+0x1020` sztringet a p1import ágon tölti
+   (`0x00406ee9`), az indulás-rutin ez alapján dönt (0=migráció,
+   1=tiszta). Megerősítve dekompilációval (2026-08-30).
+3. ~~Hol jelenik meg a panel~~ (saját ablak vagy beágyazva), és mi
+   történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett) —
+   **LEZÁRVA** (6.7): saját MODÁLIS ablak, bezárásra −1 a rekeszbe, az
+   indulás `0xF4242`-vel megszakad.
 
 ### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
 
