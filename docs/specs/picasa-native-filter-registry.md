@@ -170,8 +170,22 @@ _anon_BEC5211C::ResaturateImageOperation::vftable   @ 0x00cf0578
   binárisban, tehát effekt-XML-ből nem példányosítható; belső segédművelet.
 
 *Bizonyítottsági fok: megerősített* (a létezés és a hívási lánc);
-**nyitva**, hogy mit csinál és melyik effekt használja — ehhez a `0x00bbd630`
-és a `0x00bc4ae0` dekompilálása kell.
+~~**nyitva**, hogy mit csinál és melyik effekt használja — ehhez a `0x00bbd630`
+és a `0x00bc4ae0` dekompilálása kell.~~ → **LEZÁRVA Ghidrával (2026-08-30):**
+a `0x00bbd630` a konstruktor, ami egy **`ColorMatrixImageOperation`**
+(színmátrix) + a `0x00bbd4a0` (a `ResaturateImageOperation::vftable`
+példánya, két attribútum: `color` + `dynamicColorCachePriority`) +
+`FUN_008eb520` regisztrációból áll. A `0x00bc4ae0` a **Glimmer-üzenet-
+sorosító**: a láncot építi (`MaskWithSourceAlphaInstruction`,
+`BlendInstruction`, `PopInstruction`) a paraméterezett
+színmátrix köré. A művelet **tartalmilag egy színmátrix + maszk/blend
+sor**, tehát a `Resaturate` **nem önálló képi algoritmus**, hanem a
+színmátrix-motor egy összetett csomagolása (`color` és
+`dynamicColorCachePriority` paraméterekkel). A tényleges pixellogika a
+vtable egyik metódusában van (a `0x00cf0578`); a `resaturate`-ként való
+előfordulás **egyetlen effektnek sem feleltethető meg** (a név nincs a
+binárisban) — belső segédművelet. *Bizonyítottsági fok: megerősített (a
+konstruktor + a sorosító Ghidra-C).*
 
 ## A `desat` „negyedik mezője" — NEM LÉTEZIK (2026-08-16)
 
