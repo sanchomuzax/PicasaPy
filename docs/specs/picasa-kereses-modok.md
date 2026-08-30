@@ -113,13 +113,18 @@ Duplikátumok`) éppúgy hiba lenne, mint a néma hatástalanság.
 
 ## 6. Ami NYITVA marad
 
-**Mi alapján dönt másodpéldányról?** A `0x00513680` szálnak a saját nevén
-kívül nincs sztringje, és **az `originhash` szó a bináris szövegtárában nem
-szerepel** (csak a `backuphash`, 8 helyen) — tehát a kulcs nem onnan jön.
-A következő lépés az `iCAcquireDupeChecker` vtable-jének végigjárása
-(`0x00c89490`).
+**Mi alapján dönt másodpéldányról?** — **MEGFEJTVE Ghidrával (2026-08-30, #1398).**
+A `iCAcquireDupeCheckJob` (`0x00513730`) a **fájl `originfast`-ját** számolja
+ki (`FUN_00a4d210` — a #1481 MD5-képlete), és ezt a **64 bites értéket**
+keresi a meglévő másodpéldány-listában. A `FUN_00436980` = a gyűjtemény-kereső:
+`(param_3, param_4)` párt veti össze a lista `(piVar8[0], piVar8[1])`
+elemeivel. A találat → dupe-jelölés.
 
-*Bizonyítottsági fok: **megerősített** a keresési sáv élő/halott
-elemlistájára, a szűrő-családra és az importáláskori ellenőrzés
-osztályaira (`.tre` + RTTI + sztring-xref). **Nyitva**: a
-másodpéldány-döntés kulcsa.*
+⇒ **A döntés az `originfast` (tartalmi MD5) — NEM a `backuphash`, NEM a
+fájlnév.** Ez **MEGDŐLTI** a korábbi állítást („a kulcs nem onnan jön, mert az
+`originhash` szó nincs a szövegtárban") — a tévedés: a job az **`originfast`**-ot
+használja, nem az `originhash`-t, és az `originfast` a #1481-ben már MD5-ként
+ismert.
+
+*Bizonyítottsági fok: **megerősített** (Ghidra-C, `0x00513730` +
+`0x00436980`).*
