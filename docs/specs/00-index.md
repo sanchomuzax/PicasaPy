@@ -23,7 +23,13 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 `cv2.BORDER_REPLICATE` helyes. Melléklelet: a natív mag (`0x00bcf4b0`) igazolja a
 `zoom_max_offset` és `zoom_sample_count` képleteinket. Jegy: **#1351**.
 
-### [picasa-create-features.md](picasa-create-features.md) — nincs nyitott kérdés
+### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
+
+3. **Az Indexkép (contactsheet) `.cxf` `scale=313`-ának levezetése** — a
+   Ghidra-C (2026-08-30) kizárta a layout-ból (a `0x00888210` 1,0-t ad a
+   node `+0x2c`-be); a `313` a vetítés/render-scale képlete kell →
+   `docs/specs/picasa-create-features.md` 1.9.14 + **#1412** (a jegy nyitva,
+   fejlesztés + kutatás).
 
 1. ~~**A Képkockamozaik kényszeres vágási szabálya**~~ — **A SZABÁLY KUTATÁSA MEGVAN**
    (#431/#916, 1.9.14, 2026-08-18): a kényszeres levél a téglalapot
