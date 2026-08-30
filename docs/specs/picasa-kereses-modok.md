@@ -128,3 +128,25 @@ ismert.
 
 *Bizonyítottsági fok: **megerősített** (Ghidra-C, `0x00513730` +
 `0x00436980`).*
+
+### Kiegészítés — az `iCAcquireDupeChecker` vtable 9 slotja (2026-08-30, olcsó lánc)
+
+A lezárás után az olcsó lánc (string_xrefs + az annotált diszasszemblálás)
+**függetlenül megerősíti** a fenti képet, és teljes vtable-térképet ad:
+
+| slot | cím | szerep (diszasszemblálva) |
+|---|---|---|
+| 0 | `0x005291e0` | destruktor (a `0x00528300` törzsre) |
+| 1 | `0x00408b30` | CRITICAL_SECTION zárás a `+0x8`-on |
+| 2 | `0x00528420` | **a job-feldolgozó (~872 b)** — a `[+0x6c]` job-listán lépked, `QueryPerformanceCounter`-al időzít |
+| 3 | `0x0097b4b0` | queue-limit / beállítás hurok |
+| 4 | `0x00513680` | **`AcquireDupeCheckThread`** — szálnév-sztring, 6 bájt („a saját nevén kívül nincs sztringje" ⇒ tényleg csak név) |
+| 5 | `0x0060d610` | járulékos feldolgozó (~162 b, ugyanaz a minta) |
+| 6/7 | `0x0097b5e0` / `0x0097b5f0` | CRITICAL_SECTION lock/unlock-párok a `+0x28`-on |
+| 8 | `0x006cc940` | vtable-küldő (delegált hívás) |
+
+A `0x00513680` **6 bájtos** volta (szószerint `mov eax, "AcquireDupeCheckThread";
+ret`) a lap korábbi megállapítását („a szálnak a saját nevén kívül nincs
+sztringje") **bájtról-bájtra igazolja** — a tényleges hash-számítás a
+`0x00528420` / `0x0060d610` job-feldolgozókban és azok `0x00a4d210`
+fájl-olvasójában történik, amit a #1398 Ghidra-bontása már meg is fejtett.

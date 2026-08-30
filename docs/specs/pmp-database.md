@@ -1460,14 +1460,24 @@ További rögzített tények: a figyelési sor hossza **5**; a kötési cím kü
 tagváltozóból (`+0x58`) jön, tehát a `localhost`-ra kötés is adat, nem
 beégetett érték — ez illeszkedik az `AllowRemoteWeb` kapcsolóhoz.
 
-**Amit NEM sikerült megállapítani:** a **preferált** kezdőérték (a
-konstruktorban beállított immediate). A `+0x54` offszetre való vadászat
-zsákutca volt — a jelöltek veremeltolásnak bizonyultak. A projekt
-módszertani szabálya szerint (*„a struktúra-offszet alapú nyom félrevezet"*)
-itt megálltam, ahelyett hogy hamis találatot jelentenék. A konstruktor
-megtalálásához a vtábla adat-hivatkozásait kellene végigmenni, ami a mostani
-indexből nem elérhető.
+**Amit korábban NYITVA maradt — LEZÁRVA (2026-08-30): nincs „preferált
+kezdőérték".** A `0x004c0d10` / `0x004c0db0` konstruktor **a `+0x54`-et
+egyszer sem írja** — a Start (`0x00a5b180`) a `+0x54` mezőt olvassa
+(`movzx ecx, word ptr [esi+0x54]`), ami a `0xbf37c0` mamorícentemzés után
+**0**. A `bind(0)` a Windows rendszer-szabad portot oszt ki ⇒ a szerver
+**minden indításkor a rendszer egy efemer portján áll**; a `%d`-t használó
+URL-minták (a `0x004cd010` `http://localhost:%d/%s/` stb.) a ténylegesen
+kapott portot szövik az ÚJRA; az „ha foglalt, nullázd és újrapróbálkozz"
+ág (`0x00a5b1eb`) gyakorlatilag sosem fut, mert a `%d` porton nincs fix
+kedvenc. **Statikusan nincs kézzel beállítható port-bemenet** — a
+felhasználónak semmilyen UI-vezérlő nem állíthatja; a
+`AllowRemoteWeb` csak a cím-korlátot oldja, a portot nem.
+
+A projekt módszertani óvása („a struktúra-offszet alapú nyom félrevezet")
+itt is igaz volt: a `+0x54` mezőt a konstruktorok **szándékosan nem**
+inicializálják, mert a rendszer-tényleges-port a cél.
 
 *Bizonyítottsági fok: **megerősített** a teljes felállítási sorrend, a
-tartalék-ág és a backlog (a diszasszemblált kódból); **nyitva** a preferált
-kezdő portszám.*
+tartalék-ág, a backlog (a diszasszemblált kódból) és a „nincs preferált
+kezdőérték" lezárás (a `0x004c0d10`/`0x004c0db0` konstruktorok
+diszasszemblálásából: a `+0x54`-et egyik sem írja, az efemer).*

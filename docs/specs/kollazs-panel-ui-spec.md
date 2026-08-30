@@ -1185,8 +1185,10 @@ dolga** — a feature-branch csak leírja az igényt a jegyben.
 | a gyűrű 132 × 132-es rajz, és képernyő-egységben állandó | **erős** |
 | a maszk **7.** bitje = elforgatás | **erős** |
 | a maszk **6.** bitje mit kapcsol | **MEGFEJTVE** (2026-08-21, #1170) — a `collagepanel/groupnode` csoport-csomópontot teszi külön overlay-ágba (`0x00860470` → `+0x219`); a rajza `#F85E0F` körvonalas téglalap. Részletek: `picasa-kollazs-felulet.md` **2.** és **2/b**. |
-| a `framegrid` `CLocationTree` pakolója | **NYITOTT** (#916) — a mai közelítés (középre rögzített kép) marad |
+| a `framegrid` `CLocationTree` pakolója | **KUTATÁS MEGVAN, átadásra kész** (2026-08-30) — a slot7/slot8/slot5 dekompilációja a privát `referencia/dekompilalt-pakolo/script-DecompilePacker3.log`-ban (`Gyöker 0x008906e0`, `0x008910b0`, `0x0089a5d0`); az **értelmezés**: a `0x008906e0` beszúró faépítést végez (a `-1.0` négységű képek kényszer-mentes listába kerülnek, `piVar10`), a `0x0089a5d0` a **rekurzív téglalap-számítás** min/max uniókkal (`FUN_0049fae0`=max, `FUN_0049fab0`=min), a slot8 (`0x008910b0`) az 56 bájtos `CLocationTreeNode`-gyártó — a **#916-os FEJLESZTŐI jegynek ez az alapja**. |
 
 **Ez a lap nem igényel további bináris kutatást a megvalósítás
-megkezdéséhez.** A megmaradt egyetlen nyitott pont (a `framegrid` pakolója)
-nem érinti a felületet.
+megkezdéséhez.** A `framegrid` pakolója a #916-os jegy átadására kész állapotban
+van (a dekompilált forrás a privát repóban), de az **értelmezésétől** nem
+függ a felület — a mai közelítés addig is maradhat, amíg a fejlesztő a
+#916-ot el nem készíti.

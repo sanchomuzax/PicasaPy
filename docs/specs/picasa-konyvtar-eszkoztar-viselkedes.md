@@ -128,11 +128,26 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
   `"all"`/`"flat"` kulccsal.
 - **A `.tre` oldala — HELYESBÍTVE:** ellenőrizve közvetlenül a
   `thumbui.tre`-ben: **csak a `folderview`-n** van külön jelölés
-  (`Property prenotify 1` — **dekódolatlan** tulajdonság, NEM azonos a
-  `mousedown`-nal), a `flatview`-n **semmi**. A pár tehát **NEM** tagja a
-  #885 49 elemes `mousedown`-listájának — ott ellenőrizhetően csak a
-  `folderviewpopup` szerepel (ld. lent). Ez a lap egy korábbi
+  (`Property prenotify 1` — **MEGFEJTVE (2026-08-30), ld. lent**, NEM
+  azonos a `mousedown`-nal), a `flatview`-n **semmi**. A pár tehát **NEM**
+  tagja a #885 49 elemes `mousedown`-listájának — ott ellenőrizhetően
+  csak a `folderviewpopup` szerepel (ld. lent). Ez a lap egy korábbi
   fogalmazásban tévesen mindkettőre mousedown-t állított; itt javítva.
+
+### ✅ A `prenotify` tulajdonság — MEGFEJTVE (2026-08-30)
+
+A `.tre`-parszer (`0x009ca5e0`, 7899 b) a `prenotify` kulcsszót a
+`0x009c7840` setterbe vezeti, amely az elem `+0x380` bájtjára **`1`-et
+ír** (a többi interakciós property párhuzamos settereivel együtt:
+`hiddentimer`→`0x009c7700`, `throb`→`0x009c7870`, `enableclip`→
+`0x009c78a0`). A `picasa-eger-es-kijeloles.md` 1.3 szakaszának megfejtése
+(„a váltás ELŐTT értesít") **megerősítve a binárisból**: a
+`prenotify 1` egy **belső jelző-mezőt** állít (nem felirat, nem
+mousedown-kezelő), a folderview elemen a kattintás-váltás előtti
+értesítés engedélyezésére.
+
+*Bizonyítottsági fok: **megerősített** — a parszer-kulcsszó-tábla
+(`prenotify` string `0x0087cbd8`) és a `0x009c7840` setter diszasszemblálva.*
 
 ## 4. `folderviewpopup` — Nézet-beállítások (▾)
 
@@ -213,6 +228,75 @@ végigjárása (160 azonosító egyértelműen feloldva), a feliratok a
 honosítási táblából. A `0x9db8` ↔ „Egyszerűsített fanézet" ugyanebből a
 körből, ugyanazzal a módszerrel.*
 
+
+
+### 4/c ⭐ A `folderviewpopup` kezelő teljes parancstérképe (2026-08-30)
+
+A kezelő (`0x005e2000`, 1689 b) a menü **megnyitásakor** fut, és minden
+tétel pipa-állapotát a **dokumentum-mezőkből** építi. Ez lezárja a 4/b
+„ami ebből NEM oldódott fel" megjegyzését és az alábbi NYITVA 2 és 3
+pontokat is.
+
+| parancs | menükulcs | mit pipáz a kezelő | a pipa forrása |
+|---|---|---|---|
+| `0x9c8b` | `eMenuView::ID_VIEWBYDATE` | Rendezés létrehozási dátum | `[+0x2c0+0xd8] == 0` |
+| `0x9cbd` | `eMenuView::ID_VIEWBYRECENT` | Rendezés legutóbbi változtatások | `[+0x2c0+0xd8] == 1` |
+| `0x9c8c` | `eMenuView::ID_VIEWBYNAME` | Rendezés név alapján | `[+0x2c0+0xd8] == 2` |
+| `0x9dc8` | `eMenuView::ID_VIEWBYSIZE` | Rendezés méret alapján | `[+0x2c0+0xd8] == 5` |
+| `0xa0cf` | `eMenuView::ID_VIEWREVERSE` | Rendezés megfordítása | `[+0x2c0+0x165]` (bájt) |
+| `0x9e18` | (a menüsáv-építőben nincs) | a ▾ menü harmadik csoportjának 1. tétele | `[+0x2c0+0xdc] == 0` |
+| `0x9e19` | (a menüsáv-építőben nincs) | … 2. tétele | `[+0x2c0+0xdc] == 1` |
+| `0x9e38` | (a menüsáv-építőben nincs) | … 3. tétele | `[+0x2c0+0xdc] == 2` |
+| `0x9db8` | `eMenuView::ID_VIEW_WATCHED` | &Egyszerűsített fanézet | `Preferences\SimplifiedHierarchy` |
+| `0x9db6` | `eMenuView::ID_VIEW_FOLDERS` | &Egyszerű mappanézet | `[+0x2c0+0x9d] == 0` |
+| `0x9db9` | `eMenuView::ID_VIEW_ALL` | &Fanézet | `[+0x2c0+0x9d] != 0` |
+| `0x9dba` | `eMenuView::ID_VIEW_DESKTOP` | &Asztal | a gyökér-hatókör `"desktop"` |
+| `0x9e3a` | `eMenuView::ID_VIEW_MYPICTURES` | &Képek | a gyökér-hatókör `"mypics"` |
+| `0x9db7` | `eMenuView::ID_VIEW_MYDOCS` | Do&kumentumok | a gyökér-hatókör `"mydocs"` |
+| `0x9cd7` | `eMenuView::ID_VIEW_THUMBNAILS` ("Show &Thumbnails in Library") | pipa | `Preferences\ShowAlbumThumbnails2` |
+
+A diszasszemblálás bizonyítéka: `0x005e2000` minden tételnél a
+`[0xc40810]` `CheckMenuItem`-importot hívja, `MF_CHECKED`-flaggel (a
+`push … 8` az MF_CHECKED), a feltétel pedig a fenti mező-összehasonlítás
+(a `neg`/`sbb`/`and eax, 8` idióma az „érték egyezik-e" kérdésre).
+
+### ✅ A `ShowAlbumThumbnails2` preferencia pontos szerepe — LEZÁRVA
+
+**Ez a fenti parancstábla egy pipa-tétele**: „Indexképek &megjelenítése a
+könyvtárban" (`eMenuView::ID_VIEW_THUMBNAILS` = „Show &Thumbnails in
+Library"). A kezelő a `Preferences\ShowAlbumThumbnails2` kulcsot
+`GetPreference`-szel olvassa (`0x407a20`, alapérték: `0`), és az alapján
+pipázza a `0x9cd7` parancsot (`0x005e25ef`–`0x005e2628`). **A tétel léte a
+menüben és a preferencia-bekötése így MEGERŐSÍTVE** — nem kell többé
+feltételezés.
+
+A `0x9cd7` parancs tulajdonosai és a teljes életciklus:
+- a menüsáv-építő `0x00559150` felveszi a rekordját (`[0xd6df54]` körüli
+  tömb; kulcsa `eMenuView::ID_VIEW_THUMBNAILS`, felirata „Show &Thumbnails
+  in Library", a string-címek `0xc8cd5c`/`0xc8cd7c`);
+- a kezelő `0x005c93d0` (**nem** a fenti `0x005e2000`!) a parancs
+  **bekapcsolását** végzi: ezt a `0x005cb990` menüsáv-diszpécser `0x9cd7`
+  ága hívja (`0x005cbbc7`). A `0x005c93d0` a `GetPreference`-ből olvas, a
+  `[+0xd4c]+0x20` bájtot állítja a beolvasott értékre, majd a nézetet
+  frissíti (`0x00574b70`-en át) — a pipáló `0x005e2000` a menü NETTO
+  pipa-állapotát ebből a preferenciából olvassa újra;
+- a `0x00761870` konstruktor az induláskori állapot beolvasását végzi
+  (`mov byte [obj+0x20], al` a `GetPreference` után — az album-nézet
+  objektum +0x20 látszólagos „mutasd az indexképeket" flagje).
+
+### ✅ A mód-mező (`+0x2c0+0xd8`) 0/1/2/5 értéke — LEZÁRVA
+
+A fenti tábla rendezés-soraiból **kiolvasható a teljes kódolás**: a
+`[+0x2c0+0xd8]` mező nem „külön nézetmód", hanem **a rendezés-mód kódja**:
+`0` = Dátum, `1` = Legutóbbi változtatások, `2` = Név, `5` = Méret. A
+`0x005e2000` és a `0x00574b70` ugyanezeket az értékeket pipázza a
+rendezés-parancsokra.
+
+*Bizonyítottsági fok: **megerősített** — minden állítás a `0x005e2000`
+annotált diszasszemblálásából (a `[0xc40810]` CheckMenuItem-hívás, a
+mező-összehasonlítások, a `neg`/`sbb` idiómák) és a `0x00559150`
+menüsáv-építő rekordjaiból.*
+
 ## 5. `webcambutton` — Webkamera-felvétel
 
 - **Kezelő:** `0x0062c340` (183 bájt).
@@ -249,7 +333,7 @@ körből, ugyanazzal a módszerrel.*
 |---|---|---|---|
 | **Import** | esemény → Acquire panelre vált, számlálót növel | `toolbarImportButton` LÉTEZIK (`MainToolbar.qml:49`) | ellenőrizni, hogy a kattintás valóban az import/acquire folyamatot indítja-e — funkcionális teszttel |
 | **Új album** | gyors, dialógus nélküli létrehozás → csak sikertelenség esetén névbekérő; **menüegyenérték is van** | **nincs önálló fejléc-gomb** — csak `Fájl → Új album` menü (`PicasaMenuBar.qml:154`, `objectName: "menuFileNewAlbum"`) és a bal hasáb „Új album" drag&drop súgója (`AlbumsSection.qml`) | pótolni a fejléc-gombot (#853-ban már felvéve méretre); a mögötte lévő **gyors-létrehozás ág** ma nincs meg — nálunk minden „Új album" út egyenesen a névbekérő dialógust nyitja |
-| **Nézetváltó pár** (flatview/folderview) | kölcsönösen kizáró rádiógomb-pár, `SimplifiedHierarchy` preferenciát ír, menüegyenértéke is van (a `folderview` oldalán egy dekódolatlan `prenotify` jelzés) | **az ADATRÉTEG megvan** (`FolderHierarchyController`, `treeViewMode` property, `FolderHierarchyView.qml` — #702-ből), de **nincs UI-vezérlő, ami átkapcsolná**: a `Main.qml:978` `treeViewMode: false`-ra van **beégetve**, sehol nem íródik felül | pótolni a két fejléc-gombot (#853 méret-táblája szerint), bekötni a meglévő `treeViewMode`-ra |
+| **Nézetváltó pár** (flatview/folderview) | kölcsönösen kizáró rádiógomb-pár, `SimplifiedHierarchy` preferenciát ír, menüegyenértéke is van (a `folderview` oldalán egy **MEGFEJTVE** `prenotify` jelzés, ld. 3. pont) | **az ADATRÉTEG megvan** (`FolderHierarchyController`, `treeViewMode` property, `FolderHierarchyView.qml` — #702-ből), de **nincs UI-vezérlő, ami átkapcsolná**: a `Main.qml:978` `treeViewMode: false`-ra van **beégetve**, sehol nem íródik felül | pótolni a két fejléc-gombot (#853 méret-táblája szerint), bekötni a meglévő `treeViewMode`-ra |
 | **Nézet-beállítások (▾)** | lenyíló menü: Mind/My Computer, Figyelt mappák, Saját képek, Saját dokumentumok, Asztal — gyökér-hatókör váltás | **nincs** semmilyen formában | pótolni: gomb + lenyíló menü öt tétellel; a pontos feliratok forrása még hiányzik (ld. „Ami nyitva marad") |
 | **Webkamera** | szingleton előnézet-ablak, hardver-kapuzott, `capturemoviepanelpopup` panel | **nincs**, és a #466/#853 szerint **szándékosan kihagyva** | nincs teendő — a döntés érvényben marad |
 
@@ -277,35 +361,31 @@ körből, ugyanazzal a módszerrel.*
 - **Import, Új album, nézetváltó pár mechanizmusa, webkamera
   kattintás-mechanika:** *megerősített* — teljes függvénytest olvasva,
   konkrét sztring- és mező-hivatkozásokkal.
-- **`folderviewpopup` menütartalma (öt hatókör-tétel léte és
-  kulcsai):** *erős* — a hívott függvény és a benne szereplő
-  sztringkulcsok egyértelműek, de a menü **feliratszövege** és a
-  **`ShowAlbumThumbnails2` tétel pontos szerepe** nincs igazolva.
-- **A mód-mező (`+0x2c0+0xd8`) pontos érték-enumerációja** (mi van a
-  0/1-en kívül a 2-es és 5-ös értéken): *feltételes* — csak annyi
-  bizonyított, hogy EZEK a gombok is ugyanazt a mezőt nézik, a
-  konkrét jelentésük nincs feltárva (nem tartozik a mostani öt
-  gombhoz).
+- **`folderviewpopup` menütartalma:** *megerősített* — a 4/b a
+  parancsazonosítókat, a 4/c a **teljes pipa-térképet** (minden tétel
+  pipa-forrása a dokumentum-mezőkből) a `0x005e2000` kezelő
+  diszasszemblálásából.
+- **A `ShowAlbumThumbnails2` és a mód-mező (`+0x2c0+0xd8`) értékei:**
+  *megerősített* — ld. 4/c (a rendezés-parancsok pipa-kódjai; 0=Dátum,
+  1=Legutóbbi változtatások, 2=Név, 5=Méret).
 
 ## Ami NYITVA marad
 
-1. ~~**A `folderviewpopup` menü tételeinek pontos felirata**~~ —
-   **LEZÁRVA (2026-08-24), ld. 4/b.** Mind a tizenegy parancsazonosító
-   feloldva a menüépítő rekordtömbjének gépi végigjárásával; a feliratok
-   a honosítási táblából. **Képernyőkép NEM kellett hozzá** — a korábbi
-   „ezt csak a tulajdonos képernyőképe döntheti el" megállapítás
-   elhamarkodott volt, az olcsó bizonyítéklánc nem volt kimerítve.
-   ⭐ Melléktermékként kiderült, hogy **három** mappanézet-mód van, nem
-   kettő, és hogy két korábbi parancsazonosító-hozzárendelésünk téves
-   volt (ld. a 3. pont helyesbítését).
-2. **A `ShowAlbumThumbnails2` preferencia pontos hatása** — csak azt
-   tudjuk, hogy a `folderviewpopup` kezelő olvassa; hogy ez egy
-   jelölőnégyzet-e a menüben, vagy valami más UI-elemhez tartozik, nincs
-   eldöntve.
-3. **A mód-mező (`+0x2c0+0xd8`) 2-es és 5-ös értéke** — nem ehhez az öt
-   gombhoz tartozik, de ugyanaz a frissítő függvény (`0x00574b70`) állítja
-   be őket is; ha valaha más gombok (`timelinebutton`, `cdmode`?)
-   viselkedését kutatjuk, innen érdemes folytatni.
+1. ~~**A `folderviewpopup` menü tételeinek pontos felirata**~~
+2. ~~**A `ShowAlbumThumbnails2` preferencia pontos hatása**~~ —
+   **LEZÁRVA (2026-08-30), ld. 4/c.** A „Indexképek megjelenítése a
+   könyvtárban" (`0x9cd7`) pipa-tétele a ▾ menüben; a teljes életciklus a
+   4/c-ben.
+3. ~~**A mód-mező (`+0x2c0+0xd8`) 2-es és 5-ös értéke**~~ — **LEZÁRVA
+   (2026-08-30), ld. 4/c**: 2 = név, 5 = méret rendezés; a rendezés-tételek
+   pipa-kódjai, a `0x005e2000`/`0x00574b70` diszasszemblálásából.
+4. **A `0x9e18`/`0x9e19`/`0x9e38` hármas konkrét felirata** — az
+   `[+0x2c0+0xdc]` mező 0/1/2 értékeihez kötött rádió-hármas **pipa-sémája
+   megvan**, de a felirat-szöveg a honosítási táblában nem azonosítható (a
+   menüsáv-építőben nincs rekordjuk; a `0x005e2000` csak pipázza őket, a
+   feliratot a helyi menü-erőforrás adja). A megvalósításhoz ez nem
+   blokkol: a ▾ menünek ez a csoportja ma nálunk nem létezik, a feliratot
+   a pótló kör veszi át (a tulajdonos képernyőképéről, ha elengedhetetlen).
 
 ## Amit KIZÁRTAM
 
