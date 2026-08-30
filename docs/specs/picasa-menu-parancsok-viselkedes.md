@@ -795,3 +795,210 @@ mappa-menüben **laposan** állnak; az `AlbumContextMenu.qml:107` viszont ismeri
 az „Online Actions" csoportot. Ez apró, önmagában nem indokol jegyet —
 **a következő kör, amelyik a mappa-menühöz nyúl, vigye át** a csoportosítást
 az album-menü mintájára.
+
+---
+
+## 33. tétel — a KÉP menü: a „Csoportos szerkesztés" kilenc parancsa + a GEOTAG (2026-08-30)
+
+A menü-lefedettségi mérés determinisztikus sora a `ID_PICTURE_*` ötöst adta
+(`AUTO_LIGHTING`, `AUTO_REDEYE`, `ENHANCE`, `FILM_GRAIN`, `GEOTAG`). A
+feltárás közben a **teljes Kép-menü** parancsazonosító-térképe kijött
+(16 tétel + az almenü), ezért itt a teljes leképezés szerepel — a
+`?`-ként megjelölt „néma" tétel kivételével („Auto RedEye", ld. 33.4).
+
+### 33.1 A parancs-térkép — cmd → kezelő, mind címmel
+
+**Forrás:** a menüépítő `0x00559150` rekordhorgonya (a felirat-írás címe =
+rekord kezdete, a `+0x0a` = parancsazonosító, a #1581 javított horgonya) +
+a főablak-diszpécser (`0x005cb990`) két index/ugrótábla-párja
+(`0x5cde04`→`0x5cdc30` az `0x9d44..0x9e3b` tartományra).
+
+| tétel (eMenuPicture) | felirat-horgony | cmd | kezelő |
+|---|---|---|---|
+| `ID_PICTURE_AUTO_COLOR` | „&Auto Color" | `0x9d48` | `0x5cc949` |
+| `ID_PICTURE_AUTO_LIGHTING` | „A&uto Contrast" | `0x9d49` | `0x5cc917` |
+| *(a Kép menü „&Sepia")* | „&Sepia" | `0x9d4a` | `0x5cca47` |
+| `ID_PICTURE_SHARPEN` | „S&harpen" | `0x9d4b` | `0x5cc9ad` |
+| *(a Kép menü „&Black and White")* | „&Black and White" | `0x9d4c` | `0x5cca71` |
+| `ID_PICTURE_WARMIFY` | „&Warmify" | `0x9d4d` | `0x5cca9e` |
+| `ID_PICTURE_FILM_GRAIN` | „&Film Grain" | `0x9d4e` | `0x5ccacb` |
+| `ID_PICTURE_ENHANCE` | „I'm Feeling &Lucky" | `0x9d5e` | `0x5cc97b` |
+| `ID_PICTURE_AUTO_REDEYE` | „Auto Red Eye Correction" | `0x9df1` | `0x5ccb36` |
+
+⚠️ **Két tétel cmd-je megdönti a #1434 31.–32. tételeinek egy régi
+feltevését** — a „Kép menübeli Szépia/Fekete-fehér" (`0x9d4a`/`0x9d4c`)
+**külön parancsok a Batch Edit almenüben**, nem a Megjelenítési mód
+rádiócsoportjának a tagjai (azok `0x9d1b`/`0x9d1c`, #1409). Mindkettő
+kezelője a szokásos batch-mintát követi.
+
+A **Geotag almenü** (az Eszközök menüben, `eMenuTools::Geotag`):
+
+| tétel | felirat | cmd | kezelő |
+|---|---|---|---|
+| `ID_PICTURE_GEOTAG` | „Geotag With Google Earth..." | `0x9db4` | `0x5cc825` → `0x600580` |
+| `ID_VIEW_EARTH` | „View in Google Earth..." | `0x9d9e` | `0x5cc831` → `0x600670` |
+| `ID_PICTURE_GEOUNTAG` | „Clear Geotags" | `0x9db5` | `0x5cc831` → `0x600670` |
+| `ID_EXPORT_EARTH` | „Export to Google Earth File" | `0x9db0` | `0x5ccce6` |
+
+*(A `0x5cc825` és a `0x5cc831` a diszpécserben két szomszédos törzs —
+a `0x600580`/`0x600670` a tényleges kezelők.)*
+
+### 33.2 A „Csoportos szerkesztés" KÖZÖS KÉTÁGÚ MINTA
+
+A négy+ batch kezelő ugyanazt a mintát járja be:
+
+```
+call 0x579330          ; a „szerkesztő-előnézet nyitva és szabad" vizsgáló
+test al, al
+je   <batch-ág>
+; SZERKESZTŐ-ÁG — a parancs a SZERKESZTŐPANELBE navigál:
+mov edx, "editpanel/tab1" | "editpanel/tab3"     ; a fül
+call 0x9cd8a0
+mov edx, "editpanel/autolighting" | ...          ; a vezérlő (ahol van)
+call 0x9cd8a0
+; BATCH-ÁG — a kijelölés MINDEN képére alkalmaz:
+mov eax, "<effekt-kulcs>"
+call 0x5fe370
+```
+
+- **A `0x579330` vizsgáló** (`0x00579330`): igaz, ha a `0xd67914`
+  (a szerkesztő fő állapota) nem nulla, a `editpanel/preview` panel létezik
+  (`0x9c2fc0`), és annak `+0x20c` javaslóflagje 0. ⟹ **„most a szerkesztőben
+  dolgozunk"**.
+- **Szerkesztő-ág:** a parancs NEM alkalmaz — a szerkesztőpanel megfelelő
+  fülére (tab1 = Gyakori javítások, tab3 = Fény) és a konkrét vezérlőre vált
+  (`editpanel/autolighting`, `editpanel/autocolor`, `editpanel/enhance`).
+  Tehát az eredeti **menüből a szerkesztő vezérlőjét nyitja meg** — nem
+  duplikálja a batch-et.
+- **Batch-ág:** `0x5fe370` („<effekt-kulcs>"): a kijelölt képek `filters=`
+  láncára fűzi az effektet; a kulcsok: `autolight`, `autocolor`, `enhance`
+  (a `0x5cc93f`/`0x5cc96c`/`0x5cc99e`-ben betöltve), `unsharp` (`0x5cc9e2`
+  közös cél), `warm` (`0x5cc9e8`? — a `0x9d4d` kezelője), és a `grain`/
+  `grain2` pár (33.3). A 0xF4242-es visszatérés = hiba (nincs kijelölés).
+
+### 33.3 ⭐ A FILM_GRAIN kulcsválasztása: SHIFT-tel „grain", különben „grain2"
+
+A FILM_GRAIN kezelője (`0x5ccacb`) a batch-ágban:
+
+```
+cmp byte ptr [0xd67849], 0
+je   <grain2>
+push 0x10
+call GetAsyncKeyState        ; a [0xc406f8] import = USER32 GetAsyncKeyState
+shr  eax, 0xf
+and  al, 1                   ; a 15. bit = „a billentyű lenyomva"
+mov  eax, "grain"
+jne  <alkalmaz(grain)>
+<grain2>: mov eax, "grain2"
+<alkalmaz>: call 0x5fe370
+```
+
+- A **`0x10` = VK_SHIFT** — tehát ha a Shift lenyomva, az effekt-kulcs a
+  régi `grain`, egyébként a `grain2`. **A `0xd67849` jelző meghatározza, hogy
+  a shift-ág él-e egyáltalán** (0-nál mindig `grain2`).
+- A `0xd67849` mért képe: globális `.data`-jelző, ~445 olvasó, két író
+  (`0x576419` = 1, `0xa52e66` = al). Az írók a főablak-aktiváló/blokk
+  környékén vannak — a pontos jelentése **nem megerősített** (erős:
+  „a főablak/szerkesztő fókusz-állapota").
+- **Nálunk:** a `menuBatchFilmGrain` MINDIG `grain2`-t hív
+  (`PicasaMenuBar.qml`), a `batch_effect_controller` is csak a `grain2`-t
+  ismeri a `_APPEND_NAMES`-ben. A `grain` (v1) kulcsunk nincs — a shift-ág
+  nem reprodukálható, és **nincs is rá felhasználói eset** (a Shift-et a
+  rács-kijelölés használja) → ld. a mérleget.
+
+### 33.4 Az AUTO_REDEYE külön útja — nem a `0x5fe370`-es batch
+
+Az `Auto Red Eye Correction` kezelője (`0x5ccb36`) nem a közös batch-tel
+megy:
+
+```
+xor ecx, ecx
+mov eax, 0x5f39d0        ; a delegált kezelő
+push ecx
+push eax
+mov eax, ebx
+call 0x602100            ; a közös „kijelölésen végrehajtás" keret
+```
+
+- **A `0x602100`**: beolvassa az `AllowReadOnlyEdits` Preferences-kapcsolót,
+  majd a kijelölés körét (`0x541fc0`) — a keret, amin a delegált fut.
+- **A `0x5f39d0`**: az Auto RedEye kezelője; a törzse a szerkesztő-előnézet
+  függvényét is használja (`editpanel/preview` + a `0x20c` flag, ugyanaz a
+  minta, mint a `0x579330`-ban) — az Auto RedEye az **előnézeten** dolgozik.
+- A `redeye` **string-kulcs a batch-rendszerben nem él** (a `0x5fe370`-es
+  hívásokban nincs `redeye`) — a vörösszem-javítás a függvény-úton megy,
+  nem a `filters=` láncon.
+- **Nálunk:** `menuBatchAutoRedeye` → `batchApplyEffectRequested("redeye")`,
+  a `batch_effect_controller` `toggle()`-ként kezeli (a `filters=` láncon).
+  Ez a mért viselkedéssel összeegyeztethető (mindkettő a kijelölésre hat),
+  az eltérés a belső út — a dev számára nincs teendő, hacsak a szerkesztő-
+  előnézetes ágat nem akarjuk (33.6).
+
+### 33.5 A Geotag almenü — Google Earth-függőség mérve
+
+**GEOTAG** (`0x9db4` → `0x5cc825` → `0x600580`):
+
+1. a kijelölést a `[edi+0xea4]`-ről veszi;
+2. **`0x703980(0)` = a Google Earth telepítés-ellenőrzés**: a
+   `CLSID\{8097D7E9-DB9E-4AEF-9B28-61D82A1DF784}\LocalServer32`
+   registry-kulcsot vizsgálja (a Google Earth COM-objektum EL):
+   a `0x703980` sztringjei a CLSID-t és az `InstallEarth:*` kulcsokat tartják;
+3. ha nincs Google Earth → **`0x5ff930` = az InstallEarth figyelmeztető
+   párbeszéd**: *„In order to use the geotagging features in Picasa, you
+   will need to install/upgrade to the latest version of Google Earth.
+   Click 'Learn More...' to go to the Google Earth home page."* —
+   gombok: Cancel · Continue/Launch · Learn More... → `http://earth.google.com`
+   (`InstallEarth:message_install` a hiányra, `InstallEarth:message_update`
+   a frissítésre);
+4. ha megvan → a geotag-objektum (`[edi+0xdb0]`) inicializálása
+   (`0xc0769f`, `0x6fe800`) és a kijelölt képek továbbítása.
+
+**GEOUNTAG** (`0x9db5` → `0x600670`): **megerősítő párbeszéd** a
+`ClearGeoTag::warn` kulccsal (Igen/Nem), utána törlés.
+
+**Nálunk (mérve):** a Geotag almenü (`PicasaMenuBar.qml`, „#530" blokk) az
+`Export to Google Earth File` és a `View in Google Earth...` tételeket
+tartja (a #530/#1589 szerint, saját `export/kml.py` motorral). **A „Geotag
+With Google Earth..." és a „Clear Geotags" tétel hiányzik** — a törlés
+tételét a #1404 már jegyzi. A Google Earth-függő belépés (CLSID-ellenőrzés +
+InstallEarth-párbeszéd) Linuxon nem reprodukálandó — hatókörön kívül.
+
+### 33.6 Eredeti / nálunk / teendő (mind mérve)
+
+| parancs | az EREDETI (a binárisból) | nálunk (mérve) | teendő |
+|---|---|---|---|
+| `AUTO_LIGHTING` | szerkesztő-navigáció **vagy** batch `autolight` | `menuBatchAutoContrast` → `applyEffectMany("autolight")` — **mindig batch** | a szerkesztő-ág hiányzik — nincs teendő addig, amíg a Kép menü a szerkesztőben is él (lásd alább) |
+| `AUTO_REDEYE` | `0x602100(0x5f39d0)` keret, előnézet-mintával | `menuBatchAutoRedeye` → `"redeye"` toggle | egyik irányba sem kell most |
+| `ENHANCE` | szerkesztő-navigáció **vagy** batch `enhance` | `menuBatchEnhance` → `"enhance"` | ua. |
+| `FILM_GRAIN` | batch `grain`/`grain2`, Shift-függő | `menuBatchFilmGrain` → **mindig** `grain2` | a `grain` (v1) nincs nálunk; a shift-ág kihagyása hatókörön kívül (nincs felhasználói út) |
+| `GEOTAG` | Google Earth-ellenőrzés + InstallEarth-párbeszéd | **nincs tétel** | hatókörön kívül (Linux, a Google Earth-integráció halott); a meglévő `kml`-exportunk #530/#1589 marad |
+| `GEOUNTAG` | megerősítés + törlés | **nincs tétel** | **#1404** — a megerősítő-kulcs (`ClearGeoTag::warn`) most már ismert |
+
+**A szerkesztő-ág (33.2) eldöntéséhez mérni kell, hogy a Kép menü él-e a
+szerkesztőnézetben nálunk** (a `photoActionsEnabled` + a `PicasaMenuBar`
+láthatósága a `PhotoViewer`-rel) — ez a **#1502-es frissítés** dolga, nem
+külön jegy addig, amíg az élő menü-eltérés nem látszik a képernyőn.
+
+### 33.7 Nyitott kérdések mérlege
+
+```
+Nyitott kérdések: 0 nyílt · 9 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA** (mind címmel): a 8 parancs cmd→kezelő térképe (33.1); a
+  kétágú mintázat (33.2); a FILM_GRAIN shift-ág (33.3); az AUTO_REDEYE
+  keret-útja (33.4); a GEOTAG Google Earth-ellenőrzése és a GEOUNTAG
+  megerősítése (33.5).
+- **HATÓKÖRÖN KÍVÜL:** a `grain` (v1) shift-ág reprodukciója (33.3) —
+  nincs felhasználói út; a GEOTAG InstallEarth-párbeszéd (33.5) — Linuxon
+  értelmét vesztett Google Earth-integráció. *A döntés a lelet alapján
+  kézenfekvő, tulajdonosi jóváhagyást a #1404-gyel együtt kér.*
+
+### Amit KIZÁRTAM
+
+- **„Az 'Auto RedEye' a 0x5fe370-es batch-rendszerrel megy"** — megdőlt:
+  a `redeye` kulcs a `0x5fe370` hívásláncában nincs; az út a `0x602100`
+  kereten át vezet (33.4).
+- **„A 0x5cc561 a GEOTAG kezelője"** — megdőlt: a táblafeloldás (1. táblás
+  számolás) szerint a GEOTAG a `0x5cc825`, a `0x5cc561` a `0x9d53`-hoz
+  tartozik (a táblázat téves kézi olvasása).
