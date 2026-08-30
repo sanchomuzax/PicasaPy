@@ -164,6 +164,34 @@ paraméterezése és csővezetéke a #565-ben a natív kód visszafejtéséből
 megvan (ld. `filters-decoded.md`), csak a Feather csúszka affin leképezése
 vár még golden-párra.
 
+### ✅ ÉLŐ KORPUSZ-IGAZOLÁS (2026-08-30, 859 fájl)
+
+A teljes élő korpusz (`referencia/ini-korpusz/korpusz.txt`, 1,9 MB)
+ellenőrzése a fenti hét tokenre: **mind a hét NULLA élő előfordulás.**
+
+| token | élő előfordulás | teendő |
+|---|--:|---|
+| `picnik=1;` | **0** | zárolható: nem fordul elő valós telepítésben |
+| `radtint` | **0** | zárolható (a kód-visszafejtés a #565-ben marad) |
+| `RoundedEdges` | **0** | (a `Border` csempe második tokenje — a token nem ini-alak) |
+| `Matte` | **0** | (a `Vignette` csempe második tokenje) |
+| `NightVision` | **0** | (a `HeatMap` csempe második tokenje) |
+| `glow=` (v1) | **0** | (a v1 a `glow2`-vel azonos kezelő; élőben csak `glow2`?) |
+| `grain=` (v1) | **0** | (a v1 a `grain2`-vel azonos kezelő) |
+
+A korpuszban **élő tokenek**, amik a `filterdesc-registry.md`-ben
+dokumentáltak, és most élő adattal is igazolódtak: `Vignette=` (126
+előfordulás, 4-paraméteres: sugár, erősség, fade, szín — egyezik a
+dokumentált `p1…p4`-gyel), `Boost=` (23), `Cinemascope=` (1), `Lomo=`,
+`HDR=`. Az `ImageFilters::`-blokk (`0x008fcfa0`) a teljes csúszka-névtárt
+adja a `Boost`/`PencilSketch`/`FocalZoom` stb. effektekhez.
+
+**A teljes élő `filters=` token-készlet** (a korpusz összes
+`filters=`-láncából): `enhance autolight crop64 fill redeye retouch tilt
+finetune2 Vignette autocolor sat warm Boost sepia bw movieend moviestart
+dir_tint Lomo HDR` — **mindegyik dokumentált** a specben, ismeretlen token
+nincs.
+
 Szöveg-overlay (külön kulcs): `text=` + `textactive=`. A régi, rövidített
 példa (`text=1; 136;11;sample text;Aharoni;...`) **nem teljes sor** — a
 formátum hossz-előtagos és többblokkos, ld. „A `text=` sor formátuma"
@@ -1574,6 +1602,25 @@ hivatkozás. Ha a kontakt-írás hibázik, a `faces=` sor sem íródik ki.
 > `rect64(…)` van. A `rect(...)` a naplóba megy.
 
 *Bizonyítottsági fok: megerősített* (diszasszemblált kód + 859 fájlos korpusz).
+
+### A `faces=` FÁJLALAK élő adatból (2026-08-30, 859 fájl)
+
+A korpusz `faces=`-mintái (9 411 előfordulás) két mezőt mutatnak:
+
+```
+faces=rect64(<recthex>),<contactid>
+```
+
+| mező | élő értékek | jelentés |
+|---|---|---|
+| `recthex` | **8–16 hex jegy** (16 az uralkodó: 8 612; előfordul 15/14/12/11/10/8 is) | **változó hosszú** rect64 — a parser `zfill(16)`-et kell alkalmazzon (a `#1398`-as tanulság élő adattal igazolva) |
+| `contactid` | **`0`**, **`ffffffffffffffff`**, vagy 16-jegyű azonosító | `0` és `ffffffffffffffff` = **nincs hozzárendelt személy** (1995× a `ffff…`, 696× a `0`); a 16-jegyűek a `[contacts2]`-beli azonosítók |
+
+A `ffffffffffffffff` (MAX_UINT64) tehát **„nincs személy" jelölő** — nem
+valódi kontakt. Ez a formátum most már élő adattal igazolt, nem csak a
+kód-visszafejtésből.
+
+*Bizonyítottsági fok: megerősített* (a teljes korpusz-eloszlás).
 
 ## A videó vágópontjai: `moviestart` és `movieend` (2026-08-16)
 

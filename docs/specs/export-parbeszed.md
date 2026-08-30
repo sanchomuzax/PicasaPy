@@ -1292,7 +1292,9 @@ Az `]history:*` **nem a `.picasa.ini`-be** kerül, hanem az
 **adatbázisba**: az `albumdata_token.pmp` egy-egy **album-sorának** a
 tokenje. A 859 elemű ini-korpuszban ezért volt nulla találat — **rossz
 helyen kerestünk.** *(A `picasa-mappakezelo.md` 11.5 ezt már 2026-08-21-én
-rögzítette; a két lap nem lett összekötve.)*
+rögzítette; a két lap nem lett összekötve.)* *(2026-08-30: a teljes
+korpusz `^]`-ellenőrzése ismét **0** találatot adott — az ini-formátumban
+tényleg nincs `]`-kezdetű sor; a `]token`-ek kizárólag a PMP-ben élnek.)*
 
 #### Élő bizonyíték — a tulajdonos valódi adatbázisából
 
