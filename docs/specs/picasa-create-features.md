@@ -373,7 +373,7 @@ kiterjesztés a `scale`-re **nem áll**.
 | `framegrid` | ugyanaz | AI4 | 9/9 |
 | `regulargrid` | ugyanaz | AI5 | 9/9 |
 | `multiexp` | **1,0** | AI7 | 4/4 (#1248) |
-| `contactsheet` | **nincs levezetve** — mind a 9 csomóponton `313` | AI6 | — |
+| `contactsheet` | **Ghidra-C (2026-08-30): NEM a layout állítja** — a `0x00888210` a node `+0x2c`-be `1,0`-t ad; a `313` a vetítés/render-scale adja | AI6 | tovább kutatva (#1412, nyitva) |
 
 A megkülönböztető eset az **álló cella**: az `AI3` első cellája
 219,5 × 288,1 lapegység, és a fájlban `scale="216"` áll — a **szélesség**,
@@ -415,7 +415,11 @@ Az, hogy MELYIK doboz kerül a fájlba, viszont témánként más:
 1. **Az Indexkép `scale`-je (`313`).** Lap-szintű állandó: a két különböző
    méretű csomópont (242 × 302,6 és 155 × 276,6 lapegység) ugyanazt kapja.
    Sem a `k` cellaél (300), sem a cella magassága (359), sem a `k` 8%-os
-   ráhagyásával csökkentett cella (311) nem adja ki. Egyetlen mintánk van.
+   ráhagyásával csökkentett cella (311) nem adja ki. **Ghidra-C (2026-08-30,
+   #1412):** a `0x00888210` layout a node `+0x2c`-be `1,0`-t tesz, a
+   `0x00887e50` csomópont-allokátor (nem `k`-képző) — tehát a `313`-at a
+   **vetítés/render-scale** írja, a `scale_for_theme`-unk contactsheet-ágát a
+   vetítés-scale-képlettel kell összekötni (#1412 nyitva).
 2. **A rácsos témák térköz ELŐTTI téglalapja.** A `picturegrid` és a
    `framegrid` a pakolási téglalapot írja ki, a `regulargrid` a hézagosat;
    mi mind a hármat hézagosan írjuk. Térköz nélkül a kettő egybeesik, ezért
