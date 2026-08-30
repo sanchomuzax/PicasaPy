@@ -36,6 +36,25 @@ LAPOK = [
 ]
 
 
+def _kommentek_lekerese() -> None:
+    """A komment-lekérés emlékeztetője — MINDEN kimeneten, nem csak sikeren.
+
+    Korábban ez csak a hibátlan futás ágán állt, a `return 3` UTÁN. Felhős
+    munkamenetben viszont a bináris térkép rendre kimaradt, tehát az ág soha
+    nem futott le: a lapokra érkező hozzászólásokat emiatt egyetlen kör sem
+    kérte le. Automatikus értesítés nincs, így ez volt az egyetlen kapu — és
+    zárva volt.
+    """
+    print()
+    print("📬 ÉS KÉRD LE A KOMMENTEKET IS — automatikus értesítés NINCS.")
+    print("   Ez az EGYETLEN pillanat, amikor ez rendszeresen megtörténik:")
+    for nev, _sz, _ki, url in LAPOK:
+        print(f"     Artifact(action=\"comments\", url=\"{url}\")   # {nev}")
+    print("   Ha a válasz »comments are not available«, a lap nincs megosztva —")
+    print("   ez nem hiba, csak nincs hol kommentelni.")
+    print("   Válaszolni CSAK olyan szálba lehet, ahol valaki @claude-ot említett.")
+
+
 def main() -> int:
     kihagyva, hibas = [], []
     print("=" * 66)
@@ -54,21 +73,16 @@ def main() -> int:
     print("\n" + "=" * 66)
     if hibas:
         print(f"❌ HIBA: {', '.join(hibas)}")
+        _kommentek_lekerese()
         return 1
     if kihagyva:
         print(f"⚠️  Kihagyva (hiányzó forrás): {', '.join(kihagyva)}")
         print("   A bináris index a PRIVÁT agent-repóban él.")
+        _kommentek_lekerese()
         return 3
     print("✅ Mindkét lap újraszámolva.")
     print("   Publikáld ŐKET a fent kiírt címekre — url NÉLKÜL új lap jön létre!")
-    print()
-    print("📬 ÉS KÉRD LE A KOMMENTEKET IS — automatikus értesítés NINCS.")
-    print("   Ez az EGYETLEN pillanat, amikor ez rendszeresen megtörténik:")
-    for nev, _sz, _ki, url in LAPOK:
-        print(f"     Artifact(action=\"comments\", url=\"{url}\")   # {nev}")
-    print("   Ha a válasz »comments are not available«, a lap nincs megosztva —")
-    print("   ez nem hiba, csak nincs hol kommentelni.")
-    print("   Válaszolni CSAK olyan szálba lehet, ahol valaki @claude-ot említett.")
+    _kommentek_lekerese()
     return 0
 
 
