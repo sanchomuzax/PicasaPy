@@ -516,8 +516,32 @@ nélkül.*
 
 **A két megbízható horgony** (a kezelő tartalma és a pipa-szinkron)
 függetlenül ugyanazt a párt adja: `0x9c9e`↔ShowHidden és `0x9d72`↔
-EnableColorManagement. Ami mégis képernyőképet igényel: a látható
-menü-feliratok és a pipák pontos párosítása (blokkolt a #1582-ben).
+EnableColorManagement. Ami mégis képernyőképet igényelt: a látható
+menü-feliratok és a pipák pontos párosítása.
+
+#### ✅ A párosítás LEZÁRVA a tulajdonos képeivel (2026-08-30)
+
+A tulajdonos két képernyőképet küldött (`1852-nezet-menu` mappa,
+`/mnt/nas/My Pictures/1852-nezet-menu/`):
+
+| tétel | alap kép | bekapcsolt kép |
+|---|---|---|
+| „Kis képek" | nincs pipa | **van pipa** |
+| „Rejtett képek" | **van pipa** (mindkettőn) | van pipa |
+| **„Színkezelés használata"** | **nincs pipa** | **van pipa** |
+| „Megjelenítési mód ›" | nincs | nincs |
+
+(Leolvasás: helyi codex agent, csak olvasás — a futó kutatási modell nem
+támogatja a képbemenetet.)
+
+⇒ **A pipa a „Színkezelés használata" SAJÁT során jelenik meg**, nem a
+`ShowHidden`-soron túl. A `0x9d72` (EnableColorManagement) tehát tényleg a
+„Színkezelés használata" felirathoz tartozik a képernyőn; a `0x9c9e` a
+„Rejtett képek"-hez (ShowHidden). A #1581-es elcsúszás-tanulság itt **nem**
+érinti a megvalósítást: a #1725-ben a „Színkezelés használata" tétel
+checkable, és a pipa azon a soron jelenik meg.
+
+*A párosítás bizonyítottsági foka ezzel **megerősített** a képernyőképpel.*
 
 **A diszpécser teljes kezelő-térképe (módszertanilag értékes melléktermék):**
 
@@ -559,7 +583,7 @@ menü-feliratok és a pipák pontos párosítása (blokkolt a #1582-ben).
 
 *Bizonyítottsági fok: **megerősített** minden állítás, ami mellett `0x…`
 cím áll (a függvénytörzsek szó szerinti tartalma); a menü-felirat ↔
-azonosító párosítás — **blokkolt**, képernyőkép kell hozzá.*
+azonosító párosítás — **megerősített** (a tulajdonos képeivel, 2026-08-30).*
 
 ## 6. Tárolás, alapértelmezés, indulási állapot
 
@@ -628,7 +652,7 @@ NY-5 az **5.12**-ben kapott választ.
 | **NY-2** | **Miért ≈ gamma 1,44 a „Lineáris gamma (2.2)" táblája?** | A `2.2` float itt csak a tábla **kiválasztó kulcsa**; a tábla a binárisban előre kitöltve érkezik, a generátora nincs a kódban. | Nem kell eldönteni a megvalósításhoz: **a mért 256 bájtos tábla a szerződés** (5.9). Csak akkor számít, ha valaki képletet akar illeszteni — akkor egy szürkeék képernyőképe a windowsos Picasából ellenőrizné a táblát. |
 | **NY-3** | **Mit csinál valójában a `Mac gamma (1.6)`?** | A `0.0f` kulcs egy **megosztott, lustán feltöltődő** táblát (`0x00d32cd0`) választ, amit egy másik gamma-alkalmazó (`0x00aa40a0`, 8 hívó) is használhat, futásidőben kapott gammával. Ha az fut előbb, a Mac gamma az ő tábláját kapja; ha nem, a saját feltöltése `1/0.0 = +∞` kitevővel megy. | Semleges **szürkeékre** kapcsolni a `Mac gamma (1.6)`-ot **közvetlenül indítás után**, majd **néhány kép megnyitása után is**, és képernyőkép mindkettőről. Ha a két kép eltér, a mód futásidő-függő ⇒ nálunk **nem reprodukálandó**. |
 | **NY-4** | **Látszik-e a mód diavetítésben / teljes képernyőn?** | Nem néztem meg, hogy a `0x009e1c40` rajzolóút szolgálja-e azokat a nézeteket. | `Projektor mód` bekapcsolása, majd diavetítés indítása — látszik-e a sötétítés. *(Ez a mód gyakorlati értelme is: vetítéskor kellene hatnia.)* |
-| **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | **LEZÁRVA (2026-08-30, #1582)** — lásd az **5.12** szakaszt: önálló kapcsoló, `Preferences\EnableColorManagement`, alap 0; bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott `icc_camera_profile`/`icc_camera_to_tone_matrix` metaadat-tagok a forrás. | kapcsoló megvalósítása; a menü-felirat párosítás képernyőképet igényel (blokkolt) |
+| **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | **LEZÁRVA (2026-08-30, #1582)** — lásd az **5.12** szakaszt: önálló kapcsoló, `Preferences\EnableColorManagement`, alap 0; bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott `icc_camera_profile`/`icc_camera_to_tone_matrix` metaadat-tagok a forrás. | **a kapcsoló megvalósítása → #1725**; a felirat↔pipa párosítás a tulajdonos képeivel MEGERŐSÍTVE (a pipa a „Színkezelés használata" során) |
 | **NY-6** | **A 16 bites szemcsézés pixelhű reprodukálhatósága.** | Az MT19937-változat vetőmagozását (`0x00aa2930`) nem néztem meg. | Csak akkor kell, ha valaki bitre egyező szemcsét akar — a **statisztika** (egyenletes 0…7 / 0…3 / 0…7) ehhez nem szükséges, az mérve van. |
 
 ⚠️ **Amit szándékosan NEM állítok:** hogy az „LCD fehérpont" fehérpontot
@@ -642,7 +666,8 @@ színhőmérséklet-korrekció nincs benne. A felirat ellentmond a kódnak; a
 *(Ami ide tartozna, de már a 8. szakasz nyitott kérdései közt szerepel a
 javasolt méréssel: export/nyomtatás · diavetítés · a `0x00aa40a0` nyolc
 hívója · az MT-vetőmagozás — és az 5.12-ben az EnableColorManagement
-felirathoz rendelt parancsazonosító kérdése, amely blokkolt.)*
+felirathoz rendelt parancsazonosító kérdése, amely a #1582 képeivel
+lezárult.)*
 
 1. **A megjelenítő objektum osztálya és életciklusa.** A `+0x254` horog
    egy általános rajzfelület-osztályon ül (más felületek is állítanak
