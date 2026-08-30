@@ -13,6 +13,10 @@ on:
   # A megoldás: EGYETLEN workflow dönt. A `valtozas` job megnézi, érint-e
   # a diff kódot; a mátrix csak akkor fut, a kötelező státuszt pedig
   # mindig ugyanaz az aggregátor adja.
+  #
+  # #1722 óta ez a `main`-re érkező pushra IS áll: az összevetés alapja ott
+  # a `github.event.before`. Korábban a push-ág feltétel nélkül teljes kört
+  # kért, ezért a tisztán dokumentációs merge-ek is végigülték a mátrixot.
   push:
     branches: [main]
   pull_request:
@@ -51,11 +55,33 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+          # #1722: a `main`-re érkező push ELŐZŐ állapota. PR-nél üres.
+          ELOZO: ${{ github.event.before }}
+          MOSTANI: ${{ github.sha }}
         run: |
           set -euo pipefail
+
+          # A `main`-en is ugyanaz a döntés szülessen, mint a PR-en. Eddig
+          # itt feltétel nélkül `kod=true` állt, mert push-nál nincs
+          # `pull_request.base` — de a push-eseménynek VAN előzménye
+          # (`github.event.before`), tehát van mihez hasonlítani. Enélkül
+          # minden dokumentációs merge elvitte a teljes mátrixot a
+          # `main`-en (mérve: a #1434 docs-commitja 15 percet).
+          #
+          # Az összefogó `Test (…)` jobok `if: always()`-szel futnak, és
+          # `kod=false` mellett zölden jelentenek — a kötelező ellenőrzés
+          # tehát ITT is megérkezik, nem „kihagyva" állapotban.
           if [ -z "${BASE:-}" ]; then
-            echo "push vagy kézi indítás — mindig a teljes kör."
-            echo "kod=true" >> "$GITHUB_OUTPUT"; exit 0
+            # Csupa nulla = az ág most jött létre; ilyenkor nincs előzmény.
+            if [ -n "${ELOZO:-}" ] \
+               && [ "$ELOZO" != "0000000000000000000000000000000000000000" ] \
+               && git cat-file -e "$ELOZO^{commit}" 2>/dev/null; then
+              echo "push — összevetés az előző main-állapottal ($ELOZO)."
+              BASE="$ELOZO"; HEAD="$MOSTANI"
+            else
+              echo "Nincs használható előzmény (új ág vagy kézi indítás) — teljes kör."
+              echo "kod=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
           fi
           valtozott="$(git diff --name-only "$BASE" "$HEAD")"
           echo "Változott fájlok:"; echo "$valtozott"
