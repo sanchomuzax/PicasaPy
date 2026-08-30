@@ -484,3 +484,25 @@ dolgozik (`0x00655c36`), **kritikus szakaszon belül** (`0x00655cc3` /
 `0x00656a30:0x00656a46` viszi át. **Nem** az élettartam — az a `+0xb8`.
 
 Jegy: **#1130**.
+
+## ✅ Az animáció ÜTEMFORRÁSA — a vtable 0x60 rekesze (2026-08-30)
+
+A korábbi körök „a `yt` keretrendszer képkocka-üteme" sejtését most az
+**RTTI/vtable-tábla igazolja** (olcsó lánc, dekompiláció nélkül):
+
+| vtable | rekesz 25. (0x60) | szerep |
+|---|---|---|
+| `CBaseNotifier::vftable` (`0x00ca27cc`) | **`0x00656860`** | ős tick — órát olvas (`0x009a5210`), cella-másolót hív (`0x00656a30`) |
+| `CNotifierPopup::vftable` (`0x00ca284c`) | **`0x006575b0`** (felülírva) | a Popup tick — a lejárat-ellenőrző (a `0x00655be0` eltávolítóval) |
+
+**Miért nincs közvetlen hívójuk az indexben:** a `0x006575b0`-ra és a
+`0x00656860`-ra **egyetlen `call` sem mutat** — mindkettő kizárólag a
+**vtable 25. rekeszén (0x60)** keresztül érhető el. A `yt`-keretrendszer
+képkocka-ciklusa a csomópontok `[vtable+0x60]` rekeszét hívja minden
+képkockán — ez az ütemforrás. *(Ugyanez magyarázza a korábbi negatívumot
+is: a Win32-időzítő-kizárás helyes, a tick nem időzítőből, hanem a saját
+renderelési ciklusból jön.)*
+
+*Bizonyítottsági fok: **megerősített** (a vtable-rekeszek és a
+hívás-hiány az indexből; a rekesz-szerep a dekompilált `0x006575b0`
+tartalmából — óra + határidő + eltávolítás, ld. a 2026-08-26-i szakaszt).*
