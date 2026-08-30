@@ -518,8 +518,19 @@ véletlen is; négy megfigyelés kevés.
    állapotot** mutatnak.
 2. **A `FUN_005d7c20` (VA `0x005d7c20`, RVA `0x001d7c20`, 1614 bájt)
    dekompilálása** — ez a függvény írja a jelvény szövegét, tehát
-   egyértelműen eldönti a kérdést. (Ehhez Ghidra-kör kell; ebben a körben
-   nem futott.)
+   egyértelműen eldönti a kérdést. ~~(Ehhez Ghidra-kör kell; ebben a körben
+   nem futott.)~~ → **2026-08-30: Ghidra-dekompilálva.** A `FUN_005d7c20`
+   **nem a jelvény-számot képzi**, hanem a **felül-választott effekt
+   OBJEKTUMÁT tölti be**: `FilterItemLoaderJobHolder` vtable, a `_tab%d`/
+   `_mod%s` felirat-párok (fül-index `param_2`-ből), `GetAsyncKeyState(0x10)`
+   a Shift-ág, és a `FUN_0098d380(&local_34,&local_24,1,0)` =
+   **az effekt-példányok darabszám-olvasása** (`local_24`-be). Vagyis a
+   függvény a **fülek szerint rendezett effekt-betöltő** — a jelvény
+   *felhasználója*, nem a képzője. **A jelvény-szám forrása a
+   `local_24` (a betöltött effekt-darabok száma), amit a
+   `FUN_0098d380` ad** — ez a „hányszor van alkalmazva" olvasatot
+   támasztja alá (a függvény a felvétel effekt-példányszámát adja). A
+   „lánc-sorszám" olvasat végleg elvetve.
 
 **A PicasaPy-nak addig is:** a jelvény **helye, mérete, alakja és színe
 megerősített** — ez implementálható; csak a **számérték forrását** kell

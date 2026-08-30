@@ -482,7 +482,7 @@ Picasa-hű lenne.
 | **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
 | **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
 | **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#668)** | a natív elmosó mag (`0x009dd0d0`) alá állítva, és MINDEN szabad skalár valódi Picasa-exportból mérve — 12 golden-párból 12 „közelítés", átlagos ΔE 0,09…1,19 | `glow`/`glow2` (`0x0090d4b0`: négyzetre emelő előgörbe → IIR-elmosás → screen, súly = Intenzitás), `radblur` (`0x008f8520`: IIR-elmosás + natív smoothstep sugaras maszk) |
-| **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve), `linblur` (`0x0090de10`; a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára) |
+| **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; ~~a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve~~ → **2026-08-30 Ghidra-C: `k = 2·Δ` (a két `FUN_00c29990` különbségének duplája)**), `linblur` (`0x0090de10`; ~~a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára~~ → **2026-08-30 Ghidra-C: a sugár a `param_5`-ből közvetlenül** — a #623 feltevése megdőlt, ld. lentebb) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
@@ -1431,6 +1431,34 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
    tárolna, ami 0-ra fordul körbe: a teljesen éles tartomány egy sávjában
    50%-os homályt adna. A 255,9999-es szorzó a **csonkolás** klasszikus
    idiómája, ezért 255-re vágunk — referencia-export döntheti el.
+
+#### ⚠️ Ghidra-pontosítás (2026-08-30) — a 2. közelítés MEGDŐLT, az 1. MÓDOSULT
+
+A célzott dekompiláció (`0x008f9090` dir_sharp burkoló, `0x008f99c0`
+linblur burkoló, `0x0090d600` dir_sharp mag, `0x0090de10` linblur mag):
+
+- **linblur (`0x0090de10`) — a sugár a `param_5`-ből közvetlenül érkezik,**
+  és `FUN_009dd0d0` (a KÖZÖS IIR-elmosó mag) **kétszer** kapja (az irány
+  mentén): `local_1b4 = iVar*2 / local_1a0 = iVar6*2` az eltolás-irány, a
+  `param_5` **nem** `W/100·(Amount+1)` — a burkoló (`0x008f99c0`)
+  **üres**: `local_18 = FUN_00c29990(); local_14 = FUN_00c29990()` (a
+  Mennyiség → a képméret képpont-fele típusú transzform, a `param_5`
+  marad), majd `0x0090de10(param_5,...)`. **A #623 „a testvér radblur
+  burkolójának alakja" feltevése a sugárra NEM áll** — a közös IIR-mag
+  a `param_5`-öt sugárként kapja (0..1-ben a mag maga skáláz).
+- **dir_sharp mag (`0x0090d600`) — a `k` képlete MÓDOSUL:** a két `ABS`
+  (a `FUN_0049f5c0`) **nem** `|a|+|b|` a rámpára, hanem a két paraméter
+  **belső, 1.0-ra klampolt** terjedelme, és a mag különbségképzése
+  `iVar3 = (iVar2 − iVar3)·2` az **egyesített különbség kétszerese**
+  (a `FUN_00c29990`-k = a `__ftol`-kerekítés, nem `fabs`). Az `amount`
+  így: `((szomszéd−saját)·k)>>8`, csatornánként, telítéssel.
+  A burkoló sugara `min(W,H)>>3 = max/8` (a `uVar1 = min(w,h)>>3`).
+
+*Bizonyítottsági fok a frissítéssel: **megerősített** a linblur-sugár
+közvetlenségére és a dir_sharp `k = 2·Δ` képletére (Ghidra-C, szó szerint);
+a `param_5` 0..1→sugár pontos leképezése a IIR-magban továbbra is a
+`0x009dd0d0`-ban van — az mérve (#668). A 3. közelítés (súlytábla-vágás)
+változatlanul nyitott, mérés dönti el.*
 
 Mindhármat a **#317** (effekt-kalibráció) írhatja felül; a hatás JELLEGE
 (hol erős, milyen irányú, milyen az átmenet) ettől függetlenül egzakt.
