@@ -2242,6 +2242,44 @@ diszasszemblálása — a benne lévő három közvetett hívás `[0xc40368]`
 `cmp eax, 0xff`), **nincs köztük `FindFirst…`**; továbbá a `0x004e1xxx`
 függvénylista átnézése.
 
+#### ⛔ MEGDŐLT: az „1. lehetőség (az index kihagyott egy hívást)" — TELJES .text-PÁSZTÁZÁS (2026-08-30)
+
+A teljes `.text` szekció gépi átpásztázása (capstone, **2 887 292 utasítás**,
+`call`-operandusok céljaira szűrve) a négy hívás-családra:
+
+| cél | találatok | hol |
+|---|---|---|
+| `[0xc404d0]` (FindFirstW-feloldó) | **1** | `0x009b3077` — **a CRT A→W-burkoban** (`0x009b3000`) |
+| `0x009b3000` (a burok maga) | **0** — senki nem hívja | — |
+| `[0xc403c0]` (FindNext-feloldó) | 2 | `0x00706647`, `0x007066c6` (a két ismert) |
+| `[0xc40368]` (FindClose-feloldó) | 1 | `0x004e18ba` (az ismert) |
+
+⇒ **Az index nem hagyott ki semmit:** a `FindFirstChangeNotificationW`
+egyetlen hívása a CRT-burkoban van, a burkot pedig **a teljes `.text`-ben
+senki sem hívja**. (A `0xc403xx`-feloldók szintén ott vannak; a
+`call dword ptr [cím]` alakú hívásokon kívül regiszter-közvetítésű
+indirekt hívás nem lehetséges az importált API-khoz — a `WaitForMultipleObjects`
+hívásai `[0xc4039c]`-en mennek, az is közvetlen formájú.)
+
+**Következmény:** a fogantyú-tömböt (`[this+0x18]`, `[this+0x1c]`) a `.text`-beli
+kód **nem tölti fel** — nincs `FindFirst…`-hívás, ami a tömböt megtöltené. A
+`WaitForMultipleObjects` számlálója (`[this+0x1c] >> 1`) üres tömbnél **0**, a
+`FindNext…`-újrafegyverzés csak a `WAIT_TIMEOUT`-on kívüli, **jelzett**
+fogantyúra futna — jelzett fogantyú pedig nem létezik.
+
+**Tehát a „minden futásban él-e a figyelő" kérdésre a válasz az eddigi
+legjobb bizonyítékkal: NEM jön létre a fő EXE-ben** — a 16.1 „az eredeti
+nem használ OS-szintű fájlfigyelést" iránya a bizonyítékkal **erősödik**
+(igaz, a `FindNext…`/`FindClose…` KÓD benne van a binárisban: öröklött
+kód, ami nem kap fogantyút, vagy a fogantyúkat más modul hozza létre —
+utóbbihoz pl. a `plugins/` DLL-ek vizsgálata kellene, ami a fő EXE
+`GetProcAddress`-feloldásain túl egy külön kör, és a mi megvalósításunkat
+nem érinti).
+
+*Bizonyítottsági fok a frissítéssel: **megerősített** a `FindFirst…` hívás
+hiányára (a teljes `.text` gépi pásztázása); **nyitva marad** a fogantyúk
+más modulból való esetleges származása (nem érinti a teendőt).*
+
 *Bizonyítottsági fok: **megerősített**, hogy a `FindNext…`/`FindClose…`
 alkalmazáskódból hívódik és hogy a `0x007065f0` újrafegyverez.
 **Eldöntetlen**, hol jön létre a fogantyú, és ezért az is, hogy a figyelő
