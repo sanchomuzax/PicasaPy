@@ -2869,3 +2869,99 @@ a csoportosztás nincs mérve.)*
 - **„A Picasa nem tudott róla, hogy Wine alatt fut"** — megdőlt:
   `wine_get_unix_file_name`, `ShowUnixPaths` hét helyen, `%s (wine)`,
   `winedisable.txt` (50.3).
+
+## 51. tétel — a `thumbui`: a hiányok nagy része ESZKÖZTÁRGOMB, és egy valódi hiányzó eszköz (2026-09-01)
+
+*Tizenkettedik kör az UI-lefedettségi axisról (#1778). Panel: `thumbui`
+(41 hiány) — a fő könyvtárnézet. A „nézd meg a testvéreket" fogással.*
+
+### 51.1 A hiányok fő mintája: menüben megvan, eszköztáron nincs
+
+Nyolc elem **megvan nálunk**, csak **más helyen**: az eredetiben
+eszköztárgomb, nálunk menütétel vagy helyi menü. Mindegyik felvéve a
+`ui-lefedettseg-elemek.csv`-be, fájllal és sorszámmal:
+
+| eredeti (eszköztár) | nálunk |
+|---|---|
+| `smallthumbs` / `largethumbs` | Nézet menü, `thumbSizePreset(96)` / `(144)` (`PicasaMenuBar.qml:301/306`) |
+| `rotateleft` / `rotateright` | Kép menü + fotó helyi menü |
+| `scratchhold` / `scratchclear` | képtálca `trayHold` / `trayClear` (`TrayBar.qml`) |
+| `newalbum` | bal hasáb (`FolderPane.qml`, `AlbumsSection.qml`) |
+| `newfolder` | Fájl menü „Áthelyezés új mappába…" |
+
+Hatás a táblán: párosítva 135 → **143**, hiányzik 396 → **388**.
+
+⇒ **Ez nem funkcióhiány, hanem ELHELYEZÉS-kérdés**, és a fő eszköztár
+hiányzó vezérlőit már a **#853** tartja számon. Ide nem nyílik új jegy.
+
+### 51.2 A négy fiók-kapcsoló: itt is, ott is
+
+`people_toggle` · `places_toggle` · `properties_toggle` · `tags_toggle` —
+a 37. tételben már feltárt jobb fiók-lapok, de itt **eszköztárgombként**.
+A menü-oldaluk nálunk megvan (37.), az eszköztár-oldaluk nem — ugyanaz az
+elhelyezés-kérdés, ugyanaz a jegy (**#853**), és a kizáró viszonyuk a
+**#1773**.
+
+### 51.3 ⭐ Ami VALÓBAN hiányzik: a nagyító (`loupe`)
+
+> `loupehit` — buboréksúgó: **„Click and drag over photos to magnify
+> them"**
+
+Egy **nagyító**, amit a bélyegkép-rács fölött húzva a képek nagyítva
+jelennek meg. Saját felületi csomópontjai vannak (`loupe`,
+`loupe/loupe_sm`, kezelő `0x0077be10`), és a `thumbui/loupe` néven a
+rács vezérlőihez kapcsolódik (`0x005733f0`).
+
+**Nálunk mérve: nincs.** A „nagyít"/`magnif`/`loupe` keresés a
+QML-fában csak a kollázs-csomópontra, a szerkesztő effekt-fülére, a
+bélyegkép-delegáltra és a fő eszköztárra ad találatot — **egyik sem
+rács-nagyító**.
+
+⇒ Ez **önálló, felhasználónak látszó funkció**, nem elhelyezés-kérdés.
+
+### 51.4 A többi valódi hiány, besorolva
+
+| elem | mi ez | hova tartozik |
+|---|---|---|
+| `webcambutton` | webkamerás felvétel | **#853** (a négy hiányzó eszköztár-vezérlő egyike) |
+| `visitweb` („Internetes nézet") · `backup` · `cdmode` („Ajándék CD") | eszköztár-gombok | `visitweb` **hatókörön kívül**; `backup` → #440; `cdmode` → #32 |
+| `single_action_*` hármas | a „Get more" mód üzenetsávja: *„Jelölje ki… majd a »Vissza« gombra kattintva térjen vissza a projekthez"* | a kollázs/film **klip-gyűjtő módja** — a projektpanelekhez tartozik |
+| `lightbox_esolo_button` / `_text` | *„Nincs találat ebben az albumban"* + **„Keresés mindenhol"** gomb | keresési üres-állapot — **kis jegy értéke lehet** |
+| `flatview` · `folderview` · `folderviewpopup` | a bal hasáb nézetváltói | a 36./4c körökben feltárva; **#1407**, **#853** |
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| rács-nagyító | húzásra nagyít | **nincs** | **ÚJ JEGY** |
+| kis/nagy indexkép, forgatás, tálca, új album/mappa | eszköztáron | **megvan**, máshol | — (elhelyezés: #853) |
+| négy fiók-kapcsoló | eszköztáron | menüben megvan | #853 + #1773 |
+| webkamera | eszköztárgomb | nincs | #853 |
+| „Nincs találat… / Keresés mindenhol" | üres-állapot | nem mérve | megfontolandó |
+
+### Nyitott kérdések mérlege (51.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a hiányok fő mintája (elhelyezés, nem funkció — 51.1–51.2);
+  a nagyító léte és a mi oldalunk hiánya (51.3).
+- **BLOKKOLT:** a nagyító **viselkedési részletei** (nagyítás mértéke,
+  követi-e az egeret, mekkora a `loupe_sm`). A sztringtár erről nem ad
+  többet, a kezelő (`0x0077be10`) két csomópontnévnél egyebet nem
+  hivatkozik. **Mi kell hozzá:** célzott dekompiláció vagy egy
+  képernyőmentés működés közben. **A jegyet nem blokkolja**: a funkció
+  léte és belépési pontja megvan.
+- **HATÓKÖRÖN KÍVÜL:** `visitweb` („Internetes nézet").
+
+*(Záró mondat a 45.1 szerint: **van** hiányzó vezérlő; a csoportosztás
+nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `thumbui` 41 hiánya 41 hiányzó funkció"** — megdőlt: nyolc elem
+  megvan más helyen, négy a jobb fiók már feltárt lapja, több pedig
+  meglévő jegyekhez tartozik (51.1–51.4).
+- **„A nagyító nálunk is megvan valamilyen alakban"** — megdőlt: a
+  QML-fában nincs rács-nagyító (51.3).
