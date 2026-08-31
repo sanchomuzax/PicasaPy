@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 143 |
+| párosítva | 153 |
 | másutt megvan (nem ezen a felületen) | 46 |
-| hiányzik | 388 |
-| bizonytalan | 158 |
+| hiányzik | 382 |
+| bizonytalan | 154 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **19.5%** |
+| **lefedettség az értékelhető elemeken** | **20.9%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -50,7 +50,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | # | panel | hiány + bizonytalan | mit takar |
 |---:|---|---:|---|
-| 1 | `editpanel` | 83 | A szerkesztő teljes bal oldali panelje minden fülével |
+| 1 | `editpanel` | 73 | A szerkesztő teljes bal oldali panelje minden fülével |
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `thumbui` | 33 | A fő könyvtárnézet egésze |
 | 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
@@ -65,7 +65,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | hiányzik | bizonytalan | rajzoló | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `editpanel` | 312 | 125 | 36 | 6 | 36 | 47 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
+| `editpanel` | 312 | 125 | 46 | 6 | 30 | 43 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
 | `thumbui` | 140 | 46 | 10 | 3 | 22 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
@@ -144,7 +144,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 Csak az értékelhető elemek. `bizonytalan` = nem dönthető el gépi úton, kézi ellenőrzésre vár.
 
-### `editpanel` — 83 hiány · panel-megfeleltetés: `parositva`
+### `editpanel` — 73 hiány · panel-megfeleltetés: `parositva`
 
 A szerkesztő teljes bal oldali panelje minden fülével
 
@@ -153,12 +153,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `ab_2up_toggle` buboréksúgó: „View two different images”
 - `captionbutton` buboréksúgó: „Show/Hide Caption”
 - `captiontrash` buboréksúgó: „Delete this caption”
-- `crop_aspect_menu` — *bizonytalan*
-- `crop_delete_custom` buboréksúgó: „Deletes the current aspect ratio”
-- `cropsug_preview1` — *bizonytalan*
-- `cropsug_preview2` — *bizonytalan*
-- `cropsug_preview3` — *bizonytalan*
-- `croptext` „Select a dimension below and then click and drag on the image to select the portion of the image you wish to crop.” (magyarul: „Válasszon az alábbi méretek közül, majd a fogd és húzd módszerrel jelölje ki a képnek azt a részét, amelyiket ki szeretné vágni.”)
 - `droppertoggle` buboréksúgó: „Allows you to pick a neutral gray or white part of the Photo to remove color cast”
 - `editcheckbox1` — *bizonytalan*
 - `editcheckbox2` — *bizonytalan*
@@ -204,10 +198,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `previewimage` — *bizonytalan*
 - `previewimage2` — *bizonytalan*
 - `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box”
-- `redeye_label` „Redeye Repair” (magyarul: „Vörösszem kijavítása”)
-- `redeyetext` „Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.  Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.” (magyarul: „Kattintson az egérrel, tartsa lenyomva a gombot, és mozgassa az egérmutatót a szemek körül külön-külön a kijelöléshez. Egy kijelölő keret jelenik meg a terület fölött. Engedje fel az egérgombot a kijelölés befejezéséhez. A fotóról eltűnik a vörösszem.”)
-- `retouch_label` „Retouch blemishes” (magyarul: „Szennyeződések retusálása”)
-- `retouchtext` „Click to select the area to fix.  Then, move the mouse to see a preview of the replacement area.  Click on the image again to finalize.  Lather, rinse, repeat.  Note:  you can use ctrl-drag to pan.” (magyarul: „Kattintással jelölje ki a javítani kívánt területet. Ezután mozgassa az egeret, és figyelje meg a változást az előnézetben. A művelet véglegesítéséhez kattintson újra a képre. Ismételje meg többször ezt a műveletet. Megjegyzés: a Ctrl billentyűt nyomva tartva az egér húzásával pásztázhat.”)
 - `selection_label` „Selected” (magyarul: „Kijelölve”)
 - `selection_label_zoom` „Selected” (magyarul: „Kijelölve”)
 - `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo”
@@ -1124,7 +1114,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **420 felirat** 82 fájlban.
+Összesen **423 felirat** 83 fájlban.
 
 ### `PicasaPy/PicasaMenuBar.qml` — 29
 
@@ -1599,6 +1589,12 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „You can also draw a square around any red eye that”
 - „Picasa has found and corrected red eye(s).”
 - „No red eye was found automatically.”
+
+### `PicasaPy/EmailChoiceDialog.qml` — 3
+
+- „Send pictures by email”
+- „The pictures will be attached to a new message in ”
+- „Remember this choice and do not ask again”
 
 ### `PicasaPy/OptionsDialog.qml` — 3
 
