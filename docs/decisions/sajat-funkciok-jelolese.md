@@ -58,8 +58,8 @@ mi kiegészítéseinktől. Ez két konkrét kárt okoz:
 
 ## Kötés
 
-- **Státusz:** ELFOGADVA · MEGVALÓSÍTVA (#1701, v0.8.148)
-- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/PicasaMenuItem.qml`
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** #1701 (v0.8.148) — `src/picasapy/app/qml/PicasaPy/PicasaMenuItem.qml`
   (`sajat` tulajdonság → kék felirat + kötelező buboréksúgó)
 - **Őrzi:** `tests/app/qml_functional/test_sajat_funkcio_jeloles_1701.py`
 
