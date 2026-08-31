@@ -103,7 +103,14 @@ def main(
     ertelmezo.add_argument("--changelog", default=None)
     beallitas = ertelmezo.parse_args(argv)
 
-    valtozott = runner(["git", "diff", "--name-only", beallitas.base, beallitas.head])
+    # #1770: HÁROM PONT — a PR SAJÁT commitjait nézzük, ne a kétirányú
+    # diffet. Sűrű kiadásnál a `main` percek alatt előrelép, és a kétirányú
+    # alak MÁSOK változásait is a PR-hez számolja: egy ártatlan
+    # dokumentáció-PR így kaphat „ez a PR kódot módosít, de nincs
+    # CHANGELOG-bejegyzése" hibát. Élesben elő is jött (#1765).
+    valtozott = runner(
+        ["git", "diff", "--name-only", f"{beallitas.base}...{beallitas.head}"]
+    )
     if valtozott.returncode != 0:
         # ⚠️ A sikertelen mérésből SOHA nem lehet zöld út. Éles próbán jött
         # elő: hibás refekkel a diff elbukott, a fájllista üres lett, és az őr
@@ -111,7 +118,7 @@ def main(
         # ami miatt ez a jegy megnyílt — csak eggyel feljebb.
         print(
             f"::error title=A CHANGELOG-őr nem tudott mérni::"
-            f"A `git diff {beallitas.base} {beallitas.head}` elbukott: "
+            f"A `git diff {beallitas.base}...{beallitas.head}` elbukott: "
             f"{(valtozott.stderr or '').strip()[:200]}. Ellenőrzés nélkül nem "
             f"adunk zöld utat."
         )
@@ -140,7 +147,7 @@ def main(
         naplo = ""
 
     diff = runner([
-        "git", "diff", beallitas.base, beallitas.head, "--", "CHANGELOG.md",
+        "git", "diff", f"{beallitas.base}...{beallitas.head}", "--", "CHANGELOG.md",
     ])
     if van_uj_bejegyzes(diff.stdout or ""):
         print("Van új CHANGELOG-bejegyzés — rendben.")

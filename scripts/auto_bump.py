@@ -79,8 +79,21 @@ def zard_le_a_changelogot(ut: Path, verzio: str, datum: str) -> bool:
     szoveg = ut.read_text(encoding="utf-8")
     if KIADATLAN_CIM not in szoveg:
         return False
+    # #1770: a lezárás UTÁN azonnal visszatesszük az ÜRES szakaszt.
+    #
+    # Enélkül a következő kör olyan fájlt kap, amiben nincs hova írni — és
+    # aki ilyenkor kézzel vesz fel szakaszt, könnyen MÁS néven teszi.
+    # Pontosan ez történt: a `629a0872` óta a fájl `## [Kiadatlan]`-t
+    # használt, az eszközök viszont ezt a címet keresték. Hat napig,
+    # némán: 19 bejegyzés gyűlt fel egyetlen dátumozatlan halomban
+    # (v0.8.133 … v0.8.154), és a napló elvesztette a
+    # verzió-hozzárendelést.
     ut.write_text(
-        szoveg.replace(KIADATLAN_CIM, f"## [{verzio}] – {datum}", 1),
+        szoveg.replace(
+            KIADATLAN_CIM,
+            f"{KIADATLAN_CIM}\n\n## [{verzio}] – {datum}",
+            1,
+        ),
         encoding="utf-8",
     )
     return True
