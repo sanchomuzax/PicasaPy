@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.163] – 2026-09-01
+
+### Hozzáadva
+- **A nyomtatás mostantól szól, ha a kép túl kicsi (#1782).** Eddig
+  kinyomtathattál egy 640×480-as képet 8×10 hüvelykre, és a program
+  **egy szót sem szólt** — a nyomat pedig pixeles lett. A Nyomtatás
+  ablakban most ott a **nyomatméret** (3,5×5 · 4×6 · 5×7 · 8×10 ·
+  tárcaméret), alatta pedig megjelenik, hány képpont jut hüvelykenként a
+  kijelölés **legrosszabb** képére. Ha bármelyik kép túl kicsi ehhez a
+  mérethez, a program pirosan kiírja, hányról van szó, és megkér, hogy
+  nézd át őket nyomtatás előtt. Ha minden rendben, azt is megmondja.
+- **A választott nyomatméret megjegyződik**, ahogy az eredeti Picasában:
+  legközelebb ugyanazzal indul.
+
 ## [0.8.162] – 2026-09-01
 
 ### Egyéb
