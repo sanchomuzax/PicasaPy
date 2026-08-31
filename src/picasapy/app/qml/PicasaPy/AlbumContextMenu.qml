@@ -27,7 +27,7 @@ import QtQuick.Controls
 // tud), a webes műveletek pedig nálunk nem értelmezhetők.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "albumContextMenu"
 

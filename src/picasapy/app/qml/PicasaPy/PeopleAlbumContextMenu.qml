@@ -13,7 +13,7 @@ import QtQuick.Controls
 // (#416, spec 5.1.). A két kijelölés-parancs élő.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "peopleAlbumContextMenu"
 

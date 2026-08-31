@@ -170,7 +170,7 @@ Item {
     // A `HierFolder` menüosztály — a fa KÖZTES csomópontjának menüje.
     // Öt tétel, a `FUN_00733a40` felépítő rutinból kiolvasva (a teljes
     // mappa-menü ennél jóval bővebb, ld. `FolderContextMenu.qml`).
-    Menu {
+    PicasaMenu {
         id: contextMenu
         objectName: "hierFolderContextMenu"
         property string folderPath: ""

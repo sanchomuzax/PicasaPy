@@ -27,7 +27,7 @@ import QtQuick.Controls
 // is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
 //
 // Önálló, signal-alapú komponens: a bekötést a Main.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "photoContextMenu"
 
@@ -84,7 +84,7 @@ Menu {
         font.bold: true
         onTriggered: menu.openRequested()
     }
-    Menu {
+    PicasaMenu {
         id: addToAlbumMenu
         objectName: "contextMenuAddToAlbum"
         title: qsTr("Add to Album")

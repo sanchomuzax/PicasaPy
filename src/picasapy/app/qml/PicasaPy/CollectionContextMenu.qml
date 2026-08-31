@@ -17,7 +17,7 @@ import QtQuick.Controls
 // FolderPane.qml köti be.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "collectionContextMenu"
 
