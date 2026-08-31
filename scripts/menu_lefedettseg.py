@@ -41,6 +41,51 @@ NEVSOR_LAPOK = {"picasa-menu-leltar.md"}
 #: Itt áll a tényleges viselkedés (mit indít, mit ír, mikor).
 VISELKEDES_LAP = "picasa-menu-parancsok-viselkedes.md"
 
+#: Parancsok, amelyek viselkedése NEM ezen az egy lapon, hanem egy saját,
+#: mélyebb spec-lapon van feltárva.
+#:
+#: ⚠️ Miért kell ez, és miért KURÁLT lista, nem automatika. A mérés eredetileg
+#: EGYETLEN lapot ismert el feltárásnak. Emiatt 2026-08-31-én nyolc
+#: megjelenítési mód „feltáratlanként" állt a sorban, miközben a
+#: `picasa-megjelenitesi-modok.md` a **képpont-matematikájukat is** méri
+#: (LUT-ok bájtra, a tárolás hiánya, az indulási állapot, az export-hatókör).
+#: A determinisztikus sor emiatt újra és újra ezeket adta volna ki — a
+#: kutatói körök a már elvégzett munkát ismételték volna.
+#:
+#: Automatikus „bárhol említik" szabály viszont NEM jó: az említés lehet
+#: puszta felirat-tábla is (a jobb fiók lapjai például a `jobb-fiok-meretek.md`
+#: GEOMETRIA-lapján szerepelnek, a viselkedésük nélkül). Ezért minden sor
+#: **kimondott állítás**: „ezen a lapon ennek a parancsnak a VISELKEDÉSE le van
+#: írva" — mit indít, mit ír, mikor. Aki felvesz ide egy parancsot, ezt állítja,
+#: és greppel ellenőrizhető, hogy igaz-e.
+VISELKEDES_MAS_LAPON: dict[str, frozenset[str]] = {
+    # A tizenegy megjelenítési mód: algoritmus képpontra, tárolás (NINCS),
+    # indulási állapot (`RemoteDesktopCheck`), hatókör (képernyő; export NEM).
+    "picasa-megjelenitesi-modok.md": frozenset({
+        "ID_VIEW_NORMAL", "ID_VIEW_16", "ID_VIEW_LCD", "ID_VIEW_LINEAR",
+        "ID_VIEW_MAC", "ID_VIEW_OV", "ID_VIEW_PROJECTOR", "ID_VIEW_RDESK",
+    }),
+    # A bal hasáb gyökér-hatókörei: melyik gyökérre vált, és honnan jön a pipa
+    # (a `folderviewpopup` kezelő scope-kulcsai: "all" / "mydocs" / "desktop").
+    "picasa-konyvtar-eszkoztar-viselkedes.md": frozenset({
+        "ID_VIEW_MYCOMPUTER", "ID_VIEW_MYDOCS", "ID_VIEW_DESKTOP",
+    }),
+}
+
+
+def _mashol_feltart() -> set[str]:
+    """A más lapon feltárt parancsok — CSAK ha a lap tényleg említi is.
+
+    A kurált lista így nem tud némán hazudni: ha egy lapot átneveznek vagy
+    egy parancs kikerül belőle, a tétel magától elveszti a hatását.
+    """
+    lapok = _lapok()
+    ki: set[str] = set()
+    for lap, parancsok in VISELKEDES_MAS_LAPON.items():
+        szoveg = lapok.get(lap, "")
+        ki |= {p for p in parancsok if p in szoveg}
+    return ki
+
 #: Nem építjük meg — a Picasa Web / Google+ / YouTube szolgáltatások 2016
 #: (az `ID_DELETE_EMPTY_ALBUMS` felirata kimondja: „Üres ONLINE albumok törlése";
 #:  az `ID_BURNCD` egy szállított windowsos/mac nézőprogramot éget lemezre — #32;
@@ -67,6 +112,7 @@ def merd() -> dict:
     parancsok = _parancsok()
     lapok = _lapok()
     viselkedes = lapok.get(VISELKEDES_LAP, "")
+    mashol = _mashol_feltart()
     ki: dict[str, list[str]] = {
         "viselkedes": [], "erdemi": [], "csak_nev": [],
         "sehol": [], "hatokoron_kivul": [],
@@ -78,7 +124,7 @@ def merd() -> dict:
         hol = {nev for nev, szoveg in lapok.items() if cmd in szoveg}
         if not hol:
             ki["sehol"].append(cmd)
-        elif cmd in viselkedes:
+        elif cmd in viselkedes or cmd in mashol:
             ki["viselkedes"].append(cmd)
         elif hol <= NEVSOR_LAPOK:
             ki["csak_nev"].append(cmd)
@@ -127,7 +173,8 @@ def markdown(m: dict) -> str:
         "",
         "| állapot | darab | mit jelent |",
         "|---|---:|---|",
-        f"| ✅ **viselkedés feltárva** | {len(m['viselkedes'])} | a `{VISELKEDES_LAP}`-on: mit indít, mit ír, mikor |",
+        f"| ✅ **viselkedés feltárva** | {len(m['viselkedes'])} | a `{VISELKEDES_LAP}`-on "
+        f"vagy egy saját spec-lapon (`VISELKEDES_MAS_LAPON`): mit indít, mit ír, mikor |",
         f"| 🟡 érdemi lapon szerepel | {len(m['erdemi'])} | valamit tudunk róla, de a viselkedése nincs végigvive |",
         f"| ⚠️ **csak a neve** | {len(m['csak_nev'])} | egyedül a leltárban — a felirata és a helye |",
         f"| ⛔ **sehol** | {len(m['sehol'])} | egyetlen spec sem említi |",
