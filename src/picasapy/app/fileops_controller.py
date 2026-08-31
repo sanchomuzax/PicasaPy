@@ -362,18 +362,28 @@ class FileOpsController(QObject):
         letezok = [p for p in letezok if p.exists()]
         if not letezok:
             return
-        adat = QMimeData()
-        urlek = [QUrl.fromLocalFile(str(p)) for p in letezok]
-        adat.setUrls(urlek)
-        sorok = [muvelet, *(u.toString() for u in urlek)]
-        adat.setData(
-            "x-special/gnome-copied-files",
-            QByteArray("\n".join(sorok).encode("utf-8")),
-        )
-        self._vagolap_adat = adat
+
+        def epits() -> QMimeData:
+            adat = QMimeData()
+            urlek = [QUrl.fromLocalFile(str(p)) for p in letezok]
+            adat.setUrls(urlek)
+            sorok = [muvelet, *(u.toString() for u in urlek)]
+            adat.setData(
+                "x-special/gnome-copied-files",
+                QByteArray("\n".join(sorok).encode("utf-8")),
+            )
+            return adat
+
+        # ⚠️ KÉT KÜLÖN példány, szándékosan. A `setMimeData` ÁTVESZI a
+        # tulajdonjogot: a Qt a vágólapra tett objektumot a következő
+        # vágólap-művelettel törli. Ha ugyanarra a példányra Python-oldali
+        # referenciát is tartanánk, az a törlés után halott objektumra
+        # mutatna — CI-n ez SZEGMENSHIBÁVAL (`exit -11`) állította meg a
+        # tesztfájlt, nem szép hibaüzenettel.
+        self._vagolap_adat = epits()
         vagolap = QGuiApplication.clipboard()
         if vagolap is not None:
-            vagolap.setMimeData(adat)
+            vagolap.setMimeData(epits())
 
     @Slot(list)
     def copyFilesToClipboard(self, paths) -> None:  # noqa: N802
