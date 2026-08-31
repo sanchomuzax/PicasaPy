@@ -28,7 +28,7 @@ import QtQuick.Controls
 // pedig Linux-first.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "folderListContextMenu"
 

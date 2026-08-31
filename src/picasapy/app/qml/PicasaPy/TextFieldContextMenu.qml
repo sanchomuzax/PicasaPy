@@ -19,7 +19,7 @@ import QtQuick.Controls
 // ránézésre is látszik, hogy a helye megvan, de még nem működik (#416).
 //
 // Használat: a mezőre tett MouseArea (jobb gomb) hívja a `popupFor(mező)`-t.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "textFieldContextMenu"
 

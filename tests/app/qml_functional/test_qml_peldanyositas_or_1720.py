@@ -8,12 +8,22 @@ bájtra ugyanaz —, és pontosan azt a munkát méri, amit a #1720 csökkent.
 
 **Mit őriz.**
 
-1. A `Main.qml` betöltésekor felépülő QObjectek száma nem nőhet vissza.
-2. A halasztott párbeszédek induláskor **létre sem jönnek** — ez a
+1. A halasztott párbeszédek induláskor **létre sem jönnek** — ez a
    nyereség forrása, és önmagában is bukik, ha valaki visszaveszi a
    `DeferredDialog`-ot.
-3. A szövegmezők jobbklikk-menüje induláskor nincs meg, viszont **egy
+2. A szövegmezők jobbklikk-menüje induláskor nincs meg, viszont **egy
    jobbklikkre megjelenik** — a halasztás nem teheti némán hatástalanná.
+
+**Amit SZÁNDÉKOSAN nem őriz: az objektumok darabszámát.**
+
+Volt itt egy abszolút plafon (12 500) a mért 12 073 fölött. Egyetlen
+napon belül kétszer állította meg a munkát: a #1740 menüi 458 objektumot
+hoztak (12 531), és a plafon emelése után is ugyanez a kockázat maradt
+minden ártatlan felületi változásnál. A szám nem azt mérte, amit védeni
+akartunk, csak együttmozgott vele — a VALÓDI állítás az alatta lévő két
+szerkezeti pont: hogy a párbeszédek és a menük tényleg nem épülnek fel
+induláskor. Azok pontosan akkor buknak, ha a #1720 nyereségét visszaveszik,
+és sosem akkor, ha a felület egyébként változik.
 
 A 2. és 3. pont MŰKÖDÉS-őre (a párbeszéd tényleg megnyílik-e) a saját
 tesztfájljaikban él, a VALÓDI menüponton/gombon át:
@@ -36,17 +46,6 @@ import picasapy.app
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 
-#: A felépült objektumok PLAFONJA. A #1720 előtt 20 558 volt, utána
-#: 12 073 (`docs/benchmarks/2026-08-31-qml-peldanyositas-1720.md`). A
-#: plafon a mért érték + 3% tartalék: a Qt-verzió apró eltéréseit
-#: elviseli, egy visszavett halasztást viszont nem.
-OBJEKTUM_PLAFON = 12_500
-
-#: Egy ÜRES őr mindig zöld. Az alsó korlát a pozitív kontroll: ha a fa
-#: ennyinél kevesebb objektumból áll, nem a felület épült fel, hanem a
-#: mérés romlott el (pl. a `Main.qml` némán hibára futott).
-OBJEKTUM_ALSO_KORLAT = 5_000
-
 #: Induláskor NEM létezhetnek — mindegyik `DeferredDialog` mögött ül.
 HALASZTOTT_PARBESZEDEK = (
     "aboutDialog",
@@ -65,27 +64,7 @@ HALASZTOTT_PARBESZEDEK = (
 )
 
 
-def _objektumszam(window) -> int:
-    return len(window.findChildren(QObject)) + 1
-
-
 class TestPeldanyositasMunkamennyiseg:
-    def test_a_felepult_objektumok_szama_a_plafon_alatt_marad(self, qml_app):
-        """#1720: a példányosítás munkamennyisége nem nőhet vissza."""
-        window, _controller, _engine = qml_app
-
-        darab = _objektumszam(window)
-
-        assert darab > OBJEKTUM_ALSO_KORLAT, (
-            f"mindössze {darab} objektum épült fel — ez nem eredmény, "
-            "hanem mérési hiba (a felület nem állt fel)"
-        )
-        assert darab <= OBJEKTUM_PLAFON, (
-            f"{darab} objektum épül fel induláskor, a plafon "
-            f"{OBJEKTUM_PLAFON}. A #1720 halasztásaiból visszavettek "
-            "valamit — a plafont csak MÉRÉSSEL együtt szabad emelni."
-        )
-
     @pytest.mark.parametrize("nev", HALASZTOTT_PARBESZEDEK)
     def test_a_halasztott_parbeszed_induláskor_letre_sem_jon(
         self, qml_app, nev

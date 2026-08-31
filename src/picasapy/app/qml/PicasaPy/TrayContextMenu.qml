@@ -12,7 +12,7 @@ import QtQuick.Controls
 // szűkíti a kijelölést, az „eltávolítás" pedig kiveszi belőle.
 //
 // Önálló, signal-alapú komponens: a bekötést a TrayBar.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "trayContextMenu"
 

@@ -29,6 +29,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   programból. Mostantól az ablak rögzített szélességű, a szöveg tördel, és
   a hosszú fájlnév is olvashatóan elfér benne. Ugyanez a javítás vonatkozik
   a Google Earth-export eredményablakára is.
+- **A magyar menüfeliratok csonkoltak (#1740).** A menük szélessége eddig
+  rögzített 200 képpont volt — nem az angol felirathoz igazodott, hanem
+  semmihez: a Qt menü-alapértelmezése nem méri meg a saját tételeit.
+  Angolul ez ritkán tűnt fel, magyarul viszont a menüsáv 18 menüjéből 12
+  csonkolt, összesen 51 tételen („Rendezés a legutóbbi változtatások
+  alapján", „Kép exportálása mappába…"). Mostantól minden menü — a
+  menüsáv és a jobbklikk-menük egyaránt — a leghosszabb feliratához
+  igazodik, és a nyelv váltásakor újramér, tehát a csonkolás egyik
+  nyelven sem tér vissza. A rövid menük szélessége nem változott.
 - **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
   mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
   számától függ, hanem attól, hány exportcélt tart nyilván a program — ez a

@@ -362,7 +362,7 @@ MenuBar {
         onActivated: bar.newAlbumRequested()
     }
 
-    Menu {
+    PicasaMenu {
         title: qsTr("&File")
         // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt —
         // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
@@ -527,7 +527,7 @@ MenuBar {
             onTriggered: Qt.quit()
         }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&Edit")
         // #1475: a visszavonás a menü ÉLÉN — ide teszi az eredeti is
         // (`eMenuEdit::ID_UNDO`). A felirat megnevezi a műveletet, hogy a
@@ -589,7 +589,7 @@ MenuBar {
             onTriggered: bar.clearSelectionRequested()
         }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&View")
         MenuItem {
             objectName: "menuViewLibraryView"
@@ -712,7 +712,7 @@ MenuBar {
         // SZÁNDÉKOSAN nem kerültek be: ebben a fájlban ma csak a hét
         // FŐMENÜ-cím visel mnemonikot, a 130+ tétel egyike sem, és egyetlen
         // almenüt kiemelni következetlenséget szülne. Ez külön jegy dolga.
-        Menu {
+        PicasaMenu {
             objectName: "menuViewDisplayMode"
             title: qsTr("Display Mode")
             MenuItem {
@@ -851,7 +851,7 @@ MenuBar {
         // ma FELTÉTEL NÉLKÜL jelez (`statusChanged.emit()`), ezért a hiba itt
         // épp nem látszik — ez azonban a setter véletlen mellékhatása, nem
         // szerződés. A visszakötés ettől függetlenné teszi a menüt.
-        Menu {
+        PicasaMenu {
             objectName: "menuViewThumbnailCaption"
             title: qsTr("Thumbnail Caption")
             MenuItem {
@@ -926,7 +926,7 @@ MenuBar {
         // az „Egyszerűsített fanézet" ettől FÜGGETLEN, tartós kapcsoló.
         // A négy gyökér (Sajátgép / Képek / Dokumentumok / Asztal) külön
         // jegy (#1407), ezért itt még nem szerepel.
-        Menu {
+        PicasaMenu {
             id: folderViewMenu
             objectName: "menuViewFolderView"
             title: qsTr("Folder View")
@@ -984,7 +984,7 @@ MenuBar {
             }
         }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("F&older")
         PicasaMenuItem { text: qsTr("Edit Description..."); placeholder: true }
         MenuItem {
@@ -1011,7 +1011,7 @@ MenuBar {
         // A négy rendezési szempont kizáró csoport; a „Fordított sorrend"
         // ÖNÁLLÓ kapcsoló (az állapota minden kattintásra változik, a kötés
         // tehát magától helyreáll) — ott nem kell visszakötés.
-        Menu {
+        PicasaMenu {
             objectName: "menuFolderSortBy"
             title: qsTr("Sort By")
             MenuItem {
@@ -1104,14 +1104,14 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Move..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Delete..."); placeholder: true }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&Picture")
         PicasaMenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; placeholder: true }
         // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
         // az `eMenuPicture` osztályból ismert — a kijelölt N kép
         // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
         // (`controller.applyEffectMany`, `batch_effect_controller`).
-        Menu {
+        PicasaMenu {
             objectName: "menuPictureBatchEdit"
             title: qsTr("Batch Edit")
             enabled: bar.photoActionsEnabled
@@ -1203,7 +1203,7 @@ MenuBar {
             onTriggered: bar.propertiesPanelRequested()
         }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&Create")
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Set as Desktop Background..."); placeholder: true }
@@ -1219,7 +1219,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Make a Gift CD..."); placeholder: true }
         // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
         // filmkészítés a submenu egyetlen tételeként maradt életben
-        Menu {
+        PicasaMenu {
             title: qsTr("Movie")
             // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
             // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
@@ -1234,7 +1234,7 @@ MenuBar {
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: false; retired: true }  // #638
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&Tools")
         MenuItem {
             text: qsTr("Folder Manager...")
@@ -1269,12 +1269,12 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Adjust Date and Time..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
-        Menu { title: qsTr("Upload"); enabled: false }
+        PicasaMenu { title: qsTr("Upload"); enabled: false }
         // #530: a Geocímke almenü élesedett — az export motorja kész
         // (export/kml.py + earth.py). A feliratok a bináris index szerint:
         // eMenuTools::Geotag = "&Geotag", ID_EXPORT_EARTH =
         // "Export to Google Earth File".
-        Menu {
+        PicasaMenu {
             title: qsTr("Geotag")
             MenuItem {
                 objectName: "menuToolsExportEarth"
@@ -1299,7 +1299,7 @@ MenuBar {
                 onTriggered: bar.earthViewRequested()
             }
         }
-        Menu {
+        PicasaMenu {
             title: qsTr("Experimental")
             // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta
             MenuItem {
@@ -1331,7 +1331,7 @@ MenuBar {
         // Itt a hiba MÉRHETŐ volt: a `LanguageController.setLanguage` azonos
         // értéknél szándékosan NEM jelez, tehát a már aktív nyelvre kattintva
         // mindkét pipa eltűnt.
-        Menu {
+        PicasaMenu {
             objectName: "menuToolsLanguage"
             title: qsTr("Language")
             MenuItem {
@@ -1369,7 +1369,7 @@ MenuBar {
             onTriggered: bar.optionsRequested()
         }
     }
-    Menu {
+    PicasaMenu {
         title: qsTr("&Help")
         PicasaMenuItem { text: qsTr("Help Contents and Index") + "\tF1"; placeholder: true }
         PicasaMenuItem { text: qsTr("Keyboard Shortcuts"); placeholder: true }
