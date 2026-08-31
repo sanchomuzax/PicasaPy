@@ -15,6 +15,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
+from picasapy.edit.save import find_original_backup
 from picasapy.fileops import (
     RENAME,
     InvalidFolderNameError,
@@ -331,6 +332,41 @@ class FileOpsController(QObject):
             reveal_in_file_manager(Path(path))
         except OSError as error:
             self.operationFailed.emit("reveal", str(error))
+
+    @Slot(str, result=bool)
+    def hasOriginalOnDisk(self, path: str) -> bool:  # noqa: N802
+        """Van-e a képnek megőrzött EREDETIJE a `.picasaoriginals`-ban (#1613).
+
+        Az „Eredeti a lemezen" tétel ettől él vagy szürkül: az eredetiben is
+        letiltott, ha nincs mit megmutatni."""
+        cel = _to_local_path(path) or path
+        if not cel:
+            return False
+        return find_original_backup(Path(cel)) is not None
+
+    @Slot(str)
+    def revealOriginal(self, path: str) -> None:  # noqa: N802
+        """A `.picasaoriginals`-beli EREDETI megmutatása a fájlkezelőben (#1613).
+
+        Az eredeti `CThumbUI::locateorigondiskmenu_win` parancsa. Nem a
+        szerkesztett fájlt mutatja meg — épp az a lényege, hogy a megőrzött
+        eredetihez lehessen eljutni.
+
+        Ha nincs eredeti, a felhasználó üzenetet kap; a menütétel ilyenkor
+        amúgy is szürke (`hasOriginalOnDisk`), de a néma bukást akkor sem
+        engedjük, ha valaki mégis idejut."""
+        cel = _to_local_path(path) or path
+        eredeti = find_original_backup(Path(cel)) if cel else None
+        if eredeti is None:
+            self.operationFailed.emit(
+                "locate_original",
+                self.tr("This picture has no preserved original on disk."),
+            )
+            return
+        try:
+            reveal_in_file_manager(eredeti)
+        except OSError as error:
+            self.operationFailed.emit("locate_original", str(error))
 
     @Slot(str)
     def revealFolder(self, folder_path: str) -> None:

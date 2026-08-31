@@ -47,6 +47,9 @@ PicasaMenu {
     property string currentAlbumToken: ""
     //: a jelenleg mutatott személy neve (üres, ha nem személy-album)
     property string personName: ""
+    //: #1613: van-e a képnek megőrzött eredetije a `.picasaoriginals`-ban —
+    //: enélkül az „Eredeti a lemezen" tétel szürke, mint az eredetiben
+    property bool hasOriginalOnDisk: false
 
     signal openRequested()
     signal addToAlbumRequested(string token)
@@ -63,6 +66,10 @@ PicasaMenu {
     signal moveRequested()
     signal openFileRequested()
     signal locateRequested()
+    //: #1613: a `.picasaoriginals`-beli megőrzött eredeti megmutatása
+    signal locateOriginalRequested()
+    //: #1613: ugrás a kép VALÓDI mappájára (album-/Emberek-nézetből)
+    signal locateInPicasaRequested()
     signal deleteRequested()
     signal copyFullPathRequested()
     signal propertiesRequested()
@@ -263,16 +270,36 @@ PicasaMenu {
     // HELYFOGLALÓ: a réteg megvan (`controller.selectFolder(mappa)`), de a
     // bekötés a Main.qml-ben lakik (forró fájl) — ld. az integrációs
     // igényeket a jegyben.
-    PicasaMenuItem {
-        objectName: "contextMenuLocateInPicasa"
-        text: qsTr("Locate in Picasa")
-        visible: menu.currentAlbumToken !== ""
-        placeholder: true
-    }
-    MenuItem {
-        objectName: "contextMenuLocate"
-        text: qsTr("Locate on Disk") + "\tCtrl+Enter"
-        onTriggered: menu.locateRequested()
+    // #1613: az eredetiben ez ALMENÜ (`CThumbUI::locatemenu`), három
+    // tétellel — nálunk egyetlen lapos parancs volt. A középső („Eredeti a
+    // lemezen") a `.picasaoriginals`-beli megőrzött eredetihez visz, ami
+    // eddig sehonnan nem volt elérhető.
+    PicasaMenu {
+        objectName: "contextMenuLocateMenu"
+        title: qsTr("Locate")
+
+        MenuItem {
+            objectName: "contextMenuLocate"
+            text: qsTr("File on Disk") + "\tCtrl+Enter"
+            onTriggered: menu.locateRequested()
+        }
+        MenuItem {
+            objectName: "contextMenuLocateOriginal"
+            text: qsTr("Locate Original on Disk")
+            // az eredetiben is SZÜRKE, ha nincs megőrzött eredeti — a
+            // tétel léte így is megmondja, hogy a funkció létezik
+            enabled: menu.hasOriginalOnDisk
+            onTriggered: menu.locateOriginalRequested()
+        }
+        MenuItem {
+            objectName: "contextMenuLocateInPicasa"
+            text: qsTr("Locate in Picasa")
+            // #1613: album- és Emberek-nézetben van értelme — ott a kép
+            // nem a saját mappájában látszik. Mappanézetben az eredeti sem
+            // mutatja.
+            visible: menu.currentAlbumToken !== "" || menu.personName !== ""
+            onTriggered: menu.locateInPicasaRequested()
+        }
     }
     MenuItem {
         objectName: "contextMenuDelete"
