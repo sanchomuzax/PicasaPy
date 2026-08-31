@@ -22,3 +22,6 @@ collagepanel/deleteclips,megvan,PicasaPy/CollageClipsTab.qml,"„Remove the sele
 collagepanel/caption_checkbox,megvan,PicasaPy/CollageSettingsTab.qml,"Képfelirat-kapcsoló: collageCaptionCheckbox (499. sor), a controller collageCaptions tulajdonságával (70. sor)"
 collagepanel/portrait,megvan,PicasaPy/CollageSettingsTab.qml,"Álló tájolás gomb: collagePortraitButton, a collageOrientation ==  portrait állapottal"
 collagepanel/landscape,megvan,PicasaPy/CollageSettingsTab.qml,"Fekvő tájolás gomb: collageLandscapeButton (344. sor), collageOrientation == landscape (352. sor)"
+quicktagconfig/recent_checkbox,megvan,PicasaPy/QuickTagsConfigDialog.qml,"quickTagsReserveRecentCheck (84. sor); a felirat nálunk „Reserve the top two buttons…”, az eredetiben „Reserve top two buttons…” — egy szó eltérés miatt nem párosult"
+quicktagconfig/recent_checkbox_label,megvan,PicasaPy/QuickTagsConfigDialog.qml,"ua., a jelölőnégyzet felirata (86. sor)"
+quicktagconfig/autofill,megvan,PicasaPy/QuickTagsConfigDialog.qml,"quickTagsAutoFillCheck (92. sor): „Fill the empty boxes above with frequently used tags”"
