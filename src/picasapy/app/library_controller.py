@@ -1225,7 +1225,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if mappak:
             self._on_folders_dirty(mappak)
 
-    @Slot(str)
+    # SZÁNDÉKOSAN nincs `@Slot` — ugyanazért, amiért a `resyncMovedFolder`-en
+    # sincs: a hívó a `wire_fileops` PYTHON-oldali kötése (`folderDeleted` →
+    # itt), a QML soha nem hívja. Slotként a `kepesseg_or.py` joggal jelezné
+    # felületről elérhetetlen képességnek — a CI el is bukott rajta.
     def resyncDeletedFolder(self, path: str) -> None:  # noqa: N802
         """A LOMTÁRBA tett mappa kivezetése az indexből (#1638).
 
