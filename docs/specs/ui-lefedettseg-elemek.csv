@@ -43,3 +43,7 @@ editpanel/retouchtext,megvan,PicasaPy/EditorRetouchPanel.qml,"Retus-útmutató (
 editpanel/redeyetext,megvan,PicasaPy/EditorRedeyePanel.qml,"Vörösszem-útmutató (64. sor) + az automatikus javítás visszajelzése (79–80.)"
 editpanel/retouch_label,megvan,PicasaPy/EditorRetouchPanel.qml,"„Retouch” fejléc (47. sor)"
 editpanel/redeye_label,megvan,PicasaPy/EditorRedeyePanel.qml,"„Redeye” fejléc (55. sor)"
+editpanel/filllight_icon,megvan,PicasaPy/EditorFinetunePanel.qml,"Derítőfény: SliderCaption „Fill Light” + finetuneFillSlider (105., 108. sor)"
+editpanel/droppertoggle,megvan,PicasaPy/EditorFinetunePanel.qml,"Semleges színválasztó: finetuneNeutralPicker (208. sor), buboréksúgója az eredetiét követi („Pick a neutral gray or white area of the photo to…”, 211.)"
+editpanel/faces_button,megvan,PicasaPy/PhotoViewer.qml,"Arcok megjelenítése/elrejtése: facesToggleButton (1490. sor), a facesVisible kapcsolóval (165–166.)"
+editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,"Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében"
