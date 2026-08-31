@@ -21,6 +21,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   minden párbeszéd változatlanul ugyanúgy nyílik meg, mint eddig.
 
 ### Javítva
+- **Az export eredményét közlő ablak szélessége kiszámíthatatlan volt
+  (#1599).** A hosszú hibaüzenetek — épp azok, amiket el kell olvasni —
+  egyetlen sorba nyúltak, és az ablak a képernyő szélessége felé hízott.
+  A jelenség csak a Windowson megszokott ablakstílussal jött elő, ezért a
+  fejlesztői gépen soha nem látszott; a tulajdonos jelentette futó
+  programból. Mostantól az ablak rögzített szélességű, a szöveg tördel, és
+  a hosszú fájlnév is olvashatóan elfér benne. Ugyanez a javítás vonatkozik
+  a Google Earth-export eredményablakára is.
 - **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
   mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
   számától függ, hanem attól, hány exportcélt tart nyilván a program — ez a

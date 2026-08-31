@@ -46,6 +46,18 @@ QML_SCRIPT_ERROR_PATTERNS = (
     "Cannot anchor to an item",
 )
 
+# #1599/#1748: a `Binding loop detected` minta SZÁNDÉKOSAN nincs a listában.
+# Felvettük, és a CI azonnal MEGMÉRTE, hogy legalább két további párbeszédünk
+# hurkol (`SaveDialogs.qml:171`, `UnnamedFacesView.qml:283`) — a forrás-söprés
+# szerint 38 párbeszéd hordozza ugyanazt a mintát. A minta bekapcsolása tehát
+# nem egy őr bevezetése volna, hanem egy több tucat helyet érintő javítás
+# kikényszerítése egyetlen kiadás közben.
+#
+# A #1599 saját hurkát ezért CÉLZOTT teszt őrzi
+# (`tests/app/qml_functional/test_kotesi_hurok_fusion_1599.py`, Fusion
+# stílusú gyerekprocesszben), a többi a #1748 hatóköre — ott a minta
+# bekapcsolása az utolsó lépés, a javítások UTÁN.
+
 
 def is_qml_script_error(message: str) -> bool:
     """QML-szkripthiba-e az üzenet (a mi kötéseink hibája), vagy környezeti zaj."""
