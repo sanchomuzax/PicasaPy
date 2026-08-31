@@ -137,7 +137,7 @@ class TestAholNemNyithat:
         """A Címkék panel beviteli mezőjében az Enter a címkét adja hozzá."""
         window, _c = _feed(qml_app, qt_app)
         _allj(window, qt_app, 2)
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         _fokusz(_gyerek(window, "photoGrid"), qt_app)
         _fokusz(_gyerek(window, "tagInput"), qt_app)

@@ -39,7 +39,7 @@ class TestViewerPropertiesPanel:
     def test_follows_library_toggle(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _open_viewer(window, qt_app)
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         panel = _panel(window)
         assert panel.property("visible") is True
@@ -49,7 +49,7 @@ class TestViewerPropertiesPanel:
     def test_entries_follow_navigation(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         viewer = _open_viewer(window, qt_app)
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
@@ -58,7 +58,7 @@ class TestViewerPropertiesPanel:
     def test_close_clears_shared_state(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _open_viewer(window, qt_app)
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         panel = _panel(window)
         panel.closeRequested.emit()

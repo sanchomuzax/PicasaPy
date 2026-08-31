@@ -21,7 +21,7 @@ class TestQuickTagsGrid:
 
     def test_eight_buttons_present(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         for i in range(8):
             button = window.findChild(QObject, f"quickTagButton{i}")
@@ -31,7 +31,7 @@ class TestQuickTagsGrid:
         self, qml_app, qt_app
     ):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         button = window.findChild(QObject, "quickTagButton0")
         assert button.property("text") == "?"
@@ -41,7 +41,7 @@ class TestQuickTagsGrid:
         window, controller, lib, engine = qml_app
         controller.setQuickTagsReserveRecent(False)
         controller.setQuickTagLabel(3, "vitorlás")
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
@@ -58,7 +58,7 @@ class TestQuickTagsGrid:
         self, qml_app, qt_app
     ):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
@@ -70,7 +70,7 @@ class TestQuickTagsGrid:
         self, qml_app, qt_app
     ):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [1])
         window.setProperty("selectedIndex", 1)
         qt_app.processEvents()
@@ -92,7 +92,7 @@ class TestQuickTagsConfigDialog:
 
     def test_gear_click_opens_dialog(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         dialog = self._open_dialog(window, qt_app)
         assert dialog.property("visible") is True
@@ -100,7 +100,7 @@ class TestQuickTagsConfigDialog:
     def test_dialog_shows_current_labels(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         controller.setQuickTagLabel(4, "hegyek")
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
         field = window.findChild(QObject, "quickTagField4")
@@ -108,7 +108,7 @@ class TestQuickTagsConfigDialog:
 
     def test_editing_a_field_persists_to_controller(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
         field = window.findChild(QObject, "quickTagField5")
@@ -121,7 +121,7 @@ class TestQuickTagsConfigDialog:
         self, qml_app, qt_app
     ):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
         checkbox = window.findChild(QObject, "quickTagsReserveRecentCheck")
@@ -133,7 +133,7 @@ class TestQuickTagsConfigDialog:
         self, qml_app, qt_app
     ):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
         checkbox = window.findChild(QObject, "quickTagsReserveRecentCheck")
@@ -146,7 +146,7 @@ class TestQuickTagsConfigDialog:
 
     def test_autofill_checkbox_toggle_persists(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
         checkbox = window.findChild(QObject, "quickTagsAutoFillCheck")

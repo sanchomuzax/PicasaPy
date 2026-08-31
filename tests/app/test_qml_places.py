@@ -33,7 +33,7 @@ class TestPlacesMenu:
 
     def test_panel_opens_from_the_window_state(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("placesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "places")
         _settle(qt_app)
         assert window.findChild(QObject, "placesPanel").property("visible") is True
         assert window.findChild(QObject, "menuViewPlaces").property("checked") is True
@@ -42,7 +42,7 @@ class TestPlacesMenu:
 class TestPlacesContent:
     def test_marker_count_label_follows_the_controller(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("placesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "places")
         _settle(qt_app)
         label = window.findChild(QObject, "placesCountLabel")
         assert label is not None
@@ -51,7 +51,7 @@ class TestPlacesContent:
 
     def test_markers_appear_after_geotagging(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("placesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "places")
         controller.setGeotagRows([0], 47.5, 19.05)
         _settle(qt_app)
         assert controller.geoMarkerCount == 1
@@ -60,7 +60,7 @@ class TestPlacesContent:
 
     def test_clear_button_needs_a_selection(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("placesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "places")
         _settle(qt_app)
         button = window.findChild(QObject, "placesClearButton")
         assert button.property("enabled") is False
@@ -72,7 +72,7 @@ class TestPlacesContent:
         """A panel sosem marad üresen: vagy a térkép jön be, vagy — ha a
         QtLocation nincs telepítve — a magyarázó szöveg."""
         window, controller, lib, engine = qml_app
-        window.setProperty("placesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "places")
         _settle(qt_app)
         loader = window.findChild(QObject, "placesMapLoader")
         fallback = window.findChild(QObject, "placesFallbackText")

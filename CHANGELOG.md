@@ -8,6 +8,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A jobb oldali fiók négy lapja végre egymást váltja (#1773).** A
+  Tulajdonságok · Címkék · Emberek · Helyek panel eddig négy független
+  kapcsoló volt: **mind a négy nyitva lehetett egyszerre**, és mind a négy
+  zárva is. Az eredeti Picasában egyik állapot sem létezik — ott a négy lap
+  kizárja egymást, egyszerre pontosan egy látszik. Mostantól nálunk is:
+  bármelyik lap megnyitása bezárja a másik hármat, a menü pipája pedig
+  mindig azt mutatja, ami tényleg látszik. A már nyitott lapra kattintva a
+  fiók **nem** csukódik be (a mérés szerint az eredeti sem csukja).
+
+## [0.8.157] – 2026-09-01
+
+### Javítva
 - **A felső menüsor csoportosztása az eredetit követi (#1774).** A
   tulajdonos bejelentette, hogy a Picasa 3 menüszerkezete eltér a mienktől.
   Nyolc képernyőmentést készített a magyar Picasa mind a nyolc menüjéről;
@@ -20,6 +32,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   vonal darabolta szét az egybetartozó tételeket. Mind javítva.
   A menüsor **sorrendje** eddig igazolatlan feltevés volt — a mentések
   megerősítik.
+
+## [0.8.156] – 2026-08-31
+
+### Javítva
 - **A kiadások megint elmondják, mi változott (#1770).** A kiadási
   oldalon augusztus 28. óta minden verzió azt írta magáról, hogy „ehhez a
   kiadáshoz nem készült emberi összefoglaló" — pedig készült: minden

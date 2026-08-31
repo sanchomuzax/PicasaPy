@@ -1619,9 +1619,13 @@ Rectangle {
                        controller.propertiesOf(viewer.currentIndex))
                     : []
                 onCloseRequested: {
+                    // #1773: a négy fiók-jelző SZÁRMAZTATOTT, közvetlenül
+                    // nem írható — a fiókot az ablak függvénye üríti. A
+                    // `!== undefined` a #1572-őr mintája: a próbák
+                    // stub-ablakán nincs rajta a függvény.
                     if (viewer.appWindow
-                        && viewer.appWindow.propertiesPanelOpen !== undefined)
-                        viewer.appWindow.propertiesPanelOpen = false
+                        && viewer.appWindow.ureseidAFiokot !== undefined)
+                        viewer.appWindow.ureseidAFiokot()
                 }
             }
         }
@@ -1706,10 +1710,14 @@ Rectangle {
                 viewer.deleteRequested(viewer.currentPath)
         }
         onPropertiesRequested: {
+            // #1773: a helyi menü a fiók Tulajdonságok lapjára VÁLT (az
+            // eredetiben a négy lap kizáró csoport); ha már az látszik, a
+            // nézőben a billentyűhöz hasonlóan zárja a fiókot.
             if (viewer.appWindow
-                && viewer.appWindow.propertiesPanelOpen !== undefined)
-                viewer.appWindow.propertiesPanelOpen =
-                    !viewer.appWindow.propertiesPanelOpen
+                && viewer.appWindow.valtsFiokLapot !== undefined)
+                viewer.appWindow.propertiesPanelOpen
+                    ? viewer.appWindow.ureseidAFiokot()
+                    : viewer.appWindow.valtsFiokLapot("properties")
         }
     }
 
