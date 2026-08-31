@@ -16,8 +16,13 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
 from pathlib import Path
+
+# #1611: az adatosztályok a cv2-mentes `types.py`-ban élnek, hogy az
+# `index/faces_detected.py` ne rántsa be az OpenCV-t pusztán a rekordokért.
+# Az újraexport miatt a `from picasapy.faces.detector import FaceDetection`
+# változatlanul működik.
+from .types import FaceDetection, FaceLandmarks
 
 import numpy as np
 
@@ -99,12 +104,6 @@ def download_model(
 
     return download_spec(DETECTOR_SPEC, dest=dest, url=url, timeout=timeout).ok
 
-
-# #1611: az adatosztályok a cv2-mentes `types.py`-ban élnek, hogy az
-# `index/faces_detected.py` ne rántsa be az OpenCV-t pusztán a rekordokért.
-# Az újraexport miatt a `from picasapy.faces.detector import FaceDetection`
-# változatlanul működik.
-from .types import FaceDetection, FaceLandmarks
 
 class FaceDetector:
     """`cv2.FaceDetectorYN` hiánytűrő becsomagolása.
