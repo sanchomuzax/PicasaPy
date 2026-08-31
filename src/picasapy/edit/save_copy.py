@@ -55,6 +55,8 @@ jelentek volna meg. Levezetés: `docs/specs/picasa-ini-format.md`.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -66,6 +68,7 @@ from picasapy.edit.save import (
 )
 from picasapy.edit.session import EditSession
 from picasapy.ioutil import write_atomic
+from picasapy.metadata.copy_signature import sign_jpeg, source_taken_at
 
 #: A másolat nevének mintája — MÉRT: a `0x00993650` egyetlen sztringje
 #: `"%s-%03lu"` (tő, majd kötőjel és HÁROM jegyű, nullákkal feltöltött
@@ -172,6 +175,17 @@ def save_copy(
     # A kódolás ELŐBB fut, mint bármilyen írás: fájlformázási hibánál
     # (`filesaveerr3`) így egyetlen bájt sem kerül a lemezre.
     payload = _encode_image(target.suffix, rendered_image, jpeg_quality)
+
+    # #1642: a másolat METAADAT-ALÁÍRÁST kap — az eredeti is ezt teszi
+    # (EXIF `Software`/`Artist`/`DateTime` + XMP `dc:creator`/`ModifyDate`),
+    # és közben MEGŐRZI a forrás eredeti felvételi idejét. A forráshoz nem
+    # nyúlunk: az aláírás a már kódolt bájtsorba kerül, a képadat
+    # változatlan. Az aláírásunk a SAJÁT nevünk (`PicasaPy`), nem „Picasa".
+    payload = sign_jpeg(
+        payload,
+        modified_at=datetime.now(),
+        taken_at=source_taken_at(image_path),
+    )
 
     # ⚠️ #1643: A MÁSOLÁS NEM ÍR A `.picasa.ini`-BE — sem a célról, sem a
     # forrásról. A #1527 az ellenkezőjét döntötte (`redo=` + `originhash`),
