@@ -43,17 +43,32 @@ def nyisd_meg(window, parbeszed_neve: str) -> None:
 
 
 def epitsd_fel(window, parbeszed_neve: str) -> None:
-    """A párbeszéd FELÉPÍTÉSE a menüpontján át, majd azonnali bezárás.
+    """A párbeszéd FELÉPÍTÉSE a menüpontján át, MELLÉKHATÁS NÉLKÜL.
 
-    Sok teszt nem magát a megnyitást vizsgálja, hanem a párbeszéd
-    belsejében ülő elemeket (`findChild`) — azokhoz elég, hogy a fa
-    álljon. A `nyisd_meg` viszont MEG IS NYITJA a párbeszédet, ami
-    átállítaná a kiinduló állapotot; ez a változat ezért utána becsukja.
+    Sok teszt nem a megnyitást vizsgálja, hanem a párbeszéd belsejében ülő
+    elemeket (`saveErrorMessage`, `exportQuality`, …) — azokhoz elég, hogy
+    a fa álljon.
+
+    ⚠️ A menüpont nem csak nyit: a `menuFileSave` MENT is. Üres kijelöléssel
+    viszont minden belépő azonnal visszatér (`openSave([])`), a `Loader` mégis
+    felépül — ezért a hívás idejére kiürítjük a kijelölést, utána
+    visszaállítjuk. Enélkül a felépítés egy „lemezhiba" hibaüzenetet hagyott
+    a párbeszédben, és a KÖVETKEZŐ teszt állítása bukott el rajta.
 
     A felépítés útja itt is a valódi menüpont, nem a `Loader.active`."""
     if window.findChild(QObject, parbeszed_neve) is not None:
         return
-    nyisd_meg(window, parbeszed_neve)
+
+    kijeloles = window.property("selectedIndexes")
+    kijelolt = window.property("selectedIndex")
+    window.setProperty("selectedIndexes", [])
+    window.setProperty("selectedIndex", -1)
+    try:
+        nyisd_meg(window, parbeszed_neve)
+    finally:
+        window.setProperty("selectedIndexes", kijeloles)
+        window.setProperty("selectedIndex", kijelolt)
+
     parbeszed = window.findChild(QObject, parbeszed_neve)
     if parbeszed is not None and parbeszed.property("visible"):
         QMetaObject.invokeMethod(

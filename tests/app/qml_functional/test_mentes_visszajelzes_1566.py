@@ -236,6 +236,13 @@ class TestBukottMentesNemJelentKeszet:
         self, qml_app, qt_app
     ):
         window, controller, _engine = qml_app
+        # #1720: a SaveDialogs HALASZTOTT, és a hibaüzenetet egy
+        # `Connections` kapja el a vezérlő jelzéséből. Ez a teszt a
+        # vezérlőt KÖZVETLENÜL hívja (a felületet megkerülve), ezért a
+        # párbeszédnek a művelet ELŐTT állnia kell — különben a jelzés
+        # senkihez nem ér el. A felületen ez nem fordul elő: minden
+        # mentés-belépő az `ensure()`-ön át megy.
+        epitsd_fel(window, "saveDialogs")
         sav = _sav(window)
         _kijelol(window, qt_app, [0])
         forras = Path(str(controller.photos.filePathAt(0)))
