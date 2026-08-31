@@ -6,9 +6,13 @@ megerősítő dialógus megnyílását és a controller-hívást ellenőrizzük,
 valódi ideiglenes könyvtárfán, mock nélkül."""
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from support.halasztott_parbeszed import nyisd_meg
 
 
 def _child(window, name):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (ld. support/halasztott_parbeszed.py).
+    nyisd_meg(window, "folderManagerDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj

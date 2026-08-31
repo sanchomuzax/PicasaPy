@@ -109,14 +109,18 @@ class TestBelepesiPont:
         """VALÓDI billentyűleütés — a felirat Ctrl+Shift+P-t hirdet."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
-        parbeszed = _elem(window, "printDialog")
-        assert parbeszed.property("visible") is False
+        # #1720: a párbeszéd HALASZTOTT — a billentyű ELŐTT létre sem jön.
+        assert window.findChild(QObject, "printDialog") is None, (
+            "a nyomtatás ablaka már a billentyű előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         QTest.keyClick(
             window, Qt.Key_P, Qt.ControlModifier | Qt.ShiftModifier
         )
         qt_app.processEvents()
 
+        parbeszed = _elem(window, "printDialog")
         assert parbeszed.property("visible") is True
         assert parbeszed.property("contactSheet") is True
 

@@ -60,6 +60,7 @@ ImportSourceDialog 1.0 ImportSourceDialog.qml
 AddFileDialog 1.0 AddFileDialog.qml
 TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
+DeferredDialog 1.0 DeferredDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
 EditOverwriteDialog 1.0 EditOverwriteDialog.qml
 CompactDatabaseDialog 1.0 CompactDatabaseDialog.qml

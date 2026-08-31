@@ -3,9 +3,14 @@ felderítés-API-ját (scanner/discovery.py, #199) mockolva ellenőrizzük a
 dialógus megjelenését, a mappák kiválasztását és az átvételt."""
 
 from PySide6.QtCore import QEventLoop, QMetaObject, QObject, Qt, QTimer
+from support.halasztott_parbeszed import nyisd_meg
 
 
 def _child(window, name):
+    # #1720: a Mappakezelő HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    if name.startswith("folderManager"):
+        nyisd_meg(window, "folderManagerDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj

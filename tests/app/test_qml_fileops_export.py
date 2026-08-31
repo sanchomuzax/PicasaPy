@@ -22,12 +22,19 @@ from PySide6.QtCore import (
     QTimer,
 )
 
+from support.halasztott_parbeszed import nyisd_meg
+
 
 # a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
 # teszt-fájlokkal)
 
 
 def _child(window, name):
+    # #1720: az exportálás párbeszédei HALASZTOTTAK — ha még nem
+    # állnak, a Fájl ▸ Exportálás menüponttal (valódi vezérlő)
+    # építtetjük fel őket.
+    if name.startswith("export"):
+        nyisd_meg(window, "exportDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj

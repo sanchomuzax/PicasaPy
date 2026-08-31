@@ -35,10 +35,15 @@ from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
+from support.halasztott_parbeszed import epitsd_fel
 from support.qt_wait import wait_for_photo_op, wait_for_signal
 
 
 def _elem(root, nev: str) -> QObject:
+    # #1720: az itt keresett elemek a HALASZTOTT párbeszéd
+    # belsejében ülnek — előbb fel kell épülnie, a valódi
+    # menüponton át (ld. support/halasztott_parbeszed.py).
+    epitsd_fel(root, "saveDialogs")
     obj = root.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található"
     return obj
@@ -370,6 +375,13 @@ class TestHibaagakEsFolyamatjelzes:
 
     def test_a_nevutkozes_a_HIVATALOS_mondatot_adja(self, qml_app, qt_app):
         window, controller, _engine = qml_app
+        # #1720: a SaveDialogs HALASZTOTT, és a hibaüzenetet egy
+        # `Connections` kapja el a vezérlő jelzéséből. Ez a teszt a
+        # vezérlőt KÖZVETLENÜL hívja (a felületet megkerülve), ezért a
+        # párbeszédnek a művelet ELŐTT állnia kell — különben a jelzés
+        # senkihez nem ér el. A felületen ez nem fordul elő: minden
+        # mentés-belépő az `ensure()`-ön át megy.
+        epitsd_fel(window, "saveDialogs")
         _kijelol(window, qt_app, [0])
         forras = Path(str(controller.photos.filePathAt(0)))
         (forras.parent / f"{forras.stem}-001{forras.suffix}").write_bytes(b"foglalt")
@@ -395,6 +407,13 @@ class TestHibaagakEsFolyamatjelzes:
         self, qml_app, qt_app
     ):
         window, controller, _engine = qml_app
+        # #1720: a SaveDialogs HALASZTOTT, és a hibaüzenetet egy
+        # `Connections` kapja el a vezérlő jelzéséből. Ez a teszt a
+        # vezérlőt KÖZVETLENÜL hívja (a felületet megkerülve), ezért a
+        # párbeszédnek a művelet ELŐTT állnia kell — különben a jelzés
+        # senkihez nem ér el. A felületen ez nem fordul elő: minden
+        # mentés-belépő az `ensure()`-ön át megy.
+        epitsd_fel(window, "saveDialogs")
         _kijelol(window, qt_app, [0])
         forras = Path(str(controller.photos.filePathAt(0)))
 
@@ -413,6 +432,13 @@ class TestHibaagakEsFolyamatjelzes:
 
     def test_a_formatumhiba_a_HARMADIK_mondatot_adja(self, qml_app, qt_app):
         window, controller, _engine = qml_app
+        # #1720: a SaveDialogs HALASZTOTT, és a hibaüzenetet egy
+        # `Connections` kapja el a vezérlő jelzéséből. Ez a teszt a
+        # vezérlőt KÖZVETLENÜL hívja (a felületet megkerülve), ezért a
+        # párbeszédnek a művelet ELŐTT állnia kell — különben a jelzés
+        # senkihez nem ér el. A felületen ez nem fordul elő: minden
+        # mentés-belépő az `ensure()`-ön át megy.
+        epitsd_fel(window, "saveDialogs")
         _kijelol(window, qt_app, [0])
         cel = _mappa(controller) / "kimenet.nincsilyenformatum"
 

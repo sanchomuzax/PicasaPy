@@ -35,6 +35,8 @@ import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
 
+from support.halasztott_parbeszed import nyisd_meg
+
 import picasapy.app
 
 _APP_DIR = Path(picasapy.app.__file__).parent
@@ -50,6 +52,14 @@ def _elem(root, nev):
 
 def _parbeszed(window):
     return _elem(window, "importSourceDialog")
+
+
+def _meg_nem_all(window):
+    """#1720: a párbeszéd HALASZTOTT — a megnyitás ELŐTT létre sem jön."""
+    assert window.findChild(QObject, "importSourceDialog") is None, (
+        "az Import ablak már a megnyitás előtt felépült — a #1720 "
+        "halasztása elromlott"
+    )
 
 
 def _bezar(window, qt_app):
@@ -94,8 +104,7 @@ class TestMenupont:
 
     def test_a_menupontra_kattintva_megnyilik_a_parbeszed(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        parbeszed = _parbeszed(window)
-        assert parbeszed.property("visible") is False
+        _meg_nem_all(window)
 
         tetel = _elem(window, "menuFileImportFrom")
         assert tetel.property("enabled") is True
@@ -104,7 +113,7 @@ class TestMenupont:
         )
         qt_app.processEvents()
 
-        assert parbeszed.property("visible") is True, (
+        assert _parbeszed(window).property("visible") is True, (
             "a Fájl ▸ Importálás forrása… nem nyitotta meg a párbeszédet"
         )
         _bezar(window, qt_app)
@@ -145,13 +154,12 @@ class TestGyorsbillentyu:
 
     def test_a_ctrl_m_megnyitja_a_parbeszedet(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        parbeszed = _parbeszed(window)
-        assert parbeszed.property("visible") is False
+        _meg_nem_all(window)
 
         QTest.keyClick(window, Qt.Key_M, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert parbeszed.property("visible") is True, (
+        assert _parbeszed(window).property("visible") is True, (
             "a Ctrl+M nem nyitotta meg az importálás párbeszédét"
         )
         _bezar(window, qt_app)
@@ -213,7 +221,9 @@ class TestSzovegmezoElsobbsege:
         assert str(mezo.property("text")) == "m", (
             "a keresőmező nem kapta meg a leütött betűt"
         )
-        assert _parbeszed(window).property("visible") is False, (
+        # #1720: halasztás mellett a „nem nyílt meg" azt jelenti, hogy
+        # a párbeszéd LÉTRE SEM JÖTT — ez erősebb állítás a `visible`-nél
+        assert window.findChild(QObject, "importSourceDialog") is None, (
             "egy sima betű megnyitotta az importálás párbeszédét"
         )
 
@@ -252,4 +262,8 @@ class TestForrasEsFordítas:
 )
 def test_a_lanc_minden_szeme_megvan(qml_app, nev):
     window, _controller, _engine = qml_app
+    # #1720: a párbeszéd halasztott — a lánc utolsó szeme a MENÜPONTON át
+    # jön létre; épp ez bizonyítja, hogy a lánc végig ép
+    if nev == "importSourceDialog":
+        nyisd_meg(window, "importSourceDialog")
     assert window.findChild(QObject, nev) is not None, nev

@@ -22,9 +22,13 @@ from PySide6.QtCore import QEvent, QPointF, Qt, QTimer, QEventLoop, QMetaObject
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtCore import QObject
+from support.halasztott_parbeszed import nyisd_meg
 
 
 def _dialog_window(window):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (ld. support/halasztott_parbeszed.py).
+    nyisd_meg(window, "folderManagerDialog")
     dialog = window.findChild(QQuickWindow, "folderManagerDialog")
     assert dialog is not None, "folderManagerDialog nem található Window-ként"
     return dialog
@@ -56,6 +60,9 @@ def _tree_controller(engine):
 
 
 def _open_with_root(window, qt_app, engine, root_path):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    nyisd_meg(window, "folderManagerDialog")
     dialog = window.findChild(QObject, "folderManagerDialog")
     loop = _quit_on(_tree_controller(engine).childrenLoaded)
     dialog.setProperty("rootPath", str(root_path))
@@ -135,6 +142,9 @@ class TestNyilKattintas:
         from PySide6.QtTest import QTest
 
         window, engine, gyoker = self._fa(qml_app, qt_app, tmp_path)
+        # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+        # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         dialog.setProperty("selectedPath", "")
         nyil = _by_name(window, f"folderTreeArrow:{gyoker / 'alfa'}")
@@ -157,6 +167,9 @@ class TestNyilKattintas:
         from PySide6.QtTest import QTest
 
         window, engine, gyoker = self._fa(qml_app, qt_app, tmp_path)
+        # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+        # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         dialog.setProperty("selectedPath", "")
         sor = _by_name(window, f"folderTreeRow:{gyoker / 'alfa'}")
@@ -191,6 +204,9 @@ class TestGombsor:
         from PySide6.QtCore import QObject
 
         window, _controller, _lib, _engine = qml_app
+        # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+        # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         QMetaObject.invokeMethod(dialog, "open", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
@@ -259,8 +275,13 @@ class TestFajlMenuBekotes:
         from PySide6.QtCore import QObject
 
         window, _controller, _lib, _engine = qml_app
-        dialog = window.findChild(QObject, "folderManagerDialog")
-        assert dialog.property("visible") is not True
+        # #1720: a Mappakezelő HALASZTOTT — induláskor LÉTRE SEM JÖN.
+        # Ez az állítás egyszerre őrzi a nyereséget (nincs korai
+        # példányosítás) és a bekötést (a menüpont mégis megnyitja).
+        assert window.findChild(QObject, "folderManagerDialog") is None, (
+            "a Mappakezelő már a menüpont előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         tetel = window.findChild(QObject, "menuFileAddFolder")
         assert tetel is not None
@@ -269,6 +290,10 @@ class TestFajlMenuBekotes:
         )
         qt_app.processEvents()
 
+        dialog = window.findChild(QObject, "folderManagerDialog")
+        assert dialog is not None, (
+            "a Fájl menü tétele nem hozta létre a Mappakezelot"
+        )
         assert dialog.property("visible") is True, (
             "a Fájl menü tétele nem nyitotta meg a Mappakezelot"
         )
@@ -330,6 +355,9 @@ class TestRadiosorIkonok:
         gyoker = tmp_path / "radiofa"
         (gyoker / "alfa").mkdir(parents=True)
         _open_with_root(window, qt_app, engine, gyoker)
+        # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+        # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         dialog.setProperty("selectedPath", str(gyoker / "alfa"))
         qt_app.processEvents()

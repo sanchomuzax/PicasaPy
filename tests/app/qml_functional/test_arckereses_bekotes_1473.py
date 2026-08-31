@@ -179,8 +179,11 @@ class TestBelepesiPont:
 
     def test_a_menupont_megnyitja_a_parbeszedet(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        parbeszed = _elem(window, "faceScanDialog")
-        assert parbeszed.property("visible") is False
+        # #1720: a párbeszéd HALASZTOTT — a menüpont ELŐTT létre sem jön.
+        assert window.findChild(QObject, "faceScanDialog") is None, (
+            "az arckeresés ablaka már a menüpont előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         QMetaObject.invokeMethod(
             _elem(window, "menuToolsFaceScan"),
@@ -189,12 +192,20 @@ class TestBelepesiPont:
         )
         qt_app.processEvents()
 
+        parbeszed = _elem(window, "faceScanDialog")
         assert parbeszed.property("visible") is True
 
     def test_a_parbeszed_NEM_modalis(self, qml_app, qt_app):
         """#449: a beolvasás alatt SEMMI nem blokkolhatja a felhasználót —
         a haladás a bal hasáb albumsorán is látszik, az ablak bezárható."""
         window, _controller, _engine = qml_app
+        # #1720: a párbeszéd halasztott — a menüponttal nyitjuk meg.
+        QMetaObject.invokeMethod(
+            _elem(window, "menuToolsFaceScan"),
+            "triggered",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
         parbeszed = _elem(window, "faceScanDialog")
         assert parbeszed.property("modality") == Qt.WindowModality.NonModal
 

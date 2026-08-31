@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Gyorsult
+- **A program felülete lényegesen gyorsabban jelenik meg (#1720).** Eddig a
+  PicasaPy indulásnál felépítette a teljes felületet — beleértve azt a húsz
+  párbeszédablakot is (Beállítások, Mappakezelő, Nyomtatás, Exportálás,
+  Duplikátum-kereső és a többi), amit a legtöbben soha meg sem nyitnak. A
+  legdrágább tétel egy szem sem látta apróság volt: minden egyes
+  szövegbeviteli mező alá odaépült a saját jobbklikk-menüje, negyven
+  darab — ez önmagában a felépített felület negyede. Mostantól ezek csak
+  akkor jönnek létre, amikor a felhasználó tényleg megnyitja őket. A
+  felület felépítése így **41%-kal kevesebb munkát** végez, és a mért
+  indulási szakasz **kb. 0,8 másodperccel rövidebb** — a jobbklikk-menü és
+  minden párbeszéd változatlanul ugyanúgy nyílik meg, mint eddig.
+
 ### Javítva
 - **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
   mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
