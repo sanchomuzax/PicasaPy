@@ -290,6 +290,16 @@ A kapu 8. lépésében, a szálbontás ELŐTT három mentés fut (sorrendben,
 `0x9c98`-as esetéből) ugyanebbe a menetbe tartozik: az ablak pozíciója a
 kilépés pillanatában rögzül.)
 
+> **Helyesbítés (2026-08-31, második kör):** a Fájl → Kilépés
+> parancsazonisítója a javított menü-horgonnyal **`0x9c41`** (nem
+> `0x9c98` — az az EPROCESS/„Order Prints" rekordja), és a `0x9c41` esete
+> (`0x5cba27`) **`PostMessage(WM_SYSCOMMAND, SC_CLOSE)`**-t küld — tehát
+> a menü Kilépés és az X **bizonyítottan ugyanarra a kapura** fut. A
+> korábbi kör „a menü útja a kapuig nem volt nyomonkövethető" megjegyzése
+> ezzel lezárult. (Az `0x9c98`-as eset — web-panel-lezárás — ettől független
+> menütétel; a horgony-módszer határát ld.
+> `picasa-menu-parancsok-viselkedes.md` 34.1.)
+
 ## Amit ebből érdemes átvenni
 
 1. **Az „X" jelentése szintfüggő.** Nézetben visszalép, lapon projektet zár,
