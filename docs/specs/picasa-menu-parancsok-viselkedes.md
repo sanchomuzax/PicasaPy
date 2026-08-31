@@ -2768,3 +2768,104 @@ Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kív�
   a fogantyút adja meg; almenü-tételek ugyanoda tartoznak (49.1).
 - **„A #1798 oka a beállítás olvasásának hiánya"** — megdőlt: a
   `sendRows()`-nak nem volt hívója (49.2).
+
+## 50. tétel — a `publish`: HÁROM panel egy névtérben, és a Picasa WINE-tudata (2026-09-01)
+
+*Tizenegyedik kör az UI-lefedettségi axisról (#1778). Panel: `publish`
+(30 hiány). A (d) szabály próbája: a leltár leírása szerint
+„Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk", ami
+egyben csábítás is, hogy az egészet halott szolgáltatásnak minősítsük.*
+
+### 50.1 ⛔ NEM egy panel: három, és csak az EGYIK halott
+
+A `publish` névtér elemei három, egymástól független funkcióhoz
+tartoznak:
+
+| csoport | elemek | állapot |
+|---|---|---|
+| **biztonsági mentés** | `backup_go/cancel/eject/help`, `backupcdheader2`, `backuptext2/3`, **`newbackupset` · `editbackupset` · `deletebackupset`**, `selectall`, `selectnone` | **ÉL** → #440 |
+| **Ajándék-CD** | `presentcd_go/cancel/eject/help`, `giftcdtext`, `addmore`, `picsizemenu` | **ÉL** (lemezre írás) → #32 |
+| **webre töltés** | `rpoptionbox1/2/3` + feliratok, `uploadallsync`, `upgradestorage`, `webpublish_cancel`, `replicate_*` | **HALOTT** (Picasa Web Albums) |
+
+⇒ Ha a panelt egyben zárnánk le „megszűnt szolgáltatás" címén, **két élő
+funkció veszne el** vele. *(Ez a 47. kör `choose_mail`-csapdájának
+ismétlődése — most már szabályként fogtuk meg.)*
+
+### 50.2 ⭐ A mentés-KÉSZLET első osztályú fogalom
+
+A 35.6 pont a `backup.xml`-t és a `backuphash` ini-kulcsot rögzítette. A
+panel ennél többet mond: a mentés **nevesített készletekbe** szerveződik,
+teljes életciklussal.
+
+| művelet | bizonyíték |
+|---|---|
+| **új készlet** | `publish/newbackupset` · `il_BurnPanel::bksetname` |
+| **szerkesztés** | `publish/editbackupset` · **„Edit Backup Set"** párbeszéd (`0x00678e80`), címe `il_NewBkDialog::EditTitle`, gombja `il_NewBkDialog::EditOKButton` („Change") |
+| **átnevezés hibája** | *„Unable to rename Backup Set"* (`0x00679ca0`) |
+| **törlés** | `publish/deletebackupset` + megerősítés: ***„Are you sure you want to delete the backup set \"%s\"?"*** |
+| **alapértelmezett név** | **„My Backup Set"** (`0x006706d0`) |
+| **melyik volt az utolsó** | `Preferences\LastBkSet` |
+| **futás közbeni állapot** | *„Updating Backup Set"* (`0x00672f50`) |
+
+**A CD-oldali beállítások** (ugyanott, `0x006706d0`):
+`Preferences\CDEraseFirst` · `CDLimitSize` · `CDSlideshow` ·
+`CDSlideshowInclSetup` · `UploadAllSize`, és a lemezre kerülő
+**`setup.exe`** — ez zárja a kört a 35.6-ban említett „szállított
+nézőprogram" megfigyeléssel.
+
+### 50.3 ⭐ A Picasa MAGA tudott a Wine-ról
+
+A mentés-készlet szerkesztője (`0x00678e80`) mellékesen elárul valamit,
+ami eddig sehol nem szerepelt nálunk:
+
+| bizonyíték | mit jelent |
+|---|---|
+| **`wine_get_unix_file_name`** (`0x00403640`, `kernel32`-ből feloldva) | a bináris **futásidőben megkérdezi a Wine-t**, mi a Windows-út UNIX-megfelelője |
+| **`Preferences\ShowUnixPaths`** — **hét** függvényben (`0x00672380`, `0x00678e80`, `0x006befa0`, `0x00738c00`, `0x0073a140`, `0x00749ba0`, `0x007e3210`) | kapcsoló: a felület **UNIX-útvonalakat** mutasson-e Windows-osak helyett |
+| `%s (wine)` (`0x00990ee0`) | a Wine jelenléte megjelenik egy megjelenített szövegben |
+| `runtime\winedisable.txt` (`0x006e0670`) | szállított fájl a Wine-specifikus viselkedés kikapcsolására |
+
+⇒ **A Picasa 3.9 nem „véletlenül futott Wine alatt": felismerte, és a
+felületét is igazította hozzá.** Ez a hivatalos „Picasa for Linux"
+csomag Wine-alapú voltának bizonyítéka a binárisból.
+
+**Miért érdekes nekünk (Linux-first projekt):** a `ShowUnixPaths` hét
+helyen hat, tehát az útvonal-megjelenítés **kereszmetsző** kérdés volt
+náluk is. Nálunk ez nem kérdés (natívan UNIX-utakat mutatunk) — de a
+`.picasa.ini`-kompatibilitásnál érdemes tudni, hogy az **eredeti is
+kétféle útvonal-alakot ismert**.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| mentés-készletek (új/szerkeszt/töröl) | teljes életciklus, megerősítéssel | a menütétel **placeholder** (35.6) | a **#440** kapja meg |
+| `LastBkSet`, `My Backup Set` | tartós állapot + alapnév | nincs | ua. |
+| Ajándék-CD | lemezre írás, `setup.exe`-vel | nincs | **#32** |
+| CD-beállítások (`CDEraseFirst`, `CDLimitSize`, `CDSlideshow*`) | négy kulcs | nincs | ua. |
+| webre töltés | `rpoptionbox*`, `upgradestorage` | — | **hatókörön kívül** |
+| `ShowUnixPaths` | hét helyen ható kapcsoló | nálunk tárgytalan | — (tudás, nem teendő) |
+
+### Nyitott kérdések mérlege (50.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a panel háromfelé bontása és annak eldöntése, melyik ága
+  halott (50.1); a mentés-készlet mint első osztályú fogalom, teljes
+  szövegkészlettel (50.2); a Picasa Wine-tudata (50.3).
+- **HATÓKÖRÖN KÍVÜL:** a webre töltés ága.
+
+*(Záró mondat a 45.1 szerint: ebben a panelben **van** hiányzó vezérlő;
+a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `publish` panel egészében halott szolgáltatás"** — megdőlt: három
+  funkció lakik benne, kettő él (50.1).
+- **„A biztonsági mentés egyetlen művelet"** — megdőlt: **nevesített
+  készletek**, létrehozás/szerkesztés/törlés életciklussal (50.2).
+- **„A Picasa nem tudott róla, hogy Wine alatt fut"** — megdőlt:
+  `wine_get_unix_file_name`, `ShowUnixPaths` hét helyen, `%s (wine)`,
+  `winedisable.txt` (50.3).
