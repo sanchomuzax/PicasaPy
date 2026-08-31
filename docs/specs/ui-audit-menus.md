@@ -14,6 +14,11 @@
 > menüsáv mind a 32 kötése rekordcímmel és `cmd`-azonosítóval szerepel,
 > a funkcióleírással együtt.
 
+> 📁 **A menü-képernyőmentések forráshelye** (a tulajdonos gépén, hálózati
+> megosztáson): `\\DS215j\lemez\My Pictures\Picasa-3-menuk`. A
+> felhő-sessionből NEM elérhető (#326). A menüsor **sorrendje** és a menük
+> **valós szélessége** innen mérendő ki: **#1774**.
+
 Forrás: az eredeti **Picasa 3.9** magyar nyelvű felületének 35 képernyőképe
 (`2026-07-17 20 54 38.png` … `2026-07-17 21 00 20.png`, végigkattintva minden
 felső menün). Összevetve a jelenlegi implementációval:
