@@ -569,12 +569,24 @@ Item {
                ? qsTr("Error") : qsTr("Export")
         modal: true
         anchors.centerIn: parent
+        // #1599: a szélesség EGYIRÁNYÚ függés. A `Dialog` implicit
+        // szélessége a tartalmától függ; ha a tartalom `Text`-je viszont
+        // szabadon nőhet, a Fusion stílus `Dialog.qml`-je kötési hurkot
+        // jelent, és a kötést ELDOBJA — a párbeszéd szélessége
+        // kiszámíthatatlan lesz. (Mérve Fusionnel, `QT_QUICK_CONTROLS_STYLE`;
+        // a fejlesztői alapstílussal nem jön elő, a felhasználó Windowson
+        // jelentette.) Ugyanaz a minta, mint a fenti
+        // `exportOverwriteDialog`-nál (#1185): rögzített szélesség, tördelő
+        // szöveg.
+        implicitWidth: 420 + leftPadding + rightPadding
         standardButtons: Dialog.Ok
         property string message: ""
         property var failedDetails: []
         Text {
             objectName: "exportResultText"
             text: exportResultDialog.message
+            width: 420
+            wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -617,11 +629,23 @@ Item {
         title: qsTr("Export to Google Earth File")
         modal: true
         anchors.centerIn: parent
+        // #1599: a szélesség EGYIRÁNYÚ függés. A `Dialog` implicit
+        // szélessége a tartalmától függ; ha a tartalom `Text`-je viszont
+        // szabadon nőhet, a Fusion stílus `Dialog.qml`-je kötési hurkot
+        // jelent, és a kötést ELDOBJA — a párbeszéd szélessége
+        // kiszámíthatatlan lesz. (Mérve Fusionnel, `QT_QUICK_CONTROLS_STYLE`;
+        // a fejlesztői alapstílussal nem jön elő, a felhasználó Windowson
+        // jelentette.) Ugyanaz a minta, mint a fenti
+        // `exportOverwriteDialog`-nál (#1185): rögzített szélesség, tördelő
+        // szöveg.
+        implicitWidth: 420 + leftPadding + rightPadding
         standardButtons: Dialog.Ok
         property string message: ""
         Text {
             objectName: "earthResultText"
             text: earthResultDialog.message
+            width: 420
+            wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }

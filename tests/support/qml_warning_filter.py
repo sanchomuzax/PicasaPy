@@ -44,6 +44,12 @@ QML_SCRIPT_ERROR_PATTERNS = (
     # szántuk. A tulajdonos konzolján jelent meg minden induláskor, kétszer —
     # a tesztek addig nem fogták meg, mert ez a minta hiányzott innen.
     "Cannot anchor to an item",
+    # #1599: `Binding loop detected for property "implicitWidth"` — a kötés
+    # körbeér, ezért a Qt ELDOBJA: az érintett tulajdonság értéke onnantól
+    # nem determinisztikus. Mindig a mi kötésünk hibája, platformfüggetlen,
+    # és a hatása néma — a tulajdonos Windowson, futó programból jelentette,
+    # miközben a fejlesztői alapstílussal elő sem jött.
+    "Binding loop detected",
 )
 
 
