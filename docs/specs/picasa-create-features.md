@@ -1603,6 +1603,198 @@ Az `eMenuCreateMovie` két tétele: **A kijelölésben lévő arcokból…**
 alapértelmezett cím: „People Movie". Az arc-film külön képfelbontással
 dolgozik (`facemakemovieres` vs `makemovieres`).
 
+### 2.5/b A CMakeFaceMoviePanel működése — a „recompute" megerősítője (#1408)
+
+*A 2.5 csak két mondat volt; az arc-film PANEL-jének működése eddig nem
+volt feltárva. Ez a szakasz a `0x0061df10` (12 420 b, az arc-film-panel
+fő művelet-kezelője) diszasszemblálásából adja a teljes képet.*
+
+**A panel belépési parancsai** (a `0x0061df10` első switch-e): `recompute`,
+`render`, `cancel` (+ a fül- és gomb-vezérlők). A `recompute` (a
+`makemoviepanel/recompute` gomb) az **újraszámolás** — és ez az egyetlen,
+amely MEGERŐSÍTÉST kér:
+
+| lépés | mit tesz | bizonyíték |
+|---|---|---|
+| 1. | `Preferences\CMakeFaceMoviePanel::askapplyconfirm` **olvasása** (`GetPreference`, `0x407a20`), alap **0** | `0x0061dfa9`–`0x0061dfc2` |
+| 2. | ha **0** (még nem „ne kérdezz újra") → a **`CMakeFaceMoviePanelApplyDialog`** felépítése és megjelenítése | `0x0061e073` |
+| 3. | a párbeszéd szövege: **„This will generate a new movie removing all the text slides you added. Are you sure?"** | `0x0061e078` (`0xc9d0b8`, EN sor) |
+| 4. | a párbeszéd címe: **„Please Confirm..."** (`CCollageUI::ConfirmCloseTitle`) | `0x0061e097` |
+| 5. | **„Do not ask again"** pipa (`CMakeFaceMoviePanelRememberDialog`) | `0x0061e002` |
+| 6. | Igen + pipa → a választ `SetPreference` (`0x401900`) rögzíti a `askapplyconfirm` kulcsba (`1`) | `0x0061e0f7`–`0x0061e12c` |
+| 7. | Igen → `vt[0xa0]` hívás (a tényleges újraszámolás indítása) | `0x0061e14e` |
+
+A `recompute` eredménye a filmkészítő a **3. fül** (`makemoviepanel/tab3`) —
+a művelet a `makemoviepanel/edittabbase` + `previewimage` (2.4/i-ből)
+paneljeit érinti.
+
+**Két következmény a #1408-as jegyhez:**
+
+1. A „Film arcokból" **újraszámolása elveszi a felhasználó szöveges diáit**
+   (a párbeszéd szövege kimondja) — a megvalósításnak ezt a kockázatot
+   ugyanígy jeleznie kell.
+2. A beállítás **tárolódik** (`Preferences\CMakeFaceMoviePanel::askapplyconfirm`)
+   — a „ne kérdezz újra" a párbeszéden állítható, mint a kollázs egyéb
+   konfirmálóinál.
+
+### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
+
+*A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
+a szakasz a lefordított VALUES-t és a TÁROLÁSI kulcsokat adja — az olcsó
+láncból (`0x00613b50` + `0x00616940` diszasszemblálásából).*
+
+#### A kimeneti méretlista — 7 méret (`CMakeMoviePanel::size0..size6`)
+
+A `makemoviepanel/moviesize` listbox építője a `0x00613b50`-ben, a rendezett
+sorrend:
+
+| index | érték | honosítási kulcs |
+|---|---|---|
+| 0 | `320x240` | `CMakeMoviePanel::size0` |
+| 1 | `640x480` | `CMakeMoviePanel::size1` |
+| 2 | `800x600` | `CMakeMoviePanel::size2` |
+| 3 | `1024x768` | `CMakeMoviePanel::size3` |
+| 4 | `1600x1200` | `CMakeMoviePanel::size4` |
+| 5 | `1280x720 (720p)` | `CMakeMoviePanel::size5` |
+| 6 | `1920x1080 (1080p)` | `CMakeMoviePanel::size6` |
+
+*(A `size5`/`size6` felirata magában hordozza a minőségi jelölőt — a
+honosított szöveget `XxY` alakban kell kezelni, nem kulcsként.)*
+
+**Bizonyíték:** a `0x00613b50`-ben a `0x9ae560` (érték feloldó) hívásait
+követő literálok: `0xc9bf04`=`320x240`, `0xc9bf24`=`640x480`,
+`0xc9bf44`=`800x600`, `0xc9bf64`=`1024x768`, `0xc9bf88`=`1600x1200`,
+`0xc9bfac`=`1280x720 (720p)`, `0xc9bfd4`=`1920x1080 (1080p)`.
+
+#### A hangsáv-opciók — 3 állás (`CMakeMoviePanel::audiooption0..2`)
+
+| index | felirat | kulcs |
+|---|---|---|
+| 0 | Truncate audio | `CMakeMoviePanel::audiooption0` |
+| 1 | Fit photos into audio | `CMakeMoviePanel::audiooption1` |
+| 2 | Loop photos to match audio | `CMakeMoviePanel::audiooption2` |
+
+**Bizonyíték:** `0xc9c018` / `0xc9c048` / `0xc9c080` a `0x00613b50`-ben.
+
+#### A film-beállítások TÁROlása — `Preferences` kulcsok (`0x00616940`)
+
+A `0x00616940` (1021 b) a MakeMoviePanel beállítás-beolvasója, amely a
+létező kulcsokból tölti a film-modell szerkezetét:
+
+| kulcs | jelentés | beolvasó |
+|---|---|---|
+| `Preferences\CMakeMoviePanel::showcaptions` | a `makemoviepanel/show_captions` kapcsoló állása | `0x00616961` |
+| `Preferences\CMakeMoviePanel::cropfit` | a „Full frame photo crop" kapcsoló | `0x00616981` |
+| `makemoviepanel/remove_low_res_faces` | a „Remove Low Resolution Faces" | a `0x00618050`-ből |
+| `Preferences\movievolume` | a hangerő (ld. 2.7) | a `0x00618050`-ből |
+| `Preferences\makemovie1to1` | az „1:1 / valódi méret" kapcsoló (ld. 2.7) | a `0x00618050`-ből |
+
+A beolvasott kapcsolók a `[+0x4bc]` (a film-modell) `+0x2c4`–`+0x2c8`
+bájtjaira kerülnek (`0x006169cf`–`0x00616a08`); a `+0x2cc`/`+0x2d0` a
+méretlistáé, a `+0x2d8` a modell-mutató. A MakeMoviePanel **három rádiója**
+(`smart_order_radio` / `album_order_radio` / `chronological_order_radio`)
+a `0x00618050`-ben épül; a diasorrend az `.mxf` `<ordering>%d</ordering>`
+mezőjébe kerül (2.4/b), nem Preferences-be.
+
+### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
+
+*A 2.2/2.6 a felső panel beállításait, ez a szakasz a film-előnézet ALUL
+lévő `video_control_bar2` vezérlősávját (a #1154 „nem feltárt" pontját).
+A `.tre`-t és a kezelőket összevetve:*
+
+#### A felület (`video_control_bar2.tre`)
+
+| elem | típus / horgony | szerep |
+|---|---|---|
+| `video_control_bar2/controlbar` | `root`, `m_scaleX m_offsetT` | a sáv maga |
+| `video_control_bar2/moviescrubslider_container` | `m_offsetLTR` | a scrub-tartály |
+| `video_control_bar2/time` | `m_systemfont11 textalign center` | **a lejátszási idő** (2.7/b) |
+| `video_control_bar2/scaleslider` | `slider 3`, `YConstraint 1,1,0` | a scrub-csúszka |
+| `video_control_bar2/volumeslider` | `slider 0`, `m_offsetRT` | a hangerő |
+| `video_control_bar2/moviecontrolsclip` | `m_offsetLT` | a play/pause clip |
+| `video_control_bar2/1to1` | `m_offsetRT` | a **valódi méret** gomb; Tooltip: „Show actual movie size (don't stretch)" |
+| `video_control_bar2/fullscreen` | `m_offsetRT` | a **teljes képernyő** gomb; Tooltip: „Play full screen" |
+
+#### A kezelők (a `MoviePreviewHandler` `0x006248e0` és a hozzá tartozó magok)
+
+| függvény | méret | szerep |
+|---|---|---|
+| `0x006248e0` | 1030 b | a **MoviePreviewHandler** fő művelet-kezelő (billentyű + felület) |
+| `0x00619380` | 86 b | a play/pause **állapot-szinkron** — a `[+0x4a0]` videó-objektum `[+0x7c]` bájtja alapján a `moviecontrols/play` vs `pause` (+ ikonjaik) mutatása |
+| `0x0061ca80` | 435 b | a **pause-toggle** — a `[+0x4f2]` flag váltása, a `[+0x4b4]` mediaszolgáltató lejátszás-leállítás, majd a `moviecontrols/pause` elem frissítése |
+| `0x0061b1f0` | 611 b | a `video_control_bar2/time` **szövegfrissítő** (2.7/b) |
+| `0x0061cc40` | 76 b | az 1to1 gomb **állapotkérdője** |
+| `0x005931c0` | 647 b | a `video_control_bar` (SZERKESZTŐ) volumeslider kezelő — a `movievolume` SetPreference-írója |
+
+#### A két preferencia, amit a sáv kezel
+
+| kulcs | tartomány / alap | kezelő |
+|---|---|---|
+| `Preferences\movievolume` | egész, **0..1000**, alap **500** (=50%, `/1000`-nel normál) | olvasó: `0x00618a0f–0x00618a53` (a MakeMoviePanel-konstruktor: `video_control_bar2/volumeslider`, `fild` + `fdiv [1000.0]`, alap `0x1f4`); író: `0x005931c0` |
+| `Preferences\makemovie1to1` | bool, alap **1** (bekapcsolva) | olvasó/író: `0x006161ff`–`0x00616234` (`SetPreference`) + `0x0061cc40` |
+
+### 2.7/b A `video_control_bar2/time` formátuma — MEGFEJTVE
+
+A `0x0061b1f0` (611 b) a `time` elem szövegét építi **két konvertált
+időből, `/` elválasztóval** (`0x2f` push a `0x0061b382`-nél):
+
+```
+HH:MM:SS / HH:MM:SS
+ (eltelt)   (összes)
+```
+
+| lépés | művelet | bizonyíték |
+|---|---|---|
+| bemenet | két 64 bites **DirectShow `REFERENCE_TIME`** (100 ns), a videó 0-pontjától | `fild qword` a `0x0061b2b2` / `0x0061b317` |
+| konverzió | `/ 10 000 000` (a `0xcf3e88` = `10000000.0` double) | `0x0061b2bd` |
+| kerekítés | az összes-hossz `+0.5` (`0xc72150` = `0.5`) | `0x0061b328` |
+| formátum | `ytDateTime::Format4` = **`%.2d:%.2d:%.2d`** (óra:perc:másodperc) | `0x98c9a0`; a `0x9ae560` a formátum-kulcsra: `0xca85f0` |
+| fűzés | az eltelt + `/` + az összes string | `0x0061b382` |
+
+Tehát az **eltelt idő** a `video_control_bar2/time` bal oldalán, az **összes
+időtartam** a jobb oldalán, `HH:MM:SS`-ben — a DirectShow 100 ns-os
+időbázisából. *(A `video_control_bar` — a SZERKESZTŐ — időjelzője ettől
+külön él, `m_systemfont11 textalign center`, a `ui-audit-editor.md` videó
+szakaszában.)*
+
+### 2.7/c A MoviePreviewHandler billentyű-kezelése (#1154 42–44. rekesz)
+
+A `0x006248e0` a **műveletkód + VK-pár** alapján diszpécsel: a `[+0xc]`
+struktúra `[+8]` mezője a műveletkód, a `[+0x10]` a VK-kiegészítő. ⚠️ **Ez
+NEM a 26-os közös belső eseménykód-készlet** (`picasa-eger-es-kijeloles.md`
+4.2/b) — a `MoviePreviewHandler` modulnak **saját** a kódolása; ahol a
+`0x13` itt a Play/Pause-t váltja, ott a 26-os készletben (a rács
+kontextusában) a 0x13 „találat-vizsgálat" — a két modul nem osztozik a
+jelentésen. A mért váltások:
+
+| `[+8]` | `[+0x10]` | akció | bizonyíték |
+|---|---|---|---|
+| `0x13` | — | **Pause/Play** (`0x619ac0`) | `0x006248f1`→`0x0062490a` |
+| `0x18` | `0x20` (Space le) | a `video_control_bar2/moviecontrols` play/pause + ikon frissítése | `0x00624c3b`–`0x00624c67` |
+| `0x17` | `0x20` (Space fel) | **szünet**, ha a `[+0x4f2]` (lejátszik) (a `0x61ca80`) | `0x00624cba`–`0x00624cc5` |
+| `0x17` | `0x0d` (Enter) | seek-eltérés-ellenőrzés | `0x00624c82`–`0x00624ca4` |
+| `0x0d` | — | **teljes képernyő** (méret-ellenőrzéssel) | `0x00624b67`–`0x00624bec` |
+| `0x1f` / `0x20` | — | a teljes-képernyő jelző `[+0x217]` = 1 / 0 | `0x00624b2d`–`0x00624b59` |
+| `0x1b` | — | **Esc** — a teljes képernyőből kilépés (a `[+0x213]`-feltétellel) | `0x00624918` |
+
+A 42–44. rekesz (`/`, `,`, `.`) a #1154-ben ⬜-ként szerepelt; a mért
+térkép szerint a film-előnézet a **Space-t** és a **Pause-t** használja
+lejátszás/szünetre, az **Entert** és az **Escet** a teljes képernyőre — a
+`/`, `,`, `.` (SHORTCUTS.XML, 2.4-ben) **nem** ezen a kezelőn megy.
+
+### 2.8 Mi aktiválja a filmkészítést? — a belépési pontok (#1397, #1408)
+
+A `Létrehozás ▸ Film` almenü (`eMenuCreateMovie::ID_MAKEMOVIE`) a
+`0x00618050` (a MakeMoviePanel) létrehozásával indul — ez indítja a
+`i18n\moviecreate_text.xml` és `i18n\tooltips.xml` betöltését
+(`0x00618064`, `0x0061807b`), majd a `video_control_bar2` és a
+`makemoviepanel/*` vezérlők felépítését. Az **arc-film** a
+`CMakeFaceMoviePanel` (a `0x0061df10` kezelő) — **ugyanaz a `video_control_bar2`
+sáv**, `askapplyconfirm`-kapuval (2.5/b). A két filmtípus **egy modul**,
+két beállítás-készlettel: a `Preferences\makemovieres` és a
+`Preferences\facemakemovieres` külön-külön a normál- és az arc-film
+felbontását tárolja (`0x006193e0`).
+
 ## 3. A Létrehozás menü többi tétele
 
 | menüpont | ID | mit tudunk |

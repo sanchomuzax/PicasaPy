@@ -25,6 +25,17 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
 
+⭐ **2026-08-30 — a „Film készítése" szakasz MŰKÖDÉS-sel bővült** (2.5/b–2.8):
+a `CMakeFaceMoviePanel` **„recompute" megerősítője** (`askapplyconfirm`
+preferencia, a „Do not ask again" párbeszéd → #1408); a **7 kimeneti méret**
+(320x240 … 1920x1080), a **3 hangsáv-opció** (Truncate/Fit/Loop), a film
+**Preferences-kulcsok** (`showcaptions`, `cropfit`, `movievolume` 0..1000
+alap 500, `makemovie1to1` alap 1); a **`video_control_bar2` sáv MŰKÖDÉSE**
+(a `time` = `%02d:%02d:%02d` / `%02d:%02d:%02d` a DirectShow 100 ns-os
+időből), és a **MoviePreviewHandler billentyű-térképe** (Space/Pause →
+play-pause, Enter/Esc → teljes képernyő → #1154 42–44.). Jegy-kommentek:
+**#432**, **#452**, **#1408**.
+
 3. **Az Indexkép (contactsheet) `.cxf` `scale=313`-ának levezetése** — a
    Ghidra-C (2026-08-30) kizárta a layout-ból (a `0x00888210` 1,0-t ad a
    node `+0x2c`-be); a `313` a vetítés/render-scale képlete kell →
