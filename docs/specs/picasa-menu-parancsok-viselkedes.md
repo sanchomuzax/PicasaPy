@@ -1949,3 +1949,101 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 1 hatókörön kív�
   mint a 39.-nél: amit „a művelethez tapad"-nak hinnénk, az globális.)*
 - **„A `0x00745980`-ban van a DPI-küszöb"** — megdőlt: a darabszámot
   paraméterként kapja.
+
+## 41. tétel — az `acquirepanel`: a „22 hiány" nagy része TÉVES RIASZTÁS (2026-08-31)
+
+*Harmadik kör az UI-lefedettségi axisról (#1778). Panel: `acquirepanel`
+(22 hiány). **A kör legfontosabb eredménye nem az eredetiről szól, hanem
+rólunk:** a mérés a funkciót meglévőnek nem látja, mert a mi
+megvalósításunk **párbeszéd**, nem bal oldali panel, és az elemek
+nevenként nem párosulnak.*
+
+### 41.1 Az eredeti importálás — MIT ÍR és HOVA
+
+| kulcs / erőforrás | mit tárol | hol |
+|---|---|---|
+| `Preferences\AcquirePath` | az importálás **célútvonala** | `0x00513830`, `0x006e3990` |
+| `Preferences\LastImport%x` | a **korábbi célmappák listája**, indexelt kulcsokkal | `0x00516180` |
+| `Preferences\acquireUseSubFolder` | almappába importáljon-e | `0x00514180`, `0x00524730` |
+
+A cél-választó menü (`import_folder_menu`, `0x00516180`) három szakaszból
+áll, elválasztókkal: **korábbi importok** (`-seperator-before-LastImports-`)
+· **alapértelmezett hely** (`-seperator-before/after-default_location-`) ·
+**„Choose…"** (`Acquire::ChooseFolder`).
+
+### 41.2 ⭐ Az almappa elnevezésének HÁROM módja
+
+A `0x005181b0` a `subfolder_menu` kezelője, és pontosan három feliratot ad:
+
+| erőforrás | felirat | jelentés |
+|---|---|---|
+| `iCAcquireUI::SubFolder` | **„Enter Folder Title"** | kézzel megadott cím |
+| `iCAcquireUI::AutoDate` | **„Date Taken (YYYY-MM-DD)"** | a felvétel dátuma szerint, külön mappákba |
+| `iCAcquireUI::TodayDate` | **„%s (Today)"** | a mai dátum |
+
+⇒ **A dátum-formátum kimondva `YYYY-MM-DD`.**
+
+### 41.3 A kártya-törlés és a másodpéldány-szűrés
+
+- **Másodpéldány-szűrés saját szálon**: `AcquireDupeCheckThread`
+  (`0x00513680`); üzenete *„… will not be imported because it is a
+  duplicate already in Picasa."* (egyes és többes szám külön).
+- **Kártya-törlés import után** (`0x00519720`): *„%d files will be erased
+  after import."* · *„An unknown number of files will be erased…"* ·
+  megerősítés: **„Are you sure you want to remove the imported files from
+  your card? This cannot be undone."** (`CAcquireUI::WipeCardWillBeImported`
+  / `WipeCardNotImported`).
+- **Hibaágak**: *„An error has occurred while attempting to import. Either
+  the source is unavailable or the destination is full or read only."* ·
+  *„A file error has occurred while importing files. Cancelling Import."*
+  (`0x0070b1e0`, `0x0070bdd0`).
+
+### 41.4 ⚠️ A MI OLDALUNK — a mérés téved, a funkció nagyrészt megvan
+
+Az `ImportSourceDialog.qml` **684 sor**, és a leltár „hiányzó" elemeinek
+nagy részét **megvalósítja**, csak más néven és más elrendezésben:
+
+| eredeti elem | nálunk (mérve) |
+|---|---|
+| `rotate1button` / `rotate2button` | `importRotateRight:<i>` / `importRotateLeft:<i>` (397., 410. sor) |
+| `startoggle` | `importStar:<i>` (424. sor) |
+| `excludetoggle` | `importSourceToggle:<i>` + „Exclude All" / „Include All" (335., 340., 453.) |
+| `subfolder_menu` | **mind a három mód**: kézi cím · „Import into separate folders for each date taken" · „Import into folder with today's date" (503., 521., 528.) |
+| `delete_menu` | hármas rádió: „Leave card alone" · „Delete only copied photos" · „Delete everything on card" (548., 555., 562.) |
+| `searchstatus` | folyamatjelző + darabszám + üres-üzenet (304., 311., 319.) |
+| `import_selected` / `anowbutton` / `acancelbutton` | Import / Include All / Close (629., 341., 638.) |
+| másodpéldány-szűrés | „Exclude Duplicates" + *„%n of those are duplicates already in Picasa"* (267., 287.) |
+
+⇒ **Tíz elem téves riasztás volt.** A `ui-lefedettseg-elemek.csv`
+felülbírálásai ebben a körben bekerültek, bizonyítékkal (fájl + sor).
+
+**A valódi hiány ehhez képest kettő:**
+
+1. **A korábbi CÉLMAPPÁK listája.** Nálunk a „Recent sources" a **forrást**
+   jegyzi meg (208. sor), a **célt** nem — az eredeti a `LastImport%x`
+   kulcsokban tartja, és menüben kínálja.
+2. **Feltöltés/megosztás blokk** (`upload_checkbox`, `share_with_label`,
+   `add_groups_button`, `selected_groups_label`, `sync_options_button`) —
+   **hatókörön kívül**: a Picasa Web Albums 2016 óta nincs.
+
+*(Az egyképes előnézet next/previous lapozása helyett nálunk bélyegkép-rács
+van — funkcionálisan egyenértékű, tudatos eltérés; nem hiány.)*
+
+### Nyitott kérdések mérlege (41.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a három tárolási kulcs és a cél-menü szerkezete (41.1); az
+  almappa-elnevezés három módja a `YYYY-MM-DD` formátummal (41.2); a
+  kártya-törlés és a másodpéldány-szűrés szövegkészlete (41.3).
+- **HATÓKÖRÖN KÍVÜL:** a feltöltés/megosztás blokk (megszűnt szolgáltatás).
+
+### Amit KIZÁRTAM
+
+- **„Az `acquirepanel` 22 eleme nálunk hiányzik"** — megdőlt: tíz elem
+  megvan, csak más néven; a mérés a párbeszéd↔panel eltérés miatt jelezte
+  hiánynak (41.4). **Ez a lecke az egész UI-axisra érvényes: a
+  „hiányzik" oszlop JELÖLT, nem ítélet — minden panelnél előbb a mi
+  oldalunkat kell megmérni.**
