@@ -98,7 +98,16 @@ class TestSaveCopy:
         assert eredmeny.target_path.exists()
         assert forras.read_bytes() == elotte, "a FORRÁS fájl megváltozott"
 
-    def test_a_cel_ini_kapja_a_redo_lancot_a_forrase_erintetlen(self, tmp_path):
+    def test_a_forras_ini_bejegyzese_erintetlen_marad(self, tmp_path):
+        """#1643: a cél NEM kap szakaszt — a #1527 döntése megdőlt.
+
+        Akkor a másolat `redo=` + `originhash` könyvelést kapott, józan
+        alapértelmezésként. A tulajdonos referencia-mérése (valódi Picasa
+        3.9) megcáfolta: a másolás semmit nem ír az ini-be. A forrás
+        érintetlensége viszont VÁLTOZATLANUL követelmény, ezért ez a teszt
+        megmarad — csak a cél-oldali állítás fordult meg.
+
+        A teljes mérést a `test_masolat_nem_ir_inibe_1643.py` őrzi."""
         forras = tmp_path / "kep.jpg"
         _kep(forras)
         ini = tmp_path / ".picasa.ini"
@@ -114,9 +123,10 @@ class TestSaveCopy:
         assert parser["kep.jpg"]["filters"] == "crop64=1,0,0,ffff,ffff;", (
             "a FORRÁS ini-bejegyzése megváltozott"
         )
-        assert parser.has_section("kep-001.jpg"), "a cél nem került az ini-be"
-        assert parser["kep-001.jpg"]["redo"] == "crop64=1,0,0,ffff,ffff;"
-        assert parser["kep-001.jpg"]["originhash"]
+        assert not parser.has_section("kep-001.jpg"), (
+            "a cél szakaszt kapott az ini-ben — az eredeti nem ír "
+            "semmit (#1643, mérve)"
+        )
 
     def test_megadott_cel_eseten_ODA_ir(self, tmp_path):
         forras = tmp_path / "kep.jpg"

@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Javítva
+- **A „Másolat mentése" többé nem ír a `.picasa.ini` fájlba (#1643).**
+  Eddig a másolat mellé két bejegyzést tettünk — abból a feltevésből,
+  hogy az eredeti Picasa is ezt teszi. A tulajdonos mérése a valódi
+  Picasa 3.9-cel megcáfolta: az **semmit nem ír**, és ha a mappában még
+  nem volt `.picasa.ini`, nem is hoz létre egyet. Mostantól mi sem.
+  Ez azért fontos, mert a fényképmappáid a windowsos Picasával közösen is
+  használhatók: az általunk írt idegen bejegyzések ott is megjelentek
+  volna.
+
 ### Hozzáadva
 - **A Mappa menü négy néma tétele működik (#1595).** Az „Áthelyezés…",
   a „Törlés…", az „Eltávolítás a Picasából…" és a „Keresés a lemezen"
