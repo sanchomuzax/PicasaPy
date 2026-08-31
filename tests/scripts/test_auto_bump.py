@@ -48,7 +48,11 @@ def test_a_changelog_cime_lezarodik(tmp_path):
     assert auto_bump.zard_le_a_changelogot(c, "0.8.29", "2026-08-21") is True
     szoveg = c.read_text(encoding="utf-8")
     assert "## [0.8.29] – 2026-08-21" in szoveg
-    assert "Nem kiadott" not in szoveg
+    # #1770: a lezárás UTÁN a szakasz VISSZAKERÜL, üresen — enélkül a
+    # következő kör nem találna helyet a bejegyzésnek, és más néven venné
+    # fel. A régi állítás („nincs többé Nem kiadott") ezért megfordult.
+    assert auto_bump.KIADATLAN_CIM in szoveg, "az üres szakasz nem került vissza"
+    assert szoveg.index(auto_bump.KIADATLAN_CIM) < szoveg.index("## [0.8.29]")
     assert "## [0.8.28] – 2026-08-20" in szoveg, "a régi szakasz nem sérülhet"
 
 

@@ -5,7 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Kiadatlan]
+## [Nem kiadott]
+
+### Javítva
+- **A változásnapló megint megmondja, melyik kiadás mit hozott (#1770).**
+  Augusztus 28. óta a napló „kiadatlan" szakasza más nevet viselt, mint
+  amit a kiadási automatika keresett — így huszonkét kiadás jegyzete
+  egyetlen, dátum nélküli halomban gyűlt. Mostantól a kiadás lezárja a
+  szakaszt, és **azonnal nyit egy újat**, tehát ez nem fordulhat elő még
+  egyszer. A felgyűlt bejegyzések egy szakaszba kerültek, kimondva, hogy
+  melyik verziótartományt fedik — találgatás helyett.
+
+## [0.8.133 – 0.8.154] – 2026-08-28 … 2026-08-31
+
+⚠️ **Miért egy szakasz huszonkét kiadásra?** A szakasz címe 2026-08-28-án
+`[Kiadatlan]`-ra változott, az eszközök viszont `[Nem kiadott]`-at
+kerestek — így a kiadás hat napig nem tudta lezárni, és a bejegyzések
+dátumozatlanul gyűltek. A hozzárendelés utólag nem vezethető le
+megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
 
 ### Hozzáadva
 - **A Másolás és a Kivágás a képek fájljait teszi a vágólapra (#1526,
