@@ -17,8 +17,12 @@ class TestPlaceholderMenuItemek:
         # „Új album…" azóta ÉLŐ menüpont (`Ctrl+N`-nel együtt). Ez a teszt
         # a JELÖLÉST méri, nem konkrét tételeket; ha egy példa bekötést kap,
         # itt kell másikat választani, nem a jelölést visszatenni rá.
+        # ⚠️ #1526: a `menuEditCut` KIKERÜLT — a Kivágás azóta ÉLŐ
+        # (a képek fájljait teszi a vágólapra, Ctrl+X-szel együtt).
+        # Ugyanaz a menet, mint a #1616-nál: példát cserélünk, nem
+        # jelölést teszünk vissza egy működő tételre.
         for name in (
-            "menuEditCut",
+            "menuViewDisplayMode16Bit",
             "menuViewThumbnailsOnly",
         ):
             item = window.findChild(QObject, name)
@@ -36,7 +40,9 @@ class TestPlaceholderMenuItemek:
         window, _controller, _engine = qml_app
         # #1616: a korábbi példa (`menuFileNewAlbum`) élővé vált, ezért
         # egy MA IS helyfoglaló tételen mérünk.
-        item = window.findChild(QObject, "menuEditCut")
+        # #1526: a következő példa (`menuEditCut`) is élővé vált — ez a
+        # teszt a JELÖLÉST méri, nem konkrét tételeket.
+        item = window.findChild(QObject, "menuViewDisplayMode16Bit")
         content = item.property("contentItem")
         assert content is not None
         # a felirat színe a Theme.textGray tokent használja (alap/világos

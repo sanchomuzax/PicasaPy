@@ -279,6 +279,9 @@ MenuBar {
     // szerkesztési láncát törli (a Csoportos szerkesztés almenün KÍVÜL, a
     // Kép menü saját tétele) — megerősítéssel, ld. Main.qml ConfirmDialog.
     signal undoAllEditsRequested()
+    //: #1526: a kijelölt képek FÁJLJAI a vágólapra
+    signal copyFilesRequested()
+    signal cutFilesRequested()
     // #1595: a Mappa menü négy néma tétele — mind a MEGNYITOTT mappára
     // vonatkozik (az eredetiben a „Mappa" menü ezt jelenti). A vezérlők
     // már megvannak: a mappa-áthelyezés a #457, a lomtárba tétel a #1638,
@@ -554,12 +557,24 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): a szabvány vágólap-műveletek
-        PicasaMenuItem {
+        // #1526: a Kivágás és a Másolás UGYANAZT az adatot teszi a
+        // vágólapra — a binárisban a `Preferred DropEffect` formátum
+        // különbözteti meg őket (mozgatás vs. másolás). Linuxon ennek a
+        // párja az `x-special/gnome-copied-files` első sora.
+        MenuItem {
             objectName: "menuEditCut"
             text: qsTr("Cut") + "\tCtrl+X"
-            placeholder: true
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.cutFilesRequested()
         }
-        PicasaMenuItem { text: qsTr("Copy") + "\tCtrl+C"; placeholder: true }
+        MenuItem {
+            objectName: "menuEditCopy"
+            text: qsTr("Copy") + "\tCtrl+C"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.copyFilesRequested()
+        }
+        // #1526: a Beillesztés a fájl-vágólap MÁSIK fele — külön munka
+        // (ütközéskezelés, célmappa), ezért egyelőre helyfoglaló marad.
         PicasaMenuItem { text: qsTr("Paste") + "\tCtrl+V"; placeholder: true }
         MenuSeparator {}
         MenuItem {
