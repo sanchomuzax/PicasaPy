@@ -84,11 +84,6 @@ Item {
         dialogs.pendingRows = rows
         revertConfirmDialog.open()
     }
-    function openUndoSave(rows) {
-        if (!rows || rows.length === 0) return
-        dialogs.pendingRows = rows
-        undoSaveConfirmDialog.open()
-    }
 
     // #1527: a mentés megerősítése. HÁROM hivatalos erőforrásból áll —
     // a kérdés (`CThumbUI::FileSave::message`), és a kiegészítés KÉT
@@ -234,14 +229,44 @@ Item {
         }
     }
 
+    // #1791: az „Undo Save" az eredetiben NEM menütétel, hanem ENNEK a
+    // párbeszédnek a gombja (`CThumbUI::FileRevert::undosave`), a
+    // magyarázó sorával együtt (`::message1undo`). A #1774 mérése
+    // (a tulajdonos képernyőmentése) szerint a Fájl menü mentés-csoportja
+    // két tételből áll — nálunk három volt.
+    //
+    // A két művelet KÜLÖNBÖZŐ, ezért kell két gomb: a Visszaállítás
+    // eldobja a szerkesztéseket, az Undo Save MEGTARTJA őket, csak a
+    // lemezre írást vonja vissza.
     Dialog {
         id: revertConfirmDialog
         objectName: "revertConfirmDialog"
         title: qsTr("Revert")
         modal: true
         anchors.centerIn: parent
-        standardButtons: Dialog.Ok | Dialog.Cancel
         onAccepted: controller.revertRowsToOriginal(dialogs.pendingRows)
+        footer: DialogButtonBox {
+            Button {
+                objectName: "revertUndoSaveButton"
+                //: `CThumbUI::FileRevert::undosave`
+                text: qsTr("Undo Save")
+                DialogButtonBox.buttonRole: DialogButtonBox.ActionRole
+                onClicked: {
+                    revertConfirmDialog.close()
+                    controller.undoLastSave(dialogs.pendingRows)
+                }
+            }
+            Button {
+                objectName: "revertOkButton"
+                text: qsTr("Revert")
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+            }
+            Button {
+                objectName: "revertCancelButton"
+                text: qsTr("Cancel")
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+            }
+        }
         Column {
             spacing: 6
             Text {
@@ -258,25 +283,16 @@ Item {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-        }
-    }
-
-    Dialog {
-        id: undoSaveConfirmDialog
-        objectName: "undoSaveConfirmDialog"
-        title: qsTr("Undo Save")
-        modal: true
-        anchors.centerIn: parent
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        onAccepted: controller.undoLastSave(dialogs.pendingRows)
-        Text {
-            width: 380
-            wrapMode: Text.WordWrap
-            //: az eredeti magyarázata: ez a fokozat MEGTARTJA a
-            //: szerkesztéseket, csak a lemezre írást vonja vissza
-            text: qsTr("To undo the last save and keep edits click 'Undo Save'.")
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
+            Text {
+                objectName: "revertUndoSaveHint"
+                width: 380
+                wrapMode: Text.WordWrap
+                //: `CThumbUI::FileRevert::message1undo` — a gomb önmagában
+                //: nem árulja el, hogy a szerkesztések MEGMARADNAK
+                text: qsTr("To undo the last save and keep edits click 'Undo Save'.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
         }
     }
 

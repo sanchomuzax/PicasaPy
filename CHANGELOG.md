@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.161] – 2026-09-01
+
+### Javítva
+- **Az „Utolsó mentés visszavonása" oda került, ahol az eredetiben is van
+  (#1791).** Eddig külön menüpont volt a Fájl menüben — az eredeti Picasa
+  viszont a **Visszaállítás párbeszéd gombjaként** kínálja, és nem
+  véletlenül: pont ott derül ki, hogy a felhasználó két különböző dolog
+  közül választhat. A Visszaállítás eldobja a szerkesztéseket, az
+  „Utolsó mentés visszavonása" **megtartja** őket, és csak a lemezre
+  írást vonja vissza. A párbeszédben most ott a magyarázó sor is, ami
+  ezt megmondja — korábban a menüből ez sehol nem látszott.
+
 ## [0.8.160] – 2026-09-01
 
 ### Javítva
