@@ -10,7 +10,7 @@ canoncapturemoviepanelpopup,nem-cel,,Canon SDK-s kamerafelvétel — nem cél
 capturemoviepanelpopup,nincs-megfeleltetes,,Webkamerás videofelvétel — nincs nálunk
 choose_mail,nincs-megfeleltetes,,Levelezőprogram-választó párbeszéd — nincs nálunk
 collab,nem-cel,,"Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél"
-collagepanel,parositva,PicasaPy/CreateDialogs.qml,Csak a kollázs-létrehozó párbeszéd van meg; interaktív kollázs-szerkesztő panel nincs
+collagepanel,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/CollagePanel.qml;PicasaPy/CollagePanelTabBar.qml;PicasaPy/CollagePanelTabButton.qml;PicasaPy/CollageSettingsTab.qml;PicasaPy/CollageClipsTab.qml;PicasaPy/CollageActionRow.qml;PicasaPy/CollageZOrderColumn.qml;PicasaPy/CollageSnapColumn.qml;PicasaPy/CollageRandomRow.qml;PicasaPy/CollageContextMenus.qml;PicasaPy/CollageCanvas.qml;PicasaPy/CollageFormatMenu.qml;PicasaPy/CollageThemePopup.qml;PicasaPy/CollageBorderPicker.qml;PicasaPy/CollageBackgroundBox.qml;PicasaPy/CollageNode.qml;PicasaPy/CollageGroupNode.qml;PicasaPy/CollageSheet.qml;PicasaPy/CollageRing.qml;PicasaPy/CollageProgressOverlay.qml;PicasaPy/CollageDialogs.qml;PicasaPy/CollageDraftDialog.qml;PicasaPy/CollageDoneNotice.qml,"A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte."
 compose_mail,nincs-megfeleltetes,,"Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül"
 compose_share,nincs-megfeleltetes,,Megosztási meghívó szerkesztő — nincs nálunk
 durationslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
