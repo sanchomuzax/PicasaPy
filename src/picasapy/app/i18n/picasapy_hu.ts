@@ -192,6 +192,50 @@
 <context>
     <name>PrintDialog</name>
     <message>
+        <source>Print size:</source>
+        <translation>Nyomatméret:</translation>
+    </message>
+    <message>
+        <source>3.5 x 5 in</source>
+        <translation>3,5 × 5 hüvelyk</translation>
+    </message>
+    <message>
+        <source>4 x 6 in</source>
+        <translation>4 × 6 hüvelyk</translation>
+    </message>
+    <message>
+        <source>5 x 7 in</source>
+        <translation>5 × 7 hüvelyk</translation>
+    </message>
+    <message>
+        <source>8 x 10 in</source>
+        <translation>8 × 10 hüvelyk</translation>
+    </message>
+    <message>
+        <source>Wallet</source>
+        <translation>Tárcaméret</translation>
+    </message>
+    <message>
+        <source>Smallest picture: %1 pixels/inch.</source>
+        <translation>A legkisebb kép: %1 képpont/hüvelyk.</translation>
+    </message>
+    <message>
+        <source>%1 small picture found.</source>
+        <translation>%1 kis méretű kép található.</translation>
+    </message>
+    <message>
+        <source>%1 small pictures found.</source>
+        <translation>%1 kis méretű kép található.</translation>
+    </message>
+    <message>
+        <source>Please review before printing.</source>
+        <translation>Nyomtatás előtt ellenőrizze őket.</translation>
+    </message>
+    <message>
+        <source>You are ready to print.</source>
+        <translation>Nyomtatásra kész.</translation>
+    </message>
+    <message>
         <source>Print...</source>
         <translation>Nyomtatás…</translation>
     </message>
