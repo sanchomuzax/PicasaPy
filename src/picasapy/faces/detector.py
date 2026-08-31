@@ -100,31 +100,11 @@ def download_model(
     return download_spec(DETECTOR_SPEC, dest=dest, url=url, timeout=timeout).ok
 
 
-@dataclass(frozen=True)
-class FaceLandmarks:
-    """A YuNet öt jellegzetes pontja, KÉPPIXELBEN — a detektor kimenetének
-    igazolt sorrendjében (issue #26, 2026-08-07-i mérés): jobb szem, bal
-    szem, orrhegy, száj jobb sarka, száj bal sarka."""
-
-    right_eye: tuple[float, float]
-    left_eye: tuple[float, float]
-    nose: tuple[float, float]
-    mouth_right: tuple[float, float]
-    mouth_left: tuple[float, float]
-
-
-@dataclass(frozen=True)
-class FaceDetection:
-    """Egy detektált arc — a keret KÉPPIXELBEN (nem [0..1] relatív, szemben
-    a Picasa rect64-gyel; a hívó normalizál, ha kell)."""
-
-    left: float
-    top: float
-    right: float
-    bottom: float
-    score: float
-    landmarks: FaceLandmarks
-
+# #1611: az adatosztályok a cv2-mentes `types.py`-ban élnek, hogy az
+# `index/faces_detected.py` ne rántsa be az OpenCV-t pusztán a rekordokért.
+# Az újraexport miatt a `from picasapy.faces.detector import FaceDetection`
+# változatlanul működik.
+from .types import FaceDetection, FaceLandmarks
 
 class FaceDetector:
     """`cv2.FaceDetectorYN` hiánytűrő becsomagolása.

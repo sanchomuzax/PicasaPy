@@ -20,7 +20,9 @@ from pathlib import Path
 
 import numpy as np
 
-from picasapy.faces.detector import FaceDetection, FaceLandmarks
+# #1611: a cv2-mentes adatosztály-modulból — a detektor (és vele az
+# OpenCV) csak akkor töltődik be, ha tényleg detektálunk.
+from picasapy.faces.types import FaceDetection, FaceLandmarks
 
 from .queries import _SELECT, PhotoRecord, _records
 
