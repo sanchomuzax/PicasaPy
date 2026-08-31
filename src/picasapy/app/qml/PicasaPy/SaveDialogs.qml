@@ -298,18 +298,25 @@ Item {
         }
     }
 
-    Connections {
-        target: controller
-        function onSaveFailedDetails(details) {
-            saveResultDialog.message = details.join("\n")
-            saveResultDialog.open()
-        }
-        // #1527: a besorolt hibaág — a hivatalos, ágspecifikus mondat
-        function onSaveErrorOccurred(kind, fileName, code) {
-            saveErrorDialog.kind = kind
-            saveErrorDialog.fileName = fileName
-            saveErrorDialog.code = code
-            saveErrorDialog.open()
-        }
+    // #1743: a vezérlő jelzéseit NEM itt fogadjuk. Ez a komponens a #1720
+    // óta HALASZTOTT (`DeferredDialog`), tehát amíg a felhasználó meg nem
+    // nyitotta, a benne ülő `Connections` NEM LÉTEZIK — a jelzés senkihez
+    // nem ér el, és a hibaüzenet némán elmarad. A `Main.qml` mindig álló
+    // `Connections`-e hívja ezeket a függvényeket, az `ensure()` után.
+    //
+    // A logika változatlan; csak a HALLGATÓ került ki innen.
+
+    //: A bukott mentés részletei (#136 mintája) — a gyűjtő párbeszéd.
+    function jelezdAbukottMentest(details) {
+        saveResultDialog.message = details.join("\n")
+        saveResultDialog.open()
+    }
+
+    //: #1527: a besorolt hibaág — a hivatalos, ágspecifikus mondat.
+    function jelezdAmentesiHibat(kind, fileName, code) {
+        saveErrorDialog.kind = kind
+        saveErrorDialog.fileName = fileName
+        saveErrorDialog.code = code
+        saveErrorDialog.open()
     }
 }

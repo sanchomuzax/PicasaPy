@@ -2130,6 +2130,43 @@ ApplicationWindow {
         }
     }
 
+    // #1743: A HALLGATÓK MINDIG ÁLLNAK, a párbeszéd nem.
+    //
+    // A #1720 óta a mentés- és export-párbeszéd halasztott: csak az első
+    // megnyitáskor épül fel. A vezérlő eredmény- és hibajelzéseit viszont
+    // EDDIG a párbeszéden BELÜLI `Connections` fogadta — ami addig nem is
+    // létezett. Amíg minden belépő az `ensure()`-ön át megy, ez nem okoz
+    // bajt; egy ÚJ belépő (gyorsbillentyű, tálcagomb, kötegelt művelet)
+    // viszont némán elnyelné a hibaüzenetet, és semmilyen teszt nem bukna
+    // el rá.
+    //
+    // Ezért a hallgató ide került, a mindig felépülő ablakba: pár objektum,
+    // a #1720 nyeresége érintetlen. Az `ensure()` a jelzés pillanatában
+    // építi fel a párbeszédet — pontosan akkor, amikor tényleg kell.
+    Connections {
+        target: controller
+        function onSaveFailedDetails(details) {
+            saveDialogs.ensure().jelezdAbukottMentest(details)
+        }
+        function onSaveErrorOccurred(kind, fileName, code) {
+            saveDialogs.ensure().jelezdAmentesiHibat(kind, fileName, code)
+        }
+        function onExportFailedDetails(details) {
+            exportDialogs.ensure().jegyezdAbukottFajlokat(details)
+        }
+        function onExportFinished(done, failed) {
+            exportDialogs.ensure().jelezdAzExportVeget(done, failed)
+        }
+        function onEarthExportFinished(kmlPath, placemarks, skipped) {
+            exportDialogs.ensure().jelezdAzEarthExportVeget(
+                kmlPath, placemarks, skipped)
+        }
+        function onEarthViewReady(kmlPath, placemarks, skipped) {
+            exportDialogs.ensure().nyisdMegAzEarthFajlt(
+                kmlPath, placemarks, skipped)
+        }
+    }
+
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
     CreateDialogs {
         id: createDialogs
