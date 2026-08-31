@@ -8230,4 +8230,19 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Exportálások</translation>
     </message>
 </context>
+<context>
+    <name>EmailChoiceDialog</name>
+    <message>
+        <source>Send pictures by email</source>
+        <translation>Képek küldése e-mailben</translation>
+    </message>
+    <message>
+        <source>The pictures will be attached to a new message in your default email program.</source>
+        <translation>A képek csatolmányként kerülnek egy új levélbe az alapértelmezett levelezőprogramban.</translation>
+    </message>
+    <message>
+        <source>Remember this choice and do not ask again</source>
+        <translation>Jegyezze meg ezt a beállítást, és ne kérdezze meg újra</translation>
+    </message>
+</context>
 </TS>

@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.160] – 2026-09-01
+
+### Javítva
+- **A képtálca „E-Mail" gombja végre csinál valamit (#1798).** A gomb
+  eddig kattintható volt, és **nem történt semmi**: a jelzését senki nem
+  fogta el — a szomszédai (Kollázs, Exportálás, Nyomtatás) mind be voltak
+  kötve, ez az egy maradt ki. Mostantól a kijelölt képeket a beállított
+  méretre kicsinyítve csatolja egy új levélbe, az alapértelmezett
+  levelezőprogramban.
+- **A Beállítások „minden küldéskor kérdezzen" módja sem néma többé
+  (#1798).** A választás eddig tárolódott, a felület visszajelezte, a
+  küldés viszont átlépett rajta. Most tényleg megjelenik a kérdés, és van
+  benne „ne kérdezze meg újra" jelölés is — pontosan úgy, ahogy az
+  eredetiben.
+- **A levelezős hibaüzenet is látszik.** Ha nincs telepítve
+  levelezőprogram, eddig csak a naplóba került; most a képernyő tetején
+  megjelenő hibasávban olvasható.
+
 ## [0.8.159] – 2026-09-01
 
 ### Javítva

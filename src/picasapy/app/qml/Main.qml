@@ -983,6 +983,58 @@ ApplicationWindow {
         window.clearSelection()
     }
 
+    // #1798: a kijelölés elküldése levélben. A tárgyat és a szöveget
+    // SZÁNDÉKOSAN nem kérjük be: az eredeti Picasa sem kérdez, a levelet a
+    // levelezőprogram szerkeszti meg — mi csak a csatolmányokkal nyitjuk meg.
+    function sendSelectionByEmail() {
+        if (typeof emailController === "undefined" || !emailController)
+            return
+        var sorok = window.selectedRows()
+        if (sorok.length === 0)
+            return
+        var csatolmanyok = emailController.prepareAttachments(
+            sorok, sorok.length > 1)
+        if (csatolmanyok.length === 0)
+            return
+        // A `sendRows` a beállítás szerint vagy küld, vagy a
+        // `mailChoiceRequested`-del kérdést kér — a válasz lentebb.
+        emailController.sendRows(csatolmanyok, "", "")
+    }
+
+    // #1798: a küldési út két visszajelzése. A `mailChoiceRequested` a
+    // „minden küldéskor kérdezz" mód kérdése, az `emailFailed` a hibáé —
+    // ez utóbbinak eddig SEHOL nem volt kezelője, tehát a hibaüzenet
+    // („nincs levelezőprogram") némán elveszett.
+    Connections {
+        target: (typeof emailController !== "undefined")
+                ? emailController : null
+        function onMailChoiceRequested(utvonalak, targy, szoveg) {
+            var parbeszed = emailChoiceDialog.ensure()
+            parbeszed.attachmentPaths = utvonalak
+            parbeszed.subject = targy
+            parbeszed.body = szoveg
+            parbeszed.open()
+        }
+        function onEmailFailed(uzenet) {
+            // a #459-es közös hibasáv — a levelezős hibának eddig SEHOL
+            // nem volt kezelője, tehát némán elveszett
+            errorBanner.notice = false
+            errorBannerText.text = uzenet
+        }
+    }
+
+    DeferredDialog {
+        id: emailChoiceDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            EmailChoiceDialog {
+                objectName: "emailChoiceDialog"
+                onAccepted: emailController.sendWithDefaultClient(
+                    attachmentPaths, subject, body, rememberChoice)
+            }
+        }
+    }
+
     // #1720: halasztott példányosítás — a párbeszéd csak az első
     // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
     DeferredDialog {
@@ -2016,6 +2068,12 @@ ApplicationWindow {
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
+        // #1798: a tálca „E-Mail" gombja engedélyezve volt és kattintható,
+        // a jelzését viszont SEHOL nem fogta el senki — a testvérei
+        // (Kollázs, Exportálás, Nyomtatás) mind be voltak kötve. Ez volt a
+        // valódi oka annak, hogy a Beállítások e-mail-módja némának
+        // látszott: az egész küldési út néma volt.
+        onEmailRequested: window.sendSelectionByEmail()
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
