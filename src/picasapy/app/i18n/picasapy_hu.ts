@@ -2922,6 +2922,10 @@ Would you like to rename or skip these files?</source>
 <context>
     <name>SaveDialogs</name>
     <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
         <source>A backup of this file will be made.</source>
         <translation>A program biztonsági másolatot készít erről a fájlról.</translation>
     </message>

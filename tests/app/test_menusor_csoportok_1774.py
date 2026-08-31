@@ -71,7 +71,6 @@ VART: dict[str, list[str]] = {
         SZ,
         "Save",
         "Revert",
-        "Undo Save",
         SZ,
         "Save As...",
         "Save a Copy",
@@ -218,18 +217,15 @@ VART: dict[str, list[str]] = {
     ],
 }
 
+#: A `&File · Undo Save` sor 2026-09-01-én LEZÁRULT (#1791): az „Undo
+#: Save” átkerült a Visszaállítás párbeszéd gombjává, ahol az eredetiben
+#: is van, és a menütétel megszűnt. A tábla azért rövidülhet: minden sora
+#: egy megnyitott kérdés, nem örökös felmentés.
+#:
 #: TUDOTT és INDOKOLT eltérések a mért eredetitől. Ami itt nincs benne, az
 #: a mérés szerint egyezik — ha eltér, az hiba. A tábla azért van a
 #: tesztben, hogy a szerkezet és az indoka EGY helyen legyen olvasható.
 ELTERESEK = {
-    "&File · Undo Save": (
-        "Az eredetiben az „Undo Save” nem menütétel, hanem a "
-        "Visszaállítás párbeszéd gombja (`CThumbUI::FileRevert::undosave`) "
-        "és a szerkesztősáv tippje (`CFilterStackUI::savetip`). Nálunk "
-        "a #444 óta menütétel; az áthelyezés külön jegy, mert a "
-        "párbeszédünkben ma nincs meg a gomb, tehát a tétel törlése "
-        "elvágná az egyetlen elérési utat."
-    ),
     "&Edit · Undo Paste All Effects + Undo Batch Edit": (
         "A mentésen a Szerkesztés menü NEM kezdődik visszavonás-"
         "csoporttal, pedig az inaktív tételei látszanak. A szövegtárban "

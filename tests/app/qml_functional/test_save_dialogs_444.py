@@ -58,8 +58,11 @@ class TestSaveDialogs:
         )
         qt_app.processEvents()
 
-        _open(window, qt_app, "openUndoSave", [0])
-        assert _child(window, "undoSaveConfirmDialog").property("visible") is True
+        # #1791: az „Undo Save" külön párbeszéde MEGSZŰNT — az eredetiben
+        # ez a Visszaállítás párbeszéd GOMBJA, nem önálló megerősítés.
+        # A gombot a `test_undosave_a_parbeszedben_1791.py` méri.
+        _open(window, qt_app, "openRevert", [0])
+        assert _child(window, "revertUndoSaveButton") is not None
 
     def test_an_unrenderable_filter_gets_the_stronger_warning(
         self, qml_app, qt_app, tmp_path
@@ -94,12 +97,16 @@ class TestSaveDialogs:
 
 class TestMenuWiring:
     def test_the_restore_items_need_a_backup(self, qml_app, qt_app):
-        """A Visszaállítás és az Utolsó mentés visszavonása csak akkor
-        engedélyezett, ha a képnek van már biztonsági másolata."""
+        """A Visszaállítás csak akkor engedélyezett, ha a képnek van már
+        biztonsági másolata.
+
+        #1791: az „Utolsó mentés visszavonása" MÁR NEM menütétel — az
+        eredetiben a Visszaállítás párbeszéd gombja. Ezért itt csak a
+        Visszaállítás marad."""
         window, _controller, _engine = qml_app
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
 
         assert _child(window, "menuFileRevert").property("enabled") is False
-        assert _child(window, "menuFileUndoSave").property("enabled") is False
+        assert window.findChild(QObject, "menuFileUndoSave") is None

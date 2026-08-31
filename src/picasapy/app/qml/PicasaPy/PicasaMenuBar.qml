@@ -220,7 +220,6 @@ MenuBar {
     // szerkesztés visszavonása" a Kép menüben él, #465)
     signal saveRequested()
     signal revertRequested()
-    signal undoSaveRequested()
     // #1527: a mentés-család két hiányzó tagja. Mérve (ld.
     // `picasapy.edit.save_copy`): az eredetiben MINDKETTŐ ugyanaz a
     // függvény, egyetlen kapcsolóval — a „Mentés másként…" fájlválasztót
@@ -452,11 +451,14 @@ MenuBar {
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
-        // #444: a nem-destruktív mentés HÁROM fokozata. A „Mentés" beégeti
-        // a szerkesztéseket a fájlba (előtte biztonsági másolattal), a
+        // #444/#1791: a nem-destruktív mentés HÁROM fokozata, de a
+        // menüben csak KETTŐ látszik. A „Mentés" beégeti a
+        // szerkesztéseket a fájlba (előtte biztonsági másolattal), a
         // „Visszaállítás" az eredetit hozza vissza (a szerkesztések
-        // elvesznek), az „Utolsó mentés visszavonása" pedig a köztes
-        // fokozat: a fájl visszaáll, de a szerkesztések MEGMARADNAK.
+        // elvesznek). A harmadik fokozat — a fájl visszaáll, de a
+        // szerkesztések MEGMARADNAK — az eredetiben NEM menütétel, hanem
+        // a Visszaállítás párbeszéd „Undo Save" gombja
+        // (`CThumbUI::FileRevert::undosave`); ld. SaveDialogs.qml.
         MenuItem {
             objectName: "menuFileSave"
             text: qsTr("Save") + "\tCtrl+S"
@@ -469,12 +471,6 @@ MenuBar {
             // csak akkor van mit visszaállítani, ha a kép már volt mentve
             enabled: bar.photoActionsEnabled && bar.hasSavedBackup
             onTriggered: bar.revertRequested()
-        }
-        MenuItem {
-            objectName: "menuFileUndoSave"
-            text: qsTr("Undo Save")
-            enabled: bar.photoActionsEnabled && bar.hasSavedBackup
-            onTriggered: bar.undoSaveRequested()
         }
         MenuSeparator {}
         // #1527: a mentés-család két további tagja — ÉLŐ tételek. A

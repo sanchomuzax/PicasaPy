@@ -891,7 +891,6 @@ ApplicationWindow {
             ? controller.hasSavedBackup(window.selectedIndexes) : false
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedIndexes)
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedIndexes)
-        onUndoSaveRequested: saveDialogs.ensure().openUndoSave(window.selectedIndexes)
         // #1527: a mentés-család két új tagja
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
