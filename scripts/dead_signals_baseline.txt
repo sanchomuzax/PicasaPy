@@ -27,7 +27,6 @@ app/compact_controller.py::compactProgress #1003 — az index-tömörítés szí
 app/compact_controller.py::compactStarted #1003 — a tömörítés indulását a felület nem jelzi
 app/create_controller.py::collagePreviewFailed #1003 — a kollázs-előnézet hibaüzenete elvész; át kell nézni, kell-e felületi jelzés
 app/dedup_controller.py::scanStarted #1003 — a másolatkereső indulását a felület nem jelzi (a scanProgress/scanFinished VISZONT be van kötve a DedupDialogban)
-app/email_controller.py::emailFailed #1003 — VISSZAIGAZOLT: az e-mail-küldés hibáját a felhasználó nem látja, pedig a jelzés saját docstringje kéri a UI-figyelmeztetést
 app/face_scan_controller.py::scanProgress #1003 — az arcszkennelés haladása a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
 app/import_source_controller.py::sourceScanStarted #1003 — az importforrás vizsgálatának indulását a felület nem jelzi
 app/photo_ops_controller.py::photoOpFinished #1003 — a fotóművelet vége; ma csak TESZT figyeli (ld. batch_effect_controller.py kommentjét), a felület nem
