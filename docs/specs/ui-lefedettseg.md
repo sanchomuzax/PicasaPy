@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 87 |
-| másutt megvan (nem ezen a felületen) | 62 |
-| hiányzik | 425 |
-| bizonytalan | 160 |
+| párosítva | 132 |
+| másutt megvan (nem ezen a felületen) | 46 |
+| hiányzik | 397 |
+| bizonytalan | 159 |
 | nem értékelhető (rajzoló elem) | 1286 |
-| **lefedettség az értékelhető elemeken** | **11.9%** |
+| **lefedettség az értékelhető elemeken** | **18.0%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -53,13 +53,13 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 1 | `editpanel` | 83 | A szerkesztő teljes bal oldali panelje minden fülével |
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `thumbui` | 41 | A fő könyvtárnézet egésze |
-| 4 | `collagepanel` | 36 | Csak a kollázs-létrehozó párbeszéd van meg; interaktív kollázs-szerkesztő panel nincs |
-| 5 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
-| 6 | `printpanel` | 26 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
-| 7 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| 8 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
-| 9 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
-| 10 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
+| 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
+| 5 | `printpanel` | 26 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
+| 6 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
+| 7 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
+| 8 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
+| 9 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
+| 10 | `quicktagconfig` | 15 | Gyorscímke-beállító |
 
 ## Panelenkénti lefedettség
 
@@ -68,7 +68,6 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `editpanel` | 312 | 125 | 36 | 6 | 36 | 47 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
 | `thumbui` | 140 | 46 | 2 | 3 | 30 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
-| `collagepanel` | 108 | 55 | 3 | 16 | 28 | 8 | 53 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `printpanel` | 73 | 33 | 0 | 7 | 26 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
@@ -85,6 +84,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 31 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `headerpanel` | 30 | 11 | 1 | 0 | 10 | 0 | 19 | `LightboxHeader.qml` |
 | `collab` | 23 | 10 | 0 | 0 | 10 | 0 | 13 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
+| `collagepanel` | 108 | 55 | 48 | 0 | 0 | 7 | 53 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `searchcontainer` | 25 | 11 | 4 | 0 | 4 | 3 | 14 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 11 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 3 | 3 | 18 | `VideoPlayerView.qml` |
@@ -331,47 +331,6 @@ A fő könyvtárnézet egésze
 - `toggle_right_drawer` — *bizonytalan*
 - `visitweb` „Web View” (magyarul: „Internetes nézet”)
 - `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device”
-
-### `collagepanel` — 36 hiány · panel-megfeleltetés: `parositva`
-
-Csak a kollázs-létrehozó párbeszéd van meg; interaktív kollázs-szerkesztő panel nincs
-
-- `addclips` buboréksúgó: „Add selected clips to the collage”
-- `cancelbutton` buboréksúgó: „Close the Collage tab”
-- `cancelbutton-label` „Close” (magyarul: „Bezárás”)
-- `caption_checkbox` buboréksúgó: „Show captions as text on pictures with an "Instant Camera" border”
-- `delete_custom_aspect` buboréksúgó: „Delete the current aspect ratio”
-- `deleteclips` buboréksúgó: „Remove selected clips from the tray”
-- `format_menu` buboréksúgó: „Select the relative width and height of your design”
-- `landscape` buboréksúgó: „Landscape: Orient your design horizontally”
-- `makedesktop` buboréksúgó: „Save as a JPG image in the Collages album, then set it as the desktop background”
-- `move_bottom` buboréksúgó: „Move picture to the bottom of the pile”
-- `move_down` buboréksúgó: „Move picture down in the pile”
-- `move_top` buboréksúgó: „Move picture to the top of the pile”
-- `move_up` buboréksúgó: „Move picture up in the pile”
-- `picker_panel` — *bizonytalan*
-- `portrait` buboréksúgó: „Portrait: Orient your design vertically”
-- `previewinset` — *bizonytalan*
-- `previewroot` — *bizonytalan*
-- `rand_order` buboréksúgó: „Randomize the order of the pictures”
-- `rand_placement` buboréksúgó: „Mix up the collage layout”
-- `remove_node` „Remove” (magyarul: „Eltávolítás”)
-- `resetbutton` buboréksúgó: „Undo all changes”
-- `resetbutton-label` „Reset” (magyarul: „Alaphelyzet”)
-- `select_all` „Select All” (magyarul: „Az összes kijelölése”)
-- `select_none` „Select None” (magyarul: „Az összes kijelölés megszüntetése”)
-- `sharebutton` buboréksúgó: „Save as a JPG image in the Collages album (within the Projects collection).”
-- `snap_12` buboréksúgó: „Align rotation to straight up”
-- `snap_3` buboréksúgó: „Align rotation to 90 CW”
-- `snap_6` buboréksúgó: „Align rotation to 180 CW”
-- `snap_9` buboréksúgó: „Align rotation to 270 CW”
-- `tab1` „Settings” (magyarul: „Beállítások”)
-- `tab2` „Clips” (magyarul: „Képek”)
-- `tabpanel1` — *bizonytalan*
-- `tabpanel2` — *bizonytalan*
-- `tabs` — *bizonytalan*
-- `theme_popup` — *bizonytalan*
-- `view_and_edit` — *bizonytalan*
 
 ### `publish` — 30 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -704,6 +663,18 @@ Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél
 - `storagetext` „Learn more...” (magyarul: „További információ...”)
 - `uploadinfo_link`
 - `uploadsize_menu`
+
+### `collagepanel` — 7 hiány · panel-megfeleltetés: `parositva`
+
+A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte.
+
+- `picker_panel` — *bizonytalan*
+- `previewinset` — *bizonytalan*
+- `previewroot` — *bizonytalan*
+- `tabpanel1` — *bizonytalan*
+- `tabpanel2` — *bizonytalan*
+- `tabs` — *bizonytalan*
+- `view_and_edit` — *bizonytalan*
 
 ### `searchcontainer` — 7 hiány · panel-megfeleltetés: `parositva`
 
@@ -1087,25 +1058,6 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `albumview` — „Back To Library” itt: PicasaPy/PhotoViewer.qml, PicasaPy/ViewerContextMenu.qml
 - `librarylabel` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 - `sbutton` — „Slideshow” itt: PicasaPy/OptionsDialog.qml, PicasaPy/PicasaMenuBar.qml
-
-### `collagepanel` — 16
-
-- `bitmap_bg_label` — „Use Image” itt: PicasaPy/CollageBackgroundBox.qml
-- `bkg_from_selection` — „Use selected” itt: PicasaPy/CollageBackgroundBox.qml
-- `bkg_settings_title` — „Background Options” itt: PicasaPy/CollageBackgroundBox.qml
-- `caption_checkbox_label` — „Show Captions” itt: PicasaPy/CollageSettingsTab.qml
-- `color_bg_label` — „Solid Color” itt: PicasaPy/CollageBackgroundBox.qml
-- `format_title` — „Page Format” itt: PicasaPy/CollageSettingsTab.qml
-- `getmoreclips` — „Get more...” itt: PicasaPy/CollageClipsTab.qml
-- `makedesktop-label` — „Desktop Background” itt: PicasaPy/CollagePanel.qml
-- `max_spacing_label` — „Max.” itt: PicasaPy/CollageSettingsTab.qml
-- `rand_order-label` — „Shuffle Pictures” itt: PicasaPy/CollageContextMenus.qml, PicasaPy/CollageRandomRow.qml
-- `set_background` — „Set as Background” itt: PicasaPy/CollageActionRow.qml, PicasaPy/CollageContextMenus.qml
-- `set_frame_center-label` — „Set as Frame Center” itt: PicasaPy/CollageContextMenus.qml, PicasaPy/CollageSettingsTab.qml
-- `shadow_checkbox_label` — „Draw Shadows” itt: PicasaPy/CollageSettingsTab.qml
-- `sharebutton-label` — „Create Collage” itt: PicasaPy/CollagePanel.qml
-- `spacing_label` — „Grid Spacing” itt: PicasaPy/CollageSettingsTab.qml
-- `view_and_edit-label` — „View and Edit” itt: PicasaPy/CollageContextMenus.qml, PicasaPy/CollageRandomRow.qml, PicasaPy/PhotoContextMenu.qml
 
 ### `printpanel` — 7
 

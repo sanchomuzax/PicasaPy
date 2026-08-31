@@ -2047,3 +2047,106 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kív�
   hiánynak (41.4). **Ez a lecke az egész UI-axisra érvényes: a
   „hiányzik" oszlop JELÖLT, nem ítélet — minden panelnél előbb a mi
   oldalunkat kell megmérni.**
+
+## 42. tétel — a `collagepanel`: EGY ELAVULT SOR 38 elemet rejtett el (2026-08-31)
+
+*Negyedik kör az UI-lefedettségi axisról (#1778). Panel: `collagepanel`
+(36 hiány). A 41. kör leckéjét alkalmazva — **előbb a mi oldalunkat
+mérjük** — a kör nem az eredetiről, hanem a MÉRÉSRŐL talált leletet.*
+
+### 42.1 ⛔ A panel-megfeleltetés sora ELAVULT volt, és hazudott
+
+A `docs/specs/ui-lefedettseg-megfeleltetes.csv` `collagepanel` sora
+**egyetlen** QML-fájlra mutatott (`CreateDialogs.qml`), a megjegyzése
+pedig ezt állította:
+
+> *„Csak a kollázs-létrehozó párbeszéd van meg; interaktív
+> kollázs-szerkesztő panel nincs"*
+
+**Ez ma nem igaz.** A mérés: **23 `Collage*.qml`** fájl van a fában, köztük
+`CollagePanel.qml`, `CollageCanvas.qml`, `CollageSettingsTab.qml`,
+`CollageClipsTab.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`,
+`CollageActionRow.qml`, `CollageContextMenus.qml`, `CollageFormatMenu.qml`,
+`CollageThemePopup.qml` — vagyis az interaktív szerkesztő **megvan**.
+
+Mivel az eszköz csak a sorban felsorolt fájlokban keres, a panel
+**mind a 36 eleme hiánynak látszott.**
+
+**A sor javítása után** (mind a 23 fájl felsorolva) a hiány **36 → 14**,
+és a teljes tábla:
+
+| | a kör előtt | a sor javítása után | + elem-felülbírálások |
+|---|---:|---:|---:|
+| párosítva | 87 | 125 | **132** |
+| hiányzik | 425 | 404 | **397** |
+
+⇒ **Egyetlen elavult sor 38 helyesen megvalósított elemet rejtett el.**
+
+### 42.2 A bekötés LÁNCÁT mértem, nem a végpontokat
+
+A `collage_controller.py` metódusai önmagukban nem bizonyítanak semmit
+(ld. a „mérd a bekötés láncát" tanulságot). Ezért mindegyikre
+megnéztem, hogy a QML **tényleg hívja-e**:
+
+| eredeti elem | controller-metódus | a hívó QML |
+|---|---|---|
+| `select_all` / `select_none` | `selectAllNodes` / `selectNoNodes` | `CollageCanvas` · `CollageActionRow` · `CollageContextMenus` |
+| `remove_node` | `removeSelectedNodes` | ua. |
+| `move_top` / `move_up` / `move_down` / `move_bottom` | `moveSelectionTop/Up/Down/Bottom` | `CollageZOrderColumn` · `CollageContextMenus` |
+| `snap_12` / `snap_3` / `snap_6` / `snap_9` | `snapRotation(command)` | `CollageSnapColumn` · `CollageContextMenus` |
+
+Mind a tizenegy **bekötve**, két belépési ponttal (saját oszlop + helyi menü).
+
+### 42.3 Hét további elem: felirat-eltérés, nem hiány
+
+Ezek megvannak, csak a szövegük nem betűre egyezik, ezért gépi úton nem
+párosultak. Mind bekerült a `ui-lefedettseg-elemek.csv`-be, fájllal és
+sorszámmal:
+
+| elem | nálunk | miért nem párosult |
+|---|---|---|
+| `makedesktop` | „Desktop Background" gomb | a buboréksúgó majdnem szó szerint az eredetié, de nem betűre |
+| `sharebutton` | „Create Collage" gomb | ua. |
+| `tab2` | „Clips (%1)" fül | a darabszám miatt nem egyezik a „Clips"-szel |
+| `deleteclips` | „Remove the selected pictures from the tray" | az eredeti „…selected clips…" |
+| `caption_checkbox` | `collageCaptionCheckbox` | felirat nélküli vezérlő |
+| `portrait` / `landscape` | `collagePortraitButton` / `collageLandscapeButton` | ikonos gombok, felirat nélkül |
+
+### 42.4 Ami valóban nyitva marad
+
+A maradék hét tétel mind **`bizonytalan`** osztályú (felirat nélküli,
+szerkezeti elem): `tabs`, `tabpanel1`, `tabpanel2`, `picker_panel`,
+`previewroot`, `previewinset`, `view_and_edit`. Ezek **tartók**, nem
+vezérlők; gépi úton nem értékelhetők, és önmagukban nem jelentenek
+funkcióhiányt.
+
+⇒ **A `collagepanel`-hez ebben a körben NEM nyílik jegy** — nincs mérhető
+funkcióhiány. *(A skill szabálya szerint a negatív eredmény is eredmény:
+a jegy hiánya itt lelet, nem mulasztás.)*
+
+### Nyitott kérdések mérlege (42.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a megfeleltetési sor elavultsága és a javítás hatása (42.1);
+  a tizenegy vezérlő bekötési láncának ellenőrzése (42.2).
+- **HATÓKÖRÖN KÍVÜL:** a hét `bizonytalan` szerkezeti elem gépi értékelése
+  (42.4) — az eszköz osztályozása szerint sem dönthető el.
+
+### Amit KIZÁRTAM
+
+- **„A kollázs-szerkesztő panel nincs meg nálunk"** — megdőlt: 23
+  `Collage*.qml`, a vezérlők bekötve, két belépési ponttal (42.1–42.2).
+  A megfeleltetési fájl állítása **elavult** volt.
+- **„A 36 hiány funkcióhiány"** — megdőlt: 22 elem megvan, 7 felirat-eltérés,
+  7 szerkezeti tartó.
+
+### ⚠️ Amit ez az egész axisra jelent
+
+A 41. kör azt mutatta, hogy az **elem**-párosítás téved. Ez a kör azt, hogy
+a **panel-megfeleltetés maga is elavulhat** — és az sokkal drágább, mert
+egy sor az egész panelt hiánynak jelzi. **Minden UI-kör első lépése ezért:
+nézd meg a panel megfeleltetési sorát, és hasonlítsd össze a mai
+QML-fával**, mielőtt bármit hiánynak neveznél.
