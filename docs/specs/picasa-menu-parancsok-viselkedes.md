@@ -3248,3 +3248,90 @@ kettő; a csoportosztás nincs mérve.)*
   `Preferences\LastCaptionButton`, a főablak-építő visszaállítja (54.3).
 - **„A felirat-kapcsoló csak a szerkesztőben van"** — megdőlt: az
   egyképes nézetben is (`editoneup/captionbutton`, 54.4).
+
+## 55. tétel — a finomhangolás és az effekt-fülek: négy téves riasztás, egy valódi hiány (2026-09-01)
+
+*Tizenhatodik kör az UI-lefedettségi axisról (#1778). Az `editpanel`
+**negyedik szelete**: a finomhangolás-fül és az effekt-fülek vezérlői.*
+
+### 55.1 A finomhangolás nálunk teljes
+
+Az `EditorFinetunePanel.qml` a teljes készletet adja: **Fill Light** ·
+**Highlights** · **Shadows** + „One-click lighting fix" varázspálca ·
+**Color Temperature** · **Neutral Color Picker** (mintaszín + pipetta) +
+„One-click color fix".
+
+A `droppertoggle` buboréksúgója az eredetiben *„Allows you to pick a
+neutral gray or white part of the Photo to remove color cast"*; nálunk
+*„Pick a neutral gray or white area of the photo to…"* (`:211`) —
+ugyanaz a tartalom, más megfogalmazás, ezért nem párosult gépi úton.
+
+### 55.2 Négy elem felülbírálva
+
+| eredeti | nálunk | fájl:sor |
+|---|---|---|
+| `filllight_icon` | „Fill Light" + `finetuneFillSlider` | `EditorFinetunePanel.qml:105`, `:108` |
+| `droppertoggle` | `finetuneNeutralPicker` | `:208`, `:211` |
+| `faces_button` | `facesToggleButton` + `facesVisible` | `PhotoViewer.qml:1490`, `:165–166` |
+| `filter_name` | `effectParamTitle` (az aktív effekt neve) | `EditorParamPanel.qml:191` |
+
+Tábla: párosítva 153 → **157**, hiányzik 382 → **380**, bizonytalan
+154 → **152**.
+
+*(Az `editcircle1`, `editcircle1_well`, `editcontrol_well`,
+`editcheckbox1/2` **felirat nélküli szerkezeti tartók** — a 45.1 szerint
+a mérés ezeket nem tudja értékelni, és önmagukban nem jelentenek
+funkcióhiányt.)*
+
+### 55.3 Ami valóban hiányzik: `editslideshow` — „Edit Movie"
+
+> `editslideshow` — **„Edit Movie"** / **„Mozgófilm szerkesztése"**
+
+Egy gomb a szerkesztő panelen, amivel a **filmkészítőbe** lehet átlépni.
+Nálunk mérve **nincs** (`grep -i "Edit Movie|film szerkeszt"` a
+QML-fában: nulla találat).
+
+⇒ **Nem nyílik rá új jegy:** a filmkészítő panel egésze hiányzik, és az
+a **#432 / #452** jegyekhez tartozik — ez a gomb annak a **belépési
+pontja**, nem önálló funkció. *(A „gyűjtőjegy nem elég" szabály másik
+oldala, ugyanaz, mint a 46. körben.)*
+
+### 55.4 A `edithelpbutton` — hatókör-kérdés, nem hiány
+
+> `edithelpbutton` — buboréksúgó: „Help"
+
+Az eredeti szerkesztő-paneljén súgógomb ül, ami a Picasa
+súgórendszerébe visz. **A súgórendszer egésze hatókörön kívül**
+(`HATOKORON_KIVUL` a menü-metrikában: `ID_HELP_*` parancsok), ezért ez
+sem hiány, hanem **szándékos elhagyás** — bekerül a 45.3 táblába.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| finomhangolás (derítőfény, csúcsfény, árnyék, hőmérséklet, pipetta, két varázspálca) | teljes | **teljes** | — |
+| aktív effekt neve | `filter_name` | `effectParamTitle` | — |
+| arcok kapcsolója | `faces_button` | `facesToggleButton` | — |
+| **„Edit Movie" gomb** | belépés a filmkészítőbe | **nincs** | **#432 / #452** |
+| súgógomb | a Picasa súgójába visz | nincs | **hatókörön kívül** |
+
+### Nyitott kérdések mérlege (55.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a finomhangolás teljessége (55.1); a négy téves riasztás
+  (55.2); az `editslideshow` besorolása (55.3).
+- **HATÓKÖRÖN KÍVÜL:** a súgógomb — a súgórendszer egésze az (55.4).
+
+*(Záró mondat a 45.1 szerint: ebben a szeletben **nincs önállóan
+megvalósítható hiányzó vezérlő** — az egyetlen valódi hiány egy másik
+jegy belépési pontja; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A finomhangolás-fülünk hiányos"** — megdőlt: a teljes készlet
+  megvan, két elem csak a fogalmazás miatt nem párosult (55.1–55.2).
+- **„Az `editslideshow` önálló funkció"** — megdőlt: a filmkészítő
+  belépési pontja, tehát a #432/#452-höz tartozik (55.3).

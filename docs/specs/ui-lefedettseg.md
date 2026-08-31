@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 153 |
+| párosítva | 157 |
 | másutt megvan (nem ezen a felületen) | 46 |
-| hiányzik | 382 |
-| bizonytalan | 154 |
+| hiányzik | 380 |
+| bizonytalan | 152 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **20.9%** |
+| **lefedettség az értékelhető elemeken** | **21.4%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -50,7 +50,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | # | panel | hiány + bizonytalan | mit takar |
 |---:|---|---:|---|
-| 1 | `editpanel` | 73 | A szerkesztő teljes bal oldali panelje minden fülével |
+| 1 | `editpanel` | 69 | A szerkesztő teljes bal oldali panelje minden fülével |
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `thumbui` | 33 | A fő könyvtárnézet egésze |
 | 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
@@ -65,7 +65,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | hiányzik | bizonytalan | rajzoló | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `editpanel` | 312 | 125 | 46 | 6 | 30 | 43 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
+| `editpanel` | 312 | 125 | 50 | 6 | 28 | 41 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
 | `thumbui` | 140 | 46 | 10 | 3 | 22 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
@@ -144,7 +144,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 Csak az értékelhető elemek. `bizonytalan` = nem dönthető el gépi úton, kézi ellenőrzésre vár.
 
-### `editpanel` — 73 hiány · panel-megfeleltetés: `parositva`
+### `editpanel` — 69 hiány · panel-megfeleltetés: `parositva`
 
 A szerkesztő teljes bal oldali panelje minden fülével
 
@@ -153,7 +153,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `ab_2up_toggle` buboréksúgó: „View two different images”
 - `captionbutton` buboréksúgó: „Show/Hide Caption”
 - `captiontrash` buboréksúgó: „Delete this caption”
-- `droppertoggle` buboréksúgó: „Allows you to pick a neutral gray or white part of the Photo to remove color cast”
 - `editcheckbox1` — *bizonytalan*
 - `editcheckbox2` — *bizonytalan*
 - `editcircle1` — *bizonytalan*
@@ -165,9 +164,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `edittextghost` — *bizonytalan*
 - `edittextpanel` — *bizonytalan*
 - `eraserbutton` — *bizonytalan*
-- `faces_button` — *bizonytalan*
-- `filllight_icon` buboréksúgó: „Fill Light: Adjust the ambient light in the Photo”
-- `filter_name` — *bizonytalan*
 - `fit` buboréksúgó: „Fit Photo inside viewing area”
 - `fxpreview1` — *bizonytalan*
 - `fxpreview10` — *bizonytalan*
