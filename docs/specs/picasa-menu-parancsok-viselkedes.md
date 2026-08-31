@@ -1607,3 +1607,133 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kív�
   `active_metadata_tab` kulcsnak **nincs írója** a binárisban (37.5).
 - **„Az `ID_CAPTAG` egyértelműen a fiók Címkék lapja"** — megdőlt: két
   menüben két KÜLÖNBÖZŐ azonosítóval szerepel (37.2).
+
+## 38. tétel — Rejtett képek (jelszó-ajánlattal), Idővonal, Háttérkép (2026-08-31)
+
+A lefedettségi sor utolsó három tétele: `ID_VIEW_SHOWHIDDEN`,
+`ID_VIEW_TIMELINE`, `ID_WALLPAPER`. A parancsazonosítókat a 33.1-es
+javított horgony adta a menüsáv-építőből (`0x00559150`):
+
+| kulcs | rekord | cmd |
+|---|---|---|
+| `eMenuView::ID_VIEW_TIMELINE` | `0xd6e090` | **`0x9ccc`** |
+| `eMenuView::ID_VIEW_SHOWHIDDEN` | `0xd6e0e0` | **`0x9c9e`** |
+| `eMenuCreate::ID_WALLPAPER` | `0xd6e5b0` | **`0x9cd2`** |
+
+*(A `ID_WALLPAPER` névtere `eMenuCreate` — a **Létrehozás** menüé, nem a
+Nézeté.)*
+
+### 38.1 ⭐ „Rejtett képek" — a bekapcsolás JELSZÓT AJÁNL
+
+Az állapot a `Preferences\ShowHidden` kulcsban él; az olvasó/író
+`0x005c9300` (a `Preferences` ág, `ShowHidden` kulcs az egyetlen két
+sztringje), amit a fő parancskezelő (`0x005cb990`) hív.
+
+**Ami eddig sehol nem szerepelt nálunk:** ugyanez a parancskezelő
+**kétszer** hívja a `0x005ee2a0`-t is, és az egy párbeszédet tesz fel, ha
+a „Rejtett mappák" gyűjtemény **nincs jelszóval védve**:
+
+| elem | sztring |
+|---|---|
+| cím | `IDS_PROMPT_HIDDEN_PWD_TITLE` |
+| üzenet | `IDS_PROMPT_HIDDEN_PWD_MESSAGE` — *„The \"Hidden Folders\" collection is not currently password protected. Would you like to add a password now?"* |
+| igen-gomb | `ThumbUI::HiddenPassword::YesButton` = **„Add Password"** |
+| nem-gomb | `ThumbUI::HiddenPassword::NoButton` = **„Don't Add Password"** |
+| jelölőnégyzet | **„Do not ask me again."** → `Preferences\DoNotConfirmHiddenPwd` |
+
+A függvény a `Preferences` ág mellett a `Folders on Disk`, `Hidden
+Folders` és `state` sztringeket is használja — vagyis a gyűjtemény
+állapotát nézi meg, mielőtt kérdez.
+
+⇒ **A „Rejtett képek megjelenítése" nem puszta szűrő-kapcsoló: a Picasa
+az első bekapcsoláskor felajánlja a gyűjtemény jelszavas védelmét, és a
+„ne kérdezd többet" választ külön kulcsban őrzi.**
+
+*(Bizonyítottsági fok: **megerősített** a párbeszéd léte, szövegei,
+gombjai és a két registry-kulcs; **feltételes** az, hogy pontosan a
+BEkapcsoláskor kérdez — a `0x005cb990` két hívóhelye a be- és a kikapcsoló
+ág is lehet. A gombfeliratok iránya („Add Password") viszont a
+bekapcsolás felé mutat.)*
+
+### 38.2 Idővonal — egy közös „bemutató-mód" kezelő
+
+A `0x9ccc` a binárisban nem jelenik meg közvetlen összehasonlításban
+(ugrótáblás ág), a viselkedés viszont a `0x005e8a70`-ből olvasható. Ez a
+függvény **három bemutató-módot** kezel egy helyen:
+
+| mód | sztringek |
+|---|---|
+| **Idővonal** | `CThumbUI::MakeTimeline` · **„Preparing timeline…"** |
+| Flipbook | `CThumbUI::MakeFlip` · „Preparing flipbook…" |
+| Nagy diavetítés | `BigSlideshow2` |
+
+Közös őre az `IDS_MUST_SELECT`, és a függvény a `thumbui/fullview`,
+`editpanel/preview`, `editpanel/only_1up_toggle`, `oneup/back`
+csomópontokat is kezeli — vagyis a **teljes képernyős** útra vált át. Van
+saját gomb-belépési pontja is: **`thumbui/timelinebutton`**
+(`0x005d9cc0`).
+
+⇒ **Az Idővonal nem nézet-kapcsoló, hanem egy előkészítő lépéssel induló,
+teljes képernyős bemutató-mód** („Preparing timeline…" folyamatjelzővel).
+
+### 38.3 ⭐ „Beállítás asztali háttérképként" — mit ír, hova, milyen stílussal
+
+A munkát a `0x0057aa10` (1143 b) végzi. **MÉRVE, teljes lánc:**
+
+1. **Fájlt ír**: `picasabackground.bmp` (`0xc8ffe8`) a `Picasa`
+   (`0xc7f0fc`) / `Backgrounds` (`0xc8ffc0`) mappába — a mappát a
+   `CThumbUI::BackgroundsFolder` erőforrás nevezi meg. ⇒ **BMP-vé
+   alakítja**, nem az eredeti fájlra mutat.
+2. **Azonnal érvényesít**: `SystemParametersInfoW(0x14 /* SPI_SETDESKWALLPAPER */,
+   0, <útvonal>, 0)` — `0x0057aca1`, import `0xc408d0`. Az utolsó
+   paraméter **0**, tehát se `SPIF_UPDATEINIFILE`, se `SPIF_SENDWININICHANGE`.
+3. **Maga írja a registryt** — `HKEY_CURRENT_USER` (`0x80000001`),
+   ág: **`Control Panel\Desktop\`** (`0xc90000`), három érték:
+
+   | érték | mit kap | cím |
+   |---|---|---|
+   | `Wallpaper` | a BMP teljes útvonala | `0x0057acaf` |
+   | `WallpaperStyle` | **`"0"`** | `0x0057acfe` |
+   | `TileWallpaper` | **`"0"`** | `0x0057ad67` |
+
+   A `"0"` mindkettőnél a `0xc7fe6c` egykarakteres sztring.
+
+⇒ **A háttérkép KÖZÉPRE kerül: nem csempézve (`TileWallpaper=0`) és nem
+nyújtva (`WallpaperStyle=0`).** Ez a Windows „Középre" beállítása.
+
+### Eredeti / nálunk / teendő
+
+| parancs | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| `ID_VIEW_SHOWHIDDEN` (`0x9c9e`) | `Preferences\ShowHidden`; **plusz jelszó-ajánló párbeszéd** + `DoNotConfirmHiddenPwd` | a kapcsoló megvan és őrződik (`controller.py:506`–`519`, `view/showHidden`); a menütétel pipás (`PicasaMenuBar.qml:679`) | **a jelszó-ajánlat hiányzik** — de mögötte nincs rétegünk: a gyűjtemény-jelszó nálunk tudatosan `placeholder` (`CollectionContextMenu.qml:12`, #416). ⇒ a #416-hoz tartozik, nem önálló jegy |
+| `ID_VIEW_TIMELINE` (`0x9ccc`) | teljes képernyős bemutató-mód, „Preparing timeline…" előkészítéssel; gomb-belépési pont is (`thumbui/timelinebutton`) | menütétel + **valódi bekötés**: `Main.qml:823` → `toggleTimeline()` → `timelineController.reload()` + `timelineOpen` (`Main.qml:611`) | a **gomb**-belépési pont és az előkészítés-jelző hiányzik (kis jegy, ha kell) |
+| `ID_WALLPAPER` (`0x9cd2`) | BMP a `Picasa\Backgrounds`-ba, `SPI_SETDESKWALLPAPER`, majd három registry-érték; **középre** | **placeholder** (`PicasaMenuBar.qml:1236`, „Set as Desktop Background…") — a kollázs-oldalon van egy `wallpaper` jelző (`collage_save.py:490`), de a menüparancs halott | **ÚJ JEGY** |
+
+### Nyitott kérdések mérlege (38.)
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a három parancsazonosító (38. bevezető); a `ShowHidden`
+  tárolása és a jelszó-ajánló párbeszéd teljes szövegkészlete (38.1); az
+  Idővonal bemutató-mód jellege és belépési pontjai (38.2); a háttérkép
+  teljes írási lánca, a stílusértékekkel együtt (38.3).
+- **BLOKKOLT:** hogy a jelszó-ajánlat a BE- vagy a KIkapcsoláskor jön-e.
+  A `0x005cb990` két hívóhelye statikusan nem különbözteti meg őket.
+  **Mi kell hozzá:** egy megfigyelés élő Picasán — a „Nézet ▸ Rejtett
+  képek" be-, majd kikapcsolása, és melyiknél jön a párbeszéd. Ez a
+  #416 megvalósításáig **nem blokkol semmit**, ezért nem kér külön
+  `felhasználóra-vár` jegyet.
+
+### Amit KIZÁRTAM
+
+- **„A »Rejtett képek« puszta szűrő-kapcsoló"** — megdőlt: jelszó-ajánló
+  párbeszéd tartozik hozzá, saját „ne kérdezd többet" kulccsal (38.1).
+- **„A háttérkép az eredeti képfájlra mutat"** — megdőlt: a Picasa
+  **BMP-t ír** a saját `Backgrounds` mappájába, és arra mutat (38.3).
+- **„A háttérkép nyújtva/csempézve kerül ki"** — megdőlt: mindkét
+  registry-érték `"0"` ⇒ **középre** (38.3).
+- **„A `timelineRequested` jelzésünknek nincs fogyasztója"** — a mérés
+  megcáfolta: `Main.qml:823` bekötve. *(Ez a kör saját, ellenőrzés előtti
+  feltevése volt — a grep döntötte el, nem a benyomás.)*
