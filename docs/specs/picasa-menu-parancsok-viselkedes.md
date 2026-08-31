@@ -1002,3 +1002,152 @@ Nyitott kérdések: 0 nyílt · 9 lezárva · 0 blokkolt · 2 hatókörön kív�
 - **„A 0x5cc561 a GEOTAG kezelője"** — megdőlt: a táblafeloldás (1. táblás
   számolás) szerint a GEOTAG a `0x5cc825`, a `0x5cc561` a `0x9d53`-hoz
   tartozik (a táblázat téves kézi olvasása).
+
+## 34. tétel — az öt KÉP-parancs: forgatás, visszavonás, elrejtés, arcok (2026-08-31)
+
+A lefedettségi mérés determinisztikus sora: `ID_PICTURE_RESET_FACES`,
+`ID_PICTURE_REVERT`, `ID_PICTURE_ROTATECLOCKWISE`,
+`ID_PICTURE_ROTATECOUNTERCLOCKWISE`, `ID_PICTURE_UNHIDE`. Mindegyik
+kezelője a főablak-diszpécserből (`0x005cb990`) olvasható — az esetek
+**magát a viselkedést** adják, a menü-azonosítót pedig a 33.1-es
+„javított horgony" módszere (a fordítás-eredmény írási címe = rekord
+alapja, a `+0x0a` = parancsazonosító).
+
+### 34.1 A parancs-térkép — mind hívólánccal, mind címmel
+
+| parancs | cmd | eset | kezelő | viselkedés |
+|---|---|---|---|---|
+| `ROTATECLOCKWISE` („F&orgatás jobbra") | `0x9ca2` | `0x5cbd35` | `0x005eef30` | forgatás **+90°**, háttérmunkaként |
+| `ROTATECOUNTERCLOCKWISE` („Forgatás &balra") | `0x9ca3` | `0x5cbd42` | `0x005eef30` | forgatás **270°** (−90°) |
+| `REVERT` („Összes szerkesztés vissz&avonása") | `0x9d2d` | `0x5cbd78` | `0x005ef3e0` | megerősítés, majd az edit-tokenek törlése |
+| `UNHIDE` („&Megjelenítés") | `0x9ca4` | `0x5cbd52` | `0x005e7d90` | `hidden` kulcs **törlése**, frissítés |
+| *(párja:)* `ID_PICTURE_HIDE` („&Elrejtés") | `0x9ca5` | `0x5cbd5f` | `0x005e7d90` | `hidden` kulcs **írása**, frissítés |
+| `RESET_FACES` („Ar&cok alaphelyzetbe állítása") | `0x9e11` | `0x5cc83c` | **módosító-gomb szerint három ág** | ld. 34.4 |
+
+A második, helyi-menübeli pár is megvan: a menüépítő ugyanezeket a
+tételket kétszer építi — egy második azonosító-párral (`HIDE`=`0x9c72`,
+`UNHIDE`=`0x9cd0`, esetükben `0x5cc054`/`0x5cc069` → `0x005cb180(ebx,
+1|0)`, ugyanannak a művelet másik keretből hívott változata).
+
+> **A horgony-módszer határa (következő köröknek):** a hat kulcsból ötnél
+> a javított horgony a diszpécserrel BIZTOSAN egyezik (`0x9ca2`/`0x9ca3`/
+> `0x9d2d`/`0x9e11` + a második pár), de a HIDE/UNHIDE második (b)
+> rekordpárját fordítva társította (`HIDE`→`0x9ca4`, holott a diszpécser
+> szerint `0x9ca4` = törlés = Unhide). Az azonosító-mező mindig a
+> **diszpécser-oldalról** is ellenőrizendő: a kezelő-paraméter
+> (írás/törlés, 90/270) dönt, nem a menüépítő blokkja.
+
+### 34.2 A forgatás — és a `rotate=` bit jelentése (#1162 LEZÁRVA)
+
+A menü-forgatás a `0x005eef30`-ra fut (a `thumbui/rotateright`/
+`rotateleft` névparancsok is ide érkeznek: `0x5dafcd` → `push 0x5a`,
+`0x5db03c` → `push 0x10e`):
+
+- **jobbra = 90, balra = 270** — ugyanaz a motor, fix szög;
+- **háttérszálon** fut (a függvény munkaobjektumot gyárt,
+  `EnterCriticalSection` + szál-id jelölés);
+- őr: `IDS_MUST_SELECT_TO_ROT` („Must have selected images to rotate."),
+  hiba: `IDS_ROT_TYPEFAILED` („One or more images could not be rotated
+  because of the file type.").
+
+A `rotate=` kulcs a **negyedfordulat** tárolója: a 864 ini-es korpuszban
+2426 `rotate=` sor, értéke kizárólag `rotate(0)`…`rotate(3)` (1735/451/
+213/27) — **szabad szög sehol**. A szabad egyenesítés (Straighten) a
+`crop64` dőlése, nem a `rotate=`.
+
+⇒ **#1162 kérdésének válasza: a `rotate` bit és a menü UGYANAZ a
+mechanizmus** — a `rotate=rotate(N)` negyedfordulatot tárol, a szabad
+forgatás nem ebbe a kulcsba való. A mi oldalunkon
+(`photo_ops_controller.py` `_rotate_many`) a `rotate({steps})` 0..3-ig
+**egyezik**; egyetlen eltérés: a videókat hallgatólagosan kihagyjuk
+(#103), az eredeti `IDS_ROT_TYPEFAILED`-et ad vegyes kijelölésnél.
+
+### 34.3 A visszavonás (Undo All Edits) — `0x005ef3e0`
+
+1. **film** esetén külön kérdés: `CThumbUI::UndomovieEdits`
+   („Remove all movie edits?");
+2. **egy képre**: `IDS_CONFIRMREVERT` — „This will remove all edits you
+   have made to the current picture.  Do you want to continue?", gomb:
+   `Remove Edits`;
+3. **több képre**: `IDS_CONFIRMREVERT_MULTIPLE` + saját gomb
+   (`IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON`);
+4. jóváhagyás után képenként a **különleges régió-tokenek** törlése —
+   `redeye` · `retouch` · `picnik` (`0x5ef6e1`–`0x5ef877`, a `filters=`
+   láncból), majd az `editpanel/preview` frissítése.
+
+*(Megkülönböztetendő a fájlszintű Revert-től: a
+`CThumbUI::FileRevert`-család (`0x0053b2e0`, „Revert to original version
+of file?") az eredeti fájl visszaállítása, az Undo All Edits pedig az ini
+szerkesztés-tokenjeit veszi le — két különböző művelet.)*
+
+### 34.4 Az arcok alaphelyzetbe állítása — HÁROM ág módosító-gomb szerint
+
+Az `0x9e11` esete (`0x5cc83c`) a billentyű-állapotot is olvassa
+(`GetKeyState`):
+
+| módosító | kezelő | mit tesz | szöveg |
+|---|---|---|---|
+| **sima kattintás** | `0x0057daa0` | a **kijelölés** arc-téglalapjait törli (`faces=` kulcs, `0x448560`/`0x484820`/`0x47bfd0`) | **nincs megerősítés** |
+| **Ctrl+kattintás** | `0x006038b0` | `CThumbUI::RemoveAllFaceData` — MINDEN arc-adat törlése + teljes újra-arcfelismerés | „FIGYELEM! Ez a művelet TÖRLI az összes, arcokra vonatkozó adatot, a személyi albumokat, és újrakeresi az arcokat az összes fotón. A művelet egyúttal ELTÁVOLÍTHATJA a szinkronizált webalbumokban lévő névcímkéket is. Ezt szeretné tenni?" |
+| **Shift+kattintás** | `0x00603a20` | `CThumbUI::ResetAllFaces` — a személyi albumok törlése, az arcok a Név nélküliek közé | „FIGYELMEZTETÉS! Ez a művelet TÖRLI az összes személyi albumot, és a Név nélküliek albumba helyezi át az arcokat. A művelet a szinkronizált webalbumokból is ELTÁVOLÍTHATJA a névcímkéket. Ezt szeretné tenni?" |
+
+A két könyvtárszintű ág a `peoplepanel/resetfaces` névparancsot ereszti
+(`0x6038b0`/`0x603a20`).
+
+> **Helyesbítés a #422-höz:** a korábbi megfigyelés („az eredeti
+> FIGYELMEZTETÉSSEL kérdez, mert az egész könyvtárra hat") az **a
+> Shift/Ctrl-ágat** írta le. A sima menüpont a **kijelölésen** dolgozik,
+> és a binárisban nincs figyelmeztető szövege. A mi
+> `resetFacesConfirm`-ünk (mindig kérdez, könyvtárszintű szöveggel) a
+> Shift-ágat másolta le — dokumentált SAJÁT döntés maradhat, de az
+> eredeti három ágát a jegy rögzíti.
+
+### 34.5 Az elrejtés/megjelenítés — a `hidden` kulcs
+
+A `0x005e7d90(param)` ágai: `param=1` (Hide) a `]hidden` belső tokenet
+**írja** (vtable+0x8c), `param=0` (Unhide) **törli**; utána frissítés
+(`0x65b840`), és ha a szerkesztő-előnézet él, annak lezárása.
+
+A `]`-prefix a bináris **belső token-névtere** (mint `]star`,
+`]revertable`) — az ini-kulcs a korpusz szerint **`hidden=yes`**
+(66563–66581. sorok), tehát a mi `photo_ops_controller.py`
+(`with_value("hidden","yes")` / `with_removed`) **egyezik**.
+
+A HIDE-oldalhoz online-album megerősítés tartozik (`0x005e7e80`):
+`Sync::SimpleConfirm` („Remove online copies of these files?") /
+`Sync::MultiConfirm` („Some selected files may be in multiple online
+albums. Remove all online copies?"), gomb: „Remove Online Copies" —
+webalbum nélkül nálunk nincs miről átvenni.
+
+### Eredeti / nálunk / teendő — az öt parancsra
+
+| parancs | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| Forgatás jobbra/balra | fix 90/270°, háttérszálon; nincs kijelölés → őr-szöveg; típus-hiba → üzenet | `_rotate_many`: `rotate(0..3)`, videó hallgatólagosan kihagyva | vegyes kijelölésnél az `IDS_ROT_TYPEFAILED` üzenet (kis jegy) |
+| Undo All Edits | megerősítés (egy/több/film külön szöveg), régió-tokenek + `filters=` törlés | `openRevert` → `revertConfirmDialog`, `filters=` törlés | az egy/több szövegkülönböztetés a párbeszédben |
+| Unhide/Hide | `hidden` kulcs írása/törlése + frissítés | **egyezik** (`hidePhotosByIds`, `with_removed`) | — |
+| Reset Faces | sima = kijelölés (nincs kérdés); Ctrl/Shift = könyvtárszintű FIGYELEM-párbeszéd | mindig kérdez, ResetAllFaces-szöveg (#422 SAJÁT döntés) | a három ág megvalósítása vagy tudatos eltérés rögzítése |
+
+### Nyitott kérdések mérlege (34.)
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** #1162 (a rotate bit = negyedfordulat-tároló, a menüvel
+  azonos mechanizmus); a forgatás két szöge és szövegei (34.2); a
+  revert szöveg-hármasa és régió-tokenjei (34.3); a Reset Faces
+  három ága (34.4).
+- **HATÓKÖRÖN KÍVÜL:** a `Sync::Simple/MultiConfirm` átvétele —
+  webalbum-feltöltés nélkül nincs tárgya.
+
+### Amit KIZÁRTAM
+
+- **„A menü-forgatás a szabad forgatást írja a rotate= bitbe"** —
+  megdőlt: a korpuszban kizárólag `rotate(0..3)`, a motor fix
+  90/270-et kap (34.2).
+- **„A Reset Faces menüpont mindig figyelmeztet"** — részben dőlt meg:
+  a sima ág kijelölés-szintű és szöveg nélküli; a figyelmeztetés a
+  Ctrl/Shift ágaké (34.4).
+- **„A HIDE/UNHIDE az `]hidden` ini-kulcsot írja"** — pontosítva: a
+  `]`-prefix belső token-név; az ini-kulcs `hidden=yes` (korpusz).
