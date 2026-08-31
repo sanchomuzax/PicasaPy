@@ -1111,9 +1111,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     def _talca_fotok():
         return controller._tray_records()
 
-    email_controller = EmailController(
-        photo_source=_lathato_fotok, tray_source=_talca_fotok
-    )
+    email_controller = EmailController(photo_source=_lathato_fotok, tray_source=_talca_fotok)
     web_export_controller = WebExportController(photo_source=_lathato_fotok)
     # #1472: a nyomtatás vezérlője — UGYANARRA a `photo_source`-ra épül
     # (a `printRows`/`renderPrintPreviewPdf` sorindexei a látható fotók
@@ -1121,9 +1119,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # tesztfájllal SOHA nem jött létre a futó alkalmazásban, ezért a
     # Ctrl+P és a képtálca „Nyomtatás" gombja halott volt.
     print_controller = (
-        PrintController(
-            photo_source=_lathato_fotok, tray_source=_talca_fotok
-        )
+        PrintController(photo_source=_lathato_fotok, tray_source=_talca_fotok)
         if PrintController is not None
         else None
     )
