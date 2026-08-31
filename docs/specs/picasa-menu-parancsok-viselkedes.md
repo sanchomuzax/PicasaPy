@@ -3151,6 +3151,104 @@ vezérlő**; a csoportosztás nincs mérve.)*
   volt, de úgy hangzott, mintha kevés lenne; valójában ez a vágás-fül
   teljes értékű funkciója.)*
 
+## 54. tétel — a szöveg-fül és a FELIRAT két hiányzó vezérlője (2026-09-01)
+
+*Tizenötödik kör az UI-lefedettségi axisról (#1778). Az `editpanel`
+harmadik szelete: a **szöveg-fül** és a hozzá tartozó **felirat**-vezérlők.*
+
+### 54.1 A szöveg-fül nálunk teljes
+
+Az `EditorTextPanel.qml` (22 feliratos vezérlő) a szövegráírás teljes
+készletét adja: szövegmező (`textContentField`), **„Copy Caption"**
+gomb („Add text based on the picture's caption"), betűtípus- és
+méretválasztó, **félkövér / dőlt / aláhúzott**, és **három igazítás**
+(bal / közép / jobb).
+
+⇒ Az `edittextpanel` és az `edittextghost` jelöltek **téves riasztások**
+(szerkezeti tartók, felirat nélkül; a 45.1 szerint a mérés ezeket nem
+tudja értékelni).
+
+### 54.2 ⛔ Ami VALÓBAN hiányzik: a felirat két vezérlője
+
+| eredeti | buboréksúgó | nálunk (**mérve**) |
+|---|---|---|
+| **`captionbutton`** | **„Show/Hide Caption"** | **nincs** |
+| **`captiontrash`** | **„Delete this caption"** | **nincs** |
+| `showtextcheckbox` | „Toggle to show or hide text on a photo" | **nincs** |
+
+Nálunk a `PhotoViewer.qml:1536` `captionField`-je **szerkeszthető
+felirat-mező**, de:
+
+- **nincs mód elrejteni** a feliratot (a mező mindig ott van);
+- **nincs egy mozdulatos törlés** — a szöveget kézzel kell kijelölni és
+  kitörölni.
+
+*(Mérve: a `show.*text` / `hide.*text` / `delete.*caption` / `clearCaption`
+keresés a QML-fában és az `app/`-ban **nulla** találat.)*
+
+### 54.3 ⭐ A felirat láthatósága TARTÓS ÁLLAPOT
+
+A `captionbutton` nem pillanatnyi kapcsoló: az állapota **túléli a
+programindítást**.
+
+| bizonyíték | mit jelent |
+|---|---|
+| **`Preferences\LastCaptionButton`** (`0x00576a20`, a `Preferences` és az `editpanel/captionbutton` mellett ugyanabban a függvényben) | a felirat-sáv **utolsó állapota** |
+| ugyanez a kulcs a **főablak-építőben** is (`0x0040bf70`) | induláskor **visszaállítja** |
+| szomszédja: `LastNerdView` | ugyanaz a minta a „nerd" (EXIF-részletes) nézetre |
+
+⇒ **Ha egyszer elrejtetted a feliratot, a Picasa legközelebb is
+elrejtve indul.**
+
+### 54.4 KÉT belépési pont — a szerkesztőben és az egyképes nézetben
+
+A `captionbutton` **két névtérben** él:
+
+| névtér | hol |
+|---|---|
+| `editpanel/captionbutton` | a szerkesztő panelen (`0x0040bf70`, `0x00565cf0`, `0x00566a70`, `0x00568010`, `0x00576a20`) |
+| **`editoneup/captionbutton`** | az **egyképes nézetben** (`0x0075eac0`, `0x0075f430`, `0x00760240`) |
+
+⇒ A felirat-kapcsoló **mindkét nézetben** ott van, és a `0x0057bb50`
+kezelő a `captionbutton` · `caption` · `captiontrash` hármast együtt
+kezeli.
+
+*(Ez a 2/b szabály 1. pontja élesben: egy vezérlő több belépési ponttal —
+ha csak az egyiket építjük meg, a másik nézetben hiányozni fog.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| szövegráírás (betű, stílus, igazítás) | teljes | **teljes** (`EditorTextPanel.qml`) | — |
+| „Copy Caption" | a felirat átemelése szövegként | **megvan** (`:58`) | — |
+| felirat **elrejtése** | `captionbutton`, két nézetben | **nincs** | ÚJ JEGY |
+| felirat **törlése** | `captiontrash` | **nincs** | ua. |
+| az elrejtés **megjegyzése** | `Preferences\LastCaptionButton` | nincs | ua. |
+| szöveg elrejtése a fotón | `showtextcheckbox` | nincs | ua. |
+
+### Nyitott kérdések mérlege (54.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a szöveg-fül teljessége nálunk (54.1); a két hiányzó
+  felirat-vezérlő és a mi mérésünk (54.2); a láthatóság tartóssága és a
+  két belépési pont (54.3–54.4).
+
+*(Záró mondat a 45.1 szerint: ebben a szeletben **van** hiányzó vezérlő —
+kettő; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A szöveg-fül nálunk hiányos"** — megdőlt: a teljes készlet megvan,
+  a jelölt két elem szerkezeti tartó (54.1).
+- **„A felirat-kapcsoló pillanatnyi állapot"** — megdőlt:
+  `Preferences\LastCaptionButton`, a főablak-építő visszaállítja (54.3).
+- **„A felirat-kapcsoló csak a szerkesztőben van"** — megdőlt: az
+  egyképes nézetben is (`editoneup/captionbutton`, 54.4).
+
 ## 55. tétel — a finomhangolás és az effekt-fülek: négy téves riasztás, egy valódi hiány (2026-09-01)
 
 *Tizenhatodik kör az UI-lefedettségi axisról (#1778). Az `editpanel`
