@@ -896,6 +896,11 @@ pontja.)*
 
 ### 8.7 HIBAESETEK — mind a hét, magyar szöveggel
 
+⚠️ Az alábbi tábla **tíz sor**, de csak **hét hibaág**: a `destexists`
+egy KÉRDÉS, az `overwritetitle` és az `errortitle` pedig ABLAKCÍM. A
+lap korábbi „Tíz hibaág” összegzése ezt összemosta, és a #1617-es jegy
+ebből indult ki (#1617).
+
 | kulcs | magyar |
 |---|---|
 | `CExportPrefsPage::destexists` | A cél már létezik. Felülírja az új albummal? |
@@ -909,7 +914,16 @@ pontja.)*
 | `IDS_DESTDIRCANNOCREATE` | A célkönyvtár nem hozható létre. |
 | `IDS_NO_IMAGES_TO_SEND` | Nem állt rendelkezésre kép a küldéshez. |
 
-**Tíz hibaág — nálunk egy sincs bekötve.**
+**Hét hibaág + egy kérdés + két ablakcím.** A hét ág nálunk MIND be
+van kötve, végig a láncon: `exporter.py` (fajta) →
+`ExportMixin._export_error_text` (szöveg) → `exportFailedDetails` →
+`ExportDialogs.qml` (a felhasználó látja). Ágankénti őr — a KIVÁLTÓ
+helyzetből, nem injektált kivétellel:
+`tests/export/test_export_hibaagak_1617.py` (#1617).
+
+A `scanfile` ág a mi felépítésünkben nem előállítható (az ürítésünk
+nem külön fájl-letapogatással dolgozik) — a szöveg megvan hozzá, de
+kiváltani nem tudjuk. Ld. a 12.3 szakaszt.
 
 ### 8.8 HONNAN JÖN INDULÁSKOR AZ ÁLLAPOT
 
