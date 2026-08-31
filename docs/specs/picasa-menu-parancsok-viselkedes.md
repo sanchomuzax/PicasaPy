@@ -1413,7 +1413,7 @@ A hasonlító `0x004a7e80`-tól olvasható (ugyanaz az osztály):
 
 | menü | építő | kulcs-névtér | bizonyíték |
 |---|---|---|---|
-| **menüsáv ▸ Nézet** | `0x00559150` (menüsáv-építő) | `eMenuView::ID_VIEWBYDATE/RECENT/NAME/SIZE` | a négy sztring a menüsáv-építőben; a pipázója `0x00574b70`, ami **`GetSubMenu(GetMenu(hwnd), 2)`**-t vesz (`0x00574b81`–`0x00574b8a`) = a **harmadik** felső menü |
+| **menüsáv ▸ Nézet** | `0x00559150` (menüsáv-építő) | `eMenuView::ID_VIEWBYDATE/RECENT/NAME/SIZE` | a négy sztring a menüsáv-építőben; a pipázója `0x00574b70`, ami **`GetSubMenu(GetMenu(hwnd), 2)`**-t vesz (`0x00574b81`–`0x00574b8a`) = a **harmadik** felső menü ⚠️ **de a menün BELÜLI helyet ez nem mondja meg** — ld. 49.1 |
 | **bal hasáb ▾ előugró** | `0x005e2000` (`folderviewpopup`) | `AlbumList::ID_VIEWBY*` (feliratok: `0x00733480`) | a 4/c pont táblája |
 | **album/címke helyi menü ▸ „Sort By"** | `0x00559150` | `eMenuLabelFolder::ID_DATESORT/NAMESORT/SIZESORT/REVERSESORT` + `eMenuLabelFolder::SortBy` | a hat sztring ugyanabban az építőben |
 
@@ -2673,3 +2673,98 @@ Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kív�
   `nema_slotok.py` 16 találata közt nincs ott (48.1).
 - **„Az `export/*` beállítások is némák"** — megdőlt: a végigkövetett
   export-lánc rendben van (48.2).
+
+
+## 49. tétel — KÉT SAJÁT HELYESBÍTÉS (2026-09-01)
+
+*Nem új kutatás: két korábbi körömet egy testvér-munkamenet mérése
+javította ki. Mindkettő olyan hiba, amit a saját szabályaim tiltanak —
+ezért kerül külön tételbe, nem lábjegyzetbe.*
+
+### 49.1 ⚠️ „A Nézet menühöz tartozik" ≠ „a Nézet menü FELSŐ SZINTJÉN van"
+
+A 36.5 pontban azt írtam, hogy a `ID_VIEWBY*` ötös a menüsáv Nézet
+menüjében ül, és ebből nyílt a **#1766**. A bizonyíték: a pipázó
+(`0x00574b70`) a `GetSubMenu(GetMenu(hwnd), 2)`-t veszi, ami a harmadik
+felső menü.
+
+**Ez a bizonyíték a menü-HOVATARTOZÁST igazolja, a menün belüli HELYET
+nem.** Egy almenü tételei ugyanannak a felső menünek a fogantyúja alatt
+pipázódnak.
+
+A tulajdonos képernyőmentése (#1774) szerint a Nézet menü **felső
+szintjén nincs** rendezés-tétel — és ezeken a mentéseken **az inaktív
+tételek is látszanak**, tehát a hiány valódi hiány, nem elrejtett tétel.
+
+⇒ **A #1766 leállítva, `felhasználóra-vár` állapotban**: egy mentés kell
+a kinyitott **Nézet ▸ Mappanézet** almenüről. Ha ott vannak, a jegy
+hatóköre az almenüre szűkül.
+
+**Amit ebből tanulni kell:** a `GetSubMenu(…, N)` a **fogantyút** adja
+meg, nem a pozíciót. Aki ebből helyre következtet, egy szinttel téved.
+
+### 49.2 ⛔ A #1798-nál a lánc MÁSIK vége volt elvágva
+
+A 47. körben kimutattam, hogy a `sendRows()` nem olvassa a
+`mail/useDefaultClient` beállítást — **igaz volt**. A megvalósító kör
+viszont a saját szabályomat („előbb a mi oldalunkat mérd") elvégezte, és
+mélyebb okot talált:
+
+> **A `sendRows()`-nak EGYETLEN hívója sem volt** — sem QML-ből, sem
+> Pythonból. A tálca „E-Mail" gombja engedélyezve volt és kattintható,
+> de a `TrayBar.emailRequested()` jelzést senki nem fogta el. (A
+> testvérei — export, nyomtatás, kollázs, film — mind be voltak kötve.)
+
+⇒ **A rádiógomb nem azért volt néma, mert a küldés rosszul olvasta a
+beállítást, hanem mert küldés nem volt.**
+
+**A hibám:** a láncnak csak a **végét** mértem (olvassa-e a beállítást),
+és nem kérdeztem meg, hogy a lánc **eleje** létezik-e. Ha a jegy „Kész,
+ha" pontjait valaki szó szerint teljesíti, a gomb **ma is néma maradna,
+csak „helyesen" néma**.
+
+**Szabály, ami ebből következik, és a 48. tételt kiegészíti:**
+
+> Néma vezérlő leleténél **a teljes láncot** kell megmérni, mindkét
+> irányból: (1) van-e **hívó** — a jelzést elfogja-e valaki; (2)
+> elér-e a hívás a **műveletig**; (3) olvassa-e a művelet a
+> **beállítást**. A három közül bármelyik szakadása ugyanolyan némaságot
+> okoz, és a leletből nem derül ki, melyik.
+
+*(A projekt „mérd a bekötés LÁNCÁT, ne a végpontokat" tanulsága ez —
+és ebben a körben ÉN sértettem meg, miközben más köröknél épp erre
+hivatkoztam.)*
+
+### 49.3 A közös minta a két helyesbítésben
+
+Mindkét hiba ugyanaz: **a bizonyíték igaz volt, a belőle levont
+következtetés tágabb.**
+
+| amit mértem | amit állítottam | ami hiányzott |
+|---|---|---|
+| a pipázó a 3. felső menü fogantyúját veszi | „a Nézet menü felső szintjén vannak" | a fogantyú nem pozíció |
+| a `sendRows()` nem olvassa a beállítást | „ezért néma a gomb" | a `sendRows()`-nak nincs hívója |
+
+⇒ **Az állítás hatóköre soha ne legyen tágabb, mint a mérésé.** Ha a
+mérés a hovatartozást adja, ne írj pozíciót; ha a lánc egy szemét
+méred, ne írj okot az egész láncra.
+
+### Nyitott kérdések mérlege (49.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a `GetSubMenu` bizonyítóerejének határa (49.1); a #1798
+  valódi oka és a belőle következő lánc-szabály (49.2).
+- **BLOKKOLT:** hol állnak pontosan a `ID_VIEWBY*` tételek a Nézet
+  menüben. **Mi kell hozzá:** képernyőmentés a kinyitott
+  **Nézet ▸ Mappanézet** almenüről. A kérés a #1766-on áll,
+  `felhasználóra-vár` címkével — nem az én köröm zárja le.
+
+### Amit KIZÁRTAM
+
+- **„A `GetSubMenu(…, 2)` megadja a tétel helyét a menüben"** — megdőlt:
+  a fogantyút adja meg; almenü-tételek ugyanoda tartoznak (49.1).
+- **„A #1798 oka a beállítás olvasásának hiánya"** — megdőlt: a
+  `sendRows()`-nak nem volt hívója (49.2).
