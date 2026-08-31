@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Javítva
+- **A mentés és az export hibaüzenete néma maradhatott volna (#1743).** A
+  legutóbbi indulási gyorsítás óta a ritkán használt ablakok csak az első
+  megnyitáskor épülnek fel — a hibaüzeneteiket viszont ugyanezek az ablakok
+  fogadták, tehát amíg nem nyíltak meg, nem is volt, aki meghallja őket. A
+  gyakorlatban ez nem fordult elő, mert minden út előbb felépítette az
+  ablakot; de az első új belépési pont (billentyűparancs, gomb)
+  észrevétlenül elnyelte volna a hibát. Mostantól a program mindig figyel,
+  és az ablak akkor épül fel, amikor a hír megérkezik.
+
 ### Gyorsult
 - **A program felülete lényegesen gyorsabban jelenik meg (#1720).** Eddig a
   PicasaPy indulásnál felépítette a teljes felületet — beleértve azt a húsz

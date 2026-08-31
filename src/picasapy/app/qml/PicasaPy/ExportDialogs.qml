@@ -651,59 +651,66 @@ Item {
         }
     }
 
-    Connections {
-        target: controller
-        // #136: a sikertelen fájlok neve/oka a számszerű összegzés ELŐTT
-        // érkezik — a dialógus szövegébe fűzzük, hogy a felhasználó lássa,
-        // melyik fájl és miért hiúsult meg, ne csak a darabszámot.
-        function onExportFailedDetails(details) {
-            exportResultDialog.failedDetails = details
-        }
-        function onExportFinished(done, failed) {
-            var message = failed > 0
-                ? qsTr("%1 pictures exported, %2 failed.").arg(done).arg(failed)
-                : qsTr("%1 pictures exported.").arg(done)
-            if (exportResultDialog.failedDetails.length > 0)
-                message += "\n" + exportResultDialog.failedDetails.join("\n")
-            exportResultDialog.message = message
-            exportResultDialog.failedDetails = []
-            exportResultDialog.open()
-        }
-        // #530: a Google Earth-export vége. A KIHAGYOTTAKAT is kiírjuk: a
-        // felhasználónak tudnia kell, miért kevesebb a helyjelző, mint a
-        // kijelölés (koordináta nélküli képet nincs hova tenni a térképen).
-        function onEarthExportFinished(kmlPath, placemarks, skipped) {
-            var message = kmlPath.length > 0
-                ? qsTr("%1 pictures written to the Google Earth file.")
-                    .arg(placemarks)
-                : qsTr("None of the selected pictures has a location, so no Google Earth file was written.")
-            if (skipped > 0 && kmlPath.length > 0)
-                message += "\n" + qsTr("%1 pictures were left out: they have no location.")
-                    .arg(skipped)
-            earthResultDialog.message = message
+    // #1743: a vezérlő jelzéseit NEM itt fogadjuk. Ez a komponens a #1720
+    // óta HALASZTOTT (`DeferredDialog`), tehát amíg a felhasználó meg nem
+    // nyitotta, a benne ülő `Connections` NEM LÉTEZIK — a jelzés senkihez
+    // nem ér el, és az eredmény némán elmarad. A `Main.qml` mindig álló
+    // `Connections`-e hívja ezeket a függvényeket, az `ensure()` után.
+    //
+    // A logika változatlan; csak a HALLGATÓ került ki innen.
+
+    //: #136: a sikertelen fájlok neve/oka a számszerű összegzés ELŐTT
+    //: érkezik — a párbeszéd szövegébe fűzzük, hogy a felhasználó lássa,
+    //: melyik fájl és miért hiúsult meg, ne csak a darabszámot.
+    function jegyezdAbukottFajlokat(details) {
+        exportResultDialog.failedDetails = details
+    }
+
+    function jelezdAzExportVeget(done, failed) {
+        var message = failed > 0
+            ? qsTr("%1 pictures exported, %2 failed.").arg(done).arg(failed)
+            : qsTr("%1 pictures exported.").arg(done)
+        if (exportResultDialog.failedDetails.length > 0)
+            message += "\n" + exportResultDialog.failedDetails.join("\n")
+        exportResultDialog.message = message
+        exportResultDialog.failedDetails = []
+        exportResultDialog.open()
+    }
+
+    //: #530: a Google Earth-export vége. A KIHAGYOTTAKAT is kiírjuk: a
+    //: felhasználónak tudnia kell, miért kevesebb a helyjelző, mint a
+    //: kijelölés (koordináta nélküli képet nincs hova tenni a térképen).
+    function jelezdAzEarthExportVeget(kmlPath, placemarks, skipped) {
+        var message = kmlPath.length > 0
+            ? qsTr("%1 pictures written to the Google Earth file.")
+                .arg(placemarks)
+            : qsTr("None of the selected pictures has a location, so no Google Earth file was written.")
+        if (skipped > 0 && kmlPath.length > 0)
+            message += "\n" + qsTr("%1 pictures were left out: they have no location.")
+                .arg(skipped)
+        earthResultDialog.message = message
+        earthResultDialog.open()
+    }
+
+    //: #1589: a „Megtekintés a Google Earth programban…" ága. A megnyitást
+    //: SZÁNDÉKOSAN a főszálon kérjük — a háttérszálból indított
+    //: `QDesktopServices.openUrl` nem biztonságos.
+    function nyisdMegAzEarthFajlt(kmlPath, placemarks, skipped) {
+        if (kmlPath.length === 0) {
+            earthResultDialog.message = qsTr("No geotagged images to export.")
             earthResultDialog.open()
+            return
         }
-        // #1589: a „Megtekintés a Google Earth programban…" ága. A
-        // megnyitást SZÁNDÉKOSAN itt, a főszálon kérjük — a háttérszálból
-        // indított `QDesktopServices.openUrl` nem biztonságos.
-        function onEarthViewReady(kmlPath, placemarks, skipped) {
-            if (kmlPath.length === 0) {
-                earthResultDialog.message =
-                    qsTr("No geotagged images to export.")
-                earthResultDialog.open()
-                return
-            }
-            if (typeof controller === "undefined" || !controller) return
-            if (controller.openKml(kmlPath))
-                return
-            // néma hatástalanság helyett megmondjuk, mi történt: a fájl
-            // KÉSZ, csak nincs mivel megnyitni (nincs telepítve Google
-            // Earth vagy más KML-kezelő)
-            earthResultDialog.message =
-                qsTr("The Google Earth file was written to %1, but this "
-                     + "computer has no program associated with it.")
-                    .arg(kmlPath)
-            earthResultDialog.open()
-        }
+        if (typeof controller === "undefined" || !controller) return
+        if (controller.openKml(kmlPath))
+            return
+        // néma hatástalanság helyett megmondjuk, mi történt: a fájl KÉSZ,
+        // csak nincs mivel megnyitni (nincs telepítve Google Earth vagy
+        // más KML-kezelő)
+        earthResultDialog.message =
+            qsTr("The Google Earth file was written to %1, but this "
+                 + "computer has no program associated with it.")
+                .arg(kmlPath)
+        earthResultDialog.open()
     }
 }
