@@ -4,7 +4,7 @@
 Ez a csomag csak az algoritmust és az adatmodellt adja — a kezelő-felület
 (UI) külön jegyre marad. Publikus belépési pont: `find_duplicates`.
 
-#1481 — a Picasa fej+farok tartalom-kulcsa (`fastkey.picasa_fast_key`) mint
+#1481 — a Picasa fej+farok SZÁRMAZÁS-kulcsa (`fastkey.picasa_fast_key`) mint
 olcsó előszűrő a teljes hash előtt.
 """
 
