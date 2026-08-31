@@ -1105,7 +1105,15 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     def _lathato_fotok():
         return controller.photos.photos
 
-    email_controller = EmailController(photo_source=_lathato_fotok)
+    # #1671: a nyomtatás és az e-mail a KÉPTÁLCA tartalmán dolgozik, ha az
+    # nem üres — a mappába exportálás (#455) mintájára. Enélkül kijelölés
+    # nélkül némák maradtak, és a MÁS mappából tartott képet sosem látták.
+    def _talca_fotok():
+        return controller._tray_records()
+
+    email_controller = EmailController(
+        photo_source=_lathato_fotok, tray_source=_talca_fotok
+    )
     web_export_controller = WebExportController(photo_source=_lathato_fotok)
     # #1472: a nyomtatás vezérlője — UGYANARRA a `photo_source`-ra épül
     # (a `printRows`/`renderPrintPreviewPdf` sorindexei a látható fotók
@@ -1113,7 +1121,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # tesztfájllal SOHA nem jött létre a futó alkalmazásban, ezért a
     # Ctrl+P és a képtálca „Nyomtatás" gombja halott volt.
     print_controller = (
-        PrintController(photo_source=_lathato_fotok)
+        PrintController(
+            photo_source=_lathato_fotok, tray_source=_talca_fotok
+        )
         if PrintController is not None
         else None
     )
