@@ -168,7 +168,7 @@ Item {
 
     // --- 1. Egy kijelölt kép: NYOLC tétel -----------------------------------
 
-    Menu {
+    PicasaMenu {
         id: singleMenu
         objectName: "collageNodeMenuSingle"
 
@@ -221,7 +221,7 @@ Item {
     // Ami kimarad, az mind EGY képet vár: háttér, képkockaközéppont,
     // rétegsorrend, megjelenítés és szerkesztés.
 
-    Menu {
+    PicasaMenu {
         id: groupMenu
         objectName: "collageNodeMenuGroup"
 
@@ -244,7 +244,7 @@ Item {
 
     // --- 3. A vászon: NÉGY tétel --------------------------------------------
 
-    Menu {
+    PicasaMenu {
         id: canvasMenu
         objectName: "collageCanvasMenu"
 

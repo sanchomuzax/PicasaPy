@@ -12,7 +12,7 @@ import QtQuick.Controls
 // kulcsszó-vezérlőn, a keresés a meglévő keresőn át.
 //
 // Önálló, signal-alapú komponens: a bekötést a TagsPanel.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "tagContextMenu"
 
