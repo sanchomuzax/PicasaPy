@@ -2249,3 +2249,81 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kív�
 - **„A gyorscímke-helyek száma nyolc"** — megdőlt: az eredetiben tíz
   (43.2). *(A mi nyolcunk saját döntés volt, de sehol nem volt kimondva,
   hogy eltérés.)*
+
+## 44. tétel — a `buttonmgr`: a Picasa gombsávja BŐVÍTHETŐ VOLT (2026-08-31)
+
+*Hatodik kör az UI-lefedettségi axisról (#1778). Panel: `buttonmgr`
+(13 hiány, `nincs-megfeleltetes`). Nálunk a menütétel **placeholder**
+(`PicasaMenuBar.qml:1361`), a párbeszéd nem létezik.*
+
+### 44.1 MIT CSINÁL: két registry-kulcs és egy bővítmény-mappa
+
+| tároló | mit tart | cím |
+|---|---|---|
+| `Preferences\Buttons\UserConfig` | a felhasználó gombsáv-összeállítása | `0x00758390`, `0x00758d30` |
+| `Preferences\Buttons\Exclude` | a kihagyott gombok | `0x00758390`, `0x007592f0` |
+| **`#buttons\`** mappa | a **telepített gombok** adatkönyvtára | `0x005f97f0`, `0x007599b0` |
+
+A `#`-előtag a Picasa adatmappán belüli útvonalak jelölése (ugyanaz a
+minta, mint a `#db3\saverlist.txt`-nél, 35.3).
+
+### 44.2 ⭐ A gombsáv BŐVÍTMÉNY-RENDSZER volt
+
+A panelen ott a **„Find buttons online…"** gomb (`buttonmgr/browse`),
+és a mögötte álló cím a `0x007e14e0`-ben:
+
+```
+http://picasa.smo/buttons
+```
+
+Ehhez tartozik egy **importáló ág** is: *„Launch Picasa and import
+buttons?"* (`0x004bbaf0`) — vagyis a letöltött gombcsomagot a rendszer
+héja adta át a Picasának, ami rákérdezett, mielőtt telepítette. A
+`CustomButtons` (`0x0097a390`) és a `Buttons::DidHideAll` (`0x0075b1c0`)
+ugyanennek a rendszernek a részei.
+
+⇒ **A gombsáv nem fix készlet volt: a felhasználó gombokat tölthetett
+le és telepíthetett.** A `picasa.smo` kiszolgáló nem létezik, tehát a
+**letöltés-ág hatókörön kívül** — a **testreszabás** viszont nem az.
+
+### 44.3 A párbeszéd szerkezete — klasszikus kétlistás választó
+
+`leftlist` („Rendelkezésre álló gombok:") ↔ `rightlist` („Jelenlegi
+gombok:"), közte **„Add >>"** és **„<< Remove"**; a jobb listán
+**„Move Up" / „Move Down"** sorrendezés; alul **„Reset to Defaults"**,
+és **OK / Mégse / Kész** hármas.
+
+*(A `0x007e2980` és `0x007e2470` a listák egér- és
+fogd-és-vidd-eseményeit kezeli — `lb_selected`, `b_drop`, `lb_rightclick`,
+`lb_predouble` —, tehát a listák **húzással is** rendezhetők voltak.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a párbeszéd | kétlistás választó, sorrendezéssel | **nincs**; a menütétel `placeholder` (`PicasaMenuBar.qml:1361`) | ÚJ JEGY |
+| a testreszabás tárolása | `Preferences\Buttons\UserConfig` + `…\Exclude` | nincs | QSettings |
+| alapértelmezettre állítás | „Reset to Defaults" | nincs | ua. |
+| gombok letöltése | `http://picasa.smo/buttons` | — | **hatókörön kívül** (a kiszolgáló nem létezik) |
+| gombcsomag-telepítés | „Launch Picasa and import buttons?" | — | **hatókörön kívül** |
+| a `#buttons\` mappa | telepített gombok | — | csak akkor kell, ha a bővítményt is megépítjük |
+
+### Nyitott kérdések mérlege (44.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a két registry-kulcs és a `#buttons\` mappa (44.1); a
+  bővítmény-rendszer léte és a hozzá tartozó cím (44.2); a párbeszéd
+  szerkezete és a húzásos rendezés (44.3).
+- **HATÓKÖRÖN KÍVÜL:** a gombletöltés (`picasa.smo` megszűnt) és a
+  gombcsomag-telepítő ág.
+
+### Amit KIZÁRTAM
+
+- **„A Picasa gombsávja fix készlet"** — megdőlt: bővítmény-rendszer volt,
+  letölthető gombokkal és saját adatmappával (44.2).
+- **„A »Configure Buttons…« csak sorrendet állít"** — megdőlt: a
+  **kihagyást** külön kulcs tárolja (`Buttons\Exclude`), tehát a gombok
+  el is rejthetők, nem csak átrendezhetők (44.1).
