@@ -2508,3 +2508,92 @@ vezérlő; a csoportosztás nincs mérve.)*
   futtat és frissíti a Személyek panelt (46.2).
 - **„A javaslat-kezelés egyetlen gomb"** — megdőlt: négy külön parancs,
   három különböző jelentéssel (46.1–46.2).
+
+## 47. tétel — a `choose_mail`, és egy NÉMA BEÁLLÍTÁS nálunk (2026-09-01)
+
+*Kilencedik kör az UI-lefedettségi axisról (#1778). Panel: `choose_mail`
+(13 hiány) — a levelezőprogram-választó párbeszéd.*
+
+### 47.1 Az eredeti párbeszéd — két út, és egy „ne kérdezd többet"
+
+A párbeszéd kérdése: *„Válassza ki, hogyan szeretné e-mailben elküldeni
+fotóit."* Két választás:
+
+| vezérlő | felirat |
+|---|---|
+| `mail1` / `mail1a` (`mymail`) | **„LEVELEZŐPROGRAM"** — „Az alapértelmezett levelezőprogram használata" |
+| `mail2` / `mail2a` (`gsender`) | **„Google Mail"** — „A Gmail-fiók vagy a Google Fiók használata" |
+
+Mellette `gmailsignup1` („Nincs Gmail-fiókja? Nyisson egy fiókot ingyen."),
+`help`/`helpbutton`, `mailcancel`, és a **`remember`** jelölőnégyzet:
+*„Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt
+újra."*
+
+**Tárolás** (`0x0084f6b0`): a `Preferences` ág **`EmailPrepType`**
+(melyik utat választotta) és **`DoNotPromptForEmailPref`** (a „ne
+kérdezd többet" jelölés).
+
+A tágabb e-mail beállítás-készlet (`0x006e1100`): `EmailSinglePicture` ·
+`EmailMovie` · `EmailExportSize` · `UseHTMLMailer` · `mailprog` ·
+`defaultmail` · `IDS_EMAILCLIENTRADIO`.
+
+⇒ **A Google Mail-ág hatókörön kívül** (a Picasa saját Gmail-integrációja
+megszűnt). **A választó-párbeszéd maga viszont nem az**, mert nálunk a
+Beállítások ígéri.
+
+### 47.2 ⛔ NÁLUNK NÉMA BEÁLLÍTÁS: „Let me choose each time"
+
+A `OptionsTabEmail.qml` (99 sor) két rádiógombot kínál:
+
+```qml
+:33  optionsMailDefaultRadio  „Use this computer's default email program”
+:43  optionsMailChooseRadio   „Let me choose each time I send a picture”
+```
+
+A választás **tárolódik** (`email_controller.py:63`,
+`mail/useDefaultClient`), és a felület helyesen jelzi vissza.
+
+**De a küldés nem olvassa el.** Az `email_controller.py:255`
+`sendRows()` metódusa **feltétel nélkül** az `xdg-email`, illetve annak
+hiányában a `mailto:` útra megy — a `useDefaultClient` értéket
+**sehol nem kérdezi meg** (a kulcs a fájlban csak az olvasó/író
+tulajdonságban szerepel: `:132`, `:182`, `:184`).
+
+⇒ **A „Let me choose each time I send a picture" gomb kiválasztható,
+megmarad, és NEM CSINÁL SEMMIT.** Ugyanaz a hibaosztály, mint a #936
+(néma jelzés) és a #1638 (néma menütétel).
+
+*(Az eredetiben ehhez a választáshoz tartozik a `choose_mail`
+párbeszéd — nálunk az nincs meg, ezért nincs mit megjeleníteni.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| választó-párbeszéd | `choose_mail`, két úttal | **nincs** | ÚJ JEGY |
+| „ne kérdezd többet" | `DoNotPromptForEmailPref` | nincs | ua. |
+| a választás tárolása | `EmailPrepType` | `mail/useDefaultClient` — **tárolva, de nem használva** | ua. |
+| „minden küldéskor kérdezz" beállítás | a párbeszéd megjelenik | **néma** (`sendRows` nem nézi) | ua. |
+| Google Mail-ág | `gsender`, `gmailsignup1` | — | **hatókörön kívül** |
+| méret/film/HTML beállítások | `EmailExportSize`, `EmailMovie`, `UseHTMLMailer` | **megvannak** (`OptionsTabEmail.qml:54/64/78/85/93`) | — |
+
+### Nyitott kérdések mérlege (47.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a párbeszéd két útja, a „ne kérdezd többet" kulcs és a
+  tárolás (47.1); a mi néma beállításunk bizonyítása (47.2).
+- **HATÓKÖRÖN KÍVÜL:** a Google Mail-ág.
+
+*(Záró mondat a 45.1 szerint: ebben a panelben **van** hiányzó vezérlő —
+az egész párbeszéd hiányzik; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `choose_mail` teljes egészében halott szolgáltatás"** — megdőlt:
+  csak a **Google Mail-ág** az; a választó-párbeszéd maga él, és nálunk a
+  Beállítások ígéri is (47.2).
+- **„A `mail/useDefaultClient` beállításunk hat a küldésre"** — megdőlt:
+  a `sendRows()` nem olvassa (47.2).
