@@ -205,8 +205,17 @@ def _fordit(eszkoz: Path, gyoker: Path, forras: Path) -> tuple[Path, str | None]
 
 
 def elofordit(gyoker: Path, szalak: int = 0) -> Eredmeny:
-    """A teljes fa előrefordítása, a magok számával párhuzamosan."""
+    """A teljes fa előrefordítása, a magok számával párhuzamosan.
+
+    ⚠️ **Először MINDIG kitakarít.** Egy fordított egység a hozzá tartozó
+    forrás dátumától függetlenül érvényes, ezért egy RÉGI verzióból
+    ottmaradt `.qmlc` némán elnyomná az új `.qml`-t — a felhasználó a
+    régi felületet kapná az új programmal. A `pip install --upgrade` nem
+    törli ezeket (nem szerepelnek a csomag RECORD-jában), tehát a
+    takarítás a mi dolgunk. Így a futás legrosszabb kimenetele is csak
+    HIÁNYZÓ egység (= a mai, lassabb viselkedés), soha nem ELAVULT."""
     eszkoz = qmlcachegen_utvonal()
+    takarit(gyoker)
     lista = forrasok(gyoker)
     if eszkoz is None:
         return Eredmeny(
@@ -265,11 +274,14 @@ def ellenoriz(gyoker: Path) -> Eredmeny:
 
 
 def takarit(gyoker: Path) -> int:
-    """Minden fordított egység törlése — vissza a fejlesztői állapotba."""
+    """Minden fordított egység törlése — vissza a fejlesztői állapotba.
+
+    Nem a forrásokból indul, hanem a kimenetekből: így az ÁRVA egységek is
+    eltűnnek (olyan `.qmlc`, amelynek a `.qml`-jét egy újabb verzió már
+    nem tartalmazza)."""
     torolt = 0
-    for forras in forrasok(gyoker):
-        cel = cel_utvonal(forras)
-        for jelolt in (cel, cel.with_name(cel.name + ".aotstats")):
+    for minta in ("*.qmlc", "*.jsc", "*.mjsc", "*.aotstats"):
+        for jelolt in gyoker.rglob(minta):
             if jelolt.is_file():
                 jelolt.unlink()
                 torolt += 1

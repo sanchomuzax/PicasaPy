@@ -40,6 +40,17 @@ case "$1" in
             "$PYTHON_BIN" -m venv "$VENV_DIR"
         fi
 
+        # #1719: az ELŐZŐ verzió előrefordított QML-egységei MÉG a pip
+        # előtt tűnjenek el. Ezek a `pip install --upgrade`-et túlélik (nem
+        # szerepelnek a csomag RECORD-jában), és mivel a fordított egység a
+        # forrás dátumától függetlenül érvényes, egy ottmaradt régi `.qmlc`
+        # NÉMÁN elnyomná az új `.qml`-t — a felhasználó a régi felületet
+        # kapná. Így a legrosszabb kimenetel is csak annyi, hogy hiányzik a
+        # gyorsítás; elavult felület soha.
+        if [ -x "$VENV_DIR/bin/picasapy-qml-elofordit" ]; then
+            "$VENV_DIR/bin/picasapy-qml-elofordit" --takarit >/dev/null 2>&1 || true
+        fi
+
         echo "PicasaPy: telepítés a virtuális környezetbe (PyPI-függőségekkel)…"
         WHEEL_FILE=$(ls "$WHEEL_DIR"/picasapy-*.whl 2>/dev/null | head -n1)
         if [ -z "$WHEEL_FILE" ]; then

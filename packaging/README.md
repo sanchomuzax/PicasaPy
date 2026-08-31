@@ -43,13 +43,25 @@ más verziójú lehet — ezért a fordítás a célgép SAJÁT PySide6-jával
 készül. A `MANIFEST.in` emiatt kifejezetten ki is zárja a `.qmlc`-t a
 csomagból.
 
-Kézzel telepített (`pip install picasapy`) környezetben a lépés
-elmarad; ott érdemes egyszer lefuttatni a fenti parancsot.
+⚠️ **Az elavult egység a valódi veszély, nem a hiányzó.** A fordított
+egység a forrás dátumától FÜGGETLENÜL érvényes, a `pip install --upgrade`
+pedig nem törli (nem szerepel a csomag RECORD-jában). Egy régi verzióból
+ottmaradt `.qmlc` tehát némán elnyomná az új `.qml`-t — a felhasználó a
+régi felületet kapná. Ezért:
 
-⚠️ **Fejlesztői fán ne hagyd ott.** Az időbélyeg-függetlenség miatt egy
-ottfelejtett `.qmlc` némán elnyomja a később szerkesztett `.qml`-t. A
-repóból a `python3 scripts/qml_elofordit.py --takarit` állítja vissza a
-fejlesztői állapotot.
+* a `postinst` **a pip előtt** kitakarít (`--takarit`), és
+* maga az előrefordítás is takarítással kezd, tehát a legrosszabb
+  kimenetel is csak *hiányzó* egység (a mai, lassabb viselkedés).
+
+Kézzel telepített (`pip install picasapy`) környezetben a lépés
+**szándékosan elmarad**: ott senki nem futtatná újra a következő
+frissítés után, és egy elavult felület rosszabb, mint fél másodperc
+indulás. Ha mégis lefuttatod, **minden frissítés után futtasd újra**.
+
+⚠️ **Fejlesztői fán ne hagyd ott** ugyanezért: az ottfelejtett `.qmlc`
+elnyomja a szerkesztett `.qml`-t. A repóból a
+`python3 scripts/qml_elofordit.py --takarit` állítja vissza a fejlesztői
+állapotot.
 
 ---
 

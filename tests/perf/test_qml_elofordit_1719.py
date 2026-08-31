@@ -102,6 +102,34 @@ class TestAzElofordítás:
         assert eredmeny.rendben, eredmeny.hibas
         assert (tmp_path / "segito.jsc").is_file()
 
+    def test_a_regi_egyseget_a_forditas_ELOTT_torli(self, mini_fa: Path):
+        """A legveszélyesebb eset: ELAVULT egység, nem hiányzó.
+
+        Egy régi verzióból ottmaradt `.qmlc` a forrás dátumától
+        függetlenül érvényes, tehát némán elnyomná az új `.qml`-t. Itt a
+        fordítás bukik (a forrás hibás) — a kimenet ettől még nem lehet a
+        RÉGI egység."""
+        elo.elofordit(mini_fa)
+        regi = (mini_fa / "Hello.qmlc").read_bytes()
+        (mini_fa / "Hello.qml").write_text("import QtQuick\nItem {", encoding="utf-8")
+
+        eredmeny = elo.elofordit(mini_fa)
+
+        assert not eredmeny.rendben
+        assert not (mini_fa / "Hello.qmlc").exists(), (
+            "elavult fordított egység maradt ott — a régi felület menne ki"
+        )
+        assert regi  # a régi egység létezett, tehát a törlésnek volt dolga
+
+    def test_arva_egyseget_is_torol(self, mini_fa: Path):
+        """Ha egy `.qml` eltűnik egy újabb verzióban, a `.qmlc`-je se maradjon."""
+        elo.elofordit(mini_fa)
+        (mini_fa / "Masik.qml").unlink()
+
+        elo.elofordit(mini_fa)
+
+        assert not (mini_fa / "Masik.qmlc").exists()
+
     def test_hibas_qml_eseten_nem_ad_zoldet(self, tmp_path: Path):
         (tmp_path / "Rossz.qml").write_text("import QtQuick\nItem {", encoding="utf-8")
 
@@ -280,8 +308,19 @@ class TestATelepitokHivjak:
 
         assert "picasapy-qml-elofordit" in szoveg
         pip_sor = szoveg.index("pip\" install --upgrade")
-        elo_sor = szoveg.index("bin/picasapy-qml-elofordit")
+        elo_sor = szoveg.rindex("bin/picasapy-qml-elofordit")
         assert pip_sor < elo_sor, "az előrefordítás csak a telepítés UTÁN futhat"
+
+    def test_a_deb_telepito_a_pip_ELOTT_takarit(self):
+        """A régi verzió egységei a `pip install --upgrade`-et túlélik, és
+        némán elnyomnák az új QML-t — ezért még előtte el kell tűnniük."""
+        szoveg = (_REPO / "packaging" / "debian" / "postinst").read_text(
+            encoding="utf-8"
+        )
+
+        takarit_sor = szoveg.index("picasapy-qml-elofordit\" --takarit")
+        pip_sor = szoveg.index("pip\" install --upgrade")
+        assert takarit_sor < pip_sor
 
     def test_a_windows_telepito_hivja_az_eloforditast(self):
         szoveg = (
