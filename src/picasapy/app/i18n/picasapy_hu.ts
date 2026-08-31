@@ -3242,6 +3242,13 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>PicasaMenuItem</name>
+    <message>
+        <source>This is a PicasaPy addition — the original Picasa did not have it.</source>
+        <translation>Ez a PicasaPy kiegészítése — az eredeti Picasában nem volt ilyen.</translation>
+    </message>
+</context>
+<context>
     <name>FileOpsController</name>
     <message>
         <source>This picture has no preserved original on disk.</source>
