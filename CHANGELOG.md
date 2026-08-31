@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **A Másolás és a Kivágás a képek fájljait teszi a vágólapra (#1526,
+  #1571).** A Szerkesztés menü két tétele eddig szürke volt. Mostantól a
+  kijelölt képeket a Ctrl+C-vel (vagy a menüből) átteheted egy
+  fájlkezelőbe, a Ctrl+X pedig ugyanezt mozgatásként jelöli — ahogy az
+  eredeti Picasában. **A szövegmezőkben a Ctrl+C változatlanul a beírt
+  szöveget másolja:** a billentyű a fókuszt nézi, tehát átnevezés,
+  keresés vagy feliratszerkesztés közben nem veszi el a mezőtől.
+
 ### Gyorsult
 - **Az induláskori mappa-ellenőrzés nem tapogatja végig a változatlan
   mappákat (#1674).** A program indulásnál az exportcélokat és a Kollázsok

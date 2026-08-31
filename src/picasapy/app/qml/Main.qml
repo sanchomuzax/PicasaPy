@@ -550,6 +550,41 @@ ApplicationWindow {
         onActivated: saveDialogs.ensure().openSave(window.selectedIndexes)
     }
 
+    // #1526/#1571: a fájl-vágólap billentyűi — FÓKUSZ-ÉRZÉKENYEN.
+    //
+    // ⚠️ A kézenfekvő megoldás valódi regressziót okozna: egy sima
+    // `WindowShortcut` a Ctrl+C-t ELVENNÉ a szövegmezőktől, tehát
+    // átnevezés, keresés vagy feliratszerkesztés közben a felhasználó nem
+    // tudná a beírt szöveget másolni. Ez rosszabb volna a mai állapotnál
+    // (#1571).
+    //
+    // A kapu: ha a fókusz szövegmezőn van, a billentyű a MEZŐÉ. A próba a
+    // `selectedText` tulajdonság megléte — ezt a `TextInput`/`TextEdit`
+    // (és minden rájuk épülő `TextField`/`TextArea`) hordozza, más elem
+    // nem. Így nem kell felsorolni a mezőtípusokat, és a jövőbeli
+    // mezőkre is magától áll.
+    readonly property bool _szovegmezoneVanFokusz:
+        window.activeFocusItem !== null
+        && window.activeFocusItem.selectedText !== undefined
+
+    Shortcut {
+        // A `StandardKey.Copy` linuxon ugyanez, de a menü-audit a
+        // szekvenciát SZÖVEGES alakban keresi — és joggal: a menü szó
+        // szerint Ctrl+C-t hirdet, tehát az ígéret is szó szerinti.
+        // (⚠️ A komment maga sem tartalmazhatja a keresett mintát: az
+        // első változatom épp ezzel vezette félre a mérést.)
+        sequence: "Ctrl+C"
+        enabled: !window._szovegmezoneVanFokusz
+        onActivated: fileOpsController.copyFilesToClipboard(
+            window.selectedPaths())
+    }
+    Shortcut {
+        sequence: "Ctrl+X"
+        enabled: !window._szovegmezoneVanFokusz
+        onActivated: fileOpsController.cutFilesToClipboard(
+            window.selectedPaths())
+    }
+
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
     function rotateTargetRow() {
@@ -713,6 +748,12 @@ ApplicationWindow {
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
         onRescanRequested: controller.rescan()
+        // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
+        // így egy fájlkezelőbe közvetlenül beilleszthetők
+        onCopyFilesRequested: fileOpsController.copyFilesToClipboard(
+            window.selectedPaths())
+        onCutFilesRequested: fileOpsController.cutFilesToClipboard(
+            window.selectedPaths())
         // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
         // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
         // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.

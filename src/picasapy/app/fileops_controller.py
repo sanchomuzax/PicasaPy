@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QUrl, Signal, Slot
+from PySide6.QtCore import QByteArray, QMimeData
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.edit.save import find_original_backup
@@ -332,6 +333,81 @@ class FileOpsController(QObject):
             reveal_in_file_manager(Path(path))
         except OSError as error:
             self.operationFailed.emit("reveal", str(error))
+
+    # ------------------------------------------------------------------
+    # #1526: FÁJL-VÁGÓLAP — a Másolás/Kivágás a képek FÁJLJAIT teszi fel
+    # ------------------------------------------------------------------
+    #: Az utoljára feltett MIME-adat. A rendszervágólap tartalma
+    #: fejlesztői gépen és CI-n is a munkamenet-kezelőtől függ (headless
+    #: futásban gyakran nincs is), ezért az ŐR ezt a mezőt nézi — a
+    #: vágólapra tétel maga ettől függetlenül megtörténik.
+    _vagolap_adat = None
+
+    def _tegyd_a_vagolapra(self, paths, muvelet: str) -> None:
+        """A megadott fájlok a vágólapra, `copy`/`cut` jelzéssel (#1526).
+
+        A binárisból mérve: a Picasa a Windows shell-fájlátvitel
+        formátumait teszi fel, köztük a **`Preferred DropEffect`**-et — ez
+        bizonyítja, hogy a Kivágás és a Másolás UGYANAZT az adatot teszi
+        fel, és csak ez a formátum különbözteti meg őket.
+
+        Linuxon ennek a párja az `x-special/gnome-copied-files`, aminek az
+        ELSŐ sora `copy` vagy `cut`. A `text/uri-list`-et is feltesszük,
+        mert azt minden fájlkezelő érti.
+
+        Az időközben eltűnt fájl kimarad: a beillesztés ott hibára futna, és
+        a felhasználó nem értené, miért. Üres listára nem nyúlunk a
+        vágólaphoz — ne söpörjük el, ami rajta van."""
+        letezok = [Path(_to_local_path(p) or p) for p in paths or ()]
+        letezok = [p for p in letezok if p.exists()]
+        if not letezok:
+            return
+
+        def epits() -> QMimeData:
+            adat = QMimeData()
+            urlek = [QUrl.fromLocalFile(str(p)) for p in letezok]
+            adat.setUrls(urlek)
+            sorok = [muvelet, *(u.toString() for u in urlek)]
+            adat.setData(
+                "x-special/gnome-copied-files",
+                QByteArray("\n".join(sorok).encode("utf-8")),
+            )
+            return adat
+
+        # ⚠️ KÉT KÜLÖN példány, szándékosan. A `setMimeData` ÁTVESZI a
+        # tulajdonjogot: a Qt a vágólapra tett objektumot a következő
+        # vágólap-művelettel törli. Ha ugyanarra a példányra Python-oldali
+        # referenciát is tartanánk, az a törlés után halott objektumra
+        # mutatna — CI-n ez SZEGMENSHIBÁVAL (`exit -11`) állította meg a
+        # tesztfájlt, nem szép hibaüzenettel.
+        self._vagolap_adat = epits()
+
+        # ⚠️ FEJ NÉLKÜLI KÖRNYEZETBEN NEM ÍRUNK a vágólapra. Az `offscreen`
+        # és a `minimal` Qt-platform teszt-/CI-környezet: nincs mögötte
+        # vágólap-tulajdonos, és a `setMimeData` ott a CI-n
+        # SZEGMENSHIBÁVAL állította meg a tesztfájlt (`exit -11`) — nem
+        # kivétellel, amit el lehetne kapni. Helyben (valódi
+        # munkamenet-kezelővel) ugyanez lefut, ezért a hiba csak a CI-n
+        # jött elő.
+        #
+        # A művelet így sem lesz néma: a `_vagolap_adat` mindig elkészül,
+        # tehát az őr azt méri, AMIT feltennénk — a valódi vágólapra írás
+        # pedig ott történik meg, ahol van vágólap.
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return
+        vagolap = QGuiApplication.clipboard()
+        if vagolap is not None:
+            vagolap.setMimeData(epits())
+
+    @Slot(list)
+    def copyFilesToClipboard(self, paths) -> None:  # noqa: N802
+        """A kijelölt képek fájljai a vágólapra, MÁSOLÁSKÉNT (#1526)."""
+        self._tegyd_a_vagolapra(paths, "copy")
+
+    @Slot(list)
+    def cutFilesToClipboard(self, paths) -> None:  # noqa: N802
+        """Ugyanaz, de MOZGATÁSKÉNT — a `Preferred DropEffect` párja."""
+        self._tegyd_a_vagolapra(paths, "cut")
 
     @Slot(str, result=bool)
     def hasOriginalOnDisk(self, path: str) -> bool:  # noqa: N802
