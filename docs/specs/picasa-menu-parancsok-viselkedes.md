@@ -1843,3 +1843,109 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kív�
 - **„A Beállítások »Nyomtatás« füle ugyanez a panel"** — megdőlt: két külön
   panel; a fül a nyomtató-oldali beállításoké, a `printoptions` a **nyomat
   kinézetéé**.
+
+## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
+
+*Második kör az UI-lefedettségi axisról (#1778). Panel: `printpanel` —
+26 hiányzó elem, a rangsor 6. helye; a `printoptions` (39.) természetes
+folytatása, és önmagában lezárható.*
+
+### 40.1 ⭐ A LEGFONTOSABB: a panel FIGYELMEZTET a kis felbontásra
+
+A `0x00745980` (1484 b) az előnézet **állapotsorát** építi, és ebben egy
+olyan viselkedés lakik, amiről nálunk semmi nincs:
+
+| sztring | erőforrás | mikor |
+|---|---|---|
+| **„Smallest picture: %d pixels/inch."** | `ThumbUIPrint::Smallest` | mindig — a kijelölés **legrosszabb** effektív felbontása |
+| **„%d small %s found."** + **„Please review before printing."** | `ThumbUIPrint::ReviewPrompt` | ha van „kicsi" kép |
+| **„You are ready to print."** | — | ha nincs |
+| „picture" / „pictures" | `ThumbUIPrint::picture` / `::pictures` | egyes/többes szám a fenti mondatban |
+| `%d of %d` | — | az előnézet lapszáma |
+| `IDS_COPIES` | `ThumbUIPrint::PrintCount` | a példányszám-kijelzés |
+
+⇒ **A Picasa a választott nyomatmérethez kiszámolja minden kép effektív
+DPI-jét, megszámolja a „kicsiket", és nyomtatás előtt ELLENŐRZÉSRE
+szólít fel.** Ez magyarázza a leltár két `reviewnowbutton` („Ellenőrzés")
+gombját is.
+
+A számot (`edi`, `[esp+0x40]`) a függvény **paraméterként kapja** — a
+küszöb a hívóláncban dől el (ld. a mérleget).
+
+### 40.2 A méretválasztó és a MEGJEGYZETT méret
+
+Méret-gombok (`0x00743700` és `0x00743980`): `3x5button` · `4x6button` ·
+`5x7button` · `8x10button` · `walletbutton` („Tárcaméret") — a
+leltárban a `3.5 x 5`, `4x6`, `5x7`, `8x10` feliratokkal.
+
+A választás **tartós**: a `0x00743980` és a `0x00744a00` egyaránt a
+`Preferences` ág **`PrintLastSize`** kulcsát kezeli. ⇒ **a legutóbbi
+nyomatméret két indítás közt is megmarad.**
+
+### 40.3 A példányszám és a nyomtató-őr
+
+- **Példányszám fotónként** (`copieslabel`): `addprintsbutton` /
+  `subprintsbutton` gombpár — buboréksúgójuk *„Add another copy of each
+  Photo to be printed"* / *„Subtract a copy…"*. ⇒ **képenkénti**
+  példányszám, nem összesített.
+- **Nyomtató-őr** (`0x00744a00`): `IDS_MUST_INSTALL_PRINTER` —
+  *„A printer must be installed in order to print."*
+- **Előnézet-lapozás**: `prevbutton` / `nextbutton` + `previewnumber`
+  (`%d of %d`).
+- **Átjáró a 39. tételhez**: `captionoptionsbutton`, buboréksúgó
+  *„Configure borders and text for Photos to be printed"*, felirata
+  **„Szegély- és szövegopciók"** ⇒ **ez nyitja a `printoptions` panelt.**
+
+### 40.4 Hatókörön kívüli elem a panelen
+
+`froogle` — *„Search Froogle for Supplies"* / „Tartozékok keresése a
+Froogle-en". A Froogle a Google 2007-ben átnevezett, majd megszűnt
+termékkereső szolgáltatása. **Nem építjük meg**; a #1778 hatókör-szűrője
+alá tartozik, de mivel egyetlen elem egy egyébként érvényes panelen, itt
+elég kimondani.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| **DPI-őr** | legkisebb DPI kiírása + „kicsik" száma + „Ellenőrzés" felszólítás | **nincs semmi** — a `PrintDialog.qml` 383 sorában nincs felbontás-ellenőrzés | **ÚJ JEGY** |
+| nyomatméret-gombok | 3,5×5 · 4×6 · 5×7 · 8×10 · tárca | a `PrintDialog` „egy kép / indexkép + oszlopszám" bontást ad, **méretgombok nincsenek** | ua. |
+| a méret megjegyzése | `Preferences\PrintLastSize` | nincs | ua. |
+| példányszám fotónként | +/− gombpár | nincs | ua. |
+| előnézet-lapozás | prev/next + „%d / %d" | a párbeszédben nincs lapozó előnézet | ua. |
+| nyomtató-őr | „A printer must be installed…" | a nyomtatólista üres marad, saját üzenet nélkül | kis kiegészítés |
+| szegély/szöveg gomb | a `printoptions`-t nyitja | — | a #1780 párja |
+| `froogle` | megszűnt szolgáltatás | — | **hatókörön kívül** |
+
+### Nyitott kérdések mérlege (40.)
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a DPI-őr létezése, szövegei és a hozzá tartozó „Ellenőrzés"
+  gombok (40.1); a `PrintLastSize` tartós méret (40.2); a képenkénti
+  példányszám és a nyomtató-őr (40.3); a `captionoptionsbutton` →
+  `printoptions` átjáró (40.3).
+- **BLOKKOLT:** **mennyi DPI alatt számít egy kép „kicsinek".** A
+  `0x00745980` a darabszámot paraméterként kapja; a küszöb a hívóláncban
+  (`0x007451a0` / `0x00746170`) van, és nem egész-összehasonlítás — a
+  megvizsgált konstansok mind sztring-kezelési határok (`0x7f`/`0x80`/`0xff`).
+  **Mi döntené el:** (a) egy célzott dekompilációs kör a hívóláncra, vagy
+  (b) élő megfigyelés — egy kis felbontású kép 8×10-re állítva, és leolvasni,
+  hány DPI-nél vált át a mondat „ready to print"-ről „review"-ra.
+  **Nem blokkolja a megvalósítást:** a mechanizmus (legkisebb DPI kiírása +
+  „kicsik" számlálása + felszólítás) átvehető, a küszöböt magunk is
+  választhatjuk, ha kimondjuk, hogy saját döntés.
+- **HATÓKÖRÖN KÍVÜL:** a `froogle` gomb (40.4).
+
+### Amit KIZÁRTAM
+
+- **„A nyomtatási panel csak elrendezést és nyomtatót választ"** — megdőlt:
+  van benne **minőség-ellenőrzés** (DPI-őr), képenkénti példányszám és
+  lapozható előnézet (40.1, 40.3).
+- **„A nyomatméret a nyomtatási munka része"** — megdőlt: a
+  `Preferences\PrintLastSize` **tartósan** őrzi (40.2). *(Ugyanaz a minta,
+  mint a 39.-nél: amit „a művelethez tapad"-nak hinnénk, az globális.)*
+- **„A `0x00745980`-ban van a DPI-küszöb"** — megdőlt: a darabszámot
+  paraméterként kapja.
