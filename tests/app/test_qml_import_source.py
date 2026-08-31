@@ -18,17 +18,24 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtQuick import QQuickWindow
+from support.halasztott_parbeszed import nyisd_meg
 
 from support.jpeg_factory import make_jpeg
 
 
 def _child(window, name):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    nyisd_meg(window, "importSourceDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
 
 
 def _dialog_window(window):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    nyisd_meg(window, "importSourceDialog")
     dialog = window.findChild(QQuickWindow, "importSourceDialog")
     assert dialog is not None, "importSourceDialog nem található Window-ként"
     return dialog
@@ -73,15 +80,21 @@ class TestToolbarEntryPoint:
 
     def test_clicking_import_opens_the_dialog(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
-        button = _child(window, "toolbarImportButton")
-        dialog = _dialog_window(window)
-        assert dialog.property("visible") is False
+        button = window.findChild(QObject, "toolbarImportButton")
+        assert button is not None, "toolbarImportButton nem található"
+        # #1720: a párbeszéd HALASZTOTT — a gomb ELŐTT létre sem jön.
+        assert window.findChild(QObject, "importSourceDialog") is None, (
+            "az Import ablak már a gombnyomás előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         QMetaObject.invokeMethod(
             button, "clicked", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
 
+        dialog = window.findChild(QObject, "importSourceDialog")
+        assert dialog is not None, "az Import gomb nem hozta létre az ablakot"
         assert dialog.property("visible") is True
 
 

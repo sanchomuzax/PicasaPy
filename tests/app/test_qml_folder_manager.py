@@ -11,9 +11,13 @@ alatt élnek, nem a főablak (Main.qml) alatt."""
 
 from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
 from PySide6.QtQuick import QQuickWindow
+from support.halasztott_parbeszed import nyisd_meg
 
 
 def _child(window, name):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (ld. support/halasztott_parbeszed.py).
+    nyisd_meg(window, "folderManagerDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
@@ -22,6 +26,9 @@ def _child(window, name):
 def _dialog_window(window):
     """A Mappakezelő SAJÁT QQuickWindow-ként (nem sima QObject-ként) —
     ehhez kell a `.contentItem()` a fa-sorok vizuális bejárásához."""
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (ld. support/halasztott_parbeszed.py).
+    nyisd_meg(window, "folderManagerDialog")
     dialog = window.findChild(QQuickWindow, "folderManagerDialog")
     assert dialog is not None, "folderManagerDialog nem található Window-ként"
     return dialog

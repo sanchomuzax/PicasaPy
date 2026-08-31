@@ -484,7 +484,7 @@ ApplicationWindow {
                 ? [photoViewer.currentIndex] : []
         return window.selectedRows()
     }
-    function openPrint() { printDialog.openForRows(window.printTargetRows()) }
+    function openPrint() { printDialog.ensure().openForRows(window.printTargetRows()) }
     // #1590: Mappa ▸ Bélyegképek nyomtatása… — ugyanaz a párbeszéd,
     // indexkép-elrendezésre állítva. Kijelölés nélkül a MEGNYITOTT MAPPA
     // egésze a célpont: az eredetiben ez a parancs a mappa/album tétele,
@@ -495,7 +495,7 @@ ApplicationWindow {
         // ha az több mappát mutat) — pontosan az, amire a mappa-menü
         // tétele vonatkozik
         if (sorok.length === 0) sorok = window._groupRows()
-        printDialog.openForContactSheet(sorok)
+        printDialog.ensure().openForContactSheet(sorok)
     }
     // #422: a mappa-kontextusmenünek HÁROM megnyitási pontja van (a rács
     // üres területe, a bal panel mappa-sora, a rács mappa-fejléce), és
@@ -547,7 +547,7 @@ ApplicationWindow {
     // semmit: a `openSave` üres listára visszatér.
     Shortcut {
         sequence: "Ctrl+S"
-        onActivated: saveDialogs.openSave(window.selectedIndexes)
+        onActivated: saveDialogs.ensure().openSave(window.selectedIndexes)
     }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
@@ -658,7 +658,7 @@ ApplicationWindow {
     }
     Shortcut {
         sequence: "Ctrl+Shift+S"
-        onActivated: if (!window.viewerOpen) exportDialogs.openForSelection()
+        onActivated: if (!window.viewerOpen) exportDialogs.ensure().openForSelection()
     }
     // #422: a rács kontextusmenüje `Ctrl+Delete`-et hirdet a lemezről
     // törléshez (spec 3.) — a billentyű eddig nem élt, csak a Fájl menü
@@ -732,9 +732,9 @@ ApplicationWindow {
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
-        onEarthExportRequested: exportDialogs.openGoogleEarth()
+        onEarthExportRequested: exportDialogs.ensure().openGoogleEarth()
         // #1589: ugyanaz a párbeszéd, de a kiírás után MEGNYITJA a fájlt
-        onEarthViewRequested: exportDialogs.openGoogleEarth(true)
+        onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
@@ -753,7 +753,7 @@ ApplicationWindow {
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
-        onExportRequested: exportDialogs.openForSelection()
+        onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
         // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
@@ -796,12 +796,12 @@ ApplicationWindow {
         // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
         hasSavedBackup: controller
             ? controller.hasSavedBackup(window.selectedIndexes) : false
-        onSaveRequested: saveDialogs.openSave(window.selectedIndexes)
-        onRevertRequested: saveDialogs.openRevert(window.selectedIndexes)
-        onUndoSaveRequested: saveDialogs.openUndoSave(window.selectedIndexes)
+        onSaveRequested: saveDialogs.ensure().openSave(window.selectedIndexes)
+        onRevertRequested: saveDialogs.ensure().openRevert(window.selectedIndexes)
+        onUndoSaveRequested: saveDialogs.ensure().openUndoSave(window.selectedIndexes)
         // #1527: a mentés-család két új tagja
-        onSaveAsRequested: saveDialogs.openSaveAs(window.selectedIndex)
-        onSaveCopyRequested: saveDialogs.openSaveCopy(window.selectedIndexes)
+        onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
+        onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
@@ -892,21 +892,41 @@ ApplicationWindow {
         window.clearSelection()
     }
 
-    FolderManagerDialog { id: folderManager }
+    // #1720: halasztott példányosítás — a párbeszéd csak az első
+    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
+    DeferredDialog {
+        id: folderManager
+        anchors.fill: parent
+        sourceComponent: Component { FolderManagerDialog { } }
+    }
     // Duplikátum-kezelő (#287): Eszközök → "Find Duplicates..."
     // #294: az appWindow-bekötés a „kijelölt képek" hatókörhöz kell — enélkül
     // a dialógus a mappa-hatókörre esne vissza (integrátori bekötés).
-    DedupDialog { id: dedupDialog; appWindow: window }
+    DeferredDialog {
+        id: dedupDialog
+        anchors.fill: parent
+        sourceComponent: Component { DedupDialog { appWindow: window } }
+    }
     // #1473: az arckeresés belépési pontja. A vezérlőt az ablak-szintű
     // álnéven kapja (#1236) — az ablak maga NEM modális, a keresés alatt a
     // felhasználó tovább dolgozhat (#449).
-    FaceScanDialog { id: faceScanDialog; faceScan: window._faceScanController }
+    DeferredDialog {
+        id: faceScanDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            FaceScanDialog { faceScan: window._faceScanController }
+        }
+    }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
     PicasaImportDialog { id: picasaImportDialog }
     // Import forrásból (#23): az eszköztár "Import" gombja nyitja
-    ImportSourceDialog { id: importSourceDialog }
+    DeferredDialog {
+        id: importSourceDialog
+        anchors.fill: parent
+        sourceComponent: Component { ImportSourceDialog { } }
+    }
     // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — natív fájlválasztó
     AddFileDialog { id: addFileDialog }
     // #1654: a tesztüzem naplójának „Mentés másként…" tartaléka —
@@ -1025,8 +1045,8 @@ ApplicationWindow {
         photosModel: controller ? controller.photos : null
         // #422: a mentés-parancsok a nézőből — ugyanazok a megerősítések,
         // mint a rácsból (egy parancs, egy út)
-        onSaveRequested: function(row) { saveDialogs.openSave([row]) }
-        onRevertRequested: function(row) { saveDialogs.openRevert([row]) }
+        onSaveRequested: function(row) { saveDialogs.ensure().openSave([row]) }
+        onRevertRequested: function(row) { saveDialogs.ensure().openRevert([row]) }
         onUndoAllEditsRequested: function(row) {
             if (typeof batchEffectController !== "undefined"
                     && batchEffectController)
@@ -1897,7 +1917,7 @@ ApplicationWindow {
         visible: window.libraryFrameVisible
         appWindow: window
         viewerIndex: photoViewer.currentIndex
-        onExportRequested: exportDialogs.openForSelection()
+        onExportRequested: exportDialogs.ensure().openForSelection()
         // #1472: a tálca „Nyomtatás" gombja — a jelzésnek eddig SEHOL nem
         // volt kezelője, a gomb kattintható volt, és nem történt semmi
         onPrintRequested: window.openPrint()
@@ -1928,8 +1948,8 @@ ApplicationWindow {
             : false
         hasBackup: controller
             ? controller.hasSavedBackup(window.selectedRows()) : false
-        onSaveRequested: saveDialogs.openSave(window.selectedRows())
-        onRevertRequested: saveDialogs.openRevert(window.selectedRows())
+        onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
+        onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
         onUndoAllEditsRequested: {
             if (typeof batchEffectController !== "undefined"
                     && batchEffectController)
@@ -2078,10 +2098,18 @@ ApplicationWindow {
     }
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
-    SaveDialogs {
+    // #1720: halasztott példányosítás — a párbeszéd csak az első
+    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
+    DeferredDialog {
         id: saveDialogs
-        objectName: "saveDialogs"
-        appWindow: window
+        // ⚠️ Az `objectName` a BECSOMAGOLT párbeszédé marad, nem a
+        // `Loader`-é: a `findChild(objectName)` így a megnyitás után a
+        // VALÓDI komponenst adja vissza, nem a burkot.
+        objectName: "saveDialogsLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            SaveDialogs { objectName: "saveDialogs"; appWindow: window }
+        }
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
@@ -2092,9 +2120,14 @@ ApplicationWindow {
     }
 
     // exportálás mappába (#16, Ctrl+Shift+S; ExportDialogs.qml, #150)
-    ExportDialogs {
+    // #1720: halasztott példányosítás — a párbeszéd csak az első
+    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
+    DeferredDialog {
         id: exportDialogs
-        appWindow: window
+        anchors.fill: parent
+        sourceComponent: Component {
+            ExportDialogs { appWindow: window }
+        }
     }
 
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
@@ -2103,16 +2136,34 @@ ApplicationWindow {
         appWindow: window
     }
 
-    AboutDialog { id: aboutDialog }
+    DeferredDialog {
+        id: aboutDialog
+        anchors.fill: parent
+        // az `objectName` a BECSOMAGOLT párbeszédé — enélkül a #1720
+        // őre üres halmazt vizsgálna, azaz némán mindig zöld lenne
+        sourceComponent: Component { AboutDialog { objectName: "aboutDialog" } }
+    }
 
     // #350: Beállítások-dialógus (options.fen)
-    OptionsDialog { id: optionsDialog }
+    DeferredDialog {
+        id: optionsDialog
+        anchors.fill: parent
+        sourceComponent: Component { OptionsDialog { } }
+    }
 
     // #351: webexport-dialógus (.tpl sablonmotor)
-    WebExportDialog { id: webExportDialog }
+    DeferredDialog {
+        id: webExportDialog
+        anchors.fill: parent
+        sourceComponent: Component { WebExportDialog { } }
+    }
 
     // #1472: nyomtatás-párbeszéd (nyomtató-választó + PDF-fájlba nyomtatás)
-    PrintDialog { id: printDialog }
+    DeferredDialog {
+        id: printDialog
+        anchors.fill: parent
+        sourceComponent: Component { PrintDialog { } }
+    }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
     // #422: „Arcok alaphelyzetbe állítása" — az eredeti szó szerinti
@@ -2134,14 +2185,26 @@ ApplicationWindow {
         }
     }
 
-    MoveDatabaseDialog { id: moveDatabaseDialog }
+    DeferredDialog {
+        id: moveDatabaseDialog
+        anchors.fill: parent
+        sourceComponent: Component { MoveDatabaseDialog { } }
+    }
     // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
-    EditOverwriteDialog { id: editOverwriteDialog }
+    DeferredDialog {
+        id: editOverwriteDialog
+        anchors.fill: parent
+        sourceComponent: Component { EditOverwriteDialog { } }
+    }
     Connections {
         target: controller
-        function onEditsOverwritten(lost) { editOverwriteDialog.show(lost) }
+        function onEditsOverwritten(lost) { editOverwriteDialog.ensure().show(lost) }
     }
-    CompactDatabaseDialog { id: compactDatabaseDialog }
+    DeferredDialog {
+        id: compactDatabaseDialog
+        anchors.fill: parent
+        sourceComponent: Component { CompactDatabaseDialog { } }
+    }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
     // kapja az állapotot, és ready-re magától kifakul/eltűnik.

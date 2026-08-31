@@ -15,6 +15,7 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtQuick import QQuickWindow
+from support.halasztott_parbeszed import nyisd_meg
 
 from picasapy.index import open_index, sync_tree
 
@@ -22,12 +23,18 @@ from support.jpeg_factory import make_jpeg
 
 
 def _child(window, name):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    nyisd_meg(window, "dedupDialog")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
 
 
 def _dialog_window(window):
+    # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+    # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+    nyisd_meg(window, "dedupDialog")
     dialog = window.findChild(QQuickWindow, "dedupDialog")
     assert dialog is not None, "dedupDialog nem található Window-ként"
     return dialog
@@ -96,9 +103,13 @@ class TestMenuEntryPoint:
 
     def test_triggering_menu_item_opens_the_dialog(self, qml_app, qt_app):
         window, _controller, _lib, engine = qml_app
-        item = _child(window, "menuToolsDedup")
-        dialog = _child(window, "dedupDialog")
-        assert dialog.property("visible") is False
+        item = window.findChild(QObject, "menuToolsDedup")
+        assert item is not None, "menuToolsDedup nem található"
+        # #1720: a párbeszéd HALASZTOTT — induláskor LÉTRE SEM JÖN.
+        assert window.findChild(QObject, "dedupDialog") is None, (
+            "a Duplikátum-kereső már a menüpont előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         loop = _quit_on(_dedup_controller(engine).scanFinished)
         # a MenuItem-nek nincs hívható "trigger()" metódusa — a `triggered`
@@ -108,6 +119,10 @@ class TestMenuEntryPoint:
         loop.exec()
         qt_app.processEvents()
 
+        dialog = window.findChild(QObject, "dedupDialog")
+        assert dialog is not None, (
+            "az Eszközök menü tétele nem hozta létre a párbeszédet"
+        )
         assert dialog.property("visible") is True
 
 

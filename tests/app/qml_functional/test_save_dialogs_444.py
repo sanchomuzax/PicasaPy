@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
+from support.halasztott_parbeszed import nyisd_meg
+
 
 def _child(root, name):
     obj = root.findChild(QObject, name)
@@ -18,6 +20,11 @@ def _child(root, name):
 
 
 def _open(window, qt_app, method, rows):
+    # #1720: a mentés-párbeszédek HALASZTOTTAK — a Fájl ▸ Mentés
+    # menüponttal (valódi út) építtetjük fel a köteget, és csak utána
+    # hívjuk a konkrét sorokkal.
+    nyisd_meg(window, "saveDialogs")
+    qt_app.processEvents()
     QMetaObject.invokeMethod(
         _child(window, "saveDialogs"), method,
         Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", rows),

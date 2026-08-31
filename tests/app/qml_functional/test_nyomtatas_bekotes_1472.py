@@ -184,12 +184,16 @@ class TestBelepesiPontok:
         """VALÓDI billentyűleütés — nem a `Shortcut.activated` kibocsátása."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
-        parbeszed = _elem(window, "printDialog")
-        assert parbeszed.property("visible") is False
+        # #1720: a párbeszéd HALASZTOTT — a billentyű ELŐTT létre sem jön.
+        assert window.findChild(QObject, "printDialog") is None, (
+            "a nyomtatás ablaka már a billentyű előtt felépült — a #1720 "
+            "halasztása elromlott"
+        )
 
         QTest.keyClick(window, Qt.Key_P, Qt.ControlModifier)
         qt_app.processEvents()
 
+        parbeszed = _elem(window, "printDialog")
         assert parbeszed.property("visible") is True, (
             "a Ctrl+P nem nyitotta meg a nyomtatás párbeszédét"
         )

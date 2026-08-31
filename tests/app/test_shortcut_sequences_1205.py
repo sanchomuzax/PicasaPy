@@ -55,7 +55,11 @@ class TestEscMukodik:
         from PySide6.QtGui import QKeyEvent
         from PySide6.QtQuick import QQuickWindow
 
+        from support.halasztott_parbeszed import nyisd_meg
+
         window, _controller, _lib, _engine = qml_app
+        # #1720: a Mappakezelő HALASZTOTT — a valódi menüponttal nyílik
+        nyisd_meg(window, "folderManagerDialog")
         parbeszed = window.findChild(QObject, "folderManagerDialog")
         assert parbeszed is not None, "folderManagerDialog nem található"
         QMetaObject.invokeMethod(

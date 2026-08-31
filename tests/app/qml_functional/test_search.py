@@ -73,7 +73,11 @@ class TestFolderManager:
     def test_dialog_lists_watched_folders(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, QObject, Qt
 
+        from support.halasztott_parbeszed import nyisd_meg
+
         window, controller, _ = qml_app
+        # #1720: a Mappakezelő HALASZTOTT — a valódi menüponttal nyílik
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         assert dialog is not None, "folderManagerDialog nem található"
         QMetaObject.invokeMethod(dialog, "open", Qt.ConnectionType.DirectConnection)

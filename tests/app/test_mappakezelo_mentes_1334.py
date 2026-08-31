@@ -18,6 +18,7 @@ Levezetés: `docs/specs/picasa-mappakezelo.md` 17. szakasz.
 """
 
 import pytest
+from support.halasztott_parbeszed import nyisd_meg
 
 from support.jpeg_factory import make_jpeg
 
@@ -317,6 +318,9 @@ class TestQmlOkGomb:
         )
 
         window, controller, lib, _engine = qml_app
+        # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
+        # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
+        nyisd_meg(window, "folderManagerDialog")
         dialog = window.findChild(QObject, "folderManagerDialog")
         assert dialog is not None
         dialog.setProperty("selectedPath", str(lib))
