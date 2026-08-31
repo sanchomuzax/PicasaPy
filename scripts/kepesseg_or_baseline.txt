@@ -31,8 +31,6 @@
 # -- #1473: az arcfelismerés keresési oldalának nincs belépési pontja ------
 
 # -- #1474: az e-mail küldés két metódusa bekötetlen -----------------------
-emailController.prepareAttachments #1474 — a QML csak a beállítás-fül kliensválasztóját köti
-emailController.sendRows #1474 — a tényleges küldés sehonnan nem hívódik
 
 # -- Az effektus-vágólap MÁSODIK rétege (#152) — ELDŐLT: marad, felület nélkül
 # A #1475 eldöntötte: a felület mögötti út a KÖTEGELT réteg

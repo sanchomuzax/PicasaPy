@@ -40,6 +40,7 @@ TrayActionCell 1.0 TrayActionCell.qml
 TrayActionButton 1.0 TrayActionButton.qml
 TrayActionSeparator 1.0 TrayActionSeparator.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
+EmailChoiceDialog 1.0 EmailChoiceDialog.qml
 SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml

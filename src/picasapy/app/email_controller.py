@@ -100,6 +100,11 @@ class EmailController(QObject):
     singleSizeIndexChanged = Signal()
     useDefaultClientChanged = Signal()
     emailFailed = Signal(str)
+    #: #1798: a felület KÉRDEZZE meg, hogyan küldjön. Akkor dördül el, ha a
+    #: felhasználó a Beállításokban a „minden küldéskor kérdezz" módot
+    #: választotta. Paraméterei: csatolmány-útvonalak, tárgy, szöveg — a
+    #: válasz a `sendWithDefaultClient()`.
+    mailChoiceRequested = Signal(list, str, str)
 
     def __init__(
         self,
@@ -253,9 +258,40 @@ class EmailController(QObject):
 
     @Slot(list, str, str, result=bool)
     def sendRows(self, attachment_paths, subject: str, body: str) -> bool:
-        """A már előkészített (`prepareAttachments`) fájlok elküldése a
-        rendszer levelezőjével. `xdg-email` hiányában `mailto:`
-        visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről a
+        """A már előkészített (`prepareAttachments`) fájlok elküldése.
+
+        #1798: ELŐBB a beállítás. Ha a felhasználó a „minden küldéskor
+        kérdezz" módot választotta, itt NEM küldünk, hanem a
+        `mailChoiceRequested` jelzéssel kérdést kérünk a felülettől — a
+        válasz a `sendWithDefaultClient()`. Enélkül a beállítás néma volt:
+        tárolódott, visszajelzett, és a küldés átlépett rajta.
+
+        A visszatérési `False` itt azt jelenti, hogy a küldés MÉG nem
+        történt meg — nem azt, hogy elbukott."""
+        if not self._use_default_client:
+            self.mailChoiceRequested.emit(
+                list(attachment_paths), subject, body
+            )
+            return False
+        return self._kuldes(attachment_paths, subject, body)
+
+    @Slot(list, str, str, bool, result=bool)
+    def sendWithDefaultClient(
+        self, attachment_paths, subject: str, body: str, remember: bool
+    ) -> bool:
+        """A választó-párbeszéd válasza: küldés az alapértelmezett
+        levelezővel.
+
+        A `remember` a mért `DoNotPromptForEmailPref` megfelelője — ha be
+        van jelölve, a Beállítások rádiója is visszaáll, tehát legközelebb
+        nem kérdezünk."""
+        if remember:
+            self.setUseDefaultClient(True)
+        return self._kuldes(attachment_paths, subject, body)
+
+    def _kuldes(self, attachment_paths, subject: str, body: str) -> bool:
+        """A tényleges indítás: `xdg-email`, annak hiányában `mailto:`
+        visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről az
         `emailFailed` jelez, hogy a UI figyelmeztethesse a felhasználót."""
         attachments = [Path(path) for path in attachment_paths]
         xdg_email = _which("xdg-email")

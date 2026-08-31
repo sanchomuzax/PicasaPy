@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 40.**
+**Felületről el nem ért vezérlő-tag: 38.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -136,8 +136,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
 | `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |
-| `emailController` | `prepareAttachments` | Slot | `app/email_controller.py` | #1474 — a QML csak a beállítás-fül kliensválasztóját köti |
-| `emailController` | `sendRows` | Slot | `app/email_controller.py` | #1474 — a tényleges küldés sehonnan nem hívódik |
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
