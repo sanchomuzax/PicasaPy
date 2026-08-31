@@ -22,3 +22,10 @@ exclude src/picasapy/app/i18n/*.ts
 global-exclude __pycache__
 global-exclude *.py[cod]
 global-exclude *.orig *.rej
+
+# #1719: a QML-előrefordítás kimenete (`.qmlc`/`.jsc`) TELEPÍTÉSKOR
+# keletkezik a célgépen, a célgép saját Qt-verziójával. A csomagba
+# SOHA nem kerülhet bele: a bájtkód más Qt-verzióval használhatatlan,
+# és egy fejlesztői fából becsomagolt, elavult egység NÉMÁN elnyomná a
+# hozzá tartozó .qml forrást (az egység szándékosan időbélyeg-független).
+global-exclude *.qmlc *.jsc *.aotstats

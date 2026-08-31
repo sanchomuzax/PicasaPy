@@ -45,6 +45,14 @@ dev = [
 # példány") headless/SSH-s környezetben is látszódjanak stderr-en.
 [project.scripts]
 picasapy = "picasapy.app.__main__:main"
+# #1719: a QML-fa előrefordítása TELEPÍTÉSKOR. A Qt a QML-t egyébként az
+# első induláskor fordítja bájtkóddá, és a lemezes gyorsítótára a forrás
+# IDŐBÉLYEGÉHEZ van kötve — a `pip install --upgrade` pedig minden fájlt
+# frissre ír, tehát minden frissítés után az első indulás újrafordítja a
+# teljes fát. A `postinst`/`install.bat` ezt a parancsot hívja a célgép
+# saját PySide6-jával (a bájtkód a Qt verziójához kötött, ezért nem a
+# wheel építésekor készül).
+picasapy-qml-elofordit = "picasapy.perf.qml_elofordit:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

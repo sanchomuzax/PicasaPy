@@ -17,6 +17,42 @@ pont e feladat része (`picasapy` parancs → `picasapy.app.__main__:main`); a
 
 ---
 
+## 0. Telepítés utáni kötelező lépés: a QML előrefordítása (#1719)
+
+A felület 141 QML-fájlból áll. A Qt ezeket **az első induláskor** fordítja
+bájtkóddá, és a lemezes gyorsítótára a forrás **időbélyegéhez** van kötve
+— a `pip install --upgrade` viszont minden fájlt frissre ír, tehát minden
+telepítés/frissítés után az első indulás újra kifizetné a fordítást.
+
+Ezért mindkét telepítő (`debian/postinst`, `windows/install.bat.template`)
+a telepítés UTÁN meghívja:
+
+```sh
+picasapy-qml-elofordit            # vagy: python -m picasapy.perf.qml_elofordit
+```
+
+A parancs a telepített csomag saját `app/qml/` fája mellé teszi le a
+`.qmlc` egységeket, **nulla forrás-időbélyeggel** — ilyenkor a Qt nem
+hasonlít dátumot, tehát az egység a telepítés dátumaitól függetlenül
+érvényes marad.
+
+**Miért a telepítéskor és nem a wheel építésekor?** A bájtkód fejléce
+tartalmazza a Qt verzióját; eltérésnél a Qt CSENDBEN eldobja és
+visszaesik a forrásfordításra. A wheel `py3-none-any`, a célgép PySide6-ja
+más verziójú lehet — ezért a fordítás a célgép SAJÁT PySide6-jával
+készül. A `MANIFEST.in` emiatt kifejezetten ki is zárja a `.qmlc`-t a
+csomagból.
+
+Kézzel telepített (`pip install picasapy`) környezetben a lépés
+elmarad; ott érdemes egyszer lefuttatni a fenti parancsot.
+
+⚠️ **Fejlesztői fán ne hagyd ott.** Az időbélyeg-függetlenség miatt egy
+ottfelejtett `.qmlc` némán elnyomja a később szerkesztett `.qml`-t. A
+repóból a `python3 scripts/qml_elofordit.py --takarit` állítja vissza a
+fejlesztői állapotot.
+
+---
+
 ## 1. pip / pipx telepítés (Linux)
 
 ### Build

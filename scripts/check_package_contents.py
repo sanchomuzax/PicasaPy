@@ -48,7 +48,15 @@ INTENTIONALLY_EXCLUDED: tuple[tuple[str, str], ...] = (
 )
 
 #: Sosem tartoznak a csomagba (fejlesztői melléktermékek).
-_IGNORED_SUFFIXES = frozenset({".py", ".pyc", ".pyo", ".orig", ".rej"})
+#:
+#: #1719: a `.qmlc`/`.jsc`/`.aotstats` a QML-előrefordítás kimenete. A
+#: célgépen, TELEPÍTÉSKOR keletkezik (a bájtkód a Qt verziójához kötött),
+#: a wheelbe tehát nem is szabad bekerülnie — a `MANIFEST.in` kizárja. Ha
+#: egy fejlesztői fán mégis ott van (mert valaki lefuttatta a
+#: `scripts/qml_elofordit.py`-t), az nem hiányzó csomagtartalom.
+_IGNORED_SUFFIXES = frozenset(
+    {".py", ".pyc", ".pyo", ".orig", ".rej", ".qmlc", ".jsc", ".aotstats"}
+)
 _IGNORED_DIRS = frozenset({"__pycache__"})
 
 

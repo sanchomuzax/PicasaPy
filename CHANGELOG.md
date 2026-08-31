@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Gyorsult
+- **A telepítés utáni ELSŐ indítás gyorsabb (#1719).** A program felülete
+  141 QML-fájlból áll, amelyeket a Qt eddig az első indításkor fordított
+  le — és mivel a frissítés minden fájlt újraír, ez a munka **minden
+  telepítés után** újra elkészült. Mostantól maga a telepítő végzi el a
+  fordítást (`.deb`-nél és a windowsos `install.bat`-nál is), így az első
+  indítás nem várat vele. Mérve, Raspberry Pi 5-ön, nyolc-nyolc
+  indítással: a felület betöltése **3,26 s → 2,71 s** (medián), és
+  elmarad 139 gyorsítótár-fájl kiírása is. Aki a repóból futtatja, annál
+  nem változik semmi.
+
 ### Javítva
 - **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
   mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák

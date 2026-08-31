@@ -32,6 +32,19 @@ if "!FOUND!"=="0" (
 )
 
 echo.
+rem #1719: a QML-felulet ELOREFORDITASA a most telepitett PySide6-tal.
+rem A Qt kulonben az elso indulaskor forditja bajtkodda mind a 141
+rem QML-fajlt, es a lemezes gyorsitotara a forras IDOBELYEGEHEZ van kotve
+rem — a fenti "pip install --upgrade" viszont minden fajlt frissre ir.
+rem Az itt keszulo .qmlc nulla idobelyeggel keszul, tehat a telepites
+rem datumaitol fuggetlenul ervenyes marad. A lepes hibaja NEM allitja meg
+rem a telepitest: a program enelkul is elindul, csak lassabban.
+echo QML-felulet eloforditasa...
+py -3.12 -m picasapy.perf.qml_elofordit
+if errorlevel 1 py -3 -m picasapy.perf.qml_elofordit
+if errorlevel 1 echo FIGYELEM: az eloforditas kimaradt, az elso indulas lassabb lesz.
+
+echo.
 echo Parancsikonok letrehozasa (Asztal + Start menu)...
 rem #67: tálca-ikon — az .exe-hez tartozó parancsikon explicit IconLocation-t
 rem kap (assets/icon.ico), így a taskbar/Start-menü nem a Python-ikont mutatja.

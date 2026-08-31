@@ -105,3 +105,12 @@ tools/histogram/out/
 .agents/skills/
 docs/allapotlap.html
 docs/binaris-terkep.html
+
+# === QML-előrefordítás kimenete (#1719) ===
+# A `qmlcachegen` bájtkódja telepítéskor keletkezik a célgépen; a repóba
+# soha nem kerül. ⚠️ Ha kézzel lefuttattad a forrásfán, a `.qmlc` NÉMÁN
+# elnyomja a később szerkesztett `.qml`-t (időbélyeg-független egység) —
+# a `python3 scripts/qml_elofordit.py --takarit` állítja vissza.
+*.qmlc
+*.jsc
+*.aotstats

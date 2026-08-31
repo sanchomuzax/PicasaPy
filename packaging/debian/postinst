@@ -48,6 +48,21 @@ case "$1" in
         fi
         "$VENV_DIR/bin/pip" install --upgrade --quiet "$WHEEL_FILE"
 
+        # #1719: a QML-felület ELŐREFORDÍTÁSA most, a venv saját
+        # PySide6-jával. A Qt egyébként az első induláskor fordítja
+        # bájtkóddá mind a 141 QML-fájlt, és a lemezes gyorsítótára a
+        # forrás IDŐBÉLYEGÉHEZ van kötve — a fenti `pip install --upgrade`
+        # viszont minden fájlt frissre ír, tehát minden frissítés után az
+        # első indulás újra kifizetné a fordítást. Az itt készülő `.qmlc`
+        # nulla időbélyeggel készül, így a telepítés dátumaitól függetlenül
+        # érvényes marad.
+        #
+        # A lépés SOHA nem buktathatja el a telepítést: ha nincs
+        # `qmlcachegen`, a program ugyanúgy elindul, csak lassabban.
+        echo "PicasaPy: a QML-felület előrefordítása…"
+        "$VENV_DIR/bin/picasapy-qml-elofordit" \
+            || echo "PicasaPy: az előrefordítás kimaradt — az első indulás lassabb lesz." >&2
+
         ln -sf "$VENV_DIR/bin/picasapy" /usr/bin/picasapy
 
         if command -v update-desktop-database >/dev/null 2>&1; then

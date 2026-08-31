@@ -295,6 +295,19 @@ jobs:
           test -x /tmp/smoke/bin/picasapy
           /tmp/smoke/bin/python scripts/check_installed_package.py
 
+      - name: A QML-előrefordítás lefut a TELEPÍTETT csomagon (#1719)
+        # Ezt a lépést hívja a `postinst` és a windowsos `install.bat` a
+        # telepítés után. Itt nem IDŐT mérünk (#1653/#1689), hanem
+        # MUNKAMENNYISÉGET: a `--legalabb 140` megköveteli, hogy a
+        # telepített fában tényleg ott legyen a teljes QML-készlet, az
+        # `--ellenoriz` pedig azt, hogy MINDEGYIKHEZ készült érvényes,
+        # időbélyeg-független bájtkód. Enélkül egy csonka fa vagy egy néma
+        # fordítási hiba észrevétlen maradna, és a felhasználó megint
+        # fizetné az induláskori fordítást.
+        run: |
+          /tmp/smoke/bin/picasapy-qml-elofordit --legalabb 140
+          /tmp/smoke/bin/picasapy-qml-elofordit --ellenoriz --legalabb 140
+
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
