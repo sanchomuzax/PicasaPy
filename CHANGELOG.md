@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **A „Másolat mentése" megőrzi a kép eredeti felvételi idejét (#1642).**
+  A másolat eddig metaadat nélkül készült: elveszett belőle, mikor
+  készült az eredeti felvétel. Mostantól — ahogy az eredeti Picasa is
+  teszi — a másolat EXIF- és XMP-aláírást kap, benne a **forrás eredeti
+  dátumával**, míg a másolás pillanata külön mezőbe kerül. Így a
+  fényképkezelők (és a mi idővonalunk is) a másolatot a felvétel
+  idejéhez sorolják, nem a mai naphoz. A forrásfájl változatlan marad.
+  A készítő neve a mi nevünk („PicasaPy"), nem a „Picasa" — nem adjuk ki
+  magunkat a Google termékének.
+
 ### Javítva
 - **A „Másolat mentése" többé nem ír a `.picasa.ini` fájlba (#1643).**
   Eddig a másolat mellé két bejegyzést tettünk — abból a feltevésből,
