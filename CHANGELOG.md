@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Gyorsult
+- **Az induláskori mappa-ellenőrzés nem tapogatja végig a változatlan
+  mappákat (#1674).** A program indulásnál az exportcélokat és a Kollázsok
+  mappát végignézte fájlonként, akkor is, ha egyikük sem változott. Helyi
+  lemezen ez alig érzékelhető, **hálózati meghajtón vagy NAS-on viszont
+  fájlonként egy külön kör** — nagy mappánál ez összeadódik. Mostantól a
+  változatlan mappát a program felismeri, és meg sem nyitja a benne lévő
+  fájlokat. Új vagy módosult fájl továbbra is azonnal bekerül.
+
+### Gyorsult
 - **A Kollázsok mappa nem olvasódik újra minden induláskor (#1675).** A
   program indulásnál kidobta az indexből a saját Kollázsok mappáját, majd
   rögtön vissza is építette — közben minden benne lévő képet újra

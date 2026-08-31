@@ -210,8 +210,21 @@ def sync_folder(
     folder: str | Path,
     exclude: tuple[str | Path, ...] = (),
     should_stop: Callable[[], bool] | None = None,
+    incremental: bool = False,
 ) -> None:
     """Egyetlen mappa nem-rekurzív szinkronja (watcher-ág, #143).
+
+    #1674: `incremental=True` esetén a VÁLTOZATLAN mappa fájljait meg sem
+    statoljuk — a #139 kihagyás-predikátumát (`_make_skip`) használjuk, azt
+    a gépezetet, amit eddig csak a rekurzív rescan kapott meg. A feltétel
+    szigorú: a mappa- ÉS az ini-mtime bitre egyezzen a tárolt állapottal, és
+    mindkettő legyen idősebb a frissesség-védőablaknál — egy épp íródó
+    mappa így nem ragadhat be.
+
+    Az alapértelmezés SZÁNDÉKOSAN `False`: a watcher jelzésére a mappa épp
+    azért jön, mert valami történt vele. Az indulási önjavító ágak
+    (#1565/#1075) viszont változatlan mappákat olvasnak újra, és ott a
+    kihagyás a nyereség.
 
     A watcher mappa-pontos jelzést ad — nincs ok a teljes részfa
     újrabejárására. A mappa almappáihoz nem nyúl; ha a mappa eltűnt,
@@ -237,7 +250,8 @@ def sync_folder(
     excluded = any(
         folder_path == item or item in folder_path.parents for item in exclude_paths
     )
-    scan = None if excluded else scan_folder(folder_path)
+    skip = _make_skip(conn) if incremental else None
+    scan = None if excluded else scan_folder(folder_path, skip=skip)
     gyoker_baja = "" if excluded or scan is not None else _gyoker_baja(root_path)
     if gyoker_baja:
         # #1560: a takarítás bizonyítéka a GYÖKÉR. Ha az nem tudja
@@ -282,6 +296,12 @@ def sync_folder(
             )
         else:
             _remove_folder(conn, folder_path)
+    elif scan.skipped:
+        # #1674: változatlan mappa — az indexbeli állapot érvényes. Sem
+        # fotósort, sem scan-állapotot nem írunk: nincs mit frissíteni, és
+        # a felesleges írás a `folder_scan_state` mtime-ját is elmozdítaná.
+        conn.commit()
+        return
     else:
         _sync_folder(conn, scan)
         _store_scan_state(conn, scan)

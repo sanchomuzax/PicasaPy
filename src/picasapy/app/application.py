@@ -194,7 +194,11 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
         if not mappa.is_dir():
             return
         collage_output.ensure_project_album(mappa)
-        sync_folder(conn, mappa, mappa)
+        # #1674: inkrementális — a Kollázsok mappa induláskor rendszerint
+        # változatlan, és a #1675 védelme óta a sorai is megmaradnak, tehát
+        # a kihagyás feltétele teljesül. Így a mappa fájljait meg sem
+        # statoljuk.
+        sync_folder(conn, mappa, mappa, incremental=True)
     except Exception:  # noqa: BLE001 - az indulás soha nem hiúsulhat meg tőle
         logging.getLogger(__name__).warning(
             "a Kollázsok mappa indulási felvétele hibára futott", exc_info=True
@@ -230,7 +234,10 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
         return
     for mappa in mappak:
         try:
-            sync_folder(conn, Path(mappa), Path(mappa))
+            # #1674: inkrementális — az exportcélok a #1667 védelme óta
+            # bent maradnak az indexben, tehát változatlan célnál nincs
+            # fájlonkénti statolás.
+            sync_folder(conn, Path(mappa), Path(mappa), incremental=True)
         except Exception:  # noqa: BLE001 - egy rossz cél ne vigye el a többit
             logging.getLogger(__name__).warning(
                 "az exportcél indulási felvétele hibára futott: %s",

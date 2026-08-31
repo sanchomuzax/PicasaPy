@@ -119,7 +119,9 @@ def scan_tree(
 
 
 def scan_folder(
-    folder: str | Path, name_filters: NameFilters | None = None
+    folder: str | Path,
+    name_filters: NameFilters | None = None,
+    skip: SkipPredicate | None = None,
 ) -> FolderScan | None:
     """Egyetlen mappa nem-rekurzív scanje (watcher-ág, #143).
 
@@ -140,7 +142,11 @@ def scan_folder(
     except OSError:
         return None
     file_entries = [e for e in entries if not _entry_is_dir(e)]
-    return _scan_folder(path, file_entries, skip=None, with_state=True)
+    # #1674: a watcher-ág is kaphat kihagyás-predikátumot. Enélkül a
+    # `_scan_folder` MINDEN médiafájlt statolt akkor is, ha a mappa
+    # bizonyíthatóan változatlan — a #139 gépezete létezett, csak ez az út
+    # nem használta.
+    return _scan_folder(path, file_entries, skip=skip, with_state=True)
 
 
 def _walk(
