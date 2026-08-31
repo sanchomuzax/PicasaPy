@@ -2124,6 +2124,13 @@ funkcióhiányt.
 funkcióhiány. *(A skill szabálya szerint a negatív eredmény is eredmény:
 a jegy hiánya itt lelet, nem mulasztás.)*
 
+> ⚠️ **HELYESBÍTÉS (45. tétel, 2026-09-01):** ez a mondat **szűkebben
+> igaz**, mint ahogy leírtam. A mérés **elem-jelenlétet** vizsgál; a
+> **csoportosztásra, sorrendre és elrendezésre VAK** (az elválasztókat
+> `rajzolo`-ként ki is dobja). „Nincs mérhető funkcióhiány" tehát azt
+> jelenti: *nincs hiányzó VEZÉRLŐ* — nem azt, hogy a panel elrendezése
+> egyezik. Ld. **45.1**.
+
 ### Nyitott kérdések mérlege (42.)
 
 ```
@@ -2327,3 +2334,86 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 2 hatókörön kív�
 - **„A »Configure Buttons…« csak sorrendet állít"** — megdőlt: a
   **kihagyást** külön kulcs tárolja (`Buttons\Exclude`), tehát a gombok
   el is rejthetők, nem csak átrendezhetők (44.1).
+
+
+## 45. tétel — a mérés HATÁRAI és a tudott eltérések táblája (2026-09-01)
+
+*Hetedik kör az UI-lefedettségi axisról. Nem panel: a **módszer** köre —
+egy testvér-munkamenet menüsor-mérése rámutatott egy vakfoltra, ami a
+saját korábbi következtetéseimet is érinti.*
+
+### 45.1 ⚠️ A mérés VAK a csoportosztásra, a sorrendre és az elrendezésre
+
+Az `ui_lefedettseg.py` három osztályba sorolja az elemeket
+(`feliratos` / `vezerlo` / `rajzolo`), és **csak azt kérdezi, hogy egy
+elem MEGVAN-e**. Amit nem kérdez:
+
+| amit nem lát | miért |
+|---|---|
+| **elválasztók, csoporthatárok** | a `separator` a `rajzolo` névminták közt van (`ui_lefedettseg.py:64`) — ki is dobja az értékelésből |
+| **sorrend** | az összevetés halmaz-alapú |
+| **elrendezés, méret, pozíció** | a `.tre`/`respack` geometriát az eszköz nem olvassa |
+| **hierarchia** | melyik elem melyik csoportban ül |
+
+⇒ **A „hiányzik = 0" NEM azt jelenti, hogy a panel egyezik.** Azt
+jelenti: *minden vezérlő megvan valahol.*
+
+**Miért fontos ez most:** egy testvér-kör a felső menüsor
+**csoportosztását** mérte ki a tulajdonos képernyőmentéseiből
+(`docs/specs/picasa-menusor-csoportok.md`), és a **nyolc menüből hatban**
+talált eltérést — miközben a korábbi, **felirat-szintű** audit
+(`ui-audit-menus.md`) mindet átengedte. A hiba **szerkezeti** volt, nem
+feliratbeli. Ugyanez a vakfolt az én axisomon is fennáll.
+
+⇒ **A 42.4 pont mondata ezért helyesbítve** (ld. ott): a `collagepanel`
+esetében *hiányzó vezérlő* nincs; a **csoportosztása nincs mérve.**
+
+### 45.2 Amit ebből minden UI-kör csináljon másképp
+
+1. A záró mondat legyen **pontos**: „nincs hiányzó vezérlő", ne „nincs
+   funkcióhiány".
+2. Ha a panelről van **képernyőmentés**, a csoportosztást is nézd meg —
+   a mentéseken az **inaktív tételek is látszanak**, tehát ha egy elem
+   nincs a képen, akkor tényleg nincs a panelen. *(Ez a testvér-kör
+   bizonyítéka; erős elv, mert az inaktivitás nem rejti el a tételt.)*
+3. Ha nincs mentés, **mondd ki**, hogy a csoportosztás nincs mérve —
+   ne csendben maradjon.
+
+### 45.3 ⭐ TUDOTT ÉS INDOKOLT ELTÉRÉSEK — a kimondatlanság ellen
+
+A projekt visszatérő kára: egy **szándékos** eltérés kimondatlanul marad,
+és egy későbbi kör hibának nézi, újra levezeti, esetleg „javítja". A
+#416/#422 és a #1454 mind ilyen volt.
+
+Az alábbi tábla az UI-axis eddigi köreiben talált eltéréseket sorolja.
+**Ami itt szerepel, az tudatos; ami nem szerepel és mégis eltér, az
+hiba.**
+
+| panel | eltérés | indok | jegy |
+|---|---|---|---|
+| `acquirepanel` | nálunk **párbeszéd**, az eredetiben bal oldali panel | a párbeszéd ugyanazt a funkciót adja; a panel-forma átvétele nagy szerkezeti munka, önálló haszon nélkül | — |
+| `acquirepanel` | egyképes előnézet next/prev helyett **bélyegkép-rács** | a rács egyszerre mutatja a készletet; funkcionálisan erősebb | — |
+| `quicktagconfig` | **8** hely az eredeti **10** helyett | eredetileg saját döntés, **indoka nincs rögzítve** ⇒ a jegy kéri a pótlást | #1788 |
+| `quicktagconfig` | csak **Bezárás**, nincs OK/Mégse | a párbeszéd azonnal ír; **kimondatlan volt** ⇒ a jegy döntést kér | #1788 |
+| `printoptions` | nálunk **nincs** a panel | még nincs megvalósítva — ez hiány, nem eltérés | #1780 |
+| `buttonmgr` | a **gombletöltés** nem készül el | a `picasa.smo` kiszolgáló megszűnt | #1792 |
+| `acquirepanel` | a **feltöltés/megosztás** blokk nem készül el | Picasa Web Albums megszűnt | — |
+| `printpanel` | a **`froogle`** gomb nem készül el | a Froogle megszűnt | #1782 |
+
+*(A tábla nyitott: minden további UI-kör ide írja, amit tudatos
+eltérésként hagy.)*
+
+### Nyitott kérdések mérlege (45.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** mire vak a mérés, és mit jelent pontosan a „hiányzik = 0"
+  (45.1); a tudott eltérések helye és szabálya (45.3).
+
+### Amit KIZÁRTAM
+
+- **„A `hiányzik = 0` azt jelenti, hogy a panel egyezik az eredetivel"** —
+  megdőlt: a mérés elem-jelenlétet néz, a csoportosztásra és a sorrendre
+  vak (45.1). **Ez a saját 42.4 pontom helyesbítése.**
