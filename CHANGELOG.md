@@ -8,6 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Hozzáadva
+- **A „Keresés" almenü a kép helyi menüjében, három tétellel (#1613).**
+  Eddig egyetlen lapos „Keresés a lemezen" parancs volt itt; az eredetiben
+  almenü van, és két olyan tétel is, ami nálunk sehonnan nem volt elérhető:
+  - **Fájl a lemezen** (Ctrl+Enter) — a régi parancs, az eredeti nevén;
+  - **Eredeti a lemezen** — a szerkesztés előtti, megőrzött eredetit
+    mutatja meg a fájlkezelőben. Szürke, ha a képnek nincs eredetije;
+  - **Keresés a Picasában** — album- vagy Emberek-nézetből a kép valódi
+    mappájára ugrik, ahol a többi kép is mellette van.
+
+### Hozzáadva
 - **Működik a „Mappa törlése…" a mappa helyi menüjében (#1638).** Eddig
   szürke, kattinthatatlan tétel volt — miközben a két szomszédja
   („Mappa áthelyezése…", „Eltávolítás a Picasából…") működött. Épp a
