@@ -1282,3 +1282,190 @@ Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kív�
   (`RIGHTDRAWEROFFSET`); a `thumbui/backup` matchelőágának ugrása a
   sztring-lánc matcher esethatárára esik — a valódi motor a `il_BurnPanel`
   (35.6).
+
+## 36. tétel — Névcímke-letöltés, Mappakezelő-kapu és a LISTA-RENDEZÉS (2026-08-31)
+
+A lefedettségi mérés következő öte: `ID_TOOLS_DOWNLOAD_FACES`,
+`ID_TOOLS_INCLUDEEXCLUDEFOLDERS`, `ID_VIEWBYNAME`, `ID_VIEWBYRECENT`,
+`ID_VIEWBYSIZE`. Mindhárom rendezés-parancs ugyanahhoz a
+**bal hasáb-lista rendezéséhez** tartozik, ezért egy jelenségként megy.
+
+### 36.1 ⛔ `ID_TOOLS_DOWNLOAD_FACES` — HALOTT tétel: a Picasa maga veszi ki
+
+Az Eszközök menü `WM_INITMENU`-építője (`FUN_0056e1c0`, a menüfogantyú
+`esi = [esp+0x38]`) a szomszédos tételeket `EnableMenuItem`-mel
+engedélyezi/szürkíti — a névcímke-letöltést viszont **eltávolítja**:
+
+```
+0x0056f68d  push edi          ; az előző tétel (0x9df7/0x9df9) engedélyezése
+0x0056f68e  push 0x9df9
+0x0056f693  push esi
+0x0056f694  call ebx          ; EnableMenuItem   [0xc40818]
+0x0056f696  push 0            ; MF_BYCOMMAND
+0x0056f698  push 0x9e10       ; ID_TOOLS_DOWNLOAD_FACES
+0x0056f69d  push esi
+0x0056f69e  call [0xc408b0]   ; RemoveMenu
+```
+
+A hívás **feltétel nélküli**: a `0x0056f554`–`0x0056f69e` blokkba
+egyetlen ugrás vezet (`0x0056f550 jmp 0x0056f554`), és a blokkon belül
+minden elágazás a közvetlenül következő címkére megy. Vagyis a
+3.9.141.259-es build **minden menünyitáskor kiveszi** a
+„Névcímkék letöltése a Picasa Webalbumokból" tételt.
+
+⇒ **A tétel a binárisban megvan, a felhasználó soha nem látja.** A
+Picasa Web Albums 2016-os megszűnésével a funkciónak amúgy sincs
+kiszolgálója. *(Bizonyítottsági fok: **megerősített** — a
+diszasszemblátum és az importfeloldás: `0xc408b0` → `USER32!RemoveMenu`,
+`0xc40818` → `EnableMenuItem`, `0xc40810` → `CheckMenuItem`.)*
+
+A `RemoveMenu` mind a kilenc hívóhelye (`0x56cf78` = `0x9ca5` Elrejtés,
+`0x56cfa4` = `0x9ca4` Megjelenítés, `0x56d990` = `0xa0b5`, `0x56db44` és
+`0x56dfc9` = `0xa0cb`, `0x56f69e` = `0x9e10`, `0x5e7a69` = `0x9de1`) —
+csak a `0x9e10` áll elágazás nélküli úton.
+
+### 36.2 `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` — a kapu, ami szürkíti
+
+A Mappakezelő teljes viselkedése (`watchedfolders.txt`,
+`frexcludefolders.txt`, `scanlist.txt`, a `+`/`-` sorformátumok) a
+`picasa-mappakezelo.md`-ben van; ide az **engedélyezési feltétel**
+kerül, ami eddig sehol nem szerepelt:
+
+```
+0x0056f543  cmp ecx, edx              ; ecx = [edi+0x34a4], edx = 0
+0x0056f547  cmp byte [esp+0x13], 0
+0x0056f54e  mov al, 1                 ; engedélyezve
+...
+0x0056f562  sete dl                   ; dl = (al==0) → MF_GRAYED
+0x0056f566  push 0x9caa               ; ID_TOOLS_INCLUDEEXCLUDEFOLDERS
+0x0056f56c  call ebx                  ; EnableMenuItem
+```
+
+- `[esp+0x13]` forrása (`0x0056e240`–`0x0056e265`): a **`editpanel/preview`**
+  csomópont keresése (`0x9c2fc0`, névsztring `0xc88a2c`), majd
+  `sete [esp+0x13]` a `byte [csomópont+0x20c] == 0` feltételre.
+  ⇒ **a Mappakezelő és a „Mappa hozzáadása…" SZÜRKE, amíg a
+  szerkesztő-előnézet aktív állapotban van.** Ugyanez a kapu szürkíti a
+  `0x9d38`, `0x9d3a`, `0x9d9d`, `0x9daf`, `0x9df0`, `0x9dc9` tételeket is.
+- `[edi+0x34a4]` **ebben a buildben mindig 0**: a teljes fájlban egyetlen
+  írása van, a konstruktorban (`0x00564c6e`, `mov [ebp+0x34a4], ebx`,
+  ahol `ebx = 0`); sem `mov imm`, sem más regiszteres írás nem létezik rá.
+  ⇒ **kikapcsolt (korlátozott módú) jelzőbit** — a rá épülő
+  `jne`-ágak sosem futnak. *(Bizonyítottsági fok: **megerősített** — a
+  `.text` teljes bájtmintás átvizsgálása a `C7 8x A4 34 00 00` és
+  `89 8x A4 34 00 00` alakokra.)*
+
+A két belépési pont (Fájl ▸ „Mappa hozzáadása a Picasához…" és
+Eszközök ▸ „Mappakezelő…", mindkettő `0x9caa`) a
+`picasa-mappakezelo.md`-ben már rögzítve van.
+
+### 36.3 ⭐ A lista-rendezés HÁROM állapota a REGISTRYBEN — és a 4/c
+### nyitott kérdésének lezárása
+
+A `docs/specs/picasa-konyvtar-eszkoztar-viselkedes.md` 4/c pontja a
+pipa-forrásokat mezőnévvel adta meg (`[+0x2c0+0xd8]`, `+0xdc`, `+0x165`),
+de **nem mondta meg, hol él az állapot két indítás között**. Megvan: a
+`Preferences` registry-ág három kulcsa.
+
+**Betöltő** — `0x004a1560` (a lista-osztály konstruktora),
+`GetPreference` = `0x00407a20`, a `Preferences` sztring `0xc7eafc`:
+
+| kulcs | sztring-cím | betöltés | célmező |
+|---|---|---|---|
+| **`datesort`** | `0xc83078` | `0x004a195f`–`0x004a1991` | `[obj+0xd8]` — a **lista-rendezés módja** |
+| **`peoplesort`** | `0xc83084` | `0x004a198c`–`0x004a19bd` | `[obj+0xdc]` — a **személy-lista rendezése** |
+| **`albumlistflip`** | `0xc83090` | `0x004a19d5`–`0x004a1a05` | `[obj+0x165]` (bájt, `setne`) — a **megfordítás** |
+
+**Mentő** — `0x004a3790`, ugyanaz a három kulcs, ugyanabban a sorrendben,
+a mezőkből visszaírva (`0x004a379e`, `0x004a37e8`, `0x004a3835`).
+
+> ⚠️ A `datesort` kulcsnév **félrevezető**: nem logikai „dátum szerint"
+> kapcsoló, hanem a **teljes módszám** tárolója (0/1/2/5).
+
+**A `0x9e18` / `0x9e19` / `0x9e38` rejtélye ezzel LEZÁRVA.** A 4/c pont
+azt írta róluk: „a menüsáv-építőben nincsenek… a ▾ menü harmadik
+csoportjának 1–3. tétele", a pipa forrása `[+0x2c0+0xdc] == 0/1/2`. A
+`+0xdc` = `peoplesort` ⇒ ezek a **személy-lista rendezésének** tételei,
+és a feliratuk is megvan (`0x00733480`):
+
+| cmd | `[obj+0xdc]` | felirat |
+|---|---|---|
+| `0x9e18` | 0 | **Sort &People by Name** |
+| `0x9e19` | 1 | **Sort People by &Amount** |
+| `0x9e38` | 2 | **Sort People by Top &10** |
+
+### 36.4 A rendező hasonlítója — a „méret" BÁJT, nem darabszám
+
+A hasonlító `0x004a7e80`-tól olvasható (ugyanaz az osztály):
+
+- **`mode == 1` (legutóbbi változtatás):** kétszer hívja a `0x004ae0d0`-t,
+  és az eredményt **`double`-ként** hasonlítja (`fld`/`fucom`) — időbélyeg.
+- **`mode == 5` (méret):** a `[obj+0xc4]` táblából a `0x004507e0`
+  kétszeri hívásával kér egy **kétszavas (64 bites)** értéket
+  (`[eax]` + `[eax+4]`), és **magas–alacsony szó szerint** hasonlítja
+  (`0x004a7f2e`–`0x004a7f54`). Darabszámhoz 64 bit nem kellene.
+  ⇒ **a „Rendezés méret alapján" a mappa/album ÖSSZES BÁJTJA.**
+- **A megfordítás a hasonlítón belül van:** mindkét kimeneti ág
+  `cmp byte [edi+0x165], al` + `sete`/`setne` + `lea eax,[eax+eax-1]`
+  (azaz ±1) — a `albumlistflip` nem külön menetben fordítja meg a listát.
+
+### 36.5 A rendezés-tételek HÁROM menüben élnek
+
+| menü | építő | kulcs-névtér | bizonyíték |
+|---|---|---|---|
+| **menüsáv ▸ Nézet** | `0x00559150` (menüsáv-építő) | `eMenuView::ID_VIEWBYDATE/RECENT/NAME/SIZE` | a négy sztring a menüsáv-építőben; a pipázója `0x00574b70`, ami **`GetSubMenu(GetMenu(hwnd), 2)`**-t vesz (`0x00574b81`–`0x00574b8a`) = a **harmadik** felső menü |
+| **bal hasáb ▾ előugró** | `0x005e2000` (`folderviewpopup`) | `AlbumList::ID_VIEWBY*` (feliratok: `0x00733480`) | a 4/c pont táblája |
+| **album/címke helyi menü ▸ „Sort By"** | `0x00559150` | `eMenuLabelFolder::ID_DATESORT/NAMESORT/SIZESORT/REVERSESORT` + `eMenuLabelFolder::SortBy` | a hat sztring ugyanabban az építőben |
+
+> **Megerősítés a #1595-höz, és helyesbítés a `PicasaMenuBar.qml:926`
+> megjegyzéséhez.** A #1595 már kimondta, hogy **két külön rendezés-készlet**
+> van (A = `ID_*SORT`, négy rövid felirat, a **Mappa** menüben; B =
+> `ID_VIEWBY*`, öt hosszú felirat, a **Nézet** menüben és a bal hasábon).
+> Ez a kör **független bizonyítékot** ad a B készlet menüsáv-beli helyére:
+> a pipázója (`0x00574b70`) a `GetMenu(hwnd)` **2. indexű almenűjét** veszi
+> (`0x00574b81`–`0x00574b8a`) — az a harmadik felső menü, a **Nézet**.
+> A `PicasaMenuBar.qml:926` megjegyzése („a bal hasábé a saját menüje")
+> ezért **féligazság**: a Mappanézet hármasa (`0x9db6/0x9db9/0x9db8`)
+> valóban nem rendezés, de a B készlet a menüsáv Nézet menüjében **is**
+> ott van. Nálunk a menüsáv Nézet menüjéből ez az öt tétel hiányzik.
+
+### Eredeti / nálunk / teendő
+
+| parancs | eredeti | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| `ID_TOOLS_DOWNLOAD_FACES` | a menüből **feltétel nélkül eltávolítva** (36.1); a kiszolgáló 2016 óta nincs | nincs se menütétel, se kód (`grep`: 0 találat) | **semmi** — hatókörön kívül, rögzítve |
+| `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` | két belépési pont; **szürke**, amíg a szerkesztő-előnézet aktív | mindkét belépési pont bekötve (`PicasaMenuBar.qml:405` és `:1268` → `folderManagerRequested`); **engedélyezési kapu nincs** | a szerkesztő-előnézet alatti szürkítés (kis jegy) |
+| `ID_VIEWBYNAME` (`0x9c8c`, mód 2) | `Preferences\datesort=2`, kis-nagybetű-független név | `view/paneSort="name"`, `casefold()` (`models.py:267`) | — |
+| `ID_VIEWBYRECENT` (`0x9cbd`, mód 1) | `datesort=1`, `double` időbélyeg | `view/paneSort="changed"` (`models.py:271`) | — |
+| `ID_VIEWBYSIZE` (`0x9dc8`, mód 5) | `datesort=5`, **64 bites bájtösszeg** | `view/paneSort="size"`, `COALESCE(SUM(p.size),0)` (`models.py:50`) — **egyezik** | — |
+| `ID_VIEWREVERSE` (`0xa0cf`) | `albumlistflip`, a **hasonlítón belül** | `view/paneSortReverse` (`controller.py:409`) | — |
+| a három tétel helye | menüsáv Nézet + ▾ előugró + album helyi menü (36.5) | **csak** a bal hasáb helyi menüje (`FolderListContextMenu.qml`) | a menüsáv `Nézet` menüjébe is (jegy) |
+| személy-rendezés (`0x9e18/19/38`) | `Preferences\peoplesort` 0/1/2, három tétel | **nincs** — a Személyek panelen nincs rendezés-menü | új jegy |
+
+### Nyitott kérdések mérlege (36.)
+
+```
+Nyitott kérdések: 0 nyílt · 6 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a `DOWNLOAD_FACES` sorsa (36.1); a Mappakezelő
+  engedélyezési kapuja és a `+0x34a4` holt jelzőbit (36.2); a rendezés
+  három registry-kulcsa (36.3); a `0x9e18/0x9e19/0x9e38` azonosítása —
+  a 4/c pont utolsó nyitott tétele (36.3); a „méret" mértékegysége és a
+  megfordítás helye (36.4); a rendezés-tételek három menüje (36.5).
+- **HATÓKÖRÖN KÍVÜL:** `ID_TOOLS_DOWNLOAD_FACES` megvalósítása — az
+  eredeti maga veszi ki a menüből, a kiszolgáló megszűnt.
+
+### Amit KIZÁRTAM
+
+- **„A `datesort` egy logikai kapcsoló (dátum szerint igen/nem)"** —
+  megdőlt: a betöltő az egész módszámot (`0/1/2/5`) írja a `+0xd8`-ba
+  (36.3).
+- **„A `Rendezés méret alapján` a képek DARABSZÁMA"** — megdőlt: a
+  hasonlító 64 bites értéket vet össze (36.4).
+- **„A `0x9e18/0x9e19/0x9e38` egy fel nem tárt harmadik mappanézet"** —
+  megdőlt: a `peoplesort` három módja (36.3).
+- **„A rendezés csak a bal hasáb saját menüjében van"** (#1454
+  megjegyzése) — megdőlt: a menüsáv Nézet menüjében is (36.5).
+- **„A `[edi+0x34a4]` futásidejű állapot"** — megdőlt: egyetlen írása a
+  konstruktorban, értéke mindig 0 (36.2).
