@@ -220,7 +220,9 @@ tiltva/engedve):
 
 **Ami ebből NEM oldódott fel:** `0x9e18`, `0x9e19`, `0x9e38` — ezek a
 menüsáv-építőben nem szerepelnek, tehát egy **helyi menü** építőjében
-élnek. Ez nem blokkol semmit: a ▾ menü nyolc tétele + öt rendezés
+élnek. *(2026-08-31: **LEZÁRVA** — a személy-lista rendezésének három
+módja, `Preferences\peoplesort`; ld.
+`picasa-menu-parancsok-viselkedes.md` 36.3.)* Ez nem blokkol semmit: a ▾ menü nyolc tétele + öt rendezés
 megvan.
 
 *Bizonyítottsági fok: **megerősített** — a menürekord-tömb gépi
@@ -379,13 +381,14 @@ menüsáv-építő rekordjaiból.*
 3. ~~**A mód-mező (`+0x2c0+0xd8`) 2-es és 5-ös értéke**~~ — **LEZÁRVA
    (2026-08-30), ld. 4/c**: 2 = név, 5 = méret rendezés; a rendezés-tételek
    pipa-kódjai, a `0x005e2000`/`0x00574b70` diszasszemblálásából.
-4. **A `0x9e18`/`0x9e19`/`0x9e38` hármas konkrét felirata** — az
-   `[+0x2c0+0xdc]` mező 0/1/2 értékeihez kötött rádió-hármas **pipa-sémája
-   megvan**, de a felirat-szöveg a honosítási táblában nem azonosítható (a
-   menüsáv-építőben nincs rekordjuk; a `0x005e2000` csak pipázza őket, a
-   feliratot a helyi menü-erőforrás adja). A megvalósításhoz ez nem
-   blokkol: a ▾ menünek ez a csoportja ma nálunk nem létezik, a feliratot
-   a pótló kör veszi át (a tulajdonos képernyőképéről, ha elengedhetetlen).
+4. ~~**A `0x9e18`/`0x9e19`/`0x9e38` hármas konkrét felirata**~~ —
+   **LEZÁRVA (2026-08-31)**, ld. `picasa-menu-parancsok-viselkedes.md`
+   **36.3**: a `[+0x2c0+0xdc]` mező a `Preferences\peoplesort`
+   registry-kulcs (betöltő `0x004a1560`, mentő `0x004a3790`), a három
+   felirat pedig a `0x00733480`-ban áll: `0x9e18` = **Sort &People by
+   Name** (0), `0x9e19` = **Sort People by &Amount** (1), `0x9e38` =
+   **Sort People by Top &10** (2). Vagyis nem mappanézet, hanem a
+   **személy-lista rendezése**.
 
 ## Amit KIZÁRTAM
 
