@@ -27,21 +27,35 @@ következik), `Save a Cop&y` **anélkül** (azonnali művelet).
 Mindkét ág a cél mappájának `.picasa.ini`-jén (`0x005e6f33`) és a KÖZÖS
 hibaüzeneten (`CThumbUI::FileSaveCopy:err`) fut át.
 
-## Amit a mérés NEM ad — dokumentált döntés
+## A `.picasa.ini` — MÉRVE, és a #1527 döntése MEGDŐLT
 
-Hogy a cél `.picasa.ini`-jébe pontosan mely kulcsok kerülnek, a
-sztringekből nem derül ki (`0x005aafd0` nem tartalmaz kulcsnevet).
-**Döntés (nem mérés):** a másolat a `save_edited`-del azonos könyvelést
-kap — `redo=` + `originhash` —, mert a lánc a pixelekbe van égetve;
-`filters=`-t odaírni dupla-szerkesztés volna (#297). A FORRÁS fájlja és
-ini-bejegyzése érintetlen marad.
+A #1527 idején a binárisból nem lehetett kiolvasni, mit ír az eredeti
+(`0x005aafd0` nem tartalmaz kulcsnevet), ezért a kör józan
+alapértelmezést választott: a másolat kapjon `redo=` + `originhash`
+könyvelést. **Ez a döntés megdőlt.**
 
-**Mi döntené el:** egy valódi Picasa 3.9-cel készített „Másolat mentése"
-kimenet mellé exportált `.picasa.ini` (a `MEMORY.md` „Referencia-export a
-windowsos Picasából" lapja szerinti kérés).
+A tulajdonos referencia-mérése (`research/testdata/1557-masolat-mentese/`,
+valódi Picasa 3.9) szerint a művelet **semmit nem ír** a `.picasa.ini`-be:
+
+| idő | esemény | `.picasa.ini` |
+|---|---|---|
+| 19:30 | másolat SZERKESZTETLEN képről | **nem jött létre** |
+| 19:33 | auto kontraszt a FORRÁSRA | ekkor keletkezett, 65 bájt |
+| 19:35 | másolat SZERKESZTETT képről | **változatlan**, 65 bájt |
+
+Hogy a második eset tényleg szerkesztett képről készült, képponti mérés
+bizonyítja: a `-002` a forrástól 99,9%-ban eltér, a `-001` csak 7,3%-ban
+(újrakódolási zaj).
+
+⇒ **Sem a cél, sem a forrás ini-bejegyzését nem érintjük** (#1643). Ez nem
+kényelmi kérdés: a kétirányú `.picasa.ini`-kompatibilitás a projekt
+magígérete, és a mi kulcsaink a windowsos Picasában idegen bejegyzésként
+jelentek volna meg. Levezetés: `docs/specs/picasa-ini-format.md`.
 """
 
 from __future__ import annotations
+
+from datetime import datetime
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,13 +64,11 @@ import numpy as np
 
 from picasapy.edit.save import (
     SaveError,
-    _compute_originhash,
     _encode_image,
-    _section_name,
-    _update_ini_document,
 )
 from picasapy.edit.session import EditSession
 from picasapy.ioutil import write_atomic
+from picasapy.metadata.copy_signature import sign_jpeg, source_taken_at
 
 #: A másolat nevének mintája — MÉRT: a `0x00993650` egyetlen sztringje
 #: `"%s-%03lu"` (tő, majd kötőjel és HÁROM jegyű, nullákkal feltöltött
@@ -91,9 +103,8 @@ class SaveCopyResult:
 
     source_path: Path
     target_path: Path
-    #: a cél `.picasa.ini`-jébe írt `redo=` érték
-    redo_value: str
-    originhash: str
+    # #1643: NINCS `redo_value`/`originhash` mező — a művelet nem ír az
+    # ini-be, tehát nem is lenne mit visszaadnia.
 
 
 def next_copy_path(image_path: str | Path) -> Path:
@@ -130,8 +141,9 @@ def save_copy(
         rendered_image: a szerkesztési lánc beégetésével kapott mátrix,
             OpenCV BGR-ben — a renderelés a hívó dolga, ahogy a
             `save_edited`-nél is.
-        filters: a beégetett lánc; szerializált értéke a cél `redo=`-jába
-            kerül.
+        filters: a beégetett lánc. #1643 óta CSAK a renderelés
+            azonosításához kell — a cél `.picasa.ini`-jébe nem kerül
+            belőle semmi (ld. lent a mérést).
         target_path: `None` esetén a MÉRT `-001` minta adja („Másolat
             mentése"); megadva a felhasználó választotta út („Mentés
             másként…", fájlválasztóból).
@@ -143,10 +155,9 @@ def save_copy(
             nevet kérnie a felhasználótól.
         SaveError: ha a kép nem kódolható a cél kiterjesztésébe
             (`filesaveerr3`, fájlformázási hiba).
-        OSError | IniSaveError | IniConflictError: lemezhiba vagy
-            ini-ütközés (`filesaveerr-win`). Ilyenkor a MÁR kiírt
-            célfájlt eltávolítjuk: fél-kész másolat ne maradjon a
-            gyűjteményben, ini-bejegyzés nélkül.
+        OSError: lemezhiba a célfájl kiírásakor (`filesaveerr-win`).
+            #1643 óta ini-írás nincs, tehát fél-kész állapot sem
+            keletkezhet: a `write_atomic` az egyetlen és utolsó írás.
     """
     image_path = Path(image_path)
     target = Path(target_path) if target_path is not None else next_copy_path(image_path)
@@ -165,35 +176,28 @@ def save_copy(
     # (`filesaveerr3`) így egyetlen bájt sem kerül a lemezre.
     payload = _encode_image(target.suffix, rendered_image, jpeg_quality)
 
-    redo_value = filters.to_value()
-    originhash = _compute_originhash(redo_value)
-
-    write_atomic(target, payload, make_parents=True)
-    try:
-        _update_ini_document(
-            target,
-            lambda document: document.with_value(
-                # #643: a lánc ÁTVITT tartalom (a forrás `filters=`-éből
-                # jön), nem most keletkező tag — a round-trip őr ezt a
-                # `carried=True` jelzésből tudja.
-                _section_name(target),
-                "redo",
-                redo_value,
-                carried=True,
-            ).with_value(_section_name(target), "originhash", originhash),
-        )
-    except BaseException:
-        # A cél fájl MÁR kint van, az ini-könyvelés viszont elbukott. A
-        # `save_edited` ilyenkor visszaállítja az EREDETI bájtokat; itt
-        # nincs mit visszaállítani, tehát a fél-kész másolatot töröljük —
-        # különben egy könyveletlen fájl maradna a gyűjteményben, amit a
-        # felhasználó a következő indexeléskor valódi képként látna.
-        target.unlink(missing_ok=True)
-        raise
-
-    return SaveCopyResult(
-        source_path=image_path,
-        target_path=target,
-        redo_value=redo_value,
-        originhash=originhash,
+    # #1642: a másolat METAADAT-ALÁÍRÁST kap — az eredeti is ezt teszi
+    # (EXIF `Software`/`Artist`/`DateTime` + XMP `dc:creator`/`ModifyDate`),
+    # és közben MEGŐRZI a forrás eredeti felvételi idejét. A forráshoz nem
+    # nyúlunk: az aláírás a már kódolt bájtsorba kerül, a képadat
+    # változatlan. Az aláírásunk a SAJÁT nevünk (`PicasaPy`), nem „Picasa".
+    payload = sign_jpeg(
+        payload,
+        modified_at=datetime.now(),
+        taken_at=source_taken_at(image_path),
     )
+
+    # ⚠️ #1643: A MÁSOLÁS NEM ÍR A `.picasa.ini`-BE — sem a célról, sem a
+    # forrásról. A #1527 az ellenkezőjét döntötte (`redo=` + `originhash`),
+    # de akkor a binárisból nem lehetett kiolvasni, mit tesz az eredeti; a
+    # tulajdonos referencia-mérése (`research/testdata/1557-masolat-mentese/`,
+    # valódi Picasa 3.9) MEGCÁFOLTA: a másolat nem kap szakaszt, a meglévő
+    # ini bájtra változatlan marad, és ini nélküli mappában a művelet nem is
+    # hoz létre egyet. Szerkesztett képről készült másolatnál sem — ezt
+    # képponti mérés bizonyítja (99,9%-os eltérés a forrástól).
+    #
+    # Ezért itt nincs ini-írás, és nincs mit visszagörgetni sem: a
+    # `write_atomic` az utolsó lépés.
+    write_atomic(target, payload, make_parents=True)
+
+    return SaveCopyResult(source_path=image_path, target_path=target)

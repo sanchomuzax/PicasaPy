@@ -8,6 +8,66 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Hozzáadva
+- **A „Másolat mentése" megőrzi a kép eredeti felvételi idejét (#1642).**
+  A másolat eddig metaadat nélkül készült: elveszett belőle, mikor
+  készült az eredeti felvétel. Mostantól — ahogy az eredeti Picasa is
+  teszi — a másolat EXIF- és XMP-aláírást kap, benne a **forrás eredeti
+  dátumával**, míg a másolás pillanata külön mezőbe kerül. Így a
+  fényképkezelők (és a mi idővonalunk is) a másolatot a felvétel
+  idejéhez sorolják, nem a mai naphoz. A forrásfájl változatlan marad.
+  A készítő neve a mi nevünk („PicasaPy"), nem a „Picasa" — nem adjuk ki
+  magunkat a Google termékének.
+
+### Javítva
+- **A „Másolat mentése" többé nem ír a `.picasa.ini` fájlba (#1643).**
+  Eddig a másolat mellé két bejegyzést tettünk — abból a feltevésből,
+  hogy az eredeti Picasa is ezt teszi. A tulajdonos mérése a valódi
+  Picasa 3.9-cel megcáfolta: az **semmit nem ír**, és ha a mappában még
+  nem volt `.picasa.ini`, nem is hoz létre egyet. Mostantól mi sem.
+  Ez azért fontos, mert a fényképmappáid a windowsos Picasával közösen is
+  használhatók: az általunk írt idegen bejegyzések ott is megjelentek
+  volna.
+
+### Hozzáadva
+- **A Mappa menü négy néma tétele működik (#1595).** Az „Áthelyezés…",
+  a „Törlés…", az „Eltávolítás a Picasából…" és a „Keresés a lemezen"
+  eddig szürkén állt a Mappa menüben — pedig mind a négy régóta működik a
+  mappa jobbklikk-menüjéből. Mostantól a menüsávból is elérhetők, és a
+  megnyitott mappára hatnak. Ugyanazokat a megerősítéseket kapod, mint a
+  helyi menüből: egy művelet, egy út.
+
+### Hozzáadva
+- **A PicasaPy saját menüparancsai kék felirattal látszanak (#1701).**
+  Eddig semmi nem különböztette meg az eredeti Picasa parancsait a mi
+  kiegészítéseinktől — ha egy funkció máshogy működött, mint amit a
+  Picasából megszoktál, nem derült ki, hogy azért, mert nem is a Picasáé.
+  Mostantól a saját parancsaink feliratát kék szín jelöli, és a föléjük
+  húzott egérnél megjelenő buborék ki is mondja („Ez a PicasaPy
+  kiegészítése…") — a szín önmagában nem elég, színvakoknak is
+  olvashatónak kell lennie. Az első két megjelölt parancs a Súgó menü
+  Tesztüzem és Napló elküldése tétele.
+
+### Javítva
+- **A Nyomtatás és az e-mail küldés a képtálca tartalmán dolgozik
+  (#1671).** Eddig csak a rácsban épp kijelölt képeket látta mind a
+  kettő: kijelölés nélkül nem történt semmi, és a más mappából a tálcára
+  tett kép sosem került bele. Pedig a képtálca épp arra való, hogy több
+  mappából lehessen képeket összegyűjteni — a mappába exportálás már
+  régóta így viselkedik. Mostantól, ha van valami a tálcán, a nyomtatás
+  és az e-mail is azt viszi; üres tálcánál marad a megszokott,
+  kijelölés-alapú működés.
+
+### Hozzáadva
+- **A „Keresés" almenü a kép helyi menüjében, három tétellel (#1613).**
+  Eddig egyetlen lapos „Keresés a lemezen" parancs volt itt; az eredetiben
+  almenü van, és két olyan tétel is, ami nálunk sehonnan nem volt elérhető:
+  - **Fájl a lemezen** (Ctrl+Enter) — a régi parancs, az eredeti nevén;
+  - **Eredeti a lemezen** — a szerkesztés előtti, megőrzött eredetit
+    mutatja meg a fájlkezelőben. Szürke, ha a képnek nincs eredetije;
+  - **Keresés a Picasában** — album- vagy Emberek-nézetből a kép valódi
+    mappájára ugrik, ahol a többi kép is mellette van.
+
+### Hozzáadva
 - **Működik a „Mappa törlése…" a mappa helyi menüjében (#1638).** Eddig
   szürke, kattinthatatlan tétel volt — miközben a két szomszédja
   („Mappa áthelyezése…", „Eltávolítás a Picasából…") működött. Épp a

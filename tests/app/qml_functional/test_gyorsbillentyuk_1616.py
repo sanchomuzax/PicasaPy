@@ -370,7 +370,12 @@ class TestSweepOr:
         # helyfoglaló. Ez a kontroll pontosan úgy viselkedett, ahogy kell:
         # megszólalt, és a hibaüzenete kérdezte meg, hogy „tényleg javult
         # valami". Igen, javult; ezért csökken a szám, nem a mérés tört el.
-        assert len(helyfoglalo_hirdetok) >= 7, (
+        #
+        # ⚠️ #1595: 7 → 6. Ugyanez másodszor: a Mappa ▸ „Keresés a lemezen"
+        # (Ctrl+Enter) tétele élővé vált — a mappa helyi menüjéből régóta
+        # működött, csak a menüsávból nem lehetett elérni. A szám tehát
+        # megint azért csökken, mert javult valami.
+        assert len(helyfoglalo_hirdetok) >= 6, (
             "a mérésnek meg kell találnia a spec szerinti kilenc "
             "hatókörön-kívüli helyfoglaló tételt — ha ez a szám lecsökkent, "
             "vagy a regex tört el, vagy tényleg javult valami (ellenőrizd!)"

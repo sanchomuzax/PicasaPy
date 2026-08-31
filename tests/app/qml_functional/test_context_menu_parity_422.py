@@ -243,11 +243,24 @@ class TestKeresesAPicasabanCsakAlbumNezetben:
     Mappa-nézetben nincs értelme (már ott vagyunk), ezért ugyanaz a kapu,
     mint az „Eltávolítás az albumból"-nál."""
 
+    # #1613: a tétel azóta a „Keresés" ALMENÜBEN ül. Csukott almenüben a
+    # Qt minden tételt `visible: false`-nak mutat — a saját kötésünket
+    # tehát csak NYITOTT almenüben lehet megmérni. (Ugyanaz a csapda, mint
+    # a #1720 szövegmező-menüjénél: a `visible` a felbukkanó ablak
+    # állapotát tükrözi, nem a mi feltételünket.)
+    @staticmethod
+    def _nyisd_ki_a_kereses_almenut(window, qt_app):
+        almenu = _child(window, "contextMenuLocateMenu")
+        almenu.setProperty("visible", True)
+        qt_app.processEvents()
+        return almenu
+
     def test_mappa_nezetben_rejtve(self, qml_app, qt_app) -> None:
         window, controller, _engine = qml_app
         assert controller.currentAlbumToken == ""
 
         _open_context_menu(window, qt_app, 0)
+        self._nyisd_ki_a_kereses_almenut(window, qt_app)
         tetel = _child(window, "contextMenuLocateInPicasa")
 
         assert tetel.property("visible") is False
@@ -260,6 +273,7 @@ class TestKeresesAPicasabanCsakAlbumNezetben:
         qt_app.processEvents()
 
         _open_context_menu(window, qt_app, 0)
+        self._nyisd_ki_a_kereses_almenut(window, qt_app)
         tetel = _child(window, "contextMenuLocateInPicasa")
 
         assert tetel.property("visible") is True

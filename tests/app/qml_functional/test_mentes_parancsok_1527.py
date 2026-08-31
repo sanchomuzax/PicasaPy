@@ -189,12 +189,21 @@ class TestMasolatMentese:
                 f"{ut.name} másolata hiányzik"
             )
 
-    def test_a_masolat_ini_bejegyzest_kap_a_forrase_valtozatlan(
+    def test_a_masolat_NEM_kap_ini_bejegyzest_a_forrase_valtozatlan(
         self, qml_app, qt_app
     ):
-        """A láncot a VALÓDI úton adjuk (Kép ▸ Csoportos szerkesztés) —
-        a `.picasa.ini` kézi írása nem elég, mert a vezérlő az indexből
-        veszi a `filters=`-t, és az attól még nem frissül."""
+        """#1643: a másolat NEM kap szakaszt — a #1527 döntése megdőlt.
+
+        A tulajdonos referencia-mérése (valódi Picasa 3.9) szerint a
+        művelet semmit nem ír a `.picasa.ini`-be. A forrás érintetlensége
+        viszont változatlanul követelmény, ezért a teszt megmarad; csak a
+        cél-oldali állítás fordult meg.
+
+        A láncot itt is a VALÓDI úton adjuk (Kép ▸ Csoportos szerkesztés)
+        — a `.picasa.ini` kézi írása nem elég, mert a vezérlő az indexből
+        veszi a `filters=`-t, és az attól még nem frissül. Enélkül a
+        „nincs szakasz" állítás akkor is teljesülne, ha a másolás egyáltalán
+        le sem futott volna."""
         window, controller, _engine = qml_app
         forras = Path(str(controller.photos.filePathAt(0)))
         _kijelol(window, qt_app, [0])
@@ -218,9 +227,12 @@ class TestMasolatMentese:
             "a FORRÁS ini-bejegyzése megváltozott"
         )
         masolat_nev = f"{forras.stem}-001{forras.suffix}"
-        assert ini.has_section(masolat_nev), "a másolat nem került az ini-be"
-        assert ini[masolat_nev]["redo"] == lanc, (
-            "a másolat nem kapta meg a beégetett láncot a redo= kulcsban"
+        assert (forras.parent / masolat_nev).exists(), (
+            "a másolat fájlja nem készült el — a próba alapja hiányzik"
+        )
+        assert not ini.has_section(masolat_nev), (
+            "a másolat szakaszt kapott az ini-ben — az eredeti semmit nem "
+            "ír oda (#1643, mérve)"
         )
 
 

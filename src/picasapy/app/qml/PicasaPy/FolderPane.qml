@@ -104,6 +104,33 @@ Rectangle {
     // ld. MEMORY 2026-07-31) kiszervezve pane-szintű, névvel hívható
     // függvénybe, hogy közvetlenül (a valódi kattintás szintetizálása
     // nélkül) tesztelhető legyen.
+    // #1595: a Mappa MENÜSÁV-menü ugyanazokat a műveleteket kínálja, mint a
+    // mappa helyi menüje — csak a MEGNYITOTT mappára. A párbeszédek és a
+    // megerősítések itt élnek, ezért a menüsáv is innen hívja őket: egy
+    // művelet, egy út (különben két helyen kellene ugyanazt a
+    // megerősítés-szöveget karbantartani).
+    function mozgatasMappara(path) {
+        if (!path) return
+        pane._movingFolder = path
+        moveFolderDialog.open()
+    }
+
+    function torlesLomtarba(path) {
+        if (!path) return
+        deleteFolderConfirm.pendingPath = path
+        deleteFolderConfirm.message = qsTr(
+            "Are you sure you want to move the folder \"%1\" and its "
+            + "contents to the Recycle Bin?").arg(
+                path.substring(path.lastIndexOf("/") + 1))
+        deleteFolderConfirm.open()
+    }
+
+    function eltavolitasAPicasabol(path) {
+        if (!path) return
+        folderContextMenu.folderPath = path
+        removeFolderConfirm.open()
+    }
+
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel

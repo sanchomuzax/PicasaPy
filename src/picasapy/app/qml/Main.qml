@@ -713,6 +713,23 @@ ApplicationWindow {
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
         onRescanRequested: controller.rescan()
+        // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
+        // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
+        // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.
+        onFolderMoveRequested: {
+            if (controller) folderPane.mozgatasMappara(controller.currentFolder)
+        }
+        onFolderDeleteRequested: {
+            if (controller) folderPane.torlesLomtarba(controller.currentFolder)
+        }
+        onFolderRemoveFromPicasaRequested: {
+            if (controller)
+                folderPane.eltavolitasAPicasabol(controller.currentFolder)
+        }
+        onFolderLocateRequested: {
+            if (controller && controller.currentFolder.length > 0)
+                fileOpsController.revealFolder(controller.currentFolder)
+        }
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
@@ -1931,6 +1948,14 @@ ApplicationWindow {
 
     PhotoContextMenu {
         id: photoContextMenu
+        // #1613: a lemezt CSAK a menü megnyitásakor kérdezzük meg — egy
+        // kötés minden képkockán fájlrendszert olvasna.
+        onAboutToShow: {
+            var ut = controller
+                ? controller.photos.filePathAt(window.fileOpTargetRow) : ""
+            photoContextMenu.hasOriginalOnDisk =
+                ut.length > 0 && fileOpsController.hasOriginalOnDisk(ut)
+        }
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
         // #305: null-őr
@@ -1962,6 +1987,27 @@ ApplicationWindow {
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.fileOpTargetRow)
             if (p.length > 0) fileOpsController.revealPhoto(p)
+        }
+        // #1613: a „Keresés" almenü két új tétele.
+        //
+        // A `hasOriginalOnDisk` a menü MEGNYITÁSAKOR kérdez rá a lemezre
+        // (`fileOpTargetRow` változásakor) — kötésben nem tehetnénk, mert
+        // az minden képkockán fájlrendszert kérdezne.
+        onLocateOriginalRequested: {
+            var p = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (p.length > 0) fileOpsController.revealOriginal(p)
+        }
+        // az eredeti `IDS_LOCATE_SOURCE_IMAGE`: a kép VALÓDI mappájára ugrik
+        // (album-/Emberek-nézetből, ahol a kép nem a saját mappájában látszik)
+        onLocateInPicasaRequested: {
+            var p = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (p.length === 0) return
+            var mappa = p.substring(0, p.lastIndexOf("/"))
+            if (mappa.length === 0) return
+            toolbar.clearSearch()
+            window.clearSelection()
+            window.unnamedFacesOpen = false
+            controller.selectFolder(mappa)
         }
         // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
         onOpenRequested: {

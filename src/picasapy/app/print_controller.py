@@ -82,11 +82,17 @@ class PrintController(QObject):
         self,
         photo_source: Callable[[], Sequence[PhotoRecord]],
         parent: QObject | None = None,
+        tray_source: Callable[[], Sequence[PhotoRecord]] | None = None,
     ) -> None:
         """`photo_source`: hívható, ami a jelenleg kiválasztott mappa/album
         `PhotoRecord`-jait adja vissza (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
+        #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
+        #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
+        #: mező elhagyható, hogy a meglévő hívók és tesztek ne törjenek el.
+        self._tray_source = tray_source
         # #1072: a piszkozat-tilalom szövege és felismerése — közös a
         # `EmailController`-rel, ezért külön objektum (ld. ott a docstringet)
         self._draft_guard = CollageDraftGuard(self)
@@ -98,6 +104,20 @@ class PrintController(QObject):
         return list(QPrinterInfo.availablePrinterNames())
 
     def _resolve_records(self, rows: Sequence[int]) -> list[PhotoRecord]:
+        """A művelet bemenete — #1671: HA A TÁLCA NEM ÜRES, ŐK nyernek.
+
+        A rács pillanatnyi kijelölése és a látott mappa ilyenkor nem
+        számít: a tálca épp arra való, hogy több mappából gyűjtött képekkel
+        lehessen dolgozni. Az eredeti súgója is így fogalmaz — *„Print
+        photos in the Photo Tray"* —, és a mappába exportálás (#455) már
+        régóta így viselkedik.
+
+        Üres tálcánál (vagy `tray_source` nélkül) marad a régi, sor-alapú
+        feloldás."""
+        if self._tray_source is not None:
+            talca = list(self._tray_source())
+            if talca:
+                return talca
         photos = tuple(self._photo_source())
         return [
             photos[int(row)]

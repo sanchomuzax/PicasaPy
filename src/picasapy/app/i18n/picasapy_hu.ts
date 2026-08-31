@@ -3242,7 +3242,18 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>PicasaMenuItem</name>
+    <message>
+        <source>This is a PicasaPy addition — the original Picasa did not have it.</source>
+        <translation>Ez a PicasaPy kiegészítése — az eredeti Picasában nem volt ilyen.</translation>
+    </message>
+</context>
+<context>
     <name>FileOpsController</name>
+    <message>
+        <source>This picture has no preserved original on disk.</source>
+        <translation>Ehhez a képhez nincs megőrzött eredeti a lemezen.</translation>
+    </message>
     <message>
         <source>Choose a destination folder first.</source>
         <translation>Előbb válassza ki a célmappát.</translation>
@@ -3849,6 +3860,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
         <source>Locate in Picasa</source>
         <translation>Keresés a Picasában</translation>
+    </message>
+    <message>
+        <source>Locate</source>
+        <translation>Keresés</translation>
+    </message>
+    <message>
+        <source>File on Disk</source>
+        <translation>Fájl a lemezen</translation>
+    </message>
+    <message>
+        <source>Locate Original on Disk</source>
+        <translation>Eredeti a lemezen</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="23"/>
