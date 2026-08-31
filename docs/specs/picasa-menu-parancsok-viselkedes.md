@@ -2965,3 +2965,98 @@ nincs mérve.)*
   meglévő jegyekhez tartozik (51.1–51.4).
 - **„A nagyító nálunk is megvan valamilyen alakban"** — megdőlt: a
   QML-fában nincs rács-nagyító (51.3).
+
+## 52. tétel — a KÉTKÉPES összevetés, és a „melyik szerkesztést tartsuk meg?" (2026-09-01)
+
+*Tizenharmadik kör az UI-lefedettségi axisról (#1778). Az `editpanel`
+(83 hiány) **egy szelete**: a kép-nézet vezérlői. A teljes szerkesztő
+nem egy kör munkája — a 42. kör tanulsága szerint félbehagyva többet
+ártana —, ezért a négy összevetés/nagyítás-vezérlő önálló egységként.*
+
+### 52.1 A négy vezérlő
+
+| elem | buboréksúgó |
+|---|---|
+| `1to1` | „Display Photo at actual size" (**1:1 nagyítás**) |
+| `fit` | „Fit Photo inside viewing area" (**ablakhoz illesztés**) |
+| **`aa_2up_toggle`** | **„View the same image twice"** |
+| **`ab_2up_toggle`** | **„View two different images"** |
+
+⇒ Két külön kétképes mód: **A-A** (ugyanaz a kép kétszer) és **A-B**
+(két különböző kép).
+
+### 52.2 ⭐ Az A-A mód nem csak nézet: KÉT KÜLÖN SZERKESZTÉS
+
+A kilépéskori megerősítő (`0x0056aad0`) elárulja, mire való valójában:
+
+| elem | szöveg |
+|---|---|
+| cím | **„Choose Edits"** (`CThumbUI::Confirm2upEditTitle`) |
+| üzenet | ***„The same image has two different edits. Which one would you like to keep?"*** (`…EditMsg`) |
+| gombok | **Top** · **Bottom** · **Left** · **Right** (`Confirm2upTop/Bottom/Left/Right`) + Mégse |
+| jelölőnégyzet | **„Don't ask again, always use the selected image"** (`…EditDontAsk`) → `Preferences\DoNotAskOnEnd2Up` |
+
+⇒ **Az A-A módban a két példány KÜLÖN szerkeszthető**, és kilépéskor a
+Picasa megkérdezi, melyiket tartsd meg. Ez nem összehasonlító nézet,
+hanem **próbálgatós szerkesztés**: két változatot viszel párhuzamosan,
+és a végén választasz.
+
+⇒ **A Top/Bottom ÉS a Left/Right gombpár egyaránt létezik** ⇒ az osztás
+**vízszintes és függőleges is lehet**, és a megerősítő a tényleges
+elrendezéshez igazítja a gombfeliratokat.
+
+### 52.3 Nálunk: háromgombos placeholder
+
+A `PhotoViewer.qml:590` kimondja:
+
+```qml
+// #6: A/AB/AA összehasonlító nézetek — placeholder (a
+// szerkesztő-összevetés a 2. fázisban élesedik)
+PicasaButton { objectName: "compareButtonA";  text: "A";  enabled: false }
+PicasaButton { objectName: "compareButtonAB"; text: "AB"; enabled: false }
+```
+
+⇒ A gombok **léteznek, de `enabled: false`** — vagyis nem néma
+vezérlők (a szürkítés őszinte), csak nincs mögöttük funkció. A
+`1to1` / `fit` nagyítás-vezérlőkre a QML-fában **nincs találat**.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| A-A mód | ugyanaz a kép kétszer, **külön szerkeszthető** | `compareButtonA`, szürke placeholder | **#6** kapja meg |
+| A-B mód | két különböző kép | `compareButtonAB`, szürke placeholder | ua. |
+| kilépéskori választás | „Choose Edits" párbeszéd, 4 irány-gombbal | nincs | ua. |
+| „ne kérdezd többet" | `Preferences\DoNotAskOnEnd2Up` | nincs | ua. |
+| 1:1 nagyítás · ablakhoz illesztés | két külön vezérlő | **nincs** a QML-fában | ua. |
+
+### 52.4 Miért a #6 kapja, és nem új jegy
+
+A négy vezérlő **egyetlen funkcióhoz** tartozik (a szerkesztő
+összevetés-módja), amire **már van jegy** (#6), és amit a kódunk
+kommentje is nevesít. Új jegy csak szétszórná a tudást. *(A
+„gyűjtőjegy nem elég" szabály itt nem sérül: a lelet nem önálló,
+hanem épp annak a jegynek a tartalma, amire a placeholder hivatkozik.)*
+
+### Nyitott kérdések mérlege (52.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a négy vezérlő szerepe (52.1); az A-A mód valódi célja és
+  a kilépéskori választás teljes szövegkészlete (52.2); a mi
+  placeholder-állapotunk (52.3).
+- **BLOKKOLT:** mikor **vízszintes** és mikor **függőleges** az osztás
+  (a gombfeliratok mindkettőt kínálják, a választás szabálya nincs
+  mérve). **Mi kell hozzá:** képernyőmentés a kétképes módról, vagy
+  célzott dekompiláció a `0x0056b130`-ra. **A #6-ot nem blokkolja**: a
+  megvalósítás választhat egy irányt, ha kimondja, hogy saját döntés.
+
+### Amit KIZÁRTAM
+
+- **„Az A-A mód puszta előtte/utána összehasonlítás"** — megdőlt: a két
+  példány **külön szerkeszthető**, és a kilépés választást kér (52.2).
+- **„A kétképes mód gombjai nálunk némák"** — megdőlt: `enabled: false`,
+  tehát szürkék és őszinték (52.3). *(Ellentétben a #1798 esetével, ahol
+  a vezérlő kattintható volt és nem csinált semmit.)*
