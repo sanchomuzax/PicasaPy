@@ -36,6 +36,36 @@ MenuItem {
     // a helyi funkciók (pl. a gyűjtemény jelszava) maradnak helyfoglalók.
     property bool retired: false
 
+    // #1701: A PICASAPY SAJÁT parancsa — az eredeti Picasa 3-ban nem
+    // létezett. A jelölés a tulajdonos döntése (2026-08-28,
+    // `docs/decisions/sajat-funkciok-jelolese.md`), és szándékos eltérés
+    // attól a korábbi szabálytól, hogy a felület pontosan úgy nézzen ki,
+    // mint az eredeti.
+    //
+    // A jelölés a felirat KÉK SZÍNE, nem pötty a jobb szélen: a döntéslap
+    // kimondja, hogy a jobb szél már foglalt — a feliratok gyorsbillentyűt
+    // hordoznak (`"Új album…" + "\tCtrl+N"`), és azt a Qt oda igazítja.
+    //
+    // ⚠️ NEM keverendő a másik kettővel:
+    //   `placeholder` = még nem működik · `retired` = volt, de kivezettük ·
+    //   `sajat`       = az eredetiben SOHA nem is létezett.
+    // És NEM jár olyan parancsra, ami az eredetiben létezik, csak nálunk
+    // hibás — az jegy, nem jelölés.
+    property bool sajat: false
+
+    // A pötty/szín önmagában nem hordozhat információt (színvakság), ezért
+    // a buboréksúgó KÖTELEZŐ, nem díszítés — a döntéslap így írja elő.
+    //: A súgó szövege SAJÁT tulajdonságban is él, nem csak a csatolt
+    //: `ToolTip.text`-ben: a csatolt tulajdonságot a teszt nem tudja
+    //: kiolvasni (`property("ToolTip.text")` → null), tehát a
+    //: kötelezőségét nem lehetne rajta őrizni.
+    readonly property string sajatSugo: control.sajat
+        ? qsTr("This is a PicasaPy addition — the original Picasa did not have it.")
+        : ""
+
+    ToolTip.visible: control.sajat && control.hovered
+    ToolTip.text: control.sajatSugo
+
     // sem a helyfoglaló, sem a nyugdíjazott tétel nem kattintható
     enabled: !placeholder && !control.retired
 
@@ -51,7 +81,9 @@ MenuItem {
         font: control.font
         // a nyugdíjazott tétel ugyanúgy halvány, mint a helyfoglaló — a
         // különbség csak a sor végi pont (ld. lent)
-        color: control.placeholder || control.retired ? Theme.textGray : Theme.ink
+        color: control.placeholder || control.retired
+            ? Theme.textGray
+            : (control.sajat ? Theme.linkBlue : Theme.ink)
         alignment: Qt.AlignLeft | Qt.AlignVCenter
         // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást
         rightPadding: control.placeholder ? placeholderDot.width + 8 : 0

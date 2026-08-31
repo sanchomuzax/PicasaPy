@@ -1396,8 +1396,12 @@ MenuBar {
         // TÚLÉLI a kilépést, és a KÖVETKEZŐ indulást naplózza az első
         // ezredmásodperctől — az indulás az egyetlen szakasz, amit
         // menetközbeni kapcsolóval elvből nem lehet megmérni (#1653).
-        MenuItem {
+        PicasaMenuItem {
             objectName: "menuHelpTesztuzem"
+            // #1701: a tesztüzem a PicasaPy saját eszköze — az eredeti
+            // Picasában nincs megfelelője
+            placeholder: false
+            sajat: true
             text: qsTr("Test Mode (logs the next startup)")
             checkable: true
             checked: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
@@ -1407,8 +1411,11 @@ MenuBar {
         // Egykattintásos átadás — CSAK tesztüzemben látszik. A `height`
         // nullázása azért kell, mert a rejtett MenuItem különben üres
         // sávot hagyna a Súgó menüben.
-        MenuItem {
+        PicasaMenuItem {
             objectName: "menuHelpSendLog"
+            // #1701: a naplóátadás is a miénk — a tesztüzem párja
+            placeholder: false
+            sajat: true
             // ⚠️ A láthatóság feltétele SAJÁT tulajdonságban él, nem
             // közvetlenül a `visible`-ben: a QQuickItem `visible`-je az
             // EFFEKTÍV láthatóságot adja vissza, ami csukott menünél

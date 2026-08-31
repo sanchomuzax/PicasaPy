@@ -59,8 +59,19 @@ mi kiegészítéseinktől. Ez két konkrét kárt okoz:
 ## Kötés
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** nincs megvalósítva
-- **Őrzi:** nincs őr
+- **Megvalósítja:** #1701 (v0.8.148) — `src/picasapy/app/qml/PicasaPy/PicasaMenuItem.qml`
+  (`sajat` tulajdonság → kék felirat + kötelező buboréksúgó)
+- **Őrzi:** `tests/app/qml_functional/test_sajat_funkcio_jeloles_1701.py`
 
-*(A megvalósítás jegye: #1701. A `Megvalósítja` és `Őrzi` sort az a kör
-tölti ki, amelyik megépíti.)*
+## A megvalósítás választása — a színezés nyert
+
+A döntéslap két alakot engedett meg, és a színezést tette
+alapértelmezéssé. A megvalósító kör ezt választotta, a lap saját
+indoklásával: a jobb szél foglalt a gyorsbillentyűkkel. A `PicasaMenuItem`
+így három, egymástól FÜGGETLEN jelölést ismer — `placeholder` (még nem
+működik), `retired` (volt, de kivezettük), `sajat` (soha nem is létezett).
+
+**A ma megjelölt parancsok:** Súgó ▸ *Tesztüzem*, Súgó ▸ *Napló
+elküldése…*. A teljes leltár összeállítása külön munka (a #1701 hatókörén
+kívülre tette); az őr viszont MINDEN megjelölt tételre érvényes, és külön
+állítja, hogy eredeti Picasa-parancs nem kaphat jelölést.

@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **A PicasaPy saját menüparancsai kék felirattal látszanak (#1701).**
+  Eddig semmi nem különböztette meg az eredeti Picasa parancsait a mi
+  kiegészítéseinktől — ha egy funkció máshogy működött, mint amit a
+  Picasából megszoktál, nem derült ki, hogy azért, mert nem is a Picasáé.
+  Mostantól a saját parancsaink feliratát kék szín jelöli, és a föléjük
+  húzott egérnél megjelenő buborék ki is mondja („Ez a PicasaPy
+  kiegészítése…") — a szín önmagában nem elég, színvakoknak is
+  olvashatónak kell lennie. Az első két megjelölt parancs a Súgó menü
+  Tesztüzem és Napló elküldése tétele.
+
 ### Javítva
 - **A Nyomtatás és az e-mail küldés a képtálca tartalmán dolgozik
   (#1671).** Eddig csak a rácsban épp kijelölt képeket látta mind a
