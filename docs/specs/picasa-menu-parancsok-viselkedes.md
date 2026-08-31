@@ -1151,3 +1151,134 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 1 hatókörön kív�
   Ctrl/Shift ágaké (34.4).
 - **„A HIDE/UNHIDE az `]hidden` ini-kulcsot írja"** — pontosítva: a
   `]`-prefix belső token-név; az ini-kulcs `hidden=yes` (korpusz).
+
+## 35. tétel — Poszter, képernyővédő, TiVo, keresés-mentés, biztonsági mentés (2026-08-31)
+
+A lefedettségi mérés következő ötöse: `ID_POSTER`, `ID_SAVESEARCH`,
+`ID_SCREENSAVER`, `ID_TIVO`, `ID_TOOLS_BACKUP` — mindegyik ugyanazzal a
+módszerrel (menüépítő javított horgonya → diszpécser-eset → kezelő), plusz
+a bónusz `ID_TOOLS_CONFIG_SCREENSAVER`.
+
+### 35.1 A parancs-térkép
+
+| menü | tétel | felirat | cmd | eset | kezelő |
+|---|---|---|---|---|---|
+| Létrehozás | `ID_POSTER` | „&Poszter készítése..." | `0x9d30` | `0x5cc150` | `0x00530c10` → `0x7387c0` |
+| Létrehozás | `ID_SCREENSAVER` | „Hozzáadás a &képernyővédőhöz..." | `0x9d5c` | `0x5cce78` | `0x00531900` |
+| LétrehozásWin *(csak Windows)* | `ID_TIVO` | „&Exportálás TiVo(r) DVR-re..." | `0x9d61` | `0x5cce6e` | `0x00536f70` → `ytITivo` akció |
+| Eszközök | `ID_SAVESEARCH` | „Keresési eredmények &mentése..." | `0x9d52` | `0x5cc7ab` | `0x005d86a0` |
+| Eszközök | `ID_TOOLS_BACKUP` | „&Képek biztonsági mentése..." | `0x9d38` | `0x5cbdee` | **névparancs** `thumbui/backup` |
+| Eszközök *(bónusz)* | `ID_TOOLS_CONFIG_SCREENSAVER` | „Configure Screensaver..." | `0x9dc9` | `0x5ccc0a` | `0x00531ac0` |
+
+### 35.2 Poszter — a papírméret-lista NYELVI beállítás szerint változik
+
+A `0x00530c10` a kijelölésről felépíti a poszter-párbeszédet
+(`0x7387c0`, „poster"); maga a `CPosterDlg` (`0x738800`) a
+**papírméret-választót kétféle készlettel tölti** — a Windows
+nyelvi/területi beállítását lekérdezve (`GetLocaleInfo`-típusú hívás,
+`0x73895a`):
+
+| területi beállítás | méret 1 | méret 2 |
+|---|---|---|
+| **metrikus** | **`10x15`** (beégetett sztring) | **`20x25`** (beégetett sztring) |
+| **amerikai** | `CPosterDlg::size1` = **„4x6"** (fordítható) | `CPosterDlg::size2` = **„8.5x11"** (hu: **„8,5x11"**) |
+
+A párbeszéd egy **`paper`** beállítást is olvas (utolsó választás
+megőrzése — `0x73883e`–`0x738862`). A „Make Poster" a Képtálcán is
+self-álló gomb: `buttonlabel:{FF04B854-3029-46ff-B762-FB9AF417F93F}` =
+„Poszter készítése" (#455). Jegy: **#601**.
+
+### 35.3 Képernyővédő — a `saverlist.txt` és a telepítés-ellenőrzés
+
+Az `Add to Screensaver` (`0x00531900`) kétszintű:
+
+1. **album-szintű kijelölésnél** megerősítés: `addtosaver::warning` —
+   „Are you sure you want to add all of the selected album's images?";
+2. a hozzáadás motorja (`0x00531a20`) — **minden állapot megnevezve:**
+
+| elem | bizonyíték |
+|---|---|
+| tagság tokenje | `]screensaver` belső token (írás/törlés `0x531a3d`/`0x531a88`) — az ini-korpuszban `screensaver=` sor **nincs**: a tagság nem a `.picasa.ini`-ben él |
+| a képernyővédő listája | **`saverlist.txt`** a **`#db3\`** mappában (`0x531a8d`–`0x531a93`) — ugyanott, ahol az adatbázis |
+| telepítve van-e | `Software\Google\Google Photos Screensaver` → `AppPath` (registry, `0x531ae2`–`0x531aec`) |
+| nincs telepítve | `CThumbUI::InstallScreensaver` → **`rundll32.exe desk.cpl,InstallScreenSaver %s`** (`ShellExecute`, „open" ige — `0x531bcf`–`0x531c0f`); hiba: `CImageOutput::noscr` = „A képernyővédő nem lett telepítve." |
+| folyamat | `CImageOutput::scrprog` = „Hozzáadás a képernyővédőhöz" |
+| konfigurálás | `Configure Screensaver` (`0x00531ac0`): ugyanabból a registryből indítja a képernyővédő beállítóját |
+
+A Google Fotók-képernyővédő **külön telepítésű program** (#453) — a
+`desk.cpl`-hívás Windows-specifikus. Jegy: **#453**, **#32**.
+
+### 35.4 TiVo-export — Windows-only menü, akció-kereten át
+
+Az `Export to TiVo(r) DVR...` a `eMenuCreateWin` névtérből jön — **a
+menü csak Windowson épül fel** (a Mac-névtérben külön kulcs él). A
+kezelő (`0x00536f70`, 42 bájt) az akció-kezelőből kéri a **`ytITivo`**
+akciót (`ytIAction` interfésznévvel), amelyet a `0x0069ac10`
+valósít meg: regisztráció induláskor, futás közben két szövegű
+folyamat-párbeszéd — `ytITivo::exportprog` („Tivo exportálás") és
+`ytITivo::copyprog` („Fájlok másolása: %d%"). A TiVo-protokoll
+(hálózati felderítés, .tivo-átvitel) ennél a körnél nem lett mélyebben
+kibontva.
+
+### 35.5 Keresési eredmények mentése — a 1000-es küszöb pontosan
+
+A `0x005d86a0` (362 bájt): az aktív keresés találatánál, ha az
+**1000 felett van**, megerősítést kér:
+
+- szöveg: `CThumbUI::SaveSearchBig` — „This will create an album with
+  more than 1000 images.  Do you want to continue?"
+- gomb: `CThumbUI::SaveSearchBigBtn` — **„Create Album"**
+
+1000 alatt csendben létrehozza az albumot a keresés tartalmából. Ez a
+#1405-ben már ismert viselkedés — új elemek: a **gombfelirat** és a
+küszöb **feltétele** (csak afelett kérdez). A menütétel nálunk hiányzik
+(#428).
+
+### 35.6 Biztonsági mentés — `backup.xml` és `backuphash`
+
+A `Back Up Pictures...` névparancsot ereszti (`thumbui/backup`). A
+mentés állapota két, eddig nem rögzített helyen él:
+
+| elem | bizonyíték |
+|---|---|
+| mentés-készletek könyve | **`backup.xml`** a Picasa adatmappájában (`0x00581920`, `0x0066f2b0` — ugyanaz a kezelő, mint a `contacts.xml`) |
+| a mentés-motor | a **`il_BurnPanel`** (0x67xxxx tartomány): meghajtó-felderítés („Drive Type is %s on %s", `CD-R`/`DVD-R`… debug-sztringek, „No recordable drives detected") és a `backup.xml` kezelője (`0x0066f470`, nyolc hívóval) — a klasszikus Picasa-mentés **CD/DVD-re írás** |
+| képenkénti könyvelés | `backuphash` ini-kulcs: a korpuszban **14 700 sor** (pl. `backuphash=50247`); a `-backuphash` alak a kulcs **levételét** jelzi — a #440-es „újrafuttatható, inkrementális készletek" pontosan ezen a két helyen könyvel |
+| társprogram-promó | `0x0040d160`: `Software\Google\Google Photos Backup\Preferences` (`welcome_seen`, `SkipABPromo`, `LastABPromo`, `ABRepromptDays`) + `https://photos.google.com/apps` — a Picasa 3.9 végén a Google Fotók-Backup alkalmazást kínálta |
+
+Jegy: **#440**. *(A `thumbui/backup` névparancs és a BurnPanel közötti
+azonnali launcher-lépés a sztring-matcher esethatáránál nem
+egyértelműen követhető — a motor és az állapothordozók viszont megvannak.)*
+
+### Eredeti / nálunk / teendő — az öt parancsra
+
+| parancs | nálunk (mérve) | teendő |
+|---|---|---|
+| Poszter készítése | **placeholder** a Létrehozás menüben (`PicasaMenuBar.qml:1210`) | #601 folytatja; új adat: papírméret-lista nyelvi feltétellel + `paper` megőrzés |
+| Hozzáadás a képernyővédőhöz | **placeholder** (`:1218`) | #453/#32; a `saverlist.txt` + telepítés-ellenőrzés mintája rögzítve |
+| Exportálás TiVo DVR-re | nincs menütétel | **HATÓKÖRÖN KÍVÜL-javaslat** (Windows-only névtér, TiVo-hardver nélkül nincs haszna) — tulajdonosi jóváhagyást kér |
+| Keresési eredmények mentése | a menü **tétel hiányzik** | #1405/#428; a 1000-es küszöb és a „Create Album" gombfelirat most rögzítve |
+| Képek biztonsági mentése | **placeholder** (`:1267`) | #440; az állapothordozók (`backup.xml` + `backuphash`) most rögzítve |
+
+### Nyitott kérdések mérlege (35.)
+
+```
+Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 2 hatókörön kívül-javaslat · 0 csak-nyitva
+```
+
+- **LEZÁRVA** (mind címmel): a poszter papírméret-listája és nyelvi
+  feltétele (35.2); a képernyővédő három állapothordozója (35.3); a
+  TiVo-akció kerete (35.4); a 1000-es küszöb és gombfelirat (35.5); a
+  mentés két állapothordozója (35.6).
+- **HATÓKÖRÖN KÍVÜL-JAVASLAT** (tulajdonosi döntést kér): a TiVo-export
+  megvalósítása; a `desk.cpl`-alapú képernyővédő-telepítés átvétele.
+
+### Amit KIZÁRTAM
+
+- **„A screensaver-tagság a `.picasa.ini`-ben él"** — megdőlt: a
+  `]screensaver` token a korpuszban nem jelenik meg kulcsként; a lista a
+  `#db3\saverlist.txt`-ben él.
+- **„A `0x6032f0` a backup-kezelője"** — megdőlt: az a jobbfiók-átváltó
+  (`RIGHTDRAWEROFFSET`); a `thumbui/backup` matchelőágának ugrása a
+  sztring-lánc matcher esethatárára esik — a valódi motor a `il_BurnPanel`
+  (35.6).
