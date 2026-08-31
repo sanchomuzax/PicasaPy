@@ -10,8 +10,14 @@ from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
+from support.halasztott_parbeszed import epitsd_fel
+
 
 def _elem(window, nev):
+    # #1720: az itt keresett elemek a HALASZTOTT párbeszéd
+    # belsejében ülnek — előbb fel kell épülnie, a valódi
+    # menüponton át (ld. support/halasztott_parbeszed.py).
+    epitsd_fel(window, "exportDialog")
     elem = window.findChild(QObject, nev)
     assert elem is not None, f"{nev} nem található"
     return elem

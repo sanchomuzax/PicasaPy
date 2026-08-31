@@ -13,6 +13,7 @@ from PySide6.QtCore import QObject, QSettings
 
 from picasapy.index import open_index, sync_tree
 from picasapy.thumbs import ThumbnailCache
+from support.halasztott_parbeszed import epitsd_fel
 from support.jpeg_factory import make_jpeg
 
 
@@ -196,6 +197,9 @@ class TestExportHeld:
 class TestDialogUsesTheTray:
     def test_the_dialog_switches_source_with_the_tray(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
+        # #1720: az export-párbeszéd HALASZTOTT — a valódi menüponton át
+        # építjük fel (ld. support/halasztott_parbeszed.py).
+        epitsd_fel(window, "exportDialog")
         dialog = window.findChild(QObject, "exportDialog")
         assert dialog is not None
 

@@ -40,3 +40,22 @@ def nyisd_meg(window, parbeszed_neve: str) -> None:
     QMetaObject.invokeMethod(
         menupont, "triggered", Qt.ConnectionType.DirectConnection
     )
+
+
+def epitsd_fel(window, parbeszed_neve: str) -> None:
+    """A párbeszéd FELÉPÍTÉSE a menüpontján át, majd azonnali bezárás.
+
+    Sok teszt nem magát a megnyitást vizsgálja, hanem a párbeszéd
+    belsejében ülő elemeket (`findChild`) — azokhoz elég, hogy a fa
+    álljon. A `nyisd_meg` viszont MEG IS NYITJA a párbeszédet, ami
+    átállítaná a kiinduló állapotot; ez a változat ezért utána becsukja.
+
+    A felépítés útja itt is a valódi menüpont, nem a `Loader.active`."""
+    if window.findChild(QObject, parbeszed_neve) is not None:
+        return
+    nyisd_meg(window, parbeszed_neve)
+    parbeszed = window.findChild(QObject, parbeszed_neve)
+    if parbeszed is not None and parbeszed.property("visible"):
+        QMetaObject.invokeMethod(
+            parbeszed, "close", Qt.ConnectionType.DirectConnection
+        )

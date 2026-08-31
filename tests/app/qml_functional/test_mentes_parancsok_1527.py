@@ -35,10 +35,15 @@ from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
+from support.halasztott_parbeszed import epitsd_fel
 from support.qt_wait import wait_for_photo_op, wait_for_signal
 
 
 def _elem(root, nev: str) -> QObject:
+    # #1720: az itt keresett elemek a HALASZTOTT párbeszéd
+    # belsejében ülnek — előbb fel kell épülnie, a valódi
+    # menüponton át (ld. support/halasztott_parbeszed.py).
+    epitsd_fel(root, "saveDialogs")
     obj = root.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található"
     return obj
