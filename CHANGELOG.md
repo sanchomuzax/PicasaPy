@@ -8,13 +8,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
-- **A változásnapló megint megmondja, melyik kiadás mit hozott (#1770).**
-  Augusztus 28. óta a napló „kiadatlan" szakasza más nevet viselt, mint
-  amit a kiadási automatika keresett — így huszonkét kiadás jegyzete
-  egyetlen, dátum nélküli halomban gyűlt. Mostantól a kiadás lezárja a
-  szakaszt, és **azonnal nyit egy újat**, tehát ez nem fordulhat elő még
-  egyszer. A felgyűlt bejegyzések egy szakaszba kerültek, kimondva, hogy
-  melyik verziótartományt fedik — találgatás helyett.
+- **A kiadások megint elmondják, mi változott (#1770).** A kiadási
+  oldalon augusztus 28. óta minden verzió azt írta magáról, hogy „ehhez a
+  kiadáshoz nem készült emberi összefoglaló" — pedig készült: minden
+  változáshoz megírtuk magyarul, mi lett jobb. A leírás egyszerűen nem
+  jutott el a kiadási oldalra. Mostantól odakerül.
+  A változásnapló szerkezete is rendben: a felgyűlt bejegyzések egy
+  szakaszba kerültek, kimondva, melyik verziótartományt fedik —
+  találgatás helyett.
 
 ## [0.8.133 – 0.8.154] – 2026-08-28 … 2026-08-31
 

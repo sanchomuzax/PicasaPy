@@ -94,6 +94,20 @@ def olvasott_verzio(pyproject: Path | None = None) -> str:
     )
 
 
+#: A kiadatlan szakasz címkéje — ugyanaz, amit az `auto_bump` keres.
+_KIADATLAN_CIMKE = "Nem kiadott"
+
+
+def _szakasz(szoveg: str, cim_minta: str) -> str | None:
+    """Egy `## [<cím>]` szakasz törzse, vagy `None`, ha nincs ilyen."""
+    minta = re.compile(
+        rf"^## \[{cim_minta}\][^\n]*\n(.*?)(?=^## \[|\Z)",
+        re.S | re.M,
+    )
+    talalat = minta.search(szoveg)
+    return talalat.group(1) if talalat else None
+
+
 def changelog_notes(version: str, changelog: Path | None = None) -> str:
     """A kiadási jegyzet a CHANGELOG verzió-szakaszából (#1167 utómunka).
 
@@ -108,14 +122,23 @@ def changelog_notes(version: str, changelog: Path | None = None) -> str:
         szoveg = utvonal.read_text(encoding="utf-8")
     except OSError:
         return ""
-    minta = re.compile(
-        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)",
-        re.S | re.M,
-    )
-    talalat = minta.search(szoveg)
-    if not talalat:
+    talalat = _szakasz(szoveg, re.escape(version))
+    if talalat is None:
+        # #1770 (2. réteg): ha nincs VERZIÓ-szakasz, a „Nem kiadott" alatt
+        # álló mondatok pontosan azok, amiket most adunk ki.
+        #
+        # ⚠️ Miért kell ez: a szakaszt lezáró `auto_bump` CSAK akkor fut, ha
+        # a verzió MÁR ki van adva — a mi menetünkben viszont minden PR
+        # kézzel emel, tehát a lezárás a gyakorlatban sosem fut le. MÉRVE:
+        # 2026-08-31 este TIZENÖT kiadás ment ki egymás után a gépi
+        # tartalékkal („nem készült emberi összefoglaló"), pedig mind a
+        # tizenöthöz volt megírt magyar bekezdés. A tulajdonos a Releases
+        # hasábból követi a fejlődést — épp az nem jutott el hozzá, amit
+        # neki írtunk.
+        talalat = _szakasz(szoveg, re.escape(_KIADATLAN_CIMKE))
+    if talalat is None:
         return ""
-    torzs = talalat.group(1).strip()
+    torzs = talalat.strip()
     # a helykitöltő-kommentes szakasz nem jegyzet
     if not torzs or torzs.startswith("*("):
         return ""
