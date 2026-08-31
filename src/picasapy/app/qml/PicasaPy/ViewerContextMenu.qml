@@ -32,7 +32,7 @@ import QtQuick.Controls
 //
 // Önálló komponens (CONTRIBUTING.md mintája, ld. PhotoContextMenu.qml):
 // csak jeleket bocsát ki, a bekötést a PhotoViewer.qml végzi.
-Menu {
+PicasaMenu {
     id: menu
     objectName: "viewerContextMenu"
 
@@ -92,7 +92,7 @@ Menu {
 
     // -- 2. blokk: albumtagság --------------------------------------------
 
-    Menu {
+    PicasaMenu {
         objectName: "viewerMenuAddToAlbum"
         title: qsTr("Add to Album")
         // album nélkül a Picasa is szürkén hagyja az almenüt

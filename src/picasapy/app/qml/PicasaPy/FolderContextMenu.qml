@@ -22,7 +22,7 @@ import QtQuick.Controls
 //
 // Önálló, signal-alapú komponens: a controller-kötést a FolderPane.qml
 // végzi (nem forró fájl).
-Menu {
+PicasaMenu {
     id: menu
     objectName: "folderContextMenu"
 
@@ -88,7 +88,7 @@ Menu {
         text: qsTr("&Invert Selection") + "\tCtrl+I"
         onTriggered: menu.invertSelectionRequested()
     }
-    Menu {
+    PicasaMenu {
         objectName: "folderContextMenuMoveToCollection"
         title: qsTr("Mo&ve to Collection")
 
@@ -118,7 +118,7 @@ Menu {
         text: qsTr("Refresh &Thumbnails")
         onTriggered: menu.refreshThumbnailsRequested()
     }
-    Menu {
+    PicasaMenu {
         objectName: "folderMenuSortBy"
         // az eredeti `Sort` menüosztálya: Dátum · Név · Méret · Fordított
         // sorrend (spec A.2)

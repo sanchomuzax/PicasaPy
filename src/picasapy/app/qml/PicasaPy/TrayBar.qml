@@ -479,7 +479,7 @@ Column {
             }
         }
 
-        Menu {
+        PicasaMenu {
             id: trayAddToMenu
             objectName: "trayAddToMenu"
             Repeater {
