@@ -1,6 +1,6 @@
 # UI-lefedettség — az eredeti Picasa panelei ↔ a PicasaPy QML-fája
 
-**Generálva:** 2026-08-31 — **ezt a fájlt ne írd kézzel**, újragenerálható.
+**Generálva:** 2026-09-01 — **ezt a fájlt ne írd kézzel**, újragenerálható.
 
 **Előállító:** `eszkozok/ui_lefedettseg.py` (privát `picasapy-agent` repó).
 **Bemenet (privát):** `referencia/ui-leltar.csv` (2020 elem / 74 panel, a `.tre` erőforrásokból), `referencia/panel-feliratok-hu.tsv`, `referencia/stringres-en-hu.tsv`.
@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 135 |
+| párosítva | 143 |
 | másutt megvan (nem ezen a felületen) | 46 |
-| hiányzik | 396 |
+| hiányzik | 388 |
 | bizonytalan | 158 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **18.4%** |
+| **lefedettség az értékelhető elemeken** | **19.5%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -52,7 +52,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 |---:|---|---:|---|
 | 1 | `editpanel` | 83 | A szerkesztő teljes bal oldali panelje minden fülével |
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
-| 3 | `thumbui` | 41 | A fő könyvtárnézet egésze |
+| 3 | `thumbui` | 33 | A fő könyvtárnézet egésze |
 | 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | 5 | `printpanel` | 26 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
 | 6 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
@@ -67,7 +67,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | `editpanel` | 312 | 125 | 36 | 6 | 36 | 47 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
-| `thumbui` | 140 | 46 | 2 | 3 | 30 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
+| `thumbui` | 140 | 46 | 10 | 3 | 22 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `printpanel` | 73 | 33 | 0 | 7 | 26 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
@@ -286,7 +286,7 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `txcolorpicker_bevel` — *bizonytalan*
 - `viewedit` — *bizonytalan*
 
-### `thumbui` — 41 hiány · panel-megfeleltetés: `parositva`
+### `thumbui` — 33 hiány · panel-megfeleltetés: `parositva`
 
 A fő könyvtárnézet egésze
 
@@ -304,28 +304,20 @@ A fő könyvtárnézet egésze
 - `hlisthandle` — *bizonytalan*
 - `hlistsizer` — *bizonytalan*
 - `hviewtoggle` — *bizonytalan*
-- `largethumbs` buboréksúgó: „Show photos using large thumbnails”
 - `lightbox_esolo_button` „Search All” (magyarul: „Keresés mindenhol”)
 - `lightbox_esolo_text` „No results found in this album” (magyarul: „Nincs találat ebben az albumban”)
 - `listdecrect` — *bizonytalan*
 - `listdetail` — *bizonytalan*
 - `loupehit` buboréksúgó: „Click and drag over photos to magnify them”
-- `newalbum` buboréksúgó: „Create a new album”
-- `newfolder` buboréksúgó: „Move the selected files to a new folder”
 - `next` buboréksúgó: „View the next Photo”
 - `people_toggle` buboréksúgó: „Show/Hide People Panel”
 - `places_toggle` buboréksúgó: „Show/Hide Places Panel”
 - `prev` buboréksúgó: „View the previous Photo”
 - `properties_toggle` buboréksúgó: „Show/Hide Properties Panel”
-- `rotateleft` buboréksúgó: „Rotate counter-clockwise”
-- `rotateright` buboréksúgó: „Rotate clockwise”
-- `scratchclear` buboréksúgó: „Clear items from the selection”
-- `scratchhold` buboréksúgó: „Hold selected items”
 - `searchgroup` — *bizonytalan*
 - `single_action_close` buboréksúgó: „Cancel "Get more"”
 - `single_action_message` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” (magyarul: „Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a "Vissza" gombra kattintva térjen vissza a projekthez”)
 - `single_action_return` buboréksúgó: „Go back to what you were editing”
-- `smallthumbs` buboréksúgó: „Show photos using small thumbnails”
 - `startoggle` buboréksúgó: „Add/Remove Star”
 - `tags_toggle` buboréksúgó: „Show/Hide Tags Panel”
 - `toggle_right_drawer` — *bizonytalan*
