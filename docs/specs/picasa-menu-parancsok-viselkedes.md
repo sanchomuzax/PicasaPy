@@ -2417,3 +2417,94 @@ Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kív�
 - **„A `hiányzik = 0` azt jelenti, hogy a panel egyezik az eredetivel"** —
   megdőlt: a mérés elem-jelenlétet néz, a csoportosztásra és a sorrendre
   vak (45.1). **Ez a saját 42.4 pontom helyesbítése.**
+
+## 46. tétel — a `faceheaderpanel`: a JAVASLAT-MUNKAFOLYAMAT négy parancsa (2026-09-01)
+
+*Nyolcadik kör az UI-lefedettségi axisról (#1778). Panel:
+`faceheaderpanel` (12 hiány) — a névvel ellátott arc-album fejléce.*
+
+### 46.1 A fejléc egy PARANCSKÉSZLET, közös kezelővel
+
+A `0x005e0f70` az album-fejlécek **névparancs-kezelője** — ugyanaz szolgálja
+ki a mappa- és az arc-album fejlécét. A benne felsorolt nevek:
+
+| csoport | parancsok |
+|---|---|
+| **javaslat-munkafolyamat** | `selectsug` · **`confirmsug`** · **`sug_filter`** · **`moresug`** |
+| nézet | **`face_zoom`** ↔ **`picture_zoom`** |
+| láthatóság | `showunknown` · `showignored` |
+| kijelölés | `select_faces` · `select_star` |
+| létrehozás | `create_collage` · `create_movie` · `create_cd` |
+| online *(halott)* | `pwa_button` · `share` · `view_online` · `ebsync0/1` · `sync_options` |
+
+### 46.2 ⭐ „További javaslatok keresése" = ÚJRA-KLASZTEREZÉS
+
+A `moresug` saját kezelője a `0x0074cc00`, és a sztringjei elárulják, mit
+csinál:
+
+```
+rightdrawerpanel/peoplepanel · peoplepanel/update · moresug · cluster · showall
+```
+
+⇒ A gomb **klaszterezést** futtat (`cluster`), majd **frissíti a
+Személyek panelt** (`peoplepanel/update`). Nem szűrő, hanem **munka**:
+az eddig nem javasolt arcokra keres egyezést.
+
+A `confirmsug` („Az összes jóváhagyása") ezzel szemben a **meglévő**
+javaslatokat fogadja el egy lépésben; a `sug_filter` pedig csak
+**megjelenítési szűrő** („Show only suggestions (when toggled on)").
+
+⇒ **Három különböző dolog, három gomb** — a felirataikból ez nem
+látszik, a kezelőikből igen.
+
+### 46.3 A nézet-váltó pár
+
+`face_zoom` („View zoomed in to the face") ↔ `picture_zoom` („View zoomed
+out to the full picture") — a bélyegkép **az arcra vagy a teljes képre**
+nagyít. Kizáró pár, a fejlécben.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| javaslat-munkafolyamat (4 parancs) | `selectsug`/`confirmsug`/`sug_filter`/`moresug` | **nincs** — a „suggestion" szó a QML-ben csak a **vágás**-javaslatokra utal (`EditorCropPanel.qml:237`) | a #26 része |
+| arc ↔ kép nagyítás | kizáró pár a fejlécben | nincs | ua. |
+| `showunknown` / `showignored` | láthatóság-kapcsolók | nincs | ua. |
+| „Eltávolítás" (`removesel`) | a fejlécben | a helyi menüben van (`PeopleAlbumContextMenu.qml`) | elhelyezés-kérdés |
+| „Beállítás indexképként" | `set_thumbnail` | nincs személy-album indexkép | ua. |
+| kollázs / film / arcfilm gomb | három Létrehozás-gomb | a fejlécben nincs | ua. |
+| lejátszás | `play` | **megvan** (`LightboxHeader.qml:131`, `headerPlayButton`) | — |
+| `pwa_button` · `share` · `view_online` | Picasa Web Albums | — | **hatókörön kívül** |
+
+### 46.4 Miért NEM nyílik önálló jegy
+
+A javaslat-munkafolyamat **nem valósítható meg önállóan**: javaslat csak
+ott van, ahol **arcfelismerő motor** fut, és a projektben az még nem
+készült el (`feature-map.md`, 3. fázis). A lelet ezért a **#26**
+(„Arcfelismerés + Emberek") jegyre került kommentként, a négy parancs
+szétválasztásával — az a jegy tudja majd felhasználni.
+
+*(Ez a `gyujtojegy-nem-eleg` szabály másik oldala: ha a lelet önmagában
+NEM megvalósítható, akkor a meglévő jegy a helyes cím.)*
+
+### Nyitott kérdések mérlege (46.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a fejléc parancskészlete és közös kezelője (46.1); a
+  `moresug` valódi működése — újra-klaszterezés, nem szűrés (46.2); a
+  nagyítás-pár (46.3).
+- **HATÓKÖRÖN KÍVÜL:** `pwa_button` · `share` · `view_online` ·
+  `ebsync0/1` · `sync_options` — Picasa Web Albums.
+
+*(Záró mondat a 45.1 szerint pontosan: ebben a panelben **van** hiányzó
+vezérlő; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A »További javaslatok keresése« egy szűrő"** — megdőlt: klaszterezést
+  futtat és frissíti a Személyek panelt (46.2).
+- **„A javaslat-kezelés egyetlen gomb"** — megdőlt: négy külön parancs,
+  három különböző jelentéssel (46.1–46.2).
