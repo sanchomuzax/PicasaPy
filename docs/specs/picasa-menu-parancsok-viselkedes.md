@@ -2597,3 +2597,79 @@ az egész párbeszéd hiányzik; a csoportosztás nincs mérve.)*
   Beállítások ígéri is (47.2).
 - **„A `mail/useDefaultClient` beállításunk hat a küldésre"** — megdőlt:
   a `sendRows()` nem olvassa (47.2).
+
+## 48. tétel — a NÉMA BEÁLLÍTÁS mint önálló hibaosztály (2026-09-01)
+
+*Tizedik kör az UI-lefedettségi axisról. Nem panel: a 47. körben talált
+hiba **osztályának** felmérése — és annak bizonyítása, hogy a meglévő
+őreink NEM fogják meg.*
+
+### 48.1 A negyedik állapot
+
+A projektnek két gépi őre van erre a hibacsaládra:
+
+| őr | mit fog meg |
+|---|---|
+| `eszkozok/nema_jelzesek.py` | **kimenő**: kibocsátott jelzés, aminek nincs fogadója |
+| `eszkozok/nema_slotok.py` | **bejövő**: `@Slot`/`@Property`, amit senki nem hív |
+
+A 47. körben talált hiba **egyikbe sem fér bele**:
+
+> a QML **hívja** a settert · az érték **eltárolódik** · a QML **vissza is
+> olvassa** (a rádiógomb helyesen mutatja) — csak az **üzleti logika**
+> nem kérdezi meg soha.
+
+⇒ **Negyedik állapot:** *„a beállítás él, csak nem hat."*
+
+**Mérve, nem feltételezve:** a `nema_slotok.py` a mai fán 565 tagot
+vizsgál, 16-ot jelöl némának — és a `useDefaultClient` / `setUseDefaultClient`
+**nincs köztük** (0 találat). Az őr helyesen működik; a hiba csak
+kívül esik a hatókörén.
+
+### 48.2 Miért nem elég a grep
+
+Kézi felmérést futtattam mind az **52** `QSettings`-kulcsra. A puszta
+„hány fájlban fordul elő" mérőszám **nem használható**: a kulcsok
+nagy része szándékosan egyetlen `*_prefs.py` modulban él, és onnan
+tulajdonságon át terjed. Példa az ellenkező irányra: az
+`export/addnumbers` és az `export/watermarktext` **végig van kötve**
+(`ExportDialogs.qml:240–242` → `export_controller.py:333` →
+`exporter.py:234`), pedig a kulcs egyetlen fájlban szerepel.
+
+⇒ **A kulcs–hatás lánc csak nyomkövetéssel dönthető el**, ezért ez a
+kör **nem** állítja, hogy a mail-eset volt az egyetlen. Amit állít: a
+`view/*`, `collage/*` és `export/*` családból a végigkövetett tételek
+rendben vannak, és az osztály **gépi őr nélkül** van.
+
+### 48.3 Amit a meglévő őr közben talált — 16 néma tag
+
+A `nema_slotok.py` mai futása **16** olyan `@Slot`/`@Property` tagot
+jelöl, amit sem QML-ből, sem Pythonból nem hív senki (pl.
+`copyEffects`, `undoPasteEffects`, `hasEffectsClipboard`,
+`setFolderDescription`, `movePhoto`, `setTrayUsed`, `locationOfRow`).
+
+⚠️ **Ez a lista NEM hibalista**: az őr saját kimenete átvizsgálást
+igényel (lehet köztük teszt-célú vagy szándékosan tartalék tag). A kör
+**nem** minősíti őket — csak rögzíti, hogy az őr fut és van kimenete,
+amit senki nem néz át rendszeresen.
+
+### Nyitott kérdések mérlege (48.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a negyedik állapot megnevezése és az, hogy a két meglévő
+  őr nem fogja meg (48.1, mérve); hogy a puszta előfordulás-számlálás
+  nem alkalmas őrnek (48.2).
+- **BLOKKOLT:** *hány további néma beállítás van?* Gépi őr nélkül nem
+  dönthető el, kézzel mind az 52 kulcs végigkövetése egy kör alatt nem
+  fér bele. **Mi kell hozzá:** a 48.1-ben leírt harmadik őr (jegy
+  nyílt rá). Addig a válasz **nem** „nincs több", hanem „nincs megmérve".
+
+### Amit KIZÁRTAM
+
+- **„A meglévő néma-őrök megfogják a 47. kör hibáját"** — megdőlt: a
+  `nema_slotok.py` 16 találata közt nincs ott (48.1).
+- **„Az `export/*` beállítások is némák"** — megdőlt: a végigkövetett
+  export-lánc rendben van (48.2).
