@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.162] – 2026-09-01
+
+### Egyéb
+- **Egy csapda kikerült a duplikátumkereső útjából (#1648).** Nincs benne
+  viselkedésbeli változás — a program pontosan ugyanúgy működik, mint
+  eddig. Az történt, hogy a kódban „tartalom-kulcsnak" neveztünk valamit,
+  ami valójában **származást** azonosít. A különbség nem szőrszálhasogatás:
+  ha erre építve bevezettük volna az eredeti Picasa öröklési szabályát, a
+  duplikátumkereső egy **szerkesztett másolatot az eredeti pontos
+  másodpéldányának** jelentett volna — pedig a képpontok 99,9%-ában
+  eltérnek. A csapda most le van írva, hogy a következő fejlesztői kör ne
+  fusson bele.
+
 ## [0.8.161] – 2026-09-01
 
 ### Javítva

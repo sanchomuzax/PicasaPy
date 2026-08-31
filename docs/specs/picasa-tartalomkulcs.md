@@ -219,3 +219,30 @@ képlet a fájl **első** felvételekor fut, származtatott másolatnál a forr�
 
 *Bizonyítottsági fok: **megerősített** — valódi, élő Picasa-adatbázison mérve,
 a méret-oszloppal függetlenül azonosított rekordokon.*
+
+### Miért nem elég ezt „bevezetni” (mérve, 2026-09-01, #1648)
+
+Az öröklés megvalósítása nem egyetlen értékadás, két külön okból.
+
+**1. Nincs hova eltenni.** Az SQLite indexünk sémájában **nincs**
+`originfast` oszlop — a kulcsot mindig menet közben számoljuk
+(`dedup/exact.py`, `importsource.py`). Öröklésről csak akkor lehet szó,
+ha a származtatott értéket egyáltalán TÁROLNI tudjuk; ez sémaváltozás, és
+a sávtérkép szerint az `index/` csomag dolga.
+
+**2. A kulcs nálunk MÁS célt szolgál.** Az eredeti a származás
+nyilvántartására használja; nálunk két helyen **azonosságot** jelent:
+
+| hívóhely | mit jelent ma a kulcs egyezése |
+|---|---|
+| `dedup/exact.py` | a két fájl **másodpéldány** |
+| `importsource.py` | a kép **már a könyvtárban van**, ne importáljuk |
+
+Ha a másolat örökölné a forrás kulcsát, a duplikátum-kereső egy
+**beleégetett szerkesztésű** másolatot a forrása pontos másodpéldányának
+jelentene — pedig a képpontok 99,9%-ában eltér. Az importálás pedig
+kihagyná a másolatot, mint „már megvan”.
+
+⇒ Az öröklés bevezetése **együtt jár** azzal, hogy a két hívóhely ne a
+származás-kulcson döntsön azonosságról. Enélkül a hűség egy valódi,
+felhasználónak látszó hibát okozna.
