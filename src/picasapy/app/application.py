@@ -272,7 +272,45 @@ def _takaritas_gyokerei(
         *registered_exported_folders(
             settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
         ),
+        *_kollazs_gyoker(settings),
     )
+
+
+def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
+    """A Kollázsok mappa mint VÉDETT gyökér (#1675).
+
+    Ugyanaz az eset, mint az exportcél (#1667): a MI kimenetünk, saját
+    gyökérként indexelve — nem „ottragadt idegen mappa". A takarítás eddig
+    minden induláskor kidobta, a `_onjavito_kollazsmappa` (#1075) pedig
+    NULLÁRÓL építette vissza; az üres `photos` tábla miatt a `sync_folder`
+    inkrementális kihagyása (#139) nem tudott működni, tehát **minden
+    kollázs képfájlja megnyílt minden induláskor**. MÉRVE (mutációval, a
+    #1675 őrében): három kollázsra három fájlnyitás, a védelemmel nulla.
+
+    A #1675 kérdése az volt, a #1075 SZÁNDÉKA szerint védett-e — nem
+    analógiából. Az: a `_onjavito_kollazsmappa` docstringje kimondja, hogy
+    a mappának az indexben KELL lennie (a Projektek gyűjtemény két
+    feltételének egyike), és hogy csak a MI kimenetünket jelöljük meg. Egy
+    gyökér, amit minden induláskor vissza kell építeni, definíció szerint
+    nem idegen.
+
+    A létezésre — az exportcélokhoz hasonlóan — SZÁNDÉKOSAN nem szűrünk: a
+    hiány nem bizonyíték (#1560), és egy épp leválasztott meghajtón lévő
+    kollázsmappa sorai sem eshetnek ki emiatt.
+    """
+    try:
+        return (
+            str(
+                collage_output.output_dir(
+                    settings.value(collage_prefs.OUTPUT_DIR_KEY)
+                )
+            ),
+        )
+    except Exception:  # noqa: BLE001 — a takarítás soha nem hiúsulhat meg tőle
+        logging.getLogger(__name__).warning(
+            "a Kollázsok mappa védett gyökérként nem oldható fel", exc_info=True
+        )
+        return ()
 
 
 def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
