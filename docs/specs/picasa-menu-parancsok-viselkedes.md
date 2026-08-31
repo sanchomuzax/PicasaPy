@@ -1469,3 +1469,141 @@ Nyitott kérdések: 0 nyílt · 6 lezárva · 0 blokkolt · 1 hatókörön kív�
   megjegyzése) — megdőlt: a menüsáv Nézet menüjében is (36.5).
 - **„A `[edi+0x34a4]` futásidejű állapot"** — megdőlt: egyetlen írása a
   konstruktorban, értéke mindig 0 (36.2).
+
+## 37. tétel — a jobb fiók NÉGY LAPJA: rádiócsoport, és egy névütközés (2026-08-31)
+
+A lefedettségi sor következő tételei: `ID_VIEW_PROPERTIES`,
+`ID_VIEW_PEOPLE`, `ID_VIEW_PLACES` — és velük egy jelenségként a
+negyedik lap, az `ID_CAPTAG`. Eddig **csak a `jobb-fiok-meretek.md`
+geometria-lapjának felirat-táblájában** szerepeltek, viselkedés nélkül.
+
+### 37.1 A parancsazonosítók — és a KERESZT-ELLENŐRZÉSÜK
+
+A menüsáv-építőből (`0x00559150`) a 33.1-es „javított horgony"
+módszerével (a `mov dword ptr [<rekordcím>], eax` a rekord kezdete, a
+`+0x0a` word a parancsazonosító):
+
+| kulcs | rekord | cmd |
+|---|---|---|
+| `eMenuView::ID_VIEW_PROPERTIES` | `0xd6e004` | **`0x9d71`** |
+| `eMenuView::ID_CAPTAG` (a fiók Címkék lapja) | `0xd6e018` | **`0x9d2c`** |
+| `eMenuView::ID_VIEW_PEOPLE` | `0xd6e02c` | **`0x9d6c`** |
+| `eMenuView::ID_VIEW_PLACES` | `0xd6e040` | **`0x9d6d`** |
+
+A négy rekord a tömbben **egymás után** áll (`0x14` bájtos lépésköz) —
+egyetlen menücsoport.
+
+⭐ **A társítás FÜGGETLENÜL is igazolva.** A 34.1 pont figyelmeztet, hogy a
+horgony-módszer elcsúszhat. Itt nem kellett hinni neki: a `0x0065ab50`
+függvény ugyanezt a négy számot **kódban** párosítja a névparancsokkal
+(ld. 37.2). Két, egymástól független forrás, ugyanaz a négy szám.
+
+### 37.2 ⛔ `ID_CAPTAG` KÉTSZER szerepel, KÉT KÜLÖNBÖZŐ azonosítóval
+
+| előfordulás | rekord | cmd | mit csinál |
+|---|---|---|---|
+| **Nézet ▸ Címkék** (a jobb fiók lapja) | `0xd6e018` | **`0x9d2c`** | a fiók Címkék lapjára vált |
+| **Nézet ▸ Indexkép felirata ▸ Címkék** | `0xd6de04` | **`0x9de4`** | az indexkép feliratát állítja |
+
+⇒ **Aki csak a kulcsnevet nézi, a rossz parancsot köti be.** A `0x9de4`
+az indexkép-felirat pipázójában bukkan fel (`0x00574b07`), a `0x9d2c` a
+fiók-hídban (`0x0065ab98`) — a két azonosítónak semmi köze egymáshoz.
+
+### 37.3 A híd: menüparancs → NÉVPARANCS (`0x0065ab50`)
+
+A négy menüparancs nem közvetlenül kapcsol panelt: mindegyik egy
+**névparancsot** ereszt, és mind a `0x005d9760` vezérlőt hívja
+(`0x0065ab88`).
+
+| cmd | névparancs | cím |
+|---|---|---|
+| `0x9d71` | `thumbui/properties_toggle` | `0x0065ab51` |
+| `0x9d2c` | `thumbui/tags_toggle` | `0x0065ab98` |
+| `0x9d6c` | `thumbui/people_toggle` | `0x0065aba6` |
+| `0x9d6d` | `thumbui/places_toggle` | `0x0065abb4` |
+| *(bónusz)* `0x9d6e` | **`editpanel/toggle_left_drawer`** | `0x0065abc2` |
+
+Az ötödik ág ugyanennek a hídnak a része, de a **BAL** fiókot billenti —
+külön parancs, külön fiók.
+
+⇒ **Belépési pontok:** a négy menütétel **és** a négy névparancs
+(vagyis a fiók fejlécének kapcsológombjai), plusz a fiók egészét
+billentő `thumbui/toggle_right_drawer`.
+
+### 37.4 ⭐ A NÉGY LAP KIZÁRÓ RÁDIÓCSOPORT — nem független kapcsoló
+
+A vezérlő (`0x005d9760`, 1369 b) a `people_toggle` ágon
+(`0x005d98ba`–`0x005d998b`) **pontosan ezt** teszi, ebben a sorrendben:
+
+1. **elrejti a másik hármat** — `geopanel` (`0xc7ff04`), `tagpanel`
+   (`0xc7fec8`), `propertiespanel` (`0xc7fea4`); mindegyik a vtable
+   **`+0x68`** metódusán át;
+2. **kikapcsolja a másik három fejléc-gombot** — `places_toggle`,
+   `tags_toggle`, `properties_toggle` értéke `0` (`0x9cd8f0` hívások);
+3. **bekapcsolja a sajátját** — `people_toggle` = `1`;
+4. **megjeleníti a `peoplepanel`-t** — vtable **`+0x6c`**.
+
+A másik három ág ugyanez a minta, felcserélt szereplőkkel.
+
+⇒ **Egyszerre PONTOSAN EGY lap látszik.** A fiók nem tud „két lapot
+nyitva" tartani, és a négyből egy mindig aktív, amíg a fiók nyitva van.
+
+### 37.5 A `Preferences\active_metadata_tab` — HÁROM olvasó, NULLA író
+
+A vezérlő a **belépéskor** kiolvassa a `Preferences` ág
+`active_metadata_tab` kulcsát (`0x005d9781`–`0x005d9793`; kulcs-sztring
+`0xc801f4`, ág-sztring `0xc7eafc`, olvasó `0x00407630`). Ugyanezt teszi a
+főablak-építő (`0x0040d7ea`) és a `0x005c982f`.
+
+**Író nincs.** Ezt két, egymástól független lekérdezés mondja ki:
+
+1. az index `string_xrefs` táblája **három** függvényt ad
+   (`0x0040d3c0`, `0x005c9740`, `0x005d9760`), mindhárom a `0x00407630`
+   olvasót hívja, kétparaméteres (ág + kulcs) alakban — érték nélkül;
+2. a **teljes fájl bájtmintás átvizsgálása** a kulcs-sztring címére
+   (`0x00c801f4` mint 32 bites immediate) **pontosan három** találatot
+   ad: `0x40d7eb`, `0x5c9830`, `0x5d9782` — vagyis nincs negyedik,
+   író hivatkozás.
+
+⇒ **A Picasa NEM jegyzi meg, melyik lap volt nyitva.** Az
+`active_metadata_tab` **kézzel állítható rejtett beállítás**: a program
+olvassa, de sosem írja.
+
+*(Bizonyítottsági fok: **megerősített** a három olvasó és az író hiánya;
+**feltételes** az, hogy a kulcs értékkészlete a négy lap neve — az
+alapértelmezett ág értékét nem futtattuk le.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a négy menütétel | megvan, `0x9d71`/`0x9d2c`/`0x9d6c`/`0x9d6d` | mind a négy megvan (`PicasaMenuBar.qml:625/632/640/647`), `checkable`, pipás | — |
+| **a lapok viszonya** | **kizáró rádiócsoport** (37.4) | **négy FÜGGETLEN kapcsoló**: `Main.qml:825/827/829/833` mind `x = !x`, és négy külön `visible:` kötés (`:1525/1556/1571/1590`) ⇒ **mind a négy nyitva lehet egyszerre, és mind a négy zárva is** | **jegy** — a rádió-viselkedés átvétele |
+| a fiók fejléc-gombjai | négy névparancs (`*_toggle`) ugyanarra a vezérlőre | a menün kívül más belépési pont **nincs** mérve | a fejléc-gombok bekötése ugyanarra az útra |
+| a fiók egészének billentése | `thumbui/toggle_right_drawer` | — | — |
+| a lap megjegyzése | **NINCS** — olvassa, de nem írja (37.5) | nálunk sem őrzi (a `window.*PanelOpen` alapértéke `false`) | **egyezik**, ne vezessünk be tárolást |
+| `ID_CAPTAG` névütközés | két azonosító, két menü (37.2) | a két tételünk külön objektumnév alatt van (`menuViewTags` és `menuViewThumbCaptionTags`) ⇒ **nem estünk bele** | — |
+
+### Nyitott kérdések mérlege (37.)
+
+```
+Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a négy parancsazonosító, két független forrásból (37.1);
+  az `ID_CAPTAG` névütközése (37.2); a menü→névparancs híd és a belépési
+  pontok teljes listája (37.3); a lapok kizáró viszonya (37.4); az
+  `active_metadata_tab` szerepe és az író hiánya (37.5).
+- A 36. körben felvetett saját részkérdés — „a `0x00574b70` View-pipázó
+  nem pipázza a négy lapot, akkor hol pipázódnak?" — **itt zárul**: nem a
+  menü-pipázóban, hanem a **fiók fejléc-gombjainak** állapotában
+  (`0x9cd8f0` hívások, 37.4); a menütétel pipája ebből következik.
+
+### Amit KIZÁRTAM
+
+- **„A négy lap négy független kapcsoló"** — megdőlt: minden ág elrejti a
+  másik hármat (37.4). *(Ez a mi mai megvalósításunk feltevése volt.)*
+- **„A Picasa megjegyzi az utoljára nyitott lapot"** — megdőlt: az
+  `active_metadata_tab` kulcsnak **nincs írója** a binárisban (37.5).
+- **„Az `ID_CAPTAG` egyértelműen a fiók Címkék lapja"** — megdőlt: két
+  menüben két KÜLÖNBÖZŐ azonosítóval szerepel (37.2).
