@@ -381,6 +381,20 @@ class FileOpsController(QObject):
         # mutatna — CI-n ez SZEGMENSHIBÁVAL (`exit -11`) állította meg a
         # tesztfájlt, nem szép hibaüzenettel.
         self._vagolap_adat = epits()
+
+        # ⚠️ FEJ NÉLKÜLI KÖRNYEZETBEN NEM ÍRUNK a vágólapra. Az `offscreen`
+        # és a `minimal` Qt-platform teszt-/CI-környezet: nincs mögötte
+        # vágólap-tulajdonos, és a `setMimeData` ott a CI-n
+        # SZEGMENSHIBÁVAL állította meg a tesztfájlt (`exit -11`) — nem
+        # kivétellel, amit el lehetne kapni. Helyben (valódi
+        # munkamenet-kezelővel) ugyanez lefut, ezért a hiba csak a CI-n
+        # jött elő.
+        #
+        # A művelet így sem lesz néma: a `_vagolap_adat` mindig elkészül,
+        # tehát az őr azt méri, AMIT feltennénk — a valódi vágólapra írás
+        # pedig ott történik meg, ahol van vágólap.
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return
         vagolap = QGuiApplication.clipboard()
         if vagolap is not None:
             vagolap.setMimeData(epits())
