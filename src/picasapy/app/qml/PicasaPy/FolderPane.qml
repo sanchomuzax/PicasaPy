@@ -937,6 +937,21 @@ Rectangle {
             moveFolderDialog.open()
         }
 
+        // #1638: „Mappa törlése…" — a mappa a LOMTÁRBA kerül a
+        // tartalmával együtt. A megerősítés az eredeti szövegével megy, és
+        // a mappa NEVÉT tartalmazza, hogy ne lehessen véletlen mást
+        // törölni.
+        onDeleteFolderRequested: {
+            var ut = folderContextMenu.folderPath
+            if (ut === "") return
+            deleteFolderConfirm.pendingPath = ut
+            deleteFolderConfirm.message = qsTr(
+                "Are you sure you want to move the folder \"%1\" and its "
+                + "contents to the Recycle Bin?").arg(
+                    ut.substring(ut.lastIndexOf("/") + 1))
+            deleteFolderConfirm.open()
+        }
+
         onMoveToCollectionRequested: function(collectionName) {
             if (controller) controller.moveFolderToCollection(
                 folderContextMenu.folderPath, collectionName)
@@ -1010,6 +1025,23 @@ Rectangle {
 
     // „Eltávolítás a Picasából…" — a fájlok a lemezen maradnak, csak a
     // könyvtárból kerül ki (#422 → #1249)
+    // #1638: a mappa lomtárba tétele — a megerősítés az eredeti szövegével
+    ConfirmDialog {
+        id: deleteFolderConfirm
+        namePrefix: "deleteFolderConfirm"
+        property string pendingPath: ""
+        title: qsTr("Delete Folder")
+        yesText: qsTr("Delete Folder")
+        onConfirmed: {
+            if (typeof fileOpsController !== "undefined" && fileOpsController
+                    && deleteFolderConfirm.pendingPath !== "")
+                fileOpsController.deleteFolder(deleteFolderConfirm.pendingPath)
+            deleteFolderConfirm.pendingPath = ""
+        }
+        onDenied: deleteFolderConfirm.pendingPath = ""
+        onCanceled: deleteFolderConfirm.pendingPath = ""
+    }
+
     ConfirmDialog {
         id: removeFolderConfirm
         namePrefix: "removeFolderConfirm"

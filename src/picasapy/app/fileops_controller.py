@@ -81,6 +81,8 @@ class FileOpsController(QObject):
     # feliratkozó szándékosan nincs: a bal hasábot és a rácsot az
     # újraolvasás utáni modellfrissítés hozza rendbe.
     folderMoved = Signal(str, str)
+    #: #1638: a lomtárba tett MAPPA útja — az index innen tudja, mit vegyen ki
+    folderDeleted = Signal(str)
 
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
@@ -259,6 +261,31 @@ class FileOpsController(QObject):
         # #1538: a NORMALIZÁLT forrás megy ki, nem a kapott nyers szöveg —
         # az `file://` URL-t a fogadó oldal nem tudná megtalálni.
         self.folderMoved.emit(str(source), str(moved))
+
+    @Slot(str)
+    def deleteFolder(self, folder: str, trash_dir: Path | None = None) -> None:  # noqa: N802
+        """A MAPPA a lomtárba, a tartalmával együtt (#1638).
+
+        Az eredeti `Folder::ID_ALBUM_DELETE` parancsa. Hogy a lomtár a cél,
+        és nem a végleges törlés, azt az eredeti megerősítő szövege mondja
+        ki: *„…move the folder »%s« and its contents to the Recycle Bin?"*
+
+        A `.picasa.ini` a mappával megy — nincs vele külön dolgunk —, tehát
+        egy visszaállítás a feliratokat, címkéket és arc-hozzárendeléseket
+        is visszahozza.
+
+        A `trash_dir` CSAK a tesztek fogantyúja (a valódi lomtárba nem
+        írunk próbaképp); a felületről mindig alapértelmezéssel hívjuk.
+
+        Hiba esetén `operationFailed` megy ki emberi üzenettel, és a mappa
+        érintetlen marad — néma bukás nincs."""
+        source = Path(_to_local_path(folder) or folder)
+        try:
+            delete_to_trash(source, trash_dir=trash_dir)
+        except OSError as error:
+            self.operationFailed.emit("delete_folder", str(error))
+            return
+        self.folderDeleted.emit(str(source))
 
     @Slot(str)
     def deletePhoto(self, path: str) -> None:
