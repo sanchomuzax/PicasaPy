@@ -8,6 +8,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A felső menüsor csoportosztása az eredetit követi (#1774).** A
+  tulajdonos bejelentette, hogy a Picasa 3 menüszerkezete eltér a mienktől.
+  Nyolc képernyőmentést készített a magyar Picasa mind a nyolc menüjéről;
+  ezekből tételesen kimértük a sorrendet és az elválasztók helyét. A nyolc
+  menüből **hatban** tért el a csoportosztás: a Fájl menüből hiányzott két
+  elválasztó és volt egy fölösleges, a Létrehozás menü egyetlen tömb volt a
+  mért három csoport helyett, a Kép menüből három elválasztó és a
+  „Megjelenítés" tétel hiányzott, a Nézet menüben négy csoporthatár állt
+  rossz helyen, az Eszközök és a Súgó menüben pedig egy-egy fölösleges
+  vonal darabolta szét az egybetartozó tételeket. Mind javítva.
+  A menüsor **sorrendje** eddig igazolatlan feltevés volt — a mentések
+  megerősítik.
 - **A kiadások megint elmondják, mi változott (#1770).** A kiadási
   oldalon augusztus 28. óta minden verzió azt írta magáról, hogy „ehhez a
   kiadáshoz nem készült emberi összefoglaló" — pedig készült: minden

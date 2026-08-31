@@ -395,6 +395,8 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.newAlbumRequested()
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // ⚠️ #1200: ez NEM külön funkció és NEM mappaválasztó — az
         // eredetiben EZ A MENÜPONT nyitja meg a Mappakezelőt:
         // `eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS` (`stringres` 2648.)
@@ -448,6 +450,8 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.renameRequested()
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // #444: a nem-destruktív mentés HÁROM fokozata. A „Mentés" beégeti
         // a szerkesztéseket a fájlba (előtte biztonsági másolattal), a
         // „Visszaállítás" az eredetit hozza vissza (a szerkesztések
@@ -491,7 +495,8 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.saveCopyRequested()
         }
-        MenuSeparator {}
+        // #1774 (mérve): az exportálás UGYANEBBEN a csoportban van, mint a
+        // „Mentés másként…” és a „Másolat mentése” — nincs közte elválasztó.
         MenuItem {
             objectName: "menuFileExport"
             text: qsTr("Export Picture to Folder...") + "\tCtrl+Shift+S"
@@ -668,6 +673,8 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója
         PicasaMenuItem { text: qsTr("Show Editing Controls"); checkable: true; placeholder: true }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         MenuItem {
             objectName: "menuViewSlideshow"
             text: qsTr("Slideshow") + "\tCtrl+4"
@@ -698,6 +705,8 @@ MenuBar {
             checked: (bar.ctl && bar.ctl.showHidden !== undefined) ? bar.ctl.showHidden : false
             onTriggered: controller.toggleShowHidden()
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // hiányzott (#324 audit): színprofil-kezelés kapcsoló
         PicasaMenuItem { text: qsTr("Use Color Management"); checkable: true; placeholder: true }
         MenuItem {
@@ -708,7 +717,8 @@ MenuBar {
             checked: (bar.ctl && bar.ctl.darkTheme !== undefined) ? bar.ctl.darkTheme : false
             onTriggered: controller.toggleDarkTheme()
         }
-        MenuSeparator {}
+        // #1774 (mérve): a Megjelenítési mód UGYANEBBEN a csoportban van,
+        // mint a Színkezelés használata — nincs közte elválasztó.
         // #1575: a Megjelenítési mód almenü — 11 tétel + 4 elválasztó
         // (15 rekord), a `docs/specs/picasa-megjelenitesi-modok.md` 1.
         // szakaszának SORRENDJÉBEN. A tartalom a binárisból mérve
@@ -863,6 +873,8 @@ MenuBar {
                 }
             }
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
         // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
         // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
@@ -1221,6 +1233,8 @@ MenuBar {
             PicasaMenuItem { text: qsTr("Show Text"); placeholder: true }
             PicasaMenuItem { text: qsTr("Hide Text"); placeholder: true }
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // #465 3. pont: korábban placeholder — a kijelölt kép(ek) teljes
         // szerkesztési láncát törli, megerősítéssel (Main.qml)
         MenuItem {
@@ -1236,9 +1250,18 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.hideToggleRequested()
         }
+        // #1774 (mérve): az eredetiben az Elrejtés MELLETT önálló
+        // „Megjelenítés” tétel áll (a mentésen mindkettő inaktív). Nálunk
+        // az Elrejtés ma kapcsoló — a szétválasztás külön jegy, addig ez a
+        // tétel helyfoglaló, hogy a csoport szerkezete stimmeljen.
+        PicasaMenuItem { text: qsTr("Show"); placeholder: true }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // hiányzott (#324 audit): arc-négyzetek pozíciójának visszaállítása
         // (3. fázis, arcfelismerés-előkészítés)
         PicasaMenuItem { text: qsTr("Reset Face Positions"); placeholder: true }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         MenuItem {
             objectName: "menuPictureProperties"
             text: qsTr("Properties") + "\tAlt+Enter"
@@ -1250,6 +1273,8 @@ MenuBar {
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Set as Desktop Background..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Make a Poster..."); placeholder: true }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         MenuItem {
             objectName: "menuCreateCollage"
             text: qsTr("Picture Collage...")
@@ -1273,6 +1298,8 @@ MenuBar {
                 onTriggered: bar.movieRequested()
             }
         }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: false; retired: true }  // #638
     }
@@ -1306,6 +1333,8 @@ MenuBar {
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Configure Photo Viewer..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
+        // #1774 (mérve): a mentések szerint itt csoporthatár van.
+        MenuSeparator {}
         PicasaMenuItem { text: qsTr("Back Up Pictures..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Adjust Date and Time..."); placeholder: true }
@@ -1359,7 +1388,7 @@ MenuBar {
         }
         MenuSeparator {}
         PicasaMenuItem { text: qsTr("Configure Buttons..."); placeholder: true }
-        MenuSeparator {}
+        // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
         // #333: nyelvválasztás — alapértelmezés az angol, a magyar
         // választható; a döntés a QSettings-ben marad. A #305-ös null-őr
         // kötelező: a controller a QML-engine leépítésekor null lehet.
@@ -1401,7 +1430,7 @@ MenuBar {
                 }
             }
         }
-        MenuSeparator {}
+        // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
         // #350: az OptionsDialog.qml megépült (9/8 fülős options.fen
         // paritás) — a jelzés itt fut ki, a dialógus példányosítása és a
         // signal bekötése a Main.qml-ben (forró fájl) az integrátoré
@@ -1420,7 +1449,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Picasa Forums"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Online Information"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Product Release Notes"); placeholder: false; retired: true }  // #638
-        MenuSeparator {}
+        // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
         PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
