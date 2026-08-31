@@ -25,7 +25,7 @@ class TestPropertiesPanelInMain:
         window, controller, lib, engine = qml_app
         panel = _panel(window)
         assert panel.property("visible") is False
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         assert panel.property("visible") is True
 
@@ -38,7 +38,7 @@ class TestPropertiesPanelInMain:
 
     def test_entries_follow_selection(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         panel = _panel(window)
         assert panel.property("hasSelection") is False
         window.setProperty("selectedIndexes", [0])
@@ -53,6 +53,6 @@ class TestPropertiesPanelInMain:
 
     def test_no_selection_empty_entries(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("propertiesPanelOpen", True)
+        window.setProperty("activeDrawerTab", "properties")
         qt_app.processEvents()
         assert _entries(_panel(window)) == []

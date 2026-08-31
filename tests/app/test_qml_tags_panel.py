@@ -115,7 +115,7 @@ class TestTagsPanelInMain:
         window, controller, lib, engine = qml_app
         panel = self._panel(window)
         assert panel.property("visible") is False
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         assert panel.property("visible") is True
 
@@ -127,7 +127,7 @@ class TestTagsPanelInMain:
 
     def test_add_tag_writes_iptc_and_refreshes_panel(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
@@ -143,7 +143,7 @@ class TestTagsPanelInMain:
 
     def test_remove_tag_updates_file_and_panel(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
@@ -160,7 +160,7 @@ class TestTagsPanelInMain:
         window, controller, lib, engine = qml_app
         controller.addKeywordToRows([0], "zebra")
         controller.addKeywordToRows([1], "alma")
-        window.setProperty("tagsPanelOpen", True)
+        window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()

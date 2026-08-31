@@ -76,13 +76,43 @@ ApplicationWindow {
     }
     property bool viewerOpen: false
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
-    property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
-    property bool placesPanelOpen: false  // Helyek-panel (#30, térkép)
+    // #1773: a jobb fiók négy lapja KIZÁRÓ csoport — egyszerre pontosan
+    // egy látszik, vagy a fiók üres. Ezért EGYETLEN állapot írja le mind a
+    // négyet; négy független billenőből a mérés szerint nem előfordulható
+    // állapotok álltak elő (négy panel egyszerre nyitva).
+    //
+    // MÉRVE (`0x005d9760`, mind a négy ág): a vezérlő elrejti a másik
+    // hármat, kikapcsolja a másik három fejléc-gombot, bekapcsolja a
+    // sajátját, majd megjeleníti a saját panelt.
+    //
+    // Az érvényes értékek: "" (a fiók üres) · "tags" · "places" ·
+    // "properties" · "people".
+    property string activeDrawerTab: ""
+
+    // A négy régi jelző SZÁRMAZTATOTT — a kötések és a menüpipák
+    // változatlanul rájuk hivatkoznak, de már nem írhatók külön-külön.
+    readonly property bool tagsPanelOpen:
+        window.activeDrawerTab === "tags"        // Címkék-panel (#12, Ctrl+T)
+    readonly property bool placesPanelOpen:
+        window.activeDrawerTab === "places"      // Helyek-panel (#30, térkép)
     // Tulajdonságok-panel (#13, Alt+Enter)
-    property bool propertiesPanelOpen: false
+    readonly property bool propertiesPanelOpen:
+        window.activeDrawerTab === "properties"
     // Emberek-panel (#26) — a jobb fiók negyedik panelje
     // (`rightdrawerpanel/peoplepanel`), a Címkék/Helyek/Tulajdonságok mellett
-    property bool peoplePanelOpen: false
+    readonly property bool peoplePanelOpen:
+        window.activeDrawerTab === "people"
+
+    // #1773: a lapváltás EGYETLEN útja. Az aktív lapra kattintás
+    // SZÁNDÉKOSAN nem zár be: a bináris a vizsgált ágon feltétel nélkül
+    // 1-re állítja a saját gombját (a jegy „nyitott" pontja, ez az
+    // alapértelmezés). A fiók ürítése az `ureseidAFiokot()`.
+    function valtsFiokLapot(nev) {
+        window.activeDrawerTab = nev
+    }
+    function ureseidAFiokot() {
+        window.activeDrawerTab = ""
+    }
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
     property bool unnamedFacesOpen: false
@@ -630,13 +660,18 @@ ApplicationWindow {
     Shortcut {
         sequence: "Ctrl+T"
         onActivated: if (!window.viewerOpen)
-                         window.tagsPanelOpen = !window.tagsPanelOpen
+                         // #1773: a billentyű BILLENT (a menütétel nem) —
+                         // a Ctrl+T nyitja, és zárja is a fiókot
+                         window.tagsPanelOpen ? window.ureseidAFiokot()
+                                              : window.valtsFiokLapot("tags")
     }
     // #13: Alt+Enter — Tulajdonságok-panel (Picasa-billentyű)
     Shortcut {
         sequence: "Alt+Return"
         onActivated: if (!window.viewerOpen)
-                         window.propertiesPanelOpen = !window.propertiesPanelOpen
+                         window.propertiesPanelOpen
+                             ? window.ureseidAFiokot()
+                             : window.valtsFiokLapot("properties")
     }
 
     // -- időrend nézet (#24, Ctrl+5) -----------------------------------------
@@ -863,16 +898,14 @@ ApplicationWindow {
         onSlideshowRequested: window.startSlideshow(-1)
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
-        onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
+        onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
-        onPeoplePanelRequested: window.peoplePanelOpen = !window.peoplePanelOpen
+        onPeoplePanelRequested: window.valtsFiokLapot("people")
         placesPanelOpen: window.placesPanelOpen
-        onPlacesPanelRequested:
-            window.placesPanelOpen = !window.placesPanelOpen
+        onPlacesPanelRequested: window.valtsFiokLapot("places")
         onHideToggleRequested: window.toggleHiddenSelection()
         propertiesPanelOpen: window.propertiesPanelOpen
-        onPropertiesPanelRequested:
-            window.propertiesPanelOpen = !window.propertiesPanelOpen
+        onPropertiesPanelRequested: window.valtsFiokLapot("properties")
         // #426: „Az összes effektus másolása/beillesztése" — a kijelölésre
         // hat, a rács sorindexein keresztül (window.selectedRows() a
         // meglévő mintát követi, ld. toggleHiddenSelection). A
@@ -1579,7 +1612,7 @@ ApplicationWindow {
             onRemoveRequested: function(keyword) {
                 controller.removeKeywordFromRows(window.selectedRows(), keyword)
             }
-            onCloseRequested: window.tagsPanelOpen = false
+            onCloseRequested: window.ureseidAFiokot()
             // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
             onAddToSelectionRequested: function(keyword) {
                 if (controller)
@@ -1598,7 +1631,7 @@ ApplicationWindow {
             SplitView.preferredWidth: 320
             SplitView.minimumWidth: 220
             appWindow: window
-            onCloseRequested: window.placesPanelOpen = false
+            onCloseRequested: window.ureseidAFiokot()
             onPhotoActivated: function(row) {
                 window.selectedIndexes = [row]
                 window.selectedIndex = row
@@ -1619,7 +1652,7 @@ ApplicationWindow {
                 ? (controller.photos.revision,
                    controller.propertiesOf(window.selectedIndex))
                 : []
-            onCloseRequested: window.propertiesPanelOpen = false
+            onCloseRequested: window.ureseidAFiokot()
         }
 
         // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
@@ -1648,7 +1681,7 @@ ApplicationWindow {
                 window.unnamedFacesOpen = false
                 controller.showPerson(name)
             }
-            onCloseRequested: window.peoplePanelOpen = false
+            onCloseRequested: window.ureseidAFiokot()
         }
     }
 
@@ -2065,8 +2098,7 @@ ApplicationWindow {
             var full = controller.photos.filePathAt(window.fileOpTargetRow)
             if (full.length > 0) fileOpsController.copyFullPath(full)
         }
-        onPropertiesRequested:
-            window.propertiesPanelOpen = !window.propertiesPanelOpen
+        onPropertiesRequested: window.valtsFiokLapot("properties")
         // #9 (2. lépés): albumtagság — #305 null-őr
         albums: controller ? controller.albums : []
         currentAlbumToken: controller ? controller.currentAlbumToken : ""
