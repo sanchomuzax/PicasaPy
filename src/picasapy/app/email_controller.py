@@ -106,6 +106,7 @@ class EmailController(QObject):
         photo_source: Callable[[], Sequence[PhotoRecord]],
         settings: QSettings | None = None,
         parent: QObject | None = None,
+        tray_source: Callable[[], Sequence[PhotoRecord]] | None = None,
     ) -> None:
         """`photo_source`: ld. a modul docstringje. `settings`: teszthez
         beinjektálható `QSettings`-példány (`QSettings("...", "...")` egy
@@ -113,6 +114,11 @@ class EmailController(QObject):
         (az `application.py`-ban már beállított szervezet/app-név alatt)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        #: #1671: a KÉPTÁLCA rekordjai. Ha nem üres, ŐK a forrás — a rács
+        #: pillanatnyi kijelölése és a látott mappa nem számít. Az eredeti
+        #: súgója is így fogalmaz: „Print photos in the Photo Tray". A
+        #: mező elhagyható, hogy a meglévő hívók és tesztek ne törjenek el.
+        self._tray_source = tray_source
         # #1072: a piszkozat-tilalom — közös a `PrintController`-rel
         self._draft_guard = CollageDraftGuard(self)
         self._settings = settings if settings is not None else QSettings()
@@ -179,20 +185,38 @@ class EmailController(QObject):
 
     # -- küldés-előkészítés + küldés ---------------------------------------
 
-    def _resolve_items(self, rows: Sequence[int]) -> list[ExportItem]:
+    def _resolve_records(self, rows: Sequence[int]) -> list[PhotoRecord]:
+        """A művelet bemenete — #1671: HA A TÁLCA NEM ÜRES, ŐK nyernek.
+
+        A rács pillanatnyi kijelölése és a látott mappa ilyenkor nem
+        számít: a tálca épp arra való, hogy több mappából gyűjtött képekkel
+        lehessen dolgozni. Az eredeti súgója is így fogalmaz — *„Print
+        photos in the Photo Tray"* —, és a mappába exportálás (#455) már
+        régóta így viselkedik.
+
+        Üres tálcánál (vagy `tray_source` nélkül) marad a régi, sor-alapú
+        feloldás."""
+        if self._tray_source is not None:
+            talca = list(self._tray_source())
+            if talca:
+                return talca
         photos = tuple(self._photo_source())
+        return [
+            photos[int(row)]
+            for row in rows
+            if 0 <= int(row) < len(photos)
+        ]
+
+    def _resolve_items(self, rows: Sequence[int]) -> list[ExportItem]:
         items = []
-        for row in rows:
-            index = int(row)
-            if 0 <= index < len(photos):
-                photo = photos[index]
-                items.append(
-                    ExportItem(
-                        source=Path(photo.folder_path) / photo.name,
-                        rotate_steps=photo.rotate_steps,
-                        filters=photo.filters,
-                    )
+        for photo in self._resolve_records(rows):
+            items.append(
+                ExportItem(
+                    source=Path(photo.folder_path) / photo.name,
+                    rotate_steps=photo.rotate_steps,
+                    filters=photo.filters,
                 )
+            )
         return items
 
     @Slot(list, bool, result=list)

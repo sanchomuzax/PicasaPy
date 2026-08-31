@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Javítva
+- **A Nyomtatás és az e-mail küldés a képtálca tartalmán dolgozik
+  (#1671).** Eddig csak a rácsban épp kijelölt képeket látta mind a
+  kettő: kijelölés nélkül nem történt semmi, és a más mappából a tálcára
+  tett kép sosem került bele. Pedig a képtálca épp arra való, hogy több
+  mappából lehessen képeket összegyűjteni — a mappába exportálás már
+  régóta így viselkedik. Mostantól, ha van valami a tálcán, a nyomtatás
+  és az e-mail is azt viszi; üres tálcánál marad a megszokott,
+  kijelölés-alapú működés.
+
 ### Hozzáadva
 - **A „Keresés" almenü a kép helyi menüjében, három tétellel (#1613).**
   Eddig egyetlen lapos „Keresés a lemezen" parancs volt itt; az eredetiben
