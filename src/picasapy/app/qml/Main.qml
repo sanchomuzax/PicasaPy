@@ -713,6 +713,23 @@ ApplicationWindow {
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
         onRescanRequested: controller.rescan()
+        // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
+        // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
+        // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.
+        onFolderMoveRequested: {
+            if (controller) folderPane.mozgatasMappara(controller.currentFolder)
+        }
+        onFolderDeleteRequested: {
+            if (controller) folderPane.torlesLomtarba(controller.currentFolder)
+        }
+        onFolderRemoveFromPicasaRequested: {
+            if (controller)
+                folderPane.eltavolitasAPicasabol(controller.currentFolder)
+        }
+        onFolderLocateRequested: {
+            if (controller && controller.currentFolder.length > 0)
+                fileOpsController.revealFolder(controller.currentFolder)
+        }
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,

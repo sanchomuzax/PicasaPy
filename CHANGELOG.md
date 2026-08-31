@@ -8,6 +8,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Kiadatlan]
 
 ### Hozzáadva
+- **A Mappa menü négy néma tétele működik (#1595).** Az „Áthelyezés…",
+  a „Törlés…", az „Eltávolítás a Picasából…" és a „Keresés a lemezen"
+  eddig szürkén állt a Mappa menüben — pedig mind a négy régóta működik a
+  mappa jobbklikk-menüjéből. Mostantól a menüsávból is elérhetők, és a
+  megnyitott mappára hatnak. Ugyanazokat a megerősítéseket kapod, mint a
+  helyi menüből: egy művelet, egy út.
+
+### Hozzáadva
 - **A PicasaPy saját menüparancsai kék felirattal látszanak (#1701).**
   Eddig semmi nem különböztette meg az eredeti Picasa parancsait a mi
   kiegészítéseinktől — ha egy funkció máshogy működött, mint amit a

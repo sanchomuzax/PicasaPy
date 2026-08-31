@@ -279,6 +279,14 @@ MenuBar {
     // szerkesztési láncát törli (a Csoportos szerkesztés almenün KÍVÜL, a
     // Kép menü saját tétele) — megerősítéssel, ld. Main.qml ConfirmDialog.
     signal undoAllEditsRequested()
+    // #1595: a Mappa menü négy néma tétele — mind a MEGNYITOTT mappára
+    // vonatkozik (az eredetiben a „Mappa" menü ezt jelenti). A vezérlők
+    // már megvannak: a mappa-áthelyezés a #457, a lomtárba tétel a #1638,
+    // az eltávolítás a #1249, a fájlkezelőben megnyitás a #422 óta.
+    signal folderMoveRequested()
+    signal folderDeleteRequested()
+    signal folderRemoveFromPicasaRequested()
+    signal folderLocateRequested()
 
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
@@ -1097,12 +1105,31 @@ MenuBar {
             onTriggered: bar.webExportRequested()
         }
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Locate on Disk") + "\tCtrl+Enter"; placeholder: true }
-        PicasaMenuItem { text: qsTr("Remove from Picasa..."); placeholder: true }
+        // #1595: a négy tétel a MEGNYITOTT mappára hat. Eddig mind néma
+        // helyfoglaló volt, pedig a motorjuk régóta megvan — csak a helyi
+        // menüből lehetett elérni őket, a Mappa menüből nem.
+        MenuItem {
+            objectName: "menuFolderLocate"
+            text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+            onTriggered: bar.folderLocateRequested()
+        }
+        MenuItem {
+            objectName: "menuFolderRemoveFromPicasa"
+            text: qsTr("Remove from Picasa...")
+            onTriggered: bar.folderRemoveFromPicasaRequested()
+        }
         MenuSeparator {}
         // hiányzott (#324 audit): mappa áthelyezése/törlése a lemezen
-        PicasaMenuItem { text: qsTr("Move..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Delete..."); placeholder: true }
+        MenuItem {
+            objectName: "menuFolderMove"
+            text: qsTr("Move...")
+            onTriggered: bar.folderMoveRequested()
+        }
+        MenuItem {
+            objectName: "menuFolderDelete"
+            text: qsTr("Delete...")
+            onTriggered: bar.folderDeleteRequested()
+        }
     }
     PicasaMenu {
         title: qsTr("&Picture")
