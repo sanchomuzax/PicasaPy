@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Gyorsult
+- **A Kollázsok mappa nem olvasódik újra minden induláskor (#1675).** A
+  program indulásnál kidobta az indexből a saját Kollázsok mappáját, majd
+  rögtön vissza is építette — közben minden benne lévő képet újra
+  beolvasott a lemezről. Kevés kollázsnál ez alig látszott, sok kollázsnál
+  viszont ugyanúgy elszaladt volna, mint korábban az exportcéloknál (ott
+  8,4 másodpercbe került). Mostantól a mappa védett: a benne lévő képek
+  nem nyílnak meg feleslegesen.
+
 ### Hozzáadva
 - **A „Másolat mentése" megőrzi a kép eredeti felvételi idejét (#1642).**
   A másolat eddig metaadat nélkül készült: elveszett belőle, mikor
