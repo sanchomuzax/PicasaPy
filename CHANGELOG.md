@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.159] – 2026-09-01
+
+### Javítva
+- **A kiadási jegyzet nem veszíti el többé, mi melyik verzióban ment ki
+  (#1770).** A változásnapló „Nem kiadott" szakaszát a mi menetünkben soha
+  nem zárta le semmi: minden kiadás után bent maradtak a bejegyzések, így a
+  következő kiadás jegyzete megismételte őket, a napló pedig nem árulta el,
+  melyik verzió mit hozott. Mostantól a kör **elbukik**, ha egy
+  verzióemelő munka nem nevezi meg a saját naplószakaszát — a hibaüzenet
+  pedig megmondja, pontosan mit kell odaírni.
+
+## [0.8.158] – 2026-09-01
+
 ### Javítva
 - **A jobb oldali fiók négy lapja végre egymást váltja (#1773).** A
   Tulajdonságok · Címkék · Emberek · Helyek panel eddig négy független
