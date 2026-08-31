@@ -1737,3 +1737,109 @@ Nyitott kérdések: 0 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kív�
 - **„A `timelineRequested` jelzésünknek nincs fogyasztója"** — a mérés
   megcáfolta: `Main.qml:823` bekötve. *(Ez a kör saját, ellenőrzés előtti
   feltevése volt — a grep döntötte el, nem a benyomás.)*
+
+## 39. tétel — a `printoptions` panel: TIZENEGY beállítás-kulcs (2026-08-31)
+
+*Ez az első kör az **UI-lefedettségi** axisról (#1778): a menüparancs-sor
+138/138-cal kiürült, a következő forrás az eredeti felület elemleltára.
+Választott panel: `printoptions` — 22 hiányzó elem, a rangsor 8. helye,
+és **önmagában lezárható** (szemben az `editpanel`-lel, ami a szerkesztő
+egésze).*
+
+### 39.1 ⭐ MIT CSINÁL: tizenegy `Preferences`-kulcsot ír
+
+A panel nem a nyomtatási munkára hat közvetlenül, hanem **tizenegy
+beállítást** ír a `Preferences` registry-ágba:
+
+| kulcs | sztring-cím | mire vonatkozik |
+|---|---|---|
+| `printoptions::text` | `0xcb3d14` | a felirat **forrása** (nincs / képfelirat / fájlnév / Exif) |
+| `printoptions::textplacement` | `0xcb3dc4` | a felirat **helye** (kép alatt / képen / szegélyen) |
+| `printoptions::textfont` | `0xcb3e10` | betűtípus — **alapérték `Arial`** (`0xc80a64`) |
+| `printoptions::textsize` | `0xcb3de0` | betűméret |
+| `printoptions::textcolor` | `0xcb3df8` | szövegszín |
+| `printoptions::wrap` | `0xcb3db0` | szöveg tördelése |
+| `printoptions::border` | `0xcb3d28` | van-e szegély |
+| `printoptions::bordersize` | `0xcb3d40` | szegélyvastagság |
+| `printoptions::bordercolor` | `0xcb3d5c` | szegélyszín |
+| `printoptions::borderedge` | `0xcb3d78` | „csak alul" (`bottomonly_checkbox`) |
+| `printoptions::evenborder` | `0xcb3d94` | „egyenletes szélességű szegély" |
+
+**Négy függvény érinti mind a tizenegyet:**
+
+| cím | méret | szerep |
+|---|---:|---|
+| `0x0085e800` | 1444 b | **az OK/Alkalmaz kezelője** — innen írja ki a rádió- és jelölő-értékeket |
+| `0x0085f7a0` | 1230 b | **betöltő** — a panel megnyitásakor olvassa be mind a tizenegyet |
+| `0x0085f3a0` | — | a párja (mentés/visszaállítás) |
+| **`0x00776180`** | 1085 b | **a FOGYASZTÓ: a nyomtatási rajzoló** — a `printing` címtartományban, a `Preferences` mellett `Arial`/`Tahoma` betűnevekkel |
+
+⇒ **A lánc teljes:** panel → `Preferences\printoptions::*` → a nyomtatási
+rajzoló olvassa ki. A beállítás tehát **nem a nyomtatási munkához tapad**,
+hanem globális és tartós.
+
+### 39.2 A vezérlők — két rádiócsoport és négy jelölőnégyzet
+
+A kezelő (`0x0085e800`) csomópontnevei alapján:
+
+| csoport | tagok |
+|---|---|
+| **felirat forrása** (rádió) | `usenotext` · `usecaption` · `usefilename` · `useexif` |
+| **felirat helye** (rádió) | `textbelowimage` · `textonimage` · `textonborder` |
+| **jelölőnégyzet** | `border_checkbox` · `wrap_checkbox` · `bottomonly_checkbox` · `evenwidth_checkbox` |
+| gomb | `ok` · `cancel` · `apply` |
+
+A leltár hivatalos magyar feliratai: „Nincs szöveg" · „Képfeliratok" ·
+„Exif-adatok" · „A kép alatt" · „A képen" · „A szegélyen" · „Szegély színe"
+· „Csak alul" · „Egyenletes szélességű szegély" · „Szöveg tördelése" ·
+„Betűtípus" · „Méret" · „Alkalmaz".
+
+⚠️ **A `usefilename` (fájlnév) vezérlőnek a leltárban NINCS felirata** — a
+kezelőben viszont ott a csomópont. A négyes rádiócsoport tehát teljes, a
+felirat-leltár hiányos; a felirat a `printoptionstext.xml`-ből jön
+(`0x0085d550`).
+
+### 39.3 A tiltó állapot — indexképnél nem használható
+
+A panelnek van saját tiltó felirata:
+
+> `disabled_label` — *„Sorry, but these options cannot be used when printing
+> contact sheets."* / **„Ezek a beállítások indexképek nyomtatásakor nem
+> használhatók."**
+
+⇒ **Indexkép-nyomtatásnál (contact sheet) a keret/felirat beállítások
+kikapcsolódnak.** Ez a mi `printing/contact_sheet.py`-unkat közvetlenül
+érinti.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a panel | önálló `printoptions` párbeszéd, 22 vezérlővel | **nincs** — a `PrintDialog.qml` (383 sor) elrendezést, nyomtatót, lapra-illesztést és tájolást kínál, keret/felirat vezérlőt **egyet sem** | ÚJ JEGY |
+| felirat/szegély a nyomaton | négyféle forrás, háromféle hely, szegély-négyes | a `printing/` csomagban (`layout.py`, `contact_sheet.py`) **nincs** felirat- vagy szegély-kód | ua. |
+| tárolás | 11 tartós `Preferences`-kulcs | — | QSettings, ugyanezzel a bontással |
+| indexképnél | a beállítások **tiltva**, saját magyarázó szöveggel | nincs mit tiltani | a szöveg átvehető |
+| a Beállítások „Nyomtatás" füle | **külön panel** | megvan (`OptionsTabPrinting.qml`, 59 sor) | ne keverjük össze a kettőt |
+
+### Nyitott kérdések mérlege (39.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a tizenegy kulcs és a teljes írás→olvasás lánc (39.1); a
+  vezérlő-készlet csoportosítása (39.2); az indexkép-tiltás és a szövege (39.3).
+- **HATÓKÖRÖN KÍVÜL:** a numerikus **alapértékek** (bordersize, textsize,
+  szín-értékek) kiolvasása a betöltő veremkezeléséből. A betűtípusé mérve
+  (`Arial`); a többinél a stack-slotokból való következtetés a 34.1-ben
+  leírt elcsúszás-kockázatot hozná, és a megvalósításhoz nem kell: a
+  szerződés a **kulcsnevek és a jelentésük**.
+
+### Amit KIZÁRTAM
+
+- **„A keret/felirat beállítás a nyomtatási munkához tapad"** — megdőlt:
+  tizenegy tartós `Preferences`-kulcs, amit a rajzoló (`0x00776180`) minden
+  nyomtatáskor újraolvas (39.1).
+- **„A Beállítások »Nyomtatás« füle ugyanez a panel"** — megdőlt: két külön
+  panel; a fül a nyomtató-oldali beállításoké, a `printoptions` a **nyomat
+  kinézetéé**.
