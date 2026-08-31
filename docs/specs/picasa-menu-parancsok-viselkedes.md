@@ -2150,3 +2150,102 @@ a **panel-megfeleltetés maga is elavulhat** — és az sokkal drágább, mert
 egy sor az egész panelt hiánynak jelzi. **Minden UI-kör első lépése ezért:
 nézd meg a panel megfeleltetési sorát, és hasonlítsd össze a mai
 QML-fával**, mielőtt bármit hiánynak neveznél.
+
+## 43. tétel — a megfeleltetések átvilágítása, és a gyorscímkék TÍZ helye (2026-08-31)
+
+*Ötödik kör az UI-lefedettségi axisról (#1778). A 42. kör után előbb
+**az egész megfeleltetési fájlt** átvilágítottam, csak utána vettem
+panelt.*
+
+### 43.1 A megfeleltetések átvilágítása — a `collagepanel` volt az EGYETLEN elavult sor
+
+A 42. körben kiderült, hogy egy elavult megfeleltetési sor egy egész
+panelt hiánynak tud jelezni. Kézenfekvő volt a kérdés: **hány ilyen sor
+van még?**
+
+Gépi ellenőrzés mind a 74 soron (nem létező fájlra mutató hivatkozás;
+illetve tagadó megjegyzés úgy, hogy a névhez illő QML mégis létezik):
+
+| eredmény | darab |
+|---|---:|
+| nem létező QML-fájlra mutató sor | **0** |
+| tagadó megjegyzés, de létező QML | **0** (a `collagepanel` javítása után) |
+
+A gyanúsnak látszó `makemoviepanel` sor (49 hiány, **egyetlen** listázott
+fájl, „interaktív filmkészítő panel nincs") **helyes**: a QML-fában nincs
+egyetlen `Movie*`/`Film*` fájl sem. Az a hiány valódi, és a #432/#452
+jegyekhez tartozik.
+
+⇒ **A `collagepanel` egyedi eset volt.** Ez fontos negatív eredmény: a
+tábla maradék számai ettől nem torzulnak tovább, tehát a 42. körben
+kimondott „felfelé torzít" figyelmeztetés a **megfeleltetés** szintjén
+LEZÁRUL; az **elem** szintjén (41.) továbbra is él.
+
+### 43.2 ⭐ A gyorscímke-beállító TÍZ helyet ad, nálunk NYOLC van
+
+A `quicktagconfig` panel elemleltára `edit_0` … **`edit_9`** — tíz
+szövegmező. A binárisban a kezelő (`0x0083ea00`, 2063 b) ciklushatára
+ezt megerősíti:
+
+```
+0x0083efa2  cmp eax, 0xa      ; 10 hely
+```
+
+**Nálunk nyolc van.** A `QuickTagsConfigDialog.qml` (98 sor) a saját
+kommentjében ki is mondja: *„a 8 szövegmező közös viselkedése — EXPLICIT
+8 példány (nem Repeater)"*, és a mezők `quickTagField0` … `quickTagField7`
+néven élnek.
+
+Tárolás (`0x0063a5e0`, `0x0083ea00`): a `Preferences` ág
+**`quicktags::tag%d`** kulcsai a címkék, a **`quicktags::enable_recents`**
+a „felső két gomb lefoglalása" kapcsoló. A gyorscímke-gombok a
+felületen a `quicktag_%d` / `%s/quicktag_%1d` csomópontnevek alatt élnek
+(`0x0063c120`, `0x0063c7d0`).
+
+### 43.3 A párbeszéd gombjai: OK / Mégse — nálunk csak „Bezárás"
+
+Az eredeti `quicktagconfig/ok` és `quicktagconfig/cancel` vezérlőkkel
+zár, tehát a **Mégse eldobja** a szerkesztést. Nálunk
+`standardButtons: Dialog.Close` (17. sor) — **egyetlen** gomb, vagyis a
+változtatás azonnal érvényes, és nincs elvetés.
+
+*(Ez nem feltétlenül hiba: a mi párbeszédünk azonnal ír. De **eltérés**,
+és eddig sehol nem volt kimondva.)*
+
+### 43.4 Három elem téves riasztás volt
+
+`recent_checkbox`, `recent_checkbox_label`, `autofill` — mindhárom megvan
+(`quickTagsReserveRecentCheck` 84., felirat 86., `quickTagsAutoFillCheck`
+92. sor). A felirat egy szóban tér el („Reserve **the** top two
+buttons…"), ezért nem párosult gépi úton. Felülbírálva.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **8** (`quickTagField0..7`) | **ÚJ JEGY** |
+| „felső kettő a legutóbbiaknak" | `quicktags::enable_recents` | megvan | — |
+| automatikus kitöltés | `quicktagconfig/autofill` | megvan | — |
+| tárolás | `Preferences\quicktags::tag%d` | QSettings | — |
+| gombok | **OK + Mégse** (elvethető) | csak **Bezárás** (azonnal ír) | dokumentált eltérés vagy átvétel |
+
+### Nyitott kérdések mérlege (43.)
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a megfeleltetési fájl átvilágítása — a `collagepanel` volt
+  az egyetlen elavult sor (43.1); a gyorscímke-helyek száma két
+  független forrásból (leltár + ciklushatár, 43.2); a tárolási kulcsok
+  (43.2); a párbeszéd gombkészletének eltérése (43.3).
+
+### Amit KIZÁRTAM
+
+- **„Több elavult megfeleltetési sor is van"** — megdőlt: gépi
+  ellenőrzés mind a 74 soron, nulla találat (43.1).
+- **„A `makemoviepanel` sora is elavult"** — megdőlt: a QML-fában nincs
+  filmkészítő panel, a sor állítása helyes; az a hiány valódi (43.1).
+- **„A gyorscímke-helyek száma nyolc"** — megdőlt: az eredetiben tíz
+  (43.2). *(A mi nyolcunk saját döntés volt, de sehol nem volt kimondva,
+  hogy eltérés.)*

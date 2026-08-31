@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 132 |
+| párosítva | 135 |
 | másutt megvan (nem ezen a felületen) | 46 |
-| hiányzik | 397 |
-| bizonytalan | 159 |
-| nem értékelhető (rajzoló elem) | 1286 |
-| **lefedettség az értékelhető elemeken** | **18.0%** |
+| hiányzik | 396 |
+| bizonytalan | 158 |
+| nem értékelhető (rajzoló elem) | 1285 |
+| **lefedettség az értékelhető elemeken** | **18.4%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -59,7 +59,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 7 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | 8 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
 | 9 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
-| 10 | `quicktagconfig` | 15 | Gyorscímke-beállító |
+| 10 | `quicktagconfig` | 13 | Gyorscímke-beállító |
 
 ## Panelenkénti lefedettség
 
@@ -74,7 +74,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | `buzzupload` | 55 | 22 | 0 | 1 | 21 | 0 | 33 | **nem-cel** — Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
 | `compose_share` | 49 | 16 | 0 | 0 | 16 | 0 | 33 | **nincs-megfeleltetes** — Megosztási meghívó szerkesztő — nincs nálunk |
-| `quicktagconfig` | 33 | 15 | 0 | 0 | 3 | 12 | 18 | `QuickTagsConfigDialog.qml` |
+| `quicktagconfig` | 33 | 15 | 3 | 0 | 2 | 11 | 17 | `QuickTagsConfigDialog.qml` |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 13 | 0 | 16 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 11 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 5 | 43 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
@@ -498,7 +498,7 @@ Megosztási meghívó szerkesztő — nincs nálunk
 - `visibility_label` „Album visibility:” (magyarul: „Album láthatósága:”)
 - `visibility_menu`
 
-### `quicktagconfig` — 15 hiány · panel-megfeleltetés: `parositva`
+### `quicktagconfig` — 13 hiány · panel-megfeleltetés: `parositva`
 
 Gyorscímke-beállító
 
@@ -515,8 +515,6 @@ Gyorscímke-beállító
 - `edit_8` — *bizonytalan*
 - `edit_9` — *bizonytalan*
 - `ok-label` „OK” (magyarul: „OK”)
-- `recent_checkbox` — *bizonytalan*
-- `recent_checkbox_label` „Reserve top two buttons for recently used tags” (magyarul: „A felső két gomb lefoglalása a legutóbb használt címkék számára”)
 
 ### `buttonmgr` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
