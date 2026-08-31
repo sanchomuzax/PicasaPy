@@ -1,4 +1,15 @@
-"""A Picasa fej+farok tartalom-kulcsa (`originfast`) — #1481.
+"""A Picasa fej+farok SZÁRMAZÁS-kulcsa (`originfast`) — #1481, #1648.
+
+⚠️ **A mező származást azonosít, nem tartalmat** (#1648, mérve élő
+Picasa-adatbázison). A neve pontos: „origin", nem „content". A képlet a
+fájl ELSŐ felvételekor fut; a „Másolat mentése" kimenete viszont a
+FORRÁS értékét ÖRÖKLI, akkor is, ha a szerkesztés bele van égetve és a
+bájtok 99,9%-ban eltérnek. Ez köti a másolatot a forrásához.
+
+Nálunk ez az öröklés MA NINCS meg (a kulcsot mindig a fájl saját
+bájtjaiból számoljuk), és az index sémájában nincs is hova eltenni —
+`originfast` oszlop nem létezik. A különbség következménye: az eredeti a
+másolatot a forrásához kötné, mi nem. Ld. a #1648-at.
 
 Az eredeti Picasa a másodpéldány-kereséshez NEM olvassa végig a fájlt: a
 méretből, az első és az utolsó 16834 bájtból képez egy 64 bites kulcsot, és
@@ -59,7 +70,12 @@ def olvasott_bajtok(meret: int) -> int:
 
 
 def picasa_fast_key(path: Path) -> int | None:
-    """A fájl Picasa-kompatibilis gyors tartalom-kulcsa 64 bites egészként.
+    """A fájl Picasa-kompatibilis gyors kulcsa 64 bites egészként.
+
+    A fájl SAJÁT bájtjaiból számol. Származtatott másolatnál az eredeti
+    ehelyett a forrás értékét örökítené (#1648) — ezt a függvény nem
+    tudja megtenni, mert nem ismeri a forrást; az öröklés a hívó dolga
+    lenne.
 
     `None`, ha a fájl üres (az eredeti ilyenkor `-1`-gyel tér vissza), vagy
     ha nem olvasható (törölt/elérhetetlen NAS-forrás, könyvtár) — ez nem
