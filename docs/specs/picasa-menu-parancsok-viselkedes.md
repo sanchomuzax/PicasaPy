@@ -3060,3 +3060,93 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 0 hatókörön kív�
 - **„A kétképes mód gombjai nálunk némák"** — megdőlt: `enabled: false`,
   tehát szürkék és őszinték (52.3). *(Ellentétben a #1798 esetével, ahol
   a vezérlő kattintható volt és nem csinált semmit.)*
+
+## 53. tétel — az `editpanel` HÁROM eszköz-füle: mind megvan (2026-09-01)
+
+*Tizennegyedik kör az UI-lefedettségi axisról (#1778). Az `editpanel`
+(83 hiány) második szelete: a **vágás**, a **retus** és a **vörösszem**
+fül. A 42. kör tanulsága szerint a szerkesztőt fülenként visszük.*
+
+### 53.1 Tíz elem — mind TÉVES RIASZTÁS
+
+A három fül tíz jelölt eleméről a mérés azt mondja: **megvan nálunk**,
+csak más néven vagy más megfogalmazásban. Mind felvéve a
+`ui-lefedettseg-elemek.csv`-be, fájllal és sorszámmal:
+
+| eredeti | nálunk (`EditorCropPanel.qml`) |
+|---|---|
+| `croptext` | „Choose a size below, then drag on the picture to…" (56. sor) |
+| `crop_aspect_menu` | `cropAspectCombo` (81.) + `cropAspectList` (109.) |
+| `crop_delete_custom` | `cropAspectDelete<i>` (164.), **megerősítéssel** („Delete this custom aspect ratio?", 186.) |
+| `cropsug_preview1/2/3` | `cropSuggestion0/1/2` (270–272.), a „Suggested crops" sorban (237.) |
+
+| eredeti | nálunk (retus / vörösszem) |
+|---|---|
+| `retouch_label` · `retouchtext` | `EditorRetouchPanel.qml:47` · `:56` |
+| `redeye_label` · `redeyetext` | `EditorRedeyePanel.qml:55` · `:64` |
+
+Hatás a táblán: párosítva 143 → **153**, hiányzik 388 → **382**,
+bizonytalan 158 → **154**.
+
+### 53.2 Amit a mi oldalunk TÖBBET tud
+
+A mérés a hiányt keresi, a többletet nem mutatja. Három tétel, amit a
+QML-fa ad, és az eredeti elemleltárában nincs megfelelője:
+
+| nálunk | mi ez |
+|---|---|
+| `cropStraightenWarning` (`EditorCropPanel.qml:67`) | figyelmeztetés, ha a kép tájolását az **egyenesítés** módosította |
+| `cropAspectAddRow` + „Add Custom Aspect Ratio…" (203., 210.) | egyéni képarány **hozzáadása** — az eredetiben csak a **törlés** (`crop_delete_custom`) van nevesítve |
+| `quickCropTopleft` · `quickCropLandscape` (280., 285.) | gyors-vágás gombok |
+| „Regions selected: %1" (`EditorRetouchPanel.qml:89`) | a retusált régiók **számlálója** |
+| „Picasa has found and corrected red eye(s)." / „No red eye was found automatically." (`EditorRedeyePanel.qml:79–80`) | az automatikus vörösszem-keresés **visszajelzése** |
+
+⇒ **A három fül nálunk nem szegényebb, hanem helyenként gazdagabb.**
+*(A „gazdagabb" itt nem érdem, hanem tény: a 45.3 eltérés-tábla
+szempontjából ezek **tudatos többletek**, nem hiányok — és nem is
+eltérések az eredetitől, mert az eredeti sem tiltja őket.)*
+
+### 53.3 Az eredeti útmutató-szövegei — a fogalmazás átvehető
+
+Az eredeti három útmutatója a hivatalos magyar fordítással megvan a
+leltárban, és **pontosabb**, mint a miénk egy ponton: a retus-szövege
+kimondja a **Ctrl+húzás pásztázást** is —
+
+> *„…Megjegyzés: a Ctrl billentyűt nyomva tartva az egér húzásával
+> pásztázhat."*
+
+A mi `EditorRetouchPanel.qml:56` szövege ezt **nem említi**. Ha a
+pásztázás nálunk működik, a mondat átvehető; ha nem működik, az külön
+kérdés.
+
+⇒ Ez **nem hiányzó vezérlő**, hanem **szöveg-pontosítás** — nem jegy,
+hanem a 45.3 tábla „tudott eltérés" sora, amíg valaki meg nem méri, hogy
+a Ctrl+húzás nálunk működik-e.
+
+### Nyitott kérdések mérlege (53.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a tíz elem téves riasztás volta (53.1); a mi többletünk
+  leltára (53.2).
+- **BLOKKOLT:** működik-e nálunk a **Ctrl+húzás pásztázás** a retus-fülön.
+  Ez a mi kódunk kérdése, nem a binárisé; egy dev-kör grep-pel eldönti.
+  **Nem nyitok rá jegyet**, mert a válasz nélkül nem lehet megmondani,
+  hogy szöveg-hiány vagy funkció-hiány — a 45.3 táblába viszont bekerül.
+
+*(Záró mondat a 45.1 szerint: ebben a három fülben **nincs hiányzó
+vezérlő**; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„Az `editpanel` 83 hiánya mind valódi"** — megdőlt: az első két
+  szeletben (kép-nézet, 52. tétel; három eszköz-fül, most) tíz elem
+  téves riasztás volt, és a kép-nézetnél is csak a kétképes mód hiányzik
+  valóban.
+- **„A vágás-javaslatok nálunk nincsenek"** — megdőlt: `cropSuggestion0/1/2`
+  (53.1). *(Ez a 46. körben tett saját megjegyzésem pontosítása is: ott
+  azt írtam, hogy a „suggestion" szó nálunk csak a vágásra utal — igaz
+  volt, de úgy hangzott, mintha kevés lenne; valójában ez a vágás-fül
+  teljes értékű funkciója.)*
