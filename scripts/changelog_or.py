@@ -87,6 +87,29 @@ def van_uj_bejegyzes(changelog_diff: str) -> bool:
     return False
 
 
+#: A verzióemelő diff `+version = "X"` sora — ebből tudjuk, MELYIK kiadás
+#: születik a beolvadáskor.
+_EMELT_VERZIO = re.compile(r'^\+version\s*=\s*"([^"]+)"', re.MULTILINE)
+
+
+def emelt_verzio(pyproject_diff: str) -> str | None:
+    """Melyik verzióra emel ez a PR? `None`, ha nem emel."""
+    talalat = _EMELT_VERZIO.search(pyproject_diff)
+    return talalat.group(1) if talalat else None
+
+
+def van_verzio_szakasz(changelog: str, verzio: str) -> bool:
+    """Van-e a naplóban a verzióhoz tartozó, MEGNEVEZETT szakasz?
+
+    ⚠️ A `[Nem kiadott]` szakasz NEM számít annak: a kiadási jegyzet a
+    `## [X]` címre keres, és a napló verzió-hozzárendelése is ezen múlik.
+    A minta a záró `]`-t is megköveteli, különben a `0.8.15` rátalálna a
+    `0.8.157`-re."""
+    return re.search(
+        rf"^##\s*\[{re.escape(verzio)}\]", changelog, re.MULTILINE
+    ) is not None
+
+
 def van_kiadatlan_szakasz(changelog: str) -> bool:
     """Van-e egyáltalán hova írni? A hiányzó szakasz maga is hiba."""
     return KIADATLAN_CIM in changelog
@@ -149,6 +172,31 @@ def main(
     diff = runner([
         "git", "diff", f"{beallitas.base}...{beallitas.head}", "--", "CHANGELOG.md",
     ])
+    # #1770 (3. réteg): ha ez a PR verziót emel, a naplóban legyen HOZZÁ
+    # tartozó, megnevezett szakasz. A `[Nem kiadott]`-ban hagyott bejegyzést
+    # a mi menetünkben SOHA nem zárja le semmi (az `auto_bump.py` lezáró
+    # lépése csak automatikus emelésnél futna, nálunk viszont minden kód-PR
+    # kézzel emel) — így a következő kiadás jegyzete megismételné, a napló
+    # pedig elvesztené a verzió-hozzárendelést. Mérve: a v0.8.156 és a
+    # v0.8.157 után is bent maradt a bejegyzés.
+    pyproject_diff = runner([
+        "git", "diff", f"{beallitas.base}...{beallitas.head}", "--", "pyproject.toml",
+    ])
+    verzio = emelt_verzio(pyproject_diff.stdout or "")
+    if verzio and not van_verzio_szakasz(naplo, verzio):
+        print(
+            f"::error title=A CHANGELOG szakasza nincs megnevezve::"
+            f"Ez a PR a(z) {verzio} verzióra emel, tehát a beolvadáskor "
+            f"pontosan ez a kiadás születik — a naplóban viszont nincs "
+            f"`## [{verzio}]` szakasz. Nevezd át a `{KIADATLAN_CIM}` "
+            f"szakaszt `## [{verzio}] – ÉÉÉÉ-HH-NN` alakra (a bejegyzésekkel "
+            f"együtt), és tegyél fölé egy üres `{KIADATLAN_CIM}` címet a "
+            f"következő körnek. Enélkül a kiadási jegyzet nem találja meg a "
+            f"hozzá írt mondatokat, és a napló elveszti, mi melyik "
+            f"verzióban ment ki (#1770)."
+        )
+        return 1
+
     if van_uj_bejegyzes(diff.stdout or ""):
         print("Van új CHANGELOG-bejegyzés — rendben.")
         return 0
