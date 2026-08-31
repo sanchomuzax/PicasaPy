@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Kiadatlan]
 
+### Hozzáadva
+- **Működik a „Mappa törlése…" a mappa helyi menüjében (#1638).** Eddig
+  szürke, kattinthatatlan tétel volt — miközben a két szomszédja
+  („Mappa áthelyezése…", „Eltávolítás a Picasából…") működött. Épp a
+  visszafordíthatatlan művelet hiányzott. Mostantól a mappa a
+  **Lomtárba** kerül a teljes tartalmával együtt, ahogy az eredeti
+  Picasában: nem törlődik véglegesen, tehát visszaállítható. A
+  megerősítő kérdés kiírja a mappa nevét, a mappa pedig a törlés után
+  azonnal eltűnik a bal hasábról.
+
 ### Javítva
 - **A mentés és az export hibaüzenete néma maradhatott volna (#1743).** A
   legutóbbi indulási gyorsítás óta a ritkán használt ablakok csak az első

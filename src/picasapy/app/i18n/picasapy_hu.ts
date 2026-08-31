@@ -3263,6 +3263,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Mappa eltávolítása</translation>
     </message>
     <message>
+        <source>Are you sure you want to move the folder &quot;%1&quot; and its contents to the Recycle Bin?</source>
+        <translation>Biztosan a Lomtárba helyezi a(z) „%1&quot; mappát és a teljes tartalmát?</translation>
+    </message>
+    <message>
+        <source>Delete Folder</source>
+        <translation>Mappa törlése</translation>
+    </message>
+    <message>
         <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>

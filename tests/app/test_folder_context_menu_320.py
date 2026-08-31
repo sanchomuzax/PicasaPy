@@ -118,9 +118,11 @@ class TestFolderContextMenu:
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
         """Az inaktív tétel is tétel: LÁTSZIK, de szürke (spec 5.1.)."""
         menu = self._make_menu(qml_engine)
+        # #1638: a „Mappa törlése…" KIKERÜLT ebből a listából — azóta él,
+        # és a mappát a lomtárba teszi. A tétel LÉTE változatlanul őrzött a
+        # fenti sorrend-tesztben.
         for name in (
             "folderMenuHideFolder",
-            "folderMenuDeleteFolder",
             "folderMenuUploadToGooglePhotos",
             "folderMenuAddNameTags",
         ):

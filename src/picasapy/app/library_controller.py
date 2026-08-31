@@ -1225,6 +1225,28 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if mappak:
             self._on_folders_dirty(mappak)
 
+    # SZÁNDÉKOSAN nincs `@Slot` — ugyanazért, amiért a `resyncMovedFolder`-en
+    # sincs: a hívó a `wire_fileops` PYTHON-oldali kötése (`folderDeleted` →
+    # itt), a QML soha nem hívja. Slotként a `kepesseg_or.py` joggal jelezné
+    # felületről elérhetetlen képességnek — a CI el is bukott rajta.
+    def resyncDeletedFolder(self, path: str) -> None:  # noqa: N802
+        """A LOMTÁRBA tett mappa kivezetése az indexből (#1638).
+
+        A `resyncMovedFolder` (#1538) régi oldalával azonos út: a részfát az
+        INDEXBŐL kérdezzük, mert a lemezen már nincs meg. Új oldal nincs,
+        ezért annak a fele elmarad.
+
+        A takarítás itt is mappánként, a `sync_folder` `folder_looks_offline`
+        próbáján át történik: elérhetetlen (nem eltűnt) mappa sorai
+        megmaradnak, offline jelöléssel — nem törlünk olyan sort, amiről nem
+        tudjuk, hogy elavult."""
+        regi = normalize_path(to_local_path(path))
+        if not regi:
+            return
+        mappak = _dedupe_paths(self._reszfa_az_indexbol(regi))
+        if mappak:
+            self._on_folders_dirty(mappak)
+
     def _kovesd_a_gyoker_athelyezeset(self, regi: str, uj: str) -> bool:
         """A FIGYELT GYÖKÉR áthelyezésének követése (#1542).
 

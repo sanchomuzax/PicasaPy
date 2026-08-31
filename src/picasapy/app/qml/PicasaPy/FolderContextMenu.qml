@@ -60,6 +60,8 @@ PicasaMenu {
     signal locateRequested()
     signal removeFromPicasaRequested()
     signal moveFolderRequested()
+    //: #1638: a mappa a LOMTÁRBA, a tartalmával együtt — nem véglegesen
+    signal deleteFolderRequested()
     signal exportAsHtmlRequested()
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
@@ -216,10 +218,14 @@ PicasaMenu {
         text: qsTr("&Move Folder...")
         onTriggered: menu.moveFolderRequested()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderMenuDeleteFolder"
         text: qsTr("&Delete Folder...")
-        placeholder: true
+        // #1638: a mappa-menü három „nagy" parancsa közül ez volt az
+        // egyetlen néma — épp a visszafordíthatatlan. A művelet a
+        // LOMTÁRBA tesz (az eredeti megerősítő szövege mondja ki), tehát
+        // visszaállítható.
+        onTriggered: menu.deleteFolderRequested()
     }
     MenuSeparator {}
 
