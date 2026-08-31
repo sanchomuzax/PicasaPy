@@ -40,7 +40,14 @@ _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 #: 12 073 (`docs/benchmarks/2026-08-31-qml-peldanyositas-1720.md`). A
 #: plafon a mért érték + 3% tartalék: a Qt-verzió apró eltéréseit
 #: elviseli, egy visszavett halasztást viszont nem.
-OBJEKTUM_PLAFON = 12_500
+#:
+#: #1740: a menük tartalomhoz igazodó szélessége (`PicasaMenu`) 37
+#: menü-deklarációt érintett, és menünként néhány objektumot hozott
+#: magával — MÉRVE a CI-n **12 531**, azaz 458-cal a #1720 utáni 12 073
+#: fölött (+3,8%). A plafon ezért 12 900-ra emelkedik: a mért 12 531 + 3%
+#: tartalék. Az emelés így továbbra sem fed el egy visszavett halasztást
+#: — az a 20 ezres nagyságrendbe vinné vissza a számot.
+OBJEKTUM_PLAFON = 12_900
 
 #: Egy ÜRES őr mindig zöld. Az alsó korlát a pozitív kontroll: ha a fa
 #: ennyinél kevesebb objektumból áll, nem a felület épült fel, hanem a
