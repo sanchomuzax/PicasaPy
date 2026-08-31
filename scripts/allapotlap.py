@@ -44,6 +44,7 @@ from kutatas_elszamolas import (  # noqa: E402
     _spec_nyitott_kerdesek,
 )
 from menu_lefedettseg import kovetkezo_ot, merd  # noqa: E402
+from ui_lefedettseg_lap import olvas as _ui_lefedettseg  # noqa: E402
 
 #: A publikált artifact címe. Egy MÁSIK munkamenetből frissítve EZT kell
 #: átadni az `Artifact` hívás `url` mezőjében — enélkül új, különálló lap
@@ -138,6 +139,10 @@ def gyujts() -> dict:
     return {
         "menu": menu,
         "kovetkezo": kovetkezo_ot(menu),
+        # #1778: a menü-axis 2026-08-31-én kimerült (138/138), a következő
+        # az UI-lefedettség. A COMMITOLT mérést olvassuk — az előállító a
+        # privát repóban él (ld. `ui_lefedettseg_lap` docstringje).
+        "ui": _ui_lefedettseg(),
         "jegyek": jegyek,
         "ossz": ossz,
         "erintetlen": erintetlen,
@@ -267,14 +272,82 @@ def _mi_tortent_szakasz(a: dict) -> str:
 """
 
 
-def _kovetkezo_szakasz(a: dict) -> str:
-    if not a["kovetkezo"]:
-        return ('      <p class="empty">Nincs több feltáratlan menüparancs — '
-                'a lefedettség teljes.</p>')
-    sorok = "\n".join(
-        f'          <li><code>{_e(p)}</code></li>' for p in a["kovetkezo"]
+def _kovetkezo_bevezeto(a: dict) -> str:
+    """A szakasz bevezetője — a KÉT axis másképp rendez, tehát mást is ígér.
+
+    #1778: a menüparancs-sor ábécésorrend volt („bárki futtatja, ugyanazt
+    kapja"). Az UI-sor ehelyett a fehér foltok MÉRETE szerint rendez —
+    ugyanúgy nem válogatás, de más ígéret, ezért a szöveg is más."""
+    if a["kovetkezo"]:
+        return ('      <p>Determinisztikus sorrend a lefedettségi mérésből — '
+                'nem válogatás. Ha egy kutatói kör indul, ezekkel kezd.</p>')
+
+    meres = a.get("ui")
+    if meres is None:
+        return ('      <p>A menüparancsok feltárása teljes. A következő '
+                'terület mérése még nincs a fában.</p>')
+
+    # ⚠️ A „hiányzik" szám JELÖLT, nem ítélet. Két egymást követő kör
+    # talált téves riasztást (tíz elem az `acquirepanel`-en, három a
+    # `quicktagconfig`-on), sőt egy egész panel is tévesen látszott
+    # hiánynak. A szám a felülbírálásokkal csökken — az CSÖKKENÉS MUNKA,
+    # nem a mérce lazulása, ezért a felülbírálások számát is kiírjuk.
+    kor = ""
+    if meres.ideje is not None:
+        # a magyar dátum-toldalék pont NÉLKÜL kapcsolódik: „08. 31-i”
+        kor = f' A mérés {meres.ideje.strftime("%Y. %m. %d")}-i'
+        if meres.elavult(datetime.now().date()):
+            kor += (' — ez már régi, a lap újragenerálása előtt érdemes '
+                    'újramérni')
+        kor += "."
+    return (
+        '      <p>A menüparancsok feltárása <strong>teljes</strong> '
+        '(138/138), ezért a sor mostantól a felület fehér foltjait '
+        'mutatja: <strong>a legnagyobbakat, méret szerint</strong> — nem '
+        'válogatás, két futás ugyanazt adja.</p>\n'
+        f'      <p class="note">A {meres.hianyzik} „hiányzó" és a '
+        f'{meres.bizonytalan} bizonytalan elem <strong>feltárandó '
+        f'jelölt, nem megállapított hiány</strong>: eddig '
+        f'{meres.felulbiralasok} elemről derült ki kézi ellenőrzéssel, '
+        f'hogy valójában megvan nálunk, csak máshogy. A szám ezekkel '
+        f'csökken.{kor}</p>'
     )
-    return f'        <ol class="next">\n{sorok}\n        </ol>'
+
+
+def _kovetkezo_szakasz(a: dict) -> str:
+    """A következő kutatói körök — menüparancsok, majd UI-panelek.
+
+    #1778: amíg volt feltáratlan menüparancs, azokat soroltuk. A menü-axis
+    2026-08-31-én kimerült (138/138), ezért a lap az UI-lefedettségre vált.
+    A két axis NEM keveredik: ha még van menüparancs, az megy előbb."""
+    if a["kovetkezo"]:
+        sorok = "\n".join(
+            f'          <li><code>{_e(p)}</code></li>' for p in a["kovetkezo"]
+        )
+        return f'        <ol class="next">\n{sorok}\n        </ol>'
+
+    meres = a.get("ui")
+    if meres is None or not meres.kovetkezo_ot:
+        return ('      <p class="empty">Nincs több feltáratlan menüparancs, '
+                'és UI-lefedettségi mérés sincs a fában.</p>')
+
+    sorok = "\n".join(
+        f'          <li><code>{_e(p.nev)}</code>'
+        f'<span class="txt">{_e(p.leiras)}</span>'
+        f'<span class="db">{p.hiany}</span></li>'
+        for p in meres.kovetkezo_ot
+    )
+    kihagyott = "".join(
+        f'<li><code>{_e(nev)}</code><span class="txt">{_e(indok)}</span></li>'
+        for nev, indok in meres.kihagyott
+    )
+    kihagyott_blokk = (
+        f'      <p class="note">Hatókörön kívül — ezekre nem küldünk kört, '
+        f'de nem is felejtettük el őket:</p>\n'
+        f'      <ul class="skipped">{kihagyott}</ul>'
+        if kihagyott else ""
+    )
+    return f'        <ol class="next">\n{sorok}\n        </ol>\n{kihagyott_blokk}'
 
 
 def _spec_szakasz(a: dict) -> str:
@@ -347,8 +420,7 @@ def epits(a: dict) -> str:
   <section>
     <div class="section-head">
       <h2>A következő öt kutatnivaló</h2>
-      <p>Determinisztikus sorrend a lefedettségi mérésből — nem válogatás.
-         Ha egy kutatói kör indul, ezekkel kezd.</p>
+{_kovetkezo_bevezeto(a)}
     </div>
 {_kovetkezo_szakasz(a)}
   </section>
@@ -480,6 +552,14 @@ _STILUS = """<style>
                font-size:0.75rem; color:var(--ink-faint); min-width:1.1rem; }
   ol.next li:last-child, ul.tickets li:last-child, ul.specs li:last-child {
                border-bottom:1px solid var(--rule-soft); }
+  /* #1778: az UI-axis sorai a hiány MÉRETÉT is mutatják — a szám adja a
+     rangsor értelmét, enélkül a sorrend önkényesnek látszana. */
+  ol.next li .db { margin-left:auto; font-family:var(--font-mono);
+               font-size:0.78rem; color:var(--ink-faint); flex:none; }
+  ul.skipped { list-style:none; margin:0.6rem 0 0; padding:0;
+               font-size:0.83rem; color:var(--ink-faint); }
+  ul.skipped li { display:flex; gap:0.6rem; padding:0.22rem 0;
+               align-items:baseline; }
 
   code { font-family:var(--font-mono); font-size:0.85em; background:var(--accent-wash);
          color:var(--ink); padding:0.1em 0.32em; border-radius:2px; }
