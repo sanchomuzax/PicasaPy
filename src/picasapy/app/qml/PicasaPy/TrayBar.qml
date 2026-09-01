@@ -355,28 +355,42 @@ Column {
             // TÖBB SORBA tördelődnek — nem tűnnek el némán.
             //
             // Húsz referencia-felvétel ugyanabban az 1920×1080-as
-            // ablakban: 15 kijelölt kép → 1 sor, ~55 képpont magas
-            // bélyegképek; 67 kép → 3 sor, ~22 képpont. A doboz külső
-            // mérete közben változatlan. Tehát nem görgetősáv és nem
-            // levágás.
+            // ablakban. A doboz külső mérete közben változatlan: nem
+            // görgetősáv és nem levágás.
             //
             // Nálunk eddig egyetlen `Row` állt itt `clip: true`-val: a be
             // nem férő képek EGYSZERŰEN ELTŰNTEK. A kék infó-csík közben
             // a teljes darabszámot írta — a felület önmagának mondott
             // ellent.
             //
-            // ⚠️ A magasság KÉPLETE a darabszámból nincs levezetve (a
-            // #1904 nyitott kérdése): két mért pontunk van. Amit innen
-            // BIZTOSAN tudunk, az a felső korlát (55) és a három sornál
-            // mért 22 — és a kettő ugyanabból a szabályból jön ki:
+            // ## A MÉRT sorozat (spec `picasa-keptalca.md` 15.2)
             //
-            //     h(sorok) = min(55, (belmagasság − (sorok−1)·hézag) / sorok)
-            //     h(1) = 55 · h(2) = 34 · h(3) = 22   ← a mért érték
+            //   kép | sorok | tartalom | osztásköz
+            //     3 |   1   |   54     |  57,00
+            //    12 |   1   |   48     |  51,00
+            //    15 |   1   |   38     |  39,93
+            //    19 |   1   |   29     |  31,00
+            //    27 |   2   |   28     |  29,94
+            //    49 |   2   |   22     |  24,00
+            //    67 |   3   |  18–19   |  21,00
+            //    82 |   3   |  18–19   |  21,00
             //
-            // A sorszám a legkisebb, amivel minden kép elfér. A becsléshez
-            // névleges 3:2 oldalarányt veszünk (a valódi tördelést a
-            // `Flow` a tényleges szélességekkel végzi; a 3:2 bőven adott,
-            // ezért a tényleges sorszám csak KEVESEBB lehet a becsültnél).
+            // ⚠️ #1916 HELYESBÍTÉS: egy korábbi változat itt „h(2)=34 ·
+            // h(3)=22 ← a mért érték"-et állított. **Ez téves volt** — a
+            // 22 a KÉTSOROS, 49 képes eset tartalma, a háromsoros eseté
+            // 18–19 (21-es osztásközzel). Mért értéknek nevezni valamit,
+            // ami nem az, rosszabb, mint nem tudni.
+            //
+            // ⛔ A cellaméret pontos KÉPLETE: **NINCS MEG.** A spec 15.4
+            // kimerítő keresést közöl a kézenfekvő modellre — ±1 tűréssel
+            // 912 paraméterkészlet megy át a tizenhat megfigyelésen,
+            // pontos egyezéssel NULLA. A tizenhat megfigyelés tehát nem
+            // határozza meg a konstansokat, és a kézenfekvő modell rossz.
+            //
+            // Amit itt számolunk, az ezért NEM az eredeti képlete, hanem
+            // egy VISELKEDÉS: fix doboz, semmi nem lóg ki, több sor nagyobb
+            // darabszámnál — a felső korlát a mért 54. Az őr is ezt
+            // rögzíti, nem képpontszámot.
             Flow {
                 id: trayScratchStrip
                 objectName: "trayScratchStrip"
