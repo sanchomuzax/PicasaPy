@@ -26,7 +26,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import picasapy.app
 import pytest
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QSettings, QUrl
 from PySide6.QtGui import QGuiApplication, QImage
 
 from support.jpeg_factory import make_jpeg
@@ -62,13 +62,27 @@ class _FakePhoto:
 
 @pytest.fixture
 def ket_kep(qt_app, tmp_path):
+    """⚠️ SAJÁT beállítás-tár, nem a gépé.
+
+    A nyomatméret tartós beállítás (`print/lastSize`, #1782). Alapértelmezett
+    `QSettings()`-szel a teszt a GÉP állapotára ül rá: Linuxon egy ini-fájlra
+    a `~/.config`-ban, Windowson a **registrybe**. A CI windows-lába emiatt
+    bukott vissza a 4×6-os alapértelmezésre a beállított 8×10 helyett
+    (`0,667 == 0,8` — a lap aránya a rossz méreté volt).
+
+    A tmp_path-beli ini-fájl tesztenként friss, tehát a teszt ugyanazt
+    méri minden gépen és minden sorrendben.
+    """
     egy = make_jpeg(tmp_path / "egy.jpg", size=(400, 200))
     ketto = make_jpeg(tmp_path / "ketto.jpg", size=(200, 400))
     photos = [
         _FakePhoto(folder_path=str(tmp_path), name=egy.name),
         _FakePhoto(folder_path=str(tmp_path), name=ketto.name),
     ]
-    return PrintController(photo_source=lambda: photos)
+    beallitasok = QSettings(
+        str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+    )
+    return PrintController(photo_source=lambda: photos, settings=beallitasok)
 
 
 class TestALapszam:
