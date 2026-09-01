@@ -83,10 +83,19 @@ Window {
 
     property string lastError: ""
 
+    //: #1629: a megjelenített útvonal OS-NATÍV alakban. A szöveges
+    //: `file://`-levágás Windowson `/C:/Users/…`-t hagyott maga után; a
+    //: helyes átalakítás csak Python-oldalon végezhető el (`to_local_path`,
+    //: #1626). A null-őr a #305/#1572 mintája: a párbeszéd önálló
+    //: próbákban is betöltődik, ahol a vezérlő nincs regisztrálva.
     readonly property string sourceFolderDisplay:
-        importSourceWindow.sourceFolder.replace(/^file:\/\//, "")
+        (typeof fileOpsController !== "undefined" && fileOpsController)
+            ? fileOpsController.toLocalPath(importSourceWindow.sourceFolder)
+            : importSourceWindow.sourceFolder.replace(/^file:\/\//, "")
     readonly property string destFolderDisplay:
-        importSourceWindow.destFolder.replace(/^file:\/\//, "")
+        (typeof fileOpsController !== "undefined" && fileOpsController)
+            ? fileOpsController.toLocalPath(importSourceWindow.destFolder)
+            : importSourceWindow.destFolder.replace(/^file:\/\//, "")
 
     function open() { importSourceWindow.visible = true }
 

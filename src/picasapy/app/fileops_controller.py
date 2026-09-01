@@ -38,6 +38,7 @@ from picasapy.fileops.move_folder import FolderMoveError
 from picasapy.ini import IniConflictError, IniSaveError
 
 from .controller import _to_local_path
+from .formatting import to_local_path
 
 # #295: az átnevezés/áthelyezés `.picasa.ini`-írása is elbukhat a
 # párhuzamosan futó eredeti Picasa miatt (`IniConflictError`) vagy kódolási
@@ -321,6 +322,21 @@ class FileOpsController(QObject):
         if not paths:
             return True
         return all(trash_available(Path(path)) for path in paths)
+
+    @Slot(str, result=str)
+    def toLocalPath(self, path_or_url: str) -> str:  # noqa: N802 — QML-stílus
+        r"""`file://` URL vagy sima útvonal → OS-NATÍV alak, MEGJELENÍTÉSRE.
+
+        #1629: három párbeszéd a `file://` előtagot szöveges cserével
+        vágta le, ami Windowson `/C:/Users/…`-t hagy maga után — a
+        felhasználó `C:\Users\…`-t vár. Tisztán QML-ből ez nem
+        megoldható: a `QUrl.toLocalFile()` a meghajtóbetű elé tett
+        perjelet CSAK Windowson szedi le (mérve a #1626-ban).
+
+        A tényleges munkát a #1626 `formatting.to_local_path`-ja végzi —
+        EGYETLEN helyen, a `_platform()` fogantyún át, hogy a windowsos ág
+        Linuxon is mérhető maradjon."""
+        return to_local_path(path_or_url)
 
     @Slot(str)
     def revealPhoto(self, path: str) -> None:

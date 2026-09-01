@@ -275,7 +275,14 @@ Item {
                     objectName: "exportLocationBox"
                     Layout.preferredWidth: 357
                     readOnly: true
-                    text: exportDialog.targetFolder.replace(/^file:\/\//, "")
+                    //: #1629: OS-natív alak — ld. az `ImportSourceDialog`
+                    //: azonos kötését.
+                    text: (typeof fileOpsController !== "undefined"
+                           && fileOpsController)
+                          ? fileOpsController.toLocalPath(
+                                exportDialog.targetFolder)
+                          : exportDialog.targetFolder.replace(
+                                /^file:\/\//, "")
                     font.pixelSize: Theme.fontSize
                     // #422: jobbklikk-menü (Picasa `Address`)
                     TextFieldContextArea {}
