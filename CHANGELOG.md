@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.197] – 2026-09-01
+
+### Megváltozott
+- **Az „Időrend" egyelőre nem nyitható meg (#1903).** Az eszköztári
+  gombja eltűnt, a `Nézet ▸ Időrend` menüpont szürke, és a `Ctrl+5` sem
+  sül el. Ami eddig megnyílt, az nem az eredeti funkció volt: a Picasa
+  Időrendje **teljes képernyős, animált bemutató** a diavetítő motorján,
+  saját vezérlősávval — nálunk lapos rács volt hónap-fejlécekkel. A
+  menüpont helye megmarad; a valódi nézet megépítése külön munka.
+
 ## [0.8.196] – 2026-09-01
 
 ### Hozzáadva
