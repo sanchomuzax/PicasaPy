@@ -37,7 +37,7 @@ import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRectF, Qt, Signal, Slot
+from PySide6.QtCore import QObject, QRectF, QSettings, Qt, Signal, Slot
 from PySide6.QtGui import QFont, QImage, QPageLayout, QPainter
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
@@ -46,6 +46,11 @@ from picasapy.printing.contact_sheet import (
     DEFAULT_COLUMNS,
     header_rect,
     sheet_pages,
+)
+from picasapy.printing.dpi import (
+    KICSI_KUSZOB_DPI,
+    NyomatMeret,
+    minoseg_osszegzes,
 )
 from picasapy.printing.layout import (
     PageGeometry,
@@ -96,6 +101,57 @@ class PrintController(QObject):
         # #1072: a piszkozat-tilalom szövege és felismerése — közös a
         # `EmailController`-rel, ezért külön objektum (ld. ott a docstringet)
         self._draft_guard = CollageDraftGuard(self)
+        #: #1782: a nyomatméret TARTÓS — az eredetiben a
+        #: `Preferences\PrintLastSize` őrzi két indítás közt. Ugyanaz a
+        #: minta, mint a #1780-nál: amit „a művelethez tapad"-nak
+        #: hinnénk, az valójában globális beállítás.
+        self._settings = QSettings()
+
+    #: A QML-nek átadott méretnevek — a `NyomatMeret` tagjainak nevei.
+    #: A felirat a QML dolga, ide csak az azonosító kell.
+    @Slot(result=list)
+    def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
+        """A mért öt nyomatméret azonosítója, a mérés sorrendjében."""
+        return [tag.name for tag in NyomatMeret]
+
+    @Slot(result=str)
+    def printSize(self) -> str:  # noqa: N802 — QML-stílus
+        """A megjegyzett nyomatméret (`PrintLastSize`), alapból 4×6."""
+        tarolt = self._settings.value("print/lastSize", NyomatMeret.M4X6.name)
+        nevek = {tag.name for tag in NyomatMeret}
+        return tarolt if tarolt in nevek else NyomatMeret.M4X6.name
+
+    @Slot(str)
+    def setPrintSize(self, nev: str) -> None:  # noqa: N802 — QML-stílus
+        """A nyomatméret megjegyzése. Ismeretlen nevet nem tárolunk el —
+        egy elgépelt érték némán elrontaná a következő indulást."""
+        if nev in {tag.name for tag in NyomatMeret}:
+            self._settings.setValue("print/lastSize", nev)
+
+    @Slot(list, str, result="QVariantMap")
+    def printQuality(self, rows, size_name: str):  # noqa: N802 — QML-stílus
+        """A kijelölés minőség-összegzése a választott nyomatmérethez.
+
+        #1782: eddig egy 640×480-as képet 8×10-re lehetett nyomtatni úgy,
+        hogy a program egy szót sem szólt. A `smallest`/`small`/`ready`
+        mezőkből a QML állítja össze az eredeti mondatait
+        (`ThumbUIPrint::Smallest`, `::ReviewPrompt`).
+
+        Az ISMERETLEN méretű kép kicsinek számít — ha nem tudjuk, mekkora,
+        ne nyugtassuk meg a felhasználót."""
+        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        meretek = [
+            (rekord.width or 0, rekord.height or 0)
+            for rekord in self._resolve_records(rows)
+        ]
+        osszegzes = minoseg_osszegzes(meretek, meret)
+        return {
+            "smallest": osszegzes.legkisebb_dpi,
+            "small": osszegzes.kicsik,
+            "total": osszegzes.osszes,
+            "ready": osszegzes.keszen_all,
+            "threshold": KICSI_KUSZOB_DPI,
+        }
 
     @Slot(result=list)
     def listPrinters(self) -> list[str]:

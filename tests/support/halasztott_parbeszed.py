@@ -25,6 +25,8 @@ MENUPONT = {
     "importSourceDialog": "menuFileImportFrom",
     "saveDialogs": "menuFileSave",
     "exportDialog": "menuFileExport",
+    # #1782: a nyomtatás-párbeszéd — a Fájl ▸ Nyomtatás… tétele
+    "printDialog": "menuFilePrint",
 }
 
 

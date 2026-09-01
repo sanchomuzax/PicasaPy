@@ -73,6 +73,25 @@ Window {
     property bool contactSheet: false
     property int contactColumns: 4
 
+    // #1782: a nyomatméret (`0x00743700`) és a hozzá tartozó
+    // minőség-összegzés. A méret TARTÓS — az eredetiben a
+    // `Preferences\PrintLastSize` őrzi; nálunk a vezérlő teszi el.
+    property string printSize: "M4X6"
+    //: a mért öt méret felirata, a vezérlő azonosítói sorrendjében
+    readonly property var printSizeLabels: [
+        qsTr("3.5 x 5 in"), qsTr("4 x 6 in"), qsTr("5 x 7 in"),
+        qsTr("8 x 10 in"), qsTr("Wallet")
+    ]
+    property var printSizeIds: []
+    //: {smallest, small, total, ready, threshold} — a vezérlőtől
+    property var quality: ({})
+
+    function frissitsdAMinoseget() {
+        if (!printWindow.printCtl) return
+        printWindow.quality = printWindow.printCtl.printQuality(
+            printWindow.rows, printWindow.printSize)
+    }
+
     property string lastError: ""
     property string lastResult: ""
     // a feladatból kimaradt képek nevei (videó/RAW: a `QImage` nem nyitja
@@ -93,6 +112,12 @@ Window {
 
     function openForRows(targetRows) {
         printWindow.rows = targetRows ? targetRows : []
+        // #1782: a megjegyzett méret visszatöltése, majd a minőség-mérés
+        if (printWindow.printCtl) {
+            printWindow.printSizeIds = printWindow.printCtl.printSizes()
+            printWindow.printSize = printWindow.printCtl.printSize()
+        }
+        printWindow.frissitsdAMinoseget()
         printWindow.lastResult = ""
         printWindow.lastSkipped = []
         // ⚠️ #1590: az elrendezés NEM élheti túl a bezárást. Ha az
@@ -225,6 +250,65 @@ Window {
                     to: 10
                     value: printWindow.contactColumns
                     onValueModified: printWindow.contactColumns = value
+                }
+            }
+        }
+
+        // -- nyomatméret + minőség-ellenőrzés (#1782) ---------------------
+        // Az eredeti panel a választott mérethez kiszámolja minden kép
+        // effektív felbontását, és nyomtatás ELŐTT szól, ha valamelyik túl
+        // kicsi. Enélkül egy 640×480-as kép szó nélkül ment ki 8×10-re.
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 2
+            visible: !printWindow.contactSheet
+            Text {
+                text: qsTr("Print size:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            ComboBox {
+                id: printSizeBox
+                objectName: "printSizeBox"
+                Layout.fillWidth: true
+                model: printWindow.printSizeLabels
+                currentIndex: Math.max(
+                    0, printWindow.printSizeIds.indexOf(printWindow.printSize))
+                onActivated: {
+                    var azonosito = printWindow.printSizeIds[currentIndex]
+                    if (!azonosito) return
+                    printWindow.printSize = azonosito
+                    // a méret TARTÓS (`PrintLastSize`) — azonnal eltesszük
+                    if (printWindow.printCtl)
+                        printWindow.printCtl.setPrintSize(azonosito)
+                    printWindow.frissitsdAMinoseget()
+                }
+            }
+            Text {
+                objectName: "printQualityText"
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                //: figyelmeztetés esetén hangsúlyos, egyébként semleges
+                color: printWindow.quality.ready === false
+                       && printWindow.quality.total > 0
+                       ? Theme.brandRed : Theme.ink
+                text: {
+                    var q = printWindow.quality
+                    if (!q || !q.total) return ""
+                    //: `ThumbUIPrint::Smallest`
+                    var sor = qsTr("Smallest picture: %1 pixels/inch.")
+                                  .arg(q.smallest)
+                    if (q.small > 0) {
+                        //: `ThumbUIPrint::ReviewPrompt` — az egyes/többes
+                        //: szám az eredetiben is külön erőforrás
+                        var db = q.small === 1
+                            ? qsTr("%1 small picture found.").arg(q.small)
+                            : qsTr("%1 small pictures found.").arg(q.small)
+                        return sor + " " + db + " "
+                               + qsTr("Please review before printing.")
+                    }
+                    return sor + " " + qsTr("You are ready to print.")
                 }
             }
         }
