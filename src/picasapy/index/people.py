@@ -41,6 +41,44 @@ class PersonRecord:
 FaceData = tuple[str, dict[str, str], dict[str, tuple[Face, ...]]]
 
 
+#: A Személyek lista három rendezési módja (#1767). A sorrend az eredeti
+#: `Preferences\peoplesort` értékeit követi: 0 = név, 1 = darabszám,
+#: 2 = Top 10.
+PEOPLE_SORT_MODES = ("name", "count", "top")
+
+#: A „Top 10" mód felső korlátja. Az eredeti FELIRATA mondja ki a tízet
+#: (`Sort People by Top &10`); a holtverseny és a „továbbiak" tétel
+#: viselkedése NINCS mérve — nálunk a darabszám-sorrend első tíz eleme
+#: áll, holtversenynél a névsor dönt (ugyanaz a kulcs, mint a
+#: `people_with`-nél). Ez TUDATOS egyszerűsítés, nem mérés.
+TOP_LIST_LIMIT = 10
+
+
+def rendezd_szemelyeket(
+    records: "tuple[PersonRecord, ...]", mode: str
+) -> "tuple[PersonRecord, ...]":
+    """A Személyek lista rendezése (és a `top` módban SZŰRÉSE) — #1767.
+
+    Tiszta függvény: nem nyúl adatbázishoz, nem függ Qt-tól. Ismeretlen
+    módra a NÉV szerinti sorrendet adja, ami az eredeti alapértéke is
+    (`peoplesort=0`) — hibás beállításból ne legyen üres lista."""
+    if mode == "count":
+        return _darabszam_szerint(records)
+    if mode == "top":
+        return _darabszam_szerint(records)[:TOP_LIST_LIMIT]
+    return tuple(sorted(records, key=lambda r: r.name.casefold()))
+
+
+def _darabszam_szerint(
+    records: "tuple[PersonRecord, ...]",
+) -> "tuple[PersonRecord, ...]":
+    """Legtöbb fotó elöl, azonos darabszámnál névsor — ugyanaz a kulcs,
+    amit a `people_with` is használ."""
+    return tuple(
+        sorted(records, key=lambda r: (-r.photo_count, r.name.casefold()))
+    )
+
+
 def people_in_index(
     conn: sqlite3.Connection,
     face_data: tuple[FaceData, ...] | None = None,

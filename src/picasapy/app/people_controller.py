@@ -22,7 +22,13 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy.index import open_index
-from picasapy.index.people import people_in_index, people_with, person_photos
+from picasapy.index.people import (
+    PEOPLE_SORT_MODES,
+    people_in_index,
+    people_with,
+    person_photos,
+    rendezd_szemelyeket,
+)
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
@@ -58,10 +64,33 @@ class PeopleMixin:
     def people(self):
         """A bal hasábnak: `[{name, count}, ...]` — LISTA, nem tuple (#232,
         a QML-ben a tuple nem tömb), a `albums` property mintájára."""
+        # #1767: a rendezés a MEGJELENÍTÉSNÉL történik, nem a
+        # begyűjtésnél — az `people_in_index` eredményét a Projektek
+        # gyűjtemény is használja (`index/side_pane.py`), és annak a
+        # sorrendje nem a hasáb beállításától függ.
         return [
             {"name": person.name, "count": person.photo_count}
-            for person in self._people
+            for person in rendezd_szemelyeket(self._people, self.peopleSort)
         ]
+
+    @Property(str, notify=peopleChanged)
+    def peopleSort(self) -> str:
+        """A Személyek lista rendezési módja (#1767).
+
+        Az eredetiben a `Preferences\\peoplesort` őrzi (0 = név,
+        1 = darabszám, 2 = Top 10); nálunk `view/peopleSort`. Ismeretlen
+        tárolt értékre a NÉV szerinti alapértékre esünk vissza — egy
+        elrontott beállításból ne legyen üres hasáb."""
+        tarolt = self._get_settings().value("view/peopleSort", "name")
+        return tarolt if tarolt in PEOPLE_SORT_MODES else "name"
+
+    @Slot(str)
+    def setPeopleSort(self, mode: str) -> None:
+        """A három menütétel („Sort People by Name / Amount / Top 10")."""
+        if mode not in PEOPLE_SORT_MODES:
+            return
+        self._get_settings().setValue("view/peopleSort", mode)
+        self.peopleChanged.emit()
 
     @Property(str, notify=personViewChanged)
     def currentPersonName(self):

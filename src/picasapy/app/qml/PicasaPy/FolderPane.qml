@@ -935,6 +935,14 @@ Rectangle {
         // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
         simplifiedTree:
             pane.hierarchyController ? pane.hierarchyController.simplified : false
+        // #1767: a Személyek lista rendezése — a `!== undefined` a
+        // #1572-őr mintája (a próbák stub-vezérlőjén hiányozhat)
+        peopleSort: (controller && controller.peopleSort !== undefined)
+            ? controller.peopleSort : "name"
+        onPeopleSortRequested: function(mode) {
+            if (controller && controller.setPeopleSort !== undefined)
+                controller.setPeopleSort(mode)
+        }
         onSortModeRequested: function(mode) {
             if (controller) controller.setPaneSort(mode)
         }

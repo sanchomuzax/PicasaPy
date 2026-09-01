@@ -9,8 +9,10 @@ felvételéről)."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, QSettings
 
 from support.jpeg_factory import make_jpeg
 
@@ -53,6 +55,18 @@ def host(qt_app, tmp_path, library):
 
         def _show(self, records):
             self._shown = records
+
+        def _get_settings(self):
+            """#1767: a `people` property a rendezési módot a
+            beállításokból olvassa (`view/peopleSort`). A valódi gazda az
+            `AppController`, ott ez megvan — a próbagazdának is meg kell
+            adni, különben nem a valódi utat mérnénk."""
+            if getattr(self, "_beallitasok", None) is None:
+                self._beallitasok = QSettings(
+                    str(Path(self._db_path).parent / "settings.ini"),
+                    QSettings.Format.IniFormat,
+                )
+            return self._beallitasok
 
     instance = _Host(tmp_path / "index.db")
     with open_index(tmp_path / "index.db") as conn:

@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.170] – 2026-09-01
+
+### Hozzáadva
+- **A Személyek lista mostantól háromféleképpen rendezhető (#1767).** A
+  bal oldali lista eddig **kizárólag névsorban** állt, és a menüjében ott
+  szereplő három rendezési pont **nem csinált semmit**. Mostantól
+  választhatsz: **név szerint**, **darabszám szerint** (aki a legtöbb
+  képen szerepel, elöl), vagy **Top 10** (csak a tíz leggyakoribb
+  személy). A választás megmarad a következő indításig — ahogy az
+  eredeti Picasában.
+
 ## [0.8.169] – 2026-09-01
 
 ### Egyéb
