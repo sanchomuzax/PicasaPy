@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.169] – 2026-09-01
+
+### Egyéb
+- **Az indulási lassulás megszűnt — és most már őrzi is valami (#1719).**
+  Amikor augusztus végén bejelentetted, hogy a program lassan indul, a
+  felület betöltése **11,4 másodperc** volt. A mai mérés szerint **1,7
+  másodperc** — a lassulás időközben megszűnt. Ami eddig hiányzott: egy
+  ellenőrzés, ami **észreveszi, ha visszajön**. Mostantól minden új
+  párbeszéd-ablaknál kiderül, ha fölöslegesen épülne fel minden
+  induláskor. Ez nincs hatással arra, amit a képernyőn látsz.
+
 ## [0.8.168] – 2026-09-01
 
 ### Egyéb
