@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 18" width="17" height="18">
+  <!-- PicasaPy sajat rajz (#1927): „Tulajdonságok" panelkapcsoló. Méret az
+       eredetiből mérve (`thumbui/properties_icon` 17×18); a rajz a sajátunk. -->
+  <rect x="1.2" y="0.8" width="14.6" height="16.4" rx="1.2" fill="#f2efe9" stroke="#6f6f6f" stroke-width="1.2"/>
+  <path d="M4 5 H13 M4 8 H13 M4 11 H10" stroke="#6f6f6f" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

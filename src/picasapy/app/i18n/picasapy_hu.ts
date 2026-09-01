@@ -5342,6 +5342,38 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>TrayBar</name>
     <message>
+        <source>People</source>
+        <translation>Emberek</translation>
+    </message>
+    <message>
+        <source>Places</source>
+        <translation>Helyek</translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation>Címkék</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>Tulajdonságok</translation>
+    </message>
+    <message>
+        <source>Show/Hide People Panel</source>
+        <translation>Emberek panel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Places Panel</source>
+        <translation>Helyek panel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Tags Panel</source>
+        <translation>Címkék panel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Properties Panel</source>
+        <translation>Tulajdonságok panel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
         <source>Order Prints (service discontinued)</source>
         <translation>Papírképek rendelése (a szolgáltatás megszűnt)</translation>
     </message>

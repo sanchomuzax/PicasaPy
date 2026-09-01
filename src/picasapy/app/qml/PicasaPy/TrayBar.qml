@@ -811,6 +811,113 @@ Column {
                     }
                 }
 
+                // #1927: `thumbui/rect: metadata_group` — a NÉGY
+                // panelkapcsoló (Emberek · Helyek · Címkék · Tulajdonságok).
+                //
+                // Mérve a `respack.yt` rétegfejléceiből (#1914; a tálca
+                // függőleges méretei 1:1-ben képpontok):
+                //
+                //   metadata_group     545..785 × 448..472  →  240×24
+                //   people_toggle      545..605             →   60×24
+                //   places_toggle      605..665             →   60×24
+                //   tags_toggle        665..725             →   60×24
+                //   properties_toggle  725..785             →   60×24
+                //
+                // A négy gomb ÉRINTKEZIK (545→605→665→725→785, nincs rés),
+                // és a típusneveik a szegmens-szerepet is megadják:
+                // `buttcon_LS_` (bal szélső) · `_MS_` (két középső) ·
+                // `_RS_` (jobb szélső) ⇒ ÖSSZEFÜGGŐ SZEGMENSSÁV, nem négy
+                // különálló gomb. A `_text_RC` utótag: az ikon balra, a
+                // felirat tőle jobbra, függőlegesen középre.
+                //
+                // A panelek MEGVANNAK (`activeDrawerTab`: people/places/
+                // tags/properties) — itt csak a MÁSODIK belépési pont
+                // hiányzott; a menüből eddig is el lehetett érni őket.
+                //
+                // ⚠️ Az ikonok SAJÁT RAJZOK. A méretük az eredetiből mért
+                // (`people_icon` 19×17, `places_icon` 14×19, `tags_icon`
+                // 19×15, `properties_icon` 17×18), de a projekt egyetlen
+                // kicsomagolt Picasa-képet sem szállít — minden ikonunk
+                // kézzel rajzolt SVG.
+                //
+                // ⛔ NINCS MEG: hogy a négy kapcsoló KIZÁRÓ csoport-e. A
+                // #1773 a jobb fiók négy LAPJÁRA mérte ki a kizárólagosságot,
+                // és nálunk egyetlen `activeDrawerTab` írja le mind a
+                // négyet — a gombok ezt tükrözik. Hogy az EREDETI is így
+                // viselkedik-e, nincs megmérve; a #1927 nyitott kérdése.
+                Row {
+                    id: trayMetadataGroup
+                    objectName: "trayMetadataGroup"
+                    anchors.right: trayZoomGroup.left
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
+
+                    readonly property var kapcsolok: [
+                        { nev: "people", ikon: "panel-emberek.svg",
+                          felirat: qsTr("People"),
+                          sugo: qsTr("Show/Hide People Panel") },
+                        { nev: "places", ikon: "panel-helyek.svg",
+                          felirat: qsTr("Places"),
+                          sugo: qsTr("Show/Hide Places Panel") },
+                        { nev: "tags", ikon: "panel-cimkek.svg",
+                          felirat: qsTr("Tags"),
+                          sugo: qsTr("Show/Hide Tags Panel") },
+                        { nev: "properties", ikon: "panel-tulajdonsagok.svg",
+                          felirat: qsTr("Properties"),
+                          sugo: qsTr("Show/Hide Properties Panel") }
+                    ]
+
+                    Repeater {
+                        model: trayMetadataGroup.kapcsolok
+                        delegate: PicasaButton {
+                            required property var modelData
+                            required property int index
+                            objectName: "trayPanelToggle_" + modelData.nev
+                            width: 60
+                            height: 24
+                            //: a szegmens-szerep: a szélsők lekerekítve, a
+                            //: középsők nem — így áll össze az összefüggő sáv
+                            readonly property bool balSzelso: index === 0
+                            readonly property bool jobbSzelso:
+                                index === trayMetadataGroup.kapcsolok.length - 1
+                            //: #718-minta: a főablak átmenetileg null lehet
+                            //: az engine leépítésekor
+                            readonly property bool aktiv:
+                                tray.appWindow
+                                && tray.appWindow.activeDrawerTab === modelData.nev
+                            accent: aktiv ? Theme.selectionBlue : "transparent"
+                            ToolTip.text: modelData.sugo
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
+                            //: ⚠️ a #1773 rádió-csapdája: az AKTÍV gombra
+                            //: kattintva a fiók BEZÁRUL, nem marad
+                            //: állapot nélkül
+                            onClicked: {
+                                if (!tray.appWindow) return
+                                tray.appWindow.activeDrawerTab =
+                                    aktiv ? "" : modelData.nev
+                            }
+                            contentItem: Row {
+                                spacing: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                Image {
+                                    source: "icons/" + modelData.ikon
+                                    width: 16; height: 16
+                                    fillMode: Image.PreserveAspectFit
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Text {
+                                    text: modelData.felirat
+                                    color: aktiv ? "white" : Theme.ink
+                                    font.pixelSize: Theme.fontSize - 1
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // `scale_group` — nagyítás-csúszka − / + jelekkel
                 // (kézikönyv 06), a sáv jobb felső sarkához zárva
                 // (`m_offsetRT` a `basecontrolset`-en)
