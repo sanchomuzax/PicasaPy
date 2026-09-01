@@ -8281,6 +8281,14 @@ Restore it to continue where you left off. If you discard it, the draft is delet
         <source>%1 copies saved</source>
         <translation>%1 másolat mentve</translation>
     </message>
+    <message>
+        <source>One or more images could not be rotated because of the file type.</source>
+        <translation>Egy vagy több képet nem lehetett elforgatni a fájltípus miatt.</translation>
+    </message>
+    <message>
+        <source>Must have selected images to rotate.</source>
+        <translation>Ki kell jelölnie képeket a forgatáshoz.</translation>
+    </message>
 </context>
 <context>
     <name>CollageDialogs</name>

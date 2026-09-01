@@ -308,6 +308,28 @@ Window {
         //:
         //: A második sor viszont HIVATALOS: `CThumbUI::clickview` — ugyanaz
         //: a felirat, amit az importálás kész-értesítése is használ.
+        //: #1755: a forgatás két jelző ága. MINDKÉT szöveg HIVATALOS
+        //: Picasa-erőforrás (`IDS_ROT_TYPEFAILED`, `IDS_MUST_SELECT_TO_ROT`)
+        //: — a magyar is a szövegtárból való, nem a mi fogalmazásunk.
+        //:
+        //: Eddig mindkét eset néma volt: vegyes fotó+videó kijelölésnél a
+        //: videók kimaradtak (#103), a felhasználó pedig csak annyit
+        //: látott, hogy nem forgott el minden.
+        function onRotationTypeFailed(skipped) {
+            if (skipped <= 0)
+                return
+            notifier.notify(
+                "rotate-failed",
+                qsTr("One or more images could not be rotated because of the file type."),
+                "", "")
+        }
+
+        function onRotationNeedsSelection() {
+            notifier.notify(
+                "rotate-noselection",
+                qsTr("Must have selected images to rotate."), "", "")
+        }
+
         function onSaveCopyReady(saved, targetPath) {
             //: Egyetlen sikeres mentés sem volt: a művelet vagy meg lett
             //: szakítva, vagy elbukott — az utóbbit a `SaveDialogs.qml`

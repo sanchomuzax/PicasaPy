@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.183] – 2026-09-01
+
+### Javítva
+- **A forgatás megszólal, ha nem tud mindent elforgatni (#1755).** Vegyes
+  kijelölésnél (fotó + videó) a videók eddig is kimaradtak, de a program
+  hallgatott róla — a felhasználó csak annyit látott, hogy nem forgott el
+  minden. Mostantól kiírja: „Egy vagy több képet nem lehetett elforgatni a
+  fájltípus miatt." Kijelölés nélküli forgatásra pedig „Ki kell jelölnie
+  képeket a forgatáshoz." Mindkét mondat az eredeti Picasa saját szövege,
+  a hivatalos magyar fordításban.
+
 ## [0.8.182] – 2026-09-01
 
 ### Hozzáadva
