@@ -215,16 +215,29 @@ class TestAGyokerEltunesenekFelismerese:
 
     def test_a_LECSATOLT_MOUNT_NEM_eltunt(self, tmp_path):
         """⚠️ A jegy határesete. A lecsatolt NAS csatolási pontja ÜRES
-        KÖNYVTÁRKÉNT marad ott: LÉTEZIK, tehát nem „eltűnt" — az
-        elérhetetlenségét a meglévő `folder_looks_offline` mondja ki."""
-        from picasapy.index import folder_looks_offline, watched_root_missing
+        KÖNYVTÁRKÉNT marad ott: LÉTEZIK, tehát nem „eltűnt".
+
+        ⚠️ #1909: az elérhetetlenséget itt már NEM a mappa-szintű
+        `folder_looks_offline` mondja ki, hanem a GYÖKÉR-szintű próba. A
+        kettő szándékosan különbözik: a gyökér üressége önmagában gyanús
+        (ez a #1560 mérése), egy MAPPA üressége viszont a leggyakoribb
+        esetben azt jelenti, hogy a felhasználó kiürítette — erről
+        állított valótlant a felület („jelenleg nem elérhető … lecsatolt
+        meghajtó"), miközben a mappa olvasható volt.
+
+        A VÉDELEM ereje változatlan: a `_gyoker_baja` továbbra is
+        visszatartja a takarítást az egész fára, ahogy a
+        `TestALecsatoltNasAlmappai` méri.
+        """
+        from picasapy.index import watched_root_missing
+        from picasapy.index.sync import _gyoker_ures_vagy_olvashatatlan
 
         mount = tmp_path / "mnt" / "photo"
         mount.mkdir(parents=True)
         assert watched_root_missing(mount) is False, (
             "a lecsatolt csatolási pontot eltűntnek minősítettük"
         )
-        assert folder_looks_offline(mount) is True
+        assert _gyoker_ures_vagy_olvashatatlan(mount) is True
 
     @pytest.mark.skipif(_ROOTKENT_FUT, reason="rootként a jogosultság nem korlátoz")
     @pytest.mark.skipif(_WINDOWSON, reason="a chmod Windowson nem korlátoz — ld. _WINDOWSON")
