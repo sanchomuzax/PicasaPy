@@ -67,6 +67,34 @@ def van_erdemi_valtozas(diff: str) -> bool:
     return False
 
 
+def csak_komment_valtozas(diff: str) -> bool:
+    """Csak `#`-megjegyzés (és üres) sorok változtak a fájlban? (#1875)
+
+    ⚠️ **A szabály SZÁNDÉKOSAN szűk.** Nem tud kódváltozást elrejteni:
+    bármely érdemi sor a diffben azonnal kiüti, mert az nem `#`-kezdetű.
+    A Python-DOCSTRING-et NEM kezeli (az nem `#`-sor) — ott a szigor
+    marad. A téves riasztás bosszantó, a téves ÁTENGEDÉS néma, ezért a
+    kétes eset a szigorú oldalra dől.
+
+    Üres diff = „nem tudjuk" ⇒ NEM mondjuk kommentnek.
+
+    Miért kell: a projekt elve, hogy a „miért" a kód mellett éljen — a
+    `render/` konstansainak `#:` blokkjai tele vannak mért levezetéssel.
+    Az őr ezt eddig megadóztatta: a #1873-at (a #1607 mérésének
+    beírását a konstans mellé) elbuktatta, holott egyetlen kódsor sem
+    változott, és a CHANGELOG-ba nem-felhasználói mondat került volna.
+    """
+    latott = False
+    for sor in diff.splitlines():
+        if not sor or sor[0] not in "+-" or sor.startswith(("+++", "---")):
+            continue
+        latott = True
+        tartalom = sor[1:].strip()
+        if tartalom and not tartalom.startswith("#"):
+            return False
+    return latott
+
+
 def kell_bejegyzes(fajlok: Iterable[str]) -> bool:
     """Érinti-e a változás a felhasználót? Ugyanaz a mérce, mint a kiadásé."""
     return kiadasra_erdemes(list(fajlok))
@@ -149,6 +177,24 @@ def main(
     fajlok = [s for s in (valtozott.stdout or "").splitlines() if s.strip()]
 
     erdemi = [f for f in fajlok if kell_bejegyzes([f])]
+
+    # #1875: a csak-megjegyzés változás nem jut el a felhasználóhoz. A
+    # `kell_bejegyzes` FÁJLNÉV alapján dönt, tehát a kommentet sem tudja
+    # megkülönböztetni a kódtól; itt a DIFF dönt.
+    csak_kommentesek = [
+        f
+        for f in erdemi
+        if csak_komment_valtozas(
+            (runner(["git", "diff", f"{beallitas.base}...{beallitas.head}", "--", f]).stdout or "")
+        )
+    ]
+    if csak_kommentesek:
+        print(
+            "Csak megjegyzés változott ezekben: "
+            + ", ".join(csak_kommentesek)
+        )
+        erdemi = [f for f in erdemi if f not in csak_kommentesek]
+
     if erdemi == ["pyproject.toml"]:
         pyproject_diff = runner([
             "git", "diff", beallitas.base, beallitas.head, "--", "pyproject.toml",
