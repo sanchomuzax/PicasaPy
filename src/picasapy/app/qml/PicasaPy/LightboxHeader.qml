@@ -23,6 +23,33 @@ ColumnLayout {
     // mint a rács üres területén és a bal panel mappa-során
     signal contextMenuRequested()
 
+    //: #1823: a fejléc-gombok DARABSZÁMOT írnak ki. A bináris erőforrásai
+    //: minden fejléc-gombot két alakban tartanak — `albumbutton_save` és
+    //: `albumbutton_save%d` —, vagyis üres kijelölésnél a szám nélküli,
+    //: kijelölésnél a számos felirat megy ki.
+    //:
+    //: ⚠️ A `play` gombra ez NEM igaz: a mért listában (`save`, `sstar`,
+    //: `sall`, `album`, `cd`, `menu`, `pubaction`) nincs `play%d`. A
+    //: diavetítés ezért ikon marad, szám nélkül — a jegy „a play is"
+    //: mondata a mérésnek mond ellent.
+    property int selectedCount: 0
+
+    //: „Szerkesztések mentése lemezre" (`save_edits`) — a kijelölt képek
+    //: szerkesztéseit a FÁJLBA írja. A művelet maga a #444 mentés-
+    //: párbeszédéé; ez a gomb csak egy újabb belépési pont hozzá.
+    signal saveEditsRequested()
+
+    //: „Csillagozottak kijelölése" (`select_star`) — ugyanaz a parancs,
+    //: mint a menüsávban; itt is a jelenlegi mappára hat (#1145).
+    signal selectStarredRequested()
+
+    //: A számos/szám nélküli alak választása egy helyen, hogy minden
+    //: fejléc-gomb ugyanúgy viselkedjen.
+    function feliratSzammal(alap) {
+        return header.selectedCount > 0
+            ? alap + " (" + header.selectedCount + ")" : alap
+    }
+
     TapHandler {
         acceptedButtons: Qt.RightButton
         gesturePolicy: TapHandler.ReleaseWithinBounds
@@ -139,13 +166,34 @@ ColumnLayout {
             HoverHandler { id: headerPlayHover }
             TapHandler { onTapped: header.playRequested() }
         }
-        Rectangle {
-            width: 26; height: 22; radius: 3
-            color: Theme.contentPanel; border.color: Theme.chromeBorder
-            Text { anchors.centerIn: parent; text: "☆"; color: Theme.textGray; font.pixelSize: 13 }
+        // #1823: eddig ez egy néma díszcsempe volt — se neve, se
+        // kezelője. Most a mért `select_star` gomb: a jelenlegi mappa
+        // csillagozott képeit jelöli ki.
+        PicasaButton {
+            objectName: "headerSelectStarredButton"
+            text: header.feliratSzammal("☆")
+            Layout.preferredHeight: 22
+            ToolTip.text: qsTr("Select starred photos")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: header.selectStarredRequested()
+        }
+        // #1823: „szerkesztések mentése lemezre" (`save_edits`) — a
+        // fejlécről eddig teljesen hiányzott, pedig a művelet megvan
+        // (#444). Üres kijelölésnél tiltott: a mentés a KIJELÖLTEKRE hat.
+        PicasaButton {
+            objectName: "headerSaveEditsButton"
+            text: header.feliratSzammal(qsTr("Save"))
+            enabled: header.selectedCount > 0
+            Layout.preferredHeight: 22
+            ToolTip.text: qsTr("Save edited photos to disk")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: header.saveEditsRequested()
         }
         PicasaButton {
-            text: qsTr("Upload") + " ▾"
+            objectName: "headerUploadButton"
+            text: header.feliratSzammal(qsTr("Upload")) + " ▾"
             enabled: false
             Layout.preferredHeight: 22
         }

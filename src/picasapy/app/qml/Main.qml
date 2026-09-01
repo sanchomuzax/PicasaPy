@@ -493,6 +493,12 @@ ApplicationWindow {
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
+    //: #1823: „szerkesztések mentése lemezre" a mappa-fejlécről. A
+    //: művelet a #444 mentés-párbeszédéé — ez csak egy újabb belépési
+    //: pont, ugyanazzal a megerősítéssel és biztonsági mentéssel.
+    function saveSelectedEdits() {
+        saveDialogs.ensure().openSave(window.selectedIndexes)
+    }
     // #422: „Exportálás HTML-oldalként…" a mappa-kontextusmenüből — a
     // dialógus itt él (a menüsáv is ezt nyitja)
     function openWebExport() { webExportDialog.open() }
