@@ -73,6 +73,7 @@ from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
+from .display_mode_paint import current_display_mode_suffix
 
 _log = logging.getLogger(__name__)
 
@@ -785,7 +786,11 @@ def _group_payload(faces, label: str) -> dict:
         "faces": [
             {
                 "faceId": face.id,
-                "thumbUrl": f"image://thumbs/{face.photo_id}",
+                # #1656: a megjelenítési mód cimkéje
+                "thumbUrl": (
+                    f"image://thumbs/{face.photo_id}"
+                    f"{current_display_mode_suffix()}"
+                ),
                 # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az
                 # eredeti kérdésként vetette fel (`PeoplePanel::
                 # SuggestionFmt` = „%s?"), pipa/x gombbal.

@@ -33,6 +33,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from .display_mode_paint import set_current_display_mode
+
 #: A tizenegy mód, a menü SORRENDJÉBEN (spec 1. szakasz). Az azonosítók a
 #: bináris `ID_VIEW_*` parancsainak rövid, kisbetűs megfelelői.
 #:
@@ -143,6 +145,11 @@ def wire_display_mode(controller, edit_controller, preview_provider):
 
     def _atvezet() -> None:
         mode = controller.displayMode
+        # #1656: a hat további bélyegkép-felület (duplikátumok,
+        # importálás, arckeresés, idővonal, keresési találatok,
+        # effekt-előnézet) innen veszi a módot — mind modul-szintű
+        # URL-építőből dolgozik, saját vezérlőben
+        set_current_display_mode(mode)
         preview_provider.set_display_mode(mode)
         edit_controller.refresh_displayed_image()
         if photo_model is not None:

@@ -57,6 +57,7 @@ from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
+from .display_mode_paint import current_display_mode_suffix
 
 # a soronkénti importálási hibákból ennyit mutatunk a UI-nak (az
 # `ExportMixin._EXPORT_FAILED_DETAILS_LIMIT` mintája) — tömeges hibánál a
@@ -86,7 +87,8 @@ MAX_RECENT_SOURCES = 8
 
 
 def _thumb_url(photo_id: int) -> str:
-    return f"image://thumbs/{photo_id}"
+    # #1656: a megjelenítési mód cimkéje (üres a no-op módokra)
+    return f"image://thumbs/{photo_id}{current_display_mode_suffix()}"
 
 
 def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord:

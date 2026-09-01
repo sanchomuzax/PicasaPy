@@ -67,6 +67,37 @@ def display_mode_url_suffix(mode: str) -> str:
     return f"&{DISPLAY_MODE_QUERY_KEY}={mode}"
 
 
+#: Az AKTÍV megjelenítési mód, egy helyen (#1656).
+#:
+#: ⚠️ Miért modul-szintű, és miért nem paraméter. A bélyegkép-URL-t hat
+#: további felület építi (duplikátumok, importálás, arckeresés, idővonal,
+#: keresési találatok, effekt-előnézet), mind SAJÁT vezérlőben, modul-
+#: szintű függvényből. Hat konstruktor átírása helyett a mód ugyanoda
+#: kerül, ahonnan a szolgáltató is kapja: a `wire_display_mode()` egyetlen
+#: átvezetőjébe. Ez ugyanaz az egy-forrás elv, amiért az a függvény
+#: nevesítve van — a féloldalas tükrözés így nem tud becsúszni.
+_aktualis_mod: str = ""
+
+
+def set_current_display_mode(mode: str) -> None:
+    """Az aktív mód beállítása (a `wire_display_mode()` hívja)."""
+    global _aktualis_mod
+    _aktualis_mod = mode if isinstance(mode, str) else ""
+
+
+def current_display_mode() -> str:
+    """Az aktív mód — a bélyegkép-URL-t építő felületeknek."""
+    return _aktualis_mod
+
+
+def current_display_mode_suffix() -> str:
+    """Az aktív mód URL-cimkéje, vagy üres sztring.
+
+    A no-op módokra üres marad, tehát az URL bájtra a mód bevezetése
+    előtti — a Qt gyorstára nem duplázódik."""
+    return display_mode_url_suffix(_aktualis_mod)
+
+
 def display_mode_from_thumb_id(photo_id: str) -> str:
     """A `?…&d=<mód>` cimke kiolvasása a szolgáltatónak átadott azonosítóból.
 
