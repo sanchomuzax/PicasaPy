@@ -62,9 +62,22 @@ def _new_controller(tmp_path, library, settings):
     )
 
 
+#: #1788: a helyek száma 8 → 10 lett (`edit_0`…`edit_9` + `cmp eax, 0xa`).
+#: A tesztek a KONSTANSRA hivatkoznak, hogy a szám egy helyen éljen — a
+#: tízes szám MAGA külön állítás (`test_tiz_hely_van`), különben egy
+#: visszacsúszás 10-ről 8-ra némán zöld maradna.
+SZLOTOK = 10
+
+
 class TestQuickTagDefaults:
+    def test_tiz_hely_van(self):
+        """#1788: az eredetiben TÍZ gyorscímke-hely van, nem nyolc."""
+        from picasapy.app.keywords_controller import _QUICK_TAG_SLOTS
+
+        assert _QUICK_TAG_SLOTS == SZLOTOK == 10
+
     def test_default_labels_all_empty(self, controller):
-        assert controller.quickTagConfigLabels == [""] * 8
+        assert controller.quickTagConfigLabels == [""] * SZLOTOK
 
     def test_default_reserve_recent_is_true(self, controller):
         assert controller.quickTagsReserveRecent is True
@@ -73,7 +86,7 @@ class TestQuickTagDefaults:
         assert controller.quickTagsAutoFillFrequent is False
 
     def test_default_buttons_all_empty(self, controller):
-        assert controller.quickTagButtons == [""] * 8
+        assert controller.quickTagButtons == [""] * SZLOTOK
 
 
 class TestSetQuickTagLabel:
@@ -81,7 +94,7 @@ class TestSetQuickTagLabel:
         controller.setQuickTagLabel(2, "nyaralás")
         labels = controller.quickTagConfigLabels
         assert labels[2] == "nyaralás"
-        assert labels.count("") == 7
+        assert labels.count("") == SZLOTOK - 1
 
     def test_comma_stripped_like_regular_keywords(self, controller):
         controller.setQuickTagLabel(0, "egy, kettő")
@@ -92,7 +105,7 @@ class TestSetQuickTagLabel:
         controller.setQuickTagLabel(0, "   ")
         assert controller.quickTagConfigLabels[0] == ""
 
-    @pytest.mark.parametrize("bad_slot", [-1, 8, 99])
+    @pytest.mark.parametrize("bad_slot", [-1, SZLOTOK, 99])
     def test_out_of_range_slot_ignored(self, controller, bad_slot):
         before = list(controller.quickTagConfigLabels)
         controller.setQuickTagLabel(bad_slot, "x")
@@ -170,7 +183,7 @@ class TestQuickTagAutoFillFrequent:
         controller.addKeywordToRows([0], "gyakori")
         controller.addKeywordToRows([1], "gyakori")
         controller.addKeywordToRows([2], "gyakori")
-        assert controller.quickTagButtons[2:] == [""] * 6
+        assert controller.quickTagButtons[2:] == [""] * (SZLOTOK - 2)
 
     def test_fills_empty_slots_by_frequency(self, controller):
         controller.setQuickTagsAutoFillFrequent(True)
@@ -183,7 +196,7 @@ class TestQuickTagAutoFillFrequent:
         buttons = controller.quickTagButtons
         assert buttons[0] == "gyakori"
         assert buttons[1] == "ritka"
-        assert buttons[2:] == [""] * 6
+        assert buttons[2:] == [""] * (SZLOTOK - 2)
 
     def test_does_not_duplicate_a_label_already_shown(self, controller):
         controller.setQuickTagsAutoFillFrequent(True)
@@ -201,4 +214,4 @@ class TestQuickTagAutoFillFrequent:
         controller.addKeywordToRows([0], "egyetlen")
         buttons = controller.quickTagButtons
         assert buttons[0] == "egyetlen"
-        assert buttons[1:] == [""] * 7
+        assert buttons[1:] == [""] * (SZLOTOK - 1)

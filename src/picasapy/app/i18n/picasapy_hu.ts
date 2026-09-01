@@ -5307,8 +5307,8 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml" line="56"/>
-        <source>Edit the 8 quick tag buttons shown at the bottom of the Tags panel.</source>
-        <translation>A Címkék panel alján megjelenő 8 gyorscímke-gomb szerkesztése.</translation>
+        <source>Edit the 10 quick tag buttons shown at the bottom of the Tags panel.</source>
+        <translation>A Címkék panel alján megjelenő 10 gyorscímke-gomb szerkesztése.</translation>
     </message>
 </context>
 <context>
