@@ -175,6 +175,8 @@ class TestAlbumsMigration:
             "ALTER TABLE folders DROP COLUMN offline;"
             # #1637: a hidden oszlop a v13-ban érkezik
             "ALTER TABLE folders DROP COLUMN hidden;"
+            # #1644: az unread oszlop a v15-ben érkezik
+            "ALTER TABLE folders DROP COLUMN unread;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -226,6 +228,8 @@ class TestFaceMigration:
             "ALTER TABLE folders DROP COLUMN offline;\n"
             # #1637: a hidden oszlop a v13-ban érkezik
             "ALTER TABLE folders DROP COLUMN hidden;\n"
+            # #1644: az unread oszlop a v15-ben érkezik
+            "ALTER TABLE folders DROP COLUMN unread;\n"
             "PRAGMA user_version = 8;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -282,6 +286,8 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE folders DROP COLUMN offline;\n"
             # #1637: a hidden oszlop a v13-ban érkezik
             "ALTER TABLE folders DROP COLUMN hidden;\n"
+            # #1644: az unread oszlop a v15-ben érkezik
+            "ALTER TABLE folders DROP COLUMN unread;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")

@@ -698,6 +698,13 @@ class AppController(
         self._restore_full_folder_pane()
         self._get_settings().setValue("session/lastFolder", folder_path)
         self._folder_description = self._read_folder_description(folder_path)
+        # #1644: az „olvasatlan" jelölő a mappa MEGNYITÁSAKOR áll vissza —
+        # a felhasználó megnézte, ami benne van.
+        #
+        # ⚠️ A jegy kimondja: hogy az EREDETI pontosan mikor törli, NINCS
+        # kimérve; a megnyitás a jegy által előírt ésszerű alapértelmezés.
+        # Ha egy későbbi kör mást mér, a mérés győz.
+        self._clear_unread(folder_path)
         if folder_path in self._folders.offline_paths():
             # #459/5: néma bukás helyett kimondjuk, mi a helyzet — a mappa
             # megnyitható marad (a bélyegképek a gyorsítótárból jönnek), de
@@ -712,6 +719,26 @@ class AppController(
             records = self._feed_records(conn)
         self._show(records)
         self.folderActivated.emit(folder_path)
+
+    def _clear_unread(self, folder_path: str) -> None:
+        """Az „olvasatlan" jelölő törlése egy mappára (#1644).
+
+        Csak akkor ír, ha a jelölő tényleg fent van: a mappaváltás gyakori
+        művelet, és egy feltétel nélküli UPDATE minden kattintásra
+        WAL-bejegyzést szülne (a #139 azonos megfontolása)."""
+        if not folder_path:
+            return
+        with open_index(self._db_path) as conn:
+            kurzor = conn.execute(
+                "UPDATE folders SET unread = 0 WHERE path = ? AND unread = 1",
+                (str(folder_path),),
+            )
+            if not kurzor.rowcount:
+                return
+            conn.commit()
+        # A bal hasáb kövér szedése ebből a mezőből él — újratöltés nélkül
+        # a mappa megnyitás után is kövér maradna.
+        self._reload_folders()
 
     def _index_stamp(self) -> tuple:
         """Az index-adatbázis olcsó változás-pecsétje (#142): a db és a
