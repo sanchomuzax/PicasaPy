@@ -347,9 +347,40 @@ def _gyoker_baja(root_path: Path) -> str:
     """
     if watched_root_missing(root_path):
         return "nincs meg a lemezen"
-    if folder_looks_offline(root_path):
+    if _gyoker_ures_vagy_olvashatatlan(root_path):
         return "jelenleg nem elérhető (üres vagy olvashatatlan)"
     return ""
+
+
+def _gyoker_ures_vagy_olvashatatlan(root_path: Path) -> bool:
+    """A GYÖKÉR-szintű próba: üres VAGY olvashatatlan → visszatartunk.
+
+    ⚠️ #1909: itt szándékosan TÁGABB a szabály, mint a mappa-szintű
+    `folder_looks_offline`-nál, és ez nem következetlenség, hanem a két
+    kérdés különbsége:
+
+    * a GYÖKÉR üressége már önmagában gyanús — a #1560 mérése szerint épp
+      így néz ki a lecsatolt NAS (a csatolási pont üres könyvtárként ott
+      marad), és a tévedés ára a TELJES index kiürülése volt (9,2 s alatt
+      3 mappa / 3 fotó → 0 / 0);
+    * egy MAPPA üressége viszont a leggyakoribb esetben azt jelenti, hogy
+      a felhasználó kiürítette — erről állított valótlant a felület
+      („jelenleg nem elérhető … lecsatolt meghajtó"), miközben a mappa
+      olvasható volt.
+
+    A gyökér-szintű visszatartás így továbbra is fedi a lecsatolt NAS
+    egész fáját (az almappák sorai megmaradnak), a mappa-szintű döntés
+    pedig nem hazudik a kiürített mappáról.
+    """
+    try:
+        with _scandir(root_path) as it:
+            return next(iter(it), None) is None
+    except FileNotFoundError:
+        return False
+    except NotADirectoryError:
+        return False
+    except OSError:
+        return True
 
 
 def watched_root_missing(root: str | Path) -> bool:
@@ -383,6 +414,13 @@ def watched_root_missing(root: str | Path) -> bool:
         # innen a #459/5 ága viszi tovább
         return False
     return not stat_module.S_ISDIR(stat.st_mode)
+
+
+#: #1217/#1375: MODULSZINTŰ fogantyúk. A teszt ezeket cseréli, nem a
+#: globális `os.stat`/`os.scandir`-t — a globális átírás minden más
+#: modulra átszivárog, amíg a teszt fut.
+_stat = os.stat
+_scandir = os.scandir
 
 
 def folder_looks_offline(folder_path: Path) -> bool:
@@ -426,7 +464,7 @@ def folder_looks_offline(folder_path: Path) -> bool:
     lefedve; a rekord-id-k ott a következő sikeres scannel újraépülnek.
     """
     try:
-        with os.scandir(folder_path) as it:
+        with _scandir(folder_path) as it:
             if next(iter(it), None) is not None:
                 return False  # van benne valami — biztosan elérhető
     except FileNotFoundError:
@@ -444,8 +482,8 @@ def _csatolasi_hataron_ul(folder_path: Path) -> bool:
     Ez az élő csatolási pont jele. Ha a szülő nem olvasható, óvatosak
     vagyunk és igazat adunk: olyankor nem tudjuk kizárni a leválást."""
     try:
-        sajat = os.stat(folder_path).st_dev
-        szulo = os.stat(folder_path.parent).st_dev
+        sajat = _stat(folder_path).st_dev
+        szulo = _stat(folder_path.parent).st_dev
     except OSError:
         return True
     return sajat != szulo

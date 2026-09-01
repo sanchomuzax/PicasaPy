@@ -37,6 +37,7 @@ import stat as stat_module
 
 import pytest
 
+from picasapy.index import sync as sync_module
 from picasapy.index.sync import folder_looks_offline
 
 
@@ -93,7 +94,7 @@ class TestACsatolasiHatar:
     ):
         ures = tmp_path / "mount"
         ures.mkdir()
-        valodi_stat = os.stat
+        valodi_stat = sync_module._stat
 
         def hamis_stat(ut, *args, **kwargs):
             eredmeny = valodi_stat(ut, *args, **kwargs)
@@ -104,7 +105,9 @@ class TestACsatolasiHatar:
                 )
             return eredmeny
 
-        monkeypatch.setattr(os, "stat", hamis_stat)
+        #: #1217/#1375: a MODUL fogantyúját cseréljük, nem a globális
+        #: `os.stat`-ot — az minden más modulra átszivárogna.
+        monkeypatch.setattr(sync_module, "_stat", hamis_stat)
         assert folder_looks_offline(ures) is True
 
     def test_az_azonos_eszkozon_ulo_ures_mappa_NEM_offline(self, tmp_path):
@@ -112,3 +115,27 @@ class TestACsatolasiHatar:
         ures.mkdir()
         assert os.stat(ures).st_dev == os.stat(tmp_path).st_dev
         assert folder_looks_offline(ures) is False
+
+
+class TestAGyokerSzintuProbaTAGABB:
+    """#1560 nem sérülhet: a gyökér ürességére továbbra is visszatartunk.
+
+    A két kérdés különbözik, és szándékosan más a szabályuk. A gyökér
+    üressége önmagában gyanús — a #1560 mérése szerint épp így néz ki a
+    lecsatolt NAS, és a tévedés ára a TELJES index kiürülése volt. Egy
+    MAPPA üressége viszont a leggyakoribb esetben azt jelenti, hogy a
+    felhasználó kiürítette.
+    """
+
+    def test_az_ures_gyoker_visszatart(self, tmp_path):
+        gyoker = tmp_path / "mnt" / "photo"
+        gyoker.mkdir(parents=True)
+        assert sync_module._gyoker_ures_vagy_olvashatatlan(gyoker) is True
+        # …miközben ugyanez a mappa mappa-szinten csak ÜRES:
+        assert folder_looks_offline(gyoker) is False
+
+    def test_a_nem_ures_gyoker_nem_tart_vissza(self, tmp_path):
+        gyoker = tmp_path / "mnt" / "photo"
+        gyoker.mkdir(parents=True)
+        (gyoker / "kep.jpg").write_bytes(b"\xff\xd8\xff")
+        assert sync_module._gyoker_ures_vagy_olvashatatlan(gyoker) is False
