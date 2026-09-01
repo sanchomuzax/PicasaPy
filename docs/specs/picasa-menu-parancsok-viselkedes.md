@@ -3821,3 +3821,72 @@ mérés vakfoltját — „hiányzó vezérlő" mérőszáma nincs.)*
 - **„A `searchoptions`-hoz hasonló rejtett funkciós csoportok tömegével
   vannak"** — megdőlt: tíz csoportból kilenc grafikai erőforrás vagy
   általános névtér, a tizedik (`notifier`) már feltárva (61.2).
+
+## 62. tétel — a névtelen és mellőzött arcok fejléce: két téves riasztás, egy elhelyezés-eltérés (2026-09-01)
+
+*Huszonötödik kör az UI-lefedettségi axisról (#1778). Két kis panel egy
+jelenségként: `unknownfaceheaderpanel` (3) és `peoplepanel` (3) — a
+**névtelen és mellőzött arcok** munkafolyamata.*
+
+### 62.1 Két elem megvan nálunk
+
+| eredeti | nálunk (**mérve**) |
+|---|---|
+| `ignore` („Kijelöltek mellőzése") | `ignoreFacesButton` (`UnnamedFacesView.qml:117`), buboréksúgóval; **párja** az `unignoreFacesButton` („Stop ignoring", `:109`) |
+| `manual_add` („Személy kézi hozzáadása") | `addNameButton` („Add a name", `:128`) |
+
+*(A `manual_add::instructions` négylépéses gesztus-utasítását egy
+**korábbi** kör már rögzítette — a `FacesOverlay.qml:283` név szerint
+hivatkozza. Nem ez a kör találta.)*
+
+### 62.2 Elhelyezés-eltérés: fejléc-gomb helyett ALBUM
+
+`showignored` („Mellőzött arcok megjelenítése") és `showunknown`
+(„Vissza ide: Név nélküliek") az eredetiben **fejléc-gombok**: a
+névtelen és a mellőzött nézet közt váltanak.
+
+Nálunk ugyanez **két albumon** át megy: a bal hasáb „Névtelenek" és
+„Mellőzött emberek" gyűjteménye (`FolderPane.qml:50–59`,
+`ignoredFacesActive`), az `UnnamedFacesView` pedig a
+`window.facesAlbumMode` szerint vált (`Main.qml:1644`).
+
+⇒ **Funkcionálisan egyenértékű, elhelyezésben eltér.** A 45.3
+eltérés-táblába való, nem jegybe.
+
+*(A `UnnamedFacesView.qml:20–21` docstringje ezt már ki is mondja: „az
+eredetiben ez két ALBUM volt" — vagyis a döntés tudatos volt, csak az
+eltérés-tábla még nem létezett, amikor megszületett.)*
+
+### 62.3 A `peoplepanel` maradék eleme
+
+`status_label` — „Select a folder to display faces". Nálunk a
+`PeoplePanel.qml` a kijelöléshez igazodó feliratokat használ („In this
+photo:", „People in these photos:"), üres állapotra saját szöveggel.
+**Nem hiány**, hanem más állapotkezelés; a mérés a szó szerinti egyezést
+kereste.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| kijelöltek mellőzése | `ignore` | **megvan** (+ a visszavonás párja) | — |
+| személy kézi hozzáadása | `manual_add` | **megvan** | — |
+| váltás névtelen ↔ mellőzött | **fejléc-gomb** | **album** a bal hasábon | tudatos eltérés → 45.3 |
+| üres állapot felirata | `status_label` | saját szövegek | — |
+
+### Nyitott kérdések mérlege (62.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a két téves riasztás (62.1); az elhelyezés-eltérés
+  besorolása (62.2); a `status_label` kérdése (62.3).
+
+*(Záró mondat a 45.1 szerint: ebben a két panelben **nincs hiányzó
+vezérlő**; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A névtelen/mellőzött váltás hiányzik nálunk"** — megdőlt: albumon
+  át megvan, tudatos eltéréssel (62.2).

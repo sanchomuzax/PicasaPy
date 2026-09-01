@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 157 |
-| másutt megvan (nem ezen a felületen) | 46 |
-| hiányzik | 380 |
+| párosítva | 160 |
+| másutt megvan (nem ezen a felületen) | 47 |
+| hiányzik | 376 |
 | bizonytalan | 152 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **21.4%** |
+| **lefedettség az értékelhető elemeken** | **21.8%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -54,7 +54,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `thumbui` | 33 | A fő könyvtárnézet egésze |
 | 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
-| 5 | `printpanel` | 26 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
+| 5 | `printpanel` | 25 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
 | 6 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | 7 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | 8 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
@@ -69,7 +69,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
 | `thumbui` | 140 | 46 | 10 | 3 | 22 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
-| `printpanel` | 73 | 33 | 0 | 7 | 26 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
+| `printpanel` | 73 | 33 | 0 | 8 | 25 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | `buzzupload` | 55 | 22 | 0 | 1 | 21 | 0 | 33 | **nem-cel** — Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
@@ -85,8 +85,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `headerpanel` | 30 | 11 | 1 | 0 | 10 | 0 | 19 | `LightboxHeader.qml` |
 | `collab` | 23 | 10 | 0 | 0 | 10 | 0 | 13 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 7 | 53 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
-| `searchcontainer` | 25 | 11 | 4 | 0 | 4 | 3 | 14 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 11 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
+| `searchcontainer` | 25 | 11 | 5 | 0 | 3 | 3 | 14 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 3 | 3 | 18 | `VideoPlayerView.qml` |
 | `keywords` | 18 | 7 | 1 | 0 | 5 | 1 | 11 | `TagsPanel.qml` |
 | `uploadmgr` | 17 | 7 | 0 | 1 | 6 | 0 | 10 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
@@ -98,15 +98,15 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `initialscan` | 18 | 4 | 0 | 0 | 0 | 4 | 14 | `InitialScanDialog.qml` |
 | `video_control_bar2` | 18 | 4 | 0 | 0 | 2 | 2 | 14 | `VideoPlayerView.qml` |
 | `panelroot` | 14 | 7 | 2 | 1 | 2 | 2 | 7 | `Main.qml`, `MainToolbar.qml` |
-| `peoplepanel` | 14 | 6 | 0 | 2 | 3 | 1 | 8 | `PeoplePanel.qml`, `PeoplePanelRow.qml` |
 | `gedialog` | 13 | 5 | 0 | 1 | 2 | 2 | 8 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `throttle` | 10 | 4 | 1 | 0 | 0 | 4 | 5 | `PicasaScrollBar.qml` |
 | `movieeditpanel` | 7 | 4 | 0 | 0 | 4 | 0 | 3 | `VideoPlayerView.qml` |
 | `editoneup` | 34 | 5 | 0 | 2 | 0 | 3 | 29 | `PhotoViewer.qml` |
 | `oneup` | 33 | 5 | 0 | 2 | 0 | 3 | 28 | `PhotoViewer.qml` |
-| `unknownfaceheaderpanel` | 18 | 6 | 3 | 0 | 3 | 0 | 12 | `UnnamedFacesView.qml` |
+| `peoplepanel` | 14 | 6 | 1 | 2 | 2 | 1 | 8 | `PeoplePanel.qml`, `PeoplePanelRow.qml` |
 | `rightdrawerpanel` | 9 | 3 | 0 | 0 | 3 | 0 | 6 | `PropertiesPanel.qml` |
 | `foldermgr` | 32 | 11 | 4 | 5 | 1 | 1 | 21 | `FolderManagerDialog.qml` |
+| `unknownfaceheaderpanel` | 18 | 6 | 4 | 0 | 2 | 0 | 12 | `UnnamedFacesView.qml` |
 | `instructionpanel` | 7 | 2 | 0 | 0 | 2 | 0 | 5 | **nincs-megfeleltetes** — Betanító buborék („Learn more…”) — nincs nálunk |
 | `activity` | 6 | 1 | 0 | 0 | 1 | 0 | 5 | **nincs-megfeleltetes** — Töltésjelző pörgettyű a rácson — nálunk nincs külön elem |
 | `nav` | 6 | 1 | 0 | 0 | 1 | 0 | 5 | **nincs-megfeleltetes** — Nagyítás-navigátor („floater”) a szerkesztőben — nálunk csak a PhotoViewer nagyítás-állapotgépe van, navigátor-ablak nincs |
@@ -345,7 +345,7 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `uploadallsync` buboréksúgó: „Change the sync setting for the selected folders and/or albums”
 - `webpublish_cancel`
 
-### `printpanel` — 26 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
+### `printpanel` — 25 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
 Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg
 
@@ -374,7 +374,6 @@ Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítóg
 - `selectprinterbutton` buboréksúgó: „Provides a list of available printers”
 - `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”)
 - `subprintsbutton` buboréksúgó: „Subtract a copy of each Photo to be printed”
-- `walletbutton` „Wallet” (magyarul: „Tárcaméret”)
 
 ### `printoptions` — 22 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -652,18 +651,6 @@ A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A kor
 - `tabs` — *bizonytalan*
 - `view_and_edit` — *bizonytalan*
 
-### `searchcontainer` — 7 hiány · panel-megfeleltetés: `parositva`
-
-Keresősáv és szűrőgombjai
-
-- `facesearch` buboréksúgó: „Show only photos with faces”
-- `moviesearch` buboréksúgó: „Show movies only”
-- `search` — *bizonytalan*
-- `searchautocomplete` — *bizonytalan*
-- `searchbutton` — *bizonytalan*
-- `timecontainer_label` buboréksúgó: „Filter by date range”
-- `webview` buboréksúgó: „Show uploads to web albums only”
-
 ### `titledialog` — 7 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
 Filmes címdia-szerkesztő párbeszéd — nincs nálunk
@@ -675,6 +662,17 @@ Filmes címdia-szerkesztő párbeszéd — nincs nálunk
 - `previewtext`
 - `sizelist`
 - `stylelist`
+
+### `searchcontainer` — 6 hiány · panel-megfeleltetés: `parositva`
+
+Keresősáv és szűrőgombjai
+
+- `facesearch` buboréksúgó: „Show only photos with faces”
+- `search` — *bizonytalan*
+- `searchautocomplete` — *bizonytalan*
+- `searchbutton` — *bizonytalan*
+- `timecontainer_label` buboréksúgó: „Filter by date range”
+- `webview` buboréksúgó: „Show uploads to web albums only”
 
 ### `video_control_bar` — 6 hiány · panel-megfeleltetés: `parositva`
 
@@ -786,15 +784,6 @@ Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
 - `makemovietab` „Movie Maker” (magyarul: „Mozgófilmkészítés”)
 - `youtab` — *bizonytalan*
 
-### `peoplepanel` — 4 hiány · panel-megfeleltetés: `parositva`
-
-Emberek oldalsó panel
-
-- `manual_add` „Add a person manually” (magyarul: „Személy kézi hozzáadása”)
-- `manual_cancel` „Cancel” (magyarul: „Mégse”)
-- `peoplelist` — *bizonytalan*
-- `status_label` „Select a folder to display faces” (magyarul: „Válasszon ki egy mappát az arcok megjelenítéséhez”)
-
 ### `gedialog` — 4 hiány · panel-megfeleltetés: `parositva`
 
 Google Earth-ös geocímkéző párbeszéd — nálunk a Helyek panel fedi
@@ -838,13 +827,13 @@ Egyképes nézet a könyvtárban
 - `next` — *bizonytalan*
 - `prev` — *bizonytalan*
 
-### `unknownfaceheaderpanel` — 3 hiány · panel-megfeleltetés: `parositva`
+### `peoplepanel` — 3 hiány · panel-megfeleltetés: `parositva`
 
-Névtelen arcok fejléce
+Emberek oldalsó panel
 
-- `ignore` „Ignore Selected” (magyarul: „Kijelöltek mellőzése”)
-- `showignored` „Show ignored faces” (magyarul: „Mellőzött arcok megjelenítése”)
-- `showunknown` „Back to Unnamed” (magyarul: „Vissza ide: Név nélküliek”)
+- `manual_cancel` „Cancel” (magyarul: „Mégse”)
+- `peoplelist` — *bizonytalan*
+- `status_label` „Select a folder to display faces” (magyarul: „Válasszon ki egy mappát az arcok megjelenítéséhez”)
 
 ### `rightdrawerpanel` — 3 hiány · panel-megfeleltetés: `parositva`
 
@@ -860,6 +849,13 @@ Mappakezelő
 
 - `cancel` — *bizonytalan*
 - `instructions_text` „For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.” (magyarul: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését.”)
+
+### `unknownfaceheaderpanel` — 2 hiány · panel-megfeleltetés: `parositva`
+
+Névtelen arcok fejléce
+
+- `showignored` „Show ignored faces” (magyarul: „Mellőzött arcok megjelenítése”)
+- `showunknown` „Back to Unnamed” (magyarul: „Vissza ide: Név nélküliek”)
 
 ### `instructionpanel` — 2 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -1035,7 +1031,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `librarylabel` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 - `sbutton` — „Slideshow” itt: PicasaPy/OptionsDialog.qml, PicasaPy/PicasaMenuBar.qml
 
-### `printpanel` — 7
+### `printpanel` — 8
 
 - `4x6button` — „4 x 6” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
 - `5x7button` — „5 x 7” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
@@ -1044,6 +1040,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `pnowbutton` — „Print” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/PrintDialog.qml, PicasaPy/TrayBar.qml
 - `pnowbutton2` — „Print” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/PrintDialog.qml, PicasaPy/TrayBar.qml
 - `printerlabel` — „Printer” itt: PicasaPy/PrintDialog.qml
+- `walletbutton` — „Wallet” itt: PicasaPy/PrintDialog.qml
 
 ### `printoptions` — 7
 
@@ -1079,11 +1076,6 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 - `picasatab` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 
-### `peoplepanel` — 2
-
-- `addname` — „Add a name” itt: PicasaPy/FacesOverlay.qml, PicasaPy/UnnamedFacesView.qml
-- `ignore` — „Ignore” itt: PicasaPy/UnnamedFacesView.qml
-
 ### `gedialog` — 1
 
 - `tag` — „Geotag” itt: PicasaPy/PicasaMenuBar.qml
@@ -1098,6 +1090,11 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `bcklabel` — „Exit” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/SlideshowView.qml
 - `tllabel` — „Timeline” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/TimelineView.qml
 
+### `peoplepanel` — 2
+
+- `addname` — „Add a name” itt: PicasaPy/FacesOverlay.qml, PicasaPy/UnnamedFacesView.qml
+- `ignore` — „Ignore” itt: PicasaPy/UnnamedFacesView.qml
+
 ### `foldermgr` — 5
 
 - `remove_label` — „Remove from Picasa” itt: PicasaPy/FolderContextMenu.qml, PicasaPy/FolderHierarchyView.qml, PicasaPy/FolderStatePanel.qml
@@ -1110,7 +1107,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **423 felirat** 83 fájlban.
+Összesen **429 felirat** 83 fájlban.
 
 ### `PicasaPy/PicasaMenuBar.qml` — 29
 
@@ -1191,6 +1188,28 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Import destination folder:”
 - „Browse...”
 
+### `PicasaPy/PrintDialog.qml` — 19
+
+- „3.5 x 5 in”
+- „4 x 6 in”
+- „5 x 7 in”
+- „8 x 10 in”
+- „Printing is unavailable: the Qt print support ”
+- „No pictures to print.”
+- „Choose the target file.”
+- „Layout:”
+- „One picture per page”
+- „Columns:”
+- „Print size:”
+- „Please review before printing.”
+- „Print to a PDF file...”
+- „(not selected)”
+- „Browse...”
+- „Fit to page:”
+- „Whole picture”
+- „Fill the page (crop)”
+- „PDF documents (*.pdf)”
+
 ### `PicasaPy/CreateDialogs.qml` — 15
 
 - „Select pictures in the library first, or put them in the Picture Tray.”
@@ -1243,22 +1262,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Choose source folder...”
 - „Choose destination folder...”
 - „WARNING! You have chosen to delete ALL FILES…”
-
-### `PicasaPy/PrintDialog.qml` — 13
-
-- „Printing is unavailable: the Qt print support ”
-- „No pictures to print.”
-- „Choose the target file.”
-- „Layout:”
-- „One picture per page”
-- „Columns:”
-- „Print to a PDF file...”
-- „(not selected)”
-- „Browse...”
-- „Fit to page:”
-- „Whole picture”
-- „Fill the page (crop)”
-- „PDF documents (*.pdf)”
 
 ### `PicasaPy/EditorParamPanel.qml` — 12
 
