@@ -48,10 +48,18 @@ class _CollageControllerStub(QObject):
     A `collagePageRatio` MAGASSÁG / SZÉLESSÉG (spec 8.1) — ebből él a lap
     alakja."""
 
-    def __init__(self, page_ratio: float = 0.75, clip_count: int = 0) -> None:
+    def __init__(
+        self,
+        page_ratio: float = 0.75,
+        clip_count: int = 0,
+        unused_count: int = 0,
+    ) -> None:
         super().__init__()
         self._page_ratio = page_ratio
         self._clip_count = clip_count
+        #: #1276: a „Klipek (N)" fül száma a VÁLASZTHATÓ képeké (a tálca
+        #: fel nem használt része), nem a kollázsra feltetteké.
+        self._unused_count = unused_count
         self.close_calls = 0
 
     @Slot()
@@ -66,8 +74,14 @@ class _CollageControllerStub(QObject):
     def collageClipCount(self) -> int:
         return self._clip_count
 
+    @Property(int, constant=True)
+    def trayUnusedCount(self) -> int:
+        return self._unused_count
 
-def _panel(qt_app, width: int, height: int, *, page_ratio=0.75, clips=0):
+
+def _panel(
+    qt_app, width: int, height: int, *, page_ratio=0.75, clips=0, unused=0
+):
     """A panel valódi ablakban, adott mérettel — a kötések lefuttatva."""
     import picasapy.app.application as app_module
 
@@ -75,7 +89,7 @@ def _panel(qt_app, width: int, height: int, *, page_ratio=0.75, clips=0):
     view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
     view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
 
-    stub = _CollageControllerStub(page_ratio, clips)
+    stub = _CollageControllerStub(page_ratio, clips, unused)
     qml = """
 import QtQuick
 import PicasaPy 1.0
@@ -270,10 +284,16 @@ def test_a_lap_kitolti_a_behuzas_rovidebb_iranyat(qt_app):
 # --- 3. A fülsáv ------------------------------------------------------------
 
 
-def test_a_masodik_ful_a_tenyleges_darabszamot_mutatja(qt_app):
-    """A második fül felirata futásidőben frissül a klip-darabszámmal."""
-    panel = _panel(qt_app, 800, 534, clips=7)
+def test_a_masodik_ful_a_VALASZTHATOK_szamat_mutatja(qt_app):
+    """A második fül felirata a VÁLASZTHATÓ képek számát követi.
+
+    #1276: korábban a kollázsra feltett klipeket számolta. A tulajdonos
+    képernyőképén „Klipek (80)" áll egy néhány elemű kollázs mellett — a
+    szám a készlet mérete, amiből válogatni lehet. A két szám itt
+    SZÁNDÉKOSAN különbözik, hogy az állítás megkülönböztesse őket."""
+    panel = _panel(qt_app, 800, 534, clips=3, unused=7)
     assert "7" in _child(panel, "collageClipsTabButton").property("text")
+    assert "3" not in _child(panel, "collageClipsTabButton").property("text")
 
 
 def test_a_beallitasok_lap_az_alapertelmezett(qt_app):

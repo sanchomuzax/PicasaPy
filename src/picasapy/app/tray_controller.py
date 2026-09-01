@@ -284,6 +284,35 @@ class TrayMixin:
             tray.without(self._tray, self._tray_ids_of_rows(rows))
         )
 
+    @Slot("QVariantList", bool)
+    def setTrayUsedRows(self, rows, used: bool = True) -> None:
+        """Ugyanaz, mint a `setTrayUsed`, csak RÁCS-SOROKKAL.
+
+        A Klipek lap „+" gombja a KÖNYVTÁR kijelölését kapja meg, az pedig
+        rács-sorokból áll (`librarySelection`) — nem fotó-azonosítókból. A
+        `setTrayUsed` azonosítót vár, és a `0.` sort némán eldobná
+        (`photo_id > 0`), vagyis az első kép felvétele nyom nélkül maradna
+        (#1276).
+        """
+        self._set_tray_used_ids(self._tray_ids_of_rows(rows), used=used)
+
+    @Slot("QVariantList")
+    def removeTrayItems(self, photo_ids) -> None:
+        """A Klipek lap „–" gombjának magja: a megadott FOTÓ-AZONOSÍTÓKAT
+        veszi ki a tálcából (*Remove the selected pictures from the tray*).
+
+        Miért nem a `removeHeldRows`: az rács-SOROKAT vár, mert a főablak
+        tálca-sávja felől a kijelölés onnan érkezik. A Klipek lap viszont
+        magukat a tálca-elemeket listázza — ott nincs rács-sor, és a
+        tartott kép akár másik mappából is jöhet, tehát sor nem is
+        rendelhető hozzá. Ezért kap a lap saját, azonosító-alapú belépőt
+        (#1276).
+        """
+        self._ensure_tray_wired()
+        self._tray_apply(
+            tray.without(self._tray, self._tray_ids_of_values(photo_ids))
+        )
+
     @Slot()
     def clearHeld(self) -> None:
         """A tálca teljes ürítése (`IDS_CLEARTRAY`). A felület KÉRDEZ előtte
@@ -291,17 +320,20 @@ class TrayMixin:
         self._ensure_tray_wired()
         self._tray_apply(tray.cleared(self._tray))
 
-    @Slot("QVariantList", bool)
-    def setTrayUsed(self, photo_ids, used: bool = True) -> None:
-        """A megadott tálca-elemek FELHASZNÁLTSÁGÁNAK jelölése.
+    def _set_tray_used_ids(self, photo_ids, used: bool = True) -> None:
+        """A tálca-elemek FELHASZNÁLTSÁGA, fotó-azonosítók szerint.
 
-        `used=True` a Klipek lap „+" gombjának hatása: a kép a tálcán
-        MARAD, csak az „Unused Pictures" listából esik ki. `used=False` a
-        visszavonás (a kollázsról levett kép újra választható).
+        `used=True`: a kép a tálcán MARAD, csak az „Unused Pictures"
+        listából esik ki (ez a Klipek lap „+" gombjának hatása).
+        `used=False` a visszavonás — a kollázsról levett kép újra
+        választható.
 
-        Egyetlen slot két helyett szándékos: a felületnek egy fogalma van
-        („ez a kép fel van használva"), és a Klipek lap mindkét irányba
-        ugyanezt írja.
+        #1276: ez a tag SZÁNDÉKOSAN nem `@Slot`. A felület egyetlen
+        belépője a `setTrayUsedRows`, mert a „+" a könyvtár RÁCS-SORAIT
+        kapja; azonosító-alapú QML-hívó ma nincs, egy bekötetlen slot
+        pedig néma lánc-szakadás lenne (`scripts/kepesseg_or.py`). Ha a
+        visszavonás egyszer a kollázs felől érkezik, ott azonosító lesz —
+        akkor kap ez a mag saját slotot, hívóval együtt.
         """
         self._ensure_tray_wired()
         self._tray_apply(

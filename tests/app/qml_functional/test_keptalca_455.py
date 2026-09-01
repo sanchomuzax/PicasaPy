@@ -422,7 +422,7 @@ class TestKlipekFulElokeszites:
         assert controller.trayUnusedCount == 2
 
         elso = controller.trayItems[0]["photoId"]
-        controller.setTrayUsed([elso], True)
+        controller._set_tray_used_ids([elso], True)
         qt_app.processEvents()
 
         assert controller.heldCount == 2, "a felhasznált kép a tálcán marad"
@@ -434,8 +434,8 @@ class TestKlipekFulElokeszites:
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
         elso = controller.trayItems[0]["photoId"]
-        controller.setTrayUsed([elso], True)
-        controller.setTrayUsed([elso], False)
+        controller._set_tray_used_ids([elso], True)
+        controller._set_tray_used_ids([elso], False)
         qt_app.processEvents()
         assert controller.trayUnusedCount == 1
 
@@ -447,7 +447,7 @@ class TestKlipekFulElokeszites:
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
         elso = controller.trayItems[0]["photoId"]
-        controller.setTrayUsed([elso], True)
+        controller._set_tray_used_ids([elso], True)
         _kijelol(window, qt_app, [1])
         assert controller.heldCount == 2
         assert controller.trayUnusedCount == 1

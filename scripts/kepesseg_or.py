@@ -142,11 +142,12 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak
 #: indoklással.
-# #455: 37 → 40. A képtálca modellje EGY jeggyel a felülete előtt készült
-# el: a `trayItems`/`trayUnusedCount`/`setTrayUsed` a kollázs „Klipek"
-# lapjának bemenete, és a #1276 köti be. Ha az megvan, a három sor
-# TÖRLENDŐ, és ez a szám vissza 37-re.
-MAX_BASELINE_ENTRIES = 40
+# #455: 37 → 40 volt, mert a képtálca modellje EGY jeggyel a felülete előtt
+# készült el. #1276: a `trayItems`/`trayUnusedCount`/`setTrayUsedRows` bekötve a
+# kollázs „Klipek" lapjára, a három sor TÖRÖLVE, a plafon VISSZA 37-re —
+# ahogy a #455 kommentje előírta. A szám csökkentése így nem külön döntés
+# volt, hanem a jegy zárásának kötelező része.
+MAX_BASELINE_ENTRIES = 37
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
 MAX_OSZTALY_ENTRIES = 3

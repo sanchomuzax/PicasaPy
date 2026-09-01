@@ -149,6 +149,17 @@ def _relativ(panel, nev):
     return (round(x - lap_x), round(y - lap_y), round(w), round(h))
 
 
+def _valasztas(lap):
+    """A lap `trayValasztas`-a Python-listaként.
+
+    QML-ből írva a tulajdonság `QJSValue`-ként jön vissza (nem iterálható),
+    Pythonból írva sima listaként — a teszteknek mindkettőt kezelniük kell."""
+    ertek = lap.property("trayValasztas")
+    if hasattr(ertek, "toVariant"):
+        ertek = ertek.toVariant()
+    return [int(e) for e in (ertek or ())]
+
+
 def _fulfelirat(panel):
     for item in _walk(panel):
         if item.objectName() == "collageClipsTabButton":
@@ -182,31 +193,54 @@ class TestGeometria:
 
 
 class TestFulfelirat:
-    """„Klipek (%1)" — a TÉNYLEGES darabszámmal, minden művelet után."""
+    """„Klipek (%1)" — a VÁLASZTHATÓ képek számával.
+
+    ⚠️ **A jelentés a #1276-tal MEGVÁLTOZOTT.** Ez az osztály korábban azt
+    állította, hogy a szám a kollázsra MÁR FELTETT képeket számolja
+    (`collageClipCount`), és minden kollázs-műveletre átírja magát.
+
+    A tulajdonos képernyőképén viszont **„Klipek (80)"** áll egy néhány
+    elemű kollázs mellett — a szám tehát a VÁLASZTHATÓKAT számolja: a
+    képtálca fel nem használt részét (`trayUnusedCount`). A lap maga is ez:
+    a készlet, amiből válogatni lehet. A régi állítások nem „elromlottak",
+    hanem egy téves szerződést rögzítettek.
+
+    A próbapadon a kollázson is három klip van, a tálcán is három
+    felhasználatlan kép — ezért a puszta nyitáskori „3" NEM bizonyítana
+    semmit. A SZÉTVÁLASZTÓ eset az, amikor a kettő elmozdul egymástól.
+    """
 
     def test_a_nyitaskori_darabszam(self, panel, controller):
-        assert controller.collageClipCount == 3
+        assert controller.trayUnusedCount == 3
         assert _fulfelirat(panel) == "Clips (3)"
 
-    def test_torles_utan_ujrairodik(self, panel, controller):
-        controller.setCollageSelection([0])
+    def test_a_kollazsrol_torles_NEM_irja_at(self, panel, controller):
+        """SZÉTVÁLASZTÓ eset: a kollázs kiürül, a felirat marad.
+
+        A kollázsról levett kép a tálcán marad, tehát továbbra is
+        választható — ez a különbség a régi és az új szerződés között."""
+        controller.deleteClips([0])
+        assert _var(lambda: controller.collageClipCount == 2), (
+            "a deleteClips() után a klipszám nem lett 2"
+        )
+        assert _fulfelirat(panel) == "Clips (3)"
+
+    def test_a_felvetel_CSOKKENTI(self, panel, controller):
+        """A „+"-szal felvett kép felhasználtá válik, és kiesik a listából.
+
+        A régi szerződés szerint a szám NŐTT volna (több klip a
+        kollázson); az újban CSÖKKEN (kevesebb választható maradt)."""
+        panel.setProperty("librarySelection", [0])
+        assert _var(
+            lambda: _child(panel, "collageAddClips").property("enabled") is True
+        ), "a könyvtár-kijelölés nem tette aktívvá a felvétel gombot"
         _kattints(
             panel,
-            _child(panel, "collageDeleteClips"),
-            amig=lambda: controller.collageClipCount == 2,
-        )
-        assert controller.collageClipCount == 2
-        assert _fulfelirat(panel) == "Clips (2)"
-
-    def test_felvetel_utan_ujrairodik(self, panel, controller):
-        controller.addClips([1])
-        # #1463: fix `QTest.qWait(50)` helyett a felvétel VALÓDI eredményére
-        # várunk — a klipszám négyre nőtt.
-        assert _var(lambda: controller.collageClipCount == 4), (
-            "az addClips() után a klipszám nem lett 4"
+            _child(panel, "collageAddClips"),
+            amig=lambda: controller.trayUnusedCount == 2,
         )
         assert controller.collageClipCount == 4
-        assert _fulfelirat(panel) == "Clips (4)"
+        assert _fulfelirat(panel) == "Clips (2)"
 
     def test_a_felirat_NEM_a_statikus_Kepek(self, panel):
         """A `.tre` statikus címkéje „Képek", a futó programé „Klipek (N)".
@@ -219,38 +253,48 @@ class TestFulfelirat:
 
 
 class TestKlipLista:
-    def test_minden_kliphez_tartozik_csempe(self, panel, controller):
-        assert all(
-            _van(panel, f"collageClip{i}")
-            for i in range(controller.collageClipCount)
-        )
+    """A lista a TÁLCA fel nem használt elemeit rajzolja ki (#1276)."""
 
-    def test_a_csempe_a_KEP_utvonalat_mutatja(self, panel, controller):
+    def test_minden_valaszthatohoz_tartozik_csempe(self, panel, controller):
+        assert controller.trayUnusedCount == 3
+        assert all(_van(panel, f"collageClip{i}") for i in range(3))
+        assert not _van(panel, "collageClip3")
+
+    def test_a_csempe_a_TALCA_kepet_mutatja(self, panel, controller):
         csempe = _child(panel, "collageClip0")
-        assert controller.collageNodes.nodes[0].path in str(
-            csempe.property("path")
-        )
+        assert str(csempe.property("path")) == controller.trayItems[0]["path"]
+
+    def test_a_lista_NEM_a_kollazs_csomopontjait_koveti(self, panel, controller):
+        """A kollázsról levett kép csempéje MEGMARAD a lapon.
+
+        Ez a #1276 lényege: a lap a választható készlet, nem a kollázs
+        tükre. A régi kötéssel ez a teszt bukna — a csempe eltűnne."""
+        controller.deleteClips([0])
+        assert _var(lambda: controller.collageClipCount == 2)
+        QTest.qWait(50)
+        assert _van(panel, "collageClip2")
 
     def test_a_csempere_kattintva_kijelolodik(self, panel, controller):
+        lap = _child(panel, "collageClipsTab")
+        masodik = controller.trayItems[1]["photoId"]
         _kattints(
             panel,
             _child(panel, "collageClip1"),
-            amig=lambda: list(controller.collageSelection) == [1],
+            amig=lambda: _valasztas(lap) == [masodik],
         )
-        assert list(controller.collageSelection) == [1]
+        assert _valasztas(lap) == [masodik]
 
     def test_a_kijelolt_csempe_jelolve_van(self, panel, controller):
-        controller.setCollageSelection([2])
-        # #1463: fix `QTest.qWait(50)` helyett arra várunk, ami az állítás
-        # tárgya — a harmadik csempe felvette a kijelölt állapotot.
+        lap = _child(panel, "collageClipsTab")
+        lap.setProperty("trayValasztas", [controller.trayItems[2]["photoId"]])
         assert _var(
             lambda: _child(panel, "collageClip2").property("selected") is True
         ), "a kijelölés nem jelent meg a csempén"
-        assert _child(panel, "collageClip2").property("selected") is True
         assert _child(panel, "collageClip0").property("selected") is False
 
-    def test_torles_utan_eltunik_a_csempe(self, panel, controller):
-        controller.setCollageSelection([0])
+    def test_a_talcarol_torles_utan_eltunik_a_csempe(self, panel, controller):
+        lap = _child(panel, "collageClipsTab")
+        lap.setProperty("trayValasztas", [controller.trayItems[0]["photoId"]])
         _kattints(
             panel,
             _child(panel, "collageDeleteClips"),
@@ -261,16 +305,21 @@ class TestKlipLista:
 
 
 class TestGombok:
-    def test_a_torles_a_KIJELOLT_klipeket_veszi_ki(self, panel, controller):
-        elso = controller.collageNodes.nodes[0].path
-        controller.setCollageSelection([0])
+    def test_a_torles_a_TALCABOL_veszi_ki_a_kijeloltet(self, panel, controller):
+        """#1276: a gomb saját buboréksúgója a TÁLCÁT ígéri (*Remove the
+        selected pictures from the tray*), korábban mégis a kollázsról
+        törölt (`deleteClips`). A súgó és a hatás most ugyanazt mondja."""
+        lap = _child(panel, "collageClipsTab")
+        elso = controller.trayItems[0]["photoId"]
+        lap.setProperty("trayValasztas", [elso])
         _kattints(
             panel,
             _child(panel, "collageDeleteClips"),
-            amig=lambda: controller.collageClipCount == 2,
+            amig=lambda: controller.trayUnusedCount == 2,
         )
-        assert [n.path for n in controller.collageNodes.nodes] != [elso]
-        assert controller.collageClipCount == 2
+        assert elso not in [e["photoId"] for e in controller.trayItems]
+        # A kollázs ÉRINTETLEN: a tálca és a kollázs két külön lista.
+        assert controller.collageClipCount == 3
 
     def test_kijeloles_nelkul_a_torles_TILTOTT(self, panel, controller):
         # #1463: ez a fali óra SZÁNDÉKOSAN marad. Az állítás TÁVOLLÉTRE
@@ -280,7 +329,7 @@ class TestGombok:
         # fordított: terhelt gépen nem hamis PIROS, hanem hamis ZÖLD — ha a
         # kötés lassan futna le, a teszt a még-nem-frissült állapotot látná.
         # Az 50 ms ezért a kötés lefutásának ideje, nem várakozási határidő.
-        controller.setCollageSelection([])
+        _child(panel, "collageClipsTab").setProperty("trayValasztas", [])
         QTest.qWait(50)
         assert _child(panel, "collageDeleteClips").property("enabled") is False
 
