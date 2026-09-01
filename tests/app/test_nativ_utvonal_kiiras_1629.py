@@ -33,6 +33,18 @@ _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _EXPORT = (_QML / "ExportDialogs.qml").read_text(encoding="utf-8")
 _IMPORT = (_QML / "ImportSourceDialog.qml").read_text(encoding="utf-8")
 _MOVEDB = (_QML / "MoveDatabaseDialog.qml").read_text(encoding="utf-8")
+#: ⚠️ A három forrás NEVEZVE, nem paraméterként átadva. A `parametrize` a
+#: paraméter ÉRTÉKÉBŐL képez teszt-azonosítót, és a pytest azt a
+#: `PYTEST_CURRENT_TEST` KÖRNYEZETI VÁLTOZÓBA is kiírja — egy egész
+#: QML-fájllal az azonosító átlépi a Windows 32767 karakteres korlátját,
+#: és a teszt `ValueError`-ral MÁR A SETUPBAN elhasal. Linuxon ez nem
+#: látszik; a CI windows-lába fogta meg (#1629).
+_FORRASOK = {
+    "ExportDialogs": _EXPORT,
+    "ImportSourceDialog": _IMPORT,
+    "MoveDatabaseDialog": _MOVEDB,
+}
+
 _FILEOPS = (
     Path(picasapy.app.__file__).parent / "fileops_controller.py"
 ).read_text(encoding="utf-8")
@@ -93,33 +105,20 @@ class TestASlot:
 
 
 class TestAHaromParbeszed:
-    @pytest.mark.parametrize(
-        "nev,forras",
-        [
-            ("ExportDialogs", _EXPORT),
-            ("ImportSourceDialog", _IMPORT),
-            ("MoveDatabaseDialog", _MOVEDB),
-        ],
-    )
-    def test_a_vezerlon_at_alakit(self, nev, forras):
-        assert "fileOpsController.toLocalPath(" in forras, nev
+    @pytest.mark.parametrize("nev", sorted(_FORRASOK))
+    def test_a_vezerlon_at_alakit(self, nev):
+        assert "fileOpsController.toLocalPath(" in _FORRASOK[nev], nev
 
     def test_az_importban_MINDKET_utvonal_at_van_kotve(self):
         """A jegy két helyet nevez meg ebben a fájlban (:87 és :89)."""
         assert _IMPORT.count("fileOpsController.toLocalPath(") == 2
 
-    @pytest.mark.parametrize(
-        "nev,forras",
-        [
-            ("ExportDialogs", _EXPORT),
-            ("ImportSourceDialog", _IMPORT),
-            ("MoveDatabaseDialog", _MOVEDB),
-        ],
-    )
-    def test_a_nyers_levagas_CSAK_tartalekagkent_marad(self, nev, forras):
+    @pytest.mark.parametrize("nev", sorted(_FORRASOK))
+    def test_a_nyers_levagas_CSAK_tartalekagkent_marad(self, nev):
         """A szöveges csere megmarad annak az ágnak, ahol a vezérlő nincs
         regisztrálva (önálló próbák) — de MINDIG a `toLocalPath` UTÁN,
         tartalékként, nem helyette."""
+        forras = _FORRASOK[nev]
         for i, sor in enumerate(forras.split("\n")):
             if "replace(/^file:" not in sor:
                 continue

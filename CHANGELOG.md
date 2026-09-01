@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.194] – 2026-09-01
+
+### Javítva
+- **Windowson elhasalt egy teszt a saját azonosítója miatt (#1629).** A
+  hiba a programot nem érintette, csak a CI windows-lábát: egy
+  paraméterezett teszt egész fájlok tartalmát kapta azonosítónak, és az
+  átlépte a Windows környezetiváltozó-korlátját. Új őr fogja meg, ha ez
+  visszatérne.
+
 ## [0.8.193] – 2026-09-01
 
 ### Javítva
