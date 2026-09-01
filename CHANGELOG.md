@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.184] – 2026-09-01
+
+### Hozzáadva
+- **Tíz gyorscímke-hely a nyolc helyett (#1788).** Az eredeti Picasában tíz
+  hely van; nálunk nyolc volt, így a Címkék panel alján is két gombbal
+  több fér el (2×5 rács). A korábban beállított nyolc címke a helyén marad.
+
+### Javítva
+- **A gyorscímke-szerkesztés elvethető (#1788).** A párbeszéd eddig csak
+  „Bezárás" gombot kínált, és a mezők azonnal írtak — egy elgépelt címkét
+  csak kézzel lehetett visszaírni. Mostantól OK/Mégse van, ahogy az
+  eredetiben, és a Mégse visszaállítja a megnyitáskori állapotot.
+
 ## [0.8.183] – 2026-09-01
 
 ### Javítva
