@@ -96,6 +96,17 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
+    #: #1755: a forgatás két JELZŐ ága, az eredeti két erőforrásával.
+    #: Eddig mindkettő néma visszatérés volt: vegyes fotó+videó
+    #: kijelölésnél a videók hallgatólagosan kimaradtak (#103), üres
+    #: kijelölésnél pedig egyszerűen nem történt semmi. A felhasználó
+    #: mindkét esetben ugyanazt látta: „nem forgott el minden", magyarázat
+    #: nélkül.
+    #:
+    #: A szöveg NEM itt él, hanem a felületen (`PicasaNotifier.qml`) —
+    #: a vezérlő csak a tényt jelenti, ahogy a `saveCopyReady` is.
+    rotationTypeFailed = Signal(int)   # hány elem maradt ki
+    rotationNeedsSelection = Signal()
     # #366: a tömeges átnevezés (fájlrendszer-írás, lehet lassú NAS-on)
     # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
     # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
@@ -536,13 +547,21 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
     def _rotate_many(self, rows, delta: int) -> None:
         photos = self._photos.photos
+        kert = [int(r) for r in rows or () if 0 <= int(r) < len(photos)]
         # #103: a videókat kihagyjuk — a rotate= kulcsnak videón nincs
         # értelmes hatása; vegyes kijelölésnél csak a fotók forognak
-        valid = [
-            photos[int(r)]
-            for r in rows
-            if 0 <= int(r) < len(photos) and photos[int(r)].kind != "video"
-        ]
+        valid = [photos[r] for r in kert if photos[r].kind != "video"]
+
+        # #1755: az eredeti Picasa ezt a két esetet MEGMONDJA
+        # (`IDS_MUST_SELECT_TO_ROT`, `IDS_ROT_TYPEFAILED`); mi eddig némán
+        # tértünk vissza. A jelzés a kihagyottak SZÁMÁT viszi, hogy a
+        # felület el tudja dönteni, van-e mit mondani.
+        if not kert:
+            self.rotationNeedsSelection.emit()
+            return
+        kihagyott = len(kert) - len(valid)
+        if kihagyott:
+            self.rotationTypeFailed.emit(kihagyott)
         if not valid:
             return
 
