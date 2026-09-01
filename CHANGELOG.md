@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.200] – 2026-09-01
+
+### Gyorsabb
+- **A program indulása bő két másodperccel rövidebb (#1611).** Eddig
+  minden indításkor betöltődött a képfeldolgozó könyvtár (OpenCV), akkor
+  is, ha egyetlen effektet, mentést vagy arckeresést sem használtál.
+  Mostantól csak akkor töltődik be, amikor tényleg kell — és akkor is a
+  háttérben, közvetlenül az ablak megjelenése után, hogy a felület soha
+  ne akadjon meg tőle. Mérve: a program betöltése 3,0 másodpercről
+  0,7-re csökkent.
+
 ## [0.8.198] – 2026-09-01
 
 ### Javítva
