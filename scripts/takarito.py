@@ -64,6 +64,11 @@ REPO = Path(__file__).resolve().parent.parent
 #: A `run_tests.py` basetempjeinek előtagja a `/tmp` alatt.
 TESZT_ELOTAG = "picasapy-tests-"
 
+#: Modulszintű fogantyú a folyamatindításra (#1375). A teszt EZT cseréli,
+#: nem a globális `subprocess.run`-t — az minden más modulra átszivárogna,
+#: amíg a teszt fut. A projekt őre ezt be is tartatja.
+_run = subprocess.run
+
 #: Ennyi óra után számít árvának egy basetemp, ha nem használja folyamat.
 ALAP_ORA = 6
 
@@ -167,7 +172,7 @@ def pr_allapot(ag: str) -> str | None:
     `gh` nem elérhető) itt „NEM tudjuk" — ilyenkor a munkamásolat MARAD.
     """
     try:
-        ki = subprocess.run(
+        ki = _run(
             ["gh", "pr", "list", "--head", ag, "--state", "all",
              "--json", "state", "--limit", "1"],
             capture_output=True, text=True, timeout=30, cwd=REPO,
@@ -186,7 +191,7 @@ def pr_allapot(ag: str) -> str | None:
 def munkamasolatok(*, allapot=pr_allapot) -> list[Tetel]:
     """A befejezett PR-hez tartozó git-munkamásolatok."""
     try:
-        ki = subprocess.run(
+        ki = _run(
             ["git", "worktree", "list", "--porcelain"],
             capture_output=True, text=True, timeout=30, cwd=REPO, check=True,
         )
@@ -237,10 +242,11 @@ def _idegen_scratchpadben(ut: Path) -> bool:
 # --- 2. basetempek --------------------------------------------------------
 
 
-def basetempek(most: float, ora: int, *, hasznalja=folyamat_hasznalja) -> list[Tetel]:
+def basetempek(most: float, ora: int, *, gyoker: Path = Path("/tmp"),
+               hasznalja=folyamat_hasznalja) -> list[Tetel]:
     """Árva `run_tests.py`-basetempek a `/tmp` alatt."""
     talalt = []
-    for p in sorted(Path("/tmp").glob(TESZT_ELOTAG + "*")):
+    for p in sorted(gyoker.glob(TESZT_ELOTAG + "*")):
         if not p.is_dir():
             continue
         oraban = kor_masodperc(p, most) / 3600
@@ -264,15 +270,15 @@ def sajat_munkamenet() -> str | None:
     return None
 
 
-def scratchpadek(most: float, nap: int, sajat: str | None,
-                 *, hasznalja=folyamat_hasznalja) -> list[Tetel]:
+def scratchpadek(most: float, nap: int, sajat: str | None, *,
+                 gyoker: Path = Path("/tmp/claude-1000"),
+                 hasznalja=folyamat_hasznalja) -> list[Tetel]:
     """Halott munkamenetek scratchpadjei.
 
     ⚠️ Csak a SAJÁT azonosító alattit jelöljük elvihetőnek. Idegen
     munkamenet fáját akkor sem töröljük, ha minden jel halottnak mutatja
     — a tévedés ott visszafordíthatatlan (#1867).
     """
-    gyoker = Path("/tmp/claude-1000")
     if not gyoker.is_dir():
         return []
     talalt = []
@@ -313,13 +319,13 @@ def torol(tetel: Tetel) -> bool:
     if not tetel.elvihetjuk:
         return False
     if tetel.fajta == "munkamasolat":
-        vissza = subprocess.run(
+        vissza = _run(
             ["git", "worktree", "remove", str(tetel.ut), "--force"],
             capture_output=True, text=True, cwd=REPO,
         )
         if vissza.returncode != 0:
             return False
-        subprocess.run(["git", "worktree", "prune"], capture_output=True, cwd=REPO)
+        _run(["git", "worktree", "prune"], capture_output=True, cwd=REPO)
         return True
     shutil.rmtree(tetel.ut, ignore_errors=True)
     return not tetel.ut.exists()
