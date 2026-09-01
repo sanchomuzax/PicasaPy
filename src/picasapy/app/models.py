@@ -43,9 +43,9 @@ def sorted_folder_rows(
     reverse: bool = False,
     *,
     include_hidden: bool = False,
-) -> list[tuple[str, str, int, str, int, int, bool]]:
-    """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline)
-    sorai a kért rendezésben.
+) -> list[tuple[str, str, int, str, int, int, bool, bool]]:
+    """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline,
+    rejtett) sorai a kért rendezésben.
 
     Külön függvény, mert két, egymástól FÜGGETLEN sorrendet kell kiszolgálnia
     (#321): a bal hasáb a saját, rögzített Picasa-sorrendjében áll, a rács
@@ -56,7 +56,7 @@ def sorted_folder_rows(
     # Rejtett képek kapcsoló hozza vissza őket, ami a rejtett fotókat.
     rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
     db_rows = conn.execute(
-        "SELECT f.path, f.date, f.offline, count(p.id) AS n,"
+        "SELECT f.path, f.date, f.offline, f.hidden, count(p.id) AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
@@ -74,6 +74,9 @@ def sorted_folder_rows(
             # #459/5: a jelenleg nem elérhető mappa jelölése — a sor
             # bennmarad a listában, csak külön jelzést kap.
             bool(row["offline"]),
+            # #1637/2: a rejtettség a soron utazik, hogy a hívó a
+            # „Rejtett mappák" csomópont alá tudja gyűjteni őket
+            bool(row["hidden"]),
         )
         for row in db_rows
     ]
@@ -127,23 +130,34 @@ class FolderListModel(QAbstractListModel):
         folders = sorted_folder_rows(
             conn, sort_mode, reverse, include_hidden=include_hidden
         )
+        # #1637/2: a rejtett mappák nem VEGYÜLNEK vissza a listába — a
+        # végén, saját fejléc alatt állnak. Az eredetiben az elrejtés
+        # adatvédelmi funkció (`IDS_HIDDEN` = „Rejtett mappák"), nem
+        # nézeti szűrő: a csomópont léte a funkció lényege. Nélküle a
+        # bekapcsolt kapcsoló mellett nem lehetne megmondani, melyik
+        # mappa volt elrejtve.
         rows = (
             (name, path, count, date, offline)
-            for name, path, count, date, _size, _change, offline in folders
+            for name, path, count, date, _size, _change, offline, hidden in folders
+            if not hidden
+        )
+        rejtettek = tuple(
+            ("folder", name, path, count, offline)
+            for name, path, count, _date, _size, _change, offline, hidden in folders
+            if hidden
         )
         # #461/3: az ÉVSZÁM-csoportok a DÁTUM-nézethez tartoznak. Név vagy
         # méret szerinti rendezésnél a fejlécek értelmüket vesztenék (egy
         # évszám többször, összevissza sorrendben bukkanna fel), ezért ott
         # sima felsorolás áll — ahogy az eredetiben is.
         if sort_mode in ("date", "changed"):
-            self._set_rows(_with_year_separators(rows))
+            lathato = _with_year_separators(rows)
         else:
-            self._set_rows(
-                tuple(
-                    ("folder", name, path, count, offline)
-                    for name, path, count, _date, offline in rows
-                )
+            lathato = tuple(
+                ("folder", name, path, count, offline)
+                for name, path, count, _date, offline in rows
             )
+        self._set_rows(lathato + _rejtett_csomopont(rejtettek))
 
     def load_matches(self, groups) -> None:
         """Keresési találatok mappái (#49): csak a találatos mappák
@@ -300,6 +314,27 @@ def _sort_key(sort_mode: str):
 def _descending(sort_mode: str) -> bool:
     """A Picasa alapértéke: dátum/változás/méret csökkenő, név növekvő."""
     return sort_mode != "name"
+
+
+#: A „Rejtett mappák" csomópont felirata (`IDS_HIDDEN`, bináris index).
+REJTETT_MAPPAK_FEJLEC = "Rejtett mappák"
+
+
+def _rejtett_csomopont(
+    rejtettek: tuple[tuple[str, str, str, int, bool], ...],
+) -> tuple[tuple[str, str, str, int, bool], ...]:
+    """A rejtett mappák a saját fejlécük alatt, a lista végén (#1637/2).
+
+    ÜRESEN nem ad fejlécet: aki nem rejtett el semmit, ne lásson egy
+    örökké ott ülő, tartalmatlan csomópontot a hasáb alján.
+
+    A fejléc `hidden` FAJTÁJÚ sor, útvonal nélkül — a delegate ugyanúgy
+    nem engedi kijelölni, mint az évszám-elválasztót.
+    """
+    if not rejtettek:
+        return ()
+    fejlec = ("hidden", REJTETT_MAPPAK_FEJLEC, "", len(rejtettek), False)
+    return (fejlec,) + rejtettek
 
 
 def _with_year_separators(folders) -> tuple[tuple[str, str, str, int, bool], ...]:

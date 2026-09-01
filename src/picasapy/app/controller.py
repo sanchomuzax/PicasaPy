@@ -609,8 +609,14 @@ class AppController(
 
     @Slot(bool)
     def setShowHidden(self, show: bool) -> None:
+        # #1637/2: a bal hasábot IS újra kell tölteni. A #1637 első köre a
+        # rejtett MAPPÁKAT is erre a kapcsolóra bízta, de itt csak a rács
+        # frissült — a mappa így csak egy későbbi, más okból kiváltott
+        # újratöltéskor bukkant elő. A kapcsoló látszólag működött (a
+        # rejtett KÉPEK azonnal megjelentek), ezért maradt észrevétlen.
         self._get_settings().setValue("view/showHidden", bool(show))
         self._refresh_view()
+        self._reload_folders()
         self.statusChanged.emit()
 
     @Slot()

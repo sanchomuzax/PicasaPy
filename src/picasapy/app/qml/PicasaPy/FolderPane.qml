@@ -683,9 +683,16 @@ Rectangle {
                     // évszám-elválasztó: arányos betűs címke + vékony
                     // vízszintes elválasztó vonal a panel széléig (audit:
                     // docs/specs/ui-audit-mainwindow.md, mappafa szakasz)
+                    //
+                    // #1637/2: a „Rejtett mappák" csomópont fejléce
+                    // UGYANEZ a sorfajta — címke + vonal, kijelölés nélkül.
+                    // Csak a fajtája más (`hidden`), hogy a modell ne
+                    // hazudjon évszámot oda, ahol gyűjtemény van.
+                    readonly property bool isHeaderRow:
+                        kind === "year" || kind === "hidden"
                     Text {
                         id: yearLabel
-                        visible: kind === "year"
+                        visible: parent.isHeaderRow
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 6
                         text: name
@@ -693,7 +700,7 @@ Rectangle {
                         color: Theme.panelYearText
                     }
                     Rectangle {
-                        visible: kind === "year"
+                        visible: parent.isHeaderRow
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: yearLabel.right; anchors.leftMargin: 6
                         anchors.right: parent.right; anchors.rightMargin: 6
