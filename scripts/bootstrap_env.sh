@@ -89,6 +89,16 @@ python3 -m pip install $PIP_CSOMAGOK
 # és a tulajdonosnak kellett szólnia. Élő futás könyvtárához nem nyúl.
 python3 "$PROJECT_DIR/scripts/run_tests.py" --csak-takaritas || true
 
+# #1867: a fenti sor CSAK a saját basetempjeinket takarítja. A munkamásolatok
+# és a halott munkamenetek scratchpadjei külön osztály — egyetlen éjszaka
+# 4,6 GB-ot és 17 fölösleges munkamásolatot hagyott, és a /tmp 82%-on
+# riasztott a tulajdonosnál.
+#
+# Itt SZÁNDÉKOSAN csak JELENTÜNK, nem törlünk: a session-start hook minden
+# indulásnál fut, felügyelet nélkül is, és egy téves törlés
+# visszafordíthatatlan. A `--torol` az emberi (vagy kör-végi) döntés.
+python3 "$PROJECT_DIR/scripts/takarito.py" || true
+
 # Az offscreen Qt-platform a fejléc/QML-teszteknek is kell. A környezetfájl
 # neve agentfüggő; ha egyik sem ismert, a beállítás kimarad (nem hiba).
 ENV_FILE="${CLAUDE_ENV_FILE:-${CODEX_ENV_FILE:-}}"
