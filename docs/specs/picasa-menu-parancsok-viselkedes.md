@@ -4054,3 +4054,89 @@ vezérlője és a képkocka-mentés; a csoportosztás nincs mérve.)*
   ponttal, visszaállítással és képkocka-mentéssel (64.1–64.2).
 - **„A `moviestart`/`movieend` tokent nem ismerjük"** — megdőlt: a
   regiszterben és a render-láncban is ott van, megőrizve (64.3).
+
+## 65. tétel — a KETTŐS NÉZET (2-up) NEM összehasonlítás, hanem KÉT SZERKESZTÉS (2026-09-01)
+
+**Bizalmi fok: megerősített.** A megfejtést a bináris sztringtára és a
+hivatalos magyar fordítás együtt adja; a tárolás helye a hívási környezetből.
+
+### A lelet egy mondatban
+
+A `2up` mód, amit eddig „összehasonlító nézetnek" neveztünk, valójában
+**párhuzamos SZERKESZTŐ munkamenet**: ugyanazt a képet **kétféleképpen**
+lehet megszerkeszteni egymás mellett, és kilépéskor a Picasa **megkérdezi,
+melyik változatot tartsuk meg**. Ez nem nézegetés, hanem szerkesztési
+munkafolyamat — a #434 eddigi keretezése („nézet") félrevezető volt.
+
+### A döntő bizonyíték — a kilépési párbeszéd, hivatalos magyar szöveggel
+
+| erőforrás-kulcs | angol | hivatalos magyar |
+|---|---|---|
+| `CThumbUI::Confirm2upEditTitle` | „Choose Edits" | „Szerkesztett változatok kiválasztása" |
+| `CThumbUI::Confirm2upEditMsg` | „The same image has two different edits.  Which one would you like to keep?" | „A képnek két szerkesztett változata van. Melyiket szeretné megtartani?" |
+| `CThumbUI::Confirm2upEditDontAsk` | „Don't ask again, always use the selected image" | „Ne kérdezzen újra, mindig használja a kijelölt képet" |
+| `CThumbUI::Confirm2upLeft` / `…Right` | „Left" / „Right" | „Bal" / „Jobb" |
+| `CThumbUI::Confirm2upTop` / `…Bottom` | „Top" / „Bottom" | „Fent" / „Lent" |
+
+Forrás: `referencia/stringres-en-hu.tsv`. A párbeszédet felépítő függvény:
+**`0x0056aad0`** — ugyanaz érinti mind a hét kulcsot, a `Cancel`-t és a
+`Preferences` sztringet.
+
+**A négy irány-felirat magyarázza a `swap_2up_layout`-ot:** a választást a
+Picasa **pozíció szerint** kínálja, tehát vízszintes elrendezésnél
+„Bal/Jobb", függőlegesnél „Fent/Lent". A két elrendezés nem díszítés — a
+kilépési párbeszéd feliratai függenek tőle.
+
+### TARTÓS állapot: a „ne kérdezzen újra" a registrybe kerül
+
+A `DoNotAskOnEnd2Up` kulcsot **kizárólag** a `0x0056aad0` érinti, és ugyanez
+a függvény hivatkozik a `Preferences` sztringre ⇒ a kulcs a
+`SOFTWARE\Google\Picasa\Picasa2\Preferences` alatt él, a többi `Last*`/
+kapcsoló-beállítás mintájára. Bekapcsolva a párbeszéd elmarad, és a
+**kijelölt** oldal szerkesztése marad meg némán.
+
+### A vezérlőcsalád HAT tagú (nem három, és nem is öt)
+
+| elem | buboréksúgó | mit csinál |
+|---|---|---|
+| `only_1up_toggle` | „View only one image" | vissza egyképes nézetbe |
+| `ab_2up_toggle` | „View two different images" | **két különböző** kép egymás mellett |
+| `aa_2up_toggle` | „View the same image twice" | **ugyanaz a kép kétszer** — ez a két-szerkesztés mód |
+| `swap_2up_focus` | „Switch which image has focus" | melyik oldal az **aktív** (oda mennek a szerkesztések) |
+| `swap_2up_layout` | „Switch between horizontal and vertical layout" | vízszintes ↔ függőleges osztás |
+| **`wipe_2up_toggle`** | *(nincs kimért felirat)* | **hatodik vezérlő** — törlő/függöny-átmenet a két oldal közt |
+
+Csoport-tároló: `editpanel/layout_2up_group`.
+
+### A két megjelenítő-felület a binárisban is kettő
+
+A kapcsolókat kezelő függvények (`0x0056a260`, 1046 b; `0x0056a680`, 785 b)
+**párban** hivatkoznak a felületekre: `editpanel/preview` ↔
+`editpanel/previewimage2`, és `editpanel/previewclip` ↔
+`editpanel/previewclip2`. A `0x0056a680` ezen felül a **`previewx0`** és
+**`previewy0`** kulcsokat is érinti (a második felületnek külön
+`preview2_x0` / `preview2_y0` párja van) ⇒ a két nézet **pásztázási pozíciója
+külön tárolódik**.
+
+### Az egyképes visszaváltás LEZÁRJA a futó eszközöket
+
+Az `only_1up_toggle` kezelője (`0x00565fd0`, 660 b) ugyanabban a
+függvényben hivatkozik a `editpanel/cropcancel`, `redeyecancel`,
+`edittextcancel` és `manual_cancel` vezérlőkre ⇒ az egyképes nézetre váltás
+**megszakítja a nyitott vágást / vörösszem-javítást / szövegbeírást /
+kézi retust**. Ez viselkedés, nem elrendezés — a #434 megvalósításakor
+kötelező.
+
+### Amit KIZÁRTAM
+
+- **„A 2up puszta nézegetés."** Megdőlt: a kilépési párbeszéd
+  *szerkesztett változatokról* kérdez, nem megjelenítésről.
+- **„A layout-váltó kozmetikai."** Megdőlt: a kilépési párbeszéd feliratai
+  (Bal/Jobb vs. Fent/Lent) tőle függenek.
+- **„Öt vezérlő."** Megdőlt: a `wipe_2up_toggle` a hatodik.
+
+### Ami NYITVA marad (örökölt, a #434-be)
+
+A `wipe_2up_toggle` **pontos viselkedése** — a felirata nincs a kimért
+szövegtárban, és a `0x005d59f0` a teljes elemnév-tábla, nem kezelő. Ehhez
+célzott dekompiláció kellene; a jegyben rögzítve.
