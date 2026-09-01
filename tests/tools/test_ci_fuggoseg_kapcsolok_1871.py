@@ -31,9 +31,8 @@ listától — így új kapcsolónál magától bővül.
 
 from __future__ import annotations
 
+import ast
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -47,12 +46,31 @@ _HIVAS = re.compile(r"print_dependencies\.py((?:\s+--[a-z-]+)*)")
 
 
 def _ervenyes_kapcsolok() -> set[str]:
-    """A szkript saját súgójából — nem beégetve."""
-    sugo = subprocess.run(
-        [sys.executable, str(SZKRIPT), "--help"],
-        capture_output=True, text=True, check=True,
-    ).stdout
-    return set(re.findall(r"--[a-z-]+", sugo)) | {"--help"}
+    """A szkript saját `add_argument` hívásaiból — nem beégetve.
+
+    ⚠️ Az első változat ALPROCESSZBEN futtatta a `--help`-et, és a
+    windows-lábon elhasalt: a súgó magyar szövege a konzol
+    alapértelmezett kódlapján nem írható ki, a szkript nem-nulla kóddal
+    lép ki, a `check=True` pedig kivételt dob. Nem a szabály volt rossz,
+    hanem a MÉRÉS módja.
+
+    AST-tel olvasva nincs alprocessz, nincs konzol, nincs kódlap — és a
+    forrás ugyanúgy az igazságforrás, mint a súgó, mert a súgót is ezek
+    az `add_argument` hívások állítják elő.
+    """
+    fa = ast.parse(SZKRIPT.read_text(encoding="utf-8"))
+    kapcsolok = {
+        elem.value
+        for csomopont in ast.walk(fa)
+        if isinstance(csomopont, ast.Call)
+        and isinstance(csomopont.func, ast.Attribute)
+        and csomopont.func.attr == "add_argument"
+        for elem in csomopont.args
+        if isinstance(elem, ast.Constant)
+        and isinstance(elem.value, str)
+        and elem.value.startswith("--")
+    }
+    return kapcsolok | {"--help"}
 
 
 def _hivasok() -> list[tuple[Path, str]]:
