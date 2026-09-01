@@ -183,6 +183,39 @@ LCD_MODE = "lcd"
 #: `ID_VIEW_LINEAR` módazonosítója.
 LINEAR_GAMMA_MODE = "linear"
 
+#: `ID_VIEW_MACGAMMA` módazonosítója (#1730).
+MAC_MODE = "mac"
+
+#: A Mac gamma kitevője — a MÉRÉSBŐL, nem a menüfeliratból.
+#:
+#: 🟡 SZÁMÍTOTT érték, NEM mért tábla. A `LINEAR_GAMMA_LUT` (2.2) minden
+#: bájtja a binárisból van kiolvasva; ez NEM az. A #1580 képpont-mérése a
+#: világosítás irányát és nagyságát adta meg, a bináris tábláját nem
+#: láttuk.
+#:
+#: ⚠️ A MENÜFELIRAT („Mac gamma (1.6)") ÉS A MÉRÉS NEM EGYEZIK. A #1730
+#: jegy azt írta, hogy a mérés „konzisztens az `x^(1/1,6)` gammával" —
+#: SZÁMSZERŰEN NEM AZ. A mért pár a központi fotón luma **133,5 → 154,5**;
+#: ebből a kitevő:
+#:
+#:     ln(154,5/255) / ln(133,5/255) = 0,7743   →   gamma = 1,292
+#:
+#: Az `1/1,6 = 0,625` kitevő ugyanerre a bemenetre **170,2**-t adna, azaz
+#: jóval világosabbat a mértnél.
+#:
+#: A MÉRÉST követjük, nem a feliratot: a felirat az eredeti UI szövege, a
+#: 154,5 viszont a tulajdonos gépén készült felvétel képpontja. Hogy az
+#: 1,6-os felirat mire vonatkozik (más színtér? a felület más rétege?),
+#: NYITOTT KÉRDÉS — a jegyben rögzítve.
+MAC_GAMMA_MEASURED_PAIR: tuple[float, float] = (133.5, 154.5)
+MAC_GAMMA_EXPONENT = 0.7743
+
+#: A számított tábla, hogy a futásidőben ne kelljen hatványozni.
+MAC_GAMMA_LUT: tuple[int, ...] = tuple(
+    int(round(255.0 * (ertek / 255.0) ** MAC_GAMMA_EXPONENT))
+    for ertek in range(256)
+)
+
 #: `ID_VIEW_BW` módazonosítója.
 BW_MODE = "bw"
 
@@ -234,6 +267,7 @@ LINEAR_GAMMA_LUT: tuple[int, ...] = (
 
 #: A gamma-tábla `cv2.LUT`-kész alakja — egyszer épül fel, modulszinten.
 _LINEAR_GAMMA_TABLE: np.ndarray = np.array(LINEAR_GAMMA_LUT, dtype=np.uint8)
+_MAC_GAMMA_TABLE: np.ndarray = np.array(MAC_GAMMA_LUT, dtype=np.uint8)
 
 
 def _luma_tabla() -> np.ndarray:
@@ -294,7 +328,15 @@ _DARKEN_MULTIPLIERS: dict[str, int] = {
 #: Az a néhány mód, amely MA ténylegesen átírja a képpontokat. A hívó ebből
 #: tudja, hogy megéri-e egyáltalán a képet numpy-tömbbé alakítania.
 PIXEL_AFFECTING_MODES: frozenset[str] = frozenset(
-    {OVERFLOW_MODE, PROJECTOR_MODE, LCD_MODE, LINEAR_GAMMA_MODE, BW_MODE, SEPIA_MODE}
+    {
+        OVERFLOW_MODE,
+        PROJECTOR_MODE,
+        LCD_MODE,
+        LINEAR_GAMMA_MODE,
+        MAC_MODE,
+        BW_MODE,
+        SEPIA_MODE,
+    }
 )
 
 def display_mode_changes_pixels(mode: str) -> bool:
@@ -397,6 +439,26 @@ def apply_linear_gamma(rgb: np.ndarray) -> np.ndarray:
     return _tablat_alkalmaz(rgb, _LINEAR_GAMMA_TABLE)
 
 
+def apply_mac_gamma(rgb: np.ndarray) -> np.ndarray:
+    """A `Mac gamma (1.6)` világosítása (#1730).
+
+    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
+
+    🟡 A tábla **SZÁMÍTOTT**, nem mért. A `LINEAR_GAMMA_LUT` (2.2) a
+    binárisból kiolvasott adat, ez NEM az — a #1580 képpont-mérése a
+    világosítás irányát és nagyságát adta meg, a bináris tábláját nem
+    láttuk. A kitevő a MÉRT párból jön (133,5 → 154,5), nem a
+    menüfeliratból: az `1/1,6` ugyanerre 170,2-t adna. Ld. a
+    `MAC_GAMMA_EXPONENT` melletti levezetést.
+
+    A 0 és a 255 fixpont marad, tehát a fekete nem mosódik szürkévé, a
+    fehér nem csordul ki.
+    """
+    if not _rgb_kep_e(rgb):
+        return rgb
+    return _tablat_alkalmaz(rgb, _MAC_GAMMA_TABLE)
+
+
 def luma(rgb: np.ndarray) -> np.ndarray:
     """A mért egész luma `(H, W)` uint8 síkja: `(77·R + 151·G + 28·B) >> 8`.
 
@@ -472,6 +534,8 @@ def apply_display_mode(rgb: np.ndarray | None, mode: str) -> np.ndarray | None:
         return darken(rgb, multiplier)
     if mode == LINEAR_GAMMA_MODE:
         return apply_linear_gamma(rgb)
+    if mode == MAC_MODE:
+        return apply_mac_gamma(rgb)
     if mode == BW_MODE:
         return apply_display_bw(rgb)
     if mode == SEPIA_MODE:

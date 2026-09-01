@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.172] – 2026-09-01
+
+### Hozzáadva
+- **A „Mac gamma (1.6)" megjelenítési mód működik (#1730).** A Nézet ▸
+  Megjelenítési mód menüben ez a tétel eddig **szürke** volt. Mostantól
+  kiválasztható, és azt csinálja, amit az eredetiben: **világosítja** a
+  képet. Az erősségét a saját felvételeidből mértük ki (#1580) — nem a
+  menü feliratából következtettük.
+
 ## [0.8.171] – 2026-09-01
 
 ### Hozzáadva
