@@ -66,7 +66,7 @@ SPEC_DIR = REPO / "docs" / "specs"
 
 #: A publikált artifact címe. MÁSIK munkamenetből frissítve EZT kell átadni az
 #: `Artifact` hívás `url` mezőjében, különben új lap jön létre.
-ARTIFACT_URL = "https://claude.ai/code/artifact/3e4aac90-5195-45c3-ba94-661d26824f94"
+ARTIFACT_URL = "https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e"  # az ÖSSZEVONT lap (2026-09-01 óta)
 
 SAVOK = 32
 
@@ -544,7 +544,12 @@ def main() -> int:
     args.ki.parent.mkdir(parents=True, exist_ok=True)
     args.ki.write_text(epits(adat), encoding="utf-8")
     print(f"✅ {args.ki}")
-    print(f"   Publikálás ERRE a címre (különben új lap jön létre):\n   {ARTIFACT_URL}")
+    print(
+        "   ⚠️ EZT A FÁJLT ÖNMAGÁBAN NE PUBLIKÁLD — a tulajdonos EGY lapot kap,\n"
+        "      három szakasszal. Az összerakó futtatja ezt a szkriptet is:\n"
+        "         cd ~/picasapy-agent && python3 eszkozok/egy_lap.py\n"
+        f"      A publikálás címe:  {ARTIFACT_URL}"
+    )
     return 0
 
 
