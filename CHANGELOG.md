@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.177] – 2026-09-01
+
+### Javítva
+- **A Mappa menü Rendezés almenüje az eredeti négyes készletet kapta
+  (#1595).** Eddig a **Nézet** menü ötös készletét használta, hosszú
+  feliratokkal — ugyanaz a rendezés a mappa jobbklikk-menüjében és a
+  Mappa menüben **kétféle felirattal és tételszámmal** jelent meg.
+  Mostantól mindkét helyen ugyanaz áll: **Dátum · Név · Méret ·
+  Fordított sorrend**.
+- A **legutóbbi változtatások** szerinti rendezés **nem tűnt el**: az
+  eredetiben ilyen nincs, ezért mostantól **saját funkcióként** van
+  jelölve (kék felirat + buboréksúgó), nem pedig kikerült a menüből.
+
 ## [0.8.176] – 2026-09-01
 
 ### Javítva
@@ -251,199 +264,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A változásnapló szerkezete is rendben: a felgyűlt bejegyzések egy
   szakaszba kerültek, kimondva, melyik verziótartományt fedik —
   találgatás helyett.
-
-## [0.8.133 – 0.8.154] – 2026-08-28 … 2026-08-31
-
-⚠️ **Miért egy szakasz huszonkét kiadásra?** A szakasz címe 2026-08-28-án
-`[Kiadatlan]`-ra változott, az eszközök viszont `[Nem kiadott]`-at
-kerestek — így a kiadás hat napig nem tudta lezárni, és a bejegyzések
-dátumozatlanul gyűltek. A hozzárendelés utólag nem vezethető le
-megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
-
-### Hozzáadva
-- **A Másolás és a Kivágás a képek fájljait teszi a vágólapra (#1526,
-  #1571).** A Szerkesztés menü két tétele eddig szürke volt. Mostantól a
-  kijelölt képeket a Ctrl+C-vel (vagy a menüből) átteheted egy
-  fájlkezelőbe, a Ctrl+X pedig ugyanezt mozgatásként jelöli — ahogy az
-  eredeti Picasában. **A szövegmezőkben a Ctrl+C változatlanul a beírt
-  szöveget másolja:** a billentyű a fókuszt nézi, tehát átnevezés,
-  keresés vagy feliratszerkesztés közben nem veszi el a mezőtől.
-
-### Gyorsult
-- **Az induláskori mappa-ellenőrzés nem tapogatja végig a változatlan
-  mappákat (#1674).** A program indulásnál az exportcélokat és a Kollázsok
-  mappát végignézte fájlonként, akkor is, ha egyikük sem változott. Helyi
-  lemezen ez alig érzékelhető, **hálózati meghajtón vagy NAS-on viszont
-  fájlonként egy külön kör** — nagy mappánál ez összeadódik. Mostantól a
-  változatlan mappát a program felismeri, és meg sem nyitja a benne lévő
-  fájlokat. Új vagy módosult fájl továbbra is azonnal bekerül.
-
-### Gyorsult
-- **A Kollázsok mappa nem olvasódik újra minden induláskor (#1675).** A
-  program indulásnál kidobta az indexből a saját Kollázsok mappáját, majd
-  rögtön vissza is építette — közben minden benne lévő képet újra
-  beolvasott a lemezről. Kevés kollázsnál ez alig látszott, sok kollázsnál
-  viszont ugyanúgy elszaladt volna, mint korábban az exportcéloknál (ott
-  8,4 másodpercbe került). Mostantól a mappa védett: a benne lévő képek
-  nem nyílnak meg feleslegesen.
-
-### Hozzáadva
-- **A „Másolat mentése" megőrzi a kép eredeti felvételi idejét (#1642).**
-  A másolat eddig metaadat nélkül készült: elveszett belőle, mikor
-  készült az eredeti felvétel. Mostantól — ahogy az eredeti Picasa is
-  teszi — a másolat EXIF- és XMP-aláírást kap, benne a **forrás eredeti
-  dátumával**, míg a másolás pillanata külön mezőbe kerül. Így a
-  fényképkezelők (és a mi idővonalunk is) a másolatot a felvétel
-  idejéhez sorolják, nem a mai naphoz. A forrásfájl változatlan marad.
-  A készítő neve a mi nevünk („PicasaPy"), nem a „Picasa" — nem adjuk ki
-  magunkat a Google termékének.
-
-### Javítva
-- **A „Másolat mentése" többé nem ír a `.picasa.ini` fájlba (#1643).**
-  Eddig a másolat mellé két bejegyzést tettünk — abból a feltevésből,
-  hogy az eredeti Picasa is ezt teszi. A tulajdonos mérése a valódi
-  Picasa 3.9-cel megcáfolta: az **semmit nem ír**, és ha a mappában még
-  nem volt `.picasa.ini`, nem is hoz létre egyet. Mostantól mi sem.
-  Ez azért fontos, mert a fényképmappáid a windowsos Picasával közösen is
-  használhatók: az általunk írt idegen bejegyzések ott is megjelentek
-  volna.
-
-### Hozzáadva
-- **A Mappa menü négy néma tétele működik (#1595).** Az „Áthelyezés…",
-  a „Törlés…", az „Eltávolítás a Picasából…" és a „Keresés a lemezen"
-  eddig szürkén állt a Mappa menüben — pedig mind a négy régóta működik a
-  mappa jobbklikk-menüjéből. Mostantól a menüsávból is elérhetők, és a
-  megnyitott mappára hatnak. Ugyanazokat a megerősítéseket kapod, mint a
-  helyi menüből: egy művelet, egy út.
-
-### Hozzáadva
-- **A PicasaPy saját menüparancsai kék felirattal látszanak (#1701).**
-  Eddig semmi nem különböztette meg az eredeti Picasa parancsait a mi
-  kiegészítéseinktől — ha egy funkció máshogy működött, mint amit a
-  Picasából megszoktál, nem derült ki, hogy azért, mert nem is a Picasáé.
-  Mostantól a saját parancsaink feliratát kék szín jelöli, és a föléjük
-  húzott egérnél megjelenő buborék ki is mondja („Ez a PicasaPy
-  kiegészítése…") — a szín önmagában nem elég, színvakoknak is
-  olvashatónak kell lennie. Az első két megjelölt parancs a Súgó menü
-  Tesztüzem és Napló elküldése tétele.
-
-### Javítva
-- **A Nyomtatás és az e-mail küldés a képtálca tartalmán dolgozik
-  (#1671).** Eddig csak a rácsban épp kijelölt képeket látta mind a
-  kettő: kijelölés nélkül nem történt semmi, és a más mappából a tálcára
-  tett kép sosem került bele. Pedig a képtálca épp arra való, hogy több
-  mappából lehessen képeket összegyűjteni — a mappába exportálás már
-  régóta így viselkedik. Mostantól, ha van valami a tálcán, a nyomtatás
-  és az e-mail is azt viszi; üres tálcánál marad a megszokott,
-  kijelölés-alapú működés.
-
-### Hozzáadva
-- **A „Keresés" almenü a kép helyi menüjében, három tétellel (#1613).**
-  Eddig egyetlen lapos „Keresés a lemezen" parancs volt itt; az eredetiben
-  almenü van, és két olyan tétel is, ami nálunk sehonnan nem volt elérhető:
-  - **Fájl a lemezen** (Ctrl+Enter) — a régi parancs, az eredeti nevén;
-  - **Eredeti a lemezen** — a szerkesztés előtti, megőrzött eredetit
-    mutatja meg a fájlkezelőben. Szürke, ha a képnek nincs eredetije;
-  - **Keresés a Picasában** — album- vagy Emberek-nézetből a kép valódi
-    mappájára ugrik, ahol a többi kép is mellette van.
-
-### Hozzáadva
-- **Működik a „Mappa törlése…" a mappa helyi menüjében (#1638).** Eddig
-  szürke, kattinthatatlan tétel volt — miközben a két szomszédja
-  („Mappa áthelyezése…", „Eltávolítás a Picasából…") működött. Épp a
-  visszafordíthatatlan művelet hiányzott. Mostantól a mappa a
-  **Lomtárba** kerül a teljes tartalmával együtt, ahogy az eredeti
-  Picasában: nem törlődik véglegesen, tehát visszaállítható. A
-  megerősítő kérdés kiírja a mappa nevét, a mappa pedig a törlés után
-  azonnal eltűnik a bal hasábról.
-
-### Javítva
-- **A mentés és az export hibaüzenete néma maradhatott volna (#1743).** A
-  legutóbbi indulási gyorsítás óta a ritkán használt ablakok csak az első
-  megnyitáskor épülnek fel — a hibaüzeneteiket viszont ugyanezek az ablakok
-  fogadták, tehát amíg nem nyíltak meg, nem is volt, aki meghallja őket. A
-  gyakorlatban ez nem fordult elő, mert minden út előbb felépítette az
-  ablakot; de az első új belépési pont (billentyűparancs, gomb)
-  észrevétlenül elnyelte volna a hibát. Mostantól a program mindig figyel,
-  és az ablak akkor épül fel, amikor a hír megérkezik.
-
-### Gyorsult
-- **A program felülete lényegesen gyorsabban jelenik meg (#1720).** Eddig a
-  PicasaPy indulásnál felépítette a teljes felületet — beleértve azt a húsz
-  párbeszédablakot is (Beállítások, Mappakezelő, Nyomtatás, Exportálás,
-  Duplikátum-kereső és a többi), amit a legtöbben soha meg sem nyitnak. A
-  legdrágább tétel egy szem sem látta apróság volt: minden egyes
-  szövegbeviteli mező alá odaépült a saját jobbklikk-menüje, negyven
-  darab — ez önmagában a felépített felület negyede. Mostantól ezek csak
-  akkor jönnek létre, amikor a felhasználó tényleg megnyitja őket. A
-  felület felépítése így **41%-kal kevesebb munkát** végez, és a mért
-  indulási szakasz **kb. 0,8 másodperccel rövidebb** — a jobbklikk-menü és
-  minden párbeszéd változatlanul ugyanúgy nyílik meg, mint eddig.
-
-### Javítva
-- **Az export eredményét közlő ablak szélessége kiszámíthatatlan volt
-  (#1599).** A hosszú hibaüzenetek — épp azok, amiket el kell olvasni —
-  egyetlen sorba nyúltak, és az ablak a képernyő szélessége felé hízott.
-  A jelenség csak a Windowson megszokott ablakstílussal jött elő, ezért a
-  fejlesztői gépen soha nem látszott; a tulajdonos jelentette futó
-  programból. Mostantól az ablak rögzített szélességű, a szöveg tördel, és
-  a hosszú fájlnév is olvashatóan elfér benne. Ugyanez a javítás vonatkozik
-  a Google Earth-export eredményablakára is.
-- **A magyar menüfeliratok csonkoltak (#1740).** A menük szélessége eddig
-  rögzített 200 képpont volt — nem az angol felirathoz igazodott, hanem
-  semmihez: a Qt menü-alapértelmezése nem méri meg a saját tételeit.
-  Angolul ez ritkán tűnt fel, magyarul viszont a menüsáv 18 menüjéből 12
-  csonkolt, összesen 51 tételen („Rendezés a legutóbbi változtatások
-  alapján", „Kép exportálása mappába…"). Mostantól minden menü — a
-  menüsáv és a jobbklikk-menük egyaránt — a leghosszabb feliratához
-  igazodik, és a nyelv váltásakor újramér, tehát a csonkolás egyik
-  nyelven sem tér vissza. A rövid menük szélessége nem változott.
-- **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
-  mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
-  számától függ, hanem attól, hány exportcélt tart nyilván a program — ez a
-  szám eddig sehol nem látszott, ezért a naplóból nem lehetett eldönteni, mi
-  drágult meg. Továbbra is csak darabszám kerül a naplóba, útvonal nélkül.
-- **A Fájl ▸ „Áthelyezés új mappába…" menüpont eddig semmit nem
-  csinált (#1614).** A tétel szürkén, kattinthatatlanul állt — pedig a
-  neve ELLENÉRE nem új, üres mappát hoz létre, hanem a kijelölt képeket
-  helyezi át egy olyan mappába, amit a felhasználó most nevez el.
-  Mostantól kattintásra egy névmezős párbeszéd kéri a mappa nevét (mint
-  az „Új album…"), és a képek — a `.picasa.ini` bejegyzésükkel együtt —
-  átkerülnek az így létrehozott mappába; üres kijelölésnél a tétel
-  szürke marad, érvénytelen (üres, csak szóköz, vagy Windowson tiltott
-  karaktert tartalmazó) vagy már foglalt névnél pedig érthető
-  hibaüzenet jelenik meg, és semmi nem mozdul a lemezen.
-- **A duplikátumok mappája egymásba ágyazódhatott (#1697).** A
-  „Duplikátumok" gyűjtőmappából újra futtatott áthelyezés
-  `Duplikátumok\Duplikátumok` szerkezetet hozott létre, mert a program a
-  saját gyűjtőmappáját közönséges fotómappaként dolgozta fel. Mostantól,
-  ha a kép már egy „Duplikátumok" nevű mappában van (kis- és
-  nagybetűtől függetlenül, a felhasználó saját maga által létrehozott
-  ilyen nevű mappára is), az áthelyezés a helyén hagyja a fájlt, és
-  egyértelmű üzenetet ír ki — a duplikátum-keresés a mappában továbbra is
-  működik, csak a beágyazó áthelyezést tiltjuk.
-- **Az állapotlap „Ez vár rád" része félrevezetett (#1664).** A tulajdonos
-  jelezte, hogy kaotikus. Két hiba volt benne: ugyanaz a jegy **kétszer**
-  szerepelt (a „bináris kutatás oldja fel" lista a blokkoltak részhalmaza,
-  mégis mellé került), a szakasz címe pedig azt ígérte, hogy minden alatta
-  lévő tétel a tulajdonosra vár — holott épp az ellenkezője igaz volt rájuk.
-  Mostantól egy jegy pontosan egy csoportban szerepel, és a cím megmondja,
-  hogy csak az első csoport az, ami nélküle áll.
-- **Az ottragadt mappák induláskori takarítása fölöslegesen dolgozott, ha a
-  nyilvántartott exportcélok között pontosan egyező útvonal ismétlődött
-  (#1706).** Minden ilyen ismétlés külön fájlrendszer-hívást (útvonal-
-  feloldást) igényelt — hálózati meghajtón ez közvetlenül az indulási időt
-  hosszabbította. Mostantól egy pontosan egyező útvonal csak egyszer
-  oldódik fel, a védelem (#1667/#1565) változatlan.
-- **Az ottragadt mappák induláskori takarítása feltartotta a program
-  ablakának megjelenését (#1716).** Ez a lépés hálózati könyvtárnál a
-  figyelt mappák és a nyilvántartott exportcélok számával arányosan
-  lassult — a tulajdonos gépén mérve 2,3 másodpercig. A takarítás
-  szerepe (az induláskor már nem figyelt mappák eltüntetése az
-  előzményekből) nem sürgős, ezért mostantól az ablak megjelenése UTÁN
-  fut, ugyanúgy, ahogy az exportcélok pótlólagos betöltése is (#1667) —
-  az ablak ezzel a mért idővel hamarabb látszik, a takarítás funkciója
-  változatlan.
 
 ## [0.8.132] – 2026-08-28
 
@@ -1776,50 +1596,6 @@ megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
   véletlenül két képet felcserélni; a korábban másik kártya fölött
   „visszaugró” kép pedig ott marad, ahová a felhasználó húzta.
 
-## [0.8.63] – 2026-08-23
-
-### Javítva
-- **Lezárult a kollázs-mentés összeomlásának ügye (#988).** A korábbi
-  magyarázat szerint a hiba magában a programban volt: a kollázs
-  háttérmunkája és a memória-takarítás akadt volna össze. **A mérés ezt
-  megcáfolta** — a mentés 96 egymást követő futásban hibátlan maradt
-  akkor is, amikor a takarítást szándékosan a lehető legsűrűbben
-  kényszerítettük ki. A tényleges ok a tesztek oldalán volt, és az már
-  javítva. Új őr-teszt vigyáz rá, hogy a program oldala ne romolhasson el
-  észrevétlenül.
-
-## [0.8.64] – 2026-08-24
-
-### Javítva
-- **A főág ellenőrzése nem borul fel többé a kollázs-teszteknél
-  (#988).** Az összeomlás (`exit -11`) egy versenyhelyzetből jött: a
-  teszt beágyazott várakozása közben a főszál szemétgyűjtést futtatott,
-  miközben a kollázs háttérszála épp Qt-jelzést adott át. A védekezés
-  eddig egyetlen tesztfájlba volt bemásolva, ezért amint az elhallgatott,
-  a testvérfájl kezdett elszállni — ma kétszer is. A védekezés mostantól
-  KÖZÖS, és mindhárom érintett fájl azt használja.
-
-## [0.8.62] – 2026-08-23
-
-### Javítva
-- **Megszűnt egy ingatag teszt az arc-beolvasás haladásánál (#1233).**
-  A teszt időzítéstől függően bukott (húsz futásból egy), mert a
-  százalékot a kibocsátás UTÁN olvasta vissza — mire mintát vett, az
-  érték már a következő állapoton állt. A termék viselkedése változatlan:
-  a hiba a mérésben volt. A hamis riasztás azért káros, mert elveszi az
-  időt a valódi hibáktól, és rászoktat az „újrafuttatom" reflexre.
-
-## [0.8.65] – 2026-08-24
-
-### Javítva
-- **Egyetlen magyar szó a képarányra: „méretarány" (#982).** A kollázs
-  formátum-menüje „méretarány"-t mondott, a vágópanel „képarány"-t —
-  ugyanarra a fogalomra. A Picasa saját magyar honosítási táblája dönt:
-  ott mind a négy vonatkozó felirat „méretarány" (és ugyanaz az
-  `AspectRatioList` lista szolgálja ki a vágóeszközt és a kollázst is),
-  tehát a „képarány" a mi saját szóalkotásunk volt. A vágópanel feliratai
-  mostantól a hivatalos alakot használják.
-
 ## [0.8.66] – 2026-08-24
 
 ### Javítva
@@ -1847,6 +1623,50 @@ megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
   irány ugyanazt a szabályt követi. Az ismeretlen nevű szűrő útja
   változatlan (a round-trip elv nem sérül), a záró üres mező
   (`grain=1,;`) továbbra is tolerált.
+
+## [0.8.65] – 2026-08-24
+
+### Javítva
+- **Egyetlen magyar szó a képarányra: „méretarány" (#982).** A kollázs
+  formátum-menüje „méretarány"-t mondott, a vágópanel „képarány"-t —
+  ugyanarra a fogalomra. A Picasa saját magyar honosítási táblája dönt:
+  ott mind a négy vonatkozó felirat „méretarány" (és ugyanaz az
+  `AspectRatioList` lista szolgálja ki a vágóeszközt és a kollázst is),
+  tehát a „képarány" a mi saját szóalkotásunk volt. A vágópanel feliratai
+  mostantól a hivatalos alakot használják.
+
+## [0.8.64] – 2026-08-24
+
+### Javítva
+- **A főág ellenőrzése nem borul fel többé a kollázs-teszteknél
+  (#988).** Az összeomlás (`exit -11`) egy versenyhelyzetből jött: a
+  teszt beágyazott várakozása közben a főszál szemétgyűjtést futtatott,
+  miközben a kollázs háttérszála épp Qt-jelzést adott át. A védekezés
+  eddig egyetlen tesztfájlba volt bemásolva, ezért amint az elhallgatott,
+  a testvérfájl kezdett elszállni — ma kétszer is. A védekezés mostantól
+  KÖZÖS, és mindhárom érintett fájl azt használja.
+
+## [0.8.63] – 2026-08-23
+
+### Javítva
+- **Lezárult a kollázs-mentés összeomlásának ügye (#988).** A korábbi
+  magyarázat szerint a hiba magában a programban volt: a kollázs
+  háttérmunkája és a memória-takarítás akadt volna össze. **A mérés ezt
+  megcáfolta** — a mentés 96 egymást követő futásban hibátlan maradt
+  akkor is, amikor a takarítást szándékosan a lehető legsűrűbben
+  kényszerítettük ki. A tényleges ok a tesztek oldalán volt, és az már
+  javítva. Új őr-teszt vigyáz rá, hogy a program oldala ne romolhasson el
+  észrevétlenül.
+
+## [0.8.62] – 2026-08-23
+
+### Javítva
+- **Megszűnt egy ingatag teszt az arc-beolvasás haladásánál (#1233).**
+  A teszt időzítéstől függően bukott (húsz futásból egy), mert a
+  százalékot a kibocsátás UTÁN olvasta vissza — mire mintát vett, az
+  érték már a következő állapoton állt. A termék viselkedése változatlan:
+  a hiba a mérésben volt. A hamis riasztás azért káros, mert elveszi az
+  időt a valódi hibáktól, és rászoktat az „újrafuttatom" reflexre.
 
 ## [0.8.61] – 2026-08-23
 
@@ -5883,3 +5703,196 @@ három eredeti Picasa-képernyőkép-csomag (53 kép) szisztematikus auditjára
 - **A fájlkezelő-megnyitás hibája eljut a felhasználóhoz (#112):** a „Keresés a
   lemezen" mostantól hibát jelez, ha az `xdg-open` hiányzik vagy nemnulla
   kóddal tér vissza — nem nyeli el némán.
+## [0.8.133 – 0.8.154] – 2026-08-28 … 2026-08-31
+
+⚠️ **Miért egy szakasz huszonkét kiadásra?** A szakasz címe 2026-08-28-án
+`[Kiadatlan]`-ra változott, az eszközök viszont `[Nem kiadott]`-at
+kerestek — így a kiadás hat napig nem tudta lezárni, és a bejegyzések
+dátumozatlanul gyűltek. A hozzárendelés utólag nem vezethető le
+megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
+
+### Hozzáadva
+- **A Másolás és a Kivágás a képek fájljait teszi a vágólapra (#1526,
+  #1571).** A Szerkesztés menü két tétele eddig szürke volt. Mostantól a
+  kijelölt képeket a Ctrl+C-vel (vagy a menüből) átteheted egy
+  fájlkezelőbe, a Ctrl+X pedig ugyanezt mozgatásként jelöli — ahogy az
+  eredeti Picasában. **A szövegmezőkben a Ctrl+C változatlanul a beírt
+  szöveget másolja:** a billentyű a fókuszt nézi, tehát átnevezés,
+  keresés vagy feliratszerkesztés közben nem veszi el a mezőtől.
+
+### Gyorsult
+- **Az induláskori mappa-ellenőrzés nem tapogatja végig a változatlan
+  mappákat (#1674).** A program indulásnál az exportcélokat és a Kollázsok
+  mappát végignézte fájlonként, akkor is, ha egyikük sem változott. Helyi
+  lemezen ez alig érzékelhető, **hálózati meghajtón vagy NAS-on viszont
+  fájlonként egy külön kör** — nagy mappánál ez összeadódik. Mostantól a
+  változatlan mappát a program felismeri, és meg sem nyitja a benne lévő
+  fájlokat. Új vagy módosult fájl továbbra is azonnal bekerül.
+
+### Gyorsult
+- **A Kollázsok mappa nem olvasódik újra minden induláskor (#1675).** A
+  program indulásnál kidobta az indexből a saját Kollázsok mappáját, majd
+  rögtön vissza is építette — közben minden benne lévő képet újra
+  beolvasott a lemezről. Kevés kollázsnál ez alig látszott, sok kollázsnál
+  viszont ugyanúgy elszaladt volna, mint korábban az exportcéloknál (ott
+  8,4 másodpercbe került). Mostantól a mappa védett: a benne lévő képek
+  nem nyílnak meg feleslegesen.
+
+### Hozzáadva
+- **A „Másolat mentése" megőrzi a kép eredeti felvételi idejét (#1642).**
+  A másolat eddig metaadat nélkül készült: elveszett belőle, mikor
+  készült az eredeti felvétel. Mostantól — ahogy az eredeti Picasa is
+  teszi — a másolat EXIF- és XMP-aláírást kap, benne a **forrás eredeti
+  dátumával**, míg a másolás pillanata külön mezőbe kerül. Így a
+  fényképkezelők (és a mi idővonalunk is) a másolatot a felvétel
+  idejéhez sorolják, nem a mai naphoz. A forrásfájl változatlan marad.
+  A készítő neve a mi nevünk („PicasaPy"), nem a „Picasa" — nem adjuk ki
+  magunkat a Google termékének.
+
+### Javítva
+- **A „Másolat mentése" többé nem ír a `.picasa.ini` fájlba (#1643).**
+  Eddig a másolat mellé két bejegyzést tettünk — abból a feltevésből,
+  hogy az eredeti Picasa is ezt teszi. A tulajdonos mérése a valódi
+  Picasa 3.9-cel megcáfolta: az **semmit nem ír**, és ha a mappában még
+  nem volt `.picasa.ini`, nem is hoz létre egyet. Mostantól mi sem.
+  Ez azért fontos, mert a fényképmappáid a windowsos Picasával közösen is
+  használhatók: az általunk írt idegen bejegyzések ott is megjelentek
+  volna.
+
+### Hozzáadva
+- **A Mappa menü négy néma tétele működik (#1595).** Az „Áthelyezés…",
+  a „Törlés…", az „Eltávolítás a Picasából…" és a „Keresés a lemezen"
+  eddig szürkén állt a Mappa menüben — pedig mind a négy régóta működik a
+  mappa jobbklikk-menüjéből. Mostantól a menüsávból is elérhetők, és a
+  megnyitott mappára hatnak. Ugyanazokat a megerősítéseket kapod, mint a
+  helyi menüből: egy művelet, egy út.
+
+### Hozzáadva
+- **A PicasaPy saját menüparancsai kék felirattal látszanak (#1701).**
+  Eddig semmi nem különböztette meg az eredeti Picasa parancsait a mi
+  kiegészítéseinktől — ha egy funkció máshogy működött, mint amit a
+  Picasából megszoktál, nem derült ki, hogy azért, mert nem is a Picasáé.
+  Mostantól a saját parancsaink feliratát kék szín jelöli, és a föléjük
+  húzott egérnél megjelenő buborék ki is mondja („Ez a PicasaPy
+  kiegészítése…") — a szín önmagában nem elég, színvakoknak is
+  olvashatónak kell lennie. Az első két megjelölt parancs a Súgó menü
+  Tesztüzem és Napló elküldése tétele.
+
+### Javítva
+- **A Nyomtatás és az e-mail küldés a képtálca tartalmán dolgozik
+  (#1671).** Eddig csak a rácsban épp kijelölt képeket látta mind a
+  kettő: kijelölés nélkül nem történt semmi, és a más mappából a tálcára
+  tett kép sosem került bele. Pedig a képtálca épp arra való, hogy több
+  mappából lehessen képeket összegyűjteni — a mappába exportálás már
+  régóta így viselkedik. Mostantól, ha van valami a tálcán, a nyomtatás
+  és az e-mail is azt viszi; üres tálcánál marad a megszokott,
+  kijelölés-alapú működés.
+
+### Hozzáadva
+- **A „Keresés" almenü a kép helyi menüjében, három tétellel (#1613).**
+  Eddig egyetlen lapos „Keresés a lemezen" parancs volt itt; az eredetiben
+  almenü van, és két olyan tétel is, ami nálunk sehonnan nem volt elérhető:
+  - **Fájl a lemezen** (Ctrl+Enter) — a régi parancs, az eredeti nevén;
+  - **Eredeti a lemezen** — a szerkesztés előtti, megőrzött eredetit
+    mutatja meg a fájlkezelőben. Szürke, ha a képnek nincs eredetije;
+  - **Keresés a Picasában** — album- vagy Emberek-nézetből a kép valódi
+    mappájára ugrik, ahol a többi kép is mellette van.
+
+### Hozzáadva
+- **Működik a „Mappa törlése…" a mappa helyi menüjében (#1638).** Eddig
+  szürke, kattinthatatlan tétel volt — miközben a két szomszédja
+  („Mappa áthelyezése…", „Eltávolítás a Picasából…") működött. Épp a
+  visszafordíthatatlan művelet hiányzott. Mostantól a mappa a
+  **Lomtárba** kerül a teljes tartalmával együtt, ahogy az eredeti
+  Picasában: nem törlődik véglegesen, tehát visszaállítható. A
+  megerősítő kérdés kiírja a mappa nevét, a mappa pedig a törlés után
+  azonnal eltűnik a bal hasábról.
+
+### Javítva
+- **A mentés és az export hibaüzenete néma maradhatott volna (#1743).** A
+  legutóbbi indulási gyorsítás óta a ritkán használt ablakok csak az első
+  megnyitáskor épülnek fel — a hibaüzeneteiket viszont ugyanezek az ablakok
+  fogadták, tehát amíg nem nyíltak meg, nem is volt, aki meghallja őket. A
+  gyakorlatban ez nem fordult elő, mert minden út előbb felépítette az
+  ablakot; de az első új belépési pont (billentyűparancs, gomb)
+  észrevétlenül elnyelte volna a hibát. Mostantól a program mindig figyel,
+  és az ablak akkor épül fel, amikor a hír megérkezik.
+
+### Gyorsult
+- **A program felülete lényegesen gyorsabban jelenik meg (#1720).** Eddig a
+  PicasaPy indulásnál felépítette a teljes felületet — beleértve azt a húsz
+  párbeszédablakot is (Beállítások, Mappakezelő, Nyomtatás, Exportálás,
+  Duplikátum-kereső és a többi), amit a legtöbben soha meg sem nyitnak. A
+  legdrágább tétel egy szem sem látta apróság volt: minden egyes
+  szövegbeviteli mező alá odaépült a saját jobbklikk-menüje, negyven
+  darab — ez önmagában a felépített felület negyede. Mostantól ezek csak
+  akkor jönnek létre, amikor a felhasználó tényleg megnyitja őket. A
+  felület felépítése így **41%-kal kevesebb munkát** végez, és a mért
+  indulási szakasz **kb. 0,8 másodperccel rövidebb** — a jobbklikk-menü és
+  minden párbeszéd változatlanul ugyanúgy nyílik meg, mint eddig.
+
+### Javítva
+- **Az export eredményét közlő ablak szélessége kiszámíthatatlan volt
+  (#1599).** A hosszú hibaüzenetek — épp azok, amiket el kell olvasni —
+  egyetlen sorba nyúltak, és az ablak a képernyő szélessége felé hízott.
+  A jelenség csak a Windowson megszokott ablakstílussal jött elő, ezért a
+  fejlesztői gépen soha nem látszott; a tulajdonos jelentette futó
+  programból. Mostantól az ablak rögzített szélességű, a szöveg tördel, és
+  a hosszú fájlnév is olvashatóan elfér benne. Ugyanez a javítás vonatkozik
+  a Google Earth-export eredményablakára is.
+- **A magyar menüfeliratok csonkoltak (#1740).** A menük szélessége eddig
+  rögzített 200 képpont volt — nem az angol felirathoz igazodott, hanem
+  semmihez: a Qt menü-alapértelmezése nem méri meg a saját tételeit.
+  Angolul ez ritkán tűnt fel, magyarul viszont a menüsáv 18 menüjéből 12
+  csonkolt, összesen 51 tételen („Rendezés a legutóbbi változtatások
+  alapján", „Kép exportálása mappába…"). Mostantól minden menü — a
+  menüsáv és a jobbklikk-menük egyaránt — a leghosszabb feliratához
+  igazodik, és a nyelv váltásakor újramér, tehát a csonkolás egyik
+  nyelven sem tér vissza. A rövid menük szélessége nem változott.
+- **A tesztüzem naplója kiírja a védett gyökerek számát (#1712).** A
+  mérésekből kiderült, hogy az indulás egyik drága lépése nem a mappák
+  számától függ, hanem attól, hány exportcélt tart nyilván a program — ez a
+  szám eddig sehol nem látszott, ezért a naplóból nem lehetett eldönteni, mi
+  drágult meg. Továbbra is csak darabszám kerül a naplóba, útvonal nélkül.
+- **A Fájl ▸ „Áthelyezés új mappába…" menüpont eddig semmit nem
+  csinált (#1614).** A tétel szürkén, kattinthatatlanul állt — pedig a
+  neve ELLENÉRE nem új, üres mappát hoz létre, hanem a kijelölt képeket
+  helyezi át egy olyan mappába, amit a felhasználó most nevez el.
+  Mostantól kattintásra egy névmezős párbeszéd kéri a mappa nevét (mint
+  az „Új album…"), és a képek — a `.picasa.ini` bejegyzésükkel együtt —
+  átkerülnek az így létrehozott mappába; üres kijelölésnél a tétel
+  szürke marad, érvénytelen (üres, csak szóköz, vagy Windowson tiltott
+  karaktert tartalmazó) vagy már foglalt névnél pedig érthető
+  hibaüzenet jelenik meg, és semmi nem mozdul a lemezen.
+- **A duplikátumok mappája egymásba ágyazódhatott (#1697).** A
+  „Duplikátumok" gyűjtőmappából újra futtatott áthelyezés
+  `Duplikátumok\Duplikátumok` szerkezetet hozott létre, mert a program a
+  saját gyűjtőmappáját közönséges fotómappaként dolgozta fel. Mostantól,
+  ha a kép már egy „Duplikátumok" nevű mappában van (kis- és
+  nagybetűtől függetlenül, a felhasználó saját maga által létrehozott
+  ilyen nevű mappára is), az áthelyezés a helyén hagyja a fájlt, és
+  egyértelmű üzenetet ír ki — a duplikátum-keresés a mappában továbbra is
+  működik, csak a beágyazó áthelyezést tiltjuk.
+- **Az állapotlap „Ez vár rád" része félrevezetett (#1664).** A tulajdonos
+  jelezte, hogy kaotikus. Két hiba volt benne: ugyanaz a jegy **kétszer**
+  szerepelt (a „bináris kutatás oldja fel" lista a blokkoltak részhalmaza,
+  mégis mellé került), a szakasz címe pedig azt ígérte, hogy minden alatta
+  lévő tétel a tulajdonosra vár — holott épp az ellenkezője igaz volt rájuk.
+  Mostantól egy jegy pontosan egy csoportban szerepel, és a cím megmondja,
+  hogy csak az első csoport az, ami nélküle áll.
+- **Az ottragadt mappák induláskori takarítása fölöslegesen dolgozott, ha a
+  nyilvántartott exportcélok között pontosan egyező útvonal ismétlődött
+  (#1706).** Minden ilyen ismétlés külön fájlrendszer-hívást (útvonal-
+  feloldást) igényelt — hálózati meghajtón ez közvetlenül az indulási időt
+  hosszabbította. Mostantól egy pontosan egyező útvonal csak egyszer
+  oldódik fel, a védelem (#1667/#1565) változatlan.
+- **Az ottragadt mappák induláskori takarítása feltartotta a program
+  ablakának megjelenését (#1716).** Ez a lépés hálózati könyvtárnál a
+  figyelt mappák és a nyilvántartott exportcélok számával arányosan
+  lassult — a tulajdonos gépén mérve 2,3 másodpercig. A takarítás
+  szerepe (az induláskor már nem figyelt mappák eltüntetése az
+  előzményekből) nem sürgős, ezért mostantól az ablak megjelenése UTÁN
+  fut, ugyanúgy, ahogy az exportcélok pótlólagos betöltése is (#1667) —
+  az ablak ezzel a mért idővel hamarabb látszik, a takarítás funkciója
+  változatlan.
+

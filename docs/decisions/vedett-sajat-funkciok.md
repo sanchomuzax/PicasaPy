@@ -82,6 +82,14 @@ kódtól).
   `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem
   árulja el a valódi bájtformátumot (#371 nyitott kérdés); amíg az elő nem
   kerül, ez a mi kódolásunk — paraméter nélkül bájtra egyezik az eredetivel.
+- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1595) — a **Mappa ▸
+  Rendezés ▸ „Legutóbbi változtatások"** tétel. Az eredeti Mappa menü
+  rendezés-készlete (`ID_DATESORT` / `ID_NAMESORT` / `ID_SIZESORT` /
+  `ID_REVERSESORT`) NÉGY tagú, és nincs benne „legutóbbi változtatások" —
+  az az `ID_VIEWBY*` ötösben él, ami a NÉZET menüé. Nálunk viszont működő,
+  hasznos rendezés (#1759), ezért a #1595 nem törölte a hűség kedvéért,
+  hanem `sajat: true` jelöléssel hagyta bent: kék felirat + kötelező
+  buboréksúgó. Ld. `docs/decisions/sajat-funkciok-jelolese.md`.
 - `src/picasapy/app/qml/PicasaPy/TrayBar.qml` (#70) — az alsó kék
   állapotsáv (`infoBar`) `busySweep` fény-hullám animációja háttérmunka
   (indexelés, bélyegkép-gyártás) közben. Az eredetiben nincs ilyen vizuális

@@ -1053,10 +1053,16 @@ MenuBar {
         // tehát magától helyreáll) — ott nem kell visszakötés.
         PicasaMenu {
             objectName: "menuFolderSortBy"
+            // #1595: az eredetiben KÉT rendezés-készlet van, és mi a rosszat
+            // tettük ide. Az `ID_*SORT` négyes (RÖVID felirat) a Mappa menüé
+            // és a mappa helyi menüjéé; az `ID_VIEWBY*` ötös (HOSSZÚ felirat,
+            // benne a „legutóbbi változtatások") a Nézet menüé és a bal
+            // hasábé. A `FolderContextMenu.qml` végig a helyeset használta —
+            // ugyanaz a rendezés két helyen, kétféle felirattal állt.
             title: qsTr("Sort By")
             MenuItem {
                 objectName: "menuFolderSortByDate"
-                text: qsTr("Sort by creation date")
+                text: qsTr("&Date")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "date"
                 onTriggered: {
@@ -1067,32 +1073,8 @@ MenuBar {
                 }
             }
             MenuItem {
-                objectName: "menuFolderSortByChanged"
-                text: qsTr("Sort by recent changes")
-                checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "changed"
-                onTriggered: {
-                    controller.setFolderSort("changed")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.folderSort === "changed"
-                    })
-                }
-            }
-            MenuItem {
-                objectName: "menuFolderSortBySize"
-                text: qsTr("Sort by size")
-                checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "size"
-                onTriggered: {
-                    controller.setFolderSort("size")
-                    checked = Qt.binding(function () {
-                        return bar.ctl && bar.ctl.folderSort === "size"
-                    })
-                }
-            }
-            MenuItem {
                 objectName: "menuFolderSortByName"
-                text: qsTr("Sort by name")
+                text: qsTr("&Name")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "name"
                 onTriggered: {
@@ -1102,10 +1084,41 @@ MenuBar {
                     })
                 }
             }
+            MenuItem {
+                objectName: "menuFolderSortBySize"
+                text: qsTr("&Size")
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "size"
+                onTriggered: {
+                    controller.setFolderSort("size")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "size"
+                    })
+                }
+            }
+            // SAJÁT FUNKCIÓ (#1595): a „legutóbbi változtatások" szerinti
+            // rendezés — az eredeti négyes `ID_*SORT` készletben nincs ilyen
+            // tétel, nálunk viszont működő rendezés (#1759 mérte ki, mit
+            // rendez). A hűségért nem vesszük el; a `sajat` jelölés (kék
+            // felirat + kötelező buboréksúgó) mondja meg, hogy ez a mi
+            // többletünk. Jegyzék: docs/decisions/vedett-sajat-funkciok.md
+            PicasaMenuItem {
+                objectName: "menuFolderSortByChanged"
+                text: qsTr("Recent &changes")
+                sajat: true
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "changed"
+                onTriggered: {
+                    controller.setFolderSort("changed")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "changed"
+                    })
+                }
+            }
             MenuSeparator {}
             MenuItem {
                 objectName: "menuFolderSortReverse"
-                text: qsTr("Reverse sort")
+                text: qsTr("&Reverse order")
                 checkable: true
                 checked: (bar.ctl && bar.ctl.folderSortReverse !== undefined)
                     ? bar.ctl.folderSortReverse : false
