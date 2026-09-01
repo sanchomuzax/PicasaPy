@@ -37,12 +37,12 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 160 |
+| párosítva | 164 |
 | másutt megvan (nem ezen a felületen) | 47 |
-| hiányzik | 376 |
+| hiányzik | 372 |
 | bizonytalan | 152 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **21.8%** |
+| **lefedettség az értékelhető elemeken** | **22.4%** |
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -92,20 +92,20 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `uploadmgr` | 17 | 7 | 0 | 1 | 6 | 0 | 10 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
 | `searchoptions` | 9 | 6 | 0 | 0 | 2 | 4 | 3 | `SearchGroupHeader.qml`, `MainToolbar.qml` |
 | `canoncapturemoviepanelpopup` | 45 | 5 | 0 | 0 | 5 | 0 | 40 | **nem-cel** — Canon SDK-s kamerafelvétel — nem cél |
-| `tagpanel` | 24 | 8 | 3 | 0 | 3 | 2 | 16 | `TagsPanel.qml` |
 | `geopanel` | 14 | 5 | 0 | 0 | 1 | 4 | 9 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `outputlayout` | 31 | 9 | 4 | 1 | 4 | 0 | 22 | `TrayBar.qml` |
 | `initialscan` | 18 | 4 | 0 | 0 | 0 | 4 | 14 | `InitialScanDialog.qml` |
 | `video_control_bar2` | 18 | 4 | 0 | 0 | 2 | 2 | 14 | `VideoPlayerView.qml` |
 | `panelroot` | 14 | 7 | 2 | 1 | 2 | 2 | 7 | `Main.qml`, `MainToolbar.qml` |
-| `gedialog` | 13 | 5 | 0 | 1 | 2 | 2 | 8 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `throttle` | 10 | 4 | 1 | 0 | 0 | 4 | 5 | `PicasaScrollBar.qml` |
 | `movieeditpanel` | 7 | 4 | 0 | 0 | 4 | 0 | 3 | `VideoPlayerView.qml` |
 | `editoneup` | 34 | 5 | 0 | 2 | 0 | 3 | 29 | `PhotoViewer.qml` |
 | `oneup` | 33 | 5 | 0 | 2 | 0 | 3 | 28 | `PhotoViewer.qml` |
 | `peoplepanel` | 14 | 6 | 1 | 2 | 2 | 1 | 8 | `PeoplePanel.qml`, `PeoplePanelRow.qml` |
+| `gedialog` | 13 | 5 | 1 | 1 | 1 | 2 | 8 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `rightdrawerpanel` | 9 | 3 | 0 | 0 | 3 | 0 | 6 | `PropertiesPanel.qml` |
 | `foldermgr` | 32 | 11 | 4 | 5 | 1 | 1 | 21 | `FolderManagerDialog.qml` |
+| `tagpanel` | 24 | 8 | 6 | 0 | 0 | 2 | 16 | `TagsPanel.qml` |
 | `unknownfaceheaderpanel` | 18 | 6 | 4 | 0 | 2 | 0 | 12 | `UnnamedFacesView.qml` |
 | `instructionpanel` | 7 | 2 | 0 | 0 | 2 | 0 | 5 | **nincs-megfeleltetes** — Betanító buborék („Learn more…”) — nincs nálunk |
 | `activity` | 6 | 1 | 0 | 0 | 1 | 0 | 5 | **nincs-megfeleltetes** — Töltésjelző pörgettyű a rácson — nálunk nincs külön elem |
@@ -728,16 +728,6 @@ Canon SDK-s kamerafelvétel — nem cél
 - `settings_apply`
 - `settings_cancel`
 
-### `tagpanel` — 5 hiány · panel-megfeleltetés: `parositva`
-
-Címke oldalsó panel
-
-- `add_tag_label` „Type in a tag to add:” (magyarul: „Írjon be egy hozzáadandó címkét:”)
-- `addtag` buboréksúgó: „Add tag to the currently selected items”
-- `input_group` — *bizonytalan*
-- `quick_config` buboréksúgó: „Configure Quick Tags”
-- `taglist_group` — *bizonytalan*
-
 ### `geopanel` — 5 hiány · panel-megfeleltetés: `parositva`
 
 Helyek panel
@@ -784,15 +774,6 @@ Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
 - `makemovietab` „Movie Maker” (magyarul: „Mozgófilmkészítés”)
 - `youtab` — *bizonytalan*
 
-### `gedialog` — 4 hiány · panel-megfeleltetés: `parositva`
-
-Google Earth-ös geocímkéző párbeszéd — nálunk a Helyek panel fedi
-
-- `done` „Done” (magyarul: „Kész”)
-- `next` — *bizonytalan*
-- `prev` — *bizonytalan*
-- `tagall` „Geotag All” (magyarul: „Az összes geocímkézése”)
-
 ### `throttle` — 4 hiány · panel-megfeleltetés: `parositva`
 
 Gyorsgörgető a rács jobb szélén
@@ -835,6 +816,14 @@ Emberek oldalsó panel
 - `peoplelist` — *bizonytalan*
 - `status_label` „Select a folder to display faces” (magyarul: „Válasszon ki egy mappát az arcok megjelenítéséhez”)
 
+### `gedialog` — 3 hiány · panel-megfeleltetés: `parositva`
+
+Google Earth-ös geocímkéző párbeszéd — nálunk a Helyek panel fedi
+
+- `done` „Done” (magyarul: „Kész”)
+- `next` — *bizonytalan*
+- `prev` — *bizonytalan*
+
 ### `rightdrawerpanel` — 3 hiány · panel-megfeleltetés: `parositva`
 
 Jobb oldali fiók kerete
@@ -849,6 +838,13 @@ Mappakezelő
 
 - `cancel` — *bizonytalan*
 - `instructions_text` „For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.” (magyarul: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését.”)
+
+### `tagpanel` — 2 hiány · panel-megfeleltetés: `parositva`
+
+Címke oldalsó panel
+
+- `input_group` — *bizonytalan*
+- `taglist_group` — *bizonytalan*
 
 ### `unknownfaceheaderpanel` — 2 hiány · panel-megfeleltetés: `parositva`
 
@@ -1076,10 +1072,6 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 - `picasatab` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 
-### `gedialog` — 1
-
-- `tag` — „Geotag” itt: PicasaPy/PicasaMenuBar.qml
-
 ### `editoneup` — 2
 
 - `bcklabel` — „Exit” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/SlideshowView.qml
@@ -1094,6 +1086,10 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 - `addname` — „Add a name” itt: PicasaPy/FacesOverlay.qml, PicasaPy/UnnamedFacesView.qml
 - `ignore` — „Ignore” itt: PicasaPy/UnnamedFacesView.qml
+
+### `gedialog` — 1
+
+- `tag` — „Geotag” itt: PicasaPy/PicasaMenuBar.qml
 
 ### `foldermgr` — 5
 

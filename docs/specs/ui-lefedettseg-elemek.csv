@@ -49,3 +49,7 @@ editpanel/faces_button,megvan,PicasaPy/PhotoViewer.qml,"Arcok megjelenítése/el
 editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,"Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében"
 unknownfaceheaderpanel/ignore,megvan,PicasaPy/UnnamedFacesView.qml,"Kijelöltek mellőzése: ignoreFacesButton (117. sor), buboréksúgóval; a párja az unignoreFacesButton („Stop ignoring”, 109.)"
 peoplepanel/manual_add,megvan,PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml,"Személy kézi hozzáadása: addNameButton („Add a name”, 128. sor); a gesztus-utasítás a FacesOverlay.qml:283-ban van hivatkozva"
+tagpanel/add_tag_label,megvan,PicasaPy/TagsPanel.qml,"Címke-beviteli mező helyőrzővel: tagInput (87. sor), „Add a tag…” (91.)"
+tagpanel/addtag,megvan,PicasaPy/TagsPanel.qml,"Címke hozzáadása gomb: tagAddButton (97. sor)"
+tagpanel/quick_config,megvan,PicasaPy/TagsPanel.qml,"Gyorscímkék beállítása: quickTagsGearButton (201. sor), a QuickTagsConfigDialog-ot nyitja"
+gedialog/tagall,megvan,PicasaPy/PlacesPanel.qml,"Az összes kijelölt geocímkézése: a PlacesPanel a controller.setGeotagRows(appWindow.selectedIndexes, lat, lon)-t hívja (109. sor) — egy hely a TELJES kijelölésre"
