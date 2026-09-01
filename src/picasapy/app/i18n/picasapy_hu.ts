@@ -3557,6 +3557,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Preparing attachments...</source>
+        <translation>Mellékletek előkészítése…</translation>
+    </message>
+    <message>
         <source>Stop</source>
         <translation>Leállítás</translation>
     </message>
@@ -4025,6 +4029,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>PhotoViewer</name>
+    <message>
+        <source>Show/Hide Caption</source>
+        <translation>Felirat megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Delete this caption</source>
+        <translation>Felirat törlése</translation>
+    </message>
     <message>
         <source>Create Now</source>
         <translation>Létrehozás</translation>

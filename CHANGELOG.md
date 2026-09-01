@@ -7,6 +7,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.165] – 2026-09-01
+
+### Javítva
+- **Az e-mail-küldés már nem dolgozik némán.** A képtálca „E-Mail"
+  gombja a képeket a beállított méretre **kicsinyíti**, mielőtt csatolná
+  őket — nagy fényképeknél ez másodpercekig tart, és eddig semmi nem
+  jelezte. Úgy tűnt, nem történik semmi. Mostantól a képernyő tetején
+  megjelenik a **„Mellékletek előkészítése…"** sor, és eltűnik, amint
+  kész. Az eredeti Picasa ugyanezt csinálja.
+
+## [0.8.164] – 2026-09-01
+
+### Hozzáadva
+- **A kép alatti felirat elrejthető és egy kattintással törölhető
+  (#1816).** Eddig a felirat-mező **mindig ott volt** a nagy kép alatt, és
+  ha ki akartad törölni a szöveget, kézzel kellett kijelölni és
+  letörölni. Mostantól a felirat mellett két apró gomb van: az egyikkel
+  **elrejted az egész sávot**, a másikkal **egy kattintással törlöd** a
+  feliratot. Az elrejtés **megmarad**: ha egyszer elrejtetted, a program
+  legközelebb is elrejtve indul — pontosan úgy, ahogy az eredeti
+  Picasában. Rejtett állapotban a jobb alsó sarokban marad egy halvány
+  gomb, amivel bármikor visszahozhatod.
+
 ## [0.8.163] – 2026-09-01
 
 ### Hozzáadva

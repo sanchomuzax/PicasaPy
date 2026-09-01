@@ -3577,3 +3577,92 @@ hiányzik** nálunk; a csoportosztás nincs mérve.)*
   készít (58.1).
 - **„A `video_label` és a `live_video` ugyanannak az eszköznek két neve"** —
   megdőlt: **két módot** jelölnek (58.1).
+
+## 59. tétel — a keresősáv HÁROM hiányzó szűrője (2026-09-01)
+
+*Huszonkettedik kör az UI-lefedettségi axisról (#1778). Panel:
+`searchcontainer` (4 hiány) — a keresősáv és a szűrőgombjai.*
+
+### 59.1 Az eredeti szűrő-készlet: hat gomb
+
+A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
+
+| gomb | buboréksúgó | nálunk (**mérve**) |
+|---|---|---|
+| `starsearch` | csillagozottak | **megvan** (a `MainToolbar.qml` ★ jele) |
+| `geotagsearch` | geocímkézettek | **megvan** (`geoFilter`, `:135`) |
+| **`facesearch`** | **„Show only photos with faces"** | **nincs** |
+| **`moviesearch`** | **„Show movies only"** | **nincs** |
+| `webview` | „Show uploads to web albums only" | **hatókörön kívül** |
+| `timecontainer_label` + `timeslider/scaleslider` | **„Filter by date range"** | **nincs** |
+
+⇒ **Három valódi hiány**, egy hatókörön kívüli, kettő megvan.
+
+*(A `starsearch` és a `geotagsearch` felülbírálásai korábbi körből
+származnak — nem ez a kör találta őket.)*
+
+### 59.2 ⭐ A dátum-szűrő CSÚSZKA, nem dátumválasztó
+
+A `timecontainer_label` mellett a kezelő a
+**`timeslider/scaleslider`**-t is hivatkozza — ugyanabban a
+`…/scaleslider` alakban, mint a filmkészítő négy csúszkája (2.9).
+
+⇒ A dátum-tartomány szűrése az eredetiben **csúszkával** történik, nem
+két dátumválasztó mezővel. *(A felirat — „Filter by date range" — ezt
+nem árulja el; ez megint a „a felirat nem a funkció" eset.)*
+
+### 59.3 A keresés MÁSODIK vezérlőcsoportja: `searchoptions`
+
+A `0x005d8810` egy külön, eddig nem dokumentált csoportot ad:
+
+| elem | mit sejtet |
+|---|---|
+| **`dupesearch`** | másodpéldány-keresés — a **főablak-építőben** és a **fő parancskezelőben** is szerepel (`0x0040bf70`, `0x005cb990`), tehát menü-belépési pontja is van |
+| **`similarthumb`** · `loadsim` · `clearsim` | **hasonlóság-keresés**: minta-bélyegkép betöltése és törlése |
+| `digicam` | fényképezőgép szerinti szűrés |
+| `viewallbutton` | „mindet mutasd" visszaállító |
+
+⇒ A keresősáv mögött **egy második, gazdagabb szűrő-réteg** áll:
+hasonló képek keresése mintakép alapján, másodpéldány-keresés és
+gép szerinti szűrés.
+
+⚠️ **Ez a szakasz JELZÉS, nem kész feltárás:** a `searchoptions` panel
+**nincs benne** a mai UI-lefedettségi leltárban (a `.tre`-ből kinyert
+2020 elem közt nem szerepel önálló panelként), tehát a mérés soha nem
+fogja kiadni. A viselkedését egy külön kör tárja fel — a `dupesearch`
+egyébként a **#1398** (másodpéldány-szűrés) témája.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| csillag- és geo-szűrő | megvan | **megvan** | — |
+| **arcos képek szűrője** | `facesearch` | **nincs** | ÚJ JEGY |
+| **csak filmek szűrője** | `moviesearch` | **nincs** | ua. |
+| **dátum-tartomány (csúszka!)** | `timeslider/scaleslider` | **nincs** | ua. |
+| webalbum-szűrő | `webview` | — | **hatókörön kívül** |
+| `searchoptions` csoport | hasonlóság, másodpéldány, gép | nincs | **külön kör** (jelzés, ld. 59.3) |
+
+### Nyitott kérdések mérlege (59.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a hatos szűrő-készlet és a mi oldalunk mérése (59.1); a
+  dátum-szűrő csúszka volta (59.2).
+- **BLOKKOLT:** a `searchoptions` csoport viselkedése (59.3). **Mi kell
+  hozzá:** önálló kör, mert a panel nincs a leltárban, tehát a mérés nem
+  vezet rá. **A jegyet nem blokkolja** — a három szűrő tőle függetlenül
+  megvalósítható.
+- **HATÓKÖRÖN KÍVÜL:** a `webview` szűrő.
+
+*(Záró mondat a 45.1 szerint: **van** hiányzó vezérlő — három; a
+csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A dátum-szűrő két dátumválasztó mező"** — megdőlt: a kezelő a
+  `timeslider/scaleslider`-t hivatkozza, tehát **csúszka** (59.2).
+- **„A keresősáv szűrői kimerülnek a hat gombbal"** — megdőlt: van egy
+  második, gazdagabb `searchoptions` réteg (59.3).
