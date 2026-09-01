@@ -188,35 +188,95 @@ mov   dword ptr [rek+0x10], ebx          ; almenü darabszám
 menü rekordjaival, ahol ugyanez a mező mást hordozott, ld.
 `picasa-keptalca.md` 12.)*
 
-### A kinyert térkép: **177 tétel, 145 parancsazonosítóval**
+### A kinyert térkép: 177 tétel, **140 ellenőrzött parancsazonosítóval**
 
-> 🔴 **A gépi azonosító-kinyerés MEGBUKOTT — az oszlop eltávolítva
-> (2026-08-25, ugyanaznap).**
+> 🟢 **HARMADIK, SIKERES KINYERÉS — 2026-09-01 (#1581).** Az oszlop
+> **visszakerült** a CSV-be. A korábbi „ne legyen harmadik próbálkozás"
+> figyelmeztetés ezzel érvényét vesztette: nem a feladat volt
+> megoldhatatlan, hanem a horgony volt rossz.
 >
-> A menüépítőben a **felirat a KÖVETKEZŐ rekord `+0x00` mezőjébe íródik**, a
-> fordítás lekérése (`call 0x9ae560`) után — ezért a kulcs↔azonosító párosítás
-> kétséges volt. **Kontroll-méréssel eldöntve, független horgonnyal:**
+> **A bukás oka (a #1409 lelete).** A fordító a menürekord `+0x04`…`+0x10`
+> mezőit a **KÖVETKEZŐ** rekord feliratának betöltése **után** írja ki. Aki
+> a `push "…kulcs"`-ot a rá következő `mov word ptr […+0x0a]`-val olvassa
+> össze, **egy rekorddal elcsúszik**. A csúszás azért látszott
+> „szabálytalannak", mert nem minden rekordot előz meg felirat-betöltés (az
+> elválasztók és az almenü-fejek nem), így a hiba hol jelentkezett, hol nem.
 >
-> A `picasa-konyvtar-eszkoztar-viselkedes.md` egy korábbi, más úton végzett
-> kör alapján rögzíti, hogy `0x9db6` = **`ID_VIEW_FOLDERS`** (&Flat Folder
-> View), `0x9db8` = `ID_VIEW_WATCHED`, `0x9db9` = `ID_VIEW_ALL`. A gépi
-> kinyerésem viszont `0x9db6`-ra **`ID_VIEW_ALL`**-t mondott, `0x9db9`-re
-> pedig `ID_VIEWBYDATE`-et — miközben `ID_VIEW_MYPICTURES` = `0x9db7`
-> **helyes** volt.
->
-> ⇒ **A tévedés SZABÁLYTALAN**, nem egyenletes egy-rekordos elcsúszás, tehát
-> nem javítható egy eltolással. **Egy félig hibás azonosító-térkép rosszabb,
-> mint semmilyen**, mert használat közben bizalmat kelt — ezért az oszlopot
-> **kivettem** a CSV-ből.
->
-> **Ami MEGMARADT és megbízható:** `menu`, `parancs`, `felirat_en`,
-> `felirat_hu` — a névterek, a parancsnevek és a feliratok a szövegtárból
-> és a menüépítő sztringjeiből jönnek, azokat a kontroll nem érintette.
->
-> **Ha valakinek kell egy konkrét parancsazonosító:** keresse ki
-> egyenként, a kulcs sztringcímétől indulva a menüépítőben
-> (`0x00559150`), és **ellenőrizze független horgonnyal** — pontosan úgy,
-> ahogy ez a bekezdés készült.
+> **A javított horgony:** `mov dword ptr [REK], eax` — ez adja a rekord
+> KEZDŐCÍMÉT, és a `+0x0a` ahhoz tartozik.
+
+#### A kinyerés menete — és miért nem diszasszemblálással
+
+A `.text` adatszigeteket tartalmaz; lineáris dekódolásnál a menüépítő
+környékén értelmetlen utasítások jönnek ki (`call 0xb8567ea4`), és a
+kinyerés csendben félresiklik. Ehelyett a menüépítő **gépiesen ismételt
+sablonjának bájtmintáját** keressük — annak fix a kódolása, tehát nincs
+szinkronvesztés:
+
+```asm
+68 <kulcs>          push  "<Osztály::ID_NEV>"
+B8 <imm32>          mov   eax, <angol felirat>
+[csak tárolások]    a MEGELŐZŐ rekord +0x04..+0x10 mezői
+E8 <rel32>          call  <fordítás-betöltő>
+8B 00 / 83 C4 04 / 3B C3 / 74 0A / 83 C0 04
+A3 <REK>            mov   dword ptr [REK], eax    ; <<< a rekord kezdőcíme
+```
+
+A `push`-t **csak akkor** fogadjuk el, ha a `call`-ig vezető út kizárólag
+tárolásokból áll — vagyis a sablon hiánytalanul kirajzolódik. Ahol nem, a
+cella **üresen marad**.
+
+⚠️ **Ez a szigor nem óvatoskodás, hanem mérés.** Kipróbáltam a kényelmes
+változatot is („keresd visszafelé a legközelebbi `push`-t"): az **három
+különböző azonosítót** adott ugyanarra a kulcsra, és a kimenete pontosan
+úgy nézett ki, mint egy jó találat. A laza változat 308, a szigorú 146
+párt ad — a különbözet nagy része néma tévedés lett volna.
+
+#### A kontroll: 13 független azonosítóból 13 ✔
+
+A kulcs (`eMenuView::ID_VIEW_LCD`) és az azonosító (`+0x0a` = `0x9d20`)
+**két különböző mezőből** jön, ezért az egyezésük valódi kontroll. A
+#1409/#1454 által korábban, más úton rögzített azonosítók mind stimmelnek:
+
+`ID_VIEW_16` · `ID_VIEW_PROJECTOR` · `ID_VIEW_MAC` · `ID_VIEW_SEPIA` ·
+`ID_VIEW_LINEAR` · `ID_VIEW_NORMAL` · `ID_VIEW_AUTO` · `ID_VIEW_LCD` ·
+`ID_VIEW_OV` · `ID_VIEW_RDESK` · `ID_VIEW_FOLDERS` · `ID_VIEW_WATCHED` ·
+`ID_VIEW_ALL` — **13/13, eltérés nincs.**
+
+#### ⭐ Amit menet közben megtanultunk: a kulcs a FELIRATOT nevezi meg
+
+`eMenuView::ID_VIEW_BW` **három** rekordon szerepel, három azonosítóval:
+
+| rekord | azonosító | a szomszédai alapján melyik menü |
+|---|---|---|
+| `0x00d6ddb0` | `0x9d1c` | Nézet (`ID_VIEW_SEPIA`, `ID_CAPNONE` közt) |
+| `0x00d6e41c` | `0x9d4c` | Kép (`ID_PICTURE_WARMIFY` `0x9d4d`, `ID_PICTURE_FILM_GRAIN` `0x9d4e` közt) |
+| `0x00d6e780` | `0x9da9` | Eszközök (`ID_S_PURPLE` `0x9da8`, `ID_FTPWEB` közt) |
+
+A szomszédos azonosítók számtani folytonossága **függetlenül igazolja**,
+hogy három külön parancsról van szó. A `push`-olt sztring tehát **fordítási
+kulcs**, nem parancsnév: a „Fekete-fehér" feliratot három menü használja
+újra. A CSV maga is három `eMenuView,ID_VIEW_BW` sort tartalmaz — ezért
+ezek a sorok **üresen maradnak**: nem tudjuk, melyik sor melyik menüé.
+
+Három ilyen ütközés van (`ID_VIEW_BW`, `ID_CAPTAG`, `ID_PICTURE_UNHIDE`),
+összesen 7 CSV-sort érintve.
+
+#### ⚠️ Egy eltérés a korábbi feljegyzésektől: `0x9db7`
+
+A fenti (2026-08-25-ös) bekezdés `ID_VIEW_MYPICTURES = 0x9db7`-et mond
+„helyes"-nek. A mostani kinyerés szerint a `0x9db7`-et hordozó rekord
+(`0x00d6de44`) felirat-kulcsa **`eMenuViewWin::ID_VIEW_MYDOCS`**, míg
+`eMenuViewWin::ID_VIEW_MYPICTURES` a `0x00d6de58` rekordon áll, azonosítója
+**`0x9e3a`**. A fentiek fényében ez nem feltétlenül ellentmondás — a kulcs
+a feliratot nevezi meg —, de **a `0x9db7` ↔ `ID_VIEW_MYPICTURES` társítás
+nem tekinthető megerősítettnek**. NYITOTT.
+
+#### A kinyerő
+
+`scripts/binaris/menu_parancsazonositok.py` — a bináris útját a
+`PICASA_EXE` környezeti változó adja. Függősége (`pefile`) **nincs** a
+projekt csomaglistáján: ez kutatóeszköz, nem futásidejű kód.
 
 Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancsok.csv)**
 (oszlopok: `menu`, `parancs`, `parancsazonosito`, `felirat_en`, `felirat_hu`).

@@ -1,181 +1,191 @@
-# A parancsazonosito oszlop 2026-08-25-en ELTAVOLITVA: a gepi kinyerese
-# egy fuggetlen horgonnyal (0x9db6 = ID_VIEW_FOLDERS) osszevetve SZABALYTALANUL
-# tevedett. A megmaradt oszlopok ellenorzottek. Reszletek: picasa-menu-leltar.md 7.
-menu,parancs,felirat_en,felirat_hu
-CMenuBar,Delete,Delete,Törlés
-CMenuBar,Enter,Enter,Enter
-CMenuBar,Enter,Enter,Enter
-CMenuBar,Enter,Enter,Enter
-eMenuCreate,ID_BURNCD,Create a &Gift CD...,&Ajándék CD készítése...
-eMenuCreate,ID_COLLAGEMAKER,&Picture Collage...,&Képkollázs...
-eMenuCreate,ID_EXPORT_SENDTOBLOGGER,Publish to &Blogger...,Kö&zzététel a Bloggeren...
-eMenuCreate,ID_POSTER,Make a &Poster...,&Poszter készítése...
-eMenuCreate,ID_SCREENSAVER,Add to &Screensaver...,Hozzáadás a &képernyővédőhöz...
-eMenuCreate,ID_WALLPAPER,Set as &Desktop...,Beállítás &háttérképként...
-eMenuCreate,Movies,&Movie,&Mozgófilm
-eMenuCreateMovie,ID_FACES,From Faces in Selection...,A kijelölésben lévő arcokból...
-eMenuCreateMovie,ID_FACESRANDOM,From People Albums...,Az Emberek albumból...
-eMenuCreateMovie,MOVIE,From Selection...,Kijelölésből...
-eMenuCreateWin,ID_TIVO,&Export to TiVo(r) DVR...,&Exportálás TiVo(r) DVR-re...
-eMenuEdit,ID_ALBUM_SELECTALLPICTURES,Select &All,Az ö&sszes kijelölése
-eMenuEdit,ID_CLEAR_SELECTION,C&lear Selection,Kijelölés &törlése
-eMenuEdit,ID_COPY,&Copy,&Másolás
-eMenuEdit,ID_CUT,Cu&t,&Kivágás
-eMenuEdit,ID_EDIT_COPYALLEFFECTS,C&opy All Effects,Az összes effektus más&olása
-eMenuEdit,ID_EDIT_COPYTEXT,Copy Text,Szöveg másolása
-eMenuEdit,ID_EDIT_PASTEALLEFFECTS,Paste All E&ffects,Az összes e&ffektus beillesztése
-eMenuEdit,ID_EDIT_PASTETEXT,Paste Text,Szöveg beillesztése
-eMenuEdit,ID_PASTE,&Paste,&Beillesztés
-eMenuEdit,ID_SELECTSTAR,Select &Starred,&Csillagozottak kijelölése
-eMenuEdit,ID_SELECT_INVERT,&Invert Selection,Kiválasztás &megfordítása
-eMenuFile,ID_FILE_DELETEFROMDISK,&Delete from Disk...,Tö&rlés a lemezről...
-eMenuFile,ID_FILE_EMAIL,&E-Mail...,&E-mail...
-eMenuFile,ID_FILE_EPROCESS,Order Prin&ts...,Papírképek rendelé&se...
-eMenuFile,ID_FILE_EXIT,E&xit,&Kilépés
-eMenuFile,ID_FILE_EXPORTTOFOLDER,Export Pi&cture to Folder...,Kép e&xportálása mappába...
-eMenuFile,ID_FILE_IMPORTPICTURE,&Import From...,&Importálás forrása...
-eMenuFile,ID_FILE_NEWFOLDER,Mo&ve to New Folder...,Áthel&yezés új mappába...
-eMenuFile,ID_FILE_NEWLABEL,&New Album...,Ú&j album...
-eMenuFile,ID_FILE_OPEN,Add &File to Picasa...,&Fájl felvétele a Picasába...
-eMenuFile,ID_FILE_OPENINANEDITOR,&Open File(s) in an Editor,&Fájl(ok) megnyitása szerkesztőben
-eMenuFile,ID_FILE_PRINT,&Print...,&Nyomtatás...
-eMenuFile,ID_FILE_RENAME,&Rename...,Átne&vezés...
-eMenuFile,ID_FILE_RENAME,&Rename...,Átne&vezés...
-eMenuFile,ID_FILE_REVERT,Rever&t,Vissz&aállítás
-eMenuFile,ID_FILE_SAVE,&Save,Menté&s
-eMenuFile,ID_FILE_SAVEACOPY,Save a Cop&y,&Másolat mentése
-eMenuFile,ID_FILE_SAVEAS,Save &As...,Mentés &másként...
-eMenuFile,ID_GETMYSTUFF,Import from Picasa Web Albums...,Importálás a Picasa Webalbumokból...
-eMenuFile,ID_TOOLS_INCLUDEEXCLUDEFOLDERS,Add Folder to Picasa...,Mappa hozzáadása a Picasához...
-eMenuFileWin,ID_ALBUM_LOCATEONDISK,&Locate on Disk,&Keresés a lemezen
-eMenuFileWin,ID_FILE_LOCATEONDISK,&Locate on Disk,&Keresés a lemezen
-eMenuHelp,ID_HELP_ABOUT,&About Picasa,A Picasa &névjegye
-eMenuHelp,ID_HELP_CHECK_FOR_UPDATES,&Check for Updates,&Frissítések keresése
-eMenuHelp,ID_HELP_DEFAULT,&Help Contents and Index,&Súgó - tartalom és tárgymutató
-eMenuHelp,ID_HELP_KEYBOARD_SHORTCUTS,&Keyboard Shortcuts,Billentyű&kódok
-eMenuHelp,ID_HELP_PICASA_FORUMS,Picasa &Forums,Picasa-&fórumok
-eMenuHelp,ID_HELP_PICASA_README,Online &ReadMe,&Online információ
-eMenuHelp,ID_HELP_PRIVACY,Privacy Policy,Adatvédelmi irányelvek
-eMenuHelp,ID_HELP_RELEASENOTES,Release &Notes,&Termékkiadási tájékoztató
-eMenuHelp,ID_HELP_TERMS,Terms,Általános Szerződési Feltételek
-eMenuHelp,ID_HELP_UNINSTALL,&Uninstalling Picasa,A &Picasa eltávolítása
-eMenuLabelFolder,ID_ALBUM_DELETE,&Delete...,&Törlés...
-eMenuLabelFolder,ID_ALBUM_EDITCAPTIONS,&Edit Description...,&Leírás szerkesztése...
-eMenuLabelFolder,ID_ALBUM_SLIDESHOW,&View Slideshow,&Diavetítés megtekintése
-eMenuLabelFolder,ID_DATESORT,&Date,&Dátum
-eMenuLabelFolder,ID_FILE_EXPORTASWEBPAGE,E&xport as HTML Page...,E&xportálás HTML-oldalként...
-eMenuLabelFolder,ID_FILE_PRINTCONTACTSHEET,&Print Contact Sheet...,&Indexképek nyomtatása...
-eMenuLabelFolder,ID_MANAGE_ALBUM,&Remove from Picasa...,&Eltávolítás a Picasából...
-eMenuLabelFolder,ID_MOVEFOLDER,&Move...,Át&helyezés...
-eMenuLabelFolder,ID_NAMESORT,&Name,&Név
-eMenuLabelFolder,ID_REFRESH_THUMB,Refresh &Thumbnails,&Indexképek frissítése
-eMenuLabelFolder,ID_REVERSESORT,&Reverse order,&Fordított sorrend
-eMenuLabelFolder,ID_SIZESORT,&Size,&Méret
-eMenuLabelFolder,SortBy,&Sort By,&Rendezés
-eMenuPicture,BatchEdit,&Batch Edit,&Csoportos szerkesztés
-eMenuPicture,ID_PICTURE_AUTO_COLOR,&Auto Color,&Automatikus szín
-eMenuPicture,ID_PICTURE_AUTO_LIGHTING,A&uto Contrast,A&utomatikus kontraszt
-eMenuPicture,ID_PICTURE_AUTO_REDEYE,Auto Red Eye Correction,Automatikus vörösszem-eltávolítás
-eMenuPicture,ID_PICTURE_ENHANCE,I'm Feeling &Lucky,&Jó napom van
-eMenuPicture,ID_PICTURE_FILM_GRAIN,&Film Grain,Films&zemcse
-eMenuPicture,ID_PICTURE_HIDE,&Hide,&Elrejtés
-eMenuPicture,ID_PICTURE_HIDE,&Hide,&Elrejtés
-eMenuPicture,ID_PICTURE_HIDE_TEXT,Hide Text,Szöveg elrejtése
-eMenuPicture,ID_PICTURE_RESET_FACES,Reset &Faces,Ar&cok alaphelyzetbe állítása
-eMenuPicture,ID_PICTURE_REVERT,Undo &All Edits,Összes szerkesztés vissz&avonása
-eMenuPicture,ID_PICTURE_ROTATECLOCKWISE,R&otate Clockwise,F&orgatás jobbra
-eMenuPicture,ID_PICTURE_ROTATECOUNTERCLOCKWISE,Rotate &Counterclockwise,Forgatás &balra
-eMenuPicture,ID_PICTURE_SHARPEN,S&harpen,É&lesítés
-eMenuPicture,ID_PICTURE_SHOW_TEXT,Show Text,Szöveg megjelenítése
-eMenuPicture,ID_PICTURE_UNHIDE,&Unhide,&Megjelenítés
-eMenuPicture,ID_PICTURE_UNHIDE,&Unhide,&Megjelenítés
-eMenuPicture,ID_PICTURE_VIEW,&View and Edit,&Megjelenítés és szerkesztés
-eMenuPicture,ID_PICTURE_WARMIFY,&Warmify,&Melegítés
-eMenuPictureWin,ID_PICTURE_PROPERTIES,Propert&ies,T&ulajdonságok
-eMenuTools,Experimental,Experimental,Kísérleti
-eMenuTools,Geotag,&Geotag,&Geocímke
-eMenuTools,ID_DELETE_EMPTY_ALBUMS,Delete empty online albums...,Üres online albumok törlése...
-eMenuTools,ID_DUPES,Show Duplicate Files,Fájlok másodpéldányainak megjelenítése
-eMenuTools,ID_EXPORT_EARTH,Export to Google Earth File,Exportálás Google Earth-fájlba
-eMenuTools,ID_FTPWEB,Publish via FTP...,Közzététel FTP-n keresztül...
-eMenuTools,ID_MOVE_DATABASE,Choose database location...,Adatbázis helyének kiválasztása...
-eMenuTools,ID_PASSPORT,&Passport photo...,Útle&vélkép...
-eMenuTools,ID_PICTURE_GEOTAG,Geotag With Google Earth...,Geocímkézés a Google Earth programmal...
-eMenuTools,ID_PICTURE_GEOUNTAG,Clear Geotags,Geocímkék törlése
-eMenuTools,ID_SAVESEARCH,Save &search results...,Keresési eredmények &mentése...
-eMenuTools,ID_SEARCHTOKEN,Show &tag as album...,&Címke megjelenítése albumként...
-eMenuTools,ID_S_BLUE,&Blue,&Kék
-eMenuTools,ID_S_GREEN,&Green,&Zöld
-eMenuTools,ID_S_ORANGE,&Orange,&Narancssárga
-eMenuTools,ID_S_PURPLE,&Purple,&Lila
-eMenuTools,ID_S_RED,&Red,&Piros
-eMenuTools,ID_S_YELLOW,&Yellow,&Sárga
-eMenuTools,ID_TOOLS_ADJUST_TIMESTAMP,Adjust &Date and Time...,&Dátum és idő beállítása...
-eMenuTools,ID_TOOLS_BACKUP,&Back Up Pictures...,&Képek biztonsági mentése...
-eMenuTools,ID_TOOLS_BATCH_UPLOAD,Batch Upload...,Csoportos feltöltés...
-eMenuTools,ID_TOOLS_BUTTONMGR,Configure Buttons...,Gombok konfigurálása...
-eMenuTools,ID_TOOLS_COLLAB,Upload to a Collaborative Web Album,Feltöltés közös szerkesztésű webalbumba
-eMenuTools,ID_TOOLS_CONFIG_SCREENSAVER,Configure Screensaver...,Képernyővédő konfigurálása...
-eMenuTools,ID_TOOLS_CONFIG_SLINGSHOT,Configure Photo Viewer...,Fotómegjelenítő beállítása...
-eMenuTools,ID_TOOLS_CONTACTMGR,People Manager...,Személyek kezelése...
-eMenuTools,ID_TOOLS_DOWNLOAD_FACES,Do&wnload Name Tags from Picasa Web Albums,Névcímkék letöltése a Picasa &Webalbumokból
-eMenuTools,ID_TOOLS_INCLUDEEXCLUDEFOLDERS,&Folder Manager...,&Mappakezelő...
-eMenuTools,ID_TOOLS_OPTIONS,&Options...,&Beállítások...
-eMenuTools,ID_TOOLS_UPLOAD,Upload to Google &Photos,Feltöltés a Google Fotókba
-eMenuTools,ID_TOOLS_UPLOADMGR,&Upload Manager...,&Feltöltéskezelő...
-eMenuTools,ID_TOOLS_YOUTUBE,Upload to &YouTube,Feltöltés a &YouTube webhelyre
-eMenuTools,ID_VIEW_EARTH,View in Google Earth...,Megtekintés a Google Earth programban...
-eMenuTools,ID_WRITE_XMP_FACES,Write faces to XMP...,Arcinformációk írása XMP-adatokba...
-eMenuTools,Searchfor,Search for...,Keresés...
-eMenuTools,Upload,U&pload,&Feltöltés
-eMenuView,DisplayMode,&Display Mode,&Megjelenítési mód
-eMenuView,FolderView,&Folder View,&Mappanézet
-eMenuView,ID_CAPFILE,&Filename,&Fájlnév
-eMenuView,ID_CAPFULL,&Caption,&Képfelirat
-eMenuView,ID_CAPNONE,&None,&Nincs
-eMenuView,ID_CAPRES,&Resolution,&Felbontás
-eMenuView,ID_CAPTAG,&Tags,&Címkék
-eMenuView,ID_CAPTAG,&Tags,&Címkék
-eMenuView,ID_PICTURE_SEPIA,&Sepia,&Szépia
-eMenuView,ID_VIEWBYDATE,Sort by &Creation Date,Rendezés létre&hozási dátum alapján
-eMenuView,ID_VIEWBYNAME,Sort by &Name,Rendezés &név alapján
-eMenuView,ID_VIEWBYRECENT,Sort by &Recent Changes,Rendezés a leg&utóbbi változtatások alapján
-eMenuView,ID_VIEWBYSIZE,Sort by &Size,Rendezés &méret alapján
-eMenuView,ID_VIEWREVERSE,Re&verse sort,Rendezés megfordítása
-eMenuView,ID_VIEW_16,&16-bit (dithered),&16 bites (szemcsézett)
-eMenuView,ID_VIEW_ALL,&Tree View,&Fanézet
-eMenuView,ID_VIEW_AUTO,&Automatic,&Automatikus
-eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér
-eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér
-eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér
-eMenuView,ID_VIEW_COLOR_MANAGED,Use Color Management,Színkezelés használata
-eMenuView,ID_VIEW_DESKTOP,&Desktop,&Asztal
-eMenuView,ID_VIEW_EDIT,Show Edit Controls,Szerkesztési vezérlők megjelenítése
-eMenuView,ID_VIEW_FOLDERS,&Flat Folder View,&Egyszerű mappanézet
-eMenuView,ID_VIEW_LARGETHUMBNAILS,&Normal Thumbnails,&Normál indexképek
-eMenuView,ID_VIEW_LCD,&LCD Whitepoint,&LCD fehérpont
-eMenuView,ID_VIEW_LIGHTBOXVIEW,&Library View,&Könyvtárnézet
-eMenuView,ID_VIEW_LINEAR,Linear &Gamma (2.2),Lineáris &gamma (2.2)
-eMenuView,ID_VIEW_MAC,&Mac Gamma (1.6),&Mac gamma (1.6)
-eMenuView,ID_VIEW_NORMAL,&24-bit,&24 bites
-eMenuView,ID_VIEW_OV,&Show overflow pixels,Túlcsordult &képpontok megjelenítése
-eMenuView,ID_VIEW_PEOPLE,&People,&Emberek
-eMenuView,ID_VIEW_PICTURE,&Edit View,&Szerkesztési nézet
-eMenuView,ID_VIEW_PLACES,&Places,&Helyek
-eMenuView,ID_VIEW_PROJECTOR,&Projector Mode,&Projektor mód
-eMenuView,ID_VIEW_PROPERTIES,Properties,Tulajdonságok
-eMenuView,ID_VIEW_RDESK,&Remote Desktop,&Távoli asztal
-eMenuView,ID_VIEW_SEARCHVIEW,Search &Options,Keresési &opciók
-eMenuView,ID_VIEW_SEPIA,&Sepia,&Szépia
-eMenuView,ID_VIEW_SHOWHIDDEN,&Hidden Pictures,&Rejtett képek
-eMenuView,ID_VIEW_SLIDESHOW,&Slideshow,&Diavetítés
-eMenuView,ID_VIEW_SMALL,Small &Pictures,Kis &képek
-eMenuView,ID_VIEW_SMALLTHUMBNAILS,S&mall Thumbnails,&Kis indexképek
-eMenuView,ID_VIEW_THUMBNAILS,Show &Thumbnails in Library,Indexképek &megjelenítése a könyvtárban
-eMenuView,ID_VIEW_TIMELINE,Ti&meline,I&dőrend
-eMenuView,ID_VIEW_WATCHED,&Simplified Tree View,&Egyszerűsített fanézet
-eMenuView,Shortcuts,&Shortcuts,&Gyorsbillentyűk
-eMenuView,ThumbnailCaption,Thumbnail &Caption,Indexkép &felirata
-eMenuViewWin,ID_VIEW_MYCOMPUTER,My &Computer,&Sajátgép
-eMenuViewWin,ID_VIEW_MYDOCS,My Do&cuments,Do&kumentumok
-eMenuViewWin,ID_VIEW_MYPICTURES,My &Pictures,&Képek
+# A parancsazonosito oszlop 2026-09-01-en VISSZAKERULT (#1581).
+# A ket korabbi gepi kinyeres azert bukott meg, mert a fordito a menurekord
+# +0x04..+0x10 mezoit a KOVETKEZO rekord feliratanak betoltese UTAN irja ki:
+# a push "<kulcs>" es a ra kovetkezo mov word ptr [...+0x0a] NEM tartozik ossze.
+# A javitott horgony a rekord KEZDOCIME: mov dword ptr [REK], eax (#1409).
+# KONTROLL: 13 fuggetlenul ismert azonositobol 13 egyezik, 0 ter el.
+# URES cella ket okbol lehet:
+#   (a) a bajtminta nem rajzolodott ki hianytalanul -> nem talalgatunk;
+#   (b) a felirat-kulcsot TOBB parancs is hasznalja. A kulcs a FELIRATOT
+#       nevezi meg, nem a parancsot: eMenuView::ID_VIEW_BW harom kulonbozo
+#       menuben harom kulonbozo azonositoval szerepel.
+# Kinyero: scripts/binaris/menu_parancsazonositok.py
+# Reszletek: picasa-menu-leltar.md 7. szakasz.
+menu,parancs,felirat_en,felirat_hu,parancsazonosito
+CMenuBar,Delete,Delete,Törlés,
+CMenuBar,Enter,Enter,Enter,
+CMenuBar,Enter,Enter,Enter,
+CMenuBar,Enter,Enter,Enter,
+eMenuCreate,ID_BURNCD,Create a &Gift CD...,&Ajándék CD készítése...,0x9d51
+eMenuCreate,ID_COLLAGEMAKER,&Picture Collage...,&Képkollázs...,0x9d62
+eMenuCreate,ID_EXPORT_SENDTOBLOGGER,Publish to &Blogger...,Kö&zzététel a Bloggeren...,
+eMenuCreate,ID_POSTER,Make a &Poster...,&Poszter készítése...,0x9d30
+eMenuCreate,ID_SCREENSAVER,Add to &Screensaver...,Hozzáadás a &képernyővédőhöz...,0x9d5c
+eMenuCreate,ID_WALLPAPER,Set as &Desktop...,Beállítás &háttérképként...,0x9cd2
+eMenuCreate,Movies,&Movie,&Mozgófilm,
+eMenuCreateMovie,ID_FACES,From Faces in Selection...,A kijelölésben lévő arcokból...,0x9d59
+eMenuCreateMovie,ID_FACESRANDOM,From People Albums...,Az Emberek albumból...,0x9d5a
+eMenuCreateMovie,MOVIE,From Selection...,Kijelölésből...,0x9d58
+eMenuCreateWin,ID_TIVO,&Export to TiVo(r) DVR...,&Exportálás TiVo(r) DVR-re...,0x9d61
+eMenuEdit,ID_ALBUM_SELECTALLPICTURES,Select &All,Az ö&sszes kijelölése,0x9cb8
+eMenuEdit,ID_CLEAR_SELECTION,C&lear Selection,Kijelölés &törlése,0x9c90
+eMenuEdit,ID_COPY,&Copy,&Másolás,0x9d3b
+eMenuEdit,ID_CUT,Cu&t,&Kivágás,0x9d39
+eMenuEdit,ID_EDIT_COPYALLEFFECTS,C&opy All Effects,Az összes effektus más&olása,0x9d6f
+eMenuEdit,ID_EDIT_COPYTEXT,Copy Text,Szöveg másolása,0x9ded
+eMenuEdit,ID_EDIT_PASTEALLEFFECTS,Paste All E&ffects,Az összes e&ffektus beillesztése,0x9d70
+eMenuEdit,ID_EDIT_PASTETEXT,Paste Text,Szöveg beillesztése,0x9dee
+eMenuEdit,ID_PASTE,&Paste,&Beillesztés,0x9d3c
+eMenuEdit,ID_SELECTSTAR,Select &Starred,&Csillagozottak kijelölése,0x9d5b
+eMenuEdit,ID_SELECT_INVERT,&Invert Selection,Kiválasztás &megfordítása,0x9c47
+eMenuFile,ID_FILE_DELETEFROMDISK,&Delete from Disk...,Tö&rlés a lemezről...,0x9c9a
+eMenuFile,ID_FILE_EMAIL,&E-Mail...,&E-mail...,
+eMenuFile,ID_FILE_EPROCESS,Order Prin&ts...,Papírképek rendelé&se...,0x9c98
+eMenuFile,ID_FILE_EXIT,E&xit,&Kilépés,0x9c41
+eMenuFile,ID_FILE_EXPORTTOFOLDER,Export Pi&cture to Folder...,Kép e&xportálása mappába...,0x9c81
+eMenuFile,ID_FILE_IMPORTPICTURE,&Import From...,&Importálás forrása...,
+eMenuFile,ID_FILE_NEWFOLDER,Mo&ve to New Folder...,Áthel&yezés új mappába...,
+eMenuFile,ID_FILE_NEWLABEL,&New Album...,Ú&j album...,0x9d67
+eMenuFile,ID_FILE_OPEN,Add &File to Picasa...,&Fájl felvétele a Picasába...,0xe101
+eMenuFile,ID_FILE_OPENINANEDITOR,&Open File(s) in an Editor,&Fájl(ok) megnyitása szerkesztőben,0x9c9b
+eMenuFile,ID_FILE_PRINT,&Print...,&Nyomtatás...,0xe107
+eMenuFile,ID_FILE_RENAME,&Rename...,Átne&vezés...,0x9d4f
+eMenuFile,ID_FILE_RENAME,&Rename...,Átne&vezés...,0x9d4f
+eMenuFile,ID_FILE_REVERT,Rever&t,Vissz&aállítás,
+eMenuFile,ID_FILE_SAVE,&Save,Menté&s,0xe103
+eMenuFile,ID_FILE_SAVEACOPY,Save a Cop&y,&Másolat mentése,0x9dca
+eMenuFile,ID_FILE_SAVEAS,Save &As...,Mentés &másként...,
+eMenuFile,ID_GETMYSTUFF,Import from Picasa Web Albums...,Importálás a Picasa Webalbumokból...,0x9dfa
+eMenuFile,ID_TOOLS_INCLUDEEXCLUDEFOLDERS,Add Folder to Picasa...,Mappa hozzáadása a Picasához...,0x9caa
+eMenuFileWin,ID_ALBUM_LOCATEONDISK,&Locate on Disk,&Keresés a lemezen,0x9cba
+eMenuFileWin,ID_FILE_LOCATEONDISK,&Locate on Disk,&Keresés a lemezen,
+eMenuHelp,ID_HELP_ABOUT,&About Picasa,A Picasa &névjegye,0x9c42
+eMenuHelp,ID_HELP_CHECK_FOR_UPDATES,&Check for Updates,&Frissítések keresése,0x9c53
+eMenuHelp,ID_HELP_DEFAULT,&Help Contents and Index,&Súgó - tartalom és tárgymutató,0x9cac
+eMenuHelp,ID_HELP_KEYBOARD_SHORTCUTS,&Keyboard Shortcuts,Billentyű&kódok,
+eMenuHelp,ID_HELP_PICASA_FORUMS,Picasa &Forums,Picasa-&fórumok,0x9d93
+eMenuHelp,ID_HELP_PICASA_README,Online &ReadMe,&Online információ,0x9c54
+eMenuHelp,ID_HELP_PRIVACY,Privacy Policy,Adatvédelmi irányelvek,0x9c58
+eMenuHelp,ID_HELP_RELEASENOTES,Release &Notes,&Termékkiadási tájékoztató,0x9c57
+eMenuHelp,ID_HELP_TERMS,Terms,Általános Szerződési Feltételek,0x9c59
+eMenuHelp,ID_HELP_UNINSTALL,&Uninstalling Picasa,A &Picasa eltávolítása,0x9d94
+eMenuLabelFolder,ID_ALBUM_DELETE,&Delete...,&Törlés...,0x9d44
+eMenuLabelFolder,ID_ALBUM_EDITCAPTIONS,&Edit Description...,&Leírás szerkesztése...,0x9c69
+eMenuLabelFolder,ID_ALBUM_SLIDESHOW,&View Slideshow,&Diavetítés megtekintése,0x9c6d
+eMenuLabelFolder,ID_DATESORT,&Date,&Dátum,0x9cd4
+eMenuLabelFolder,ID_FILE_EXPORTASWEBPAGE,E&xport as HTML Page...,E&xportálás HTML-oldalként...,0x9c95
+eMenuLabelFolder,ID_FILE_PRINTCONTACTSHEET,&Print Contact Sheet...,&Indexképek nyomtatása...,0x9c94
+eMenuLabelFolder,ID_MANAGE_ALBUM,&Remove from Picasa...,&Eltávolítás a Picasából...,0x9cce
+eMenuLabelFolder,ID_MOVEFOLDER,&Move...,Át&helyezés...,0x9df4
+eMenuLabelFolder,ID_NAMESORT,&Name,&Név,0x9cd3
+eMenuLabelFolder,ID_REFRESH_THUMB,Refresh &Thumbnails,&Indexképek frissítése,
+eMenuLabelFolder,ID_REVERSESORT,&Reverse order,&Fordított sorrend,0xa0d0
+eMenuLabelFolder,ID_SIZESORT,&Size,&Méret,0x9cd5
+eMenuLabelFolder,SortBy,&Sort By,&Rendezés,
+eMenuPicture,BatchEdit,&Batch Edit,&Csoportos szerkesztés,
+eMenuPicture,ID_PICTURE_AUTO_COLOR,&Auto Color,&Automatikus szín,0x9d48
+eMenuPicture,ID_PICTURE_AUTO_LIGHTING,A&uto Contrast,A&utomatikus kontraszt,
+eMenuPicture,ID_PICTURE_AUTO_REDEYE,Auto Red Eye Correction,Automatikus vörösszem-eltávolítás,0x9df1
+eMenuPicture,ID_PICTURE_ENHANCE,I'm Feeling &Lucky,&Jó napom van,0x9d5e
+eMenuPicture,ID_PICTURE_FILM_GRAIN,&Film Grain,Films&zemcse,0x9d4e
+eMenuPicture,ID_PICTURE_HIDE,&Hide,&Elrejtés,0x9ca4
+eMenuPicture,ID_PICTURE_HIDE,&Hide,&Elrejtés,0x9ca4
+eMenuPicture,ID_PICTURE_HIDE_TEXT,Hide Text,Szöveg elrejtése,0x9dec
+eMenuPicture,ID_PICTURE_RESET_FACES,Reset &Faces,Ar&cok alaphelyzetbe állítása,0x9e11
+eMenuPicture,ID_PICTURE_REVERT,Undo &All Edits,Összes szerkesztés vissz&avonása,0x9d2d
+eMenuPicture,ID_PICTURE_ROTATECLOCKWISE,R&otate Clockwise,F&orgatás jobbra,
+eMenuPicture,ID_PICTURE_ROTATECOUNTERCLOCKWISE,Rotate &Counterclockwise,Forgatás &balra,
+eMenuPicture,ID_PICTURE_SHARPEN,S&harpen,É&lesítés,0x9d4b
+eMenuPicture,ID_PICTURE_SHOW_TEXT,Show Text,Szöveg megjelenítése,0x9deb
+eMenuPicture,ID_PICTURE_UNHIDE,&Unhide,&Megjelenítés,
+eMenuPicture,ID_PICTURE_UNHIDE,&Unhide,&Megjelenítés,
+eMenuPicture,ID_PICTURE_VIEW,&View and Edit,&Megjelenítés és szerkesztés,0x9ca0
+eMenuPicture,ID_PICTURE_WARMIFY,&Warmify,&Melegítés,0x9d4d
+eMenuPictureWin,ID_PICTURE_PROPERTIES,Propert&ies,T&ulajdonságok,0x9ca8
+eMenuTools,Experimental,Experimental,Kísérleti,
+eMenuTools,Geotag,&Geotag,&Geocímke,
+eMenuTools,ID_DELETE_EMPTY_ALBUMS,Delete empty online albums...,Üres online albumok törlése...,0x9e00
+eMenuTools,ID_DUPES,Show Duplicate Files,Fájlok másodpéldányainak megjelenítése,0x9d57
+eMenuTools,ID_EXPORT_EARTH,Export to Google Earth File,Exportálás Google Earth-fájlba,0x9db0
+eMenuTools,ID_FTPWEB,Publish via FTP...,Közzététel FTP-n keresztül...,0x9d54
+eMenuTools,ID_MOVE_DATABASE,Choose database location...,Adatbázis helyének kiválasztása...,0x9e20
+eMenuTools,ID_PASSPORT,&Passport photo...,Útle&vélkép...,0x9def
+eMenuTools,ID_PICTURE_GEOTAG,Geotag With Google Earth...,Geocímkézés a Google Earth programmal...,0x9db4
+eMenuTools,ID_PICTURE_GEOUNTAG,Clear Geotags,Geocímkék törlése,0x9db5
+eMenuTools,ID_SAVESEARCH,Save &search results...,Keresési eredmények &mentése...,0x9d52
+eMenuTools,ID_SEARCHTOKEN,Show &tag as album...,&Címke megjelenítése albumként...,0x9de3
+eMenuTools,ID_S_BLUE,&Blue,&Kék,0x9da4
+eMenuTools,ID_S_GREEN,&Green,&Zöld,0x9da7
+eMenuTools,ID_S_ORANGE,&Orange,&Narancssárga,0x9da5
+eMenuTools,ID_S_PURPLE,&Purple,&Lila,0x9da8
+eMenuTools,ID_S_RED,&Red,&Piros,0x9db1
+eMenuTools,ID_S_YELLOW,&Yellow,&Sárga,0x9da6
+eMenuTools,ID_TOOLS_ADJUST_TIMESTAMP,Adjust &Date and Time...,&Dátum és idő beállítása...,0x9e0e
+eMenuTools,ID_TOOLS_BACKUP,&Back Up Pictures...,&Képek biztonsági mentése...,0x9d38
+eMenuTools,ID_TOOLS_BATCH_UPLOAD,Batch Upload...,Csoportos feltöltés...,0x9d3a
+eMenuTools,ID_TOOLS_BUTTONMGR,Configure Buttons...,Gombok konfigurálása...,0x9daf
+eMenuTools,ID_TOOLS_COLLAB,Upload to a Collaborative Web Album,Feltöltés közös szerkesztésű webalbumba,0x9df9
+eMenuTools,ID_TOOLS_CONFIG_SCREENSAVER,Configure Screensaver...,Képernyővédő konfigurálása...,0x9dc9
+eMenuTools,ID_TOOLS_CONFIG_SLINGSHOT,Configure Photo Viewer...,Fotómegjelenítő beállítása...,0x9df0
+eMenuTools,ID_TOOLS_CONTACTMGR,People Manager...,Személyek kezelése...,
+eMenuTools,ID_TOOLS_DOWNLOAD_FACES,Do&wnload Name Tags from Picasa Web Albums,Névcímkék letöltése a Picasa &Webalbumokból,0x9e10
+eMenuTools,ID_TOOLS_INCLUDEEXCLUDEFOLDERS,&Folder Manager...,&Mappakezelő...,0x9caa
+eMenuTools,ID_TOOLS_OPTIONS,&Options...,&Beállítások...,0x9cab
+eMenuTools,ID_TOOLS_UPLOAD,Upload to Google &Photos,Feltöltés a Google Fotókba,0x9df7
+eMenuTools,ID_TOOLS_UPLOADMGR,&Upload Manager...,&Feltöltéskezelő...,0x9d9d
+eMenuTools,ID_TOOLS_YOUTUBE,Upload to &YouTube,Feltöltés a &YouTube webhelyre,0x9df8
+eMenuTools,ID_VIEW_EARTH,View in Google Earth...,Megtekintés a Google Earth programban...,0x9d9e
+eMenuTools,ID_WRITE_XMP_FACES,Write faces to XMP...,Arcinformációk írása XMP-adatokba...,0x9e2a
+eMenuTools,Searchfor,Search for...,Keresés...,
+eMenuTools,Upload,U&pload,&Feltöltés,
+eMenuView,DisplayMode,&Display Mode,&Megjelenítési mód,
+eMenuView,FolderView,&Folder View,&Mappanézet,
+eMenuView,ID_CAPFILE,&Filename,&Fájlnév,0x9d64
+eMenuView,ID_CAPFULL,&Caption,&Képfelirat,0x9d65
+eMenuView,ID_CAPNONE,&None,&Nincs,0x9d63
+eMenuView,ID_CAPRES,&Resolution,&Felbontás,0x9d66
+eMenuView,ID_CAPTAG,&Tags,&Címkék,
+eMenuView,ID_CAPTAG,&Tags,&Címkék,
+eMenuView,ID_PICTURE_SEPIA,&Sepia,&Szépia,0x9d4a
+eMenuView,ID_VIEWBYDATE,Sort by &Creation Date,Rendezés létre&hozási dátum alapján,0x9c8b
+eMenuView,ID_VIEWBYNAME,Sort by &Name,Rendezés &név alapján,0x9c8c
+eMenuView,ID_VIEWBYRECENT,Sort by &Recent Changes,Rendezés a leg&utóbbi változtatások alapján,0x9cbd
+eMenuView,ID_VIEWBYSIZE,Sort by &Size,Rendezés &méret alapján,0x9dc8
+eMenuView,ID_VIEWREVERSE,Re&verse sort,Rendezés megfordítása,0xa0cf
+eMenuView,ID_VIEW_16,&16-bit (dithered),&16 bites (szemcsézett),0x9d18
+eMenuView,ID_VIEW_ALL,&Tree View,&Fanézet,0x9db9
+eMenuView,ID_VIEW_AUTO,&Automatic,&Automatikus,0x9d1f
+eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér,
+eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér,
+eMenuView,ID_VIEW_BW,&Black and White,&Fekete-fehér,
+eMenuView,ID_VIEW_COLOR_MANAGED,Use Color Management,Színkezelés használata,0x9d72
+eMenuView,ID_VIEW_DESKTOP,&Desktop,&Asztal,0x9dba
+eMenuView,ID_VIEW_EDIT,Show Edit Controls,Szerkesztési vezérlők megjelenítése,0x9d6e
+eMenuView,ID_VIEW_FOLDERS,&Flat Folder View,&Egyszerű mappanézet,0x9db6
+eMenuView,ID_VIEW_LARGETHUMBNAILS,&Normal Thumbnails,&Normál indexképek,0x9c9c
+eMenuView,ID_VIEW_LCD,&LCD Whitepoint,&LCD fehérpont,0x9d20
+eMenuView,ID_VIEW_LIGHTBOXVIEW,&Library View,&Könyvtárnézet,0x9d2a
+eMenuView,ID_VIEW_LINEAR,Linear &Gamma (2.2),Lineáris &gamma (2.2),0x9d1d
+eMenuView,ID_VIEW_MAC,&Mac Gamma (1.6),&Mac gamma (1.6),0x9d1a
+eMenuView,ID_VIEW_NORMAL,&24-bit,&24 bites,0x9d1e
+eMenuView,ID_VIEW_OV,&Show overflow pixels,Túlcsordult &képpontok megjelenítése,0x9d55
+eMenuView,ID_VIEW_PEOPLE,&People,&Emberek,0x9d6c
+eMenuView,ID_VIEW_PICTURE,&Edit View,&Szerkesztési nézet,0x9c8f
+eMenuView,ID_VIEW_PLACES,&Places,&Helyek,0x9d6d
+eMenuView,ID_VIEW_PROJECTOR,&Projector Mode,&Projektor mód,0x9d19
+eMenuView,ID_VIEW_PROPERTIES,Properties,Tulajdonságok,0x9d71
+eMenuView,ID_VIEW_RDESK,&Remote Desktop,&Távoli asztal,0x9dbc
+eMenuView,ID_VIEW_SEARCHVIEW,Search &Options,Keresési &opciók,0x9d2b
+eMenuView,ID_VIEW_SEPIA,&Sepia,&Szépia,0x9d1b
+eMenuView,ID_VIEW_SHOWHIDDEN,&Hidden Pictures,&Rejtett képek,0x9c9e
+eMenuView,ID_VIEW_SLIDESHOW,&Slideshow,&Diavetítés,0x9c9f
+eMenuView,ID_VIEW_SMALL,Small &Pictures,Kis &képek,0x9cd8
+eMenuView,ID_VIEW_SMALLTHUMBNAILS,S&mall Thumbnails,&Kis indexképek,0x9c9d
+eMenuView,ID_VIEW_THUMBNAILS,Show &Thumbnails in Library,Indexképek &megjelenítése a könyvtárban,
+eMenuView,ID_VIEW_TIMELINE,Ti&meline,I&dőrend,
+eMenuView,ID_VIEW_WATCHED,&Simplified Tree View,&Egyszerűsített fanézet,0x9db8
+eMenuView,Shortcuts,&Shortcuts,&Gyorsbillentyűk,
+eMenuView,ThumbnailCaption,Thumbnail &Caption,Indexkép &felirata,
+eMenuViewWin,ID_VIEW_MYCOMPUTER,My &Computer,&Sajátgép,0x9dcb
+eMenuViewWin,ID_VIEW_MYDOCS,My Do&cuments,Do&kumentumok,0x9db7
+eMenuViewWin,ID_VIEW_MYPICTURES,My &Pictures,&Képek,0x9e3a
