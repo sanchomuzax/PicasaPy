@@ -97,42 +97,42 @@ class TestAszukAblak:
 
 
 class TestIdorendGomb:
-    """A második kihelyezett gomb: a NÉZET megvolt, a gomb hiányzott."""
+    """⚠️ A gomb a #1903-ban VISSZAVONVA — a mérés MEGDŐLT.
 
-    def test_ott_van_a_savon(self, qml_app, qt_app):
+    Ez az osztály eredetileg azt állította, hogy az „Időrend" váltógomb
+    ott van az eszköztáron (a #1421 mért helyével és méretével). A
+    tulajdonos élesben jelentette, két képernyőképpel, hogy amit a gomb
+    megnyit, az **nem az eredeti funkció**: a Picasa Időrendje TELJES
+    KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján
+    (`oneup/timeline` + `BigSlideshow2`, `0x008037e0`), saját RÁTÉTES
+    vezérlősávval (`overlays/timeline` · `timelinedot` · `sliderthumb` ·
+    `startbutton` · `exit`, `0x007fb210`) és „Időrend előkészítése…"
+    fázissal — a miénk lapos rács volt hónap-fejlécekkel.
+
+    ⇒ A fejlécben ilyen gomb az eredetiben ezen a helyen NEM létezik: az
+    Időrend vezérlői a teljes képernyős rátéten ülnek. A #1421 mérése a
+    HELYET és a MÉRETET jól adta meg, de rossz funkcióhoz — a felirat
+    egyezése („Timeline" → „Időrend") nem jelenti, hogy ugyanazt a
+    funkciót építettük meg.
+
+    A tesztek ezért **megfordultak**: azt őrzik, hogy a gomb NINCS ott,
+    amíg a valódi nézet nincs megépítve (#1903). A többi kihelyezett gomb
+    (Új album, lapos/fa nézetváltó) érintetlen — azok mérése áll.
+    """
+
+    def test_NINCS_idorend_gomb_a_savon(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        assert window.findChild(QObject, "toolbarTimelineButton") is not None
+        assert window.findChild(QObject, "toolbarTimelineButton") is None
 
-    def test_a_MERT_meretet_hasznalja(self):
-        """132 × 28 — `konyvtar-ablak-meretek.md` 2. szakasz.
-
-        Ez az EGYETLEN feliratos a kihelyezett gombok közül, és épp azért
-        fér bele a szöveg, mert a mért hely ekkora. Az `newalbum` 29 × 22-je
-        nem fért — ott a méret mondta meg, hogy ikonnak kell lennie."""
+    def test_a_forrasban_sincs_benne(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarTimelineButton"')
-        blokk = forras[kezdet : kezdet + 900]
-        assert "Layout.preferredWidth: 132" in blokk
-        assert "Layout.preferredHeight: 28" in blokk
+        assert 'objectName: "toolbarTimelineButton"' not in forras
 
-    def test_a_nyitott_nezetet_JELZI(self):
-        """A gomb váltó — a Ctrl+5 és a menütétel ugyanezt kapcsolja.
-
-        Enélkül a `timelineActive` holt kötés lenne, és a felhasználó sem
-        látná, hogy a gomb be van nyomva."""
-        forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarTimelineButton"')
-        assert "toolbar.timelineActive" in forras[kezdet : kezdet + 900]
-
-    def test_ugyanaz_az_ut_mint_a_menu(self):
-        fo = _MAIN.read_text(encoding="utf-8")
-        assert fo.count("onTimelineRequested: window.toggleTimeline()") >= 2, (
-            "a menü és az eszköztár nem ugyanazt a váltást hívja"
+    def test_a_MENUTETEL_helye_megmarad(self):
+        """A hely az eredetiben létezik — csak a tartalma nincs kész."""
+        menu = (_TOOLBAR.parent / "PicasaMenuBar.qml").read_text(
+            encoding="utf-8"
         )
+        assert 'objectName: "menuViewTimeline"' in menu
 
-    def test_szuk_ablaknal_elrejtozik(self):
-        forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarTimelineButton"')
-        blokk = forras[kezdet : kezdet + 900]
-        assert "visible: !toolbar.toolbarCompact" in blokk
-        assert "Layout.minimumWidth: 0" in blokk
+
