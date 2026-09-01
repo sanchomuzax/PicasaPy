@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.175] – 2026-09-01
+
+### Javítva
+- **A rejtett mappák mostantól nem tűnnek el nyomtalanul (#1637).** Eddig
+  az elrejtett mappa egyszerűen eltűnt a bal hasábról, és a **Nézet ▸
+  Rejtett képek** bekapcsolásakor ugyanoda került vissza, a többi mappa
+  közé keveredve — sem azt nem lehetett megmondani, van-e egyáltalán
+  rejtett mappánk, sem azt, melyik volt az. Most a rejtettek a hasáb
+  alján, saját **„Rejtett mappák”** fejléc alatt állnak, ahogy az eredeti
+  Picasában. Ha nincs rejtett mappa, a fejléc sem jelenik meg.
+- **A „Rejtett képek” kapcsoló eddig nem frissítette a bal hasábot
+  (#1637).** A rejtett mappa csak egy későbbi, más okból kiváltott
+  újratöltéskor bukkant elő. A hiba azért maradt észrevétlen, mert a
+  rejtett **képek** azonnal megjelentek — a kapcsoló működni látszott.
+
 ## [0.8.174] – 2026-09-01
 
 ### Javítva
