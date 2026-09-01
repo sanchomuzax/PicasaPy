@@ -110,14 +110,14 @@ class TestUrlCimke:
         assert url.endswith("&d=projector"), url
 
     @pytest.mark.parametrize(
-        "mod", ["", "auto", "normal", "dither16", "rdesk", "mac"]
+        "mod", ["", "auto", "normal", "dither16", "rdesk"]
     )
     def test_a_no_op_modok_nem_valtoztatjak_az_url_t(self, tmp_path, mod):
-        """Az öt no-op mód és az alaphelyzet: az URL bájtra a régi.
+        """A no-op módok és az alaphelyzet: az URL bájtra a régi.
 
-        A `sepia` és a `bw` a #1657 óta KIKERÜLT innen: mozdítanak
-        képpontot, tehát KELL nekik cimke — különben a Qt URL-kulcsú
-        gyorstára a régi képpontokat tartaná a rácson.
+        A `sepia` és a `bw` a #1657 óta KIKERÜLT innen, a `mac` a #1730
+        óta: mozdítanak képpontot, tehát KELL nekik cimke — különben a Qt
+        URL-kulcsú gyorstára a régi képpontokat tartaná a rácson.
 
         Ez nem kozmetika. Cimkével minden módváltás ELDOBNÁ a Qt
         URL-kulcsú bélyegkép-gyorstárát, és a rács hatás nélkül
@@ -127,7 +127,8 @@ class TestUrlCimke:
         assert _thumb_url(records[0], mod) == _thumb_url(records[0])
 
     @pytest.mark.parametrize(
-        "mod", ["projector", "lcd", "linear", "overflow", "sepia", "bw"]
+        "mod",
+        ["projector", "lcd", "linear", "overflow", "sepia", "bw", "mac"],
     )
     def test_a_cimke_korbejar(self, tmp_path, mod):
         _lib, records = _konyvtar(tmp_path)
