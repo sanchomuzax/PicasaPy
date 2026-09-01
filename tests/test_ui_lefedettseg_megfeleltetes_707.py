@@ -40,6 +40,32 @@ def elem_sorok() -> list[dict]:
     return _sorok(ELEM_MEGFELELTETES)
 
 
+
+def _bizonyitek_hibai(hivatkozas: str) -> list[str]:
+    """Üres lista, ha a `fájl` / `fájl:sor` hivatkozás megáll a fán.
+
+    Külön függvény, hogy a sorszám-leválasztás EGY helyen éljen, és a
+    hibaüzenet megmondja, MELYIK fele bukott — a „nincs ilyen fájl" és a
+    „rövidebb a fájl, mint a hivatkozott sor" két különböző hiba, és
+    másképp kell javítani.
+    """
+    fajl, _, sor_szoveg = hivatkozas.partition(":")
+    ut = QML_GYOKER / fajl
+    if not ut.is_file():
+        return ["nincs ilyen fájl"]
+    if not sor_szoveg:
+        return []
+    try:
+        sorszam = int(sor_szoveg)
+    except ValueError:
+        return [f"a sorszám nem szám: {sor_szoveg!r}"]
+    if sorszam < 1:
+        return [f"a sorszám nem pozitív: {sorszam}"]
+    sorok = ut.read_text(encoding="utf-8").splitlines()
+    if sorszam > len(sorok):
+        return [f"a fájl {len(sorok)} soros, a hivatkozás {sorszam}"]
+    return []
+
 class TestPanelMegfeleltetes:
     def test_letezik(self):
         assert MEGFELELTETES.is_file()
@@ -128,7 +154,19 @@ class TestElemFelulbiralasok:
         assert not rosszak, f"ismeretlen panel-előtagú elem: {rosszak}"
 
     def test_megvan_allapothoz_letezo_bizonyitek_kell(self, elem_sorok):
-        """A „megvan” állítást létező QML-fájllal kell alátámasztani."""
+        """A „megvan” állítást létező QML-fájllal kell alátámasztani.
+
+        A bizonyíték `fájl` vagy `fájl:sor` alakú lehet. A sorszám nem
+        díszítés: enélkül a „megvan” állítás egy 2000 soros fájlra mutat,
+        és ellenőrizni éppolyan drága, mint elölről megkeresni. Ezért ha
+        van sorszám, azt is ellenőrizzük — a fájlnak legalább annyi sora
+        kell legyen.
+
+        ⚠️ Ez az ág a #1858-cal került be, és a `main`-t PIROSRA vitte:
+        az őr a teljes `fájl:sor` szöveget adta át az `is_file()`-nak,
+        ami sosem lehet igaz. A javítás a sorszámot LEVÁLASZTJA, és
+        külön ellenőrzi — a bizonyíték pontosabb lett, nem gyengébb.
+        """
         hibas: list[str] = []
         for sor in elem_sorok:
             if sor["allapot"] != "megvan":
@@ -141,11 +179,11 @@ class TestElemFelulbiralasok:
             if not bizonyitekok:
                 hibas.append(f"{sor['elem']}: nincs bizonyíték")
                 continue
-            hibas.extend(
-                f"{sor['elem']} -> {fajl}"
-                for fajl in bizonyitekok
-                if not (QML_GYOKER / fajl).is_file()
-            )
+            for hivatkozas in bizonyitekok:
+                hibas.extend(
+                    f"{sor['elem']} -> {hivatkozas} ({ok})"
+                    for ok in _bizonyitek_hibai(hivatkozas)
+                )
         assert not hibas
 
     def test_nincs_ismetlodo_elem(self, elem_sorok):
