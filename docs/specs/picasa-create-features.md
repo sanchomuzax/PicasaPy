@@ -2217,3 +2217,49 @@ nem dokumentált tételt hoz:
 **Bizonyítottsági fok: megerősített** a névparancsok és a kulcsok léte;
 **nem mérve** a csúszkák értéktartománya és az automatikus mentés
 időzítése.
+
+### 2.10 A `titledialog` — a szöveges dia szerkesztője (2026-09-01)
+
+*A 2.9 megtalálta az `insert_slide` névparancsot („Add a new text
+slide"); ez a szakasz a mögötte álló **párbeszédet** írja le. A
+2.5/b már rögzítette, hogy az **újraszámítás eldobja a kézzel felvett
+szöveges diákat** — az a figyelmeztetés ehhez a funkcióhoz tartozik.*
+
+#### A párbeszéd vezérlői (elemleltár, `titledialog`)
+
+| elem | felirat |
+|---|---|
+| `previewtext` · `previewimage` | a dia **élő előnézete** (szöveg + háttér) |
+| `stylelist` | a dia **stílusa** |
+| `sizelist` | a **betűméret** |
+| `captionchk` | jelölőnégyzet — a **képfelirat** átemelése |
+| `add` · `cancel` | „Add" / „Cancel" |
+
+⇒ A szöveges dia **nem puszta szövegmező**: stílus- és
+méretválasztóval, élő előnézettel, és azzal a lehetőséggel, hogy a
+szöveg a kép **feliratából** jöjjön (`captionchk`).
+
+#### Az infósor a filmkészítőben
+
+A `0x0061be40` a `makemoviepanel/infotext` tartalmát építi:
+
+| formátum | mit mutat |
+|---|---|
+| `%s     %dx%d pixels` | a dia neve és **képpont-mérete** |
+| `(%d of %d)` | a dia **sorszáma** a filmben |
+| **`Text Slide`** | a szöveges diák neve a listában |
+
+⇒ A szöveges dia a filmszalagon **„Text Slide" néven** jelenik meg, és
+az infósor ugyanúgy mutatja a méretét és a helyét, mint a fotókét.
+
+**Bizonyítottsági fok: megerősített** a vezérlőkészlet és a
+formátumsztringek; **nem mérve** a `stylelist` és a `sizelist` konkrét
+értékkészlete.
+
+> ⚠️ **A kapcsolódó romboló figyelmeztetés már dokumentálva van** a
+> **2.5/b** pontban (`askapplyconfirm`, *„This will generate a new movie
+> removing all the text slides you added. Are you sure?"*) — ez a kör
+> **nem** találta meg újra, csak összeköti vele a szöveges dia
+> funkcióját. Aki a `titledialog`-ot megvalósítja, annak a
+> figyelmeztetést is meg kell építenie, különben a felhasználó kézi
+> munkája némán elveszik.

@@ -25,7 +25,7 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
 
-⭐ **2026-09-01 (2.9):** a filmkészítő **filmszalagja teljes fogd-és-vidd felület** (`filmstripmove/insert/dragtoclips/doubleclick/context`), a **négy csúszka** egy kezelőben, és a filmkészítő **saját, menthető projekt** (`CMakeMoviePanel::autosave`, „Back to Movie Maker", `Preferences\SupportMovies`).
+⭐ **2026-09-01 (2.9):** a filmkészítő **filmszalagja teljes fogd-és-vidd felület** (`filmstripmove/insert/dragtoclips/doubleclick/context`), a **négy csúszka** egy kezelőben, és a filmkészítő **saját, menthető projekt** (`CMakeMoviePanel::autosave`, „Back to Movie Maker", `Preferences\SupportMovies`). **2.10 (2026-09-01):** a `titledialog` — a **szöveges dia szerkesztője** (stílus- és méretválasztó, élő előnézet, `captionchk` a képfelirat átemelésére); a szöveges dia a filmszalagon **„Text Slide"** néven jelenik meg, az infósor `%s  %dx%d pixels` + `(%d of %d)`.
 
 ⭐ **2026-08-30 — a „Film készítése" szakasz MŰKÖDÉS-sel bővült** (2.5/b–2.8):
 a `CMakeFaceMoviePanel` **„recompute" megerősítője** (`askapplyconfirm`
