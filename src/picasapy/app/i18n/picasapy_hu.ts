@@ -339,6 +339,14 @@
         <source>PDF documents (*.pdf)</source>
         <translation>PDF-dokumentumok (*.pdf)</translation>
     </message>
+    <message>
+        <source>Copies of each picture:</source>
+        <translation>Példány képenként:</translation>
+    </message>
+    <message>
+        <source>Add another copy of each Photo to be printed</source>
+        <translation>További másolat minden nyomtatandó képhez</translation>
+    </message>
 </context>
 <context>
     <name>EmailController</name>

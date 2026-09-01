@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.186] – 2026-09-01
+
+### Hozzáadva
+- **Nyomtatás: képenkénti példányszám (#1819).** A +/− minden képhez ad egy
+  további másolatot — két kép két példányban négy lap. Ez nem a nyomtató
+  saját példányszám-mezője: az a teljes feladatot sokszorozza, ez pedig
+  képenként.
+- **Nyomtatás: lapozható előnézet (#1819).** A párbeszédnek eddig
+  egyáltalán nem volt előnézete — a felhasználó vakon nyomott nyomtatást.
+  Mostantól látszik, mi kerül papírra, lapról lapra léptethetően. Az
+  előnézet a VÁLASZTOTT nyomatméret arányát mutatja, akkor is, ha a gépen
+  nincs nyomtató.
+
 ## [0.8.185] – 2026-09-01
 
 ### Hozzáadva

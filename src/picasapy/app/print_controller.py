@@ -37,7 +37,16 @@ import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRectF, QSettings, Qt, Signal, Slot
+from PySide6.QtCore import (
+    QObject,
+    QRectF,
+    QSettings,
+    QStandardPaths,
+    QUrl,
+    Qt,
+    Signal,
+    Slot,
+)
 from PySide6.QtGui import QFont, QImage, QPageLayout, QPainter
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
@@ -69,6 +78,11 @@ _log = logging.getLogger(__name__)
 # rögzített értéke (a részletes sablonrendszer, benne az állítható margóval,
 # NEM ebben a körben készül el, ld. a modul docstringje)
 _MARGIN_MM = 5.0
+
+# #1819: az előnézeti lap felbontása. Nem nyomdai érték — csak annyi, hogy
+# a képernyőn éles legyen a legnagyobb nyomatméreten is (8×10 hüvelyk ×
+# 96 = 768×960 képpont), és a PNG még gyorsan elkészüljön.
+_ELONEZET_DPI = 96.0
 
 
 class PrintController(QObject):
@@ -188,8 +202,14 @@ class PrintController(QObject):
         ]
 
     @Slot(list, str, str, str, result=bool)
+    @Slot(list, str, str, str, int, result=bool)
     def renderPrintPreviewPdf(
-        self, rows, fit_mode: str, orientation: str, output_path: str
+        self,
+        rows,
+        fit_mode: str,
+        orientation: str,
+        output_path: str,
+        copies: int = 1,
     ) -> bool:
         """Determinisztikus, headless-ben tesztelhető nyomtatás-előkészítés:
         a kijelölt képek PDF-be renderelése (`QPrinter.PdfFormat`), egy
@@ -202,14 +222,20 @@ class PrintController(QObject):
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
         printer.setOutputFileName(target)
-        ok = self._run(printer, rows, fit_mode, orientation)
+        ok = self._run(printer, rows, fit_mode, orientation, copies)
         if ok:
             self.printFinished.emit(target)
         return ok
 
     @Slot(list, str, str, str, result=bool)
+    @Slot(list, str, str, str, int, result=bool)
     def printRows(
-        self, rows, printer_name: str, fit_mode: str, orientation: str
+        self,
+        rows,
+        printer_name: str,
+        fit_mode: str,
+        orientation: str,
+        copies: int = 1,
     ) -> bool:
         """A kijelölt képek nyomtatása a megadott (üres `printer_name`
         esetén a rendszer alapértelmezett) nyomtatóra."""
@@ -222,7 +248,7 @@ class PrintController(QObject):
                 )
                 return False
             printer.setPrinterName(printer_name)
-        ok = self._run(printer, rows, fit_mode, orientation)
+        ok = self._run(printer, rows, fit_mode, orientation, copies)
         if ok:
             self.printFinished.emit(printer.printerName() or self.tr("default printer"))
         return ok
@@ -417,7 +443,12 @@ class PrintController(QObject):
             painter.end()
 
     def _run(
-        self, printer: QPrinter, rows: Sequence[int], fit_mode: str, orientation: str
+        self,
+        printer: QPrinter,
+        rows: Sequence[int],
+        fit_mode: str,
+        orientation: str,
+        copies: int = 1,
     ) -> bool:
         paths = self._resolve_paths(rows)
         if not paths:
@@ -465,6 +496,17 @@ class PrintController(QObject):
             # a többi kimegy — de a kihagyás NEM tűnhet el a naplóban
             self.printSkipped.emit(skipped)
 
+        # #1819: KÉPENKÉNTI példányszám (`addprintsbutton`/`subprintsbutton`,
+        # „Add another copy of each Photo to be printed"). Ez NEM a nyomtató
+        # saját példányszám-mezője: a +/− minden képhez ad egy további
+        # másolatot, tehát két kép × két példány NÉGY lap.
+        #
+        # ⚠️ A lapok SORRENDJE nincs kimérve. Képenként csoportosítunk
+        # (A, A, B, B), mert a felirat is képenként fogalmaz („each Photo");
+        # a másik olvasat (A, B, A, B) a nyomtató példányszám-mezőjének
+        # viselkedése lenne, amitől ez a vezérlő épp különbözik.
+        images = self._sokszorozva(images, copies)
+
         # a teljes feladat egy tájolást használ (ld. a modul docstringje) —
         # az első képhez igazítva, ha "auto"
         orientation_for_job = resolve_orientation(
@@ -487,6 +529,140 @@ class PrintController(QObject):
             self.printFailed.emit(self.tr("The print job could not be started."))
             return False
         return True
+
+    @staticmethod
+    def _sokszorozva(images: list[QImage], copies: int) -> list[QImage]:
+        """A képek listája képenkénti példányszámmal (#1819).
+
+        A `copies` alsó határa 1: a nulla vagy negatív érték nem „semmit
+        ne nyomtass", hanem hibás bemenet — a felület +/− vezérlője úgyis
+        egynél áll meg."""
+        darab = max(1, int(copies or 1))
+        if darab == 1:
+            return images
+        return [image for image in images for _ in range(darab)]
+
+    @Slot(result=str)
+    def previewImageUrl(self) -> str:  # noqa: N802 — QML-stílus
+        """Az előnézeti PNG helye (#1819) — EGYETLEN fájl, felülírva, URL-ként.
+
+        A fájl a Qt gyorsítótár-könyvtárában él, nem a munkakönyvtárban: a
+        lapozás így nem szemetel a képek mellé, és a rendszer magától
+        takarít, ha a hely fogy.
+
+        ⚠️ URL-t ad vissza, nem útvonalat, és a `QUrl.fromLocalFile`-on át
+        (#1019): a kézzel összefűzött `"file://" + útvonal` Windowson a
+        meghajtóbetűt PORTNAK látja, `#`-es névnél pedig Linuxon is elvágja
+        a nevet. A `renderPreviewPage` a `to_local_path`-en át fogadja
+        vissza, tehát ugyanez az URL adható neki célként."""
+        gyoker = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.CacheLocation
+        )
+        if not gyoker:
+            gyoker = str(Path.home())
+        mappa = Path(gyoker) / "print-preview"
+        mappa.mkdir(parents=True, exist_ok=True)
+        return QUrl.fromLocalFile(str(mappa / "page.png")).toString()
+
+    @Slot(list, str, str, int, int, str, result=bool)
+    def renderPreviewPage(  # noqa: N802 — QML-stílus
+        self,
+        rows,
+        fit_mode: str,
+        orientation: str,
+        copies: int,
+        page_index: int,
+        output_path: str,
+    ) -> bool:
+        """EGY lap előnézete PNG-be (#1819) — a lapozó előnézet forrása.
+
+        Miért nem a `renderPrintPreviewPdf` egy oldala: azt a `QPrinter`
+        rajzolja, és a lapméretet a NYOMTATÓ adja. Az előnézetnek a
+        VÁLASZTOTT nyomatméret arányát kell mutatnia (`NyomatMeret`), akkor
+        is, ha a gépen nincs is nyomtató — a párbeszéd PDF-be is dolgozhat.
+        A tördelés maga UGYANAZ (`compute_print_layout`, `_MARGIN_MM`),
+        tehát az előnézet nem külön elrendezés, csak más vászon.
+        """
+        target = to_local_path(output_path)
+        if not target:
+            return False
+        paths = self._resolve_paths(rows)
+        kepek = [
+            kep
+            for kep in (QImage(str(path)) for path in paths)
+            if not kep.isNull()
+        ]
+        kepek = self._sokszorozva(kepek, copies)
+        if not 0 <= int(page_index) < len(kepek):
+            return False
+        kep = kepek[int(page_index)]
+
+        meret = NyomatMeret[self.printSize()]
+        try:
+            mode = PrintFitMode(fit_mode) if fit_mode else PrintFitMode.FIT
+            kert = (
+                PrintOrientation(orientation)
+                if orientation
+                else PrintOrientation.AUTO
+            )
+        except ValueError:
+            return False
+        # A tájolás a TELJES feladaté (ld. a modul docstringje): az első
+        # kép dönti el, nem a most mutatott lap — különben a lapozás közben
+        # elfordulna az előnézet.
+        elso = kepek[0]
+        fekvo = (
+            resolve_orientation(elso.width(), elso.height(), kert)
+            == PrintOrientation.LANDSCAPE
+        )
+        huvelyk_sz, huvelyk_ma = meret.szeles_huvelyk, meret.magas_huvelyk
+        if fekvo:
+            huvelyk_sz, huvelyk_ma = huvelyk_ma, huvelyk_sz
+
+        vaszon_sz = _ELONEZET_DPI * huvelyk_sz
+        vaszon_ma = _ELONEZET_DPI * huvelyk_ma
+        margo = _MARGIN_MM / 25.4 * _ELONEZET_DPI
+        lap = QImage(
+            int(round(vaszon_sz)),
+            int(round(vaszon_ma)),
+            QImage.Format.Format_RGB32,
+        )
+        lap.fill(Qt.GlobalColor.white)
+        page = PageGeometry(
+            width=float(lap.width()),
+            height=float(lap.height()),
+            margin=max(
+                0.0,
+                min(margo, lap.width() / 2 - 1, lap.height() / 2 - 1),
+            ),
+        )
+        placement = compute_print_layout(page, kep.width(), kep.height(), mode)
+        painter = QPainter()
+        if not painter.begin(lap):
+            return False
+        try:
+            painter.drawImage(
+                QRectF(
+                    placement.x, placement.y, placement.width, placement.height
+                ),
+                kep,
+            )
+        finally:
+            painter.end()
+        return bool(lap.save(target, "PNG"))
+
+    @Slot(list, int, result=int)
+    def printPageCount(self, rows, copies: int = 1) -> int:  # noqa: N802
+        """Hány lap lenne a nyomtatásból (#1819) — a lapozó előnézet
+        `%d / %d` kijelzéséhez.
+
+        Csak a DEKÓDOLHATÓ képeket számolja: a kihagyott (videó, sérült)
+        fájlok lapot sem kapnak, tehát a lapszám sem tartalmazhatja őket."""
+        darab = 0
+        for path in self._resolve_paths(rows):
+            if not QImage(str(path)).isNull():
+                darab += 1
+        return darab * max(1, int(copies or 1))
 
     @staticmethod
     def _paint_pages(
