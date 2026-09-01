@@ -226,37 +226,76 @@ class TestQuantizePalette:
 
 
 class TestHdrMeasuredModel:
-    """#545: a HDR/LocalContrast mért modellje (`referencia/hdrish/`)."""
+    """#545 → #1607: a HDR/LocalContrast mért modellje.
 
-    def test_a_szigma_a_radius_fele(self):
-        """A négy Radius-állás egymástól függetlenül a felét adta.
+    ⚠️ **Két állítás megfordult.** A #545 köre egy illesztett
+    `+2,9·Strength` világosító tagot épített a modellbe, és a Gauss-szigmát
+    a `Radius` felére állította — mindkettő a `referencia/hdrish/`
+    exportjaira illeszkedett, magyarázat nélkül.
 
-        Közvetlenül nem tudjuk kiolvasni a szigmát, ezért az
-        EGYENÉRTÉKŰSÉGET mérjük: a `Radius=20`-as HDR ugyanazt adja, mint a
-        `local_contrast` primitív σ=10-zel — ha valaki visszaállítaná a
-        `Radius`-t közvetlen szigmának, ez a teszt bukik.
+    A #1607 megtalálta a KÖZÖS okot: a `filterdesc.xml` szerinti
+    `BlurImageOperation quality="3"` **háromszoros dobozelmosás**, menetenként
+    x-ben és y-ban egész osztással. Ebből mindkettő MAGÁTÓL adódik:
+
+    * a háromszoros doboz szórása `σ ≈ w/2` — innen a felezés;
+    * a hat egész osztás az elmosást rendszeresen ~2,7 szinttel a valódi
+      átlag alá viszi, és a `be + (be−elmosott)·strength` képlet ezt
+      `+2,7·strength` világosításként adja vissza — innen a 2,9.
+
+    ⇒ A világosító tag nem külön lépés volt, hanem a hiányzó csonkítás
+    lenyomata. A modell most a valódi dobozelmosást számolja, a tag
+    megszűnt, és a SÍK felület (égbolt, sima fal) többé nem világosodik ok
+    nélkül.
+    """
+
+    def test_a_dobozelmosas_a_gauss_ala_visz(self):
+        """A mechanizmus MAGA, számmal — ez a jegy tárgya.
+
+        A csonkító háromszoros doboz rendszeresen a Gauss-átlag ALATT van,
+        és a torzítás a sugártól gyakorlatilag független (hat osztás,
+        egyenként fél szint).
         """
+        from picasapy.render import glimmer_ops as ops
+
+        photo = _real_photo_rgb(300, 400, seed=5)
+        image_f = ops.to_float(photo)
+        for radius in (15.0, 20.0, 40.0):
+            doboz = ops.box_blur_trunc(image_f, radius)
+            gauss = ops.gaussian_blur_f(image_f, radius / 2.0)
+            elteres = float(np.mean(doboz - gauss))
+            assert -3.2 < elteres < -1.8, (
+                f"Radius {radius}: a csonkítás torzítása {elteres:.3f}, "
+                "a várt −2,7 körüli sávon kívül"
+            )
+
+    def test_sik_kepen_AZONOSSAG(self):
+        """A régi modell síkon is világosított (`Strength=3` → +8,7 szint),
+        pedig ott nincs mit kiemelni. A csonkítás sík felületen nulla
+        torzítást ad, tehát az égbolt és a sima fal érintetlen marad."""
+        flat = np.full((60, 80, 3), 137, dtype=np.uint8)
+        for strength in (1.0, 3.0, 7.0):
+            np.testing.assert_array_equal(
+                t.apply_hdr(flat, radius=20.0, strength=strength, fade=0.0), flat
+            )
+
+    def test_a_modell_a_dobozelmosast_hasznalja(self):
+        """Egyenértékűség-mérés: ha valaki visszaállítaná a Gauss-elmosást
+        vagy a világosító tagot, ez bukik."""
         from picasapy.render import glimmer_ops as ops
 
         photo = _real_photo_rgb(200, 300, seed=3)
         through_hdr = t.apply_hdr(photo, radius=20.0, strength=3.0, fade=0.0)
 
         image_f = ops.to_float(photo)
-        blurred = ops.gaussian_blur_f(image_f, 10.0)
-        expected = ops.to_uint8(image_f + (image_f - blurred) * 3.0 + 2.9 * 3.0)
+        blurred = ops.box_blur_trunc(image_f, 20.0)
+        expected = ops.to_uint8(image_f + (image_f - blurred) * 3.0)
 
         np.testing.assert_array_equal(through_hdr, expected)
-
-    def test_a_vilagositas_a_strengthtel_aranyos(self):
-        """A lokális kontraszt mellett `Strength`-arányos világosítás is fut
-        — sík (részletmentes) képen csak ez látszik, ezért ott mérhető."""
-        flat = np.full((40, 50, 3), 100, dtype=np.uint8)
-        for strength, expected in ((1.0, 100 + 2.9), (3.0, 100 + 8.7), (7.0, 100 + 20.3)):
-            result = t.apply_hdr(flat, radius=20.0, strength=strength, fade=0.0)
-            assert int(result[20, 25, 0]) == round(expected)
 
     def test_fade_100_valtozatlan_marad(self):
         photo = _real_photo_rgb(60, 80, seed=9)
         np.testing.assert_array_equal(
             t.apply_hdr(photo, radius=20.0, strength=3.0, fade=100.0), photo
         )
+
+
