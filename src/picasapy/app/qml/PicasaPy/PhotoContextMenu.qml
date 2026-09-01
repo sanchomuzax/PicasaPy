@@ -66,6 +66,9 @@ PicasaMenu {
     signal moveRequested()
     signal openFileRequested()
     signal locateRequested()
+    //: #1833: „keress ehhez hasonlót” — a minta-alapú hasonlóság-keresés
+    //: belépési pontja (`loadsim`).
+    signal findSimilarRequested()
     //: #1613: a `.picasaoriginals`-beli megőrzött eredeti megmutatása
     signal locateOriginalRequested()
     //: #1613: ugrás a kép VALÓDI mappájára (album-/Emberek-nézetből)
@@ -274,6 +277,16 @@ PicasaMenu {
     // tétellel — nálunk egyetlen lapos parancs volt. A középső („Eredeti a
     // lemezen") a `.picasaoriginals`-beli megőrzött eredetihez visz, ami
     // eddig sehonnan nem volt elérhető.
+    // #1833: „Keress ehhez hasonlót” (`loadsim`). Az eredetiben a keresés
+    // második rétegében (`searchoptions`) ül; nálunk a kép saját menüje a
+    // természetes belépési pont, mert a MINTA maga egy kijelölt kép.
+    MenuItem {
+        objectName: "contextMenuFindSimilar"
+        text: qsTr("Find Similar Pictures")
+        onTriggered: menu.findSimilarRequested()
+    }
+    MenuSeparator {}
+
     PicasaMenu {
         objectName: "contextMenuLocateMenu"
         title: qsTr("Locate")

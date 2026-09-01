@@ -3859,6 +3859,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Picasa had a problem loading this file(s). Would you like to hide the files on disk?</source>
         <translation>A Picasa nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné elrejteni a fájlokat a lemezen?</translation>
     </message>
+    <message>
+        <source>Similarity Search Results</source>
+        <translation>Hasonlósági keresés eredménye</translation>
+    </message>
+    <message>
+        <source>Clear Sample</source>
+        <translation>Minta törlése</translation>
+    </message>
+    <message>
+        <source>Updating similarity database (will be fast next time)</source>
+        <translation>A hasonlósági adatbázis épül (legközelebb gyors lesz)</translation>
+    </message>
 </context>
 <context>
     <name>MainToolbar</name>
@@ -4078,6 +4090,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <source>Properties</source>
         <translation>Tulajdonságok</translation>
+    </message>
+    <message>
+        <source>Find Similar Pictures</source>
+        <translation>Keresés hasonló képekre</translation>
     </message>
 </context>
 <context>

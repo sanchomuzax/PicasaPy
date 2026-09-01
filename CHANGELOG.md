@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.189] – 2026-09-01
+
+### Hozzáadva
+- **„Keresés hasonló képekre" (#1833).** A kép helyi menüjéből mostantól
+  megkereshető, mely képek hasonlítanak rá — nem duplikátumok, hanem
+  hasonlók: újrakeretezett, más expozíciójú vagy utólag vágott változatok
+  is. Az eredmény külön nézetben jelenik meg („Hasonlósági keresés
+  eredménye"), a minta pedig egy kattintással törölhető.
+  Az első keresés végigszámolja a képek ujjlenyomatát — a program ezt
+  kiírja, és azt is, hogy legközelebb gyors lesz.
+
 ## [0.8.188] – 2026-09-01
 
 ### Javítva

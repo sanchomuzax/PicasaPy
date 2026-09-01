@@ -1523,7 +1523,72 @@ ApplicationWindow {
                             font.pixelSize: Theme.fontSize
                             font.bold: true
                         }
+                        // #1833: a MINTA jelzése és törlése (`similarthumb`
+                        // + `clearsim`). Az eredetiben a keresés második
+                        // rétegében ül; nálunk a zöld eredménysávban, mert a
+                        // hasonlóság-keresés is szűrt nézetet ad, és a
+                        // „Mindet" gomb amúgy is itt vezet ki belőle.
+                        Text {
+                            objectName: "similaritySampleLabel"
+                            visible: (controller
+                                      && controller.similaritySample !== undefined)
+                                     ? controller.similaritySample.length > 0
+                                     : false
+                            text: qsTr("Similarity Search Results")
+                            color: "white"
+                            font.pixelSize: Theme.fontSize
+                        }
+                        Rectangle {
+                            objectName: "similarityClearButton"
+                            visible: (controller
+                                      && controller.similaritySample !== undefined)
+                                     ? controller.similaritySample.length > 0
+                                     : false
+                            Layout.preferredHeight: 18
+                            Layout.preferredWidth: clearSimText.width + 20
+                            radius: 9
+                            color: "#ffffff"
+                            Text {
+                                id: clearSimText
+                                anchors.centerIn: parent
+                                //: `clearsim` — a minta törlése.
+                                text: qsTr("Clear Sample")
+                                font.pixelSize: Theme.fontSize - 1
+                                font.bold: true
+                                color: "#3b8f00"
+                            }
+                            TapHandler {
+                                onTapped: controller.clearSimilarity()
+                            }
+                        }
                         Item { Layout.fillWidth: true }
+                    }
+                }
+
+                // #1833: „Updating similarity database (will be fast next
+                // time)" — az ELSŐ keresés végigszámolja a hiányzó
+                // ujjlenyomatokat. ⚠️ Üres várakozás TILOS (#1798): a
+                // felhasználónak látnia kell, hogy dolgozunk, ÉS azt is,
+                // hogy ez egyszeri.
+                Rectangle {
+                    objectName: "similarityUpdatingBar"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+                    visible: (controller
+                              && controller.similarityUpdating !== undefined)
+                             ? controller.similarityUpdating : false
+                    color: "#f0e3b0"
+                    Text {
+                        objectName: "similarityUpdatingText"
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 8
+                        //: `CSimSearch::updating` — az eredeti szövege.
+                        text: qsTr(
+                            "Updating similarity database "
+                            + "(will be fast next time)")
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
                     }
                 }
 
@@ -2118,6 +2183,13 @@ ApplicationWindow {
 
     PhotoContextMenu {
         id: photoContextMenu
+        //: #1833: „Keress ehhez hasonlót" — a MINTA a jobbklikkelt kép
+        //: (`fileOpTargetRow`), nem a kijelölés: a menü arra a képre
+        //: vonatkozik, amin megnyílt. Az eredmény külön nézetben jön.
+        onFindSimilarRequested: {
+            if (window.fileOpTargetRow >= 0)
+                controller.showSimilarTo(window.fileOpTargetRow)
+        }
         // #1613: a lemezt CSAK a menü megnyitásakor kérdezzük meg — egy
         // kötés minden képkockán fájlrendszert olvasna.
         onAboutToShow: {
