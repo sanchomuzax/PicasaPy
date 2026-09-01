@@ -7,9 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.201] – 2026-09-01
+## [0.8.201] – 2026-09-02
 
 ### Javítva
+- **A képtálca bélyegképei négyzetesek és középre vágottak (#1914).** Az
+  eredeti Picasa így mutatja őket — húsz referencia-felvétel mérése
+  döntötte el. Nálunk eddig arányhelyesen, üres sávokkal jelentek meg.
 - **A nyomtatási előnézet mérete a tesztekben a gép beállítására ült rá.**
   Belső javítás: a nyomatméret tartós beállítás, és a teszt eddig azt
   olvasta, amit a futtató gépen talált — emiatt a Windows-os ellenőrzés
