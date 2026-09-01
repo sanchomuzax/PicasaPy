@@ -105,6 +105,12 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    //: #1768: a szerkesztő-előnézet aktív-e. Az eredeti a `0x9caa`
+    //: parancsot (a Mappakezelő MINDKÉT belépési pontját) a menü
+    //: megnyitásakor SZÜRKÍTI, amíg a szerkesztő-előnézet él
+    //: (`editpanel/preview`, `FUN_0056e1c0`). Nálunk a szerkesztőpanel a
+    //: nézőben lakik, tehát a nyitott néző a megfelelője.
+    property bool editorActive: false
     // #922: a Létrehozás-tételek forrása a KÉPTÁLCA is lehet (#455), ezért
     // NEM a `photoActionsEnabled`-ből élnek — az a rácsbeli kijelöléshez
     // kötött 27 fotó-műveletet vezérli, és azoknak tényleg kijelölés kell.
@@ -406,6 +412,10 @@ MenuBar {
         MenuItem {
             objectName: "menuFileAddFolder"
             text: qsTr("Add Folder to Picasa...")
+            //: #1768: szürke, amíg a szerkesztő nyitva — az eredeti sem
+            //: üzen, csak nem engedi. A könyvtár szerkezetének
+            //: átrendezése félbehagyott szerkesztés mellett kockázatos.
+            enabled: !bar.editorActive
             onTriggered: bar.folderManagerRequested()
         }
         // #1633: ÉLŐ tétel. A fájlválasztó nem függ kijelöléstől, ezért
@@ -1324,7 +1334,11 @@ MenuBar {
     PicasaMenu {
         title: qsTr("&Tools")
         MenuItem {
+            objectName: "menuToolsFolderManager"
             text: qsTr("Folder Manager...")
+            //: #1768: ugyanaz a parancs (`0x9caa`), ugyanaz a kapu — a
+            //: két belépési pont nem viselkedhet másképp.
+            enabled: !bar.editorActive
             onTriggered: bar.folderManagerRequested()
         }
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
