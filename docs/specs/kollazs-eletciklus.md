@@ -816,3 +816,66 @@ elavult. A pontos mai állapot:
 **Nyitva marad:** a lebegő értesítősáv (#1129) — a kész-értesítés ma egy
 saját, a főablak aljára horgonyzott doboz, nem a sáv eleme; és a
 `hascollage`-nak nincs hívója, amíg a #1033/#1131 nem kéri.
+
+## 17. A `.cxf` `scale` mezője témánként — hat téma átmérve (2026-09-01)
+
+*A #1412 kérdése: az Indexkép (`contactsheet`) `scale`-je lap-szintű
+állandó (313), a levezetése ismeretlen. Ez a szakasz a **mérést** rögzíti
+mind a hat témára — a levezetés továbbra sem teljes, és ez ki is van
+mondva.*
+
+### 17.1 A mérés: `scale / (w × 1024)` minden csomópontra
+
+| téma | minta | arány | konstans? |
+|---|---|---|---|
+| **`regulargrid`** | AI5 | **1,00000** (9/9) | **IGEN** |
+| **`picturepile`** | AI1 | **1,25000** (hat különböző méreten) | **IGEN** |
+| `picturegrid` | AI3 | 0,97510 … 0,98791 | nem |
+| `framegrid` | AI4 | 0,82682 · 0,89007 · 0,91146 | nem |
+| **`contactsheet`** | AI6 | 1,29339 **és** 2,01936 | **nem — node-független** |
+| `multiexp` | AI7 | `scale=1` | — (jelző, nem méret) |
+
+### 17.2 ⭐ A `scale` a RAJZOLT méret, nem a befoglaló dobozé
+
+Az AI1-ben (`picturepile`) egy csomópont **188,87** széles, mégis
+`scale=337` — ugyanaz, mint a **269,60** széleseké (arány 1,78431 a
+konstans 1,25000 helyett). Ez **álló** kép a kupacban: azonos `scale`,
+keskenyebb befoglaló doboz.
+
+⇒ **A `scale` a kép rajzolt mérete**, a `w`/`h` a **befoglaló doboz** —
+és forgatott/álló képnél a kettő szétválik. Ez magyarázza, miért nem
+lehet a `contactsheet` `scale`-jét a doboz-méretekből kihozni.
+
+### 17.3 A `.cxf` a lap SZÉLESSÉGÉT osztja 1024 egységre
+
+Mérve (AI5 és AI6 minden mennyiségén): a **vízszintes** törtek × 1024
+kivétel nélkül **egész** számot adnak (doboz-szélességek 242 · 155 · 330,
+oszlop-osztások 300 · 339), a **függőlegesek** egyike sem.
+
+⇒ A vízszintes mennyiségek egész egységben tárolódnak; a függőlegesek a
+lap magasságához viszonyított törtek.
+
+### 17.4 Ami a `contactsheet`-ből MEGMARAD nyitva
+
+A **313** node-független, tehát a témából vagy a lapból jön. A mérés
+ennyire szűkíti:
+
+- **függőleges** hossz a fenti egységben (a vízszintesek mind egészek, ez nem az);
+- a mért kép-magasság (**302,6**) és a sor-osztás (**359,1**) **közé** esik;
+- **nem beégetett konstans**: a teljes `.text` bájtmintás átvizsgálása a
+  `313` immediate négy alakjára (`push`/`mov eax|ecx|edx`) **nulla**
+  találatot ad ⇒ **számított** érték.
+
+**Feltevés — NEM mérés:** a `contactsheet` cellája feliratot is tartalmaz
+(ez a téma lényege), tehát a 313 a **kép + felirat** együttes magassága
+lehet; a különbség ekkor ≈ 10,4 egység. A `.cxf` ezt nem tartalmazza.
+
+**Mi döntené el:** egy **fekvő** tájolású `contactsheet`-minta (a meglévő
+AI6 álló). Ha ott is 313, fix szám; ha más, a lapmérettel skálázódik, és
+a két érték hányadosa megadja a képletet. → **#1412**
+(`blocked` + `felhasználóra-vár`).
+
+*Bizonyítottsági fok: **megerősített** a hat téma aránytáblája, a
+`scale` = rajzolt méret értelmezés és az 1024-es egységrendszer;
+**feltételes** a felirat-magyarázat; **elvetve** a „beégetett konstans"
+hipotézis.*
