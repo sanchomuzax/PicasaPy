@@ -173,6 +173,8 @@ class TestAlbumsMigration:
             "DROP TABLE IF EXISTS face_group;"
             # #459/5: az offline oszlop a v11-ben érkezik
             "ALTER TABLE folders DROP COLUMN offline;"
+            # #1637: a hidden oszlop a v13-ban érkezik
+            "ALTER TABLE folders DROP COLUMN hidden;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -222,6 +224,8 @@ class TestFaceMigration:
             "DROP TABLE IF EXISTS face;\n"
             # #459/5: az offline oszlop a v11-ben érkezik
             "ALTER TABLE folders DROP COLUMN offline;\n"
+            # #1637: a hidden oszlop a v13-ban érkezik
+            "ALTER TABLE folders DROP COLUMN hidden;\n"
             "PRAGMA user_version = 8;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -276,6 +280,8 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE face DROP COLUMN group_id;\n"
             # #459/5: az offline oszlop a v11-ben érkezik
             "ALTER TABLE folders DROP COLUMN offline;\n"
+            # #1637: a hidden oszlop a v13-ban érkezik
+            "ALTER TABLE folders DROP COLUMN hidden;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")

@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -211,7 +211,8 @@ CREATE TABLE IF NOT EXISTS folders (
     path TEXT NOT NULL UNIQUE,
     has_ini INTEGER NOT NULL DEFAULT 0,
     date TEXT,
-    offline INTEGER NOT NULL DEFAULT 0
+    offline INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS photos (
@@ -321,4 +322,20 @@ ALTER TABLE folders ADD COLUMN offline INTEGER NOT NULL DEFAULT 0;
     # `_FACE_NAME_DDL`). NULL-lal jön a meglévő sorokra: a következő
     # névadás/csoportosítás tölti fel, újraindexelés nem kell.
     11: _FACE_NAME_DDL,
+    # #1637: a MAPPA elrejtése. A fotó-szintű `photos.hidden` mintáját
+    # követi, és ugyanaz a Nézet ▸ Rejtett képek kapcsoló hozza vissza.
+    #
+    # ⚠️ SZÁNDÉKOSAN CSAK AZ INDEXBEN. Az eredeti a `]hidden` tokennel és a
+    # „Rejtett mappák" gyűjteménnyel dolgozik, de hogy a jelölés a
+    # `.picasa.ini`-be, az adatbázisba vagy mindkettőbe kerül-e, NINCS
+    # MÉRVE (a jegy ezt hatókörön kívülinek mondja). Egy találgatott
+    # kulcsot NEM írunk a felhasználó valódi ini-fájljaiba: a kétirányú
+    # ini-kompatibilitás a projekt központi ígérete, és egy rossz kulcs
+    # csendben rontaná el. Amíg a valódi tároló nincs megmérve, a jelölés
+    # az indexben él.
+    #
+    # Minden meglévő mappa 0-val (látszik) indul; újraindexelés nem kell.
+    12: """
+ALTER TABLE folders ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
+""",
 }

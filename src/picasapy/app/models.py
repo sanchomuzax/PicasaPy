@@ -35,7 +35,11 @@ _ROOT_INDEX = QModelIndex()
 
 
 def sorted_folder_rows(
-    conn: sqlite3.Connection, sort_mode: str = "date", reverse: bool = False
+    conn: sqlite3.Connection,
+    sort_mode: str = "date",
+    reverse: bool = False,
+    *,
+    include_hidden: bool = False,
 ) -> list[tuple[str, str, int, str, int, int, bool]]:
     """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline)
     sorai a kért rendezésben.
@@ -45,11 +49,15 @@ def sorted_folder_rows(
     (feed) viszont a Mappa ▸ Rendezés beállítását követi (#1454-ig ez a
     menü Nézet ▸ Mappanézet néven szerepelt — tévesen).
     """
+    # #1637: a REJTETT mappák alapból kimaradnak — ugyanaz a Nézet ▸
+    # Rejtett képek kapcsoló hozza vissza őket, ami a rejtett fotókat.
+    rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
     db_rows = conn.execute(
         "SELECT f.path, f.date, f.offline, count(p.id) AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
+        f"{rejtett_szuro}"
         " GROUP BY f.id ORDER BY f.path"
     ).fetchall()
     folders = [
@@ -104,6 +112,8 @@ class FolderListModel(QAbstractListModel):
         conn: sqlite3.Connection,
         sort_mode: str = "date",
         reverse: bool = False,
+        *,
+        include_hidden: bool = False,
     ) -> None:
         """Mappalista Picasa-rendezéssel.
 
@@ -111,7 +121,9 @@ class FolderListModel(QAbstractListModel):
         'changed' (legutóbbi változtatás), 'size' (méret), 'name' (név).
         A reverse a kiválasztott rendezést fordítja meg.
         """
-        folders = sorted_folder_rows(conn, sort_mode, reverse)
+        folders = sorted_folder_rows(
+            conn, sort_mode, reverse, include_hidden=include_hidden
+        )
         rows = (
             (name, path, count, date, offline)
             for name, path, count, date, _size, _change, offline in folders

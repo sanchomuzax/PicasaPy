@@ -147,6 +147,40 @@ def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     return _records(rows)
 
 
+def set_folder_hidden(
+    conn: sqlite3.Connection, folder_path: str, hidden: bool
+) -> bool:
+    """A mappa elrejtése/megjelenítése (#1637).
+
+    A LEMEZEN semmit nem mozgat — csak jelöl. Visszatérés: volt-e ilyen
+    mappa az indexben (ismeretlen útvonalra `False`, nem kivétel: a
+    felület a jelzésből tud üzenetet adni)."""
+    kurzor = conn.execute(
+        "UPDATE folders SET hidden = ? WHERE path = ?",
+        (1 if hidden else 0, str(folder_path)),
+    )
+    conn.commit()
+    return kurzor.rowcount > 0
+
+
+def is_folder_hidden(conn: sqlite3.Connection, folder_path: str) -> bool:
+    """Rejtett-e a mappa. Ismeretlen útvonalra `False`."""
+    sor = conn.execute(
+        "SELECT hidden FROM folders WHERE path = ?", (str(folder_path),)
+    ).fetchone()
+    return bool(sor["hidden"]) if sor is not None else False
+
+
+def hidden_folders(conn: sqlite3.Connection) -> tuple[str, ...]:
+    """A rejtett mappák útvonalai, ábécében."""
+    return tuple(
+        sor["path"]
+        for sor in conn.execute(
+            "SELECT path FROM folders WHERE hidden = 1 ORDER BY path"
+        )
+    )
+
+
 def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """Minden hellyel rendelkező fotó (#30) — a geo-szűrő és a térkép-nézet
     forrása.

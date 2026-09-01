@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.167] – 2026-09-01
+
+### Javítva
+- **A „Mappa elrejtése" végre csinál valamit (#1637).** A menütétel eddig
+  ott volt a mappa jobbklikk-menüjében, kattintható volt, és **nem
+  történt semmi**. Mostantól tényleg elrejti a mappát a bal oldali
+  listáról — a **lemezen semmi nem mozdul**, a mappa és a képek a
+  helyükön maradnak. Visszahozni ugyanazzal a kapcsolóval lehet, ami a
+  rejtett képeket is előhozza: **Nézet ▸ Rejtett képek**. A menütétel
+  felirata is követi az állapotot („Mappa elrejtése" ↔ „Megjelenítés").
+
 ## [0.8.166] – 2026-09-01
 
 ### Hozzáadva

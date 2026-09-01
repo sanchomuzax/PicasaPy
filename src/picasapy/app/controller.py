@@ -28,6 +28,8 @@ from picasapy.index import (
     geotagged_photos,
     open_index,
     search_photos,
+    is_folder_hidden,
+    set_folder_hidden,
     starred_photos,
     video_photos,
     sync_tree,
@@ -447,7 +449,14 @@ class AppController(
         # követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
         # (`paneSort`), ahogy az eredeti Picasa `AlbumList` menüje tette.
         with open_index(self._db_path) as conn:
-            self._folders.load(conn, self.paneSort, self.paneSortReverse)
+            self._folders.load(
+                conn,
+                self.paneSort,
+                self.paneSortReverse,
+                # #1637: a rejtett mappákat ugyanaz a kapcsoló hozza
+                # vissza, ami a rejtett fotókat — nem külön beállítás
+                include_hidden=self.showHidden,
+            )
         self.statusChanged.emit()
 
     # -- gyűjtemények a bal hasábon (#320) -----------------------------------
@@ -540,6 +549,36 @@ class AppController(
     def toggleCaptionVisible(self) -> None:
         """A `captionbutton` („Show/Hide Caption") viselkedése."""
         self.setCaptionVisible(not self.captionVisible)
+
+    # -- rejtett MAPPÁK (#1637) ----------------------------------------------
+
+    @Slot(str, result=bool)
+    def isFolderHidden(self, path: str) -> bool:
+        """Rejtett-e a mappa — a menütétel felirata ebből vált."""
+        if not path:
+            return False
+        with open_index(self._db_path) as conn:
+            return is_folder_hidden(conn, path)
+
+    @Slot(str)
+    def toggleFolderHidden(self, path: str) -> None:
+        """A „Mappa elrejtése / Megjelenítés" menütétel.
+
+        A LEMEZEN semmit nem mozgat — csak jelöl. Elrejtés után a mappa
+        eltűnik a bal hasábról, és a Nézet ▸ Rejtett képek kapcsolóval jön
+        vissza (ugyanaz az út, mint a rejtett fotóknál); rejtett
+        állapotban a kijelölés a mappáról lekerül, hogy ne maradjon egy
+        láthatatlan mappa tartalma a rácsban."""
+        if not path:
+            return
+        with open_index(self._db_path) as conn:
+            rejtve = is_folder_hidden(conn, path)
+            set_folder_hidden(conn, path, not rejtve)
+        if not rejtve and not self.showHidden and self._current_folder == path:
+            self._current_folder = ""
+            self._view_mode = ("folder", "")
+            self._show(())
+        self._reload_folders()
 
     # -- rejtett képek (#17) -------------------------------------------------
 
