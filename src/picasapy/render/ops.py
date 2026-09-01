@@ -29,7 +29,7 @@ történik: darabszám-küszöb (`_levels_clip_threshold`), a natív keresőcikl
 
 from __future__ import annotations
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64

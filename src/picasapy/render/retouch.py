@@ -17,7 +17,7 @@ Amint előkerül egy valódi golden-minta, mindkét modul a
 
 from __future__ import annotations
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64

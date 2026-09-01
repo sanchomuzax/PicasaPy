@@ -41,7 +41,7 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag

@@ -17,7 +17,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 #: A két szem közti táv a kimeneti szélesség hányadaként (Picasa-szerű

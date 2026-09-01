@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from .fitting import fit_inside

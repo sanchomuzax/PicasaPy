@@ -16,18 +16,24 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 # Nagy forráskép redukált (fél/negyed/nyolcad méretű) JPEG-dekódolása kíméli
 # a memóriát és nagyságrendet gyorsít; a legerősebb redukcióval kezdünk, és
 # az első olyat választjuk, amely még elég pixelt hagy a célmérethez.
-_REDUCED_COLOR_FLAGS = (
-    (8, cv2.IMREAD_REDUCED_COLOR_8),
-    (4, cv2.IMREAD_REDUCED_COLOR_4),
-    (2, cv2.IMREAD_REDUCED_COLOR_2),
-)
+#
+# #1611: a tábla FÜGGVÉNY, nem modulszintű konstans. Modulszinten a
+# `cv2.IMREAD_*` olvasása a BETÖLTÉSKOR behozná az OpenCV-t, és ezzel
+# elvenné a lusta import teljes nyereségét — a `cvimage` az indulási
+# láncban van (`thumbs/__init__` → `thumbs/cache`).
+def _reduced_color_flags() -> tuple[tuple[int, int], ...]:
+    return (
+        (8, cv2.IMREAD_REDUCED_COLOR_8),
+        (4, cv2.IMREAD_REDUCED_COLOR_4),
+        (2, cv2.IMREAD_REDUCED_COLOR_2),
+    )
 
 # Mintavételi tartalék: a dekódolt kép leghosszabb oldala legalább ennyiszer
 # akkora legyen, mint a célméret — így az utána következő INTER_AREA
@@ -53,7 +59,7 @@ def reduced_color_flag(payload: np.ndarray, goal: int) -> int:
         Image.DecompressionBombError,
     ):
         return cv2.IMREAD_COLOR
-    for factor, flag in _REDUCED_COLOR_FLAGS:
+    for factor, flag in _reduced_color_flags():
         if longest // factor >= goal * _SAMPLING_HEADROOM:
             return flag
     return cv2.IMREAD_COLOR

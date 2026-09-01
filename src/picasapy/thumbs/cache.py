@@ -15,7 +15,7 @@ import logging
 import threading
 from pathlib import Path
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down
@@ -60,7 +60,23 @@ _JPEG_QUALITY = 85
 # Ha a telepített OpenCV FFMPEG NÉLKÜL épült, nincs mire kényszeríteni —
 # ilyenkor marad az automatikus választás, de a zárral (5/15 rosszabb, mint
 # a 0/15, viszont lényegesen jobb, mint a 12/15).
-_FFMPEG_AVAILABLE = cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
+#
+# #1611: FÜGGVÉNY, nem modulszintű konstans — és nem csak importálja a
+# cv2-t, hanem MEG IS HÍVJA. Modulszinten ez a sor egymaga behozná az
+# OpenCV-t az indulási láncban (`thumbs/__init__` → `thumbs/cache`), és
+# ezzel elvenné a lusta import teljes nyereségét. Az eredmény egyszer
+# számolódik ki, az első videó-bélyegképnél.
+_ffmpeg_allapot: bool | None = None
+
+
+def _ffmpeg_elerheto() -> bool:
+    """Van-e FFMPEG-háttér az OpenCV-ben (egyszer kiszámolva, gyorstárazva)."""
+    global _ffmpeg_allapot
+    if _ffmpeg_allapot is None:
+        _ffmpeg_allapot = (
+            cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
+        )
+    return _ffmpeg_allapot
 
 # Csak az FFMPEG-telen tartaléknál használt sorosító zár (ld. fent).
 _VIDEO_FALLBACK_LOCK = threading.Lock()
@@ -270,7 +286,7 @@ def _open_video(source: Path) -> cv2.VideoCapture:
     FFMPEG-es OpenCV-n kényszerítetten `cv2.CAP_FFMPEG` (nincs visszaesés a
     GStreamerre); FFMPEG nélküli buildben marad az automatikus választás, de
     sorosítva — a részletes indoklás és a mérési számok a modul tetején."""
-    if _FFMPEG_AVAILABLE:
+    if _ffmpeg_elerheto():
         return cv2.VideoCapture(str(source), cv2.CAP_FFMPEG)
     with _VIDEO_FALLBACK_LOCK:
         return cv2.VideoCapture(str(source))
