@@ -5842,6 +5842,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Recent destinations</source>
         <translation>Korábbi célmappák</translation>
     </message>
+    <message>
+        <source>Original size</source>
+        <translation>Eredeti méret</translation>
+    </message>
+    <message>
+        <source>%1 pixels</source>
+        <translation>%1 képpont</translation>
+    </message>
 </context>
 <context>
     <!-- #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — a felirat és a

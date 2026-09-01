@@ -528,6 +528,40 @@ Window {
                 displayText: qsTr("Recent destinations")
                 onActivated: importSourceWindow.destFolder = model[currentIndex]
             }
+            // #1555: ÁTMÉRETEZÉS importáláskor — öt kizáró opció, a mért
+            // képpontértékekkel (0 = eredeti méret). A tárolt érték
+            // KÉPPONT, nem sorszám (ld. `RESIZE_SETTINGS_KEY`).
+            ComboBox {
+                id: resizeBox
+                objectName: "importSourceResizeBox"
+                Layout.preferredWidth: 150
+                readonly property var opciok:
+                    (typeof importSourceController !== "undefined"
+                     && importSourceController
+                     && importSourceController.resizeOptions !== undefined)
+                    ? importSourceController.resizeOptions : [0]
+                model: resizeBox.opciok.map(function (px) {
+                    return px === 0
+                        ? qsTr("Original size")
+                        : qsTr("%1 pixels").arg(px)
+                })
+                currentIndex: {
+                    if (typeof importSourceController === "undefined"
+                        || !importSourceController
+                        || importSourceController.resizeLimit === undefined)
+                        return 0
+                    var i = resizeBox.opciok.indexOf(
+                        importSourceController.resizeLimit)
+                    return i >= 0 ? i : 0
+                }
+                onActivated: {
+                    if (typeof importSourceController === "undefined"
+                        || !importSourceController)
+                        return
+                    importSourceController.setResizeLimit(
+                        resizeBox.opciok[currentIndex])
+                }
+            }
             PicasaButton {
                 objectName: "importSourceChooseDestButton"
                 text: qsTr("Browse...")

@@ -49,11 +49,14 @@ from PySide6.QtCore import (
 
 from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
 from picasapy.importsource import (
+    ATMERETEZES_EREDETI,
+    ATMERETEZES_OPCIOK,
     MEDIA_FILTER_PICTURES_AND_MOVIES,
     NAMING_BY_DATE,
     NAMING_MANUAL,
     NAMING_TODAY,
     ImportCandidate,
+    atmeretez_masolatot,
     destination_subpath_for_mode,
     duplicate_paths,
     scan_source,
@@ -102,6 +105,12 @@ MAX_RECENT_SOURCES = 8
 # tartunk, ugyanannyit, mint a forrásokból — a legördülő így nem hízik el.
 RECENT_DESTINATIONS_SETTINGS_KEY = "import/recentdestinations"
 MAX_RECENT_DESTINATIONS = 8
+
+# #1555: az importálás átméretezési beállítása. ⚠️ KÉPPONT-értéket
+# tárolunk, nem sorszámot — ahogy az eredeti is (egyetlen egész mező,
+# `[+0x74c]`); ettől egy új méret felvétele nem töri el a meglévő
+# beállításokat. A `0` jelentése „EREDETI MÉRET", nem „nincs beállítva".
+RESIZE_SETTINGS_KEY = "import/resizeLimit"
 
 
 def _thumb_url(photo_id: int) -> str:
@@ -173,6 +182,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     mediaFilterChanged = Signal()
     recentSourcesChanged = Signal()
     recentDestinationsChanged = Signal()
+    resizeLimitChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
@@ -327,6 +337,39 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             RECENT_DESTINATIONS_SETTINGS_KEY, recent[:MAX_RECENT_DESTINATIONS]
         )
         self.recentDestinationsChanged.emit()
+
+    # -- #1555: átméretezés importáláskor ------------------------------------
+
+    @Property("QVariant", notify=resizeLimitChanged)
+    def resizeOptions(self):  # noqa: N802 — QML property-konvenció
+        """Az öt mért méret-opció, KÉPPONTBAN (`0` = eredeti méret)."""
+        return list(ATMERETEZES_OPCIOK)
+
+    @Property(int, notify=resizeLimitChanged)
+    def resizeLimit(self) -> int:  # noqa: N802 — QML property-konvenció
+        """A megjegyzett átméretezési határ képpontban; `0` = eredeti.
+
+        Az ISMERETLEN tárolt érték (kézzel írt beállításfájl, jövőbeli
+        verzió) az EREDETI méretre esik vissza: inkább ne méretezzünk át,
+        mint hogy egy félreértett számra vágjunk le képeket."""
+        tarolt = self._get_settings().value(RESIZE_SETTINGS_KEY, 0)
+        try:
+            ertek = int(tarolt)
+        except (TypeError, ValueError):
+            return ATMERETEZES_EREDETI
+        return ertek if ertek in ATMERETEZES_OPCIOK else ATMERETEZES_EREDETI
+
+    @Slot(int)
+    def setResizeLimit(self, value: int) -> None:  # noqa: N802
+        """A méret-opció választása. Ismeretlen értékre nem ír."""
+        try:
+            ertek = int(value)
+        except (TypeError, ValueError):
+            return
+        if ertek not in ATMERETEZES_OPCIOK:
+            return
+        self._get_settings().setValue(RESIZE_SETTINGS_KEY, ertek)
+        self.resizeLimitChanged.emit()
 
     @Property(str, notify=mediaFilterChanged)
     def mediaFilter(self) -> str:  # noqa: N802 — QML property-konvenció
@@ -560,6 +603,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 return
             started_at = time.monotonic()
             copied_bytes = 0
+            # #1555: a beállítást a szál INDULÁSAKOR olvassuk ki egyszer —
+            # a `QSettings` a GUI-szálé, és a felhasználó közben átállíthatná
+            # (fél feladat két méretben már nem visszakövethető).
+            resize_limit = self.resizeLimit
             for done, candidate in enumerate(included, start=1):
                 try:
                     subdir = dest_root / destination_subpath_for_mode(
@@ -567,6 +614,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                     )
                     subdir.mkdir(parents=True, exist_ok=True)
                     target = copy_photo(candidate.path, subdir)
+                    # #1555: a MÁSOLATOT skálázzuk le, sosem a forrást — az
+                    # importálás a kártyán lévő eredetihez nem nyúlhat. A
+                    # videó/RAW/sérült fájl érintetlen marad (a leskálázó
+                    # `False`-szal tér vissza).
+                    if resize_limit:
+                        atmeretez_masolatot(target, resize_limit)
                     self._mark_imported(target, str(candidate.path))
                     copied_paths.append(candidate.path)
                     copied_bytes += _size_of(target)

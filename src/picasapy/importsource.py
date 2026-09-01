@@ -89,6 +89,74 @@ _FILTER_KINDS: dict[str, frozenset[str]] = {
 }
 
 
+#: #1555: az importálás öt ÁTMÉRETEZÉSI opciója, a HOSSZABBIK oldal
+#: képpontértékében. A mért parancsazonosítók és feltételek
+#: (`0x00518b40`, `acquirepanel/sync_options_button`):
+#:
+#: | azonosító | feltétel        | jelentés        |
+#: |-----------|-----------------|-----------------|
+#: | `0x9dfe`  | `[+0x74c] == 0` | eredeti méret   |
+#: | `0x9e14`  | `== 0x800`      | 2048 képpont    |
+#: | `0x9dfd`  | `== 0x640`      | 1600 képpont    |
+#: | `0x9e0a`  | `== 0x400`      | 1024 képpont    |
+#: | `0x9e13`  | `== 0x320`      | 800 képpont     |
+#:
+#: ⚠️ A tárolt érték KÉPPONT, nem sorszám — az eredeti is így tárolja
+#: (egyetlen egész mező). Ettől egy új méret felvétele nem töri el a
+#: meglévő beállításokat, és a `0` jelentése „EREDETI MÉRET", nem „nincs
+#: beállítva".
+ATMERETEZES_EREDETI = 0
+ATMERETEZES_OPCIOK: tuple[int, ...] = (ATMERETEZES_EREDETI, 2048, 1600, 1024, 800)
+
+
+def atmeretezendo(szelesseg: int, magassag: int, hatar: int) -> bool:
+    """Kell-e átméretezni ezt a képet a megadott határra.
+
+    `hatar = 0` (eredeti méret) esetén soha. A már kisebb képet sem
+    nagyítjuk FEL: az importálás nem javíthat a felbontáson, csak
+    ronthatna a fájlmérettel."""
+    if hatar <= 0:
+        return False
+    return max(int(szelesseg), int(magassag)) > int(hatar)
+
+
+def atmeretez_masolatot(target: Path, hatar: int) -> bool:
+    """A MÁR ÁTMÁSOLT fájl leskálázása a helyén; volt-e tényleges munka.
+
+    A leskálázás matematikáját SZÁNDÉKOSAN nem írjuk le újra: a
+    `cvimage.scale_down` a projekt egyetlen „hosszabbik oldal korlátozása,
+    felskálázás soha" megvalósítása (INTER_AREA-val), és a kiírás is a
+    bevált, bájt-alapú úton megy — a `cv2.imwrite` Windowson ékezetes
+    útvonalon némán nem ír (#190).
+
+    A CÉLPÉLDÁNYT írja át, sosem a forrást: az importálás a kártyán lévő
+    eredetihez nem nyúlhat. Nem dekódolható fájlra (videó, RAW, sérült)
+    `False`-szal tér vissza — a másolat érintetlen marad."""
+    if hatar <= 0:
+        return False
+    import cv2
+
+    from picasapy.collage.render import write_collage
+    from picasapy.cvimage import read_image_bytes, scale_down
+
+    target = Path(target)
+    # ⚠️ A `read_image_bytes` a NYERS BÁJTOKAT adja (nem dekódolt képet) —
+    # a dekódolás a hívóé, `imdecode`-dal (a `thumbs/cache.py` mintája).
+    # A bájt-alapú út azért kell, mert a `cv2.imread` Windowson ékezetes
+    # útvonalon némán elhasal (#65).
+    bajtok = read_image_bytes(target)
+    if bajtok is None:
+        return False
+    kep = cv2.imdecode(bajtok, cv2.IMREAD_COLOR)
+    if kep is None or kep.ndim < 2:
+        return False
+    magassag, szelesseg = kep.shape[:2]
+    if not atmeretezendo(szelesseg, magassag, hatar):
+        return False
+    write_collage(target, scale_down(kep, hatar))
+    return True
+
+
 def scan_source(
     folder: str | Path, media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
 ) -> tuple[ImportCandidate, ...]:
