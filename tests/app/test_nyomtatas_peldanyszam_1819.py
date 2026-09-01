@@ -26,6 +26,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import picasapy.app
 import pytest
+from PySide6.QtCore import QUrl
 from PySide6.QtGui import QGuiApplication, QImage
 
 from support.jpeg_factory import make_jpeg
@@ -188,8 +189,11 @@ class TestAzElonezetiLap:
         kep = QImage(str(cel))
         assert kep.width() / kep.height() == pytest.approx(8.0 / 10.0, abs=0.01)
 
-    def test_az_elonezeti_fajl_utvonala_letezo_mappara_mutat(self, ket_kep):
-        ut = Path(ket_kep.previewImagePath())
+    def test_az_elonezeti_fajl_URL_letezo_mappara_mutat(self, ket_kep):
+        url = ket_kep.previewImageUrl()
+        #: #1019: URL, nem kézzel fűzött „file://" + útvonal.
+        assert url.startswith("file://")
+        ut = Path(QUrl(url).toLocalFile())
         assert ut.parent.is_dir()
         assert ut.name.endswith(".png")
 

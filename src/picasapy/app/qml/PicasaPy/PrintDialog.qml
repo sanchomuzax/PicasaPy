@@ -134,14 +134,18 @@ Window {
             printWindow.rows, printWindow.fitMode, printWindow.orientation,
             printWindow.copies, printWindow.previewPage, cel)
         printWindow.elonezetValtozat += 1
-        printWindow.previewSource = ok
-            ? "file://" + cel + "?v=" + printWindow.elonezetValtozat : ""
+        //: A cél MÁR URL (a vezérlő a `QUrl.fromLocalFile`-on át adja,
+        //: #1019) — kézzel semmit nem fűzünk elé, csak a gyorstár-törő
+        //: lekérdezést utána.
+        printWindow.previewSource =
+            ok ? cel + "?v=" + printWindow.elonezetValtozat : ""
     }
 
-    //: Az előnézeti PNG helye. Egyetlen fájl, felülírva — a párbeszéd
-    //: életciklusán túl nincs rá szükség, és a lapozás így nem szemetel.
+    //: Az előnézeti PNG helye URL-ként. Egyetlen fájl, felülírva — a
+    //: párbeszéd életciklusán túl nincs rá szükség, és a lapozás így nem
+    //: szemetel. ⚠️ A vezérlő adja, `QUrl.fromLocalFile`-on át (#1019).
     function elonezetiFajl() {
-        return printWindow.printCtl.previewImagePath()
+        return printWindow.printCtl.previewImageUrl()
     }
 
     property string lastError: ""

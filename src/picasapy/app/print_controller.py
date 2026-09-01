@@ -42,6 +42,7 @@ from PySide6.QtCore import (
     QRectF,
     QSettings,
     QStandardPaths,
+    QUrl,
     Qt,
     Signal,
     Slot,
@@ -542,12 +543,18 @@ class PrintController(QObject):
         return [image for image in images for _ in range(darab)]
 
     @Slot(result=str)
-    def previewImagePath(self) -> str:  # noqa: N802 — QML-stílus
-        """Az előnézeti PNG helye (#1819) — EGYETLEN fájl, felülírva.
+    def previewImageUrl(self) -> str:  # noqa: N802 — QML-stílus
+        """Az előnézeti PNG helye (#1819) — EGYETLEN fájl, felülírva, URL-ként.
 
-        A felhasználó gépén a Qt gyorsítótár-könyvtárában él, nem a
-        munkakönyvtárban: a lapozás így nem szemetel a képek mellé, és a
-        rendszer magától takarít, ha a hely fogy."""
+        A fájl a Qt gyorsítótár-könyvtárában él, nem a munkakönyvtárban: a
+        lapozás így nem szemetel a képek mellé, és a rendszer magától
+        takarít, ha a hely fogy.
+
+        ⚠️ URL-t ad vissza, nem útvonalat, és a `QUrl.fromLocalFile`-on át
+        (#1019): a kézzel összefűzött `"file://" + útvonal` Windowson a
+        meghajtóbetűt PORTNAK látja, `#`-es névnél pedig Linuxon is elvágja
+        a nevet. A `renderPreviewPage` a `to_local_path`-en át fogadja
+        vissza, tehát ugyanez az URL adható neki célként."""
         gyoker = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.CacheLocation
         )
@@ -555,7 +562,7 @@ class PrintController(QObject):
             gyoker = str(Path.home())
         mappa = Path(gyoker) / "print-preview"
         mappa.mkdir(parents=True, exist_ok=True)
-        return str(mappa / "page.png")
+        return QUrl.fromLocalFile(str(mappa / "page.png")).toString()
 
     @Slot(list, str, str, int, int, str, result=bool)
     def renderPreviewPage(  # noqa: N802 — QML-stílus
