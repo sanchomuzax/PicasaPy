@@ -48,7 +48,7 @@ meg, ezek a mi értékeink.
 
 from __future__ import annotations
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 #: A helykitöltő HOSSZABB éle képpontban (mérve: 640 × 453).

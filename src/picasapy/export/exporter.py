@@ -17,7 +17,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
+from picasapy import cv as cv2
+from functools import lru_cache
+
 import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
@@ -30,11 +32,15 @@ from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
-_ROTATIONS = {
-    1: cv2.ROTATE_90_CLOCKWISE,
-    2: cv2.ROTATE_180,
-    3: cv2.ROTATE_90_COUNTERCLOCKWISE,
-}
+# #1611: LUSTÁN — a modul-szintű `cv2.ROTATE_*` olvasás behúzná a valódi
+# OpenCV-t az importkor (1 639 ms minden induláskor).
+@lru_cache(maxsize=1)
+def _rotations() -> dict[int, int]:
+    return {
+        1: cv2.ROTATE_90_CLOCKWISE,
+        2: cv2.ROTATE_180,
+        3: cv2.ROTATE_90_COUNTERCLOCKWISE,
+    }
 
 # A bájthű (no-op) másolás csak valódi JPEG-forrásra alkalmazható — más
 # formátumot mindenképp JPEG-be kell kódolni (meglévő viselkedés).
@@ -600,7 +606,7 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
     steps = rotate_steps % 4
     if steps == 0:
         return image
-    return cv2.rotate(image, _ROTATIONS[steps])
+    return cv2.rotate(image, _rotations()[steps])
 
 
 def _transfer_metadata(source: Path, encoded: bytes) -> bytes:

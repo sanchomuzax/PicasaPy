@@ -164,7 +164,7 @@ eltérést adna az eredetitől, azaz paritás-vesztés volna.
 
 from __future__ import annotations
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 #: `ID_VIEW_OV` módazonosítója (a `DISPLAY_MODES` egyike, ld.

@@ -21,11 +21,16 @@ from pathlib import Path
 
 import numpy as np
 
-try:
-    import cv2
-except ImportError:  # pragma: no cover — az OpenCV már a projekt kemény
-    # függősége (thumbs/scanner), ez az ág csak extra védelem
-    cv2 = None  # type: ignore[assignment]
+# #1611: a LUSTA homlokzat — az importja ingyen van, a valódi `cv2` az
+# első attribútum-hozzáféréskor töltődik be. A korábbi `try/import cv2`
+# alak az indulás legnagyobb egyetlen tételét (1 639 ms) hozta be minden
+# indításnál, akkor is, ha a felhasználó egyetlen arcot sem keresett.
+#
+# Az `ImportError`-ág elmarad: a homlokzat importja nem bukhat el, a
+# hiányzó OpenCV az első HASZNÁLATKOR derülne ki. A projektnek az OpenCV
+# amúgy is kemény függősége (`pyproject.toml`), az ág „extra védelem"
+# volt — a saját kommentje mondta ki.
+from picasapy import cv as cv2
 
 logger = logging.getLogger(__name__)
 

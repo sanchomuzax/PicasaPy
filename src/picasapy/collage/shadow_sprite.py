@@ -58,7 +58,7 @@ import base64
 import math
 from functools import lru_cache
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 from .shadow import BLUR_TO_SIGMA, BOUNDS_GROWTH_FACTOR

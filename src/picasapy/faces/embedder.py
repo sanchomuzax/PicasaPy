@@ -22,11 +22,9 @@ from pathlib import Path
 
 import numpy as np
 
-try:
-    import cv2
-except ImportError:  # pragma: no cover — az OpenCV már a projekt kemény
-    # függősége (thumbs/scanner/detector), ez az ág csak extra védelem
-    cv2 = None  # type: ignore[assignment]
+# #1611: lusta homlokzat — ld. a `detector.py` azonos helyén az
+# indoklást (az `ImportError`-ág elmarad; a homlokzat importja nem bukhat).
+from picasapy import cv as cv2
 
 from .detector import FaceDetection, default_model_dir
 

@@ -54,7 +54,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 

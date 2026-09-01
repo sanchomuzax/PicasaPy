@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.175] – 2026-09-01
+
+### Egyéb
+- **Az OpenCV már nem töltődik be feleslegesen (#1611).** A képfeldolgozó
+  könyvtár eddig **minden induláskor** betöltődött, akkor is, ha egyetlen
+  effektet vagy mentést sem használtál — másfél másodpercet vitt el.
+  Mostantól csak akkor töltődik be, amikor tényleg kell.
+
+  ⚠️ **Az indulási idő ettől alig lesz rövidebb** (a mérés szerint
+  ~0,1 másodperc): a betöltés nem tűnt el, csak később történik meg — az
+  első bélyegkép megrajzolásakor. A valódi nyereség máshol van: a
+  fejlesztői eszközök és a tesztek, amelyeknek nincs szükségük
+  képfeldolgozásra, **hatszor gyorsabban** indulnak.
+
 ## [0.8.174] – 2026-09-01
 
 ### Javítva

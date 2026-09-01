@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import cv2
+from picasapy import cv as cv2
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
 

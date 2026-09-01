@@ -15,7 +15,9 @@ import logging
 import threading
 from pathlib import Path
 
-import cv2
+from picasapy import cv as cv2
+from functools import lru_cache
+
 import numpy as np
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down
@@ -60,7 +62,13 @@ _JPEG_QUALITY = 85
 # Ha a telepített OpenCV FFMPEG NÉLKÜL épült, nincs mire kényszeríteni —
 # ilyenkor marad az automatikus választás, de a zárral (5/15 rosszabb, mint
 # a 0/15, viszont lényegesen jobb, mint a 12/15).
-_FFMPEG_AVAILABLE = cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
+# #1611: LUSTÁN. Ez volt az EGYETLEN modul-szintű, valódi cv2-HÍVÁS az
+# indulási láncban (a többi csak konstanst olvasott ki) — a válasz egy
+# processzen belül nem változik, tehát az első videó-bélyegképnél
+# egyszer kiszámoljuk, és onnantól a gyorstárból jön.
+@lru_cache(maxsize=1)
+def _ffmpeg_available() -> bool:
+    return cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
 
 # Csak az FFMPEG-telen tartaléknál használt sorosító zár (ld. fent).
 _VIDEO_FALLBACK_LOCK = threading.Lock()
@@ -270,7 +278,7 @@ def _open_video(source: Path) -> cv2.VideoCapture:
     FFMPEG-es OpenCV-n kényszerítetten `cv2.CAP_FFMPEG` (nincs visszaesés a
     GStreamerre); FFMPEG nélküli buildben marad az automatikus választás, de
     sorosítva — a részletes indoklás és a mérési számok a modul tetején."""
-    if _FFMPEG_AVAILABLE:
+    if _ffmpeg_available():
         return cv2.VideoCapture(str(source), cv2.CAP_FFMPEG)
     with _VIDEO_FALLBACK_LOCK:
         return cv2.VideoCapture(str(source))

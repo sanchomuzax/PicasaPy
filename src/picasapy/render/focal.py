@@ -19,7 +19,7 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image

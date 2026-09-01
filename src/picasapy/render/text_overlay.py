@@ -27,15 +27,25 @@ hivatkozik, aminek a Linuxos megfelelője gépenként más.
 
 from __future__ import annotations
 
-import cv2
+from picasapy import cv as cv2
+from functools import lru_cache
+
 import numpy as np
 from PIL import Image, ImageDraw
 
 from picasapy.render.curves import validate_image
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 
-_FONT = cv2.FONT_HERSHEY_SIMPLEX
-_LINE_TYPE = cv2.LINE_AA
+# #1611: LUSTÁN — a modul-szintű `cv2.FONT_*`/`cv2.LINE_*` olvasás
+# behúzná a valódi OpenCV-t az importkor (1 639 ms minden induláskor).
+@lru_cache(maxsize=1)
+def _font() -> int:
+    return cv2.FONT_HERSHEY_SIMPLEX
+
+
+@lru_cache(maxsize=1)
+def _line_type() -> int:
+    return cv2.LINE_AA
 
 
 #: A `font_scale` (a Hershey-út egysége) és a TrueType-pontméret közti
@@ -61,12 +71,12 @@ def _draw_hershey(
     layer = base.copy()
     if has_outline:
         cv2.putText(
-            layer, content, origin, _FONT, font_scale, outline_color,
-            thickness + 2 * outline_thickness, _LINE_TYPE,
+            layer, content, origin, _font(), font_scale, outline_color,
+            thickness + 2 * outline_thickness, _line_type(),
         )
     if fill_enabled:
         cv2.putText(
-            layer, content, origin, _FONT, font_scale, color, thickness, _LINE_TYPE
+            layer, content, origin, _font(), font_scale, color, thickness, _line_type()
         )
     return layer
 

@@ -62,7 +62,11 @@ class TestForcedFfmpegBackend:
             calls.append((path, args))
             return original(path, *args)
 
-        monkeypatch.setattr(cache_module, "_FFMPEG_AVAILABLE", True)
+        # #1611: a jelző lusta függvény lett (a modul-szintű
+        # `cv2.videoio_registry` hívás behúzta az OpenCV-t importkor)
+        monkeypatch.setattr(
+            cache_module, "_ffmpeg_available", lambda: True
+        )
         monkeypatch.setattr(cache_module.cv2, "VideoCapture", spy)
         broken = tmp_path / "serult.mp4"
         broken.write_bytes(b"\x00" * 64)
@@ -92,7 +96,9 @@ class TestForcedFfmpegBackend:
             held.append(cache_module._VIDEO_FALLBACK_LOCK.locked())
             return original(path, *args)
 
-        monkeypatch.setattr(cache_module, "_FFMPEG_AVAILABLE", False)
+        monkeypatch.setattr(
+            cache_module, "_ffmpeg_available", lambda: False
+        )
         monkeypatch.setattr(cache_module.cv2, "VideoCapture", spy)
         broken = tmp_path / "serult.mp4"
         broken.write_bytes(b"\x00" * 64)

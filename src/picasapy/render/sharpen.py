@@ -7,7 +7,7 @@ az `unsharp2=1,0.600000`-val. A kernel pontos alakjának finomítása nyitott.
 
 from __future__ import annotations
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image

@@ -64,7 +64,7 @@ import math
 from dataclasses import dataclass
 from typing import NamedTuple
 
-import cv2
+from picasapy import cv as cv2
 import numpy as np
 
 from .render import screen_rotation
