@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.168] – 2026-09-01
+
+### Egyéb
+- **Egy félrevezető belső leírás javítva (#1759).** Nincs benne
+  viselkedésbeli változás. A programban **három, egymástól független**
+  rendezés él — a mappák sorrendje a rácson, a képek sorrendje a mappán
+  belül, és a bal oldali lista sorrendje —, és a kód leírása ezt eddig
+  összemosta. Egy korábbi kutatás emiatt majdnem összevont két különböző
+  funkciót, ami elvett volna egy működő rendezési szempontot. A leírás
+  most mérésen alapul, és teszt őrzi, hogy ne csússzon el újra.
+
 ## [0.8.167] – 2026-09-01
 
 ### Javítva

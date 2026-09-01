@@ -425,7 +425,26 @@ class AppController(
 
     @Slot(str)
     def setFolderSort(self, mode: str) -> None:
-        """A RÁCS rendezése (Mappa ▸ Rendezés): date/changed/size/name.
+        """A MAPPA-BLOKKOK sorrendje a rácson (Mappa ▸ Rendezés):
+        date / changed / size / name.
+
+        ⚠️ #1759 — MÉRVE, mert a korábbi leírás félrevezetett. Ez a
+        beállítás azt dönti el, milyen sorrendben követik egymást a
+        MAPPÁK a rácson (`_feed_records` → `folder_order`). Nem rendezi
+        át a mappán BELÜLI képeket, és nem a bal hasáb sorrendje.
+
+        Három, egymástól FÜGGETLEN rendezés él a programban:
+
+        | beállítás | mit rendez | honnan |
+        |---|---|---|
+        | `folderSort` (ez) | a mappa-blokkokat a RÁCSON | Mappa ▸ Rendezés |
+        | `folderPhotoSort` (#1436) | a mappa KÉPEIT | mappa-jobbklikk |
+        | `paneSort` (#461/3) | a BAL HASÁB sorait | a hasáb helyi menüje |
+
+        A #1595 kutatása épp azért vont le téves következtetést, mert a
+        korábbi docstring („a RÁCS rendezése") alapján úgy tűnt, hogy ez
+        és a `folderPhotoSort` ugyanaz kétféle felirattal — az összevonás
+        egy működő szempontot („legutóbbi változtatások") vett volna el.
 
         #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén
         hívható volt — nem rendez, hanem a bal hasáb szerkezetét állítja.
