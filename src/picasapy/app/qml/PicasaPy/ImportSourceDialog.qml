@@ -487,6 +487,38 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
+            // #1785: a korábbi CÉLMAPPÁK — az eredeti a célt is megjegyzi
+            // (`Preferences\LastImport%x`), és háromszakaszos menüben
+            // kínálja: korábbi importok · alapértelmezett hely · „Choose…".
+            // Nálunk a FORRÁSÉVAL AZONOS legördülő adja az első kettőt (az
+            // alapértelmezett hely az utolsó tétel), a „Tallózás…" pedig a
+            // mellette álló gomb — így a szakaszhatár is látszik.
+            ComboBox {
+                id: destRecentBox
+                objectName: "importSourceRecentDestBox"
+                Layout.preferredWidth: 180
+                readonly property var korabbiak:
+                    (typeof importSourceController !== "undefined"
+                     && importSourceController)
+                    ? importSourceController.recentDestinations : []
+                readonly property string alapertelmezett:
+                    (typeof importSourceController !== "undefined"
+                     && importSourceController)
+                    ? importSourceController.defaultDestination : ""
+                //: A lista VÉGÉN az alapértelmezett hely áll, külön
+                //: tételként — az eredeti menü is külön szakaszba tette
+                //: (`-seperator-before-default_location-`). Ha már a
+                //: korábbiak közt szerepel, nem ismételjük meg.
+                model: destRecentBox.alapertelmezett.length > 0
+                       && destRecentBox.korabbiak.indexOf(
+                              destRecentBox.alapertelmezett) < 0
+                       ? destRecentBox.korabbiak.concat(
+                             [destRecentBox.alapertelmezett])
+                       : destRecentBox.korabbiak
+                visible: model.length > 0
+                displayText: qsTr("Recent destinations")
+                onActivated: importSourceWindow.destFolder = model[currentIndex]
+            }
             PicasaButton {
                 objectName: "importSourceChooseDestButton"
                 text: qsTr("Browse...")

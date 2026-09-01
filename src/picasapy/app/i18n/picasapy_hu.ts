@@ -5810,6 +5810,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Recent sources</source>
         <translation>Korábbi források</translation>
     </message>
+    <message>
+        <source>Recent destinations</source>
+        <translation>Korábbi célmappák</translation>
+    </message>
 </context>
 <context>
     <!-- #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — a felirat és a
