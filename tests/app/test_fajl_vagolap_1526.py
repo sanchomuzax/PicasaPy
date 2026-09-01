@@ -47,6 +47,20 @@ def _mime(vezerlo) -> object:
 
 
 class TestMasolasFajlokat:
+    @staticmethod
+    def _utvonalak(adat) -> list[str]:
+        """A vágólapra tett fájlok, PLATFORMFÜGGETLEN alakban.
+
+        ⚠️ Windowson a `QUrl.toLocalFile()` PERJELET ad (`C:/…`), a
+        `str(Path)` viszont VISSZAperjelet (`C:\…`) — a nyers
+        összehasonlítás ezért determinisztikusan bukott a windowsos lábon,
+        és minden PR-t elpirított, a dokumentáció-PR-eket is.
+
+        A `Path`-on át hasonlítunk: az állítás úgyis az, hogy UGYANAZ a
+        fájl került fel, nem az, hogy melyik elválasztót használja a
+        platform."""
+        return [str(Path(u.toLocalFile())) for u in adat.urls()]
+
     def test_a_masolas_uri_listat_tesz_fel(self, kepek, qt_app):
         vezerlo = FileOpsController()
         vezerlo.copyFilesToClipboard([str(p) for p in kepek])
@@ -54,8 +68,8 @@ class TestMasolasFajlokat:
         adat = _mime(vezerlo)
         assert adat is not None, "semmit nem tettünk a vágólapra"
         assert adat.hasUrls(), "nincs URL a vágólap-adatban"
-        urlek = [u.toLocalFile() for u in adat.urls()]
-        assert urlek == [str(p) for p in kepek], (
+        urlek = self._utvonalak(adat)
+        assert urlek == [str(Path(p)) for p in kepek], (
             f"nem a kijelölt fájlok kerültek fel: {urlek}"
         )
 
@@ -83,8 +97,8 @@ class TestMasolasFajlokat:
             f"az első sor nem „cut”: {nyers.splitlines()[:1]}"
         )
         # az URL-ek UGYANAZOK — a Preferred DropEffect tanulsága
-        assert [u.toLocalFile() for u in adat.urls()] == [
-            str(p) for p in kepek
+        assert self._utvonalak(adat) == [
+            str(Path(p)) for p in kepek
         ], "a kivágás más fájlokat tett fel, mint a másolás"
 
     def test_ures_kijelolesre_nem_torol_vagolapot(self, qt_app):
@@ -102,8 +116,10 @@ class TestMasolasFajlokat:
         hianyzo = kepek[0].parent / "nincs.jpg"
         vezerlo.copyFilesToClipboard([str(kepek[0]), str(hianyzo)])
 
-        urlek = [u.toLocalFile() for u in _mime(vezerlo).urls()]
-        assert urlek == [str(kepek[0])], (
+        urlek = [
+            str(Path(u.toLocalFile())) for u in _mime(vezerlo).urls()
+        ]
+        assert urlek == [str(Path(kepek[0]))], (
             f"a nem létező fájl is felkerült: {urlek}"
         )
 
