@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.203] – 2026-09-02
+
+### Javítva
+- **A szerkesztő felső filmszalagja csak a saját mappa képeit mutatja
+  (#1905).** Eddig idegen mappák képei is bekerültek: egy ötképes mappa
+  szerkesztésekor nyolc elem látszott, köztük egy másik mappa
+  kollázs-képei. A ◀/▶ léptetés ezt már jól kezelte, a szalag maradt le
+  róla.
+
 ## [0.8.202] – 2026-09-02
 
 ### Javítva

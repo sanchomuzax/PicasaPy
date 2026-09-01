@@ -691,6 +691,41 @@ class PhotoGridModel(QAbstractListModel):
             result = candidate
         return result
 
+    @Slot(int, result="QVariantList")
+    def folderRowRange(self, row: int) -> list:
+        """A `row` sort tartalmazó MAPPA folytonos sortartománya: `[kezdet,
+        darab]` (#1905).
+
+        A szerkesztő felső filmszalagja eddig a TELJES rács-modellt
+        listázta. A rács viszont FEED: több mappa fotóit sorolja fel
+        egymás után (`build_feed_groups`), a csillag-szűrő és a keresés
+        pedig végképp vegyít. A tulajdonos ezért egy ötképes mappa
+        szerkesztésekor NYOLC elemet látott a szalagon — köztük egy másik
+        mappa kollázs-képeit.
+
+        Az eredeti Picasa a szalagon **pontosan a mappa képeit** mutatja
+        (`research/Picasa3-vs-PicasaPy-fejlec-elteresek/`, egymás mellé
+        tett felvétel ugyanazon a mappán).
+
+        Ugyanazon a szerződésen áll, mint a `folderNeighbor` (#84): a
+        lekérdezések mappa szerint rendezettek (`f.path, p.name`), tehát
+        egy mappa fotói FOLYTONOS tartományt alkotnak. Érvénytelen sorra
+        `[0, 0]`.
+        """
+        if not 0 <= row < len(self._photos):
+            return [0, 0]
+        folder = self._photos[row].folder_path
+        kezdet = row
+        while kezdet > 0 and self._photos[kezdet - 1].folder_path == folder:
+            kezdet -= 1
+        veg = row
+        while (
+            veg + 1 < len(self._photos)
+            and self._photos[veg + 1].folder_path == folder
+        ):
+            veg += 1
+        return [kezdet, veg - kezdet + 1]
+
     @Slot(int, result=str)
     def filePathAt(self, row: int) -> str:
         """A kép abszolút útvonala (EditController.beginEdit-hez); üres, ha
