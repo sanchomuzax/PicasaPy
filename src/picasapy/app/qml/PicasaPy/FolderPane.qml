@@ -140,6 +140,12 @@ Rectangle {
         if (controller) {
             folderContextMenu.sortMode = controller.folderPhotoSort
             folderContextMenu.sortReverse = controller.folderPhotoSortReverse
+            // #1637: a tétel felirata állapotfüggő („Mappa elrejtése" ↔
+            // „Megjelenítés"), tehát a menü NYITÁSAKOR kell megkérdezni.
+            // A `!== undefined` a #1572-őr mintája.
+            folderContextMenu.folderHidden =
+                (controller.isFolderHidden !== undefined)
+                    ? controller.isFolderHidden(path) : false
         }
         folderContextMenu.popup()
     }
@@ -977,6 +983,14 @@ Rectangle {
                 + "contents to the Recycle Bin?").arg(
                     ut.substring(ut.lastIndexOf("/") + 1))
             deleteFolderConfirm.open()
+        }
+
+        // #1637: a „Mappa elrejtése / Megjelenítés" — a jelölés az
+        // INDEXBE megy, a lemezen semmi nem mozdul. Elrejtés után a mappa
+        // eltűnik a hasábról; a Nézet ▸ Rejtett képek kapcsolóval jön
+        // vissza, ugyanúgy, mint a rejtett fotók.
+        onHideFolderRequested: function(ut) {
+            if (controller && ut.length > 0) controller.toggleFolderHidden(ut)
         }
 
         onMoveToCollectionRequested: function(collectionName) {

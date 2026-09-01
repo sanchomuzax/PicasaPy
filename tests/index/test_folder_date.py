@@ -57,6 +57,8 @@ class TestMigrationV3:
         raw.execute("ALTER TABLE folders DROP COLUMN date")
         # #459/5: az offline oszlop a v11-ben érkezik
         raw.execute("ALTER TABLE folders DROP COLUMN offline")
+        # #1637: a hidden oszlop a v13-ban érkezik
+        raw.execute("ALTER TABLE folders DROP COLUMN hidden")
         raw.execute("ALTER TABLE photos DROP COLUMN filters")
         raw.execute("ALTER TABLE photos DROP COLUMN hidden")
         # #30: a geo-oszlopok is a v2 utániak (séma v7)

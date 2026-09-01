@@ -48,6 +48,8 @@ PicasaMenu {
     // helyes lesz.
     property bool folderHidden: false
 
+    //: #1637 — a mappa elrejtése/megjelenítése
+    signal hideFolderRequested(string path)
     signal editDescriptionRequested()
     signal selectAllRequested()
     signal clearSelectionRequested()
@@ -185,12 +187,15 @@ PicasaMenu {
 
     // -- 4. blokk: rejtés ----------------------------------------------------
 
-    PicasaMenuItem {
+    // #1637: ÉLŐ tétel — a tétel eddig `placeholder: true` volt, tehát
+    // látszott, kattintható volt, és NEM CSINÁLT SEMMIT.
+    MenuItem {
         objectName: "folderMenuHideFolder"
         // állapotfüggő felirat-váltás UGYANAZON a helyen (spec A.2) — nem
         // külön tétel, ezért nincs `folderMenuUnhideFolder`
         text: menu.folderHidden ? qsTr("&Unhide Folder") : qsTr("&Hide Folder")
-        placeholder: true
+        enabled: menu.folderPath.length > 0
+        onTriggered: menu.hideFolderRequested(menu.folderPath)
     }
     MenuSeparator {}
 

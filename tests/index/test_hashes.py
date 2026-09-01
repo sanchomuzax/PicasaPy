@@ -11,9 +11,8 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v12: a név-javaslat oszlopai (#26) — `face.person_name` és
-        # `face.suggested_name`
-        assert SCHEMA_VERSION == 12
+        # v13: a mappa-szintű elrejtés (#1637) — `folders.hidden`
+        assert SCHEMA_VERSION == 13
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -42,6 +41,8 @@ class TestSchema:
             conn.execute("DROP TABLE face")
             # #459/5: az offline oszlop a v11-ben érkezik
             conn.execute("ALTER TABLE folders DROP COLUMN offline")
+            # #1637: a hidden oszlop a v13-ban érkezik
+            conn.execute("ALTER TABLE folders DROP COLUMN hidden")
             conn.commit()
         with open_index(db) as conn:
             assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
