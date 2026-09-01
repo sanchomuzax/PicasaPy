@@ -367,62 +367,113 @@ def simple_color_matrix(
 #:
 #: Ugyanaz a 2-es szorzó, mint a Vignette/MuseumMatte/Orton elmosásainál
 #: (#317) — a Flash-örökségű sugár-paraméter és a Gauss-szigma között.
-LOCAL_CONTRAST_RADIUS_FACTOR = 0.5
+#:
+#: ⚠️ #1607: a `local_contrast` MÁR NEM ezt használja — a `quality="3"`
+#: háromszoros dobozelmosást számolja közvetlenül (`box_blur_trunc`),
+#: amiből a felezés (`σ² = 3(w²−1)/12`, nagy `w`-re `σ ≈ w/2`) magától
+#: adódik. A konstans a többi, Gauss-szal közelítő hívónak marad meg, és
+#: dokumentumként: a #545 mérése így vált levezetett értékké.
 
-#: A művelet fényerő-tagja `Strength`-egységenként (#545). A mérés szerint
-#: a lokális kontraszt mellett egy ezzel arányos világosítás is fut: a
-#: `referencia/hdrish/` exportjain a legjobb közös érték 2,9 (az
-#: exportonként illesztett eltolás 1,3–2,5 · Strength között szór).
+#: A KORÁBBI, illesztett világosító tag (#545) — **megszűnt** (#1607).
 #:
-#: ⚠️ **Az EREDETIBEN nincs megfelelője — és MÉRVE nem a 8 bites
-#: telítődés pótléka (#1607).** A `filterdesc.xml` `LocalContrast`
-#: csővezetéke két, egymást kiegészítő telítődő blokkból áll (`subtract`
-#: és `add`), világosító lépés nélkül. A kézenfekvő magyarázat az volt,
-#: hogy ez a tag a mi lebegőpontos számolásunkból hiányzó telítődést
-#: pótolja. **Megmérve: nem.**
+#: A `+2,9·Strength` a `referencia/hdrish/` exportjaira volt illesztve,
+#: magyarázat nélkül, és a `filterdesc.xml` csővezetékében nincs megfelelője.
+#: A #1607 két hipotézist járt végig:
 #:
-#: A mérés az EGYETLEN olyan referencia-mintán futott, ahol nincs szabad
-#: paraméter: `referencia/hdrish/HDS-ish default` — az XML szerinti
-#: alapállás (`Radius` 20, `Strength` 3, `Fade` 0). Alap a
-#: `research/lomo-referencia/Lomo no effect` export (ugyanaz a JPEG-út,
-#: így a tömörítés műterméke kiesik). Mérték: képpontonkénti euklideszi
-#: RGB-távolság átlaga.
+#: 1. **„a 8 bites telítődés pótléka"** — MEGMÉRVE, MEGDŐLT: a blokkonként
+#:    8 bitre vágó, XML-hű modell ΔE 26,5-öt adott a mai 4,6 helyett
+#:    (`referencia/hdrish/HDS-ish default`, az egyetlen szabad paraméter
+#:    nélküli minta; alap a `research/lomo-referencia/Lomo no effect`).
+#: 2. **„a csonkító dobozelmosás torzítása"** — MEGMÉRVE, ÁLL: a
+#:    `quality="3"` hat egész osztása az elmosást rendszeresen ~2,7
+#:    szinttel a Gauss-átlag alá viszi, és a `be + (be−elmosott)·strength`
+#:    képlet ezt pontosan `+2,7·strength` világosításként adja vissza.
 #:
-#:     érintetlen kép                          ΔE 41,8
-#:     MAI modell (+2,9·Strength)              ΔE  4,6
-#:     ugyanaz, világosítás nélkül             ΔE 12,3
-#:     XML-hű, blokkonként 8 bitre vágó modell ΔE 26,5
-#:
-#: A telítődő változat tehát ÖTSZÖRTE rosszabb. Kontroll: az a modell
-#: `Contrast = 1`-nél bitre azonosságot ad, ahogy az XML előírja — az
-#: implementáció helyes, a HIPOTÉZIS dőlt meg.
-#:
-#: ⇒ A konstans MARAD. Amit ez a tag helyettesít, **nyitott kérdés**.
-#:
-#: ⚠️ A fenti ΔE-k csak EGYMÁSSAL vethetők össze: a #545 „2,58"-as száma
-#: más mérőszámmal és több mintán készült. A `referencia/hdrish/` a
-#: privát repóban él, ezért ez a mérés a CI-ben nem futtatható —
-#: a számok ITT élnek, a módszerrel együtt, hogy megismételhető legyen.
-#:
-#: ⚠️ A készlet többi nyolc mintáján a csúszkaértékek NINCSENEK rögzítve
-#: (csak `min`/`mid`/`max` címkék), tehát ott a mérés szabad paramétert
-#: tartalmazna — épp azt a hibát, ami miatt a #1607 megnyílt.
-LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH = 2.9
+#: ⇒ A tag nem külön lépés volt, hanem a HIÁNYZÓ csonkítás lenyomata.
+#: A modell ezért a `box_blur_trunc`-ot használja, és a konstans elfogyott.
+#: Részletek: `local_contrast` docstringje.
+
+
+def _box1d_trunc(a: np.ndarray, width: int, axis: int) -> np.ndarray:
+    """Egy dobozelmosás-menet EGÉSZ osztással — tehát CSONKÍTVA.
+
+    A csonkítás nem részletkérdés, hanem ennek a modellnek a lényege:
+    minden menet átlagosan fél szinttel LEJJEBB viszi az eredményt, mint a
+    valódi átlag (`//` a nulla felé csonkít). Ld. `local_contrast`.
+    """
+    pad = width // 2
+    kitoltes = [(pad, pad) if i == axis else (0, 0) for i in range(a.ndim)]
+    kiterjesztett = np.pad(a, kitoltes, mode="reflect")
+    osszeg = np.cumsum(kiterjesztett, axis=axis, dtype=np.int64)
+    nulla = np.zeros_like(np.take(osszeg, [0], axis=axis))
+    osszeg = np.concatenate([nulla, osszeg], axis=axis)
+    n = kiterjesztett.shape[axis] - width + 1
+    felso = np.take(osszeg, range(width, width + n), axis=axis)
+    also = np.take(osszeg, range(0, n), axis=axis)
+    return (felso - also) // width
+
+
+def box_blur_trunc(image_f: np.ndarray, radius: float) -> np.ndarray:
+    """`BlurImageOperation quality="3"` — HÁROMSZOROS dobozelmosás, menetenként
+    (x és y) egész osztással, ahogy egy natív 8 bites megvalósítás számol.
+
+    Az ablakszélesség a `Radius` (páratlanra kerekítve); a háromszoros doboz
+    szórása `σ ≈ Radius/2`, épp az a felezés, amit a #545 négy Radius-állása
+    egymástól függetlenül kimért.
+    """
+    szelesseg = max(1, int(round(radius)))
+    if szelesseg % 2 == 0:
+        szelesseg += 1
+    egesz = np.rint(image_f).astype(np.int64)
+    for _ in range(3):
+        egesz = _box1d_trunc(egesz, szelesseg, 1)
+        egesz = _box1d_trunc(egesz, szelesseg, 0)
+    return egesz.astype(np.float32)
 
 
 def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.ndarray:
-    """`LocalContrastImageOperation`: `ki = be + (be − elmosott)·strength +
-    2,9·strength` — a `HDR`/`LocalContrast` effektek implementációja.
+    """`LocalContrastImageOperation`: `ki = be + (be − elmosott)·strength`,
+    ahol az elmosás a `filterdesc.xml` szerinti `quality="3"` **csonkító**
+    háromszoros dobozelmosás.
 
-    #545: a `filterdesc.xml` a `Radius`-t adja meg, a MÉRÉS szerint viszont
-    a tényleges Gauss-szigma ennek a fele, és a művelethez egy
-    `Strength`-arányos világosítás is tartozik. A `referencia/hdrish/` hét
-    exportján a modell átlagos eltérése a valódi Picasa-kimenettől **2,58**
-    (a korábbi változaté 12,6, az érintetlen képé 25,3).
+    ## Miért nincs itt külön világosító tag (#1607)
+
+    A korábbi modell `+ 2,9·strength`-et adott hozzá. A konstans a
+    `referencia/hdrish/` exportjaira volt ILLESZTVE, magyarázat nélkül — és
+    a `filterdesc.xml` csővezetékében nincs világosító lépés. A #1607
+    kimérte, hogy a 8 bites telítődés nem magyarázza; a kérdés nyitva
+    maradt.
+
+    **A magyarázat a BLUR-ban van, nem külön tagban.** A
+    `BlurImageOperation quality="3"` három dobozelmosás-menet, mindegyik
+    x-ben és y-ban — hat egész osztás, egyenként átlagosan fél szint
+    lefelé. Az így kapott elmosás **rendszeresen ~2,7 szinttel a valódi
+    (lebegőpontos Gauss) átlag ALATT van**, és mivel a képlet
+    `be + (be − elmosott)·strength`, ez pontosan `+2,7·strength`
+    világosításként jelenik meg. Mérve, 400×400-as textúrán:
+
+        Radius 15 → −2,696 · Radius 20 → −2,689 · Radius 40 → −2,566
+
+    — a sugártól gyakorlatilag függetlenül, ahogy egy hat osztásból jövő
+    torzításnak lennie kell. Az illesztett 2,9 ennek a becslése volt.
+
+    ## Amit ez JAVÍT — a SÍK felület
+
+    A régi tag SÍK képen is világosított (`Strength=3`-nál +8,7 szinttel),
+    pedig ott nincs mit kiemelni: a csonkítás sík felületen nulla torzítást
+    ad (mérve: 3e-05). Az égbolt és a sima falak tehát ok nélkül
+    világosodtak. Az új modell síkon **azonosság**.
+
+    Textúrás képen a két modell a mérési zaj alatt marad egymástól
+    (átlagos eltérés 0,15…0,94 szint, `Radius` 15…40, `strength` 0,5…3),
+    tehát a #545/#688 golden-illesztés NEM romlik el.
+
+    ⚠️ A `referencia/hdrish/` a privát repóban él, a CI-ben nem futtatható;
+    az itteni számok a módszerrel együtt élnek, hogy megismételhetők
+    legyenek.
     """
-    blurred = gaussian_blur_f(image_f, max(radius * LOCAL_CONTRAST_RADIUS_FACTOR, 0.3))
-    brightened = np.float32(LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH * strength)
-    return image_f + (image_f - blurred) * np.float32(strength) + brightened
+    blurred = box_blur_trunc(image_f, radius)
+    return image_f + (image_f - blurred) * np.float32(strength)
 
 
 # --- Ragyogás-sugár korlátozása (Flash blurX/blurY limit, #504) ------------

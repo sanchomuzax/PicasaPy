@@ -7,16 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.200] – 2026-09-01
+## [0.8.200] – 2026-09-02
 
 ### Gyorsabb
 - **A program indulása bő két másodperccel rövidebb (#1611).** Eddig
   minden indításkor betöltődött a képfeldolgozó könyvtár (OpenCV), akkor
   is, ha egyetlen effektet, mentést vagy arckeresést sem használtál.
-  Mostantól csak akkor töltődik be, amikor tényleg kell — és akkor is a
-  háttérben, közvetlenül az ablak megjelenése után, hogy a felület soha
-  ne akadjon meg tőle. Mérve: a program betöltése 3,0 másodpercről
-  0,7-re csökkent.
+  Mostantól csak akkor töltődik be, amikor tényleg kell — és a
+  bélyegképeket amúgy is háttérszál készíti, tehát a felület nem vár rá.
+  Mérve: a program betöltése 3,0 másodpercről 0,7-re csökkent.
+
+## [0.8.199] – 2026-09-01
+
+### Javítva
+- **A HDR-ish és a Helyi kontraszt nem világosítja többé az égboltot
+  (#1607).** A két effekt eddig a sima, részletmentes felületeket is
+  felderítette (erős beállításnál érezhetően), pedig ott nincs mit
+  kiemelni. Kiderült, miért: a modellünkben egy illesztett világosító tag
+  állt, ami valójában az eredeti elmosás számolási sajátosságát
+  helyettesítette. Most a valódi eljárást számoljuk, így a részletes
+  területek ugyanúgy néznek ki, a sima felületek viszont érintetlenek
+  maradnak.
 
 ## [0.8.198] – 2026-09-01
 
