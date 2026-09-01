@@ -415,3 +415,54 @@ class TestNincsBeegetettPerjelesMerce:
             'assert to_local_path("file:///C:/Temp/pp") == _nativ("C:/Temp/pp")'
         )
         assert not self._MINTA.search('assert to_local_path("") == ""')
+
+
+class TestNincsTulHosszuTesztAzonosito:
+    """A `parametrize` paraméter-ÉRTÉKBŐL képez teszt-azonosítót — #1629.
+
+    A pytest az azonosítót a `PYTEST_CURRENT_TEST` **környezeti változóba**
+    is kiírja. Windowson egy környezeti változó legfeljebb **32767**
+    karakter lehet; e fölött a teszt `ValueError`-ral MÁR A SETUPBAN
+    elhasal, mielőtt bármit is állítana.
+
+    Így bukott el a #1629 első változata a CI windows-lábán: a
+    `parametrize` egy EGÉSZ QML-FÁJL tartalmát adta paraméterként. Linuxon
+    ugyanez szó nélkül lefutott — a hiba csak Windowson látszik, tehát egy
+    forrás-szintű őr az egyetlen mód, hogy ne térjen vissza.
+
+    Az őr NEM a 32767-es határra méri magát: egy több ezer karakteres
+    azonosító már azelőtt olvashatatlan, hogy elhasalna. A korlát így a
+    „mi ésszerű", nem a „mi fér még bele".
+    """
+
+    #: Ennél hosszabb azonosító biztosan nem szándékos.
+    MAX_AZONOSITO = 400
+
+    def test_egyetlen_gyujtott_teszt_azonositoja_sem_hosszabb(self):
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        gyoker = Path(__file__).resolve().parents[2]
+        eredmeny = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests", "--collect-only", "-q",
+             "-p", "no:cacheprovider"],
+            cwd=gyoker,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        hosszu = [
+            sor
+            for sor in eredmeny.stdout.splitlines()
+            if "::" in sor and len(sor) > self.MAX_AZONOSITO
+        ]
+        assert not hosszu, (
+            f"{len(hosszu)} teszt-azonosító hosszabb "
+            f"{self.MAX_AZONOSITO} karakternél — a `parametrize` "
+            "valószínűleg fájltartalmat kap paraméterként. Windowson a "
+            "`PYTEST_CURRENT_TEST` 32767 karakteres korlátja miatt ez "
+            "SETUP-hibát ad (#1629). Adj NEVET a paraméternek, és a "
+            "tartalmat a teszten belül keresd ki. Első találat: "
+            + hosszu[0][:160]
+        )
