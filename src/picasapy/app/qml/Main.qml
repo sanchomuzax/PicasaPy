@@ -1128,6 +1128,9 @@ ApplicationWindow {
         }
         // #23: az "Import" gomb az Import forrásból ablakot nyitja
         onImportRequested: importSourceDialog.open()
+        // #1421: az eszköztár `newalbum` gombja UGYANOTT köt ki, mint a
+        // Fájl ▸ Új album… és a kép-helyimenü tétele — egy út, egy dialógus.
+        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
     }
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)

@@ -25,6 +25,11 @@ Rectangle {
     signal searchCleared()
     // #23: az "Import" gomb — a megnyitást a Main.qml végzi (ImportSourceDialog)
     signal importRequested()
+    //: #1421: az eredeti `newalbum` gombja — ugyanaz a párbeszéd,
+    //: mint a Fájl ▸ Új album… (a bináris szerint a menütétel is a
+    //: `thumbui/newalbum` kattintást szimulálja, ld. az
+    //: eszköztár-viselkedés spec 2. szakaszát).
+    signal newAlbumRequested()
 
     function clearSearch() {
         searchField.clear()
@@ -63,6 +68,31 @@ Rectangle {
             Layout.minimumWidth: 111
             Layout.preferredHeight: 22
             onClicked: toolbar.importRequested()
+        }
+        // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
+        // album… párbeszéde), csak az eszköztárról hiányzott. A bináris
+        // szerint a menütétel maga is a `thumbui/newalbum` kattintást
+        // szimulálja, tehát a kettő UGYANAZ az út.
+        //
+        // Mért méret: 29 × 22 (`konyvtar-ablak-meretek.md` 2.). A gomb az
+        // eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele).
+        //
+        // ⚠️ Szűk ablaknál elrejtőzik, a szűrő-zóna mintájára (#423): a
+        // sávnak egyetlen csíkban kell maradnia, és minden fix szélességű
+        // elem a NEM zsugorodó alapot növeli. A rejtés a mi
+        // alkalmazkodásunk, nem az eredeti viselkedés.
+        PicasaButton {
+            objectName: "toolbarNewAlbumButton"
+            text: qsTr("New Album")
+            visible: !toolbar.toolbarCompact
+            Layout.preferredWidth: 29
+            Layout.minimumWidth: 0
+            Layout.preferredHeight: 22
+            //: `newalbum` — az eredeti buboréksúgója
+            ToolTip.text: qsTr("Create a new album")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: toolbar.newAlbumRequested()
         }
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
