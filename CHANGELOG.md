@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.202] – 2026-09-02
+
+### Javítva
+- **A kiürített mappa nem állítja többé, hogy „jelenleg nem elérhető"
+  (#1909).** Ha kitörölted egy mappa tartalmát, a program a lecsatolt
+  meghajtóra hivatkozott, és a mappa sora bent ragadt a bal hasábban —
+  pedig a mappa ott volt és olvasható volt. A megkülönböztetés eddig azon
+  múlt, hogy maradt-e véletlenül egy rejtett fájl a mappában; mostantól a
+  valódi jelet nézi. A tényleg lecsatolt meghajtó továbbra is jelölést kap.
+
 ## [0.8.201] – 2026-09-02
 
 ### Javítva

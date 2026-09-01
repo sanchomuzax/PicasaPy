@@ -12,6 +12,7 @@ import os
 import pytest
 
 from picasapy.index import open_index, photos_in_folder, sync_folder, sync_tree
+from picasapy.index import sync as sync_module
 
 
 @pytest.fixture
@@ -47,8 +48,39 @@ def _empty_folder(path) -> None:
         os.remove(entry.path)
 
 
+@pytest.fixture
+def csatolasi_pont(monkeypatch):
+    """⚠️ #1909: az ürességből ÖNMAGÁBAN nem következik a leválás.
+
+    Ezek a tesztek eddig egy mappa kiürítésével „szimulálták" a levált
+    mountot — csakhogy pontosan ez volt a #1909-ben javított tévedés: a
+    program a felhasználó által KIÜRÍTETT mappáról is azt állította, hogy
+    „jelenleg nem elérhető (például lecsatolt meghajtó)". A két eset a
+    fájlrendszerben nem különbözik pusztán az üresség alapján.
+
+    A megkülönböztetés jele mostantól a CSATOLÁSI HATÁR (`st_dev` eltér a
+    szülőétől). Ez a rögzítő azt mondja ki, hogy a megadott útvonalon van
+    ilyen határ — vagyis a mappa élő csatolási pont, nem egy közönséges
+    kiürített mappa. A tesztek TÁRGYA (a jelölés, a fotók megőrzése, a
+    jelölés eltűnése) változatlan.
+    """
+
+    def rogzits(utvonal):
+        valodi = sync_module._csatolasi_hataron_ul
+        monkeypatch.setattr(
+            sync_module,
+            "_csatolasi_hataron_ul",
+            lambda p: True if os.fspath(p) == os.fspath(utvonal) else valodi(p),
+        )
+
+    return rogzits
+
+
 class TestOfflineFolderInTreeSync:
-    def test_empty_mountpoint_keeps_photos_and_marks_offline(self, conn, library):
+    def test_empty_mountpoint_keeps_photos_and_marks_offline(
+        self, conn, library, csatolasi_pont
+    ):
+        csatolasi_pont(library / "nas")
         sync_tree(conn, library)
         assert len(photos_in_folder(conn, library / "nas")) == 2
 
@@ -61,7 +93,10 @@ class TestOfflineFolderInTreeSync:
         # a másik mappa érintetlen és elérhető
         assert _offline_flag(conn, library / "helyi") == 0
 
-    def test_returning_folder_clears_the_flag(self, conn, library):
+    def test_returning_folder_clears_the_flag(
+        self, conn, library, csatolasi_pont
+    ):
+        csatolasi_pont(library / "nas")
         sync_tree(conn, library)
         _empty_folder(library / "nas")
         sync_tree(conn, library, incremental=False)
@@ -98,13 +133,35 @@ class TestOfflineFolderInTreeSync:
 
 
 class TestOfflineFolderInWatcherSync:
-    def test_watcher_keeps_unavailable_folder(self, conn, library):
+    def test_watcher_keeps_unavailable_folder(
+        self, conn, library, csatolasi_pont
+    ):
+        csatolasi_pont(library / "nas")
         sync_tree(conn, library)
         _empty_folder(library / "nas")
         sync_folder(conn, library, library / "nas")
 
         assert len(photos_in_folder(conn, library / "nas")) == 2
         assert _offline_flag(conn, library / "nas") == 1
+
+
+    def test_a_KIURITETT_mappa_nem_kap_jelolest(self, conn, library):
+        """#1909: csatolási határ NÉLKÜL az üresség csak üresség.
+
+        A tulajdonos kiürített egy mappát, és a program azt állította
+        róla, hogy „jelenleg nem elérhető (például lecsatolt meghajtó)" —
+        miközben a meghajtó megvolt. Itt nincs `csatolasi_pont` rögzítő,
+        tehát a `nas` mappa közönséges, a szülővel azonos eszközön ülő
+        mappa: kiürítve egyszerűen eltűnik az indexből, jelölés nélkül.
+        """
+        sync_tree(conn, library)
+        _empty_folder(library / "nas")
+        sync_folder(conn, library, library / "nas")
+
+        assert _offline_flag(conn, library / "nas") is None, (
+            "a kiürített mappa »jelenleg nem elérhető« jelölést kapott — "
+            "a felület valótlant állítana (#1909)"
+        )
 
     def test_watcher_removes_deleted_folder(self, conn, library):
         sync_tree(conn, library)
