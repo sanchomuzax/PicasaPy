@@ -167,12 +167,18 @@ class TestIconTabs:
             assert label.property("truncated") is False
 
     def test_five_tooltip_bindings_present_in_source(self):
-        """Minden fülgombnak legyen ToolTip-je a teljes névvel — a
-        `MainToolbar.qml` mintáját követő `ToolTip.text`/`ToolTip.visible`
-        attached property-pár (5×, egy az EditTabButton-sablonban,
-        ezért a forrás egyszer tartalmazza, de a RowLayout mind az 5
-        példányra alkalmazza)."""
-        assert "ToolTip.text: tbtn.label" in _QML_SOURCE
+        """Minden fülgombnak legyen ToolTip-je — a `MainToolbar.qml`
+        mintáját követő `ToolTip.text`/`ToolTip.visible` attached
+        property-pár (egyszer az `EditTabButton`-sablonban, de mind a
+        hét példányra alkalmazva).
+
+        #1857: a súgó szövege MÁR NEM a `tbtn.label`. A fül nevének
+        megismétlése semmi újat nem mondott a felhasználónak; mostantól
+        `description` áll ott, és a `label` csak a tartalék, ha egy
+        hívóhely nem ad leírást. A leírások meglétét a
+        `test_buboreksugok_1857.py` őrzi, fülről fülre."""
+        assert "ToolTip.text: tbtn.description" in _QML_SOURCE
+        assert "tbtn.label" in _QML_SOURCE, "a tartalék ág eltűnt"
         assert "ToolTip.visible: tabMouse.containsMouse" in _QML_SOURCE
         # mind az 5 EditTabButton-példány adja meg a `label`-t (a ToolTip
         # forrása) — ha ez az 5 nem lenne mind jelen, a ToolTip néma maradna

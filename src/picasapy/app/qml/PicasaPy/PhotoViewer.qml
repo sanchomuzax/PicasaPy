@@ -598,30 +598,56 @@ Rectangle {
                     objectName: "viewerPlayButton"
                     text: "▶ " + qsTr("Play")
                     font.pixelSize: Theme.fontSize
+                    //: #1857: ehhez a négy gombhoz (lejátszás, előző,
+                    //: következő, „Létrehozás most") NINCS kimért eredeti
+                    //: felirat — a szöveg SAJÁT, leíró magyar, a mért
+                    //: testvérek hangnemében. Ez tudatos eltérés.
+                    ToolTip.text: qsTr("Start slideshow")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                     onClicked: viewer.playRequested()
                 }
                 // #6: A/AB/AA összehasonlító nézetek — placeholder (a
                 // szerkesztő-összevetés a 2. fázisban élesedik)
+                //
+                // ⚠️ #1857: a buboréksúgó szövege KI VAN TÉVE, de amíg a
+                // gomb `enabled: false`, a Qt nem ad neki `hovered`-et,
+                // tehát a felhasználó nem látja. Ez nem hiba: a #434
+                // élesítésekor a súgó magától megjelenik, és a mért
+                // eredeti szöveg addig sem vész el.
                 PicasaButton {
                     objectName: "compareButtonA"
                     text: "A"; enabled: false
                     Layout.preferredWidth: 28
+                    //: Az eredeti `only_1up_toggle` felirata.
+                    ToolTip.text: qsTr("View only one image")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                 }
                 PicasaButton {
                     objectName: "compareButtonAB"
                     text: "AB"; enabled: false
                     Layout.preferredWidth: 32
+                    ToolTip.text: qsTr("View two different images")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                 }
                 PicasaButton {
                     objectName: "compareButtonAA"
                     text: "AA"; enabled: false
                     Layout.preferredWidth: 32
+                    ToolTip.text: qsTr("View the same image twice")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                 }
                 PicasaButton {
                     objectName: "viewerPrevButton"
                     text: "◀"; onClicked: viewer.previous()
                     enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
+                    ToolTip.text: qsTr("Previous picture")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                 }
                 ListView {
                     id: filmstrip
@@ -655,6 +681,9 @@ Rectangle {
                     text: "▶"; onClicked: viewer.next()
                     enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
+                    ToolTip.text: qsTr("Next picture")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                 }
                 Item { Layout.fillWidth: true }
             }
@@ -1465,6 +1494,9 @@ Rectangle {
                     visible: viewer.currentIsCollageDraft
                     x: (parent.width - width) / 2
                     y: parent.height * 0.875 - height / 2
+                    ToolTip.text: qsTr("Render the final collage from this draft")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
                     onClicked: controller.finishCollageDraft(
                         viewer.currentFilePath)
                 }
@@ -1490,12 +1522,20 @@ Rectangle {
                             objectName: "zoomFitButton"
                             text: "⛶"
                             width: 26; height: 20
+                            //: Az eredeti kimért felirata.
+                            ToolTip.text: qsTr("Fit Photo inside viewing area")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
                             onClicked: viewer.zoomFit()
                         }
                         PicasaButton {
                             objectName: "zoomActualButton"
                             text: "1:1"
                             width: 30; height: 20
+                            //: Az eredeti kimért felirata.
+                            ToolTip.text: qsTr("Display Photo at actual size")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
                             onClicked: viewer.zoomActual()
                         }
                         // #147: arc-keretek be/ki (F billentyűvel egyenértékű)
