@@ -3428,3 +3428,73 @@ kettő; a csoportosztás nincs mérve.)*
   tíz elemből öt élő, köztük két valódi hiány (56.1).
 - **„A fejléc gombjai statikus feliratúak"** — megdőlt: minden gombnak
   van `%d`-s, **számlálós** változata is (56.3).
+
+## 57. tétel — a `compose_mail`: hatókörön kívül, DE két élő részlettel (2026-09-01)
+
+*Huszadik kör az UI-lefedettségi axisról (#1778). Panel: `compose_mail`
+(10 hiány) — a Picasa **saját levélszerkesztője**. A (d) szabály próbája:
+mielőtt „megszűnt szolgáltatás" címén lezárnám, meg kell nézni, van-e
+élő ága.*
+
+### 57.1 A panel a GMAIL/Web Albums úthoz tartozik — bizonyítva
+
+A kezelő (`0x00850030`) sztringjei nem hagynak kétséget:
+
+| sztring | mit mond |
+|---|---|
+| `GMail` · `ChooseMail::GmailName` | a Gmail-ág neve |
+| `ChooseMail::GPhotoName` · `ChooseMail::GPhotoShare` („Share Photos") | Google Fotók-megosztás |
+| `Web Albums` · `CChooseEmailDialog::albumshare` („Ready to share an album") | Picasa Web Albums |
+| `changeuser` („Change User") | Google-fiók váltása |
+
+⇒ **A beépített levélszerkesztő a `choose_mail` (47. tétel) Gmail-ágának
+a felülete.** A 47. körben rögzítettük, hogy az az ág halott; ez a panel
+vele együtt **hatókörön kívül**.
+
+*(Ez NEM ellentmond a 47. tétel figyelmeztetésének: ott azt mondtam ki,
+hogy a **választó-párbeszédet** nem szabad halottnak nyilvánítani, mert a
+másik ága él. A `compose_mail` viszont **kizárólag** a halott ághoz
+tartozik — ezt most külön megmértem, nem feltételeztem.)*
+
+### 57.2 ⭐ Két élő részlet, ami NEM a Gmail-ághoz kötődik
+
+| bizonyíték | mit jelent | hova tartozik |
+|---|---|---|
+| **`Preferences\EmailAutocomplete`** | a **címzett-kiegészítés** kapcsolója | általános e-mail viselkedés → **#1798** |
+| **„Preparing attachments…"** (`CChooseEmailDialog::infoprepare`) | folyamatjelző, amíg a **mellékletek átméretezése** tart | ua. |
+
+⇒ Az eredeti **jelez, amíg a mellékleteket készíti** — nagy képeknél ez
+másodpercekig tart, és a mi küldésünk (`sendRows`) ma **némán** dolgozik
+alatta. Ez a két tétel a `choose_mail`-jegyre (#1798) megy, nem
+veszik el a panel hatókörön kívülre tételével.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| beépített levélszerkesztő (Címzett/Tárgy/Szöveg/Küldés/Elvetés) | a Gmail-ághoz | nincs | **hatókörön kívül** |
+| `changeuser`, `preview`, `discardimage` | ua. | nincs | ua. |
+| **címzett-kiegészítés** | `Preferences\EmailAutocomplete` | nincs | → #1798 |
+| **„mellékletek előkészítése" jelző** | folyamatjelző | **nincs** (néma) | → #1798 |
+
+### Nyitott kérdések mérlege (57.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** hogy a panel a Gmail-ághoz tartozik (57.1, mérve, nem
+  feltételezve); a két élő részlet kiemelése (57.2).
+- **HATÓKÖRÖN KÍVÜL:** a beépített levélszerkesztő egésze.
+
+*(Záró mondat a 45.1 szerint: ebben a panelben a hiányzó vezérlők
+**hatókörön kívüliek**; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `compose_mail` általános levélszerkesztő, tehát kellene"** —
+  megdőlt: a kezelője a Gmail / Web Albums / Google Fotók sztringeket
+  hivatkozza (57.1).
+- **„Ha a panel halott, minden eleme halott"** — megdőlt: a
+  címzett-kiegészítés és a melléklet-előkészítés jelzője **általános**
+  viselkedés, és a #1798-ra tartozik (57.2).
