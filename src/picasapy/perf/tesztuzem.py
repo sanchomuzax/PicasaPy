@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from collections.abc import Callable, Iterable, Mapping
 from datetime import datetime
 from pathlib import Path
@@ -198,12 +199,119 @@ def utvonalmentes(szoveg: str) -> str:
     return "\n".join(kimenet)
 
 
+#: #1660: a tároló TÍPUSA — a #1653 zárásához hiányzó bizonyíték. A mérés
+#: szerint az indulás fájlbeolvasás-korlátos (~290 MB modul, ebből a `cv2`
+#: 138 MB), és ugyanazon a gépen 490 ms meleg vs. 3679 ms hideg
+#: lapgyorstárral — 7,5×, kizárólag a fájlrendszer állapotától. Ha a
+#: telepítés hálózati meghajtón van, az önmagában megmagyarázza a
+#: tulajdonos 33 másodpercét.
+#:
+#: ⚠️ CSAK a típus kerül a naplóba, a HELY soha: se meghajtóbetű, se
+#: UNC-név, se útvonal, se felhasználónév. A jegy ezt külön kiköti, és
+#: teszt is őrzi.
+TAROLO_HELYI = "helyi lemez"
+TAROLO_HALOZATI = "hálózati meghajtó"
+TAROLO_CSERELHETO = "cserélhető adathordozó"
+TAROLO_MEMORIA = "memórialemez"
+TAROLO_ISMERETLEN = "ismeretlen"
+
+#: A Linux mount-típusai, amikből a fenti kategóriák következnek. A lista
+#: SZÁNDÉKOSAN rövid: amit nem ismerünk fel, az „ismeretlen" marad —
+#: rosszabb egy magabiztos téves besorolás, mint a bevallott nemtudás.
+_HALOZATI_FS = frozenset(
+    {"nfs", "nfs4", "cifs", "smbfs", "smb3", "afs", "sshfs", "fuse.sshfs",
+     "ncpfs", "9p", "davfs", "fuse.davfs"}
+)
+_MEMORIA_FS = frozenset({"tmpfs", "ramfs"})
+
+
+def tarolo_tipusa(
+    ut: Path | str,
+    *,
+    platform: str | None = None,
+    mount_tipus: Callable[[Path], str | None] | None = None,
+    win_drive_type: Callable[[str], int] | None = None,
+) -> str:
+    """Egy útvonal tárolójának TÍPUSA — a hely kimondása nélkül (#1660).
+
+    Windowson a `GetDriveType`, Linuxon a mount fájlrendszer-típusa dönt.
+    A `platform`/`mount_tipus`/`win_drive_type` fogantyúk a #1217 mintája:
+    a windowsos ág így Linuxon is MÉRHETŐ, nem `skipif`-fel kihagyott
+    (a #1560 hibája).
+
+    Bármilyen hiba esetén `TAROLO_ISMERETLEN` — egy diagnosztikai sor
+    sosem akaszthatja meg az indulást."""
+    platform = platform if platform is not None else sys.platform
+    try:
+        if platform.startswith("win"):
+            return _windows_tarolo(Path(ut), win_drive_type)
+        return _posix_tarolo(Path(ut), mount_tipus)
+    except Exception:  # pragma: no cover — a napló nem törhet el
+        return TAROLO_ISMERETLEN
+
+
+def _windows_tarolo(ut: Path, win_drive_type) -> str:
+    #: Az UNC-út (`\\gép\megosztás`) a `GetDriveType`-nak nem meghajtó —
+    #: azt önmagában felismerjük, mielőtt kérdeznénk.
+    szoveg = str(ut)
+    if szoveg.startswith("\\\\") or szoveg.startswith("//"):
+        return TAROLO_HALOZATI
+    if win_drive_type is None:  # pragma: no cover — csak valódi Windowson
+        import ctypes
+
+        win_drive_type = ctypes.windll.kernel32.GetDriveTypeW
+    gyoker = str(Path(szoveg).anchor) or szoveg
+    return {
+        2: TAROLO_CSERELHETO,
+        3: TAROLO_HELYI,
+        4: TAROLO_HALOZATI,
+        6: TAROLO_MEMORIA,
+    }.get(int(win_drive_type(gyoker)), TAROLO_ISMERETLEN)
+
+
+def _posix_tarolo(ut: Path, mount_tipus) -> str:
+    tipus = (
+        mount_tipus(ut) if mount_tipus is not None else _mount_tipus_olvasva(ut)
+    )
+    if not tipus:
+        return TAROLO_ISMERETLEN
+    tipus = tipus.lower()
+    if tipus in _HALOZATI_FS:
+        return TAROLO_HALOZATI
+    if tipus in _MEMORIA_FS:
+        return TAROLO_MEMORIA
+    return TAROLO_HELYI
+
+
+def _mount_tipus_olvasva(ut: Path) -> str | None:
+    """A `ut`-ot tartalmazó mount fájlrendszer-típusa a `/proc/mounts`-ból.
+
+    A LEGHOSSZABB illeszkedő mount-pontot választja: `/mnt/photo` NFS-e
+    nem eshet a `/` alá."""
+    try:
+        sorok = Path("/proc/mounts").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    cel = str(Path(ut).resolve())
+    legjobb: tuple[int, str | None] = (-1, None)
+    for sor in sorok:
+        mezok = sor.split()
+        if len(mezok) < 3:
+            continue
+        pont, fs = mezok[1], mezok[2]
+        if cel == pont or cel.startswith(pont.rstrip("/") + "/"):
+            if len(pont) > legjobb[0]:
+                legjobb = (len(pont), fs)
+    return legjobb[1]
+
+
 def naplo_szovege(
     *,
     idovonal_jelentes: str,
     fejlec: Mapping[str, Any],
     meret: KonyvtarMeret,
     vedett_gyokerek: int | None = None,
+    tarolo: Mapping[str, str] | None = None,
 ) -> str:
     """A tesztüzem naplójának teljes szövege (#1654/3).
 
@@ -237,6 +345,17 @@ def naplo_szovege(
     # szerint.
     if vedett_gyokerek is not None:
         sorok.append(f"  védett gyökerek:  {vedett_gyokerek}")
+    # #1660: a TÁROLÓ TÍPUSA — a #1653 zárásához hiányzó bizonyíték. Az
+    # indulás fájlbeolvasás-korlátos (mérve: 490 ms meleg vs. 3679 ms
+    # hideg lapgyorstárral); ha a telepítés hálózati meghajtón van, az
+    # önmagában megmagyarázza a tulajdonos 33 másodpercét.
+    # ⚠️ Csak a TÍPUS kerül ide, sosem a hely.
+    if tarolo:
+        sorok += [
+            "",
+            "A tároló típusa (a #1653 lemez-korlátos gyanújához):",
+        ]
+        sorok += [f"  {cimke}: {tipus}" for cimke, tipus in tarolo.items()]
     sorok += [
         "",
         "A napló SEMMILYEN elérési utat, fájlnevet és felhasználónevet",
