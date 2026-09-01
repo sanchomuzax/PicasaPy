@@ -64,6 +64,7 @@ from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import PhotoOpsMixin
+from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
@@ -103,6 +104,10 @@ class AppController(
     # (forró fájl) nem kell nyúlni.
     ColorIndexMixin,
     KeywordsMixin,
+    # #1833: „keress ehhez hasonlót" — a minta-alapú hasonlóság-keresés.
+    # Lustán inicializálja magát, tehát az `__init__`-hez (forró fájl) nem
+    # kell nyúlni.
+    SimilarityMixin,
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,
@@ -970,6 +975,10 @@ class AppController(
             with open_index(self._db_path) as conn:
                 records = video_photos(conn)
             self._show_filtered(records, time.perf_counter() - started)
+        elif mode == "similar":
+            # #1833: enélkül egy frissítés némán visszadobná a felhasználót
+            # a mappa-nézetbe (a film-szűrőnek is ezért van ága, #1830).
+            self._show_filtered(self._similar_records(param), 0.0)
         elif mode == "album":
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
