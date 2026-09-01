@@ -5216,6 +5216,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>TrayBar</name>
     <message>
+        <source>Order Prints (service discontinued)</source>
+        <translation>Papírképek rendelése (a szolgáltatás megszűnt)</translation>
+    </message>
+    <message>
+        <source>Publish to Blogger (service discontinued)</source>
+        <translation>Közzététel a Bloggeren (a szolgáltatás megszűnt)</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
         <source>Add the pictures in the tray to an album</source>
         <translation>A tálcán lévő képek hozzáadása egy albumhoz</translation>

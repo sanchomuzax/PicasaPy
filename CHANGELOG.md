@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.171] – 2026-09-01
+
+### Hozzáadva
+- **A képtálca gombsora teljesebb lett (#1672).** A kilenc eredeti gombból
+  hat volt meg nálunk; most nyolc. A két új — **Papírképek rendelése** és
+  **Közzététel a Bloggeren** — a mért helyükre került, de **szürkék**, és
+  a buboréksúgójuk megmondja, miért: ezek a Google-szolgáltatások
+  megszűntek. Nem „még nem kész" gombok, hanem kivezetettek. Szűk
+  ablakban ők tűnnek el elsőként, hiszen úgysem kattinthatók.
+
 ## [0.8.170] – 2026-09-01
 
 ### Hozzáadva
