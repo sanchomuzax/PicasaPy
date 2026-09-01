@@ -76,6 +76,10 @@ ApplicationWindow {
     }
     property bool viewerOpen: false
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
+    //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
+    //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
+    //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
+    property bool loupeActive: false
     // #1773: a jobb fiók négy lapja KIZÁRÓ csoport — egyszerre pontosan
     // egy látszik, vagy a fiók üres. Ezért EGYETLEN állapot írja le mind a
     // négyet; négy független billenőből a mérés szerint nem előfordulható
@@ -1141,6 +1145,8 @@ ApplicationWindow {
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         onTimelineRequested: window.toggleTimeline()
         timelineActive: window.timelineOpen
+        onLoupeRequested: window.loupeActive = !window.loupeActive
+        loupeActive: window.loupeActive
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
         // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
         treeViewActive: (typeof folderHierarchyController !== "undefined"

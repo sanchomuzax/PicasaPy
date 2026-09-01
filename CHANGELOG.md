@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.187] – 2026-09-01
+
+### Hozzáadva
+- **Rács-nagyító (#1808).** Az eszköztár nagyító-gombjával bekapcsolva a
+  bélyegképek fölött húzva nagyított előnézet jelenik meg — megnyitás
+  nélkül eldönthető, melyik kép éles, és melyiken van csukott szem. Eddig
+  ehhez meg kellett nyitni a képet, és vissza kellett lépni. Bekapcsolva a
+  húzás nem jelöl ki: a nagyító a nézés eszköze, nem a válogatásé.
+
 ## [0.8.186] – 2026-09-01
 
 ### Hozzáadva
