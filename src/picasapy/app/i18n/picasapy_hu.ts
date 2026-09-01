@@ -3553,6 +3553,18 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Add a description</source>
         <translation>Leírás hozzáadása</translation>
     </message>
+    <message>
+        <source>Save</source>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>Select starred photos</source>
+        <translation>Csillagozott képek kijelölése</translation>
+    </message>
+    <message>
+        <source>Save edited photos to disk</source>
+        <translation>A szerkesztett képek mentése lemezre</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>

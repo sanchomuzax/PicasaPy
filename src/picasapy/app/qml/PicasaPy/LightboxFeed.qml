@@ -554,9 +554,24 @@ ListView {
                 controller.setFolderDescriptionOf(
                     groupCol.modelData.path, text)
             }
+            // #1823: a fejléc-gombok a KIJELÖLÉS darabszámát írják ki.
+            selectedCount: grid.appWindow && grid.appWindow.selectedIndexes
+                           ? grid.appWindow.selectedIndexes.length : 0
             // zöld ▸ (#8): a mappa vetítése az első képétől
             onPlayRequested: grid.slideshowRequested(
                 groupCol.modelData.start)
+            // #1823: a két új fejléc-gomb ugyanazon az úton jut a
+            // gazdaablakhoz, mint a jobbklikkes mappa-menü — nem
+            // vezetünk át új jelet a LightboxFeed-en, mert a művelet
+            // nem a képfolyamé, hanem az ablaké.
+            onSelectStarredRequested: {
+                if (grid.appWindow && grid.appWindow.selectStarred)
+                    grid.appWindow.selectStarred()
+            }
+            onSaveEditsRequested: {
+                if (grid.appWindow && grid.appWindow.saveSelectedEdits)
+                    grid.appWindow.saveSelectedEdits()
+            }
             // #422: jobbklikk a mappa-fejlécen — a mappa-kontextusmenü
             // ARRA a mappára, amelyiknek a fejléce ez (nem a kijelöltre)
             onContextMenuRequested: {
