@@ -136,7 +136,7 @@ class TestModValaszto:
 
     @pytest.mark.parametrize(
         "mode",
-        ["auto", "normal", "dither16", "rdesk", "mac", "", "ismeretlen"],
+        ["auto", "normal", "dither16", "rdesk", "", "ismeretlen"],
     )
     def test_a_tobbi_mod_ma_atenged(self, mode):
         """A még megvalósítatlan módokra átereszt.

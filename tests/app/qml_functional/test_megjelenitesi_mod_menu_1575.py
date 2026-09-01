@@ -64,9 +64,12 @@ NEVEK: tuple[str, ...] = tuple(nev for nev, _ in TETELEK)
 #: választhatóság kevesebbet ér, mint az őszinteség arról, mi működik.
 #:
 #: Ez a három tétel MA nincs megvalósítva, tehát jelölt és letiltott:
+# #1730: a `menuViewDisplayModeMacGamma` KIKERÜLT — a #1658 „nincs
+# referencia-mérés" indoka megszűnt (a #1580 képpont-mérése megvan), és a
+# mód azóta él. Ez a halmaz csak RÖVIDÜLHET: minden kikerülő tétel egy
+# megszüntetett szürke helyfoglaló.
 NEM_MEGVALOSITOTT: frozenset[str] = frozenset(
-    {"menuViewDisplayMode16Bit", "menuViewDisplayModeRemoteDesktop",
-     "menuViewDisplayModeMacGamma"}
+    {"menuViewDisplayMode16Bit", "menuViewDisplayModeRemoteDesktop"}
 )
 
 #: A 15 rekord: 11 tétel + 4 elválasztó, a spec 1. szakasza szerint.

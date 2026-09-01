@@ -44,7 +44,9 @@ SZANDEKOS_NOOP = frozenset({"auto", "normal"})
 
 #: Amit sosem kötünk be — a `docs/specs/picasa-megjelenitesi-modok.md`
 #: 7. táblázata mindkettőt „hatókörön kívül"-nek mondja.
-NYUGDIJAZOTT = frozenset({"rdesk", "mac"})
+# #1730: a `mac` KIKERÜLT — a #1658 „nincs referencia-mérés" indoka
+# megszűnt (a #1580 képpont-mérése megvan), és a mód azóta él.
+NYUGDIJAZOTT = frozenset({"rdesk"})
 
 #: Megvalósítható, de ma értelmetlen (16 bites képernyő nincs).
 HELYFOGLALO = frozenset({"dither16"})

@@ -146,8 +146,9 @@ class TestMegjelenitettKep:
         )
 
     #: A `sepia`/`bw` a #1657 óta NEM tartozik ide — képpontot mozdít.
-    @pytest.mark.parametrize("mode", ["auto", "normal", "dither16", "rdesk",
-                                      "mac"])
+    #: A `mac` a #1730 óta szintén nem: a Mac gamma világosít, és a
+    #: képpont-szabályát a `tests/render/test_mac_gamma_1730.py` őrzi.
+    @pytest.mark.parametrize("mode", ["auto", "normal", "dither16", "rdesk"])
     def test_a_tobbi_mod_erintetlenul_hagy(self, szolgaltato, mode):
         eredeti = _keres(szolgaltato)
         szolgaltato.set_display_mode(mode)

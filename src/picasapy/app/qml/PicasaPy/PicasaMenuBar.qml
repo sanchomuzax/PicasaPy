@@ -823,13 +823,22 @@ MenuBar {
                     })
                 }
             }
-            PicasaMenuItem {
+            // #1730: ÉLŐ tétel. A #1658 „hatókörön kívül, amíg nincs
+            // referencia-mérés" indoka MEGSZŰNT: a #1580 képpont-mérése
+            // megvan (a tulajdonos felvételeiről), és a mag a mért
+            // világosítást reprodukálja (`render/display_modes.py`,
+            // `apply_mac_gamma`).
+            MenuItem {
                 objectName: "menuViewDisplayModeMacGamma"
                 text: qsTr("Mac Gamma (1.6)")
-                // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL, amíg nincs
-                // referencia-mérés (futásidő-függő, ld. 5.10) — nyugdíjazott.
-                placeholder: false
-                retired: true
+                checkable: true
+                checked: bar.ctl && bar.ctl.displayMode === "mac"
+                onTriggered: {
+                    controller.setDisplayMode("mac")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.displayMode === "mac"
+                    })
+                }
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLinearGamma"
