@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.173] – 2026-09-01
+
+### Javítva
+- **A megjelenítési mód a többi nézetben is hat (#1656).** A Nézet ▸
+  Megjelenítési mód beállítása eddig **csak a nagy képen és a fő rácson**
+  látszott. A duplikátum-kereső, az importálás előnézete és az arckeresés
+  bélyegképein **hatástalan** volt — vagyis ugyanaz a kép két helyen
+  másképp nézett ki. Mostantól ezekre is hat.
+
 ## [0.8.172] – 2026-09-01
 
 ### Hozzáadva

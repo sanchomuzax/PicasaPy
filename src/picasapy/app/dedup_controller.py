@@ -62,6 +62,7 @@ from picasapy.index import (
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
+from .display_mode_paint import current_display_mode_suffix
 
 # A nem-destruktív áthelyezés célmappájának neve, forrásmappánként —
 # létrehozva, ha még nincs (ld. `_move_one`).
@@ -120,7 +121,11 @@ def _thumb_url(photo_id: int | None) -> str:
     """A `thumbs` image-provider URL-je (ld. `thumbnail_provider.py`) —
     üres string, ha a fájl nincs az indexben (ilyenkor a QML placeholder
     marad, `Image.source` üres stringre nem próbál betölteni)."""
-    return f"image://thumbs/{photo_id}" if photo_id is not None else ""
+    if photo_id is None:
+        return ""
+    # #1656: a megjelenítési mód cimkéje — enélkül a párbeszéd
+    # bélyegképein a mód hatástalan maradna
+    return f"image://thumbs/{photo_id}{current_display_mode_suffix()}"
 
 
 def _group_dict(
