@@ -394,28 +394,61 @@ def folder_looks_offline(folder_path: Path) -> bool:
 
     - a `scandir` hibára fut (ESTALE/EIO/EACCES/ENOTCONN — levált mount,
       megszűnt hálózati megosztás, elvett jog) → offline;
-    - a mappa létezik, de TELJESEN üres (nulla bejegyzés) → offline: a
-      levált NAS-mount pontosan így néz ki (üres könyvtárként ott marad),
-      míg a kiürített fotómappában rendszerint ott marad legalább a
-      `.picasa.ini` vagy más fájl;
+    - a mappa létezik és hibátlanul olvasható, de ÜRES → **csak akkor**
+      offline, ha CSATOLÁSI HATÁR van rajta (ld. lentebb);
     - a mappa nem létezik, vagy létezik és van benne bármi (csak épp
       média nincs) → NEM offline, a takarítás futhat.
 
-    A tévedés iránya tudatos: inkább maradjon egy ideig egy „jelenleg nem
-    elérhető" jelölésű üres mappa a listában, mint hogy egy levált NAS
-    fotói (és a stabil rekord-id-k) elvesszenek. A jelölés a következő
-    sikeres scannel magától eltűnik, a végleges eltávolítás pedig explicit
-    (Mappakezelő → „Eltávolítás a Picasából").
+    ## #1909: a „kiürített" és az „elérhetetlen" szétválasztása
+
+    Korábban **minden** üres mappa offline-nak számított, arra a feltevésre
+    építve, hogy „a kiürített fotómappában rendszerint ott marad legalább a
+    `.picasa.ini`". **Ez a feltevés élesben megdőlt:** a tulajdonos
+    kiürített egy mappát, semmi nem maradt benne, és a program azt
+    állította róla, hogy *„jelenleg nem elérhető (például lecsatolt
+    meghajtó vagy hálózati megosztás)"* — miközben a meghajtó megvolt és a
+    mappa olvasható volt. A felület VALÓTLANT állított, és a sor bent
+    ragadt.
+
+    A megkülönböztetés ezért nem egy véletlen maradék-fájlon múlik többé,
+    hanem azon, hogy **van-e csatolási határ a mappán**: az `st_dev`
+    eltér-e a SZÜLŐ mappáétól. Egy ÉLŐ, de üres csatolási pont továbbra is
+    offline (ez a levált NAS jellemző képe); egy közönséges, a szülővel
+    azonos eszközön ülő üres mappa viszont egyszerűen üres.
+
+    ⚠️ **A maradék kockázat kimondva:** ha egy BEÁGYAZOTT mount csatolódik
+    le teljesen, a csatolási pont közönséges üres könyvtárként marad ott
+    (`st_dev` = a szülőé), tehát ez a próba „egyszerűen üresnek" látja. Ezt
+    a `sync_folder` elé tett GYÖKÉR-szintű védelem fogja (`_gyoker_baja`,
+    #1560/#132): a figyelt gyökér elérhetetlensége önmagában megállítja a
+    takarítást, és a gyakori eset — a figyelt gyökér MAGA a NAS-útvonal —
+    ezzel le van fedve. A beágyazott, külön csatolt almappa esete NINCS
+    lefedve; a rekord-id-k ott a következő sikeres scannel újraépülnek.
     """
     try:
         with os.scandir(folder_path) as it:
-            return next(iter(it), None) is None
+            if next(iter(it), None) is not None:
+                return False  # van benne valami — biztosan elérhető
     except FileNotFoundError:
         return False  # ténylegesen eltűnt mappa — nem offline, takarítható
     except NotADirectoryError:
         return False
     except OSError:
         return True  # elérhetetlen (levált mount, jogosultság, I/O hiba)
+    return _csatolasi_hataron_ul(folder_path)
+
+
+def _csatolasi_hataron_ul(folder_path: Path) -> bool:
+    """Igaz, ha a mappa MÁS eszközön ül, mint a szülője (#1909).
+
+    Ez az élő csatolási pont jele. Ha a szülő nem olvasható, óvatosak
+    vagyunk és igazat adunk: olyankor nem tudjuk kizárni a leválást."""
+    try:
+        sajat = os.stat(folder_path).st_dev
+        szulo = os.stat(folder_path.parent).st_dev
+    except OSError:
+        return True
+    return sajat != szulo
 
 
 def _has_photos(conn: sqlite3.Connection, folder_id: int) -> bool:
