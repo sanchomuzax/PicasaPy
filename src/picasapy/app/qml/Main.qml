@@ -786,11 +786,11 @@ ApplicationWindow {
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         photoActionsEnabled: !window.viewerOpen
+                             && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
         //: szerkesztő-előnézet él. Nálunk a szerkesztőpanel a nézőben
         //: lakik, tehát a nyitott néző a megfelelője.
         editorActive: window.viewerOpen
-                             && window.selectedIndexes.length > 0
         // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
         // a menüpontnak ezért tálcával, kijelölés nélkül is élnie kell
         createActionsEnabled: !window.viewerOpen
