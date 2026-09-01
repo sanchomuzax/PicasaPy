@@ -32,12 +32,8 @@ Rectangle {
     signal newAlbumRequested()
     //: #1421: az eredeti `timelinebutton` — ugyanaz a nézetváltás,
     //: mint a Nézet ▸ Időrend (Ctrl+5).
-    //: #1808: a rács-nagyító be/ki (`thumbui/loupehit`).
-    signal loupeRequested()
     //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
     //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
-    //: #1808: be van-e kapcsolva a rács-nagyító.
-    property bool loupeActive: false
     //: #1421: a `flatview`/`folderview` pár — a bal hasáb lapos vagy
     //: fa elrendezése. A vezérlő a `FolderHierarchyController`, ami
     //: ÖNÁLLÓ context property; a hívó köti be, a próbák stub-jain
@@ -224,26 +220,30 @@ Rectangle {
         //
         // A `Nézet ▸ Időrend` menütétel HELYE megmarad (az eredetiben
         // létezik), csak inaktív — ld. PicasaMenuBar.qml.
-        // #1808: RÁCS-NAGYÍTÓ kapcsoló. Az eredetiben is eszköztárgomb
-        // kapcsolja (`loupehit`); bekapcsolva a rácson húzva nagyított
-        // előnézet jelenik meg — megnyitás nélkül.
-        PicasaButton {
-            objectName: "toolbarLoupeButton"
-            //: A nagyító jele. Szöveg helyett ikon: a felirat („Nagyító")
-            //: nem férne el a gombsor zsugorodási sorrendjének sérülése
-            //: nélkül (a #1421 ugyanezt mérte ki az „Új album"-nál).
-            text: "\u2315"
-            visible: !toolbar.toolbarCompact
-            accent: toolbar.loupeActive ? Theme.selectionBlue : "transparent"
-            Layout.preferredWidth: 29
-            Layout.minimumWidth: 0
-            Layout.preferredHeight: 22
-            //: `thumbui/loupehit` — az eredeti buboréksúgója, szó szerint.
-            ToolTip.text: qsTr("Click and drag over photos to magnify them")
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            onClicked: toolbar.loupeRequested()
-        }
+        // #1808 → VISSZAVONVA: a rács-nagyító KAPCSOLÓGOMBJA nincs itt.
+        //
+        // A gomb `thumbui/loupehit`-ből mért, és a lánca MŰKÖDIK is — a
+        // valódi, kirajzolt ablakban mérve: kattintásra `loupeActive`
+        // igazra vált, és a rácson NYOMVA HÚZVA megjelenik a 2,5×-ös
+        // lencse (`feedLoupe`). Mégis kikerült, mert a felhasználónak
+        // élesben **semmit nem csinál**, és ennek két oka van:
+        //
+        // 1. a kapcsolt állapotot csak egy 29×22-es, feliratlan ikon
+        //    színe jelzi — a felületen semmi nem mondja, hogy „a nagyító
+        //    fel van húzva";
+        // 2. a puszta KATTINTÁS a képen nem csinál semmit: nyomva
+        //    HÚZNI kell. Ez a felfedezhetetlen része.
+        //
+        // A #1808 tesztkészlete ezt nem foghatta meg: mind a tizennégy
+        // állítása a QML FORRÁSSZÖVEGÉT olvasta, nem kirajzolt ablakot
+        // (0,25 mp alatt lefutott). A lánc végpontjai megvoltak, a
+        // felhasználói élmény nem — pontosan a #1662 osztálya.
+        //
+        // A rács oldali réteg (`LightboxFeed.qml` `feedLoupeArea`)
+        // SZÁNDÉKOSAN a helyén marad: működik, mérve van, és a
+        // visszakapcsolása egy felfedezhető felülettel külön jegy. Egy
+        // kattintható vezérlő, ami mást ad, mint amit ígér, rosszabb,
+        // mint a hiánya (#936, #1903).
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
         // `searchcontainer.tre`-jének `filter_label` kényszere szerint

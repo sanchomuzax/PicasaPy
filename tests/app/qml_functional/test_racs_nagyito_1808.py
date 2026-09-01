@@ -42,26 +42,39 @@ def _blokk(forras: str, horgony: str, hossz: int = 2600) -> str:
 
 
 class TestAKapcsolo:
-    def test_van_eszkoztargomb(self):
-        assert 'objectName: "toolbarLoupeButton"' in _TOOLBAR
+    """⚠️ MEGFORDULT (#1911): a kapcsológomb NINCS az eszköztáron.
 
-    def test_a_gomb_JELZI_a_bekapcsolt_allapotot(self):
-        """Enélkül a felhasználó nem tudná, miért nem jelöl ki a húzás."""
-        blokk = _blokk(_TOOLBAR, 'objectName: "toolbarLoupeButton"', 900)
-        assert "accent: toolbar.loupeActive" in blokk
+    A gomb `thumbui/loupehit`-ből mért volt, és a lánca MŰKÖDIK is — a
+    valódi, kirajzolt ablakban mérve: kattintásra `loupeActive` igazra
+    vált, és a rácson NYOMVA HÚZVA megjelenik a 2,5×-ös lencse. A
+    tulajdonos élesben mégis azt jelentette, hogy a gomb **semmit nem
+    csinál**, és igaza volt:
 
-    def test_a_gomb_ELJUT_az_ablakig(self):
-        """A #1153 osztálya: a gomb jelet ad, de senki nem veszi fel."""
-        assert "signal loupeRequested()" in _TOOLBAR
-        assert "onLoupeRequested: window.loupeActive = !window.loupeActive" in _MAIN
-        assert "loupeActive: window.loupeActive" in _MAIN
-        assert "property bool loupeActive: false" in _MAIN
+    1. a bekapcsolt állapotot csak egy 29×22-es, feliratlan ikon SZÍNE
+       jelzi — a felületen semmi nem mondja, hogy a nagyító fel van húzva;
+    2. a puszta KATTINTÁS a képen nem csinál semmit: nyomva HÚZNI kell.
 
-    def test_a_hivatalos_buboreksugo(self):
-        assert 'qsTr("Click and drag over photos to magnify them")' in _TOOLBAR
-        assert (
-            "<source>Click and drag over photos to magnify them</source>" in _TS
-        )
+    ⚠️ **Ez az osztály korábban tizennégy állítással volt „zöld", és
+    egyiket sem kirajzolt ablakon mérte** — mind a QML forrásszövegét
+    olvasta (0,25 mp alatt lefutott). A végpontok megvoltak, a
+    felhasználói élmény nem.
+
+    A rács oldali réteg SZÁNDÉKOSAN marad (`TestANagyitoAracson`): mérve
+    van és működik; a visszakapcsolása felfedezhető felülettel külön jegy.
+    """
+
+    def test_NINCS_kapcsologomb_az_eszkoztaron(self):
+        assert 'objectName: "toolbarLoupeButton"' not in _TOOLBAR
+
+    def test_nincs_arva_jelzes(self):
+        """Bekötetlen `loupeRequested` néma lánc-szakadás lenne."""
+        assert "signal loupeRequested()" not in _TOOLBAR
+        assert "onLoupeRequested" not in _MAIN
+
+    def test_a_forras_KIMONDJA_miert(self):
+        """A visszavonás oka a forrásban áll — hogy egy későbbi kör ne
+        „hiányzó gombként" tegye vissza."""
+        assert "VISSZAVONVA" in _TOOLBAR
 
 
 class TestANagyitoReteg:
