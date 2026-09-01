@@ -46,7 +46,7 @@ Bemenet/kimenet: `uint8` RGB `numpy.ndarray` (H, W, 3), tiszta függvény.
 
 from __future__ import annotations
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image

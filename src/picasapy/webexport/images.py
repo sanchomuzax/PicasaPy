@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.index import PhotoRecord

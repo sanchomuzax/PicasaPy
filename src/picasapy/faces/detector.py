@@ -22,7 +22,12 @@ from pathlib import Path
 import numpy as np
 
 try:
-    import cv2
+    # #1611: a lusta helyettes — az OpenCV csak az első tényleges
+    # használatkor töltődik be. A `faces` csomag az INDULÁSI láncban van
+    # (`index/__init__` → `index/face_groups` → `faces/__init__`), tehát
+    # az itteni felső szintű `import cv2` egymaga behozta a teljes
+    # ~1,5 másodperces költséget minden induláskor.
+    from picasapy.lazy_cv2 import cv2
 except ImportError:  # pragma: no cover — az OpenCV már a projekt kemény
     # függősége (thumbs/scanner), ez az ág csak extra védelem
     cv2 = None  # type: ignore[assignment]

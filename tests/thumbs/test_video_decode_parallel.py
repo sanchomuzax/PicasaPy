@@ -62,7 +62,7 @@ class TestForcedFfmpegBackend:
             calls.append((path, args))
             return original(path, *args)
 
-        monkeypatch.setattr(cache_module, "_FFMPEG_AVAILABLE", True)
+        monkeypatch.setattr(cache_module, "_ffmpeg_elerheto", lambda: True)
         monkeypatch.setattr(cache_module.cv2, "VideoCapture", spy)
         broken = tmp_path / "serult.mp4"
         broken.write_bytes(b"\x00" * 64)
@@ -92,7 +92,7 @@ class TestForcedFfmpegBackend:
             held.append(cache_module._VIDEO_FALLBACK_LOCK.locked())
             return original(path, *args)
 
-        monkeypatch.setattr(cache_module, "_FFMPEG_AVAILABLE", False)
+        monkeypatch.setattr(cache_module, "_ffmpeg_elerheto", lambda: False)
         monkeypatch.setattr(cache_module.cv2, "VideoCapture", spy)
         broken = tmp_path / "serult.mp4"
         broken.write_bytes(b"\x00" * 64)
