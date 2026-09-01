@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.169] – 2026-09-01
+
+### Javítva
+- **Az induláskor felépülő felület tovább karcsúsodott (#1719).** A
+  fájlműveleti párbeszédek (átnevezés, áthelyezés, törlés) eddig **minden
+  induláskor** felépültek, akkor is, ha soha nem nyitottad meg őket —
+  ez a leghosszabb ilyen fájlunk. Mostantól csak az első használatkor
+  jönnek létre: **551 objektummal kevesebb** épül fel indításkor.
+  Az augusztus végi lassulás (13 másodperces indulás) egyébként már
+  korábban megszűnt; a mai mérés szerint a felület betöltése **1,7
+  másodperc**, ami a normál szint.
+
 ## [0.8.168] – 2026-09-01
 
 ### Egyéb

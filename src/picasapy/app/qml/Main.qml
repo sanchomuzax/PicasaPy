@@ -724,7 +724,7 @@ ApplicationWindow {
     Shortcut {
         sequence: "F2"
         onActivated: if (!window.viewerOpen && window.selectedIndex >= 0)
-                         fileOpsDialogs.openRename(window.selectedIndex)
+                         fileOpsDialogs.ensure().openRename(window.selectedIndex)
     }
     Shortcut {
         sequence: "Ctrl+Shift+S"
@@ -756,7 +756,7 @@ ApplicationWindow {
         enabled: window.viewerOpen && photoViewer.currentIndex >= 0
         onActivated: {
             var p = controller.photos.filePathAt(photoViewer.currentIndex)
-            if (p.length > 0) fileOpsDialogs.openDelete([p])
+            if (p.length > 0) fileOpsDialogs.ensure().openDelete([p])
         }
     }
 
@@ -830,8 +830,8 @@ ApplicationWindow {
         onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
-            ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
-            : fileOpsDialogs.openRename(window.selectedIndex)
+            ? fileOpsDialogs.ensure().openRenameMany(window.selectedIndexes)
+            : fileOpsDialogs.ensure().openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
         // #449: adatbázis-tömörítés (`compacting.fen`)
@@ -851,7 +851,7 @@ ApplicationWindow {
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
         // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
         // helyi menü példányán)
-        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
@@ -861,7 +861,7 @@ ApplicationWindow {
         // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
         // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
         onMoveToNewFolderRequested:
-            fileOpsDialogs.openMoveToNewFolder(window.selectedPaths())
+            fileOpsDialogs.ensure().openMoveToNewFolder(window.selectedPaths())
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
@@ -870,7 +870,7 @@ ApplicationWindow {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
-        onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
         // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
         // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
         // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
@@ -1232,7 +1232,7 @@ ApplicationWindow {
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
         // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
         // megerősítő dialógus itt él (a menü maga a PhotoViewer-ben)
-        onDeleteRequested: function(path) { fileOpsDialogs.openDelete([path]) }
+        onDeleteRequested: function(path) { fileOpsDialogs.ensure().openDelete([path]) }
     }
 
     // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
@@ -1445,7 +1445,7 @@ ApplicationWindow {
             // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
             // indított (Fájl → Új album), hogy ne legyen két, kicsit
             // másképp viselkedő út ugyanarra.
-            onNewAlbumDropped: fileOpsDialogs.openNewAlbum(window.selectedIndexes)
+            onNewAlbumDropped: fileOpsDialogs.ensure().openNewAlbum(window.selectedIndexes)
             onPhotosDroppedOnAlbum: function(token) {
                 if (controller && window.selectedIndexes.length > 0)
                     controller.addRowsToAlbum(window.selectedIndexes, token)
@@ -2124,8 +2124,8 @@ ApplicationWindow {
         }
         onResetFacesRequested: resetFacesConfirm.open()   // mindig kérdez
         onHideToggleRequested: window.toggleHiddenSelection()
-        onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())
-        onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())
+        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.fileOpTargetRow)
             if (p.length > 0) fileOpsController.revealPhoto(p)
@@ -2178,7 +2178,7 @@ ApplicationWindow {
                 controller.removeRowsFromAlbum(
                     window.selectedRows(), controller.currentAlbumToken)
         }
-        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
         // csak személy-albumban látszanak (üres `personName` = rejtve).
         personName: controller ? controller.currentPersonName : ""
@@ -2300,10 +2300,18 @@ ApplicationWindow {
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
-    FileOpsDialogs {
+    // #1719: 603 sor, és MINDEN induláskor felépült — a leghosszabb
+    // párbeszéd-fájlunk. A hívóhelyek `ensure()`-t használnak; ha egy
+    // kimaradna, a `Loader` látható `TypeError`-t dob, nem néma hiba.
+    DeferredDialog {
         id: fileOpsDialogs
-        objectName: "fileOpsDialogs"
-        appWindow: window
+        anchors.fill: parent
+        sourceComponent: Component {
+            FileOpsDialogs {
+                objectName: "fileOpsDialogs"
+                appWindow: window
+            }
+        }
     }
 
     // exportálás mappába (#16, Ctrl+Shift+S; ExportDialogs.qml, #150)

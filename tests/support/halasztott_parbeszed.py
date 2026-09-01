@@ -27,6 +27,9 @@ MENUPONT = {
     "exportDialog": "menuFileExport",
     # #1782: a nyomtatás-párbeszéd — a Fájl ▸ Nyomtatás… tétele
     "printDialog": "menuFilePrint",
+    # #1719: a fájlműveleti párbeszédek — az „Új album…" menüpont
+    # építi fel őket (üres kijelöléssel is, ld. a docstringet)
+    "fileOpsDialogs": "menuFileNewAlbum",
 }
 
 

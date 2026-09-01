@@ -17,9 +17,26 @@ QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 
 def _child(window, name):
+    # #1719: a `FileOpsDialogs` HALASZTOTT (603 sor, minden induláskor
+    # felépült) — a párbeszédei csak az első megnyitás után léteznek. A
+    # felépítés a VALÓDI menüponton át megy, nem a `Loader.active`-on.
+    if window.findChild(QObject, "fileOpsDialogs") is None:
+        from support.halasztott_parbeszed import epitsd_fel
+
+        epitsd_fel(window, "fileOpsDialogs")
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj
+
+
+def _fileops(window):
+    """A HALASZTOTT `FileOpsDialogs` példánya, felépítve (#1719).
+
+    ⚠️ A korábbi `findChild(...) or window` alak halasztott párbeszédnél
+    NÉMÁN a `window`-ra esett vissza, és a `startBatch` egyszerűen nem
+    indult el — a teszt „nem nyílt meg a kérdés"-re bukott, nem a valódi
+    okra."""
+    return _child(window, "fileOpsDialogs")
 
 
 def _jpeg(folder: Path, name: str) -> Path:
@@ -168,7 +185,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "a.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),
@@ -196,7 +213,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "a.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),
@@ -218,7 +235,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "b.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),

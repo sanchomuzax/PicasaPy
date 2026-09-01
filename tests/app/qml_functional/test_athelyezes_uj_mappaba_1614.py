@@ -35,6 +35,12 @@ from PySide6.QtCore import QMetaObject, QObject, Qt
 
 
 def _elem(window, nev):
+    # #1719: a `FileOpsDialogs` HALASZTOTT — a párbeszédei csak az első
+    # megnyitás után léteznek; a felépítés a valódi menüponton át megy.
+    if window.findChild(QObject, "fileOpsDialogs") is None:
+        from support.halasztott_parbeszed import epitsd_fel
+
+        epitsd_fel(window, "fileOpsDialogs")
     obj = window.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található"
     return obj
