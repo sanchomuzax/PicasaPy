@@ -4140,3 +4140,80 @@ kötelező.
 A `wipe_2up_toggle` **pontos viselkedése** — a felirata nincs a kimért
 szövegtárban, és a `0x005d59f0` a teljes elemnév-tábla, nem kezelő. Ehhez
 célzott dekompiláció kellene; a jegyben rögzítve.
+
+## 66. tétel — az EFFEKT-CSEMPÉK: háromrétegű csempe, és a rács elrejtése (2026-09-01)
+
+**Bizalmi fok: megerősített** a szerkezetre és a rejtési mechanizmusra;
+**BLOKKOLT** arra, hogy az előnézet a felhasználó képét mutatja-e.
+
+### A csempe HÁROM rétegből áll, nálunk kettőből
+
+Az `editpanel.tre` mind a 12 csempét azonos szerkezettel írja le
+(293–299. sor, `#--FX1`-től `#--FX12`-ig):
+
+```
+editpanel/fxpreview1: editpanel/fx1     m_offsetLT     <- előnézeti kép
+editpanel/fx1_adorn:  editpanel/fx1     m_fxadorner    <- DÍSZÍTŐ RÉTEG
+editpanel/fxlabel1:   editpanel/fx1     m_fxlabel      <- felirat
+editpanel/fx1:        editpanel/fxthumbs               <- maga a csempe
+```
+
+| réteg | eredeti | nálunk (`ToolTile.qml`) |
+|---|---|---|
+| előnézet | `fxpreviewN` | `Image`, **statikus SVG**: `source: "icons/" + iconFile + ".svg"`, 44×30 (:76–88) |
+| **díszítő** | `fxN_adorn`, saját `m_fxadorner` osztály | **NINCS semmilyen alakban** |
+| felirat | `fxlabelN`, `m_fxlabel` | `Text` (:91) |
+| aktív jelzés | *(nem a díszítőn keresztül dokumentált)* | háttérszín + **1 képpont keret** (:54, :61) |
+
+A 12-es darabszám **egyezik**: az `EditorEffectsTab1.qml` pontosan 12 csempét
+sorol fel (`effectUnsharp` … `effectDirTint`, :53–130). **A hiány nem a
+darabszámban van, hanem a csempe szerkezetében.**
+
+### A rács ELTŰNIK, amikor egy eszközt választasz
+
+Az eszközgombok deklaratív tulajdonságai (`editpanel.tre:128–132`):
+
+```
+Property setpressed 1
+Property mousedown 1
+Property showtarget editpanel/tabpanel1
+Property hidetarget editpanel/filter_name
+Property hidetarget editpanel/fxthumbs
+```
+
+⇒ egy eszköz megnyitása **elrejti az effekt-rácsot** (`fxthumbs`) **és** a
+szűrőnevet (`filter_name`), és megjeleníti a hozzá tartozó lapot. Ugyanezt a
+kódoldal is megerősíti: a **`0x00750ff0`** (1702 b) egyetlen függvényben
+érinti a `fxthumbs`-ot, az `editslider%d_container`-t, a `colorwheel%d`-t, az
+`editlabel%d`-t, a `filter_name`-et, az `ok`/`cancel` gombokat és a
+`finetune` / `finetune2` / `colorfix` neveket.
+
+⚠️ A `setpressed 1` / `mousedown 1` = a vezérlő **LENYOMÁSRA** sül el, nem
+felengedésre. **Ezt egy korábbi kör már feltárta és jegyre vitte: #885**
+(49 vezérlő) — itt csak megerősítés, nem új lelet.
+
+### A csempék tab- és módfüggők
+
+A `0x005d7c20` (1614 b) a `fxpreview1`, `fxlabel%d`, `fx%d`, `fx%d_adorn` és
+`fxthumbs` mellett a **`_tab%d`** és **`_mod%s`** utótagokat is formázza ⇒ a
+csempekészlet a **fül** és egy **módosító** szerint változik. A módosító
+konkrét jelentése nincs feltárva.
+
+### Elhelyezés: a két varázsgomb NEM az effekt-fülön van
+
+`editpanel/magic_color` és `editpanel/magic_lighting` szülője a
+**`tabpanel2`** (`editpanel.tre:259`, `:265`), nem az effektrács. A
+`greybalancelabel` és a `filllightlabel` ugyanitt, `m_fxlabel2` stílussal —
+tehát az `m_fxlabel2` **közös felirat-osztály**, nem effekt-specifikus.
+
+### NYITOTT (blokkolt): élő előnézet-e a `fxpreview`?
+
+A `.tre` csak a szülő-gyerek viszonyt adja, a tartalmat nem; a `respack.yt`
+**nincs meg** ebben a checkoutban (kerestem, nincs `.yt` fájl); a
+`0x0050e8d0` (133 b) csak a `fxpreview%d` nevet formázza, és **nincs
+rögzített hívója** az xref-táblában. Az olcsó lánc itt kimerült.
+
+**Amit eldöntene:** egy képernyőkép a windowsos Picasa **Effektusok** füléről.
+Ha a 12 csempe a **megnyitott fényképet** mutatja effektenként, akkor a mi
+statikus SVG-ikonjaink elvi eltérés; ha rajzolt ikonok, akkor a megoldásunk
+helyes. Jegy: **#1869**, `blocked` + `felhasználóra-vár`.
