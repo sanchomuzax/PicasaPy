@@ -20,7 +20,10 @@ from PySide6.QtCore import (
 
 from picasapy.index import PhotoRecord
 
-from .display_mode_paint import display_mode_url_suffix
+from .display_mode_paint import (
+    current_display_mode,
+    display_mode_url_suffix,
+)
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
@@ -244,9 +247,16 @@ def _has_edits(photo: PhotoRecord) -> bool:
     return bool(photo.filters and photo.filters.strip())
 
 
-def _thumb_url(photo: PhotoRecord, display_mode: str = "") -> str:
+def _thumb_url(photo: PhotoRecord, display_mode: str | None = None) -> str:
     """Thumb-URL forgatás-, szerkesztés- és FÁJLVÁLTOZÁS-érzékeny
     cache-busterrel (#59, #1186), megjelenítési mód-cimkével (#1596).
+
+    #1656: a `display_mode` alapértéke MOSTANTÓL a jelenlegi mód, nem az
+    üres sztring. Az üres alapérték volt az oka, hogy az idővonal, a
+    keresési találatok és a képtálca bélyegképein a mód hatástalan
+    maradt: mind ezt a függvényt hívja, csak mód nélkül. A rács modellje
+    továbbra is a SAJÁT másolatát adja át (`self._display_mode`), mert az
+    a `set_display_mode()`-dal együtt lépteti a `revision`-t is.
 
     ⚠️ Az `mtime_ns`/`size` nélkül a felülírt fájl URL-je változatlan
     marad (ugyanaz a sor, forgatás és lánc), a Qt pedig URL szerint
@@ -265,6 +275,8 @@ def _thumb_url(photo: PhotoRecord, display_mode: str = "") -> str:
     `thumbnail_provider` olvassa vissza; a két felet a
     `display_mode_paint` tartja együtt.
     """
+    if display_mode is None:
+        display_mode = current_display_mode()
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
     return (
         f"image://thumbs/{photo.id}"

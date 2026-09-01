@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.174] – 2026-09-01
+
+### Javítva
+- **A megjelenítési mód mostantól mindenhol egyformán hat (#1656).** Az
+  előző kiadás után még három nézet maradt ki: az **idővonal**, a
+  **keresési találatok** és a **képtálca** bélyegképei. Ezekkel együtt a
+  beállítás már minden bélyegkép-felületen ugyanazt mutatja — nincs
+  olyan hely, ahol ugyanaz a kép másképp néz ki.
+
 ## [0.8.173] – 2026-09-01
 
 ### Javítva
