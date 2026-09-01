@@ -44,6 +44,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | nem értékelhető (rajzoló elem) | 1285 |
 | **lefedettség az értékelhető elemeken** | **23.7%** |
 
+> ⚠️ **A 23.7% ALSÓ BECSLÉS, nem pontos érték.** 150 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **44.2%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+
 ## Rangsor — a tíz legnagyobb fehér folt
 
 Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelenként.
