@@ -45,6 +45,17 @@ Window {
     // megnyitáskor rögzülnek, hogy a párbeszéd alatt módosuló kijelölés ne
     // írja át a feladatot
     property var rows: []
+    //: #1819: KÉPENKÉNTI példányszám (`addprintsbutton`/`subprintsbutton`,
+    //: „Add another copy of each Photo to be printed"). NEM a nyomtató saját
+    //: példányszám-mezője: a +/− minden képhez ad egy további másolatot,
+    //: tehát két kép × két példány négy lap.
+    property int copies: 1
+    //: #1819: a lapozó előnézet állapota. A lapszámot a vezérlő adja
+    //: (`printPageCount`) — csak a DEKÓDOLHATÓ képek számítanak, tehát a
+    //: kihagyott videó/sérült fájl lapot sem kap.
+    property int previewPage: 0
+    property int previewPageCount: 0
+    property string previewSource: ""
     // a rendszer nyomtatóinak neve; a választóban EGGYEL eltolva jelennek
     // meg, mert a 0. tétel a PDF-fájl
     property var printers: []
@@ -90,6 +101,47 @@ Window {
         if (!printWindow.printCtl) return
         printWindow.quality = printWindow.printCtl.printQuality(
             printWindow.rows, printWindow.printSize)
+        printWindow.frissitsdAzElonezetet()
+    }
+
+    //: #1819: az előnézeti lap újrarajzolása. Minden állítás (méret,
+    //: illesztés, tájolás, példányszám, lapozás) ide fut be — így az
+    //: előnézet SOSEM mutathat mást, mint amit a nyomtatás adna.
+    //:
+    //: A cache-buster (`?v=`) nem díszítés: a Qt a képeket URL szerint
+    //: gyorstárazza, tehát ugyanarra a fájlnévre írt új tartalom a RÉGI
+    //: képpontokkal jelenne meg (a #1186 hibaosztálya).
+    property int elonezetValtozat: 0
+    function frissitsdAzElonezetet() {
+        if (!printWindow.printCtl || printWindow.contactSheet) {
+            printWindow.previewPageCount = 0
+            printWindow.previewSource = ""
+            return
+        }
+        var lapok = printWindow.printCtl.printPageCount(
+            printWindow.rows, printWindow.copies)
+        printWindow.previewPageCount = lapok
+        if (lapok <= 0) {
+            printWindow.previewSource = ""
+            return
+        }
+        if (printWindow.previewPage >= lapok)
+            printWindow.previewPage = lapok - 1
+        if (printWindow.previewPage < 0)
+            printWindow.previewPage = 0
+        var cel = printWindow.elonezetiFajl()
+        var ok = printWindow.printCtl.renderPreviewPage(
+            printWindow.rows, printWindow.fitMode, printWindow.orientation,
+            printWindow.copies, printWindow.previewPage, cel)
+        printWindow.elonezetValtozat += 1
+        printWindow.previewSource = ok
+            ? "file://" + cel + "?v=" + printWindow.elonezetValtozat : ""
+    }
+
+    //: Az előnézeti PNG helye. Egyetlen fájl, felülírva — a párbeszéd
+    //: életciklusán túl nincs rá szükség, és a lapozás így nem szemetel.
+    function elonezetiFajl() {
+        return printWindow.printCtl.previewImagePath()
     }
 
     property string lastError: ""
@@ -168,7 +220,8 @@ Window {
             }
             printWindow.printCtl.renderPrintPreviewPdf(
                 printWindow.rows, printWindow.fitMode,
-                printWindow.orientation, printWindow.pdfTarget)
+                printWindow.orientation, printWindow.pdfTarget,
+                printWindow.copies)
             return
         }
         if (printWindow.contactSheet) {
@@ -179,7 +232,7 @@ Window {
         }
         printWindow.printCtl.printRows(
             printWindow.rows, printWindow.printerName,
-            printWindow.fitMode, printWindow.orientation)
+            printWindow.fitMode, printWindow.orientation, printWindow.copies)
     }
 
     Connections {
@@ -284,6 +337,113 @@ Window {
                     printWindow.frissitsdAMinoseget()
                 }
             }
+            // #1819: KÉPENKÉNTI példányszám. A felirat az `IDS_COPIES`
+            // (`ThumbUIPrint::PrintCount`); a két gomb az `addprintsbutton`
+            // és a `subprintsbutton`.
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                Text {
+                    text: qsTr("Copies of each picture:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                PicasaButton {
+                    objectName: "printCopiesMinusButton"
+                    text: "–"
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 22
+                    //: Egy alá nem mehet: nulla példány nem nyomtatás,
+                    //: hanem a párbeszéd értelmetlen állapota.
+                    enabled: printWindow.copies > 1
+                    onClicked: {
+                        printWindow.copies -= 1
+                        printWindow.frissitsdAzElonezetet()
+                    }
+                }
+                Text {
+                    objectName: "printCopiesText"
+                    text: printWindow.copies
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                    Layout.minimumWidth: 20
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                PicasaButton {
+                    objectName: "printCopiesPlusButton"
+                    text: "+"
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 22
+                    //: Buboréksúgó az eredetiből (`addprintsbutton`).
+                    ToolTip.text: qsTr(
+                        "Add another copy of each Photo to be printed")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    onClicked: {
+                        printWindow.copies += 1
+                        printWindow.frissitsdAzElonezetet()
+                    }
+                }
+                Item { Layout.fillWidth: true }
+            }
+
+            // #1819: LAPOZHATÓ előnézet. A párbeszédnek eddig egyáltalán
+            // nem volt előnézete — a felhasználó vakon nyomott nyomtatást.
+            ColumnLayout {
+                objectName: "printPreviewBlock"
+                Layout.fillWidth: true
+                spacing: 4
+                visible: printWindow.previewPageCount > 0
+                Image {
+                    objectName: "printPreviewImage"
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredHeight: 150
+                    Layout.preferredWidth: 150
+                    fillMode: Image.PreserveAspectFit
+                    source: printWindow.previewSource
+                    asynchronous: true
+                    //: A gyorstár KIKAPCSOLVA: ugyanaz a fájlnév kap új
+                    //: tartalmat minden lapozáskor.
+                    cache: false
+                }
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 8
+                    PicasaButton {
+                        objectName: "printPreviewPrevButton"
+                        text: "◀"
+                        Layout.preferredWidth: 26
+                        Layout.preferredHeight: 22
+                        //: Az első lapon nincs hova visszalépni.
+                        enabled: printWindow.previewPage > 0
+                        onClicked: {
+                            printWindow.previewPage -= 1
+                            printWindow.frissitsdAzElonezetet()
+                        }
+                    }
+                    Text {
+                        objectName: "printPreviewPageText"
+                        //: A mért `%d / %d` alak.
+                        text: (printWindow.previewPage + 1) + " / "
+                              + printWindow.previewPageCount
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+                    PicasaButton {
+                        objectName: "printPreviewNextButton"
+                        text: "▶"
+                        Layout.preferredWidth: 26
+                        Layout.preferredHeight: 22
+                        enabled: printWindow.previewPage
+                                 < printWindow.previewPageCount - 1
+                        onClicked: {
+                            printWindow.previewPage += 1
+                            printWindow.frissitsdAzElonezetet()
+                        }
+                    }
+                }
+            }
+
             Text {
                 objectName: "printQualityText"
                 Layout.fillWidth: true
