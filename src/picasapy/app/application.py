@@ -1086,7 +1086,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
     # mappák hozzáadása a meglévő addWatchedFolder úton
-    discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
+    discovery_controller = DiscoveryController(
+        add_folder=controller.addWatchedFolder,
+        # #1622: az induláskori felajánlás EGYSZER fut le — a jelölőt a
+        # KÖZÖS beállítás-tároló őrzi (`QSettings("PicasaPy", "PicasaPy")`,
+        # ugyanaz, amibe a `ConfirmSettingsBridge` is ír).
+        settings=QSettings(),
+    )
 
     # kép/mappa ablakra ejtése (#237): a kép mappája (vagy maga a mappa)
     # figyelt gyökér lesz — az ImportDropArea.qml hídja

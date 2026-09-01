@@ -1112,6 +1112,12 @@ ApplicationWindow {
         collageDraftDialog.openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
+        // #1622: NÉMA felderítés korábbi telepítésből származó adatra —
+        // az eredeti is magától megnézi (`0x00406770`, két `Windows.old`
+        // útvonal). Találat nélkül semmi nem történik; találatnál a
+        // PicasaImportDialog KÉRDEZ, mielőtt bármit átvennénk.
+        if (typeof discoveryController !== "undefined" && discoveryController)
+            discoveryController.discoverAtStartup()
     }
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
