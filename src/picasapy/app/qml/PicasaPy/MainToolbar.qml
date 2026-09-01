@@ -36,6 +36,13 @@ Rectangle {
     //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
     //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
     property bool timelineActive: false
+    //: #1421: a `flatview`/`folderview` pár — a bal hasáb lapos vagy
+    //: fa elrendezése. A vezérlő a `FolderHierarchyController`, ami
+    //: ÖNÁLLÓ context property; a hívó köti be, a próbák stub-jain
+    //: nincs rajta — ezért van alapértéke.
+    property bool treeViewActive: false
+    signal flatViewRequested()
+    signal treeViewRequested()
 
     function clearSearch() {
         searchField.clear()
@@ -128,6 +135,66 @@ Rectangle {
             ToolTip.delay: 500
             HoverHandler { id: newAlbumHover }
             TapHandler { onTapped: toolbar.newAlbumRequested() }
+        }
+        // #1421: a `flatview` / `folderview` pár — a NÉZET már megvolt
+        // (Nézet ▸ Mappanézet, #1454), csak gomb nem vezetett hozzá.
+        //
+        // Mért méret: egyenként 30 × 22, egy `hviewtoggle` csoportban
+        // (60 × 22) — `konyvtar-ablak-meretek.md` 2.
+        //
+        // ⚠️ KIZÁRÓ pár, nem két független kapcsoló: pontosan az egyik
+        // aktív. Ikonos, mint az eredeti (a `newalbum` tanulsága: a
+        // 30 × 22-be felirat nem fér).
+        Row {
+            objectName: "toolbarFolderViewToggle"
+            visible: !toolbar.toolbarCompact
+            spacing: 0
+            Layout.preferredWidth: 60
+            Layout.minimumWidth: 0
+            Layout.preferredHeight: 22
+            Layout.alignment: Qt.AlignVCenter
+            Rectangle {
+                objectName: "toolbarFlatViewButton"
+                width: 30; height: 22; radius: 2
+                readonly property bool aktiv: !toolbar.treeViewActive
+                color: aktiv ? "#ffffff" : "transparent"
+                border.width: aktiv ? 1 : 0
+                border.color: Theme.selectionBlue
+                Text {
+                    anchors.centerIn: parent
+                    text: "▤"
+                    font.pixelSize: 12
+                    color: parent.aktiv ? Theme.selectionBlue
+                           : (flatViewHover.hovered ? Theme.selectionBlue : "#8f8b83")
+                }
+                //: `flatview` — az eredeti buboréksúgója
+                ToolTip.text: qsTr("Flat folder view")
+                ToolTip.visible: flatViewHover.hovered
+                ToolTip.delay: 500
+                HoverHandler { id: flatViewHover }
+                TapHandler { onTapped: toolbar.flatViewRequested() }
+            }
+            Rectangle {
+                objectName: "toolbarTreeViewButton"
+                width: 30; height: 22; radius: 2
+                readonly property bool aktiv: toolbar.treeViewActive
+                color: aktiv ? "#ffffff" : "transparent"
+                border.width: aktiv ? 1 : 0
+                border.color: Theme.selectionBlue
+                Text {
+                    anchors.centerIn: parent
+                    text: "⊞"
+                    font.pixelSize: 12
+                    color: parent.aktiv ? Theme.selectionBlue
+                           : (treeViewHover.hovered ? Theme.selectionBlue : "#8f8b83")
+                }
+                //: `folderview` — az eredeti buboréksúgója
+                ToolTip.text: qsTr("Tree folder view")
+                ToolTip.visible: treeViewHover.hovered
+                ToolTip.delay: 500
+                HoverHandler { id: treeViewHover }
+                TapHandler { onTapped: toolbar.treeViewRequested() }
+            }
         }
         // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
         // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.

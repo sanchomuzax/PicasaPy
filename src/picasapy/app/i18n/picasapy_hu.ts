@@ -3881,6 +3881,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Timeline</source>
         <translation>Időrend</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Flat folder view</source>
+        <translation>Lapos mappanézet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Tree folder view</source>
+        <translation>Fa mappanézet</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>

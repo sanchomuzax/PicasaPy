@@ -1135,6 +1135,15 @@ ApplicationWindow {
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         onTimelineRequested: window.toggleTimeline()
         timelineActive: window.timelineOpen
+        // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
+        // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
+        treeViewActive: (typeof folderHierarchyController !== "undefined"
+                         && folderHierarchyController.treeView !== undefined)
+                        ? folderHierarchyController.treeView : false
+        onFlatViewRequested: if (typeof folderHierarchyController !== "undefined")
+                                 folderHierarchyController.setTreeView(false)
+        onTreeViewRequested: if (typeof folderHierarchyController !== "undefined")
+                                 folderHierarchyController.setTreeView(true)
     }
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)

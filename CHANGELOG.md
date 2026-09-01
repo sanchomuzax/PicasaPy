@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.179] – 2026-09-01
+
+### Hozzáadva
+- **A lapos/fa mappanézet váltópárja felkerült az eszköztárra (#1421).**
+  A két elrendezés eddig is választható volt a **Nézet ▸ Mappanézet**
+  almenüből, de gomb nem vezetett hozzá — az eredetiben ott a pár is.
+  A két gomb **kizárja egymást**: mindig pontosan az látszik benyomva,
+  amelyik elrendezés éppen aktív.
+  *(Szűk ablaknál elrejtőzik, hogy az eszköztár egyetlen csíkban maradjon.)*
+
 ## [0.8.178] – 2026-09-01
 
 ### Hozzáadva
