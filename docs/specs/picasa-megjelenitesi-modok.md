@@ -620,22 +620,32 @@ tényleges alapállapot minden nem 32 bites képernyőn is.
 
 ## 7. „eredeti / nálunk / teendő"
 
+> 🟢 **FRISSÍTVE 2026-09-01 (#1579).** Ez a tábla korábban minden sorában
+> `nincs`-et mondott — a #1575 / #1656 / #1658 / #1730 körök óta **nem volt
+> igaz**. A hatókör-döntés (mit valósítunk meg és mit nem) mostantól ADR:
+> [`../decisions/megjelenitesi-modok-hatokore.md`](../decisions/megjelenitesi-modok-hatokore.md).
+
 | tétel | eredeti (mérve) | nálunk ma | teendő |
 |---|---|---|---|
-| **Megjelenítési mód** almenü | 11 tétel + 4 elválasztó, egy rádiócsoport | a `Nézet ▸ Display Mode` almenü **létezik, de üres és `enabled: false`** (`PicasaMenuBar.qml:471`) | almenü feltöltése, kizáró csoportként |
-| `24 bites` | nincs átalakítás | nincs | **rádió alapértelmezettje**, no-op |
-| `16 bites (szemcsézett)` | MT-zaj +0…7/0…3/0…7, telítő | nincs | megvalósítható, de **16 bites képernyő ma nincs** → alacsony érték |
-| `LCD fehérpont` | ×246/256 mindhárom csatornán | nincs | egyszerű, megvalósítandó |
-| `Lineáris gamma (2.2)` | fix 256 bájtos LUT (5.9) | nincs | a LUT bemásolható, pixelhű |
-| `Túlcsordult képpontok` | tiszta fehér → `#FF7F7F` | nincs | egyszerű, **felhasználónak hasznos** (levágás-jelzés) |
-| `Projektor mód` | ×220/256 mindhárom csatornán | nincs | egyszerű, megvalósítandó |
-| `Automatikus` | 16 bites képernyőn szemcsézés, egyébként no-op | nincs | Linuxon gyakorlatilag no-op → felvehető, de üres |
-| `Fekete-fehér` (nézet) | luma 77/151/28 | a **szerkesztő** B&W effektje megvan; **megjelenítési módként nincs** | megfontolandó |
-| `Szépia` (nézet) | luma → világosítás → overlay `#9B7D63` | a **szerkesztő** szépia effektje megvan; **megjelenítési módként nincs** | megfontolandó |
-| `Távoli asztal` | 3-3-3 bit + fekete/fehér levágás | nincs | **hatókörön kívül** (RDP-specifikus) |
-| `Mac gamma (1.6)` | futásidő-függő, ld. 5.10 | nincs | **hatókörön kívül**, amíg nincs referencia-mérés |
-| tárolás | **nincs**, minden indításkor „Automatikus" | – | nálunk se tárolja |
-| hatókör | képernyő; export/nyomtatás **nem** (követk.) | – | a megvalósítás **csak a nézetre** tegye |
+| **Megjelenítési mód** almenü | 11 tétel + 4 elválasztó, egy rádiócsoport | ✅ **él**, kizáró rádiócsoportként (`PicasaMenuBar.qml`) | – |
+| `24 bites` | nincs átalakítás | ✅ no-op, a rádió alapértelmezettje | – |
+| `16 bites (szemcsézett)` | MT-zaj +0…7/0…3/0…7, telítő | 🟡 **helyfoglaló** — a szabály mérve, de 16 bites képernyő ma nincs | ha értelmet nyer, bekötni |
+| `LCD fehérpont` | ×246/256 mindhárom csatornán | ✅ megvalósítva | – |
+| `Lineáris gamma (2.2)` | fix 256 bájtos LUT (5.9) | ✅ a LUT bemásolva, pixelhű | – |
+| `Túlcsordult képpontok` | tiszta fehér → `#FF7F7F` | ✅ megvalósítva | – |
+| `Projektor mód` | ×220/256 mindhárom csatornán | ✅ megvalósítva | – |
+| `Automatikus` | 16 bites képernyőn szemcsézés, egyébként no-op | ✅ no-opként megvalósítva | – |
+| `Fekete-fehér` (nézet) | luma 77/151/28 | ✅ **nézetmódként is** megvalósítva (a szerkesztő effektjétől függetlenül) | – |
+| `Szépia` (nézet) | luma → világosítás → overlay `#9B7D63` | ✅ **nézetmódként is** megvalósítva | – |
+| `Távoli asztal` | 3-3-3 bit + fekete/fehér levágás | ⛔ **hatókörön kívül** (RDP-specifikus) — nyugdíjazott menütétel | nincs |
+| `Mac gamma (1.6)` | futásidő-függő, ld. 5.10 | ✅ megvalósítva a **mért** kitevővel (0,7743), nem az `1/1,6`-tal | – |
+| tárolás | **nincs**, minden indításkor „Automatikus" | nálunk sem tárolódik | – |
+| hatókör | képernyő; export/nyomtatás **nem** (NY-1: lezárva) | rács, idővonal, keresés, tálca (#1656) | a szerkesztő-előnézet és a teljes képernyő nyitott |
+
+⚠️ **A `Mac gamma` kitevője nem `1/1,6`.** A #1580 mérése szerint a
+központi fotó lumája 133,5 → 154,5; ebből `ln(154,5/255)/ln(133,5/255) =
+0,7743` (gamma 1,292). Az `1/1,6 = 0,625` kitevő 170,2-t adna. A felirat
+a Picasa saját elnevezése — **a mérés a szerződés**, nem a felirat.
 
 ---
 
