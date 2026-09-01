@@ -3499,6 +3499,85 @@ Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kív�
   címzett-kiegészítés és a melléklet-előkészítés jelzője **általános**
   viselkedés, és a #1798-ra tartozik (57.2).
 
+## 58. tétel — a webkamera-panel: KÉT rögzítési mód, külön hang- és képforrás (2026-09-01)
+
+*Huszonegyedik kör az UI-lefedettségi axisról (#1778). Panel:
+`capturemoviepanelpopup` (11 hiány). A leltár egy mondata — „Webkamerás
+videofelvétel" — kevesebbet mond, mint amit a kezelők adnak.*
+
+### 58.1 KÉT rögzítési mód, nem egy
+
+A `0x006274f0` kezelő névparancsai közt **két külön** rögzítés van:
+
+| név | mit rögzít |
+|---|---|
+| `capture` (felirata **„Record"**) | **videoklip** |
+| **`snapshot`** | **állókép** |
+
+⇒ A panel nemcsak filmet vesz fel: **pillanatképet is készít**. A
+leltár feliratai (`video_label` „Videoklip" · `live_video`
+„Fényképezőgép") ezt visszaigazolják — a két címke **két módot** jelöl,
+nem egy eszköz két nevét.
+
+### 58.2 Külön KÉP- és HANGFORRÁS
+
+`/videosrc` · `/audiosrc` (`0x006274f0`) + a `camchange` („Beállítások")
+gomb, hozzá `settings_apply` / `settings_cancel`.
+
+⇒ **A kamera és a mikrofon külön választható**, saját beállítás-lappal,
+külön Alkalmaz/Mégse gombbal. A leltár `audio_label` („Hang") és
+`size_label` („Méret") címkéi ehhez a laphoz tartoznak.
+
+### 58.3 A felvett klip VISSZAJÁTSZHATÓ a panelen
+
+`capturevbar/moviecontrols/play` · `…/playicon` · `…/pause` ·
+`…/pauseicon` (`0x00626640`), mellettük `/next` · `/prev` és a
+`/movieparent` konténer.
+
+⇒ A rögzítés után **a panelen belül** meg lehet nézni a klipet, és
+lépegetni lehet a felvételek közt — nem kell hozzá kilépni.
+
+### 58.4 Tartós állapot
+
+**`Preferences\capturemoviesize`** (mindkét kezelőben) — a választott
+**felvételi méret** két indítás közt megmarad. *(Ugyanaz a `Preferences`
+minta, mint a `PrintLastSize`, `datesort`, `LastCaptionButton`.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| videofelvétel (`capture`, `pause`, `/stop`) | megvan | **nincs** | **#853** |
+| **állókép** (`snapshot`) | megvan | nincs | ua. |
+| külön kép- és hangforrás | `/videosrc`, `/audiosrc` | nincs | ua. |
+| beállítás-lap Alkalmaz/Mégse gombbal | `camchange` + `settings_apply/cancel` | nincs | ua. |
+| a klip visszajátszása a panelen | `capturevbar/moviecontrols/*` | nincs | ua. |
+| a méret megjegyzése | `Preferences\capturemoviesize` | nincs | ua. |
+
+*(A `webcambutton` a fő eszköztáron — „Capture photos or video from a
+webcam or other video device" — ennek a panelnek a **belépési pontja**;
+az 51. tételben már a #853-hoz soroltuk. Ez a kör a panel **tartalmát**
+adja hozzá.)*
+
+### Nyitott kérdések mérlege (58.)
+
+```
+Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a két rögzítési mód (58.1); a külön kép- és hangforrás
+  (58.2); a panelen belüli visszajátszás (58.3); a tartós méret (58.4).
+
+*(Záró mondat a 45.1 szerint: ebben a panelben **minden vezérlő
+hiányzik** nálunk; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A panel csak videót vesz fel"** — megdőlt: a `snapshot` **állóképet**
+  készít (58.1).
+- **„A `video_label` és a `live_video` ugyanannak az eszköznek két neve"** —
+  megdőlt: **két módot** jelölnek (58.1).
+
 ## 59. tétel — a keresősáv HÁROM hiányzó szűrője (2026-09-01)
 
 *Huszonkettedik kör az UI-lefedettségi axisról (#1778). Panel:
