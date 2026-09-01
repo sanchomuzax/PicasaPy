@@ -19,13 +19,19 @@ class TestQuickTagsGrid:
         assert panel is not None, "tagsPanel nincs a Main.qml-ben"
         return panel
 
-    def test_eight_buttons_present(self, qml_app, qt_app):
+    def test_ten_buttons_present(self, qml_app, qt_app):
+        """#1788: TÍZ gomb, nem nyolc — a KIRAJZOLT ablakban.
+
+        A forrás-szintű állítás (`test_gyorscimke_tiz_hely_1788`) csak azt
+        mondja meg, hogy a deklaráció ott van; ez azt, hogy a két új gomb
+        tényleg meg is születik a jelenetben."""
         window, controller, lib, engine = qml_app
         window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
-        for i in range(8):
+        for i in range(10):
             button = window.findChild(QObject, f"quickTagButton{i}")
             assert button is not None, f"quickTagButton{i} hiányzik"
+        assert window.findChild(QObject, "quickTagButton10") is None
 
     def test_default_buttons_show_placeholder_and_are_disabled(
         self, qml_app, qt_app
@@ -96,6 +102,14 @@ class TestQuickTagsConfigDialog:
         qt_app.processEvents()
         dialog = self._open_dialog(window, qt_app)
         assert dialog.property("visible") is True
+
+    def test_ten_fields_present(self, qml_app, qt_app):
+        """#1788: a dialógusban tíz szövegmező születik meg, nem nyolc."""
+        window, controller, lib, engine = qml_app
+        self._open_dialog(window, qt_app)
+        for i in range(10):
+            assert window.findChild(QObject, f"quickTagField{i}") is not None, i
+        assert window.findChild(QObject, "quickTagField10") is None
 
     def test_dialog_shows_current_labels(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
