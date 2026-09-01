@@ -2163,3 +2163,57 @@ képernyős nézete), ami betűre ugyanezt a három szöveget hordozza.
 
 *Bizonyítottsági fok: megerősített* (a `respack.yt` 39 `oneup` rétege és az
 `oneuptext.tre` teljes tartalma).
+
+### 2.9 A filmkészítő FILMSZALAGJA és a négy csúszka (2026-09-01, UI-lefedettségi kör)
+
+*A 2.6 a beállítás-leltárt adta, a 2.7 az előnézet-vezérlősávot. Ez a
+szakasz a **filmszalag interakcióit**, a **négy csúszkát** és a
+**projekt-állapotot** teszi hozzá — ezek eddig sehol nem szerepeltek.*
+
+#### A filmszalag teljes interakció-készlete
+
+A `0x006223b0` kezelő névparancsai — mind a filmszalagra vonatkoznak:
+
+| név | mit jelent |
+|---|---|
+| `filmstripmove` · `filmstripselmove` | dia **áthelyezése** (egyedi és kijelölés) |
+| `filmstripinsert` · `filmstripinsertnew` | **beszúrás** meglévő és új diával |
+| `filmstripdragtoclips` | **húzás a kliptálcára** |
+| `filmstripdeletedragged` · `filmstripdeletesel` | törlés húzással és kijelölésből |
+| `filmstripdoubleclick` | **dupla kattintás** (a dia megnyitása) |
+| `filmstripcontext` | **helyi menü** |
+
+⇒ **A filmszalag teljes értékű fogd-és-vidd felület**, nem puszta
+előnézet-sor.
+
+#### A négy csúszka — mind ugyanabban a kezelőben
+
+`durationslider` („Dia időtartama") · `transitionslider` („Átfedés") ·
+`lengthslider` („Összes fénykép") · `burstslider` („Ne legyen szűrés a
+készítés ideje alapján"), mind `…/scaleslider` alakban, ugyanabban a
+`0x006223b0`-ban, a `video_control_bar2` hangerő- és pozíció-csúszkája
+mellett.
+
+⚠️ **A `burstslider` felirata félrevezető:** „Don't filter by time
+taken" a csúszka **egyik végállása**, nem a funkciója. A csúszka a
+sorozatfelvételek (burst) **időalapú ritkítását** állítja — a szélső
+állásban nincs szűrés.
+
+#### Projekt-állapot: automatikus mentés és visszatérés
+
+A `0x0061df10` (az `insert_slide` és a `tab3` kezelője) három, eddig
+nem dokumentált tételt hoz:
+
+| bizonyíték | mit jelent |
+|---|---|
+| **`CMakeMoviePanel::autosave`** + `autosave` | a filmprojekt **automatikus mentése** |
+| **`CMakeMoviePanel::back_to_slideshow`** — *„Back to Movie Maker"* | visszatérés a filmkészítőbe másik nézetből |
+| `panelroot/makemovietab` · `panelroot/picasatab` | a filmkészítő **saját felső lapja** a panelgyökérben |
+| **`Preferences\SupportMovies`** | kapcsoló: kezeljen-e a program mozgóképeket egyáltalán |
+
+⇒ A filmkészítő **saját, menthető projekt** — nem egyszeri párbeszéd.
+*(Ugyanaz a minta, mint a kollázsnál: `collage/autosave`, piszkozat.)*
+
+**Bizonyítottsági fok: megerősített** a névparancsok és a kulcsok léte;
+**nem mérve** a csúszkák értéktartománya és az automatikus mentés
+időzítése.
