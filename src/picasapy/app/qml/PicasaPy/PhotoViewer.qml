@@ -11,6 +11,19 @@ import PicasaPy.Gpu
 Rectangle {
     id: viewer
 
+    // #1816: látszik-e a felirat-sáv. A GYÖKÉREN áll, mert a sáv és a
+    // „Make a caption!" helyőrző két külön szülő alatt él.
+    // A `!== undefined` a #1572-őr mintája: a próbák stub-vezérlőjén a
+    // tulajdonság hiányozhat.
+    readonly property bool captionVisible:
+        (controller && controller.captionVisible !== undefined)
+            ? controller.captionVisible : true
+
+    function billentsdAFeliratot() {
+        if (controller && controller.toggleCaptionVisible !== undefined)
+            controller.toggleCaptionVisible()
+    }
+
     // #1072: a megnyitott kép útvonala és a KOLLÁZS-ÁLLAPOTA. A két gomb
     // (Kollázs szerkesztése / Létrehozás) ugyanezt kérdezi, ezért itt áll
     // egyszer — a `filePathAt` hívást háromszor beírni néma szétcsúszás.
@@ -1532,13 +1545,63 @@ Rectangle {
                 // property-ről (közvetlen C++ írás), ezért elfogadás és
                 // Esc után Qt.binding()-gel újra be kell kötni, különben a
                 // mező a következő navigáláskor nem frissülne.
-                TextInput {
-                    id: captionField
-                    objectName: "captionField"
+                // #1816: a felirat-sáv KÉT vezérlője. Az eredetiben a
+                // `captionbutton` („Show/Hide Caption") és a `captiontrash`
+                // („Delete this caption") — a `0x0057bb50` kezelő a
+                // `captionbutton` · `caption` · `captiontrash` hármast
+                // EGYÜTT kezeli.
+                //
+                // ⚠️ A jegy KÉT belépési pontot ír elő (`editpanel/` és
+                // `editoneup/captionbutton`). Nálunk a szerkesztő panel a
+                // NÉZŐN BELÜL él (`EditorPanel` ugyanebben a fájlban), tehát
+                // ez az EGY sáv mindkét állapotot kiszolgálja — mérve, nem
+                // feltételezve: a sáv `visible`-je csak a vágásra és a
+                // videóra érzékeny, a szerkesztő nyitottságára nem.
+                Row {
+                    objectName: "captionBar"
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 8
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: Math.min(400, photoArea.width)
+                    spacing: 6
+                    visible: viewer.captionVisible
+
+                    ToolButton {
+                        objectName: "captionTrashButton"
+                        flat: true
+                        implicitWidth: 26
+                        implicitHeight: 26
+                        text: "\u2715"
+                        //: `captiontrash` — az eredeti buboréksúgója
+                        ToolTip.text: qsTr("Delete this caption")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        // üres feliratot nincs mit törölni
+                        enabled: captionField.text.length > 0
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#ffffff"
+                            opacity: parent.enabled ? (parent.hovered ? 1 : 0.6) : 0.25
+                            font.pixelSize: Theme.fontSize
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Item {}
+                        // #1816 DÖNTÉS: NINCS megerősítés. Az eredetiben ez
+                        // szemetes-ikon közvetlen hatással, és a művelet nem
+                        // lemezromboló: a felirat egyetlen mező, újragépelhető.
+                        // A projekt #459-es elve a megerősítést a lemezt
+                        // érintő, visszafordíthatatlan műveletekre tartja fenn.
+                        // (Az eredetiről ez NINCS mérve — saját döntés.)
+                        onClicked: {
+                            controller.setCaption(viewer.currentIndex, "")
+                            captionField.rebind()
+                        }
+                    }
+
+                    TextInput {
+                        id: captionField
+                        objectName: "captionField"
+                        width: Math.min(400, photoArea.width - 80)
                     horizontalAlignment: TextInput.AlignHCenter
                     color: "#ffffff"
                     font.pixelSize: Theme.fontSize
@@ -1562,12 +1625,36 @@ Rectangle {
                         rebind()
                         viewer.forceActiveFocus()
                     }
-                    Keys.onEscapePressed: (event) => {
-                        rebind()
-                        viewer.forceActiveFocus()
-                        event.accepted = true
+                        Keys.onEscapePressed: (event) => {
+                            rebind()
+                            viewer.forceActiveFocus()
+                            event.accepted = true
+                        }
+                    }
+
+                    ToolButton {
+                        objectName: "captionToggleButton"
+                        flat: true
+                        implicitWidth: 26
+                        implicitHeight: 26
+                        text: "\u2261"
+                        //: `captionbutton` — az eredeti buboréksúgója
+                        ToolTip.text: qsTr("Show/Hide Caption")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#ffffff"
+                            opacity: parent.hovered ? 1 : 0.6
+                            font.pixelSize: Theme.fontSize
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Item {}
+                        onClicked: viewer.billentsdAFeliratot()
                     }
                 }
+
                 Text {
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 8
@@ -1575,7 +1662,37 @@ Rectangle {
                     text: qsTr("Make a caption!")
                     color: "#e8e8e8"
                     font.pixelSize: Theme.fontSize
-                    visible: captionField.text.length === 0 && !captionField.activeFocus
+                    visible: viewer.captionVisible
+                             && captionField.text.length === 0
+                             && !captionField.activeFocus
+                }
+
+                // #1816: ha a sáv REJTVE van, kell egy út a visszahozásához —
+                // különben az elrejtés egyirányú lenne, és a felhasználó a
+                // beállítások közt keresné. Kis, halvány gomb a sarokban.
+                ToolButton {
+                    objectName: "captionRevealButton"
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 8
+                    flat: true
+                    implicitWidth: 26
+                    implicitHeight: 26
+                    text: "\u2261"
+                    visible: !viewer.captionVisible && !viewer.isCurrentVideo
+                    ToolTip.text: qsTr("Show/Hide Caption")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        opacity: parent.hovered ? 1 : 0.4
+                        font.pixelSize: Theme.fontSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Item {}
+                    onClicked: viewer.billentsdAFeliratot()
                 }
 
                 // elő-betöltés: a szomszédok már dekódolva, mire lépsz —

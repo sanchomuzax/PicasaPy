@@ -500,6 +500,36 @@ class AppController(
         self._get_settings().setValue("view/thumbCaption", mode)
         self.statusChanged.emit()
 
+    # -- felirat-sáv láthatósága (#1816) -------------------------------------
+
+    @Property(bool, notify=statusChanged)
+    def captionVisible(self):
+        """Látszik-e a nagy kép alatti felirat-sáv.
+
+        #1816: az eredetiben ez TARTÓS állapot, nem pillanatnyi kapcsoló —
+        a `Preferences\\LastCaptionButton` őrzi, és a főablak-építő
+        (`0x0040bf70`) induláskor visszaállítja. Ha egyszer elrejtetted, a
+        Picasa legközelebb is elrejtve indul.
+
+        Alapból LÁTSZIK: a felirat a Picasa egyik fő fogalma, az elrejtés a
+        felhasználó külön döntése."""
+        value = self._get_settings().value("view/captionVisible", "true")
+        return value in (True, "true", "1")
+
+    def setCaptionVisible(self, visible: bool) -> None:
+        """A felirat-sáv láthatóságának beállítása.
+
+        SZÁNDÉKOSAN nem `@Slot`: a QML-nek csak a BILLENTŐ-t kínáljuk (az
+        eredeti `captionbutton` megfelelője). Egy felületről elérhetetlen
+        slot a képesség-őr szerint szakadás — és joggal: néma ígéret."""
+        self._get_settings().setValue("view/captionVisible", bool(visible))
+        self.statusChanged.emit()
+
+    @Slot()
+    def toggleCaptionVisible(self) -> None:
+        """A `captionbutton` („Show/Hide Caption") viselkedése."""
+        self.setCaptionVisible(not self.captionVisible)
+
     # -- rejtett képek (#17) -------------------------------------------------
 
     @Property(bool, notify=statusChanged)
