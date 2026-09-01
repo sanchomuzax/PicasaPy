@@ -5084,6 +5084,31 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Undo Save</source>
         <translation>Utolsó mentés visszavonása</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>&amp;Date</source>
+        <translation>&amp;Dátum</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>&amp;Name</source>
+        <translation>&amp;Név</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>&amp;Size</source>
+        <translation>&amp;Méret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>&amp;Reverse order</source>
+        <translation>&amp;Fordított sorrend</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Recent &amp;changes</source>
+        <translation>Legutóbbi &amp;változtatások</translation>
+    </message>
 </context>
 <context>
     <name>PlacesPanel</name>
