@@ -50,18 +50,34 @@ GYURU = 132
 
 @dataclass
 class _Photo:
-    """A `PhotoRecord` azon mezői, amiket a kollázs-panel használ."""
+    """A `PhotoRecord` azon mezői, amiket a kollázs-panel használ.
+
+    #1276: a `id`/`rotate_steps`/`filters`/`mtime_ns`/`size` a KÉPTÁLCA
+    miatt került ide — a `TrayMixin.trayItems` a `models._thumb_url`-t
+    hívja, az pedig ezt az öt mezőt olvassa.
+    """
 
     folder_path: str
     name: str
     caption: str | None = None
     width: int | None = 400
     height: int | None = 300
+    id: int = 0
+    rotate_steps: int = 0
+    filters: str | None = None
+    mtime_ns: int = 0
+    size: int = 0
 
 
 class _Photos:
     def __init__(self, photos):
         self.photos = list(photos)
+
+    def idAt(self, row: int):
+        """A `TrayMixin` rács-sorból azonosítót képez (`_tray_ids_of_rows`)."""
+        if 0 <= row < len(self.photos):
+            return self.photos[row].id
+        return 0
 
 
 # --- A két fixture TÖRZSE ----------------------------------------------------
@@ -91,19 +107,24 @@ def nyitott_vezerlo(tmp_path, library):
     from PySide6.QtCore import QObject
 
     from picasapy.app.collage_controller import COLLAGE_OUTPUT_DIR_KEY, CollageMixin
+    from picasapy.app.tray_controller import TrayMixin
 
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     settings.setValue(COLLAGE_OUTPUT_DIR_KEY, str(tmp_path / "kimenet"))
 
-    class _Host(CollageMixin, QObject):
+    # #1276: a `TrayMixin` azért került ide, mert a Kollázs-panel „Klipek"
+    # lapja MOSTANTÓL a képtálca fel nem használt részét listázza, nem a
+    # kollázs saját csomópontjait. Tálca nélküli hoston a lap üres lenne, és
+    # a lap tesztjei nem mérnének semmit.
+    class _Host(TrayMixin, CollageMixin, QObject):
         def __init__(self):
             super().__init__()
             self._settings = settings
             self._photos = _Photos(
                 [
-                    _Photo(str(library), "a.jpg", "Alma", 400, 300),
-                    _Photo(str(library), "b.jpg", "Barack", 300, 400),
-                    _Photo(str(library), "c.jpg", "Cseresznye", 200, 200),
+                    _Photo(str(library), "a.jpg", "Alma", 400, 300, id=101),
+                    _Photo(str(library), "b.jpg", "Barack", 300, 400, id=102),
+                    _Photo(str(library), "c.jpg", "Cseresznye", 200, 200, id=103),
                 ]
             )
 
@@ -112,6 +133,9 @@ def nyitott_vezerlo(tmp_path, library):
 
     instance = _Host()
     instance.openCollage([0, 1, 2])
+    # A három kép RÖGZÍTVE a tálcán, felhasználatlanul — ez a Klipek lap
+    # bemenete. (A `holdRows` rács-sorokat vár, ld. `_Photos.idAt`.)
+    instance.holdRows([0, 1, 2])
     yield instance
     assert instance.waitForBackgroundWorkers(30.0), "a kollázs-szál nem állt le"
 

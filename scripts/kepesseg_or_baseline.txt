@@ -103,9 +103,6 @@ editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
 editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
 editController.isDeadLegacyEffect MÉRVE — az elavult effektek felismerése bekötetlen
 startupStatus.busy MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja
-controller.trayItems #1276 — a képtálca tartalma a kollázs „Klipek" lapjának bemenete
-controller.trayUnusedCount #1276 — a „Klipek (N)" fülfelirat száma (fel nem használt elemek)
-controller.setTrayUsed #1276 — a „+" gomb jelöli felhasználtnak a tálca elemét
 
 # -- Osztály-szintű kivételek ---------------------------------------------
 # Ide az az osztály kerül, aminek VAN `@Slot`/`@Property` tagja, de EGYETLEN

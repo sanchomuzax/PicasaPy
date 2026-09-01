@@ -7,6 +7,28 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.180] – 2026-09-01
+
+### Javítva
+- **A kollázs „Klipek" lapja végre mutat valamit (#1276).** A tulajdonos
+  jelentése szerint a lap üresen állt. Az ok nem rajzolási hiba volt: a
+  lista a kollázsra MÁR feltett képeket sorolta fel — vagyis frissen
+  nyitott kollázsnál nem volt mit mutatnia. Az eredeti Picasában ez a lap
+  a KÉSZLET, amiből válogatni lehet: a képtálca fel nem használt része
+  („Unused Pictures"). Ezért van rajta „+", „–" és „Továbbiak…", és ezért
+  ír a képernyőképen „Klipek (80)" egy néhány elemű kollázs mellett.
+  Mostantól a lap és a fülfelirat száma is a választható képeket mutatja.
+- **A „–" gomb azt csinálja, amit ígér.** A buboréksúgója eddig is a
+  tálcáról való eltávolítást ígérte, közben a kollázsról törölt. Most a
+  kijelölt képeket tényleg a tálcáról veszi le; a kollázsról levételre a
+  vászon `Del` billentyűje való.
+- **A „+" első képe nem vész el.** A felvett képek felhasználtsága
+  rács-sor szerint jelölődik; a korábbi azonosító-alapú út a lista első
+  elemét némán eldobta volna.
+- **A `Del` rácsos témán sem hagy lyukat.** A #996 újrarendezés eddig csak
+  a „–" gombra vonatkozott; mióta a kollázsról levételnek a `Del` az
+  egyetlen útja, a javítás oda is kiterjed.
+
 ## [0.8.179] – 2026-09-01
 
 ### Hozzáadva

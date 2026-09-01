@@ -708,7 +708,6 @@ class TestApiFelulet:
         "createCollage",
         "resetCollage",
         "addClips",
-        "deleteClips",
     )
 
     JELZESEK = (

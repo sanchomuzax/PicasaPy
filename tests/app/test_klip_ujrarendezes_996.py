@@ -151,6 +151,24 @@ class TestARacsosTemak:
         assert host.collageClipCount == 3
         assert _geometria(host) == _pakolo_szerint(host)
 
+    def test_a_Del_billentyu_utan_SEM_marad_lyuk(self, host, tema):
+        """#1276: a vászon `Del`-je ugyanezen a magon fut be.
+
+        Korábban a `removeSelectedNodes` a saját, javítatlan útján törölt,
+        és rácsos témán LYUKAT hagyott — a #996 javítása csak a Klipek lap
+        „–" gombjára vonatkozott. Mióta a „–" a tálcát kezeli, a `Del` az
+        EGYETLEN felületi út, tehát a javításnak ott kell hatnia."""
+        if not capabilities_for(tema).selection:
+            pytest.skip(f"a(z) {tema} témán nincs kijelölés — a Del inert")
+        host.openCollage([0, 1, 2, 3, 4])
+        host.setCollageTheme(tema)
+        host.setCollageSelection([1, 3])
+
+        host.removeSelectedNodes()
+
+        assert host.collageClipCount == 3
+        assert _geometria(host) == _pakolo_szerint(host)
+
 
 @pytest.mark.parametrize("tema", KUPAC)
 class TestAKepkupac:

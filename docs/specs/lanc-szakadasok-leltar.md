@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 38.**
+**Felületről el nem ért vezérlő-tag: 35.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -125,9 +125,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
-| `controller` | `trayUnusedCount` | Property | `app/tray_controller.py` | #1276 — a „Klipek (N)" fülfelirat száma (fel nem használt elemek) |
-| `controller` | `trayItems` | Property | `app/tray_controller.py` | #1276 — a képtálca tartalma a kollázs „Klipek" lapjának bemenete |
-| `controller` | `setTrayUsed` | Slot | `app/tray_controller.py` | #1276 — a „+" gomb jelöli felhasználtnak a tálca elemét |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |

@@ -710,11 +710,10 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
     def removeSelectedNodes(self) -> None:
         """A kijelöltek kivétele (Del). Minden kép eltávolítható — a mentés
         ilyenkor „Mentés mellőzve" üzenettel áll meg."""
-        nodes = self._nodes()
-        selection = selected_indices(nodes)
-        if not selection:
-            return
-        self._set_nodes(canvas.remove_at(nodes, selection))
+        # #1276: a törlés MAGJA a `deleteClips` — benne a #996
+        # lyuk-javításával (rácsos témánál újrarendezés). Korábban ez a
+        # két út elvált, és a `Del` rácsos témán lyukat hagyott.
+        self.deleteClips(selected_indices(self._nodes()))
 
     # -- vászon-manipuláció (8.2) ------------------------------------------
 
@@ -895,9 +894,16 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         )
         self._set_nodes((*self._nodes(), *new_nodes))
 
-    @Slot(list)
     def deleteClips(self, rows) -> None:
-        """A „–" gomb: a megadott klipek (csomópont-indexek) kivétele.
+        """A megadott klipek (csomópont-indexek) kivétele a kollázsból.
+
+        #1276: ez a tag SZÁNDÉKOSAN nem `@Slot`. Korábban a Klipek lap
+        „–" gombja hívta — csakhogy annak a gombnak a saját buboréksúgója
+        a TÁLCÁRÓL való eltávolítást ígéri, és a lap azóta tényleg a
+        tálcát kezeli (`removeTrayItems`). A kollázsról levételnek egy
+        felületi útja maradt: a vászon `Del` billentyűje, ami a
+        `removeSelectedNodes`-on át IDE fut be — így a #996 lyuk-javítása
+        arra az útra is érvényes lett (korábban nem volt az).
 
         ⚠️ #996: rácsos témánál a törölt kép helyén LYUK maradt — a rács
         hiányos lett. A Képkupacnál viszont a lyuk természetes: a csempék
