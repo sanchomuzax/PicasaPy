@@ -54,7 +54,7 @@ marad" pontja).
 
 from __future__ import annotations
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image

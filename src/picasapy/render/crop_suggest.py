@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64
