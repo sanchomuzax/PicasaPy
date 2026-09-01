@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.192] – 2026-09-01
+
+### Hozzáadva
+- **Az importálás átméretezheti a képeket (#1555).** Az importálás
+  párbeszédében választható, hogy a képek eredeti méretben jöjjenek, vagy a
+  hosszabbik oldaluk 2048, 1600, 1024 vagy 800 képpontra csökkenjen — ezt
+  az öt méretet kínálta az eredeti Picasa is. Az átméretezés mindig a
+  MÁSOLATOT érinti: a kártyán lévő eredetihez a program nem nyúl, és a már
+  kisebb képeket sem kódolja újra.
+
 ## [0.8.191] – 2026-09-01
 
 ### Hozzáadva
