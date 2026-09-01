@@ -47,3 +47,5 @@ editpanel/filllight_icon,megvan,PicasaPy/EditorFinetunePanel.qml,"Derítőfény:
 editpanel/droppertoggle,megvan,PicasaPy/EditorFinetunePanel.qml,"Semleges színválasztó: finetuneNeutralPicker (208. sor), buboréksúgója az eredetiét követi („Pick a neutral gray or white area of the photo to…”, 211.)"
 editpanel/faces_button,megvan,PicasaPy/PhotoViewer.qml,"Arcok megjelenítése/elrejtése: facesToggleButton (1490. sor), a facesVisible kapcsolóval (165–166.)"
 editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,"Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében"
+unknownfaceheaderpanel/ignore,megvan,PicasaPy/UnnamedFacesView.qml,"Kijelöltek mellőzése: ignoreFacesButton (117. sor), buboréksúgóval; a párja az unignoreFacesButton („Stop ignoring”, 109.)"
+peoplepanel/manual_add,megvan,PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml,"Személy kézi hozzáadása: addNameButton („Add a name”, 128. sor); a gesztus-utasítás a FacesOverlay.qml:283-ban van hivatkozva"
