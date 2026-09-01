@@ -1,0 +1,68 @@
+# Szerző-kapu — csak elfogadott szerző PR-je fésülhető be.
+#
+# A repó NYILVÁNOS, tehát bárki forkolhatja és nyithat PR-t; ezt megakadályozni
+# nem lehet (és nem is cél). Amit meg lehet akadályozni: hogy egy ismeretlen
+# szerző munkája BEKERÜLJÖN a main-be. Ez az ellenőrzés kötelező státuszként
+# viselkedik: ismeretlen szerzőnél bukik, tehát a PR nem fésülhető be — sem
+# kézzel, sem auto-merge-dzsel.
+#
+# ⚠️ EZ A WORKFLOW SZÁNDÉKOSAN NEM CHECKOUTOL SEMMIT. Csak az esemény
+# adatait olvassa. Így a PR kódja itt SOHA nem fut le — enélkül maga az
+# ellenőrzés lenne a támadási felület.
+#
+# A `pull_request` (és nem `pull_request_target`) trigger azért fontos, mert
+# forkból érkező PR-nél csak olvasó, titok nélküli tokent kap. A
+# `pull_request_target` a klasszikus ellátásilánc-rés; a repóban sehol nincs.
+name: Szerző-kapu
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  szerzo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: A PR szerzője elfogadott-e
+        env:
+          SZERZO: ${{ github.event.pull_request.user.login }}
+          FORKBOL: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          # Az elfogadott szerzők listája. Új agent felvétele TUDATOS döntés:
+          # csak ide írva kap befésülési jogot. (agent-#32: a Codex és az
+          # OpenCode saját bot-neve ide jön, ha megkapják a saját App-jukat.)
+          ELFOGADOTT="
+          sanchomuzax
+          picasapy-claude-agent[bot]
+          "
+          echo "PR szerzője: $SZERZO"
+          echo "forkból érkezett: $FORKBOL"
+          if echo "$ELFOGADOTT" | grep -qxF "$SZERZO"; then
+            echo "✔ elfogadott szerző — a kapu átengedi"
+            exit 0
+          fi
+          echo "::error title=Ismeretlen szerző::A(z) '$SZERZO' nincs az elfogadott szerzők között."
+          cat <<VEGE
+          ────────────────────────────────────────────────────────────────
+          A PR nem fésülhető be, mert a szerzője nincs az elfogadott listán.
+
+          Ez NEM azt jelenti, hogy a hozzájárulás nem kívánatos — azt
+          jelenti, hogy embernek kell átnéznie, mielőtt a main-be kerül.
+
+          A tulajdonos teendője, ha a hozzájárulás rendben van:
+            * nézze át a diffet SORRÓL SORRA (különösen a .github/,
+              scripts/, és minden build- vagy teszt-fájlt);
+            * ha elfogadja, vegye fel a szerzőt ebbe a listába egy külön
+              PR-ben — vagy zárja le ezt, és vigye be a változtatást
+              saját ágon.
+
+          Miért van ez a kapu: a repó nyilvános, és a befésülést nálunk
+          gépi munkamenetek auto-merge-dzsel intézik. Emberi átnézés
+          nélkül egy zöld tesztkészletű, rosszindulatú PR magától
+          bekerülhetne.
+          ────────────────────────────────────────────────────────────────
+          VEGE
+          exit 1
