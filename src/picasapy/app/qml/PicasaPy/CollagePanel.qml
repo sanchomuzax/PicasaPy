@@ -190,13 +190,29 @@ Item {
     // A négy alsó gomb. A `.tre` szerint a FIX tabbase aljához vannak kötve
     // (`m_offsetLB`), ami — mivel a tabbase fix — egyenértékű a panel
     // bal-felső sarkához mért rögzített helyzettel (spec 2.6).
+    // #1895: a gomb INAKTÍV, amíg a háttérkép-beállítás nincs megépítve.
+    //
+    // A súgója szó szerint azt ígérte, hogy a képet „be is állítja asztali
+    // háttérképnek". A lánc viszont a `collageDesktopBackgroundReady`
+    // jelzésnél VÉGET ÉRT: az egyetlen fogyasztója egy értesítést villantott
+    // fel („A kollázs kész"), és a háttérkép beállítására a forrásban SEHOL
+    // nincs kód (`set_wallpaper` / `SPI_SETDESKWALLPAPER` / `gsettings` /
+    // `swaybg` — nulla találat). A felhasználó tehát megnyomta a gombot,
+    // kapott egy „kész" értesítést, és az asztala változatlan maradt.
+    //
+    // Egy kattintható vezérlő, ami mást ad, mint amit ígér, rosszabb, mint
+    // a hiánya (#936, #1903). A HELYE megmarad — az eredetiben létezik —,
+    // csak a tartalma nincs kész. A megépítése a #1775 tárgya (az eredeti
+    // BMP-t ír és középre teszi); addig a felirat és a súgó sem ígérhet
+    // olyat, amit nem adunk.
     PicasaButton {
         objectName: "collageMakeDesktopButton"
         x: 10; y: 415; width: 127; height: 28
         text: qsTr("Desktop Background")
-        //: Buboréksúgó az „Asztali háttérkép" gombon.
-        ToolTip.text: qsTr("Save the picture as a JPG in the Collages album, then set "
-                   + "it as your desktop background")
+        enabled: false
+        //: Buboréksúgó az INAKTÍV „Asztali háttérkép" gombon (#1895).
+        ToolTip.text: qsTr("The desktop background cannot be set yet — "
+                   + "use „Create Collage” to save the picture.")
         ToolTip.visible: hovered
         ToolTip.delay: 500
         onClicked: panel.requestSave(true)

@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.204] – 2026-09-02
+
+### Javítva
+- **A kollázs „Asztali háttérkép" gombja nem ígér többé háttérképet
+  (#1895).** A súgója azt állította, hogy beállítja a képet asztali
+  háttérképnek — a program viszont sehol nem tartalmaz erre kódot: kaptál
+  egy „kész" értesítést, és az asztalod változatlan maradt. A gomb
+  mostantól inaktív, a súgója pedig megmondja, hogy ez még nem működik, és
+  hogy a kép mentéséhez a „Kollázs létrehozása" gomb való. A gomb helye
+  megmarad — az eredeti Picasában is ott van.
+
 ## [0.8.203] – 2026-09-02
 
 ### Javítva
