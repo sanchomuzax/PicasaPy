@@ -3742,3 +3742,82 @@ meg.)*
   adatbázisa és eredmény-albuma** van (60.2).
 - **„A `searchoptions` a keresősáv része"** — megdőlt: külön csoport,
   ami a `.tre`-leltárban nem is szerepel (59.3, 60. bevezető).
+
+## 61. tétel — a „rejtett vezérlőcsoportok" keresése: NEGATÍV eredmény, egy kivétellel (2026-09-01)
+
+*Huszonnegyedik kör az UI-lefedettségi axisról (#1778). A 60. tétel
+tanulsága volt, hogy a `searchoptions` csoport a `.tre`-leltárban nem
+szerepel, tehát a mérés nem adja ki. Kézenfekvő kérdés: **hány ilyen
+csoport van még?** Ez a kör azt méri meg — és a válasz **jó hír**.*
+
+### 61.1 A módszer
+
+Gépi összevetés: minden `panel/vezérlő` alakú sztring a binárisból,
+kiszűrve a `.tre`-leltár (2020 elem / 74 panel) panelnevei. Ami marad:
+olyan csoport, amit a mérés **szerkezetileg nem lát**.
+
+### 61.2 Az eredmény: tíz csoport, és szinte mind RAJZOLÓ erőforrás
+
+| csoport | vezérlőnév | mi ez valójában |
+|---|---:|---|
+| `icons` | 49 | **ikon-atlasz** |
+| `globalbuttons` | 15 | **gomb-grafikák** (ld. 61.3) |
+| `adorners` · `overlays` | 12 · 12 | rárajzolt díszítések, fedvények |
+| `notifier` | 10 | a lebegő értesítősáv — **már feltárva** (`picasa-lebego-ertesito.md`) |
+| `scrollart` · `arrows` · `progbase` | 7 · 5 · 3 | görgetősáv-, nyíl- és folyamatjelző-grafika |
+| `text` · `action` | 3 · 3 | általános névterek |
+
+⇒ **A `searchoptions` kivétel volt, nem szabály.** A leltárból hiányzó
+csoportok nagy része **grafikai erőforrás**, nem funkció — és az egyetlen
+valódi funkciós csoport (`notifier`) **már fel van tárva** egy korábbi
+körben.
+
+**Ez negatív eredmény, és mint ilyen, eredmény:** a következő köröknek
+**nem érdemes** ezt a keresést megismételni. *(A skill szabálya szerint
+az elvetett irányt ugyanúgy le kell írni, mint a megtaláltat — enélkül
+egy következő kör újra végigjárja.)*
+
+### 61.3 ⭐ Melléklelet: a gombok HÁROM állapotúak
+
+A `globalbuttons` nevei **hármas készletekben** állnak:
+
+```
+globalbuttons/small_ok_n · small_ok_h · small_ok_p
+globalbuttons/small_cn_n · small_cn_h · small_cn_p
+globalbuttons/mk_root_n  · mk_root_h  · mk_root_p
+globalbuttons/square_close_n · _h · _p
+globalbuttons/ob1_decrect_n · _h · _p
+```
+
+⇒ **`_n` = normál · `_h` = rámutatott (hover) · `_p` = lenyomott.** A
+binárisban **1252** ilyen végződésű erőforrásnév van — vagyis ez a
+Picasa **általános gombkonvenciója**, nem néhány gombé.
+
+**Miért érdekes nekünk:** a mi gombjaink Qt-stílusból veszik az
+állapotokat. Ahol az eredeti kinézetét pontosan követjük (a
+`docs/decisions/szerkeszto-bal-panel.md` szerint ez az alapértelmezés),
+ott **három** állapotot kell megadni, nem kettőt — a rámutatás külön
+grafikát kapott, nem csak világosítást.
+
+*(A `globalbuttons/#chip_*` nevek — `chip_public`,
+`chip_extended_network`, `chip_x_blue`, `chip_x_green` — a webalbum-
+megosztás láthatóság-jelzői: **hatókörön kívül**.)*
+
+### Nyitott kérdések mérlege (61.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** hány rejtett vezérlőcsoport van (61.2 — gyakorlatilag
+  nincs több); a gombok háromállapotú konvenciója (61.3).
+- **HATÓKÖRÖN KÍVÜL:** a `#chip_*` megosztás-jelzők.
+
+*(Záró mondat a 45.1 szerint: ez a kör nem panelt vizsgált, hanem a
+mérés vakfoltját — „hiányzó vezérlő" mérőszáma nincs.)*
+
+### Amit KIZÁRTAM
+
+- **„A `searchoptions`-hoz hasonló rejtett funkciós csoportok tömegével
+  vannak"** — megdőlt: tíz csoportból kilenc grafikai erőforrás vagy
+  általános névtér, a tizedik (`notifier`) már feltárva (61.2).
