@@ -3960,3 +3960,97 @@ vezérlő**; a csoportosztás nincs mérve.)*
 
 - **„A `gedialog` egésze halott, mert a Google Earth-integráció az"** —
   megdőlt: a `tagall` művelete él, és nálunk meg is van (63.2).
+
+## 64. tétel — a VIDEÓ-SZERKESZTŐ: vágás be-/kimeneti ponttal, és képkocka-mentés (2026-09-01)
+
+*Huszonhetedik kör az UI-lefedettségi axisról (#1778). Panel:
+`video_control_bar` (3) — és a mögötte álló `movieeditpanel`.*
+
+### 64.1 ⭐ A videó VÁGHATÓ — be- és kimeneti ponttal
+
+| elem | buboréksúgó |
+|---|---|
+| **`setin`** | **„Create a new starting point"** |
+| **`setout`** | **„Create a new ending point"** |
+| `trimslider` | a vágás-csúszka |
+| `moviemode1` | „Play full screen" |
+
+A kezelő (`0x005952d0`) a **`moviestart`** és **`movieend`** neveket
+hivatkozza ⇒ **a vágáspontok a `.picasa.ini` `filters=` láncába
+kerülnek**, ugyanoda, ahová a képszerkesztés tokenjei.
+
+### 64.2 A `movieeditpanel` további három művelete
+
+Ugyanaz a kezelő:
+
+| elem | mit csinál |
+|---|---|
+| **`reset_trim`** | a vágás **visszaállítása** |
+| **`capture_frame`** | ⭐ **állókép mentése a videóból** |
+| `export_movie` · `export_youtube` | export (a YouTube-ág **hatókörön kívül**) |
+
+⇒ A videó nem csak lejátszható: **vágható**, és **képkocka menthető
+belőle**.
+
+### 64.3 Nálunk: a TÁROLÁS megvan, a FUNKCIÓ nincs
+
+**Mérve — és ez a lényeg:** a `moviestart` és `movieend` tokent a
+rendszerünk **ismeri és megőrzi**:
+
+| hol | mit tesz |
+|---|---|
+| `ini/filter_registry.py:148–149` | a két token a regiszterben |
+| `render/registry_data.py:512–513` | „Start Point" / „End Point" néven |
+| `render/chain.py:220` | a `_NOOP_MARKERS` közt — **átmegy a láncon, nem vész el** |
+
+⇒ **A round-trip biztonságos**: ha egy Picasából örökölt videón van
+vágás, azt nem töröljük ki. **Beállítani viszont nem tudjuk** — a
+QML-fában nincs `setin`/`setout`/`trim` vezérlő, és képkocka-mentés sincs.
+
+*(Ez a jó fajta állapot: a formátum-kompatibilitás megelőzte a
+funkciót, tehát a funkció pótlása nem jár adatvesztés-kockázattal.)*
+
+### 64.4 A maradék kis panelek
+
+| panel | elem | állapot |
+|---|---|---|
+| `rightdrawerpanel` | `close` · `size_toggle` („Switch between small/large side panel") · `title_text` („Metaadatok") | a fiók **méret-váltója** nálunk nincs — kis eltérés, a #1773-hoz tartozik |
+| `panelroot` | `makemovietab` („Movie Maker") · `capturemovietab` („Rögzítés") · `globaltabs` · `youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
+| `instructionpanel` | `close` · `learn_more` („Learn more…") | súgó-hivatkozás ⇒ **hatókörön kívül** |
+| `video_control_bar2` | `1to1` („Show actual movie size (don't stretch)") · `fullscreen` · `scaleslider` · `volumeslider` | a **2.7** szakaszban már feltárva — nem ez a kör találta |
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| videó **vágása** (be/ki pont) | `setin` · `setout` · `trimslider` | **nincs** — a tokent megőrizzük, de nem állítjuk | **ÚJ JEGY** |
+| a vágás **visszaállítása** | `reset_trim` | nincs | ua. |
+| **képkocka mentése** | `capture_frame` | nincs | ua. |
+| a vágás **tárolása** | `moviestart` / `movieend` a `filters=`-ben | **ismerjük és megőrizzük** | — |
+| YouTube-export | `export_youtube` | — | **hatókörön kívül** |
+
+### Nyitott kérdések mérlege (64.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a vágás vezérlői és tárolása (64.1); a `movieeditpanel`
+  három további művelete (64.2); a mi round-trip állapotunk (64.3).
+- **BLOKKOLT:** a `moviestart`/`movieend` **értékformátuma** (képkocka?
+  ezredmásodperc?). A korpuszban nem találtam mintát; a
+  `binary-index/README` szerint a sorosítójuk a `0x00463fd0`.
+  **Mi kell hozzá:** célzott dekompiláció **vagy** egy vágott videó
+  `.picasa.ini`-je a tulajdonostól. **A jegyet részben blokkolja** —
+  ezért a jegy `blocked` + `felhasználóra-vár` címkét kap.
+- **HATÓKÖRÖN KÍVÜL:** a YouTube-export és a súgó-hivatkozás.
+
+*(Záró mondat a 45.1 szerint: **van** hiányzó vezérlő — a vágás három
+vezérlője és a képkocka-mentés; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A videóhoz csak lejátszás tartozik"** — megdőlt: vágás be-/kimeneti
+  ponttal, visszaállítással és képkocka-mentéssel (64.1–64.2).
+- **„A `moviestart`/`movieend` tokent nem ismerjük"** — megdőlt: a
+  regiszterben és a render-láncban is ott van, megőrizve (64.3).
