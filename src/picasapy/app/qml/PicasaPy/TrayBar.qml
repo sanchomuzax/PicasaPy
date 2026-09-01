@@ -47,6 +47,13 @@ Column {
     property int viewerIndex: -1
     // az Exportálás gomb (a dialógus a Main.qml-ben él)
     signal exportRequested()
+    // #1917: a tálca helyi menüjének ÖRÖKÖLT tételei — a vezérlők a
+    // Main.qml-ben élnek, ide csak a jelzés jut el.
+    signal viewAndEditRequested()
+    signal trayRotateRightRequested()
+    signal trayRotateLeftRequested()
+    signal trayLocateRequested()
+    signal trayPropertiesRequested()
     // #361: Kollázs/Film a tálcáról (a dialógusok a Main.qml-ben élnek)
     signal collageRequested()
     signal movieRequested()
@@ -222,6 +229,14 @@ Column {
                 if (tray.ctl && typeof tray.ctl.removeHeldRows === "function")
                     tray.ctl.removeHeldRows(tray.selectedIndexesOrEmpty)
             }
+            // #1917: az öt ÖRÖKÖLT tétel — más névterekből, de ugyanarra a
+            // kijelölésre hat, mint a rács helyi menüjének párja. A jelzést
+            // a gyökér adja tovább a `Main.qml`-nek, ahol a vezérlők élnek.
+            onViewAndEditRequested: tray.viewAndEditRequested()
+            onRotateRightRequested: tray.trayRotateRightRequested()
+            onRotateLeftRequested: tray.trayRotateLeftRequested()
+            onLocateRequested: tray.trayLocateRequested()
+            onPropertiesRequested: tray.trayPropertiesRequested()
         }
         // #1420: 20 (infó-csík) + 85 = 105 — a `publishbottom` = −105.
         width: parent.width; height: 85

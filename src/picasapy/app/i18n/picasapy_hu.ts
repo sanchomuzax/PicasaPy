@@ -6095,12 +6095,32 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>TrayContextMenu</name>
     <message>
-        <source>Keep Selection</source>
-        <translation>Kijelölés megtartása</translation>
+        <source>&amp;Hold Selection</source>
+        <translation>Kijelölés &amp;megtartása</translation>
     </message>
     <message>
-        <source>Remove Selection</source>
-        <translation>Kijelölés eltávolítása</translation>
+        <source>&amp;Remove Selection</source>
+        <translation>Kijelölés &amp;eltávolítása</translation>
+    </message>
+    <message>
+        <source>&amp;View and Edit</source>
+        <translation>&amp;Megjelenítés és szerkesztés</translation>
+    </message>
+    <message>
+        <source>R&amp;otate Clockwise</source>
+        <translation>Forgatás &amp;jobbra</translation>
+    </message>
+    <message>
+        <source>Rotate &amp;Counterclockwise</source>
+        <translation>Forgatás &amp;balra</translation>
+    </message>
+    <message>
+        <source>&amp;Locate on Disk</source>
+        <translation>&amp;Keresés a lemezen</translation>
+    </message>
+    <message>
+        <source>Propert&amp;ies</source>
+        <translation>T&amp;ulajdonságok</translation>
     </message>
 </context>
 <context>
