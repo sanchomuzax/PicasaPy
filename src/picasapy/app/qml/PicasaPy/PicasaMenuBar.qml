@@ -1096,12 +1096,12 @@ MenuBar {
                     })
                 }
             }
-            // #1595: a „legutóbbi változtatások" az eredeti NÉGYES készletben
-            // NINCS — de nálunk működő, hasznos rendezés (#1759). Nem vesszük
-            // el a hűségért: SAJÁT FUNKCIÓ jelölést kap (kék felirat +
-            // kötelező buboréksúgó), a `sajat-funkciok-jelolese.md` döntés
-            // szerint. Így a menü szerkezete az eredetit követi, és az is
-            // látszik, mi a többletünk.
+            // SAJÁT FUNKCIÓ (#1595): a „legutóbbi változtatások" szerinti
+            // rendezés — az eredeti négyes `ID_*SORT` készletben nincs ilyen
+            // tétel, nálunk viszont működő rendezés (#1759 mérte ki, mit
+            // rendez). A hűségért nem vesszük el; a `sajat` jelölés (kék
+            // felirat + kötelező buboréksúgó) mondja meg, hogy ez a mi
+            // többletünk. Jegyzék: docs/decisions/vedett-sajat-funkciok.md
             PicasaMenuItem {
                 objectName: "menuFolderSortByChanged"
                 text: qsTr("Recent &changes")
