@@ -7714,8 +7714,8 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollagePanel.qml"/>
-        <source>Save the picture as a JPG in the Collages album, then set it as your desktop background</source>
-        <translation>JPG formátumban mentheti a képet a Kollázsok albumba, majd beállíthatja az asztalra háttérképként</translation>
+        <source>The desktop background cannot be set yet — use „Create Collage” to save the picture.</source>
+        <translation>Az asztali háttérkép beállítása még nem működik — a kép mentéséhez használd a „Kollázs létrehozása” gombot.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CollagePanel.qml"/>
