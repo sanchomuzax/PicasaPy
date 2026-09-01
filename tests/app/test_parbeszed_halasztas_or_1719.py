@@ -21,18 +21,19 @@ A javítás a `DeferredDialog` (`Loader { active: false }`). A ma esti
 mérés a mai main-en: **QML betöltése 1718 ms** (meleg) / 2506 ms (hideg),
 tehát a regresszió megszűnt.
 
-## A MÉRT hatás — munkamennyiségben, nem időben
+## Egy MÉRÉS, amit a tábla őriz
 
-A `FileOpsDialogs` (603 sor, a leghosszabb párbeszéd-fájlunk) halasztása
-után az indulási fa **12 343 → 11 792 objektum** (−551, −4,5 %). Ez
-determinisztikus szám, két futás ugyanazt adja.
+A `FileOpsDialogs` halasztását kipróbáltuk, és **elvetettük — méréssel**:
 
-⚠️ **Az IDŐBEN ezen a gépen nincs mérhető nyereség**: a QML betöltése
-1718 → 1757 ms, ami a futások közti szóráson belül van. Ezt nem
-titkoljuk el: a munkamennyiség csökkent, a fejlesztői gépen mért idő
-nem. Lassabb gépen (a tulajdonos eredeti 11 429 ms-os naplója) a
-kevesebb objektum többet érhet — de ezt NEM mértük, tehát nem is
-állítjuk.
+| | main | halasztva |
+|---|---:|---:|
+| indulási fa objektumai | 12 343 | 11 792 |
+| QML betöltése | 1718 ms | 1757 ms |
+
+551 objektummal kevesebb, **időben viszont semmi** (szóráson belül).
+Cserébe 14 tesztfájl keresi közvetlenül a párbeszéd gyerekeit. Mérhető
+haszon nélküli, nagy kockázatú változtatás — ezért került a felmentések
+közé, a számokkal együtt, hogy egy későbbi kör ne kezdje elölről.
 
 ## Miért SZERKEZETI őr, és nem időmérés
 
@@ -78,6 +79,14 @@ AZONNAL_EPULO = {
     "NameInputDialog": (
         "#422: apró, egymezős névbekérő; a Személyek panel több pontjáról "
         "hívják közvetlenül."
+    ),
+    "FileOpsDialogs": (
+        "603 sor, a leghosszabb párbeszéd-fájlunk — a halasztása MÉRVE "
+        "551 objektumot spórolna (12 343 → 11 792), IDŐBEN viszont "
+        "semmit (1718 → 1757 ms, szóráson belül). Cserébe 14 tesztfájl "
+        "keresi közvetlenül a gyerekeit, tehát mind átkötendő lenne. "
+        "Mérhető haszon nélküli, nagy kockázatú változtatás — külön kör "
+        "dolga, ha egyszer lassabb gépen mérhető nyereséget mutat (#1719)."
     ),
     "AddFileDialog": (
         "#1633: 63 soros burkoló a NATÍV `QtQuick.Dialogs` fájlválasztó "
@@ -175,7 +184,7 @@ class TestAHalasztas:
     def test_a_tabla_szandekosan_rovid(self):
         """A lista csak rövidülhet. Ha ez a szám nőni kezd, az azt
         jelenti, hogy a halasztás szabályból kivétellé válik."""
-        assert len(AZONNAL_EPULO) <= 8
+        assert len(AZONNAL_EPULO) <= 9
 
 
 class TestAHalasztasELO:

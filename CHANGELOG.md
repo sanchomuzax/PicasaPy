@@ -9,15 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.169] – 2026-09-01
 
-### Javítva
-- **Az induláskor felépülő felület tovább karcsúsodott (#1719).** A
-  fájlműveleti párbeszédek (átnevezés, áthelyezés, törlés) eddig **minden
-  induláskor** felépültek, akkor is, ha soha nem nyitottad meg őket —
-  ez a leghosszabb ilyen fájlunk. Mostantól csak az első használatkor
-  jönnek létre: **551 objektummal kevesebb** épül fel indításkor.
-  Az augusztus végi lassulás (13 másodperces indulás) egyébként már
-  korábban megszűnt; a mai mérés szerint a felület betöltése **1,7
-  másodperc**, ami a normál szint.
+### Egyéb
+- **Az indulási lassulás megszűnt — és most már őrzi is valami (#1719).**
+  Amikor augusztus végén bejelentetted, hogy a program lassan indul, a
+  felület betöltése **11,4 másodperc** volt. A mai mérés szerint **1,7
+  másodperc** — a lassulás időközben megszűnt. Ami eddig hiányzott: egy
+  ellenőrzés, ami **észreveszi, ha visszajön**. Mostantól minden új
+  párbeszéd-ablaknál kiderül, ha fölöslegesen épülne fel minden
+  induláskor. Ez nincs hatással arra, amit a képernyőn látsz.
 
 ## [0.8.168] – 2026-09-01
 
