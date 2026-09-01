@@ -38,7 +38,14 @@ import time
 from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
+from PySide6.QtCore import (
+    Property,
+    QObject,
+    QSettings,
+    QStandardPaths,
+    Signal,
+    Slot,
+)
 
 from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
 from picasapy.importsource import (
@@ -84,6 +91,17 @@ AUTOEXCLUDE_SETTINGS_KEY = "import/autoexclude"
 # legördülő ne hízzon el.
 RECENT_SOURCES_SETTINGS_KEY = "import/recentsources"
 MAX_RECENT_SOURCES = 8
+
+# #1785: az eredeti a CÉLMAPPÁKAT is megjegyzi — `Preferences\LastImport%x`
+# indexelt kulcsokkal (0x00516180) —, és háromszakaszos menüben kínálja:
+# korábbi importok · alapértelmezett hely · „Choose…". Nálunk a forráséval
+# AZONOS legördülő adja ugyanezt; a három szakaszból a „Tallózás…" külön
+# gombként már megvolt.
+#
+# A megőrzött célok maximális száma az eredetiben NINCS kimérve; nyolcat
+# tartunk, ugyanannyit, mint a forrásokból — a legördülő így nem hízik el.
+RECENT_DESTINATIONS_SETTINGS_KEY = "import/recentdestinations"
+MAX_RECENT_DESTINATIONS = 8
 
 
 def _thumb_url(photo_id: int) -> str:
@@ -154,6 +172,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     autoExcludeChanged = Signal()
     mediaFilterChanged = Signal()
     recentSourcesChanged = Signal()
+    recentDestinationsChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
@@ -250,6 +269,64 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             RECENT_SOURCES_SETTINGS_KEY, recent[:MAX_RECENT_SOURCES]
         )
         self.recentSourcesChanged.emit()
+
+    # -- #1785: korábbi CÉLMAPPÁK -------------------------------------------
+
+    @Property("QVariant", notify=recentDestinationsChanged)
+    def recentDestinations(self):  # noqa: N802 — QML property-konvenció
+        """A korábbi import-célmappák, a legutóbbi elöl (#1785).
+
+        ⚠️ A MÁR NEM LÉTEZŐ mappa KIMARAD a listából. A döntést a jegy a
+        megvalósítóra bízta („kihagyjuk vagy jelöljük"); a kihagyás mellett
+        az szól, hogy a legördülőben minden tétel egy KATTINTHATÓ cél — egy
+        letűnt kártyát felkínálni és hibával elutasítani rosszabb, mint meg
+        sem mutatni. A tárolt lista nem csonkul: ha a mappa visszakerül (pl.
+        felcsatolt hálózati meghajtó), magától újra megjelenik.
+        """
+        return [
+            item for item in self._read_recent_destinations()
+            if Path(item).is_dir()
+        ]
+
+    @Property(str, notify=recentDestinationsChanged)
+    def defaultDestination(self) -> str:  # noqa: N802
+        """Az alapértelmezett cél — az eredeti menü KÜLÖN szakasza
+        (`-seperator-before-default_location-`).
+
+        A képek rendszermappája alatti `Picasa` gyűjtő; ha a rendszer nem
+        ad képek-mappát, a felhasználó saját mappája. Az `export_controller`
+        alapértelmezésének mintája."""
+        kepek = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
+        if not kepek:
+            kepek = str(Path.home())
+        return str(Path(kepek) / "Picasa")
+
+    def _read_recent_destinations(self) -> list[str]:
+        stored = self._get_settings().value(
+            RECENT_DESTINATIONS_SETTINGS_KEY, []
+        )
+        if isinstance(stored, str):
+            stored = [stored] if stored else []
+        return [str(item) for item in (stored or [])]
+
+    def _remember_destination(self, folder: str) -> None:
+        """A most használt cél a lista ELEJÉRE; ismétlés nélkül.
+
+        A forrás mintája (`_remember_source`), egy különbséggel: a célt a
+        SIKERES másolás után jegyezzük meg, mert a cél létezését csak
+        akkor tudjuk."""
+        if not folder:
+            return
+        recent = [
+            item for item in self._read_recent_destinations() if item != folder
+        ]
+        recent.insert(0, folder)
+        self._get_settings().setValue(
+            RECENT_DESTINATIONS_SETTINGS_KEY, recent[:MAX_RECENT_DESTINATIONS]
+        )
+        self.recentDestinationsChanged.emit()
 
     @Property(str, notify=mediaFilterChanged)
     def mediaFilter(self) -> str:  # noqa: N802 — QML property-konvenció
@@ -504,6 +581,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 )
             if copied_paths:
                 self._add_folder(str(dest_root))
+                # #1785: a cél a SIKERES másolás után kerül a listába — a
+                # hibás/nem létező mappa ne kínálódjon fel legközelebb.
+                self._remember_destination(str(dest_root))
                 # #441: a törlés CSAK sikeres másolás után futhat le
                 if after_copying == AFTER_COPY_DELETE_COPIED:
                     for path in copied_paths:
