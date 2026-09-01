@@ -372,12 +372,21 @@ Column {
                 spacing: 2
                 clip: true
 
-                //: a felső korlát: 15 kép egyetlen sorban ~55 képpont
-                readonly property int maxThumbHeight: 55
+                //: MÉRT felső korlát: egy sornál a tartalom 54 képpont,
+                //: 57 képpontos osztásközzel (spec `picasa-keptalca.md`
+                //: 15.2, tizenhat felvétel; a kék csík darabszám-felirata
+                //: kalibrálja).
+                readonly property int maxThumbHeight: 54
                 //: ez alatt a bélyegkép már nem mond semmit — inkább vágunk
                 readonly property int minThumbHeight: 12
-                //: a becsléshez használt névleges oldalarány (ld. fent)
-                readonly property real nominalAspect: 1.5
+                //: A cella NÉGYZET — mérve (spec 15.1). A `…214634.jpg`
+                //: csíkfelirata a forrás méretét is kiírja (816×1456,
+                //: álló, 0,560), a tálcabeli bélyegkép mégis 54×54; a
+                //: normalizált keresztkorreláció háromból háromszor a
+                //: KÖZÉPRE VÁGÁST hozza ki (+0,587 / +0,900 / +0,902) a
+                //: nyújtás és az aránytartó illesztés ellenében. Ezért
+                //: nincs többé „névleges oldalarány" becslés: a szélesség
+                //: a magassággal egyenlő.
 
                 readonly property int thumbCount:
                     trayScratchBack.heldCount > 0
@@ -397,10 +406,9 @@ Column {
                     var h = maxThumbHeight
                     for (var sorok = 1; sorok <= maxSorok; ++sorok) {
                         h = Math.min(maxThumbHeight, sorMagassag(sorok))
-                        var szeles = h * nominalAspect
                         var soronkent = Math.max(
                             1, Math.floor((width + spacing)
-                                          / (szeles + spacing)))
+                                          / (h + spacing)))
                         if (n <= soronkent * sorok)
                             return h
                     }
@@ -429,20 +437,19 @@ Column {
                         // 20 × 20-as rács a 81 képpontos dobozban holt
                         // helyet hagyott volna.
                         height: trayScratchStrip.thumbHeight
-                        // a panoráma se törje meg a tördelés becslését:
-                        // a szélesség legfeljebb a magasság kétszerese
-                        width: implicitHeight > 0
-                               ? Math.min(
-                                     height * 2,
-                                     Math.round(height * implicitWidth
-                                                / implicitHeight))
-                               : height
+                        // #1914 (spec 15.1): a cella NÉGYZET, a fotó
+                        // középre VÁGVA — nem aránytartó illesztés.
+                        width: height
                         source: !tray.ctl || !tray.appWindow ? ""
                             : trayScratchBack.heldCount > 0
                               ? tray.ctl.heldThumbUrlAt(index)
                               : tray.ctl.photos.thumbUrlAt(
                                     Number(tray.appWindow.selectedIndexes[index]))
-                        fillMode: Image.PreserveAspectFit
+                        //: `PreserveAspectCrop` = a rövidebbik oldalra
+                        //: illeszt, a hosszabbikat levágja — a `clip`
+                        //: nélkül a levágott rész kilógna a cellából.
+                        fillMode: Image.PreserveAspectCrop
+                        clip: true
                         asynchronous: true
                     }
                 }

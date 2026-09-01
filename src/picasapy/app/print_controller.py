@@ -102,6 +102,7 @@ class PrintController(QObject):
         photo_source: Callable[[], Sequence[PhotoRecord]],
         parent: QObject | None = None,
         tray_source: Callable[[], Sequence[PhotoRecord]] | None = None,
+        settings: QSettings | None = None,
     ) -> None:
         """`photo_source`: hívható, ami a jelenleg kiválasztott mappa/album
         `PhotoRecord`-jait adja vissza (ld. a modul docstringje)."""
@@ -119,7 +120,13 @@ class PrintController(QObject):
         #: `Preferences\PrintLastSize` őrzi két indítás közt. Ugyanaz a
         #: minta, mint a #1780-nál: amit „a művelethez tapad"-nak
         #: hinnénk, az valójában globális beállítás.
-        self._settings = QSettings()
+        #:
+        #: A `settings` átadható, hogy a TESZT ne a gép tartós
+        #: beállítására üljön rá. Enélkül a nyomatméret-teszt attól függ,
+        #: mi maradt a gépen (és Windowson a beállítás a registrybe megy,
+        #: nem ini-fájlba) — a CI windows-lába emiatt bukott vissza a
+        #: 4×6-os alapértelmezésre a beállított 8×10 helyett.
+        self._settings = settings if settings is not None else QSettings()
 
     #: A QML-nek átadott méretnevek — a `NyomatMeret` tagjainak nevei.
     #: A felirat a QML dolga, ide csak az azonosító kell.
