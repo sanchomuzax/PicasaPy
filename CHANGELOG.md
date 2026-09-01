@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.178] – 2026-09-01
+
+### Hozzáadva
+- **Az „Új album" gomb visszakerült a felső eszköztárra (#1421).** Eddig
+  csak a **Fájl ▸ Új album…** menüpontból volt elérhető, pedig az
+  eredetiben ott a gomb is — a Picasában a menüpont maga is ezt a
+  gombnyomást szimulálja. Ugyanaz a párbeszéd nyílik mindkét úton.
+  A gomb — az eredetihez hasonlóan — **ikonos**, nem feliratos.
+  *(Szűk ablaknál elrejtőzik, hogy az eszköztár egyetlen csíkban
+  maradjon.)*
+- **Az „Időrend" gomb is felkerült az eszköztárra (#1421).** A nézet eddig
+  is megvolt (Nézet ▸ Időrend, Ctrl+5), de gomb nem vezetett hozzá. A gomb
+  **jelzi is**, ha a nézet éppen nyitva van.
+
 ## [0.8.177] – 2026-09-01
 
 ### Javítva
