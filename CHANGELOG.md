@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.165] – 2026-09-01
+
+### Javítva
+- **Az e-mail-küldés már nem dolgozik némán.** A képtálca „E-Mail"
+  gombja a képeket a beállított méretre **kicsinyíti**, mielőtt csatolná
+  őket — nagy fényképeknél ez másodpercekig tart, és eddig semmi nem
+  jelezte. Úgy tűnt, nem történik semmi. Mostantól a képernyő tetején
+  megjelenik a **„Mellékletek előkészítése…"** sor, és eltűnik, amint
+  kész. Az eredeti Picasa ugyanezt csinálja.
+
 ## [0.8.164] – 2026-09-01
 
 ### Hozzáadva

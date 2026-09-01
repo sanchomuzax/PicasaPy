@@ -3557,6 +3557,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Preparing attachments...</source>
+        <translation>Mellékletek előkészítése…</translation>
+    </message>
+    <message>
         <source>Stop</source>
         <translation>Leállítás</translation>
     </message>

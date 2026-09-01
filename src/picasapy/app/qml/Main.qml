@@ -1014,6 +1014,17 @@ ApplicationWindow {
             parbeszed.body = szoveg
             parbeszed.open()
         }
+        // #1798b: az előkészítés jelzése. A `sendSelectionByEmail()` a
+        // képeket a beállított méretre kicsinyíti, ami nagy fájloknál
+        // másodpercekig tart — jelzés nélkül úgy tűnik, nem történik semmi.
+        // A #459-es közös sávot használjuk, TÁJÉKOZTATÓ (borostyán)
+        // tónussal: ez nem hiba.
+        function onPreparingChanged(fut) {
+            errorBanner.notice = true
+            errorBannerText.text = fut
+                ? qsTr("Preparing attachments...")
+                : ""
+        }
         function onEmailFailed(uzenet) {
             // a #459-es közös hibasáv — a levelezős hibának eddig SEHOL
             // nem volt kezelője, tehát némán elveszett
