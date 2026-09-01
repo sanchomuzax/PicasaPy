@@ -80,5 +80,9 @@ megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
 hamis biztonságérzetet ad.*
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** `src/picasapy/index/schema.py`, `src/picasapy/app/library_controller.py`
+- **Megvalósítja:** `src/picasapy/index/schema.py`,
+  `src/picasapy/index/sync.py`
+  (a döntés MAGJA: `folder_looks_offline` — az „üres vs. elérhetetlen”
+  elhatárolás, valamint a `_remove_folder` / `_prune_folders`),
+  `src/picasapy/app/library_controller.py`
 - **Őrzi:** `tests/index/test_offline_folders.py`, `tests/app/test_folder_pane_offline_459.py`, `tests/app/test_offline_folder_notice_459.py`

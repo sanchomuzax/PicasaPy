@@ -57,5 +57,10 @@ megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
 hamis biztonságérzetet ad.*
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** `src/picasapy/app/qml/Main.qml`
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/EditorPanel.qml`
+  (a 276 képpontos tartalom-oszlop és a 132 × 28-as gombpár),
+  `src/picasapy/app/qml/PicasaPy/EditorTabBar.qml` (a 25 képpontos
+  fülsáv és a hét fül), `src/picasapy/app/qml/PicasaPy/ToolTile.qml`
+  (a 44 × 30-as eszközcsempe), `src/picasapy/app/qml/Main.qml`
+  (a döntésből következő legkisebb ablakszélesség, #641)
 - **Őrzi:** `tests/app/qml_functional/test_editor_panel_geometry_741.py`
