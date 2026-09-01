@@ -29,6 +29,26 @@ egyetlen új sorral:
 
 Mindkettőt egyetlen sor visszaírásával elbuktattam, mielőtt bekerült
 volna (a `render/text_overlay.py` `_FONT` konstansával).
+
+## Az ÁRA — és miért nem fagy meg tőle a felület
+
+Az első tényleges cv2-használat egyszeri ~1341 ms. **Ez nem a felület
+szálán esik be:** a bélyegképeket a `ThumbnailProvider` állítja elő, ami
+`QQuickAsyncImageProvider` — a Qt szálkészletén fut, nem a GUI-szálon.
+Az első bélyegkép tehát valamivel később készül el, a felület közben
+mozog.
+
+⚠️ Egy KORÁBBI változat háttérszálon „előmelegítette" az OpenCV-t az
+ablak első képkockája után. Két őr buktatta el, jogosan:
+
+1. `test_hatterszal_nyilvantartas_988` — nyers `threading.Thread` az app
+   rétegben (a `BackgroundWorkerMixin._start_background` a szabály);
+2. `test_indulas_or_1601` — a blokkoló indulás növekménye túllépte a
+   megengedett hányadot: a Python-import a GIL-t tartja, tehát az
+   „előmelegítés" éppen a felület szálát akasztotta meg.
+
+Az előmelegítés ezért KIKERÜLT. A lusta import a nyereség; a halasztott
+költséget az viszi, akinek tényleg kell, és az egy háttérszál.
 """
 
 from __future__ import annotations

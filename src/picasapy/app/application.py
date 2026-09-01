@@ -1347,38 +1347,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             _remaining_splash_ms(elapsed_ms), startup_status.finish
         )
 
-    def _melegitsd_az_opencvt() -> None:
-        """#1611: az OpenCV betöltése HÁTTÉRSZÁLON, az első képkocka után.
-
-        A cv2 mostantól lusta (`picasapy.lazy_cv2`), ezért az indulásból
-        kiesett ~2,3 másodperc — de az ÁRA az lenne, hogy az első
-        tényleges használat (bélyegkép, effekt, mentés) egyszeri ~1,3
-        másodperces várakozást hoz. Ha ez a főszálon esne be, a felület
-        addig FAGYNA.
-
-        Ezért amint az ablak kirajzolódott, egy háttérszál előhozza. A
-        felhasználó közben már látja és mozgatja a felületet; mire az első
-        bélyegkép kellene, az OpenCV rendszerint készen áll. Ha mégsem, a
-        működés akkor is helyes — csak az a szál várja meg, amelyik
-        használni akarja.
-        """
-        import threading
-
-        from picasapy.lazy_cv2 import cv2 as _lusta_cv2
-
-        threading.Thread(
-            target=lambda: _lusta_cv2.IMREAD_COLOR,
-            name="picasapy-opencv-melegites",
-            daemon=True,
-        ).start()
-
     def _on_first_frame() -> None:
         # a frameSwapped minden képkockánál jön — csak az első számít
         if splash_state["started"]:
             return
         splash_state["started"] = True
         timeline.mark("az ablak első kirajzolt képkockája")
-        _melegitsd_az_opencvt()
         QTimer.singleShot(0, _start_and_finish)
 
     window.frameSwapped.connect(_on_first_frame)
