@@ -649,30 +649,58 @@ Rectangle {
                     ToolTip.visible: hovered
                     ToolTip.delay: 500
                 }
+                // #1905: a szalag CSAK a jelenlegi kép mappáját mutatja.
+                //
+                // Eddig a teljes rács-modellt listázta. A rács viszont
+                // FEED: több mappa fotóit sorolja fel egymás után, a
+                // csillag-szűrő és a keresés pedig végképp vegyít. A
+                // tulajdonos ezért egy ötképes mappa szerkesztésekor
+                // NYOLC elemet látott — köztük egy MÁSIK mappa
+                // kollázs-képeit. Az eredetiben (egymás mellé tett
+                // felvétel ugyanazon a mappán) pontosan a mappa képei
+                // állnak itt.
+                //
+                // Ugyanaz a szerződés, mint a ◀/▶ léptetésé (#84,
+                // `folderNeighbor`): a mappa fotói folytonos tartományt
+                // alkotnak, tehát elég a kezdet és a darabszám.
                 ListView {
                     id: filmstrip
-                    Layout.preferredWidth: Math.min(7, viewer.photoCount) * 44
+                    objectName: "viewerFilmstrip"
+
+                    //: [kezdet, darab] — a `revision` a modell-változásra köt
+                    readonly property var mappaSav: (viewer.photosModel
+                        && viewer.currentIndex >= 0)
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.folderRowRange(viewer.currentIndex))
+                        : [0, 0]
+                    readonly property int mappaKezdet: mappaSav[0]
+                    readonly property int mappaDarab: mappaSav[1]
+
+                    Layout.preferredWidth: Math.min(7, mappaDarab) * 44
                     Layout.preferredHeight: 38
                     orientation: ListView.Horizontal
-                    model: viewer.photosModel
-                    currentIndex: viewer.currentIndex
+                    model: mappaDarab
+                    currentIndex: viewer.currentIndex - mappaKezdet
                     highlightMoveDuration: 100
                     clip: true
                     delegate: Rectangle {
-                        required property string thumbUrl
                         required property int index
+                        //: a rács-modell VALÓDI sora (a mappa-eltolással)
+                        readonly property int racsSor: filmstrip.mappaKezdet + index
                         width: 42; height: 38
-                        color: index === viewer.currentIndex
+                        color: racsSor === viewer.currentIndex
                                ? Theme.thumbSelection : "transparent"
                         Image {
                             anchors.fill: parent
                             anchors.margins: 2
-                            source: thumbUrl
+                            source: viewer.photosModel
+                                ? viewer.photosModel.thumbUrlAt(parent.racsSor)
+                                : ""
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                         }
                         TapHandler {
-                            onTapped: viewer.currentIndex = index
+                            onTapped: viewer.currentIndex = parent.racsSor
                         }
                     }
                 }

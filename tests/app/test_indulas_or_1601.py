@@ -65,6 +65,13 @@ _SZEKCIO_PER_INI = 22
 #: bőven megfogja, flaky-ség nélkül.
 _MEGENGEDETT_HANYAD = 1.0
 
+#: Hány kört mérünk VÁLTOGATVA, mielőtt minimumot veszünk. Az időmérés
+#: zaja egyirányú (a terhelés csak lassíthat), ezért a minimum a helyes
+#: becslő; a váltogatás pedig azt zárja ki, hogy egy lassú perc csak az
+#: egyik mérést érje. Három kör: a CI-n mért két bukást (1,90 és 1,90
+#: hányad) mindkétszer egyetlen kiugró minta okozta.
+_KOROK = 3
+
 _ROY = "b8e4117cf1d6615b"
 _ANNA = "a1a2a3a4a5a6a7a8"
 _RECT = "3f840000c3509f84"
@@ -223,13 +230,33 @@ class TestIndulasNemSkalazodikAzIniSopressel:
     def test_a_blokkolo_indulas_novekmenye_a_sopres_tort_resze(
         self, qt_app, tmp_path
     ):
+        """⚠️ A három mérés VÁLTOGATVA és MINIMUMMAL.
+
+        A saját küszöb-magyarázata mondja ki a bajt: „a két mérés NEM
+        egyszerre készül, tehát egy közben beérkező terhelés az egyiket
+        jobban torzítja". Egyetlen mintával ez nem hipotetikus: a küszöböt
+        a #1689-ben 0,5-ről 1,0-re kellett emelni, és a CI-n **így is
+        elbukott kétszer** (2026-09-02: 254 ms / 134 ms = 1,90), mindkétszer
+        a terméket NEM érintő PR-en.
+
+        Az időmérés zaja EGYIRÁNYÚ: a terhelés csak lassíthat, gyorsítani
+        nem tud. A minimum ezért a helyes becslő — és a három kör
+        VÁLTOGATVA fut (kicsi, nagy, söprés, kicsi, …), hogy egy lassú
+        percbe ne csak az egyik mérés essen bele.
+        """
         kicsi = _konyvtar_es_index(tmp_path, "kicsi", _KICSI)
         nagy = _konyvtar_es_index(tmp_path, "nagy", _NAGY)
 
-        kicsi_ms = _indulas_blokkolo_ms(*kicsi)
-        nagy_ms = _indulas_blokkolo_ms(*nagy)
+        kicsi_korok, nagy_korok, sopres_korok = [], [], []
+        for _ in range(_KOROK):
+            kicsi_korok.append(_indulas_blokkolo_ms(*kicsi))
+            nagy_korok.append(_indulas_blokkolo_ms(*nagy))
+            sopres_korok.append(_sopres_ms(nagy[2]))
+
+        kicsi_ms = min(kicsi_korok)
+        nagy_ms = min(nagy_korok)
         novekmeny_ms = nagy_ms - kicsi_ms
-        sopres_ms = _sopres_ms(nagy[2])
+        sopres_ms = min(sopres_korok)
 
         assert novekmeny_ms <= sopres_ms * _MEGENGEDETT_HANYAD, (
             f"az indulás blokkoló ideje az ini-söpréssel arányosan nő: "

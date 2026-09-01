@@ -1,6 +1,6 @@
 # UI-lefedettség — az eredeti Picasa panelei ↔ a PicasaPy QML-fája
 
-**Generálva:** 2026-09-01 — **ezt a fájlt ne írd kézzel**, újragenerálható.
+**Generálva:** 2026-09-02 — **ezt a fájlt ne írd kézzel**, újragenerálható.
 
 **Előállító:** `eszkozok/ui_lefedettseg.py` (privát `picasapy-agent` repó).
 **Bemenet (privát):** `referencia/ui-leltar.csv` (2020 elem / 74 panel, a `.tre` erőforrásokból), `referencia/panel-feliratok-hu.tsv`, `referencia/stringres-en-hu.tsv`.
@@ -37,12 +37,14 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 164 |
+| párosítva | 174 |
 | másutt megvan (nem ezen a felületen) | 47 |
-| hiányzik | 372 |
-| bizonytalan | 152 |
+| hiányzik | 364 |
+| bizonytalan | 150 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **22.4%** |
+| **lefedettség az értékelhető elemeken** | **23.7%** |
+
+> ⚠️ **A 23.7% ALSÓ BECSLÉS, nem pontos érték.** 150 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **44.2%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -50,7 +52,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | # | panel | hiány + bizonytalan | mit takar |
 |---:|---|---:|---|
-| 1 | `editpanel` | 69 | A szerkesztő teljes bal oldali panelje minden fülével |
+| 1 | `editpanel` | 61 | A szerkesztő teljes bal oldali panelje minden fülével |
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `thumbui` | 33 | A fő könyvtárnézet egésze |
 | 4 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
@@ -65,8 +67,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | hiányzik | bizonytalan | rajzoló | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| `editpanel` | 312 | 125 | 50 | 6 | 28 | 41 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
-| `makemoviepanel` | 111 | 55 | 1 | 5 | 33 | 16 | 56 | `CreateDialogs.qml` |
+| `editpanel` | 312 | 125 | 58 | 6 | 21 | 40 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
+| `makemoviepanel` | 111 | 55 | 1 | 5 | 34 | 15 | 56 | `CreateDialogs.qml` |
 | `thumbui` | 140 | 46 | 10 | 3 | 22 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 30 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `printpanel` | 73 | 33 | 0 | 8 | 25 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
@@ -82,8 +84,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 11 | 0 | 33 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
 | `edittextpanel` | 45 | 19 | 9 | 0 | 8 | 2 | 26 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 31 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
-| `headerpanel` | 30 | 11 | 1 | 0 | 10 | 0 | 19 | `LightboxHeader.qml` |
 | `collab` | 23 | 10 | 0 | 0 | 10 | 0 | 13 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
+| `headerpanel` | 30 | 11 | 3 | 0 | 8 | 0 | 19 | `LightboxHeader.qml` |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 7 | 53 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 11 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `searchcontainer` | 25 | 11 | 5 | 0 | 3 | 3 | 14 | `MainToolbar.qml`, `SearchSuggestions.qml` |
@@ -144,11 +146,10 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 Csak az értékelhető elemek. `bizonytalan` = nem dönthető el gépi úton, kézi ellenőrzésre vár.
 
-### `editpanel` — 69 hiány · panel-megfeleltetés: `parositva`
+### `editpanel` — 61 hiány · panel-megfeleltetés: `parositva`
 
 A szerkesztő teljes bal oldali panelje minden fülével
 
-- `1to1` buboréksúgó: „Display Photo at actual size”
 - `aa_2up_toggle` buboréksúgó: „View the same image twice”
 - `ab_2up_toggle` buboréksúgó: „View two different images”
 - `captionbutton` buboréksúgó: „Show/Hide Caption”
@@ -164,8 +165,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `edittextghost` — *bizonytalan*
 - `edittextpanel` — *bizonytalan*
 - `eraserbutton` — *bizonytalan*
-- `fit` buboréksúgó: „Fit Photo inside viewing area”
-- `fxpreview1` — *bizonytalan*
 - `fxpreview10` — *bizonytalan*
 - `fxpreview11` — *bizonytalan*
 - `fxpreview12` — *bizonytalan*
@@ -201,11 +200,6 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `slidercircle1` — *bizonytalan*
 - `swap_2up_focus` buboréksúgó: „Switch which image has focus”
 - `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout”
-- `tab1` buboréksúgó: „Commonly needed fixes”
-- `tab2` buboréksúgó: „Finely-tuned lighting and color fixes”
-- `tab3` buboréksúgó: „Fun and useful image processing”
-- `tab4` buboréksúgó: „More fun and useful image processing”
-- `tab5` buboréksúgó: „Even more fun and useful image processing”
 - `tab_bkg` — *bizonytalan*
 - `tabpanel1` — *bizonytalan*
 - `tabpanel2` — *bizonytalan*
@@ -255,7 +249,7 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `render` „Create Movie” (magyarul: „Mozgófilm létrehozása”)
 - `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”)
 - `size_label` „Size:” (magyarul: „Méret:”)
-- `sizelist` — *bizonytalan*
+- `sizelist`
 - `smart_order_label` „Best Transitions” (magyarul: „A legjobb átmenetek”)
 - `smart_order_radio` — *bizonytalan*
 - `style_label` „Style:” (magyarul: „Stílus:”)
@@ -609,21 +603,6 @@ Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület n�
 - `to_text` „To:” (magyarul: „Címzett:”)
 - `topentry`
 
-### `headerpanel` — 10 hiány · panel-megfeleltetés: `parositva`
-
-Album- és mappafejléc a rács fölött
-
-- `create_collage` buboréksúgó: „Create Photo Collage”
-- `create_movie` buboréksúgó: „Create Movie Presentation”
-- `play` buboréksúgó: „Play Fullscreen Slideshow”
-- `save_edits` buboréksúgó: „Save edited photos to disk”
-- `select_star` buboréksúgó: „Select starred photos”
-- `sync_label` „Sync to Web” (magyarul: „Szinkronizálás az internettel”)
-- `sync_options` buboréksúgó: „Online options”
-- `view_online` „View on Web” (magyarul: „Megtekintés az interneten”)
-- `websync0` buboréksúgó: „Upload and sync future changes to the web”
-- `websync1` buboréksúgó: „Stop syncing changes to the web”
-
 ### `collab` — 10 hiány · panel-megfeleltetés: `nem-cel`
 
 Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél
@@ -638,6 +617,19 @@ Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél
 - `storagetext` „Learn more...” (magyarul: „További információ...”)
 - `uploadinfo_link`
 - `uploadsize_menu`
+
+### `headerpanel` — 8 hiány · panel-megfeleltetés: `parositva`
+
+Album- és mappafejléc a rács fölött
+
+- `create_collage` buboréksúgó: „Create Photo Collage”
+- `create_movie` buboréksúgó: „Create Movie Presentation”
+- `play` buboréksúgó: „Play Fullscreen Slideshow”
+- `sync_label` „Sync to Web” (magyarul: „Szinkronizálás az internettel”)
+- `sync_options` buboréksúgó: „Online options”
+- `view_online` „View on Web” (magyarul: „Megtekintés az interneten”)
+- `websync0` buboréksúgó: „Upload and sync future changes to the web”
+- `websync1` buboréksúgó: „Stop syncing changes to the web”
 
 ### `collagepanel` — 7 hiány · panel-megfeleltetés: `parositva`
 
@@ -1103,9 +1095,9 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **429 felirat** 83 fájlban.
+Összesen **442 felirat** 83 fájlban.
 
-### `PicasaPy/PicasaMenuBar.qml` — 29
+### `PicasaPy/PicasaMenuBar.qml` — 30
 
 - „Sign in with your Google Account”
 - „TEST MODE — logging startup”
@@ -1115,6 +1107,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Show Editing Controls”
 - „Thumbnails Only”
 - „Dark Theme”
+- „Recent &changes”
 - „Show”
 - „Print Thumbnails...”
 - „Auto Redeye Fix”
@@ -1162,6 +1155,29 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Stamp photos with your name, a web domain, or a copyright notice.”
 - „None of the selected pictures has a location, so no Google Earth file was written.”
 
+### `PicasaPy/PrintDialog.qml` — 20
+
+- „3.5 x 5 in”
+- „4 x 6 in”
+- „5 x 7 in”
+- „8 x 10 in”
+- „Printing is unavailable: the Qt print support ”
+- „No pictures to print.”
+- „Choose the target file.”
+- „Layout:”
+- „One picture per page”
+- „Columns:”
+- „Print size:”
+- „Copies of each picture:”
+- „Please review before printing.”
+- „Print to a PDF file...”
+- „(not selected)”
+- „Browse...”
+- „Fit to page:”
+- „Whole picture”
+- „Fill the page (crop)”
+- „PDF documents (*.pdf)”
+
 ### `PicasaPy/OptionsTabGeneral.qml` — 19
 
 - „User interface:”
@@ -1183,28 +1199,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Never check for updates”
 - „Import destination folder:”
 - „Browse...”
-
-### `PicasaPy/PrintDialog.qml` — 19
-
-- „3.5 x 5 in”
-- „4 x 6 in”
-- „5 x 7 in”
-- „8 x 10 in”
-- „Printing is unavailable: the Qt print support ”
-- „No pictures to print.”
-- „Choose the target file.”
-- „Layout:”
-- „One picture per page”
-- „Columns:”
-- „Print size:”
-- „Please review before printing.”
-- „Print to a PDF file...”
-- „(not selected)”
-- „Browse...”
-- „Fit to page:”
-- „Whole picture”
-- „Fill the page (crop)”
-- „PDF documents (*.pdf)”
 
 ### `PicasaPy/CreateDialogs.qml` — 15
 
@@ -1242,7 +1236,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Move others to \"Duplikátumok\"”
 - „Delete others to Trash”
 
-### `PicasaPy/ImportSourceDialog.qml` — 14
+### `PicasaPy/ImportSourceDialog.qml` — 15
 
 - „Import from Source”
 - „bytes”
@@ -1252,6 +1246,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Browse...”
 - „Exclude Duplicates”
 - „No pictures or videos found in this folder.”
+- „Recent destinations”
 - „Enter new folder title or choose existing folder to continue”
 - „Import into separate folders for each date taken”
 - „Import into folder with today's date”
@@ -1316,6 +1311,19 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Log all network information”
 - „Log file:”
 - „Browse...”
+
+### `Main.qml` — 10
+
+- „This will remove all edits you have made to the”
+- „This will remove all edits you have made to ALL of”
+- „Red eye fixes have been applied. If you”
+- „View All”
+- „Clear Sample”
+- „Updating similarity database ”
+- „This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.”
+- „Picasa had a problem loading this file(s). Would you ”
+- „New person's name:”
+- „WARNING! This will move all the faces back to the ”
 
 ### `PicasaPy/CollageThemePopup.qml` — 10
 
@@ -1393,16 +1401,27 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „To undo the last save and keep edits click 'Undo Save'.”
 - „File operation failed”
 
-### `Main.qml` — 8
+### `PicasaPy/EditorTabBar.qml` — 8
 
-- „This will remove all edits you have made to the”
-- „This will remove all edits you have made to ALL of”
-- „Red eye fixes have been applied. If you”
-- „View All”
-- „This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.”
-- „Picasa had a problem loading this file(s). Would you ”
-- „New person's name:”
-- „WARNING! This will move all the faces back to the ”
+- „Common Fixes”
+- „Fine Tuning”
+- „Effects”
+- „Creative”
+- „More Effects”
+- „Glimmer effects beyond the three known tabs”
+- „Legacy Effects”
+- „Filters left in the Picasa engine but not on its surface”
+
+### `PicasaPy/PhotoViewer.qml` — 8
+
+- „Start slideshow”
+- „Retouch fixes cannot be recovered with redo.”
+- „Redeye fixes cannot be recovered with redo.”
+- „The caption will replace the text you have ”
+- „Video playback requires the Qt Multimedia module.”
+- „Render the final collage from this draft”
+- „Show Faces”
+- „Edit Faces”
 
 ### `PicasaPy/FileOpsDialogs.qml` — 7
 
@@ -1423,6 +1442,16 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Don't confirm each sync (use previous settings)”
 - „Upload name tags”
 - „Add a watermark to all photo uploads:”
+
+### `PicasaPy/PhotoContextMenu.qml` — 7
+
+- „Add to People Album”
+- „Rotate Right”
+- „Rotate Left”
+- „Find Similar Pictures”
+- „File on Disk”
+- „Locate Original on Disk”
+- „Block Upload”
 
 ### `PicasaPy/PicasaImportDialog.qml` — 7
 
@@ -1452,15 +1481,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Crop by detail”
 - „Full page (A4)”
 
-### `PicasaPy/EditorTabBar.qml` — 6
-
-- „Common Fixes”
-- „Fine Tuning”
-- „Effects”
-- „Creative”
-- „More Effects”
-- „Legacy Effects”
-
 ### `PicasaPy/OptionsTabNameTags.qml` — 6
 
 - „Enable face detection”
@@ -1478,24 +1498,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Resizing algorithm quality:”
 - „General (Lanczos-3)”
 - „Very sharp (Lanczos-8)”
-
-### `PicasaPy/PhotoContextMenu.qml` — 6
-
-- „Add to People Album”
-- „Rotate Right”
-- „Rotate Left”
-- „File on Disk”
-- „Locate Original on Disk”
-- „Block Upload”
-
-### `PicasaPy/PhotoViewer.qml` — 6
-
-- „Retouch fixes cannot be recovered with redo.”
-- „Redeye fixes cannot be recovered with redo.”
-- „The caption will replace the text you have ”
-- „Video playback requires the Qt Multimedia module.”
-- „Show Faces”
-- „Edit Faces”
 
 ### `PicasaPy/EditorCropPanel.qml` — 5
 
@@ -1520,6 +1522,14 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Use music for Slideshow and Movie presentation:”
 - „Place taken (optional):”
 - „Description (optional):”
+
+### `PicasaPy/TrayBar.qml` — 5
+
+- „Waiting for the collage to be created…”
+- „Add the pictures in the tray to an album”
+- „This will clear your entire tray.”
+- „Order Prints (service discontinued)”
+- „Publish to Blogger (service discontinued)”
 
 ### `PicasaPy/CollageActionRow.qml` — 4
 
@@ -1591,6 +1601,12 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „The pictures will be attached to a new message in ”
 - „Remember this choice and do not ask again”
 
+### `PicasaPy/MainToolbar.qml` — 3
+
+- „Tree folder view”
+- „Search”
+- „Kiadások megtekintése a GitHubon”
+
 ### `PicasaPy/OptionsDialog.qml` — 3
 
 - „Printing”
@@ -1617,7 +1633,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ### `PicasaPy/QuickTagsConfigDialog.qml` — 3
 
-- „Edit the 8 quick tag buttons shown at the bottom of the ”
+- „Edit the 10 quick tag buttons shown at the bottom of the ”
 - „Reserve the top two buttons for recently used tags”
 - „Fill the empty boxes above with frequently used tags”
 
@@ -1626,12 +1642,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Add Tag to Entire Selection”
 - „Find Items Tagged This Way”
 - „Remove Tag”
-
-### `PicasaPy/TrayBar.qml` — 3
-
-- „Waiting for the collage to be created…”
-- „Add the pictures in the tray to an album”
-- „This will clear your entire tray.”
 
 ### `PicasaPy/UnnamedFacesView.qml` — 3
 
@@ -1669,11 +1679,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 - „Currently unavailable — the folder stays in the database, thumbnails come from the cache.”
 - „Folders on Disk”
-
-### `PicasaPy/MainToolbar.qml` — 2
-
-- „Search”
-- „Kiadások megtekintése a GitHubon”
 
 ### `PicasaPy/PerfMonitorPanel.qml` — 2
 
