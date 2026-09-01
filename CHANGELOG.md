@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.201] – 2026-09-01
+
+### Javítva
+- **A nyomtatási előnézet mérete a tesztekben a gép beállítására ült rá.**
+  Belső javítás: a nyomatméret tartós beállítás, és a teszt eddig azt
+  olvasta, amit a futtató gépen talált — emiatt a Windows-os ellenőrzés
+  rendszeresen hibát jelzett a program hibája nélkül.
+
 ## [0.8.199] – 2026-09-01
 
 ### Javítva
