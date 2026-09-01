@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.199] – 2026-09-01
+
+### Javítva
+- **A HDR-ish és a Helyi kontraszt nem világosítja többé az égboltot
+  (#1607).** A két effekt eddig a sima, részletmentes felületeket is
+  felderítette (erős beállításnál érezhetően), pedig ott nincs mit
+  kiemelni. Kiderült, miért: a modellünkben egy illesztett világosító tag
+  állt, ami valójában az eredeti elmosás számolási sajátosságát
+  helyettesítette. Most a valódi eljárást számoljuk, így a részletes
+  területek ugyanúgy néznek ki, a sima felületek viszont érintetlenek
+  maradnak.
+
 ## [0.8.198] – 2026-09-01
 
 ### Javítva
