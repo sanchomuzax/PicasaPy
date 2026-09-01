@@ -32,8 +32,11 @@ Window {
             ? relocateController.currentLocation : ""
     // a `FolderDialog selectedFolder.toString()`-ja (file:// URL is lehet)
     property string newLocation: ""
+    //: #1629: OS-natív alak — ld. az `ImportSourceDialog` azonos kötését.
     readonly property string newLocationDisplay:
-        moveDatabaseWindow.newLocation.replace(/^file:\/\//, "")
+        (typeof fileOpsController !== "undefined" && fileOpsController)
+            ? fileOpsController.toLocalPath(moveDatabaseWindow.newLocation)
+            : moveDatabaseWindow.newLocation.replace(/^file:\/\//, "")
 
     property bool relocating: false
     property string progressPhase: ""
