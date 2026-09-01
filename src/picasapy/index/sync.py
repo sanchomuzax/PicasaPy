@@ -766,6 +766,17 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
     _sync_albums(conn, folder_id, document)
     _sync_folder_date(conn, folder_id, document)
+    # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
+    # #209 óta pontosan ezt számolja (az indexben eddig nem szereplő
+    # fotókat), tehát nincs szükség külön észlelésre.
+    #
+    # ⚠️ Csak BEÁLLÍT, sosem töröl: az első indexeléskor MINDEN mappa új
+    # képeket kap, de a visszaállítás a felhasználó dolga (megnyitja a
+    # mappát) — a sync nem tudhatja, mit nézett már meg.
+    if new_count:
+        conn.execute(
+            "UPDATE folders SET unread = 1 WHERE id = ?", (folder_id,)
+        )
     return new_count
 
 

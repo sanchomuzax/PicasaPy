@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -240,7 +240,14 @@ CREATE TABLE IF NOT EXISTS folders (
     has_ini INTEGER NOT NULL DEFAULT 0,
     date TEXT,
     offline INTEGER NOT NULL DEFAULT 0,
-    hidden INTEGER NOT NULL DEFAULT 0
+    hidden INTEGER NOT NULL DEFAULT 0,
+    -- #1644: „olvasatlan" mappa — a Picasa `albumdata_unread` oszlopa
+    -- (PMP-típus 0x03, 1 bájt/rekord; a tulajdonos valódi adatában
+    -- 330/2366 áll 1-en). Akkor áll be, ha a beolvasás ÚJ képet talál a
+    -- mappában, és a mappa megnyitásakor áll vissza. A bal hasáb ezt
+    -- KÖVÉR szedéssel mutatja — a tulajdonos élő megfigyelése szerint
+    -- (2026-08-27) az eredeti is így jelzi.
+    unread INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS photos (
@@ -369,4 +376,7 @@ ALTER TABLE folders ADD COLUMN offline INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE folders ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
 """,
     13: _RESOLVED_ROOT_DDL,
+    14: """
+ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
+""",
 }

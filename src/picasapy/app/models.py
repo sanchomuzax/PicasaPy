@@ -43,9 +43,9 @@ def sorted_folder_rows(
     reverse: bool = False,
     *,
     include_hidden: bool = False,
-) -> list[tuple[str, str, int, str, int, int, bool, bool]]:
+) -> list[tuple[str, str, int, str, int, int, bool, bool, bool]]:
     """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline,
-    rejtett) sorai a kért rendezésben.
+    rejtett, olvasatlan) sorai a kért rendezésben.
 
     Külön függvény, mert két, egymástól FÜGGETLEN sorrendet kell kiszolgálnia
     (#321): a bal hasáb a saját, rögzített Picasa-sorrendjében áll, a rács
@@ -56,7 +56,8 @@ def sorted_folder_rows(
     # Rejtett képek kapcsoló hozza vissza őket, ami a rejtett fotókat.
     rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
     db_rows = conn.execute(
-        "SELECT f.path, f.date, f.offline, f.hidden, count(p.id) AS n,"
+        "SELECT f.path, f.date, f.offline, f.hidden, f.unread,"
+        " count(p.id) AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
@@ -77,6 +78,9 @@ def sorted_folder_rows(
             # #1637/2: a rejtettség a soron utazik, hogy a hívó a
             # „Rejtett mappák" csomópont alá tudja gyűjteni őket
             bool(row["hidden"]),
+            # #1644: „olvasatlan" — új kép került a mappába, amit a
+            # felhasználó még nem nézett meg. A bal hasáb KÖVÉREN szedi.
+            bool(row["unread"]),
         )
         for row in db_rows
     ]
@@ -106,12 +110,15 @@ class FolderListModel(QAbstractListModel):
     CountRole = Qt.ItemDataRole.UserRole + 4
     # #459/5: „jelenleg nem elérhető" (levált NAS-mount, kihúzott lemez)
     OfflineRole = Qt.ItemDataRole.UserRole + 5
+    #: #1644: „olvasatlan" — új kép került a mappába. A bal hasáb KÖVÉREN
+    #: szedi, ahogy az eredeti is (a tulajdonos élő megfigyelése).
+    UnreadRole = Qt.ItemDataRole.UserRole + 6
 
     folderCountChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._rows: tuple[tuple[str, str, str, int, bool], ...] = ()
+        self._rows: tuple[tuple[str, str, str, int, bool, bool], ...] = ()
 
     def load(
         self,
@@ -137,13 +144,15 @@ class FolderListModel(QAbstractListModel):
         # bekapcsolt kapcsoló mellett nem lehetne megmondani, melyik
         # mappa volt elrejtve.
         rows = (
-            (name, path, count, date, offline)
-            for name, path, count, date, _size, _change, offline, hidden in folders
+            (name, path, count, date, offline, unread)
+            for name, path, count, date, _size, _change, offline, hidden, unread
+            in folders
             if not hidden
         )
         rejtettek = tuple(
-            ("folder", name, path, count, offline)
-            for name, path, count, _date, _size, _change, offline, hidden in folders
+            ("folder", name, path, count, offline, unread)
+            for name, path, count, _date, _size, _change, offline, hidden, unread
+            in folders
             if hidden
         )
         # #461/3: az ÉVSZÁM-csoportok a DÁTUM-nézethez tartoznak. Név vagy
@@ -154,8 +163,8 @@ class FolderListModel(QAbstractListModel):
             lathato = _with_year_separators(rows)
         else:
             lathato = tuple(
-                ("folder", name, path, count, offline)
-                for name, path, count, _date, offline in rows
+                ("folder", name, path, count, offline, unread)
+                for name, path, count, _date, offline, unread in rows
             )
         self._set_rows(lathato + _rejtett_csomopont(rejtettek))
 
@@ -165,12 +174,24 @@ class FolderListModel(QAbstractListModel):
         a Picasa találati mappalistája is sima felsorolás."""
         self._set_rows(
             tuple(
-                ("folder", g.folder_name, g.folder_path, len(g.photos), False)
+                #: #1644: a keresési TALÁLATOK listája sosem „olvasatlan" —
+                #: a jelölő a mappa tartalmának újdonságáról szól, nem a
+                #: találatokéról.
+                (
+                    "folder",
+                    g.folder_name,
+                    g.folder_path,
+                    len(g.photos),
+                    False,
+                    False,
+                )
                 for g in groups
             )
         )
 
-    def _set_rows(self, rows: tuple[tuple[str, str, str, int, bool], ...]) -> None:
+    def _set_rows(
+        self, rows: tuple[tuple[str, str, str, int, bool, bool], ...]
+    ) -> None:
         # Változatlan adatnál nincs reset: a reset eldobná a delegate-eket
         # és nullázná a görgetést, így a lista minden háttér-szinkronnál
         # a tetejére ugrana (#10).
@@ -230,7 +251,7 @@ class FolderListModel(QAbstractListModel):
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._rows):
             return None
-        kind, name, path, count, offline = self._rows[index.row()]
+        kind, name, path, count, offline, unread = self._rows[index.row()]
         if role == self.KindRole:
             return kind
         if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
@@ -241,6 +262,8 @@ class FolderListModel(QAbstractListModel):
             return count
         if role == self.OfflineRole:
             return offline
+        if role == self.UnreadRole:
+            return unread
         return None
 
     def roleNames(self):
@@ -250,6 +273,7 @@ class FolderListModel(QAbstractListModel):
             self.PathRole: b"path",
             self.CountRole: b"count",
             self.OfflineRole: b"offline",
+            self.UnreadRole: b"unread",
         }
 
 
@@ -321,8 +345,8 @@ REJTETT_MAPPAK_FEJLEC = "Rejtett mappák"
 
 
 def _rejtett_csomopont(
-    rejtettek: tuple[tuple[str, str, str, int, bool], ...],
-) -> tuple[tuple[str, str, str, int, bool], ...]:
+    rejtettek: tuple[tuple[str, str, str, int, bool, bool], ...],
+) -> tuple[tuple[str, str, str, int, bool, bool], ...]:
     """A rejtett mappák a saját fejlécük alatt, a lista végén (#1637/2).
 
     ÜRESEN nem ad fejlécet: aki nem rejtett el semmit, ne lásson egy
@@ -333,11 +357,13 @@ def _rejtett_csomopont(
     """
     if not rejtettek:
         return ()
-    fejlec = ("hidden", REJTETT_MAPPAK_FEJLEC, "", len(rejtettek), False)
+    fejlec = ("hidden", REJTETT_MAPPAK_FEJLEC, "", len(rejtettek), False, False)
     return (fejlec,) + rejtettek
 
 
-def _with_year_separators(folders) -> tuple[tuple[str, str, str, int, bool], ...]:
+def _with_year_separators(
+    folders,
+) -> tuple[tuple[str, str, str, int, bool, bool], ...]:
     """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix).
 
     Audit (`docs/specs/ui-audit-mainwindow.md`, 1.1 pont): ha a listában
@@ -349,22 +375,25 @@ def _with_year_separators(folders) -> tuple[tuple[str, str, str, int, bool], ...
     """
     folders = list(folders)
     years = [
-        _folder_year(name, date) for name, _path, _count, date, _offline in folders
+        _folder_year(name, date)
+        for name, _path, _count, date, _offline, _unread in folders
     ]
     distinct_years = {year for year in years if year}
     if years and len(distinct_years) <= 1 and all(years):
         return tuple(
-            ("folder", name, path, count, offline)
-            for name, path, count, _date, offline in folders
+            ("folder", name, path, count, offline, unread)
+            for name, path, count, _date, offline, unread in folders
         )
 
     rows = []
     last_year = None
-    for (name, path, count, _date, offline), year in zip(folders, years, strict=True):
+    for (name, path, count, _date, offline, unread), year in zip(
+        folders, years, strict=True
+    ):
         if year and year != last_year:
-            rows.append(("year", year, "", 0, False))
+            rows.append(("year", year, "", 0, False, False))
         last_year = year
-        rows.append(("folder", name, path, count, offline))
+        rows.append(("folder", name, path, count, offline, unread))
     return tuple(rows)
 
 

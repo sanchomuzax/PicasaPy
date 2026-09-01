@@ -668,6 +668,11 @@ Rectangle {
                     // #459/5: „jelenleg nem elérhető" mappa (levált NAS-mount,
                     // kihúzott lemez) — a sor bennmarad, csak jelölést kap.
                     required property bool offline
+                    //: #1644: „olvasatlan" — új kép került a mappába, amit a
+                    //: felhasználó még nem nézett meg. A tulajdonos élő
+                    //: megfigyelése szerint az eredeti ilyenkor KÖVÉREN
+                    //: szedi a mappa nevét (`albumdata_unread`).
+                    required property bool unread
                     width: folderList.width; height: pane.rowHeight
                     // #9: album-nézetben a mappa-kijelölés szűnjön meg — a
                     // hasábon csak az aktív album sora legyen kiemelve.
@@ -732,6 +737,9 @@ Rectangle {
                             // gyorsítótárból még látszanak), csak jelzi az
                             // állapotot; a részletet a súgószöveg mondja el.
                             font.italic: offline
+                            //: #1644: KÖVÉR, ha új kép került a mappába.
+                            //: A megnyitáskor áll vissza.
+                            font.bold: unread
                             opacity: offline ? 0.55 : 1.0
                             color: isSelectedFolder || folderRowMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.ink
