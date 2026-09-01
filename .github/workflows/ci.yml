@@ -47,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       kod: ${{ steps.d.outputs.kod }}
+      docs: ${{ steps.d.outputs.docs }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -111,6 +112,23 @@ jobs:
             maradek="$(grep -vx 'src/picasapy/__init__\.py' <<<"$maradek" || true)"
           fi
 
+          # #1863: a `docs/` alatt TESZTADAT is van — a `check_decision_links`
+          # és a `check_protected_features` a TELJES fát bejárja, tehát
+          # bármely lap változása hathat egy teszt eredményére. MÉRVE: 105
+          # docs-fájlt nyitnak meg a tesztek, nem kilencet, ahogy a #1863
+          # jegy szemre becsülte — kivétel-listával ez nem javítható.
+          #
+          # Ezért a mátrix továbbra is kimarad (az olcsó marad olcsó), de a
+          # `docs/`-ot OLVASÓ őrök külön lefutnak (`docs-orok` job), és a
+          # kötelező `Test (ubuntu-latest)` MEGVÁRJA őket. Enélkül ez is
+          # csak egy nem-blokkoló láb lenne — pontosan az a hiba, ami a
+          # #1858-at zölden beolvasztotta.
+          if grep -qE '^docs/' <<<"$valtozott"; then
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          fi
+
           if [ -n "$maradek" ]; then
             echo "A kód futását ÉRINTŐ fájlok:"; echo "$maradek"
             echo "kod=true" >> "$GITHUB_OUTPUT"
@@ -135,6 +153,35 @@ jobs:
     uses: ./.github/workflows/teszt-darabok.yml
     with:
       os: windows-latest
+
+  # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
+  # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
+  # adja (mérve, `--mer`); a `tests/tools/test_docs_olvaso_tesztek_1863.py`
+  # őrzi, hogy ne legyen benne elavult útvonal.
+  docs-orok:
+    name: Dokumentáció-őrök
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod != 'true' && needs.valtozas.outputs.docs == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Környezet
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 scripts/print_dependencies.py --pip | xargs -r python3 -m pip install
+      - name: A docs/-ot olvasó őrök futtatása
+        run: |
+          mapfile -t tesztek < <(python3 scripts/docs_olvaso_tesztek.py)
+          if [ "${#tesztek[@]}" -eq 0 ]; then
+            echo "ÜRES a lista — ez hiba: némán semmit nem futtatnánk."
+            exit 1
+          fi
+          printf 'Futtatandó őrök (%d):\n' "${#tesztek[@]}"
+          printf '  %s\n' "${tesztek[@]}"
+          QT_QPA_PLATFORM=offscreen python3 -m pytest "${tesztek[@]}" -q
 
   # ⚠️ #1164: ÖSSZEFOGÓ ellenőrzés a főág védelmének.
   #
@@ -161,14 +208,26 @@ jobs:
     # mátrix kimaradt — így a kötelező státuszt SOHA nem adhatja meg más
     # workflow „kihagyva" állapotban (a GitHub a kihagyottat sikernek
     # számolja, és auto-merge mellett ez beolvasztott volna egy bukó kört).
-    needs: [valtozas, darabok-ubuntu]
+    needs: [valtozas, darabok-ubuntu, docs-orok]
     if: always()
     steps:
       - name: A kód futását nem érintő PR — a mátrix kimaradt
         if: ${{ needs.valtozas.outputs.kod != 'true' }}
         run: |
           echo "A diff csak dokumentációt/verziósort érint (ld. a"
-          echo "Változás-elemzés jobot) — nincs mit futtatni."
+          echo "Változás-elemzés jobot) — a mátrix kimarad."
+
+      # #1863: itt kap FOGAT a dokumentáció-őr. A `docs-orok` job önmagában
+      # nem blokkolna (nem kötelező ellenőrzés) — a bukását EZ a lépés
+      # emeli a kötelező státuszba. A #1340 CHANGELOG-őre ugyanezért került
+      # ebbe a jobba, és a #1858 pontosan a hiányán csúszott át.
+      - name: A dokumentáció-őrök zöldek
+        if: ${{ needs.valtozas.outputs.kod != 'true' && needs.valtozas.outputs.docs == 'true' }}
+        run: |
+          if [ "${{ needs.docs-orok.result }}" != "success" ]; then
+            echo "A docs/-ot olvasó őrök elbuktak: ${{ needs.docs-orok.result }}"
+            exit 1
+          fi
 
       - name: A négy ubuntu-darab mind zöld
         if: ${{ needs.valtozas.outputs.kod == 'true' }}
