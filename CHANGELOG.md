@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.188] – 2026-09-01
+
+### Javítva
+- **Gyorsabb indulás hálózati meghajtón (#1859).** A program minden
+  indításkor újra feloldotta a védett mappák útvonalát, ami helyi lemezen
+  ingyen van, NAS-on viszont minden lépés külön körülfordulás. Az eredményt
+  mostantól megőrzi két indítás között, és csak azt ellenőrzi, hogy a mappa
+  ugyanaz maradt-e — ez öt lemez-lekérdezés helyett kettő mappánként. Ha
+  bármi megváltozott (áthelyezett link, le-/felcsatolt meghajtó, megszűnt
+  mappa), a feloldás teljesen újrafut: a mentett érték soha nem vezethet
+  más eredményre, mint a friss.
+
 ## [0.8.187] – 2026-09-01
 
 ### Hozzáadva
