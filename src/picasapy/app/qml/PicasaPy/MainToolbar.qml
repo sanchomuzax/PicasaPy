@@ -32,12 +32,10 @@ Rectangle {
     signal newAlbumRequested()
     //: #1421: az eredeti `timelinebutton` — ugyanaz a nézetváltás,
     //: mint a Nézet ▸ Időrend (Ctrl+5).
-    signal timelineRequested()
     //: #1808: a rács-nagyító be/ki (`thumbui/loupehit`).
     signal loupeRequested()
     //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
     //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
-    property bool timelineActive: false
     //: #1808: be van-e kapcsolva a rács-nagyító.
     property bool loupeActive: false
     //: #1421: a `flatview`/`folderview` pár — a bal hasáb lapos vagy
@@ -209,23 +207,23 @@ Rectangle {
         //
         // ⚠️ Szűk ablaknál elrejtőzik (#423), és `Layout.minimumWidth: 0`,
         // hogy a zsugorodási sorrend érintetlen maradjon.
-        PicasaButton {
-            objectName: "toolbarTimelineButton"
-            text: qsTr("Timeline")
-            visible: !toolbar.toolbarCompact
-            // A nyitott nézetet a gomb JELZI — enélkül a `timelineActive`
-            // holt kötés lenne, és a felhasználó sem látná, hogy a gomb
-            // váltó (a Ctrl+5 és a menütétel ugyanezt kapcsolja).
-            accent: toolbar.timelineActive ? Theme.selectionBlue : "transparent"
-            Layout.preferredWidth: 132
-            Layout.minimumWidth: 0
-            Layout.preferredHeight: 28
-            //: `timelinebutton` — az eredeti buboréksúgója
-            ToolTip.text: qsTr("Show photos on a timeline")
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            onClicked: toolbar.timelineRequested()
-        }
+        // #1903: az „Időrend" váltógomb ELTÁVOLÍTVA a fejlécből.
+        //
+        // A tulajdonos élesben jelentette (két képernyőképpel), és a
+        // bináris megerősíti: az eredeti Időrend NEM rácsnézet, hanem
+        // TELJES KÉPERNYŐS, ANIMÁLT BEMUTATÓ a diavetítő motorján
+        // (`oneup/timeline` + `BigSlideshow2`, `0x008037e0`), saját
+        // RÁTÉTES vezérlősávval (`overlays/timeline` · `timelinedot` ·
+        // `sliderthumb` · `startbutton` · `exit`, `0x007fb210`).
+        //
+        // ⇒ A fejlécben ilyen gomb az eredetiben NEM LÉTEZIK: az Időrend
+        // vezérlői a teljes képernyős rátéten ülnek. Amíg a valódi nézet
+        // nincs megépítve, a belépési pont nem kínálhatja fel magát —
+        // egy kattintható gomb, ami mást ad, mint amit ígér, rosszabb,
+        // mint a hiánya (#936).
+        //
+        // A `Nézet ▸ Időrend` menütétel HELYE megmarad (az eredetiben
+        // létezik), csak inaktív — ld. PicasaMenuBar.qml.
         // #1808: RÁCS-NAGYÍTÓ kapcsoló. Az eredetiben is eszköztárgomb
         // kapcsolja (`loupehit`); bekapcsolva a rácson húzva nagyított
         // előnézet jelenik meg — megnyitás nélkül.
