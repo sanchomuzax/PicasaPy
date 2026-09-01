@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.181] – 2026-09-01
+
+### Hozzáadva
+- **Buboréksúgó a néző kilenc gombjára (#1857).** A lejátszás, az A/AB/AA
+  összehasonlító gombok, az előző/következő léptetés, a „Létrehozás most",
+  valamint az illesztés és az 1:1 nagyítás eddig némán állt, miközben a
+  mellettük ülő arc-gomboknak volt súgójuk. A két nagyítógomb és a három
+  összehasonlító gomb szövege az eredeti Picasáé, szó szerint.
+
+### Javítva
+- **A szerkesztő fülei elmondják, mire valók (#1857).** A buboréksúgó eddig
+  a fül SAJÁT NEVÉT ismételte — a felhasználó ugyanazt a szót kapta
+  másodszor. Mostantól leírás áll ott: az első öt fülön az eredeti Picasa
+  szövege, a hatodikon és a hetediken (ezek a mi többletünk) saját leírás.
+
 ## [0.8.180] – 2026-09-01
 
 ### Javítva
