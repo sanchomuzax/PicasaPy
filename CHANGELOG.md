@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.166] – 2026-09-01
+
+### Hozzáadva
+- **„Csak filmek" szűrő a keresősávon (#1830).** Vegyes könyvtárban eddig
+  végig kellett görgetni a videókért. Mostantól a csillag és a
+  helyjelölő mellett ott a harmadik szűrő: egy kattintás, és csak a
+  filmek látszanak. Újra rákattintva visszakapod a mappát.
+
 ## [0.8.165] – 2026-09-01
 
 ### Javítva

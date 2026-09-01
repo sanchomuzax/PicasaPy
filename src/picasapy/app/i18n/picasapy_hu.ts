@@ -3843,6 +3843,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>MainToolbar</name>
     <message>
+        <source>Show movies only</source>
+        <translation>Csak filmek megjelenítése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="35"/>
         <source>Import</source>
         <translation>Importálás</translation>

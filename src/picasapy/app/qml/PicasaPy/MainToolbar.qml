@@ -125,11 +125,49 @@ Rectangle {
                     }
                 }
                 Text {   // arc-szűrő (3. fázis)
+                    // #1830: MÉRVE — az ini `faces=` adata NINCS az
+                    // indexben (a `face` tábla kizárólag a felismerésből
+                    // származik), ezért ez a szűrő ma nem építhető meg a
+                    // meglévő adatokból. Helyfoglaló marad, hogy ne
+                    // ígérjen hatástalan kattintást.
                     width: 22; height: 20
                     text: "☺"; font.pixelSize: 13; color: Theme.placeholderText
                     opacity: 0.45
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
+                }
+                Item {   // #1830: „csak filmek" — az eredeti `moviesearch`
+                    objectName: "movieFilter"
+                    width: 22; height: 20
+                    readonly property bool aktiv:
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "videos" : false
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 2
+                        color: parent.aktiv ? "#ffffff" : "transparent"
+                        border.width: parent.aktiv ? 1 : 0
+                        border.color: Theme.selectionBlue
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "▶"
+                        font.pixelSize: 11
+                        color: parent.aktiv
+                               ? Theme.selectionBlue
+                               : (movieFilterHover.hovered
+                                  ? Theme.selectionBlue : "#8f8b83")
+                    }
+                    //: `moviesearch` — az eredeti buboréksúgója
+                    ToolTip.text: qsTr("Show movies only")
+                    ToolTip.visible: movieFilterHover.hovered
+                    ToolTip.delay: 500
+                    HoverHandler { id: movieFilterHover }
+                    TapHandler {
+                        onTapped: parent.aktiv
+                                  ? controller.clearFilter()
+                                  : controller.showVideosOnly()
+                    }
                 }
                 Item {   // geo-szűrő (#30) — csak akkor él, ha van geocímkés kép
                     objectName: "geoFilter"

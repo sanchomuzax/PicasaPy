@@ -135,6 +135,18 @@ def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     return _records(rows)
 
 
+def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
+    """Csak a videók (#1830) — az eredeti `moviesearch` szűrője.
+
+    A MÁR MEGLÉVŐ `kind` mezőre épül, tehát nem igényel sem sémaváltozást,
+    sem újraindexelést. A rendezés a csillag-szűrőét követi (mappa, majd
+    név), hogy a szűrt nézet ugyanúgy viselkedjen, mint a testvérei."""
+    rows = conn.execute(
+        f"{_SELECT} WHERE p.kind = 'video' ORDER BY f.path, p.name"
+    )
+    return _records(rows)
+
+
 def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """Minden hellyel rendelkező fotó (#30) — a geo-szűrő és a térkép-nézet
     forrása.
