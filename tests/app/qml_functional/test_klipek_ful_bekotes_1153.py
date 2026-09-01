@@ -146,18 +146,39 @@ class TestAKonyvtarKijeloleseEljutAFulig:
         ), "a kollázs nem nőtt — a könyvtárból felvett kép nem került be"
 
     def test_a_klip_lista_ujra_rajzolodik_a_felvetel_utan(self, kollazs, qt_app):
-        """A másik tünet: nem frissülnek az indexképek (#1153)."""
+        """A másik tünet: nem frissülnek az indexképek (#1153).
+
+        #1276: a lista a VÁLASZTHATÓ képeket mutatja, ezért a felvétel
+        UTÁN a felvett kép csempéje ELTŰNIK (felhasználtá vált) — korábban
+        itt új csempe megjelenését vártuk. Az állítás tárgya ugyanaz
+        maradt: a lista újrarajzolódik a felvételre. Csak az irány más.
+
+        A lánc a VALÓDI alkalmazásé: a könyvtár kijelölése a tálcába kerül
+        (`syncSelection`), onnan a lapra; a „+" a kollázsra teszi és
+        felhasználtnak jelöli."""
         window, controller = kollazs
+
+        def csempek() -> int:
+            n = 0
+            while _keres(window, f"collageClip{n}") is not None:
+                n += 1
+            return n
+
         elotte = controller.collageNodes.rowCount()
         window.setProperty("selectedIndexes", [1])
         gomb = _keres(window, "collageAddClips")
         assert _var(qt_app, lambda: gomb.property("enabled") is True)
+        # A kijelölés a tálcába kerül, tehát VÁLASZTHATÓKÉNT megjelenik.
+        assert _var(qt_app, lambda: csempek() == 1), (
+            "a könyvtárban kijelölt kép nem jelent meg a választhatók közt"
+        )
 
         _kattints(window, gomb)
 
         assert _var(
             qt_app, lambda: controller.collageNodes.rowCount() == elotte + 1
         )
-        assert _var(
-            qt_app, lambda: _keres(window, f"collageClip{elotte}") is not None
-        ), "az új klip csempéje nem jelent meg a listán"
+        assert _var(qt_app, lambda: csempek() == 0), (
+            "a felvett kép csempéje ottmaradt a választhatók listáján"
+        )
+        assert controller.trayUnusedCount == 0
