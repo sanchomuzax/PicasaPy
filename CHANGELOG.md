@@ -17,6 +17,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   A gomb — az eredetihez hasonlóan — **ikonos**, nem feliratos.
   *(Szűk ablaknál elrejtőzik, hogy az eszköztár egyetlen csíkban
   maradjon.)*
+- **Az „Időrend" gomb is felkerült az eszköztárra (#1421).** A nézet eddig
+  is megvolt (Nézet ▸ Időrend, Ctrl+5), de gomb nem vezetett hozzá. A gomb
+  **jelzi is**, ha a nézet éppen nyitva van.
 
 ## [0.8.177] – 2026-09-01
 

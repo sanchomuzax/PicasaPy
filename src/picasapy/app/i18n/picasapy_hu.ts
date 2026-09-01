@@ -3871,6 +3871,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Create a new album</source>
         <translation>Új album létrehozása</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Show photos on a timeline</source>
+        <translation>A képek megjelenítése időrendben</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Timeline</source>
+        <translation>Időrend</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>

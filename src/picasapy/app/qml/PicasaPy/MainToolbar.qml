@@ -30,6 +30,12 @@ Rectangle {
     //: `thumbui/newalbum` kattintást szimulálja, ld. az
     //: eszköztár-viselkedés spec 2. szakaszát).
     signal newAlbumRequested()
+    //: #1421: az eredeti `timelinebutton` — ugyanaz a nézetváltás,
+    //: mint a Nézet ▸ Időrend (Ctrl+5).
+    signal timelineRequested()
+    //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
+    //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
+    property bool timelineActive: false
 
     function clearSearch() {
         searchField.clear()
@@ -122,6 +128,32 @@ Rectangle {
             ToolTip.delay: 500
             HoverHandler { id: newAlbumHover }
             TapHandler { onTapped: toolbar.newAlbumRequested() }
+        }
+        // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
+        // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.
+        //
+        // Mért méret: 132 × 28 (`konyvtar-ablak-meretek.md` 2.) — ez az
+        // egyetlen FELIRATOS a három kihelyezett gomb közül, ezért fér is
+        // bele a szöveg (az `newalbum` 29 × 22-je nem fért, ld. ott).
+        //
+        // ⚠️ Szűk ablaknál elrejtőzik (#423), és `Layout.minimumWidth: 0`,
+        // hogy a zsugorodási sorrend érintetlen maradjon.
+        PicasaButton {
+            objectName: "toolbarTimelineButton"
+            text: qsTr("Timeline")
+            visible: !toolbar.toolbarCompact
+            // A nyitott nézetet a gomb JELZI — enélkül a `timelineActive`
+            // holt kötés lenne, és a felhasználó sem látná, hogy a gomb
+            // váltó (a Ctrl+5 és a menütétel ugyanezt kapcsolja).
+            accent: toolbar.timelineActive ? Theme.selectionBlue : "transparent"
+            Layout.preferredWidth: 132
+            Layout.minimumWidth: 0
+            Layout.preferredHeight: 28
+            //: `timelinebutton` — az eredeti buboréksúgója
+            ToolTip.text: qsTr("Show photos on a timeline")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: toolbar.timelineRequested()
         }
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa

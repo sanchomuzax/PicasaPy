@@ -1,4 +1,4 @@
-"""#1421 — az `newalbum` gomb az eszköztáron.
+"""#1421 — a KIHELYEZETT eszköztárgombok (`newalbum`, `timelinebutton`).
 
 ## A lelet
 
@@ -94,3 +94,45 @@ class TestAszukAblak:
         forras = _TOOLBAR.read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
         assert "Layout.minimumWidth: 0" in forras[kezdet : kezdet + 1200]
+
+
+class TestIdorendGomb:
+    """A második kihelyezett gomb: a NÉZET megvolt, a gomb hiányzott."""
+
+    def test_ott_van_a_savon(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        assert window.findChild(QObject, "toolbarTimelineButton") is not None
+
+    def test_a_MERT_meretet_hasznalja(self):
+        """132 × 28 — `konyvtar-ablak-meretek.md` 2. szakasz.
+
+        Ez az EGYETLEN feliratos a kihelyezett gombok közül, és épp azért
+        fér bele a szöveg, mert a mért hely ekkora. Az `newalbum` 29 × 22-je
+        nem fért — ott a méret mondta meg, hogy ikonnak kell lennie."""
+        forras = _TOOLBAR.read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "toolbarTimelineButton"')
+        blokk = forras[kezdet : kezdet + 900]
+        assert "Layout.preferredWidth: 132" in blokk
+        assert "Layout.preferredHeight: 28" in blokk
+
+    def test_a_nyitott_nezetet_JELZI(self):
+        """A gomb váltó — a Ctrl+5 és a menütétel ugyanezt kapcsolja.
+
+        Enélkül a `timelineActive` holt kötés lenne, és a felhasználó sem
+        látná, hogy a gomb be van nyomva."""
+        forras = _TOOLBAR.read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "toolbarTimelineButton"')
+        assert "toolbar.timelineActive" in forras[kezdet : kezdet + 900]
+
+    def test_ugyanaz_az_ut_mint_a_menu(self):
+        fo = _MAIN.read_text(encoding="utf-8")
+        assert fo.count("onTimelineRequested: window.toggleTimeline()") >= 2, (
+            "a menü és az eszköztár nem ugyanazt a váltást hívja"
+        )
+
+    def test_szuk_ablaknal_elrejtozik(self):
+        forras = _TOOLBAR.read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "toolbarTimelineButton"')
+        blokk = forras[kezdet : kezdet + 900]
+        assert "visible: !toolbar.toolbarCompact" in blokk
+        assert "Layout.minimumWidth: 0" in blokk
