@@ -787,6 +787,10 @@ ApplicationWindow {
         id: picasaMenuBar
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
+        //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
+        //: szerkesztő-előnézet él. Nálunk a szerkesztőpanel a nézőben
+        //: lakik, tehát a nyitott néző a megfelelője.
+        editorActive: window.viewerOpen
         // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
         // a menüpontnak ezért tálcával, kijelölés nélkül is élnie kell
         createActionsEnabled: !window.viewerOpen

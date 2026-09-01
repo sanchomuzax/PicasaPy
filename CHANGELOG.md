@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.193] – 2026-09-01
+
+### Javítva
+- **A Mappakezelő szürke, amíg a szerkesztő nyitva van (#1768).** A
+  „Mappa hozzáadása a Picasához…" és a „Mappakezelő…" eddig szerkesztés
+  közben is kattintható volt; az eredetiben mindkettő szürke ilyenkor. A
+  könyvtár szerkezetének átrendezése félbehagyott szerkesztés mellett
+  kockázatos — az eredeti sem üzen róla, csak nem engedi.
+
 ## [0.8.192] – 2026-09-01
 
 ### Hozzáadva
