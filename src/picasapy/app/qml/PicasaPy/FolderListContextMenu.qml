@@ -39,6 +39,10 @@ PicasaMenu {
     // fa-vezérlőjének állapota, a gazda köti be
     property bool simplifiedTree: false
 
+    //: #1767 — a Személyek lista rendezési módja: name / count / top
+    property string peopleSort: "name"
+
+    signal peopleSortRequested(string mode)
     signal sortModeRequested(string mode)
     signal sortReverseRequested()
     signal simplifiedTreeRequested()
@@ -113,20 +117,48 @@ PicasaMenu {
 
     // -- 2. blokk: a személyek rendezése ------------------------------------
 
-    PicasaMenuItem {
+    // #1767: ÉLŐ tételek — eddig mindhárom `placeholder: true` volt,
+    // tehát látszottak, kattinthatók voltak, és nem csináltak semmit.
+    //
+    // ⚠️ RÁDIÓ-CSAPDA (#1464/#1468): a valódi kattintás előbb IMPERATÍVAN
+    // átbillenti a `checked`-et, és a `setPeopleSort` azonos értéknél nem
+    // változtat állapotot — a kötés tehát magától soha nem értékelődne
+    // újra. Ezért minden tétel a jelzés után VISSZAKÖTI a `checked`-et.
+    MenuItem {
         objectName: "folderListMenuSortPeopleByName"
         text: qsTr("Sort &People by Name")
-        placeholder: true
+        checkable: true
+        checked: menu.peopleSort === "name"
+        onTriggered: {
+            menu.peopleSortRequested("name")
+            checked = Qt.binding(function () {
+                return menu.peopleSort === "name"
+            })
+        }
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderListMenuSortPeopleByCount"
         text: qsTr("Sort People by &Amount")
-        placeholder: true
+        checkable: true
+        checked: menu.peopleSort === "count"
+        onTriggered: {
+            menu.peopleSortRequested("count")
+            checked = Qt.binding(function () {
+                return menu.peopleSort === "count"
+            })
+        }
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderListMenuSortPeopleByTopList"
         text: qsTr("Sort People by Top &10")
-        placeholder: true
+        checkable: true
+        checked: menu.peopleSort === "top"
+        onTriggered: {
+            menu.peopleSortRequested("top")
+            checked = Qt.binding(function () {
+                return menu.peopleSort === "top"
+            })
+        }
     }
     MenuSeparator {}
 

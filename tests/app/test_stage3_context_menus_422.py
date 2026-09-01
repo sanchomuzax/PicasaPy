@@ -83,9 +83,19 @@ class TestFolderListContextMenu:
         ]
         assert found == self.EXPECTED
 
-    #: #1454: az „Egyszerűsített fanézet" mögé megjött a réteg — a bal
-    #: hasáb fa-vezérlőjének kapcsolója, tehát már nem helykitöltő.
-    ELO_KIVETELEK = {"folderListMenuSimplifiedTree"}
+    #: Amik mögé MÁR megjött a réteg — ezek nem helykitöltők.
+    #:
+    #: ⚠️ Ez a lista csak NŐHET: minden új tétel egy megszüntetett néma
+    #: vezérlő. Ha valamelyik visszakerülne a szürkék közé, az regresszió.
+    ELO_KIVETELEK = {
+        # #1454: a bal hasáb fa-vezérlőjének kapcsolója
+        "folderListMenuSimplifiedTree",
+        # #1767: a Személyek lista három rendezési módja — név,
+        # darabszám, Top 10; a választást a `view/peopleSort` őrzi
+        "folderListMenuSortPeopleByName",
+        "folderListMenuSortPeopleByCount",
+        "folderListMenuSortPeopleByTopList",
+    }
 
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
         menu = _load(qml_engine, "FolderListContextMenu")
