@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.196] – 2026-09-01
+
+### Hozzáadva
+- **Az indulás megkeresi a korábbi telepítésből származó Picasa-adatot
+  (#1622).** Aki új Windowsra frissített, annak a régi rendszer
+  maradványaiban ott maradhattak az albumai és arcadatai — a program
+  mostantól ezt magától megnézi, és ha talál valamit, **megkérdezi**,
+  átvegye-e. Ha nincs találat, semmi nem történik és semmi nem jelenik meg.
+  A felajánlás egyszer fut le; utána a Mappakezelő gombjából bármikor
+  újraindítható.
+
 ## [0.8.195] – 2026-09-01
 
 ### Hozzáadva
