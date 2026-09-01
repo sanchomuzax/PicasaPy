@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.195] – 2026-09-01
+
+### Hozzáadva
+- **A tesztüzem naplója megmondja, milyen tárolón fut a program (#1660).**
+  Ha az indulás lassú, ez adja meg a hiányzó bizonyítékot: hálózati
+  meghajtón, helyi lemezen vagy memórialemezen van-e a program és a
+  könyvtár. A napló továbbra sem tartalmaz elérési utat, fájlnevet vagy
+  felhasználónevet — kizárólag a tároló TÍPUSÁT.
+
 ## [0.8.194] – 2026-09-01
 
 ### Javítva

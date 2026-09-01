@@ -41,6 +41,7 @@ from picasapy.perf.tesztuzem import (
     irj_indulasi_naplot,
     konyvtar_merete,
     naplo_szovege,
+    tarolo_tipusa,
     tesztuzem_bekapcsolva,
 )
 from picasapy.scanner import (
@@ -857,6 +858,14 @@ def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> N
             vedett_gyokerek=(
                 len(vedett_gyokerek()) if vedett_gyokerek is not None else None
             ),
+            # #1660: a tároló TÍPUSA — a #1653 zárásához hiányzó
+            # bizonyíték. Két helyet nézünk: ahol a PROGRAM fut (a modulok
+            # ~290 MB-ja innen olvasódik minden induláskor), és ahol a
+            # KÖNYVTÁR van. ⚠️ Csak a típus, sosem az útvonal.
+            tarolo={
+                "a program helye": tarolo_tipusa(Path(__file__).resolve()),
+                "a könyvtár helye": tarolo_tipusa(_data_dir()),
+            },
         )
         print(szoveg, file=sys.stderr)
         target = irj_indulasi_naplot(szoveg, default_log_dir())
