@@ -60,3 +60,6 @@ editpanel/ab_2up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:611,"A gomb LÉTEZIK (
 editpanel/swap_2up_focus,hianyzik,-,"„Switch which image has focus” — semmilyen alakban nincs nálunk; a #434 hatókörébe vonva"
 editpanel/swap_2up_layout,hianyzik,-,"„Switch between horizontal and vertical layout” — nincs nálunk; a #434 hatókörébe vonva"
 editpanel/only_1up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:606,"A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya"
+editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,"Az effekt-csempe képe — nálunk STATIKUS SVG (44x30); él-e az eredetiben: #1869 (blokkolt)"
+editpanel/magic_color,hianyzik,-,"A tabpanel2-n ül (editpanel.tre:259), nem az effektrácson — »One-click fix for color«"
+editpanel/magic_lighting,hianyzik,-,"A tabpanel2-n ül (editpanel.tre:265), nem az effektrácson — »One-click fix for lighting«"
