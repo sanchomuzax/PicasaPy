@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.185] – 2026-09-01
+
+### Hozzáadva
+- **Az importálás megjegyzi a korábbi CÉLMAPPÁKAT (#1785).** Eddig csak a
+  forrásokat jegyezte meg: minden importálásnál újra ki kellett tallózni a
+  célt, akkor is, ha ugyanoda ment, mint tegnap. Mostantól a cél mellett is
+  ott a legördülő a legutóbb használt mappákkal, a végén az alapértelmezett
+  hellyel. A már nem létező mappa kimarad a listából — ha visszakerül (pl.
+  felcsatolt hálózati meghajtó), magától újra megjelenik.
+
 ## [0.8.184] – 2026-09-01
 
 ### Hozzáadva
