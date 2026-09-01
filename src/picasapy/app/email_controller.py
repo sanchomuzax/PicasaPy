@@ -100,6 +100,15 @@ class EmailController(QObject):
     singleSizeIndexChanged = Signal()
     useDefaultClientChanged = Signal()
     emailFailed = Signal(str)
+    #: #1798b: az előkészítés FOLYAMATJELZŐJE. Az eredeti a
+    #: „Preparing attachments…" sorral jelez, amíg a mellékleteket
+    #: készíti — a `prepareAttachments` a beállított méretre KICSINYÍTI a
+    #: képeket, ami nagy fájloknál másodpercekig tart. Jelzés nélkül a
+    #: felhasználó azt látja, hogy nem történik semmi.
+    #:
+    #: `True` = elkezdődött, `False` = véget ért (sikerrel vagy sem).
+    preparingChanged = Signal(bool)
+
     #: #1798: a felület KÉRDEZZE meg, hogyan küldjön. Akkor dördül el, ha a
     #: felhasználó a Beállításokban a „minden küldéskor kérdezz" módot
     #: választotta. Paraméterei: csatolmány-útvonalak, tárgy, szöveg — a
@@ -236,6 +245,20 @@ class EmailController(QObject):
         items = self._resolve_items(rows)
         if not items:
             return []
+        # a jelzés a KORAI kilépések UTÁN indul: üres kijelölésre nincs mit
+        # előkészíteni, és egy azonnal eltűnő jelző csak villanna
+        self.preparingChanged.emit(True)
+        try:
+            return self._keszitsd_elo(items, multi)
+        finally:
+            # a `finally` KÖTELEZŐ: ha az előkészítés kivétellel áll meg, a
+            # jelző beragadna, és a felület örökre „dolgozom" állapotban
+            # maradna
+            self.preparingChanged.emit(False)
+
+    def _keszitsd_elo(self, items, multi: bool) -> list[str]:
+        """Az előkészítés törzse — a jelzés a hívóban van, hogy a korai
+        kilépések ne villantsanak feleslegesen."""
         # #1072: a befejezetlen kollázst nem küldjük el
         # (`projectutils::draft_collage`: a megosztás a befejezés
         # feltétele). Az egész küldés áll meg, nem csak a piszkozat marad
