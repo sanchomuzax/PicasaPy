@@ -373,6 +373,34 @@ LOCAL_CONTRAST_RADIUS_FACTOR = 0.5
 #: a lokális kontraszt mellett egy ezzel arányos világosítás is fut: a
 #: `referencia/hdrish/` exportjain a legjobb közös érték 2,9 (az
 #: exportonként illesztett eltolás 1,3–2,5 · Strength között szór).
+#:
+#: ⚠️ **Az EREDETIBEN nincs megfelelője — és tudjuk, hogy nem a 8 bites
+#: telítődés pótléka (#1607, MÉRVE).** A `filterdesc.xml` `LocalContrast`
+#: csővezetéke két, egymást kiegészítő telítődő blokkból áll (`subtract`
+#: és `add`), világosító lépés nélkül. A kézenfekvő magyarázat az volt,
+#: hogy ez a tag a mi lebegőpontos számolásunkból hiányzó telítődést
+#: pótolja. **Megmérve: nem.**
+#:
+#: A mérés az EGYETLEN olyan referencia-mintán futott, ahol nincs szabad
+#: paraméter — a `referencia/hdrish/HDS-ish default`, vagyis az XML szerinti
+#: alapállás (`Radius` 20, `Strength` 3, `Fade` 0). Alap: a
+#: `research/lomo-referencia/Lomo no effect` export (ugyanaz a JPEG-út,
+#: így a tömörítés műterméke kiesik). Mérték: képpontonkénti euklideszi
+#: RGB-távolság átlaga.
+#:
+#:     érintetlen kép                          ΔE 41,8
+#:     MAI modell (+2,9·Strength)              ΔE  4,6
+#:     ugyanaz, világosítás nélkül             ΔE 12,3
+#:     XML-hű, blokkonként 8 bitre vágó modell ΔE 26,5
+#:
+#: A telítődő változat tehát **ötszörte rosszabb**, nem jobb. Kontroll: az
+#: a modell `Contrast = 1`-nél bitre azonosságot ad, ahogy az XML előírja
+#: — az implementáció helyes, a HIPOTÉZIS dőlt meg.
+#:
+#: ⇒ A konstans MARAD. Amit ez a tag helyettesít, **nyitott kérdés**.
+#:
+#: ⚠️ A fenti ΔE-k csak EGYMÁSSAL vethetők össze: a #545 „2,58"-as száma
+#: más mérőszámmal és több mintán készült.
 LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH = 2.9
 
 
