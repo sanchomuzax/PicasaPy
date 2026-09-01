@@ -81,4 +81,6 @@ hamis biztonságérzetet ad.*
 
 - **Státusz:** ELFOGADVA
 - **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/EditorLegacyTab.qml`
+  (a fül TARTALMA), `src/picasapy/app/qml/PicasaPy/EditorTabBar.qml`
+  (a fül LÉTE — a 7. fül felvétele, épp ez a tudatos eltérés)
 - **Őrzi:** `tests/app/qml_functional/test_editor_legacy_tab_571.py`

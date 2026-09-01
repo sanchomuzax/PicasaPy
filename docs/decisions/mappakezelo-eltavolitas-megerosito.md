@@ -66,5 +66,6 @@ megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
 hamis biztonságérzetet ad.*
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/FolderManagerDialog.qml`, `src/picasapy/app/folder_tree_controller.py`
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/FolderManagerDialog.qml`
+  (a `removeWatchedConfirm` ablak — a döntés TELJES egészében itt él)
 - **Őrzi:** `tests/app/test_qml_folder_manager.py`

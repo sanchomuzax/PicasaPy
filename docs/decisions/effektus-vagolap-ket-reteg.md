@@ -242,5 +242,9 @@ megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
 hamis biztonságérzetet ad.*
 
 - **Státusz:** ELFOGADVA
-- **Megvalósítja:** `src/picasapy/edit/effect_clipboard.py`, `src/picasapy/app/effects_controller.py`
+- **Megvalósítja:** `src/picasapy/edit/effect_clipboard.py`,
+  `src/picasapy/app/effects_controller.py`,
+  `src/picasapy/app/photo_ops_controller.py`
+  (a döntés kétrétegű felállásának VEZÉRLŐ rétege: `EffectClipboardMixin`,
+  az állapot és a visszavonás — `_effect_clipboard_undo`)
 - **Őrzi:** `tests/edit/test_effect_clipboard.py`, `tests/app/qml_functional/test_effektus_beillesztes_vagas_1544.py`
