@@ -7,6 +7,31 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.198] – 2026-09-01
+
+### Javítva
+- **Eltűnt a fejlécből a nagyító gomb.** Kattintásra látszólag nem
+  történt semmi: a bekapcsolt állapotát csak egy apró ikon színe jelezte,
+  és a nagyításhoz a képek fölött **nyomva húzni** kellett volna — ezt
+  semmi nem mondta meg. A nagyító maga megmarad a kódban; a gomb akkor
+  jön vissza, ha lesz mellé érthető felület.
+- **A válogatótálcából nem tűnnek el a képek (#1904).** Eddig annyi
+  bélyegkép látszott, amennyi egyetlen sorba befért — hatvanhét kijelölt
+  képből nyolc —, a többi némán lemaradt, miközben a kék csík a teljes
+  darabszámot írta. Mostantól a tálca **több sorba tördel és kisebbre
+  veszi a bélyegképeket**, ahogy az eredeti Picasa: a doboz mérete
+  változatlan, de minden kép benne van.
+
+## [0.8.197] – 2026-09-01
+
+### Megváltozott
+- **Az „Időrend" egyelőre nem nyitható meg (#1903).** Az eszköztári
+  gombja eltűnt, a `Nézet ▸ Időrend` menüpont szürke, és a `Ctrl+5` sem
+  sül el. Ami eddig megnyílt, az nem az eredeti funkció volt: a Picasa
+  Időrendje **teljes képernyős, animált bemutató** a diavetítő motorján,
+  saját vezérlősávval — nálunk lapos rács volt hónap-fejlécekkel. A
+  menüpont helye megmarad; a valódi nézet megépítése külön munka.
+
 ## [0.8.196] – 2026-09-01
 
 ### Hozzáadva

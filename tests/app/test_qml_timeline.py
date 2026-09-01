@@ -47,16 +47,26 @@ class TestTimelineEntryPoints:
         _invoke(qt_app, window, "toggleTimeline")
         assert grid.property("visible") is False
 
-    def test_menu_item_opens_timeline(self, qml_app, qt_app):
+    def test_menu_item_is_disabled_and_does_NOT_open(self, qml_app, qt_app):
+        """#1903: a menütétel INAKTÍV — a nézet nem nyílik meg róla.
+
+        ⚠️ Ez az állítás MEGFORDULT. Korábban azt mértük, hogy a tétel
+        megnyitja az Időrendet; a tulajdonos élesben jelentette (két
+        képernyőképpel), hogy amit megnyit, az NEM az eredeti funkció: a
+        Picasa Időrendje teljes képernyős, animált bemutató a diavetítő
+        motorján (`oneup/timeline` + `BigSlideshow2`, `0x008037e0`), saját
+        rátétes vezérlősávval — a miénk lapos rács volt.
+
+        A tétel HELYE megmarad (az eredetiben létezik), de amíg a valódi
+        nézet nincs megépítve, nem nyithat meg mást."""
         window, _controller, _lib, _engine = qml_app
         item = _child(window, "menuViewTimeline")
+        assert item.property("enabled") is False
         QMetaObject.invokeMethod(
             item, "triggered", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
-        assert window.property("timelineOpen") is True
-        view = _child(window, "timelineView")
-        assert view.property("visible") is True
+        assert window.property("timelineOpen") is not True
 
     def test_close_button_closes_timeline(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

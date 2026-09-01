@@ -79,6 +79,12 @@ ApplicationWindow {
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
     //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
+    //:
+    //: ⚠️ #1911: ma SENKI nem billenti igazra — az eszköztári
+    //: kapcsológomb kikerült, mert élesben felfedezhetetlen volt. A
+    //: tulajdonság és a rács oldali réteg SZÁNDÉKOSAN marad: mérve van
+    //: és működik, csak felfedezhető felület kell hozzá (külön jegy).
+    //: Ne töröld „halott kódként" — a hiányzó darab a KAPCSOLÓ.
     property bool loupeActive: false
     // #1773: a jobb fiók négy lapja KIZÁRÓ csoport — egyszerre pontosan
     // egy látszik, vagy a fiók üres. Ezért EGYETLEN állapot írja le mind a
@@ -696,8 +702,14 @@ ApplicationWindow {
         timelineController.reload()
         window.timelineOpen = true
     }
+    // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
+    // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
+    // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
+    // miközben a tétel helyfoglaló volt, és a funkciót csak az érte el,
+    // aki ismerte a gyorsbillentyűt).
     Shortcut {
         sequence: "Ctrl+5"
+        enabled: false
         onActivated: window.toggleTimeline()
     }
 
@@ -909,7 +921,6 @@ ApplicationWindow {
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
-        onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
@@ -1153,10 +1164,6 @@ ApplicationWindow {
         onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
-        onTimelineRequested: window.toggleTimeline()
-        timelineActive: window.timelineOpen
-        onLoupeRequested: window.loupeActive = !window.loupeActive
-        loupeActive: window.loupeActive
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
         // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
         treeViewActive: (typeof folderHierarchyController !== "undefined"
