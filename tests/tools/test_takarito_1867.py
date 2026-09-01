@@ -233,3 +233,74 @@ class TestATorlesKapuja:
         assert takarito.main([]) == 0
         assert "csak jelentés" in capsys.readouterr().out
         assert proba.exists(), "a jelentő ág törölt"
+
+
+class TestPlatformFuggetlenseg:
+    """A takarító a windows-lábon is FUT — ott is csak jelent.
+
+    ⚠️ Ez a készlet a #1868 beolvadása UTÁN született, mert a windows-láb
+    **11 tesztet buktatott** rajta:
+
+        scripts\\takarito.py:308: in tmp_szazalek
+            st = os.statvfs("/tmp")
+        AttributeError: module 'os' has no attribute 'statvfs'
+
+    Az `os.statvfs` **POSIX-only**, és az `except OSError` nem fogja meg —
+    az `AttributeError` nem `OSError`. A hiba csak azért derült ki, mert a
+    #1865 óta a windows-láb bukása LÁTSZIK; korábban hetekig elült volna.
+
+    ⚠️ Ezt **nem lehet Linuxon hűen szimulálni**: az `os.statvfs`
+    törlésével a `shutil.disk_usage` is elhasal, holott Windowson az más
+    úton dolgozik. Ezért FORRÁS-szintű az őr — azt nézi, hívunk-e
+    POSIX-only nevet —, nem viselkedésit.
+    """
+
+    #: POSIX-only nevek, amelyek Windowson `AttributeError`-t adnak.
+    POSIX_ONLY = ("statvfs", "getuid", "geteuid", "fork", "getppid", "setuid")
+
+    def test_nincs_posix_only_hivas(self):
+        import ast
+
+        forras = (takarito.REPO / "scripts" / "takarito.py").read_text(encoding="utf-8")
+        talalt = [
+            f"os.{csomopont.attr}"
+            for csomopont in ast.walk(ast.parse(forras))
+            if isinstance(csomopont, ast.Attribute)
+            and csomopont.attr in self.POSIX_ONLY
+            and isinstance(csomopont.value, ast.Name)
+            and csomopont.value.id == "os"
+        ]
+        assert not talalt, (
+            f"POSIX-only hívás a takarítóban: {talalt}. Windowson ez "
+            "AttributeError, amit az `except OSError` NEM fog meg."
+        )
+
+    def test_a_tmp_gyoker_a_platformtol_jon(self):
+        """Beégetett `/tmp` helyett `tempfile.gettempdir()`.
+
+        ⚠️ FORRÁS-szintű, szándékosan. Az első változatom az ÉRTÉKET
+        hasonlította a `tempfile.gettempdir()`-hez — Linuxon mindkettő
+        `/tmp`, tehát a teszt akkor is zöld maradt, ha a konstans BEÉGETETT
+        `/tmp` volt. Mutációval mérve: átcsúszott.
+        """
+        import ast
+
+        forras = (takarito.REPO / "scripts" / "takarito.py").read_text(encoding="utf-8")
+        ertek = next(
+            csomopont.value
+            for csomopont in ast.walk(ast.parse(forras))
+            if isinstance(csomopont, ast.Assign)
+            and any(
+                isinstance(cel, ast.Name) and cel.id == "TMP_GYOKER"
+                for cel in csomopont.targets
+            )
+        )
+        szoveg = ast.unparse(ertek)
+        assert "gettempdir" in szoveg, (
+            f"a TMP_GYOKER nem a platformtól jön: {szoveg}"
+        )
+
+    def test_a_szazalek_mindig_szamot_ad(self):
+        szazalek = takarito.tmp_szazalek()
+        assert isinstance(szazalek, int)
+        assert 0 <= szazalek <= 100
