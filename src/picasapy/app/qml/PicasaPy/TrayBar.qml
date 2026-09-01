@@ -336,7 +336,33 @@ Column {
 
             // a bélyegképsor (`thumbui/scratch`): 5 képpont belső margó,
             // JOBBRÓL 50 képpont marad szabadon a három gombnak
-            Row {
+            // #1904: a doboz magassága FIX, a bélyegképek ZSUGORODNAK és
+            // TÖBB SORBA tördelődnek — nem tűnnek el némán.
+            //
+            // Húsz referencia-felvétel ugyanabban az 1920×1080-as
+            // ablakban: 15 kijelölt kép → 1 sor, ~55 képpont magas
+            // bélyegképek; 67 kép → 3 sor, ~22 képpont. A doboz külső
+            // mérete közben változatlan. Tehát nem görgetősáv és nem
+            // levágás.
+            //
+            // Nálunk eddig egyetlen `Row` állt itt `clip: true`-val: a be
+            // nem férő képek EGYSZERŰEN ELTŰNTEK. A kék infó-csík közben
+            // a teljes darabszámot írta — a felület önmagának mondott
+            // ellent.
+            //
+            // ⚠️ A magasság KÉPLETE a darabszámból nincs levezetve (a
+            // #1904 nyitott kérdése): két mért pontunk van. Amit innen
+            // BIZTOSAN tudunk, az a felső korlát (55) és a három sornál
+            // mért 22 — és a kettő ugyanabból a szabályból jön ki:
+            //
+            //     h(sorok) = min(55, (belmagasság − (sorok−1)·hézag) / sorok)
+            //     h(1) = 55 · h(2) = 34 · h(3) = 22   ← a mért érték
+            //
+            // A sorszám a legkisebb, amivel minden kép elfér. A becsléshez
+            // névleges 3:2 oldalarányt veszünk (a valódi tördelést a
+            // `Flow` a tényleges szélességekkel végzi; a 3:2 bőven adott,
+            // ezért a tényleges sorszám csak KEVESEBB lehet a becsültnél).
+            Flow {
                 id: trayScratchStrip
                 objectName: "trayScratchStrip"
                 x: 5
@@ -345,6 +371,41 @@ Column {
                 height: parent.height - 10
                 spacing: 2
                 clip: true
+
+                //: a felső korlát: 15 kép egyetlen sorban ~55 képpont
+                readonly property int maxThumbHeight: 55
+                //: ez alatt a bélyegkép már nem mond semmit — inkább vágunk
+                readonly property int minThumbHeight: 12
+                //: a becsléshez használt névleges oldalarány (ld. fent)
+                readonly property real nominalAspect: 1.5
+
+                readonly property int thumbCount:
+                    trayScratchBack.heldCount > 0
+                        ? trayScratchBack.heldCount
+                        : tray.selectedIndexesOrEmpty.length
+
+                function sorMagassag(sorok) {
+                    return Math.floor(
+                        (height - (sorok - 1) * spacing) / sorok)
+                }
+
+                readonly property int thumbHeight: {
+                    var n = thumbCount
+                    var maxSorok = Math.max(
+                        1, Math.floor((height + spacing)
+                                      / (minThumbHeight + spacing)))
+                    var h = maxThumbHeight
+                    for (var sorok = 1; sorok <= maxSorok; ++sorok) {
+                        h = Math.min(maxThumbHeight, sorMagassag(sorok))
+                        var szeles = h * nominalAspect
+                        var soronkent = Math.max(
+                            1, Math.floor((width + spacing)
+                                          / (szeles + spacing)))
+                        if (n <= soronkent * sorok)
+                            return h
+                    }
+                    return Math.max(minThumbHeight, h)
+                }
                 Repeater {
                     objectName: "trayPreviewRepeater"
                     // #718: null-őr — az appWindow (a Main.qml
@@ -367,10 +428,14 @@ Column {
                         // ~70 képpont), oldalarányt tartva — a korábbi
                         // 20 × 20-as rács a 81 képpontos dobozban holt
                         // helyet hagyott volna.
-                        height: trayScratchStrip.height
+                        height: trayScratchStrip.thumbHeight
+                        // a panoráma se törje meg a tördelés becslését:
+                        // a szélesség legfeljebb a magasság kétszerese
                         width: implicitHeight > 0
-                               ? Math.round(height * implicitWidth
-                                            / implicitHeight)
+                               ? Math.min(
+                                     height * 2,
+                                     Math.round(height * implicitWidth
+                                                / implicitHeight))
                                : height
                         source: !tray.ctl || !tray.appWindow ? ""
                             : trayScratchBack.heldCount > 0
