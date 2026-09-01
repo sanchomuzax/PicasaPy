@@ -39,11 +39,23 @@ class TestAGombLETEZIK:
         window, _controller, _engine = qml_app
         assert window.findChild(QObject, "toolbarNewAlbumButton") is not None
 
+    def test_IKONOS_es_nem_feliratos(self):
+        """Az eredeti `newalbum` IKONOS (`newalbum_icon` 19 × 14).
+
+        ⚠️ Először feliratos gombnak írtam meg, és a felirat-őr megfogta:
+        a magyar „Új album" 15,1 × 24,5 a 19 × 22-es helyen — 2,5 px
+        túllógás. A MÉRT méret maga mondta meg, hogy ikonnak kell lennie."""
+        forras = _TOOLBAR.read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
+        blokk = forras[kezdet : kezdet + 1200]
+        assert 'text: qsTr("New Album")' not in blokk, "feliratos gomb — nem fér el"
+        assert 'text: "＋"' in blokk
+
     def test_a_MERT_meretet_hasznalja(self):
         """29 × 22 — `konyvtar-ablak-meretek.md` 2. szakasz."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        blokk = forras[kezdet : kezdet + 700]
+        blokk = forras[kezdet : kezdet + 1200]
         assert "Layout.preferredWidth: 29" in blokk
         assert "Layout.preferredHeight: 22" in blokk
 
@@ -52,7 +64,7 @@ class TestAGombLETEZIK:
         nem lenne kitalálható."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        assert "ToolTip.text" in forras[kezdet : kezdet + 700]
+        assert "ToolTip.text" in forras[kezdet : kezdet + 1200]
 
 
 class TestUGYANAZ_az_ut:
@@ -71,7 +83,7 @@ class TestAszukAblak:
     def test_szuk_ablaknal_elrejtozik(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        blokk = forras[kezdet : kezdet + 700]
+        blokk = forras[kezdet : kezdet + 1200]
         assert "visible: !toolbar.toolbarCompact" in blokk
 
     def test_nem_novel_nem_zsugorodo_alapot(self):
@@ -81,4 +93,4 @@ class TestAszukAblak:
         egész zsugorodás-tervét elrontaná."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        assert "Layout.minimumWidth: 0" in forras[kezdet : kezdet + 700]
+        assert "Layout.minimumWidth: 0" in forras[kezdet : kezdet + 1200]

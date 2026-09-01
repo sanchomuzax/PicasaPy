@@ -3868,11 +3868,6 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
-        <source>New Album</source>
-        <translation>Új album</translation>
-    </message>
-    <message>
-        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
         <source>Create a new album</source>
         <translation>Új album létrehozása</translation>
     </message>

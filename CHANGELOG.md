@@ -14,7 +14,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   csak a **Fájl ▸ Új album…** menüpontból volt elérhető, pedig az
   eredetiben ott a gomb is — a Picasában a menüpont maga is ezt a
   gombnyomást szimulálja. Ugyanaz a párbeszéd nyílik mindkét úton.
-  *(Szűk ablaknál a gomb elrejtőzik, hogy az eszköztár egyetlen csíkban
+  A gomb — az eredetihez hasonlóan — **ikonos**, nem feliratos.
+  *(Szűk ablaknál elrejtőzik, hogy az eszköztár egyetlen csíkban
   maradjon.)*
 
 ## [0.8.177] – 2026-09-01

@@ -81,18 +81,47 @@ Rectangle {
         // sávnak egyetlen csíkban kell maradnia, és minden fix szélességű
         // elem a NEM zsugorodó alapot növeli. A rejtés a mi
         // alkalmazkodásunk, nem az eredeti viselkedés.
-        PicasaButton {
+        // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
+        // album… párbeszéde), csak az eszköztárról hiányzott. A bináris
+        // szerint a menütétel maga is a `thumbui/newalbum` kattintást
+        // szimulálja, tehát a kettő UGYANAZ az út.
+        //
+        // Mért méret: 29 × 22, és az eredetiben IKONOS, nem feliratos
+        // (`newalbum_icon` 19 × 14 — `konyvtar-ablak-meretek.md` 2.).
+        // ⚠️ Először feliratos gombnak írtam meg: a magyar „Új album" a
+        // 29 × 22-be NEM fér bele (a felirat-őr mérte: 15,1 × 24,5 a
+        // 19 × 22-es helyen, 2,5 px túllógás). A mért méret tehát maga
+        // mondta meg, hogy ikonnak kell lennie — a glif a szűrő-zóna
+        // idiómáját követi (★ ▶ ⚲).
+        //
+        // A gomb az eredetiben MINDIG aktív (a `.tre`-ben nincs feltétele);
+        // szűk ablaknál nálunk elrejtőzik (#423) — ld. a teszt indoklását.
+        Item {
             objectName: "toolbarNewAlbumButton"
-            text: qsTr("New Album")
             visible: !toolbar.toolbarCompact
             Layout.preferredWidth: 29
             Layout.minimumWidth: 0
             Layout.preferredHeight: 22
+            Layout.alignment: Qt.AlignVCenter
+            Rectangle {
+                anchors.centerIn: parent
+                width: 22; height: 20; radius: 2
+                color: "transparent"
+                border.width: newAlbumHover.hovered ? 1 : 0
+                border.color: Theme.selectionBlue
+                Text {
+                    anchors.centerIn: parent
+                    text: "＋"
+                    font.pixelSize: 13
+                    color: newAlbumHover.hovered ? Theme.selectionBlue : "#8f8b83"
+                }
+            }
             //: `newalbum` — az eredeti buboréksúgója
             ToolTip.text: qsTr("Create a new album")
-            ToolTip.visible: hovered
+            ToolTip.visible: newAlbumHover.hovered
             ToolTip.delay: 500
-            onClicked: toolbar.newAlbumRequested()
+            HoverHandler { id: newAlbumHover }
+            TapHandler { onTapped: toolbar.newAlbumRequested() }
         }
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
