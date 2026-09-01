@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.182] – 2026-09-01
+
+### Hozzáadva
+- **„Szerkesztések mentése lemezre" és „csillagozottak kijelölése" az
+  album-fejlécen (#1823).** Az eredeti Picasa fejlécén két gomb van, ami
+  nálunk sehol nem volt: a csillag helyén néma díszcsempe állt, a
+  mentés-gomb pedig teljesen hiányzott. Egyik művelet sem új — a mentés a
+  megszokott párbeszédet nyitja (biztonsági mentéssel), a csillagozottak
+  kijelölése pedig ugyanaz, mint a menüsávban. A fejléc most ad hozzájuk
+  belépési pontot.
+- **A fejléc gombjai kiírják a darabszámot.** „Mentés (3)", „Feltöltés
+  (3)" — üres kijelölésnél a szám nélküli alakra váltanak, ahogy az
+  eredetiben. A diavetítés ikon marad: a mért erőforrásoknak nincs
+  számlálós alakjuk.
+
 ## [0.8.181] – 2026-09-01
 
 ### Hozzáadva
