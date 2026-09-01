@@ -68,14 +68,32 @@ van fenntartva a két ikongombnak.
 
 ---
 
-## 3. A `Tray` helyi menü — PONTOSAN két parancs
+## 3. A `Tray` helyi menü — ~~PONTOSAN két parancs~~ **NYOLC SOR** (helyesbítve 2026-09-01)
 
-| parancs | EN | HU |
-|---|---|---|
-| `Tray::ID_PICTURE_HOLDINPICTURETRAY` | *&Hold Selection* | **Kijelölés &megtartása** |
-| `Tray::ID_REMOVE_SELECTION` | *&Remove Selection* | **Kijelölés &eltávolítása** |
+⚠️ **Ez a szakasz korábban téves következtetést vont le.** Igaz, hogy a `Tray::`
+névtérben **pontosan két** parancsazonosító van — de a tálca helyi menüje ettől
+még **nyolc soros**: a másik öt tétel **más névterekből** öröklődik ide. A
+névtér-számlálásból nem következik a menü hossza.
 
-A `Tray::` névtérben **több parancs nincs** a szövegtárban.
+A menü-leíró tábla a **`0x00732ee0`** címen épül fel (egyszeri init, a
+`0xda038c` bitjével őrizve; a bejegyzések a `0xd6edc0`-tól). Hívó: **`0x005e7d10`**.
+A tételek a felépítés sorrendjében:
+
+| # | parancsazonosító (cím) | EN (cím) | HU |
+|---|---|---|---|
+| 1 | `AlbumPhoto::ID_PICTURE_VIEW` (`0xcadb44`) | *&View and Edit* (`0xc8d8b8`) | **&Megjelenítés és szerkesztés** |
+| 2 | `Tray::ID_PICTURE_HOLDINPICTURETRAY` (`0xcae618`) | *&Hold Selection* (`0xcae63c`) | **Kijelölés &megtartása** |
+| 3 | `Tray::ID_REMOVE_SELECTION` (`0xcae5e4`) | *&Remove Selection* (`0xcae600`) | **Kijelölés &eltávolítása** |
+| 4 | `AlbumPhoto::ID_PICTURE_ROTATECLOCKWISE` (`0xcadf04`) | *R&otate Clockwise* (`0xc8d7c4`) | — |
+| 5 | `AlbumPhoto::ID_PICTURE_ROTATECOUNTERCLOCKWISE` (`0xcadbc0`) | *Rotate &Counterclockwise* (`0xc8d778`) | — |
+| 6 | `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0xcadd5c`) | *&Locate on Disk* (`0xc8c520`) | **&Keresés a lemezen** |
+| 7 | — | **elválasztó** (`CMenuBar::Enter`, `0xc8c4e4`) | — |
+| 8 | `AlbumPhotoWin::ID_PICTURE_PROPERTIES` (`0xcadedc`) | *Propert&ies* (`0xc8d800`) | **T&ulajdonságok** |
+
+**Nyitva:** a 4./5. tétel közös másodlagos mutatója (`0xc8d794`) és a 6. tétel
+1-es jelzőbitje — a jelentésük **NINCS MEG**; a menü megépítéséhez nem kell.
+
+Jegy: **#1917** (nálunk ma két tétel van, és a 2. felirata is rossz).
 
 ---
 
@@ -111,10 +129,40 @@ takarítás („régóta tartott" elemekre). A kettőt nem szabad összevonni.
 `IDS_NEEDS_SELECTION` üzenetekkel — azok a **kijelölésre** vonatkoznak, nem
 a tálcára.)*
 
-## 6. A jelvény a rácsban
+## 6. A jelvény a rácsban — LEZÁRVA: a `#holdadorner` az adorner-CSALÁD tagja (2026-09-01)
 
-`thumbui/#holdadorner` — a respackben **438 bájtos** réteg. A `#` előtag a
-Picasa erőforrás-nyelvében a **kompozit/overlay** elemeket jelöli.
+`thumbui/#holdadorner` — a respackben **438 bájtos** réteg, mérete a
+rétegfejléc szerint **10×10** (x 87…97, y 450…460 a tervezővásznon). A `#`
+előtag a Picasa erőforrás-nyelvében a **kompozit/overlay** elemeket jelöli.
+
+**Mire való?** A sztring (`0x00cad36c`) **egyetlen** helyről hivatkozott:
+**`0x007145c0`**, ami az **adorner-képek gyorsítótárának** egyszeri feltöltője
+(0x1b8 bájtos szerkezet, globális a `0xd676c0`-on; hívó `0x00714990`). A
+betöltési sorrend és az eltolások:
+
+| eltolás | erőforrás | cím |
+|---:|---|---|
+| **+0x00** | **`thumbui/#holdadorner`** | `0x00cad36c` |
+| +0x28 | `adorners/shortcut` | `0x00cad384` |
+| +0x50 | `adorners/star` | `0x00c878ec` |
+| +0x78 | `adorners/web` | `0x00cad398` |
+| +0xa0 | `adorners/geo` | `0x00cad3b8` |
+| +0xc8 | `adorners/sync` | `0x00cad3a8` |
+| +0xf0 | `adorners/suppress` | `0x00cad3c8` |
+| +0x118 | `adorners/dirty` | `0x00cad3dc` |
+| +0x140 | `adorners/movie` | `0x00cad3ec` |
+| +0x168 | `adorners/people` | `0x00cad3fc` |
+
+⇒ **Jelvény, nem elrendezési elem** — ugyanabból a családból, mint a csillag,
+a geocímke vagy az arcfelismerés jelvénye. A jelentése a névből és a
+parancstáblából (3. szakasz, 2. tétel) egybehangzó: a **„Kijelölés
+megtartása"** állapotot jelöli a bélyegképen.
+
+**Nyitva:** a jelvény pontos sarka a cellán belül — **NINCS MEG**. Megszerzés:
+felvétel a felhasználótól egy „megtartott" tálcáról, vagy a rajzoló függvény
+dekompilálása.
+
+Jegy: **#1918** (nálunk nulla találat a `holdadorner`-re).
 
 ---
 
@@ -396,3 +444,131 @@ A `respack.yt` ~1700 rétegének **egyikén sem** `dragnode` a csomópont-típus
 **Erős, nem megerősített**: hogy a harmadik hívó konkrétan a
 `CSelectionNode`-hoz tartozik — ez RTTI-szomszédságon alapul, nem a
 függvényre írt néven.*
+
+---
+
+## 15. LEZÁRVA: a bélyegképek NÉGYZETESEK és középre vágottak (2026-09-01)
+
+**Forrás:** 20 felvétel az eredeti Picasa 3-ból,
+`research/Picasa3-also-talca-ikonok-viselkedese/`, mind **1920×1080**, a kék
+infó-csík mindenütt y 928…942. A csík **kiírja a tálca darabszámát** — ez
+kalibrálja a mérést.
+
+### 15.1 A cella négyzet — és a fotó középre VÁGVA
+
+A `…214634.jpg` csíkfelirata a forrás méretét is kiírja: **816×1456 (álló,
+0,560)**, a tálcabeli bélyegkép mégis **54×54**. Melyik művelet? Normalizált
+keresztkorreláció a rácsbeli (arányhelyes) változat és a tálcabeli között:
+
+| rácsbeli forrás | **középre VÁGÁS** | teljes NYÚJTÁS | aránytartó ILLESZTÉS |
+|---|---:|---:|---:|
+| 75×138 (0,543) | **+0,587** | +0,214 | +0,055 |
+| 77×138 (0,558) | **+0,900** | +0,589 | +0,466 |
+| 90×138 (0,652) | **+0,902** | +0,673 | +0,041 |
+
+Háromból háromszor a vágás nyer. A 39 képes felvételen a rács vízszintesen és
+függőlegesen is 30 px osztásközű, 28 px tartalommal — négyzetes.
+
+### 15.2 A mért sorozat
+
+A „soronkénti darab" összege **mind a 16 esetben egyezik a csík feliratával**.
+
+| kép | sorok | cella (tartalom) | osztásköz | soronkénti |
+|---:|---:|---:|---:|---|
+| 3 | 1 | 54 | 57,00 | 3 |
+| 6 | 1 | 54 | 57,20 | 6 |
+| 10 | 1 | 54 | 57,00 | 10 |
+| 11 | 1 | 54 | 56,00 | 11 |
+| 12 | 1 | 48 | 51,00 | 12 |
+| 14 | 1 | 42 | 44,00 | 14 |
+| 15 | 1 | 38 | 39,93 | 15 |
+| 16 | 1 | 35 | 37,00 | 16 |
+| 17 | 1 | 33 | 35,00 | 17 |
+| 18 | 1 | 33 | 33,94 | 18 |
+| 19 | 1 | 29 | 31,00 | 19 |
+| 27 | 2 | 28 | 29,94 | 19 + 8 |
+| 39 | 2 | 28 | 30,00 | 20 + 19 |
+| 49 | 2 | 22 | 24,00 | 25 + 24 |
+| 67 | 3 | 18–19 | 21,00 | 29 + 29 + 9 |
+| 82 | 3 | 18–19 | 21,00 | 29 + 29 + 24 |
+
+**Mérés módja:** PIL; képpont-osztályozás „doboz-háttér / keret-árnyék /
+fénykép-tartalom" (semleges-e az RGB és ≥150 a fényessége); sorsávok a
+soronkénti tartalom-arányból, cellahatárok az oszloponkénti tartalom-arányból;
+a törtpontosságú osztásköz `(utolsó − első tartalom-képpont + 1 −
+cellaszélesség) / (darab − 1)`.
+
+⚠️ **A küszöbös háttér-elkülönítés NEM működik** (a doboz keretét méri), és a
+puszta szórás-profil a középre igazított „Kijelölés" feliratot is képnek nézi —
+egy korábbi kör emiatt mért „15 képet" egy **egyképes** felvételen.
+
+### 15.3 A vízszintes törvény IGAZOLVA a képernyőn
+
+A `thumbui.tre` kényszerei (`scratchback` = `bal+5 … 0,365·szélesség−15`;
+`scratch` = `scratchback` behúzva bal +5 / jobb −50 / fent +5 / lent −5)
+1920-as ablakra `scratchback = [5 ; 685,8]` és `scratch = [10 ; 635,8]`.
+
+Mérve: a doboz kerete **x 5** és **x 683**; az első cellahatár közepe **x 10,5**.
+A 625,8 px hasznos szélesség a férőhelyet is megadja: `⌊625,8/30⌋ = 20` és
+`⌊625,8/21⌋ = 29` — **pontosan a mért soronkénti maximumok**.
+
+### 15.4 ⛔ NINCS MEG: a cellaméret pontos képlete
+
+Kimerítő keresés a kézenfekvő modellre (*„a legnagyobb `s ≤ korlát`, amellyel
+`⌈n / ⌊W/(s+rés)⌋⌉ · (s+rés) ≤ H`"*), `W = 560…720`, `H = 52…90`,
+korlát `45…62`, rés `1…4`:
+
+- **±1 tűréssel az osztásközre: 912 paraméterkészlet megy át** ⇒ a 16
+  megfigyelés **nem határozza meg** a konstansokat;
+- **pontos egyezéssel: 0 készlet** — és az osztásközök törtpontosságú mérése
+  egészre jön ki, tehát ez **nem mérési hiba: a modell rossz.**
+
+**Ezért képletet nem adunk át.** Megszerzés: a `scratch` panel elrendező
+metódusának dekompilálása.
+
+*Bizonyítottsági fok: **megerősített** a négyzetes cellára, a középre vágásra,
+a 16 mért esetre és a vízszintes törvényre. A cellaméret-képlet: **NINCS MEG**.*
+
+Jegy: **#1916**.
+
+---
+
+## 16. LEZÁRVA: a `scratch` a `scratchlabel` FÖLÖTT van (2026-09-01)
+
+A `thumbui.tre` szülő-gyerek viszonya: `thumbui/scratchlabel` a
+`scratchpadbase` gyereke; a `scratchpadbase` és a `thumbui/scratch` a
+`scratchback` testvérei, és a `scratchpadbase` van **előbb** deklarálva.
+
+**A döntő bizonyíték közvetlen megfigyelés:** a `…214851.jpg` felvételen a 6
+bélyegkép **eltakarja a „Kijelölés" felirat bal részét**, és a felirat vége
+(`…lés`) **kilóg a képek jobb oldalán**.
+
+⇒ A bélyegképek a felirat **fölé** rajzolódnak, és a felirat **nem tűnik el**,
+ha a tálca nem üres. *(Nálunk `visible: false` lesz — a #1916 javítja.)*
+
+*Bizonyítottsági fok: **megerősített**.*
+
+---
+
+## 17. A tálca összecsukott MAPPA-TOKENT is tud tartani (2026-09-01)
+
+A `…214629.jpg` felvételen a tálca nem bélyegképeket mutat, hanem **egyetlen
+tokent**: kép-köteg ikont, rajta kék hátterű felirattal **„Kiválasztott mappa –
+82 fotó"**. A rétegkészlet a `scratch.tre`-ben külön él:
+
+```
+scratch/album:      root                (m_scaleXY, m_hidden)
+scratch/albumsize:  scratch/album       (mind a négy oldalon 8 px behúzás)
+scratch/albumcover: scratch/albumsize   (m_centerXY, Property usealpha 1)
+scratch/albumlabel: scratch/album       (m_centerXY, m_displayfont12)
+scratch/highlight:  scratch/albumlabel  (−4/+4 vízszintesen, +1 függőlegesen,
+                                         Property round 2, Property predraw 1)
+```
+
+A `scratch.tre` saját megjegyzése: *„I chose this dumb constraint because the
+tray can get so small that there's no room for text"*.
+
+**Nyitva:** mi teszi a mappát a tálcára (a `Tray::` névtérben nincs rá parancs),
+és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.
+
+Jegy: **#1919**.
