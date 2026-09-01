@@ -168,10 +168,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Környezet
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # ⚠️ #1871: az első változat a `--pip` kapcsolót hívta, ami NEM
+      # LÉTEZIK (`print_dependencies.py` csak `--dev`, `--all`, `--apt`).
+      # A hiba mégsem látszott: a `... | xargs pip install` csővezetékben a
+      # kilépőkód az UTOLSÓ tagé, és az `xargs -r` üres bemenetre SIKERREL
+      # tér vissza — a lépés zölden ment tovább, a job pedig „No module
+      # named pytest"-tel halt meg. Ezért itt parancs-behelyettesítés van,
+      # nem cső: az hangosan elbukik.
+      #
+      # `--all` (futásidejű + fejlesztői), ahogy a teszt-darabok jobja is:
+      # a nyolc őr közt van QML-funkcionális teszt, aminek a PySide6 is
+      # kell, nem csak a pytest.
+      - name: Qt rendszercsomagok
+        run: |
+          for kiserlet in 1 2 3; do
+            timeout 180 sudo apt-get update && break
+            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
+            sleep 5
+          done
+          sudo apt-get install -y $(python3 scripts/print_dependencies.py --apt)
+
+      - name: Python-csomagok
         run: |
           python3 -m pip install --upgrade pip
-          python3 scripts/print_dependencies.py --pip | xargs -r python3 -m pip install
+          pip install $(python3 scripts/print_dependencies.py --all)
+
       - name: A docs/-ot olvasó őrök futtatása
         run: |
           mapfile -t tesztek < <(python3 scripts/docs_olvaso_tesztek.py)
