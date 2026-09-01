@@ -40,7 +40,12 @@ from pathlib import Path
 
 from PySide6.QtQuick import QQuickItem
 
+import picasapy.app
 from support.jpeg_factory import make_jpeg
+
+_TRAYBAR = (
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+)
 
 
 def _walk(item: QQuickItem):
@@ -135,6 +140,51 @@ class TestSemmiNemLogKi:
     def test_sok_kepnel(self, qml_app, qt_app):
         window, darab = _kepekkel(qml_app, qt_app, 40)
         self._ellenoriz(window, darab)
+
+
+class TestNegyzetesCella:
+    """#1914 (spec `picasa-keptalca.md` 15.1): a cella NÉGYZET, a fotó
+    középre VÁGVA — nem aránytartó illesztés.
+
+    A `…214634.jpg` csíkfelirata a forrás méretét is kiírja (816×1456,
+    álló, 0,560), a tálcabeli bélyegkép mégis **54×54**. Normalizált
+    keresztkorrelációval háromból háromszor a középre vágás nyer
+    (+0,587 / +0,900 / +0,902) a nyújtás és az aránytartó illesztés
+    ellenében.
+
+    ⚠️ A #1904 első megvalósítása (v0.8.198) aránytartó volt, és egy
+    BECSÜLT „névleges 3:2 oldalarányt" használt a tördelés becsléséhez.
+    A mérés mindkettőt tárgytalanná tette: a cella négyzet, tehát nincs
+    mit becsülni.
+    """
+
+    def test_a_belyegkep_NEGYZETES(self, qml_app, qt_app):
+        window, _ = _kepekkel(qml_app, qt_app, 6)
+        for elem in _bélyegképek(window):
+            assert elem.width() == elem.height(), (
+                f"{elem.width()}×{elem.height()} — a cellának négyzetnek "
+                "kell lennie (spec 15.1)"
+            )
+
+    def test_kozepre_VAGOTT_nem_illesztett(self):
+        """A `PreserveAspectFit` illeszt (üres sávot hagy), a
+        `PreserveAspectCrop` vág — a mérés az utóbbit adja."""
+        forras = _TRAYBAR.read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "trayPreviewThumb"')
+        blokk = forras[kezdet : kezdet + 1400]
+        assert "fillMode: Image.PreserveAspectCrop" in blokk
+        assert "PreserveAspectFit" not in blokk
+
+    def test_a_MERT_felso_korlat(self):
+        """Egy sornál a tartalom 54 képpont (spec 15.2, tizenhat felvétel)."""
+        forras = _TRAYBAR.read_text(encoding="utf-8")
+        assert "readonly property int maxThumbHeight: 54" in forras
+
+    def test_nincs_becsult_oldalarany(self):
+        """A becsült szabad paraméter elnyeli a hibát — itt már nincs mit
+        becsülni, tehát ne is kerüljön vissza."""
+        forras = _TRAYBAR.read_text(encoding="utf-8")
+        assert "nominalAspect" not in forras
 
 
 class TestTordeles:
