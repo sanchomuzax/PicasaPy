@@ -1101,8 +1101,8 @@ def _resolved_protected_roots(roots: tuple[str | Path, ...]) -> tuple[Path, ...]
     védett gyökér ALATT van-e — az ilyen heurisztika egy szimbolikus linkkel
     tévedhetne, és a #1667/#1560 védelme éppen az, hogy egy exportcél
     SOHA ne essen áldozatul a takarításnak. A fennmaradó, nagyobb nyereség
-    (a feloldás cache-elése munkamenetek között) külön jegyet igényel — ld.
-    #1706 jelentése."""
+    (a feloldás cache-elése munkamenetek között) a #1859-ben készült el —
+    ld. `_feloldas_gyorstarral`."""
     resolved: list[Path] = []
     latott: set[str] = set()
     for root in roots:
@@ -1112,6 +1112,123 @@ def _resolved_protected_roots(roots: tuple[str | Path, ...]) -> tuple[Path, ...]
         latott.add(nyers)
         resolved.append(Path(normalize_path(root)))
     return tuple(resolved)
+
+
+def _azonossag(ut: str) -> tuple[int, int] | None:
+    """Az útvonal fájlrendszer-AZONOSSÁGA (`dev`, `ino`), vagy `None`.
+
+    `None` minden olyan esetben, amikor nem tudjuk megmondani: nem létezik,
+    nem olvasható, lecsatolt hálózati megosztás. A hívó ilyenkor NEM
+    gyorstáraz — a bizonytalanság sosem vezethet arra, hogy egy régi
+    feloldást igaznak veszünk (#1859)."""
+    try:
+        adat = os.stat(ut)
+    except OSError:
+        return None
+    return (adat.st_dev, adat.st_ino)
+
+
+def _feloldas_gyorstarral(
+    conn: sqlite3.Connection, roots: tuple[str | Path, ...]
+) -> tuple[Path, ...]:
+    """A védett gyökerek feloldása, MUNKAMENETEK KÖZÖTT megőrzött
+    gyorstárral (#1859).
+
+    **Miért kell.** A `Path.resolve()` minden útvonal-komponensre
+    rendszerhívást tesz (mérve: gyökerenként 5, pontosan lineárisan), és ez
+    minden induláskor újrafut ugyanazokra az útvonalakra. Helyi lemezen
+    ingyen van; hálózati megosztáson minden hívás körülfordulás — a
+    tulajdonos a könyvtárát NAS-on tartja, és a #1706 mérése szerint épp ez
+    magyarázza a takarítás 125 → 969 ms-os romlását.
+
+    **Miért nem elég egy egyszerű szótár.** A feloldás eredménye KÍVÜLRŐL
+    változhat: átirányított szimbolikus link, le-/felcsatolt NAS,
+    átnevezett vagy megszűnt exportcél. Egy elavult bejegyzés a #1667/#1560
+    védelmét lyukasztaná ki — egy védett mappa „idegennek" minősülne, és a
+    takarítás TÖRÖLNÉ az indexből.
+
+    **Ezért a bejegyzés MINDKÉT végét azonosítjuk.** A nyers útvonalét és a
+    feloldottét is (`dev`/`ino`). A gyorstárazott feloldást csak akkor
+    fogadjuk el, ha
+      * a nyers útvonal ma is ugyanarra az objektumra mutat, ÉS
+      * a feloldott útvonal ma is ugyanaz az objektum, ÉS
+      * a kettő UGYANAZ az objektum.
+    Ez két `stat` hívás gyökerenként az öt helyett; bármelyik feltétel
+    sérülésekor (vagy bármilyen hibánál) a feloldás teljesen újrafut, és a
+    bejegyzés frissül. Az eredmény tehát SOHA nem lehet más, mint
+    gyorstár nélkül — csak gyorsabban áll elő.
+    """
+    try:
+        conn.execute("SELECT 1 FROM resolved_root_cache LIMIT 1")
+    except sqlite3.Error:
+        # A tábla hiánya (régi index, félbemaradt migráció) NEM hiba: a
+        # gyorstár származtatott adat, nélküle a régi út működik.
+        return _resolved_protected_roots(roots)
+
+    tarolt: dict[str, sqlite3.Row] = {
+        sor["raw"]: sor
+        for sor in conn.execute(
+            "SELECT raw, resolved, raw_dev, raw_ino, resolved_dev, resolved_ino"
+            " FROM resolved_root_cache"
+        )
+    }
+
+    eredmeny: list[Path] = []
+    latott: set[str] = set()
+    frissitendo: list[tuple] = []
+    for root in roots:
+        nyers = str(root)
+        if nyers in latott:
+            continue
+        latott.add(nyers)
+
+        sor = tarolt.get(nyers)
+        talalat = None
+        if sor is not None:
+            nyers_id = _azonossag(nyers)
+            if nyers_id is not None and nyers_id == (
+                sor["raw_dev"], sor["raw_ino"]
+            ):
+                feloldott_id = _azonossag(sor["resolved"])
+                if feloldott_id is not None and feloldott_id == nyers_id:
+                    talalat = str(sor["resolved"])
+        if talalat is not None:
+            eredmeny.append(Path(talalat))
+            continue
+
+        feloldott = normalize_path(root)
+        eredmeny.append(Path(feloldott))
+        azonossag = _azonossag(nyers)
+        feloldott_azonossag = _azonossag(feloldott)
+        # Csak azt tesszük el, aminek MINDKÉT vége azonosítható — egy
+        # nem létező vagy elérhetetlen útvonalra a gyorstár nem tudna
+        # érvényességet állítani.
+        if azonossag is not None and feloldott_azonossag is not None:
+            frissitendo.append(
+                (
+                    nyers,
+                    feloldott,
+                    azonossag[0],
+                    azonossag[1],
+                    feloldott_azonossag[0],
+                    feloldott_azonossag[1],
+                )
+            )
+
+    if frissitendo:
+        conn.executemany(
+            "INSERT INTO resolved_root_cache"
+            " (raw, resolved, raw_dev, raw_ino, resolved_dev, resolved_ino)"
+            " VALUES (?, ?, ?, ?, ?, ?)"
+            " ON CONFLICT(raw) DO UPDATE SET"
+            "  resolved = excluded.resolved,"
+            "  raw_dev = excluded.raw_dev, raw_ino = excluded.raw_ino,"
+            "  resolved_dev = excluded.resolved_dev,"
+            "  resolved_ino = excluded.resolved_ino",
+            frissitendo,
+        )
+        conn.commit()
+    return tuple(eredmeny)
 
 
 def prune_foreign_folders(
@@ -1130,7 +1247,7 @@ def prune_foreign_folders(
     if not roots:
         return
     _ensure_scan_state(conn)
-    root_paths = _resolved_protected_roots(roots)
+    root_paths = _feloldas_gyorstarral(conn, roots)
     stale = [
         (row["id"], row["path"])
         for row in conn.execute("SELECT id, path FROM folders")

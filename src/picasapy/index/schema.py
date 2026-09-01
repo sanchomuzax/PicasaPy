@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -205,6 +205,34 @@ CREATE INDEX IF NOT EXISTS idx_face_person ON face(person_name);
 # sikeres scan magától nullázza. A magyarázat SZÁNDÉKOSAN itt, Python-
 # kommentben áll: az SQLite az `ALTER TABLE … DROP COLUMN`-nál újraparse-olja
 # a tárolt DDL-szöveget, és a benne maradó `--` sorkommenttől elhasal.
+# #1859 — az induláskori ÚTVONAL-FELOLDÁS gyorstára. A `Path.resolve()`
+# minden útvonal-komponensre rendszerhívást tesz (mérve: gyökerenként 5),
+# és ez MINDEN munkamenetben újrafut ugyanazokra az útvonalakra. Helyi
+# lemezen ingyen van, hálózati megosztáson viszont minden hívás
+# körülfordulás — a tulajdonos a könyvtárát NAS-on tartja.
+#
+# ⚠️ A gyorstár itt NEM triviális: a feloldás eredménye kívülről változhat
+# (szimbolikus link átirányítása, NAS le-/felcsatolása, megszűnt
+# exportcél), és egy ELAVULT bejegyzés a #1667/#1560 védelmét lyukasztaná
+# ki — egy védett mappa „idegennek" minősülne, és a takarítás törölné az
+# indexből. Ezért a bejegyzés MINDKÉT végét azonosítjuk (`dev`/`ino`): a
+# nyers útvonalét ÉS a feloldottét. Ha bármelyik nem egyezik, vagy a
+# lekérdezés hibázik, a feloldás teljesen újrafut.
+#
+# Származtatott adat: bármikor eldobható, a helyes viselkedés nem függ
+# tőle — csak a sebesség.
+_RESOLVED_ROOT_DDL = """
+CREATE TABLE IF NOT EXISTS resolved_root_cache (
+    raw TEXT PRIMARY KEY,
+    resolved TEXT NOT NULL,
+    raw_dev INTEGER NOT NULL,
+    raw_ino INTEGER NOT NULL,
+    resolved_dev INTEGER NOT NULL,
+    resolved_ino INTEGER NOT NULL
+);
+"""
+
+
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
@@ -250,6 +278,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 
 {_FACE_EMBEDDING_DDL}
 {_FACE_NAME_DDL}
+
+{_RESOLVED_ROOT_DDL}
 
 {_FTS_DDL}
 """
@@ -338,4 +368,5 @@ ALTER TABLE folders ADD COLUMN offline INTEGER NOT NULL DEFAULT 0;
     12: """
 ALTER TABLE folders ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
 """,
+    13: _RESOLVED_ROOT_DDL,
 }
