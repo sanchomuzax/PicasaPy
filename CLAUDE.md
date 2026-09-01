@@ -118,22 +118,24 @@ bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vag
 második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
 lehetőleg különböző sávokból végy jegyeket.
 
-## 📐 Élő artifactok — a kör végén frissítsd
+## 📐 A tulajdonos lapja — a kör végén frissítsd
 
-A tulajdonos **két** olvasható lapot kap: az **állapotlapot** (hol tart a
-projekt) és a **bináris térképet** (mennyit fejtettünk vissza, és hol). A
-címeik és a menet a `docs/allapotlap.md`-ben. Egyiket sem írjuk kézzel —
-**újraszámoljuk**, egyetlen paranccsal:
+A tulajdonos **egyetlen** olvasható lapot kap, három szakasszal: hol tart a
+projekt, mennyit fejtettünk vissza a Picasából, és hogyan dolgozunk. A lapot
+nem írjuk kézzel — **újraszámoljuk**, egyetlen paranccsal:
 
 ```
-python3 scripts/artifactok.py
+cd ~/picasapy-agent && python3 eszkozok/egy_lap.py
 ```
 
-majd mindkettőt **a kiírt címre** publikáljuk (`Artifact` hívás `url` mezője).
-Új cím = a felhasználó régi linkje elavul, ezért soha ne publikáld `url` nélkül.
+Ez lefuttatja az itteni `scripts/allapotlap.py`-t és `scripts/binaris_terkep.py`-t
+is, tehát külön egyiket sem kell indítani. Publikálás **mindig** a kiírt
+címre (`Artifact` hívás `url` mezője) — új cím = a felhasználó régi linkje
+elavul.
 
-Ha a köröd jegyet nyitott vagy zárt, a kör végén frissítsd. Bármelyik
-session megteheti; a szkript csak olvas.
+**Mikor:** ha a köröd jegyet nyitott vagy zárt, PR-t olvasztott be, kiadást
+csinált, vagy specifikációt bővített. A pontos menet, a cím és az átnézési
+körök külön teendője: a privát repó `docs/lapok.md`-je.
 
 ## Fejlesztés
 

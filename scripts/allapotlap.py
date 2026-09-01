@@ -598,7 +598,12 @@ def main() -> int:
     args.ki.write_text(epits(adat), encoding="utf-8")
 
     print(f"✅ {args.ki}")
-    print(f"   Publikálás ERRE a címre (különben új lap jön létre):\n   {ARTIFACT_URL}")
+    print(
+        "   ⚠️ EZT A FÁJLT ÖNMAGÁBAN NE PUBLIKÁLD — a tulajdonos EGY lapot kap,\n"
+        "      három szakasszal. Az összerakó futtatja ezt a szkriptet is:\n"
+        "         cd ~/picasapy-agent && python3 eszkozok/egy_lap.py\n"
+        f"      A publikálás címe:  {ARTIFACT_URL}"
+    )
     return 0
 
 
