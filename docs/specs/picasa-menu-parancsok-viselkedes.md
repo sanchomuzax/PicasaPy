@@ -3666,3 +3666,79 @@ csoportosztás nincs mérve.)*
   `timeslider/scaleslider`-t hivatkozza, tehát **csúszka** (59.2).
 - **„A keresősáv szűrői kimerülnek a hat gombbal"** — megdőlt: van egy
   második, gazdagabb `searchoptions` réteg (59.3).
+
+## 60. tétel — a `searchoptions`: a keresés MÁSODIK rétege (2026-09-01)
+
+*Huszonharmadik kör az UI-lefedettségi axisról (#1778). **Nem a
+leltárból**: az 59.3 jelezte, hogy a `searchoptions` csoport a
+`.tre`-leltárban nem szerepel önálló panelként, tehát a mérés soha nem
+adja ki. A binárisból (`0x005d8810`, `0x005e60d0`).*
+
+### 60.1 A csoport öt vezérlője
+
+| elem | mit csinál |
+|---|---|
+| **`similarthumb`** | a **minta-bélyegkép** — „keress ehhez hasonlót" |
+| **`loadsim`** · **`clearsim`** | a minta **betöltése** és **törlése** |
+| **`dupesearch`** | másodpéldány-keresés |
+| `digicam` | **fényképezőgép** szerinti szűrés |
+| `viewallbutton` | „mindet mutasd" visszaállító |
+
+### 60.2 ⭐ A hasonlóság-keresésnek SAJÁT ADATBÁZISA van
+
+| bizonyíték | mit jelent |
+|---|---|
+| **„Updating similarity database (will be fast next time)"** (`CSimSearch::updating`, `0x007ead60`) | van **hasonlósági adatbázis**, ami **első használatkor épül fel**, utána gyors |
+| **„Similarity Search Results"** (`CAlbumState::SimSearchResults`, `0x004ad4e0`) | az eredmény **virtuális albumként** jelenik meg, saját néven |
+
+⇒ **Nem szűrő, hanem külön keresési mód**: kiválasztasz egy mintaképet,
+és a program megmutatja a hozzá hasonlókat egy **saját albumban**. Az
+első futás lassú (indexépítés), és a program **meg is mondja**.
+
+### 60.3 A `dupesearch` menü-belépési pontja
+
+A `searchoptions/dupesearch` a **főablak-építőben** (`0x0040bf70`) és a
+**fő parancskezelőben** (`0x005cb990`) is szerepel ⇒ nemcsak a
+keresősávból érhető el, hanem **menüből** is. *(A menütétel az
+`ID_DUPES` — a #1398 és a menü-leltár szerint nálunk „megvan".)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| másodpéldány-keresés | `dupesearch`, menüből is | **megvan** — teljes motor (`dedup/`: `phash.py`, `similar.py`, sávos jelöltszűrés) + `DedupDialog.qml` | — |
+| **hasonlóság-keresés MINTAKÉPPEL** | `similarthumb` + `loadsim`/`clearsim`, saját adatbázissal és eredmény-albummal | **nincs** — a mi `similar.py`-unk **csoportokat** keres, nem „ehhez hasonlót" | **ÚJ JEGY** |
+| az indexépítés jelzése | „Updating similarity database…" | — | ua. |
+| eredmény-album | „Similarity Search Results" | — | ua. |
+| **gép szerinti szűrés** | `digicam` | **nincs** | ua. |
+| „mindet mutasd" | `viewallbutton` | a szűrők kikapcsolása | — |
+
+⚠️ **A `dedup` és a hasonlóság-keresés NEM ugyanaz.** A miénk azt
+kérdezi: *„mely képek duplikátumai egymásnak?"* — a Picasáé azt:
+*„mely képek hasonlítanak ERRE?"* A motor (dHash + Hamming) közös lehet,
+a felhasználói kérdés más.
+
+### Nyitott kérdések mérlege (60.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a csoport öt vezérlője (60.1); a hasonlósági adatbázis és
+  az eredmény-album (60.2); a `dupesearch` második belépési pontja (60.3).
+- **BLOKKOLT:** a hasonlósági adatbázis **helye és formátuma** (a
+  `0x007e95f0` — az egyetlen hívó — sztringjei az indexben üresek).
+  **Mi kell hozzá:** célzott dekompiláció. **A jegyet nem blokkolja:** a
+  mi `phash`-motorunk adja a tartalmat, a tárolás a mi döntésünk.
+
+*(Záró mondat a 45.1 szerint: ez a csoport a leltárban nem szerepel,
+ezért „hiányzó vezérlő" mérőszáma sincs — a hiányt a fenti tábla mondja
+meg.)*
+
+### Amit KIZÁRTAM
+
+- **„A `dupesearch` és a hasonlóság-keresés ugyanaz"** — megdőlt: két
+  külön vezérlő, más felhasználói kérdéssel; a hasonlóságnak **saját
+  adatbázisa és eredmény-albuma** van (60.2).
+- **„A `searchoptions` a keresősáv része"** — megdőlt: külön csoport,
+  ami a `.tre`-leltárban nem is szerepel (59.3, 60. bevezető).
