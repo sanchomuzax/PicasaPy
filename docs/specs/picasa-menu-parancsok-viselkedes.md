@@ -3890,3 +3890,73 @@ vezérlő**; a csoportosztás nincs mérve.)*
 
 - **„A névtelen/mellőzött váltás hiányzik nálunk"** — megdőlt: albumon
   át megvan, tudatos eltéréssel (62.2).
+
+## 63. tétel — a címke-panel és a geocímke-párbeszéd: négy téves riasztás (2026-09-01)
+
+*Huszonhatodik kör az UI-lefedettségi axisról (#1778). Két kis panel:
+`tagpanel` (3) és `gedialog` (2).*
+
+### 63.1 A címke-panel nálunk teljes
+
+| eredeti | nálunk (**mérve**) |
+|---|---|
+| `add_tag_label` („Írjon be egy hozzáadandó címkét:") | `tagInput` + „Add a tag…" helyőrző (`TagsPanel.qml:87`, `:91`) |
+| `addtag` („Add tag to the currently selected items") | `tagAddButton` (`:97`) |
+| `quick_config` („Configure Quick Tags") | `quickTagsGearButton` (`:201`) — a `QuickTagsConfigDialog`-ot nyitja |
+
+Mellettük **nálunk van többlet is**: címke-lista eltávolító gombokkal
+(`tagList`, `tagRemove-<címke>`, `:117`, `:151`), gyorscímke-rács
+(`quickTagsGrid`, `:219`), és üres kijelölésre saját szöveg („Select
+pictures to tag them.", `:108`).
+
+### 63.2 A geocímke-párbeszéd: a `tagall` MEGVAN, más alakban
+
+Az eredeti `gedialog` a **Google Earth**-integráció párbeszéde
+(filmszalaggal, `next`/`prev` lapozással). A Google Earth asztali
+integráció **megszűnt** — a `docs/specs/` ezt korábbi körből már
+rögzítette.
+
+**A `tagall` („Az összes geocímkézése") viszont NEM a Google Earth-höz
+kötődik**, hanem magához a geocímkézéshez: egy hely a **teljes
+kijelölésre**.
+
+Nálunk mérve: a `PlacesPanel.qml:109` a
+`controller.setGeotagRows(appWindow.selectedIndexes, latitude,
+longitude)`-t hívja — vagyis **egy koordináta az egész kijelölésre**.
+Ugyanaz a művelet, más felületen (térkép-panel a párbeszéd helyett).
+
+⇒ **Téves riasztás**, felülbírálva. *(Ez a (d) szabály ötödik esete: a
+párbeszéd halott, a benne lévő művelet nem.)*
+
+### 63.3 A maradék `gedialog`-elemek
+
+`done` · `next` · `prev` · `filmstrip` — a Google Earth-párbeszéd saját
+navigációja. **Hatókörön kívül** a párbeszéddel együtt; a mi
+térkép-panelünk a kijelölésen dolgozik, nem képenként lapozva.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| címke beírása + hozzáadás | `add_tag_label`, `addtag` | **megvan** | — |
+| gyorscímkék beállítása | `quick_config` | **megvan** | — |
+| az összes geocímkézése | `tagall` | **megvan** (`setGeotagRows` a kijelölésre) | — |
+| Google Earth-párbeszéd navigációja | `done`/`next`/`prev`/`filmstrip` | — | **hatókörön kívül** |
+
+### Nyitott kérdések mérlege (63.)
+
+```
+Nyitott kérdések: 0 nyílt · 2 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a címke-panel teljessége (63.1); a `tagall` megléte más
+  alakban (63.2).
+- **HATÓKÖRÖN KÍVÜL:** a Google Earth-párbeszéd navigációja (63.3).
+
+*(Záró mondat a 45.1 szerint: ebben a két panelben **nincs hiányzó
+vezérlő**; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `gedialog` egésze halott, mert a Google Earth-integráció az"** —
+  megdőlt: a `tagall` művelete él, és nálunk meg is van (63.2).
