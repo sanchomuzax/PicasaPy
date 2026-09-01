@@ -3335,3 +3335,96 @@ jegy belépési pontja; a csoportosztás nincs mérve.)*
   megvan, két elem csak a fogalmazás miatt nem párosult (55.1–55.2).
 - **„Az `editslideshow` önálló funkció"** — megdőlt: a filmkészítő
   belépési pontja, tehát a #432/#452-höz tartozik (55.3).
+
+## 56. tétel — a `headerpanel`: fele halott, fele valódi hiány (2026-09-01)
+
+*Tizennyolcadik kör az UI-lefedettségi axisról (#1778). Panel:
+`headerpanel` (10 hiány) — az album- és mappafejléc a rács fölött.*
+
+### 56.1 A tíz elem KÉTFELÉ oszlik
+
+| csoport | elemek | állapot |
+|---|---|---|
+| **élő** | `save_edits` · `select_star` · `create_collage` · `create_movie` · `play` | 5 |
+| **halott** | `sync_label` · `sync_options` · `view_online` · `websync0` · `websync1` | 5 (Picasa Web Albums) |
+
+⇒ A (d) szabály próbája megint: a panel **fele** megszűnt szolgáltatás, a
+másik fele nem. Egyben lezárva öt élő vezérlő veszne el.
+
+### 56.2 Ami nálunk megvan, és ami nem
+
+| eredeti | nálunk (**mérve**) |
+|---|---|
+| `play` („Play Fullscreen Slideshow") | **megvan** — `headerPlayButton` (`LightboxHeader.qml:131`) |
+| `create_collage` · `create_movie` | **megvan, de a TÁLCÁN** (`TrayBar.qml`), nem a fejlécben ⇒ elhelyezés-kérdés (#853) |
+| **`save_edits`** („Save edited photos to disk") | **nincs** |
+| **`select_star`** („Select starred photos") | **nincs** |
+| album cím + leírás | **megvan** (`folderTitleText`, `folderDescriptionField`) | 
+
+*(Mérve: a `save_edits` / `Save.*disk` / `select_star` / `csillagozott`
+keresés a `LightboxHeader.qml`-ben és a `TrayBar.qml`-ben **nulla**
+találat.)*
+
+### 56.3 ⭐ A fejléc-gombok SZÁMLÁLÓT mutatnak
+
+A gomb-erőforrások **kétféle alakban** léteznek — sima és `%d`-s:
+
+```
+albumbutton_save    ·  albumbutton_save%d
+albumbutton_sstar   ·  albumbutton_sstar%d
+albumbutton_sall    ·  albumbutton_sall%d
+albumbutton_album   ·  albumbutton_album%d
+albumbutton_cd      ·  albumbutton_cd%d
+albumbutton_menu    ·  albumbutton_menu%d   (+ `albumbutton_menu%d %x`)
+albumbutton_pubaction · albumbutton_pubaction%d
+```
+
+⇒ **A fejléc gombjai kiírják, hány elemre hatnának** („Mentés (3)"), és
+a felirat üres kijelölésnél másik alakra vált. *(A `%x` változat a
+`menu`-nál egy második, hexadecimális mezőt is kap — nem mérve, mire.)*
+
+### 56.4 A fejléc mezői és a tartós állapot
+
+A kezelő (`0x00749ba0`) a fejléc szerkeszthető mezőit is nevesíti:
+`album_title` · `album_description` · `info_text`; mellettük egy tartós
+kulcs: **`Preferences\LastUserESState`**.
+
+*(A `LastUserESState` jelentése **nem mérve** — a `Last*` minta szerint
+tartós felület-állapot, de a rövidítés feloldása nélkül nem állítok
+róla többet. Ugyanaz a család, mint a `LastCaptionButton` és a
+`LastNerdView`, 54.3.)*
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| **szerkesztések mentése lemezre** | `save_edits`, számlálós felirattal | **nincs** | ÚJ JEGY |
+| **csillagozottak kijelölése** | `select_star`, számlálós felirattal | **nincs** | ua. |
+| diavetítés | `play` | **megvan** | — |
+| kollázs / film | a fejlécben | a **tálcán** | #853 (elhelyezés) |
+| cím + leírás | `album_title`, `album_description` | **megvan** | — |
+| webes szinkron (5 elem) | Picasa Web Albums | — | **hatókörön kívül** |
+
+### Nyitott kérdések mérlege (56.)
+
+```
+Nyitott kérdések: 0 nyílt · 3 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+```
+
+- **LEZÁRVA:** a panel kettéosztása (56.1); a mi oldalunk mérése (56.2);
+  a számlálós gombfeliratok (56.3).
+- **BLOKKOLT:** a `LastUserESState` jelentése. **Mi kell hozzá:** a
+  rövidítés feloldása egy célzott dekompilációval, vagy egy futó
+  Picasa registry-ének összevetése. **Semmit nem blokkol** — csak ne
+  találgassunk róla.
+- **HATÓKÖRÖN KÍVÜL:** az öt webes szinkron-elem.
+
+*(Záró mondat a 45.1 szerint: ebben a panelben **van** hiányzó vezérlő —
+kettő; a csoportosztás nincs mérve.)*
+
+### Amit KIZÁRTAM
+
+- **„A `headerpanel` webes szinkron-panel, tehát halott"** — megdőlt: a
+  tíz elemből öt élő, köztük két valódi hiány (56.1).
+- **„A fejléc gombjai statikus feliratúak"** — megdőlt: minden gombnak
+  van `%d`-s, **számlálós** változata is (56.3).
