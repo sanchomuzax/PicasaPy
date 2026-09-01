@@ -49,9 +49,28 @@ import pytest
 from picasapy.export import ExportItem, export_photos
 
 _ROOT = hasattr(os, "geteuid") and os.geteuid() == 0
-_root_kihagy = pytest.mark.skipif(
-    _ROOT, reason="rendszergazdaként a jogosultsági bitek nem korlátoznak"
+
+#: Windowson a `chmod` a POSIX-biteket NEM érvényesíti: a „csak olvasható"
+#: mappába a Python továbbra is ír, a `chmod(0)` alatti mappa listázható.
+#: A próba tehát nem váltja ki a hibaágat — az `error_kind` üresen marad,
+#: és a teszt NEM azt méri, amit állít.
+#:
+#: ⚠️ Ez a windows-lábon 2026-09-01-ig MINDEN PR-t elbuktatott (`exit 1`,
+#: négy állítás), csak nem tűnt fel: a windows-láb `continue-on-error`,
+#: tehát nem blokkol. A darab 1/4 így hetekig NEM tesztelt a windowson —
+#: a zöld összkép mögött néma lefedettség-vesztés.
+_WINDOWS = os.name == "nt"
+
+_jogosultsag_kihagy = pytest.mark.skipif(
+    _ROOT or _WINDOWS,
+    reason=(
+        "rendszergazdaként a jogosultsági bitek nem korlátoznak; "
+        "Windowson a chmod nem érvényesíti a POSIX-biteket"
+    ),
 )
+
+#: Régi név, hogy a fájlon belüli hivatkozások egy helyen dőljenek el.
+_root_kihagy = _jogosultsag_kihagy
 
 
 def _kep(ut: Path) -> Path:
