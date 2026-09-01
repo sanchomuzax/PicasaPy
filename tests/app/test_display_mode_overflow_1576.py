@@ -142,7 +142,7 @@ class TestMegjelenitettKep:
         )
 
     @pytest.mark.parametrize(
-        "mode", ["auto", "normal", "dither16", "rdesk", "mac"]
+        "mode", ["auto", "normal", "dither16", "rdesk"]
     )
     def test_barmely_masik_mod_erintetlenul_hagy(self, szolgaltato, mode):
         """A `lcd`/`projector` (#1577) és a `linear` (#1578) azóta KIKERÜLT
