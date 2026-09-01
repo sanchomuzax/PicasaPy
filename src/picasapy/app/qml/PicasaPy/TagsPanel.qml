@@ -174,7 +174,7 @@ Rectangle {
         }
 
         // Gyorscímkék (#193) — a Picasa 3 mintájára: 2×4 gombrács a panel
-        // alján. A gombok a controller.quickTagButtons-t (8 elemű lista,
+        // alján. A gombok a controller.quickTagButtons-t (tíz elemű lista,
         // "" = üres szlot, a QML "?" jellel jelzi) mutatják; kattintásra a
         // MEGLÉVŐ addRequested jelen át adódnak a kijelöléshez (ugyanaz az
         // út, mint a kézi címke-beírásé — Main.qml köti a controllerhez).
@@ -220,12 +220,18 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 4
 
-            // 2 sor × 4 gomb — EXPLICIT deklaráció, Repeater NÉLKÜL: egy
+            // #1788: 2 sor × 5 gomb (volt 2×4). Az eredetiben TÍZ
+            // gyorscímke-hely van — a `quicktagconfig` elemleltára
+            // `edit_0` … `edit_9`-et sorol, a kezelő ciklushatára pedig
+            // `cmp eax, 0xa`. Nyolc gombbal a kilencedik és tizedik
+            // beállított címke sehol nem jelenne meg.
+            //
+            // EXPLICIT deklaráció, Repeater NÉLKÜL: egy
             // Layout-ba ágyazott Repeater a Qt Quick Layouts sajátossága
             // miatt úgy jelenteti meg a delegáltakat, hogy a QObject-
             // szülőjük a Repeater marad (nem a layout) — findChild(name)
             // ezért a tesztekben nem találná meg őket. A `quickTagButton`
-            // helyi komponens (lásd lent) DRY-vá teszi a 8 példányt.
+            // helyi komponens (lásd lent) DRY-vá teszi a tíz példányt.
             component QuickTagButton: PicasaButton {
                 id: quickTagButton
                 required property int slot
@@ -258,14 +264,16 @@ Rectangle {
                 QuickTagButton { slot: 1 }
                 QuickTagButton { slot: 2 }
                 QuickTagButton { slot: 3 }
+                QuickTagButton { slot: 4 }
             }
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 4
-                QuickTagButton { slot: 4 }
                 QuickTagButton { slot: 5 }
                 QuickTagButton { slot: 6 }
                 QuickTagButton { slot: 7 }
+                QuickTagButton { slot: 8 }
+                QuickTagButton { slot: 9 }
             }
         }
     }

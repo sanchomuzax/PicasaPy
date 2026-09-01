@@ -14,8 +14,16 @@ from picasapy.ini import update_document
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
-# Gyorscímkék (#193) — a Címkék-panel alján 2×4 gombrács, a Picasa 3 mintájára.
-_QUICK_TAG_SLOTS = 8
+# Gyorscímkék (#193) — a Címkék-panel alján gombrács, a Picasa 3 mintájára.
+#
+# #1788: 8 → 10. Az eredetiben TÍZ hely van, két független forrásból: a
+# `quicktagconfig` panel elemleltára `edit_0` … `edit_9` mezőket sorol, a
+# kezelő ciklushatára pedig `cmp eax, 0xa` (0x0083efa2). A rács ezért 2×5.
+#
+# A bővítés MIGRÁCIÓ-BARÁT: a `_quick_tag_raw_labels` a tárolt listát
+# üresekkel tölti fel a jelenlegi hosszra, tehát a korábban mentett nyolc
+# érték a helyén marad, és két üres szlot kerül mögé.
+_QUICK_TAG_SLOTS = 10
 # a felső ennyi gomb foglalható le a legutóbb használt címkéknek
 _QUICK_TAG_RESERVED = 2
 # ennél többet a „legutóbb használt" lista nem kell hogy őrizzen (a felső
@@ -155,8 +163,11 @@ class KeywordsMixin:
     # -- Gyorscímkék (#193) --------------------------------------------------
 
     def _quick_tag_raw_labels(self) -> list[str]:
-        """A 8 kézzel beállított szlot, mindig pontosan 8 elemű listaként
-        (hiányzó/hibás mentésnél üres string tölti ki)."""
+        """A kézzel beállított szlotok, mindig pontosan `_QUICK_TAG_SLOTS`
+        elemű listaként (hiányzó/hibás mentésnél üres string tölti ki).
+
+        #1788: ez a feltöltés a MIGRÁCIÓ maga — a nyolc elemre mentett
+        beállítás tíz mezős felületen is hiánytalanul megjelenik."""
         stored = _as_str_list(self._get_settings().value(_KEY_QUICK_LABELS))
         labels = [_clean_keyword(v) for v in stored[:_QUICK_TAG_SLOTS]]
         labels += [""] * (_QUICK_TAG_SLOTS - len(labels))
@@ -197,13 +208,14 @@ class KeywordsMixin:
 
     @Property(list, notify=quickTagsChanged)
     def quickTagConfigLabels(self) -> list:
-        """A 8 kézzel szerkeszthető szlot — a konfigurációs dialógus ezt
-        mutatja/írja (a ténylegesen megjelenő gombokat ld. quickTagButtons)."""
+        """A tíz kézzel szerkeszthető szlot (#1788) — a konfigurációs
+        dialógus ezt mutatja/írja (a ténylegesen megjelenő gombokat ld.
+        `quickTagButtons`)."""
         return self._quick_tag_raw_labels()
 
     @Slot(int, str)
     def setQuickTagLabel(self, slot: int, text: str) -> None:
-        """Egy gyorscímke-szlot beállítása (0..7) — a konfigurációs
+        """Egy gyorscímke-szlot beállítása (0..9, #1788) — a konfigurációs
         dialógus szövegmezőinek onEditingFinished-je hívja."""
         slot = int(slot)
         if not 0 <= slot < _QUICK_TAG_SLOTS:
@@ -237,7 +249,7 @@ class KeywordsMixin:
 
     @Property(list, notify=quickTagsChanged)
     def quickTagButtons(self) -> list:
-        """A ténylegesen megjelenő 8 gombcímke (#193): a kézzel beállított
+        """A ténylegesen megjelenő tíz gombcímke (#193, #1788): a kézzel beállított
         szlotok, a felső 2 helyén — ha a kapcsoló BE — a legutóbb használt
         címkékkel felülírva, majd (ha a gyakori-kitöltés BE) az üresen
         maradt szlotok a leggyakrabban használt, még nem szereplő
