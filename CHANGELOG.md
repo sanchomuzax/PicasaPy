@@ -10,6 +10,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.198] – 2026-09-01
 
 ### Javítva
+- **Eltűnt a fejlécből a nagyító gomb.** Kattintásra látszólag nem
+  történt semmi: a bekapcsolt állapotát csak egy apró ikon színe jelezte,
+  és a nagyításhoz a képek fölött **nyomva húzni** kellett volna — ezt
+  semmi nem mondta meg. A nagyító maga megmarad a kódban; a gomb akkor
+  jön vissza, ha lesz mellé érthető felület.
 - **A válogatótálcából nem tűnnek el a képek (#1904).** Eddig annyi
   bélyegkép látszott, amennyi egyetlen sorba befért — hatvanhét kijelölt
   képből nyolc —, a többi némán lemaradt, miközben a kék csík a teljes
