@@ -25,6 +25,8 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
 
+⭐ **2026-09-01 — a #1412 egyik KORLÁTJA MEGDŐLT:** a jegy szerint „egy mintánk van (AI6)", de a `kollazs-golden/` **tizenegy** `.cxf`-je közt a **`regulargrid` (AI5) is egyetlen `scale`-t** használ (330) ⇒ **második adatpont**. Levezetve: a kizárt 300 és 359 az **oszlop-** és **sor-osztás**; az AI5-re pontos a megfelelés (`0,322266 × 1024 = 330`), az AI6-ra keresett tört **0,305664** — a felirat-sávot is tartalmazó cella lehet. Részletek a #1412 kommentjében.
+
 ⭐ **2026-09-01 (2.9):** a filmkészítő **filmszalagja teljes fogd-és-vidd felület** (`filmstripmove/insert/dragtoclips/doubleclick/context`), a **négy csúszka** egy kezelőben, és a filmkészítő **saját, menthető projekt** (`CMakeMoviePanel::autosave`, „Back to Movie Maker", `Preferences\SupportMovies`). **2.10 (2026-09-01):** a `titledialog` — a **szöveges dia szerkesztője** (stílus- és méretválasztó, élő előnézet, `captionchk` a képfelirat átemelésére); a szöveges dia a filmszalagon **„Text Slide"** néven jelenik meg, az infósor `%s  %dx%d pixels` + `(%d of %d)`.
 
 ⭐ **2026-08-30 — a „Film készítése" szakasz MŰKÖDÉS-sel bővült** (2.5/b–2.8):
