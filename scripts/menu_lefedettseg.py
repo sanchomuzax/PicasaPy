@@ -104,8 +104,46 @@ def _parancsok() -> list[str]:
     return sorted({s[1] for s in sorok[1:] if len(s) > 1 and s[1].startswith("ID_")})
 
 
+#: Ennyi sort nézünk meg a fájl elején a „generált" jelölés keresésekor.
+#:
+#: ⚠️ A teljes szövegben keresni NEM jó: MÉRVE (2026-09-01) a „generál"
+#: szótő 14 lapra illeszkedik, mert a PRÓZA is használja („a Picasa saját
+#: generált…", „a lap generált blokkja"). A fejléc első három sorára
+#: szűkítve pontosan 2 lap jön ki, hamis pozitív nélkül — és mindkét
+#: generált lapunk tényleg ott mondja ki magáról.
+_FEJLEC_SOROK = 3
+
+_GENERALT_JELEK = ("generálva", "generált", "ne szerkeszd", "ne írd kézzel")
+
+
+def _generalt(szoveg: str) -> bool:
+    """Gépi lap-e — a FEJLÉCE alapján."""
+    fejlec = "\n".join(szoveg.splitlines()[:_FEJLEC_SOROK]).casefold()
+    return any(jel in fejlec for jel in _GENERALT_JELEK)
+
+
 def _lapok() -> dict[str, str]:
-    return {p.name: p.read_text(encoding="utf-8") for p in SPEC_DIR.glob("*.md")}
+    """A `docs/specs/` lapjai — a GENERÁLT lapok NÉLKÜL.
+
+    ⚠️ **Körkörösség-védelem (#1878).** A mérő bizonyítékként olvassa
+    ezeket a lapokat. Ha egy generált jelentés is köztük van, a mérő a
+    SAJÁT (vagy egy testvér-eszköz) kimenetét hinné el, és a szám némán
+    100%-ra ugorhatna.
+
+    Ma két generált lap van a `docs/specs/` alatt — `ui-lefedettseg.md`
+    (privát `ui_lefedettseg.py`) és `lanc-szakadasok-leltar.md`
+    (`kepesseg_or.py`) —, és egyikben sincs `ID_*` token, tehát a mai
+    138/138 nem önhivatkozó. **Ez azonban szerencse, nem szerkezet:** ha
+    egy generált lap egyszer parancsneveket sorolna, a szám hazudna. A
+    kizárás ezért nem utólagos javítás, hanem a mérés feltétele.
+
+    A testvér-eszköz (#1878) ugyanezt a szabályt kapja — ott a naiv
+    névgrep 49 elemből 31 hamis pozitívot adott, mind körkörösségből."""
+    return {
+        p.name: szoveg
+        for p in SPEC_DIR.glob("*.md")
+        if not _generalt(szoveg := p.read_text(encoding="utf-8"))
+    }
 
 
 def merd() -> dict:
