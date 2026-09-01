@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.190] – 2026-09-01
+
+### Javítva
+- **Windowson a mappa útvonala olvasható alakban jelenik meg (#1629).** Az
+  exportálás, az importálás és az adatbázis-áthelyezés párbeszéde eddig
+  `/C:/Users/…` alakot mutatott a megszokott `C:\Users\…` helyett.
+
 ## [0.8.189] – 2026-09-01
 
 ### Hozzáadva
