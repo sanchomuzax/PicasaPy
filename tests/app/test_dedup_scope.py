@@ -7,7 +7,7 @@ import os
 import threading
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtCore import Qt, QEventLoop, QTimer
 
 from picasapy.index import open_index, sync_tree
 from picasapy.thumbs import ThumbnailCache
@@ -20,6 +20,31 @@ def _quit_on(signal):
     signal.connect(loop.quit)
     QTimer.singleShot(5000, loop.quit)
     return loop
+
+
+def _cancel_on_progress(dedup):
+    """A megszakítás kiváltása a haladás-jelzésre — KÖZVETLEN kapcsolattal.
+
+    Alapértelmezett (Auto) kapcsolattal ez a teszt versenyhelyzetes: a
+    `scanProgress` a worker-szálról jön, a fogadó kontextus viszont a
+    GUI-szálon élő controller, tehát a Qt SORBA ÁLLÍTJA a hívást. A
+    `cancelScan()` így csak a `loop.exec()` alatt fut le — addigra a
+    hat képes próbakönyvtáron a keresés már be is fejeződött, és
+    `scanFinished` érkezik `scanCancelled` helyett. (A `_PROGRESS_STEP`
+    = 25 ritkítás miatt egyébként is csak a fázis-záró jelzések
+    mennek ki, épp a leállási ellenőrzési pontok mellett.)
+
+    KÖZVETLEN kapcsolattal a kérés ott és akkor kerül a jelzőre, ahol a
+    valóságban is hat: a worker következő ellenőrzési pontja előtt —
+    ez a TERMÉK szerződése, a sorbaállítás csak a tesztkörnyezeté.
+
+    Bizonyíték: 2026-09-01, PR #1902 CI (ubuntu 2/4) — a
+    `test_cancelled_scan_emits_no_results` elbukott, miközben ugyanaz a
+    kód helyben ötször zölden futott.
+    """
+    dedup.scanProgress.connect(
+        lambda *_args: dedup.cancelScan(), Qt.DirectConnection
+    )
 
 
 def _duplicate_pair(folder, stem, size=(40, 20)):
@@ -177,7 +202,7 @@ class TestCancellation:
         cancelled = threading.Event()
         dedup.scanCancelled.connect(cancelled.set)
         # a legelső haladás-jelzésre azonnal megszakítjuk
-        dedup.scanProgress.connect(lambda *_args: dedup.cancelScan())
+        _cancel_on_progress(dedup)
 
         loop = _quit_on(dedup.scanCancelled)
         dedup.scanForDuplicates()
@@ -188,7 +213,7 @@ class TestCancellation:
     def test_cancelled_scan_emits_no_results(self, dedup, library):
         finished = []
         dedup.scanFinished.connect(finished.append)
-        dedup.scanProgress.connect(lambda *_args: dedup.cancelScan())
+        _cancel_on_progress(dedup)
 
         loop = _quit_on(dedup.scanCancelled)
         dedup.scanForDuplicates()
@@ -197,7 +222,7 @@ class TestCancellation:
         assert finished == []
 
     def test_a_new_scan_runs_after_a_cancelled_one(self, dedup, library):
-        dedup.scanProgress.connect(lambda *_args: dedup.cancelScan())
+        _cancel_on_progress(dedup)
         loop = _quit_on(dedup.scanCancelled)
         dedup.scanForDuplicates()
         loop.exec()

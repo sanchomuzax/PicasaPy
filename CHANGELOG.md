@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.197] – 2026-09-01
+
+### Megváltozott
+- **Az „Időrend" egyelőre nem nyitható meg (#1903).** Az eszköztári
+  gombja eltűnt, a `Nézet ▸ Időrend` menüpont szürke, és a `Ctrl+5` sem
+  sül el. Ami eddig megnyílt, az nem az eredeti funkció volt: a Picasa
+  Időrendje **teljes képernyős, animált bemutató** a diavetítő motorján,
+  saját vezérlősávval — nálunk lapos rács volt hónap-fejlécekkel. A
+  menüpont helye megmarad; a valódi nézet megépítése külön munka.
+
+## [0.8.196] – 2026-09-01
+
+### Hozzáadva
+- **Az indulás megkeresi a korábbi telepítésből származó Picasa-adatot
+  (#1622).** Aki új Windowsra frissített, annak a régi rendszer
+  maradványaiban ott maradhattak az albumai és arcadatai — a program
+  mostantól ezt magától megnézi, és ha talál valamit, **megkérdezi**,
+  átvegye-e. Ha nincs találat, semmi nem történik és semmi nem jelenik meg.
+  A felajánlás egyszer fut le; utána a Mappakezelő gombjából bármikor
+  újraindítható.
+
 ## [0.8.195] – 2026-09-01
 
 ### Hozzáadva

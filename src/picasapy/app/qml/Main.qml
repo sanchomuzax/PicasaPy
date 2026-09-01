@@ -696,8 +696,14 @@ ApplicationWindow {
         timelineController.reload()
         window.timelineOpen = true
     }
+    // #1903: a `Ctrl+5` NEM sül el, amíg a valódi Időrend nincs kész — a
+    // menütétel is inaktív. A billentyű így nem kerülhet meg egy szürke
+    // menüpontot (a #1686 fordított esete: ott a billentyű MŰKÖDÖTT,
+    // miközben a tétel helyfoglaló volt, és a funkciót csak az érte el,
+    // aki ismerte a gyorsbillentyűt).
     Shortcut {
         sequence: "Ctrl+5"
+        enabled: false
         onActivated: window.toggleTimeline()
     }
 
@@ -909,7 +915,6 @@ ApplicationWindow {
         onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.selectedIndex)
         onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
-        onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.valtsFiokLapot("tags")
         peoplePanelOpen: window.peoplePanelOpen
@@ -1112,6 +1117,12 @@ ApplicationWindow {
         collageDraftDialog.openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
+        // #1622: NÉMA felderítés korábbi telepítésből származó adatra —
+        // az eredeti is magától megnézi (`0x00406770`, két `Windows.old`
+        // útvonal). Találat nélkül semmi nem történik; találatnál a
+        // PicasaImportDialog KÉRDEZ, mielőtt bármit átvennénk.
+        if (typeof discoveryController !== "undefined" && discoveryController)
+            discoveryController.discoverAtStartup()
     }
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
@@ -1147,8 +1158,6 @@ ApplicationWindow {
         onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
-        onTimelineRequested: window.toggleTimeline()
-        timelineActive: window.timelineOpen
         onLoupeRequested: window.loupeActive = !window.loupeActive
         loupeActive: window.loupeActive
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a

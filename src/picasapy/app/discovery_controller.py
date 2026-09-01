@@ -44,20 +44,80 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
     # őket, ugyanúgy, ahogy a `controller`/`fileOpsController` is elérhető
     # bármelyik QML-fájlból.
     dialogRequested = Signal()
+    #: #1622: az INDULÁSKORI, néma felderítés eredménye. Külön jelzés a
+    #: `discoveryFinished`-től, mert a felhasználó itt nem kért semmit:
+    #: találat nélkül SEMMI nem történhet és semmi nem jelenhet meg.
+    startupDiscoveryFinished = Signal(list, int)
 
     def __init__(
         self,
         add_folder: Callable[[str], None],
         parent: QObject | None = None,
+        settings=None,
     ) -> None:
         super().__init__(parent)
         self._add_folder = add_folder
+        self._settings = settings
 
     @Slot()
     def openImportDialog(self) -> None:
         """A Mappakezelő gombja hívja: jelzi a PicasaImportDialog-nak, hogy
         nyíljon meg és induljon újra a felderítés."""
         self.dialogRequested.emit()
+
+    #: #1622: az induláskori felajánlás EGYSZER fut le. Aki elutasította,
+    #: azt ne kérdezzük meg minden indításkor — a felderítés maga
+    #: bármikor újraindítható a Mappakezelő gombjából.
+    STARTUP_OFFER_KEY = "discovery/startupOfferDone"
+
+    @Slot()
+    def discoverAtStartup(self) -> None:
+        """Néma felderítés induláskor (#1622).
+
+        Az eredeti Picasa magától megnézi, van-e korábbi telepítésből
+        származó adat (`0x00406770`: két `Windows.old`-útvonal), és átveszi
+        — aki új Windowsra frissített, annak az albumai maguktól
+        előkerültek. Nálunk ugyanez, két különbséggel:
+
+        * **kérdezünk**, nem veszünk át némán (adatátvételnél a némaság a
+          kockázatosabb irány — a jegy ezt külön kiköti);
+        * **találat nélkül semmi nem történik**: se dialógus, se üzenet.
+
+        A felajánlás egyszer fut le; utána a Mappakezelő gombja marad."""
+        if self._startup_offer_done():
+            return
+        self._mark_startup_offer_done()
+
+        def worker() -> None:
+            javaslatok, darab = self._felderites()
+            self.startupDiscoveryFinished.emit(javaslatok, darab)
+
+        self._start_background(worker, name="picasapy-discovery-startup")
+
+    def _startup_offer_done(self) -> bool:
+        if self._settings is None:
+            return False
+        ertek = self._settings.value(self.STARTUP_OFFER_KEY, False)
+        if isinstance(ertek, bool):
+            return ertek
+        return str(ertek).strip().lower() in ("true", "1")
+
+    def _mark_startup_offer_done(self) -> None:
+        if self._settings is not None:
+            self._settings.setValue(self.STARTUP_OFFER_KEY, True)
+
+    def _felderites(self) -> tuple[list[str], int]:
+        """A felderítés MAGJA — a kézi és az induláskori út közös része."""
+        installations = discover_installations()
+        proposed: list[str] = []
+        seen: set[str] = set()
+        for installation in installations:
+            for path in propose_watched_folders(installation, _DEFAULT_REMAP):
+                text = str(path)
+                if text not in seen:
+                    seen.add(text)
+                    proposed.append(text)
+        return proposed, len(installations)
 
     @Slot()
     def discoverPicasa(self) -> None:
@@ -70,16 +130,8 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
         mindig a jelenlegi állapotot adja (7. rögzített döntés)."""
 
         def worker() -> None:
-            installations = discover_installations()
-            proposed: list[str] = []
-            seen: set[str] = set()
-            for installation in installations:
-                for path in propose_watched_folders(installation, _DEFAULT_REMAP):
-                    text = str(path)
-                    if text not in seen:
-                        seen.add(text)
-                        proposed.append(text)
-            self.discoveryFinished.emit(proposed, len(installations))
+            javaslatok, darab = self._felderites()
+            self.discoveryFinished.emit(javaslatok, darab)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin) — a
         # leépítés (teszt-fixture, app-zárás) `waitForBackgroundWorkers()`-
