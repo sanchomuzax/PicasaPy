@@ -24,6 +24,7 @@ ez a modul csak *javaslatot* ad, fájlt nem ír).
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -152,11 +153,60 @@ def _wine_appdata_candidates(
     return tuple(candidates)
 
 
+#: #1622: a KORÁBBI Windows-telepítés maradványai. Az eredeti Picasa
+#: induláskor magától megnézi ezt a két útvonalat (`0x00406770`, mind a
+#: négy literál ugyanabban a függvényben), és átveszi a talált adatot —
+#: aki új Windowsra frissített, annak az albumai és arcadatai maguktól
+#: előkerültek. A `$$` a felhasználónévre álló helyettesítő.
+_WINDOWS_OLD_RELATIVE = (
+    # XP-alak
+    "Documents and Settings/{felhasznalo}/Local Settings/Application Data",
+    # Vista+ alak
+    "Users/{felhasznalo}/AppData/Local",
+)
+
+
+def _windows_old_candidates(
+    gyoker: Path, *, isdir: Callable[[Path], bool] = Path.is_dir
+) -> tuple[tuple[str, Path], ...]:
+    """A `Windows.old` alatti korábbi profilok `%LocalAppData%`-szerű
+    könyvtárai (#1622).
+
+    A felhasználónevet NEM találgatjuk: végigmegyünk a profilokon, ahogy a
+    Wine-ág is teszi. Így az sem marad ki, aki más néven használta a régi
+    rendszert.
+
+    Az `isdir` fogantyú a #1217 mintája: a windowsos ág így LINUXON is
+    végigmérhető, nem `skipif`-fel kihagyott (a #1560 hibája)."""
+    if not isdir(gyoker):
+        return ()
+    jeloltek: list[tuple[str, Path]] = []
+    for sablon in _WINDOWS_OLD_RELATIVE:
+        elotag, _, maradek = sablon.partition("/{felhasznalo}/")
+        profilok_gyokere = gyoker / elotag
+        if not isdir(profilok_gyokere):
+            continue
+        try:
+            profilok = sorted(
+                p for p in profilok_gyokere.iterdir() if isdir(p)
+            )
+        except OSError:
+            continue
+        for profil in profilok:
+            appdata = profil / maradek
+            if isdir(appdata):
+                jeloltek.append(
+                    (f"Korábbi Windows ({profil.name})", appdata)
+                )
+    return tuple(jeloltek)
+
+
 def discover_installations(
     extra_candidates: tuple[str | Path, ...] = (),
     *,
     home: str | Path | None = None,
     wineprefix: str | Path | None = None,
+    windows_old: str | Path | None = None,
 ) -> tuple[PicasaInstallation, ...]:
     """Meglévő Picasa-telepítések felderítése.
 
@@ -192,6 +242,15 @@ def discover_installations(
         results.append(installation)
 
     for label, appdata in _wine_appdata_candidates(resolved_home, resolved_wineprefix):
+        _add(_installation_from_appdata(label, appdata))
+
+    # #1622: a korábbi Windows-telepítés maradványai. Alapértelmezésben a
+    # `C:/Windows.old`, de a paraméter felülírható — így a windowsos ág
+    # Linuxon is mérhető, és egy áttelepített profil is megadható.
+    windows_old_gyoker = (
+        Path(windows_old) if windows_old is not None else Path("C:/Windows.old")
+    )
+    for label, appdata in _windows_old_candidates(windows_old_gyoker):
         _add(_installation_from_appdata(label, appdata))
 
     for candidate in extra_candidates:

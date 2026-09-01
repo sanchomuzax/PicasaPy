@@ -48,6 +48,20 @@ Dialog {
         function onDialogRequested() {
             importDialog.openAndDiscover()
         }
+        //: #1622: az INDULÁSKORI, néma felderítés eredménye. Találat
+        //: nélkül SEMMI nem történik — se dialógus, se üzenet: a
+        //: felhasználó nem kért semmit, egy üres „nem találtunk semmit"
+        //: ablak indításkor puszta zaj lenne.
+        function onStartupDiscoveryFinished(folders, installationsFound) {
+            if (installationsFound <= 0)
+                return
+            folderModel.clear()
+            for (var i = 0; i < folders.length; ++i)
+                folderModel.append({ path: folders[i], picked: true })
+            importDialog.searching = false
+            importDialog.searched = true
+            importDialog.open()
+        }
     }
 
     ListModel { id: folderModel }
