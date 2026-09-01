@@ -54,6 +54,7 @@ import re
 import os
 import shutil
 import subprocess
+import tempfile
 import sys
 import time
 from dataclasses import dataclass
@@ -80,6 +81,11 @@ JELENTESI_KUSZOB = 5_000_000
 
 #: A `/tmp` telítettségének figyelmeztetési küszöbe százalékban.
 TMP_KUSZOB = 70
+
+#: Az ideiglenes gyökér — a platform saját válasza, nem beégetett `/tmp`.
+#: Windowson a `/tmp` nem létezik; a takarítónak ott nincs mit tennie, de
+#: elhasalnia sem szabad.
+TMP_GYOKER = Path(tempfile.gettempdir())
 
 #: A munkamenet-könyvtár neve UUID. Enélkül a `claude-1000` alatti EGYÉB
 #: könyvtárak is scratchpadnek látszanának — az első futásom a
@@ -242,7 +248,7 @@ def _idegen_scratchpadben(ut: Path) -> bool:
 # --- 2. basetempek --------------------------------------------------------
 
 
-def basetempek(most: float, ora: int, *, gyoker: Path = Path("/tmp"),
+def basetempek(most: float, ora: int, *, gyoker: Path = TMP_GYOKER,
                hasznalja=folyamat_hasznalja) -> list[Tetel]:
     """Árva `run_tests.py`-basetempek a `/tmp` alatt."""
     talalt = []
@@ -271,7 +277,7 @@ def sajat_munkamenet() -> str | None:
 
 
 def scratchpadek(most: float, nap: int, sajat: str | None, *,
-                 gyoker: Path = Path("/tmp/claude-1000"),
+                 gyoker: Path = TMP_GYOKER / "claude-1000",
                  hasznalja=folyamat_hasznalja) -> list[Tetel]:
     """Halott munkamenetek scratchpadjei.
 
@@ -304,13 +310,19 @@ def scratchpadek(most: float, nap: int, sajat: str | None, *,
 
 
 def tmp_szazalek() -> int:
+    """A `/tmp` telítettsége százalékban; 0, ha nem mérhető.
+
+    ⚠️ Az `os.statvfs` **POSIX-only** — Windowson `AttributeError`, amit az
+    `except OSError` NEM fog meg. A windows-láb pontosan ezen bukott el
+    (11 teszt), és csak azért derült ki, mert a #1865 óta a láb bukása
+    látszik. A `shutil.disk_usage` mindkét platformon él."""
     try:
-        st = os.statvfs("/tmp")
+        hasznalat = shutil.disk_usage(TMP_GYOKER)
     except OSError:
         return 0
-    osszes = st.f_blocks * st.f_frsize
-    szabad = st.f_bavail * st.f_frsize
-    return 0 if osszes == 0 else round((osszes - szabad) * 100 / osszes)
+    if hasznalat.total == 0:
+        return 0
+    return round(hasznalat.used * 100 / hasznalat.total)
 
 
 def torol(tetel: Tetel) -> bool:
