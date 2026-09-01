@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.176] – 2026-09-01
+
+### Javítva
+- **A „Ghoul Eye” effekt mostantól a helyes színt és irányt használja
+  (#1605).** Eddig élénk sárgászöldet festett (a szín kék komponense
+  teljesen hiányzott), és **sötétítette** a képet ott, ahol az eredeti
+  **világosít** — a két művelet ellentétes irányba viszi a képet. A
+  `filterdesc.xml` mért leírása szerint javítva: a szín `0xC2FF9E`, az
+  elmosás és a színezés a helyes keverési módban, és bekerült a hiányzó
+  világosító görbe is.
+
 ## [0.8.175] – 2026-09-01
 
 ### Javítva
@@ -21,7 +32,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#1637).** A rejtett mappa csak egy későbbi, más okból kiváltott
   újratöltéskor bukkant elő. A hiba azért maradt észrevétlen, mert a
   rejtett **képek** azonnal megjelentek — a kapcsoló működni látszott.
-
 ## [0.8.174] – 2026-09-01
 
 ### Javítva
