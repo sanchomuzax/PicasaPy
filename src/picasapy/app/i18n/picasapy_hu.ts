@@ -4254,6 +4254,42 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Edit the collage from which this image was created</source>
         <translation>A kép alapjául szolgáló kollázs szerkesztése</translation>
     </message>
+    <message>
+        <source>Start slideshow</source>
+        <translation>Diavetítés indítása</translation>
+    </message>
+    <message>
+        <source>View only one image</source>
+        <translation>Csak egy kép megjelenítése</translation>
+    </message>
+    <message>
+        <source>View two different images</source>
+        <translation>Két különböző kép megjelenítése</translation>
+    </message>
+    <message>
+        <source>View the same image twice</source>
+        <translation>Ugyanaz a kép kétszer</translation>
+    </message>
+    <message>
+        <source>Previous picture</source>
+        <translation>Előző kép</translation>
+    </message>
+    <message>
+        <source>Next picture</source>
+        <translation>Következő kép</translation>
+    </message>
+    <message>
+        <source>Render the final collage from this draft</source>
+        <translation>A végleges kollázs elkészítése ebből a piszkozatból</translation>
+    </message>
+    <message>
+        <source>Fit Photo inside viewing area</source>
+        <translation>A kép illesztése a nézetbe</translation>
+    </message>
+    <message>
+        <source>Display Photo at actual size</source>
+        <translation>A kép valódi méretben</translation>
+    </message>
 </context>
 <context>
     <name>PicasaImportDialog</name>
@@ -6908,6 +6944,34 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
         <source>Legacy Effects</source>
         <translation>Régi effektek</translation>
+    </message>
+    <message>
+        <source>Commonly needed fixes</source>
+        <translation>A leggyakoribb javítások</translation>
+    </message>
+    <message>
+        <source>Finely-tuned lighting and color fixes</source>
+        <translation>Finomhangolt fény- és színjavítás</translation>
+    </message>
+    <message>
+        <source>Fun and useful image processing</source>
+        <translation>Szórakoztató és hasznos képfeldolgozás</translation>
+    </message>
+    <message>
+        <source>More fun and useful image processing</source>
+        <translation>További szórakoztató és hasznos képfeldolgozás</translation>
+    </message>
+    <message>
+        <source>Even more fun and useful image processing</source>
+        <translation>Még több szórakoztató és hasznos képfeldolgozás</translation>
+    </message>
+    <message>
+        <source>Glimmer effects beyond the three known tabs</source>
+        <translation>A három ismert fülön kívüli Glimmer-effektek</translation>
+    </message>
+    <message>
+        <source>Filters left in the Picasa engine but not on its surface</source>
+        <translation>A Picasa motorjában maradt, de a felületén nem elérhető szűrők</translation>
     </message>
 </context>
 <context>

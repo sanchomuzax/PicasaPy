@@ -32,6 +32,16 @@ Rectangle {
     // effekt, ami erre a fülre tartozik; a felhasználónak tudnia kell,
     // hol nézze meg
     property bool marked: false
+
+    //: #1857: a fül LEÍRÁSA — mire való a fül —, nem a neve.
+    //: Korábban a buboréksúgó a `label`-t ismételte, vagyis a
+    //: felhasználó ugyanazt a szót kapta másodszor, semmi újat. Az
+    //: eredeti Picasa öt fülének leírása a `docs/specs/`-ben kimért
+    //: `editpanel/tabN` szövegekből jön; a 6.–7. fül a mi többletünk
+    //: (`docs/decisions/szerkeszto-bal-panel.md`), oda saját szöveg kell.
+    //: Üresen hagyva a súgó a régi módon a feliratot mutatja — így egy
+    //: bekötetlen hívóhely nem marad néma.
+    property string description: ""
     // #741: a fülsáv MÉRT magassága 25 képpont (`respack.yt`: a fülgombok
     // y 45..70). A tényleges `x`/`width`/`height` a gazda `EditorTabBar`-tól
     // jön, amely hézag nélkül osztja szét a tartalom-oszlopot — ezért itt
@@ -82,7 +92,7 @@ Rectangle {
         hoverEnabled: true
         onClicked: panel.activeTab = tbtn.tabIndex
     }
-    ToolTip.text: tbtn.label
+    ToolTip.text: tbtn.description !== "" ? tbtn.description : tbtn.label
     ToolTip.visible: tabMouse.containsMouse
     ToolTip.delay: 400
 }

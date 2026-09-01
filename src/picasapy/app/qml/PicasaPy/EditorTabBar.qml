@@ -54,6 +54,7 @@ Item {
         width: tabBarRoot.tabWidth(0)
         height: tabBarRoot.height
         label: qsTr("Common Fixes")
+        description: qsTr("Commonly needed fixes")
         iconKind: "wrench"
     }
     // #338: nap — az eredeti Picasa 2. füle
@@ -65,6 +66,7 @@ Item {
         width: tabBarRoot.tabWidth(1)
         height: tabBarRoot.height
         label: qsTr("Fine Tuning")
+        description: qsTr("Finely-tuned lighting and color fixes")
         iconKind: "sun"
     }
     // #338: sima ecset — a törzs-effektek (3. fül, nincs szín-minta)
@@ -76,6 +78,7 @@ Item {
         width: tabBarRoot.tabWidth(2)
         height: tabBarRoot.height
         label: qsTr("Effects")
+        description: qsTr("Fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.iconInk
     }
@@ -89,6 +92,7 @@ Item {
         width: tabBarRoot.tabWidth(3)
         height: tabBarRoot.height
         label: qsTr("Creative")
+        description: qsTr("More fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.picasaGreen
         iconFleck: Qt.darker(Theme.picasaGreen, 1.4)
@@ -102,6 +106,7 @@ Item {
         width: tabBarRoot.tabWidth(4)
         height: tabBarRoot.height
         label: qsTr("Artistic")
+        description: qsTr("Even more fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.brandBlue
         iconFleck: Qt.lighter(Theme.brandBlue, 1.6)
@@ -118,6 +123,7 @@ Item {
         width: tabBarRoot.tabWidth(5)
         height: tabBarRoot.height
         label: qsTr("More Effects")
+        description: qsTr("Glimmer effects beyond the three known tabs")
         iconKind: "brush"
         iconAccent: Theme.textGray
     }
@@ -132,6 +138,7 @@ Item {
         width: tabBarRoot.tabWidth(6)
         height: tabBarRoot.height
         label: qsTr("Legacy Effects")
+        description: qsTr("Filters left in the Picasa engine but not on its surface")
         iconKind: "brush"
         iconAccent: Theme.chromeBorder
         marked: tabBarRoot.panel.legacyEffectsPresent
