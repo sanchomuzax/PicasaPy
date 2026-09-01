@@ -11,8 +11,9 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v13: a mappa-szintű elrejtés (#1637) — `folders.hidden`
-        assert SCHEMA_VERSION == 13
+        # v14: az útvonal-feloldás gyorstára (#1859) —
+        # `resolved_root_cache`
+        assert SCHEMA_VERSION == 14
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
