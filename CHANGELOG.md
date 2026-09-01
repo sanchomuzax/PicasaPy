@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.191] – 2026-09-01
+
+### Hozzáadva
+- **„Olvasatlan" mappajelölő (#1644).** Ha új kép kerül egy mappába, a bal
+  hasábon a mappa neve KÖVÉREN jelenik meg — ahogy az eredeti Picasában is
+  (a tulajdonos élő megfigyelése). A jelölés a mappa megnyitásakor tűnik
+  el.
+
 ## [0.8.190] – 2026-09-01
 
 ### Javítva
