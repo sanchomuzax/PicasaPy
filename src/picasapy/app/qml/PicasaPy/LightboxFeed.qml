@@ -774,6 +774,108 @@ ListView {
                     }
                 }
             }
+
+            // #1808: RÁCS-NAGYÍTÓ (`thumbui/loupehit`, „Click and drag
+            // over photos to magnify them"). A cellák FÖLÖTT áll, tehát
+            // amíg be van kapcsolva, ELNYELI a rács egéreseményeit — a
+            // húzás így nem jelöl ki és nem lasszóz, ahogy az eredetiben
+            // sem: a nagyító a nézés eszköze, nem a válogatásé.
+            //
+            // A cella-kiszámítás UGYANAZ az aritmetika, amit a lasszó is
+            // használ (`columns`, `cellWidth/cellHeight`) — a képfolyamon
+            // belül a hely egyértelműen adja a sorszámot.
+            MouseArea {
+                id: loupeArea
+                objectName: "feedLoupeArea"
+                anchors.fill: parent
+                enabled: grid.appWindow ? grid.appWindow.loupeActive === true
+                                        : false
+                visible: loupeArea.enabled
+                acceptedButtons: Qt.LeftButton
+                preventStealing: true
+                hoverEnabled: false
+
+                //: A nagyítás mértéke. ⚠️ SAJÁT DÖNTÉS, nem mért érték: az
+                //: eredeti nagyító arányait a bináris nem árulja el (a
+                //: `0x0077be10` a két csomópontnévnél többet nem hivatkoz).
+                //: Két és félszeres nagyítás annyi, hogy az élesség és a
+                //: csukott szem eldönthető legyen, de a lencse még ne
+                //: takarja el a fél rácsot.
+                readonly property real nagyitas: 2.5
+
+                property int aktivSor: -1
+                property real kurzorX: 0
+                property real kurzorY: 0
+
+                function sorItt(x, y) {
+                    if (grid.columns <= 0) return -1
+                    var oszlop = Math.floor(x / grid.cellWidth)
+                    if (oszlop < 0 || oszlop >= grid.columns) return -1
+                    var sor = Math.floor(y / grid.cellHeight)
+                    if (sor < 0) return -1
+                    var helyi = sor * grid.columns + oszlop
+                    if (helyi < 0 || helyi >= groupCol.modelData.count)
+                        return -1
+                    return groupCol.modelData.start + helyi
+                }
+
+                function frissits(x, y) {
+                    loupeArea.kurzorX = x
+                    loupeArea.kurzorY = y
+                    loupeArea.aktivSor = loupeArea.sorItt(x, y)
+                }
+
+                onPressed: function (event) { loupeArea.frissits(event.x, event.y) }
+                onPositionChanged: function (event) {
+                    if (!pressed) return
+                    loupeArea.frissits(event.x, event.y)
+                }
+                //: Elengedésre eltűnik — a nagyító nem hagy nyomot, és a
+                //: képet NEM nyitja meg.
+                onReleased: loupeArea.aktivSor = -1
+                onCanceled: loupeArea.aktivSor = -1
+
+                Item {
+                    id: loupe
+                    objectName: "feedLoupe"
+                    visible: loupeArea.pressed && loupeArea.aktivSor >= 0
+                    width: grid.nominalCellWidth * loupeArea.nagyitas
+                    height: grid.cellHeight * loupeArea.nagyitas
+                    //: A lencse a kurzor fölött ül, de a KÉPFOLYAMON belül
+                    //: marad — a rács szélén sem lóg ki (a jegy külön
+                    //: kiköti). A `clamp` mindkét irányban dolgozik.
+                    x: Math.max(0, Math.min(groupFlow.width - loupe.width,
+                                            loupeArea.kurzorX - loupe.width / 2))
+                    y: Math.max(0, Math.min(groupFlow.height - loupe.height,
+                                            loupeArea.kurzorY - loupe.height - 8))
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Theme.contentPanel
+                        border.width: 1
+                        border.color: Theme.chromeBorder
+                        radius: 3
+                    }
+                    Image {
+                        objectName: "feedLoupeImage"
+                        anchors.fill: parent
+                        anchors.margins: 3
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        //: A nagyított kép NAGYOBB felbontással kérődik le,
+                        //: különben a bélyegkép képpontjait nagyítanánk fel
+                        //: (a nagyító épp az élesség eldöntésére való).
+                        sourceSize.width: Math.round(loupe.width)
+                        sourceSize.height: Math.round(loupe.height)
+                        source: {
+                            if (!grid.ctl || loupeArea.aktivSor < 0) return ""
+                            var elem = (grid.ctl.photos.revision,
+                                        grid.ctl.photos.itemAt(loupeArea.aktivSor))
+                            return elem && elem.thumbUrl ? elem.thumbUrl : ""
+                        }
+                    }
+                }
+            }
         }
     }
     ScrollBar.vertical: PicasaScrollBar { objectName: "feedScrollBar" }

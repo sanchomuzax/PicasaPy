@@ -33,9 +33,13 @@ Rectangle {
     //: #1421: az eredeti `timelinebutton` — ugyanaz a nézetváltás,
     //: mint a Nézet ▸ Időrend (Ctrl+5).
     signal timelineRequested()
+    //: #1808: a rács-nagyító be/ki (`thumbui/loupehit`).
+    signal loupeRequested()
     //: A nézet nyitva van-e — a gomb aktív állapotához. A hívó köti;
     //: alapértéke false, hogy a próbák stub-jain se legyen undefined.
     property bool timelineActive: false
+    //: #1808: be van-e kapcsolva a rács-nagyító.
+    property bool loupeActive: false
     //: #1421: a `flatview`/`folderview` pár — a bal hasáb lapos vagy
     //: fa elrendezése. A vezérlő a `FolderHierarchyController`, ami
     //: ÖNÁLLÓ context property; a hívó köti be, a próbák stub-jain
@@ -221,6 +225,26 @@ Rectangle {
             ToolTip.visible: hovered
             ToolTip.delay: 500
             onClicked: toolbar.timelineRequested()
+        }
+        // #1808: RÁCS-NAGYÍTÓ kapcsoló. Az eredetiben is eszköztárgomb
+        // kapcsolja (`loupehit`); bekapcsolva a rácson húzva nagyított
+        // előnézet jelenik meg — megnyitás nélkül.
+        PicasaButton {
+            objectName: "toolbarLoupeButton"
+            //: A nagyító jele. Szöveg helyett ikon: a felirat („Nagyító")
+            //: nem férne el a gombsor zsugorodási sorrendjének sérülése
+            //: nélkül (a #1421 ugyanezt mérte ki az „Új album"-nál).
+            text: "\u2315"
+            visible: !toolbar.toolbarCompact
+            accent: toolbar.loupeActive ? Theme.selectionBlue : "transparent"
+            Layout.preferredWidth: 29
+            Layout.minimumWidth: 0
+            Layout.preferredHeight: 22
+            //: `thumbui/loupehit` — az eredeti buboréksúgója, szó szerint.
+            ToolTip.text: qsTr("Click and drag over photos to magnify them")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: toolbar.loupeRequested()
         }
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa

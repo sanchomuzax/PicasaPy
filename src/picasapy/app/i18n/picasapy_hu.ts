@@ -3911,6 +3911,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Tree folder view</source>
         <translation>Fa mappanézet</translation>
     </message>
+    <message>
+        <source>Click and drag over photos to magnify them</source>
+        <translation>Kattintson és húzza a képek fölött a nagyításhoz</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>
