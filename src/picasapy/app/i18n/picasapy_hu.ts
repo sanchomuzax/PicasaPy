@@ -4026,6 +4026,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>PhotoViewer</name>
     <message>
+        <source>Show/Hide Caption</source>
+        <translation>Felirat megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Delete this caption</source>
+        <translation>Felirat törlése</translation>
+    </message>
+    <message>
         <source>Create Now</source>
         <translation>Létrehozás</translation>
     </message>
