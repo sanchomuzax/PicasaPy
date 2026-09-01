@@ -244,7 +244,18 @@ Column {
         //: a MEGLÉVŐ hat kimeneti gomb (nyomtatás, e-mail, exportálás,
         //: megosztás, kollázs, film) — a hiányzó `shop`/`blog`/`morebutton`
         //: nélkül (`docs/specs/ui-lefedettseg.md`)
+        // #1672: hat MINDIG látszó cella (nyomtatás, e-mail, exportálás,
+        // Hello, kollázs, film) + két KIVEZETETT (Rendelés, Blogger),
+        // amelyek szűk ablakban elsőként esnek ki. Az eredetiben erre a
+        // `morebutton`/`overflow` való — az nálunk még nincs meg (#1672).
+        //
+        // A kivezetett gombok a legjobb jelöltek a kiesésre: nem
+        // kattinthatók, tehát semmit nem vesznek el a felhasználótól.
         readonly property int actionCellCount: 6
+        //: hány cella fér ki, ha a kivezetettek is elférnek
+        readonly property int retiredCellCount: 2
+        readonly property bool retiredVisible:
+            width >= windowWidthFor(actionCellCount + retiredCellCount + 2)
         //: a `splitX` kerekítése és a szegélyek fél képpontjai miatti
         //: ráhagyás — enélkül a küszöb pontosan a határon állna
         readonly property int roundingReserve: 4
@@ -912,9 +923,30 @@ Column {
                         ToolTip.delay: 500
                     }
                 }
+                // #1672: `outputlayout/shop` — „Papírképek rendelése".
+                // KIVEZETETT (`retired`), nem helyfoglaló: a Picasa
+                // nyomat-rendelő partnerszolgáltatásai megszűntek, tehát
+                // nem ígérünk mögé jövőbeli funkciót. A HELYE viszont az
+                // eredetié, a mért sorrend szerint: export UTÁN, „Hello"
+                // ELŐTT.
+                TrayActionCell {
+                    visible: trayMainBar.retiredVisible
+                    TrayActionButton {
+                        id: trayOrderBtn
+                        objectName: "trayOrderButton"
+                        anchors.fill: parent
+                        enabled: false
+                        iconSource: "icons/share.svg"
+                        iconObjectName: "trayOrderIcon"
+                        //: kivezetett: a nyomat-rendelő szolgáltatás megszűnt
+                        ToolTip.text: qsTr("Order Prints (service discontinued)")
+                        ToolTip.visible: trayOrderBtn.hovered
+                        ToolTip.delay: 500
+                    }
+                }
                 // `outputlayout/sharewith` („Hello") — backend híján tiltott
                 // helyőrző, de a HELYE az eredetié: az export után, a kollázs
-                // előtt (a kimaradó `shop` és `blog` közé esne).
+                // előtt (a `shop` és a `blog` közé esik).
                 TrayActionCell {
                     TrayActionButton {
                         id: trayShareBtn
@@ -923,6 +955,25 @@ Column {
                         enabled: false
                         iconSource: "icons/share.svg"
                         iconObjectName: "trayShareIcon"
+                    }
+                }
+                // #1672: `outputlayout/blog` — „Közzététel a Bloggeren".
+                // Szintén KIVEZETETT: a Picasa Blogger-integrációja
+                // megszűnt. A mért sorrendben a „Hello" UTÁN, a
+                // csoportelválasztó ELŐTT áll.
+                TrayActionCell {
+                    visible: trayMainBar.retiredVisible
+                    TrayActionButton {
+                        id: trayBlogBtn
+                        objectName: "trayBlogButton"
+                        anchors.fill: parent
+                        enabled: false
+                        iconSource: "icons/share.svg"
+                        iconObjectName: "trayBlogIcon"
+                        //: kivezetett: a Blogger-integráció megszűnt
+                        ToolTip.text: qsTr("Publish to Blogger (service discontinued)")
+                        ToolTip.visible: trayBlogBtn.hovered
+                        ToolTip.delay: 500
                     }
                 }
                 // #1345: a csoportelválasztó (`outputlayout/separator`),
