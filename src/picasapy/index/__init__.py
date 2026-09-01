@@ -48,6 +48,7 @@ from .queries import (
     search_photos,
     search_suggestions,
     starred_photos,
+    video_photos,
 )
 from .people import (
     PersonRecord,
@@ -107,6 +108,7 @@ __all__ = [
     "faces_missing_embedding",
     "folder_scan_stamps",
     "geotagged_photos",
+    "video_photos",
     "group_unnamed_faces",
     "load_color_tokens",
     "load_dhashes",

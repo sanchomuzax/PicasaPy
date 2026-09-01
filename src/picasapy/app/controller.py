@@ -29,6 +29,7 @@ from picasapy.index import (
     open_index,
     search_photos,
     starred_photos,
+    video_photos,
     sync_tree,
 )
 from picasapy.ini import load_document, update_document
@@ -341,6 +342,16 @@ class AppController(
     @Property(bool, notify=statusChanged)
     def filterActive(self):
         return self._filter_active
+
+    @Property(str, notify=statusChanged)
+    def viewModeName(self):
+        """A jelenlegi szűrt nézet neve (`folder` · `starred` · `videos` ·
+        `album` · `search`…).
+
+        #1830: a szűrő-gombok ebből tudják, hogy ŐK vannak-e bekapcsolva.
+        A `filterActive` erre nem elég: az csak azt mondja, hogy szűrünk,
+        azt nem, hogy MIVEL — két szűrő-gomb egyszerre látszana aktívnak."""
+        return self._view_mode[0]
 
     @Property(str, notify=statusChanged)
     def filterStatusText(self):
@@ -796,6 +807,21 @@ class AppController(
             records = starred_photos(conn)
         self._show_filtered(records, time.perf_counter() - started)
 
+    # -- film-szűrő (#1830) --------------------------------------------------
+
+    @Slot()
+    def showVideosOnly(self) -> None:
+        """„Csak filmek" — az eredeti `moviesearch` szűrője.
+
+        A csillag-szűrő mintáját követi: szűrt NÉZET, nem külön nézetmód,
+        a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
+        A `kind` indexmezőre épül, tehát nem igényel újraindexelést."""
+        self._view_mode = ("videos", "")
+        started = time.perf_counter()
+        with open_index(self._db_path) as conn:
+            records = video_photos(conn)
+        self._show_filtered(records, time.perf_counter() - started)
+
     # -- virtuális albumok (#9) -----------------------------------------------
 
     @Slot(str)
@@ -872,6 +898,13 @@ class AppController(
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = starred_photos(conn)
+            self._show_filtered(records, time.perf_counter() - started)
+        elif mode == "videos":
+            # #1830: enélkül egy frissítés némán visszadobná a felhasználót
+            # a mappa-nézetbe — a csillag-szűrőnek is ezért van ága
+            started = time.perf_counter()
+            with open_index(self._db_path) as conn:
+                records = video_photos(conn)
             self._show_filtered(records, time.perf_counter() - started)
         elif mode == "album":
             started = time.perf_counter()
