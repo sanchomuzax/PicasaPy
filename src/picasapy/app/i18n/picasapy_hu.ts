@@ -5358,6 +5358,22 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Nagyító — húzd a képek fölött</translation>
     </message>
     <message>
+        <source>Select the items you want to add to the project clip tray, then click &quot;Back&quot; to return to the project</source>
+        <translation>Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a „Vissza” gombra kattintva térjen vissza a projekthez</translation>
+    </message>
+    <message>
+        <source>Go back to what you were editing</source>
+        <translation>Visszatérés a szerkesztett elemhez</translation>
+    </message>
+    <message>
+        <source>Back to Collage</source>
+        <translation>Vissza a kollázshoz</translation>
+    </message>
+    <message>
+        <source>Cancel &quot;Get more&quot;</source>
+        <translation>A „Továbbiak” művelet megszakítása</translation>
+    </message>
+    <message>
         <source>Rotate counter-clockwise</source>
         <translation>Forgatás balra</translation>
     </message>

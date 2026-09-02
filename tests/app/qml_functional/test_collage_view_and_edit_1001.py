@@ -378,7 +378,11 @@ class TestVisszaAKollazshoz:
         nezo.metaObject().invokeMethod(nezo, "closed")
         assert _var(qt_app, lambda: window.property("viewerOpen") is False)
 
-        gomb = _elem(window, "backToCollageButton")
+        #: #1939: a visszaút az ALSÓ SÁV üzenetsávjában van
+        #: (`traySingleActionReturn`), nem lebegő gombként a jobb felső
+        #: sarokban. Az állítás lényege ugyanaz: a felhasználónak LÁTNIA
+        #: kell, hogyan jut vissza.
+        gomb = _elem(window, "traySingleActionReturn")
         assert _var(qt_app, gomb.isVisible), (
             "a szerkesztőből kilépve nincs látható visszaút a kollázshoz"
         )

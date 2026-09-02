@@ -57,6 +57,8 @@ Column {
     // #361: Kollázs/Film a tálcáról (a dialógusok a Main.qml-ben élnek)
     signal collageRequested()
     signal movieRequested()
+    //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja
+    signal backToCollageRequested()
     // #32 (RÉSZLEGES kör): Nyomtatás/E-mail — a dialógusok (nyomtató-
     // választó, tárgy/szöveg-bekérés) a Main.qml-ben élnének, ugyanúgy,
     // mint a fenti kettőnél (a bekötés az integrátor lépése, ld.
@@ -1409,6 +1411,115 @@ Column {
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
+            }
+        }
+
+        // #1939: a „Továbbiak…" KLIP-GYŰJTŐ MÓD üzenetsávja
+        // (`thumbui/single_action_container`). A mód nálunk eddig is
+        // működött, de a visszaút egy lebegő gomb volt a jobb felső
+        // sarokban; az eredetiben egy teljes sáv ül az alsó
+        // vezérlőkészletben, és ELTAKARJA a kimeneti gombsort.
+        //
+        // A méret KÉNYSZER-vezérelt (spec `getmore-klipgyujto-mod.md` 3.1):
+        //   XConstraint 0, .365,  2   → bal  = az osztópont + 2
+        //   XConstraint 1, 1,   -20   → jobb = a sáv jobb széle − 20
+        //   YConstraint 0, 0,    45   → felül = a készlet tetejétől + 45
+        //   YConstraint 1, 1,    -2   → alul  = a készlet aljától − 2
+        //
+        // ⚠️ A respack-ben tárolt 502 × 40 NEM normatív — az a
+        // tervezővászon pillanatképe, a kényszerek felülírják. Ugyanaz a
+        // tanulság, mint a #1934-nél az `infotext_clip`-nél.
+        Rectangle {
+            id: traySingleActionBar
+            objectName: "traySingleActionBar"
+            //: a `basecontrolset` tetejétől +45; a 14-es infó-csík már
+            //: nem része ennek a sávnak, ezért 45 − 14
+            y: 45 - 14
+            x: trayMainBar.splitX + 2
+            width: Math.max(
+                0, trayMainBar.width - trayMainBar.rightMargin * 2 - x)
+            //: alul −2 a készlet aljától
+            height: Math.max(0, trayMainBar.height - 2 - y)
+            //: `decrect(softbevel/flatbevel)` — átlátszatlan, ezért TAKAR
+            color: Theme.trayPanelBg
+            border.width: 1
+            border.color: Theme.trayBorder
+            radius: 2
+            //: a kimeneti gombsor FÖLÉ kerül (spec 2.4)
+            z: 50
+
+            //: #718-minta: az appWindow átmenetileg null lehet.
+            //:
+            //: A ✕ CSAK ELREJT (spec 2.3: `Property hidetarget`, más
+            //: hívás nélkül) — a mód jelzőjéhez NEM nyúl, a projekt lapja
+            //: nyitva marad, és a lapsávból tovább lehet visszatérni.
+            property bool elrejtve: false
+            visible: tray.appWindow
+                     ? (tray.appWindow.backToCollagePrompted === true
+                        && !traySingleActionBar.elrejtve)
+                     : false
+            //: újbóli belépéskor megint látszódjon
+            Connections {
+                target: tray.appWindow
+                ignoreUnknownSignals: true
+                function onBackToCollagePromptedChanged() {
+                    traySingleActionBar.elrejtve = false
+                }
+            }
+
+            Text {
+                objectName: "traySingleActionMessage"
+                //: MÉRT: 335 × 26, JOBBRA igazítva (`textalign right`)
+                width: 335
+                height: 26
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: traySingleActionReturn.left
+                anchors.rightMargin: 9
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+                elide: Text.ElideRight
+                color: Theme.ink
+                font.pixelSize: Theme.fontSize
+                //: a `thumbui/single_action_message` HIVATALOS magyar
+                //: fordítása (`referencia/panel-feliratok-hu.tsv:5187`)
+                text: qsTr("Select the items you want to add to the "
+                           + "project clip tray, then click \"Back\" to "
+                           + "return to the project")
+            }
+
+            PicasaButton {
+                id: traySingleActionReturn
+                objectName: "traySingleActionReturn"
+                //: MÉRT: 109 × 43
+                width: 109
+                height: 43
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: traySingleActionClose.left
+                anchors.rightMargin: 3
+                accent: Theme.picasaGreen
+                text: qsTr("Back to Collage")
+                ToolTip.text: qsTr("Go back to what you were editing")
+                ToolTip.visible: hovered
+                ToolTip.delay: 500
+                onClicked: tray.backToCollageRequested()
+            }
+
+            PicasaButton {
+                id: traySingleActionClose
+                objectName: "traySingleActionClose"
+                //: MÉRT: 18 × 18
+                width: 18
+                height: 18
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
+                anchors.rightMargin: 16
+                text: "\u2715"
+                ToolTip.text: qsTr("Cancel \"Get more\"")
+                ToolTip.visible: hovered
+                ToolTip.delay: 500
+                //: CSAK elrejt — a módból NEM lép ki (spec 2.3)
+                onClicked: traySingleActionBar.elrejtve = true
             }
         }
     }
