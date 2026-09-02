@@ -51,6 +51,11 @@ _NEM_KIADHATO_ELOTAGOK = (
     #: mondatot követelt. Olyat, ami a naplóban hazugság lenne: a
     #: felhasználó ebből semmit nem lát.
     "tools/",
+    #: #2060: az ast-grep SZERKEZETI kódszabályai — fejlesztői eszköz, a CI
+    #: sem futtatta. Ugyanaz a hiba ismétlődött volna, mint a `tools/`-nál:
+    #: az áthelyezésükre az őr FELHASZNÁLÓI mondatot követelt volna, olyat,
+    #: ami a naplóban hazugság — a felhasználó ebből semmit nem lát.
+    ".ast-grep/",
 )
 
 #: Fájlnevek, amelyek önmagukban sosem indokolnak kiadást.
@@ -58,6 +63,8 @@ _NEM_KIADHATO_FAJLOK = (
     ".gitignore",
     ".gitattributes",
     ".editorconfig",
+    #: #2060: az ast-grep gyökér-konfigurációja, a szabálykészletéhez tartozik.
+    "sgconfig.yml",
 )
 
 
