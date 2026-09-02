@@ -1962,6 +1962,90 @@ kommentezve**:
 a súgója ebben a kiadásban ki van kapcsolva. *(Hogy maga a gomb él-e, ez a
 kör nem mérte — a `0x00744a00` mindkettőt hivatkozza.)*
 
+### 40.7 ⭐ A „Nyomtatás előtti ellenőrzés" PÁRBESZÉD (2026-09-02, a tulajdonos felvételéről)
+
+A 40.1 azt írta le, hogy a panel **figyelmeztet** a kis felbontásra. A
+tulajdonos futó Picasa 3-ból készített felvétele
+(`#1953-nyomtatas-kep-kicsi.jpg`) megmutatja, hogy ez **egy teljes
+párbeszéd**, nem csak egy mondat — és hogy a kiváltó gomb **nem ott van**,
+ahol a 40.1 nyomán feltételeztük.
+
+#### A gomb helye — HELYESBÍTÉS
+
+Az „Ellenőrzés" gomb a panel **jobb alsó gombsorában** áll, a
+**„Nyomtatás"** és a **„Mégse"** mellett, és **figyelmeztető háromszöget**
+visel. Nem a „Legkisebb kép: … képpont/hüvelyk" állapotszöveg mellett.
+A három gomb balról jobbra: **Ellenőrzés ⚠ · Nyomtatás ✔ · Mégse ✖**.
+
+#### A párbeszéd tartalma
+
+| elem | szövegtár-kulcs | magyar |
+|---|---|---|
+| magyarázat | `CPrintDlg::toosmall` | **„Néhány kép túl kicsi a jó minőségű nyomtatáshoz. Ezeket a képeket eltávolíthatja, kinyomtathatja, vagy visszavonhatja és módosíthatja a nyomtatási méretet."** |
+| a lista sorai | `ThumbUIPrint::ReviewLow` (`Low Quality: %s`) | **„Alacsony minőség: %s"** |
+| a kiválasztott elem minősítése | `CPrintDlg::badqual` | **„Rossz minőség (%d képpont/hüvelyk)"** |
+| ha nincs kifogásolt kép | `CPrintDlg::ready` | *All of your pictures are ready to print.* |
+| ha mindet eltávolították | `CPrintDlg::noneleft` | *There are no pictures left to print.* |
+
+A párbeszéd **négy** gombja: **„Kijelölt elemek eltávolítása"** ·
+**„Gyenge minőségű képek eltávolítása"** · **OK** · **Mégse**. Jobb oldalt a
+kijelölt kép **előnézete**, alatta a minősítés a mért DPI-vel.
+
+⇒ **Az ellenőrzés nem passzív:** a felhasználó a párbeszédből **ki tudja
+venni** a rossz képeket a nyomtatásból — egyesével vagy egy gombbal az
+összeset.
+
+#### HÁROM minőségi fokozat, nem kettő
+
+A minősítés `0x0085cff0` (781 b) szerint egy **tárolt bájtból** jön
+(képenkénti rekord, 20 bájt lépésköz, a mező a rekord `+0x10`-én):
+
+| a bájt értéke | szövegtár-kulcs | angol | **magyar** |
+|---:|---|---|---|
+| **2** | `CPrintDlg::bestqual` | Best quality (%d pixels/inch) | **„Legjobb minőség (%d képpont/hüvelyk)"** |
+| **1** | `CPrintDlg::goodqual` | Good quality (%d pixels/inch) | **„Jó minőség (%d képpont/hüvelyk)"** |
+| egyéb | `CPrintDlg::badqual` | Bad quality (%d pixels/inch) | **„Rossz minőség (%d képpont/hüvelyk)"** |
+
+(`0x0085d1dd`: `cmp eax, 2` → best; `0x0085d1ee`: `cmp eax, 1` → good;
+különben bad.)
+
+⚠️ **A KÜSZÖBÖK továbbra sincsenek mérve.** A besorolás egy **korábban
+kiszámolt** bájt; az azt ÍRÓ kód nincs meg. A `0x0085cff0`, a `0x007451a0`
+(1473 b) és a `0x00746170` (351 b) `cmp`-immediate-jei között DPI-szerű
+érték **nincs** (csak 127/128/255 — sztringhossz-ellenőrzések). A
+`src/picasapy/printing/dpi.py` 150 DPI-s küszöbe **továbbra is saját
+döntés**. **Megszerzés:** a `[rekord+0x10]` bájtot író kód — a 20 bájtos
+rekordtömb a `[ebx+0x48]` alatt.
+
+### 40.8 A nyomatméretek: TIZENHÉT tétel, és a magyar felület METRIKUS
+
+A `ytPrintSizes::` szövegcsalád teljes (a `stringres` 3478–3494. sora):
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `e3x4` · `e3x5` · `e4x5` · `e4x6` · `e5x7` · `e8x10` | 3 x 4 … 8 x 10 | 3x4 … 8x10 |
+| `e5x8cm` · `e9x13cm` · `e10x15cm` · `e13x18cm` · `e15x20cm` · `e20x25cm` | 5 x 8 cm … 20 x 25 cm | **5x8 cm … 20x25 cm** |
+| `eWallet` | Wallet | **Tárcaméret** |
+| `ePassport` | Passport | **Útlevél** |
+| `eCDSize` | CD Cover Size | **CD-borító mérete** |
+| `eContact` | Contact Sheet | **Indexképek** |
+| `eFullPage` | FullPage | FullPage |
+
+**A tulajdonos magyar Picasáján a panel a METRIKUS hatost mutatja:**
+5x8 · 9x13 · 10x15 · 13x18 · 20x25 cm · Teljes oldal. Ez egybevág a #876
+leletével (a nyomatméretek metrikus/angolszász ágra oszlanak).
+
+### 40.9 ⛔ A magyar felület FELCSERÉLI a lapszámlálót
+
+`ThumbUIPrint::PrintCount` = `%1$d of %2$d` → magyarul **`%2$d / %1$d`**.
+
+A felvételen az előnézet lapozója **`8 / 1`**-et mutat, miközben az **első**
+lapon állunk nyolcból. Vagyis magyarul a sorrend **összes / aktuális**.
+
+⇒ Ez utólag megmagyarázza a kék infó-sáv korábban rögzített `(5 / 3)`
+olvasatát is (ötképes mappa, a harmadik kép kiválasztva) — ugyanaz a
+felcserélés.
+
 ### 40.4 Hatókörön kívüli elem a panelen
 
 `froogle` — *„Search Froogle for Supplies"* / „Tartozékok keresése a
