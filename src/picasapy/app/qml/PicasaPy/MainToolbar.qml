@@ -249,6 +249,18 @@ Rectangle {
         // visszakapcsolása egy felfedezhető felülettel külön jegy. Egy
         // kattintható vezérlő, ami mást ad, mint amit ígér, rosszabb,
         // mint a hiánya (#936, #1903).
+        //
+        // #1911 — A KAPCSOLÓ VISSZAKERÜLT, de NEM IDE, hanem az ALSÓ
+        // SÁVBA (`TrayBar.qml`, `trayLoupeButton`). Ez nem áthelyezés
+        // ízlés szerint: mérve (`docs/specs/racs-nagyito.md` 1. és 5.)
+        // az eredeti belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
+        // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT — az
+        // eszköztárban az EREDETIBEN SINCS ilyen gomb.
+        //
+        // Ezért marad igaz a fenti „nincs itt", és ezért NE tegye vissza
+        // ide egy későbbi kör „hiányzó gombként". A felfedezhetőséget a
+        // gomb buboréksúgója adja („húzd a képek fölött"); az eredeti
+        // erre nem ad támpontot — mérve külön egérmutatót SEM használ.
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
         // `searchcontainer.tre`-jének `filter_label` kényszere szerint

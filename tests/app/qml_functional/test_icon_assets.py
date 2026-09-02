@@ -73,6 +73,11 @@ _EXPECTED_ICONS = (
     # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
     # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
     "tray-addto.svg",
+    # #1911: a rács-nagyító kapcsolója az alsó sávban
+    # (`thumbui/loupehit` 25×19, benne a `thumbui/loupe` MÉRT 23×16).
+    # A rajz a sajátunk: az eredeti egy két gyűrűs üveglencse, amit nem
+    # másolunk — a projekt egyetlen kicsomagolt Picasa-képet sem szállít.
+    "loupe.svg",
     # #1927: az alsó sáv négy panelkapcsolója (`thumbui/metadata_group`).
     # A MÉRET az eredetiből mért (`people_icon` 19×17, `places_icon` 14×19,
     # `tags_icon` 19×15, `properties_icon` 17×18), a RAJZ a sajátunk — a

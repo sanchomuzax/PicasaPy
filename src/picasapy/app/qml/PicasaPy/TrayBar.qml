@@ -1040,6 +1040,66 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
 
+                    // #1911: a rács-nagyító KAPCSOLÓJA. A #1808 megépítette
+                    // a nagyítót, de a gombja a v0.8.198-ban kikerült az
+                    // eszköztárból, és a funkció ezzel elérhetetlenné vált —
+                    // a tulajdonos élesben jelentette, hogy „semmit nem
+                    // csinál". A lánc működik, csak nem volt mit megnyomni.
+                    //
+                    // Az ALSÓ SÁVBA kerül vissza, nem az eszköztárba: mérve
+                    // (`docs/specs/racs-nagyito.md` 1. és 5.) az eredeti
+                    // belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
+                    // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT
+                    // (`loupehit` x 366…391, `scalecontainer` x 398…525).
+                    PicasaButton {
+                        id: trayLoupeButton
+                        objectName: "trayLoupeButton"
+                        //: MÉRT méret (`thumbui/loupehit`)
+                        width: 25
+                        height: 19
+                        anchors.verticalCenter: parent.verticalCenter
+                        //: ⚠️ NEM `checkable` + kötött `checked` — az a
+                        //: projekt ismert rádió-csapdája (#1773): a gomb
+                        //: kattintáskor MAGA is átírja a `checked`-et, és
+                        //: ezzel eltöri a kötést, amiből olvassuk. A
+                        //: bekapcsolt állapotot ezért — a panelkapcsolók
+                        //: mintájára — az `accent` jelzi, a `loupeActive`
+                        //: pedig az EGYETLEN igazságforrás.
+                        //:
+                        //: A saját tesztje ezt élesben fogta meg: a
+                        //: kikapcsolás nem jutott el a rács rétegéhez.
+                        readonly property bool aktiv: tray.appWindow
+                            ? tray.appWindow.loupeActive === true : false
+                        accent: aktiv ? Theme.selectionBlue : "transparent"
+                        //: ⚠️ A felfedezhetőség a MI döntésünk: az eredeti
+                        //: nem ad rá támpontot — mérve (spec 2. szakasz)
+                        //: külön egérmutatót SEM használ. A #1911 viszont
+                        //: kiköti, hogy kipróbálás nélkül is kiderüljön:
+                        //: nyomva HÚZNI kell. A legkisebb ilyen jelzés a
+                        //: buboréksúgó — nem foglal helyet, és nem talál ki
+                        //: új viselkedést.
+                        ToolTip.text: qsTr("Loupe — drag over the photos")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        onClicked: {
+                            if (!tray.appWindow) return
+                            tray.appWindow.loupeActive =
+                                !tray.appWindow.loupeActive
+                        }
+                        contentItem: Image {
+                            objectName: "trayLoupeIcon"
+                            source: "icons/loupe.svg"
+                            //: `thumbui/loupe` — MÉRT 23 × 16 a 25 × 19-es
+                            //: gombon belül
+                            width: 23; height: 16
+                            sourceSize.width: 23; sourceSize.height: 16
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                            //: a kikapcsolt állapot halványabb — a bekapcsolt
+                            //: állapotot a gomb saját `checked` háttere jelzi
+                            opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
+                        }
+                    }
                     Text {
                         text: "−"
                         color: Theme.textGray
@@ -1048,6 +1108,7 @@ Column {
                     }
                     PicasaSlider {
                         id: sizeSlider
+                        objectName: "traySizeSlider"
                         // #718: null-őr — appWindow hiányában egy
                         // tetszőleges, a [from, to] tartományba eső érték.
                         from: 72; to: 256
