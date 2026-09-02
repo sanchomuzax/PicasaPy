@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.214] – 2026-09-02
+
+### Javítva
+- **A törölt kép sora azonnal eltűnik (#1227).** Eddig a kép a rácson
+  maradt addig, amíg a program a mappát újra át nem nézte — nagy
+  könyvtárnál ez másodperceket vagy perceket jelentett. Mostantól a sor
+  rögtön eltűnik, és az átnézés csak utólag egyeztet, a háttérben. Így
+  csinálja az eredeti Picasa is.
+
 ## [0.8.213] – 2026-09-02
 
 ### Javítva
