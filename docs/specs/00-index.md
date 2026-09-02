@@ -640,6 +640,25 @@ kitalált értékekkel, és a mért 480 elő sem fordul a listánkban) → **#20
    egyetlen képernyőkép a futó Picasa `Eszközök ▸ Beállítások ▸ E-mail`
    lapjáról. Jegy: **#2020** (`blocked` + `felhasználóra-vár`).
 
+### [picasa-beepitett-webszerver.md](picasa-beepitett-webszerver.md) — nincs nyitott kérdés (ÚJ lap, 2026-09-02)
+
+⭐ **2026-09-02 — a Picasa 3 BEÉPÍTETT HTTP/WebDAV-kiszolgálója feltárva.** Az
+eredeti **hallgatózó kiszolgálót** futtat: HTTP Basic hitelesítés
+(`WWW-Authenticate: Basic realm="Picasa"`, jelszó a `LANPassword`-ből, a
+felhasználónév fixen `picasaserver`), WebDAV (`OPTIONS`/`PROPFIND`, 13 `D:*`
+elem, a megosztás `\\localhost\picasa`, a DAV-ág **80-as portot** igényel),
+**14 végpont** (`/albumlist` … `/dbdebug`) plusz `/repost` és `/upload`,
+kép-végpontok (`image/`, `thumb/`, `sthumb/`, `original/`), két hibakereső lap
+(a `/dbdebug` **adatbázis-böngésző**, a `/uidebug` rajzolási időmérésekkel), és
+egy LAN-hirdetés, ami **gépnevet és felhasználónevet** tesz a hálózatra
+(`0x00937800`). Külön beérkező felület a **`picasa://` URL-séma**, amelynek egy
+ága **külső URL-ről tölt be bővítményt**. **Nálunk mindebből semmi nincs
+(mérve), és a javaslat: ne is legyen** → **#2023** (döntés-jegy, őr-teszttel).
+Melléklelet: a `/filesigs` `text/plain` mezőlistája **független** megerősítése
+a fotó-rekordunknak — és a **`flip` mező negatív eredmény**
+(`imagedata_flipped.pmp`: 3 011/3 011 üres; a 859 fájlos ini-korpuszban 0 db
+`flip=` sor).
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -650,6 +669,7 @@ minden további lapja.
 | lap | miről szól |
 |---|---|
 | [picasa-ini-format.md](picasa-ini-format.md) | A `.picasa.ini` — az igazságforrás, round-trip szabályokkal |
+| [picasa-beepitett-webszerver.md](picasa-beepitett-webszerver.md) | **A Picasa 3 beépített HTTP/WebDAV-kiszolgálója** — a bekapcsoló beállítások (`AllowRemoteWeb`, `LANShareAlbums`, `LANPassword`, `DAVSupport`, `EnableTester`, `UIProfiling`), a 14 végpont teljes listája, a kép- és bélyegkép-URL-ek, a WebDAV-válaszok, a LAN-hirdetés mezői, a `text/plain` metaadat-alak (album + fájl), és a `picasa://` URL-séma öt művelete. Döntés: **nem építjük meg** (#2023) |
 | [pmp-database.md](pmp-database.md) | A központi adatbázis (`db3` / PMP) — **és a bélyegkép-gyorstár blokkfájl-formátuma**: a négy szint mért mérete (72/144/288/640 px), az `*_index.db` három vektora (`20 + 12n`, 11 fájlon mérve), a slot ↔ `thumbindex.db` sorindex kötés, a kulcsvektor **azonos résterű tárak közt bitre azonos** (⇒ nem blob-ellenőrzőösszeg), az elavult sorok mért veszélye és a `CBlockFile` bináris oldala |
 | [picasa-arcfelismeres.md](picasa-arcfelismeres.md) | **Az arcfelismerés TELJES működése** — a három réteg és kapcsolóik, a két küszöb-létra, a KÉT ini-írási útvonal (`facedata`!), a `db3` arc-oszlopai élő adaton mérve, a három romboló művelet, a verzió-migráció |
 | [picasa-imagedata-rekord.md](picasa-imagedata-rekord.md) | Az `imagedata` rekord — belső kép-nyilvántartás |
