@@ -423,6 +423,19 @@ visszatérő felirat (`collagepanel::back_to_collage` · `CMakeMoviePanel::back_
    teszi. **Megszerzés:** célzott Ghidra-kör a `0x00601090`-re (`eThrobOff`).
    Lap: `getmore-klipgyujto-mod.md` 3.3; jegy **#1939**.
 
+### [racs-nagyito.md](racs-nagyito.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02:** a rács-nagyító működése feltárva — az 51.3 három korábbi
+blokkolt részkérdéséből **három lezárva**. Helyesbítés: az 51.3
+„nálunk nincs" állítása **elavult** (a #1808 azóta megépítette, a #1911
+vette ki a gombot). Jegy-komment: **#1911**, **#460**.
+
+1. **Mekkora a nagyítás?** A kezelő (`0x0077be10`) és négy testvére
+   (`0x0077b4b0`, `0x0077b6e0`, `0x0077b780`, `0x0077b8e0`) teljes
+   diszasszemblátumában **nincs nagyítási arány**. **Megszerzés:** a
+   rajzoló ág, `0x0077bb10` célzott dekompilációja (a `80.0` és a
+   `2276,5556` konstansokkal). Lap: `racs-nagyito.md` 6.; jegy **#1911**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -463,6 +476,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [szerkeszto-panel-meretek.md](szerkeszto-panel-meretek.md) | A szerkesztő bal panelje (201 elem) — **az 1. fül gombsorrendjének EGYETLEN érvényes forrása** |
 | [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) | **A szerkesztő FELSŐ SÁVJA (`oneup_controls`)** — a hét vezérlő képpontos geometriája két, egymást igazoló forrásból; a „paletta-ikonos gomb" = `quickupload` (Web Albums Drop Box); a filmszalag **hét férőhelyes**, az aktuális kép **mindig középen**; a kijelölés-keret `#009EFF`+`#D4D4D4`; a hisztogram-doboz horgonya `root.alsó − 95` |
 | [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
+| [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
