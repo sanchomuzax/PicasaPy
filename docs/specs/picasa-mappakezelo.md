@@ -2168,6 +2168,110 @@ A várakozást a `WaitForMultipleObjects` végzi (`0x007065f0` időkorláttal,
 és a 16.4 szerint ezek **igenis** változás-figyelő fogantyúk (a 0. rekesz
 kivételével, ami a szál ébresztő/leállító eseménye).
 
+### 16.2/b A hibakereső kiíratás TELJES működése — és a `badfiles.txt` (2026-09-02)
+
+*A 16.2 megnevezte a három CSV-t és az oszlopneveket. Ez a szakasz a
+`0x004f25f0` (1952 b) végigolvasásából adja a **működést** — és egy
+eddig sehol nem dokumentált **második kimenetet**.*
+
+#### A négy mód — és hogy csak három közülük kapuzott
+
+A függvény `ecx`-ben kapja a **módot**:
+
+| mód | mit ír | a `Preferences\WriteDirscannerCSV` kapu | cím |
+|:--:|---|---|---|
+| **1** | `dirscanner-start.csv` | **igen** | `0x004f26a9` |
+| **2** | `dirscanner-up.csv` | **igen** | `0x004f26d5` |
+| **3** | `dirscanner-shutdown.csv` | **igen** | `0x004f26e4` |
+| **4** | ugyanaz, mint a 3. | ⭐ **NEM** — a kaput átugorja, és a végén **meg is nyitja** a fájlt (`0x00981280`, `GetSystemDirectoryA`-val indított külső program) | `0x004f2622`–`0x004f262c`, `0x004f2b0d` |
+
+Ha a kulcs nincs beállítva (1–3. mód), a függvény **azonnal visszatér**
+(`0x004f2694`) — a CSV nem jön létre. ⇒ **Ez fejlesztői kapcsoló, nem
+felhasználói szolgáltatás.**
+
+**Hova:** mindkét kimenet a **`#db3\`** útvonal-tokenre megy
+(`0x00c7eeb8`) — vagyis a `…\Google\Picasa2\db3\` mappába, ugyanoda, ahol
+a `backups.xml` és a `thumbindex.db` van. A CSV **`"w"` módban**
+(`0x00c7ebe4`) nyílik, tehát **teljes újraírás**.
+
+#### A CSV sorformátuma — és mit jelent a hét oszlop
+
+```
+Name,Creation Time,Access Time,Size,Type,Dirty,Valid        (fejléc, 0x00c864d4)
+"%s",%f,%f,%d,%d,%d,%d                                      (sor,    0x00c8650c)
+```
+
+A mezők a bejegyzés-rekordból, a `0x004f2951`–`0x004f295f` push-sorrendje
+szerint:
+
+| oszlop | forrás | típus |
+|---|---|---|
+| `Name` | a bejegyzés neve, **idézőjelek közt** | szöveg |
+| `Creation Time` | `[rekord+0x04]` → `0x0098b650` (FILETIME → `double`) | `%f` |
+| `Access Time` | `[rekord+0x0c]` → ugyanaz | `%f` |
+| `Size` | `[rekord+0x14]` | `%d` |
+| **`Type`** | `[rekord+0x18]` | `%d` — **értékkészlet lent** |
+| `Dirty` | `[rekord+0x1c]` (bájt) | `%d` |
+| `Valid` | `[rekord+0x1d]` (bájt) | `%d` |
+
+⇒ A „piszkos" (`Dirty`) és az „érvényes" (`Valid`) **külön jelző**: a
+változáslista tehát nemcsak azt tartja nyilván, hogy egy bejegyzés
+megváltozott-e, hanem azt is, hogy **egyáltalán használható-e**.
+
+#### ⭐ A `badfiles.txt` — a MÁSODIK kimenet, eddig sehol nem dokumentálva
+
+Ugyanaz a függvény, a CSV után, **ugyanabba a `#db3\` mappába** kiír egy
+`badfiles.txt`-et is (`0x00c86524`, `0x004f299c`), és abban végigmegy az
+összes bejegyzésen:
+
+| a `Type` értéke | mit ír | cím |
+|:--:|---|---|
+| **4** | `%s (badfile)\n` (`0x00c86534`) | `0x004f2a58`–`0x004f2a8a` |
+| **5** | `%s (baddirectory)\n` (`0x00c86544`) | `0x004f2aaa`–`0x004f2ad8` |
+
+⇒ **A `Type` oszlop nem pusztán „fájl vagy mappa": a 4 és az 5 azt
+jelenti, hogy a Picasa a bejegyzést NEM tudta feldolgozni.** A
+könyvtárbejáró tehát **nyilvántartja a hibás fájlokat és mappákat**, és
+kérésre ki is listázza őket.
+
+*(A `0x004f2804`–`0x004f2825` ág további `Type`-értékeket különböztet meg
+— **1**, **5**, **0x19 = 25**, **0x3e9 = 1001** —, de ezek jelentése a
+névfeloldás ágában van, és **nincs mérve**. Lásd a mérleget.)*
+
+#### Egy második fejlesztői kapcsoló: `DirscanRegression`
+
+A hívók egyike (`0x004e9b00`, 649 b) a `Preferences\`**`DirscanRegression`**
+kulcsot olvassa. ⇒ a bejárónak **regressziós üzemmódja** is volt. A
+kulcs hatása **nincs mérve**.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a bejáró nyilvántartja a hibás fájlokat | `Type = 4` | **nincs** — a `scanner/walker.py` minden `OSError`-t **némán elnyel** (`return`/`return None`: 142., 175., 188., 234., 258., 276., 301. sor) | **#1998** |
+| a hibás **mappákat** is | `Type = 5` | ua. | ua. |
+| kilistázható a hibás bejegyzésekről | `badfiles.txt` | nincs | ua. |
+| állapot-pillanatkép hibakereséshez | három CSV, kapcsolóval | nincs | ua. (alacsonyabb prioritás) |
+
+*Bizonyítottsági fok: **megerősített** a négy módra, a kapura, a `#db3\`
+helyre, a `"w"` nyitásra, a hét oszlop forrására, a `badfiles.txt`
+létére és a 4/5 `Type`-értékre; a további `Type`-értékek és a
+`DirscanRegression` hatása **nincs mérve**.*
+
+#### Nyitott kérdések mérlege (16.2/b)
+
+`0 nyílt · 5 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| mikor írja a három CSV-t | **LEZÁRVA** — mód 1/2/3, a `WriteDirscannerCSV` kapuval |
+| hova írja | **LEZÁRVA** — `#db3\`, `"w"` módban |
+| mi a sorformátum, honnan a hét oszlop | **LEZÁRVA** — `"%s",%f,%f,%d,%d,%d,%d` + a rekord-eltolások |
+| van-e másik kimenet | **LEZÁRVA** — **igen: `badfiles.txt`** |
+| mit jelent a `Type` 4 és 5 | **LEZÁRVA** — hibás fájl / hibás mappa |
+| **mit jelent a `Type` 1, 25 és 1001** | **BLOKKOLT** — a névfeloldó ág `0x004f2804`–`0x004f2825` különbözteti meg őket, de a jelentésükre nincs sztring. **Megszerzés:** a `ytDirScannerChangeList` osztály dekompilációja. **A #1997-et nem blokkolja** (a 4/5 elég a hibalistához). |
+| **mit csinál a `DirscanRegression`** | **BLOKKOLT** — csak a kulcs olvasása látszik (`0x004e9b00`). **Megszerzés:** a `0x004e9b00` dekompilációja. **Fejlesztői kapcsoló**, a termékre nincs hatása. |
+
 ### 16.3 Amit ez a #1275-re kimond
 
 > ⚠️ **A premissza téves (16.4), a következtetés viszont ÁLL.** Az eredeti

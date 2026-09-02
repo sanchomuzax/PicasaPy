@@ -316,7 +316,28 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 
 ### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — nincs nyitott kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül)
+
+⭐ **2026-09-02 (16.2/b) — a könyvtárbejáró hibakereső kiíratása TELJESEN
+feltárva, és egy eddig sehol nem dokumentált MÁSODIK kimenettel.** A
+`0x004f25f0` **négy módban** hívható: az 1–3. a `dirscanner-start/up/
+shutdown.csv`-t írja a `Preferences\WriteDirscannerCSV` **kapu** mögött, a
+**4. mód a kaput átugorja és meg is nyitja** a fájlt. Mindkét kimenet a
+**`#db3\`** mappába megy, `"w"` módban. A sorformátum
+`"%s",%f,%f,%d,%d,%d,%d` (a hét oszlop forrás-eltolásaival), és a `Dirty`
+meg a `Valid` **külön** jelző. ⭐ **A `badfiles.txt`** ugyanabban a
+függvényben készül: a `Type == 4` → `%s (badfile)`, a `Type == 5` →
+`%s (baddirectory)` ⇒ **a bejáró nyilvántartja a hibás fájlokat és
+mappákat**. ⛔ Ebből termékhiba is előkerült: a mi `scanner/walker.py`-unk
+**hét `OSError`-ágat némán elnyel** → **#1998**.
+
+1. **Mit jelent a `Type` 1, 25 (`0x19`) és 1001 (`0x3e9`) értéke?** A
+   névfeloldó ág (`0x004f2804`–`0x004f2825`) megkülönbözteti őket, de
+   sztring nincs hozzájuk. **Megszerzés:** a `ytDirScannerChangeList`
+   dekompilációja. A #1998-at nem blokkolja.
+2. **Mit csinál a `Preferences\DirscanRegression` kulcs?** Csak az
+   olvasása látszik (`0x004e9b00`, 649 b). **Fejlesztői kapcsoló**, a
+   termékre nincs hatása. **Megszerzés:** a `0x004e9b00` dekompilációja.
 
 ✅ **2026-08-24 — a két megmaradt „erős, nem megerősített" állítás MEGERŐSÍTVE:**
 
