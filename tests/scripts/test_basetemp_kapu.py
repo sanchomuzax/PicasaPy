@@ -50,7 +50,7 @@ ATENGEDENDO = [
     "rg --files-with-matches 'pytest tests' .",
     # nem is pytest
     "git status",
-    "python3 scripts/allapotlap.py",
+    "python3 scripts/menu_lefedettseg.py",
 ]
 
 

@@ -157,9 +157,9 @@ számít. A kör eleji olvasás tájékozódásra jó, de a publikálást nem v�
 ### Csak EGY lap van, egyetlen címmel
 
 A címre kizárólag az `egy_lap.py` kimenete (`~/picasapy-agent/docs/egy-lap.html`)
-megy. A `docs/modszertan-lap.html`, `docs/allapotlap.html` és
-`docs/binaris-terkep.html` **köztes fájlok**, amiket a generátor fűz össze —
-ezeket soha ne publikáld külön, és a régi címeikre se publikálj.
+megy. A generátorok és a köztes fájljaik a **privát `picasapy-agent`
+repóban** élnek (`eszkozok/lap/`, #2060) — ide, a termék repójába nem valók.
+A köztes HTML-eket soha ne publikáld külön, és a régi címeikre se publikálj.
 
 ### Ha hibát kapsz
 
