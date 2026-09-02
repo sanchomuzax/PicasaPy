@@ -118,24 +118,27 @@ bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vag
 második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
 lehetőleg különböző sávokból végy jegyeket.
 
-## 📐 A tulajdonos lapja — a kör végén frissítsd
+## 📐 A tulajdonos lapja — dolgozó munkamenetként NE publikáld
 
 A tulajdonos **egyetlen** olvasható lapot kap, három szakasszal: hol tart a
-projekt, mennyit fejtettünk vissza a Picasából, és hogyan dolgozunk. A lapot
-nem írjuk kézzel — **újraszámoljuk**, egyetlen paranccsal:
+projekt, mennyit fejtettünk vissza a Picasából, és hogyan dolgozunk.
+
+A lapot **kizárólag** a `picasapy-allapotlap-halo` ütemezett feladat teszi ki,
+naponta háromszor, és csak ha a tartalom tényleg változott. **Dolgozó
+munkamenetként ne publikáld, és ne is generáld** — a kör végén nincs vele
+teendőd: se jegyzáráskor, se kiadáskor, se spec-írás után.
+
+**Miért:** amíg minden munkamenet publikált, a párhuzamos körök rendszeresen
+ütköztek, és az ütközés a felhasználó felületén **piros hibaként** jelent meg.
+Egy publikálóval nincs verseny, tehát nincs piros hiba. (Mérés: 2026-09-01.)
+
+Megnézni bármikor szabad — ez csak számol és fájlba ír, nem publikál:
 
 ```
 cd ~/picasapy-agent && python3 eszkozok/egy_lap.py
 ```
 
-Ez lefuttatja az itteni `scripts/allapotlap.py`-t és `scripts/binaris_terkep.py`-t
-is, tehát külön egyiket sem kell indítani. Publikálás **mindig** a kiírt
-címre (`Artifact` hívás `url` mezője) — új cím = a felhasználó régi linkje
-elavul.
-
-**Mikor:** ha a köröd jegyet nyitott vagy zárt, PR-t olvasztott be, kiadást
-csinált, vagy specifikációt bővített. A pontos menet, a cím és az átnézési
-körök külön teendője: a privát repó `docs/lapok.md`-je.
+A pontos menet, a cím és az ütközés kezelése: a privát repó `docs/lapok.md`-je.
 
 ## Fejlesztés
 
