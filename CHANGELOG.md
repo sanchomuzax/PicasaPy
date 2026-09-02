@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.227] – 2026-09-02
+
+### Javítva
+- **A weboldal-export ékezetes fájlnevet is helyesen kezel (#1991).**
+  Windowson a képméret beolvasása ékezetes néven némán elbukott, és a
+  kész oldalon nulla méret maradt. Mostantól minden képet ugyanazon a
+  bevált úton olvasunk, és ha valami mégsem sikerül, az naplóba kerül —
+  nem marad néma.
+
 ## [0.8.226] – 2026-09-02
 
 ### Javítva
