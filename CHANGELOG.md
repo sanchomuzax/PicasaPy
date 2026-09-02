@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.213] – 2026-09-02
+
+### Javítva
+- **A tálca csillag- és forgatás-gombja rendes ikont kapott (#1224).**
+  Eddig ezek betűjelek voltak (★ ↺ ↻), és az alakjuk attól függött, milyen
+  betűkészletet talált a gép — ezért nézhettek ki máshogy Windowson, mint
+  Linuxon, és ezért látszottak torznak. Mostantól rajzolt ikonok, az
+  eredeti Picasából kimért méretben.
+
 ## [0.8.212] – 2026-09-02
 
 ### Javítva

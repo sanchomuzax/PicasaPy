@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#1224): a tálca csillag-vezérlője, BEKAPCSOLT
+       állapot — kitöltött, a `Theme.starYellow`-val egyező aranyszín.
+       ⚠️ KÉT külön SVG kell, nem egy színezett: a QML `Image` shader
+       nélkül nem színezhető, a `QtQuick.Effects` pedig szándékosan nincs
+       a projektben (ld. CollageSheet.qml). -->
+  <path d="M12 3.2 14.7 9.1 21 9.9 16.4 14.2 17.6 20.4 12 17.4
+           6.4 20.4 7.6 14.2 3 9.9 9.3 9.1Z"
+        fill="#f2b01e" stroke="#b8860b" stroke-width="1.1"
+        stroke-linejoin="round"/>
+</svg>

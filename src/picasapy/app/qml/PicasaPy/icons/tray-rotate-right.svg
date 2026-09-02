@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#1224): forgatás JOBBRA (óramutató irányába).
+       Az eredeti `thumbui/rotateright_icon` MÉRT mérete 11x15 (#1914).
+       A balra-forgatás tükörképe, hogy a pár egy készletnek lássék. -->
+  <path d="M16.5 9.5A7 7 0 1 0 18.4 14.6"
+        fill="none" stroke="#3c3c3c" stroke-width="2.1"
+        stroke-linecap="round"/>
+  <path d="M20.6 5.4 16.1 9.7 20.7 10.4Z" fill="#3c3c3c"/>
+</svg>

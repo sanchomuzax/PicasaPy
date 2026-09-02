@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#1224): forgatás BALRA (óramutatóval szemben).
+       Az eredeti `thumbui/rotateleft_icon` MÉRT mérete 11x15 (#1914). -->
+  <path d="M7.5 9.5A7 7 0 1 1 5.6 14.6"
+        fill="none" stroke="#3c3c3c" stroke-width="2.1"
+        stroke-linecap="round"/>
+  <path d="M3.4 5.4 7.9 9.7 3.3 10.4Z" fill="#3c3c3c"/>
+</svg>

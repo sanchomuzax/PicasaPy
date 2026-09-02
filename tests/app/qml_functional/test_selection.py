@@ -22,9 +22,15 @@ class TestTrayStar:
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
         _do_photo_op(controller, qt_app, lambda: controller.toggleStar(0))
-        star_label = window.findChild(QObject, "trayStarLabel")
-        assert star_label is not None
-        assert star_label.property("color").name() == "#f5c518"  # arany
+        #: #1224: a csillag KÉP lett, nem betűjel — a `color` állítás
+        #: képre nem érvényes. A bekapcsolt állapotot mostantól a
+        #: FORRÁSFÁJL mondja meg (két külön SVG, mert a QML `Image`
+        #: shader nélkül nem színezhető).
+        star_icon = window.findChild(QObject, "trayStarIcon")
+        assert star_icon is not None
+        assert "tray-star-on.svg" in str(star_icon.property("source")), (
+            "csillagozott képnél nem a BEKAPCSOLT ikon látszik"
+        )
 
 
 class TestMultiSelect:

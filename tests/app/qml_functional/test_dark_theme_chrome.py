@@ -172,11 +172,17 @@ class TestTrayBarIconContrast:
         assert _child(window, "trayExportButton").property("enabled") is True
 
         icon_ink = theme.property("iconInk")
-        for name in (
-            "trayRotateLeftLabel",
-            "trayRotateRightLabel",
-            "trayExportLabel",
-        ):
+        #: #1224: a két forgatás-vezérlő KÉP lett, nem betűjel — a `color`
+        #: állítás rájuk nem érvényes. A gomb-króm mindig világos, tehát a
+        #: kép LÁTHATÓSÁGÁT állítjuk helyette; a szín-token továbbra is a
+        #: szöveges feliratokra vonatkozik.
+        for name in ("trayRotateLeftIcon", "trayRotateRightIcon"):
+            ikon = _child(window, name)
+            assert ikon is not None, f"{name} nem található"
+            assert ikon.property("opacity") == 1.0, (
+                f"{name} halvány, pedig a gomb engedélyezett"
+            )
+        for name in ("trayExportLabel",):
             label = _child(window, name)
             assert label.property("color") == icon_ink, (
                 f"{name} színe nem az iconInk tokent követi"
@@ -193,11 +199,10 @@ class TestTrayBarIconContrast:
         controller.setDarkTheme(False)
         qt_app.processEvents()
 
-        for name in (
-            "trayRotateLeftLabel",
-            "trayRotateRightLabel",
-            "trayExportLabel",
-        ):
+        #: #1224: a forgatás-vezérlők képek — rájuk a láthatóság a mérce
+        for name in ("trayRotateLeftIcon", "trayRotateRightIcon"):
+            assert _child(window, name).property("opacity") == 1.0
+        for name in ("trayExportLabel",):
             label = _child(window, name)
             assert label.property("color").lightnessF() < 0.35
 
@@ -205,6 +210,15 @@ class TestTrayBarIconContrast:
         window, controller, engine = qml_app
         _select_row(window, qt_app, 0)
         qt_app.processEvents()
-        assert _child(window, "trayRotateLeftLabel").property("text") == "↺"
-        assert _child(window, "trayRotateRightLabel").property("text") == "↻"
+        #: #1224: a betűjelek helyett MÉRT méretű ikonok
+        #: (`thumbui/rotateleft_icon` / `rotateright_icon`, 11 × 15).
+        #: A glifa-állítás azért szűnt meg, mert épp az volt a hiba: az
+        #: alakja platformonként más lett.
+        for name, fajl in (
+            ("trayRotateLeftIcon", "tray-rotate-left.svg"),
+            ("trayRotateRightIcon", "tray-rotate-right.svg"),
+        ):
+            ikon = _child(window, name)
+            assert fajl in str(ikon.property("source"))
+            assert (ikon.width(), ikon.height()) == (11.0, 15.0)
         assert "Export" in _child(window, "trayExportLabel").property("text")
