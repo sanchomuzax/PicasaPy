@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.212] – 2026-09-02
+
+### Javítva
+- **A mappanézet-kapcsoló állapota nem csúszhat el (#1956).** A program
+  indulása és leállása közben egy pillanatra üresen állt a mappanézetet
+  kezelő rész, és az erre épülő ellenőrzés ezt nem vette észre. Ilyenkor
+  a menü pipája és a nézetváltó gomb a **régi** állapoton ragadhatott.
+  Hét helyen javítva, és őr került mellé, hogy a hibás minta ne
+  szivárogjon vissza.
+
 ## [0.8.211] – 2026-09-02
 
 ### Javítva

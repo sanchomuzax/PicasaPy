@@ -1166,12 +1166,23 @@ ApplicationWindow {
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
         // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
+        //: #1956: KÉT őr kell, mert KÉT külön hiba fenyeget:
+        //:   `typeof …`  — a NÉV nincs regisztrálva (pl. szűkített
+        //:                 teszt-összeállítás) ⇒ ReferenceError;
+        //:   `&& x`      — a név megvan, de az ÉRTÉKE `null` az engine
+        //:                 fel-/leépítése közben ⇒ TypeError. A `typeof`
+        //:                 EZT NEM fogja: `typeof null === "object"`.
+        //: A korábbi alak csak az elsőt fogta, ezért volt tele minden
+        //: QML-futás „Cannot read property 'treeView' of null"-lal.
         treeViewActive: (typeof folderHierarchyController !== "undefined"
-                         && folderHierarchyController.treeView !== undefined)
-                        ? folderHierarchyController.treeView : false
-        onFlatViewRequested: if (typeof folderHierarchyController !== "undefined")
+                         && folderHierarchyController)
+                        ? (folderHierarchyController.treeView === true)
+                        : false
+        onFlatViewRequested: if (typeof folderHierarchyController !== "undefined"
+                                 && folderHierarchyController)
                                  folderHierarchyController.setTreeView(false)
-        onTreeViewRequested: if (typeof folderHierarchyController !== "undefined")
+        onTreeViewRequested: if (typeof folderHierarchyController !== "undefined"
+                                 && folderHierarchyController)
                                  folderHierarchyController.setTreeView(true)
     }
 

@@ -28,7 +28,8 @@ Window {
     // a `pathbox name="current_location"`/`name="new_location"` (FEN)
     // megfelelője — a jelenlegi hely a controllertől jön (csak-olvasható)
     readonly property string currentLocation:
-        typeof relocateController !== "undefined"
+        //: #1956: `typeof` a NÉVRE, `&&` az ÉRTÉKRE
+        (typeof relocateController !== "undefined" && relocateController)
             ? relocateController.currentLocation : ""
     // a `FolderDialog selectedFolder.toString()`-ja (file:// URL is lehet)
     property string newLocation: ""

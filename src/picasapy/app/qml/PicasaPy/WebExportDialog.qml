@@ -46,7 +46,9 @@ Window {
     function open() {
         webExportWindow.lastError = ""
         webExportWindow.lastOutputFolder = ""
-        if (typeof webExportController !== "undefined") {
+        //: #1956: `typeof` a NÉVRE, `&&` az ÉRTÉKRE
+        if (typeof webExportController !== "undefined"
+                && webExportController) {
             webExportWindow.templates = webExportController.listWebExportTemplates()
         }
         webExportWindow.visible = true
