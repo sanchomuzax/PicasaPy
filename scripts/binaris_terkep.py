@@ -64,6 +64,10 @@ def _index_utvonal() -> Path:
 INDEX = _index_utvonal()
 SPEC_DIR = REPO / "docs" / "specs"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from szakasz_eredet import eredet_sor, forras_datum  # noqa: E402
+
+
 #: A publikált artifact címe. MÁSIK munkamenetből frissítve EZT kell átadni az
 #: `Artifact` hívás `url` mezőjében, különben új lap jön létre.
 ARTIFACT_URL = "https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e"  # az ÖSSZEVONT lap (2026-09-01 óta)
@@ -341,6 +345,7 @@ def epits(a: dict) -> str:
       <h2>A program nagy birodalmai</h2>
       <p>A Picasa osztályai jól elkülönülő családba esnek. A sáv azt mutatja,
          hányat érintettünk közülük.</p>
+{eredet_sor(forras_datum(_index_utvonal()), "ha új bináris kutatás kerül az indexbe")}
     </div>
     <div class="csaladok">
 {_csaladok(a)}
@@ -354,6 +359,7 @@ def epits(a: dict) -> str:
          hossza a feltárt függvények aránya azon a szakaszon.
          <b style="color:var(--kiemelt)">Naranccsal</b> a kiemelt jegyeink által
          érintett sávok — a jobb szélen a jegy számával.
+{eredet_sor(forras_datum(_index_utvonal()), "ha új bináris kutatás kerül az indexbe")}
          <b>Szürke sraffozással</b> az, amit sosem kell visszafejtenünk.</p>
     </div>
     <div class="terep">
@@ -382,6 +388,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>Amit ez a lap NEM mutat</h2>
       <p>Három korlát, hogy a szám ne látsszon többnek, mint ami.</p>
+{eredet_sor(forras_datum(SPEC_DIR), "ha a specifikációink hivatkozási köre bővül")}
     </div>
     <div class="doboz">
       <p><b>A „feltárt" itt annyit tesz: valamelyik specifikációnk hivatkozik
@@ -463,6 +470,8 @@ _STILUS = """<style>
   h2 { font-family:var(--font-display); font-size:1.5rem; font-weight:600;
        letter-spacing:-0.01em; margin:0; text-wrap:balance; }
   .section-head { display:flex; flex-direction:column; gap:0.35rem; }
+  .eredet { margin:0; font-family:var(--font-mono); font-size:0.72rem;
+            color:var(--ink-faint); }
   .section-head p { margin:0; color:var(--ink-soft); max-width:46rem; font-size:0.93rem; }
   .csaladok { display:flex; flex-direction:column; }
   .csalad { display:grid; grid-template-columns:9rem 1fr 5.5rem; gap:0 1rem;
