@@ -265,6 +265,95 @@ a `00848071` melegebb semlegespont.
 *Bizonyítottsági fok: megerősített* (a `filterdesc.xml` deklarációja + 566
 valós bejegyzés).
 
+### Az ÍRÓ két függvénye — és egy kulcs→alapérték tábla (2026-09-02)
+
+*A lap eddig a kulcsokat és a formátumokat írta le; azt nem, hogy melyik
+függvény melyiket írja, és hogy a Picasa mit tekint „alapértéknek".
+Minden cím a `Picasa3.exe` 3.9-é, image base `0x00400000`.*
+
+#### Két író, egy hívópáros
+
+| függvény | méret | mit ír |
+|---|---:|---|
+| **`0x0068ac80`** | 1681 b | az **album-szintű** rész: `[encoding]`+`[Picasa]` fejléc, `name=`, `description=`, `location=`, `category=`, `date=%f` |
+| **`0x0068b320`** | 3304 b | a **képenkénti** szekciók: `[%s]`, `star=yes`, `caption=%s`, `keywords=%s`, `crop=rect64(%s)`, `IIDLIST_%s=%s`, `%s=%s`, `%s=%d` |
+
+Mindkettőt **ugyanaz a két hívó** használja (`0x006956d0`, `0x0069b240`)
+⇒ egy fájl tartalmát a kettő együtt állítja elő.
+
+#### ⭐ A kulcs→ALAPÉRTÉK tábla — öt kulcs
+
+A `0x0068b320` két párhuzamos, **NULL-lal lezárt** mutatótömböt épít fel a
+veremben (`0x0068b535`–`0x0068b58c`):
+
+| kulcs | „alapérték" | a literál címe |
+|---|---|---|
+| `flipped` | **`flipped(0)`** | `0x00ca7860` |
+| `rotate` | **`rotate(0)`** | `0x00c81964` |
+| `filters` | *üres* (`""`) | `0x00c7f979` |
+| `text` | *üres* | ua. |
+| `moddate` | *üres* | ua. |
+
+⇒ **A `rotate` és a `flipped` alapértéke NEM az üres/hiányzó kulcs, hanem
+a `rotate(0)` illetve a `flipped(0)` érték.** A többi háromé az üres
+sztring.
+
+**Élő megerősítés a tulajdonos korpuszán** (859 fájl):
+
+| érték | előfordulás |
+|---|---:|
+| `rotate=rotate(0)` | **1 735** |
+| `rotate=rotate(1)` | 451 |
+| `rotate=rotate(3)` | 213 |
+| `rotate=rotate(2)` | 27 |
+
+⇒ **A valódi Picasa kiírja a `rotate=rotate(0)` sort** — a nulla nem
+jelenti a kulcs elhagyását. *(A `flipped=` a korpuszban nem fordul elő,
+tehát a `flipped(0)` alakra **élő mintánk nincs**; a tábla és a
+`flipped(%d)` formátum a bizonyíték.)*
+
+⚠️ **Nálunk ez ELTÉR** — és a mi kódunk indoklása épp fordítva igaz.
+Lásd a **#2004**-et.
+
+#### A `[encoding]` fejléc — mérve, és a korpusszal ÖSSZEVETVE
+
+A literál pontos alakja (`0x00ca77f0`, **30 bájt**):
+
+```
+[encoding]\r\nutf8=1\r\n[Picasa]\r\n
+```
+
+⚠️ **CRLF sorvégekkel** — ezt a lap korábbi szakasza nem mondta ki.
+A `0x0068ac80` a `0x0068ae31`-nél **feltétel nélkül** összefűzi a
+tartalom elejére (`0x00985ff0`, hossz `0x1e`).
+
+⛔ **A korpusz viszont EGYETLEN ilyen fejlécet sem tartalmaz:**
+
+| mérés | eredmény |
+|---|---:|
+| `.picasa.ini` fájl a korpuszban | 859 |
+| ebből `[Picasa]` szekciót tartalmaz | 733 |
+| ebből **album-jellegű** (`name=` vagy `description=`) — azaz pontosan a `0x0068ac80` kulcskészlete | **694** |
+| **`[encoding]` szekciót tartalmaz** | **0** |
+
+⇒ **A „az író-kód literálisan ezt a szekciót írja a `[Picasa]` elé"
+állítás ÉLES ADATTAL NEM IGAZOLHATÓ.** A tartalom-összeállító
+utasításszinten valóban feltétel nélkül teszi elé, de a felhasználó 694
+album-jellegű fájljából egy sem tartalmazza.
+
+**A legvalószínűbb magyarázat** (a korpusz `date=40452` = 2010-es
+sorszámdátumai alapján), hogy ezek a fájlok **korábbi Picasa-változattól**
+származnak, és a tulajdonos azóta nem íratta újra őket. ⚠️ **Ez
+KÖVETKEZTETÉS, nem mérés** — lásd a mérleget.
+
+**Amit ebből a megvalósításra le KELL vonni:**
+
+1. **Olvasásnál tűrni kell** a `[encoding]` szekciót — nálunk ez **megvan**
+   (`tests/ini/test_new_keys_348.py`, CRLF-fel is).
+2. **Írásnál NEM szabad magunktól bevezetni**: 694 valós fájlban nincs
+   ott, tehát a hozzáadása **diffet csinálna** a felhasználó saját
+   gyűjteményén.
+
 ## `rect64` kódolás (crop + arcok)
 
 `rect64(3f845bcb59418507)` — 16 hex karakter = 4×16 bit: **left, top, right, bottom**.
