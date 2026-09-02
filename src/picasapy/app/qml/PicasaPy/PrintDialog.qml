@@ -112,6 +112,10 @@ Window {
         "TELJES_OLDAL": qsTr("FullPage")
     })
     property var printSizeIds: []
+    //: #1953: az „Ellenőrzés" gomb eredménye — a küszöb alatti képek
+    //: {name, dpi} tételei, a legrosszabbal elöl.
+    property var reviewList: []
+    property bool reviewOpen: false
     //: A választó modellje: a vezérlőtől kapott azonosítók feliratai.
     //: Ismeretlen azonosítónál MAGA az azonosító látszik — néma üres sor
     //: helyett legyen látható, hogy felirat hiányzik.
@@ -507,6 +511,35 @@ Window {
                     return sor + " " + qsTr("You are ready to print.")
                 }
             }
+
+            // #1953: az üzenet megvolt, a GOMB nem — a felhasználó
+            // megtudta, hogy VAN kis felbontású kép, azt viszont nem,
+            // hogy MELYIK.
+            //
+            // Az eredetiben `printpanel/reviewnowbutton` (és `…button2`),
+            // felirat „Review", súgó „Make sure your photos are ready to
+            // print" (`ui-leltar.csv:1434–1437`). ⚠️ Hogy MIÉRT kettő, az
+            // NINCS mérve (a #1953 blokkolt kérdése); egy gomb elég.
+            PicasaButton {
+                objectName: "printReviewButton"
+                //: `printpanel/reviewnowbutton` felirata
+                text: qsTr("Review")
+                font.pixelSize: Theme.fontSize
+                //: `printpanel/reviewnowbutton` elemleírása
+                ToolTip.text: qsTr(
+                    "Make sure your photos are ready to print")
+                ToolTip.visible: hovered
+                ToolTip.delay: 500
+                // Az eredetiben a „You are ready to print." ágon nincs
+                // mit ellenőrizni.
+                visible: printWindow.quality.small > 0
+                onClicked: {
+                    if (!printWindow.printCtl) return
+                    printWindow.reviewList = printWindow.printCtl.smallPictures(
+                        printWindow.rows, printWindow.printSize)
+                    printWindow.reviewOpen = true
+                }
+            }
         }
 
         // -- nyomtató (vagy PDF-fájl) ------------------------------------
@@ -648,6 +681,64 @@ Window {
                 objectName: "printCloseButton"
                 text: qsTr("Close")
                 onClicked: printWindow.visible = false
+            }
+        }
+    }
+
+    // #1953: az „Ellenőrzés" eredménye — MELYIK képek esnek a küszöb alá.
+    // A lista a legrosszabbal kezdődik (a vezérlő rendezi), és a
+    // DPI-t is kiírja, hogy a felhasználó lássa, mennyivel kevés.
+    Rectangle {
+        objectName: "printReviewPanel"
+        anchors.fill: parent
+        visible: printWindow.reviewOpen
+        color: Theme.canvasBg
+        z: 100
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
+            Text {
+                //: `printpanel/reviewnowbutton` felirata — a lap címe is ez
+                text: qsTr("Review")
+                font.pixelSize: Theme.fontSize + 3
+                font.bold: true
+                color: Theme.ink
+            }
+            Text {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                //: A sztring EGYETLEN literál: a `qsTr()` futásidőben
+                //: összefűzött argumentumát a kinyerő nem látná, és a
+                //: fordítás némán elmaradna.
+                text: qsTr("These pictures are below %1 pixels/inch at the selected print size:")
+                          .arg(printWindow.quality.threshold)
+            }
+            ListView {
+                objectName: "printReviewList"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: printWindow.reviewList
+                delegate: Text {
+                    required property var modelData
+                    width: ListView.view.width
+                    elide: Text.ElideMiddle
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                    //: fájlnév — effektív felbontás
+                    text: modelData.name + "   —   "
+                          + qsTr("%1 pixels/inch").arg(modelData.dpi)
+                }
+            }
+            PicasaButton {
+                objectName: "printReviewCloseButton"
+                Layout.alignment: Qt.AlignRight
+                text: qsTr("Close")
+                onClicked: printWindow.reviewOpen = false
             }
         }
     }
