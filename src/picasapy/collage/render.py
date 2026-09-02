@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from picasapy.lazy_cv2 import cv2
@@ -58,6 +59,18 @@ class CollageSettings:
     columns: int = 4
     seed: int = 0
     matted: bool = True  # fehér paszpartu a képek körül (Picasa-hatás)
+    #: #1004: a HARMADIK háttérmód — a képek ÁTLAGSZÍNE
+    #: (`collage::avgcolor`). Bekapcsolva FELÜLÍR minden más
+    #: háttérbeállítást; az eredeti beállítója (`0x008364a0`) ugyanígy
+    #: nullázza a kért módot:
+    #:     spec[0x2c] = (Preferences\collage::avgcolor != 0) ? 0 : mód
+    #:
+    #: ⚠️ Az eredeti az értéket NEM számolja: egy adatbázis-mezőt olvas ki
+    #: (`"avgcolor"`, `0x006a4cd0`), amit az indexelője állított elő. A
+    #: képlete a kollázson KÍVÜL van és nincs visszafejtve, ezért a mi
+    #: átlagunk KÖZELÍTÉS — nem bitre azonos. Aki egyszer leméri, cserélje
+    #: ki, és vegye ki ezt a megjegyzést.
+    background_avg: bool = False
 
     def __post_init__(self) -> None:
         if self.width < 16 or self.height < 16:
@@ -211,6 +224,28 @@ def _rotated_paste(
     region[sub_mask] = rotated[y0 - y : y1 - y, x0 - x : x1 - x][sub_mask]
 
 
+def _atlagszin(
+    dekodolt: Sequence[tuple[Path, np.ndarray]],
+) -> tuple[int, int, int]:
+    """A kollázs képeinek átlagszíne, BGR hármasként (#1004).
+
+    KÉPENKÉNT átlagolunk, majd a kép-átlagokat átlagoljuk — vagyis minden
+    kép EGYENLŐ súllyal esik latba, függetlenül attól, mekkora helyet kap
+    a vásznon. Ez tudatos döntés: a képpont-súlyozás a nagyobbra vágott
+    képeket felülreprezentálná, és az eredmény a tördeléstől is függne.
+
+    ⚠️ **KÖZELÍTÉS.** Az eredeti Picasa az `avgcolor`-t az indexeléskor
+    számolta, és a kollázs csak KIOLVASSA (`0x006a4cd0`). A számítás
+    képlete a kollázson kívül van, nincs visszafejtve — ez az érték tehát
+    nem bitre azonos az eredetiével, csak ugyanazt a szerepet tölti be.
+    """
+    osszeg = np.zeros(3, dtype=np.float64)
+    for _ut, kep in dekodolt:
+        osszeg += np.asarray(kep, dtype=np.float64).reshape(-1, 3).mean(axis=0)
+    atlag = osszeg / float(len(dekodolt))
+    return tuple(int(np.clip(round(c), 0, 255)) for c in atlag)
+
+
 def make_collage(
     sources, settings: CollageSettings = _DEFAULT_SETTINGS
 ) -> CollageReport:
@@ -241,9 +276,17 @@ def make_collage(
             skipped.append(path)
             reasons.append(str(error))
 
+    #: #1004: az `avg` mód FELÜLÍRJA a beállított hátteret — de csak ha
+    #: van mihez nyúlnia. Kép nélkül a beállított szín marad, kivétel
+    #: nélkül (üres kollázst is kell tudni renderelni).
+    hatter = (
+        _atlagszin(decoded)
+        if settings.background_avg and decoded
+        else settings.background
+    )
     canvas = np.full(
         (settings.height, settings.width, 3),
-        np.array(settings.background, dtype=np.uint8),
+        np.array(hatter, dtype=np.uint8),
         dtype=np.uint8,
     )
     if not decoded:
