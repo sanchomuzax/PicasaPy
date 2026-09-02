@@ -117,3 +117,16 @@ editpanel/prev,megvan,PicasaPy/PhotoViewer.qml,viewerPrevButton (:641) — előz
 editpanel/next,megvan,PicasaPy/PhotoViewer.qml,viewerNextButton (:709) — következő kép a fejlécben
 editpanel/zoomsliderrect,megvan,PicasaPy/PhotoViewer.qml,a nagyítás-csúszka sávja az alsó vezérlősorban (#1420)
 editpanel/edittextpanel,megvan,PicasaPy/EditorTextPanel.qml,a teljes szöveg-eszköz panel (:15-:186) — tartalom · betűtípus · méret · félkövér/dőlt/aláhúzott · három igazítás · kitöltő színek
+quicktagconfig/edit_0,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField0 (:86) — a #1788 óta EXPLICIT tíz mező (_QUICK_TAG_SLOTS = 10)
+quicktagconfig/edit_1,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField1 (:86)
+quicktagconfig/edit_2,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField2 (:86)
+quicktagconfig/edit_3,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField3 (:86)
+quicktagconfig/edit_4,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField4 (:86)
+quicktagconfig/edit_5,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField5 (:86)
+quicktagconfig/edit_6,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField6 (:86)
+quicktagconfig/edit_7,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField7 (:86)
+quicktagconfig/edit_8,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField8 (:86) — a #1788 hozta a 9. helyet
+quicktagconfig/edit_9,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField9 (:86) — a #1788 hozta a 10. helyet
+quicktagconfig/cancel,megvan,PicasaPy/QuickTagsConfigDialog.qml,standardButtons: Dialog.Ok | Dialog.Cancel (:36) — a #1788 óta elvethető a szerkesztés
+quicktagconfig/cancel-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,a Cancel gomb felirata (:36)
+quicktagconfig/ok-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,az Ok gomb felirata (:36)
