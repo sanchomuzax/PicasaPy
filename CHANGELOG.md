@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.228] – 2026-09-02
+
+### Javítva
+- **A szerkesztő fejléce az eredeti gombjait kapta (#1993).** A képek
+  közti lépegetés eddig két szögletes gomb volt `◀`/`▶` karakterrel; az
+  eredeti Picasában kerek, szürke nyílgombok állnak ott. A „Vissza a
+  könyvtárhoz" gomb pedig — ahogy az eredetiben — kék nyíl-ikont kapott,
+  és a felirata két sorba tördelve fér el.
+
 ## [0.8.227] – 2026-09-02
 
 ### Javítva

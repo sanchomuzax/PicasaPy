@@ -560,10 +560,32 @@ Rectangle {
                 anchors.fill: parent
                 anchors.leftMargin: 8; anchors.rightMargin: 8
                 spacing: 8
+                // #1993: a MÉRT alak — ikonos, KÉTSOROS gomb.
+                //
+                // Az ikon az `editpanel/albumview_icon` (17 × 15), színe a
+                // sprite domináns kékje, `#5A7BBB`. A felirat a felvételen
+                // két sorban áll („Vissza a / könyvtárhoz"), ezért a gomb
+                // szélessége kötött — a `PicasaButton` maga tördel (#992).
+                //
+                // ⚠️ A `◀` glif KIESETT: az ikon váltja ki, nem mellette
+                // áll. A tesztek erre külön állítást tesznek.
                 PicasaButton {
-                    text: "◀  " + qsTr("Back to Library")
+                    objectName: "viewerBackButton"
                     font.pixelSize: Theme.fontSize
+                    text: qsTr("Back to Library")
+                    Layout.preferredWidth: 118
+                    Layout.preferredHeight: 34
+                    leftPadding: 30
                     onClicked: viewer.closed()
+                    Image {
+                        objectName: "viewerBackIcon"
+                        source: "icons/viewer-back-arrow.svg"
+                        width: 17; height: 15
+                        sourceSize.width: 17; sourceSize.height: 15
+                        anchors.left: parent.left
+                        anchors.leftMargin: 7
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
                 // #1002 — `editpanel/editcollage`. Az eredetiben `m_hidden`:
                 // alapból REJTETT, és csak akkor jön elő, ha a megnyitott
@@ -608,11 +630,34 @@ Rectangle {
                     ToolTip.delay: 500
                     onClicked: viewer.playRequested()
                 }
+                // #1993: a MÉRT léptető — 30 × 31, KÖR alakú rajz.
+                //
+                // A kör alakot a `globalbuttons/lfs_n` sprite soronkénti
+                // látható szélessége bizonyítja (…29, 30, 30, 30, 30, 30,
+                // 30, 30, 29…) — korong, nem lekerekített téglalap.
+                //
+                // ⚠️ A jegy „kör alakú, KÉK" nyilakat írt. A kör igaz, a
+                // kék NEM: a sprite és a felvétel is `#5C`–`#5F` szürkét
+                // ad. A KÉK a „Vissza a könyvtárhoz" gomb nyila
+                // (`#5A7BBB`) — két különböző elem.
                 PicasaButton {
                     objectName: "viewerPrevButton"
-                    text: "◀"; onClicked: viewer.previous()
+                    onClicked: viewer.previous()
                     enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
+                    Layout.preferredHeight: 31
+                    width: 30; height: 31
+                    padding: 0
+                    background: null
+                    contentItem: Item {
+                        Image {
+                            objectName: "viewerPrevIcon"
+                            source: "icons/viewer-step-left.svg"
+                            width: 30; height: 31
+                            sourceSize.width: 30; sourceSize.height: 31
+                            anchors.centerIn: parent
+                        }
+                    }
                     ToolTip.text: qsTr("Previous picture")
                     ToolTip.visible: hovered
                     ToolTip.delay: 500
@@ -674,9 +719,22 @@ Rectangle {
                 }
                 PicasaButton {
                     objectName: "viewerNextButton"
-                    text: "▶"; onClicked: viewer.next()
+                    onClicked: viewer.next()
                     enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
+                    Layout.preferredHeight: 31
+                    width: 30; height: 31
+                    padding: 0
+                    background: null
+                    contentItem: Item {
+                        Image {
+                            objectName: "viewerNextIcon"
+                            source: "icons/viewer-step-right.svg"
+                            width: 30; height: 31
+                            sourceSize.width: 30; sourceSize.height: 31
+                            anchors.centerIn: parent
+                        }
+                    }
                     ToolTip.text: qsTr("Next picture")
                     ToolTip.visible: hovered
                     ToolTip.delay: 500

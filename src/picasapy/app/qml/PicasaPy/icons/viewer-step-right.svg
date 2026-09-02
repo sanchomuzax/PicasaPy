@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 31" width="30" height="31">
+  <!-- PicasaPy sajat rajz (#1993): kor alaku leptet-nyil (jobbra) a szerkeszto
+       fejlecebe. A MERET es a SZINEK MERTEK, a rajz a mienk.
+
+       Meret: 30 x 31 - a `globalbuttons/rfs_n` sprite merete. Hogy KOR
+       es nem lekerekitett teglalap, azt a sprite soronkenti lathato
+       szelessege bizonyitja: 7, 13, 17, 20, 22, 24, 25, 27, 27, 29, 29,
+       29, 30, 30, 30, 30, 30, 30, 30, 29, ... - ez korong.
+
+       Szinek: a korong #DCDCDC, a nyil #5D5D5D. Mindketto ketszer merve:
+       a sprite dominans szineibol ES a tulajdonos felvetelebol (78 sotet
+       keppont, mind #5B-#5F kozott).
+
+       FONTOS: a jegy "kor alaku, KEK" nyilakat irt. A kek a
+       "Vissza a konyvtarhoz" gomb nyila (#5A7BBB) - a lepteto SZURKE. -->
+  <circle cx="15" cy="15.5" r="14.5" fill="#DCDCDC" stroke="#BFBFBF" stroke-width="1"/>
+  <path d="M11.5 8.5 L19 15.5 L11.5 22.5 L11.5 18.5 L8.5 18.5 L8.5 12.5 L11.5 12.5 Z"
+        fill="#5D5D5D"/>
+</svg>

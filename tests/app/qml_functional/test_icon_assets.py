@@ -152,11 +152,22 @@ _COLLAGE_CANVAS_ICONS = (
     "collage-move-bottom.svg",
 )
 
+#: #1993: a szerkesztő fejlécének MÉRT rajzai. Mindhárom mérete a
+#: `respack.yt` sprite-fejlécéből való, nem a mi választásunk:
+#: a két léptető `globalbuttons/lfs_n` / `rfs_n` (30 × 31, KÖR alakú), a
+#: vissza-nyíl `editpanel/albumview_icon` (17 × 15).
+_VIEWER_HEADER_ICONS = (
+    "viewer-step-left.svg",
+    "viewer-step-right.svg",
+    "viewer-back-arrow.svg",
+)
+
 _ALL_ICONS = (
     _EXPECTED_ICONS
     + _EDITOR_TOOL_ICONS
     + _COLLAGE_PANEL_ICONS
     + _COLLAGE_CANVAS_ICONS
+    + _VIEWER_HEADER_ICONS
 )
 
 
@@ -196,6 +207,12 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     "panel-helyek.svg",
     "panel-cimkek.svg",
     "panel-tulajdonsagok.svg",
+    # #1993: a szerkesztő-fejléc három rajza — a méretarányt a `respack.yt`
+    # sprite-fejléce adja (30 × 31 a két léptető, 17 × 15 a vissza-nyíl),
+    # nem az eszközgomb-szabály.
+    "viewer-step-left.svg",
+    "viewer-step-right.svg",
+    "viewer-back-arrow.svg",
 })
 
 

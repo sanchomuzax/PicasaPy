@@ -63,7 +63,16 @@ def _blokk(forras: str, object_name: str) -> str:
 
     A blokkhatár a *sajátnál nem mélyebb* behúzású, `{`-re végződő sor:
     ez a következő elem kezdete. Így a súgó-állítás ahhoz a gombhoz
-    kötődik, amelyikről szól."""
+    kötődik, amelyikről szól.
+
+    ⚠️ #1993: a TULAJDONSÁG-ÉRTÉKKÉNT megadott beágyazott elem
+    (`contentItem: Item {`, `background: Rectangle {`) ugyanabban a
+    behúzásban áll, mint az `objectName` — a naiv szabály tehát ott vágta
+    el a blokkot, és a MÖGÖTTE álló `ToolTip.text` „hiányzónak" látszott.
+    Ez hamis riasztás volt: a súgó ott van, csak a keresőablak zárult be
+    korábban. A megkülönböztetés egyszerű és biztos: a testvér elem
+    `Típus {` alakú, a tulajdonság-érték `név: Típus {` — vagyis a `{`
+    ELŐTT van kettőspont."""
     minta = re.compile(r'^([ \t]*)objectName: "%s"$' % re.escape(object_name), re.M)
     talalat = minta.search(forras)
     assert talalat, f"nincs ilyen elem: {object_name}"
@@ -72,7 +81,12 @@ def _blokk(forras: str, object_name: str) -> str:
     ki = []
     for sor in sorok[1:]:
         csupasz = sor.strip()
-        if csupasz.endswith("{") and len(sor) - len(sor.lstrip()) <= behuzas:
+        beagyazott_tulajdonsag = ":" in csupasz.split("{")[0]
+        if (
+            csupasz.endswith("{")
+            and not beagyazott_tulajdonsag
+            and len(sor) - len(sor.lstrip()) <= behuzas
+        ):
             break
         ki.append(sor)
     return "\n".join(ki)
