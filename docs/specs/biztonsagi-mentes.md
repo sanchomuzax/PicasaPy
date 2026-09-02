@@ -609,3 +609,99 @@ címkézését** futtatja — vagyis a készlet inkrementalitása az írás
 | kapacitás-számítás | `szektor × 2048 − tartalék` (12.1) | nincs | átvehető, hardver nélkül is |
 | lemez-sorszámozás | „%d. számú lemez a(z) %d darabból" | nincs | átvehető |
 | `il_BurnPanel::*` szövegek | 21 + 13 + 11 + 4 kulcs, hivatalos magyarral | csak egy komment hivatkozik rájuk (`PicasaNotifier.qml:304`) | a szövegek készen állnak
+
+### 12.8 A LEMEZ FELISMERÉSE — három külön kódkészlet (2026-09-03)
+
+> **Bizonyítottság: megerősített** a két megfejtett táblára; **erős** (érvelés,
+> nem közvetlen olvasás) a harmadikra vonatkozó cáfolatra.
+
+A 12.2 egyetlen kódkészletet említett. Valójában **három, egymástól független
+számozás** él egymás mellett — ez okozta, hogy a `0x2xx` kódok jelentése nem
+akart előjönni.
+
+#### (a) A lemez ÍRHATÓSÁGI ÁLLAPOTA — `0x301` … `0x304`
+
+A `0x006665c0` (96 bájt) ugrótáblája (`0x00666620`, négy ág):
+
+| kód | kulcs | angol | hivatalos magyar |
+|---|---|---|---|
+| `0x301` | `ytICDVDR::MTNotRec` | Not Recordable Disc | *(a `stringres`-ben)* |
+| `0x302` | `ytICDVDR::MTRec` | Recordable Disc | ” |
+| `0x303` | `ytICDVDR::MTNotRecIncom` | Incompatible Recordable Disc | ” |
+| `0x304` | `ytICDVDR::MTBlank` | Blank Recordable Disc | ” |
+| minden más | `ytICDVDR::MTUnknown` | Unknown | ” |
+
+A tartomány-ellenőrzés `add eax, 0xfffffcff` + `cmp eax, 3` + `ja`
+(`0x006665c0`–`0x006665c8`), tehát **pontosan négy** érvényes kód van.
+
+#### (b) A lemez FORMÁTUMA — `0xA1` … `0xFA`, 25 nevesített eset
+
+A `0x00666630` (404 bájt) **kétszintű** ugrótáblát használ: egy 90 bájtos
+bájt-indextábla (`0x0066682c`) képezi le a `0xA1 … 0xFA` kódokat 26 ágra
+(`0x006667c4`). Ami nincs a listában, az `ytICDVDR::MFOther` („Egyéb").
+
+| kód | kulcs | angol | hivatalos magyar |
+|---|---|---|---|
+| `0xA1` | `ytICDVDR::MF11` | Audio DAO Silver, like almost any music disc, or Closed Gold | Audio DAO Silver, mint a legtöbb zenelemez, vagy zárt Gold |
+| `0xA2` | `ytICDVDR::MF12` | Audio Gold disc not closed (TAO or SAO) | Audio Gold lemez nincsen lezárva (TAO vagy SAO) |
+| `0xA3` | `ytICDVDR::MF13` | First type of Enhanced CD (aborted) | Első típusú Enhanced CD (megszakítva) |
+| `0xA4` | `ytICDVDR::MF14` | CD Extra, Blue Book standard | CD Extra, &quot;Kék könyv&quot; szabvány |
+| `0xA5` | `ytICDVDR::MF15` | Audio TAO tracks with session not closed, the (HP way) | Audio TAO zeneszámok le nem zárt programfolyamattal, a (HP út) |
+| `0xB1` | `ytICDVDR::MF1` | Blank Disc | Üres lemez |
+| `0xD1` | `ytICDVDR::MF2` | Data Mode 1 DAO (like the MSVC++ or a typical DOS game) | 1. Data üzemmód DAO (mint az MSVC++ vagy egy tipikus DOS-alapú játék) |
+| `0xD2` | `ytICDVDR::MF3` | vKodak Photo CD - Data multis. Mode 2 TAO | vKodak Photo CD – 2. több programfolyamatú adatüzemmód, TAO |
+| `0xD3` | `ytICDVDR::MF4` | Gold Data Mode 1 - Data multis. Mode 1, closed | 1. Gold Data üzemmód – 1. több programfolyamatú adatüzemmód, lezárt |
+| `0xD4` | `ytICDVDR::MF5` | Gold Data Mode 2 - Data multis. Mode 2, closed | 2. Gold Data üzemmód – 2. több programfolyamatú adatüzemmód, lezárt |
+| `0xD5` | `ytICDVDR::MF6` | Data Mode 2 DAO (silver mastered from Corel or Toast gold) | 2. Data üzemmód DAO (ezüst a Corel vagy Toast aranyról másolva) |
+| `0xD6` | `ytICDVDR::MF7` | CDRFS - Fixed packet (from Sony packet writing solution) | CDRFS – Fix csomag (a Sony csomagíró termékétől) |
+| `0xD7` | `ytICDVDR::MF8` | Packet writing | Csomag írása |
+| `0xD8` | `ytICDVDR::MF9` | Gold Data Mode 1 - Data multis. Mode 1, open | 1. Gold Data üzemmód – 1. több programfolyamatú adatüzemmód, nyitott |
+| `0xD9` | `ytICDVDR::MF10` | Gold Data Mode 2 - Data multis. Mode 2, open | 2. Gold Data üzemmód – 2. több programfolyamatú adatüzemmód, nyitott |
+| `0xE1` | `ytICDVDR::MF16` | First track Data and other audio | Első sáv adat és más hanganyag |
+| `0xE2` | `ytICDVDR::MF17` | Gold TAO (like the ones made with Easy-CD 16 or 32 versions) | Gold TAO (olyanok, mint amiket az Easy-CD 16 vagy 32 verziójával lehet létrehozni) |
+| `0xE3` | `ytICDVDR::MF18` | Kodak Portfolio (as the Kodak standard) | Kodak Portfolio (mint a Kodak szabvány) |
+| `0xE4` | `ytICDVDR::MF19` | Video CD (as the White Book standard) | Video-CD (mint a &quot;Fehér könyv&quot; szabvány) |
+| `0xE5` | `ytICDVDR::MF20` | CD-i (as the Green Book standard) | CD-i (mint a &quot;Zöld könyv&quot; szabvány) |
+| `0xE6` | `ytICDVDR::MF21` | PlayStation (Sony games) | PlayStation (Sony játékok) |
+| `0xF1` | `ytICDVDR::MF22` | DVD-ROM | DVD-ROM |
+| `0xF3` | `ytICDVDR::MF23` | Recordable DVD-R, closed | Írható DVD-R, lezárt |
+| `0xF8` | `ytICDVDR::MF24` | Recordable DVD-R, open | Írható DVD-R, nyitott |
+| `0xFA` | `ytICDVDR::MF25` | DVD-RAM cartridge | DVD-RAM kazetta |
+
+A kódok **családonként csoportosulnak**: `0xA1–0xA5` hangleme­zek,
+`0xD1–0xD9` adatlemezek, `0xE1–0xE6` vegyes/szabványos lemezek,
+`0xF1–0xFA` DVD-k. A `stringres`-ben **31** `ytICDVDR::MT*`/`MF*` kulcs áll
+hivatalos magyar fordítással — a felület tehát meg tudja nevezni a behelyezett
+lemezt.
+
+#### (c) A lemez CSALÁDJA — `0x2xx`, hat kód: MEGFEJTETLEN
+
+A „DVD-e?" teszt (`0x00666400`) hat kódra ad igazat: `0x204`, `0x206`,
+`0x207`, `0x209`, `0x210`, `0x214`. Ez **sem az (a), sem a (b) számozás**.
+
+⛔ **A kézenfekvő magyarázat MEGDŐLT.** A `CDVDR.yti` az **IMAPI2**
+COM-felületet használja (`DataWriter2Event`, `Erase2Event` az RTTI-jében),
+és az `IMAPI_MEDIA_PHYSICAL_TYPE` értékei kísértetiesen illenének:
+`0x204−0x200 = 4` = DVD-ROM, `6` = DVD+R, `7` = DVD+RW, `9` = DVD−R.
+**De az illesztés ellentmondásra vezet:**
+
+- IMAPI szerint a kétrétegű lemez `8` (DVD+R DL) és `0x0B` (DVD−R DL) volna
+  ⇒ ezek **nem szerepelnek** a „DVD-e?" hat kódja között, holott egy DVD+R DL
+  nyilvánvalóan DVD;
+- ugyanakkor a `0x0066be90` épp a `0x214`-nek (IMAPI szerint `0x14` =
+  DVD-RW sequential) adja a **kétrétegű kapacitást** (8 547 991 552 bájt).
+
+A két állítás egyszerre nem állhat ⇒ **a `0x2xx` NEM az IMAPI fizikai
+médiatípus**, hanem a Picasa saját, belső családkódja. Ezt az irányt nem kell
+újra végigjárni.
+
+**Amit még kizártunk:** a `CDVDR.yti` indexében (1 062 függvény, 125
+string-xref) **nincs** médiatípus-szöveg; a `0x2xx` konstansok nyers
+bájtmintás keresése a teljes `.text`-ben 35–213 találatot ad kódonként, mind
+más jelentésű immediate ⇒ **a keresés ezen az úton nem szűkíthető tovább**.
+
+⚠️ **NINCS MEG:** az öt kód (`0x204`, `0x206`, `0x207`, `0x209`, `0x210`)
+jelentése. A megszerzés útja már nem a sztring- vagy konstanskeresés, hanem
+**a `0x2xx` mezőt beállító hívási lánc** felderítése a `CDVDR.yti`
+COM-oldaláról (`IDiscRecorder2` → `CurrentPhysicalMediaType`), célzott
+dekompilációval. Jegy: **#2074**.
