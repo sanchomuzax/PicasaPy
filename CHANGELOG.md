@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.230] – 2026-09-02
+
+### Javítva
+- **A geocímke törlése mostantól rákérdez (#1404).** Eddig a Helyek panel
+  gombja szó nélkül törölte a kijelölt képek helyadatát — pedig ez
+  visszafordíthatatlan. Az eredeti Picasa figyelmeztet előtte, és
+  mostantól mi is, az ő szövegével.
+
+### Hozzáadva
+- **„Geocímkék törlése" az Eszközök ▸ Geocímke menüben (#1404).** A
+  képesség eddig is megvolt, de csak a Helyek panelről lehetett elérni.
+- A Helyek panel gombja — ahogy az eredetiben — kiírja, **hány** geocímkét
+  törölne.
+
 ## [0.8.229] – 2026-09-02
 
 ### Hozzáadva

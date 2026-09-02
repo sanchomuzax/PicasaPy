@@ -869,6 +869,9 @@ ApplicationWindow {
         onEarthExportRequested: exportDialogs.ensure().openGoogleEarth()
         // #1589: ugyanaz a párbeszéd, de a kiírás után MEGNYITJA a fájlt
         onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
+        //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
+        onClearGeotagRequested:
+            clearGeotagDialog.openFor(window.selectedRows())
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
@@ -984,6 +987,31 @@ ApplicationWindow {
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
     // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
     // "undoAllEdits" a „Don't ask again" jelölő eltárolásához.
+    // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
+    // szövegével, szó szerint — nem átfogalmazva.
+    //
+    // ⚠️ Ez nem stílusdöntés: a törlés VISSZAFORDÍTHATATLAN (a `geotag`
+    // kulcs kikerül a `.picasa.ini`-ből), és eddig kérdés NÉLKÜL futott le
+    // a Helyek panel gombjáról. Mindkét belépési pont — a menüpont és a
+    // panel gombja — ezen az EGY párbeszéden megy át.
+    ConfirmDialog {
+        id: clearGeotagDialog
+        objectName: "clearGeotagConfirm"
+        namePrefix: "clearGeotag"
+        title: qsTr("Clear Geotags")
+        property var rows: []
+        function openFor(rowList) {
+            if (!rowList || rowList.length === 0) return
+            rows = rowList
+            //: `ClearGeoTag::warn` — az eredeti szövege
+            ask("clearGeotag", qsTr(
+                "You are about to erase all geographic location information"
+                + " (i.e., latitude and longitude) from the selected photos."
+                + "\n\nOK to proceed?"))
+        }
+        onConfirmed: controller.clearGeotagRows(rows)
+    }
+
     ConfirmDialog {
         id: undoAllEditsDialog
         objectName: "undoAllEditsDialog"
@@ -1825,6 +1853,9 @@ ApplicationWindow {
         // képek helyei térképen, és a kijelölés geocímkézése
         PlacesPanel {
             objectName: "placesPanel"
+            //: #1404: a panel gombja is a MEGERŐSÍTÉSEN át töröl —
+            //: a törlés visszafordíthatatlan.
+            onClearGeotagRequested: (rows) => clearGeotagDialog.openFor(rows)
             visible: window.placesPanelOpen
             SplitView.preferredWidth: 320
             SplitView.minimumWidth: 220
