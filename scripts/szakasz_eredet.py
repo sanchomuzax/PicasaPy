@@ -21,19 +21,25 @@ from pathlib import Path
 _IDOKORLAT = 20
 
 
-def forras_datum(ut: Path | str) -> str | None:
-    """A forrásadat kora `ÉÉÉÉ-HH-NN` alakban, vagy ``None``, ha nincs ilyen fájl.
+#: #2057: PERC kell, nem nap. Az élő szakaszok naponta többször frissülnek,
+#: ezért a puszta dátumból nem dönthető el, hogy „most" vagy „ma reggel".
+IDO_ALAK = "%Y-%m-%d %H:%M"
 
-    Elsődlegesen a git utolsó commit-dátuma, mert az mondja meg, mikor
-    változott ÉRDEMBEN a tartalom. Ha a fájl nincs követve — például frissen
-    generált mérés —, a módosítás ideje az adat kora.
+
+def forras_ideje(ut: Path | str) -> str | None:
+    """A forrásadat kelte `ÉÉÉÉ-HH-NN ÓÓ:PP` alakban, vagy ``None``.
+
+    Elsődlegesen a git utolsó commit-ideje, mert az mondja meg, mikor változott
+    ÉRDEMBEN a tartalom. Ha a fájl nincs követve — például frissen generált
+    mérés —, a módosítás ideje az adat kelte.
     """
     ut = Path(ut)
     if not ut.exists():
         return None
     try:
         kimenet = subprocess.run(
-            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(ut)],
+            ["git", "log", "-1", "--format=%ad",
+             f"--date=format:{IDO_ALAK}", "--", str(ut)],
             cwd=ut.parent,
             capture_output=True,
             text=True,
@@ -49,20 +55,25 @@ def forras_datum(ut: Path | str) -> str | None:
         kimenet = ""
     if kimenet:
         return kimenet
-    return datetime.fromtimestamp(ut.stat().st_mtime).strftime("%Y-%m-%d")
+    return datetime.fromtimestamp(ut.stat().st_mtime).strftime(IDO_ALAK)
 
 
-def eredet_sor(datum: str | None, mondat: str) -> str:
-    """A szakaszcím alatti sor: a forrás kora, és mitől frissülne.
+def eredet_sor(idopont: str | None, esemeny: str) -> str:
+    """A szakaszcím alatti sor: az adat kelte, és mi VÁLTOZTATJA MEG.
 
-    Ismeretlen dátumnál a mondat akkor is kimegy — a „mitől frissül" önmagában
-    is információ, és a hiányzó dátum nem indok a szakasz elhallgatására.
+    Az `esemeny` a valódi kiváltó ok a felhasználó nyelvén — „új kiadás
+    készül", „egy kutatási kör újramér" —, **nem** a lekérdezés mechanikája.
+    #2057: a „minden futáskor, élő GitHub-lekérdezés" azt mondta meg, hogyan
+    jön az adat, nem azt, mitől lesz más.
+
+    Ismeretlen időpontnál az esemény akkor is kimegy: a „mi változtatja meg"
+    önmagában is információ.
     """
-    mondat_h = html.escape(str(mondat), quote=True)
-    if not datum:
-        return f'<p class="eredet">frissül: {mondat_h}</p>'
-    d = html.escape(str(datum), quote=True)
+    esemeny_h = html.escape(str(esemeny), quote=True)
+    if not idopont:
+        return f'<p class="eredet">változik: {esemeny_h}</p>'
+    d = html.escape(str(idopont), quote=True)
     return (
-        f'<p class="eredet">az adat kora: <time datetime="{d}">{d}</time>'
-        f" · frissül: {mondat_h}</p>"
+        f'<p class="eredet">az adat kelte: <time datetime="{d}">{d}</time>'
+        f" · változik: {esemeny_h}</p>"
     )

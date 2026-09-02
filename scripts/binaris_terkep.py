@@ -65,7 +65,7 @@ INDEX = _index_utvonal()
 SPEC_DIR = REPO / "docs" / "specs"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from szakasz_eredet import eredet_sor, forras_datum  # noqa: E402
+from szakasz_eredet import eredet_sor, forras_ideje  # noqa: E402
 
 
 #: A publikált artifact címe. MÁSIK munkamenetből frissítve EZT kell átadni az
@@ -345,7 +345,7 @@ def epits(a: dict) -> str:
       <h2>A program nagy birodalmai</h2>
       <p>A Picasa osztályai jól elkülönülő családba esnek. A sáv azt mutatja,
          hányat érintettünk közülük.</p>
-{eredet_sor(forras_datum(_index_utvonal()), "ha új bináris kutatás kerül az indexbe")}
+{eredet_sor(forras_ideje(_index_utvonal()), "egy bináris kutatási kör új eredményt importál az indexbe")}
     </div>
     <div class="csaladok">
 {_csaladok(a)}
@@ -359,7 +359,7 @@ def epits(a: dict) -> str:
          hossza a feltárt függvények aránya azon a szakaszon.
          <b style="color:var(--kiemelt)">Naranccsal</b> a kiemelt jegyeink által
          érintett sávok — a jobb szélen a jegy számával.
-{eredet_sor(forras_datum(_index_utvonal()), "ha új bináris kutatás kerül az indexbe")}
+{eredet_sor(forras_ideje(_index_utvonal()), "egy bináris kutatási kör új eredményt importál az indexbe")}
          <b>Szürke sraffozással</b> az, amit sosem kell visszafejtenünk.</p>
     </div>
     <div class="terep">
@@ -388,7 +388,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>Amit ez a lap NEM mutat</h2>
       <p>Három korlát, hogy a szám ne látsszon többnek, mint ami.</p>
-{eredet_sor(forras_datum(SPEC_DIR), "ha a specifikációink hivatkozási köre bővül")}
+{eredet_sor(forras_ideje(SPEC_DIR), "egy kutatási kör újabb címeket köt specifikációhoz")}
     </div>
     <div class="doboz">
       <p><b>A „feltárt" itt annyit tesz: valamelyik specifikációnk hivatkozik

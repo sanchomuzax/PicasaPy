@@ -46,7 +46,7 @@ from kutatas_elszamolas import (  # noqa: E402
     _spec_nyitott_kerdesek,
 )
 from menu_lefedettseg import kovetkezo_ot, merd  # noqa: E402
-from szakasz_eredet import eredet_sor, forras_datum  # noqa: E402
+from szakasz_eredet import IDO_ALAK, eredet_sor, forras_ideje  # noqa: E402
 from ui_lefedettseg_lap import olvas as _ui_lefedettseg  # noqa: E402
 
 #: A publikált artifact címe. Egy MÁSIK munkamenetből frissítve EZT kell
@@ -62,13 +62,17 @@ SPEC_DIR = REPO / "docs" / "specs"
 #: mainak látszik — a tartalom nagy része viszont commitolt mérésből jön, ami
 #: hetekig változatlan. Ezért kap minden szakasz saját eredet-sort: a forrás
 #: kora, és egy mondat arról, mitől frissülne.
-ELO = "minden futáskor — élő GitHub-lekérdezés"
 UI_MERES = SPEC_DIR / "ui-lefedettseg.md"
 
 
-def _elo_eredet(a: dict) -> str:
-    """Élő lekérdezésből élő szakasz: a forrás kora maga a futás ideje."""
-    return eredet_sor(a["ideje"].strftime("%Y-%m-%d"), ELO)
+def _elo(a: dict, esemeny: str) -> str:
+    """Élő lekérdezés: az adat kelte a futás ideje, PERCRE (#2057).
+
+    Az `esemeny` a valódi kiváltó ok — mitől lesz MÁS a tartalom —, nem az,
+    hogy honnan jön az adat. „Élő GitHub-lekérdezés" a csövet írta le, nem az
+    okot, tehát semmit nem mondott.
+    """
+    return eredet_sor(a["ideje"].strftime(IDO_ALAK), esemeny)
 
 
 # --- mérés -----------------------------------------------------------------
@@ -269,7 +273,7 @@ def _mi_tortent_szakasz(a: dict) -> str:
       <p>A legutóbbi kiadások és az elmúlt 24 óra lezárt jegyei — hogy ne a
          GitHubot kelljen böngészni. A lezárás azt jelenti: beolvadt és
          kiment.</p>
-{_elo_eredet(a)}
+{_elo(a, 'új kiadás készül, vagy egy fejlesztői kör jegyet zár')}
     </div>
     <div class="groups">
       <div class="group ok">
@@ -415,10 +419,11 @@ def epits(a: dict) -> str:
     <h1>Hol tart a projekt most</h1>
     <p class="standfirst">
       Ezen a lapon egyetlen mondat sincs kézzel írva — minden szám mérésből
-      jön. De nem mind ugyanolyan friss: egy részük élő GitHub-lekérdezés,
-      másik részük commitolt mérés, ami hetekig változatlan lehet. Ezért
-      minden szakasz alatt ott áll, <b>mikori az adata</b> és <b>mitől
-      frissülne</b>. A fenti dátum csak a lap előállításáé.
+      jön. De nem mind ugyanolyan friss: van, ami minden körben változhat, és
+      van, ami csak akkor, ha valaki újramér valamit — az utóbbi hetekig
+      állhat egy helyben. Ezért minden szakasz alatt ott áll, <b>mikor kelt az
+      adata</b> (percre) és <b>mi változtatja meg</b>. A fenti időpont csak a
+      lap előállításáé.
     </p>
   </header>
 {hiba}
@@ -432,7 +437,7 @@ def epits(a: dict) -> str:
          jegy leírja, pontosan mi kell. A másik kettő nem rád vár; azért van
          itt, hogy lásd, mi áll és min múlik. Egy jegy csak egy csoportban
          szerepel.</p>
-{_elo_eredet(a)}
+{_elo(a, 'egy kör jegyet nyit, blokkol vagy felold')}
     </div>
     <div class="groups">
 {_jegylista("Rád vár", "Legtöbbször egy export vagy egy képernyőkép a windowsos Picasából.", var_rank, "warn")}
@@ -445,7 +450,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>A következő öt kutatnivaló</h2>
 {_kovetkezo_bevezeto(a)}
-{eredet_sor(forras_datum(UI_MERES), "ha valaki újrafuttatja az UI-lefedettségi mérőt (a privát repóban)")}
+{eredet_sor(forras_ideje(UI_MERES), "egy kutatási kör újraméri a felület lefedettségét")}
     </div>
 {_kovetkezo_szakasz(a)}
   </section>
@@ -455,7 +460,7 @@ def epits(a: dict) -> str:
       <h2>A rothadás</h2>
       <p>Jegyek, amelyekhez a nyitásuk óta senki nem nyúlt. Ez a szakasz azért
          van itt, hogy ez a szám <em>látszódjon</em> — enélkül csendben nő.</p>
-{_elo_eredet(a)}
+{_elo(a, 'egy kör hozzányúl egy régóta érintetlen jegyhez')}
     </div>
     <div class="groups">
 {_jegylista("A tíz legrégebbi érintetlen", f"Összesen {len(a['erintetlen'])} ilyen jegy van.", erintetlen_regi, "warn")}
@@ -466,7 +471,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>Specifikációs lapok nyitott kérdéssel</h2>
       <p>A <code>docs/specs/</code> kézzel karbantartott kérdés-listájából.</p>
-{eredet_sor(forras_datum(SPEC_DIR), "ha egy specifikációs lap kérdés-listája változik")}
+{eredet_sor(forras_ideje(SPEC_DIR), "egy kutatási kör specifikációt bővít vagy kérdést zár")}
     </div>
 {_spec_szakasz(a)}
   </section>
