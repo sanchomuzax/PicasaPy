@@ -44,16 +44,20 @@ def _controller(photos, tmp_path):
 
 
 class TestSizeSettingsDefaults:
-    def test_default_multi_size_is_not_original(self, qt_app, tmp_path):
+    def test_az_alapertek_480_keppont(self, qt_app, tmp_path):
+        """#2020: MÉRVE — az `EmailExportSize` alapértéke 480 (`0x1e0`),
+        három független helyen a binárisban. A #350 becsült listájában ez
+        az érték elő sem fordult."""
         controller = _controller([], tmp_path)
-        # a Picasa-mintát követve a többfotós küldés alapból nem az eredeti
-        # méretet küldi (levélméret-korlát) — a pontos index a modul
-        # dokumentált alapértéke
-        assert 0 <= controller.multiSizeIndex <= 4
+        assert controller.emailSize == 480
 
-    def test_default_single_size_is_original(self, qt_app, tmp_path):
+    def test_egy_kep_alapbol_a_KOZOS_meretet_kapja(self, qt_app, tmp_path):
+        """#2020: az `EmailSinglePicture` alapértéke 0.
+
+        ⚠️ Ez MEGVÁLTOZTATJA a #350 viselkedését, ahol egy kép alapból
+        eredeti méretben ment."""
         controller = _controller([], tmp_path)
-        assert controller.singleSizeIndex == 4  # utolsó fokozat = eredeti
+        assert controller.singlePictureOriginal is False
 
     def test_default_uses_default_mail_client(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)
@@ -61,25 +65,33 @@ class TestSizeSettingsDefaults:
 
 
 class TestSizeSettingsPersistence:
-    def test_setting_multi_size_persists_across_instances(self, qt_app, tmp_path):
+    def test_a_meret_tullel_egy_ujrainditast(self, qt_app, tmp_path):
         settings = _settings(tmp_path)
         first = EmailController(photo_source=lambda: [], settings=settings)
-        first.setMultiSizeIndex(0)
+        first.setEmailSize(1200)
         second = EmailController(photo_source=lambda: [], settings=settings)
-        assert second.multiSizeIndex == 0
+        assert second.emailSize == 1200
 
-    def test_setting_out_of_range_index_is_ignored(self, qt_app, tmp_path):
+    def test_a_negativ_meret_nem_ir_felul(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)
-        before = controller.multiSizeIndex
-        controller.setMultiSizeIndex(99)
-        assert controller.multiSizeIndex == before
+        before = controller.emailSize
+        controller.setEmailSize(-5)
+        assert controller.emailSize == before
+
+    def test_a_fokozatlistan_kivuli_meret_ELFOGADOTT(self, qt_app, tmp_path):
+        """A mező képpontszám, nem fokozat-sorszám (#2020).
+
+        Fog: ha valaki visszateszi a nyolc fokozatra szűkítést, ez bukik —
+        egy másik Picasa-verzióból örökölt 900 érvényes méret."""
+        controller = _controller([], tmp_path)
+        controller.setEmailSize(900)
+        assert controller.emailSize == 900
 
     def test_setting_same_value_does_not_emit_signal(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)
-        controller.setSingleSizeIndex(controller.singleSizeIndex)
         events = []
-        controller.singleSizeIndexChanged.connect(lambda: events.append(1))
-        controller.setSingleSizeIndex(controller.singleSizeIndex)
+        controller.singlePictureOriginalChanged.connect(lambda: events.append(1))
+        controller.setSinglePictureOriginal(controller.singlePictureOriginal)
         assert events == []
 
     def test_toggle_use_default_client(self, qt_app, tmp_path):
@@ -88,12 +100,54 @@ class TestSizeSettingsPersistence:
         assert controller.useDefaultClient is False
 
 
+class TestRegiBeallitasAtvetele:
+    """#2020: a #350 INDEX-alapú kulcsát képponttá kell alakítani.
+
+    Enélkül a meglévő felhasználó `mail/multiSizeIndex=2` beállítása
+    2 KÉPPONTOS méretként olvasódna — némán, észrevehetetlenül.
+    """
+
+    def _regi_indexszel(self, tmp_path, index):
+        settings = _settings(tmp_path)
+        settings.setValue("mail/multiSizeIndex", index)
+        settings.sync()
+        return EmailController(photo_source=lambda: [], settings=settings)
+
+    @pytest.mark.parametrize(
+        "index,varhato", [(0, 640), (1, 800), (2, 1024), (3, 1600), (4, 0)]
+    )
+    def test_a_regi_index_a_REGI_listan_oldodik_fel(
+        self, qt_app, tmp_path, index, varhato
+    ):
+        controller = self._regi_indexszel(tmp_path, index)
+        assert controller.emailSize == varhato
+
+    def test_az_atvett_ertek_KIIRODIK_az_uj_kulcsba(self, qt_app, tmp_path):
+        settings = _settings(tmp_path)
+        settings.setValue("mail/multiSizeIndex", 1)
+        settings.sync()
+        EmailController(photo_source=lambda: [], settings=settings)
+        assert int(settings.value("mail/exportSize")) == 800
+
+    def test_az_UJ_kulcs_eroesebb_a_reginel(self, qt_app, tmp_path):
+        settings = _settings(tmp_path)
+        settings.setValue("mail/multiSizeIndex", 0)
+        settings.setValue("mail/exportSize", 480)
+        settings.sync()
+        controller = EmailController(photo_source=lambda: [], settings=settings)
+        assert controller.emailSize == 480
+
+    def test_ertelmetlen_regi_index_az_alapertekre_esik(self, qt_app, tmp_path):
+        controller = self._regi_indexszel(tmp_path, 99)
+        assert controller.emailSize == 480
+
+
 class TestPrepareAttachments:
     def test_original_size_returns_source_path_unchanged(self, qt_app, tmp_path):
         source = make_jpeg(tmp_path / "kép.jpg", size=(300, 200))
         photo = _FakePhoto(folder_path=str(tmp_path), name=source.name)
         controller = _controller([photo], tmp_path)
-        controller.setSingleSizeIndex(4)  # eredeti méret
+        controller.setSinglePictureOriginal(True)  # #2020: KAPCSOLÓ
         result = controller.prepareAttachments([0], False)
         assert result == [str(source)]
 
@@ -101,7 +155,7 @@ class TestPrepareAttachments:
         source = make_jpeg(tmp_path / "kép.jpg", size=(2000, 1000))
         photo = _FakePhoto(folder_path=str(tmp_path), name=source.name)
         controller = _controller([photo], tmp_path)
-        controller.setMultiSizeIndex(0)  # 640 px
+        controller.setEmailSize(640)  # #2020: KÉPPONT, nem index
         result = controller.prepareAttachments([0], True)
         assert len(result) == 1
         assert result[0] != str(source)

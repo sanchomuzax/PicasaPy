@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.233] – 2026-09-02
+
+### Javítva
+- **Az e-mailhez csatolt képek mérete a valódi Picasa fokozatait kapta (#2020).**
+  Eddig öt kitalált fokozat közül lehetett választani, és hiányzott belőlük
+  az eredeti alapértéke, a 480 képpont. Mostantól a nyolc valódi fokozat
+  közül lehet választani (160, 320, 480, 640, 800, 1024, 1200, 1600), a
+  csúszka mellett ott a pillanatnyi érték, és az „egyetlen kép" nem külön
+  méret többé, hanem egy kapcsoló: vagy ugyanakkora, mint a többi, vagy
+  eredeti méretben megy. A korábbi beállításod automatikusan átveszi az
+  új alakot.
+
 ## [0.8.232] – 2026-09-02
 
 ### Javítva

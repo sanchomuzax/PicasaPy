@@ -11,14 +11,18 @@ parancs-összeállítást tartalmazza, hogy önmagában, mockolás nélkül
 tesztelhető legyen."""
 
 from .command import (
-    EMAIL_SIZE_PRESETS,
+    EMAIL_SIZE_DEFAULT,
+    EMAIL_SIZE_STEPS,
+    EREDETI_MERET,
     build_mailto_url,
     build_xdg_email_argv,
     resolve_email_max_dimension,
 )
 
 __all__ = [
-    "EMAIL_SIZE_PRESETS",
+    "EMAIL_SIZE_DEFAULT",
+    "EMAIL_SIZE_STEPS",
+    "EREDETI_MERET",
     "build_mailto_url",
     "build_xdg_email_argv",
     "resolve_email_max_dimension",

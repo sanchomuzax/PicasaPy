@@ -165,3 +165,70 @@ A **méretkorlát-figyelmeztetés** és a **melléklet-eltávolítás** viszont
 
 *Bizonyítottsági fok: megerősített* (a négy erőforrásfájl teljes tartalma
 és a 23 `IDS_EMAIL_*` bejegyzés).
+
+## ✅ Az Opciók ▸ E-mail lap — KÉPERNYŐKÉPPEL MÉRVE (2026-09-02, #2020)
+
+A tulajdonos futó Picasa 3-ának két képernyőképe (`research/#2020-email/`)
+és a csúszka végigléptetése. Ez a szakasz **mérés**, nem következtetés.
+
+### A csúszka nyolc fokozata
+
+**160 · 320 · 480 · 640 · 800 · 1024 · 1200 · 1600** képpont, az alapérték a
+**480** — egyezik a dekompilációval (`EmailExportSize` alapértéke `0x1e0`
+három független helyen: `0x006e1756`, `0x006e3f2b`, `0x00743094`).
+
+⚠️ A #350 becsült listája `(640, 800, 1024, 1600, „eredeti")` volt. A mérés
+szerint **a 480 (az alapérték), a 160, a 320 és az 1200 mind hiányzott
+belőle**, az „eredeti méret" pedig **nincs a csúszkán**.
+
+### A lap valódi szerkezete, hivatalos magyar feliratokkal
+
+```
+Levelezőprogram:             (•) Minden képküldésnél kiválasztom
+                             ( ) Ezt használom: Microsoft Outlook
+                             ( ) A Google Fiók használata
+
+Több kép mérete              [--|-----------]   480 képpont
+
+Egyedülálló képek mérete:    (•) Több elemmel azonos (480 képpont)
+                             ( ) Eredeti méret
+
+Mozgófilmek küldése másként: (•) Első képkocka
+                             ( ) Teljes mozgófilm
+
+Kimeneti formátum:           [ ] Szövegközi fotók és képfeliratok küldése
+                                 (csak Outlookban)
+```
+
+Négy dolog, amit ez a szerkezet **eldönt**:
+
+1. **EGY méret-csúszka van**, nem kettő. A második vezérlő rádiógombpár.
+2. **A csúszka mellett a pillanatnyi érték szövegként** áll („480 képpont").
+3. **A rádiógomb felirata beleírja az aktuális méretet** — élő kötés a
+   csúszkához, nem statikus szöveg.
+4. A `0` (eredeti méret) az „Eredeti méret" gombról jön, nem a csúszkáról.
+
+### A levelezőprogram-választó párbeszéd
+
+Cím: **„Válasszon levelezőprogramot"**, alcím: *„Válassza ki, hogyan
+szeretné e-mailben elküldeni fotóit."* Két ikonos választógomb (Microsoft
+Outlook / Google Mail), alattuk link *„Nincs Gmail-fiókja? Nyisson egy
+fiókot ingyen."*, majd a jelölőnégyzet **„Jegyezze meg ezt a beállítást, ne
+jelenítse meg a párbeszédpanelt újra."** — ez írja át a Levelezőprogram
+rádiógombot az Opciók lapon. Gombok: **Súgó** · **Mégse**.
+
+### Nálunk — a #2020 után
+
+| | eredeti | nálunk |
+|---|---|---|
+| a méret tárolása | képpont | ✅ képpont (`mail/exportSize`) |
+| fokozatok | a fenti nyolc | ✅ ugyanaz |
+| alapérték | 480 | ✅ 480 |
+| érték a csúszka mellett | igen | ✅ |
+| „egyedülálló kép" | kapcsoló | ✅ két rádiógomb |
+| a gomb feliratában a méret | igen | ✅ élő kötés |
+| levelezőprogram-választás | három gomb (Outlook/Google) | ⚠️ **kettő** — Linuxon nincs Outlook- és Google-integrációnk, ezért a rendszer alapértelmezett levelezője marad |
+| mozgófilm-ág, Outlook-jelölő | élő | ⚠️ tiltott helyfoglaló — nincs videó-e-mail és Outlook-integráció |
+
+A két ⚠️ **szándékos, platformból következő eltérés**, nem hiány: olyan
+integrációt ígérnének, ami nem létezik.

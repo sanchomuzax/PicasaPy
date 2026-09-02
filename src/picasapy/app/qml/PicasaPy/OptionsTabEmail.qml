@@ -47,25 +47,84 @@ ColumnLayout {
         onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(false)
     }
 
+    // #2020: EGY méret-csúszka, NYOLC MÉRT fokozattal, mellette a
+    // pillanatnyi érték szövegként — az eredetiben is így van
+    // („Több kép mérete  [--|----]  480 képpont"). A csúszka INDEXET
+    // mozgat, de a vezérlő KÉPPONTOT tárol: a mező az eredetiben is
+    // képpontszám, nem fokozat-sorszám.
+    readonly property var meretFokozatok: [160, 320, 480, 640, 800, 1024, 1200, 1600]
+
+    readonly property int meretIndex: {
+        const meret = root.mailCtl && root.mailCtl.emailSize !== undefined
+            ? root.mailCtl.emailSize : 480
+        const i = root.meretFokozatok.indexOf(meret)
+        // ismeretlen (más Picasa-verzióból örökölt) méretnél a legközelebbi
+        // fokozatra állunk — a TÁROLT érték viszont változatlan marad, amíg
+        // a felhasználó hozzá nem nyúl a csúszkához
+        if (i >= 0)
+            return i
+        let legjobb = 0
+        for (let j = 1; j < root.meretFokozatok.length; ++j)
+            if (Math.abs(root.meretFokozatok[j] - meret)
+                < Math.abs(root.meretFokozatok[legjobb] - meret))
+                legjobb = j
+        return legjobb
+    }
+
+    readonly property int aktualisMeret: root.meretFokozatok[root.meretIndex]
+
     RowLayout {
         spacing: 8
-        Text { text: qsTr("Multiple photo size:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
+        Text {
+            text: qsTr("Multiple photo size")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
         PicasaSlider {
-            objectName: "optionsMailMultiSizeSlider"
-            from: 0; to: 4
-            value: root.mailCtl ? root.mailCtl.multiSizeIndex : 2
-            onMoved: if (root.mailCtl) root.mailCtl.setMultiSizeIndex(value)
+            objectName: "optionsMailSizeSlider"
+            from: 0
+            to: 7
+            stepSize: 1
+            value: root.meretIndex
+            onMoved: if (root.mailCtl)
+                root.mailCtl.setEmailSize(root.meretFokozatok[value])
+        }
+        Text {
+            objectName: "optionsMailSizeValue"
+            //: A csúszka mellett a pillanatnyi érték — az eredetiben is
+            //: kiírt szöveg („480 képpont").
+            text: qsTr("%1 pixels").arg(root.aktualisMeret)
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
         }
     }
-    RowLayout {
-        spacing: 8
-        Text { text: qsTr("Single photo size:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        PicasaSlider {
-            objectName: "optionsMailSingleSizeSlider"
-            from: 0; to: 4
-            value: root.mailCtl ? root.mailCtl.singleSizeIndex : 4
-            onMoved: if (root.mailCtl) root.mailCtl.setSingleSizeIndex(value)
-        }
+
+    // #2020: az „egyedülálló kép" NEM méret, hanem KAPCSOLÓ. Az eredetiben
+    // két választógomb, és az elsőbe bele van írva a csúszka aktuális
+    // értéke — ezért él a kötés a fenti `aktualisMeret`-re.
+    Text {
+        text: qsTr("Single picture size:")
+        font.pixelSize: Theme.fontSize
+        color: Theme.ink
+    }
+    ButtonGroup { id: singleGroup }
+    RadioButton {
+        objectName: "optionsMailSingleSameRadio"
+        text: qsTr("Same as multiple (%1 pixels)").arg(root.aktualisMeret)
+        ButtonGroup.group: singleGroup
+        checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
+            ? !root.mailCtl.singlePictureOriginal : true
+        onToggled: if (root.mailCtl && checked)
+            root.mailCtl.setSinglePictureOriginal(false)
+    }
+    RadioButton {
+        objectName: "optionsMailSingleOriginalRadio"
+        text: qsTr("Original size")
+        ButtonGroup.group: singleGroup
+        checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
+            ? root.mailCtl.singlePictureOriginal : false
+        onToggled: if (root.mailCtl && checked)
+            root.mailCtl.setSinglePictureOriginal(true)
     }
 
     Text {
