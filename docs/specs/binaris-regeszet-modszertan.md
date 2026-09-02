@@ -1083,3 +1083,104 @@ nem díszítés, hanem az, amitől a sor bizonyítékká válik.
 a TELJES nevén nevezi meg az elemet" — a
 [`picasa-menu-parancsok-viselkedes.md`](picasa-menu-parancsok-viselkedes.md)
 44.3-ában is ki van mondva.)*
+
+---
+
+## 19. Egy ELVETETT mérőszám: „a név nincs a binárisban ⇒ halott elem" (2026-09-02)
+
+Ez a szakasz **negatív módszertani eredmény**: egy kézenfekvő mérőszámot
+kipróbáltunk, kontrollal megmértük, és **elvetettük**. Azért kerül ide, hogy a
+következő kör ne építse fel újra.
+
+### A kérdés
+
+A felületi leltár (`referencia/ui-leltar.csv`, **2 020 elem, 74 panel**) sok
+olyan elemet tartalmaz, amit a lefedettségi mérés „hiány"-ként számol. Kínálja
+magát az ötlet: *ha egy elem nevét a `Picasa3.exe` sehol nem tartalmazza, akkor
+azt a kód nem tudja megszólítani, tehát halott — nem hiány.*
+
+### A naiv mérés — és amit adott
+
+Nyers bájt-keresés a teljes PE-ben, teljes névre (`panel/elem`) **és**
+levélnévre külön-külön:
+
+| mérés | érték |
+|---|---:|
+| a leltár elemei | 2 020 |
+| a teljes névre van hivatkozás | 781 |
+| legalább a levélnévre van | 1 085 |
+| **egyikre sem** | **935 (46,3%)** |
+| a lefedettségi lap **hiánylistáján** szereplő tételek | 363 |
+| ezek közül a névre nincs hivatkozás | **78 (21,5%)** |
+
+### ⛔ A KONTROLL MEGBUKTATTA
+
+Kiválasztottunk olyan elemeket, amelyekről **más körök már bizonyították, hogy
+valódiak**, és megnéztük, mit mond rájuk a mérés:
+
+| elem | a mérés szerint | a valóság |
+|---|---|---|
+| `thumbui/loupehit` | „halott" | **VALÓDI** — a rács-nagyító, a #1911/#1951 épp ezt építette meg |
+| `printpanel/printsizes` | „halott" | **VALÓDI** — a nyomatméret-lista |
+| `printoptions/usenotext` | él | valódi ✅ |
+| `thumbui/backup`, `cdmode`, `visitweb`, `next`, `prev` | él | valódi ✅ |
+
+⇒ **A mérőszám önmagában használhatatlan.** A `.tre` motor sok elemet
+**deklaratívan** kezel (találati zóna, felirat-gyerek, ikon-gyerek, konténer),
+azokat a kódnak sosem kell néven szólítania.
+
+### Két MEGNEVEZETT hamis-pozitív osztály
+
+1. **Dinamikusan összerakott név.** A kód `%d`-vel állítja elő. Mérve, a
+   formátumsztringek megvannak a binárisban: `quickcontainer%d` ·
+   `quickpreview%d` · `palette_%d` · `tabpanel%d` · `%s_label` · `%s-label`.
+   Ez egyedül a `buzzupload` 12 elemét, a `pickerpanel` 2-t és a
+   `tabpanel3..5` négyet magyarázza.
+2. **Szerkezeti gyerek.** `-label`, `_icon`, `_base`, `_group`, `_well`
+   végű csomópontok: a szülő vezérlő része, nem önálló vezérlő.
+
+### Ami a szűrők után MEGMARAD — és mikor mondható ki mégis
+
+A szűkítés `m_hidden`-re (a kezdetben **rejtett** csomópont csak akkor
+jelenhet meg, ha kód mutatja meg): **282** rejtett elemből **83** olyan, amit a
+bináris sehol nem nevez meg. Ez a lista viszont **még mindig** tartalmazza a
+fenti két hamis-pozitív osztályt (pl. `wait_dialog/frame1..frame10`, egy tíz
+képkockás várakozó-animáció).
+
+**Egy elem akkor mondható ki elérhetetlennek, ha MIND a négy teljesül:**
+
+1. a `.tre`-ben `m_hidden` (magától nem látszik);
+2. a teljes név, a levélnév **és** a név egy jellegzetes darabja is **nulla**
+   találat a PE-ben;
+3. **nincs** olyan formátumsztring a binárisban, ami a nevet előállíthatná
+   (a névtörzsre `%d`/`%s` alakban keresve);
+4. a **felirata** sem szerepel sem a PE-ben, sem a `stringres` szövegtárban —
+   tehát a funkciónak nincs más nyoma.
+
+### Az egyetlen eset, ami ezt a négyet KIÁLLTA
+
+| elem | felirat | 1. | 2. | 3. | 4. |
+|---|---|---|---|---|---|
+| `thumbui/lightbox_esolo_button` | „Search All" | ✅ | ✅ | ✅ | ✅ |
+| `thumbui/lightbox_esolo_text` | „No results found in this album" | ✅ | ✅ | ✅ | ✅ |
+| `thumbui/albumsback` (a közös szülő) | — | ✅ | ✅ | ✅ | ✅ |
+
+Mérve: az `esolo` **részlet** nulla előfordulás a teljes `Picasa3.exe`-ben; az
+`albumsback` szintén nulla; a „Search All" és a „No results found in this
+album" **egyik sem** szerepel a PE-ben (sem ASCII-ban, sem UTF-16-ban) és a
+`stringres-en-hu.tsv`-ben sem. A `lightbox_` előtagot a kód **literálisan**
+használja máshol (`thumbui/lightbox_bgtext`, `0x00662b20`), tehát nem
+`lightbox_%s` alakban áll elő.
+
+⇒ **Ez egy album-szűkített keresés „nincs találat" állapota volt, egy
+„Keresés mindenhol" kilépőgombbal — a felületleíróban ott maradt, a kódból
+kivették.** Nem hiány: **nem cél**. Jegy: **#2027**.
+
+### Bizonyítottsági fok
+
+- a naiv mérőszám elvetése: **megerősített** (kontroll-elemekkel megbuktatva);
+- a két hamis-pozitív osztály: **megerősített** (a formátumsztringek megvannak);
+- a három `thumbui` elem elérhetetlensége: **erős** — négy független negatív
+  ellenőrzés, de negatívumot bizonyítani zárt binárison nem lehet
+  abszolút módon. Egyetlen képernyőkép a futó Picasáról, amin ez a gomb
+  megjelenik, azonnal megdöntené.
