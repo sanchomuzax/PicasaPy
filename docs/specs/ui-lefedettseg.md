@@ -39,15 +39,15 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 182 |
-| másutt megvan (nem ezen a felületen) | 47 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 338 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 18 |
+| párosítva | 203 |
+| másutt megvan (nem ezen a felületen) | 43 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 316 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 23 |
 | bizonytalan | 150 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **24.8%** |
+| **lefedettség az értékelhető elemeken** | **27.7%** |
 
-> ⚠️ **A 24.8% ALSÓ BECSLÉS, nem pontos érték.** 150 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **45.3%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 27.7% ALSÓ BECSLÉS, nem pontos érték.** 150 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **48.2%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -59,22 +59,21 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 3 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | 4 | `thumbui` | 25 | A fő könyvtárnézet egésze |
-| 5 | `printpanel` | 25 | Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
-| 6 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| 7 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
-| 8 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
-| 9 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
-| 10 | `quicktagconfig` | 13 | Gyorscímke-beállító |
+| 5 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
+| 6 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
+| 7 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
+| 8 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
+| 9 | `quicktagconfig` | 13 | Gyorscímke-beállító |
+| 10 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
 
 ## Panelenkénti lefedettség
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `editpanel` | 312 | 125 | 58 | 6 | 18 | 3 | 40 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
+| `editpanel` | 312 | 125 | 58 | 6 | 16 | 5 | 40 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 34 | 0 | 15 | 56 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 26 | 4 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
-| `thumbui` | 140 | 46 | 18 | 3 | 11 | 3 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
-| `printpanel` | 73 | 33 | 0 | 8 | 25 | 0 | 0 | 40 | **nincs-megfeleltetes** — Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg |
+| `thumbui` | 140 | 46 | 18 | 3 | 8 | 6 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | `buzzupload` | 55 | 22 | 0 | 1 | 21 | 0 | 0 | 33 | **nem-cel** — Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
@@ -88,6 +87,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `edittextpanel` | 45 | 19 | 9 | 0 | 8 | 0 | 2 | 26 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 0 | 31 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `collab` | 23 | 10 | 0 | 0 | 10 | 0 | 0 | 13 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
+| `printpanel` | 73 | 33 | 21 | 4 | 8 | 0 | 0 | 40 | `PrintDialog.qml` |
 | `headerpanel` | 30 | 11 | 3 | 0 | 7 | 1 | 0 | 19 | `LightboxHeader.qml` |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 0 | 11 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
@@ -195,7 +195,7 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `preview2` — *bizonytalan*
 - `previewimage` — *bizonytalan*
 - `previewimage2` — *bizonytalan*
-- `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box”
+- `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
 - `selection_label` „Selected” (magyarul: „Kijelölve”)
 - `selection_label_zoom` „Selected” (magyarul: „Kijelölve”)
 - `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo”
@@ -211,7 +211,7 @@ A szerkesztő teljes bal oldali panelje minden fülével
 - `tabpanel5` — *bizonytalan*
 - `tabs` — *bizonytalan*
 - `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0065ab50)
-- `uploadchanges` buboréksúgó: „Update online copy with this version”
+- `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
 - `weblink` buboréksúgó: „Go to the website associated with this Photo”
 - `zoomsliderrect` — *bizonytalan*
 
@@ -323,46 +323,16 @@ A fő könyvtárnézet egésze
 - `lightbox_esolo_text` „No results found in this album” (magyarul: „Nincs találat ebben az albumban”)
 - `listdecrect` — *bizonytalan*
 - `listdetail` — *bizonytalan*
-- `loupehit` buboréksúgó: „Click and drag over photos to magnify them”
+- `loupehit` buboréksúgó: „Click and drag over photos to magnify them” — 🔧 **lekutatva**, csak nem megépítve (racs-nagyito.md: thumbui.tre:286)
 - `next` buboréksúgó: „View the next Photo”
 - `prev` buboréksúgó: „View the previous Photo”
 - `searchgroup` — *bizonytalan*
-- `single_action_close` buboréksúgó: „Cancel "Get more"”
+- `single_action_close` buboréksúgó: „Cancel "Get more"” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: thumbui.tre:661)
 - `single_action_message` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” (magyarul: „Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a "Vissza" gombra kattintva térjen vissza a projekthez”)
 - `single_action_return` buboréksúgó: „Go back to what you were editing”
 - `toggle_right_drawer` — *bizonytalan*
 - `visitweb` „Web View” (magyarul: „Internetes nézet”)
-- `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device”
-
-### `printpanel` — 25 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
-
-Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg
-
-- `3x5button` „3.5 x 5” (magyarul: „3,5x5”)
-- `addprintsbutton` buboréksúgó: „Add another copy of each Photo to be printed”
-- `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed”
-- `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”)
-- `copieslabel` „Copies per Photo” (magyarul: „Példányszám fotónként”)
-- `croptoggle` buboréksúgó: „Crop photos to match the selected print dimensions”
-- `croptogglelabel` „Crop to Fit” (magyarul: „Kép méretre vágása”)
-- `fittoggle` buboréksúgó: „Preserve the original dimensions of the photos”
-- `fittogglelabel` „Shrink to Fit” (magyarul: „Kép kicsinyítése, hogy elférjen”)
-- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”)
-- `nextbutton` buboréksúgó: „View the next preview page”
-- `pcancelbutton` „Cancel” (magyarul: „Mégse”)
-- `phelpbutton` „Help” (magyarul: „Súgó”)
-- `prevbutton` buboréksúgó: „View the previous preview page”
-- `preview`
-- `previewlabel` „Preview” (magyarul: „Előnézet”)
-- `previewnumber`
-- `printlayoutlabel` „Print Layout” (magyarul: „Nyomtatási elrendezés”)
-- `printsetuplabel` „Printer Settings” (magyarul: „Nyomtatóbeállítások”)
-- `psetupbutton` buboréksúgó: „Open printer setup controls for the selected printer”
-- `reviewnowbutton` „Review” (magyarul: „Ellenőrzés”)
-- `reviewnowbutton2` „Review” (magyarul: „Ellenőrzés”)
-- `selectprinterbutton` buboréksúgó: „Provides a list of available printers”
-- `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”)
-- `subprintsbutton` buboréksúgó: „Subtract a copy of each Photo to be printed”
+- `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x009ca5e0)
 
 ### `printoptions` — 22 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -613,6 +583,19 @@ Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél
 - `uploadinfo_link`
 - `uploadsize_menu`
 
+### `printpanel` — 8 hiány · panel-megfeleltetés: `parositva`
+
+Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)
+
+- `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed”
+- `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”)
+- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”)
+- `phelpbutton` „Help” (magyarul: „Súgó”)
+- `psetupbutton` buboréksúgó: „Open printer setup controls for the selected printer”
+- `reviewnowbutton` „Review” (magyarul: „Ellenőrzés”)
+- `reviewnowbutton2` „Review” (magyarul: „Ellenőrzés”)
+- `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”)
+
 ### `headerpanel` — 8 hiány · panel-megfeleltetés: `parositva`
 
 Album- és mappafejléc a rács fölött
@@ -758,7 +741,7 @@ Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
 
 - `capturemovietab` „Capture” (magyarul: „Rögzítés”)
 - `globaltabs` — *bizonytalan*
-- `makemovietab` „Movie Maker” (magyarul: „Mozgófilmkészítés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x0061df10)
+- `makemovietab` „Movie Maker” (magyarul: „Mozgófilmkészítés”) — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x0056c140)
 - `youtab` — *bizonytalan*
 
 ### `throttle` — 4 hiány · panel-megfeleltetés: `parositva`
@@ -1014,17 +997,6 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `librarylabel` — „Library” itt: PicasaPy/DocumentTabStrip.qml
 - `sbutton` — „Slideshow” itt: PicasaPy/OptionsDialog.qml, PicasaPy/PicasaMenuBar.qml
 
-### `printpanel` — 8
-
-- `4x6button` — „4 x 6” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
-- `5x7button` — „5 x 7” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
-- `8x10button` — „8 x 10” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
-- `fullbutton` — „Full Page” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
-- `pnowbutton` — „Print” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/PrintDialog.qml, PicasaPy/TrayBar.qml
-- `pnowbutton2` — „Print” itt: PicasaPy/PicasaMenuBar.qml, PicasaPy/PrintDialog.qml, PicasaPy/TrayBar.qml
-- `printerlabel` — „Printer” itt: PicasaPy/PrintDialog.qml
-- `walletbutton` — „Wallet” itt: PicasaPy/PrintDialog.qml
-
 ### `printoptions` — 7
 
 - `border_label` — „Border” itt: PicasaPy/EditorEffectsTab3.qml
@@ -1046,6 +1018,13 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 ### `capturemoviepanelpopup` — 1
 
 - `stop` — „Stop” itt: Main.qml
+
+### `printpanel` — 4
+
+- `4x6button` — „4 x 6” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
+- `5x7button` — „5 x 7” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
+- `8x10button` — „8 x 10” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
+- `fullbutton` — „Full Page” itt: PicasaPy/CollageFormatMenu.qml, PicasaPy/EditorPanel.qml
 
 ### `uploadmgr` — 1
 
@@ -1090,7 +1069,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **439 felirat** 82 fájlban.
+Összesen **440 felirat** 82 fájlban.
 
 ### `PicasaPy/PicasaMenuBar.qml` — 30
 
@@ -1518,6 +1497,14 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Place taken (optional):”
 - „Description (optional):”
 
+### `PicasaPy/TrayBar.qml` — 5
+
+- „Waiting for the collage to be created…”
+- „This will clear your entire tray.”
+- „Loupe — drag over the photos”
+- „Order Prints (service discontinued)”
+- „Publish to Blogger (service discontinued)”
+
 ### `PicasaPy/CollageActionRow.qml` — 4
 
 - „Select all the pictures (Ctrl+A)”
@@ -1545,13 +1532,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Play MP3 music during slideshow”
 - „Select a music folder:”
 - „Browse...”
-
-### `PicasaPy/TrayBar.qml` — 4
-
-- „Waiting for the collage to be created…”
-- „This will clear your entire tray.”
-- „Order Prints (service discontinued)”
-- „Publish to Blogger (service discontinued)”
 
 ### `PicasaPy/CollageSettingsTab.qml` — 3
 

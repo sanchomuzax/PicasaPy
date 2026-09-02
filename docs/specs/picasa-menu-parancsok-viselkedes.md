@@ -1896,6 +1896,72 @@ nyomatméret két indítás közt is megmarad.**
   *„Configure borders and text for Photos to be printed"*, felirata
   **„Szegély- és szövegopciók"** ⇒ **ez nyitja a `printoptions` panelt.**
 
+### 40.5 ⭐ A vágás/kicsinyítés PÁR — és hogy MELYIK az alapértelmezett (2026-09-02)
+
+A `printpanel.tre` 152–175. sora szerint a `croptoggle` és a `fittoggle`
+ugyanannak a `cropcontainer`-nek a gyereke — **két állapotú választás**,
+és a `croptoggle`-ön ott áll:
+
+```
+printpanel/croptoggle: printpanel/cropcontainer
+m_offsetLT
+Property setpressed 1        <<<
+m_hit_childlabel
+```
+
+⇒ **az alapértelmezés a „Kép méretre vágása" (Crop to Fit)** — az eredeti
+Picasa alapból **levágja** a képet a nyomatarányra, nem kicsinyíti bele.
+A `fittoggle`-ön nincs `setpressed`.
+
+**A választás NEM tartós.** Két lekérdezés-alak: nyers bájtkeresés a teljes
+`Picasa3.exe`-ben a `PrintCrop` / `PrintFit` / `PrintShrink` /
+`PrintQuality` / `PrintOptimize` mintákra → **0 / 0 / 0 / 0 / 0** találat;
+a `PrintLastSize`-ra ugyanígy → **1** (pozitív kontroll). ⇒ **csak a
+nyomatméret marad meg két indítás közt; a vágás-mód és a minőség nem.**
+
+**A váltás ÉRVÉNYTELENÍTI az előnézetet.** Az állapotsor-építő
+(`0x00745980`) a `0x00745aa4`-nél kikeresi a `croptoggle` állapotát, és:
+
+```
+mov  ecx, [ebp+0xec4]
+cmp  byte ptr [ecx], al      ; a TÁROLT állapottal veti össze
+je   tovabb
+mov  byte ptr [ecx+1], 1     ; „megváltozott" jelző
+mov  byte ptr [ecx], al      ; az új állapot
+```
+
+⇒ a vágás-mód váltása **piszkosnak jelöli** az előnézetet, tehát az
+újraszámolódik (és vele a DPI-figyelmeztetés is).
+
+### 40.6 A méret- és minőség-gombok teljes készlete
+
+A 40.2 négy méretgombot sorolt fel; a leltár és a `tooltips.tre` szerint a
+készlet ennél bővebb:
+
+| elem | felirat | buboréksúgó |
+|---|---|---|
+| `3x5button` | 3.5 x 5 | Print photos as a standard 3.5x5 size |
+| `4x6button` | 4 x 6 | Print photos as a standard 4x6 size |
+| `5x7button` | 5 x 7 | Print photos as a standard 5x7 size |
+| `8x10button` | 8 x 10 | Print photos as a standard 8x10 size |
+| **`walletbutton`** | **Wallet** | **Print wallet-sized photos** |
+| `fullbutton` | Full Page | Print photos the same size as paper |
+| **`photoindexbutton`** | *(a leltárban felirat nélkül)* | — |
+
+És egy **minőség-pár**, ugyanabban a függvényben, mint a `PrintLastSize`
+(`0x00744a00`): **`normalbutton`** és **`optimizebutton`**. Az
+`optimizebutton` buboréksúgója a `tooltips.tre` 77–78. sorában **ki van
+kommentezve**:
+
+```
+#Tooltip printpanel/optimizebutton
+#Highest quality, uses your printer's resolution. Test on inexpensive paper first.
+```
+
+⇒ a „legjobb minőség, a nyomtató saját felbontásával" opció **létezik**, de
+a súgója ebben a kiadásban ki van kapcsolva. *(Hogy maga a gomb él-e, ez a
+kör nem mérte — a `0x00744a00` mindkettőt hivatkozza.)*
+
 ### 40.4 Hatókörön kívüli elem a panelen
 
 `froogle` — *„Search Froogle for Supplies"* / „Tartozékok keresése a

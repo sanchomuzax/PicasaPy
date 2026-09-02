@@ -46,7 +46,7 @@ peoplepanel,parositva,PicasaPy/PeoplePanel.qml;PicasaPy/PeoplePanelRow.qml,Ember
 pickerpanel,parositva,PicasaPy/TextColorSwatches.qml,Színválasztó paletta + legutóbbiak
 printborderslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 printoptions,nincs-megfeleltetes,,Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel)
-printpanel,nincs-megfeleltetes,,Nyomtatási panel és előnézet — nálunk csak a tálca „Print” indítógombja van meg
+printpanel,parositva,PicasaPy/PrintDialog.qml,"Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)"
 propertiespanel,parositva,PicasaPy/PropertiesPanel.qml,Tulajdonságlista a jobb oldali fiókban
 publish,nincs-megfeleltetes,,Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 quicktagconfig,parositva,PicasaPy/QuickTagsConfigDialog.qml,Gyorscímke-beállító
