@@ -1423,8 +1423,8 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 | hány mező, milyen típussal | **LEZÁRVA** — a formátumsztringből (`0x00ce42e8`) |
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
-| **melyik float az átlátszatlanság (4. vagy 6.)** | **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
-| **mi a `<b>` (9. mező)** | **BLOKKOLT** — a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
+| **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **A POZÍCIÓ LEZÁRVA** (2026-09-02, ld. lentebb): a 6. az, ami mozog. A **leképezés** nyitva marad. Az alábbi eredeti szöveg a lezárás ELŐTTI állapotot rögzíti: **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
+| **mi a `<b>` (9. mező)** | **BLOKKOLT** — 2026-09-02 óta öt értékünk van (`0xC000`, `0xC001`, `0xC008`), és a dőlt/aláhúzott bit-hozzárendelés kézenfekvő, de szétválasztó eset (a kettő EGYÜTT) nincs. Az eredeti indoklás: a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
 
 ⚠️ **Amíg ez a kettő nyitva van, a mi írónk NE találgasson:** a
 `text_overlay.py` mai viselkedése (megőrzés + változatlan visszaírás)
@@ -2338,3 +2338,98 @@ azonos a `%f`-fel).
 
 A Helyek panel teljes működése — a két megerősítő kérdés mért küszöbeivel és a
 térkép JavaScript-hídjával — külön lapon: **`picasa-helyek-panel.md`**.
+
+### ⭐ A stílusblokk MÉRVE valódi exportokból (2026-09-02, #1994)
+
+A tulajdonos két exportot készített a futó Picasa 3-ból, összesen **öt**
+felirat-blokkal (`research/#1994-felirat/`). Ez az első eset, hogy a
+stílusblokk mezői **nem alapértéken** állnak — a korpusz eddigi két sora
+ezért nem tudta megkülönböztetni őket.
+
+| # | szöveg | betűtípus | 4. | **5.** | **6.** | 7. | **8.** | **9.** |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | Minta szöveg | Arial | 1,0 | 0,000 | 0,757813 | 400 | 256 | 49160 |
+| 2 | Minta szöveg | Arial Black | 1,0 | 0,000 | 0,503906 | 700 | 256 | 49153 |
+| 3 | Minta szöveg (3 sor) | Arial | 1,0 | 0,000 | 0,757813 | 700 | **512** | 49160 |
+| 4 | Mit nekem… (3 sor) | Arial Black | 1,0 | **0,250** | 0,878906 | 400 | **514** | 49152 |
+| 5 | FELIRAT | Arial Black | 1,0 | **0,500** | 0,878906 | 400 | **257** | 49152 |
+
+#### ✅ Az 5. mező (körvonalvastagság) — a képen is MÉRVE
+
+A vezérlőkből azonosított jelentést a kimenet igazolja: a `0,250`-es
+felirat körvonala **2 képpont** (medián, 4457 vízszintes metszet), a
+`0,500`-asé **6 képpont** (1465 metszet). A két em-méret 82, illetve
+141 képpont ⇒ a vastagság a **betűmérettel is skálázódik**, nem
+abszolút képpontszám (a mező kétszerezése 3× vastagságot ad, a
+`mező × em` szorzat 3,42-öt jósol a mért 3,0 mellett).
+
+⚠️ **Az arányossági tényező NINCS MÉRVE** — két pontból ~0,085…0,098 jön
+ki, de a vastagságmérés küszöbfüggő. Ehhez azonos betűméretű, három
+különböző körvonal-értékű sorozat kell.
+
+#### ✅ A 4. és a 6. mező szétválasztása — a 6. az, ami MOZOG
+
+A spec eddig azt mondta, hogy „a 4. vagy a 6. az átlátszatlanság,
+mindkettő `1.000000` minden valós mintán, tehát megkülönböztethetetlen".
+
+Az öt új blokkban a **4. mező mind az ötben `1,000000`**, a **6. viszont
+három különböző értéket vesz fel** (`0,503906`, `0,757813`, `0,878906` —
+mind `n/256` alakú). ⇒ **a felhasználó által állítható érték a 6.**, a 4.
+állandó.
+
+⚠️ Ez a **pozíciót** dönti el, a **leképezést nem**: a 3. blokk
+vonásainak belsejében mért tényleges keverési arány **0,53** (33 155
+képpont, élsimított perem nélkül), miközben a 6. mező `0,757813`. A
+csúszka-érték és a megjelenő átlátszatlanság **nem azonos** — a
+leképezés NYITOTT.
+
+#### ✅ A 8. mező KÉT bájt: igazítás ÉS kitöltés/körvonal mód
+
+| 8. mező | hexa | felső bájt | alsó bájt | a képen |
+|---:|---|---|---|---|
+| 256 | `0x0100` | 1 | 0 | egysoros — nem látszik |
+| 512 | `0x0200` | **2** | 0 | **jobbra igazított** (3 sor, jobb szélek 1 képponton belül) |
+| 514 | `0x0202` | **2** | 2 | **jobbra igazított**, kitöltés **és** körvonal |
+| 257 | `0x0101` | 1 | 1 | **csak körvonal**, nincs kitöltés (a betűk belsejében a háttér látszik) |
+
+A **felső bájt egybevág a `0x0062f300`-nál mért igazítás-értékkészlettel**
+(0 = bal, 1 = közép, 2 = jobb): a `0x02`-es blokkok mérten jobbra
+igazítottak. Az alsó bájt a kitöltés/körvonal mód: **0** = csak kitöltés,
+**1** = csak körvonal (`no_fill`), **2** = mindkettő.
+
+⚠️ **Amit a minta NEM fed le:** a `0x00`-s felső bájt (BAL igazítás)
+egyszer sem fordul elő — a `0x01`-es blokkok mind egysorosak, tehát a
+„közép" olvasat a `0x0062f300`-as mérésből következik, nem a képből. Egy
+többsoros, balra igazított felirat zárná le.
+
+#### A 9. mező — a jelzőszó bitjei
+
+| érték | hexa | a képen |
+|---:|---|---|
+| 49152 | `0xC000` | sem dőlt, sem aláhúzott (2 blokk) |
+| 49153 | `0xC001` | **aláhúzott**, nem dőlt |
+| 49160 | `0xC008` | **dőlt**, nem aláhúzott (2 blokk) |
+
+A `0xC000` az alapérték (egyezik a `+0x2f0` konstruktor-alapértékével).
+A `0x01` bit az aláhúzáshoz, a `0x08` a dőlthöz **rendelhető**, de a
+kettő **soha nem szerepel együtt** ebben a mintában, tehát ez egyezés,
+nem szétválasztó eset. **NYITOTT.**
+
+#### ✅ A geometria: a forgatás RADIÁN, az `x` a SZÉLESSÉGHEZ, az `y` és a méret a MAGASSÁGHOZ normált
+
+A 2. export képe **896 × 1344** — nem négyzetes, ezért a normálás
+eldönthető:
+
+| mező | szélességgel | magassággal | **MÉRT** |
+|---|---:|---:|---:|
+| `x = 0.140557` | **125,9** | 188,9 | bal szél **134** |
+| `y = 0.841569` | 754,0 | **1131,1** | felső szél **1167** |
+| `méret = 0.104631` | 93,7 | **140,6** | em ≈ **133** |
+
+A forgatás mértékegysége **radián**: az `5.946289` értékű blokk mért fő
+tengelye **−18,72°**, a radián-olvasat **−19,30°**-ot ad; fokként
+értelmezve **+5,95°** jönne, ami még előjelben is téves.
+
+A horgonypont a szöveg**doboz** bal felső sarka, nem az első soré: a 3.
+blokk horgonya 270,1, a doboz bal széle 275 (a leghosszabb sor), miközben
+a 2. és 3. sor 699-nél és 704-nél kezdődik.
