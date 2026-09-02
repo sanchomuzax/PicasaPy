@@ -96,6 +96,16 @@ class ParamSweep:
     sweep_max: float = 0.0
     discrete_ints: bool = False
     megjegyzes: str = ""
+    #: #1938: MELYIK csúszkát söpri ez a bejegyzés. Üres, ha az effektnek
+    #: csak egy söpört tengelye van (a 23-ból 22 ilyen).
+    #:
+    #: ⚠️ Ha egy effekthez több bejegyzés tartozik, ez KÖTELEZŐ: a
+    #: mappanév a `key`-re épül, tengely nélkül a bejegyzések ugyanoda,
+    #: ugyanazon a néven írnának, és az utolsó NÉMÁN felülírná a többit.
+    #: A felhasználó egy hiányos készletet exportálna, és a hiba csak a
+    #: mérésnél derülne ki. Az őre: `test_azonos_kulcsu_bejegyzesek_
+    #: kulon_mappat_kapnak`.
+    tengely: str = ""
 
 
 # ---------------------------------------------------------------------
@@ -246,12 +256,32 @@ EFFECTS_5: list[ParamSweep] = [
         megjegyzes="p2 (szín, piros) fixen; a fő erősség (1. param, minta "
         "0) sweepelve.",
     ),
+    # #1938: a Comicize HÁROM csúszkája külön tengely. A p2/p3 jelentése a
+    # `filterdesc-registry.md` óta ismert (a korábbi „feltehetően" elavult):
+    #   p1 = BlurXY 0–100 (20) · p2 = DotContrast 0–100 (50) · p3 = DotFade 0–100 (50)
+    # A #1606 négy eltéréséből KETTŐT épp a p2 és a p3 hajt (a raszter
+    # alfája `0,5 − DotFade/200`, a küszöbgörbe töréspontja
+    # `90 + DotContrast·1,5`), ezért egy alapállású referencia nem elég.
     ParamSweep(
         key="Comicize", nev="Képregény", tab=5, base="photo",
         template=("0.000000", "50.000000", "50.000000"), sweep_index=0,
-        sweep_min=0, sweep_max=100,
-        megjegyzes="p2=50, p3=50 (feltehetően él-/színszint-részletesség) "
-        "fixen; a fő erősség (1. param, minta 20) sweepelve.",
+        sweep_min=0, sweep_max=100, tengely="blurxy",
+        megjegyzes="BlurXY (p1) söpörve, DotContrast és DotFade 50-en. "
+        "A minta-lánc értéke 20.",
+    ),
+    ParamSweep(
+        key="Comicize", nev="Képregény", tab=5, base="photo",
+        template=("20.000000", "0.000000", "50.000000"), sweep_index=1,
+        sweep_min=0, sweep_max=100, tengely="dotcontrast",
+        megjegyzes="DotContrast (p2) söpörve — ez hajtja a fő küszöbgörbe "
+        "töréspontját (`90 + DotContrast·1,5`, #1606). BlurXY a minta 20-on.",
+    ),
+    ParamSweep(
+        key="Comicize", nev="Képregény", tab=5, base="photo",
+        template=("20.000000", "50.000000", "0.000000"), sweep_index=2,
+        sweep_min=0, sweep_max=100, tengely="dotfade",
+        megjegyzes="DotFade (p3) söpörve — ez hajtja a raszter felvitelének "
+        "alfáját (`0,5 − DotFade/200`, #1606). BlurXY a minta 20-on.",
     ),
     ParamSweep(
         key="Border", nev="Szegély", tab=5, base="photo",
@@ -340,6 +370,18 @@ def _filters_value(effect: ParamSweep, value: float) -> str:
     return f"{effect.key}=" + ",".join(("1", *parts)) + ";"
 
 
+def mappa_neve(effect: ParamSweep) -> str:
+    """Az effekt sweep-mappájának neve.
+
+    #1938: több tengelynél a tengely neve is bekerül, különben az azonos
+    `key`-ű bejegyzések ugyanoda írnának. Publikus, mert a teszt is ezt
+    hívja — ha a névképzés duplikálva lenne a tesztben, az őr nem őrizne
+    semmit, csak a saját másolatát.
+    """
+    alap = f"effekt{effect.tab}_{slugify(effect.nev)}"
+    return f"{alap}_{effect.tengely}" if effect.tengely else alap
+
+
 def _build_effect(
     effect: ParamSweep, bases: dict[str, Path], out: Path
 ) -> tuple[str, list[tuple[str, str]]]:
@@ -351,7 +393,7 @@ def _build_effect(
 
     Visszaadja a mappa nevét és a (fájlnév, `filters=` érték) párokat az
     UTMUTATO.md táblázatához."""
-    folder_name = f"effekt{effect.tab}_{slugify(effect.nev)}"
+    folder_name = mappa_neve(effect)
     fdir = out / folder_name
     fdir.mkdir(parents=True, exist_ok=True)
     base = bases[effect.base]
