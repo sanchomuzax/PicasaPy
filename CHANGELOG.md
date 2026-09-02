@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.207] – 2026-09-02
+
+### Javítva
+- **Az alsó sáv gombjai nem érnek hozzá a kék csíkhoz (#1914).** Ezt te
+  jelentetted a képernyőképeden. Kiderült, hogy nem a gombok álltak
+  rosszul: a kék csík volt hat képponttal magasabb a kelleténél, és
+  alóla hiányzott az öt képpontos térköz. A Picasa saját
+  erőforrás-csomagjából kimért felosztás szerint most 14 (csík) + 5
+  (térköz) + 81 (képtálca) + 5 (alsó hézag) = 105 képpont.
+
 ## [0.8.206] – 2026-09-02
 
 ### Hozzáadva
