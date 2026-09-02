@@ -1769,7 +1769,7 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | `category` | 179 | Picasa 2-örökség |
 | `textactive` | 173 | ✅ |
 | `width` / `height` | 172 / 172 | ✅ |
-| `geotag` | 84 | specben, kódban **nincs** |
+| `geotag` | 84 | ✅ (#30 óta olvassuk ÉS írjuk — `app/geo_controller.py`) |
 | `location` | 42 | 1 hely a kódban |
 
 A „hexadecimális nevű" kulcsok (`3e0c6b88a16df349` stb., 20–109 előfordulás)
@@ -1818,7 +1818,7 @@ kulcssorrendre és a formátumokra.
 |---:|---|---|---|
 | 1 | `caption` | `0x007d56f0` | |
 | 2 | `keywords` | `0x007d5755` | |
-| 3 | `geotag` | `0x007d582e` | formátum: `%lf %lf` **vagy** `%lf,%lf` (két ág!) |
+| 3 | `geotag` | `0x007d582e` | kiírt alak: **`%lf,%lf`** (`0xc8187c`); a `%lf %lf` NEM kimenet — ld. lentebb |
 | 4 | `faces` | `0x007d5da2` | előtte a kontakt-hurok |
 | 5 | **`originhash`** | `0x007d5e74` | |
 | 6 | `star` | `0x007d5ec7` | értéke **`yes`** (`0x007d5ec2`) |
@@ -2281,3 +2281,27 @@ ini-kompatibilitás a projekt magígérete, tehát ez valódi eltérés. → **#
 
 *Bizonyítottsági fok: **megerősített** — valódi Picasa 3.9 kimenetén mérve,
 a fájlok a repóban vannak.*
+
+## HELYESBÍTÉS: a `geotag` írásának NINCS két ága (2026-09-02)
+
+A fenti írási-sorrend táblázat korábban azt állította, hogy a `geotag` kulcs
+formátuma „`%lf %lf` **vagy** `%lf,%lf` (két ág!)". **Ez téves volt** — a két
+formátumsztring a folyamat két *különböző lépéséhez* tartozik, nem két
+kimeneti alakhoz:
+
+| lépés | cím | formátum | szerep |
+|---|---|---|---|
+| beolvasás a belső értékből | `0x007d57c0` → `sscanf` `0x007d57c6` | `%lf %lf` (`0xca74d8`) | **szóközös** — a program belső, memóriabeli alakja |
+| ellenőrzés | `0x007d57cb` `sub eax, 2` | — | pontosan **két** mezőt vár, különben a kulcs kimarad |
+| kiírás a `.picasa.ini`-be | `sprintf` `0x007d57fb`, kulcs `0x007d582e` | `%lf,%lf` (`0xc8187c`), kulcsnév `geotag` (`0xc81874`) | **vesszős** — ez kerül a fájlba |
+
+Tehát a lemezre írt alak **egyféle**: `geotag=<szélesség>,<hosszúság>`,
+vesszővel, MSVC-`%lf` szerint **hat tizedesjeggyel** (a `%lf` a `printf`-ben
+azonos a `%f`-fel).
+
+**Élő mérés (a tulajdonos korpusza, 859 fájl):** 84 `geotag=` sor, mind a 84
+**6/6 tizedesjeggyel** — a záró nullák benne maradnak (`47.820020`, nem
+`47.82002`). Szóközös alak nulla darab.
+
+A Helyek panel teljes működése — a két megerősítő kérdés mért küszöbeivel és a
+térkép JavaScript-hídjával — külön lapon: **`picasa-helyek-panel.md`**.
