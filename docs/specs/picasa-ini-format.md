@@ -312,8 +312,41 @@ jelenti a kulcs elhagyását. *(A `flipped=` a korpuszban nem fordul elő,
 tehát a `flipped(0)` alakra **élő mintánk nincs**; a tábla és a
 `flipped(%d)` formátum a bizonyíték.)*
 
-⚠️ **Nálunk ez ELTÉR** — és a mi kódunk indoklása épp fordítva igaz.
-Lásd a **#2004**-et.
+✅ **Nálunk ez a #2004 óta EGYEZIK** (v0.8.225): a `rotate=` sor
+megmarad, ha a fájlban ott volt.
+
+##### A nyitott kérdés LEZÁRVA — a tulajdonos élő mérése (#2007)
+
+A #2004 blokkolt kérdése az volt: *mit tesz a Picasa, ha a `rotate=` sor
+**hiányzik**, és a felhasználó 0-ra forgat?* A korpusz ezt nem dönti el
+(csak a végállapotot látjuk, a történetet nem).
+
+**A mérés menete** (a tulajdonos, windowsos Picasa 3):
+kép exportálása egy friss mappába → visszaimportálás → **négyszeri**
+forgatás egy irányba (vissza alaphelyzetbe) → kilépés → a mappa átadva
+(`research/#2007-rotate-ini/`).
+
+**Az eredmény — a teljes `.picasa.ini`, CRLF sorvégekkel:**
+
+```ini
+[Picasa]
+P2category=Exported Pictures
+date=46267.802095
+[_03c62d34-6e84-4b2c-aa2b-e25c54f24d08.jpg]
+rotate=rotate(0)
+backuphash=6547
+```
+
+⇒ **A teljes kör után a `rotate=rotate(0)` sor OTT VAN.** A Picasa tehát
+a nulla lépést sem hagyja jelöletlenül — sem a korpusz meglévő fájljain,
+sem egy frissen exportált képen.
+
+⚠️ Amit ez a mérés **nem** dönt el: hogy a sort maga az EXPORT írta-e ki,
+vagy a negyedik forgatás hozta létre. A megvalósításunk szempontjából ez
+mindegy: mindkét ágon ugyanaz a végállapot, és a mi kimenetünk ezzel
+**megegyezik**. ⇒ A #2004 „Kész, ha" listájának az a pontja, amely szerint
+`rotate=` sor nélküli fájlon négyszeri forgatás után **sem** keletkezhet
+sor, **megdőlt** — nem kell hozzá tartós állapotot bevezetni.
 
 #### A `[encoding]` fejléc — mérve, és a korpusszal ÖSSZEVETVE
 
