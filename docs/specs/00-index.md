@@ -619,6 +619,27 @@ Jegy-komment: **#1446**.
    változásának megfigyelése egy fájl módosítása után élő Picasában.
    Lap: `pmp-database.md`; jegy **#1446**.
 
+### [picasa-email-kuldes.md](picasa-email-kuldes.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02 — az e-mail méret-beállítás SZEMANTIKÁJA mérve:** az
+`EmailExportSize` **közvetlen képpont-érték** (a hosszabb oldal), **nem**
+listaindex, és az alapértéke **480** — három független helyen kiolvasva
+(`0x006e1756`, `0x006e3f2b`, `0x00743094`). A `0` jelentése **eredeti méret**
+(`option_useorig`); nem nulla értéknél az `option_imagesizelimit` **és** az
+`option_estimate` is megkapja. Az `EmailSinglePicture` **kapcsoló**, nem méret:
+egy kép + bekapcsolt állapot ⇒ a méret 0 lesz. Az `EmailMovie` az
+`option_preservemovies`-t állítja; a mellékletek a `temp\email\` mappába
+kerülnek. **Nálunk ez szerkezetileg más** (két ötfokozatú index-csúszka,
+kitalált értékekkel, és a mért 480 elő sem fordul a listánkban) → **#2020**.
+
+1. **Mik a Beállítások ▸ E-mail lap csúszkájának LÉPÉSEI?** Az olcsó lánc
+   kimerült: a lap natív Win32 erőforrás, ezért sem a `.tre`, sem a
+   `respack.yt`, sem a `stringres` nem tartalmazza; a `%d pixels (for e-mail)`
+   sablon megvan a PE sztringtáblájában, de a számot futásidőben kapja, és
+   statikus méret-tömb nincs a binárisban (végigkeresve). **Megszerzés:**
+   egyetlen képernyőkép a futó Picasa `Eszközök ▸ Beállítások ▸ E-mail`
+   lapjáról. Jegy: **#2020** (`blocked` + `felhasználóra-vár`).
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
