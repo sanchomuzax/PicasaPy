@@ -67,7 +67,13 @@ class Teendo:
 
 
 def _valodi_gh(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, capture_output=True, text=True, check=False)
+    # #2077: `errors="replace"` — a `git diff` kimenete NEM feltétlenül
+    # érvényes UTF-8 (idegen kódolású fájl, bináris darab). Enélkül az
+    # őr a DEKÓDOLÁSON hal meg, nem a leleten, és a CI úgy pirosodik,
+    # hogy közben semmi baj nincs a vizsgált tartalommal.
+    return subprocess.run(
+        args, capture_output=True, text=True, errors="replace", check=False
+    )
 
 
 def verzio_az_agbol(ag: str) -> tuple[int, ...] | None:
