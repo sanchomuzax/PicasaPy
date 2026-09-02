@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit(docs/help/**)",
+      "Write(docs/help/**)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(ls:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(python3 -c:*)"
+    ],
+    "deny": [
+      "Edit(src/**)",
+      "Write(src/**)",
+      "Edit(tests/**)",
+      "Write(tests/**)",
+      "Edit(scripts/**)",
+      "Write(scripts/**)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh:*)"
+    ]
+  }
+}

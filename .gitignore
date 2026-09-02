@@ -105,3 +105,7 @@ tools/histogram/out/
 .agents/skills/
 docs/allapotlap.html
 docs/binaris-terkep.html
+
+# #2051: a súgó-frissítő gépi állapota és naplója — nem projekt-tartalom
+docs/help/.update.log
+docs/help/.last_documented_commit
