@@ -62,6 +62,8 @@ def _index_utvonal() -> Path:
 
 
 INDEX = _index_utvonal()
+REPO_URL = "https://github.com/sanchomuzax/PicasaPy"
+
 SPEC_DIR = REPO / "docs" / "specs"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -263,7 +265,9 @@ def _terep(a: dict) -> str:
             sor_o, oszlop_o = " idegen-sor", " idegen"
         elif aktiv:
             sor_o, oszlop_o = " kiemelt-sor", " kiemelt"
-            mi = f'<span class="mi">#{jegy[0]} · {_e(jegy[1])}</span>'
+            hivatkozas = (f'<a href="{REPO_URL}/issues/{jegy[0]}">'
+                          f'#{jegy[0]}</a>')
+            mi = f'<span class="mi">{hivatkozas} · {_e(jegy[1])}</span>'
         elif cimke != "—":
             mi = f'<span class="mi">{_e(cimke)}</span>'
 
@@ -500,6 +504,8 @@ _STILUS = """<style>
   .terepsor.idegen-sor .cim, .terepsor.idegen-sor .szam { opacity:0.55; }
   .terepsor .szam { font-family:var(--font-mono); text-align:right;
                     font-variant-numeric:tabular-nums; color:var(--ink-soft); font-size:0.72rem; }
+  .terepsor .mi a { color:inherit; text-decoration:none;
+                    border-bottom:1px dotted currentColor; }
   .terepsor .mi { color:var(--ink-soft); font-size:0.76rem; overflow:hidden;
                   text-overflow:ellipsis; white-space:nowrap; }
   .terepsor .mi.halvany { color:var(--ink-faint); font-style:italic; }

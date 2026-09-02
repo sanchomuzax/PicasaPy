@@ -55,6 +55,10 @@ from ui_lefedettseg_lap import olvas as _ui_lefedettseg  # noqa: E402
 #: átírni, hogy a következő session is a jót találja.
 ARTIFACT_URL = "https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e"
 
+#: A tulajdonos ismételt kérése: a lapon látott jegyszám és kiadás legyen
+#: KATTINTHATÓ — enélkül a GitHubot kell kézzel böngésznie (#2059).
+REPO_URL = "https://github.com/sanchomuzax/PicasaPy"
+
 SPEC_DIR = REPO / "docs" / "specs"
 
 
@@ -226,12 +230,24 @@ def _szamsor(a: dict) -> str:
     return f'    <div class="stats">\n{cellak}\n    </div>'
 
 
+def _jegy_link(szam: object) -> str:
+    """`#1234` a jegyre mutató hivatkozásként."""
+    sz = _e(szam)
+    return f'<a class="num" href="{REPO_URL}/issues/{sz}">#{sz}</a>'
+
+
+def _kiadas_link(verzio: object) -> str:
+    """`v0.8.232` a kiadás oldalára mutató hivatkozásként."""
+    v = _e(verzio)
+    return f'<a class="num" href="{REPO_URL}/releases/tag/{v}">{v}</a>'
+
+
 def _jegylista(cim: str, leiras: str, jegyek: list[dict], oszt: str) -> str:
     if not jegyek:
         return (f'      <div class="group"><h3>{_e(cim)}</h3>'
                 f'<p class="empty">Egy sincs.</p></div>')
     sorok = "\n".join(
-        f'          <li><span class="num">#{i["number"]}</span>'
+        f'          <li>{_jegy_link(i["number"])}'
         f'<span class="txt">{_e(i["title"])}</span></li>'
         for i in jegyek
     )
@@ -255,13 +271,13 @@ def _mi_tortent_szakasz(a: dict) -> str:
         return ""
 
     kiadas_sorok = "".join(
-        f'          <li><span class="num">{_e(k["verzio"])}</span>'
+        f'          <li>{_kiadas_link(k["verzio"])}'
         f'<span class="txt">{_e(k["mikor"])}</span></li>\n'
         for k in kiadasok
     ) or '          <li><span class="txt">Nincs adat.</span></li>\n'
 
     lezart_sorok = "".join(
-        f'          <li><span class="num">#{j["number"]}</span>'
+        f'          <li>{_jegy_link(j["number"])}'
         f'<span class="txt">{_e(j["title"])}</span></li>\n'
         for j in lezart
     ) or '          <li><span class="txt">Az elmúlt napban egy sem.</span></li>\n'
@@ -573,6 +589,8 @@ _STILUS = """<style>
   ul.tickets li, ul.specs li { display:grid; grid-template-columns:max-content 1fr;
                 gap:0 0.75rem; padding:0.5rem 0; border-top:1px solid var(--rule-soft);
                 font-size:0.9rem; align-items:baseline; }
+  a.num { text-decoration:none; border-bottom:1px dotted currentColor; }
+  a.num:hover, a.num:focus { border-bottom-style:solid; }
   .num { font-family:var(--font-mono); font-size:0.82rem; font-weight:600;
          color:var(--accent); font-variant-numeric:tabular-nums; }
   .lap { font-family:var(--font-mono); font-size:0.75rem; color:var(--ink-faint); }

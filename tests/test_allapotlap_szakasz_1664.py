@@ -54,7 +54,9 @@ def test_egy_jegy_csak_egy_csoportban_szerepel() -> None:
     """A #1664 magva: a részhalmaz NEM kerülhet a fölérendelt mellé."""
     kozos = [_jegy(1276), _jegy(1153)]
     html = lap.epits(_adat(blokkolt=kozos + [_jegy(684)], binaris=kozos))
-    szamok = re.findall(r'class="num">#(\d+)<', _szakasz(html))
+    # #2059 óta a jegyszám horgony (`<a class="num" href=...>`), nem sima span —
+    # a jelentése változatlan, csak a burkolata.
+    szamok = re.findall(r'class="num"[^>]*>#(\d+)<', _szakasz(html))
     dup = [k for k, v in collections.Counter(szamok).items() if v > 1]
     assert not dup, f"duplán szereplő jegy: {dup}"
     assert set(szamok) == {"1276", "1153", "684"}, szamok
