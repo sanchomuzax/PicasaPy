@@ -22,6 +22,9 @@ Rectangle {
 
     signal closeRequested()
     signal photoActivated(int row)
+    //: #1404: a törlés VISSZAFORDÍTHATATLAN — a panel nem maga törli,
+    //: hanem a gazdát kéri meg, hogy futtassa a megerősítést.
+    signal clearGeotagRequested(var rows)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -92,11 +95,20 @@ Rectangle {
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
+            // #1404: a MÉRT felirat — `GeotagPanel::clearbutton` =
+            // „Clear %d Geotag(s)" / „%d geocímke törlése". A darabszám az
+            // eredetiben is benne van; a korábbi „Remove Geotag" a mi
+            // fogalmazásunk volt.
+            //
+            // ⚠️ A gomb NEM töröl közvetlenül: a művelet
+            // visszafordíthatatlan, ezért ugyanazon a megerősítésen megy
+            // át, mint a menüpont (`ClearGeoTag::warn`).
             PicasaButton {
                 objectName: "placesClearButton"
-                text: qsTr("Remove Geotag")
+                text: qsTr("Clear %1 Geotag(s)")
+                          .arg(panel.appWindow.selectedIndexes.length)
                 enabled: panel.appWindow.selectedIndexes.length > 0
-                onClicked: controller.clearGeotagRows(
+                onClicked: panel.clearGeotagRequested(
                     panel.appWindow.selectedIndexes)
             }
         }

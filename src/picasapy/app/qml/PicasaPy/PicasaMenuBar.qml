@@ -185,6 +185,8 @@ MenuBar {
     // rendszer társított programjával. Az eredetiben KÉT külön menütétel
     // van; a párbeszédet itt is a hívó (Main.qml) nyitja.
     signal earthViewRequested()
+    //: #1404: `eMenuTools::ID_PICTURE_GEOUNTAG` — a geocímkék törlése
+    signal clearGeotagRequested()
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
@@ -1501,6 +1503,19 @@ MenuBar {
                 objectName: "menuToolsViewEarth"
                 text: qsTr("View in Google Earth...")
                 onTriggered: bar.earthViewRequested()
+            }
+            // #1404: `eMenuTools::ID_PICTURE_GEOUNTAG` = „Clear Geotags" /
+            // „Geocímkék törlése" — a menüsáv-építőben (`0x00559150`) a
+            // Google Earth tételek testvéreként.
+            //
+            // A KÉPESSÉG régóta megvolt (`GeoMixin.clearGeotagRows`), csak
+            // a Helyek panelről lehetett elérni: a menü-belépési pont
+            // hiányzott. ⚠️ MINDKÉT út ugyanazon a megerősítésen megy át
+            // (`ClearGeoTag::warn`) — a törlés visszafordíthatatlan.
+            MenuItem {
+                objectName: "menuToolsClearGeotag"
+                text: qsTr("Clear Geotags")
+                onTriggered: bar.clearGeotagRequested()
             }
         }
         PicasaMenu {

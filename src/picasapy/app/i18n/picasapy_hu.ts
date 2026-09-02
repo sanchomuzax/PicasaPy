@@ -3636,6 +3636,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Clear Geotags</source>
+        <translation>Geocímkék törlése</translation>
+    </message>
+    <message>
+        <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.&#xa;&#xa;OK to proceed?</source>
+        <translation>Törölni készül a kijelölt fotók összes, földrajzi helyre utaló adatát (a szélességet és a hosszúságot).&#xa;&#xa;Folytatja?</translation>
+    </message>
+    <message>
         <source>Preparing attachments...</source>
         <translation>Mellékletek előkészítése…</translation>
     </message>
@@ -4482,6 +4490,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Clear Geotags</source>
+        <translation>Geocímkék törlése</translation>
+    </message>
+    <message>
         <source>Sort by &amp;Creation Date</source>
         <translation>Rendezés létre&amp;hozási dátum alapján</translation>
     </message>
@@ -5300,6 +5312,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>PlacesPanel</name>
+    <message>
+        <source>Clear %1 Geotag(s)</source>
+        <translation>%1 geocímke törlése</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PlacesPanel.qml" line="40"/>
         <source>Places</source>
