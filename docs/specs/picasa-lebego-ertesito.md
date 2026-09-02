@@ -506,3 +506,39 @@ renderelési ciklusból jön.)*
 *Bizonyítottsági fok: **megerősített** (a vtable-rekeszek és a
 hívás-hiány az indexből; a rekesz-szerep a dekompilált `0x006575b0`
 tartalmából — óra + határidő + eltávolítás, ld. a 2026-08-26-i szakaszt).*
+
+## Elszámolás — az öt eredeti kérdés állapota (2026-09-02, #1130 zárása)
+
+A #1130 törzse még az első kör öt nyitott kérdését sorolta; a lap azóta
+mindet megválaszolta. A jegy azért zárható, mert **saját kérdés nem
+maradhat „félig nyitva"** — ami tényleg nyitott, annak önálló jegy jár.
+
+| # | kérdés | állapot | hol |
+|---|---|---|---|
+| 1 | geometria | ✅ **LEZÁRVA** | „Geometria — MÉRVE A BINÁRISBÓL" + „Melyik ÉLHEZ képest a 144 képpont" |
+| 2 | animáció | ⚠️ **RÉSZBEN** — az ÜTEMFORRÁS lezárva, a látható ALAK nem | „Az animáció ÜTEMFORRÁSA — a vtable 0x60 rekesze" |
+| 3 | élettartam | ✅ **LEZÁRVA** | „A cella élettartama — MEGFEJTVE": abszolút határidő `+0xb8`-on, képkockánkénti ellenőrzés |
+| 4 | észlelési ág | ✅ **LEZÁRVA** | „4. ág — új képek észlelése" |
+| 5 | események listája | ✅ **LEZÁRVA** (bizonyítottan nincs ilyen lista) | „Hány eseménye van?" |
+
+**A 2. pont maradéka** — becsúszik-e vagy áttűnik — a `0x006575b0`
+(1714 bájt, a Popup képkockánkénti tickje) teljes diszasszemblálásával
+válaszolható meg: ugyanaz a függvény kezeli a lejáratot ÉS a képkockánkénti
+állapotot. A parkolóhely (`left = 10000`, ill. `-10001` jobbról-balra író
+felületnél) továbbra is **nyom, nem bizonyíték**. Külön jegy: **#2034**.
+
+### Ami a MEGVALÓSÍTÁSBÓL hiányzik
+
+A geometria **három** vezérlőt ad a jobb oldali 21 képpontos sávban; a
+`NotifierCell.qml` ebből **egyet** épít meg:
+
+| réteg | méret | nálunk |
+|---|---|---|
+| `close` (231,4) | 11 × 11 | ✅ megvan |
+| `gripper` (233,19) | 7 × 7 | ❌ hiányzik |
+| `collapse` (231,30) | 11 × 11 | ❌ hiányzik |
+
+A méret mindkettőnél mérve van, a **viselkedésük nincs** — a fogantyú
+mozgatása ütközik a munkaterülethez horgonyzással (`0x00658200`), az
+összecsukás célállapotának mérete pedig sehol nincs kimérve. Ezért nem
+építjük meg találgatásból. Külön jegy: **#2035**.
