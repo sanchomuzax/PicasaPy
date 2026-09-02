@@ -46,6 +46,7 @@ from picasapy.collage import write_collage
 from picasapy.collage.autosave import (
     discard_autosave,
     has_recoverable_draft,
+    recover_orphan_draft,
     write_autosave,
 )
 from picasapy.collage.draft import project_from_nodes
@@ -164,9 +165,27 @@ class CreateMixin(BackgroundWorkerMixin):
 
     @Slot()
     def discardCollageDraft(self) -> None:  # noqa: N802 (QML-stílusú név)
-        """A piszkozat eldobása a felhasználó kérésére („nem állítom
-        vissza")."""
-        self._drop_collage_draft()
+        """A felhasználó nemet mond a visszaállításra (#979).
+
+        ⚠️ **Ez NEM törlés.** Az eredeti Picasa az elárvult automentést
+        nem dobja el, hanem ÁTNEVEZI („Helyreállított automatikus
+        másolat") és indexeli, hogy a felhasználó megtalálja a Kollázsok
+        albumban (spec 9.2/b, `0x008419e0`). A munkája így akkor sem
+        vész el, ha a felajánlásra nemet mondott — meggondolhatja magát.
+
+        A mentés utáni eldobás (`_drop_collage_draft`) továbbra is
+        TÖRLÉS: ott a piszkozat betöltötte a szerepét, és a megőrzése
+        csak szemetelne.
+
+        ⚠️ Az eredeti mindezt INDULÁSKOR, kérdés nélkül teszi. Nálunk van
+        egy felajánlás-lépés (#1064), ami az eredetiben nincs; ha
+        induláskor neveznénk át, a felajánlásnak nem maradna mit
+        felajánlania. Ezért a „nem" ágra kötjük — a végeredmény ugyanaz:
+        a piszkozat megmarad, néven nevezve.
+        """
+        uj_ut = recover_orphan_draft(self._collage_draft_dir())
+        if uj_ut is not None:
+            self.collageDraftAvailableChanged.emit()
 
     def _selected_sources(self, rows) -> tuple[Path, ...]:
         """A kijelölt sorokból forrás-útvonalak, a rács sorrendjében."""
