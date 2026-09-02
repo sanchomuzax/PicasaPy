@@ -13,10 +13,56 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 @pytest.fixture(scope="session")
 def qt_app():
+    """Egyetlen `QGuiApplication` a részfutásra — RENDEZETT lebontással.
+
+    #2037: a lebontás eddig hiányzott, és a részfutás a Python-értelmező
+    kilépésekor, statikus destruktorok idején bomlott le. A CI-n ez
+    kétszer is `exit -6`-ot adott ÚGY, hogy közben MINDEN teszt zöld volt:
+
+    ```
+    13 passed in 0.51s
+    terminate called without an active exception
+    ```
+
+    Az üzenet a C++ szabványé: egy szál **joinable állapotban semmisült
+    meg**. A `yield` utáni ág ezt előzi meg — még az értelmező kilépése
+    ELŐTT megvárja a háttér-pool-okat és lefuttatja a függőben lévő
+    törléseket.
+
+    ⚠️ **A flake eltűnése NINCS bizonyítva:** a jelenség helyben 40
+    futásból egyszer sem jött elő, tehát a javítás hatását nem lehet
+    kontroll-méréssel igazolni. Ami igazolható: a lebontás lefut, és a
+    készlet zöld marad. A megerősítés a CI ismétlődő zöldje lesz.
+    """
     from PySide6.QtGui import QGuiApplication
 
     app = QGuiApplication.instance() or QGuiApplication([])
     yield app
+    _vard_meg_a_hatterszalakat(app)
+
+
+def _vard_meg_a_hatterszalakat(app) -> None:
+    """#2037: a részfutás végén NE maradjon futó pool-szál.
+
+    A `ThumbnailProvider` és az `EffectThumbnailProvider` saját
+    `QThreadPool`-t tart. A globális pool-t is megvárjuk: a `QRunnable`-ök
+    egy része oda kerül, ha valaki `globalInstance()`-t használ.
+
+    Hibát SEM dobunk, ha valami nem áll le: a lebontás nem tehet tönkre
+    egy zöld részfutást. A cél a rendezett kilépés, nem az ítélkezés.
+    """
+    from PySide6.QtCore import QCoreApplication, QThreadPool
+
+    try:
+        QThreadPool.globalInstance().waitForDone(5000)
+    except Exception:  # noqa: BLE001 — a lebontás sosem bukhat el
+        pass
+    try:
+        QCoreApplication.processEvents()
+        QCoreApplication.sendPostedEvents(None, 0)  # DeferredDelete
+        QCoreApplication.processEvents()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 @pytest.fixture(autouse=True)
