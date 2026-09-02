@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.231] – 2026-09-02
+
+### Javítva
+- **A képtálca és a Klipek lap bélyegképe követi a kép változását (#1153).**
+  Ha egy tálcán lévő képet megszerkesztettél, a kis előnézete a régi
+  állapotot mutatta — a kollázs Klipek lapján is. Mostantól a szerkesztés
+  után azonnal az új kép látszik.
+
 ## [0.8.230] – 2026-09-02
 
 ### Javítva
