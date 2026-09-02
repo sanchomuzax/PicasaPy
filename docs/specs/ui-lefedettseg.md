@@ -39,15 +39,15 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 203 |
-| másutt megvan (nem ezen a felületen) | 43 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 316 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 23 |
-| bizonytalan | 150 |
+| párosítva | 244 |
+| másutt megvan (nem ezen a felületen) | 38 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 313 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 22 |
+| bizonytalan | 118 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **27.7%** |
+| **lefedettség az értékelhető elemeken** | **33.3%** |
 
-> ⚠️ **A 27.7% ALSÓ BECSLÉS, nem pontos érték.** 150 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **48.2%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 33.3% ALSÓ BECSLÉS, nem pontos érték.** 118 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.4%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -55,9 +55,9 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | # | panel | hiány + bizonytalan | mit takar |
 |---:|---|---:|---|
-| 1 | `editpanel` | 61 | A szerkesztő teljes bal oldali panelje minden fülével |
-| 2 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
-| 3 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
+| 1 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
+| 2 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
+| 3 | `editpanel` | 25 | A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet) |
 | 4 | `thumbui` | 25 | A fő könyvtárnézet egésze |
 | 5 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | 6 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
@@ -70,9 +70,9 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `editpanel` | 312 | 125 | 58 | 6 | 16 | 5 | 40 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml` |
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 34 | 0 | 15 | 56 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 26 | 4 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
+| `editpanel` | 312 | 125 | 99 | 1 | 13 | 4 | 8 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 18 | 3 | 8 | 6 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
@@ -148,72 +148,6 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 ## A legnagyobb fehér foltok — a hiányzó elemek panelenként, névvel
 
 Csak az értékelhető elemek. `bizonytalan` = nem dönthető el gépi úton, kézi ellenőrzésre vár.
-
-### `editpanel` — 61 hiány · panel-megfeleltetés: `parositva`
-
-A szerkesztő teljes bal oldali panelje minden fülével
-
-- `aa_2up_toggle` buboréksúgó: „View the same image twice”
-- `ab_2up_toggle` buboréksúgó: „View two different images”
-- `captionbutton` buboréksúgó: „Show/Hide Caption” — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00576a20)
-- `captiontrash` buboréksúgó: „Delete this caption”
-- `editcheckbox1` — *bizonytalan*
-- `editcheckbox2` — *bizonytalan*
-- `editcircle1` — *bizonytalan*
-- `editcircle1_well` — *bizonytalan*
-- `editcontrol_well` — *bizonytalan*
-- `editcontrols` — *bizonytalan*
-- `edithelpbutton` buboréksúgó: „Help”
-- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”)
-- `edittextghost` — *bizonytalan*
-- `edittextpanel` — *bizonytalan*
-- `eraserbutton` — *bizonytalan*
-- `fxpreview10` — *bizonytalan*
-- `fxpreview11` — *bizonytalan*
-- `fxpreview12` — *bizonytalan*
-- `fxpreview2` — *bizonytalan*
-- `fxpreview3` — *bizonytalan*
-- `fxpreview4` — *bizonytalan*
-- `fxpreview5` — *bizonytalan*
-- `fxpreview6` — *bizonytalan*
-- `fxpreview7` — *bizonytalan*
-- `fxpreview8` — *bizonytalan*
-- `fxpreview9` — *bizonytalan*
-- `magic_color` buboréksúgó: „One-click fix for color”
-- `magic_lighting` buboréksúgó: „One-click fix for lighting”
-- `modaldialogblur` — *bizonytalan*
-- `movietab` — *bizonytalan*
-- `movietabpanel` — *bizonytalan*
-- `next` — *bizonytalan*
-- `only_1up_toggle` buboréksúgó: „View only one image”
-- `picnik` „Edit in Creative Kit” (magyarul: „Szerkesztés a Kreatív készletben”) — 🔧 **lekutatva**, csak nem megépítve (picasa-bezaras-es-kilepes.md: 0x0057c4e0)
-- `picnik_fx` buboréksúgó: „Try more effects at Creative Kit”
-- `picnik_fx_label` „Effects by” (magyarul: „Effektusok a következőtől:”)
-- `picnikapply` — *bizonytalan*
-- `prev` — *bizonytalan*
-- `preview` — *bizonytalan*
-- `preview2` — *bizonytalan*
-- `previewimage` — *bizonytalan*
-- `previewimage2` — *bizonytalan*
-- `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `selection_label` „Selected” (magyarul: „Kijelölve”)
-- `selection_label_zoom` „Selected” (magyarul: „Kijelölve”)
-- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo”
-- `slidercircle0` — *bizonytalan*
-- `slidercircle1` — *bizonytalan*
-- `swap_2up_focus` buboréksúgó: „Switch which image has focus”
-- `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout”
-- `tab_bkg` — *bizonytalan*
-- `tabpanel1` — *bizonytalan*
-- `tabpanel2` — *bizonytalan*
-- `tabpanel3` — *bizonytalan*
-- `tabpanel4` — *bizonytalan*
-- `tabpanel5` — *bizonytalan*
-- `tabs` — *bizonytalan*
-- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0065ab50)
-- `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `weblink` buboréksúgó: „Go to the website associated with this Photo”
-- `zoomsliderrect` — *bizonytalan*
 
 ### `makemoviepanel` — 49 hiány · panel-megfeleltetés: `parositva`
 
@@ -303,6 +237,36 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `upgradestorage` „Upgrade storage” (magyarul: „Tárhely bővítése”)
 - `uploadallsync` buboréksúgó: „Change the sync setting for the selected folders and/or albums”
 - `webpublish_cancel`
+
+### `editpanel` — 25 hiány · panel-megfeleltetés: `parositva`
+
+A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet)
+
+- `aa_2up_toggle` buboréksúgó: „View the same image twice”
+- `ab_2up_toggle` buboréksúgó: „View two different images”
+- `edithelpbutton` buboréksúgó: „Help”
+- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”)
+- `edittextghost` — *bizonytalan*
+- `eraserbutton` — *bizonytalan*
+- `modaldialogblur` — *bizonytalan*
+- `movietab` — *bizonytalan*
+- `movietabpanel` — *bizonytalan*
+- `only_1up_toggle` buboréksúgó: „View only one image”
+- `picnik` „Edit in Creative Kit” (magyarul: „Szerkesztés a Kreatív készletben”) — 🔧 **lekutatva**, csak nem megépítve (picasa-bezaras-es-kilepes.md: 0x0057c4e0)
+- `picnik_fx` buboréksúgó: „Try more effects at Creative Kit”
+- `picnik_fx_label` „Effects by” (magyarul: „Effektusok a következőtől:”)
+- `picnikapply` — *bizonytalan*
+- `preview2` — *bizonytalan*
+- `previewimage2` — *bizonytalan*
+- `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
+- `selection_label` „Selected” (magyarul: „Kijelölve”)
+- `selection_label_zoom` „Selected” (magyarul: „Kijelölve”)
+- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo”
+- `swap_2up_focus` buboréksúgó: „Switch which image has focus”
+- `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout”
+- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0065ab50)
+- `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
+- `weblink` buboréksúgó: „Go to the website associated with this Photo”
 
 ### `thumbui` — 25 hiány · panel-megfeleltetés: `parositva`
 
@@ -974,15 +938,6 @@ Ezeknek a feliratoknak van párja a QML-fánkban, csak **nem a panelhez rendelt 
 
 A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is egyezhetnek (a „4 x 6” az eredetiben lappapír-méret, nálunk vágási arány) — a sort a bizonyítékával együtt kell olvasni.
 
-### `editpanel` — 6
-
-- `albumview` — „Back to Library” itt: PicasaPy/PhotoViewer.qml, PicasaPy/ViewerContextMenu.qml
-- `editcollage` — „Edit Collage” itt: PicasaPy/PhotoViewer.qml
-- `in_progress_label` — „In Progress...” itt: PicasaPy/PhotoViewer.qml
-- `render_now` — „Create Now” itt: PicasaPy/PhotoViewer.qml
-- `sbutton` — „Play” itt: PicasaPy/PhotoViewer.qml
-- `showtextlabel` — „Show Text” itt: PicasaPy/PicasaMenuBar.qml
-
 ### `makemoviepanel` — 5
 
 - `addclips` — „Get More...” itt: PicasaPy/CollageClipsTab.qml
@@ -990,6 +945,10 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `show_captions_label` — „Show Captions” itt: PicasaPy/CollageSettingsTab.qml
 - `templatetext` — „Template:” itt: PicasaPy/WebExportDialog.qml
 - `text_color_label` — „Text color” itt: PicasaPy/EditorTextPanel.qml
+
+### `editpanel` — 1
+
+- `showtextlabel` — „Show Text” itt: PicasaPy/PicasaMenuBar.qml
 
 ### `thumbui` — 3
 

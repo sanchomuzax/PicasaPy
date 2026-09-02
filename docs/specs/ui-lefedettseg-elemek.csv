@@ -61,8 +61,6 @@ editpanel/swap_2up_focus,hianyzik,-,"„Switch which image has focus” — semm
 editpanel/swap_2up_layout,hianyzik,-,"„Switch between horizontal and vertical layout” — nincs nálunk; a #434 hatókörébe vonva"
 editpanel/only_1up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:606,"A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya"
 editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,"Az effekt-csempe képe — nálunk STATIKUS SVG (44x30); él-e az eredetiben: #1869 (blokkolt)"
-editpanel/magic_color,hianyzik,-,"A tabpanel2-n ül (editpanel.tre:259), nem az effektrácson — »One-click fix for color«"
-editpanel/magic_lighting,hianyzik,-,"A tabpanel2-n ül (editpanel.tre:265), nem az effektrácson — »One-click fix for lighting«"
 makemoviepanel/recompute,hianyzik,-,"NINCS megvalósítva (a CreateDialogs.qml párbeszéde egyből renderel). De FELTÁRVA: #1408 / picasa-create-features.md 2.5b — 0x0061df10 megerősítő párbeszéd + askapplyconfirm. Kutatni NEM kell, megépíteni igen (#432)."
 makemoviepanel/sizelist,hianyzik,-,"NINCS megvalósítva (nálunk rögzített magasság-lista, CreateDialogs.qml:241). De FELTÁRVA: #1408 — a moviesize listbox építője 0x00613b50, hét méret. Kutatni NEM kell, megépíteni igen (#432)."
 makemoviepanel/add_audio,hianyzik,-,"Hangsáv betöltése — a MovieSettings-ben (slideshow.py:32) nyoma sincs; három opció: CMakeMoviePanel::audiooption0..2"
@@ -85,3 +83,37 @@ printpanel/nextbutton,megvan,PicasaPy/PrintDialog.qml,printPreviewNextButton (:4
 printpanel/pcancelbutton,megvan,PicasaPy/PrintDialog.qml,»Close« (:617) — a párbeszéd bezárása
 printpanel/selectprinterbutton,megvan,PicasaPy/PrintDialog.qml,printerBox ComboBox (:493) — az elérhető nyomtatók listája plusz PDF-cél
 printpanel/printsetuplabel,megvan,PicasaPy/PrintDialog.qml,»Printer:« (:485) — a nyomtatóválasztó felirata
+editpanel/fxpreview2,megvan,PicasaPy/EditorEffectsTab1.qml,thumbSource: panel.effectThumbSource(...) — az effekt-csempék ÉLŐ előnézeti képe (#338); Tab1/2/3 12-12 csempe
+editpanel/fxpreview3,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet (:56-:105)
+editpanel/fxpreview4,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet
+editpanel/fxpreview5,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet
+editpanel/fxpreview6,megvan,PicasaPy/EditorEffectsTab1.qml,ugyanaz a csempe-készlet
+editpanel/fxpreview7,megvan,PicasaPy/EditorEffectsTab2.qml,ugyanaz a csempe-készlet a 2. effekt-fülön
+editpanel/fxpreview8,megvan,PicasaPy/EditorEffectsTab2.qml,ugyanaz a csempe-készlet a 2. effekt-fülön
+editpanel/fxpreview9,megvan,PicasaPy/EditorEffectsTab2.qml,ugyanaz a csempe-készlet a 2. effekt-fülön
+editpanel/fxpreview10,megvan,PicasaPy/EditorEffectsTab3.qml,ugyanaz a csempe-készlet a 3. effekt-fülön
+editpanel/fxpreview11,megvan,PicasaPy/EditorEffectsTab3.qml,ugyanaz a csempe-készlet a 3. effekt-fülön
+editpanel/fxpreview12,megvan,PicasaPy/EditorEffectsTab3.qml,ugyanaz a csempe-készlet a 3. effekt-fülön
+editpanel/magic_lighting,megvan,PicasaPy/EditorFinetunePanel.qml,finetuneLightingWand (:165) buboréksúgó »One-click lighting fix« — HELYESBÍTÉS: a 95c7fb7c hianyzik-nak jelölte; a vezérlő 486e4a4e (2026-08-12) óta megvan
+editpanel/magic_color,megvan,PicasaPy/EditorFinetunePanel.qml,finetuneColorWand (:220) buboréksúgó »One-click color fix« — HELYESBÍTÉS: ugyanaz mint a magic_lighting sorban
+editpanel/editcircle1,megvan,PicasaPy/EditorFinetunePanel.qml,finetuneNeutralSwatch (:199) — a semleges szín mintája
+editpanel/editcircle1_well,megvan,PicasaPy/EditorFinetunePanel.qml,ugyanannak a mintának a foglalata (:199 körül)
+editpanel/editcheckbox1,megvan,PicasaPy/EditorParamPanel.qml,effectParamCheckbox<N> (:289) — a paraméteres effektek logikai vezérlői
+editpanel/editcheckbox2,megvan,PicasaPy/EditorParamPanel.qml,ugyanaz a repeater (:289)
+editpanel/editcontrols,megvan,PicasaPy/EditorParamPanel.qml,effectParamColumn (:171) — a paraméter-vezérlők oszlopa
+editpanel/editcontrol_well,megvan,PicasaPy/EditorParamPanel.qml,editorEffectParamScroll (:98) — a vezérlők foglalata
+editpanel/slidercircle0,megvan,PicasaPy/EditorParamPanel.qml,effectParamColor (:297) — színválasztó a csúszkasoron
+editpanel/slidercircle1,megvan,PicasaPy/EditorParamPanel.qml,ugyanaz a repeater (:297)
+editpanel/tabs,megvan,PicasaPy/EditorTabBar.qml,a fülsáv hét gombja (:51-:135) — tudatos eltérés: hét fül öt helyett
+editpanel/tab_bkg,megvan,PicasaPy/EditorTabBar.qml,a fülsáv háttere
+editpanel/tabpanel1,megvan,PicasaPy/EditorTabCommonFixes.qml,az 1. fül lapja (Gyakori javítások)
+editpanel/tabpanel2,megvan,PicasaPy/EditorFinetunePanel.qml,a 2. fül lapja (Finomhangolás)
+editpanel/tabpanel3,megvan,PicasaPy/EditorEffectsTab1.qml,a 3. fül lapja (effektek)
+editpanel/tabpanel4,megvan,PicasaPy/EditorEffectsTab2.qml,a 4. fül lapja (további effektek)
+editpanel/tabpanel5,megvan,PicasaPy/EditorEffectsTab3.qml,az 5. fül lapja (további effektek)
+editpanel/preview,megvan,PicasaPy/PhotoViewer.qml,viewerPhotoArea (:1075) — a szerkesztett kép területe
+editpanel/previewimage,megvan,PicasaPy/PhotoViewer.qml,a photo Image (:1086) — maga a megjelenített kép
+editpanel/prev,megvan,PicasaPy/PhotoViewer.qml,viewerPrevButton (:641) — előző kép a fejlécben
+editpanel/next,megvan,PicasaPy/PhotoViewer.qml,viewerNextButton (:709) — következő kép a fejlécben
+editpanel/zoomsliderrect,megvan,PicasaPy/PhotoViewer.qml,a nagyítás-csúszka sávja az alsó vezérlősorban (#1420)
+editpanel/edittextpanel,megvan,PicasaPy/EditorTextPanel.qml,a teljes szöveg-eszköz panel (:15-:186) — tartalom · betűtípus · méret · félkövér/dőlt/aláhúzott · három igazítás · kitöltő színek
