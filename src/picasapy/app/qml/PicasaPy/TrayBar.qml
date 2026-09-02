@@ -480,6 +480,54 @@ Column {
                         fillMode: Image.PreserveAspectCrop
                         clip: true
                         asynchronous: true
+
+                        // #1918: a MEGTARTOTT kép jelvénye a bélyegképen.
+                        //
+                        // Az eredetiben a `thumbui/#holdadorner` — az
+                        // adorner-CSALÁD első eleme (a `0x007145c0`-on
+                        // épülő gyorsítótár +0x00 eltolása, `0x00cad36c`),
+                        // ugyanabból a családból, mint a csillag
+                        // (`adorners/star`), a geocímke vagy az arcok
+                        // jelvénye. Mérete a respack-rétegfejléc szerint
+                        // 10×10.
+                        //
+                        // Nálunk a megtartás eddig CSAK SZÁMKÉNT létezett
+                        // (`heldCount`); a képen semmi nem jelezte. A
+                        // rács-cellán már megvolt (#455, `holdMark`) — a
+                        // tálca bélyegképein nem.
+                        //
+                        // ⚠️ A jelvény a MEGLÉVŐ `hold-pin.svg`, nem a
+                        // respackből kicsomagolt PNG: a projekt egyetlen
+                        // kicsomagolt Picasa-képet sem szállít, és a
+                        // rács-cella ugyanezt a rajzot használja — így a
+                        // két hely ugyanazt jelenti ugyanazzal a jellel.
+                        Image {
+                            objectName: "trayHoldMark"
+                            //: #1572-minta: a `!== undefined` a hiányzó
+                            //: TULAJDONSÁGRA véd (a próbák stub-vezérlőjén
+                            //: nincs rajta).
+                            //: ⚠️ A `heldCount` olvasása NEM felesleges: a
+                            //: `heldAtTrayIndex(...)` puszta FÜGGVÉNYHÍVÁS,
+                            //: amire a QML nem tud kötést építeni. A
+                            //: `heldCount` a `heldChanged` jelzésre notifyol,
+                            //: és a „megtartás" épp ezt sütteti el — enélkül
+                            //: a jelvény csak a következő elrendezéskor
+                            //: jelenne meg. (Ugyanaz a minta, mint a
+                            //: `photos.revision` a rácsban.)
+                            visible: (tray.ctl
+                                      && tray.ctl.heldAtTrayIndex !== undefined
+                                      && tray.ctl.heldCount !== undefined
+                                      && trayScratchBack.heldCount > 0)
+                                     ? (tray.ctl.heldCount,
+                                        tray.ctl.heldAtTrayIndex(parent.index))
+                                     : false
+                            source: "icons/hold-pin.svg"
+                            width: 6; height: 10
+                            sourceSize.width: 6; sourceSize.height: 10
+                            anchors.left: parent.left
+                            anchors.bottom: parent.bottom
+                            anchors.margins: 2
+                        }
                     }
                 }
             }
