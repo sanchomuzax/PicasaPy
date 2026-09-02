@@ -1157,6 +1157,114 @@ súly**. A `49152` (`0xC000`) állandó; a `<b>` mező `0` és `258` (`0x102`)
 értéket vett fel. *Bizonyítottsági fok: a színek és a súly megerősített;
 a `128.0`, az `<a>` és a `<b>` mező jelentése **nyitva**.*
 
+### A stílusblokk mezői — a SZÖVEG-ESZKÖZ vezérlőiből azonosítva (2026-09-02)
+
+*A fenti szakasz a `128.0`, az `<a>` és a `<b>` mezőt nyitva hagyta. A
+szerkesztő szöveg-eszközének (`edittextpanel`) kezelői ebből kettőt
+lezárnak. Minden cím a `Picasa3.exe` 3.9-é, image base `0x00400000`.*
+
+#### A formátumsztring maga — mind a tíz mező típusa
+
+```
+v1,%u,%u,%f,%f,%f,%f,%u,%u,%u        (0x00ce42e8)
+```
+
+Író: `0x00a4e3b0` (827 b) · olvasó: `0x00a4dd50` (1628 b), amely a
+sikeres olvasáshoz **kilenc** konverziót vár (`cmp eax, 9`,
+`0x00a4dfb8`). ⇒ **A mezőszám és a típusok megerősítettek**, nem a
+mintából következtetve.
+
+⭐ **Az olvasó két RÉGEBBI alakot is ismer** (ugyanabban a függvényben):
+`%u,%u,%f,%f,%d,%u,%u,%d,%u,%f,%u` és `%u,%u,%f,%d,%u,%u,%d,%u,%f` —
+`v1` előtag nélkül. ⇒ **A `v1` egy formátum-verzió**, és a Picasa a
+korábbi változatokat is beolvassa. (Írni csak `v1`-et ír.)
+
+#### A stílus-objektum mezői — a panel vezérlőiből
+
+A `0x0062d3b0` (539 b) a stílus-objektum konstruktora, a `0x0062e2b0`
+környéke a panel **frissítője**: minden vezérlőt egy mezőből tölt fel.
+Ez adja a megfeleltetést:
+
+| objektum-mező | alapérték | melyik vezérlő | cím |
+|---|---|---|---|
+| `+0x2cc` | **12** | betűméret | `0x0062d463` |
+| `+0x2dc` | **400** | **betűsúly** — a félkövér gomb akkor világít, ha az érték **700** (`cmp …, 0x2bc`) | `0x0062d483`, `0x0062e31a` |
+| `+0x2e0` | **1.0** (`fld1`) | **`textopacityslider/scaleslider`** — az **átlátszatlanság** | `0x0062d44b`, `0x0062e357` |
+| `+0x2e4` | — | **igazítás** (lásd lent) | `0x0062e3ad` → `0x0062f300` |
+| `+0x2e8` | **0.5** (`0x00c7dafc`) | **`outlineweightslider/scaleslider`** — a **körvonal vastagsága**; **0.0**, ha a `+0x2d0` nulla | `0x0062d45d`, `0x0062e374`–`0x0062e389` |
+| `+0x2ec` | `0xFF000000` | szín (fekete) | `0x0062d493` |
+| `+0x2f0` | **0xC000 = 49152** | jelzőszó — a **0. bitje** egy jelölőnégyzetet vezérel (`and eax, 0xffffff01`) | `0x0062d49d`, `0x0062e339` |
+
+**Az igazítás értékkészlete — MÉRVE** (`0x0062f300`):
+
+| érték | melyik gomb kap `pressed=1` | cím |
+|:--:|---|---|
+| **0** | `edittextpanel/leftalign` | `0x0062f344` |
+| **1** | `edittextpanel/centeralign` | `0x0062f325` |
+| **2** | `edittextpanel/rightalign` | `0x0062f312` |
+
+#### ⇒ A stílusblokk két nyitott mezője LEZÁRVA
+
+| pozíció | eddig | **most** |
+|---:|---|---|
+| 5. (`<a>`) | „nyitva" | **a KÖRVONAL VASTAGSÁGA**, 0…1; alapértelmezés **0,5**; **0,0 = nincs körvonal** |
+| 4. vagy 6. (`1.0`) | „nyitva" | az egyik az **ÁTLÁTSZATLANSÁG**, 0…1, alapértelmezés **1,0** |
+
+**Az `<a>` azonosítása megerősített**, három egybevágó bizonyítékkal:
+
+1. a panel körvonal-csúszkája **ebből** a mezőből töltődik (`0x0062e374`);
+2. a konstruktor alapértéke **0,5**, és a korpusz kétblokkos mintájában
+   pontosan `0.500000` áll;
+3. a másik mintán `0.000000` — és ott a `+0x2d0` nulla ága ad 0-t, azaz
+   **nincs körvonal**.
+
+**Az átlátszatlanság POZÍCIÓJA viszont nem dönthető el a korpuszból:** a
+4. és a 6. mező **mindhárom valós blokkban `1.000000`** (az alapérték),
+tehát a két hely megkülönböztethetetlen. ⚠️ Ez **NYITOTT KÉRDÉS** — a
+megszerzés útja lent.
+
+#### A `<b>` (9. mező) — továbbra is nyitva
+
+A korpuszban `0` és `258` (`0x102`). Az `<a>`-val **együtt mozog** (a
+körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
+— de ez **következtetés, nem mérés**, és nem is elég: a 258 két bitet
+állít (`0x2` és `0x100`). *Nem írjuk le tényként.*
+
+#### Nyitott kérdések mérlege (a stílusblokkra)
+
+`0 nyílt · 3 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| hány mező, milyen típussal | **LEZÁRVA** — a formátumsztringből (`0x00ce42e8`) |
+| mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
+| mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
+| **melyik float az átlátszatlanság (4. vagy 6.)** | **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
+| **mi a `<b>` (9. mező)** | **BLOKKOLT** — a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
+
+⚠️ **Amíg ez a kettő nyitva van, a mi írónk NE találgasson:** a
+`text_overlay.py` mai viselkedése (megőrzés + változatlan visszaírás)
+**helyes** a beolvasott sorokra. Az ÚJ sorok írásához viszont most már
+megvan a súly, a körvonalvastagság és az igazítás — ld. a **#1994**-et.
+
+#### A panel négy vezérlője, ami eddig sehol nem szerepelt
+
+| elem | magyar felirat / súgó |
+|---|---|
+| `edittextpanel/usecaption` | **„Képfelirat másolása"** — *„Szöveg hozzáadása a képfelirat alapján"* |
+| `edittextpanel/clearall` | **„Az összes törlése"** — *„Az összes meglévő szöveg eltávolítása"* |
+| `edittextpanel/no_fill` | *„Ne jelenjen meg a kitöltőszín (csak a körvonal)"* |
+| `edittextpanel/no_outline` | — (a körvonal kikapcsolása; a `+0x2d0` nulla ága) |
+
+A vászon üres állapotában a Picasa a **`EditText::GhostText`** feliratot
+mutatja: **„Szöveg elhelyezéséhez kezdjen el gépelni"** (`0x005f5b30`).
+
+*Bizonyítottsági fok: **megerősített** a formátumsztringre és a
+mezőszámra, a régebbi formátum-változatokra, az igazítás
+értékkészletére, a súly 400/700 párosára, a két csúszka
+mező-megfeleltetésére és a négy vezérlő feliratára; **erős** az `<a>`
+azonosítására (három egybevágó bizonyíték).*
+
 ### `textactive=`
 
 Külön kulcs a képszekcióban, 173 előfordulással; a korpuszban **mindenhol

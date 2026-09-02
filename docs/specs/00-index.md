@@ -385,7 +385,28 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — nincs nyitott kérdés
+### [picasa-ini-format.md](picasa-ini-format.md) — 2 BLOKKOLT tétel (a `text=` stílusblokk)
+
+⭐ **2026-09-02 — a `text=` STÍLUSBLOKK két nyitott mezőjéből kettő megvan.**
+A szerkesztő szöveg-eszközének (`edittextpanel`) kezelőiből: a formátum
+maga `v1,%u,%u,%f,%f,%f,%f,%u,%u,%u` (`0x00ce42e8`; az olvasó `cmp eax, 9`),
+és **az olvasó két RÉGEBBI, `v1` nélküli alakot is ismer** ⇒ a `v1`
+formátum-verzió. Az **5. mező (`<a>`) a KÖRVONAL VASTAGSÁGA** (0…1, alap
+**0,5**, **0 = nincs körvonal**), a **8. mező a betűsúly** (400 / **700**
+félkövéren), az **igazítás** értékkészlete **0 = bal · 1 = közép ·
+2 = jobb** (`0x0062f300`). ⛔ **Ebből kiderült egy termékhiba is:** a mi
+írónk **csak a két színt** adja át, tehát nálunk a körvonal mindig eltűnik
+és minden felirat félkövér → **#1994**.
+
+1. **Melyik float az ÁTLÁTSZATLANSÁG — a 4. vagy a 6.?** Mindkettő
+   `1.000000` mind a három valós blokkban (az alapérték), ezért a korpusz
+   nem különbözteti meg őket. **Megszerzés:** egyetlen `.picasa.ini` a
+   tulajdonos windowsos Picasájából, amelyben a felirat **csökkentett
+   átlátszósággal** készült.
+2. **Mi a `<b>` (9. mező)?** A korpuszban `0` és `258` (`0x102`); az
+   `<a>`-val együtt mozog, de ez következtetés. **Megszerzés:** ugyanaz
+   az egy minta, ha benne az **igazítás** és a **dőlt/aláhúzott** is
+   eltér az alapértelmezettől.
 
 ✅ **2026-08-24 — LEZÁRVA.** „Mit tesz a Picasa, ha külső program írja az
 inifájlt?" A kulcs **nem a képfájl, hanem maga a `.picasa.ini`**: a Picasa
