@@ -79,6 +79,33 @@ from .worker_thread import BackgroundWorkerMixin
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError, FilterWriteError)
 
 
+#: A `rotate` kulcs értéke nulla lépésnél. #2004: NEM töröljük, ha a sor
+#: eredetileg ott volt — a Picasa a `rotate(0)`-t tekinti alapértéknek, nem
+#: a hiányzó kulcsot (`0x0068b535`–`0x0068b58c` kulcs→alapérték tábla), és
+#: ki is írja: a tulajdonos gyűjteményében 1 735 ilyen sor van.
+def forgatas_mutacio(document, nev: str, steps: int):
+    """A forgatás ini-mutációja — MEGŐRZŐ szabállyal (#2004).
+
+    | a fájlban volt `rotate=` sor? | 0 lépésnél |
+    |---|---|
+    | igen | marad, `rotate(0)` értékkel |
+    | nem | nem keletkezik |
+
+    ⚠️ Miért nem az a megoldás, hogy MINDIG kiírjuk? Mert akkor olyan
+    fájlokba is bekerülne, amelyekben eredetileg nem volt `rotate=` sor —
+    és az ugyanúgy eltérés. A helyes szabály a megőrzés.
+
+    A régi viselkedés (0-nál mindig törlés) épp a Picasa-eredetű fájlokon
+    rontotta el a round-tripet, tehát ott, ahol a legfontosabb."""
+    if steps != 0:
+        return document.with_value(nev, "rotate", f"rotate({steps})")
+    szakasz = document.section(nev)
+    volt_sor = szakasz is not None and szakasz.get("rotate") is not None
+    if volt_sor:
+        return document.with_value(nev, "rotate", "rotate(0)")
+    return document.with_removed(nev, "rotate")
+
+
 class PhotoOpsMixin(BackgroundWorkerMixin):
     """Csillag, felirat, forgatás és elrejtés — egyesével és kötegelten."""
 
@@ -567,9 +594,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         def mutate(document, photo):
             steps = (photo.rotate_steps + delta) % 4
-            if steps == 0:
-                return document.with_removed(photo.name, "rotate")
-            return document.with_value(photo.name, "rotate", f"rotate({steps})")
+            return forgatas_mutacio(document, photo.name, steps)
 
         self._apply_batch(valid, mutate)
 
@@ -605,8 +630,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._apply_rotate(row, -1)
 
     def _apply_rotate(self, row: int, delta: int) -> None:
-        """Nem-destruktív forgatás: rotate=rotate(n) az ini-be; n=0-nál a
-        kulcs törlődik, így a teljes kör bitre pontos round-trip."""
+        """Nem-destruktív forgatás: `rotate=rotate(n)` az ini-be.
+
+        A nulla lépés szabályát a `forgatas_mutacio` mondja ki (#2004):
+        a `rotate=` sor MEGMARAD, ha eredetileg ott volt. A korábbi
+        indoklás („n=0-nál a kulcs törlődik, így a kör bitre pontos")
+        MEGDŐLT: a Picasa a `rotate(0)`-t tekinti alapértéknek és ki is
+        írja, tehát a törlés épp a Picasa-eredetű fájlokon rontotta el a
+        round-tripet."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return
@@ -619,9 +650,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
 
             def mutate(document):
-                if steps == 0:
-                    return document.with_removed(photo.name, "rotate")
-                return document.with_value(photo.name, "rotate", f"rotate({steps})")
+                return forgatas_mutacio(document, photo.name, steps)
 
             update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}

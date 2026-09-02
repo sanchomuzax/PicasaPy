@@ -236,15 +236,31 @@ class TestToggleStar:
             library / "nyaralas" / ".picasa.ini"
         ).read_text(encoding="utf-8")
 
-    def test_full_circle_removes_key(self, controller, library):
-        # 4x jobbra = alaphelyzet → a kulcs törlődik (tiszta round-trip).
+    def test_full_circle_a_PICASA_alapertekre_all(self, controller, library):
+        """#2004: a teljes kör után `rotate=rotate(0)` marad, NEM üres sor.
+
+        ⚠️ Ez a teszt korábban az ELLENKEZŐJÉT állította („a kulcs
+        törlődik, tiszta round-trip"). A #2004 mérése megdöntötte: a
+        Picasa a `rotate` alapértékének a `rotate(0)`-t tekinti, nem a
+        hiányzó kulcsot (`0x0068b535`–`0x0068b58c`), és ki is írja — a
+        tulajdonos gyűjteményében 1 735 ilyen sor van. A törlés tehát épp
+        a Picasa-eredetű fájlokon rontotta el a round-tripet.
+
+        A megőrző szabály a fájl AKTUÁLIS állapotát nézi: a negyedik
+        forgatáskor a kulcs már ott van (mi írtuk a `rotate(1..3)`
+        lépésekben), ezért megmarad, `rotate(0)` értékkel. Ez tudatos
+        következmény, és a #2004-en jelentve van: az „eredetileg ott
+        volt-e" kérdésre a több lépésen át tartó forgatásnál nincs
+        megőrzött állapotunk, a `rotate(0)` kiírása viszont az, amit a
+        Picasa maga is tenne.
+        """
         ini = library / "nyaralas" / ".picasa.ini"
-        before = ini.read_bytes()
         controller.selectFolder(str(library / "nyaralas"))
         for _ in range(4):
             _do_photo_op(controller, lambda: controller.rotateRight(0))
-        assert "rotate=" not in ini.read_text(encoding="utf-8")
-        assert ini.read_bytes() == before
+        szoveg = ini.read_text(encoding="utf-8")
+        assert "rotate=rotate(0)" in szoveg
+        assert "rotate=rotate(1)" not in szoveg
 
     def test_toggle_twice_restores_ini_bytes(self, controller, library):
         # Round-trip invariáns: fel + le = bitre azonos .picasa.ini.

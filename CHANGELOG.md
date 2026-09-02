@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.225] – 2026-09-02
+
+### Javítva
+- **Forgatásnál nem tűnik el egy sor a `.picasa.ini`-ből (#2004).** Ha egy
+  képet körbeforgattál, eddig kitöröltük a `rotate=` sort a
+  beállításfájlból. A valódi Picasa viszont kiírja (`rotate=rotate(0)`) —
+  a te gyűjteményedben 1735 ilyen sor van —, tehát a törléssel épp azokat
+  a fájlokat módosítottuk, amelyeket a Picasa írt. Mostantól a sor
+  megmarad.
+
 ## [0.8.224] – 2026-09-02
 
 ### Hozzáadva
