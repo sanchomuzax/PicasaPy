@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.218] – 2026-09-02
+
+### Hozzáadva
+- **Kollázs indítható a mappa fejlécéből is (#1006).** Eddig két helyről
+  lehetett kollázst kezdeni; az eredeti Picasában négy van. A mappa
+  fejlécében mostantól ott a gomb, és a **fejléchez tartozó mappa** képeit
+  viszi be — nem a kijelölést. Ugyanez a gomb szolgálja ki a személyek
+  képeinek nézetét is.
+
 ## [0.8.217] – 2026-09-02
 
 ### Javítva

@@ -42,6 +42,10 @@ ColumnLayout {
     //: „Csillagozottak kijelölése" (`select_star`) — ugyanaz a parancs,
     //: mint a menüsávban; itt is a jelenlegi mappára hat (#1145).
     signal selectStarredRequested()
+    //: #1006: kollázs a fejléc csoportjából. Az eredetiben NÉGY belépési
+    //: pont van; nálunk kettő működött (Létrehozás menü, kimeneti sáv), a
+    //: két fejléc-gomb hiányzott.
+    signal collageRequested()
 
     //: A számos/szám nélküli alak választása egy helyen, hogy minden
     //: fejléc-gomb ugyanúgy viselkedjen.
@@ -190,6 +194,36 @@ ColumnLayout {
             ToolTip.visible: hovered
             ToolTip.delay: 500
             onClicked: header.saveEditsRequested()
+        }
+        // #1006: `headerpanel/create_collage` — MÉRT 29 × 27
+        // (`picasa-create-features.md` 1.10.5).
+        //
+        // ⚠️ Az eredetiben KÉT panel van: a mappa-fejléc
+        // (`headerpanel`) és az ARC-fejléc (`faceheaderpanel`), mindkettőn
+        // ugyanez a gomb. A mi felületünkön a személy képei UGYANEBBEN a
+        // rácsban, ugyanezzel a fejléccel jelennek meg — nincs külön
+        // arc-fejléc. Ez az egy gomb tehát mindkét belépési pontot
+        // lefedi; külön arc-fejlécet építeni olyan felületet hozna létre,
+        // ami nálunk nem létezik.
+        PicasaButton {
+            objectName: "headerCollageButton"
+            width: 29; height: 27
+            Layout.preferredWidth: 29
+            Layout.preferredHeight: 27
+            ToolTip.text: qsTr("Create a collage from these photos")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            onClicked: header.collageRequested()
+            contentItem: Item {
+                Image {
+                    objectName: "headerCollageIcon"
+                    source: "icons/collage-check.svg"
+                    width: 16; height: 16
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                    anchors.centerIn: parent
+                }
+            }
         }
         PicasaButton {
             objectName: "headerUploadButton"

@@ -203,6 +203,21 @@ ApplicationWindow {
     /** A Kollázs LAP megnyitása — a Létrehozás menü és a tálca gombja is ide
         fut be (spec 3.2). Ha már nyitva van, csak visszaváltunk rá: a
         felhasználó munkáját újranyitással eldobni némán adatvesztés volna. */
+    /** #1006: kollázs a MEGADOTT sorokból — a fejléc-gomb belépője.
+
+        A `openCollageTab()` a tálcát vagy a kijelölést veszi
+        (`collageSourceRows`); a fejléc viszont a SAJÁT csoportjához
+        tartozik, tehát a sorokat ő adja meg. A többi lépés — a néző
+        elhagyása, a lap aktiválása — ugyanaz, ezért egy helyen él. */
+    function openCollageFromRows(rows) {
+        if (!controller) return
+        window.backToCollagePrompted = false
+        window.viewerOpen = false
+        if (!controller.collageOpen)
+            controller.openCollage(rows)
+        documentTabStrip.activateTab(window.collageTabId)
+    }
+
     function openCollageTab() {
         if (!controller) return
         window.backToCollagePrompted = false

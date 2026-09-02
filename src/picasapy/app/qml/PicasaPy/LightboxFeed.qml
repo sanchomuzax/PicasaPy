@@ -568,6 +568,18 @@ ListView {
                 if (grid.appWindow && grid.appWindow.selectStarred)
                     grid.appWindow.selectStarred()
             }
+            //: #1006: a fejléc a SAJÁT csoportjának képeiből nyit
+            //: kollázst — nem a kijelölésből és nem a tálcából. Az
+            //: eredeti is a panelhez tartozó halmazzal dolgozik.
+            onCollageRequested: {
+                if (!grid.appWindow || !grid.appWindow.openCollageFromRows)
+                    return
+                var sorok = []
+                var kezdet = groupCol.modelData.start
+                for (var i = 0; i < groupCol.modelData.count; ++i)
+                    sorok.push(kezdet + i)
+                grid.appWindow.openCollageFromRows(sorok)
+            }
             onSaveEditsRequested: {
                 if (grid.appWindow && grid.appWindow.saveSelectedEdits)
                     grid.appWindow.saveSelectedEdits()
