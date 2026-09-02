@@ -896,10 +896,16 @@ Column {
                             readonly property bool jobbSzelso:
                                 index === trayMetadataGroup.kapcsolok.length - 1
                             //: #718-minta: a főablak átmenetileg null lehet
-                            //: az engine leépítésekor
-                            readonly property bool aktiv:
-                                tray.appWindow
-                                && tray.appWindow.activeDrawerTab === modelData.nev
+                            //: az engine leépítésekor.
+                            //:
+                            //: ⚠️ TERNÁRIUS, nem `&&`: a JS `&&` a HAMIS
+                            //: OPERANDUST adja vissza (itt `null`-t), nem
+                            //: bool-t, és a Qt ilyenkor „Unable to assign
+                            //: [undefined] to bool" hibát ír. A #1260-as
+                            //: fixture-őr ezt a CI-n el is kapta.
+                            readonly property bool aktiv: tray.appWindow
+                                ? tray.appWindow.activeDrawerTab === modelData.nev
+                                : false
                             accent: aktiv ? Theme.selectionBlue : "transparent"
                             ToolTip.text: modelData.sugo
                             ToolTip.visible: hovered

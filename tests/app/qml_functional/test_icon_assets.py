@@ -73,6 +73,14 @@ _EXPECTED_ICONS = (
     # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
     # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
     "tray-addto.svg",
+    # #1927: az alsó sáv négy panelkapcsolója (`thumbui/metadata_group`).
+    # A MÉRET az eredetiből mért (`people_icon` 19×17, `places_icon` 14×19,
+    # `tags_icon` 19×15, `properties_icon` 17×18), a RAJZ a sajátunk — a
+    # projekt egyetlen kicsomagolt Picasa-képet sem szállít.
+    "panel-emberek.svg",
+    "panel-helyek.svg",
+    "panel-cimkek.svg",
+    "panel-tulajdonsagok.svg",
 )
 
 # a szerkesztő "Gyakori javítások" fülének ikonjai (#411, + #464: a
@@ -167,6 +175,13 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     "collage-dropdown-arrow.svg",
     # #949: a vissza-nyíl mérete is a `.tre`-ből jön (17 × 15, spec 11.)
     "collage-back.svg",
+    # #1927: a négy panelkapcsoló ikonjának méretarányát a `respack.yt`
+    # rétegfejlécei adják meg (19×17 · 14×19 · 19×15 · 17×18) — ezek MÉRT
+    # arányok, nem a 3:2/négyzetes eszköz-ikon szabály alá tartoznak.
+    "panel-emberek.svg",
+    "panel-helyek.svg",
+    "panel-cimkek.svg",
+    "panel-tulajdonsagok.svg",
 })
 
 
