@@ -5,8 +5,28 @@
 > **189 tétel 18 névtérben**) itt van:
 > **[picasa-menu-leltar.md](picasa-menu-leltar.md)**. Amit ez a lap nem
 > látott: a platform-változatok (Win/Mac) és az **`eMenuCreateMovie`
-> almenü** (Létrehozás → Film, 3 tétel). Lefedettségünk a gépi leltár
-> szerint **150/189 (79%)**. Jegy: **#1397**.
+> almenü** (Létrehozás → Film, 3 tétel). Jegy: **#1397**.
+>
+> **Lefedettség — ÚJRAMÉRVE 2026-09-02-án (`eb4e75d1`): 165/189 (87%).**
+> A 2026-08-25-i 150/189 (79%) azóta elavult: a `eMenuView` névtér
+> (46 tétel) időközben **teljes** lett. A mérés a menütételek angol ÉS
+> magyar feliratát keresi a QML-fában és a `picasapy_hu.ts`-ben,
+> ékezet- és `&`-jelölés-függetlenül.
+>
+> A hiányzó 24-ből **hat platform-változat** (Mac/Win: Finder,
+> „Információ lekérése", „A Mac rendszerben", TiVo ×2, iPhoto-import),
+> és további **kilenc megszűnt szolgáltatáshoz** kötődik (Picasa
+> Webalbumok, FTP-közzététel, YouTube, közös szerkesztésű albumok,
+> Google Earth, telepítő-eltávolítás). Az **érdemi** hiányra mind van
+> nyitott jegy: **#1398** (másodpéldány-kereső) · **#1399** (szín
+> szerinti keresés) · **#1401** (Útlevélkép) · **#1402** (adatbázis
+> áthelyezése) · **#1403** (arcok XMP-be) · **#1404** (geocímke-törlés) ·
+> **#1405** (keresés mentése) · **#1406** (címke albumként) ·
+> **#1408** (arc-film).
+>
+> ⚠️ A mérés **felirat-egyezésen** alapul, tehát egy átfogalmazott
+> menüpontot „hiányzónak" jelölhet — minden tétel külön ellenőrzendő
+> megvalósítás előtt.
 
 > 🔑 **A „gyorsbillentyű" oszlop teljes, parancsazonosítós és bináris
 > címmel ellátott változata külön lapon van:**
