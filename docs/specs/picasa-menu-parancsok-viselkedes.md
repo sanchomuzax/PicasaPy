@@ -2793,6 +2793,12 @@ ismétlődése — most már szabályként fogtuk meg.)*
 
 ### 50.2 ⭐ A mentés-KÉSZLET első osztályú fogalom
 
+> ⭐ **2026-09-02 — a MŰKÖDÉS oldala külön lapon:**
+> [`biztonsagi-mentes.md`](biztonsagi-mentes.md). Ez a szakasz a *fogalmat*
+> és a *felületet* adja; hogy mit ír a lemezre (`backups.xml` négy mezővel,
+> három tartalom-mód, `files.txt` a célmappában, honosított mappanév,
+> lemezhely-ellenőrzés), az ott áll.
+
 A 35.6 pont a `backup.xml`-t és a `backuphash` ini-kulcsot rögzítette. A
 panel ennél többet mond: a mentés **nevesített készletekbe** szerveződik,
 teljes életciklussal.
