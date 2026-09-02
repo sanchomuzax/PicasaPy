@@ -59,6 +59,15 @@ class TestKiadasraErdemes:
             "README.md",
             ".claude/settings.json",
             "research/testdata/jegyzet.txt",
+            # #1938: a `tools/` a golden-kit generátorok és mérőszkriptek
+            # helye. A wheel CSAK a `src/` alól csomagol
+            # (`[tool.setuptools.packages.find] where = ["src"]`), tehát
+            # ezek ugyanúgy nem jutnak el a felhasználóhoz, mint a
+            # `scripts/`. A lista mégis kihagyta őket, ezért a
+            # CHANGELOG-őr egy kutatói eszköz bővítésére felhasználói
+            # mondatot követelt — olyat, ami a naplóban hazugság lenne.
+            "tools/golden/make_param_sweep.py",
+            "tools/benchmarks/bench_image_libs.py",
         ],
     )
     def test_belso_karbantartas_nem_kiadhato(self, fajl: str) -> None:
