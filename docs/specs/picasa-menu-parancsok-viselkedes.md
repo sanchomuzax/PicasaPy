@@ -3978,6 +3978,28 @@ A `0x00591dd0` (927 b) a videóból mentett képkocka (`capture_frame`,
 ⇒ **Két külön funkció (webkamera + videó-képkocka) osztozik egy
 mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
 
+**A képkocka-fájl NEVE is megvan** (`0x00591fa6`–`0x0059203c`):
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| 1 | a honosított mappanév hozzáfűzése | `0x00591fae` (`0x009a38a0`) |
+| 2 | `Exists`; ha nincs → létrehozás **és** `.picasa.ini` (`0x00445a30`) | `0x00591fc5`, `0x00591fd5`, `0x00591ff0` |
+| 3 | az **alapnév** hozzáfűzése — a `[obj+0x68]` mezőből | `0x0059200a` (`0x009a37b0`) |
+| 4 | a kiterjesztés: **`.jpg`** (`0x00c80a50`) | `0x0059200f` (`0x009a3620`) |
+| 5 | **ugyanaz a `%s-%03lu` egyediesítő**, mint a pillanatképnél | `0x0059203c` (`0x00993650`) |
+
+⇒ A képkocka **JPEG**, ugyanabban a mappában, **ugyanazzal a kötőjeles
+háromjegyű sorszámozással**. A mappa `.picasa.ini`-je itt is **csak
+létrehozáskor** íródik.
+
+⚠️ **Ami nyitva marad:** hogy a `[obj+0x68]` alapnév pontosan mit
+tartalmaz (a forrásvideó neve? időbélyeg?) — a mezőt a hívó tölti, és a
+függvényben nincs rá literál. **Megszerzés:** a `0x00591dd0` hívójának
+dekompilációja (az index `xrefs` táblája nem tartalmazza — a hívás
+közvetett). **A megvalósítást nem blokkolja:** a mappa, a kiterjesztés és
+a sorszámozás megvan.
+
+
 #### A panel állapotszövegei — a hivatalos magyar fordítással
 
 | kulcs | **magyar** |
@@ -4035,7 +4057,7 @@ közös mappája, a kilenc állapotszöveg.
 
 #### Nyitott kérdések mérlege (58.5–58.6)
 
-`0 nyílt · 5 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 6 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -4044,6 +4066,8 @@ közös mappája, a kilenc állapotszöveg.
 | mi az állókép fájlneve | **LEZÁRVA** — `snapshot.jpg` |
 | hogyan sorszámoz ütközésnél | **LEZÁRVA** — `%s-%03lu`, kötőjeles háromjegyű, max. 4096 |
 | hova megy a videóból mentett képkocka | **LEZÁRVA** — **ugyanabba** a mappába |
+| mi a képkocka kiterjesztése és sorszámozása | **LEZÁRVA** — `.jpg` + ugyanaz a `%s-%03lu` |
+| **mit tartalmaz a képkocka ALAPNEVE (`[obj+0x68]`)** | **BLOKKOLT** — a mezőt a hívó tölti, literál nincs rá; az index `xrefs`-e a közvetett hívást nem tartalmazza. **Megszerzés:** a `0x00591dd0` hívójának dekompilációja. A megvalósítást nem blokkolja. |
 | **a videoklip fájlneve és formátuma** | **HATÓKÖRÖN KÍVÜL** — a rögzítés DirectShow-eszközlánccal megy (`CTranscodeCaptureLoad`, `0x00626030`), ami Windows-specifikus; a **#853 döntése szerint** a webkamera-felvétel szándékosan kimarad. A célmappa és a képkocka-ág viszont ÉLŐ (a `capture_frame` a #452-höz tartozik). |
 
 ## 59. tétel — a keresősáv HÁROM hiányzó szűrője (2026-09-01)
