@@ -1968,7 +1968,82 @@ tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
 | mik az alapértékek | **LEZÁRVA** — 39.5, `.tre`-vel keresztmérve |
 | mi a különbség OK / Alkalmaz / Mégse közt | **LEZÁRVA** — 39.3 |
 | van-e felirata a `usefilename`-nek | **LEZÁRVA (helyesbítés)** — van, „Fájlnév" (39.4) |
-| **honnan jön a betűméret-lista tartalma** | **BLOKKOLT** — a `[panel+0x2b4]` tömböt a `0x0085d3c0` konstruktor nullázza, a `0x0085df30` olvassa; a feltöltés helye a mérésből nem derül ki. **Megszerzés:** a `0x0085df30` (2165 b) célzott dekompilációja, vagy a futó Picasa listájának leolvasása. **A megvalósítást nem blokkolja:** a `textsize` alapértéke (12) és a tárolás módja megvan. |
+| **honnan jön a betűméret-lista tartalma** | **BLOKKOLT** — a `[panel+0x2b4]` tömböt a `0x0085d3c0` konstruktor nullázza, a `0x0085df30` olvassa; a feltöltés helye a mérésből nem derül ki. **Megszerzés:** a `0x0085df30` (2165 b) célzott dekompilációja, vagy a futó Picasa listájának leolvasása. **A megvalósítást nem blokkolja:** a `textsize` alapértéke (12) és a tárolás módja megvan. **Szűkítve (39.8/c, 2026-09-03):** a `.tre` és az `i18n\printoptionstext.xml` sem hordoz tételeket ⇒ a lista **futásidőben** töltődik. |
+
+### 39.8 A FELIRAT-RÉTEG és a szegélycsúszka — az i18n XML-ből (2026-09-03)
+
+> **Bizonyítottság: megerősített** — `.tre` fájl + sor, illetve a
+> `referencia/i18n-hu/printoptionstext.xml` (4202 bájt, 27 bejegyzés).
+
+#### (a) A panel feliratai KÜLÖN FÁJLBÓL jönnek — és a fájl megvan
+
+A panelépítő (`0x0085d550`) az **`i18n\printoptionstext.xml`**-t olvassa. Ez
+a fájl **kicsomagolva ott van a kutatási anyagban**:
+`referencia/i18n-hu/printoptionstext.xml`. Huszonhét bejegyzés: 24 felirat és
+**3 buboréksúgó**.
+
+**Három felirat, amit a lefedettségi lista nem nevezett meg:**
+
+| elem | hivatalos magyar |
+|---|---|
+| `printoptions/border_size_label` | **„Szegély szélessége"** |
+| `printoptions/border_none_label` | **„Egyik sem"** |
+| `printoptions/border_max_label` | **„Maximális"** |
+| `printoptions/caption_color_label` | **„Szöveg színe"** |
+
+#### (b) ⭐ A szegélyvastagság CSÚSZKA, nem számmező
+
+A `border_none_label` / `border_max_label` páros végpont-felirat — és a `.tre`
+meg is erősíti:
+
+```
+printoptions.tre:34   printborderslider/thumb: printborderslider/scaleslider
+printoptions.tre:36   printborderslider/scaleslider: root
+printoptions.tre:38   Property slider 2
+printoptions.tre:39   printoptions/printborderslider_container: printoptions/all_border_options
+```
+
+⇒ **`printoptions::bordersize` egy csúszka értéke** („Egyik sem" … „Maximális"),
+nem beírt szám. A 39.5 az alapértékét (**10**) már kimérte; a vezérlő TÍPUSA
+eddig nem volt kimondva. A csúszkának **saját névtere** van
+(`printborderslider/*`), a `root` alatt — nem a panel gyereke.
+
+#### (c) A két legördülő RUNTIME töltődik — a nyitott kérdés szűkítve
+
+```
+printoptions.tre:183  printoptions/fontfamily: printoptions/all_options
+printoptions.tre:184  Property itempadding 2 2 10 2
+printoptions.tre:185  Property maxrows 7
+printoptions.tre:188  printoptions/sizelist: printoptions/all_options
+printoptions.tre:190  Property maxrows 7
+```
+
+Mindkettő **legfeljebb 7 sort** mutat, és **egyik sem hordoz tételeket**: sem a
+`.tre`-ben, sem a `printoptionstext.xml`-ben nincs egyetlen betűméret vagy
+betűtípusnév sem. ⇒ a 39.7 blokkolt kérdése („honnan jön a betűméret-lista")
+**két további forrásra nézve is negatív**: nem a felületleíróból és nem az
+i18n-fájlból. Marad a `0x0085df30` célzott dekompilációja.
+
+#### (d) ⚠️ HIBÁS HIVATALOS SZÖVEG — ne vegyük át
+
+| elem | a hivatalos magyar buboréksúgó |
+|---|---|
+| `printoptions/apply` | „A kijelölt beállítások alkalmazása **a Google Fotókra**" |
+| `printoptions/ok` | „A kijelölt beállítások alkalmazása **a Google Fotókra**, és a párbeszédpanel bezárása" |
+
+Egy **nyomtatási** párbeszédben ez értelmetlen. A mondat a
+`panel-feliratok-hu.tsv`-ben **csak ezen a két helyen** szerepel, tehát nem
+másik panelről átvett fordítómemória-találat.
+
+⚠️ **Amit NEM tudunk:** hogy a hiba a fordításban van-e, vagy az angol eredeti
+is ezt írja. **Angol i18n-csomag nincs a kutatási anyagban** (a
+`research/copy_Picasa_3_7/Picasa3/i18n/` csak `uninstall_*.html`-eket
+tartalmaz) ⇒ **NINCS MEG**. A megszerzés útja: az angol `printoptionstext.xml`
+kibontása a `Picasa3i18n.dll`-ből.
+
+**A gyakorlati következmény független ettől:** a szolgáltatás megszűnt, tehát
+**ezt a két buboréksúgót nem vesszük át** — nálunk a nyomtatásra kell
+vonatkozniuk. A többi 25 bejegyzés változatlanul átvehető.
 
 ## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
 
