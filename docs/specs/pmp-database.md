@@ -1741,14 +1741,224 @@ Melléklelet: a tár **rés-száma** a `+0x2490` mezőben áll, `>>1`
 kódolással — ugyanaz az „elemszám kétszerese" idióma, mint a
 `CSelectionNode`-nál.
 
-#### 6.4 Ami TOVÁBBRA IS NYITOTT — de már egyetlen függvényben
+#### 6.4 A válogatás — MEGVÁLASZOLVA (2026-09-02)
 
-**Melyik fotókból áll a kupac, és milyen sorrendben?** A válasz a
-**`0x00423500`** (632 b) törzsében van. A függvény eleje (`0x00423500`–
-`0x004235f5`) újrabelépés-védelem és kritikus szakasz (`GetCurrentThreadId`
-`0xc40284`, be/kilépés `0xc4055c` / `0xc402a8`), a tényleges válogatás
-ez után kezdődik. A `0x004235ad` a szokásos `[ecx+4] >> 1` elemszámot
-olvassa ki — tehát az album elemtömbjén dolgozik.
+A korábbi kiadás itt még nyitott kérdést jelölt („melyik fotókból áll a
+kupac, és milyen sorrendben?"). **A `0x00423500` és a belőle hívott
+`0x00423780` végigolvasva megválaszolta.** A teljes algoritmus a **7.
+szakaszban** áll; röviden:
 
-**Ez a kör eddig jutott.** A következő lépés a `0x00423500` második felének
-végigolvasása. Jegy: **#2049**.
+- a `0x00423500` a **saját elemlistát** kéri le az albumtól
+  (`[[this+0x48]] +0x2c` virtuális hívás, `0x00423521`–`0x00423538`), majd
+  ezt a listát adja át a **`0x00423780`** összeállítónak (`0x004236ef`);
+- a `0x00423780` a lista **első legfeljebb NÉGY** elemét használja;
+- a kupac hátulról előre rajzolódik, tehát a lista **első** eleme kerül
+  legfelülre.
+
+Ami eredményül visszajön, azt a `0x004236fa`–`0x00423715` írja be a
+gyorstárba: bélyeget számol (`0x6c9d60`), és a `+0x2428` tárba menti
+(`0x4115c0`).
+
+---
+
+## 7. A BORÍTÓ ÖSSZEÁLLÍTÁSA — a fotó-kupac teljes algoritmusa (2026-09-02)
+
+> **Bizonyítottság: megerősített.** Minden szám a `Picasa3.exe`
+> diszasszemblátumából van kiolvasva (cím + konstanscím), a lágy árnyék
+> létét és lefutását pedig **élő adaton** mértük (37 valódi borító a
+> `research/testdata/Picasa2-arcok/Picasa2/db3/albums_0.db`-ből).
+> Az összeállító: **`0x00423780`**, 2167 bájt.
+
+### 7.1 Bemenet és a fotók KIVÁLASZTÁSA
+
+A `0x00423500` az albumtól lekéri az elemlistát, és azt adja át
+paraméterként. A lista a szokásos „tömb + elemszám kétszerese" idióma:
+
+| mező | jelentés | cím |
+|---|---|---|
+| `[lista+0]` | mutató az elemtömbre | `0x0042385a` |
+| `[lista+4] >> 1` | elemszám (`N`) | `0x00423784`, `0x0042378d` |
+
+```asm
+0x00423784  mov eax, [eax+4]
+0x0042378d  shr eax, 1            ; N
+0x00423793  jne 0x4237a7          ; N == 0  ->  4-es hibakóddal kilép
+0x004237ab  cmp eax, 4
+0x004237be  ja  0x4237c4          ; N > 4   ->  marad a 4
+0x004237c0  mov [esp+0x1c], eax   ; különben N
+```
+
+⇒ **A kupacba a lista első `min(N, 4)` eleme kerül** — nem véletlen
+válogatás, nem a legrégebbi, nem a legújabb: a lista **eleje**, a
+`[tömb + i*4]` indexeléssel (`0x0042385c`), `i = 0 … min(N,4)-1`.
+
+> ⛔ **Ezzel a „a legrégebbi képből csinál mini ikont" feltevés MEGDŐLT.**
+> A kiválasztás sorrend-alapú, nem dátum-alapú. Hogy az albumtól visszakapott
+> lista maga milyen rendezésben áll, azt a `[[album+0x48]] +0x2c` virtuális
+> metódus dönti el — az a mappanézet saját rendezése.
+
+### 7.2 A rajzolási SORREND — az első fotó kerül felülre
+
+A rajzoló ciklus **visszafelé** megy:
+
+```asm
+0x00423a71  add ebx, -1           ; ebx = N-1 -tól indul
+0x00423f45  sub ebx, 1
+0x00423f4b  cmp ebx, edi          ; edi = 0
+0x00423f4d  jge 0x423aae          ; ... 0-ig
+```
+
+⇒ az `N-1` indexű fotó rajzolódik **először** (a kupac alja), a `0`
+indexű **utoljára** (a kupac teteje).
+
+### 7.3 A szórás DETERMINISZTIKUS — albumonként ugyanaz
+
+A vetemítés véletlenszerűnek látszik, de **nem az**: a magot az album
+tárolóbeli **rés-indexe** adja.
+
+```asm
+0x00423a24  mov eax, [esp+0x144]  ; a 0x00423500 2. paramétere = a rés indexe
+0x00423a2b  xor eax, 0x133475
+0x00423a6c  call 0xc08214         ; srand(mag)
+```
+
+A `0x00c08214` = **`srand`** (a magot a `[CRT+0x14]` mezőbe írja), a
+`0x00c08221` = **`rand`** — a klasszikus MSVCRT-generátor, kódból
+kiolvasva:
+
+```asm
+0x00c08229  imul ecx, ecx, 0x343fd
+0x00c0822f  add  ecx, 0x269ec3
+0x00c0823a  shr  eax, 0x10
+0x00c0823d  and  eax, 0x7fff
+```
+
+⇒ `seed = seed*0x343FD + 0x269EC3`, a visszaadott érték
+`(seed >> 16) & 0x7FFF`.
+
+**A `rand()` kimenetéből `[1,2)` intervallumú lebegőpontos szám lesz** — a
+klasszikus kitevő-trükkel, három helyen azonos alakban
+(`0x00423bb0`, `0x00423c56`, `0x00423c67`):
+
+```asm
+call rand                 ; 0 … 0x7FFF
+add  eax, 0x3f8000
+shl  eax, 8               ; 0x3F800000 … 0x3FFFFF00  ->  float32: 1.0 … 1.99998
+```
+
+**A függvény KÉTSZER járja végig a fotókat**, és a `srand`-ot mindkét
+menet elején ugyanazzal a maggal hívja meg (`0x00423a6c`), tehát a két
+menet **azonos elrendezést** számol:
+
+| menet | `[esp+0x1c]` | mit csinál |
+|---|---|---|
+| 0. | 0 | végigméri a befoglaló téglalapot (min/max: `[esp+0x28…0x34]`) |
+| 1. | 1 | ténylegesen rajzol a kiszámolt vászonra |
+
+A menetszámláló a `0x00423fb7`–`0x00423fc5`-ön nő (`cmp eax, 2`), a vászon
+a 0. menet végén jön létre a befoglaló méretével:
+
+```asm
+0x00423f70  sub edx, esi          ; szélesség = maxX - minX
+0x00423f72  sub ecx, edi          ; magasság  = maxY - minY
+0x00423f75  call 0x9a9c90         ; vászon létrehozása
+```
+
+⇒ **a borító mérete nem rögzített** — a kupac befoglaló téglalapja.
+(Élő adat: 37 valódi borító, leghosszabb oldal **72–119 képpont**.)
+
+### 7.4 Fotónkénti geometria — a pontos képletek
+
+Jelölés: `i` = a fotó indexe (`0` = legfelső), `w`, `h` = a bélyegkép
+mérete, `r₁, r₂, r₃` = a három `rand()`-ból képzett `[1,2)` szám.
+
+| mennyiség | képlet | hol | konstans |
+|---|---|---|---|
+| középpont | a fotó a `(72, 72)` pontra kerül: eltolás `72 − w/2`, `72 − h/2` | `0x00423b00`–`0x00423b1d` | `72.0` = `0xcf3f90`, `0.5` = `0xc72150` |
+| **forgatás** | `α = 0.2 · (r₁ − 1.5)` ⇒ **`α ∈ [−0.1, +0.1) radián = ±5,7296°`** | `0x00423bc5`, `0x00423bd3`, `0x00423bd9` | `1.0` = `0xc7e328`, `0.5` = `0xc72150`, `0.2` = `0xcf4748` |
+| **x-eltolás** | `uₓ = 2(r₂ − 1) − 1 ∈ [−1, 1)`, majd `tₓ = 4 · i · uₓ` | `0x00423c98`–`0x00423cd8` | `2.0` = `0xc7d9d0` |
+| **y-eltolás** | `t_y = −i · (4·r₃ + 1)`, `r₃ ∈ [1,2)` ⇒ **`t_y ∈ (−9i, −5i]`** | `0x00423cfc`–`0x00423d36` | `−2.0` = `0xcf3b80` |
+
+Következmények, amelyek a képen is látszanak:
+
+1. **A legfelső fotó (`i = 0`) eltolás nélkül, pontosan középen áll** —
+   `4·0·uₓ = 0` és `−0·(…) = 0`.
+2. Minden további fotó **indexarányosan** csúszik: oldalra legfeljebb
+   `±4i` képpont, függőlegesen `5i…9i` képpont **egy irányba** (a
+   képlet előjele nem vált) — ezért látszik „lefelé kifutó" kupacnak.
+3. **A legalsó fotó (`i = N−1`) NEM kap forgatást.** A forgatás-ág át van
+   ugorva rá:
+
+   ```asm
+   0x00423ba6  cmp [esp+0x70], ecx   ; (i+1) : N
+   0x00423baa  jge 0x423c56          ; i == N-1  ->  a forgatás KIMARAD
+   ```
+
+   ⚠️ Ez a `rand()`-sorozatot is eltolja: a legalsó fotóra **két**
+   hívás jut, a többire **három**. Bitre pontos újraalkotáskor ez
+   számít.
+
+A forgatásmátrix `[cos, −sin, tₓ; sin, cos, t_y; 0, 0, 1]` alakban áll
+össze (`0x00423c18`–`0x00423c4d`); a `0x00c29d20` = **`cos`**, a
+`0x00c285f0` = **`sin`** (mindkettő a CRT SSE2-elágazó burkolója). Az
+egyes részmátrixokat a `0x009e6340` fűzi az addigi transzformációhoz.
+
+> A `72`-es középpont a **munkavászon** origója, nem a kimeneti méret: a
+> vászon utólag a befoglaló téglalapra szűkül (7.3), és egy MINDEN fotóra
+> azonos eltolás a `max − min` különbségből kiesik. **Bizonyítottság:
+> erős** (levezetés, nem külön mérés).
+
+### 7.5 A lágy árnyék — kódból ÉS mérésből
+
+Minden bélyegkép a `0x009a97a0` rajzolón megy át, két lebegőpontos
+paraméterrel (`0x00423898`–`0x004238bf`):
+
+```asm
+fld dword [0xc7e304]   ; 0.6f
+fld dword [0xcf3a58]   ; 5.0f
+call 0x9a97a0          ; (kép, 5.0f, 0.6f, 1, 1)
+```
+
+A `0x009a97a0` ezeket a `0x00a6e2f0`-nak adja tovább, ami **elárulja a
+jelentésüket**:
+
+```asm
+0x00a6e2f5  fld   dword [esp+0x18]    ; 0.6
+0x00a6e2f9  fmul  qword [0xcf39d0]    ; * 255.0
+0x00a6e326  fistp qword [esp+4]
+0x00a6e32e  mov   [ecx+4], eax        ; = 153  -> ÁTLÁTSZATLANSÁG (alfa)
+0x00a6e337  fld   dword [esp+0x10]    ; 5.0
+0x00a6e33b  fstp  dword [ecx+0xc]     ; -> SUGÁR (float, képpont)
+```
+
+| paraméter | érték | jelentés | bizonyíték |
+|---|---|---|---|
+| `0xc7e304` | `0.6f` | árnyék-átlátszatlanság ⇒ **alfa = 153** | `0.6 × 255.0` (`0xcf39d0`) egészre kerekítve, `0x00a6e32e` |
+| `0xcf3a58` | `5.0f` | árnyék-**sugár képpontban** | `0x00a6e33b`, és lásd a mérést alább |
+
+**Mérés élő adaton** (37 borító, 288 091 képpont):
+
+- a képpontok **32,2%-a részlegesen átlátszó** (`0 < α < 255`) — ez
+  élsimítással nem magyarázható, csak lágy árnyékkal;
+- ezek **59%-a feketés** (`max(R,G,B) ≤ 16`) = maga az árnyék, a maradék
+  a fotók elsimított, elforgatott éle;
+- az alfa-lefutás **egy-egy fotó szélénél kb. 5 képpont széles** —
+  például a 3. rés `y=59` sorában balról:
+  `0 0 0 1 5 14 35 64 | 210 254 …`, a 7. rés `y=53` sorában
+  `0 0 0 0 0 5 22 50 89 | 185 255 …`.
+  **Ez független megerősítése az `5.0`-nak.**
+
+⚠️ **Amit NEM tudtunk megmérni:** az árnyék *csúcs*-alfáját (153),
+mert a látható árnyék mindig csak a lefutó pereme — a belseje a fotó alatt
+van. Az 153 tehát **kódból** van, nem mérésből; a kettő nem mond ellent
+egymásnak. A mérőszkript egyszeri, a `research/testdata/` alatti mintákon
+bármikor megismételhető.
+
+### 7.6 Amit KIZÁRTUNK
+
+| hipotézis | mi döntötte el |
+|---|---|
+| „a borító a legrégebbi képből készül" | a válogatás **indexalapú** (`[tömb + i*4]`, `i = 0…3`), dátumot nem olvas — `0x0042385c` |
+| „a kupac elrendezése futásonként változik" | `srand(rés ^ 0x133475)` — **albumonként rögzített**, `0x00423a2b` |
+| „a borító mérete rögzített (pl. 144×144)" | a vászon a befoglaló téglalap, `0x00423f70`–`0x00423f75`; élő adat: 72–119 képpont |
+| „a 32%-nyi félig átlátszó képpont élsimítás" | az alfa-hisztogram egyenletesen lefutó, és a félig átlátszók 59%-a feketés — lágy árnyék |
