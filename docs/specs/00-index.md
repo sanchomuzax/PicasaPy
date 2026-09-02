@@ -748,13 +748,18 @@ lemezes mappák is albumként szerepelnek (élő minta: `wallpapers`, `space`,
 `volt` a `albumdata_filename`-mel). Nálunk **minden sor ugyanaz a mappaikon**
 (`FolderTreeItem.qml:101`) → **#2049**.
 
-1. **MELYIK fotókból áll a kupac, és milyen sorrendben?** A tár-oldal és a
-   fogyasztók megvannak (`0x00415790`, `0x00761870`, `0x0056ba10`), az
-   **előállító** függvény nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`,
-   `*Stack*`: 0 találat), sem sztring nem vezet rá. A képi összevetés
-   megkísérelve és **elvetve** (a legjobb két találat 0,96 vs 1,03 — nem
-   különül el). **Megszerzés:** az előállító függvény megkeresése.
-   Lap: `pmp-database.md`; jegy **#2049**.
+1. **MELYIK fotókból áll a kupac, és milyen sorrendben?** ⭐ **2026-09-02
+   (folytatás): az ELŐÁLLÍTÓ MEGVAN — `0x00423500` (632 b).** A tár a
+   `CThumbDB` **`+0x2428`** tagja (`lea edi,[ebp+0x2428]; push "albums.db"`,
+   `0x00415aeb`), és a `.text`-ben pontosan **15 függvény** hivatkozik rá; a
+   lekérő a `0x00423300`, ami **bélyeg-egyezés** esetén a gyorstárat
+   olvassa, különben a `0x00423500`-at hívja. **Melléklelet:** ezzel
+   *kódból* is bebizonyosodott, hogy az `*_index.db` első vektora
+   **érvényességi bélyeg** (`0x00423481` számol, `0x0042349f` olvas,
+   `0x004234a4` hasonlít) — a 12. kör ezt mérésből mondta ki.
+   **Ami hátravan:** a `0x00423500` második felének végigolvasása (az eleje
+   újrabelépés-védelem). A képi összevetés megkísérelve és **elvetve**
+   (0,96 vs 1,03 — nem különül el). Lap: `pmp-database.md`; jegy **#2049**.
 
 ### Nincs nyitott kérdés
 
