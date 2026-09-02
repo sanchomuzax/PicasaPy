@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.210] – 2026-09-02
+
+### Javítva
+- **A rács nagyítója most már úgy néz ki, mint az eredetiben (#1951).**
+  Eddig egy szögletes doboz volt, ami a bélyegképek méretével együtt
+  változott, és ugrásszerűen jelent meg a kurzor fölött. Mostantól
+  **kerek**, mindig **ugyanakkora**, a kurzor **közepén** ül, és lágyan
+  úszik be — eltűnni pedig háromszor lassabban tűnik el, ahogy az
+  eredeti Picasa is csinálja.
+
 ## [0.8.209] – 2026-09-02
 
 ### Javítva

@@ -38,6 +38,11 @@ _TRAYBAR = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
 ).read_text(encoding="utf-8")
 
+#: a rács oldali réteg forrása — a lencse alakját és áttűnését ez írja le
+_FEED = (
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
+).read_text(encoding="utf-8")
+
 
 def _walk(item: QQuickItem):
     for gy in item.childItems():
@@ -201,4 +206,89 @@ class TestAFelfedezhetoseg:
         kezdet = ts.find("Loupe — drag over the photos")
         assert "úz" in ts[kezdet : kezdet + 300], (
             "a magyar súgó sem mondja ki, hogy húzni kell"
+        )
+
+
+class TestALencseAlakja1951:
+    """A lencse RAJZA és mozgása (#1951, spec `racs-nagyito.md` 4–5.).
+
+    A #1911 a kapcsolót tette vissza; magának a lencsének négy mért
+    eltérése maradt. Ez az osztály azokat őrzi.
+
+    ⚠️ A lencse `visible`-je csak nyomva igaz, de az ELEM mindig létezik,
+    és a méret-/alak-kötései kiértékelődnek — ezért kirajzolt ablakon
+    mérhetők anélkül, hogy egeret kellene nyomva tartani.
+    """
+
+    def _lencse(self, window):
+        return _elem(window, "feedLoupe")
+
+    def test_fix_103x103(self, qml_app, qt_app):
+        """MÉRT: `loupe/docbounds` 103 × 103 — NEM a rács cellájához kötött.
+
+        A cellához kötött méret (`cellWidth × 2,5`) a nagyítás-csúszkával
+        együtt változna; az eredetiben a lencse mérete állandó.
+        """
+        window, _c, _e = qml_app
+        lencse = self._lencse(window)
+        if lencse is None:
+            import pytest
+            pytest.skip("a rács nincs kirajzolva ebben az összeállításban")
+        assert (lencse.width(), lencse.height()) == (103.0, 103.0)
+
+    def test_a_meret_nem_fugg_a_cellamerettol(self, qml_app, qt_app):
+        """Ellenpróba: a bélyegkép-méret átállítása NE mozdítsa a lencsét.
+
+        Enélkül a „103" akár véletlen egybeesés is lehetne az aktuális
+        cellamérettel.
+        """
+        window, _c, _e = qml_app
+        lencse = self._lencse(window)
+        if lencse is None:
+            import pytest
+            pytest.skip("a rács nincs kirajzolva")
+        eredeti = window.property("thumbSize")
+        try:
+            window.setProperty("thumbSize", 200)
+            qt_app.processEvents()
+            assert _var(qt_app, lambda: lencse.width() == 103.0), (
+                "a lencse mérete a cellamérettel változott"
+            )
+        finally:
+            window.setProperty("thumbSize", eredeti)
+            qt_app.processEvents()
+
+    def test_kor_alaku(self, qml_app, qt_app):
+        """MÉRT: üveglencse, nem téglalap — a keret `radius`-a a fél
+        oldalhossz, tehát a doboz KÖR."""
+        window, _c, _e = qml_app
+        keret = _elem(window, "feedLoupeRing")
+        if keret is None:
+            import pytest
+            pytest.skip("a rács nincs kirajzolva")
+        assert keret.property("radius") == keret.width() / 2
+
+    def test_van_attunese(self, qml_app, qt_app):
+        """MÉRT: a nagyító nem ugrik be — beúszik (spec 3.1–3.2)."""
+        window, _c, _e = qml_app
+        lencse = self._lencse(window)
+        if lencse is None:
+            import pytest
+            pytest.skip("a rács nincs kirajzolva")
+        assert lencse.property("opacity") is not None
+        assert "Behavior on opacity" in _FEED
+
+    def test_az_attunes_ARANYA_1_3(self):
+        """A spec 3.1 KIMONDJA: az egység nincs mérve, az ARÁNY igen —
+        az eltűnés pontosan háromszor hosszabb, mint a megjelenés.
+
+        Ezért az arányt őrizzük, nem a nyers ezredmásodperceket.
+        """
+        import re
+        reszlet = _FEED[_FEED.find("feedLoupe"):]
+        be = re.search(r"megjelenesMs\s*:\s*(\d+)", reszlet)
+        ki = re.search(r"eltunesMs\s*:\s*(\d+)", reszlet)
+        assert be and ki, "az áttűnés két időtartama nincs NÉVVEL a kódban"
+        assert int(ki.group(1)) == 3 * int(be.group(1)), (
+            f"az arány nem 1:3 ({be.group(1)} / {ki.group(1)})"
         )

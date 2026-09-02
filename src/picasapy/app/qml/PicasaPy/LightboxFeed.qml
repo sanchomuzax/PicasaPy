@@ -838,29 +838,80 @@ ListView {
                 Item {
                     id: loupe
                     objectName: "feedLoupe"
-                    visible: loupeArea.pressed && loupeArea.aktivSor >= 0
-                    width: grid.nominalCellWidth * loupeArea.nagyitas
-                    height: grid.cellHeight * loupeArea.nagyitas
-                    //: A lencse a kurzor fölött ül, de a KÉPFOLYAMON belül
-                    //: marad — a rács szélén sem lóg ki (a jegy külön
-                    //: kiköti). A `clamp` mindkét irányban dolgozik.
+
+                    //: #1951 (spec `racs-nagyito.md` 4.): a vászon MÉRT
+                    //: mérete `loupe/docbounds` — **fix 103 × 103**, NEM a
+                    //: rács cellájához kötött. A cellához kötött méret a
+                    //: nagyítás-csúszkával együtt változna; az eredetiben
+                    //: a lencse mérete állandó.
+                    readonly property int vaszon: 103
+
+                    //: Az áttűnés két időtartama (spec 3.1).
+                    //:
+                    //: ⚠️ Az EGYSÉG nincs mérve: az eredeti `0,4` és `1,2`
+                    //: a saját órájának egységében értendő, és a
+                    //: binárisból nem derül ki, hogy másodperc-e. **Ami
+                    //: mérve van: az ARÁNY — az eltűnés pontosan
+                    //: háromszor hosszabb.** Az abszolút ezredmásodperc a
+                    //: MI választásunk; az arányt az őr-teszt rögzíti.
+                    readonly property int megjelenesMs: 120
+                    readonly property int eltunesMs: 360
+
+                    //: #1951: a láthatóság ÁTTŰNÉSSEL vált — az eredeti
+                    //: nem ugrasztja be a lencsét (spec 3.2: az
+                    //: átlátszatlanság 0→256 skálán, 1 és 256 közé vágva).
+                    readonly property bool kell:
+                        loupeArea.pressed && loupeArea.aktivSor >= 0
+                    visible: opacity > 0
+                    opacity: kell ? 1.0 : 0.0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: loupe.kell ? loupe.megjelenesMs
+                                                 : loupe.eltunesMs
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+
+                    width: loupe.vaszon
+                    height: loupe.vaszon
+                    //: #1951: a lencse a kurzor KÖZEPÉN ül (`0x0077b780`:
+                    //: a kapott téglalap két méretét 0,5-tel szorozza),
+                    //: nem fölötte. A KÉPFOLYAMON belül marad — a rács
+                    //: szélén sem lóg ki (#1808); a `clamp` mindkét
+                    //: irányban dolgozik.
                     x: Math.max(0, Math.min(groupFlow.width - loupe.width,
                                             loupeArea.kurzorX - loupe.width / 2))
                     y: Math.max(0, Math.min(groupFlow.height - loupe.height,
-                                            loupeArea.kurzorY - loupe.height - 8))
+                                            loupeArea.kurzorY - loupe.height / 2))
 
+                    //: #1951: KÖR, nem téglalap — az eredeti egy
+                    //: üveglencse (spec 4.: `loupe/loupe` 103 × 103,
+                    //: belső átlátszó átmérő 65, NULLA teljesen fedő
+                    //: képponttal, tehát végig áttetsző).
                     Rectangle {
+                        objectName: "feedLoupeRing"
                         anchors.fill: parent
                         color: Theme.contentPanel
                         border.width: 1
                         border.color: Theme.chromeBorder
-                        radius: 3
+                        radius: width / 2
                     }
                     Image {
                         objectName: "feedLoupeImage"
                         anchors.fill: parent
-                        anchors.margins: 3
-                        fillMode: Image.PreserveAspectFit
+                        //: a gyűrű vastagsága: a 103-as vászon és a mért
+                        //: 65-ös belső átlátszó átmérő különbsége felezve
+                        //:
+                        //: ⚠️ Ez a margó tartja a képet a KÖRÖN BELÜL,
+                        //: shader nélkül. A `QtQuick.Effects` (kör-maszk)
+                        //: szándékosan nincs a projektben — ld.
+                        //: `CollageSheet.qml`. Számolva: a 65 × 65-ös kép
+                        //: sarka a középponttól `65/2·√2 = 46,0`-ra van, a
+                        //: kör sugara `103/2 = 51,5` ⇒ a sarkok NEM lógnak
+                        //: ki. A margó csökkentése ezt elrontaná: 73 fölötti
+                        //: képméretnél a sarkok kibújnának a körből.
+                        anchors.margins: (loupe.vaszon - 65) / 2
+                        fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         //: A nagyított kép NAGYOBB felbontással kérődik le,
                         //: különben a bélyegkép képpontjait nagyítanánk fel
