@@ -1725,6 +1725,94 @@ pótolja — a bizonyíték a szakasz fenti címei (`0x00613b50`,
 BETÖLTÉSE és törlése; a leltár csak a betöltött sáv **kezelési
 opcióit** adja meg, a fájlválasztás útját nem.
 
+### 2.6/b A HANGSÁV betöltése és törlése — MŰKÖDÉS (2026-09-02)
+
+*A 2.6 a hangsáv három **kezelési opcióját** adta (Truncate / Fit / Loop).
+Ez a szakasz azt írja le, **hogyan kerül oda a hangsáv**, és mi történik
+törléskor — a két gomb az előző kör „valóban feltáratlan" listájáról.*
+
+| elem | felirat | **hivatalos magyar** | az ág címe |
+|---|---|---|---|
+| `makemoviepanel/add_audio` | Load… | **„Betöltés…"** | `0x0061e48c` |
+| `makemoviepanel/remove_audio` | Clear | **„Törlés"** | `0x0061ea4e` |
+
+*(Mindkettő a `0x0061df10` panelkezelőn belül, névösszehasonlítással
+kiválasztott ág.)*
+
+#### Mit nyit meg a „Betöltés…" — fájlválasztó, PLATFORMFÜGGŐ szűrővel
+
+A `0x0061e48c`-nél kezdődő ág (a `0x0061df10` panelkezelőben) a
+szövegtárból veszi a szűrő leírását, és utána a nyers mintát:
+
+| | angol | **magyar** | cím |
+|---|---|---|---|
+| leírás (Windows) | `Music Files (*.mp3,*.wma)` | **„Zenei fájlok (*.mp3, *.wma)"** | `MakeMoviePanel::AudioTypesWin`, `0x00c9d40c` |
+| leírás (Mac) | `Music Files (*.mp3,*.m4a)` | **„Zenei fájlok (*.mp3, *.m4a)"** | `MakeMoviePanel::AudioTypesMac` |
+| minta | `*.mp3;*.wma` | — | `0x00c9d42c` (11 bájt, `0x0061e57d`) |
+
+⇒ **A Picasa csak KÉT hangformátumot fogad el**, és a kettőből az egyik
+platformfüggő: Windowson `wma`, Macen `m4a`. *(Linuxon a `wma` a
+kézenfekvő megfelelő nélkül marad — ez megvalósítási döntés lesz, nem
+mérés.)*
+
+#### ⭐ MINDKÉT gomb ELŐBB SZÜNETELTETI a lejátszást
+
+Ugyanaz a három lépés a `add_audio` (`0x0061e4e3`) és a `remove_audio`
+(`0x0061ea9f`) ágában:
+
+```
+mov eax, [panel+0x4a0]                     ; a lejátszó objektum
+cmp byte ptr [eax+0x7c], 0 / je …          ; JÁTSZIK ÉPPEN?
+mov byte ptr [panel+0x499], 1              ; jelző: „le kellett állítani"
+mov edx, 0xc9bea4                          ; "video_control_bar2/moviecontrols/pause"
+call 0x9cd8a0                              ; a PAUSE névparancs elküldése
+```
+
+⇒ **A hangsáv cseréje vagy törlése nem futó lejátszás közben történik**: a
+panel előbb megnyomja a saját szüneteltető gombját, és megjegyzi, hogy
+tette. *(A `[panel+0x499]` a törlés-ágban előbb **nullázódik**
+(`0x0061ea99`), és csak akkor lesz 1, ha tényleg futott a lejátszás.)*
+
+A törlés végén `0x00619910(panel)` — a panel újraépítése.
+
+#### Hova kerül a betöltött fájl
+
+Az `.mxf` projektfájl **`<musicfile>`** elemébe (2.4/b), az
+**`<audiooption>`** mellé, ami a három kezelési mód indexe (2.6). Vagyis
+a hangsáv a **projekt** része, nem globális beállítás.
+
+#### ⭐ REJTETT ÁG: CTRL + „Betöltés…"
+
+A `0x0061e76a`-nál:
+
+```
+push 0x11                       ; VK_CONTROL
+call dword ptr [0xc406f8]       ; = GetAsyncKeyState  (IAT[0xc406f8] = 0x922efc)
+shr eax, 0xf / and al, 1 / je   ; a magas bit: NYOMVA VAN-E
+…
+push 0xc9d438                   ; "AudioWebSupport"
+push 0xc7eafc                   ; "Preferences"
+```
+
+⇒ **CTRL-t nyomva tartva a „Betöltés…" más ágra megy**, és beolvassa a
+`Preferences\AudioWebSupport` kulcsot. Ha az értéke **nem üres**
+(`0x0061e7fb`–`0x0061e807`), a panel a `[panel+0x4b4]` objektum
+**`vt[0x10]`** rekeszét hívja (`0x0061e809`–`0x0061e82f`) — a rendes ág
+ehelyett a `0x0061e86d`-nél folytatódik, más rekesszel.
+
+⚠️ **Hogy ez az ág MIT csinál, NINCS mérve.** A kulcsnév webes
+hangforrásra utal, de ez következtetés, nem mérés; a `vt[0x10]` mögötti
+osztály nincs azonosítva. **Megszerzés:** a `[panel+0x4b4]` típusának
+meghatározása (RTTI) és a `0x0061cc90` (a hívott segéd) dekompilálása.
+
+*(Ugyanaz az idióma, mint a 33. tétel `FILM_GRAIN` ágában:
+`GetAsyncKeyState(0x10)` = SHIFT. A Picasa több helyen rejt
+módosítóbillentyűs ágat.)*
+
+**Bizonyítottsági fok: megerősített** a szűrőre, a két platformváltozatra,
+a szüneteltetésre és a CTRL-kapura (utasításszinten olvasva); a rejtett ág
+**tartalma nincs mérve**.
+
 ### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
 
 *A 2.2/2.6 a felső panel beállításait, ez a szakasz a film-előnézet ALUL
