@@ -148,4 +148,12 @@ class TestEmail:
             ),
         )
 
+        # #2020: a MÉRT alapérték szerint egy kép ugyanakkora, mint több
+        # (`EmailSinglePicture` alapja 0), tehát alapból ÁTMÉRETEZÉS történne,
+        # és a visszaadott út egy ideiglenes másolaté lenne. Ez a teszt nem a
+        # méretről szól, hanem arról, hogy a KÉSZ kollázst nem tiltja a
+        # piszkozat-őr — ezért az eredeti méretet kérjük, ahol a forrásút
+        # változatlanul jön vissza, és az állítás továbbra is éles marad.
+        vezerlo.setSinglePictureOriginal(True)
+
         assert vezerlo.prepareAttachments([0], False) == [str(kesz)]

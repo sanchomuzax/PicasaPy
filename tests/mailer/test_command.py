@@ -5,31 +5,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from picasapy.mailer.command import (
-    EMAIL_SIZE_PRESETS,
     build_mailto_url,
     build_xdg_email_argv,
-    resolve_email_max_dimension,
 )
 
-
-class TestResolveEmailMaxDimension:
-    def test_smallest_preset_is_640(self):
-        assert resolve_email_max_dimension(0) == 640
-
-    def test_last_preset_is_original_size(self):
-        assert resolve_email_max_dimension(len(EMAIL_SIZE_PRESETS) - 1) is None
-
-    def test_presets_are_ascending_before_the_original_entry(self):
-        sized = [value for value in EMAIL_SIZE_PRESETS if value is not None]
-        assert sized == sorted(sized)
-
-    @pytest.mark.parametrize("index", [-1, 5, 100])
-    def test_rejects_out_of_range_index(self, index):
-        with pytest.raises(ValueError):
-            resolve_email_max_dimension(index)
+# ⚠️ #2020: a méret-feloldás tesztjei átkerültek a
+# `tests/mailer/test_email_meret_2020.py`-ba. Az itteni készlet a #350
+# BECSÜLT ötfokozatú listáját őrizte (`EMAIL_SIZE_PRESETS`, index-alapú);
+# a mérés kimutatta, hogy az eredeti KÉPPONTSZÁMOT tárol nyolc fokozattal,
+# tehát a régi állítások nem gyengültek, hanem ÉRVÉNYTELENNÉ váltak.
 
 
 class TestBuildXdgEmailArgv:

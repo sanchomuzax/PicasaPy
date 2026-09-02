@@ -38,7 +38,8 @@ from PySide6.QtGui import QDesktopServices
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.index import PhotoRecord
 from picasapy.mailer import (
-    EMAIL_SIZE_PRESETS,
+    EMAIL_SIZE_DEFAULT,
+    EREDETI_MERET,
     build_mailto_url,
     build_xdg_email_argv,
     resolve_email_max_dimension,
@@ -58,15 +59,24 @@ _popen = subprocess.Popen
 _log = logging.getLogger(__name__)
 
 # QSettings-kulcsok — a `mail/` névtér az OptionsTabEmail élő mezőié
-_MULTI_SIZE_KEY = "mail/multiSizeIndex"
-_SINGLE_SIZE_KEY = "mail/singleSizeIndex"
+#
+# #2020: a méret KÉPPONTBAN tárolódik, nem listaindexként — ezért ÚJ kulcs
+# (`mail/exportSize`), nem a régi átértelmezése. A régi kulcs értéke egy
+# 0..4 index volt egy MÁSIK (becsült) fokozatlistán; ha ugyanazt a kulcsot
+# olvasnánk képpontként, a meglévő felhasználók 0…4 KÉPPONTOS méretet
+# kapnának — némán, a legkisebb bosszúság nélkül. A migráció egyszeri, és
+# az `_atvett_meret` végzi.
+_EXPORT_SIZE_KEY = "mail/exportSize"
+_SINGLE_ORIGINAL_KEY = "mail/singlePictureOriginal"
 _USE_DEFAULT_CLIENT_KEY = "mail/useDefaultClient"
 
-# alapértelmezett indexek (`EMAIL_SIZE_PRESETS`, 0..4): több fotónál a
-# közepes méret ésszerű (levélméret-korlátok miatt), egy fotónál az eredeti
-# — a Picasa "Single photo size" alapból is nagyobb volt, mint a többfotós
-_DEFAULT_MULTI_SIZE_INDEX = 2  # 1024 px
-_DEFAULT_SINGLE_SIZE_INDEX = len(EMAIL_SIZE_PRESETS) - 1  # eredeti méret
+#: A régi, INDEX-alapú kulcsok — csak a migrációhoz olvassuk őket.
+_REGI_MULTI_INDEX_KEY = "mail/multiSizeIndex"
+_REGI_SINGLE_INDEX_KEY = "mail/singleSizeIndex"
+
+#: A #350 becsült fokozatlistája — kizárólag a régi index feloldásához.
+#: Élesben SEHOL nem használjuk; a mért lista az `EMAIL_SIZE_STEPS`.
+_REGI_FOKOZATOK: tuple[int, ...] = (640, 800, 1024, 1600, EREDETI_MERET)
 
 _TRUE_VALUES = ("true", "1")
 
@@ -82,22 +92,29 @@ def _coerce_bool(value, default: bool) -> bool:
     return default
 
 
-def _clamp_index(value, default: int) -> int:
+def _meret(value, default: int) -> int:
+    """A tárolt e-mail méret képpontban; hibás/hiányzó értékre az alapérték.
+
+    ⚠️ NEM szűkítjük az `EMAIL_SIZE_STEPS` nyolc fokozatára: a mező az
+    eredetiben is szabad képpontszám (#2020), és egy másik Picasa-verzió
+    vagy egy kézi szerkesztés más értéket is hagyhat ott. Csak a
+    értelmetlen (negatív) értéket utasítjuk vissza.
+    """
     try:
-        index = int(value)
+        meret = int(value)
     except (TypeError, ValueError):
         return default
-    if not 0 <= index < len(EMAIL_SIZE_PRESETS):
+    if meret < 0:
         return default
-    return index
+    return meret
 
 
 class EmailController(QObject):
     """A `OptionsTabEmail.qml` méret-beállításai + a küldés-előkészítés
     (átméretezés) és a tényleges elküldés (subprocess/mailto) hídja."""
 
-    multiSizeIndexChanged = Signal()
-    singleSizeIndexChanged = Signal()
+    emailSizeChanged = Signal()
+    singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
     emailFailed = Signal(str)
     #: #1798b: az előkészítés FOLYAMATJELZŐJE. Az eredeti a
@@ -136,46 +153,110 @@ class EmailController(QObject):
         # #1072: a piszkozat-tilalom — közös a `PrintController`-rel
         self._draft_guard = CollageDraftGuard(self)
         self._settings = settings if settings is not None else QSettings()
-        self._multi_size_index = _clamp_index(
-            self._settings.value(_MULTI_SIZE_KEY), _DEFAULT_MULTI_SIZE_INDEX
-        )
-        self._single_size_index = _clamp_index(
-            self._settings.value(_SINGLE_SIZE_KEY), _DEFAULT_SINGLE_SIZE_INDEX
-        )
+        self._email_size = self._betolt_meretet()
+        self._single_original = self._betolt_egy_kep_kapcsolot()
         self._use_default_client = _coerce_bool(
             self._settings.value(_USE_DEFAULT_CLIENT_KEY), True
         )
 
     # -- méret-beállítások (OptionsTabEmail.qml csúszdái) ------------------
 
-    @Property(int, notify=multiSizeIndexChanged)
-    def multiSizeIndex(self) -> int:
-        """Több fotó együttes küldésénél használt méret-fokozat (0..4,
-        ld. `picasapy.mailer.EMAIL_SIZE_PRESETS`)."""
-        return self._multi_size_index
+    def _betolt_meretet(self) -> int:
+        """A tárolt méret képpontban — a régi, INDEX-alapú kulcs migrálásával.
+
+        #2020: a #350 `mail/multiSizeIndex` kulcsa egy 0..4 index volt egy
+        BECSÜLT fokozatlistán. Az új kulcs képpontot tárol. A régi értéket
+        egyszer, a régi listán feloldva vesszük át — enélkül a meglévő
+        felhasználó beállítása némán 0…4 KÉPPONTRA romlana.
+        """
+        tarolt = self._settings.value(_EXPORT_SIZE_KEY)
+        if tarolt is not None:
+            return _meret(tarolt, EMAIL_SIZE_DEFAULT)
+        regi = self._settings.value(_REGI_MULTI_INDEX_KEY)
+        if regi is None:
+            return EMAIL_SIZE_DEFAULT
+        try:
+            index = int(regi)
+        except (TypeError, ValueError):
+            return EMAIL_SIZE_DEFAULT
+        if not 0 <= index < len(_REGI_FOKOZATOK):
+            return EMAIL_SIZE_DEFAULT
+        atvett = _REGI_FOKOZATOK[index]
+        self._settings.setValue(_EXPORT_SIZE_KEY, atvett)
+        return atvett
+
+    def _betolt_egy_kep_kapcsolot(self) -> bool:
+        """Az „egy kép eredeti méretben" kapcsoló — a régi kulcs átvételével.
+
+        #2020: a #350-ben ez egy MÁSODIK méret-csúszka volt
+        (`mail/singleSizeIndex`), aminek az utolsó fokozata jelentette az
+        eredeti méretet. Az új alapérték a MÉRT viselkedés („ugyanakkora,
+        mint a többi"), ami a régi alapértéknek az ELLENTÉTE — ezért a
+        meglévő felhasználó beállítását át KELL venni, különben a
+        következő indításnál némán megváltozna, amit küld.
+        """
+        tarolt = self._settings.value(_SINGLE_ORIGINAL_KEY)
+        if tarolt is not None:
+            return _coerce_bool(tarolt, False)
+        regi = self._settings.value(_REGI_SINGLE_INDEX_KEY)
+        if regi is None:
+            return False
+        try:
+            index = int(regi)
+        except (TypeError, ValueError):
+            return False
+        if not 0 <= index < len(_REGI_FOKOZATOK):
+            return False
+        # a régi listán az EREDETI MÉRET az utolsó fokozat volt
+        eredeti = _REGI_FOKOZATOK[index] == EREDETI_MERET
+        self._settings.setValue(_SINGLE_ORIGINAL_KEY, eredeti)
+        return eredeti
+
+    @Property(int, notify=emailSizeChanged)
+    def emailSize(self) -> int:  # noqa: N802 — QML-stílus
+        """A csatolmányok leghosszabb oldala KÉPPONTBAN; 0 = eredeti méret.
+
+        MÉRVE (#2020): az eredeti a `Preferences\\EmailExportSize` mezőben
+        képpontszámot tárol, alapértéke **480**; a csúszka nyolc fokozata
+        az `EMAIL_SIZE_STEPS`. A 0 az „eredeti méret" jelzőérték, de az
+        eredetiben azt NEM a csúszka adja, hanem a
+        `singlePictureOriginal` kapcsoló.
+        """
+        return self._email_size
 
     @Slot(int)
-    def setMultiSizeIndex(self, index: int) -> None:
-        index = _clamp_index(index, self._multi_size_index)
-        if index == self._multi_size_index:
+    def setEmailSize(self, size_px: int) -> None:  # noqa: N802 — QML-stílus
+        size_px = _meret(size_px, self._email_size)
+        if size_px == self._email_size:
             return
-        self._multi_size_index = index
-        self._settings.setValue(_MULTI_SIZE_KEY, index)
-        self.multiSizeIndexChanged.emit()
+        self._email_size = size_px
+        self._settings.setValue(_EXPORT_SIZE_KEY, size_px)
+        self.emailSizeChanged.emit()
 
-    @Property(int, notify=singleSizeIndexChanged)
-    def singleSizeIndex(self) -> int:
-        """Egyetlen fotó küldésénél használt méret-fokozat (0..4)."""
-        return self._single_size_index
+    @Property(bool, notify=singlePictureOriginalChanged)
+    def singlePictureOriginal(self) -> bool:  # noqa: N802 — QML-stílus
+        """Igaz: EGYETLEN kép küldésekor az EREDETI méret megy.
 
-    @Slot(int)
-    def setSingleSizeIndex(self, index: int) -> None:
-        index = _clamp_index(index, self._single_size_index)
-        if index == self._single_size_index:
+        MÉRVE (#2020): az eredetiben ez **kapcsoló**, nem méret — az
+        „Egyedülálló képek mérete" két választógombja („Több elemmel
+        azonos (N képpont)" / „Eredeti méret"). A `EmailSinglePicture`
+        alapértéke **0**, tehát alapból a közös méret érvényes; a képernyőkép
+        is ezt mutatja.
+
+        ⚠️ Ez MEGVÁLTOZTATJA a korábbi viselkedést: a #350 külön
+        méret-csúszkát adott egy képre, és annak alapértéke az eredeti
+        méret volt. Mostantól egy kép alapból ugyanakkora, mint több.
+        """
+        return self._single_original
+
+    @Slot(bool)
+    def setSinglePictureOriginal(self, eredeti: bool) -> None:  # noqa: N802
+        eredeti = bool(eredeti)
+        if eredeti == self._single_original:
             return
-        self._single_size_index = index
-        self._settings.setValue(_SINGLE_SIZE_KEY, index)
-        self.singleSizeIndexChanged.emit()
+        self._single_original = eredeti
+        self._settings.setValue(_SINGLE_ORIGINAL_KEY, eredeti)
+        self.singlePictureOriginalChanged.emit()
 
     @Property(bool, notify=useDefaultClientChanged)
     def useDefaultClient(self) -> bool:
@@ -266,8 +347,14 @@ class EmailController(QObject):
         if self._draft_guard.first_draft(item.source for item in items) is not None:
             self.emailFailed.emit(self._draft_guard.restriction_message())
             return []
-        index = self._multi_size_index if multi else self._single_size_index
-        max_dimension = resolve_email_max_dimension(index)
+        # #2020: egyetlen KÉPPONT-beállítás van; az „egy kép" nem külön
+        # méret, hanem kapcsoló az eredeti méretre.
+        meret = (
+            EREDETI_MERET
+            if (not multi and self._single_original)
+            else self._email_size
+        )
+        max_dimension = resolve_email_max_dimension(meret)
         if max_dimension is None:
             return [str(item.source) for item in items]
         target_dir = Path(tempfile.mkdtemp(prefix="picasapy-mail-"))

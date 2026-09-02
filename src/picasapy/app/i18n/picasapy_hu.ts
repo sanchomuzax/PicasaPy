@@ -562,12 +562,24 @@
         <translation>Minden képküldésnél választhassak</translation>
     </message>
     <message>
-        <source>Multiple photo size:</source>
-        <translation>Több fénykép mérete:</translation>
+        <source>Multiple photo size</source>
+        <translation>Több kép mérete</translation>
     </message>
     <message>
-        <source>Single photo size:</source>
-        <translation>Egy fénykép mérete:</translation>
+        <source>%1 pixels</source>
+        <translation>%1 képpont</translation>
+    </message>
+    <message>
+        <source>Single picture size:</source>
+        <translation>Egyedülálló képek mérete:</translation>
+    </message>
+    <message>
+        <source>Same as multiple (%1 pixels)</source>
+        <translation>Több elemmel azonos (%1 képpont)</translation>
+    </message>
+    <message>
+        <source>Original size</source>
+        <translation>Eredeti méret</translation>
     </message>
     <message>
         <source>Send movies as:</source>

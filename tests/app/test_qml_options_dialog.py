@@ -53,40 +53,46 @@ class FakeConfirmSettings(QObject):
 
 
 class FakeEmailController(QObject):
-    """A #32-es EmailController QML-felülete (méret-csúszdák + kliens-
-    választás) — a valódi `email_controller.py` ugyanezt a property/slot-
-    készletet exportálja."""
+    """A #32-es EmailController QML-felülete — a valódi
+    `email_controller.py` ugyanezt a property/slot-készletet exportálja.
 
-    multiSizeIndexChanged = Signal()
-    singleSizeIndexChanged = Signal()
+    #2020: a méret KÉPPONT (`emailSize`), az „egy kép" pedig KAPCSOLÓ
+    (`singlePictureOriginal`), nem második méret-csúszka.
+    """
+
+    emailSizeChanged = Signal()
+    singlePictureOriginalChanged = Signal()
     useDefaultClientChanged = Signal()
 
-    def __init__(self, multi=2, single=4, use_default=True):
+    def __init__(self, size=480, single_original=False, use_default=True):
         super().__init__()
-        self._multi = multi
-        self._single = single
+        self._size = size
+        self._single_original = single_original
         self._use_default = use_default
-        self.set_multi_calls = []
+        self.set_size_calls = []
         self.set_single_calls = []
         self.set_use_default_calls = []
 
-    multiSizeIndex = Property(int, lambda self: self._multi, notify=multiSizeIndexChanged)
-    singleSizeIndex = Property(int, lambda self: self._single, notify=singleSizeIndexChanged)
+    emailSize = Property(int, lambda self: self._size, notify=emailSizeChanged)
+    singlePictureOriginal = Property(
+        bool, lambda self: self._single_original,
+        notify=singlePictureOriginalChanged,
+    )
     useDefaultClient = Property(
         bool, lambda self: self._use_default, notify=useDefaultClientChanged
     )
 
     @Slot(int)
-    def setMultiSizeIndex(self, index) -> None:
-        self.set_multi_calls.append(index)
-        self._multi = index
-        self.multiSizeIndexChanged.emit()
+    def setEmailSize(self, size_px) -> None:
+        self.set_size_calls.append(size_px)
+        self._size = size_px
+        self.emailSizeChanged.emit()
 
-    @Slot(int)
-    def setSingleSizeIndex(self, index) -> None:
-        self.set_single_calls.append(index)
-        self._single = index
-        self.singleSizeIndexChanged.emit()
+    @Slot(bool)
+    def setSinglePictureOriginal(self, eredeti) -> None:
+        self.set_single_calls.append(eredeti)
+        self._single_original = eredeti
+        self.singlePictureOriginalChanged.emit()
 
     @Slot(bool)
     def setUseDefaultClient(self, use_default) -> None:
@@ -369,38 +375,100 @@ class TestEmailTabLiveSettings:
         window, engine = self._dialog_with_email(
             qt_app, fake_controller, fake_confirm_settings, fake_email_controller
         )
-        assert _child(window, "optionsMailMultiSizeSlider").property("enabled") is True
-        assert _child(window, "optionsMailSingleSizeSlider").property("enabled") is True
+        assert _child(window, "optionsMailSizeSlider").property("enabled") is True
+        assert _child(window, "optionsMailSingleSameRadio").property("enabled") is True
         assert _child(window, "optionsMailDefaultRadio").property("enabled") is True
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
 
-    def test_sliders_reflect_controller_values(
+    def test_a_csuszka_a_MERT_fokozatra_all(
         self, qt_app, fake_controller, fake_confirm_settings
     ):
-        fake_email = FakeEmailController(multi=1, single=3, use_default=False)
+        """#2020: a vezérlő KÉPPONTOT ad, a csúszka INDEXET mozgat.
+
+        1024 a nyolc mért fokozat (160, 320, 480, 640, 800, 1024, 1200,
+        1600) ÖTÖDIK eleme, tehát az index 5."""
+        fake_email = FakeEmailController(size=1024, use_default=False)
         window, engine = self._dialog_with_email(
             qt_app, fake_controller, fake_confirm_settings, fake_email
         )
-        assert _child(window, "optionsMailMultiSizeSlider").property("value") == 1
-        assert _child(window, "optionsMailSingleSizeSlider").property("value") == 3
+        assert _child(window, "optionsMailSizeSlider").property("value") == 5
         assert _child(window, "optionsMailChooseRadio").property("checked") is True
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
 
-    def test_moving_multi_slider_calls_controller(
+    def test_a_csuszka_MELLE_kiirja_a_keppontszamot(
+        self, qt_app, fake_controller, fake_confirm_settings
+    ):
+        """MÉRVE: az eredetiben a csúszka mellett ott a szám („480 képpont")."""
+        fake_email = FakeEmailController(size=800)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email
+        )
+        assert "800" in _child(window, "optionsMailSizeValue").property("text")
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_az_egy_kep_gombjaba_BELE_van_irva_az_aktualis_meret(
+        self, qt_app, fake_controller, fake_confirm_settings
+    ):
+        """MÉRVE: „Több elemmel azonos (480 képpont)" — élő kötés.
+
+        Fog: ha valaki statikus feliratot ír a gombra, ez bukik."""
+        fake_email = FakeEmailController(size=1600)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email
+        )
+        assert "1600" in _child(window, "optionsMailSingleSameRadio").property("text")
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_az_egy_kep_KAPCSOLO_nem_csuszka(
+        self, qt_app, fake_controller, fake_confirm_settings
+    ):
+        """#2020: két választógomb, nem méret-csúszka."""
+        fake_email = FakeEmailController(single_original=True)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email
+        )
+        assert window.findChild(QObject, "optionsMailSingleSizeSlider") is None
+        assert _child(window, "optionsMailSingleOriginalRadio").property("checked") is True
+        assert _child(window, "optionsMailSingleSameRadio").property("checked") is False
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_a_csuszka_mozgatasa_KEPPONTOT_ad_at(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        """Fog: index-átadásnál a hívás 3 lenne, nem 640."""
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        slider = _child(window, "optionsMailSizeSlider")
+        slider.setProperty("value", 3)
+        slider.moved.emit()
+        qt_app.processEvents()
+        assert fake_email_controller.set_size_calls == [640]
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_az_eredeti_meret_gomb_a_KAPCSOLOT_allitja(
         self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
     ):
         window, engine = self._dialog_with_email(
             qt_app, fake_controller, fake_confirm_settings, fake_email_controller
         )
-        slider = _child(window, "optionsMailMultiSizeSlider")
-        slider.setProperty("value", 3)
-        slider.moved.emit()
+        gomb = _child(window, "optionsMailSingleOriginalRadio")
+        gomb.setProperty("checked", True)
+        gomb.toggled.emit()
         qt_app.processEvents()
-        assert fake_email_controller.set_multi_calls == [3]
+        assert fake_email_controller.set_single_calls == [True]
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
@@ -425,6 +493,9 @@ class TestEmailTabLiveSettings:
         null-őr miatt a mezők a modul dokumentált alapértékével jelennek
         meg, írás nélkül (nincs kivétel/QML-hiba)."""
         window, *_ = dialog
-        assert _child(window, "optionsMailMultiSizeSlider").property("value") == 2
-        assert _child(window, "optionsMailSingleSizeSlider").property("value") == 4
+        # #2020: vezérlő nélkül a MÉRT alapérték látszik — 480 képpont, ami
+        # a nyolc fokozat HARMADIKA (index 2), és „azonos a többivel".
+        assert _child(window, "optionsMailSizeSlider").property("value") == 2
+        assert "480" in _child(window, "optionsMailSizeValue").property("text")
+        assert _child(window, "optionsMailSingleSameRadio").property("checked") is True
         assert _child(window, "optionsMailDefaultRadio").property("checked") is True
