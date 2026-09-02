@@ -24,6 +24,28 @@ szűk, mintaalapú szűrés a szándékolt viselkedés.
 
 from __future__ import annotations
 
+#: #2072: a QT SAJÁT QML-jéből érkező üzenetek origója. Ezeket nem mi
+#: írtuk, és nem is javíthatjuk — a szűrőnek figyelmen kívül kell hagynia
+#: őket, bármilyen mintát tartalmaznak.
+#:
+#: A mérés (`ci.yml` 33687325094, windows 1/4): a Qt Controls natív
+#: Windows-stílusának `Button.qml`-je négy `TypeError`-t ír ki minden
+#: gomb-példányosításkor:
+#:
+#:     qrc:/qt-project.org/imports/QtQuick/Controls/Windows/Button.qml:28:9:
+#:         TypeError: Cannot read property 'height' of null
+#:
+#: Az őr ezekre elhasalt, tehát Windowson MINDEN gombot példányosító teszt
+#: elbukott — és mivel a windows-láb nem blokkol, ez hónapokig láthatatlan
+#: maradhatott, közben elfedve minden VALÓDI windows-specifikus hibát
+#: (pl. a #998-at).
+#:
+#: ⚠️ Ez ORIGÓ szerinti szűrés, nem minta szerinti: a mi QML-ünkből
+#: (`file:///…`) érkező azonos szövegű üzenet TOVÁBBRA IS buktat.
+IDEGEN_QML_EREDET = (
+    "qrc:/qt-project.org/",
+)
+
 QML_SCRIPT_ERROR_PATTERNS = (
     "TypeError",
     "ReferenceError",
@@ -60,5 +82,11 @@ QML_SCRIPT_ERROR_PATTERNS = (
 
 
 def is_qml_script_error(message: str) -> bool:
-    """QML-szkripthiba-e az üzenet (a mi kötéseink hibája), vagy környezeti zaj."""
+    """QML-szkripthiba-e az üzenet (a mi kötéseink hibája), vagy környezeti zaj.
+
+    #2072: az idegen (Qt saját) QML-ből érkező üzenet SOHA nem a mi hibánk,
+    ezért az origó-ellenőrzés a mintaillesztés ELŐTT áll.
+    """
+    if any(eredet in message for eredet in IDEGEN_QML_EREDET):
+        return False
     return any(pattern in message for pattern in QML_SCRIPT_ERROR_PATTERNS)

@@ -55,3 +55,59 @@ def test_szkripthiba_buktat(uzenet):
 @pytest.mark.parametrize("uzenet", KORNYEZETI_ZAJ)
 def test_kornyezeti_zaj_nem_buktat(uzenet):
     assert not is_qml_script_error(uzenet)
+
+
+# #2072: a QT SAJÁT QML-jéből érkező üzenetek — origó szerint kizárva.
+#
+# A mérés (`ci.yml` 33687325094, windows 1/4): a Qt Controls natív
+# Windows-stílusának `Button.qml`-je négy `TypeError`-t ír ki minden
+# gomb-példányosításkor. Az őr ezekre elhasalt, tehát Windowson MINDEN
+# gombot példányosító teszt elbukott — és a nem-blokkoló windows-láb
+# miatt ez elfedte a valódi, windows-specifikus hibákat is.
+IDEGEN_EREDETU_ZAJ = [
+    "qrc:/qt-project.org/imports/QtQuick/Controls/Windows/Button.qml:28:9: "
+    "TypeError: Cannot read property 'height' of null",
+    "qrc:/qt-project.org/imports/QtQuick/Controls/Windows/Button.qml:25:9: "
+    "TypeError: Cannot read property 'x' of null",
+    "qrc:/qt-project.org/imports/QtQuick/Controls/Fusion/CheckBox.qml:12: "
+    "ReferenceError: control is not defined",
+]
+
+
+@pytest.mark.parametrize("uzenet", IDEGEN_EREDETU_ZAJ)
+def test_a_qt_sajat_qml_je_NEM_buktat(uzenet):
+    """Nem mi írtuk, nem is javíthatjuk — az őr ne hasaljon el rajta."""
+    assert is_qml_script_error(uzenet) is False
+
+
+@pytest.mark.parametrize(
+    "uzenet",
+    [
+        "file:///home/x/PicasaPy/src/picasapy/app/qml/PicasaPy/Button.qml:28:9: "
+        "TypeError: Cannot read property 'height' of null",
+        "file:///…/PicasaPy/qml/Sajat.qml:25:9: "
+        "TypeError: Cannot read property 'x' of null",
+    ],
+)
+def test_a_MI_QML_UNK_ugyanolyan_uzenete_TOVABBRA_IS_buktat(uzenet):
+    """A kapu nem tehet vakká.
+
+    Fog: ha valaki az origó-szűrést a `TypeError` MINTA kivételére
+    cseréli, ez a két eset átcsúszna — pedig szó szerint ugyanaz a
+    hibaszöveg, csak a MI fájlunkból.
+    """
+    assert is_qml_script_error(uzenet) is True
+
+
+def test_a_szures_nem_a_fajlnevre_hanem_az_EREDETRE_nez():
+    """Egy `Button.qml` nevű SAJÁT fájl nem eshet ki a szűrőn."""
+    sajat = (
+        "file:///…/PicasaPy/qml/PicasaPy/Button.qml:1: "
+        "TypeError: Cannot read property 'x' of null"
+    )
+    idegen = (
+        "qrc:/qt-project.org/imports/QtQuick/Controls/Windows/Button.qml:1: "
+        "TypeError: Cannot read property 'x' of null"
+    )
+    assert is_qml_script_error(sajat) is True
+    assert is_qml_script_error(idegen) is False
