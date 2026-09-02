@@ -519,13 +519,17 @@ class TestVisszaAKollazshoz:
     def test_megjelenik_a_vissza_a_kollazshoz_gomb(self, qml_app, qt_app):
         window = qml_app[0]
         _kollazs_lapot_nyit(window, qt_app)
-        gomb = _keres(window, "backToCollageButton")
+        gomb = _keres(window, "traySingleActionReturn")
+        #: #1939: a visszaút az ALSÓ SÁV üzenetsávjába került
+        #: (`traySingleActionBar` → `traySingleActionReturn`), a korábbi
+        #: lebegő gomb helyett. Az állítás SZÁNDÉKA változatlan: a
+        #: „Továbbiak…" ELŐTT nem szabad látszania.
         assert gomb is None or gomb.isVisible() is False, (
             "a Vissza a kollazshoz gomb a Tovabbiak... ELOTT is latszik"
         )
         self._klipek_lapra(window, qt_app)
         _kattints(window, _elem(window, "collageGetMoreClips"), qt_app)
-        gomb = _elem(window, "backToCollageButton")
+        gomb = _elem(window, "traySingleActionReturn")
         assert _var(qt_app, gomb.isVisible), (
             "a Konyvtar fulon nincs Vissza a kollazshoz gomb"
         )
@@ -536,7 +540,7 @@ class TestVisszaAKollazshoz:
         sav = _elem(window, "documentTabStrip")
         self._klipek_lapra(window, qt_app)
         _kattints(window, _elem(window, "collageGetMoreClips"), qt_app)
-        gomb = _elem(window, "backToCollageButton")
+        gomb = _elem(window, "traySingleActionReturn")
         assert _var(qt_app, gomb.isVisible)
         _kattints(window, gomb, qt_app)
         assert _var(qt_app, lambda: sav.property("activeTabId") != "library"), (

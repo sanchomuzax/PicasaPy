@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.211] – 2026-09-02
+
+### Javítva
+- **A „Továbbiak…" utáni visszaút a helyére került (#1939).** Amikor a
+  kollázshoz újabb képeket keresel, eddig egy lebegő gomb jelent meg a
+  jobb felső sarokban. Mostantól — ahogy az eredeti Picasában is — egy
+  **üzenetsáv** jelenik meg az ablak alján: megmondja, mit kell tenned,
+  mellette a „Vissza a kollázshoz" gomb, és egy **✕**, amivel a sávot
+  eltüntetheted. A ✕ csak a sávot rejti el: a kollázsod nyitva marad, és
+  a fenti lapfülről bármikor visszatérhetsz.
+
 ## [0.8.210] – 2026-09-02
 
 ### Javítva

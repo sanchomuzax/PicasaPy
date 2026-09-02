@@ -1896,27 +1896,15 @@ ApplicationWindow {
         }
     }
 
-    // A „Vissza a kollázshoz" gomb (`collagepanel::back_to_collage`): a
-    // „Továbbiak..." után a KÖNYVTÁR lapján jelenik meg, a kollázs lapja
-    // közben nyitva marad (`picasa-kollazs-felulet.md` 8.).
-    PicasaButton {
-        objectName: "backToCollageButton"
-        z: 80
-        visible: window.backToCollagePrompted
-                 && documentTabStrip.hasProjectTabs
-                 && documentTabStrip.libraryActive
-                 && !window.viewerOpen && !window.timelineOpen
-        text: qsTr("Back to Collage")
-        accent: Theme.picasaGreen
-        anchors.top: documentTabStrip.bottom
-        anchors.topMargin: 8
-        anchors.right: parent.right
-        anchors.rightMargin: 24
-        onClicked: {
-            window.backToCollagePrompted = false
-            documentTabStrip.activateTab(window.collageTabId)
-        }
-    }
+    // #1939: a „Vissza a kollázshoz" visszaútja AZ ALSÓ SÁVBA került
+    // (`TrayBar.qml` → `traySingleActionBar`), mert az eredetiben a
+    // „Továbbiak…" után egy teljes üzenetsáv ül a vezérlőkészletben
+    // (`thumbui/single_action_container`), nem egy lebegő gomb a jobb
+    // felső sarokban. A visszatérés MŰVELETE változatlan — csak a
+    // felülete került a helyére; a kezelő lent, a `TrayBar`-on.
+    //
+    // Ezért NINCS itt `backToCollageButton`: ne tegye vissza egy későbbi
+    // kör „hiányzó gombként", mert akkor két vezérlő kínálná ugyanazt.
 
     // #209: lebegő „Importálás" folyamat-panel — jobb oldalt lebeg, húzható;
     // a néző felett is látszik (a szkennelés közben is lehet dolgozni),
@@ -2206,6 +2194,13 @@ ApplicationWindow {
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
+        //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
+        //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
+        //: jelzője lekerül, és a projekt lapja lesz az aktív.
+        onBackToCollageRequested: {
+            window.backToCollagePrompted = false
+            documentTabStrip.activateTab(window.collageTabId)
+        }
         // #1798: a tálca „E-Mail" gombja engedélyezve volt és kattintható,
         // a jelzését viszont SEHOL nem fogta el senki — a testvérei
         // (Kollázs, Exportálás, Nyomtatás) mind be voltak kötve. Ez volt a
