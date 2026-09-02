@@ -3573,6 +3573,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Save edited photos to disk</source>
         <translation>A szerkesztett képek mentése lemezre</translation>
     </message>
+    <message>
+        <source>Create Photo Collage</source>
+        <translation>Fotókollázs készítése</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>
