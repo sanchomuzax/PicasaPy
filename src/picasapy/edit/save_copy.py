@@ -66,6 +66,7 @@ from picasapy.edit.save import (
     SaveError,
     _encode_image,
 )
+from picasapy.dedup.fastkey import picasa_fast_key
 from picasapy.edit.session import EditSession
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.copy_signature import sign_jpeg, source_taken_at
@@ -105,6 +106,12 @@ class SaveCopyResult:
     target_path: Path
     # #1643: NINCS `redo_value`/`originhash` mező — a művelet nem ír az
     # ini-be, tehát nem is lenne mit visszaadnia.
+
+    #: #1648: a FORRÁS származás-kulcsa (`originfast`), amit a másolatnak
+    #: ÖRÖKÖLNIE kell. `None`, ha a forrás nem volt olvasható. A mentés
+    #: maga nem írja sehova — a tárolás az indexé (`index/origin.py`), a
+    #: bekötés a hívóé; így a mag lemez- és adatbázis-független marad.
+    inherited_origin_key: int | None = None
 
 
 def next_copy_path(image_path: str | Path) -> Path:
@@ -200,4 +207,14 @@ def save_copy(
     # `write_atomic` az utolsó lépés.
     write_atomic(target, payload, make_parents=True)
 
-    return SaveCopyResult(source_path=image_path, target_path=target)
+    # #1648: a másolat a FORRÁS származás-kulcsát viszi tovább, nem a
+    # sajátját. Mérve a tulajdonos élő Picasa-adatbázisán: négy, egymástól
+    # bájtban eltérő másolat KÖZÖS `originfast` értéket kapott, és az a
+    # forrás saját bájtjaiból számolt kulcs. A kulcsot itt olvassuk ki (a
+    # forrás legfeljebb 33 KB-ja, a JPEG-kódolás mellett elhanyagolható),
+    # de NEM tároljuk — az az index dolga.
+    return SaveCopyResult(
+        source_path=image_path,
+        target_path=target,
+        inherited_origin_key=picasa_fast_key(image_path),
+    )

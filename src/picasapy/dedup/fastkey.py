@@ -6,10 +6,15 @@ fájl ELSŐ felvételekor fut; a „Másolat mentése" kimenete viszont a
 FORRÁS értékét ÖRÖKLI, akkor is, ha a szerkesztés bele van égetve és a
 bájtok 99,9%-ban eltérnek. Ez köti a másolatot a forrásához.
 
-Nálunk ez az öröklés MA NINCS meg (a kulcsot mindig a fájl saját
-bájtjaiból számoljuk), és az index sémájában nincs is hova eltenni —
-`originfast` oszlop nem létezik. A különbség következménye: az eredeti a
-másolatot a forrásához kötné, mi nem. Ld. a #1648-at.
+Az öröklés MEGVAN (#1648): a `save_copy` visszaadja a forrás kulcsát
+(`SaveCopyResult.inherited_origin_key`), és az `index/origin.py`
+`origin_keys` táblája tárolja útvonalra. A SZÁRMAZÁS-kulcsot onnan kell
+kérni (`index.origin.origin_key`), nem innen.
+
+⚠️ **Ez a modul továbbra is a TARTALOMBÓL számol, és ez így helyes.** A
+`dedup/` kérdése a tartalmi azonosság, nem a származás: egy másolat NEM
+másodpéldánya a forrásának, tehát ott az öröklött érték félrevinne. Az
+eredeti Picasa a két fogalmat egyetlen mezőben keverte; mi szétválasztjuk.
 
 Az eredeti Picasa a másodpéldány-kereséshez NEM olvassa végig a fájlt: a
 méretből, az első és az utolsó 16834 bájtból képez egy 64 bites kulcsot, és

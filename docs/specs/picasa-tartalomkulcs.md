@@ -246,3 +246,49 @@ kihagyná a másolatot, mint „már megvan”.
 ⇒ Az öröklés bevezetése **együtt jár** azzal, hogy a két hívóhely ne a
 származás-kulcson döntsön azonosságról. Enélkül a hűség egy valódi,
 felhasználónak látszó hibát okozna.
+
+### ✅ Az öröklés MEGVAN — és a két akadály MEGKERÜLVE (2026-09-02, #1648)
+
+Az előző szakasz két akadályt nevezett meg. Mindkettőt úgy oldottuk meg,
+hogy közben a `dedup/` viselkedése **bitre változatlan** maradt.
+
+**1. „Nincs hova eltenni" → önálló, útvonalra kulcsolt tábla.**
+`index/origin.py`, `origin_keys(path TEXT PRIMARY KEY, origin_key INTEGER)`,
+lustán létrehozva (`CREATE TABLE IF NOT EXISTS`), tehát meglévő indexen is
+azonnal működik. **Miért nem a `photos` oszlopa:** a „Másolat mentése"
+előbb írja ki a fájlt, mint ahogy a szinkron felveszi a fotó-rekordot — egy
+`photos`-oszlop írása versenyhelyzetbe kerülne a saját szinkronunkkal (vagy
+elveszne az érték, vagy a szinkron írná felül). Az útvonalra kulcsolt tábla
+**bármikor írható**, sorrendtől függetlenül.
+
+⚠️ Ez az adat a `photo_hashes`-szel és a `photo_colors`-szal ellentétben
+**nem származtatott**: a fájlból nem számolható újra, mert épp azt tartja
+nyilván, amit a tartalom NEM árul el. Gyorsítótárként soha nem dobható el.
+
+**2. „A kulcs nálunk mást jelent" → szétválasztott fogalmak.**
+
+| kérdés | ki válaszol | mit használ |
+|---|---|---|
+| tartalmi azonosság (másodpéldány, importálás) | `dedup/exact.py`, `importsource.py` | a **számolt** `picasa_fast_key` — VÁLTOZATLAN |
+| származás (melyik fájlból lett) | `index/origin.py` `origin_key()` | az **örökölt** érték, ha van; egyébként a számolt |
+
+Így a duplikátum-kereső **nem** jelenti a beégetett szerkesztésű másolatot
+másodpéldánynak, és az importálás sem hagyja ki — az előző szakasz
+figyelmeztetése tehát nem következett be. Az eredeti Picasa a két fogalmat
+egyetlen mezőben keverte; nálunk kettő van, és a hűséget a származás-oldal
+hordozza.
+
+**A lánc:** `save_copy` → `SaveCopyResult.inherited_origin_key` (a forrás
+kulcsa, a másolat kiírása után olvasva) → `app/save_controller.py`
+`_orokit_szarmazas_kulcsokat` → `index.origin.inherit_origin_key`. A mag
+lemez- és adatbázis-független marad: `save_copy` csak visszaad, nem tárol.
+
+**Előjel-kezelés:** a kulcs előjel NÉLKÜLI 64 bites, az SQLite INTEGER
+előjeles — a tárolás kettes komplemensben megy, ahogy a `photo_hashes`
+dHash-oszlopánál. Ez nem elméleti szélsőérték: a mért kulcsok fele a felső
+felébe esik (a #1648 mérésének `0x8637e41c12b8eaa` értéke is ilyen). Őrizve:
+`tests/test_index_origin_1648.py::test_a_teljes_64_bites_tartomany_visszaolvashato`.
+
+**Ami NYITOTT marad:** a törölt vagy átnevezett fájl sorát ma senki nem
+takarítja ki (`forget_origin_key` megvan, hívója nincs) — egy később
+ugyanoda kerülő, más fájl idegen származást örökölne. Külön jegy: **#2038**.
