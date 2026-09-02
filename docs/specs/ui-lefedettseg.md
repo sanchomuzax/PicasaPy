@@ -39,15 +39,15 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 257 |
+| párosítva | 259 |
 | másutt megvan (nem ezen a felületen) | 38 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 311 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 22 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 310 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 21 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **35.1%** |
+| **lefedettség az értékelhető elemeken** | **35.3%** |
 
-> ⚠️ **A 35.1% ALSÓ BECSLÉS, nem pontos érték.** 107 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.7%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 35.3% ALSÓ BECSLÉS, nem pontos érték.** 107 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.9%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -58,11 +58,11 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 1 | `makemoviepanel` | 49 | Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel nincs |
 | 2 | `publish` | 30 | Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | 3 | `editpanel` | 25 | A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet) |
-| 4 | `thumbui` | 25 | A fő könyvtárnézet egésze |
+| 4 | `thumbui` | 23 | A fő könyvtárnézet egésze |
 | 5 | `printoptions` | 22 | Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| 6 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
+| 6 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés) |
 | 7 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
-| 8 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
+| 8 | `compose_share` | 16 | PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok |
 | 9 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | 10 | `choose_mail` | 13 | Levelezőprogram-választó párbeszéd — nincs nálunk |
 
@@ -73,11 +73,11 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 34 | 0 | 15 | 56 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 26 | 4 | 0 | 95 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 99 | 1 | 13 | 4 | 8 | 187 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
-| `thumbui` | 140 | 46 | 18 | 3 | 8 | 6 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
+| `thumbui` | 140 | 46 | 20 | 3 | 7 | 5 | 11 | 94 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 0 | 20 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
+| `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 0 | 40 | **nem-cel** — Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés) |
 | `buzzupload` | 55 | 22 | 0 | 1 | 21 | 0 | 0 | 33 | **nem-cel** — Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
-| `compose_share` | 49 | 16 | 0 | 0 | 16 | 0 | 0 | 33 | **nincs-megfeleltetes** — Megosztási meghívó szerkesztő — nincs nálunk |
+| `compose_share` | 49 | 16 | 0 | 0 | 16 | 0 | 0 | 33 | **nem-cel** — PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 12 | 1 | 0 | 16 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
@@ -268,7 +268,7 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
 - `weblink` buboréksúgó: „Go to the website associated with this Photo”
 
-### `thumbui` — 25 hiány · panel-megfeleltetés: `parositva`
+### `thumbui` — 23 hiány · panel-megfeleltetés: `parositva`
 
 A fő könyvtárnézet egésze
 
@@ -291,9 +291,7 @@ A fő könyvtárnézet egésze
 - `next` buboréksúgó: „View the next Photo”
 - `prev` buboréksúgó: „View the previous Photo”
 - `searchgroup` — *bizonytalan*
-- `single_action_close` buboréksúgó: „Cancel "Get more"” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: thumbui.tre:661)
 - `single_action_message` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” (magyarul: „Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a "Vissza" gombra kattintva térjen vissza a projekthez”)
-- `single_action_return` buboréksúgó: „Go back to what you were editing”
 - `toggle_right_drawer` — *bizonytalan*
 - `visitweb` „Web View” (magyarul: „Internetes nézet”)
 - `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x009ca5e0)
@@ -325,9 +323,9 @@ Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „
 - `wrap_checkbox`
 - `wrap_checkbox_label` „Wrap text” (magyarul: „Szöveg tördelése”)
 
-### `upload` — 21 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
+### `upload` — 21 hiány · panel-megfeleltetés: `nem-cel`
 
-Picasa Web Albums feltöltő párbeszéd — nincs nálunk
+Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)
 
 - `add_groups_button`
 - `cancel` „Cancel” (magyarul: „Mégse”)
@@ -377,9 +375,9 @@ Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél
 - `visibility_label` „Album visibility” (magyarul: „Album láthatósága”)
 - `webalbums_menu`
 
-### `compose_share` — 16 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
+### `compose_share` — 16 hiány · panel-megfeleltetés: `nem-cel`
 
-Megosztási meghívó szerkesztő — nincs nálunk
+PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok
 
 - `add_groups_button`
 - `cancel` „Cancel” (magyarul: „Mégse”)
@@ -1010,7 +1008,7 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
-Összesen **440 felirat** 82 fájlban.
+Összesen **441 felirat** 82 fájlban.
 
 ### `PicasaPy/PicasaMenuBar.qml` — 30
 
@@ -1414,6 +1412,15 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „General (Lanczos-3)”
 - „Very sharp (Lanczos-8)”
 
+### `PicasaPy/TrayBar.qml` — 6
+
+- „Waiting for the collage to be created…”
+- „This will clear your entire tray.”
+- „Loupe — drag over the photos”
+- „Order Prints (service discontinued)”
+- „Publish to Blogger (service discontinued)”
+- „Select the items you want to add to the ”
+
 ### `PicasaPy/EditorCropPanel.qml` — 5
 
 - „Choose a size below, then drag on the picture to ”
@@ -1437,14 +1444,6 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - „Use music for Slideshow and Movie presentation:”
 - „Place taken (optional):”
 - „Description (optional):”
-
-### `PicasaPy/TrayBar.qml` — 5
-
-- „Waiting for the collage to be created…”
-- „This will clear your entire tray.”
-- „Loupe — drag over the photos”
-- „Order Prints (service discontinued)”
-- „Publish to Blogger (service discontinued)”
 
 ### `PicasaPy/CollageActionRow.qml` — 4
 

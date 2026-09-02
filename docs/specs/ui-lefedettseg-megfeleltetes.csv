@@ -12,7 +12,7 @@ choose_mail,nincs-megfeleltetes,,Levelezőprogram-választó párbeszéd — nin
 collab,nem-cel,,"Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél"
 collagepanel,parositva,PicasaPy/CreateDialogs.qml;PicasaPy/CollagePanel.qml;PicasaPy/CollagePanelTabBar.qml;PicasaPy/CollagePanelTabButton.qml;PicasaPy/CollageSettingsTab.qml;PicasaPy/CollageClipsTab.qml;PicasaPy/CollageActionRow.qml;PicasaPy/CollageZOrderColumn.qml;PicasaPy/CollageSnapColumn.qml;PicasaPy/CollageRandomRow.qml;PicasaPy/CollageContextMenus.qml;PicasaPy/CollageCanvas.qml;PicasaPy/CollageFormatMenu.qml;PicasaPy/CollageThemePopup.qml;PicasaPy/CollageBorderPicker.qml;PicasaPy/CollageBackgroundBox.qml;PicasaPy/CollageNode.qml;PicasaPy/CollageGroupNode.qml;PicasaPy/CollageSheet.qml;PicasaPy/CollageRing.qml;PicasaPy/CollageProgressOverlay.qml;PicasaPy/CollageDialogs.qml;PicasaPy/CollageDraftDialog.qml;PicasaPy/CollageDoneNotice.qml,"A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte."
 compose_mail,nincs-megfeleltetes,,"Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül"
-compose_share,nincs-megfeleltetes,,Megosztási meghívó szerkesztő — nincs nálunk
+compose_share,nem-cel,,"PWA megosztási meghívó szerkesztő — a szolgáltatás 2016-ban megszűnt; album-láthatóság, együttműködők, címzettek, csoportok"
 durationslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 editoneup,parositva,PicasaPy/PhotoViewer.qml,Egyképes nézet szerkesztés közben
 editpanel,parositva,PicasaPy/EditorPanel.qml;PicasaPy/EditorTabBar.qml;PicasaPy/EditorTabCommonFixes.qml;PicasaPy/EditorFinetunePanel.qml;PicasaPy/EditorEffectsTab1.qml;PicasaPy/EditorEffectsTab2.qml;PicasaPy/EditorEffectsTab3.qml;PicasaPy/EditorEffectsTab4.qml;PicasaPy/EditorLegacyTab.qml;PicasaPy/EditorCropPanel.qml;PicasaPy/EditorRedeyePanel.qml;PicasaPy/EditorRetouchPanel.qml;PicasaPy/EditorParamPanel.qml;PicasaPy/EditorDialogs.qml;PicasaPy/EditTabButton.qml;PicasaPy/EditTabIcon.qml;PicasaPy/CropOverlay.qml;PicasaPy/HistogramBox.qml;PicasaPy/AddCustomAspectRatioDialog.qml;PicasaPy/EditOverwriteDialog.qml;PicasaPy/BatchEditProgressPanel.qml;PicasaPy/ToolTile.qml;PicasaPy/PhotoViewer.qml,"A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet)"
@@ -66,7 +66,7 @@ titledialog,nincs-megfeleltetes,,Filmes címdia-szerkesztő párbeszéd — ninc
 toolslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 transitionslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 unknownfaceheaderpanel,parositva,PicasaPy/UnnamedFacesView.qml,Névtelen arcok fejléce
-upload,nincs-megfeleltetes,,Picasa Web Albums feltöltő párbeszéd — nincs nálunk
+upload,nem-cel,,"Picasa Web Albums feltöltő párbeszéd — a szolgáltatás 2016-ban megszűnt; a panel MINDEN eleme a PWA-hoz köt (album-lista, láthatóság, együttműködők, tárhely-bővítés)"
 uploadallinstructionpanel,nincs-megfeleltetes,,Feltöltési betanító buborék — nincs nálunk
 uploadmgr,nincs-megfeleltetes,,Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk
 video_control_bar,parositva,PicasaPy/VideoPlayerView.qml,Videó vezérlősáv (vágás is)
