@@ -118,27 +118,46 @@ bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vag
 második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
 lehetőleg különböző sávokból végy jegyeket.
 
-## 📐 A tulajdonos lapja — dolgozó munkamenetként NE publikáld
+## 📐 A tulajdonos lapja — a kör ELEJÉN olvasd, a kör VÉGÉN frissítsd
 
-A tulajdonos **egyetlen** olvasható lapot kap, három szakasszal: hol tart a
-projekt, mennyit fejtettünk vissza a Picasából, és hogyan dolgozunk.
+A tulajdonos **egyetlen** olvasható lapot kap: hol tart a projekt, mennyit
+fejtettünk vissza a Picasából, és hogyan dolgozunk. A lapot **a dolgozó
+munkamenetek tartják naprakészen** — ez ugyanolyan kötelező, mint a
+git-szabályok betartása.
 
-A lapot **kizárólag** a `picasapy-allapotlap-halo` ütemezett feladat teszi ki,
-naponta háromszor, és csak ha a tartalom tényleg változott. **Dolgozó
-munkamenetként ne publikáld, és ne is generáld** — a kör végén nincs vele
-teendőd: se jegyzáráskor, se kiadáskor, se spec-írás után.
+**Cím:** `https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e`
 
-**Miért:** amíg minden munkamenet publikált, a párhuzamos körök rendszeresen
-ütköztek, és az ütközés a felhasználó felületén **piros hibaként** jelent meg.
-Egy publikálóval nincs verseny, tehát nincs piros hiba. (Mérés: 2026-09-01.)
+### A kör ELEJÉN — olvasd el
 
-Megnézni bármikor szabad — ez csak számol és fájlba ír, nem publikál:
+Fejlesztési vagy kutatási kör indulásakor `WebFetch` a fenti címre. Két dolog
+múlik rajta: látod, hol tart a projekt, **és ez előfeltétele annak, hogy a kör
+végén egyáltalán publikálni tudj**.
+
+### A kör VÉGÉN — frissítsd
+
+**Kötelező minden kiadás után és minden lezárt kutatási kör után**, továbbá ha
+a köröd jegyet nyitott vagy zárt, PR-t olvasztott be, vagy specifikációt
+bővített:
 
 ```
 cd ~/picasapy-agent && python3 eszkozok/egy_lap.py
 ```
 
-A pontos menet, a cím és az ütközés kezelése: a privát repó `docs/lapok.md`-je.
+majd `Artifact` hívás — `file_path`: `~/picasapy-agent/docs/egy-lap.html`,
+`url`: a fenti cím (**kötelező**; `url` nélkül új lap jön létre, és a
+felhasználó régi linkje elavul), `favicon`: 📐.
+
+### Ha hibát kapsz
+
+- **„this session hasn't viewed the latest version"** — kimaradt a kör eleji
+  olvasás. `WebFetch`-eld a címet, és publikálj újra. Ez nem tiltás, hanem egy
+  kihagyott lépés.
+- **`conflict`** — egy másik munkamenet ugyanabból a generált forrásból már
+  publikálta. Nem hiba, semmi nem veszett el: ne `force`-olj, ne generálj újra.
+
+**Piros hibát SOHA ne úgy „oldj meg", hogy elnémítod a jelzést.** A piros
+üzenet azt jelenti, hogy valami tényleg elromlott — az elavult lap nem
+elfogadható kimenet. A jelzés eltakarása súlyosabb hiba, mint maga a hiba.
 
 ## Fejlesztés
 
