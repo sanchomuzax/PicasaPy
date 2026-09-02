@@ -184,7 +184,28 @@ Column {
         }
         Text {
             objectName: "trayInfoText"
-            anchors.centerIn: parent
+            // #1934 (spec `kek-info-sav.md` 6.): a szövegnek SAJÁT clipje
+            // van — `thumbui/clip: infotext_clip`, kényszere
+            // `XConstraint 0, 0, 20` / `1, 1, -20` a sávon. A kék HÁTTÉR
+            // ettől függetlenül teljes szélességű marad (mérve: a csík
+            // sorában a kék x 0…1919, nem-kék képpont 0).
+            //
+            // A `respack.yt` ugyanerre az elemre `x 183…664`-et tárol, de
+            // az MEGDŐLT: az a téglalap nem szimmetrikus (balra 183,
+            // jobbra 136, közepe 423,5 a 800-as vásznon), márpedig a
+            // szöveg közepe mind a 20 felvételen az ablak közepén áll
+            // (|Δ| ≤ 0,5 képpont). A tárolt téglalap a tervezővászon
+            // szerzői értéke; ahol az elem kényszert kap, az elrendező
+            // felülírja.
+            //
+            // `clip`, nem `elide`: az eredeti elem CLIP, a levágás helye
+            // mért, a „…" hárompont viszont a MI döntésünk lenne — arra
+            // nincs bizonyítékunk, ezért nem vezetjük be.
+            x: 20
+            width: Math.max(0, parent.width - 40)
+            anchors.verticalCenter: parent.verticalCenter
+            horizontalAlignment: Text.AlignHCenter
+            clip: true
             // #718: null-őr — a `ctl` mellett az `appWindow` is
             // átmenetileg null lehet az engine-leépítés utolsó kiértékelésekor.
             //

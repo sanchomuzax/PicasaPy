@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.208] – 2026-09-02
+
+### Javítva
+- **Az alsó sáv kék csíkjában a szöveg a helyére került (#1934).** Eddig a
+  teljes sávot kapta; az eredetiben a szövegnek saját, két oldalt húsz
+  képponttal beljebb kezdődő helye van. Húsz képernyőképen lemérve: a
+  felirat közepe pontosan az ablak közepén áll — a másik lehetséges
+  olvasat ötvenhat képponttal odébb tolta volna. A kék háttér
+  változatlanul végigmegy a képernyőn.
+
 ## [0.8.207] – 2026-09-02
 
 ### Javítva
