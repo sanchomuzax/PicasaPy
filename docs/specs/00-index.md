@@ -409,6 +409,20 @@ a filmszalag **hét férőhelyes** (`7 × 28 + 6 × 3 = 214`), az aktuális kép
    Ghidra-kör a `CFilmstrip::vftable` (`0x00c9359c`) egérkezelő rekeszére.
    Lap: `szerkeszto-felso-sav.md` 5.5; jegy **#1905**.
 
+### [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02:** a `thumbui` `single_action_*` hármasa feltárva — a
+kollázs/filmkészítő **klip-gyűjtő módja**. Két belépési pont, három
+visszatérő felirat (`collagepanel::back_to_collage` · `CMakeMoviePanel::back_to_slideshow`
+· `thumbui::back_to_previous_tab`), a ✕ **csak elrejt**. Helyesbítés: a
+`konyvtar-ablak-meretek.md` 5.8 „haladásjelzés" elnevezése téves volt. → **#1939**.
+
+1. **Villog-e a visszatérő gomb?** A gomb makrója hozza a negyedik
+   („throb") bőrt — mért különbség: a keret `#BBBBBB` → **`#629BC3`** —, de a
+   `.tre` nem ír rá `Property throb 1`-et, tehát ha bekapcsolódik, azt kód
+   teszi. **Megszerzés:** célzott Ghidra-kör a `0x00601090`-re (`eThrobOff`).
+   Lap: `getmore-klipgyujto-mod.md` 3.3; jegy **#1939**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -448,6 +462,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 |---|---|
 | [szerkeszto-panel-meretek.md](szerkeszto-panel-meretek.md) | A szerkesztő bal panelje (201 elem) — **az 1. fül gombsorrendjének EGYETLEN érvényes forrása** |
 | [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) | **A szerkesztő FELSŐ SÁVJA (`oneup_controls`)** — a hét vezérlő képpontos geometriája két, egymást igazoló forrásból; a „paletta-ikonos gomb" = `quickupload` (Web Albums Drop Box); a filmszalag **hét férőhelyes**, az aktuális kép **mindig középen**; a kijelölés-keret `#009EFF`+`#D4D4D4`; a hisztogram-doboz horgonya `root.alsó − 95` |
+| [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |

@@ -260,15 +260,21 @@ hézag nélkül:
 | `outputs` (Nyomtatás / E-mail / Exportálás sor) | **424 × 29** |
 | `separator` | **497 × 2** |
 
-### 5.8 Az „egy művelet" sáv (haladásjelzés)
+### 5.8 A „Továbbiak…" klip-gyűjtő mód üzenetsávja
 
-| elem | méret |
-|---|---:|
-| `single_action_container` | **502 × 40** |
-| `single_action_group` | 481 × 30 |
-| `single_action_message` | 335 × 26 |
-| `single_action_return` | **109 × 43** |
-| `single_action_close` | **18 × 18** |
+⚠️ **HELYESBÍTÉS (2026-09-02):** ez a szakasz korábban *„az »egy művelet«
+sáv (haladásjelzés)"* néven futott. **Nem haladásjelzés** — a kollázs és a
+filmkészítő **klip-gyűjtő módjának** üzenetsávja, és a `single_action_container`
+**mérete sem fix**, mert négy kényszere van. A működés és a levezetés:
+[`getmore-klipgyujto-mod.md`](getmore-klipgyujto-mod.md).
+
+| elem | méret | státusz |
+|---|---:|---|
+| `single_action_container` | (502 × 40 a tervezővásznon) | **NEM normatív** — kényszer-vezérelt, ld. a hivatkozott lap 3.1 |
+| `single_action_group` | **481 × 30** | fix |
+| `single_action_message` | **335 × 26** | fix, jobbra igazított |
+| `single_action_return` | **109 × 43** | fix |
+| `single_action_close` | **18 × 18** | fix |
 
 ### 5.9 Egyéb
 
