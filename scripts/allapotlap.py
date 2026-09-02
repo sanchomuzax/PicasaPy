@@ -305,12 +305,18 @@ def _kovetkezo_bevezeto(a: dict) -> str:
         '(138/138), ezért a sor mostantól a felület fehér foltjait '
         'mutatja: <strong>a legnagyobbakat, méret szerint</strong> — nem '
         'válogatás, két futás ugyanazt adja.</p>\n'
-        f'      <p class="note">A {meres.hianyzik} „hiányzó" és a '
+        f'      <p class="note">A {meres.hianyzik} feltáratlan és a '
         f'{meres.bizonytalan} bizonytalan elem <strong>feltárandó '
         f'jelölt, nem megállapított hiány</strong>: eddig '
         f'{meres.felulbiralasok} elemről derült ki kézi ellenőrzéssel, '
         f'hogy valójában megvan nálunk, csak máshogy. A szám ezekkel '
-        f'csökken.{kor}</p>'
+        f'csökken.{kor}</p>\n'
+        # #1878: a kettő KÜLÖN munka — az egyikhez kutatás kell, a
+        # másikhoz fejlesztés. A tulajdonos lapján ez eddig egy szám volt.
+        f'      <p class="note">Ezen felül <strong>{meres.lekutatva} '
+        f'elemet már feltártunk</strong> — azokról tudjuk, mit csinálnak, '
+        f'csak még nem építettük meg. Ezekhez nem kutatás kell, hanem '
+        f'fejlesztés.</p>'
     )
 
 

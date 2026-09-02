@@ -77,6 +77,10 @@ class Meres:
     rangsor: tuple[Panel, ...]
     parositva: int
     hianyzik: int
+    #: #1878: a hiány KÉT külön dolog — a `hianyzik` feltáratlan (kutatói
+    #: kör kell), a `lekutatva` fel van tárva, csak nem megépítve
+    #: (fejlesztői kör). A lap mindkettőt kiírja, mert más munka.
+    lekutatva: int
     bizonytalan: int
     felulbiralasok: int
 
@@ -117,12 +121,53 @@ def _osszesito(szoveg: str) -> dict[str, int]:
         talalat = _OSSZESITO_SOR.match(sor)
         if not talalat:
             continue
-        cimke = talalat.group(1).strip("* ").lower()
+        #: A félkövér jelölés a címke BELSEJÉBEN is állhat („hiányzik —
+        #: **feltáratlan** (kutatói kör)"), ezért mindet kivesszük, nem
+        #: csak a széleken — különben a kulcs nem illeszkedne.
+        cimke = talalat.group(1).replace("*", "").strip().lower()
         try:
             ki[cimke] = int(talalat.group(2))
         except ValueError:
             continue
     return ki
+
+
+#: Az összesítő tábla címkéi EMBERI szövegek — a generátor bővítheti őket
+#: („hiányzik" → „hiányzik — **feltáratlan** (kutatói kör kell)"). Ezért
+#: prefixre illesztünk, nem pontos egyezésre.
+#:
+#: ⚠️ MÉRT eset (#1878): amikor a generátor átnevezte ezt a sort, a pontos
+#: egyezés némán **0-t** adott — az állapotlapon ez HAMIS JAVULÁSKÉNT
+#: jelent volna meg („nincs több hiány"). A `KOTELEZO_KULCSOK` őre ezért
+#: nem stílus kérdése: az fogja meg, ha a lap és az olvasó elcsúszik.
+KOTELEZO_KULCSOK = (
+    "párosítva",
+    "hiányzik — feltáratlan",
+    "hiányzik — lekutatva",
+    "bizonytalan",
+)
+
+
+def _szam(szamok: dict[str, int], prefix: str) -> int:
+    """Az első olyan összesítő-sor száma, amelynek címkéje `prefix`-szel kezdődik."""
+    for cimke, ertek in szamok.items():
+        if cimke.startswith(prefix):
+            return ertek
+    return 0
+
+
+def hianyzo_kulcsok(szoveg: str) -> tuple[str, ...]:
+    """Mely kötelező összesítő-kulcsok NINCSENEK meg a lapon.
+
+    Ezt az őr-teszt hívja a COMMITOLT lapra. Üres eredmény = a lap és az
+    olvasó összhangban van.
+    """
+    szamok = _osszesito(szoveg)
+    return tuple(
+        prefix
+        for prefix in KOTELEZO_KULCSOK
+        if not any(cimke.startswith(prefix) for cimke in szamok)
+    )
 
 
 def _felulbiralasok(gyoker: Path) -> int:
@@ -172,8 +217,9 @@ def olvas(ut: Path | None = None) -> Meres | None:
     return Meres(
         ideje=ideje,
         rangsor=tuple(rangsor),
-        parositva=szamok.get("párosítva", 0),
-        hianyzik=szamok.get("hiányzik", 0),
-        bizonytalan=szamok.get("bizonytalan", 0),
+        parositva=_szam(szamok, "párosítva"),
+        hianyzik=_szam(szamok, "hiányzik — feltáratlan"),
+        lekutatva=_szam(szamok, "hiányzik — lekutatva"),
+        bizonytalan=_szam(szamok, "bizonytalan"),
         felulbiralasok=_felulbiralasok(ut.resolve().parents[2]),
     )
