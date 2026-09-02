@@ -210,7 +210,7 @@ ColumnLayout {
             width: 29; height: 27
             Layout.preferredWidth: 29
             Layout.preferredHeight: 27
-            ToolTip.text: qsTr("Create a collage from these photos")
+            ToolTip.text: qsTr("Create Photo Collage")
             ToolTip.visible: hovered
             ToolTip.delay: 500
             onClicked: header.collageRequested()
