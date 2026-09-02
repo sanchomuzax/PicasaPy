@@ -5354,6 +5354,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Csillag hozzáadása/eltávolítása</translation>
     </message>
     <message>
+        <source>Loupe — drag over the photos</source>
+        <translation>Nagyító — húzd a képek fölött</translation>
+    </message>
+    <message>
         <source>Rotate counter-clockwise</source>
         <translation>Forgatás balra</translation>
     </message>

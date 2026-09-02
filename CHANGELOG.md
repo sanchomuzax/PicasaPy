@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.209] – 2026-09-02
+
+### Javítva
+- **A rács nagyítója újra elérhető (#1911).** Ezt te jelentetted: a gomb
+  „semmit nem csinált". Kiderült, hogy a nagyító maga működik, csak a
+  bekapcsoló gombja korábban kikerült a felületről, így nem volt mit
+  megnyomni. A gomb most az **alsó sávban** van, a nagyítás-csúszka
+  mellett — ott, ahol az eredeti Picasában is —, és a rámutatva megjelenő
+  buborék megmondja a lényeget: **húzni** kell vele a képek fölött, nem
+  kattintani.
+
 ## [0.8.208] – 2026-09-02
 
 ### Javítva
