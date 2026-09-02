@@ -13,8 +13,10 @@ Ez a szkript ezért **nem leírja** az állapotot, hanem **méri**:
 * spec-lapok        → a `docs/specs/` fájljai
 
 Kimenete egy önhordó HTML, amit artifactként publikálunk. Mivel minden
-futáskor újraszámol, a lap nem tud elavulni — legfeljebb régi, és azt a
-fejlécében ki is írja.
+futáskor újraszámol, egyetlen mondata sincs kézzel írva. Frissesség
+szempontjából viszont NEM egynemű: a szakaszok saját eredet-sort kapnak (a
+forrás kora + mitől frissül), mert egy részük commitolt mérésből jön — ld.
+`scripts/szakasz_eredet.py`, #2046.
 
 Használat:
 
@@ -44,6 +46,7 @@ from kutatas_elszamolas import (  # noqa: E402
     _spec_nyitott_kerdesek,
 )
 from menu_lefedettseg import kovetkezo_ot, merd  # noqa: E402
+from szakasz_eredet import eredet_sor, forras_datum  # noqa: E402
 from ui_lefedettseg_lap import olvas as _ui_lefedettseg  # noqa: E402
 
 #: A publikált artifact címe. Egy MÁSIK munkamenetből frissítve EZT kell
@@ -53,6 +56,19 @@ from ui_lefedettseg_lap import olvas as _ui_lefedettseg  # noqa: E402
 ARTIFACT_URL = "https://claude.ai/code/artifact/4deaf3dd-41c3-4da2-85ec-5fd14a98601e"
 
 SPEC_DIR = REPO / "docs" / "specs"
+
+
+#: #2046: a lap fejléce a GENERÁLÁS idejét írja ki, ezért minden futás után
+#: mainak látszik — a tartalom nagy része viszont commitolt mérésből jön, ami
+#: hetekig változatlan. Ezért kap minden szakasz saját eredet-sort: a forrás
+#: kora, és egy mondat arról, mitől frissülne.
+ELO = "minden futáskor — élő GitHub-lekérdezés"
+UI_MERES = SPEC_DIR / "ui-lefedettseg.md"
+
+
+def _elo_eredet(a: dict) -> str:
+    """Élő lekérdezésből élő szakasz: a forrás kora maga a futás ideje."""
+    return eredet_sor(a["ideje"].strftime("%Y-%m-%d"), ELO)
 
 
 # --- mérés -----------------------------------------------------------------
@@ -253,6 +269,7 @@ def _mi_tortent_szakasz(a: dict) -> str:
       <p>A legutóbbi kiadások és az elmúlt 24 óra lezárt jegyei — hogy ne a
          GitHubot kelljen böngészni. A lezárás azt jelenti: beolvadt és
          kiment.</p>
+{_elo_eredet(a)}
     </div>
     <div class="groups">
       <div class="group ok">
@@ -397,11 +414,11 @@ def epits(a: dict) -> str:
     <p class="eyebrow">PicasaPy · mért állapot · frissítve {_e(ideje)}</p>
     <h1>Hol tart a projekt most</h1>
     <p class="standfirst">
-      Ezen a lapon egyetlen mondat sincs kézzel írva. Minden szám mérésből jön:
-      a menüparancsok feltártsága a Picasa saját parancslistájából, a jegyek a
-      GitHubról, a rothadás-mutató abból, hány jegyhez nem nyúlt hozzá senki a
-      nyitása óta. Ezért a lap nem tud elavulni — legfeljebb régi lehet, és a
-      dátumát fent kiírja.
+      Ezen a lapon egyetlen mondat sincs kézzel írva — minden szám mérésből
+      jön. De nem mind ugyanolyan friss: egy részük élő GitHub-lekérdezés,
+      másik részük commitolt mérés, ami hetekig változatlan lehet. Ezért
+      minden szakasz alatt ott áll, <b>mikori az adata</b> és <b>mitől
+      frissülne</b>. A fenti dátum csak a lap előállításáé.
     </p>
   </header>
 {hiba}
@@ -415,6 +432,7 @@ def epits(a: dict) -> str:
          jegy leírja, pontosan mi kell. A másik kettő nem rád vár; azért van
          itt, hogy lásd, mi áll és min múlik. Egy jegy csak egy csoportban
          szerepel.</p>
+{_elo_eredet(a)}
     </div>
     <div class="groups">
 {_jegylista("Rád vár", "Legtöbbször egy export vagy egy képernyőkép a windowsos Picasából.", var_rank, "warn")}
@@ -427,6 +445,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>A következő öt kutatnivaló</h2>
 {_kovetkezo_bevezeto(a)}
+{eredet_sor(forras_datum(UI_MERES), "ha valaki újrafuttatja az UI-lefedettségi mérőt (a privát repóban)")}
     </div>
 {_kovetkezo_szakasz(a)}
   </section>
@@ -436,6 +455,7 @@ def epits(a: dict) -> str:
       <h2>A rothadás</h2>
       <p>Jegyek, amelyekhez a nyitásuk óta senki nem nyúlt. Ez a szakasz azért
          van itt, hogy ez a szám <em>látszódjon</em> — enélkül csendben nő.</p>
+{_elo_eredet(a)}
     </div>
     <div class="groups">
 {_jegylista("A tíz legrégebbi érintetlen", f"Összesen {len(a['erintetlen'])} ilyen jegy van.", erintetlen_regi, "warn")}
@@ -446,6 +466,7 @@ def epits(a: dict) -> str:
     <div class="section-head">
       <h2>Specifikációs lapok nyitott kérdéssel</h2>
       <p>A <code>docs/specs/</code> kézzel karbantartott kérdés-listájából.</p>
+{eredet_sor(forras_datum(SPEC_DIR), "ha egy specifikációs lap kérdés-listája változik")}
     </div>
 {_spec_szakasz(a)}
   </section>
@@ -527,6 +548,8 @@ _STILUS = """<style>
   .section-head { display:flex; flex-direction:column; gap:0.35rem; }
   h2 { font-family:var(--font-display); font-size:1.5rem; font-weight:600;
        letter-spacing:-0.01em; margin:0; text-wrap:balance; }
+  .eredet { margin:0; font-family:var(--font-mono); font-size:0.72rem;
+            color:var(--ink-faint); letter-spacing:0.01em; }
   .section-head p { margin:0; color:var(--ink-soft); max-width:44rem; font-size:0.93rem; }
   h3 { font-family:var(--font-display); font-size:1.05rem; font-weight:600; margin:0; }
 
