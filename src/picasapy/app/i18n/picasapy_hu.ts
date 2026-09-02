@@ -3875,6 +3875,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>MainToolbar</name>
     <message>
+        <source>Get photos from a camera, scanner, or other media</source>
+        <translation>Fotók letöltése fényképezőgépről, képolvasóról vagy más eszközről</translation>
+    </message>
+    <message>
         <source>Show movies only</source>
         <translation>Csak filmek megjelenítése</translation>
     </message>
@@ -3915,13 +3919,13 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
-        <source>Flat folder view</source>
-        <translation>Lapos mappanézet</translation>
+        <source>Set view to show flat folder structure</source>
+        <translation>Egydimenziós mappanézet beállítása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
-        <source>Tree folder view</source>
-        <translation>Fa mappanézet</translation>
+        <source>Set view to show folder tree structure</source>
+        <translation>Fastruktúrájú mappanézet beállítása</translation>
     </message>
     <message>
         <source>Click and drag over photos to magnify them</source>
@@ -5342,6 +5346,54 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>TrayBar</name>
     <message>
+        <source>Clear Tray</source>
+        <translation>Tálca ürítése</translation>
+    </message>
+    <message>
+        <source>Add/Remove Star</source>
+        <translation>Csillag hozzáadása/eltávolítása</translation>
+    </message>
+    <message>
+        <source>Rotate counter-clockwise</source>
+        <translation>Forgatás balra</translation>
+    </message>
+    <message>
+        <source>Rotate clockwise</source>
+        <translation>Forgatás jobbra</translation>
+    </message>
+    <message>
+        <source>People</source>
+        <translation>Emberek</translation>
+    </message>
+    <message>
+        <source>Places</source>
+        <translation>Helyek</translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation>Címkék</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>Tulajdonságok</translation>
+    </message>
+    <message>
+        <source>Show/Hide People Panel</source>
+        <translation>Az Emberek párbeszédpanel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Places Panel</source>
+        <translation>A Helyek párbeszédpanel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Tags Panel</source>
+        <translation>A Címkék párbeszédpanel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
+        <source>Show/Hide Properties Panel</source>
+        <translation>A Tulajdonságok párbeszédpanel megjelenítése/elrejtése</translation>
+    </message>
+    <message>
         <source>Order Prints (service discontinued)</source>
         <translation>Papírképek rendelése (a szolgáltatás megszűnt)</translation>
     </message>
@@ -5351,8 +5403,8 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
-        <source>Add the pictures in the tray to an album</source>
-        <translation>A tálcán lévő képek hozzáadása egy albumhoz</translation>
+        <source>Add selected items to an Album</source>
+        <translation>Kijelölt elemek hozzáadása albumhoz</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
@@ -5401,13 +5453,13 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml" line="232"/>
-        <source>Hold Selection</source>
-        <translation>Kijelölés megtartása</translation>
+        <source>Hold selected items</source>
+        <translation>Kijelölt elemek megőrzése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml" line="249"/>
-        <source>Clear Tray</source>
-        <translation>Tálca ürítése</translation>
+        <source>Clear items from the selection</source>
+        <translation>Elemek eltávolítása a kijelölésből</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
@@ -6095,12 +6147,32 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>TrayContextMenu</name>
     <message>
-        <source>Keep Selection</source>
-        <translation>Kijelölés megtartása</translation>
+        <source>&amp;Hold Selection</source>
+        <translation>Kijelölés &amp;megtartása</translation>
     </message>
     <message>
-        <source>Remove Selection</source>
-        <translation>Kijelölés eltávolítása</translation>
+        <source>&amp;Remove Selection</source>
+        <translation>Kijelölés &amp;eltávolítása</translation>
+    </message>
+    <message>
+        <source>&amp;View and Edit</source>
+        <translation>&amp;Megjelenítés és szerkesztés</translation>
+    </message>
+    <message>
+        <source>R&amp;otate Clockwise</source>
+        <translation>Forgatás &amp;jobbra</translation>
+    </message>
+    <message>
+        <source>Rotate &amp;Counterclockwise</source>
+        <translation>Forgatás &amp;balra</translation>
+    </message>
+    <message>
+        <source>&amp;Locate on Disk</source>
+        <translation>&amp;Keresés a lemezen</translation>
+    </message>
+    <message>
+        <source>Propert&amp;ies</source>
+        <translation>T&amp;ulajdonságok</translation>
     </message>
 </context>
 <context>

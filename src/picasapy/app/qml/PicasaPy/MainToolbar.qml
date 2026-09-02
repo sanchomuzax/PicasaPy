@@ -78,6 +78,11 @@ Rectangle {
             Layout.preferredWidth: 111
             Layout.minimumWidth: 111
             Layout.preferredHeight: 22
+            //: #1929: `thumbui/importbutton` — az EREDETI súgója, szó
+            //: szerint (`referencia/ui-leltar.csv`). Eddig nem volt súgója.
+            ToolTip.text: qsTr("Get photos from a camera, scanner, or other media")
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
             onClicked: toolbar.importRequested()
         }
         // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
@@ -166,7 +171,7 @@ Rectangle {
                            : (flatViewHover.hovered ? Theme.selectionBlue : "#8f8b83")
                 }
                 //: `flatview` — az eredeti buboréksúgója
-                ToolTip.text: qsTr("Flat folder view")
+                ToolTip.text: qsTr("Set view to show flat folder structure")
                 ToolTip.visible: flatViewHover.hovered
                 ToolTip.delay: 500
                 HoverHandler { id: flatViewHover }
@@ -187,7 +192,7 @@ Rectangle {
                            : (treeViewHover.hovered ? Theme.selectionBlue : "#8f8b83")
                 }
                 //: `folderview` — az eredeti buboréksúgója
-                ToolTip.text: qsTr("Tree folder view")
+                ToolTip.text: qsTr("Set view to show folder tree structure")
                 ToolTip.visible: treeViewHover.hovered
                 ToolTip.delay: 500
                 HoverHandler { id: treeViewHover }

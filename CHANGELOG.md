@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.205] – 2026-09-02
+
+### Javítva
+- **A buboréksúgók az eredeti Picasa szövegei (#1929).** Eddig saját
+  átfogalmazások voltak (a 31-ből egy egyezett), négy gombnak pedig —
+  Importálás, csillag, forgatás balra/jobbra — egyáltalán nem volt súgója.
+  A magyar szövegek a Picasa hivatalos fordításából valók, nem a mi
+  fogalmazásunk.
+
+### Hozzáadva
+- **Négy panelkapcsoló az alsó sávban: Emberek · Helyek · Címkék ·
+  Tulajdonságok (#1927).** Eddig ezek a panelek csak a menüből voltak
+  elérhetők. A gombok az eredeti Picasa mért helyén és méretében állnak
+  (összefüggő szegmenssáv), és a rájuk kattintás nyitja-zárja a saját
+  paneljét.
+- **A képtálca jobbklikk-menüje hét tételes lett kettő helyett (#1917).**
+  Megjelenítés és szerkesztés · Kijelölés megtartása · Kijelölés
+  eltávolítása · Forgatás jobbra · Forgatás balra · Keresés a lemezen ·
+  Tulajdonságok. A „Kijelölés megtartása" angol felirata is javítva.
+
 ## [0.8.204] – 2026-09-02
 
 ### Javítva

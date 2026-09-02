@@ -47,6 +47,13 @@ Column {
     property int viewerIndex: -1
     // az Exportálás gomb (a dialógus a Main.qml-ben él)
     signal exportRequested()
+    // #1917: a tálca helyi menüjének ÖRÖKÖLT tételei — a vezérlők a
+    // Main.qml-ben élnek, ide csak a jelzés jut el.
+    signal viewAndEditRequested()
+    signal trayRotateRightRequested()
+    signal trayRotateLeftRequested()
+    signal trayLocateRequested()
+    signal trayPropertiesRequested()
     // #361: Kollázs/Film a tálcáról (a dialógusok a Main.qml-ben élnek)
     signal collageRequested()
     signal movieRequested()
@@ -222,6 +229,14 @@ Column {
                 if (tray.ctl && typeof tray.ctl.removeHeldRows === "function")
                     tray.ctl.removeHeldRows(tray.selectedIndexesOrEmpty)
             }
+            // #1917: az öt ÖRÖKÖLT tétel — más névterekből, de ugyanarra a
+            // kijelölésre hat, mint a rács helyi menüjének párja. A jelzést
+            // a gyökér adja tovább a `Main.qml`-nek, ahol a vezérlők élnek.
+            onViewAndEditRequested: tray.viewAndEditRequested()
+            onRotateRightRequested: tray.trayRotateRightRequested()
+            onRotateLeftRequested: tray.trayRotateLeftRequested()
+            onLocateRequested: tray.trayLocateRequested()
+            onPropertiesRequested: tray.trayPropertiesRequested()
         }
         // #1420: 20 (infó-csík) + 85 = 105 — a `publishbottom` = −105.
         width: parent.width; height: 85
@@ -340,28 +355,42 @@ Column {
             // TÖBB SORBA tördelődnek — nem tűnnek el némán.
             //
             // Húsz referencia-felvétel ugyanabban az 1920×1080-as
-            // ablakban: 15 kijelölt kép → 1 sor, ~55 képpont magas
-            // bélyegképek; 67 kép → 3 sor, ~22 képpont. A doboz külső
-            // mérete közben változatlan. Tehát nem görgetősáv és nem
-            // levágás.
+            // ablakban. A doboz külső mérete közben változatlan: nem
+            // görgetősáv és nem levágás.
             //
             // Nálunk eddig egyetlen `Row` állt itt `clip: true`-val: a be
             // nem férő képek EGYSZERŰEN ELTŰNTEK. A kék infó-csík közben
             // a teljes darabszámot írta — a felület önmagának mondott
             // ellent.
             //
-            // ⚠️ A magasság KÉPLETE a darabszámból nincs levezetve (a
-            // #1904 nyitott kérdése): két mért pontunk van. Amit innen
-            // BIZTOSAN tudunk, az a felső korlát (55) és a három sornál
-            // mért 22 — és a kettő ugyanabból a szabályból jön ki:
+            // ## A MÉRT sorozat (spec `picasa-keptalca.md` 15.2)
             //
-            //     h(sorok) = min(55, (belmagasság − (sorok−1)·hézag) / sorok)
-            //     h(1) = 55 · h(2) = 34 · h(3) = 22   ← a mért érték
+            //   kép | sorok | tartalom | osztásköz
+            //     3 |   1   |   54     |  57,00
+            //    12 |   1   |   48     |  51,00
+            //    15 |   1   |   38     |  39,93
+            //    19 |   1   |   29     |  31,00
+            //    27 |   2   |   28     |  29,94
+            //    49 |   2   |   22     |  24,00
+            //    67 |   3   |  18–19   |  21,00
+            //    82 |   3   |  18–19   |  21,00
             //
-            // A sorszám a legkisebb, amivel minden kép elfér. A becsléshez
-            // névleges 3:2 oldalarányt veszünk (a valódi tördelést a
-            // `Flow` a tényleges szélességekkel végzi; a 3:2 bőven adott,
-            // ezért a tényleges sorszám csak KEVESEBB lehet a becsültnél).
+            // ⚠️ #1916 HELYESBÍTÉS: egy korábbi változat itt „h(2)=34 ·
+            // h(3)=22 ← a mért érték"-et állított. **Ez téves volt** — a
+            // 22 a KÉTSOROS, 49 képes eset tartalma, a háromsoros eseté
+            // 18–19 (21-es osztásközzel). Mért értéknek nevezni valamit,
+            // ami nem az, rosszabb, mint nem tudni.
+            //
+            // ⛔ A cellaméret pontos KÉPLETE: **NINCS MEG.** A spec 15.4
+            // kimerítő keresést közöl a kézenfekvő modellre — ±1 tűréssel
+            // 912 paraméterkészlet megy át a tizenhat megfigyelésen,
+            // pontos egyezéssel NULLA. A tizenhat megfigyelés tehát nem
+            // határozza meg a konstansokat, és a kézenfekvő modell rossz.
+            //
+            // Amit itt számolunk, az ezért NEM az eredeti képlete, hanem
+            // egy VISELKEDÉS: fix doboz, semmi nem lóg ki, több sor nagyobb
+            // darabszámnál — a felső korlát a mért 54. Az őr is ezt
+            // rögzíti, nem képpontszámot.
             Flow {
                 id: trayScratchStrip
                 objectName: "trayScratchStrip"
@@ -488,7 +517,7 @@ Column {
                          : false
                 onClicked: tray.ctl && tray.appWindow && tray.ctl.holdRows(
                     tray.appWindow.selectedIndexes)
-                ToolTip.text: qsTr("Hold Selection")
+                ToolTip.text: qsTr("Hold selected items")
                 ToolTip.visible: trayHoldBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -512,7 +541,7 @@ Column {
                 height: 20
                 enabled: trayScratchBack.heldCount > 0
                 onClicked: trayClearConfirm.open()
-                ToolTip.text: qsTr("Clear Tray")
+                ToolTip.text: qsTr("Clear items from the selection")
                 ToolTip.visible: trayClearBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -549,7 +578,7 @@ Column {
                          && tray.ctl && tray.ctl.albums
                          && tray.ctl.albums.length > 0)
                 onClicked: trayAddToMenu.popup()
-                ToolTip.text: qsTr("Add the pictures in the tray to an album")
+                ToolTip.text: qsTr("Add selected items to an Album")
                 ToolTip.visible: trayAddToBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -678,6 +707,12 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/startoggle` — az EREDETI súgója,
+                        //: szó szerint (`referencia/ui-leltar.csv`). Eddig
+                        //: nem volt súgója.
+                        ToolTip.text: qsTr("Add/Remove Star")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
                         readonly property int targetRow: tray.appWindow
@@ -723,6 +758,10 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/rotateleft` — az EREDETI súgója.
+                        ToolTip.text: qsTr("Rotate counter-clockwise")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #103: csak-videó kijelölésnél tiltva (photos.revision:
                         // modell-frissüléskor újraértékelt kötés)
                         // #718: null-őr — az appWindow (`window`) az engine-
@@ -758,6 +797,10 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/rotateright` — az EREDETI súgója.
+                        ToolTip.text: qsTr("Rotate clockwise")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #718: null-őr — ld. trayRotateLeftBtn indoklása.
                         enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
                                   tray.appWindow
@@ -778,6 +821,119 @@ Column {
                                    ? Theme.iconInk : "#9a9a9a"
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                // #1927: `thumbui/rect: metadata_group` — a NÉGY
+                // panelkapcsoló (Emberek · Helyek · Címkék · Tulajdonságok).
+                //
+                // Mérve a `respack.yt` rétegfejléceiből (#1914; a tálca
+                // függőleges méretei 1:1-ben képpontok):
+                //
+                //   metadata_group     545..785 × 448..472  →  240×24
+                //   people_toggle      545..605             →   60×24
+                //   places_toggle      605..665             →   60×24
+                //   tags_toggle        665..725             →   60×24
+                //   properties_toggle  725..785             →   60×24
+                //
+                // A négy gomb ÉRINTKEZIK (545→605→665→725→785, nincs rés),
+                // és a típusneveik a szegmens-szerepet is megadják:
+                // `buttcon_LS_` (bal szélső) · `_MS_` (két középső) ·
+                // `_RS_` (jobb szélső) ⇒ ÖSSZEFÜGGŐ SZEGMENSSÁV, nem négy
+                // különálló gomb. A `_text_RC` utótag: az ikon balra, a
+                // felirat tőle jobbra, függőlegesen középre.
+                //
+                // A panelek MEGVANNAK (`activeDrawerTab`: people/places/
+                // tags/properties) — itt csak a MÁSODIK belépési pont
+                // hiányzott; a menüből eddig is el lehetett érni őket.
+                //
+                // ⚠️ Az ikonok SAJÁT RAJZOK. A méretük az eredetiből mért
+                // (`people_icon` 19×17, `places_icon` 14×19, `tags_icon`
+                // 19×15, `properties_icon` 17×18), de a projekt egyetlen
+                // kicsomagolt Picasa-képet sem szállít — minden ikonunk
+                // kézzel rajzolt SVG.
+                //
+                // ⛔ NINCS MEG: hogy a négy kapcsoló KIZÁRÓ csoport-e. A
+                // #1773 a jobb fiók négy LAPJÁRA mérte ki a kizárólagosságot,
+                // és nálunk egyetlen `activeDrawerTab` írja le mind a
+                // négyet — a gombok ezt tükrözik. Hogy az EREDETI is így
+                // viselkedik-e, nincs megmérve; a #1927 nyitott kérdése.
+                Row {
+                    id: trayMetadataGroup
+                    objectName: "trayMetadataGroup"
+                    anchors.right: trayZoomGroup.left
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
+
+                    readonly property var kapcsolok: [
+                        { nev: "people", ikon: "panel-emberek.svg",
+                          felirat: qsTr("People"),
+                          sugo: qsTr("Show/Hide People Panel") },
+                        { nev: "places", ikon: "panel-helyek.svg",
+                          felirat: qsTr("Places"),
+                          sugo: qsTr("Show/Hide Places Panel") },
+                        { nev: "tags", ikon: "panel-cimkek.svg",
+                          felirat: qsTr("Tags"),
+                          sugo: qsTr("Show/Hide Tags Panel") },
+                        { nev: "properties", ikon: "panel-tulajdonsagok.svg",
+                          felirat: qsTr("Properties"),
+                          sugo: qsTr("Show/Hide Properties Panel") }
+                    ]
+
+                    Repeater {
+                        model: trayMetadataGroup.kapcsolok
+                        delegate: PicasaButton {
+                            required property var modelData
+                            required property int index
+                            objectName: "trayPanelToggle_" + modelData.nev
+                            width: 60
+                            height: 24
+                            //: a szegmens-szerep: a szélsők lekerekítve, a
+                            //: középsők nem — így áll össze az összefüggő sáv
+                            readonly property bool balSzelso: index === 0
+                            readonly property bool jobbSzelso:
+                                index === trayMetadataGroup.kapcsolok.length - 1
+                            //: #718-minta: a főablak átmenetileg null lehet
+                            //: az engine leépítésekor.
+                            //:
+                            //: ⚠️ TERNÁRIUS, nem `&&`: a JS `&&` a HAMIS
+                            //: OPERANDUST adja vissza (itt `null`-t), nem
+                            //: bool-t, és a Qt ilyenkor „Unable to assign
+                            //: [undefined] to bool" hibát ír. A #1260-as
+                            //: fixture-őr ezt a CI-n el is kapta.
+                            readonly property bool aktiv: tray.appWindow
+                                ? tray.appWindow.activeDrawerTab === modelData.nev
+                                : false
+                            accent: aktiv ? Theme.selectionBlue : "transparent"
+                            ToolTip.text: modelData.sugo
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
+                            //: ⚠️ a #1773 rádió-csapdája: az AKTÍV gombra
+                            //: kattintva a fiók BEZÁRUL, nem marad
+                            //: állapot nélkül
+                            onClicked: {
+                                if (!tray.appWindow) return
+                                tray.appWindow.activeDrawerTab =
+                                    aktiv ? "" : modelData.nev
+                            }
+                            contentItem: Row {
+                                spacing: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                Image {
+                                    source: "icons/" + modelData.ikon
+                                    width: 16; height: 16
+                                    fillMode: Image.PreserveAspectFit
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Text {
+                                    text: modelData.felirat
+                                    color: aktiv ? "white" : Theme.ink
+                                    font.pixelSize: Theme.fontSize - 1
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
                         }
                     }
                 }

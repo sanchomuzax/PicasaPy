@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 17" width="19" height="17">
+  <!-- PicasaPy sajat rajz (#1927): az alsó sáv „Emberek" panelkapcsolójának
+       ikonja. A MÉRET az eredetiből mérve (`thumbui/people_icon` 19×17,
+       respack-rétegfejléc); a RAJZ a sajátunk — a projekt egyetlen
+       kicsomagolt Picasa-képet sem szállít, minden ikon kézzel rajzolt SVG. -->
+  <circle cx="7" cy="5" r="3.2" fill="#6f6f6f"/>
+  <path d="M1.2 16 C1.2 11.6 4 10 7 10 C10 10 12.8 11.6 12.8 16 Z" fill="#6f6f6f"/>
+  <circle cx="14.2" cy="6.2" r="2.4" fill="#a3a3a3"/>
+  <path d="M10.6 16 C10.9 12.6 12.4 11.4 14.2 11.4 C16 11.4 18 12.6 18 16 Z" fill="#a3a3a3"/>
+</svg>

@@ -2181,6 +2181,24 @@ ApplicationWindow {
         appWindow: window
         viewerIndex: photoViewer.currentIndex
         onExportRequested: exportDialogs.ensure().openForSelection()
+        // #1917: a tálca helyi menüjének öt ÖRÖKÖLT tétele. Ugyanazokra a
+        // vezérlőkre megy, mint a rács helyi menüjének párja — a tálca
+        // kijelölésén, mert a menü a tálcára hat.
+        onViewAndEditRequested: {
+            var sorok = window.selectedRows()
+            if (sorok.length === 0) return
+            window.viewerOpen = true
+            photoViewer.show(sorok[0])
+        }
+        onTrayRotateRightRequested: controller.rotateRightMany(window.selectedRows())
+        onTrayRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
+        onTrayLocateRequested: {
+            var sorok = window.selectedRows()
+            if (sorok.length === 0) return
+            var ut = controller.photos.filePathAt(sorok[0])
+            if (ut.length > 0) fileOpsController.revealPhoto(ut)
+        }
+        onTrayPropertiesRequested: window.valtsFiokLapot("properties")
         // #1472: a tálca „Nyomtatás" gombja — a jelzésnek eddig SEHOL nem
         // volt kezelője, a gomb kattintható volt, és nem történt semmi
         onPrintRequested: window.openPrint()

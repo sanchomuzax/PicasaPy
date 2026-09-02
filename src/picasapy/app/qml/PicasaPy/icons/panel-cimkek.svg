@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 15" width="19" height="15">
+  <!-- PicasaPy sajat rajz (#1927): „Címkék" panelkapcsoló. Méret az
+       eredetiből mérve (`thumbui/tags_icon` 19×15); a rajz a sajátunk. -->
+  <path d="M0.8 1.2 L9.4 1.2 L18.2 7.5 L9.4 13.8 L0.8 13.8 Z" fill="#6f6f6f"/>
+  <circle cx="4.6" cy="7.5" r="1.7" fill="#f2efe9"/>
+</svg>
