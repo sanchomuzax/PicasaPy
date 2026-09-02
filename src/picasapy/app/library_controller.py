@@ -1163,6 +1163,33 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if 0 <= row < len(photos):
             self.resyncFolder(photos[row].folder_path)
 
+    # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `wire_fileops` PYTHON-oldali
+    # kötése (`photoDeleted` → itt), a QML soha nem hívja.
+    def removeDeletedRow(self, path: str) -> bool:  # noqa: N802
+        """A törölt kép sorának AZONNALI kivétele a rácsból (#1227).
+
+        Eddig a sor eltűnése a célzott újraszinkronon múlt
+        (`photoDeleted` → `resyncFolder` → háttérszál → `syncFinished`),
+        tehát csak a szinkron VÉGÉN tűnt el — nagy könyvtárnál másodpercek
+        vagy percek múlva. Az eredetiben a rács maga végzi a törlést
+        (`CThumbUI::DeleteProgress`, `0x00894fb4`).
+
+        A resync ezután is elindul: az utólag EGYEZTET (más program is
+        nyúlhatott a mappához), ez a lépés csak előrehozza a látható
+        hatást.
+
+        ⚠️ A mappa-csoportokat (`feedGroups`) is frissíteni kell, különben
+        a rács csoporthatárai elcsúsznak — a lasszó, a Shift-tartomány és
+        a nyilas léptetés mind ezekre épül (#1219). Szerencsés szerkezet:
+        a `build_feed_groups` a REKORDOKBÓL számol, tehát a sor kivétele
+        után a `start`/`count` maguktól helyes.
+        """
+        if not self._photos.remove_by_path(path):
+            return False
+        self._update_feed_groups(self._photos.photos)
+        self._update_status(self._photos.photos)
+        return True
+
     @Slot(str)
     def resyncFolder(self, folder_path: str) -> None:
         """Egy mappa újraszinkronja + nézetfrissítés — a néző bezárásakor

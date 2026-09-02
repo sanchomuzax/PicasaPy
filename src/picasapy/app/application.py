@@ -722,7 +722,17 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
     fileops.photoRenamed.connect(lambda old, new: refresh(old, new))
     fileops.photoMoved.connect(lambda old, new: refresh(old, new))
-    fileops.photoDeleted.connect(refresh)
+    def torles_utan(path: str) -> None:
+        """#1227: a sor AZONNAL tűnjön el, a resync csak utólag egyeztessen.
+
+        A sorrend számít: előbb a látható hatás (a rács kiveszi a sort),
+        utána a lemez/index egyeztetése. Fordítva a felhasználó a szinkron
+        végéig nézné a törölt képet — nagy könyvtárnál percekig.
+        """
+        controller.removeDeletedRow(path)
+        refresh(path)
+
+    fileops.photoDeleted.connect(torles_utan)
     # #1522: másolásnál CSAK a célmappa változott — a forrás érintetlen
     # marad, annak újraolvasása fölösleges lemez- és indexmunka volna.
     fileops.photoCopied.connect(lambda _source, new: refresh(new))

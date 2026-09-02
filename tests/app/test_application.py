@@ -368,9 +368,20 @@ class TestWireFileops:
         def __init__(self, roots):
             self.watchedFolders = list(roots)
             self.resynced = []
+            self.removed = []  # #1227
 
         def resyncFolder(self, folder):
             self.resynced.append(folder)
+
+        def removeDeletedRow(self, path):  # noqa: N802
+            """#1227: a törölt sor azonnali kivétele a rácsból.
+
+            A stubnak ismernie kell, különben a `photoDeleted` kezelője
+            `AttributeError`-ral elszáll, és a resync SEM fut le — pont ezt
+            fogta meg ez a teszt, amikor a lánc bekötése elkészült.
+            """
+            self.removed.append(path)
+            return True
 
     @pytest.fixture
     def wired(self, qt_app, tmp_path):
@@ -397,6 +408,17 @@ class TestWireFileops:
             str(root / "alma" / "a.jpg"), str(root / "banan" / "a.jpg")
         )
         assert sorted(stub.resynced) == [str(root / "alma"), str(root / "banan")]
+
+    def test_delete_removes_the_row_FIRST(self, wired):
+        """#1227: a látható hatás előbb, az egyeztetés utána.
+
+        Fordítva a felhasználó a szinkron végéig nézné a törölt képet —
+        nagy könyvtárnál percekig.
+        """
+        fileops, stub, root = wired
+        fileops.photoDeleted.emit(str(root / "banan" / "kep.jpg"))
+        assert stub.removed == [str(root / "banan" / "kep.jpg")]
+        assert stub.resynced == [str(root / "banan")]
 
     def test_delete_resyncs_parent_folder(self, wired):
         fileops, stub, root = wired

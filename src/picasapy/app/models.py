@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+from pathlib import Path
 import zlib
 
 from PySide6.QtCore import (
@@ -525,6 +526,39 @@ class PhotoGridModel(QAbstractListModel):
     @property
     def photos(self) -> tuple[PhotoRecord, ...]:
         return self._photos
+
+    def remove_by_path(self, path: str) -> bool:
+        """Egy sor AZONNALI kivétele az útvonala alapján (#1227).
+
+        A törölt kép sorának eltűnése eddig a célzott újraszinkronon múlt
+        (`photoDeleted` → `resyncFolder` → háttérszál → `syncFinished`),
+        tehát a sor csak a szinkron VÉGÉN tűnt el — nagy könyvtárnál
+        másodpercek vagy percek múlva. Az eredetiben a rács maga végzi a
+        törlést (`CThumbUI::DeleteProgress`, `0x00894fb4`).
+
+        ⚠️ `beginRemoveRows`, NEM `set_photos`: a teljes reset eldobná a
+        delegate-eket, és a rács visszaugrana a tetejére — épp azt a
+        zavart okozná, amit ez a változás megszüntet.
+
+        A hívó a resyncet ezután is elindíthatja: az utólag EGYEZTET, nem
+        ez a metódus helyettesíti.
+
+        Returns:
+            `True`, ha volt ilyen sor. `False` ismeretlen útra — a
+            törlés-jelzés olyan képre is jöhet, ami nincs a jelen
+            nézetben (másik mappa, szűrt nézet), és az nem hiba.
+        """
+        cel = str(Path(path))
+        for sor, rekord in enumerate(self._photos):
+            if str(Path(rekord.folder_path) / rekord.name) != cel:
+                continue
+            self.beginRemoveRows(QModelIndex(), sor, sor)
+            self._photos = self._photos[:sor] + self._photos[sor + 1:]
+            self.endRemoveRows()
+            self._revision += 1
+            self.revisionChanged.emit()
+            return True
+        return False
 
     def row_of_id(self, photo_id: int) -> int:
         """A fotó sor-indexe id alapján; -1, ha nincs a jelen nézetben
