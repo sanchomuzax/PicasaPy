@@ -74,6 +74,35 @@ class TrayMixin:
         #: rekordjai mindig a friss modellből jönnek, ld. `_tray_records`)
         self._tray_foreign: dict[int, object] = {}
         self._tray_records_cache: tuple[int, list] | None = None
+        #: #1153: a tálca rekordjai a RÁCS modelljéből jönnek, de eddig
+        #: csak a tálca SAJÁT változására frissültek. Egy szerkesztés (vagy
+        #: bármely külső felülírás) új `mtime_ns`-t ad, tehát új
+        #: bélyegkép-URL-t is — csakhogy senki nem kérte el: a `trayItems`
+        #: értesítője a `heldChanged`, ami ilyenkor nem szól.
+        #: Eredmény: a Klipek lapon és a tálcán a RÉGI kép maradt.
+        #: ⚠️ Defenzív kötés: a QML-próbák és a komponens-tesztek
+        #: teszt-kettőse (`_Photos`) nem Qt-objektum, nincs rajta jelzés.
+        #: A #1227 tanulsága: az új láncszem beékelése elronthatja a régi
+        #: utat, ha a kettős nem ismeri. A VALÓDI modellen a jelzés mindig
+        #: megvan — a #1153 tesztje élő `AppController`-rel méri, tehát a
+        #: hiánya nem maradhat észrevétlen.
+        jelzes = getattr(self._photos, "revisionChanged", None)
+        if jelzes is not None:
+            jelzes.connect(self._tray_photos_changed)
+
+    def _tray_photos_changed(self) -> None:
+        """A rács rekordjai kicserélődtek — a tálca nézete is elavult (#1153).
+
+        A rekord-gyorstár ürül, és jelzünk, hogy a QML-kötések újra
+        kiolvassák a `trayItems`-t. ÜRES tálcánál nem jelzünk: ott nincs
+        mit frissíteni, a fölösleges jelzés viszont minden háttér-szinkronnál
+        újraköttetné a tálca-sávot.
+        """
+        if not tray.photo_ids(self._tray):
+            return
+        self._tray_records_cache = None
+        self._tray_foreign.clear()
+        self.heldChanged.emit()
 
     # -- belső segédek ----------------------------------------------------
 
