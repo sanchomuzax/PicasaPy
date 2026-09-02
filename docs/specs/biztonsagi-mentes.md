@@ -8,6 +8,13 @@ hova, milyen néven, milyen szerkezetben, és hogyan tudja, mi van már mentve.
 
 Jegy: **#440**.
 
+> ⭐ **A LEMEZRE ÍRÁS oldala külön lapon:**
+> [`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md) — a kimeneti
+> beállítások (16 kulcs, köztük az `option_backup`), a lemez önjáró
+> tartalma és a **honosított mappanevek** („Biztonsági mentés" / „Képek")
+> ott állnak. A két funkció **ugyanazt a csővezetéket** használja; a
+> `[ebp+0x13f]` jelzőbit dönti el, melyik ág fut.
+
 ## 1. Két állományt ír, két külön helyre
 
 | állomány | hol | mit tartalmaz | író/olvasó |
