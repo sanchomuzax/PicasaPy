@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 259 |
 | másutt megvan (nem ezen a felületen) | 37 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 201 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 57 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 192 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 66 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -74,7 +74,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | nem cél | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 10 | 24 | 15 | 56 | 0 | `CreateDialogs.qml` |
-| `publish` | 125 | 30 | 0 | 0 | 26 | 4 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
+| `publish` | 125 | 30 | 0 | 0 | 17 | 13 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 99 | 1 | 13 | 4 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 20 | 3 | 7 | 5 | 11 | 94 | 0 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
@@ -211,12 +211,12 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 
 - `addmore` „Add More...” (magyarul: „Továbbiak hozzáadása...”)
-- `backup_cancel` „Cancel” (magyarul: „Mégse”)
+- `backup_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `backup_eject` „Eject” (magyarul: „Kiadás”)
-- `backup_go` „Burn Disc” (magyarul: „Lemezre írás”)
+- `backup_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `backup_help` „Help” (magyarul: „Súgó”)
 - `backupcdheader2` „Choose folders & albums to back up” (magyarul: „Mappák és albumok kijelölése biztonsági másolat készítéséhez”)
-- `backuptext2` „Picasa is now showing the files you have not previously backed up.” (magyarul: „A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.”)
+- `backuptext2` „Picasa is now showing the files you have not previously backed up.” (magyarul: „A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00670b03)
 - `backuptext3` „Check the folders you want to back up, or choose 'Select All' to choose everything.” (magyarul: „Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy "Az összes kijelölése" gombra kattintva az összes elemet jelölje ki.”)
 - `deletebackupset` „Delete Set” (magyarul: „Készlet törlése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00678e80)
 - `editbackupset` „Edit Set” (magyarul: „Készlet szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00678e80)
@@ -226,17 +226,17 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `label_rpoptionbox3` „Remove online” (magyarul: „Eltávolítás: online elemek”)
 - `newbackupset` „New Set” (magyarul: „Új készlet”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00678e80)
 - `picsizemenu` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x005ba010)
-- `presentcd_cancel` „Cancel” (magyarul: „Mégse”)
+- `presentcd_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `presentcd_eject` „Eject” (magyarul: „Kiadás”)
-- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”)
+- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `presentcd_help` „Help” (magyarul: „Súgó”)
 - `replicate_button_group`
-- `replicate_cancel` „Cancel” (magyarul: „Mégse”)
-- `replicate_go` „OK” (magyarul: „OK”)
+- `replicate_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
+- `replicate_go` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `rpoptionbox1` buboréksúgó: „Selected folder and/or albums will be uploaded”
 - `rpoptionbox2` buboréksúgó: „Selected folders and/or albums will be updated online with the options specified in the menus to the right”
-- `selectall` „Select All” (magyarul: „Az összes kijelölése”)
-- `selectnone` „Select None” (magyarul: „Az összes kijelölés megszüntetése”)
+- `selectall` „Select All” (magyarul: „Az összes kijelölése”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
+- `selectnone` „Select None” (magyarul: „Az összes kijelölés megszüntetése”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `upgradestorage` „Upgrade storage” (magyarul: „Tárhely bővítése”)
 - `uploadallsync` buboréksúgó: „Change the sync setting for the selected folders and/or albums”
 - `webpublish_cancel`
