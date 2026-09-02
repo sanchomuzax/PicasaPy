@@ -406,7 +406,26 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 3 BLOKKOLT tétel (a `text=` stílusblokk + a `rotate(0)`)
+### [picasa-ini-format.md](picasa-ini-format.md) — 5 BLOKKOLT tétel (a `text=` stílusblokk, a `rotate(0)` és a legacy `crop=`)
+
+⭐ **2026-09-02 (3. kör) — a LEGACY `crop=` alak és a MIGRÁCIÓ.** A
+binárisban van egy **második, Picasa 2 korabeli** vágás-alak:
+`crop=%d,%d,%d,%d,%d;` (`0x00c8130c`, mind az öt mező kötelező:
+`cmp eax, 5`). A `0x004221b0` **négy 16 bites szót** pakol egy 64 bitesbe,
+és **`crop64=1,<hex>`** filter-tokenné alakítja — a hívó a
+`0x00425f60` **olvasó**, tehát a **migráció beolvasáskor fut**. Élő adat:
+a korpusz **761/761** `crop=` sora már `rect64` ⇒ a tulajdonos gyűjteménye
+teljesen migrált. Nálunk a régi alak `ValueError`-t adna
+(`ini/rect64.py:28`) → **#2008** (P4, megelőző).
+
+1. **Melyik szám melyik koordináta a régi alakban?** A `sscanf` kimeneti
+   címeinek veremre pakolása ezen a szinten nem fejthető ki.
+   **Megszerzés:** a `0x004221b0` dekompilációja, **vagy** egyetlen régi
+   `.picasa.ini` ismert vágású képpel. **A #2008 addig nem indítható.**
+2. **Mi lesz a `crop=` sorral a migráció után** (átírja / törli /
+   meghagyja)? A korpusz csak a végállapotot mutatja. **Megszerzés:**
+   ugyanaz a régi minta, migráció előtti és utáni fájllal.
+
 
 ⭐ **2026-09-02 (2. kör) — az ini ÍRÓJA két függvény, és van egy
 kulcs→ALAPÉRTÉK tábla.** A `0x0068ac80` az album-szintű részt
