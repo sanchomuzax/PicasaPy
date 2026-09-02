@@ -2454,10 +2454,34 @@ le és telepíthetett.** A `picasa.smo` kiszolgáló nem létezik, tehát a
 
 ### 44.3 A párbeszéd szerkezete — klasszikus kétlistás választó
 
-`leftlist` („Rendelkezésre álló gombok:") ↔ `rightlist` („Jelenlegi
-gombok:"), közte **„Add >>"** és **„<< Remove"**; a jobb listán
-**„Move Up" / „Move Down"** sorrendezés; alul **„Reset to Defaults"**,
-és **OK / Mégse / Kész** hármas.
+**A TELJES elemlista, elemnévvel** (a listakezelők a `0x007e2980` és a
+`0x007e2470` címen; a bővítmény-ág a `0x007e14e0`):
+
+| elem | felirat | **hivatalos magyar** |
+|---|---|---|
+| `buttonmgr/leftlist_text` | *(felirat a lista fölött)* | **„Rendelkezésre álló gombok:"** |
+| `buttonmgr/leftlist` | a választható gombok listája | — |
+| `buttonmgr/rightlist_text` | *(felirat a lista fölött)* | **„Jelenlegi gombok:"** |
+| `buttonmgr/rightlist` | a gombsáv aktuális összeállítása | — |
+| `buttonmgr/add` | Add >> | **„Hozzáadás >>"** |
+| `buttonmgr/remove` | << Remove | **„<< Eltávolítás"** |
+| `buttonmgr/moveup` | Move Up | **„Mozgatás felfelé"** |
+| `buttonmgr/movedown` | Move Down | **„Mozgatás lefelé"** |
+| `buttonmgr/usedefaults` | Reset to Defaults | **„Visszaállítás alapértelmezettre"** |
+| `buttonmgr/ok` | OK | **„OK"** |
+| `buttonmgr/cancel` | Cancel | **„Mégse"** |
+| `buttonmgr/done` | Done | **„Kész"** |
+| `buttonmgr/browse` | Find buttons online… | **„Gombok keresése az interneten…"** — **hatókörön kívül** (44.2) |
+
+⚠️ **Miért kellett ide a TELJES elemlista** (2026-09-02): a szakasz eddig
+prózában sorolta fel a vezérlőket („közte »Add >>« és »<< Remove«"), a
+lefedettségi mérő viszont a **teljes elemnévre** (`buttonmgr/add`) keres.
+Emiatt a tizenhárom elemből **tizenkettő „feltáratlan"-nak**, azaz kutatói
+kört igénylőnek látszott — pedig a 44.1–44.3 mindent leír róluk (tárolás,
+bővítmény-ág, szerkezet). Az elemnevek kiírásával a mérő **`lekutatva`**-ként
+sorolja be őket: **fejlesztői kör kell rájuk, nem kutatói.** A lelet
+általánosítható: *egy spec-szakasz csak akkor számít bizonyítéknak, ha az
+elemet a TELJES nevén nevezi meg.*
 
 *(A `0x007e2980` és `0x007e2470` a listák egér- és
 fogd-és-vidd-eseményeit kezeli — `lb_selected`, `b_drop`, `lb_rightclick`,

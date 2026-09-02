@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 259 |
 | másutt megvan (nem ezen a felületen) | 37 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 237 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 21 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 225 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 33 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -78,7 +78,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `editpanel` | 312 | 125 | 99 | 1 | 13 | 4 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 20 | 3 | 7 | 5 | 11 | 94 | 0 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 22 | 0 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
-| `buttonmgr` | 29 | 13 | 0 | 0 | 12 | 1 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
+| `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `faceheaderpanel` | 39 | 13 | 0 | 1 | 11 | 1 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
@@ -330,19 +330,19 @@ Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „
 
 Gombsáv-testreszabó párbeszéd — nincs nálunk
 
-- `add` „Add >>” (magyarul: „Hozzáadás >>”)
+- `add` „Add >>” (magyarul: „Hozzáadás >>”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
 - `browse` „Find buttons online...” (magyarul: „Gombok keresése az interneten...”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e14e0)
-- `cancel` „Cancel” (magyarul: „Mégse”)
-- `done` „Done” (magyarul: „Kész”)
-- `leftlist`
-- `leftlist_text` (magyarul: „Rendelkezésre álló gombok:”)
-- `movedown` „Move Down” (magyarul: „Mozgatás lefelé”)
-- `moveup` „Move Up” (magyarul: „Mozgatás felfelé”)
-- `ok` „OK” (magyarul: „OK”)
-- `remove` „<< Remove” (magyarul: „<< Eltávolítás”)
-- `rightlist`
-- `rightlist_text` (magyarul: „Jelenlegi gombok:”)
-- `usedefaults` „Reset to Defaults” (magyarul: „Visszaállítás alapértelmezettre”)
+- `cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `done` „Done” (magyarul: „Kész”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `leftlist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `leftlist_text` (magyarul: „Rendelkezésre álló gombok:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `movedown` „Move Down” (magyarul: „Mozgatás lefelé”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `moveup` „Move Up” (magyarul: „Mozgatás felfelé”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `ok` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `remove` „<< Remove” (magyarul: „<< Eltávolítás”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `rightlist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `rightlist_text` (magyarul: „Jelenlegi gombok:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `usedefaults` „Reset to Defaults” (magyarul: „Visszaállítás alapértelmezettre”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
 
 ### `choose_mail` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -1597,4 +1597,10 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 ### `PicasaPy/VideoPlayerView.qml` — 1
 
 - „Unable to play this video.”
+
+## Figyelmeztetések a generáláskor
+
+- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/aa_2up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View the same image twice). A kézi indok: A gomb LÉTEZIK (compareButtonAA) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
+- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/ab_2up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View two different images). A kézi indok: A gomb LÉTEZIK (compareButtonAB) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
+- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/only_1up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View only one image). A kézi indok: A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
 
