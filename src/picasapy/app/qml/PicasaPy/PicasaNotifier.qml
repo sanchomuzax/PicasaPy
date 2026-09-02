@@ -34,20 +34,13 @@ import QtQuick.Window
 //
 // ## Az élettartam és az átmenet
 //
-// SAJÁT FUNKCIÓ (#1129): a cella magától eltűnik `cellLifetimeMs` után.
-//
-// Az eredeti MECHANIZMUSA azóta megvan (#1130, spec: „A cella élettartama —
-// MEGFEJTVE"): a cella `+0xb8` mezőjébe a létrehozáskor egy ABSZOLÚT
-// határidő kerül (`most + kért élettartam`, `0x00655d20`), és a Popup
-// képkockánkénti tickje (`0x006575b0`, a vtable 25. rekesze) hasonlítja
-// össze az órával. Nem Win32 időzítő — a saját renderelési ciklus.
-//
-// Amit ez NEM ad meg: magát az élettartam-ÉRTÉKET. Az az eredetiben is
-// HÍVÓNKÉNT jön (float paraméter, `[ebp+0xc]`), nem konstans; nulla vagy
-// negatív érték = nincs határidő (nálunk `running: lifetimeMs > 0`, ez
-// egyezik). A `cellLifetimeMs` konkrét száma tehát a mi döntésünk marad —
-// a #1168 igénye szerint, hogy a kész-értesítés ne csak kattintásra
-// tűnjön el.
+// SAJÁT FUNKCIÓ (#1129): a cella magától eltűnik `cellLifetimeMs` után. Az
+// eredeti élettartama NINCS kimérve — a spec ezt nyitott kérdésként tartja
+// nyilván, és a bináris importtáblája alapján bizonyítottan NEM Win32
+// időzítő méri (a `SetTimer`/`KillTimer`/`timeSetEvent` egyik hívója sincs
+// a notifier moduljában). A magától eltűnés viszont a #1168 kimondott
+// igénye: enélkül a kész-értesítés csak kattintásra tűnne el. A választott
+// érték a mi döntésünk, nem az eredeti mérése.
 //
 // Az átmenet HOSSZAI viszont mért értékek — a `yt` keretrendszer ugyanazon
 // konstansai, amelyeket a #1000 (gyűrű-elhalványulás) is használ: 0,25 s
