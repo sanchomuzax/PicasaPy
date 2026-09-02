@@ -169,12 +169,45 @@ Item {
             //: `ready` nélkül a lap felépülése maga küldene egy hívást.
             property bool ready: false
             Component.onCompleted: spacingSlider.ready = true
-            onValueChanged: {
+
+            //: #996: FOJTÁS a húzás alatt. A térköz a PAKOLÁS bemenete
+            //: (#1121), tehát minden hívás teljes újrarendezést indít — és
+            //: az MÉRVE a Mozaiknál és a Képkockamozaiknál **~520 ms**
+            //: (`packing.PACK_TIME_LIMIT = 0,5 s`), miközben a Sima rács és
+            //: a Képkupac 0,1–0,3 ms. Fojtás nélkül a csúszka húzása
+            //: tickenként fél másodpercre BEFAGYASZTJA a felületet.
+            //:
+            //: Az érték a húzás alatt is látszik a feliraton (a csúszka
+            //: saját `value`-ja), csak a drága újrarendezés vár a
+            //: megállásig. Elengedéskor azonnal lefut — nem kell megvárni
+            //: az időzítőt.
+            readonly property int fojtasMs: 120
+            function alkalmazTerkozt() {
                 if (!spacingSlider.ready || !tab.controller)
                     return
                 if (Math.abs(spacingSlider.value - tab.controller.collageSpacing)
                         > 0.0005)
                     tab.controller.setCollageSpacing(spacingSlider.value)
+            }
+            Timer {
+                id: spacingFojtas
+                objectName: "collageSpacingThrottle"
+                interval: spacingSlider.fojtasMs
+                repeat: false
+                onTriggered: spacingSlider.alkalmazTerkozt()
+            }
+            onValueChanged: {
+                if (!spacingSlider.ready || !tab.controller)
+                    return
+                spacingFojtas.restart()
+            }
+            //: Elengedéskor NINCS várakozás: a felhasználó befejezte a
+            //: mozdulatot, a végleges érték azonnal érvényesüljön.
+            onPressedChanged: {
+                if (!spacingSlider.pressed) {
+                    spacingFojtas.stop()
+                    spacingSlider.alkalmazTerkozt()
+                }
             }
 
             background: Rectangle {
