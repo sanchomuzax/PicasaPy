@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.234] – 2026-09-02
+
+### Javítva
+- **A Polaroid-keretre írt képfelirat mostantól a valódi Picasa
+  tipográfiáját követi (#978).** Eddig találgatott helyre, mérettel és
+  fix szürkével került ki, ráadásul **ékezet nélkül**: az „Ősz" felirat
+  „?sz"-ként jelent meg. Mostantól ékezethelyesen, a mért dobozba, a
+  mért betűmérettel írjuk ki, és a színe — ahogy az eredetiben —
+  igazodik a háttérhez: sötét hátterű kollázson fehérrel, világoson
+  sötétszürkével.
+- **A „képfeliratok" kapcsoló végre hat is (#978).** Eddig kikapcsolva
+  is ott maradt a felirat a kész képen, mert a kapcsoló nem jutott el a
+  rajzolásig.
+
 ## [0.8.233] – 2026-09-02
 
 ### Javítva

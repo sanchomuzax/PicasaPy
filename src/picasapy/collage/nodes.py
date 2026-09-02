@@ -61,8 +61,58 @@ _PLACEMENT_DECIMALS = 9
 _MISSING_FILL_BGR = (200, 200, 200)
 _MISSING_INK_BGR = (120, 120, 120)
 
-#: A Polaroid-felirat tintája a `#D9D9D9` papíron (`frames.POLAROID_PAPER_BGR`).
-_CAPTION_INK_BGR = (60, 60, 60)
+#: A Polaroid-felirat doboza a keret MÉRETÉHEZ normalizálva, `(bal, fent,
+#: jobb, lent)` — MÉRVE (#978, spec 9/c): `0xcf4e18`, `0xcf4e1c`,
+#: `0xcf4e28`, `0xcf4e20`.
+#:
+#: A szám önmagát ellenőrzi: a bal és a jobb margó EGYENLŐ (0,098), és a
+#: keret-geometriából a fotó alsó éle négyzetes képnél `(1+0,0725)/1,374 =
+#: 0,781` — a felirat 0,792-nél kezdődik, épp a fotó alatt.
+CAPTION_BOX: tuple[float, float, float, float] = (0.098, 0.792, 0.902, 0.980)
+
+#: A betűméret nevezője a mért `0xcf3d50 = 360.0` tervezővászon-magasság…
+_CAPTION_FONT_NUMERATOR = 14
+_CAPTION_FONT_DENOMINATOR = 360
+
+#: …és a világos háttéren mért tinta: ARGB `0xFF4A4A4A` (`0x0087c9fa`).
+_CAPTION_INK_LIGHT_BGR = (74, 74, 74)
+
+#: Sötét háttéren a mért képlet `0xB5B5B5 + 0x4A4A4A = 0xFFFFFF` — FEHÉR.
+_CAPTION_INK_DARK_BGR = (255, 255, 255)
+
+#: A háttér világos/sötét küszöbe, komponensenként (`0x7F`).
+_CAPTION_DARK_THRESHOLD = 0x7F
+
+
+def caption_font_px(reference_height: int) -> int:
+    """A felirat betűmérete képpontban — MÉRVE: `(egész)(magasság × 14/360)`.
+
+    Csonkolás, nem kerekítés (`0x0080c510`). A minimum 1: nulla képpontos
+    betű néma eltűnés lenne, ami rosszabb, mint egy apró felirat.
+    """
+    meret = reference_height * _CAPTION_FONT_NUMERATOR // _CAPTION_FONT_DENOMINATOR
+    return max(1, meret)
+
+
+def caption_ink_bgr(background_bgr) -> tuple[int, int, int]:
+    """A felirat tintája a HÁTTÉRSZÍNBŐL — az eredeti adaptív (#978).
+
+    MÉRVE (`0x00887aff`–`0x00887b23`, spec 9/c helyesbítése):
+
+    ```
+    szín = (h < 0x7F7F7F ? 0xB5B5B5 : 0) + 0xFF4A4A4A
+    ```
+
+    ⚠️ **Nem fix szürke.** Aki fixen a világos-háttéri `0x4A4A4A`-val ír,
+    sötét hátterű kollázson olvashatatlan feliratot ad — a Picasa
+    kollázsainak pedig gyakran sötét a hátterük.
+
+    A küszöb komponensenként `0x7F`: a maszkolt egészek összehasonlítása
+    akkor ad „sötét"-et, ha MINDEN komponens a küszöb alatt van.
+    """
+    b, g, r = (int(c) for c in background_bgr[:3])
+    sotet = max(b, g, r) < _CAPTION_DARK_THRESHOLD
+    return _CAPTION_INK_DARK_BGR if sotet else _CAPTION_INK_LIGHT_BGR
 
 
 @dataclass(frozen=True)
@@ -248,52 +298,84 @@ def _draw_polaroid_caption(
 
     A felirat **csak** a Polaroid keretnél jelenik meg — ezt a buboréksúgó
     is kimondja („…szövegként való megjelenítése *Polaroid fényképezőgép*
-    szegélyű képeken"). A tipográfia a MIÉNK: az eredeti bitmap-betűkészlete
-    nem szállítható, a sáv geometriája viszont a `frames.polaroid_geometry`
-    dekompilált értékeiből jön."""
+    szegélyű képeken").
+
+    #978: a doboz, a betűméret és a szín MÉRVE van (spec 9/c) — korábban
+    mindhárom találgatás volt (fix `(60,60,60)` tinta és `sáv/44.0`
+    betűméret).
+
+    ⚠️ **A betűkészlet Unicode-képes** (Pillow/FreeType), nem a korábbi
+    OpenCV Hershey. Az nem Unicode: az „Ősz" feliratot „?sz"-ként rajzolta
+    — magyar felületen a képfeliratok nagy része ékezetes. Ugyanez az
+    indoklás áll a `picasa_render._unicode_font`-nál is; onnan vesszük a
+    betűt, hogy egy helyen legyen.
+
+    A tipográfia (betűforma) továbbra is a MIÉNK: az eredeti
+    bitmap-betűkészlete nem szállítható. A doboz, a méret és a szín
+    viszont az eredetié.
+    """
     szoveg = caption.strip()
     if not szoveg:
         return
-    geometria = polaroid_geometry(photo_width, photo_height)
-    sav_teteje = geometria.photo_y + photo_height
-    sav_magassag = geometria.caption_height
-    if sav_magassag < 6:
+    magas, szeles = tile.shape[:2]
+    bal_a, fent_a, jobb_a, lent_a = CAPTION_BOX
+    bal = int(bal_a * szeles)
+    jobb = int(jobb_a * szeles)
+    fent = int(fent_a * magas)
+    lent = int(lent_a * magas)
+    doboz_w = jobb - bal
+    doboz_h = lent - fent
+    if doboz_w < 4 or doboz_h < 4:
         return
-    hasznos = max(1, geometria.outer_width - 2 * geometria.margin)
-    skala = max(0.25, sav_magassag / 44.0)
-    vastagsag = max(1, round(skala * 1.4))
-    (szeles, magas), _ = cv2.getTextSize(
-        szoveg, cv2.FONT_HERSHEY_SIMPLEX, skala, vastagsag
-    )
-    if szeles > hasznos:
-        skala = max(0.2, skala * hasznos / szeles)
-        vastagsag = max(1, round(skala * 1.4))
-        (szeles, magas), _ = cv2.getTextSize(
-            szoveg, cv2.FONT_HERSHEY_SIMPLEX, skala, vastagsag
-        )
-    x = max(0, (geometria.outer_width - szeles) // 2)
-    y = sav_teteje + (sav_magassag + magas) // 2
-    if y >= tile.shape[0]:
-        return
-    cv2.putText(
-        tile,
-        szoveg,
-        (x, y),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        skala,
-        _CAPTION_INK_BGR,
-        vastagsag,
-        cv2.LINE_AA,
-    )
+
+    # A háttér a doboz TÉNYLEGES színe (a polaroid papírja vagy — ha a
+    # keret nem takar — a kollázs háttere), nem feltételezés.
+    hatter = tile[fent:lent, bal:jobb].reshape(-1, 3).mean(axis=0)
+    tinta = caption_ink_bgr(tuple(int(round(c)) for c in hatter))
+
+    from PIL import Image, ImageDraw
+
+    from picasapy.collage.picasa_render import _unicode_font
+
+    meret = caption_font_px(magas)
+    font = _unicode_font(meret)
+    # A dobozból kilógó feliratot ZSUGORÍTJUK, nem vágjuk: a levágott
+    # képfelirat néma adatvesztés lenne a képen.
+    while meret > 1:
+        font = _unicode_font(meret)
+        bbox = font.getbbox(szoveg)
+        if bbox[2] - bbox[0] <= doboz_w and bbox[3] - bbox[1] <= doboz_h:
+            break
+        meret -= 1
+
+    bbox = font.getbbox(szoveg)
+    szoveg_w = bbox[2] - bbox[0]
+    szoveg_h = bbox[3] - bbox[1]
+    x = bal + max(0, (doboz_w - szoveg_w) // 2) - bbox[0]
+    y = fent + max(0, (doboz_h - szoveg_h) // 2) - bbox[1]
+
+    kep = Image.fromarray(cv2.cvtColor(tile, cv2.COLOR_BGR2RGB))
+    ImageDraw.Draw(kep).text((x, y), szoveg, font=font, fill=tinta[::-1])
+    tile[:, :, :] = cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
 
 
 def _node_tile(
-    node: CollageNode, image: np.ndarray | None, page_width: int
+    node: CollageNode,
+    image: np.ndarray | None,
+    page_width: int,
+    captions: bool = True,
 ) -> np.ndarray:
     """Egy csomópont KIRAJZOLT csempéje: illesztés, keret, felirat.
 
     A csempe méretét a KÉP adja (a dobozba illesztve), nem a doboz maga —
-    arányos illesztésnél (`fill=False`) a kép kisebb lehet a doboznál."""
+    arányos illesztésnél (`fill=False`) a kép kisebb lehet a doboznál.
+
+    `captions`: a felület „képfeliratok" kapcsolója
+    (`collage/showcaptions`). #978: az eredetiben a felirat KÉT feltételhez
+    kötött — a kapcsoló BE **és** a keret `polaroid` (`0x00839830`, a
+    keretnevet a `0x00839bef`–`0x00839d1c` háromszor is összeveti).
+    Nálunk eddig csak a keretet néztük: a kapcsoló kikapcsolva is látszott
+    a felirat, mert a rajzolási úton NEM volt jelen."""
     doboz_w = max(1, picasa_round(sheet_to_pixels(node.width, page_width)))
     doboz_h = max(1, picasa_round(sheet_to_pixels(node.height, page_width)))
     if image is None:
@@ -301,7 +383,7 @@ def _node_tile(
     foto_w, foto_h = photo_box(doboz_w, doboz_h, node.border)
     foto = fit_to_frame(image, max(1, foto_w), max(1, foto_h), fill=node.fill)
     tile = apply_border(foto, node.border)
-    if node.border == POLAROID and node.caption:
+    if captions and node.border == POLAROID and node.caption:
         _draw_polaroid_caption(tile, node.caption, foto.shape[1], foto.shape[0])
     return tile
 
@@ -312,6 +394,7 @@ def draw_nodes(
     images: Sequence[np.ndarray | None],
     page_width: int,
     shadow: ShadowParams | None = None,
+    captions: bool = True,
 ) -> None:
     """A KÖZÖS rajzoló: a csomópontokat a vászonra teszi, rajzolási sorrendben.
 
@@ -326,7 +409,7 @@ def draw_nodes(
     felül lévő kép árnyéka ráesik az alatta lévőre — ez adja a Képkupac
     mélységét. A rajzoló nem ismeri a témát; a paramétereket a hívó adja."""
     for node, image in zip(nodes, images, strict=True):
-        tile = _node_tile(node, image, page_width)
+        tile = _node_tile(node, image, page_width, captions=captions)
         kozep_x = sheet_to_pixels(node.center_x, page_width)
         kozep_y = sheet_to_pixels(node.center_y, page_width)
         x = _origin(kozep_x, tile.shape[1])
