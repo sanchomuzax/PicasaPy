@@ -59,3 +59,45 @@ class TestAKiiras:
         assert main([]) == 0
         sorok = capsys.readouterr().out.strip().splitlines()
         assert sorok == list(DOCS_OLVASO_TESZTEK)
+
+
+class TestAMeresNemHazudhat1968:
+    """A meghiúsult mérés NE látsszon érvényes eredménynek (#1968).
+
+    A `--mer` korábban nem nézte a `pytest.main()` kilépőkódját: egy
+    megszakadt gyűjtés (kód 2) után derűsen kiírta a `JSON: []`-t. Aki
+    ezt bemásolja, **kiüríti** a `DOCS_OLVASO_TESZTEK` listát, és a
+    docs-only PR-eken onnantól semmi nem fut le.
+
+    Ez ugyanaz a hibaosztály, mint a „hibaüzenet ≠ üres eredmény".
+    """
+
+    def _modul(self):
+        import importlib.util
+        import sys
+        from pathlib import Path
+
+        ut = Path(__file__).resolve().parents[2] / "scripts" / "docs_olvaso_tesztek.py"
+        spec = importlib.util.spec_from_file_location("dot_1968", ut)
+        modul = importlib.util.module_from_spec(spec)
+        sys.modules["dot_1968"] = modul
+        spec.loader.exec_module(modul)
+        return modul
+
+    def test_hasznalati_hiba_eseten_NEM_nulla(self, capsys):
+        """Nem létező útvonal → pytest 4 → a mérés meghiúsult."""
+        modul = self._modul()
+        kod = modul.main(["--mer", "tests/biztosan_nincs_ilyen_konyvtar", "-q"])
+        kimenet = capsys.readouterr()
+        assert kod != 0, "a meghiúsult mérés 0-val tért vissza"
+        assert "MEGHIÚSULT" in (kimenet.err + kimenet.out)
+
+    def test_hibas_meres_NEM_ir_ki_JSON_listat(self, capsys):
+        """A `JSON: [...]` sor az, amit bemásolnak — annak nem szabad
+        megjelennie, ha a mérés nem futott le rendesen."""
+        modul = self._modul()
+        modul.main(["--mer", "tests/biztosan_nincs_ilyen_konyvtar", "-q"])
+        kimenet = capsys.readouterr()
+        assert "JSON:" not in (kimenet.out + kimenet.err), (
+            "a meghiúsult mérés is kiírta a bemásolható JSON-listát"
+        )
