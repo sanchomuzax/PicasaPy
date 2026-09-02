@@ -467,6 +467,22 @@ tartalom-mód, `files.txt` a célmappában, honosított
    írás a másoló ciklus mélyén. Enélkül az **inkrementalitás** mechanizmusa
    sincs igazolva. **Megszerzés:** a `0x00677a70` (3005 b) dekompilációja.
 
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02:** az Ajándék-CD kimenete feltárva — a lemez **önjáró**
+(`PicasaCD.exe` + `Picasa CD Slideshow.app` + `PicasaRestore.exe` +
+`Picasa Restore.app` + `setup.exe` + `Download Picasa.url` + generált
+`autorun.inf`), a forrásmappa **élő mintaként megvan** a repóban, és a
+lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
+(`PicasaMenuBar.qml:1329`). Jegy-komment: **#32**, **#440**.
+
+1. **Mi a 16 kimeneti beállítás ÉRTÉKKÉSZLETE?** A kulcsnevek megvannak
+   (`option_imagesizelimit` … `option_isupload`), a megengedett értékek
+   nem. Az olcsó lánc kimerült: nem felületi elemek (nincsenek a `.tre`-ben),
+   a szövegtárban sincsenek, és az egyetlen olvasót (`0x0066f470`)
+   végigolvastam. **Megszerzés:** a `0x0066f470` (923 b) célzott
+   dekompilációja. Lap: `ajandek-cd-kimenet.md` 7.; jegy **#32**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -510,6 +526,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
 | [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
 | [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a `Picasa2Backups` mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** |
+| [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) | **Az Ajándék-CD / mentő lemez KIMENETE** — a lemez **önjáró**, Windows ÉS macOS vetítővel és visszaállítóval, telepítővel és letöltő-linkkel; az `autorun.inf` **pontos sablonja**; a **16 kimeneti beállítás** teljes listája; és hogy a lemez mappanevei **honosítottak** („Biztonsági mentés" / „Képek") |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
