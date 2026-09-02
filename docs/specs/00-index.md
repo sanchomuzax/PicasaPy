@@ -29,7 +29,7 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 2 nyitott kérdés (a #1412 és a `0x00d694c0` mutató)
 
-⭐ **2026-09-01 — a #1412 egyik KORLÁTJA MEGDŐLT:** a jegy szerint „egy mintánk van (AI6)", de a `kollazs-golden/` **tizenegy** `.cxf`-je közt a **`regulargrid` (AI5) is egyetlen `scale`-t** használ (330) ⇒ **második adatpont**. Levezetve: a kizárt 300 és 359 az **oszlop-** és **sor-osztás**; az AI5-re pontos a megfelelés (`0,322266 × 1024 = 330`), az AI6-ra keresett tört **0,305664** — a felirat-sávot is tartalmazó cella lehet. Részletek a #1412 kommentjében. **Folytatás (2026-09-01):** mind a hat téma átmérve (`kollazs-eletciklus.md` **17.**) — a `picturepile` szorzója **pontosan 1,25000**, a `regulargrid`-é **1,00000**, a `contactsheet`-é **node-független**; a `scale` a **rajzolt méret**, nem a befoglaló dobozé; a 313 **nem beégetett konstans** (nulla találat a `.text`-ben).
+⭐ **2026-09-01 — a #1412 egyik KORLÁTJA MEGDŐLT:** a jegy szerint „egy mintánk van (AI6)", de a `kollazs-golden/` **tizenegy** `.cxf`-je közt a **`regulargrid` (AI5) is egyetlen `scale`-t** használ (330) ⇒ **második adatpont**. Levezetve: a kizárt 300 és 359 az **oszlop-** és **sor-osztás**; az AI5-re pontos a megfelelés (`0,322266 × 1024 = 330`), az AI6-ra keresett tört **0,305664** — a felirat-sávot is tartalmazó cella lehet. Részletek a #1412 kommentjében. **Folytatás (2026-09-01):** mind a hat téma átmérve (`kollazs-eletciklus.md` **17.**) — a `picturepile` szorzója **pontosan 1,25000**, a `regulargrid`-é **1,00000**, a `contactsheet`-é **node-független**; a `scale` a **rajzolt méret**, nem a befoglaló dobozé; a 313 **nem beégetett konstans** (nulla találat a `.text`-ben). **Folytatás (2026-09-02):** a `.cxf`-író bináris oldala kimérve (`picasa-create-features.md` **1.6/g**): a csomópont-tömb **56 bájtos**, a `scale` a `+0x2c` (`0x008350b2`), a `theta` a `+0x28`; a mentés-szervező (`0x00834700`) **nem készíti elő** a csomópontokat. A 2026-08-30-i „vetítés/render-scale" magyarázat **MEGDŐLT**: a `regulargrid` elhelyezője **ugyanúgy `1,0`-t ír** a `+0x2c`-be (`0x0088520d`→`0x0088522d`), mint a contactsheeté — az `1,0` a norma. Kimerítő negatív pásztázás: indexelt, SSE- és disp32-alakú `+0x2c`-író **nincs**; a végleges értéket a kollázs-sáv 37 mutatós írójának egyike adja. A jegy **`blocked` + `felhasználóra-vár`** (fekvő Indexkép-minta).
 
 ⭐ **2026-09-02 (2.3/b) — a SZÖVEGES DIA fülének működése:** a beszúrás `<type>=2` rekordot hoz létre „Szöveg" placeholderrel, **a kijelölt dia UTÁN** (üres kijelölésnél a lista elejére), majd átvált a 2. fülre és a beviteli mezőre teszi a fókuszt (`WM_SETFOCUS`); a három kapcsoló mezői: **`<weight>` = 400/700** (GDI-súly, nem logikai!), `<italic>`, `<outline>`; a három legördülő a `<fontname>`, `<size>` és `<styleid>` mezőt írja, a **betűméret-lista teljes tartalma** `8·10·12·14·16·18·20·22·26·30·36·48·60·72·84·96` (`0x00c7e4f0`), a betűtípus a **`Preferences\makemovie::textfont`** kulcsba is bekerül; a két színválasztó `text_` / `bkg_` **előtag** szerint dől el. **Negatív eredmény:** a `titleoption_listbox` ága **halott kód** (a panelépítő nem hozza létre, és a névre egyetlen hivatkozás van a binárisban). Kommentek: **#432**, **#436**.
 
@@ -729,7 +729,7 @@ korábbi `✅` jelölése ezen a soron félrevezető volt** (a hármasból kett�
 kész), javítva. A maradék nyolc színre a **szerepük NINCS MÉRVE** a mi
 felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
-### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-02)
+### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
 ⭐ **2026-09-02 — az ÖTÖDIK bélyegkép-tár: `albums.db`, a mappák BORÍTÓJA.**
 A tulajdonos képernyőképe mutatta, hogy a bal hasáb fastruktúrájában **fotó-kupac**
@@ -748,18 +748,18 @@ lemezes mappák is albumként szerepelnek (élő minta: `wallpapers`, `space`,
 `volt` a `albumdata_filename`-mel). Nálunk **minden sor ugyanaz a mappaikon**
 (`FolderTreeItem.qml:101`) → **#2049**.
 
-1. **MELYIK fotókból áll a kupac, és milyen sorrendben?** ⭐ **2026-09-02
-   (folytatás): az ELŐÁLLÍTÓ MEGVAN — `0x00423500` (632 b).** A tár a
-   `CThumbDB` **`+0x2428`** tagja (`lea edi,[ebp+0x2428]; push "albums.db"`,
-   `0x00415aeb`), és a `.text`-ben pontosan **15 függvény** hivatkozik rá; a
-   lekérő a `0x00423300`, ami **bélyeg-egyezés** esetén a gyorstárat
-   olvassa, különben a `0x00423500`-at hívja. **Melléklelet:** ezzel
-   *kódból* is bebizonyosodott, hogy az `*_index.db` első vektora
-   **érvényességi bélyeg** (`0x00423481` számol, `0x0042349f` olvas,
-   `0x004234a4` hasonlít) — a 12. kör ezt mérésből mondta ki.
-   **Ami hátravan:** a `0x00423500` második felének végigolvasása (az eleje
-   újrabelépés-védelem). A képi összevetés megkísérelve és **elvetve**
-   (0,96 vs 1,03 — nem különül el). Lap: `pmp-database.md`; jegy **#2049**.
+**A kérdés — „MELYIK fotókból áll a kupac, és milyen sorrendben?" —
+2026-09-02-án LEZÁRULT** (`pmp-database.md` **7. szakasz**, jegy **#2049**):
+az összeállító a `0x00423780` (2167 b), amit a `0x00423500` hív. A lista
+**első `min(N,4)`** eleme kerül a kupacba (`0x004237ab` `cmp eax,4`), hátulról
+előre rajzolva, tehát a **lista első eleme kerül legfelülre**
+(`0x00423f45`–`0x00423f4d`). Az elrendezés **albumonként determinisztikus**:
+`srand(rés-index ^ 0x133475)` (`0x00423a2b`), MSVCRT-generátorral
+(`0x00c08221`). Fotónként: forgatás **±0,1 rad = ±5,73°** (a legalsó fotó
+forgatás nélkül), oldaleltolás `±4·i`, függőleges `5i…9i`. A vászon a kupac
+**befoglaló téglalapja** (`0x00423f70`). A lágy árnyék **sugara 5 px**
+(mérve: ~5 képpontos alfa-lefutás 37 valódi borítón), **alfája 153**
+(`0.6 × 255`, `0x00a6e32e`). Megdőlt: „a legrégebbi képből készül".
 
 ### Nincs nyitott kérdés
 

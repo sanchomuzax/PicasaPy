@@ -140,3 +140,20 @@ class TestParancssor:
         )
         assert kod == 0
         assert capsys.readouterr().out.splitlines()[0] == "igen"
+
+
+def test_az_ast_grep_nem_jut_el_a_felhasznalohoz():
+    """#2060: fejlesztői szabálykészlet — a CI sem futtatta.
+
+    Ugyanaz a hiba, mint a `tools/`-nál (#1938): az áthelyezésükre a
+    CHANGELOG-őr felhasználói mondatot követelt, olyat, ami hazugság lenne.
+    """
+    assert not ksz.erdemi_fajlok([
+        ".ast-grep/rules/literal-color-tuple.yml",
+        "sgconfig.yml",
+    ])
+
+
+def test_a_forras_valtozasa_tovabbra_is_kiadast_indokol():
+    """Az előző teszt nem tompíthatja el az őrt."""
+    assert ksz.erdemi_fajlok(["src/picasapy/render/effects.py"])

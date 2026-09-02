@@ -275,6 +275,7 @@ def render_settings(
     background_image: str = "",
     album_title: str = "",
     album_date: str = "",
+    captions: bool = True,
 ) -> PicasaCollageSettings:
     """A panel állapotából renderelő-beállítás.
 
@@ -303,6 +304,9 @@ def render_settings(
         background_image=background_image,
         album_title=album_title,
         album_date=album_date,
+        # #978: a felület „képfeliratok" kapcsolója. Eddig NEM jutott el a
+        # rajzolóig — kikapcsolva is ott maradt a Polaroid-felirat.
+        captions=captions,
     )
 
 

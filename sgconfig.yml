@@ -1,4 +1,0 @@
-# ast-grep konfiguráció — a projektre szabott, SZERKEZETI (nem szöveges)
-# kódszabályok. Futtatás a repó gyökeréből:  ast-grep scan
-ruleDirs:
-  - .ast-grep/rules
