@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.220] – 2026-09-02
+
+### Javítva
+- **Magyar felületen metrikus nyomatméretek (#1961).** Eddig hüvelykes
+  méreteket kínáltunk (3,5×5, 4×6, …), amilyeneket magyar fotólaborban
+  nem lehet rendelni. Mostantól magyarul a metrikus hatos jelenik meg —
+  5x8 · 9x13 · 10x15 · 13x18 · 20x25 cm és FullPage —, angolul marad a
+  hüvelykes készlet. A feliratok az eredeti Picasa saját szövegtárából
+  valók.
+
 ## [0.8.219] – 2026-09-02
 
 ### Javítva

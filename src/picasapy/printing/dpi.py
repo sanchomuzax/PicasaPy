@@ -38,16 +38,43 @@ from enum import Enum
 KICSI_KUSZOB_DPI = 150
 
 
+#: Egy hüvelyk centiméterben — a metrikus méretek innen származnak, hogy
+#: a forrásban a HIVATALOS centiméteres érték álljon, ne egy kézzel
+#: kiszámolt hüvelyk-tizedes (#1961).
+CM_PER_HUVELYK = 2.54
+
+
+def _cm(szelesseg_cm: float, magassag_cm: float) -> tuple[float, float]:
+    """Centiméteres nyomatméret hüvelykben."""
+    return (szelesseg_cm / CM_PER_HUVELYK, magassag_cm / CM_PER_HUVELYK)
+
+
 class NyomatMeret(Enum):
-    """A mért öt nyomatméret (`0x00743700`, `0x00743980`), hüvelykben.
+    """A nyomatméretek hüvelykben — KÉT készletben (#1782, #1961).
 
-    A `TARCA` az eredeti „wallet" mérete — a legkisebb a készletben."""
+    A `TARCA` az eredeti „wallet" mérete — a legkisebb a hüvelykes
+    készletben. A metrikus tagok a `ytPrintSizes::` szövegcsalád
+    centiméteres tételei (`stringres` 3478–3494)."""
 
+    #: hüvelykes készlet (#1782, mérve: `0x00743700`, `0x00743980`)
     M3_5X5 = (3.5, 5.0)
     M4X6 = (4.0, 6.0)
     M5X7 = (5.0, 7.0)
     M8X10 = (8.0, 10.0)
     TARCA = (2.5, 3.5)
+
+    #: metrikus készlet (#1961) — a tulajdonos felvételén ez a hat csempe
+    #: látszik a magyar felületen
+    M5X8CM = _cm(5, 8)
+    M9X13CM = _cm(9, 13)
+    M10X15CM = _cm(10, 15)
+    M13X18CM = _cm(13, 18)
+    M20X25CM = _cm(20, 25)
+    #: ⚠️ DÖNTÉS: a „Teljes oldal" nálunk **A4** (210 × 297 mm). Az
+    #: eredetiben a NYOMTATÓ papírmérete adja; nekünk a minőség-számoláshoz
+    #: kell egy konkrét lap, és a metrikus készlethez az A4 tartozik. Egy
+    #: helyen áll, hogy mérés esetén egyetlen sort kelljen átírni.
+    TELJES_OLDAL = _cm(21.0, 29.7)
 
     @property
     def szeles_huvelyk(self) -> float:
@@ -56,6 +83,43 @@ class NyomatMeret(Enum):
     @property
     def magas_huvelyk(self) -> float:
         return self.value[1]
+
+
+#: A hüvelykes készlet, a mérés sorrendjében (#1782).
+HUVELYK_KESZLET: tuple[NyomatMeret, ...] = (
+    NyomatMeret.M3_5X5,
+    NyomatMeret.M4X6,
+    NyomatMeret.M5X7,
+    NyomatMeret.M8X10,
+    NyomatMeret.TARCA,
+)
+
+#: A metrikus készlet, a felvételen látott sorrendben (#1961).
+METRIKUS_KESZLET: tuple[NyomatMeret, ...] = (
+    NyomatMeret.M5X8CM,
+    NyomatMeret.M9X13CM,
+    NyomatMeret.M10X15CM,
+    NyomatMeret.M13X18CM,
+    NyomatMeret.M20X25CM,
+    NyomatMeret.TELJES_OLDAL,
+)
+
+#: Mely nyelveken metrikus a készlet. ⚠️ SAJÁT DÖNTÉS: az eredetiben
+#: NINCS MÉRVE, hogy a nyelv, a területi beállítás vagy a nyomtató
+#: papírja választ. A felület nyelve a legkevésbé meglepő szabály, és itt
+#: egyetlen soron cserélhető, ha a mérés megszületik.
+METRIKUS_NYELVEK: frozenset[str] = frozenset({"hu"})
+
+
+def keszlet_nyelvhez(nyelv: str | None) -> tuple[NyomatMeret, ...]:
+    """A felület nyelvéhez tartozó nyomatméret-készlet.
+
+    Ismeretlen vagy hiányzó nyelvre a hüvelykes készlet jön: az
+    alapértelmezett felületi nyelv az angol, tehát a bizonytalanság ne
+    váltson magától metrikusra."""
+    if nyelv and nyelv.strip().lower() in METRIKUS_NYELVEK:
+        return METRIKUS_KESZLET
+    return HUVELYK_KESZLET
 
 
 def effektiv_dpi(

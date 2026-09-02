@@ -58,7 +58,9 @@ from picasapy.printing.contact_sheet import (
 )
 from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
+    METRIKUS_KESZLET,
     NyomatMeret,
+    keszlet_nyelvhez,
     minoseg_osszegzes,
 )
 from picasapy.printing.layout import (
@@ -71,6 +73,7 @@ from picasapy.printing.layout import (
 
 from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_local_path
+from .language_controller import LANGUAGE_KEY
 
 _log = logging.getLogger(__name__)
 
@@ -128,25 +131,53 @@ class PrintController(QObject):
         #: 4×6-os alapértelmezésre a beállított 8×10 helyett.
         self._settings = settings if settings is not None else QSettings()
 
+    def _keszlet(self) -> tuple[NyomatMeret, ...]:
+        """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
+
+        A nyelvet a beállításokból olvassuk, nem gyorstárazzuk: a
+        felhasználó menet közben is válthat, és a párbeszéd minden
+        megnyitáskor újrakérdezi a listát."""
+        return keszlet_nyelvhez(self._settings.value(LANGUAGE_KEY))
+
+    def _alapmeret(self) -> NyomatMeret:
+        """A készlet alapértelmezett mérete.
+
+        A hüvelykesé a mért 4×6; a metrikusé a **10×15 cm** — ugyanaz a
+        méret más mértékegységben, és a legelterjedtebb fotóméret. DÖNTÉS:
+        az eredetiben a `PrintLastSize` hiányakor betöltött érték nincs
+        mérve."""
+        keszlet = self._keszlet()
+        alap = NyomatMeret.M10X15CM if keszlet is METRIKUS_KESZLET \
+            else NyomatMeret.M4X6
+        return alap if alap in keszlet else keszlet[0]
+
     #: A QML-nek átadott méretnevek — a `NyomatMeret` tagjainak nevei.
     #: A felirat a QML dolga, ide csak az azonosító kell.
     @Slot(result=list)
     def printSizes(self) -> list[str]:  # noqa: N802 — QML-stílus
-        """A mért öt nyomatméret azonosítója, a mérés sorrendjében."""
-        return [tag.name for tag in NyomatMeret]
+        """A felület nyelvéhez tartozó nyomatméretek azonosítói (#1961).
+
+        Magyarul a metrikus hatos, angolul a mért hüvelykes ötös."""
+        return [tag.name for tag in self._keszlet()]
 
     @Slot(result=str)
     def printSize(self) -> str:  # noqa: N802 — QML-stílus
-        """A megjegyzett nyomatméret (`PrintLastSize`), alapból 4×6."""
-        tarolt = self._settings.value("print/lastSize", NyomatMeret.M4X6.name)
-        nevek = {tag.name for tag in NyomatMeret}
-        return tarolt if tarolt in nevek else NyomatMeret.M4X6.name
+        """A megjegyzett nyomatméret (`PrintLastSize`), alapból 4×6.
+
+        #1961: a tárolt érték túléli a nyelvváltást, ezért a MÁSIK készlet
+        tételét nem adhatjuk vissza — a párbeszéd olyan méretet mutatna,
+        ami nincs is a listájában."""
+        alap = self._alapmeret()
+        tarolt = self._settings.value("print/lastSize", alap.name)
+        nevek = {tag.name for tag in self._keszlet()}
+        return tarolt if tarolt in nevek else alap.name
 
     @Slot(str)
     def setPrintSize(self, nev: str) -> None:  # noqa: N802 — QML-stílus
-        """A nyomatméret megjegyzése. Ismeretlen nevet nem tárolunk el —
-        egy elgépelt érték némán elrontaná a következő indulást."""
-        if nev in {tag.name for tag in NyomatMeret}:
+        """A nyomatméret megjegyzése. A készleten kívüli nevet nem
+        tároljuk el — egy elgépelt (vagy másik készletbeli) érték némán
+        elrontaná a következő indulást."""
+        if nev in {tag.name for tag in self._keszlet()}:
             self._settings.setValue("print/lastSize", nev)
 
     @Slot(list, str, result="QVariantMap")

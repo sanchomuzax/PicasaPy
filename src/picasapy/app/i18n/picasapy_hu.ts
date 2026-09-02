@@ -196,20 +196,44 @@
         <translation>Nyomatméret:</translation>
     </message>
     <message>
-        <source>3.5 x 5 in</source>
-        <translation>3,5 × 5 hüvelyk</translation>
+        <source>3.5 x 5</source>
+        <translation>3,5x5</translation>
     </message>
     <message>
-        <source>4 x 6 in</source>
-        <translation>4 × 6 hüvelyk</translation>
+        <source>4 x 6</source>
+        <translation>4x6</translation>
     </message>
     <message>
-        <source>5 x 7 in</source>
-        <translation>5 × 7 hüvelyk</translation>
+        <source>5 x 7</source>
+        <translation>5x7</translation>
     </message>
     <message>
-        <source>8 x 10 in</source>
-        <translation>8 × 10 hüvelyk</translation>
+        <source>8 x 10</source>
+        <translation>8x10</translation>
+    </message>
+    <message>
+        <source>5 x 8 cm</source>
+        <translation>5x8 cm</translation>
+    </message>
+    <message>
+        <source>9 x 13 cm</source>
+        <translation>9x13 cm</translation>
+    </message>
+    <message>
+        <source>10 x 15 cm</source>
+        <translation>10x15 cm</translation>
+    </message>
+    <message>
+        <source>13 x 18 cm</source>
+        <translation>13x18 cm</translation>
+    </message>
+    <message>
+        <source>20 x 25 cm</source>
+        <translation>20x25 cm</translation>
+    </message>
+    <message>
+        <source>FullPage</source>
+        <translation>FullPage</translation>
     </message>
     <message>
         <source>Wallet</source>

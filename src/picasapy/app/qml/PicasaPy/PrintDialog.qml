@@ -88,12 +88,37 @@ Window {
     // minőség-összegzés. A méret TARTÓS — az eredetiben a
     // `Preferences\PrintLastSize` őrzi; nálunk a vezérlő teszi el.
     property string printSize: "M4X6"
-    //: a mért öt méret felirata, a vezérlő azonosítói sorrendjében
-    readonly property var printSizeLabels: [
-        qsTr("3.5 x 5 in"), qsTr("4 x 6 in"), qsTr("5 x 7 in"),
-        qsTr("8 x 10 in"), qsTr("Wallet")
-    ]
+    //: #1961: a feliratok a HIVATALOS `ytPrintSizes::` szövegcsaládból
+    //: valók (`stringres` 3478–3494), nem saját fogalmazás. A készletet a
+    //: vezérlő adja a felület nyelve szerint (magyarul metrikus hatos),
+    //: ezért a felirat nem pozíció, hanem AZONOSÍTÓ szerint jön — a
+    //: korábbi rögzített tömb a metrikus készleten minden tételre rossz
+    //: szöveget adott volna.
+    //:
+    //: ⚠️ A `TELJES_OLDAL` felirata magyarul is „FullPage": az eredeti
+    //: szövegtár `eFullPage` sora mindkét nyelven ezt adja. Nem
+    //: fordítjuk le magunktól — a hűség erősebb, mint a szépség.
+    readonly property var printSizeLabelById: ({
+        "M3_5X5": qsTr("3.5 x 5"),
+        "M4X6": qsTr("4 x 6"),
+        "M5X7": qsTr("5 x 7"),
+        "M8X10": qsTr("8 x 10"),
+        "TARCA": qsTr("Wallet"),
+        "M5X8CM": qsTr("5 x 8 cm"),
+        "M9X13CM": qsTr("9 x 13 cm"),
+        "M10X15CM": qsTr("10 x 15 cm"),
+        "M13X18CM": qsTr("13 x 18 cm"),
+        "M20X25CM": qsTr("20 x 25 cm"),
+        "TELJES_OLDAL": qsTr("FullPage")
+    })
     property var printSizeIds: []
+    //: A választó modellje: a vezérlőtől kapott azonosítók feliratai.
+    //: Ismeretlen azonosítónál MAGA az azonosító látszik — néma üres sor
+    //: helyett legyen látható, hogy felirat hiányzik.
+    readonly property var printSizeLabels: printWindow.printSizeIds.map(
+        function (azonosito) {
+            return printWindow.printSizeLabelById[azonosito] || azonosito
+        })
     //: {smallest, small, total, ready, threshold} — a vezérlőtől
     property var quality: ({})
 
