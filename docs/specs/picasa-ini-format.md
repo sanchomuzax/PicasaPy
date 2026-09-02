@@ -354,6 +354,68 @@ KÖVETKEZTETÉS, nem mérés** — lásd a mérleget.
    ott, tehát a hozzáadása **diffet csinálna** a felhasználó saját
    gyűjteményén.
 
+### A LEGACY `crop=` alak — és hogy a Picasa 3 MIGRÁLJA (2026-09-02)
+
+*A lap eddig egyetlen `crop=` alakot ismert: `crop=rect64(<hex>)`. A
+binárisban van egy **második, régebbi** alak, és egy függvény, ami
+átalakítja. Minden cím a `Picasa3.exe` 3.9-é, image base `0x00400000`.*
+
+#### A régi alak: öt egész szám, pontosvesszővel
+
+A `0x004221b0` (2547 b) a bemeneti szövegben megkeresi a **`crop=`**
+előtagot (`0x00c81304`, `0x004222c4`), majd `sscanf`-fel olvassa:
+
+```
+crop=%d,%d,%d,%d,%d;          (0x00c8130c, a hívás 0x00422361)
+```
+
+⇒ **öt egész**, pontosvesszővel lezárva — és **mind az ötnek** meg kell
+lennie (`cmp eax, 5`, `0x00422369`), különben a függvény kihagyja az ágat.
+
+#### Amivé alakítja: `crop64=1,<hex>` — vagyis FILTER-TOKEN
+
+`0x00422550`–`0x00422587`: **négy 16 bites szót** pakol egyetlen 64 bites
+értékbe (a jellegzetes `shld ecx,edx,0x10` / `shl edx,0x10` / `or` hármas),
+majd `%I64x`-szel írja ki (`0x00c82fcc`, `0x0042258e`), és eléfűzi a
+**`crop64`** (`0x00c80adc`) + **`=1,`** (`0x00c8131c`) szöveget.
+
+⇒ **A régi ötszámos `crop=` a `filters=` lánc `crop64=1,<rect64hex>`
+tokenjévé alakul** — nem a `crop=` kulcs új értékévé.
+
+**Hol történik:** a hívó a `0x00425f60`, az ini/metaadat **olvasó**
+(ugyanott van a `moviestart`, az `avgcolor`, a `geoview` és a
+`DigicamPictureThreshold`) ⇒ **a migráció beolvasáskor fut**, nem külön
+konverter-lépésben.
+
+⚠️ **Az öt szám JELENTÉSE (melyik a bal/felső/jobb/alsó, és mi az ötödik)
+NINCS MÉRVE.** Négy szó megy a 64 bitbe, tehát az ötödik más szerepű —
+de a `sscanf` kimeneti címeinek veremre pakolása ezen az olvasási
+szinten nem fejthető ki egyértelműen. Lásd a mérleget.
+
+#### Élő adat: a korpuszban MÁR NINCS régi alak
+
+| mérés (859 fájl) | eredmény |
+|---|---:|
+| `crop=` sor összesen | **761** |
+| ebből `crop=rect64(<hex>)` | **761** |
+| ebből régi, ötszámos alak | **0** |
+
+⇒ **A tulajdonos gyűjteménye teljesen migrált** — a 3.9-es Picasa
+beolvasáskor átírta. A régi alakkal tehát **csak olyan gyűjteményben
+lehet találkozni, amit Picasa 3 még sosem nyitott meg.**
+
+#### Mit jelent ez nálunk
+
+A vágást a renderelő a **`filters=` lánc `crop64` tokenjéből** veszi
+(`render/chain.py:258`), nem a `crop=` kulcsból — ez **egyezik** az
+eredetivel. A régi alakot viszont **nem ismerjük fel**: nálunk a
+`decode_rect64` `rect64(...)`-et vagy csupasz hexet vár
+(`ini/rect64.py:28–35`), az `a,b,c,d,e;` alakra **kivételt dob**.
+
+⇒ Egy Picasa 3-mal még sosem megnyitott, Picasa 2-es korú gyűjteményben
+a **vágás nem érvényesülne** nálunk. Jegy: **#2008** (alacsony
+prioritás — a tulajdonos korpuszában nulla előfordulás).
+
 ## `rect64` kódolás (crop + arcok)
 
 `rect64(3f845bcb59418507)` — 16 hex karakter = 4×16 bit: **left, top, right, bottom**.
