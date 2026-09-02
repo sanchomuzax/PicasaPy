@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#1224): a tálca csillag-vezérlője, KIKAPCSOLT
+       állapot. Az eredeti `thumbui/startoggle_icon0` MÉRT mérete 17x17
+       (a #1914 réteg-leltárából); a rajz a sajátunk — a projekt egyetlen
+       kicsomagolt Picasa-képet sem szállít.
+       Kontúros, kitöltetlen: a bekapcsolt állapot a tray-star-on.svg. -->
+  <path d="M12 3.2 14.7 9.1 21 9.9 16.4 14.2 17.6 20.4 12 17.4
+           6.4 20.4 7.6 14.2 3 9.9 9.3 9.1Z"
+        fill="none" stroke="#9a9a9a" stroke-width="1.7"
+        stroke-linejoin="round"/>
+</svg>

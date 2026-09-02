@@ -73,6 +73,15 @@ _EXPECTED_ICONS = (
     # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
     # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
     "tray-addto.svg",
+    # #1224: a tálca három vezérlője betűjelről ikonra váltott. A MÉRET
+    # az eredetiből mért (`startoggle_icon` 17×17, `rotateleft_icon` és
+    # `rotateright_icon` 11×15 — a #1914 réteg-leltárából), a RAJZ a
+    # sajátunk. A csillagnak KÉT állapota van, mert a QML `Image` shader
+    # nélkül nem színezhető (a `QtQuick.Effects` szándékosan nincs).
+    "tray-star.svg",
+    "tray-star-on.svg",
+    "tray-rotate-left.svg",
+    "tray-rotate-right.svg",
     # #1911: a rács-nagyító kapcsolója az alsó sávban
     # (`thumbui/loupehit` 25×19, benne a `thumbui/loupe` MÉRT 23×16).
     # A rajz a sajátunk: az eredeti egy két gyűrűs üveglencse, amit nem

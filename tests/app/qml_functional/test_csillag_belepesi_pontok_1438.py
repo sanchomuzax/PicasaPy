@@ -51,9 +51,12 @@ def _tray_star_button(window) -> QObject:
     tulajdonság ellenőrzése a szerkezeti kapocs: ha a felépítés megváltozik,
     ez a sor mondja meg, miért nem találjuk a gombot.
     """
-    button = _child(window, "trayStarLabel").parent()
+    #: #1224: a gombot a SAJÁT nevén keressük. Korábban a felirata
+    #: (`trayStarLabel`) szülőjén át találtuk meg — az a felirat képre
+    #: cserélésekor eltört, mert a kép konténerbe került. A név stabil.
+    button = _child(window, "trayStarButton")
     assert button is not None and button.property("targetRow") is not None, (
-        "a trayStarLabel szülője már nem a csillag-gomb — a keresést "
+        "nincs meg a trayStarButton — a csillag-gomb neve megváltozott? "
         "igazítani kell"
     )
     return button

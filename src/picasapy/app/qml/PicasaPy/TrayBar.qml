@@ -798,6 +798,14 @@ Column {
 
                     PicasaButton {
                         id: trayStar
+                        //: #1224: SAJÁT név a gombnak. Eddig a tesztek a
+                        //: feliratának (`trayStarLabel`) a SZÜLŐJÉN át
+                        //: találták meg — a #1438 tesztje ezt panaszolta is
+                        //: („a gombnak magának nincs objectName-je"). Amint
+                        //: a felirat képre cserélődött és konténerbe került,
+                        //: a szülő-lánc eltört. Egy név stabilabb, mint egy
+                        //: hierarchia-feltevés.
+                        objectName: "trayStarButton"
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
@@ -825,21 +833,31 @@ Column {
                                    ? controller.toggleStarMany(
                                          tray.appWindow.selectedIndexes)
                                    : controller.toggleStar(targetRow)
-                        contentItem: Text {
-                            objectName: "trayStarLabel"
-                            text: "★"
-                            font.pixelSize: 15
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            // arany, ha a kiválasztott kép csillagos; egyébként
-                            // világos kontúr-csillag (Picasa-minta, nem fekete!)
-                            color: (tray.ctl
-                                    ? (tray.ctl.photos.revision,
-                                       tray.ctl.photos.starAt(trayStar.targetRow))
-                                    : false)
-                                   ? Theme.starYellow : "#ffffff"
-                            style: Text.Outline
-                            styleColor: "#9a9a9a"
+                        //: #1224: KÉP, nem betűjel. A `Text`-es `★` alakja a
+                        //: rendszer betűkészletétől függött (Windowson más
+                        //: glifa, mint Linuxon) — a tulajdonos ezt is
+                        //: „eltorzultnak" látta (#1188). Az eredeti
+                        //: raszterikont rajzol (`thumbui/startoggle_icon0`,
+                        //: MÉRT 17 × 17 a #1914 réteg-leltárából); a RAJZ a
+                        //: sajátunk.
+                        //:
+                        //: ⚠️ KÉT SVG, nem egy színezett: a QML `Image`
+                        //: shader nélkül nem színezhető, a `QtQuick.Effects`
+                        //: pedig szándékosan nincs a projektben.
+                        contentItem: Item {
+                        Image {
+                            objectName: "trayStarIcon"
+                            source: (tray.ctl
+                                     ? (tray.ctl.photos.revision,
+                                        tray.ctl.photos.starAt(trayStar.targetRow))
+                                     : false)
+                                    ? "icons/tray-star-on.svg"
+                                    : "icons/tray-star.svg"
+                            width: 17; height: 17
+                            sourceSize.width: 17; sourceSize.height: 17
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                        }
                         }
                     }
                     //: a csillag utáni 5 képpontos hézag (a `spacing` 1-ből
@@ -848,7 +866,8 @@ Column {
                     PicasaButton {
                         id: trayRotateLeftBtn
                         objectName: "trayRotateLeft"
-                        text: "↺"
+                        //: #1224: a felirat KIÜRÜL — a gomb tartalma kép
+                        text: ""
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
@@ -874,20 +893,26 @@ Column {
                         // mindig világos bevel-gomb. Az alapértelmezett
                         // contentItem az `ink`-et használná, ami sötét témán
                         // kivilágosodik és eltűnne a világos gombháttéren.
-                        contentItem: Text {
-                            objectName: "trayRotateLeftLabel"
-                            text: trayRotateLeftBtn.text
-                            font: trayRotateLeftBtn.font
-                            color: trayRotateLeftBtn.enabled
-                                   ? Theme.iconInk : "#9a9a9a"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
+                        //: #1224: KÉP, nem betűjel (`thumbui/rotateleft_icon`,
+                        //: MÉRT 11 × 15). A letiltott állapotot `opacity`
+                        //: jelzi — képre a `color` nem érvényes.
+                        contentItem: Item {
+                        Image {
+                            objectName: "trayRotateLeftIcon"
+                            source: "icons/tray-rotate-left.svg"
+                            width: 11; height: 15
+                            sourceSize.width: 11; sourceSize.height: 15
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                            opacity: trayRotateLeftBtn.enabled ? 1.0 : 0.4
+                        }
                         }
                     }
                     PicasaButton {
                         id: trayRotateRightBtn
                         objectName: "trayRotateRight"
-                        text: "↻"
+                        //: #1224: a felirat KIÜRÜL — a gomb tartalma kép
+                        text: ""
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
@@ -907,14 +932,18 @@ Column {
                                          tray.appWindow.selectedIndexes)
                                    : controller.rotateRight(trayStar.targetRow)
                         // #314: ld. trayRotateLeftBtn indoklása fentebb.
-                        contentItem: Text {
-                            objectName: "trayRotateRightLabel"
-                            text: trayRotateRightBtn.text
-                            font: trayRotateRightBtn.font
-                            color: trayRotateRightBtn.enabled
-                                   ? Theme.iconInk : "#9a9a9a"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
+                        //: #1224: KÉP, nem betűjel (`thumbui/rotateright_icon`,
+                        //: MÉRT 11 × 15) — a balra-forgatás párja.
+                        contentItem: Item {
+                        Image {
+                            objectName: "trayRotateRightIcon"
+                            source: "icons/tray-rotate-right.svg"
+                            width: 11; height: 15
+                            sourceSize.width: 11; sourceSize.height: 15
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                            opacity: trayRotateRightBtn.enabled ? 1.0 : 0.4
+                        }
                         }
                     }
                 }
