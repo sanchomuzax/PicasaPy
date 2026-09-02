@@ -69,3 +69,19 @@ makemoviepanel/add_audio,hianyzik,-,"Hangsáv betöltése — a MovieSettings-be
 makemoviepanel/insert_slide,hianyzik,-,"Szövegdia beszúrása — a teljes szövegdia-szerkesztő hiányzik (#432)"
 makemoviepanel/transtype_label,hianyzik,-,"»Képváltási stílus« — nálunk egyetlen áttűnés van (slideshow.py:41 transition_seconds)"
 makemoviepanel/tab3,hianyzik,-,"A harmadik fül magyar neve »Klipek« (az angol »Options«-szel szemben) — a magyar a mérvadó"
+printpanel/3x5button,megvan,PicasaPy/PrintDialog.qml,»3.5 x 5 in« a printSizeLabels tömbben (:93) — a felirat mértékegységgel bővül
+printpanel/printlayoutlabel,megvan,PicasaPy/PrintDialog.qml,»Layout:« (:279) — az elrendezés-választó felirata; két rádió (egy kép/lap · indexkép)
+printpanel/copieslabel,megvan,PicasaPy/PrintDialog.qml,»Copies of each picture:« (:351) — képenkénti példányszám; a mért eredeti szemantika
+printpanel/subprintsbutton,megvan,PicasaPy/PrintDialog.qml,printCopiesMinusButton (:356) — a példányszám csökkentése
+printpanel/croptoggle,megvan,PicasaPy/PrintDialog.qml,»Fill the page (crop)« rádió (:543) — a fitMode FILL ága
+printpanel/croptogglelabel,megvan,PicasaPy/PrintDialog.qml,ugyanannak a rádiónak a felirata (:543)
+printpanel/fittoggle,megvan,PicasaPy/PrintDialog.qml,»Whole picture« rádió (:537) — a fitMode FIT ága
+printpanel/fittogglelabel,megvan,PicasaPy/PrintDialog.qml,ugyanannak a rádiónak a felirata (:537)
+printpanel/preview,megvan,PicasaPy/PrintDialog.qml,printPreviewImage (:402) — laponkénti előnézeti kép
+printpanel/previewlabel,megvan,PicasaPy/PrintDialog.qml,a printPreviewBlock (:397) maga az előnézet-blokk
+printpanel/previewnumber,megvan,PicasaPy/PrintDialog.qml,printPreviewPageText (:430) — a mért »%d / %d« alak
+printpanel/prevbutton,megvan,PicasaPy/PrintDialog.qml,printPreviewPrevButton (:417)
+printpanel/nextbutton,megvan,PicasaPy/PrintDialog.qml,printPreviewNextButton (:439)
+printpanel/pcancelbutton,megvan,PicasaPy/PrintDialog.qml,»Close« (:617) — a párbeszéd bezárása
+printpanel/selectprinterbutton,megvan,PicasaPy/PrintDialog.qml,printerBox ComboBox (:493) — az elérhető nyomtatók listája plusz PDF-cél
+printpanel/printsetuplabel,megvan,PicasaPy/PrintDialog.qml,»Printer:« (:485) — a nyomtatóválasztó felirata
