@@ -35,7 +35,8 @@ _MINTA = """\
 | mutató | darab |
 |---|---:|
 | párosítva | 135 |
-| hiányzik | 396 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 396 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 12 |
 | bizonytalan | 158 |
 
 ## Rangsor — a tíz legnagyobb fehér folt
@@ -71,6 +72,17 @@ class TestABeolvasas:
         assert (meres.parositva, meres.hianyzik, meres.bizonytalan) == (
             135, 396, 158
         )
+
+    def test_a_ket_hiany_kulon_szamkent_jon_ki(self, meres):
+        """#1878: a feltáratlan és a lekutatva KÜLÖN szám.
+
+        A minta-lap címkéi szándékosan a generátor MAI, bővített alakját
+        használják („hiányzik — **feltáratlan** (kutatói kör kell)"). Az
+        olvasó ezért prefixre illeszt: a pontos egyezés ezen a lapon némán
+        0-t adna, és a tulajdonos állapotlapján HAMIS JAVULÁS látszana.
+        """
+        assert meres.hianyzik == 396
+        assert meres.lekutatva == 12
 
     def test_hianyzo_fajlbol_None(self, tmp_path: Path):
         assert ul.olvas(tmp_path / "nincs.md") is None
