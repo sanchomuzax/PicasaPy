@@ -64,21 +64,31 @@ DOCS_OLVASO_TESZTEK: tuple[str, ...] = (
     "tests/app/qml_functional/test_sajat_funkcio_jeloles_1701.py",
     "tests/render/test_display_modes_1577_1578.py",
     #: #1958: a spec-elavulás jelzése a `docs/specs/` lapjait olvassa.
-    #: KÉZZEL felvéve (a lista RENDEZETT, ezért ide): a `--mer` újramérés
-    #: a mai `main`-en NEM fut le — gyűjtési hiba a
-    #: `tests/export/test_export_mukodes_1166.py`-n, az én ágam nélkül is.
-    #: Erre külön jegy nyílt. A tétel helyességét addig a
-    #: `test_docs_olvaso_tesztek_1863` őrzi: ha a fájl eltűnik vagy
-    #: átnevezik, elbukik.
+    #: A #1968 helyreállította a mérést, és ez a tétel MÉRÉSSEL igazolt
+    #: (76 megnyitott `docs/`-lap) — nem kézi feltevés.
     "tests/scripts/test_spec_elavulas_jelzes_1958.py",
     "tests/test_index_leltar_szam_1512.py",
     "tests/test_ui_lefedettseg_megfeleltetes_707.py",
     "tests/tools/test_check_decision_links_1623.py",
     "tests/tools/test_check_protected_features_1187.py",
     "tests/tools/test_kepesseg_or_1476.py",
+    #: #1968: MÉRÉSSEL került be — a lista eddig kihagyta, pedig 77
+    #: `docs/`-lapot nyit meg. Épp ez a fajta csendes kimaradás volt az,
+    #: amiért a mérés helyreállítása kellett.
+    "tests/tools/test_menu_lefedettseg_korkorosseg_1878.py",
     "tests/tools/test_validation_kit_685.py",
 )
 
+#: ⚠️ #1968 — A MÉRÉS KÉT HATÁRA, MÉRVE:
+#:
+#: 1. **Egy menetben a teljes `tests` NEM futtatható**: a Qt-nehéz fák
+#:    együtt futtatva összeomlanak (a projekt ismert jelensége, ezért van
+#:    a `scripts/run_tests.py` darabolás). A `--mer`-t ezért fánként kell
+#:    futtatni, és az eredményeket összefésülni.
+#: 2. A megszakadt gyűjtés korábban ÜRES listát adott érvényes
+#:    eredménynek látszva; a `--mer` mostantól nem nulla kilépőkóddal áll
+#:    meg, és nem ír ki bemásolható JSON-t.
+#:
 #: ⚠️ A MÉRÉS HATÁRA — a `tests/app` fát nem futtattam végig audit-horoggal
 #: (Qt-nehéz, több mint tíz perc). Ott előbb szűkítettem: azokat a fájlokat
 #: kerestem, amelyek TÉNYLEGES útvonalat építenek a `docs/`-hoz
@@ -117,7 +127,29 @@ def _mer(pytest_argumentumok: list[str]) -> int:
         def pytest_runtest_protocol(self, item, nextitem):  # noqa: ARG002
             aktualis["fajl"] = item.nodeid.split("::")[0]
 
-    pytest.main(pytest_argumentumok, plugins=[Figyelo()])
+    kod = pytest.main(pytest_argumentumok, plugins=[Figyelo()])
+
+    #: ⚠️ #1968: a `pytest.main()` kilépőkódját MEG KELL nézni. Korábban
+    #: nem néztük, és egy MEGSZAKADT GYŰJTÉS (kód 2) után a szkript
+    #: derűsen kiírta a `JSON: []`-t — érvényes eredménynek látszó ÜRES
+    #: listát. Aki bemásolja, KIÜRÍTI a `DOCS_OLVASO_TESZTEK`-et, és a
+    #: docs-only PR-eken onnantól semmi nem fut le. A hibás mérésnek nem
+    #: szabad érvényes eredménynek látszania.
+    #:
+    #: A bukó TESZT (kód 1) viszont elfogadható: a mérés az `open`
+    #: hívásokat figyeli, azokat egy elbukó állítás is elvégzi.
+    ELFOGADHATO = {0, 1}
+    if int(kod) not in ELFOGADHATO:
+        print(
+            f"\n⛔ A MÉRÉS MEGHIÚSULT — a pytest kilépőkódja {int(kod)} "
+            f"(2 = megszakadt gyűjtés, 3 = belső hiba, 4 = használati "
+            f"hiba, 5 = nem talált tesztet).\n"
+            f"A lenti eredmény HIÁNYOS vagy üres — NE másold be a "
+            f"`DOCS_OLVASO_TESZTEK` listába.",
+            file=sys.stderr,
+        )
+        return 1
+
     print("\n--- MÉRT eredmény ---")
     for fajl, lapok in sorted(terkep.items()):
         print(f"{len(lapok):5}  {fajl}")
