@@ -714,6 +714,31 @@ Ezek a `.picasa.ini` **`[Picasa] P2category`** értékei (#1029). Az
 ugyanolyan **könyvtár-kategória**, mint a lemezen álló mappáké — a 859
 fájlos valódi ini-korpuszban három mappa hordozza is ezt az értéket.
 
+#### A kategória KIZÁRÓ — a mappa egy helyen látszik (#1033)
+
+A #1033 kérdése az volt, hogy egy projekt-mappa az eredetiben **átkerül-e**
+a Projektek alá, vagy **mindkét helyen** látszik. A fenti tábla eldönti,
+külön mérés nélkül:
+
+1. a `P2category` **egyetlen ini-kulcs, egyetlen értékkel** (élő minta:
+   `P2category=Exported Pictures`, `research/#2007-rotate-ini/`);
+2. a `Folders on Disk` **maga is kategória** (`IDS_FOLDERS`) — nem
+   „minden mappa", hanem a besorolatlanok gyűjtője;
+3. van **nevesített ALAPÉRTELMEZETT** kategória (`IDS_DEFAULTCAT` =
+   „Other Stuff" / „Egyebek"), aminek csak kizáró tagság mellett van
+   értelme: ha a mappa több kategóriába is tartozhatna, nem kellene
+   alapértelmezett.
+
+⇒ **A mappa PONTOSAN EGY kategóriában van.** Egy `Projects (internal)`
+mappa tehát nincs benne a `Folders on Disk` gyűjtőben — az eredeti
+**átteszi**, nem duplázza.
+
+⚠️ Amit ez a levezetés **nem** bizonyít: hogy a bal hasáb *renderelése*
+nem tehetne ugyanazt a mappát két csomópont alá adatmodell-szinten
+kizáró tagság mellett is. A 2. pont zárja a hurkot: ha volna egy
+„minden mappa" lista, a `Folders on Disk` kategóriának nem lenne
+értelme mellette.
+
 ➡️ **Következmény nálunk (#1565):** az exportált mappának az INDEXBEN a
 helye, különben a bal hasáb „Exportált képek" sora tartósan üres rácsot
 nyit. A megvalósítás a `library_controller.indexExportedFolder`.
