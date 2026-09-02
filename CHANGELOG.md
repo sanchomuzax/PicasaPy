@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.232] – 2026-09-02
+
+### Javítva
+- **A „Másolat mentése" kimenete mostantól a forrásához kötődik (#1648).**
+  A valódi Picasa a másolatnak a FORRÁS származás-azonosítóját adja, akkor
+  is, ha a szerkesztés bele van égetve — így marad kimutatható, melyik
+  képből lett. Nálunk eddig minden másolat a saját tartalmából kapott
+  újat, tehát ez a kapcsolat elveszett. A másodpéldány-keresés és az
+  importálás **változatlanul** a fájl saját tartalmát nézi: egy
+  szerkesztett másolat továbbra sem számít az eredeti másodpéldányának.
+
 ## [0.8.231] – 2026-09-02
 
 ### Javítva

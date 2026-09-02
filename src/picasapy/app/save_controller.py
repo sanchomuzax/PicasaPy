@@ -396,6 +396,10 @@ class SaveMixin(BackgroundWorkerMixin):
             # mutat.
             utolso_cel = ""
             jelentett_agak: set[str] = set()
+            # #1648: (másolat útja, a FORRÁS származás-kulcsa) párok. Egyben
+            # megy be az indexbe a ciklus UTÁN — képenként külön kapcsolatot
+            # nyitni fölösleges lemezmunka lenne.
+            orokolt_kulcsok: list[tuple[str, int]] = []
             for index, (path, rotate_steps, filters) in enumerate(items):
                 try:
                     rendered = _render_for_save(path, rotate_steps, filters)
@@ -414,10 +418,15 @@ class SaveMixin(BackgroundWorkerMixin):
                 else:
                     done += 1
                     utolso_cel = str(eredmeny.target_path)
+                    if eredmeny.inherited_origin_key is not None:
+                        orokolt_kulcsok.append(
+                            (utolso_cel, eredmeny.inherited_origin_key)
+                        )
                     # #1539: a TÉNYLEGES célút megy be, nem a látott mappa
                     self.noteOutputWritten(utolso_cel)
                 self._saveProgressTick.emit(index + 1, len(items), 1)
             self._saveProgressTick.emit(len(items), len(items), 0)
+            self._orokit_szarmazas_kulcsokat(orokolt_kulcsok)
             # #1566: a FELÜLETI visszajelzés ELŐBB megy ki, mint a gépies
             # befejezés-jelzés. Mindkettő a GUI-szálra sorolódik, sorrendben
             # — így a `saveCopyFinished`-re váró hívó (és teszt) számára az
@@ -426,6 +435,36 @@ class SaveMixin(BackgroundWorkerMixin):
             self.saveCopyFinished.emit(done, failed)
 
         self._start_background(worker, name="picasapy-save-copy")
+
+    def _orokit_szarmazas_kulcsokat(
+        self, parok: list[tuple[str, int]]
+    ) -> None:
+        """#1648: a másolatok a FORRÁS `originfast` kulcsát öröklik.
+
+        A mező **származást** azonosít, nem tartalmat: a valódi Picasa a
+        „Másolat mentése" kimenetének a forrás értékét adja, akkor is, ha a
+        szerkesztés bele van égetve (mérve a tulajdonos élő adatbázisán,
+        `docs/specs/picasa-tartalomkulcs.md`). A tárolás az indexé.
+
+        Hiba esetén CSAK naplózunk: az öröklés kényelmi nyilvántartás, a
+        felhasználó fájljai már a lemezen vannak, és a mentés sikere nem
+        múlhat az indexen. A hívó a háttérszálon van, ahol egy kiszökő
+        kivétel a szálat vinné el.
+        """
+        if not parok:
+            return
+        from picasapy.index import open_index
+        from picasapy.index.origin import inherit_origin_key
+
+        try:
+            with open_index(self._db_path) as conn:
+                for ut, kulcs in parok:
+                    inherit_origin_key(conn, ut, kulcs)
+        except Exception:  # noqa: BLE001 — ld. a docstringet
+            logging.getLogger(__name__).exception(
+                "A másolatok származás-kulcsának öröklése nem sikerült (%d db)",
+                len(parok),
+            )
 
     @Slot(list)
     def revertRowsToOriginal(self, rows) -> None:  # noqa: N802 — QML-stílus
