@@ -547,6 +547,27 @@ Jegy: **#1945**.
 
 ### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel
 
+⭐ **2026-09-03 (12. szakasz) — a LEMEZRE ÍRÁS menete.** A 10. szakasz a
+`publish` sávot írta le; ez azt, ami az **OK után** történik. **Mért képlet**
+a lemez használható kapacitására (`0x0066be90`): `szektorszám × 2048 −
+tartalék`, ahol a tartalék **DVD-nél 4 096 000**, **CD-nél 409 600** bájt
+(`0x0066bf50` / `0x0066bf58`); kétrétegű lemeznél (médiatípus **`0x214`**)
+rögzített **8 547 991 552** bájt; ha a kapacitás nem olvasható, a tartalék
+alapérték **688 072 704** bájt. A „DVD-e?" hat kódra igaz (`0x00666400`).
+⭐ **A mentés TÖBB LEMEZRE folytatódhat**, és a Picasa sorszámozza őket
+(„Ez lesz a(z) %d. számú lemez a(z) %d darabból", `InsertNext::13`) —
+**lemezíró nélkül ISO-fájl(ok)ba** is dolgozik (`InsertNext::7*`), ez a mi
+környezetünkben az implementálható ág. A 21 írás-állapot, a törlés-
+figyelmeztetés és a médiatípus-nevek hivatalos magyar szövege a lapon.
+Melléklelet: a `WriteProgress::13` („Mentési készlet frissítése") kimondja,
+hogy a **`BKTag` címkézés az írás VÉGÉN** fut, nem az elején. Új jegy:
+**#2074**.
+
+⚠️ **Új nyitott kérdés:** a hat médiatípus-kódból (`0x204`, `0x206`, `0x207`,
+`0x209`, `0x210`, `0x214`) csak a `0x214` jelentése ismert (kétrétegű);
+a másik ötről **nem tudjuk, melyik lemezfajtát jelöli** — a megszerzés útja
+a `CDVDR.yti` bővítmény elemzése. Lap: `biztonsagi-mentes.md` 12.2; jegy **#2074**.
+
 ⭐ **2026-09-02 (11. szakasz):** a `files.txt` **megnyitási módja MÉRVE** —
 `OPEN_ALWAYS` + `GENERIC_READ | GENERIC_WRITE` (`0x00677de6`), `OPEN_EXISTING`
 tartalékkal (`0x00677e31`) ⇒ a Picasa **vissza is olvassa**, nem csonkolja; a

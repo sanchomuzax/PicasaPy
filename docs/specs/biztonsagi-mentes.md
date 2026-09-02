@@ -468,3 +468,144 @@ Ez két dolgot magyaráz meg egyszerre:
    mért példával.
 
 Jegy-komment: **#440**.
+
+---
+
+## 12. A LEMEZRE ÍRÁS menete — kapacitás, több lemez, ISO (2026-09-03)
+
+> **Bizonyítottság: megerősített.** Minden szám a diszasszemblátumból, cím
+> szerint; minden felhasználói szöveg a `referencia/stringres-en-hu.tsv`
+> hivatalos magyar sorából. A 10. szakasz a `publish` SÁVOT írta le
+> (gombok, kulcsok); ez a szakasz azt, ami az **OK megnyomása UTÁN** történik.
+
+### 12.1 A lemez használható kapacitása — `0x0066be90` (MÉRT KÉPLET)
+
+A `publish` sáv ezt a függvényt hívja (`0x006740fd`), és 64 bites bájtszámot
+kap vissza.
+
+```asm
+0x0066bec7  cmp dword ptr [esi+0x94], 0x214      ; kétrétegű lemez?
+0x0066bed3  mov dword ptr [ebx+0x180], 0xfd800000 ;   -> 0x1_FD800000
+0x0066bedd  mov dword ptr [ebx+0x184], 1          ;      = 8 547 991 552 bájt
+…
+0x0066bf12  mov eax, 0x29032800                   ; tartalék alapérték
+0x0066bf35  push 0x800                            ; szektorméret = 2048
+0x0066bf3c  call 0xbf7680                         ; [esi+0x90] × 2048  (64 bites)
+0x0066bf47  call 0x666400                         ; DVD-e?
+0x0066bf50  add esi, 0xffc18000                   ;   igen: −4 096 000 bájt
+0x0066bf58  add esi, 0xfff9c000                   ;   nem:  −409 600 bájt
+0x0066bf5e  adc edi, -1
+```
+
+| mennyiség | érték | cím |
+|---|---|---|
+| kétrétegű lemez kapacitása | **8 547 991 552 bájt** (`0x1_FD800000`) | `0x0066bed3`–`0x0066bedd` |
+| a kétrétegűt jelző médiatípus | **`0x214`** | `0x0066bec7` |
+| szektorméret | **2048 bájt** | `0x0066bf35` |
+| **DVD-tartalék** (levonás) | **4 096 000 bájt** = 2000 szektor | `0x0066bf50` (`0xffc18000` = −0x3E8000) |
+| **CD-tartalék** (levonás) | **409 600 bájt** = 200 szektor | `0x0066bf58` (`0xfff9c000` = −0x64000) |
+| tartalék alapérték, ha a lemez kapacitása nem olvasható | **688 072 704 bájt** (`0x29032800`) | `0x0066bf12`, `0x0066bf78` |
+
+⇒ **`használható = szektorszám × 2048 − tartalék`**, kivéve a `0x214`
+típusú (kétrétegű) lemezt, ahol rögzített 8 547 991 552 bájt.
+
+Ugyanez az öt konstans megjelenik a `0x00672380`-ban és a `0x00674460`-ban
+is — ott a fordító **beágyazta** ugyanezt a számítást.
+
+### 12.2 „DVD-e?" — `0x00666400` (54 bájt)
+
+Igazat ad hat médiatípus-kódra: **`0x204`, `0x206`, `0x207`, `0x209`,
+`0x210`, `0x214`** (`0x00666403`–`0x0066642b`). Minden más CD-ként számít
+(a tartalék ekkor 409 600 bájt).
+
+⚠️ **Amit NEM tudunk:** hogy az egyes kódok pontosan melyik lemezfajtát
+jelentik (DVD−R / DVD+R / DVD-RW …). Csak a `0x214` van megfejtve
+(kétrétegű, a hozzá rendelt kapacitásból). A többi öt kód jelentése
+**NINCS MEG** — a megszerzés útja a `CDVDR.yti` bővítmény
+(`picasa-program-resources.md` 486.) elemzése.
+
+A médiatípus emberi nevei (`0x006665c0`):
+`ytICDVDR::MTNotRec` „Not Recordable Disc" · `MTRec` „Recordable Disc" ·
+`MTNotRecIncom` „Incompatible Recordable Disc" · `MTBlank`
+„Blank Recordable Disc" · `MTUnknown` „Unknown".
+
+### 12.3 TÖBB LEMEZRE osztás — a Picasa sorszámoz
+
+A mentés **nem fér el kötelezően egy lemezen**; a felület végig kíséri a
+lemezcserét. Az első becslés (`0x006740a0`, `il_BurnPanel::InitialCollect::*`,
+11 kulcs), a folytatás (`0x00674460`, `InsertNext::*`, 13 kulcs):
+
+| kulcs | hivatalos magyar |
+|---|---|
+| `InitialCollect::1` | „Tegyen be üres lemezt a(z) %c:\ meghajtóba" |
+| `InitialCollect::2` | „Lemez felcímkézése 1. számúként" |
+| `InitialCollect::3` | „Ehhez a következő szükséges: " |
+| `InitialCollect::4s` / `4p` | „1 DVD %s" / „%d DVD %s" |
+| `InitialCollect::5s` / `5p` | „1 CD %s" / „%d CD %s" |
+| `InitialCollect::8p` | „%d CD" |
+| `InitialCollect::9s` / `9p` | „ vagy 1 DVD %s" / „ vagy %d DVD %s" |
+| `InitialCollect::11s` | „1 CD vagy 1 DVD %s" |
+| `InsertNext::1` | „Folytatás" |
+| `InsertNext::2` | „Helyezzen be egy üres lemezt a(z) %c:\ meghajtóba, majd válassza a »Folytatás« lehetőséget" |
+| `InsertNext::10` | „Tegye be az utolsó üres lemezt." |
+| `InsertNext::11` | „Ez lesz a(z) %d. számú lemez." |
+| `InsertNext::12` | „Tegye be a következő üres lemezt." |
+| `InsertNext::13` | **„Ez lesz a(z) %d. számú lemez a(z) %d darabból."** |
+
+⇒ **A lemezek sorszámozottak, és a felület megmondja, hányból hányadik.**
+Az „utolsó" külön szöveget kap.
+
+### 12.4 ISO-kimenet — lemez helyett fájlba
+
+| kulcs | hivatalos magyar |
+|---|---|
+| `InsertNext::7` | „Ezzel a művelettel létrehoz " |
+| `InsertNext::7s` / `7p` | „1 ISO." / „%d ISO-fájl" |
+
+⇒ **A Picasa lemezíró nélkül is használható**: ugyanaz a szétosztás, csak a
+kimenet ISO-képfájl(ok). Ez a **mi célkörnyezetünkben (Linux/RPi5) a
+megvalósítható ág** — hardver nélkül is tesztelhető.
+
+### 12.5 Törlés-figyelmeztetés — `0x006755f0` (283 bájt)
+
+| kulcs | hivatalos magyar |
+|---|---|
+| `EraseWarn::2` (cím) | „Törölhető lemez" |
+| `EraseWarn::1` | „Ezen az újraírható lemezen fájlok vannak.\nA Picasa csak akkor tud a lemezre írni, ha előbb törli a tartalmát.\nTörli a lemezt?" |
+| `EraseWarn::yesbutton` | „Lemez törlése" |
+| `il_CancelButton` | „Mégse" |
+
+### 12.6 Az írás ÁLLAPOTAI — `0x00672f50` (2634 bájt), 21 kulcs
+
+| kulcs | hivatalos magyar |
+|---|---|
+| `WriteProgress::10` | „Felkészülés az írásra" |
+| `WriteProgress::3` | „Lemez törlése" |
+| `WriteProgress::103` | „Lemez törlésének ellenőrzése" |
+| `WriteProgress::8` | „Írás... %.1f%% kész" |
+| `WriteProgress::9` | „Írás... %2$s / %1$s" |
+| `WriteProgress::4` / `::17` | „ %d másodperc van hátra" |
+| `WriteProgress::101` | „Felkészülés az ellenőrzésre" |
+| `WriteProgress::100` | „Ellenőrzés... %1$s/%2$s" |
+| `WriteProgress::16` | „Lemez véglegesítése" |
+| `WriteProgress::14` | „A lemez készen van!" |
+| `WriteProgress::18` | **„Várakozás a következő lemezre"** |
+| `WriteProgress::13` | **„Mentési készlet frissítése"** |
+| `WriteProgress::15` | „Az írás kész!" |
+| `WriteProgress::5` / `::6` | „Hiba történt a CD írása közben" / „A Picasa nem tudott megfelelően a lemezre írni" |
+| `WriteProgress::1` · `::7`/`::11` · `::2`/`::12` | „%d törlése" · „%d véglegesítése" · „CDVDR időzítés" (hibakeresési naplósorok) |
+
+⭐ Két állapot **kapcsolatot teremt a lap többi szakaszával**:
+a `::18` a 12.3 lemezcseréjéé, a `::13` pedig a **9. szakasz `BKTag`
+címkézését** futtatja — vagyis a készlet inkrementalitása az írás
+**befejezésekor** frissül, nem az elején.
+
+### 12.7 Nálunk — MÉRVE (2026-09-03)
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| lemezre írás | teljes motor (kapacitás, szétosztás, törlés, ellenőrzés) | **nincs** — a `src/` egyetlen „lemezre írás" találata a szerkesztés-mentés visszavonása (`edit/save.py:320`), nem lemezírás | a hardveres ág célkörnyezetünkben nem tesztelhető |
+| ISO-kimenet | `InsertNext::7*` | **nincs** | **ez az implementálható ág** |
+| kapacitás-számítás | `szektor × 2048 − tartalék` (12.1) | nincs | átvehető, hardver nélkül is |
+| lemez-sorszámozás | „%d. számú lemez a(z) %d darabból" | nincs | átvehető |
+| `il_BurnPanel::*` szövegek | 21 + 13 + 11 + 4 kulcs, hivatalos magyarral | csak egy komment hivatkozik rájuk (`PicasaNotifier.qml:304`) | a szövegek készen állnak
