@@ -2,6 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>LightboxFeed</name>
+    <message>
+        <source>No photos found</source>
+        <translation>A program nem talált fotókat</translation>
+    </message>
+</context>
+<context>
     <name>CollageDraftGuard</name>
     <message>
         <source>This collage was not completed. To finalize this collage (required for sharing or printing), please select the "Create Now" button. Please note that you can always change your collage later, even after it has been saved.</source>

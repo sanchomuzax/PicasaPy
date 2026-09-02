@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.222] – 2026-09-02
+
+### Hozzáadva
+- **Az üres rács már nem néma (#1945).** Ha egy mappának vagy egy
+  keresésnek nincs találata, eddig üres szürke felület fogadott,
+  magyarázat nélkül. Mostantól — ahogy az eredeti Picasa is teszi — a
+  rács közepére kiírjuk: „A program nem talált fotókat". Betöltés közben
+  nem jelenik meg, hiszen olyankor még számolunk.
+
 ## [0.8.221] – 2026-09-02
 
 ### Javítva

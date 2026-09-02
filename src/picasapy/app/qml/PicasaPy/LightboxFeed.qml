@@ -27,6 +27,36 @@ ListView {
 
     clip: true
     model: grid.ctl ? grid.ctl.feedGroups : []
+
+    // #1945: az üres rács NE legyen néma. Az eredetiben a rács közepén
+    // egyetlen sor áll (`layer:thumbui/static(nothing): lightbox_bgtext`,
+    // `thumbui.tre:190–193`: szülő `thumbui/albumsback`, `m_centerXY`,
+    // `m_displayfont18_Reg`, alapból `m_hidden`), és a `0x00676b10`
+    // állítja rá a hét kontextus-szöveg egyikét.
+    //
+    // Ez a 0. index: `thumbui_text.tre` `Text1` = „No photos found".
+    // A másik hat a webalbum-, CD- és biztonságimásolat-ághoz tartozik,
+    // ami nálunk nincs.
+    //
+    // ⚠️ A mellette mért „Keresés mindenhol" gomb az EREDETIBEN HALOTT
+    // (`docs/specs/racs-ures-allapot.md` 1.) — szándékosan nem épül meg.
+    //
+    // A `contentItem`-be kerül (a ListView minden vizuális gyereke oda
+    // megy), és ez itt nem baj: az üzenet CSAK üres rácson látszik, ahol
+    // nincs mit görgetni.
+    Text {
+        objectName: "gridEmptyText"
+        anchors.centerIn: grid
+        //: `thumbui_text.tre` Text1 — az eredeti felirata
+        text: qsTr("No photos found")
+        font.pointSize: 18
+        color: Theme.textGray
+        // Munka közben a rács is üres, de attól még nem igaz, hogy nincs
+        // kép — a mondat ilyenkor hazudna (#1798 osztálya: hazudó állapot).
+        visible: grid.count === 0
+                 && !(grid.ctl && grid.ctl.isWorking !== undefined
+                      ? grid.ctl.isWorking : false)
+    }
     spacing: 14
     cacheBuffer: 600
     // #85: kiegyenlített sor-elrendezés — az oszlopszám a
