@@ -347,3 +347,64 @@ class TestAKeptalcaBelseje:
         ]
         assert y == sorted(y), f"a három gomb nem egymás alatt áll: {y}"
         assert len(set(y)) == 3
+
+
+class TestAzInfoSzovegClipje1934:
+    """#1934: a szövegnek SAJÁT clipje van — `bal + 20 … jobb − 20`.
+
+    A `respack.yt` az `infotext_clip`-re `x 183…664`-et tárol, a
+    `thumbui.tre:690–693` viszont `XConstraint 0, 0, 20` / `1, 1, -20`-at
+    ad ugyanarra az elemre. **A kettő nem ugyanaz**, és nem is
+    „mindegy": a `respack` téglalap a 800-as vásznon NEM szimmetrikus
+    (balra 183, jobbra 136), a közepe 423,5 — a `.tre`-olvasaté 400. A
+    különbség 1920 képpontos ablakra **56 képpont**.
+
+    A `docs/specs/kek-info-sav.md` 6. szakasza ezt lemérte mind a 20
+    felvételen: a szöveg közepe az ablak közepén áll, `|Δ| ≤ 0,5`
+    képpont (19/20; a huszadikon egy másik világos elem is a sávba lóg).
+    ⇒ a `respack`-olvasat MEGDŐLT, a `.tre` az igaz.
+
+    A kék HÁTTÉR viszont teljes szélességű marad — az is mérve
+    (`y = 942`-n a kék `x 0…1919`, nem-kék képpont: 0). Ezt a két
+    állítást együtt kell őrizni, különben egy későbbi kör a szöveg
+    behúzását a háttérre is ráhúzza.
+    """
+
+    @pytest.mark.parametrize("ablak", ABLAKOK)
+    def test_a_kek_hatter_teljes_szelessegu_marad(
+        self, qml_app_module, qt_app, ablak
+    ):
+        window, _, _ = qml_app_module
+        _szelesseg(window, qt_app, ablak)
+        sav = _elem(window, "trayBar")
+        csik = _elem(window, "trayInfoBar")
+        assert abs(csik.property("width") - sav.property("width")) <= TURES
+
+    @pytest.mark.parametrize("ablak", ABLAKOK)
+    def test_a_szoveg_clipje_20_20_behuzast_kap(
+        self, qml_app_module, qt_app, ablak
+    ):
+        window, _, _ = qml_app_module
+        _szelesseg(window, qt_app, ablak)
+        csik = _elem(window, "trayInfoBar")
+        szoveg = _elem(window, "trayInfoText")
+        assert abs(szoveg.property("x") - 20) <= TURES
+        assert abs(
+            szoveg.property("width") - (csik.property("width") - 40)
+        ) <= TURES
+
+    @pytest.mark.parametrize("ablak", ABLAKOK)
+    def test_a_szoveg_kozepe_a_sav_kozepen_all(
+        self, qml_app_module, qt_app, ablak
+    ):
+        """A MÉRT állítás: a szöveg közepe = a sáv közepe.
+
+        Ez az, ami a 20 felvételen látszik — és amit a `respack`-olvasat
+        (közép 423,5/800) megsértene.
+        """
+        window, _, _ = qml_app_module
+        _szelesseg(window, qt_app, ablak)
+        csik = _elem(window, "trayInfoBar")
+        szoveg = _elem(window, "trayInfoText")
+        kozep = szoveg.property("x") + szoveg.property("width") / 2
+        assert abs(kozep - csik.property("width") / 2) <= TURES
