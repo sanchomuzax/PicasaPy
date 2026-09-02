@@ -1053,3 +1053,33 @@ A Kong-féle **struktúra-szintézis** a mi meglévő szerszámainkból összera
 osztályonként **egy offszet-térkép** készülne, bizonyítékkal mezőnként — és
 pontosan ez zárná ki azt a hibát, ami minket négyszer megharapott
 (`[+0xd8]`, `[+0xdc]`, `+0x54`, `0xc365`).
+
+---
+
+## 18. A spec csak akkor BIZONYÍTÉK, ha az elemnév és a cím EGY SZAKASZBAN áll (2026-09-02)
+
+A `ui_lefedettseg.py` egy elemet akkor sorol **`lekutatva`**-ba (fejlesztői
+kör kell rá, nem kutatói), ha megtalálja a **teljes elemnevét** egy olyan
+spec-szakaszban, ami **címet is tartalmaz**. Két körben is ebbe futottunk
+bele, ezért érdemes kimondani a pontos feltételt:
+
+| feltétel | mit jelent |
+|---|---|
+| **teljes elemnév** | `makemoviepanel/add_audio` — a puszta `add_audio` vagy a felirat („Betöltés…") **nem elég** |
+| **cím ugyanabban a szakaszban** | a minta `0x00` + 6 hexa jegy (`0x0061e48c`), vagy `fájl.kiterjesztés:sor` (`thumbui.tre:696`) |
+| **a szakasz határa: BÁRMELY `#`-kezdetű sor** | a `####` alcím is ÚJ szakaszt nyit — egy elemnév-tábla és a hozzá tartozó cím **nem lehet két külön alcím alatt** |
+
+**Ahogy elbukik (mért példa, 2026-09-02):** a hangsáv-szakasz elemnév-táblája
+a `### 2.6/b` alatt állt, a `0x0061e48c` cím viszont a következő
+`#### Mit nyit meg…` alcím alatt. A két gomb **nem sorolódott át**, pedig a
+szakasz teljes egészében leírja őket. A javítás egy oszlop volt: a cím
+bekerült **magába a táblába**.
+
+**Gyakorlati szabály a spec-írónak:** ha egy szakasz vezérlőket sorol fel,
+a tábla legyen **`elem | felirat | magyar | cím`** alakú — a cím oszlopa
+nem díszítés, hanem az, amitől a sor bizonyítékká válik.
+
+*(A hozzá tartozó, tágabb szabály — „egy szakasz csak akkor bizonyíték, ha
+a TELJES nevén nevezi meg az elemet" — a
+[`picasa-menu-parancsok-viselkedes.md`](picasa-menu-parancsok-viselkedes.md)
+44.3-ában is ki van mondva.)*
