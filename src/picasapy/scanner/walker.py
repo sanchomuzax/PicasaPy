@@ -54,6 +54,52 @@ SkipPredicate = Callable[[Path, int, "int | None"], bool]
 
 
 @dataclass(frozen=True)
+class HibasBejegyzes:
+    """Egy bejegyzés, amit a bejáró NEM tudott feldolgozni (#1998).
+
+    Az eredeti Picasa könyvtárbejárója minden bejegyzéshez tárol egy
+    `Type` mezőt, aminek **4 = hibás fájl**, **5 = hibás mappa** értéke
+    van, és kérésre kilistázza őket (`badfiles.txt`, `0x004f25f0`; a két
+    sorformátum `%s (badfile)` / `%s (baddirectory)`).
+
+    Nálunk nem fájlba írunk: a hívó megkapja a listát, és minden elem
+    naplóba is kerül. A `mappa` mező a `Type` 4/5 megfelelője."""
+
+    path: Path | str
+    errno: int
+    mappa: bool
+
+
+#: A hibás bejegyzések gyűjtője — a hívó adja át, ha kéri (a `#358`
+#: `excluded_names` mintája). `None` esetén csak napló keletkezik.
+HibaGyujto = "list[HibasBejegyzes] | None"
+
+
+def _hiba(
+    gyujto: list[HibasBejegyzes] | None,
+    path: Path | str,
+    hiba: OSError,
+    *,
+    mappa: bool,
+) -> None:
+    """Egy elnyelt `OSError` nyilvántartásba vétele (#1998).
+
+    Eddig mind a hét ág `return`-nel tűnt el: a felhasználó annyit
+    látott, hogy egy mappa vagy egy kép „nincs ott". A napló FÜGGETLEN
+    a gyűjtőtől — a jelzés akkor is kell, ha a hívó nem kért listát."""
+    logger.warning(
+        "A bejárás kihagyta (%s): %s — %s",
+        "mappa" if mappa else "fájl",
+        path,
+        hiba.strerror or hiba,
+    )
+    if gyujto is not None:
+        gyujto.append(
+            HibasBejegyzes(path=path, errno=hiba.errno or 0, mappa=mappa)
+        )
+
+
+@dataclass(frozen=True)
 class MediaFile:
     name: str
     kind: str
@@ -80,6 +126,7 @@ def scan_tree(
     skip: SkipPredicate | None = None,
     name_filters: NameFilters | None = None,
     excluded_names: list[Path] | None = None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
 ) -> tuple[FolderScan, ...]:
     """A gyökér alatti összes médiatartalmú mappa, útvonal szerint rendezve.
 
@@ -114,7 +161,10 @@ def scan_tree(
     exclude_paths = tuple(Path(item).resolve() for item in exclude)
     filters = name_filters if name_filters is not None else default_name_filters()
     folders: list[FolderScan] = []
-    _walk(root_path, exclude_paths, skip, filters, folders, set(), excluded_names)
+    _walk(
+        root_path, exclude_paths, skip, filters, folders, set(),
+        excluded_names, hibas_bejegyzesek,
+    )
     return tuple(sorted(folders, key=lambda f: f.path))
 
 
@@ -122,6 +172,7 @@ def scan_folder(
     folder: str | Path,
     name_filters: NameFilters | None = None,
     skip: SkipPredicate | None = None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
 ) -> FolderScan | None:
     """Egyetlen mappa nem-rekurzív scanje (watcher-ág, #143).
 
@@ -139,14 +190,18 @@ def scan_folder(
     try:
         with os.scandir(path) as it:
             entries = list(it)
-    except OSError:
+    except OSError as hiba:
+        _hiba(hibas_bejegyzesek, path, hiba, mappa=True)
         return None
     file_entries = [e for e in entries if not _entry_is_dir(e)]
     # #1674: a watcher-ág is kaphat kihagyás-predikátumot. Enélkül a
     # `_scan_folder` MINDEN médiafájlt statolt akkor is, ha a mappa
     # bizonyíthatóan változatlan — a #139 gépezete létezett, csak ez az út
     # nem használta.
-    return _scan_folder(path, file_entries, skip=skip, with_state=True)
+    return _scan_folder(
+        path, file_entries, skip=skip, with_state=True,
+        hibas=hibas_bejegyzesek,
+    )
 
 
 def _walk(
@@ -157,6 +212,7 @@ def _walk(
     out: list[FolderScan],
     visited_dirs: set[tuple[int, int]],
     excluded_names: list[Path] | None = None,
+    hibas: list[HibasBejegyzes] | None = None,
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
     (élő NAS-on a mappa el is tűnhet menet közben).
@@ -172,8 +228,11 @@ def _walk(
         return
     try:
         stat = os.stat(current)
-    except OSError:
-        return  # törött symlink vagy időközben eltűnt/elérhetetlen mappa
+    except OSError as hiba:
+        # törött symlink vagy időközben eltűnt/elérhetetlen mappa (#1998:
+        # eddig nyomtalanul tűnt el)
+        _hiba(hibas, current, hiba, mappa=True)
+        return
     identity = (stat.st_dev, stat.st_ino)
     if identity in visited_dirs:
         logger.warning(
@@ -185,7 +244,8 @@ def _walk(
     try:
         with os.scandir(current) as it:
             entries = list(it)
-    except OSError:
+    except OSError as hiba:
+        _hiba(hibas, current, hiba, mappa=True)
         return
     dir_entries = []
     file_entries = []
@@ -194,7 +254,9 @@ def _walk(
             dir_entries.append(entry)
         else:
             file_entries.append(entry)
-    scan = _scan_folder(current, file_entries, skip, with_state=skip is not None)
+    scan = _scan_folder(
+        current, file_entries, skip, with_state=skip is not None, hibas=hibas
+    )
     if scan is not None:
         out.append(scan)
     for entry in sorted(dir_entries, key=lambda e: e.name):
@@ -221,6 +283,7 @@ def _walk(
             out,
             visited_dirs,
             excluded_names,
+            hibas,
         )
 
 
@@ -240,6 +303,7 @@ def _scan_folder(
     entries: list[os.DirEntry],
     skip: SkipPredicate | None,
     with_state: bool,
+    hibas: list[HibasBejegyzes] | None = None,
 ) -> FolderScan | None:
     by_name = {entry.name: entry for entry in entries}
     media = [
@@ -273,9 +337,12 @@ def _scan_folder(
             # DirEntry.stat(): az első hívás statol, az eredmény cache-elt —
             # nincs külön (path / name).stat() kör (NAS-on plusz RTT / fájl).
             info = by_name[name].stat()
-        except OSError:
+        except OSError as hiba:
             # Élő könyvtárban (NAS, futó Picasa) a fájl eltűnhet a listázás
             # és a stat között — egy fájl kihagyása nem buktathat scant.
+            # #1998: de nem is tűnhet el NYOMTALANUL — ez a `Type = 4`
+            # (hibás fájl) megfelelője.
+            _hiba(hibas, path / name, hiba, mappa=False)
             continue
         files.append(
             MediaFile(name=name, kind=kind, size=info.st_size, mtime_ns=info.st_mtime_ns)
