@@ -68,13 +68,23 @@ def out_dir(tmp_path: Path, fotok_dir: Path) -> Path:
 
 
 def _folder_for(effect) -> str:
-    return f"effekt{effect.tab}_{mps.slugify(effect.nev)}"
+    #: #1938: a generátor SAJÁT névképzőjét hívjuk. Ha a teszt újraírná a
+    #: logikát, csak a saját másolatát őrizné, a valódi kimenetet nem.
+    return mps.mappa_neve(effect)
 
 
 class TestEffektLista:
     def test_mind_a_23_effekt_szerepel(self) -> None:
-        assert len(mps.EFFECTS) == 23
+        """#1938 óta a BEJEGYZÉS és az EFFEKT nem ugyanaz.
+
+        Egy effekthez több bejegyzés tartozhat — annyi, ahány csúszkáját
+        söpörjük (a `Comicize` háromét). Az állítás lényege változatlan:
+        mind a 23 effekt-KULCS szerepeljen, egyik se essen ki.
+        """
         assert len({e.key for e in mps.EFFECTS}) == 23
+        #: a többtengelyű effektek adják a többletet
+        tobbtengelyu = sum(1 for e in mps.EFFECTS if e.tengely)
+        assert len(mps.EFFECTS) == 23 - 1 + tobbtengelyu
 
     def test_kulcsok_egyeznek_a_190es_1koros_valodi_mintakkal(self) -> None:
         varakozott = {
@@ -275,3 +285,76 @@ class TestKitGeneralas:
             next(e for e in mps.EFFECTS if e.key == "Boost")
         )
         assert len(list(boost_folder.glob("*.jpg"))) == 5
+
+
+class TestTobbTengelyuSweep:
+    """#1938: egy effekt TÖBB csúszkája is söpörhető, névütközés nélkül.
+
+    A `Comicize`-nál ez nem kényelmi kérdés: a #1606 négy eltéréséből
+    kettőt épp a korábban fixen hagyott csúszkák hajtanak — a raszter
+    alfáját a **DotFade** (`0,5 − DotFade/200`), a fő küszöbgörbe
+    töréspontját a **DotContrast** (`90 + DotContrast·1,5`). Egyetlen
+    alapállású (50/50) referencia nem tudja megmutatni, hogy a javítás a
+    csúszka mentén helyesen viselkedik-e, pedig a #1606 elfogadási
+    feltétele épp az, hogy a ΔE „egyik csúszkaálláson se" romoljon.
+
+    ⚠️ A névképzés a `key`-re épült (`effekt{tab}_{slug(nev)}` mappa,
+    `{key}_{label}.jpg` fájl). Tengely-megkülönböztetés nélkül a három
+    Comicize-bejegyzés UGYANODA, ugyanazon a néven írna: az utolsó némán
+    felülírná az előzőeket, és a felhasználó egy hiányos készletet
+    exportálna — a hiba csak a mérésnél derülne ki.
+    """
+
+    def test_a_comicize_mindharom_csuszkaja_sopoheto(self) -> None:
+        comicize = [e for e in mps.EFFECTS if e.key == "Comicize"]
+        assert len(comicize) == 3, "a Comicize-nak három tengelye van"
+        assert {e.sweep_index for e in comicize} == {0, 1, 2}
+        assert {e.tengely for e in comicize} == {
+            "blurxy", "dotcontrast", "dotfade"
+        }
+
+    def test_azonos_kulcsu_bejegyzesek_kulon_mappat_kapnak(self) -> None:
+        """A névütközés kizárva — ez a teszt foga."""
+        mappak = [_folder_for(e) for e in mps.EFFECTS]
+        assert len(mappak) == len(set(mappak)), (
+            "két bejegyzés ugyanabba a mappába írna: "
+            f"{sorted({m for m in mappak if mappak.count(m) > 1})}"
+        )
+
+    def test_a_tengely_a_mappanevben_latszik(self) -> None:
+        nevek = {
+            _folder_for(e) for e in mps.EFFECTS if e.key == "Comicize"
+        }
+        assert nevek == {
+            "effekt5_kepregeny_blurxy",
+            "effekt5_kepregeny_dotcontrast",
+            "effekt5_kepregeny_dotfade",
+        }
+
+    def test_minden_tengely_a_sajat_pozciojat_sopri(self) -> None:
+        """A DotFade-tengely a 3. paramétert mozgatja, a többit fixen hagyja."""
+        dotfade = next(
+            e for e in mps.EFFECTS
+            if e.key == "Comicize" and e.tengely == "dotfade"
+        )
+        # a tartomány alja és teteje
+        assert mps._filters_value(dotfade, 0.0) == (
+            "Comicize=1,20.000000,50.000000,0.000000;"
+        )
+        assert mps._filters_value(dotfade, 100.0) == (
+            "Comicize=1,20.000000,50.000000,100.000000;"
+        )
+
+    def test_a_tengelyes_mappak_tenyleg_legyartodnak(
+        self, out_dir: Path
+    ) -> None:
+        for nev in (
+            "effekt5_kepregeny_blurxy",
+            "effekt5_kepregeny_dotcontrast",
+            "effekt5_kepregeny_dotfade",
+        ):
+            mappa = out_dir / nev
+            assert mappa.is_dir(), f"hiányzó mappa: {nev}"
+            assert (mappa / ".picasa.ini").exists()
+            # 5 pont mindegyik tengelyen
+            assert len(list(mappa.glob("*.jpg"))) == 5
