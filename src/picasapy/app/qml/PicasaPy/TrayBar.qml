@@ -516,6 +516,7 @@ Column {
                             //: `photos.revision` a rácsban.)
                             visible: (tray.ctl
                                       && tray.ctl.heldAtTrayIndex !== undefined
+                                      && tray.ctl.heldCount !== undefined
                                       && trayScratchBack.heldCount > 0)
                                      ? (tray.ctl.heldCount,
                                         tray.ctl.heldAtTrayIndex(parent.index))
