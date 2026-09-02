@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.217] – 2026-09-02
+
+### Javítva
+- **A félbehagyott kollázs nem vész el többé (#979).** Ha a program
+  váratlanul bezárul, a félkész kollázsból automatikus mentés marad.
+  Eddig, ha a következő induláskor nemet mondtál a visszaállításra, ez a
+  mentés törlődött. Mostantól — ahogy az eredeti Picasa is teszi —
+  megmarad „Helyreállított automatikus másolat" néven, tehát később még
+  meggondolhatod magad.
+
 ## [0.8.216] – 2026-09-02
 
 ### Hozzáadva

@@ -19,6 +19,7 @@ from .autosave import (
     autosave_path,
     discard_autosave,
     has_recoverable_draft,
+    recover_orphan_draft,
     read_autosave,
     write_autosave,
 )
@@ -88,6 +89,7 @@ __all__ = [
     "discard_autosave",
     "draft_project_path",
     "has_recoverable_draft",
+    "recover_orphan_draft",
     "is_draft_image",
     "read_autosave",
     "read_cxf",

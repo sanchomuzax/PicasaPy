@@ -35,6 +35,9 @@ import logging
 import os
 from pathlib import Path
 
+import numpy as np
+
+from picasapy.lazy_cv2 import cv2
 from picasapy.collage.cxf import CxfProject, dumps, loads
 from picasapy.collage.win_paths import decode_cxf_path
 
@@ -53,6 +56,22 @@ AUTOSAVE_NAME = "autosave.cxf"
 
 #: az átmeneti fájl neve írás közben (a Picasa `.cxf.tmp`-je)
 _TEMP_NAME = AUTOSAVE_NAME + ".tmp"
+
+
+#: #979: az elárvult piszkozat ÚJ neve induláskor. A HIVATALOS magyar
+#: fordítás (`stringres`: `collage::recoveredautosave` → „Recovered
+#: Autosave"), nem a mi megfogalmazásunk. Az eredeti belépője induláskor
+#: `0x00689f40` → `0x008419e0`; a nevet a `0x00841b65` olvassa ki.
+RECOVERED_NAME = "Helyreállított automatikus másolat"
+
+#: A helykitöltő JPEG MÉRT paraméterei (`0x0068a767` = 0x280 szélesség,
+#: `0x0068a79c` = 0x1e0 magasság, `0x0068a7c6` = 0xFF3F3F3F szín,
+#: `0x0068a7f6` = `{1, 4, 0x55}` → q85). Az eredeti akkor írja, ha az
+#: `autosave.cxf` mellett NINCS kép — ettől lesz csempéje a piszkozatnak
+#: a Kollázsok albumban.
+_PLACEHOLDER_SIZE = (640, 480)
+_PLACEHOLDER_GRAY = 0x3F
+_PLACEHOLDER_QUALITY = 85
 
 
 def autosave_path(directory: Path | str) -> Path:
@@ -148,6 +167,82 @@ def _letezik(forras: str) -> bool:
         return False
 
 
+def _szabad_nev(directory: Path, alap: str) -> str:
+    """Ütközésmentes név: `alap`, `alap1`, `alap2`, … — SZÓKÖZ NÉLKÜL.
+
+    MÉRT: az eredeti ugyanazt a `"%s%lu"` számozót használja, mint a
+    rendes mentésnél (`0x00993030`, hívva a `0x00841bb8`-ból). A szóköz
+    hiánya nem stílus: a fájlnév egy az egyben így néz ki.
+    """
+    if not (directory / f"{alap}.cxf").exists():
+        return alap
+    sorszam = 1
+    while (directory / f"{alap}{sorszam}.cxf").exists():
+        sorszam += 1
+    return f"{alap}{sorszam}"
+
+
+def _helykitolto(cel: Path) -> None:
+    """A MÉRT paraméterű helykitöltő JPEG (#979).
+
+    Akkor kell, ha a piszkozat mellett nincs kép: enélkül a helyreállított
+    tétel csempe nélkül állna a Kollázsok albumban, és a felhasználó nem
+    találná meg.
+    """
+    kep = np.full(
+        (_PLACEHOLDER_SIZE[1], _PLACEHOLDER_SIZE[0], 3),
+        _PLACEHOLDER_GRAY,
+        dtype=np.uint8,
+    )
+    cv2.imwrite(
+        str(cel), kep, [int(cv2.IMWRITE_JPEG_QUALITY), _PLACEHOLDER_QUALITY]
+    )
+
+
+def recover_orphan_draft(directory: Path | str) -> Path | None:
+    """Az elárvult piszkozat helyreállítása induláskor (#979).
+
+    Ha a mappában `autosave.cxf` maradt egy előző munkamenetből, átnevezi
+    a hivatalos néven (`RECOVERED_NAME`), a `.jpg` párjával együtt, és ha
+    kép nem volt mellette, MÉRT paraméterű helykitöltőt ír.
+
+    ⚠️ **Nem futhat le kétszer ugyanarra.** Az átnevezés után nincs többé
+    `autosave.cxf`, tehát a következő hívás `None`-t ad — enélkül minden
+    indulás új „…másolat1", „…másolat2" fájlt gyártana.
+
+    Returns:
+        Az új `.cxf` útvonala, vagy `None`, ha nem volt mit helyreállítani.
+    """
+    directory = Path(directory)
+    forras = autosave_path(directory)
+    if not forras.is_file():
+        return None
+
+    nev = _szabad_nev(directory, RECOVERED_NAME)
+    cel = directory / f"{nev}.cxf"
+    try:
+        _replace(str(forras), str(cel))
+    except OSError as hiba:
+        logger.warning(
+            "Az árva kollázs-piszkozat nem nevezhető át (%s): %s", forras, hiba
+        )
+        return None
+
+    kep_forras = forras.with_suffix(".jpg")
+    kep_cel = cel.with_suffix(".jpg")
+    if kep_forras.is_file():
+        try:
+            _replace(str(kep_forras), str(kep_cel))
+        except OSError as hiba:  # pragma: no cover - ritka lemezhiba
+            logger.warning("A piszkozat képe nem nevezhető át: %s", hiba)
+    else:
+        try:
+            _helykitolto(kep_cel)
+        except (OSError, cv2.error) as hiba:  # pragma: no cover
+            logger.warning("A helykitöltő nem írható (%s): %s", kep_cel, hiba)
+    return cel
+
+
 def discard_autosave(directory: Path | str) -> bool:
     """A piszkozat eldobása; `True`, ha tényleg volt mit törölni.
 
@@ -167,6 +262,8 @@ def discard_autosave(directory: Path | str) -> bool:
 
 
 __all__ = [
+    "RECOVERED_NAME",
+    "recover_orphan_draft",
     "AUTOSAVE_NAME",
     "autosave_path",
     "discard_autosave",
