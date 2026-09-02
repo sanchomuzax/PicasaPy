@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.216] – 2026-09-02
+
+### Hozzáadva
+- **A kollázs háttere lehet a képek átlagszíne (#1004).** Az eredeti
+  Picasában van egy harmadik háttérmód, ami a kollázsba tett képek
+  átlagszínét használja, és felülír minden más háttérbeállítást — ez
+  eddig nálunk hiányzott. A panelen továbbra sincs hozzá gomb (az
+  eredetiben sincs): beállításként érhető el.
+
 ## [0.8.215] – 2026-09-02
 
 ### Javítva
