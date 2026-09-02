@@ -31,5 +31,5 @@ app/face_scan_controller.py::scanProgress #1003 — az arcszkennelés haladása 
 app/import_source_controller.py::sourceScanStarted #1003 — az importforrás vizsgálatának indulását a felület nem jelzi
 app/photo_ops_controller.py::photoOpFinished #1003 — a fotóművelet vége; ma csak TESZT figyeli (ld. batch_effect_controller.py kommentjét), a felület nem
 app/save_controller.py::revertFinished #1003 — a visszaállítás eredménye (hány sikerült, hány bukott) elvész
-app/save_controller.py::saveFinished #1003 — VISSZAIGAZOLT: a mentés eredménye elvész; teszt VAN rá, de a KIBOCSÁTÁSRA, ezért zöld
+app/save_controller.py::saveFinished #1384 MÉRVE: az EREDETI SEM jelzi. A Picasa értesítő-sávjához (`CNotifierPopup`) tartozó összes szöveget átnéztem a szállított szövegtárban (26 `notif`-tétel, 12 névtér): van importálás-kész/hiba (`CAcquireUI`), „%d kép érkezett" (`il_PopupNotifierRec`), webexport-hiba (`CWebExportNotify`) és szerverhiba (`CActivityNotify`) — MENTÉS-értesítés NINCS. A mentés a felhasználó saját, szándékos műveletének a vége, az eredeti sem szakítja meg érte. Marad néma; teszt VAN rá, de a KIBOCSÁTÁSRA
 app/save_controller.py::undoSaveFinished #1003 — a mentés visszavonásának eredménye elvész
