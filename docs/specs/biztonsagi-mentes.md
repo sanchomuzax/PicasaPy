@@ -206,7 +206,7 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 | **melyik könyvtárban van a `backups.xml`** | **LEZÁRVA (2026-09-02)** — a `#db3\` token (`0x00c7eeb8`), átadva írásnál `0x00670ca8`, olvasásnál `0x00670aa8`. **A korábbi „`Picasa2Backups` mappa" olvasat MEGDŐLT** — az a fájl XML-gyökéreleme (1.1). |
 | **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-02)** — adatbázis-címke, `BKTag ` + a készlet neve (9.) |
 | hogyan nyitja a fájlt | **LEZÁRVA (2026-09-02)** — `"wb"`, előtte leveszi a csak-olvasható jelzőt (1.1/b) |
-| **a `files.txt` SORFORMÁTUMA** | **BLOKKOLT** — a név (`\files.txt`, `0x00ca5c78`) és a hely megvan; a soronkénti írás a `0x00677a70` (3005 b) másoló ciklusának mélyén van, és **nincs hozzá formátum-sztring a binárisban** (a függvény összes sztringje: a három állapotüzenet + a fájlnév + `ytIO.cpp`) ⇒ nyers `fputs`/`fwrite`. **Megszerzés:** a `0x00677a70` célzott dekompilációja. |
+| **a `files.txt` SORFORMÁTUMA** | **BLOKKOLT, de SZŰKÍTVE (2026-09-02)** — a **megnyitás módja most már mérve** (11.1), a soronkénti írás azonban továbbra sem olvasható ki: a `0x00677f6d` írás-hívás **belső függvénymutatón** át megy (`0xd69518`), nem nevesített importon, ezért a névre keresés nem talál rá. **Megszerzés:** a `0x00677a70` célzott dekompilációja (a `0x00677f6d` hívás argumentumaival), vagy egy valódi `files.txt` egy gépről, ahol futott a mentés. |
 | **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **BLOKKOLT** — a címke létezése mérve (9.), a TÁROLÓJA nem. ⚠️ **A korpusz nem tudja eldönteni:** a `BKTag`-re nulla találat, de a `keywords=` sorra **is** nulla — a korpusz kulcsszavakat egyáltalán nem tartalmaz, tehát a hiány nem bizonyíték. **Megszerzés:** a `0x00670b25` utáni felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol futott a mentés. |
 | **a webre töltés (`replicate`) ága** | **HATÓKÖRÖN KÍVÜL** — a Picasa Web Albums / Google Fotók szolgáltatás megszűnt; a szövegek és a kulcsok a 10. szakaszban a teljesség kedvéért állnak. *(Ez a lap rögzíti a döntést; a `publish` sáv mentés- és CD-ága ettől függetlenül ÉLŐ.)* |
 | **mit csinál a Wine-ág másképp** | **HATÓKÖRÖN KÍVÜL** — a `0x00678be0` Wine alatt más célmappát épít (`wine_get_unix_file_name`), de mi **natív Linuxon** futunk, nem Wine alatt; a mi célmappánk a rendszer saját konvenciója szerint áll elő. |
@@ -354,3 +354,117 @@ címke teszi igazzá — enélkül a szöveg hazudna.
 `rpoptionbox` rádiócsoportja); a **`publish/replicate_go`** felirata `OK`,
 a **`publish/webpublish_cancel`** és a **`publish/replicate_cancel`**
 „Mégse". Mindhárom a webes ághoz tartozik ⇒ **hatókörön kívül** (7.).
+
+---
+
+## 11. A `files.txt` MEGNYITÁSA és a replikáció ikertestvére (2026-09-02)
+
+### 11.1 A `files.txt`-t a Picasa NEM írja felül — OLVASSA is
+
+A 7. szakasz sorformátum-kérdése továbbra is nyitva van, de a **megnyitás
+módja** mérve van, és önmagában is megválaszol egy fontos viselkedési
+kérdést.
+
+A másoló függvény (`0x00677a70`) a célmappa útvonalához hozzáfűzi a
+`\files.txt`-t (`0x00677ada`, a sztring `0x00ca5c78`, hossz 10), majd:
+
+```
+0x00677de6   call [0xd69520]        ; CreateFileW-alak, argumentumok jobbról balra:
+             push edi   (0)         ;   hTemplateFile
+             push 0x80              ;   FILE_ATTRIBUTE_NORMAL
+             push 4                 ;   dwCreationDisposition = OPEN_ALWAYS
+             push edi   (0)         ;   lpSecurityAttributes
+             push 3                 ;   FILE_SHARE_READ | FILE_SHARE_WRITE
+             push 0xC0000000        ;   GENERIC_READ | GENERIC_WRITE
+             push esi               ;   a fájl útvonala
+0x00677dec   cmp eax, -1            ; INVALID_HANDLE_VALUE ellenőrzés
+0x00677e31   (hibaág) ugyanez, de dwCreationDisposition = 3 (OPEN_EXISTING)
+```
+
+Három dolog következik ebből, mérésként:
+
+1. **`OPEN_ALWAYS`** — ha a fájl létezik, megnyitja; ha nem, létrehozza.
+   **Nem csonkolja** (`CREATE_ALWAYS` = 2 lenne).
+2. **`GENERIC_READ | GENERIC_WRITE`** — a Picasa **vissza is olvassa** a
+   fájlt, nem csak ír bele. Ez illeszkedik a mentés inkrementális
+   jellegéhez (9. szakasz, `BKTag`): a `files.txt` a célmappában lévő
+   tartalom **nyilvántartása**, amit menetenként frissít.
+3. A **csak-olvasható jelzőt itt is leveszi**, ugyanazzal a mintával, mint a
+   `backups.xml`-nél (1.1/b): `0x0067834e` lekérdezi az attribútumokat,
+   `test al, 1` vizsgálja a `FILE_ATTRIBUTE_READONLY` bitet,
+   `and eax, 0xfffffffe` törli, `0x00678362` visszaírja.
+
+> **Bizonyítottsági fok: megerősített** a megnyitási módra (kiolvasott
+> argumentum-konstansok). **A sorformátum továbbra sem ismert** — ld. lent,
+> miért nem találta meg a szokásos keresés.
+
+**Miért nem elég a sztring-keresés:** az író hívás
+(`0x00677f6d`, `call dword ptr [0xd69518]`) **belső függvénymutatón** át megy.
+A PE import-táblájának feldolgozásakor a `0xc4025c` → `KERNEL32!GetLastError`
+és a `0xc40474` → `KERNEL32!SetFileTime` **feloldódik**, a `0xd69514`,
+`0xd69518`, `0xd69520` és `0xd694bc` viszont **nem szerepel az
+import-táblában** — futásidőben töltött mutatók. Ezért nincs se
+formátum-sztring, se importnév, amire a szokásos lánc ráakadna.
+
+### 11.2 A `replicates.xml` — ugyanaz az író, ugyanaz az öt mező
+
+Az 1.2 eddig annyit mondott, hogy „ugyanez a függvény írja". A mezőlista
+mérve **azonos**: a `0x006759c0` (1723 b) sztringkészlete
+**egyetlen** halmaz mindkét fájlhoz —
+
+```
+Picasa2Backups   (XML-gyökérelem, közös)
+setname · diskroot · filter
+bkallfiles · bkonlypics · bkonlyexif   (a három tartalom-mód)
+```
+
+és az olvasó is közös: `0x00676910` (223 b) mindkét fájlnevet ismeri; a
+mező-feldolgozás `0x00676170` (a három mód) és `0x00676760`
+(`setname` / `diskroot`).
+
+⚠️ **A `diskroot` csak akkor íródik ki, ha nem üres** (2. szakasz,
+`0x00675c52`). A replikációs készletnél tehát ez a mező hiányozhat — a
+beolvasónak fel kell készülnie a hiányára.
+
+**Az utoljára használt cél két külön kulcsban él** (`0x0067b7e0`):
+
+| kulcs | mihez |
+|---|---|
+| `Preferences\LastBkSet` | az utoljára használt **mentési** készlet (9.1) |
+| `Preferences\LastReplTarget` | az utoljára használt **replikációs** cél |
+
+### 11.3 A replikáció NÉGY állapotszövege — hivatalos magyar fordítással
+
+| erőforrás-azonosító | angol | magyar |
+|---|---|---|
+| `il_CReplicateStatusRep` | Replicating | **Replikáció** |
+| `il_CReplicateStatus` | %d items scheduled to be copied | **%d elem van másolásra ütemezve** |
+| `il_CReplicateStatusItems` | %1$d of %2$d items | **%1$d / %2$d elem** |
+| `il_CReplicateStatusDone` | Done | **Kész** |
+
+(`referencia/stringres-en-hu.tsv` 3156–3159. sor.)
+
+### 11.4 ⭐ A `publish` sáv STRUKTURÁLIS KULCSA: `publish/%s_go`
+
+A parancsdiszpécser (`0x005fa770`, 8913 b) a `publish` sáv gombjait
+**összerakott névvel** szólítja meg:
+
+```
+publish/%s_go        publish/%s_cancel
+```
+
+ahol a `%s` a **három mód** egyike, és mindhárom névként ott áll ugyanabban
+a függvényben: **`backup` · `presentcd` · `replicate`**.
+
+Ez két dolgot magyaráz meg egyszerre:
+
+1. **A `publish` sáv tényleg egy panel három üzemmóddal** (10. szakasz), és
+   ezt most a *kód* is igazolja, nem csak az elemnevek.
+2. **Ezért látszik több `publish`-elem „hiányzónak"** a lefedettségi
+   mérésben: a nevük a binárisban **nem szerepel literálisan**. Ez pontosan
+   az a hamis-pozitív osztály, amit a
+   [`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 19.
+   szakasza „dinamikusan összerakott név" néven ír le — itt egy konkrét,
+   mért példával.
+
+Jegy-komment: **#440**.

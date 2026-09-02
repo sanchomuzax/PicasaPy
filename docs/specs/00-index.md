@@ -547,6 +547,23 @@ Jegy: **#1945**.
 
 ### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel
 
+⭐ **2026-09-02 (11. szakasz):** a `files.txt` **megnyitási módja MÉRVE** —
+`OPEN_ALWAYS` + `GENERIC_READ | GENERIC_WRITE` (`0x00677de6`), `OPEN_EXISTING`
+tartalékkal (`0x00677e31`) ⇒ a Picasa **vissza is olvassa**, nem csonkolja; a
+csak-olvasható jelzőt itt is leveszi (`0x0067834e` → `0x00678362`). A
+**sorformátum továbbra is BLOKKOLT, de szűkítve**: az író hívás
+(`0x00677f6d`) **belső függvénymutatón** (`0xd69518`) megy, nem nevesített
+importon — ezért nem találja meg sem a sztring-, sem az importnév-keresés.
+Melléklelet: a `replicates.xml` mezőlistája **tételesen azonos** a
+`backups.xml`-ével (közös író `0x006759c0`, közös olvasó `0x00676910`), az
+utoljára használt cél **két külön kulcsban** él (`LastBkSet` /
+**`LastReplTarget`**), és megvan a replikáció **négy állapotszövege** hivatalos
+magyar fordítással. ⭐ **Strukturális kulcs:** a parancsdiszpécser
+(`0x005fa770`) a sáv gombjait **`publish/%s_go` / `publish/%s_cancel`** alakban
+szólítja meg, a `%s` ∈ {`backup`, `presentcd`, `replicate`} — ez egy **mért,
+konkrét példa** a módszertani lap 19. szakaszának „dinamikusan összerakott
+név" hamis-pozitív osztályára. Jegy-komment: **#440**.
+
 ⭐ **2026-09-02:** a mentés **MIT ÍR** oldala feltárva (az 50.2 a fogalmat és
 a felületet adta, ezt nem): `backups.xml` négy mezővel, **három**
 tartalom-mód, `files.txt` a célmappában, honosított
