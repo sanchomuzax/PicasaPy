@@ -92,8 +92,15 @@ class TestANagyitoReteg:
         assert "onCanceled: loupeArea.aktivSor = -1" in blokk
 
     def test_a_lencse_CSAK_nyomva_latszik(self):
-        blokk = _blokk(_FEED, 'objectName: "feedLoupe"', 900)
-        assert "visible: loupeArea.pressed && loupeArea.aktivSor >= 0" in blokk
+        """#1951 óta a láthatóság ÁTTŰNIK, ezért a feltétel külön
+        tulajdonságba került (`kell`) — a `visible` az áttűnés
+        eredményét követi. Az állítás SZÁNDÉKA változatlan: a lencse
+        csak nyomva, és csak érvényes soron látszik."""
+        blokk = _blokk(_FEED, 'objectName: "feedLoupe"', 2600)
+        assert (
+            "loupeArea.pressed && loupeArea.aktivSor >= 0" in blokk
+        ), "a lencse láthatósága nem a nyomva tartáshoz kötött"
+        assert "visible: opacity > 0" in blokk
 
     def test_NEM_nyitja_meg_a_kepet(self):
         """A réteg semmilyen megnyitás-hívást nem tartalmazhat."""
@@ -117,14 +124,14 @@ class TestANagyitoReteg:
 
     def test_a_racs_szelen_sem_log_ki(self):
         """A lencse a képfolyamon belül marad — a jegy külön kiköti."""
-        blokk = _blokk(_FEED, 'objectName: "feedLoupe"', 1200)
+        blokk = _blokk(_FEED, 'objectName: "feedLoupe"', 3200)
         assert "Math.max(0, Math.min(groupFlow.width" in blokk
         assert "Math.max(0, Math.min(groupFlow.height" in blokk
 
     def test_a_nagyitott_kep_NAGYOBB_felbontast_ker(self):
         """Enélkül a bélyegkép képpontjait nagyítanánk fel — a nagyító
         épp az élesség eldöntésére való."""
-        blokk = _blokk(_FEED, 'objectName: "feedLoupeImage"', 900)
+        blokk = _blokk(_FEED, 'objectName: "feedLoupeImage"', 1600)
         assert "sourceSize.width: Math.round(loupe.width)" in blokk
 
 
