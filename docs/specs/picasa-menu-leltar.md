@@ -36,22 +36,31 @@ Létrehozás, Eszközök, Súgó) egyezik a képernyőképekkel; a leltár a
 **platform-változatokat** és **egy almenüt** (`eMenuCreateMovie`) is
 megmutat, amit a képernyőkép-audit nem.
 
-## 2. Lefedettség — 150/189 (79%)
+## 2. Lefedettség — 165/189 (87%), újramérve 2026-09-02
 
-Mérés: a magyar (vagy angol) feliratot keresve a
-`src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` + `picasapy_hu.ts`
-párosban.
+Mérés: a menütétel angol ÉS magyar feliratát keresve a **teljes QML-fában**
+és a `picasapy_hu.ts`-ben, ékezet-, `&`- és „…"-független
+összehasonlítással. (Az első mérés csak a `PicasaMenuBar.qml`-t nézte; a
+helyi menük és a más fájlokba került tételek így kimaradtak belőle.)
 
-| menü | összes | nálunk | hiányzik |
-|---|---:|---:|---:|
-| `eMenuTools` | 38 | 20 | **18** |
-| `eMenuView` | 46 | 37 | **9** |
-| `eMenuFile` | 21 | 19 | 2 |
-| `eMenuHelp` | 11 | 10 | 1 |
-| `eMenuCreateMovie` | 3 | 2 | 1 |
-| `eMenuPicture` · `eMenuEdit` · `eMenuLabelFolder` · `eMenuCreate` | 54 | **54** | **0** |
-| Mac-változatok | 9 | 2 | 7 *(hatókörön kívül)* |
-| **összesen** | **189** | **150** | **39** |
+| menü | összes | nálunk | hiányzik | 2026-08-25-höz képest |
+|---|---:|---:|---:|---|
+| `eMenuTools` | 38 | 24 | **14** | −4 |
+| `eMenuView` | 46 | **46** | **0** | **−9, teljes lett** |
+| `eMenuFile` | 21 | 19 | 2 | — |
+| `eMenuHelp` | 11 | 10 | 1 | — |
+| `eMenuCreateMovie` | 3 | 2 | 1 | — |
+| `eMenuPicture` · `eMenuEdit` · `eMenuLabelFolder` · `eMenuCreate` | 54 | **54** | **0** | — |
+| platform-változatok (Mac/Win) | 16 | 10 | 6 *(hatókörön kívül)* | −1 |
+| **összesen** | **189** | **165** | **24** | **−15** |
+
+⚠️ **A 2026-08-25-i 150/189 (79%) ELAVULT** — a `eMenuView` névtér azóta
+teljes lett (#1434, #1595, #1766 köre). Az alábbi 3.1–3.3 csoportosítás a
+RÉGI, 39 tételes mérésből származik; a tételek besorolása (hatókörön kívül
+/ érdemi) továbbra is érvényes, csak a darabszámok mozdultak.
+
+**Az érdemi hiányra mind van nyitott jegy** (2026-09-02-án ellenőrizve):
+#1398 · #1399 · #1401 · #1402 · #1403 · #1404 · #1405 · #1406 · #1408.
 
 ## 3. A HIÁNYZÓ 39 tétel, három csoportban
 
