@@ -69,6 +69,61 @@ A fül feliratai: `IDS_EMAIL_PREFS` → **„E-mail"**,
 `IDS_EMAILCLIENTBUTTON` → **„Küldés módja: "**,
 `IDS_EMAILCLIENTRADIO` → **„Ezt használom: "**.
 
+### 3/b A méret-beállítás SZEMANTIKÁJA — mérve (2026-09-02)
+
+A fenti tábla eddig csak annyit mondott, hogy az `EmailExportSize` „a csatolt
+képek mérete". A kulcs tényleges jelentése a binárisból:
+
+| állítás | bizonyíték |
+|---|---|
+| `Preferences\EmailExportSize` **közvetlen képpont-érték** (a hosszabb oldal), NEM listaindex | `0x00743030` a `0x407a20` beállítás-olvasóval, majd változtatás nélkül továbbadja |
+| az **alapértéke 480** | `mov dword ptr [esp+0x24], 0x1e0` — **három** egymástól független helyen: `0x006e1756`, `0x006e3f2b`, `0x00743094` |
+| a **`0` jelentése: eredeti méret** | `option_useorig` = (érték == 0), `0x0074310f`–`0x0074311a` |
+| nem nulla értéknél a képkimenet **két** beállítást kap | `option_imagesizelimit` = érték (`0x00743128`) és `option_estimate` = érték (`0x00743137`) |
+| `EmailSinglePicture` **kapcsoló** (alapérték 0), nem méret | `0x007430a6` olvasás alapértékkel 0; a `0x007430f6` ágban csak `== 1`-re vizsgálja |
+| ha a kimenet darabszáma **1** ÉS `EmailSinglePicture == 1` ⇒ a méret **0 lesz** (eredeti méret) | `0x007430ec` `call [edx+0x38]`, `cmp eax, 1`; majd `0x007430ff` `cmp eax, 1`; `0x00743104` `xor edi, edi` |
+| `EmailMovie == 1` ⇒ `option_preservemovies = 1` (a videó teljes egészében megy, nem egy képkocka) | `0x0074313e`–`0x0074315a` |
+| a méretre hozott mellékletek a **`temp\email\`** mappába kerülnek | `0x0073f320` |
+
+A teljes döntési sor, ahogy a kód végrehajtja:
+
+```
+méret = Preferences\EmailExportSize                  # alapértelmezés: 480
+ha (kimenet_darabszám == 1) és (EmailSinglePicture == 1):
+    méret = 0                                        # eredeti méret
+option_useorig = (méret == 0)
+ha méret != 0:
+    option_imagesizelimit = méret
+    option_estimate       = méret
+ha EmailMovie == 1:
+    option_preservemovies = 1
+```
+
+> **Bizonyítottsági fok: megerősített** minden sorra, **egy kivétellel**: hogy a
+> `[edx+0x38]` virtuális hívás pontosan a **küldendő képek darabszámát** adja,
+> az **erős**, nem megerősített olvasat (a `cmp eax, 1` és az
+> `EmailSinglePicture` név együttes jelentése). Ugyanabban a függvényben a
+> `[+0x30]` és a `[+0x34]` szintén darabszám-jellegű (két egymásba ágyazott
+> ciklus határa), tehát a szomszédos rések is számlálók.
+
+**Ami NINCS MEG: a Beállítások E-mail fülén a csúszka LÉPÉSEI.** A
+`Beállítások` párbeszéd natív Win32 lap (`CGeneralPrefsPage`), a feliratai a PE
+erőforrás-táblában élnek, nem a `.tre`/`stringres` anyagban — ezért a
+szövegtárból nem jönnek elő. Amit tudunk: a **`%d pixels (for e-mail)`**,
+`%d pixels (for Web pages)`, `%d pixels (for large Web pages)` és
+`%d pixels (for large monitors)` sablonok **ott vannak** a `Picasa3.exe`
+sztringtáblájában (UTF-16-ban megtalálva) — tehát a felirat a számot
+**futásidőben** kapja.
+
+**Erős, de nem bizonyított kapcsolat:** az Exportálás párbeszéd
+méret-előbeállításai **mérve** `320 | 480 | 640 | 800 | 1024 | 1200 | 1600`
+(`export/bind17.list`, ld. [`export-parbeszed.md`](export-parbeszed.md)), és az
+`EmailExportSize` alapértéke — **480** — ennek a listának a **második** eleme.
+Hogy az E-mail fül csúszkája ugyanezt a hét értéket kínálja-e (plusz az
+„eredeti méret" = 0), az **NINCS MÉRVE**. Megszerzése: **egyetlen képernyőkép**
+a futó Picasa `Eszközök ▸ Beállítások ▸ E-mail` lapjáról — ott a csúszka
+felirata kiírja az aktuális képpontszámot. Jegy: **#2020**.
+
 ## 4. Az üzenetek — ezek LE VANNAK fordítva
 
 Ellentétben a `.tre` feliratokkal, az `IDS_EMAIL_*` üzenetek hivatalos
