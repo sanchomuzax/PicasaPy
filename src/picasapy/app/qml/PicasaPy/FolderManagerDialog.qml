@@ -139,7 +139,9 @@ Window {
     function requestRootIfNeeded() {
         if (folderManagerWindow.rootLoaded) return
         folderManagerWindow.rootLoaded = true
-        if (typeof folderTreeController !== "undefined") {
+        //: #1956: `typeof` a nem regisztrált NÉVRE, `&&` a `null` ÉRTÉKRE
+        if (typeof folderTreeController !== "undefined"
+                && folderTreeController) {
             if (folderManagerWindow.rootPath.length > 0)
                 folderTreeController.requestChildren(folderManagerWindow.rootPath)
             else

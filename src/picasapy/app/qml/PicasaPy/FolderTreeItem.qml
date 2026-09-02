@@ -158,7 +158,9 @@ Column {
         root.expanded = !root.expanded
         if (root.expanded && !root.loaded) {
             root.loaded = true
-            if (typeof folderTreeController !== "undefined")
+            //: #1956: `typeof` a NÉVRE, `&&` az ÉRTÉKRE
+            if (typeof folderTreeController !== "undefined"
+                    && folderTreeController)
                 folderTreeController.requestChildren(root.path)
         }
     }
