@@ -9,6 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.205] – 2026-09-02
 
+### Javítva
+- **A buboréksúgók az eredeti Picasa szövegei (#1929).** Eddig saját
+  átfogalmazások voltak (a 31-ből egy egyezett), négy gombnak pedig —
+  Importálás, csillag, forgatás balra/jobbra — egyáltalán nem volt súgója.
+  A magyar szövegek a Picasa hivatalos fordításából valók, nem a mi
+  fogalmazásunk.
+
 ### Hozzáadva
 - **Négy panelkapcsoló az alsó sávban: Emberek · Helyek · Címkék ·
   Tulajdonságok (#1927).** Eddig ezek a panelek csak a menüből voltak

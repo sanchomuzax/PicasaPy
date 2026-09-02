@@ -517,7 +517,7 @@ Column {
                          : false
                 onClicked: tray.ctl && tray.appWindow && tray.ctl.holdRows(
                     tray.appWindow.selectedIndexes)
-                ToolTip.text: qsTr("Hold Selection")
+                ToolTip.text: qsTr("Hold selected items")
                 ToolTip.visible: trayHoldBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -541,7 +541,7 @@ Column {
                 height: 20
                 enabled: trayScratchBack.heldCount > 0
                 onClicked: trayClearConfirm.open()
-                ToolTip.text: qsTr("Clear Tray")
+                ToolTip.text: qsTr("Clear items from the selection")
                 ToolTip.visible: trayClearBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -578,7 +578,7 @@ Column {
                          && tray.ctl && tray.ctl.albums
                          && tray.ctl.albums.length > 0)
                 onClicked: trayAddToMenu.popup()
-                ToolTip.text: qsTr("Add the pictures in the tray to an album")
+                ToolTip.text: qsTr("Add selected items to an Album")
                 ToolTip.visible: trayAddToBtn.hovered
                 ToolTip.delay: 500
                 contentItem: Image {
@@ -707,6 +707,12 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/startoggle` — az EREDETI súgója,
+                        //: szó szerint (`referencia/ui-leltar.csv`). Eddig
+                        //: nem volt súgója.
+                        ToolTip.text: qsTr("Add/Remove Star")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
                         readonly property int targetRow: tray.appWindow
@@ -752,6 +758,10 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/rotateleft` — az EREDETI súgója.
+                        ToolTip.text: qsTr("Rotate counter-clockwise")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #103: csak-videó kijelölésnél tiltva (photos.revision:
                         // modell-frissüléskor újraértékelt kötés)
                         // #718: null-őr — az appWindow (`window`) az engine-
@@ -787,6 +797,10 @@ Column {
                         width: 36
                         height: 22
                         anchors.verticalCenter: parent.verticalCenter
+                        //: #1929: `thumbui/rotateright` — az EREDETI súgója.
+                        ToolTip.text: qsTr("Rotate clockwise")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
                         // #718: null-őr — ld. trayRotateLeftBtn indoklása.
                         enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
                                   tray.appWindow
