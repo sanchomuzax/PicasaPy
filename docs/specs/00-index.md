@@ -714,6 +714,21 @@ meg is valósítja. **Módszertani tanulság:** a `runtime/*.ui` szövegfájlok 
 bizonyítéklánc **elejére** tartoznak — a Picasa a felület számadatainak egy
 részét szándékosan kiszervezte oda.
 
+### [design-guide.md](design-guide.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
+
+⭐ **2026-09-02 — a `runtime/constants.ui` ÁTVILÁGÍTVA.** A fájl **46 élő
+kulcsot** tartalmaz; ezek közül **csak a 23 szín-kulcs mérhető** azzal, hogy
+megkeressük az értéket a `src/`-ben (egy `#634B45` megkülönböztető, egy puszta
+`22` bármire illeszkedik — a számos kulcsokról ezért **nem állítunk semmit**).
+Mérés: **11 megvan** a kódunkban, **3 hatókörön kívül** (Mac-változatok,
+Linux-first projekt), **9 hiányzik**. ⚠️ A legfontosabb hiányzó az
+**`alayout_titleColor=#634B45`** (mappa-cím): ugyanannak a blokknak a betűjét
+(`Georgia`) és méretét (20) **már átvettük** (`LightboxHeader.qml:96–97`), a
+színt nem — nálunk `Theme.folderTitle` → `ink` → `#1c1b19`. ⛔ **A lap
+korábbi `✅` jelölése ezen a soron félrevezető volt** (a hármasból kettő volt
+kész), javítva. A maradék nyolc színre a **szerepük NINCS MÉRVE** a mi
+felületünkön — vakon átvenni tilos. Jegy: **#2043**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
