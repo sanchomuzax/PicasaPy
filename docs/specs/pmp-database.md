@@ -1672,3 +1672,83 @@ viszont nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`, `*Stack*`: nincs
 találat), sem sztring nem vezet rá.
 
 Jegy: **#2049**.
+
+### 6. A borító ÉLETCIKLUSA — hol van a kód (2026-09-02, folytatás)
+
+Az előző menet nyitva hagyta, hogy **melyik fotókból** áll a kupac. Ez a
+szakasz nem válaszolja meg, de a keresést **egyetlen függvényre szűkíti**, és
+közben három új dolgot mér ki.
+
+#### 6.1 A tár a `CThumbDB` `+0x2428` tagja
+
+A hat blokkfájlt egyetlen ciklusszerű részlet nyitja meg a konstruktorban
+(`0x00415790`), tagonként `lea edi, [ebp+OFF]; push <fájlnév>; call 0x6b5d40`:
+
+| tag-eltolás | fájl |
+|---|---|
+| `+0x2178` | `0x00c80dcc` |
+| `+0x2224` | `0x00c80dd8` |
+| `+0x22d0` | `0x00c80de4` |
+| `+0x237c` | `0x00c80df4` |
+| **`+0x2428`** | **`albums.db`** (`0x00c80e00`) |
+
+(`0x00415aab`–`0x00415af1`.) A `m_albumThumbs` név ugyanerre a tagra
+hivatkozik (`0x00416c4a` + `0x00416c64`).
+
+#### 6.2 A tárat ÉRINTŐ függvények — pontosan tizenöt
+
+A `+0x2428` eltolásra a teljes `.text`-ben **15 függvény** hivatkozik
+(nyers bájtkeresés a `0x00002428` konstansra, függvényhatárokhoz rendelve):
+
+| cím | méret | szerep |
+|---|---:|---|
+| `0x00415790` | 7851 | a hat tár megnyitása (konstruktor) |
+| `0x004181b0` | 212 | **bulk** művelet mindegyik táron (`[+0x18]` virtuális) |
+| `0x00418290` | 213 | **bulk** művelet mindegyik táron (`[+0x1c]` virtuális) |
+| **`0x00423300`** | **505** | **a borító LEKÉRÉSE — „megvan és friss?"** |
+| **`0x00423500`** | **632** | ⭐ **a borító ELŐÁLLÍTÁSA** |
+| `0x00417770` · `0x0044d540` · `0x004844f0` · `0x00423500` | | további belső hívók |
+| `0x00763150` | 11169 | **fogyasztó**: az albumlista rajzolása (`CAlbumList`) |
+| `0x0064ae90` | 3278 | fogyasztó: a Személyek panel |
+| `0x0074ad40` | 3938 | fogyasztó: az albumfejléc |
+| `0x00419d10` · `0x00561840` · `0x00603510` · `0x00603660` | | személy-album ágak |
+
+#### 6.3 ⭐ A gyorstár ÉRVÉNYESSÉGE — és ami ezzel bebizonyosodott
+
+A `0x00423300` menete:
+
+```asm
+0x00423481  call 0x6c9d60              ; -> BÉLYEG kiszámítása az albumból
+0x00423486  mov ecx, [ebx+0x2490]
+0x0042348c  shr ecx, 1                 ; a tár rés-száma
+0x0042348e  cmp ecx, esi               ; az album sorindexe belefér-e?
+0x00423494  jbe 0x4234d8               ;   nem -> ÚJRAÉPÍTÉS
+0x00423496  lea edi, [ebx+0x2428]      ; az album-tár
+0x0042349f  call 0x6b66c0              ; -> a sloton TÁROLT kulcs
+0x004234a4  cmp eax, [esp+0x10]        ; egyezik a bélyeggel?
+0x004234a8  jne 0x4234d8               ;   nem -> ÚJRAÉPÍTÉS
+0x004234b0  call 0x4114e0              ;   igen -> a gyorstárazott blob KIOLVASÁSA
+…
+0x004234de  call 0x423500              ; ÚJRAÉPÍTÉS
+```
+
+⇒ **Az `*_index.db` első vektora („kulcs") ÉRVÉNYESSÉGI BÉLYEG.** Ezt a
+2026-09-02-i blokkfájl-kör **mérésből** már kimondta (a `thumbs` és a
+`thumbs2` kulcsvektora bitre azonos, noha a blobjuk más) — most megvan a
+**kód**, ami össze is hasonlítja. A két bizonyíték egymástól független.
+
+Melléklelet: a tár **rés-száma** a `+0x2490` mezőben áll, `>>1`
+kódolással — ugyanaz az „elemszám kétszerese" idióma, mint a
+`CSelectionNode`-nál.
+
+#### 6.4 Ami TOVÁBBRA IS NYITOTT — de már egyetlen függvényben
+
+**Melyik fotókból áll a kupac, és milyen sorrendben?** A válasz a
+**`0x00423500`** (632 b) törzsében van. A függvény eleje (`0x00423500`–
+`0x004235f5`) újrabelépés-védelem és kritikus szakasz (`GetCurrentThreadId`
+`0xc40284`, be/kilépés `0xc4055c` / `0xc402a8`), a tényleges válogatás
+ez után kezdődik. A `0x004235ad` a szokásos `[ecx+4] >> 1` elemszámot
+olvassa ki — tehát az album elemtömbjén dolgozik.
+
+**Ez a kör eddig jutott.** A következő lépés a `0x00423500` második felének
+végigolvasása. Jegy: **#2049**.
