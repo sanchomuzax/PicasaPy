@@ -572,3 +572,66 @@ tray can get so small that there's no room for text"*.
 és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.
 
 Jegy: **#1919**.
+
+---
+
+## 18. MEGDŐLT: a „3 px a sorok közt, 0 a képek közt" (2026-09-02, #1933)
+
+A #1914 a bélyegkép-rácsra **eltérő** vízszintes és függőleges rést kért:
+*„a sorok közt 3 px rés, a képek közt 0"*. A #1933 ezt azzal vitte
+blokkoltra, hogy **a forrásfelvétel nincs meg** a
+`research/Picasa3-also-talca-ikonok-viselkedese/` mappában.
+
+**Mindkét állítás megdőlt.**
+
+### 18.1 A forrásfelvétel MEGVAN — és pontosan azt adja
+
+A `…214733.jpg` kék csíkja kiírja: **„67 képek”** — ez a #1914 által
+idézett 67 képes felvétel. A tálca sávjában soronkénti szórásprofillal
+(PIL, `std > 25` az `x 12…600` sávon):
+
+```
+sorok:  y 956…974 (18) · rés 974…977 (3) · y 977…995 (18) · rés 995…998 (3) · y 998…1018
+```
+
+A #1914 idézete — *„3 px (y 974–976, 995–997)”* — **képpontra ez.** A
+#1933 azért nem találta meg, mert **`std > 12`-vel mérte**: azzal a
+küszöbbel a három sor egyetlen sávvá olvad össze.
+
+**Küszöbfüggő mérésnél a negatív eredmény nem eredmény** — a küszöböt
+addig kell szigorítani, amíg a szerkezet szét nem válik.
+
+### 18.2 A rés MINDKÉT irányban UGYANANNYI
+
+Detrendelt autokorreláció a sorsávok fényességprofilján (mozgóátlag
+`k = 41` levonva, csúcskeresés 10…60 között) — az oszlop-osztásköz, és
+mellette a sor-osztásköz ugyanabból a felvételből:
+
+| felvétel | sorok | tartalom | **oszlop-osztásköz** | **sor-osztásköz** |
+|---|---:|---:|---:|---:|
+| `…214733` (67 kép) | 3 | 18 | **21** (AC 0,554 / 0,647) | **21** (956 → 977) |
+| `…214725` (39 kép) | 2 | 28 | **30** (AC 0,264 / 0,322) | **30** (957 → 987) |
+| `…214730` (49 kép) | 2 | 22 | **24** (AC 0,435) | **24** (963 → 987) |
+| `…214707` (19 kép) | 1 | 29 | **31** (AC 0,277) | — |
+
+⇒ **A cella négyzetes, és az osztásköz a két irányban azonos.** Ez
+egybevág a 15.1-gyel (*„a 39 képes felvételen a rács vízszintesen és
+függőlegesen is 30 px osztásközű, 28 px tartalommal"*) — a #1914
+kérése ellentmondott a saját lapunk 15. szakaszának.
+
+### 18.3 Következmény a megvalósításra — NINCS átépítés
+
+A mai kód `spacing: 2` **mindkét irányban** (`TrayBar.qml:421`). Ez a
+mért törvénnyel **szerkezetileg egyezik**: a `Flow` szétszedése külön
+sor- és oszlopközre **nem kell.**
+
+Ami marad: a rés a cellamérettel együtt változik — **2 képpont** a
+22–29-es tartalomnál, **3 képpont** a 18-asnál. Hogy a rés a
+cellaméret függvénye-e vagy a maradék elosztásából adódik, az a
+**cellaméret-képlettel együtt** dől el (15.4, **#1916**) — külön nem
+kutatható.
+
+*Bizonyítottsági fok: **megerősített** a forrásfelvétel azonosítására és
+a négyzetes osztásközre (négy felvétel, két független mérési móddal).*
+
+Jegy: **#1933** (lezárva), **#1916** (a képlet).
