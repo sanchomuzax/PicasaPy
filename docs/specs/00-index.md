@@ -563,10 +563,22 @@ Melléklelet: a `WriteProgress::13` („Mentési készlet frissítése") kimondj
 hogy a **`BKTag` címkézés az írás VÉGÉN** fut, nem az elején. Új jegy:
 **#2074**.
 
-⚠️ **Új nyitott kérdés:** a hat médiatípus-kódból (`0x204`, `0x206`, `0x207`,
-`0x209`, `0x210`, `0x214`) csak a `0x214` jelentése ismert (kétrétegű);
-a másik ötről **nem tudjuk, melyik lemezfajtát jelöli** — a megszerzés útja
-a `CDVDR.yti` bővítmény elemzése. Lap: `biztonsagi-mentes.md` 12.2; jegy **#2074**.
+⭐ **2026-09-03 (12.8) — HÁROM külön kódkészlet, kettő megfejtve.** A lemez
+felismerése nem egy számozáson megy: **(a)** az írhatósági állapot `0x301`–
+`0x304` (`0x006665c0`, négy név + „Unknown"); **(b)** a **lemezformátum
+`0xA1`–`0xFA`, 25 nevesített eset** (`0x00666630`, kétszintű ugrótábla
+`0x0066682c` → `0x006667c4`) — a teljes tábla hivatalos magyar fordítással a
+lapon (31 `ytICDVDR::MT*`/`MF*` kulcs); **(c)** a családkód `0x2xx`, hat érték,
+**továbbra is megfejtetlen**.
+
+⛔ **Megdőlt magyarázat:** a `0x2xx` **nem** az IMAPI2
+`IMAPI_MEDIA_PHYSICAL_TYPE` + `0x200` — az illesztés ellentmond önmagának (a
+kétrétegű IMAPI-kódok hiányoznak a „DVD-e?" listából, miközben a `0x214`
+kapja a kétrétegű kapacitást). A `CDVDR.yti` indexében nincs médiatípus-szöveg,
+és a nyers konstanskeresés sem szűkít. **NINCS MEG:** öt kód jelentése; a
+megszerzés útja a `0x2xx` mezőt beállító COM-hívási lánc
+(`IDiscRecorder2` → `CurrentPhysicalMediaType`). Lap: `biztonsagi-mentes.md`
+12.8; jegy **#2074**.
 
 ⭐ **2026-09-02 (11. szakasz):** a `files.txt` **megnyitási módja MÉRVE** —
 `OPEN_ALWAYS` + `GENERIC_READ | GENERIC_WRITE` (`0x00677de6`), `OPEN_EXISTING`
