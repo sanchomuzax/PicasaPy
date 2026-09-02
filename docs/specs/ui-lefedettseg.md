@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 259 |
 | másutt megvan (nem ezen a felületen) | 37 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 225 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 33 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 211 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 47 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -73,7 +73,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | nem cél | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `makemoviepanel` | 111 | 55 | 1 | 5 | 34 | 0 | 15 | 56 | 0 | `CreateDialogs.qml` |
+| `makemoviepanel` | 111 | 55 | 1 | 5 | 20 | 14 | 15 | 56 | 0 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 26 | 4 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 99 | 1 | 13 | 4 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 20 | 3 | 7 | 5 | 11 | 94 | 0 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
@@ -158,39 +158,39 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 
 - `add_audio` „Load...” (magyarul: „Betöltés...”)
 - `addtomovie` buboréksúgó: „Add the selected clip(s) to the end of the movie”
-- `album_order_label` „Album Order” (magyarul: „Album szerint”)
+- `album_order_label` „Album Order” (magyarul: „Album szerint”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `album_order_radio` — *bizonytalan*
-- `aoptions_label` „Options” (magyarul: „Opciók”)
-- `audio_label` „Audio Track:” (magyarul: „Hangsáv:”)
+- `aoptions_label` „Options” (magyarul: „Opciók”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
+- `audio_label` „Audio Track:” (magyarul: „Hangsáv:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `bkg_picker_panel` — *bizonytalan*
 - `bold` buboréksúgó: „Bold”
-- `burstslider_label` „Don't filter by time taken” (magyarul: „Ne legyen szűrés a készítés ideje alapján”)
+- `burstslider_label` „Don't filter by time taken” (magyarul: „Ne legyen szűrés a készítés ideje alapján”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
 - `cancel` „Close” (magyarul: „Bezárás”)
-- `chronological_order_label` „Chronological” (magyarul: „Időrend”)
+- `chronological_order_label` „Chronological” (magyarul: „Időrend”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `chronological_order_radio` — *bizonytalan*
-- `crop_to_fit_label` „Full frame photo crop” (magyarul: „Teljes képkockás fotó körbevágása”)
+- `crop_to_fit_label` „Full frame photo crop” (magyarul: „Teljes képkockás fotó körbevágása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `deleteclips` buboréksúgó: „Remove the selected clip(s) from the tray”
-- `durationslider_label` „Slide Duration” (magyarul: „Dia időtartama”)
+- `durationslider_label` „Slide Duration” (magyarul: „Dia időtartama”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
 - `export_youtube` „YT” (magyarul: „YouTube”)
 - `font_label` „Font:” (magyarul: „Betűtípus:”)
 - `inputtext` — *bizonytalan*
 - `insert_slide` buboréksúgó: „Add a new text slide”
 - `italic` buboréksúgó: „Italic”
-- `lengthslider_label` „Total Photos” (magyarul: „Összes fénykép”)
-- `moviesize_label` „Dimensions” (magyarul: „Méretek”)
-- `ordering_header_label` „Ordering of Slides:” (magyarul: „Diák rendezése:”)
+- `lengthslider_label` „Total Photos” (magyarul: „Összes fénykép”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
+- `moviesize_label` „Dimensions” (magyarul: „Méretek”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
+- `ordering_header_label` „Ordering of Slides:” (magyarul: „Diák rendezése:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `outline` buboréksúgó: „Automatic Outline (like movie subtitles)”
 - `previewimage` — *bizonytalan*
 - `previewpanel` — *bizonytalan*
 - `recompute` „Apply” (magyarul: „Alkalmaz”)
 - `remove_audio` „Clear” (magyarul: „Törlés”)
-- `remove_low_res_faces_label` „Remove Low Resolution Faces” (magyarul: „Kis felbontású arcok eltávolítása”)
-- `remove_slide` buboréksúgó: „Remove the selected slide”
+- `remove_low_res_faces_label` „Remove Low Resolution Faces” (magyarul: „Kis felbontású arcok eltávolítása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
+- `remove_slide` buboréksúgó: „Remove the selected slide” — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
 - `render` „Create Movie” (magyarul: „Mozgófilm létrehozása”)
 - `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”)
 - `size_label` „Size:” (magyarul: „Méret:”)
 - `sizelist`
-- `smart_order_label` „Best Transitions” (magyarul: „A legjobb átmenetek”)
+- `smart_order_label` „Best Transitions” (magyarul: „A legjobb átmenetek”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `smart_order_radio` — *bizonytalan*
 - `style_label` „Style:” (magyarul: „Stílus:”)
 - `tab2` „Slide” (magyarul: „Dia”)
@@ -201,7 +201,7 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `tabs` — *bizonytalan*
 - `templatelist` — *bizonytalan*
 - `text_picker_panel` — *bizonytalan*
-- `transitionslider_label` „Overlap” (magyarul: „Átfedés”)
+- `transitionslider_label` „Overlap” (magyarul: „Átfedés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
 - `transtype_label` „Transition Style” (magyarul: „Képváltási stílus”)
 - `txcolorpicker_bevel` — *bizonytalan*
 - `viewedit` — *bizonytalan*

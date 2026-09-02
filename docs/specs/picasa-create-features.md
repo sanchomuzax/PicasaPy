@@ -1696,6 +1696,35 @@ méretlistáé, a `+0x2d8` a modell-mutató. A MakeMoviePanel **három rádiója
 a `0x00618050`-ben épül; a diasorrend az `.mxf` `<ordering>%d</ordering>`
 mezőjébe kerül (2.4/b), nem Preferences-be.
 
+#### A szakasz által lefedett vezérlők — TELJES ELEMNÉVVEL (2026-09-02)
+
+A fenti leltár a vezérlőket a **feliratukkal** azonosította. A
+lefedettségi mérő viszont a **teljes elemnévre** keres, ezért ezek
+„feltáratlan"-ként számítottak, pedig itt le vannak írva. A tábla ezt
+pótolja — a bizonyíték a szakasz fenti címei (`0x00613b50`,
+`0x00616940`, `0x00618050`):
+
+| elem | mit azonosít | hol áll a bizonyíték |
+|---|---|---|
+| `makemoviepanel/moviesize_label` | a kimeneti méretlista felirata („Méretek") | a 7 méret táblája |
+| `makemoviepanel/sizelist` | maga a méret-lista | ugyanott (`0x00613b50`) |
+| `makemoviepanel/audio_label` | „Hangsáv:" — a hangsáv-blokk felirata | a 3 hangsáv-opció |
+| `makemoviepanel/aoptions_label` | „Opciók" — a hangsáv-opciók felirata | ugyanott |
+| `makemoviepanel/ordering_header_label` | „Diák rendezése:" | a három rádió bekezdése |
+| `makemoviepanel/smart_order_radio` | „A legjobb átmenetek" rádiógomb | `0x00618050` |
+| `makemoviepanel/smart_order_label` | ugyanannak a felirata | `0x00618050` |
+| `makemoviepanel/album_order_radio` | „Album szerint" rádiógomb | `0x00618050` |
+| `makemoviepanel/album_order_label` | ugyanannak a felirata | `0x00618050` |
+| `makemoviepanel/chronological_order_radio` | „Időrend" rádiógomb | `0x00618050` |
+| `makemoviepanel/chronological_order_label` | ugyanannak a felirata | `0x00618050` |
+| `makemoviepanel/remove_low_res_faces_label` | „Kis felbontású arcok eltávolítása" | `0x00618050` |
+| `makemoviepanel/crop_to_fit_label` | „Teljes képkockás fotó körbevágása" (`cropfit`) | `0x00616981` |
+
+⚠️ **Amit ez a szakasz NEM fed le**, tehát valóban feltáratlan marad:
+`add_audio` („Betöltés…") és `remove_audio` („Törlés") — a hangsáv
+BETÖLTÉSE és törlése; a leltár csak a betöltött sáv **kezelési
+opcióit** adja meg, a fájlválasztás útját nem.
+
 ### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
 
 *A 2.2/2.6 a felső panel beállításait, ez a szakasz a film-előnézet ALUL
@@ -2217,6 +2246,24 @@ nem dokumentált tételt hoz:
 **Bizonyítottsági fok: megerősített** a névparancsok és a kulcsok léte;
 **nem mérve** a csúszkák értéktartománya és az automatikus mentés
 időzítése.
+
+#### A szakasz által lefedett vezérlők — TELJES ELEMNÉVVEL (2026-09-02)
+
+| elem | mit azonosít | bizonyíték a szakaszban |
+|---|---|---|
+| `makemoviepanel/durationslider_label` | „Dia időtartama" | a négy csúszka, `0x006223b0` |
+| `makemoviepanel/transitionslider_label` | „Átfedés" | ugyanott |
+| `makemoviepanel/lengthslider_label` | „Összes fénykép" | ugyanott |
+| `makemoviepanel/burstslider_label` | „Ne legyen szűrés a készítés ideje alapján" | ugyanott + a félrevezető felirat magyarázata |
+| `makemoviepanel/insert_slide` | „Új szöveges dia" | a `0x0061df10` névparancsa |
+| `makemoviepanel/remove_slide` | „A kijelölt dia eltávolítása" | a `filmstripdeletesel` névparancs (`0x006223b0`) |
+| `makemoviepanel/viewedit` | a filmszalag mint szerkesztő felület | a nyolc `filmstrip*` névparancs |
+
+⚠️ **Amit ez a szakasz NEM fed le:** `addtomovie` és `deleteclips` — a
+**kliptálca** két gombja. A szakasz a filmszalag húzási parancsait adja
+(`filmstripdragtoclips`, `filmstripdeletedragged`), a tálca-oldali
+gombokat nem; a „Továbbiak…" belépési pontja külön lapon van
+([`getmore-klipgyujto-mod.md`](getmore-klipgyujto-mod.md) 1.1).
 
 ### 2.10 A `titledialog` — a szöveges dia szerkesztője (2026-09-01)
 
