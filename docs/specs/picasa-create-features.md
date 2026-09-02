@@ -1637,6 +1637,164 @@ paneljeit érinti.
    — a „ne kérdezz újra" a párbeszéden állítható, mint a kollázs egyéb
    konfirmálóinál.
 
+### 2.5/c Az „Opciók" fül és a KLIPTÁLCA — MŰKÖDÉS (2026-09-02)
+
+*A 2.5/b csak a „recompute" megerősítőjét adta. Ez a szakasz a fül összes
+vezérlőjét megnevezi, megmondja **melyik `.mxf`-mezőt** állítja, és
+levezeti a **két csúszka képletét**. Minden cím a `Picasa3.exe` 3.9-é,
+image base `0x00400000`.*
+
+> ⚠️ **Helyesbítés a 2.5/b-hez:** ott a `0x0061df10` „az arc-film-panel
+> fő művelet-kezelője"-ként szerepel. Pontosabban: **a filmkészítő panel
+> KÖZÖS kezelője** — a 2.6/b (hangsáv) és a 2.6/c (kimenet) parancsai is
+> ebben ülnek. Az arc-film nem külön kezelőt kap, hanem külön ágakat.
+
+#### A) A kliptálca négy gombja
+
+| elem | parancs | mit tesz | cím |
+|---|---|---|---|
+| `makemoviepanel/addclips` | `addclips` | átvált a **könyvtárra** (`panelroot/picasatab` névparancs), és bekapcsolja a **klipgyűjtő módot** „Vissza a Mozgófilmkészítés párbeszédpanelhez" sávval (`panelroot/makemovietab`) | `0x0061f62f`–`0x0061f69d` |
+| `makemoviepanel/addtomovie` | `addtomovie` | a kijelölt klipeket a lista **VÉGÉRE** fűzi (`push -1` = beszúrási index) | `0x0061f727`–`0x0061f7b9` |
+| `makemoviepanel/deleteclips` | `deleteclips` | a kijelölteket **eltávolítja** a tálcából (elemenként `vt[0x94]`) | `0x0061f9c5`–`0x0061fa1d` |
+| `makemoviepanel/solo` | — | **nincs parancs-ága** a közös kezelőben; az elemet a `0x00616d40` (975 b) kezeli külön | — |
+
+**Előfeltételek (`addtomovie`, `0x0061f72b`–`0x0061f76a`):** ha a tálca
+(`[panel+0x470]`), a forrás (`[panel+0x4b8]`) vagy a projekt
+(`[panel+0x4bc]`) bármelyike hiányzik, **vagy nincs kijelölés**, a gomb
+némán nem csinál semmit. A kijelölés-lista elemenként **két duplaszó**
+(`shr esi,1` a darabszámhoz).
+
+**A törlés után az előnézet CSAK akkor számolódik újra**, ha nincs
+függőben lévő Opciók-módosítás (lásd F) — `0x0061fa2b`–`0x0061fa43`.
+Ellenkező esetben a klip eltűnik a tálcáról, de az előnézet a régi marad.
+
+#### B) A három rendezés-rádiógomb → az `.mxf` `<ordering>` mezője
+
+| rádiógomb | `<ordering>` | bizonyíték |
+|---|---|---|
+| `makemoviepanel/smart_order_radio` | **0** | `0x006177a3`–`0x006177a7` |
+| `makemoviepanel/album_order_radio` | **1** | `0x006177a9`–`0x006177b3` |
+| `makemoviepanel/chronological_order_radio` | **2** | ugyanott: a „egyik sem" eset |
+
+Az érték a `[ctrl+0x359]` bejelölt-bájtból jön. A `chronological`
+állapotát a beolvasó **meg sem kérdezi** — az a maradék eset.
+
+⚠️ **A rádió-viselkedés kézzel van megvalósítva.** A parancs-ág mind a
+három gomb bejelöltségét **explicit beállítja**, és a hívás harmadik
+paramétere mindenütt **0** (nincs értesítés):
+
+| kattintás | smart | album | chronological | cím |
+|---|:--:|:--:|:--:|---|
+| `smart_order_radio` | 1 | 0 | 0 | `0x00620132`–`0x00620152` |
+| `album_order_radio` | 0 | 1 | 0 | `0x006201c0`–`0x006201e0` |
+
+⇒ **A kattintás önmagában NEM számol újra** (a kezelő azonnal `0xf4240`-nel
+tér vissza) — csak megjelöli a fület nem-alkalmazottként.
+
+#### C) A többi Opciók-vezérlő és a mezője
+
+| vezérlő | `.mxf` mező | megjegyzés |
+|---|---|---|
+| `makemoviepanel/remove_low_res_faces` | `removelowresfaces` | a `[ctrl+0x359]` bájt, `0x0061778b` |
+| `makemoviepanel/show_captions` | `showcaption` | |
+| `makemoviepanel/crop_to_fit` | `cropfit` | |
+| **„Dátumok megjelenítése"** (`CMakeMoviePanel::show_dates_label`, EN `Show Dates`) | `showdates` | a `0x00618050` a `crop_to_fit_label` **mellett/helyett** teszi ki — ez a mező eddig SEHOL nem volt megnevezve vezérlőként |
+| `burstslider/scaleslider` | `burstmodethresh` | lásd **D** |
+| `lengthslider/scaleslider` | — (a felhasznált képek száma) | lásd **D** |
+
+A beolvasó a `0x006175c0` (2691 b); a mezőnevek az `.mxf` írójából és
+olvasójából jönnek (2.4/b, illetve az **olvasó** `0x008152f0`, 4081 b,
+amely mind a 30 mezőt ismeri).
+
+#### D) A két csúszka képlete — MÉRVE
+
+```
+burstmodethresh = ⌊ s² × 60 × 60 × 24 ⌋  =  ⌊ s² × 86 400 ⌋   [másodperc]
+```
+
+- `s` a csúszka értéke, a `0x009ddd00` olvassa ki (a vezérlő `vt[0x18]`-a, float)
+- a konstansok: `0x00cf4020` = **60.0**, `0x00cf3ef0` = **24.0** (`0x006176e3`–`0x006176ed`)
+- **`s` normalizált (0..1) — ez MÉRT, nem feltevés:** ugyanez a
+  `scaleslider`-érték a hangerőnél `× 1000.0` szorzóval
+  (`0x00cf3e10`, `0x00623e38`) megy a `Preferences\movievolume` kulcsba,
+  amelynek tartománya a 2.6 szerint **0..1000**
+- ⇒ a szűrő **maximuma pontosan 24 óra**, a görbe **négyzetes** (a csúszka
+  alsó felén jóval finomabb a felbontás)
+- `s = 0` → a felirat `CMakeMoviePanel::movieburstzero` = **„Ne legyen
+  szűrés a készítés ideje alapján"**; egyébként `movieburst` = **„Az
+  utolsó időszak képeinek eltávolítása: %s"** (`0x0061ac70`)
+
+```
+felhasznált képek = ⌊ t² × N ⌋
+```
+
+- `N = [panel+0x48c]`, a panel indulásakor a forrás `vt[0x38]`-ából
+  (`0x0061843f`)
+- **`N` azonossága MÉRT:** ugyanez az érték megy a `0x0061adf0`-ba
+  (`0x0061855e`), az pedig a `0x0061abb0`-on át a
+  `CMakeMoviePanel::movielength` = **„Összes fotó: %s"** feliratot rajzolja
+- a negatív érték előjel nélkülire javítódik (`+ 4294967296.0`,
+  `0x00cf39e4`, `0x006177ec`) ⇒ a mező **unsigned**
+
+#### E) Az újraszámolás ÖT bemenete
+
+```
+0x0081b800( [panel+0x4b8],  hossz,  ordering,  burstmodethresh,  removelowresfaces )
+```
+
+`0x00617810`. Ez az egyetlen hely, ahol a fül négy beállítása egyszerre
+átmegy a film-előállítóhoz — **a fül minden más vezérlője csak eddig jut.**
+
+#### F) A „nem alkalmazott módosítások" kapu — ÚJ, a 2.5/b-ben NINCS benne
+
+A `render` útja (2.6/c) a **`0x006204ec`**-nél megnézi a
+`[panel+0x4f0]` / `[panel+0x4f1]` jelzőket; ha bármelyik áll, meghívja a
+`vt[0xb0]`-t, azaz a **`0x0061dcf0`**-et (539 b).
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| 1. | ha egyik jelző sem áll → **1**-gyel tér vissza | `0x0061dd00`–`0x0061dd12` |
+| 2. | megkeresi a `makemoviepanel/recompute` gombot; ha nincs, vagy a `[ctrl+0x20e]` bájtja nem nulla → **1** | `0x0061dd22`–`0x0061dd54` |
+| 3. | beolvassa a `Preferences\`**`CMakeFaceMoviePanel::askapplyswitchconfirm`** kulcsot; ha **nem nulla** → **1** | `0x0061dd5a`–`0x0061dd9b` |
+| 4. | különben párbeszéd: cím = `CMakeFaceMoviePanel::UnapliedChanges` (**„Opciók"**), szöveg = `CMakeFaceMoviePanelUnappliedDialog` (**„Még nem alkalmazott módosítások vannak az Opciók lapon. Alkalmazza őket?"**), gombok **Igen / Nem / Mégse**, plusz **„Ne kérdezze meg újra"** pipa | `0x0061ddaa`–`0x0061de9d` |
+| 5. | ha a pipa be volt jelölve → a kulcsba **1** kerül (`SetPreference`, `0x00401900`) | `0x0061dead`–`0x0061dedf` |
+
+**A visszatérési érték a `render`-ágban** (`0x00620510`–`0x00620568`):
+
+| érték | jelentés | mi történik |
+|:--:|---|---|
+| **0** (Igen) | alkalmazd | átvált a `makemoviepanel/tab3`-ra és elsüti a `recompute` parancsot — **a film nem készül el most** |
+| **2** (Mégse) | ne csinálj semmit | a művelet elmarad |
+| egyéb (Nem, vagy a kapu ki van kapcsolva) | menj tovább | a függő módosítások **eldobódnak**, a film a legutóbb alkalmazott állapotból készül |
+
+⛔ **A „Ne kérdezze meg újra" itt NEM azt jelenti, hogy alkalmaz.** A kapu
+ilyenkor **1**-et ad (`0x0061defe`), ami a fenti tábla harmadik sora:
+a Mozgófilm létrehozása **némán eldobja** a fülön elvégzett, nem
+alkalmazott módosításokat.
+
+⚠️ **Ez MÁSIK kulcs, mint a 2.5/b-beli.** Kettő van, és külön-külön
+állítható: `askapplyconfirm` (a *recompute* megerősítője) és
+**`askapplyswitchconfirm`** (a *nem alkalmazott módosítások* kérdése).
+
+**A két jelző jelentése:** `[panel+0x4f0]` / `[panel+0x4f1]` = **függőben
+lévő, még nem alkalmazott Opciók-állapot**. Ugyanez a kettő váltja a panel
+forrás-módját **5**-re, illetve **6**-ra a szokásos 1–4/7 helyett
+(`0x00618209`–`0x00618223`), és a `[panel+0x4f3]` bájt tárolja, hogy
+bármelyik áll-e (`0x0061823c`). *Bizalmi fok: **erős** — a jelentést a
+rájuk épülő kapu szövege adja, a jelzők nevét nem olvastuk ki.*
+
+#### Bizonyítottsági fok
+
+**Megerősített** (utasításszinten olvasva): a négy tálcagomb ága és
+előfeltételei, a beszúrás a lista végére, a törlés utáni feltételes
+újraszámolás, a három `ordering`-érték, a rádió-csoport kézi kezelése,
+a `remove_low_res_faces` bájtja, a két csúszka képlete és konstansai, az
+`s` normalizáltsága (a hangerő `×1000` skálázásából), az `N` azonossága a
+felirattal, az öt bemenet sorrendje, a kapu mind az öt lépése és a három
+visszatérési érték, a két külön preferencia-kulcs.
+
+**Erős**: a `[panel+0x4f0]`/`[+0x4f1]` jelzők jelentése.
+
 ### 2.6 A MakeMoviePanel (a „Film készítése" párbeszéd) teljes beállítás-leltára
 
 *A 2.2 szakasz a csúszkákat és beállításokat a felirat-szintig írta le. Ez
