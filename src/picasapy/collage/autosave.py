@@ -194,9 +194,16 @@ def _helykitolto(cel: Path) -> None:
         _PLACEHOLDER_GRAY,
         dtype=np.uint8,
     )
-    cv2.imwrite(
-        str(cel), kep, [int(cv2.IMWRITE_JPEG_QUALITY), _PLACEHOLDER_QUALITY]
+    #: A helykitöltő neve ÉKEZETES („Helyreállított automatikus másolat"),
+    #: és a cv2 fájlútvonalas írója Windowson az ANSI kódlapon megy át —
+    #: ott némán nem ír (#190). Ezért bájt-alapon, `imencode` + Python-IO,
+    #: és hangos hiba néma elnyelés helyett.
+    ok, kodolt = cv2.imencode(
+        ".jpg", kep, [int(cv2.IMWRITE_JPEG_QUALITY), _PLACEHOLDER_QUALITY]
     )
+    if not ok:
+        raise ValueError("A helykitöltő kollázs-csempe kódolása nem sikerült.")
+    cel.write_bytes(kodolt.tobytes())
 
 
 def recover_orphan_draft(directory: Path | str) -> Path | None:

@@ -101,6 +101,26 @@ class TestAHelykitoltoKep:
             f"a helykitöltő színe nem #3F3F3F: {kep[0, 0]}"
         )
 
+    def test_NEM_a_fajlutvonalas_irot_hasznalja(self, mappa, monkeypatch):
+        """A helykitöltő neve ékezetes, ezért a `cv2` fájlútvonalas írója
+        Windowson némán nem írná ki (#190).
+
+        Foga: a `cv2.imwrite`-ot robbanóra cseréljük. Ha a megvalósítás
+        mégis azon menne, a teszt elbukik — Linuxon is, ahol a valódi
+        hiba nem jelentkezne.
+        """
+
+        def _tilos(*_args, **_kwargs):  # pragma: no cover - csak bukáskor fut
+            raise AssertionError(
+                "a helykitöltő fájlútvonalas írót hív — ékezetes néven "
+                "Windowson némán nem ír (#190)"
+            )
+
+        monkeypatch.setattr(cv2, "imwrite", _tilos)
+        write_autosave(mappa, _projekt())
+        recover_orphan_draft(mappa)
+        assert (mappa / f"{RECOVERED_NAME}.jpg").is_file()
+
     def test_MEGLEVO_kep_mellett_nem_ir_helykitoltot(self, mappa):
         """Ha a `.jpg` pár megvan, azt kell átnevezni — nem felülírni."""
         write_autosave(mappa, _projekt())
