@@ -729,6 +729,33 @@ korábbi `✅` jelölése ezen a soron félrevezető volt** (a hármasból kett�
 kész), javítva. A maradék nyolc színre a **szerepük NINCS MÉRVE** a mi
 felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
+### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-02)
+
+⭐ **2026-09-02 — az ÖTÖDIK bélyegkép-tár: `albums.db`, a mappák BORÍTÓJA.**
+A tulajdonos képernyőképe mutatta, hogy a bal hasáb fastruktúrájában **fotó-kupac**
+áll a sárga mappaikon helyett. Nem futásidejű: **mappánként egy mentett
+raszter**. A tár-nevek egyetlen függvényben (`0x00415790`) állnak, és az
+`albums.db` **együtt szerepel** a másik néggyel (`m_albumThumbs`). Kapcsoló:
+`Preferences\ShowAlbumThumbnails2` (a Nézet menü „Indexképek megjelenítése a
+könyvtárban" pipája, alapérték **0**). **A formátum NEM JPEG**: 8 bájt fejléc
+(`uint32 width`, `uint32 height`) + `w*h*4` bájt **BGRA** — a
+`8 + w*h*4 == hossz` azonosság **37/37** élő bejegyzésre teljesül, `FFD8`
+kezdet 0/37. Aránytartó (leghosszabb oldal 72–119 px), **valódi
+átlátszósággal** (1 400–2 200 átlátszó képpont mintánként). Kirenderelve:
+**egy elülső fotó + 1–3 mögötte, kifordítva** ⇒ a „legrégebbi kép mini
+ikonja" feltevés **megdőlt**. A rés-index az **albumtábla sorindexe**, és a
+lemezes mappák is albumként szerepelnek (élő minta: `wallpapers`, `space`,
+`volt` a `albumdata_filename`-mel). Nálunk **minden sor ugyanaz a mappaikon**
+(`FolderTreeItem.qml:101`) → **#2049**.
+
+1. **MELYIK fotókból áll a kupac, és milyen sorrendben?** A tár-oldal és a
+   fogyasztók megvannak (`0x00415790`, `0x00761870`, `0x0056ba10`), az
+   **előállító** függvény nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`,
+   `*Stack*`: 0 találat), sem sztring nem vezet rá. A képi összevetés
+   megkísérelve és **elvetve** (a legjobb két találat 0,96 vs 1,03 — nem
+   különül el). **Megszerzés:** az előállító függvény megkeresése.
+   Lap: `pmp-database.md`; jegy **#2049**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák

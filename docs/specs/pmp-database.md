@@ -1571,3 +1571,104 @@ inicializálják, mert a rendszer-tényleges-port a cél.
 tartalék-ág, a backlog (a diszasszemblált kódból) és a „nincs preferált
 kezdőérték" lezárás (a `0x004c0d10`/`0x004c0db0` konstruktorok
 diszasszemblálásából: a `+0x54`-et egyik sem írja, az efemer).*
+
+---
+
+## Az ÖTÖDIK bélyegkép-tár: `albums.db` — a mappák/albumok BORÍTÓJA (2026-09-02)
+
+A lap eddig **négy** bélyegkép-szintet ismert (72 / 144 / 288 / 640 px). Van
+egy **ötödik** tár, más céllal és **más formátummal**: az `albums.db` a
+mappa-/album-**borítókat** tárolja — azokat a kis képkupacokat, amiket a
+bal hasáb fastruktúrája és a tálca „Kiválasztott mappa" tokenje mutat.
+
+A tulajdonos képernyőképe (2026-09-02, futó Picasa 3) mutatja: a
+`Mappák` fa több során **nem a sárga mappaikon**, hanem egy pici fotó
+látszik; ugyanez a tálcán a „Kiválasztott mappa – 82 fotó" token mellett.
+
+### 1. Hol van a rendszerben
+
+A tár-nevek felsorolása egyetlen függvényben (`0x00415790`) áll, és az
+`albums.db` **együtt szerepel** a másik néggyel:
+
+```
+thumbs.db · thumbs2.db · bigthumbs.db · previews.db · albums.db · facetemplatesV2.db
+m_thumbs  · m_pinkyThumbs · m_bigThumbs · m_previewThumbs · m_albumThumbs · m_facetemplates
+```
+
+A kapcsolója: **`Preferences\ShowAlbumThumbnails2`** — a Nézet menü
+„Indexképek megjelenítése a könyvtárban" pipája (`0x9cd7`), alapérték **0**.
+Ld. [`picasa-konyvtar-eszkoztar-viselkedes.md`](picasa-konyvtar-eszkoztar-viselkedes.md)
+4/c. A listaépítő (`0x00761870`) ugyanitt olvassa be induláskor, és ugyanez a
+függvény sorolja fel a helyettesítő ikonokat (`icons/folder`, `icons/album`,
+`icons/smartalbum`, …) arra az esetre, amikor nincs borító.
+
+### 2. A FORMÁTUM — NEM JPEG, hanem nyers raszter
+
+Az `albums_index.db` a szokásos blokkfájl-index (ld. az `*_index.db`
+szakaszt), de a hozzá tartozó **blokkok nem JPEG-ek**:
+
+```
++0   uint32  width
++4   uint32  height
++8   width * height * 4 bájt   — 32 bites képpontok, BGRA sorrendben
+```
+
+**Mérés:** a `Picasa2-arcok` adatbázis `albums_index.db`-jében **37 élő
+bejegyzés** van, és a `8 + width*height*4 == hossz` azonosság **37/37**
+esetben teljesül. JPEG-kezdet (`FFD8`) **0/37**.
+
+A méret **változó és aránytartó**: a leghosszabb oldal a 37 mintában
+**72–119** képpont (a leggyakoribb 72: 9 db). Az alfa-csatorna **valódi
+átlátszóságot hordoz** (mintánként 1 400–2 200 teljesen átlátszó képpont) —
+a borító tehát nem téglalap, hanem egy **kivágott alakzat**.
+
+### 3. Mit ÁBRÁZOL — nem egy fotó, hanem KUPAC
+
+A borítókat kirenderelve (nyers BGRA → PNG, méretezés nélkül) jól látszik:
+**egy elülső fotó, mögötte 1–3 további, felfelé-balra kifordítva**, mint egy
+kis képhalom. Az átlátszó szél a halom kontúrja.
+
+⇒ **A „mappaikon = a legrégebbi kép mini változata" feltevés MEGDŐLT.** A
+borító **összeállított kép**, több fotóból.
+
+*Bizonyítottsági fok: **megerősített** a formátumra (37/37 méret-azonosság)
+és arra, hogy összeállított kupac (kirenderelt minták).*
+
+### 4. A borító a MAPPÁHOZ tartozik — az albumtábla során át
+
+Az `albums_index.db` **rés-indexe az `albumdata` tábla sorindexe**, és a
+Picasa modelljében a lemezen lévő mappák is albumként szerepelnek. Élő
+példa ugyanabból az adatbázisból (a `albumdata_name` / `_token` /
+`_filename` oszlopokból):
+
+| rés | név | token | fájl |
+|---:|---|---|---|
+| 4 | `wallpapers` | `]album:8b6dd1f0…` | `…\Képek\wallpapers\` |
+| 5 | `space` | `]album:654529b2…` | `…\Képek\wallpapers\space\` |
+| 13 | `volt` | `]album:83439121…` | `…\Képek\AI\volt\` |
+| 2 | `Név nélküliek` | `]unknownface` | *(nincs)* |
+
+⇒ A borító **mappánként egy**, és a gyűjtemény-jellegű sorok (pl.
+`]unknownface`) is kapnak egyet.
+
+### 5. ⚠️ Ami NINCS MÉRVE: MELYIK fotókból áll a kupac
+
+**Nem tudjuk**, hogy a kupac elülső lapja (és a mögötte lévők) melyik fotók,
+és milyen szabály választja ki őket (első? legrégebbi? legutóbb módosított?
+csillagozott?).
+
+**Amit megpróbáltam, és miért nem döntött:** a saját `2025-05-xx`
+tesztmappánk borítóját (72×114) kirendereltem, az elülső lap dobozát az
+alfa-maszkból kivágtam (49×92, arány 0,533), és képaláírás-mentes
+képjel-összevetéssel kerestem a mappa 241 fájlja között. A legjobb két
+találat **0,96 és 1,03** hibaértékkel jött — **nem különül el**, mert a
+kivágott doboz a mögöttes lapokból is tartalmaz sávot. Ez a módszer így
+**nem alkalmas** a döntésre, és becsült választ nem adunk.
+
+**A megszerzés útja:** a borítót előállító függvény megkeresése a
+binárisban. A tár-oldal megvan (`m_albumThumbs`, `0x00415790`), a fogyasztók
+is (`0x00761870` listaépítő, `0x0056ba10` tálca-token), az **előállító**
+viszont nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`, `*Stack*`: nincs
+találat), sem sztring nem vezet rá.
+
+Jegy: **#2049**.
