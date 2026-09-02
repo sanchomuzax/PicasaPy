@@ -1787,6 +1787,22 @@ csomópont léptékével szorozva), a helyét a `0x009debd0(csp, 0.098, 0.792)`
 | elforgatás | 0 (`0x005ba590(csp, 0.0)`) | `0x0087ca78` |
 | két logikai kapcsoló | mindkettő **1** (a szövegcsomópont `vt[0x38]` és `vt[0x2c]` bejáratán) | `0x0087ca4e`, `0x0087ca59` |
 
+### Nálunk — a #978 után (2026-09-02)
+
+| mi | eredeti | nálunk |
+|---|---|---|
+| doboz | x 0.098–0.902, y 0.792–0.980 | ✅ ugyanaz (`nodes.CAPTION_BOX`) |
+| betűméret | `(egész)(magasság × 14/360)` | ✅ ugyanaz (`nodes.caption_font_px`) |
+| szín | adaptív: világoson `0x4A4A4A`, sötéten fehér | ✅ ugyanaz (`nodes.caption_ink_bgr`) |
+| megjelenési feltétel | `showcaptions` BE **és** `polaroid` keret | ✅ mindkettő, a kapcsoló a vezérlőtől a rajzolóig elvezetve |
+| betűkészlet | az eredeti bitmap-betűje | ⚠️ **a miénk** (Pillow/FreeType, Arial→Liberation→DejaVu) — a bitmap-betű nem szállítható |
+
+⚠️ **Két hiba, amit ez a kör javított, és amit a jegy „nincs felirat"
+olvasata elfedett:** a korábbi rajzoló az OpenCV Hershey-betűjét használta,
+ami **nem Unicode** (az „Ősz" felirat „?sz"-ként ment ki), és a
+`showcaptions` kapcsoló **nem jutott el a rajzolóig** — kikapcsolva is ott
+maradt a felirat a mentett képen.
+
 A felirat-csomópont neve `collagepanel/textclip_<sorszám>`
 (`0xcc4ad8`), és `0x350` = 848 bájtos szövegcsomópont-osztály.
 
