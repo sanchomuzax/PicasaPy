@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.224] – 2026-09-02
+
+### Hozzáadva
+- **„Arcos képek" szűrő a keresősávban (#1830).** A csillag és a
+  geocímke mellett mostantól egyetlen kattintással előhívhatók azok a
+  képek, amelyeken be van jelölve arc — a megnevezetlen arcok is
+  beleszámítanak. A szűrő a már meglévő adatra épül: nem kell hozzá
+  arcfelismerés, és nem kell újraindexelni.
+
 ## [0.8.223] – 2026-09-02
 
 ### Hozzáadva
