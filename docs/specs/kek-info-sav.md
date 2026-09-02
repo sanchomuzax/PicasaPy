@@ -133,3 +133,77 @@ Kimondva, hogy ne látszódjon késznek:
   megvalósítás a kapott sorokat összesíti, mappától függetlenül;
 - a sáv **egyéb üzenetei** (folyamatjelzés, hibaüzenet) — a `0x005706b0`
   szerepe csak részben tisztázott.
+
+---
+
+## 6. LEZÁRVA: a szöveg clipje a `.tre`-t követi, nem a `respack` téglalapot (2026-09-02, #1934)
+
+A `thumbui/infotext_clip`-re a két forrásunk mást mondott:
+
+| forrás | mit mond | 800 pontos vásznon |
+|---|---|---|
+| `respack.yt` rétegfejléc | `x 183 … 664` | 481 széles, **közepe 423,5** |
+| `thumbui.tre:690–693` | `XConstraint 0, 0, 20` / `1, 1, -20` a `basecontrolset`-en (`x 0…800`) | `20 … 780`, 760 széles, **közepe 400** |
+
+### 6.1 A döntő mérés: a szöveg KÖZEPE
+
+Az `infotext` `Property textalign center` (`thumbui.tre:687`), tehát a
+szöveg a clip közepére ül. A két olvasat közepe a 800-as vásznon
+**23,5 képponttal** tér el — 1920 képpont széles ablakra átszámolva
+**56 képpont**. Ez bőven mérhető.
+
+Mérve mind a **20** felvételen
+(`research/Picasa3-also-talca-ikonok-viselkedese/`, 1920×1080; a fehér
+szöveg oszlopkiterjedése a kék csík sávjában, `R>170 ∧ G>190 ∧ B>200`):
+
+```
+214629  szöveg 718…1202  közép 960,0   ablakközép 960,0   eltérés  +0,0
+214634  szöveg 688…1231  közép 959,5   ablakközép 960,0   eltérés  −0,5
+214636  szöveg 791…1128  közép 959,5                       eltérés  −0,5
+…  19 felvételen az eltérés  |Δ| ≤ 0,5 képpont
+```
+
+*(A huszadik, `…214905.jpg`, kiesik: ott egy másik világos elem is a
+sávba lóg, tehát a szövegdoboz nem különíthető el.)*
+
+Ugyanez a szerkesztő fejlécével készült felvételen
+(`Picasa3-vs-PicasaPy-fejlec-elteresek`): a szöveg `x 1227…1653`,
+közepe **1440**; a Picasa-ablak `962…1918`, közepe **1440** ✓.
+
+⇒ **A clip szimmetrikus a sávra.** A `respack`-olvasat (közép 423,5/800)
+`+28` képpontos jobbra tolást követelne az adott ablakban — a mérés
+`±0,5`-öt ad. **A `respack` téglalap MEGDŐLT, a `.tre` az igaz.**
+
+### 6.2 Miért NEM ellentmondás
+
+A `respack.yt` téglalapja a **tervezővászon szerzői értéke**. Ahol az
+elem kap `XConstraint`-et, ott az elrendező **felülírja**. Ez a lapon
+belül is ellenőrizhető: a `filmcontainer_overlay_C` ugyanezt a
+kényszerpárt kapja (`0, 0, 20` / `1, 1, -20`), és ott a tárolt téglalap
+*egyezik* a kényszerrel (394+20 = 414, 682−20 = 662) — a szerző ott
+szinkronban tartotta, az `infotext_clip`-nél nem.
+
+**Szabály ebből:** ha egy elemnek van `XConstraint`/`YConstraint`
+kényszere, **a kényszer a törvény**; a `respack` téglalap csak akkor
+használható, ha nincs rá kényszer (ilyen a szerkesztő fejlécének minden
+mérete, ld. [`szerkeszto-felso-sav.md`](szerkeszto-felso-sav.md) 0.).
+
+### 6.3 Amit ez a mérés NEM dönt el
+
+A clip **szélessége** közvetlenül nem látszik: a leghosszabb mért szöveg
+543 képpont (`…214634`), ami **mindkét** olvasatba belefér, tehát vágás
+sehol nem áll elő. A `20 / −20` behúzás azért fogadható el, mert a
+`respack`-olvasat a **helyre** nézve megdőlt, és a `.tre` az egyetlen
+megmaradt forrás.
+
+*Bizonyítottsági fok: **megerősített** a szimmetriára (20-ból 19
+felvétel, `|Δ| ≤ 0,5` képpont); **erős** a 20 képpontos behúzásra.*
+
+### 6.4 Teendő nálunk
+
+A mai kódban a szövegnek **nincs külön clipje**, a teljes sávot kapja
+(`TrayBar.qml:152` `width: parent.width`). A kék háttér teljes szélessége
+**helyes** (mérve: `y = 942`-n a kék `x 0…1919`, nem-kék képpont 0), csak
+a **szöveg** clipje hiányzik: `bal + 20 … jobb − 20`.
+
+Jegy: **#1934**.
