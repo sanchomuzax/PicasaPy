@@ -78,7 +78,24 @@ def _y_a_savban(window, nev: str) -> float:
 
 class TestASavMagassaga:
     """`publishbottom` = −105: az alsó sáv 105 képpont, és a tartalom
-    tölti ki (a 20-as infó-csík SZÁNDÉKOS eltérés a 14-től)."""
+    tölti ki.
+
+    ⚠️ #1914: a felosztás MEGVÁLTOZOTT. A #1420-ban a csík 20 képpont
+    volt — „szándékos eltérés a 14-től, olvashatóságért" —, és épp ettől
+    ÉRTEK a gombok a kék csíkhoz, amit a tulajdonos élesben jelentett.
+    A #1914 a `respack.yt` rétegfejléceiből kimérte a teljes függőleges
+    felosztást (a tálca függőlegesen 1:1-ben képpont, két független
+    méréssel igazolva):
+
+        infotext      y 429…443   14 magas
+        vezérlők       y 448-tól   ⇒ 5 pont TÉRKÖZ
+        scratchback   y 449…530   81 magas
+        a sáv alja    y 534        ⇒ 5 pont alsó hézag
+
+        14 + 5 + 81 + 5 = 105 ✓
+
+    A különbség tehát nem az olvashatóságé volt, hanem a hiányzó
+    térközé. A mérés felülírja a saját döntésünket."""
 
     @pytest.mark.parametrize("ablak", ABLAKOK)
     def test_a_teljes_sav_105_kepont(self, qml_app_module, qt_app, ablak):
@@ -86,38 +103,57 @@ class TestASavMagassaga:
         _szelesseg(window, qt_app, ablak)
         assert _elem(window, "trayBar").property("height") == 105
 
-    def test_a_sav_ket_resze_20_es_85(self, qml_app_module, qt_app):
+    def test_a_sav_ket_resze_14_es_91(self, qml_app_module, qt_app):
+        """#1914: a MÉRT felosztás — 14 (`infotext`) + 91 = 105."""
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, 1280)
-        assert _elem(window, "trayInfoBar").property("height") == 20
-        assert _elem(window, "trayMainBar").property("height") == 85
+        assert _elem(window, "trayInfoBar").property("height") == 14
+        assert _elem(window, "trayMainBar").property("height") == 91
 
-    def test_a_keptalca_81_kepont_magas_es_alul_4_kepont_marad(
+    def test_a_keptalca_81_magas_5_terkozzel_es_5_also_hezaggal(
         self, qml_app_module, qt_app
     ):
-        """`scratchback`: 81 px, a sáv tetejétől 20, aljától 4 —
-        a képernyőképen y 947…1027, a sáv 927…1032."""
+        """#1914: `scratchback` y 449…530 a `basecontrolset` 429…534-én
+        belül ⇒ a kék csík (…443) alatt **5 pont térköz**, alul **5**.
+
+        Ez a jegy lényege: az 5 pontos térköz hiányzott, ezért értek a
+        gombok a csíkhoz."""
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, 1280)
         sav = _elem(window, "trayMainBar")
         talca = _elem(window, "trayScratchBack")
         assert talca.property("height") == 81
-        assert _y_a_savban(window, "trayScratchBack") == pytest.approx(0, abs=TURES)
+        assert _y_a_savban(window, "trayScratchBack") == pytest.approx(5, abs=TURES), (
+            "a kék csík alól hiányzik az 5 pontos MÉRT térköz (#1914)"
+        )
         alsó_hézag = sav.property("height") - (
             _y_a_savban(window, "trayScratchBack") + talca.property("height")
         )
-        assert alsó_hézag == pytest.approx(4, abs=TURES)
+        assert alsó_hézag == pytest.approx(5, abs=TURES)
 
     def test_nincs_holt_sav_a_jobb_oldalon(self, qml_app_module, qt_app):
         """A magasságot ÖNMAGÁBAN emelni hiba lenne: a jobb oldalon is
-        tartalomnak kell kitöltenie a sávot. A legalsó elem (a zöld gomb
-        helye) alja legfeljebb 5 képponttal legyen a sáv alja fölött."""
+        tartalomnak kell kitöltenie a sávot.
+
+        ⚠️ #1914: a korlát mostantól MÉRT érték, nem a sajátunk. Az
+        eredetiben a zöld gomb (`thumbui/superbutton(...): webupload`)
+        y 490…525, a `basecontrolset` alja y 534 ⇒ **9 pont** hézag alatta.
+        Korábban itt a saját elrendezésünkből vett 5 állt, és a MÉRT
+        térköz bevezetésekor (a csík 20→14, a doboz +5) ez 6-ra mozdult —
+        a szám a mi elrendezésünké volt, nem az eredetié.
+
+        Az állítás célja változatlan: NE maradjon holt sáv. A mérce a
+        mért 9."""
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, 1280)
         sav = _elem(window, "trayMainBar")
         hely = _elem(window, "trayUploadSlot")
         alja = _y_a_savban(window, "trayUploadSlot") + hely.property("height")
-        assert sav.property("height") - alja == pytest.approx(5, abs=TURES)
+        hezag = sav.property("height") - alja
+        assert 0 <= hezag <= 9, (
+            f"{hezag:.0f} pont holt sáv a jobb oldal alján; az eredetiben a "
+            "zöld gomb alatt 9 pont marad (y 525 → 534)"
+        )
 
 
 class TestAzOsztopont:

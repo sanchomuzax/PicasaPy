@@ -125,14 +125,31 @@ Column {
 
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     //
-    // #1420: az eredetiben ez a `thumbui/infotext` — a 105 képpontos sáv
-    // LEGTETEJE, 14 képpont magasan. Nálunk 20: szándékos és dokumentált
-    // eltérés (olvashatóság, `design-guide.md`), és a 105-be pontosan
-    // beleillik: 20 (csík) + 81 (képtálca) + 4 (alsó hézag) = 105.
+    // #1914: a MÉRT függőleges felosztás. A tálca függőleges méretei
+    // 1:1-ben képpontok — ezt a #1914 két független méréssel igazolta
+    // (kék csík 15 px ↔ 14 tervezőpont; teljes tálca 104 ↔ 105; és a
+    // `scratch` 60 pontos magassága a 67 képes felvételen képpontra
+    // kijött: 3 sor × 18 + 2 rés × 3 = 60).
+    //
+    //     thumbui/rect: basecontrolset   y 429…534   105 magas
+    //     thumbui/text( ): infotext      y 429…443    14 magas
+    //     az első vezérlők felső éle     y 448        ⇒ 5 pont TÉRKÖZ
+    //     thumbui/rect: scratchback      y 449…530    81 magas
+    //     a sáv alja                     y 534        ⇒ 5 pont alsó hézag
+    //
+    //     14 (csík) + 5 (térköz) + 81 (doboz) + 5 (alsó) = 105 ✓
+    //
+    // ⚠️ VISSZAVONT ELTÉRÉS: a #1420 óta a csík nálunk 20 képpont volt,
+    // „szándékos és dokumentált eltérés (olvashatóság,
+    // `design-guide.md`)" — és épp ettől ÉRTEK a gombok a kék csíkhoz,
+    // amit a tulajdonos élesben jelentett. A mért felosztásban a
+    // különbség nem az olvashatóságé, hanem az 5 pontos TÉRKÖZÉ: a 20-as
+    // csík felette azt is felette elnyelte. A mérés felülírja a saját
+    // döntésünket.
     Rectangle {
         id: infoBar
         objectName: "trayInfoBar"
-        width: parent.width; height: 20
+        width: parent.width; height: 14
         color: Theme.infoBar
         clip: true
 
@@ -238,8 +255,8 @@ Column {
             onLocateRequested: tray.trayLocateRequested()
             onPropertiesRequested: tray.trayPropertiesRequested()
         }
-        // #1420: 20 (infó-csík) + 85 = 105 — a `publishbottom` = −105.
-        width: parent.width; height: 85
+        // #1914: 14 (infó-csík) + 91 = 105 — a `publishbottom` = −105.
+        width: parent.width; height: 91
         color: Theme.trayBg
 
         // ---------------------------------------------------------------
@@ -336,7 +353,10 @@ Column {
             id: trayScratchBack
             objectName: "trayScratchBack"
             x: 5
-            y: 0
+            //: #1914: MÉRT térköz a kék csík alatt — `infotext` y 443-ig,
+            //: az első vezérlők y 448-tól. Ez az 5 pont hiányzott, ezért
+            //: értek a gombok a csíkhoz.
+            y: 5
             width: Math.max(0, trayMainBar.splitX - 15 - x)
             height: 81
             color: Theme.trayPanelBg
@@ -727,12 +747,15 @@ Column {
             id: trayRightPane
             objectName: "trayRightPane"
             x: trayMainBar.splitX
-            y: 0
+            //: #1914: ugyanaz az 5 pontos MÉRT térköz, mint a
+            //: `scratchback`-en — a jobb oldali vezérlők felső éle is
+            //: y 448-tól indul (az `infotext` y 443-ig tart).
+            y: 5
             width: Math.max(
                 0, trayMainBar.width - trayMainBar.rightMargin - x)
-            height: parent.height
+            height: parent.height - y
 
-            // --- felső sor (a sáv tetejétől 20…42 → itt 0…22) ---
+            // --- felső sor (a sáv tetejétől 448…471 → itt 0…22) ---
             Item {
                 id: trayTopRow
                 objectName: "trayTopRow"
