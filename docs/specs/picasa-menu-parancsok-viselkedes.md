@@ -2254,7 +2254,15 @@ tábla maradék számai ettől nem torzulnak tovább, tehát a 42. körben
 kimondott „felfelé torzít" figyelmeztetés a **megfeleltetés** szintjén
 LEZÁRUL; az **elem** szintjén (41.) továbbra is él.
 
-### 43.2 ⭐ A gyorscímke-beállító TÍZ helyet ad, nálunk NYOLC van
+### 43.2 ⭐ A gyorscímke-beállító TÍZ helyet ad — nálunk is (LEZÁRVA)
+
+> ✅ **2026-09-02 — a szakasz „nálunk" oszlopa ELAVULT volt.** A leírás a
+> megírása napján (2026-08-31, `4fcbfa19`) igaz volt; **másnap** a #1788
+> megépítette a tíz helyet és az elvethető szerkesztést (`a6daab4c`,
+> 2026-09-01). A mai kód: `_QUICK_TAG_SLOTS = 10`
+> (`keywords_controller.py:26`), a QML pedig „EXPLICIT tíz példány"-t mond
+> (`QuickTagsConfigDialog.qml:78`). **Az eredetiről szóló mérés
+> változatlanul érvényes**, csak a mi oldalunk változott meg.
 
 A `quicktagconfig` panel elemleltára `edit_0` … **`edit_9`** — tíz
 szövegmező. A binárisban a kezelő (`0x0083ea00`, 2063 b) ciklushatára
@@ -2264,10 +2272,10 @@ ezt megerősíti:
 0x0083efa2  cmp eax, 0xa      ; 10 hely
 ```
 
-**Nálunk nyolc van.** A `QuickTagsConfigDialog.qml` (98 sor) a saját
-kommentjében ki is mondja: *„a 8 szövegmező közös viselkedése — EXPLICIT
-8 példány (nem Repeater)"*, és a mezők `quickTagField0` … `quickTagField7`
-néven élnek.
+~~**Nálunk nyolc van.**~~ — **2026-09-02: már tíz.** A
+`QuickTagsConfigDialog.qml` (144 sor) ma azt mondja: *„a tíz szövegmező
+közös viselkedése — EXPLICIT tíz példány (nem Repeater)"*, és a mezők
+`quickTagField0` … `quickTagField9` néven élnek.
 
 Tárolás (`0x0063a5e0`, `0x0083ea00`): a `Preferences` ág
 **`quicktags::tag%d`** kulcsai a címkék, a **`quicktags::enable_recents`**
@@ -2275,15 +2283,16 @@ a „felső két gomb lefoglalása" kapcsoló. A gyorscímke-gombok a
 felületen a `quicktag_%d` / `%s/quicktag_%1d` csomópontnevek alatt élnek
 (`0x0063c120`, `0x0063c7d0`).
 
-### 43.3 A párbeszéd gombjai: OK / Mégse — nálunk csak „Bezárás"
+### 43.3 A párbeszéd gombjai: OK / Mégse — nálunk is (LEZÁRVA)
 
 Az eredeti `quicktagconfig/ok` és `quicktagconfig/cancel` vezérlőkkel
-zár, tehát a **Mégse eldobja** a szerkesztést. Nálunk
-`standardButtons: Dialog.Close` (17. sor) — **egyetlen** gomb, vagyis a
-változtatás azonnal érvényes, és nincs elvetés.
+zár, tehát a **Mégse eldobja** a szerkesztést.
 
-*(Ez nem feltétlenül hiba: a mi párbeszédünk azonnal ír. De **eltérés**,
-és eddig sehol nem volt kimondva.)*
+~~Nálunk `standardButtons: Dialog.Close` (17. sor) — egyetlen gomb.~~ —
+**2026-09-02: már nem.** A #1788 átállította:
+`standardButtons: Dialog.Ok | Dialog.Cancel`
+(`QuickTagsConfigDialog.qml:36`), tehát a szerkesztés **elvethető**, mint
+az eredetiben. **Nincs eltérés.**
 
 ### 43.4 Három elem téves riasztás volt
 
@@ -2296,11 +2305,11 @@ buttons…"), ezért nem párosult gépi úton. Felülbírálva.
 
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
-| gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **8** (`quickTagField0..7`) | **ÚJ JEGY** |
+| gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **10** (`quickTagField0..9`) | ✅ **KÉSZ** (#1788) |
 | „felső kettő a legutóbbiaknak" | `quicktags::enable_recents` | megvan | — |
 | automatikus kitöltés | `quicktagconfig/autofill` | megvan | — |
 | tárolás | `Preferences\quicktags::tag%d` | QSettings | — |
-| gombok | **OK + Mégse** (elvethető) | csak **Bezárás** (azonnal ír) | dokumentált eltérés vagy átvétel |
+| gombok | **OK + Mégse** (elvethető) | **OK + Mégse** (elvethető) | ✅ **KÉSZ** (#1788) |
 
 ### Nyitott kérdések mérlege (43.)
 

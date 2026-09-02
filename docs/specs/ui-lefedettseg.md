@@ -39,15 +39,15 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 733 |
-| párosítva | 244 |
+| párosítva | 257 |
 | másutt megvan (nem ezen a felületen) | 38 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 313 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 311 |
 | hiányzik — **lekutatva** (fejlesztői kör kell) | 22 |
-| bizonytalan | 118 |
+| bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
-| **lefedettség az értékelhető elemeken** | **33.3%** |
+| **lefedettség az értékelhető elemeken** | **35.1%** |
 
-> ⚠️ **A 33.3% ALSÓ BECSLÉS, nem pontos érték.** 118 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.4%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 35.1% ALSÓ BECSLÉS, nem pontos érték.** 107 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.7%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -63,8 +63,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 6 | `upload` | 21 | Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | 7 | `buzzupload` | 21 | Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
 | 8 | `compose_share` | 16 | Megosztási meghívó szerkesztő — nincs nálunk |
-| 9 | `quicktagconfig` | 13 | Gyorscímke-beállító |
-| 10 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
+| 9 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
+| 10 | `choose_mail` | 13 | Levelezőprogram-választó párbeszéd — nincs nálunk |
 
 ## Panelenkénti lefedettség
 
@@ -78,7 +78,6 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `upload` | 61 | 21 | 0 | 0 | 21 | 0 | 0 | 40 | **nincs-megfeleltetes** — Picasa Web Albums feltöltő párbeszéd — nincs nálunk |
 | `buzzupload` | 55 | 22 | 0 | 1 | 21 | 0 | 0 | 33 | **nem-cel** — Google Buzz feltöltés — a szolgáltatás megszűnt, nem cél |
 | `compose_share` | 49 | 16 | 0 | 0 | 16 | 0 | 0 | 33 | **nincs-megfeleltetes** — Megosztási meghívó szerkesztő — nincs nálunk |
-| `quicktagconfig` | 33 | 15 | 3 | 0 | 2 | 0 | 11 | 17 | `QuickTagsConfigDialog.qml` |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 12 | 1 | 0 | 16 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
@@ -136,6 +135,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `toolslider` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | `PicasaSlider.qml` |
 | `transitionslider` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | `PicasaSlider.qml` |
 | `zoomslider` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | `PicasaSlider.qml` |
+| `quicktagconfig` | 33 | 15 | 16 | 0 | 0 | 0 | 0 | 17 | `QuickTagsConfigDialog.qml` |
 | `wait_dialog` | 13 | 1 | 1 | 0 | 0 | 0 | 0 | 12 | `BatchEditProgressPanel.qml`, `ConfirmDialog.qml` |
 | `pickerpanel` | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 9 | `TextColorSwatches.qml` |
 | `modalprogress` | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 7 | `ImportProgressPanel.qml`, `BatchEditProgressPanel.qml` |
@@ -397,24 +397,6 @@ Megosztási meghívó szerkesztő — nincs nálunk
 - `to_text` „To:” (magyarul: „Címzett:”)
 - `visibility_label` „Album visibility:” (magyarul: „Album láthatósága:”)
 - `visibility_menu`
-
-### `quicktagconfig` — 13 hiány · panel-megfeleltetés: `parositva`
-
-Gyorscímke-beállító
-
-- `cancel` — *bizonytalan*
-- `cancel-label` „Cancel” (magyarul: „Mégse”)
-- `edit_0` — *bizonytalan*
-- `edit_1` — *bizonytalan*
-- `edit_2` — *bizonytalan*
-- `edit_3` — *bizonytalan*
-- `edit_4` — *bizonytalan*
-- `edit_5` — *bizonytalan*
-- `edit_6` — *bizonytalan*
-- `edit_7` — *bizonytalan*
-- `edit_8` — *bizonytalan*
-- `edit_9` — *bizonytalan*
-- `ok-label` „OK” (magyarul: „OK”)
 
 ### `buttonmgr` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
