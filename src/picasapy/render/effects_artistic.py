@@ -178,6 +178,47 @@ def apply_pencil_sketch(
     return _to_uint8(gray_rgb + mix * (image_f - gray_rgb))
 
 
+def pixelate_shifted(
+    image: np.ndarray, tile: int, offset_x: float, offset_y: float
+) -> np.ndarray:
+    """Csempeméretű pixelesítés, `offset`-tel eltolt rácson (#1351).
+
+    A `glimmer` `PixelateImageOperation`-je `offsetX`/`offsetY`
+    paramétert is kap; a `Comicize` második fázisában ez
+    `_nDotSize/2` — a rács fél csempével el van tolva.
+
+    ⚠️ **NINCS szegély-kiterjesztés**: a `filterdesc.xml`-ben egyik maszk
+    sem ad meg `padding` értéket, tehát mind a négy 0, és a rács pontosan
+    a kép méretére feszül. A jobb/alsó szélen kilógó csempét a KÉPHATÁR
+    vágja — ezért dolgozunk `cv2.INTER_AREA`/`INTER_NEAREST` párral egy
+    eltolt vágáson, és nem `copyMakeBorder`-rel.
+    """
+    height, width = image.shape[:2]
+    dx = int(round(offset_x)) % max(1, tile)
+    dy = int(round(offset_y)) % max(1, tile)
+    if dx == 0 and dy == 0:
+        kicsi = cv2.resize(
+            image,
+            (max(1, width // tile), max(1, height // tile)),
+            interpolation=cv2.INTER_AREA,
+        )
+        return cv2.resize(
+            kicsi, (width, height), interpolation=cv2.INTER_NEAREST
+        )
+
+    #: az eltolt rácshoz a képet elcsúsztatva pixelesítjük, majd
+    #: visszacsúsztatjuk — a kilógó rész a képhatáron kívül marad, épp
+    #: úgy, ahogy a nulla padding megköveteli.
+    csuszt = np.roll(image, shift=(-dy, -dx), axis=(0, 1))
+    kicsi = cv2.resize(
+        csuszt,
+        (max(1, width // tile), max(1, height // tile)),
+        interpolation=cv2.INTER_AREA,
+    )
+    nagy = cv2.resize(kicsi, (width, height), interpolation=cv2.INTER_NEAREST)
+    return np.roll(nagy, shift=(dy, dx), axis=(0, 1))
+
+
 def apply_comicize(
     image: np.ndarray,
     blur_xy: float = 20.0,
@@ -233,20 +274,22 @@ def apply_comicize(
     upper = float(np.clip(90.0 + min(dot_contrast, 100.0) * 1.5, 1.0, 255.0))
     curved = np.clip(darkened * (255.0 / upper), 0.0, 255.0)
 
-    # 4. pixelesítés a csempeméretre + szürkeárnyalat
-    small = cv2.resize(
-        curved,
-        (max(1, width // dot), max(1, height // dot)),
-        interpolation=cv2.INTER_AREA,
+    # 4-5. KÉT fázis, mindkettő SAJÁT pixelesítéssel (#1351).
+    #
+    # ⚠️ Korábban a pixelesítés EGYSZER futott, eltolás nélkül, és csak a
+    # maszk-ág tolódott el fél csempével. A `filterdesc.xml` viszont KÉT
+    # `PixelateImageOperation`-t ad: a 793. sor eltolás nélküli, a 807.
+    # soré `offsetX = offsetY = _nDotSize/2` — vagyis a fél csempés
+    # eltolás a maszkban ÉS a pixelesítésben is érvényes. Egy közös
+    # pixelesítéssel az eltolás fele elvész, és a raszter szabályosabb
+    # lesz a kelleténél.
+    branch_a = halftone_branch(
+        _luma(pixelate_shifted(curved, dot, 0.0, 0.0)), dot, 0.0, 0.0
     )
-    pixelated = cv2.resize(
-        small, (width, height), interpolation=cv2.INTER_NEAREST
+    branch_b = halftone_branch(
+        _luma(pixelate_shifted(curved, dot, dot / 2.0, dot / 2.0)),
+        dot, dot / 2.0, dot / 2.0,
     )
-    ink = _luma(pixelated)
-
-    # 5. két ág, fél csempével eltolva; az ágak DARKEN-nel egyesülnek
-    branch_a = halftone_branch(ink, dot, 0.0, 0.0)
-    branch_b = halftone_branch(ink, dot, dot / 2.0, dot / 2.0)
     raster = np.minimum(branch_a, branch_b)
 
     # 6-7. a blokk alfájával, DARKEN jelleggel az EREDETI képre
