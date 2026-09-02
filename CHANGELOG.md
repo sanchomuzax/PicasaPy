@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.215] – 2026-09-02
+
+### Javítva
+- **A Képregény effekt rasztere pontosabb lett (#1351).** Az eredeti a
+  pontrácsot két menetben rajzolja, a másodikat fél ponttal elcsúsztatva —
+  nálunk eddig csak a minta csúszott el, maga a pontosítás nem. Emiatt a
+  raszter szabályosabbnak látszott a kelleténél. Ez most a Picasa saját
+  leírófájlja szerint működik.
+
 ## [0.8.214] – 2026-09-02
 
 ### Javítva

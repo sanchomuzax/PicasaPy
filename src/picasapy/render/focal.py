@@ -138,6 +138,16 @@ def apply_focal_zoom(
                 matrix,
                 (width, height),
                 flags=cv2.INTER_LINEAR,
+                # ⚠️ #1351: MÉRETLEN FELTEVÉS, nem adat. A `Comicize`
+                # peremszabálya kiderült a szállított `filterdesc.xml`-ből
+                # (nulla padding, képméretre feszített rács), a `FocalZoom`
+                # halmozásáé NEM: az a NATÍV magban van (`0xbcf4b0`), ami
+                # nincs visszafejtve, és golden-párunk sincs rá.
+                #
+                # A `BORDER_REPLICATE` a mi választásunk — józan, de nem
+                # igazolt. Aki méréssel eldönti, cserélje ki, és vegye ki
+                # ezt a megjegyzést; addig NE hivatkozzon rá úgy, mintha
+                # az eredeti viselkedése volna.
                 borderMode=cv2.BORDER_REPLICATE,
             ).astype(np.float32)
         blurred = accum / np.float32(samples)
