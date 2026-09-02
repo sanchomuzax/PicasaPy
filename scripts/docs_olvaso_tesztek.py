@@ -63,6 +63,14 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 DOCS_OLVASO_TESZTEK: tuple[str, ...] = (
     "tests/app/qml_functional/test_sajat_funkcio_jeloles_1701.py",
     "tests/render/test_display_modes_1577_1578.py",
+    #: #1958: a spec-elavulás jelzése a `docs/specs/` lapjait olvassa.
+    #: KÉZZEL felvéve (a lista RENDEZETT, ezért ide): a `--mer` újramérés
+    #: a mai `main`-en NEM fut le — gyűjtési hiba a
+    #: `tests/export/test_export_mukodes_1166.py`-n, az én ágam nélkül is.
+    #: Erre külön jegy nyílt. A tétel helyességét addig a
+    #: `test_docs_olvaso_tesztek_1863` őrzi: ha a fájl eltűnik vagy
+    #: átnevezik, elbukik.
+    "tests/scripts/test_spec_elavulas_jelzes_1958.py",
     "tests/test_index_leltar_szam_1512.py",
     "tests/test_ui_lefedettseg_megfeleltetes_707.py",
     "tests/tools/test_check_decision_links_1623.py",

@@ -420,6 +420,28 @@ jobs:
         # ellenőrizetlen.
         run: ruff check src/ tests/ scripts/
 
+      - name: Elavulhatott spec-szakaszok jelzése (#1958)
+        # ⚠️ EZ NEM KAPU — a szkript kilépőkódja MINDIG 0, és ez szándékos.
+        # A találatok többsége jogos: a szakasz épp a lezárt jegy
+        # EREDMÉNYÉT dokumentálja. Kapuvá téve az első naptól pirosítana,
+        # és a csapat megtanulná figyelmen kívül hagyni.
+        #
+        # Mit ad: azoknak a spec-szakaszoknak a listája, amelyek „nálunk"-ot
+        # ÉS egy LEZÁRT jegyet is említenek — vagyis ahol a „nálunk
+        # hiányzik" állítás időközben elavulhatott.
+        #
+        # Miért kell: 2026-09-02-án EGY NAP alatt négy elavult állítás vitt
+        # el egy-egy kutatói kört; a lefedettség utólag 24,8% → 35,1% lett,
+        # tehát a „fehér foltok" harmada könyvelési hiba volt. A legélesebb
+        # esetben a spec egy NAPPAL a javítás előtt készült, és a javító
+        # jegy hivatkozott is rá.
+        #
+        # A `gh` a CI-ben a GITHUB_TOKEN-nel dolgozik; ha a lekérdezés nem
+        # megy, a szkript csendben kihagyja a szűkítést (nem esik szét).
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/spec_elavulas_jelzes.py
+
       - name: Néma akció-jelzések őre (#1003)
         # Ide, a `lint` jobba illik: tisztán statikus vizsgálat, se Qt, se
         # futtatókörnyezet nem kell hozzá (a szkript csak a szabványos
