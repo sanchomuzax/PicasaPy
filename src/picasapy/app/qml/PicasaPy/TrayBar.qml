@@ -1460,7 +1460,13 @@ Column {
                      : false
             //: újbóli belépéskor megint látszódjon
             Connections {
-                target: tray.appWindow
+                //: ⚠️ TERNÁRIUS, nem csupasz hivatkozás (#1260): a
+                //: `tray.appWindow` az engine felépítése/leépítése közben
+                //: `undefined` lehet, és a Qt ilyenkor „Unable to assign
+                //: [undefined] to QObject*" hibát ír — a fixture-életciklus
+                //: őre ezt BUKÁSNAK veszi. A `null` érvényes cél (a
+                //: kapcsolat egyszerűen nem él), az `undefined` nem.
+                target: tray.appWindow ? tray.appWindow : null
                 ignoreUnknownSignals: true
                 function onBackToCollagePromptedChanged() {
                     traySingleActionBar.elrejtve = false
