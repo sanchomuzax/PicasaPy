@@ -1,10 +1,34 @@
 """#1454: a `Nézet ▸ Mappanézet` almenü a bal hasáb SZERKEZETÉT állítja.
 
 Az almenü korábban a `Mappa ▸ Sort By` szó szerinti másolata volt: öt
-rendezési tétel, ugyanazzal a `folderSort` bekötéssel. Az eredetiben ez az
-almenü nem rendez, hanem a bal hasáb gyökerét és hierarchiáját szabja meg
-— három tétellel, amelyek közül nálunk egyetlen sem volt elérhető menüből
-(`docs/specs/picasa-mappanezet.md`).
+rendezési tétel, ugyanazzal a **`folderSort`** bekötéssel. Ez a másolat
+hibás volt, és a #1454 helyesen távolította el.
+
+⚠️ **HELYESBÍTÉS (#1766).** A #1454 ebből azt a következtetést is levonta,
+hogy az almenüben *egyáltalán nincs* rendezés — csak szerkezeti tételek.
+**Ez megdőlt.** A tulajdonos képernyőképe
+(`research/#1766-nezet-mappanezet-almenu.png`) szerint az almenü így néz ki:
+
+    ✓ Egyszerű mappanézet          [szerkezet]
+      Fanézet                      [szerkezet]
+      ────────────────────────────
+    ✓ Rendezés létrehozási dátum alapján
+      Rendezés a legutóbbi változtatások alapján
+      Rendezés méret alapján
+      Rendezés név alapján
+      Rendezés megfordítása
+      ────────────────────────────
+      Gyorsbillentyűk ▸            [#1407]
+      ────────────────────────────
+      Indexképek megjelenítése a könyvtárban
+      Egyszerűsített fanézet       [szerkezet]
+
+Tehát **van** rendezés az almenüben — de a `eMenuView::` HOSSZÚ feliratú
+ötös (`paneSort`), nem a Mappa menü rövid, négyes `folderSort` készlete.
+A #1454 a ROSSZ készletet vette ki helyesen; a HELYESET a #1766 tette be.
+
+A két készlet szétválasztása marad a lényeg: ezt az alábbi
+`test_a_menusavban_csak_egy_helyen_marad_a_folderSort` őrzi.
 
 A pipa-logika mérve (`0x00574b70`, spec 3.): az „Egyszerű mappanézet" és a
 „Fanézet" EGYETLEN bájt két állapota, tehát kizáró pár; az
@@ -101,25 +125,38 @@ def _menu_item_texts(menu) -> list[str]:
 
 
 class TestAMappanezetAlmenuTartalma:
-    """Kész, ha: három szerkezeti tétel, egyetlen rendezési tétel nélkül."""
+    """Kész, ha: a három szerkezeti tétel megvan, és a rendezés a HELYES
+    (`paneSort`) készletből való — a `folderSort` négyesből egy sem."""
 
-    def test_nincs_benne_rendezesi_tetel(self, qml_app):
+    def test_nincs_benne_a_MAPPA_menu_negyese(self, qml_app):
+        """#1766: a tiltás a ROSSZ készletre szól, nem minden rendezésre.
+
+        A Mappa menü rövid feliratai (`&Date`, `&Name`, `&Size`,
+        `&Reverse order`) ide másolva ugyanaz a hiba lenne, amit a #1454
+        javított."""
         window, _controller, _engine = qml_app
         texts = _menu_item_texts(_child(window, "menuViewFolderView"))
         assert texts, "a Mappanézet almenüben egyetlen tétel sincs"
-        rendezes = [t for t in texts if "Sort" in t or "Reverse" in t]
-        assert rendezes == [], (
-            f"a Mappanézet almenüben rendezési tétel maradt: {rendezes}"
+        rovid = [t for t in texts if t in ("&Date", "&Name", "&Size",
+                                           "&Reverse order")]
+        assert rovid == [], (
+            f"a Mappa menü RÖVID készlete beszivárgott ide: {rovid}"
         )
 
     def test_a_harom_szerkezeti_tetel_all_benne(self, qml_app):
         window, _controller, _engine = qml_app
         texts = _menu_item_texts(_child(window, "menuViewFolderView"))
-        assert texts == [
-            "Flat Folder View",
-            "Tree View",
-            "Simplified Tree View",
-        ]
+        for szerkezeti in ("Flat Folder View", "Tree View",
+                           "Simplified Tree View"):
+            assert szerkezeti in texts, f"hiányzik: {szerkezeti}"
+
+    def test_a_HOSSZU_otos_is_benne_van(self, qml_app):
+        """#1766: a felvételen mért `eMenuView::` készlet."""
+        window, _controller, _engine = qml_app
+        texts = _menu_item_texts(_child(window, "menuViewFolderView"))
+        for hosszu in ("Sort by &Creation Date", "Sort by &Recent Changes",
+                       "Sort by &Size", "Sort by &Name", "Re&verse sort"):
+            assert hosszu in texts, f"hiányzik a Nézet-készletből: {hosszu}"
 
     def test_a_menusavban_csak_egy_helyen_marad_a_folderSort(self):
         """A `Mappa ▸ Sort By` négy szempontja + a megfordítás — és semmi

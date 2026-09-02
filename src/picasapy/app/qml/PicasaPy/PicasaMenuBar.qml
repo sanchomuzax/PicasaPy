@@ -1003,6 +1003,16 @@ MenuBar {
             readonly property bool simplifiedMode:
                 (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
                     ? bar.folderViewCtl.simplified : false
+            //: #1766: a lista-rendezés állapota — ugyanaz a forrás, mint a
+            //: bal hasáb helyi menüjéé, hogy a két menü pipája EGYÜTT
+            //: mozogjon. A `!== undefined` a próbák stub-vezérlőjére véd
+            //: (#1572, `scripts/qml_undefined_or.py`).
+            readonly property string rendezes:
+                (controller && controller.paneSort !== undefined)
+                    ? controller.paneSort : ""
+            readonly property bool rendezesForditott:
+                (controller && controller.paneSortReverse !== undefined)
+                    ? controller.paneSortReverse : false
 
             // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
             // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
@@ -1032,6 +1042,82 @@ MenuBar {
                     checked = Qt.binding(function () {
                         return folderViewMenu.treeMode
                     })
+                }
+            }
+            MenuSeparator {}
+            // #1766: az ÖT lista-rendezés tétel. A helyüket a tulajdonos
+            // képernyőképe döntötte el (`research/#1766-nezet-mappanezet-almenu.png`):
+            // ebben az ALMENÜBEN vannak, nem a Nézet menü felső szintjén.
+            //
+            // A jegy eredeti bizonyítéka (`GetSubMenu(GetMenu(hwnd), 2)`) a
+            // menü-HOVATARTOZÁST igazolta, a menün belüli HELYET nem — a
+            // spec 49.1 ezt ki is mondta, és emiatt állt a jegy hónapokig.
+            //
+            // ⚠️ Ez a `eMenuView::` ötös, HOSSZÚ feliratokkal. A Mappa menü
+            // NÉGYES, rövid feliratú `ID_*SORT` készlete (#1595) MÁS — a
+            // kettő összekeverése épp az a hiba, amit a #1595 javított.
+            //
+            // A sorrend is a felvételről jön: dátum · legutóbbi
+            // változtatások · méret · név · megfordítás.
+            //
+            // A négy mód KIZÁRÓ csoport, ezért a #1464/#1468 rádió-csapdája
+            // ellen a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et; a
+            // megfordítás önálló kapcsoló, ott erre nincs szükség.
+            MenuItem {
+                objectName: "menuViewSortByDate"
+                text: qsTr("Sort by &Creation Date")
+                checkable: true
+                checked: folderViewMenu.rendezes === "date"
+                onTriggered: {
+                    if (controller) controller.setPaneSort("date")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.rendezes === "date"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortByRecent"
+                text: qsTr("Sort by &Recent Changes")
+                checkable: true
+                checked: folderViewMenu.rendezes === "changed"
+                onTriggered: {
+                    if (controller) controller.setPaneSort("changed")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.rendezes === "changed"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortBySize"
+                text: qsTr("Sort by &Size")
+                checkable: true
+                checked: folderViewMenu.rendezes === "size"
+                onTriggered: {
+                    if (controller) controller.setPaneSort("size")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.rendezes === "size"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortByName"
+                text: qsTr("Sort by &Name")
+                checkable: true
+                checked: folderViewMenu.rendezes === "name"
+                onTriggered: {
+                    if (controller) controller.setPaneSort("name")
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.rendezes === "name"
+                    })
+                }
+            }
+            MenuItem {
+                objectName: "menuViewSortReverse"
+                text: qsTr("Re&verse sort")
+                checkable: true
+                checked: folderViewMenu.rendezesForditott
+                onTriggered: {
+                    if (controller) controller.togglePaneSortReverse()
                 }
             }
             MenuSeparator {}

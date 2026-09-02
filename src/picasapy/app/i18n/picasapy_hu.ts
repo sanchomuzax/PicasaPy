@@ -4482,6 +4482,26 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Sort by &amp;Creation Date</source>
+        <translation>Rendezés létre&amp;hozási dátum alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Recent Changes</source>
+        <translation>Rendezés a leg&amp;utóbbi változtatások alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Size</source>
+        <translation>Rendezés &amp;méret alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Name</source>
+        <translation>Rendezés &amp;név alapján</translation>
+    </message>
+    <message>
+        <source>Re&amp;verse sort</source>
+        <translation>Rendezés megfordítása</translation>
+    </message>
+    <message>
         <source>Remove from Album</source>
         <translation>Eltávolítás az albumból</translation>
     </message>

@@ -7,14 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.228] – 2026-09-02
+## [0.8.229] – 2026-09-02
 
-### Javítva
-- **A szerkesztő fejléce az eredeti gombjait kapta (#1993).** A képek
-  közti lépegetés eddig két szögletes gomb volt `◀`/`▶` karakterrel; az
-  eredeti Picasában kerek, szürke nyílgombok állnak ott. A „Vissza a
-  könyvtárhoz" gomb pedig — ahogy az eredetiben — kék nyíl-ikont kapott,
-  és a felirata két sorba tördelve fér el.
+### Hozzáadva
+- **A `Nézet ▸ Mappanézet` almenüben megjelent az öt rendezés (#1766).**
+  A mappalista rendezését eddig csak a bal hasáb helyi menüjéből lehetett
+  átállítani; az eredeti Picasában a Nézet menü almenüjében is ott van.
+  A két hely ugyanazt az állapotot mutatja, tehát a pipa mindkettőben
+  együtt mozog.
 
 ## [0.8.227] – 2026-09-02
 
