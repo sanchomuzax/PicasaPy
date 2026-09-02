@@ -406,7 +406,27 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 2 BLOKKOLT tétel (a `text=` stílusblokk)
+### [picasa-ini-format.md](picasa-ini-format.md) — 3 BLOKKOLT tétel (a `text=` stílusblokk + a `rotate(0)`)
+
+⭐ **2026-09-02 (2. kör) — az ini ÍRÓJA két függvény, és van egy
+kulcs→ALAPÉRTÉK tábla.** A `0x0068ac80` az album-szintű részt
+(`name`/`description`/`location`/`category`/`date`), a `0x0068b320` a
+képenkénti szekciókat írja; ugyanaz a két hívó fűzi őket össze. ⭐ A
+`0x0068b320` két NULL-lal lezárt tömbje kimondja, mit tekint a Picasa
+**alapértéknek**: `flipped`→**`flipped(0)`**, `rotate`→**`rotate(0)`**,
+`filters`/`text`/`moddate`→**üres**. ⇒ **a `rotate` nullája NEM a kulcs
+elhagyása** — a korpuszban **1 735** `rotate=rotate(0)` sor van. ⛔ Nálunk
+a forgatás 0-nál **törli** a kulcsot, és a kód kommentje ezt „bitre pontos
+round-trip"-nek mondja — Picasa-eredetű fájlon **fordítva igaz** →
+**#2004**. Plusz: a `[encoding]` literál pontos alakja **CRLF-fel**
+(`0x00ca77f0`, 30 bájt), és **0/859** valós fájl tartalmazza (694
+album-jellegűből is nulla) ⇒ írásnál **nem szabad magunktól bevezetni**.
+
+1. **Ha a `rotate=` sor HIÁNYZIK és a felhasználó 0-ra forgat, kiírja-e a
+   Picasa a `rotate(0)`-t?** A korpusz csak a végállapotot mutatja.
+   **Megszerzés:** a tulajdonos windowsos Picasájában egy `rotate=` nélküli
+   képet 4×90°-kal elforgatni. A #2004-et nem blokkolja.
+
 
 ⭐ **2026-09-02 — a `text=` STÍLUSBLOKK két nyitott mezőjéből kettő megvan.**
 A szerkesztő szöveg-eszközének (`edittextpanel`) kezelőiből: a formátum
