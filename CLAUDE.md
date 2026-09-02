@@ -147,13 +147,30 @@ majd `Artifact` hívás — `file_path`: `~/picasapy-agent/docs/egy-lap.html`,
 `url`: a fenti cím (**kötelező**; `url` nélkül új lap jön létre, és a
 felhasználó régi linkje elavul), `favicon`: 📐.
 
+### Publikálás előtt MINDIG olvasd el — nem elég a kör elején
+
+Közvetlenül az `Artifact` hívás ELŐTT `WebFetch` arra a címre, amit publikálsz.
+A közzétevő eszköz csak attól fogad el frissítést, aki **ebben a
+munkamenetben** már látta a jelenlegi változatot, és ez **laponként** külön
+számít. A kör eleji olvasás tájékozódásra jó, de a publikálást nem váltja ki.
+
+### Csak EGY lap van, egyetlen címmel
+
+A címre kizárólag az `egy_lap.py` kimenete (`~/picasapy-agent/docs/egy-lap.html`)
+megy. A `docs/modszertan-lap.html`, `docs/allapotlap.html` és
+`docs/binaris-terkep.html` **köztes fájlok**, amiket a generátor fűz össze —
+ezeket soha ne publikáld külön, és a régi címeikre se publikálj.
+
 ### Ha hibát kapsz
 
-- **„this session hasn't viewed the latest version"** — kimaradt a kör eleji
-  olvasás. `WebFetch`-eld a címet, és publikálj újra. Ez nem tiltás, hanem egy
-  kihagyott lépés.
-- **`conflict`** — egy másik munkamenet ugyanabból a generált forrásból már
-  publikálta. Nem hiba, semmi nem veszett el: ne `force`-olj, ne generálj újra.
+- **„this session hasn't viewed the latest version"** — kimaradt a publikálás
+  előtti `WebFetch`. Olvasd el a címet, és publikálj újra. Ez nem tiltás.
+- **`conflict`** — egy másik munkamenet közben újat tett fel. `WebFetch`-eld a
+  lapot, és olvasd ki a fejlécből a „Frissítve" időpontot:
+  - ha az **újabb**, mint a te generált fájlod → kész, nincs teendőd;
+  - ha **régebbi** → publikálj újra, hogy a friss adat kimenjen.
+
+  `force`-t soha ne használj — az eldobná a másik munkamenet változatát.
 
 **Piros hibát SOHA ne úgy „oldj meg", hogy elnémítod a jelzést.** A piros
 üzenet azt jelenti, hogy valami tényleg elromlott — az elavult lap nem
