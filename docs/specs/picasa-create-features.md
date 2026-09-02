@@ -1513,6 +1513,140 @@ Gradient – White · Transparent – Black · Transparent – White ·
 Caption – Typewriter (+ további kettő). Betűbeállítás: család, méret,
 `Bold`, `Italic`, és **„Automatic Outline (like movie subtitles)"**.
 
+### 2.3/b A SZÖVEGES DIA fülének MŰKÖDÉSE — a 11 stílus mellé a többi vezérlő (2026-09-02)
+
+*A 2.3 a tizenegy stílus NEVÉT adta. Ez a szakasz a `makemoviepanel`
+2. fülének (a szöveges diáé) **összes** vezérlőjét megnevezi, és
+megmondja, **melyik `.mxf`-mezőt** írja. A parancsok ugyanabban a közös
+kezelőben ülnek (`0x0061df10`), mint a hangsáv (2.6/b) és a kimenet
+(2.6/c). Image base `0x00400000`.*
+
+#### A) A dia beszúrása — „Szöveges dia beszúrása" (`insert_slide`)
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| 0. | **kapu:** ha a `[panel+0x4f2]` bájt nem nulla, a gomb más ágra megy | `0x0061ec18` |
+| 1. | új dia-rekord, **`<type>` = 2** (ez a szöveges dia típuskódja) | `0x0061ec34`, `0x0061ec5d` |
+| 2. | a szövege a honosított `CMakeMoviePanel::sampletext` = `Text` / **„Szöveg"** | `0x0061ec39` |
+| 3. | **hova kerül:** ha van kijelölt dia (`[panel+0x388]` ≠ −1) és a `0x00610b90` igazat ad → `[panel+0x388] + 1`, azaz **a kijelölt dia UTÁN**; különben a **lista elejére** (index 0) | `0x0061ec56`–`0x0061ec8f` |
+| 4. | beszúrás | `0x0061c4c0` |
+| 5. | **átvált a 2. fülre** (`makemoviepanel/tab2` névparancs) | `0x0061eca5` |
+| 6. | a fül tartalmát az új diához igazítja (`0x00621240`), majd négy frissítő hívás | `0x0061ecb2`–`0x0061ecdb` |
+| 7. | `SendMessageA(hwnd, 7, hwnd, 0)` — a **7 = WM_SETFOCUS** (az import `0x00c40884`) | `0x0061eceb` |
+| 8. | végül a **`makemoviepanel/inputtext`** mezőre teszi a fókuszt | `0x0061ed28` |
+
+⇒ **Egy kattintás után a felhasználó azonnal gépelhet:** a panel átvált a
+szövegdia-fülre, a beviteli mező kap fókuszt, és a placeholder „Szöveg".
+
+A törlés (`remove_slide`) egyetlen hívás: `0x006214e0(panel, 0, 0)`
+(`0x0061edc5`).
+
+#### B) A három betűstílus-kapcsoló — mind ugyanaz a séma
+
+Mindhárom (`bold`, `italic`, `outline`) pontosan három lépés:
+
+1. **beolvassa** az aktuális dia szövegparamétereit — `0x00611320(projekt+0x48, &rekord, [panel+0x388], 1)`
+2. **lekérdezi** a kapcsoló állását — `0x009cd9a0(<elemnév>)`
+3. **visszaírja** a rekordot — `0x0061c7f0` (közös farok, `0x0061fca4`)
+
+| kapcsoló | `.mxf` mező | rekord-eltolás | érték | cím |
+|---|---|---|---|---|
+| `makemoviepanel/bold` | **`<weight>`** | +0x44 (dword) | **400** (normál) / **700** (félkövér) | `0x0061fb5b`–`0x0061fb6a` |
+| `makemoviepanel/italic` | **`<italic>`** | +0x40 (bájt) | 0 / 1 | `0x0061fc03` |
+| `makemoviepanel/outline` | **`<outline>`** | +0x41 (bájt) | 0 / 1 | `0x0061fc9c` |
+
+⭐ **A 400/700 a GDI `LOGFONT.lfWeight` szokásos két értéke** — a bináris
+`neg al; sbb eax,eax; and eax,0x12c; add eax,0x190` idiómával számolja
+(0x12c = 300, 0x190 = 400). A `.mxf` `<weight>` mezője tehát **nem
+logikai**, hanem súlyszám.
+
+#### C) A három legördülő — mit ír, és hova
+
+| legördülő | `.mxf` mező | rekord-eltolás | mit ír | cím |
+|---|---|---|---|---|
+| `makemoviepanel/fontfamily_listbox` | **`<fontname>`** | +0x28 | a `[panel+0x2a8]` tömb `index`-edik betűtípusneve | `0x006226d8`–`0x0062270a` |
+| `makemoviepanel/sizelist_listbox` | **`<size>`** | +0x2C | a **`0x00c7e4f0`** statikus tábla `index`-edik eleme | `0x006227eb`–`0x006227f8` |
+| `makemoviepanel/templatelist_listbox` | **`<styleid>`** | +0x3C | **magát az indexet** (a 2.3 tizenegy stílusa) | `0x006228cd`–`0x006228ea` |
+
+Mindhárom a `−1`-es (nincs kiválasztás) indexnél **kilép** anélkül, hogy
+bármit írna (`0x006226ae`, `0x006227c1`, `0x006228a3`).
+
+**A betűméret-lista TELJES tartalma** (`0x00c7e4f0`, `−1`-gyel lezárva —
+tizenhat érték):
+
+```
+8 · 10 · 12 · 14 · 16 · 18 · 20 · 22 · 26 · 30 · 36 · 48 · 60 · 72 · 84 · 96
+```
+
+**A betűtípus-választás preferenciába is bekerül:** a
+`Preferences\`**`makemovie::textfont`** kulcsba (`0x00622731`–`0x00622743`).
+⇒ A következő szöveges dia ezzel a betűtípussal indul, nem a
+gyárival.
+
+#### D) A két színválasztó
+
+A `0x00621d40` (242 b) **előtag szerint** dönt:
+
+| a névelőtag | melyik vezérlő adja a színt | a szín helye |
+|---|---|---|
+| **`text_`** | `makemoviepanel/txcolorcircle` | a vezérlő `[+0x268]` mezője |
+| **`bkg_`** | `makemoviepanel/bgcolorcircle` | ugyanott |
+
+A két panel neve `makemoviepanel/text_picker_panel` és
+`makemoviepanel/bkg_picker_panel`; a keretük a respackben
+`txcolorpicker_bevel` és `bgcolorpicker_bevel`, a közös tartó
+`colorpickerpanel`.
+
+#### E) A fül feliratai — a hivatalos magyar fordítással
+
+| elem | magyar |
+|---|---|
+| `makemoviepanel/templatetext` | **„Sablon:"** |
+| `makemoviepanel/font_label` | **„Betűtípus:"** |
+| `makemoviepanel/size_label` | **„Méret:"** |
+| `makemoviepanel/style_label` | **„Stílus:"** |
+| `makemoviepanel/text_color_label` | **„Szöveg színe"** |
+| `makemoviepanel/back_color_label` | **„Háttér színe"** |
+
+*(Forrás: `panel-feliratok-hu.tsv` 594–599. sor. A `font_label`,
+`size_label`, `style_label` NEM a `.tre`-ből jön — a `respack.yt`
+`layer:makemoviepanel/text(...)` rétegei hordozzák.)*
+
+A fül ikonjai a respackben: `bold_icon`, `italic_icon`, `outline_icon`,
+`inserticon`, `removeicon`.
+
+#### F) NEGATÍV EREDMÉNY — a `titleoption_listbox` ága HALOTT
+
+A `0x006223b0` kezel egy `makemoviepanel/titleoption_listbox` nevű listát
+is (`0x00622918`), és a választást a **projekt** objektum `[+0x2c0]`
+mezőjébe írja (`0x0062295f`) — tehát **nem diánkénti** beállítás volna.
+
+**Két, egymástól független lekérdezés mondja, hogy ez a lista a 3.9-ben
+nem jön létre:**
+
+1. a panelépítő `0x00613b50` a `moviesize`, `templatelist`, `fontfamily`
+   és `sizelist` legördülőt hozza létre — **`titleoption`-t nem**;
+2. a `makemoviepanel/titleoption_listbox` sztringre a **teljes binárisban
+   egyetlen** hivatkozás van, és az maga a kezelő (`0x006223b0`).
+
+⇒ **Nem kell megépíteni.** *(A respack hiánya itt NEM bizonyíték: a
+legördülők felugró listái közül **egy sem** szerepel a `respack.yt`-ben —
+ezt külön ellenőriztem, a `_listbox` végű nevekre nulla találat. A
+negatív eredmény a fenti két lekérdezésen áll, nem a respackon.)*
+
+#### Bizonyítottsági fok
+
+**Megerősített** (utasításszinten olvasva): a beszúrás nyolc lépése és a
+`<type> = 2`, a fókusz a beviteli mezőre, a három kapcsoló séma és a
+400/700 súly, a három legördülő cél-mezője és a `−1` kilépés, a
+tizenhat betűméret, a `makemovie::textfont` preferencia, a színválasztók
+előtag-dönése, a hat felirat magyar alakja, és a `titleoption`-ág
+halottsága.
+
+**Erős**: a rekord-eltolások (`+0x28`, `+0x2C`, `+0x3C`, `+0x40`,
+`+0x41`, `+0x44`) — a helyi puffer `[esp+0x68]` bázisából számolva; a
+mezőnevekhez a 2.4/b írója rendeli őket.
+
 ### 2.4 Projektfájl és automatikus mentés
 
 `autosave.mxf` (`MakeMoviePanel::autosave` / `recoveredautosave`) — a
