@@ -229,10 +229,15 @@ class TestAFelulet:
         assert "printWindow.copies" in _DIALOG[kezd : kezd + 260]
 
     def test_a_lapszam_a_mert_alakot_koveti(self):
+        """#1960: a mért alak `%d / %d`, de a SORREND nyelvfüggő — az
+        angol erőforrás `%1$d of %2$d`, a magyar `%2$d / %1$d`. Ezért
+        összefűzés helyett pozíció-argumentumos, FORDÍTHATÓ sablonra
+        állítunk: a sorrendet a `.ts` adja, nem a kód."""
         kezd = _DIALOG.index('objectName: "printPreviewPageText"')
-        blokk = _DIALOG[kezd : kezd + 320]
-        assert "+ \" / \" +" in blokk.replace("\n", " ").replace("  ", " ") \
-            or '" / "' in blokk
+        blokk = _DIALOG[kezd : kezd + 900]
+        assert 'qsTr("%1 / %2")' in blokk
+        assert ".arg(printWindow.previewPage + 1)" in blokk
+        assert ".arg(printWindow.previewPageCount)" in blokk
 
     def test_a_lapozas_nem_lep_ki_a_tartomanybol(self):
         elozo = _DIALOG.index('objectName: "printPreviewPrevButton"')

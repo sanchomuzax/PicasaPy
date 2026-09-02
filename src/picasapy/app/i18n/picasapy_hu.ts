@@ -192,6 +192,10 @@
 <context>
     <name>PrintDialog</name>
     <message>
+        <source>%1 / %2</source>
+        <translation>%2 / %1</translation>
+    </message>
+    <message>
         <source>Print size:</source>
         <translation>Nyomatméret:</translation>
     </message>
@@ -1532,6 +1536,10 @@
 </context>
 <context>
     <name>AppController</name>
+    <message>
+        <source>({current} / {total})</source>
+        <translation>({total} / {current})</translation>
+    </message>
     <message>
         <source>Color search is still being prepared: {0} of {1} photos have been analyzed so far. Photos that have not been analyzed yet cannot show up in the results, but the list fills in on its own as soon as the preparation finishes.</source>
         <translation>A színkeresés adatai még készülnek: {1} fényképből eddig {0} van feldolgozva. A még fel nem dolgozott képek most nem jelenhetnek meg a találatok között, de amint a feldolgozás elkészül, a lista magától kiegészül.</translation>

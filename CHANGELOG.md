@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.221] – 2026-09-02
+
+### Javítva
+- **A lapszámláló sorrendje magyarul is az eredetit követi (#1960).** Az
+  eredeti Picasa magyar felületén a két szám fordítva áll: ötképes mappa
+  harmadik képénél `(5 / 3)`, a nyomtatási előnézet első lapján nyolcból
+  `8 / 1`. Nálunk eddig fordítva volt. A sorrendet mostantól a fordítás
+  adja, nem a kód — angolul marad a megszokott (aktuális / összes).
+
 ## [0.8.220] – 2026-09-02
 
 ### Javítva

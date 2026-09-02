@@ -14,6 +14,7 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     Property,
+    QCoreApplication,
     QLocale,
     QObject,
     QSettings,
@@ -890,7 +891,24 @@ class AppController(
         photo = photos[row]
         folder = formatting.PATH_TAIL.split(photo.folder_path)[-1]
         base = self.photoInfo(row).replace(photo.name, f"{folder} > {photo.name}", 1)
-        return f"{base}   ({row + 1} / {len(photos)})"
+        return f"{base}   {self.szamlalo_szoveg(row + 1, len(photos))}"
+
+    @staticmethod
+    def szamlalo_szoveg(aktualis: int, osszes: int) -> str:
+        """A „hányadik / hányból" számláló — a SORREND a fordításé (#1960).
+
+        Az eredeti angol erőforrása `%1$d of %2$d` (aktuális / összes), a
+        magyar `%2$d / %1$d` (**összes / aktuális**) —
+        `ThumbUIPrint::PrintCount`, `stringres` 2287. Élesben a tulajdonos
+        felvételén egy ötképes mappa harmadik képénél `(5 / 3)` áll.
+
+        Ezért nem fűzünk össze és nem égetünk be sorrendet: nevesített
+        pozíció-argumentumokat adunk át, és a `.ts` dönti el, melyik nyelv
+        melyik sorrendet kapja."""
+        sablon = QCoreApplication.translate(
+            "AppController", "({current} / {total})"
+        )
+        return sablon.format(current=aktualis, total=osszes)
 
     # -- csillag-szűrő -------------------------------------------------------
 
