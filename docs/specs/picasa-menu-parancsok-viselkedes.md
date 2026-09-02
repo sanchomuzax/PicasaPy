@@ -2917,6 +2917,14 @@ QML-fában csak a kollázs-csomópontra, a szerkesztő effekt-fülére, a
 bélyegkép-delegáltra és a fő eszköztárra ad találatot — **egyik sem
 rács-nagyító**.
 
+> ⚠️ **ELAVULT (2026-09-02).** Ez a bekezdés a megírása napján (2026-08-31,
+> `50c61fdd`) igaz volt; **másnap** a #1808 megépítette a nagyítót
+> (`3070080c`), majd a #1911 kivette a bekapcsoló gombját. A mai állapot:
+> a rajz és a húzás-kezelés **megvan** (`LightboxFeed.qml:787–878`,
+> `Main.qml:88`), **a gomb hiányzik**. A teljes feltárás — alak, méret,
+> áttűnés, és hogy külön egérmutató **nincs** — az új lapon:
+> [`racs-nagyito.md`](racs-nagyito.md).
+
 ⇒ Ez **önálló, felhasználónak látszó funkció**, nem elhelyezés-kérdés.
 
 ### 51.4 A többi valódi hiány, besorolva
@@ -2947,12 +2955,12 @@ Nyitott kérdések: 0 nyílt · 2 lezárva · 1 blokkolt · 1 hatókörön kív�
 
 - **LEZÁRVA:** a hiányok fő mintája (elhelyezés, nem funkció — 51.1–51.2);
   a nagyító léte és a mi oldalunk hiánya (51.3).
-- **BLOKKOLT:** a nagyító **viselkedési részletei** (nagyítás mértéke,
-  követi-e az egeret, mekkora a `loupe_sm`). A sztringtár erről nem ad
-  többet, a kezelő (`0x0077be10`) két csomópontnévnél egyebet nem
-  hivatkozik. **Mi kell hozzá:** célzott dekompiláció vagy egy
-  képernyőmentés működés közben. **A jegyet nem blokkolja**: a funkció
-  léte és belépési pontja megvan.
+- ~~**BLOKKOLT:** a nagyító **viselkedési részletei**~~ — **2026-09-02:
+  nagyrészt LEZÁRVA** ([`racs-nagyito.md`](racs-nagyito.md)): a `loupe_sm`
+  **51 × 51**, a 103 × 103-as lencse **belső** rétege; a nagyító a kurzor
+  **közepére** ül; a megjelenés **áttűnéses** (0,4 be / 1,2 ki, alfa
+  1…256); és **nincs saját egérmutató**. **Marad blokkolt:** csak a
+  **nagyítás mértéke** — a megszerzés útja a `0x0077bb10` rajzoló ág.
 - **HATÓKÖRÖN KÍVÜL:** `visitweb` („Internetes nézet").
 
 *(Záró mondat a 45.1 szerint: **van** hiányzó vezérlő; a csoportosztás
