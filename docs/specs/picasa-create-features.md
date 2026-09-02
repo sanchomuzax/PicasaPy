@@ -373,7 +373,7 @@ kiterjesztés a `scale`-re **nem áll**.
 | `framegrid` | ugyanaz | AI4 | 9/9 |
 | `regulargrid` | ugyanaz | AI5 | 9/9 |
 | `multiexp` | **1,0** | AI7 | 4/4 (#1248) |
-| `contactsheet` | **Ghidra-C (2026-08-30): NEM a layout állítja** — a `0x00888210` a node `+0x2c`-be `1,0`-t ad; a `313` a vetítés/render-scale adja | AI6 | tovább kutatva (#1412, nyitva) |
+| `contactsheet` | **mérve 313, levezetve nincs** — a `0x00888210` layout a node `+0x2c`-be `1,0`-t ad, de **ugyanezt teszi a `regulargrid` layoutja is** (ld. 1.6/g), tehát ebből nem következik semmi | AI6 | nyitva (#1412) |
 
 A megkülönböztető eset az **álló cella**: az `AI3` első cellája
 219,5 × 288,1 lapegység, és a fájlban `scale="216"` áll — a **szélesség**,
@@ -415,11 +415,9 @@ Az, hogy MELYIK doboz kerül a fájlba, viszont témánként más:
 1. **Az Indexkép `scale`-je (`313`).** Lap-szintű állandó: a két különböző
    méretű csomópont (242 × 302,6 és 155 × 276,6 lapegység) ugyanazt kapja.
    Sem a `k` cellaél (300), sem a cella magassága (359), sem a `k` 8%-os
-   ráhagyásával csökkentett cella (311) nem adja ki. **Ghidra-C (2026-08-30,
-   #1412):** a `0x00888210` layout a node `+0x2c`-be `1,0`-t tesz, a
-   `0x00887e50` csomópont-allokátor (nem `k`-képző) — tehát a `313`-at a
-   **vetítés/render-scale** írja, a `scale_for_theme`-unk contactsheet-ágát a
-   vetítés-scale-képlettel kell összekötni (#1412 nyitva).
+   ráhagyásával csökkentett cella (311) nem adja ki. A 2026-08-30-i
+   „vetítés/render-scale" magyarázat **MEGDŐLT** — az okot és a helyette
+   érvényes bizonyítékokat az **1.6/g** szakasz írja le (#1412 nyitva).
 2. **A rácsos témák térköz ELŐTTI téglalapja.** A `picturegrid` és a
    `framegrid` a pakolási téglalapot írja ki, a `regulargrid` a hézagosat;
    mi mind a hármat hézagosan írjuk. Térköz nélkül a kettő egybeesik, ezért
@@ -431,6 +429,98 @@ Az, hogy MELYIK doboz kerül a fájlba, viszont témánként más:
 
 *Bizonyítottsági fok: mért* (12 valódi Picasa-projekt, 89 csomópont; a
 Képkupac dobozai a golden JPEG képpontjain is ellenőrizve).
+
+### 1.6/g A `scale` MEZŐ a binárisban — mérve, és egy megdőlt magyarázat (2026-09-02, #1412)
+
+> **Bizonyítottság: megerősített** a mezőleképezésre és a negatív eredményre;
+> a `313` levezetése **továbbra is NYITOTT**.
+
+#### A `.cxf`-író mezőleképezése — pontosan
+
+A `<node>` sorait a **`0x008347b0`** írja (egyetlen hívója a mentés-szervező
+`0x00834700`, `0x00834777`). A csomópontok **56 bájtos (0x38) tömbben**
+állnak; a bázis a `[ebx+0x48]`, az eltolás `index × 56`
+(`0x00834c30`–`0x00834c3d`: `lea eax,[ecx*8]; sub eax,ecx; add eax,eax ×3`).
+
+| mező | eltolás | hol olvassa | az attribútum neve |
+|---|---|---|---|
+| `x` | `+0x18` | — | — |
+| `y` | `+0x1c` | `0x00834d26` | — |
+| `w` | `+0x20` | `0x00834e09` | — |
+| `h` | `+0x24` | `0x00834eec` | — |
+| `theta` | `+0x28` | `0x00834fcf` | `0xcbf804` (`0x00834fb3`) |
+| **`scale`** | **`+0x2c`** | **`0x008350b2`** | `0xcbf80c` (`0x00835096`) |
+
+A mentés-szervező a hívás előtt **semmilyen csomópont-előkészítést nem
+végez** (`0x00834700`, 174 bájt: sztringkezelés és a `0x008347b0` hívása) —
+tehát a `+0x2c` már a szerkesztés/elrendezés végén tartalmazza a végleges
+értéket.
+
+#### ⛔ MEGDŐLT: „a layout `1,0`-t ír, tehát a 313-at a render-scale adja"
+
+A 2026-08-30-i kör helyesen olvasta ki, hogy a **contactsheet layout
+`1,0`-t** tesz a `+0x2c`-be (`0x008885ac` `fld1` → `0x008885bc`
+`fstp dword [ebx+eax+0x2c]`) — ezt most diszasszemblálásból is megerősítettük.
+A **következtetés** viszont nem áll, mert:
+
+> a **`regulargrid` csomópont-elhelyezője ugyanezt teszi**: `0x0088520d`
+> `fld1` → `0x0088522d` `fstp dword [eax+esi+0x2c]`
+> (a `0x00885060`-at a `0x00884040` és a `0x008844d0`, azaz a
+> `CRegularGridTheme` vtable 0. és 2. rekesze hívja).
+
+A `regulargrid` fájlbeli `scale`-je **nem** `1,0`, hanem a kirajzolt cella
+szélessége (AI5, 9/9 — 1.6/f). Ugyanez a `framegrid`en 280 / 319 / 127
+(AI4). **Az `1,0` beírása tehát a NORMA, nem a contactsheet különössége** —
+belőle a `313` eredetére semmi nem következik. A „vetítés/render-scale"
+irányt ez a lap ezennel visszavonja.
+
+#### Kimerítő negatív pásztázás — hol NINCS a `+0x2c` írója
+
+A teljes `.text`-et végigpásztáztuk a `+0x2c`-be író utasításokra
+(2026-09-02):
+
+| alak | találat az EGÉSZ binárisban | ebből a kollázs-sávban (0x820000–0x895000) |
+|---|---|---|
+| `fstp dword [bázis+index+0x2c]` | 5 függvény | **2** — `0x00885060` és `0x00888210`, **mindkettő `1,0`-t ír** |
+| `mov dword [bázis+index+0x2c], r32` | — | **0** |
+| `movss [… +0x2c], xmm` (SSE) | **0** | 0 |
+| disp32-alak (`mod=10`, eltolás `0x2c`) | **0** | 0 |
+| `fstp`/`mov` **mutatós** alak (`[reg+0x2c]`) | — | 37 függvény, ebből **34** a `+0x28`-at is írja |
+
+⇒ **A `scale` végleges értékét mutatós alakban író függvény adja**, és az a
+37 közül való. Indexelt, SSE- és disp32-alakú író **nincs** — ezt nem kell
+újra megnézni.
+
+#### A KÖVETKEZŐ lépés (konkrétan)
+
+1. A 37 mutatós író közül azokat kell megnézni, amelyek a
+   **`CCollageUI`/`CollageNodeHandler` szerkesztési útjából** hívódnak (a
+   `0x0088e4e0` 13, a `0x00839200` 8 hívóval a legvalószínűbb belépők).
+2. Ha ez sem dönt: **futó Picasán adatfigyelő** a csomópont `+0x2c`-jén,
+   Indexkép-téma választása közben — ez már drága lépés, de a statikus
+   olcsó lánc itt kimerült.
+
+#### A MÉRÉSI oldal máshol van — és ez a lap elavult hozzá képest
+
+A `scale` **mérési** feltárása a
+[`kollazs-eletciklus.md` 17. szakaszában](kollazs-eletciklus.md) áll
+(2026-09-01): mind a hat téma `scale / (w × 1024)` aránya, a
+⭐ **`scale` = a RAJZOLT méret, nem a befoglaló dobozé** felismerés, az
+1024-es vízszintes egységrendszer, és az, hogy a **313 nem beégetett
+konstans** (a `.text` bájtmintás átvizsgálása a `313` négy immediate-alakjára
+**nulla** találatot ad) ⇒ **számított** érték.
+
+Ez a lap (`1.6/f`) 2026-08-30 óta a megdőlt „vetítés/render-scale"
+magyarázatot hordozta — a jelen szakasz vonja vissza. **A két lap közül a
+mérési kérdésekben a `kollazs-eletciklus.md` 17. az irányadó**, ez a szakasz
+pedig a `.cxf`-író bináris oldaláé.
+
+#### Mi dönti el — és kitől kell
+
+A 17.4 szerint egyetlen olcsó lépés zárná le: egy **FEKVŐ tájolású**
+Indexkép-`.cxf` a windowsos Picasából (a meglévő AI6 álló). Ha ott is `313`
+áll, a szám fix; ha más, a lapmérettel skálázódik, és a két érték hányadosa
+megadja a képletet. **Jegy: #1412** (`blocked` + `felhasználóra-vár`).
 
 ### 1.10 A kollázs-panel TELJES felülete — 156 elem (2026-08-16)
 
