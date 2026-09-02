@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.226] – 2026-09-02
+
+### Javítva
+- **A beolvasás már nem hallgat el hibákat (#1998).** Ha egy mappát vagy
+  egy képet nem sikerült beolvasni (jogosultság, törött hivatkozás,
+  hálózati megszakadás), eddig annyi látszott, hogy „nincs ott" — semmi
+  nem mondta meg, miért. Mostantól minden ilyen elem naplóba kerül, a
+  beolvasás végén pedig egy összesítő sor mondja meg, hány elem maradt ki
+  és melyek voltak az elsők.
+
 ## [0.8.225] – 2026-09-02
 
 ### Javítva

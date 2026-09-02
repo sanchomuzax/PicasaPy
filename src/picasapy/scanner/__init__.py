@@ -32,6 +32,7 @@ from .walker import (
     MediaFile,
     SkipPredicate,
     scan_folder,
+    HibasBejegyzes,
     scan_tree,
 )
 from .watched import (
@@ -70,6 +71,7 @@ __all__ = [
     "read_watched_folders",
     "SkipPredicate",
     "scan_folder",
+    "HibasBejegyzes",
     "scan_tree",
     "write_exclude_folders",
     "write_scan_list",

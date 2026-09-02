@@ -24,6 +24,7 @@ from picasapy.paths import normalize_path
 from picasapy.scanner import (
     PICASA_INI_NAME,
     FolderScan,
+    HibasBejegyzes,
     MediaFile,
     scan_folder,
     scan_tree,
@@ -139,7 +140,29 @@ def sync_tree(
     # kizárt nevű mappa alatt van. Ez különbözteti meg a védő-heurisztikát
     # a ténylegesen elérhetetlen gyökértől (ld. lent).
     excluded_names: list[Path] = []
-    scans = scan_tree(root_path, exclude=exclude, skip=skip, excluded_names=excluded_names)
+    # #1998: a bejáró eddig NÉMÁN nyelte el az olvasási hibákat — a
+    # felhasználó annyit látott, hogy egy mappa vagy egy kép „nincs ott".
+    # Elemenként a `walker` naplóz; itt egy összesítő sor is kell, mert a
+    # hosszú scan naplójában az egyedi sorok elvesznek.
+    hibas_bejegyzesek: list[HibasBejegyzes] = []
+    scans = scan_tree(
+        root_path,
+        exclude=exclude,
+        skip=skip,
+        excluded_names=excluded_names,
+        hibas_bejegyzesek=hibas_bejegyzesek,
+    )
+    if hibas_bejegyzesek:
+        mappak = sum(1 for elem in hibas_bejegyzesek if elem.mappa)
+        logger.warning(
+            "A beolvasás %d elemet nem tudott feldolgozni (%d mappa, %d fájl) "
+            "a(z) %s alatt — az elsők: %s",
+            len(hibas_bejegyzesek),
+            mappak,
+            len(hibas_bejegyzesek) - mappak,
+            root_path,
+            ", ".join(str(elem.path) for elem in hibas_bejegyzesek[:5]),
+        )
     done = 0
     new_total = 0
     cancelled = False
