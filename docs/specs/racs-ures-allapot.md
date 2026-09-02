@@ -135,20 +135,32 @@ Ezt **nem építjük meg** — az 1. szakasz szerint halott.)*
 
 ## 4. Eredeti / nálunk / teendő
 
-A „nálunk" oszlop **mérés** (`683883b1`).
+A „nálunk" oszlop **mérés**. ⚠️ A tábla a **#1945 megvalósítása után**
+frissült — a korábbi állapot (`683883b1`, „nincs üzenet") már nem érvényes.
 
 | | eredeti (mért) | nálunk (mért) | teendő |
 |---|---|---|---|
-| üres rács üzenete | **van**, a rács közepén, 18 pt | **nincs** — a rács üres marad, magyarázat nélkül | felvenni |
-| hány szöveg | **hét** kontextus-változat | — | legalább a „nincs találat" ág |
+| üres rács üzenete | **van**, a rács közepén, 18 pt | **van** — `gridEmptyText` a `LightboxFeed.qml`-ben, `anchors.centerIn`, `font.pointSize: 18` | ✅ kész (#1945) |
+| hány szöveg | **hét** kontextus-változat | **egy**: a 0. index („No photos found" / „A program nem talált fotókat") | a maradék hat a webalbum-/CD-/mentés-ághoz tartozik, ami nálunk nincs |
 | a márkaváltás | az 5. index **`LastUserESState`** szerint „Picasa Web Albums" vagy „Google Photos" | — | hatókörön kívül (webalbum-ág) |
 | „Keresés mindenhol" gomb | **halott** az eredetiben | nincs | **NE épüljön meg** |
 
-**Mérés módja nálunk:** két lekérdezés-alak — `grep -rn 'No photos found\|Nincs
-találat\|emptyText'` a QML/Python fán (0 találat a rácsra), és
+**Egy ponton TÖBBET adunk az eredetinél, szándékosan.** Az üzenet nálunk
+akkor sem jelenik meg, ha a rács azért üres, mert **még fut a betöltés**
+(`controller.isWorking`). Az eredetiben erre nincs mért kapu; nálunk a
+mondat enélkül a betöltés alatt azt állítaná, hogy nincs kép — az a
+**hazudó állapot** hibaosztálya (#1798).
+
+**Mérés módja nálunk — a #1945 ELŐTT** (a lelet levezetése, történeti):
+két lekérdezés-alak — `grep -rn 'No photos found\|Nincs találat\|emptyText'`
+a QML/Python fán (**0 találat a rácsra**), és
 `grep -rniE 'no (photos|results)|nincs (találat|kép)'` (3 találat, mind
 **párbeszéd-hibaüzenet**: `create_controller.py:279`, `:344`,
 `print_controller.py:340`) — **egyik sem a rács üres állapota**.
+
+**A #1945 UTÁN** ugyanez a keresés a `LightboxFeed.qml` `gridEmptyText`
+elemét is megtalálja; az őr-teszt:
+`tests/app/qml_functional/test_ures_racs_uzenet_1945.py`.
 
 ## 5. Nyitott kérdések mérlege
 
