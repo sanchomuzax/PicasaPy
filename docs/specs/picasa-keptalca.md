@@ -635,3 +635,92 @@ kutatható.
 a négyzetes osztásközre (négy felvétel, két független mérési móddal).*
 
 Jegy: **#1933** (lezárva), **#1916** (a képlet).
+
+---
+
+## 19. A tálcának SAJÁT KIJELÖLÉSE van — és a keret színe MEGVAN (2026-09-02)
+
+Ez a lap eddig a tálca **tartalmáról** és a **műveleteiről** szólt. Hiányzott
+belőle a legalapvetőbb interakció: **a tálcán belül ki lehet jelölni egy-egy
+képet**, és a parancsok arra vonatkoznak.
+
+### 19.1 A bizonyíték
+
+**A tulajdonos képernyőképe** (2026-09-02, futó Picasa 3): a tálcán három kép,
+a **középső kijelölve**, kék kerettel. A skill szabálya szerint ez a
+legerősebb bizonyíték.
+
+**A bináris oldal ezt megmagyarázza:** a tálca **ugyanolyan
+`CSelectionNode`**, mint a fotórács (13. szakasz: `[ebx+0xea4]`, és a rá futó
+két számláló `0x00716cb0` / `0x00716d10`). A csomópont szerződése
+([`picasa-eger-es-kijeloles.md`](picasa-eger-es-kijeloles.md) 4.):
+
+| mező | mit tárol |
+|---|---|
+| `+0x32c` | az elemtömb |
+| `+0x330 >> 1` | a darabszám |
+| `[elem+0x59]` | **kijelölt** jelző |
+| `[elem+0x5a]` | horgony / elnyomó jelző |
+| `[elem+0x5b]` | fókusz jelző |
+
+A tálca számlálója (`0x00716cb0`) épp az **elemenkénti** jelzőt olvassa:
+`cmp byte ptr [ecx+0x5a], 0` → `jne <kihagy>`. ⇒ **elemenkénti állapot van a
+tálcán belül** — nem a rács kijelölésének tükre.
+
+Ezért van értelme a helyi menü **„Kijelölés eltávolítása"** tételének
+(`Tray::ID_REMOVE_SELECTION`, `0xcae5e4`, felirat `0xcae600` — 3. és 12.
+szakasz): az a **tálcán** kijelöltet veszi ki.
+
+### 19.2 A kijelölés KERETE — `constants.ui`, nem a bináris
+
+⛔ **Ez a szakasz egy ugyanaznapi SAJÁT TÉVEDÉST is helyesbít.** A #2039
+nyitásakor a kör azt írta, hogy a keret színe „NINCS MÉRVE" és képernyőkép
+kell hozzá. **Téves:** az érték egy sima szövegfájlban áll, a telepítőben.
+
+```
+runtime/constants.ui
+;-----------------------------
+; Selected thumbnail outline
+; color1 = outside; color2 = inside
+;-----------------------------
+thumbsel_color1=#009EFF
+thumbsel_color2=#FFFFFF
+```
+
+A **fájl saját megjegyzése** mondja meg a sorrendet: **kívül `#009EFF`**
+(élénk azúr), **belül `#FFFFFF`** (fehér). A binárisban az egyetlen olvasójuk
+a `0x007224f0` (2997 b), amit a `0x00718d80` hív.
+
+**Nálunk ez a rácsban MÁR MEG VAN ÉPÍTVE** (#384, 2026-08-06):
+`app/qml/PicasaPy/Theme.qml:64` (`thumbSelection`) és a
+`ThumbDelegate.qml` `selectionOuter` / `selectionInner` rétege
+(`:5`, `:118–125`). A `design-guide.md` 63. sora dokumentálja.
+
+⇒ **A tálca ugyanezt vegye át**, ne kapjon saját stílust.
+
+*Bizonyítottsági fok: **megerősített** a színekre (szó szerinti
+konfigurációs érték, saját magyarázó megjegyzéssel) és **erős** arra, hogy a
+tálcán belüli kijelölés létezik (képernyőkép + a `CSelectionNode`
+elemenkénti jelzői).*
+
+### 19.3 MÓDSZERTANI TANULSÁG — a `runtime/*.ui` is a bizonyítéklánc része
+
+A kör azért minősítette tévesen „blokkoltnak" a kérdést, mert **kizárólag a
+bináris felől** kereste (respack-réteg, sztringtár, sztring-xref), és ott nem
+találta. A válasz egy **sima szöveges konfigurációs fájlban** volt, a
+telepítő `runtime/` mappájában — és a saját `design-guide.md`-nk **egy hónapja
+tartalmazta**.
+
+⇒ **A `runtime/constants.ui` (és társai) a lánc ELEJÉRE tartozik**, a
+`docs/specs` és a `referencia/` mellé. Ha egy szín, méret, betűméret vagy
+térköz kell, **először ott nézd meg** — a Picasa a felület számadatainak egy
+részét szándékosan kiszervezte szövegfájlba.
+
+A `constants.ui` (1 723 bájt) témakörei: albumlista (sormagasság, behúzás,
+kijelölés- és lebegtetés-színek **platformonként**), albumcímke (színek,
+eltolások, betűk), album-elrendezés (`alayout_gutter=24`,
+`alayout_thumbGutterX=12`, `alayout_thumbGutterY=22`, `Georgia` 20/14,
+`#634B45`), a kijelölt indexkép kerete, és a webre töltés színe
+(`publishtoweb_color=#0000FF`).
+
+Jegy: **#2039**.
