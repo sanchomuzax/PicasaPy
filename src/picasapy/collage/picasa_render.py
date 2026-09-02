@@ -167,6 +167,12 @@ class PicasaCollageSettings:
     #: esik vissza (spec 1.9.14: „a `CLocationTree` nem helyettesíti, hanem
     #: kiegészíti az alap algoritmust").
     frame_center: int | None = None
+    #: #978: a felület „képfeliratok" kapcsolója (`collage/showcaptions`).
+    #: Az eredetiben a Polaroid-felirat KÉT feltételhez kötött — a kapcsoló
+    #: BE **és** a keret `polaroid` (`0x00839830`). Nálunk a rajzolási úton
+    #: eddig csak a keret szerepelt, tehát a kapcsoló NÉMA volt: kikapcsolva
+    #: is ott maradt a felirat a mentett képen.
+    captions: bool = True
     #: Rajzoljunk-e árnyékot. `None` = a téma alapértelmezése (a maszk
     #: 14. bitje) — ez az eredeti viselkedése, ld. `effective_shadow`.
     shadow: bool | None = None
@@ -340,7 +346,12 @@ def render_nodes(
         # dekódolt képeket. A hiányzó helykitöltő nem lehet „kép” a számban.
         _draw_contact_header(canvas, settings, len(used))
     draw_nodes(
-        canvas, nodes, images, settings.width, shadow_for_settings(settings, len(nodes))
+        canvas,
+        nodes,
+        images,
+        settings.width,
+        shadow_for_settings(settings, len(nodes)),
+        captions=settings.captions,
     )
     return CollageReport(
         image=canvas,
@@ -901,12 +912,18 @@ def make_picasa_collage(
             decoded,
             alsobeallitas.width,
             shadow_for_settings(settings, len(decoded)),
+            captions=settings.captions,
         )
         rajzolt = tuple(nodes)
     else:
         nodes = layout_nodes(decoded, used, settings)
         draw_nodes(
-            canvas, nodes, decoded, settings.width, shadow_for_settings(settings, len(decoded))
+            canvas,
+            nodes,
+            decoded,
+            settings.width,
+            shadow_for_settings(settings, len(decoded)),
+            captions=settings.captions,
         )
         rajzolt = tuple(nodes)
 

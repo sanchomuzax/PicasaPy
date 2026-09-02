@@ -450,6 +450,8 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             # a #1274 már megőriz a `.cxf` körbejárásában.
             album_title=self._collage_panel_title,
             album_date=self._collage_panel_album_date,
+            # #978: a „képfeliratok" kapcsoló innen jut el a rajzolóig
+            captions=self._collage_panel_captions,
         )
 
     def _index_saved_collage(self, path: Path) -> None:
