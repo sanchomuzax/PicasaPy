@@ -590,6 +590,35 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    végigolvastam. **Megszerzés:** a `0x0066f470` (923 b) célzott
    dekompilációja. Lap: `ajandek-cd-kimenet.md` 7.; jegy **#32**.
 
+### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02 — SAJÁT HELYESBÍTÉS a bélyegkép-gyorstár kulcsvektorán:** a lap
+korábbi következtetése („a kulcs tárankénti, nem globális fotó-azonosító")
+**érvénytelen** — két **eltérő hosszú** vektort vetett össze rés szerint
+(`thumbs` 140 755 vs. `previews` 273 921). Azonos résterű tárak közt mérve a
+kulcsvektor **bitre azonos**: `thumbs` ≡ `thumbs2` (140 755/140 755 és
+3 338/3 338), `previews` ≡ `bigthumbs` (273 921/273 921) — noha a tárolt blob
+más (144 px vs. 72 px JPEG). ⇒ **a kulcs nem lehet a blob ellenőrzőösszege**,
+hanem a forrásfotóra vonatkozó, sorindexhez kötött bélyeg.
+Melléklelet: az „elavult sorok maradnak a `previews`/`bigthumbs` vektorban"
+eddigi *következtetés* **MÉRÉSSÉ** vált (az `arcok` készletben 216, illetve 217
+élő bejegyzés nem valódi JPEG-re mutat, ebből 185+185 a katalóguson túli
+sloton; a tulajdonos nagy mentésében **0 anomália** mind a négy tárban) ⇒ a
+beolvasónak a `FFD8`/`FFD9` tartalom-ellenőrzés **kötelező**. Plusz a tároló
+bináris oldala: `CBlockFile` (`.\thumblab\CBlockFile.cpp`), a
+`Preferences ▸ Write blockfile CSV` kapuval kapuzott `Size,Offset,Checksum`
+hibakereső dump (`0x006b5e00`) és a `Restore` helyreállító ág.
+Jegy-komment: **#1446**.
+
+1. **Hogyan képződik az `*_index.db` kulcsvektora?** Réshez (sorindexhez)
+   kötött bélyeg, amivel a Picasa eldönti, hogy a gyorstárazott blob még a mai
+   forráshoz tartozik-e. **Hét jelölt kizárva** (`imagedata_originfast`,
+   `originslow`, `onlinechecksum`, `long`, `rotate`, `filetype`, `tagdate` —
+   alsó és felső 32 biten is, 0/3 204 egyezés). **Megszerzés:** a `CBlockFile`
+   írási útjának (`0x006b61e0` környéke) célzott dekompilációja, vagy a kulcs
+   változásának megfigyelése egy fájl módosítása után élő Picasában.
+   Lap: `pmp-database.md`; jegy **#1446**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -600,7 +629,7 @@ minden további lapja.
 | lap | miről szól |
 |---|---|
 | [picasa-ini-format.md](picasa-ini-format.md) | A `.picasa.ini` — az igazságforrás, round-trip szabályokkal |
-| [pmp-database.md](pmp-database.md) | A központi adatbázis (`db3` / PMP) |
+| [pmp-database.md](pmp-database.md) | A központi adatbázis (`db3` / PMP) — **és a bélyegkép-gyorstár blokkfájl-formátuma**: a négy szint mért mérete (72/144/288/640 px), az `*_index.db` három vektora (`20 + 12n`, 11 fájlon mérve), a slot ↔ `thumbindex.db` sorindex kötés, a kulcsvektor **azonos résterű tárak közt bitre azonos** (⇒ nem blob-ellenőrzőösszeg), az elavult sorok mért veszélye és a `CBlockFile` bináris oldala |
 | [picasa-arcfelismeres.md](picasa-arcfelismeres.md) | **Az arcfelismerés TELJES működése** — a három réteg és kapcsolóik, a két küszöb-létra, a KÉT ini-írási útvonal (`facedata`!), a `db3` arc-oszlopai élő adaton mérve, a három romboló művelet, a verzió-migráció |
 | [picasa-imagedata-rekord.md](picasa-imagedata-rekord.md) | Az `imagedata` rekord — belső kép-nyilvántartás |
 | [picasa-respack-format.md](picasa-respack-format.md) | `respack.yt` — a bináris erőforráscsomag (megfejtve) |
