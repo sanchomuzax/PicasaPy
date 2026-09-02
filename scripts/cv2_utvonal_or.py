@@ -59,7 +59,26 @@ def _talalatok(fa: ast.AST) -> list[tuple[int, str]]:
     return ki
 
 
+def _utf8_kimenet() -> None:
+    """#2077: a Windows-konzol alapértelmezett kódolása `cp1252`.
+
+    A `✅`/`⚠️`/`⛔` jelek abban nem ábrázolhatók, és a `print` ilyenkor
+    `UnicodeEncodeError`-t dob — az őr NEM a leletre, hanem a SAJÁT
+    kiírására bukik el. Mérve: `ci.yml` 33693910159, windows 1/4, a
+    `cv2_utvonal_or.py` `✅`-jén.
+
+    A `reconfigure` a Python 3.7 óta létezik; ahol mégsem, ott a hiba
+    elnyelése a helyes: a kiírás sosem lehet fontosabb az ellenőrzésnél.
+    """
+    for folyam in (sys.stdout, sys.stderr):
+        try:
+            folyam.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main() -> int:
+    _utf8_kimenet()
     leletek: list[str] = []
     for utvonal in sorted(FORRAS.rglob("*.py")):
         rel = utvonal.relative_to(REPO / "src").as_posix()

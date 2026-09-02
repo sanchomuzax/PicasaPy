@@ -57,6 +57,7 @@ A `hasattr` **rövidzár**: Windowson a második tag már le sem fut.
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
 GYOKER = Path(__file__).resolve().parents[1]
@@ -146,7 +147,23 @@ def _hivasok(csomopont: ast.AST) -> list[tuple[int, str]]:
     return ki
 
 
+def _utf8_kimenet() -> None:
+    """#2077: a Windows-konzol alapértelmezett kódolása `cp1252`.
+
+    A `✅` és társai abban nem ábrázolhatók, és a `print` ilyenkor
+    `UnicodeEncodeError`-t dob — az őr NEM a leletre, hanem a SAJÁT
+    kiírására bukik el. Mérve: `ci.yml` 33693910159, windows 1/4, a
+    `cv2_utvonal_or.py` `✅`-jén.
+    """
+    for folyam in (sys.stdout, sys.stderr):
+        try:
+            folyam.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main() -> int:
+    _utf8_kimenet()
     hibak: list[str] = []
     fajlok = sorted(TESZTEK.rglob("*.py"))
     for fajl in fajlok:
