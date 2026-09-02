@@ -28,6 +28,7 @@ from picasapy.index import (
     all_photos,
     geotagged_photos,
     open_index,
+    photos_with_faces,
     search_photos,
     is_folder_hidden,
     set_folder_hidden,
@@ -934,6 +935,30 @@ class AppController(
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = video_photos(conn)
+        self._show_filtered(records, time.perf_counter() - started)
+
+    # -- arc-szűrő (#1830) ---------------------------------------------------
+
+    @Slot()
+    def showFacesOnly(self) -> None:
+        """„Arcos képek" — az eredeti `facesearch` szűrője.
+
+        A film- és a csillag-szűrő mintáját követi: szűrt NÉZET, nem külön
+        nézetmód, a mappa-kontextus megmarad a `clearFilter`-es
+        visszaváltáshoz.
+
+        A MEGLÉVŐ `.picasa.ini` `faces=` adatára épül (`photos_with_faces`),
+        tehát nem igényel arcfelismerést — a megnevezetlen arc is arc.
+
+        ⚠️ A geo-szűrővel ellentétben ez NEM kap engedélyezési kaput. A geo
+        azért kaphat, mert az adata az indexben van, tehát a darabszám
+        olcsó; az arc-adat ini-söprést igényel, amit nem futtathatunk
+        minden kötés-kiértékelésnél. Ha nincs arcos kép, a szűrő üres
+        rácsot ad — az pedig a #1945 óta kimondja magáról, hogy üres."""
+        self._view_mode = ("faces", "")
+        started = time.perf_counter()
+        with open_index(self._db_path) as conn:
+            records = photos_with_faces(conn)
         self._show_filtered(records, time.perf_counter() - started)
 
     # -- virtuális albumok (#9) -----------------------------------------------
