@@ -73,7 +73,10 @@ class TestAHibatlanFa:
         ]
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root mindent olvashat")
+@pytest.mark.skipif(
+    not hasattr(os, "getuid") or os.getuid() == 0,
+    reason="Windowson nincs os.getuid, root alatt pedig minden olvasható",
+)
 class TestAzOlvashatatlanMappa:
     def test_bekerul_a_listaba_MAPPAKENT(self, fa):
         vissza = _olvashatatlanna(fa / "rossz")
@@ -149,7 +152,10 @@ class TestAzElemLeirasa:
         assert fajl.mappa is False and mappa.mappa is True
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root mindent olvashat")
+@pytest.mark.skipif(
+    not hasattr(os, "getuid") or os.getuid() == 0,
+    reason="Windowson nincs os.getuid, root alatt pedig minden olvasható",
+)
 class TestAzOSSZESITO_JELZES:
     """A hosszú scan naplójában az egyedi sorok elvesznek — a szinkron
     ezért egy összesítő sort is ad (#1998, „a felhasználó lát valamit")."""

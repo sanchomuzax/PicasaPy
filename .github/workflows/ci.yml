@@ -476,6 +476,17 @@ jobs:
         # ugyanis név szerint említik a tiltott hívásokat.
         run: python scripts/cv2_utvonal_or.py
 
+      - name: POSIX-only os-hívás a tesztek modulszintjén (#2077)
+        # A `skipif` kifejezése az IMPORTÁLÁSKOR fut le. Ha abban egy
+        # Windowson nem létező `os`-függvény áll, nem egy teszt bukik,
+        # hanem a teljes GYŰJTÉS — és vele a részfutás egésze
+        # (`exit 2`). Mérve: ci.yml 33690975023, windows 1/4.
+        #
+        # Az őr a rövidzárral védett alakot (`hasattr(os, …)` vagy
+        # `sys.platform`) ENGEDI: az a projekt bevált mintája, és egy
+        # kapu, ami a helyes munkát bünteti, rosszabb a semminél.
+        run: python scripts/posix_or.py
+
       - name: Felületről elérhetetlen vezérlő-képességek őre (#1476)
         # Ugyanide illik, mint a néma jelzések őre: tisztán statikus, Qt
         # nélkül fut, másodpercek alatt kész.
