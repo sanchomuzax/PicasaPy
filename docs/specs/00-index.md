@@ -451,6 +451,22 @@ Jegy: **#1945**.
    közzététel-panel célzott dekompilációja. Lap: `racs-ures-allapot.md` 5.;
    jegy **#1945**.
 
+### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02:** a mentés **MIT ÍR** oldala feltárva (az 50.2 a fogalmat és
+a felületet adta, ezt nem): `backups.xml` négy mezővel, **három**
+tartalom-mód, `files.txt` a célmappában, honosított
+`\Picasa biztonsági másolat\`, lemezhely-ellenőrzés. Jegy: **#440**.
+
+1. **Melyik könyvtárban van a `Picasa2Backups`?** Az útvonalat építő
+   `0x009bfde0` (135 b) egyetlen sztringet sem hivatkozik, és a saját
+   `research/testdata/`-nkban **nincs** `backups.xml`. **Megszerzés:**
+   a `0x009bfde0` dekompilációja vagy egy valódi, mentést futtatott
+   Picasa-adatmappa.
+2. **Mi a `files.txt` sorformátuma?** A név és a hely megvan; a soronkénti
+   írás a másoló ciklus mélyén. Enélkül az **inkrementalitás** mechanizmusa
+   sincs igazolva. **Megszerzés:** a `0x00677a70` (3005 b) dekompilációja.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -493,6 +509,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
 | [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
 | [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
+| [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a `Picasa2Backups` mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
