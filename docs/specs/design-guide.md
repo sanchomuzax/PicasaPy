@@ -57,7 +57,7 @@ eltérés van, ez a mérvadó. Az eddigi mintavételünket **megerősítik**
 | `alabel_subhead` | 20 | alcím-sáv magassága |
 | `alayout_gutter` | 24 | lightbox külső margó |
 | `alayout_thumbGutterX` / `Y` | 12 / 22 | **indexkép-rács térközei** — a függőleges nagyobb (felirat helye) |
-| `alayout_titleFont` / `Size` / `Color` | Georgia / 20 / `#634B45` | mappa-cím ✅ |
+| `alayout_titleFont` / `Size` / `Color` | Georgia / 20 / `#634B45` | mappa-cím — ⚠️ a **betű és a méret** átvéve, a **SZÍN NEM** (ld. lent, 2026-09-02) |
 | `alayout_titleOffsetX` | 28 | a cím bal behúzása |
 | `alayout_bodyFont` / `Size` | Georgia / 14 | **a dátumsor is Georgia** ✅ |
 | `thumbsel_color1` / `color2` | `#009EFF` / `#FFFFFF` | **a kijelölt indexkép kerete KÉTSZÍNŰ**: kívül azúr, belül fehér — a mostani egyszínű keretünk ezzel pontosítható |
@@ -294,3 +294,73 @@ szín** — ami nem token, az sötét módban fehér foltként marad ott.
 A **márkaszínek** (a logó pirosa/sárgája/kékje…) és a fotó fölé kerülő
 rétegek (néző-feliratok, arckeretek, sötét fátyol) mindkét témában
 azonosak — azok nem a felület, hanem a kép kontextusa.
+
+---
+
+## A `constants.ui` ÁTVILÁGÍTÁSA — mi van belőle megvalósítva (2026-09-02)
+
+A fenti táblázat a fájl **tartalmát** írja le. Ez a szakasz azt méri meg, hogy
+**mennyi van belőle a mi kódunkban** — mert a kettőt eddig egy `✅` mosta össze.
+
+### A mérés módja — és a KORLÁTJA
+
+A `runtime/constants.ui` **46 élő kulcsot** tartalmaz (2 továbbit
+kikommentezve). Ezek közül **csak a 23 SZÍN-kulcs mérhető** azzal, hogy
+megkeressük az értékét a `src/` alatt: egy `#634B45` megkülönböztető, egy
+puszta `22` vagy `14` viszont bármire illeszkedik.
+
+⛔ **A számos kulcsokra (`alist_height=22`, `alabel_iconoffsety=8`, …) ez a
+mérés NEM alkalmazható**, és nem is állítunk róluk semmit. Ugyanaz a
+hibaosztály, mint a
+[`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 19.
+szakaszában elvetett mérőszámnál: a nem megkülönböztető minta hamis
+pozitívot ad.
+
+### A 23 szín — mérve a `src/` teljes QML- és Python-forrásán
+
+| állapot | darab | melyek |
+|---|---:|---|
+| **megvan a kódunkban** | **11** | `alist_bgcolor` · `alist_hicolor_win` · `alist_selcolor_win` · `alist_scatcolor` · `alabel_fldrcol` · `alabel_albumcol` · `alabel_lighttext` · `alabel_darktext` · `thumbsel_color1` · `thumbsel_color2` · `publishtoweb_color` |
+| **hatókörön kívül (Mac-változat)** | 3 | `alist_hicolor_mac` · `alist_hicolor2_mac` · `alist_selcolor_mac` — Linux-first projekt, a `_win` párjuk a mérvadó |
+| **NINCS a kódunkban** | **9** | `alayout_titleColor` · `alist_hicolor2_win` · `alist_dragcolor` · `alist_catcolor` · `alist_dotcolor` · `alist_stickycolor` · `alabel_hicol` · `alabel_fldrhicol` · `alabel_albumhicol` |
+
+### ⚠️ A legfontosabb hiányzó: `alayout_titleColor`
+
+| | érték | hol |
+|---|---|---|
+| eredeti | **`#634B45`** (meleg sötétbarna) | `constants.ui`, `alayout_titleColor` |
+| nálunk | **`Theme.ink`** = `#1c1b19` világos témán (majdnem fekete) | `Theme.qml:60` (`folderTitle: ink`), használat `LightboxHeader.qml:96` |
+
+Ugyanannak a konfigurációs blokknak a **másik két értékét átvettük**: a
+`LightboxHeader.qml` `font.family: "Georgia"` és `font.pointSize: 20`
+(`alayout_titleFont` / `alayout_titleSize`), és a dátumsor is Georgia 14
+(`alayout_bodyFont` / `alayout_bodySize`). **Csak a szín maradt ki** — ezért
+volt félrevezető a fenti sor `✅` jelölése.
+
+*Bizonyítottsági fok: **megerősített**. A `#634B45` szó szerinti
+konfigurációs érték; a mi oldalunk `Theme.qml:60` + `LightboxHeader.qml:96`.*
+
+### A maradék nyolc szín — és amit RÓLUK NEM tudunk
+
+`alist_hicolor2_win` `#E5E2DA` · `alist_dragcolor` `#82A6BD` ·
+`alist_catcolor` `#EDEAE4` · `alist_dotcolor` `#BEBEBE` ·
+`alist_stickycolor` `#EAE7DC` · `alabel_hicol` / `alabel_fldrhicol` /
+`alabel_albumhicol` `#F2F2F2`.
+
+Ezekre **NINCS MÉRVE**, hogy a mi felületünkön melyik elem felel meg nekik.
+A mappalista két fő szerepét ellenőriztem, és **azok helyesek**:
+`Theme.selectionBlue` = `#83a7bd` = `alist_hicolor_win` (hover) és
+`Theme.panelSelectionActive` = `#25648b` = `alist_selcolor_win` (kijelölés),
+`FolderTreeItem.qml:49`. A többi nyolc szerepét (húzás, kategória-háttér,
+pont, „ragadós" sor, második hover-tónus) **egyenként meg kell keresni a mi
+felületünkön, mielőtt bármelyiket átvennénk** — vakon nem szabad beírni őket.
+
+Jegy: **#2043**.
+
+### Amit KIZÁRTAM
+
+- **Nem állítjuk, hogy a számos kulcsok (méretek, eltolások, betűméretek)
+  hiányoznak.** Azokra a használt mérés vak; külön, szerepenkénti
+  ellenőrzés kell hozzájuk.
+- **A `_mac` változatok nem hiányok.** A projekt Linux-first; a `_win`
+  párjuk a mérvadó, és azok megvannak.
