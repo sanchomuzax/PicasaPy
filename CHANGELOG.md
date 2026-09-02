@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.235] – 2026-09-03
+
+### Javítva
+- **A kollázs rácsvastagság-csúszkája nem akasztja meg többé a felületet (#996).**
+  Mozaik és Képkockamozaik témánál a csúszka minden apró mozdulata teljes
+  újrarendezést indított, ami mérve **fél másodpercig** tart — a húzás
+  ezért szaggatott, „beragadós" volt. Mostantól az átrendezés megvárja,
+  hogy megállj a csúszkával, elengedéskor pedig azonnal lefut.
+
 ## [0.8.234] – 2026-09-02
 
 ### Javítva
