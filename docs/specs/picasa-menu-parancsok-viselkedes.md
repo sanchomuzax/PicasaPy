@@ -2934,7 +2934,7 @@ rács-nagyító**.
 | `webcambutton` | webkamerás felvétel | **#853** (a négy hiányzó eszköztár-vezérlő egyike) |
 | `visitweb` („Internetes nézet") · `backup` · `cdmode` („Ajándék CD") | eszköztár-gombok | `visitweb` **hatókörön kívül**; `backup` → #440; `cdmode` → #32 |
 | `single_action_*` hármas | a „Get more" mód üzenetsávja: *„Jelölje ki… majd a »Vissza« gombra kattintva térjen vissza a projekthez"* | a kollázs/film **klip-gyűjtő módja** — a projektpanelekhez tartozik |
-| `lightbox_esolo_button` / `_text` | *„Nincs találat ebben az albumban"* + **„Keresés mindenhol"** gomb | keresési üres-állapot — **kis jegy értéke lehet** |
+| `lightbox_esolo_button` / `_text` | *„Nincs találat ebben az albumban"* + **„Keresés mindenhol"** gomb | ⛔ **2026-09-02: HALOTT az eredetiben** — nyers bájtkeresésre 0 találat a teljes `Picasa3.exe`-ben, és `showtarget`/`hidetarget` sincs rájuk. **NE épüljön meg.** A helyette élő üres-állapot: [`racs-ures-allapot.md`](racs-ures-allapot.md), jegy **#1945** |
 | `flatview` · `folderview` · `folderviewpopup` | a bal hasáb nézetváltói | a 36./4c körökben feltárva; **#1407**, **#853** |
 
 ### Eredeti / nálunk / teendő
@@ -2945,7 +2945,7 @@ rács-nagyító**.
 | kis/nagy indexkép, forgatás, tálca, új album/mappa | eszköztáron | **megvan**, máshol | — (elhelyezés: #853) |
 | négy fiók-kapcsoló | eszköztáron | menüben megvan | #853 + #1773 |
 | webkamera | eszköztárgomb | nincs | #853 |
-| „Nincs találat… / Keresés mindenhol" | üres-állapot | nem mérve | megfontolandó |
+| „Nincs találat… / Keresés mindenhol" | **halott vezérlő** | nincs | **nem építjük** — helyette a `lightbox_bgtext` (#1945) |
 
 ### Nyitott kérdések mérlege (51.)
 

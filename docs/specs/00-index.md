@@ -436,6 +436,21 @@ vette ki a gombot). Jegy-komment: **#1911**, **#460**.
    rajzoló ág, `0x0077bb10` célzott dekompilációja (a `80.0` és a
    `2276,5556` konstansokkal). Lap: `racs-nagyito.md` 6.; jegy **#1911**.
 
+### [racs-ures-allapot.md](racs-ures-allapot.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+
+⭐ **2026-09-02:** a `thumbui` `lightbox_esolo_*` párja **HALOTT** az
+eredetiben (nyers bájtkeresés: 0 találat; pozitív kontroll a testvér
+`lightbox_bgtext`-en) ⇒ **nem építjük meg**; helyette a `lightbox_bgtext`
+**hét** kontextus-szövege él. Helyesbítés: a
+`picasa-menu-parancsok-viselkedes.md` 51.4 „kis jegy értéke lehet" sora.
+Jegy: **#1945**.
+
+1. **Melyik kontextus melyik szöveg-indexet adja?** A két közvetlen hívóból
+   egy immediate (`push 3` = „All photos have been uploaded"), a másik
+   **számított** (`0x0067b285`). **Megszerzés:** a `0x00679ca0` (6960 b)
+   közzététel-panel célzott dekompilációja. Lap: `racs-ures-allapot.md` 5.;
+   jegy **#1945**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
@@ -477,6 +492,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) | **A szerkesztő FELSŐ SÁVJA (`oneup_controls`)** — a hét vezérlő képpontos geometriája két, egymást igazoló forrásból; a „paletta-ikonos gomb" = `quickupload` (Web Albums Drop Box); a filmszalag **hét férőhelyes**, az aktuális kép **mindig középen**; a kijelölés-keret `#009EFF`+`#D4D4D4`; a hisztogram-doboz horgonya `root.alsó − 95` |
 | [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
 | [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
+| [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
