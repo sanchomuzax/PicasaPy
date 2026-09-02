@@ -41,16 +41,16 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
-| párosítva | 259 |
+| párosítva | 261 |
 | másutt megvan (nem ezen a felületen) | 37 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 171 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 87 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 168 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 88 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
-| **lefedettség az értékelhető elemeken** | **39.3%** |
+| **lefedettség az értékelhető elemeken** | **39.6%** |
 
-> ⚠️ **A 39.3% ALSÓ BECSLÉS, nem pontos érték.** 107 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **55.5%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 39.6% ALSÓ BECSLÉS, nem pontos érték.** 107 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **55.8%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -66,8 +66,8 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 6 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | 7 | `choose_mail` | 13 | Levelezőprogram-választó párbeszéd — nincs nálunk |
 | 8 | `acquirepanel` | 12 | Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel |
-| 9 | `faceheaderpanel` | 12 | Névvel ellátott arc-album fejléce |
-| 10 | `capturemoviepanelpopup` | 11 | Webkamerás videofelvétel — nincs nálunk |
+| 9 | `capturemoviepanelpopup` | 11 | Webkamerás videofelvétel — nincs nálunk |
+| 10 | `faceheaderpanel` | 11 | Névvel ellátott arc-album fejléce |
 
 ## Panelenkénti lefedettség
 
@@ -81,13 +81,13 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
-| `faceheaderpanel` | 39 | 13 | 0 | 1 | 11 | 1 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
-| `edittextpanel` | 45 | 19 | 9 | 0 | 8 | 0 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
+| `faceheaderpanel` | 39 | 13 | 1 | 1 | 11 | 0 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
+| `edittextpanel` | 45 | 19 | 9 | 0 | 5 | 3 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `printpanel` | 73 | 33 | 21 | 4 | 8 | 0 | 0 | 40 | 0 | `PrintDialog.qml` |
-| `headerpanel` | 30 | 11 | 3 | 0 | 7 | 1 | 0 | 19 | 0 | `LightboxHeader.qml` |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
+| `headerpanel` | 30 | 11 | 4 | 0 | 7 | 0 | 0 | 19 | 0 | `LightboxHeader.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `searchcontainer` | 25 | 11 | 5 | 0 | 1 | 2 | 3 | 14 | 0 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 3 | 0 | 3 | 18 | 0 | `VideoPlayerView.qml` |
@@ -379,23 +379,6 @@ Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali 
 - `upload_checkbox` — *bizonytalan*
 - `upload_label` „Upload” (magyarul: „Feltöltés”)
 
-### `faceheaderpanel` — 12 hiány · panel-megfeleltetés: `parositva`
-
-Névvel ellátott arc-album fejléce
-
-- `confirmsug` „Confirm all” (magyarul: „Az összes jóváhagyása”)
-- `create_collage` buboréksúgó: „Create Photo Collage” — 🔧 **lekutatva**, csak nem megépítve (kollazs-atvilagitas.md: 0x00cbf878)
-- `create_face_movie` buboréksúgó: „Create Face Movie”
-- `create_movie` buboréksúgó: „Create Movie Presentation”
-- `face_zoom` buboréksúgó: „View zoomed in to the face”
-- `moresug` „Find more suggestions” (magyarul: „További javaslatok keresése”)
-- `picture_zoom` buboréksúgó: „View zoomed out to the full picture”
-- `play` buboréksúgó: „Play Fullscreen Slideshow”
-- `pwa_button` buboréksúgó: „Open PWA web page”
-- `removesel` „Remove” (magyarul: „Eltávolítás”)
-- `set_thumbnail` buboréksúgó: „Set as People Album Thumbnail”
-- `sug_filter` buboréksúgó: „Show only suggestions (when toggled on)”
-
 ### `capturemoviepanelpopup` — 11 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
 Webkamerás videofelvétel — nincs nálunk
@@ -412,16 +395,32 @@ Webkamerás videofelvétel — nincs nálunk
 - `size_label` „Size” (magyarul: „Méret”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
 - `video_label` „Video” (magyarul: „Videoklip”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
 
+### `faceheaderpanel` — 11 hiány · panel-megfeleltetés: `parositva`
+
+Névvel ellátott arc-album fejléce
+
+- `confirmsug` „Confirm all” (magyarul: „Az összes jóváhagyása”)
+- `create_face_movie` buboréksúgó: „Create Face Movie”
+- `create_movie` buboréksúgó: „Create Movie Presentation”
+- `face_zoom` buboréksúgó: „View zoomed in to the face”
+- `moresug` „Find more suggestions” (magyarul: „További javaslatok keresése”)
+- `picture_zoom` buboréksúgó: „View zoomed out to the full picture”
+- `play` buboréksúgó: „Play Fullscreen Slideshow”
+- `pwa_button` buboréksúgó: „Open PWA web page”
+- `removesel` „Remove” (magyarul: „Eltávolítás”)
+- `set_thumbnail` buboréksúgó: „Set as People Album Thumbnail”
+- `sug_filter` buboréksúgó: „Show only suggestions (when toggled on)”
+
 ### `edittextpanel` — 10 hiány · panel-megfeleltetés: `parositva`
 
 Szöveg-eszköz panelje
 
 - `align_label` „Alignment:” (magyarul: „Igazítás:”)
-- `centeralign` buboréksúgó: „Center justify text”
+- `centeralign` buboréksúgó: „Center justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
 - `colorpicker_bevel` — *bizonytalan*
 - `edittext_label` „Edit Text” (magyarul: „Szöveg szerkesztése”)
-- `leftalign` buboréksúgó: „Left justify text”
-- `rightalign` buboréksúgó: „Right justify text”
+- `leftalign` buboréksúgó: „Left justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
+- `rightalign` buboréksúgó: „Right justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
 - `size_label` „Size:” (magyarul: „Méret:”)
 - `sizelist` — *bizonytalan*
 - `style_label` „Style:” (magyarul: „Stílus:”)
@@ -455,19 +454,6 @@ Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 
 - `reviewnowbutton2` „Review” (magyarul: „Ellenőrzés”)
 - `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”)
 
-### `headerpanel` — 8 hiány · panel-megfeleltetés: `parositva`
-
-Album- és mappafejléc a rács fölött
-
-- `create_collage` buboréksúgó: „Create Photo Collage” — 🔧 **lekutatva**, csak nem megépítve (kollazs-atvilagitas.md: 0x00cbf878)
-- `create_movie` buboréksúgó: „Create Movie Presentation”
-- `play` buboréksúgó: „Play Fullscreen Slideshow”
-- `sync_label` „Sync to Web” (magyarul: „Szinkronizálás az internettel”)
-- `sync_options` buboréksúgó: „Online options”
-- `view_online` „View on Web” (magyarul: „Megtekintés az interneten”)
-- `websync0` buboréksúgó: „Upload and sync future changes to the web”
-- `websync1` buboréksúgó: „Stop syncing changes to the web”
-
 ### `collagepanel` — 7 hiány · panel-megfeleltetés: `parositva`
 
 A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte.
@@ -479,6 +465,18 @@ A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A kor
 - `tabpanel2` — *bizonytalan*
 - `tabs` — *bizonytalan*
 - `view_and_edit` — *bizonytalan*
+
+### `headerpanel` — 7 hiány · panel-megfeleltetés: `parositva`
+
+Album- és mappafejléc a rács fölött
+
+- `create_movie` buboréksúgó: „Create Movie Presentation”
+- `play` buboréksúgó: „Play Fullscreen Slideshow”
+- `sync_label` „Sync to Web” (magyarul: „Szinkronizálás az internettel”)
+- `sync_options` buboréksúgó: „Online options”
+- `view_online` „View on Web” (magyarul: „Megtekintés az interneten”)
+- `websync0` buboréksúgó: „Upload and sync future changes to the web”
+- `websync1` buboréksúgó: „Stop syncing changes to the web”
 
 ### `titledialog` — 7 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -851,13 +849,13 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `usecaption_label` — „Caption” itt: PicasaPy/PicasaMenuBar.qml
 - `usefilename_label` — „File name” itt: PicasaPy/PicasaMenuBar.qml
 
-### `faceheaderpanel` — 1
-
-- `confirmsel` — „Confirm” itt: PicasaPy/CollageDialogs.qml, PicasaPy/DocumentTabStrip.qml
-
 ### `capturemoviepanelpopup` — 1
 
 - `stop` — „Stop” itt: Main.qml
+
+### `faceheaderpanel` — 1
+
+- `confirmsel` — „Confirm” itt: PicasaPy/CollageDialogs.qml, PicasaPy/DocumentTabStrip.qml
 
 ### `printpanel` — 4
 
