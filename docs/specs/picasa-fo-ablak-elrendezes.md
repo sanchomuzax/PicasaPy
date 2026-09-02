@@ -345,3 +345,162 @@ Az alapérték a `PWADefaultSize` = **1600** (az előző szakasz) — vagyis az
 
 *Bizonyítottsági fok: megerősített* (a függvény mind a 79 hivatkozott
 sztringje, és a feliratok a `*text.tre` szövegforrásból).
+
+---
+
+## A MEGŐRZÖTT elrendezés-állapot — mit ír ki a Picasa, hova, mikor (2026-09-03)
+
+> **Bizonyítottság: megerősített.** Minden állítás mellett cím vagy
+> `.tre` fájl + sor. Az egyik állítás **kimerítő negatív** — három
+> egymástól független lekérdezéssel.
+
+### 1. A főablak pozíciója és mérete
+
+| kulcs | szakasz | formátum | cím |
+|---|---|---|---|
+| `mainwinpos` | `Preferences` | **`rect(%ld %ld %ld %ld)`** | `0x00575f50` (visszaállítás), `0x005760e0` (mentés) |
+| `mainwinismax` | `Preferences` | maximalizált-jelző | ugyanott |
+
+A maximalizált állapot **külön kulcs**, nem a téglalapba kódolva — a
+normál geometria így megmarad a maximalizálás visszavonásához.
+
+### 2. ⛔ `HLISTDIV` és `VLISTDIV` — BEÍRVA, de SOHA NEM OLVASVA
+
+Az induló kód (`0x00565920`, 969 bájt) két `resvars`-változót vet be:
+
+```asm
+0x00565974  push 0xc8e67c   ; "HLISTDIV"
+0x00565979  push 0xc7fe64   ; "resvars"
+0x0056598c  call 0x407630   ; kiolvasás
+…                            ; üres/hiányzó?
+0x00565a02  push 0xc8e688   ; "0.216406"   <- ALAPÉRTÉK
+0x00565a20  call 0x407760   ; beírás
+0x00565a2a  push 0xc8e694   ; "VLISTDIV"
+0x00565ab3  push 0xc8e6a0   ; "0.1"        <- ALAPÉRTÉK
+```
+
+| változó | alapérték | hol |
+|---|---|---|
+| `HLISTDIV` | **`0.216406`** | `0xc8e67c` / `0xc8e688` |
+| `VLISTDIV` | **`0.1`** | `0xc8e694` / `0xc8e6a0` |
+
+A beírás **feltételes**: csak akkor, ha a kulcs hiányzik vagy üres
+(`0x005659ee` állítja a jelzőt, `0x00565a00` ágazik el rajta).
+
+**És ezzel vége — semmi nem olvassa őket.** Három, egymástól független
+lekérdezés:
+
+1. **`string_xrefs` index:** mindkét névre pontosan **egy** hivatkozó
+   függvény, a `0x00565920`.
+2. **Nyers bájtminta a teljes PE-n** a sztringek CÍMÉRE (`0xc8e67c`,
+   `0xc8e694`, és a két alapérték-sztringé is): szekciónként végigpásztázva
+   **1–1 hivatkozás**, mind a `0x00565920`-ban.
+3. **Mind a 141 `.tre` erőforrás** végiggrepelve: **0 találat** — egyetlen
+   felületleíró sem hivatkozik rájuk.
+
+Nincs dinamikusan összerakott név sem: a teljes fájlra futtatott
+`[ -~]{0,12}LISTDIV[ -~]{0,12}` reguláris keresés **pontosan a két
+literált** adja, `%sLISTDIV`-szerű formátumsztring nincs.
+
+⇒ **Elsőindulási maradék. NE valósítsuk meg.**
+
+> ⚠️ **Miért került ide külön szakasz:** a `0.216406` első ránézésre a bal
+> panel **arányos** szélességének látszik (a lap fenti táblája viszont fix
+> **240 képpontot** mond). A negatív eredmény ezt a csapdát zárja le: a
+> `HLISTDIV` nem a könyvtár osztóvonala. A könyvtár osztója a
+> `HLISTOFFSET2`, ahogy eddig is állt:
+>
+> ```
+> thumbui.tre:517   XConstraint 0, 0, HLISTOFFSET2=240, -4
+> thumbui.tre:518   Handler hsplitoffset HLISTOFFSET2
+> ```
+>
+> **A lap eddigi állítása („FIX 240 képpont, nem százalék") tehát
+> MEGERŐSÍTVE**, nem cáfolva.
+
+### 3. Az induláskori felület-állapot alkalmazója — `0x0040bf70`
+
+A 3486 bájtos függvény a `Preferences`-t és a `resvars`-t olvassa, és
+ebből állítja be **név szerint** a felületi elemek láthatóságát. Az általa
+érintett elemek és kulcsok (a `string_xrefs` teljes listája erre a
+függvényre):
+
+| kulcs / változó | érintett elem |
+|---|---|
+| `RIGHTDRAWEROFFSET` | `thumbui/right_drawer`, `thumbui/rightdrawerpanel` |
+| `LEFTDRAWEROFFSET`, `left_drawer_open` | `editpanel/toggle_left_drawer` |
+| `LastCaptionButton` | `editpanel/captionbutton` |
+| `EnableScreenCap` | — |
+| `hosting`, `UIFolder` | a webes szolgáltatások megléte |
+| — | `thumbui/webcambutton`, `thumbui/visitweb`, `thumbui/uploadmgr`, `thumbui/webmode` |
+| — | `searchoptions/webview`, `searchoptions/label_webview`, `searchoptions/dupesearch` |
+| — | `rightdrawerpanel/propertiespanel` · `/tagpanel` · `/peoplepanel` · `/geopanel` |
+| — | `printpanel/nextbutton`, `printpanel/prevbutton` |
+| — | `editpanel/picnik`, `editpanel/adorner_container`, `publish/picsizemenu`, `thumbui/addtobuttcon`, `thumbui/albums` |
+
+⇒ **A megszűnt webes szolgáltatásokhoz kötött gombok (`visitweb`,
+`uploadmgr`, `webmode`, `webcambutton`) nem külön ágon, hanem EBBEN az
+egy függvényben kapcsolódnak ki-be.**
+
+### 4. `hviewtoggle` — nem vezérlő, hanem a nézetváltó pár TARTÓJA
+
+A lefedettségi mérés `thumbui/hviewtoggle`-t „bizonytalan"-ként hozta. A
+forrás egyértelmű:
+
+```
+thumbui.tre:406   thumbui/folderview: thumbui/hviewtoggle
+thumbui.tre:407-408                   (#Property showtarget leftindent/rightindent — kikommentelve)
+thumbui.tre:409   Property prenotify 1
+thumbui.tre:412   thumbui/flatview:   thumbui/hviewtoggle
+thumbui.tre:415   thumbui/hviewtoggle: thumbui/buttonbarsets
+```
+
+⇒ **`hviewtoggle` a `buttonbarsets`-ben ülő csoport**, két gyerekkel:
+`folderview` és `flatview`. A mappanézet ↔ egyszerű nézet váltás tehát az
+eredetiben **eszköztár-gombpár**, nem csak menütétel. A két gomb mérete a
+#587 mérése szerint 2 × 30 × 22; a hiányuk a **#1421**-ben van
+nyilvántartva.
+
+### 5. Nálunk — MÉRVE (2026-09-03)
+
+| | eredeti | nálunk | állapot |
+|---|---|---|---|
+| főablak-geometria | `Preferences/mainwinpos` = `rect(l t r b)` + `mainwinismax` | `QSettings` `window/x·y·width·height·maximized`, virtuális asztalhoz igazítva (`app/window_geometry.py`, #192) | **megvan** |
+| bal panel szélessége | `HLISTOFFSET2 = 240`, húzható (`Handler hsplitoffset`) | alap **240**, húzható `SplitView`, `QSettings` `view/folderPaneWidth` (`app/controller.py:86`) | **megvan** |
+| a húzás korlátai | **NINCS fix korlát** (ld. 6.) | 160 … 600 (`_clamp_folder_pane_width`, `controller.py:91`) | a miénk **saját kiegészítés**, nem mért érték |
+| mappanézet ↔ egyszerű | eszköztár-gombpár (`hviewtoggle`) | csak a Nézet menüben (#1454) | **hiányzik** → #1421 |
+| `HLISTDIV` / `VLISTDIV` | beírva, sosem olvasva | nincs | **helyesen nincs** |
+
+### 6. A húzható osztó kezelője — és a 240 MÁSODIK, független előfordulása
+
+A `.tre` `Handler hsplitoffset` sora egy gyártó-osztályra mutat:
+
+| lépés | cím |
+|---|---|
+| a névadó csonk (`"hsplitoffset"`) | `0x0040aa80` → `0xc7fbd0` |
+| `HSplitOffsetCreator::vftable` | `0x0060cbd0` · `0x0040aa80` · **`0x009da130`** · `0x00401570` |
+| a gyártó `Create` metódusa | **`0x009da130`** (113 b) |
+| a létrehozott kezelő | `ytSplitterOffsetHandler`, **`0x009d9d80`** (712 b) |
+
+A `Create` a `0x009c9de0`-nal olvassa ki a `resvars`-változót, foglal egy
+`0x1c` bájtos objektumot, és **beleteszi a `240.0f`-ot**:
+
+```asm
+0x009da164  fld  dword ptr [0xcf48b0]   ; 240.0f
+0x009da16e  fstp dword ptr [eax + 0x18]
+```
+
+⇒ **A 240 kétszer, egymástól függetlenül van rögzítve:** a
+`thumbui.tre:517` (`HLISTOFFSET2=240`) és a `0xcf48b0` kódkonstans.
+
+**A korlátokról — kimerítő negatív:** a `ytSplitterOffsetHandler` teljes
+712 bájtos törzsében **nincs egyetlen abszolút című lebegőpontos konstans
+sem**, és nincs `cmp <reg>, <immediate>` sem; az egyetlen immediate-
+összehasonlítás az esemény-típusé (`cmp dword ptr [esi+8], 0x1b`). Az
+összes lebegőpontos összehasonlítás a konstruktorban eltárolt
+`[obj+0x18]`-ra és futásidejű értékekre megy.
+
+⇒ **Az eredetiben nincs beégetett alsó/felső határ a bal panel
+szélességére.** A mi `160 … 600` korlátunk (`controller.py:91`) tehát nem
+egy mért eredeti érték átvétele, hanem **saját kiegészítés**. Ez nem
+feltétlenül baj — de ne hivatkozzunk rá úgy, mintha az eredetiből jönne.
