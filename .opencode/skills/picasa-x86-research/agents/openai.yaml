@@ -1,4 +1,0 @@
-interface:
-  display_name: "Picasa x86 felhőkutatás"
-  short_description: "Picasa bináris elemzése izolált Codespace-ban"
-  default_prompt: "Használd a $picasa-x86-research skillt a Picasa x86 bináris biztonságos felhős elemzéséhez."
