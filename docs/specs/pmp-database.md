@@ -503,6 +503,96 @@ paraméter-függő hash, amivel a Picasa eldönti, hogy a gyorstárazott blob m�
 a mai forráshoz tartozik-e. A képzése nincs visszafejtve — aki erre épít,
 előbb mérje le.
 
+##### ⛔ HELYESBÍTÉS (2026-09-02): a kulcs NEM tárankénti
+
+A fenti mérési pontok közül a **harmadik** — „a `thumbs_index.db` kulcsa
+egyetlen sloton sem egyezik a `previews_index.db`-ével (0/14 531) → a kulcs
+tárankénti" — **érvénytelen következtetés**: a két vektor **nem ugyanabban a
+réstérben él** (140 755 vs. 273 921 slot a nagy adatbázisban, 3 338 vs. 5 971
+az arcokban), tehát a rés szerinti összevetés eleve értelmetlen. Két
+különböző hosszú vektort hasonlítottunk össze indexről indexre.
+
+**A helyes összevetés — azonos résterű tárak között:**
+
+| összevetés | réstér | egyező kulcs |
+|---|---:|---|
+| `thumbs` vs `thumbs2` (arcok) | 3 338 | **3 338 / 3 338** |
+| `thumbs` vs `thumbs2` (nagy) | 140 755 | **140 755 / 140 755** |
+| `previews` vs `bigthumbs` (nagy) | 273 921 | **273 921 / 273 921** |
+| `thumbs` vs `facetemplatesV2` (arcok) | 3 338 | 134 / 3 338 — és ez a 134 **pontosan az üres (könyvtár-) slotok halmaza**, ahol mindkét vektor 0 |
+| `thumbs` vs `previews` | 3 338 vs 5 971 | **nem összevethető** |
+
+Vagyis: **a kulcsvektor bitre azonos két olyan tár között, amelyek osztoznak a
+réstéren** — akkor is, ha a tárolt blob teljesen más (a `thumbs` 144 képpontos
+JPEG-je és a `thumbs2` 72 képpontosa ugyanarra a slotra más bájtokat tesz).
+
+**Ebből következik, amit a fejlesztőnek tudnia kell:**
+
+- a kulcs **nem lehet a tárolt blob ellenőrzőösszege** — különben a `thumbs` és
+  a `thumbs2` kulcsa különbözne;
+- a kulcs a **forrásfotóra** vonatkozó bélyeg, réshez (sorindexhez) kötve;
+- a `facetemplatesV2` kivétel: ott a kulcs a használt slotokon állandó `1`,
+  tehát az a tár nem használja a bélyeget.
+
+**Hét kizárt jelölt.** A `thumbs_index.db` kulcsát a 3 204 élő sloton
+összevetettük a `imagedata_originfast`, `originslow`, `onlinechecksum`,
+`long`, `rotate`, `filetype` és `tagdate` oszlopokkal, alsó és felső 32 biten
+egyaránt: **egyetlen egyezés sem** (0/3 204 mind a tizennégy összevetésben).
+A kulcs képzése továbbra is **NYITOTT** — de a keresést ezek felé nem érdemes
+újra elindítani.
+
+*Bizonyítottsági fok: megerősített* (két adatbázis, négy tár, teljes vektorok).
+
+##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
+
+A fenti fenntartás — hogy a `previews`/`bigthumbs` vektorban **elavult sorok**
+maradnak egy korábbi, nagyobb katalógusból — eddig „következtetés, nem mérés"
+volt. Most mérés:
+
+| adatbázis · tár | élő slot | a blokk valódi JPEG (`FFD8`…`FFD9`) | NEM az |
+|---|---:|---:|---:|
+| nagy · `thumbs` | 133 454 | **133 454** | 0 |
+| nagy · `thumbs2` | 133 454 | **133 454** | 0 |
+| nagy · `previews` | 14 531 | **14 531** | 0 |
+| nagy · `bigthumbs` | 14 531 | **14 531** | 0 |
+| arcok · `thumbs` / `thumbs2` | 3 204 / 3 204 | **3 204 / 3 204** | 0 / 0 |
+| arcok · `previews` | 1 030 | 814 | **216** |
+| arcok · `bigthumbs` | 1 221 | 1 004 | **217** |
+
+Az `arcok` készlet 216 hibás bejegyzéséből **185 a katalóguson túlmutató
+sloton ül** (rés-index ≥ 3 338) — a `bigthumbs`-nál ugyanígy 185. Ez pontra
+egyezik a fent már rögzített „186 használt slot túlmutat" mérésével
+(185 hibás + 1 érvényes = 186). A maradék ~31 hibás bejegyzés a **fájl elejére**
+mutat (legnagyobb elavult eltolás 8 482 391, miközben az érvényes bejegyzések
+42 143 178-ig érnek): ez a terület azóta **újra fel lett használva**.
+
+**Következmény a beolvasóra (#1446):** a `hossz > 0` próba **nem elegendő**.
+Egy elavult sor is „élőnek" látszik, és olyan bájttartományra mutat, amit
+azóta más blob foglal el. A beolvasó **ellenőrizze a tartalmat** — a
+bélyegkép-tárakban a `FFD8` kezdet és a `FFD9` vég —, és a nem egyezőt hagyja
+ki. A tulajdonos valódi mentésében ez a szűrő **egyetlen érvényes bélyegképet
+sem dob el** (0 anomália mind a négy tárban).
+
+*Bizonyítottsági fok: megerősített* (két adatbázis, hét tár-mérés).
+
+##### A tároló neve és hibakeresője a binárisból (2026-09-02)
+
+A fenti formátum eddig **kizárólag fájlmérésből** volt levezetve. A bináris
+oldal független megerősítése:
+
+| lelet | cím |
+|---|---|
+| az osztály neve `CBlockFile`, forrásfájlja `.\thumblab\CBlockFile.cpp` | `0x006b8640`, `0x006b9030` |
+| a három mező NEVE: `Size,Offset,Checksum\n` fejléc + `%d,%d,%d\n` sorok | `0x006b5e00` |
+| a dumpot registry-kulcs kapuzza: `Preferences` ▸ **`Write blockfile CSV`** (nem nulla ⇒ ír) | `0x006b5e07`–`0x006b5e5a` (`0xca8400` + `0xc7eafc`) |
+| hibaágak: `CBlockFile::OpenBlock err=%d, %s`, `CBlockFile::Restore err=%d, %s` | `0x006b61e0`, `0x006b9030` |
+
+A CSV **oszlopsorrendje** (Size, Offset, Checksum) NEM azonos a fájlbeli
+vektor-sorrenddel (kulcs/„Checksum", eltolás, hossz/„Size") — a dump csak a
+mezők **nevét** igazolja, a sorrendjüket nem. A `Restore` ág megléte azt is
+megmutatja, hogy az eredeti **számol a sérült blokkfájllal**, és van
+helyreállító útja.
+
 #### A sorindex → fájlnév leképezés — MEGVAN
 
 **A slot indexe azonos a `thumbindex.db` sorindexével** (és így a PMP-oszlopok
