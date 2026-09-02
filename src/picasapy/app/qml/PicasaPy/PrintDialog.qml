@@ -452,9 +452,16 @@ Window {
                     }
                     Text {
                         objectName: "printPreviewPageText"
-                        //: A mért `%d / %d` alak.
-                        text: (printWindow.previewPage + 1) + " / "
-                              + printWindow.previewPageCount
+                        //: #1960: a SORREND a fordításé, nem a kódé. Az
+                        //: eredeti angol erőforrása `%1$d of %2$d`
+                        //: (aktuális / összes), a magyar `%2$d / %1$d`
+                        //: (összes / aktuális) — `ThumbUIPrint::PrintCount`,
+                        //: `stringres` 2287. Ezért összefűzés helyett
+                        //: pozíció-argumentumos sablon: a `.ts` dönti el,
+                        //: melyik nyelv melyik sorrendet kapja.
+                        text: qsTr("%1 / %2")
+                              .arg(printWindow.previewPage + 1)
+                              .arg(printWindow.previewPageCount)
                         font.pixelSize: Theme.fontSize
                         color: Theme.ink
                     }
