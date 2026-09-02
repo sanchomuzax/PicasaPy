@@ -166,6 +166,34 @@ def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...
     return _records(rows)
 
 
+def photos_with_faces(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
+    """Minden fotó, amin VAN bejelölt arc (#1830) — az eredeti `facesearch`
+    szűrője.
+
+    ⚠️ A **megnevezetlen** arc is arc: ez a szűrő nem arra válaszol, hogy
+    kit ismerünk fel, hanem arra, hogy van-e a képen bejelölt arc. Ebben
+    tér el a `person_photos`-tól, ami nevet egyeztet.
+
+    A MEGLÉVŐ `.picasa.ini` `faces=` adatára épül — ugyanazon a söprésen,
+    amiből az „Emberek" gyűjtemény is él —, tehát **nem igényel
+    arcfelismerést** (a `face` tábla az `index/faces_detected.py` motorjáé,
+    az üres lehet). Rendezés: mappa, majd név — mint a csillag- és a
+    film-szűrőnél."""
+    parok: list[tuple[str, str]] = []
+    for folder_path, _names, faces_by_file in _iter_face_data(conn):
+        for filename, faces in faces_by_file.items():
+            if faces:
+                parok.append((folder_path, filename))
+    if not parok:
+        return ()
+    clause = " OR ".join(["(f.path = ? AND p.name = ? COLLATE NOCASE)"] * len(parok))
+    params = [value for pair in parok for value in pair]
+    rows = conn.execute(
+        f"{_SELECT} WHERE {clause} ORDER BY f.path, p.name", params
+    )
+    return _records(rows)
+
+
 def _resolve_name(face: Face, names: dict[str, str]) -> str | None:
     if not face.is_identified:
         return None

@@ -56,6 +56,7 @@ from .queries import (
 from .people import (
     PersonRecord,
     people_in_index,
+    photos_with_faces,
     people_with,
     person_photos,
 )
@@ -125,6 +126,7 @@ __all__ = [
     "open_index",
     "paths_with_color",
     "people_in_index",
+    "photos_with_faces",
     "people_with",
     "person_photos",
     "photo_by_id",

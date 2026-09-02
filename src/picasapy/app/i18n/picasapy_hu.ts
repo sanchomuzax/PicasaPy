@@ -3934,6 +3934,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>MainToolbar</name>
     <message>
+        <source>Show only photos with faces</source>
+        <translation>Csak az arcokat ábrázoló fotók</translation>
+    </message>
+    <message>
         <source>Get photos from a camera, scanner, or other media</source>
         <translation>Fotók letöltése fényképezőgépről, képolvasóról vagy más eszközről</translation>
     </message>

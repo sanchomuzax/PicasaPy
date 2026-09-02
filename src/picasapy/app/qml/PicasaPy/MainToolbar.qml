@@ -321,17 +321,51 @@ Rectangle {
                                   : controller.showStarred()
                     }
                 }
-                Text {   // arc-szűrő (3. fázis)
-                    // #1830: MÉRVE — az ini `faces=` adata NINCS az
-                    // indexben (a `face` tábla kizárólag a felismerésből
-                    // származik), ezért ez a szűrő ma nem építhető meg a
-                    // meglévő adatokból. Helyfoglaló marad, hogy ne
-                    // ígérjen hatástalan kattintást.
+                Item {   // #1830: „arcos képek" — az eredeti `facesearch`
+                    objectName: "faceFilter"
+                    // ⚠️ HELYESBÍTÉS. Itt korábban helyfoglaló állt, ezzel
+                    // az indoklással: „az ini `faces=` adata NINCS az
+                    // indexben, ezért ez a szűrő ma nem építhető meg a
+                    // meglévő adatokból". Az első fele igaz, a
+                    // következtetés téves volt: az „Emberek" gyűjtemény
+                    // (`index/people.py`) ÉPP EZT az ini-adatot söpri be
+                    // minden hívásnál, és a `person_photos` ugyanezen az
+                    // úton ad vissza fotó-rekordokat. A hiányzó darab
+                    // egyetlen lekérdezés volt (`photos_with_faces`), nem
+                    // egy felismerő motor.
+                    //
+                    // A megnevezetlen arc is arc: a szűrő nem azt kérdezi,
+                    // kit ismerünk fel, hanem hogy van-e bejelölt arc.
                     width: 22; height: 20
-                    text: "☺"; font.pixelSize: 13; color: Theme.placeholderText
-                    opacity: 0.45
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                    readonly property bool aktiv:
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "faces" : false
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 2
+                        color: parent.aktiv ? "#ffffff" : "transparent"
+                        border.width: parent.aktiv ? 1 : 0
+                        border.color: Theme.selectionBlue
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "☺"
+                        font.pixelSize: 13
+                        color: parent.aktiv
+                               ? Theme.selectionBlue
+                               : (faceFilterHover.hovered
+                                  ? Theme.selectionBlue : "#8f8b83")
+                    }
+                    //: `facesearch` — az eredeti buboréksúgója
+                    ToolTip.text: qsTr("Show only photos with faces")
+                    ToolTip.visible: faceFilterHover.hovered
+                    ToolTip.delay: 500
+                    HoverHandler { id: faceFilterHover }
+                    TapHandler {
+                        onTapped: parent.aktiv
+                                  ? controller.clearFilter()
+                                  : controller.showFacesOnly()
+                    }
                 }
                 Item {   // #1830: „csak filmek" — az eredeti `moviesearch`
                     objectName: "movieFilter"
