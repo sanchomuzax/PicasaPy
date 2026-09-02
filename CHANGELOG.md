@@ -16,8 +16,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   közül lehet választani (160, 320, 480, 640, 800, 1024, 1200, 1600), a
   csúszka mellett ott a pillanatnyi érték, és az „egyetlen kép" nem külön
   méret többé, hanem egy kapcsoló: vagy ugyanakkora, mint a többi, vagy
-  eredeti méretben megy. A korábbi beállításod automatikusan átveszi az
-  új alakot.
+  eredeti méretben megy. **A korábbi beállításaid megmaradnak**: a
+  méret és az „egy kép eredeti méretben" választás is automatikusan
+  átkerül az új alakba.
 
 ## [0.8.232] – 2026-09-02
 

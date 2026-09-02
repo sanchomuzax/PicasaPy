@@ -255,3 +255,47 @@ class TestSendRows:
             ok = controller.sendRows([], "s", "b")
         assert ok is False
         assert events
+
+
+class TestRegiEgyKepBeallitasAtvetele:
+    """#2020: a régi MÁSODIK méret-csúszka átvétele kapcsolóvá.
+
+    Az új alapérték („ugyanakkora, mint a többi") a réginek az
+    ELLENTÉTE — átvétel nélkül a meglévő felhasználó némán mást küldene,
+    mint eddig.
+    """
+
+    def _regi_indexszel(self, tmp_path, index):
+        settings = _settings(tmp_path)
+        settings.setValue("mail/singleSizeIndex", index)
+        settings.sync()
+        return EmailController(photo_source=lambda: [], settings=settings)
+
+    def test_a_regi_EREDETI_MERET_fokozat_bekapcsolja(self, qt_app, tmp_path):
+        controller = self._regi_indexszel(tmp_path, 4)  # a régi lista vége
+        assert controller.singlePictureOriginal is True
+
+    @pytest.mark.parametrize("index", [0, 1, 2, 3])
+    def test_a_tobbi_regi_fokozat_KIkapcsolva_hagyja(
+        self, qt_app, tmp_path, index
+    ):
+        controller = self._regi_indexszel(tmp_path, index)
+        assert controller.singlePictureOriginal is False
+
+    def test_az_atvett_ertek_KIIRODIK(self, qt_app, tmp_path):
+        settings = _settings(tmp_path)
+        settings.setValue("mail/singleSizeIndex", 4)
+        settings.sync()
+        EmailController(photo_source=lambda: [], settings=settings)
+        assert _coerce(settings.value("mail/singlePictureOriginal")) is True
+
+    def test_beallitas_nelkul_az_UJ_alapertek_ervenyes(self, qt_app, tmp_path):
+        controller = _controller([], tmp_path)
+        assert controller.singlePictureOriginal is False
+
+
+def _coerce(value):
+    """A QSettings platformonként bool-t vagy szöveget ad ugyanarra az írásra."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "1")

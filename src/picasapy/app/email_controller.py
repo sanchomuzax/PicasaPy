@@ -70,8 +70,9 @@ _EXPORT_SIZE_KEY = "mail/exportSize"
 _SINGLE_ORIGINAL_KEY = "mail/singlePictureOriginal"
 _USE_DEFAULT_CLIENT_KEY = "mail/useDefaultClient"
 
-#: A régi, INDEX-alapú kulcs — csak a migrációhoz olvassuk.
+#: A régi, INDEX-alapú kulcsok — csak a migrációhoz olvassuk őket.
 _REGI_MULTI_INDEX_KEY = "mail/multiSizeIndex"
+_REGI_SINGLE_INDEX_KEY = "mail/singleSizeIndex"
 
 #: A #350 becsült fokozatlistája — kizárólag a régi index feloldásához.
 #: Élesben SEHOL nem használjuk; a mért lista az `EMAIL_SIZE_STEPS`.
@@ -153,9 +154,7 @@ class EmailController(QObject):
         self._draft_guard = CollageDraftGuard(self)
         self._settings = settings if settings is not None else QSettings()
         self._email_size = self._betolt_meretet()
-        self._single_original = _coerce_bool(
-            self._settings.value(_SINGLE_ORIGINAL_KEY), False
-        )
+        self._single_original = self._betolt_egy_kep_kapcsolot()
         self._use_default_client = _coerce_bool(
             self._settings.value(_USE_DEFAULT_CLIENT_KEY), True
         )
@@ -185,6 +184,33 @@ class EmailController(QObject):
         atvett = _REGI_FOKOZATOK[index]
         self._settings.setValue(_EXPORT_SIZE_KEY, atvett)
         return atvett
+
+    def _betolt_egy_kep_kapcsolot(self) -> bool:
+        """Az „egy kép eredeti méretben" kapcsoló — a régi kulcs átvételével.
+
+        #2020: a #350-ben ez egy MÁSODIK méret-csúszka volt
+        (`mail/singleSizeIndex`), aminek az utolsó fokozata jelentette az
+        eredeti méretet. Az új alapérték a MÉRT viselkedés („ugyanakkora,
+        mint a többi"), ami a régi alapértéknek az ELLENTÉTE — ezért a
+        meglévő felhasználó beállítását át KELL venni, különben a
+        következő indításnál némán megváltozna, amit küld.
+        """
+        tarolt = self._settings.value(_SINGLE_ORIGINAL_KEY)
+        if tarolt is not None:
+            return _coerce_bool(tarolt, False)
+        regi = self._settings.value(_REGI_SINGLE_INDEX_KEY)
+        if regi is None:
+            return False
+        try:
+            index = int(regi)
+        except (TypeError, ValueError):
+            return False
+        if not 0 <= index < len(_REGI_FOKOZATOK):
+            return False
+        # a régi listán az EREDETI MÉRET az utolsó fokozat volt
+        eredeti = _REGI_FOKOZATOK[index] == EREDETI_MERET
+        self._settings.setValue(_SINGLE_ORIGINAL_KEY, eredeti)
+        return eredeti
 
     @Property(int, notify=emailSizeChanged)
     def emailSize(self) -> int:  # noqa: N802 — QML-stílus
