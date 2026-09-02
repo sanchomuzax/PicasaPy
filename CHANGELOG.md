@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.206] – 2026-09-02
+
+### Hozzáadva
+- **A tálcán megtartott képeken látszik a jelvény (#1918).** Eddig a
+  „megtartás" csak számként létezett: a képen semmi nem jelezte, melyik
+  elem van rögzítve. Most ugyanaz a kis jelvény jelenik meg a tálca
+  bélyegképén, amit a rácsban is látsz.
+
 ## [0.8.205] – 2026-09-02
 
 ### Javítva

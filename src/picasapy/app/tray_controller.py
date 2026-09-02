@@ -230,6 +230,24 @@ class TrayMixin:
             return ""
         return _thumb_url(rekordok[index])
 
+    @Slot(int, result=bool)
+    def heldAtTrayIndex(self, index: int) -> bool:
+        """MEGTARTOTT-e a tálca-előnézet `index`. eleme? (#1918)
+
+        Az eredeti Picasa a megtartott képekre a `thumbui/#holdadorner`
+        jelvényt rajzolja — ugyanabból az adorner-CSALÁDBÓL, mint a csillag,
+        a geocímke vagy az arcfelismerés jelvénye (a `0x007145c0`-on épülő
+        gyorsítótár első eleme, `0x00cad36c`).
+
+        Nálunk a megtartás eddig CSAK SZÁMKÉNT létezett (`heldCount`), a
+        képen semmi nem jelezte. A rács-cellán már megvolt a jelvény
+        (#455, `holdMark`); a tálca bélyegképein nem.
+        """
+        rekordok = self._tray_records()
+        if not 0 <= index < len(rekordok):
+            return False
+        return int(rekordok[index].id) in self._tray_held
+
     @Slot(result=str)
     def trayInfo(self) -> str:
         """A kék infó-sáv szövege a TÁLCA tartalmáról (`il_GetSelectionInfo`).
