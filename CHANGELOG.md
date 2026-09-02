@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.219] – 2026-09-02
+
+### Javítva
+- **A szerkesztő felső sávja az eredeti sorrendjét követi (#1905).** Az
+  `A` · `AB` · `AA` összehasonlító hármas eddig a filmszalag ELÉ került;
+  az eredeti Picasában a szalag után, a sáv jobb szélén áll. Most ott áll
+  nálunk is.
+- **A hisztogram-doboz a bal panel aljához simul (#1905).** Eddig 95
+  képponttal feljebb lebegett, nagy üres sávval alatta. Az eredetiben a
+  panel aljához van rögzítve.
+
 ## [0.8.218] – 2026-09-02
 
 ### Hozzáadva
