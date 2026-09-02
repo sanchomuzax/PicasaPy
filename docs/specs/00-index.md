@@ -694,6 +694,26 @@ album") és a közös szülőjük, a `thumbui/albumsback` — egy **album-szűk�
 keresés üres állapota**, amit a kódból kivettek, a felületleíróban viszont
 bennmaradt. Jegy: **#2027**.
 
+### [picasa-keptalca.md](picasa-keptalca.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
+
+⭐ **2026-09-02 (19. szakasz) — a tálcának SAJÁT kijelölése van.** A tulajdonos
+képernyőképe (futó Picasa 3) mutatja: a tálcán a középső kép **kijelölve**. A
+bináris ezt megmagyarázza: a tálca **ugyanolyan `CSelectionNode`**, mint a
+fotórács (`[ebx+0xea4]`), és a számlálója (`0x00716cb0`) **elemenkénti**
+jelzőt olvas (`cmp byte ptr [ecx+0x5a], 0`). Ezért van értelme a helyi menü
+„Kijelölés eltávolítása" tételének. **Nálunk a tálca bélyegképein egyetlen
+kattintás-kezelő sincs** (mérve: `TrayBar.qml:503`, a csíkban csak jobb gombos
+`TapHandler` a 250. sorban), és a tálca parancsai a **RÁCS** kijelölésén
+dolgoznak → **#2039**.
+⛔ **Ugyanaznapi SAJÁT HELYESBÍTÉS:** a #2039 először azt állította, hogy a
+kijelölés keretének színe „NINCS MÉRVE". **Téves** — a
+`runtime/constants.ui`-ban áll, a fájl saját megjegyzésével együtt:
+`thumbsel_color1=#009EFF` (kívül) / `thumbsel_color2=#FFFFFF` (belül), és a
+`design-guide.md` 63. sora **2026-08-06 óta** dokumentálja (#384); a rácsunk
+meg is valósítja. **Módszertani tanulság:** a `runtime/*.ui` szövegfájlok a
+bizonyítéklánc **elejére** tartoznak — a Picasa a felület számadatainak egy
+részét szándékosan kiszervezte oda.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
