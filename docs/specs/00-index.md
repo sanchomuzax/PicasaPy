@@ -659,6 +659,24 @@ a fotó-rekordunknak — és a **`flip` mező negatív eredmény**
 (`imagedata_flipped.pmp`: 3 011/3 011 üres; a 859 fájlos ini-korpuszban 0 db
 `flip=` sor).
 
+### [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
+
+⭐ **2026-09-02 — egy ELVETETT mérőszám, kontrollal megbuktatva (19. szakasz).**
+A kézenfekvő ötlet — „ha egy felületi elem neve nincs benne a `Picasa3.exe`-ben,
+akkor halott" — **használhatatlan**: a 2 020 elemű leltárból **935 (46,3%)** és
+a lefedettségi hiánylista 363 tételéből **78 (21,5%)** esne bele, köztük a
+`thumbui/loupehit` (a rács-nagyító, amit a #1911/#1951 épp megépített) és a
+`printpanel/printsizes`. Két megnevezett hamis-pozitív osztály: a **dinamikusan
+összerakott név** (`quickcontainer%d`, `palette_%d`, `tabpanel%d`, `%s_label` —
+a formátumsztringek mérve megvannak) és a **szerkezeti gyerek** (`-label`,
+`_icon`, `_group`, `_well`). A helyükre egy **négyfeltételes** szabály lépett
+(`m_hidden` + nulla névtalálat + nincs névelőállító sablon + a felirat sincs
+sehol); ezt a 2 020 elemből **három** állja ki: a `thumbui/lightbox_esolo_button`
+(„Search All"), a `thumbui/lightbox_esolo_text` („No results found in this
+album") és a közös szülőjük, a `thumbui/albumsback` — egy **album-szűkített
+keresés üres állapota**, amit a kódból kivettek, a felületleíróban viszont
+bennmaradt. Jegy: **#2027**.
+
 ### Nincs nyitott kérdés
 
 `filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
