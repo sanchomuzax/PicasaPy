@@ -42,6 +42,15 @@ _NEM_KIADHATO_ELOTAGOK = (
     "research/",
     "scripts/",
     "tests/",
+    #: #1938: a golden-kit generátorok és mérőszkriptek helye. A wheel
+    #: CSAK a `src/` alól csomagol (`[tool.setuptools.packages.find]
+    #: where = ["src"]`), tehát ezek ugyanúgy nem jutnak el a
+    #: felhasználóhoz, mint a `scripts/`. A lista fejléce eddig is
+    #: „belső eszközöket" ígért — a `tools/` csak kimaradt belőle, és
+    #: emiatt a CHANGELOG-őr egy kutatói eszköz bővítésére FELHASZNÁLÓI
+    #: mondatot követelt. Olyat, ami a naplóban hazugság lenne: a
+    #: felhasználó ebből semmit nem lát.
+    "tools/",
 )
 
 #: Fájlnevek, amelyek önmagukban sosem indokolnak kiadást.
