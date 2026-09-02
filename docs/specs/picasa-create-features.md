@@ -1813,6 +1813,194 @@ módosítóbillentyűs ágat.)*
 a szüneteltetésre és a CTRL-kapura (utasításszinten olvasva); a rejtett ág
 **tartalma nincs mérve**.
 
+### 2.6/c A „Mozgófilm létrehozása" gomb — MI KÉSZÜL, HOVA, MILYEN NÉVEN (2026-09-02)
+
+*A 2.6 a panel beállításait sorolja, a 2.6/b a hangsávot. Ez a szakasz azt
+írja le, mi történik a **lemezen**, amikor a felhasználó megnyomja a
+`makemoviepanel/render` gombot („Mozgófilm létrehozása").*
+
+Minden cím a `Picasa3.exe` 3.9-es változatáé, image base `0x00400000`.
+A vezérlő-parancsokat ugyanaz a kezelő fogadja, mint a hangsávét:
+**`0x0061df10`**.
+
+#### A három parancs egy ágon — `render`, `export_youtube`, `cancel`
+
+| parancs | elem | felirat | magyar | összehasonlítás |
+|---|---|---|---|---|
+| `render` | `makemoviepanel/render` | Create Movie | Mozgófilm létrehozása | `0x0061e17f` |
+| `cancel` | `makemoviepanel/cancel` | Cancel | Mégse | `0x0061e1e0` |
+| `export_youtube` | `makemoviepanel/export_youtube` | — (YT) | — | `0x0061e241` |
+
+Mindhárom **ugyanoda ugrik**: `0x00620421`. Ott dől el, melyik az
+(`0x006204bf`): a `cancel` a `0x00620ed3` bezáró ágra megy, a másik kettő
+a **kimenet-készítő** ágra.
+
+**Előkapu (`0x006204c7`):** a `[panel+0x4a0]` lejátszó `vt[0x38]` rekesze
+igazat kell adjon; ha nem, a gomb **némán nem csinál semmit**.
+
+#### 1. A YouTube-ág csak egy ELŐLÉPÉS
+
+`export_youtube` esetén a rendes menet ELŐTT lefut `0x00624cf0` → ez hívja
+a `youtube` sztringet ismerő `0x00827020`-at. Ha `0xf4242`-vel tér vissza
+(a felhasználó megszakította), az **egész művelet elmarad**
+(`0x006205bc`). Egyébként a menet ugyanaz, mint a `render`-nél, és a
+kapott objektum a feladat `+0x74` mezőjébe kerül (`0x00620ce5`).
+
+⇒ **A YT-gomb nem külön kimenet: előbb ugyanaz a `.wmv` készül el, és azt
+tölti fel.**
+
+#### 2. „Lecseréli a meglévőt, vagy újat hoz létre?" — mikor jön elő
+
+A panel a `[panel+0x4d4]` mezőben megjegyzi a **korábban elkészített film
+teljes útvonalát**. A menet ebből három állapotot vezet le:
+
+| állapot | feltétel | mód |
+|---|---|---|
+| **nincs korábbi** | `[panel+0x4d4]` üres, vagy `autoplay` | 1 (új) |
+| **helyreállított automatikus mentés** | a név része a honosított `autosave` | 2 (csere) |
+| **volt korábbi** | minden más | a **párbeszéd** dönti el |
+
+A párbeszéd (`0x00620718`–`0x0062082c`) három gombja:
+
+| kulcs | angol | **magyar** |
+|---|---|---|
+| `CCollageUI::ConfirmTitle` | Replace Existing or Create New? | **Lecseréli a meglévőt, vagy újat hoz létre?** |
+| `CMakeMoviePanelConfirmDialog` | You have been editing a previously created slideshow.… | **Eddig egy korábban készült diavetítést szerkesztett.…** |
+| `CCollageUI::ButtonCreateNew` | Create New | **Új létrehozása** |
+| `CCollageUI::ButtonReplace` | Replace Existing | **Meglévő cseréje** |
+| `il_CancelButton` | Cancel | **Mégse** |
+
+A **Mégse** (`0x00620804`: a visszatérés 2) az egész műveletet elhagyja —
+a szerkesztés mentés nélkül folytatódik, ahogy a szöveg ígéri.
+
+#### 3. A célmappa — `<Képek>\Picasa\<honosított „Movies">`
+
+A mappát a **`0x0061cf20`** adja (`CMakeMoviePanel::SlideshowFolder`):
+
+1. `0x009966a0` → a **`My Pictures`** gyökér;
+2. hozzáfűzve a `Picasa` (`0x00c7f0fc`) közbülső szint;
+3. hozzáfűzve a **honosított** mappanév — kulcs
+   `CMakeMoviePanel::SlideshowFolder`, angolul `Movies`, magyarul
+   **`Mozgófilmek`** (`0x00c9ce34` / `0x00c9ce3c`);
+4. `0x00992ed0` (`Exists`) ellenőrzi; ha nincs, `0x009a3db0` létrehozza,
+   és sikertelenségnél a függvény **`0xf4240`**-nel tér vissza.
+
+**ÉLŐ BIZONYÍTÉK a tulajdonos gyűjteményéből** (`ini-korpusz`): a
+`/mnt/photo/Picasa/` alatt **egyszerre** áll `Movies`, `Filmek` **és**
+`Mozgófilmek` — a nyelvváltás új mappát nyit, a régit nem költözteti. Ezt
+a mi oldalunkon a `project_folder_names.letezo_vagy_honos_mappa` már
+kezeli (#1131).
+
+**Tartalék: a `My Videos` mappa.** Ha a fenti mappa üres útvonal marad
+vagy **nem létezik**, a menet a `0x009968a0` adta **`My Videos`** mappára
+vált (`0x00620af9`–`0x00620b1d`). Ez nem elméleti ág: a `0x0061cf20`
+hibája után ide esik a film.
+
+**A célmappa `.picasa.ini`-t is kap.** A `0x0061cf20` a végén
+`0x00445a30`-at hívja (`0x0061d005`), és az a függvény ismeri mindhárom
+sztringet: `.picasa.ini`, `P2category`, **`Projects (internal)`**.
+A korpusz megerősíti: mind a négy projekt-mappa `.picasa.ini`-je
+`[Picasa] P2category=Projects (internal)`. (Az „Exportált videoklipek"
+kivétel: ott `P2category=tech`.)
+
+#### 4. A fájlnév — négy lépés, ebben a sorrendben
+
+| # | lépés | cím | mit tesz |
+|---:|---|---|---|
+| 1 | alapnév | `0x00620998` | a `[panel+0x4d4]` útvonal **név-része** |
+| 2 | üres → alapértelmezés | `0x00620ab1` | `CMakeMoviePanel::deffilename` = `slideshowmovie` / **`diavetites_jellegu_film`** |
+| 3 | automatikus mentésből | `0x00620b2d` | `CMakeMoviePanel::recoveredautosave` = `Recovered Autosave` / **`Helyreállított automatikus másolat`** — **felülírja** az 1–2. lépést |
+| 4 | tiltott karakterek | `0x00620b61` → `0x009946f0` | a `\ / : * ? " < > \|` készlet kiszűrése |
+
+Ezután: `0x009a37b0` fűzi a mappához, `0x009a3620` teszi rá a
+**`.wmv`** kiterjesztést (`0x00c81a44`, a `0x00620b84`-nél).
+
+**Végül két, egymást kizáró lépés:**
+
+- **csere mód (2):** `0x00991f00(útvonal, 5)` — a `0x00d694c0` globális
+  függvénymutatót hívja az útvonalra; ha az nem sikerül és a
+  `GetLastError` **5** (`ERROR_ACCESS_DENIED`), **5 másodpercig újrapróbál**
+  (`QueryPerformanceCounter` + `WaitForSingleObject`). ⚠️ Hogy melyik API
+  ez, **NINCS MÉRVE** — a mutató futásidőben töltődik, a statikus tartalma
+  értelmetlen, és nincs rá xref. Lásd a nyitott kérdést lent.
+- **mindkét mód:** `0x00993030(útvonal)` — az **egyediesítő**: `0x00992ed0`
+  (`Exists`) és a `%s%lu` formátum, azaz létező névnél **sorszám** kerül a
+  végére. Csere módban a fenti lépés után a név már szabad, tehát
+  változatlan marad.
+
+#### 5. Maga a kódolás — `wmvcore.dll`, futásidőben betöltve
+
+A tényleges filmkészítést a `0x0061d820` indítja (`0x00620d8d`). A
+láncban a `0x00555e40` a `0x00549240`-et hívja, és **az** tölti be a
+`wmvcore.dll`-t, belőle a **`WMCreateProfileManager`** és
+**`WMCreateWriter`** belépési pontot.
+
+⇒ A kimenet **Windows Media (WMV)**, a Windows Media Format SDK írójával.
+A DLL **nincs az importtáblában** — `LoadLibrary`-vel jön, tehát a
+Picasa maga is számol a hiányával.
+
+⚠️ **Linuxra ez nem másolható.** A `.wmv` + WMF SDK párost nálunk mással
+kell kiváltani; ez **megvalósítási döntés lesz, nem mérés**.
+
+#### 6. Amíg készül: PISZKOZAT
+
+A `0x0061d820` hívja a `0x0061d350`-et, ami a `projectutils::draft`
+kulcsot ismeri: angolul `DRAFT`, magyarul **`PISZKOZAT`** (a
+`projectutils::draft_format` szerint `PISZKOZAT -- %s`). A hozzá tartozó
+üzenet a `projectutils::draft_slideshow`:
+
+> „Ez a diavetítés még nem készült el teljesen. A diavetítés jellegű film
+> elkészítéséhez kattintson a »Létrehozás« gombra."
+
+#### 7. Hibaeset — és egy néma ág
+
+Ha a `0x0061d820` **nem nullát** ad vissza (`0x00620d94`), a menet hibát
+jelez… **de csak feltételesen** (`0x00620db2`–`0x00620dfe`): előbb
+beolvassa a `Preferences\SupportMovies` kulcsot, és ha az **be van
+állítva**, a hibaüzenet **elmarad**, a menet a siker-ágra megy tovább.
+
+Az üzenet egyébként (`0x00620e00`):
+
+| kulcs | angol | **magyar** |
+|---|---|---|
+| `MakeMoviePanelNoMovie` | Error creating movie file (error %d) | **Hiba történt a mozgófilmfájl létrehozása során (hibakód: %d)** |
+
+A `%d` a `0x0061d820` visszatérési értéke.
+
+#### 8. Siker után
+
+`0x00620e68`-tól: a `[panel+0x4bc]` projektobjektum a feladatra száll át,
+a `[panel+0x4bc]` **kinullázódik** (`0x00620eaf`), a `0x00631cb0` fut le,
+majd a panel visszavált a **`panelroot/picasatab`** névparancssal
+(`0x00620f77`, `0x00c801c8`) — vagyis a felhasználó a **könyvtárban**
+találja magát.
+
+#### Bizonyítottsági fok
+
+**Megerősített** (utasításszinten olvasva): a három parancs közös ága és a
+`cancel` szétválása, az előkapu, a párbeszéd három gombja és a magyar
+szövegei, a mappalánc három szintje, a `My Videos` tartalék, a négylépéses
+névképzés, a `.wmv` kiterjesztés, az egyediesítő, a `wmvcore.dll` két
+belépési pontja, a `SupportMovies`-tól függő néma hibaág, a záró
+névparancs.
+
+**Erős** (a hívási környezetből következik, de az API neve nincs kiolvasva):
+a csere módban futó `0x00991f00` **törlés**-szemantikája.
+
+**Élő mintával megerősítve:** a `Picasa/Movies` · `Filmek` · `Mozgófilmek`
+együttállása és a `P2category=Projects (internal)` — a tulajdonos
+NAS-korpuszából.
+
+#### Nyitott kérdés — a `0x00d694c0` mutató
+
+**Mi ez az API?** A `0x00991f00` ezen a globális függvénymutatón hívja az
+útvonalat. **Megszerzés:** Ghidra-kör, ami megkeresi, **ki írja** a
+`0x00d694c0` címet (a `.data` írásait az index nem tartalmazza), vagy a
+`GetProcAddress`-hívások környékének dekompilálása. A jegy megvalósítását
+**nem blokkolja**: a viselkedés (a régi fájl helyét a csere mód
+felszabadítja, hozzáférés-megtagadásnál 5 másodpercig újrapróbál) a
+kódból egyértelmű.
+
 ### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
 
 *A 2.2/2.6 a felső panel beállításait, ez a szakasz a film-előnézet ALUL
