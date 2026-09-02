@@ -1844,6 +1844,132 @@ Nyitott kérdések: 0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kív�
   panel; a fül a nyomtató-oldali beállításoké, a `printoptions` a **nyomat
   kinézetéé**.
 
+### 39.3 A három gomb VISELKEDÉSE — és hogy a Mégse VISSZATÖLT (2026-09-02)
+
+A kezelő `0x0085e800`; a három ág **külön** viselkedik:
+
+| elem | magyar | mit tesz | cím |
+|---|---|---|---|
+| `printoptions/cancel` | „Mégse" | **visszatölti mind a tizenegy beállítást** (`0x0085f7a0`), majd frissíti a nyomtatási előnézetet (`0x00745980`) és bezárja a panelt | `0x0085e8a1`–`0x0085e8e5` |
+| `printoptions/apply` | „Alkalmaz" | **csak frissíti az előnézetet** (`0x00745980`) — a panel **nyitva marad** | `0x0085e937`–`0x0085e95d` |
+| `printoptions/ok` | „OK" | `0x00745f50`, majd **bezárja** a panelt (`[panel+0x258]->vt[0x14](0,0)`) | `0x0085e9ab`–`0x0085e9c9` |
+
+⭐ **Ebből következik, hogyan működik a panel:** minden vezérlő **azonnal**
+kiírja a maga `Preferences`-kulcsát, ahogy a felhasználó rákattint (a
+kezelő minden ága `GetPreference` + `SetPreference` párral zárul). Az
+„Alkalmaz" ezért **nem ment** — csak újrarajzoltatja az előnézetet; a
+„Mégse" pedig **nem eldob**, hanem **visszaolvassa** a korábbi értékeket.
+
+⇒ **Ha a felhasználó a panelt az ablak X-ével zárja be, a módosításai
+BENT MARADNAK.** A visszavonás egyedül a „Mégse" gombhoz kötött.
+
+### 39.4 A két rádiócsoport ÉRTÉKKÉSZLETE — mérve
+
+**`printoptions::text`** (a felirat forrása) — a csoport szülője
+`printoptions/text_source`, az író `0x0085ebc3`:
+
+| elem | magyar felirat | érték | cím |
+|---|---|:--:|---|
+| `printoptions/usenotext` | „Nincs szöveg" | **0** | `0x0085ebc1` |
+| `printoptions/usecaption` | „Képfelirat" | **1** | `0x0085ec3a` |
+| `printoptions/usefilename` | „Fájlnév" | **2** | `0x0085ec73` |
+| `printoptions/useexif` | „Exif-adatok" | **3** | `0x0085ecaf` |
+
+**`printoptions::textplacement`** (a felirat helye) — szülő
+`printoptions/text_placement`, az író `0x0085eced`:
+
+| elem | magyar felirat | érték | cím |
+|---|---|:--:|---|
+| `printoptions/textbelowimage` | „A kép alatt" | **0** | `0x0085eceb` |
+| `printoptions/textonimage` | „A képen" | **1** | `0x0085ed4a` |
+| `printoptions/textonborder` | „A szegélyen" | **2** | `0x0085ed83` |
+
+> ⛔ **HELYESBÍTÉS a 39.2-höz.** Ott ez állt: *„A `usefilename` (fájlnév)
+> vezérlőnek a leltárban NINCS felirata."* **Megdőlt:** a
+> `referencia/ui-leltar.csv` tartalmazza a
+> `printoptions/usefilename_label` sort `File name` felirattal, a
+> `panel-feliratok-hu.tsv:850` pedig a magyar **„Fájlnév"** alakot. A
+> négyes rádiócsoport **és** a felirat-leltár egyaránt teljes.
+
+### 39.5 A tizenegy kulcs ALAPÉRTÉKE — a betöltőből (`0x0085f7a0`)
+
+| kulcs | alapérték | cím |
+|---|---:|---|
+| `printoptions::text` | **0** (nincs szöveg) | `0x0085f8c6` |
+| `printoptions::textplacement` | **0** (a kép alatt) | `0x0085f8f9` |
+| `printoptions::textfont` | **`Arial`** | `0x0085f9db` |
+| `printoptions::textsize` | **12** | `0x0085f962` |
+| `printoptions::textcolor` | **0** | `0x0085f993` |
+| `printoptions::wrap` | **0** | `0x0085f926` |
+| `printoptions::border` | **0** | `0x0085f7b1` |
+| `printoptions::bordersize` | **10** | `0x0085f7ef` |
+| `printoptions::bordercolor` | **0** | `0x0085f826` |
+| `printoptions::borderedge` | **0** (nem csak alul) | `0x0085f859` |
+| `printoptions::evenborder` | **1** ⭐ | `0x0085f88c` |
+
+⭐ **Az `evenborder` az EGYETLEN, ami 1-gyel indul** — az „Egyenletes
+szélességű szegély" alapból **be van kapcsolva**.
+
+**Független megerősítés a `.tre`-ből:** a `printoptions.tre` a
+kezdőállapotot is rögzíti, és **négy vezérlőnél pontosan egyezik** a
+mérttel:
+
+| elem | `.tre` | a kulcs alapértéke | egyezik? |
+|---|---|---|:--:|
+| `printoptions/usenotext` | `setpressed=1` | `text = 0` | ✅ |
+| `printoptions/textbelowimage` | `setpressed=1` | `textplacement = 0` | ✅ |
+| `printoptions/bottomonly_checkbox` | `setpressed=0` | `borderedge = 0` | ✅ |
+| `printoptions/evenwidth_checkbox` | `setpressed=1` | `evenborder = 1` | ✅ |
+| `printoptions/wrap_checkbox` | `setpressed=1` | `wrap = **0**` | ❌ **ELTÉR** |
+
+⚠️ **Az ötödik eltér, és a beállítás nyer:** a panel megnyitásakor a
+betöltő (`0x0085f7a0`) minden vezérlőt a `Preferences`-ből állít be, tehát
+a `.tre` `setpressed=1` értéke csak addig él, amíg a betöltő le nem fut.
+Első indításkor a „Szöveg tördelése" **kikapcsolva** jelenik meg.
+*Bizonyítottság: **erős** — a két forrás egymásnak ellentmond, a
+sorrendet (`.tre` felépítés → betöltő) a `0x0085d550` és a `0x0085f7a0`
+hívási sorrendje adja.*
+
+### 39.6 A maradék vezérlők — a panelépítőből (`0x0085d550`, 2500 b)
+
+| elem | mi ez | forrás |
+|---|---|---|
+| `printoptions/fontfamily` | betűtípus-legördülő, **`maxrows=7`** | `ui-leltar.csv` |
+| `printoptions/sizelist` | betűméret-legördülő, **`maxrows=7`** | ugyanott |
+| `printoptions/colorpicker_bevel` · `printoptions/colorcircle` | a **szövegszín** választója (`all_text_options` alatt) | ugyanott |
+| `printoptions/text_picker_panel` | a szövegszín-paletta, **kezdetben rejtett** (`m_hidden`, `palette=0`) | ugyanott |
+| `printoptions/bordercolorpicker_bevel` · `printoptions/bordercolorcircle` | a **szegélyszín** választója | ugyanott |
+| `printoptions/border_picker_panel` | a szegélyszín-paletta, **kezdetben rejtett** | ugyanott |
+| `printborderslider/scaleslider` (+ `/thumb`) | a **szegélyvastagság** csúszkája, `slider=2` | ugyanott |
+| `printoptions/border_options` · `printoptions/all_border_options` · `printoptions/all_options` · `printoptions/all_text_options` · `printoptions/printborderslider_container` | csoport-tartók (felirat nélkül) | ugyanott |
+| `printoptions/disabled_label` | **„Ezek a beállítások indexképek nyomtatásakor nem használhatók."** — a `.tre`-ben szülő nélküli, csak szöveg | `panel-feliratok-hu.tsv:861` |
+
+**A betűméret-lista működése** (`0x0085df30`, 2165 b): a lista tartalma
+**dinamikus tömb** a panelen (`[panel+0x2b4]`, elemszám `[panel+0x2b8] >> 1`),
+`%d` formátummal kiírva (`0x00c81844`); a kiválasztott elem értéke megy a
+`printoptions::textsize` kulcsba (`0x0085e5a2`–`0x0085e5af`). Az induló
+kijelölés a **6. sor** (`0x0085d95e`), kivéve ha valamelyik elem egyezik a
+tárolt mérettel (`0x0085d9a5`).
+
+⛔ **NEGATÍV eredmény:** a lista **NEM** a filmkészítő statikus
+betűméret-táblájából (`0x00c7e4f0`, 8…96) jön — a `0x0085d***`–`0x0085f***`
+tartomány **egyetlen** függvénye sem hivatkozik arra a címre (a teljes
+tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
+**nincs mérve** — lásd a nyitott kérdést.
+
+### 39.7 Nyitott kérdések mérlege (a 39. tételre)
+
+`0 nyílt · 5 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| mit ír a panel | **LEZÁRVA** — tizenegy `Preferences`-kulcs (39.1) |
+| mi a két rádiócsoport értékkészlete | **LEZÁRVA** — 0–3 és 0–2 (39.4) |
+| mik az alapértékek | **LEZÁRVA** — 39.5, `.tre`-vel keresztmérve |
+| mi a különbség OK / Alkalmaz / Mégse közt | **LEZÁRVA** — 39.3 |
+| van-e felirata a `usefilename`-nek | **LEZÁRVA (helyesbítés)** — van, „Fájlnév" (39.4) |
+| **honnan jön a betűméret-lista tartalma** | **BLOKKOLT** — a `[panel+0x2b4]` tömböt a `0x0085d3c0` konstruktor nullázza, a `0x0085df30` olvassa; a feltöltés helye a mérésből nem derül ki. **Megszerzés:** a `0x0085df30` (2165 b) célzott dekompilációja, vagy a futó Picasa listájának leolvasása. **A megvalósítást nem blokkolja:** a `textsize` alapértéke (12) és a tárolás módja megvan. |
+
 ## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
 
 *Második kör az UI-lefedettségi axisról (#1778). Panel: `printpanel` —
