@@ -199,6 +199,22 @@
 <context>
     <name>PrintDialog</name>
     <message>
+        <source>Review</source>
+        <translation>Ellenőrzés</translation>
+    </message>
+    <message>
+        <source>Make sure your photos are ready to print</source>
+        <translation>Győződjön meg arról, hogy a fotók nyomtatásra készek</translation>
+    </message>
+    <message>
+        <source>These pictures are below %1 pixels/inch at the selected print size:</source>
+        <translation>Ezek a képek a választott nyomatméreten %1 képpont/hüvelyk alatt vannak:</translation>
+    </message>
+    <message>
+        <source>%1 pixels/inch</source>
+        <translation>%1 képpont/hüvelyk</translation>
+    </message>
+    <message>
         <source>%1 / %2</source>
         <translation>%2 / %1</translation>
     </message>

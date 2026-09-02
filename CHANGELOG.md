@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.223] – 2026-09-02
+
+### Hozzáadva
+- **„Ellenőrzés" gomb a nyomtatásnál (#1953).** Eddig a program szólt, ha
+  volt a kijelölésben kis felbontású kép, de nem árulta el, **melyik**.
+  Mostantól — ahogy az eredeti Picasa is teszi — a figyelmeztetés mellett
+  ott az „Ellenőrzés" gomb, és fájlnév szerint kiírja, melyik kép hány
+  képpont/hüvelyket ad a választott nyomatméreten.
+
 ## [0.8.222] – 2026-09-02
 
 ### Hozzáadva

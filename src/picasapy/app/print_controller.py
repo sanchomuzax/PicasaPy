@@ -60,6 +60,7 @@ from picasapy.printing.dpi import (
     KICSI_KUSZOB_DPI,
     METRIKUS_KESZLET,
     NyomatMeret,
+    effektiv_dpi,
     keszlet_nyelvhez,
     minoseg_osszegzes,
 )
@@ -204,6 +205,34 @@ class PrintController(QObject):
             "ready": osszegzes.keszen_all,
             "threshold": KICSI_KUSZOB_DPI,
         }
+
+    @Slot(list, str, result=list)
+    def smallPictures(self, rows, size_name: str):  # noqa: N802 — QML-stílus
+        """A küszöb alatti képek NÉV szerint, a hozzájuk tartozó DPI-vel.
+
+        #1953: eddig a párbeszéd kimondta, hogy *van* kis felbontású kép,
+        de nem mondta meg, **melyik**. Az eredetiben erre való az
+        „Ellenőrzés" gomb (`printpanel/reviewnowbutton`).
+
+        A számítás UGYANAZ, mint az összegzésé (`effektiv_dpi` +
+        `KICSI_KUSZOB_DPI`) — ha a két út külön számolna, előbb-utóbb
+        ellentmondanának: a mondat N kis képet írna, a lista M-et mutatna.
+
+        A lista a **legrosszabbal kezdődik**: a felhasználót az érdekli
+        először. Az ismeretlen méretű kép ugyanúgy kicsinek számít, mint
+        az összegzésben — 0 DPI-vel."""
+        meret = NyomatMeret.__members__.get(size_name, NyomatMeret.M4X6)
+        tetelek = [
+            {
+                "name": rekord.name,
+                "dpi": effektiv_dpi(
+                    rekord.width or 0, rekord.height or 0, meret
+                ),
+            }
+            for rekord in self._resolve_records(rows)
+        ]
+        kicsik = [t for t in tetelek if t["dpi"] < KICSI_KUSZOB_DPI]
+        return sorted(kicsik, key=lambda t: t["dpi"])
 
     @Slot(result=list)
     def listPrinters(self) -> list[str]:
