@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 259 |
 | másutt megvan (nem ezen a felületen) | 37 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 182 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 76 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 171 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 87 |
 | bizonytalan | 107 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -82,7 +82,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `faceheaderpanel` | 39 | 13 | 0 | 1 | 11 | 1 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
-| `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 11 | 0 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
+| `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
 | `edittextpanel` | 45 | 19 | 9 | 0 | 8 | 0 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `printpanel` | 73 | 33 | 21 | 4 | 8 | 0 | 0 | 40 | 0 | `PrintDialog.qml` |
@@ -400,17 +400,17 @@ Névvel ellátott arc-album fejléce
 
 Webkamerás videofelvétel — nincs nálunk
 
-- `audio_label` „Audio” (magyarul: „Hang”)
-- `camchange` „Settings” (magyarul: „Beállítások”)
-- `capture` „Record” (magyarul: „Felvétel”)
-- `done` „Done” (magyarul: „Kész”)
-- `live_video` „Camera” (magyarul: „Fényképezőgép”)
-- `next`
-- `prev`
-- `settings_apply` „Apply” (magyarul: „Alkalmaz”)
-- `settings_cancel` „Cancel” (magyarul: „Mégse”)
-- `size_label` „Size” (magyarul: „Méret”)
-- `video_label` „Video” (magyarul: „Videoklip”)
+- `audio_label` „Audio” (magyarul: „Hang”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `camchange` „Settings” (magyarul: „Beállítások”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `capture` „Record” (magyarul: „Felvétel”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `done` „Done” (magyarul: „Kész”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `live_video` „Camera” (magyarul: „Fényképezőgép”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `next` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `prev` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `settings_apply` „Apply” (magyarul: „Alkalmaz”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `settings_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `size_label` „Size” (magyarul: „Méret”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
+- `video_label` „Video” (magyarul: „Videoklip”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x006274f0)
 
 ### `edittextpanel` — 10 hiány · panel-megfeleltetés: `parositva`
 

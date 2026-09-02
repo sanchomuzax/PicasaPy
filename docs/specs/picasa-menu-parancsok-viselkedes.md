@@ -3901,6 +3901,151 @@ hiányzik** nálunk; a csoportosztás nincs mérve.)*
 - **„A `video_label` és a `live_video` ugyanannak az eszköznek két neve"** —
   megdőlt: **két módot** jelölnek (58.1).
 
+### 58.5 ⭐ MIT ÍR — a célmappa, a fájlnév és a sorszámozás (2026-09-02)
+
+*Az 58.1–58.4 a panel VEZÉRLŐIT adta; azt nem, hogy a felvétel hova
+kerül. Ez a szakasz azt méri ki. Minden cím a `Picasa3.exe` 3.9-é,
+image base `0x00400000`.*
+
+#### A célmappa — `<Képek>\Picasa\Rögzített videoklipek`
+
+A `0x00627160` (906 b) **pontosan ugyanazt a hármas láncot** építi, mint a
+filmkészítő `0x0061cf20`-a (`picasa-create-features.md` 2.6/c):
+
+| # | lépés | cím |
+|---|---|---|
+| 1 | `0x009966a0` → a **`My Pictures`** gyökér | `0x00627176` |
+| 2 | hozzáfűzve a **`Picasa`** közbülső szint (`0x00c7f0fc`) | `0x0062718d` |
+| 3 | hozzáfűzve a **honosított** mappanév: kulcs `CCaptureMoviePanel::CaptureFolder`, angolul `Captured Videos`, magyarul **„Rögzített videoklipek"** (`0x00c9dc00` / `0x00c917f8`) | `0x006271bd`–`0x006271f3` |
+| 4 | `0x00992ed0` (`Exists`); ha nincs, `0x009a3db0` létrehozza | `0x00627205`, `0x00627210` |
+
+**A mappa `.picasa.ini`-t is kap.** A `0x00627271` a `0x00445a30`-at
+hívja — ugyanazt, amelyik a `[Picasa] P2category=Projects (internal)`
+sort írja (`biztonsagi-mentes.md`-ben és a filmnél is ez a függvény).
+⚠️ **Csak létrehozáskor:** ha a mappa már létezik, a `0x00627205`
+`Exists`-ellenőrzése **átugorja** a létrehozást ÉS az ini-írást is.
+
+**ÉLŐ BIZONYÍTÉK a tulajdonos gyűjteményéből** (`ini-korpusz`): a
+`/mnt/photo/Picasa/` alatt egyszerre áll a **`Captured Videos`** és a
+**`Rögzített videoklipek`** mappa — pontosan a `project_folder_names.py`
+(#1131) által kezelt nyelvi kettőzés.
+
+#### Az állókép fájlneve — `snapshot.jpg`, ütközésnél `-001`
+
+A `snapshot` ágat a `0x00628ec0` (1071 b) viszi:
+
+| lépés | mit tesz | cím |
+|---|---|---|
+| 1 | a `[panel+0x2a0]` célmappa másolása | `0x0062902d` (`0x004089e0`) |
+| 2 | hozzáfűzve a **`snapshot.jpg`** név (`0x00c9ddcc`) | `0x00629032`–`0x00629039` (`0x009a37b0` = PathAppend) |
+| 3 | **egyediesítés**: `0x00993650` | `0x0062905f` |
+
+⭐ **Az egyediesítő MÁS mintát használ, mint a kollázsé és a filmé:**
+
+| funkció | minta | eredmény |
+|---|---|---|
+| kollázs · mozgófilm | `%s%lu` (`0x00993030`) | `nev1.jpg`, `nev2.jpg` |
+| **webkamera-pillanatkép** | **`%s-%03lu`** (`0x00cd8d64`, `0x00993650`) | **`snapshot-001.jpg`**, `snapshot-002.jpg` |
+
+A `0x00993650` a **kiterjesztést leválasztva** dolgozik (`0x009a3c70`,
+`0x009a3b50`, majd `0x009a3620` teszi vissza), és a számlálót
+**`0x1000` = 4096**-ig emeli (`0x00993a1a`); addig `0x00992ed0`
+(`Exists`) a ciklusfeltétel.
+
+⇒ **A sorszám kötőjeles és háromjegyű, nullákkal feltöltve.** Aki a
+kollázs `output_path()`-át emeli át ide, **rossz nevet fog adni**.
+
+#### A panel filmszalagja EZT a mappát mutatja
+
+A panelépítő `0x00626640` maga hívja a `0x00627160`-at, és tőle kapja a
+`capturemoviepanelpopup/filmstrip` tartalmát; a `/next` és a `/prev`
+ezen a listán lépked (58.3).
+
+#### A VIDEÓ-KÉPKOCKA ugyanide megy — és négy állapotszöveget ad
+
+A `0x00591dd0` (927 b) a videóból mentett képkocka (`capture_frame`,
+64. tétel) útja, és **ugyanazt a mappát** használja: kulcsa
+`CCaptureFrame::CaptureFolder`, értéke szintén `Captured Videos` /
+**„Rögzített videoklipek"**.
+
+| kulcs | angol | **magyar** |
+|---|---|---|
+| `CCaptureFrame::captureframeprog1` | Capturing frame... | **„Képkocka rögzítése..."** |
+| `CCaptureFrame::captureframeprog2` | Saving to Captured Videos | **„Mentés a Rögzített videoklipek albumba"** |
+| `CCaptureFrame::captureframeprog3` | Saved %s to Captured Videos | **„A(z) %s mentve a Rögzített videoklipek albumba"** |
+| `CCaptureFrame::captureframeprog4` | Failed to capture frame | **„Nem sikerült a képkocka rögzítése"** |
+
+⇒ **Két külön funkció (webkamera + videó-képkocka) osztozik egy
+mappán.** Aki bármelyiket megvalósítja, a másik helyét is eldönti.
+
+#### A panel állapotszövegei — a hivatalos magyar fordítással
+
+| kulcs | **magyar** |
+|---|---|
+| `CCaptureMoviePanelPopup::title` | **„Rögzítés"** |
+| `CCaptureMoviePanel::connecting` | **„Csatlakozás a kamerához"** |
+| `CCaptureMoviePanel::connected` | **„Előnézet megjelenítése"** |
+| `CCaptureMoviePanel::connecterr` | **„Sikertelen kapcsolódás"** |
+| `CCaptureMoviePanel::unavail` | **„Nem érhető el"** |
+| `CCaptureMoviePanel::live` | **„Élő videokép"** |
+| `CCaptureMoviePanel::snap` | **„Pillanatkép"** |
+| `CCaptureMoviePanel::size` | **„Méret: %s"** |
+| `CCaptureMoviePanel::xxpixels` | **„%1$dx%2$d képpont"** |
+
+Az állapotokat a `0x0062a720` (kapcsolódás, élő kép, pillanatkép,
+`activitycapture/spinner`) és a `0x00629960` (elérhetetlenség, méret)
+kezeli.
+
+#### 58.6 A panel TELJES elemlistája — teljes névvel
+
+*(A 58.1–58.4 a vezérlőket panel-előtag nélkül sorolta; a lefedettségi
+mérő a teljes névre keres, ezért itt teljes alakban állnak. Kezelők:
+`0x006274f0` (3690 b) és `0x00626640` (1095 b).)*
+
+| elem | magyar felirat | mit tesz |
+|---|---|---|
+| `capturemoviepanelpopup/capture` | „Felvétel" | **videoklip** rögzítése |
+| `capturemoviepanelpopup/live_video` | „Fényképezőgép" | az élő kép módja |
+| `capturemoviepanelpopup/video_label` | „Videoklip" | a videó-mód címkéje |
+| `capturemoviepanelpopup/audio_label` | „Hang" | a hangforrás címkéje |
+| `capturemoviepanelpopup/size_label` | „Méret" | a felvételi méret címkéje |
+| `capturemoviepanelpopup/camchange` | „Beállítások" | átvált a beállítás-lapra |
+| `capturemoviepanelpopup/settings_apply` | „Alkalmaz" | a beállítás-lap véglegesítése |
+| `capturemoviepanelpopup/settings_cancel` | „Mégse" | a beállítás-lap elvetése |
+| `capturemoviepanelpopup/done` | „Kész" | a panel bezárása |
+| `capturemoviepanelpopup/next` | — | a következő felvételre lép |
+| `capturemoviepanelpopup/prev` | — | az előzőre lép |
+
+Panel-szintű nevek ugyanitt: `capturemoviepanelpopup/basepanel`,
+`capturemoviepanelpopup/settingspanel`,
+`capturemoviepanelpopup/filmstrip`, valamint a névparancsok
+`snapshot`, `pause`, `/stop`, `/videosrc`, `/audiosrc`, `/outputsize`,
+`/activitycontainer`, `/capture_bgtext`, `/movieparent`.
+
+#### Bizonyítottsági fok (58.5–58.6)
+
+**Megerősített** (utasításszinten olvasva): a hármas mappalánc és a
+honosított név, a `.picasa.ini` írása **csak létrehozáskor**, a
+`snapshot.jpg` név, a `%s-%03lu` egyediesítő és a 4096-os korlát, a
+kiterjesztés leválasztása, a filmszalag forrása, a képkocka-rögzítés
+közös mappája, a kilenc állapotszöveg.
+
+**Élő mintával megerősítve:** a `Captured Videos` és a
+`Rögzített videoklipek` együttállása a tulajdonos gyűjteményében.
+
+#### Nyitott kérdések mérlege (58.5–58.6)
+
+`0 nyílt · 5 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| hova kerül a felvétel | **LEZÁRVA** — `<Képek>\Picasa\Rögzített videoklipek` |
+| kap-e a mappa `.picasa.ini`-t | **LEZÁRVA** — igen, `P2category=Projects (internal)`, csak létrehozáskor |
+| mi az állókép fájlneve | **LEZÁRVA** — `snapshot.jpg` |
+| hogyan sorszámoz ütközésnél | **LEZÁRVA** — `%s-%03lu`, kötőjeles háromjegyű, max. 4096 |
+| hova megy a videóból mentett képkocka | **LEZÁRVA** — **ugyanabba** a mappába |
+| **a videoklip fájlneve és formátuma** | **HATÓKÖRÖN KÍVÜL** — a rögzítés DirectShow-eszközlánccal megy (`CTranscodeCaptureLoad`, `0x00626030`), ami Windows-specifikus; a **#853 döntése szerint** a webkamera-felvétel szándékosan kimarad. A célmappa és a képkocka-ág viszont ÉLŐ (a `capture_frame` a #452-höz tartozik). |
+
 ## 59. tétel — a keresősáv HÁROM hiányzó szűrője (2026-09-01)
 
 *Huszonkettedik kör az UI-lefedettségi axisról (#1778). Panel:
