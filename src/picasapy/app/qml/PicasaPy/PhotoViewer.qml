@@ -552,6 +552,7 @@ Rectangle {
         // felső sáv: vissza gomb + filmszalag nyilakkal
         Rectangle {
             id: viewerTopBar
+            objectName: "viewerTopBar"
             Layout.fillWidth: true
             height: 46
             color: Theme.chromeBg
@@ -606,39 +607,6 @@ Rectangle {
                     ToolTip.visible: hovered
                     ToolTip.delay: 500
                     onClicked: viewer.playRequested()
-                }
-                // #6: A/AB/AA összehasonlító nézetek — placeholder (a
-                // szerkesztő-összevetés a 2. fázisban élesedik)
-                //
-                // ⚠️ #1857: a buboréksúgó szövege KI VAN TÉVE, de amíg a
-                // gomb `enabled: false`, a Qt nem ad neki `hovered`-et,
-                // tehát a felhasználó nem látja. Ez nem hiba: a #434
-                // élesítésekor a súgó magától megjelenik, és a mért
-                // eredeti szöveg addig sem vész el.
-                PicasaButton {
-                    objectName: "compareButtonA"
-                    text: "A"; enabled: false
-                    Layout.preferredWidth: 28
-                    //: Az eredeti `only_1up_toggle` felirata.
-                    ToolTip.text: qsTr("View only one image")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-                PicasaButton {
-                    objectName: "compareButtonAB"
-                    text: "AB"; enabled: false
-                    Layout.preferredWidth: 32
-                    ToolTip.text: qsTr("View two different images")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-                PicasaButton {
-                    objectName: "compareButtonAA"
-                    text: "AA"; enabled: false
-                    Layout.preferredWidth: 32
-                    ToolTip.text: qsTr("View the same image twice")
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
                 }
                 PicasaButton {
                     objectName: "viewerPrevButton"
@@ -714,6 +682,39 @@ Rectangle {
                     ToolTip.delay: 500
                 }
                 Item { Layout.fillWidth: true }
+                // #6: A/AB/AA összehasonlító nézetek — placeholder (a
+                // szerkesztő-összevetés a 2. fázisban élesedik)
+                //
+                // ⚠️ #1857: a buboréksúgó szövege KI VAN TÉVE, de amíg a
+                // gomb `enabled: false`, a Qt nem ad neki `hovered`-et,
+                // tehát a felhasználó nem látja. Ez nem hiba: a #434
+                // élesítésekor a súgó magától megjelenik, és a mért
+                // eredeti szöveg addig sem vész el.
+                PicasaButton {
+                    objectName: "compareButtonA"
+                    text: "A"; enabled: false
+                    Layout.preferredWidth: 28
+                    //: Az eredeti `only_1up_toggle` felirata.
+                    ToolTip.text: qsTr("View only one image")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                }
+                PicasaButton {
+                    objectName: "compareButtonAB"
+                    text: "AB"; enabled: false
+                    Layout.preferredWidth: 32
+                    ToolTip.text: qsTr("View two different images")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                }
+                PicasaButton {
+                    objectName: "compareButtonAA"
+                    text: "AA"; enabled: false
+                    Layout.preferredWidth: 32
+                    ToolTip.text: qsTr("View the same image twice")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                }
             }
         }
 
@@ -1040,7 +1041,17 @@ Rectangle {
                 HistogramBox {
                     objectName: "viewerHistogramBox"
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 95
+                    // #1905/3: MÉRVE a tulajdonos egymás mellé tett
+                    // felvételén — a doboz alsó szegélye 4 px-re van a bal
+                    // panel aljától (Picasa 3: y=921, a panel alja y=925;
+                    // nálunk y=830 volt, azaz 95 px lebegés).
+                    //
+                    // A 95 az `editpanel.tre` `nerdview_container`
+                    // `YConstraint 1, 1, -95` sorából jött — CSAKHOGY annak
+                    // a szülője `root`, nem a bal fiók. A fiók aljára
+                    // ugyanazt a −95-öt alkalmazva nagy üres sáv marad
+                    // alatta. A felvétel dönt.
+                    anchors.bottomMargin: 4
                     anchors.left: parent.left
                     anchors.leftMargin: 20
                     width: 238

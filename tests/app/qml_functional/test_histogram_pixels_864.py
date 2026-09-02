@@ -325,7 +325,14 @@ def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
     viewer_bottom = viewer.mapToScene(viewer.boundingRect().bottomLeft()).y()
     box_bottom = box.mapToScene(box.boundingRect().bottomLeft()).y()
     assert box_left == pytest.approx(drawer_left + 20, abs=0.5)
-    assert box_bottom == pytest.approx(viewer_bottom - 95, abs=0.5)
+    # #1905/3: a −95 az `editpanel.tre` `nerdview_container`
+    # `YConstraint 1, 1, -95` sorából jött, DE annak a szülője `root`,
+    # nem a bal fiók — a fiók aljára alkalmazva 95 px üres sáv maradt
+    # alatta. A tulajdonos egymás mellé tett felvételén (Picasa 3 vs
+    # PicasaPy, azonos mappa) MÉRVE: az eredetiben a doboz alsó
+    # szegélye y=921, a panel alja y=925 — 4 px. A felvétel erősebb
+    # bizonyíték, mint a mi olvasatunk a kényszerről.
+    assert box_bottom == pytest.approx(viewer_bottom - 4, abs=0.5)
     # a doboz NEM lóghat ki a fiókból a képterületre
     assert box_right <= drawer_right + 0.5
     # #1344: a felirat NEM félkövér, és a mért 11 képpontos sormagasságot
