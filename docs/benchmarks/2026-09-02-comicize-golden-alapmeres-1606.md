@@ -84,3 +84,42 @@ kontraszt → sötétebb átlag), a **meredeksége** nem.
   összevetése kell.
 - A mérés **egyetlen forrásképen** készült. A készlet ezt adja; több
   motívumra a #684 golden-mappája való.
+
+## 5. KÍSÉRLET: a négy eltérés NEM javítható egyenként (negatív eredmény)
+
+A `filterdesc.xml` Comicize-blokkja teljes egészében elolvasva
+(`research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml:772`), és a
+jegy négy lelete szó szerint visszaigazolódott:
+
+| lelet | a leíróban |
+|---|---|
+| szorzás, nem sötétítés | `_opColorSpots` `BlendMode="multiply"`, `BlendAlpha="{0.5-_sldrDotFade.value/200}"` |
+| fekete ragyogás | `GlowImageOperation color="0" innerglow="true" strength="1.1"`, sugár `35·0,02·max(W,H)/2` |
+| küszöbgörbe 1 | `MasterCurve = [{0,0},{24,24},{48,48},{90+DotContrast·1,5, 254},{255,255}]` |
+| küszöbgörbe 2 | ágankénti `[{0,0},{150,0},{160,255},{255,255}]`, majd `GetVar(pixelated) BlendMode="add"` |
+
+**Két javítást kipróbáltam, és MÉRTEM az eredményt.** Egyik sem ment ki:
+
+| változat | DotContrast elmozdulás (cél: 2,52) | DotFade (cél: 5,50) | Δátlag (50-es pont) |
+|---|---:|---:|---:|
+| mai kód | 9,70 | 5,89 | 7,48 |
+| + ötpontos görbe | 7,05 | 7,39 | 7,69 |
+| + görbe és szorzás | 7,70 | 8,38 | — |
+
+⇒ **Az ötpontos görbe közelebb viszi a DotContrastot (9,70 → 7,05), de
+elrontja a DotFade-et (5,89 → 7,39), és a képpont-eltérés is ROMLIK.**
+A szorzás önmagában tovább ront.
+
+### Miért — és mit jelent ez a megvalósító körnek
+
+A szorzás a leíró szerint helyes, **de csak a hiányzó `add` lépéssel
+együtt**: az eredeti mindkét ágban VISSZAADJA a pixelesített SZÍNES képet
+(`GetVarImageOperation … BlendMode="add"`), ami jelentősen világosítja a
+rasztert. A mi raszterünk enélkül sötétebb, ezért a szorzás túl erős.
+
+⇒ **A négy eltérés CSATOLT. Egyenként javítva mindegyik ront.** A
+megvalósítás csak úgy mehet, hogy a teljes ág-szerkezet (két görbe +
+`add` + belső ragyogás) egyszerre áll össze, és a mérce a fenti tábla.
+
+*A kísérleti kód nem ment ki — ez a szakasz azért van itt, hogy a
+következő kör ne fusson bele ugyanebbe.*
