@@ -130,3 +130,4 @@ quicktagconfig/edit_9,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagField9 (
 quicktagconfig/cancel,megvan,PicasaPy/QuickTagsConfigDialog.qml,standardButtons: Dialog.Ok | Dialog.Cancel (:36) — a #1788 óta elvethető a szerkesztés
 quicktagconfig/cancel-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,a Cancel gomb felirata (:36)
 quicktagconfig/ok-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,az Ok gomb felirata (:36)
+thumbui/hviewtoggle,hianyzik,,"NEM önálló vezérlő: a folderview + flatview gombpár TARTÓJA a buttonbarsets-ben (thumbui.tre:406/412/415, 2026-09-03). Nálunk a mappanézet-váltás csak a Nézet menüben van (#1454), eszköztár-gombpárként nincs; a két gyerek hiányát a #1421 tartja nyilván."

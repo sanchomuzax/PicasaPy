@@ -809,7 +809,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
-| [picasa-fo-ablak-elrendezes.md](picasa-fo-ablak-elrendezes.md) | A fő ablak elrendezése — a forrásból |
+| [picasa-fo-ablak-elrendezes.md](picasa-fo-ablak-elrendezes.md) | A fő ablak elrendezése — a forrásból; **és a MEGŐRZÖTT állapot** (2026-09-03): `Preferences/mainwinpos` = `rect(%ld %ld %ld %ld)` + `mainwinismax`; az induláskori állapot-alkalmazó `0x0040bf70`; a `HLISTDIV=0.216406` / `VLISTDIV=0.1` **beírva, de SOHA nem olvasva** (három független negatív) — csapda, ne valósítsuk meg; a bal panel osztója a `HLISTOFFSET2=240`, ami **kódból is** megvan (`0xcf48b0`), és a kezelőjében (`ytSplitterOffsetHandler`, `0x009d9d80`) **nincs beégetett alsó/felső határ** |
 
 ## Felület — auditok és lefedettség
 
