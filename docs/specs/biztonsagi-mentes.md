@@ -19,21 +19,56 @@ Jegy: **#440**.
 
 | állomány | hol | mit tartalmaz | író/olvasó |
 |---|---|---|---|
-| **`backups.xml`** | a **`Picasa2Backups`** mappában | a **készlet-definíciók** | `0x006759c0` (1723 b) |
-| **`files.txt`** | a **mentés célmappájában** | a másolt fájlok listája | `0x00677a70` (3005 b) |
+| **`backups.xml`** | a Picasa adatmappa **`db3`** almappájában | a **készlet-definíciók** | író `0x006759c0` (1723 b) · olvasó `0x00676910` (223 b) |
+| **`files.txt`** | a mentés **célmappájában** | a másolt fájlok listája | `0x00677a70` (3005 b) |
 
-### 1.1 A `Picasa2Backups` mappa
+### 1.1 A hely — `…\Google\Picasa2\db3\` (2026-09-02: MEGVAN)
 
-A név a binárisból: **`Picasa2Backups`** (`0x00ca5bc0`, 14 karakter, a
-`0x006759c0`-ban közvetlenül a `0x009bfde0` hívása után fűzve).
+> ⛔ **HELYESBÍTÉS — a lap korábbi 1.1 szakasza KÉT dologban tévedett.**
+> Ott ez állt: „a `Picasa2Backups` mappában", és hogy a szülőkönyvtár
+> azért nincs mérve, mert a `0x009bfde0` sztring nélküli útvonal-építő.
+> **Mindkettő megdőlt** — a bizonyíték lent.
 
-⚠️ **A SZÜLŐKÖNYVTÁR NINCS MÉRVE.** A `0x009bfde0` (135 b) egyetlen
-sztringet sem hivatkozik, tehát a mérésből nem derül ki, mihez fűzi. A
-projekt korábbi mérése szerint az adatmappa `AppLocalDataPath` →
-`Google\Picasa2`, és mellette áll a `Picasa2Albums`
-([`picasa-indulas.md`](picasa-indulas.md)) — a `Picasa2Backups` **névalakja
-ugyanaz a család**, de hogy tényleg oda kerül, **nincs igazolva**.
-*Bizonyítottság: **feltételes**.*
+**1. A `0x009bfde0` NEM útvonal-építő, hanem az XML BEHÚZÁSA.**
+A 135 bájtos függvény (`0x009bfde0`) mindössze ennyit tesz: 0x50 (**80**)
+szóközzel tölt fel egy puffert (`0x009bfe40`: `push 0x50; push 0x20`),
+majd a `min(hossz/2, 0x4f)` pozíción lezárja (`0x009bfe4d`–`0x009bfe5c`).
+**Hívója az `0x009bfed0`**, ami a nyitó XML-elemet írja
+(`%s%s%s%s%s<%s` / `%s<%s`) — a `0x009bfde0` adja hozzá a mélységnek
+megfelelő behúzást. Tíznél több, egymástól független hívója van a
+binárisban.
+
+**2. A `Picasa2Backups` NEM mappanév, hanem az XML GYÖKÉRELEME.**
+A `0x00675af5`-nél a literál (14 karakter) a `0x00985ff0` sztring-építőn
+át a **`0x009bfed0`**-be megy — vagyis a fájl első sora
+`<Picasa2Backups>`, ugyanúgy, ahogy az `.mxf`-é `<CTransTimeline>`
+(2.4/b) és a `.cxf`-é a saját gyökere.
+
+**3. A tényleges könyvtár: a `#db3\` útvonal-token.**
+
+| hívás | mit ad át | cím |
+|---|---|---|
+| **olvasás** | `mov ecx, 0xc7eeb8` (`#db3\`), majd `call 0x676910` | `0x00670aa8`–`0x00670aaf` |
+| **írás** | `push 0xc7eeb8` (`#db3\`), majd `call 0x6759c0` | `0x00670ca8`–`0x00670cae` |
+
+A feloldást a `0x00991b00` (`ytFileUtils.cpp`, 641 b) végzi. **Ugyanez a
+helper nyitja a `thumbindex.db`-t** (`0x004f47bf`) **és a
+`runtime\winedisable.txt`-t** (`0x006e0709`) — mindkettő helye ismert a
+saját mintaadatunkból: `research/testdata/Picasa2/db3/thumbindex.db`,
+illetve `…/Picasa2/runtime/`.
+
+⇒ **`backups.xml` és `replicates.xml` a `…\Google\Picasa2\db3\` mappában
+van**, a `thumbindex.db` és a `.pmp`-k mellett. *Bizonyítottság:
+**megerősített** a `#db3\` átadására; **erős** a `db3` teljes útvonalára
+(a mintaadat és a `picasa-indulas.md` adatmappa-mérése alapján).*
+
+### 1.1/b Hogyan nyitja meg a fájlt
+
+- **mód: `"wb"`** (`0x00c7faa4`, `0x00675a50`) — **teljes újraírás**,
+  nem hozzáfűzés; a készletlista minden mentéskor újra kiíródik.
+- **előbb leveszi a csak-olvasható jelzőt:** `GetFileAttributes`
+  (`0x00d694bc`), és ha a 1-es bit áll, `SetFileAttributes` a bit nélkül
+  (`0x00d69514`) — `0x00675a18`–`0x00675a2c`.
 
 ### 1.2 UGYANEZ a függvény írja a `replicates.xml`-t is
 
@@ -159,17 +194,22 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 5 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 8 lezárva · 2 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
-| hova írja a készleteket | **LEZÁRVA** — `backups.xml`, `Picasa2Backups` (1.1) |
+| hova írja a készleteket | **LEZÁRVA** — `backups.xml`, a **`db3`** mappában (1.1) |
 | milyen mezőkkel | **LEZÁRVA** — `setname` · `diskroot` (feltételes) · `filter` · `type` (2.) |
 | hány tartalom-mód van | **LEZÁRVA** — három (2.1) |
 | mi a célmappa alapértéke | **LEZÁRVA** — honosított `\Picasa biztonsági másolat\` (4.) |
 | mit ír a célmappába | **LEZÁRVA** — `files.txt` (3.) |
-| **melyik könyvtárban van a `Picasa2Backups`** | **BLOKKOLT** — a `0x009bfde0` (135 b) sztring nélküli útvonal-építő; az olcsó lánc kimerült (sztring-xref, `.tre`, a saját `research/testdata/` — ott **nincs** `backups.xml`, a tulajdonos sosem használta a funkciót). **Megszerzés:** a `0x009bfde0` célzott dekompilációja, vagy egy valódi Picasa-adatmappa, amiben futott a mentés. |
-| **a `files.txt` SORFORMÁTUMA** | **BLOKKOLT** — a név és a hely megvan, a soronkénti írás a másoló ciklus mélyén van. **Megszerzés:** a `0x00677a70` (3005 b) célzott dekompilációja. Enélkül az **inkrementalitás** („a Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat") mechanizmusa sincs igazolva. |
+| **melyik könyvtárban van a `backups.xml`** | **LEZÁRVA (2026-09-02)** — a `#db3\` token (`0x00c7eeb8`), átadva írásnál `0x00670ca8`, olvasásnál `0x00670aa8`. **A korábbi „`Picasa2Backups` mappa" olvasat MEGDŐLT** — az a fájl XML-gyökéreleme (1.1). |
+| **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-02)** — adatbázis-címke, `BKTag ` + a készlet neve (9.) |
+| hogyan nyitja a fájlt | **LEZÁRVA (2026-09-02)** — `"wb"`, előtte leveszi a csak-olvasható jelzőt (1.1/b) |
+| **a `files.txt` SORFORMÁTUMA** | **BLOKKOLT** — a név (`\files.txt`, `0x00ca5c78`) és a hely megvan; a soronkénti írás a `0x00677a70` (3005 b) másoló ciklusának mélyén van, és **nincs hozzá formátum-sztring a binárisban** (a függvény összes sztringje: a három állapotüzenet + a fájlnév + `ytIO.cpp`) ⇒ nyers `fputs`/`fwrite`. **Megszerzés:** a `0x00677a70` célzott dekompilációja. |
+| **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **BLOKKOLT** — a címke létezése mérve (9.), a TÁROLÓJA nem. ⚠️ **A korpusz nem tudja eldönteni:** a `BKTag`-re nulla találat, de a `keywords=` sorra **is** nulla — a korpusz kulcsszavakat egyáltalán nem tartalmaz, tehát a hiány nem bizonyíték. **Megszerzés:** a `0x00670b25` utáni felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol futott a mentés. |
+| **a webre töltés (`replicate`) ága** | **HATÓKÖRÖN KÍVÜL** — a Picasa Web Albums / Google Fotók szolgáltatás megszűnt; a szövegek és a kulcsok a 10. szakaszban a teljesség kedvéért állnak. *(Ez a lap rögzíti a döntést; a `publish` sáv mentés- és CD-ága ettől függetlenül ÉLŐ.)* |
+| **mit csinál a Wine-ág másképp** | **HATÓKÖRÖN KÍVÜL** — a `0x00678be0` Wine alatt más célmappát épít (`wine_get_unix_file_name`), de mi **natív Linuxon** futunk, nem Wine alatt; a mi célmappánk a rendszer saját konvenciója szerint áll elő. |
 
 ## 8. Amit KIZÁRTAM
 
@@ -180,6 +220,13 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 - **„a »biztonsági másolat« szöveg a mentés-készletekhez tartozik"** — az
   5. szakasz névcsapdája: a `CThumbUI::FileSave::messagetagX` a
   szerkesztés-mentés párbeszédé.
+- **„a `0x009bfde0` útvonal-építő"** — **MEGDŐLT (2026-09-02):** a 135
+  bájtos függvény az **XML behúzását** állítja elő (80 szóköz, a mélységre
+  csonkolva), és a `0x009bfed0` elem-író hívja. Az 1.1 mondja el, mi
+  döntötte el.
+- **„a `Picasa2Backups` egy mappa neve"** — **MEGDŐLT (2026-09-02):** a
+  `backups.xml` / `replicates.xml` **XML-gyökéreleme**. A tényleges mappa
+  a `db3`.
 - **„a `publish` panel egésze halott, mert megszűnt a Picasa Web Albums"** —
   az 50.1 már kizárta; ez a lap a mentés-ág **élő** működését adja.
 
@@ -187,3 +234,123 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 tartalom-módra, a folyamatszövegekre és a honosított mappanévre (a
 sztringek és a rájuk mutató utasítások olvasva); **feltételes** a
 `Picasa2Backups` szülőkönyvtárára; a `files.txt` **tartalma** nincs mérve.*
+
+## 9. AZ INKREMENTALITÁS MECHANIZMUSA — `BKTag <készletnév>` (2026-09-02)
+
+A panel azt ígéri, hogy *„A Picasa most azokat a fájlokat jeleníti meg,
+amelyekről korábban nem készült biztonsági másolat"* (`publish/backuptext2`).
+Eddig **nem volt igazolva, mi tartja nyilván**. Most megvan:
+
+**Minden mentési készlethez egy adatbázis-CÍMKE tartozik, `BKTag ` +
+a készlet neve.**
+
+| lépés | bizonyíték |
+|---|---|
+| a `"BKTag "` literál (6 karakter) sztringgé alakul | `0x00670b03`–`0x00670b15` (`0x00ca4698`, `0x00985ff0`, hossz **6**) |
+| **összefűzés a készlet nevével** (`0x00408760`) | `0x00670b25` |
+| átnevezéskor `"BKTag %s"` formátummal áll elő | `0x00679ca0` (`0x00ca614c`) |
+| hiba esetén: **„A mentési készletet nem lehet átnevezni"** (`il_NewBkDlgRenameError`) | `0x00679ca0` |
+
+⇒ **A „mi van már mentve" kérdést nem egy külön nyilvántartás dönti el,
+hanem a képekre tett címke.** A nálunk erre használható megfelelő a
+`.picasa.ini` `keywords=` / a címke-index — a fejlesztésnek NEM kell külön
+mentés-adatbázist építenie.
+
+⚠️ **Amit ez NEM mond meg:** hogy a címke a `.picasa.ini`-be vagy csak az
+SQLite-indexbe kerül-e. Lásd a 7. szakasz mérlegét.
+
+### 9.1 Az utoljára használt készlet és az alapértelmezett név
+
+| mit | hol | érték |
+|---|---|---|
+| az utoljára használt készlet | `Preferences\`**`LastBkSet`** | `0x00670cb3`, `0x006769f0`, `0x0067b7e0` |
+| az új készlet alapneve | `il_BurnPanel::bksetname` | `My Backup Set` / **„Saját mentési készlet"** (`0x00670ae6`) |
+| az alapértelmezett célmappa | `il_BurnPanel::DefBkFolder` | `\Picasa Backup\` / **„\Picasa biztonsági másolat\"** (`0x00678be0`) |
+
+⭐ **A Picasa Wine alatt is felismeri magát:** a célmappát előállító
+`0x00678be0` (507 b) a `kernel32`-ből a **`wine_get_unix_file_name`**
+belépési pontot kéri le. Ha megvan, más útvonalat épít. *(A pontos eltérés
+NINCS mérve — de a tény, hogy a Picasa Wine-tudatos, önmagában is
+használható: a mi Linux-oldalunkon ugyanez a mappa NEM windowsos alakban
+kell legyen.)*
+
+## 10. A `publish` SÁV — három mód, egy felület
+
+A `publish` panel **ugyanaz a sáv** három módban; a gombokat a
+`0x00679ca0` (6960 b) építi, a „Mehet"/„Kiadás" parancsokat a
+`0x0066bf90` (1593 b) fogadja.
+
+| mód | a „mehet" gomb | a „mégse" gomb | további |
+|---|---|---|---|
+| **Biztonsági mentés** | `publish/backup_go` „Lemezre írás" | `publish/backup_cancel` | `backup_eject` „Kiadás", `newbackupset`, `editbackupset`, `deletebackupset` |
+| **Ajándék-CD** | `publish/presentcd_go` „Lemezre írás" | `publish/presentcd_cancel` | `presentcd_eject`, `addmore` „Továbbiak hozzáadása…" |
+| **Webre töltés / szinkron** | `publish/replicate_go` „OK" | `publish/replicate_cancel`, `webpublish_cancel` | `rpoptionbox1..3`, `uploadallsync`, `uploadallsize`, `uploadallaccess`, `upgradestorage` |
+
+Közös: `publish/selectall` („Az összes kijelölése"), `publish/selectnone`,
+`publish/cancel`, `publish/picsize%d`, és a
+**`thumbui/publishswitcher`** — ez váltja a módokat.
+
+### 10.1 A sáv beállításkulcsai (mind a `Preferences` alatt)
+
+| kulcs | melyik mód | hol |
+|---|---|---|
+| `LastBkSet` | mentés | `0x00670cb3` |
+| `CDEraseFirst` | ajándék-CD | `0x006706d0`, `0x00679ca0` |
+| `CDLimitSize` | ajándék-CD | ugyanott |
+| `CDSlideshow` | ajándék-CD | ugyanott |
+| `CDSlideshowInclSetup` | ajándék-CD (a `setup.exe` is felkerüljön-e) | ugyanott |
+| `UploadAllSize` | webre töltés | `0x006706d0` |
+| `UploadAllSetting` | webre töltés | `0x00679ca0` |
+
+### 10.2 A megerősítő párbeszédek — a hivatalos magyar szöveggel
+
+| mikor | kulcs | magyar |
+|---|---|---|
+| készlet törlése | `il_NewBkDialog_delete` | **„Biztosan törli a(z) »%s« mentési készletet?"** |
+| a készlet-párbeszéd címe | `il_NewBkDialogTitle` | **„Mentési készlet"** |
+| a szerkesztő címe / gombja | `il_NewBkDialog::EditTitle` / `::EditOKButton` | **„Mentési készlet szerkesztése"** / **„Módosítás"** |
+| átnevezési hiba | `il_NewBkDlgRenameError` | **„A mentési készletet nem lehet átnevezni"** |
+| feltöltés hibája / címe | `il_BurnPanel::UploadAllError` / `::UploadAllTitle` | **„Hiba történt az összes feltöltése során: %d"** / **„Az összes feltöltése"** |
+
+⚠️ **Az online eltávolítás kérdése KÉT alakban létezik** — ugyanaz a
+jelenség, mint a rács üres állapotánál (`racs-ures-allapot.md`):
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `RemoveOnlineSelectedAlbums` | Remove these albums from Picasa Web Albums? | **„Eltávolítja ezeket az albumokat a Picasa Webalbumokból?"** |
+| **`RemoveOnlineSelectedAlbumsES`** | Remove these albums from Google Photos? | **„Eltávolítja ezeket az albumokat a Google Fotókból?"** |
+
+Az `ES` utótagú a **későbbi** (Google Fotók korszakbeli) változat; a
+kettő közti választás ugyanaz a mechanizmus, mint a `LastUserESState`-nél.
+**A webes ág megvalósítása HATÓKÖRÖN KÍVÜL** (a szolgáltatás megszűnt) —
+a szövegek a teljesség kedvéért állnak itt.
+
+### 10.3 A sáv TÁJÉKOZTATÓ szövegei — teljes lista
+
+Ezeknek **nincs bináris címük**: a `respack.yt` szöveg-rétegei hordozzák
+őket, a hivatalos magyar alak a `referencia/panel-feliratok-hu.tsv`-ben
+áll (a sorszám a bizonyíték).
+
+| elem | magyar szöveg | forrás |
+|---|---|---|
+| `publish/backupcdheader2` | „Mappák és albumok kijelölése biztonsági másolat készítéséhez" | `panel-feliratok-hu.tsv:5078` |
+| `publish/backuptext2` | „A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat." | `:5080` |
+| `publish/backuptext3` | „Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy »Az összes kijelölése« gombra kattintva az összes elemet jelölje ki." | `:5081` |
+| `publish/giftcdtext` | „A program a fent pipával kijelölt elemeket másolja az ajándék CD-re. További elemek felvételéhez kattintson az alábbi »Továbbiak hozzáadása« gombra." | `:5061` |
+| `publish/backup_help` | „Súgó" | `:5083` |
+| `publish/presentcd_help` | „Súgó" | `:5068` |
+| `publish/presentcd_cancel` | „Mégse" | `:5070` |
+| `publish/label_rpoptionbox1` | „Feltöltés" | `:5092` |
+| `publish/label_rpoptionbox2` | „Opciók módosítása" | `:5094` |
+| `publish/label_rpoptionbox3` | „Eltávolítás: online elemek" | `:5096` |
+| `publish/rpoptionbox1` (buboréksúgó) | „A program feltölti a kijelölt mappákat és/vagy albumokat" | `:5093` |
+| `publish/rpoptionbox2` (buboréksúgó) | „A program a jobb oldali menükben választott opciókkal frissíti a kijelölt mappákat és/vagy albumokat az interneten" | `:5095` |
+| `publish/rpoptionbox3` (buboréksúgó) | „A program eltávolítja a kijelölt mappákat és/vagy albumokat a Picasa Webalbumokból" | `:5097` |
+
+⚠️ **A `backuptext2` a 9. szakasz ígérete:** ezt a mondatot a `BKTag`
+címke teszi igazzá — enélkül a szöveg hazudna.
+
+**A `publish/replicate_button_group`** felirat nélküli tartó (a három
+`rpoptionbox` rádiócsoportja); a **`publish/replicate_go`** felirata `OK`,
+a **`publish/webpublish_cancel`** és a **`publish/replicate_cancel`**
+„Mégse". Mindhárom a webes ághoz tartozik ⇒ **hatókörön kívül** (7.).

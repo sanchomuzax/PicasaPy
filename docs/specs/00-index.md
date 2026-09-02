@@ -457,21 +457,34 @@ Jegy: **#1945**.
    közzététel-panel célzott dekompilációja. Lap: `racs-ures-allapot.md` 5.;
    jegy **#1945**.
 
-### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel
 
 ⭐ **2026-09-02:** a mentés **MIT ÍR** oldala feltárva (az 50.2 a fogalmat és
 a felületet adta, ezt nem): `backups.xml` négy mezővel, **három**
 tartalom-mód, `files.txt` a célmappában, honosított
 `\Picasa biztonsági másolat\`, lemezhely-ellenőrzés. Jegy: **#440**.
 
-1. **Melyik könyvtárban van a `Picasa2Backups`?** Az útvonalat építő
-   `0x009bfde0` (135 b) egyetlen sztringet sem hivatkozik, és a saját
-   `research/testdata/`-nkban **nincs** `backups.xml`. **Megszerzés:**
-   a `0x009bfde0` dekompilációja vagy egy valódi, mentést futtatott
-   Picasa-adatmappa.
-2. **Mi a `files.txt` sorformátuma?** A név és a hely megvan; a soronkénti
-   írás a másoló ciklus mélyén. Enélkül az **inkrementalitás** mechanizmusa
-   sincs igazolva. **Megszerzés:** a `0x00677a70` (3005 b) dekompilációja.
+⭐ **2026-09-02 (2. kör) — HÁROM lezárás és KÉT helyesbítés:**
+a `backups.xml` **a `db3` mappában** van (`#db3\` token, `0x00c7eeb8`,
+átadva `0x00670ca8`/`0x00670aa8`), `"wb"` módban, a csak-olvasható jelző
+levétele után; **az inkrementalitást adatbázis-CÍMKE adja: `BKTag ` +
+a készlet neve** (`0x00670b25`) — nincs külön mentés-nyilvántartás.
+⛔ **Megdőlt:** a `0x009bfde0` **nem** útvonal-építő, hanem az **XML
+behúzása** (80 szóköz, a `0x009bfed0` elem-író hívja); és a
+**`Picasa2Backups` nem mappa, hanem a fájl XML-gyökéreleme**. Új
+szakaszok: 9. (BKTag), 10. (a `publish` sáv három módja, hét
+beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
+
+1. **Mi a `files.txt` sorformátuma?** A név (`\files.txt`, `0x00ca5c78`) és
+   a hely megvan; a függvény **egyetlen formátum-sztringet sem** hivatkozik
+   (csak a három állapotüzenetet), tehát nyers írás. **Megszerzés:** a
+   `0x00677a70` (3005 b) dekompilációja.
+2. **A `BKTag` címke a `.picasa.ini`-be is kikerül, vagy csak az
+   SQLite-indexbe?** ⚠️ A korpusz **nem tudja eldönteni**: a `BKTag`-re
+   nulla találat, de a `keywords=`-re **is** — a korpusz kulcsszavakat
+   egyáltalán nem tartalmaz. **Megszerzés:** a `0x00670b25` utáni
+   felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
+   futott a mentés.
 
 ### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
 
@@ -531,7 +544,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
 | [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
 | [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
-| [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a `Picasa2Backups` mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** |
+| [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a **`db3`** mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** |
 | [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) | **Az Ajándék-CD / mentő lemez KIMENETE** — a lemez **önjáró**, Windows ÉS macOS vetítővel és visszaállítóval, telepítővel és letöltő-linkkel; az `autorun.inf` **pontos sablonja**; a **16 kimeneti beállítás** teljes listája; és hogy a lemez mappanevei **honosítottak** („Biztonsági mentés" / „Képek") |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
