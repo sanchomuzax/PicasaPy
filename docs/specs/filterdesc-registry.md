@@ -497,6 +497,115 @@ belül a `strength` viselkedése **1 fölött** (a Comicize 1,1-et ad; a mi
 modellünk a súlyt `[0,1]`-re vágja, tehát telít). Ez a Vignette-et és a
 Matte-ot is érinti. Nyitott kérdés: #2076.
 
+#### A `GlowImageOperation` keverése: KÖZÖNSÉGES source-over (#2102)
+
+A #2076 után nyitva maradt kérdés első fele **eldőlt**: a ragyogás-réteg
+összeillesztése a képre nem tartalmaz semmilyen erősség-tagot.
+
+**A hívási lánc** (mind kiolvasva, nem következtetve):
+
+```
+0x00bb8e10  a vtable-belépés: kiolvassa a nyolc attribútumot
+   └─ 0x00bb8f70  a rajzoló (2579 b)
+        ├─ 0x00bb89b0  a sugár-skálázó (xblur, yblur × lapméret)
+        ├─ 0x00bcc2e0  a ragyogás-maszk építője (855 b) — IDE megy a strength
+        └─ 0x00bb992d → 0x008f59d0  a kompozitáló (549 b)
+                          └─ 0x008f4780  a képpont-mag (137 b)
+```
+
+**A rajzoló argumentumlistája — a BINÁRISBÓL levezetve.** Eddig ez csak a
+Flash-analógiából volt meg (`GlowFilter`); most a `0x00bb8e10` veremépítése
+adja, tehát a sorrend mérve van:
+
+| # | mi | honnan | alapérték |
+|---|---|---|---|
+| 1 | forráskép | `[ebp+8]` | — |
+| 2 | `color` (dword) | `+0x24`, `0x8eea90`-nel számmá | — |
+| 3 | `glowalpha` (float) | `+0x2c` | **1,0** (`fld1`, `0x00bb8e4b`) |
+| 4 | `xblur` (float) | `+0x34` | **1,0** (`0x00bb8e75`) |
+| 5 | `yblur` (float) | `+0x3c` | **1,0** (`0x00bb8e95`) |
+| 6 | **`strength`** (float) | `+0x44` | **0,0** (`fldz`, `0x00bb8eb5`) |
+| 7 | `quality` (int) | `+0x4c` | **3** (`mov ebx, 3`, `0x00bb8ede`) |
+| 8 | célkép | `[ebp+0x10]` | — |
+
+⚠️ Két meglepetés, amit a Flash-analógia **nem** adott volna meg:
+
+- a `strength` natív alapértéke **0,0**, nem 1,0 (a Flash `GlowFilter`-é 1,0);
+- a `color` **alfa-bájtja beégetve `0xFF`** (`mov byte ptr [esp+0x3b], 0xff`,
+  `0x00bb8e5f`) — a ragyogás színe mindig teljesen átlátszatlan, az
+  átlátszóságot nem a szín hordozza.
+
+**A képpont-mag (`0x008f4780`) — TELJES képlet.** SSE2, négy képpont
+egyszerre; az alfa a **forrás** képpont 4. bájtja
+(`pshuflw/pshufhw imm=0xff` = a 4 szóból a 3. indexű):
+
+```
+T   = src·a + dst·(255 − a)            ; 16 bites szorzatok, a = 0..255
+out = (T + (T >> 8) + 1) >> 8          ; a /255 egész osztás gyors alakja
+```
+
+A két SSE-konstans **kiolvasva**: `0xcd0550` = `1` (nyolc `word`),
+`0xcd0560` = `255` (nyolc `word`); a `pandn xmm4, xmm7` adja a `255 − a`-t.
+A `0x008f59d0` mindössze a sor/oszlop-bejárás: a rect `[+8]`/`[+0xc]` mezői
+a sorhatárok, a maradék képpontokra `movd` fut `movupd` helyett.
+
+> **Következmény.** A keverés egy **szabványos source-over**, egyetlen
+> erősség-, mód- vagy súlyparaméter nélkül. Tehát a `strength` **nem** a
+> keverés súlya lehet — ezt a modellcsaládot a mérés **kizárja**. A mi
+> `render/glimmer_ops.py::inner_glow`-unk épp ilyen súlyt vág `[0,1]`-re.
+
+**Hol lép be a `strength`.** A `0x00bb9186` hívás hatodik dword-argumentuma
+(`0x00bb913e  fstp dword ptr [esp+0xc]`, a `0x00bb9107  fld dword ptr [esp+0x218]`
+értéke) — tehát a `0x00bcc2e0`-ban dől el, a maszképítéskor, nem a
+kompozitáláskor.
+
+**A `0x00bcc2e0` első strength-felhasználása — kvantálás.** A
+`0x00bcc3d5`–`0x00bcc434` blokk:
+
+```
+0x00bcc3d5  fld   dword [esp+0x88]      ; strength
+0x00bcc3dc  fsub  qword [0xc7e328]      ; − 1,0     (kiolvasva)
+0x00bcc3e2  fmul  qword [0xc72150]      ; × 0,5     (kiolvasva)
+0x00bcc3f3  call  0x529e10              ; ceilf     (ld. lent)
+0x00bcc3f8  fmul  dword [esp+0x1c]      ; × n  (a struktúrából jövő egész)
+0x00bcc401  fld1 / fadd / fxch          ; + 1,0
+0x00bcc424  fistp qword [esp+0x20]      ; csonkoló kerekítés (or eax,0xc00)
+0x00bcc42c  cmp eax, 0xff / ja          ; felső korlát 255
+```
+
+**A `0x00529e10` = `ceilf` — BIZONYÍTVA, nem feltételezve.** A wrapper a
+`0x00c090f0`-t hívja (exponens-mezőt kicsomagoló, tört bitet nyíró SSE2
+rutin); az hibaágon `0x00c12fd0`-t hívja a **`0x3ec`** kóddal. A `0x00c12fd0`
+ugrótáblája (`0x00c1324c`, 13 bejegyzés, `0x3e8`-tól) a `0x3ec`-re a
+`0x00c131d5` ágat választja, ami a **`0x00c43bac` = `"ceil"`** sztringet
+teszi a névmezőbe. (A tábla többi neve: `log`, `log10`, `exp`, `atan`,
+**`ceil`**, `floor`, `modf`, `sin`, `cos`, `tan` — tehát a hozzárendelés
+egyértelmű.)
+
+**Amit ebből MA állítani lehet — és amit nem.**
+
+*Erős (a veremleképzés két független horgonyon ellenőrizve: `[esp+0x1f8]`
+= 1. argumentum a prológusban, `[esp+0x214]`/`[esp+0x218]` = `xblur`/`yblur`
+a sugár-skálázó hívásánál):*
+
+> A `strength` ebbe a tagba **`ceil((strength − 1) / 2)`** alakban lép be,
+> tehát **lépcsősen**, nem folytonosan.
+
+Ennek azonnali, **ellenőrizhető** következménye: a `filterdesc.xml`
+**minden** Glow-hívására (`1,1` · `1,2` · `1,3` · `1,4` · `1,5` és a
+Vignette/Matte `[1..2]` csúszkája) `ceil((s−1)/2) = 1` — **állandó**. Csak
+a pontosan `s = 1,0` eset ad `0`-t, és a következő lépcső `s > 3,0`-nál jön.
+
+⇒ Ez megmagyarázza, miért illeszkedik a Vignette golden-készletére
+kalibrált modellünk: **abban a tartományban ez a tag nem is változik.**
+
+*NINCS MEG (a következő kör dolga):* a `0x00bcc2e0` további szakasza — a
+`0x00bcc438`-tól induló második, szimmetrikus blokk operandusai, és hogy a
+két kiszámolt, `255`-re vágott egész **mit** vezérel (menetszám? sugár?
+alfa-szorzó?). A veremleképzés ott már nem követhető megbízhatóan kézzel:
+**célzott dekompiláció** kell a `0x00bcc2e0`-ra. Amíg ez nincs meg, a
+Comicize-eltérés oka sem magyarázható.
+
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
 Ezek a képletek a képmérethez skálázódnak, hogy az effekt **arányos**
