@@ -507,6 +507,89 @@ renderelési ciklusból jön.)*
 hívás-hiány az indexből; a rekesz-szerep a dekompilált `0x006575b0`
 tartalmából — óra + határidő + eltávolítás, ld. a 2026-08-26-i szakaszt).*
 
+
+## Az animáció ALAKJA — MÉRVE (#2034, 2026-09-03)
+
+A #1130 2. pontjának maradéka. A válasz **egyik felkínált lehetőség sem**:
+nem vízszintes becsúszás és nem áttűnés, hanem **két absztrakt skalársáv
+kulcskockás animációja**, cellánként.
+
+### A képkockánkénti tick szerkezete (`0x006575b0`)
+
+A cellák a `[popup+0x90]` tömbben ülnek, **cellánként `0xC8` = 200 bájt**
+(`add ebx, 0xc8`, `0x00657893`); a darabszám `[popup+0x94] >> 1`
+(`0x0065788b`). Minden cellára, minden képkockán:
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| lejárat | `0x00657741` | `fldz; fcomp [cella+0xb8]` — ha a határidő > 0 **és** `most > határidő` → `call 0x655be0` (elbocsátás) |
+| animáció | `0x0065777e`–`0x006577d9` | ld. lent |
+| pozíció | `0x006577ea`–`0x0065782d` | `call 0x655950` a CÉL-pozícióra, majd `[cella+0xb0]`/`[cella+0xb4]` **közvetlen** `mov` |
+
+### A két animált sáv
+
+Cellánként **két** növekvő kulcskocka-tömb: `cella+0x80…0x94` és
+`cella+0x98…0xac`. A kulcskocka **40 bájt** (`0x009e6010`: `eax*5*8`), az
+utolsó kulcskocka ÉRTÉKE a `[bázis + n·40 − 0x18]` qword.
+
+- **Kiolvasó:** `0x006559b0` — mindkét sáv utolsó értékét egy `float[2]`-be írja.
+- **Író:** `0x006558b0` — `t0 = most` (`0x009a5210`), `t1 = most + időtartam`,
+  és **mindkét** sávhoz fűz egy kulcskockát (`0x00655900` és `0x0065593b`).
+
+A tick minden képkockán összeveti a sávok aktuális végértékét a **céllal**:
+
+```
+0x0065777e  fld dword [0xcf3ed0]   ; −1,0f        → cél[0]
+0x0065778e  fld dword [esp+0x20]   ; a cella SORSZÁMA → cél[1]
+0x00657796  call 0x6559b0          ; a sávok mostani végértéke
+0x0065779f  fcomp qword [0xcf3f58] ; ≠ −1,0 ?
+0x006577b0  fld dword [ecx+4]      ; ≠ sorszám ?
+0x006577bc  fld dword [0xc7e304]   ; ha bármelyik eltér: időtartam = 0,6 s
+0x006577ca  call 0x6558b0          ; új kulcskocka MINDKÉT sávra
+0x006577d3  fadd qword [0xc7e328]  ; sorszám += 1,0  (a következő cellához)
+```
+
+**Kiolvasott konstansok** — egyik sem becslés:
+
+| cím | típus | érték | mi |
+|---|---|---|---|
+| `0x00c7e304` | float | **0,6** | az átmenet **hossza másodpercben** |
+| `0x00cf3ed0` | float | **−1,0** | az 1. sáv célértéke (állandó) |
+| `0x00cf3f58` | double | −1,0 | ugyanez az összehasonlításhoz |
+| `0x00c7e328` | double | 1,0 | a sorszám-léptető |
+
+### A GÖRBE — `0x0072df60`, kiolvasva
+
+Az `0x006558b0` a kulcskockába a `0x0072df60` **függvénymutatót** teszi
+(`0x006558b3  mov dword ptr [esp], 0x72df60`). Ez maga a lazítás:
+
+```
+0x0072df60  fld1 / fcom            ; t ≥ 1 → 1,0     (telítés)
+0x0072df78  fldz / fcom            ; t ≤ 0 → 0,0
+0x0072dfab  fmul qword [0xc7ea10]  ; u = 8·t          (0xc7ea10 = 8,0)
+0x0072dfce  call 0x40eac0          ; exponenciális
+```
+
+⇒ **exponenciális lazítás `u = 8·t` skálán**, nem lineáris és nem
+koszinuszos. A `0x00c7ea10` = **8,0** kiolvasva.
+
+### Mit jelent ez a felbukkanásra
+
+1. **A vízszintes pozíció nem interpolálódik a tickben:** a
+   `[cella+0xb0]`/`[cella+0xb4]` értéket a tick **közvetlen `mov`-val**
+   írja (`0x00657827`, `0x0065782d`), miután a `0x00655950` kiszámolta. A
+   „képernyőn kívüli parkolóhely" (`left = 10000`, ld. fent) tehát **nem**
+   egy vízszintes becsúszás kiindulópontja.
+2. **Ami tényleg animálódik:** a két sáv — az egyik célértéke **állandó
+   −1,0**, a másiké a cella **sorszáma a veremben**. Amikor egy értesítés
+   elbocsátódik és a többi feljebb lép, a sorszám megváltozik, és a cella
+   **0,6 s alatt, exponenciális görbével** csúszik az új helyére.
+
+**Bizalmi fok:** a szerkezet, a 0,6 s, a −1,0, a 8,0 és a görbe
+**megerősített** (közvetlen kiolvasás). **NINCS MEG:** hogy a rajzoló
+oldal a két sávértéket pontosan MELYIK képi mennyiséggé fordítja (eltolás,
+átlátszóság, mindkettő) — ez a rajzoló ág olvasása, külön kör.
+
 ## Elszámolás — az öt eredeti kérdés állapota (2026-09-02, #1130 zárása)
 
 A #1130 törzse még az első kör öt nyitott kérdését sorolta; a lap azóta
@@ -516,7 +599,7 @@ maradhat „félig nyitva"** — ami tényleg nyitott, annak önálló jegy jár
 | # | kérdés | állapot | hol |
 |---|---|---|---|
 | 1 | geometria | ✅ **LEZÁRVA** | „Geometria — MÉRVE A BINÁRISBÓL" + „Melyik ÉLHEZ képest a 144 képpont" |
-| 2 | animáció | ⚠️ **RÉSZBEN** — az ÜTEMFORRÁS lezárva, a látható ALAK nem | „Az animáció ÜTEMFORRÁSA — a vtable 0x60 rekesze" |
+| 2 | animáció | ✅ **LEZÁRVA** (#2034) — ütemforrás ÉS alak | „Az animáció ÜTEMFORRÁSA…" + „Az animáció ALAKJA — MÉRVE" |
 | 3 | élettartam | ✅ **LEZÁRVA** | „A cella élettartama — MEGFEJTVE": abszolút határidő `+0xb8`-on, képkockánkénti ellenőrzés |
 | 4 | észlelési ág | ✅ **LEZÁRVA** | „4. ág — új képek észlelése" |
 | 5 | események listája | ✅ **LEZÁRVA** (bizonyítottan nincs ilyen lista) | „Hány eseménye van?" |
