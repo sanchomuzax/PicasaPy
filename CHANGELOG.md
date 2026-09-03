@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- A `test_busy_integration.py` két esete a **pillanatnyi** `isWorking`-ot
+  figyelte a művelet indítása után; ez versenyhelyzet volt, és a windowsos
+  CI-lábon pirosra vitte a main-t. A busy-nyilvántartás szándékos
+  viselkedése („rövid munkánál ne villanjon a csík") miatt a jelző gyors
+  gépen soha nem lesz igaz. A tesztek mostantól azt állítják, ami a #505
+  tényleges ígérete és időzítéstől független: a művelet **bejelentkezik** a
+  nyilvántartásba és ugyanannyiszor **ki is jelentkezik**, a végén pedig az
+  `isWorking` hamis. (#2137)
+
 ## [0.8.243] – 2026-09-03
 
 ### Javítva
