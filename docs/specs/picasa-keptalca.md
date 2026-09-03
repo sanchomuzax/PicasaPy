@@ -1002,3 +1002,56 @@ gombok elfogynak vagy összenyomódnak, az eredeti viszont a maradékot a
 
 *Bizonyítottsági fok: **megerősített*** — a geometria a `respack.yt`-ből,
 a konténer `overflow:` típusa ugyanonnan, a feliratok az `i18n-hu`-ból.
+
+---
+
+## 22. A „További lehetőségek…" gomb VISELKEDÉSE — kimérve (2026-09-04, #1672)
+
+A 21. szakasz a `morebutton` **helyét és feliratát** adta meg. Ez a szakasz
+azt, hogy **mit csinál** — a #1672 kifejezetten ezt kérte („a viselkedése
+kimérve, mielőtt bekötjük — ne a feliratból következtessünk").
+
+**A kattintás útja.** A felületi parancsdiszpécser (`0x005d9cc0`) az
+elemnévre hasonlít, és a `outputlayout/morebutton` ágon **egyetlen**
+függvényt hív:
+
+```
+0x005dad25  cmp ecx, 0x00c8f6dc          ; "outputlayout/morebutton"
+0x005dad2b  sete cl
+0x005dad33  call 0x005fe090              ; a kezelő
+```
+
+**A kezelő (`0x005fe090`, 150 b) két csomópontot ér el, névvel:**
+
+```
+0x005fe099  "outputlayout/morebutton"          -> a gomb csomópontja
+0x005fe0c2  cmp byte ptr [eax + 0x359], 0      ; a gomb egy állapotbájtja
+0x005fe0d3  sete al
+0x005fe0dd  mov byte ptr [edx + 0x264], al     ; a főablak [+0xea0] objektumába, INVERTÁLVA
+
+0x005fe0e5  "outputlayout/overflowcontainer"   -> a túlcsordulás-konténer
+0x005fe110  mov dword ptr [eax + 0x268], 0xffffffff
+0x005fe11f  call [vtbl + 0x38]                 ; a konténer 14. rése
+```
+
+⇒ **A gomb a `outputlayout/overflowcontainer` állapotát billenti**, és a
+konténer saját metódusát hívja meg rá. A `.tre` szerint ebben a
+konténerben ül a kimeneti sor **összes** gombja
+(`separator`, `pbutton`, `ebutton`, `folderbutton`, `orderbutton`,
+`sharewith`, `blogger`, `collage`, és maga a `morebutton` is —
+`outputlayout.tre:30`–`136`).
+
+⇒ **A „További lehetőségek…" tehát nem külön menüt nyit, hanem a
+túlcsordulás-konténert nyitja/zárja** — pontosan azt, amit a hivatalos
+buboréksúgó ígér („Kattintson ide a további opciókért"). A felirat és a
+viselkedés **egybeesik**; a #1672 aggálya („ne a feliratból
+következtessünk") itt megnyugtatóan zárul.
+
+**Ami NINCS mérve:** mit csinál a konténer 14. rése (a `[+0x268] = −1`
+beállítás után hívott metódus), és mi a `[+0x359]` állapotbájt pontos
+jelentése a gombon. A **kötéshez** ez nem szükséges: a mi oldalunkon a
+túlcsordulás-viselkedés a felületi keretrendszer dolga.
+
+*Bizonyítottsági fok: **megerősített** a hívási láncra és a két érintett
+csomópontra (kiolvasott utasítások, névvel); **nincs mérve** a konténer
+metódusának tartalma.*
