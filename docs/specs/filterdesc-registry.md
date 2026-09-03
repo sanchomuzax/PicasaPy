@@ -562,6 +562,63 @@ kilenc pár közvetlen kiolvasásból; a feliratok a `filterdesc.xml`-ből.
 > `EditorEffectsTab*.qml` és a `ToolTile.qml` fájlokban. A funkció tehát
 > hiányzik; jegy: **#2146**.
 
+#### A HÁROM effekt-fül TELJES összevetése a csempe-táblával (#2141)
+
+A #2141 „Kész, ha" listájának pontja — *a fül **összes** csempéje összevetve
+a `0x00c7e5a0` táblával* — itt teljesül, és nem egy, hanem **mind a három**
+fülre. A tábla 36 rekordja pontosan a három eredeti effekt-fül 3×12-es
+rácsa; a mi `EditorEffectsTab1/2/3.qml`-ünk **pozícióról pozícióra** ennek
+felel meg.
+
+**A 2. és a 3. fül mind a 24 csempéje EGYEZIK** (csak a kis/nagybetűs alak
+tér el: `ir`↔`IR`, `heatmap`↔`HeatMap` stb.):
+
+```
+2. fül: IR · Lomo · Holga · HDR · Cinemascope · Orton · Sixties · Invert
+        · HeatMap · CrossProcess · QuantizePalette · TwoTone
+3. fül: Boost · Soften · Vignette · Pixelate · FocalZoom · PencilSketch
+        · Neon · Comicize · Border · DropShadow · MuseumMatte · Polaroid
+```
+
+**Az 1. fülön HÁROM csempe téves — és mind a három ugyanazt a hibát követi
+el:** a felirat az eredeti **elsődleges** szűrőé, a hívás viszont **másik**
+szűrőt indít.
+
+| # | felirat nálunk | eredeti elsődleges | nálunk hívott kulcs | a hívott kulcs SAJÁT felirata (eredeti szövegtár) |
+|---|---|---|---|---|
+| 1 | „Sharpen" / „Élesítés" | **`unsharp2`** | `unsharp` | **Sharpen (Old)** / **Élesítés (régi)** |
+| 5 | „Film Grain" / „Filmszemcse" | **`PicnikGrain`** | `grain2` | Film Grain / Filmszemcse *(azonos felirat, másik szűrő)* |
+| 6 | „Tint" / „Árnyalás" | **`PicnikTint`** | `tint` | **Tint (Old)** / **Árnyalás (régi)** |
+
+Az 1. és a 6. csempénél a hívott kulcs éppen az, amit az eredeti a **Shift**
+alá rejt (ld. az előző szakaszt) — a felhasználó tehát ma az „Élesítés"
+gombbal a „(régi)" változatot kapja, jelzés nélkül. Az 5-nél a `grain2`
+**létező eredeti szűrő** (`filter_grain2_label0` = *Film Grain*), csak épp
+nem az, amelyik a csempén ül.
+
+A többi kilenc csempe (`sepia`, `bw`, `warm`, `sat`, `radblur`, `glow2`,
+`ansel`, `radsat`, `dir_tint`) **egyezik** — köztük a `glow2`, ahol a
+tartalék `glow` lett volna a hasonló hiba.
+
+**Bizalmi fok: megerősített.** A tábla a binárisból (`0x00c7e5a0`, 36×12 b),
+a mi oldalunk az `EditorEffectsTab*.qml` `effectRequested(...)` hívásaiból,
+a feliratok az eredeti szövegtárból (`filter_*_label0`) és a
+`render/registry_data.py`-ból.
+
+##### Amit a Shift-lelet a MI 6. és 7. fülünkről mond
+
+- A **6. fül** (`EditorEffectsTab4.qml`, #422) öt csempéjéből **négy**
+  (`matte`, `nightvision`, `roundededges`, `picnikgrain`) az eredetiben
+  **Shift-másodlagos**, az ötödik (`localcontrast`) egyetlen csempén sincs
+  rajta. Ez nem hiba — a hét fül a tulajdonos rögzített döntése —, de ha a
+  Shift-ág elkészül (**#2146**), ez a négy csempe **két úton** is elérhető
+  lesz; a jegy ezt vegye figyelembe.
+- A **7. (örökölt) fül** bevezető mondata viszont **téves állítást tesz**:
+  *„These filters come from older versions of Picasa. **They are not
+  available in today's Picasa**"* — a lista első eleme, a `radtint`
+  (*Radial Tint* / *Sugaras árnyalás*) **elérhető a Picasa 3.9-ben**: az
+  1. fül 12. csempéjén (`dir_tint`) a Shift hozza elő. Jegy: **#2148**.
+
 #### A `mode` attribútum SZÁMÉRTÉKE — és az effekt-csempe kék jelvénye (#1869)
 
 A `mode` nem csak besorolás: a parser **egésszé fordítja**, és ez az egész
