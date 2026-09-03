@@ -1,6 +1,7 @@
 # `respack.yt` — a Picasa bináris erőforráscsomagja (MEGFEJTVE)
 
 **Státusz: 2026-08-06 — teljesen visszafejtve, 100%-os fedéssel.**
+*(2026-09-03: a rétegfejléc 8–9. bájtja helyesbítve — ld. 3.0.)*
 Ez a fájl korábban a `picasa-program-resources.md` 8. fejezetének
 **4. nyitott kérdése** volt („dokumentálatlan, saját bináris konténer,
 reverse-engineering nélkül nem állapítható meg"). Most már nem az.
@@ -74,14 +75,67 @@ Minden `layer:` blokk 13 bájtos fejléccel indul:
 | 2 | `int16 LE` | `y0` — felső szél |
 | 4 | `int16 LE` | `x1` — jobb szél (exkluzív) |
 | 6 | `int16 LE` | `y1` — alsó szél (exkluzív) |
-| 8 | `uint8` | 0 (ismeretlen; a mintában végig 0) |
-| 9 | `uint8` | 1 = normál réteg, 0 = a dokumentum határa (`docbounds`) |
-| 10 | `uint16 LE` | 0 (ismeretlen) |
+| 8 | `uint16 LE` | **ÁTLÁTSZÓSÁG** — 256 = átlátszatlan, 0 = teljesen átlátszó (ld. 3.0) |
+| 10 | `uint16 LE` | 0 — tartalék (mind a 2769 rétegen 0) |
 | 12 | `uint8` | **kódolás**: 0 = üres, 1 = RLE, 2 = tömör kitöltés |
 
 **A koordináták előjelesek** (`int16`, nem `uint16`) — 17 réteg lóg ki a
 vászonból negatív origóval; előjel nélkül olvasva ezek méretei
 értelmetlenné válnak. Ez a formátum egyetlen valódi csapdája.
+
+### 3.0 ⛔ HELYESBÍTÉS: a 8–9. bájt átlátszóság (2026-09-03, #2178)
+
+**Ez a lap korábban két külön mezőt írt ide, és mindkettőt tévesen:**
+
+| bájt | a korábbi állítás | valójában |
+|---|---|---|
+| 8 | „0 (ismeretlen; a mintában végig 0)” | **140 rétegen nem 0** |
+| 9 | „1 = normál réteg, 0 = `docbounds`” | a 256 felső bájtja |
+
+A kettő **egyetlen `uint16 LE`**: a réteg átlátszósága, ahol **256 =
+átlátszatlan**. A teljes csomagban (2769 réteg) mindössze **tíz**
+különböző érték fordul elő, mind 0 és 256 között:
+
+| érték | %-ban | rétegek |
+|---|---|---|
+| 256 | 100,0% | 2629 |
+| 0 | 0,0% | 100 |
+| 247 | 96,5% | 1 |
+| 242 | 94,5% | 3 |
+| 230 | 89,8% | 10 |
+| 204 | 79,7% | 9 |
+| 179 | 69,9% | 3 |
+| 153 | 59,8% | 3 |
+| 128 | 50,0% | 2 |
+| 77 | 30,1% | 9 |
+
+**Miért látszott igaznak a régi 9. bájtos szabály?** Mert a 0 értékű
+rétegek **pontosan a 100 `docbounds` réteg** — azoknak 0 az
+átlátszóságuk, és nincs egyetlen 0 értékű, nem-`docbounds` réteg sem.
+Véletlen egybeesés, nem szabály; a 8. bájtra adott állítás viszont
+nyíltan megdől.
+
+**A részlegesen átlátszó rétegek NEVE igazolja az olvasatot:**
+`modalprogress/shadow` (30%), `capturemoviepanelpopup/filmcontainer_overlayL/C/R`
+(30%), `overlays/timeline` (50%), `editpanel/rect: refining` — a
+„Finomítás…” fátyla (70%), `scratch/rect: highlight` — a képtálca
+mappa-tokenjének kék pirulája (70%), `editpanel/rect: captionbase` (80%),
+`tooldecrect/tooldecrect` (90%), `searchcontainer/listbox: searchautocomplete`
+(95%).
+
+**Fizikai ellenőrzés.** A `scratch/rect: highlight` tömör színe
+RGB(46,114,161), átlátszósága 179/256 = 69,9%. Fehér fölött ebből
+RGB(109,157,189) jön ki. A tulajdonos felvételén
+(`research/Picasa3-also-talca-ikonok-viselkedese/…214629.jpg`, a kék pirula)
+**mért** érték: **RGB(107,153,186)** — csatornánként ≤4 eltérés, JPEG-zaj.
+Átlátszatlan rétegnél 61/39/25 lenne az eltérés.
+
+**Az osztó 256, nem 255:** a mért értékkészlet maximuma pontosan 256.
+
+⚠️ A [`respack.py`](../../tools/picasa/respack.py) ma **eldobja** ezt a
+mezőt, tehát minden réteget átlátszatlanként ad vissza — jegy: **#2178**.
+Az `encode_layer` NEM érintett (a fejléc nélküli törzset állítja vissza),
+tehát a 3.3 bájtazonossági állítása továbbra is igaz.
 
 ### 3.1 Kódolás `2` — tömör kitöltés (1403 réteg)
 
