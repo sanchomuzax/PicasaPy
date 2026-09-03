@@ -1550,6 +1550,37 @@ említi-e az elemet. Kézzel javítva.
 napszakot a szabály dokumentálásával töltötte. Ez a legerősebb érv a
 **#2182** őrre.
 
+### 22.5/c AZ ŐR MEGVAN — és megmérte, mekkora az adósság (2026-09-03, #2182)
+
+A 22.4 mostantól **betartatott**: a `tests/test_spec_horgony_or_2182.py` minden
+`docs/specs/*.md` lapon végigmegy, a mérővel AZONOS szakaszolással és
+mintákkal, és elbukik, ha egy szakasz **táblasorban** dokumentál
+`panel/elem` alakú UI-elemnevet, de nincs benne `0x00…` cím vagy
+`fájl.tre:sor` horgony. A hibaüzenet megnevezi a lapot, a szakasz címét és az
+érintett elemeket.
+
+**Amit a bevezetés mért — az adósság nagysága:**
+
+| olvasat | szakasz | lap |
+|---|---|---|
+| táblasorban dokumentált elem (erre bukik az őr) | **58** | 30 |
+| bármely elemnév-említés, folyó szövegben is | 150 | 40 |
+
+A szűkebb olvasat a szándék: a prózai említés — például egy nyitott kérdés
+megfogalmazása — nem dokumentáció, tehát nem is veszít el semmit a mérésben;
+a tág kapu viszont minden őszinte írásbeli felvetést büntetne.
+
+Az 58 tétel nevesített, **szakaszonkénti** listán áll
+(`tests/support/spec_horgony_ismert_sertesek.json`), hogy az őr a meglévők
+javítása nélkül is bevezethető legyen. A lista leürítése a **#2193** dolga, és
+nem tud elrohadni: külön teszt bukik el, ha egy javított vagy átnevezett
+szakasz bent marad rajta (a #659 tanulsága — az elavult bejegyzés némán
+elnyeli a regressziót).
+
+⚠️ A mérő maga **továbbra is némán** ugorja át a horgony nélküli szakaszt; a
+figyelmeztetés a privát repó dolga (agent-#38). Az őr a commitot fogja meg, a
+figyelmeztetés a mérés futtatóját — két külön belépési pont.
+
 ### 22.6 A lefedettségi axis mint KUTATÁSI forrás — kimerült (2026-09-03)
 
 A 22.5 auditját a maradék listára is lefuttatva kiderült, hogy a

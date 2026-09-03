@@ -1,0 +1,693 @@
+{
+  "_megjegyzes": "A 22.4 horgony-előírását évekig SEMMI nem tartatta be, ezért az őr bevezetésekor (#2182) ennyi valódi sértés állt a fán. Az őr csak az ÚJAKRA bukik el, hogy bevezethető legyen a meglévők javítása nélkül. Ez a lista NEM tárolóhely: minden tétel felhorgonyzása a #2193 dolga, és amint egy szakasz megkapta a horgonyát, a bejegyzését INNEN IS törölni kell — erre külön teszt bukik (a #659 tanulsága: az elavult bejegyzés némán elnyeli a regressziót).",
+  "_jegy": "#2193",
+  "_felvetel_datuma": "2026-09-03",
+  "sertesek": [
+    {
+      "lap": "ajandek-cd-kimenet.md",
+      "cim": "### 9.1 A hivatalos magyar feliratok",
+      "elem_db": 3,
+      "elemek": [
+        "publish/presentcd_go",
+        "publish/presentcd_help",
+        "thumbui/cdmode"
+      ]
+    },
+    {
+      "lap": "binaris-regeszet-modszertan.md",
+      "cim": "### 22.5 A 22.4 szabályát MEGSÉRTETTÜK — és tizenkét elem évekig „feltáratlan\" volt (2026-09-03)",
+      "elem_db": 4,
+      "elemek": [
+        "acquirepanel/sync_options_button",
+        "headerpanel/play",
+        "outputlayout/blogger",
+        "peoplepanel/manual_cancel"
+      ]
+    },
+    {
+      "lap": "binaris-regeszet-modszertan.md",
+      "cim": "### ⚠️ A csapda: az ABSZOLÚT pozíció tervezőrajz, nem futásidő",
+      "elem_db": 2,
+      "elemek": [
+        "thumbui/hlistsizer",
+        "thumbui/listdecrect"
+      ]
+    },
+    {
+      "lap": "binaris-regeszet-modszertan.md",
+      "cim": "### ⛔ A KONTROLL MEGBUKTATTA",
+      "elem_db": 4,
+      "elemek": [
+        "printoptions/usenotext",
+        "printpanel/printsizes",
+        "thumbui/backup",
+        "thumbui/loupehit"
+      ]
+    },
+    {
+      "lap": "biztonsagi-mentes.md",
+      "cim": "### 10.3 A sáv TÁJÉKOZTATÓ szövegei — teljes lista",
+      "elem_db": 13,
+      "elemek": [
+        "publish/backup_help",
+        "publish/backupcdheader2",
+        "publish/backuptext2",
+        "publish/backuptext3",
+        "publish/giftcdtext",
+        "publish/label_rpoptionbox1",
+        "publish/label_rpoptionbox2",
+        "publish/label_rpoptionbox3",
+        "publish/presentcd_cancel",
+        "publish/presentcd_help",
+        "publish/rpoptionbox1",
+        "publish/rpoptionbox2",
+        "publish/rpoptionbox3"
+      ]
+    },
+    {
+      "lap": "design-guide.md",
+      "cim": "### Tömör kitöltések — HÁROM tokenünk igazolva",
+      "elem_db": 3,
+      "elemek": [
+        "headerpanel/headerbase0",
+        "thumbui/basepanel",
+        "thumbui/scratchpadbase"
+      ]
+    },
+    {
+      "lap": "getmore-klipgyujto-mod.md",
+      "cim": "### 1.1 A belépési pontok",
+      "elem_db": 2,
+      "elemek": [
+        "collagepanel/getmoreclips",
+        "makemoviepanel/addclips"
+      ]
+    },
+    {
+      "lap": "kollazs-atvilagitas.md",
+      "cim": "## 1. Belépési pontok — hogyan jutok a kollázshoz",
+      "elem_db": 4,
+      "elemek": [
+        "editpanel/editcollage",
+        "faceheaderpanel/create_collage",
+        "headerpanel/create_collage",
+        "outputlayout/button"
+      ]
+    },
+    {
+      "lap": "kollazs-eletciklus.md",
+      "cim": "### 4.4 A megvalósítás és EGY MEGDŐLT elvárás (2026-08-24, #1072)",
+      "elem_db": 1,
+      "elemek": [
+        "editpanel/render_now"
+      ]
+    },
+    {
+      "lap": "konyvtar-ablak-meretek.md",
+      "cim": "### 5.9 Egyéb",
+      "elem_db": 1,
+      "elemek": [
+        "thumbui/size"
+      ]
+    },
+    {
+      "lap": "picasa-arcfelismeres.md",
+      "cim": "### 15.7 Eredeti / nálunk — MÉRVE",
+      "elem_db": 10,
+      "elemek": [
+        "faceheaderpanel/addname",
+        "faceheaderpanel/confirmsel",
+        "faceheaderpanel/confirmsug",
+        "faceheaderpanel/face_zoom",
+        "faceheaderpanel/ignore",
+        "faceheaderpanel/moresug",
+        "faceheaderpanel/picture_zoom",
+        "faceheaderpanel/removesel",
+        "faceheaderpanel/selectsug",
+        "faceheaderpanel/sug_filter"
+      ]
+    },
+    {
+      "lap": "picasa-beviteli-mezok.md",
+      "cim": "### A Címkék panel",
+      "elem_db": 4,
+      "elemek": [
+        "tagpanel/add_tag_label",
+        "tagpanel/addtag",
+        "tagpanel/quick_config",
+        "tagpanel/quick_label"
+      ]
+    },
+    {
+      "lap": "picasa-beviteli-mezok.md",
+      "cim": "### A Címkék párbeszéd (`keywords`)",
+      "elem_db": 6,
+      "elemek": [
+        "keywords/addbutton",
+        "keywords/addkeywords_label",
+        "keywords/closebutton",
+        "keywords/keywords_label",
+        "keywords/readonly_label",
+        "keywords/removebutton"
+      ]
+    },
+    {
+      "lap": "picasa-bezaras-es-kilepes.md",
+      "cim": "## 1. szint — nézet-kilépők (NEM zárják az appot)",
+      "elem_db": 4,
+      "elemek": [
+        "editoneup/exit",
+        "editoneup/prev",
+        "oneup/exit",
+        "oneup/prev"
+      ]
+    },
+    {
+      "lap": "picasa-create-features.md",
+      "cim": "#### 1.10.5 Belépési pontok a kollázsba",
+      "elem_db": 1,
+      "elemek": [
+        "outputlayout/button"
+      ]
+    },
+    {
+      "lap": "picasa-create-features.md",
+      "cim": "#### A felület (`video_control_bar2.tre`)",
+      "elem_db": 8,
+      "elemek": [
+        "video_control_bar2/1to1",
+        "video_control_bar2/controlbar",
+        "video_control_bar2/fullscreen",
+        "video_control_bar2/moviecontrolsclip",
+        "video_control_bar2/moviescrubslider_container",
+        "video_control_bar2/scaleslider",
+        "video_control_bar2/time",
+        "video_control_bar2/volumeslider"
+      ]
+    },
+    {
+      "lap": "picasa-create-features.md",
+      "cim": "#### E) A fül feliratai — a hivatalos magyar fordítással",
+      "elem_db": 6,
+      "elemek": [
+        "makemoviepanel/back_color_label",
+        "makemoviepanel/font_label",
+        "makemoviepanel/size_label",
+        "makemoviepanel/style_label",
+        "makemoviepanel/templatetext",
+        "makemoviepanel/text_color_label"
+      ]
+    },
+    {
+      "lap": "picasa-eger-es-kijeloles.md",
+      "cim": "## 2. A 49 vezérlő, ami LENYOMÁSRA sül el",
+      "elem_db": 15,
+      "elemek": [
+        "acquirepanel/sync_options_button",
+        "compose_mail/ltr",
+        "compose_share/ltr",
+        "editoneup/next",
+        "editoneup/prev",
+        "editpanel/tab1",
+        "edittextpanel/bold",
+        "headerpanel/play",
+        "makemoviepanel/bold",
+        "oneup/next",
+        "oneup/prev",
+        "printpanel/captionoptionsbutton",
+        "thumbui/albumview",
+        "thumbui/folderviewpopup",
+        "thumbui/properties_toggle"
+      ]
+    },
+    {
+      "lap": "picasa-eger-es-kijeloles.md",
+      "cim": "## 6. Handler-ek — a tíz viselkedés-kötés",
+      "elem_db": 10,
+      "elemek": [
+        "editpanel/edittextghost",
+        "editpanel/edittextoverlay",
+        "editpanel/fullscreenswitcher",
+        "editpanel/previewimage",
+        "editpanel/redselection",
+        "editpanel/retouchoverlay",
+        "panelroot/picasatab",
+        "thumbui/circlecursor",
+        "thumbui/hlistsizer",
+        "thumbui/publishswitcher"
+      ]
+    },
+    {
+      "lap": "picasa-eger-es-kijeloles.md",
+      "cim": "## 7. Ismétlő és kurzort nem váltó vezérlők",
+      "elem_db": 7,
+      "elemek": [
+        "editoneup/minusone",
+        "editoneup/plusone",
+        "keywords/closebutton",
+        "oneup/minusone",
+        "oneup/plusone",
+        "thumbui/lessthumbs",
+        "thumbui/morethumbs"
+      ]
+    },
+    {
+      "lap": "picasa-eger-es-kijeloles.md",
+      "cim": "### 1.3 Más elemek vezérlése — a deklaratív kötések",
+      "elem_db": 2,
+      "elemek": [
+        "editpanel/sbutton",
+        "thumbui/sbutton"
+      ]
+    },
+    {
+      "lap": "picasa-eger-es-kijeloles.md",
+      "cim": "### 1.4 Húzás és görgetés",
+      "elem_db": 1,
+      "elemek": [
+        "throttle/throttlethumb"
+      ]
+    },
+    {
+      "lap": "picasa-gomb-es-menu-rendszer.md",
+      "cim": "## 8. Panelen belüli legördülők (`popuplist`)",
+      "elem_db": 6,
+      "elemek": [
+        "collagepanel/format_menu",
+        "editpanel/crop_aspect_menu",
+        "makemoviepanel/fontfamily",
+        "makemoviepanel/sizelist",
+        "makemoviepanel/templatelist",
+        "thumbui/addtobuttcon"
+      ]
+    },
+    {
+      "lap": "picasa-hisztogram.md",
+      "cim": "### 6.1 Geometria (`respack.yt`)",
+      "elem_db": 2,
+      "elemek": [
+        "nerdview/detail1",
+        "nerdview/detail2"
+      ]
+    },
+    {
+      "lap": "picasa-hisztogram.md",
+      "cim": "### 7.2 A megjelenítés — két kapcsoló, mindkettő rejtve",
+      "elem_db": 3,
+      "elemek": [
+        "editpanel/editbase",
+        "editpanel/histogram",
+        "thumbui/histogram"
+      ]
+    },
+    {
+      "lap": "picasa-hu-terminology.md",
+      "cim": "## 2. Angol → hivatalos Picasa-magyar szójegyzék",
+      "elem_db": 15,
+      "elemek": [
+        "editpanel/captiontrash",
+        "editpanel/crop",
+        "editpanel/crop_label",
+        "editpanel/enhance",
+        "editpanel/filllight_icon",
+        "editpanel/filllightlabel",
+        "editpanel/greybalancelabel",
+        "editpanel/horizonadjust",
+        "editpanel/redeye",
+        "editpanel/retouch",
+        "editpanel/retouch_label",
+        "headerpanel/select_star",
+        "keywords/keywords_label",
+        "peoplepanel/addname",
+        "thumbui/timelinebutton"
+      ]
+    },
+    {
+      "lap": "picasa-keptalca.md",
+      "cim": "## 11. A műveletsor gombjainak MÉRT geometriája (2026-08-24)",
+      "elem_db": 1,
+      "elemek": [
+        "outputlayout/docbounds"
+      ]
+    },
+    {
+      "lap": "picasa-keptalca.md",
+      "cim": "## 2. A vezérlők — és amiben a #455 leírása PONTATLAN",
+      "elem_db": 4,
+      "elemek": [
+        "thumbui/addtobuttcon",
+        "thumbui/scratchclear",
+        "thumbui/scratchhold",
+        "thumbui/scratchlabel"
+      ]
+    },
+    {
+      "lap": "picasa-keptalca.md",
+      "cim": "### 20.5 Geometria — MÉRVE",
+      "elem_db": 6,
+      "elemek": [
+        "scratch/album",
+        "scratch/albumcover",
+        "scratch/albumlabel",
+        "scratch/albumsize",
+        "scratch/docbounds",
+        "scratch/highlight"
+      ]
+    },
+    {
+      "lap": "picasa-keptalca.md",
+      "cim": "### 21.2 ⭐ A `morebutton` a TÚLCSORDULÁS-gomb — nálunk nincs",
+      "elem_db": 9,
+      "elemek": [
+        "outputlayout/blogger",
+        "outputlayout/collage",
+        "outputlayout/ebutton",
+        "outputlayout/folderbutton",
+        "outputlayout/makemovie",
+        "outputlayout/morebutton",
+        "outputlayout/orderbutton",
+        "outputlayout/pbutton",
+        "outputlayout/sharewith"
+      ]
+    },
+    {
+      "lap": "picasa-kereses-modok.md",
+      "cim": "### Geometria — a `respack.yt`-ből",
+      "elem_db": 6,
+      "elemek": [
+        "searchcontainer/timecontainer",
+        "searchcontainer/timecontainer_label",
+        "timeslider/docbounds",
+        "timeslider/scaleslider",
+        "timeslider/sliderbase",
+        "timeslider/thumb"
+      ]
+    },
+    {
+      "lap": "picasa-kereses-modok.md",
+      "cim": "### Élő (6)",
+      "elem_db": 8,
+      "elemek": [
+        "searchoptions/dupesearch",
+        "searchoptions/facesearch",
+        "searchoptions/label_search1",
+        "searchoptions/label_searchresult",
+        "searchoptions/searchbackground",
+        "searchoptions/searchcenter",
+        "searchoptions/searchresult",
+        "searchoptions/viewallbutton"
+      ]
+    },
+    {
+      "lap": "picasa-kollazs-felulet.md",
+      "cim": "### A három gomb súgója ugyanezt mondja",
+      "elem_db": 3,
+      "elemek": [
+        "collagepanel/addclips",
+        "collagepanel/deleteclips",
+        "collagepanel/getmoreclips"
+      ]
+    },
+    {
+      "lap": "picasa-mappakezelo.md",
+      "cim": "## 15. „Eltávolítás a Picasából…\" — a MENÜPONT teljes működése (2026-08-22)",
+      "elem_db": 1,
+      "elemek": [
+        "foldermgr/remove_label"
+      ]
+    },
+    {
+      "lap": "picasa-mappakezelo.md",
+      "cim": "#### A fa ikonjai MÁS erőforrások, mint a rádiósoroké",
+      "elem_db": 4,
+      "elemek": [
+        "foldermgr/icon_always",
+        "foldermgr/icon_exclude",
+        "foldermgr/icon_once",
+        "foldermgr/nofr_on"
+      ]
+    },
+    {
+      "lap": "picasa-mappanezet.md",
+      "cim": "### 4.5 A három érintett felületi vezérlő",
+      "elem_db": 4,
+      "elemek": [
+        "thumbui/flatview",
+        "thumbui/folderview",
+        "thumbui/folderviewpopup",
+        "thumbui/soloview"
+      ]
+    },
+    {
+      "lap": "picasa-megjelenitesi-modok.md",
+      "cim": "#### ✅ A párosítás LEZÁRVA a tulajdonos képeivel (2026-08-30)",
+      "elem_db": 2,
+      "elemek": [
+        "searchcontainer/searchbutton",
+        "thumbui/newalbum"
+      ]
+    },
+    {
+      "lap": "picasa-menu-parancsok-viselkedes.md",
+      "cim": "### 59.1 Az eredeti szűrő-készlet: hat gomb",
+      "elem_db": 1,
+      "elemek": [
+        "timeslider/scaleslider"
+      ]
+    },
+    {
+      "lap": "picasa-menu-parancsok-viselkedes.md",
+      "cim": "### Eredeti / nálunk / teendő",
+      "elem_db": 1,
+      "elemek": [
+        "quicktagconfig/autofill"
+      ]
+    },
+    {
+      "lap": "picasa-menu-parancsok-viselkedes.md",
+      "cim": "### Eredeti / nálunk / teendő",
+      "elem_db": 1,
+      "elemek": [
+        "timeslider/scaleslider"
+      ]
+    },
+    {
+      "lap": "picasa-menu-parancsok-viselkedes.md",
+      "cim": "#### (d) ⚠️ HIBÁS HIVATALOS SZÖVEG — ne vegyük át",
+      "elem_db": 2,
+      "elemek": [
+        "printoptions/apply",
+        "printoptions/ok"
+      ]
+    },
+    {
+      "lap": "picasa-nerdview-panel.md",
+      "cim": "## 1. A teljes panel: 238 × 144",
+      "elem_db": 2,
+      "elemek": [
+        "editpanel/previewimage",
+        "nerdview/docbounds"
+      ]
+    },
+    {
+      "lap": "picasa-program-resources.md",
+      "cim": "### 1.2 A `.pbf` fájl: sima XML",
+      "elem_db": 1,
+      "elemek": [
+        "outputlayout/blogger_icon"
+      ]
+    },
+    {
+      "lap": "picasa-program-resources.md",
+      "cim": "### 1.4 A `core-lh2.pbz` gombjai (9 db)",
+      "elem_db": 8,
+      "elemek": [
+        "outputlayout/collage",
+        "outputlayout/ebutton",
+        "outputlayout/folderbutton",
+        "outputlayout/makemovie",
+        "outputlayout/orderbutton",
+        "outputlayout/pbutton",
+        "outputlayout/sharewith",
+        "outputlayout/webupload"
+      ]
+    },
+    {
+      "lap": "racs-ures-allapot.md",
+      "cim": "## 1. ⛔ A LEGFONTOSABB: a „Keresés mindenhol\" gomb HALOTT",
+      "elem_db": 2,
+      "elemek": [
+        "thumbui/lightbox_esolo_button",
+        "thumbui/lightbox_esolo_text"
+      ]
+    },
+    {
+      "lap": "szerkeszto-panel-meretek.md",
+      "cim": "## A színválasztó komponensei",
+      "elem_db": 4,
+      "elemek": [
+        "pickerpanel/base",
+        "pickerpanel/bezels",
+        "pickerpanel/mru_0",
+        "pickerpanel/palette_0"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 3.2 A rács geometriája (megerősített)",
+      "elem_db": 1,
+      "elemek": [
+        "editpanel/fxN"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 4.2 Az alpanel és a Finomhangolás fül UGYANAZT a vezérlőkészletet használja",
+      "elem_db": 9,
+      "elemek": [
+        "editpanel/cancel",
+        "editpanel/colorwheel0",
+        "editpanel/droppertoggle",
+        "editpanel/editcheckbox1",
+        "editpanel/editlabel1",
+        "editpanel/editlabel5",
+        "editpanel/editslider1",
+        "editpanel/eraserbutton",
+        "editpanel/ok"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 4.3 A csúszka geometriája (mérés a 2. fül felvételén)",
+      "elem_db": 1,
+      "elemek": [
+        "editpanel/editsliderN_container"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 4.6 A gombsor — és összevetés a vágás-panel gombjaival",
+      "elem_db": 6,
+      "elemek": [
+        "editpanel/cancel",
+        "editpanel/crop_well",
+        "editpanel/cropapply",
+        "editpanel/cropcancel",
+        "editpanel/editcontrol_well",
+        "editpanel/ok"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 4.x Kicsomagolt bitkép-mérések (#700)",
+      "elem_db": 2,
+      "elemek": [
+        "editpanel/cancel_icon",
+        "editpanel/ok_icon"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### A panel váza",
+      "elem_db": 5,
+      "elemek": [
+        "editpanel/albumview",
+        "editpanel/edittabbase",
+        "editpanel/insetleft",
+        "editpanel/tabpanel1",
+        "editpanel/tabs"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### A sáv mind a 19 eleme",
+      "elem_db": 19,
+      "elemek": [
+        "video_control_bar/endthumb",
+        "video_control_bar/lefttrim",
+        "video_control_bar/moviemode1",
+        "video_control_bar/moviescrubslider_container",
+        "video_control_bar/righttrim",
+        "video_control_bar/scaleslider",
+        "video_control_bar/setin",
+        "video_control_bar/setout",
+        "video_control_bar/sliderbaseC",
+        "video_control_bar/sliderbaseL",
+        "video_control_bar/sliderbaseR",
+        "video_control_bar/startthumb",
+        "video_control_bar/thumb",
+        "video_control_bar/time",
+        "video_control_bar/trimruler",
+        "video_control_bar/trimslider",
+        "video_control_bar/volumeslider",
+        "video_control_bar/volumeslider_base",
+        "video_control_bar/volumethumb"
+      ]
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "#### Az 1. fül deklarációs sorrendje (`editpanel.tre` 130–240) — NEM a megjelenítési",
+      "elem_db": 11,
+      "elemek": [
+        "editpanel/autocolor",
+        "editpanel/autolighting",
+        "editpanel/crop",
+        "editpanel/edittext",
+        "editpanel/enhance",
+        "editpanel/filllightlabel",
+        "editpanel/horizonadjust",
+        "editpanel/picnik",
+        "editpanel/redeye",
+        "editpanel/retouch",
+        "editpanel/showtextlabel"
+      ]
+    },
+    {
+      "lap": "ui-audit-mainwindow.md",
+      "cim": "## 1.4 A MÁSIK nézetmód: valódi mappafa (2026-08-15)",
+      "elem_db": 3,
+      "elemek": [
+        "thumbui/flatview",
+        "thumbui/folderview",
+        "thumbui/folderviewpopup"
+      ]
+    },
+    {
+      "lap": "ui-audit-mainwindow.md",
+      "cim": "### A sáv elemei",
+      "elem_db": 10,
+      "elemek": [
+        "searchcontainer/filter_label",
+        "searchcontainer/filterbase",
+        "searchcontainer/search",
+        "searchcontainer/search_icon",
+        "searchcontainer/searchautocomplete",
+        "searchcontainer/searchbase",
+        "searchcontainer/searchbutton",
+        "searchcontainer/searchclr",
+        "searchcontainer/timecontainer",
+        "searchcontainer/timecontainer_label"
+      ]
+    },
+    {
+      "lap": "ui-audit-mainwindow.md",
+      "cim": "### Az ÖT szűrőgomb — sorrendben",
+      "elem_db": 5,
+      "elemek": [
+        "searchcontainer/facesearch",
+        "searchcontainer/geotagsearch",
+        "searchcontainer/moviesearch",
+        "searchcontainer/starsearch",
+        "searchcontainer/webview"
+      ]
+    },
+    {
+      "lap": "vagas-eszkoz-allapot.md",
+      "cim": "## 4/b. Lezárt nyitott kérdés: mit tesz az „Alaphelyzet\"? (#1528)",
+      "elem_db": 1,
+      "elemek": [
+        "editpanel/cropdiscard"
+      ]
+    }
+  ]
+}
