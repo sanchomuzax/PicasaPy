@@ -118,9 +118,93 @@ pipái függetlenek.
 | 5 | Gombok konfigurálása… · Beállítások… |
 
 A menü **nem tartalmaz** duplikátum- vagy arckereső tételt a felső szinten.
-A szövegtárban a `eMenuTools::ID_DUPES` („Show Duplicate Files") megvan, a
-mentésen viszont nincs a felső szinten — a **Kísérleti** almenüben lehet,
-amelynek tartalmát ez a mentés nem nyitja ki.
+✅ **A Kísérleti almenü tartalma azóta KIMÉRVE** — ld. a következő szakaszt
+(#1794): a `ID_DUPES` ott van, a második helyen.
+
+### Az Eszközök menü TELJES szerkezete — a binárisból (#1794)
+
+A menüt **egyetlen** függvény építi: `0x00559150` (15 495 b). Nem
+`AppendMenuW`-vel — az egész függvényben **két** Win32-hívás van
+(`0x00559169`, `0x0055cda7`) —, hanem egy `.data`-beli **rekord-táblát** tölt
+fel mezőnként (`0x00d6e678`…`0x00d6e9a8`). Az `eMenuTools::` névtér mind a
+**36** kulcsa ebben az egy függvényben szerepel.
+
+A felépítés sorrendje adja a csoportosítást; a három almenü-cím (`Upload`,
+`Geotag`, `Experimental`) rekordja egy **gyerek-mutatót** és egy
+**darabszámot** kap.
+
+#### A KÍSÉRLETI almenü — kilenc tétel
+
+A `0x0055c91e` a gyerek-mutatót `0x00d6e798`-ra állítja, a `0x0055c928` pedig
+a darabszámot **`9`-re** — konstansként. Pontosan kilenc tétel épül fel
+összefüggő blokkban (`0x0055c295`…`0x0055c4c9`), a színblokk után és a
+felső szintű blokk előtt:
+
+| # | kulcs | angol | magyar |
+|---|---|---|---|
+| 1 | `ID_FTPWEB` | Publish via FTP... | Közzététel FTP-n keresztül... |
+| 2 | **`ID_DUPES`** | **Show Duplicate Files** | **Fájlok másodpéldányainak megjelenítése** |
+| 3 | `Searchfor` ▸ | Search for... | Keresés... |
+| 4 | `ID_SAVESEARCH` | Save &search results... | Keresési eredmények &mentése... |
+| 5 | `ID_SEARCHTOKEN` | Show &tag as album... | &Címke megjelenítése albumként... |
+| 6 | `ID_PASSPORT` | &Passport photo... | Útle&vélkép... |
+| 7 | `ID_DELETE_EMPTY_ALBUMS` | Delete empty online albums... | Üres online albumok törlése... |
+| 8 | `ID_MOVE_DATABASE` | Choose database location... | Adatbázis helyének kiválasztása... |
+| 9 | `ID_WRITE_XMP_FACES` | Write faces to XMP... | Arcinformációk írása XMP-adatokba... |
+
+⇒ **A #1794 feltevése beigazolódott: a `ID_DUPES` a Kísérleti almenüben van**,
+a második helyen.
+
+#### A „Keresés…" ALMENÜ — hat szín
+
+A 3. tétel maga is almenü: a `0x0055c078`…`0x0055c1c8` blokk hat színt épít,
+ebben a sorrendben:
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `ID_S_RED` | &Red | &Piros |
+| `ID_S_ORANGE` | &Orange | &Narancssárga |
+| `ID_S_YELLOW` | &Yellow | &Sárga |
+| `ID_S_GREEN` | &Green | &Zöld |
+| `ID_S_BLUE` | &Blue | &Kék |
+| `ID_S_PURPLE` | &Purple | &Lila |
+
+#### A másik két almenü
+
+| almenü | tételek |
+|---|---|
+| **Feltöltés** (`Upload`) | `ID_TOOLS_UPLOAD` (Feltöltés a Google Fotókba) · `ID_TOOLS_COLLAB` (Feltöltés közös szerkesztésű webalbumba) · `ID_TOOLS_YOUTUBE` (Feltöltés a YouTube webhelyre) |
+| **Geocímke** (`Geotag`) | `ID_PICTURE_GEOTAG` (Geocímkézés a Google Earth programmal…) · `ID_VIEW_EARTH` (Megtekintés a Google Earth programban…) · `ID_PICTURE_GEOUNTAG` (Geocímkék törlése) · `ID_EXPORT_EARTH` (Exportálás Google Earth-fájlba) |
+
+#### A felső szint
+
+`0x0055c54c`…`0x0055c7b6`: `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` ·
+`ID_TOOLS_UPLOADMGR` · `ID_TOOLS_CONTACTMGR` · `ID_TOOLS_CONFIG_SLINGSHOT` ·
+`ID_TOOLS_CONFIG_SCREENSAVER` · `ID_TOOLS_BACKUP` · `ID_TOOLS_BATCH_UPLOAD` ·
+`ID_TOOLS_ADJUST_TIMESTAMP` · `ID_TOOLS_DOWNLOAD_FACES`; utána a három
+almenü-cím, végül `ID_TOOLS_BUTTONMGR` és `ID_TOOLS_OPTIONS`.
+
+Ez **fedi a tulajdonos képernyőmentését**, egy tétellel több:
+`ID_TOOLS_DOWNLOAD_FACES` („Névcímkék letöltése a Picasa Webalbumokból") —
+a mentésen nem látszik, valószínűleg feltételes.
+
+#### ⛔ „Find Faces" — az EGÉSZ szövegtárban NINCS
+
+Nem csak az `eMenuTools` névtérből hiányzik: a `stringres-en-hu.tsv`
+**teljes** állományában nincs „Find Faces" felirat. A „duplicate/másodpéldány"
+találatok mind máshova tartoznak (`CAcquireUI::…`, `CThumbUI::MoveFiles…`,
+`ContactManagerDlg::DupFoundTitle`, `IDS_NORENAME`).
+
+⇒ Az **arckeresés az eredetiben nem menüparancs**. A miénk tudatos eltérés.
+
+**Bizalmi fok.** A tételek, a feliratok, a sorrend és a „Find Faces"
+negatívum: **megerősített** (közvetlen kiolvasás, kimerítő keresés). Az,
+hogy a kilenc elemű blokk a **Kísérleti** almenüé: **erős** — a
+darabszám-konstans `9` egyedül erre a blokkra illik (a másik két almenü 3 és
+4 elemű, és a darabszámuk regiszterből jön), de a rekord-tábla mezőkiosztását
+nem fejtettem meg teljesen, tehát a hozzárendelés levezetés, nem közvetlen
+olvasat.
+
 
 ### Súgó — 10 tétel, 4 csoport
 
