@@ -29,6 +29,26 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
 
+⭐ **2026-09-03 (2.1 bővítés) — a 22 átmenet HIVATALOS MAGYAR neve.** A lap
+eddig csak az **angol** neveket adta meg, és a **#432 sem** tartalmazta a
+magyart — így a legördülő magyar felületen angolul jelent volna meg. A teljes
+22 soros tábla most a lapon áll (`CTransitions::*`, `stringres-en-hu.tsv`).
+⚠️ **Négy fordítás megtévesztő:** `wiperight` = **„Törlés"** (nem „…jobbra"),
+`pushright` = **„Tolás"**, `circleout` = **„Kör"** — az alapirány rövid nevet
+kap; és `timelapse` = **„Gyorsítás"**, nem „Időzített felvétel".
+⚠️ **NE keverd össze a `CThemePrefs::` családdal** — az egy MÁSIK, **tíz**
+elemű készlet (Sakktábla, Kollázs, Google Modulok…): *ha egy kör tíz
+átmenetet talál, rossz családot néz.* **Új mérés:** a `makemoviepanel/rewind`
+(**„Vissza a kijelölt diához"**) megjelenítése `0x0061681e`
+(`[+0x210]=1`, `[+0x248]=0xff`); ⛔ **elvetett hipotézis:** az őrző globális
+(`0xd67914`) **nem** szolgáltatás-kapcsoló, hanem a **felületi fa
+gyökérmutatója** — egyetlen írója a keret-indító (`0x009c3a36`), és mind az
+1712 olvasója `cmp …, 0` null-ellenőrzés. **NINCS MÉRVE**, mit csinál a gomb
+kattintásra (az olcsó lánc kimerült). A fülek magyarul: **„Mozgófilm" ·
+„Dia" · „Klipek"**. ⇒ **A `makemoviepanel` feltáratlan listája ÜRES: 5 → 0**
+(globálisan 116 → 111); ezzel a **#2093** 3. pontjának négy elavult
+felülbírálása is rendezve. Komment: **#432**.
+
 ⭐ **2026-09-01 — a #1412 egyik KORLÁTJA MEGDŐLT:** a jegy szerint „egy mintánk van (AI6)", de a `kollazs-golden/` **tizenegy** `.cxf`-je közt a **`regulargrid` (AI5) is egyetlen `scale`-t** használ (330) ⇒ **második adatpont**. Levezetve: a kizárt 300 és 359 az **oszlop-** és **sor-osztás**; az AI5-re pontos a megfelelés (`0,322266 × 1024 = 330`), az AI6-ra keresett tört **0,305664** — a felirat-sávot is tartalmazó cella lehet. Részletek a #1412 kommentjében. **Folytatás (2026-09-01):** mind a hat téma átmérve (`kollazs-eletciklus.md` **17.**) — a `picturepile` szorzója **pontosan 1,25000**, a `regulargrid`-é **1,00000**, a `contactsheet`-é **node-független**; a `scale` a **rajzolt méret**, nem a befoglaló dobozé; a 313 **nem beégetett konstans** (nulla találat a `.text`-ben). **Folytatás (2026-09-02):** a `.cxf`-író bináris oldala kimérve (`picasa-create-features.md` **1.6/g**): a csomópont-tömb **56 bájtos**, a `scale` a `+0x2c` (`0x008350b2`), a `theta` a `+0x28`; a mentés-szervező (`0x00834700`) **nem készíti elő** a csomópontokat. A 2026-08-30-i „vetítés/render-scale" magyarázat **MEGDŐLT**: a `regulargrid` elhelyezője **ugyanúgy `1,0`-t ír** a `+0x2c`-be (`0x0088520d`→`0x0088522d`), mint a contactsheeté — az `1,0` a norma. Kimerítő negatív pásztázás: indexelt, SSE- és disp32-alakú `+0x2c`-író **nincs**; a végleges értéket a kollázs-sáv 37 mutatós írójának egyike adja. A jegy **`blocked` + `felhasználóra-vár`** (fekvő Indexkép-minta). **⛔ Két SZÁMHELYESBÍTÉS a FILM fejezetben (2026-09-03):** az átmenetek száma **22, nem 18/21** — a 2.1 táblájából kimaradt a **`rect`** („Négyszög"), és a `0x00771a10` átmenet-nyilvántartó (934 b) **mind a 22 kulcsra** hivatkozik, tehát élő; a szövegdia-stílusoké **12, nem 11** — a 2.3 kilencet nevezett meg „+ további kettő" megjegyzéssel, holott **három** hiányzott (`Centered`, `I'm Feeling Lucky`, `Caption`). Mindkét lista most teljes, hivatalos magyar fordítással. Jegy-komment és címjavítás: **#432**.
 
 ⭐ **2026-09-02 (2.3/b) — a SZÖVEGES DIA fülének működése:** a beszúrás `<type>=2` rekordot hoz létre „Szöveg" placeholderrel, **a kijelölt dia UTÁN** (üres kijelölésnél a lista elejére), majd átvált a 2. fülre és a beviteli mezőre teszi a fókuszt (`WM_SETFOCUS`); a három kapcsoló mezői: **`<weight>` = 400/700** (GDI-súly, nem logikai!), `<italic>`, `<outline>`; a három legördülő a `<fontname>`, `<size>` és `<styleid>` mezőt írja, a **betűméret-lista teljes tartalma** `8·10·12·14·16·18·20·22·26·30·36·48·60·72·84·96` (`0x00c7e4f0`), a betűtípus a **`Preferences\makemovie::textfont`** kulcsba is bekerül; a két színválasztó `text_` / `bkg_` **előtag** szerint dől el. **Negatív eredmény:** a `titleoption_listbox` ága **halott kód** (a panelépítő nem hozza létre, és a névre egyetlen hivatkozás van a binárisban). Kommentek: **#432**, **#436**.
