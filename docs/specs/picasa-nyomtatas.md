@@ -102,7 +102,21 @@ sorolta. Ehhez tartozik a figyelmeztetés:
 > hivatalos magyar feliratokkal dolgozik; a lap maradt le.
 
 A párbeszéd **26 honosított szövege**, teljes listával (forrás:
-`referencia/i18n-hu/printoptionstext.xml`):
+`referencia/i18n-hu/printoptionstext.xml`).
+
+**Szerkezeti horgony** — hol vannak deklarálva: az elemek a
+`printoptions.tre`-ben (`printoptions.tre:45` = `border_color_label`,
+`printoptions.tre:95` = `caption_label`, `printoptions.tre:115` =
+`useexif_label`, `printoptions.tre:197` = `wrap_checkbox_label`), a
+feliratok pedig a `printoptionstext.tre`-ben
+(`printoptionstext.tre:33` = `border_color_label`,
+`printoptionstext.tre:36` = `caption_label`).
+
+*(A horgony nem díszítés: a lefedettségi mérő CSAK olyan szakaszt fogad el
+bizonyítékként, amiben van `0x…` cím vagy `fájl:sor` — a
+`binaris-regeszet-modszertan.md` 22.4 pontja írja elő. A `.xml`-hivatkozás
+sorszám nélkül nem elég, és emiatt e tábla **tizenkét** eleme évekig
+„feltáratlannak" látszott. Ld. a 22.5 pontot.)*
 
 | elem (teljes név) | típus | **hivatalos magyar** |
 |---|---|---|

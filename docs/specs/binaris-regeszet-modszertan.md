@@ -1465,3 +1465,65 @@ felvétele így megelőző javítás, nem hibajavítás.
 > *Bizonyítottsági fok: **megerősített*** — minden szám a
 > `ui-lefedettseg.md` és a `docs/specs/` kézzel írt lapjainak
 > újrafuttatható összevetéséből jön.
+
+### 22.5 A 22.4 szabályát MEGSÉRTETTÜK — és tizenkét elem évekig „feltáratlan" volt (2026-09-03)
+
+A 22.4 pont előírja, hogy a bizonyító szakaszban legyen `0x…` cím vagy
+`fájl:sor`. Ez a kör **lemérte, mennyibe kerül, ha ezt megsértjük.**
+
+**A mérés menete.** A `ui-lefedettseg.md` hiánylistáiból kigyűjtöttem
+mind a **100** `feltáratlan` (kutatói kört igénylő) tételt, és
+megnéztem, szerepel-e a **teljes** `panel/elem` nevük valamelyik kézzel
+írt spec-lapon.
+
+| | darab |
+|---|---|
+| `feltáratlan` tétel összesen | **100** |
+| ebből a TELJES neve szerepel egy spec-lapon | **19** |
+| ebből a mérő saját függvénye mégis megtalálja | 1 |
+| ⇒ **némán elveszett** (le van írva, mégis feltáratlannak látszik) | **18** |
+| a 18-ból: a szakaszában NINCS horgony ⇒ a **cím-kapu** ejti el | **18/18** |
+
+**A cím-kapu mechanizmusa.** A `lekutatott_elemek()` szakaszonként dolgozik,
+és egy szakaszt csak akkor fogad el bizonyítékként, ha talál benne
+`0x00…` címet vagy `fájl.kiterjesztés:sorszám` alakot. Ha nem talál,
+a **teljes szakaszt átugorja** — bármit is írtunk bele. Ez szándékos
+(horgony nélküli próza nem bizonyíték), de a hatása néma.
+
+**A 18-ból 12 VALÓDI dokumentáció volt.** A `picasa-nyomtatas.md`
+„A nyomtatási beállítások párbeszéd" szakaszának 26 soros elemtáblája
+teljes névvel, típussal és hivatalos magyar felirattal írja le őket — a
+szakasz forrásaként viszont csak `referencia/i18n-hu/printoptionstext.xml`
+állt, **sorszám nélkül**, és az `.xml` nem is szerepel a horgony-minta
+kiterjesztései közt (`py|qml|cpp|h|tre|yt|ini`).
+
+⇒ **A javítás egyetlen bekezdés volt** — `printoptions.tre` és
+`printoptionstext.tre` sorszámok a szakaszba. Mérve, előtte/utána:
+
+```
+előtte:  feltáratlan 100 · lekutatva 154
+utána:   feltáratlan  88 · lekutatva 166
+```
+
+**A maradék 6 NEM dokumentáció** — és ezt fontos kimondani, mert a
+„teljes név szerepel egy lapon" próba önmagában **túl laza**:
+
+| tétel | hol szerepel | miért NEM bizonyíték |
+|---|---|---|
+| `headerpanel/play`, `create_movie`, `websync0`, `acquirepanel/sync_options_button`, `peoplepanel/manual_cancel` | `picasa-eger-es-kijeloles.md` | **kurzor-tulajdonság** felsorolásai („nyíl-kurzor marad") — azt mondják meg, milyen a mutató fölötte, nem azt, mit CSINÁL |
+| `outputlayout/blogger` | `binaris-regeszet-modszertan.md` 22.3 | épp azt a részsztring-hibát dokumentálja, aminek a példája |
+
+⇒ **A puszta névelőfordulás nem lefedettség.** Aki ilyen mérést végez,
+nézze meg a találati SORT is — ez a kör az első futásában 68%-os hamis
+arányt mért, és az kizárólag azért jött ki, mert a puszta elemnévre
+keresett, és a „megvan másutt" szakaszt is beszippantotta. A helyes szám
+**12/100**.
+
+**Ami ebből a jövőre nézve következik:** a 22.4 szabályát ma **semmi nem
+tartatja be**. Egy új spec-lap, ami horgony nélküli elemtáblát ír, ugyanígy
+némán kiesik a mérésből, és a következő kutatói körök újra fel fogják
+tárni, ami már fel van tárva. Erre őr kell — jegy: **#2182**.
+
+> *Bizonyítottsági fok: **megerősített*** — a 18/18-as ok-hozzárendelés a
+> mérő saját `_szakaszok()` + `CIM_MINTA` függvényeivel futtatva, az
+> előtte/utána szám pedig a generátor két futásából.
