@@ -889,7 +889,7 @@ ApplicationWindow {
         // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
@@ -1163,7 +1163,7 @@ ApplicationWindow {
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
-        collageDraftDialog.openIfNeeded()
+        collageDraftDialog.ensure().openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
         // #1622: NÉMA felderítés korábbi telepítésből származó adatra —
@@ -2250,7 +2250,7 @@ ApplicationWindow {
         // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
         //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
         //: jelzője lekerül, és a projekt lapja lesz az aktív.
@@ -2374,7 +2374,7 @@ ApplicationWindow {
                 window.selectedRows(), controller.currentPersonName)
         }
         onMoveToNewPersonRequested: {
-            if (controller) moveToNewPersonDialog.openFor(
+            if (controller) moveToNewPersonDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
         }
     }
@@ -2403,20 +2403,27 @@ ApplicationWindow {
 
     // #422: „Áthelyezés új személyhez…" — az adott személy arc-címkéje a
     // kijelölt képeken ÁTKERÜL egy másik névre (a régió marad).
-    NameInputDialog {
+    //: #1612: halasztva — az „Áthelyezés új személyhez" csak az arcpanel
+    //: helyi menüjéből nyílik. Az `objectName` a BELSŐ párbeszédre marad,
+    //: hogy a felépülés után ugyanúgy megtalálható legyen.
+    DeferredDialog {
         id: moveToNewPersonDialog
-        objectName: "moveToNewPersonDialog"
-        title: qsTr("Move to New Person")
-        prompt: qsTr("New person's name:")
-        property var rows: []
-        property string person: ""
-        function openFor(rowList, name) {
-            if (rowList.length === 0 || name.length === 0) return
-            rows = rowList
-            person = name
-            openEmpty()
+        sourceComponent: Component {
+            NameInputDialog {
+                objectName: "moveToNewPersonDialog"
+                title: qsTr("Move to New Person")
+                prompt: qsTr("New person's name:")
+                property var rows: []
+                property string person: ""
+                function openFor(rowList, name) {
+                    if (rowList.length === 0 || name.length === 0) return
+                    rows = rowList
+                    person = name
+                    openEmpty()
+                }
+                onAccepted: controller.movePersonOnRows(rows, person, enteredName)
+            }
         }
-        onAccepted: controller.movePersonOnRows(rows, person, enteredName)
     }
 
     // #449: első indítás — a kérdés az ablak megjelenése UTÁN jön elő, hogy
@@ -2434,9 +2441,15 @@ ApplicationWindow {
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
     // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
-    CollageDraftDialog {
+    //: #1612: halasztva — a piszkozat-kérdés csak indulás után, egyszer
+    //: merül fel; addig nincs miért felépülnie.
+    DeferredDialog {
         id: collageDraftDialog
-        onRestored: documentTabStrip.activateTab(window.collageTabId)
+        sourceComponent: Component {
+            CollageDraftDialog {
+                onRestored: documentTabStrip.activateTab(window.collageTabId)
+            }
+        }
     }
 
     // #1129: a lebegő értesítősáv (Picasa Notifier) — önálló, keret nélküli
@@ -2542,9 +2555,13 @@ ApplicationWindow {
     }
 
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
-    CreateDialogs {
+    //: #1612: halasztva — a Létrehozás-párbeszédek csak a menüből nyílnak.
+    DeferredDialog {
         id: createDialogs
-        appWindow: window
+        objectName: "createDialogs"
+        sourceComponent: Component {
+            CreateDialogs { appWindow: window }
+        }
     }
 
     DeferredDialog {

@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.236] – 2026-09-03
+
+### Javítva
+- **Valamivel gyorsabban indul a program (#1612).** Három párbeszéd —
+  a Létrehozás-ablakok, az „Áthelyezés új személyhez" és a
+  kollázs-piszkozat kérdése — mostantól csak akkor épül fel, amikor
+  tényleg megnyitod. Induláskor 363 objektummal kevesebb készül el.
+  Működésben semmi nem változik.
+
 ## [0.8.235] – 2026-09-03
 
 ### Javítva
