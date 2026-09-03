@@ -2098,9 +2098,9 @@ motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
 ---
 
-## ⭐ NÉGY Glimmer-művelet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB`, `TwoTone` (2026-09-03, #2211)
+## ⭐ ÖT Glimmer-művelet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB`, `TwoTone`, `Resize` (2026-09-03, #2211)
 
-Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **négyet
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **ötöt
 számszerűen is megold** — és a megoldás módszere maga is eredmény: a
 **saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
 
@@ -2215,6 +2215,34 @@ független horgony mondja ugyanezt: a közös munkavégző, a `+0x40` tag
 **Ami NINCS kiolvasva:** a két megálló pontos pozíciója (feltehetően 0 és 1,
 de ez nem mérés).
 
+### 5. `ResizeImageOperation` — UGYANAZ a mintavételező, mint a forgatásnál
+
+Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
+számol (`0x00bc3700`–`0x00bc3731`), majd a végén a **`0x00bcb5e0`**
+segédfüggvénynek adja át a transzformációt és a `smoothing` kapcsolót
+(harmadik argumentum, `0x00bc37d6`).
+
+⭐ **Ez ugyanaz a `0x00bcb5e0`, amit a `RotateImageOperation` hív** a
+`0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a `0x00bcb5e0`-nak
+négy hívója van, köztük mindkettő.
+
+⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
+`Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
+**explicit** — *lépték = 1 → **0-s (doboz)**, egyébként **3-as
+(Mitchell–Netravali, B = C = 0,4)***. **Nem bilineáris.**
+
+**A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
+(`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
+`FUN_00c29990` logikai átalakítóval).
+
+> ⚠️ **Eltérés a mai kódunktól.** A `resize_image`
+> (`src/picasapy/render/glimmer_ops.py`) `cv2.INTER_LINEAR`-t használ, ha a
+> `smoothing` be van kapcsolva. Ez **mérhető eltérés** az eredetitől.
+> Jegy: **#2227**.
+
+**Ami NINCS mérve:** hogy `smoothing = false` esetén a bináris a `0`-s
+dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
@@ -2227,6 +2255,7 @@ de ez nem mérés).
 3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
    levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
 
-*Bizonyítottsági fok: **megerősített** mind a négy leletre (kiolvasott
+*Bizonyítottsági fok: **megerősített** mind az öt leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma és a `TwoTone` megálló-pozíciói **nincsenek mérve**.*
+tartalma, a `TwoTone` megálló-pozíciói és a `Resize` `smoothing = false` ága
+**nincsenek mérve**.*
