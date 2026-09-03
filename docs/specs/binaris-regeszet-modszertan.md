@@ -1550,6 +1550,52 @@ említi-e az elemet. Kézzel javítva.
 napszakot a szabály dokumentálásával töltötte. Ez a legerősebb érv a
 **#2182** őrre.
 
+### 22.6 A lefedettségi axis mint KUTATÁSI forrás — kimerült (2026-09-03)
+
+A 22.5 auditját a maradék listára is lefuttatva kiderült, hogy a
+`feltáratlan` lista **már nem munkalista**. A **69** tétel mindegyikét
+megvizsgálva:
+
+| | darab |
+|---|---|
+| a **minősített** `panel/elem` név szerepel egy spec-lapon | 5 |
+| a **levélnév** és a **panel neve** ugyanazon a lapon | 55 |
+| ⇒ **bizonyíthatóan már dokumentált** | **60** (87%) |
+| semmilyen nyom | **9** |
+
+A 60 tétel gazdalapja minden esetben a panel **saját** lapja — pl. mind a
+tíz `compose_mail` és mind a kilenc `choose_mail` a
+`picasa-email-kuldes.md`-en, mind a hét `titledialog` a
+`picasa-create-features.md`-en, mind az öt `edittextpanel` a
+`szerkeszto-panel-meretek.md`-en. Nem szórvány-találatok: a panel
+dokumentációja megvan, csak **levélnéven és horgony nélkül**, ezért a
+mérő nem látja (22.4–22.5).
+
+**A kilenc valóban nyitottból mérve:**
+
+| tétel | verdikt |
+|---|---|
+| `activity/activitybutton` + `uploadmgr/{itemlist, minibutton, pause, resume, cleanup, throttlechk}` (**7**) | **HATÓKÖRÖN KÍVÜL** — ugyanaz a funkció: az `activitybutton` a **Feltöltéskezelőt** nyitja (`0x007d3f90`: „Upload Manager", `uploadmgr::title`, `%.2f KBps`, „Paused"), ami Picasa Web Albums-gépezet |
+| `uploadallinstructionpanel/close` | a testvér `instructionpanel/close` **már mérve** (14 × 14, „Oldalpanel bezárása") — ugyanaz a vezérlő a másik panelen |
+| **`outputlayout/morebutton`** | ✅ **EZ A KÖR FELTÁRTA** — a kimeneti gombsor túlcsordulás-gombja; `picasa-keptalca.md` 21., jegy **#2191** |
+
+⛔ **Negatív lelet a `.ioq` sorokról.** A `db3` store-inicializáló
+(`0x00415790`) három ki/bemeneti sort regisztrál:
+`ioqueue\slingshot.ioq`, `ioqueue\filesafe.ioq`, `ioqueue\albumsafe.ioq`.
+A `slingshot.ioq` egy webalbum/RSS-környezetben is felbukkan
+(`0x007d94c0`: „Web Albums", „Recent Activity", `feed.rss`,
+„Temporary Feeds"), a **`filesafe.ioq` és az `albumsafe.ioq` viszont a
+teljes binárisban SEHOL máshol nem szerepel**. Élő mintánkban
+(`research/testdata/Picasa2/ioqueue/`) mind a három fájl **0 bájtos**.
+⇒ Nincs miből visszafejteni őket; ha valaha kellenek, nem üres fájl kell,
+hanem egy használt sorral rendelkező adatmappa.
+
+⇒ **A következő kutatói körök NE az axisból válasszanak.** Amíg a
+**#2182** őre meg nem épül és a 60 tétel horgonyt nem kap, az axis
+„feltáratlan" oszlopa a dokumentáltság hiányát méri, nem a tudásét.
+Forrásnak marad a `ready` címkés kutatási jegy, a `00-index.md`
+kérdés-listája és a `research-plan.md`.
+
 **Ami ebből a jövőre nézve következik:** a 22.4 szabályát ma **semmi nem
 tartatja be**. Egy új spec-lap, ami horgony nélküli elemtáblát ír, ugyanígy
 némán kiesik a mérésből, és a következő kutatói körök újra fel fogják

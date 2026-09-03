@@ -900,3 +900,102 @@ konstruktor). A teszt csak azt kérdezi, felépült-e már a yt felületmotor.
 
 Jegyek: **#1919** (a token megvalósítása), **#2178** (respack-átlátszóság),
 **#2179** (a „Kijelölés” vízjel).
+
+---
+
+## 21. A tálca alatti KIMENETI gombsor — `outputlayout`, és a hiányzó túlcsordulás-gomb (2026-09-03)
+
+A 7. és a 11. pont a tálca **három** gombjáról szól (megtartás, ürítés,
+albumhoz adás). A tálca **jobb oldalán** viszont van egy másik, önálló
+gombsor: a kimeneti műveleteké (`outputlayout`) — nyomtatás, e-mail,
+exportálás, kollázs, film. Ez a szakasz azt írja le.
+
+### 21.1 A sor EGYETLEN cellasablonból épül
+
+A `respack.yt` mért geometriája szerint az `outputlayout` **nem egy sáv,
+hanem egy CELLA**: a `outputlayout/docbounds` **59 × 40**, és **mind a
+kilenc gomb ugyanazt a téglalapot foglalja** — (2,2)–(57,38), azaz
+**55 × 36**. A gombok tehát ugyanannak a cellának a **változatai**,
+amiket a konténer példányosít:
+
+| elem | téglalap | méret |
+|---|---|---|
+| `outputlayout/docbounds` | (0,0)–(59,40) | 59 × 40 |
+| `outputlayout/overflowcontainer` *(típusa: `overflow:`)* | (0,0)–(59,40) | 59 × 40 |
+| `outputlayout/pbutton` (nyomtatás) | (2,2)–(57,38) | **55 × 36** |
+| `outputlayout/ebutton` (e-mail) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/folderbutton` (exportálás) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/orderbutton` (vásárlás) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/sharewith` (Hello) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/blogger` | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/collage` | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/makemovie` | (2,2)–(57,38) | 55 × 36 |
+| **`outputlayout/morebutton`** *(típusa: `buttcon`)* | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/separator` | (28,8)–(30,35) | **2 × 27** |
+
+A **gazda** a főablakban: `thumbui/outputs`, típusa
+`rect(0, outputlayout)` — **(373,480)–(797,509), 424 × 29**. Vagyis a
+424 × 29-es sávban ismétlődik az `outputlayout` cella.
+
+Az ikonok saját méretei: `pbutton_icon` 15 × 12, `ebutton_icon` 16 × 11,
+`folderbutton_icon` 17 × 13, `orderbutton_icon` 13 × 11,
+`sharewith_icon` 40 × 21, `blogger_icon` 17 × 19, `collage_icon` 16 × 15,
+`movie_icon` 17 × 15, `export7_icon` 13 × 7, `default_icon` 16 × 15,
+`earth_icon` 17 × 17.
+
+Szerkezeti horgony: `outputlayout.tre` — minden gomb az
+`outputlayout/overflowcontainer` gyereke, a konténer pedig a `root`-é
+(`outputlayout.tre:1`–`:36`).
+
+### 21.2 ⭐ A `morebutton` a TÚLCSORDULÁS-gomb — nálunk nincs
+
+| | angol | **magyar** |
+|---|---|---|
+| felirat | More... | **További lehetőségek...** |
+| buboréksúgó | Click here for more options | **Kattintson ide a további opciókért** |
+
+A konténer típusa a `respack.yt`-ben **`overflow:`** — ez az a
+konténerfajta, ami a ki nem férő gyerekeket egy gomb mögé rejti; a
+`morebutton` ennek a gombja (típusa `buttcon`, saját ikonja az
+`export7_icon`, 13 × 7).
+
+⇒ **A gombsor szélesség-érzékeny**: ha a 424 × 29-es sávba nem fér ki
+minden 55 × 36-os cella, a maradék a „További lehetőségek…" mögé kerül.
+
+**A többi gomb hivatalos magyar felirata és súgója** (forrás:
+`referencia/i18n-hu/outputlayout_text.xml`, angol:
+`referencia/tre-eroforrasok/outputlayout_text.tre`):
+
+| elem | felirat | buboréksúgó |
+|---|---|---|
+| `outputlayout/pbutton` | **Nyomtatás** | A Fotótálcán található fotók nyomtatása |
+| `outputlayout/ebutton` | **E-mail** | A Fotótálcán található fotókat elküldheti e-mailben |
+| `outputlayout/folderbutton` | **Exportálás** | Átmásolja a Fotótálcán található fotókat egy a merevlemezen található mappába |
+| `outputlayout/orderbutton` | **Vásárlás** | Rendeljen nyomatokat és egyéb termékeket kedvenc online szolgáltatójától |
+| `outputlayout/collage` | **Kollázs** | Készítsen fotókollázst a kijelölt képekből |
+| `outputlayout/makemovie` | **Mozgófilm** | Mozgófilmes prezentáció létrehozása a kijelölt elemek alapján |
+| `outputlayout/sharewith` | **Hello** | A Fotótálcán található fotókat elküldheti a Hello programba |
+| `outputlayout/blogger` | **Blogger** | Fotók feltöltése a Bloggerre |
+| **`outputlayout/morebutton`** | **További lehetőségek...** | **Kattintson ide a további opciókért** |
+
+*(A `sharewith` (Hello) és a `blogger` megszűnt Google-szolgáltatásokhoz
+tartozik — hatókörön kívül, ugyanazon az alapon, mint a `publish` webes
+ága.)*
+
+### 21.3 Eredeti / nálunk — MÉRVE
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a cella mérete | **55 × 36**, a gazdasáv 424 × 29 | nem mérve — a gombok a `TrayBar.qml` sorában élnek |
+| Nyomtatás · E-mail | `pbutton` · `ebutton` | megvan (`TrayBar.qml:62` környéke) |
+| Exportálás | `folderbutton` | megvan (`TrayBar.qml:48`) |
+| Kollázs · Film | `collage` · `makemovie` | megvan (`trayCollageButton`, `trayMovieButton`) |
+| **túlcsordulás-gomb** | **`morebutton`**, „További lehetőségek…" | ⛔ **NINCS** — 0 találat `morebutton`/„további lehetőség"/overflow névre a `src/`-ben |
+| Vásárlás · Hello · Blogger | `orderbutton` · `sharewith` · `blogger` | hatókörön kívül (megszűnt szolgáltatások) |
+
+⇒ Nálunk a gombsor **nem kezeli a szűk helyet**: keskeny ablaknál a
+gombok elfogynak vagy összenyomódnak, az eredeti viszont a maradékot a
+„További lehetőségek…" mögé rejti. Jegy: **#2191**.
+
+*Bizonyítottsági fok: **megerősített*** — a geometria a `respack.yt`-ből,
+a konténer `overflow:` típusa ugyanonnan, a feliratok az `i18n-hu`-ból.
