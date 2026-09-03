@@ -661,6 +661,25 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
+⭐ **2026-09-03 — a szerkesztő MARADÉK három vezérlője.** Mindhárom
+`m_hidden` alapállapotban, ezért ránézésre nem tűnnek fel. ⭐ **Ugyanaz a
+funkció KÉT ALAKBAN:** a szöveg-overlay láthatósága a **menüben két külön
+parancs** (`ID_PICTURE_SHOW_TEXT`/`…HIDE_TEXT`), a szerkesztő panelen viszont
+**egyetlen jelölőnégyzet** (`editpanel/showtextcheckbox`,
+`superbutton(buttcon_checkbox)`, az **1. fülön**, felirata **„Szöveg
+megjelenítése"**) — aki csak a menü-specet olvassa, lemarad a
+jelölőnégyzetről. ⛔ **NINCS hozzá `Preferences`-kulcs** (mérve, két
+lekérdezési alakkal) ⇒ munkamenet-szintű nézetkapcsoló, nem tartós
+beállítás. ⭐ **Az `editpanel/editslideshow` a már megépített `editcollage`
+IKERPÁRJA:** mindkettő `root`-gyerek, mindkettő `m_hidden`, és **ugyanaz a
+kezelő** (`0x00567a00`) — a szerkesztő felismeri, hogy a kép egy PROJEKT
+kimenete, és felkínálja a forrás újranyitását. Nálunk a **kollázs-ág megvan**
+(#1002), a **mozgófilm-ág nincs** ⇒ **#2114**. Végül: az
+`editpanel/edithelpbutton` **ikonja ki van kommentezva** — ugyanaz a
+„lecsupaszított súgógomb" minta, mint a `printpanel/phelpbutton`-nál ⇒ nem
+kell megépíteni. ⇒ **Az `editpanel` feltáratlan listája ÜRES: 3 → 0**
+(globálisan 103 → **100**). Komment: **#425**, **#1002**.
+
 ⭐ **2026-09-03 — a KETTŐS NÉZET (2-up) teljes vezérlőkészlete.** A **#434** a
 *fogalmat* rögzítette (három üzemmód, `TwoUp*` kulcsok), de **egyetlen
 elemnevet és címet sem** tartalmazott. Most megvan: a három üzemmód **egyetlen
