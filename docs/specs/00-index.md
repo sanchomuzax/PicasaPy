@@ -1223,7 +1223,7 @@ minden további lapja.
 | lap | miről szól |
 |---|---|
 | [filters-decoded.md](filters-decoded.md) | A szűrők visszafejtett modelljei + golden-verdiktek |
-| [filterdesc-registry.md](filterdesc-registry.md) | A `filterdesc.xml` — csúszkanevek, tartományok, alapértékek |
+| [filterdesc-registry.md](filterdesc-registry.md) | A `filterdesc.xml` — csúszkanevek, tartományok, alapértékek. ✅ **2026-09-03 — a 34 Glimmer-művelet VTABLE-TÉRKÉPE** (#2211): minden osztályhoz vtable, attribútum-beolvasó (1. rés), alkalmazó (6. rés), munkavégző (8. rés) és **attribútum → tagoffszet** tábla. **Két közös motor**: `0x00bb7c80` (kép-bejáró, 7 művelet) és `0x00bc16b0` (színmátrix-alkalmazó, 4 művelet); a `GetVar`/`Nested`/`Tint` alkalmazója **6 bájtos no-op** ⇒ szerkezeti műveletek, nincs saját képpont-menetük. A **`TwoTone` és a `GradientMap` bitre ugyanazt a munkavégzőt futtatja** (`0x00bb87b0`) ⇒ a TwoTone kétmegállós színátmenet-leképezés. A `BlendAlpha` **ős-attribútum**, minden művelethez elérhető. Képlet ebből a szakaszból egy sincs — a cél a horgony volt. |
 | [picasa-native-filter-registry.md](picasa-native-filter-registry.md) | A natív szűrő-tábla: 49 név → kezelő + képen belüli vezérlők |
 | [picasa-native-filter-workers.md](picasa-native-filter-workers.md) | A natív szűrők munkafüggvényei — hívási térkép |
 | [histogram-reference.md](histogram-reference.md) | Hisztogram-referencia és összevetés |

@@ -1951,3 +1951,147 @@ különbséglista névvel, címmel kiírva. A „nincs `imageOperations:` sztrin
 állítás **mind a 13 bináris-indexen** ellenőrizve (a fő index + 12 kísérő
 bináris), mindenütt nulla találattal.*
 
+
+---
+
+## ⭐ A 34 Glimmer-művelet VTABLE-TÉRKÉPE — cím, attribútum-offszet, közös motor (2026-09-03, #2211)
+
+**Mit old meg:** a #2211 tíz „csak regisztrációs sorral" szereplő művelete
+eddig cím nélkül állt — nem lehetett rájuk kutatást indítani. Ez a szakasz
+mind a **34** `glimmer::*ImageOperation` osztályhoz megadja a **vtable-t**, a
+**belépési függvényeket** és az **attribútum → tagoffszet** táblát. A
+képletek ettől még nincsenek meg, de mostantól **minden művelethez van
+horgony**.
+
+### A vtable-rések JELENTÉSE
+
+Az RTTI-táblából minden osztály vtable-je kiolvasható. A rések szerepe a
+már megfejtett műveletekből horgonyozható le — a `DropShadow` (`0x00bbb720`),
+a `SimpleBorder` (`0x00bbf4a0`) és a `Rotate` (`0x00bb5640`) korábban
+levezetett „alkalmazó" címe **mind a 6. résben** áll.
+
+| rés | szerep | bizonyíték |
+|---|---|---|
+| **1** | **attribútum-beolvasó** — a `<effect>` leíró nevesített attribútumait tagváltozókba tölti | `FUN_008eb160(leíró, név)` keres, `FUN_008eb520` tárol a `[this + offszet]` címre |
+| **3, 4, 5, 7** | közös ősmetódusok (`0x00bc4ae0`, `0x00bc5160`, `0x00bc5180`, `0x00bc51d0`) | minden osztályban azonos cím |
+| **6** | **alkalmazó** — vagy saját, vagy a két közös motor egyike | a három korábban megfejtett művelet alkalmazója itt áll |
+| **8** | **munkavégző** — csak ott van, ahol a 6. rés közös motor | a motor `mov eax,[eax+0x20]; call eax` hívása (`0x20/4 = 8`) |
+
+### A KÉT közös motor — és egy no-op
+
+| motor | mit csinál | kik használják |
+|---|---|---|
+| **`0x00bb7c80`** (435 b) | általános **kép-bejáró**: felépíti a csomópontot, majd a 8. résen át hívja a művelet saját munkavégzőjét | `AdjustCurves` · `AutoFix` · `Exposure` · `GradientMap` · `HSVGradientMap` · `PaletteMap` · `TwoTone` |
+| **`0x00bc16b0`** (428 b) | **színmátrix-alkalmazó** — szintén a 8. résen kéri el a mátrixot | `BW` · `ColorMatrix` · `MultiplyColorMatrix` · `SimpleColorMatrix` |
+| **`0x00bbf920`** (6 b) | **no-op**: `or eax, 0xffffffff; ret 0xc` — nincs saját képpont-menete | `GetVar` · `Nested` · `Tint` |
+
+⇒ A `GetVar`, a `Nested` és a `Tint` **szerkezeti** művelet: a hatásukat a
+csővezeték keverő rétege adja, nem saját képpont-menet. Ez megerősíti a 4.
+szakasz „a csővezeték nem lineáris" megállapítását — **a `Tint` tehát nem
+képpont-szűrő**, hanem egy szín, amit a keverés visz fel.
+
+### ⭐ A `TwoTone` UGYANAZT a munkavégzőt használja, mint a `GradientMap`
+
+Mindkettő 8. rése **`0x00bb87b0`** (493 b). ⇒ A `TwoTone` a motorban **egy
+kétmegállós színátmenet-leképezés**: a `blackColor` és a `whiteColor`
+attribútum a gradiens két végpontja. Ez nem következtetés a névből — a két
+osztály **bitre ugyanazt a kódot** futtatja.
+
+*(A munkavégző első lépése egy `[ebx+4] >> 1` elemszám-számítás és egy
+`< 2` ellenőrzés: kevesebb mint két megállóval nem csinál semmit — ami
+pontosan egy gradienstábla szemantikája.)*
+
+### A teljes tábla
+
+Az attribútum-oszlop alakja `név@tagoffszet`. Az offszet a **művelet-objektum**
+eleje.
+
+| művelet (`…ImageOperation`) | vtable RVA | 1. rés (attribútumok) | 6. rés (alkalmazó) | 8. rés (munkavégző) | attribútum → tagoffszet |
+|---|---|---|---|---|---|
+| `AdjustCurves` | `0x008f01e0` | `0x00bb9b60` | `0x00bb7c80` (435 b) | `0x00bb9d20` (224 b) | ExposureAdjustmentStops@0x50 |
+| `AutoFix` | `0x008f08bc` | `0x00bc2d60` | `0x00bb7c80` (435 b) | `0x00bc2d70` (217 b) | — |
+| `BW` | `0x008f05d0` | `0x00bbdd40` | `0x00bc16b0` (428 b) | `0x00bbdd80` (392 b) | filtercolor@0x28 |
+| `Blend` *(ős)* | `0x008f0b2c` | `0x00bc4900` | `0x00c07709` (42 b) | — | maskWithSourceAlpha@0x34, BlendAlpha@0xc, dynamicParamsCachePriority@0x2c, dynamicAlphaCachePriority@0x2c |
+| `Blur` | `0x008efe98` | `0x00bb4d50` | `0x00bb4de0` (616 b) | — | xblur@0x24, yblur@0x2c, quality@0x34 |
+| `Border` | `0x008f0650` | `0x00bbe090` | `0x00bbe320` (266 b) | — | outercolor@0x24, innercolor@0x2c, cornerradius@0x34, innerthickness@0x3c, outerthickness@0x44, captionheight@0x4c |
+| `ColorMatrix` | `0x008f0798` | `0x00bc1620` | `0x00bc16b0` (428 b) | `0x00bc1860` (245 b) | — *(a `Matrix` tömb más úton)* |
+| `Crop` | `0x008f05a0` | `0x00bbd9a0` | `0x00bbdbd0` (227 b) | — | width@0x34, height@0x3c |
+| `DropShadow` | `0x008f039c` | `0x00bbb350` | `0x00bbb720` (417 b) | — | shadowAlpha@0x24, angle@0x2c, shadowColor@0x34, backgroundColor@0x3c, distance@0x44, inner@0x4c, quality@0x54, strength@0x5c, blurX@0x64, blurY@0x6c |
+| `EdgeDetectionB` | `0x008f04a0` | `0x00bbca60` | `0x00bbcdd0` (124 b) | — | detail@0x2c |
+| `EdgeDetectionSobel` | `0x008efff4` | `0x00bb6590` | `0x00bb6620` (544 b) | — | — |
+| `Exposure` | `0x008f07d4` | `0x00bc1a90` | `0x00bb7c80` (435 b) | `0x00bc1ba0` (210 b) | **exposure@0x40, contrast@0x48, blacks@0x58** |
+| `GetVar` | `0x008f06f0` | `0x00bbf7e0` | `0x00bbf920` (6 b) | — | — |
+| `Glow` | `0x008f0174` | `0x00bb8c40` | `0x00bb8e10` (342 b) | — | color@0x24, glowalpha@0x2c, xblur@0x34, yblur@0x3c, strength@0x44, quality@0x4c, inner@0x54, knockout@0x5c |
+| `GradientMap` | `0x008f0120` | `0x00bb8710` | `0x00bb7c80` (435 b) | `0x00bb87b0` (493 b) | — *(a `gradientArray` más úton)* |
+| `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
+| `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
+| `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34 |
+| `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
+| `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
+| `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
+| `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
+| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
+| `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
+| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
+| `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
+| `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
+| `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
+| `Sharpen` | `0x008f0720` | `0x00bbf990` | `0x00bbf9e0` (550 b) | — | sharpness@0x24 |
+| `SimpleBorder` | `0x008f06cc` | `0x00bbf280` | `0x00bbf4a0` (391 b) | — | right@0x2c, bottom@0x3c, color@0x44 |
+| `SimpleColorMatrix` | `0x008effb4` | `0x00bb62c0` | `0x00bc16b0` (428 b) | `0x00bb6400` (296 b) | saturation@0x28, contrast@0x30, brightness@0x38, ContrastAndBrightnessLinked@0x48 |
+| `Tint` ⚠ | `0x008f0554` | `0x00bbd630` | `0x00bbf920` (6 b) | — | color@0x10 *(a kiolvasás itt nem megbízható)* |
+| `TwoTone` | `0x008f085c` | `0x00bc2760` | `0x00bb7c80` (435 b) | `0x00bb87b0` (493 b) | whiteColor@0x24, blackColor@0x2c |
+
+### A `BlendAlpha` NEM műveletenkénti attribútum
+
+A `QuantizePalette` attribútum-beolvasója a saját két kulcsa után
+**átadja a vezérlést** az ős beolvasójának (`0x00bb5a89 call 0x00bc4900`),
+és ez a `0x00bc4900` a `Blend` 1. rése. ⇒ A `BlendAlpha`, a
+`maskWithSourceAlpha` és a két gyorsítótár-prioritás **minden művelethez
+elérhető**, nem csak azokhoz, amelyeknél a `red.cfg` kiírja őket. Ez
+magyarázza, miért szerepel a `BlendAlpha` a legkülönbözőbb blokkokban a 4.
+szakasz recept-listáiban.
+
+### Amit a bináris TÖBBET tud, mint amit a `red.cfg` használ
+
+A 4. szakasz attribútum-listája a `red.cfg`-ből készült — abból, amit a
+szállított effektek **használnak**. A motor ennél többet ismer:
+
+| művelet | csak a binárisban | mit jelenthet |
+|---|---|---|
+| `Exposure` | **`exposure`, `contrast`, `blacks`** | teljes expozíció-hármas; a `red.cfg` egyetlen effektben sem használja |
+| `AdjustCurves` | **`ExposureAdjustmentStops`** | rekesz-alapú expozíció a görbék mellett |
+| `Rotate` | `radAngle`, `flipH`, `flipV` | tükrözés is van, nem csak forgatás |
+| `Glow` | `inner`, `knockout` | belső ragyogás és kivágás |
+| `LocalContrast` | `Strength` offszete | a `red.cfg` ismeri a nevet, a tagoffszet új |
+
+⇒ **Ez a lista NEM megvalósítási igény.** Azt mutatja meg, hol tudna a
+motor többet, mint amennyit az effektek kihasználnak — a megvalósításnak a
+`red.cfg` a szerződése.
+
+### Ami NINCS mérve (őszintén)
+
+- **Egyetlen képlet sem** ebből a szakaszból. A cél a horgony volt.
+- Négy művelet **tömb-típusú attribútuma** (`ColorMatrix::Matrix`,
+  `GradientMap::gradientArray`, `PaletteMap::ColorMaps`,
+  `AdjustCurves::*Curve`) **más úton** kerül be — a fenti mintával nem
+  olvasható ki.
+- A `Tint`, a `Crop` és a `SimpleBorder` sora **hiányos**: a `red.cfg`
+  több nevet sorol (`x`/`y`, illetve `top`/`left`), mint amennyit a minta
+  megtalált.
+- A `QuantizePalette` alapértékei viszont **mérve vannak**: `Steps` = 255,
+  `Depth` = 2 (`0x00bb5aed`, `0x00bb5b1d`) — a tényleges kvantálást a
+  `0x00bb5b60` (1510 b) végzi, az még feltáratlan.
+
+### Módszer
+
+Helyi diszasszemblálás (capstone), felhős dekompiláció nélkül; a helyi
+`Picasa3.exe` SHA-256-a azonos az indexeltével (`644b7bec…3ddc96`). Az
+attribútum-tábla úgy készült, hogy a szkript **minden** osztály 1. résének
+törzsében párba állította a betöltött névsztringet a `FUN_008eb520` tároló
+hívás előtti tagcímmel — tehát nem mintaillesztés a nevekre, hanem a
+tényleges tárolási hely kiolvasása.
+
+*Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre, a közös
+motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
