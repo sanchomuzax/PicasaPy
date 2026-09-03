@@ -640,6 +640,12 @@ hívója van a binárisban (`0x0040b290`, `0x005a6e30`, `0x0072e1f0`,
 
 #### ⛔ NEGATÍV EREDMÉNY, mérve: az értesítő NEM olvassa a sávok értékét
 
+> ⚠️ **A MÉRÉS ÁLL, A KÖVETKEZTETÉS NEM.** A `cella+0x88`/`+0xa0`
+> gyorsítótárazott értéket tényleg nem olvassa senki rajzoláshoz — de a rajzoló
+> **újra kiértékeli** a sávokat (`0x00658423`, `0x0065903b`, `0x006590b4` →
+> `0x00655950`). A sávok jelentése ezzel megvan: ld. lent, „A két sáv
+> JELENTÉSE — MEGVÁLASZOLVA (#2122)".
+
 A `0x00654800`–`0x0065AC00` teljes tartományt (a `CNotifierPopup` és a
 `CBaseNotifier` MINDEN vtable-metódusa beleesik) végigpásztáztam a
 `cella+0x88` és `cella+0xa0` hozzáférésekre. Az összes találat:
@@ -667,6 +673,102 @@ kimerítő keresés a megadott tartományon). A sávok *jelentése* **NINCS
 MÉRVE** — a „(x-tényező, rekesz-sorszám)" olvasat kézenfekvő, de
 bizonyítatlan, ezért nem is állítjuk.
 
+
+#### A két sáv JELENTÉSE — MEGVÁLASZOLVA (#2122)
+
+A #2034 és a #2122 köre a sávokat „absztrakt skalársávnak" nevezte, mert a
+`cella+0x88` / `+0xa0` (a sávok pillanatnyi értéke) hozzáféréseit végigpásztázva
+**nem talált rajzoló olvasást**. A pásztázás helyes volt — a következtetés
+nem: a rajzoló **nem a gyorsítótárazott értéket olvassa, hanem újra kiértékeli
+a sávokat**.
+
+##### A lánc
+
+```
+0x00655950(cella) → out[2 float]
+    edi = cella + 0x80 (A sáv) → call 0x009e5e70(t)   ; „érték t időpontban"
+    edi = cella + 0x98 (B sáv) → call 0x009e5e70(t)
+```
+
+A `0x009e5e70` az **általános kulcskocka-kiértékelő**: ha a sávnak nincs
+kulcskockája, a `[sáv+8]`-at adja vissza, egyébként interpolál.
+
+**Két helyen hívják:**
+
+1. a **tick**-ben (`0x006577ea`) — az eredményt összeveti a `cella+0xb0`/`+0xb4`
+   párral, és **ha eltér**, beírja (`0x00657827`) és `[esp+0x16] = 1`-et állít.
+   A jelzőt a tick vége nézi (`0x00657bda`), és a popup **vtable +0x50**
+   metódusát (`0x00658340`) hívja — újrarajzolás. ⇒ a `+0xb0`/`+0xb4` **nem
+   rajzolási forrás, hanem VÁLTOZÁS-ŐR** (utolsó ismert pozíció).
+2. a **rajzolóban** (`0x00658423` méretezés, `0x0065903b` / `0x006590b4`
+   cellaelhelyezés) — itt születik a tényleges képpont-pozíció.
+
+##### A skálázás — ez adja meg a MÉRTÉKEGYSÉGET
+
+A cellaelhelyezésben (`0x0065903b` ága):
+
+```
+0x00659040  fild [esp+0x74]        ; = [popup+0x1c0]
+0x00659052  fmul [esp+0xdc]        ; × B sáv
+0x00659061  fistp …                ; → Y
+0x00659069  fild [esp+0x70]        ; = [popup+0x1bc]
+0x0065907b  fmul [esp+0xd8]        ; × A sáv
+0x0065908a  fistp …                ; → X
+```
+
+(`[esp+0x70] = [popup+0x1bc]`, `[esp+0x74] = [popup+0x1c0]`, beállítva a
+`0x00658896`–`0x006588d2`-n.)
+
+A `popup+0x1b4` a **`notifier/cell1` réteg** rekesze (ld. a rétegtáblát), a
+rétegstruktúra `+8` mezője a **szélesség**, a `+0xc` a **magasság** — ezt a
+fogantyú rajzolása bizonyítja (`0x0065879b`: `[esi+8]` szélességből vonja ki a
+`[popup+0x1e4]`-et, `[esi+0xc]` a magasság). Tehát:
+
+| mező | mi | érték (respack) |
+|---|---|---|
+| `popup+0x1bc` | `notifier/cell1` **szélessége** | **247 px** |
+| `popup+0x1c0` | `notifier/cell1` **magassága** | **45 px** |
+| `popup+0x1e4` | `notifier/basedecrect` **szélessége** | **21 px** |
+
+**Független megerősítés a magasságra:** a kattintáskezelő a cella sorszámát
+`(egérY − 2) / [popup+0x1c0]` alakban számolja (`0x00657eb4`) — ez csak akkor
+ad sorszámot, ha a mező a **cellamagasság**.
+
+##### A válasz
+
+| sáv | mit szoroz | mit jelent | élő cella célja | elbocsátás célja |
+|---|---|---|---|---|
+| **A** (`cella+0x80`) | `247 px` (cellaszélesség) | **vízszintes eltolás cellaszélesség-egységben** | **−1,0** = −247 px | 0,0 = 0 px |
+| **B** (`cella+0x98`) | `45 px` (cellamagasság) | **függőleges eltolás cellamagasság-egységben** | a cella **sorszáma** = sorszám × 45 px | 0,0 = 0 px |
+
+⇒ **A `−1,0` jelentése: pontosan EGY cellaszélességnyi (247 képpont)
+vízszintes eltolás.** A cella tehát a horgonyzási helyétől egy teljes
+cellaszélességgel elcsúszva áll meg — ez a **becsúszás**, 0,6 s alatt,
+exponenciális görbével; elbocsátáskor 0,3 s alatt csúszik vissza a 0-ra.
+
+##### ⛔ HELYESBÍTÉS a #2034 köréhez
+
+A #2034 köre azt írta: *„A becsúszás-hipotézis MEGDŐLT: a pozíciót
+(`cella+0xb0`/`+0xb4`) a tick közvetlen `mov`-val írja (`0x00657827`), tehát a
+képernyőn kívüli parkolóhely nem egy vízszintes animáció kiindulópontja."*
+
+**Ez téves volt.** A `mov` valóban közvetlen, de az **általa írt érték a
+sáv-kiértékelőtől jön** (`0x006577ea` → `0x00655950`), és a rajzoló amúgy is
+újra kiértékel. A becsúszás **valódi**, és a mértéke pontosan egy cellaszélesség.
+
+##### Az RTL-jelző — mért aszimmetria
+
+A cellaelhelyezés a `0x00d678d4` globális bájton ágazik el. Ez a **jobbról
+balra (RTL) elrendezés** jelzője: a `0x0098f8af`–`0x0098f8e1` blokk a
+`Preferences` / `RTL` beállításkulcsból tölti (`0x00cd8b58` = `"RTL"`,
+`0x00c7eafc` = `"Preferences"`). A programban **114** hivatkozás van rá.
+
+**Mérve, aszimmetria:** a nem-RTL ágban (`0x0065903b`) az X-et az **A sáv**
+adja (`round(A × 247) + [esp+0xc8]`), az RTL ágban (`0x006590ad`) viszont az X
+egy kész értékből jön (`[esp+0xd0]`), és **csak a B sávot** használja. Az Y
+mindkét ágban `round(B × 45) + 2`. Ennek az okát nem mértük ki — de a magyar
+(balról jobbra) felület mindig a **nem-RTL** ágon megy, tehát a becsúszás
+onnan olvasandó.
 
 ### A jobb sáv három rétege: EGYIK SEM vezérlő (#2035)
 
@@ -774,3 +876,16 @@ A méret mindkettőnél mérve van, a **viselkedésük nincs** — a fogantyú
 mozgatása ütközik a munkaterülethez horgonyzással (`0x00658200`), az
 összecsukás célállapotának mérete pedig sehol nincs kimérve. Ezért nem
 építjük meg találgatásból. Külön jegy: **#2035**.
+
+#### Az ANIMÁCIÓ — nálunk halványítás, az eredetiben csúszás (#2157)
+
+| | eredeti (mérve) | nálunk ma (mérve) |
+|---|---|---|
+| megjelenés | **vízszintes csúszás 247 px-en**, 0,6 s, exponenciális (`u = 8·t`) | `opacity` 0 → 1, **0,25 s** (`PicasaNotifier.qml:85`) |
+| eltűnés | **visszacsúszás 0-ra**, 0,3 s | `opacity` 1 → 0, **0,5 s** (`:87`) |
+| a cella függőleges helye | **animált**: sorszám × 45 px, ugyanaz a görbe | `Column` — azonnal ugrik (`:196`) |
+| ütemezés | képkockánkénti tick, a pozíció újraszámolva | Qt `Behavior on opacity` |
+
+Mérve: a `PicasaNotifier.qml`-ben és a `NotifierCell.qml`-ben **nincs**
+`x`/`y` animáció — az egyetlen `Behavior` az átlátszóságé
+(`notifierFadeAnim`, `:202`). Megvalósítás: **#2157**.
