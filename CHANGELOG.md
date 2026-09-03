@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.245] – 2026-09-03
+
+### Hozzáadva
+- A képtálcán mostantól **ki lehet jelölni képeket**: kattintás jelöl,
+  `Ctrl`-lal hozzáadható vagy elvehető egy kép, `Shift`-tel tartomány
+  jelölhető ki. A kijelölt képet ugyanolyan kék keret jelzi, mint a
+  rácsban. Eddig a tálca képeire egyáltalán nem lehetett kattintani.
+
+### Javítva
+- A tálca helyi menüjének „Kijelölés eltávolítása" parancsa mostantól a
+  **tálcán** kijelölt képeket veszi le a tálcáról. Korábban a rács
+  kijelöléséből dolgozott — olyan képekből, amiket a tálcán ki sem
+  lehetett jelölni.
+
 ## [0.8.244] – 2026-09-03
 
 ### Javítva

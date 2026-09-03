@@ -86,6 +86,19 @@ Column {
     readonly property string collageWaitText:
         qsTr("Waiting for the collage to be created…")
 
+    // #2039: a tálca SAJÁT kijelölése (tálca-indexek). #1572 null-őr: a
+    // próbák csonk-vezérlőjén ez a tulajdonság nem is létezik.
+    readonly property var traySelectedIndexes: {
+        if (!tray.ctl || tray.ctl.traySelectedIndexes === undefined) return []
+        var lista = tray.ctl.traySelectedIndexes
+        return (lista === null) ? [] : lista
+    }
+    readonly property bool trayHasSelection: tray.traySelectedIndexes.length > 0
+
+    function trayIndexSelected(index) {
+        return tray.traySelectedIndexes.indexOf(index) >= 0
+    }
+
     readonly property var selectedIndexesOrEmpty:
         (tray.appWindow && tray.appWindow.selectedIndexes)
             ? tray.appWindow.selectedIndexes
@@ -265,9 +278,18 @@ Column {
                 if (tray.ctl && typeof tray.ctl.holdRows === "function")
                     tray.ctl.holdRows(tray.selectedIndexesOrEmpty)
             }
+            // #2039: ha a TÁLCÁN van kijelölés, arra hat — az eredetiben a
+            // tálca saját `CSelectionNode`-ja dönt, nem a rácsé. Ha a
+            // tálcán nincs kijelölve semmi, marad a régi út (a rács
+            // kijelöléséből vesz ki), hogy a parancs ne legyen néma.
             onRemoveSelectionRequested: {
-                if (tray.ctl && typeof tray.ctl.removeHeldRows === "function")
+                if (!tray.ctl) return
+                if (tray.trayHasSelection
+                    && typeof tray.ctl.removeTraySelected === "function") {
+                    tray.ctl.removeTraySelected()
+                } else if (typeof tray.ctl.removeHeldRows === "function") {
                     tray.ctl.removeHeldRows(tray.selectedIndexesOrEmpty)
+                }
             }
             // #1917: az öt ÖRÖKÖLT tétel — más névterekből, de ugyanarra a
             // kijelölésre hat, mint a rács helyi menüjének párja. A jelzést
@@ -501,8 +523,57 @@ Column {
                         ? trayScratchBack.heldCount
                         : tray.selectedIndexesOrEmpty.length
                     delegate: Image {
+                        id: trayThumb
                         objectName: "trayPreviewThumb"
                         required property int index
+
+                        // #2039: a tálcának SAJÁT kijelölése van — az
+                        // eredetiben ugyanolyan `CSelectionNode`, mint a
+                        // rácsé (`picasa-keptalca.md` 13.). A kattintás a
+                        // VEZÉRLŐN megy át, a módosítókkal együtt.
+                        readonly property bool trayCellSelected:
+                            tray.trayIndexSelected(trayThumb.index)
+
+                        TapHandler {
+                            objectName: "trayThumbTap"
+                            acceptedButtons: Qt.LeftButton
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onSingleTapped: function (eventPoint, button) {
+                                if (!tray.ctl
+                                    || typeof tray.ctl.selectTrayIndex !== "function")
+                                    return
+                                tray.ctl.selectTrayIndex(
+                                    trayThumb.index,
+                                    (point.modifiers & Qt.ControlModifier) !== 0,
+                                    (point.modifiers & Qt.ShiftModifier) !== 0)
+                            }
+                        }
+
+                        // A kijelölés KÉTVONALAS kerete — ugyanaz a réteg,
+                        // mint a rácsban (`ThumbDelegate.qml` 89–108.):
+                        // kívül `Theme.thumbSelection` (#009EFF), belül a
+                        // kártya színe. Nem új stílus, hanem a meglévő
+                        // újrahasználása (`constants.ui` thumbsel_color1/2).
+                        Rectangle {
+                            objectName: "trayThumbSelectionOuter"
+                            visible: trayThumb.trayCellSelected
+                            z: -1
+                            anchors.centerIn: parent
+                            readonly property int outerWidth: 2
+                            readonly property int innerWidth: 1
+                            width: parent.width + 2 * (outerWidth + innerWidth)
+                            height: parent.height + 2 * (outerWidth + innerWidth)
+                            color: Theme.thumbSelection
+                        }
+                        Rectangle {
+                            objectName: "trayThumbSelectionInner"
+                            visible: trayThumb.trayCellSelected
+                            z: -1
+                            anchors.centerIn: parent
+                            width: parent.width + 2
+                            height: parent.height + 2
+                            color: Theme.thumbCard
+                        }
                         // #1420: az eredeti tálcáján a bélyegképek a doboz
                         // TELJES belső magasságát kitöltik (a képernyőképen
                         // ~70 képpont), oldalarányt tartva — a korábbi

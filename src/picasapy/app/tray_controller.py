@@ -54,6 +54,8 @@ class TrayMixin:
     függetlenül."""
 
     heldChanged = Signal()
+    #: #2039: a tálca SAJÁT kijelölése változott (nem a rácsé).
+    traySelectionChanged = Signal()
 
     def _ensure_tray_wired(self) -> None:
         """Lusta, egyszeri állapot-inicializálás (a `PhotoOpsMixin.
@@ -296,6 +298,90 @@ class TrayMixin:
         return formatting.status_text(rekordok, locale, self.tr, self.tr)
 
     # -- műveletek --------------------------------------------------------
+
+    # -- a tálca SAJÁT kijelölése (#2039) ----------------------------------
+    #
+    # Az eredetiben a tálca ugyanolyan `CSelectionNode`, mint a rács
+    # (`picasa-keptalca.md` 13., `[ebx+0xea4]`), és a csomópont ELEMENKÉNTI
+    # állapotot tárol (`+0x32c` elemtömb, elemenként `[elem+0x59]` kijelölt);
+    # a tálca számlálója (`0x00716cb0`) épp ezt a jelzőt olvassa. Nálunk a
+    # tálca eddig tükör volt, és a „Kijelölés eltávolítása" a RÁCSRA hatott.
+    #
+    # Az indexek a `trayItems` sorrendjére vonatkoznak — az a tálca saját
+    # rendje, nem rács-sorindex.
+
+    def _tray_selection_state(self) -> tuple[list[int], int | None]:
+        if not hasattr(self, "_tray_selected"):
+            self._tray_selected: list[int] = []
+            self._tray_anchor: int | None = None
+        return self._tray_selected, self._tray_anchor
+
+    def _tray_item_count(self) -> int:
+        self._ensure_tray_wired()
+        return len(self._tray_records())
+
+    def _set_tray_selection(self, kijelolt, horgony: int | None) -> None:
+        db = self._tray_item_count()
+        tiszta = sorted({i for i in kijelolt if 0 <= i < db})
+        self._tray_selected = tiszta
+        self._tray_anchor = horgony if horgony is not None and 0 <= horgony < db else None
+        self.traySelectionChanged.emit()
+
+    @Property("QVariant", notify=traySelectionChanged)
+    def traySelectedIndexes(self):
+        """A tálcán kijelölt elemek indexei (a `trayItems` sorrendjében)."""
+        kijelolt, _ = self._tray_selection_state()
+        db = self._tray_item_count()
+        return [i for i in kijelolt if 0 <= i < db]
+
+    @Slot(int, bool, bool)
+    def selectTrayIndex(self, index: int, ctrl: bool = False, shift: bool = False) -> None:
+        """Kattintás a tálca egy elemére.
+
+        Args:
+            index: a `trayItems` indexe.
+            ctrl: hozzáad/elvesz (a rács `Ctrl`-jével azonos).
+            shift: tartomány a horgonytól (a rács `Shift`-jével azonos).
+        """
+        db = self._tray_item_count()
+        if not 0 <= index < db:
+            return
+        kijelolt, horgony = self._tray_selection_state()
+        if shift and horgony is not None:
+            eleje, vege = sorted((horgony, index))
+            self._set_tray_selection(range(eleje, vege + 1), horgony)
+            return
+        if ctrl:
+            uj = set(kijelolt)
+            uj.symmetric_difference_update({index})
+            self._set_tray_selection(uj, index)
+            return
+        self._set_tray_selection({index}, index)
+
+    @Slot()
+    def clearTraySelection(self) -> None:
+        """A tálca kijelölésének törlése (a rácsé érintetlen)."""
+        self._set_tray_selection((), None)
+
+    @Slot()
+    def removeTraySelected(self) -> None:
+        """„Kijelölés eltávolítása" (`Tray::ID_REMOVE_SELECTION`) — a
+        TÁLCÁN kijelölt elemekre.
+
+        Üres kijelöléssel nem tesz semmit: az eredetiben sincs mit
+        eltávolítani, és a tálca kiürítése ennél sokkal drágább tévedés
+        volna, mint a néma no-op.
+        """
+        self._ensure_tray_wired()
+        indexek = list(self.traySelectedIndexes)
+        if not indexek:
+            return
+        rekordok = self._tray_records()
+        azonositok = [rekordok[i].id for i in indexek if 0 <= i < len(rekordok)]
+        if not azonositok:
+            return
+        self._tray_apply(tray.without(self._tray, azonositok))
+        self._set_tray_selection((), None)
 
     @Slot("QVariantList")
     def syncSelection(self, rows) -> None:
