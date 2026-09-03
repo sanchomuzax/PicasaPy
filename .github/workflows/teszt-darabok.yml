@@ -117,3 +117,34 @@ jobs:
         # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
         # jegyre került; a `--cov` helyben változatlanul működik.
         run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
+
+      # #1864: a windows-láb NEM blokkol (kísérleti), és épp ezért a
+      # bukása hetekig észrevétlen maradt: négy export-hibaág minden
+      # PR-en elbukott, és a zöld összképben senki nem nézett bele.
+      #
+      # Ez a lépés láthatóvá teszi anélkül, hogy blokkolna: a futás
+      # ÖSSZEGZŐ LAPJÁRA ír (`$GITHUB_STEP_SUMMARY`), ami a webes felületen
+      # a job tetején jelenik meg. Nem `exit 1` — a láb kísérleti marad.
+      #
+      # ⚠️ SZÁNDÉKOSAN nem a záró (kötelező) jobba került: oda kötve minden
+      # PR-nek meg kellene VÁRNIA a windows-lábat, ami a beolvasztást a
+      # lassabb platformhoz kötné. A #1863 óta épp az a felállás, hogy a
+      # kötelező ellenőrzés csak az ubuntu-darabokra vár.
+      - name: A windows-láb bukása LÁTHATÓ legyen (#1864)
+        if: ${{ failure() && runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          {
+            echo "## ⚠️ A windows-láb elbukott — ${{ matrix.shard }}/4 darab"
+            echo
+            echo "Ez a láb **nem blokkol** (kísérleti), de a bukása"
+            echo "lefedettség-vesztést jelent: az itt elbukó állítások"
+            echo "azon a platformon nincsenek mérve."
+            echo
+            echo "A bukó részfutások a fenti \"Run tests\" lépés naplójában,"
+            echo "a \"HIBÁS RÉSZFUTÁSOK:\" sor alatt állnak tételesen."
+            echo
+            echo "Ha a bukás tartós és nem javítható a platformon, a"
+            echo "kihagyást KIMONDOTT \`skipif\`-fel kell rögzíteni, valódi"
+            echo "indokkal — nem szabad némán elbukni hagyni (#1864)."
+          } >> "$GITHUB_STEP_SUMMARY"
