@@ -909,6 +909,54 @@ feltétele és a 36 elemű csempe-tábla **megerősített** (közvetlen kiolvas�
 A „három jelvény, mind az 1. effekt-fülön" **következtetés** a fentiekből —
 a negyedik megfigyelés ellentmondása feloldatlan.
 
+#### A 21 örökölt szűrőből HÁROM ma is elérhető a felületről (#2148)
+
+A 7. („örökölt") szerkesztő-fülünk bevezetője azt állította, hogy ezek a
+szűrők „nem érhetők el a mai Picasában". **Három elemre ez nem igaz** — mind
+a három út a binárisból kimérve:
+
+| örökölt kulcs | hol érhető el a mai Picasában | bizonyíték |
+|---|---|---|
+| `radtint` | 1. effekt-fül, **12. csempe** (`dir_tint`), **Shifttel** | a `0x00c7e5a0` tábla 12. rekordjának másodlagos mezője (ld. fentebb) |
+| `autobacklight` | Alapvető javítások fül, **egykattintásos gomb** | `editpanel/autobacklight` → `push "autobacklight"` + `call 0x6021d0` (`0x005d6848`) |
+| `rainbow` | **Kiegyenesítés** gomb + **ALT** | `editpanel/horizonadjust` ágában `push 0x12` (**VK_MENU**) → `GetAsyncKeyState` → `push "rainbow"` (`0x005d6733`–`0x005d6746`) |
+
+⚠️ A `rainbow` kapcsolója **ALT (`0x12`), nem Shift** — a csempék
+másodlagosát a Shift (`0x10`) hozza elő. A két rejtett út **különböző
+módosítót** használ; ezt ne mossuk össze.
+
+**A `0x6021d0` a felületi „szűrőt alkalmaz" belépési pont**, és az egész
+binárisban **két** hívója van (`xrefs`): a `0x005d59f0` szerkesztő-panel
+(7 hívás) és a `0x005d3290` (1 hívás, futásidejű névvel). A panel hét
+statikus szűrőneve **kimerítően**: `autolight` (Automatikus kontraszt),
+`autocolor` (Automatikus szín), `rainbow`, `tilt` (Kiegyenesítés),
+`enhance` („Jó napom van"), `autobacklight`, és egy dinamikus.
+
+**A maradék 18-ra a mondat IGAZ.** Felületi vezérlőjük nincs; a
+`0x008fc690` név-átfordító csak a **lánc betöltésekor** ismeri fel őket
+(`repe cmpsb` névhasonlítás: `colorfix`, `triple`, `triple2`, `triple3` →
+`finetune` / `finetune2`). Tizenhárom örökölt név egy tömbben ül
+(`0x00cd05d0`–`0x00cd0650`): `contrast`, `gamma`, `dir_sharp`, `dir_brite`,
+`dir_sat`, `linblur`, `autocontrast`, `backlight`, `colortemp`, `whitept`,
+`triple2`, `triple`, **`debug`** — az utolsó fejlesztői eszköz, ezért marad
+ki a fülünkről.
+
+**Ráadás-lelet:** a `focalpixelate` kulcs sztringként **nincs benne** a
+`Picasa3.exe`-ben (a `PicnikFocalPixelate` igen), a `filterdesc.xml`-ben
+viszont **van** — tehát XML-vezérelt bejegyzés, nem beégetett. Ez
+összhangban van a #567 „halott bejegyzés" magyarázatával.
+
+**Amit ez NEM mond meg:** hogy a `rainbow` ALT-os ágát őrző globális
+kapcsoló (`cmp byte ptr [0xd67849]`, `0x005d672b`) mikor nem nulla. Amíg ez
+nincs kimérve, a `rainbow` elérhetősége **feltételes** — a mondat
+pontosítását ez nem érinti (a `radtint` és az `autobacklight` önmagában is
+megcáfolja a kizárólagos tagadást), de a felhasználónak szóló „hogyan hívd
+elő" leírás ezen múlik. Nyitott kérdés.
+
+**Bizalmi fok: megerősített** a három út és a kétféle módosító
+(közvetlen kiolvasás + diszasszemblálás); **nyitott** a `0x00d67849`
+kapcsoló feltétele.
+
 #### A `GlowImageOperation` keverése: KÖZÖNSÉGES source-over (#2102)
 
 A #2076 után nyitva maradt kérdés első fele **eldőlt**: a ragyogás-réteg

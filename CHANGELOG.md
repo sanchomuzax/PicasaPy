@@ -7,12 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.257] – 2026-09-03
+
+### Javítva
+- A szerkesztő 7. („örökölt effektek") fülének bevezetője nem állítja többé,
+  hogy egyik régi szűrő sem érhető el a mai Picasában: a huszonegyből három
+  ma is elérhető (Sugaras árnyalás, Derítőfény, Szivárvány), a többi
+  tizennyolcra a mondat igaz (#2148).
+
 ## [0.8.256] – 2026-09-03
 
 ### Javítva
-- A projekt-mappák (Kollázsok, Filmek, Exportált képek) többé nem jelennek meg
-  kétszer a bal hasábban: a „Projektek" csomópont alatt maradnak, a „Mappák"
-  listából kimaradnak (#2031).
+- A projekt-mappák (Kollázsok, Filmek) többé nem jelennek meg kétszer a bal
+  hasábban: a „Projektek" csomópont alatt maradnak, a „Mappák" listából
+  kimaradnak (#2031). A kizárás pontosan a `P2category=Projects (internal)`
+  mappákra vonatkozik; az „Exportált képek" és a rejtett mappák viselkedése
+  változatlan, és a mappa az indexben, a keresésben és a darabszámokban
+  érintetlen marad.
 
 ## [0.8.255] – 2026-09-03
 
