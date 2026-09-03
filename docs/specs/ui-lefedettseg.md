@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 268 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 111 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 143 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 103 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 151 |
 | bizonytalan | 106 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -75,7 +75,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | `makemoviepanel` | 111 | 55 | 1 | 5 | 0 | 34 | 15 | 56 | 0 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 0 | 30 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
-| `editpanel` | 312 | 125 | 99 | 1 | 11 | 6 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
+| `editpanel` | 312 | 125 | 99 | 1 | 3 | 14 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 20 | 3 | 2 | 11 | 10 | 94 | 0 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 12 | 10 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
@@ -187,7 +187,7 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `remove_low_res_faces_label` „Remove Low Resolution Faces” (magyarul: „Kis felbontású arcok eltávolítása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `remove_slide` buboréksúgó: „Remove the selected slide” — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
 - `render` „Create Movie” (magyarul: „Mozgófilm létrehozása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00400000)
-- `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x0061681e)
+- `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0061681e)
 - `size_label` „Size:” (magyarul: „Méret:”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-create-features.md)
 - `sizelist` — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-create-features.md)
 - `smart_order_label` „Best Transitions” (magyarul: „A legjobb átmenetek”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
@@ -245,8 +245,8 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 
 A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a PhotoViewer.qml (fejléc, előnézet, nagyítás-csúszka, felirat, kettős nézet)
 
-- `aa_2up_toggle` buboréksúgó: „View the same image twice”
-- `ab_2up_toggle` buboréksúgó: „View two different images”
+- `aa_2up_toggle` buboréksúgó: „View the same image twice” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
+- `ab_2up_toggle` buboréksúgó: „View two different images” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `edithelpbutton` buboréksúgó: „Help”
 - `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”)
 - `edittextghost` — *bizonytalan*
@@ -254,7 +254,7 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `modaldialogblur` — *bizonytalan*
 - `movietab` — *bizonytalan*
 - `movietabpanel` — *bizonytalan*
-- `only_1up_toggle` buboréksúgó: „View only one image”
+- `only_1up_toggle` buboréksúgó: „View only one image” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `picnik` „Edit in Creative Kit” (magyarul: „Szerkesztés a Kreatív készletben”) — 🔧 **lekutatva**, csak nem megépítve (picasa-bezaras-es-kilepes.md: 0x0057c4e0)
 - `picnik_fx` buboréksúgó: „Try more effects at Creative Kit” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `picnik_fx_label` „Effects by” (magyarul: „Effektusok a következőtől:”) — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
@@ -262,14 +262,14 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `preview2` — *bizonytalan*
 - `previewimage2` — *bizonytalan*
 - `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `selection_label` „Selected” (magyarul: „Kijelölve”)
-- `selection_label_zoom` „Selected” (magyarul: „Kijelölve”)
+- `selection_label` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
+- `selection_label_zoom` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
 - `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo”
-- `swap_2up_focus` buboréksúgó: „Switch which image has focus”
-- `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout”
+- `swap_2up_focus` buboréksúgó: „Switch which image has focus” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
+- `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
 - `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `weblink` buboréksúgó: „Go to the website associated with this Photo”
+- `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:1166)
 
 ### `thumbui` — 23 hiány · panel-megfeleltetés: `parositva`
 
@@ -1585,10 +1585,4 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 ### `PicasaPy/VideoPlayerView.qml` — 1
 
 - „Unable to play this video.”
-
-## Figyelmeztetések a generáláskor
-
-- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/aa_2up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View the same image twice). A kézi indok: A gomb LÉTEZIK (compareButtonAA) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
-- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/ab_2up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View two different images). A kézi indok: A gomb LÉTEZIK (compareButtonAB) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
-- ELLENŐRIZD a »hianyzik« felülbírálást: 'editpanel/only_1up_toggle' — a gépi párosítás ma már MEGTALÁLJA (parositva: buboréksúgó: View only one image). A kézi indok: A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya. Ha a funkció azóta elkészült, töröld a sort; ha az indok ma is áll (pl. a vezérlő létezik, de véglegesen letiltott), HAGYD.
 

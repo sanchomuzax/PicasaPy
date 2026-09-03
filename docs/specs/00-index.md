@@ -659,6 +659,29 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 
 ### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03)
 
+### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
+
+⭐ **2026-09-03 — a KETTŐS NÉZET (2-up) teljes vezérlőkészlete.** A **#434** a
+*fogalmat* rögzítette (három üzemmód, `TwoUp*` kulcsok), de **egyetlen
+elemnevet és címet sem** tartalmazott. Most megvan: a három üzemmód **egyetlen
+háromszegmenses kapcsoló** (`only_1up` **bal** · `ab_2up` **közép** · `aa_2up`
+**jobb**, a respack `buttcon_LS/MS/RS` rajzaiból), a kölcsönös kizárás
+**`Property uptarget`**-tel megy — mindegyik **név szerint felengedi a másik
+kettőt**, ezért az aktív gombra kattintva **nem tűnik el minden pipa** *(ez a
+mi rádió-csapdánk ellenszere)*; az alapértelmezett a `only_1up`
+(**`setpressed 1`**, `editpanel.tre:1196`). Két segédgomb **alapból rejtett**
+(`swap_2up_focus` = „Fókusz váltása a képek között", `swap_2up_layout` =
+„Váltás a vízszintes és a függőleges elrendezés között"), ahogy az
+`editpanel/weblink` is. ⭐ **A szerkesztési ütközés párbeszéde teljes
+szöveggel** (`CThumbUI::Confirm2up*`, `0x0056aad0`): **„Szerkesztett
+változatok kiválasztása"** / „A képnek két szerkesztett változata van.
+Melyiket szeretné megtartani?" — és a válaszgombok **NEM „A/B", hanem
+HELYZETEK**, **négy** darab (`Bal` · `Jobb` · `Fent` · `Lent`), mert a
+párbeszéd az aktuális elrendezéshez igazodik. ⛔ **A `wipe_2up_toggle` a
+kódban NÉV, a felületen NINCS** — sem `.tre`, sem respack-réteg. ⇒ Az
+`editpanel` feltáratlan listája **11 → 3** (globálisan 111 → **103**).
+Komment: **#434**.
+
 ### [picasa-nyomtatas.md](picasa-nyomtatas.md) — nincs nyitott kérdés
 
 ⭐ **2026-09-03 — HÁROM TÉVES ÁLLÍTÁS JAVÍTVA, és a panel alsó gombjai
