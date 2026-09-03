@@ -3124,17 +3124,19 @@ szöveges diákat** — az a figyelmeztetés ehhez a funkcióhoz tartozik.*
 
 #### A párbeszéd vezérlői (elemleltár, `titledialog`)
 
-| elem | felirat |
-|---|---|
-| `previewtext` · `previewimage` | a dia **élő előnézete** (szöveg + háttér) |
-| `stylelist` | a dia **stílusa** |
-| `sizelist` | a **betűméret** |
-| `captionchk` | jelölőnégyzet — a **képfelirat** átemelése |
-| `add` · `cancel` | „Add" / „Cancel" |
+*Forrás: `titledialog.tre` — a sorszámok a felületleíró saját sorai.*
+
+| elem | felirat | `titledialog.tre` |
+|---|---|---|
+| `titledialog/previewimage` · `titledialog/previewtext` | a dia **élő előnézete** (szöveg + háttér) | `titledialog.tre:20` |
+| `titledialog/stylelist` | a dia **stílusa** | `titledialog.tre:14` |
+| `titledialog/sizelist` | a **betűméret** | `titledialog.tre:37` |
+| `titledialog/captionchk` | jelölőnégyzet — a **képfelirat** átemelése | `titledialog.tre:40` |
+| `titledialog/add` · `titledialog/cancel` | „Add" / „Cancel" | — |
 
 ⇒ A szöveges dia **nem puszta szövegmező**: stílus- és
 méretválasztóval, élő előnézettel, és azzal a lehetőséggel, hogy a
-szöveg a kép **feliratából** jöjjön (`captionchk`).
+szöveg a kép **feliratából** jöjjön (`titledialog/captionchk`).
 
 #### Az infósor a filmkészítőben
 

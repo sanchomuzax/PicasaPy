@@ -4594,10 +4594,15 @@ funkciót, tehát a funkció pótlása nem jár adatvesztés-kockázattal.)*
 
 ### 64.4 A maradék kis panelek
 
+*Forrás a `panelroot` sorához: `panelroot.tre` — pl. a
+`panelroot/makemovietab` a `panelroot.tre:75`, a
+`panelroot/capturemovietab` a `panelroot.tre:91`, a `panelroot/globaltabs`
+a `panelroot.tre:95` sorban áll.*
+
 | panel | elem | állapot |
 |---|---|---|
 | `rightdrawerpanel` | `close` · `size_toggle` („Switch between small/large side panel") · `title_text` („Metaadatok") | a fiók **méret-váltója** nálunk nincs — kis eltérés, a #1773-hoz tartozik |
-| `panelroot` | `makemovietab` („Movie Maker") · `capturemovietab` („Rögzítés") · `globaltabs` · `youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
+| `panelroot` | `panelroot/makemovietab` („Movie Maker") · `panelroot/capturemovietab` („Rögzítés") · `panelroot/globaltabs` · `panelroot/youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
 | `instructionpanel` | `close` · `learn_more` („Learn more…") | súgó-hivatkozás ⇒ **hatókörön kívül** |
 | `video_control_bar2` | `1to1` („Show actual movie size (don't stretch)") · `fullscreen` · `scaleslider` · `volumeslider` | a **2.7** szakaszban már feltárva — nem ez a kör találta |
 

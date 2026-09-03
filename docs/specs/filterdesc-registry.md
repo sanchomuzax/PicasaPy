@@ -2098,9 +2098,12 @@ motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
 ---
 
-## ⭐ ÖT Glimmer-művelet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB`, `TwoTone`, `Resize` (2026-09-03, #2211)
+## ⭐ HÉT Glimmer-művelet KIMÉRVE (2026-09-03, #2211)
 
-Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **ötöt
+*`IR` · `MultiplyColorMatrix` · `EdgeDetectionB` · `TwoTone` · `Resize` ·
+`AutoFix` · `AdjustCurves`*
+
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **hetet
 számszerűen is megold** — és a megoldás módszere maga is eredmény: a
 **saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
 
@@ -2243,6 +2246,68 @@ négy hívója van, köztük mindkettő.
 **Ami NINCS mérve:** hogy `smoothing = false` esetén a bináris a `0`-s
 dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
 
+### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
+
+A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
+(`0x00bc2d70`, 217 b) három lépést tesz:
+
+1. **Három hisztogram.** Három 256 dwordös puffert nulláz
+   (`0x3fc` bájt `memset` + a 256. rekesz külön), majd a `0x00bc2e50`
+   (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
+   `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
+   nincs benne**.
+2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
+   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
+   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
+   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
+   olvasat, de nem azonosítottam.)*
+3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
+   `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
+
+**A LUT képlete — teljes:**
+
+```
+lo = a legkisebb index, ahol a hisztogram nem nulla
+hi = a legnagyobb index, ahol a hisztogram nem nulla
+
+ha lo == hi:                       LUT[x] = 255            (a csatorna telítve)
+egyébként:  LUT[x] = clamp( round( (x − lo) / (hi − lo) · 255 + 0,5 ), 0, 255 )
+```
+
+A `255,0` a `0x00cf39d0`, a `0,5` a `0x00c72150` (mindkettő dupla
+pontosságú, kiolvasva); a `+0,5` a `0x00c29990` egészre alakítóval együtt
+kerekítés. A `lo` keresése ötösével kibontott ciklus (`0x00bc3180`–
+`0x00bc31a9`), a `hi`-é visszafelé megy 255-től.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól — és NEM elírás.** A mi `autofix`-ünk
+> (`src/picasapy/render/glimmer_ops.py`) az `apply_channel_levels_stretch`-re
+> mutat, ami a **natív „Jó napom van" modellt** használja, **0,30-as
+> vágópont-keveréssel** (#535, #721 — a `0x009db610` kutatása). A Glimmer
+> `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
+> teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
+> ugyanaz. Jegy: **#2229**.
+
+### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
+
+A munkavégző (`0x00bb9d20`, 224 b) sorrendben:
+
+| tag | mi | hogyan |
+|---|---|---|
+| `+0x50` | **`ExposureAdjustmentStops`** | beolvasás (`0x008ef520`), majd `0x00bcd3b0` |
+| `+0x40` | 1. görbe | `0x00bb9e00` (438 b), csak ha nem nulla |
+| `+0x44` | 2. görbe | ugyanaz |
+| `+0x48` | 3. görbe | ugyanaz |
+| `+0x4c` | 4. görbe | ugyanaz |
+
+A `red.cfg` négy görbe-attribútumot ismer (`MasterCurve`, `RedCurve`,
+`GreenCurve`, `BlueCurve`) — **a négy tagoffszet ezekkel áll párban**, a
+sorrendjük viszont **nincs mérve** (a beolvasó a tömb-attribútumokat nem a
+szokásos mintával veszi át).
+
+⭐ Az **`ExposureAdjustmentStops`** ELŐBB fut, mint a görbék, és **nem
+szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
+görbék mellett.
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
@@ -2255,10 +2320,230 @@ dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
 3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
    levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
 
-*Bizonyítottsági fok: **megerősített** mind az öt leletre (kiolvasott
+*Bizonyítottsági fok: **megerősített** mind a hét leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma, a `TwoTone` megálló-pozíciói és a `Resize` `smoothing = false` ága
-**nincsenek mérve**.*
+tartalma, a `TwoTone` megálló-pozíciói, a `Resize` `smoothing = false` ága,
+az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az `AdjustCurves` négy
+görbéjének SORRENDJE **nincsenek mérve**.*
+
+---
+
+## ⭐ A `QuantizePalette` OKTREE, és a MASZK-osztályok térképe (2026-09-04, #2211)
+
+### 1. `QuantizePaletteImageOperation` — palettaválasztó, nem lépésközös kvantálás
+
+A művelet két attribútuma és alapértéke (`0x00bb5ad0`, 139 b):
+
+| attribútum | tag | alapérték | cím |
+|---|---|---|---|
+| `Steps` | `+0x24` | **255** | `0x00bb5aed` |
+| `Depth` | `+0x2c` | **2** | `0x00bb5b1d` |
+
+A munkát a `0x00bb5b60` (1510 b) végzi, négy argumentummal
+(`kép`, `Steps`, `Depth`, `cél`). Három lépés olvasható ki belőle:
+
+**a) Végigmegy a kép MINDEN képpontján**, kibontja a csomagolt képpontot
+`(R, G, B)`-re (`shr 0x10` / `shr 8` / `movzx al`), és a `0x00bcb8e0`
+beszúróval egy fába teszi (`0x00bb5d3b`–`0x00bb5d8c`).
+
+**b) A beszúró OKTREE-t épít.** A csomópont **32 bájt**, és a beszúró
+mind a **nyolc** mutatóját nullázza (`0x00bcb8f2` `push 0x20`,
+`0x00bcb8ff`–`0x00bcb913`); a redukáló (`0x00bcb6f0`, 389 b) szintén
+**nyolcasával** járja a gyerekeket (`0x00bcb71e` `lea ecx, [edx + 8]`).
+
+**c) A redukció mérete a `Steps`-ből jön** (`0x00bb5da8`):
+
+```
+Steps == 2  ->  0x00bcb6f0(2)
+egyébként   ->  0x00bcb6f0(Steps − 1)
+```
+
+**d) Tartalék: fix 3-3-2 bites paletta.** A `0x00bb5e02`–`0x00bb5e53` ciklus
+három 256 elemű táblát tölt fel: `r & 0xE0`, `(g >> 3) & 0x1C`, `b >> 6` —
+a klasszikus 8 bites (256 színű) RGB-palettaindex.
+
+⇒ **A `Steps` a PALETTA MÉRETE, nem a csatornánkénti szintszám.** Az
+eredmény a kép saját színeihez igazodik, nem egy fix rácshoz.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól.** Mind a két megvalósításunk
+> (`effects_creative_tone.apply_quantizepalette`,
+> `glimmer_tone.apply_quantizepalette`) **egyenletes lépésközű** kvantálást
+> csinál, és a docstringjük ki is mondja, hogy a pontos algoritmus „NEM
+> ismert", zárójelben megemlítve, hogy „esetleg palettaválasztó". **A
+> zárójeles sejtés igaz volt.** Jegy: **#2231**.
+
+**Ami NINCS mérve:** mit jelent a `Depth` (alapérték 2), mikor lép életbe a
+3-3-2-es tartalék paletta, és milyen szabály szerint választ a redukáló
+leveleket.
+
+### 2. A MASZK-osztályok — más vtable-elrendezés, és több attribútum, mint a `red.cfg`-ben
+
+A `glimmer::*ImageMask` osztályok **nem** ugyanazt a réskiosztást használják,
+mint a műveletek: náluk az attribútum-beolvasó az **5. rés**, és a 3–4. rés
+közös metódusa is más (`0x004bdeb0`, nem `0x00bc4ae0`). Ezt nem feltevésből
+tudjuk: a `tileWidth` és társai sztring-xrefje **pontosan** az 5. rés
+függvényére mutat.
+
+| maszk | vtable RVA | 5. rés (attribútumok) | 6. rés | attribútum → tagoffszet |
+|---|---|---|---|---|
+| `ImageMask` *(ős)* | `0x008f0d34` | `0x00bcd5c0` | `0x00c07709` (no-op) | width@0x8, height@0x10 |
+| `TiledImageMask` | `0x008f02e8` | `0x00bba2e0` | `0x00bba4d0` (169 b) | tileWidth@0x18, tileHeight@0x20, **scaleWidth@0x28**, **scaleHeight@0x30**, **paddingLeft@0x38**, **paddingTop@0x40**, **paddingRight@0x48**, **paddingBottom@0x50**, offsetX@0x58, offsetY@0x60, alphaMin@0x68, **alphaMax@0x70** |
+| `CircularGradientImageMask` | `0x008f0890` | `0x00bcfc70` | `0x00bcfda0` (100 b) | **aspectRatio@0x18**, innerRadius@0x20, outerRadius@0x28, innerAlpha@0x30, outerAlpha@0x38, xCenter@0x40, yCenter@0x48 |
+| `ShapeGradientImageMask` | `0x008f0e50` | **ugyanaz** (`0x00bcfc70`) | **ugyanaz** (`0x00bcfda0`) | ugyanaz |
+| `PaintMaskPlusImageMask` | `0x008f0750` | `0x00bcd5c0` (az ősé) | `0x005baa00` (5 b) | width@0x8, height@0x10 |
+
+**Két szerkezeti következmény:**
+
+1. ⭐ **A `CircularGradient` és a `ShapeGradient` bitre ugyanazt a beolvasót
+   és ugyanazt az alkalmazót futtatja** — a különbségük nem itt van, hanem a
+   9./10. résben (a `ShapeGradient`-é `0x00c07709`, azaz **no-op**, a
+   `CircularGradient`-é `0x00bc2a30`). Vagyis a `ShapeGradient` a
+   `CircularGradient` egy **lecsupaszított** változata.
+2. A `PaintMaskPlusImageMask` **saját attribútumot nem ismer** — csak az ős
+   `width`/`height`-jét; a festett maszkot máshonnan kapja.
+
+**Amit a `red.cfg` NEM használ, de a motor tud:** a `Tiled` maszk **öt**
+extra attribútuma (`scaleWidth`, `scaleHeight`, a négy `padding*`,
+`alphaMax`) és a gradiens-maszkok `aspectRatio`-ja. A 4. szakasz
+attribútum-táblája a `red.cfg`-ből készült, tehát csak a **használt**
+neveket sorolja.
+
+> Ezzel a **#2211** `Tiled` tétele is horgonyt kapott — a
+> `glimmer::TiledImageMask` **nem `ImageOperation`**, ezért hiányzott a
+> műveleti táblából.
+
+*Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre és az
+attribútum-offszetekre; a `QuantizePalette` `Depth`-jelentése, a
+levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
+
+---
+
+## `HSVGradientMapImageOperation` — a megállók HSV-ben vannak (2026-09-04, #2211)
+
+A `red.cfg` két attribútumot mutat (`gradientObjectArray`, `hueOffset`). A
+munkavégző (`0x00bbc260`, 1448 b) megmutatja, **mi van a tömbben**: minden
+megálló egy `color` és egy `position` mezőből áll, és a **`color` maga is
+objektum, három mezővel**:
+
+| mező | sztring címe | hol olvassa |
+|---|---|---|
+| `h` | `0x00cbf800` | `0x00bbc373` |
+| `s` | `0x00cd6fb4` | `0x00bbc3a6` |
+| `v` | `0x00cb92e8` | `0x00bbc3d9` |
+| *(a burkoló)* `color` | `0x00cbda84` | `0x00bbc328` |
+| `position` | `0x00cf03dc` | `0x00bbc412` |
+
+*(A három egybetűs név nem szerepel a bináris-index sztringtáblájában —
+közvetlenül a fájlból olvastam ki a `mov edi, <cím>` operandusai alapján.)*
+
+⇒ **Ez különbözteti meg a `GradientMap`-tól:** ott a megállók RGB-színek,
+itt **HSV**-ben adottak, tehát az interpoláció is HSV-térben történik. A
+`hueOffset` ezért értelmes: a színezetet forgatja el.
+
+### A HSV-modell mértékegységei — mérve
+
+A leképezést építő `0x00bbbe20` (673 b) beolvasott konstansai:
+
+| konstans | érték | szerep |
+|---|---|---|
+| `0x00cf3d50` (dupla) | **360,0** | `fadd` — a negatív színezet körbefordítása |
+| `0x00cf4098` (egyszeres) | **360,0** | `fsub` — a 360 fölötti körbefordítása |
+| `0x00cf39ec` / `0x00cf3a08` | **100,0** | az `s` és a `v` osztója |
+| `0x00cf39f0` (dupla) | **6,0** | a szektor-szorzó (`h/360 · 6`) |
+| `0x00cf39d0` (dupla) | **255,0** | a kimeneti csatorna skálája |
+
+⇒ **`h` fokban (0–360, körbefordítással), `s` és `v` SZÁZALÉKBAN (0–100)**,
+a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
+
+**Ami NINCS mérve:** a megállók közti interpoláció pontos módja (lineáris-e
+a színezetben, és melyik irányban megy körbe), valamint hogy a `position`
+milyen tartományban van.
+
+---
+
+## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
+
+Ezzel a **#2211** tízes listájának utolsó művelete is horgonyt kapott —
+és két teljes kontrollpont-tábla jött ki belőle.
+
+A munkavégző (`0x00bc1ba0`, 210 b) **négy** tagot olvas be
+(`+0x40`, `+0x48`, `+0x50`, `+0x58`), de a beolvasó (`0x00bc1a90`) csak
+**hármat** nevez meg: `exposure`, `contrast`, `blacks`. A négy értéket
+átadja a `0x00bc1c80`-nak (1758 b), és ott épül a két görbe.
+
+### 1. A FIX, nyolcpontos tábla
+
+Egyszer, indításkor töltődik fel (`0x00d9fda0` az „már megvolt" jelző), a
+`0x00d9fd60`-tól kezdődő 16 float:
+
+| # | x | y |
+|---|---|---|
+| 0 | **14** | **0** |
+| 1 | **27** | **19** |
+| 2 | **41** | **36** |
+| 3 | **81** | **70** |
+| 4 | **128** | **94** |
+| 5 | **193** | **123** |
+| 6 | **220** | **136** |
+| 7 | **255** | **160** |
+
+A görbeépítő hívása egyértelmű: `push 0x00d9fd60; mov eax, 8;
+call 0x008f2b30` — **nyolc pont**.
+
+⇒ **Sötétítő, csúcsokat összenyomó görbe**: a 255 csak 160-ig jut, a 14 alatti
+rész nullára esik.
+
+### 2. Az ÖT pontos, PARAMÉTERES görbe
+
+Közvetlenül utána (`0x00bc1e01`–`0x00bc1e71`, `mov eax, 5`), ahol `s` az
+egyik beolvasott attribútum értéke:
+
+| # | x | y |
+|---|---|---|
+| 0 | 0 | 0 |
+| 1 | 6 | **42 · s + 6** |
+| 2 | 36 | **112 · s + 36** |
+| 3 | 126 | **72 · s + 126** |
+| 4 | 255 | 255 |
+
+Minden szorzó és eltolás kiolvasott konstans (`0x00cf4b00` = 42,
+`0x00cf4af8` = 112, `0x00cf3f90` = 72; az eltolások `6`, `36`, `126`).
+
+⇒ **`s = 0`-nál a görbe azonosság** (a pontok a felezővonalon ülnek), és a
+paraméter nő
+
+- a **sötét részt** emeli a legkevésbé (x = 6 → +42 s),
+- a **mélyárnyékot/középsötétet** a legjobban (x = 36 → +112 s),
+- a **középtónust** mérsékelten (x = 126 → +72 s),
+- a **fehéret egyáltalán nem** (x = 255 rögzített).
+
+Ez a **derítőfény (fill light)** jellegű görbe alakja.
+
+> **Ami NINCS mérve:** melyik attribútum az `s` (a négy beolvasott érték
+> közül), és mire megy a másik három; továbbá hogy a két görbe hogyan
+> kapcsolódik össze (sorban? keverve?).
+
+### 3. Egy módszertani apróság: a „közel a nullához" próba BITMINTÁN megy
+
+Mindkét görbe elé ugyanaz a kapu kerül:
+
+```
+mov eax, dword ptr [esp + 0xc]   ; a float BITMINTÁJA egészként
+sub eax, dword ptr [esp + 8]     ; a 0,0 bitmintája
+cdq / xor eax, edx / sub eax, edx ; abszolút érték
+cmp eax, 8
+jb  <kihagyás>
+```
+
+⇒ A program a lebegőpontos értéket **egészként** hasonlítja a nullához, és
+ha a bitminta-különbség **8-nál kisebb**, a görbét egyszerűen **kihagyja**.
+Ez nem hiba, hanem szándékos „elhanyagolható a csúszka" gyorsítás — de aki
+átveszi, ne `abs(x) < eps`-t írjon a helyére: a bitminta-távolság nem
+arányos az értékkel.
+
+*Bizonyítottsági fok: **megerősített** a két táblára, a pontszámokra és a
+kapura (kiolvasott konstansok és utasítások); az attribútum-hozzárendelés és
+a két görbe összekapcsolása **nincs mérve**.*
 
 ## ⭐ A `rainbow` ALT-os ága: a `0x00d67849` kapcsoló MEGVAN (#2224, 2026-09-04)
 
@@ -2355,4 +2640,3 @@ beállítás, parancssori kapcsoló, vagy futásidejű állapot-e.
 *Bizonyítottsági fok: a **két írás, a 139 hivatkozás osztályozása, a
 nullás kezdőérték és a kapu létezése megerősített** (címenként kiolvasva,
 illetve a szekció-méretekből számolva); a **kapu forrása NINCS MEG**.*
-

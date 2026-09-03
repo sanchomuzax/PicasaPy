@@ -115,7 +115,7 @@ keretrendszer **magától** cseréli a két ikont, kód nélkül.
 | elem | angol | magyar (a képernyőképről is) |
 |---|---|---|
 | `folder_list_label` | Folder List | **Mappalista** |
-| `instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
+| `foldermgr/instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
 | `status_label` | For the current folder: | **Az aktuális mappa esetében:** |
 | `scan_once_label` | Scan Once | **Keresés egyszer** |
 | `remove_label` | Remove from Picasa | **Eltávolítás a Picasából** |
@@ -136,13 +136,16 @@ Ezt a tulajdonos két képernyőképe **közvetlenül** igazolja.
 
 ### 2.1 A szabályok a `.tre`-ből
 
+*Forrás: `foldermgr.tre` — pl. a `foldermgr/instructions_text` a
+`foldermgr.tre:23` sorban áll.*
+
 | elem | vízszintesen | függőlegesen |
 |---|---|---|
 | `base` | **nyúlik** (`m_scaleX`) | alul rögzítve (`m_offsetB`) |
 | `left_side` / `right_side` | mindig **fele-fele**, 4 képpont külső margóval | az ablak aljáig |
 | `foldertree` | **nyúlik** | **nyúlik**, az alja `−60` |
 | `watched_folders` | **nyúlik** (`−10`) | **nyúlik**, az alja `−60` |
-| `instructions_text` | **fix 232** széles | fix 73 magas |
+| `foldermgr/instructions_text` | **fix 232** széles | fix 73 magas |
 | `status_decrect` (a csoportkeret) | **fix 231** széles | **fix 172** magas |
 | `status_group`, a három rádió, a `frexclude` | fix | fix |
 | `line` | **nyúlik** (`m_scaleX`) | fix |
