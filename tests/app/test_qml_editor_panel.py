@@ -412,8 +412,10 @@ class TestEffectButtons:
         "effectSepia": "sepia",
         "effectBw": "bw",
         "effectWarm": "warm",
-        "effectGrain2": "grain2",
-        "effectTint": "tint",
+        # #2141: az eredeti csempe-táblája (`0x00c7e5a0`) szerinti
+        # elsődlegesek; a `grain2`/`tint` a Shiftes másodlagos.
+        "effectGrain2": "PicnikGrain",
+        "effectTint": "PicnikTint",
         "effectSat": "sat",
         "effectRadblur": "radblur",
         "effectGlow2": "glow2",
