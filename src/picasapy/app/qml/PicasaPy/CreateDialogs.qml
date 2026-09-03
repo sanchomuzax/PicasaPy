@@ -61,13 +61,6 @@ Item {
                 dialogs.collageKinds[collageKindBox.currentIndex],
                 dialogs.collageBorders[collageBorderBox.currentIndex])
         }
-        Connections {
-            target: controller
-            function onCollagePreviewReady(revision) {
-                collageDialog.previewRevision = revision
-            }
-        }
-
         function openForSelection() {
             // #922: MINDIG megnyílik. Korábban forrás nélkül némán
             // visszatért, és a kattintás nyomtalanul elnyelődött — az
@@ -382,37 +375,58 @@ Item {
         return text
     }
 
-    Connections {
-        target: controller
-        function onCollageFinished(path, used, skipped, missing) {
-            createResultDialog.message =
-                qsTr("Collage saved: %1").arg(path)
-                + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped, missing)
-            createResultDialog.open()
-        }
-        function onCollageFailed(message) {
-            createResultDialog.message =
-                qsTr("The collage could not be created.") + "\n" + message
-            createResultDialog.open()
-        }
-        function onMovieProgress(done, total) {
-            movieProgressDialog.done = done
-            movieProgressDialog.total = total
-        }
-        function onMovieFinished(path, used, skipped, missing) {
-            movieProgressDialog.close()
-            createResultDialog.message =
-                qsTr("Movie saved: %1").arg(path)
-                + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped, missing)
-            createResultDialog.open()
-        }
-        function onMovieFailed(message) {
-            movieProgressDialog.close()
-            createResultDialog.message =
-                qsTr("The movie could not be created.") + "\n" + message
-            createResultDialog.open()
-        }
+    // #2096: a vezérlő jelzéseit NEM itt fogadjuk. Ez a komponens a #1612 óta
+    // HALASZTOTT (`DeferredDialog`), tehát amíg a felhasználó meg nem
+    // nyitotta, egy itteni `Connections` NEM LÉTEZNE — a jelzés senkihez nem
+    // érne el, és a visszajelzés némán elmaradna. A kollázs a Kollázs
+    // PANELRŐL is indítható, tehát ez nem elméleti eset (#1743 őre fogta meg).
+    //
+    // A `Main.qml` mindig álló `Connections`-e hívja az alábbi függvényeket,
+    // az `ensure()` után. A logika változatlan; csak a HALLGATÓ került ki.
+    // Ugyanez a minta, mint a `SaveDialogs.qml`-nél.
+
+    //: A kollázs élő előnézetének új változata (a panel jelzi).
+    function frissitsdAzElonezetet(revision) {
+        collageDialog.previewRevision = revision
+    }
+
+    //: A kollázs elkészült — az összegző párbeszéd megnyitása.
+    function jelezdAKollazsSikert(path, used, skipped, missing) {
+        createResultDialog.message =
+            qsTr("Collage saved: %1").arg(path)
+            + "\n" + qsTr("%1 pictures used.").arg(used)
+            + dialogs._skippedSuffix(skipped, missing)
+        createResultDialog.open()
+    }
+
+    //: A kollázs nem készült el.
+    function jelezdAKollazsHibajat(message) {
+        createResultDialog.message =
+            qsTr("The collage could not be created.") + "\n" + message
+        createResultDialog.open()
+    }
+
+    //: A film haladása.
+    function frissitsdAFilmHaladast(done, total) {
+        movieProgressDialog.done = done
+        movieProgressDialog.total = total
+    }
+
+    //: A film elkészült.
+    function jelezdAFilmSikert(path, used, skipped, missing) {
+        movieProgressDialog.close()
+        createResultDialog.message =
+            qsTr("Movie saved: %1").arg(path)
+            + "\n" + qsTr("%1 pictures used.").arg(used)
+            + dialogs._skippedSuffix(skipped, missing)
+        createResultDialog.open()
+    }
+
+    //: A film nem készült el.
+    function jelezdAFilmHibajat(message) {
+        movieProgressDialog.close()
+        createResultDialog.message =
+            qsTr("The movie could not be created.") + "\n" + message
+        createResultDialog.open()
     }
 }

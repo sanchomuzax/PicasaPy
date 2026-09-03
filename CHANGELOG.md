@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.242] – 2026-09-03
+
+### Javítva
+- **Valamivel gyorsabban indul a program (#2096, #1612).** A Létrehozás
+  ablakai (kollázs, film) mostantól csak akkor épülnek fel, amikor tényleg
+  megnyitod őket — induláskor 303 objektummal kevesebb készül el. A kollázs
+  és a film elkészültéről szóló visszajelzés változatlanul megjelenik akkor
+  is, ha a Kollázs panelről indítottad, és sosem nyitottad meg ezeket az
+  ablakokat.
+
 ## [0.8.241] – 2026-09-03
 
 ### Javítva
