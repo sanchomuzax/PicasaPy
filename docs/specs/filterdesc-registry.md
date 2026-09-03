@@ -2191,7 +2191,26 @@ A `0x00bbcdd0` (124 b) a `detail` attribútumot (tag `+0x2c`, alapérték
 `[this+0x34]` gyerekműveletnek. Ha a `+0x34` üres, a művelet **`4`-gyel
 tér vissza** (`0x00bbcde2`) — vagyis nem csinál semmit.
 
-**Ami NINCS mérve:** mit csinál a gyerekművelet a `100 − detail` értékkel.
+> ✅ **MEGVAN (2026-09-04, #2238).** A `[this+0x34]` gyerek egy
+> **`SimpleColorMatrixImageOperation`** — a beolvasó (`0x00bbca60`) a
+> `0x00bb6150`-nel hozza létre, és az a `0x00ceffb4` vtable-t írja bele,
+> ami a `SimpleColorMatrix` (RVA `0x008effb4`).
+>
+> A `100 − detail` a gyerek **`+0x30`** tagjába megy (`0x00bbce24`
+> `add eax, 0x30`, majd `FUN_008ef2b0` beállító) — a fenti attribútum-tábla
+> szerint az a **`contrast`**.
+>
+> ⇒ **A `detail` csúszka a beágyazott színmátrix KONTRASZTJA, fordított
+> irányban:** `contrast = 100 − detail`.
+>
+> **A művelet egyébként összetett:** ugyanez a beolvasó létrehoz egy
+> `BlurImageOperation`-t (`0x00bb4c40` → `0x00cefe98`), egy
+> `EdgeDetectionSobelImageOperation`-t (`0x00bb6560` → `0x00cefff4`) és egy
+> `AdjustCurvesImageOperation`-t (`0x00bb9990` → `0x00cf01e0`) — az utóbbi
+> kettőt **két külön ágon** is. Csak a színmátrix kapott saját tagoffszetet;
+> a többi a gyereklistába fűződik. **A négy gyerek összekapcsolási sorrendje
+> nincs mérve.**
+
 
 ### 4. `TwoToneImageOperation` — bizonyítottan a `GradientMap` két megállóval
 
