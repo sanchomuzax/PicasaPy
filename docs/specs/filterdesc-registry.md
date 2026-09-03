@@ -499,6 +499,149 @@ Matte-ot is érinti. Nyitott kérdés: #2076.
 
 
 
+#### A maszképítő (`0x00bcc2e0`) TELJES kiolvasása — és egy HELYESBÍTÉS (#2102)
+
+A #2102 nyitott kérdése: *a `0x00bcc2e0` második fele, és hogy a két
+kiszámolt, 255-re vágott egész MIT vezérel.* Megvan — és közben kiderült,
+hogy az előző kör **rossz paraméterhez** kötötte a lépcsős képletet.
+
+##### A paraméterek és a bemeneti vágásuk
+
+A maszképítő nyolc argumentumot kap; a rajzoló dokumentált sorrendjével
+(`forrás, color, glowalpha, xblur, yblur, strength, quality, cél`) a
+keretbeli helyük:
+
+| arg | hol a keretben | mi | vágás |
+|---|---|---|---|
+| 1 | `[esp+0x70]` → `ebp` | forrás/rect | – |
+| 2 | – | `color` | – |
+| 3 | `[esp+0x80]` | **glowalpha** | **[0, 1]**, majd bájt: `trunc(a × 255)` (`0x00bcc4d9`) |
+| 4 | `[esp+0x84]` | **xblur** | **[0, 253]** |
+| 5 | `[esp+0x88]` | **yblur** | **[0, 253]** |
+| 6 | `[esp+0x8c]` | **strength** | **[0, 255]** |
+| 7 | `[esp+0x90]` | **quality** (egész) | **[1, 15]** |
+| 8 | `[esp+0x20]` (belépéskor) | cél | nem lehet `NULL` (`0x00bcc2f3`) |
+
+A vágásokat a **`0x00bc52c0`** segédfüggvény végzi (két float **[0, 253]**-ra
+— a `0x00cf0b4c` = `253.0f`, a `0x00cf4090` = `253.0`; egy egész
+**[1, 15]**-re, `0x00bc5345`–`0x00bc534f`); a `glowalpha` [0, 1] és a
+`strength` [0, 255] vágása a hívó törzsében van (`0x00bcc34c`–`0x00bcc3b8`,
+a felső korlát a `0x00cf39d0` = `255.0` és a `0x00cf3a00` = `255.0f`).
+
+##### A két egész: a KÉT BLUR-SUGÁR
+
+A `0x00bcc3d5`–`0x00bcc434` és a `0x00bcc438`–`0x00bcc48d` blokk **ugyanaz a
+képlet, két különböző bemenetre**:
+
+```
+r_x = min(255, trunc( ceil((xblur − 1) · 0,5) · quality + 1 ))
+r_y = min(255, trunc( ceil((yblur − 1) · 0,5) · quality + 1 ))
+```
+
+- a `−1,0` a `0x00c7e328`, a `×0,5` a `0x00c72150` (kiolvasva);
+- a `ceilf` a `0x00529e10` (a `_matherr` névtáblája, `0x00c1324c`, a `0x3ec`
+  kódra a `0x00c43bac` = `"ceil"`-t adja);
+- a csonkítás `fldcw | 0x0c00` (nulla felé) + `fistp`;
+- a 255-ös korlát az `esi = 0xff` / `cmp` / `ja` párossal
+  (`0x00bcc42c`, `0x00bcc485`).
+
+**Miért nézett ki egyformának a két blokk:** az elsőt egy `push ecx`
+(`0x00bcc3d4`) előzi meg, ezért az `[esp+0x88]` ott **a bázis `[esp+0x84]`**
+— vagyis az `xblur`; a másodikban a verem már vissza van állítva
+(`add esp, 4`, `0x00bcc403`), tehát az `[esp+0x88]` valóban az `yblur`.
+
+A két egész a bázis `[esp+0x1c]` (r_x) és `[esp+0x18]` (r_y) rekeszbe kerül,
+és a `0x00bcbfb0` hívásba megy (`0x00bcc5de`–`0x00bcc5ef`), onnan a
+`0x00bcc700`-ba (`0x00bcc02a`).
+
+##### ⛔ HELYESBÍTÉS: a lépcsős képlet NEM a `strength`-é
+
+A #2102 első köre azt írta, hogy *„a `strength` a maszképítőben
+`ceil((s−1)/2)` alakban lép be"*, és ebből azt a jóslatot vezette le, hogy a
+`filterdesc.xml` minden Glow-hívására ez a tag **állandó 1**. **Mindkettő
+megdőlt:** a képlet az `xblur`/`yblur`-re megy, a `strength` pedig egészen
+máshol lép be.
+
+##### Ahol a `strength` VALÓJÁBAN belép: 8.8-as fixpontos szorzó
+
+A `0x00bcbfb0` a `strength`-et (`[ebp+0x20]`) és a `color`-t (`[ebp+0x14]`) a
+**`0x00bcbd90`** regiszter-előkészítőnek adja (`0x00bcbfd7`–`0x00bcbfe1`). Az
+onnan kiolvasott mag:
+
+```
+0x00bcbda4  fld dword ptr [ebp+0xc]        ; strength
+0x00bcbda8  fmul qword ptr [0xcf39d8]      ; × 256,0   (kiolvasva)
+0x00bcbdc5  fistp dword ptr [esp+8]        ; csonkítás (fldcw | 0x0c00)
+0x00bcbdc9  mov ax, word ptr [esp+8]       ; az ALSÓ SZÓ
+```
+
+Ez a szó kerül **négyszer** az `mm7`-be (`[esp+0x30]`…`[esp+0x36]`), mellette
+a `0x0100` **nyolcszor** az `xmm7`-be és a `0x0080` **négyszer** az `mm6`-ba
+(`0x00bcbdf4`–`0x00bcbe41`). A `0x0100` = **1,0** és a `0x0080` = **0,5** a
+klasszikus **8.8-as fixpontos** ábrázolásban ⇒
+
+> **A `strength` egy 8.8-as fixpontos szorzó: `trunc(strength × 256)`**,
+> a `color` B/G/R/A bájtjai mellé töltve (`xmm6`, két példányban).
+
+A `[0, 255]`-ös bemeneti vágás miatt a szorzó **1,0 fölé is mehet** (egészen
+255-ig) — tehát a `strength` **erősíthet**, nem csak halványíthat.
+
+##### Nálunk (mérve) — két eltérés
+
+`src/picasapy/render/glimmer_ops.py`:
+
+| | eredeti (mérve) | nálunk ma (mérve) |
+|---|---|---|
+| blur-sugár | **egész**: `min(255, trunc(ceil((b−1)/2)·quality + 1))`, `b` ∈ [0, 253], `quality` ∈ [1, 15] (alap 3) | a nyers `xblur`/`yblur` **közvetlenül szigmaként** az analitikus `erf`-modellbe (`_box_blur_axis`, `:575`) |
+| `strength` | 8.8-as **szorzó**, `trunc(s × 256)`, a bemenet [0, 255] | keverési súly, **[0, 1]-re vágva**: `np.clip((1−covered)·strength, 0, 1)` (`:578`) |
+| `glowalpha` | bájt: `trunc(a × 255)`, a bemenet [0, 1] | `* np.float32(alpha)` (`:578`) — nincs bájtra kvantálás |
+| sugár-korlát | a **bemenet** 253, a **kimenet** 255 | `GLOW_RADIUS_MAX = 255.0` a sugárra (`:495`) |
+
+⚠️ **Megfejtve, de a mért eltérésre gyakorolt hatása NINCS mérve.** Sem a
+Vignette-, sem a Comicize-goldenen nem futott összevetés ezzel a
+modellel — a fenti két eltérés önmagában **nem bizonyítja**, hogy a
+javításuk csökkenti a ΔE-t. Megvalósítás és mérés: **#2159**.
+
+**Bizalmi fok: megerősített** a vágásokra, a két sugár-képletre, a `ceilf`
+azonosítására és a 8.8-as szorzóra (mind közvetlen kiolvasás).
+
+##### A blur ÁTVÁLTÓJA (`0x00bb89b0`) — a gyakorlatban AZONOSSÁG
+
+A hívó (`0x00bb8f70`) a maszképítő előtt mindkét blur-paramétert átengedi a
+`0x00bb89b0(p, d)` függvényen: `p` = a hívó **4. argumentuma** (`xblur`,
+`0x00bb8fa7`), illetve az **5.** (`yblur`, `0x00bb8fdd`); `d` = a kép
+szélessége (`[ebp+8]`), illetve magassága (`[ebp+0xc]`), egésszé-floattá
+alakítva (`0x00bb8f8b`, `0x00bb8fc5`).
+
+A függvény teljes zárt alakja, kiolvasva:
+
+```
+if (p <= 0)  p = 1e-5                       ; 0x00cf3a10
+k = (p < 255) ? 1,0 : 255/p                 ; 0x00cf39d0 = 255,0
+X = ((100 + d) − d·k) / p                   ; 0x00cf3a08 = 100,0
+return (X > 3,0) ? k : k · X / 3,0          ; 0x00c49618 = 3,0f, 0x00cf39f8 = 3,0
+```
+
+**A gyakorlatban ez azonosság.** Reális blur-értékre `p < 255`, tehát
+`k = 1` és `X = 100/p`; a `X > 3` feltétel ekkor `p < 33,33`. A
+`filterdesc.xml` Glow-hívásainak blur-értékei ennél jóval kisebbek ⇒
+**a függvény pontosan `1,0`-t ad vissza, a képmérettől FÜGGETLENÜL.**
+
+| tartomány | visszatérés |
+|---|---|
+| `p < 33,33` | **1,0** ← minden filterdesc-beli Glow ide esik |
+| `33,33 ≤ p < 255` | `100 / (3·p)` |
+| `p ≥ 255` | `k = 255/p`, `X = ((100+d) − d·k)/p`, majd a fenti feltétel |
+
+⇒ A maszképítőbe érkező `b` érték a **hívó saját blur-paraméterével**
+arányos, nem a képmérettel — a méretfüggést tehát **nem itt** kapja meg.
+
+**Bizalmi fok: megerősített** (a függvény mind a 165 bájtja elolvasva, mind
+az öt konstans kiolvasva). ⚠️ Amit ez **nem** mond meg: hogy a
+`0x00bb914d` / `0x00bb9167` második szorzásában szereplő két bemenő
+paraméter a hívási lánc melyik szintjéről jön — az a `0x00bb8f70` hívóinak
+kérdése, nem ezé a lapé.
+
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
 A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
