@@ -946,16 +946,16 @@ ki a fülünkről.
 viszont **van** — tehát XML-vezérelt bejegyzés, nem beégetett. Ez
 összhangban van a #567 „halott bejegyzés" magyarázatával.
 
-**Amit ez NEM mond meg:** hogy a `rainbow` ALT-os ágát őrző globális
-kapcsoló (`cmp byte ptr [0xd67849]`, `0x005d672b`) mikor nem nulla. Amíg ez
-nincs kimérve, a `rainbow` elérhetősége **feltételes** — a mondat
-pontosítását ez nem érinti (a `radtint` és az `autobacklight` önmagában is
-megcáfolja a kizárólagos tagadást), de a felhasználónak szóló „hogyan hívd
-elő" leírás ezen múlik. Nyitott kérdés.
+~~**Amit ez NEM mond meg:** hogy a `rainbow` ALT-os ágát őrző globális
+kapcsoló (`cmp byte ptr [0xd67849]`, `0x005d672b`) mikor nem nulla.~~
+**LEZÁRVA (#2224, 2026-09-04):** a kapcsoló azt jelenti, hogy **a Picasa az
+előtérben lévő alkalmazás** — hétköznapi kattintáskor tehát MINDIG 1. A
+`rainbow` elérhetősége ezért **nem feltételes**: az ALT + Kiegyenesítés út
+egy átlagos telepítésen él. A levezetés a lenti „A `rainbow` ALT-os ága"
+szakaszban.
 
-**Bizalmi fok: megerősített** a három út és a kétféle módosító
-(közvetlen kiolvasás + diszasszemblálás); **nyitott** a `0x00d67849`
-kapcsoló feltétele.
+**Bizalmi fok: megerősített** — a három út, a kétféle módosító és a
+`0x00d67849` jelentése egyaránt (közvetlen kiolvasás + diszasszemblálás).
 
 #### A `GlowImageOperation` keverése: KÖZÖNSÉGES source-over (#2102)
 
@@ -2706,7 +2706,7 @@ végrehajtható szekciók teljes tartalmában, majd minden találatot a
 | cím | utasítás | tartalmazó függvény | a függvény sztringjei |
 |---|---|---|---|
 | `0x00576419` | `mov byte ptr [0x00d67849], 1` | `0x005760e0` (940 b) | `Preferences`, `mainwinismax`, `mainwinpos` |
-| `0x00a52e65` | `mov byte ptr [0x00d67849], al` | `0x00a52890` | `#32768` (a Windows menü-ablakosztálya) |
+| `0x00a52e66` | `mov byte ptr [0x00d67849], al` | `0x00a52890` | `#32768` (a Windows menü-ablakosztálya) |
 
 A második `al`-t tárol, amit közvetlenül előtte a `mov eax, [ecx+8]` /
 `test eax, eax` állít elő ⇒ **nullázni is tud**.
@@ -2723,8 +2723,9 @@ A `0x00d67849` a tartalmazó szekció **inicializálatlan farkába** esik:
 | a cím eltolása a szekcióban | **`0x43849` = 276 041** |
 
 276 041 **> 155 648** ⇒ a bájt a fájlban nem szerepel, betöltéskor a
-rendszer **nullázza**. ⇒ **Indításkor a kapcsoló 0**, azaz a `rainbow`
-ág **alapból nem él**.
+rendszer **nullázza**. ⇒ **A folyamat indulásának pillanatában a kapcsoló
+0** — de a főablak megjelenítése (lentebb) rögtön 1-re állítja, tehát ebből
+NEM következik, hogy a `rainbow` ág ne élne.
 
 ### Az írást KAPU védi
 
@@ -2747,34 +2748,141 @@ dekódolás).
 ágon fut le — és ugyanez az ág olvas be egy beállítást a `0x004019b0`-on
 (a `Preferences` olvasója) keresztül.
 
+### A KAPU: a `[esp + 0xbc]` a függvény MÁSODIK PARAMÉTERE (#2224, 2026-09-04)
+
+A korábbi kör „helyi bájtnak" nevezte, és a verem-normalizálás hiányára
+hivatkozva nyitva hagyta. **A verem kiszámolható**, és nem helyi változó:
+
+| lépés | esp elmozdulása |
+|---|---|
+| belépéskor | `[esp]`=visszatérési cím, `[esp+4]`=1. paraméter, `[esp+8]`=2. paraméter |
+| `sub esp, 0xa4` | +0xa4 |
+| `push ebx` · `push ebp` · `push esi` · `push edi` | +0x10 |
+| **összesen** | **+0xb4** |
+
+⇒ `[esp+0xb4]` = visszatérési cím, **`[esp+0xb8]` = 1. paraméter**,
+**`[esp+0xbc]` = 2. paraméter**. Ezt a függvény maga is megerősíti: a
+`0x005761d2` `mov edx, [esp+0xb8]` után rögtön `mov byte ptr [edx+0xdd5],
+al` következik — objektumtagba ír, tehát az `[esp+0xb8]` **objektummutató**,
+nem helyi. A lezárás `ret 8` = **két** paraméter, stdcall.
+
+### A függvény szerepe — kiolvasva
+
+`0x005760e0` a **főablak helyreállítója**: a `Preferences\mainwinpos`
+és `Preferences\mainwinismax` kulcsokból visszaállítja a főablak helyét és
+maximalizált állapotát, ellenőrzi a képernyő-határokat
+(`GetWindowPlacement` / `AdjustWindowRectEx` / `SetWindowPos`), majd — **ha
+a 2. paraméter igaz** — meg is jeleníti:
+
+```
+0x005763db   cmp byte ptr [esp+0xbc], bl   ; 2. paraméter == 0 ?
+0x005763e2   je  0x00576426                ; ha 0 → NEM jeleníti meg
+0x005763e8   call 0x004019b0               ; „maximalizált volt?" beállítás
+0x005763ed   neg/sbb/and 2/add 1           ⇒ 3 (SW_SHOWMAXIMIZED) vagy 1 (SW_SHOWNORMAL)
+0x005763f9   ShowWindow(hwnd, nCmdShow)        [0xc40890]
+0x00576404   SetFocus(...)                     [0xc408a4]
+0x0057640b   BringWindowToTop(...)             [0xc408c8]
+0x00576412   SetForegroundWindow(hwnd)         [0xc40888]
+0x00576419   mov byte ptr [0x00d67849], 1      ⬅️ A KAPCSOLÓ
+0x00576420   UpdateWindow(hwnd)                [0xc40848]
+```
+
+Az import-nevek a betöltési tábla rekeszeiből feloldva (a
+`binaris-regeszet-modszertan.md` 21. szakaszának módszerével).
+
+⇒ **A kapcsoló akkor lesz 1, amikor a főablak ténylegesen megjelenik és
+előtérbe kerül.**
+
+### Az öt hívó — mind kimérve
+
+| hívás helye | 2. paraméter | kapu |
+|---|---|---|
+| `0x0040ce0b` | **1** | — |
+| `0x0040d078` | **1** | — |
+| `0x0040d428` | **1** | `cmp byte [0x00d67666], 0` |
+| `0x0040da02` | **0** | `cmp byte [0x00d67666], 0` |
+| `0x0040dcaa` | **1** | `cmp byte [0x00d67666], 0` |
+
+*(A hívás-helyeket nem lineáris diszasszemblálás adta, hanem a `.text`
+teljes pásztázása az `e8` relatív hívás célcíme szerint — ez a
+0x005760e0-ra **öt** helyet talált, míg az index `xrefs` táblája hármat.)*
+
+Négy hívó igazzal hív ⇒ a kapcsoló a **rendes indulás** része.
+
+### A MÁSODIK írás: a kapcsoló jelentése ZÁRT
+
+A `0x00a52890` ablakeljárás elején `mov edi, [ebp+8]` (üzenet-struktúra),
+`mov esi, [edi+4]` = **üzenetazonosító**, `[edi+8]` = `wParam`. Az ugrótábla
+(`0x00a53900` / index `0x00a53918`) a **`0x1C`** azonosítót — és **csak**
+azt — a `0x00a52e0c` blokkra irányítja, ahol:
+
+```
+0x00a52e55   cmp esi, 0x1c                 ; WM_ACTIVATEAPP
+0x00a52e58   jne 0x00a52edf
+0x00a52e5e   mov ecx, [ebp+8]
+0x00a52e61   mov eax, [ecx+8]              ; wParam = aktiválódik-e
+0x00a52e64   test eax, eax
+0x00a52e66   mov byte ptr [0x00d67849], al ⬅️ A KAPCSOLÓ
+```
+
+⇒ **`0x00d67849` = „a Picasa az ELŐTÉRBEN lévő alkalmazás".** A
+`WM_ACTIVATEAPP` `wParam`-ja írja: aktiválódáskor 1, elvesztéskor 0. A
+másik írás (a főablak megjelenítése) ugyanezt mondja ki induláskor.
+
+> **Helyesbítés a korábbi körhöz:** a második írás címe **`0x00a52e66`**,
+> nem `0x00a52e65` — a nyers cím-keresés a *operandus* kezdetét adta, az
+> `a2` opkód eggyel előrébb van.
+
+### Miért pont ez őrzi az ALT-ot — 81 olvasás ugyanabban a mintában
+
+A 137 olvasásból **81** olyan, hogy **28 bájton belül** utána a
+`GetAsyncKeyState` betöltési rekesze (`0x00c406f8`) hívódik. A minta
+mindenütt azonos — például a nyitóképernyő-függvényben:
+
+```
+0x0040b4a7   cmp byte ptr [0x00d67849], bl
+0x0040b4ad   je  0x0040b4c2                ; nem aktív → NE nézd a billentyűt
+0x0040b4af   push 0x10                     ; VK_SHIFT
+0x0040b4b1   call [0x00c406f8]             ; GetAsyncKeyState
+```
+
+Ez pontosan az, amit a `GetAsyncKeyState` megkövetel: a függvény
+**rendszerszintű**, tehát egy háttérben lévő alkalmazásnak nem szabad
+reagálnia rá. A `0x005d672b` (a Kiegyenesítés ALT-ága) ennek a 81-nek
+**egyike**.
+
+### A gyakorlati válasz
+
+**A `rainbow` ALT-os útja egy átlagos telepítésen ÉL.** A kapcsoló nem
+rejtett beállítás és nem parancssori kapcsoló: hétköznapi kattintáskor a
+Picasa az előtérben van, tehát 1. A korábbi óvatosság („alapból nem él")
+**csak az induló pillanatra** volt igaz, a megjelenített főablakra már nem.
+
 ### Nálunk MA — mérve
 
-| | eredeti | nálunk | hol |
+| | eredeti | nálunk (MÉRVE) | hol |
 |---|---|---|---|
-| `rainbow` effekt | natív szűrő | **megvalósítva** | `src/picasapy/render/legacy_effects.py:66`, `render/chain.py:112` |
-| előhívás | ALT + Kiegyenesítés, **kapcsolófüggő** | **nincs** ALT-ág | a `horizonadjust`-hoz nálunk csak a #448-as figyelmeztetés tartozik |
+| `rainbow` mint név | natív szűrő | **ismert**, öt helyen | `render/legacy_effects.py:66`, `render/registry_data.py:159`, `render/chain.py:112`, `ini/filter_registry.py:91` és `:214` |
+| `rainbow` RENDERELÉSE | natív mag | **NINCS** — a `KNOWN_UNRENDERED_OPS` halmazban ül | `render/chain.py:86`+`112` ⇒ a `can_render_filter` hamisat ad rá |
+| előhívás a felületről | ALT + Kiegyenesítés | **az örökölt-fülön** (szándékos többlet, #571); ALT-ág **nincs** | a Kiegyenesítés `toolName: "tilt"` — `app/qml/PicasaPy/EditorTabCommonFixes.qml:100` |
+| `AltModifier` a szerkesztőben | VK_MENU-vizsgálat | **nulla előfordulás** (csak a `CollageSheet.qml`-ben, más célra) | `grep -rn "AltModifier" src/` |
 
-⇒ A hiány tehát **nem az effekt**, hanem a felületi előhívási mód — és a
-mérés szerint az eredetiben is **alapból inaktív**. ⚠️ Amíg nem tudjuk,
-mi állítja 1-re a kapcsolót, a felületen és a súgóban **nem szabad**
-azt ígérni, hogy a Szivárvány ALT-tal előjön.
+⇒ **Az ALT-ág megépítése ma nem volna őszinte:** a `rainbow`-nak nincs
+renderelő modellje, tehát a gomb aktívnak látszana, de nem hatna — pont
+azt csinálná, amit a `legacy_effects.py` fejléce kizár. A rejtett
+módosítós ágak közös jegye a **#2146**.
 
-### Ami NYITVA marad — pontosan megnevezve
+> **Negatív eredmény, ami MUNKÁT SPÓROL:** a `0x00d67849`-nek megfelelő
+> „előtérben vagyunk-e" őrt nálunk **nem kell megépíteni**. Az eredetiben
+> azért kell, mert a `GetAsyncKeyState` rendszerszintű; Qtben a
+> billentyű-módosítót az esemény hozza magával (`event.modifiers`), és
+> esemény csak fókuszált ablakhoz érkezik. Aki a Shift-/ALT-ágakat
+> megépíti, ezt az őrt **ne másolja át**.
 
-**Mi tölti a `[esp+0xbc]` helyi bájtot?** A függvényen belül erre az
-eltolásra **egyetlen** hivatkozás van (maga a `cmp`), de ez **nem
-bizonyíték**: az `esp` a függvény során mozog, tehát ugyanaz a
-verem-rekesz más eltolással is írható. A verem-normalizálást a jelenlegi
-eszközeinkkel nem sikerült megbízhatóan elvégezni.
-
-⇒ **A következő lépés:** a `0x005760e0` (940 b) **dekompilálása**
-(a #2224 ezt kifejezetten megengedi: „rekurzív bejárás vagy Ghidra-kör,
-nem lineáris pásztázás"). Ebből derül ki, hogy a kapu felhasználói
-beállítás, parancssori kapcsoló, vagy futásidejű állapot-e.
-
-*Bizonyítottsági fok: a **két írás, a 139 hivatkozás osztályozása, a
-nullás kezdőérték és a kapu létezése megerősített** (címenként kiolvasva,
-illetve a szekció-méretekből számolva); a **kapu forrása NINCS MEG**.*
+*Bizonyítottsági fok: **megerősített** — a paraméter-azonosítás
+verem-számolásból, az öt hívó a `.text` teljes pásztázásából, a
+`WM_ACTIVATEAPP` az ugrótáblából és a `wParam`-eltolásból, a 81-es
+minta megszámolva. A „nálunk" oszlop minden sora lemért `grep`.*
 
 ## ⭐ `AdjustCurves`: a négy görbe-tag SORRENDJE megvan (#2238/1, 2026-09-04)
 
