@@ -194,7 +194,10 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 8 lezárva · 2 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 9 lezárva · 2 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+
+*(A 2026-09-03 előtti sor `1 hatókörön kívül`-t írt, miközben a tábla kettőt
+sorolt fel — elszámolási hiba, javítva.)*
 
 | kérdés | állapot |
 |---|---|
@@ -206,7 +209,8 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 | **melyik könyvtárban van a `backups.xml`** | **LEZÁRVA (2026-09-02)** — a `#db3\` token (`0x00c7eeb8`), átadva írásnál `0x00670ca8`, olvasásnál `0x00670aa8`. **A korábbi „`Picasa2Backups` mappa" olvasat MEGDŐLT** — az a fájl XML-gyökéreleme (1.1). |
 | **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-02)** — adatbázis-címke, `BKTag ` + a készlet neve (9.) |
 | hogyan nyitja a fájlt | **LEZÁRVA (2026-09-02)** — `"wb"`, előtte leveszi a csak-olvasható jelzőt (1.1/b) |
-| **a `files.txt` SORFORMÁTUMA** | **BLOKKOLT, de SZŰKÍTVE (2026-09-02)** — a **megnyitás módja most már mérve** (11.1), a soronkénti írás azonban továbbra sem olvasható ki: a `0x00677f6d` írás-hívás **belső függvénymutatón** át megy (`0xd69518`), nem nevesített importon, ezért a névre keresés nem talál rá. **Megszerzés:** a `0x00677a70` célzott dekompilációja (a `0x00677f6d` hívás argumentumaival), vagy egy valódi `files.txt` egy gépről, ahol futott a mentés. |
+| **a `files.txt` ÍRÁSÁNAK MENETE** | **LEZÁRVA (2026-09-03)** — nem sorformázás, hanem **bájtra fűzés**: két megnyitás, két teljes beolvasás, `SetFilePointer` a fájl elejére, majd a régi és az új tartalom kiírása (11.1/b). A blokk **csak akkor fut**, ha a másolandó elem célja maga a `files.txt` (11.1/a). |
+| **mi a `files.txt` TARTALMA** | **BLOKKOLT (2026-09-03)** — a korábbi „mi a SORFORMÁTUM" kérdés **rossz kérdés volt**: a Picasa3.exe-ben nincs sorformázó, a fájlba nyers bájtblokk megy a *forrásfájlból* (11.1/c). ⚠️ A korábbi indoklás — „az író hívás futásidejű mutatón megy, ezért nem oldható fel" — **MEGDŐLT**: a `0x00677f6d` nem író, hanem `GetFileAttributesEx`, és minden ilyen mutató feloldható (módszertan 21.). **Megszerzés:** valódi `files.txt` egy gépről, ahol futott a mentés, VAGY a `0x00678630` célzott dekompilációja (11.1/d). |
 | **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **BLOKKOLT** — a címke létezése mérve (9.), a TÁROLÓJA nem. ⚠️ **A korpusz nem tudja eldönteni:** a `BKTag`-re nulla találat, de a `keywords=` sorra **is** nulla — a korpusz kulcsszavakat egyáltalán nem tartalmaz, tehát a hiány nem bizonyíték. **Megszerzés:** a `0x00670b25` utáni felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol futott a mentés. |
 | **a webre töltés (`replicate`) ága** | **HATÓKÖRÖN KÍVÜL** — a Picasa Web Albums / Google Fotók szolgáltatás megszűnt; a szövegek és a kulcsok a 10. szakaszban a teljesség kedvéért állnak. *(Ez a lap rögzíti a döntést; a `publish` sáv mentés- és CD-ága ettől függetlenül ÉLŐ.)* |
 | **mit csinál a Wine-ág másképp** | **HATÓKÖRÖN KÍVÜL** — a `0x00678be0` Wine alatt más célmappát épít (`wine_get_unix_file_name`), de mi **natív Linuxon** futunk, nem Wine alatt; a mi célmappánk a rendszer saját konvenciója szerint áll elő. |
@@ -357,54 +361,102 @@ a **`publish/webpublish_cancel`** és a **`publish/replicate_cancel`**
 
 ---
 
-## 11. A `files.txt` MEGNYITÁSA és a replikáció ikertestvére (2026-09-02)
+## 11. A `files.txt` ÍRÁSA és a replikáció ikertestvére (2026-09-02, 11.1 átírva 2026-09-03)
 
-### 11.1 A `files.txt`-t a Picasa NEM írja felül — OLVASSA is
+### 11.1 A `files.txt`-t a Picasa NEM formázza — BÁJTRA fűzi össze
 
-A 7. szakasz sorformátum-kérdése továbbra is nyitva van, de a **megnyitás
-módja** mérve van, és önmagában is megválaszol egy fontos viselkedési
-kérdést.
+> ⚠️ **Ez a szakasz 2026-09-03-án ÁTÍRÓDOTT.** Az előző változat két
+> állítása **megdőlt**, mindkettőt ugyanaz a mérés döntötte el: a
+> [`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 21.
+> szakaszának thunk-táblája. Az akkori „nem oldható fel, futásidejű
+> mutató" indoklás ma nem áll: minden ilyen mutató **névre hozható**.
+>
+> | korábbi állítás | mi lett vele |
+> |---|---|
+> | „a `0x00677f6d` **írás**-hívás a `0xd69518` mutatón át megy" | **MEGDŐLT** — a `0xd69518` = `GetFileAttributesEx` (9x: `…ExA`, IAT `0x00c40518`; NT: burkoló `0x009affb0`). A hívás **attribútum-lekérdezés**, nem írás. |
+> | „a második `CreateFile` a **hibaág**, csak a disposition más" | **MEGDŐLT** — nem hibaág (a `0x00677df3 jne` a **siker**re ugrik, onnan `jmp 0x00677e31`), és nem csak a disposition tér el: más a hozzáférés, más a megosztás és **más a fájl**. |
+> | „a `0xd69520` `CreateFile`-alak (argumentum-alakból)" | **IGAZOLVA** — `0xd69520` = `CreateFile` (9x: `CreateFileA`, IAT `0x00c40424`; NT: burkoló `0x009afe60`). |
 
-A másoló függvény (`0x00677a70`) a célmappa útvonalához hozzáfűzi a
-`\files.txt`-t (`0x00677ada`, a sztring `0x00ca5c78`, hossz 10), majd:
+#### a) A kapu: a blokk CSAK a `files.txt`-re fut le
+
+A másoló (`0x00677a70`, `il_BurnPanel::BackupCopy`, 3005 b) a legelején
+összerakja a `…\files.txt` nevet (`0x00677ada`, sztring `0x00ca5c78`,
+hossz 10), és eltárolja. A per-elem hurokban azután **összehasonlítja** az
+aktuális elem célnevével:
 
 ```
-0x00677de6   call [0xd69520]        ; CreateFileW-alak, argumentumok jobbról balra:
-             push edi   (0)         ;   hTemplateFile
-             push 0x80              ;   FILE_ATTRIBUTE_NORMAL
-             push 4                 ;   dwCreationDisposition = OPEN_ALWAYS
-             push edi   (0)         ;   lpSecurityAttributes
-             push 3                 ;   FILE_SHARE_READ | FILE_SHARE_WRITE
-             push 0xC0000000        ;   GENERIC_READ | GENERIC_WRITE
-             push esi               ;   a fájl útvonala
-0x00677dec   cmp eax, -1            ; INVALID_HANDLE_VALUE ellenőrzés
-0x00677e31   (hibaág) ugyanez, de dwCreationDisposition = 3 (OPEN_EXISTING)
+0x00677d21  mov eax, [esp+0x18]     ; a …\files.txt CString
+0x00677d2d  lea ecx, [eax+4]        ; a puffere
+0x00677d38  …                       ; kis-nagybetűre ÉRZÉKENY strcmp(ebx, ecx)
+0x00677d89  sete al
+0x00677d8e  je 0x00677f63           ; NEM egyezik -> a szokásos másolási ág
+0x00677d94  …                       ; EGYEZIK  -> a files.txt-specifikus blokk
 ```
 
-Három dolog következik ebből, mérésként:
+Vagyis a lenti mechanizmus **nem** minden fájlra fut, hanem pontosan
+akkor, amikor a másolandó elem célja maga a `files.txt`. A hozzá tartozó
+állapotszöveg: **`Updating Backup Info`** (`il_BurnPanel::BackupCopy::2`,
+`0x00ca5cb8`).
 
-1. **`OPEN_ALWAYS`** — ha a fájl létezik, megnyitja; ha nem, létrehozza.
-   **Nem csonkolja** (`CREATE_ALWAYS` = 2 lenne).
-2. **`GENERIC_READ | GENERIC_WRITE`** — a Picasa **vissza is olvassa** a
-   fájlt, nem csak ír bele. Ez illeszkedik a mentés inkrementális
-   jellegéhez (9. szakasz, `BKTag`): a `files.txt` a célmappában lévő
-   tartalom **nyilvántartása**, amit menetenként frissít.
-3. A **csak-olvasható jelzőt itt is leveszi**, ugyanazzal a mintával, mint a
-   `backups.xml`-nél (1.1/b): `0x0067834e` lekérdezi az attribútumokat,
-   `test al, 1` vizsgálja a `FILE_ATTRIBUTE_READONLY` bitet,
-   `and eax, 0xfffffffe` törli, `0x00678362` visszaírja.
+#### b) A mechanizmus: két megnyitás, két teljes beolvasás, két írás
 
-> **Bizonyítottsági fok: megerősített** a megnyitási módra (kiolvasott
-> argumentum-konstansok). **A sorformátum továbbra sem ismert** — ld. lent,
-> miért nem találta meg a szokásos keresés.
+| # | cím | mit tesz | mérve |
+|---|---|---|---|
+| 1 | `0x00677de6` | `CreateFile(<cél>\files.txt, GENERIC_READ\|GENERIC_WRITE, FILE_SHARE_READ\|WRITE, NULL, **OPEN_ALWAYS**, FILE_ATTRIBUTE_NORMAL, NULL)` | kiolvasott `push`-konstansok: `0xc0000000` · `3` · `4` · `0x80` |
+| 2 | `0x00677e42` | `CreateFile(<forrás>, GENERIC_READ, FILE_SHARE_READ, NULL, **OPEN_EXISTING**, FILE_ATTRIBUTE_NORMAL, NULL)` | `0x80000000` · `1` · `3` · `0x80` |
+| 3 | `0x00677e8f` | a **forrás** teljes beolvasása pufferbe | `0x0099dcb0` = `GetFileSize` + `ReadFile` |
+| 4 | `0x00677ea1` | a **cél** (a meglévő `files.txt`) teljes beolvasása pufferbe | ugyanaz a segéd |
+| 5 | `0x00677eb1` | `SetFilePointer(cél, **0**, NULL, **FILE_BEGIN**)` | `0x0099dd50`, `xor edx,edx` + `push 0` |
+| 6 | `0x00677eba` | `WriteFile(cél, **a cél régi tartalma**)` | `0x0099df60` |
+| 7 | `0x00677ecb` | `WriteFile(cél, **a forrás tartalma**)` | `0x0099df60` |
 
-**Miért nem elég a sztring-keresés:** az író hívás
-(`0x00677f6d`, `call dword ptr [0xd69518]`) **belső függvénymutatón** át megy.
-A PE import-táblájának feldolgozásakor a `0xc4025c` → `KERNEL32!GetLastError`
-és a `0xc40474` → `KERNEL32!SetFileTime` **feloldódik**, a `0xd69514`,
-`0xd69518`, `0xd69520` és `0xd694bc` viszont **nem szerepel az
-import-táblában** — futásidőben töltött mutatók. Ezért nincs se
-formátum-sztring, se importnév, amire a szokásos lánc ráakadna.
+A puffer-leíró alakja is mérve (`0x0099df60`): **`[+0]` = hossz,
+`[+4]` = mutató** — a `WriteFile` innen kapja a méretet és a címet.
+
+#### c) Amit ez eldönt
+
+1. **A `files.txt` írása HOZZÁFŰZÉS, újraírás formájában.** Nem
+   `CREATE_ALWAYS` (nem csonkol), nem `FILE_END`-re állított mutató:
+   a Picasa visszaolvassa a régi tartalmat, a fájl elejére áll, kiírja a
+   régit, majd utána az újat. Ugyanaz az eredmény, mint az append, de a
+   fájl **egyben** íródik újra.
+2. **A `files.txt`-nek nincs sorformázója a Picasa3.exe-ben.** A 7.
+   szakasz „mi a SORFORMÁTUM" kérdése rossz kérdés volt: a fájlba
+   **nyers bájtblokk** megy, `printf`-alakú formátumsztring nélkül. A
+   tartalom a **forrásfájlból** származik.
+3. **A `\files.txt` sztring a binárisban PONTOSAN EGYSZER fordul elő**
+   (`0x00677adb`), és **egyetlen társ-binárisban sem** — ellenőrizve mind
+   a 14 kísérő indexen (`referencia/binary-index-*`), két különböző alakú
+   lekérdezéssel (teljes név, illetve `\files` előtag). A `PicasaCD.exe`,
+   a `PicasaRestore.exe` és a `CDVDR.exe` sem ismeri.
+4. **A karakterkódolás UTF-8** — nem a rendszer ANSI kódlapja. Az összes
+   fájlműveleti hívás a 21. szakasz thunk-tábláján megy át, és annak
+   NT-ági burkolói `CP_UTF8`-cal konvertálnak
+   ([`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 21.2).
+
+> **Bizonyítottsági fok: megerősített** — minden szám kiolvasott
+> `push`-konstans vagy feloldott import-név.
+
+#### d) Ami NYITVA marad, és pontosan mi
+
+A kérdés **átfogalmazódott**: nem „mi a sorformátum", hanem **„mi van a
+forrásfájlban, amit a Picasa átmásol"**. A forrás útvonalát egy virtuális
+híváspár adja (`0x00677bf9` és `0x00677c07`, mindkettő `[vtbl+0xc]`, közös
+indexszel), tehát a mai olcsó lánccal nem olvasható ki.
+
+**Megszerzés — két út:**
+
+1. **Valódi `files.txt`** egy gépről, ahol lefutott a mentés
+   (`\Picasa biztonsági másolat\` alatt). Ez egyben a tartalmat is megadja.
+2. A `0x00678630` (`il_BurnPanel::BackgroundProc`, 1246 b) **célzott
+   dekompilációja** — ez tölti fel a másolónak átadott két gyűjteményt.
+
+**Jegy: #2090** (`blocked` + `felhasználóra-vár`) — a kérés szövege és a
+határidős alternatíva ott áll.
+
+⚠️ **Amit NEM szabad ebből következtetni:** hogy a `files.txt` szöveges. A
+mérés csak annyit mond, hogy bájtmásolás történik; a `.txt` kiterjesztés
+nem bizonyíték.
 
 ### 11.2 A `replicates.xml` — ugyanaz az író, ugyanaz az öt mező
 
