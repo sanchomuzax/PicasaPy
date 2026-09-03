@@ -1230,3 +1230,141 @@ a választ — de ott a sztring-keresés amúgy is megtalálja.
 *Bizonyítottsági fok: **megerősített** — a recept a `0x00d694c0`-on
 végigfutva `KERNEL32!DeleteFileA` / `DeleteFileW` + `MultiByteToWideChar`
 + `GetVersion` neveket adott, mind az import-táblából.*
+
+---
+
+## 21. A Picasa **UTF-8 rétege**: a teljes futásidejű thunk-tábla (2026-09-03)
+
+A 20. szakasz receptje egy mutatóra készült. Végigfuttatva az **egész**
+`.text`-en kiderült, hogy nem elszigetelt trükkről van szó: a Picasa
+**minden ANSI Win32 API-hívását** egy globális mutatókból álló táblán
+vezeti át, és a táblát induláskor tölti fel.
+
+### 21.1 A minta, amivel az egész tábla kiadható
+
+Az inicializáló blokkok egy kaptafára készültek (példa a `0x00c3315e`-ről):
+
+```
+0x00c3315e  cmp dword ptr [0xd6fc58], 0x80000000   ; a GetVersion eredménye
+0x00c33168  jae 0xc33175                           ; magas bit = Windows 9x
+0x00c3316a  mov dword ptr [0xd69518], 0x009affb0   ; NT-ág: SAJÁT burkoló
+0x00c33174  ret
+0x00c33175  mov eax, dword ptr [0xc40518]          ; 9x-ág: az IAT-rekesz…
+0x00c3317a  mov dword ptr [0xd69518], eax          ; …változtatás nélkül
+0x00c3317f  ret
+```
+
+Ezért **egyetlen bájtminta kiadja az egész táblát**: `a1 <IAT-rekesz>`
+közvetlenül `a3 <mutató>` előtt. A `c7 05 <mutató>` írást ugyanabban a
+blokkban visszafelé keresve megvan az NT-ági burkoló címe is. A kész
+szkript a privát repóban: **`eszkozok/rt_thunks.py`**.
+
+### 21.2 Mit csinál az NT-ági burkoló
+
+Mérve a `0x009affb0`-on (`GetFileAttributesEx`, 151 bájt): a burkoló
+`MultiByteToWideChar`-t hív **`0xfde9` = 65001 = `CP_UTF8`** kódlappal
+(`0x009affd9`, `0x009afff7`, `0x009b0011`), majd a **`…W`** változatot
+(itt `0x00c403c8` = `KERNEL32!GetFileAttributesExW`).
+
+**Ebből következik, hogy a Picasa belső sztringjei NT alatt UTF-8-asak** —
+nem a rendszer ANSI kódlapja szerintiek. Ez a `.picasa.ini`, a
+`files.txt`, a `watchedfolders.txt` és minden más szöveges tároló
+karakterkódolására nézve **normatív**: ékezetes fájlnév UTF-8-ként megy
+át a Win32 rétegen.
+
+> *Bizonyítottsági fok: **megerősített*** — kiolvasott kódlap-konstans és
+> feloldott import-név, nem következtetés.
+
+### 21.3 A teljes tábla — 68 bejegyzés
+
+`0x00d694bc`-tól `0x00d695c8`-ig folytonos, 4 bájtos rekeszekben. A
+`0x00d49a28` (`TlsGetValue`) **nem** ehhez a táblához tartozik: külön
+mutató, NT-ági burkoló nélkül — a listában csak azért szerepel, mert
+ugyanaz a bájtminta találja meg.
+
+| mutató | DLL | 9x-ág (`…A`) | IAT-rekesz | NT-ági burkoló |
+|---|---|---|---|---|
+| `0x00d49a28` | `KERNEL32.dll` | `TlsGetValue` | `0x00c40270` | `—` |
+| `0x00d694bc` | `KERNEL32.dll` | `GetFileAttributesA` | `0x00c40524` | `0x009aec30` |
+| `0x00d694c0` | `KERNEL32.dll` | `DeleteFileA` | `0x00c40528` | `0x009aecc0` |
+| `0x00d694c4` | `KERNEL32.dll` | `FindFirstFileA` | `0x00c40428` | `0x009aed50` |
+| `0x00d694c8` | `KERNEL32.dll` | `FindFirstFileExA` | `0x00c404a8` | `0x009aee90` |
+| `0x00d694cc` | `KERNEL32.dll` | `FindNextFileA` | `0x00c404bc` | `0x009aeff0` |
+| `0x00d694d0` | `KERNEL32.dll` | `CopyFileA` | `0x00c404d4` | `0x009af0c0` |
+| `0x00d694d4` | `KERNEL32.dll` | `MoveFileA` | `0x00c404dc` | `0x009af1c0` |
+| `0x00d694d8` | `KERNEL32.dll` | `MoveFileExA` | `0x00c404e4` | `0x009af2b0` |
+| `0x00d694dc` | `KERNEL32.dll` | `CopyFileExA` | `0x00c404f4` | `0x009af3b0` |
+| `0x00d694e0` | `KERNEL32.dll` | `MoveFileWithProgressA` | `0x00c404fc` | `0x009af4c0` |
+| `0x00d694e4` | `ADVAPI32.dll` | `RegCreateKeyExA` | `0x00c40000` | `0x009af5c0` |
+| `0x00d694e8` | `ADVAPI32.dll` | `RegOpenKeyExA` | `0x00c40074` | `0x009af6d0` |
+| `0x00d694ec` | `ADVAPI32.dll` | `RegQueryValueExA` | `0x00c4006c` | `0x009af780` |
+| `0x00d694f0` | `ADVAPI32.dll` | `RegSetValueExA` | `0x00c40004` | `0x009af950` |
+| `0x00d694f4` | `ADVAPI32.dll` | `RegEnumKeyExA` | `0x00c40028` | `0x009afa70` |
+| `0x00d694f8` | `ADVAPI32.dll` | `RegEnumValueA` | `0x00c4000c` | `0x009afb40` |
+| `0x00d694fc` | `KERNEL32.dll` | `FindFirstChangeNotificationA` | `0x00c404d8` | `0x009b3000` |
+| `0x00d69500` | `KERNEL32.dll` | `CompareStringA` | `0x00c4030c` | `0x009b30a0` |
+| `0x00d69504` | `KERNEL32.dll` | `GetModuleFileNameA` | `0x00c40248` | `0x009b31a0` |
+| `0x00d69508` | `KERNEL32.dll` | `GetModuleHandleA` | `0x00c40238` | `0x009b3250` |
+| `0x00d6950c` | `KERNEL32.dll` | `LoadLibraryA` | `0x00c402b8` | `0x009b32e0` |
+| `0x00d69510` | `KERNEL32.dll` | `LoadLibraryExA` | `0x00c403f4` | `0x009b3370` |
+| `0x00d69514` | `KERNEL32.dll` | `SetFileAttributesA` | `0x00c4050c` | `0x009aff10` |
+| `0x00d69518` | `KERNEL32.dll` | `GetFileAttributesExA` | `0x00c40518` | `0x009affb0` |
+| `0x00d6951c` | `KERNEL32.dll` | `GetShortPathNameA` | `0x00c403d4` | `0x009afd30` |
+| `0x00d69520` | `KERNEL32.dll` | `CreateFileA` | `0x00c40424` | `0x009afe60` |
+| `0x00d69524` | `USER32.dll` | `SetWindowLongA` | `0x00c4087c` | `0x009b0050` |
+| `0x00d69528` | `USER32.dll` | `GetWindowLongA` | `0x00c40870` | `0x009b0060` |
+| `0x00d6952c` | `USER32.dll` | `CallWindowProcA` | `0x00c40660` | `0x009b0070` |
+| `0x00d69530` | `USER32.dll` | `RegisterClassA` | `0x00c408f4` | `0x009b0080` |
+| `0x00d69534` | `USER32.dll` | `UnregisterClassA` | `0x00c407ac` | `0x009b01b0` |
+| `0x00d69538` | `USER32.dll` | `GetClassInfoA` | `0x00c40760` | `0x009b0250` |
+| `0x00d6953c` | `USER32.dll` | `SetClassLongA` | `0x00c40860` | `0x009b0260` |
+| `0x00d69540` | `USER32.dll` | `SetWindowTextA` | `0x00c408b4` | `0x009b0270` |
+| `0x00d69544` | `USER32.dll` | `GetWindowTextA` | `0x00c406e0` | `0x009b0310` |
+| `0x00d69548` | `USER32.dll` | `DialogBoxParamA` | `0x00c40750` | `0x009b03c0` |
+| `0x00d6954c` | `USER32.dll` | `SendMessageA` | `0x00c40884` | `0x009b03d0` |
+| `0x00d69550` | `USER32.dll` | `SetDlgItemTextA` | `0x00c4075c` | `0x009b0a90` |
+| `0x00d69554` | `USER32.dll` | `DefWindowProcA` | `0x00c40850` | `0x009b0b30` |
+| `0x00d69558` | `USER32.dll` | `CreateDialogParamA` | `0x00c40908` | `0x009b0b40` |
+| `0x00d6955c` | `COMCTL32.dll` | `PropertySheetA` | `0x00c400bc` | `0x009b0b50` |
+| `0x00d69560` | `COMCTL32.dll` | `CreatePropertySheetPageA` | `0x00c400b8` | `0x009b0c00` |
+| `0x00d69564` | `SHELL32.dll` | `SHBrowseForFolderA` | `0x00c405f4` | `0x009b0cb0` |
+| `0x00d69568` | `SHELL32.dll` | `SHGetPathFromIDListA` | `0x00c405f8` | `0x009b0de0` |
+| `0x00d6956c` | `GDI32.dll` | `TextOutA` | `0x00c4017c` | `0x009b0e80` |
+| `0x00d69570` | `GDI32.dll` | `ExtTextOutA` | `0x00c40174` | `0x009b0f30` |
+| `0x00d69574` | `SHELL32.dll` | `DragQueryFileA` | `0x00c40620` | `0x009b10a0` |
+| `0x00d69578` | `GDI32.dll` | `GetTextExtentPoint32A` | `0x00c4012c` | `0x009b0ff0` |
+| `0x00d6957c` | `KERNEL32.dll` | `CreateDirectoryA` | `0x00c40510` | `0x009b1140` |
+| `0x00d69580` | `KERNEL32.dll` | `CreateDirectoryExA` | `0x00c4051c` | `0x009b11e0` |
+| `0x00d69584` | `USER32.dll` | `SetMenuItemInfoA` | `0x00c40794` | `0x009b12e0` |
+| `0x00d69588` | `USER32.dll` | `GetMenuItemInfoA` | `0x00c408b8` | `0x009b1390` |
+| `0x00d6958c` | `USER32.dll` | `InsertMenuItemA` | `0x00c407a0` | `0x009b14a0` |
+| `0x00d69590` | `USER32.dll` | `AppendMenuA` | `0x00c407a8` | `0x009b1550` |
+| `0x00d69594` | `USER32.dll` | `MessageBoxA` | `0x00c407f0` | `0x009b15f0` |
+| `0x00d69598` | `COMDLG32.dll` | `GetOpenFileNameA` | `0x00c400d4` | `0x009b1d10` |
+| `0x00d6959c` | `COMDLG32.dll` | `GetSaveFileNameA` | `0x00c400cc` | `0x009b1d30` |
+| `0x00d695a0` | `SHELL32.dll` | `SHFileOperationA` | `0x00c40604` | `0x009b1d50` |
+| `0x00d695a4` | `SHELL32.dll` | `SHGetFileInfoA` | `0x00c40608` | `0x009b2370` |
+| `0x00d695a8` | `SHELL32.dll` | `SHGetSpecialFolderPathA` | `0x00c40610` | `0x009b2500` |
+| `0x00d695ac` | `KERNEL32.dll` | `GetDateFormatA` | `0x00c40300` | `0x009b25a0` |
+| `0x00d695b0` | `KERNEL32.dll` | `GetTimeFormatA` | `0x00c402fc` | `0x009b26d0` |
+| `0x00d695b4` | `KERNEL32.dll` | `RemoveDirectoryA` | `0x00c404e0` | `0x009b2800` |
+| `0x00d695b8` | `SHELL32.dll` | `ShellExecuteA` | `0x00c405e0` | `0x009b2890` |
+| `0x00d695bc` | `SHELL32.dll` | `ShellExecuteExA` | `0x00c40618` | `0x009b2a50` |
+| `0x00d695c0` | `KERNEL32.dll` | `CreateProcessA` | `0x00c404f0` | `0x009b2e90` |
+| `0x00d695c4` | `SHELL32.dll` | `Shell_NotifyIconA` | `0x00c405fc` | `0x009b2d00` |
+| `0x00d695c8` | `USER32.dll` | `CreateWindowExA` | `0x00c407ec` | `0x009aeb10` |
+
+### 21.4 Mire jó ez azonnal
+
+Minden `call dword ptr [0x00d69…]` alakú hívás **egy lépésben névre
+hozható** — eddig ezek „nem oldható fel, futásidejű mutató" indoklással
+maradtak nyitva. Két ilyen tétel dőlt el a jelen körben:
+
+- `0x00d69518` → `GetFileAttributesEx` — ez **cáfolta** a
+  [`biztonsagi-mentes.md`](biztonsagi-mentes.md) 11.1 „a `0x00677f6d`
+  **írás**-hívás" olvasatát: a hívás attribútum-lekérdezés;
+- `0x00d69520` → `CreateFile` — ez **igazolta** ugyanott az
+  argumentum-alakból következtetett `CreateFile`-olvasatot.
+
+**A tanulság általánosan:** ha egy kör „nem oldható fel"-t ír egy globális
+mutatóra, az ma már **hiba**, nem korlát.

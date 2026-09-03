@@ -547,6 +547,19 @@ Jegy: **#1945**.
 
 ### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel
 
+⭐ **2026-09-03 (11.1 ÁTÍRVA) — a `files.txt` írása MEGVAN, és két korábbi
+olvasat MEGDŐLT.** A `0x00677f6d` **nem** írás-hívás: a `0x00d69518` mutató
+`GetFileAttributesEx`. A valódi menet **bájtra fűzés** (`0x00677de6`–
+`0x00677ecb`): `CreateFile(OPEN_ALWAYS, R/W)` a célra + `CreateFile(OPEN_EXISTING,
+GENERIC_READ)` a forrásra, **mindkettő teljes beolvasása**, `SetFilePointer(0,
+FILE_BEGIN)`, majd **a régi, utána az új tartalom** kiírása — és a blokk csak
+akkor fut, ha a másolandó elem célja maga a `files.txt` (mért `strcmp`,
+`0x00677d38`). **Sorformázó a Picasa3.exe-ben NINCS**, a `\files.txt` sztring
+egyszer fordul elő és **egyik társ-binárisban sem** (14 index, két lekérdezési
+alak). A kérdés átfogalmazódott: nem „mi a sorformátum", hanem **„mi van a
+forrásfájlban"** — BLOKKOLT, megszerzés: valódi `files.txt`, vagy a
+`0x00678630` dekompilációja. Komment: **#440**.
+
 ⭐ **2026-09-03 (12. szakasz) — a LEMEZRE ÍRÁS menete.** A 10. szakasz a
 `publish` sávot írta le; ez azt, ami az **OK után** történik. **Mért képlet**
 a lemez használható kapacitására (`0x0066be90`): `szektorszám × 2048 −
@@ -710,6 +723,20 @@ a fotó-rekordunknak — és a **`flip` mező negatív eredmény**
 `flip=` sor).
 
 ### [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
+
+⭐ **2026-09-03 (21. szakasz) — a Picasa UTF-8 rétege: a TELJES futásidejű
+thunk-tábla.** A 20. szakasz receptjét az egész `.text`-en végigfuttatva
+kiderült, hogy nem elszigetelt trükk: a Picasa **68 ANSI Win32 API-t** vezet át
+globális mutatókon (`0x00d694bc`–`0x00d695c8`), és induláskor a `GetVersion`
+magas bitje szerint tölti fel őket — 9x-en a nyers `…A` importtal, NT-n **saját
+UTF-8 burkolóval** (`MultiByteToWideChar(CP_UTF8= 65001)` → `…W`). A lap most a
+**teljes 68 soros táblát** tartalmazza (mutató · DLL · `…A` név · IAT-rekesz ·
+burkoló), a szkript pedig a privát repóban él (`eszkozok/rt_thunks.py`).
+**Két következmény:** (1) minden `call dword ptr [0x00d69…]` egy lépésben névre
+hozható — a „nem oldható fel, futásidejű mutató" indoklás ma **hiba**, nem
+korlát; (2) a Picasa belső sztringjei NT alatt **UTF-8-asak**, ami a
+`.picasa.ini`, a `files.txt` és a `watchedfolders.txt` kódolására nézve
+**normatív**.
 
 ⭐ **2026-09-02 — egy ELVETETT mérőszám, kontrollal megbuktatva (19. szakasz).**
 A kézenfekvő ötlet — „ha egy felületi elem neve nincs benne a `Picasa3.exe`-ben,
