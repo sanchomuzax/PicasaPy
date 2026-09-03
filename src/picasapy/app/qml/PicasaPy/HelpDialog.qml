@@ -57,6 +57,8 @@ Dialog {
                 objectName: "helpSearchField"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search in help")
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
                 onTextChanged: {
                     if (!controller) return
                     // Üres keresésre a FEJEZETLISTA jön vissza — a néző
@@ -105,6 +107,9 @@ Dialog {
                 wrapMode: TextArea.Wrap
                 textFormat: TextArea.MarkdownText
                 selectByMouse: true
+                // #422: jobbklikk-menü a súgó szövegén is — a „Másolás"
+                // itt valódi funkció (a felhasználó kimásol egy lépéssort).
+                TextFieldContextArea {}
             }
         }
     }
