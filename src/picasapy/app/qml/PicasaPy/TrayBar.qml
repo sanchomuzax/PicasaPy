@@ -148,11 +148,24 @@ Column {
     //
     //     thumbui/rect: basecontrolset   y 429…534   105 magas
     //     thumbui/text( ): infotext      y 429…443    14 magas
-    //     az első vezérlők felső éle     y 448        ⇒ 5 pont TÉRKÖZ
     //     thumbui/rect: scratchback      y 449…530    81 magas
-    //     a sáv alja                     y 534        ⇒ 5 pont alsó hézag
+    //     a sáv alja                     y 534
     //
-    //     14 (csík) + 5 (térköz) + 81 (doboz) + 5 (alsó) = 105 ✓
+    //     14 (csík) + 6 (térköz) + 81 (doboz) + 4 (alsó) = 105 ✓
+    //
+    // ⚠️ #1913 HELYESBÍTÉS: a #1914 az összeget eltalálta, a kettévágást
+    // nem — 5+5 helyett 6+4 a mért érték. A tévedés forrása, hogy „az
+    // első vezérlők felső éle y 448"; ez IGAZ, de MÁS vezérlőkre:
+    //
+    //     thumbui/rect: scale_group      y 448…475   (nagyító)
+    //     thumbui/rect: metadata_group   y 448…472   (Személyek/Helyek/…)
+    //     thumbui/rect: scratchback      y 449…530   ← a TÁLCA doboza
+    //     …: rotateleft / startoggle     y 449…471   ← és a gombsora
+    //
+    // A rétegfejléc `y1`-e NYÍLT (a képpontszám igazolja: a
+    // `scratchclear_icon` 255,480,266,491 blobja 484 bájt = 11×11×4
+    // BGRA), tehát az `infotext` a 442. sorig tart, az első tálca-sor a
+    // 449. — közte 443…448, azaz HAT pont.
     //
     // ⚠️ VISSZAVONT ELTÉRÉS: a #1420 óta a csík nálunk 20 képpont volt,
     // „szándékos és dokumentált eltérés (olvashatóság,
@@ -398,10 +411,11 @@ Column {
             id: trayScratchBack
             objectName: "trayScratchBack"
             x: 5
-            //: #1914: MÉRT térköz a kék csík alatt — `infotext` y 443-ig,
-            //: az első vezérlők y 448-tól. Ez az 5 pont hiányzott, ezért
-            //: értek a gombok a csíkhoz.
-            y: 5
+            //: #1913: MÉRT térköz a kék csík alatt — `infotext` y 443-ig
+            //: (nyílt), a `scratchback` y 449-től ⇒ HAT pont. (A #1914 itt
+            //: ötöt írt, mert a 448-tól induló nagyító-/metaadat-csoportot
+            //: mérte, nem a tálcát.)
+            y: 6
             width: Math.max(0, trayMainBar.splitX - 15 - x)
             height: 81
             color: Theme.trayPanelBg
@@ -842,15 +856,16 @@ Column {
             id: trayRightPane
             objectName: "trayRightPane"
             x: trayMainBar.splitX
-            //: #1914: ugyanaz az 5 pontos MÉRT térköz, mint a
-            //: `scratchback`-en — a jobb oldali vezérlők felső éle is
-            //: y 448-tól indul (az `infotext` y 443-ig tart).
-            y: 5
+            //: #1913: ugyanaz a 6 pontos MÉRT térköz, mint a
+            //: `scratchback`-en — a csillag és a két forgatás
+            //: (`startoggle`, `rotateleft`, `rotateright`) is y **449**-től
+            //: indul, nem 448-tól.
+            y: 6
             width: Math.max(
                 0, trayMainBar.width - trayMainBar.rightMargin - x)
             height: parent.height - y
 
-            // --- felső sor (a sáv tetejétől 448…471 → itt 0…22) ---
+            // --- felső sor (a sáv tetejétől 449…471 → itt 0…22) ---
             Item {
                 id: trayTopRow
                 objectName: "trayTopRow"

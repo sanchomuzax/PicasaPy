@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.249] – 2026-09-03
+
+### Javítva
+- Az alsó sávban a kék információs csík és a képtálca doboza közti térköz
+  egy képponttal pontosabb lett (5 helyett 6), az eredeti Picasa
+  elrendezéséből kimérve. A tálca doboza így pontosan ott ül, ahol az
+  eredetiben.
+
 ## [0.8.248] – 2026-09-03
 
 ### Javítva
