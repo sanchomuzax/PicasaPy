@@ -1014,6 +1014,25 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (7. kör) — HÁROM Glimmer-leltár, és egy TÉVES jegy-tétel
+(`filterdesc-registry.md`).** A #2211 munkalistája élén a
+`TiledImageOperation` állt „**0 említéssel**". ⛔ **Ilyen nevű művelet nem
+létezik** — a valódi neve **`TiledImageMask`**, és az a lap szerint a
+**legjobban dokumentált** műveletünk (**17** említés a `docs/specs/` alatt,
+mind a tizenkét attribútuma kiolvasva a `filters-decoded.md` 2026-08-16-i
+szakaszában). A „0 említés" tehát tisztán a **rossz név** műterméke volt.
+A lista másik **kilenc** neve ellenőrizve: mind pontos. ⭐ **A készletről
+három különböző leltár készíthető, és egyik sem teljes önmagában:**
+`filterdesc.xml` által **HASZNÁLT 31** · a binárisban név szerint
+**REGISZTRÁLT 35** · az RTTI-ben **LÉTEZŐ 37** konkrét osztály (+2
+ősosztály). A különbségek névvel és címmel kiírva: három osztály
+(`BlendImageOperation`, `PaintMaskPlusImageMask`, `ShapeGradientImageMask`)
+**létezik, de nincs regisztrációs sztringje** — tehát `filterdesc.xml`-ből
+nem hozható létre, a motor belsőleg példányosítja. A negatív állítás mind a
+**13 bináris-indexen** ellenőrizve, mindenütt nulla találattal. A 4.5
+szakasz fejléce egyértelműsítve („mind a 31" → „a HASZNÁLT 31"). Jegy:
+**#2211** (komment), **#626** (komment).
+
 ⭐ **2026-09-03 (6. kör) — a hasonlóság-rekord eleje: 8×8 RGB565
 BÉLYEGKÉP (`picasa-kereses-modok.md`).** A kvantáló (`0x007eb8c0`) egy
 kibontott kettős ciklus: soronként **nyolc** `uint16`-ot ír

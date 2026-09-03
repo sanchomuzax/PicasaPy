@@ -1042,7 +1042,12 @@ legyen (ugyanúgy nézzen ki kicsiben és nagyban):
 > Gauss-elmosása **zárt formában** (tengelyenként egy `erf`) számolható,
 > sugártól független költséggel.
 
-### 4.5 A művelet-készlet — mind a 31 `imageOperations:` művelet
+### 4.5 A művelet-készlet — a `filterdesc.xml` által HASZNÁLT 31 művelet
+
+> ⚠️ **A „31" a HASZNÁLAT száma, nem a készleté.** A binárisban 35 művelet
+> van **név szerint regisztrálva**, és 37 konkrét osztály létezik az
+> RTTI-ben. A három leltár és a különbségük: ld. a lap végén, „HÁROM
+> leltár" szakasz.
 
 A `<effect>` blokkok **31 különböző** műveletet használnak. A `db` oszlop azt
 mutatja, hányszor fordul elő; az attribútumok a fájlból kigyűjtve.
@@ -1846,3 +1851,55 @@ rekeszt választja ki; az alapérték a beállítás-olvasóban (`0x009ae560`,
 
 *Bizonyítottsági fok: megerősített* (diszasszemblált if-lánc, minden ághoz
 fájloffset).
+
+## ⭐ HÁROM leltár, és egyik sem teljes önmagában (2026-09-03)
+
+A Glimmer-műveletekről **három különböző** lista készíthető, és a
+számuk eltér. Aki egyet használ közülük „a készletként", téves
+hiánylistát kap.
+
+| leltár | forrás | darab |
+|---|---|---:|
+| **HASZNÁLT** | a `filterdesc.xml` `<effect>` blokkjai | **31** |
+| **REGISZTRÁLT** | `imageOperations:<Név>` sztringek a binárisban | **35** |
+| **LÉTEZŐ** | `glimmer::*ImageOperation` / `*ImageMask` az RTTI-ben | **37** konkrét + 2 ősosztály |
+
+### A különbségek — névvel
+
+**REGISZTRÁLT (35), de a `filterdesc.xml` nem használja (4):**
+`ShaderImageOperation` · `SharpenImageOperation` · `ExposureImageOperation` ·
+`PaletteMapImageOperation` · `EdgeDetectionSobelImageOperation`
+*(a lap 4.6-os táblája ezeket már felsorolta)*
+
+**LÉTEZIK az RTTI-ben, de NINCS `imageOperations:` regisztrációs sztringje (3):**
+
+| osztály | RTTI-cím |
+|---|---|
+| `glimmer::BlendImageOperation` | `0x00c9b0bc` |
+| `glimmer::PaintMaskPlusImageMask` | `0x00cf0750` |
+| `glimmer::ShapeGradientImageMask` | `0x00cf0e50` |
+
+⇒ Ezek **nem hozhatók létre névvel** a `filterdesc.xml`-ből; a motor
+belsőleg példányosítja őket (a `Blend` például a `NestedImageOperation`
+`Dupe → gyerekek → Blend → Pop` fordításában).
+
+**Az anonim névtérben (1):** `_anon_BEC5211C::ResaturateImageOperation`
+(`0x00cf0578`) — ld. `picasa-native-filter-registry.md`, ahol a lap már
+kimondta, hogy **nem önálló algoritmus**.
+
+### Módszertani következmény
+
+Egy „mi hiányzik" listát **nem szabad** egyetlen forrásra alapozni:
+
+- csak a **regisztrációs sztringekre** ⇒ kimarad a fenti három osztály;
+- csak az **RTTI-re** ⇒ bekerül két ősosztály és egy anonim névtér-beli
+  osztály, ami nem felhasználói művelet;
+- csak a **`filterdesc.xml`-re** ⇒ kimarad mind a négy nem használt, de
+  regisztrált művelet.
+
+*Bizonyítottsági fok: **megerősített** — mindhárom leltár lekérdezésből
+származik (a `string_xrefs`, illetve az `rtti` tábla), és a három
+különbséglista névvel, címmel kiírva. A „nincs `imageOperations:` sztringje"
+állítás **mind a 13 bináris-indexen** ellenőrizve (a fő index + 12 kísérő
+bináris), mindenütt nulla találattal.*
+
