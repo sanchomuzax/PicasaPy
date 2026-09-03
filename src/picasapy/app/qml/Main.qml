@@ -2374,7 +2374,7 @@ ApplicationWindow {
                 window.selectedRows(), controller.currentPersonName)
         }
         onMoveToNewPersonRequested: {
-            if (controller) moveToNewPersonDialog.openFor(
+            if (controller) moveToNewPersonDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
         }
     }
@@ -2403,20 +2403,27 @@ ApplicationWindow {
 
     // #422: „Áthelyezés új személyhez…" — az adott személy arc-címkéje a
     // kijelölt képeken ÁTKERÜL egy másik névre (a régió marad).
-    NameInputDialog {
+    //: #1612: halasztva — az „Áthelyezés új személyhez" csak az arcpanel
+    //: helyi menüjéből nyílik. Az `objectName` a BELSŐ párbeszédre marad,
+    //: hogy a felépülés után ugyanúgy megtalálható legyen.
+    DeferredDialog {
         id: moveToNewPersonDialog
-        objectName: "moveToNewPersonDialog"
-        title: qsTr("Move to New Person")
-        prompt: qsTr("New person's name:")
-        property var rows: []
-        property string person: ""
-        function openFor(rowList, name) {
-            if (rowList.length === 0 || name.length === 0) return
-            rows = rowList
-            person = name
-            openEmpty()
+        sourceComponent: Component {
+            NameInputDialog {
+                objectName: "moveToNewPersonDialog"
+                title: qsTr("Move to New Person")
+                prompt: qsTr("New person's name:")
+                property var rows: []
+                property string person: ""
+                function openFor(rowList, name) {
+                    if (rowList.length === 0 || name.length === 0) return
+                    rows = rowList
+                    person = name
+                    openEmpty()
+                }
+                onAccepted: controller.movePersonOnRows(rows, person, enteredName)
+            }
         }
-        onAccepted: controller.movePersonOnRows(rows, person, enteredName)
     }
 
     // #449: első indítás — a kérdés az ablak megjelenése UTÁN jön elő, hogy
@@ -2544,6 +2551,7 @@ ApplicationWindow {
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
     CreateDialogs {
         id: createDialogs
+        objectName: "createDialogs"
         appWindow: window
     }
 
