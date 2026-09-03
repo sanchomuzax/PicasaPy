@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.244] – 2026-09-03
+
+### Javítva
+- **A fejlesztői ellenőrző kör Windowson véletlenszerűen hibát jelzett
+  (#2136).** Az egyik teszt egy pillanatnyi állapotra várt („épp dolgozik-e a
+  program"), és ha a munka a legelső ellenőrzés előtt befejeződött, tévesen
+  hibát jelentett. A mérés mostantól nem múlik időzítésen. A program
+  működését ez nem érintette.
+
 ## [0.8.243] – 2026-09-03
 
 ### Javítva
