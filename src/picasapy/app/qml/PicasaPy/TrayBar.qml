@@ -527,6 +527,24 @@ Column {
                         objectName: "trayPreviewThumb"
                         required property int index
 
+                        // 20 × 20-as rács a 81 képpontos dobozban holt
+                        // helyet hagyott volna.
+                        height: trayScratchStrip.thumbHeight
+                        // #1914 (spec 15.1): a cella NÉGYZET, a fotó
+                        // középre VÁGVA — nem aránytartó illesztés.
+                        width: height
+                        source: !tray.ctl || !tray.appWindow ? ""
+                            : trayScratchBack.heldCount > 0
+                              ? tray.ctl.heldThumbUrlAt(index)
+                              : tray.ctl.photos.thumbUrlAt(
+                                    Number(tray.appWindow.selectedIndexes[index]))
+                        //: `PreserveAspectCrop` = a rövidebbik oldalra
+                        //: illeszt, a hosszabbikat levágja — a `clip`
+                        //: nélkül a levágott rész kilógna a cellából.
+                        fillMode: Image.PreserveAspectCrop
+                        clip: true
+                        asynchronous: true
+
                         // #2039: a tálcának SAJÁT kijelölése van — az
                         // eredetiben ugyanolyan `CSelectionNode`, mint a
                         // rácsé (`picasa-keptalca.md` 13.). A kattintás a
@@ -577,23 +595,6 @@ Column {
                         // #1420: az eredeti tálcáján a bélyegképek a doboz
                         // TELJES belső magasságát kitöltik (a képernyőképen
                         // ~70 képpont), oldalarányt tartva — a korábbi
-                        // 20 × 20-as rács a 81 képpontos dobozban holt
-                        // helyet hagyott volna.
-                        height: trayScratchStrip.thumbHeight
-                        // #1914 (spec 15.1): a cella NÉGYZET, a fotó
-                        // középre VÁGVA — nem aránytartó illesztés.
-                        width: height
-                        source: !tray.ctl || !tray.appWindow ? ""
-                            : trayScratchBack.heldCount > 0
-                              ? tray.ctl.heldThumbUrlAt(index)
-                              : tray.ctl.photos.thumbUrlAt(
-                                    Number(tray.appWindow.selectedIndexes[index]))
-                        //: `PreserveAspectCrop` = a rövidebbik oldalra
-                        //: illeszt, a hosszabbikat levágja — a `clip`
-                        //: nélkül a levágott rész kilógna a cellából.
-                        fillMode: Image.PreserveAspectCrop
-                        clip: true
-                        asynchronous: true
 
                         // #1918: a MEGTARTOTT kép jelvénye a bélyegképen.
                         //
