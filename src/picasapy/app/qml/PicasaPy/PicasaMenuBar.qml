@@ -118,6 +118,9 @@ MenuBar {
     // #444: van-e a kijelölésben MÁR mentett kép — enélkül a
     // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
     property bool hasSavedBackup: false
+    //: #1637: a rejtettek feloldása jelszóval / a jelszó beállítása
+    signal hiddenUnlockRequested()
+    signal hiddenPasswordRequested()
     signal rescanRequested()
     signal aboutRequested()
     signal thumbSizePreset(int size)
@@ -726,7 +729,18 @@ MenuBar {
             // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
             // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
             checked: (bar.ctl && bar.ctl.showHidden !== undefined) ? bar.ctl.showHidden : false
-            onTriggered: controller.toggleShowHidden()
+            // #1637: ha van beállított jelszó és még nincs feloldva, a
+            // kapcsoló NEM némán marad ki — a gazda jelszót kér. Enélkül a
+            // menüpont hatástalannak látszana (a projekt visszatérő kára).
+            onTriggered: {
+                var zarva = bar.ctl && bar.ctl.hiddenPasswordSet === true
+                            && bar.ctl.hiddenUnlocked !== true
+                if (zarva && !bar.ctl.showHidden) {
+                    bar.hiddenUnlockRequested()
+                } else {
+                    controller.toggleShowHidden()
+                }
+            }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}

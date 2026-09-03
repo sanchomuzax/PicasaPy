@@ -823,6 +823,11 @@ ApplicationWindow {
         createActionsEnabled: !window.viewerOpen
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
+        // #1637: a rejtettek jelszó-kapuja. A menüsor csak JELEZ; a
+        // párbeszédet a gazda nyitja, és a gazda írja vissza a vezérlőt —
+        // így a párbeszéd önálló, újrahasznosítható komponens marad.
+        onHiddenUnlockRequested: hiddenPasswordDialog.openUnlock()
+        onHiddenPasswordRequested: hiddenPasswordDialog.openSet()
         onRescanRequested: controller.rescan()
         // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
         // így egy fájlkezelőbe közvetlenül beilleszthetők
@@ -2441,6 +2446,36 @@ ApplicationWindow {
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
     // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
+    // #1637: a »Rejtett mappák« jelszava. NEM halasztott: a #1743 tanulsága
+    // szerint a halasztás akkor kockázatos, ha a komponens jelzést fogad —
+    // itt viszont a gazda hívja, tehát a halasztás lehetséges lenne; a
+    // méret (egy párbeszéd, néhány vezérlő) miatt nem éri meg (#1612).
+    HiddenPasswordDialog {
+        id: hiddenPasswordDialog
+        onAccepted: {
+            if (!controller) return
+            if (hiddenPasswordDialog.mode === "set") {
+                controller.setHiddenPassword(
+                    hiddenPasswordDialog.enteredPassword,
+                    hiddenPasswordDialog.modernRequested)
+            } else if (controller.unlockHidden(
+                           hiddenPasswordDialog.enteredPassword)) {
+                controller.setShowHidden(true)
+            } else {
+                hiddenPasswordRosszUzenet.open()
+            }
+        }
+    }
+
+    ConfirmDialog {
+        id: hiddenPasswordRosszUzenet
+        objectName: "hiddenPasswordWrongDialog"
+        //: rossz jelszó a rejtett mappákhoz (#1637)
+        title: qsTr("Wrong password")
+        message: qsTr("The password does not match. The hidden folders stay hidden.")
+        onAccepted: hiddenPasswordDialog.openUnlock()
+    }
+
     CollageDraftDialog {
         id: collageDraftDialog
         onRestored: documentTabStrip.activateTab(window.collageTabId)
