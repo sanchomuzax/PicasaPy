@@ -1579,9 +1579,24 @@ szakaszt).*
 | `kenburns` | **Pan and Zoom** (Ken Burns-effekt) |
 | `kenburnsaoi` | **Pan and Zoom – face** (arcra fókuszáló Ken Burns) |
 | `timelapse` | Time Lapse |
+| **`rect`** | **Rectangle** — „Négyszög" *(2026-09-03-i kiegészítés)* |
 
 A `kenburnsaoi` külön említést érdemel: a Picasa az **arcfelismerés
 eredményét** használta a Ken Burns-mozgás célpontjául.
+
+> ⛔ **SZÁMHELYESBÍTÉS (2026-09-03).** A fenti tábla eddig **21** átmenetet
+> sorolt, a #432 címe pedig **18**-at mondott. **A tényleges szám 22**, és a
+> kimaradt tétel a **`rect`**.
+>
+> **Bizonyíték — két, egymástól független forrás:**
+>
+> | forrás | eredmény |
+> |---|---|
+> | `referencia/stringres-en-hu.tsv` | `CTransitions::*` kulcsok száma: **22** |
+> | az átmenet-nyilvántartó `0x00771a10` (934 b) | **mind a 22** kulcsra hivatkozik, a `rect`-re is (`CTransitions::rect`) |
+>
+> ⇒ a `rect` **élő** átmenet, nem maradék sztring. A hivatalos magyar neve
+> **„Négyszög"**.
 
 ### 2.2 Beállítások
 
@@ -1595,13 +1610,32 @@ eredményét** használta a Ken Burns-mozgás célpontjául.
 - **Diasorrend:** `Best Transitions` (okos) · `Album Order` · `Chronological`.
 - **Hangsáv:** `Load…` / `Clear` + `Options`.
 
-### 2.3 Szöveges dia — 11 stílus
+### 2.3 Szöveges dia — 12 stílus (a teljes lista, 2026-09-03)
 
-`CMakeMoviePanel::textstyleN`: Caption – Classic · Gradient – Black ·
-Gradient – White · Transparent – Black · Transparent – White ·
-**Scrolling Credits** · Music Video – Left · Music Video – Right ·
-Caption – Typewriter (+ további kettő). Betűbeállítás: család, méret,
-`Bold`, `Italic`, és **„Automatic Outline (like movie subtitles)"**.
+> ⛔ **SZÁMHELYESBÍTÉS.** A szakasz eddig **11 stílust** mondott, és kilencet
+> nevezett meg „(+ további kettő)" megjegyzéssel. **A tényleges szám 12**
+> (`textstyle0` … `textstyle11`), és **három** volt megnevezetlen, nem kettő.
+
+| # | kulcs | angol | **hivatalos magyar** |
+|---|---|---|---|
+| 0 | `textstyle0` | Centered | **Középre igazított** |
+| 1 | `textstyle1` | I'm Feeling Lucky | **Jó napom van** |
+| 2 | `textstyle2` | Caption | **Képfelirat** |
+| 3 | `textstyle3` | Caption - Classic | **Képfelirat – Klasszikus** |
+| 4 | `textstyle4` | Gradient - Black | **Színátmenet – fekete** |
+| 5 | `textstyle5` | Gradient - White | **Színátmenet – Fehér** |
+| 6 | `textstyle6` | Transparent - Black | **Átlátszó – fekete** |
+| 7 | `textstyle7` | Transparent - White | **Átlátszó – fehér** |
+| 8 | `textstyle8` | Scrolling Credits | **Gördülő stáblista** |
+| 9 | `textstyle9` | Music Video - Left | **Zenei videoklip – bal** |
+| 10 | `textstyle10` | Music Video - Right | **Zenei videoklip – jobb** |
+| 11 | `textstyle11` | Caption - Typewriter | **Képfelirat – Írógép** |
+
+*(Forrás: `referencia/stringres-en-hu.tsv`, `CMakeMoviePanel::textstyle*` —
+12 kulcs, hézag nélkül 0-tól 11-ig.)*
+
+Betűbeállítás: család, méret, `Bold`, `Italic`, és **„Automatic Outline
+(like movie subtitles)"**.
 
 ### 2.3/b A SZÖVEGES DIA fülének MŰKÖDÉSE — a 11 stílus mellé a többi vezérlő (2026-09-02)
 
