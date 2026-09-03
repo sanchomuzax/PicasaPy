@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.261] – 2026-09-04
+
+### Javítva
+- Az Effektek fül Élesítés, Filmszemcse és Árnyalás csempéje az eredeti
+  Picasa szerinti szűrőt indítja (eddig a régi, „(régi)" jelzésű változatot).
+  A Filmszemcséről eltűnik a kék jelvény, és — az eredetihez hűen —
+  csúszkás panelt nyit (#2141).
+
 ## [0.8.260] – 2026-09-03
 
 ### Javítva
