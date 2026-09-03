@@ -2282,7 +2282,7 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 
 | kérdés | állapot | a következő lépés |
 |---|---|---|
-| a kulcs képzésének képlete | **NYITOTT** (örökölt) | ld. 8.9 — a 2026-09-03-i kör kimerítette az adatoldali lehetőségeket; innentől csak a kulcstömböt feltöltő kód marad |
+| a kulcs képzésének képlete | ✅ **MEGVAN** (2026-09-03, ld. 8.10) | — |
 | mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
@@ -2389,4 +2389,149 @@ tévesen teljes útvonalnak látszott. A 28-as sor az ezzel javított,
 ⇒ A kulcs **nem** az útvonal önmagában, **nem** az időbélyeg vagy a méret
 önmagában, és **nem** áll elő egyik ismert PMP-oszlopból sem. Marad a
 bináris: a `[this+0x0c]` tárolót feltöltő kód.
+
+### 8.10 ⭐ AZ ELLENŐRZŐÖSSZEG KÉPLETE — MEGVAN
+
+Az „első tömb" (8.2), amit a korábbi körök „kulcsnak" neveztek, a Picasa saját
+szóhasználatában **Checksum**. A képlete megvan, és mért.
+
+#### A név a Picasa SAJÁT diagnosztikai kimenetéből
+
+Az osztály neve **`CBlockFile`**, forrása `.\thumblab\CBlockFile.cpp`
+(a sztring a `0x006b8640` és a `0x006b9030` függvényben áll). Van hozzá
+CSV-kiíró: `0x006b5e00`, „Write blockfile CSV", fejléce
+
+```
+Size,Offset,Checksum
+```
+
+soronként `%d,%d,%d`. A kiírás sorrendje (`0x006b5ed6`–`0x006b5ef1`,
+cdecl, tehát fordított push-sorrend) egyértelműen megfelelteti a
+tárolókat:
+
+| objektum-eltolás | a `0x0099c1e0` hívási sorrendjében | CSV-oszlop |
+|---|---|---|
+| `+0x54` | 1. tömb | **Checksum** |
+| `+0x5c` | 2. tömb | **Offset** |
+| `+0x64` | 3. tömb | **Size** |
+
+⇒ A 8.2 „kulcs / eltolás / hossz" elnevezése helyes volt; innentől a
+Picasa saját nevét használjuk.
+
+#### A képlet
+
+```
+Checksum = ( JS_hash(teljes_út) mod 1 000 231 )
+           ^ rol(idő_lo, 13)
+           ^ rol(idő_hi, 17)
+           ^ rol(fájlméret, 18)
+```
+
+ahol a `JS_hash` ugyanaz, mint a 8.8-ban:
+
+```
+h = 0x12345678
+minden bájtra:  ha 'A' <= c <= 'Z': c += 0x20
+                h ^= ((h << 5) + c + (h >> 2))       # 32 biten
+```
+
+és `idő` a `thumbindex.db` rekordjának **MÁSODIK** FILETIME mezője (`+8`).
+
+| cím | mit ad |
+|---|---|
+| `0x006b9af8`–`0x006b9b08` | az osztás-idióma: `mod 0xF4327` = **1 000 231** |
+| `0x006b9b0a` / `0x006b9b0d` | `edx = [edi+0x10]`, `rol edx, 0x11` (17) |
+| `0x006b9b0a` / `0x006b9b10` | `eax = [edi+0x14]`, `rol eax, 0x12` (18) |
+| `0x006b9b15` / `0x006b9b18` | `eax = [edi+0x0c]`, `rol eax, 0x0d` (13) |
+| `0x006b9b13`–`0x006b9b1d` | a három `xor`, majd `xor ecx, edx` |
+| `0x006b9b20`–`0x006b9b23` | `eax = ecx`, `ret 4` |
+
+#### Az ellenőrzés
+
+Pontos, 32 bites egyezés, három független katalóguson:
+
+| katalógus | vizsgált bejegyzés | **pontos egyezés** |
+|---|---:|---:|
+| nagy (a tulajdonos élő katalógusa) | 133 089 | **48 605** |
+| kis „arcok" | 3 188 | **2 161** |
+| kis „másolat" | 2 603 | **1 932** |
+
+Negyvennyolcezer véletlen 32 bites egyezés kizárt (várható érték
+gyakorlatilag nulla), ezért a képlet **megerősített**.
+
+#### Melyik időbélyeg — és a 8.1 mezőneve pontosításra szorul
+
+A `+0`-s FILETIME-mal számolt egyezések **valódi részhalmazai** a `+8`-cal
+számoltaknak (1 337 ⊂ 2 161): a `+0` csak ott „talál", ahol a két bélyeg
+amúgy is azonos. ⇒ **A használt mező a `+8`.**
+
+A 8.1 ezt „hozzáférés"-ként nevezi meg (a `WriteDirscannerCSV`
+`Access Time` fejléce nyomán). Viselkedése alapján ez az **írás/módosítás**
+ideje: a Picasa erre alapozza az elavulás-vizsgálatot, amit a hozzáférési
+időre értelmetlen volna. *A CSV-fejléc szava megmarad, de a szerepét itt
+mondjuk ki.*
+
+#### Miért nem egyezik MINDEN bejegyzés — és miért nem hiba ez
+
+Az egyezési arány katalóguskorral csökken:
+
+| katalógus | jelleg | egyezés |
+|---|---|---:|
+| kis „másolat" | frissen épült | **74,2 %** |
+| kis „arcok" | frissen épült | **67,8 %** |
+| nagy | évek óta élő | **36,5 %** |
+
+⇒ **Az eltérés maga a jelzés**, amiért a mező létezik: a gyorsítótárban álló
+bélyegkép elavult a forrásfájlhoz képest. A `dirty`/`valid` bájt ezt **nem**
+jelöli (mind a 121 593 vizsgált JPEG-bejegyzés `dirty=0, valid=1`), tehát az
+elavulás felismerése kizárólag az ellenőrzőösszegen múlik.
+
+⚠️ **Amit ez NEM bizonyít:** hogy minden egyes nem egyező bejegyzés
+elavult. A katalóguskorral való együttmozgás alátámasztja, de nem
+bizonyítja. A döntő kísérlet — egy fájl módosítása a windowsos Picasa
+mellett, majd az összeg újramérése — **tulajdonosi közreműködést igényel**;
+a leletet nem tartja fel.
+
+*Bizonyítottsági fok: a **képlet megerősített** (a binárisból kiolvasva ÉS
+48 605 pontos egyezéssel három katalóguson); az **eltérések oka erős**, de
+egyedi szinten nincs bizonyítva.*
+
+### 8.11 A `CBlockFile` NEM bélyegkép-specifikus — négy másik fájl ugyanez
+
+Az író metódus (`0x006b75f0`) **19 hívási helyről** hívódik. Köztük:
+
+| hívó | mire használja |
+|---|---|
+| `0x0080f830` | **`makemoviecache.db`** — a filmkészítő gyorstára (`makemoviecache\`) |
+| `0x007ead60` | a **hasonlóság-kereső adatbázisa** (`CSimSearch::updating`, „Updating similarity database (will be fast next time)") |
+| `0x00439a80` | album-tokenek (`]album`, `]screensaver`, `]web_`) |
+| `0x004290e0` | `runtime\missing.jpg` |
+| `0x00425f60` | geo-nézet (`geoview`, „Use EXIF thumbnails") |
+
+⇒ **A 8.2-ben leírt keret ezekre a fájlokra is érvényes.** Aki megírja a
+`*_index.db` olvasóját, ingyen kapja a filmkészítő-gyorstár és a
+hasonlóság-adatbázis olvasását is. *(Ezekre a repóban nincs mintafájl —
+a formátum-azonosság a közös íróból következik, nem mintából.)*
+
+### 8.12 A `Size` mező 24 BITES — és ebből 16 MB-os blob-korlát következik
+
+A `Size` szót a kód **`& 0xFFFFFF`**-fel maszkolja (CSV-kiíró:
+`0x006b5eea`; továbbá `0x006b6bc3` és `0x006b952f`). Az író metódus
+**elutasítja** a nagyobb blobot:
+
+```
+0x006b75f7   cmp dword ptr [eax], 0xffffff
+0x006b7603   ja  0x006b7e3f          ; hibakijárat
+```
+
+⇒ Egy blob legfeljebb **16 777 215 bájt**.
+
+**Mérés a felső 8 bitre:** mind a 17 mintaindexben, három katalóguson,
+**302 000-nél több** foglalt bejegyzésen a `Size` szó felső nyolc bitje
+**nulla**. Élő minta tehát arra, hogy ezek a bitek mit jelentenek, **NINCS
+MEG** — de az olvasónak maszkolnia kell, mert a Picasa is maszkol.
+
+⚠️ **A 8.2 ellenőrzése ezzel pontosítva:** a „legutolsó `eltolás + hossz`
+= az adatfájl mérete" azonosság a **maszkolt** hosszal is teljesül mind a
+17 fájlon (a felső bitek nullák lévén a két számítás itt egybeesik).
 
