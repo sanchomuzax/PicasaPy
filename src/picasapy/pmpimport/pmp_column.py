@@ -21,10 +21,21 @@ _CONST_1332 = 0x1332
 _CONST_2 = 0x00000002
 _HEADER = struct.Struct("<IHHIHHI")
 
+# A típuskódok a `Picasa3.exe` RTTI-jéből, NEM adatból következtetve (#2105):
+# a PMP-oszlopok `CColumn<…>` sablonpéldányok, és a sablon harmadik
+# paramétere `0x13320000 + típuskód` — a C++ típusnév pedig a sablonban áll.
+#
+#   0x00 ytString · 0x01 unsigned long · 0x02 double · 0x03 SIGNED char
+#   0x04 unsigned __int64 · 0x05 unsigned short · 0x06 char const* · 0x07 INT
+#
+# ⚠️ A `0x03` és a `0x07` ELŐJELES (#2106). Korábban mindkettőt előjel nélkül
+# olvastuk; a tulajdonos `imagedata_edit_width.pmp`-jében (0x07) szereplő
+# `0xFFFFFFAA` emiatt 4 294 967 210-ként jött vissza −86 helyett.
 TYPE_STRING = frozenset({0x0, 0x6})
-TYPE_UINT32 = frozenset({0x1, 0x7})
+TYPE_UINT32 = frozenset({0x1})
+TYPE_INT32 = frozenset({0x7})
 TYPE_DOUBLE = frozenset({0x2})
-TYPE_UINT8 = frozenset({0x3})
+TYPE_INT8 = frozenset({0x3})
 TYPE_UINT64 = frozenset({0x4})
 TYPE_UINT16 = frozenset({0x5})
 
@@ -91,10 +102,12 @@ def _read_records(
 _FIXED_WIDTH: dict[int, tuple[str, int]] = {}
 for _t in TYPE_UINT32:
     _FIXED_WIDTH[_t] = ("I", 4)
+for _t in TYPE_INT32:
+    _FIXED_WIDTH[_t] = ("i", 4)
 for _t in TYPE_DOUBLE:
     _FIXED_WIDTH[_t] = ("d", 8)
-for _t in TYPE_UINT8:
-    _FIXED_WIDTH[_t] = ("B", 1)
+for _t in TYPE_INT8:
+    _FIXED_WIDTH[_t] = ("b", 1)
 for _t in TYPE_UINT64:
     _FIXED_WIDTH[_t] = ("Q", 8)
 for _t in TYPE_UINT16:

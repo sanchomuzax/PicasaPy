@@ -64,6 +64,42 @@ feladata — ez a modul csak a felderítést és a javaslat-számítást végzi.
   **minden oszlopa külön `.pmp` fájl**.
 - Fájlszerkezet: fejléc (oszlop adattípusa: string / float / int + rekordszám),
   utána a nyers rekordok egymás után, **szeparátor nélkül**.
+
+### A típuskódok TELJES táblája — a binárisból, nem adatból (#2105)
+
+A `Picasa3.exe` RTTI-jében a PMP-oszlopok `CColumn<…>` sablonpéldányok, és a
+sablon **harmadik paramétere `0x13320000 + típuskód`** — a `0x1332` ugyanaz a
+konstans, ami a fejlécben is ott van. A C++ típusnév magában a sablonban áll,
+tehát a tábla **olvasott**, nem következtetett:
+
+| kód | `CColumn` sablonpéldány | típus | méret |
+|---|---|---|---|
+| `0x00` | `CColumn<ytString,0,322043904>` | sztring | változó |
+| `0x01` | `CColumn<unsigned_long,1,322043905>` | előjel nélküli 32 | 4 |
+| `0x02` | `CColumn<double,1,322043906>` | **`double`** | 8 |
+| `0x03` | `CColumn<signed_char,1,322043907>` | **ELŐJELES** bájt | 1 |
+| `0x04` | `CColumn<unsigned___int64,1,322043908>` | előjel nélküli 64 | 8 |
+| `0x05` | `CColumn<unsigned_short,1,322043909>` | előjel nélküli 16 | 2 |
+| `0x06` | `CColumn<char_const*,1,322043910>` | C-sztring | változó |
+| `0x07` | `CColumn<int,1,322043911>` | **ELŐJELES** 32 | 4 |
+
+*(A `ytString` példány második paramétere `0`, a többié `1` — alighanem a
+„fix méretű-e" jelző.)*
+
+A korábbi, adatból levezetett négy kódunk (`0x00`, `0x01`, `0x03`, `0x04`)
+**mind egyezik** ezzel, tehát a levezetés helyes volt. Két dolgot viszont
+csak a bináris mond meg:
+
+1. **A `0x02` `double`** — nem csak „8 bájt, dátum-gyanús". Dátumnál épp ez
+   passzol: az OLE variant time is `double`.
+2. **A `0x03` és a `0x07` ELŐJELES.** A PicasaPy beolvasója mindkettőt
+   előjel nélkül olvasta; a tulajdonos `imagedata_edit_width.pmp`-jében
+   (`0x07`, 2914 rekord) a `0xFFFFFFAA` emiatt **4 294 967 210**-ként jött
+   vissza **−86** helyett (#2106).
+
+Mind a nyolc kód előfordul a tulajdonos valódi adatbázisában (302 `.pmp`:
+`0x00`×38, `0x01`×32, `0x02`×8, `0x03`×16, `0x04`×14, `0x05`×4, `0x06`×2,
+`0x07`×4).
 - `thumbindex.db`: az **útvonal-index** — a PMP-sorok és a fizikai
   fájlrendszer (képek/mappák abszolút útvonalai) összerendelése.
   Magic `0x40466666`, a bejegyzésszám a `+4`-en.
@@ -1011,9 +1047,10 @@ Hatoszlopos, soronként egy gyorsítótárazott válasz:
 | `cacheindex_lastfetch` | **`0x02`** | az utolsó letöltés ideje (8 bájt — **új típuskód**, dátum-jellegű) |
 | `cacheindex_serial` | `0x01` u32 | sorszám |
 
-⭐ **A `0x02` típuskód eddig nem szerepelt a leltárunkban** (8 bájt/sor,
-dátum-gyanús — valószínűleg ugyanaz az OLE variant time, mint az
-`albumdata.date`; **nem igazolt**).
+⭐ **A `0x02` típuskód** a binárisból `double` (`CColumn<double,1,322043906>`,
+#2105) — a „dátum-gyanú" ezzel megerősítést kapott a TÁROLÁS oldaláról: az
+`albumdata.date` OLE variant time-ja is `double`. Hogy ez a mező TÉNYLEG dátum,
+az továbbra is a mezőnév és az értéktartomány alapján valószínű, nem igazolt.
 
 ### Mit hívogat a Picasa — a TELJES hálózati felület
 
