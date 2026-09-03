@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.258] – 2026-09-03
+
+### Javítva
+- A súgó kék hivatkozásaira kattintva végre megnyílik a fejezet: a nyitólap
+  tartalomjegyzéke eddig működésképtelen volt (#2212).
+
 ## [0.8.257] – 2026-09-03
 
 ### Javítva
