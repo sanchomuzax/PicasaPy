@@ -2544,3 +2544,99 @@ arányos az értékkel.
 *Bizonyítottsági fok: **megerősített** a két táblára, a pontszámokra és a
 kapura (kiolvasott konstansok és utasítások); az attribútum-hozzárendelés és
 a két görbe összekapcsolása **nincs mérve**.*
+
+## ⭐ A `rainbow` ALT-os ága: a `0x00d67849` kapcsoló MEGVAN (#2224, 2026-09-04)
+
+A #2148 nyitott kérdése: *mikor nem nulla a `0x00d67849` bájt, ki írja?*
+A kérdést az tette nyitottá, hogy a **lineáris pásztázás hiányos** —
+a #2224 maga is kimondta, hogy még azt a hivatkozást sem találta meg,
+amiből a kérdés indult.
+
+### A módszer: nyers cím-keresés, nem lineáris diszasszemblálás
+
+A `0x00d67849` **négy bájtos, little-endian** alakjára kerestem rá a
+végrehajtható szekciók teljes tartalmában, majd minden találatot a
+**előtte álló opkód** szerint osztályoztam.
+
+| | darab |
+|---|---:|
+| nyers előfordulás | **139** |
+| ebből **olvasás** (`cmp` / `mov` / `movzx` / `test`) | **137** |
+| ebből **ÍRÁS** | **2** |
+
+*(A #2224 négy hivatkozást és nulla írást talált.)*
+
+### A két írás
+
+| cím | utasítás | tartalmazó függvény | a függvény sztringjei |
+|---|---|---|---|
+| `0x00576419` | `mov byte ptr [0x00d67849], 1` | `0x005760e0` (940 b) | `Preferences`, `mainwinismax`, `mainwinpos` |
+| `0x00a52e65` | `mov byte ptr [0x00d67849], al` | `0x00a52890` | `#32768` (a Windows menü-ablakosztálya) |
+
+A második `al`-t tárol, amit közvetlenül előtte a `mov eax, [ecx+8]` /
+`test eax, eax` állít elő ⇒ **nullázni is tud**.
+
+### A kezdőérték: 0 — mérve
+
+A `0x00d67849` a tartalmazó szekció **inicializálatlan farkába** esik:
+
+| | érték |
+|---|---|
+| szekció virtuális kezdete | `0x00d24000` |
+| virtuális méret | 513 684 |
+| **nyers (fájlbeli) méret** | **155 648** |
+| a cím eltolása a szekcióban | **`0x43849` = 276 041** |
+
+276 041 **> 155 648** ⇒ a bájt a fájlban nem szerepel, betöltéskor a
+rendszer **nullázza**. ⇒ **Indításkor a kapcsoló 0**, azaz a `rainbow`
+ág **alapból nem él**.
+
+### Az írást KAPU védi
+
+```
+0x005763d9   xor ebx, ebx
+0x005763db   cmp byte ptr [esp + 0xbc], bl      ; a helyi bájt 0-e?
+0x005763e2   je  0x00576426                     ; ⇐ ha 0, ÁTUGORJA az írást
+…
+0x005763e8   call 0x004019b0                    ; a beállítás-OLVASÓ
+0x005763ed   neg eax / sbb eax, eax / and eax, 2 / add eax, 1   ⇒ 1 vagy 3
+0x00576419   mov byte ptr [0x00d67849], 1
+```
+
+A függvényben **ez az egyetlen** olyan elágazás, amely az írást átugorja
+(a 940 bájt teljes ugrás-leltára: 73 jelölt, ebből öt lépi át az írás
+címét, és három közülük a kép határain kívülre mutat, azaz téves
+dekódolás).
+
+⇒ A kapcsoló akkor és csak akkor lesz 1, ha a főablak-függvény ezen az
+ágon fut le — és ugyanez az ág olvas be egy beállítást a `0x004019b0`-on
+(a `Preferences` olvasója) keresztül.
+
+### Nálunk MA — mérve
+
+| | eredeti | nálunk | hol |
+|---|---|---|---|
+| `rainbow` effekt | natív szűrő | **megvalósítva** | `src/picasapy/render/legacy_effects.py:66`, `render/chain.py:112` |
+| előhívás | ALT + Kiegyenesítés, **kapcsolófüggő** | **nincs** ALT-ág | a `horizonadjust`-hoz nálunk csak a #448-as figyelmeztetés tartozik |
+
+⇒ A hiány tehát **nem az effekt**, hanem a felületi előhívási mód — és a
+mérés szerint az eredetiben is **alapból inaktív**. ⚠️ Amíg nem tudjuk,
+mi állítja 1-re a kapcsolót, a felületen és a súgóban **nem szabad**
+azt ígérni, hogy a Szivárvány ALT-tal előjön.
+
+### Ami NYITVA marad — pontosan megnevezve
+
+**Mi tölti a `[esp+0xbc]` helyi bájtot?** A függvényen belül erre az
+eltolásra **egyetlen** hivatkozás van (maga a `cmp`), de ez **nem
+bizonyíték**: az `esp` a függvény során mozog, tehát ugyanaz a
+verem-rekesz más eltolással is írható. A verem-normalizálást a jelenlegi
+eszközeinkkel nem sikerült megbízhatóan elvégezni.
+
+⇒ **A következő lépés:** a `0x005760e0` (940 b) **dekompilálása**
+(a #2224 ezt kifejezetten megengedi: „rekurzív bejárás vagy Ghidra-kör,
+nem lineáris pásztázás"). Ebből derül ki, hogy a kapu felhasználói
+beállítás, parancssori kapcsoló, vagy futásidejű állapot-e.
+
+*Bizonyítottsági fok: a **két írás, a 139 hivatkozás osztályozása, a
+nullás kezdőérték és a kapu létezése megerősített** (címenként kiolvasva,
+illetve a szekció-méretekből számolva); a **kapu forrása NINCS MEG**.*

@@ -1014,6 +1014,25 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-04 — a `rainbow` ALT-os ágának kapcsolója MEGVAN
+(`filterdesc-registry.md`, #2224).** A kérdés azért volt nyitott, mert a
+lineáris pásztázás **hiányos**: négy hivatkozást és **nulla** írást talált.
+A `0x00d67849` cím **nyers, négybájtos** keresése a végrehajtható
+szekciókban **139** előfordulást ad; opkód szerint osztályozva **137
+olvasás és 2 ÍRÁS**. ⭐ Az egyik írás
+`0x00576419` `mov byte ptr [0x00d67849], 1` a főablak-függvényben
+(`0x005760e0`, sztringjei `Preferences`, `mainwinismax`, `mainwinpos`); a
+másik `0x00a52e65` `mov byte ptr [...], al` a menü-ablakosztály
+(`#32768`) függvényében — az **nullázni is tud**. ⭐ **A kezdőérték 0,
+számolva:** a cím a szekció eltolásában `0x43849` = 276 041, a szekció
+**nyers** mérete viszont 155 648 ⇒ a bájt az inicializálatlan farokba
+esik, betöltéskor nullázódik ⇒ **a `rainbow` ág alapból nem él.**
+Az írást **egyetlen** kapu védi (`0x005763db` `cmp byte ptr [esp+0xbc], bl`
+/ `0x005763e2` `je`), és ugyanaz az ág olvas be egy beállítást
+(`0x004019b0`). ⛔ **NINCS MEG:** mi tölti a `[esp+0xbc]` helyi bájtot — a
+függvényen belüli egyetlen hivatkozás **nem bizonyíték**, mert az `esp`
+mozog; a következő lépés a `0x005760e0` dekompilálása. Jegy: **#2224**.
+
 ⭐ **2026-09-03 (8. kör) — a hasonlóság-rekord KÖZEPE: 216 bájt
 (`picasa-kereses-modok.md`).** ⛔ **Helyesbítés az előző körre:** az azt
 állította, hogy a normalizáló (`0x007ebd90`) nem ír a rekord `+0x082`-től
