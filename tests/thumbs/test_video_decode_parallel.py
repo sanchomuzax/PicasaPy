@@ -27,7 +27,7 @@ def _run_probe(tmp_path: Path, threads: int, rounds: int):
     return subprocess.run(
         [sys.executable, str(probe), str(tmp_path), str(threads), str(rounds)],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         timeout=_PROBE_TIMEOUT_S,
         env=env,
     )

@@ -130,7 +130,7 @@ def _gh_zart(szamok: Iterable[str]) -> set[str]:
         eredmeny = subprocess.run(
             ["gh", "issue", "list", "--state", "closed",
              "--limit", "2000", "--json", "number"],
-            capture_output=True, text=True, check=False, timeout=120,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=120,
         )
         if eredmeny.returncode != 0:
             return set()

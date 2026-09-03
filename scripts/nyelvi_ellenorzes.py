@@ -77,7 +77,7 @@ def _hunspell(szavak: list[str]) -> list[str]:
         return []
     r = subprocess.run(
         ["hunspell", "-d", "hu_HU", "-l"],
-        input="\n".join(szavak), capture_output=True, text=True, timeout=120,
+        input="\n".join(szavak), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
     )
     return list(dict.fromkeys(r.stdout.split()))
 
@@ -114,7 +114,8 @@ def _diff(tartomany: str) -> str:
         # jött, egy sem volt valódi felirat. A tesztfák sem UI-k.
         ["git", "diff", tartomany, "--unified=0", "--",
          "*.ts", "*.qml", ":(exclude)tests/**"],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True, text=True, encoding="utf-8",
+        errors="replace", timeout=60,
     ).stdout
 
 

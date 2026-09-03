@@ -58,7 +58,7 @@ VEDETT = {
 
 def _futtat() -> int:
     return subprocess.run(
-        [sys.executable, str(OR)], cwd=GYOKER, capture_output=True, text=True
+        [sys.executable, str(OR)], cwd=GYOKER, capture_output=True, text=True, encoding="utf-8", errors="replace"
     ).returncode
 
 

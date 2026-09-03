@@ -28,7 +28,7 @@ def _futtat() -> subprocess.CompletedProcess[str]:
         [sys.executable, str(OR)],
         cwd=GYOKER,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         errors="replace",
     )
 

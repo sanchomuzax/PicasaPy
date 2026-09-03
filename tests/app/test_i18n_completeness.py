@@ -117,7 +117,7 @@ def _extract_with_lupdate(tmp_path: Path) -> ET.Element:
     result = subprocess.run(
         [lupdate, *files, "-ts", str(scratch_ts), "-silent"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         timeout=60,
     )
     assert result.returncode == 0, (

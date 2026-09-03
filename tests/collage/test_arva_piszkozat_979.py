@@ -92,7 +92,16 @@ class TestAHelykitoltoKep:
         recover_orphan_draft(mappa)
         kep_ut = mappa / f"{RECOVERED_NAME}.jpg"
         assert kep_ut.is_file(), "nem készült helykitöltő"
-        kep = cv2.imread(str(kep_ut))
+        # #2084: a helykitöltő neve ÉKEZETES („Helyreállított automatikus
+        # másolat"), a `cv2.imread` fájlútvonalas alakja pedig Windowson az
+        # ANSI kódlapon megy át — ott némán `None`-t ad (#190/#1991). A
+        # gyártó oldal ezért ír `imencode` + Python-IO párossal
+        # (`collage/autosave.py::_helykitolto`); az olvasó oldalnak
+        # ugyanígy kell. Ez volt a windows-láb utolsó ismert bukása, és
+        # ettől ment a main CI-je minden kód-merge után pirosra.
+        kep = cv2.imdecode(
+            np.frombuffer(kep_ut.read_bytes(), np.uint8), cv2.IMREAD_COLOR
+        )
         assert kep is not None
         assert (kep.shape[1], kep.shape[0]) == (640, 480), "a MÉRT méret 640×480"
         #: `0xFF3F3F3F` → BGR (0x3F, 0x3F, 0x3F) = (63, 63, 63).

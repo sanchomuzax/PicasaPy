@@ -75,7 +75,7 @@ def _kulon_folyamat(kod: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-c", kod],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         timeout=180,
         env=kornyezet,
     )

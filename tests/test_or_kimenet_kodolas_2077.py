@@ -48,7 +48,7 @@ def test_az_or_CP1252_kimeneten_sem_bukik_el(nev):
         [sys.executable, str(GYOKER / "scripts" / nev)],
         cwd=GYOKER,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         errors="replace",
         env=kornyezet,
     )
