@@ -2406,9 +2406,42 @@ eredmény a kép saját színeihez igazodik, nem egy fix rácshoz.
 > ismert", zárójelben megemlítve, hogy „esetleg palettaválasztó". **A
 > zárójeles sejtés igaz volt.** Jegy: **#2231**.
 
-**Ami NINCS mérve:** mit jelent a `Depth` (alapérték 2), mikor lép életbe a
-3-3-2-es tartalék paletta, és milyen szabály szerint választ a redukáló
-leveleket.
+#### A `Depth` az oktree MÉLYSÉG-KERETE (2026-09-04, #2238)
+
+A `Depth` (3. argumentum) a gyűjtő objektum **`+0x10`** mezőjébe kerül
+(`0x00bb5bdc`, a `[esp+0x50]`-en álló objektum `+0x10`-e). Onnan:
+
+```
+; a leszálló lépés (0x00bcb950)
+0x00bcb954  mov eax, [ebx + 0xc]      ; a csomópont SZINTJE
+0x00bcb962  mov ecx, 7
+0x00bcb967  sub ecx, eax              ; a vizsgált BIT: 7 − szint
+...                                   ; gyerekindex = R-bit<<2 | G-bit<<1 | B-bit
+0x00bcb99d  mov edx, [ebx + 0x10]
+0x00bcb9a6  sub edx, 1                ; a gyerek kerete EGGYEL kevesebb
+0x00bcb9bc  mov [eax + 0x10], edx
+
+; a beszúró kapuja (0x00bcb8e0)
+0x00bcb8e6  cmp dword ptr [esi + 0x10], 1
+0x00bcb8ea  jbe <nem megy tovább>
+```
+
+⇒ **A `Depth` azt mondja meg, hány SZINT mélyre mehet az oktree**, azaz
+hány bitet vesz figyelembe csatornánként. Minden szint eggyel csökkenti a
+keretet, és a leszállás megáll, amikor 1-re fogy.
+
+A gyerekindex a klasszikus oktree-képlet, a `7 − szint`-edik bittel:
+
+```
+index = ((R >> k) & 1) << 2 | ((G >> k) & 1) << 1 | ((B >> k) & 1)      k = 7 − szint
+```
+
+**A szétvágás LUSTA:** a csomópont csak akkor bomlik gyerekekre, ha már van
+benne egy szín és érkezik a második (`0x00bcb8ec` `cmp dword ptr [esi+4], 1`).
+
+**Ami NINCS mérve:** mikor lép életbe a 3-3-2-es tartalék paletta, és milyen
+szabály szerint választ a redukáló leveleket.
+
 
 ### 2. A MASZK-osztályok — más vtable-elrendezés, és több attribútum, mint a `red.cfg`-ben
 
