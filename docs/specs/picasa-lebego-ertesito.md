@@ -667,6 +667,78 @@ kimerítő keresés a megadott tartományon). A sávok *jelentése* **NINCS
 MÉRVE** — a „(x-tényező, rekesz-sorszám)" olvasat kézenfekvő, de
 bizonyítatlan, ezért nem is állítjuk.
 
+
+### A jobb sáv három rétege: EGYIK SEM vezérlő (#2035)
+
+A `respack.yt` három réteget ad a cella jobb szélső, 21 képpontos sávjában
+(`close`, `gripper`, `collapse`). A kérdés az volt, mit CSINÁLNAK. A válasz:
+**a fogantyú puszta rajz, az összecsukás pedig meg sem jelenik.**
+
+#### A rétegek slotjai — a betöltő (`0x00656fe0`) alapján
+
+| slot | réteg | hivatkozások a `0x00654800`–`0x0065AC00` tartományban |
+|---|---|---|
+| `popup+0x114` | `notifier/close` | ctor · dtor · **rajz** (`0x006586a2`) |
+| `popup+0x13c` | `notifier/collapse` | ctor (`0x00657046`) · dtor (`0x006572d3`) — **más SEMMI** |
+| `popup+0x164` | `notifier/cellbase` | 5 |
+| `popup+0x18c` | `notifier/gripper` | ctor · név · dtor · **rajz** (`0x0065878e`) |
+| `popup+0x1b4` | `notifier/cell1` | 3 |
+| `popup+0x1dc` | `notifier/basedecrect` | 4 |
+| `popup+0x204` | `notifier/progressbase` | 4 |
+| `popup+0x22c` | `notifier/progressfill` | 4 |
+
+A rétegkezelő 0x28 = 40 bájtos; a nevek a `0x00ca268c`–`0x00ca2718`
+sztringekből, a `0x00410fa0` értékadóval kerülnek a slotokba.
+
+⇒ **Az `összecsukás` réteg betöltődik és felszabadul, de sosem rajzolódik
+ki.** Halott erőforrás — mint a `#1869` kommentelt elemei.
+
+#### Az ablak ÜZENETKEZELŐJE — a teljes lista
+
+A `CNotifierPopup` vtable 11. rekesze, a `0x00657d10` (1253 b), pontosan
+**hat** üzenetet kezel:
+
+| érték | üzenet | hol |
+|---|---|---|
+| `0x201` | **WM_LBUTTONDOWN** | `0x00657e94` |
+| `0x214` | WM_SIZING | `0x00657da9` |
+| `0x216` | WM_MOVING | `0x00657db0` |
+| `0x20` | WM_SETCURSOR | `0x006580db` |
+| `0x10` | WM_CLOSE | `0x00658129` |
+| `0x18` | WM_SHOWWINDOW | `0x0065815e` |
+
+**NINCS `WM_MOUSEMOVE` (0x200) és NINCS `WM_LBUTTONUP` (0x202).** Húzáshoz
+mindkettő kellene — az ablak tehát **nem tud vonszolást megvalósítani**.
+
+A `WM_SETCURSOR` ága egyetlen kurzort tölt: `LoadCursorA(NULL, 0x7F00)` =
+**IDC_ARROW** (`0x006580e0`–`0x006580ee`). Méretező vagy mozgató kurzor
+sehol.
+
+#### A kattintás — EGYETLEN téglalap, EGYETLEN jelző
+
+```
+0x00657e9f  movsx eax, word [msg+0xc]      ; x = LOWORD(lParam)
+0x00657ea7  movsx eax, word [msg+0xe]      ; y = HIWORD(lParam)
+0x00657eaf  add eax, -2
+0x00657eb4  div dword [popup+0x1c0]        ; cellaIndex = (y − 2) / cellaMagasság
+0x00657ed8  cmp …                          ; x ∈ [popup+0x12c , +0x11c + +0x12c)
+0x00657eea  cmp …                          ; y ∈ [popup+0x130 , +0x120 + +0x130)
+0x00657f13  mov byte [cella+0x14], 1       ; ★ az EGYETLEN következmény
+```
+
+Nincs külön találati vizsgálat a `close`, a `gripper` vagy a `collapse`
+téglalapjára — **egy** doboz, **egy** jelző, a cellasor pedig osztásból jön.
+
+**Bizalmi fok: megerősített.** A hivatkozás-számok kimerítő pásztázásból
+valók a megnevezett tartományon (a `CNotifierPopup` és a `CBaseNotifier`
+minden vtable-metódusa beleesik); az üzenetlista a kezelő teljes
+végigolvasásából.
+
+> **Következmény a megvalósításra:** a **fogantyút KI KELL rajzolni**
+> (7 × 7, a cellán belül 233, 19), mert az eredetiben látszik — de
+> **nem szabad megfogható vezérlőnek megépíteni**. Az **összecsukást
+> egyáltalán nem rajzoljuk ki**. Jegy: **#2133**.
+
 ## Elszámolás — az öt eredeti kérdés állapota (2026-09-02, #1130 zárása)
 
 A #1130 törzse még az első kör öt nyitott kérdését sorolta; a lap azóta
