@@ -705,6 +705,36 @@ kilenc pár közvetlen kiolvasásból; a feliratok a `filterdesc.xml`-ből.
 > `EditorEffectsTab*.qml` és a `ToolTile.qml` fájlokban. A funkció tehát
 > hiányzik; jegy: **#2146**.
 
+##### ⛔ HELYESBÍTÉS: a Shift-váltás ÉLŐ, nem a fül felépülésekor (#2164, 2026-09-03)
+
+A fenti szakasz azt írta, hogy a Shift állapota **„a fül felépülésekor
+egyszer"** dől el. **Ez pontatlan volt.** A panel üzenetkezelője
+(`0x005e6710`) a VK-vizsgálat ELŐTT külön ágat futtat:
+
+```
+0x005e6745  cmp dword ptr [ebx+4], 0x102     ; WM_CHAR -> kihagy
+0x005e674e  cmp byte ptr [ebx+8], 0x10       ; VK_SHIFT?
+0x005e6754  push 0x10 ; call [0xc406f8]      ; GetAsyncKeyState(VK_SHIFT)
+0x005e675c  shr eax, 0xf ; and al, 1
+0x005e6761  cmp byte ptr [edi+0x33a8], al    ; a TÁROLT Shift-jelző
+0x005e6767  je  0x5e6776                     ; nem változott -> nincs teendő
+0x005e6769  mov eax, dword ptr [edi+0x3378]
+0x005e6771  call 0x5d7c20                    ; a CSEMPEÉPÍTŐ újrafuttatása
+```
+
+⇒ A `VK_SHIFT` **minden le- és felengedésére** (`WM_KEYDOWN` és
+`WM_KEYUP`; a `WM_CHAR` kizárva) a program **újraépíti a csempéket**, ha a
+`[panel+0x33a8]` jelző értéke megváltozott. A felhasználó tehát a kilenc
+csempét **nyomva tartás közben látja átváltani**, elengedéskor pedig
+visszaváltani — nem kell hozzá fület váltani.
+
+**Bizalmi fok: megerősített** (közvetlen kiolvasás; a `0x005d7c20` és a
+`[panel+0x33a8]` ugyanaz, mint a fenti szakaszban).
+
+**Megvalósítási következmény (#2146):** a Shift-ág nem elég a fül
+felépülésekor egyszer kiértékelni — a billentyű **le- és felengedésére**
+is újra kell építeni a csempéket. A jegy „Kész, ha" listája ezzel bővül.
+
 #### A HÁROM effekt-fül TELJES összevetése a csempe-táblával (#2141)
 
 A #2141 „Kész, ha" listájának pontja — *a fül **összes** csempéje összevetve

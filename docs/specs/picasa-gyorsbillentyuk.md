@@ -769,7 +769,8 @@ A `[esi+0x10]` bájt három bitje a módosítókat hordozza; a kezelő a
 | `+2`, `+5` | a **8**-as bit | `[esp+0x12]` az ágakban |
 | `+8` | a billentyűkód | – |
 
-**Azonosítás (bizalmi fok: erős, két független egyezésből):** a `3` ág a
+**Azonosítás** *(a `Ctrl`-re **megerősített**, ld. 10.9; a `Shift`/`Alt`-ra
+**erős**, két független egyezésből)**:** a `3` ág a
 `thumbui/fullview`-t kattintja, és a lap 3.3 táblája szerint a
 szerkesztési nézet billentyűje `Ctrl+3` ⇒ a **kötelező 4-es bit = `Ctrl`**;
 az `R` ág a 2-es bitre ágazik, és a forgatás `Ctrl+R` / `Ctrl+Shift+R` ⇒ a
@@ -881,3 +882,93 @@ lap 3.3 táblájával).
 **Nincs mérve:** a nem-kattintó ágak által hívott függvények *jelentése* —
 csak a címük és az argumentumaik szerepelnek; továbbá az F12-jelző
 felhasználási helye.
+
+### 10.9 ⛔ HELYESBÍTÉS: a `0x005e60d0` a Ctrl-ÁG, nem a teljes kezelő (#2164, 2026-09-03)
+
+A 10.1 a `0x005e60d0`-t „a könyvtárnézet billentyűkezelőjének" nevezte.
+**Pontosabban:** ez a **Ctrl-ág**. A tényleges kezelő a **`0x005e6710`**
+(780 b), és **egyetlen** helyről hívja a `0x005e60d0`-t:
+
+```
+0x005e680f  mov al, byte ptr [ebx+0x10]
+0x005e6812  test al, 4
+0x005e6814  jg  0x5e69cc            ; a 4-es bit BE -> a Ctrl-tábla
+   …
+0x005e69cc  push edi ; mov eax, ebx
+0x005e69cf  call 0x5e60d0
+```
+
+⇒ **A `Ctrl` azonosítása ezzel MÉRT, nem következtetett.** A 10.2 „erős"
+minősítése **megerősítettre** javítva: az az ág megy a Ctrl-táblába,
+amelyik a **4-es bitet** megköveteli, a nélküle futó ág pedig a
+módosító nélküli billentyűket kezeli (lásd lent).
+
+### 10.10 A MÓDOSÍTÓ NÉLKÜLI billentyűk — a `0x005e6710`-ben
+
+A `0x005e6814` `jg`-je alatt, `WM_KEYDOWN`-ra (`cmp [ebx+4], 0x100`,
+`0x005e681d`) a VK-t közvetlen `cmp ax, imm16` láncban vizsgálja
+(`movzx eax, word ptr [ebx+8]`, `0x005e6836`):
+
+| billentyű | cím | mit csinál |
+|---|---|---|
+| **F1** | `0x005e683a` | `0x0057c430(1)` őr → `0x005d0cd0`; egyébként `0x0057c430(2)` őr → **kattint: `editpanel/edithelpbutton`** (`0x00c948c4`) |
+| **F2** | `0x005e68fd` | öt őr után (`0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650`, `0x0057c430(4)`) az átnevezés útja: `[edi+0xeac]` → `0x007166c0`, `0x0057d430`, `0x00532ec0` |
+| **F3** | `0x005e69a4` | **kattint: `searchcontainer/searchbutton`** (`0x00c8f448`) — ugyanaz az elem, mint a `Ctrl+F` |
+| **F4** | `0x005e696c` | `0x009cd110(`**`thumbui/startoggle`**`)` feloldás; ha `[eax+0x20e] == 0`, **kattint** rá (vtable `+0x78`) |
+| **F5** | `0x005e6869` | `[edi+0x2c0]` → `0x004a46e0`, `0x00579480(0,1)`, `[ecx+0x166] = 1`, `0x0065b840` |
+| **F11** | `0x005e68a0` | vtable `+0x24` kétszer, `[eax+0x3e]` billentése, majd `0x00983fc0` |
+| **F12** | `0x005e69c2` | `call 0x005e60d0` — de az F12 a Ctrl-tábla tartományán **kívül** esik (10.6), tehát ott nem történik semmi |
+
+**Bizalmi fok: megerősített** (közvetlen kiolvasás). A hívott függvények
+*jelentése* nincs mérve — csak a címük, az őreik és az elemnevek.
+
+### 10.11 ⛔ NEGATÍV EREDMÉNY: nincs MÁSIK ilyen kezelő (#2164)
+
+A #2164 azt kérdezte, hol van a **szerkesztő**, a **diavetítés** és a
+**videólejátszó** billentyűkezelője. Három, egymástól független mérés:
+
+1. **A módosító-gépezet egyetlen helyen fut.** A billentyű-kombinációt
+   építő `0x005c5f90` és az összevető `0x005c5fc0` **hívóinak száma:
+   1 – 1**, mindkettő a `0x005e60d0`-ban (`0x005e61c2`, `0x005e61d1`).
+   ⇒ **Átképezhető billentyű-kötés csak a Ctrl-táblában van.**
+2. **Ugrótáblás VK-switch csak egy van.** A teljes `.text`-et
+   végigpásztáztam a `jmp dword ptr [ecx*4 + imm32]` alakra: **174**
+   ugrótáblás `switch` van, ebből **indextáblás** 14, és **egyetlen**
+   olyan, amelyik `word ptr [reg+8]`-ból (a VK-ból) indexel: a
+   `0x005e61f1` — a Ctrl-tábla.
+3. **A videó írásjel-billentyűi sehol.** A `cmp ax, 0xBC` / `0xBE` /
+   `0xBF` (`,` `.` `/`) alak — pontosan az, amivel a `0x005e6710` a
+   többi VK-t hasonlítja — a `.text`-ben **nulla** előfordulás.
+   *(Csak ezt az alakot pásztáztam; 8 vagy 32 bites immediate alakot nem.)*
+
+⇒ **A szerkesztő és a könyvtárnézet EGYAZON kezelőt használja** (a
+`0x005e6710` mindkettő állapotát piszkálja: `[edi+0x332f]`, `[edi+0x33a8]`,
+`[edi+0x3378]`). A diavetítés és a videólejátszó billentyűi **nem
+ugrótáblás kezelőben** vannak — ha vannak, `if`-láncban, más
+összehasonlítási alakkal. A 7.3 pont ezzel **szűkül**, de nem zárul le.
+
+### 10.12 ⭐ MELLÉKLELET: a Shift-váltás ÉLŐ, nem a fül felépülésekor (#2141, #2146)
+
+A `0x005e6710` elején egy külön ág fut, **még a VK-vizsgálat előtt**:
+
+```
+0x005e6745  cmp dword ptr [ebx+4], 0x102     ; WM_CHAR -> kihagy
+0x005e674e  cmp byte ptr [ebx+8], 0x10       ; VK_SHIFT?
+0x005e6754  push 0x10 ; call [0xc406f8]      ; GetAsyncKeyState(VK_SHIFT)
+0x005e675c  shr eax, 0xf ; and al, 1
+0x005e6761  cmp byte ptr [edi+0x33a8], al    ; a panel TÁROLT Shift-jelzője
+0x005e6767  je  0x5e6776                     ; ha nem változott -> nincs teendő
+0x005e6769  mov eax, dword ptr [edi+0x3378]
+0x005e6771  call 0x5d7c20                    ; a CSEMPEÉPÍTŐ újrafuttatása
+```
+
+A `0x005d7c20` a csempeépítő, a `[edi+0x33a8]` pedig ugyanaz a Shift-jelző,
+amit a `filterdesc-registry.md` „A csempe MÁSODIK szűrője: a SHIFT
+kapcsolja be (#2141)" szakasza ír le.
+
+⇒ **HELYESBÍTÉS a #2141 köréhez:** az a kör azt írta, hogy a Shift-állapot
+„a fül felépülésekor egyszer" dől el. **Valójában élő:** a
+`VK_SHIFT` minden le- és felengedésére (`WM_KEYDOWN`/`WM_KEYUP`, a
+`WM_CHAR` kizárva) a program **újraépíti a csempéket**, ha az állapot
+megváltozott. A felhasználó tehát **nyomva tartás közben látja átváltani**
+a kilenc csempét, és elengedéskor visszaváltani.
