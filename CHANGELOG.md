@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.246] – 2026-09-03
+
+### Hozzáadva
+- A bal hasáb mappasorain mostantól **a mappa fotóiból összeállított kis
+  képkupac** állhat a sárga mappaikon helyett — úgy, ahogy az eredeti
+  Picasa mutatja. Bekapcsolni a **Nézet ▸ Mappanézet ▸ „Indexképek
+  megjelenítése a könyvtárban"** tétellel lehet; alapból ki van
+  kapcsolva, ahogy az eredetiben is. Kép nélküli mappán marad a
+  mappaikon.
+
 ## [0.8.245] – 2026-09-03
 
 ### Hozzáadva
