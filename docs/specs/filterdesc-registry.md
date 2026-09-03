@@ -2300,9 +2300,24 @@ A munkavégző (`0x00bb9d20`, 224 b) sorrendben:
 | `+0x4c` | 4. görbe | ugyanaz |
 
 A `red.cfg` négy görbe-attribútumot ismer (`MasterCurve`, `RedCurve`,
-`GreenCurve`, `BlueCurve`) — **a négy tagoffszet ezekkel áll párban**, a
-sorrendjük viszont **nincs mérve** (a beolvasó a tömb-attribútumokat nem a
-szokásos mintával veszi át).
+`GreenCurve`, `BlueCurve`) — és a **sorrendjük is kiolvasva** (2026-09-04,
+#2238): a beolvasó (`0x00bb9b60`) mind a négyet **saját néven** keresi, és
+tárolja:
+
+| attribútum | tag | a tároló utasítás |
+|---|---|---|
+| `MasterCurve` | **`+0x40`** | `0x00bb9bb4` |
+| `RedCurve` | **`+0x44`** | `0x00bb9be4` |
+| `GreenCurve` | **`+0x48`** | `0x00bb9c14` |
+| `BlueCurve` | **`+0x4c`** | `0x00bb9c44` |
+| `ExposureAdjustmentStops` | `+0x50` | `0x00bb9b8b` |
+
+*(A korábbi „a sorrend nincs mérve" megjegyzés ezzel megszűnt.)*
+
+> ⛔ **Ez a bekezdés korábban azt írta, hogy „a sorrendjük nincs mérve, mert
+> a beolvasó a tömb-attribútumokat nem a szokásos mintával veszi át".** A
+> második fele igaz — más a minta —, de a névsorrend attól még kiolvasható,
+> és ki is van olvasva (a fenti tábla).
 
 ⭐ Az **`ExposureAdjustmentStops`** ELŐBB fut, mint a görbék, és **nem
 szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
@@ -2522,6 +2537,34 @@ Ez a **derítőfény (fill light)** jellegű görbe alakja.
 > **Ami NINCS mérve:** melyik attribútum az `s` (a négy beolvasott érték
 > közül), és mire megy a másik három; továbbá hogy a két görbe hogyan
 > kapcsolódik össze (sorban? keverve?).
+
+### 2/b. ⛔ HELYESBÍTÉS: az `Exposure` NEGYEDIK attribútuma a `fill` — és épp az hajtja az 5 pontos görbét (2026-09-04, #2238)
+
+Az előző bekezdés azt írta, hogy a munkavégző **négy** tagot olvas, de a
+beolvasó csak **hármat** nevez meg. **A negyedik neve megvan:** `fill`
+(`0x00c87128`, a `+0x50` tagba, `0x00bb…`/`0x00bc1b04`). A kiolvasó szkript
+azért hagyta ki, mert ez a sztring — a `h`/`s`/`v`-hez hasonlóan — **nincs
+benne a bináris-index sztringtáblájában**; közvetlenül a fájlból olvastam ki
+a `mov edi, <cím>` operandusa alapján.
+
+**Az `ExposureImageOperation` NÉGY attribútuma:**
+
+| attribútum | tag | melyik ágat hajtja |
+|---|---|---|
+| `exposure` | `+0x40` | a **8 pontos FIX tábla** ága (`0x00bc1c86`) |
+| `contrast` | `+0x48` | `0x00bc2036` |
+| **`fill`** | `+0x50` | ⭐ **az 5 pontos, paraméteres görbe** (`0x00bc1dbc`) |
+| `blacks` | `+0x58` | `0x00bc1e80` · `0x00bc1eda` · `0x00bc1f1b` |
+
+*(A hozzárendelés a hívási sorrendből: a munkavégző `(exposure, contrast,
+fill, blacks)` sorrendben adja át a négy lebegőpontos értéket
+`0x00bc1c42`–`0x00bc1c64`, a görbeépítő pedig ezeket a veremrekeszeket
+olvassa vissza.)*
+
+⇒ **A 2. pont paraméteres görbéje a DERÍTŐFÉNY (fill light) görbéje** — nem
+találgatás a görbe alakjából, hanem az attribútum neve. A két olvasat
+egybeesik: a görbe a mélyárnyékot emeli a legjobban (x = 36 → +112 · s), a
+fehéret nem mozdítja.
 
 ### 3. Egy módszertani apróság: a „közel a nullához" próba BITMINTÁN megy
 
