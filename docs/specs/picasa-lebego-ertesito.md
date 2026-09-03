@@ -590,6 +590,83 @@ koszinuszos. A `0x00c7ea10` = **8,0** kiolvasva.
 oldal a két sávértéket pontosan MELYIK képi mennyiséggé fordítja (eltolás,
 átlátszóság, mindkettő) — ez a rajzoló ág olvasása, külön kör.
 
+
+### A két sáv TELJES állapotgépe — mérve (#2122)
+
+A #2034 megtalálta a két animált skalársávot; ez a szakasz a **teljes
+életciklusukat** rögzíti. A `0x006558b0` (a sáv-író) hívási helyeit
+kimerítően végigpásztáztam: **pontosan kettő van**.
+
+| esemény | cél (A sáv, B sáv) | időtartam | hol |
+|---|---|---|---|
+| **létrehozás** | a struktúrák üresek, az érték **0,0** | — | `0x006557a0`, `0x006557b8` |
+| **élő cella** (képkockánként) | (**−1,0** , a cella **sorszáma**) | **0,6 s** (`0x00c7e304`) | `0x006577ca` |
+| **elbocsátás** | (**0,0** , **0,0**) | **0,3 s** (`0x00c7dcc8`) | `0x00655c98` |
+
+⇒ Az „A" sáv a megjelenéskor **0 → −1**, az eltűnéskor **−1 → 0**; a „B" sáv
+**0 → sorszám**, majd vissza 0-ra. **Az eltűnés kétszer gyorsabb, mint a
+beállás** (0,3 s vs 0,6 s) — mindkét szám kiolvasva.
+
+**Az elbocsátás egyben** (`0x00655be4`, a `0x00655c80`-tól):
+
+```
+0x00655c80  fldz                       ; 0,0
+0x00655c83  fst  dword [esp+0x14]      ; cél[0] = 0,0   (A sáv)
+0x00655c8b  fstp dword [esp+0x18]      ; cél[1] = 0,0   (B sáv)
+0x00655c8f  fld  dword [0xc7dcc8]      ; 0,30 s
+0x00655c98  call 0x6558b0
+0x00655ca5  mov  byte [cella+0x11], 1  ; „elbocsátás alatt" jelző
+0x00655cb0  fstp qword [cella+0xb8]    ; a HATÁRIDŐ nullázva
+```
+
+A `+0x11` jelzőt a tick nézi (`0x00657774`): amíg áll, a cellára **nem** állít
+új célt — tehát az elbocsátás animációja nem kap ellenparancsot.
+
+**A cella kezdőállapota** (a konstruktor, `0x006556e0`–`0x0065580a`):
+`+0x80`/`+0x98` bájt = 0, `+0x88`/`+0xa0` = **0,0**, `+0x90`/`+0x94` és
+`+0xa8`/`+0xac` = 0 (üres kulcskocka-tömbök), `+0xb0`/`+0xb4` = 0,0 (pozíció),
+`+0xb8` = 0,0 (határidő), **`+0x0c` = −1,0** (`0x00cf3ed0` — ugyanaz a
+konstans, amit a tick az A sáv céljának ad), `+0x04` = `0x7FFFFFFF`,
+`+0x10` = 1.
+
+**A sáv-struktúra alakja** (a `0x009e6010` fűzőből és a konstruktorból):
+`+0x00` bájt jelző · `+0x08` qword **aktuális érték** · `+0x10` tömb-mutató ·
+`+0x14` darabszám. A kulcskocka **40 bájt**, és az **első mezője a görbe
+függvénymutatója** (`0x006558b3  mov dword ptr [esp], 0x72df60`).
+
+**A kulcskocka-rendszer NEM az értesítőé:** a `0x009e6010` fűzőnek **22**
+hívója van a binárisban (`0x0040b290`, `0x005a6e30`, `0x0072e1f0`,
+`0x00809cd0`, … ) — általános animált-skalár szolgáltatás.
+
+#### ⛔ NEGATÍV EREDMÉNY, mérve: az értesítő NEM olvassa a sávok értékét
+
+A `0x00654800`–`0x0065AC00` teljes tartományt (a `CNotifierPopup` és a
+`CBaseNotifier` MINDEN vtable-metódusa beleesik) végigpásztáztam a
+`cella+0x88` és `cella+0xa0` hozzáférésekre. Az összes találat:
+
+| cím | mit csinál |
+|---|---|
+| `0x006559bc`, `0x006559e7` | a **legutolsó kulcskocka** kiolvasása (`0x006559b0`) |
+| `0x006564eb`, `0x006564f7` | cella-**másolás** |
+| `0x00656b8e`, `0x00656b95` | cella-**másolás** |
+| `0x006557a0`, `0x006557b8` | a **konstruktor** nullázása |
+
+**Rajzoló olvasás nincs köztük.** Ugyanígy a `cella+0xb0`/`+0xb4` (pozíció)
+is csak írás és másolás. ⇒ A sávokat **valaki más** fordítja képi
+mennyiséggé — a `yt` keretrendszer oldalán.
+
+> **Ami tehát NINCS MEG:** melyik képi mennyiség (eltolás, átlátszóság,
+> méret) olvassa a két sávot. A következő lépés a `yt` animált-tulajdonság
+> rendszer **kiértékelője**: a `0x009e6010` szomszédságában lévő
+> „érték időpillanatban" rutin, és az, hogy a cella melyik rajzoló
+> hívásba adja át magát. Jegy: **#2122**.
+
+**Bizalmi fok:** az állapotgép, a két időtartam (0,6 s / 0,3 s), a
+kezdőértékek és a negatív pásztázás **megerősített** (közvetlen kiolvasás,
+kimerítő keresés a megadott tartományon). A sávok *jelentése* **NINCS
+MÉRVE** — a „(x-tényező, rekesz-sorszám)" olvasat kézenfekvő, de
+bizonyítatlan, ezért nem is állítjuk.
+
 ## Elszámolás — az öt eredeti kérdés állapota (2026-09-02, #1130 zárása)
 
 A #1130 törzse még az első kör öt nyitott kérdését sorolta; a lap azóta
