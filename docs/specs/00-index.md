@@ -1014,6 +1014,32 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (3. kör) — MEGVAN A BÉLYEGKÉP-GYORSÍTÓTÁR ELLENŐRZŐÖSSZEGE.**
+A hetek óta nyitott örökölt kérdés lezárva. Az osztály neve **`CBlockFile`**
+(`.\thumblab\CBlockFile.cpp`), és a Picasa **saját** CSV-kiírója
+(`0x006b5e00`, „Write blockfile CSV") nevezi meg a három tömböt:
+`Size,Offset,Checksum` — a kiírás sorrendje (`0x006b5ed6`–`0x006b5ef1`)
+a `+0x54`/`+0x5c`/`+0x64` tárolókhoz köti őket. **A képlet**
+(`0x006b9af8`–`0x006b9b1d`):
+`Checksum = (JS_hash(teljes_út) mod 1 000 231) ^ rol(idő_lo,13) ^
+rol(idő_hi,17) ^ rol(fájlméret,18)`, ahol a `JS_hash` `0x12345678`-cal
+magvetett, kisbetűsítő, és `idő` a `thumbindex.db` **MÁSODIK** FILETIME
+mezője. **Ellenőrzés: 48 605 pontos, 32 bites egyezés** a nagy katalóguson
+(továbbá 2 161 és 1 932 a két kicsin) — véletlen egyezés kizárva. A nem
+egyező bejegyzések aránya a katalógus korával nő (74,2 % → 67,8 % → 36,5 %):
+**az eltérés maga a jelzés**, amiért a mező létezik (elavult bélyegkép), és
+ezt a `dirty`/`valid` bájt NEM jelöli. ⭐ **A `CBlockFile` nem
+bélyegkép-specifikus:** az író 19 hívási helye közt ott a
+`makemoviecache.db` (`0x0080f830`) és a **hasonlóság-kereső adatbázisa**
+(`0x007ead60`, `CSimSearch::updating`) ⇒ egy olvasó mindhármat megnyitja.
+⭐ A `Size` mező **24 bites** (`& 0xFFFFFF`), és az író a 16 MB fölötti
+blobot **elutasítja** (`0x006b75f7`/`0x006b7603`); a felső 8 bit mind a 17
+mintaindexben, 302 000+ bejegyzésen **nulla**. ⚠️ Módszertani lelet: a
+„nincs több forgatás-hash az osztályban" korábbi negatívum **téves volt** —
+a függvényindexre épült, az pedig nem fedi a `0x006b9b50`…`0x006b9dd0`
+tartományt; a **bájtszintű** pásztázás hét további forgatást talált, és az
+egyik volt a válasz. Jegy: **#2195**.
+
 ⭐ **2026-09-03 (2. kör) — a `thumbindex.db` NEM útvonalat tárol, és a
 `típus` FORMÁTUMKÓD.** Két helyesbítés a `pmp-database.md` 8.1-en, amelyek
 nélkül a most nyitott olvasó-jegy (#2195) rossz útvonalakat adna:
