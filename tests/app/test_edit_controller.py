@@ -826,8 +826,10 @@ class TestEffects:
 
     def test_apply_effect_pushes_undo(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        controller.applyEffect("grain2")
-        assert controller.undoAction == "grain2"
+        # #2141: a `grain2` a Shiftes másodlagos, felületről már nem
+        # alkalmazható; az 1. fül 5. csempéje a `picnikgrain`-t hívja.
+        controller.applyEffect("picnikgrain")
+        assert controller.undoAction == "picnikgrain"
         controller.undo()
         assert self._filters(photo) == ""
 
