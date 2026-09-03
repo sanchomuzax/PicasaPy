@@ -95,6 +95,8 @@ play-pause, Enter/Esc → teljes képernyő → #1154 42–44.). Jegy-kommentek:
 
 ### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — nincs nyitott kérdés
 
+⭐ **2026-09-03 — a 9. bit (keretválasztó) RENDERELT bizonyítéka megvan, a #997 leletje ELAVULT.** Eddig a bit jelentését csak a `0x00831750` fogyasztó-oldala támasztotta alá; most a tulajdonos valódi `AI6.jpg`-jén (3841 × 5120, `contactsheet`) képpontszinten is megvan: az első csempe körül **`(238,238,238)`** sáv fut — bájtra a `frames.WHITE_BORDER_BGR` —, a szélessége **41 / 42 / 43 px** három élen, a szabály pedig szabad paraméter nélkül `b = 0,05·(907 − 2b) ⇒ **41,23 px**`. Tehát az eredeti Indexkép **kirajzolja** a keretet, nem csak a `.cxf`-be írja. A lap **2.1/b**. **A mai kódunk is helyes** (**2.1/c**): a három keret-állás három különböző lapot ad, a felületi lánc ép — a #997 („a keretválasztó nem hat") a #1273 óta nem áll. **Új lelet:** a `test_indexkep_1273.py` tűrése elnyeli a keret elhagyását (`noborder`-rel is ÁTMEGY), tehát az őrnek **nincs foga** erre — önálló jegy: **#2118**. Jegyek: **#997** (lezárva), **#2118**.
+
 ✅ **2026-08-24 — az utolsó kérdés (a 6. bit MIÉRT a három rácsos témán van) LEZÁRVA**, ld. a lap **2/c** szakaszát: a bit pontosan a három `*Grid*` osztályon áll, és **nem öröklődésből** (a `CRegularGridTheme` szerkezetileg külön áll, mégis beállítja) — szándékos, témánként kiírt képesség-deklaráció. A *szándék* hatókörön kívül: nincs a binárisban. Jegy: **#1170**.
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a

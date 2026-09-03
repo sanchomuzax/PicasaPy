@@ -131,6 +131,14 @@ THEME_CLASS_NAMES = {
 # el kellene tűnnie") ezzel megdőlt — a választót működővé kell tenni, nem
 # elrejteni.
 #
+# ⭐ 2026-09-03 — a 9. bitnek RENDERELT bizonyítéka is van, tehát nem csak a
+# választó láthatóságát kapcsolja. A tulajdonos valódi `AI6.jpg`-jén
+# (3841 × 5120, `contactsheet`) az első csempe körül `(238,238,238)` sáv fut,
+# ami bájtra a `frames.WHITE_BORDER_BGR`; a szélessége 41–43 px, a szabály
+# pedig szabad paraméter nélkül `b = 0,05·(907 − 2b) ⇒ 41,23 px`. Részletek:
+# `docs/specs/picasa-kollazs-felulet.md` **2.1/b**. A mai kódunk a keretet
+# KI IS RAJZOLJA (2.1/c) — a #997 leletje elavult.
+#
 # A legolcsóbb valódi ellenőrzés: a **Többszörös exponálás** az eredetiben.
 # A jóslat szerint ott sem kijelölés, sem háttér-beállítás, sem árnyék nincs —
 # egyetlen képernyőkép NÉGY bitet dönt el egyszerre.
