@@ -41,9 +41,16 @@ NYUGDIJAZOTT = (
 )
 
 #: Nálunk MEGVALÓSÍTHATÓ — marad helyfoglaló.
+#:
+#: ⚠️ #2054: a „Help Contents and Index" KIKERÜLT innen, mert **elkészült**.
+#: A súgó szövege a csomagban van (`picasapy/help/`), a menütétel valódi
+#: `MenuItem`, és az F1 is él. A lista tehát azért rövidült, mert javult
+#: valami — nem azért, mert engedtünk a mércéből. Ha a tétel valaha
+#: visszaesne helyfoglalóvá, a `TestAmiMegvalosithato` már nem szólna;
+#: azt a `test_sugo_bekotes_2054.py` fogja meg (a tétel engedélyezett, és
+#: kattintásra megnyílik a néző).
 HELYFOGLALO_MARAD = (
     "Check for Updates",
-    "Help Contents and Index",
     "Set as Desktop Background...",
     "Make a Gift CD...",
 )
