@@ -393,10 +393,12 @@ class CreateMixin(BackgroundWorkerMixin):
             try:
                 target = str(self._alapertelmezett_film_cel(sources))
             except OSError as hiba:
+                # A részletet NAPLÓZZUK, nem a felhasználónak mondjuk: az
+                # `OSError` szövege fejlesztői (errno, útvonal), és a
+                # honosítása is külön csapda volna (%1-helyettesítő).
+                logger.warning("a film mappája nem hozható létre: %s", hiba)
                 self.movieFailed.emit(
-                    self.tr("The movie folder could not be created: %1").replace(
-                        "%1", str(hiba)
-                    )
+                    self.tr("The movie folder could not be created.")
                 )
                 return
         try:
