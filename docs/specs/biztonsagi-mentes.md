@@ -83,6 +83,13 @@ van**, a `thumbindex.db` és a `.pmp`-k mellett. *Bizonyítottság:
 más fájlnéven. Aki a mentést megvalósítja, egy szerkezetet ír meg kettő
 helyett.
 
+> ✅ **A jelzőbit JELENTÉSE kimérve (2026-09-03, #2095).** A `+0x13f` a panel
+> **üzemmód-bájtja**: `0` = biztonsági mentés lemezre (`thumbui/backup`,
+> `publish/backup_go`), `1` = replikáció (`thumbui/replicate`,
+> `publish/replicate_go`, kiadás-gomb nélkül). A szomszédja, a `+0x13e`,
+> az Ajándék-CD-t választja le. Levezetés:
+> [`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md) 12. szakasz.
+
 ## 2. A `backups.xml` mezői — a bejárás sorrendjében
 
 A függvény a `[ebp+0x2b0]`-ból induló rekordtömböt járja be, és

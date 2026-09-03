@@ -709,7 +709,7 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
    felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
    futott a mentés.
 
-### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03)
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03, az „ág ↔ üzemmód” LEZÁRVA)
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
@@ -1240,7 +1240,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
 | [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
 | [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a **`db3`** mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** |
-| [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) | **Az Ajándék-CD / mentő lemez KIMENETE** — a lemez **önjáró**, Windows ÉS macOS vetítővel és visszaállítóval, telepítővel és letöltő-linkkel; az `autorun.inf` **pontos sablonja**; a **16 kimeneti beállítás** teljes listája; és hogy a lemez mappanevei **honosítottak** („Biztonsági mentés" / „Képek") |
+| [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) | **Az Ajándék-CD / mentő lemez KIMENETE** — a lemez **önjáró**, Windows ÉS macOS vetítővel és visszaállítóval, telepítővel és letöltő-linkkel; az `autorun.inf` **pontos sablonja**; a **16 kimeneti beállítás** teljes listája; és hogy a lemez mappanevei **honosítottak** („Biztonsági mentés" / „Képek"). ✅ **2026-09-03 — a HÁROM ÜZEMMÓD szétválasztva** (#2095): a panel `+0x13e`/`+0x13f` bájtja dönt — `0/–` = **Ajándék-CD**, `≠0/0` = **biztonsági mentés lemezre**, `≠0/≠0` = **replikáció (feltöltés)**; a két bájtnak egyetlen írója van (a konstruktor, `0x0066bf90`), és ugyanaz választja belőlük a `publish/presentcd_go` / `backup_go` / `replicate_go` vezérlőnevet. Üzemmódonkénti alapérték-tábla a 12.4-ben; a méretfokozatok **eredeti / 640 / 800 / 1600**; a replikációs módban **nincs kiadás-gomb**. Két helyesbítés: az `option_backup` a mentés-ágon **1** (nem 0), és a 16 `option_*` tagoffszet a **motorobjektumhoz** tartozik, nem a 984 bájtos panelhez. |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
