@@ -1598,6 +1598,120 @@ eredményét** használta a Ken Burns-mozgás célpontjául.
 > ⇒ a `rect` **élő** átmenet, nem maradék sztring. A hivatalos magyar neve
 > **„Négyszög"**.
 
+#### A 22 átmenet HIVATALOS MAGYAR neve (2026-09-03)
+
+A fenti tábla az **angol** neveket adta meg. A `referencia/stringres-en-hu.tsv`
+`CTransitions::*` sorai a **hivatalos magyar** fordítást is tartalmazzák —
+ezek nélkül a legördülő magyar felületen angolul jelenne meg:
+
+| erőforrás-kulcs | angol | **hivatalos magyar** |
+|---|---|---|
+| `CTransitions::cut` | Cut | **Kivágás** |
+| `CTransitions::dissolve` | Dissolve | **Szétoszlás** |
+| `CTransitions::dissolveblack` | Dissolve through black | **Szétoszlás feketén át** |
+| `CTransitions::dissolvewhite` | Dissolve through white | **Szétoszlás fehéren át** |
+| `CTransitions::wipeleft` | Wipe - left | **Törlés - balra** |
+| `CTransitions::wiperight` | Wipe | **Törlés** |
+| `CTransitions::wipeup` | Wipe - top | **Törlés - felfelé** |
+| `CTransitions::wipedown` | Wipe - bottom | **Törlés - lefelé** |
+| `CTransitions::diagwipeul` | Wipe - up left | **Törlés - balra fel** |
+| `CTransitions::diagwipeur` | Wipe - up right | **Törlés - jobbra fel** |
+| `CTransitions::diagwipedl` | Wipe - down left | **Törlés - balra le** |
+| `CTransitions::diagwipedr` | Wipe - down right | **Törlés - jobbra le** |
+| `CTransitions::pushleft` | Push - left | **Tolás - balra** |
+| `CTransitions::pushright` | Push | **Tolás** |
+| `CTransitions::pushtop` | Push - top | **Tolás - felfelé** |
+| `CTransitions::pushdown` | Push - bottom | **Tolás - lefelé** |
+| `CTransitions::circlein` | Circle - inwards | **Kör - befelé** |
+| `CTransitions::circleout` | Circle | **Kör** |
+| `CTransitions::kenburns` | Pan and Zoom | **Pásztázás és nagyítás** |
+| `CTransitions::kenburnsaoi` | Pan and Zoom - face | **Pásztázás és nagyítás - arc** |
+| `CTransitions::timelapse` | Time Lapse | **Gyorsítás** |
+| `CTransitions::rect` | Rectangle | **Négyszög** |
+
+⚠️ **Négy fordítás megtévesztő, ha valaki az angolból indul:**
+
+1. **`wiperight` = „Törlés"**, nem „Törlés - jobbra" — az angol is csak
+   „Wipe" (az alapirány kap rövid nevet). Ugyanígy **`pushright` = „Tolás"**
+   és **`circleout` = „Kör"**.
+2. **`timelapse` = „Gyorsítás"**, nem „Időzített felvétel".
+3. **`cut` = „Kivágás"** — a magyar szó a szerkesztő „kivágás" műveletére is
+   használt; itt **vágás** értelemben áll (átmenet nélküli váltás).
+4. A **`kenburnsaoi`** magyarul is jelzi az arcot: „**- arc**".
+
+#### ⚠️ NE keverd össze: a `CThemePrefs::` MÁSIK, TÍZ elemű készlet
+
+A binárisban van egy második, hasonló nevű család. **Nem** a filmkészítőé:
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `CThemePrefs::checkerboard` | Checkerboard | Sakktábla |
+| `CThemePrefs::circle` | Circle | Kör |
+| `CThemePrefs::collage` | Collage | Kollázs |
+| `CThemePrefs::crossfade` | Cross Fade | Egymásra helyezés |
+| `CThemePrefs::diagonal` | Diagonal | Átlós |
+| `CThemePrefs::gadgets` | Google Gadgets | Google Modulok |
+| `CThemePrefs::panzoom` | Pan and Zoom | Pásztázás és nagyítás |
+| `CThemePrefs::push` | Push | Tolás |
+| `CThemePrefs::rect` | Rectangle | Négyszög |
+| `CThemePrefs::wipe` | Wipe | Törlés |
+
+Négy név **azonos** a két készletben (`Kör`, `Pásztázás és nagyítás`,
+`Négyszög`, `Tolás`), de a `CThemePrefs` **tíz** elemű, és van benne olyan,
+ami a filmkészítőben nincs (`Sakktábla`, `Kollázs`, `Google Modulok`).
+⇒ **Ha egy kör tíz átmenetet talál, rossz családot néz.**
+
+#### A választó vezérlő és a szomszédjai — hivatalos magyar feliratokkal
+
+| elem (teljes név) | **hivatalos magyar** | forrás |
+|---|---|---|
+| `makemoviepanel/transtype_label` | **„Képváltási stílus"** | `panel-feliratok-hu.tsv:590` |
+| `makemoviepanel/transtype` · `transtype_listbox` | *(a legördülő maga)* | `0x00613b50`, `0x0061b560`; a lista `0x006223b0` |
+| `makemoviepanel/transitionslider_label` | **„Átfedés"** | `panel-feliratok-hu.tsv:572` |
+| `makemoviepanel/tab1` | **„Mozgófilm"** | `:577` |
+| `makemoviepanel/tab2` | **„Dia"** | `:591` |
+| `makemoviepanel/tab3` | **„Klipek"** | `:592` *(az angol „Options"-szel szemben)* |
+
+#### `makemoviepanel/rewind` — „Vissza a kijelölt diához"
+
+**Felirat:** `panel-feliratok-hu.tsv:565` — **„Vissza a kijelölt diához"**.
+
+**Amit MÉRTÜNK:** a panel frissítő blokkja (`0x0061681e`) **megjeleníti és
+teljesen átlátszatlanná teszi** az elemet:
+
+```
+0x0061681e  mov edx, "makemoviepanel/rewind"
+0x00616823  call 0x9c2fc0            ; elem keresése NÉV szerint
+0x00616844  mov byte [eax+0x210], 1  ; látható/engedélyezett := 1
+0x00616851  mov dword [eax+0x248], 0xff  ; átlátszatlanság := 255
+```
+
+Ugyanez a blokk kezeli a `makemoviepanel/export_youtube` és a
+`makemoviepanel/tabpanel2` elemet is.
+
+**Amit NEM tudunk: mit csinál KATTINTÁSRA.** Az olcsó lánc kimerült:
+
+- a `makemoviepanel/rewind` sztring a binárisban **egyszer** fordul elő, és
+  az a fenti megjelenítő hely;
+- a parancsdiszpécserben (`publish/%s_go`-mintájú összerakott név) **nincs**;
+- a `.tre` csak a szülőt adja meg, viselkedés-tulajdonság nincs rajta.
+
+⇒ **NINCS MÉRVE.** **Megszerzés:** a panel egérkezelőjének célzott
+dekompilációja, VAGY egy windowsos Picasa-próba (a felirat egyértelmű, de a
+mérce a mérés).
+
+> ⛔ **ELVETETT hipotézis — a `rewind` NEM feltételes funkció.** A
+> megjelenítő blokkot egy globális őrzi (`cmp dword [0xd67914], 0`), és
+> kézenfekvő volt szolgáltatás-kapcsolónak hinni. **Nem az:** a globálisnak
+> **egyetlen** írója van (`0x009c3a36`, a felületi keret indítójában —
+> `0x009c3860`, ami a `Preferences\UIFolder`-t és a `runtime\` mappát
+> olvassa), és **1712** olvasója, mind `cmp …, 0` alakú. ⇒ Ez a
+> **felületi fa gyökérmutatója**, a hivatkozások null-ellenőrzések.
+> A `rewind` tehát mindig látszik, ha a felület betöltődött.
+
+> *Bizonyítottsági fok: **megerősített** a feliratokra és a megjelenítő
+> blokkra; **NINCS MÉRVE** a kattintás hatására.*
+
 ### 2.2 Beállítások
 
 - **Slide Duration** csúszka — kiírás: `Slide Duration: %s Sec`.
