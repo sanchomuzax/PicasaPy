@@ -843,7 +843,8 @@ kötődnek (a videólejátszóra a 7.3 pont áll).
 ### 10.5 Negatív eredmény, mérve — amire NINCS ág
 
 Az indextábla ezekre a kihagyó ágra (`0x005e65f7`) mutat:
-**`Ctrl+7`, `Ctrl+J`, `Ctrl+Q`, `Ctrl+W`, `Ctrl+Z`, `Ctrl+F1`…`Ctrl+F5`**,
+**`Ctrl+7`, `Ctrl+J`, `Ctrl+Q`, ~~`Ctrl+W`~~, `Ctrl+Z`, `Ctrl+F1`…`Ctrl+F5`**,
+*(a `Ctrl+W`-t a lánc egy KORÁBBI szeme fogja el — ld. **10.15**)*,
 és a `0x0E`–`0x2F` tartomány minden billentyűje (`Esc`, `Space`, nyilak,
 `Home`/`End`, `PageUp`/`PageDown`, `Insert`, `Delete`) — **egyetlen
 kivétellel: VK `0x12`**.
@@ -972,3 +973,111 @@ kapcsolja be (#2141)" szakasza ír le.
 `WM_CHAR` kizárva) a program **újraépíti a csempéket**, ha az állapot
 megváltozott. A felhasználó tehát **nyomva tartás közben látja átváltani**
 a kilenc csempét, és elengedéskor visszaváltani.
+
+### 10.13 A billentyűkezelés LÁNC, nem nézetenkénti kezelő (#2164, 2026-09-03)
+
+A #2164 azt kereste, hol van a **szerkesztő**, a **diavetítés** és a
+**videólejátszó** külön billentyűkezelője. **Nincs külön kezelő** — a
+`0x005e6710` egy **felelősség-láncot** hív végig, és minden láncszem a
+saját billentyűit fogja el. A lánc sorrendben:
+
+| # | cím | mikor hívja | mit fog el |
+|---|---|---|---|
+| 1 | `0x00760970` | `[panel+0x332f]` igaz | (nem mérve) |
+| 2 | — (helyben) | `VK_SHIFT` le/fel | a Shift-csempeváltás (10.12) |
+| 3 | **`0x005d2290`** | `0x005f95d0` őr után, `0x005e6784` | a **csúszka-léptetés** (lásd 10.14) |
+| 4 | **`0x005b2390`** | `[panel+0xccc]` nem nulla, `0x005e67e5` | a **projektlap-sáv** billentyűi (10.15) |
+| 5 | **`0x00a53b00`** | mindig, `0x005e67f4` | általános vezérlő-/szövegbeviteli billentyűk |
+| 6 | — (helyben) | `Ctrl` nélkül | F1–F5, F11, F12 (10.10) |
+| 7 | `0x005e60d0` | `Ctrl` esetén | a 34 elemes Ctrl-tábla (10.3) |
+
+Minden láncszem `0xf4240`-t (kezelve) vagy `0xf4241`-et (nem kezelve) ad
+vissza; a `0x005e6710` az elsőre azonnal kilép.
+
+### 10.14 A CSÚSZKA-LÉPTETÉS — `+` / `=` / `−` / `_`
+
+`0x005d2290`, **`WM_CHAR`** (`0x102`) üzenetre, tehát karakterre, nem
+VK-ra:
+
+```
+0x005d22ac  cmp eax, 0x2b   ; '+'
+0x005d22b1  cmp eax, 0x3d   ; '='
+0x005d22b6  cmp eax, 0x2d   ; '-'
+0x005d22bb  cmp eax, 0x5f   ; '_'
+0x005d22c7  fld dword ptr [0xcf50d8]   ; +0,02
+0x005d22d8  fld dword ptr [0xcf50d4]   ; -0,02
+0x005d22e2  mov eax, dword ptr [ebp+0x337c]  ; a FÓKUSZBAN LÉVŐ csúszka indexe
+0x005d22e8  add eax, 1
+0x005d22ee  push 0xc87160              ; "editslider%d/editslider"
+```
+
+⇒ **`+` és `=` növeli, `−` és `_` csökkenti a fókuszban lévő csúszkát,
+lépésenként ±0,02** (a tartomány 2%-a). A cél az `editslider<N>/editslider`
+elem, ahol `N = [panel+0x337c] + 1`.
+
+**Bizalmi fok: megerősített** (a két konstans és a formátumsztring
+kiolvasva).
+
+### 10.15 A PROJEKTLAP-SÁV billentyűi — és a `Ctrl+W` MÉGIS létezik
+
+`0x005b2390`, `WM_KEYDOWN`-ra, **`Ctrl` kötelező** (`test cl, 4` / `jle`,
+`0x005b239d` — ugyanaz a bit, mint a 10.9-ben):
+
+| billentyű | cím | mit csinál |
+|---|---|---|
+| **`Ctrl+Left`** | `0x005b23a6` | `0x005b22b0(panel, −1)` — előző lap |
+| **`Ctrl+Right`** | `0x005b23b6` | `0x005b22b0(panel, +1)` — következő lap |
+| **`Ctrl+Tab`** | `0x005b23c8` | `0x005b22b0(panel, +1)`; **`Shift`-tel** (`test cl, 2`) `−1` |
+| **`Ctrl+W`** | `0x005b23dd` | `0x005b31a0(panel, …)` — a `[panel+0x26c]` szerint |
+
+⇒ ⛔ **HELYESBÍTÉS a 10.5-höz.** A 10.5 negatív eredménye azt mondta:
+*„`Ctrl+W` … NINCS ág"*. Ez **a Ctrl-táblára igaz**, de a `Ctrl+W`-t a
+lánc **korábbi** szeme fogja el (`0x005b2390`), tehát **a billentyű
+létezik**. A 10.5 listájából a `Ctrl+W` **törlendő**; a többi (`Ctrl+7`,
+`Ctrl+J`, `Ctrl+Q`, `Ctrl+Z`, `Ctrl+F1`…`F5`) továbbra is áll, mert azokat
+egyik láncszem sem vizsgálja.
+
+*(Ez egyben megmagyarázza a 7.2 pont `Ctrl+W` rekeszét is: a keymapben ott
+van, csak nem menüben és nem a Ctrl-táblában.)*
+
+### 10.16 A VK-láncok TELJES leltára — 20 db a `.text`-ben
+
+A `movsx`/`movzx …, word ptr [reg+8]` (a VK kiolvasása) minden előfordulását
+végigpásztáztam, és megtartottam azokat, amelyeket **legalább két**
+`cmp reg, imm` követ 0xA0 bájton belül. **Húsz ilyen lánc van**, ezek:
+
+| lánc | gazdafüggvény | a vizsgált billentyűk | mi ez |
+|---|---|---|---|
+| `0x0052ecfc` | `0x0052ece0` | `D`,`C`,`P`,`S`,`0xbb`,`0x6b` | nem mérve |
+| `0x005b23a2` | `0x005b2390` | `←`,`→`,`W` | **projektlap-sáv** (10.15) |
+| `0x005d22a8` | `0x005d2290` | `+`,`=`,`−`,`_` | **csúszka-léptetés** (10.14) |
+| `0x005e6836` | `0x005e6710` | `F1`,`F5`,`F11` | **a fő kezelő** (10.10) |
+| `0x005e68f9` | `0x005e6710` | `F2`,`F4` | ugyanaz |
+| `0x006398da` | `0x006398c0` | `Esc`,`Enter` | szövegbeviteli mező (`editcancel`, `editselected`) |
+| `0x007366ae` | `0x00736690` | nyilak | szövegbeviteli mező (`edittab`, `editarrow`) |
+| `0x0077d3a1` | `0x0077d380` | nyilak, `PageUp/Down`, `Enter` | nem mérve |
+| `0x007e13f9` | `0x007e13b0` | nyilak, `Esc` | `buttonmgr/cancel` |
+| `0x00808ade`, `0x00808b7c` | `0x00808ac0` | `↑`,`↓`,`Enter`,`Esc` | nem mérve |
+| `0x0080906c` | `0x00809050` | `↑`,`↓`,`Enter` | nem mérve |
+| `0x00920adf`, `0x00921fe7` | `0x00920a30`, `0x00921de0` | `M`,`m`,`L`,`l` | nem mérve |
+| `0x00a53b63` | `0x00a53b00` | saját index+ugrótábla (`0x00a53bb4`/`0x00a53ba8`), VK `0x08`–`0x70`, plusz `Tab` és `Ctrl+A…Z` | **általános vezérlő** (lánc 5.) |
+| `0x00aa4e18` | `0x00aa4dd0` | `Home`,`End`,`Delete`,`→` | listavezérlő (`listboxup`, `listboxdown`, …) |
+| `0x00ae137c`, `0x00b41267`, `0x00c1609c`, `0x00c160d1` | — | nem billentyű-jellegű | kizárva |
+
+⇒ **A diavetítésnek és a videólejátszónak NINCS saját VK-lánca.** Ez a
+negyedik, egymástól független kizárás a 10.11 három mérése után.
+
+### 10.17 Ami a diavetítésről/videóról továbbra sem tudható (kimondva)
+
+- A `Space` billentyű a `.text`-ben **nyolc** helyen szerepel `cmp ax, 0x20`
+  alakban (`0x006d6042`, `0x006d605f`, `0x006d7498`, `0x006d74e2`,
+  `0x006d7ead`, `0x006d8f9b`, `0x009d713d`, `0x009d732e`), de **egyik
+  gazdafüggvénynek sincs sztring-hivatkozása**, amiből a felület
+  azonosítható volna — a jelentésük **NINCS MÉRVE**.
+- A keymap `/`, `,`, `.` rekeszeihez (VK `0xBF`, `0xBC`, `0xBE`) **egyetlen
+  összehasonlítást sem** találtam: sem `cmp ax, imm16` (10.11), sem a fenti
+  húsz lánc egyikében.
+- ⇒ **A diavetítés és a videólejátszó billentyűkezelése — ha van —
+  nem a fenti minták egyikét sem használja.** A következő lépés a
+  `0x006d5e90`, `0x006d7410`, `0x006d7e30`, `0x006d8eb0` függvények
+  azonosítása (ezek a `Space`-t vizsgálják).
