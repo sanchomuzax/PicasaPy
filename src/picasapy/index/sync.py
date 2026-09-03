@@ -17,6 +17,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from picasapy.index.origin import forget_origin_keys_outside
 from picasapy.ini import IniDocument, load_document, read_folder_date_override
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
@@ -857,7 +858,13 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             if current is None:
                 new_count += 1  # #209: eddig nem indexelt fotó
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
-    _prune_photos(conn, folder_id, [media.name for media in scan.files])
+    nevek = [media.name for media in scan.files]
+    _prune_photos(conn, folder_id, nevek)
+    # #2038: a származás-öröklés (`origin_keys`) útvonalra van kulcsolva, és a
+    # takarítása eddig kimaradt. Ez a MINDEN utat lefedő pont: a fájl eltűnhet
+    # kukába dobással, átnevezéssel vagy a felhasználó fájlkezelőjéből — a
+    # mappa-szinkron mindegyiket itt látja meg.
+    forget_origin_keys_outside(conn, scan.path, nevek)
     _sync_albums(conn, folder_id, document)
     _sync_folder_date(conn, folder_id, document)
     # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
