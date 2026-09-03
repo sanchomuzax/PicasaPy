@@ -30,7 +30,15 @@ PANEL_ALLAPOTOK = {"parositva", "nincs-megfeleltetes", "nem-cel"}
 #: generált lap így 36 elemet sorolt „kutatói kör kell" alá, amiről a saját
 #: táblánk tudta, hogy fel van tárva.
 #: Részletek: `docs/specs/binaris-regeszet-modszertan.md` 22.3.
-ELEM_ALLAPOTOK = {"megvan", "hianyzik", "lekutatva"}
+#: #2027: a `nem-cel` a NEGYEDIK elem-állapot — „bizonyítottan
+#: elérhetetlen, soha nem épül meg". Eddig ez CSAK panel-szinten
+#: létezett (#1963): egy célnak számító panelen egy kivett funkció
+#: maradványát nem lehetett kivenni a hiányból.
+#:
+#: ⚠️ A mérő (privát repó) ŐRT is kapott hozzá: ha a `nem-cel`-nek
+#: jelölt elem neve SZEREPEL a bináris sztringjei közt, szól — a
+#: kategória ne váljon kényelmes elnémítássá.
+ELEM_ALLAPOTOK = {"megvan", "hianyzik", "lekutatva", "nem-cel"}
 SPEC_DIR = GYOKER / "docs" / "specs"
 
 
