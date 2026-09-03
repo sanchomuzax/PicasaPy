@@ -127,6 +127,25 @@ FILTER_REGISTRY: dict[str, FilterSpec] = {
 }
 
 
+def one_click_keys() -> tuple[str, ...]:
+    """A `mode="oneclick"` szűrők kulcsai — a szerkesztő kék jelvényéhez.
+
+    #2126: az eredetiben a csempe kék jelvényét a szűrő MÓDJA kapcsolja, nem
+    az, hogy alkalmazva van-e. A csempeépítő (`0x005d7c20`) a szűrő-leíró
+    `+4` mezőjét olvassa és `== 1`-re teszi láthatóvá az `fx%d_adorn`
+    vezérlőt; a `+4` a `mode` egésszé fordítva (`0x00900490`:
+    `oneclick` → 1). Ez a függvény az EGYETLEN forrás — a felület ne
+    tartson külön listát.
+    """
+    return tuple(
+        sorted(
+            kulcs
+            for kulcs, spec in FILTER_REGISTRY.items()
+            if spec.mode == "oneclick"
+        )
+    )
+
+
 def get_filter_spec(key: str) -> FilterSpec | None:
     """A regiszter-bejegyzés lekérése kis-nagybetű-tűrően, `None` ha ismeretlen."""
     return FILTER_REGISTRY.get(key.casefold())

@@ -52,6 +52,7 @@ from picasapy.render.chain import (
     can_offer_filter_control,
 )
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
+from picasapy.render.registry import one_click_keys
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
 from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
@@ -502,6 +503,17 @@ class EditController(QObject, BackgroundWorkerMixin):
         Picasa felülete nem is mutat — tudnia kell, hol nézze meg."""
         names = {op.name.casefold() for op in self._session.ops}
         return sorted(names & LEGACY_EFFECT_KEYS)
+
+    @Property("QVariant", constant=True)
+    def oneClickEffects(self):
+        """#2126: a `mode="oneclick"` szűrők kulcsai — a kék jelvényhez.
+
+        ÁLLANDÓ: a mód a szűrő-leíró tulajdonsága, nem a munkamenet
+        állapota, ezért `constant=True` (a felületnek nem kell újraszámolnia
+        minden lánc-módosításnál). A forrás egyetlen helyen van:
+        `render.registry.one_click_keys()`.
+        """
+        return list(one_click_keys())
 
     @Property("QVariant", notify=revisionChanged)
     def effectChainCounts(self):

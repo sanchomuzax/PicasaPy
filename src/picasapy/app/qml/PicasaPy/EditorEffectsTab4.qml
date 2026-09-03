@@ -61,21 +61,21 @@ ColumnLayout {
             label: qsTr("Matte")
             onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
-            appliedCount: panel.effectAppliedCount("matte")
+            badge: panel.hasBadge("matte")
         }
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
             onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
-            appliedCount: panel.effectAppliedCount("nightvision")
+            badge: panel.hasBadge("nightvision")
         }
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
             onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
-            appliedCount: panel.effectAppliedCount("localcontrast")
+            badge: panel.hasBadge("localcontrast")
         }
         // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
         // MÁR bekötött (chain._HANDLERS) effektek
@@ -84,14 +84,14 @@ ColumnLayout {
             label: qsTr("Rounded Edges")
             onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
-            appliedCount: panel.effectAppliedCount("roundededges")
+            badge: panel.hasBadge("roundededges")
         }
         PanelButton {
             objectName: "effectPicnikGrain"
             label: qsTr("Film Grain (Fine)")
             onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
             thumbSource: panel.effectThumbSource("picnikgrain")
-            appliedCount: panel.effectAppliedCount("picnikgrain")
+            badge: panel.hasBadge("picnikgrain")
         }
     }
 

@@ -361,6 +361,24 @@ Rectangle {
         return (counts === undefined || counts === null) ? ({}) : counts
     }
 
+    // #2126: a kék jelvényt a szűrő MÓDJA kapcsolja, nem az alkalmazottság.
+    // Az eredetiben a csempeépítő (`0x005d7c20`) a szűrő-leíró `+4` mezőjét
+    // olvassa (`mode` egésszé fordítva, `oneclick` → 1), és arra teszi
+    // láthatóvá az `fx%d_adorn` vezérlőt. A tulajdonos ott is látott
+    // jelvényt, ahol egyetlen effekt sem volt alkalmazva.
+    //
+    // A forrás EGYETLEN hely: `render.registry.one_click_keys()`, a
+    // vezérlőn át. #1572 null-őr: a csonk editController-en nincs rajta.
+    readonly property var oneClickEffects: {
+        if (!panel.hasEffectController()) return []
+        var lista = editController.oneClickEffects
+        return (lista === undefined || lista === null) ? [] : lista
+    }
+
+    function hasBadge(effectName) {
+        return panel.oneClickEffects.indexOf(effectName) >= 0
+    }
+
     function effectAppliedCount(effectName) {
         var count = panel.effectChainCounts[effectName]
         return count === undefined ? 0 : count

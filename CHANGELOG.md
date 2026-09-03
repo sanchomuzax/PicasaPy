@@ -7,7 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.244] – 2026-09-03
+
 ### Javítva
+- **A szerkesztő effekt-csempéin a kis kék jel rossz dolgot mutatott
+  (#2126).** Eddig azt jelezte, hogy az adott effektet már alkalmaztad a
+  képre. Az eredeti Picasában viszont ez a jel azt jelenti, hogy az effekt
+  **egy kattintással, beállítások nélkül** működik — ezért látszik ott is,
+  ahol semmi nincs alkalmazva. Mostantól a Szépia, a Fekete-fehér és a
+  Melegítés csempéjén áll, a lánctól függetlenül, és a szám mindig „1",
+  ahogy az eredetiben.
 
 - A `test_busy_integration.py` két esete a **pillanatnyi** `isWorking`-ot
   figyelte a művelet indítása után; ez versenyhelyzet volt, és a windowsos
