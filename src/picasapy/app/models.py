@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+from collections.abc import Iterable
 from pathlib import Path
 import zlib
 
@@ -128,16 +129,31 @@ class FolderListModel(QAbstractListModel):
         reverse: bool = False,
         *,
         include_hidden: bool = False,
+        exclude_paths: Iterable[str] = (),
     ) -> None:
         """Mappalista Picasa-rendezéssel.
 
         sort_mode: 'date' (létrehozási dátum, legújabb elöl — alapérték),
-        'changed' (legutóbbi változtatás), 'size' (méret), 'name' (név).
+        'changed' (legutóbbi változtatás), 'size' (méret), 'név' (name).
         A reverse a kiválasztott rendezést fordítja meg.
+
+        `exclude_paths` (#2031): a PROJEKT-mappák útvonalai. A `P2category`
+        az eredetiben **kizáró**: egy projekt-mappa CSAK a Projektek alatt
+        látszik, a Mappák listában nem (#1033 verdiktje,
+        `docs/specs/export-parbeszed.md` 12.5).
+
+        ⚠️ A mappa az INDEXBEN marad — a kategória megjelenítési
+        besorolás, nem törlés. A fotói, a keresés és a darabszámok
+        érintetlenek; a Projektek alól ugyanaz a rács nyílik.
         """
-        folders = sorted_folder_rows(
-            conn, sort_mode, reverse, include_hidden=include_hidden
-        )
+        kizart = {str(u) for u in exclude_paths}
+        folders = [
+            sor
+            for sor in sorted_folder_rows(
+                conn, sort_mode, reverse, include_hidden=include_hidden
+            )
+            if sor[1] not in kizart
+        ]
         # #1637/2: a rejtett mappák nem VEGYÜLNEK vissza a listába — a
         # végén, saját fejléc alatt állnak. Az eredetiben az elrejtés
         # adatvédelmi funkció (`IDS_HIDDEN` = „Rejtett mappák"), nem

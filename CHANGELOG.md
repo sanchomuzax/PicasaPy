@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.256] – 2026-09-03
+
+### Javítva
+- A projekt-mappák (Kollázsok, Filmek, Exportált képek) többé nem jelennek meg
+  kétszer a bal hasábban: a „Projektek" csomópont alatt maradnak, a „Mappák"
+  listából kimaradnak (#2031).
+
 ## [0.8.255] – 2026-09-03
 
 ### Javítva

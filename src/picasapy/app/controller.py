@@ -485,6 +485,11 @@ class AppController(
                 # #1637: a rejtett mappákat ugyanaz a kapcsoló hozza
                 # vissza, ami a rejtett fotókat — nem külön beállítás
                 include_hidden=self.showHidden,
+                # #2031: a PROJEKT-mappák csak a Projektek alatt látszanak
+                # (a `P2category` kizáró, #1033). Az útvonalak MÁR itt
+                # vannak — a hasáb-gyűjtemények betöltése cache-eli őket —,
+                # tehát nem kell újabb `.picasa.ini`-söprés.
+                exclude_paths=[m.path for m in self._project_folders],
             )
         self.statusChanged.emit()
 
