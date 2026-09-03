@@ -1240,6 +1240,23 @@ A 20. szakasz receptje egy mutatóra készült. Végigfuttatva az **egész**
 **minden ANSI Win32 API-hívását** egy globális mutatókból álló táblán
 vezeti át, és a táblát induláskor tölti fel.
 
+> ⚠️ **Ezt a mechanizmust NEM ez a kör találta meg először.** A
+> [`picasa-mappakezelo.md`](picasa-mappakezelo.md) **16.5** már
+> **2026-08-24-én** leírta — ugyanezt a platform-váltót, ugyanezzel a
+> `cmp [0xd6fc58], 0x80000000` feltétellel, egyetlen mutatóra
+> (`0x00d694fc` = `FindFirstChangeNotification`). A 20. szakasz
+> (2026-09-03) ettől függetlenül **újra** levezette a `0x00d694c0`-ra, ez a
+> szakasz pedig harmadszor, az egészre.
+>
+> **A tanulság a háromszori újrafelfedezés, nem a lelet:** a felismerés egy
+> **panel-lapon** ült, ahol a következő kör nem kereste. Ezért került most
+> ide, a módszertani lapra, **teljes táblával és szkripttel** — hogy negyedszer
+> már ne kelljen.
+>
+> Amit ez a kör tett hozzá a 16.5-höz: a **teljes 68 soros tábla**, a
+> **`CP_UTF8` kódlap kimérése** (és annak normatív következménye a szöveges
+> tárolók kódolására), valamint a `eszkozok/rt_thunks.py` szkript.
+
 ### 21.1 A minta, amivel az egész tábla kiadható
 
 Az inicializáló blokkok egy kaptafára készültek (példa a `0x00c3315e`-ről):
