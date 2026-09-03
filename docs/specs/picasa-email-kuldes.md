@@ -232,3 +232,146 @@ rádiógombot az Opciók lapon. Gombok: **Súgó** · **Mégse**.
 
 A két ⚠️ **szándékos, platformból következő eltérés**, nem hiány: olyan
 integrációt ígérnének, ami nem létezik.
+
+---
+
+## ⭐ 6. HOL tárolódnak a beállítások, és MIT ír a választó párbeszéd (2026-09-03)
+
+A lap eddig felsorolta a beállítás-**kulcsokat** (3. szakasz), de nem mondta
+meg, **hol vannak**, mi az **alapértékük**, és **mikor** íródnak. Ez a
+szakasz ezt pótolja — és a tároló nem csak az e-mailre igaz, hanem a Picasa
+**összes** beállítására.
+
+### 6.1 A tároló: a Windows-registry, `HKEY_CURRENT_USER` alatt
+
+```
+HKEY_CURRENT_USER\SOFTWARE\Google\Picasa\Picasa2\Preferences\<kulcs>
+```
+
+Ez a teljes útvonal **szó szerint** benne van a binárisban
+(`0x00c8ae5c`), és három, egy helyen beállított darabból áll össze —
+ezért adnak a kulcsonkénti hívások csak szekció+kulcs párost:
+
+| darab | cím | érték |
+|---|---|---|
+| registry-bázis | `0x00c7f0c4` | `SOFTWARE\Google\Picasa\` |
+| termék-alkulcs | `0x00c7edd0` | `Picasa2` |
+| alapértelmezett szekció | `0x00c7eafc` | `Preferences` |
+| *(az AppData-almappa, külön célra)* | `0x00c7eaec` | `Google\Picasa2` |
+| *(a helyi adatmappa kulcsa)* | `0x00c7ef0c` | `AppLocalDataPath` |
+
+Az összeszerelés az inicializáló blokkban látszik (`0x00407330`:
+`0x0040738d`, `0x00407395`, `0x0040739d`; ugyanez a blokk a `0x00541b30`-ban
+`0x00541b9b`–`0x00541bab`).
+
+**A `HKEY_CURRENT_USER` konstans kiolvasva:** `mov eax, 0x80000001` —
+a beállítás-objektum építőjében (`0x00407a3b`) és a színkezelés
+olvasásánál (`0x00541bd8`) egyaránt.
+
+**A teljes útvonal használatban, bizonyítékként:** a `0x00541b30`
+így olvassa az `EnableColorManagement`-et:
+
+```
+0x00541bc9  push 0xc8ae44            ; "EnableColorManagement"
+0x00541bd3  mov  ecx, 0xc8ae5c       ; "SOFTWARE\Google\Picasa\Picasa2\Preferences\"
+0x00541bd8  mov  eax, 0x80000001     ; HKEY_CURRENT_USER
+0x00541be9  call 0x00408060          ; a beállítás-objektum építője
+0x00541bf8  call 0x004019b0          ; ÉRTÉK OLVASÁSA
+```
+
+> **Nem fájlban van.** A `research/testdata/` alatti valódi Picasa-adatmappa
+> (`Picasa2/`: `cache`, `db3`, `ioqueue`, `runtime`, `tmp`) **egyetlen**
+> beállításfájlt sem tartalmaz — se `.ini`, se `.xml`, se `prefs`.
+
+### 6.2 A hozzáférés-készlet
+
+| függvény | méret | mit csinál |
+|---|---|---|
+| `0x00407a20` | 297 b | beállítás-objektumot épít: `(alapérték, szekció, kulcs)`, `HKEY_CURRENT_USER` |
+| `0x00408060` | 319 b | a kulcs-útvonal megnyitása; a háttér-objektum a `+0x18` mezőbe kerül |
+| `0x004019b0` | 211 b | **olvasás** (a tárolt érték, vagy az alapérték) |
+| `0x00401900` | 171 b | **írás** |
+| `0x004018e0` | 23 b | kényelmi burkoló: `(0, "Preferences", kulcs)` |
+| `0x00923720` / `0x009237f0` | — | a tényleges `Reg*` API-hívások (`RegCreateKeyExA`/`RegSetValueExA`, ill. `RegOpenKeyExW`/`RegQueryValueEx*`) |
+
+### 6.3 A `Preferences` HÉT alszekciója
+
+A kulcsok nem mind laposak; a binárisban ezek az alszekció-nevek állnak:
+
+| alszekció | cím | mire |
+|---|---|---|
+| `Preferences\HotFolders` | `0x00c81040` | figyelt mappák |
+| `Preferences\Plugins\` | `0x00ca79bc` | bővítmények |
+| `Preferences\Buttons\Exclude` | `0x00cb20d8` | a gombsávból kihagyott gombok |
+| `Preferences\Buttons\UserConfig` | `0x00cb20f4` | a gombsáv felhasználói összeállítása |
+| `Preferences\AspectRatios` | `0x00cb832c` | a vágási oldalarányok |
+| `Preferences\PrinterData` | `0x00cc3cd0` | nyomtató-beállítások |
+| `Preferences\RSSDownload` | `0x00cab75c` | RSS-letöltés |
+
+### 6.4 A `choose_mail` párbeszéd — MIT ír, MIKOR
+
+**A kapu** (`0x007420f0`, 479 b) minden küldés előtt lefut:
+
+```
+0x00742132  mov  dword ptr [esp+0x20], 3   ; EmailPrepType ALAPÉRTÉKE = 3
+0x0074213a  call 0x00407a20                ; "Preferences" / "EmailPrepType"
+0x00742154  mov  dword ptr [esp+0x20], ebp ; DoNotPromptForEmailPref ALAPÉRTÉKE = 0
+0x00742158  call 0x00407a20                ; "Preferences" / "DoNotPromptForEmailPref"
+0x0074215d  call 0x004019b0                ; a DoNotPrompt kiolvasása
+0x00742168  je   0x007421b3                ; ha 0 → MUTASD a choose_mail-t
+0x0074216e  call 0x004019b0                ; különben a tárolt EmailPrepType-ot adja vissza
+```
+
+⇒ **Alapértékek, kiolvasva:** `EmailPrepType` = **3**,
+`DoNotPromptForEmailPref` = **0**. Vagyis **friss telepítésen az első
+küldéskor a párbeszéd MEGJELENIK.**
+
+**Az OK-ág** (`0x0084fb10`, 494 b) a megnyomott gomb nevét `repe cmpsb`-vel
+veti össze, és két értéket ismer:
+
+| gomb | elemnév | `EmailPrepType` | cím |
+|---|---|---|---|
+| „Ezt használom" | `choose_mail/mymail` | **3** | `0x0084fb91`, `0x0084fb96` |
+| Google Mail | `choose_mail/gsender` | **5** | `0x0084fbff` |
+
+*(A `choose_mail/cancelbutton` és a `choose_mail/helpbutton` a másik két ág.)*
+
+**A megőrzés szabálya** (`0x0084f6b0`, 237 b) — ez a szakasz lényege:
+
+```
+0x0084f6f6  mov bl, byte ptr [eax+0x359]  ; a choose_mail/checkbox állapota
+0x0084f6fc  push 0xca9b58                 ; "DoNotPromptForEmailPref"
+0x0084f718  call 0x00407a20 …             ; MINDIG kiírja
+0x0084f72e  test bl, bl
+0x0084f730  je   0x0084f77b               ; ha NINCS bepipálva → kilép
+0x0084f732  push 0xca9b48                 ; "EmailPrepType"
+0x0084f74b  call 0x00407a20 …             ; CSAK bepipálva írja ki
+```
+
+⇒ **A választott mód csak akkor marad meg, ha a „Ne kérdezze újra"
+jelölőnégyzet be van pipálva.** A futó munkamenetre viszont a választás
+*mindig* érvényes (`0x0084fb96`: `mov dword ptr [edx], 3` — a
+memóriabeli állapotba a jelölőnégyzettől függetlenül bekerül).
+
+Az elem, amit a `[eax+0x359]` olvas: **`choose_mail/checkbox`**
+(`0x00cc23ec`) — a „Remember this setting, don't display this dialog
+again." / **„Ne jelenítse meg többé ezt a párbeszédpanelt"**.
+
+### 6.5 Eredeti / nálunk — MÉRVE
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| tároló | `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\` | `QSettings` (`email_controller.py:155`) |
+| kulcs: a mód | `EmailPrepType` (3 = saját levelező, 5 = Gmail) | `mail/useDefaultClient` (logikai) |
+| kulcs: kérdezzen-e | `DoNotPromptForEmailPref` | *ugyanaz a kulcs* — a kettő egybeolvasztva |
+| **alapérték: kérdezzen-e** | **0 → KÉRDEZ** | **`True` → NEM kérdez** (`email_controller.py:158`) |
+| a kapu | `0x007420f0` | `sendRows()` (`email_controller.py:381`) — helyes |
+| Google Mail-ág | `EmailPrepType = 5` | **tudatosan halott** (`EmailChoiceDialog.qml:13`) |
+
+⇒ **Egy mért eltérés marad:** az alapérték. Nálunk friss telepítésen a
+választó párbeszéd **soha nem jelenik meg** magától — csak akkor, ha a
+felhasználó előbb átállítja az Opciók rádiógombját. Jegy: **#2184**.
+
+*Bizonyítottsági fok: **megerősített*** — a bázis három darabja és az
+összeszerelt teljes útvonal is kiolvasva; a `HKEY_CURRENT_USER` konstans
+két helyen; az alapértékek, a kapu és a két módérték a diszasszemblyből.
