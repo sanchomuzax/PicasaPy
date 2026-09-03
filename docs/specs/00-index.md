@@ -1014,6 +1014,31 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (2. kör) — a `thumbindex.db` NEM útvonalat tárol, és a
+`típus` FORMÁTUMKÓD.** Két helyesbítés a `pmp-database.md` 8.1-en, amelyek
+nélkül a most nyitott olvasó-jegy (#2195) rossz útvonalakat adna:
+**(1)** fájl-bejegyzésnél a rekord csak a **nevet** tartalmazza — a mért
+133 089 fájlnév közül **egyetlenegyben sincs** `\`, és a `+26` mező a
+**szülőmappa slotindexe** (érvényes: 133 089/133 089); a teljes út
+`név(szülő) + név`. **(2)** A `típus` nem „mappa vagy fájl", hanem
+**tizenkét értékű formátumkód**, amit a Picasa a **tartalomból** állapít
+meg, nem a kiterjesztésből: 33 `.png` nevű fájl JPEG-ként (2), 26 `.jpg` +
+4 `.jpeg` PNG-ként (14) van bejegyezve. ⭐ A `típus = 1001` az
+**arcsablon-bejegyzés** — halmaz-azonosság a `facetemplatesV2_index.db`
+foglalt slotjaival (412 = 412, metszet 412). A `típus = 0` **üres slot**
+(név, méret, mindkét időbélyeg, `dirty`, `valid` mind nulla, 5 325/5 325) —
+ez magyarázza a nem zsugorodó tömböket és a `valid` bájt szerepét.
+⛔ **Negatív, döntő:** a tár fordítási egységének egyetlen forgatás-hash-e
+(`0x006b9870`) **nem** a bélyegkép-kulcs — egyetlen hívója (`0x006ecd50`)
+az `onlinechecksum` / `LHUpload` sztringeket viseli, tehát a megszűnt
+webalbum-szinkroné. Az algoritmusa mégis kiolvasva (8.8): `0x12345678`-cal
+magvetett, kisbetűsítő sztring-hash `mod 1 000 231`, forgatott
+időbélyeg-tagokkal — és egy **időzóna-toleráns egyeztetővel**, amely
+−12 h…+12 h között **óránként** végigpróbálja a jelölteket. Élő
+ellenőrzés **NINCS MEG**: az oszlop mind a három katalógusban üres.
+A bélyegkép-kulcsra a valódi kulcstömbön 9 + 60 + 28 próba és mind az 59
+PMP-oszlop **nullát** adott (8.9). Jegy: **#2195**.
+
 ⭐ **2026-09-03 — a `*_index.db` NÉGY PÁRHUZAMOS TÖMB, és az előző napi
 leírás HELYESBÍTVE.** A `pmp-database.md` 8.2 szakaszának első kiadása
 „20 bájt fejléc + N × 12 bájtos rekord (`uint64 q` + `uint32 u`)"-t írt le.
