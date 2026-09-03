@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.262] – 2026-09-04
+
+### Új
+- A súgóban van **Vissza** és **Tartalom** gomb: a keresőből megnyitott
+  lapról vissza lehet lépni, és a tartalomjegyzék egy kattintással elérhető
+  keresés közben is (#2213).
+
 ## [0.8.261] – 2026-09-04
 
 ### Javítva
