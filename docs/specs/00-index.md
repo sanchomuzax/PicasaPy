@@ -639,6 +639,23 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 
 ### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03)
 
+⭐ **2026-09-03 (11. szakasz) — a panel HÁROM JELÖLŐNÉGYZETE, és egy REJTETT
+MELLÉKHATÁS.** A 3./10. szakasz a *belső* beállításokat írta le; a felhasználó
+viszont három négyzetet lát: **„Diavetítéssel együtt"** (`publish/optionbox1` →
+`Preferences\CDSlideshow`, alapérték **1**), **„Adathordozó törlése"**
+(`optionbox2`), **„A Picasával együtt"** (`optionbox3` →
+`Preferences\CDSlideshowInclSetup`, alapérték **1**). ⭐ **A „Diavetítéssel
+együtt" NEM csak a vetítőt teszi a lemezre:** ugyanaz az érték állítja be az
+`option_convertnonjpeg` kulcsot (`0x0066f6f3`) — vagyis **bekapcsolva a
+nem-JPEG képek JPEG-be konvertálódnak**, és ezt a felület sehol nem jelzi.
+A mentés-ágon nincs ilyen kapcsoló: a visszaállító **mindig** rákerül a
+lemezre (`0x0066f57d`). A `_go`/`_eject` **nem külön gomb**, hanem
+**mód-függő rés** (`0x0066bf90` → `[obj+0x2a0]`, `[obj+0x2a4]`). A készlet
+alapértelmezett neve **„Saját mentési készlet"** (`il_BurnPanel::bksetname`).
+A Kiadás gomb tényleges művelete a **`CDVDR.yti` COM-oldalán** van — ugyanaz a
+tétel, mint a **#2074**. ⇒ **A `publish` panel ezzel TELJESEN feltárt:
+feltáratlan 5 → 0**, lekutatva 30/30. Komment: **#32**, **#440**.
+
 ⭐ **2026-09-03 (9–10. szakasz) — a BELÉPÉSI PONTOK, és egy BLOKKOLT tétel
 LEZÁRVA.** A lap eddig azt írta le, mi kerül a lemezre; azt nem, **honnan
 indul**. Öt belépési pont: `eMenuCreate::ID_BURNCD` (a **Létrehozás** menüben —

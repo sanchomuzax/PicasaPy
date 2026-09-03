@@ -191,10 +191,13 @@ filmek), és a befejező visszajelzés.
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 7 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 8 lezárva · 2 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
 
-*(2026-09-03: az „értékkészlet" tétel LEZÁRULT, a belépési pontok lezárva
-bekerültek, és egy új blokkolt tétel — az ág ↔ üzemmód hozzárendelés — nyílt.)*
+*(A számok a lenti tábla sorainak MEGSZÁMOLÁSÁBÓL jönnek, nem fejből: a
+2026-09-03 délelőtti sor `7 lezárva`-t írt, miközben a tábla nyolcat
+sorolt fel — javítva. A délutáni kör három sort tett hozzá: a három
+jelölőnégyzet LEZÁRVA, a Kiadás gomb BLOKKOLT, a megszűnt webes ág két
+eleme HATÓKÖRÖN KÍVÜL.)*
 
 | kérdés | állapot |
 |---|---|
@@ -205,7 +208,10 @@ bekerültek, és egy új blokkolt tétel — az ág ↔ üzemmód hozzárendelé
 | mi történik a kiírás után | **LEZÁRVA** — párbeszéd + `LaunchAutoRun` (5.) |
 | ~~a 16 beállítás ÉRTÉKKÉSZLETE~~ | **LEZÁRVA (2026-09-03)** — a **10.** szakasz: a kulcsok logikai (0/1) vagy egész típusúak, felsorolás nincs; húsz beállító híváshely értéke kiolvasva, köztük `option_jpegquality = 85`. Dekompiláció nem kellett. *(A blokkolás indoka — „a sztring-xref **egyetlen** olvasót ad" — megdőlt: a `0x0068eea0` a második, és épp az az olvasó.)* |
 | **a belépési pontok** | **LEZÁRVA (2026-09-03)** — öt, ebből kettő a `.tre`-ben kikommentezve (**9.**) |
-| **melyik ÁG melyik üzemmódhoz tartozik** | **BLOKKOLT (2026-09-03)** — a `0x0066f470` három ágon állít értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi` hozzárendelése az üzemmódokhoz (mentés / Ajándék-CD / feltöltés) **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Jegy: **#2095**. |
+| **melyik ÁG melyik üzemmódhoz tartozik** | **BLOKKOLT, de SZŰKÍTVE (2026-09-03)** — a hívó megvan (`0x0067b0ee`), és a `0x0066f546`-os elágazást vezérlő `edi` **az objektum `+0x13e` bájtja**, a mód-jelző pedig a szomszédja (`+0x13f`) — **11.7**. A két bájt JELENTÉSE nincs mérve. **Megszerzés:** a `0x0066f470` (923 b) célzott dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Jegy: **#2095**. |
+| a panel HÁROM jelölőnégyzete | **LEZÁRVA (2026-09-03)** — felirat, tároló, alapérték és hatás mind mérve (**11.**) |
+| mit csinál a KIADÁS gomb | **BLOKKOLT** — nincs `IOCTL_STORAGE_EJECT_MEDIA` sztring, az `mciSendStringA` négy betöltése távol van a lemez-kódtól; a `CDVDR.yti` COM-oldalán megy. **Ugyanaz a tétel, mint a #2074** (11.4) |
+| a megszűnt webes ág két eleme | **HATÓKÖRÖN KÍVÜL** — `upgradestorage`, `uploadallsync`: a Picasa Web Albums tárhely-vásárlás és -szinkron (11.6); eldöntötte: `biztonsagi-mentes.md` 7., 2026-09-02 |
 | Daemon Tools / `d:\cdtemp\temp.iso` | **HATÓKÖRÖN KÍVÜL** — fejlesztői teszt-maradvány, nem felhasználói funkció; eldöntötte: ez a kör, 2026-09-02 |
 
 ## 8. Amit KIZÁRTAM
@@ -393,3 +399,146 @@ A `0x00743030` (716 b) **négy kulcsot** ugyanígy állít
 ⇒ **Ez egy közös export-beállítás szerkezet**, nem az Ajándék-CD sajátja.
 Aki a levélküldést építi, ugyanezt a struktúrát találja meg
 ([`picasa-email-kuldes.md`](picasa-email-kuldes.md)).
+
+---
+
+## 11. A panel HÁROM JELÖLŐNÉGYZETE — és a rejtett mellékhatás (2026-09-03)
+
+A 3. és a 10. szakasz a **belső** beállításokat írta le (a 16 `option_*`
+kulcsot, amiket a felhasználó nem lát). A panelen viszont **három
+jelölőnégyzet** áll, és ezek MÁS tárolóban élnek. Mindhárom a
+`publish/presentation_group`-ban (`publish.tre:88`, `:95`, `:103`).
+
+| elem | **hivatalos magyar felirat** | tároló | alapérték | mit kapcsol |
+|---|---|---|---|---|
+| `publish/optionbox1` | **„Diavetítéssel együtt"** | `Preferences\CDSlideshow` | **1** (`0x0066f6b4`) | a lemezre kerül a **vetítő** (`0x0066f76d` → `0x0066fae0`) |
+| `publish/optionbox2` | **„Adathordozó törlése"** | — *(nem ebben a függvényben)* | — | újraírható lemez törlése az írás előtt (a párbeszéd: `il_BurnPanel::EraseWarn::1–2`) |
+| `publish/optionbox3` | **„A Picasával együtt"** | `Preferences\CDSlideshowInclSetup` | **1** (`0x0066f70a`) | a lemezre kerül a **telepítő** és a letöltő-link (`0x0066f77a` → `0x0066fca0`) |
+
+A feliratok forrása: `panel-feliratok-hu.tsv` 5064–5066 (`publish/label_optionbox1…3`).
+
+### 11.1 A tároló — ITT tényleg a `Preferences`
+
+A két kulcsot a `0x00407a20` beállítás-olvasó adja vissza, `"Preferences"`
+szekciónévvel (`0x00c7eafc`) és **1-es alapértékkel**:
+
+```
+0x0066f69f  push 0xca43e8            ; "CDSlideshow"
+0x0066f6a4  push 0xc7eafc            ; "Preferences"
+0x0066f6b4  mov dword ptr [esp+0x44], 1   ; ALAPÉRTÉK
+0x0066f6bc  call 0x407a20
+0x0066f6ce  mov ebx, eax             ; ebx = a kapcsoló értéke
+```
+
+> ⚠️ **Pontosítás a 10.2-höz.** Ott az áll, hogy a `0x0066f470` **nem** a
+> `Preferences`-ből olvas — és ez a **tizenhat `option_*` kulcsra** igaz is
+> (azokat objektumba ÍRJA, és `Preferences\option…` alakú sztring a
+> binárisban nulla van). De **ugyanez a függvény OLVAS is** két
+> `Preferences`-kulcsot: a fenti kettőt. **A két állítás megfér egymás
+> mellett** — és ez magyarázza, honnan jött a 3. szakasz téves olvasata: a
+> függvényben tényleg ott a `Preferences` sztring, csak nem az `option_*`
+> kulcsokhoz tartozik.
+
+### 11.2 ⭐ A rejtett mellékhatás: a diavetítő átkapcsolja a konvertálást
+
+A `CDSlideshow` értékét a függvény **nem csak** a vetítő másolására
+használja: közvetlenül a beolvasás után **be is állítja vele** az egyik
+belső kulcsot —
+
+```
+0x0066f6eb  push ebx                 ; = CDSlideshow
+0x0066f6ec  push 0xca36a0            ; "option_convertnonjpeg"
+0x0066f6f3  call [vtbl+0x20]         ; SetOption
+```
+
+⇒ **Ha a lemezre rákerül a diavetítő, a Picasa a nem-JPEG képeket JPEG-be
+konvertálja; ha nem kerül rá, nem konvertál.** Ez logikus — a szállított
+vetítő csak JPEG-et tud —, de a felületen **semmi nem jelzi**: a felhasználó
+egy „Diavetítéssel együtt" feliratú négyzetet lát, és közben a képek
+formátuma is megváltozik.
+
+**Ezt egy megvalósításnak tudnia kell**, különben a mi lemezünk PNG-t vagy
+TIFF-et tenne olyan lemezre, amin a vetítő nem tudja megnyitni.
+
+> *Bizonyítottsági fok: **megerősített*** — a `push`-sorrend és a
+> sztring-címek kiolvasva.
+
+### 11.3 A mentés-ágon NINCS ilyen kapcsoló
+
+A `PicasaRestore.exe` + `Picasa Restore.app` másolása (`0x0066f9f0`)
+**feltétel nélkül** fut a mentés-ágon (`0x0066f57d`), közvetlenül a
+`[ebp+0x13f] == 0` vizsgálat után. ⇒ **A mentő lemezre a visszaállító
+mindig rákerül**, a felhasználó nem tudja kikapcsolni.
+
+### 11.4 A `_go` és az `_eject` gomb NEM külön vezérlő — MÓD-FÜGGŐ RÉS
+
+A `0x0066bf90` (1593 b) nem a gombok viselkedését írja le, hanem
+**összerakja az aktuális üzemmód vezérlőneveit**, és eltárolja őket két
+tagváltozóban:
+
+```
+0x0066c377  push "publish/presentcd_go"      (hossz 0x14) -> [obj+0x2a0]
+0x0066c3d9  push "publish/presentcd_eject"   (hossz 0x17) -> [obj+0x2a4]
+```
+
+Ugyanez a függvény ismeri a `publish/backup_go`, `publish/backup_eject` és
+`publish/replicate_go` neveket is. ⇒ A panelnek **egy** „indítás" és **egy**
+„kiadás" rése van; a mód dönti el, melyik nevet kapja. Ez a párja a
+parancsdiszpécser `publish/%s_go` / `publish/%s_cancel` mintájának
+([`biztonsagi-mentes.md`](biztonsagi-mentes.md) 11.4).
+
+**Feliratok** (`panel-feliratok-hu.tsv`): `publish/backup_go` és
+`publish/presentcd_go` = **„Lemezre írás"**; `publish/backup_eject` és
+`publish/presentcd_eject` = **„Kiadás"**; `publish/backup_cancel` =
+**„Mégse"**; `publish/addmore` = **„Továbbiak hozzáadása…"**.
+
+⚠️ **Amit a KIADÁS gomb csinál, NINCS MÉRVE.** A binárisban nincs
+`IOCTL_STORAGE_EJECT_MEDIA` sztring, és az egyetlen `mciSendStringA` import
+(`0x00c409c4`) négy helyen töltődik regiszterbe (`0x0075d234`,
+`0x0075d6d4`, `0x007fafc6`, `0x007fb607`) — mind **távol** a
+`0x0066–0x0067` tartományú lemez-kódtól. ⇒ A kiadás nagy valószínűséggel a
+**`CDVDR.yti` COM-oldalán** megy, ami a **#2074** tárgya. *(Ez tehát nem új
+nyitott kérdés, hanem ugyanaz.)*
+
+### 11.5 A mentési készlet ALAPÉRTELMEZETT NEVE
+
+`0x006706d0` (2759 b) — a panel feltöltője — a szövegtárból veszi:
+
+| kulcs | angol | **hivatalos magyar** |
+|---|---|---|
+| `il_BurnPanel::bksetname` | My Backup Set | **„Saját mentési készlet"** |
+
+Ugyanitt olvassa a `LastBkSet` beállítást és a `BKTag ` címke-előtagot is
+([`biztonsagi-mentes.md`](biztonsagi-mentes.md) 9.).
+
+### 11.6 A megszűnt webes ág két eleme — feltárva, de nem cél
+
+| elem | magyar | mi ez |
+|---|---|---|
+| `publish/upgradestorage` | „Tárhely bővítése" (buboréksúgó: „További tárhely birtokában több fotót tölthet fel") | a Picasa Web Albums tárhely-vásárlás |
+| `publish/uploadallsync` | (buboréksúgó) „A kijelölt mappák és/vagy albumok szinkronizálási beállításának módosítása" | a PWA-szinkron kapcsolója |
+
+A hozzájuk tartozó becslő a `0x0066cb20` (2238 b): `publish/needed_storage`,
+`full_storage`, `final_storage`, és az `il_BurnPanel::PWA_storage_total`
+családú szövegek („Ezután körülbelül %s (%d%%) lesz felhasználva a(z)
+%s-ból"). ⇒ **Feltárva, de a szolgáltatás megszűnt** — a
+[`biztonsagi-mentes.md`](biztonsagi-mentes.md) 7. mérlege ezt már
+hatókörön kívülre tette.
+
+### 11.7 Részleges válasz a #2095-re
+
+A #2095 kérdése: **melyik ág melyik üzemmódhoz tartozik** a `0x0066f470`-ben.
+A hívó megvan: **`0x0067b0ee`**, és így hívja:
+
+```
+0x0067b0df  mov eax, [ebp+0x30f4]           ; a panel-objektum
+0x0067b0e5  movsx ecx, byte ptr [eax+0x13e] ; <- a MÁSODIK argumentum
+0x0067b0ec  push ecx
+0x0067b0ed  push eax
+0x0067b0ee  call 0x66f470
+```
+
+⇒ A `0x0066f470` `edi`-je (ami a `0x0066f546`-nál a nagy elágazást vezérli)
+**az objektum `+0x13e` bájtja**, nem független paraméter. A mód-jelző
+(`+0x13f`) a **szomszédja**. **A két bájt JELENTÉSE továbbra sincs mérve** —
+a #2095 nyitva marad, de a kérdés most már két konkrét tagváltozóra szűkül.
