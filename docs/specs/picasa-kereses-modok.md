@@ -466,6 +466,24 @@ tehát elég a méretre szűrnie.
 A bájtsorrend **BGRA** (`+0`=B, `+1`=G, `+2`=R), egyezően a `respack.yt`
 rétegeivel (`picasa-respack-format.md`).
 
+### ⚠️ Helyesbítés a 66. körből: a `0x007ea650` NEM a vektor építője
+
+A szakasz első kiadása a `0x007ea650`-t „jellemző-kinyerésként" írta le,
+mintha az adná a vektort. **A hívási helyek megcáfolják.** A függvény
+**három** paramétert kap — `(kép-leíró, kimenet1, kimenet2)` —, és
+**két skalárt** ad vissza hívásonként:
+
+| hívás | cím | kép-leíró | kimenet1 | kimenet2 |
+|---|---|---|---|---|
+| 1. | `0x007eb50e` | `esp+0x74` | `esp+0xAC` | `esp+0xB4` |
+| 2. | `0x007eb52e` | `esp+0x130` | `esp+0xB0` | `esp+0xA0` |
+| 3. | `0x007eb54e` | `esp+0x108` | `esp+0xA8` | `esp+0xA4` |
+| 4. | `0x007eb56b` | `esp+0xE0` | `esp+0x9C` | `esp+0x70` |
+
+⇒ **Négy KÜLÖNBÖZŐ képre** fut (a négy átméretezés eredményére), és
+összesen **nyolc skalárt** ad. Hogy ez a nyolc hova kerül, az alábbi
+szakasz mondja meg.
+
 ### A memóriabeli vektor 216 elem — a TÁROLT rekord kisebb
 
 A normalizáló (`0x007ebd90`) hurka:
@@ -510,4 +528,76 @@ A `CBlockFile` harmadik ismert fogyasztója a filmkészítő gyorstára
 található író hívás leírója **4 bájtos** blobot ad át
 (`0x0080f9a5`: `mov dword ptr [esp+0x10], 4`). Hogy ez mit jelöl, **NINCS
 MEG**; más írási helyet ehhez a fájlhoz nem találtam.
+
+## ⭐ A 380 bájtos rekord SZERKEZETE — két rész, pontos határral (#447, 2026-09-03)
+
+Az előző kör a rekord **méretét** mérte ki. Ez a kör a **belső határát** — a
+rekordot összeállító kód a `0x007eb5c4`–`0x007eb5f6` szakaszon áll, és
+maradék nélkül megmagyarázza a 380 bájtot.
+
+### Az összeállítás
+
+```
+0x007eb5c4   fld dword ptr [esp + 0xac]     ; az első skalár az FPU-veremre
+0x007eb5cb   mov ecx, 0x5f                  ; 95
+0x007eb5d0   lea esi, [esp + 0x264]         ; forrás: a munkapuffer
+0x007eb5d7   mov edi, ebx                   ; cél: a rekord
+0x007eb5d9   rep movsd                      ; 95 dword = PONTOSAN 380 bájt
+0x007eb5db   fstp dword ptr [ebx + 0x15c]   ; …majd a nyolc skalár FELÜLÍRJA a végét
+```
+
+⇒ A rekord **egy darabban** másolódik a `esp+0x264`-nél álló munkapufferből
+(`rep movsd`, `ecx = 0x5F` = 95 dword = 380 bájt), és **utána** nyolc
+`float`-tárolás felülírja az utolsó 32 bájtot.
+
+### A rekord két része
+
+```
++0x000 … +0x15B   348 bájt (87 dword)  — a munkapufferből másolt rész
++0x15C … +0x17B    32 bájt  (8 float)  — a négy 0x007ea650-hívás nyolc skalárja
+                                          ⇒ a rekord vége 0x17C = 380
+```
+
+### A nyolc skalár — teljes, ZÁRT megfeleltetés
+
+| rekord-eltolás | forrás | melyik hívásból |
+|---|---|---|
+| `+0x15C` | `esp+0xAC` | 1. hívás, kimenet1 |
+| `+0x160` | `esp+0xB4` | 1. hívás, kimenet2 |
+| `+0x164` | `esp+0xB0` | 2. hívás, kimenet1 |
+| `+0x168` | `esp+0xA0` | 2. hívás, kimenet2 |
+| `+0x16C` | `esp+0xA8` | 3. hívás, kimenet1 |
+| `+0x170` | `esp+0xA4` | 3. hívás, kimenet2 |
+| `+0x174` | `esp+0x9C` | 4. hívás, kimenet1 |
+| `+0x178` | `esp+0x70` | 4. hívás, kimenet2 |
+
+**A megfeleltetés zárt:** a négy hívás nyolc kimeneti címe **pontosan
+egyszer** szerepel a nyolc tárolás forrásaként, és a sorrend a hívási
+sorrendet követi. Ez egyben a hívási hely-táblát is hitelesíti.
+
+⚠️ *A `+0x178` forrása a rövid `fld dword ptr [esp+0x70]` kódolású
+(`d9 44 24 70`), nem a hosszú `d9 84 24 …` alak. Egy csak a hosszú alakot
+ismerő olvasó itt megismételné az előző forrást — a kettősség maga a
+jelzés, hogy a dekódolás hiányos.*
+
+### Mi maradt nyitva — SZŰKÜLT
+
+Nem a 380 bájt, hanem a **348 bájtos első rész**. Amit tudunk róla:
+
+- a `esp+0x264`-nél álló munkapufferből származik;
+- a puffert az **RGB565-kvantáló** tölti (`0x007eb8c0`), amelyet
+  `ecx = esp+0xE4` objektummal, `esp+0x266` paraméterrel hívnak, és előtte
+  `[esp+0x268] = 1` állítódik be (`0x007eb5a3`);
+- a rekord **első két bájtja** (`+0x000`, `+0x001`) tehát a
+  `esp+0x264`…`esp+0x265` tartományból jön, azaz **a kvantáló paraméterén
+  KÍVÜLRŐL** — ez a két bájt külön kérdés.
+
+⛔ **Mintafájl továbbra sincs** (a tulajdonos sosem futtatta a funkciót),
+tehát adatoldali ellenőrzés nincs. A következő lépés: a `0x007eb8c0`
+(549 b) kimeneti elrendezésének kiolvasása.
+
+*Bizonyítottsági fok: a **rekord kétrészes szerkezete és a nyolc skalár
+megfeleltetése megerősített** (a másoló és a nyolc tárolás címről címre
+kiolvasva, a megfeleltetés zárt); a **348 bájtos rész jelentése NINCS
+MEG**.*
 

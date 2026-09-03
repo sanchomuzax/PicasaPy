@@ -1014,6 +1014,23 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (5. kör) — a 380 bájtos hasonlóság-rekord SZERKEZETE
+(`picasa-kereses-modok.md`).** Az összeállító kód (`0x007eb5c4`–`0x007eb5f6`)
+maradék nélkül megmagyarázza a rekordot: `rep movsd` `ecx = 0x5F` = **95
+dword = pontosan 380 bájt** a `esp+0x264`-nél álló munkapufferből, **majd
+nyolc `float`-tárolás felülírja az utolsó 32 bájtot**. ⇒ a rekord két
+része: `+0x000…+0x15B` (348 bájt) a munkapufferből, `+0x15C…+0x17B`
+(8 `float`) a négy `0x007ea650`-hívás skalárjaiból. ⭐ **A megfeleltetés
+ZÁRT:** a négy hívás nyolc kimeneti címe pontosan egyszer szerepel a nyolc
+tárolás forrásaként, hívási sorrendben — ez egyben hitelesíti a hívási
+hely-táblát is. ⚠️ **Helyesbítés az előző körre:** a `0x007ea650` **nem** a
+vektor építője — három paramétert kap (`kép-leíró`, `kimenet1`,
+`kimenet2`), **két skalárt** ad hívásonként, és **négy különböző képre**
+fut (`esp+0x74`, `esp+0xE0`, `esp+0x108`, `esp+0x130`). A nyitott kérdés
+ezzel **szűkült**: nem a 380 bájt, hanem a **348 bájtos első rész**, amit
+az RGB565-kvantáló (`0x007eb8c0`) tölt; a rekord első két bájtja a kvantáló
+paraméterén kívülről jön. Mintafájl továbbra sincs. Jegy: **#447**.
+
 ⭐ **2026-09-03 (4. kör) — a HASONLÓSÁG-ADATBÁZIS tárolása és a lánc
 (`picasa-kereses-modok.md`).** A `searchoptions/similarthumb` mögötti
 hasonlóság-keresésnek saját, tartós adatbázisa van, és az a **`CBlockFile`**
