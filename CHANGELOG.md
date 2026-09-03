@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.260] – 2026-09-03
+
+### Javítva
+- A súgó keresője fejezetenként egy sort ad, a találat részletével és — ha a
+  lapon többször szerepel a keresett szó — a darabszámmal. Eddig ugyanaz a
+  cím ismétlődött a listában (#2214).
+
 ## [0.8.259] – 2026-09-03
 
 ### Javítva

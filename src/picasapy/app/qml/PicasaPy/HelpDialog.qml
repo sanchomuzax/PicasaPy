@@ -81,15 +81,52 @@ Dialog {
                 model: keresoMezo.text.trim().length > 0
                     ? talalatModell
                     : (controller ? controller.helpTopics : [])
+                // #2214: keresés közben a sor a CÍMET és a RÉSZLETET is
+                // mutatja. Korábban csak a cím látszott, a részlet pedig
+                // egérrámutatásra — mivel egy fejezet több sort is kapott,
+                // a lista ugyanazt a címet ismételte, és a sorok
+                // megkülönböztethetetlenek voltak. Ma egy fejezet egy sor,
+                // és ha többször előfordul, a darabszám is kiírja.
                 delegate: ItemDelegate {
+                    objectName: "helpResultRow"
                     width: ListView.view.width
-                    // keresés közben a találat CÍME + részlete, egyébként
-                    // a fejezet címe
-                    text: model.cim !== undefined ? model.cim : ""
+                    height: reszletSor.visible
+                        ? cimSor.implicitHeight + reszletSor.implicitHeight + 12
+                        : cimSor.implicitHeight + 12
                     onClicked: helpDialog.topic =
                         model.fejezet !== undefined ? model.fejezet : model.nev
-                    ToolTip.visible: hovered && model.reszlet !== undefined
-                    ToolTip.text: model.reszlet !== undefined ? model.reszlet : ""
+
+                    contentItem: Column {
+                        spacing: 1
+
+                        Text {
+                            id: cimSor
+                            objectName: "helpResultTitle"
+                            width: parent.width
+                            elide: Text.ElideRight
+                            color: Theme.ink
+                            font.pixelSize: Theme.fontSize
+                            // „Effektek listája (5)" — a darabszám csak
+                            // akkor jelenik meg, ha tényleg több van.
+                            text: {
+                                var cim = model.cim !== undefined ? model.cim : ""
+                                var db = model.db !== undefined ? model.db : 0
+                                return db > 1 ? cim + " (" + db + ")" : cim
+                            }
+                        }
+
+                        Text {
+                            id: reszletSor
+                            objectName: "helpResultSnippet"
+                            width: parent.width
+                            visible: model.reszlet !== undefined
+                                     && model.reszlet.length > 0
+                            elide: Text.ElideRight
+                            color: Theme.textGray
+                            font.pixelSize: Theme.fontSize - 2
+                            text: model.reszlet !== undefined ? model.reszlet : ""
+                        }
+                    }
                 }
             }
         }
