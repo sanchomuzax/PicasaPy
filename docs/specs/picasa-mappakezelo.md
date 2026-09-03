@@ -2653,3 +2653,50 @@ menüpont nem ugyanaz.
 bájtkereséssel, elcsúszás-mentesen; a mód-értékek diszasszemblálva.
 **Nem vizsgáltam**, mit csinál a mód-jelző a `0x005ce590`-en belül — ez
 külön kérdés, és nem blokkolja a fenti következtetést.*
+
+## A »Rejtett mappák« JELSZAVA — mérve a binárisból (#1637)
+
+Az eredeti a rejtett mappák gyűjteményét jelszóval védhetővé teszi
+(`IDS_PROMPT_HIDDEN_PWD_MESSAGE`, `IDS_WARN_NO_HIDDEN_PWD`). A tárolás
+alakja **nem** stílus-kérdés: ettől függ, mit ígérhetünk a felhasználónak.
+
+### A lánc, címekkel
+
+| lépés | cím | mi történik |
+|---|---|---|
+| jelszó megadása/módosítása | `0x005eb910` (903 b) | „Please enter a password to use for this collection", „Please verify your password", „The passwords did not match." |
+| a jelszó feldolgozása | `0x00a4cdd0` | a sztringet és a NUL-ig számolt hosszát adja tovább |
+| **a lenyomat** | **`0x00ab3640`** | **MD5** — mind a négy init-konstans egymás után: `0x67452301`, `0xEFCDAB89`, `0x98BADCFE`, `0x10325476` (`0x00ab3667`–`0x00ab367f`); a tömörítő `0x00ab36f0` / `0x00ab37b0` |
+| hex-be írás | `0x00a4d420` (330 b) | 16 bájt → **32 karakteres kisbetűs hex**; `push 0x21` (33 = 32 + lezáró), ábécé `0x00cd8f5c` = `"0123456789abcdef"` |
+| tárolás | `0x005ebc52` | a kapott sztring a `state` (`0x00c817f0`) / `info` (`0x00c812cc`) kulcs alá kerül |
+
+Az ellenőrző ág külön él: `0x005ec440` és `0x004ab650`
+(„Please enter a password to open this collection", `CAlbumState::passprompt`).
+A rejtett mappák felajánlását a `0x005ee2a0` végzi (`DoNotConfirmHiddenPwd`,
+„Don't Add Password" / „Add Password", és a
+„The »Hidden Folders« collection is not currently password protected." szöveg).
+
+⇒ **A tárolt érték a jelszó hex-kódolt MD5-e.** Nem nyílt szöveg és nem
+elfedés — de **sózatlan**, tehát mai mércével gyenge: azonos jelszó azonos
+lenyomatot ad, és az MD5 gyors, így a nyers erő olcsó.
+
+### Amit ez a védelem NEM ad
+
+A rejtett mappák a lemezen **változatlanul ott vannak**, bármelyik
+fájlkezelővel elérhetők. A jelszó a program felületén belüli
+**megjelenítést** kapuzza, nem a fájlokat. Aki ezt nem mondja ki a
+felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
+
+### Ami NINCS mérve
+
+- **Hol perzisztálódik** a `state` / `info` érték: a tulajdonos valódi
+  adatbázisában (302 `.pmp`) **nincs** jelszó-oszlop, tehát ez külön keresés.
+- **Milyen kódolással** megy a nem ASCII jelszó az MD5-be: a hossz NUL-ig
+  számolódik (`0x00a4cdd0`), tehát bájtsorozatról van szó, de a kódolás nem
+  igazolt. ASCII jelszónál ez közömbös; ékezetesnél a kompatibilitás nem
+  bizonyított.
+- **Elfelejtett jelszó**: van-e az eredetiben visszaállítás.
+
+*Bizonyítottsági fok: **megerősített** — a négy MD5 init-konstans és a
+hex-ábécé közvetlenül olvasva, a hívási lánc diszasszemblálva. A tárolás
+HELYE és a nem ASCII kódolás: **nem vizsgálva**, ld. fent.*
