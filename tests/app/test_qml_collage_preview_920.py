@@ -12,7 +12,10 @@ maradhat egy törött felület fölött).
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
+
+from tests.support.qml_halasztott import epitsd_fel
 
 
 def _settle(qt_app, rounds=6):
@@ -32,6 +35,16 @@ def _var(controller, jelzes, hivas, ms=8000):
     loop.exec()
     return erkezett["ok"]
 
+
+
+@pytest.fixture(autouse=True)
+def _felepitett_parbeszedek(qml_app):
+    """#1612: a Létrehozás-párbeszédek halasztva épülnek fel.
+
+    Ez a fájl a VISELKEDÉSÜKET méri, nem a felépülés pillanatát (azt a
+    #1720 őre), ezért minden eset előtt felépítjük őket — így az alábbi
+    `findChild`-ok változatlanul maradhatnak."""
+    epitsd_fel(qml_app[0], "createDialogs")
 
 class TestElonezet:
     def test_a_kijelolesre_keszul_elonezet(self, qml_app, qt_app):

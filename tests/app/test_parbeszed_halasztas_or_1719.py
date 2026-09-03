@@ -68,17 +68,11 @@ AZONNAL_EPULO = {
     ),
     "CollageDraftDialog": (
         "#1051: a kollázs-piszkozat visszaállításának felajánlása "
-        "induláskor. Ugyanaz az ok, mint az InitialScanDialog-nál."
-    ),
-    "CreateDialogs": (
-        "#29: a kollázs/film belépési pontja a tálcáról ÉS a menüből is "
-        "hívható, több jelzésen át — a halasztás minden hívóhelyen "
-        "`ensure()`-t kívánna, ami több hibalehetőség, mint amennyi időt "
-        "megspórol."
-    ),
-    "NameInputDialog": (
-        "#422: apró, egymezős névbekérő; a Személyek panel több pontjáról "
-        "hívják közvetlenül."
+        "induláskor. Ugyanaz az ok, mint az InitialScanDialog-nál — és "
+        "#1612 MÉRTE, hogy a halasztás itt semmit nem hozna: az "
+        "`openIfNeeded()` a főablak `Component.onCompleted`-jében fut, "
+        "feltétel nélkül, tehát az `ensure()` ugyanabban a pillanatban "
+        "felépítené. Nulla nyereség, plusz egy indirekció."
     ),
     "FileOpsDialogs": (
         "603 sor, a leghosszabb párbeszéd-fájlunk — a halasztása MÉRVE "

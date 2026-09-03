@@ -22,7 +22,10 @@ ilyen nincs.
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
+
+from tests.support.qml_halasztott import epitsd_fel
 
 
 def _settle(qt_app, rounds=4):
@@ -38,6 +41,16 @@ def _hold_first_photos(controller, count=2):
     controller.holdRows(list(range(count)))
     return controller.heldCount
 
+
+
+@pytest.fixture(autouse=True)
+def _felepitett_parbeszedek(qml_app):
+    """#1612: a Létrehozás-párbeszédek halasztva épülnek fel.
+
+    Ez a fájl a VISELKEDÉSÜKET méri, nem a felépülés pillanatát (azt a
+    #1720 őre), ezért minden eset előtt felépítjük őket — így az alábbi
+    `findChild`-ok változatlanul maradhatnak."""
+    epitsd_fel(qml_app[0], "createDialogs")
 
 class TestMenuKovetiATalcat:
     def test_talcaval_de_kijeloles_NELKUL_a_menupont_EL(self, qml_app, qt_app):

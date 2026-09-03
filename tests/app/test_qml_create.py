@@ -10,6 +10,8 @@ import numpy as np
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 
+from tests.support.qml_halasztott import epitsd_fel
+
 
 def _settle(qt_app, rounds=4):
     for _ in range(rounds):
@@ -35,26 +37,12 @@ class TestCreateMenu:
             assert window.findChild(QObject, name).property("enabled") is True
 
 
-def _create_dialogs(window):
-    """#1612: a Létrehozás-párbeszédek HALASZTVA épülnek fel.
-
-    Induláskor nincs példány (a `DeferredDialog` `Loader`-e inaktív), ezért
-    a `findChild("collageDialog")` és minden unokája `None` volna. A
-    FELHASZNÁLÓI út a menüből `createDialogs.ensure().openMovie()`-ként fut
-    be; ez a segéd ugyanazt teszi.
-    """
-    halasztott = window.findChild(QObject, "createDialogs")
-    assert halasztott is not None, "a createDialogs DeferredDialog nincs meg"
-    halasztott.metaObject().invokeMethod(halasztott, "ensure")
-    return halasztott
-
-
 @pytest.fixture(autouse=True)
 def _felepitett_parbeszedek(qml_app):
     """Ez a fájl a párbeszédek VISELKEDÉSÉT méri, nem a felépülés
     pillanatát — azt a #1720 őre (`test_qml_peldanyositas_or_1720.py`).
     Ezért itt minden eset előtt felépítjük őket."""
-    _create_dialogs(qml_app[0])
+    epitsd_fel(qml_app[0], "createDialogs")
 
 
 

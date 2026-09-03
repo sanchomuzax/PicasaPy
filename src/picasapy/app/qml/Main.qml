@@ -1163,7 +1163,7 @@ ApplicationWindow {
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
-        collageDraftDialog.ensure().openIfNeeded()
+        collageDraftDialog.openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
         // #1622: NÉMA felderítés korábbi telepítésből származó adatra —
@@ -2441,15 +2441,9 @@ ApplicationWindow {
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
     // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
-    //: #1612: halasztva — a piszkozat-kérdés csak indulás után, egyszer
-    //: merül fel; addig nincs miért felépülnie.
-    DeferredDialog {
+    CollageDraftDialog {
         id: collageDraftDialog
-        sourceComponent: Component {
-            CollageDraftDialog {
-                onRestored: documentTabStrip.activateTab(window.collageTabId)
-            }
-        }
+        onRestored: documentTabStrip.activateTab(window.collageTabId)
     }
 
     // #1129: a lebegő értesítősáv (Picasa Notifier) — önálló, keret nélküli
