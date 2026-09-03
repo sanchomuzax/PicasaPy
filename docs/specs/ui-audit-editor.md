@@ -1918,3 +1918,136 @@ le a gomb állapotát:
 *Bizonyítottsági fok: megerősített* (a `respack.yt` rétegeinek
 képpont-szintű mérése; a nevekben a `_n`/`_p`/`_h` utótag a
 deklarációból).
+
+---
+
+## A KETTŐS NÉZET (2-up) teljes vezérlőkészlete — mérve (2026-09-03)
+
+A **#434** a *fogalmat* rögzítette (három üzemmód, `TwoUp*` beállításkulcsok),
+de **egyetlen elemnevet és egyetlen címet sem** tartalmazott. Ez a szakasz a
+hiányzó felet adja: a hat vezérlőt, a hivatalos magyar buboréksúgókat, a
+csoportosításukat és az ütközés-párbeszédet.
+
+### 1. A három üzemmód-kapcsoló EGY SZEGMENTÁLT VEZÉRLŐ
+
+Mindhárom az `editpanel/layout_2up_group`-ban ül
+(`editpanel.tre:1166`–`:1199`), és a `respack.yt` rajza elárulja, hogy
+**egyetlen háromszegmenses kapcsoló**, nem három különálló gomb:
+
+| sorrend | elem (teljes név) | respack-rajz | **hivatalos magyar buboréksúgó** |
+|---|---|---|---|
+| bal | `editpanel/only_1up_toggle` | `superbutton(buttcon_**LS**_text_RC)` | **„Csak egy kép megjelenítése"** |
+| közép | `editpanel/ab_2up_toggle` | `superbutton(buttcon_**MS**_text_RC)` | **„Két különböző kép megjelenítése"** |
+| jobb | `editpanel/aa_2up_toggle` | `superbutton(buttcon_**RS**_text_RC)` | **„Ugyanazon kép megjelenítése kétszer"** |
+
+*(`LS` / `MS` / `RS` = left / middle / right segment; a feliratok forrása
+`panel-feliratok-hu.tsv` 4938–4940.)*
+
+#### ⭐ A kölcsönös kizárás mechanizmusa: `Property uptarget`
+
+Mindhárom kapcsoló **név szerint felsorolja a másik kettőt**:
+
+```
+editpanel/aa_2up_toggle: editpanel/layout_2up_group
+Property mousedown 1
+Property uptarget editpanel/ab_2up_toggle
+Property uptarget editpanel/only_1up_toggle
+```
+
+⇒ A lenyomás **explicit módon felengedi** a másik kettőt. **Nem** „checked"
+kötésen múlik, hanem az `uptarget` felsoroláson.
+
+> ⚠️ **Ez a mi rádió-csapdánk ellenszere.** Nálunk egyszer már megharapott,
+> hogy egy `checkable` vezérlő kötött `checked`-del az aktív módra kattintva
+> **minden pipát eltüntetett**. Az eredeti azért nem tud ebbe belefutni, mert
+> az aktív gombra kattintva a saját `uptarget`-jei közt **nem szerepel önmaga**
+> — tehát lenyomva marad.
+
+#### Az ALAPÉRTELMEZETT mód
+
+`editpanel/only_1up_toggle` az egyetlen, amin ott a **`Property setpressed 1`**
+(`editpanel.tre:1196`) ⇒ **induláskor az „egy kép" mód aktív**.
+
+Mindhármon ott a `Property mousedown 1` ⇒ **lenyomásra sülnek el**, nem
+felengedésre.
+
+### 2. Két segédgomb, ami alapból REJTETT
+
+| elem | respack-rajz | `.tre` | **hivatalos magyar buboréksúgó** |
+|---|---|---|---|
+| `editpanel/swap_2up_focus` | `superbutton(listheader_button)` | `editpanel.tre:1166`, **`m_hidden`** | **„Fókusz váltása a képek között"** |
+| `editpanel/swap_2up_layout` | `superbutton(listheader_button)` | `editpanel.tre:1172`, **`m_hidden`** | **„Váltás a vízszintes és a függőleges elrendezés között"** |
+
+⇒ **Csak 2-up módban jelennek meg** (`m_hidden` az alapállapot). Ugyanígy
+rejtett az `editpanel/weblink` is (`editpanel.tre:1160`, `m_hidden`, buboréksúgó: **„Ugrás az ehhez
+a fotóhoz társított webhelyre"**).
+
+### 3. A „Kijelölve" jelvény — és a nagyított párja
+
+| elem | rajz | **magyar felirat** |
+|---|---|---|
+| `editpanel/selection_label` | `text(Selected)` | **„Kijelölve"** |
+| `editpanel/selection_label_zoom` | — | **„Kijelölve"** |
+
+Mindkettőnek **kétrészes háttere** van (`selection_label_bg_left` +
+`_bg_right`, `editpanel.tre:964`–`:994`), a `_zoom` változat pedig az
+`editpanel/editback`-hez kötődik, míg az alap az `editpanel/overlay_group`-hoz.
+
+⇒ **2-up módban a jelvény mutatja, melyik oldal az aktív** — ez a
+`swap_2up_focus` vizuális visszajelzése.
+
+### 4. ⭐ A SZERKESZTÉSI ÜTKÖZÉS párbeszéde — teljes szöveggel
+
+A #434 megemlítette a `TwoUpEditConflictDialog`-ot; a tényleges
+erőforrás-család a **`CThumbUI::Confirm2up*`**, mind a **`0x0056aad0`**
+függvényben, a `DoNotAskOnEnd2Up` beállításkulccsal együtt:
+
+| erőforrás | angol | **hivatalos magyar** |
+|---|---|---|
+| `CThumbUI::Confirm2upEditTitle` | Choose Edits | **„Szerkesztett változatok kiválasztása"** |
+| `CThumbUI::Confirm2upEditMsg` | The same image has two different edits. Which one would you like to keep? | **„A képnek két szerkesztett változata van. Melyiket szeretné megtartani?"** |
+| `CThumbUI::Confirm2upLeft` | Left | **„Bal"** |
+| `CThumbUI::Confirm2upRight` | Right | **„Jobb"** |
+| `CThumbUI::Confirm2upTop` | Top | **„Fent"** |
+| `CThumbUI::Confirm2upBottom` | Bottom | **„Lent"** |
+| `CThumbUI::Confirm2upEditDontAsk` | Don't ask again, always use the selected image | **„Ne kérdezzen újra, mindig használja a kijelölt képet"** |
+| `il_Cancel` | Cancel | **„Mégse"** |
+
+⭐ **A válaszgombok NEM „A/B", hanem HELYZETEK** — és **négy** van belőlük,
+kettő vízszintes (`Bal` / `Jobb`), kettő függőleges (`Fent` / `Lent`)
+elrendezéshez. ⇒ **A párbeszéd a `swap_2up_layout` aktuális állásához
+igazítja a gombfeliratait.** Aki csak „Bal/Jobb"-ot épít meg, függőleges
+elrendezésben értelmetlen szöveget mutat.
+
+**Mikor jelenik meg:** amikor az **`AA` mód** (ugyanaz a kép kétszer) két
+külön szerkesztési állapotot hozott létre, és a felhasználó kilép a módból.
+A `DoNotAskOnEnd2Up` beállítás elnyomja.
+
+### 5. ⛔ `editpanel/wipe_2up_toggle` — a KÓD ismeri, a FELÜLET nem
+
+A bináris `0x005d59f0` vezérlő-listájában ott a **`editpanel/wipe_2up_toggle`**
+név, de az `editpanel.tre`-ben **egyáltalán nem szerepel** (`grep` az összes
+`.tre`-ben: **0 találat**), és a `respack.yt`-ban sincs rétege.
+
+⇒ **Ebben a kiadásban nincs ilyen vezérlő.** Ugyanaz a helyzet, mint a
+`headerpanel/create_cd`-nél
+([`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md) 9.2): **a bináris név
+megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
+
+### 6. Eredeti / nálunk / teendő
+
+| | eredeti (mért) | nálunk (mért) | teendő |
+|---|---|---|---|
+| a három mód | **egy szegmentált kapcsoló**, `uptarget`-tel | három külön `PicasaButton` (`PhotoViewer.qml:752`, `:761`, `:769`), **mind `enabled: false`** | szegmentált megjelenés; a kizárás `uptarget`-mintára |
+| sorrend | `only_1up` · `ab_2up` · `aa_2up` | **A · AB · AA** | ✅ **egyezik** |
+| alapértelmezés | `only_1up` (`setpressed 1`) | — (mind letiltva) | az „A" legyen az induló |
+| buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
+| `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **nincs** (`grep` → 0) | két gomb, 2-up módban láthatóan |
+| „Kijelölve" jelvény | megvan, kétrészes háttérrel | **nincs** | az aktív oldal jelzése |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **nincs** | a #367 párbeszédére ültetve |
+| `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
+
+> *Bizonyítottsági fok: **megerősített*** — minden felirat a
+> `panel-feliratok-hu.tsv` / `stringres-en-hu.tsv` sorából, minden szerkezet a
+> `editpanel.tre` és a `respack.yt` kiolvasott bejegyzéseiből, a mi oldalunk
+> greppel mérve.
