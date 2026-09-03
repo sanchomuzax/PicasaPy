@@ -661,7 +661,7 @@ szolgáltatás megszűnt ⇒ **hatókörön kívül**. Végül: **két** minős�
 család van (`CPrintDlg::*qual` és `ThumbUIPrint::Review*`), és a magyar
 `PrintCount` **megcseréli a pozicionális argumentumokat** (`%2$d / %1$d`).
 ⇒ **A `printpanel` ezzel teljesen feltárt: feltáratlan 6 → 0**
-(globálisan 122 → 116). Komment: **#1780**, **#446**; új jegy: **#2099**.
+(globálisan 122 → 116). Komment: **#1780**, **#446**; új jegy: **#2103**.
 
 ⭐ **2026-09-03 (11. szakasz) — a panel HÁROM JELÖLŐNÉGYZETE, és egy REJTETT
 MELLÉKHATÁS.** A 3./10. szakasz a *belső* beállításokat írta le; a felhasználó
