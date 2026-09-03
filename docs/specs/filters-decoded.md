@@ -690,8 +690,9 @@ Ami ebből közvetlenül ide tartozik:
 - `highlights`/`shadows` valódi UI-tartománya **0..0,48**, nem 0..1 — a
   sweepjeink ezen túlnyúltak.
 - `unsharp` (v1) Amount felső korlátja 1,0, `unsharp2`-é **3,0**.
-- A `Vignette` (és a vele azonos motorú `Matte`) modellje: **belső ragyogás**
-  (`GlowImageOperation innerglow`), `sugár = Blur·0,02·max(W,H)/4`,
+- A `Vignette` (és a vele azonos motorú `Matte`) modellje: **ragyogás**
+  (`GlowImageOperation` — az `innerglow` attribútum HALOTT, a műveletnek egy
+  módja van, #2076), `sugár = Blur·0,02·max(W,H)/4`,
   `strength` = a 2. paraméter, `alfa = 1 − Fade/100`.
 - ~~A `tint` `colorwheel version="0"`, az `ansel` `version="1"` — két külön
   színkódolás~~ — **MEGCÁFOLVA (2026-08-15)**: a `version` a szerkesztőpanel
