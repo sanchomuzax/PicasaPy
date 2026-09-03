@@ -1014,6 +1014,25 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-04 (2.) — az `AdjustCurves` négy görbéjének SORRENDJE
+(`filterdesc-registry.md`, #2238/1).** Az attribútum-olvasó
+(`0x00bb9b60`, 255 b) bájtszintű kiolvasása **zárt** megfeleltetést ad:
+`MasterCurve` = **`+0x40`** · `RedCurve` = **`+0x44`** ·
+`GreenCurve` = **`+0x48`** · `BlueCurve` = **`+0x4c`** — mind a négy név és
+mind a négy eltolás pontosan egyszer, azonos (növekvő) sorrendben, azonos
+háromlépéses mintával (név → régi érték olvasása → új érték írása).
+⇒ **A megvalósító nem feltevésből dolgozik.** Melléklelet: ugyanez az
+olvasó a görbék ELŐTT beolvassa az `ExposureAdjustmentStops` attribútumot a
+`+0x50` tagba (`0x00bb9b88`) — a szerepe NINCS MÉRVE.
+⛔ Az alkalmazó (`0x00bb9e00`) a keresett `mov r32, [reg+disp8]` alakkal
+**nem** hivatkozik a négy tagra (438 bájton nulla) — de ebből **nem
+következik**, hogy nem használja; más címzési alak vagy paraméterátadás
+nincs kizárva. ⛔ A `Depth` kérdése (#2238/2) **NYITVA**: a `0x00bb5b60`-ban
+a 3-3-2 paletta öt keresett bitmaszk-alakja **nulla** találatot ad (a
+negatívum csak ezekre az alakokra áll); a függvény egy **4268 bájtos**
+helyi puffert szondáz (`mov eax, 0x10ac`), aminek a jelentése nincs meg.
+Jegy: **#2238**.
+
 ⭐ **2026-09-04 — a `rainbow` ALT-os ágának kapcsolója MEGVAN
 (`filterdesc-registry.md`, #2224).** A kérdés azért volt nyitott, mert a
 lineáris pásztázás **hiányos**: négy hivatkozást és **nulla** írást talált.

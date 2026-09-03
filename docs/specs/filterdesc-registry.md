@@ -2640,3 +2640,79 @@ beállítás, parancssori kapcsoló, vagy futásidejű állapot-e.
 *Bizonyítottsági fok: a **két írás, a 139 hivatkozás osztályozása, a
 nullás kezdőérték és a kapu létezése megerősített** (címenként kiolvasva,
 illetve a szekció-méretekből számolva); a **kapu forrása NINCS MEG**.*
+
+## ⭐ `AdjustCurves`: a négy görbe-tag SORRENDJE megvan (#2238/1, 2026-09-04)
+
+A #2238 első kérdése: a `+0x40`…`+0x4c` tagok közül melyik a Master / Red /
+Green / Blue? A választ az **attribútum-olvasó** adja: `0x00bb9b60` (255 b),
+amely mind a négy nevet hivatkozza.
+
+### A megfeleltetés — ZÁRT
+
+| attribútum | tagoffszet | a név betöltése | olvasás | írás |
+|---|---|---|---|---|
+| `MasterCurve` | **`+0x40`** | `0x00bb9b90` | `0x00bb9ba2` | `0x00bb9bb4` |
+| `RedCurve` | **`+0x44`** | `0x00bb9bc0` | `0x00bb9bd2` | `0x00bb9be4` |
+| `GreenCurve` | **`+0x48`** | `0x00bb9bf0` | `0x00bb9c02` | `0x00bb9c14` |
+| `BlueCurve` | **`+0x4c`** | `0x00bb9c20` | `0x00bb9c32` | `0x00bb9c44` |
+
+**A megfeleltetés zárt:** mind a négy név **pontosan egyszer** szerepel,
+mind a négy eltolás **pontosan egyszer**, és a kettő sorrendje azonos
+(növekvő). Minden névhez ugyanaz a háromlépéses minta tartozik: név
+betöltése → `mov ecx, [ebx+eltolás]` (a régi érték) → `mov [ebx+eltolás],
+esi` (az új).
+
+⇒ **A sorrend tehát a természetes: Master, Red, Green, Blue.** Aki
+megvalósítja, ezt a hozzárendelést használja — nem feltevésből.
+
+### Nálunk MA — és a lelet MEGERŐSÍTI a meglévő kódot
+
+| | eredeti | nálunk | hol |
+|---|---|---|---|
+| `adjust_curves()` | négy görbe, `+0x40`…`+0x4c` | **megvan**, `master`/`red`/`green`/`blue` paraméterrel | `src/picasapy/render/glimmer_ops.py:125` |
+| sorrend | `MasterCurve` az **első** beolvasott | **master előbb**, utána a csatornánkénti | ugyanott, a docstringben kimondva |
+
+⇒ A mostani mérés **független úton megerősíti** a meglévő függvényünk
+paramétersorrendjét. ⚠️ Amit **nem** mond meg: hogy a görbe-alkalmazás
+*matematikája* egyezik-e — az attribútum-sorrend nem pixel-matematika.
+
+### Melléklelet: az `AdjustCurves`-nek van `ExposureAdjustmentStops`
+attribútuma is
+
+Ugyanez az olvasó a négy görbe **előtt** beolvassa az
+`ExposureAdjustmentStops` nevű attribútumot is, a `+0x50` tagba
+(`0x00bb9b68` a név, `0x00bb9b88` `lea esi, [ebx + 0x50]`).
+
+⚠️ *Amit ez NEM mond meg:* hogy a művelet mit kezd vele. Csak a beolvasás
+helye mérve.
+
+### ⛔ Amit NEM sikerült megmérni — pontos hatókörrel
+
+**Az alkalmazó (`0x00bb9e00`, 438 b) nem hivatkozik a négy tagra** a
+`mov r32, [reg+disp8]` kódolással — a teljes 438 bájton **nulla** találat
+erre az alakra. ⚠️ Ebből **nem következik**, hogy nem használja: más
+címzési alak (SIB, `disp32`, más bázisregiszter) vagy paraméterátadás is
+lehetséges. A görbék feltehetően a hívótól érkeznek, de ez **NINCS MÉRVE**.
+
+*Bizonyítottsági fok: a **név → tagoffszet megfeleltetés megerősített**
+(bájtszinten kiolvasva, zárt); az alkalmazó hozzáférési módja **NINCS
+MEG**, és a fenti negatívum csak a megnevezett kódolási alakra áll.*
+
+## `QuantizePalette` `Depth` (#2238/2) — részleges mérés, NYITVA marad
+
+A `0x00bb5b60` (1510 b) **nem tartalmazza** a 3-3-2 bites paletta
+jellegzetes maszkjait. Keresett minták, a teljes törzsön:
+`and al, 0xE0` · `and al, 0xC0` · `shr al, 5` · `shr al, 6` · `shr al, 2`
+— **mind nulla találat**.
+
+⚠️ **A negatívum hatóköre:** csak ezekre az alakokra áll. Más regiszterrel
+vagy szélesebb operandussal írt maszkolást ez a keresés nem fedne le.
+
+**Amit a függvény elejéről kiolvastam:** `0x00bb5b60`
+`mov eax, 0x10ac` / `call 0x00bf6b80` — verem-szondázás egy **4268 bájtos**
+helyi pufferhez. Ez a méret önmagában nem magyaráz palettát; a jelentése
+**NINCS MEG**.
+
+⇒ A `Depth` jelentése és a tartalék paletta kérdése **NYITVA marad**
+(#2238/2).
+
