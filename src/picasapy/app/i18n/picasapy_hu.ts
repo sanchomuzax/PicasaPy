@@ -8729,6 +8729,16 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>HelpDialog</name>
     <message>
+        <location filename="../qml/PicasaPy/HelpDialog.qml"/>
+        <source>Back</source>
+        <translation>Vissza</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/HelpDialog.qml"/>
+        <source>Contents</source>
+        <translation>Tartalom</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/HelpDialog.qml" line="19"/>
         <source>Help Contents and Index</source>
         <translation>Súgó - tartalom és tárgymutató</translation>
