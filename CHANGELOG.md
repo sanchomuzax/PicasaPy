@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.243] – 2026-09-03
+
+### Javítva
+- **Egy belső ellenőrzés két írásmódot átengedett (#2132).** Az az őr, amely
+  azt védi, hogy a később megnyíló ablakok ne veszítsék el a program
+  üzeneteit, csak a legegyszerűbb írásmódot ismerte fel — két, a kódban élő
+  változatot némán átengedett. Kijavítva; a program működését ez nem
+  érintette, de a következő fejlesztésnél valódi hibát rejtett volna el.
+
 ## [0.8.242] – 2026-09-03
 
 ### Javítva
