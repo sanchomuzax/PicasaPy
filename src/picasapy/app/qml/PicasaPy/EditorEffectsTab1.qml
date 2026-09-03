@@ -86,18 +86,18 @@ ColumnLayout {
             // `oneclick`, ezért a csempe JELVÉNYT kapott, holott az
             // eredetin nincs — a `PicnikGrain` módja `effect` (#2141)
             label: qsTr("Film Grain")
-            onButtonClicked: if (!panel.tryOpenParamPanel("PicnikGrain", label)) panel.effectRequested("PicnikGrain")
-            thumbSource: panel.effectThumbSource("PicnikGrain")
-            badge: panel.hasBadge("PicnikGrain")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
+            thumbSource: panel.effectThumbSource("picnikgrain")
+            badge: panel.hasBadge("picnikgrain")
         }
         PanelButton {
             objectName: "effectTint"
             // #2141: az eredeti 6. csempéje a `PicnikTint`; a `tint` a SHIFTes
             // másodlagos, saját felirata „Tint (Old)” (#2141)
             label: qsTr("Tint")
-            onButtonClicked: if (!panel.tryOpenParamPanel("PicnikTint", label)) panel.effectRequested("PicnikTint")
-            thumbSource: panel.effectThumbSource("PicnikTint")
-            badge: panel.hasBadge("PicnikTint")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picniktint", label)) panel.effectRequested("picniktint")
+            thumbSource: panel.effectThumbSource("picniktint")
+            badge: panel.hasBadge("picniktint")
         }
         PanelButton {
             objectName: "effectSat"

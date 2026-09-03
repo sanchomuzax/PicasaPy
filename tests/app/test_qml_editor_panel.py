@@ -414,8 +414,8 @@ class TestEffectButtons:
         "effectWarm": "warm",
         # #2141: az eredeti csempe-táblája (`0x00c7e5a0`) szerinti
         # elsődlegesek; a `grain2`/`tint` a Shiftes másodlagos.
-        "effectGrain2": "PicnikGrain",
-        "effectTint": "PicnikTint",
+        "effectGrain2": "picnikgrain",
+        "effectTint": "picniktint",
         "effectSat": "sat",
         "effectRadblur": "radblur",
         "effectGlow2": "glow2",

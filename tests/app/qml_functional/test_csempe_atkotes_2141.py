@@ -55,8 +55,8 @@ def _make_panel(engine):
 #: (elemnév, a hívandó kulcs) — az eredeti tábla szerint.
 CSEMPEK = [
     ("effectUnsharp", "unsharp2"),
-    ("effectGrain2", "PicnikGrain"),
-    ("effectTint", "PicnikTint"),
+    ("effectGrain2", "picnikgrain"),
+    ("effectTint", "picniktint"),
 ]
 
 
@@ -115,12 +115,12 @@ class TestAJelvenyAFilmszemcserolEltunik:
         from picasapy.render.registry import get_filter_spec
 
         assert get_filter_spec("grain2").mode == "oneclick"
-        assert get_filter_spec("PicnikGrain").mode == "effect"
+        assert get_filter_spec("picnikgrain").mode == "effect"
 
     def test_a_masik_ketto_jelvenyallapota_valtozatlan(self):
         from picasapy.render.registry import get_filter_spec
 
-        for regi, uj in [("unsharp", "unsharp2"), ("tint", "PicnikTint")]:
+        for regi, uj in [("unsharp", "unsharp2"), ("tint", "picniktint")]:
             assert (
                 get_filter_spec(regi).mode == get_filter_spec(uj).mode
             ), f"{regi} és {uj} módja eltér — a jelvény-állapot változna"
@@ -147,14 +147,47 @@ class TestAHaromCelSzuroTENYLEG_RENDEREL:
         return int(np.abs(ki.astype(int) - kep.astype(int)).sum())
 
     def test_mindharom_celszuro_valtoztat_a_kepen(self):
+        """⚠️ A láncba az INI-NÉV megy, nem a vezérlő-kulcs.
+
+        A vezérlő kulcsa kisbetűs (`picnikgrain`), a `.picasa.ini`-be
+        viszont a Picasa írásmódja kerül (`PicnikGrain`) — ezt az
+        `_EFFECT_INI_NAMES` képezi le. Kisbetűs névvel a renderelő NÉMÁN
+        kihagyja a szűrőt (`skipped`), ezért itt az ini-néven mérünk:
+        ugyanazon a leképezésen át, amit a vezérlő is használ."""
         import numpy as np
+
+        from picasapy.app.edit_controller import _EFFECT_INI_NAMES
 
         rng = np.random.default_rng(7)
         vilagos = rng.integers(200, 256, size=(40, 50, 3), dtype=np.uint8)
 
-        assert self._elteres("unsharp2", ("1", "60"), vilagos) > 0
-        assert self._elteres("PicnikGrain", ("1", "50"), vilagos) > 0
-        assert self._elteres("PicnikTint", ("1", "0"), vilagos) > 0
+        def ininev(kulcs):
+            return _EFFECT_INI_NAMES.get(kulcs, kulcs)
+
+        assert self._elteres(ininev("unsharp2"), ("1", "60"), vilagos) > 0
+        assert self._elteres(ininev("picnikgrain"), ("1", "50"), vilagos) > 0
+        assert self._elteres(ininev("picniktint"), ("1", "0"), vilagos) > 0
+
+    def test_a_harom_kulcs_INI_NEVE_a_renderelot_talalja(self):
+        """Az őr, ami a fenti csapdát a jövőben elkapja.
+
+        Ha egy csempe kulcsához hiányzik az ini-név-leképezés, a szűrő
+        némán kimarad a láncból: a felhasználó rákattint, és nem történik
+        semmi. Ez a próba a `skipped` listát nézi, nem a képet."""
+        import numpy as np
+
+        from picasapy.app.edit_controller import _EFFECT_INI_NAMES
+        from picasapy.ini.filters import FilterOp
+        from picasapy.render.chain import apply_filters
+
+        rng = np.random.default_rng(5)
+        kep = rng.integers(200, 256, size=(20, 25, 3), dtype=np.uint8)
+        for kulcs in ["unsharp2", "picnikgrain", "picniktint"]:
+            ini = _EFFECT_INI_NAMES.get(kulcs, kulcs)
+            r = apply_filters(kep, (FilterOp(ini, ("1", "10")),))
+            assert not list(r.skipped), (
+                f"{kulcs} (ini: {ini}) kimaradt a láncból: {list(r.skipped)}"
+            )
 
     def test_az_unsharp_es_unsharp2_az_ALAPERTEKEN_azonos(self):
         """Az átkötés a szokásos használatban nem változtat a képen.
@@ -200,7 +233,7 @@ class TestAzAtkotesNEM_veszi_el_a_csuszkat:
     def test_mindharom_uj_kulcsnak_van_katalogus_bejegyzese(self):
         from picasapy.app.effect_params import has_params
 
-        for kulcs in ["unsharp2", "PicnikGrain", "PicnikTint"]:
+        for kulcs in ["unsharp2", "picnikgrain", "picniktint"]:
             assert has_params(kulcs), (
                 f"{kulcs}: nincs katalógus-bejegyzés, a csempe elvenné a csúszkát"
             )
@@ -213,17 +246,17 @@ class TestAzAtkotesNEM_veszi_el_a_csuszkat:
 
         # az Élesítés és az Árnyalás eddig is csúszkás volt
         assert db("unsharp2") >= 1
-        assert db("PicnikTint") >= 1
+        assert db("picniktint") >= 1
         # a Filmszemcse eddig egykattintásos volt — most csúszkás lett,
         # az eredetihez hűen (`PicnikGrain` mode="effect")
-        assert db("PicnikGrain") == 2
+        assert db("picnikgrain") == 2
 
     def test_a_katalogus_ertekei_a_REGISZTERBOL_jonnek(self):
         """Nem becslés: a `filterdesc.xml`-ből származó regiszter adja."""
         from picasapy.app.effect_params import resolve_effect_params
         from picasapy.render.registry import get_filter_spec
 
-        for kulcs in ["unsharp2", "PicnikTint"]:
+        for kulcs in ["unsharp2", "picniktint"]:
             katalogus = resolve_effect_params(kulcs, width=1000, height=1000)[0]
             regiszter = get_filter_spec(kulcs).sliders[0]
             assert katalogus.minimum == regiszter.minimum, kulcs

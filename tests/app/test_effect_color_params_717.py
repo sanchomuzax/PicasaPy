@@ -90,8 +90,21 @@ class TestChainCarriesTheFullParameterSet:
     """A kiírt `filters=` lánc — a TÉNYLEGES szöveg, nem a szándék."""
 
     def test_tint_writes_the_color(self, editing):
+        """#2141: a `tint` a felületről MÁR NEM alkalmazható.
+
+        Az 1. fül 6. csempéje az eredeti elsődlegesére (`picniktint`)
+        kötött; a `tint` a Shiftes másodlagos, tehát nincs felületi
+        belépési pontja (a Shift-ág a #2146). A szűrő maga él: régi
+        láncból változatlanul visszajátszható.
+
+        A próba SZÁNDÉKA — a lánc a teljes paraméter-készletet viszi,
+        a szín is — a `radtint`-en él tovább (lentebb), aminek van
+        felületi csempéje."""
         editing.applyEffectWithParams("tint", [0.5, "#336699"])
-        assert _chain(editing) == "tint=1,0.500000,00336699;"
+        assert _chain(editing) == "", (
+            "a `tint` felületről alkalmazhatóvá vált — ha ez szándékos, "
+            "a #2141 csempe-kötését kell újranézni"
+        )
 
     def test_ansel_writes_the_color(self, editing):
         editing.applyEffectWithParams("ansel", ["#336699"])

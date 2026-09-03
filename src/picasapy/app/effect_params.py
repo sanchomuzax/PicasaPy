@@ -95,7 +95,10 @@ class EffectParam:
 
 #: Effektek, amelyeknek nincs állítható paramétere — a gomb azonnal alkalmaz
 #: (ez a Picasa viselkedése is: a Szépia/Fekete-fehér egy kattintás).
-PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "grain2", "invert")
+# #2141: a `grain2` KIKERÜLT — az 1. fül 5. csempéje az eredeti
+# elsődlegesére (`picnikgrain`) kötött, aminek VAN csúszkája. A
+# `grain2` a Shiftes másodlagos, felületi belépési pont nélkül.
+PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "invert")
 
 
 def _slider(key, label, minimum, maximum, default, step=1.0, max_formula=None, default_formula=None) -> EffectParam:
