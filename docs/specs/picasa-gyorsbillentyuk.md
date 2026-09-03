@@ -1067,17 +1067,85 @@ végigpásztáztam, és megtartottam azokat, amelyeket **legalább két**
 ⇒ **A diavetítésnek és a videólejátszónak NINCS saját VK-lánca.** Ez a
 negyedik, egymástól független kizárás a 10.11 három mérése után.
 
-### 10.17 Ami a diavetítésről/videóról továbbra sem tudható (kimondva)
+### 10.17 Ami a diavetítésről/videóról ekkor még nem volt tudható
 
-- A `Space` billentyű a `.text`-ben **nyolc** helyen szerepel `cmp ax, 0x20`
-  alakban (`0x006d6042`, `0x006d605f`, `0x006d7498`, `0x006d74e2`,
-  `0x006d7ead`, `0x006d8f9b`, `0x009d713d`, `0x009d732e`), de **egyik
-  gazdafüggvénynek sincs sztring-hivatkozása**, amiből a felület
-  azonosítható volna — a jelentésük **NINCS MÉRVE**.
+> ⛔ **EZ A SZAKASZ MEGDŐLT — a választ a 10.18–10.20 adja meg.**
+> A `Space`-nyom **hamis volt**: mind a nyolc `cmp ax, 0x20` hely
+> **bitmélység-vizsgálat** (`biBitCount`), nem billentyű (10.20).
+
+- ~~A `Space` billentyű a `.text`-ben **nyolc** helyen szerepel
+  `cmp ax, 0x20` alakban (`0x006d6042`, `0x006d605f`, `0x006d7498`,
+  `0x006d74e2`, `0x006d7ead`, `0x006d8f9b`, `0x009d713d`, `0x009d732e`),
+  de egyik gazdafüggvénynek sincs sztring-hivatkozása.~~
 - A keymap `/`, `,`, `.` rekeszeihez (VK `0xBF`, `0xBC`, `0xBE`) **egyetlen
-  összehasonlítást sem** találtam: sem `cmp ax, imm16` (10.11), sem a fenti
-  húsz lánc egyikében.
-- ⇒ **A diavetítés és a videólejátszó billentyűkezelése — ha van —
-  nem a fenti minták egyikét sem használja.** A következő lépés a
-  `0x006d5e90`, `0x006d7410`, `0x006d7e30`, `0x006d8eb0` függvények
-  azonosítása (ezek a `Space`-t vizsgálják).
+  összehasonlítást sem** találtam: sem `cmp ax, imm16` (10.11), sem a
+  húsz lánc egyikében. **Ez az állítás áll.**
+- ~~A következő lépés a `0x006d5e90`, `0x006d7410`, `0x006d7e30`,
+  `0x006d8eb0` azonosítása.~~ — **tárgytalan** (10.20).
+
+### 10.18 A LÁNC ÖTÖDIK SZEME: minden navigációs billentyű EGY továbbítóba megy (#2164, 2026-09-03)
+
+A 10.13 láncának 5. szeme, a **`0x00a53b00`**, saját index- és ugrótáblát
+használ (`0x00a53bb4` / `0x00a53ba8`, VK `0x08`…`0x70`, `edx = vk − 8`,
+`cmp edx, 0x68`). A tábla **három** ágra oszt, és ez a teljes tartalma:
+
+| ág | mely billentyűk | mit tesz |
+|---|---|---|
+| `0x00a53b7d` | **Backspace `0x08`, VK `0x0C`, Enter `0x0D`, Esc `0x1B`, Space `0x20`, PageUp `0x21`, PageDown `0x22`, End `0x23`, Home `0x24`, ←`0x25`, ↑`0x26`, →`0x27`, ↓`0x28`, Insert `0x2D`, Delete `0x2E`, VK `0x2F`, F1 `0x70`** | `push eax; push ecx; call 0x00a582f0` — **továbbítás** |
+| `0x00a53b9d` | **Shift `0x10`, Ctrl `0x11`, Alt `0x12`** | **eldobás** (visszatérés) |
+| `0x00a53b8a` | minden más | ha `Ctrl` és a billentyű `A`…`Z`, akkor szintén `0x00a582f0`; egyébként tovább a láncon |
+
+Ezen felül `WM_CHAR`-ra a **Tab** (`0x00a53b44`) külön ágon megy
+(`0x00a58170`), `Shift`-fel megfordított iránnyal (`test dl, 2`).
+
+**A továbbító (`0x00a582f0`)** nem billentyűt kezel: **eseményobjektumot
+épít** (`0x005c5da0`, `0x009dd770`, `0x005de720`), megkülönbözteti a
+`WM_KEYUP`-ot (`cmp eax, 0x101`, `0x00a58322`), és a **fókuszban lévő
+elemnek** küldi el.
+
+### 10.19 ⛔ EZ A VÁLASZ a #2164-re: a diavetítésnek/videónak NINCS saját kezelője
+
+A navigációs billentyűk **nem nézetenként** vannak lekezelve, hanem
+**eseményként a fókuszált elemnek** továbbítva. Ezért nem találtunk
+diavetítés- vagy videó-specifikus billentyűkezelőt: **nincs is.**
+
+**Öt egymástól független mérés vezetett ide:**
+
+1. az átképezhető kötés gépezete (`0x005c5f90`, `0x005c5fc0`) **1–1
+   hívóval** csak a Ctrl-táblában fut;
+2. a teljes `.text` **174** ugrótáblás `switch`-éből **egyetlen** indexel a
+   VK-ból (`0x005e61f1`);
+3. `cmp ax, 0xBC` / `0xBE` / `0xBF` (`,` `.` `/`): **nulla** előfordulás;
+4. a **húsz** VK-összehasonlító lánc (10.16) egyike sem a diavetítésé;
+5. **⛔ a `Space`-nyom HAMIS volt** — ld. lent.
+
+### 10.20 ⛔ HELYESBÍTÉS: a nyolc `cmp ax, 0x20` NEM a Space billentyű
+
+A 10.17 azt írta, hogy a `Space` a `.text`-ben nyolc helyen szerepel
+`cmp ax, 0x20` alakban, és a következő lépésként a `0x006d5e90`,
+`0x006d7410`, `0x006d7e30`, `0x006d8eb0` azonosítását nevezte meg.
+**Mind a nyolc hely BITMÉLYSÉG-vizsgálat, nem billentyű:**
+
+- a `0x006d6042`/`0x006d605f` melletti ág `cmp eax, 0x32595559`-t végez —
+  ez a **`'YUY2'` FourCC** videóformátum-kód —, és hibával tér vissza:
+  `mov eax, 0x8004022a` = **`VFW_E_TYPE_NOT_ACCEPTED`** (DirectShow);
+- a vizsgált mező mindenütt **`word ptr [reg+0x0e]`**, ami a
+  `BITMAPINFOHEADER` **`biBitCount`** mezője (14. bájt);
+- az összehasonlított értékek `1`, `8`, `0x18`, `0x20` = **1, 8, 24 és 32
+  bit/képpont** (`0x009d7126`–`0x009d7141`, `0x006d7498`, `0x006d7ead`,
+  `0x006d8f9b`).
+
+⇒ A `Space` billentyűre **nincs** külön ág; a 10.17 „következő lépése"
+**tárgytalan**, és a négy megnevezett függvény a **videó-formátum
+egyeztetése**, nem billentyűkezelés.
+
+### 10.21 Ami ezzel HATÓKÖRÖN KÍVÜLRE kerül
+
+„Melyik elem mit csinál a kapott eseménnyel" — ez **nem** a
+billentyűkiosztás kérdése, hanem elemenkénti viselkedés, és a
+**`ui-lefedettseg.md`** amúgy is elemenként tartja nyilván. Ezen a lapon
+ezért nem nyitunk rá kérdést.
+
+**Bizalmi fok: megerősített** (a két tábla teljes kiolvasása, a
+továbbító azonosítása, és a `biBitCount`-helyesbítés közvetlen
+kiolvasásból).
