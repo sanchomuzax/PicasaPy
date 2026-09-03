@@ -26,6 +26,19 @@ from picasapy.metadata.gps import GeoPoint, format_geotag
 from . import formatting
 
 
+#: #2013: a Helyek panel megerősítő küszöbei — MÉRT konstansok, nem a
+#: mi döntésünk. A kettő SZÁNDÉKOSAN különbözik: a törlés
+#: visszafordíthatatlanabb, ezért ott alacsonyabb a küszöb.
+#:
+#: * hely MEGVÁLTOZTATÁSA: `0x00652585` `cmp ebx, 0x14` — 20 fölött kérdez,
+#:   és a szám a TELJES KIJELÖLÉS elemszáma;
+#: * hely TÖRLÉSE: `0x006527ad` `cmp esi, 5` — 5 fölött kérdez, és a szám a
+#:   ténylegesen GEOCÍMKÉZETT elemeké (`0x006524c0` predikátum-számláló),
+#:   nem a kijelölésé.
+HELY_MODOSITAS_KUSZOB = 20
+HELY_TORLES_KUSZOB = 5
+
+
 class GeoMixin:
     """Hely-szűrő, jelölő-lista és `geotag=` írás."""
 
@@ -94,6 +107,34 @@ class GeoMixin:
             return document.with_value(photo.name, "geotag", value)
 
         self._write_geotag(photos, mutate)
+
+    @Property(int, constant=True)
+    def geoChangeConfirmThreshold(self) -> int:
+        """A hely MEGVÁLTOZTATÁSÁNAK megerősítő küszöbe (#2013).
+
+        A felület ezt olvassa — beégetett `20` a hívás helyén nem
+        maradhat, mert a szám MÉRT konstans (`0x00652585`), nem a mi
+        döntésünk."""
+        return HELY_MODOSITAS_KUSZOB
+
+    @Property(int, constant=True)
+    def geoClearConfirmThreshold(self) -> int:
+        """A hely TÖRLÉSÉNEK megerősítő küszöbe (#2013), `0x006527ad`."""
+        return HELY_TORLES_KUSZOB
+
+    @Slot(list, result=int)
+    def geotaggedCount(self, rows) -> int:
+        """Hány kijelölt képnek van TÉNYLEGESEN geocímkéje (#2013).
+
+        A törlés megerősítő küszöbe ezt a számot nézi, nem a kijelölését:
+        ha 100 kép van kijelölve és ebből 3 geocímkézett, az eredeti NEM
+        kérdez (3 ≤ 5), és a kérdésben is a 3 szerepelne, nem a 100.
+        """
+        return sum(1 for foto in self._selected_photos(rows) if self._van_geo(foto))
+
+    def _van_geo(self, foto) -> bool:
+        """Van-e `geotag=` az ini-ben ehhez a képhez."""
+        return bool(getattr(foto, "geotag", None))
 
     @Slot(list)
     def clearGeotagRows(self, rows) -> None:

@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.253] – 2026-09-03
+
+### Hozzáadva
+- A **Helyek panel** mostantól rákérdez a nagy műveletekre, ahogy az
+  eredeti Picasa: **20-nál több** kijelölt képnél a hely megadása előtt,
+  és **5-nél több** geocímkézett képnél a helyek törlése előtt. A két
+  küszöb szándékosan más — a törlés visszafordíthatatlanabb —, és a
+  törlésnél a kérdésben az szerepel, ahány képnek **tényleg van** helye,
+  nem a kijelölés mérete.
+
 ## [0.8.252] – 2026-09-03
 
 ### Hozzáadva
@@ -14,6 +24,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   olvassa a Picasa katalógusának útvonal-nyilvántartását teljes egészében
   (létrehozás és hozzáférés ideje, méret, fajta), és a bélyegkép-táblák
   slot-nyilvántartását is. Ez a régi Picasa-adatok importjához kell.
+
 
 ## [0.8.251] – 2026-09-03
 

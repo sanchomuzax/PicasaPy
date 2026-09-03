@@ -3651,7 +3651,30 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+        <message>
+        <location filename="../qml/Main.qml" line="1076"/>
+        <source>Change Location</source>
+        <translation>Hely módosítása</translation>
+    </message>
     <message>
+        <location filename="../qml/Main.qml" line="1087"/>
+        <source>You have more than a few items selected.
+
+Are you sure you want to change the location of all %1 items?</source>
+        <translation>Több elemet is kijelölt.
+
+Biztosan módosítani szeretné az összes (%1) elem helyét?</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1112"/>
+        <source>You have more than a few items selected.
+
+Are you sure you want to clear the locations for all %1 items?</source>
+        <translation>Több elemet is kijelölt.
+
+Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
+    </message>
+<message>
         <source>Clear Geotags</source>
         <translation>Geocímkék törlése</translation>
     </message>
