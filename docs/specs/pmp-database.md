@@ -2047,70 +2047,184 @@ kiírása — a bináris rekord és a CSV egy és ugyanaz a szerkezet.
 kiterjesztés-eloszlás értelmes (119 483 `jpg`, 7 697 `png`, 7 664
 könyvtár, 2 108 `jpeg`, 1 770 `mp4`).
 
-### 8.2 `thumbs_index.db` · `previews_index.db` · `bigthumbs_index.db`
+### 8.2 `*_index.db` — NÉGY párhuzamos tömb (HELYESBÍTVE 2026-09-03)
 
-```
-+0   float32  verzió = 1.6
-+4   uint32   0
-+8   uint32   slotszám (N)
-+12  uint32   0
-+16  uint32   0            ⇒ a fejléc 20 bájt
-+20  N × 12 bájt rekord:
-        +0  uint64  „q" — a nagy mező
-        +8  uint32  „u" — a kis mező
-```
+> ⚠️ **Ez a szakasz helyesbíti önmagát.** A lap első, ugyanaznapi kiadása
+> „20 bájt fejléc + N × 12 bájtos rekord (`uint64 q` + `uint32 u`)"-t írt le.
+> **A szerkezet téves volt.** A két modell **bitre ugyanazt a fájlméretet**
+> adja — `20 + 12N` —, ezért a méret-ellenőrzés nem tudta megkülönböztetni
+> őket. Az alábbi leírás a bináris ÍRÓ KÓDJÁBÓL jön, nem méret-illesztésből.
 
-**Ellenőrzés:** `thumbs_index.db` — 1 689 080 bájt = 20 + 140 755 × 12,
-**pontosan**; `previews_index.db` és `bigthumbs_index.db` — 3 287 072 bájt
-= 20 + 273 921 × 12, **pontosan**. A fejlécben álló slotszám mindkét
-esetben megegyezik a lap korábbi méréseivel (140 755, illetve 273 921).
+#### Az író
 
-⇒ A korábbi szakaszok „kulcsvektora" ennek a rekordnak a **`q` mezője**.
+A tár-osztály másodlagos vtáblájának (`0x00ca84e8`) **1. rekesze**:
+`0x006b7fc0` (786 b). A tár-objektumot a `0x00415ab6` hívás építi
+(`0x006b5d40`, 146 b), amely `[edi] = 0x00ca84bc` és `[edi+0x48] =
+0x00ca84e8` vtáblákat állítja be.
 
-### 8.3 A KULCS KÉPZÉSE — még mindig nyitott, de KÉT újabb hipotézis-család elesett
-
-A 7 kizárt PMP-oszlop mellé ez a kör kettőt tett:
-
-**a) Közvetlen mező-egyezés az útvonal-indexszel — NULLA.** A 117 794
-*fájl* típusú sloton (a könyvtárak kihagyva) tíz összevetés futott:
-`q` = FILETIME1 · `q` = FILETIME2 · `u` = FILETIME1 felső/alsó 32 ·
-`u` = FILETIME2 felső/alsó 32 · `u` = méret · `q` alsó/felső 32 = méret ·
-`u` = a kiegészítő mező. **Egyetlen egyezés sem.**
-
-**b) Útvonal-hash — NULLA.** 3 000 mintasloton, négy bemenetre (teljes
-útvonal · kisbetűs · fájlnév · kisbetűs fájlnév) hat függvény:
-CRC-32, FNV-1a 32, djb2, FNV-1a 64, MD5 alsó és felső 8 bájtja.
-**24 kombináció, egyetlen egyezés sem.**
-
-### 8.4 Amit a kulcsról MÉRTÜNK — a következő kör induljon innen
-
-| megfigyelés | szám |
+| cím | mit tesz |
 |---|---|
-| nem üres `q` | 135 858 |
-| ebből **egyedi** | **135 345** (99,6%) |
-| nem üres `u` | 133 455 |
-| ebből egyedi | **96 716** (72,5%) |
-| csak `q` van, `u` nincs | 2 505 |
-| csak `u` van, `q` nincs | 102 |
-| egyik sincs (üres slot) | 4 795 |
+| `0x006b8071` | `fld dword ptr [0x00d678e0]` — a verzió-float betöltése |
+| `0x006b807f` | `edi = 0x00c85ef8` → a `"wbS"` fopen-mód sztringje |
+| `0x006b8088` | `call 0x009917f0` — fájlmegnyitás írásra |
+| `0x006b80a2` | `fwrite(puffer, 4, 1, f)` — **a 4 bájtos verzió** |
+| `0x006b81ae` | `call 0x0099c1e0` a `[esi+0x0c]` tárolóra |
+| `0x006b81c4` | `call 0x0099c1e0` a `[esi+0x14]` tárolóra |
+| `0x006b81de` | `call 0x0099c1e0` a `[esi+0x1c]` tárolóra |
+| `0x006b81fc` | `call [[ebx]+0x20]` — a **leszármazott** saját tömbje |
 
-**A `q` és az `u` NEM ugyanannak a dolognak a két fele:** a `q` gyakorlatilag
-egyedi, az `u` viszont több mint negyedében ismétlődik.
+A verzió-float forrása globális: `0x004056c9`-nél
+`fld dword ptr [0x00cf50b8]` / `fstp dword ptr [0x00d678e0]`, ahol
+`[0x00cf50b8] = 0x3fcccccd` = **1.6**. Ez a konstans a teljes binárisban
+**kétszer** fordul elő, és a globálisnak **kilenc** olvasója van — az egyik
+épp a `0x006b8073`, azaz ez a metódus.
 
-**Bit-eloszlás** (a nulla értékek kihagyásával): a `q` felső nyolc bitjének
-1-aránya **0,33 · 0,33 · 0,33 · 0,33 · 0,28 · 0,27 · 0,16 · 0,16** — egy jó
-hash-nél mindegyik ~0,50 volna. ⇒ **A `q` egyedi, mint egy hash, de az
-eloszlása nem egyenletes** — a értékek a kis felé húznak, miközben a
-tartomány teteje is használt (max `0xffff28d7dbf16bf2`).
+A tároló-író `0x0099c1e0` (91 b) mindössze ennyit tesz:
 
-⇒ **A következő kör NE általános hash-családokat próbáljon** (a kettő
-kizárva), hanem a `q` **előállítási helyét** keresse a binárisban: a
-`thumbs.db` írási útja, azaz a `0x00415790` store-inicializáló által
-felépített objektum írás-metódusa.
+| cím | mit tesz |
+|---|---|
+| `0x0099c1eb` | `esi = [edi+4] >> 1` — **az elemszám** |
+| `0x0099c1fd` | `fwrite(&esi, 4, 1, f)` — a darabszám kiírása |
+| `0x0099c228` | `fwrite([edi], 4, esi, f)` — `esi` darab **4 bájtos** elem |
 
-*Bizonyítottsági fok: a **formátum megerősített** (mindkét fájltípus
-maradék nélkül parszolható, a fejlécbeli darabszám egyezik a független
-méréssel); a **kulcs képzése NYITOTT**, de két hipotézis-család mérve
-kizárva.*
+⇒ Nincs 12 bájtos rekord. **Négy, egymás után kiírt `uint32`-tömb van,
+mindegyik előtt a saját darabszáma.**
+
+#### A formátum
+
+```
++0        float32   verzió           ; a 0x00d678e0 globálból, minden mintában 1.6
+          uint32    n0               ; 0. tömb elemszáma — MINDEN mintában 0
+          uint32    n1 = N           ; slotszám
+          N × uint32   kulcs         ; forrás-azonosító bélyeg (ld. 8.5)
+          uint32    n2 = N
+          N × uint32   eltolás       ; bájteltolás a <név>_0.db adatfájlban
+          uint32    n3 = N
+          N × uint32   hossz         ; a blob hossza bájtban; 0 = üres slot
+```
+
+#### Az ellenőrzés, ami a méret-egyezésnél erősebb
+
+A **legutolsó `eltolás + hossz`** értéknek meg kell egyeznie a hozzá tartozó
+`<név>_0.db` adatfájl méretével. Három független katalóguson:
+
+| index | slot | foglalt | utolsó vég | az adatfájl mérete | egyezik |
+|---|---:|---:|---:|---:|:--:|
+| `albums_index.db` | 144 | 37 | 1 328 872 | 1 328 872 | ✅ |
+| `thumbs_index.db` | 3 338 | 3 204 | 15 071 085 | 15 071 085 | ✅ |
+| `thumbs2_index.db` | 140 755 | 133 454 | 279 202 618 | 279 202 618 | ✅ |
+
+Mindhárom fájl **0 bájt maradékkal** parszolható a fenti modellel.
+A blobok többsége hézagmentesen követi egymást (`thumbs2`: 128 444 /
+133 453 szomszédpár érintkezik) — a hézagok a törölt bejegyzések helyei.
+
+### 8.3 A blobok NYERS JPEG-ek
+
+A `thumbs`, `thumbs2`, `bigthumbs` és `previews` első foglalt blobja
+egyaránt `ff d8 ff e0 00 10 4a 46` kezdetű, azaz **JFIF-fejlécű JPEG**.
+Nincs saját fejléc, nincs képméret-előtag: az `eltolás`/`hossz` páros
+közvetlenül egy JPEG-fájlt határol ki az adatfájlból.
+
+⚠️ **Az `albums.db` KIVÉTEL:** ott a blob 8 bájt fejléc (`uint32 width`,
+`uint32 height`) + `w·h·4` bájt **BGRA** — ld. a lap „ÖTÖDIK bélyegkép-tár"
+szakaszát. A **keret** (a négy tömb) mind az ötnél azonos; csak a blob
+tartalma tér el.
+
+⇒ **A PicasaPy egy `open()` + `seek()` + `read()`-del kiveheti az eredeti
+Picasa bélyegképét.** Ehhez a kulcs képzését NEM kell ismerni.
+
+### 8.4 A slot sorszáma MAGA az azonosító — nincs kulcskeresés
+
+A `thumbs`, `thumbs2` és `facetemplatesV2` slotszáma együtt mozog a
+`thumbindex.db` rekordszámával:
+
+| katalógus | `thumbindex` N | `thumbs` | `thumbs2` | `facetemplatesV2` | `bigthumbs` | `previews` | `albums` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A | 140 758 | 140 755 | 140 755 | — | 273 921 | 273 921 | 2 371 |
+| B | 3 338 | **3 338** | **3 338** | **3 338** | 6 169 | 5 971 | 144 |
+| C | 2 903 | **2 903** | **2 903** | 2 882 | 6 169 | 5 971 | 125 |
+
+Két katalógusban **pontosan egyenlő**, a harmadikban 3-mal kevesebb (a
+`thumbindex` három újabb bejegyzéséhez még nem készült bélyegkép).
+
+⇒ A `<név>_index.db` **nem hash-tábla**: a slot indexe azonos a
+`thumbindex.db` rekordsorszámával. *Megerősítő mérés:* `kulcs % slotszám ==
+slot` a 3 204 foglalt slotból **0**-ra teljesül, és a slotszám nem
+kettőhatvány — nyitott címzésű táblának egyik sem volna igaz.
+
+**A `bigthumbs` és a `previews` UGYANEBBEN az azonosítótérben él** — a
+nagyobb slotszámuk túlfoglalás, nem másik tér. A bizonyíték a **legutolsó
+FOGLALT slot indexe**:
+
+| katalógus | `thumbindex` N | `bigthumbs` slot | utolsó foglalt idx | foglalt |
+|---|---:|---:|---:|---:|
+| A | 140 758 | 273 921 | 140 741 | 14 531 |
+| B | 3 338 | 6 169 | 3 748 | 1 221 |
+| C | 2 903 | 6 169 | **2 902 = N−1** | 399 |
+
+A C katalógusban a legutolsó foglalt slot **pontosan** a `thumbindex` utolsó
+rekordja; az A-ban 17-tel alatta van. A tömb tehát a `thumbindex`
+sorszámával indexelődik, csak **jóval nagyobbra van foglalva, és sosem
+zsugorodik** — a `bigthumbs`/`previews` mindkét kis katalógusban azonos
+(6 169 / 5 971), mert közös előzményből örökölték.
+
+A B katalógusban a 3 748 **túllóg** a mai N=3 338-on: ott a `thumbindex`
+zsugorodott (részhalmaz-katalógus), és a fölötte maradt bejegyzések
+elárvultak. ⇒ **Olvasáskor a slotszám fölé nem szabad indexelni, és az
+N-en túli foglalt slotokat el kell dobni.**
+
+### 8.5 Mi a kulcstömb — NEM tartalom-ellenőrzőösszeg
+
+A `thumbs` és a `thumbs2` kulcstömbje **bitre azonos** (3 338 / 3 338
+egyezés), miközben a bennük tárolt JPEG-ek különbözőek. ⇒ a kulcs a
+**forrásból** származik, nem a tárolt blobból.
+
+A „tartalom-hash" hipotézist **kétirányú mérés cáfolja**:
+
+| irány | `thumbs` | `previews` |
+|---|---:|---:|
+| ugyanaz a kulcs, de a blobok NEM azonosak | 217 / 217 csoport | 161 / 161 csoport |
+| azonos blob, de ELTÉRŐ kulcs | 310 eset | 18 eset |
+
+Egyik irányban sem áll a megfeleltetés. **Elvetve.**
+
+A `thumbindex.db` 30 bájtos farkában sem szerepel: a farok mind a 27
+lehetséges eltolásán megnézve egyetlen `uint32` sem esik a kulcshalmazba
+20%-nál nagyobb arányban.
+
+**Amit tudunk:** ugyanaz az útvonal **324** esetben visel két különböző
+kulcsot (3 204 foglalt slotra 1 532 egyedi útvonal jut) ⇒ a kulcs az
+útvonalon **kívül** legalább egy változó bemenetet is használ.
+
+### 8.6 VISSZAVONVA: a korábbi kiadás `q`/`u` mérései
+
+A lap első kiadásának 8.3 és 8.4 szakasza egy 12 bájtos rekord `q` és `u`
+mezőjét elemezte. **Ez a két mező nem létezik.** A téves olvasás a
+kulcs-, eltolás- és hossztömb egymás melletti bájtjait ragasztotta össze,
+ezért az ott közölt kizárások (10 mező-összevetés, 24 hash-kombináció) és
+statisztikák (egyediségi arányok, bit-eloszlás) **nem érvényesek** — nem
+egy valódi mezőre vonatkoztak. Aki a kulcs képzését kutatja, **ne
+támaszkodjon rájuk**, és ne tekintse a felsorolt hash-családokat kizártnak.
+
+⭐ **A visszavont szakaszban ott volt a saját cáfolata is:** a „`q`" felső
+bitjeinek 1-aránya `0,33 … 0,16` volt, 0,50 helyett. Ezt a kiadás
+érdekességként írta le. Valójában ez pontosan az, amit **kis egész számok
+felső bitjeitől** várunk — az eltolás-tömbtől. A ferde bit-eloszlás nem a
+hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
+
+### 8.7 Ami NYITVA marad
+
+| kérdés | állapot | a következő lépés |
+|---|---|---|
+| a kulcs képzésének képlete | **NYITOTT** (örökölt) | a kulcstömböt feltöltő kód: a `0x006b7fc0`-t hívó **olvasó** párja, illetve a `[esi+0x0c]` tároló írói |
+| mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
+
+**A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
+Picasa bélyegkép-gyorsítótárát (8.3–8.4) — csak ahhoz kell, hogy olyan
+gyorsítótárat ÍRJUNK, amit a Picasa frissnek fogad el.
+
+*Bizonyítottsági fok: a **formátum megerősített** (az író kódjából olvasva
+ÉS három katalóguson maradék nélkül, az adatfájl méretével egyezően
+ellenőrizve); a **kulcs képzése NYITOTT**.*
 
 Jegyek: **#2195** (olvasó a két formátumhoz), **#1** (a db3-import gyűjtő).

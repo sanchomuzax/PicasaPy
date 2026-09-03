@@ -1014,6 +1014,29 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 — a `*_index.db` NÉGY PÁRHUZAMOS TÖMB, és az előző napi
+leírás HELYESBÍTVE.** A `pmp-database.md` 8.2 szakaszának első kiadása
+„20 bájt fejléc + N × 12 bájtos rekord (`uint64 q` + `uint32 u`)"-t írt le.
+**A szerkezet téves volt** — és a hiba azért maradt észrevétlen, mert a két
+modell **bitre ugyanazt a fájlméretet** adja (`20 + 12N`), tehát a
+méret-ellenőrzés nem tudta megkülönböztetni őket. A valódi szerkezet az
+**író kódjából** olvasva: `0x006b7fc0` (a tár másodlagos vtáblájának,
+`0x00ca84e8`, 1. rekesze) kiír 4 bájt verziót (`0x00d678e0` globál, `1.6`),
+majd háromszor hívja a `0x0099c1e0` tároló-írót, amely
+`fwrite(&darab,4,1,f)` után `fwrite(adat,4,darab,f)`-et tesz — **nincs 12
+bájtos rekord**. A négy tömb: üres · **kulcs** · **eltolás** · **hossz**.
+Az ellenőrzés, ami a méretnél erősebb: a legutolsó `eltolás+hossz`
+**bitre** az adatfájl mérete (144/3 338/140 755 slotos katalóguson egyaránt).
+⭐ A blobok **nyers JPEG-ek** ⇒ a PicasaPy `seek`+`read`-del kiveheti az
+eredeti bélyegképet, **a kulcs képzésének ismerete nélkül**. A slot indexe
+maga az azonosító (`thumbindex.db` rekordsorszáma), a `bigthumbs`/`previews`
+nagyobb slotszáma **túlfoglalás**, nem másik azonosítótér. A kulcs **nem**
+tartalom-hash (kétirányú cáfolat: 217/217 azonos kulcs eltérő blobbal,
+310 azonos blob eltérő kulccsal). ⛔ **Visszavonva** a korábbi kiadás `q`/`u`
+statisztikái és kizárásai — nem létező mezőkre vonatkoztak; a bennük közölt
+ferde bit-eloszlás (0,16 az 0,50 helyett) valójában **a saját modell
+cáfolata** volt, csak érdekességként lett leírva. Jegy: **#2195**.
+
 ⭐ **2026-09-02 — az ÖTÖDIK bélyegkép-tár: `albums.db`, a mappák BORÍTÓJA.**
 A tulajdonos képernyőképe mutatta, hogy a bal hasáb fastruktúrájában **fotó-kupac**
 áll a sárga mappaikon helyett. Nem futásidejű: **mappánként egy mentett
