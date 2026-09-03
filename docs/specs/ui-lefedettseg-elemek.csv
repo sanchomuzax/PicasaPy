@@ -1,72 +1,72 @@
 elem,allapot,bizonyitek,megjegyzes
 searchcontainer/starsearch,megvan,PicasaPy/MainToolbar.qml,"Csillag-szűrő: nálunk a ★ jel a keresősáv mellett (controller.showStarred), felirat nélkül"
-searchcontainer/geotagsearch,megvan,PicasaPy/MainToolbar.qml,"Geo-szűrő: objectName geoFilter + icons/geo-pin.svg (controller.showGeotagged)"
-searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,"Keresés törlése: objectName searchClear (a ✕ gomb a mezőben)"
+searchcontainer/geotagsearch,megvan,PicasaPy/MainToolbar.qml,Geo-szűrő: objectName geoFilter + icons/geo-pin.svg (controller.showGeotagged)
+searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,Keresés törlése: objectName searchClear (a ✕ gomb a mezőben)
 outputlayout/ebutton,megvan,PicasaPy/TrayBar.qml,"Nálunk „E-Mail” a felirata, az eredetiben „Email” — kötőjel miatt nem egyezik szó szerint"
-outputlayout/folderbutton,megvan,PicasaPy/TrayBar.qml;PicasaPy/ExportDialogs.qml,"Az „Export” tálcagomb az Exportálás párbeszédet nyitja"
-throttle/throttlethumb,megvan,PicasaPy/PicasaScrollBar.qml,"A görgetősáv fogantyúja — nálunk névtelen Rectangle a PicasaScrollBar-ban"
-acquirepanel/rotate1button,megvan,PicasaPy/ImportSourceDialog.qml,"Forgatás importáláskor: objectName importRotateRight:<index> a bélyegkép-rácson (399. sor)"
-acquirepanel/rotate2button,megvan,PicasaPy/ImportSourceDialog.qml,"Forgatás importáláskor (balra): objectName importRotateLeft:<index> (397. sor)"
-acquirepanel/startoggle,megvan,PicasaPy/ImportSourceDialog.qml,"Csillagozás importáláskor: objectName importStar:<index> (424. sor)"
-acquirepanel/excludetoggle,megvan,PicasaPy/ImportSourceDialog.qml,"Kihagyás/felvétel képenként: importSourceToggle:<index> + Exclude All / Include All (335/340/453. sor)"
+outputlayout/folderbutton,megvan,PicasaPy/TrayBar.qml;PicasaPy/ExportDialogs.qml,Az „Export” tálcagomb az Exportálás párbeszédet nyitja
+throttle/throttlethumb,megvan,PicasaPy/PicasaScrollBar.qml,A görgetősáv fogantyúja — nálunk névtelen Rectangle a PicasaScrollBar-ban
+acquirepanel/rotate1button,megvan,PicasaPy/ImportSourceDialog.qml,Forgatás importáláskor: objectName importRotateRight:<index> a bélyegkép-rácson (399. sor)
+acquirepanel/rotate2button,megvan,PicasaPy/ImportSourceDialog.qml,Forgatás importáláskor (balra): objectName importRotateLeft:<index> (397. sor)
+acquirepanel/startoggle,megvan,PicasaPy/ImportSourceDialog.qml,Csillagozás importáláskor: objectName importStar:<index> (424. sor)
+acquirepanel/excludetoggle,megvan,PicasaPy/ImportSourceDialog.qml,Kihagyás/felvétel képenként: importSourceToggle:<index> + Exclude All / Include All (335/340/453. sor)
 acquirepanel/import_selected,megvan,PicasaPy/ImportSourceDialog.qml,"A kijelöltek importálása: a kihagyás-kapcsolóval szűrt készlet megy át, egyetlen Import gombbal (629. sor)"
-acquirepanel/anowbutton,megvan,PicasaPy/ImportSourceDialog.qml,"Az összes importálása: Include All után az Import gomb (341/629. sor)"
-acquirepanel/acancelbutton,megvan,PicasaPy/ImportSourceDialog.qml,"Mégse: a Close gomb (638. sor)"
-acquirepanel/delete_menu,megvan,PicasaPy/ImportSourceDialog.qml,"After Copying hármas rádió: Leave card alone / Delete only copied photos / Delete everything on card (548/555/562. sor)"
-acquirepanel/searchstatus,megvan,PicasaPy/ImportSourceDialog.qml,"Keresési állapot: importSourceBusyIndicator + importSourceCountText + importSourceEmptyText (304/311/319. sor)"
+acquirepanel/anowbutton,megvan,PicasaPy/ImportSourceDialog.qml,Az összes importálása: Include All után az Import gomb (341/629. sor)
+acquirepanel/acancelbutton,megvan,PicasaPy/ImportSourceDialog.qml,Mégse: a Close gomb (638. sor)
+acquirepanel/delete_menu,megvan,PicasaPy/ImportSourceDialog.qml,After Copying hármas rádió: Leave card alone / Delete only copied photos / Delete everything on card (548/555/562. sor)
+acquirepanel/searchstatus,megvan,PicasaPy/ImportSourceDialog.qml,Keresési állapot: importSourceBusyIndicator + importSourceCountText + importSourceEmptyText (304/311/319. sor)
 acquirepanel/subfolder_menu,megvan,PicasaPy/ImportSourceDialog.qml,"Almappa-elnevezés hármasa: kézi cím / dátum szerint / mai dátum — importSourceNamingManualRadio, ...ByDateRadio, ...TodayRadio (503/521/528. sor)"
 collagepanel/makedesktop,megvan,PicasaPy/CollagePanel.qml,"„Desktop Background” gomb (collageMakeDesktopButton, 190. sor); a buboréksúgó szövege majdnem szó szerint az eredetié, de nem betűre — ezért nem párosult gépi úton"
 collagepanel/sharebutton,megvan,PicasaPy/CollagePanel.qml,"„Create Collage” gomb (collageShareButton, 201. sor); buboréksúgója az eredetiét követi (Collages album, Projects gyűjtemény)"
 collagepanel/tab2,megvan,PicasaPy/CollagePanelTabBar.qml,"„Clips (%1)” fül (collageClipsTabButton, 51. sor) — a darabszám miatt nem egyezik szó szerint a „Clips”-szel"
-collagepanel/deleteclips,megvan,PicasaPy/CollageClipsTab.qml,"„Remove the selected pictures from the tray” buboréksúgó (119. sor) — az eredeti szövege „Remove selected clips from the tray”"
+collagepanel/deleteclips,megvan,PicasaPy/CollageClipsTab.qml,„Remove the selected pictures from the tray” buboréksúgó (119. sor) — az eredeti szövege „Remove selected clips from the tray”
 collagepanel/caption_checkbox,megvan,PicasaPy/CollageSettingsTab.qml,"Képfelirat-kapcsoló: collageCaptionCheckbox (499. sor), a controller collageCaptions tulajdonságával (70. sor)"
 collagepanel/portrait,megvan,PicasaPy/CollageSettingsTab.qml,"Álló tájolás gomb: collagePortraitButton, a collageOrientation ==  portrait állapottal"
 collagepanel/landscape,megvan,PicasaPy/CollageSettingsTab.qml,"Fekvő tájolás gomb: collageLandscapeButton (344. sor), collageOrientation == landscape (352. sor)"
 quicktagconfig/recent_checkbox,megvan,PicasaPy/QuickTagsConfigDialog.qml,"quickTagsReserveRecentCheck (84. sor); a felirat nálunk „Reserve the top two buttons…”, az eredetiben „Reserve top two buttons…” — egy szó eltérés miatt nem párosult"
 quicktagconfig/recent_checkbox_label,megvan,PicasaPy/QuickTagsConfigDialog.qml,"ua., a jelölőnégyzet felirata (86. sor)"
-quicktagconfig/autofill,megvan,PicasaPy/QuickTagsConfigDialog.qml,"quickTagsAutoFillCheck (92. sor): „Fill the empty boxes above with frequently used tags”"
+quicktagconfig/autofill,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagsAutoFillCheck (92. sor): „Fill the empty boxes above with frequently used tags”
 thumbui/smallthumbs,megvan,PicasaPy/PicasaMenuBar.qml,"Kis indexkép: a Nézet menü thumbSizePreset(96) tétele (301. sor) — nálunk menütétel, az eredetiben eszköztárgomb"
 thumbui/largethumbs,megvan,PicasaPy/PicasaMenuBar.qml,"Nagy indexkép: thumbSizePreset(144) (306. sor) — ua., menütételként"
-thumbui/rotateleft,megvan,PicasaPy/PhotoContextMenu.qml;PicasaPy/PicasaMenuBar.qml,"Forgatás balra: a Kép menüben és a fotó helyi menüjében; az eredetiben eszköztárgomb is"
-thumbui/rotateright,megvan,PicasaPy/PhotoContextMenu.qml;PicasaPy/PicasaMenuBar.qml,"Forgatás jobbra: ua."
-thumbui/scratchhold,megvan,PicasaPy/TrayBar.qml,"A képtálca „Hold” gombja (trayHold)"
-thumbui/scratchclear,megvan,PicasaPy/TrayBar.qml,"A képtálca „Clear” gombja (trayClear)"
-thumbui/newalbum,megvan,PicasaPy/FolderPane.qml;PicasaPy/AlbumsSection.qml,"Új album létrehozása a bal hasábról"
-thumbui/newfolder,megvan,PicasaPy/PicasaMenuBar.qml;PicasaPy/FileOpsDialogs.qml,"„Áthelyezés új mappába…” a Fájl menüben"
+thumbui/rotateleft,megvan,PicasaPy/PhotoContextMenu.qml;PicasaPy/PicasaMenuBar.qml,Forgatás balra: a Kép menüben és a fotó helyi menüjében; az eredetiben eszköztárgomb is
+thumbui/rotateright,megvan,PicasaPy/PhotoContextMenu.qml;PicasaPy/PicasaMenuBar.qml,Forgatás jobbra: ua.
+thumbui/scratchhold,megvan,PicasaPy/TrayBar.qml,A képtálca „Hold” gombja (trayHold)
+thumbui/scratchclear,megvan,PicasaPy/TrayBar.qml,A képtálca „Clear” gombja (trayClear)
+thumbui/newalbum,megvan,PicasaPy/FolderPane.qml;PicasaPy/AlbumsSection.qml,Új album létrehozása a bal hasábról
+thumbui/newfolder,megvan,PicasaPy/PicasaMenuBar.qml;PicasaPy/FileOpsDialogs.qml,„Áthelyezés új mappába…” a Fájl menüben
 editpanel/croptext,megvan,PicasaPy/EditorCropPanel.qml,"Vágás-útmutató: „Choose a size below, then drag on the picture to…” (56. sor) — az eredeti „Select a dimension below and then click and drag…” szövegével egyező tartalom, más megfogalmazásban"
-editpanel/crop_aspect_menu,megvan,PicasaPy/EditorCropPanel.qml,"Képarány-választó: cropAspectCombo (81. sor) + cropAspectList (109.)"
+editpanel/crop_aspect_menu,megvan,PicasaPy/EditorCropPanel.qml,Képarány-választó: cropAspectCombo (81. sor) + cropAspectList (109.)
 editpanel/crop_delete_custom,megvan,PicasaPy/EditorCropPanel.qml,"Egyéni képarány törlése: cropAspectDelete<index> (164. sor), megerősítéssel („Delete this custom aspect ratio?”, 186.)"
 editpanel/cropsug_preview1,megvan,PicasaPy/EditorCropPanel.qml,"Vágás-javaslat 1: cropSuggestion0 (270. sor), a „Suggested crops” sorban (237.)"
-editpanel/cropsug_preview2,megvan,PicasaPy/EditorCropPanel.qml,"Vágás-javaslat 2: cropSuggestion1 (271. sor)"
-editpanel/cropsug_preview3,megvan,PicasaPy/EditorCropPanel.qml,"Vágás-javaslat 3: cropSuggestion2 (272. sor)"
+editpanel/cropsug_preview2,megvan,PicasaPy/EditorCropPanel.qml,Vágás-javaslat 2: cropSuggestion1 (271. sor)
+editpanel/cropsug_preview3,megvan,PicasaPy/EditorCropPanel.qml,Vágás-javaslat 3: cropSuggestion2 (272. sor)
 editpanel/retouchtext,megvan,PicasaPy/EditorRetouchPanel.qml,"Retus-útmutató (56. sor), az eredeti szövegének megfelelő tartalommal"
-editpanel/redeyetext,megvan,PicasaPy/EditorRedeyePanel.qml,"Vörösszem-útmutató (64. sor) + az automatikus javítás visszajelzése (79–80.)"
-editpanel/retouch_label,megvan,PicasaPy/EditorRetouchPanel.qml,"„Retouch” fejléc (47. sor)"
-editpanel/redeye_label,megvan,PicasaPy/EditorRedeyePanel.qml,"„Redeye” fejléc (55. sor)"
+editpanel/redeyetext,megvan,PicasaPy/EditorRedeyePanel.qml,Vörösszem-útmutató (64. sor) + az automatikus javítás visszajelzése (79–80.)
+editpanel/retouch_label,megvan,PicasaPy/EditorRetouchPanel.qml,„Retouch” fejléc (47. sor)
+editpanel/redeye_label,megvan,PicasaPy/EditorRedeyePanel.qml,„Redeye” fejléc (55. sor)
 editpanel/filllight_icon,megvan,PicasaPy/EditorFinetunePanel.qml,"Derítőfény: SliderCaption „Fill Light” + finetuneFillSlider (105., 108. sor)"
 editpanel/droppertoggle,megvan,PicasaPy/EditorFinetunePanel.qml,"Semleges színválasztó: finetuneNeutralPicker (208. sor), buboréksúgója az eredetiét követi („Pick a neutral gray or white area of the photo to…”, 211.)"
 editpanel/faces_button,megvan,PicasaPy/PhotoViewer.qml,"Arcok megjelenítése/elrejtése: facesToggleButton (1490. sor), a facesVisible kapcsolóval (165–166.)"
-editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,"Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében"
+editpanel/filter_name,megvan,PicasaPy/EditorParamPanel.qml,Az aktív effekt neve: effectParamTitle (191. sor) a paraméter-panel fejlécében
 unknownfaceheaderpanel/ignore,megvan,PicasaPy/UnnamedFacesView.qml,"Kijelöltek mellőzése: ignoreFacesButton (117. sor), buboréksúgóval; a párja az unignoreFacesButton („Stop ignoring”, 109.)"
 peoplepanel/manual_add,megvan,PicasaPy/UnnamedFacesView.qml;PicasaPy/FacesOverlay.qml,"Személy kézi hozzáadása: addNameButton („Add a name”, 128. sor); a gesztus-utasítás a FacesOverlay.qml:283-ban van hivatkozva"
 tagpanel/add_tag_label,megvan,PicasaPy/TagsPanel.qml,"Címke-beviteli mező helyőrzővel: tagInput (87. sor), „Add a tag…” (91.)"
-tagpanel/addtag,megvan,PicasaPy/TagsPanel.qml,"Címke hozzáadása gomb: tagAddButton (97. sor)"
+tagpanel/addtag,megvan,PicasaPy/TagsPanel.qml,Címke hozzáadása gomb: tagAddButton (97. sor)
 tagpanel/quick_config,megvan,PicasaPy/TagsPanel.qml,"Gyorscímkék beállítása: quickTagsGearButton (201. sor), a QuickTagsConfigDialog-ot nyitja"
 gedialog/tagall,megvan,PicasaPy/PlacesPanel.qml,"Az összes kijelölt geocímkézése: a PlacesPanel a controller.setGeotagRows(appWindow.selectedIndexes, lat, lon)-t hívja (109. sor) — egy hely a TELJES kijelölésre"
-editpanel/1to1,megvan,PicasaPy/PhotoViewer.qml:1497,"„Valódi méret”: zoomActual() (:217) + zoomActualButton »1:1« felirattal; a #6 építette meg"
-editpanel/fit,megvan,PicasaPy/PhotoViewer.qml:1490,"„Befér a nézetbe”: zoomFit() (:214) + zoomFitButton »⛶« felirattal; dupla kattintásra is (:1432)"
-editpanel/aa_2up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:616,"A gomb LÉTEZIK (compareButtonAA) de véglegesen enabled:false — a #434 tárgya"
-editpanel/ab_2up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:611,"A gomb LÉTEZIK (compareButtonAB) de véglegesen enabled:false — a #434 tárgya"
-editpanel/swap_2up_focus,hianyzik,-,"„Switch which image has focus” — semmilyen alakban nincs nálunk; a #434 hatókörébe vonva"
-editpanel/swap_2up_layout,hianyzik,-,"„Switch between horizontal and vertical layout” — nincs nálunk; a #434 hatókörébe vonva"
-editpanel/only_1up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:606,"A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya"
-editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,"Az effekt-csempe képe — nálunk STATIKUS SVG (44x30); él-e az eredetiben: #1869 (blokkolt)"
-makemoviepanel/recompute,hianyzik,-,"NINCS megvalósítva (a CreateDialogs.qml párbeszéde egyből renderel). De FELTÁRVA: #1408 / picasa-create-features.md 2.5b — 0x0061df10 megerősítő párbeszéd + askapplyconfirm. Kutatni NEM kell, megépíteni igen (#432)."
-makemoviepanel/sizelist,hianyzik,-,"NINCS megvalósítva (nálunk rögzített magasság-lista, CreateDialogs.qml:241). De FELTÁRVA: #1408 — a moviesize listbox építője 0x00613b50, hét méret. Kutatni NEM kell, megépíteni igen (#432)."
-makemoviepanel/add_audio,hianyzik,-,"Hangsáv betöltése — a MovieSettings-ben (slideshow.py:32) nyoma sincs; három opció: CMakeMoviePanel::audiooption0..2"
-makemoviepanel/insert_slide,hianyzik,-,"Szövegdia beszúrása — a teljes szövegdia-szerkesztő hiányzik (#432)"
-makemoviepanel/transtype_label,hianyzik,-,"»Képváltási stílus« — nálunk egyetlen áttűnés van (slideshow.py:41 transition_seconds)"
-makemoviepanel/tab3,hianyzik,-,"A harmadik fül magyar neve »Klipek« (az angol »Options«-szel szemben) — a magyar a mérvadó"
+editpanel/1to1,megvan,PicasaPy/PhotoViewer.qml:1497,„Valódi méret”: zoomActual() (:217) + zoomActualButton »1:1« felirattal; a #6 építette meg
+editpanel/fit,megvan,PicasaPy/PhotoViewer.qml:1490,„Befér a nézetbe”: zoomFit() (:214) + zoomFitButton »⛶« felirattal; dupla kattintásra is (:1432)
+editpanel/aa_2up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:616,A gomb LÉTEZIK (compareButtonAA) de véglegesen enabled:false — a #434 tárgya
+editpanel/ab_2up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:611,A gomb LÉTEZIK (compareButtonAB) de véglegesen enabled:false — a #434 tárgya
+editpanel/swap_2up_focus,hianyzik,-,„Switch which image has focus” — semmilyen alakban nincs nálunk; a #434 hatókörébe vonva
+editpanel/swap_2up_layout,hianyzik,-,„Switch between horizontal and vertical layout” — nincs nálunk; a #434 hatókörébe vonva
+editpanel/only_1up_toggle,hianyzik,PicasaPy/PhotoViewer.qml:606,A gomb LÉTEZIK (compareButtonA) de véglegesen enabled:false — a #434 tárgya
+editpanel/fxpreview1,megvan,PicasaPy/ToolTile.qml:76,Az effekt-csempe képe — nálunk STATIKUS SVG (44x30); él-e az eredetiben: #1869 (blokkolt)
+makemoviepanel/recompute,lekutatva,picasa-create-features.md,"#1878 utáni pontosítás: a sor eddig `hianyzik` volt, de a megjegyzése maga mondta ki, hogy FEL VAN TÁRVA — NINCS megvalósítva (a CreateDialogs.qml párbeszéde egyből renderel). De FELTÁRVA: #1408 / picasa-create-features.md 2.5b — 0x0061df10 megerősítő párbeszéd + askapplyconfirm. Kutatni NEM kell, megépíteni igen (#432)."
+makemoviepanel/sizelist,lekutatva,picasa-create-features.md,"#1878 utáni pontosítás: a sor eddig `hianyzik` volt, de a megjegyzése maga mondta ki, hogy FEL VAN TÁRVA — NINCS megvalósítva (nálunk rögzített magasság-lista, CreateDialogs.qml:241). De FELTÁRVA: #1408 — a moviesize listbox építője 0x00613b50, hét méret. Kutatni NEM kell, megépíteni igen (#432)."
+makemoviepanel/add_audio,hianyzik,-,Hangsáv betöltése — a MovieSettings-ben (slideshow.py:32) nyoma sincs; három opció: CMakeMoviePanel::audiooption0..2
+makemoviepanel/insert_slide,hianyzik,-,Szövegdia beszúrása — a teljes szövegdia-szerkesztő hiányzik (#432)
+makemoviepanel/transtype_label,hianyzik,-,»Képváltási stílus« — nálunk egyetlen áttűnés van (slideshow.py:41 transition_seconds)
+makemoviepanel/tab3,hianyzik,-,A harmadik fül magyar neve »Klipek« (az angol »Options«-szel szemben) — a magyar a mérvadó
 printpanel/3x5button,megvan,PicasaPy/PrintDialog.qml,»3.5 x 5 in« a printSizeLabels tömbben (:93) — a felirat mértékegységgel bővül
 printpanel/printlayoutlabel,megvan,PicasaPy/PrintDialog.qml,»Layout:« (:279) — az elrendezés-választó felirata; két rádió (egy kép/lap · indexkép)
 printpanel/copieslabel,megvan,PicasaPy/PrintDialog.qml,»Copies of each picture:« (:351) — képenkénti példányszám; a mért eredeti szemantika
@@ -131,3 +131,38 @@ quicktagconfig/cancel,megvan,PicasaPy/QuickTagsConfigDialog.qml,standardButtons:
 quicktagconfig/cancel-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,a Cancel gomb felirata (:36)
 quicktagconfig/ok-label,megvan,PicasaPy/QuickTagsConfigDialog.qml,az Ok gomb felirata (:36)
 thumbui/hviewtoggle,hianyzik,,"NEM önálló vezérlő: a folderview + flatview gombpár TARTÓJA a buttonbarsets-ben (thumbui.tre:406/412/415, 2026-09-03). Nálunk a mappanézet-váltás csak a Nézet menüben van (#1454), eszköztár-gombpárként nincs; a két gyerek hiányát a #1421 tartja nyilván."
+editpanel/picnik_fx,lekutatva,ui-audit-editor.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+editpanel/picnik_fx_label,lekutatva,ui-audit-editor.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+keywords/addbutton,lekutatva,picasa-beviteli-mezok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+keywords/addkeywords_label,lekutatva,picasa-beviteli-mezok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+keywords/closebutton,lekutatva,picasa-beviteli-mezok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+keywords/readonly_label,lekutatva,picasa-beviteli-mezok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+keywords/removebutton,lekutatva,picasa-beviteli-mezok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+makemoviepanel/font_label,lekutatva,picasa-create-features.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+makemoviepanel/size_label,lekutatva,picasa-create-features.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+makemoviepanel/style_label,lekutatva,picasa-create-features.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+outputlayout/orderbutton,lekutatva,picasa-program-resources.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+outputlayout/sharewith,lekutatva,picasa-program-resources.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/backup_help,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/backupcdheader2,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/backuptext3,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/giftcdtext,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/label_rpoptionbox1,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/label_rpoptionbox2,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/label_rpoptionbox3,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/presentcd_help,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/replicate_button_group,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/rpoptionbox1,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/rpoptionbox2,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+publish/webpublish_cancel,lekutatva,biztonsagi-mentes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+searchcontainer/timecontainer_label,lekutatva,ui-audit-mainwindow.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+searchoptions/label_searchresult,lekutatva,picasa-kereses-modok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+searchoptions/viewallbutton,lekutatva,picasa-kereses-modok.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+thumbui/lightbox_esolo_button,lekutatva,racs-ures-allapot.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+thumbui/lightbox_esolo_text,lekutatva,racs-ures-allapot.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+thumbui/visitweb,lekutatva,picasa-fo-ablak-elrendezes.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+video_control_bar/moviemode1,lekutatva,ui-audit-editor.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+video_control_bar/setin,lekutatva,ui-audit-editor.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+video_control_bar/setout,lekutatva,ui-audit-editor.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+video_control_bar2/1to1,lekutatva,picasa-create-features.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
+video_control_bar2/fullscreen,lekutatva,picasa-create-features.md,"A lap TELJES NEVEN leírja, de a bizonyító szakaszban nincs 0x-cím vagy fájl+sor, ezért a gépi detektor feltáratlannak sorolta (binaris-regeszet-modszertan.md 18./22.)"
