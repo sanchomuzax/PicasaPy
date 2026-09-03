@@ -18,7 +18,13 @@ from __future__ import annotations
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from ..help_content import FOOLDAL, fejezet_szovege, fejezetek, kereses
+from ..help_content import (
+    FOOLDAL,
+    fejezet_szovege,
+    fejezetek,
+    hivatkozas_celja,
+    kereses,
+)
 
 
 class HelpMixin(QObject):
@@ -59,6 +65,18 @@ class HelpMixin(QObject):
         buktathatja el a programot, és a néző a főoldalra tud esni.
         """
         return fejezet_szovege(nev) or ""
+
+    @Slot(str, str, result=str)
+    def helpResolveLink(self, honnan: str, cel: str) -> str:
+        """Egy Markdown-hivatkozás célja fejezetnévként; üres, ha nem az.
+
+        A nyitólap a súgó tartalomjegyzéke — csupa relatív hivatkozás —,
+        ezért a feloldás a HIVATKOZÓ fejezethez képest történik. Üres
+        választ adunk vissza (nem hibát) minden olyan célra, ami külső,
+        nem létezik, vagy kilépne a súgó mappájából: a felület ilyenkor
+        egyszerűen nem lép sehova (#2212).
+        """
+        return hivatkozas_celja(honnan, cel) or ""
 
     @Slot(str, result="QVariantList")
     def helpSearch(self, kifejezes: str) -> list[dict[str, str]]:

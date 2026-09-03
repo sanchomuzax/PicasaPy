@@ -84,6 +84,51 @@ def _feloldott(nev: str) -> Path | None:
     return jelolt if jelolt.is_file() else None
 
 
+#: Sémák, amelyek NEM a súgó belső fejezetére mutatnak. Ma egyik sem
+#: fordul elő a súgóban (mérve: 42 relatív hivatkozás, 0 külső) — a lista
+#: azért van, hogy egy később bekerülő külső hivatkozás se oldódjon fel
+#: némán fejezetnévvé.
+_KULSO_SEMAK = ("http://", "https://", "mailto:", "ftp://", "file://")
+
+
+def hivatkozas_celja(honnan: str, cel: str) -> str | None:
+    """Egy Markdown-hivatkozás célja fejezetnévként — vagy `None`.
+
+    A súgó lapjai egymásra **relatívan** hivatkoznak (`features/konyvtar.md`
+    a gyökérből, `../index.md` egy almappából), ezért a feloldás a HIVATKOZÓ
+    fejezet mappájához képest történik.
+
+    Args:
+        honnan: a hivatkozást tartalmazó fejezet neve (`fejezetek()` alakja).
+        cel: a Markdown-hivatkozás nyers célja, horgonnyal együtt is.
+
+    Returns:
+        A cél fejezet neve a `fejezetek()` alakjában, vagy `None`, ha a cél
+        külső, nem létező, vagy kilépne a súgó mappájából.
+    """
+    if not cel or not cel.strip():
+        return None
+    tiszta = cel.strip()
+    if tiszta.lower().startswith(_KULSO_SEMAK):
+        return None
+    # `konyvtar.md#albumok` — a horgony a lapon belüli hely, a fejezet
+    # attól még ugyanaz. A csak-horgony (`#szakasz`) viszont nem visz sehova.
+    tiszta = tiszta.split("#", 1)[0]
+    if not tiszta:
+        return None
+
+    mappa = sugo_mappa().resolve()
+    szulo = (mappa / honnan).parent
+    try:
+        jelolt = (szulo / tiszta).resolve()
+        viszonylagos = jelolt.relative_to(mappa)
+    except (ValueError, OSError):
+        return None
+    if not jelolt.is_file():
+        return None
+    return viszonylagos.as_posix()
+
+
 def fejezet_szovege(nev: str) -> str | None:
     """Egy fejezet nyers Markdown-szövege; ismeretlen névre `None`."""
     ut = _feloldott(nev)
