@@ -408,3 +408,106 @@ azonos, a konstansok kiolvasva, a mértékegység-szabály utasításról
 utasításra követve.*
 
 Jegy: **#1830**.
+
+## ⭐ A HASONLÓSÁG-ADATBÁZIS: 380 bájt képenként, `CBlockFile`-ban (#447, 2026-09-03)
+
+A `searchoptions/similarthumb` (a 2. szakasz elemlistája) mögötti
+hasonlóság-keresésnek **saját, tartós adatbázisa** van. Ez a szakasz a
+tárolását és az előállítás láncát írja le. ⚠️ **A 380 bájt BELSŐ
+elrendezése NINCS megfejtve** — ld. a szakasz végét.
+
+### Mit CSINÁL — a lánc
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| indítás | `0x007e95f0` (2569 b) | az egyetlen hívó |
+| frissítő | `0x007ead60` (2888 b) | `CSimSearch::updating`; folyamatjelző: „Updating similarity database (will be fast next time)" |
+| átméretezés | `0x00a3f490` → `Preferences\ResampleFilter2` | a képet **előbb átméretezi**; a nagy átméretező (`0x00a42c20`, 1543 b) **4×** fut |
+| jellemző-kinyerés | `0x007ea650` (1802 b) | **4×** hívva; bemenete egy kép-leíró: `+4` sorköz (×4 ⇒ 32 bites képpont), `+8` szélesség, `+0xc` magasság |
+| kvantálás | `0x007eb8e4`–`0x007eb900` | **RGB565** (ld. lentebb) |
+| normalizálás | `0x007ebd90` (442 b) | **216 lebegőpontos** elemen fut végig, futó **maximumot** keres |
+| tárolás | `0x007eb685` → `0x006b75f0` | `CBlockFile::Write` (a keret: `pmp-database.md` 8.2) |
+| visszaolvasás | `0x007eb22c` → `0x006b6a50` | `CBlockFile::Read` |
+
+### A rekord mérete FIX: 380 bájt
+
+```
+0x007eb652   push 0x17c                        ; 380
+0x007eb659   mov dword ptr [esp+0x74], 0x17c   ; a leíró méret-mezője
+0x007eb661   call 0x00bf2350                   ; memcpy(dest, ebx, 0x17c)
+```
+
+és visszaolvasáskor:
+
+```
+0x007eb235   cmp eax, 0x17c
+0x007eb23a   jne 0x007eb279                    ; ⇒ újraszámolás
+```
+
+⇒ **Nincs verziómező és nincs változó hossz.** Egy 380-tól eltérő méretű
+bejegyzést a Picasa érvénytelennek tekint, és újraszámolja. Egy olvasónak
+tehát elég a méretre szűrnie.
+
+### A képpont-kvantálás: RGB565, BGRA sorrendből
+
+```
+0x007eb8dc   movzx eax, byte ptr [edi + 2]     ; R
+0x007eb8e0   movzx ebx, byte ptr [edi + 1]     ; G
+0x007eb8e4   shr al, 3                         ; R → 5 bit
+0x007eb8eb   shl ax, 6
+0x007eb8ef   shr bl, 2                         ; G → 6 bit
+0x007eb8f6   or  ax, bx
+0x007eb8f9   movzx ebx, byte ptr [edi]         ; B
+0x007eb8fc   shl ax, 5
+0x007eb900   shr bl, 3                         ; B → 5 bit
+```
+
+⇒ `index = (R>>3) << 11 | (G>>2) << 5 | (B>>3)` — **RGB565**, 65 536 rekesz.
+A bájtsorrend **BGRA** (`+0`=B, `+1`=G, `+2`=R), egyezően a `respack.yt`
+rétegeivel (`picasa-respack-format.md`).
+
+### A memóriabeli vektor 216 elem — a TÁROLT rekord kisebb
+
+A normalizáló (`0x007ebd90`) hurka:
+
+| cím | mit ad |
+|---|---|
+| `0x007ebd9f` | `lea ecx, [ebx + 8]` — a kezdőpont |
+| `0x007ebda2` | `mov edx, 0x24` — **36 iteráció** |
+| `0x007ebdb0`…`0x007ebe4f` | iterációnként **hat** `float`: `[ecx-8]`, `[ecx-4]`, `[ecx]`, `[ecx+4]`, `[ecx+8]`, `[ecx+0xc]` |
+| `0x007ebe6f` | `add ecx, 0x18` — a lépés 24 bájt = 6 × `float` |
+
+⇒ **36 × 6 = 216 `float` = 864 bájt** a memóriában, szemben a tárolt
+**380** bájttal. A tárolt alak tehát **tömörített vagy kvantált** — ez a
+lépés NINCS megfejtve.
+
+### A találatok helye
+
+| mi | cím | érték |
+|---|---|---|
+| eredmény-album | `0x004ad4e0` | „Similarity Search Results" / `CAlbumState::SimSearchResults` |
+| felületi elem | `0x005d8280`, `0x005d8810` | `searchoptions/similarthumb` |
+
+### Ami NYITVA marad (örökölt)
+
+**A 380 bájt belső elrendezése.** Amit tudunk: a memóriabeli alak 216
+`float`, a tárolt 380 bájt, a bemenet RGB565-re kvantált képpontokból
+számolt, `double`-ben halmozott statisztika. Amit **NEM** tudunk: a
+tömörítés módja és a mezőhatárok.
+
+⛔ **Mintafájl NINCS a repóban** (`research/testdata/**/db3/` alatt nincs
+hasonlóság-adatbázis) — a tulajdonos sosem futtatta a funkciót. A
+megfejtés útja tehát kizárólag a `0x007ea650` (1802 b) teljes
+diszasszemblálása.
+
+*Bizonyítottsági fok: a **tárolás, a méret, a kvantálás és a lánc
+megerősített** (címenként kiolvasva); a **vektor jelentése NINCS MEG**.*
+
+### Melléklelet: a `makemoviecache.db` blobja ezen a hívási helyen 4 bájt
+
+A `CBlockFile` harmadik ismert fogyasztója a filmkészítő gyorstára
+(`0x0080f830`, `makemoviecache\` / `makemoviecache.db`). Az egyetlen ott
+található író hívás leírója **4 bájtos** blobot ad át
+(`0x0080f9a5`: `mov dword ptr [esp+0x10], 4`). Hogy ez mit jelöl, **NINCS
+MEG**; más írási helyet ehhez a fájlhoz nem találtam.
+
