@@ -144,7 +144,7 @@ class TestParamSubpanelIsolatedOpening:
         [
             (2, "effectSat", "sat", 1),
             (2, "effectVignette", "vignette", 4),
-            (2, "effectUnsharp", "unsharp", 1),
+            (2, "effectUnsharp", "unsharp2", 1),   # #2141
             (2, "effectRadblur", "radblur", 4),
             # #717: a záró színparaméter felvétele óta 5 (x, y, gradiens,
             # árnyalás, szín)
@@ -204,7 +204,10 @@ class TestParamSubpanelIsolatedOpening:
             ("effectSepia", "sepia"),
             ("effectBw", "bw"),
             ("effectWarm", "warm"),
-            ("effectGrain2", "grain2"),
+            # #2141: az `effectGrain2` KIKERÜLT innen. A csempe az eredeti
+            # elsődlegesét (`PicnikGrain`) hívja, aminek — az eredetihez
+            # hűen (`mode="effect"`) — VAN csúszkája, tehát alpanelt nyit.
+            # A `grain2` (`oneclick`) a Shiftes másodlagos.
         ],
     )
     def test_parameterless_effect_click_does_not_open_subpanel(

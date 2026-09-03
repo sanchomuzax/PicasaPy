@@ -135,6 +135,11 @@ class TestKorpuszLefedettseg:
     """Az őr csak akkor ér valamit, ha tényleg a teljes katalógust nézzük."""
 
     def test_minden_alkalmazhato_effekt_vizsgalva(self):
-        assert len(_APPLICABLE_EFFECTS) >= 57, (
+        # #2141: 57 -> 56. Az 1. fül három csempéje az eredeti
+        # elsődlegesére kötött; kikerült az `unsharp`, `grain2` és `tint`
+        # (Shiftes másodlagosok, felületi belépési pont nélkül), bekerült
+        # az `unsharp2` és a `picniktint`. A RENDERELÉSÜK változatlan —
+        # csak felületről nem alkalmazhatók.
+        assert len(_APPLICABLE_EFFECTS) >= 56, (
             "a katalógus zsugorodott — a korpusz-próba lefedettsége csökkent"
         )

@@ -69,7 +69,7 @@ class TestSyncRender:
 
         records = _library(tmp_path)
         provider = _provider(records)
-        assert len(EFFECT_NAMES) == 41
+        assert len(EFFECT_NAMES) == 40   # #2141
         for effect in EFFECT_NAMES:
             image = provider.requestImage(f"{records[0].id}/{effect}", None, None)
             assert not image.isNull(), effect
@@ -85,12 +85,15 @@ class TestToolPreviewNames:
     katalógus tagjai, mégis renderelhetők a `render/chain.py` `_HANDLERS`
     meglévő "enhance"/"autolight"/"autocolor"/"redeye" kulcsain át."""
 
-    def test_public_effect_names_stay_41(self):
-        # a meglévő, 41 elemű katalógus (#516: +5) NEM bővül tovább — külön halmaz kezeli az
-        # eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS)
+    def test_public_effect_names_stay_40(self):
+        # a katalógus (#516: +5) NEM bővül tovább — külön halmaz kezeli az
+        # eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS).
+        # #2141: 41 -> 40. Kikerült az `unsharp`, `grain2`, `tint` (a
+        # csempék az eredeti elsődlegesére kötöttek), bekerült az
+        # `unsharp2` és a `picniktint`; a `picnikgrain` már benne volt.
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
-        assert len(EFFECT_NAMES) == 41
+        assert len(EFFECT_NAMES) == 40
 
     def test_tool_preview_names_render_real_thumbnails(self, qt_app, tmp_path):
         records = _library(tmp_path)

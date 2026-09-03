@@ -131,6 +131,9 @@ def _effects() -> dict[str, str]:
         "localcontrast": "Local Contrast",
         "roundededges": "Rounded Edges",
         "picnikgrain": "Film Grain (Fine)",
+        # #2141: az 1. fül 6. csempéje ezt hívja. A felirat az EREDETI
+        # szövegtárból: `filter_PicnikTint_label0` = Tint / Árnyalás.
+        "picniktint": "Tint",
     }
 
 
@@ -172,10 +175,13 @@ ACTION_LABELS: dict[str, tuple[str, str]] = _build_labels()
 #: nevük, innen kerülnek át a névtárba.
 UNNAMED_CHAIN_KEYS: frozenset[str] = frozenset(
     {
-        # a Picnik (Kreatív Kit) saját szűrői — a felület sosem kínálta őket
         # (a `picnikfocalpixelate` a #1142-ben KIKERÜLT: a renderelő már nem
         # ismeri, mert a mérés szerint az eredeti Picasa sem futtatja)
-        "picniktint",
+        #
+        # #2141: a `picniktint` is KIKERÜLT innen. A „szótárban sem
+        # szerepelnek" indoklás rá NEM állt: az eredeti szövegtárban ott a
+        # felirata (`filter_PicnikTint_label0` = Tint / Árnyalás), és a
+        # felület azóta kínálja is — az 1. effekt-fül 6. csempéjén.
         # a vörösszem-javítás belső, szem-szín visszaállító lépése
         "reanimatedeyecolor",
     }

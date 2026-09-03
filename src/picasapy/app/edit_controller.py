@@ -111,12 +111,19 @@ _LEGACY_EFFECT_NAMES = tuple(
     sorted(key for key in LEGACY_EFFECT_KEYS if can_offer_filter_control(key))
 )
 _EFFECT_NAMES = (
-    "unsharp",
+    # #2141: az 1. effekt-fül első hat csempéje az EREDETI elsődlegesét
+    # hívja (a `0x00c7e5a0` csempe-tábla szerint). Az `unsharp`, `grain2`
+    # és `tint` a SHIFTes másodlagos — az eredetiben sem alkalmazható
+    # Shift nélkül, ezért nem marad felületi belépési pontjuk (a Shift-ág
+    # megépítése a #2146). A RENDERELÉSÜK változatlan: régi láncból
+    # továbbra is visszajátszhatók, a `_APPLICABLE_EFFECTS` csak az
+    # ÍRÁS kapuja.
+    "unsharp2",
     "sepia",
     "bw",
     "warm",
-    "grain2",
-    "tint",
+    "picnikgrain",
+    "picniktint",
     "sat",
     "radblur",
     "glow2",
@@ -153,7 +160,8 @@ _EFFECT_NAMES = (
     "museummatte",
     "polaroid",
     "roundededges",
-    "picnikgrain",
+    # #2141: a `picnikgrain` FÖLJEBB került, az 1. fül 5. csempéjéhez —
+    # itt duplikátum volna.
 )
 
 #: Amit a szerkesztő ténylegesen a láncra tehet: a felület fülein szereplő
@@ -186,6 +194,7 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "localcontrast": "LocalContrast",
     "roundededges": "RoundedEdges",
     "picnikgrain": "PicnikGrain",
+    "picniktint": "PicnikTint",
     "boost": "Boost",
     "soften": "Soften",
     "pixelate": "Pixelate",

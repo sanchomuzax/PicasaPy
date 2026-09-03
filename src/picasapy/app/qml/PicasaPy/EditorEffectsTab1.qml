@@ -51,10 +51,13 @@ ColumnLayout {
         // gombja hiányzott.
         PanelButton {
             objectName: "effectUnsharp"
+            // #2141: az eredeti 1. csempéje az `unsharp2` (a `0x00c7e5a0` tábla [0]);
+            // az `unsharp` a SHIFTes másodlagos, saját felirata
+            // „Sharpen (Old)” (#2141)
             label: qsTr("Sharpen")
-            onButtonClicked: if (!panel.tryOpenParamPanel("unsharp", label)) panel.effectRequested("unsharp")
-            thumbSource: panel.effectThumbSource("unsharp")
-            badge: panel.hasBadge("unsharp")
+            onButtonClicked: if (!panel.tryOpenParamPanel("unsharp2", label)) panel.effectRequested("unsharp2")
+            thumbSource: panel.effectThumbSource("unsharp2")
+            badge: panel.hasBadge("unsharp2")
         }
         PanelButton {
             objectName: "effectSepia"
@@ -79,17 +82,22 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectGrain2"
+            // #2141: az eredeti 5. csempéje a `PicnikGrain`; a `grain2` nálunk
+            // `oneclick`, ezért a csempe JELVÉNYT kapott, holott az
+            // eredetin nincs — a `PicnikGrain` módja `effect` (#2141)
             label: qsTr("Film Grain")
-            onButtonClicked: if (!panel.tryOpenParamPanel("grain2", label)) panel.effectRequested("grain2")
-            thumbSource: panel.effectThumbSource("grain2")
-            badge: panel.hasBadge("grain2")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
+            thumbSource: panel.effectThumbSource("picnikgrain")
+            badge: panel.hasBadge("picnikgrain")
         }
         PanelButton {
             objectName: "effectTint"
+            // #2141: az eredeti 6. csempéje a `PicnikTint`; a `tint` a SHIFTes
+            // másodlagos, saját felirata „Tint (Old)” (#2141)
             label: qsTr("Tint")
-            onButtonClicked: if (!panel.tryOpenParamPanel("tint", label)) panel.effectRequested("tint")
-            thumbSource: panel.effectThumbSource("tint")
-            badge: panel.hasBadge("tint")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picniktint", label)) panel.effectRequested("picniktint")
+            thumbSource: panel.effectThumbSource("picniktint")
+            badge: panel.hasBadge("picniktint")
         }
         PanelButton {
             objectName: "effectSat"
