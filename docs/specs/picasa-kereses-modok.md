@@ -150,3 +150,88 @@ ret`) a lap korábbi megállapítását („a szálnak a saját nevén kívül n
 sztringje") **bájtról-bájtra igazolja** — a tényleges hash-számítás a
 `0x00528420` / `0x0060d610` job-feldolgozókban és azok `0x00a4d210`
 fájl-olvasójában történik, amit a #1398 Ghidra-bontása már meg is fejtett.
+
+## A `searchoptions/dupesearch` — a keresősáv HETEDIK eleme (#2169, 2026-09-03)
+
+A keresősáv elem-kötője (`0x005d47e0`) hét nevet old fel; a hetedik
+(`searchoptions/dupesearch`, `0x00c7ff20`) más névtérben van, mint a hat
+`searchcontainer/*` szűrő. **Mit csinál — most kimérve.**
+
+### Milyen vezérlő
+
+**Értékkel rendelkező kapcsoló** — ugyanazon az API-n át, mint a jobb fiók
+lap-gombjai (`0x009cd8f0(elemnév, érték)`), és **induláskor REJTETT**:
+
+| hol | mit tesz | cím |
+|---|---|---|
+| főablak-építő (`0x0040bf70`) | feloldja, majd vtable **`+0x68`** = **elrejti** | `0x0040c8c9`–`0x0040c8de` |
+| `Ctrl+F6` ága | feloldja, majd vtable **`+0x6c`** = **megjeleníti** | `0x005e62c8`–`0x005e62e1` |
+| parancs-diszpécser | `0x009cd8f0(dupesearch, 1)` = **bekapcsolja** | `0x005ccc23`–`0x005ccc2a` |
+
+⇒ A `dupesearch` **nem a hat szűrőgomb egyike**, hanem egy alapból
+elrejtett kapcsoló, amit a duplikátum-keresés bekapcsolása tesz láthatóvá.
+
+### ⭐ AZONOS a Kísérleti almenü „Fájlok másodpéldányainak megjelenítése"
+tételével — bizonyítva
+
+A bekapcsoló ág (`0x005ccc14`) a parancs-diszpécser magas azonosítójú
+táblájából érhető el (`0x005cc4a6`: indextábla `0x005cde04`, ugrótábla
+`0x005cdc30`, `eax = cmd − 0x9d44`), és a hozzá tartozó
+**parancsazonosító `0x9d57` (40279)**.
+
+Ugyanez a szám áll az `eMenuTools::ID_DUPES` menürekordban:
+
+```
+0x0055c2bd  push 0xc8ded4                       ; "eMenuTools::ID_DUPES"
+0x0055c2fa  mov dword ptr [0xd6e7ac], eax       ; a rekord felirata
+0x0055c31e  mov word ptr [0xd6e7b6], 0x9d57     ; a rekord PARANCSAZONOSÍTÓJA
+```
+
+⇒ **A menütétel és a keresősáv-kapcsoló ugyanaz a funkció.**
+
+### Mit CSINÁL a parancs
+
+```
+0x005ccc14  push 1 ; mov edx, 0xc8f448 ; call 0x9cd8f0   ; searchcontainer/searchbutton = 1
+0x005ccc23  push 1 ; mov edx, 0xc7ff20 ; call 0x9cd8f0   ; searchoptions/dupesearch    = 1
+0x005ccc32  push 1 ; push 0 ; push 0 ; push panel
+0x005ccc37  call 0x0065b840                              ; a keresés ÚJRAFUTTATÁSA
+```
+
+⇒ **Bekapcsolja a keresőt ÉS a duplikátum-módot, majd újrafuttatja a
+keresést.** Nem párbeszédet nyit: a **találati rács** mutatja az
+eredményt.
+
+### A kattintás ugyanezt teszi
+
+A keresőbeállítás-panel kezelője (`0x005d8810`) a kiváltó elem nevét
+`repe cmpsb`-vel veti össze a beállítás-nevekkel — `digicam`
+(`0x00c964a4`), **`dupesearch`** (`0x00c7ff20`, `0x005d94c1` és
+`0x005d94d3`, hossz `0x19` = 25 bájt), `viewallbutton` (`0x00c88a54`) —,
+és egyezés esetén mind a **`0x005d95af`** ágra megy:
+
+```
+0x005d95af  push 1 ; push 0 ; push 0 ; push panel
+0x005d95b4  call 0x0065b840
+```
+
+⇒ **Ugyanaz a hívás, mint a menüparancs tailje.** A kapcsoló
+átbillentése és a menüparancs **bitre azonos** műveletet indít.
+
+### Nálunk (mérve, 2026-09-03)
+
+| | eredeti (mérve) | nálunk ma (mérve) |
+|---|---|---|
+| a duplikátum-keresés **helye** | a **keresősáv** módja (`searchoptions/dupesearch`) | önálló **párbeszéd** (`Main.qml:1123`, `Find Duplicates...`, `PicasaMenuBar.qml:1480`) |
+| az eredmény **hol jelenik meg** | a **találati rácsban**, a keresés újrafuttatásával | a párbeszéd saját listájában |
+| a keresősáv szűrői nálunk | `starsearch`, `facesearch`, `moviesearch`, `webview`, `geotagsearch`, `dupesearch` | `facesearch`, `moviesearch`, geo (`MainToolbar.qml:324/370/403`) — **dupesearch nincs** |
+| a mag | – | megvan: `src/picasapy/dedup/` (`exact.py`, `similar.py`) |
+
+⇒ A **mag megvan**, a **felületi bekötés más**: nálunk párbeszéd, az
+eredetiben keresési mód. Jegy: **#2174**.
+
+### Bizonyítottsági fok
+
+**Megerősített** — a vezérlő fajtája, a rejtés/megjelenítés, a
+parancsazonosító egyezése, a menürekord és a közös `0x0065b840` hívás
+mind közvetlen kiolvasásból; a mi oldalunk grepből.
