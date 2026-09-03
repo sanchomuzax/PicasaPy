@@ -33,9 +33,12 @@ FOOLDAL = "index.md"
 #: Egy keresési találat körüli szövegkörnyezet fél-hossza karakterben.
 _RESZLET_SUGAR = 60
 
-#: A találatok felső korlátja. Egy gyakori szó (pl. „a") különben
-#: több száz sort adna, és a lista használhatatlan lenne.
-_MAX_TALALAT = 200
+#: A találatok felső korlátja — **fejezetekben**, nem előfordulásokban
+#: (#2214). Előfordulásra számolva egyetlen bőbeszédű fejezet elvitte a
+#: keretet, és a hátrébb lévő — akár relevánsabb — fejezetek ki sem
+#: kerültek a listára. Fejezetből ma 28 van, tehát ez a korlát ma nem is
+#: harap; akkor lép működésbe, ha a súgó sokszorosára nő.
+_MAX_FEJEZET = 200
 
 #: A rejtett, GÉPI állományok: a frissítő naplója és feladatlapja. Ezek
 #: nem a felhasználónak szólnak, tehát a fejezetlistából kimaradnak.
@@ -147,34 +150,37 @@ def kereses(kifejezes: str) -> list[dict[str, str]]:
         kifejezes: a keresett szöveg; a kis- és nagybetű közömbös.
 
     Returns:
-        Találatonként `{"fejezet": …, "cim": …, "reszlet": …}` szótárak.
-        A `cim` a fejezet első `#` címsora, hogy a lista olvasható legyen
-        a fájlnév ismerete nélkül is.
+        **Fejezetenként legfeljebb egy** találat:
+        `{"fejezet": …, "cim": …, "reszlet": …, "db": …}`. A `cim` a fejezet
+        első `#` címsora (a fájlnév nem olvasható a felhasználónak), a
+        `reszlet` az első előfordulás környezete, a `db` az előfordulások
+        száma a lapon.
     """
     minta = (kifejezes or "").strip().casefold()
     if not minta:
         return []
 
-    talalatok: list[dict[str, str]] = []
+    talalatok: list[dict[str, object]] = []
     for nev in fejezetek():
-        szoveg = fejezet_szovege(nev) or ""
-        cim = _cim(szoveg) or nev
-        kicsi = szoveg.casefold()
-        kezdet = 0
-        while len(talalatok) < _MAX_TALALAT:
-            hely = kicsi.find(minta, kezdet)
-            if hely < 0:
-                break
-            talalatok.append(
-                {
-                    "fejezet": nev,
-                    "cim": cim,
-                    "reszlet": _reszlet(szoveg, hely, len(minta)),
-                }
-            )
-            kezdet = hely + len(minta)
-        if len(talalatok) >= _MAX_TALALAT:
+        if len(talalatok) >= _MAX_FEJEZET:
             break
+        szoveg = fejezet_szovege(nev) or ""
+        kicsi = szoveg.casefold()
+        elso = kicsi.find(minta)
+        if elso < 0:
+            continue
+        # A fejezet EGY sorral szerepel: a felhasználó a címet látja, és
+        # ugyanaz a cím ötször egymás alatt semmit nem mond neki (#2214).
+        # A részlet az ELSŐ előfordulás környezete, a `db` pedig megmondja,
+        # hányszor fordul elő a lapon — így a sorok különböznek egymástól.
+        talalatok.append(
+            {
+                "fejezet": nev,
+                "cim": _cim(szoveg) or nev,
+                "reszlet": _reszlet(szoveg, elso, len(minta)),
+                "db": kicsi.count(minta),
+            }
+        )
     return talalatok
 
 
