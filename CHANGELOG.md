@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.248] – 2026-09-03
+
+### Javítva
+- A képre írt felirat **félkövér gombjának állása** végre számít: eddig
+  minden felirat félkövérként került a `.picasa.ini`-be, akkor is, ha a
+  gomb ki volt kapcsolva — és az eredeti Picasa is így látta.
+- A feliratnál **választott betűtípus** is bekerül a fájlba; eddig mindig
+  „Arial" íródott, bármit is választottál.
+
 ## [0.8.247] – 2026-09-03
 
 ### Javítva

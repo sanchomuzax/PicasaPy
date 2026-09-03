@@ -2003,3 +2003,66 @@ class TestChainRejectionReachesTheUser:
 
         assert rejected == ["A szerkesztés nem menthető: teszt."]
         assert failed == []
+
+
+class TestASzovegStilusaAFAJLBA_KERUL:
+    """#1994: a felületen beállított stílus eddig NEM került a fájlba.
+
+    A `text=` stílusblokk 8. mezője a **betűsúly** (`0x0062d483`; a
+    félkövér gomb `cmp …, 0x2bc` = 700 a `0x0062e31a`-n, alap 400).
+    Nálunk a `TextStyle` alapértéke fixen 700 volt, tehát MINDEN felirat
+    félkövérként ment ki — a gomb állása nem számított.
+
+    ⚠️ Amit ez a próbakészlet SZÁNDÉKOSAN nem állít: a körvonalvastagság
+    és a betűméret mezőjét. A mi csúszkáink más mértékegységben járnak,
+    mint az ini mezői (körvonal: 0–8 képpont vs. 0…1 float; méret: 20–400
+    SZÁZALÉK vs. abszolút érték), és a leképezés nincs megmérve.
+    Találgatni tilos — ld. a jegy kommentjét.
+    """
+
+    def _mentett_stilus(self, controller, photo) -> list[str]:
+        """A `text=` sor stílusblokkja mezőkre bontva."""
+        ertek = _text_ertek(photo)
+        # a blokk a `v1,`-gyel kezdődik és `;`-ig tart
+        eleje = ertek.index("v1,")
+        return ertek[eleje:].split(";")[0].split(",")
+
+    def _felirat(self, controller, photo, *, bold: bool = False, csalad: str | None = None):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.setTextBold(bold)
+        if csalad is not None:
+            controller.setTextFontFamily(csalad)
+        controller.previewTextPlacement(0.25, 0.75)
+        controller.applyText()
+
+    def test_a_felkover_gomb_BEKAPCSOLVA_700_at_ir(self, controller, photo):
+        self._felirat(controller, photo, bold=True)
+        assert self._mentett_stilus(controller, photo)[7] == "700"
+
+    def test_a_felkover_gomb_KIKAPCSOLVA_400_at_ir(self, controller, photo):
+        self._felirat(controller, photo, bold=False)
+        mezok = self._mentett_stilus(controller, photo)
+        assert mezok[7] == "400", (
+            f"kikapcsolt félkövérrel is {mezok[7]} ment ki — a gomb állása "
+            "nem számít, minden felirat félkövér lesz a Picasában"
+        )
+
+    def test_a_ket_allas_KULONBOZO_sort_ad(self, controller, photo):
+        """Ellenpróba: nem véletlenül egyezik a két érték."""
+        self._felirat(controller, photo, bold=True)
+        felkover = _text_ertek(photo)
+        (photo.parent / ".picasa.ini").unlink()
+        self._felirat(controller, photo, bold=False)
+        assert _text_ertek(photo) != felkover
+
+    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(self, controller, photo):
+        # a lista `{key, label}` szótárakból áll (a lenyíló adata)
+        kulcsok = [cs["key"] for cs in controller.textFontFamilies]
+        mas = next((cs for cs in kulcsok if cs != "Arial"), None)
+        assert mas is not None, "a panel csak egy betűtípust kínál — a próba tárgytalan"
+        self._felirat(controller, photo, csalad=mas)
+        assert mas in _text_ertek(photo), (
+            f"a választott betűtípus ({mas}) nem került a fájlba"
+        )

@@ -1547,7 +1547,8 @@ class EditController(QObject, BackgroundWorkerMixin):
         previous = self._text_overlay or TextOverlay()
         block = TextBlock(
             content=self._text_draft,
-            font=_DEFAULT_TEXT_FONT,
+            # #1994: a VÁLASZTOTT betűtípus, nem a beégetett alapérték.
+            font=self._text_family,
             geometry=TextGeometry(
                 x=self._text_pending_pos[0],
                 y=self._text_pending_pos[1],
@@ -1556,6 +1557,20 @@ class EditController(QObject, BackgroundWorkerMixin):
             style=TextStyle(
                 fill_argb=_rgb_to_argb(self._text_fill_color),
                 outline_argb=_rgb_to_argb(self._text_outline_color),
+                # #1994: a betűsúly a félkövér gomb állásából. A stílusblokk
+                # 8. mezője (`0x0062d483`): alap **400**, félkövéren **700**
+                # (a gomb `cmp …, 0x2bc` a `0x0062e31a`-n). Eddig a
+                # `TextStyle` alapértéke fixen 700 volt, tehát MINDEN
+                # feliratunk félkövérként ment ki, a gomb állásától
+                # függetlenül.
+                #
+                # ⚠️ A körvonalvastagság (5. mező) és a betűméret
+                # SZÁNDÉKOSAN marad érintetlen: a mi csúszkáink más
+                # mértékegységben járnak (körvonal 0–8 képpont, méret
+                # 20–400 százalék), mint az ini mezői (0…1 float, illetve
+                # abszolút méret), és a leképezés NINCS megmérve.
+                # Találgatott érték rosszabb, mint a mai alapérték.
+                weight=700 if self._text_bold else 400,
             ),
         )
         self._text_overlay = previous.with_primary(block)
