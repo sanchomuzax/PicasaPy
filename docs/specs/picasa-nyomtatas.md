@@ -65,7 +65,7 @@ A panelen **öt** gyorsgomb van hozzájuk: `3x5button`, `4x6button`,
 `leftcontainer` · `leftbuttcontainer` · `leftdivider` · `froogle` ·
 `phelpbutton`
 
-> A **`phelpbutton`** teljesen ki van kommentezva (ikon, felirat, horgony),
+> A **`phelpbutton`** ikonja, felirata és horgonya ki van kommentezva (a gomb maga NEM — ld. lent),
 > csak `m_render_offscreen` maradt — vagyis a **súgó gomb elhagyott**.
 > A **`froogle`** a Google vásárlás-keresőjére mutató gomb — szintén
 > halott szolgáltatás.
@@ -87,19 +87,63 @@ sorolta. Ehhez tartozik a figyelmeztetés:
 
 ## A nyomtatási beállítások párbeszéd
 
-`printoptionstext.tre` — **21 felirat**, mind **angolul** (ez a fájl nem
-került át a fordítható erőforrásokba):
+> ⛔ **HELYESBÍTÉS (2026-09-03).** Itt eddig ez állt: *„`printoptionstext.tre`
+> — **21 felirat**, mind **angolul** (ez a fájl nem került át a fordítható
+> erőforrásokba)"*. **Mindhárom állítás téves:**
+>
+> | korábbi állítás | a mérés |
+> |---|---|
+> | „21 felirat" | **26 bejegyzés**: 23 felirat + 3 buboréksúgó |
+> | „mind angolul" | **mind MAGYARUL is megvan** — lásd a lenti táblát |
+> | „nem került át a fordítható erőforrásokba" | **átkerült**: `i18n\printoptionstext.xml`, kicsomagolva `referencia/i18n-hu/printoptionstext.xml` (4 202 bájt) |
+>
+> Ez nem apróság: a téves mondat alapján egy fejlesztő **angol feliratokat**
+> épített volna a magyar felületre. A **#1780** jegy — helyesen — már a
+> hivatalos magyar feliratokkal dolgozik; a lap maradt le.
 
-| terület | feliratok |
-|---|---|
-| gombok | Apply · OK · Cancel (mindháromhoz súgóval) |
-| keret | Border · Border width · None · Max. · Border color · **Even width border** |
-| felirat | Captions · No text · Caption · File name · **Exif information** · Text Color · Font · Size · Wrap text |
-| elhelyezés | Below image · On image · On border · **Bottom only** |
-| tiltás | „Sorry, but these options cannot be used when printing contact sheets." |
+A párbeszéd **26 honosított szövege**, teljes listával (forrás:
+`referencia/i18n-hu/printoptionstext.xml`):
 
-**Négy feliratforrás közül lehet választani:** nincs szöveg · felirat ·
-fájlnév · **EXIF-adatok**. Az elhelyezés: kép alatt · képen · kereten.
+| elem (teljes név) | típus | **hivatalos magyar** |
+|---|---|---|
+| `printoptions/apply` | felirat | **Alkalmaz** |
+| `printoptions/apply` | buboréksúgó | *A kijelölt beállítások alkalmazása a Google Fotókra* ⚠️ |
+| `printoptions/ok` | felirat | **OK** |
+| `printoptions/ok` | buboréksúgó | *A kijelölt beállítások alkalmazása a Google Fotókra, és a párbeszédpanel bezárása* ⚠️ |
+| `printoptions/cancel` | felirat | **Mégse** |
+| `printoptions/cancel` | buboréksúgó | A párbeszédpanel bezárása mentés nélkül |
+| `printoptions/border_label` | felirat | **Szegély** |
+| `printoptions/border_size_label` | felirat | Szegély szélessége |
+| `printoptions/border_none_label` | felirat | Egyik sem |
+| `printoptions/border_max_label` | felirat | Maximális |
+| `printoptions/border_color_label` | felirat | Szegély színe |
+| `printoptions/caption_label` | felirat | **Képfeliratok** |
+| `printoptions/usenotext_label` | felirat | Nincs szöveg |
+| `printoptions/usecaption_label` | felirat | Képfelirat |
+| `printoptions/usefilename_label` | felirat | Fájlnév |
+| `printoptions/useexif_label` | felirat | Exif-adatok |
+| `printoptions/caption_color_label` | felirat | Szöveg színe |
+| `printoptions/caption_font_label` | felirat | Betűtípus |
+| `printoptions/caption_size_label` | felirat | Méret |
+| `printoptions/wrap_checkbox_label` | felirat | Szöveg tördelése |
+| `printoptions/textbelowimage_label` | felirat | A kép alatt |
+| `printoptions/textonimage_label` | felirat | A képen |
+| `printoptions/textonborder_label` | felirat | A szegélyen |
+| `printoptions/bottomonly_checkbox_label` | felirat | Csak alul |
+| `printoptions/evenwidth_checkbox_label` | felirat | Egyenletes szélességű szegély |
+| `printoptions/disabled_label` | felirat | Ezek a beállítások indexképek nyomtatásakor nem használhatók. |
+
+⚠️ **A három gomb-buboréksúgóból kettő HIBÁS az eredeti magyar fordításban:**
+az `apply` és az `ok` súgója **„a Google Fotókra"** alkalmazásról beszél,
+miközben a párbeszéd a **nyomat szegélyét és feliratát** állítja — a Google
+Fotókhoz semmi köze. (Az angol eredeti is „the selected photos"-t mond, tehát
+a magyar fordító a *photos*-t vette Google Fotóknak.) **Javaslat:**
+nálunk a helyes szöveg — *„A kijelölt beállítások alkalmazása a kijelölt
+képekre"* —, és a jegyben mondjuk ki, hogy ez **szándékos eltérés az
+eredetitől**, mert az eredeti fordítás hibás.
+
+**Négy feliratforrás közül lehet választani:** nincs szöveg · képfelirat ·
+fájlnév · **Exif-adatok**. Az elhelyezés: a kép alatt · a képen · a szegélyen.
 
 ## A három nyomtatási beállítás-kulcs
 
@@ -111,3 +155,120 @@ fájlnév · **EXIF-adatok**. Az elhelyezés: kép alatt · képen · kereten.
 
 *Bizonyítottsági fok: megerősített* (a három erőforrásfájl teljes
 tartalma és a 17 `ytPrintSizes` bejegyzés).
+
+---
+
+## A panel ALSÓ AKCIÓGOMBJAI — mit csinálnak (2026-09-03)
+
+A „A panel elemei csoportonként" szakasz **felsorolta** ezeket, de a
+működésüket nem írta le. A hat elem teljes nevén (a lefedettségi mérő ezt
+keresi):
+
+### `printpanel/psetupbutton` + `printpanel/setuplabel` — „Nyomtató telepítése"
+
+A gomb a **Windows nyomtató-tulajdonságok párbeszédét** nyitja meg, a
+klasszikus háromlépéses mintával (`0x00861750`, 302 b):
+
+```
+0x00861778  call OpenPrinterA          (WINSPOOL.DRV, IAT 0x00c409f0)
+0x008617b9  call DocumentPropertiesA   (méretlekérdezés)
+0x00861816  call DocumentPropertiesA   (a párbeszéd megjelenítése)
+```
+
+A `ClosePrinter` külön függvényben (`0x008612e0`, 205 b, hívás
+`0x00861311`); egy további `DocumentPropertiesA`-hívás a `0x00861880`-ban
+(152 b).
+
+⇒ **Ez nem Picasa-párbeszéd, hanem az illesztőprogramé.** Linuxon a
+megfelelője a Qt/CUPS nyomtató-tulajdonságok — a felirat („Nyomtató
+telepítése") megtartható, a tartalom a rendszeré.
+
+### `printpanel/captionoptionsbutton` + `printpanel/captionoptionslabel`
+
+Felirat: **„Szegély- és szövegopciók"**, buboréksúgó: *„Configure borders and
+text for Photos to be printed"*. Ez nyitja a fenti **`printoptions`**
+párbeszédet (26 honosított szöveg, 11 tartós beállítás — **#1780**).
+
+Deklaráció: `printpanel.tre:54` (a gomb), `:46` (a felirat), `:51` (az ikon);
+a panel vezérlő-listájában: `0x00743980`. A rajza rendes gomb-hármas
+(`globalbuttons/ppaction_n` / `_p` / `_h`), tehát **látható és él**.
+
+### `printpanel/froogle` — „Tartozékok keresése a Froogle-en"
+
+**Megerősítést kér, majd böngészőt nyit.** Mérve (`0x00743980`, `0x00744a00`):
+
+| mit | érték |
+|---|---|
+| megerősítő szöveg | `ThumbUIPrint::FrooglePrompt` — **„Ez a funkció nyomtatókellékeket keres a Froogle szolgáltatásban. A következőt küldjük: \"%s\". Ezt szeretné?"** |
+| a `%s` | a **nyomtató neve** |
+| a megnyitott cím | **`https://uploader.picasa.com/froogle.php?q=%s`** |
+
+Deklaráció: `printpanel.tre:246` (a gomb), `:244` (a felirat) — **nincs
+kikommentezve**, a respackben `superbutton(button_text_center,froogle)`,
+tehát látható.
+
+⇒ **Adatvédelmi szempontból nem semleges gomb** (a nyomtató nevét elküldi egy
+Google-kiszolgálóra), és a Froogle **megszűnt** (2013). **HATÓKÖRÖN KÍVÜL** —
+eldöntötte: ez a kör, 2026-09-03; a megszűnt szolgáltatás miatt nem
+építjük meg.
+
+### `printpanel/phelpbutton` — „Súgó": a gomb ÉL, de nincs se ikonja, se felirata
+
+> ⛔ **HELYESBÍTÉS (2026-09-03).** A lap eddig azt írta, hogy a gomb
+> „**teljesen** ki van kommentezva (ikon, felirat, horgony)". A `.tre` sorai
+> ennél pontosabbak (`printpanel.tre:235–241`):
+>
+> ```
+> #printpanel/phelpbutton_icon: printpanel/phelpbutton      <- kikommentezve
+> #printpanel/phelpbutton-label: printpanel/phelpbutton     <- kikommentezve
+> printpanel/phelpbutton: root                              <- ÉL
+> #m_buttontypecolor                                        <- kikommentezve
+> #m_offsetLB                                               <- kikommentezve
+> m_render_offscreen                                        <- él
+> ```
+>
+> ⇒ **Maga az elem NINCS kikommentezva** — csak az ikonja, a felirata, a
+> színe és a horgonya. A `respack.yt` szerint **`vbutton`** (rajz nélküli,
+> láthatatlan találati terület), horgony nélkül, tehát a szülő bal-felső
+> sarkában ül.
+>
+> **A gyakorlati következtetés ugyanaz** (nincs használható Súgó gomb), de a
+> mechanizmus más: nem törölték, hanem **lecsupaszították**. Ugyanaz a minta,
+> mint a `thumbui/prev`/`next`-nél
+> ([`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md) 4.1) — és ott is
+> a `.tre` sorainak EGYENKÉNTI olvasása döntötte el, nem a blokk egészének
+> ránézése.
+
+## KÉT minőségszöveg-család, nem egy
+
+A lap eddig a `CPrintDlg::*qual` hármast írta le. A binárisban **másik,
+teljesebb** készlet is van, saját névtérrel — és **ez** tartalmazza az
+áttekintő párbeszéd szövegeit:
+
+| erőforrás | angol | **hivatalos magyar** |
+|---|---|---|
+| `ThumbUIPrint::ReadyPrompt` | You are ready to print. | **Készen áll a nyomtatásra.** |
+| `ThumbUIPrint::ReviewPrompt` | Please review before printing.\n%1$d small %2$s found. | **Nézze át nyomtatás előtt.\n%1$d kis %2$s van.** |
+| `ThumbUIPrint::ReviewBest` | Best Quality: %s | **Legjobb minőség: %s** |
+| `ThumbUIPrint::ReviewGood` | Good Quality: %s | **Jó minőség: %s** |
+| `ThumbUIPrint::ReviewLow` | Low Quality: %s | **Alacsony minőség: %s** |
+| `ThumbUIPrint::Smallest` | Smallest picture: %d pixels/inch.\n | **Legkisebb kép: %d képpont/hüvelyk\n** |
+| `ThumbUIPrint::PrintCount` | %1$d of %2$d | **%2$d / %1$d** *(fordított sorrend!)* |
+| `ThumbUIPrint::picture` · `::pictures` | picture · pictures | **kép · kép** |
+
+⚠️ **Két különbség, ami megvalósításkor számít:**
+
+1. A `ThumbUIPrint::ReviewLow` magyarul **„Alacsony minőség"**, míg a
+   `CPrintDlg::badqual` **„Rossz minőség"** — a két készlet **nem
+   szinonima**, két külön helyen jelenik meg.
+2. A `PrintCount` magyar alakja **megcseréli az argumentumokat**
+   (`%2$d / %1$d`) — ez ugyanaz a minta, amit a `BackupCopy::1`-nél is
+   mértünk ([`biztonsagi-mentes.md`](biztonsagi-mentes.md)). A
+   pozicionális argumentumok tehát a magyar fordításban rendszeresen
+   cserélődnek: **a formátumsztringet a fordításból kell venni, nem az
+   angolból.**
+
+> *Bizonyítottsági fok: **megerősített*** — minden szöveg a
+> `referencia/stringres-en-hu.tsv` 2286–2295. és a
+> `referencia/i18n-hu/printoptionstext.xml` soraiból, minden cím a
+> binárisból kiolvasva.

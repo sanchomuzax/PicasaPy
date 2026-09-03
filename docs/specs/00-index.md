@@ -639,6 +639,30 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 
 ### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03)
 
+### [picasa-nyomtatas.md](picasa-nyomtatas.md) — nincs nyitott kérdés
+
+⭐ **2026-09-03 — HÁROM TÉVES ÁLLÍTÁS JAVÍTVA, és a panel alsó gombjai
+feltárva.** ⛔ A lap azt írta, hogy a nyomtatási beállítások párbeszéd
+**„21 felirat, mind angolul, nem került át a fordítható erőforrásokba"** —
+**mindhárom állítás téves**: **26 bejegyzés** (23 felirat + 3 buboréksúgó),
+**mind magyarul is megvan**, a kicsomagolt `i18n\printoptionstext.xml`-ben
+(`referencia/i18n-hu/`, 4 202 bájt). A teljes magyar tábla most a lapon áll.
+⚠️ **Két hivatalos buboréksúgó HIBÁS fordítás:** az `apply` és az `ok` súgója
+„a Google Fotókra" alkalmazásról beszél, holott a párbeszéd a nyomat
+szegélyét és feliratát állítja. ⛔ Második helyesbítés: a `phelpbutton`
+**nincs** „teljesen kikommentezva" — csak az **ikonja, felirata, színe és
+horgonya**; maga a gomb él, `vbutton`-ként (rajz nélküli találati terület).
+**Új mérés:** a `psetupbutton` a **Windows nyomtató-tulajdonságok**
+párbeszédét nyitja (`0x00861750`: `OpenPrinterA` + kétszer
+`DocumentPropertiesA`); a `froogle` **megerősítést kér**, majd a
+**`https://uploader.picasa.com/froogle.php?q=%s`** címet nyitja meg a
+**nyomtató nevével** — adatvédelmi szempontból nem semleges, és a
+szolgáltatás megszűnt ⇒ **hatókörön kívül**. Végül: **két** minőségszöveg-
+család van (`CPrintDlg::*qual` és `ThumbUIPrint::Review*`), és a magyar
+`PrintCount` **megcseréli a pozicionális argumentumokat** (`%2$d / %1$d`).
+⇒ **A `printpanel` ezzel teljesen feltárt: feltáratlan 6 → 0**
+(globálisan 122 → 116). Komment: **#1780**, **#446**; új jegy: **#2099**.
+
 ⭐ **2026-09-03 (11. szakasz) — a panel HÁROM JELÖLŐNÉGYZETE, és egy REJTETT
 MELLÉKHATÁS.** A 3./10. szakasz a *belső* beállításokat írta le; a felhasználó
 viszont három négyzetet lát: **„Diavetítéssel együtt"** (`publish/optionbox1` →
