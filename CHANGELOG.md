@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.259] – 2026-09-03
+
+### Javítva
+- Bekapcsolt „Indexképek megjelenítése a könyvtárban" mellett a bal hasáb
+  sorai nem maradnak üresen: ahol nincs fotó-kupac, ott a mappaikon látszik,
+  és a kupac helye a tényleges arányához igazodik (#2215).
+
 ## [0.8.258] – 2026-09-03
 
 ### Javítva
