@@ -25,6 +25,9 @@ Rectangle {
     //: #1404: a törlés VISSZAFORDÍTHATATLAN — a panel nem maga törli,
     //: hanem a gazdát kéri meg, hogy futtassa a megerősítést.
     signal clearGeotagRequested(var rows)
+    //: #2013: a hely BEÁLLÍTÁSA is a gazdán megy át — 20 kijelölt elem
+    //: fölött az eredeti megerősítést kér (`0x00652585`, `cmp ebx, 0x14`).
+    signal setGeotagRequested(var rows, real latitude, real longitude)
 
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
@@ -118,6 +121,7 @@ Rectangle {
     // a művelet mindig a kijelölt képekre hat)
     function placeSelection(latitude, longitude) {
         if (appWindow.selectedIndexes.length === 0) return
-        controller.setGeotagRows(appWindow.selectedIndexes, latitude, longitude)
+        panel.setGeotagRequested(
+            appWindow.selectedIndexes, latitude, longitude)
     }
 }

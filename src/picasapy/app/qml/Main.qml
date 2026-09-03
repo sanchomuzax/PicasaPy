@@ -1060,6 +1060,63 @@ ApplicationWindow {
         onConfirmed: controller.clearGeotagRows(rows)
     }
 
+    // #2013: a Helyek PANEL saját két megerősítése. Az eredetiben ez KÉT
+    // KÜLÖN erőforrás a menüparancsétól (`ClearGeoTag::warn`) — más
+    // küszöbbel és más számmal:
+    //
+    //   hely MEGVÁLTOZTATÁSA  > 20 KIJELÖLT elem   (0x00652585, cmp ebx,0x14)
+    //   hely TÖRLÉSE          >  5 GEOCÍMKÉZETT    (0x006527ad, cmp esi,5)
+    //
+    // A küszöb alatt az eredeti NEM kérdez — ezért itt sem kérdezünk.
+    ConfirmDialog {
+        id: setGeotagDialog
+        objectName: "setGeotagConfirm"
+        namePrefix: "setGeotag"
+        title: qsTr("Change Location")
+        property var rows: []
+        property real lat: 0
+        property real lon: 0
+        function futtasd(rowList, latitude, longitude) {
+            if (!rowList || rowList.length === 0) return
+            if (rowList.length <= controller.geoChangeConfirmThreshold) {
+                controller.setGeotagRows(rowList, latitude, longitude)
+                return
+            }
+            rows = rowList; lat = latitude; lon = longitude
+            //: `GeoPanel::geotag_warning_change` — az eredeti szövege
+            ask("setGeotag", qsTr(
+                "You have more than a few items selected."
+                + "\n\nAre you sure you want to change the location of all"
+                + " %1 items?").arg(rowList.length))
+        }
+        onConfirmed: controller.setGeotagRows(rows, lat, lon)
+    }
+
+    ConfirmDialog {
+        id: panelClearGeotagDialog
+        objectName: "panelClearGeotagConfirm"
+        namePrefix: "panelClearGeotag"
+        title: qsTr("Clear Geotags")
+        property var rows: []
+        function futtasd(rowList) {
+            if (!rowList || rowList.length === 0) return
+            //: ⚠️ a küszöb a GEOCÍMKÉZETT elemek száma, nem a kijelölésé:
+            //: 100 kijelöltből 3 geocímkézettnél az eredeti nem kérdez.
+            var geos = controller.geotaggedCount(rowList)
+            if (geos <= controller.geoClearConfirmThreshold) {
+                controller.clearGeotagRows(rowList)
+                return
+            }
+            rows = rowList
+            //: `GeoPanel::geotag_warning_clear` — az eredeti szövege
+            ask("panelClearGeotag", qsTr(
+                "You have more than a few items selected."
+                + "\n\nAre you sure you want to clear the locations for all"
+                + " %1 items?").arg(geos))
+        }
+        onConfirmed: controller.clearGeotagRows(rows)
+    }
+
     ConfirmDialog {
         id: undoAllEditsDialog
         objectName: "undoAllEditsDialog"
@@ -1901,9 +1958,12 @@ ApplicationWindow {
         // képek helyei térképen, és a kijelölés geocímkézése
         PlacesPanel {
             objectName: "placesPanel"
-            //: #1404: a panel gombja is a MEGERŐSÍTÉSEN át töröl —
-            //: a törlés visszafordíthatatlan.
-            onClearGeotagRequested: (rows) => clearGeotagDialog.openFor(rows)
+            //: #2013: a PANEL a saját, mért küszöbén megy át (5 GEOCÍMKÉZETT
+            //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
+            //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
+            //: kérdez. A menüpont változatlanul azon megy át.
+            onClearGeotagRequested: (rows) => panelClearGeotagDialog.futtasd(rows)
+            onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.futtasd(rows, la, lo)
             visible: window.placesPanelOpen
             SplitView.preferredWidth: 320
             SplitView.minimumWidth: 220
