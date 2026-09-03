@@ -122,6 +122,17 @@ def check_startup() -> list[str]:
             controller.start()
         except Exception as hiba:  # noqa: BLE001 — bármi az indulási úton bukás
             return [f"a program nem indul el: {type(hiba).__name__}: {hiba}"]
+        finally:
+            # ⚠️ A vezérlő figyelőt, időzítőt és bélyegkép-szálakat indít. Ha a
+            # `TemporaryDirectory` úgy takarít, hogy ezek MÉG FUTNAK, a
+            # háttérszál a törlés közben ír a mappába, és a takarítás
+            # `OSError: [Errno 39] Directory not empty`-vel elszáll — a CI-ben
+            # ez valódi bukásnak látszik, holott csak ez az őr szemetel.
+            # Az éles kilépési út ugyanezt teszi (`application.py`:
+            # `controller.shutdown()` az `app.exec()` után). Ez a lezárás ott
+            # HIÁNYZOTT (#2101).
+            controller.shutdown()
+            provider.wait_for_done(5_000)
         if controller.photos.rowCount() < 1:
             return ["az indulás lefutott, de a mentett mappa képei nem jelentek meg"]
     return []
