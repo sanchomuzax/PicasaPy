@@ -601,3 +601,102 @@ megfeleltetése megerősített** (a másoló és a nyolc tárolás címről cím
 kiolvasva, a megfeleltetés zárt); a **348 bájtos rész jelentése NINCS
 MEG**.*
 
+## ⭐ A rekord eleje: 8×8 RGB565 BÉLYEGKÉP (#447, 2026-09-03)
+
+Az előző kör a rekordot két részre bontotta, és nyitva hagyta a 348 bájtos
+elejét. Ebből most **130 bájt megvan**, és a rekord kezdete is **rögzítve**.
+
+### A kvantáló kimenete: 8 sor × 8 képpont
+
+A `0x007eb8c0` (549 b) egy **kibontott** kettős ciklus. Soronként **nyolc**
+`uint16`-ot ír, majd 16 bájtot lép:
+
+| cím | mit tesz |
+|---|---|
+| `0x007eb90a` | `mov word ptr [esi-4], ax` |
+| `0x007eb94a` | `mov word ptr [esi-2], ax` |
+| `0x007eb98a` | `mov word ptr [esi], ax` |
+| `0x007eb9c9` | `mov word ptr [esi+2], ax` |
+| `0x007eba09` | `mov word ptr [esi+4], ax` |
+| `0x007eba49` | `mov word ptr [esi+6], ax` |
+| `0x007eba89` | `mov word ptr [esi+8], ax` |
+| `0x007ebac9` | `mov word ptr [esi+10], ax` |
+| `0x007ebacd` | `add edx, 1` |
+| `0x007ebad0` | `add esi, 16` |
+| `0x007ebad3` | `cmp edx, 8` |
+| `0x007ebad6` | `jb 0x007eb8d0` |
+
+⇒ **8 sor × 8 érték × 2 bájt = 128 bájt.** A képpontok a bemeneti kép
+egy-egy sorának **első nyolc** eleméből jönnek
+(`edi = [ecx+0x10] + sor·[ecx+4]·4`, majd `+0`, `+4`, `+8`, …), az érték
+pedig a már leírt **RGB565** kód (`0x007eb8e4`–`0x007eb900`).
+
+⇒ **A rekord elején egy 8×8-as, RGB565-be kvantált bélyegkép áll.**
+Ez a Picasa hasonlósági ujjlenyomatának első fele.
+
+### A rekord KEZDETE rögzítve
+
+Mindkét közbenső hívás **callee-cleanup** (`ret 4`), tehát a hívó verme
+visszaáll, és a `rep movsd` forráscíme ugyanabban a keretben van, mint a
+kvantáló előtti jelzőbájt:
+
+| cím | mit ad |
+|---|---|
+| `0x007eb8c0` vége | `c2 04 00` = `ret 4` |
+| `0x007ebf4e` | `ret 4` — a normalizáló vége |
+| `0x007eb5a3` | `mov byte ptr [esp+0x268], 1` — egy `push` UTÁN, azaz a keretben `+0x264` |
+| `0x007eb59b` | a kvantáló paramétere a keretben `+0x266` |
+| `0x007eb5d0` | `lea esi, [esp+0x264]` — a `rep movsd` forrása |
+
+⇒ A `+0x264` mindhárom helyen **ugyanaz a cím**, tehát:
+
+```
++0x000        uint8   = 1          ; jelzőbájt (0x007eb5a3 állítja be)
++0x001        —                    ; egyik lépés sem írja
++0x002 …+0x081  64 × uint16        ; 8×8 RGB565 bélyegkép (128 bájt)
++0x082 …+0x15B  218 bájt           ; ISMERETLEN (ld. lentebb)
++0x15C …+0x17B   8 × float         ; a négy 0x007ea650-hívás skalárjai
+                                   ; ⇒ 0x17C = 380
+```
+
+### A 218 bájtos rész — amit tudunk róla
+
+A normalizáló hívása előtt (`0x007eb5b8`) `lea edi, [esp+0x2ea]` fut, ami
+ugyanabban a keretben **pontosan `+0x2E6` = a rekord `+0x082`** — azaz az
+ismeretlen tartomány **kezdete**. Az `edi` tehát a normalizáló
+**regiszter-paramétere**, és a függvény a végén `mov eax, edi`-vel
+vissza is adja.
+
+⚠️ **De a normalizáló NEM ír oda.** A 460 bájtos törzsében **egyetlen**
+`edi`-célú írás sincs (mérve: `fstp [edi]`, `fstp [edi+d8]`,
+`mov byte/word/dword [edi]`, `stosb/stosw/stosd`, `add edi`, `inc edi` —
+mind **nulla** találat). Amit a hurok után tesz: a maximumot összeveti a
+`0x00cf3db0` konstanssal, és ha nem nagyobb, a `0x00c7999c`-t tölti be
+helyette (nulla-védelem) — vagyis **skálatényezőt számol**, nem kimenetet ír.
+
+⇒ Az `edi` egy **továbbadott** kimeneti mutató; a 218 bájtot a lánc egy
+másik, még nem azonosított lépése tölti.
+
+### Melléklelet: a függvényindex mérete itt RÖVID
+
+A `functions` tábla a normalizálót **442** bájtosnak mondja, de a `ret 4`
+a **446.** bájtnál áll (`0x007ebf4e`). Aki a törzset az indexbeli méretre
+vágja, **levágja a függvény végét** — épp azt a részt, ahol a skálatényező
+kiszámolása történik.
+
+### Ami NYITVA marad
+
+A `+0x082 …+0x15B` (218 bájt). Amit tudunk: ez a normalizálónak átadott
+`edi` mutató célterülete, és a memóriabeli 216 elemű `float`-vektor
+(`esp+0x3E0`) mérete **216** — a 218 bájttal **kettő** az eltérés. Ez
+egybevágó volna „216 érték egy-egy bájton + 2 bájt" felosztással, de ezt
+**NEM mértem ki**, tehát nem állítom.
+
+⛔ Mintafájl továbbra sincs. A következő lépés: megkeresni, melyik lépés ír
+a `+0x082`-től induló területre (az `edi`-t továbbadó hívási láncot követve).
+
+*Bizonyítottsági fok: a **8×8 RGB565 bélyegkép és a rekord kezdete
+megerősített** (bájtszinten kiolvasva, a veremkeret a `ret 4`-ekkel
+igazolva); a **218 bájt tartalma NINCS MEG**, a „216 bájt + 2" felosztás
+pedig **feltevés, nem mérés**.*
+
