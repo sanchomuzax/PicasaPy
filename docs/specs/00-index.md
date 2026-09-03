@@ -637,7 +637,27 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
    felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
    futott a mentés.
 
-### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03)
+
+⭐ **2026-09-03 (9–10. szakasz) — a BELÉPÉSI PONTOK, és egy BLOKKOLT tétel
+LEZÁRVA.** A lap eddig azt írta le, mi kerül a lemezre; azt nem, **honnan
+indul**. Öt belépési pont: `eMenuCreate::ID_BURNCD` (a **Létrehozás** menüben —
+a lap korábban `eMenuTools`-t írt, **helyesbítve**), a `thumbui/cdmode`
+üzemmód-gomb (magyarul **„Ajándék CD"**, buboréksúgó: *„CD/DVD létrehozása
+beépített diavetítéssel…"*), a `publish/presentcd_go` (**„Lemezre írás"**), és
+**kettő, ami a `.tre`-ben KI VAN KOMMENTEZVE**: `headerpanel/create_cd` és
+`faceheaderpanel/create_cd` — a bináris ismeri a nevüket, a felületleíró
+kikapcsolja őket. ⭐ **A 7. mérleg BLOKKOLT tétele („a 16 beállítás
+értékkészlete") LEZÁRULT dekompiláció nélkül:** a `0x0068eea0` a **második**
+függvény (a blokkolás indoka „egyetlen olvasó" volt), és a 16 kulcsot **16
+egymás utáni dwordre** képezi (`+0x454`…`+0x490`, hézag nélkül) — ez egyben
+igazolja a lista teljességét, és megadja a **hiányzó tizenhatodik** kulcsot
+(`option_copysrctotempdest`). A `0x0066f470` húsz beállító híváshelye
+kiolvasva, köztük **`option_jpegquality = 85`** — ugyanaz, amit mi is adunk
+(`exporter.py:62`), **egyezik**. **Megdőlt:** „a beállításokat a `Preferences`
+tárolja" (nulla `Preferences\option…` sztring) és „az Ajándék CD nem
+fényképexport" (`picasa-menu-parancsok-viselkedes.md` `ID_BURNCD`, javítva).
+Komment: **#32**, új jegy: **#2095**.
 
 ⭐ **2026-09-02:** az Ajándék-CD kimenete feltárva — a lemez **önjáró**
 (`PicasaCD.exe` + `Picasa CD Slideshow.app` + `PicasaRestore.exe` +
@@ -646,12 +666,17 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
 (`PicasaMenuBar.qml:1329`). Jegy-komment: **#32**, **#440**.
 
-1. **Mi a 16 kimeneti beállítás ÉRTÉKKÉSZLETE?** A kulcsnevek megvannak
-   (`option_imagesizelimit` … `option_isupload`), a megengedett értékek
-   nem. Az olcsó lánc kimerült: nem felületi elemek (nincsenek a `.tre`-ben),
-   a szövegtárban sincsenek, és az egyetlen olvasót (`0x0066f470`)
-   végigolvastam. **Megszerzés:** a `0x0066f470` (923 b) célzott
-   dekompilációja. Lap: `ajandek-cd-kimenet.md` 7.; jegy **#32**.
+1. ~~Mi a 16 kimeneti beállítás ÉRTÉKKÉSZLETE?~~ **LEZÁRVA (2026-09-03)** —
+   dekompiláció nélkül: a `0x0068eea0` a **második** függvény (a blokkolás
+   indoka „egyetlen olvasó" volt), és 16 egymás utáni dwordre képezi a
+   kulcsokat; a `0x0066f470` húsz beállító híváshelye kiolvasva. Lap:
+   `ajandek-cd-kimenet.md` **10.**
+2. **Melyik ÁG melyik üzemmódhoz tartozik?** A `0x0066f470` három ágon állít
+   értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi`
+   hozzárendelése a három üzemmódhoz (mentés / Ajándék-CD / feltöltés)
+   **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott
+   dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Lap:
+   `ajandek-cd-kimenet.md` 7.; jegy **#2095**.
 
 ### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ, 2026-09-02)
 

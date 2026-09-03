@@ -532,14 +532,29 @@ Jegy: **#1590**.
 
 ## A 29. adag (2026-08-27) — Ajándék CD, kollázs, diavetítés, kijelölés, címke-felirat
 
-### `ID_BURNCD` — HATÓKÖRÖN KÍVÜL
+### `ID_BURNCD` — RÉSZBEN hatókörön kívül (helyesbítve 2026-09-03)
 
 A `0x0066fae0` (439 b) **négy fájlt** másol a lemezre: `PicasaCD.exe`
 (windowsos önindító nézőprogram), `Picasa CD Slideshow.app` (macOS), és a
 nézőprogram felületleírói (`cdgo.ui`, `cdgo.tre`).
 
-⇒ Az Ajándék CD **nem fényképexport**, hanem egy **szállított
-nézőprogram** lemezre égetése. Linuxon nem átvehető. Jegy: **#32**.
+> ⛔ **HELYESBÍTÉS.** Itt eddig ez állt: *„Az Ajándék CD **nem
+> fényképexport**, hanem egy **szállított nézőprogram** lemezre égetése."*
+> Ez **túl szűk**, és a megvalósítást rossz irányba vitte volna.
+> **Amit a mérés mond** ([`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md)
+> 3. és 10. szakasz): a lemezre a nézőprogram mellett **teljes
+> fényképexport** kerül, **tizenhat beállítással** — felső képméret-korlát,
+> JPEG-minőség (mérve: **85**), bélyegkép-méret, eredeti fájl,
+> `.picasa.ini`, manifeszt (felirattal, fájlidővel), HTML-galéria,
+> nem-JPEG konvertálása, filmek megőrzése. Ugyanaz a csővezeték, mint a
+> biztonsági mentésé.
+>
+> ⇒ **Hatókörön kívül csak a windowsos/macOS nézőprogram és az
+> `autorun.inf`**; a **fényképexport fele átvehető**, és a #440 mentés-ágával
+> közös. A parancs a **Létrehozás** menüben ül (`eMenuCreate::ID_BURNCD`),
+> és összesen **öt** belépési pontja van, kettő kikommentezve.
+
+Jegy: **#32** · a kimenet lapja: [`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md).
 
 **Amit MÁSHOVA ad:** az Ajándék CD és a **Biztonsági mentés** ugyanazt a
 panelt használja (`il_BurnPanel`) — a mentés tizenkét hivatalos magyar
