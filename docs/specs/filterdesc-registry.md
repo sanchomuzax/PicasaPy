@@ -2098,9 +2098,12 @@ motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
 ---
 
-## ⭐ ÖT Glimmer-művelet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB`, `TwoTone`, `Resize` (2026-09-03, #2211)
+## ⭐ HÉT Glimmer-művelet KIMÉRVE (2026-09-03, #2211)
 
-Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **ötöt
+*`IR` · `MultiplyColorMatrix` · `EdgeDetectionB` · `TwoTone` · `Resize` ·
+`AutoFix` · `AdjustCurves`*
+
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **hetet
 számszerűen is megold** — és a megoldás módszere maga is eredmény: a
 **saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
 
@@ -2243,6 +2246,68 @@ négy hívója van, köztük mindkettő.
 **Ami NINCS mérve:** hogy `smoothing = false` esetén a bináris a `0`-s
 dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
 
+### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
+
+A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
+(`0x00bc2d70`, 217 b) három lépést tesz:
+
+1. **Három hisztogram.** Három 256 dwordös puffert nulláz
+   (`0x3fc` bájt `memset` + a 256. rekesz külön), majd a `0x00bc2e50`
+   (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
+   `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
+   nincs benne**.
+2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
+   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
+   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
+   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
+   olvasat, de nem azonosítottam.)*
+3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
+   `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
+
+**A LUT képlete — teljes:**
+
+```
+lo = a legkisebb index, ahol a hisztogram nem nulla
+hi = a legnagyobb index, ahol a hisztogram nem nulla
+
+ha lo == hi:                       LUT[x] = 255            (a csatorna telítve)
+egyébként:  LUT[x] = clamp( round( (x − lo) / (hi − lo) · 255 + 0,5 ), 0, 255 )
+```
+
+A `255,0` a `0x00cf39d0`, a `0,5` a `0x00c72150` (mindkettő dupla
+pontosságú, kiolvasva); a `+0,5` a `0x00c29990` egészre alakítóval együtt
+kerekítés. A `lo` keresése ötösével kibontott ciklus (`0x00bc3180`–
+`0x00bc31a9`), a `hi`-é visszafelé megy 255-től.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól — és NEM elírás.** A mi `autofix`-ünk
+> (`src/picasapy/render/glimmer_ops.py`) az `apply_channel_levels_stretch`-re
+> mutat, ami a **natív „Jó napom van" modellt** használja, **0,30-as
+> vágópont-keveréssel** (#535, #721 — a `0x009db610` kutatása). A Glimmer
+> `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
+> teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
+> ugyanaz. Jegy: **#2229**.
+
+### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
+
+A munkavégző (`0x00bb9d20`, 224 b) sorrendben:
+
+| tag | mi | hogyan |
+|---|---|---|
+| `+0x50` | **`ExposureAdjustmentStops`** | beolvasás (`0x008ef520`), majd `0x00bcd3b0` |
+| `+0x40` | 1. görbe | `0x00bb9e00` (438 b), csak ha nem nulla |
+| `+0x44` | 2. görbe | ugyanaz |
+| `+0x48` | 3. görbe | ugyanaz |
+| `+0x4c` | 4. görbe | ugyanaz |
+
+A `red.cfg` négy görbe-attribútumot ismer (`MasterCurve`, `RedCurve`,
+`GreenCurve`, `BlueCurve`) — **a négy tagoffszet ezekkel áll párban**, a
+sorrendjük viszont **nincs mérve** (a beolvasó a tömb-attribútumokat nem a
+szokásos mintával veszi át).
+
+⭐ Az **`ExposureAdjustmentStops`** ELŐBB fut, mint a görbék, és **nem
+szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
+görbék mellett.
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
@@ -2255,7 +2320,8 @@ dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
 3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
    levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
 
-*Bizonyítottsági fok: **megerősített** mind az öt leletre (kiolvasott
+*Bizonyítottsági fok: **megerősített** mind a hét leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma, a `TwoTone` megálló-pozíciói és a `Resize` `smoothing = false` ága
-**nincsenek mérve**.*
+tartalma, a `TwoTone` megálló-pozíciói, a `Resize` `smoothing = false` ága,
+az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az `AdjustCurves` négy
+görbéjének SORRENDJE **nincsenek mérve**.*
