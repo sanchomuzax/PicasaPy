@@ -12,19 +12,26 @@ Két lehetőség, mindegyik cím + magyarázó sor:
 
 | elem | felirat |
 |---|---|
-| `mail1` | **MAIL CLIENT** |
-| `mail1a` | Use my default email program. |
-| `mail2` | **Google Mail** |
-| `mail2a` | Use my Gmail or Google account. |
-| `gmailsignup1` | Don't have Gmail? Get a free account. *(webcím: `http://mail.google.com`)* |
-| `remember` | **Remember this setting, don't display this dialog again.** |
-| `help` | Help |
-| `mailcancel` | Cancel |
+| `choose_mail/mail1` | **MAIL CLIENT** |
+| `choose_mail/mail1a` | Use my default email program. |
+| `choose_mail/mail2` | **Google Mail** |
+| `choose_mail/mail2a` | Use my Gmail or Google account. |
+| `choose_mail/gmailsignup1` | Don't have Gmail? Get a free account. *(webcím: `http://mail.google.com`)* |
+| `choose_mail/remember` | **Remember this setting, don't display this dialog again.** |
+| `choose_mail/help` | Help |
+| `choose_mail/mailcancel` | Cancel |
 
-Elemek: `picker` · `selectheader` · `selecttext` · `mymail` (+ ikon) ·
-`gsender` (+ ikon) · `googsender_icon` · `checkbox` ·
-`remember_container` · `prefcontainer` · `helpbutton` (+ ikon) ·
-`cancelbutton` (+ ikon).
+Elemek: `choose_mail/picker` · `choose_mail/selectheader` ·
+`choose_mail/selecttext` · `choose_mail/mymail` (+ ikon) ·
+`choose_mail/gsender` (+ ikon) · `choose_mail/googsender_icon` ·
+`choose_mail/checkbox` · `choose_mail/remember_container` ·
+`choose_mail/prefcontainer` · `choose_mail/helpbutton` (+ ikon) ·
+`choose_mail/cancelbutton` (+ ikon).
+
+> **Miért a teljes név?** A levélnevek közt van `help`, `picker` és
+> `checkbox` — prózában eltéveszthetők, és a lefedettségi mérő sem találja
+> meg őket levélnéven (#2093). A táblák ezért a `panel/elem` alakot
+> használják.
 
 A „ne kérdezd újra" jelölő a **`DoNotPromptForEmailPref`** kulcsba ír
 (`0x006e1100`).
@@ -34,16 +41,24 @@ A „ne kérdezd újra" jelölő a **`DoNotPromptForEmailPref`** kulcsba ír
 **Negyven elem.** A Picasa nem csak átadta a képeket a levelezőnek: **saját
 üzenetszerkesztője** volt, Gmail-bejelentkezéssel.
 
+*Forrás: `compose_mail.tre` (173 sor) — a felületleíró saját sorai, pl.
+`compose_mail.tre:68` a `compose_mail/topstrip`, `compose_mail.tre:63` a
+`compose_mail/send`, `compose_mail.tre:83` a `compose_mail/changeuser`.*
+
 | csoport | elemek |
 |---|---|
-| fejléc | `topstrip` · `topentry` · `to` + `to_text` („To:") · `subject` + `subject_text` („Subject:") |
-| üzenet | `compose` · `composeclip` · `content` |
-| melléklet | `piccontainer` · `preview` · `picstroke` · `clipicon` · `discardimage` (+ ikon) |
-| lapozás | `navleft` (+ ikon) · `navright` (+ ikon) |
-| **írásirány** | **`ltr`** (+ ikon) · **`rtl`** (+ ikon) · `bidi_container` |
-| fiók | `gmail` · `googlemail` · `curuser` · `changeuser` („Change User") · `logininfo` |
-| gombok | `send` / `sendb` („Send") · `discard` / `discardb` („Discard") · fókuszált párjaik (`focsend`, `focsendb`, `focdiscard`, `focdiscardb`) |
-| egyéb | `bottomstrip` · `divider` · `infotext` |
+| fejléc | `compose_mail/topstrip` · `compose_mail/topentry` · `compose_mail/to` + `compose_mail/to_text` („To:") · `compose_mail/subject` + `compose_mail/subject_text` („Subject:") |
+| üzenet | `compose_mail/compose` · `compose_mail/composeclip` · `compose_mail/content` |
+| melléklet | `compose_mail/piccontainer` · `compose_mail/preview` · `compose_mail/picstroke` · `compose_mail/clipicon` · `compose_mail/discardimage` (+ ikon) |
+| lapozás | `compose_mail/navleft` (+ ikon) · `compose_mail/navright` (+ ikon) |
+| **írásirány** | **`compose_mail/ltr`** (+ ikon) · **`compose_mail/rtl`** (+ ikon) · `compose_mail/bidi_container` |
+| fiók | `compose_mail/gmail` · `compose_mail/googlemail` · `compose_mail/curuser` · `compose_mail/changeuser` („Change User") · `compose_mail/logininfo` |
+| gombok | `compose_mail/send` / `compose_mail/sendb` („Send") · `compose_mail/discard` / `compose_mail/discardb` („Discard") · fókuszált párjaik (`compose_mail/focsend`, `compose_mail/focsendb`, `compose_mail/focdiscard`, `compose_mail/focdiscardb`) |
+| egyéb | `compose_mail/bottomstrip` · `compose_mail/divider` · `compose_mail/infotext` |
+
+*(A teljes `compose_mail/` előtag azért áll ki, mert a levélnevek közt van
+`preview`, `content` és `send` — prózában eltéveszthetők, és a lefedettségi
+mérő sem találja meg őket levélnéven; #2093.)*
 
 > **Kétirányú írás**: a szerkesztő külön **balról-jobbra / jobbról-balra**
 > kapcsolót kínált (`ltr` / `rtl`, `bidi_container`) — arab és héber

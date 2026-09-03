@@ -1,6 +1,6 @@
 # UI-lefedettség — az eredeti Picasa panelei ↔ a PicasaPy QML-fája
 
-**Generálva:** 2026-09-03 — **ezt a fájlt ne írd kézzel**, újragenerálható.
+**Generálva:** 2026-09-04 — **ezt a fájlt ne írd kézzel**, újragenerálható.
 
 **Előállító:** `eszkozok/ui_lefedettseg.py` (privát `picasapy-agent` repó).
 **Bemenet (privát):** `referencia/ui-leltar.csv` (2020 elem / 74 panel, a `.tre` erőforrásokból), `referencia/panel-feliratok-hu.tsv`, `referencia/stringres-en-hu.tsv`.
@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 657 |
 | párosítva | 268 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 64 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 217 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 36 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 245 |
 | bizonytalan | 77 |
 | nem értékelhető (rajzoló elem) | 1284 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 77 |
@@ -73,32 +73,32 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 
 | panel | eredeti elem | értékelhető | párosítva | másutt | feltáratlan | lekutatva | bizonytalan | rajzoló | nem cél | megfeleltetés |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `makemoviepanel` | 111 | 55 | 1 | 5 | 0 | 43 | 6 | 56 | 0 | `CreateDialogs.qml` |
+| `makemoviepanel` | 111 | 55 | 1 | 5 | 0 | 42 | 7 | 56 | 0 | `CreateDialogs.qml` |
 | `publish` | 125 | 30 | 0 | 0 | 0 | 30 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 99 | 1 | 0 | 18 | 7 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `printoptions` | 49 | 29 | 0 | 7 | 0 | 22 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `thumbui` | 140 | 44 | 20 | 3 | 2 | 12 | 7 | 93 | 3 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
-| `choose_mail` | 24 | 13 | 0 | 0 | 9 | 4 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
+| `choose_mail` | 24 | 13 | 0 | 0 | 0 | 13 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
 | `faceheaderpanel` | 39 | 13 | 1 | 1 | 0 | 11 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
 | `edittextpanel` | 45 | 19 | 9 | 0 | 5 | 3 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
-| `compose_mail` | 41 | 10 | 0 | 0 | 10 | 0 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
+| `compose_mail` | 41 | 10 | 0 | 0 | 0 | 10 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `headerpanel` | 30 | 11 | 4 | 0 | 5 | 2 | 0 | 19 | 0 | `LightboxHeader.qml` |
-| `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
+| `titledialog` | 18 | 7 | 0 | 0 | 0 | 7 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `printpanel` | 73 | 33 | 27 | 0 | 0 | 6 | 0 | 40 | 0 | `PrintDialog.qml` |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 0 | 3 | 3 | 18 | 0 | `VideoPlayerView.qml` |
 | `keywords` | 18 | 7 | 1 | 0 | 0 | 5 | 1 | 11 | 0 | `TagsPanel.qml` |
 | `uploadmgr` | 17 | 7 | 0 | 1 | 6 | 0 | 0 | 10 | 0 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
 | `searchoptions` | 9 | 6 | 0 | 0 | 0 | 3 | 3 | 3 | 0 | `SearchGroupHeader.qml`, `MainToolbar.qml` |
-| `searchcontainer` | 25 | 11 | 6 | 0 | 0 | 4 | 1 | 14 | 0 | `MainToolbar.qml`, `SearchSuggestions.qml` |
+| `searchcontainer` | 25 | 11 | 6 | 0 | 0 | 3 | 2 | 14 | 0 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `geopanel` | 14 | 5 | 0 | 0 | 1 | 0 | 4 | 9 | 0 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `outputlayout` | 31 | 9 | 4 | 1 | 0 | 4 | 0 | 22 | 0 | `TrayBar.qml` |
 | `initialscan` | 18 | 4 | 0 | 0 | 0 | 0 | 4 | 14 | 0 | `InitialScanDialog.qml` |
 | `video_control_bar2` | 18 | 4 | 0 | 0 | 0 | 3 | 1 | 14 | 0 | `VideoPlayerView.qml` |
-| `panelroot` | 14 | 7 | 2 | 1 | 1 | 1 | 2 | 7 | 0 | `Main.qml`, `MainToolbar.qml` |
+| `panelroot` | 14 | 7 | 2 | 1 | 0 | 4 | 0 | 7 | 0 | `Main.qml`, `MainToolbar.qml` |
 | `throttle` | 10 | 4 | 1 | 0 | 0 | 3 | 1 | 5 | 0 | `PicasaScrollBar.qml` |
 | `movieeditpanel` | 7 | 4 | 0 | 0 | 4 | 0 | 0 | 3 | 0 | `VideoPlayerView.qml` |
 | `editoneup` | 34 | 5 | 0 | 2 | 0 | 1 | 2 | 29 | 0 | `PhotoViewer.qml` |
@@ -106,7 +106,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `peoplepanel` | 14 | 6 | 1 | 2 | 2 | 0 | 1 | 8 | 0 | `PeoplePanel.qml`, `PeoplePanelRow.qml` |
 | `gedialog` | 13 | 5 | 1 | 1 | 1 | 0 | 2 | 8 | 0 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `rightdrawerpanel` | 9 | 3 | 0 | 0 | 2 | 1 | 0 | 6 | 0 | `PropertiesPanel.qml` |
-| `foldermgr` | 32 | 11 | 4 | 5 | 1 | 0 | 1 | 21 | 0 | `FolderManagerDialog.qml` |
+| `foldermgr` | 32 | 11 | 4 | 5 | 0 | 1 | 1 | 21 | 0 | `FolderManagerDialog.qml` |
 | `tagpanel` | 24 | 8 | 6 | 0 | 0 | 0 | 2 | 16 | 0 | `TagsPanel.qml` |
 | `unknownfaceheaderpanel` | 18 | 6 | 4 | 0 | 0 | 2 | 0 | 12 | 0 | `UnnamedFacesView.qml` |
 | `instructionpanel` | 7 | 2 | 0 | 0 | 1 | 1 | 0 | 5 | 0 | **nincs-megfeleltetes** — Betanító buborék („Learn more…”) — nincs nálunk |
@@ -199,7 +199,7 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `tabpanel2` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x0061681e)
 - `tabpanel3` — *bizonytalan*
 - `tabs` — *bizonytalan*
-- `templatelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006226d8)
+- `templatelist` — *bizonytalan*
 - `text_picker_panel` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00621d40)
 - `transitionslider_label` „Overlap” (magyarul: „Átfedés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `transtype_label` „Transition Style” (magyarul: „Képváltási stílus”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-create-features.md)
@@ -255,7 +255,7 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `movietab` — *bizonytalan*
 - `movietabpanel` — *bizonytalan*
 - `only_1up_toggle` buboréksúgó: „View only one image” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
-- `picnik` „Edit in Creative Kit” (magyarul: „Szerkesztés a Kreatív készletben”) — 🔧 **lekutatva**, csak nem megépítve (picasa-bezaras-es-kilepes.md: 0x0057c4e0)
+- `picnik` „Edit in Creative Kit” (magyarul: „Szerkesztés a Kreatív készletben”) — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
 - `picnik_fx` buboréksúgó: „Try more effects at Creative Kit” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `picnik_fx_label` „Effects by” (magyarul: „Effektusok a következőtől:”) — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `picnikapply` — *bizonytalan*
@@ -303,7 +303,7 @@ Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „
 A fő könyvtárnézet egésze
 
 - `acquirebutton` — 🔧 **lekutatva**, csak nem megépítve (konyvtar-ablak-meretek.md: respack.yt:3280882)
-- `backup` „Backup” (magyarul: „Biztonsági mentés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00530c10)
+- `backup` „Backup” (magyarul: „Biztonsági mentés”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0067be30)
 - `buttonbarsets` — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: thumbui.tre:406)
 - `buttongroup1` — *bizonytalan*
 - `cdmode` „Gift CD” (magyarul: „Ajándék CD”) — 🔧 **lekutatva**, csak nem megépítve (kézi: ajandek-cd-kimenet.md)
@@ -346,19 +346,19 @@ Gombsáv-testreszabó párbeszéd — nincs nálunk
 
 Levelezőprogram-választó párbeszéd — nincs nálunk
 
-- `cancelbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x007420f0)
-- `checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x007420f0)
-- `gmailsignup1` „Don't have Gmail? Get a free account.” (magyarul: „Nincs Gmail-fiókja? Nyisson egy fiókot ingyen.”)
-- `help` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x007420f0)
-- `helpbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x007420f0)
-- `mail1` „MAIL CLIENT” (magyarul: „LEVELEZŐPROGRAM”)
-- `mail1a` „Use my default email program.” (magyarul: „Az alapértelmezett levelezőprogram használata”)
-- `mail2` „Google Mail” (magyarul: „Google Mail”)
-- `mail2a` „Use my Gmail or Google account.” (magyarul: „A Gmail-fiók vagy a Google Fiók használata”)
-- `mailcancel` „Cancel” (magyarul: „Mégse”)
-- `picker`
-- `remember` „Remember this setting, don't display this dialog again.” (magyarul: „Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.”)
-- `selecttext` „Select how you want to e-mail your photos.” (magyarul: „Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.”)
+- `cancelbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `gmailsignup1` „Don't have Gmail? Get a free account.” (magyarul: „Nincs Gmail-fiókja? Nyisson egy fiókot ingyen.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `help` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `helpbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `mail1` „MAIL CLIENT” (magyarul: „LEVELEZŐPROGRAM”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `mail1a` „Use my default email program.” (magyarul: „Az alapértelmezett levelezőprogram használata”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `mail2` „Google Mail” (magyarul: „Google Mail”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `mail2a` „Use my Gmail or Google account.” (magyarul: „A Gmail-fiók vagy a Google Fiók használata”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `mailcancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `picker` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `remember` „Remember this setting, don't display this dialog again.” (magyarul: „Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
+- `selecttext` „Select how you want to e-mail your photos.” (magyarul: „Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
 
 ### `acquirepanel` — 12 hiány · panel-megfeleltetés: `parositva`
 
@@ -428,16 +428,16 @@ Szöveg-eszköz panelje
 
 Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül
 
-- `changeuser` „Change User” (magyarul: „Felhasználóváltás”)
-- `discard` „Discard” (magyarul: „Elvetés”)
-- `discardb` „Discard” (magyarul: „Elvetés”)
-- `discardimage` buboréksúgó: „Remove selected image from attachment”
-- `preview`
-- `send` „Send” (magyarul: „Küldés”)
-- `sendb` „Send” (magyarul: „Küldés”)
-- `subject_text` „Subject:” (magyarul: „Tárgy:”)
-- `to_text` „To:” (magyarul: „Címzett:”)
-- `topentry`
+- `changeuser` „Change User” (magyarul: „Felhasználóváltás”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `discard` „Discard” (magyarul: „Elvetés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `discardb` „Discard” (magyarul: „Elvetés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `discardimage` buboréksúgó: „Remove selected image from attachment” — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `preview` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `send` „Send” (magyarul: „Küldés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `sendb` „Send” (magyarul: „Küldés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `subject_text` „Subject:” (magyarul: „Tárgy:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `to_text` „To:” (magyarul: „Címzett:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
+- `topentry` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
 
 ### `collagepanel` — 7 hiány · panel-megfeleltetés: `parositva`
 
@@ -467,13 +467,13 @@ Album- és mappafejléc a rács fölött
 
 Filmes címdia-szerkesztő párbeszéd — nincs nálunk
 
-- `add` „Add”
-- `cancel` „Cancel”
-- `captionchk`
-- `previewimage`
-- `previewtext`
-- `sizelist`
-- `stylelist`
+- `add` „Add” — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `cancel` „Cancel” — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `captionchk` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `previewimage` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `previewtext` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `sizelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
+- `stylelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: titledialog.tre:20)
 
 ### `printpanel` — 6 hiány · panel-megfeleltetés: `parositva`
 
@@ -534,7 +534,7 @@ Keresési eredmény fejléce
 
 Keresősáv és szűrőgombjai
 
-- `search` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00cf4c08)
+- `search` — *bizonytalan*
 - `searchautocomplete` — *bizonytalan*
 - `searchbutton` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00cf4c08)
 - `timecontainer_label` buboréksúgó: „Filter by date range” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-mainwindow.md)
@@ -581,10 +581,10 @@ Videó vezérlősáv második változata
 
 Legfelső panelváltó (Könyvtár / Import / Kollázs / Film / Felvétel)
 
-- `capturemovietab` „Capture” (magyarul: „Rögzítés”)
-- `globaltabs` — *bizonytalan*
+- `capturemovietab` „Capture” (magyarul: „Rögzítés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: panelroot.tre:75)
+- `globaltabs` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: panelroot.tre:75)
 - `makemovietab` „Movie Maker” (magyarul: „Mozgófilmkészítés”) — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x0056c140)
-- `youtab` — *bizonytalan*
+- `youtab` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: panelroot.tre:75)
 
 ### `throttle` — 4 hiány · panel-megfeleltetés: `parositva`
 
@@ -649,7 +649,7 @@ Jobb oldali fiók kerete
 Mappakezelő
 
 - `cancel` — *bizonytalan*
-- `instructions_text` „For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.” (magyarul: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését.”)
+- `instructions_text` „For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures.” (magyarul: „Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-mappakezelo.md: 0x005ce590)
 
 ### `tagpanel` — 2 hiány · panel-megfeleltetés: `parositva`
 
@@ -1385,7 +1385,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ### `PicasaPy/EditorLegacyTab.qml` — 3
 
-- „These filters come from older versions of Picasa. They are not available in today's Picasa, but your old edits may contain them.”
+- „These filters come from older versions of Picasa. Most of them have no control of their own in today's Picasa — it only recognises them inside your old edits.”
 - „This name is a leftover from an old configuration. Picasa 3.9 has no processor for it either, so it cannot be applied.”
 - „Picasa can read this filter from an old .picasa.ini, but its exact pixel operation has not been decoded yet, so it cannot be applied.”
 
@@ -1592,5 +1592,5 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ## Figyelmeztetések a generáláskor
 
-- ÁTSOROLVA (#1970): 42 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
+- ÁTSOROLVA (#1970): 41 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
 
