@@ -487,6 +487,17 @@ jobs:
         # kapu, ami a helyes munkát bünteti, rosszabb a semminél.
         run: python scripts/posix_or.py
 
+      - name: Nagy fájl a verziókövetésben (#2083)
+        # 2026-09-03: egy `git add -A` bevitt a munkafából 168 fájlt, 84 MB-ot
+        # (a tulajdonos Picasa-adatbázisának másolatát) egy PUBLIKUS repó
+        # PR-jébe. A beolvadást csak VÉLETLEN akadályozta meg: a changelog-őr
+        # a bináris diffen dekódolási hibára futott.
+        #
+        # A küszöb MÉRÉSBŐL jön: a repóban 1 MB fölött egyetlen, szándékos
+        # fájl van (5,2 MB-os infografika), a bevitt halmaz legnagyobb darabja
+        # 12 MB volt. Nulla hamis riasztás, és az esetet megfogta volna.
+        run: python scripts/nagy_fajl_or.py
+
       - name: Felületről elérhetetlen vezérlő-képességek őre (#1476)
         # Ugyanide illik, mint a néma jelzések őre: tisztán statikus, Qt
         # nélkül fut, másodpercek alatt kész.
