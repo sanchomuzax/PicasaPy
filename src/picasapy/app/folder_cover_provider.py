@@ -25,7 +25,6 @@ from typing import Callable, Sequence
 
 import numpy as np
 
-from PySide6.QtCore import QSize
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -126,7 +125,13 @@ class FolderCoverProvider(QQuickImageProvider):
             _log.exception("a mappa-borító előállítása elszállt: %s", mappa)
             borito = None
         if borito is None:
-            return QImage(QSize(1, 1), QImage.Format.Format_ARGB32)
+            # #2215: ÜRES (null) kép — NEM 1×1 átlátszó. A különbség a
+            # felületen dől el: az 1×1-es kép sikeresen betöltődik, ezért a
+            # QML `Image.status`-a `Ready` lesz, a fasor `boritoLatszik`
+            # feltétele igaz, és a mappaikon ELREJTŐZIK — a sor teljesen
+            # üresen marad. A null kép `Error` státuszt ad, tehát a sor
+            # visszaesik a mappaikonra, ahogy a `FolderPane.qml` ígéri.
+            return QImage()
         magassag, szelesseg = borito.shape[:2]
         # A tömb BGRA sorrendű (OpenCV); a Qt `Format_ARGB32` little-endian
         # gépen ugyanezt a bájtsorrendet várja.

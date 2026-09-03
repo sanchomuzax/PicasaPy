@@ -741,15 +741,29 @@ Rectangle {
                         // `icons/album`, `icons/smartalbum`, …).
                         Item {
                             objectName: "folderRowCover"
-                            width: 13
+                            // #2215: a hely a KUPAC arányához igazodik (a
+                            // 13 a mappaikon mérete); fix szélességgel a
+                            // mappanév ráfolyt a szélesebb kupacokra.
+                            width: boritoLatszik && folderRowCoverImage.implicitHeight > 0
+                                ? Math.max(13, Math.ceil(
+                                    height * folderRowCoverImage.implicitWidth
+                                    / folderRowCoverImage.implicitHeight))
+                                : 13
                             height: 18
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: offline ? 0.45 : 1.0
 
+                            // #2215: a `Ready` önmagában nem elég — a
+                            // szolgáltató korábban 1×1 átlátszó képet adott
+                            // borító hiányában, ami sikeresen betöltődik,
+                            // tehát elrejtette a mappaikont is.
                             readonly property bool boritoLatszik:
-                                pane.albumThumbs && folderRowCoverImage.status === Image.Ready
+                                pane.albumThumbs
+                                && folderRowCoverImage.status === Image.Ready
+                                && folderRowCoverImage.implicitWidth > 1
 
                             FolderIcon {
+                                objectName: "folderRowIcon"
                                 size: 13
                                 visible: !parent.boritoLatszik
                                 anchors.verticalCenter: parent.verticalCenter
