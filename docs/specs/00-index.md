@@ -558,7 +558,7 @@ akkor fut, ha a másolandó elem célja maga a `files.txt` (mért `strcmp`,
 egyszer fordul elő és **egyik társ-binárisban sem** (14 index, két lekérdezési
 alak). A kérdés átfogalmazódott: nem „mi a sorformátum", hanem **„mi van a
 forrásfájlban"** — BLOKKOLT, megszerzés: valódi `files.txt`, vagy a
-`0x00678630` dekompilációja. Komment: **#440**.
+`0x00678630` dekompilációja — **jegy #2090**. Komment: **#440**.
 
 ⭐ **2026-09-03 (12. szakasz) — a LEMEZRE ÍRÁS menete.** A 10. szakasz a
 `publish` sávot írta le; ez azt, ami az **OK után** történik. **Mért képlet**

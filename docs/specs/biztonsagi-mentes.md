@@ -451,6 +451,9 @@ indexszel), tehát a mai olcsó lánccal nem olvasható ki.
 2. A `0x00678630` (`il_BurnPanel::BackgroundProc`, 1246 b) **célzott
    dekompilációja** — ez tölti fel a másolónak átadott két gyűjteményt.
 
+**Jegy: #2090** (`blocked` + `felhasználóra-vár`) — a kérés szövege és a
+határidős alternatíva ott áll.
+
 ⚠️ **Amit NEM szabad ebből következtetni:** hogy a `files.txt` szöveges. A
 mérés csak annyit mond, hogy bájtmásolás történik; a `.txt` kiterjesztés
 nem bizonyíték.
