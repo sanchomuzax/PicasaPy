@@ -657,7 +657,7 @@ kiolvasva, köztük **`option_jpegquality = 85`** — ugyanaz, amit mi is adunk
 (`exporter.py:62`), **egyezik**. **Megdőlt:** „a beállításokat a `Preferences`
 tárolja" (nulla `Preferences\option…` sztring) és „az Ajándék CD nem
 fényképexport" (`picasa-menu-parancsok-viselkedes.md` `ID_BURNCD`, javítva).
-Komment: **#32**, új jegy: **#2094**.
+Komment: **#32**, új jegy: **#2095**.
 
 ⭐ **2026-09-02:** az Ajándék-CD kimenete feltárva — a lemez **önjáró**
 (`PicasaCD.exe` + `Picasa CD Slideshow.app` + `PicasaRestore.exe` +
@@ -676,7 +676,7 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    hozzárendelése a három üzemmódhoz (mentés / Ajándék-CD / feltöltés)
    **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott
    dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Lap:
-   `ajandek-cd-kimenet.md` 7.; jegy **#2094**.
+   `ajandek-cd-kimenet.md` 7.; jegy **#2095**.
 
 ### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ, 2026-09-02)
 

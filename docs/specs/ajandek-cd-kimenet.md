@@ -205,7 +205,7 @@ bekerültek, és egy új blokkolt tétel — az ág ↔ üzemmód hozzárendelé
 | mi történik a kiírás után | **LEZÁRVA** — párbeszéd + `LaunchAutoRun` (5.) |
 | ~~a 16 beállítás ÉRTÉKKÉSZLETE~~ | **LEZÁRVA (2026-09-03)** — a **10.** szakasz: a kulcsok logikai (0/1) vagy egész típusúak, felsorolás nincs; húsz beállító híváshely értéke kiolvasva, köztük `option_jpegquality = 85`. Dekompiláció nem kellett. *(A blokkolás indoka — „a sztring-xref **egyetlen** olvasót ad" — megdőlt: a `0x0068eea0` a második, és épp az az olvasó.)* |
 | **a belépési pontok** | **LEZÁRVA (2026-09-03)** — öt, ebből kettő a `.tre`-ben kikommentezve (**9.**) |
-| **melyik ÁG melyik üzemmódhoz tartozik** | **BLOKKOLT (2026-09-03)** — a `0x0066f470` három ágon állít értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi` hozzárendelése az üzemmódokhoz (mentés / Ajándék-CD / feltöltés) **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Jegy: **#2094**. |
+| **melyik ÁG melyik üzemmódhoz tartozik** | **BLOKKOLT (2026-09-03)** — a `0x0066f470` három ágon állít értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi` hozzárendelése az üzemmódokhoz (mentés / Ajándék-CD / feltöltés) **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Jegy: **#2095**. |
 | Daemon Tools / `d:\cdtemp\temp.iso` | **HATÓKÖRÖN KÍVÜL** — fejlesztői teszt-maradvány, nem felhasználói funkció; eldöntötte: ez a kör, 2026-09-02 |
 
 ## 8. Amit KIZÁRTAM
