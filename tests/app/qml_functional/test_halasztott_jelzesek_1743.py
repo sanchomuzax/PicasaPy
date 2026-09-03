@@ -38,6 +38,55 @@ _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 VEZERLOK = ("controller", "editController", "fileOpsController")
 
 
+#: A `target:` KIFEJEZÉSÉBEN keresünk vezérlő-nevet, nem csak csupasz
+#: azonosítót. #2132: a naiv `(\w+)` minta két élő írásmódot átengedett —
+#: a `PhotoViewer` `typeof controller !== "undefined" ? controller : null`
+#: alakját (az első szó `typeof`) és a `CollagePanel` `panel.controller`
+#: alakját (az első szó `panel`). Egyik sem volt a listában, tehát az őr
+#: hallgatott volna, amint azok a komponensek halasztottá válnak (#1612 c).
+_SZO = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+#: Indokolt kivételek: halasztott komponens, amelyben a vezérlő-hallgató
+#: MÉGIS maradhat. Csak akkor, ha a jelzés elvesztése bizonyíthatóan
+#: ártalmatlan — az indok ide kerül, hogy a következő kör ne találgasson.
+#:
+#: A kulcs `(fájl, a target kifejezés eleje)`, hogy egy komponens másik,
+#: NEM indokolt hallgatója továbbra is elbukjon.
+INDOKOLT_HALLGATOK = {
+    ("FolderManagerDialog.qml", "typeof controller"): (
+        "#2132: a kezelő ELSŐ sora `if (!folderManagerWindow.visible) return` "
+        "— a jelzés csak a NYITOTT mappakezelőnek szól. Fel nem épült "
+        "párbeszéd sosem látható, tehát a kezelő akkor sem tenne semmit, ha "
+        "létezne: nincs mit elveszíteni. (A másik hallgatója a "
+        "`folderTreeController`-re megy, az nincs a figyelt vezérlők közt.)"
+    ),
+}
+
+
+def _melyik_vezerlo(kifejezes: str) -> str | None:
+    """A `target:` kifejezésében szereplő ELSŐ vezérlő-név, ha van.
+
+    A vizsgálat szándékosan megengedő: bármilyen alakban szerepel a
+    vezérlő (csupasz, minősített, feltételes), az kizáró ok — a lényeg,
+    hogy a halasztott komponens a gazdára hallgat-e.
+    """
+    for szo in _SZO.findall(kifejezes):
+        if szo in VEZERLOK:
+            return szo
+    return None
+
+
+def _kivetel_kulcs(fajl: str, kifejezes: str) -> tuple[str, str]:
+    """A kivétel-tábla kulcsa: a fájl és a `target` kifejezés ELSŐ KÉT szava.
+
+    Azért nem a teljes kifejezés, hogy egy sortörés vagy egy szóköz
+    átírása ne érvénytelenítse a felmentést — és azért nem csak a fájl,
+    hogy ugyanabban a fájlban egy MÁSIK hallgató továbbra is elbukjon.
+    """
+    szavak = _SZO.findall(kifejezes)
+    return (fajl, " ".join(szavak[:2]))
+
+
 def _halasztott_komponensek() -> list[str]:
     """A `Main.qml`-ből olvassuk ki, mi van `DeferredDialog`-ba csomagolva —
     így az őr akkor is igaz marad, ha a halasztottak köre változik."""
@@ -95,10 +144,16 @@ class TestNincsVezerloreKotottConnections:
                 continue
             szoveg = fajl.read_text(encoding="utf-8")
             for m in re.finditer(
-                r"Connections\s*\{\s*\n\s*target:\s*(\w+)", szoveg
+                r"Connections\s*\{\s*\n\s*target:\s*([^\n]+)", szoveg
             ):
-                if m.group(1) in VEZERLOK:
-                    talalt.append(f"{nev}.qml → target: {m.group(1)}")
+                kifejezes = m.group(1).strip()
+                vezerlo = _melyik_vezerlo(kifejezes)
+                if vezerlo is None:
+                    continue
+                kulcs = _kivetel_kulcs(f"{nev}.qml", kifejezes)
+                if kulcs in INDOKOLT_HALLGATOK:
+                    continue
+                talalt.append(f"{nev}.qml → target: {kifejezes}")
 
         assert talalt == [], (
             "halasztott párbeszédben vezérlőre kötött `Connections` van "
@@ -128,4 +183,92 @@ class TestNincsVezerloreKotottConnections:
         main = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
         assert f"ensure().{fuggveny}(" in main, (
             f"a Main.qml nem az `ensure()`-ön át hívja a(z) {fuggveny}-t"
+        )
+
+
+class TestAzOrFoga:
+    """#2132: a mintának el kell kapnia MINDEN élő írásmódot.
+
+    A korábbi minta csak a csupasz `target: controller` alakot ismerte. Két
+    írásmód átment rajta, és mindkettő ÉL a projektben — az őr tehát
+    hallgatott volna, amint azok a komponensek halasztottá válnak.
+    """
+
+    @pytest.mark.parametrize(
+        "kifejezes",
+        [
+            "controller",
+            "typeof controller !== \"undefined\" ? controller : null",
+            "panel.controller",
+            "appWindow.editController",
+            "root.fileOpsController",
+        ],
+    )
+    def test_minden_elo_irasmodot_felismer(self, kifejezes):
+        assert _melyik_vezerlo(kifejezes) is not None, (
+            f"az őr NEM ismeri fel ezt a vezérlő-hivatkozást: {kifejezes!r} — "
+            "ilyen alakban némán átmenne egy halasztott komponensben"
+        )
+
+    @pytest.mark.parametrize(
+        "kifejezes",
+        [
+            "folderTreeController",
+            "editorPanel",
+            "appWindow",
+            "null",
+            "parent",
+        ],
+    )
+    def test_a_NEM_vezerlo_celt_bekeen_hagyja(self, kifejezes):
+        """Ellenkező irányú őr: ha mindenre riasztana, használhatatlan volna
+        — a kapu nem büntetheti a gondos munkát (#2077)."""
+        assert _melyik_vezerlo(kifejezes) is None, (
+            f"az őr tévesen vezérlőnek vette: {kifejezes!r}"
+        )
+
+    def test_a_kivetel_a_MASIK_hallgatot_nem_menti_fel(self):
+        """A felmentés kulcsa a fájl ÉS a kifejezés — ugyanabban a fájlban egy
+        másik hallgató továbbra is lelet."""
+        mentett = _kivetel_kulcs(
+            "FolderManagerDialog.qml", 'typeof controller !== "undefined" ? controller : null'
+        )
+        masik = _kivetel_kulcs("FolderManagerDialog.qml", "controller")
+        assert mentett in INDOKOLT_HALLGATOK
+        assert masik not in INDOKOLT_HALLGATOK
+
+
+class TestAKivetelTablaNemAvulEl:
+    """A tábla foga a MÁSIK irányban: ha egy felmentés tárgya eltűnt, a
+    felmentés is tűnjön el — különben a lista csendben hízik, és a következő
+    bővítés már nem tűnik fel (a #1719 azonos őrének mintája)."""
+
+    def test_minden_felmentesnek_van_ELO_targya(self):
+        elavult = []
+        for (fajl, eleje), _indok in INDOKOLT_HALLGATOK.items():
+            ut = _QML_DIR / "PicasaPy" / fajl
+            if not ut.exists():
+                elavult.append(f"{fajl}: a fájl sincs meg")
+                continue
+            szoveg = ut.read_text(encoding="utf-8")
+            talalt = False
+            for m in re.finditer(
+                r"Connections\s*\{\s*\n\s*target:\s*([^\n]+)", szoveg
+            ):
+                if _kivetel_kulcs(fajl, m.group(1).strip()) == (fajl, eleje):
+                    talalt = True
+                    break
+            if not talalt:
+                elavult.append(f"{fajl} → {eleje}")
+        assert elavult == [], (
+            "ezeknek a felmentéseknek már nincs tárgya, törlendők: " f"{elavult}"
+        )
+
+    def test_minden_felmentesnek_van_ERDEMI_indoka(self):
+        rovid = [
+            k for k, indok in INDOKOLT_HALLGATOK.items() if len(indok.strip()) < 80
+        ]
+        assert rovid == [], (
+            "ezeknek a felmentéseknek nincs érdemi indoka — egy felmentés, "
+            f"amit nem indokoltak, csendben megszünteti az őrt: {rovid}"
         )
