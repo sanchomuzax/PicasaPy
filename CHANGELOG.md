@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.241] – 2026-09-03
+
+### Javítva
+- **A telepítés-ellenőrzésünk a saját kilépésén omlott össze (#2116).** A
+  próba lefutott és sikeresnek jelentette a programot, majd a folyamat
+  hibával állt meg — így a fejlesztői ellenőrző kör hibásnak látszott, holott
+  a program rendben volt. Az ok: a próba a Qt-alkalmazás példánya nélkül
+  épített felületi részeket. A program működését ez nem érintette.
+
 ## [0.8.240] – 2026-09-03
 
 ### Javítva

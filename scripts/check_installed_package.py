@@ -91,8 +91,12 @@ def check_startup() -> list[str]:
 
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+    import gc
+    import sys
+
     import numpy as np
     from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QGuiApplication
 
     import cv2
 
@@ -100,6 +104,15 @@ def check_startup() -> list[str]:
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
+
+    # ⚠️ #2116: ALKALMAZÁS-PÉLDÁNY NÉLKÜL a Qt bontása nem definiált. A
+    # vezérlő időzítőt és fájlfigyelőt indít, a szolgáltató `QThreadPool`-t —
+    # `QGuiApplication` nélkül ezek „event dispatcher has already been
+    # destroyed" figyelmeztetést adnak, és a folyamat a KILÉPÉSKOR
+    # szegmentálási hibával áll meg (a CI-ben `exit 139`, miután az
+    # ellenőrzés maga már kiírta az OK-t). Az éles indulási út mindig
+    # alkalmazás-példánnyal fut.
+    app = QGuiApplication.instance() or QGuiApplication(sys.argv[:1])
 
     with tempfile.TemporaryDirectory(prefix="picasapy-startup-") as munkafa:
         gyoker = Path(munkafa)
@@ -133,8 +146,18 @@ def check_startup() -> list[str]:
             # HIÁNYZOTT (#2101).
             controller.shutdown()
             provider.wait_for_done(5_000)
-        if controller.photos.rowCount() < 1:
-            return ["az indulás lefutott, de a mentett mappa képei nem jelentek meg"]
+            app.processEvents()
+        kepek = controller.photos.rowCount()
+
+    # A hivatkozásokat MÉG az alkalmazás élete alatt engedjük el, és a
+    # gyűjtést is itt kényszerítjük ki: így a Qt-objektumok a saját
+    # alkalmazásuk alatt pusztulnak, nem az értelmező kilépésekor (#2116).
+    del controller, provider, settings
+    gc.collect()
+    app.processEvents()
+
+    if kepek < 1:
+        return ["az indulás lefutott, de a mentett mappa képei nem jelentek meg"]
     return []
 
 
