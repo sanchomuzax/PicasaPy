@@ -2458,3 +2458,89 @@ a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
 **Ami NINCS mérve:** a megállók közti interpoláció pontos módja (lineáris-e
 a színezetben, és melyik irányban megy körbe), valamint hogy a `position`
 milyen tartományban van.
+
+---
+
+## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
+
+Ezzel a **#2211** tízes listájának utolsó művelete is horgonyt kapott —
+és két teljes kontrollpont-tábla jött ki belőle.
+
+A munkavégző (`0x00bc1ba0`, 210 b) **négy** tagot olvas be
+(`+0x40`, `+0x48`, `+0x50`, `+0x58`), de a beolvasó (`0x00bc1a90`) csak
+**hármat** nevez meg: `exposure`, `contrast`, `blacks`. A négy értéket
+átadja a `0x00bc1c80`-nak (1758 b), és ott épül a két görbe.
+
+### 1. A FIX, nyolcpontos tábla
+
+Egyszer, indításkor töltődik fel (`0x00d9fda0` az „már megvolt" jelző), a
+`0x00d9fd60`-tól kezdődő 16 float:
+
+| # | x | y |
+|---|---|---|
+| 0 | **14** | **0** |
+| 1 | **27** | **19** |
+| 2 | **41** | **36** |
+| 3 | **81** | **70** |
+| 4 | **128** | **94** |
+| 5 | **193** | **123** |
+| 6 | **220** | **136** |
+| 7 | **255** | **160** |
+
+A görbeépítő hívása egyértelmű: `push 0x00d9fd60; mov eax, 8;
+call 0x008f2b30` — **nyolc pont**.
+
+⇒ **Sötétítő, csúcsokat összenyomó görbe**: a 255 csak 160-ig jut, a 14 alatti
+rész nullára esik.
+
+### 2. Az ÖT pontos, PARAMÉTERES görbe
+
+Közvetlenül utána (`0x00bc1e01`–`0x00bc1e71`, `mov eax, 5`), ahol `s` az
+egyik beolvasott attribútum értéke:
+
+| # | x | y |
+|---|---|---|
+| 0 | 0 | 0 |
+| 1 | 6 | **42 · s + 6** |
+| 2 | 36 | **112 · s + 36** |
+| 3 | 126 | **72 · s + 126** |
+| 4 | 255 | 255 |
+
+Minden szorzó és eltolás kiolvasott konstans (`0x00cf4b00` = 42,
+`0x00cf4af8` = 112, `0x00cf3f90` = 72; az eltolások `6`, `36`, `126`).
+
+⇒ **`s = 0`-nál a görbe azonosság** (a pontok a felezővonalon ülnek), és a
+paraméter nő
+
+- a **sötét részt** emeli a legkevésbé (x = 6 → +42 s),
+- a **mélyárnyékot/középsötétet** a legjobban (x = 36 → +112 s),
+- a **középtónust** mérsékelten (x = 126 → +72 s),
+- a **fehéret egyáltalán nem** (x = 255 rögzített).
+
+Ez a **derítőfény (fill light)** jellegű görbe alakja.
+
+> **Ami NINCS mérve:** melyik attribútum az `s` (a négy beolvasott érték
+> közül), és mire megy a másik három; továbbá hogy a két görbe hogyan
+> kapcsolódik össze (sorban? keverve?).
+
+### 3. Egy módszertani apróság: a „közel a nullához" próba BITMINTÁN megy
+
+Mindkét görbe elé ugyanaz a kapu kerül:
+
+```
+mov eax, dword ptr [esp + 0xc]   ; a float BITMINTÁJA egészként
+sub eax, dword ptr [esp + 8]     ; a 0,0 bitmintája
+cdq / xor eax, edx / sub eax, edx ; abszolút érték
+cmp eax, 8
+jb  <kihagyás>
+```
+
+⇒ A program a lebegőpontos értéket **egészként** hasonlítja a nullához, és
+ha a bitminta-különbség **8-nál kisebb**, a görbét egyszerűen **kihagyja**.
+Ez nem hiba, hanem szándékos „elhanyagolható a csúszka" gyorsítás — de aki
+átveszi, ne `abs(x) < eps`-t írjon a helyére: a bitminta-távolság nem
+arányos az értékkel.
+
+*Bizonyítottsági fok: **megerősített** a két táblára, a pontszámokra és a
+kapura (kiolvasott konstansok és utasítások); az attribútum-hozzárendelés és
+a két görbe összekapcsolása **nincs mérve**.*
