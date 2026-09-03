@@ -811,3 +811,226 @@ szabálya **nyitva marad**.*
 
 ⚠️ **Adatvédelem:** a szóban forgó adatbázis valódi családi neveket
 tartalmaz. A mérések ide csak **album-indexszel** kerülnek, névvel soha.
+
+---
+
+## 15. A SZEMÉLY-ALBUM FEJLÉCSÁVJA — a javaslat-munkafolyamat FELÜLETE (2026-09-03)
+
+A lap eddig a **motort** és az **adatot** írta le (3–4. szakasz). A
+felület, amin a felhasználó a javaslatokat jóváhagyja vagy elveti,
+hiányzott. Ez a szakasz azt pótolja — a `faceheaderpanel` a személy-album
+fejlécsávja, `unknownfaceheaderpanel` pedig az „Ismeretlen emberek"
+albumé.
+
+### 15.1 Miért nem találta eddig a lefedettségi mérés
+
+A panel elemeire a kód **nem a `faceheaderpanel/…` teljes néven**
+hivatkozik, hanem **puszta levélnéven** (`confirmsug`, `moresug`, …), és
+a példányosításkor **dinamikusan generált** névteret használ:
+
+| sablon | cím |
+|---|---|
+| `albumheader/%x/%d` | `0x0074ad40` |
+| `albumheader/%x/%d/face_zoom` · `…/picture_zoom` | `0x00767e50` |
+| `globalalbums%x/%d` | `0x0074ad40` |
+| `albumheader_%d %x` | `0x0074ad40` |
+
+⇒ A `string_xrefs`-ben **nulla** találat van `faceheaderpanel/`-re. A
+panel-építő (`0x0074ad40`, 3938 b) három változat közül választ:
+`headerpanel` · `faceheaderpanel` · `unknownfaceheaderpanel`.
+
+### 15.2 A TELJES parancskészlet — a fejlécsáv elosztójából
+
+A `0x005e0f70` (3930 b) `repe cmpsb`-vel veti össze a megnyomott elem
+levélnevét, és **28 parancsot** ismer. A javaslat-munkafolyamathoz
+tartozók vastagon:
+
+| # | parancs | kezelő | cím az elosztóban |
+|---:|---|---|---|
+| 1 | `websync0` / `websync1` | `0x005e26a0` | `0x005e1026`, `0x005e105c` |
+| 2 | `sync_options` | `0x005e26a0` | `0x005e1092` |
+| 3 | `save_edits` | `0x0053a790` | `0x005e10e6` |
+| 4 | `create_cd` | `0x009cd8a0` | `0x005e113a` |
+| 5 | `create_movie` | `0x0057cb60` | `0x005e118a` |
+| 6 | `create_collage` | `0x007463c0` | `0x005e120a` |
+| 7 | `select_star` | `0x005e50c0` | `0x005e1271` |
+| 8 | `pwa_button` | `0x00543ad0` | `0x005e12c0` |
+| 9 | `face_zoom` / `picture_zoom` | `0x005e5290` | `0x005e1314`, `0x005e134b`, `0x005e1b56` |
+| 10 | `showunknown` / `showignored` | `0x005e5110` | `0x005e1381`, `0x005e13b7` |
+| 11 | `select_faces` | `0x005e5110` | `0x005e13ed` |
+| 12 | `play` | `0x005e8a70` | `0x005e143c` |
+| 13 | `share` | `0x0059e920` | `0x005e148d` |
+| 14 | `view_online` | `0x005e0ef0` | `0x005e14df` |
+| 15 | **`selectsug`** | `0x006024e0` | `0x005e1520` |
+| 16 | **`moresug`** | **`0x00602890`** | `0x005e1570` |
+| 17 | **`confirmsug`** | **`0x00602640`** | `0x005e15bf` |
+| 18 | **`confirmsel`** | **`0x005c9b00`** | `0x005e160f` |
+| 19 | **`ignore`** | **`0x005c9b00`** | `0x005e1645` |
+| 20 | **`addname`** | **`0x00602970`** | `0x005e169a` |
+| 21 | **`sug_filter`** | vtable-hívás | `0x005e16e9` |
+| 22 | **`removesel`** | **`0x005c9b00`** | `0x005e177b` |
+| 23 | `create_face_movie` | `0x00603660` | `0x005e17d0` |
+| 24 | `set_thumbnail` | `0x00603660` | `0x005e180c` |
+| 25 | `folderbutton` | `0x004adfe0` | `0x005e185b` |
+
+### 15.3 MIT CSINÁLNAK — a három adat-válasz
+
+#### a) „További javaslatok keresése" LEJJEBB VISZI A KÜSZÖBÖT
+
+A `moresug` kezelője (`0x00602890`, 216 b) beolvassa a beállítást és
+számol:
+
+```
+0x006028be  mov  dword ptr [esp+0x18], 0x55   ; alapérték 85 (= a 1.2 pont FRSuggestionThreshold-ja)
+0x006028c6  call 0x00407a20                   ; "Preferences" / "FRSuggestionThreshold"
+0x006028cf  call 0x004019b0                   ; kiolvasás
+0x0060293a  fdiv qword ptr [0xcf3a08]         ; ÷ 100.0
+0x00602949  fsub qword ptr [0xc7dd30]         ; − 0.1
+0x0060295b  call 0x0047baf0                   ; a keresés indítása ezzel az értékkel
+```
+
+⇒ **`küszöb = FRSuggestionThreshold / 100 − 0,1`**, alapértéken
+**0,85 − 0,1 = 0,75**. A konstansok kiolvasva: `0x00cf3a08` = **100.0**,
+`0x00c7dd30` = **0.1**, az alapérték **0x55 = 85**.
+
+⛔ **A gomb NEM írja vissza a beállítást.** A `0x00602890`-ben **nincs**
+`0x00401900` (a beállítás-író) hívás — mechanikusan ellenőrizve. Vagyis
+ismételt megnyomás **ugyanazt** a 0,1-del csökkentett küszöböt használja,
+nem visz egyre lejjebb.
+
+#### b) A jóváhagyás / elvetés a `.picasa.ini`-be ír
+
+A `confirmsel`, `ignore` és `removesel` **ugyanazt** a kezelőt hívja
+(`0x005c9b00`, 5744 b), és annak sztringjei megnevezik a tárolót:
+
+| sztring | mi |
+|---|---|
+| `.picasa.ini` | a célfájl |
+| **`]ignoreface`** | az elvetett arc jelölése |
+| **`]unknownface`** | az ismeretlen arc jelölése |
+| `]search` | (ugyanennek a kezelőnek a másik ága) |
+
+⇒ A javaslat elvetése **nem** az adatbázisban marad: a `.picasa.ini`
+kapja meg — ugyanabban a rendszerben, amit a 3.1 pont ír le.
+
+#### c) A „Név hozzáadása" a jobb oldali fiókot nyitja
+
+Az `addname` kezelője (`0x00602970`, 147 b) két sztringet használ:
+`rightdrawerpanel/peoplepanel` és a **`header_addname:%s`** parancs-token
+⇒ a gomb az **Emberek panelt** nyitja meg, a nevet a tokenben átadva.
+
+### 15.4 A feliratok — angol ÉS hivatalos magyar
+
+| elem | típus | angol | **magyar** |
+|---|---|---|---|
+| `confirmsug` | felirat | Confirm all | **Az összes jóváhagyása** |
+| `confirmsug` | súgó | Confirm all suggestions | **Az összes javaslat jóváhagyása** |
+| `confirmsel` | felirat | Confirm | **Jóváhagyás** |
+| `confirmsel` | súgó | Confirm selected suggestions | **Kijelölt javaslatok jóváhagyása** |
+| `removesel` | felirat | Remove | **Eltávolítás** |
+| `removesel` | súgó | Remove selected suggestions | **Kijelölt javaslatok törlése** |
+| `moresug` | felirat | Find more suggestions | **További javaslatok keresése** |
+| `sug_filter` | súgó | Show only suggestions (when toggled on) | **Csak a javaslatok megjelenítése (ha be van kapcsolva)** |
+| `sug_label` | szöveg | Suggestions: | **Javaslatok:** |
+| `face_zoom` | súgó | View zoomed in to the face | **Megjelenítés az arcra közelítve** |
+| `picture_zoom` | súgó | View zoomed out to the full picture | **Megjelenítés a teljes képre távolítva** |
+| `set_thumbnail` | súgó | Set as People Album Thumbnail | **Beállítás indexképként az Emberek albumban** |
+| `create_face_movie` | súgó | Create Face Movie | **Mozgófilm létrehozása arcokból** |
+| `create_movie` | súgó | Create Movie Presentation | **Mozgófilmes prezentáció létrehozása** |
+| `create_collage` | súgó | Create Photo Collage | **Fotókollázs készítése** |
+| `play` | súgó | Play Fullscreen Slideshow | **Diavetítés teljes képernyőn** |
+| `pwa_button` | súgó | Open PWA web page | **Picasa Webalbumok-beli weboldal megnyitása** |
+
+Forrás: `referencia/tre-eroforrasok/faceheaderpaneltext.tre` és
+`referencia/i18n-hu/faceheaderpaneltext.xml`.
+
+**A munkafolyamat útmutató szövege** (`stringres-en-hu.tsv` 2072. sor):
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `PeopleAlbum::ConfirmText` | Press checkmark to confirm match, press "x" to ignore. | **Az egyezés megerősítéséhez kattintson a pipa, az elvetéshez pedig az "x" ikonra.** |
+
+### 15.5 Geometria — `respack.yt`, a 532 × 90 vászonban
+
+A `faceheaderpanel/docbounds` **532 × 90**; a `headerbase` 532 × 86, alatta
+egy 532 × 4 `shadow`.
+
+| elem | téglalap | méret |
+|---|---|---|
+| `faceicon` (+ árnyék) | (12,8)–(71,79) | 59 × 71 |
+| `album_title` | (80,7)–(399,28) | 319 × 21 |
+| `album_title_clip` | (80,7)–(399,40) | 319 × 33 |
+| `zoom_container` | (457,4)–(527,25) | 70 × 21 |
+| `face_zoom` | (457,4)–(492,25) | **35 × 21** |
+| `picture_zoom` | (492,4)–(527,25) | **35 × 21** |
+| `zoom_label` | (189,25)–(527,38) | 338 × 13 |
+| `create_label` | (80,40)–(418,53) | 338 × 13 |
+| `sug_label` / `sug_hottip` | (318,40)–(527,53) | 209 × 13 |
+| `selecthelp` | (357,41)–(527,54) | 170 × 13 |
+| `play` | (80,55)–(109,82) | 29 × 27 |
+| `dividers` | (111,61)–(112,78) | **1 × 17** |
+| `create_collage` | (115,55)–(144,82) | 29 × 27 |
+| `create_movie` | (147,55)–(176,82) | 29 × 27 |
+| `create_face_movie` | (179,55)–(208,82) | 29 × 27 |
+| `set_thumbnail` | (211,55)–(240,82) | 29 × 27 |
+| `pwa_button` | (243,55)–(272,82) | 29 × 27 |
+| `sug_filter` | (316,55)–(345,82) | 29 × 27 |
+| **`moresug`** | (348,55)–(527,82) | **179 × 27** |
+| **`confirmsug`** | (348,55)–(436,82) | **88 × 27** |
+| **`confirmsel`** | (348,55)–(436,82) | **88 × 27** |
+| **`removesel`** | (439,55)–(527,82) | **88 × 27** |
+
+⇒ **A `confirmsug` és a `confirmsel` UGYANAZT a téglalapot foglalja el** —
+váltakozó gomb: kijelölés nélkül „Az összes jóváhagyása", kijelöléssel
+„Jóváhagyás". A `moresug` a teljes maradék szélességet elfoglalja
+(179 px), amikor nincs jóváhagyás-pár.
+
+*(A `#`-előtagú rétegek — `#sug_filter_icon`, `#button: create_cd`,
+`#button: select_star`, `#button: toggle_faces`, `#text(Select): select_label`,
+`#button: sync_options`, `#text(xx photos edited): edit_count`,
+`#button(save_edits): save_edits`, `#button(share): share`,
+`#butlink(view_online): view_online`, `#superbutton(…selectsug): selectsug`,
+`#text(Description): album_description`, `#title_fade0/1` — a
+`picasa-respack-format.md` 2. pontja szerint **rétegtípus-jelölés**, nem
+holt kód.)*
+
+### 15.6 Az „Ismeretlen emberek" TESTVÉRPANEL
+
+Az `unknownfaceheaderpanel` ugyanabban a 532 × 90 vászonban él, de más a
+gombkészlete:
+
+| elem | téglalap | méret | szerep |
+|---|---|---|---|
+| `showall` / `cluster` | (278,14)–(398,41) | 120 × 27 | a `clustering_container` váltógombjai |
+| `showunknown` / `showignored` | (403,14)–(523,41) | 120 × 27 | a `viewtype_container` váltógombjai |
+| `addname` | (235,60)–(398,80) | **163 × 20** | „Név hozzáadása" |
+| `ignore` | (403,56)–(523,83) | 120 × 27 | „Elvetés" |
+| `addname_instructions` | (52,42)–(523,55) | 471 × 13 | útmutató szöveg |
+| `info_text` | (12,57)–(297,78) | 285 × 21 | állapotszöveg |
+| `faceicon` | (11,12)–(47,48) | 36 × 36 | a kisebb arcikon |
+| `album_title` | (52,14)–(429,35) | 377 × 21 | — |
+
+⇒ **Két váltógomb-pár egymás mellett**: a csoportosítás (`showall` ↔
+`cluster`) és a nézet (`showunknown` ↔ `showignored`).
+
+### 15.7 Eredeti / nálunk — MÉRVE
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a fejlécsáv | **három** változat (`headerpanel`, `faceheaderpanel`, `unknownfaceheaderpanel`) | **egy**, általános: `LightboxHeader.qml` |
+| gombok a fejlécen | 25 parancs (15.2) | **öt**: `headerPlayButton` (162), `headerSelectStarredButton` (177), `headerSaveEditsButton` (189), `headerCollageButton` (209), `headerUploadButton` (229) |
+| javaslat-vezérlők | `confirmsug`, `confirmsel`, `removesel`, `moresug`, `sug_filter`, `selectsug`, `addname`, `ignore` | **egyik sincs** — 0 találat `confirmAll`/`moresug`/arc-javaslat névre a `src/`-ben |
+| arc-nagyítás váltó | `face_zoom` ↔ `picture_zoom` | **nincs** |
+| a küszöb-lazítás | `FRSuggestionThreshold/100 − 0,1` | **nincs** |
+
+*(A `render/crop_suggest.py` a **vágási** javaslatoké — más funkció, nem
+ez.)*
+
+⇒ A javaslat-munkafolyamat felülete nálunk **teljesen hiányzik**, pedig az
+adatréteg (`personalbumrecs`, `suggestionpersonalbumid` — 3.4/d) már
+feltárva. Jegy: **#2187**.
+
+*Bizonyítottsági fok: **megerősített*** — a parancskészlet az elosztó
+`repe cmpsb` ágaiból, a küszöb-képlet három kiolvasott konstansból, a
+tárolók a kezelők sztringjeiből, a geometria a `respack.yt`-ből, a magyar
+feliratok az `i18n-hu`-ból.
