@@ -7073,8 +7073,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
-        <source>These filters come from older versions of Picasa. They are not available in today&apos;s Picasa, but your old edits may contain them.</source>
-        <translation>Ezek a szűrők a Picasa régebbi verzióiból származnak. A mai Picasában nem érhetők el, de a régi szerkesztéseidben előfordulhatnak.</translation>
+        <source>These filters come from older versions of Picasa. Most of them have no control of their own in today&apos;s Picasa — it only recognises them inside your old edits.</source>
+        <translation>Ezek a szűrők a Picasa régebbi verzióiból származnak. A mai Picasában többségüknek nincs saját vezérlője — a régi szerkesztéseidben viszont felismeri őket.</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
