@@ -10,11 +10,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.236] – 2026-09-03
 
 ### Javítva
-- **Valamivel gyorsabban indul a program (#1612).** Három párbeszéd —
-  a Létrehozás-ablakok, az „Áthelyezés új személyhez" és a
-  kollázs-piszkozat kérdése — mostantól csak akkor épül fel, amikor
-  tényleg megnyitod. Induláskor 363 objektummal kevesebb készül el.
-  Működésben semmi nem változik.
+- **Egy árnyalattal gyorsabban indul a program (#1612).** Az „Áthelyezés új
+  személyhez" ablak mostantól csak akkor épül fel, amikor tényleg megnyitod;
+  induláskor 62 objektummal kevesebb készül el. Működésben semmi nem változik.
+  (Két további ablaknál a mérés azt mutatta, hogy ugyanez nem érné meg: az
+  egyiknél nincs nyereség, a másiknál elveszne a kollázs elkészültéről szóló
+  visszajelzés — ezért azok maradtak a régiben.)
 
 ## [0.8.235] – 2026-09-03
 

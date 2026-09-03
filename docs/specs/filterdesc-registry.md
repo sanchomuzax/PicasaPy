@@ -313,8 +313,9 @@ formában rakhat össze.
 
 ### 4.3 Kiemelt algoritmusok (a csővezetékből kiolvasva)
 
-- **`Vignette`** és **`Matte`**: ugyanaz a művelet (`GlowImageOperation`
-  `innerglow=true`), csak fekete vs fehér színnel és más alapértékekkel.
+- **`Vignette`** és **`Matte`**: ugyanaz a művelet (`GlowImageOperation`),
+  csak fekete vs fehér színnel és más alapértékekkel. (Az XML `innerglow="true"`
+  attribútuma **halott** — a natív motor nem olvassa ki; ld. lent.)
   `xblur = yblur = Blur · 0,02 · max(W,H) / 4`, `strength = Strength`.
   **Ez a `filters-decoded.md` „Nyitva 2" pontjának megoldása** — a korábban
   csak *mért* radiális profil mögötti tényleges modell.
@@ -447,6 +448,54 @@ kompromisszum ága.)
 **Következmény:** a Lomo/Holga vignettájára (ami Glow) és a maszkolt
 elmosásra (ami Blur) **egyaránt 255 a felső határ** — a mérés, a
 Flash-örökségből vett következtetés és a natív kód **mind egyezik**.
+
+#### `GlowImageOperation`: az `innerglow` és a `knockout` HALOTT attribútum (#2076)
+
+A `filterdesc.xml` mind a nyolc `GlowImageOperation`-je `innerglow="true"`-t és
+`knockout="false"`-t ír. **A natív motor egyiket sem olvassa ki.**
+
+Az attribútum-olvasó `0x00bb8c40` pontosan nyolc nevet keres, mindegyiket egy
+8 bájtos rekeszbe kötve:
+
+| attribútum | rekesz | a névsztring |
+|---|---|---|
+| `color` | `+0x24` | `0x00cbda84` |
+| `glowalpha` | `+0x2c` | `0x00cf0144` |
+| `xblur` | `+0x34` | `0x00cefe84` |
+| `yblur` | `+0x3c` | `0x00cefe8c` |
+| `strength` | `+0x44` | `0x00cf0150` |
+| `quality` | `+0x4c` | `0x00cafa3c` |
+| **`inner`** | `+0x54` | `0x00cf015c` |
+| `knockout` | `+0x5c` | `0x00cf0164` |
+
+A névkeresés (`0x008eb160`) kis-nagybetűre érzéketlen, de **teljes** egyezést
+kíván: a ciklus a tű végén (`[edx]==0`) azt is megköveteli, hogy a szénakazal
+is nullára fusson (`[esi]==0`). Ezért `"inner"` ≠ `"innerglow"`.
+
+Az `innerglow` szó a `Picasa3.exe`-ben **egyáltalán nem fordul elő** — sem a
+bináris-index sztringtárában, sem a nyers fájlban bájtsorozatként (két
+független lekérdezés). A meglévő `inner*` sztringek: `inner`, `innercolor`,
+`innerthickness` (a `BorderImageOperation`-é), `innerRadius`, `innerAlpha`
+(a `CircularGradientImageMask`-é).
+
+A `knockout` neve **egyezik**, tehát kiolvasódik — de sehova nem jut el: a
+konstruktor (`0x00bb8a60`) minden rekeszt nulláz, a rajzolás előtti kiértékelő
+(`0x00bb8e10`) pedig a `+0x54` és a `+0x5c` rekeszt **ugyanabba a verem-kukába**
+(`[esp+0x38]`) értékeli ki, és egyiket sem vizsgálja meg. A tényleges rajzoló
+(`0x00bb8f70`) `color`-t, négy lebegőpontost és a `quality`-t kapja —
+**logikai kapcsolót nem**.
+
+> **Következmény.** A `GlowImageOperation`-nek **egy** módja van, a XML-től
+> függetlenül. A Flash-örökségből átvett `inner`/`knockout` kapcsolópár a natív
+> portban nem épült meg. Amit a Vignette, a Matte és a MuseumMatte mérése mutat
+> — széltől befelé ható izzás —, az tehát nem az „inner ág", hanem **az
+> egyetlen ág**. A PicasaPy `render/glimmer_ops.py::inner_glow`-ja ezt az egy
+> módot valósítja meg; a neve történeti.
+
+**Ami még nincs kimérve:** a mód pontos képlete a `0x00bb8f70`-ben, és azon
+belül a `strength` viselkedése **1 fölött** (a Comicize 1,1-et ad; a mi
+modellünk a súlyt `[0,1]`-re vágja, tehát telít). Ez a Vignette-et és a
+Matte-ot is érinti. Nyitott kérdés: #2076.
 
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
