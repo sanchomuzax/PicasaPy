@@ -1184,3 +1184,49 @@ kivették.** Nem hiány: **nem cél**. Jegy: **#2027**.
   ellenőrzés, de negatívumot bizonyítani zárt binárison nem lehet
   abszolút módon. Egyetlen képernyőkép a futó Picasáról, amin ez a gomb
   megjelenik, azonnal megdöntené.
+
+---
+
+## 20. Futásidőben töltött FÜGGVÉNYMUTATÓ feloldása — recept (2026-09-03)
+
+**A helyzet.** Egy hívás nem nevesített importon megy, hanem egy globális
+mutatón: `call dword ptr [0x00d694c0]`. A sztring-keresés nem talál semmit
+(nincs név), az `xrefs` tábla nem tartalmazza a `.data`-írásokat, és a
+mutató statikus tartalma értelmetlen. Két korábbi kör ezért **NINCS
+MÉRVE**-ként adta át (`picasa-create-features.md` 2.6/c, és ugyanez a
+`biztonsagi-mentes.md` 11. `files.txt`-írójánál).
+
+**A recept — négy lépés, percek:**
+
+1. **Keresd meg a mutató CÍMÉRE hivatkozó bájtmintát a `.text`-ben.**
+   A cím 4 bájtos, little endian; a találatokat a függvényhatárokhoz
+   rendeld. A megelőző bájtok árulkodnak:
+   `ff 15` = *hívás* rajta keresztül, `a3` / `c7 05` = **ÍRÁS** bele.
+
+   ```
+   0xd694c0-ra 10 hivatkozás: 8 db `ff15…` (hívó) + 2 db író
+   ```
+
+2. **Az írókat olvasd el** — ezek a feltöltő blokk. Itt derül ki az
+   elágazás feltétele is (verzió, képesség, jelenlét).
+
+3. **Az írás forrása általában egy IAT-rekesz** (`mov eax, [0xc40528]`).
+   A rekeszt a **PE import-táblájából** oldd fel: `DataDirectory[1]` →
+   `OriginalFirstThunk` neveinek végigjárása, a `FirstThunk + 4*k` cím
+   összevetése a keresettel.
+
+4. **A másik ág gyakran SAJÁT burkoló** (itt `0x009aecc0`), amit ugyanígy
+   kell elolvasni — az ő hívásai *már* nevesített importok.
+
+**Miért nem elég a Ghidra-kör.** A 2.6/c éppen erre javasolt drága
+dekompilációt. Fölösleges volt: a bájtminta-keresés + az import-tábla
+kézi parszolása **ugyanezt adja, másodpercek alatt**, és az eredmény
+*nevekkel* jön, nem következtetéssel.
+
+**Mikor NEM működik.** Ha az írás nem IAT-ból, hanem `GetProcAddress`
+visszatérési értékéből jön: akkor a `push "<név>"` a hívás előtt adja meg
+a választ — de ott a sztring-keresés amúgy is megtalálja.
+
+*Bizonyítottsági fok: **megerősített** — a recept a `0x00d694c0`-on
+végigfutva `KERNEL32!DeleteFileA` / `DeleteFileW` + `MultiByteToWideChar`
++ `GetVersion` neveket adott, mind az import-táblából.*

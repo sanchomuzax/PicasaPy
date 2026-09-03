@@ -2336,9 +2336,10 @@ Ezután: `0x009a37b0` fűzi a mappához, `0x009a3620` teszi rá a
 - **csere mód (2):** `0x00991f00(útvonal, 5)` — a `0x00d694c0` globális
   függvénymutatót hívja az útvonalra; ha az nem sikerül és a
   `GetLastError` **5** (`ERROR_ACCESS_DENIED`), **5 másodpercig újrapróbál**
-  (`QueryPerformanceCounter` + `WaitForSingleObject`). ⚠️ Hogy melyik API
-  ez, **NINCS MÉRVE** — a mutató futásidőben töltődik, a statikus tartalma
-  értelmetlen, és nincs rá xref. Lásd a nyitott kérdést lent.
+  (`QueryPerformanceCounter` + `WaitForSingleObject`). ✅ **A mutató
+  2026-09-03 óta MEGVAN: a fájltörlés platformfüggő mutatója** (NT-n
+  UTF-8 → UTF-16 átalakítás + `DeleteFileW`, 9x-en `DeleteFileA`) — a
+  levezetés lent.
 - **mindkét mód:** `0x00993030(útvonal)` — az **egyediesítő**: `0x00992ed0`
   (`Exists`) és a `%s%lu` formátum, azaz létező névnél **sorszám** kerül a
   végére. Csere módban a fenti lépés után a név már szabad, tehát
@@ -2407,15 +2408,58 @@ a csere módban futó `0x00991f00` **törlés**-szemantikája.
 együttállása és a `P2category=Projects (internal)` — a tulajdonos
 NAS-korpuszából.
 
-#### Nyitott kérdés — a `0x00d694c0` mutató
+#### ✅ MEGVÁLASZOLVA — a `0x00d694c0` a FÁJLTÖRLÉS platformfüggő mutatója (2026-09-03)
 
-**Mi ez az API?** A `0x00991f00` ezen a globális függvénymutatón hívja az
-útvonalat. **Megszerzés:** Ghidra-kör, ami megkeresi, **ki írja** a
-`0x00d694c0` címet (a `.data` írásait az index nem tartalmazza), vagy a
-`GetProcAddress`-hívások környékének dekompilálása. A jegy megvalósítását
-**nem blokkolja**: a viselkedés (a régi fájl helyét a csere mód
-felszabadítja, hozzáférés-megtagadásnál 5 másodpercig újrapróbál) a
-kódból egyértelmű.
+> **Bizonyítottság: megerősített** — minden lépés cím szerint, az
+> import-nevek a PE **import-táblájából** feloldva.
+
+A mutatót az induláskor futó `0x00c32bda` blokk tölti fel, **a Windows-verzió
+szerint elágazva**:
+
+```asm
+0x00c32bda  call dword ptr [0xc40450]              ; GetVersion()
+0x00c32be0  mov  dword ptr [0xd6fc58], eax
+0x00c32bde  cmp  dword ptr [0xd6fc58], 0x80000000  ; a magas bit = Windows 9x/ME
+0x00c32be8  jae  0xc32bf5
+0x00c32bea  mov  dword ptr [0xd694c0], 0x009aecc0  ; NT-ág: SAJÁT burkoló
+0x00c32bf4  ret
+0x00c32bf5  mov  eax, dword ptr [0xc40528]         ; 9x-ág: KERNEL32!DeleteFileA
+0x00c32bfa  mov  dword ptr [0xd694c0], eax
+```
+
+| IAT-rekesz | feloldva (import-tábla) |
+|---|---|
+| `0xc40450` | `KERNEL32.dll!GetVersion` |
+| `0xc40528` | **`KERNEL32.dll!DeleteFileA`** |
+| `0xc402e4` | `KERNEL32.dll!MultiByteToWideChar` |
+| `0xc403c4` | **`KERNEL32.dll!DeleteFileW`** |
+
+**A `0x009aecc0` burkoló (143 bájt) — mit csinál:**
+
+1. `MultiByteToWideChar(0xFDE9, 0, útvonal, -1, NULL, 0)` — a **`0xFDE9`
+   = 65001 = `CP_UTF8`** (`0x009aece9`); a hossz **`0xFFFF`-re vágva**
+   (`0x009aecf0`–`0x009aecf7`);
+2. verem-foglalás `2 × hossz` bájtra (`0x009aed13` → `0xbf5d60`);
+3. második `MultiByteToWideChar` a tényleges átalakításhoz (`0x009aed29`);
+4. **`DeleteFileW(széles útvonal)`** (`0x009aed2f` → `0xc403c4`).
+
+⇒ **`0x00d694c0` = „töröld ezt a fájlt", platformhelyesen.** Windows NT-n a
+Picasa **UTF-8-ként értelmezi a saját útvonal-sztringjeit**, átalakítja
+UTF-16-ra, és a **széles** API-t hívja; csak a 9x-ágon megy a nyers ANSI
+`DeleteFileA`.
+
+**Ez zárja le a 2.6/c „csere mód" lépését is:** a `0x00991f00(útvonal, 5)`
+**a régi fájlt törli**, és hozzáférés-megtagadásnál (`ERROR_ACCESS_DENIED`)
+5 másodpercig újrapróbálja — most már tudjuk, hogy pontosan mit.
+
+> ⭐ **Tanulságos párhuzam a saját kódunkkal.** Ugyanez a hibaosztály nálunk
+> a **#1991** volt (a `cv2.imread`/`imwrite` **fájlútvonalas** alakja
+> ékezetes néven Windowson némán elbukik). A jegy **le van zárva**: a
+> `src/picasapy/cvimage.py` `np.fromfile` + `imdecode` úton olvas, és a
+> `scripts/cv2_utvonal_or.py` őr vigyáz rá. **A Picasa ugyanezt a problémát
+> ugyanígy kerülte meg** — nem az ANSI API-t hívta, hanem átalakított és a
+> széles változatot használta. A mi megoldásunk tehát nem kényszerű
+> kerülőút, hanem **ugyanaz a bevált minta**.
 
 ### 2.7 A film-előnézet vezérlősávja (`video_control_bar2`) — MŰKÖDÉS
 
