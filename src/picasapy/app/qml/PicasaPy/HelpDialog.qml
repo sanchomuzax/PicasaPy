@@ -110,6 +110,35 @@ Dialog {
                 // #422: jobbklikk-menü a súgó szövegén is — a „Másolás"
                 // itt valódi funkció (a felhasználó kimásol egy lépéssort).
                 TextFieldContextArea {}
+
+                // #2212: a nyitólap a súgó TARTALOMJEGYZÉKE — csupa
+                // hivatkozás. Kezelő nélkül a linkek kékek, de a kattintás
+                // nem csinál semmit: a fő navigációs felület halott.
+                //
+                // A feloldás a vezérlőn át megy (a HIVATKOZÓ fejezethez
+                // képest relatív, és a súgó mappájából nem enged kilépni).
+                // Üres válasz = nem fejezet (külső cím, nem létező lap):
+                // ilyenkor SEM lépünk sehova, de a `console.warn` kiírja —
+                // a néma nem-történik-semmi épp az a hiba, amit javítunk.
+                onLinkActivated: function (link) {
+                    if (!controller) return
+                    var cel = controller.helpResolveLink(helpDialog.topic, link)
+                    if (cel) {
+                        helpDialog.topic = cel
+                    } else {
+                        console.warn("a súgó hivatkozása nem fejezetre mutat:", link)
+                    }
+                }
+
+                // A kéz-kurzor a hivatkozás fölött: enélkül a felhasználó
+                // nem is próbálja megnyomni. A `hoveredLink` a TextArea
+                // saját tulajdonsága, nem kell külön találati vizsgálat.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton   // csak a kurzorért
+                    cursorShape: szovegNezo.hoveredLink
+                        ? Qt.PointingHandCursor : Qt.IBeamCursor
+                }
             }
         }
     }
