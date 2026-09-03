@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.252] – 2026-09-03
+
+### Hozzáadva
+- A Picasából való átvétel egy lépéssel közelebb: a program mostantól
+  olvassa a Picasa katalógusának útvonal-nyilvántartását teljes egészében
+  (létrehozás és hozzáférés ideje, méret, fajta), és a bélyegkép-táblák
+  slot-nyilvántartását is. Ez a régi Picasa-adatok importjához kell.
+
 ## [0.8.251] – 2026-09-03
 
 ### Hozzáadva
