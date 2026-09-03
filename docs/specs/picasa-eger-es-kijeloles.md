@@ -163,6 +163,46 @@ lenyomás után elhúzva a kattintás visszavonható). A Picasában a következ�
 **műveletet hajt végre** (Mentés, Mégse, Kollázs létrehozása), az a
 szabványos felengedésre.
 
+### 2.2 A hét vezérlő, amit CSAK ez a tábla említett — feloldva (2026-09-04, #2093)
+
+A fenti tábla azt mondja meg, **mikor** sül el egy gomb, azt nem, hogy **mit
+csinál**. Hét elem csak itt szerepelt az egész specifikációban, ezért a
+lefedettségi mérő `feltáratlan`-nak sorolta őket. Az eredeti **saját
+felirata és buboréksúgója** viszont megvan — és a projekt szabálya szerint
+[a `.tre` szövegforrás az igazságforrás](binaris-regeszet-modszertan.md):
+azonosítóból nem következtetünk, ha van hozzá hivatalos felirat.
+
+| elem | hivatalos magyar szöveg | hol áll a `.tre`-ben |
+|---|---|---|
+| `acquirepanel/sync_options_button` | felirat: **„Opciók"**; buboréksúgó: **„Online opciók"** | `acquirepanel.tre:208` |
+| `headerpanel/create_movie` | **„Mozgófilmes prezentáció létrehozása"** | `headerpanel.tre:79` |
+| `headerpanel/play` | **„Diavetítés teljes képernyőn"** | `headerpanel.tre:32` |
+| `headerpanel/websync0` | **„Feltöltés és a későbbi változások szinkronizálása az internettel"** | `headerpanel.tre:52` |
+| `peoplepanel/manual_cancel` | felirat: **„Mégse"** | `peoplepanel.tre:38` |
+| `printpanel/captionoptionsbutton` | **„A nyomtatni kívánt fotók szegélyeinek és szövegének beállítása"** | `printpanel.tre:46` |
+| `editpanel/weblink` | **„Ugrás az ehhez a fotóhoz társított webhelyre"** | `editpanel.tre:1160` |
+
+**Amit a kód tesz hozzá** (a sztring-xrefek szerint — ezek a függvények a
+panelt építik, nem a kattintást kezelik):
+
+| elem | a hivatkozó panel-függvény | mit árul el |
+|---|---|---|
+| `acquirepanel/sync_options_button` | `0x00518b40` (929 b) | ugyanez a függvény kezeli az `acquirepanel/sync_starred` elemet is ⇒ az „Opciók" a **feltöltési** beállításokat nyitja, köztük a „csak csillagozottak" kapcsolót |
+| `editpanel/weblink` | `0x00567a00` (1035 b) | egy csoportban van az `editpanel/quickupload`, `uploadchanges`, `editcollage`, `editslideshow` elemekkel ⇒ a szerkesztő **környezeti műveletsorának** tagja |
+| `peoplepanel/manual_cancel` | `0x005d23d0` (1009 b) | az `editpanel/cropselection`, `retouchoverlay`, `edittextoverlay` társaságában ⇒ **átfedés-kezelő** ág; a „Mégse" a kézi arcfelvitelt zárja le |
+| `printpanel/captionoptionsbutton` | `0x00743980` (3533 b) | a teljes nyomtatási gombkészlettel együtt (`walletbutton`, `3x5button`, …, `PrintLastSize`) ⇒ a nyomtatási panel saját beállítás-ága — a megvalósítási jegye a **#1780** |
+
+> ⚠️ **Amit ez NEM ad meg:** egyik gomb **kattintás-kezelőjét** sem
+> olvastuk ki. A fenti sorok a *felhasználónak látszó* jelentést rögzítik
+> (a gyártó saját szövegével) és a panel-hovatartozást — nem a
+> végrehajtott kódot. A `headerpanel/create_movie`, `play` és `websync0`
+> névre a binárisban **egyetlen sztring-hivatkozás sincs**: azokat a
+> fejlécsáv általános, táblavezérelt kezelője kapcsolja.
+
+*Bizonyítottsági fok: **megerősített** a feliratokra és a `.tre`-helyekre
+(kiolvasott sorok), **erős** a panel-hovatartozásra (sztring-xref),
+**nincs mérve** a kattintás-kezelő.*
+
 ### 2.1 A mechanizmus a kódban — megerősítve
 
 A `.tre`-parszer (`0x009ca5e0`) a `mousedown` értéket a
