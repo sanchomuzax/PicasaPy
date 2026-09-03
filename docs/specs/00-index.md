@@ -1014,6 +1014,27 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (6. kör) — a hasonlóság-rekord eleje: 8×8 RGB565
+BÉLYEGKÉP (`picasa-kereses-modok.md`).** A kvantáló (`0x007eb8c0`) egy
+kibontott kettős ciklus: soronként **nyolc** `uint16`-ot ír
+(`0x007eb90a`…`0x007ebac9`), majd `add esi, 16`; a külső ciklus
+`cmp edx, 8` / `jb` ⇒ **8 sor × 8 képpont × 2 bájt = 128 bájt**. Az érték a
+már ismert RGB565-kód. ⇒ **A rekord elején egy 8×8-as, RGB565-be kvantált
+bélyegkép áll** — ez a Picasa hasonlósági ujjlenyomatának első fele.
+⭐ **A rekord KEZDETE is rögzítve:** mindkét közbenső hívás
+callee-cleanup (`ret 4`: a kvantáló vége, illetve `0x007ebf4e`), tehát a
+`rep movsd` forrása (`0x007eb5d0`, `esp+0x264`) ugyanaz a cím, mint a
+`0x007eb5a3`-nál 1-re állított **jelzőbájt**. Teljes kép:
+`+0x000` jelzőbájt=1 · `+0x002…+0x081` 8×8 RGB565 · `+0x082…+0x15B` 218
+bájt ISMERETLEN · `+0x15C…+0x17B` 8 `float`. ⚠️ A 218 bájtos rész a
+normalizálónak átadott `edi` (`0x007eb5b8`, pontosan `+0x082`) célterülete,
+**de a normalizáló nem ír oda** — a 460 bájtos törzsében nulla `edi`-célú
+írás; a hurok után **skálatényezőt** számol (`0x00cf3db0` küszöb,
+`0x00c7999c` nulla-védelem). ⚠️ Melléklelet: a `functions` tábla ezt a
+függvényt **442** bájtosnak mondja, a `ret 4` viszont a **446.** bájtnál
+áll — az indexbeli méretre vágás **levágja a függvény végét**. Jegy:
+**#447**.
+
 ⭐ **2026-09-03 (5. kör) — a 380 bájtos hasonlóság-rekord SZERKEZETE
 (`picasa-kereses-modok.md`).** Az összeállító kód (`0x007eb5c4`–`0x007eb5f6`)
 maradék nélkül megmagyarázza a rekordot: `rep movsd` `ecx = 0x5F` = **95
