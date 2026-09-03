@@ -82,7 +82,8 @@ class TestNincsHatterkepKodSehol:
              "t=[str(p) for p in gy.rglob('*.py') if m.search(p.read_text(encoding='utf-8'))]\n"
              "print('\\n'.join(t))",
              str(gyoker), minta],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=120,
         )
         talalatok = [s for s in eredmeny.stdout.split("\n") if s]
         assert not talalatok, (

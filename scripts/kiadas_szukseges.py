@@ -104,7 +104,7 @@ def _valodi_git(args: list[str]) -> subprocess.CompletedProcess[str]:
     # őr a DEKÓDOLÁSON hal meg, nem a leleten, és a CI úgy pirosodik,
     # hogy közben semmi baj nincs a vizsgált tartalommal.
     return subprocess.run(
-        args, capture_output=True, text=True, errors="replace", check=False
+        args, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False
     )
 
 

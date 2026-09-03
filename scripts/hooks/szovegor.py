@@ -27,7 +27,7 @@ CLAUDE_IDOKERET_S = 150
 
 def _futtat(args: list[str], cwd: str) -> str:
     return subprocess.run(
-        args, cwd=cwd, capture_output=True, text=True, timeout=30
+        args, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
     ).stdout
 
 
@@ -96,7 +96,7 @@ def main() -> int:
         )
         valasz = subprocess.run(
             ["claude", "-p", "--model", "sonnet", prompt],
-            capture_output=True, text=True, timeout=CLAUDE_IDOKERET_S,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=CLAUDE_IDOKERET_S,
         ).stdout.strip()
         if valasz and valasz != "RENDBEN":
             sys.stderr.write(

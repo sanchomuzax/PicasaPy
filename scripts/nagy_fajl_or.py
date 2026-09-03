@@ -62,7 +62,7 @@ def kovetett_fajlok() -> list[str]:
         ["git", "ls-files"],
         cwd=GYOKER,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         errors="replace",
         check=False,
     )

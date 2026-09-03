@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.240] – 2026-09-03
+
+### Javítva
+- **A windowsos ellenőrző körünk minden változtatás után hibát jelzett
+  (#2111, #2084).** Két, egymástól független ok, mindkettő a magyar ékezetek
+  és a Windows régi kódlapja körül: a segédprogramjaink magyar üzenetét a
+  Windows rossz kódolással próbálta beolvasni, és egy ellenőrzés az
+  „Helyreállított automatikus másolat" nevű képet nem tudta megnyitni az
+  ékezetek miatt. Mindkettő javítva, és mostantól egy őr figyeli, hogy az
+  első fajta ne térhessen vissza. A program működését ez nem érintette — de
+  a hibajelzés minden alkalommal értesítést küldött.
+
 ## [0.8.239] – 2026-09-03
 
 ### Javítva

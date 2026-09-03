@@ -487,6 +487,15 @@ jobs:
         # kapu, ami a helyes munkát bünteti, rosszabb a semminél.
         run: python scripts/posix_or.py
 
+      - name: Szöveges gyerekfolyamat kódolása (#2111)
+        # A `text=True` a LOCALE kódolásával dekódol: Linuxon UTF-8,
+        # Windowson `cp1252`. A saját őr-szkriptjeink magyarul írnak és
+        # UTF-8-ra állítják a kimenetüket — a hívó oldal ezért Windowson
+        # `UnicodeDecodeError`-ra fut. Emiatt ment a main CI-je MINDEN
+        # kód-merge után pirosra (ci.yml 33711692677, windows 1/4), és a
+        # piros main e-mailt küld a tulajdonosnak.
+        run: python scripts/subprocess_kodolas_or.py
+
       - name: Nagy fájl a verziókövetésben (#2083)
         # 2026-09-03: egy `git add -A` bevitt a munkafából 168 fájlt, 84 MB-ot
         # (a tulajdonos Picasa-adatbázisának másolatát) egy PUBLIKUS repó

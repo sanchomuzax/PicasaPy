@@ -21,7 +21,7 @@ OR = REPO / "scripts" / "cv2_utvonal_or.py"
 
 def _futtat() -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(OR)], capture_output=True, text=True, timeout=120
+        [sys.executable, str(OR)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
     )
 
 

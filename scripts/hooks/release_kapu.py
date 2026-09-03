@@ -92,7 +92,7 @@ def _verziot_emel(cwd: str) -> bool:
     try:
         diff = subprocess.run(
             ["git", "diff", "origin/main...HEAD", "--", "pyproject.toml"],
-            cwd=cwd, capture_output=True, text=True, timeout=15,
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         ).stdout
     except Exception:
         return False
@@ -111,7 +111,7 @@ def _pr_verziot_emel(cmd: str, cwd: str) -> bool:
     try:
         diff = subprocess.run(
             ["gh", "pr", "diff", szam], cwd=cwd,
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
         ).stdout
     except Exception:
         return False
@@ -134,7 +134,7 @@ def _vizsgalt_fa(cwd: str) -> str:
     try:
         ag = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=cwd, capture_output=True, text=True, timeout=10,
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
         ).stdout.strip()
     except Exception:
         ag = "?"

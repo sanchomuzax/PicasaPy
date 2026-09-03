@@ -101,7 +101,7 @@ def _futtat(*argumentumok: str) -> list[str]:
     kimenet = subprocess.run(
         [sys.executable, str(_SZKRIPT), *argumentumok],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         check=True,
         cwd=_GYOKER,
     )

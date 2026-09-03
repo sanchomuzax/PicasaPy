@@ -131,6 +131,8 @@ def gyerek_kimenet(tmp_path_factory):
         [sys.executable, str(szkript)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=600,
         cwd=str(gyoker),
         env=kornyezet,
