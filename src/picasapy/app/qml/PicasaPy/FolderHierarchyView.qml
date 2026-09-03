@@ -138,14 +138,32 @@ Item {
                 Item {
                     objectName: "hierFolderCover:" + row.modelData.path
                     visible: !row.isRoot
-                    width: 13
+                    // #2215: a hely a KUPAC arányához igazodik. A 13
+                    // képpont a mappaikon mérete; a kupac ennél szélesebb
+                    // lehet — mérve 78×62, 84×77, 80×73 (a #2049 kommentje
+                    // fordítva tudta: „magasabb, mint széles"). Fix 13-mal
+                    // a mappanév ráfolyt volna a kupacra.
+                    width: boritoLatszik && borito.implicitHeight > 0
+                        ? Math.max(13, Math.ceil(
+                            height * borito.implicitWidth / borito.implicitHeight))
+                        : 13
                     height: root.rowHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
+                    // #2215: a `Ready` ÖNMAGÁBAN nem elég. A szolgáltató
+                    // korábban 1×1 átlátszó képet adott, ha nincs borító —
+                    // az sikeresen betöltődik, tehát ez a feltétel igaz
+                    // lett, és a mappaikon elrejtőzött: a sor üresen
+                    // maradt. A szolgáltató ma null képet ad (`Error`), a
+                    // méret-ellenőrzés pedig második védelem arra az
+                    // esetre, ha valaki visszahozná a helyettesítő képet.
                     readonly property bool boritoLatszik:
-                        root.albumThumbs && borito.status === Image.Ready
+                        root.albumThumbs
+                        && borito.status === Image.Ready
+                        && borito.implicitWidth > 1
 
                     FolderIcon {
+                        objectName: "hierFolderIcon:" + row.modelData.path
                         size: 13
                         visible: !parent.boritoLatszik
                         anchors.verticalCenter: parent.verticalCenter
