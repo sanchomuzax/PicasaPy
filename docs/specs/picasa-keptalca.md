@@ -544,7 +544,10 @@ bélyegkép **eltakarja a „Kijelölés" felirat bal részét**, és a felirat 
 (`…lés`) **kilóg a képek jobb oldalán**.
 
 ⇒ A bélyegképek a felirat **fölé** rajzolódnak, és a felirat **nem tűnik el**,
-ha a tálca nem üres. *(Nálunk `visible: false` lesz — a #1916 javítja.)*
+ha a tálca nem üres. *(Nálunk MA fordítva van: a felirat csak ÜRES tálcánál látszik, és a
+bélyegképek FÖLÉ rajzolódik. Ez a pont korábban azt írta, hogy „a #1916
+javítja” — a **#1916 lezárt**, és a négyzetes bélyegképekről szólt, nem
+erről. A javítás jegye: **#2179**.)*
 
 *Bizonyítottsági fok: **megerősített**.*
 
@@ -568,8 +571,12 @@ scratch/highlight:  scratch/albumlabel  (−4/+4 vízszintesen, +1 függőlegese
 A `scratch.tre` saját megjegyzése: *„I chose this dumb constraint because the
 tray can get so small that there's no room for text"*.
 
-**Nyitva:** mi teszi a mappát a tálcára (a `Tray::` névtérben nincs rá parancs),
-és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.
+~~**Nyitva:** mi teszi a mappát a tálcára (a `Tray::` névtérben nincs rá parancs),
+és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.~~
+
+⇒ **MINDKETTŐ MEGVAN**, ld. a **20. pontot** — és ugyanott két állítás
+helyesbítve is van ebből a szakaszból (a „kép-köteg ikon” valójában egyetlen
+borítófotó, a felirat elválasztója pedig kis-, nem nagykötőjel).
 
 Jegy: **#1919**.
 
@@ -724,3 +731,172 @@ eltolások, betűk), album-elrendezés (`alayout_gutter=24`,
 (`publishtoweb_color=#0000FF`).
 
 Jegy: **#2039**.
+
+---
+
+## 20. LEZÁRVA: a mappa-token TELJESEN feltárva — kiváltó, négy felirat, geometria, és a rács kizárása (2026-09-03, #1919)
+
+A 17. pont három kérdést hagyott nyitva. **Mindhárom megvan**, és közben
+két állítása helyesbítendő.
+
+### 20.1 MI VÁLTJA KI — típusteszt, nem parancs (megerősített)
+
+A tokent **nem parancs teszi a tálcára, hanem a kijelölés TÍPUSA**.
+
+A `CThumbUI` „állítsd be az aktuális kijelölés-csomópontot” függvénye
+`0x0056bc10` (945 b). A bejövő objektumon (`eax`) **dinamikus
+típuskonverziót** végez:
+
+```
+0x0056bc43  push 0 ; push 0xd3db90 ; push 0xd3e720 ; push 0 ; push esi
+0x0056bc52  call 0x00c07db2        ; __RTDynamicCast(inptr, 0, SrcType, TargetType, 0)
+```
+
+A két típusleíró a nevét is megadja (a `TypeDescriptor` +8-tól):
+
+| cím | mangolt név | jelentés |
+|---|---|---|
+| `0x00d3e720` | `.?AVCSelectionNode@@` | a forrástípus: bármilyen kijelölés |
+| `0x00d3db90` | `.?AVCAlbumSelectionNode@@` | **a céltípus: EGÉSZ mappa/album kijelölése** |
+
+Ha a konverzió sikerül (és nem ugyanaz, mint eddig), a mutató a
+`CThumbUI` `+0xeac` mezőjébe kerül, hivatkozásszámlálással:
+
+```
+0x0056bd43  mov dword ptr [edi + 0xeac], ebx
+0x0056bd49  … call [ebx].vtbl+4          ; AddRef
+```
+
+⇒ A `+0xeac` **csak akkor nem null, ha a kijelölés egy egész
+mappa/album**. Ez magyarázza a 17. pont megfigyelését, hogy a `Tray::`
+névtérben nincs „mappa a tálcára” parancs: **nincs is ilyen parancs.**
+
+### 20.2 A felirat NÉGY változatban áll elő — nem egyben
+
+A rajzoló `0x0056ba10` (`CThumbUI::UpdateAlbumCover`, 498 b). A szöveget
+egy háromhelyes formátumsztringből rakja össze
+(`0x0056bb75`–`0x0056bb7d`, `call 0x0040eab0`, sorrend: formátum, `%s`,
+`%d`, `%s`):
+
+| lépés | cím | mit dönt el |
+|---|---|---|
+| van-e kijelölt mappa | `0x0056babc` (`[edi+0xeac]` null-teszt) | ha null → **„Nincs kijelölés”** |
+| hány elem | `0x0056bacc` (`call 0x00716cb0`) | a `%d`; ha **0**, szintén „Nincs kijelölés” (`0x0056baed`) |
+| mappa vagy album | `0x0056bae6` (`call 0x004461a0`) | az első `%s` |
+| egyes vagy többes | `0x0056bb26` (`cmp ebp, 1`) | a második `%s` |
+
+A teljes szótár (`referencia/stringres-en-hu.tsv` 759–764. sor):
+
+| kulcs | angol | magyar | mikor |
+|---|---|---|---|
+| `CThumbUI::UpdateAlbumCover` | `%1$s - %2$d %3$s` | `%1$s - %2$d %3$s` | a keret |
+| `CThumbUI::UpdateAlbumAlbum` | `Album Selected` | **Kiválasztott album** | `0x004461a0` ≠ 0 |
+| `CThumbUI::UpdateAlbumFolder` | `Folder Selected` | **Kiválasztott mappa** | `0x004461a0` = 0 |
+| `CThumbUI::UpdateAlbumphoto` | `photo` | **fotó** | darabszám = 1 |
+| `CThumbUI::UpdateAlbumCoverphotos` | `photos` | **fotó** | darabszám ≠ 1 |
+| `CThumbUI::UpdateAlbumCoverNoSel` | `No selection` | **Nincs kijelölés** | nincs mappa VAGY 0 elem |
+
+A binárisba fordított angol alapértékek ugyanezek:
+`0x00c8f070` = `%s - %d %s`, `0x00c8efd8` = `Album Selected`,
+`0x00c8f004` = `Folder Selected`, `0x00c84c10` = `photo`,
+`0x00c84c18` = `photos`, `0x00c8f0ac` = `No selection`.
+
+> ⚠️ **Helyesbítés a 17. ponthoz és a #1919 törzséhez.** Ott
+> „Kiválasztott mappa **–** 82 fotó” áll, **nagykötőjellel**. A mért
+> formátum **kiskötőjelet** használ (`%s - %d %s`). A képernyőképről
+> való leolvasás tévedett; a mért formátum a mérvadó.
+>
+> A magyar egyes és többes szám **azonos** („fotó”) — ez magyarul helyes
+> (szám után egyes szám), nem szótárhiba.
+
+### 20.3 A `0x004461a0` jelentése — független keresztellenőrzéssel
+
+Ugyanez a függvény dönti el a **helyi menü címét** is, egy tőle független
+helyen (`0x00537fb0`, `[esi+0xeac]` → `call 0x004461a0` a `0x00537fdc`-n):
+
+| eredmény | menücím | kulcs |
+|---|---|---|
+| ≠ 0 | `&Album` | `ThumbUIOutput::AlbumMenu` |
+| = 0 | `F&older` | `ThumbUIOutput::FolderMenu` |
+
+⇒ `0x004461a0` = *„a kijelölés ALBUM-e (szemben a mappával)?”* — két
+egymástól független felhasználási hely adja ugyanazt a jelentést.
+
+### 20.4 ⛔ A token KIZÁRJA a bélyegkép-rácsot — a #1919 „Kész, ha” listája TÉVED
+
+A #1919 kéri, hogy „a tálca **vegyesen** is tudjon képet és tokent
+tartani”. **Ilyen állapot az eredetiben nincs.** Három független
+bizonyíték:
+
+1. **A token a teljes tálca-vásznat elfoglalja.** A `respack.yt`-ben a
+   `scratch/album` téglalapja **bájtra azonos** a `scratch/docbounds`
+   (dokumentumhatár) téglalapjával: mindkettő **(0,0)–(174,87)**.
+2. **A tálca bélyegkép-területe épp ezt a vásznat mutatja.** A
+   `thumbui/scratch` réteg fajtája a csomagban
+   `layer:thumbui/clip(scratch): scratch` — vagyis egy **kivágás a
+   `scratch` panelre**. Amit a token elfoglal, arra rács nem fér.
+3. **Húsz felvétel, nulla vegyes eset.** A
+   `research/Picasa3-also-talca-ikonok-viselkedese/` sorozatban pontosan
+   **egy** felvételen látszik a token (`…214629.jpg`, akkor rács nélkül),
+   a maradék tizenkilencen rács van, token nélkül.
+
+⇒ A megvalósításban a tálca **VAGY** bélyegképeket mutat, **VAGY** egy
+tokent. A #1919 vonatkozó „Kész, ha” pontját törölni kell.
+
+### 20.5 Geometria — MÉRVE
+
+**A csomagból** (tervezővászon-koordináták, `int16 x0,y0,x1,y1`):
+
+| réteg | téglalap | méret | szín |
+|---|---|---|---|
+| `scratch/docbounds` | (0,0)–(174,87) | 174 × 87 | — |
+| `scratch/album` | (0,0)–(174,87) | **174 × 87** | — |
+| `scratch/albumsize` | (63,31)–(94,53) | 31 × 22 | — |
+| `scratch/albumcover` | (63,31)–(94,53) | 31 × 22 | — |
+| `scratch/albumlabel` | (45,30)–(165,52) | 120 × 22 | `#F5F5F5` |
+| `scratch/highlight` | (45,36)–(165,52) | **120 × 16** | `#2E72A1`, **70%** |
+
+A futásidejű elrendezést a `scratch.tre` kényszerei adják (17. pont): a
+`albumsize` a `album` mind a négy oldalán 8 képpont behúzással, a borító
+és a felirat egyaránt **középre**, a pirula a felirat körül −4/+4
+vízszintesen és +1 függőlegesen, `round 2`, `predraw`.
+
+**A képernyőn** (`…214629.jpg`, 1920×1080):
+
+| mit | mért érték |
+|---|---|
+| kék pirula | x 251–392, y 979–995 → **142 × 17 px** |
+| pirula színe | **RGB(107, 153, 186)** |
+| borítófotó | x 309–337 → **29 px széles**, álló, vetett árnyékkal |
+
+A pirula magassága (17) a vászonértékkel (16) egyezik ⇒ a token
+**nincs felnagyítva**, a vászonegység itt képernyő-képpont. A pirula
+**szélessége a szöveggel nő** (142 > 120), tehát a 120 vászonszélesség
+helyőrző.
+
+> ⚠️ **Helyesbítés a 17. ponthoz:** a borító **nem** „kép-köteg ikon”,
+> hanem **egyetlen borítófotó** vetett árnyékkal, oldalarány-tartóan az
+> `albumsize` dobozba illesztve (a réteg fajtája `bicubic`). A mappánként
+> MENTETT borító tárolása a #2049 lelete (`albums.db`).
+
+> **A pirula 70%-a önálló lelet:** a réteg fejlécének 8–9. bájtja
+> **átlátszóság** (`uint16`, 256 = átlátszatlan), amit a kicsomagolónk ma
+> eldob, és amit a `picasa-respack-format.md` tévesen ír le. Jegy:
+> **#2178**. A 179/256 = 69,9% fehér fölött RGB(109,157,189)-et ad — a
+> képernyőn mért (107,153,186) ettől csatornánként ≤4-gyel tér el.
+
+### 20.6 ⛔ NEGATÍV: a `0x00d67914` NEM funkciókapcsoló
+
+Az `UpdateAlbumCover` a `scratch/albumcover` feloldását egy globális
+null-tesztre köti (`0x0056ba7b`: `cmp dword ptr [0xd67914], ebx`), és
+ugyanez a teszt őrzi a `scratch/album` bekötését is (`0x00572b90`). Ez
+**nem** azt jelenti, hogy a token funkciókapcsoló mögött van: a globális
+egy **indulási szingleton mutatója**, amit a `0x009c3a20` állít elő
+(`push 0x1c70` = 7280 bájt lefoglalása, majd `call 0x009c3050`
+konstruktor). A teszt csak azt kérdezi, felépült-e már a yt felületmotor.
+
+*Bizonyítottsági fok: 20.1–20.5 **megerősített**; 20.6 **megerősített**
+(a foglalás és a konstruktorhívás a kódban áll).*
+
+Jegyek: **#1919** (a token megvalósítása), **#2178** (respack-átlátszóság),
+**#2179** (a „Kijelölés” vízjel).
