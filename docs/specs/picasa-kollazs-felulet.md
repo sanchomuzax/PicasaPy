@@ -115,6 +115,83 @@ nélkül `noborder`-ek. Ez pontosan a 9. bit fenti eloszlása.
 helyesen hagyja figyelmen kívül a keretet. Egy ezzel ellentétes „javítás"
 eltérés lenne az eredetitől (#1122).
 
+### 2.1/b A 9. bit RENDERELT bizonyítéka — az `AI6.jpg` képpontjai (#997)
+
+A `.cxf` **rögzíti** a csomópont keretét, de attól még nem biztos, hogy a
+rajzoló ki is teszi: a fájlba írás nem láthatóság. Az Indexképnél ezt most
+**képpontszinten** is megmértük, a tulajdonos valódi Picasa-kimenetén.
+
+Forrás: `referencia/kollazs-golden/kollazsok-11db-2026-08-20.zip` →
+`Kollázsok/AI6.jpg`, **3841 × 5120**, hozzá az `AI6.cxf`
+(`theme="contactsheet"`, mind a 9 csomópont `<theme>whiteborder</theme>`).
+
+Az **első** csomópont doboza a `.cxf` arányaiból (`x=0,087891`,
+`y=0,166300`, `w=0,236328`, `h=0,221612`): **(338, 851)–(1245, 1986)**,
+azaz **907 × 1135** képpont. A doboz függőleges közepén, a bal éltől
+befelé haladva:
+
+| eltolás | BGR | mi ez |
+|---|---|---|
+| −14 … −3 px | (161,204,201) … (142,181,179) | a lap háttere (`FFD5D9AB`) |
+| +0 … +4 px | (137,172,168) … (122,155,151) | a vetett árnyék sötétebb pereme |
+| **+6 … +48 px** | **(238,238,238)** | **a fehér szegély** |
+| +50 px-től | a fotó képpontjai | |
+
+A `(238, 238, 238)` **bájtra** a `frames.py` `WHITE_BORDER_BGR`
+konstansa (`0xFFEEEEEE`) — nem „világosszürke", hanem pontosan az.
+
+**A sáv szélessége is egyezik, szabad paraméter nélkül.** A szabály
+(`picasa-create-features.md` 1.9.5) `b = round(min(fotoSzél, fotoMag) · 0,05)`,
+és a keret a fotón KÍVÜL nő, tehát a mért külső dobozból:
+
+```
+b = 0,05 · (907 − 2b)   ⇒   1,1 b = 45,35   ⇒   b = 41,23 px
+```
+
+Mért sávszélesség három élen: **41 / 42 / 43 px** (bal / jobb / felső; a
+±1 a JPEG-élelmosódás). Illesztett konstans nincs: a 907 a `.cxf`-ből,
+a 0,05 a dekompilált rajzolóból jön.
+
+⇒ **Az eredeti Picasa az Indexképnél TÉNYLEG kirajzolja a választott
+keretet.** A 9. bit tehát nemcsak a *választó láthatóságát* kapcsolja,
+hanem valódi rajzi következménye van. Bizalmi fok: **megerősített**.
+
+> ⚠️ Amit ez NEM mond meg: a `polaroid` keretet az Indexképnél egyetlen
+> mintánk sem használja, tehát arra csak a közös keretszabály általánosítása
+> vonatkozik — mérésünk nincs rá. (Külön jegy nem indokolt: a keretrajzolás
+> témafüggetlen, a Képkupacon mindhárom keret mérve van.)
+
+### 2.1/c Nálunk — a keret HAT, de nincs őr, ami ezt megvédené (#997)
+
+**Mérve** (`collage/picasa_render.py`, 800 × 600, `contactsheet`, hat kép):
+a három keret-állás három **különböző** lapot ad, tehát a #997 leletje
+(„a keretválasztó nem hat") a mai kódra **már nem igaz** — a #1273 köre
+javította, amikor a `_contact_sheet_nodes` a `settings.effective_border`-t
+átvette és a `_framed_size_inside`-dal a keretes befoglalót illeszti.
+
+| keret | 1. csomópont (lapegység) | a lap SHA-256 eleje |
+|---|---|---|
+| `noborder` | 252,16 × 177,92 | `958fd2bae96e3a75` |
+| `whiteborder` | 252,16 × 181,76 | `972ebf8946762a2b` |
+| `polaroid` | 252,16 × 222,72 | `efa23b549f39c125` |
+
+A felületi lánc is ép: `CollageSettingsTab.qml:116` `visible: tab.can("borders")`
+← `collageCapabilities` ← `themes.capability_map` ← 9. bit.
+
+⚠️ **De az őrnek nincs foga.** A `tests/collage/test_indexkep_1273.py`
+`test_az_AI6_racsa_margot_hezzagot_aranyt_es_feher_keretet_kap` esete
+`WHITEBORDER`-rel mér, a tűrése viszont (`w`: 0,005, `x`/`y`/`h`: 0,01)
+elnyeli a keret elhagyását — `noborder`-rel ugyanez az eset **átmegy**:
+
+| keret | `x` | `w` | eltérés az `AI6.cxf`-től (`x` / `w`) | az őr |
+|---|---|---|---|---|
+| `whiteborder` | 0,087087 | 0,239000 | 0,000804 / 0,002672 | átmegy |
+| **`noborder`** | 0,089560 | 0,234054 | **0,001669 / 0,002274** | **átmegy** |
+| `polaroid` | 0,112991 | 0,187191 | 0,025100 / 0,049137 | bukik |
+
+Tehát ha valaki visszaállítaná az Indexkép keret nélküli rajzát, a
+készlet **zöld maradna**. Ez önálló jegy — ld. a #997 lezáró kommentjét.
+
 A megfejtett bitek *(a 2026-08-18-i kör tizenegyre bővítette az eredeti
 ötöt — a keresés a teljes kollázs-kódterületre ment, `0x00829000`+90 KB és
 `0x0087a000`+72 KB)*:
