@@ -1130,18 +1130,6 @@ MenuBar {
                 }
             }
             MenuSeparator {}
-            MenuItem {
-                objectName: "menuViewSimplifiedTreeView"
-                text: qsTr("Simplified Tree View")
-                checkable: true
-                checked: folderViewMenu.simplifiedMode
-                onTriggered: {
-                    if (bar.folderViewCtl) bar.folderViewCtl.toggleSimplified()
-                    checked = Qt.binding(function () {
-                        return folderViewMenu.simplifiedMode
-                    })
-                }
-            }
             // #2049: „Indexképek megjelenítése a könyvtárban" — a bal
             // hasáb fasorain a sárga mappaikon helyett a mappa első
             // legfeljebb négy fotójából álló kupac. Az eredeti kulcsa
@@ -1160,6 +1148,24 @@ MenuBar {
                     if (bar.folderViewCtl) bar.folderViewCtl.toggleAlbumThumbs()
                     checked = Qt.binding(function () {
                         return folderViewMenu.albumThumbsMode
+                    })
+                }
+            }
+
+            //: #2019: az „Egyszerűsített fanézet" az almenü LEGALJÁN áll,
+            //: az „Indexképek megjelenítése a könyvtárban" UTÁN — így méri
+            //: a tulajdonos felvétele (`research/#1766-nezet-mappanezet-almenu.png`).
+            //: Nálunk a #1454 óta a nézet-hármas együtt állt, holott az
+            //: eredetiben a harmadik el van választva a pártól.
+            MenuItem {
+                objectName: "menuViewSimplifiedTreeView"
+                text: qsTr("Simplified Tree View")
+                checkable: true
+                checked: folderViewMenu.simplifiedMode
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.toggleSimplified()
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.simplifiedMode
                     })
                 }
             }

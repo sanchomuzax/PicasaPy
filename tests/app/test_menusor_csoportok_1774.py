@@ -338,3 +338,54 @@ def test_az_elteresek_indoka_le_van_irva():
     """Minden tudott eltéréshez tartozzon érdemi magyarázat."""
     for kulcs, indok in ELTERESEK.items():
         assert len(indok) > 60, f"{kulcs}: az indok túl szűkszavú"
+
+
+class TestAMappanezetAlmenuSORRENDJE:
+    """#2019: az „Egyszerűsített fanézet" az almenü LEGALJÁN áll.
+
+    A tulajdonos felvétele (`research/#1766-nezet-mappanezet-almenu.png`)
+    szerint az eredeti sorrend a rendezés-blokk után:
+
+        Indexképek megjelenítése a könyvtárban
+        Egyszerűsített fanézet
+
+    Nálunk a #1454 óta fordítva volt: a nézet-hármas együtt állt, holott
+    az eredetiben a harmadik el van választva a pártól.
+    """
+
+    def _almenu(self) -> str:
+        from pathlib import Path
+
+        import picasapy.app
+
+        forras = (
+            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+        ).read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "menuViewFolderView"')
+        nyito = forras.rindex("{", 0, kezdet)
+        melyseg = 0
+        for i in range(nyito, len(forras)):
+            if forras[i] == "{":
+                melyseg += 1
+            elif forras[i] == "}":
+                melyseg -= 1
+                if melyseg == 0:
+                    return forras[nyito : i + 1]
+        raise AssertionError("a Mappanézet almenü zárójele nem záródik be")
+
+    def test_az_indexkepek_tetel_ELOBB_all(self):
+        blokk = self._almenu()
+        assert blokk.index('objectName: "menuViewAlbumThumbnails"') < blokk.index(
+            'objectName: "menuViewSimplifiedTreeView"'
+        ), (
+            "az „Egyszerűsített fanézet” nem az almenü legalján áll — az "
+            "eredetiben az „Indexképek…” után jön (#2019)"
+        )
+
+    def test_mindketto_a_RENDEZES_blokk_utan_all(self):
+        """Nem elég a kettő egymáshoz képesti sorrendje: az elválasztó
+        utáni csoportban kell lenniük."""
+        blokk = self._almenu()
+        utolso_rendezes = blokk.index('objectName: "menuViewSortReverse"')
+        for nev in ("menuViewAlbumThumbnails", "menuViewSimplifiedTreeView"):
+            assert blokk.index(f'objectName: "{nev}"') > utolso_rendezes
