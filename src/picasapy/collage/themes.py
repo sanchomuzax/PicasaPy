@@ -95,7 +95,7 @@ THEME_CLASS_NAMES = {
 #
 # | bit | mi támasztja alá |
 # |---|---|
-# | 9 (keret) | a fogyasztó kód + a felhasználó képernyőképe — de CSAK a Képkupacra |
+# | 9 (keret) | ⭐ **UTASÍTÁSSZINTEN MÉRVE** (#997) — ld. lent |
 # | 10 (térköz) | ugyanaz, szintén csak a Képkupacra |
 # | 14 (árnyék alapérték) | ugyanaz, szintén csak a Képkupacra |
 # | 4 (kijelölés) | **KIZÁRÓLAG a fogyasztó kód olvasata** — nincs külső megerősítés |
@@ -107,6 +107,29 @@ THEME_CLASS_NAMES = {
 # származtatása ezért NEM független megerősítés: azt igazolja, hogy a maszkok
 # és a belőlük közölt tábla között nincs átírási/számolási hiba — a bitek
 # JELENTÉSÉT nem.
+#
+# --- A 9. BIT — MEGFEJTVE (#997, 2026-09-03) -------------------------------
+#
+# A `collagepanel/borders_group` sztringre EGYETLEN függvény hivatkozik, a
+# `0x00831750` (880 b), és a láthatóságát így számolja:
+#
+#     0x008317f3  call eax                ; a téma képesség-maszkja
+#     0x008317f5  shr  eax, 9             ; << a 9. BIT
+#     0x008317f8  and  eax, 0xffffff01
+#     0x008317fe  mov  edx, 0xcbf728      ; "collagepanel/borders_group"
+#
+# ⇒ A 9. bit ↔ a KERETVÁLASZTÓ láthatósága, TÉMAFÜGGETLENÜL. Korábban ezt
+# csak a Képkupacra támasztotta alá külső bizonyíték (a tulajdonos
+# képernyőképe); most a bit szerepe utasításszinten rögzített.
+#
+# A `collagepanel.tre` ehhez illeszkedik: a `borders_group` ott `m_hidden`,
+# tehát az erőforrás alapból REJTI, és kód kapcsolja — pontosan úgy, ahogy
+# nálunk a képesség-maszk teszi.
+#
+# ⚠️ KÖVETKEZMÉNY: a `CONTACTSHEET = 0x4B11` maszkban a 9. bit ÁLL, tehát az
+# eredetiben az Indexképnél VAN keretválasztó. A #997 feltevése („valószínűleg
+# el kellene tűnnie") ezzel megdőlt — a választót működővé kell tenni, nem
+# elrejteni.
 #
 # A legolcsóbb valódi ellenőrzés: a **Többszörös exponálás** az eredetiben.
 # A jóslat szerint ott sem kijelölés, sem háttér-beállítás, sem árnyék nincs —
