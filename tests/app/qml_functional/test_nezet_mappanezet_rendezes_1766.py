@@ -52,9 +52,28 @@ OTOS = (
 
 
 def _almenu() -> str:
-    """A `Mappanézet` almenü törzse — a következő azonos mélységű elemig."""
+    """A `Mappanézet` almenü törzse — a záró kapcsos zárójeléig.
+
+    ⚠️ Ez korábban RÖGZÍTETT 6000 karaktert vágott, noha a docstring már
+    akkor is „a következő azonos mélységű elemig" tartót ígért. A kettő
+    közti eltérés 2026-09-03-án el is sült: a #2049 egy ÚJ, jogos tételt
+    és egy tulajdonságot tett az almenübe, mire a `menuViewSortReverse`
+    kicsúszott az ablakból — az őr „hiányzó tételt" jelentett olyasmire,
+    ami ott volt. A zárójel-számlálás ezt kizárja, és közben NEM lesz
+    engedékenyebb: a valóban hiányzó tételt továbbra is megfogja.
+    """
     kezdet = _QML.index('objectName: "menuViewFolderView"')
-    return _QML[kezdet : kezdet + 6000]
+    # visszalépünk a `PicasaMenu {` nyitó zárójeléig, onnan számolunk
+    nyito = _QML.rindex("{", 0, kezdet)
+    melyseg = 0
+    for i in range(nyito, len(_QML)):
+        if _QML[i] == "{":
+            melyseg += 1
+        elif _QML[i] == "}":
+            melyseg -= 1
+            if melyseg == 0:
+                return _QML[nyito : i + 1]
+    raise AssertionError("a Mappanézet almenü zárójele nem záródik be")
 
 
 class TestAzOtTetelOttVan:

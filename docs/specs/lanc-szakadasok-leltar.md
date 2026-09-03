@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 35.**
+**Felületről el nem ért vezérlő-tag: 36.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -136,6 +136,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
 | `folderHierarchyController` | `setSimplified` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt |
+| `folderHierarchyController` | `setAlbumThumbs` | Slot | `app/folder_hierarchy_controller.py` | FELVÁLTVA — a menü a toggleAlbumThumbs-t hívja, az hívja ezt |
 | `startupStatus` | `busy` | Property | `app/startup_status.py` | MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja |
 | `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
 | `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |
