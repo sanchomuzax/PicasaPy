@@ -2325,3 +2325,93 @@ utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
 tartalma, a `TwoTone` megálló-pozíciói, a `Resize` `smoothing = false` ága,
 az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az `AdjustCurves` négy
 görbéjének SORRENDJE **nincsenek mérve**.*
+
+---
+
+## ⭐ A `QuantizePalette` OKTREE, és a MASZK-osztályok térképe (2026-09-04, #2211)
+
+### 1. `QuantizePaletteImageOperation` — palettaválasztó, nem lépésközös kvantálás
+
+A művelet két attribútuma és alapértéke (`0x00bb5ad0`, 139 b):
+
+| attribútum | tag | alapérték | cím |
+|---|---|---|---|
+| `Steps` | `+0x24` | **255** | `0x00bb5aed` |
+| `Depth` | `+0x2c` | **2** | `0x00bb5b1d` |
+
+A munkát a `0x00bb5b60` (1510 b) végzi, négy argumentummal
+(`kép`, `Steps`, `Depth`, `cél`). Három lépés olvasható ki belőle:
+
+**a) Végigmegy a kép MINDEN képpontján**, kibontja a csomagolt képpontot
+`(R, G, B)`-re (`shr 0x10` / `shr 8` / `movzx al`), és a `0x00bcb8e0`
+beszúróval egy fába teszi (`0x00bb5d3b`–`0x00bb5d8c`).
+
+**b) A beszúró OKTREE-t épít.** A csomópont **32 bájt**, és a beszúró
+mind a **nyolc** mutatóját nullázza (`0x00bcb8f2` `push 0x20`,
+`0x00bcb8ff`–`0x00bcb913`); a redukáló (`0x00bcb6f0`, 389 b) szintén
+**nyolcasával** járja a gyerekeket (`0x00bcb71e` `lea ecx, [edx + 8]`).
+
+**c) A redukció mérete a `Steps`-ből jön** (`0x00bb5da8`):
+
+```
+Steps == 2  ->  0x00bcb6f0(2)
+egyébként   ->  0x00bcb6f0(Steps − 1)
+```
+
+**d) Tartalék: fix 3-3-2 bites paletta.** A `0x00bb5e02`–`0x00bb5e53` ciklus
+három 256 elemű táblát tölt fel: `r & 0xE0`, `(g >> 3) & 0x1C`, `b >> 6` —
+a klasszikus 8 bites (256 színű) RGB-palettaindex.
+
+⇒ **A `Steps` a PALETTA MÉRETE, nem a csatornánkénti szintszám.** Az
+eredmény a kép saját színeihez igazodik, nem egy fix rácshoz.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól.** Mind a két megvalósításunk
+> (`effects_creative_tone.apply_quantizepalette`,
+> `glimmer_tone.apply_quantizepalette`) **egyenletes lépésközű** kvantálást
+> csinál, és a docstringjük ki is mondja, hogy a pontos algoritmus „NEM
+> ismert", zárójelben megemlítve, hogy „esetleg palettaválasztó". **A
+> zárójeles sejtés igaz volt.** Jegy: **#2231**.
+
+**Ami NINCS mérve:** mit jelent a `Depth` (alapérték 2), mikor lép életbe a
+3-3-2-es tartalék paletta, és milyen szabály szerint választ a redukáló
+leveleket.
+
+### 2. A MASZK-osztályok — más vtable-elrendezés, és több attribútum, mint a `red.cfg`-ben
+
+A `glimmer::*ImageMask` osztályok **nem** ugyanazt a réskiosztást használják,
+mint a műveletek: náluk az attribútum-beolvasó az **5. rés**, és a 3–4. rés
+közös metódusa is más (`0x004bdeb0`, nem `0x00bc4ae0`). Ezt nem feltevésből
+tudjuk: a `tileWidth` és társai sztring-xrefje **pontosan** az 5. rés
+függvényére mutat.
+
+| maszk | vtable RVA | 5. rés (attribútumok) | 6. rés | attribútum → tagoffszet |
+|---|---|---|---|---|
+| `ImageMask` *(ős)* | `0x008f0d34` | `0x00bcd5c0` | `0x00c07709` (no-op) | width@0x8, height@0x10 |
+| `TiledImageMask` | `0x008f02e8` | `0x00bba2e0` | `0x00bba4d0` (169 b) | tileWidth@0x18, tileHeight@0x20, **scaleWidth@0x28**, **scaleHeight@0x30**, **paddingLeft@0x38**, **paddingTop@0x40**, **paddingRight@0x48**, **paddingBottom@0x50**, offsetX@0x58, offsetY@0x60, alphaMin@0x68, **alphaMax@0x70** |
+| `CircularGradientImageMask` | `0x008f0890` | `0x00bcfc70` | `0x00bcfda0` (100 b) | **aspectRatio@0x18**, innerRadius@0x20, outerRadius@0x28, innerAlpha@0x30, outerAlpha@0x38, xCenter@0x40, yCenter@0x48 |
+| `ShapeGradientImageMask` | `0x008f0e50` | **ugyanaz** (`0x00bcfc70`) | **ugyanaz** (`0x00bcfda0`) | ugyanaz |
+| `PaintMaskPlusImageMask` | `0x008f0750` | `0x00bcd5c0` (az ősé) | `0x005baa00` (5 b) | width@0x8, height@0x10 |
+
+**Két szerkezeti következmény:**
+
+1. ⭐ **A `CircularGradient` és a `ShapeGradient` bitre ugyanazt a beolvasót
+   és ugyanazt az alkalmazót futtatja** — a különbségük nem itt van, hanem a
+   9./10. résben (a `ShapeGradient`-é `0x00c07709`, azaz **no-op**, a
+   `CircularGradient`-é `0x00bc2a30`). Vagyis a `ShapeGradient` a
+   `CircularGradient` egy **lecsupaszított** változata.
+2. A `PaintMaskPlusImageMask` **saját attribútumot nem ismer** — csak az ős
+   `width`/`height`-jét; a festett maszkot máshonnan kapja.
+
+**Amit a `red.cfg` NEM használ, de a motor tud:** a `Tiled` maszk **öt**
+extra attribútuma (`scaleWidth`, `scaleHeight`, a négy `padding*`,
+`alphaMax`) és a gradiens-maszkok `aspectRatio`-ja. A 4. szakasz
+attribútum-táblája a `red.cfg`-ből készült, tehát csak a **használt**
+neveket sorolja.
+
+> Ezzel a **#2211** `Tiled` tétele is horgonyt kapott — a
+> `glimmer::TiledImageMask` **nem `ImageOperation`**, ezért hiányzott a
+> műveleti táblából.
+
+*Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre és az
+attribútum-offszetekre; a `QuantizePalette` `Depth`-jelentése, a
+levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
