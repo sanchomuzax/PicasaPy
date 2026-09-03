@@ -54,84 +54,84 @@ ColumnLayout {
             label: qsTr("Sharpen")
             onButtonClicked: if (!panel.tryOpenParamPanel("unsharp", label)) panel.effectRequested("unsharp")
             thumbSource: panel.effectThumbSource("unsharp")
-            appliedCount: panel.effectAppliedCount("unsharp")
+            badge: panel.hasBadge("unsharp")
         }
         PanelButton {
             objectName: "effectSepia"
             label: qsTr("Sepia")
             onButtonClicked: if (!panel.tryOpenParamPanel("sepia", label)) panel.effectRequested("sepia")
             thumbSource: panel.effectThumbSource("sepia")
-            appliedCount: panel.effectAppliedCount("sepia")
+            badge: panel.hasBadge("sepia")
         }
         PanelButton {
             objectName: "effectBw"
             label: qsTr("B&W")
             onButtonClicked: if (!panel.tryOpenParamPanel("bw", label)) panel.effectRequested("bw")
             thumbSource: panel.effectThumbSource("bw")
-            appliedCount: panel.effectAppliedCount("bw")
+            badge: panel.hasBadge("bw")
         }
         PanelButton {
             objectName: "effectWarm"
             label: qsTr("Warmify")
             onButtonClicked: if (!panel.tryOpenParamPanel("warm", label)) panel.effectRequested("warm")
             thumbSource: panel.effectThumbSource("warm")
-            appliedCount: panel.effectAppliedCount("warm")
+            badge: panel.hasBadge("warm")
         }
         PanelButton {
             objectName: "effectGrain2"
             label: qsTr("Film Grain")
             onButtonClicked: if (!panel.tryOpenParamPanel("grain2", label)) panel.effectRequested("grain2")
             thumbSource: panel.effectThumbSource("grain2")
-            appliedCount: panel.effectAppliedCount("grain2")
+            badge: panel.hasBadge("grain2")
         }
         PanelButton {
             objectName: "effectTint"
             label: qsTr("Tint")
             onButtonClicked: if (!panel.tryOpenParamPanel("tint", label)) panel.effectRequested("tint")
             thumbSource: panel.effectThumbSource("tint")
-            appliedCount: panel.effectAppliedCount("tint")
+            badge: panel.hasBadge("tint")
         }
         PanelButton {
             objectName: "effectSat"
             label: qsTr("Saturation")
             onButtonClicked: if (!panel.tryOpenParamPanel("sat", label)) panel.effectRequested("sat")
             thumbSource: panel.effectThumbSource("sat")
-            appliedCount: panel.effectAppliedCount("sat")
+            badge: panel.hasBadge("sat")
         }
         PanelButton {
             objectName: "effectRadblur"
             label: qsTr("Soft Focus")
             onButtonClicked: if (!panel.tryOpenParamPanel("radblur", label)) panel.effectRequested("radblur")
             thumbSource: panel.effectThumbSource("radblur")
-            appliedCount: panel.effectAppliedCount("radblur")
+            badge: panel.hasBadge("radblur")
         }
         PanelButton {
             objectName: "effectGlow2"
             label: qsTr("Glow")
             onButtonClicked: if (!panel.tryOpenParamPanel("glow2", label)) panel.effectRequested("glow2")
             thumbSource: panel.effectThumbSource("glow2")
-            appliedCount: panel.effectAppliedCount("glow2")
+            badge: panel.hasBadge("glow2")
         }
         PanelButton {
             objectName: "effectAnsel"
             label: qsTr("Filtered B&W")
             onButtonClicked: if (!panel.tryOpenParamPanel("ansel", label)) panel.effectRequested("ansel")
             thumbSource: panel.effectThumbSource("ansel")
-            appliedCount: panel.effectAppliedCount("ansel")
+            badge: panel.hasBadge("ansel")
         }
         PanelButton {
             objectName: "effectRadsat"
             label: qsTr("Focal Saturation")
             onButtonClicked: if (!panel.tryOpenParamPanel("radsat", label)) panel.effectRequested("radsat")
             thumbSource: panel.effectThumbSource("radsat")
-            appliedCount: panel.effectAppliedCount("radsat")
+            badge: panel.hasBadge("radsat")
         }
         PanelButton {
             objectName: "effectDirTint"
             label: qsTr("Graduated Tint")
             onButtonClicked: if (!panel.tryOpenParamPanel("dir_tint", label)) panel.effectRequested("dir_tint")
             thumbSource: panel.effectThumbSource("dir_tint")
-            appliedCount: panel.effectAppliedCount("dir_tint")
+            badge: panel.hasBadge("dir_tint")
         }
     }
 }

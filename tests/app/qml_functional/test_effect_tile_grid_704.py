@@ -61,6 +61,16 @@ class _EditControllerStub(QObject):
         return []
 
     @Property("QVariant", constant=True)
+    def oneClickEffects(self):
+        """#2126: a csonk a VALÓDI forrásból adja a listát.
+
+        Ha itt kézzel írt listát adnánk, az őr a saját másolatát mérné, és
+        a leltár elromlására nem bukna."""
+        from picasapy.render.registry import one_click_keys
+
+        return list(one_click_keys())
+
+    @Property("QVariant", constant=True)
     def effectChainCounts(self):
         return self._chain
 
@@ -165,49 +175,60 @@ class TestNincsFejlecsav:
 # ==========================================================================
 # 2. „Alkalmazva" jelvény
 # ==========================================================================
-class TestAlkalmazvaJelveny:
-    """#704/2. — a rácsról látszania kell, mely effektek vannak a képen."""
+class TestEgykattintasosJelveny:
+    """#2126 — a kék jelvényt a szűrő MÓDJA kapcsolja, nem az alkalmazottság.
 
-    def test_nincs_jelveny_ures_lancon(self, qt_app) -> None:
+    A #704 eredetileg az „alkalmazva" számlálóra kötötte. A #1869 mérése
+    szerint ez téves modell: a csempeépítő (`0x005d7c20`) a szűrő-leíró `+4`
+    mezőjét olvassa és `== 1`-re teszi láthatóvá az `fx%d_adorn` vezérlőt; a
+    `+4` a `mode` egésszé fordítva (`0x00900490`: `oneclick` → 1). A
+    tulajdonos ott is látott jelvényt, ahol egyetlen effekt sem volt
+    alkalmazva.
+
+    ⚠️ A Filmszemcse csempéjére NEM állítunk semmit: nálunk a `grain2`-höz
+    köt (`oneclick`), az eredetiben a csempe elsődlegese a `PicnikGrain`
+    (`mode="effect"`) — a csempe-tábla (`0x00c7e5a0`) szerint. Külön jegy:
+    #2141.
+    """
+
+    def test_az_EGYKATTINTASOS_csempen_URES_lancon_is_van_jelveny(self, qt_app) -> None:
         gyoker = _render(qt_app, 2, chain={})
 
-        jelveny = _child(gyoker, "effectSepiaBadge")
-
-        assert not jelveny.isVisible(), (
-            "üres szerkesztési láncon is jelvényt mutat a Szépia csempéje"
+        assert _child(gyoker, "effectSepiaBadge").isVisible(), (
+            "a Szépia (mode=oneclick) csempéjén üres láncon sincs jelvény — "
+            "a feltétel valószínűleg visszakerült az alkalmazottságra (#2126)"
         )
 
-    def test_a_lancban_levo_effekt_jelvenyt_kap(self, qt_app) -> None:
-        gyoker = _render(qt_app, 2, chain={"sepia": 1})
+    def test_a_lanc_NEM_szamit(self, qt_app) -> None:
+        """Ugyanaz a csempe, alkalmazott effekttel: a jelvény változatlan."""
+        gyoker = _render(qt_app, 2, chain={"sepia": 2})
 
-        jelveny = _child(gyoker, "effectSepiaBadge")
+        assert _child(gyoker, "effectSepiaBadge").isVisible()
 
-        assert jelveny.isVisible(), (
-            "a láncban szereplő Szépia csempéje nem kap alkalmazva-"
-            "jelvényt — a felhasználó a rácsról nem tudja megállapítani, "
-            "mely effektek vannak már a képen (#704)"
-        )
+    def test_a_NEM_egykattintasos_csempen_NINCS_jelveny(self, qt_app) -> None:
+        """Ez az őr foga: alkalmazott effekttel SEM kaphat jelvényt."""
+        gyoker = _render(qt_app, 2, chain={"tint": 1, "sat": 3})
 
-    def test_a_tobbi_csempe_jelvenytelen_marad(self, qt_app) -> None:
-        gyoker = _render(qt_app, 2, chain={"sepia": 1})
+        for nev in ("effectTintBadge", "effectSatBadge"):
+            assert not _child(gyoker, nev).isVisible(), (
+                f"a(z) {nev} jelvényt kapott, pedig a szűrője nem oneclick — "
+                "a feltétel az alkalmazottságra hallgat (#2126)"
+            )
 
-        assert not _child(gyoker, "effectBwBadge").isVisible()
+    def test_a_tobbi_EGYKATTINTASOS_is_kap(self, qt_app) -> None:
+        gyoker = _render(qt_app, 2, chain={})
 
-    def test_a_jelvenyen_szam_all(self, qt_app) -> None:
-        """A jelvényen SZÁM van — de a szám JELENTÉSÉRE nem építünk.
+        for nev in ("effectBwBadge", "effectWarmBadge"):
+            assert _child(gyoker, nev).isVisible(), f"{nev}: hiányzik a jelvény"
 
-        A spec 3.4 az egyik olvasatot cáfolja (nem lánc-sorszám: egy
-        felvételen három csempén egyszerre áll „1"), a másikat sem igazolja
-        (azon a felvételen a fotó szerkesztetlen). Amíg a `FUN_005d7c20`
-        dekompilálása vagy a célzott képernyőkép-kérés nem dönt, ez az őr
-        csak annyit rögzít, hogy a jelvény SZÁMOT mutat — a konkrét értékre
-        semmilyen viselkedés nem épül."""
-        gyoker = _render(qt_app, 2, chain={"sepia": 2, "warm": 1})
+    def test_a_jelvenyen_ALLANDO_1_all(self, qt_app) -> None:
+        """A szám nem számláló: a feltétel `== 1`, tehát más érték nem is
+        jelenhet meg. Alkalmazott effekttel sem változik."""
+        gyoker = _render(qt_app, 2, chain={"sepia": 3, "warm": 2})
 
         for name in ("effectSepiaBadgeText", "effectWarmBadgeText"):
-            szoveg = _child(gyoker, name).property("text")
-            assert szoveg.isdigit() and int(szoveg) >= 1, (
-                f"a(z) {name} jelvényén nem szám áll: {szoveg!r}"
+            assert _child(gyoker, name).property("text") == "1", (
+                f"a(z) {name} jelvényén nem »1« áll"
             )
 
     def test_a_jelveny_a_belyegkep_jobb_also_sarkaban_ul(self, qt_app) -> None:
@@ -244,11 +265,21 @@ class TestAlkalmazvaJelveny:
 
         assert (jelveny.width(), jelveny.height()) == (13.0, 12.0)
 
-    def test_a_masik_ket_effekt_fulon_is_mukodik(self, qt_app) -> None:
-        """A jelvény nem az egyik fül egyedi kiegészítése."""
-        gyoker = _render(qt_app, 3, chain={"lomo": 1})
+    def test_a_masik_ket_effekt_fulon_NINCS_egykattintasos_csempe(
+        self, qt_app
+    ) -> None:
+        """#2126: a 3–4. effekt-fülön egyetlen `mode="oneclick"` csempe sincs
+        — tehát ott jelvénynek sem szabad lennie, alkalmazott effekttel sem.
 
-        assert _child(gyoker, "effectLomoBadge").isVisible()
+        Korábban (#704) ez az eset azt állította, hogy a láncba tett Lomo
+        jelvényt kap. A Lomo `mode="effect"`, tehát az EREDETIBEN nincs rajta
+        jelvény: az állítás a téves modellt rögzítette."""
+        gyoker = _render(qt_app, 3, chain={"lomo": 1, "holga": 2})
+
+        for nev in ("effectLomoBadge", "effectHolgaBadge"):
+            assert not _child(gyoker, nev).isVisible(), (
+                f"a(z) {nev} jelvényt kapott, pedig a szűrője nem oneclick"
+            )
 
 
 class TestAFulekCsempeszama:

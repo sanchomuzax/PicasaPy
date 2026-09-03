@@ -34,10 +34,12 @@ Rectangle {
     // igazítás) — a `ToolTile` „benyomott" mintáját követi, ugyanabból a
     // jelző-kék tokenből, hogy sötét témában is olvasható maradjon
     property bool active: false
-    // #704: „alkalmazva" jelvény — hányszor szerepel ez az effekt a
-    // szerkesztési láncban. 0 = nincs jelvény (a legtöbb PanelButton-hívó:
-    // az Undo/Redo/Apply/Cancel/vágás-gombok sose adnak meg ilyet).
-    property int appliedCount: 0
+    // #2126: kék jelvény — a csempe szűrője EGYKATTINTÁSOS-e (`mode`).
+    // Korábban (#704) az „alkalmazva" számláló kapcsolta, de a #1869 mérése
+    // szerint az eredetiben a jelvénynek semmi köze a szerkesztési lánchoz:
+    // a csempeépítő a szűrő-leíró `mode` mezőjét olvassa. A legtöbb
+    // PanelButton-hívó (Undo/Redo/Apply/Cancel/vágás) sose ad meg ilyet.
+    property bool badge: false
     // A jelvény kékje az EREDETI felvételen MÉRT érték (#379FFD,
     // `ui-audit-editor.md` 3.3), nem a témapaletta valamelyik közelítése.
     // Nem téma-token, mert a `Theme.qml` bővítése ehhez a körhöz nem
@@ -258,7 +260,7 @@ Rectangle {
     Item {
         id: pbtnBadge
         objectName: pbtn.objectName ? pbtn.objectName + "Badge" : ""
-        visible: pbtn.appliedCount > 0 && pbtn.thumbSource !== ""
+        visible: pbtn.badge && pbtn.thumbSource !== ""
         anchors.right: pbtnThumbBox.right
         anchors.bottom: pbtnThumbBox.bottom
         width: 13
@@ -297,7 +299,11 @@ Rectangle {
             anchors.right: parent.right
             anchors.rightMargin: 2
             anchors.verticalCenter: parent.verticalCenter
-            text: pbtn.appliedCount > 0 ? pbtn.appliedCount.toString() : ""
+            // #2126: a szám ÁLLANDÓ „1". Az eredetiben a jelvény akkor és
+            // csak akkor látszik, ha a szűrő módja `oneclick` — a
+            // csempeépítő `== 1`-re vizsgál —, tehát más érték nem is
+            // jelenhet meg. Nem számláló.
+            text: pbtn.badge ? "1" : ""
             font.pixelSize: Theme.fontSize - 3
             font.bold: true
             color: Theme.panelSelectionText
