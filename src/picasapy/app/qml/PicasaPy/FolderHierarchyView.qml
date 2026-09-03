@@ -34,6 +34,12 @@ Item {
     // komponens magasságát is, ezért felülírhatónak kell lennie.
     property int rowHeight: 22
 
+    // #2049: „Indexképek megjelenítése a könyvtárban" — a fasorok fotó-kupac
+    // borítója. A `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+    property bool albumThumbs:
+        (root.hierarchy && root.hierarchy.albumThumbs !== undefined)
+            ? root.hierarchy.albumThumbs : false
+
     signal folderChosen(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
@@ -121,10 +127,47 @@ Item {
                     }
                 }
 
-                FolderIcon {
-                    size: 13
+                // #2049: az eredeti a fasorokon nem sárga mappaikont mutat,
+                // hanem a mappa első legfeljebb négy fotójából
+                // összeállított kis kupacot — de CSAK ha az „Indexképek
+                // megjelenítése a könyvtárban" be van kapcsolva
+                // (`ShowAlbumThumbnails2`, alapérték 0). Ha nincs borító
+                // (kép nélküli mappa), a sor a mappaikonjára esik vissza:
+                // az eredeti is helyettesítő ikonokat sorol fel erre az
+                // esetre (`0x00761870`: `icons/folder`, `icons/album`, …).
+                Item {
+                    objectName: "hierFolderCover:" + row.modelData.path
                     visible: !row.isRoot
+                    width: 13
+                    height: root.rowHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
+
+                    readonly property bool boritoLatszik:
+                        root.albumThumbs && borito.status === Image.Ready
+
+                    FolderIcon {
+                        size: 13
+                        visible: !parent.boritoLatszik
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Image {
+                        id: borito
+                        objectName: "hierFolderCoverImage:" + row.modelData.path
+                        anchors.centerIn: parent
+                        // A kupac magasabb, mint széles; a fasor magassága
+                        // szabja meg, a szélessége ehhez igazodik.
+                        height: parent.height
+                        fillMode: Image.PreserveAspectFit
+                        visible: parent.boritoLatszik
+                        asynchronous: true
+                        // ⚠️ Üres forrással a `status` `Null` marad, tehát a
+                        // kikapcsolt állapotban NEM készül borító: a
+                        // szolgáltató meg sem szólal.
+                        source: root.albumThumbs
+                                ? "image://foldercover/" + row.modelData.path
+                                : ""
+                    }
                 }
 
                 Text {

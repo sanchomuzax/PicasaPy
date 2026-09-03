@@ -4754,6 +4754,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Egyszerűsített fanézet</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Show Thumbnails in Library</source>
+        <translation>Indexképek megjelenítése a könyvtárban</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
         <source>Sort by creation date</source>
         <translation>Rendezés létrehozási dátum alapján</translation>

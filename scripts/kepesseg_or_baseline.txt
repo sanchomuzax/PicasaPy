@@ -73,6 +73,7 @@ controller.folderDescription FELVÁLTVA — a felület a mappánkénti folderDes
 controller.setFolderDescription FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja
 fileOpsController.movePhoto FELVÁLTVA — a QML a többes movePhotos alakot hívja
 folderHierarchyController.setSimplified FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt
+folderHierarchyController.setAlbumThumbs FELVÁLTVA — a menü a toggleAlbumThumbs-t hívja, az hívja ezt
 
 # -- BELSŐ: a terméken belül Pythonból hívjuk ------------------------------
 controller.restoreSession BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor
