@@ -128,7 +128,10 @@ class TestProjectFolderClickWiring:
 
 class TestFoldersViewIsNotBroken:
     """⚠️ A legvalószínűbb regresszió: a Mappák gyűjtemény listája ne
-    veszítsen sort attól, hogy a Projektek megtelt."""
+    veszítsen sort attól, hogy a Projektek megtelt.
+
+    #2031: a projekt-mappa **szándékosan** kimarad innen (a #1033
+    verdiktje), a többi mappa viszont nem tűnhet el."""
 
     def test_folder_list_still_shows_every_folder(
         self, qml_app, qt_app, tmp_path
@@ -146,6 +149,6 @@ class TestFoldersViewIsNotBroken:
         folder_list = window.findChild(QObject, "folderListView")
         assert folder_list is not None, "folderListView nem található"
         model = folder_list.property("model")
-        # a gyökér + a két almappa — a projekt-mappa is MARAD a listában
-        assert model.property("folderCount") == 3
+        # a gyökér + a `nyaralas` — a projekt-mappa a Projektek alá került (#2031)
+        assert model.property("folderCount") == 2
         assert str(lib / "nyaralas") in controller.folders.folder_paths()

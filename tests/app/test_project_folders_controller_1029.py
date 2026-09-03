@@ -94,13 +94,28 @@ class TestProjectFoldersProperty:
 
 
 class TestFoldersViewIsNotBroken:
-    """⚠️ A legvalószínűbb regresszió: a Mappák nézet MINDEN mappája
-    megmarad — a `Folders on Disk` értékű is, a projekt-mappa is."""
+    """⚠️ A legvalószínűbb regresszió: a Mappák nézet elveszít egy sort.
 
-    def test_folder_list_still_has_every_folder(self, controller, library):
+    A #2031 óta a projekt-mappa **szándékosan** kimarad innen (a #1033
+    verdiktje: a `P2category` KIZÁRÓ, tehát az eredetiben a projekt-mappa
+    csak a Projektek alatt látszik). Ez az osztály ezért már nem azt őrzi,
+    hogy MINDEN mappa bent van, hanem hogy a kizárás **pontosan** a
+    projekt-mappára szorítkozik — a `Folders on Disk` értékű nem tűnhet el."""
+
+    def test_a_nem_projekt_mappa_bent_marad(self, controller, library):
         paths = set(controller.folders.folder_paths())
         assert str(library / "nyaralas") in paths
-        assert str(library / "Kollázsok") in paths
+
+    def test_a_projekt_mappa_kimarad(self, controller, library):
+        """#2031: pontosan egy hasáb-csomópont alatt szerepel."""
+        paths = set(controller.folders.folder_paths())
+        assert str(library / "Kollázsok") not in paths
+
+    def test_a_projekt_mappa_a_projektek_alatt_megvan(self, controller, library):
+        """A kizárás MEGJELENÍTÉSI, nem törlés — az index érintetlen."""
+        projekt_utak = {m.path for m in controller._project_folders}
+        assert str(library / "Kollázsok") in projekt_utak
 
     def test_folder_count_is_unchanged(self, controller):
-        assert controller.folders.folderCount == 2
+        """Kettőből egy: csak a projekt-mappa esett ki (#2031)."""
+        assert controller.folders.folderCount == 1
