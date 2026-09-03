@@ -497,6 +497,124 @@ belül a `strength` viselkedése **1 fölött** (a Comicize 1,1-et ad; a mi
 modellünk a súlyt `[0,1]`-re vágja, tehát telít). Ez a Vignette-et és a
 Matte-ot is érinti. Nyitott kérdés: #2076.
 
+
+#### A `mode` attribútum SZÁMÉRTÉKE — és az effekt-csempe kék jelvénye (#1869)
+
+A `mode` nem csak besorolás: a parser **egésszé fordítja**, és ez az egész
+kapcsolja a csempe jobb alsó sarkában látható kék jelvényt.
+
+**A `mode` → egész leképzés — TELJES, a `0x00900490`-ből kiolvasva:**
+
+| `mode` | érték | a sztring címe |
+|---|---|---|
+| `oneclick` | **1** | `0x00cd182c` |
+| `hard` | 2 | `0x00cd1824` |
+| `effect` | 4 | `0x00cd1814` |
+| `soft` | 5 | `0x00cd181c` |
+| `tool` | 6 | `0x00cd1838` |
+| `history` | 7 | `0x00cd1840` |
+| bármi más | **0** | — |
+
+*(A 3-as érték nincs kiosztva. A `history` ága `neg al; sbb eax,eax; and eax,7`
+— egyezésre 7, egyébként 0.)*
+
+**Hol lesz ebből a `FilterDesc` mezője.** A `filterdesc.xml` parsere
+(`CImageFilterRegistrar::+0x04`, `0x008ff550`) az attribútumnevet a
+`0x00cd1730` = `"mode"` sztringgel veti össze; egyezésre:
+
+```
+0x008ff693  call 0x900490            ; mode → egész
+0x008ff698  mov dword ptr [esp+0x28], eax
+   …
+0x008ff81f  call 0x8f6910            ; FilterDesc konstruktor (+4 := 0)
+0x008ff847  mov dword ptr [eax+4], ecx   ; ★ FilterDesc+4 := a mode egésze
+0x008ff851  mov dword ptr [edx+8], eax   ; FilterDesc+8 := a zerostate egésze
+```
+
+**A jelvény feltétele — a fogyasztó oldaláról.** A csempéket felépítő
+`0x005d7c20` (1614 b) minden csempére:
+
+```
+0x005d7eb9  mov edx, [eax+0x14]      ; CGenericFilter vtable +0x14 = 0x008f6cc0
+0x005d7ebc  call edx                 ;   -> this->desc->[+4]
+0x005d7ec2  cmp eax, 1
+0x005d7eca  sete byte ptr [esp+0x64] ; ★ a jelvény-jelző
+   …
+0x005d80d4  push 0xc96304            ; "editpanel/fx%d_adorn"
+0x005d8108  cmp byte ptr [esp+0x64], 0
+0x005d8111  mov eax, [edx+0x6c]      ; igaz  -> MUTAT
+0x005d8116  mov eax, [edx+0x68]      ; hamis -> REJT
+```
+
+⇒ **A kék jelvény jelentése: `mode="oneclick"`.** Az „1" nem számláló és nem
+erőforrás-index — az `oneclick` mód **enum-értéke**. Ezért nem is látható más
+számjegy: a feltétel szigorúan `== 1`.
+
+**Az effekt-csempék TELJES táblája — `0x00c7e5a0`, 36 rekord × 12 bájt.**
+A rekord első mezője a mai szűrő azonosítója, a második a régi (örökölt)
+azonosító vagy `NULL`. Tizenkét csempe fülenként, tehát **három effekt-fül**:
+
+| # | csempe (mai id) | örökölt id | `mode` | jelvény |
+|---|---|---|---|---|
+| 1 | `unsharp2` | `unsharp` | effect | – |
+| 2 | **`sepia`** | – | **oneclick** | **✔** |
+| 3 | **`bw`** | – | **oneclick** | **✔** |
+| 4 | **`warm`** | – | **oneclick** | **✔** |
+| 5 | `PicnikGrain` | `grain` | effect | – |
+| 6 | `PicnikTint` | `tint` | effect | – |
+| 7 | `sat` | – | effect | – |
+| 8 | `radblur` | – | effect | – |
+| 9 | `glow2` | `glow` | effect | – |
+| 10 | `ansel` | – | effect | – |
+| 11 | `radsat` | – | effect | – |
+| 12 | `dir_tint` | `radtint` | effect | – |
+| 13 | `IR` | – | effect | – |
+| 14 | `Lomo` | – | effect | – |
+| 15 | `Holga` | – | effect | – |
+| 16 | `HDR` | – | effect | – |
+| 17 | `Cinemascope` | – | effect | – |
+| 18 | `Orton` | – | effect | – |
+| 19 | `Sixties` | – | effect | – |
+| 20 | `Invert` | – | effect | – |
+| 21 | `HeatMap` | `NightVision` | effect | – |
+| 22 | `CrossProcess` | – | effect | – |
+| 23 | `QuantizePalette` | – | effect | – |
+| 24 | `TwoTone` | – | effect | – |
+| 25 | `Boost` | – | effect | – |
+| 26 | `Soften` | – | effect | – |
+| 27 | `Vignette` | `Matte` | effect | – |
+| 28 | `Pixelate` | `PicnikFocalPixelate` | effect | – |
+| 29 | `FocalZoom` | – | effect | – |
+| 30 | `PencilSketch` | – | effect | – |
+| 31 | `Neon` | – | effect | – |
+| 32 | `Comicize` | – | effect | – |
+| 33 | `Border` | `RoundedEdges` | effect | – |
+| 34 | `DropShadow` | – | effect | – |
+| 35 | `MuseumMatte` | – | effect | – |
+| 36 | `Polaroid` | – | effect | – |
+
+**Ez oldja fel a #1869 „Filmszemcse nincs megjelölve" rejtvényét:** a
+Filmszemcse csempéje a **`PicnikGrain`**-hez kötődik (`mode="effect"`), nem a
+`grain`/`grain2`-höz — azok `oneclick`-ek ugyan, de **nincs csempéjük**. A 12
+`oneclick` szűrőből csak három van a 36 csempe közt.
+
+**A vizsgált bináris VERZIÓJA — mérve:** `Picasa3.exe` `3.9.141.259`
+(`strings -el`), tehát a `research/copy_Picasa_3_7/` mappanév **félrevezető**;
+a `filterdesc.xml` ugyanabból a telepítésből való. A „más verziót nézünk"
+magyarázat ezzel **kizárva**.
+
+> ⚠️ **Egy megfigyelés NEM illeszkedik**, és ezt nem söpörjük a szőnyeg alá: a
+> tulajdonos **négy** jelvényt látott, a negyediket a **Színinvertálás**
+> csempén (`Invert`, a 2. effekt-fül 8. csempéje). Az `Invert` viszont
+> `mode="effect"` (a `filterdesc.xml` **egyetlen** `id="Invert"` sora, 986.).
+> A fenti lánc szerint ott nem lehetne jelvény. Ez **nyitott ellentmondás**,
+> jegy: **#2125**.
+
+**Bizalmi fok:** a `mode`→egész tábla, a `FilterDesc+4` írása, a jelvény
+feltétele és a 36 elemű csempe-tábla **megerősített** (közvetlen kiolvasás).
+A „három jelvény, mind az 1. effekt-fülön" **következtetés** a fentiekből —
+a negyedik megfigyelés ellentmondása feloldatlan.
+
 #### A `GlowImageOperation` keverése: KÖZÖNSÉGES source-over (#2102)
 
 A #2076 után nyitva maradt kérdés első fele **eldőlt**: a ragyogás-réteg
