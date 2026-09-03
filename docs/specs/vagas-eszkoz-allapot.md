@@ -185,6 +185,8 @@ kap ilyet a PicasaPy, az **saját kiegészítés**, nem az eredeti utánzása.
 
 ## 4/b. Lezárt nyitott kérdés: mit tesz az „Alaphelyzet"? (#1528)
 
+*Forrás: `editpanel.tre:830` (`editpanel/cropdiscard`).*
+
 A #1528 nyitó kérdése az volt, hogy az eredeti „Alaphelyzet" a MENTETT
 vágást szünteti-e meg, vagy csak a húzott kijelölést. **A választ az
 eredeti saját szövegforrása adja, nem következtetés:**
@@ -206,7 +208,6 @@ le.
 pedig tiltott, ha nincs mit elvetni (`cropResetEnabled` — kijelölés VAGY
 `hasCrop`). Az elvetés a szokásos visszavonás-veremre kerül `crop` néven,
 tehát a Visszavonás gomb visszahozza (#465).
-
 ## 4/c. Lezárt nyitott kérdés: az Alkalmaz HALMOZ, nem von össze (#1553)
 
 A #1550 mérése közben derült ki, hogy a vágó-eszköz **Alkalmaz** gombja

@@ -208,6 +208,8 @@ bal mappa-panel **210 px** (benne az albumlista 196 px) · jobb fiók
 
 ### Tömör kitöltések — HÁROM tokenünk igazolva
 
+*Forrás: `headerpanel.tre:167` (`headerpanel/headerbase0`) · `thumbui.tre:715` (`thumbui/basepanel`) · `thumbui.tre:304` (`thumbui/scratchpadbase`).*
+
 | réteg | szín | tokenünk |
 |---|---|---|
 | `thumbui/basepanel` | `#e8e8e8` | `chromeBg` ✅ |
@@ -225,7 +227,6 @@ Erre nincs tokenünk. Az „Emberek" panel alapja `#e2e2e2`.
 > `decrect`, `static`) színe hiteles. A `clip`/`superbutton`/`buttcontainer`
 > típusoknál a szín gyakran csak találat-teszt maszk (pl. lila, mustársárga
 > értékek) — ezeket **nem szabad** UI-színként átvenni.
-
 ### Gombméretek
 
 A leggyakoribb kettő: **14×14 px** (kis ikongombok) és **55×36 px** (a tálca

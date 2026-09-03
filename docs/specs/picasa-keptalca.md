@@ -29,6 +29,8 @@ teljességén áll.*
 
 ## 2. A vezérlők — és amiben a #455 leírása PONTATLAN
 
+*Forrás: `thumbui.tre:337` (`thumbui/addtobuttcon`) · `thumbui.tre:326` (`thumbui/scratchclear`) · `thumbui.tre:317` (`thumbui/scratchhold`) — és további 1 elem ugyanott.*
+
 A `.tre` szerint a tálca **négy** vezérlőt hordoz. **A gombokon NINCS
 felirat**: a `.tre`-ben a `#Label` sorok **ki vannak kommentezve**, tehát
 ikon + súgóbuborék az egész.
@@ -43,7 +45,6 @@ ikon + súgóbuborék az egész.
 ⚠️ A **#455 „Kijelölés megtartása" / „Kijelölés eltávolítása" gombfeliratot**
 említ. Ezek **nem gombfeliratok**, hanem a `Tray` **helyi menü** két
 parancsának feliratai (ld. 3.).
-
 ### 2.1 Geometria — kényszerekből, nem respackből
 
 A tálca dobozát a `.tre` kényszerei adják (a respackben csak az **ikonok**
@@ -845,6 +846,8 @@ tokent. A #1919 vonatkozó „Kész, ha” pontját törölni kell.
 
 ### 20.5 Geometria — MÉRVE
 
+*Forrás: `scratch.tre:36` (`scratch/album`) · `scratch.tre:10` (`scratch/albumcover`) · `scratch.tre:31` (`scratch/albumlabel`) — és további 2 elem ugyanott.*
+
 **A csomagból** (tervezővászon-koordináták, `int16 x0,y0,x1,y1`):
 
 | réteg | téglalap | méret | szín |
@@ -884,7 +887,6 @@ helyőrző.
 > eldob, és amit a `picasa-respack-format.md` tévesen ír le. Jegy:
 > **#2178**. A 179/256 = 69,9% fehér fölött RGB(109,157,189)-et ad — a
 > képernyőn mért (107,153,186) ettől csatornánként ≤4-gyel tér el.
-
 ### 20.6 ⛔ NEGATÍV: a `0x00d67914` NEM funkciókapcsoló
 
 Az `UpdateAlbumCover` a `scratch/albumcover` feloldását egy globális
@@ -949,6 +951,8 @@ Szerkezeti horgony: `outputlayout.tre` — minden gomb az
 
 ### 21.2 ⭐ A `morebutton` a TÚLCSORDULÁS-gomb — nálunk nincs
 
+*Forrás: `outputlayout.tre:99` (`outputlayout/blogger`) · `outputlayout.tre:111` (`outputlayout/collage`) · `outputlayout.tre:51` (`outputlayout/ebutton`) — és további 6 elem ugyanott.*
+
 | | angol | **magyar** |
 |---|---|---|
 | felirat | More... | **További lehetőségek...** |
@@ -981,7 +985,6 @@ minden 55 × 36-os cella, a maradék a „További lehetőségek…" mögé ker�
 *(A `sharewith` (Hello) és a `blogger` megszűnt Google-szolgáltatásokhoz
 tartozik — hatókörön kívül, ugyanazon az alapon, mint a `publish` webes
 ága.)*
-
 ### 21.3 Eredeti / nálunk — MÉRVE
 
 | | eredeti | nálunk (mérve) |

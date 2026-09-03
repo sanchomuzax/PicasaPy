@@ -134,6 +134,8 @@ editoneup/tpslabel  Text      Megjelenítési idő
 
 ## 2. Angol → hivatalos Picasa-magyar szójegyzék
 
+*Forrás: `editpanel.tre:1258` (`editpanel/captiontrash`) · `editpanel.tre:136` (`editpanel/crop`) · `editpanel.tre:754` (`editpanel/crop_label`) — és további 12 elem ugyanott.*
+
 | Angol | Hivatalos Picasa-magyar | Forrás (DLL-azonosító) |
 |---|---|---|
 | Album | Album / Albumok | `Album::ID_ALBUM_DELETE` ("Album törlése"), `eMenuFile::ID_FILE_NEWLABEL` ("Új album...") |
@@ -195,7 +197,6 @@ releváns, egyértelműen azonosítható tételeket emeli ki. A teljes anyag
 messze nem korlátozódik ennyire — rengeteg egyéb Picasa-funkció (webes
 feltöltés, Google Fiókok, nyomtatás, DVD-írás stb.) fordítása is megvan
 benne, de ezek a PicasaPy jelenlegi hatókörén kívül esnek.)*
-
 ## 3. Összevetés a PicasaPy `picasapy_hu.ts` fájllal
 
 A `picasapy_hu.ts` (2614 sor, `src/picasapy/app/i18n/picasapy_hu.ts`)

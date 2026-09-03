@@ -451,6 +451,8 @@ egyértelműsítik a szerep→ikon párosítást. Folytatás, ha kell:
 
 #### A fa ikonjai MÁS erőforrások, mint a rádiósoroké
 
+*Forrás: `foldermgr.tre:46` (`foldermgr/icon_always`) · `foldermgr.tre:43` (`foldermgr/icon_exclude`) · `foldermgr.tre:40` (`foldermgr/icon_once`) — és további 1 elem ugyanott.*
+
 | szerep | a jobb oldali rádiósorban | **a fában** | azonos? |
 |---|---|---|---|
 | Keresés egyszer | `foldermgr/icon_once` (643 b) | `icons/folder_manager_scan_once` (643 b) | **igen** |
@@ -466,7 +468,6 @@ erőforrásnevekre (a kód szó szerint ezeket kéri, a `constants.ui` szöveges
 fájl) · **megerősített** a 22 képpontos sormagasságra (kódból ÉS
 képernyőképről) · **megerősített** a kijelölés színére mint MÉRÉSRE (két
 független képernyőkép), de a forrása ismeretlen.*
-
 ### 4.5 Mi történik a fában KATTINTÁSRA
 
 A fa és a „Figyelt mappák" lista eseményeit a `0x007c5830` (971 bájt)
@@ -1986,6 +1987,8 @@ hibaüzenet nélkül.
 
 ## 15. „Eltávolítás a Picasából…" — a MENÜPONT teljes működése (2026-08-22)
 
+*Forrás: `foldermgr.tre:49` (`foldermgr/remove_label`).*
+
 ⚠️ **Ez NEM a Mappakezelő rádiógombja.** Két, magyarul majdnem azonos nevű
 dolog létezik, és a **hármaspont** különbözteti meg őket:
 
@@ -1993,7 +1996,6 @@ dolog létezik, és a **hármaspont** különbözteti meg őket:
 |---|---|---|
 | `foldermgr/remove_label` | „Eltávolítás a Picasából" | a **Mappakezelő rádiógombja** (állapot, ld. 5.) |
 | **`Folder::ID_MANAGE_ALBUM`** | **„Eltávolítás a Picasából…"** | **helyi menü / Mappa menü parancsa** — ez a szakasz |
-
 ### 15.1 A belépési pontok
 
 A parancskulcs **két** helyen szerepel:

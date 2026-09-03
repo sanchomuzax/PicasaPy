@@ -310,6 +310,8 @@ A **fiók-fül** (`drawertab/{n,h,p}`) 56 × 25.
 
 ## 8. Panelen belüli legördülők (`popuplist`)
 
+*Forrás: `collagepanel.tre:343` (`collagepanel/format_menu`) · `editpanel.tre:784` (`editpanel/crop_aspect_menu`) · `makemoviepanel.tre:287` (`makemoviepanel/fontfamily`) — és további 3 elem ugyanott.*
+
 A vezérlő maga **21 px magas** (a 43 `popuplist` rétegből 30 pontosan 21;
 a többi 19, 22 vagy 23).
 
@@ -335,7 +337,6 @@ a többi 19, 22 vagy 23).
 | `collagepanel/format_menu`, `thumbui/addtobuttcon` | **0** (= korlátlan) |
 
 ---
-
 ## 8/b A LETILTOTT állapot: alfa / 4 (2026-08-17, #893)
 
 Nincs `_d` réteg, mert nem kell — a csomópont-rajzoló (`0x009e2a60`) az

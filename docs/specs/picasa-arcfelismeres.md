@@ -1034,6 +1034,8 @@ gombkészlete. Szerkezeti horgony: `unknownfaceheaderpanel.tre:38`
 
 ### 15.7 Eredeti / nálunk — MÉRVE
 
+*Forrás: `faceheaderpanel.tre:185` (`faceheaderpanel/confirmsel`) · `faceheaderpanel.tre:181` (`faceheaderpanel/confirmsug`) · `faceheaderpanel.tre:125` (`faceheaderpanel/face_zoom`) — és további 4 elem ugyanott.*
+
 | | eredeti | nálunk (mérve) |
 |---|---|---|
 | a fejlécsáv | **három** változat (`headerpanel`, `faceheaderpanel`, `unknownfaceheaderpanel`) | **egy**, általános: `LightboxHeader.qml` |

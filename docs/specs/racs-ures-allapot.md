@@ -13,6 +13,8 @@ Testvérlapok: [`picasa-kereses-modok.md`](picasa-kereses-modok.md),
 
 ## 1. ⛔ A LEGFONTOSABB: a „Keresés mindenhol" gomb HALOTT
 
+*Forrás: `thumbui.tre:208` (`thumbui/lightbox_esolo_button`) · `thumbui.tre:200` (`thumbui/lightbox_esolo_text`).*
+
 A lefedettségi mérés két elemet jelölt hiányzónak:
 
 | elem | felirat |

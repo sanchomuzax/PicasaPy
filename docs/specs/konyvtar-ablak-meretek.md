@@ -316,6 +316,8 @@ filmkészítő **klip-gyűjtő módjának** üzenetsávja, és a `single_action_
 
 ### 5.9 Egyéb
 
+*Forrás: `thumbui.tre:130` (`thumbui/size`).*
+
 | elem | méret |
 |---|---:|
 | `toggle_right_drawer` | **15 × 16** |
@@ -323,7 +325,6 @@ filmkészítő **klip-gyűjtő módjának** üzenetsávja, és a `single_action_
 | `output_label` | 502 × 13 |
 
 ---
-
 ## 6. Megvalósítási ellenőrzőlista
 
 - [ ] bal panel **240 px** fix (ma 230 — integrátori lépés), de a **nem

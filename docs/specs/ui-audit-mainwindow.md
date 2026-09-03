@@ -151,6 +151,8 @@ Egyebek (1)                      ◀ gyűjtemény-fejléc
 
 ## 1.4 A MÁSIK nézetmód: valódi mappafa (2026-08-15)
 
+*Forrás: `thumbui.tre:412` (`thumbui/flatview`) · `thumbui.tre:406` (`thumbui/folderview`) · `thumbui.tre:421` (`thumbui/folderviewpopup`).*
+
 A panelnek **két, egymást kizáró nézetmódja** van, és eddig csak az egyiket
 auditáltuk. Az elrendezés-erőforrás egyértelmű (`thumbui.tre`, „listview
 toggle group"):
@@ -171,7 +173,6 @@ A `thumbui_text.tre` buboréksúgói mondják meg, melyik mit csinál:
 
 Mivel közös `hviewtoggle` szülő alatt ülnek, **egyszerre csak az egyik
 aktív** — ez a két lapos ikon a keresőmező bal oldalán.
-
 ### Amit a fanézet mutat (a tulajdonos képernyőképéről)
 
 A fanézet **nem** ugyanaz a lista más rendezésben, hanem **valódi
@@ -966,6 +967,8 @@ hivatkozza.
 
 ### A sáv elemei
 
+*Forrás: `searchcontainer.tre:31` (`searchcontainer/filter_label`) · `searchcontainer.tre:86` (`searchcontainer/filterbase`) · `searchcontainer.tre:12` (`searchcontainer/search`) — és további 7 elem ugyanott.*
+
 | elem | horgony | megjegyzés |
 |---|---|---|
 | `searchcontainer/searchbase` | bal-fent-jobbra | a háttér |
@@ -978,8 +981,9 @@ hivatkozza.
 | `searchcontainer/filterbase` | bal-fent | az öt szűrőgomb alapja |
 | `searchcontainer/timecontainer_label` | bal-fent | a dátumsáv felirata |
 | `searchcontainer/timecontainer` | bal-fent | a **dátum-tartomány** csúszka |
-
 ### Az ÖT szűrőgomb — sorrendben
+
+*Forrás: `searchcontainer.tre:49` (`searchcontainer/facesearch`) · `searchcontainer.tre:79` (`searchcontainer/geotagsearch`) · `searchcontainer.tre:59` (`searchcontainer/moviesearch`) — és további 2 elem ugyanott.*
 
 | # | azonosító | buboréksúgó (angolul a forrásban) |
 |---:|---|---|
@@ -998,7 +1002,6 @@ Mind az öt `Property mousedown 1`, és mind az öt ugyanazt a
 `SharedHandler searchcontainer/tip hottip searchcontainer/filter_label`
 sort viseli: **egérrel fölé húzva a „Szűrők" felirat helyén jelenik meg a
 súgó** — nem lebegő buborékban.
-
 ### ⚠️ A súgók NINCSENEK lefordítva — és a Google is tudta
 
 A fájl végén, közvetlenül a súgók előtt egy **fejlesztői megjegyzés** áll:
