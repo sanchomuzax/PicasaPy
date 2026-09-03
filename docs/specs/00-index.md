@@ -900,7 +900,9 @@ a fotó-rekordunknak — és a **`flip` mező negatív eredmény**
 (`imagedata_flipped.pmp`: 3 011/3 011 üres; a 859 fájlos ini-korpuszban 0 db
 `flip=` sor).
 
-### [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
+### [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-03)
+
+⭐ **2026-09-03 (22.5) — a saját 22.4-es szabályunk megsértése TIZENKÉT elembe került.** A lefedettségi mérő `feltáratlan` (kutatói kört igénylő) listájának mind a **100** tételét megvizsgálva: **19**-nek a TELJES `panel/elem` neve szerepel egy kézzel írt spec-lapon, és ebből **18 némán elveszett** — mind a **18/18** azért, mert a szakaszában nincs **horgony** (`0x…` cím vagy `fájl:sor`), és a `lekutatott_elemek()` az ilyen szakaszt teljesen átugorja. A 18-ból **12 valódi dokumentáció** volt: a `picasa-nyomtatas.md` printoptions-elemtáblája, ami csak egy **sorszám nélküli `.xml`-re** hivatkozott. Egyetlen bekezdésnyi javítás után, mérve: **feltáratlan 100 → 88, lekutatva 154 → 166.** A maradék 6 NEM dokumentáció (kurzor-tulajdonság felsorolások, illetve egy hiba-példa) — ezért mondja ki a szakasz, hogy **a puszta névelőfordulás nem lefedettség**, a találati SORT is meg kell nézni. ⛔ **Két saját, korábbi állítás MEGDŐLT ugyanebben a körben:** (1) „a mérő kimenete ingadozik" — nem, két futás **bájtra azonos**, a commitolt lap csak **elavult** volt; (2) „a lista 68%-a hamis" — az első, hibás mérésem száma; a helyes **12/100**. Az őr, ami ezt a jövőben megfogná, **nincs meg** — jegy: **#2182**.
 
 ⭐ **2026-09-03 (22. szakasz) — MEKKORA a 18. szakasz hibája? Lemérve.** A 18.
 kimondta a szabályt (*elemnév és cím egy szakaszban*), de senki nem mérte, hány
@@ -1107,7 +1109,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [export-parbeszed.md](export-parbeszed.md) | **Az „Exportálás mappába" párbeszéd** — a `export.fen` leíró, mind a 28 magyar felirat, a kötések, a 9 megőrzött beállítás, és a képminőség öt fokozatának **számértéke a binárisból** |
 | [kollazs-eletciklus.md](kollazs-eletciklus.md) | **A kollázs életciklusa** — a három állapot, az átmenetek, mindhárom párbeszéd szó szerint |
 | [picasa-bezaras-es-kilepes.md](picasa-bezaras-es-kilepes.md) | Mit zár be az „X" — bezárás és kilépés; a kilépési kapu 8 lépése, a négy kilépési figyelmeztetés (feltöltés, import, aktív szerkesztő-eszköz, `WarnClosePlugins`), minden bezáró gomb névparancsa, kilépéskori mentések. Nyitva: az `exit_nag` kapcsoló hatása |
-| [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
+| [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások; a printoptions-elemtábla **szerkezeti horgonyt** kapott (`printoptions.tre` / `printoptionstext.tre` sorszámok), ettől 12 eleme kikerült a „feltáratlan" listáról |
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
 | [picasa-elso-inditas.md](picasa-elso-inditas.md) | **Az első indítás `initialscan` panelje** — migrációs és tiszta-telepítés változat, geometria, a kihagyhatatlan választás |
@@ -1158,7 +1160,7 @@ anyagban); ezt a két szöveget **nem vesszük át**. Jegy-komment: **#1780**.
 
 | lap | miről szól |
 |---|---|
-| [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) | **A szerszámosláda**: mit hoz ki egy eszköz, és mit NEM lát |
+| [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) | **A szerszámosláda**: mit hoz ki egy eszköz, és mit NEM lát; **22.5: a horgony-előírás megsértése 12 leírt elemet tett láthatatlanná** a lefedettségi mérésben (#2182) |
 | [feature-map.md](feature-map.md) | Funkciótérkép és fázisterv |
 
 ## Mikor kell ezt a lapot frissíteni

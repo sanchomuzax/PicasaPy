@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 268 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 100 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 154 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 88 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 166 |
 | bizonytalan | 106 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -77,7 +77,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `publish` | 125 | 30 | 0 | 0 | 0 | 30 | 0 | 95 | 0 | **nincs-megfeleltetes** — Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk |
 | `editpanel` | 312 | 125 | 99 | 1 | 0 | 17 | 8 | 187 | 0 | `EditorPanel.qml`, `EditorTabBar.qml`, `EditorTabCommonFixes.qml`, `EditorFinetunePanel.qml`, `EditorEffectsTab1.qml`, `EditorEffectsTab2.qml`, `EditorEffectsTab3.qml`, `EditorEffectsTab4.qml`, `EditorLegacyTab.qml`, `EditorCropPanel.qml`, `EditorRedeyePanel.qml`, `EditorRetouchPanel.qml`, `EditorParamPanel.qml`, `EditorDialogs.qml`, `EditTabButton.qml`, `EditTabIcon.qml`, `CropOverlay.qml`, `HistogramBox.qml`, `AddCustomAspectRatioDialog.qml`, `EditOverwriteDialog.qml`, `BatchEditProgressPanel.qml`, `ToolTile.qml`, `PhotoViewer.qml` |
 | `thumbui` | 140 | 46 | 20 | 3 | 2 | 11 | 10 | 94 | 0 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
-| `printoptions` | 49 | 29 | 0 | 7 | 12 | 10 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
+| `printoptions` | 49 | 29 | 0 | 7 | 0 | 22 | 0 | 20 | 0 | **nincs-megfeleltetes** — Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel) |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 13 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `acquirepanel` | 67 | 24 | 12 | 0 | 7 | 0 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
@@ -247,8 +247,8 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 
 - `aa_2up_toggle` buboréksúgó: „View the same image twice” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `ab_2up_toggle` buboréksúgó: „View two different images” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
-- `edithelpbutton` buboréksúgó: „Help” — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005c24c0)
-- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x00567a00)
+- `edithelpbutton` buboréksúgó: „Help” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00a53b00)
+- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 - `edittextghost` — *bizonytalan*
 - `eraserbutton` — *bizonytalan*
 - `modaldialogblur` — *bizonytalan*
@@ -264,12 +264,12 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
 - `selection_label` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
 - `selection_label_zoom` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
-- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo” — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005f6410)
+- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 - `swap_2up_focus` buboréksúgó: „Switch which image has focus” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
-- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
+- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00a53b00)
 - `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0056aad0)
+- `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 
 ### `thumbui` — 23 hiány · panel-megfeleltetés: `parositva`
 
@@ -282,7 +282,7 @@ A fő könyvtárnézet egésze
 - `cdmode` „Gift CD” (magyarul: „Ajándék CD”) — 🔧 **lekutatva**, csak nem megépítve (kézi: ajandek-cd-kimenet.md)
 - `editpanel` — *bizonytalan*
 - `folderviewpopup` buboréksúgó: „View options” — 🔧 **lekutatva**, csak nem megépítve (picasa-konyvtar-eszkoztar-viselkedes.md: 0x005e2000)
-- `fullview` „Edit photos” (magyarul: „Fotók szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-megjelenitesi-modok.md: 0x005c95a0)
+- `fullview` „Edit photos” (magyarul: „Fotók szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-gyorsbillentyuk.md: 0x005e6178)
 - `hlisthandle` — *bizonytalan*
 - `hlistsizer` — *bizonytalan*
 - `hviewtoggle`
@@ -304,27 +304,27 @@ A fő könyvtárnézet egésze
 Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „Nyomtatás” füle más panel)
 
 - `apply` „Apply” (magyarul: „Alkalmaz”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
-- `border_color_label` „Border color” (magyarul: „Szegély színe”)
+- `border_color_label` „Border color” (magyarul: „Szegély színe”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 - `bottomonly_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `bottomonly_checkbox_label` „Bottom only” (magyarul: „Csak alul”)
+- `bottomonly_checkbox_label` „Bottom only” (magyarul: „Csak alul”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 - `cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
-- `caption_font_label` „Font” (magyarul: „Betűtípus”)
-- `caption_label` „Captions” (magyarul: „Képfeliratok”)
-- `caption_size_label` „Size” (magyarul: „Méret”)
+- `caption_font_label` „Font” (magyarul: „Betűtípus”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `caption_label` „Captions” (magyarul: „Képfeliratok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `caption_size_label` „Size” (magyarul: „Méret”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 - `colorpicker_bevel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `disabled_label` „Sorry, but these options cannot be used when printing contact sheets.” (magyarul: „Ezek a beállítások indexképek nyomtatásakor nem használhatók.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `evenwidth_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `evenwidth_checkbox_label` „Even width border” (magyarul: „Egyenletes szélességű szegély”)
+- `evenwidth_checkbox_label` „Even width border” (magyarul: „Egyenletes szélességű szegély”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 - `ok` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
 - `sizelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `text_picker_panel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
-- `textbelowimage_label` „Below image” (magyarul: „A kép alatt”)
-- `textonborder_label` „On border” (magyarul: „A szegélyen”)
-- `textonimage_label` „On image” (magyarul: „A képen”)
-- `useexif_label` „Exif information” (magyarul: „Exif-adatok”)
-- `usenotext_label` „No text” (magyarul: „Nincs szöveg”)
+- `textbelowimage_label` „Below image” (magyarul: „A kép alatt”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `textonborder_label` „On border” (magyarul: „A szegélyen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `textonimage_label` „On image” (magyarul: „A képen”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `useexif_label` „Exif information” (magyarul: „Exif-adatok”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
+- `usenotext_label` „No text” (magyarul: „Nincs szöveg”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 - `wrap_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
-- `wrap_checkbox_label` „Wrap text” (magyarul: „Szöveg tördelése”)
+- `wrap_checkbox_label` „Wrap text” (magyarul: „Szöveg tördelése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
 
 ### `buttonmgr` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -332,7 +332,7 @@ Gombsáv-testreszabó párbeszéd — nincs nálunk
 
 - `add` „Add >>” (magyarul: „Hozzáadás >>”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
 - `browse` „Find buttons online...” (magyarul: „Gombok keresése az interneten...”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e14e0)
-- `cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
+- `cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (picasa-gyorsbillentyuk.md: 0x0052ecfc)
 - `done` „Done” (magyarul: „Kész”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
 - `leftlist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
 - `leftlist_text` (magyarul: „Rendelkezésre álló gombok:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x007e2980)
@@ -484,7 +484,7 @@ Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 
 - `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed” — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
 - `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
 - `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
-- `phelpbutton` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printpanel.tre:235)
+- `phelpbutton` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 - `psetupbutton` buboréksúgó: „Open printer setup controls for the selected printer” — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00861750)
 - `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00861750)
 
