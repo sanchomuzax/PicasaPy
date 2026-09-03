@@ -1519,6 +1519,37 @@ arányt mért, és az kizárólag azért jött ki, mert a puszta elemnévre
 keresett, és a „megvan másutt" szakaszt is beszippantotta. A helyes szám
 **12/100**.
 
+#### 22.5/b MÁSNAP MEGISMÉTLŐDÖTT — ugyanaz a kör, aki leírta (2026-09-03)
+
+A 22.5 megírása után **néhány órával** a következő kutatói kör új
+szakaszt adott a `picasa-arcfelismeres.md`-hez (15.), és **kétszer is**
+beleesett ugyanabba:
+
+1. **Puszta levélnév** a táblákban (`` `confirmsug` `` a
+   `` `faceheaderpanel/confirmsug` `` helyett) — a 22.4 első pontja.
+2. Miután ez javult, **horgony nélküli szakaszok** maradtak (a felirat- és
+   a geometria-tábla `.tre`/`.xml`/`.tsv` forrásokra hivatkozott
+   **sorszám nélkül**) — a 22.4 második pontja.
+
+Mérve, lépésenként:
+
+```
+a szakasz megírása után:            feltáratlan 84   (semmi nem mozdult)
+minősített elemnevek után:          feltáratlan 81
++ sorszámos horgonyok után:         feltáratlan 69
+```
+
+⚠️ **Egy harmadik hiba is bejött a javítás közben:** a gépi
+„minősítsük mind" csere a **testvérpanel** elemeit is `faceheaderpanel/`
+előtaggal látta el (`showunknown`, `addname`, `ignore` — ezek az
+`unknownfaceheaderpanel`-é). Ez **hamis** minősített nevet gyárt, amit a
+`felulbiralas_ervenyes()` sem fog meg, mert az csak azt nézi, hogy a lap
+említi-e az elemet. Kézzel javítva.
+
+⇒ **A szabály ismerete nem elég**: az a kör sértette meg, amelyik a
+napszakot a szabály dokumentálásával töltötte. Ez a legerősebb érv a
+**#2182** őrre.
+
 **Ami ebből a jövőre nézve következik:** a 22.4 szabályát ma **semmi nem
 tartatja be**. Egy új spec-lap, ami horgony nélküli elemtáblát ír, ugyanígy
 némán kiesik a mérésből, és a következő kutatói körök újra fel fogják
