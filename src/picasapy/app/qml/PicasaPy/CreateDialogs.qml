@@ -203,8 +203,11 @@ Item {
                     && dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
-        onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
-            function() { return movieDialog.targetFile.length > 0 })
+        //: #1977: az OK MINDIG engedélyezett — az eredeti sem kér
+        //: célfájlt. Cél nélkül a vezérlő a `Picasa`/honosított Filmek
+        //: mappába ír, a forrásmappa nevével, ütközésnél sorszámozva.
+        //: A fájlválasztó megmarad „Mentés másként"-ként.
+        onOpened: standardButton(Dialog.Ok).enabled = true
         onAccepted: {
             movieProgressDialog.done = 0
             movieProgressDialog.total = dialogs.appWindow.selectedIndexes.length

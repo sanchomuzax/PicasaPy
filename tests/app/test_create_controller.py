@@ -44,6 +44,12 @@ def controller(qt_app, tmp_path, library):
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     settings.setValue(OUTPUT_DIR_KEY, str(_piszkozat_mappa(tmp_path)))
+    # #1977: a FILM kimenete is eltérítve. Enélkül a cél nélküli
+    # `exportMovie` a felhasználó VALÓDI `~/Képek/Picasa/Filmek`
+    # mappájába írna — a #1054 őre pontosan ezt fogta meg (és jogosan).
+    from picasapy.app.movie_output import OUTPUT_DIR_KEY as FILM_OUTPUT_DIR_KEY
+
+    settings.setValue(FILM_OUTPUT_DIR_KEY, str(tmp_path / "filmek"))
     ctl = AppController(
         tmp_path / "index.db", (str(library),), provider, settings=settings
     )
@@ -183,12 +189,34 @@ class TestExportMovie:
         )
         assert arrived and args[0]
 
-    def test_missing_target_fails(self, controller):
-        arrived, args = _run(
-            controller.movieFailed,
-            lambda: controller.exportMovie([0], "", 720, 1.0), 2000,
+    def test_cel_NELKUL_is_elindul_es_a_film_mappaba_ir(self, controller, tmp_path):
+        """#1977: az eredeti NEM kér célfájlt.
+
+        Korábban ez a próba azt állította, hogy cél nélkül `movieFailed`
+        jön („No target file was chosen."). Az eredeti viszont maga dönti
+        el a mappát (`Picasa` → honosított Filmek), a nevet és a
+        sorszámot — a hibaüzenet a MI hozzátoldásunk volt.
+        """
+        arrived, _args = _run(
+            controller.movieFinished,
+            lambda: controller.exportMovie([0], "", 720, 1.0), 20000,
         )
-        assert arrived and args[0]
+        assert arrived, "cél nélkül nem készült el a film"
+        filmek = tmp_path / "filmek"
+        keszult = sorted(filmek.glob("*.mp4"))
+        assert keszult, f"nem született .mp4 a(z) {filmek} mappában"
+
+    def test_cel_nelkul_a_mappa_PROJEKTKENT_jelolodik(self, controller, tmp_path):
+        """A `.picasa.ini` `P2category=Projects (internal)` sora nélkül a
+        bal hasáb Projektek gyűjteménye nem tudja hova sorolni — ugyanaz
+        a hiba, amit a kollázsnál a `write_album_ini` javított."""
+        _run(
+            controller.movieFinished,
+            lambda: controller.exportMovie([0], "", 720, 1.0), 20000,
+        )
+        ini = tmp_path / "filmek" / ".picasa.ini"
+        assert ini.exists(), "a film mappája nem kapott .picasa.ini-t"
+        assert "P2category=Projects (internal)" in ini.read_text(encoding="utf-8")
 
 
 class TestBackgroundThreadTeardown:

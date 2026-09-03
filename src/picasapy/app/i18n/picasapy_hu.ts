@@ -1596,6 +1596,10 @@
         <translation>Nincs kijelölt kép.</translation>
     </message>
     <message>
+        <source>The movie folder could not be created.</source>
+        <translation>A film mappája nem hozható létre.</translation>
+    </message>
+    <message>
         <source>No target file was chosen.</source>
         <translation>Nem választottál célfájlt.</translation>
     </message>

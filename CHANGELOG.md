@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.250] – 2026-09-03
+
+### Javítva
+- A **Mozgófilm létrehozása** már nem kér célfájlt: ha nem adsz meg egyet,
+  a film a Képek/Picasa/Filmek mappába kerül, a forrásmappa nevével —
+  ütközésnél sorszámozva, ahogy az eredeti Picasa is teszi. A mappa
+  ilyenkor **projektként is megjelölődik**, tehát a bal hasáb Projektek
+  gyűjteményében megtalálod. Ha a mappa nem hozható létre, a film a
+  rendszer Videók mappájába megy, hibaüzenet helyett. A „Mentés
+  másként" fájlválasztó továbbra is használható.
+
 ## [0.8.249] – 2026-09-03
 
 ### Javítva
