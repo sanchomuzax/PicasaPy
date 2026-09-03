@@ -2135,3 +2135,79 @@ a súgógombokat — nem törölte őket, csak elvette az ikonjukat/feliratukat.
 > `panel-feliratok-hu.tsv` sorából, minden szerkezet az `editpanel.tre` és a
 > `respack.yt` bejegyzéseiből; a `Preferences`-hiány **két** lekérdezési
 > alakkal; a mi oldalunk greppel mérve.
+
+## Az effekt-csempe ELŐNÉZETÉNEK betöltési lánca — meddig jutottunk (#2061)
+
+A kérdés: az eredeti az **alap** képen mutatja az effektet, vagy a
+**szerkesztési lánc tetején**? A lánc az alábbi pontig ki van mérve; a
+válasz **NINCS MEG**.
+
+### A betöltő és az EGYETLEN létrehozási helye
+
+| mi | hol |
+|---|---|
+| a betöltő osztály | `FilterGridItemLoaderJob`, RTTI-vtábla `0x00c874ac` (+ `0x00c874bc`) |
+| a konstruktora | `0x0050e7b0` (139 b) |
+| a **létrehozás egyetlen helye** | `0x005d7e2b` — a csempeépítő `0x005d7c20`-on belül |
+| a futtató metódusa | `0x0050e8d0`, az `editpanel/fxpreview%d` elembe tölt (`0x00c871e4`) |
+
+A hívó kimerítő pásztázással **egyetlen** (a teljes `.text`-ben a
+`0x0050e7b0`-ra pontosan egy `call rel32` mutat).
+
+### Amit a job KAP
+
+```
+0x005d7e07  push 0x4c            ; 76 bájt: a job mérete
+0x005d7e09  call 0x97c5d0        ; foglalás
+0x005d7e1b  mov eax, [esp+0x24]  ; a csempe sorszáma
+0x005d7e24  add eax, 1           ;   -> editpanel/fxpreview<N>
+0x005d7e27  lea ecx, [esp+0x14]  ; a szűrő NEVE (sztring)
+0x005d7e1f  lea edx, [esp+0x48]  ; ★ egy 16 bájtos LEÍRÓ
+0x005d7e2b  call 0x50e7b0
+```
+
+A konstruktor a leíró **négy dwordjét** a `this+0x14`…`this+0x20`-ba másolja
+(`0x0050e7ed`–`0x0050e801`).
+
+### A leíró feltöltése — két mezője HARD NULLA
+
+```
+0x005d7c83  push esi
+0x005d7c86  call 0xa67be0        ; -> eax = a szerkesztőpanel + 0x324
+0x005d7c8b  mov ecx, [eax+8]
+0x005d7c8e  mov edx, [eax+0xc]
+0x005d7c93  mov [esp+0x4c], ebx  ; ★ 0
+0x005d7c97  mov [esp+0x50], ebx  ; ★ 0
+0x005d7c9b  mov [esp+0x54], ecx  ;   [X+8]
+0x005d7c9f  mov [esp+0x58], edx  ;   [X+0xc]
+```
+
+⇒ A leíró alakja **{0, 0, [X+8], [X+0xc]}**.
+
+### A hozzáférő (`0x00a67be0`, 128 b)
+
+Visszaadja a `szerkesztőpanel + 0x324` mezőt. Ha `[panel+0x264] != 0`,
+**előbb újraépíti nulláról**: egy teljesen kinullázott, `+0x1c`-n `1`-es,
+`+0x28`-on `0xFFFFFFFF`-es szerkezetet másol a `+0x324`-be
+(`0x00a67bfd`–`0x00a67c4e`). Ha `[panel+0x264] == 0`, a meglévőt adja
+vissza változatlanul.
+
+### ⛔ Ami NINCS MEG
+
+Hogy a `[X+8]` / `[X+0xc]` pár **melyik képet** azonosítja: az eredeti
+(alap) fotót, vagy a szerkesztési lánc aktuális tetejét. Ehhez a
+`szerkesztőpanel + 0x324` objektumot kell azonosítani (mi az, ki írja), és
+a `+0x264` feltétel jelentését.
+
+**Bizalmi fok:** a lánc (osztály, egyetlen létrehozási hely, a leíró alakja
+a két nullával, a hozzáférő viselkedése) **megerősített** — közvetlen
+kiolvasás és kimerítő hívó-keresés. A jelentés **NINCS MÉRVE**; a „két
+nulla + az újraépítés az alap-kép mellett szól" olvasat **feltételes**, és
+ezért nem is állítjuk.
+
+> **Az OLCSÓBB út továbbra is a tulajdonosé** (a #2061 „A" változata): egy
+> képernyőkép a windowsos Picasából, ahol EGY jól látható effekt (pl.
+> Fekete-fehér) már alkalmazva van. Ha a többi csempe előnézete is
+> szürkeárnyalatos, a bélyegkép a **lánc tetején** áll; ha színes marad, az
+> **alap** képen. Ez egyetlen képpel eldönti azt, amihez a binárison át még
+> több kör kell.
