@@ -1688,27 +1688,32 @@ példa ugyanabból az adatbázisból (a `albumdata_name` / `_token` /
 ⇒ A borító **mappánként egy**, és a gyűjtemény-jellegű sorok (pl.
 `]unknownface`) is kapnak egyet.
 
-### 5. ⚠️ Ami NINCS MÉRVE: MELYIK fotókból áll a kupac
+### 5. MELYIK fotókból áll a kupac — MEGVÁLASZOLVA a 7. szakaszban
 
-**Nem tudjuk**, hogy a kupac elülső lapja (és a mögötte lévők) melyik fotók,
-és milyen szabály választja ki őket (első? legrégebbi? legutóbb módosított?
-csillagozott?).
+> ⚠️ **Ez a szakasz korábban azt írta, hogy a kérdés nincs megmérve.**
+> A 2026-09-02-i folytatás (6.4 és 7.) végigolvasta a `0x00423500`
+> előállítót és a `0x00423780` összeállítót, és megválaszolta. A régi
+> szöveget azért hagyjuk itt átfogalmazva, mert a **kudarcba fulladt
+> módszer tanulsága** önmagában is érték.
 
-**Amit megpróbáltam, és miért nem döntött:** a saját `2025-05-xx`
-tesztmappánk borítóját (72×114) kirendereltem, az elülső lap dobozát az
-alfa-maszkból kivágtam (49×92, arány 0,533), és képaláírás-mentes
-képjel-összevetéssel kerestem a mappa 241 fájlja között. A legjobb két
-találat **0,96 és 1,03** hibaértékkel jött — **nem különül el**, mert a
-kivágott doboz a mögöttes lapokból is tartalmaz sávot. Ez a módszer így
-**nem alkalmas** a döntésre, és becsült választ nem adunk.
+**A válasz:** a kupacba az album SAJÁT elemlistájának első `min(N, 4)`
+eleme kerül, és a lista **első** eleme kerül legfelülre. Nem a
+legrégebbi, nem a legújabb, nem a csillagozott — a **lista eleje**. A
+részletes levezetés, a geometria és az árnyék a **7. szakaszban** áll.
 
-**A megszerzés útja:** a borítót előállító függvény megkeresése a
-binárisban. A tár-oldal megvan (`m_albumThumbs`, `0x00415790`), a fogyasztók
-is (`0x00761870` listaépítő, `0x0056ba10` tálca-token), az **előállító**
-viszont nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`, `*Stack*`: nincs
-találat), sem sztring nem vezet rá.
+#### Amit előbb megpróbáltunk, és miért NEM döntött
 
-Jegy: **#2049**.
+A saját `2025-05-xx` tesztmappánk borítóját (72×114) kirendereltük, az
+elülső lap dobozát az alfa-maszkból kivágtuk (49×92, arány 0,533), és
+képaláírás-mentes képjel-összevetéssel kerestük a mappa 241 fájlja
+között. A legjobb két találat **0,96 és 1,03** hibaértékkel jött —
+**nem különül el**, mert a kivágott doboz a mögöttes lapokból is
+tartalmaz sávot.
+
+**A tanulság:** a kép-oldali visszafejtés itt elvi korlátba ütközött, a
+kód-oldali viszont egyértelmű választ adott. Hasonló kérdésnél érdemes
+előbb az előállító függvényt megkeresni, és csak utána mérni a
+kimeneten.
 
 ### 6. A borító ÉLETCIKLUSA — hol van a kód (2026-09-02, folytatás)
 
