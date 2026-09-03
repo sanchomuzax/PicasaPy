@@ -96,7 +96,8 @@ class TestSetGeotag:
         ]
         controller.setGeotagRows(rows, 12.5, -7.25)
         ini = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
-        assert "geotag=12.5,-7.25" in ini
+        # #2012: a Picasa MINDIG hat tizedesjegyet ír, a záró nullákkal.
+        assert "geotag=12.500000,-7.250000" in ini
         located = {
             photo.name
             for photo in controller.photos.photos
@@ -123,7 +124,7 @@ class TestSetGeotag:
 
         written = sum(
             (library / folder / ".picasa.ini").read_text(encoding="utf-8").count(
-                "geotag=1,2"
+                "geotag=1.000000,2.000000"
             )
             for folder in ("nyaralas", "varos")
         )
@@ -140,7 +141,7 @@ class TestSetGeotag:
         assert len(rows) == 2
         controller.setGeotagRows(rows, 1.0, 2.0)
         ini = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
-        assert ini.count("geotag=1,2") == 2
+        assert ini.count("geotag=1.000000,2.000000") == 2
 
     def test_invalid_coordinates_are_reported(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
