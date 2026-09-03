@@ -48,7 +48,7 @@ csoportszerkezet a mentésből hiánytalanul kiolvasható.
 | 8 | Nyomtatás… `Ctrl+P` · E-mail… `Ctrl+E` · Papírképek rendelése… |
 | 9 | Kilépés |
 
-### Szerkesztés — 12 tétel, 4 csoport
+### Szerkesztés — 11 tétel, 4 csoport
 
 | # | tételek |
 |---|---|
@@ -61,6 +61,87 @@ csoportszerkezet a mentésből hiánytalanul kiolvasható.
 `eMenuEdit::ID_UNDO` és `ID_REDO`, a mentésen viszont **egyik sem
 jelenik meg** — pedig a menü többi inaktív tétele igen. Vagyis a
 Visszavonás/Ismétlés nem a menüsáv Szerkesztés menüjének állandó tétele.
+
+### A Szerkesztés menü TELJES szerkezete — a binárisból (#1795)
+
+A menüt ugyanaz a táblavezérelt függvény építi, mint az Eszközök menüt
+(`0x00559150`). A Szerkesztés almenü **egyetlen rekord-tábla** a `.data`-ban:
+
+- **a tábla kezdete `0x00d6db80`**, rekordméret **20 bájt**;
+- **a darabszám-konstans `14`** (`push 0xe` a `0x00559c76`-on, a
+  `0x00559c82` regisztráló hívása előtt, a gyerekmutatóval együtt:
+  `push 0xd6db80`, `0x00559c7c`).
+
+**14 = 11 tétel + 3 elválasztó.** Az elválasztó rekord mind a 20 bájtja
+nulla; a három elválasztó a 3., 6. és 9. rekord (`0x00d6dbbc`,
+`0x00d6dbf8`, `0x00d6dc34`), tehát a csoportosztás **3 | 2 | 2 | 4** —
+pontosan az, amit a tulajdonos képernyőmentése mutat.
+
+**Rekord-alak** (mind a 14-re azonos):
+
+| eltolás | tartalom |
+|---|---|
+| `+0x00` | a honosított felirat mutatója (a kulcsból feloldva, `call 0x009ae560`) |
+| `+0x04` | a gyorsbillentyű betűje (ASCII sztring) vagy `0` |
+| `+0x08` | `word` — mind a 14 rekordon `0` |
+| `+0x0a` | `word` — a **parancsazonosító** |
+| `+0x0c`, `+0x10` | `0` |
+
+**A tábla TELJES tartalma, kiolvasva:**
+
+| # | cím | kulcs | eredeti EN felirat | HU felirat | gyorsb. | parancs |
+|---|---|---|---|---|---|---|
+| 0 | `0x00d6db80` | `eMenuEdit::ID_CUT` | `Cu&t` | `&Kivágás` | `X` | `0x9d39` (40249) |
+| 1 | `0x00d6db94` | `eMenuEdit::ID_COPY` | `&Copy` | `&Másolás` | `C` | `0x9d3b` (40251) |
+| 2 | `0x00d6dba8` | `eMenuEdit::ID_PASTE` | `&Paste` | `&Beillesztés` | `V` | `0x9d3c` (40252) |
+| 3 | `0x00d6dbbc` | — | — | — | — | **elválasztó** |
+| 4 | `0x00d6dbd0` | `eMenuEdit::ID_EDIT_COPYALLEFFECTS` | `C&opy All Effects` | `Az összes effektus más&olása` | — | `0x9d6f` (40303) |
+| 5 | `0x00d6dbe4` | `eMenuEdit::ID_EDIT_PASTEALLEFFECTS` | `Paste All E&ffects` | `Az összes e&ffektus beillesztése` | — | `0x9d70` (40304) |
+| 6 | `0x00d6dbf8` | — | — | — | — | **elválasztó** |
+| 7 | `0x00d6dc0c` | `eMenuEdit::ID_EDIT_COPYTEXT` | `Copy Text` | `Szöveg másolása` | — | `0x9ded` (40429) |
+| 8 | `0x00d6dc20` | `eMenuEdit::ID_EDIT_PASTETEXT` | `Paste Text` | `Szöveg beillesztése` | — | `0x9dee` (40430) |
+| 9 | `0x00d6dc34` | — | — | — | — | **elválasztó** |
+| 10 | `0x00d6dc48` | `eMenuEdit::ID_ALBUM_SELECTALLPICTURES` | `Select &All` | `Az ö&sszes kijelölése` | `A` | `0x9cb8` (40120) |
+| 11 | `0x00d6dc5c` | `eMenuEdit::ID_SELECTSTAR` | `Select &Starred` | `&Csillagozottak kijelölése` | — | `0x9d5b` (40283) |
+| 12 | `0x00d6dc70` | `eMenuEdit::ID_SELECT_INVERT` | `&Invert Selection` | `Kiválasztás &megfordítása` | `I` | `0x9c47` (40007) |
+| 13 | `0x00d6dc84` | `eMenuEdit::ID_CLEAR_SELECTION` | `C&lear Selection` | `Kijelölés &törlése` | `D` | `0x9c90` (40080) |
+
+⚠️ Két tételnek **nincs** aláhúzott betűje az eredetiben (`Copy Text`,
+`Paste Text`), a `Select &Starred`-nek pedig **nincs gyorsbillentyűje** —
+ezek nem elírások, hanem a mért állapot.
+
+#### ⛔ Visszavonás/Ismétlés a Szerkesztés menüben NINCS — és nem is lehet
+
+A #1774 köre azt gyanította, hogy a menüépítő **feltételesen** teszi be a
+visszavonást (van-e visszavonható lépés), és a mentés készítésekor épp nem
+volt ilyen. **Ez megdőlt, két független mérésből:**
+
+1. **A tábla statikus.** A 14 rekordot feltöltő kódblokk
+   (`0x005598b2`–`0x00559c4c`) **pontosan 11 feltételes ugrást** tartalmaz,
+   és mind a 11 ugyanaz: a felirat-feloldás `NULL`-ellenőrzése
+   (`cmp eax, ebx` / `je`). **Állapotfüggő elágazás nincs benne**, tehát a
+   menü darabszáma és tartalma futásidőben nem változik. (A blokk elején
+   álló `test byte ptr [0xda03a8], al` / `jne` **egyszeri inicializálás**
+   őre, nem tételválasztás.)
+2. **A kulcs nem létezik a programban.** Az `eMenuEdit::ID_UNDO` és az
+   `eMenuEdit::ID_REDO` literál a `Picasa3.exe` teljes fájljában
+   **0 alkalommal** fordul elő — sem ASCII-ban, sem UTF-16LE-ben. A
+   feliratok csak az erőforrás-szövegtárban élnek
+   (`stringres-en-hu.tsv`: „Undo"/„Visszavonás", „Redo"/„Újra"), amit
+   **semmi nem kér el** — ezek **halott erőforrás-bejegyzések**.
+
+#### Hol VAN visszavonás az eredetiben — mind a négy hely
+
+| hol | erőforrás / elem | felirat (EN / HU) |
+|---|---|---|
+| a szerkesztő panel gombja | `editpanel/filter_undo`, `CFilterStackUI::undolabel` / `undoname` | `Undo` / `Visszavonás`, illetve `Undo <effekt>` / `Visszavonás: <effekt>` |
+| **Kép** menü | `eMenuPicture::ID_PICTURE_REVERT` | `Undo &All Edits` / `Összes szerkesztés vissz&avonása` |
+| szövegmező helyi menüje | `Address::ID_UNDO`, a menüt a `0x007331e0` építi (7 tétel: Visszavonás · Kivágás · Másolás · Beillesztés · Törlés · Az összes kijelölése · Automatikus kitöltés) | `&Undo` / `&Visszavonás` |
+| mentés-visszavonó párbeszéd | `CThumbUI::FileRevert::undosave` | `Undo Save` / `Mentés visszavonása` |
+
+**Bizalmi fok: megerősített.** A tábla, a darabszám, az elválasztók, a
+parancsazonosítók és az ugrás-számlálás közvetlen kiolvasásból; a
+negatív eredmény teljes fájl-pásztázásból (két kódolás).
 
 ### Nézet — 19 tétel, 8 csoport
 
@@ -262,5 +343,11 @@ mért eredeti menü is 253 képpont — a korlát a gyakorlatban sosem lép
   őket (a Rendezés készletére a #1595 és a #1766 fut);
 - a 4. menü **kontextusfüggő** címkéje (Mappa ↔ Album) — a mentés mappa-
   nézetben készült, tehát csak a „Mappa" alakot mutatja;
-- a **mnemonikok**: a képen az aláhúzás nem látszik (a Windows alapból
-  elrejti, amíg az `Alt`-ot le nem nyomják).
+- ~~a **mnemonikok**~~ — **MEGVÁLASZOLVA (2026-09-03, #1795 köre).** A képen
+  tényleg nem látszik az aláhúzás (a Windows elrejti, amíg az `Alt`-ot le
+  nem nyomják), de a **szövegtár megadja**: 189 `eMenu*::` kulcsból 145-ben
+  van angol és **142-ben magyar** mnemonik, és a magyar betű gyakran **nem**
+  az angol (`Cu&t` → `&Kivágás`). A teljes leképzés kinyerve:
+  `picasapy-agent/referencia/menu-mnemonikok.tsv` (248 sor). A Szerkesztés
+  menü mind a 11 tételének mnemonikja a fenti táblában áll. Nálunk 144
+  menütétel-feliratból **11**-en van mnemonik — átvezetés: **#2152**.
