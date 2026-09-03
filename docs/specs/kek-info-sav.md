@@ -207,3 +207,62 @@ A mai kódban a szövegnek **nincs külön clipje**, a teljes sávot kapja
 a **szöveg** clipje hiányzik: `bal + 20 … jobb − 20`.
 
 Jegy: **#1934**.
+
+---
+
+## 7. A CÍMKE-rész a sávon — kimérve (2026-09-04, #1913)
+
+A #1913 2. pontja ezt kérte: a referencia-felvételeken a sáv a **címkézett
+képek számát** is kiírja, és a jegy szerint „a forrásminta nem [látszik]…
+enélkül a formátum találgatás". **A forrás megvan.**
+
+### A felirat
+
+| kulcs | angol (bináris) | magyar (`stringres.xml`) |
+|---|---|---|
+| `CThumbUI::GetTagInfo::format` | `Tags: ` | **`Címkék: `** |
+
+Az előállító a **`0x0056f920`** (665 b):
+
+```
+0x0056f9cc  push 0x00c8f470          ; "CThumbUI::GetTagInfo::format"  (a KULCS)
+0x0056f9d1  mov  eax, 0x00c8f468     ; "Tags: "                        (az angol alapérték)
+0x0056f9d6  call 0x009ae560          ; szövegtár-lekérdezés
+```
+
+### A címkénkénti alak — BEÉGETETT, nem honosított
+
+```
+0x0056fa98  push 0x00c8f494          ; "%s (%d)"
+0x0056faa1  call 0x0040ea90          ; sprintf(név, darabszám)
+```
+
+⇒ A sáv címke-része: a honosított **`Címkék: `** előtag, majd címkénként
+**`<név> (<darabszám>)`**. A zárójeles darabszám formátuma **nincs a
+szövegtárban** — beégetett, tehát minden nyelven ugyanaz.
+
+Ez pontosan a felvételen látott alak:
+
+```
+67 képek   …   86,5 MB a lemezen   Címkék: AI image (66)
+```
+
+⇒ **A #1913 2. pontja LEZÁRVA**: a formátum nem találgatás.
+
+> ⚠️ **A sztring nincs a bináris-index sztringtáblájában.** Sem a
+> `CThumbUI::GetTagInfo::format`, sem a `%s (%d)` nem szerepel a
+> `string_xrefs`-ben — a hivatkozó függvényt az utasítás-operandusok
+> közvetlen átfésülése adta meg. A sztring-xref hiányából tehát **nem
+> következik**, hogy a szöveg nincs meg.
+
+### A 3. pont már korábban lezárult
+
+A #1913 3. pontja („a méret-felirat két magyar alakja") **a 2. és 2.1
+szakaszban már benne van** (a #1934 köre vitte be): a `::4` a
+**dátum-tartományos** alak (`… a lemezen`), a `::5` az **egy dátumos**
+(`…/lemez`). A jegyben szereplő feltevés — „nap-számhoz kötés" —
+**helyesnek bizonyult**, csak addigra már mérve is volt.
+
+*(A magyar fordítás következetlensége — `a lemezen` vs `/lemez` — a
+gyártó saját szövegtárában van így; nem a mi hibánk, és átvételkor
+követni kell.)*
