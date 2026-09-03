@@ -235,3 +235,176 @@ eredetiben keresési mód. Jegy: **#2174**.
 **Megerősített** — a vezérlő fajtája, a rejtés/megjelenítés, a
 parancsazonosító egyezése, a menürekord és a közös `0x0065b840` hívás
 mind közvetlen kiolvasásból; a mi oldalunk grepből.
+
+---
+
+## ⭐ Az idő-csúszka: NEM tartomány, hanem KOR-szűrő — a teljes képlet (#1830, 2026-09-03)
+
+A keresősáv `timeslider/scaleslider` vezérlője **egyfogantyús**, és a felirata
+(„Filter by date range" / „Szűrés dátumtartomány szerint") **félrevezet**.
+A mért viselkedés: a csúszka egyetlen értéke egy **maximális KORT** ad meg —
+„legfeljebb N napos/hetes/hónapos/éves képek".
+
+### A négy felirat, amit a program megjelenít
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `CThumUI::searchpicsdaysold` | `Pictures up to %d days old.` | **Legfeljebb %d napos képek.** |
+| `CThumUI::searchpicswksold` | `Pictures up to %d weeks old.` | **Legfeljebb %d hetes képek.** |
+| `CThumUI::searchpicsmosold` | `Pictures up to %d months old.` | **Legfeljebb %d hónapos képek.** |
+| `CThumUI::searchpicsyearsold` | `Pictures up to %d years old.` | **Legfeljebb %d éves képek.** |
+
+(`referencia/stringres-en-hu.tsv` 586–589. sor; a binárisba fordított angol
+alapértékek: `0x00ca2c6c`, `0x00ca2ca4`, `0x00ca2ce0`, `0x00ca2d1c`.)
+
+### A KÉPLET — a binárisból kiolvasva
+
+A csúszka nyers értéke egy `float`, jelöljük `s`-sel. A napok száma:
+
+```
+ha s == 0        →  NINCS kor-szűrés (a szűrő ki van kapcsolva)
+egyébként        →  napok = 2 ^ (13 · (1 − s)) + 1
+```
+
+Két, egymástól **független** helyen áll ugyanez a képlet — és ez a lényeg:
+
+| hol | cím | mit csinál vele |
+|---|---|---|
+| a találati fejléc | `0x0066345c`–`0x006634ac` | a fenti négy felirat egyikét írja ki |
+| **a tényleges szűrő** | `0x0065ee3f`–`0x0065eeaa` (a `0x0065d010` keresés-végrehajtóban) | `vágópont = MOST − napok`, és eszerint szűr |
+
+⇒ A csúszka **nem csak feliratot** állít: valóban szűkíti a találatokat.
+
+Az utasítás-szintű bizonyíték (a szűrő oldaláról):
+
+```
+0x0065ee3f  fld   dword ptr [edx + 0x24]      ; s — a keresési állapot csúszka-mezője
+0x0065ee49  fld1
+0x0065ee57  fsubrp st(1)                      ; 1 − s
+0x0065ee6e  fmul  qword ptr [0xcf4c08]        ; × 13.0
+0x0065ee80  fld   dword ptr [0xcf3a48]        ; 2.0
+0x0065ee89  call  0x005568e0                  ; pow(2.0, 13·(1−s))
+0x0065ee8e  fadd  qword ptr [0xc7e328]        ; + 1.0      → napok
+0x0065ee9f  call  0x0098b6e0                  ; MOST (a rendszeridő, nap-egységű double)
+0x0065eeaa  fsub  qword ptr [esp + 0x38]      ; vágópont = MOST − napok
+```
+
+A négy kiolvasott konstans: `0x00cf4c08` = **13.0** (qword), `0x00cf3a48` =
+**2.0** (dword), `0x00c7e328` = **1.0** (qword) — és a `0x005568e0` az a
+kétparaméteres lebegőpontos burkoló, ami a `0x00c0b410` hatványozót hívja.
+
+A „most mínusz N nap" **nap-egységű `double`** aritmetika — ugyanaz az
+ábrázolás, amit a `.picasa.ini` `date=` kulcsa is használ (OLE-dátum, napok
+1899-12-30 óta).
+
+### A MÉRTÉKEGYSÉG megválasztása — a mért szabály
+
+A `0x006634b0`–`0x006635fd` szakasz **csonkolt** (nulla felé kerekített)
+egészekkel dönt:
+
+```
+napok  = trunc(napok)
+hetek  = trunc(napok / 7)        ; 0x00cf4800 = 7.0
+hónap  = trunc(napok / 30)       ; 0x00cf3ed8 = 30.0
+év     = trunc(napok / 365)      ; 0x00cf50a8 = 365.0
+
+ha napok < 30            → „Legfeljebb <napok> napos képek.”
+különben ha hetek < 10   → „Legfeljebb <hetek> hetes képek.”
+különben ha hónap ≤ 12
+        VAGY év == 0     → „Legfeljebb <hónap> hónapos képek.”
+különben                 → „Legfeljebb <év> éves képek.”
+```
+
+### A csúszka VÉGPONTJAI és a menete
+
+| csúszka `s` | napok | a kiírt felirat |
+|---:|---:|---|
+| 0,00 | — | *(nincs kor-szűrés)* |
+| 0,02 | 6842,0 | Legfeljebb 18 éves képek. |
+| 0,10 | 3328,0 | Legfeljebb 9 éves képek. |
+| 0,20 | 1352,2 | Legfeljebb 3 éves képek. |
+| 0,30 | 549,7 | Legfeljebb 1 éves képek. |
+| 0,40 | 223,9 | Legfeljebb 7 hónapos képek. |
+| 0,50 | 91,5 | Legfeljebb 3 hónapos képek. |
+| 0,60 | 37,8 | Legfeljebb 5 hetes képek. |
+| 0,70 | 15,9 | Legfeljebb 15 napos képek. |
+| 0,80 | 7,1 | Legfeljebb 7 napos képek. |
+| 0,90 | 3,5 | Legfeljebb 3 napos képek. |
+| 1,00 | 2,0 | Legfeljebb 2 napos képek. |
+
+**A skála logaritmikus**, és **fordított**: a bal vég (`s`→0) enged át
+mindent (≈22,4 év a 0-hoz tetszőlegesen közel), a jobb vég (`s`=1) a
+**2 napnál frissebbekre** szűkít. A mértékegység-váltás pontos helyei:
+`s ≈ 0,3382` (év→hónap, 390 nap), `s ≈ 0,5302` (hónap→hét, 70 nap),
+`s ≈ 0,6263` (hét→nap, 30 nap).
+
+### Hol tárolódik, és hogyan indul
+
+A csúszka értéke a **keresési állapot-struktúra `+0x24`** `float` mezője.
+A `0x00660c80` (a keresősáv állapotgyűjtője) tölti fel:
+
+```
+0x00660e9a  fldz
+0x00660ea3  fstp dword ptr [ebx + 0x24]   ; alapérték 0.0 = nincs szűrés
+0x00660eab  mov edx, 0xc95f58             ; "timeslider/scaleslider"
+0x00660eb0  call 0x009c2fc0               ; elem feloldása
+0x00660ebb  call 0x009ddd00               ; ÉRTÉK-OLVASÓ (vtable +0x18) → [ebx+0x24]
+```
+
+Ha az elem nem oldható fel, a mező **0.0 marad** — vagyis a hiányzó csúszka
+nem szűr, nem pedig „mindent kizár". Induláskor a keresősáv-kötő
+(`0x005d47e0`, a 7. eleme) ugyanígy **0.0-ra** állítja
+(`0x005d4914`: `fldz … call 0x009ddc90` — az érték-BEÁLLÍTÓ, vtable +0x14).
+
+### Mi történik a fogantyú mozgatásakor
+
+Az eseménykezelő a `0x005de8e0` nagy állapotfüggvényben ül
+(`0x005dfd20`–`0x005dfd85`): az érkező elemnevet 23 bájton összeveti a
+`"timeslider/scaleslider"`-rel, és ha egyezik **és** az esemény típusa nem
+`0x8000001`, meghívja a `0x0065b840`-et — ugyanazt az általános
+nézet-/keresés-frissítőt, amit a keresési módok is használnak. A kezelő
+`0xf4240`-nel tér vissza („lekezeltem").
+
+### ⛔ NEGATÍV: a `timecontainer` és a `timecontainer_label` a kódból SOHA nem hivatkozott
+
+A `string_xrefs` táblában **egyetlen** találat sincs sem a
+`searchcontainer/timecontainer`, sem a `searchcontainer/timecontainer_label`
+névre. Csak a `timeslider/scaleslider` szerepel a kódban. A két konténer-elem
+tehát tisztán a felületleíró dolga: a `_label` a `.tre`-ben **csak a
+buboréksúgót hordozza** (`SharedHandler searchcontainer/tip hottip`), a
+`timecontainer` pedig a `timeslider` panel **kivágása**
+(`layer:searchcontainer/clip(timeslider): timecontainer`).
+
+### Geometria — a `respack.yt`-ből
+
+| réteg | téglalap | méret |
+|---|---|---|
+| `searchcontainer/timecontainer_label` (`vbutton`) | (133,12)–(237,28) | **104 × 16** |
+| `searchcontainer/timecontainer` (a `timeslider` kivágása) | (133,12)–(237,28) | 104 × 16 |
+| `timeslider/docbounds` | (0,0)–(97,13) | 97 × 13 |
+| `timeslider/sliderbase` (a vályú) | (0,3)–(97,10) | **97 × 7** |
+| `timeslider/scaleslider` (a fogható sáv) | (5,0)–(93,13) | **88 × 13** |
+| `timeslider/thumb` (a fogantyú) | (26,0)–(36,13) | **10 × 13** |
+
+A `sliderbase` és a `thumb` **rajzolt** rétegek (658, illetve 653 bájt RLE),
+nem tömör kitöltések.
+
+*(A `searchoptions/#clip(scaleslider,timeslider): timecontainer` — (260,44)–(387,75),
+127 × 31 — a **másik**, gazdagabb keresőbeállítás-panel saját idő-konténere;
+az a #1398 hatóköre.)*
+
+### ⚠️ A felirat az EREDETIBEN is félrevezet — ne „javítsuk ki"
+
+A buboréksúgó „dátumtartomány szerinti" szűrést ígér, a vezérlő viszont
+egyfogantyús kor-szűrő. Ez **az eredeti sajátja**, nem fordítási hiba: a
+`searchcontainer.tre` 101–102. sora az angol forrásban is
+`Filter by date range`. A projekt döntése szerint a felület pontosan úgy
+nézzen ki, mint az eredeti (`docs/decisions/szerkeszto-bal-panel.md`), ezért
+a magyar súgó **„Szűrés dátumtartomány szerint"** marad
+(`referencia/i18n-hu/tooltips.xml` 786.).
+
+*Bizonyítottsági fok: **megerősített** — a képlet két független helyen
+azonos, a konstansok kiolvasva, a mértékegység-szabály utasításról
+utasításra követve.*
+
+Jegy: **#1830**.
