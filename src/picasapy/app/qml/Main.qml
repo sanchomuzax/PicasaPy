@@ -600,6 +600,52 @@ ApplicationWindow {
         }
     }
 
+    // #2054: a súgó billentyűi. Az F1 a MÉRT eredeti gyorsbillentyű (a
+    // `SHORTCUTS.xml`-ben a *Help Contents and Index* `VK_F1`, módosító
+    // nélkül); a Shift+F1 a MIÉNK — az eredeti táblájában nincs, a
+    // súgó maga is új.
+    Shortcut {
+        objectName: "helpShortcut"
+        sequence: "F1"
+        onActivated: helpDialog.ensure().nyisdMeg("")
+    }
+    Shortcut {
+        objectName: "helpContextShortcut"
+        sequence: "Shift+F1"
+        //: A mutató alatti elem súgója. A leképezés a `helpTopic`
+        //: tulajdonságon át megy; ha a mutató alatt egyik ős sem
+        //: deklarál ilyet, a FŐOLDAL nyílik — néma kudarc nincs.
+        onActivated: helpDialog.ensure().nyisdMeg(window.helpTopicUnderCursor())
+    }
+
+    //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
+    //: ablakot lefedi, de NEM nyel el eseményt (`acceptedButtons: NoButton`),
+    //: tehát semmilyen meglévő vezérlőt nem zavar.
+    property point helpCursor: Qt.point(-1, -1)
+
+    HoverHandler {
+        objectName: "helpCursorTracker"
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onPointChanged: window.helpCursor = point.position
+    }
+
+    //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
+    //: első olyan ősig, amelyik deklarál `helpTopic`-ot. Így nem kell
+    //: minden gombot felcímkézni: elég a panelekre és a párbeszédekre,
+    //: a többi öröklődik. Ha egyik sem deklarál, ÜRES jön vissza, és a
+    //: néző a főoldalt nyitja — néma kudarc nincs.
+    function helpTopicUnderCursor() {
+        if (window.helpCursor.x < 0) return ""
+        var elem = window.contentItem.childAt(
+            window.helpCursor.x, window.helpCursor.y)
+        while (elem) {
+            if (elem.helpTopic !== undefined && String(elem.helpTopic).length > 0)
+                return String(elem.helpTopic)
+            elem = elem.parent
+        }
+        return ""
+    }
+
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
     Shortcut { sequence: "Ctrl+I"; onActivated: window.invertSelection() }
@@ -863,6 +909,8 @@ ApplicationWindow {
         onFaceScanRequested: faceScanDialog.open()
         // #350: Eszközök → Beállítások…
         onOptionsRequested: optionsDialog.open()
+        //: #2054
+        onHelpRequested: function (topic) { helpDialog.ensure().nyisdMeg(topic) }
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
@@ -2591,6 +2639,14 @@ ApplicationWindow {
         function onMovieFailed(message) {
             createDialogs.ensure().jelezdAFilmHibajat(message)
         }
+    }
+
+    // #2054: a felhasználói súgó — F1. Halasztott, mint a többi:
+    // induláskor nem épül fel, csak az első megnyitáskor.
+    DeferredDialog {
+        id: helpDialog
+        anchors.fill: parent
+        sourceComponent: Component { HelpDialog { objectName: "helpDialog" } }
     }
 
     DeferredDialog {

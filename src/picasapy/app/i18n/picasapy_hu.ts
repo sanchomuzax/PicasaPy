@@ -8703,4 +8703,17 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Jegyezze meg ezt a beállítást, és ne kérdezze meg újra</translation>
     </message>
 </context>
+<context>
+    <name>HelpDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/HelpDialog.qml" line="19"/>
+        <source>Help Contents and Index</source>
+        <translation>Súgó - tartalom és tárgymutató</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/HelpDialog.qml" line="59"/>
+        <source>Search in help</source>
+        <translation>Keresés a súgóban</translation>
+    </message>
+</context>
 </TS>

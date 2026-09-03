@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.251] – 2026-09-03
+
+### Hozzáadva
+- **Megnyílik a súgó a programból.** Az **F1** (vagy a Súgó menü „Súgó -
+  tartalom és tárgymutató" tétele) előhozza a teljes, magyar nyelvű
+  kézikönyvet — 28 fejezet, kereséssel. **Internet nem kell hozzá:** a
+  súgó a programmal együtt települ. A **Shift+F1** a mutató alatti
+  panelhez tartozó fejezetet nyitja meg; ha nincs ilyen, a főoldalt.
+  Eddig a menüpont helye megvolt, de nem történt semmi tőle.
+
 ## [0.8.250] – 2026-09-03
 
 ### Javítva

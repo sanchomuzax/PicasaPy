@@ -46,6 +46,7 @@ from .collage_controller import CollageMixin
 from .color_index_controller import ColorIndexMixin
 from .language_controller import LanguageMixin
 from .display_mode_controller import DisplayModeMixin
+from .help_controller import HelpMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
 from .custom_collections_controller import CustomCollectionsMixin
@@ -93,6 +94,8 @@ def _clamp_folder_pane_width(width: int) -> int:
 
 
 class AppController(
+    #: #2054: a felhasználói súgó fejezetei, szövege és keresése
+    HelpMixin,
     CustomAspectRatiosMixin,
     CustomCollectionsMixin,
     # #644: a saját szerkesztések védelme a párhuzamosan futó Picasa

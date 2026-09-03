@@ -133,6 +133,8 @@ MenuBar {
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
     // megnyitását a Main.qml köti be (forró fájl, az integrátor dolga)
     signal optionsRequested()
+    //: #2054: a súgó megnyitása; a paraméter a fejezet ( = főoldal)
+    signal helpRequested(string topic)
     // #287: Duplikátum-kereső ablak megnyitása
     signal dedupRequested()
     // #1473: Arckeresés — az `Eszközök` menü tétele. Az eredetiben ez nem
@@ -1616,7 +1618,12 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Help")
-        PicasaMenuItem { text: qsTr("Help Contents and Index") + "\tF1"; placeholder: true }
+        //: #2054: BEKÖTVE — a súgó a csomagban van, net nélkül is megnyílik.
+        MenuItem {
+            objectName: "menuHelpContents"
+            text: qsTr("Help Contents and Index") + "\tF1"
+            onTriggered: bar.helpRequested("")
+        }
         PicasaMenuItem { text: qsTr("Keyboard Shortcuts"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek

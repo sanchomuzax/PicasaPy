@@ -380,7 +380,12 @@ class TestSweepOr:
         # Másolás (Ctrl+C) élővé vált — a képek fájljai a vágólapra
         # kerülnek, és a billentyű FÓKUSZ-ÉRZÉKENY (szövegmezőben a mezőé
         # marad, #1571). Két tétellel kevesebb a néma hirdető.
-        assert len(helyfoglalo_hirdetok) >= 4, (
+        # ⚠️ #2054: 4 → 3. NEGYEDSZER: a Súgó ▸ „Súgó - tartalom és
+        # tárgymutató" (F1) élővé vált — a súgó szövege eddig is megvolt
+        # (28 fájl), csak a programból nem lehetett megnyitni. A menütétel
+        # mostantól valódi `MenuItem`, ami megnyitja a nézőt, és az F1 is
+        # él. A szám tehát megint azért csökken, mert javult valami.
+        assert len(helyfoglalo_hirdetok) >= 3, (
             "a mérésnek meg kell találnia a spec szerinti kilenc "
             "hatókörön-kívüli helyfoglaló tételt — ha ez a szám lecsökkent, "
             "vagy a regex tört el, vagy tényleg javult valami (ellenőrizd!)"
