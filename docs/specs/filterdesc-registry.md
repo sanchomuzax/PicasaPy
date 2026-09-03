@@ -2522,9 +2522,49 @@ A leképezést építő `0x00bbbe20` (673 b) beolvasott konstansai:
 ⇒ **`h` fokban (0–360, körbefordítással), `s` és `v` SZÁZALÉKBAN (0–100)**,
 a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
 
-**Ami NINCS mérve:** a megállók közti interpoláció pontos módja (lineáris-e
-a színezetben, és melyik irányban megy körbe), valamint hogy a `position`
-milyen tartományban van.
+### Az interpoláció — LINEÁRIS, a színezetben a RÖVIDEBB ÍVEN (2026-09-04, #2238)
+
+A megálló-keresést és a keverést a `0x00bbbcf0` (302 b) és a `0x00bbbbf0`
+(254 b) végzi.
+
+**a) A megálló-keresés.** A `0x00bbbcf0` végigmegy a pozíció-tömbön, és
+megkeresi az utolsó `position ≤ x` (alsó) és az első `position ≥ x` (felső)
+megállót. Ha a kettő egybeesik — vagy a keresett érték bitmintája 8-nál
+közelebb van valamelyik megállóéhoz —, a megálló három mezőjét
+(`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a tömbben
+**hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három float).
+
+**b) A súly.** `0x00bbbdc0`–`0x00bbbdd7`:
+
+```
+t = (position[felső] − x) / (position[felső] − position[alsó])
+```
+
+⇒ `t` az **alsó** megálló súlya (1, ha `x` az alsón áll; 0, ha a felsőn).
+
+**c) A keverés.** A `0x00bbbbf0`-ben az `s` és a `v` **sima lineáris**
+interpoláció (`a + t · (b − a)`, `0x00bbbc00`–`0x00bbbc22`).
+
+⭐ **A színezet NEM az:**
+
+```
+0x00bbbc36  fsubp             ; Δ = h_alsó − h_felső
+0x00bbbc47  call 0x0049f5c0   ; fabs
+0x00bbbc4c  fcomp dword ptr [0x00cf409c]   ; 180,0
+0x00bbbc5a  jp   <|Δ| ≤ 180: sima lineáris>
+0x00bbbc81  fld  qword ptr [0x00cf3d50]    ; 360,0 — a KISEBBIK végpontot eltolja
+```
+
+⇒ **Ha a két színezet távolsága nagyobb 180 foknál, a motor az egyiket
+±360-nal eltolja, és a RÖVIDEBB ÍVEN interpolál** — a színkörön a közelebbi
+irányba megy körbe. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen
+`fabs` utasítással.)
+
+**Ami NINCS mérve:** a `position` tartománya. A keresett érték egészként
+érkezik, és előjel nélküli javítással (`+ 2³²`) válik lebegőpontossá
+(`0x00bbbd0f`–`0x00bbbd1b`) — a pozíciók tehát egész indexhez hasonlítódnak,
+de a felső határt nem olvastam ki.
+
 
 ---
 
