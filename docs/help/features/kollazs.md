@@ -36,9 +36,15 @@ A **Beállítások** fülön:
   CD-borító, négyzet, kicsi és nagy nyomat, digitális képkeret, vagy
   kézi méret. Saját arányt is felvehetsz.
 - **Álló** / **Fekvő** tájolás.
-- **Rács vastagsága** — a képek közti hézag.
+- **Rács vastagsága** — a képek közti hézag. Mozaiknál és
+  képkockamozaiknál a csúszka húzása közben a szám azonnal követ, az
+  átrendezés viszont csak akkor fut le, amikor megállsz vagy elengeded
+  a csúszkát.
 - **Árnyékok rajzolása**.
-- **Képfeliratok megjelenítése** — a képek felirata rákerül a kollázsra.
+- **Képfeliratok megjelenítése** — a képek felirata rákerül a
+  kollázsra. Csak a **Polaroid fényképezőgép** szegélyű képeken
+  jelenik meg, a fehér sávba, a fotó alá. Kikapcsolva egyetlen
+  feliratot sem rajzol a program.
 - **Beállítás képkockaközéppontként** — melyik kép legyen a kiemelt
   középső (képkockamozaiknál).
 
@@ -67,6 +73,12 @@ A **Háttér beállításai** dobozban:
 
 A **Képszegélyek** választóban: **Egyik sem**, **Fehér szegély**, vagy
 **Polaroid fényképezőgép**.
+
+A **Polaroid fényképezőgép** szegély alsó fehér sávjába kerül a kép
+felirata, ha a **Képfeliratok megjelenítése** be van kapcsolva. A
+felirat színét a program a háttérhez igazítja: világos alapon sötét
+szürke, sötét alapon fehér. Az ékezetes betűk is helyesen jelennek meg.
+Ha a felirat nem férne ki, a program kisebb betűvel írja, nem vágja le.
 
 ## Klipek fül
 

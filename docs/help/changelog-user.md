@@ -4,6 +4,22 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-03
+
+**Kollázs**
+
+- A **Képfeliratok megjelenítése** kapcsoló mostantól tényleg hat a kész
+  kollázsra. Eddig kikapcsolva is a képen maradt a Polaroid-szegélyre
+  írt felirat.
+- A feliratok ékezetes betűi helyesen jelennek meg. Korábban az „Ő”, „Ű”
+  és társaik kérdőjelre cserélődtek.
+- A felirat színe a háttérhez igazodik: világos alapon sötét szürke,
+  sötét alapon fehér — így sötét hátterű kollázson is olvasható marad.
+  A felirat mérete és helye is az eredeti Picasáéhoz igazodik.
+- A **Rács vastagsága** csúszka húzása már nem akasztja meg a felületet
+  mozaiknál és képkockamozaiknál: az átrendezés akkor fut le, amikor
+  megállsz a csúszkával.
+
 ## 2026-09-02 — a súgó első kiadása
 
 Ez a súgó első teljes változata. Nem egy adott frissítéshez tartozik,
