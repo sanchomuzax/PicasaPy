@@ -1014,6 +1014,27 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (4. kör) — a HASONLÓSÁG-ADATBÁZIS tárolása és a lánc
+(`picasa-kereses-modok.md`).** A `searchoptions/similarthumb` mögötti
+hasonlóság-keresésnek saját, tartós adatbázisa van, és az a **`CBlockFile`**
+keretben él (ugyanaz, mint a bélyegképeké). **A rekord FIX 380 bájt**
+(`0x007eb652` `push 0x17c`, `0x007eb659` a leíró méret-mezője,
+`0x007eb661` memcpy); visszaolvasáskor `0x007eb235` `cmp eax, 0x17c` /
+`jne` ⇒ **nincs verziómező**, a 380-tól eltérő méretű bejegyzést a Picasa
+érvénytelennek veszi és újraszámolja. A lánc: `0x007e95f0` → `0x007ead60`
+(`CSimSearch::updating`, „Updating similarity database…") → átméretezés a
+`Preferences\ResampleFilter2` szerint (`0x00a3f490`; a nagy átméretező
+`0x00a42c20` **4×** fut) → jellemző-kinyerés `0x007ea650` (**4×**) →
+normalizálás `0x007ebd90`. ⭐ **A képpont-kvantálás RGB565**
+(`0x007eb8e4`–`0x007eb900`: R>>3, G>>2, B>>3, BGRA sorrendből). ⭐ **A
+memóriabeli vektor 216 `float`** (`0x007ebda2` `mov edx, 0x24` = 36
+iteráció × 6 elem, lépés `0x18`) = 864 bájt — a tárolt 380-nál nagyobb,
+tehát a tárolt alak **tömörített**. ⛔ **A 380 bájt belső elrendezése NINCS
+MEG**, és **mintafájl sincs** a repóban (a tulajdonos sosem futtatta a
+funkciót); a megfejtés útja a `0x007ea650` (1802 b) teljes
+diszasszemblálása. Melléklelet: a `makemoviecache.db` írási helyén a leíró
+**4 bájtos** blobot ad át (`0x0080f9a5`). Jegy: **#447**.
+
 ⭐ **2026-09-03 (3. kör) — MEGVAN A BÉLYEGKÉP-GYORSÍTÓTÁR ELLENŐRZŐÖSSZEGE.**
 A hetek óta nyitott örökölt kérdés lezárva. Az osztály neve **`CBlockFile`**
 (`.\thumblab\CBlockFile.cpp`), és a Picasa **saját** CSV-kiírója
