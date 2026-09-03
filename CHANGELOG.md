@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.236] – 2026-09-03
+
 ## [0.8.235] – 2026-09-03
 
 ### Javítva
