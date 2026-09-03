@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.239] – 2026-09-03
+
+### Javítva
+- **Egy hibaüzenet-ablak szélessége kiszámíthatatlan volt Windowson
+  (#1748).** A mentés összegző ablaka („File operation failed") a Windows
+  alapértelmezett megjelenésével hol keskenyebb, hol szélesebb lett a
+  kelleténél. Javítva — és mostantól **minden** párbeszédablakunkat
+  végigméri egy ellenőrzés ugyanezzel a megjelenéssel, hogy ne fordulhasson
+  elő újra észrevétlenül.
+
 ## [0.8.238] – 2026-09-03
 
 ### Javítva
