@@ -498,6 +498,70 @@ modellünk a súlyt `[0,1]`-re vágja, tehát telít). Ez a Vignette-et és a
 Matte-ot is érinti. Nyitott kérdés: #2076.
 
 
+
+#### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
+
+A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
+0). A #1869 köre a másodlagost „örökölt id"-nek nevezte; a **feltétele** most
+ki van mérve, és a név is pontosításra szorul.
+
+**A kapcsoló: a SHIFT lenyomott állapota**, a fül felépülésekor lekérdezve:
+
+```
+0x005d7c91  push 0x10                        ; VK_SHIFT
+0x005d7ca3  call dword ptr [0xc406f8]        ; GetAsyncKeyState
+0x005d7cbb  shr  eax, 0xf                    ; a 15. bit = „épp le van nyomva"
+0x005d7cbe  and  al, 1
+0x005d7cc0  mov  byte ptr [ecx+0x33a8], al   ; a panel kapcsolója
+```
+
+Az importnév a betöltési táblából kiolvasva: a `0x00c406f8` rekesz a
+`0x00922efc` név-rekordra mutat, ami **`GetAsyncKeyState`** (hint 256).
+
+**A csempeépítő ezt nézi**, és csak akkor nyúl a második mezőhöz:
+
+```
+0x005d7d2e  mov ecx, [esi+esi + 0xc7e5a0]    ; ELSŐDLEGES szűrőnév
+0x005d7d63  cmp byte ptr [ebx + 0x33a8], 0
+0x005d7d6a  je  0x5d7e07                     ; nincs Shift -> marad az elsődleges
+0x005d7d70  mov esi, [esi + 0xc7e5a4]        ; MÁSODLAGOS szűrőnév
+0x005d7d76  cmp esi, edi (0)
+0x005d7d78  je  0x5d7e07                     ; nincs második -> marad az elsődleges
+```
+
+⇒ **Shift nélkül mindig az elsődleges fut.** A második akkor és csak akkor,
+ha a Shift le van nyomva ÉS az adott csempéhez van második név.
+
+#### A kilenc csempe, amelynek VAN második szűrője
+
+| # | elsődleges | Shift-tel | a második felirata |
+|---|---|---|---|
+| 1 | `unsharp2` | `unsharp` | **Sharpen (Old)** |
+| 5 | `PicnikGrain` | `grain` | **Film Grain (Old)** |
+| 6 | `PicnikTint` | `tint` | **Tint (Old)** |
+| 9 | `glow2` | `glow` | **Glow (Old)** |
+| 12 | `dir_tint` | `radtint` | Radial Tint |
+| 21 | `HeatMap` | `NightVision` | Night Vision |
+| 27 | `Vignette` | `Matte` | Matte |
+| 28 | `Pixelate` | `PicnikFocalPixelate` | Focal Pixelate |
+| 33 | `Border` | `RoundedEdges` | Rounded Edges |
+
+A maradék **27** csempe második mezője `NULL` — azokra a Shift nem hat.
+
+⚠️ **A „örökölt/régi" olvasat csak a felére igaz.** Négy másodlagos felirata
+kimondottan **„(Old)"**, öté viszont **saját, önálló név** (Radial Tint,
+Night Vision, Matte, Focal Pixelate, Rounded Edges) — ott a Shift nem régi
+változatot, hanem **másik effektet** ad. A #1869 köre ezt „örökölt id"-nek
+nevezte; **ez pontatlan volt**, és itt helyesbítjük.
+
+**Bizalmi fok: megerősített.** A kapcsoló, az importnév, a feltétel és a
+kilenc pár közvetlen kiolvasásból; a feliratok a `filterdesc.xml`-ből.
+
+> **Nálunk (mérve):** az effekt-füleken **nincs** Shift-kezelés — a
+> `ShiftModifier` és a `Qt.Shift` egyáltalán nem fordul elő az
+> `EditorEffectsTab*.qml` és a `ToolTile.qml` fájlokban. A funkció tehát
+> hiányzik; jegy: **#2146**.
+
 #### A `mode` attribútum SZÁMÉRTÉKE — és az effekt-csempe kék jelvénye (#1869)
 
 A `mode` nem csak besorolás: a parser **egésszé fordítja**, és ez az egész
