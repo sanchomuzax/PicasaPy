@@ -1014,6 +1014,28 @@ felületünkön — vakon átvenni tilos. Jegy: **#2043**.
 
 ### [pmp-database.md](pmp-database.md) — a BORÍTÓ-kérdés lezárva (2026-09-02)
 
+⭐ **2026-09-03 (8. kör) — a hasonlóság-rekord KÖZEPE: 216 bájt
+(`picasa-kereses-modok.md`).** ⛔ **Helyesbítés az előző körre:** az azt
+állította, hogy a normalizáló (`0x007ebd90`) nem ír a rekord `+0x082`-től
+induló területére — **téves**. A keresésem mintaillesztéses volt, és csak a
+közvetlen `[edi+eltolás]` alakokat ismerte; a tényleges írás **SIB-alakú**
+(`0x007ebf39`, `mov byte ptr [esi + edi - 1], al`, ahol az `edi` **index**).
+A teljes törzs diszasszemblálása megtalálta. ⭐ **A hurok 216 iterációs**
+(`0x007ebf23`, `cmp esi, 0xd8`), és **elemenként egy bájtot** ír: a vektor
+elemét egy átalakító után megszorozza a skálatényezővel, **255,0-nál vágja**
+(`0x00cf39d0` / `0x00cf3a00`), majd **csonkítva** egészre konvertálja
+(`0x007ebf1e` `or eax, 0xC00` + `fistp`). A skálát a 216 elem maximumából
+képzi, **0,001-es alsó korláttal** (`0x00cf3db0` / `0x00c7999c`).
+⇒ **A 380 bájtból 377 elszámolva:** `+0x000` jelzőbájt · `+0x002…+0x081`
+8×8 RGB565 · `+0x082…+0x159` 216 bájt · `+0x15C…+0x17B` 8 `float`;
+ismeretlen már csak `+0x001`, `+0x15A`, `+0x15B` (**3 bájt**).
+⛔ **NINCS MEG** az elemenkénti átalakítás: `0x0049fe60` → `0x00c0b310` →
+`0x00c14398`, egy nem azonosított CRT-matematikai függvény.
+⚠️ Ugyanaz a csapda MÁSODSZOR (a 66. kör rövid `fld`-kódolása után):
+**regiszter-használatot ne mintaillesztéssel keress** — diszasszembláld a
+teljes törzset, darabolva, és a szövegben keress a regiszternévre.
+Jegy: **#447**.
+
 ⭐ **2026-09-03 (7. kör) — HÁROM Glimmer-leltár, és egy TÉVES jegy-tétel
 (`filterdesc-registry.md`).** A #2211 munkalistája élén a
 `TiledImageOperation` állt „**0 említéssel**". ⛔ **Ilyen nevű művelet nem

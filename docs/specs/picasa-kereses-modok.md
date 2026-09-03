@@ -667,15 +667,12 @@ ismeretlen tartomány **kezdete**. Az `edi` tehát a normalizáló
 **regiszter-paramétere**, és a függvény a végén `mov eax, edi`-vel
 vissza is adja.
 
-⚠️ **De a normalizáló NEM ír oda.** A 460 bájtos törzsében **egyetlen**
-`edi`-célú írás sincs (mérve: `fstp [edi]`, `fstp [edi+d8]`,
-`mov byte/word/dword [edi]`, `stosb/stosw/stosd`, `add edi`, `inc edi` —
-mind **nulla** találat). Amit a hurok után tesz: a maximumot összeveti a
-`0x00cf3db0` konstanssal, és ha nem nagyobb, a `0x00c7999c`-t tölti be
-helyette (nulla-védelem) — vagyis **skálatényezőt számol**, nem kimenetet ír.
-
-⇒ Az `edi` egy **továbbadott** kimeneti mutató; a 218 bájtot a lánc egy
-másik, még nem azonosított lépése tölti.
+⛔ **HELYESBÍTVE (2026-09-03, ld. a következő szakaszt): a normalizáló
+IGENIS ide ír.** A szakasz első kiadása azt állította, hogy „egyetlen
+`edi`-célú írás sincs" — ez **téves** volt: a mintaillesztéses keresésem
+csak a közvetlen `[edi+eltolás]` alakokat ismerte, az írás viszont
+**SIB-alakú** (`mov byte ptr [esi + edi - 1], al`, `0x007ebf39`). A teljes
+törzs diszasszemblálása megtalálta.
 
 ### Melléklelet: a függvényindex mérete itt RÖVID
 
@@ -699,4 +696,78 @@ a `+0x082`-től induló területre (az `edi`-t továbbadó hívási láncot köv
 megerősített** (bájtszinten kiolvasva, a veremkeret a `ret 4`-ekkel
 igazolva); a **218 bájt tartalma NINCS MEG**, a „216 bájt + 2" felosztás
 pedig **feltevés, nem mérés**.*
+
+## ⭐ A 216 BÁJTOS vektor — a rekord közepe megfejtve (#447, 2026-09-03)
+
+Az előző kör a rekord `+0x082`-től induló 218 bájtját nyitva hagyta, és
+tévesen zárta ki a normalizálót íróként. **A normalizáló írja** — 216
+bájtot, elemenként egyet.
+
+### A hurok
+
+```
+0x007ebeb2   fld dword ptr [ebx + esi*4]   ; a vektor i-edik float eleme
+0x007ebeb9   call 0x0049fe60               ; elemenkénti átalakítás (ld. lentebb)
+0x007ebebe   fmul dword ptr [esp + 0xc]    ; szorzás a skálatényezővel
+0x007ebee2   fcom qword ptr [0x00cf39d0]   ; összevetés 255,0-val
+0x007ebf04   fld dword ptr [0x00cf3a00]    ; a vágott érték: 255,0
+0x007ebf0e   add esi, 1
+0x007ebf1e   or eax, 0xc00                 ; FPU-kerekítés → CSONKÍTÁS
+0x007ebf2d   fldcw word ptr [esp + 0xc]
+0x007ebf31   fistp dword ptr [esp + 0xc]   ; float → egész, csonkítva
+0x007ebf35   mov al, byte ptr [esp + 0xc]  ; az alsó bájt
+0x007ebf39   mov byte ptr [esi + edi - 1], al   ; ⇐ IDE ír
+0x007ebf23   cmp esi, 0xd8                 ; 216
+0x007ebf41   jl 0x007ebeb2
+```
+
+⇒ **216 iteráció, elemenként egy bájt**, `edi`-től kezdve — és `edi` a
+hívónál (`0x007eb5b8`) pontosan a rekord **`+0x082`**-je.
+
+### A skálatényező és a védelmek
+
+| cím | konstans | szerep |
+|---|---|---|
+| `0x00cf3db0` | **0,001** (`double`) | ha a 216 elem maximuma ennél nem nagyobb… |
+| `0x00c7999c` | **0,001** (`float`) | …akkor ezt használja helyette (nulla-védelem) |
+| `0x00cf39d0` | **255,0** (`double`) | a felső vágás összehasonlító értéke |
+| `0x00cf3a00` | **255,0** (`float`) | a vágott érték |
+| `0x007ebf1e` | `or eax, 0xC00` | a kerekítés **csonkításra** állítva |
+
+### ⛔ Ami NINCS MEG: az elemenkénti átalakítás
+
+A `0x0049fe60` (29 b) csak burkoló: `fld [ebp+8]` → `call 0x00c0b310`
+(20 b) → az pedig `call 0x00c14398`. Ez a lánc egy **CRT-matematikai
+függvényhez** vezet, amelyet **nem azonosítottam**. Amíg nincs megnevezve,
+a bájtérték képlete `NINCS MEG` — a szorzás, a vágás és a csonkítás
+viszont megerősített.
+
+### A rekord MAI állása — 380-ból 377 elszámolva
+
+```
++0x000        uint8 = 1        ; jelzőbájt (0x007eb5a3)
++0x001        1 bájt           ; ISMERETLEN — egyik lépés sem írja
++0x002 …+0x081  64 × uint16    ; 8×8 RGB565 bélyegkép
++0x082 …+0x159  216 × uint8    ; a normalizált vektor, csonkítva, 255-re vágva
++0x15A …+0x15B  2 bájt         ; ISMERETLEN
++0x15C …+0x17B   8 × float     ; a négy 0x007ea650-hívás skalárjai
+                               ; ⇒ 0x17C = 380
+```
+
+### ⚠️ Módszertani helyesbítés — MÁSODSZOR ugyanaz a csapda
+
+Az előző kör azért zárta ki tévesen a normalizálót, mert a keresés
+**mintaillesztéses** volt, és csak a közvetlen `[edi+eltolás]` alakokat
+ismerte. A tényleges írás **SIB-alakú** (`88 44 3e ff` =
+`mov byte ptr [esi + edi - 1], al`), ahol az `edi` **index**, nem bázis.
+
+Ez ugyanaz a hiba, mint a 66. körben (a rövid `fld` kódolás kimaradása).
+⇒ **Regiszter-használatot ne mintaillesztéssel keress.** Diszasszembláld a
+TELJES törzset, és a kapott szövegben keress a regiszter nevére. Ha a
+törzs hosszabb, mint amennyit a dekódoló egy hívásban ad, **darabold**.
+
+*Bizonyítottsági fok: a **216 bájtos írás, a vágás, a csonkítás és a
+nulla-védelem megerősített** (címenként kiolvasva); az **elemenkénti
+átalakító függvény NINCS MEG**; a `+0x001`, `+0x15A`, `+0x15B`
+(összesen 3 bájt) továbbra is ismeretlen.*
 
