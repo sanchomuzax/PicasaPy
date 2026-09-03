@@ -2017,35 +2017,101 @@ Most igen — és mindkettő **maradék nélkül** kiparszolható.
 > származnak. Konkrét útvonalat, fájlnevet ez a lap **nem** tartalmaz, és
 > nem is szabad ide másolni.
 
-### 8.1 `thumbindex.db` — az útvonal-index
+### 8.1 `thumbindex.db` — az útvonal-index (HELYESBÍTVE 2026-09-03)
+
+> ⚠️ **Két lényeges javítás az első kiadáshoz képest.** (1) A rekord
+> **NEM teljes útvonalat** tárol fájloknál, hanem csak a **nevet** — a
+> teljes út a szülőmappa rekordjából áll össze. (2) A `típus` **nem**
+> „mappa vagy fájl", hanem **felismert formátumkód**, tizenkét mért
+> értékkel. Aki az első kiadás szerint ír parsert, rossz útvonalakat kap.
 
 ```
 +0   uint32   magic = 0x40466666      ("ffF@" ASCII-ként)
 +4   uint32   rekordszám (N)
 +8   N × rekord:
-        ASCIIZ  útvonal (változó hosszú, NUL-lezárt)
+        ASCIIZ  NÉV (fájlnál csak a fájlnév; mappánál a teljes,
+                „\"-re végződő útvonal) — változó hosszú, NUL-lezárt
         +0   uint64  FILETIME — létrehozás
         +8   uint64  FILETIME — hozzáférés
         +16  uint32  méret bájtban
-        +20  uint32  típus
+        +20  uint32  típus — FORMÁTUMKÓD (lásd lentebb)
         +24  uint8   „dirty"
         +25  uint8   „valid"
-        +26  uint32  kiegészítő mező (mappánál 0xFFFFFFFF)
+        +26  uint32  szülőmappa slotindexe, vagy 0xFFFFFFFF
         ⇒ a farok pontosan 30 bájt
 ```
 
 ⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce:**
-`Name, Creation Time, Access Time, Size, Type, Dirty, Valid`. Vagyis a
-`WriteDirscannerCSV` kimenete **ugyanennek a rekordnak** a szöveges
-kiírása — a bináris rekord és a CSV egy és ugyanaz a szerkezet.
+`Name, Creation Time, Access Time, Size, Type, Dirty, Valid`. A `Name`
+oszlop neve tehát **szó szerint igaz volt** — név, nem útvonal; az első
+kiadás olvasta félre.
 
-**A `típus` mért értékkészlete:** `5` és `1` = könyvtár, `2` = fájl.
-*(A `0xFFFFFFFF` kiegészítő mező mappáknál állandó; fájloknál kis egész.)*
+#### A teljes útvonal összeállítása
+
+| mérés (2 katalógus) | nagy katalógus | kis katalógus |
+|---|---:|---:|
+| fájl-bejegyzés (`+26 ≠ 0xFFFFFFFF`) | 133 089 | 3 188 |
+| ebből a NÉV `\`-t tartalmaz | **0** | **0** |
+| a `+26` érvényes, `\`-re végződő mappa-slotra mutat | **133 089 / 133 089** | 2 776 / 3 188 |
+
+⇒ `teljes_út(i) = név(szülő(i)) + név(i)`.
+
+A kis katalógusban hiányzó **412** eset pontosan a `típus = 1001`
+bejegyzések halmaza (ld. lentebb) — azok nem fájlok.
+
+#### A `típus` mező — FELISMERT formátum, nem kiterjesztés
+
+| típus | mi | nagy katalógus | kis katalógus |
+|---:|---|---:|---:|
+| 0 | **üres rekord** (szabad slot) | 5 325 | 16 |
+| 1 | könyvtár | 2 338 | 115 |
+| 2 | JPEG | 121 593 | 2 424 |
+| 3 | GIF | 394 | — |
+| 5 | könyvtár (2. fajta) | 6 | 19 |
+| 6 | BMP | 707 | 206 |
+| 8 | AVI | 37 | — |
+| 10 | MP4 / MPG / MTS | 2 645 | 17 |
+| 11 | WMV | 13 | — |
+| 13 | TIFF | — | 3 |
+| 14 | PNG | 7 693 | 125 |
+| 22 | TGA | 1 | — |
+| 31 | WebP | 6 | 1 |
+| 1001 | **arcsablon-bejegyzés** | — | 412 |
+
+**A besorolás a TARTALOM alapján történik, nem a kiterjesztésből.** A nagy
+katalógusban:
+
+- 33 `.png` **kiterjesztésű** fájl `típus = 2` (JPEG),
+- 26 `.jpg` és 4 `.jpeg` `típus = 14` (PNG),
+- a hat `típus = 31` (WebP) közül kettő `.jpg`/`.png` nevű.
+
+⇒ Egy átnevezett/rosszul elnevezett fájlt a Picasa a valódi formátuma
+szerint jegyez be. A saját olvasónk **ne a kiterjesztésből** következtessen.
+
+#### `típus = 0` — üres rekord
+
+Mind az 5 325 (illetve 16) ilyen bejegyzésen: a **név üres**, a méret `0`,
+a `dirty` és a `valid` `0`, mindkét FILETIME `0`, a `+26` pedig
+`0xFFFFFFFF`. ⇒ Ez **szabad slot**, nem tartalom. Ez magyarázza, miért nem
+zsugorodnak a slot-tömbök (8.4) és mire való a `valid` bájt.
+
+#### `típus = 1001` — arcsablon
+
+A kis katalógusban a `típus = 1001` bejegyzések halmaza **pontosan
+megegyezik** a `facetemplatesV2_index.db` foglalt slotjainak halmazával —
+**412 = 412, metszet 412**, azaz halmaz-azonosság, nem csak darabszám.
+⇒ Ezek nem lemezes fájlok, hanem az arcfelismerés sablon-bejegyzései,
+amelyek ugyanabban az azonosítótérben ülnek, mint a képek.
+
+#### `+26 == 0xFFFFFFFF` — pontos szabály
+
+A jelölő **pontosan** a `típus ∈ {0, 1, 5}` bejegyzéseken áll (nagy
+katalógus: 7 669 = 5 325 + 2 338 + 6; kis: 150 = 16 + 115 + 19). A többi
+bejegyzésen kis egész (nagy katalógus: 6 … 140 734, 2 305 egyedi érték —
+nagyságrendben a mappák száma).
 
 **Ellenőrzés:** a tulajdonos katalógusán a fejléc **140 758** rekordot
-ígér, és a parser pontosan ennyit olvas ki — **0 bájt maradékkal**. A
-kiterjesztés-eloszlás értelmes (119 483 `jpg`, 7 697 `png`, 7 664
-könyvtár, 2 108 `jpeg`, 1 770 `mp4`).
+ígér, és a parser pontosan ennyit olvas ki — **0 bájt maradékkal**.
 
 ### 8.2 `*_index.db` — NÉGY párhuzamos tömb (HELYESBÍTVE 2026-09-03)
 
@@ -2216,7 +2282,7 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 
 | kérdés | állapot | a következő lépés |
 |---|---|---|
-| a kulcs képzésének képlete | **NYITOTT** (örökölt) | a kulcstömböt feltöltő kód: a `0x006b7fc0`-t hívó **olvasó** párja, illetve a `[esi+0x0c]` tároló írói |
+| a kulcs képzésének képlete | **NYITOTT** (örökölt) | ld. 8.9 — a 2026-09-03-i kör kimerítette az adatoldali lehetőségeket; innentől csak a kulcstömböt feltöltő kód marad |
 | mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
@@ -2228,3 +2294,99 @@ gyorsítótárat ÍRJUNK, amit a Picasa frissnek fogad el.
 ellenőrizve); a **kulcs képzése NYITOTT**.*
 
 Jegyek: **#2195** (olvasó a két formátumhoz), **#1** (a db3-import gyűjtő).
+
+### 8.8 Melléklelet: a `onlinechecksum` algoritmusa — MEGFEJTVE, de nem ellenőrizhető
+
+A bélyegkép-kulcs keresése közben a tár-osztály fordítási egységében
+találtam **egyetlen** forgatás-alapú hash-t: `0x006b9870` (371 b). **Nem ez
+a bélyegkép-kulcs.** Az azonosítást az egyetlen hívója dönti el:
+`0x006ecd50` (835 b), amelynek sztringjei `onlinechecksum` és
+`LHUpload: Image %d (onlineID = %s) cannot be found in album feed…` ⇒ a
+megszűnt **Picasa Web Albums** szinkronjához tartozik.
+
+Mivel a megfejtés készen volt, itt marad — a `imagedata_onlinechecksum`
+PMP-oszlop olvasásához kellhet.
+
+#### A sztring-hash
+
+```
+h = 0x12345678
+minden bájtra:
+    ha 'A' <= c <= 'Z':  c += 0x20        # csak az ASCII nagybetűk
+    h ^= ((h << 5) + c + (h >> 2))        # 32 biten
+h_út = h mod 1000231                      # 0xF4327
+```
+
+| cím | mit ad |
+|---|---|
+| `0x006b98cb` | `ecx = 0x12345678` — a kezdőérték |
+| `0x006b98d2`–`0x006b98e2` | `'A'..'Z'` → `+0x20` (kisbetűsítés) |
+| `0x006b98e5`–`0x006b98f9` | `h ^= (h<<5) + c + (h>>2)` |
+| `0x006b98ff`–`0x006b9917` | osztás-idióma: `mod 0xF4327` = **1 000 231** |
+
+#### Az időbélyeg-tagok
+
+```
+mp   = (FILETIME + 5 000 000) / 10 000 000     # egész MÁSODPERC, kerekítve
+A    = rol(mp_lo,13) ^ rol(mp_hi,17) ^ <2. paraméter>
+B    = rol(ft_hi,17) ^ rol(ft_lo,13)
+kulcs_alap = h_út ^ B ^ A
+```
+
+| cím | mit ad |
+|---|---|
+| `0x006b987e` / `0x006b9883` | `+0x4C4B40` (5 000 000) és `/0x989680` (10 000 000) |
+| `0x006b988d` | `call 0x00c13b70` — 64 bites osztás |
+| `0x006b9892`–`0x006b989a` | `rol 13` / `rol 17` / `xor` / `xor <param2>` |
+| `0x006b99c0`–`0x006b99c4` | a végső `xor` a nem-egyező ágon |
+
+#### ⭐ Az érdekes rész: IDŐZÓNA-TOLERÁNS egyeztetés
+
+A függvény nem egyetlen értéket számol, hanem **végigpróbál minden egész
+órás időzóna-eltolást −12 h és +12 h között**, és mindegyikre megnézi,
+egyezik-e a tárolt ellenőrzőösszeggel:
+
+| cím | mit tesz |
+|---|---|
+| `0x006b991b` | `ebx = 0xFFFF5740` = **−43 200 s** (−12 óra) |
+| `0x006b9920`–`0x006b99a4` | az eltolt időből képzett jelölt kiszámítása |
+| `0x006b99a8` | `cmp eax, [esp+0x40]` — összevetés a **várt** összeggel |
+| `0x006b99ae` | `add ebx, 0xE10` = **+3 600 s** (egy óra) |
+| `0x006b99b4` | `cmp ebx, 0xA8C0` = **+43 200 s** — a ciklus vége |
+
+⇒ Huszonöt jelölt. A Picasa tehát **tudta**, hogy egy fájl időbélyege
+időzóna-váltás vagy hordozható meghajtó miatt egész órát ugorhat, és ezt
+nem tekintette változásnak. Ez a tervezői döntés önmagában is átvehető.
+
+#### ⛔ Amit NEM tudok róla
+
+**A képlet élő adaton NINCS ellenőrizve.** A `imagedata_onlinechecksum.pmp`
+oszlop **mind a három** mintakatalógusban teljesen üres (0 nem üres érték
+3 011, illetve 140 661 sorból) — a szolgáltatás megszűnt, a tulajdonos
+sosem használta. A `<2. paraméter>` (a `[esp+0x44]`-en érkező keverőérték)
+azonosítása ezért **NINCS MEG**; a hívó `0x006ecd50` átvilágítása adná meg.
+
+*Bizonyítottsági fok: az **algoritmus lépései megerősítettek** (címenként
+kiolvasva); a **teljes képlet feltételes**, mert nincs hozzá minta.*
+
+### 8.9 A bélyegkép-kulcs: mit zártam ki a VALÓDI kulcstömbön
+
+A 8.6 szakasz visszavonta az előző kör kizárásait, mert azok nem létező
+mezőkre vonatkoztak. Ez a szakasz a pótlásuk — mind a **valódi**
+kulcstömbön mérve, a `thumbs_index.db` 3 204 foglalt slotján.
+
+| próba | kombináció | egyezés |
+|---|---:|---:|
+| közvetlen mező-egyezés (méret, mindkét FILETIME fele, `+26`, XOR-párok) | 9 | **0** |
+| hash a TÁROLT néven (teljes/kisbetűs/fájlnév/UTF-16 × CRC-32, FNV-1a, FNV-1, djb2, djb2-xor, sdbm, Jenkins, MD5 alsó/felső, SHA-1 alsó) | 60 | **0** |
+| hash a **rekonstruált teljes úton** (8.1 szerint) × Picasa-JS-hash, CRC-32, FNV-1a, djb2, sdbm, MD5 | 28 | **0** |
+| **minden** numerikus PMP-oszlop (`uint32`, valamint `uint64` alsó/felső fele) | 59 fájl | **0** |
+
+⚠️ **A 60-as sor bemenete a TÁROLT név volt**, ami a 8.1 helyesbítése előtt
+tévesen teljes útvonalnak látszott. A 28-as sor az ezzel javított,
+összeállított teljes úton futott — szintén nullával.
+
+⇒ A kulcs **nem** az útvonal önmagában, **nem** az időbélyeg vagy a méret
+önmagában, és **nem** áll elő egyik ismert PMP-oszlopból sem. Marad a
+bináris: a `[this+0x0c]` tárolót feltöltő kód.
+
