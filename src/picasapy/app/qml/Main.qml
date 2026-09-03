@@ -889,7 +889,7 @@ ApplicationWindow {
         // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
@@ -2250,7 +2250,7 @@ ApplicationWindow {
         // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
         //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
         //: jelzője lekerül, és a projekt lapja lesz az aktív.
@@ -2549,10 +2549,48 @@ ApplicationWindow {
     }
 
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
-    CreateDialogs {
+    //: #1612/#2096: halasztva — a Létrehozás-párbeszédek csak a menüből vagy
+    //: a tálcáról nyílnak. A vezérlő jelzéseit a lenti, MINDIG álló
+    //: `Connections` fogadja, nem a komponens belseje (#1743).
+    DeferredDialog {
         id: createDialogs
         objectName: "createDialogs"
-        appWindow: window
+        sourceComponent: Component {
+            CreateDialogs { appWindow: window }
+        }
+    }
+
+    // #2096: a Létrehozás-párbeszédek vezérlő-hallgatói. Azért ITT állnak és
+    // nem a komponensben, mert az halasztott: amíg a felhasználó meg nem
+    // nyitotta, egy belső `Connections` nem létezne, és a kollázs/film
+    // visszajelzése NÉMÁN elmaradna. A kollázs a Kollázs panelről is
+    // indítható, tehát ez nem elméleti eset.
+    Connections {
+        target: controller
+        function onCollagePreviewReady(revision) {
+            // ⚠️ Itt SZÁNDÉKOSAN nincs `ensure()`. Az élő előnézet csak a
+            // NYITOTT kollázs-párbeszédnek szól: ha a párbeszéd nem áll, nincs
+            // mit frissíteni, és felépíteni is fölösleges volna. A többi
+            // jelzés (eredmény, hiba) viszont a felhasználónak szól, ott az
+            // `ensure()` KÖTELEZŐ — különben némán elmaradna a visszajelzés.
+            if (createDialogs.item)
+                createDialogs.item.frissitsdAzElonezetet(revision)
+        }
+        function onCollageFinished(path, used, skipped, missing) {
+            createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
+        }
+        function onCollageFailed(message) {
+            createDialogs.ensure().jelezdAKollazsHibajat(message)
+        }
+        function onMovieProgress(done, total) {
+            createDialogs.ensure().frissitsdAFilmHaladast(done, total)
+        }
+        function onMovieFinished(path, used, skipped, missing) {
+            createDialogs.ensure().jelezdAFilmSikert(path, used, skipped, missing)
+        }
+        function onMovieFailed(message) {
+            createDialogs.ensure().jelezdAFilmHibajat(message)
+        }
     }
 
     DeferredDialog {

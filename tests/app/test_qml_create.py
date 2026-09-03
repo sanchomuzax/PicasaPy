@@ -7,7 +7,10 @@ végén az eredmény-dialógus jelenik meg a controller jelzésére.
 
 import cv2
 import numpy as np
+import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
+
+from tests.support.qml_halasztott import epitsd_fel
 
 
 def _settle(qt_app, rounds=4):
@@ -17,6 +20,16 @@ def _settle(qt_app, rounds=4):
         QTimer.singleShot(10, pause.quit)
         pause.exec()
 
+
+
+@pytest.fixture(autouse=True)
+def _felepitett_parbeszedek(qml_app):
+    """#2096: a Létrehozás-párbeszédek halasztva épülnek fel.
+
+    Ez a fájl a VISELKEDÉSÜKET méri, nem a felépülés pillanatát (azt a
+    #1720 őre), ezért minden eset előtt felépítjük őket — így az alábbi
+    `findChild`-ok változatlanul maradhatnak."""
+    epitsd_fel(qml_app[0], "createDialogs")
 
 class TestCreateMenu:
     def test_items_disabled_without_selection(self, qml_app):
