@@ -2098,9 +2098,9 @@ motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
 
 ---
 
-## ⭐ HÁROM Glimmer-képlet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB` (2026-09-03, #2211)
+## ⭐ NÉGY Glimmer-művelet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB`, `TwoTone` (2026-09-03, #2211)
 
-Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **hármat
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **négyet
 számszerűen is megold** — és a megoldás módszere maga is eredmény: a
 **saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
 
@@ -2190,6 +2190,31 @@ tér vissza** (`0x00bbcde2`) — vagyis nem csinál semmit.
 
 **Ami NINCS mérve:** mit csinál a gyerekművelet a `100 − detail` értékkel.
 
+### 4. `TwoToneImageOperation` — bizonyítottan a `GradientMap` két megállóval
+
+Az előző szakasz megállapította, hogy a `TwoTone` és a `GradientMap`
+**ugyanazt a munkavégzőt** futtatja (`0x00bb87b0`). Az attribútum-beolvasó
+megmutatja, miért:
+
+```
+0x00bc289e  call 0x0097c5d0          ; 0x14 bájtos színátmenet-objektum foglalása
+0x00bc28cf  call 0x008e81b0          ; felépítés a két beolvasott színből
+0x00bc2923  mov  dword ptr [edi + 0x40], esi   ; -> a művelet +0x40 tagjába
+0x00bc2949  call 0x00bb8710          ; ÉS ÁTADJA A VEZÉRLÉST a GradientMap beolvasójának
+```
+
+A munkavégző pedig épp ezt a tagot olvassa (`0x00bb87d1
+mov esi, dword ptr [esi + 0x40]`), és **kevesebb mint két megállónál nem
+csinál semmit** (`0x00bb87f4` `shr esi, 1`, `0x00bb87f6` `cmp esi, 2`).
+
+⇒ **A `TwoTone` nem önálló algoritmus:** a `blackColor` és a `whiteColor`
+egy kétmegállós színátmenetté áll össze, onnantól a `GradientMap` fut. Három
+független horgony mondja ugyanezt: a közös munkavégző, a `+0x40` tag
+írása/olvasása, és a `GradientMap` beolvasójának meghívása.
+
+**Ami NINCS kiolvasva:** a két megálló pontos pozíciója (feltehetően 0 és 1,
+de ez nem mérés).
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
@@ -2202,6 +2227,6 @@ tér vissza** (`0x00bbcde2`) — vagyis nem csinál semmit.
 3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
    levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
 
-*Bizonyítottsági fok: **megerősített** mindhárom képletre (kiolvasott
+*Bizonyítottsági fok: **megerősített** mind a négy leletre (kiolvasott
 utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
-tartalma **nincs mérve**.*
+tartalma és a `TwoTone` megálló-pozíciói **nincsenek mérve**.*
