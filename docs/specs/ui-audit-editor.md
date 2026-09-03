@@ -2051,3 +2051,87 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 > `panel-feliratok-hu.tsv` / `stringres-en-hu.tsv` sorából, minden szerkezet a
 > `editpanel.tre` és a `respack.yt` kiolvasott bejegyzéseiből, a mi oldalunk
 > greppel mérve.
+
+---
+
+## A szerkesztő MARADÉK három vezérlője — mérve (2026-09-03)
+
+A kettős nézet feltárása után (előző szakasz) az `editpanel`-en **három**
+feltáratlan elem maradt. Mindhárom a **megnyitott kép kontextusától** függ,
+és mindhárom `m_hidden` alapállapotban — ezért nem tűnnek fel a felület
+ránézésre.
+
+### 1. `editpanel/showtextcheckbox` — a szöveg-overlay láthatósága
+
+| mit | érték |
+|---|---|
+| felirat (`editpanel/showtextlabel`) | **„Szöveg megjelenítése"** (`panel-feliratok-hu.tsv:4959`) |
+| buboréksúgó | **„Fotón lévő szöveg megjelenítése vagy elrejtése"** (`:4961`) |
+| rajz | `superbutton(**buttcon_checkbox**)` — **valódi jelölőnégyzet** |
+| szülő | **`editpanel/tabpanel1`** — az **első** fülön ül (`editpanel.tre:235`) |
+| alapállapot | **`m_hidden`** (`editpanel.tre:236`) |
+| a felirat kattintható | **`Property hitchildren 1`** (`editpanel.tre:234`) |
+| kezelők | `0x005f6410` (572 b, együtt a `showtextlabel`-lel és az `editpanel/edittextoverlay`-jel), `0x005f6960`, `0x005f6a40`, `0x00566a70` |
+
+⭐ **Ugyanaz a funkció KÉT ALAKBAN.** A menüben **két külön parancs** van
+(`ID_PICTURE_SHOW_TEXT` / `ID_PICTURE_HIDE_TEXT` — „nem egy kapcsoló", ld.
+[`picasa-menu-parancsok-viselkedes.md`](picasa-menu-parancsok-viselkedes.md)),
+a szerkesztő panelen viszont **egyetlen jelölőnégyzet**. ⇒ Aki csak a
+menü-specet olvassa, két menütételt épít, és **lemarad a panel
+jelölőnégyzetéről** — vagy fordítva.
+
+> ⛔ **NINCS hozzá `Preferences`-kulcs — mérve, két alakban.**
+> (1) A binárisban nincs `ShowText…` / `ShowOverlay…` / `TextOverlay…` /
+> `ShowCaption…` / `HideText…` alakú sztring.
+> (2) A négy érintett függvény (`0x00566a70`, `0x005f6410`, `0x005f6960`,
+> `0x005f6a40`) egyike sem hivatkozik `Preferences`-szel kezdődő sztringre
+> (mind a négyre **0** találat).
+> ⇒ **Munkamenet-szintű nézetkapcsoló**, nem tartós beállítás.
+
+### 2. `editpanel/editslideshow` — a már megépített `editcollage` IKERPÁRJA
+
+| elem | **felirat** | **buboréksúgó** | rajz |
+|---|---|---|---|
+| `editpanel/editcollage` | „Kollázs szerkesztése" | „A kép alapjául szolgáló kollázs szerkesztése" | — |
+| **`editpanel/editslideshow`** | **„Mozgófilm szerkesztése"** | **„Mozgófilmes prezentáció szerkesztése"** | `superbutton(listheader_button, **edit_slideshow**)` |
+
+Mindkettő **`root` gyereke**, mindkettő **`m_hidden`** (`editpanel.tre:1341`
+és `:1350`), és **ugyanaz a függvény kezeli őket** — `0x00567a00` (1035 b) —,
+együtt az `editpanel/weblink`, `quickupload` és `uploadchanges` elemekkel.
+
+⇒ **A szerkesztő felismeri, hogy a megnyitott kép egy PROJEKT kimenete**
+(kollázs vagy mozgófilm), és felkínálja a **forrásprojekt újranyitását**.
+
+**Nálunk a kollázs-ág MEGVAN** (`PhotoViewer.qml:590`, #1002, a
+`collage_save.py:753` is hivatkozik rá), a **mozgófilm-ág nincs**
+(`grep -rn 'editslideshow' src/` → **0**). ⇒ **#2114**.
+
+### 3. `editpanel/edithelpbutton` — a gomb él, az IKONJA nincs
+
+```
+#editpanel/edithelpbutton_icon: editpanel/edithelpbutton    <- kikommentezve
+editpanel/edithelpbutton: root                              <- ÉL
+```
+
+(`editpanel.tre:1356`, `:1358`.) A respackben sima **`button`**, a
+buboréksúgója **„Súgó"**. Kezelők: `0x005c24c0`, `0x005e6710`, `0x005d59f0`.
+
+⇒ **Ugyanaz a minta, mint a `printpanel/phelpbutton`-nál**
+([`picasa-nyomtatas.md`](picasa-nyomtatas.md)): a Picasa **lecsupaszította**
+a súgógombokat — nem törölte őket, csak elvette az ikonjukat/feliratukat.
+**Nálunk nincs súgógomb, és a mérés szerint nem is kell.**
+
+### 4. Eredeti / nálunk / teendő
+
+| | eredeti (mért) | nálunk (mért) | teendő |
+|---|---|---|---|
+| szöveg-láthatóság a panelen | **jelölőnégyzet** az 1. fülön, rejtve amíg nincs szöveg | **nincs**; a menüpont helyőrző (`batch_effect_controller.py:26`, #425) | jelölőnégyzet a szövegréteges képnél |
+| tárolás | **nincs** (munkamenet-szintű) | — | ne írjuk `.picasa.ini`-be |
+| „Kollázs szerkesztése" | megvan, rejtve | ✅ **megvan** (`PhotoViewer.qml:590`, #1002) | — |
+| **„Mozgófilm szerkesztése"** | megvan, rejtve, ugyanaz a kezelő | **nincs** | **#2114** |
+| súgógomb | **lecsupaszítva** (ikon kikommentezve) | nincs | **nem kell** |
+
+> *Bizonyítottsági fok: **megerősített*** — minden felirat a
+> `panel-feliratok-hu.tsv` sorából, minden szerkezet az `editpanel.tre` és a
+> `respack.yt` bejegyzéseiből; a `Preferences`-hiány **két** lekérdezési
+> alakkal; a mi oldalunk greppel mérve.
