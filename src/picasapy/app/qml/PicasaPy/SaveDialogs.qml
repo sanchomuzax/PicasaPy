@@ -303,6 +303,14 @@ Item {
         title: qsTr("File operation failed")
         modal: true
         anchors.centerIn: parent
+        // #1748: a tördelő `Text` rögzített szélessége önmagában KEVÉS — a
+        // `Dialog` implicit szélessége ettől még a tartalomtól függ, és a
+        // Fusion stílus `Dialog.qml`-je kötési hurkot jelent rá, majd a
+        // kötést ELDOBJA (a párbeszéd szélessége kiszámíthatatlan lesz).
+        // A #1599 mintája szerint a `Dialog`-nak IS kell rögzített
+        // `implicitWidth`. Mérve Fusionnel: a projekt 46 felépülő
+        // párbeszéd-tárolójából EZ AZ EGYETLEN, ami még hurkot adott.
+        implicitWidth: 380 + leftPadding + rightPadding
         standardButtons: Dialog.Ok
         property string message: ""
         Text {
