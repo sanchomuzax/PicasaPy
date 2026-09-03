@@ -740,7 +740,7 @@ keresés a mai 88 `lekutatva`-ból **nullát** igazol hamisan (szóhatáros
 újrafuttatás: 88/88). **Javítva ebben a körben:** 37 felülbírálás + a
 `konyvtar-ablak-meretek.md` 4. szakasza teljes nevekre —
 **feltáratlan 164 → 128** (ugyanazzal a QML-fával mérve). Jegy: **#1878**,
-maradék: **#2091**.
+maradék: **#2093**.
 
 ⭐ **2026-09-03 (21. szakasz) — a Picasa UTF-8 rétege: a TELJES futásidejű
 thunk-tábla.** A 20. szakasz receptjét az egész `.text`-en végigfuttatva
