@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.254] – 2026-09-03
+
+### Javítva
+- A **Nézet ▸ Mappanézet** almenüben az „Egyszerűsített fanézet" a lista
+  legaljára került, az „Indexképek megjelenítése a könyvtárban" után —
+  ahogy az eredeti Picasában áll.
+
 ## [0.8.253] – 2026-09-03
 
 ### Hozzáadva
