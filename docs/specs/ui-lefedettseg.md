@@ -43,8 +43,8 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 659 |
 | párosítva | 268 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 122 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 132 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 116 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 138 |
 | bizonytalan | 106 |
 | nem értékelhető (rajzoló elem) | 1285 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 74 |
@@ -88,7 +88,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `headerpanel` | 30 | 11 | 4 | 0 | 7 | 0 | 0 | 19 | 0 | `LightboxHeader.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 7 | 0 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
-| `printpanel` | 73 | 33 | 27 | 0 | 6 | 0 | 0 | 40 | 0 | `PrintDialog.qml` |
+| `printpanel` | 73 | 33 | 27 | 0 | 0 | 6 | 0 | 40 | 0 | `PrintDialog.qml` |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 0 | 3 | 3 | 18 | 0 | `VideoPlayerView.qml` |
 | `keywords` | 18 | 7 | 1 | 0 | 0 | 5 | 1 | 11 | 0 | `TagsPanel.qml` |
 | `uploadmgr` | 17 | 7 | 0 | 1 | 6 | 0 | 0 | 10 | 0 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
@@ -228,7 +228,7 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `picsizemenu` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x005ba010)
 - `presentcd_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `presentcd_eject` „Eject” (magyarul: „Kiadás”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
-- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0068eea0)
+- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0066f6f3)
 - `presentcd_help` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `replicate_button_group` — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `replicate_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
@@ -481,12 +481,12 @@ Filmes címdia-szerkesztő párbeszéd — nincs nálunk
 
 Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 631 sor), a DPI-őrrel együtt (#1782)
 
-- `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed”
-- `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”)
-- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”)
-- `phelpbutton` „Help” (magyarul: „Súgó”)
-- `psetupbutton` buboréksúgó: „Open printer setup controls for the selected printer”
-- `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”)
+- `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed” — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
+- `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
+- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
+- `phelpbutton` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printpanel.tre:235)
+- `psetupbutton` buboréksúgó: „Open printer setup controls for the selected printer” — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00861750)
+- `setuplabel` „Printer Setup” (magyarul: „Nyomtató telepítése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00861750)
 
 ### `video_control_bar` — 6 hiány · panel-megfeleltetés: `parositva`
 
