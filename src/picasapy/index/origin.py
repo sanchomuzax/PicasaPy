@@ -45,6 +45,7 @@ szétválasztása szándékos — az eredeti Picasa keverte őket.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from pathlib import Path
 
 from picasapy.dedup.fastkey import picasa_fast_key
@@ -69,8 +70,7 @@ def _elojel_nelkulire(ertek: int) -> int:
     return ertek + _UNSIGNED_LIMIT if ertek < 0 else ertek
 
 
-_DDL = """
-CREATE TABLE IF NOT EXISTS origin_keys (
+_DDL = """CREATE TABLE IF NOT EXISTS origin_keys (
     path TEXT PRIMARY KEY,
     origin_key INTEGER NOT NULL
 );
@@ -82,8 +82,13 @@ def ensure_origin_table(conn: sqlite3.Connection) -> None:
 
     Hívható bármikor és többször: a `CREATE TABLE IF NOT EXISTS` miatt
     idempotens, és egy régebbi sémájú indexen is működik migráció nélkül.
+
+    ⚠️ **`execute`, nem `executescript`.** Az `executescript` a futtatás előtt
+    IMPLICIT COMMITOT csinál — a szinkron közben hívva ezzel véglegesítené a
+    félbehagyott mappát, és a megszakítás visszagörgetése elveszne (#2038;
+    a `tests/index/test_sync_cancel.py` őre ezt fogta meg).
     """
-    conn.executescript(_DDL)
+    conn.execute(_DDL)
 
 
 def _kulcs(path: str | Path) -> str:
@@ -127,6 +132,62 @@ def forget_origin_key(conn: sqlite3.Connection, path: str | Path) -> None:
     """
     ensure_origin_table(conn)
     conn.execute("DELETE FROM origin_keys WHERE path = ?", (_kulcs(path),))
+
+
+def _sorok(conn: sqlite3.Connection) -> list[str]:
+    """A tábla ÖSSZES útvonala.
+
+    A szűrés szándékosan Pythonban történik, nem SQL `LIKE`-kal: az
+    útvonalban előforduló `%` és `_` a `LIKE` joker-karakterei, tehát egy
+    „100%_nyar" nevű mappa takarítása IDEGEN sorokat is elvinne. Az
+    `origin_keys` csak a „Másolat mentése" kimeneteit tartalmazza — pár
+    száz sor nagyságrend —, ezért a teljes olvasás ára elhanyagolható.
+    """
+    ensure_origin_table(conn)
+    return [sor[0] for sor in conn.execute("SELECT path FROM origin_keys")]
+
+
+def forget_origin_keys_outside(
+    conn: sqlite3.Connection, folder: str | Path, kept_names: Iterable[str]
+) -> None:
+    """A `folder` KÖZVETLEN gyerekei közül kiveszi azokat, amik eltűntek.
+
+    Ezt hívja a mappa-szinkron: `kept_names` a mappában MOST látott fájlok
+    neve. Ami a táblában szerepel, de a listában nem, az eltűnt — kukába
+    került, átnevezték, vagy a felhasználó törölte a fájlkezelőből.
+
+    Az almappák sorait NEM bántja: azokat a saját mappájuk szinkronja
+    kezeli, és egy előtag-alapú törlés némán elvinné őket.
+
+    ⚠️ A törlés feltétele KETTŐS: a név hiányozzon a listából **és** a fájl
+    tényleg ne legyen a lemezen. Az `origin_keys` ugyanis — a
+    `photo_hashes`-szel ellentétben — **nem újraszámolható** adat (ld. a
+    modul fejlécét): ha egy scan átmeneti hiba miatt üres listát adna, a
+    puszta névlista alapján visszavonhatatlanul elveszne az öröklés.
+
+    **Ismert hézag (#2099):** ha az eltűnt fájl helyére a KÖVETKEZŐ szinkron
+    előtt új fájl kerül, a név szerepel a listában és a fájl létezik, tehát a
+    régi sor megmarad. A tábla ma nem tárol se mtime-ot, se méretet, amiből a
+    csere látszana.
+
+    Args:
+        conn: nyitott index-kapcsolat (a commit a hívóé).
+        folder: a most szinkronizált mappa.
+        kept_names: a mappában látott fájlnevek.
+    """
+    mappa = Path(folder).resolve()
+    maradok = set(kept_names)
+    torlendo = [
+        ut
+        for ut in _sorok(conn)
+        if Path(ut).parent == mappa
+        and Path(ut).name not in maradok
+        and not Path(ut).exists()
+    ]
+    if torlendo:
+        conn.executemany(
+            "DELETE FROM origin_keys WHERE path = ?", [(ut,) for ut in torlendo]
+        )
 
 
 def origin_key(conn: sqlite3.Connection, path: str | Path) -> int | None:

@@ -289,6 +289,26 @@ dHash-oszlopánál. Ez nem elméleti szélsőérték: a mért kulcsok fele a fel
 felébe esik (a #1648 mérésének `0x8637e41c12b8eaa` értéke is ilyen). Őrizve:
 `tests/test_index_origin_1648.py::test_a_teljes_64_bites_tartomany_visszaolvashato`.
 
-**Ami NYITOTT marad:** a törölt vagy átnevezett fájl sorát ma senki nem
-takarítja ki (`forget_origin_key` megvan, hívója nincs) — egy később
-ugyanoda kerülő, más fájl idegen származást örökölne. Külön jegy: **#2038**.
+**A takarítás (#2038).** A mappa-szinkron
+(`index/sync.py::_sync_folder` → `forget_origin_keys_outside`) kiveszi az
+eltűnt fájlok sorát. Ez a **minden utat lefedő** pont: a fájl eltűnhet kukába
+dobással, átnevezéssel vagy a felhasználó fájlkezelőjéből — a szinkron
+mindegyiket itt látja meg, ezért a `fileops/` külön kezelése nem kell.
+
+A törlés feltétele **kettős**: a név hiányozzon a most látott fájlnevek közül
+**és** a fájl tényleg ne legyen a lemezen. Ez az adat ugyanis nem
+újraszámolható, tehát egy átmeneti hiba miatt üres scan nem vihet el létező
+fájlhoz tartozó sort.
+
+A szűrés Pythonban megy, nem SQL `LIKE`-kal: az útvonalban előforduló `%` és
+`_` a `LIKE` joker-karakterei, tehát egy „100%_nyar" nevű mappa takarítása
+idegen sorokat is elvinne.
+
+**Mappaszintű takarítás szándékosan NINCS.** Egy lecsatolt hálózati megosztás
+ugyanúgy „eltűntnek" látszik, mint egy véglegesen törölt mappa, és ezt az
+adatot nem tudnánk visszaállítani. Ha a mappa visszatér, az öröklés helyes
+marad; ha nem tér vissza, a bent maradt sorok tétlenek.
+
+**Ami NYITOTT marad:** ha az eltűnt fájl helyére a KÖVETKEZŐ szinkron előtt új
+fájl kerül ugyanazzal a névvel, a régi sor megmarad — a tábla ma nem tárol se
+méretet, se mtime-ot, amiből a csere látszana. Külön jegy: **#2099**.

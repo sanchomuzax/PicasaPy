@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.237] – 2026-09-03
+
+### Javítva
+- **Egy törölt kép helyére másolt új kép már nem „örökli" a régi
+  származását (#2038).** A „Másolat mentése" kimenetei megjegyzik, melyik
+  képből készültek. Eddig ez a bejegyzés a fájl törlése után is ott maradt,
+  így egy később ugyanoda kerülő, teljesen más kép a régi kép származását
+  vette fel. A mappa átolvasásakor ez a bejegyzés mostantól kitakarítódik —
+  akkor is, ha a képet a kukába tetted, átnevezted, vagy a
+  fájlkezelőből törölted.
+
 ## [0.8.236] – 2026-09-03
 
 ### Javítva
