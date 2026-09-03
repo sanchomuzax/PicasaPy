@@ -2095,3 +2095,113 @@ tényleges tárolási hely kiolvasása.
 
 *Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre, a közös
 motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
+
+---
+
+## ⭐ HÁROM Glimmer-képlet KIMÉRVE — `IR`, `MultiplyColorMatrix`, `EdgeDetectionB` (2026-09-03, #2211)
+
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **hármat
+számszerűen is megold** — és a megoldás módszere maga is eredmény: a
+**saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
+
+### 1. `IRImageOperation` — szürkeárnyalatos mátrix + zöld ragyogás
+
+**Három attribútum, mérve az alapértékekkel** (a `0x00bc3f50` alkalmazóban a
+getter elé betöltött konstans az alapérték):
+
+| attribútum | tag | alapérték | cím |
+|---|---|---|---|
+| `greenglow` | `+0x2c` | **5,0** | `0x00bc3f5c` → `0x00cf3a58` |
+| `greenglowalpha` | `+0x34` | **0,25** | `0x00bc3f8a` → `0x00c7c608` |
+| `redweight` | `+0x3c` | **−0,5** | `0x00bc3fae` → `0x00cf3ea0` |
+
+**a) A szürkítő 4×5 mátrix** (`0x00bc402d`–`0x00bc40b9`, dupla pontosságú
+elemek). A `−1,0` (`0x00cf3f58`) és a `2,0` (`0x00c7d9d0`) beolvasott
+konstans:
+
+```
+| r   2,0   −1−r   0   0 |      r = redweight
+| r   2,0   −1−r   0   0 |
+| r   2,0   −1−r   0   0 |
+| 0    0      0    1   0 |
+```
+
+⇒ **Mindhárom kimeneti csatorna ugyanazt kapja — ez szürkeárnyalatos
+átalakítás**, az alfa érintetlen. Alapértékkel a súlyhármas
+**(−0,5 · R + 2,0 · G − 0,5 · B)**: erős zöld-túlsúly, negatív vörös és kék
+— pontosan a hamis-infravörös hatás.
+
+⭐ **A súlyok összege MINDIG 1**: `r + 2 + (−1 − r) = 1`, bármi is a
+`redweight`. A paraméter tehát a vörös↔kék egyensúlyt tolja, a
+világosságot nem — ez a képlet önellenőrzése.
+
+**b) A zöld ragyogás — két GYEREKMŰVELET.** A függvény a saját attribútumait
+két beágyazott művelet tagjaiba tölti (`0x00bc3ff3`, `0x00bc400c`,
+`0x00bc4021`, a `FUN_008ef2b0` beállítón át):
+
+| forrás | cél | mi ez az előző szakasz tábláját használva |
+|---|---|---|
+| `greenglowalpha` | `[this+0x44]` objektum `+0xc` | **`BlendAlpha`** (a `Blend` ős tagja) |
+| `greenglow` | `[this+0x48]` objektum `+0x24` | **`xblur`** (`Blur`) |
+| `greenglow` | `[this+0x48]` objektum `+0x2c` | **`yblur`** (`Blur`) |
+
+⇒ **Az `IR` = szürkítő mátrix + egy izotróp elmosás (`xblur = yblur =
+greenglow`), amit `greenglowalpha` erősséggel visszakeverünk.**
+Alapértékkel: 5 képpontos elmosás, 25%-os keveréssel.
+
+> Ez a leolvasás **az előző szakasz saját táblájával** történt: a `+0x24` /
+> `+0x2c` a `BlurImageOperation`, a `+0xc` a `Blend` ős regisztrált
+> tagoffszete. Két független forrás mutat ugyanoda — a tábla itt
+> **használatban igazolta magát**.
+
+### 2. `MultiplyColorMatrixImageOperation` — TELJES, egy sorban
+
+A `0x00bb77a0` (165 b) egyetlen attribútumot olvas (`multiplier`, tag
+`+0x28`, alapérték **0,0**), és felépít egy **20 elemű** (`mov eax, 0x14`)
+egyszeres pontosságú mátrixot:
+
+```
+| m  0  0  0  0 |      m = multiplier
+| 0  m  0  0  0 |
+| 0  0  m  0  0 |
+| 0  0  0  1  0 |
+```
+
+⇒ **A művelet a három színcsatornát szorozza `multiplier`-rel; az alfa
+változatlan, eltolás sehol nincs.** A `red.cfg` egyetlen attribútuma
+(`Multiplier`) ezzel maradéktalanul megvan magyarázva.
+
+*Levezetés: a `0x00bb77d7` `fst`-je az első elembe teszi `m`-et, a
+`0x00bb7825`/`0x00bb7829` a 6. és a 13. elembe (a `fxch st(1)` után),
+a `fld1` a 19. elembe 1,0-t, a maradék mind nulla.*
+
+### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
+
+A `0x00bbcdd0` (124 b) a `detail` attribútumot (tag `+0x2c`, alapérték
+**0,0**) beolvassa, majd
+
+```
+0x00bbce1b  fsubr qword ptr [0x00cf3a08]     ; 0x00cf3a08 = 100,0
+```
+
+⇒ a belső paraméter **`100 − detail`**, és ezt adja tovább a
+`[this+0x34]` gyerekműveletnek. Ha a `+0x34` üres, a művelet **`4`-gyel
+tér vissza** (`0x00bbcde2`) — vagyis nem csinál semmit.
+
+**Ami NINCS mérve:** mit csinál a gyerekművelet a `100 − detail` értékkel.
+
+### Amit ez a három eset MÓDSZERTANILAG mutat
+
+1. **Az alapérték mindig ott van a getter előtt.** A minta:
+   `fld dword [konstans]` → `fstp` a kimenő rekeszbe → `call 0x008ef520`.
+   Ha az attribútum hiányzik a leíróból, a konstans marad. Ez az egész
+   Glimmer-készletre végigfuttatható.
+2. **A gyerekművelet tagoffszete azonosítja a gyerek OSZTÁLYÁT.** Az `IR`
+   ragyogása azért olvasható, mert az előző szakasz tábláját visszafelé
+   használtuk: `+0x24`/`+0x2c` ⇒ `Blur`, `+0xc` ⇒ `Blend`.
+3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
+   levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
+
+*Bizonyítottsági fok: **megerősített** mindhárom képletre (kiolvasott
+utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
+tartalma **nincs mérve**.*
