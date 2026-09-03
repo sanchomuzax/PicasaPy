@@ -2415,3 +2415,46 @@ neveket sorolja.
 *Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre és az
 attribútum-offszetekre; a `QuantizePalette` `Depth`-jelentése, a
 levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
+
+---
+
+## `HSVGradientMapImageOperation` — a megállók HSV-ben vannak (2026-09-04, #2211)
+
+A `red.cfg` két attribútumot mutat (`gradientObjectArray`, `hueOffset`). A
+munkavégző (`0x00bbc260`, 1448 b) megmutatja, **mi van a tömbben**: minden
+megálló egy `color` és egy `position` mezőből áll, és a **`color` maga is
+objektum, három mezővel**:
+
+| mező | sztring címe | hol olvassa |
+|---|---|---|
+| `h` | `0x00cbf800` | `0x00bbc373` |
+| `s` | `0x00cd6fb4` | `0x00bbc3a6` |
+| `v` | `0x00cb92e8` | `0x00bbc3d9` |
+| *(a burkoló)* `color` | `0x00cbda84` | `0x00bbc328` |
+| `position` | `0x00cf03dc` | `0x00bbc412` |
+
+*(A három egybetűs név nem szerepel a bináris-index sztringtáblájában —
+közvetlenül a fájlból olvastam ki a `mov edi, <cím>` operandusai alapján.)*
+
+⇒ **Ez különbözteti meg a `GradientMap`-tól:** ott a megállók RGB-színek,
+itt **HSV**-ben adottak, tehát az interpoláció is HSV-térben történik. A
+`hueOffset` ezért értelmes: a színezetet forgatja el.
+
+### A HSV-modell mértékegységei — mérve
+
+A leképezést építő `0x00bbbe20` (673 b) beolvasott konstansai:
+
+| konstans | érték | szerep |
+|---|---|---|
+| `0x00cf3d50` (dupla) | **360,0** | `fadd` — a negatív színezet körbefordítása |
+| `0x00cf4098` (egyszeres) | **360,0** | `fsub` — a 360 fölötti körbefordítása |
+| `0x00cf39ec` / `0x00cf3a08` | **100,0** | az `s` és a `v` osztója |
+| `0x00cf39f0` (dupla) | **6,0** | a szektor-szorzó (`h/360 · 6`) |
+| `0x00cf39d0` (dupla) | **255,0** | a kimeneti csatorna skálája |
+
+⇒ **`h` fokban (0–360, körbefordítással), `s` és `v` SZÁZALÉKBAN (0–100)**,
+a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
+
+**Ami NINCS mérve:** a megállók közti interpoláció pontos módja (lineáris-e
+a színezetben, és melyik irányban megy körbe), valamint hogy a `position`
+milyen tartományban van.
