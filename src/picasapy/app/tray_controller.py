@@ -359,11 +359,6 @@ class TrayMixin:
         self._set_tray_selection({index}, index)
 
     @Slot()
-    def clearTraySelection(self) -> None:
-        """A tálca kijelölésének törlése (a rácsé érintetlen)."""
-        self._set_tray_selection((), None)
-
-    @Slot()
     def removeTraySelected(self) -> None:
         """„Kijelölés eltávolítása" (`Tray::ID_REMOVE_SELECTION`) — a
         TÁLCÁN kijelölt elemekre.
