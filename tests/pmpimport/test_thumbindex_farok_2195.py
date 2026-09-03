@@ -22,7 +22,6 @@ from pathlib import Path
 import pytest
 
 from picasapy.pmpimport.thumbindex import (
-    SlotIndexEntry,
     ThumbIndexFormatError,
     read_slot_index,
     read_thumb_index,
@@ -47,11 +46,15 @@ def _thumbindex(tmp_path: Path, bejegyzesek) -> Path:
     return ut
 
 
-def _slotindex(tmp_path: Path, rekordok, *, verzio: float = 1.6) -> Path:
-    fej = struct.pack("<fIIII", verzio, 0, len(rekordok), 0, 0)
-    test = b"".join(struct.pack("<QI", k, v) for k, v in rekordok)
+def _slotindex(tmp_path, ellenorzo, eltolasok, meretek, *, verzio: float = 1.6):
+    """Szintetikus `*_index.db`: verzió + NÉGY tömb, mindegyik előtt a
+    saját darabszámával (#2202)."""
+    darabok = [struct.pack("<f", verzio), struct.pack("<I", 0)]  # az 1. tömb ÜRES
+    for tomb in (ellenorzo, eltolasok, meretek):
+        darabok.append(struct.pack("<I", len(tomb)))
+        darabok.append(struct.pack(f"<{len(tomb)}I", *tomb))
     ut = tmp_path / "thumbs_index.db"
-    ut.write_bytes(fej + test)
+    ut.write_bytes(b"".join(darabok))
     return ut
 
 
@@ -90,33 +93,53 @@ class TestAFarokHetMezeje:
 
 
 class TestASlotIndex:
-    def test_a_slotokat_sorrendben_adja(self, tmp_path):
-        ut = _slotindex(tmp_path, [(11, 101), (22, 202), (33, 303)])
-        slotok = read_slot_index(ut)
-        assert slotok == (
-            SlotIndexEntry(slot=0, key=11, value=101),
-            SlotIndexEntry(slot=1, key=22, value=202),
-            SlotIndexEntry(slot=2, key=33, value=303),
-        )
+    """#2202: NÉGY párhuzamos tömb, nem 12 bájtos rekordok.
 
-    def test_a_fejlec_20_bajt_a_rekord_12(self, tmp_path):
-        ut = _slotindex(tmp_path, [(1, 2)] * 5)
-        assert ut.stat().st_size == 20 + 5 * 12
+    ⚠️ A #2195 első változata `20 bájt fejléc + N × 12` alakban olvasta,
+    és ez **némán** volt rossz: a téves és a helyes modell **bitre
+    ugyanazt a fájlméretet** adja, ezért a méret-ellenőrzés átment, a
+    verzió is stimmelt — csak az ÉRTÉKEK voltak szemét. Az azonos
+    összméret tehát NEM igazol mezőfelosztást.
+    """
+
+    def test_a_harom_tombot_slotokka_fuzi(self, tmp_path):
+        ut = _slotindex(tmp_path, [0xAA, 0xBB], [0, 100], [100, 50])
+        slotok = read_slot_index(ut)
+        assert [(s.slot, s.checksum, s.offset, s.size) for s in slotok] == [
+            (0, 0xAA, 0, 100),
+            (1, 0xBB, 100, 50),
+        ]
+
+    def test_a_MERET_also_24_bitje_szamit(self, tmp_path):
+        """`0x006b5eea`: `and edx, 0xFFFFFF` — a felső bájt nem méret."""
+        ut = _slotindex(tmp_path, [1], [0], [0xAB000064])
+        assert read_slot_index(ut)[0].size == 0x64
+
+    def test_a_nulla_meret_URES_slot(self, tmp_path):
+        ut = _slotindex(tmp_path, [1, 2], [0, 0], [10, 0])
+        slotok = read_slot_index(ut)
+        assert slotok[0].ures is False
+        assert slotok[1].ures is True
 
     def test_rossz_verziora_hiba(self, tmp_path):
-        ut = _slotindex(tmp_path, [(1, 2)], verzio=2.0)
+        ut = _slotindex(tmp_path, [1], [0], [1], verzio=2.0)
         with pytest.raises(ThumbIndexFormatError, match="verzió"):
             read_slot_index(ut)
 
-    def test_a_MERETNEK_egyeznie_kell_a_fejleccel(self, tmp_path):
-        """Csonka fájlt NEM olvasunk részlegesen: az néma féladat lenne."""
-        ut = _slotindex(tmp_path, [(1, 2), (3, 4)])
+    def test_CSONKA_tombre_hiba(self, tmp_path):
+        ut = _slotindex(tmp_path, [1, 2], [0, 1], [1, 1])
         ut.write_bytes(ut.read_bytes()[:-4])
-        with pytest.raises(ThumbIndexFormatError, match="fájlméret"):
+        with pytest.raises(ThumbIndexFormatError, match="Csonka"):
+            read_slot_index(ut)
+
+    def test_MARADEKRA_hiba_nem_nema_reszleges_olvasas(self, tmp_path):
+        ut = _slotindex(tmp_path, [1], [0], [1])
+        ut.write_bytes(ut.read_bytes() + b"\x00\x00\x00\x00")
+        with pytest.raises(ThumbIndexFormatError, match="maradék"):
             read_slot_index(ut)
 
     def test_ures_tabla_is_ervenyes(self, tmp_path):
-        assert read_slot_index(_slotindex(tmp_path, [])) == ()
+        assert read_slot_index(_slotindex(tmp_path, [], [], [])) == ()
 
 
 @pytest.mark.skipif(
@@ -149,10 +172,23 @@ class TestAValodiKatalogus:
         assert konyvtarak, "nincs könyvtár-típusú rekord — a mérés eltört?"
         assert all(b.is_directory for b in konyvtarak)
 
-    def test_a_slot_index_maradek_nelkul_elfogy(self):
-        for nev in ("thumbs_index.db", "previews_index.db", "bigthumbs_index.db"):
-            ut = _VALODI / nev
-            if not ut.is_file():
+    def test_az_utolso_blob_VEGE_az_adatfajl_merete(self):
+        """#2202: a legerősebb ellenőrzés — ha a mezőfelosztás téves, ez
+        azonnal elromlik. A #2195 rossz modellje ezen bukott volna el."""
+        vizsgalt = 0
+        for nev in ("thumbs", "albums", "previews", "bigthumbs"):
+            ix = _VALODI / f"{nev}_index.db"
+            adat = _VALODI / f"{nev}_0.db"
+            if not (ix.is_file() and adat.is_file()):
                 continue
-            slotok = read_slot_index(ut)
-            assert ut.stat().st_size == 20 + len(slotok) * 12
+            slotok = read_slot_index(ix)
+            nem_ures = [s for s in slotok if not s.ures]
+            if not nem_ures:
+                continue
+            vizsgalt += 1
+            veg = max(s.offset + s.size for s in nem_ures)
+            assert veg == adat.stat().st_size, (
+                f"{nev}: a legutolsó blob vége {veg}, az adatfájl "
+                f"{adat.stat().st_size} — a mezőfelosztás téves"
+            )
+        assert vizsgalt >= 2, f"csak {vizsgalt} tárat lehetett ellenőrizni"

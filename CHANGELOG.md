@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.255] – 2026-09-03
+
+### Javítva
+- A Picasa bélyegkép-nyilvántartásának olvasása **hibás volt**: rossz
+  szerkezetet feltételezett, és néma szemetet adott vissza — a fájl
+  mérete véletlenül stimmelt, ezért nem derült ki. Most a valódi
+  szerkezetet olvassa, és a mérés is igazolja: a legutolsó bélyegkép
+  vége pontosan az adatfájl mérete, mind a három vizsgált táron.
+  (A hiba a v0.8.252-ben került be, felhasználói funkciót nem érintett.)
+
 ## [0.8.254] – 2026-09-03
 
 ### Javítva

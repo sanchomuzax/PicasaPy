@@ -111,13 +111,30 @@ def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
     return tuple(entries)
 
 
-#: A `*_index.db` fejléce: `float32` verzió, két nulla `uint32`,
-#: `uint32` slotszám, két további nulla `uint32` — összesen 20 bájt.
-_SLOT_FEJLEC = struct.Struct("<fIIII")
-#: Slotonként `uint64` kulcs + `uint32` érték.
-_SLOT_REKORD = struct.Struct("<QI")
-#: A mért verzió minden mintában (`docs/specs/pmp-database.md` 8.).
+#: A `*_index.db` szerkezete (#2202, spec `pmp-database.md` 8.2):
+#:
+#:     float32 verzió (1.6)
+#:     4 × [ uint32 darabszám, darabszám × uint32 ]
+#:
+#: A négy tömb sorrendben: **üres · Checksum · Offset · Size**. A
+#: sorrendet a Picasa SAJÁT CSV-kiírója adja meg (`0x006b5e00`, fejléc
+#: `Size,Offset,Checksum`), az írót a `0x006b7fc0` + `0x0099c1e0` mutatja
+#: (`fwrite(&n,4,1,f)`, majd `fwrite(adat,4,n,f)`).
+#:
+#: ⚠️ A #2195 első változata `20 bájt fejléc + N × 12` alakban olvasta.
+#: Ez MEGDŐLT — és némán: a téves és a helyes modell **bitre ugyanazt a
+#: fájlméretet** adja (`4 + 4 + 4·n + 4 + 4·n + 4 + 4·n` = `20 + 12n`),
+#: ezért a méret-ellenőrzés átment, a verzió is stimmelt, csak az
+#: ÉRTÉKEK voltak szemét. A tanulság a kódban marad: az azonos
+#: összméret nem igazol mezőfelosztást.
+_SLOT_VERZIO_STRUCT = struct.Struct("<f")
+_SLOT_DARAB = struct.Struct("<I")
+#: A mért verzió minden mintában.
 _SLOT_VERZIO = 1.6
+#: A `Size` mező alsó **24 bitje** a valódi méret (`0x006b5eea`:
+#: `and edx, 0xFFFFFF`); az író 16 MB fölötti blobot el is utasít
+#: (`0x006b75f7`).
+_MERET_MASZK = 0xFFFFFF
 
 
 @dataclass(frozen=True)
@@ -125,45 +142,77 @@ class SlotIndexEntry:
     """Egy slot a `thumbs_index.db` / `previews_index.db` / … fájlból."""
 
     slot: int
-    #: A `q` kulcs. A KÉPZÉSE nyitott kérdés (#2195, spec 8.3–8.4) — az
-    #: importhoz nem kell, ezért nyersen adjuk tovább.
-    key: int
-    value: int
+    #: A teljes útvonalból számolt ellenőrzőösszeg (spec 8.10).
+    checksum: int
+    #: A blob kezdete az `<név>_0.db` adatfájlban.
+    offset: int
+    #: A blob hossza. **0 = ÜRES slot** — nincs mögötte adat.
+    size: int
+
+    @property
+    def ures(self) -> bool:
+        """Üres slot: nincs hozzá blob az adatfájlban."""
+        return self.size == 0
 
 
 def read_slot_index(path: Path) -> tuple[SlotIndexEntry, ...]:
     """A `*_index.db` slot-táblája.
 
-    A slot-index sorszáma UGYANAZ a tér, mint a PMP-oszlopok sorindexe és
-    a `thumbindex.db` rekordsorrendje — a bélyegkép tehát a PMP-sorhoz
+    A slot sorszáma UGYANAZ a tér, mint a PMP-oszlopok sorindexe és a
+    `thumbindex.db` rekordsorrendje — a bélyegkép tehát a PMP-sorhoz
     ezen keresztül rendelhető.
 
     Raises:
-        ThumbIndexFormatError: rossz verzió, vagy ha a fájlméret nem
-            pontosan `20 + slotszám × 12`. A csonka fájlt NEM olvassuk
-            részlegesen: az néma féladatot adna.
+        ThumbIndexFormatError: rossz verzió, csonka tömb, vagy ha a fájl
+            nem fogy el maradék nélkül. Részlegesen NEM olvasunk: az
+            néma féladatot adna.
     """
     data = Path(path).read_bytes()
-    if len(data) < _SLOT_FEJLEC.size:
+    if len(data) < _SLOT_VERZIO_STRUCT.size:
         raise ThumbIndexFormatError(f"A fejléc túl rövid: {path}")
-    verzio, _nulla1, slotszam, _nulla2, _nulla3 = _SLOT_FEJLEC.unpack_from(data, 0)
+    (verzio,) = _SLOT_VERZIO_STRUCT.unpack_from(data, 0)
     if abs(verzio - _SLOT_VERZIO) > 1e-6:
         raise ThumbIndexFormatError(
             f"Váratlan verzió ({verzio!r}, várt {_SLOT_VERZIO}): {path}"
         )
-    varhato = _SLOT_FEJLEC.size + slotszam * _SLOT_REKORD.size
-    if len(data) != varhato:
+
+    eltolas = _SLOT_VERZIO_STRUCT.size
+    tombok: list[tuple[int, ...]] = []
+    for sorszam in range(4):
+        if eltolas + _SLOT_DARAB.size > len(data):
+            raise ThumbIndexFormatError(
+                f"Csonka fájl: a(z) {sorszam}. tömb darabszáma sem fér el: {path}"
+            )
+        (darab,) = _SLOT_DARAB.unpack_from(data, eltolas)
+        eltolas += _SLOT_DARAB.size
+        veg = eltolas + darab * 4
+        if veg > len(data):
+            raise ThumbIndexFormatError(
+                f"Csonka {sorszam}. tömb ({darab} elem): {path}"
+            )
+        tombok.append(struct.unpack_from(f"<{darab}I", data, eltolas))
+        eltolas = veg
+
+    if eltolas != len(data):
         raise ThumbIndexFormatError(
-            f"A fájlméret nem egyezik a fejléccel: {len(data)} bájt, "
-            f"várt {varhato} ({slotszam} slot × {_SLOT_REKORD.size} + "
-            f"{_SLOT_FEJLEC.size}): {path}"
+            f"A fájl nem fogyott el maradék nélkül: {len(data) - eltolas} "
+            f"bájt maradt: {path}"
+        )
+
+    _ures, ellenorzo, eltolasok, meretek = tombok
+    if not (len(ellenorzo) == len(eltolasok) == len(meretek)):
+        raise ThumbIndexFormatError(
+            f"A három tömb hossza eltér "
+            f"({len(ellenorzo)}/{len(eltolasok)}/{len(meretek)}): {path}"
         )
     return tuple(
-        SlotIndexEntry(slot=i, key=kulcs, value=ertek)
-        for i, (kulcs, ertek) in enumerate(
-            _SLOT_REKORD.unpack_from(data, _SLOT_FEJLEC.size + i * _SLOT_REKORD.size)
-            for i in range(slotszam)
+        SlotIndexEntry(
+            slot=i,
+            checksum=ellenorzo[i],
+            offset=eltolasok[i],
+            size=meretek[i] & _MERET_MASZK,
         )
+        for i in range(len(ellenorzo))
     )
 
 
