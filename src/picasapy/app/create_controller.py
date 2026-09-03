@@ -349,6 +349,28 @@ class CreateMixin(BackgroundWorkerMixin):
         self._start_background(worker, name="picasapy-collage")
 
     @Slot(list, str, int, float)
+    def _alapertelmezett_film_cel(self, sources) -> Path:
+        """A film célfájlja, ha a felhasználó nem adott meg egyet (#1977).
+
+        A mappa a `Picasa` alatti (meglévő vagy honosított) Filmek-mappa,
+        és **projekt-mappaként be is jelöljük** — enélkül a bal hasáb
+        Projektek gyűjteménye nem tudja hova sorolni (ugyanaz a hiba,
+        amit a kollázsnál a `write_album_ini` javított).
+
+        A fájlnév töve a KÖZÖS forrásmappa neve; ha a képek több mappából
+        jönnek, a mért alapnév (`diavetites_jellegu_film`).
+        """
+        from . import movie_output
+
+        # A `_get_settings()` a többi ág mintája (ld. a piszkozat-mappát
+        # a 124. sorban) — enélkül a próbák a VALÓDI `~/Képek`-be írnának.
+        beallitott = self._get_settings().value(movie_output.OUTPUT_DIR_KEY)
+        mappa = movie_output.tartalek_mappa(movie_output.output_dir(beallitott))
+        movie_output.write_album_ini(mappa, mappa.name)
+        szulok = {Path(s).parent for s in sources}
+        cim = next(iter(szulok)).name if len(szulok) == 1 else ""
+        return movie_output.output_path(mappa, cim)
+
     def exportMovie(
         self, rows, target_url: str, height: int, seconds_per_photo: float
     ) -> None:
@@ -363,8 +385,20 @@ class CreateMixin(BackgroundWorkerMixin):
             self.movieFailed.emit(self.tr("No pictures are selected."))
             return
         if not target:
-            self.movieFailed.emit(self.tr("No target file was chosen."))
-            return
+            # #1977: cél nélkül NEM hibázunk — az eredeti sem kér célfájlt.
+            # A mappát a program adja (`Picasa`/honosított Filmek), a nevet
+            # a forrásmappa címéből képezzük, ütközésnél sorszámozva. Ha a
+            # mappa nem hozható létre, a rendszer Videók mappája a tartalék
+            # (`0x00620af9`–`0x00620b1d`), és ez SEM hibaüzenet.
+            try:
+                target = str(self._alapertelmezett_film_cel(sources))
+            except OSError as hiba:
+                self.movieFailed.emit(
+                    self.tr("The movie folder could not be created: %1").replace(
+                        "%1", str(hiba)
+                    )
+                )
+                return
         try:
             settings = MovieSettings(
                 width=(height * 16 // 9) // 2 * 2,
