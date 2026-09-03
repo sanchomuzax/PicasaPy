@@ -80,13 +80,9 @@ class TestMenuJelzesVegigmegy:
     def test_a_menusor_jelzese_MEGNYITJA_a_film_parbeszedet(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0])
+        dialog = window.findChild(QObject, "movieDialog")
         _menusor(window).metaObject().invokeMethod(_menusor(window), "movieRequested")
         _settle(qt_app, 3)
-        # #1612: a párbeszéd HALASZTVA épül, ezért csak a jelzés UTÁN van meg.
-        # Így az eset erősebb is lett: azt méri, hogy a menü LÉTREHOZZA és
-        # megnyitja, nem csak azt, hogy egy meglévőt láthatóra állít.
-        dialog = window.findChild(QObject, "movieDialog")
-        assert dialog is not None, "a menü nem építette fel a film-párbeszédet"
         assert dialog.property("visible") is True
 
     def test_kijeloles_NELKUL_is_megnyilik_a_lap(self, qml_app, qt_app):

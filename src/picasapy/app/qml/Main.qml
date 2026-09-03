@@ -889,7 +889,7 @@ ApplicationWindow {
         // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.ensure().openMovie()
+        onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
@@ -2250,7 +2250,7 @@ ApplicationWindow {
         // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.ensure().openMovie()
+        onMovieRequested: createDialogs.openMovie()
         //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
         //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
         //: jelzője lekerül, és a projekt lapja lesz az aktív.
@@ -2549,13 +2549,10 @@ ApplicationWindow {
     }
 
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
-    //: #1612: halasztva — a Létrehozás-párbeszédek csak a menüből nyílnak.
-    DeferredDialog {
+    CreateDialogs {
         id: createDialogs
         objectName: "createDialogs"
-        sourceComponent: Component {
-            CreateDialogs { appWindow: window }
-        }
+        appWindow: window
     }
 
     DeferredDialog {

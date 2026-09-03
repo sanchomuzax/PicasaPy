@@ -7,10 +7,7 @@ végén az eredmény-dialógus jelenik meg a controller jelzésére.
 
 import cv2
 import numpy as np
-import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
-
-from tests.support.qml_halasztott import epitsd_fel
 
 
 def _settle(qt_app, rounds=4):
@@ -37,15 +34,6 @@ class TestCreateMenu:
             assert window.findChild(QObject, name).property("enabled") is True
 
 
-@pytest.fixture(autouse=True)
-def _felepitett_parbeszedek(qml_app):
-    """Ez a fájl a párbeszédek VISELKEDÉSÉT méri, nem a felépülés
-    pillanatát — azt a #1720 őre (`test_qml_peldanyositas_or_1720.py`).
-    Ezért itt minden eset előtt felépítjük őket."""
-    epitsd_fel(qml_app[0], "createDialogs")
-
-
-
 class TestCollageDialog:
     def test_opens_even_without_selection_and_explains(self, qml_app, qt_app):
         """#922: korábban ez azt állította, hogy a párbeszéd NEM nyílik meg
@@ -54,7 +42,6 @@ class TestCollageDialog:
         Picasa megnyitja a lapot, és megmondja, mi hiányzik."""
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [])
-
         dialog = window.findChild(QObject, "collageDialog")
         assert dialog is not None
         dialog.metaObject().invokeMethod(dialog, "openForSelection")
@@ -66,7 +53,6 @@ class TestCollageDialog:
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 0)
-
         dialog = window.findChild(QObject, "collageDialog")
         dialog.metaObject().invokeMethod(dialog, "openForSelection")
         _settle(qt_app, 2)
@@ -89,7 +75,6 @@ class TestMovieDialog:
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
-
         dialog = window.findChild(QObject, "movieDialog")
         dialog.metaObject().invokeMethod(dialog, "openForSelection")
         _settle(qt_app, 2)

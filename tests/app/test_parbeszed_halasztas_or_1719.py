@@ -66,6 +66,15 @@ AZONNAL_EPULO = {
         "elő kell jönnie — halasztva egy üres ablakot látna a felhasználó, "
         "mielőtt a kérdés megérkezik."
     ),
+    "CreateDialogs": (
+        "#1612 MÉRTE, és a #1743 őre fogta meg, miért nem lehet: a "
+        "`CreateDialogs.qml` KÉT `Connections { target: controller }` "
+        "blokkot tart — a kollázs/film EREDMÉNYÉT (`onCollageFinished`, "
+        "`onCollageFailed`, `onMovieProgress`) és az élő előnézetet. "
+        "Halasztva ezek a kezelők nem léteznek, tehát a KollázsPANELről "
+        "indított kollázs visszajelzése NÉMÁN elveszne. Előbb a hallgatókat "
+        "kell a `Main.qml`-be vinni (#2096), és csak utána halasztható."
+    ),
     "CollageDraftDialog": (
         "#1051: a kollázs-piszkozat visszaállításának felajánlása "
         "induláskor. Ugyanaz az ok, mint az InitialScanDialog-nál — és "
