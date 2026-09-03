@@ -113,6 +113,12 @@ class SidePaneMixin:
         self._project_folders = collections.project_folders
         self.peopleChanged.emit()
         self.projectFoldersChanged.emit()
+        # #2031: a Mappák listából a projekt-mappák KIMARADNAK, és ezt
+        # csak most tudjuk — a projekt-útvonalak épp itt lettek meg. A
+        # frissítés nélkül a mappa a hasáb-betöltésig MINDKÉT helyen
+        # látszana (villanás), utána eltűnne az egyikről: pont az a
+        # zavaró állapot, amitől a felhasználó azt hinné, elveszett.
+        self._reload_folders()
 
 
 __all__ = ["SidePaneMixin"]
