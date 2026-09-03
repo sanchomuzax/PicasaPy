@@ -19,6 +19,10 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
+### [filterdesc-registry.md](filterdesc-registry.md) — 1 nyitott kérdés (a #2102 maradéka)
+
+⭐ **2026-09-03 — a `GlowImageOperation` KEVERÉSE kimérve, és a `strength` LÉPCSŐSNEK bizonyult.** A kompozitálás (`0x00bb992d → 0x008f59d0 → 0x008f4780`) **közönséges source-over**, erősség-tag nélkül: `T = src·a + dst·(255−a)`, `out = (T + (T>>8) + 1) >> 8`; az SSE-konstansok kiolvasva (`0xcd0550` = 1, `0xcd0560` = 255), az alfa a FORRÁS képpont 4. bájtja. ⇒ **a `strength` nem keverési súly** — ezt a modellcsaládot (a `glimmer_ops.py:578`-at is) a mérés kizárja. A rajzoló argumentumlistája most a binárisból van (nem a Flash-analógiából): `(forrás, color, glowalpha, xblur, yblur, strength, quality, cél)`, és két meglepetéssel: a **`strength` natív alapértéke 0,0** (`fldz`, `0x00bb8eb5`), a `color` alfa-bájtja pedig **beégetve `0xFF`** (`0x00bb8e5f`). A `strength` a maszképítőben (`0x00bcc2e0`) **`ceil((s−1)/2)`** alakban lép be (`−1,0` a `0xc7e328`, `×0,5` a `0xc72150`; a `0x00529e10` = **`ceilf`**, a `0x00c12fd0` névtáblájával bizonyítva). **Ellenőrizhető jóslat:** a `filterdesc.xml` MINDEN Glow-hívására (1,1…1,5 és a Vignette/Matte `[1..2]` csúszkája) ez a tag **állandó 1** — ezért illeszkedik a Vignette-goldenre kalibrált modellünk. **Nyitva:** a `0x00bcc2e0` második fele (`0x00bcc438`-tól) — célzott dekompiláció kell. Jegy: **#2102**.
+
 ### [filters-decoded.md](filters-decoded.md) — nincs nyitott kérdés
 
 ✅ **2026-08-24 — az utolsó kérdés (a `FocalZoom` perem-módja) LEZÁRVA MÉRÉSSEL:**
