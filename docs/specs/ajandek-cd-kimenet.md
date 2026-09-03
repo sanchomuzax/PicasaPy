@@ -269,6 +269,8 @@ indul** — pedig a visszafejtési sorrend első kérdése ez
 
 ### 9.1 A hivatalos magyar feliratok
 
+*Forrás: `publish.tre:129` (`publish/presentcd_go`) · `publish.tre:154` (`publish/presentcd_help`) · `thumbui.tre:484` (`thumbui/cdmode`).*
+
 | elem | angol | **hivatalos magyar** |
 |---|---|---|
 | `eMenuCreate::ID_BURNCD` | Create a &Gift CD... | **„&Ajándék CD készítése…"** |
@@ -279,7 +281,6 @@ indul** — pedig a visszafejtési sorrend első kérdése ez
 
 *(A buboréksúgó fontos: kimondja, hogy a lemez célja a **beépített
 diavetítés** — ez köti össze a 9. szakaszt az 1.-vel.)*
-
 ### 9.2 A két kikommentezett gomb JELENTŐSÉGE
 
 A `#` a `.tre`-ben megjegyzés — ez mérve van

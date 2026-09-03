@@ -350,6 +350,8 @@ az azonosító ugyanaz, amit a `.tre` használ, tehát a két forrás **közvetl
 
 ### ⚠️ A csapda: az ABSZOLÚT pozíció tervezőrajz, nem futásidő
 
+*Forrás: `thumbui.tre:516` (`thumbui/hlistsizer`) · `thumbui.tre:441` (`thumbui/listdecrect`).*
+
 A csomag egy **tervezővászon** koordinátáit tárolja; futásidőben a `.tre`
 kényszerei újrahorgonyozzák az elemeket. A kettőt összekeverni téves számhoz
 vezet:
@@ -366,7 +368,6 @@ Ahol van kényszer, az nyer — ld. a 13. szakaszt („Az explicitebb forrás ny
 
 Az elválasztó **8 képpont széles** (210..218) — ez viszont méret, tehát
 érvényes, függetlenül attól, hogy hol ül.
-
 ## Még fel nem emelt kövek
 
 | kő | mit adhat | költség |
@@ -1115,6 +1116,8 @@ levélnévre külön-külön:
 
 ### ⛔ A KONTROLL MEGBUKTATTA
 
+*Forrás: `printoptions.tre:119` (`printoptions/usenotext`) · `thumbui.tre:96` (`thumbui/backup`) · `thumbui.tre:287` (`thumbui/loupehit`).*
+
 Kiválasztottunk olyan elemeket, amelyekről **más körök már bizonyították, hogy
 valódiak**, és megnéztük, mit mond rájuk a mérés:
 
@@ -1128,7 +1131,6 @@ valódiak**, és megnéztük, mit mond rájuk a mérés:
 ⇒ **A mérőszám önmagában használhatatlan.** A `.tre` motor sok elemet
 **deklaratívan** kezel (találati zóna, felirat-gyerek, ikon-gyerek, konténer),
 azokat a kódnak sosem kell néven szólítania.
-
 ### Két MEGNEVEZETT hamis-pozitív osztály
 
 1. **Dinamikusan összerakott név.** A kód `%d`-vel állítja elő. Mérve, a
@@ -1468,6 +1470,8 @@ felvétele így megelőző javítás, nem hibajavítás.
 
 ### 22.5 A 22.4 szabályát MEGSÉRTETTÜK — és tizenkét elem évekig „feltáratlan" volt (2026-09-03)
 
+*Forrás: `acquirepanel.tre:210` (`acquirepanel/sync_options_button`) · `headerpanel.tre:32` (`headerpanel/play`) · `outputlayout.tre:99` (`outputlayout/blogger`) — és további 1 elem ugyanott.*
+
 A 22.4 pont előírja, hogy a bizonyító szakaszban legyen `0x…` cím vagy
 `fájl:sor`. Ez a kör **lemérte, mennyibe kerül, ha ezt megsértjük.**
 
@@ -1518,7 +1522,6 @@ nézze meg a találati SORT is — ez a kör az első futásában 68%-os hamis
 arányt mért, és az kizárólag azért jött ki, mert a puszta elemnévre
 keresett, és a „megvan másutt" szakaszt is beszippantotta. A helyes szám
 **12/100**.
-
 #### 22.5/b MÁSNAP MEGISMÉTLŐDÖTT — ugyanaz a kör, aki leírta (2026-09-03)
 
 A 22.5 megírása után **néhány órával** a következő kutatói kör új

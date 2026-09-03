@@ -38,6 +38,8 @@ interakcióhoz kötve.
 
 ### 1.3 Más elemek vezérlése — a deklaratív kötések
 
+*Forrás: `editpanel.tre:1124` (`editpanel/sbutton`) · `thumbui.tre:468` (`thumbui/sbutton`).*
+
 | tulajdonság | db | mit jelent |
 |---|---:|---|
 | `hidetarget` | 126 | elsüléskor **elrejt** egy másik elemet |
@@ -50,8 +52,9 @@ interakcióhoz kötve.
 | `alias` | 7 | **ugyanaz a parancs, másik helyen** (pl. `editpanel/sbutton` = `thumbui/sbutton`) |
 | `buddy` | 3 | páros vezérlő (színkerék ↔ csúszka-korong) |
 | `prenotify 1` | 2 | a váltás ELŐTT értesít |
-
 ### 1.4 Húzás és görgetés
+
+*Forrás: `throttlethumb_mac.tre:3` (`throttle/throttlethumb`).*
 
 | tulajdonság | db | hol |
 |---|---:|---|
@@ -61,7 +64,6 @@ interakcióhoz kötve.
 | `handlealphakeys` | 2 | betűleütésre ugrik a listában (`fontfamily`) |
 
 ---
-
 ## 1/b A motor TELJES tulajdonság-szótára (2026-08-17, #905)
 
 Az 1. szakasz listája a **szállított `.tre` fájlokból** készült. A parszer
@@ -144,6 +146,8 @@ levágandó rész kontúrjai olvashatók maradnak.
 
 ## 2. A 49 vezérlő, ami LENYOMÁSRA sül el
 
+*Forrás: `acquirepanel.tre:210` (`acquirepanel/sync_options_button`) · `compose_mail.tre:139` (`compose_mail/ltr`) · `compose_share.tre:129` (`compose_share/ltr`) — és további 12 elem ugyanott.*
+
 Ez a Windows-szabvány ellentéte (ott a gomb felengedésre sül el, és a
 lenyomás után elhúzva a kattintás visszavonható). A Picasában a következők
 **azonnal**, lenyomásra hatnak:
@@ -162,7 +166,6 @@ lenyomás után elhúzva a kattintás visszavonható). A Picasában a következ�
 **A minta:** ami **nézetet vált vagy menüt nyit**, az lenyomásra hat; ami
 **műveletet hajt végre** (Mentés, Mégse, Kollázs létrehozása), az a
 szabványos felengedésre.
-
 ### 2.2 A hét vezérlő, amit CSAK ez a tábla említett — feloldva (2026-09-04, #2093)
 
 A fenti tábla azt mondja meg, **mikor** sül el egy gomb, azt nem, hogy **mit
@@ -556,6 +559,8 @@ húzást a saját csomópont-rendszere követi.
 
 ## 6. Handler-ek — a tíz viselkedés-kötés
 
+*Forrás: `editpanel.tre:941` (`editpanel/edittextghost`) · `editpanel.tre:946` (`editpanel/edittextoverlay`) · `editpanel.tre:1401` (`editpanel/fullscreenswitcher`) — és további 7 elem ugyanott.*
+
 A `.tre`-ben a `Handler <név> <argumentumok>` sor köt egy elemhez egy
 kódbeli viselkedést. **Összesen 24 kötés, 10 fajta:**
 
@@ -573,8 +578,9 @@ kódbeli viselkedést. **Összesen 24 kötés, 10 fajta:**
 | **`hsplitoffset`** | 1 | `thumbui/hlistsizer` — **a bal panel és a rács közti húzható elválasztó** |
 
 ---
-
 ## 7. Ismétlő és kurzort nem váltó vezérlők
+
+*Forrás: `editoneup.tre:148` (`editoneup/minusone`) · `editoneup.tre:140` (`editoneup/plusone`) · `keywords.tre:67` (`keywords/closebutton`) — és további 4 elem ugyanott.*
 
 **`setautorepeat`** — nyomva tartva ismétel:
 
@@ -602,7 +608,6 @@ a `showtextcheckbox`, a `keywords/closebutton`, és három
 `makemoviepanel` jelölőnégyzet.
 
 ---
-
 ## 8. Az Esc-billentyű — 11 gomb
 
 `Property escapekey 1`: `acquirepanel/acancelbutton` ·

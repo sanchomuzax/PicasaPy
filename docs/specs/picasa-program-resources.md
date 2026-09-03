@@ -24,6 +24,8 @@ tartalmán belüli `id` attribútum.
 
 ### 1.2 A `.pbf` fájl: sima XML
 
+*Forrás: `outputlayout.tre:95` (`outputlayout/blogger_icon`).*
+
 A `.pbf` fájlok **nem bináris formátumok**, hanem UTF-8 (néha BOM-mal) kódolt,
 CRLF sortörésű XML dokumentumok. Gyökérelem: `<buttons format="1" version="1">`,
 benne egyetlen `<button>` elemmel.
@@ -59,7 +61,6 @@ benne egyetlen `<button>` elemmel.
 | `<tooltip>` / `<tooltip_XX>` | Angol alap tooltip + nyelvkód-szuffixált (BCP-47-szerű, kisbetűs, pl. `pt-br`, `zh-cn`) fordítások, mind ugyanabban a `.pbf`-ben — tehát a PBZ-formátum saját magában hordozza az i18n-t, nem külön nyelvi fájlokban. |
 | `<action verb="...">` | A dinamikus gomb művelete. Megfigyelt `verb` értékek: `"hybrid"` (böngészőben/beépített webnézetben megnyitandó URL — lásd `<param name="url" value="...">`) és `"geolocate"` (belső parancs, nincs paramétere — a natív Google Earth/térkép integrációt indítja). |
 | `<param name="..." value="...">` | Az `action` tetszőleges számú kulcs-érték paramétere. |
-
 ### 1.3 Ikonformátum a PBZ-n belül
 
 A `geotag.pbz`-ben talált ikon (`{9A42861F-...}.psd`) valódi **Adobe
@@ -68,6 +69,8 @@ gomb-ikonok natív PSD-ként vannak becsomagolva (rétegek nélkül, egyszerű
 exportált bitmap), nem PNG/ICO.
 
 ### 1.4 A `core-lh2.pbz` gombjai (9 db)
+
+*Forrás: `outputlayout.tre:111` (`outputlayout/collage`) · `outputlayout.tre:51` (`outputlayout/ebutton`) · `outputlayout.tre:63` (`outputlayout/folderbutton`) — és további 4 elem ugyanott.*
 
 Ez a fájl a fő kimeneti sáv (az album-nézet alján/tetején megjelenő
 "mit csinálj a kijelölt képekkel" gombsor) alap gombkészletét írja le.
@@ -85,7 +88,6 @@ funkciót a Picasa natív kódja adja, a `.pbf` csak sorrendet/felirat-felülbí
 | 7 | `outputlayout/collage` | 7.0 | "Collage" | Kollázs készítése |
 | 8 | `outputlayout/makemovie` | 8.0 | "Movie" | Diavetítés/film készítése a kijelölt képekből |
 | 9 | `outputlayout/sharewith` | 9.0 | "Hello" | Megosztás ("Hello" feltehetően a Google Hello/IM-integráció maradványa, vagy csak egy generikus felirat-placeholder) |
-
 ### 1.5 A `geotag.pbz` gombja (1 db)
 
 | id | placement | label | ikon | action |

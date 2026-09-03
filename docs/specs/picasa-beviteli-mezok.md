@@ -204,6 +204,8 @@ Négy erőforrás írja le: `tagpanel_text.tre`, `keywordstext.tre`,
 
 ### A Címkék panel
 
+*Forrás: `tagpanel.tre:20` (`tagpanel/add_tag_label`) · `tagpanel.tre:17` (`tagpanel/addtag`) · `tagpanel.tre:51` (`tagpanel/quick_config`) — és további 1 elem ugyanott.*
+
 | elem | felirat / súgó |
 |---|---|
 | `tagpanel/add_tag_label` | **Type in a tag to add:** |
@@ -227,7 +229,6 @@ A panel fejlécei **le vannak fordítva** (`TagPanel::*`):
 
 > **Három szövegváltozat** van a fejlécre: egy kép · több kép · teljes
 > album. Ezt érdemes szó szerint követni.
-
 ### A „nincs beírt szöveg" súgó — a Picasa tanít
 
 `TagPanel::notify_notext`:
@@ -266,6 +267,8 @@ konfigurálása"**.
 > ergonómiája — a tíz gombból nyolc a felhasználóé, kettő a rendszeré.
 
 ### A Címkék párbeszéd (`keywords`)
+
+*Forrás: `keywords.tre:52` (`keywords/addbutton`) · `keywords.tre:13` (`keywords/addkeywords_label`) · `keywords.tre:67` (`keywords/closebutton`) — és további 3 elem ugyanott.*
 
 | elem | felirat |
 |---|---|

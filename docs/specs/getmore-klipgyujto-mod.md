@@ -18,6 +18,8 @@ Kiváltó: a `thumbui` UI-lefedettségi sor `single_action_*` hármasa
 
 ### 1.1 A belépési pontok
 
+*Forrás: `collagepanel.tre:206` (`collagepanel/getmoreclips`) · `makemoviepanel.tre:416` (`makemoviepanel/addclips`).*
+
 | honnan | elem | felirat (EN / **HU**) | méret |
 |---|---|---|---|
 | kollázs, Klipek fül | `collagepanel/getmoreclips` | *Get more…* / **„Továbbiak…"** | 166 × 28 |
@@ -28,7 +30,6 @@ Buboréksúgók: `collagepanel/getmoreclips` = *Get more clips from the Library*
 *Get more clips from Photo Library* / **„További klipek beolvasása a fotótárból"**.
 (Forrás: `collagepaneltext.tre`, `makemoviepaneltext.tre`, és a hivatalos
 magyar `referencia/panel-feliratok-hu.tsv` 129–130. és 566/600. sora.)
-
 ### 1.2 A visszatérő gomb HÁROM felirata — és pontosan három
 
 A sáv gombja nem egy fix szöveg: **három külön változat** van, mindegyik

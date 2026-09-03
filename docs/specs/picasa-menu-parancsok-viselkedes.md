@@ -2041,6 +2041,8 @@ i18n-fájlból. Marad a `0x0085df30` célzott dekompilációja.
 
 #### (d) ⚠️ HIBÁS HIVATALOS SZÖVEG — ne vegyük át
 
+*Forrás: `printoptions.tre:236` (`printoptions/apply`) · `printoptions.tre:242` (`printoptions/ok`).*
+
 | elem | a hivatalos magyar buboréksúgó |
 |---|---|
 | `printoptions/apply` | „A kijelölt beállítások alkalmazása **a Google Fotókra**" |
@@ -2059,7 +2061,6 @@ kibontása a `Picasa3i18n.dll`-ből.
 **A gyakorlati következmény független ettől:** a szolgáltatás megszűnt, tehát
 **ezt a két buboréksúgót nem vesszük át** — nálunk a nyomtatásra kell
 vonatkozniuk. A többi 25 bejegyzés változatlanul átvehető.
-
 ## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
 
 *Második kör az UI-lefedettségi axisról (#1778). Panel: `printpanel` —
@@ -2603,6 +2604,8 @@ buttons…"), ezért nem párosult gépi úton. Felülbírálva.
 
 ### Eredeti / nálunk / teendő
 
+*Forrás: `quicktagconfig.tre:87` (`quicktagconfig/autofill`).*
+
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **10** (`quickTagField0..9`) | ✅ **KÉSZ** (#1788) |
@@ -2610,7 +2613,6 @@ buttons…"), ezért nem párosult gépi úton. Felülbírálva.
 | automatikus kitöltés | `quicktagconfig/autofill` | megvan | — |
 | tárolás | `Preferences\quicktags::tag%d` | QSettings | — |
 | gombok | **OK + Mégse** (elvethető) | **OK + Mégse** (elvethető) | ✅ **KÉSZ** (#1788) |
-
 ### Nyitott kérdések mérlege (43.)
 
 ```
@@ -4167,6 +4169,8 @@ közös mappája, a kilenc állapotszöveg.
 
 ### 59.1 Az eredeti szűrő-készlet: hat gomb
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
 
 | gomb | buboréksúgó | nálunk (**mérve**) |
@@ -4182,7 +4186,6 @@ A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
 
 *(A `starsearch` és a `geotagsearch` felülbírálásai korábbi körből
 származnak — nem ez a kör találta őket.)*
-
 ### 59.2 ⭐ A dátum-szűrő CSÚSZKA, nem dátumválasztó
 
 A `timecontainer_label` mellett a kezelő a
@@ -4216,6 +4219,8 @@ egyébként a **#1398** (másodpéldány-szűrés) témája.
 
 ### Eredeti / nálunk / teendő
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 | | eredeti | nálunk (mérve) | teendő |
 |---|---|---|---|
 | csillag- és geo-szűrő | megvan | **megvan** | — |
@@ -4224,7 +4229,6 @@ egyébként a **#1398** (másodpéldány-szűrés) témája.
 | **dátum-tartomány (csúszka!)** | `timeslider/scaleslider` | **nincs** | ua. |
 | webalbum-szűrő | `webview` | — | **hatókörön kívül** |
 | `searchoptions` csoport | hasonlóság, másodpéldány, gép | nincs | **külön kör** (jelzés, ld. 59.3) |
-
 ### Nyitott kérdések mérlege (59.)
 
 ```

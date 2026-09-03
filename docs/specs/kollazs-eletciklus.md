@@ -242,6 +242,8 @@ m_hidden
 
 ### 4.4 A megvalósítás és EGY MEGDŐLT elvárás (2026-08-24, #1072)
 
+*Forrás: `editpanel.tre:686` (`editpanel/render_now`).*
+
 A PISZKOZAT-állapot ezzel a körrel a kódban is létezik:
 
 | a jegy elvárása | mi lett belőle |

@@ -20,6 +20,8 @@ tehát a 3.9-ben nem léteznek.
 
 ### Élő (6)
 
+*Forrás: `searchoptions.tre:97` (`searchoptions/dupesearch`) · `searchoptions.tre:93` (`searchoptions/facesearch`) · `searchoptions.tre:74` (`searchoptions/label_search1`) — és további 5 elem ugyanott.*
+
 | elem | horgony / stílus | felirat |
 |---|---|---|
 | `searchoptions/searchbackground` | `root`, `m_offsetLTR` | a sáv maga |
@@ -30,7 +32,6 @@ tehát a 3.9-ben nem léteznek.
 | `searchoptions/label_search1` | font12, `m_offsetRT` | jobbra igazított felirat |
 | **`searchoptions/facesearch`** | `m_hidden` | az arckeresés jelzője |
 | **`searchoptions/dupesearch`** | `m_hidden` | **a másodpéldány-keresés jelzője** |
-
 ### ⛔ HALOTT ebben a build-ben (13)
 
 `searchbase` · `boxleft` · `boxright` · `digicam` · **`similarrect`** ·
@@ -377,6 +378,8 @@ buboréksúgót hordozza** (`SharedHandler searchcontainer/tip hottip`), a
 
 ### Geometria — a `respack.yt`-ből
 
+*Forrás: `searchcontainer.tre:92` (`searchcontainer/timecontainer`) · `searchcontainer.tre:89` (`searchcontainer/timecontainer_label`) · `thumbui.tre:550` (`timeslider/scaleslider`) — és további 1 elem ugyanott.*
+
 | réteg | téglalap | méret |
 |---|---|---|
 | `searchcontainer/timecontainer_label` (`vbutton`) | (133,12)–(237,28) | **104 × 16** |
@@ -392,7 +395,6 @@ nem tömör kitöltések.
 *(A `searchoptions/#clip(scaleslider,timeslider): timecontainer` — (260,44)–(387,75),
 127 × 31 — a **másik**, gazdagabb keresőbeállítás-panel saját idő-konténere;
 az a #1398 hatóköre.)*
-
 ### ⚠️ A felirat az EREDETIBEN is félrevezet — ne „javítsuk ki"
 
 A buboréksúgó „dátumtartomány szerinti" szűrést ígér, a vezérlő viszont

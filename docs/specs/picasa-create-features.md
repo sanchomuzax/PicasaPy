@@ -1837,6 +1837,8 @@ A két panel neve `makemoviepanel/text_picker_panel` és
 
 #### E) A fül feliratai — a hivatalos magyar fordítással
 
+*Forrás: `makemoviepanel.tre:369` (`makemoviepanel/back_color_label`) · `makemoviepanel.tre:282` (`makemoviepanel/font_label`) · `makemoviepanel.tre:292` (`makemoviepanel/size_label`) — és további 3 elem ugyanott.*
+
 | elem | magyar |
 |---|---|
 | `makemoviepanel/templatetext` | **„Sablon:"** |
@@ -1852,7 +1854,6 @@ A két panel neve `makemoviepanel/text_picker_panel` és
 
 A fül ikonjai a respackben: `bold_icon`, `italic_icon`, `outline_icon`,
 `inserticon`, `removeicon`.
-
 #### F) NEGATÍV EREDMÉNY — a `titleoption_listbox` ága HALOTT
 
 A `0x006223b0` kezel egy `makemoviepanel/titleoption_listbox` nevű listát
@@ -2583,6 +2584,8 @@ A `.tre`-t és a kezelőket összevetve:*
 
 #### A felület (`video_control_bar2.tre`)
 
+*Forrás: `video_control_bar2.tre:79` (`video_control_bar2/1to1`) · `video_control_bar2.tre:82` (`video_control_bar2/controlbar`) · `video_control_bar2.tre:70` (`video_control_bar2/fullscreen`) — és további 5 elem ugyanott.*
+
 | elem | típus / horgony | szerep |
 |---|---|---|
 | `video_control_bar2/controlbar` | `root`, `m_scaleX m_offsetT` | a sáv maga |
@@ -2593,7 +2596,6 @@ A `.tre`-t és a kezelőket összevetve:*
 | `video_control_bar2/moviecontrolsclip` | `m_offsetLT` | a play/pause clip |
 | `video_control_bar2/1to1` | `m_offsetRT` | a **valódi méret** gomb; Tooltip: „Show actual movie size (don't stretch)" |
 | `video_control_bar2/fullscreen` | `m_offsetRT` | a **teljes képernyő** gomb; Tooltip: „Play full screen" |
-
 #### A kezelők (a `MoviePreviewHandler` `0x006248e0` és a hozzá tartozó magok)
 
 | függvény | méret | szerep |

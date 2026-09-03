@@ -225,6 +225,8 @@ for e in respack.read_index(adat):
 
 ### A panel váza
 
+*Forrás: `editpanel.tre:1332` (`editpanel/albumview`) · `editpanel.tre:1225` (`editpanel/edittabbase`) · `editpanel.tre:1416` (`editpanel/insetleft`) — és további 2 elem ugyanott.*
+
 | elem | téglalap | méret |
 |---|---|---|
 | `editpanel/albumview` („Vissza a könyvtárhoz") | x 10..132, y **9..31** | 122 × 22 |
@@ -240,7 +242,6 @@ kezdődik.** Ez egybevág a `.tre` `LEFTDRAWEROFFSET` alapértékével (**279**,
 > A „Vissza a könyvtárhoz" gomb a felső **0–40 px**-es sávban ül, és
 > **rajta kívül semmi más nincs ott**. A szerkesztőben az eredeti Picasa
 > nem tart fenn alkalmazás-szintű eszköztárat.
-
 ### ÖT fül, amik pontosan kitöltik a panelt
 
 | fül | x | szélesség |
@@ -596,6 +597,8 @@ panelcím tipográfiailag azonos. *(megerősített)*
 
 ### 4.2 Az alpanel és a Finomhangolás fül UGYANAZT a vezérlőkészletet használja
 
+*Forrás: `editpanel.tre:621` (`editpanel/cancel`) · `editpanel.tre:640` (`editpanel/colorwheel0`) · `editpanel.tre:598` (`editpanel/droppertoggle`) — és további 5 elem ugyanott.*
+
 Ez a szakasz kulcsa. ▶**ERŐFORRÁS**, `editpanel.tre`:
 
 - a 2. fül gombja megjeleníti a közös vezérlő-tárolót:
@@ -625,7 +628,6 @@ paraméter-alakzatokat is — a `Border` (2 szín + 4 szám) és a `DropShadow`
 **Következmény:** a `2026-07-17 20 56 42.png` (2. fül) **ugyanazokat a
 csúszkapéldányokat mutatja**, amelyeket a paraméter-alpanel is használ —
 tehát a lenti geometria közvetlen mérésből származik. *(erős)*
-
 ### 4.3 A csúszka geometriája (mérés a 2. fül felvételén)
 
 `2026-07-17 20 56 42.png`, 1920×1080, 1:1:
@@ -684,6 +686,8 @@ kell kezelni, nem véletlenként.)
 
 ### 4.6 A gombsor — és összevetés a vágás-panel gombjaival
 
+*Forrás: `editpanel.tre:621` (`editpanel/cancel`) · `editpanel.tre:834` (`editpanel/crop_well`) · `editpanel.tre:821` (`editpanel/cropapply`) — és további 3 elem ugyanott.*
+
 ▶**ERŐFORRÁS**, `editpanel.tre` 603–630:
 
 ```
@@ -731,8 +735,9 @@ képről olvasott tooltipjét, immár erőforrás-szinten is.
 Unicode-karakter, és a **felirat jobb oldalán**, a gomb jobb szélétől 9
 px-re ül — ugyanúgy a vágás-panelen és a paraméter-alpanelen. A két helyen
 **egyetlen közös gombkomponenst** érdemes bevezetni.
-
 ### 4.x Kicsomagolt bitkép-mérések (#700)
+
+*Forrás: `editpanel.tre:616` (`editpanel/cancel_icon`) · `editpanel.tre:603` (`editpanel/ok_icon`).*
 
 A #700 megvalósítási köre a `respack.py`-vel **ki is csomagolta** az érintett
 rétegeket; három számszerű adat innen való, és egy korábbi állítást helyesbít:
@@ -752,7 +757,6 @@ képernyőképes megfigyeléssel; ugyanaz a két kép szolgálja ki a vágás-pa
 Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás, derítőfény,
 retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
 csúszkája tehát **szándékosan más arányú**, nem a közös vezérlő.
-
 ### 4.y A csúszka-FELIRAT honnan jön — LEZÁRVA (2026-08-15)
 
 A #700 nyitva hagyta, hogy a Holga első csúszkája „Méret" vagy
@@ -1487,6 +1491,8 @@ amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
 
 ### A sáv mind a 19 eleme
 
+*Forrás: `video_control_bar.tre:22` (`video_control_bar/endthumb`) · `video_control_bar.tre:6` (`video_control_bar/lefttrim`) · `video_control_bar.tre:91` (`video_control_bar/moviemode1`) — és további 16 elem ugyanott.*
+
 **Vágó-csúszka (trim)**
 
 | elem | horgony |
@@ -1530,7 +1536,6 @@ amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
 
 `video_control_bar/controlbar: root` — X-re nyújtva, felülre igazítva ·
 `video_control_bar/moviecontrolsclip` — a `controlbar` bal-felső sarkához
-
 ### ⚠️ A buboréksúgók NINCSENEK lefordítva
 
 A három súgószöveg **közvetlenül a `.tre`-ben** áll, angolul, és a
@@ -1627,6 +1632,8 @@ nyitott pontot az effekt-panelen.
 
 #### Az 1. fül deklarációs sorrendje (`editpanel.tre` 130–240) — NEM a megjelenítési
 
+*Forrás: `editpanel.tre:172` (`editpanel/autocolor`) · `editpanel.tre:179` (`editpanel/autolighting`) · `editpanel.tre:136` (`editpanel/crop`) — és további 8 elem ugyanott.*
+
 | # | elem | mi ez |
 |---:|---|---|
 | 1 | `editpanel/crop` | Vágás |
@@ -1644,7 +1651,6 @@ nyitott pontot az effekt-panelen.
 A `picnik` gomb **stílusa a többivel azonos**: `m_buttontypecolor`,
 `m_offsetLT`, `Property hitchildren 1`, és a felirata alatta áll
 (`editpanel/picnik-label`, `m_buttonfontCbelow`).
-
 #### Mit csinált
 
 A **Picnik** (magyarul **„Kreatív készlet"**) a Google online

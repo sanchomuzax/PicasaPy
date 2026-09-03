@@ -338,6 +338,8 @@ a szövegek a teljesség kedvéért állnak itt.
 
 ### 10.3 A sáv TÁJÉKOZTATÓ szövegei — teljes lista
 
+*Forrás: `publish.tre:296` (`publish/backup_help`) · `publish.tre:238` (`publish/backupcdheader2`) · `publish.tre:249` (`publish/backuptext2`) — és további 10 elem ugyanott.*
+
 Ezeknek **nincs bináris címük**: a `respack.yt` szöveg-rétegei hordozzák
 őket, a hivatalos magyar alak a `referencia/panel-feliratok-hu.tsv`-ben
 áll (a sorszám a bizonyíték).
@@ -367,7 +369,6 @@ a **`publish/webpublish_cancel`** és a **`publish/replicate_cancel`**
 „Mégse". Mindhárom a webes ághoz tartozik ⇒ **hatókörön kívül** (7.).
 
 ---
-
 ## 11. A `files.txt` ÍRÁSA és a replikáció ikertestvére (2026-09-02, 11.1 átírva 2026-09-03)
 
 ### 11.1 A `files.txt`-t a Picasa NEM formázza — BÁJTRA fűzi össze
