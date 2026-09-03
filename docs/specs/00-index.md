@@ -724,6 +724,24 @@ a fotó-rekordunknak — és a **`flip` mező negatív eredmény**
 
 ### [binaris-regeszet-modszertan.md](binaris-regeszet-modszertan.md) — nincs nyitott kérdés (ÚJ szakasz, 2026-09-02)
 
+⭐ **2026-09-03 (22. szakasz) — MEKKORA a 18. szakasz hibája? Lemérve.** A 18.
+kimondta a szabályt (*elemnév és cím egy szakaszban*), de senki nem mérte, hány
+elemet érint — pedig a szám egy KÖZÖLT mutatóban ül. A 168 „feltáratlan" elemből
+**50 (30%) teljes néven szerepel** egy kézzel írt spec-lapon; 41 dedikált lapon
+is. **Három mechanizmus rejti el a bizonyítékot:** (1) nincs horgony a
+szakaszban (a `biztonsagi-mentes.md` 10.3 tizenkét `publish/…` feliratát a
+`panel-feliratok-hu.tsv`-sorszám igazolja, ami nem illeszkedik a mintára);
+(2) a lap a **levélnevet** használja (a `konyvtar-ablak-meretek.md` 4. szakasza
+mind a 18 lebegő gomb geometriáját megadta `thumbui/` előtag nélkül —
+**egyetlen sort sem** talált a detektor); (3) **kézi `hianyzik` felülbírálás
+árnyékolja** a gépi `lekutatva`-t (hat elem; kettőnek a saját megjegyzése
+mondta ki, hogy „De FELTÁRVA"). ⛔ **Egy aggály ELVETVE:** a részsztringes
+keresés a mai 88 `lekutatva`-ból **nullát** igazol hamisan (szóhatáros
+újrafuttatás: 88/88). **Javítva ebben a körben:** 37 felülbírálás + a
+`konyvtar-ablak-meretek.md` 4. szakasza teljes nevekre —
+**feltáratlan 164 → 128** (ugyanazzal a QML-fával mérve). Jegy: **#1878**,
+maradék: **#2091**.
+
 ⭐ **2026-09-03 (21. szakasz) — a Picasa UTF-8 rétege: a TELJES futásidejű
 thunk-tábla.** A 20. szakasz receptjét az egész `.text`-en végigfuttatva
 kiderült, hogy nem elszigetelt trükk: a Picasa **68 ANSI Win32 API-t** vezet át

@@ -1385,3 +1385,83 @@ maradtak nyitva. Két ilyen tétel dőlt el a jelen körben:
 
 **A tanulság általánosan:** ha egy kör „nem oldható fel"-t ír egy globális
 mutatóra, az ma már **hiba**, nem korlát.
+
+---
+
+## 22. MEKKORA a 18. szakasz hibája? — lemérve (2026-09-03)
+
+A 18. szakasz kimondta a szabályt (*elemnév és cím egy szakaszban*), és két
+esetet mutatott rá. Azt viszont **senki nem mérte meg, hány elemet érint** —
+pedig a szám egy közölt mutatóban ül: a UI-lefedettségi lap „hiányzik —
+**feltáratlan** (kutatói kör kell)" sora.
+
+### 22.1 A mérés
+
+A `ui-lefedettseg.md` hiánylistája **363 tétel**: `168 feltáratlan ·
+88 lekutatva · 107 bizonytalan`. A 168 feltáratlanra megnéztük, szerepel-e a
+**teljes elemnevük** (szóhatárral) valamelyik **kézzel írt** spec-lapon —
+a generált lapok kizárva, ahogy a `spec_lapok()` teszi:
+
+| mérőszám | darab | a 168-ból |
+|---|---:|---:|
+| teljes néven szerepel kézzel írt spec-lapon | **50** | 30% |
+| ebből **dedikált** lapon is (nem csak kereszt-táblában) | **41** | 24% |
+| csak kereszt-táblában (`picasa-eger-es-kijeloles.md` stb.) | 9 | 5% |
+| ezen felül: csak a **levélnevén**, de horgonyzott szakaszban, a panel nevével együtt | 23 | 14% |
+
+⇒ **A „feltáratlan" 168-ból legalább 50 valójában le van írva.** A címke
+szövege — „nem tudjuk, mit csinál" — rájuk **nem igaz**.
+
+### 22.2 A három mechanizmus, ami elrejti a bizonyítékot
+
+1. **Nincs horgony a szakaszban.** A lap teljes néven leírja az elemet, de a
+   szakaszban nincs `0x00…` cím és nincs `fájl.kiterjesztés:sor`. Példa: a
+   `biztonsagi-mentes.md` 10.3 **tizenkét** `publish/…` feliratot sorol fel
+   hivatalos magyar fordítással és `panel-feliratok-hu.tsv`-sorszámmal — az
+   utóbbi nem illeszkedik a `FAJL_SOR_MINTA`-ra.
+2. **A lap a LEVÉLNEVET használja.** A
+   [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md) 4. szakasza mind a
+   tizennyolc lebegő gomb geometriáját megadta — `prev`, `next`, `fit` … —,
+   de `thumbui/` előtag nélkül. A detektor a teljes névre keres, tehát
+   **egyetlen sort sem** talált. *(Ez a kör javította: a tábla most teljes
+   nevekkel áll.)*
+3. **Kézi `hianyzik` felülbírálás árnyékolja a gépi `lekutatva`-t.** A
+   felülbírálás a gépi besorolás UTÁN fut, tehát felülírja. Hat elem
+   ilyen; kettőnek — `makemoviepanel/recompute`, `makemoviepanel/sizelist` —
+   a **saját megjegyzése mondta ki**, hogy „De FELTÁRVA", miközben az
+   állapota `hianyzik` maradt.
+
+   **És megvan az OKA is, mérve:** a `#1878` a harmadik állapotot csak a
+   *generátorban* vezette be; a publikus őr
+   (`tests/test_ui_lefedettseg_megfeleltetes_707.py`) készlete
+   `{megvan, hianyzik}` maradt. Vagyis `lekutatva` sort **nem lehetett
+   commitolni** — a tábla gondozója kénytelen volt `hianyzik`-ot írni, és a
+   tudást a megjegyzésbe tenni. Nem figyelmetlenség volt: a kapu tiltotta.
+   *(Ez a kör javította az őrt, és adott mellé fogat: a `lekutatva` sor
+   bizonyítéka létező spec-lap kell legyen, ami a TELJES elemnevet
+   említi — a generátor `felulbiralas_ervenyes()`-ének publikus párja.)*
+
+### 22.3 Egy ELVETETT aggály: a részsztring-egyezés
+
+A detektor `elem in szakasz` alakban keres, ami **részsztringre** illeszt:
+`outputlayout/blogger` így egyezett egy `outputlayout/blogger_icon`
+attribútummal. Kézenfekvő volt attól tartani, hogy ez elemeket **hamisan**
+emel `lekutatva`-ba.
+
+**Lemérve: nem teszi.** A mai 88 `lekutatva` elem közül **nulla** olyan van,
+amit csak részsztring-egyezés igazol (szóhatáros újrafuttatás: 88/88
+megmarad). A mechanizmus él — a saját, tágabb mérésünkben egy hamis
+pozitívot csinált —, a jelenlegi adaton viszont **hatástalan**. Szóhatár
+felvétele így megelőző javítás, nem hibajavítás.
+
+### 22.4 Amit a spec-írónak tennie kell
+
+- **Teljes elemnév**, mindig: `thumbui/prev`, nem `prev`. A leltár és minden
+  gépi ellenőrzés ezt keresi.
+- **Horgony ugyanabban a szakaszban**: `0x00…` cím vagy `fájl:sor`. Egy
+  `.tre`- vagy `respack.yt`-sorszám is jó (`thumbui.tre:43`).
+- Ha vezérlőket sorolsz táblába, a **cím legyen oszlop** (18. szakasz).
+
+> *Bizonyítottsági fok: **megerősített*** — minden szám a
+> `ui-lefedettseg.md` és a `docs/specs/` kézzel írt lapjainak
+> újrafuttatható összevetéséből jön.

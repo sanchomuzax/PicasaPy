@@ -119,33 +119,71 @@ A szerkesztő-panellel ellentétben a könyvtár-ablak elemeit a `.tre`
 ## 4. A rács fölött lebegő gombok — 14 × 14, egymás alatt
 
 A `root`-hoz kötött, a rács jobb szélén függőlegesen sorakozó gombok
-**mind 14 × 14 képpontosak**, és **15 px-enként** követik egymást:
+**mind 14 × 14 képpontosak**, és **15 px-enként** követik egymást. Mind a
+tizennyolc **`vbutton`** (rajz nélküli, láthatatlan találati terület); a
+téglalapok a `respack.yt` tervezővásznáról valók, `x = 375…389`
+(`respack.yt:3280882`-től, 17 bájtos bejegyzések).
 
-| sorrend | elem | y (vásznon) |
+⚠️ **Tervezővászon-koordináták**, nem futásidejű hely. A sorrend és az
+osztásköz megbízható, az abszolút y nem.
+
+| sorrend | elem (teljes név) | y (vásznon) |
 |---|---|---:|
-| 1 | `largethumbs` | 76 |
-| 2 | `smallthumbs` | 91 |
-| 3 | `acquirebutton` | 106 |
-| 4 | `viewswitch` | 121 |
-| 5 | `horizonadjust` | 136 |
-| 6 | `prev` | 151 |
-| 7 | `next` | 166 |
-| 8 | `fit` | 181 |
-| 9 | `1to1` | 196 |
-| 10 | `morethumbs` | 211 |
-| 11 | `lessthumbs` | 226 |
-| 12 | `soloview` | 241 |
-| 13 | `replicate` | 256 |
-| 14 | `publishswitcher` | 286 |
-| 15 | `uploadmgr` | 301 |
-| 16 | `histogram` | 316 |
-| 17 | `visitweb` | 331 |
-| 18 | `makealbum` | 346 |
+| 1 | `thumbui/largethumbs` | 76 |
+| 2 | `thumbui/smallthumbs` | 91 |
+| 3 | `thumbui/acquirebutton` | 106 |
+| 4 | `thumbui/viewswitch` | 121 |
+| 5 | `thumbui/horizonadjust` | 136 |
+| 6 | `thumbui/prev` | 151 |
+| 7 | `thumbui/next` | 166 |
+| 8 | `thumbui/fit` | 181 |
+| 9 | `thumbui/1to1` | 196 |
+| 10 | `thumbui/morethumbs` | 211 |
+| 11 | `thumbui/lessthumbs` | 226 |
+| 12 | `thumbui/soloview` | 241 |
+| 13 | `thumbui/replicate` | 256 |
+| 14 | `thumbui/publishswitcher` | 286 |
+| 15 | `thumbui/uploadmgr` | 301 |
+| 16 | `thumbui/histogram` | 316 |
+| 17 | `thumbui/visitweb` | 331 |
+| 18 | `thumbui/makealbum` | 346 |
 
 **Az osztásköz egyenletesen 15 px** (14 px gomb + 1 px hézag); a 13.→14.
 között 30 px, tehát ott **csoporthatár** van.
 
 `throttlegroup` (a jobb szélen futó sáv): **16 px** széles.
+
+### 4.1 `thumbui/prev` és `thumbui/next` — NINCS nyomva-tartásra ismétlés
+
+Buboréksúgójuk „View the next Photo" / „View the previous Photo"
+(`thumbui_text.tre:168` és `thumbui_text.tre:171`), a deklarációjuk pedig
+`thumbui.tre:43` és `thumbui.tre:48`.
+
+Mindkettőnek **ki van kommentezve** a két viselkedés-tulajdonsága:
+
+```
+thumbui/prev: root
+#Property mousedown 1
+#Property setautorepeat 5
+m_render_offscreen
+```
+
+A `#` a `.tre`-ben **megjegyzés** — ez mérve van: a `collagepanel.tre`
+25–69. sorain teljes elemblokkok állnak `#`-kel (`#collagepanel/border_label0:
+collagepanel/border0`), és ezek az elemek **sem a leltárban, sem a
+`respack.yt` élő rétegei közt nincsenek** (a respack a nevükben megőrzi a
+`#`-et: `layer:collagepanel/#rect: border_preview0`). Kivétel csak a
+`#include` / `#includeonce` preprocesszor-utasítás, aminek a kikapcsolt
+alakja `##include`.
+
+⇒ **A két nyíl nyomva tartva NEM léptet tovább**, egy kattintás egy kép.
+Ez szándékos különbség: a közvetlen szomszédjaik, a
+`thumbui/morethumbs` és a `thumbui/lessthumbs` `Property setautorepeat 5`
+sora **`#` nélkül** áll, tehát náluk az ismétlés él
+([`picasa-eger-es-kijeloles.md`](picasa-eger-es-kijeloles.md) 7. szakasz).
+
+> *Bizonyítottsági fok: **megerősített*** — a `.tre` sorai és a `respack.yt`
+> bejegyzései kiolvasva.
 
 ---
 

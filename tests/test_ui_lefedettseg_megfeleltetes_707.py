@@ -22,7 +22,16 @@ MEGFELELTETES = GYOKER / "docs" / "specs" / "ui-lefedettseg-megfeleltetes.csv"
 ELEM_MEGFELELTETES = GYOKER / "docs" / "specs" / "ui-lefedettseg-elemek.csv"
 
 PANEL_ALLAPOTOK = {"parositva", "nincs-megfeleltetes", "nem-cel"}
-ELEM_ALLAPOTOK = {"megvan", "hianyzik"}
+#: #1878 vezette be a `lekutatva` harmadik állapotot a GENERÁTORBAN, de ez az
+#: őr nem követte — a készlete `{megvan, hianyzik}` maradt. Következmény
+#: (mérve, 2026-09-03): `lekutatva` sort nem lehetett commitolni, ezért a
+#: kézi tábla `hianyzik`-ként hordozott feltárt elemeket, olyan
+#: megjegyzésekkel, mint „NINCS megvalósítva … De FELTÁRVA: #1408". A
+#: generált lap így 36 elemet sorolt „kutatói kör kell" alá, amiről a saját
+#: táblánk tudta, hogy fel van tárva.
+#: Részletek: `docs/specs/binaris-regeszet-modszertan.md` 22.3.
+ELEM_ALLAPOTOK = {"megvan", "hianyzik", "lekutatva"}
+SPEC_DIR = GYOKER / "docs" / "specs"
 
 
 def _sorok(ut: Path) -> list[dict]:
@@ -189,3 +198,29 @@ class TestElemFelulbiralasok:
     def test_nincs_ismetlodo_elem(self, elem_sorok):
         nevek = [sor["elem"] for sor in elem_sorok]
         assert len(nevek) == len(set(nevek))
+
+
+    def test_lekutatva_bizonyiteka_letezo_lap_ES_emliti_az_elemet(
+        self, elem_sorok
+    ):
+        """A `lekutatva` bizonyítéka egy spec-lap, aminek NEVEZNIE kell az elemet.
+
+        Ez a publikus párja a generátor `felulbiralas_ervenyes()`-ének. Enélkül
+        egy átnevezett lap vagy egy kikerült elemnév némán hatástalanná tenné a
+        sort, és az elem visszaesne „feltáratlan"-ba anélkül, hogy bárki
+        észrevenné — a mérés pedig romlana, nem javulna.
+        """
+        hibak = []
+        for sor in elem_sorok:
+            if sor["allapot"] != "lekutatva":
+                continue
+            lap = (sor.get("bizonyitek") or "").strip()
+            ut = SPEC_DIR / lap
+            if not lap or not ut.is_file():
+                hibak.append(f"{sor['elem']}: nincs ilyen lap: {lap!r}")
+                continue
+            if sor["elem"] not in ut.read_text(encoding="utf-8"):
+                hibak.append(
+                    f"{sor['elem']}: a(z) {lap} NEM említi a teljes elemnevet"
+                )
+        assert not hibak, hibak
