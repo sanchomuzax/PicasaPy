@@ -2626,9 +2626,31 @@ paraméter nő
 
 Ez a **derítőfény (fill light)** jellegű görbe alakja.
 
-> **Ami NINCS mérve:** melyik attribútum az `s` (a négy beolvasott érték
-> közül), és mire megy a másik három; továbbá hogy a két görbe hogyan
-> kapcsolódik össze (sorban? keverve?).
+> ✅ **Mindkét kérdés megválaszolva.** Az `s` a **`fill`** attribútum
+> (2/b. pont). A görbék pedig **SORBAN**, nem keverve:
+>
+> ```
+> 0x00bc218c  call 0x008f3290   ; érték = 1. görbe(érték)
+> 0x00bc21a1  call 0x008f3290   ; érték = 2. görbe(érték)
+> 0x00bc21b6  call 0x008f3290   ; érték = 3. görbe(érték)
+> 0x00bc21bf  fldz ... fcom     ; majd alsó vágás nullára
+> ```
+>
+> A `0x008f3290` (280 b) a **görbe kiértékelése egy pontban**: ha a görbe
+> kevesebb mint két pontból áll, **változatlanul visszaadja** a bemenetet
+> (`0x008f32a0`). A `0x008f2c70` (299 b) ennek a párja: **pont hozzáfűzése**
+> a görbéhez (kapacitás-duplázás, `eax*8` ⇒ 8 bájt = egy `(x, y)` pár).
+>
+> ⇒ **A művelet a bemeneti szintet három görbén futtatja át egymás után
+> (kompozíció), majd nullára vágja alul.** Egy külön ág (`0x00bc2125`–
+> `0x00bc2163`) egyetlen görbét értékel ki, hozzáad egy skálázott tagot, és
+> a `0x008f2e00`-t hívja — mikor lép életbe, **nincs mérve**.
+>
+> **Ami szintén nincs mérve:** melyik veremrekesz melyik görbe. A három
+> kiértékelés a `[esp+0x74]`, `[esp+0x1c]` és `[esp+0x34]` címekre megy, de
+> az építési helyükhöz képest a verem közben eltolódik, és a jelen
+> olvasatból nem dönthető el egyértelműen a párosítás. **Találgatás helyett
+> kimondva marad.**
 
 ### 2/b. ⛔ HELYESBÍTÉS: az `Exposure` NEGYEDIK attribútuma a `fill` — és épp az hajtja az 5 pontos görbét (2026-09-04, #2238)
 
