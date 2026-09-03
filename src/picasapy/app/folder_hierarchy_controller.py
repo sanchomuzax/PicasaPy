@@ -88,12 +88,17 @@ class FolderHierarchyController(QObject):
     rowsChanged = Signal()
     simplifiedChanged = Signal()
     treeViewChanged = Signal()
+    #: #2049: a mappa-borítók (fotó-kupacok) megjelenítése.
+    albumThumbsChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._folders: tuple[dict, ...] = ()
         self._expanded: frozenset[str] = frozenset()
         self._simplified = False
+        #: #2049: a mappa-borítók megjelenítése — az eredetiben is
+        #: kikapcsolva indul (`ShowAlbumThumbnails2`, alapérték 0).
+        self._album_thumbs = False
         self._tree_view = False
         self._rows: tuple[dict, ...] = ()
         self._rebuild()
@@ -162,6 +167,37 @@ class FolderHierarchyController(QObject):
         self._simplified = bool(value)
         self.simplifiedChanged.emit()
         self._rebuild()
+
+    # -- mappa-borítók (#2049) ------------------------------------------
+
+    @Property(bool, notify=albumThumbsChanged)
+    def albumThumbs(self) -> bool:
+        """„Indexképek megjelenítése a könyvtárban" — a fasorok ikonja
+        helyett fotó-kupac.
+
+        Az eredeti kulcsa `Preferences` ▸ `ShowAlbumThumbnails2`, alapértéke
+        **0** (`0x00761870`), ezért nálunk is kikapcsolva indul.
+
+        ⚠️ Ez a kapcsoló — az „Egyszerűsített fanézet"-hez hasonlóan —
+        **nem marad meg** újraindításig: a `folder_hierarchy_controller`
+        egyik kapcsolója sem ír `QSettings`-be. Ez meglévő hiányosság,
+        nem ezé a jegyé.
+        """
+        return self._album_thumbs
+
+    # SZÁNDÉKOSAN nincs közvetlen QML-hivatkozása: a menü a
+    # `toggleAlbumThumbs`-t hívja, és AZ hívja ezt — ugyanaz a felállás,
+    # mint a `setSimplified`-nél (#1052).
+    @Slot(bool)
+    def setAlbumThumbs(self, value: bool) -> None:
+        if bool(value) == self._album_thumbs:
+            return
+        self._album_thumbs = bool(value)
+        self.albumThumbsChanged.emit()
+
+    @Slot()
+    def toggleAlbumThumbs(self) -> None:
+        self.setAlbumThumbs(not self._album_thumbs)
 
     @Slot()
     def toggleSimplified(self) -> None:

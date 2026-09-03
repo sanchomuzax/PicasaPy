@@ -77,6 +77,13 @@ Rectangle {
         (pane.hierarchyController && pane.hierarchyController.treeView !== undefined)
             ? pane.hierarchyController.treeView : false
     // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
+    //: #2049: „Indexképek megjelenítése a könyvtárban" — ugyanaz a
+    //: kapcsoló, mint a `Nézet ▸ Mappanézet` menü tételéé. A
+    //: `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+    readonly property bool albumThumbs:
+        (pane.hierarchyController && pane.hierarchyController.albumThumbs !== undefined)
+            ? pane.hierarchyController.albumThumbs : false
+
     readonly property int hierarchyRowCount:
         pane.hierarchyController ? pane.hierarchyController.rows.length : 0
     signal folderChosen(string path)
@@ -722,11 +729,48 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 12
                         spacing: 5
-                        FolderIcon {
-                            size: 13
+                        // #2049: az eredeti a Mappák-lista sorain nem sárga
+                        // mappaikont mutat, hanem a mappa első legfeljebb
+                        // négy fotójából összeállított kis kupacot — de
+                        // CSAK ha az „Indexképek megjelenítése a
+                        // könyvtárban" be van kapcsolva
+                        // (`ShowAlbumThumbnails2`, alapérték 0). Ha nincs
+                        // borító (kép nélküli mappa), a sor visszaesik a
+                        // mappaikonra: az eredeti is helyettesítő ikonokat
+                        // sorol fel erre (`0x00761870`: `icons/folder`,
+                        // `icons/album`, `icons/smartalbum`, …).
+                        Item {
+                            objectName: "folderRowCover"
+                            width: 13
+                            height: 18
                             anchors.verticalCenter: parent.verticalCenter
-                            // az elérhetetlen mappa ikonja halvány (#459/5)
                             opacity: offline ? 0.45 : 1.0
+
+                            readonly property bool boritoLatszik:
+                                pane.albumThumbs && folderRowCoverImage.status === Image.Ready
+
+                            FolderIcon {
+                                size: 13
+                                visible: !parent.boritoLatszik
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Image {
+                                id: folderRowCoverImage
+                                objectName: "folderRowCoverImage"
+                                anchors.centerIn: parent
+                                height: parent.height
+                                fillMode: Image.PreserveAspectFit
+                                visible: parent.boritoLatszik
+                                asynchronous: true
+                                // ⚠️ Kikapcsolva ÜRES a forrás, tehát a
+                                // szolgáltató meg sem szólal: négy JPEG
+                                // dekódolása mappánként nem indul el
+                                // feleslegesen.
+                                source: pane.albumThumbs
+                                        ? "image://foldercover/" + path
+                                        : ""
+                            }
                         }
                         Text {
                             objectName: "folderRowLabel"

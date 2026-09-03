@@ -1005,6 +1005,11 @@ MenuBar {
             readonly property bool simplifiedMode:
                 (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
                     ? bar.folderViewCtl.simplified : false
+            //: #2049: a mappa-borítók kapcsolójának állapota. A
+            //: `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+            readonly property bool albumThumbsMode:
+                (bar.folderViewCtl && bar.folderViewCtl.albumThumbs !== undefined)
+                    ? bar.folderViewCtl.albumThumbs : false
             //: #1766: a lista-rendezés állapota — ugyanaz a forrás, mint a
             //: bal hasáb helyi menüjéé, hogy a két menü pipája EGYÜTT
             //: mozogjon. A `!== undefined` a próbák stub-vezérlőjére véd
@@ -1132,6 +1137,27 @@ MenuBar {
                     if (bar.folderViewCtl) bar.folderViewCtl.toggleSimplified()
                     checked = Qt.binding(function () {
                         return folderViewMenu.simplifiedMode
+                    })
+                }
+            }
+            // #2049: „Indexképek megjelenítése a könyvtárban" — a bal
+            // hasáb fasorain a sárga mappaikon helyett a mappa első
+            // legfeljebb négy fotójából álló kupac. Az eredeti kulcsa
+            // `ShowAlbumThumbnails2`, alapértéke 0, ezért kikapcsolva
+            // indul; a listaépítő (`0x00761870`) olvassa be.
+            //
+            // A #1464/#1468 rádió-csapdája ide is vonatkozik: a valódi
+            // kattintás előbb billenti a `checked`-et, mint ahogy a
+            // `triggered` eldördül, ezért a jelzés után visszakötjük.
+            MenuItem {
+                objectName: "menuViewAlbumThumbnails"
+                text: qsTr("Show Thumbnails in Library")
+                checkable: true
+                checked: folderViewMenu.albumThumbsMode
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.toggleAlbumThumbs()
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.albumThumbsMode
                     })
                 }
             }
