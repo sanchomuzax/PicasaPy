@@ -48,14 +48,64 @@ class TestParseGeotag:
 
 
 class TestFormatGeotag:
-    def test_six_decimals_without_trailing_zeros(self):
-        assert format_geotag(47.5, 19.05) == "47.5,19.05"
+    """#2012: a Picasa MINDIG hat tizedesjegyet ír, a záró nullákkal együtt.
+
+    A korábbi három állítás a mi HIBÁS viselkedésünket rögzítette (záró
+    nullák levágva). Bizonyíték a javításra:
+
+    - a `sprintf` formátuma `%lf,%lf` (`0x00c8187c`, a hívás `0x007d57fb`),
+      a kulcsnév `geotag` (`0x00c81874`, `0x007d582e`); MSVC-ben a
+      `printf`-beli `%lf` azonos a `%f`-fel ⇒ hat tizedesjegy;
+    - a tulajdonos 859 fájlos `.picasa.ini`-korpuszában mind a **84**
+      valós `geotag=` érték 6/6 tizedesjeggyel áll.
+
+    A `rstrip` indoka („a kerek koordináta ne `33.770556000` alakban
+    íródjon") téves volt: a `%.6f` sosem ad hatnál több tizedest, tehát a
+    levágás KIZÁRÓLAG olyan jegyeket vett el, amiket a Picasa megtart.
+    """
+
+    def test_a_kerek_ertek_is_hat_tizedessel_all(self):
+        assert format_geotag(47.5, 19.05) == "47.500000,19.050000"
 
     def test_negative_values(self):
-        assert format_geotag(-33.9, -18.42) == "-33.9,-18.42"
+        assert format_geotag(-33.9, -18.42) == "-33.900000,-18.420000"
 
     def test_zero_is_written_as_zero(self):
-        assert format_geotag(0.0, 0.0) == "0,0"
+        assert format_geotag(0.0, 0.0) == "0.000000,0.000000"
+
+    def test_a_korpuszbol_vett_valodi_ertek(self):
+        """A jegyben nevesített két érték — ma `47.82002`-t adnánk."""
+        assert format_geotag(47.82002, 18.848376) == "47.820020,18.848376"
+        assert format_geotag(47.82002, 18.85157) == "47.820020,18.851570"
+
+    def test_a_hetedik_tizedes_KEREKITODIK_nem_csonkul(self):
+        """A `%.6f` kerekít; ezt a javítás nem változtatja meg."""
+        assert format_geotag(1.00000049, 0.0).startswith("1.000000")
+        assert format_geotag(1.00000051, 0.0).startswith("1.000001")
+
+
+class TestABeolvasasTOVABBRA_IS_TURO:
+    """#2012: a javítás CSAK az írást érinti.
+
+    A korábbi verzióink rövid alakot írtak a felhasználók fájljaiba; azt
+    továbbra is el kell tudni olvasni, különben a saját múltunkat
+    veszítjük el."""
+
+    def test_a_rovid_alak_beolvashato(self):
+        pont = parse_geotag("47.82002,18.848376")
+        assert pont is not None
+        assert pont.latitude == pytest.approx(47.82002)
+        assert pont.longitude == pytest.approx(18.848376)
+
+    def test_a_HAT_tizedeses_alak_is_beolvashato(self):
+        pont = parse_geotag("47.820020,18.848376")
+        assert pont is not None
+        assert pont.latitude == pytest.approx(47.82002)
+
+    def test_a_rovid_alak_beolvasva_es_visszairva_a_HOSSZU_alakot_adja(self):
+        pont = parse_geotag("47.5,19.05")
+        assert pont is not None
+        assert pont.as_geotag() == "47.500000,19.050000"
 
     def test_out_of_range_is_error(self):
         with pytest.raises(ValueError):

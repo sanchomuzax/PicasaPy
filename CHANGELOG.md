@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.247] – 2026-09-03
+
+### Javítva
+- A fényképekhez mentett **hely** (`geotag`) mostantól pontosan úgy kerül a
+  `.picasa.ini`-be, ahogy az eredeti Picasa írja: mindig hat tizedesjeggyel.
+  Eddig levágtuk a záró nullákat, ezért ugyanarra a koordinátára más szöveget
+  írtunk, mint a Picasa — a tulajdonos 84 valós helyadatából 19 tért el. A
+  korábbi, rövidebb alakot továbbra is beolvassuk.
+
 ## [0.8.246] – 2026-09-03
 
 ### Hozzáadva
