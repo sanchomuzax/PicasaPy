@@ -10,13 +10,14 @@ MAGIC = 0x3FCCCCCD
 CONST_1332 = 0x1332
 CONST_2 = 0x00000002
 
+# A típusok az RTTI-ből (#2105); a 0x03 és a 0x07 ELŐJELES (#2106).
 _FIXED_FORMAT = {
-    0x1: "I",  # uint32
-    0x7: "I",
+    0x1: "I",  # unsigned long
+    0x7: "i",  # int — ELŐJELES
     0x2: "d",  # double
-    0x3: "B",  # uint8
-    0x4: "Q",  # uint64
-    0x5: "H",  # uint16
+    0x3: "b",  # signed char — ELŐJELES
+    0x4: "Q",  # unsigned __int64
+    0x5: "H",  # unsigned short
 }
 
 

@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.238] – 2026-09-03
+
+### Javítva
+- **A Picasa-adatbázis két számoszlopát rosszul olvastuk (#2106).** Két
+  mezőtípus **negatív számokat is tárolhat**, mi viszont mindig pozitívként
+  olvastuk őket. A te adatbázisodban ez élesben elő is fordul: egy −86-os
+  érték **4 294 967 210**-ként jött be. A behozott adat mostantól helyes.
+  (A bizonyíték magából a Picasa programjából jön, nem találgatásból: a
+  típustáblát a program saját belső típusnevei adják meg — mind a nyolcat,
+  #2105.)
+
 ## [0.8.237] – 2026-09-03
 
 ### Javítva
