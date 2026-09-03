@@ -2004,3 +2004,113 @@ bármikor megismételhető.
 | „a kupac elrendezése futásonként változik" | `srand(rés ^ 0x133475)` — **albumonként rögzített**, `0x00423a2b` |
 | „a borító mérete rögzített (pl. 144×144)" | a vászon a befoglaló téglalap, `0x00423f70`–`0x00423f75`; élő adat: 72–119 képpont |
 | „a 32%-nyi félig átlátszó képpont élsimítás" | az alfa-hisztogram egyenletesen lefutó, és a félig átlátszók 59%-a feketés — lágy árnyék |
+
+---
+
+## 8. A `thumbindex.db` és a `*_index.db` BÁJTSZINTŰ formátuma — megfejtve (2026-09-03)
+
+A lap eddig annyit mondott, hogy a `thumbindex.db` „az útvonal-index", és
+hogy a slot indexe azonos a PMP-sorindexszel. A **formátumát** nem írta le.
+Most igen — és mindkettő **maradék nélkül** kiparszolható.
+
+> ⚠️ **Adatvédelem:** az alábbi számok a tulajdonos valódi katalógusából
+> származnak. Konkrét útvonalat, fájlnevet ez a lap **nem** tartalmaz, és
+> nem is szabad ide másolni.
+
+### 8.1 `thumbindex.db` — az útvonal-index
+
+```
++0   uint32   magic = 0x40466666      ("ffF@" ASCII-ként)
++4   uint32   rekordszám (N)
++8   N × rekord:
+        ASCIIZ  útvonal (változó hosszú, NUL-lezárt)
+        +0   uint64  FILETIME — létrehozás
+        +8   uint64  FILETIME — hozzáférés
+        +16  uint32  méret bájtban
+        +20  uint32  típus
+        +24  uint8   „dirty"
+        +25  uint8   „valid"
+        +26  uint32  kiegészítő mező (mappánál 0xFFFFFFFF)
+        ⇒ a farok pontosan 30 bájt
+```
+
+⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce:**
+`Name, Creation Time, Access Time, Size, Type, Dirty, Valid`. Vagyis a
+`WriteDirscannerCSV` kimenete **ugyanennek a rekordnak** a szöveges
+kiírása — a bináris rekord és a CSV egy és ugyanaz a szerkezet.
+
+**A `típus` mért értékkészlete:** `5` és `1` = könyvtár, `2` = fájl.
+*(A `0xFFFFFFFF` kiegészítő mező mappáknál állandó; fájloknál kis egész.)*
+
+**Ellenőrzés:** a tulajdonos katalógusán a fejléc **140 758** rekordot
+ígér, és a parser pontosan ennyit olvas ki — **0 bájt maradékkal**. A
+kiterjesztés-eloszlás értelmes (119 483 `jpg`, 7 697 `png`, 7 664
+könyvtár, 2 108 `jpeg`, 1 770 `mp4`).
+
+### 8.2 `thumbs_index.db` · `previews_index.db` · `bigthumbs_index.db`
+
+```
++0   float32  verzió = 1.6
++4   uint32   0
++8   uint32   slotszám (N)
++12  uint32   0
++16  uint32   0            ⇒ a fejléc 20 bájt
++20  N × 12 bájt rekord:
+        +0  uint64  „q" — a nagy mező
+        +8  uint32  „u" — a kis mező
+```
+
+**Ellenőrzés:** `thumbs_index.db` — 1 689 080 bájt = 20 + 140 755 × 12,
+**pontosan**; `previews_index.db` és `bigthumbs_index.db` — 3 287 072 bájt
+= 20 + 273 921 × 12, **pontosan**. A fejlécben álló slotszám mindkét
+esetben megegyezik a lap korábbi méréseivel (140 755, illetve 273 921).
+
+⇒ A korábbi szakaszok „kulcsvektora" ennek a rekordnak a **`q` mezője**.
+
+### 8.3 A KULCS KÉPZÉSE — még mindig nyitott, de KÉT újabb hipotézis-család elesett
+
+A 7 kizárt PMP-oszlop mellé ez a kör kettőt tett:
+
+**a) Közvetlen mező-egyezés az útvonal-indexszel — NULLA.** A 117 794
+*fájl* típusú sloton (a könyvtárak kihagyva) tíz összevetés futott:
+`q` = FILETIME1 · `q` = FILETIME2 · `u` = FILETIME1 felső/alsó 32 ·
+`u` = FILETIME2 felső/alsó 32 · `u` = méret · `q` alsó/felső 32 = méret ·
+`u` = a kiegészítő mező. **Egyetlen egyezés sem.**
+
+**b) Útvonal-hash — NULLA.** 3 000 mintasloton, négy bemenetre (teljes
+útvonal · kisbetűs · fájlnév · kisbetűs fájlnév) hat függvény:
+CRC-32, FNV-1a 32, djb2, FNV-1a 64, MD5 alsó és felső 8 bájtja.
+**24 kombináció, egyetlen egyezés sem.**
+
+### 8.4 Amit a kulcsról MÉRTÜNK — a következő kör induljon innen
+
+| megfigyelés | szám |
+|---|---|
+| nem üres `q` | 135 858 |
+| ebből **egyedi** | **135 345** (99,6%) |
+| nem üres `u` | 133 455 |
+| ebből egyedi | **96 716** (72,5%) |
+| csak `q` van, `u` nincs | 2 505 |
+| csak `u` van, `q` nincs | 102 |
+| egyik sincs (üres slot) | 4 795 |
+
+**A `q` és az `u` NEM ugyanannak a dolognak a két fele:** a `q` gyakorlatilag
+egyedi, az `u` viszont több mint negyedében ismétlődik.
+
+**Bit-eloszlás** (a nulla értékek kihagyásával): a `q` felső nyolc bitjének
+1-aránya **0,33 · 0,33 · 0,33 · 0,33 · 0,28 · 0,27 · 0,16 · 0,16** — egy jó
+hash-nél mindegyik ~0,50 volna. ⇒ **A `q` egyedi, mint egy hash, de az
+eloszlása nem egyenletes** — a értékek a kis felé húznak, miközben a
+tartomány teteje is használt (max `0xffff28d7dbf16bf2`).
+
+⇒ **A következő kör NE általános hash-családokat próbáljon** (a kettő
+kizárva), hanem a `q` **előállítási helyét** keresse a binárisban: a
+`thumbs.db` írási útja, azaz a `0x00415790` store-inicializáló által
+felépített objektum írás-metódusa.
+
+*Bizonyítottsági fok: a **formátum megerősített** (mindkét fájltípus
+maradék nélkül parszolható, a fejlécbeli darabszám egyezik a független
+méréssel); a **kulcs képzése NYITOTT**, de két hipotézis-család mérve
+kizárva.*
+
+Jegyek: **#2195** (olvasó a két formátumhoz), **#1** (a db3-import gyűjtő).

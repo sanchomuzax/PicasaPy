@@ -833,7 +833,9 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Lap:
    `ajandek-cd-kimenet.md` 7.; jegy **#2095**.
 
-### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ, 2026-09-02)
+### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-03)
+
+⭐ **2026-09-03 (8. szakasz) — a `thumbindex.db` és a `*_index.db` BÁJTFORMÁTUMA megfejtve.** A `thumbindex.db`: `uint32` magic `0x40466666` + `uint32` rekordszám + rekordonként **ASCIIZ útvonal + 30 bájtos farok** (két `FILETIME`, méret, típus, `dirty`, `valid`, kiegészítő). ⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce** — a bináris rekord és a `WriteDirscannerCSV` kimenete ugyanaz a szerkezet. A három `*_index.db`: **20 bájt fejléc** (float verzió = 1.6 + slotszám) + **12 bájt/slot** (`uint64 q` + `uint32 u`). **Ellenőrizve:** 140 758 rekord 0 bájt maradékkal; 1 689 080 = 20 + 140 755 × 12 és 3 287 072 = 20 + 273 921 × 12 pontosan. ⛔ **A kulcs képzésére KÉT további hipotézis-család elesett:** közvetlen mező-egyezés az útvonal-indexszel (10 összevetés × 117 794 fájl-slot, **nulla**) és útvonal-hash (24 kombináció — CRC-32/FNV/djb2/MD5 × teljes út/kisbetűs/fájlnév —, **nulla**). **A kulcs jellege mérve:** a `q` 135 345/135 858 **egyedi** (99,6%), de a bit-eloszlása **nem egyenletes** (a felső bitek 0,16–0,33), az `u` viszont csak 72,5%-ban egyedi ⇒ a kettő **nem ugyanannak a két fele**. ⇒ A következő kör a `q` **előállítási helyét** keresse (a `0x00415790` store-objektum írás-metódusa), ne hash-családokat. Jegyek: **#2195** (olvasó), **#1** (db3-import gyűjtő, kommentelve).
 
 ⭐ **2026-09-02 — SAJÁT HELYESBÍTÉS a bélyegkép-gyorstár kulcsvektorán:** a lap
 korábbi következtetése („a kulcs tárankénti, nem globális fotó-azonosító")
