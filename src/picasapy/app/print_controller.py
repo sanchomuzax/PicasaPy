@@ -100,8 +100,6 @@ class PrintController(QObject):
     #: bélyegkép elkészül), és a képtálca nyomtatás-gombja rájuk is élő.
     #: Enélkül a felhasználó „Kész"-t látott, miközben egy kép kimaradt.
     printSkipped = Signal(list)
-    #: #2103: a nyomtató saját beállítója bezárult — (nyomtató, elfogadva).
-    printerSetupClosed = Signal(str, bool)
 
     def __init__(
         self,
@@ -262,6 +260,12 @@ class PrintController(QObject):
         Az elfogadott oldalelrendezést megjegyezzük, és a következő
         nyomtatás azt használja; enélkül a párbeszéd díszlet lenne.
 
+        ⚠️ **Nincs hozzá jelzés.** Az eredmény a VISSZATÉRÉSI ÉRTÉK — egy
+        `printerSetupClosed`-féle jelzést senki nem fogadna: az előnézet a
+        választott nyomatméret arányából dolgozik (`renderPreviewPage`),
+        nem a nyomtató lapjából, tehát nincs mit frissíteni rajta. A
+        néma-jelzés őre ezt jogosan kifogásolta.
+
         Returns:
             Igaz, ha a felhasználó elfogadta a beállításokat.
         """
@@ -281,12 +285,10 @@ class PrintController(QObject):
         # jelzés megy ki, és a hívó nem akad el.
         parbeszed = self._page_setup_dialog(printer)
         if parbeszed is None:
-            self.printerSetupClosed.emit(printer_name, False)
             return False
         elfogadva = bool(parbeszed.exec())
         if elfogadva:
             self._oldalelrendezes = printer.pageLayout()
-        self.printerSetupClosed.emit(printer_name, elfogadva)
         return elfogadva
 
     def _page_setup_dialog(self, printer: QPrinter):

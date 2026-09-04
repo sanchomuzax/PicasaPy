@@ -245,13 +245,7 @@ class TestAVezerloBeallitoja:
             "_page_setup_dialog",
             lambda printer: HamisParbeszed(printer, True, cel),
         )
-        zarasok = []
-        vezerlo.printerSetupClosed.connect(
-            lambda n, ok: zarasok.append((n, ok))
-        )
-
         assert vezerlo.openPrinterSetup(nev) is True
-        assert zarasok == [(nev, True)]
         assert vezerlo._oldalelrendezes is not None
         assert (
             vezerlo._oldalelrendezes.pageSize().id() == QPageSize.PageSizeId.A5
@@ -268,13 +262,7 @@ class TestAVezerloBeallitoja:
             "_page_setup_dialog",
             lambda printer: HamisParbeszed(printer, False),
         )
-        zarasok = []
-        vezerlo.printerSetupClosed.connect(
-            lambda n, ok: zarasok.append((n, ok))
-        )
-
         assert vezerlo.openPrinterSetup(nev) is False
-        assert zarasok == [(nev, False)]
         assert vezerlo._oldalelrendezes is None, (
             "megszakításkor is megjegyezte az elrendezést"
         )
