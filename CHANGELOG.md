@@ -31,6 +31,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.270] – 2026-09-04
+
+### Javítva
+- Az effekt-csempék előnézete a kép **mostani** állapotát mutatja: ha a
+  képre például Fekete-fehér került, a csempék alapja is szürke lesz — ahogy
+  az eredeti Picasában. Eddig mindig a nyers fotóból indultak (#2273).
+
 ## [0.8.269] – 2026-09-04
 
 ### Javítva
