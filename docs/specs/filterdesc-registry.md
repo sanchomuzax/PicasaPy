@@ -930,10 +930,22 @@ effekt-csempén tehát más díszítés nem is jelenhet meg.
 
 **Bizalmi fok:** a `mode`→egész tábla, a `FilterDesc+4` írása, a jelvény
 feltétele és a 36 elemű csempe-tábla **megerősített** (közvetlen kiolvasás).
-A „három jelvény, mind az 1. effekt-fülön" mostantól szintén **megerősített**:
-a kódban nincs út a negyedikhez. A megfigyelés maga továbbra is feloldatlan —
-azt csak a 2. effekt-fülről készült képernyőkép döntheti el, hogy mit látott
-a tulajdonos (#2125).
+
+⛔ **MEGDŐLT (2026-09-04, #2125): NÉGY jelvény van, nem három.** A tulajdonos
+felvételei (`research/#2061-effekt-latszik/`) fülenként ezt mutatják:
+
+| effekt-fül | jelvényes csempék |
+|---|---|
+| 1. (Élesítés…Színátmenet) | **Szépia**, **Fekete-fehér**, **Melegítés** |
+| 2. (Infravörös film…Kéttónusú) | **Színinvertálás** |
+| 3. (Felpörgetés…Polaroid) | *egy sem* |
+
+A `Színinvertálás` (`Invert`) `mode="effect"`, tehát a `mode`-ból levezetett
+lánc szerint **nem lehetne** jelvénye — a jelvénye viszont **két különböző
+felvételen** is látszik, eltérő szerkesztési állapot mellett. ⇒ A korábbi
+„a kódban nincs út a negyedikhez" állítás **hibás volt**: a `FilterDesc + 4`
+írására van egy MÁSODIK út, amit még nem találtunk meg. A keresés nyitva:
+**#2125** (`ready` + `bináris-kutatható`; a jegy már NEM a tulajdonosra vár).
 
 #### A 21 örökölt szűrőből HÁROM ma is elérhető a felületről (#2148)
 
