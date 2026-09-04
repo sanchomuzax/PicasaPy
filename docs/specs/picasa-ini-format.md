@@ -2774,3 +2774,67 @@ tengelye **−18,72°**, a radián-olvasat **−19,30°**-ot ad; fokként
 A horgonypont a szöveg**doboz** bal felső sarka, nem az első soré: a 3.
 blokk horgonya 270,1, a doboz bal széle 275 (a leghosszabb sor), miközben
 a 2. és 3. sor 699-nél és 704-nél kezdődik.
+
+---
+
+## A `[Picasa] date=` OLVASÓJA — `atof`, és az ISO-alak NÉMÁN elromlik (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris).
+
+A lap eddig az **írót** dokumentálta (`date=%f`, `0x0068ac80`). A nyitott
+kérdés az volt — a `picasapy.ini.folder_date` modul fejléce is kimondta —,
+hogy **elfogadja-e a Picasa az ISO-alakot olvasáskor**. Most kimértem: **nem.**
+
+### Az olvasó (`0x00441ed0`, a `[Picasa]` szakasz beolvasása)
+
+| cím | mit tesz |
+|---|---|
+| `0x00442456`–`0x00442465` | a `Picasa` / `date` (`0x00c80d7c`) kulcs nyers sztringjét kéri |
+| `0x0044246a` | **alapérték `949998.0`** (`fld qword ptr [0x00c7ccf8]`) — ugyanaz az „+végtelen” őrszem, amit az `autodate` minimum-keresése is használ |
+| `0x0044247a`–`0x0044248a` | üres/hiányzó értéknél marad az alapérték |
+| `0x0044248d` | **`call 0x00c080d7`** — CRT sztring→`double` (`atof`) |
+| `0x00442492` | az eredmény a mappaobjektum dátummezőjébe |
+
+⇒ **`atof`, hibajelzés nélkül.** Egy `date=2026-09-04` sor eredménye
+**`2026.0`**, ami Variant-napként **1905-07-18** — a Picasa ezt némán
+elfogadja, és a mappa 1905-be kerül a bal hasáb évcsoportjában.
+
+### Az ÍRÓ oldal, mappa-szinten
+
+A `0x00710080` a mappa `.picasa.ini`-jének `[Picasa]` szakaszát írja:
+
+- `0x0071031e`–`0x0071032a`: a dátumot **`0.0`-val veti össze, és nullánál
+  KIHAGYJA a sort** — dátumtalan mappánál tehát nincs `date=` kulcs;
+- `0x00710332`: a formátum **`"%f"`** (`0x00c817c0`) ⇒ hat tizedes;
+- `0x00710353`–`0x00710358`: kulcs `date`, szakasz `Picasa`;
+- az érték forrása a mappaobjektum **`+0x198`** `double` mezője
+  (`0x00710028`).
+
+### A KÖZÖS beállító: egy hívás, KÉT tároló
+
+`0x004460a0` — `(azonosító, double dátum, bool ini-t-is)`; közvetlen hívója
+nincs, **vtáblán át** érhető el (mutató a `0x00c81fb0`-on):
+
+| cím | mit tesz |
+|---|---|
+| `0x004460d8` | `call 0x006a5c60` — az **adatbázis** `date` oszlopa |
+| `0x004460ef` | a harmadik argumentum (`[ebp+0x14]`) kapuja |
+| `0x0044615a` | **`"%f"`** formázás |
+| `0x00446176` | `call 0x0045c0a0` — a **`.picasa.ini`** `date` kulcsa |
+
+⇒ A mappa dátuma **egy ponton** áll be, és onnan megy **mindkét** tárolóba;
+az ini-írás külön kapcsolható.
+
+### A mező születési értéke
+
+A `.text`-ben **három** közvetlen `fstp qword ptr [reg+0x198]` írás van, és
+**mind a három konstruktor**: `0x006e8326` és `0x006e8ba0` a **`949998.0`**
+őrszemet, `0x0070aced` a **`0.0`**-t teszi be. ⇒ A tényleges dátum tehát
+**nem** a konstruktorból, hanem a fenti beállítón át érkezik.
+
+### Mit NEM mértem
+
+Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezett
+mappára. A beállító helye megvan (`0x004460a0`, vtábla-mutató a
+`0x00c81fb0`-on), de a hívóit vtábla-résen keresztül kell megkeresni, nem
+szöveges kereséssel.
