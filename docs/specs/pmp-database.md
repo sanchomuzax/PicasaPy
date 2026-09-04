@@ -574,12 +574,25 @@ JPEG-je és a `thumbs2` 72 képpontosa ugyanarra a slotra más bájtokat tesz).
 összevetettük a `imagedata_originfast`, `originslow`, `onlinechecksum`,
 `long`, `rotate`, `filetype` és `tagdate` oszlopokkal, alsó és felső 32 biten
 egyaránt: **egyetlen egyezés sem** (0/3 204 mind a tizennégy összevetésben).
-A kulcs képzése továbbra is **NYITOTT** — de a keresést ezek felé nem érdemes
-újra elindítani.
+~~A kulcs képzése továbbra is **NYITOTT**~~ — **ELAVULT JELÖLÉS, javítva
+2026-09-04:** a képlet a **8.10** szakaszban megvan és mérve van. Ez a
+bekezdés csak azt rögzíti, hogy ezek az EGYSZERŰ jelöltek külön-külön nem
+adják ki — a tényleges képlet összetett.
 
 *Bizonyítottsági fok: megerősített* (két adatbázis, négy tár, teljes vektorok).
 
-##### A kulcs képzése — HUSZONÖT TOVÁBBI JELÖLT KIZÁRVA, és a kulcs EGYEDI (2026-09-04, #1446)
+##### ⚠️ HELYESBÍTVE — a kulcs képlete NEM volt nyitott (2026-09-04, #1446)
+
+> **Ez a szakasz eredetileg azt állította, hogy a kulcs képzése nyitott, és
+> 25 további jelöltet zárt ki. Az állítás TÉVES volt:** ugyanennek a lapnak a
+> **8.10** szakasza már 2026-09-03 óta tartalmazza a **teljes képletet**, a
+> bináris címeivel. A tévedés oka: a fenti, 8.2-korabeli „a kulcs képzése
+> továbbra is NYITOTT" mondat **elavult jelölés** volt, és a kör azt vette
+> alapul ahelyett, hogy a lap saját későbbi szakaszát elolvasta volna.
+> Az elavult mondatokat ez a kör javította.
+>
+> Ami a mérésből ÉRVÉNYES marad, az alább áll — kiegészítve a **8.10
+> független ellenőrzésével**.
 
 A hét korábban kizárt `imagedata`-oszlop mellé ez a kör **huszonöt további
 jelöltet** zárt ki, a tulajdonos valódi adatbázisán (`thumbindex.db`
@@ -628,12 +641,33 @@ a páros értékek aránya 1654/3188).
 arc-rekord. A termékkód szűrése tehát HELYES; a fenti csapda csak az
 ad-hoc mérésé volt.
 
-⇒ **A kulcs képzése továbbra is NYITOTT**, de a kereséshez most már ez
-tudható: **per-fotó, 32 bites, egyedi**, és **nem** a fájlnévből, nem az
-útvonalból, nem az időbélyegből, nem a méretből és nem ezek egyszerű
-kombinációjából áll elő. A következő lépés a **bináris oldali író**
-(`CThumbDB`, a `thumbindex.db`-t érintő `0x004f2d90` / `0x004f46b0` /
-`0x004f54b0`), nem újabb adatoldali találgatás.
+⇒ A kizárások **érvényesek maradnak** — de nem azért, mert a képlet
+ismeretlen, hanem mert a képlet **összetett**: egyik egyszerű jelölt sem
+adhatta ki. A tényleges képlet a **8.10** szakaszban áll:
+`(JS_hash(teljes_út) mod 1 000 231) ^ rol(idő_lo,13) ^ rol(idő_hi,17) ^ rol(méret,18)`.
+
+**A 8.10 FÜGGETLEN ELLENŐRZÉSE (ez a kör, a tulajdonos valódi katalógusán):**
+
+| beállítás | egyezés |
+|---|---:|
+| a **második** FILETIME (`+8`, a rekord „hozzáférés" mezője), bájtonkénti ASCII-hajtás | **2161 / 2776** |
+| ugyanez az **első** FILETIME-mal | **0 / 2776** |
+| ugyanez **UTF-16LE** útvonal-kódolással | **0 / 2776** |
+| UTF-8 · cp1250 · cp1252 · latin1 kódolással | **mind 2161 / 2776** (azonos, mert a hajtás bájtonkénti) |
+
+⇒ **A képlet és a mezőválasztás MEGERŐSÍTVE.** A kódolás bájtonkénti
+(nem széles karakteres); a négy egybájtos kódolás azonos eredménye ezt
+mutatja.
+
+⚠️ **Új, MÉRT megfigyelés — 615 sor egyik idővel sem egyezik.** Nem
+formátumfüggő (jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), és a
+615-ből 393-nál a két FILETIME azonos. A legvalószínűbb magyarázat, hogy
+ezeknél a **tárolt ellenőrzőösszeg elavult** a bejegyzés mai
+attribútumaihoz képest (a fájl megváltozott, a bélyegkép nem épült újra) —
+**de ez NINCS bizonyítva**. ⛔ **BLOKKOLT:** eldöntéséhez olyan katalógus
+kell, amelyben a bélyegképek frissen épültek újra (a tulajdonos gépén,
+a bélyegkép-gyorsítótár törlése után), vagy a **bélyegkép-ÍRÓ** ágának
+kimérése — az mutatná meg, milyen attribútumokkal bélyegez íráskor.
 
 
 ##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
@@ -2348,7 +2382,7 @@ gyorsítótárat ÍRJUNK, amit a Picasa frissnek fogad el.
 
 *Bizonyítottsági fok: a **formátum megerősített** (az író kódjából olvasva
 ÉS három katalóguson maradék nélkül, az adatfájl méretével egyezően
-ellenőrizve); a **kulcs képzése NYITOTT**.*
+ellenőrizve); ~~a **kulcs képzése NYITOTT**~~ — **ELAVULT, javítva 2026-09-04:** a képlet a 8.10-ben megvan és mérve van.*
 
 Jegyek: **#2195** (olvasó a két formátumhoz), **#1** (a db3-import gyűjtő).
 
