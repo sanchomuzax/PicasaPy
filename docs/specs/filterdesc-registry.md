@@ -901,13 +901,39 @@ magyarázat ezzel **kizárva**.
 > tulajdonos **négy** jelvényt látott, a negyediket a **Színinvertálás**
 > csempén (`Invert`, a 2. effekt-fül 8. csempéje). Az `Invert` viszont
 > `mode="effect"` (a `filterdesc.xml` **egyetlen** `id="Invert"` sora, 986.).
-> A fenti lánc szerint ott nem lehetne jelvény. Ez **nyitott ellentmondás**,
-> jegy: **#2125**.
+> A fenti lánc szerint ott nem lehetne jelvény. Jegy: **#2125**.
+
+**A lánc TELJES — nincs második út (#2125, mérve az indexen).** A jegy azt
+kérdezte, van-e még egy író a `FilterDesc + 4`-re. Nincs, és a fogyasztói
+oldalon sincs kerülőút. Négy egymástól független mérés:
+
+| kérdés | mérés | eredmény |
+|---|---|---|
+| hol jön létre `FilterDesc`? | hívások a ctorra (`0x008f6910`) | **1** hívó: `0x008ff550`, a `filterdesc.xml` parsere |
+| honnan kaphat nem-nulla értéket? | hívások a `mode`→egészre (`0x00900490`) | **1** hívó: ugyanaz a parser |
+| felülírhatja-e más osztály a jelvény-gettert? | a `0x008f6cc0` mely vtable-ökben szerepel | **1** vtable: `CGenericFilter::vftable`, 5. slot (= +0x14) |
+| van-e leszármazott/testvér, ami mást tesz az 5. slotba? | vtable-ök ≥12 azonos indexű közös slottal | **0** — a `CGenericFilter` vtable rokon nélküli |
+
+Ötödikként a **fogyasztó** oldala: a csempéket felépítő `0x005d7c20`
+összesen hét sztringet hivatkozik (`editpanel/fx%d`, `…_adorn`,
+`editpanel/fxlabel%d`, `editpanel/fxpreview1`, `editpanel/fxthumbs`,
+`_mod%s`, `_tab%d`) — **egyetlen** jelvény-erőforrás, az `fx%d_adorn`. Az
+effekt-csempén tehát más díszítés nem is jelenhet meg.
+
+> **Kontrollok** (a negatívumok önmagukban semmit sem érnének):
+> a testvér-kereső ugyanezzel a küszöbbel az `AMgrDlg::vftable`-hez **9**
+> rokont talál — tehát működik ott, ahol van mit találnia. A hívás-élek
+> rögzítése sem hiányos: az index 78 901 `call`-élt tart 14 130 célfüggvényre.
+> Ami **NEM** bizonyíték: a getter „0 közvetlen hivatkozása" — 300 véletlen
+> vtable-slotból 275-nek szintén 0, mert az index a vtable-adatból induló
+> hivatkozásokat nem rögzíti.
 
 **Bizalmi fok:** a `mode`→egész tábla, a `FilterDesc+4` írása, a jelvény
 feltétele és a 36 elemű csempe-tábla **megerősített** (közvetlen kiolvasás).
-A „három jelvény, mind az 1. effekt-fülön" **következtetés** a fentiekből —
-a negyedik megfigyelés ellentmondása feloldatlan.
+A „három jelvény, mind az 1. effekt-fülön" mostantól szintén **megerősített**:
+a kódban nincs út a negyedikhez. A megfigyelés maga továbbra is feloldatlan —
+azt csak a 2. effekt-fülről készült képernyőkép döntheti el, hogy mit látott
+a tulajdonos (#2125).
 
 #### A 21 örökölt szűrőből HÁROM ma is elérhető a felületről (#2148)
 
