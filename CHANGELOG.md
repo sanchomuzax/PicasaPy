@@ -9,6 +9,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A nyomtatásnál a „kis kép" határa beállítható (#2359). Eddig beégetett
+  150 képpont/hüvelyk volt; az eredetiben ez rejtett beállítás, ugyanezzel
+  az alapértékkel. A `printing/dpiWarning` kulccsal átállítható.
+
+### Javítva
+
 - A mappa dátumát a Picasa által olvasható alakban írjuk a
   `.picasa.ini`-be (#2353). Eddig ISO-dátumot írtunk, amit a Picasa
   számként olvas — a `2019-07-04`-ből nála 1905 lett. Aki ugyanazt a
