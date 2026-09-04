@@ -33,8 +33,13 @@ def _load_module():
 respack = _load_module()
 
 
-def _header(x0: int, y0: int, x1: int, y1: int, encoding: int) -> bytes:
-    return struct.pack("<4hBBHB", x0, y0, x1, y1, 0, 1, 0, encoding)
+def _header(
+    x0: int, y0: int, x1: int, y1: int, encoding: int, alpha: int = 256
+) -> bytes:
+    """13 bájtos rétegfejléc. A 8–9. bájt EGY `uint16 LE` átlátszóság
+    (#2178): 256 = átlátszatlan. A 10–11. bájt a valódi csomag mind a 2769
+    rétegén 0."""
+    return struct.pack("<4hHHB", x0, y0, x1, y1, alpha, 0, encoding)
 
 
 def _build_pack(records: list[tuple[str, bytes]]) -> bytes:
@@ -227,3 +232,59 @@ class TestPngKimenet:
         assert respack.main(["png", str(src), str(out)]) == 0
         with Image.open(out / "layer_foldermgr_icon_exclude.png") as image:
             assert image.convert("RGBA").getpixel((0, 0)) == (242, 35, 2, 255)
+
+
+class TestRetegAtlatszosag:
+    """#2178: a fejléc 8–9. bájtja réteg-szintű átlátszóság.
+
+    A lap korábban két külön mezőt írt ide („a 8. bájt végig 0" és „a 9.
+    bájt 1 = normál / 0 = docbounds"). A valódi csomagon mindkettő megdőlt:
+    a nyolcadik bájt **40** rétegen nem nulla, és a `uint16` értékkészlete
+    tíz különböző szám 0 és 256 között — jelzőbit ilyet nem vesz fel.
+    """
+
+    def test_az_atlatszosag_kiolvasodik(self) -> None:
+        blob = _header(0, 0, 1, 1, respack.ENC_SOLID, alpha=179) + bytes(
+            (10, 20, 30, 255)
+        )
+        pack = _build_pack([("layer:a", blob)])
+        layer = respack.decode_layer(pack, respack.read_index(pack)[0])
+        assert layer.alpha == 179
+
+    def test_az_atlatszatlan_az_alapertelmezes(self) -> None:
+        blob = _header(0, 0, 1, 1, respack.ENC_SOLID) + bytes((1, 2, 3, 255))
+        pack = _build_pack([("layer:a", blob)])
+        layer = respack.decode_layer(pack, respack.read_index(pack)[0])
+        assert layer.alpha == respack.OPAQUE_ALPHA == 256
+
+    def test_a_beszamitas_szoroz(self) -> None:
+        """A réteg alfája a KÉPPONT alfájával szorzódik, nem helyettesíti."""
+        blob = _header(0, 0, 2, 1, respack.ENC_SOLID, alpha=128) + bytes(
+            (10, 20, 30, 200)
+        )
+        pack = _build_pack([("layer:a", blob)])
+        layer = respack.decode_layer(pack, respack.read_index(pack)[0])
+        kesz = respack.composited_pixels(layer)
+        assert kesz[3] == 200 * 128 // 256 == 100
+        assert kesz[7] == 100
+        # a színcsatornák érintetlenek
+        assert kesz[0:3] == bytes((10, 20, 30))
+
+    def test_atlatszatlan_retegnel_valtozatlan(self) -> None:
+        blob = _header(0, 0, 1, 1, respack.ENC_SOLID) + bytes((1, 2, 3, 255))
+        pack = _build_pack([("layer:a", blob)])
+        layer = respack.decode_layer(pack, respack.read_index(pack)[0])
+        assert respack.composited_pixels(layer) is layer.pixels
+
+    def test_a_nyers_kepponttomb_NEM_valtozik(self) -> None:
+        """A `pixels` marad nyers — erre épül az `encode_layer` bájthű
+        visszakódolása. Ha a beszámítás ide íródna, a formátum-értés
+        legerősebb próbája (1365/1365 bájtra egyező RLE-réteg) elveszne."""
+        test = bytes((5, 6, 7, 255)) * 3
+        blob = _header(0, 0, 3, 1, respack.ENC_RLE, alpha=77) + bytes(
+            (3, 5, 6, 7, 255)
+        )
+        pack = _build_pack([("layer:a", blob)])
+        layer = respack.decode_layer(pack, respack.read_index(pack)[0])
+        assert layer.pixels == test
+        assert respack.encode_layer(layer) == blob[respack.HEADER_SIZE :]
