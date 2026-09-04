@@ -4815,108 +4815,90 @@ erőforrás-alapú.)*
 
 ---
 
-## 67. tétel — a MAPPALISTA rendezése: mód-szám + FÜGGETLEN fordítás (2026-09-04, #2304)
+## 67. tétel — a mappalista-rendezés HIÁNYZÓ darabjai: a 0. mód, a 4. mód és a negyedik belépési pont (2026-09-04, #2304)
 
-> **Bizonyítottság: megerősített** a beállításkulcsokra, a komparátor
-> ágaira, a mód-számokra és a fordítás függetlenségére — minden állítás
-> mellett cím áll. **Erős** arra, hogy a 0. mód kulcsa a mappa
-> `date=`-értéke.
+> ⛔ **ÖNHELYESBÍTÉS.** Ennek a tételnek az első változata (ugyanaznap)
+> **négy állítást tartalmazott, ami a 36. tételben MÁR BENNE VOLT**, egyet
+> pedig **tévesen** „NINCS MEG"-nek jelölt. A hiba oka: nem olvastam el a
+> saját lapunk 36. tételét, mielőtt írtam. A helyesbítés:
+>
+> | az első változat állítása | valójában |
+> |---|---|
+> | „a `datesort` mód-szám, nem logikai érték" | **a 36.3 már kimondta** (2026-08-31) |
+> | „a fordítás a komparátoron belül érvényesül" | **a 36.4 már kimondta** |
+> | „a parancsok **két** menüben élnek" | **HIBÁS** — a 36.5 szerint **három**, és ez a kör talált egy **negyediket** |
+> | „a **Méret** mód-száma **NINCS MEG**" | **HIBÁS** — a 36.4 szerint **5**, és a mértékegysége is megvan (64 bites bájtösszeg) |
+>
+> Az emiatt nyitott **#2320** jegy tárgytalan, lezárva.
+> **Ami ténylegesen új, az alább áll.**
 
-⚠️ **Hatókör:** ez a **bal oldali mappa-/albumlista** rendezése (a
-`Folder::SortFolderBy` = „Mappa r&endezésének alapja" menü), **nem** a
-mappán belüli képsorrend. A komparátor osztálya a `]album` / `]facealbum`
-adatbázis-tokeneket használja, a fordítás kulcsa pedig `albumlistflip`.
+### 67.1 ⭐ A NEGYEDIK belépési pont — a könyvtár-nézet két rendezőgombja
 
-### 67.1 A beállítás HÁROM kulcs, és a mód SZÁM (nem logikai érték)
+A 36.5 három menüt sorolt fel (menüsáv ▸ Nézet · bal hasáb ▾ előugró ·
+album helyi menü ▸ „Sort By"). Van egy **negyedik**, nem menü, hanem két
+**gomb** a könyvtár-nézetben — a kezelőjük `FUN_005d9cc0`:
 
-| `Preferences` kulcs | tag | típus | író | olvasó |
-|---|---|---|---|---|
-| **`datesort`** | `+0xd8` | **dword — mód-szám** | `0x004a37a5` | `0x004a195f` |
-| `peoplesort` | `+0xdc` | dword | `0x004a37ee` | `0x004a198c` |
-| **`albumlistflip`** | `+0x165` | **bájt — fordított sorrend** | `0x004a383c` | `0x004a19d5` |
-
-⛔ **A név megtéveszt:** a `datesort` **nem** „dátum szerint igen/nem", hanem
-a rendezési **mód sorszáma**. Ezt az irányt ne járja újra senki.
-
-### 67.2 A komparátor — `FUN_004a7890` (2618 b), öt ág
-
-| `[this+0xd8]` | ág | mit hasonlít |
+| elem | cím | átadott mód (`edx`) |
 |---|---|---|
-| **0** | `0x004a7d95` | a tétel saját **double** kulcsa (`fld qword`; a tömbből `[bázis + idx*8]`, egyébként `[obj+0x60]`) |
-| **1** | `0x004a7e89` | `FUN_004ae0d0` → `0x00450bd0([this+0xc4], tétel)` → **double** |
-| **4** | `0x004a7e2f` | `0x004502e0([this+0xc4], tétel, &ki)` → **double** |
-| **5** | `0x004a7efe` | `0x004507e0([this+0xc4], tétel, &ki)` → **double** |
-| **minden más** | `0x004a7f5f` | a tétel **nevének sztringje** (`+0x5c`) |
+| `thumbui/datesort` | `0x005db26d` (`xor edx, edx`) | **0** |
+| `thumbui/namesort` | `0x005db207` (`mov edx, 2`) | **2** |
 
-A `[this+0xc4]` mindhárom szám-kulcsnál ugyanaz az adatforrás-objektum.
+⇒ ez adja a **0. mód** felhasználói jelentését, amit a 36.3 mód-listája
+(`0/1/2/5`) tartalmazott ugyan, de vezérlőhöz nem kötött: **a 0. mód a
+„dátum"**.
 
-### 67.3 A mód-számok — MÉRVE a felületi vezérlőkből
+### 67.2 ⭐ Van egy NEGYEDIK mód is — `4`
 
-A könyvtár-nézet két rendezőgombjának kezelője (`FUN_005d9cc0`) a
-`FUN_004b07c0`-t hívja, `edx` = a mód:
+A komparátor (`FUN_004a7890`) `0x004a7e2a`-nál **`cmp edx, 4`**, és a
+`0x004a7e2f` ágban a `0x004502e0([this+0xc4], tétel, &ki)`-t hívja kétszer,
+**double**-ként hasonlítva. A 36.3 mód-listája ezt **nem tartalmazta**.
 
-| elem | cím | `edx` | ⇒ mód |
+**A komparátor teljes ágtáblája** (a 36.4 kiegészítése):
+
+| `[this+0xd8]` | ág | kulcs | vezérlő |
 |---|---|---|---|
-| `thumbui/datesort` | `0x005db26d` (`xor edx, edx`) | **0** | a double kulcs (dátum) |
-| `thumbui/namesort` | `0x005db207` (`mov edx, 2`) | **2** | a **default** ág ⇒ **név szerint, sztringesen** |
+| **0** | `0x004a7d95` | a tétel saját **double** kulcsa (`fld qword`) | `thumbui/datesort` |
+| 1 | `0x004a7e89` | `0x00450bd0(…)` → double | `ID_VIEWBYRECENT` (36.) |
+| **4** | `0x004a7e2f` | `0x004502e0(…)` → double | ⚠️ **nincs hozzá ismert vezérlő** |
+| 5 | `0x004a7efe` | `0x004507e0(…)` → 64 bites bájtösszeg (36.4) | `ID_VIEWBYSIZE` (36.) |
+| **minden más** (köztük 2) | `0x004a7f5f` | a tétel **nevének sztringje** (`+0x5c`) | `ID_VIEWBYNAME`, `thumbui/namesort` |
 
-⇒ **A „Dátum" a 0. mód**, és mivel a 2. nincs a 0/1/4/5 között, a **„Név" a
-sztring-összehasonlító ágra esik**. A 0. mód kulcsa a mappánál a `.picasa.ini`
-**`date=`** Variant-ideje (a #2309 mérése szerint `date=%f`, lebegőpontos)
-— *bizonyítottság: erős*, mert a `+0x60` rés azonosságát külön nem mértem.
+### 67.3 ⭐ A szempontváltás NEM nullázza a fordítást
 
-### 67.4 ⭐ A FORDÍTOTT SORREND FÜGGETLEN a rendezési módtól
-
-`FUN_004b07c0` (75 b) — a beállító:
+A beállító `FUN_004b07c0` (75 b) **egyszerre** veszi a módot és a fordítást:
 
 ```
 0x004b07c4  cmp [lista+0xd8], edx      ; ugyanaz a mód?
 0x004b07cc  cmp [lista+0x165], cl      ; és ugyanaz a fordítás?
-            -> ha mindkettő, NINCS változás (0xF4242)
-0x004b07dc  mov [lista+0x165], cl      ; egyébként MINDKETTŐT beállítja
-0x004b07e2  mov [lista+0xd8], edx
-            -> majd újrarendez/frissít (0x006dc4c0)
+            -> ha mindkettő, nincs változás (0xF4242)
+0x004b07dc  mov [lista+0x165], cl
+0x004b07e2  mov [lista+0xd8], edx      ; egyébként MINDKETTŐT beállítja
+            -> majd újrarendez (0x006dc4c0)
 ```
 
 A két rendezőgomb a **jelenlegi** fordítás-értéket adja tovább
-(`mov cl, byte ptr [eax + 0x165]`, `0x005db200` és `0x005db266`) ⇒ **a
-rendezési szempont váltása NEM állítja vissza a fordított sorrendet.**
+(`mov cl, byte ptr [eax+0x165]`, `0x005db200` és `0x005db266`) ⇒ **a
+rendezési szempont váltása megtartja a fordított sorrendet.** *(A 36.4 azt
+mondta meg, HOL érvényesül a fordítás; ez azt, hogy szempontváltáskor mi
+történik vele.)*
 
-A komparátor a fordítást **négy ponton**, az összehasonlítás **eredményének
-megfordításával** érvényesíti (`0x004a7df0`, `0x004a7e09`, `0x004a7ebb`,
-`0x004a7ed4`) — tehát a fordítás **nem ötödik rendezési mód**, hanem
-mindegyikkel komponálódik.
+### 67.4 A mi oldalunk — MÉRVE, és HELYES
 
-### 67.5 A menü — négy parancs, KÉT menüben
+`src/picasapy/app/photo_sort.py` + `folder_photo_sort_controller.py`:
 
-| parancs | azonosító | felirat (EN / HU) |
-|---|---|---|
-| `ID_NAMESORT` | **0x9cd3** | `&Name` / `&Név` |
-| `ID_DATESORT` | **0x9cd4** | `&Date` / `&Dátum` |
-| `ID_SIZESORT` | **0x9cd5** | `&Size` / `&Méret` |
-| `ID_REVERSESORT` | **0xa0d0** | `&Reverse order` / `&Fordított sorrend` |
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a fordítás tárolása | **külön** kulcs (`albumlistflip`) | **külön** beállítás (`view/folderPhotoSortReverse`, `photo_sort.py:27`) | — |
+| szempontváltáskor | a fordítás **megmarad** | `setFolderPhotoSort()` (`folder_photo_sort_controller.py:70`) **nem nyúl** a reverse-hez | — |
+| név-kulcs | sztring | `r.name.casefold()` (`photo_sort.py:75`) | — |
+| dátum-kulcs | **egyetlen** double | `(photo_date(r), r.name.casefold())` — **másodlagos kulcs is** (`:71`) | eldöntendő: az eredetinek nincs másodlagos kulcsa |
 
-Mindegyik **két** menüépítőben szerepel: `FUN_007318a0` (`Sort::` előtag,
-`0x00731905`, `0x0073194f`, `0x00731999`, `0x007319cd`) és `FUN_00559150`
-(`eMenuLabelFolder::` előtag, `0x0055ad1c`, `0x0055ad66`, `0x0055adb0`,
-`0x0055adf7`). *(A skill szabálya szerint a belépési pontokat számolni kell —
-itt kettő van.)*
+⇒ **A fordítás függetlensége nálunk MÁR HELYES** — ez a kör ezt igazolta,
+nem hibát talált.
 
-### 67.6 ⛔ NINCS MEG: a `ID_SIZESORT` mód-száma
+### 67.5 ⛔ NINCS MEG: a 4. mód vezérlője
 
-A „Méret" rendezéshez nincs felületi gomb, amiből a szám kiolvasható volna,
-és **a parancsazonosítóra sehol nincs összehasonlítás**:
-
-- a négy azonosító **32 bites** alakjára (`imm32`) a teljes `.text`-ben
-  **nulla** találat;
-- a **16 bites** nyers bájtpárokra összesen 27 találat van, és **mind
-  elszámolt**: a két menüépítő táblaírásai, `call` utasítások rel32-eltolásai
-  (pl. `e8 ba d4 9c ff`), és három nem kapcsolódó függvény;
-- a menübejegyzés-táblák kezelő-mezői (`0xd6eae4`, `0xd6eae8`, …) mind
-  **nullák**, tehát a parancsot központi táblán át irányítja a keretrendszer.
-
-⇒ A `Méret` értéke a `{1, 4, 5}` halmazból való, de **melyik, az NINCS MEG**.
-**Megszerzés:** a központi parancs-diszpécser (a menübejegyzés `+0x0a` szavas
-azonosítójából kiinduló irányítás), vagy — sokkal olcsóbban — a futó Picasa
-`HKCU\…\Picasa2\Preferences\datesort` értéke a „Méret" kiválasztása után.
-Jegy: **#2318**.
+A `{0, 1, 2, 5}` mind meg van feleltetve vezérlőnek (36. + 67.1); a **4.**
+módhoz **nem ismert** felhasználói vezérlő. Nem zárható ki, hogy belső
+(programból állított) rendezés. **Megszerzés:** a `FUN_004b07c0` összes
+hívója (`edx = 4`-gyel). Jegy: **#2320**.
