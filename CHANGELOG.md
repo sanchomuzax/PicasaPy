@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.275] – 2026-09-04
+
+### Javítva
+- A kép átméretezése az eredeti Picasa mintavételezőjét használja
+  (Mitchell–Netravali), nem az eddigi lágyabb bilineárist — az érintett
+  effektek kimenete így élesebb és hívebb (#2227).
+
 ## [0.8.274] – 2026-09-04
 
 ### Javítva
