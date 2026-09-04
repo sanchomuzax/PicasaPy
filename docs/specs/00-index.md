@@ -1037,24 +1037,38 @@ negatívum csak ezekre az alakokra áll); a függvény egy **4268 bájtos**
 helyi puffert szondáz (`mov eax, 0x10ac`), aminek a jelentése nincs meg.
 Jegy: **#2238**.
 
-⭐ **2026-09-04 — a `rainbow` ALT-os ágának kapcsolója MEGVAN
-(`filterdesc-registry.md`, #2224).** A kérdés azért volt nyitott, mert a
-lineáris pásztázás **hiányos**: négy hivatkozást és **nulla** írást talált.
-A `0x00d67849` cím **nyers, négybájtos** keresése a végrehajtható
-szekciókban **139** előfordulást ad; opkód szerint osztályozva **137
-olvasás és 2 ÍRÁS**. ⭐ Az egyik írás
-`0x00576419` `mov byte ptr [0x00d67849], 1` a főablak-függvényben
-(`0x005760e0`, sztringjei `Preferences`, `mainwinismax`, `mainwinpos`); a
-másik `0x00a52e65` `mov byte ptr [...], al` a menü-ablakosztály
-(`#32768`) függvényében — az **nullázni is tud**. ⭐ **A kezdőérték 0,
-számolva:** a cím a szekció eltolásában `0x43849` = 276 041, a szekció
-**nyers** mérete viszont 155 648 ⇒ a bájt az inicializálatlan farokba
-esik, betöltéskor nullázódik ⇒ **a `rainbow` ág alapból nem él.**
-Az írást **egyetlen** kapu védi (`0x005763db` `cmp byte ptr [esp+0xbc], bl`
-/ `0x005763e2` `je`), és ugyanaz az ág olvas be egy beállítást
-(`0x004019b0`). ⛔ **NINCS MEG:** mi tölti a `[esp+0xbc]` helyi bájtot — a
-függvényen belüli egyetlen hivatkozás **nem bizonyíték**, mert az `esp`
-mozog; a következő lépés a `0x005760e0` dekompilálása. Jegy: **#2224**.
+⭐ **2026-09-04 — a `rainbow` ALT-os ágának kapcsolója LEZÁRVA: a
+`0x00d67849` = „a Picasa az ELŐTÉRBEN van" (`filterdesc-registry.md`,
+#2224).** A `0x00d67849` **nyers, négybájtos** keresése a végrehajtható
+szekciókban **139** előfordulást ad: **137 olvasás, 2 írás**. ⭐ **A kapu,
+amit az előző kör „helyi bájtnak" hitt, a függvény MÁSODIK PARAMÉTERE:**
+`sub esp,0xa4` + négy `push` = **0xb4** ⇒ `[esp+0xb4]`=visszatérési cím,
+`[esp+0xb8]`=1., **`[esp+0xbc]`=2. paraméter** (a `ret 8` is két
+paramétert mond). A `0x005760e0` a **főablak-helyreállító**
+(`Preferences\mainwinpos` / `mainwinismax`), és ha a 2. paraméter igaz,
+`ShowWindow` → `SetFocus` → `BringWindowToTop` → `SetForegroundWindow` →
+**`mov byte [0x00d67849], 1`** → `UpdateWindow`. ⭐ **Az öt hívó
+mind kimérve** (a `.text` teljes `e8`-pásztázásából — az index `xrefs`
+csak hármat ismer): `0x0040ce0b`, `0x0040d078`, `0x0040d428`,
+`0x0040dcaa` **1**-gyel, `0x0040da02` **0**-val ⇒ a kapcsoló a rendes
+indulás része. ⭐ **A második írás zárja le a jelentést:** a
+`0x00a52890` ablakeljárásban az ugrótábla a **`0x1C` = `WM_ACTIVATEAPP`**
+azonosítót — és csak azt — vezeti a `0x00a52e0c` blokkra, ahol
+`mov eax,[ecx+8]` (`wParam`) → **`0x00a52e66` `mov byte [0x00d67849], al`**
+⇒ a bájt **az alkalmazás előtér-állapota**. *(Helyesbítés: a cím
+`0x00a52e66`, nem `0x00a52e65` — a nyers keresés az operandust adta.)*
+⭐ **A 137 olvasásból 81** 28 bájton belül `GetAsyncKeyState`-et hív
+(`0x00c406f8`) — köztük a `0x005d672b`, amiből a kérdés indult; ez az
+őr azért kell, mert a `GetAsyncKeyState` rendszerszintű. ⇒ **A `rainbow`
+ALT-os útja egy átlagos telepítésen ÉL** (a korábbi „alapból nem él" csak
+az indulás pillanatára igaz). ⛔ **Nálunk (mérve):** a `rainbow` név öt
+helyen ismert, de a `KNOWN_UNRENDERED_OPS`-ban ül ⇒ **nem renderel**; az
+`AltModifier` a szerkesztőben **nulla** előfordulás. Az ALT-ág megépítése
+ezért ma hazug gombot adna — a rejtett módosítós ágak jegye a **#2146**.
+⭐ **Negatív eredmény:** az „előtérben vagyunk-e" őrt nálunk **nem kell
+megépíteni** (Qtben a módosítót az esemény hozza, és esemény csak
+fókuszált ablakhoz érkezik). Jegy: **#2224** (lezárva), **#2146**
+(kommentelve).
 
 ⭐ **2026-09-03 (8. kör) — a hasonlóság-rekord KÖZEPE: 216 bájt
 (`picasa-kereses-modok.md`).** ⛔ **Helyesbítés az előző körre:** az azt
