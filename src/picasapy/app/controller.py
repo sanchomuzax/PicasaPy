@@ -85,8 +85,24 @@ _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 # A korábbi 230 becslés volt; a `design-guide.md` két helyen 386-ot,
 # illetve 210-et állított — mindkettő téves, a #587 javította.
 FOLDER_PANE_WIDTH_DEFAULT = 240
-FOLDER_PANE_WIDTH_MIN = 160
-FOLDER_PANE_WIDTH_MAX = 600
+
+#: #2329: az eredeti osztósáv legkisebb szélessége UGYANAZ a szám, mint az
+#: alapértelmezés — a hasáb nem húzható 240 alá. Mérve: a kezelő osztálya
+#: `ytSplitterOffsetHandler` (RTTI `0x00d4734c`), a gyártó a `+0x18`
+#: mezőbe **240.0**-t tölt (`0x009da130`, konstans a `0x00cf48b0`-on), az
+#: alsó korlátot a `0x009d9df4`–`0x009d9e0e` érvényesíti.
+FOLDER_PANE_WIDTH_MIN = 240
+
+#: ⚠️ Ez NEM az eredeti felső korlátja, csak biztonsági határ.
+#:
+#: Az eredetié **ablakfüggő**: a főpanel szélessége − 240
+#: (`0x009d9e21`–`0x009d9e50`: `sub`, `fsub`, `fcomp`). Egy ablakméretet
+#: nem ismerő Python-oldali vágás ezt nem tudja kiszámolni, ezért a
+#: TÉNYLEGES korlátot a QML adja (`Main.qml`, `SplitView.maximumWidth`).
+#: Itt csak annyi a dolga, hogy egy elrontott vagy idegen gépről örökölt
+#: beállítás ne tegye használhatatlanná a felületet — a korábbi fix 600
+#: viszont széles ablakon SZŰKEBB volt az eredetinél, ezért emelkedett.
+FOLDER_PANE_WIDTH_MAX = 4000
 
 
 def _clamp_folder_pane_width(width: int) -> int:
