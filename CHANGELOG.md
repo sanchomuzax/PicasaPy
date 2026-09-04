@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.271] – 2026-09-04
+
 ### Javítva
 
 - A hat Glimmer-effekt (Holga, Éjjellátó, Ceruzarajz, 60-as évek,
