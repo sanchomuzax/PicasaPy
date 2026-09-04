@@ -40,6 +40,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.277] – 2026-09-04
+
+### Javítva
+- A jobb alsó sarokban felbukkanó értesítők az eredeti Picasa módján
+  **becsúsznak** oldalról, és elbocsátáskor visszacsúsznak — a korábbi
+  halványítás helyett. Ha több értesítés van egymás alatt, és egy eltűnik,
+  a többi odacsúszik az új helyére, nem ugrik (#2157).
+
 ## [0.8.276] – 2026-09-04
 
 ### Javítva

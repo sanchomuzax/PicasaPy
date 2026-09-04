@@ -146,6 +146,22 @@ def _cellak(sav_objektum) -> list:
         index += 1
 
 
+def _kicsuszasra_var(qt_app, feltetel, masodperc: float = 2.0) -> bool:
+    """#2157 óta az elbocsátás NEM azonnali: a cella előbb kicsúszik
+    (300 ms), és csak utána kerül ki a listából. A „elviszi a cellát"
+    állítások ezért nem `processEvents()`-szel, hanem várakozással
+    mérendők — a szándékuk változatlan."""
+    import time
+
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        if feltetel():
+            return True
+        qt_app.processEvents()
+        time.sleep(0.01)
+    return False
+
+
 def _kattints(ablak, elem) -> None:
     """IGAZI egérkattintás a vezérlő közepére.
 
@@ -390,7 +406,7 @@ class TestTobbCella:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
+        assert _kicsuszasra_var(qt_app, lambda: len(_cellak(objektum)) == 1)
 
         maradt = _cellak(objektum)
         assert len(maradt) == 1
@@ -423,9 +439,9 @@ class TestKattintas:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellHit0"))
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_a_zaro_vezerlo_elviszi_a_cellat(self, sav):
         objektum, _c, import_controller, qt_app = sav
@@ -434,9 +450,9 @@ class TestKattintas:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_a_zaras_NEM_navigal(self, sav):
         """A záró vezérlő a cella FÖLÖTT ül — ha a kattintás átszivárogna
@@ -490,9 +506,9 @@ class TestAzIdozites:
         QMetaObject.invokeMethod(
             ora, "triggered", Qt.ConnectionType.DirectConnection
         )
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_az_atmenet_iranya_donti_el_a_hosszat(self, sav):
         """0,25 s be, 0,5 s ki — ugyanaz az alak, mint a #1000-nél."""
@@ -506,7 +522,9 @@ class TestAzIdozites:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
         assert animacio.property("duration") == objektum.property("fadeOutMs")
 
 

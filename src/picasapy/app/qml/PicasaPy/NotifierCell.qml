@@ -42,6 +42,65 @@ Rectangle {
     /** Meddig marad kint magától (ms) — a sáv adja. */
     property int lifetimeMs: 0
 
+    // ------------------------------------------------------------------
+    // #2157 — a cella CSÚSZIK, nem halványodik
+    // ------------------------------------------------------------------
+    //
+    // A rajzoló két kulcskockás sávot értékel ki minden képkockán
+    // (`0x00655950` → `0x009e5e70`). Az „A" sáv a cellaszélességet
+    // (`[popup+0x1bc]` = 247) szorozza: élő cellán a célja **−1,0**,
+    // elbocsátáskor **0,0**. Vagyis a cella egy TELJES cellaszélességet
+    // tesz meg vízszintesen — nálunk ez a `[bent ? 0 : width]` pár, mert
+    // a sáv ablaka pontosan egy cella széles, tehát a kilógó cella
+    // magától eltűnik.
+
+    /** Bent van-e a cella (a sáv ablakában), vagy kicsúszva. */
+    property bool bent: false
+    //: `0x00c7e304` — a becsúszás hossza.
+    readonly property int beMs: 600
+    //: `0x00c7dcc8` — a visszacsúszás FELEANNYI. Ez az eredeti
+    //: aszimmetriája, nem elírás.
+    readonly property int visszaMs: 300
+
+    /** A kicsúszás lefutott — a sáv innen veheti ki a cellát. */
+    signal kicsuszasKesz()
+
+    /** Indítsd a kicsúszást; a `kicsuszasKesz` a végén jelez. */
+    function kicsuszik() {
+        cella.bent = false
+        kicsuszasOra.restart()
+    }
+
+    x: cella.bent ? 0 : cella.width
+
+    Behavior on x {
+        NumberAnimation {
+            objectName: "notifierSlideAnim" + cella.cellIndex
+            duration: cella.bent ? cella.beMs : cella.visszaMs
+            //: Az eredeti görbéje a saját `u = 8·t` skáláján
+            //: exponenciális (`0x0072df60`). A Qt-görbék közül az
+            //: `OutExpo` adja vissza ezt a jelleget — gyors indulás,
+            //: lágy beállás. ⚠️ A pontos, képkockára menő egyezés
+            //: **nincs mérve**: a bináris a saját skáláján számol, és a
+            //: két görbe-család nem feleltethető meg egymásnak
+            //: közvetlenül. A jelleg mért, a konkrét Qt-görbe választás.
+            easing.type: Easing.OutExpo
+        }
+    }
+
+    Component.onCompleted: cella.bent = true
+
+    //: A kicsúszás órája — a jel csak azután megy ki, hogy a cella
+    //: tényleg elhagyta az ablakot; enélkül a törlés levágná az
+    //: animációt, és megint „ugrás" látszana.
+    Timer {
+        id: kicsuszasOra
+        objectName: "notifierCellSlideOut" + cella.cellIndex
+        interval: cella.visszaMs
+        repeat: false
+        onTriggered: cella.kicsuszasKesz()
+    }
+
     /** A felhasználó a cellára kattintott: vigyen az eredményhez. */
     signal activated()
     /** A záró vezérlő. */
