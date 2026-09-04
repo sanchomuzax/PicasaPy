@@ -5544,6 +5544,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>TrayBar</name>
     <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>More...</source>
+        <translation>További lehetőségek...</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Click here for more options</source>
+        <translation>Kattintson ide a további opciókért</translation>
+    </message>
+    <message>
         <source>Clear Tray</source>
         <translation>Tálca ürítése</translation>
     </message>

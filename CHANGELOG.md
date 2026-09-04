@@ -40,6 +40,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.273] – 2026-09-04
+
+### Hozzáadva
+- A képtálca kimeneti gombsora megkapta a hiányzó „További lehetőségek…"
+  gombot: ha az ablak túl szűk, a ki nem férő gombok nem tűnnek el és nem
+  nyomódnak össze, hanem egy felugró listába kerülnek mögé — az eredeti
+  Picasa megoldása szerint (#2191).
+
 ## [0.8.272] – 2026-09-04
 
 ### Javítva

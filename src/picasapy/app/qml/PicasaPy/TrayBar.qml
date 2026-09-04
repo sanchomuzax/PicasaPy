@@ -918,7 +918,7 @@ Column {
                         //: szó szerint (`referencia/ui-leltar.csv`). Eddig
                         //: nem volt súgója.
                         ToolTip.text: qsTr("Add/Remove Star")
-                        ToolTip.visible: hovered
+                        ToolTip.visible: trayMoreBtn.hovered
                         ToolTip.delay: 500
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
@@ -1363,6 +1363,80 @@ Column {
                 y: 38
                 spacing: 0
 
+                // ---- #2191: túlcsordulás ------------------------------
+                //
+                // Az eredetiben a sor konténere `overflow:` típusú, és a
+                // ki nem férő tételek egy dedikált gomb mögé kerülnek
+                // (`outputlayout/morebutton`, 55 × 36 — mint a másik
+                // nyolc). A gombok NEM nyomódnak össze: a mért méret
+                // kötelező, épp ezért kell a túlcsordulás.
+                //
+                //: a sávban maradó hely a sor kezdetétől a jobb margóig
+                //: A kimeneti gomboknak jutó hely. ⚠️ NEM a sor `x`-éből
+                //: számol: a sáv szélesség-modellje a #1420 óta a
+                //: `windowWidthFor()`-ban van levezetve (osztópont, jobb
+                //: margó, 140-es eltolás, kerekítési ráhagyás) — ez itt
+                //: annak az INVERZE, hogy egyetlen igazságforrás legyen.
+                //: A kivezetett gombok és a csoportelválasztók helyét le
+                //: kell vonni, mert azok a sorban a kimenetiek ELŐTT ülnek.
+                readonly property int elerhetoSzelesseg: Math.max(
+                    0,
+                    (1 - trayMainBar.splitRatio) * trayMainBar.width
+                        - trayMainBar.rightMargin
+                        - trayMainBar.outputsOffset
+                        - trayMainBar.roundingReserve
+                        - (trayMainBar.retiredVisible
+                           ? trayMainBar.retiredCellCount
+                             * trayMainBar.actionCellWidth
+                           : 0)
+                        - (trayMainBar.separatorsVisible
+                           ? 2 * trayMainBar.actionCellWidth
+                           : 0))
+                //: egy cella teljes szélessége (a mért 59; a gomb 55 + 2-2)
+                readonly property int cellaSzelesseg:
+                    trayMainBar.actionCellWidth
+                //: a kimeneti gombok felirata, a respack deklarációs
+                //: sorrendjében — a rejtett tételek listája ebből épül
+                readonly property var gombFeliratok: [
+                    qsTr("Print"), qsTr("Email"), qsTr("Export"),
+                    qsTr("Collage"), qsTr("Movie")
+                ]
+                //: hány cella fér ki. Ha nem mind, EGY helyet a
+                //: túlcsordulás-gomb foglal el.
+                readonly property int kiferoCellak: {
+                    var osszes = trayActionRow.gombFeliratok.length
+                    var fer = Math.floor(
+                        trayActionRow.elerhetoSzelesseg
+                        / trayActionRow.cellaSzelesseg)
+                    if (fer >= osszes) return osszes
+                    return Math.max(0, fer - 1)   // egy hely a „További…"-nak
+                }
+                readonly property bool vanRejtett:
+                    trayActionRow.kiferoCellak < trayActionRow.gombFeliratok.length
+                //: a ki NEM férő gombok feliratai — ebből épül a felugró
+                //: lista. A tesztek is ezt mérik: a lista PONTOS kinézete
+                //: nincs mérve (a respack csak a gombot adja), a TARTALMA
+                //: viszont ellenőrizhető.
+                readonly property var rejtettFeliratok:
+                    trayActionRow.gombFeliratok.slice(trayActionRow.kiferoCellak)
+
+                //: a hívó cellák ezzel kérdezik meg, látszanak-e
+                function cellaLatszik(index) {
+                    return index < trayActionRow.kiferoCellak
+                }
+
+                //: a felugró listából indított művelet ugyanazt a jelet
+                //: küldi, mint a sorbeli gomb — a rejtett tétel nem
+                //: „másik" funkció, csak máshol érhető el
+                function rejtettMuveletInditasa(menuIndex) {
+                    var i = trayActionRow.kiferoCellak + menuIndex
+                    if (i === 0) tray.printRequested()
+                    else if (i === 1) tray.emailRequested()
+                    else if (i === 2) tray.exportRequested()
+                    else if (i === 3) tray.collageRequested()
+                    else if (i === 4) tray.movieRequested()
+                }
+
                 // #1345: a kimeneti sáv gombjai a `respack.yt` MÉRT
                 // geometriájával — mindegyik **55 × 36** képpont, egy
                 // **59 × 40**-es cellában (`TrayActionCell`;
@@ -1375,6 +1449,8 @@ Column {
                 // (`docs/specs/ui-lefedettseg.md` `outputlayout`
                 // hiánylistája).
                 TrayActionCell {
+                    //: #2191: a 0. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(0)
                     TrayActionButton {
                         id: trayPrintBtn
                         objectName: "trayPrintButton"
@@ -1400,6 +1476,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 1. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(1)
                     TrayActionButton {
                         id: trayEmailBtn
                         objectName: "trayEmailButton"
@@ -1421,6 +1499,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 2. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(2)
                     TrayActionButton {
                         id: trayExportBtn
                         objectName: "trayExportButton"
@@ -1507,6 +1587,8 @@ Column {
                 // fordítás, hanem átvétel a Picasa saját honosítási
                 // táblájából (`outputlayout_text.tre`).
                 TrayActionCell {
+                    //: #2191: a 3. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(3)
                     TrayActionButton {
                         id: trayCollageBtn
                         objectName: "trayCollageButton"
@@ -1530,6 +1612,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 4. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(4)
                     TrayActionButton {
                         id: trayMovieBtn
                         objectName: "trayMovieButton"
@@ -1545,6 +1629,47 @@ Column {
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
+
+                // #2191: `outputlayout/morebutton` — a ki nem férő gombok
+                // mögötte, felugró listában. Csak akkor látszik, ha van
+                // rejtett tétel.
+                TrayActionCell {
+                    objectName: "trayMoreCell"
+                    visible: trayActionRow.vanRejtett
+                    TrayActionButton {
+                        id: trayMoreBtn
+                        objectName: "trayMoreButton"
+                        anchors.fill: parent
+                        //: `outputlayout_text` — angolul „More...”
+                        text: qsTr("More...")
+                        iconSource: "icons/export.svg"
+                        iconObjectName: "trayMoreIcon"
+                        labelObjectName: "trayMoreLabel"
+                        enabled: true
+                        onClicked: trayMoreMenu.popup()
+                        //: `Click here for more options`
+                        ToolTip.text: qsTr("Click here for more options")
+                        ToolTip.visible: trayMoreBtn.hovered
+                        ToolTip.delay: 500
+                    }
+                }
+            }
+
+            // #2191: a rejtett tételek listája. ⚠️ A felugró PONTOS
+            // kinézete NINCS mérve — a `respack.yt` csak a gombot adja, a
+            // tartalom futásidőben épül —, ezért a legegyszerűbb, a
+            // többi helyi menünkkel egyező alakot használjuk.
+            Menu {
+                id: trayMoreMenu
+                objectName: "trayMoreMenu"
+                Repeater {
+                    model: trayActionRow.rejtettFeliratok
+                    delegate: MenuItem {
+                        objectName: "trayMoreItem"
+                        text: modelData
+                        onTriggered: trayActionRow.rejtettMuveletInditasa(index)
+                    }
+                }
             }
         }
 
