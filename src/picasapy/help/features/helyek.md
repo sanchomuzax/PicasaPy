@@ -18,6 +18,17 @@ A **Geocímkék törlése** gomb a kijelölt képekről leszedi a helyet; a
 gomb kiírja, hány képet érint. Ugyanez elérhető az **Eszközök ▸ Geocímke
 ▸ Geocímkék törlése** menüpontból is.
 
+### Rákérdezés sok képnél
+
+Hogy egy elgépelt kattintás ne írjon át egyszerre rengeteg képet, a
+program két esetben megerősítést kér:
+
+- **Hely módosítása** — ha **húsznál több** képet jelöltél ki.
+- **Geocímkék törlése** — ha **ötnél több** kijelölt képen tényleg van
+  helyadat.
+
+Kevesebb képnél a művelet kérdés nélkül lefut.
+
 > Ha a rendszereden nincs telepítve a Qt térkép-komponense, a panel
 > térkép helyett ezt írja ki: „A térkép-komponens (QtLocation) nem érhető
 > el. A geocímkék így is szerkeszthetők." A meglévő geocímkék ilyenkor is

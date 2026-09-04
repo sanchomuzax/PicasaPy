@@ -4,6 +4,69 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-04
+
+**A súgó megnyílik a programból**
+
+- **F1**-et nyomva vagy a **Súgó ▸ Súgó - tartalom és tárgymutató**
+  menüponttal ez a súgó nyílik meg, internet nélkül is.
+- A súgóban **Vissza** és **Tartalom** gomb segít a mozgásban, a
+  szövegben lévő **kék hivatkozások** pedig megnyitják a hivatkozott
+  fejezetet.
+- A kereső mostantól **fejezetenként egy sort** ad, a fejezet címével és
+  egy rövid részlettel; ha a szó többször is előfordul, kiírja a
+  darabszámot. Korábban ugyanaz a cím ismétlődött a listában.
+
+**Bal hasáb**
+
+- A három nézet-kapcsoló — a **mappanézet módja**, az **Egyszerűsített
+  fanézet** és az **Indexképek megjelenítése a könyvtárban** — mostantól
+  **megmarad a következő indításig**. Eddig minden indításnál
+  alapállapotba esett.
+- Bekapcsolt indexképeknél a mappasorokon a sárga mappaikon helyett a
+  mappa fotóiból álló kis **kupac** látszik.
+- Az **Egyszerűsített fanézet** a **Nézet ▸ Mappanézet** almenü aljára
+  került, ahogy az eredeti Picasában is.
+- Bekapcsolt indexképeknél a hasáb sorai nem maradnak üresen.
+- A **Projektek** mappái nem szerepelnek kétszer a hasábban.
+
+**Mozgófilm**
+
+- A **Célfájl** megadása már **nem kötelező**: ha üresen hagyod, a
+  program a Képek mappád `Picasa` almappáján belüli filmek-mappába ment,
+  a forrásmappa nevével, ütközésnél sorszámozva.
+
+**Képtálca**
+
+- A tálcának **saját kijelölése** van: a tálcán egy képre kattintva
+  kijelölöd (Ctrl és Shift is működik), és a **Kijelölés eltávolítása**
+  ezekre hat, nem a rács kijelölésére.
+
+**Helyek**
+
+- A program megerősítést kér, ha **húsznál több** kép helyét
+  változtatnád meg, illetve ha **ötnél több** képről törölnéd a
+  geocímkét.
+- A helyadatok pontosabban kerülnek a `.picasa.ini`-be, így a windowsos
+  Picasa ugyanoda teszi a képet a térképen.
+
+**Szerkesztő**
+
+- A **Régi effektek** fül bevezetője már nem állítja, hogy egyik örökölt
+  szűrő sem használható: a huszonegyből tizenhat ma is alkalmazható.
+- A **Filmszemcse** és az **Árnyalás** csempe az eredeti Picasa
+  elsődleges szűrőjét hívja; a Filmszemcse ezért csúszkás panelt nyit, és
+  lekerült róla a kék jelvény.
+- A szövegeszközben a választott **betűtípus** és a **félkövér** állás is
+  bekerül a `.picasa.ini`-be — eddig minden felirat félkövérként és
+  Ariallal íródott ki.
+
+**E-mail**
+
+- Friss telepítésen az **első küldéskor** megjelenik a **Képek küldése
+  e-mailben** kérdés a „ne kérdezze meg újra" pipával. Eddig ez a
+  párbeszéd csak annak jött elő, aki előtte megnyitotta a Beállításokat.
+
 ## 2026-09-03
 
 **Kollázs**

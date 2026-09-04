@@ -64,9 +64,12 @@ fölöslegesen.
 
 **Súgó**
 
-- Súgó - tartalom és tárgymutató (F1) — ehelyett ezt a súgót olvasod
 - Billentyűkódok — lásd [Billentyűparancsok](billentyuk.md)
 - Frissítések keresése
+
+(A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű ma
+már **működik**: ezt a súgót nyitja meg — lásd
+[A beépített súgó](sugo.md).)
 
 **Helyi menükben**
 
@@ -80,9 +83,14 @@ fölöslegesen.
 
 **Beállítások**
 
-A **Beállítások** párbeszéd nyolc füléből ma **két vezérlő él**, mindkettő
-az **Általános** fülön: a nyelv és a törlés-megerősítés kapcsolója. A
-többi szürke.
+A **Beállítások** párbeszéd nyolc füléből ma kettőn van élő vezérlő:
+
+- **Általános** — a nyelv és a törlés-megerősítés kapcsolója,
+- **E-mail** — a levelezőprogram megválasztása és a küldött képek mérete
+  (lásd [Küldés e-mailben](email.md)). Ugyanezen a fülön a videók
+  küldési módja és az Outlook-kapcsoló még szürke.
+
+A többi hat fül vezérlői szürkék.
 
 ## Megszűnt szolgáltatások — ezek nem is fognak elkészülni
 

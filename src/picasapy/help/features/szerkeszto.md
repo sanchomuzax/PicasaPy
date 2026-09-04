@@ -23,6 +23,9 @@ benne, balról jobbra:
 | **További effektek** | ami a motorban megvan, de az eredeti Picasa felületén nem volt |
 | **Régi effektek** | régi Picasa-változatokból örökölt szűrők |
 
+A 3–7. fül csempéin a **kék jelvény** az egykattintásos effekteket
+jelöli — lásd [Effektek](effektek.md).
+
 Az effektek részletes listája: [Effektek](effektek.md).
 
 ## Gyakori javítások
@@ -91,6 +94,11 @@ Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Beállítható:
 
 A **Felirat átvétele** gomb a kép meglévő képfeliratát írja be szövegnek.
 Az **Minden meglévő szöveg törlése** letörli a képre írt szövegeket.
+
+A választott **betűtípus** és a **félkövér** állás a többi beállítással
+együtt a `.picasa.ini`-be kerül, tehát a felirat legközelebb is úgy néz
+ki, ahogy beállítottad — és a windowsos Picasa is így látja. (A
+körvonalvastagság és a betűméret még nem így tárolódik.)
 
 ## Finomhangolás
 

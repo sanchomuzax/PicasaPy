@@ -18,10 +18,25 @@ A párbeszéd kiírja, hány képet választottál ki.
 - **Másodperc per kép** — mennyi ideig látszik egy kép. 1,0 és 10,0
   másodperc között állítható, fél másodperces lépésekben; az
   alapértelmezés 3,0 másodperc.
-- **Célfájl** — a **Tallózás…** gombbal választod ki, hova mentse. A
-  kimenet MP4-videó.
+- **Célfájl** — **nem kötelező**. Ha üresen hagyod, a program maga
+  dönti el, hova és milyen néven mentse (lásd lentebb). A **Tallózás…**
+  gombbal viszont te is megadhatod a helyét. A kimenet MP4-videó.
 
-A **Létrehozás** gomb csak akkor kapcsolható be, ha megadtad a célfájlt.
+Az **OK** gomb célfájl nélkül is nyomható.
+
+## Hova kerül a film, ha nem adsz meg célfájlt
+
+- A **mappa** a Képek mappád `Picasa` almappáján belüli filmek-mappa
+  (`Filmek`, `Mozgófilmek` vagy `Movies` — ha valamelyik már létezik, a
+  program abba ír). Ha ez a mappa nem hozható létre, a rendszer Videók
+  mappájába ment.
+- A **fájlnév** annak a mappának a nevéből lesz, ahonnan a képek jönnek.
+  Ha több különböző mappából válogattál, a program saját alapnevet
+  használ.
+- Ha ilyen nevű fájl már van ott, a program **sorszámot** tesz a név
+  végére.
+- Az így megnyitott mappa magától megjelenik a bal hasáb **Projektek**
+  csoportjában.
 
 ## Készítés közben
 
@@ -29,7 +44,7 @@ Haladásjelző mutatja, hányadik képnél tart. Ha kész, a program kiírja,
 hova mentette („A mozgófilm elmentve: …"). Ha nem sikerült, azt is
 jelzi.
 
-Az elkészült film a bal hasáb **Projektek ▸ Mozgófilmek** mappájába
+Az elkészült film a bal hasáb **Projektek** csoportjának filmek-mappájába
 kerül.
 
 ## Ha egy kép hiányzik

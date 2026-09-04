@@ -72,7 +72,8 @@ jelennek meg.
 Felülről lefelé:
 
 **Menüsor** — Fájl, Szerkesztés, Nézet, Mappa, Kép, Létrehozás, Eszközök,
-Súgó. A szürke tételek még nem működnek.
+Súgó. A szürke tételek még nem működnek. Bármikor **F1**-et nyomva
+előjön ez a súgó (lásd [A beépített súgó](features/sugo.md)).
 
 **Eszköztár** — bal oldalt az **Importálás** gomb és az új album gombja,
 középen a szűrők (csillagozott képek, arcot tartalmazó képek, videók,

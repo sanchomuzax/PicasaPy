@@ -6,11 +6,13 @@
 **E-mail**, **Fájltípusok**, **Diavetítés**, **Nyomtatás**, **Hálózat**,
 **Webalbumok**, **Névcímkék**.
 
-> **Fontos:** ma **két beállítás működik** a párbeszédben, mindkettő az
-> **Általános** fülön: a **nyelv** és a **Törlés a lemezről megerősítés
-> nélkül** kapcsoló. A többi vezérlő szürke — a helye megvan, de a
-> funkció mögötte még nem készült el. A **Bezárás** gomb zárja az
-> ablakot; nincs külön OK, mert az élő beállítások azonnal hatnak.
+> **Fontos:** ma két fülön van élő vezérlő. Az **Általános** fülön a
+> **nyelv** és a **Törlés a lemezről megerősítés nélkül** kapcsoló, az
+> **E-mail** fülön a levelezőprogram megválasztása és a küldött képek
+> mérete (lásd [Küldés e-mailben](email.md)). A többi vezérlő szürke — a
+> helye megvan, de a funkció mögötte még nem készült el. A **Bezárás**
+> gomb zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
+> hatnak.
 
 ### Nyelv
 
@@ -54,12 +56,15 @@ A PicasaPy megjegyzi és a következő indításnál visszaállítja:
 - a sötét témát és a nyelvet,
 - a mappák és a bal hasáb rendezését,
 - az indexképek felirat-módját és a feliratsáv állapotát,
+- a bal hasáb három nézet-kapcsolóját: a **mappanézet módját**, az
+  **Egyszerűsített fanézetet** és az **Indexképek megjelenítése a
+  könyvtárban** kapcsolót,
 - a rejtett képek megjelenítését,
 - a legutóbb megnyitott mappát,
 - a gyorscímkéket és a saját képarányokat.
 
-Az indexképek mérete és a mappanézet módja **nem marad meg** — ezeket
-minden indításnál újra be kell állítani.
+Az indexképek **mérete** viszont **nem marad meg** — ezt minden
+indításnál újra be kell állítani.
 
 ## A PicasaPy névjegye
 

@@ -17,16 +17,34 @@ képek.
 4. Megnyílik a levelezőprogramod egy új levéllel; a szöveget és a
    címzettet te írod be.
 
-Ha a **Képek küldése e-mailben** párbeszéd megjelenik, itt hagyhatod jóvá
-a küldést. A **Jegyezze meg ezt a beállítást, és ne kérdezze meg újra**
-pipával legközelebb kihagyja a kérdést.
+## Az első küldés: „Képek küldése e-mailben"
 
-## Amit még nem tud
+Amíg nem döntöttél másképp, az **első küldésnél** a program megkérdezi,
+mivel küldjön. A **Képek küldése e-mailben** párbeszédben hagyod jóvá,
+hogy a képek a számítógép alapértelmezett levelezőprogramjában nyíljanak
+meg új levélként.
 
-A **Beállítások ▸ E-mail** fül vezérlői (a levelezőprogram kiválasztása,
-a küldött képek mérete, a videók küldési módja) **még nem
-használhatók** — szürkék. A küldés a rendszer alapértelmezett
-levelezőjével történik.
+Ha bejelölöd a **Jegyezze meg ezt a beállítást, és ne kérdezze meg
+újra** pipát, legközelebb kérdés nélkül indul a küldés. (Ez ugyanaz a
+kapcsoló, mint a Beállítások E-mail fülén — bármikor visszaállíthatod.)
+
+## Beállítások ▸ E-mail
+
+Az **Eszközök ▸ Beállítások… ▸ E-mail** fülön:
+
+- **Válassza ki a levelezőprogramot** — vagy a számítógép
+  alapértelmezett levelezőjével küld a program, vagy minden küldéskor
+  megkérdezi. Ez a két lehetőség ma **működik**.
+- **Több kép mérete** — csúszka: ekkora hosszabbik oldalra kicsinyíti a
+  képeket küldés előtt. A csúszka mellett a pillanatnyi érték látszik
+  képpontban.
+- **Egyedülálló képek mérete** — vagy **Több elemmel azonos**, vagy
+  **Eredeti méret**.
+
+Ugyanezen a fülön a **videók küldési módja** és az **Outlookos beágyazott
+képek** kapcsolója **szürke** — ezek még nem működnek.
+
+## Ha nem indul el a küldés
 
 Ha a rendszereden nincs olyan program beállítva, ami a leveleket kezeli,
-a küldés nem indul el.
+a küldés nem indul el, és a program szól róla.

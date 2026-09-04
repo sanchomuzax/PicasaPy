@@ -71,5 +71,12 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+D | Kijelölés törlése |
 | Del | A kijelölt képek eltávolítása a kollázsból |
 
+## Súgó
+
+| billentyű | mit csinál |
+|---|---|
+| F1 | A súgó megnyitása |
+| Shift+F1 | A súgó megnyitása (ma ugyanoda visz, mint az F1 — lásd [A beépített súgó](sugo.md)) |
+
 > A **Súgó ▸ Billentyűkódok** menüpont még nem működik — a billentyűk
 > listája ez a lap.

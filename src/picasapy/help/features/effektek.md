@@ -6,6 +6,10 @@ bármikor visszavonható, és az eredeti fájlt nem érinti.
 Ha egy effektnek csúszkái vannak, azok a gomb megnyomása után jelennek
 meg a panelben; az **Alkalmaz** véglegesíti, a **Mégse** elveti.
 
+A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
+**egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
+képre.
+
 ## Effektek (3. fül)
 
 | effekt | mit csinál |
@@ -14,7 +18,7 @@ meg a panelben; az **Alkalmaz** véglegesíti, a **Mégse** elveti.
 | Szépia | barnás, régies árnyalat |
 | Fekete-fehér | a színek elvétele |
 | Melegítés | a bőrtónusok melegebbé tétele |
-| Filmszemcse | filmes szemcsézettség |
+| Filmszemcse | filmes szemcsézettség, csúszkával állítható |
 | Árnyalás | egyszínű árnyalat a képre |
 | Telítettség | a színek erőssége |
 | Lágy fókusz | lágy, elmosott kép középen éles ponttal |
@@ -72,12 +76,16 @@ nem volt hozzájuk gomb:
 
 ## Régi effektek (7. fül)
 
-Régebbi Picasa-változatokból származó szűrők. A mai Picasában sincsenek
-meg, de a régi `.picasa.ini` fájljaidban előfordulhatnak.
+Régebbi Picasa-változatokból származó szűrők. A mai Picasa felületén
+többségüknek nincs saját gombja, de a régi `.picasa.ini` fájljaidban
+előfordulhatnak — a PicasaPy felismeri és megőrzi őket.
 
-Ezeket a PicasaPy **el tudja olvasni és megőrzi**, de **nem tudja
-alkalmazni**: a képpontonkénti pontos működésük még nincs visszafejtve.
-A fül maga megírja, ha egy ilyen névvel találkozol.
+A fülön **huszonegy** ilyen szűrő van felsorolva. **Tizenhat** ma
+használható is: rájuk kattintva ugyanúgy alkalmazhatod őket, mint a
+többi effektet. A maradék **öt szürkén**, de láthatóan marad: a
+képpontonkénti működésük még nincs visszafejtve, ezért nem
+alkalmazhatók. Azért látszanak mégis, mert egy régi képeden ott lehet a
+szerkesztésben, és tudnod kell róla.
 
 ## Csoportos alkalmazás
 

@@ -51,6 +51,7 @@ szerkesztő fülei ugyanott vannak.
 
 ## Egyéb
 
+- [A beépített súgó: keresés, mozgás, F1](features/sugo.md)
 - [Ami még nem érhető el](features/meg-nem-erheto-el.md)
 - [Gyakori kérdések és hibaüzenetek](faq.md)
 - [Mi változott? — felhasználói változásnapló](changelog-user.md)

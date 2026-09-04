@@ -18,14 +18,30 @@ válthatsz köztük:
 - **Fanézet** — a mappák a lemezen elfoglalt helyük szerint, egymásba
   ágyazva.
 - **Egyszerűsített fanézet** — fanézet, de a csak-továbbvezető,
-  képet nem tartalmazó szintek összevonva.
+  képet nem tartalmazó szintek összevonva. Ez a kapcsoló az almenü
+  **legalján** áll, elválasztva a másik kettőtől.
 
-Ugyanez a három beállítás elérhető az eszköztár két kis gombjával, és a
-hasáb üres részére jobbgombbal kattintva is.
+Az első kettő között az eszköztár két kis nézetváltó gombjával is
+válthatsz. A hasáb üres részére jobbgombbal kattintva az
+**Egyszerűsített fanézet** kapcsoló érhető el.
+
+**Mindhárom beállítás megmarad a következő indításig.**
+
+### Fotó-kupac a mappaikon helyett
+
+A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
+bekapcsolásával a hasáb sorain a sárga mappaikon helyett a mappa első
+néhány fotójából álló kis kupac látszik. Ugyanaz a mappa mindig ugyanúgy
+néz ki, futások között is. Alapból kikapcsolva indul, és a választásod
+megmarad.
+
+> A hasáb helyi menüjében is szerepel egy **Indexképek megjelenítése a
+> könyvtárban** tétel, de az **még nem működik** — a menüsorból viszont
+> igen.
 
 ### A mappák sorrendje
 
-A **Nézet ▸ Mappanézet** almenü alján, illetve a hasáb helyi menüjében
+A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjében
 állítható:
 
 - **Rendezés létrehozási dátum alapján**
@@ -104,19 +120,30 @@ A tálca akkor hasznos igazán, ha **több mappából** akarsz képeket
   hozzáadhatod.
 - **Törlés a tálcáról** — kiüríti.
 
+A tálcának **saját kijelölése** van, a rácsétól függetlenül. A tálcán
+egy képre kattintva kijelölöd (kék kerettel jelöli), Ctrl-lal
+hozzáveszel vagy elveszel egyet, Shift-tel tartományt jelölsz. A rácsban
+végzett kijelölés ezt nem törli.
+
 A tálcán lévő képre jobbgombbal kattintva: **Megjelenítés és
 szerkesztés**, forgatás, **Keresés a lemezen**, **Tulajdonságok**,
-valamint **Kijelölés eltávolítása**. A tálcán a **Kijelölés
-megtartása** paranccsal is rögzíthetsz.
+valamint **Kijelölés eltávolítása** — ez utóbbi a **tálcán** kijelölt
+képeket veszi ki a tálcáról. A tálcán a **Kijelölés megtartása**
+paranccsal is rögzíthetsz.
 
 A tálca jobb szélén van a **Nagyító** is: rákattintva, majd a képek fölé
 húzva nagyítva látod a részleteket.
 
 ## Rejtett képek
 
-Egy képet a helyi menü **Elrejtés** parancsával tüntethetsz el a
-nézetből — a fájl a lemezen marad. A rejtett képek előhozásához kapcsold
-be a **Nézet ▸ Rejtett képek** pontot; ekkor a **Megjelenítés** paranccsal hozhatod vissza őket.
+Egy képet a **kép helyi menüjének Elrejtés** parancsával tüntethetsz el
+a nézetből — a fájl a lemezen marad. A rejtett képek előhozásához
+kapcsold be a **Nézet ▸ Rejtett képek** pontot; ekkor ugyanennek a helyi
+menünek a tétele **Megjelenítés**-re vált, és azzal hozod vissza a képet.
+
+> A **Kép** menü **Megjelenítés** tétele és a mappák helyi menüjének
+> **Elrejtés** / **Megjelenítés** párja még **nem működik** — a
+> kép-elrejtés a kép helyi menüjéből megy.
 
 ## Ha egy mappa nem érhető el
 
