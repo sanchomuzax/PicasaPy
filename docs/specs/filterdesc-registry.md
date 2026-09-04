@@ -2342,6 +2342,36 @@ tárolja:
 szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
 görbék mellett.
 
+#### Az `ExposureAdjustmentStops` SZEREPE — két kész görbe, előjel szerint (2026-09-04)
+
+A `0x00bcd3b0` (253 b) az értéket **nullához hasonlítja**, és három ágra
+megy. Mindkét nem-nulla ág egy **négypontos** görbét épít
+(`mov eax, 4; call 0x008f2b30`) — csupa beolvasott konstansból:
+
+| ág | a négy `(x, y)` pont | hatás |
+|---|---|---|
+| **sötétítő** (`0x00bcd3c7`) | (13, 0) · (116, 74) · (208, 156) · (255, 221) | minden kimenet a bemenet ALATT |
+| **világosító** (`0x00bcd431`) | (0, 17) · (47, 81) · (129, 186) · (221, 255) | minden kimenet a bemenet FÖLÖTT |
+| **nulla** (`0x00bcd48a`) | — | `0x008f2da0` (82 b) hívása, görbeépítés nélkül |
+
+Utána — mindkét ágon — az **abszolút értéket** veszi és továbbadja:
+
+```
+0x00bcd491  fld  dword ptr [esp + 0x2c]   ; az eredeti érték
+0x00bcd499  call 0x0049f5c0               ; fabs
+0x00bcd4a1  call 0x00bcd4b0               ; (103 b) — az erősség felhasználása
+```
+
+⇒ **Az `ExposureAdjustmentStops` ELŐJELE választja a görbét (sötétít vagy
+világosít), az ABSZOLÚT ÉRTÉKE pedig az erősséget adja.** A két görbe
+egymáshoz közel tükrös, de **nem pontosan** az (a sötétítő 13-nál kezd, a
+világosító 17-nél végződik) — külön szerzett táblák, nem egy képlet két
+iránya.
+
+**Ami NINCS mérve:** mit csinál a `0x00bcd4b0` az abszolút értékkel
+(skálázás? több lépcső?), és mit tesz a nullás ág `0x008f2da0`-ja.
+
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
