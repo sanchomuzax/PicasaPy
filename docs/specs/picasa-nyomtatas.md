@@ -308,3 +308,55 @@ teljesebb** készlet is van, saját névtérrel — és **ez** tartalmazza az
 > `referencia/stringres-en-hu.tsv` 2286–2295. és a
 > `referencia/i18n-hu/printoptionstext.xml` soraiból, minden cím a
 > binárisból kiolvasva.
+
+---
+
+## A „kis kép" KÜSZÖBE: `Preferences\DPIWarning`, alapérték **150** (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris).
+
+A `printing/dpi.py` modulunk fejléce eddig ezt mondta: *„a küszöb a
+hívóláncban van… a **mechanizmust** vesszük át, a **küszöböt** magunk
+választjuk"* — és 150-et választott. **Most kimérve: az eredeti
+alapértéke is pontosan 150**, és ráadásul **állítható**.
+
+### A számoló: `0x0085c060` (378 b)
+
+| cím | mit tesz |
+|---|---|
+| `0x0085c076`–`0x0085c07b` | a `Preferences` (`0x00c7eafc`) / **`DPIWarning`** (`0x00cc3368`) kulcs |
+| **`0x0085c08b`** | **`mov dword ptr [esp+0x1c], 0x96`** — az **alapérték 150**, ezt kapja a beállításolvasó (`0x00407a20`) |
+| `0x0085c098` | `fld dword ptr [0x00cf4900]` = **`1000000.0`** — a minimum-keresés „+végtelen" magva |
+| `0x0085c0b2`–`0x0085c120` | a képeken végigmenő ciklus; `0x0085c0cd` `fcom st(1)` tartja a **legkisebb** DPI-t |
+
+⇒ **A küszöb rejtett beállítás**, nem beégetett szám: aki átírja a
+`DPIWarning` értéket, más határnál kap figyelmeztetést.
+
+### A panel döntése DARABSZÁM-alapú, nem DPI-alapú
+
+Az állapotsor (`0x00745980`) már **kész számokat** kap:
+
+| cím | mit tesz |
+|---|---|
+| `0x00745cee` | `call 0x0085c060` — a fenti számoló |
+| `0x00745cf3`–`0x00745d0d` | a legkisebb DPI `float`-ból egészre kerekítve (`fistp`) |
+| **`0x00745d15`** | **`cmp esi, 0xf4240`** (= 1 000 000) — ha egyenlő, **kimarad** a „Legkisebb kép: …" sor (nem mértünk képet) |
+| `0x00745d5c` | ha a kis képek **száma nulla** → **`ThumbUIPrint::ReadyPrompt`** |
+| `0x00745d5e` | `cmp edi, 1` — egyes/többes szám (`::picture` / `::pictures`) |
+| `0x00745da4` | különben **`ThumbUIPrint::ReviewPrompt`** a darabszámmal |
+
+⇒ A „Készen áll a nyomtatásra" / „Nézze át nyomtatás előtt" váltás
+**egyetlen feltétel**: van-e legalább egy küszöb alatti kép. Ezért van a
+`.tre`-ben **két gombpár** (`printpanel/pnowbutton` + `pnowbutton2`,
+`printpanel/reviewnowbutton` + `reviewnowbutton2`): a panel a két állapot
+között cserél.
+
+### Mellékleletek a panel `.tre`-jéből
+
+- **`printpanel/phelpbutton`** — `m_render_offscreen`, és a többi makrója
+  **ki van kommentezve** (`#m_buttontypecolor`, `#m_offsetLB`) ⇒ **letiltott
+  vezérlő**, ugyanaz a minta, mint a főablak 20 képernyőn kívüli eleménél.
+- **`printpanel/froogle`** — a panel bal-alsó sarkában ülő vezérlő
+  (`m_offsetLB`); a kezelője (`0x00744a00`, 764 b) tartalmazza az
+  `IDS_MUST_INSTALL_PRINTER` / „A printer must be installed in order to
+  print." ágat is. *(Hogy a Froogle-gomb hova navigál, NINCS mérve.)*
