@@ -40,6 +40,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.278] – 2026-09-04
+
+### Hozzáadva
+- A nyomtatás ablakában megjelent a **„Nyomtató telepítése"** gomb: innen
+  érhetők el a nyomtató saját beállításai (papírméret, tálca, kétoldalas),
+  és a nyomtatás a megadott lapbeállítást használja. PDF-célnál a gomb
+  inaktív (#2103).
+
 ## [0.8.277] – 2026-09-04
 
 ### Javítva

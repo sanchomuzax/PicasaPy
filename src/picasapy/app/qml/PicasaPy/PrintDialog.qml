@@ -559,6 +559,28 @@ Window {
                 // a `currentIndex` a választó SAJÁTJA — a párbeszéd innen
                 // olvassa (`printerIndex`), nem fordítva (ld. ott)
             }
+            // #2103: belépési pont a nyomtató SAJÁT beállításaihoz
+            // (`printpanel/psetupbutton`). Az eredetiben az illesztőprogram
+            // tulajdonságlapját nyitja (`OpenPrinter` →
+            // `DocumentProperties` ×2, `0x00861750`); nálunk a Qt
+            // oldalbeállítóját, mert a `DocumentProperties` a Windows
+            // illesztőprogramé. A gomb HELYE és FELIRATA az, ami átvehető.
+            PicasaButton {
+                id: nyomtatoBeallitas
+                objectName: "printPrinterSetupButton"
+                //: `printpanel/setuplabel`
+                text: qsTr("Printer Setup")
+                //: A PDF-cél nem illesztőprogram: nincs mit beállítani.
+                enabled: !printWindow.pdfSelected
+                ToolTip.text: qsTr(
+                    "Open printer setup controls for the selected printer")
+                ToolTip.visible: nyomtatoBeallitas.hovered
+                ToolTip.delay: 500
+                onClicked: {
+                    if (typeof printController !== "undefined" && printController)
+                        printController.openPrinterSetup(printWindow.printerName)
+                }
+            }
         }
 
         // -- a PDF célfájlja (csak PDF-módban) ----------------------------

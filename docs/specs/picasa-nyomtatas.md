@@ -197,6 +197,28 @@ A `ClosePrinter` külön függvényben (`0x008612e0`, 205 b, hívás
 megfelelője a Qt/CUPS nyomtató-tulajdonságok — a felirat („Nyomtató
 telepítése") megtartható, a tartalom a rendszeré.
 
+✅ **Megvalósítva (#2103, 2026-09-04).** A nyomtatóválasztó mellett ott a
+gomb (`printPrinterSetupButton`), a mért feliratokkal:
+
+| | angol (`ui-leltar.csv`) | magyar (`tooltips.xml`) |
+|---|---|---|
+| felirat | `Printer Setup` | **Nyomtató telepítése** |
+| buboréksúgó | `Open printer setup controls for the selected printer` | **Nyomtató beállításvezérlőinek megnyitása a kijelölt nyomtatóhoz** |
+
+A gomb a `QPageSetupDialog`-ot nyitja a kiválasztott nyomtatóra, és az
+**elfogadott oldalelrendezést a következő nyomtatás használja**
+(`PrintController._oldalelrendezes`). PDF-célnál **inaktív** — ott nincs
+illesztőprogram, tehát nincs mit beállítani.
+
+⚠️ A tartalom továbbra sem másolható: a `DocumentProperties` a Windows
+illesztőprogramé. Ami átvehető, az a **belépési pont** — a gomb helye és
+felirata.
+
+Őr: `tests/app/qml_functional/test_nyomtato_telepites_2103.py`. Külön
+próba méri, hogy a nyomtatás tényleg a beállítóban elfogadott elrendezéssel
+indul — enélkül a párbeszéd díszlet lenne (ezt a hiányt magvetés fedte fel:
+a bekötés törlésére előbb egyetlen próba sem bukott el).
+
 ### `printpanel/captionoptionsbutton` + `printpanel/captionoptionslabel`
 
 Felirat: **„Szegély- és szövegopciók"**, buboréksúgó: *„Configure borders and
