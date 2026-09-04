@@ -555,9 +555,24 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Edit")
-        // #1475: a visszavonás a menü ÉLÉN — ide teszi az eredeti is
-        // (`eMenuEdit::ID_UNDO`). A felirat megnevezi a műveletet, hogy a
-        // felhasználó ne vaktában nyomja meg.
+        // #2151: TUDATOS TÖBBLET — az eredeti Szerkesztés menüjében NINCS
+        // visszavonás. A menü ott statikus: 11 tétel + 3 elválasztó, a
+        // darabszám konstans, állapotfüggő elágazás nélkül (#1795, a tábla
+        // a `docs/specs/picasa-menusor-csoportok.md`-ben). A korábbi
+        // indoklás egy erőforrás-kulcsra hivatkozott, amely a binárisban
+        // egyáltalán nem fordul elő — sem ASCII-ban, sem UTF-16LE-ben.
+        // A menü TELJES kulcskészlete kiolvasható, és pontosan tizenegy:
+        // ID_CUT · ID_COPY · ID_PASTE · ID_EDIT_COPYALLEFFECTS ·
+        // ID_EDIT_PASTEALLEFFECTS · ID_EDIT_COPYTEXT · ID_EDIT_PASTETEXT ·
+        // ID_ALBUM_SELECTALLPICTURES · ID_SELECTSTAR · ID_SELECT_INVERT ·
+        // ID_CLEAR_SELECTION. Visszavonás NINCS köztük.
+        //
+        // Mégis marad, mert ez a két bulk-művelet EGYETLEN belépési pontja
+        // (mérve: a jelzéseikre csak ez a fájl és a `Main.qml` köt).
+        // Kivéve őket visszavonhatatlanná válnának; áthelyezni pedig nincs
+        // hova, mert a szomszédos menük szerkezete is mért.
+        // A felirat megnevezi a műveletet, hogy a felhasználó ne vaktában
+        // nyomja meg.
         MenuItem {
             objectName: "menuEditUndoPasteAllEffects"
             text: qsTr("Undo Paste All Effects")

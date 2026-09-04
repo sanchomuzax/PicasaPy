@@ -227,11 +227,17 @@ VART: dict[str, list[str]] = {
 #: tesztben, hogy a szerkezet és az indoka EGY helyen legyen olvasható.
 ELTERESEK = {
     "&Edit · Undo Paste All Effects + Undo Batch Edit": (
-        "A mentésen a Szerkesztés menü NEM kezdődik visszavonás-"
-        "csoporttal, pedig az inaktív tételei látszanak. A szövegtárban "
-        "viszont van `eMenuEdit::ID_UNDO` és `ID_REDO`. A mi két tételünk "
-        "élő funkció; amíg nem tudjuk, mikor jelenik meg az eredetiben, "
-        "nem vesszük ki."
+        "Az eredeti Szerkesztés menüjében SOHA nincs visszavonás — nem "
+        "állapotfüggő, hanem nincs is: a menü statikus (11 tétel + 3 "
+        "elválasztó, konstans darabszám, elágazás nélkül), és a korábban "
+        "hivatkozott erőforrás-kulcs a binárisban NULLA előfordulású, "
+        "miközben a menü teljes kulcskészlete kiolvasható és pontosan "
+        "tizenegy elemű — visszavonás nincs köztük. "
+        "Mérve a #1795-ben, a tábla a picasa-menusor-csoportok.md-ben; a "
+        "helyesbítés a #2151. A mi két tételünk TUDATOS TÖBBLET, mert ez "
+        "a két bulk-művelet egyetlen belépési pontja — kivéve őket "
+        "visszavonhatatlanná válnának, áthelyezni pedig nincs hova, mert "
+        "a szomszédos menük szerkezete is mért."
     ),
     "&View · Dark Theme": (
         "Sötét téma — nálunk van, az eredetiben nincs. A mért 7. csoport "
