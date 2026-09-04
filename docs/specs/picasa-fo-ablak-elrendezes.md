@@ -334,6 +334,44 @@ PNG-t és a BMP-t az alapérték ellenére ⇒ **NE építsünk kapcsolókat** a
 `filetypes.py`-ba emiatt; a #2344 hatóköre marad a `.webp` felvétele.
 | `SupportQuicktime` | *(számított)* — `0x006e0e1c`: egy vizsgálat eredménye (`setne al`), tehát **„van-e telepítve QuickTime"** |
 
+##### PONTOSÍTÁS: a kapcsolók a FÁJLTÍPUS-TÁBLÁT építik, induláskor (2026-09-04)
+
+A 96. kör azt írta, hogy mind a négy olvasó „az importálás/megnyitás vagy
+az indulás ágán ül". Ez igaz, de a **súlyozás félrevezető volt**: az
+indulási ág nem mellékes, mert ott épül a program **fájltípus-táblája**.
+
+A lánc mérve:
+
+```
+0x00402f90  (gyűjtemény-/adatbázis-indulás)
+  → 0x004183c0  (Preferences, #db3\, dbVersion, RootPath, Filters)
+    → 0x004e04a0  (a 12 Support* kapcsolót olvassa)
+      → 0x004fadb0  ugrótábla: jmp [eax*4 + 0x004fb948] — 30 bejegyzés
+        → 0x004fa590  a kiterjesztést BESZÚRJA egy táblába
+```
+
+- a `0x004e04a0` formátumonként `push <index>` / `mov eax,<index>` párral
+  hívja a `0x004fadb0`-t (pl. `7`/`9`, `0x1b`/`0x1d`) — a hívás **a
+  kapcsoló értékétől függ**;
+- a `0x004fadb0` egy **30 bejegyzéses ugrótáblán** (`0x004fb948`) ágazik
+  el, és formátumonként a **kiterjesztés-sztringeket** adja tovább:
+  `.jpg` (`0x00c80a50`), `.jpeg` (`0x00c86408`), `.jpe` (`0x00c86400`), …;
+- a `0x004fa590` ezeket egy objektum **`+0x3dc` (tömb) / `+0x3e0`
+  (darabszám)** mezőjébe fűzi.
+
+⇒ **A `Support*` kapcsolók tehát azt vezérlik, mely kiterjesztések kerülnek
+be a program fájltípus-táblájába — induláskor, nem csak az importáló
+párbeszédben.**
+
+⚠️ **A lánc utolsó szeme NINCS mérve:** hogy a **figyelt mappák
+pásztázása** ebből a táblából dolgozik-e. A folytatás konkrét: a
+`+0x3dc`-es tömb **olvasóit** kell megkeresni (nem a `Support*`
+sztringeket), és megnézni, a pásztázó ág köztük van-e.
+
+*(Ez nem cáfolja a #2344 következtetését: a mi feltétel nélküli szűrőnk
+továbbra is helyes választás, mert a tulajdonos katalógusa szerint az
+eredeti a PNG-t és a BMP-t az alapérték ellenére is indexeli.)*
+
 > ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
 > megérzésnek, de a kód egyértelmű: `0x006e0e83 push 0` → `SupportPNG`,
 > `0x006e0e76 push 0` → `SupportGIF`.
