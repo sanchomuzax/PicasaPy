@@ -1066,3 +1066,40 @@ besorolást kapott, tehát a számot nem torzítja.
 *(A többi panel `m_render_offscreen`-es eleme — `writetodisk`,
 `edithelpbutton`, `phelpbutton`, `statustext`, `viewedit` — nincs a
 lefedettségi táblában feltáratlanként, tehát nem kell átsorolni.)*
+
+##### ✅ LEZÁRVA (2026-09-04): IGEN — a pásztázó modul ebből a táblából dolgozik
+
+A hiányzó szem megvan. A táblát **a pásztázó/változásfigyelő modul saját
+objektuma tartja**, és ugyanennek a modulnak a függvénye keresi ki belőle a
+fájl kiterjesztését.
+
+**A modul azonosítása** (sztringek szerint): `CChangeLogger`
+(`0x004e2050`), `CChangeLoggerWindows` (`0x004e21e0`), **`Dirscanner`**
+(`0x004e2f60`), `BadParentString` (`0x004e41f0`),
+`runtime\filters.txt` (`0x004e4ea0`).
+
+**Az ÍRÓ oldal ide fut be:** a regisztráló (`0x004fadb0`) a
+`0x004fb79c`–`0x004fb931` közti ágakból a **`0x004e3670`** metódust hívja —
+ez a modul objektumán ül, és a kapcsoló értéke szerint **beszúr**
+(`0x004fa590`) vagy **keres/eltávolít** (`0x004fa8b0`).
+
+**Az OLVASÓ oldal — a kiterjesztés→típus keresés (`0x004e2c40`):**
+
+| cím | mit tesz |
+|---|---|
+| `0x004e2c4f` | `call 0x004e2a00` — **a kiterjesztés kiszedése**: a `0x004e2a30`-on visszafelé keresi a `0x2e` (`.`) bájtot, azaz `strrchr(név, '.')` |
+| `0x004e2c5c` | `test dword ptr [edi+0x3e0], 0xfffffffe` — az elemszám (csomagolt, `>>1`) |
+| `0x004e2c70`–`0x004e2c76` | a tömb `[edi+0x3dc]`, **8 bájtos párokkal**: kulcs a `+0`-n, érték a `+4`-en |
+| `0x004e2c86` | `call 0x00bf697a` — kis-nagybetűt nem néző sztring-összevetés |
+| `0x004e2ca9`–`0x004e2caf` | találatnál a **párosított értéket** adja vissza (`[eax + esi*8 + 4]`) |
+| `0x004e2ca2` | ha nincs találat: **`0x3e8` = 1000** |
+
+⇒ **A `Support*` kapcsolók által feltöltött tábla AZ a tábla, amiből a
+pásztázó modul a fájlokat kiterjesztés szerint besorolja.** Ismeretlen
+kiterjesztés a **1000**-es őrszemet kapja.
+
+*(A tároló azonosítását nem csak az azonos `+0x3dc`/`+0x3e0` eltolás adja:
+az ÍRÓ thunk (`0x004e3670`) ugyanennek a modulnak a metódusa, tehát a
+kapcsolat közvetlen — nem eltolás-egybeesésre épül.)*
+
+**Bizalmi fok: megerősített.**
