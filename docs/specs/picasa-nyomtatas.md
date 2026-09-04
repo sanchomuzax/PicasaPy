@@ -360,3 +360,51 @@ között cserél.
   (`m_offsetLB`); a kezelője (`0x00744a00`, 764 b) tartalmazza az
   `IDS_MUST_INSTALL_PRINTER` / „A printer must be installed in order to
   print." ágat is. *(Hogy a Froogle-gomb hova navigál, NINCS mérve.)*
+
+---
+
+## A `printpanel/froogle` gomb — Froogle-keresés kellékekre (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris). **Javaslat: NE építsük meg** —
+a szolgáltatás megszűnt.
+
+### ⛔ Előbb egy önhelyesbítés
+
+A 103. kör a `0x00744a00`-ra mutatott mint a gomb kezelőjére. **Ez téves
+volt:** a `0x00744a00` a panel **megnyitási/nyomtató-ellenőrző** ága, és a
+froogle-elemre ott csak egy **általános elem-metódust** hív
+(`0x00744aaf`: `mov eax,[edx+0x68]; call eax`). Ez a `[+0x68]` rés a
+binárisban **181 helyen, 90 függvényben** fordul elő a legkülönfélébb
+vezérlőkön — tehát **nem navigáció**.
+
+### A valódi kattintás-út
+
+`0x00743980` (a panel gomb-elosztója) a `0x0074444e`/`0x00744460`-nál veti
+össze a kattintott elem nevét a `printpanel/froogle` literállal (19 bájt,
+`0x13`), és egyezésnél a `0x007444a4`-nél hívja a **`0x00744750`**-t.
+
+### Mit csinál a `0x00744750` (326 b)
+
+| cím | mit tesz |
+|---|---|
+| `0x00744750`–`0x0074475d` | a nyomtató-objektum (`[eax+0xec4]`); ha nincs, **`-1`** |
+| `0x0074475f`–`0x00744774` | a nyomtatólista (`[eax+4]`, elemszám `[eax+8]>>1`, aktuális index `[eax+0x10]`) ⇒ a **kiválasztott nyomtató NEVE** |
+| `0x007447e1` | a megerősítő szöveg: **`ThumbUIPrint::FrooglePrompt`** — *„This feature searches Froogle for printer supplies. We'll send "%s". Do you want to do that?"* (a `%s` a nyomtató neve) |
+| `0x00744828` | `call 0x009bac20` — **igen/nem párbeszéd**; nemre a függvény kilép |
+| `0x00744848` | a cím összeállítása: **`https://uploader.picasa.com/froogle.php?q=%s`** |
+| `0x0074486b` | `call 0x00981860` — megnyitás (böngésző) |
+
+⇒ A gomb **a kiválasztott nyomtató nevét elküldi a Google Froogle
+vásárlási keresőjének**, hogy kellékeket (patront, papírt) ajánljon —
+**előzetes megerősítés után**.
+
+### Miért nem építjük meg
+
+- A **Froogle** szolgáltatás megszűnt (a Google Shoppingba olvadt), és az
+  `uploader.picasa.com` a Picasa-szolgáltatások leállásával elérhetetlen ⇒
+  a gomb ma **halott hivatkozás** volna.
+- A funkció **adatot küld ki** (a nyomtató nevét) egy külső szolgáltatásnak.
+  Az eredeti ezt megerősítéshez kötötte; nálunk nincs mit megerősíteni,
+  mert nincs hova küldeni.
+
+*(A panel többi eleme változatlanul cél; ez az egy tétel a kivétel.)*
