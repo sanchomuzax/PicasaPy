@@ -877,15 +877,32 @@ mozgatása ütközik a munkaterülethez horgonyzással (`0x00658200`), az
 összecsukás célállapotának mérete pedig sehol nincs kimérve. Ezért nem
 építjük meg találgatásból. Külön jegy: **#2035**.
 
-#### Az ANIMÁCIÓ — nálunk halványítás, az eredetiben csúszás (#2157)
+#### Az ANIMÁCIÓ — ✅ megvalósítva (#2157, 2026-09-04)
 
-| | eredeti (mérve) | nálunk ma (mérve) |
+| | eredeti (mérve) | nálunk MOST |
 |---|---|---|
-| megjelenés | **vízszintes csúszás 247 px-en**, 0,6 s, exponenciális (`u = 8·t`) | `opacity` 0 → 1, **0,25 s** (`PicasaNotifier.qml:85`) |
-| eltűnés | **visszacsúszás 0-ra**, 0,3 s | `opacity` 1 → 0, **0,5 s** (`:87`) |
-| a cella függőleges helye | **animált**: sorszám × 45 px, ugyanaz a görbe | `Column` — azonnal ugrik (`:196`) |
-| ütemezés | képkockánkénti tick, a pozíció újraszámolva | Qt `Behavior on opacity` |
+| megjelenés | **vízszintes csúszás 247 px-en**, 0,6 s, exponenciális (`u = 8·t`) | ✅ `x: width → 0`, **600 ms**, `Easing.OutExpo` (`NotifierCell.qml`) |
+| eltűnés | **visszacsúszás 0-ra**, 0,3 s | ✅ `x: 0 → width`, **300 ms**, ugyanaz a görbe |
+| a cella függőleges helye | **animált**: sorszám × 45 px, ugyanaz a görbe | ✅ a `Column` `move` átmenete, 600 ms, `OutExpo` |
+| ütemezés | képkockánkénti tick, a pozíció újraszámolva | Qt `Behavior on x` + `Transition` |
 
-Mérve: a `PicasaNotifier.qml`-ben és a `NotifierCell.qml`-ben **nincs**
-`x`/`y` animáció — az egyetlen `Behavior` az átlátszóságé
-(`notifierFadeAnim`, `:202`). Megvalósítás: **#2157**.
+**Az elbocsátás késleltetése.** A cella törlése a listából mostantól a
+kicsúszás UTÁN történik (`kicsuszasKesz` jel, 300 ms): korábban a `dismissAt`
+azonnal futott, ami levágta volna az animációt, és megint „ugrás" látszana.
+
+**Az átlátszóság-animáció sorsa — kimondva.** Az eredetiben **nincs**
+átlátszóság-animáció. A `notifierFadeAnim` mégis megmaradt, de **nem a
+cellákra**: az ablak egészére vonatkozik, és csak akkor fut, amikor az
+utolsó cella is elment. Erre nálunk azért van szükség, mert a mi értesítőnk
+egyetlen `Window`, amelynek a `visible`-je a cellák létén múlik — az
+eredetié nem így épül fel. A cellák saját mozgása tisztán csúszás.
+
+⚠️ **Ami NINCS mérve:** a pontos görbe-egyezés. Az eredeti a saját `u = 8·t`
+skáláján exponenciális; hogy melyik Qt-görbe adja vissza képkockára pontosan,
+nem dőlt el. Az `Easing.OutExpo` a **jelleget** követi (gyors indulás, lágy
+beállás), és ez a választás a kódban is meg van indokolva. Aki kiméri,
+itt írja át.
+
+Őrök: `tests/app/test_ertesito_csuszas_2157.py` — forrás-szinten a
+konstansok és a görbe, élő objektumon a cella `x`-e, az animáció
+időtartamai és a két cella 45 képpontos távolsága.
