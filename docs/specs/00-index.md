@@ -709,7 +709,7 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
    felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
    futott a mentés.
 
-### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03, az „ág ↔ üzemmód” LEZÁRVA)
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel: a KIADÁS gomb (ÚJ, 2026-09-02; az „ág ↔ üzemmód” LEZÁRVA 2026-09-04)
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
@@ -826,12 +826,16 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    indoka „egyetlen olvasó" volt), és 16 egymás utáni dwordre képezi a
    kulcsokat; a `0x0066f470` húsz beállító híváshelye kiolvasva. Lap:
    `ajandek-cd-kimenet.md` **10.**
-2. **Melyik ÁG melyik üzemmódhoz tartozik?** A `0x0066f470` három ágon állít
-   értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi`
-   hozzárendelése a három üzemmódhoz (mentés / Ajándék-CD / feltöltés)
-   **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott
-   dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Lap:
-   `ajandek-cd-kimenet.md` 7.; jegy **#2095**.
+2. ~~Melyik ÁG melyik üzemmódhoz tartozik?~~ **LEZÁRVA (2026-09-04, #2095)** —
+   szintén dekompiláció nélkül. A `+0x13e`/`+0x13f` mód-bájtnak a teljes
+   binárisban **egyetlen írója** van (a panel konstruktora, `0x0066bf90`), és
+   **ugyanaz a függvény** választja belőlük a `publish/presentcd_go` /
+   `backup_go` / `replicate_go` vezérlőnevet — a név megnevezi az üzemmódot:
+   `0/–` = **Ajándék-CD**, `≠0/0` = **biztonsági mentés lemezre**,
+   `≠0/≠0` = **replikáció (feltöltés)**. A belépési elemnevek
+   (`thumbui/cdmode` · `backup` · `replicate`) és az ágak tartalma
+   (`option_isupload`, a `PicasaRestore` másolása) függetlenül ugyanezt adja.
+   Lap: `ajandek-cd-kimenet.md` **12.**
 
 ### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-03)
 
