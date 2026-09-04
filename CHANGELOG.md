@@ -9,6 +9,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A hat Glimmer-effekt (Holga, Éjjellátó, Ceruzarajz, 60-as évek,
+  Kinemaszkóp, HDR-szerű) belső automatikus javítása mostantól az eredeti
+  modellt követi (#2229): teljes min–max szinthúzás, vágópont nélkül.
+  Eddig a „Jó napom van" vágópontos modelljét kapták, ami más — egyetlen
+  kiugró szélső képpont ott eltűnik, itt viszont meghatározza a
+  tartományt.
+
+### Javítva
+
 - A `respack.yt` kicsomagoló kiolvassa a rétegek átlátszóságát (#2178).
   Eddig a fejléc 8–9. bájtját eldobtuk, és minden réteget
   átlátszatlanként adtunk vissza — pedig 140 réteg részben vagy teljesen

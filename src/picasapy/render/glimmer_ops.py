@@ -234,20 +234,66 @@ def gaussian_blur_f(image_f: np.ndarray, xblur: float, yblur: float | None = Non
     return cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma_x, sigmaY=sigma_y)
 
 
-def autofix(image: np.ndarray) -> np.ndarray:
-    """`AutoFix`: a Picasa belső, effekt-csővezetékekben újrahasznált
-    automatikus javítása — megfejtett modell (#535): ugyanaz a hisztogram-
-    darabszám alapú lineáris szinthúzás, mint a „Jó napom van" (I'm Feeling
-    Lucky) `apply_enhance`-e (ld. `apply_channel_levels_stretch` docstringjét
-    a bizonyítékért). A vágópont-keverés az ALAPÉRTELMEZETT 0,30: a natív
-    `0x009db610`-nek ezek a hívói is a `-1,0` jelzőt adják át (#721). Ez hat
-    Glimmer-effektet is érint (Holga, NightVision, PencilSketch, Sixties,
-    Cinemascope, HDR-család), amelyek belül `AutoFix`-et hívnak.
-    """
-    from picasapy.render.ops import apply_channel_levels_stretch
+#: Az `AutoFix` LUT-képletének kiolvasott konstansai (#2229):
+#: `0x00cf39d0` = 255,0 és `0x00c72150` = 0,5.
+_AUTOFIX_SKALA = 255.0
+_AUTOFIX_KEREKITES = 0.5
 
+
+def autofix(image: np.ndarray) -> np.ndarray:
+    """`AutoFix`: a Glimmer belső, effekt-csővezetékekben újrahasznált
+    automatikus javítása — **vágás nélküli min–max szinthúzás** (#2229).
+
+    ⚠️ **NEM azonos a „Jó napom van"-nal.** A natív parancs
+    (`0x009db610`, #535/#721) vágópont-keverést végez; a Glimmer
+    `AutoFixImageOperation` **másik kódút**, és a munkavégzője
+    (`0x00bc2d70`) mást csinál:
+
+    1. három **egyszerű** 256 rekeszes hisztogram (`0x00bc2e50`) —
+       vágás, súlyozás, percentilis **nincs** benne;
+    2. csatornánként LUT (`0x00bc3170`):
+
+    ```
+    lo = az első nem üres rekesz,  hi = az utolsó nem üres rekesz
+    lo == hi  ->  LUT[x] = 255
+    egyébként ->  LUT[x] = clamp(trunc((x − lo)/(hi − lo)·255 + 0,5), 0, 255)
+    ```
+
+    A `255,0` és a `0,5` konstans kiolvasva (`0x00cf39d0`, `0x00c72150`).
+
+    A különbség nem elméleti: egyetlen kiugró szélső képpont a vágópontos
+    modellben eltűnik, itt viszont **meghatározza a tartományt**. Hat
+    Glimmer-effekt hívja belül (Holga, NightVision, PencilSketch, Sixties,
+    Cinemascope, HDR-család), tehát mindegyik kimenetét érinti.
+
+    *(A natív `0x00bc2d70` 1000 képpont fölött lekicsinyített mintán
+    számol — a MI hisztogramunk a teljes képet nézi. A LUT szempontjából
+    ez csak a szélső rekeszek ritka esetén térhet el, és a mintavételezés
+    pontos rácsa nincs megmérve; találgatott közelítés rosszabb volna,
+    mint a teljes minta.)*
+    """
     validate_image(image)
-    return apply_channel_levels_stretch(image)
+    kimenet = np.empty_like(image)
+    for csatorna in range(image.shape[2]):
+        sik = image[..., csatorna]
+        hasznalt = np.flatnonzero(np.bincount(sik.reshape(-1), minlength=256))
+        lo, hi = int(hasznalt[0]), int(hasznalt[-1])
+        if lo == hi:
+            kimenet[..., csatorna] = 255
+            continue
+        x = np.arange(256, dtype=np.float64)
+        # CSONKOLÁS, nem kerekítés: a natív út a `0x00c29990`-en át megy,
+        # ami `cvttsd2si` — trunkál. A `+ 0,5` MAGA a felfelé kerekítés
+        # idiómája; `np.round`-dal kétszer kerekítenénk, és a felezőpontok
+        # a numpy bankár-kerekítése miatt páros felé csúsznának el
+        # (pl. 101,5 -> 102 helyett a natív 101-et ad).
+        lut = np.clip(
+            np.floor((x - lo) / (hi - lo) * _AUTOFIX_SKALA + _AUTOFIX_KEREKITES),
+            0.0,
+            255.0,
+        ).astype(np.uint8)
+        kimenet[..., csatorna] = lut[sik]
+    return kimenet
 
 
 def _telitettseg_k(saturation: float) -> float:
