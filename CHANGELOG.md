@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
+  (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
+  használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a
+  részfutást — a már lefutott próbák eredményével együtt. Új őr követeli
+  meg minden Qt-alkalmazást példányosító tesztmodultól a fejnélküli
+  alapértelmezést.
+
+## [0.8.266] – 2026-09-04
+
+### Javítva
+
+- Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
+  (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
+  használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a
+  részfutást — a már lefutott próbák eredményével együtt. Új őr követeli
+  meg minden Qt-alkalmazást példányosító tesztmodultól a fejnélküli
+  alapértelmezést.
+
 ## [0.8.265] – 2026-09-04
 
 ### Javítva

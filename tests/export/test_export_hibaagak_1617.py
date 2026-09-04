@@ -44,6 +44,14 @@ import os
 import stat
 from pathlib import Path
 
+# #2176: az `uzenetek` fixture valódi `QGuiApplication`-t példányosít. Ha
+# nincs használható megjelenítő, a Qt nem kivételt dob, hanem ABORTÁL —
+# a részfutás `Fatal Python error: Aborted`-tal, 134-es kilépőkóddal áll
+# meg, és a már lefutott próbák eredménye is elvész. Mérve: alapértelmezés
+# nélkül 3/3 abort, offscreennel 3/3 zöld. `setdefault`, tehát aki valódi
+# megjelenítőn akar futni, a környezetből felülírhatja.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pytest
 
 from picasapy.export import ExportItem, export_photos
