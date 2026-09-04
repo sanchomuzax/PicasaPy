@@ -14,6 +14,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
   a gyorsbillentyű és a funkció sem változott.
 
+- Windowson összeomolhatott a program, ha a felhasználó elsőként
+  exportált: az OpenCV első betöltése az export háttérszálán futott le,
+  a főszál egyidejű szemétgyűjtésével együtt (#2370). Mostantól a
+  betöltés a kezelőfelület szálán, a háttérmunka indítása előtt
+  történik, és a lusta betöltő zárral védett.
+
 - A nyomtatásnál a „kis kép" határa beállítható (#2359). Eddig beégetett
   150 képpont/hüvelyk volt; az eredetiben ez rejtett beállítás, ugyanezzel
   az alapértékkel. A `printing/dpiWarning` kulccsal átállítható.

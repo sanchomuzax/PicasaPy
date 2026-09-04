@@ -33,6 +33,20 @@ ezzel, és élesben is csendes, nehezen felderíthető eltérés lenne.
 A továbbítás ára egy `__getattr__` + egy `getattr` hívásonként —
 nagyságrendekkel kevesebb, mint bármelyik OpenCV-művelet maga.
 
+## ⚠️ Az első betöltés SZÁLA számít (#2370)
+
+A betöltés oda csúszik, ahol az első attribútum-olvasás történik — és ez
+lehet egy háttérszál. Mérve: a main `windows 2/4` darabja hat egymást
+követő futáson `0xC0000005`-tel omlott össze, mert a `cv2/__init__.py`
+`bootstrap()`-ja (Windowson `sys.path`-módosítás + natív DLL-könyvtár)
+egy export-munkaszálon futott, miközben a főszál szemetet gyűjtött.
+
+Ezért: aki háttérszálat indít KÉPET DEKÓDOLÓ munkára, a hívó (GUI-)
+szálon előbb hívja az `elore_betolt()`-öt. A közös
+`worker_thread._start_background`-ba tenni TILOS: az visszahozná a
+#1601-ben lemért ~1,5 másodpercet olyan munkákra is (mappapásztázás),
+amelyek sosem nyúlnak az OpenCV-hez.
+
 ## ⚠️ Amit ez NEM old meg
 
 Ha egy modul BETÖLTÉSKOR meg is HÍVJA a cv2-t (nem csak importálja), ott
@@ -43,9 +57,10 @@ helyeket egyenként kell halasztani (ld. `thumbs/cache.py`
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
-__all__ = ["cv2", "betoltve"]
+__all__ = ["cv2", "betoltve", "elore_betolt"]
 
 
 class _LustaModul:
@@ -56,16 +71,27 @@ class _LustaModul:
         # aláhúzással tartjuk, hogy soha ne ütközzön egy cv2-attribútummal.
         object.__setattr__(self, "_modul_neve", nev)
         object.__setattr__(self, "_modul", None)
+        # #2370: a betöltés ellenőriz-majd-cselekszik volt, zár nélkül. Két
+        # háttérszál egyszerre léphetett be és mindkettő futtatta az
+        # importot; a `threading.RLock` azért R, mert a `cv2` betöltése
+        # a mi kódunkon át visszahívhat (a helyettesre néző modul-szintű
+        # hivatkozások miatt), és az önmagára záródás holtpont lenne.
+        object.__setattr__(self, "_zar", threading.RLock())
 
     def _betolt(self) -> Any:
         modul = object.__getattribute__(self, "_modul")
-        if modul is None:
-            import importlib
+        if modul is not None:
+            return modul
+        with object.__getattribute__(self, "_zar"):
+            # a zár megszerzése közben egy másik szál végezhetett
+            modul = object.__getattribute__(self, "_modul")
+            if modul is None:
+                import importlib
 
-            modul = importlib.import_module(
-                object.__getattribute__(self, "_modul_neve")
-            )
-            object.__setattr__(self, "_modul", modul)
+                modul = importlib.import_module(
+                    object.__getattribute__(self, "_modul_neve")
+                )
+                object.__setattr__(self, "_modul", modul)
         return modul
 
     def __getattr__(self, nev: str) -> Any:
@@ -87,6 +113,15 @@ class _LustaModul:
 
 #: A modulok ezt importálják `cv2` néven.
 cv2 = _LustaModul("cv2")
+
+
+def elore_betolt() -> None:
+    """Behozza az OpenCV-t MOST, a hívó szálon (#2370).
+
+    Kimondottan azért létezik, hogy a költséges és Windowson szálérzékeny
+    első betöltés a GUI-szálon történjen, ne egy háttérszálon. Ismételhető:
+    a másodszori hívás nem csinál semmit."""
+    object.__getattribute__(cv2, "_betolt")()
 
 
 def betoltve() -> bool:
