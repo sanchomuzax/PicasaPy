@@ -2865,3 +2865,57 @@ Hogy a mappa **első** dátumát mi írja be (a mappa fájlrendszer-ideje? az
 első indexeléskori legkorábbi kép?). Az `autodate` ágat kimértem, az
 első beíróét nem — és a windowsos mappaidők a fejlesztői gépről nem
 elérhetők. Ez a #2304-ben nyitott kérdésként szerepel.
+
+---
+
+## A mappa-tulajdonságok beállítói: a `CThumbDB` vtábla (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris + a bináris index RTTI-táblája).
+
+A 99. kör megtalálta a mappadátum-beállítót (`0x004460a0`), de közvetlen
+hívója nem volt. Most megvan, **hol ül**: a `CThumbDB` osztály
+virtuális táblájában.
+
+### A tábla és a rés
+
+A bináris index RTTI-táblája szerint **`CThumbDB::vftable` a `0x00c81fa4`**-en
+kezdődik (`vtable_rva` `0x00881fa4`). A mutatónk a `0x00c81fb0`-on ül, tehát
+a **3. rés** (eltolás `0x0c`) — a visszafelé olvasott vtábla-kezdet és az
+index egymástól függetlenül ugyanezt adja.
+
+### A szomszédos rések: tulajdonságonként egy beállító
+
+| rés | cím | méret | sztringje |
+|---:|---|---:|---|
+| 2 | `0x00443c90` | 1463 b | **`description`** |
+| **3** | **`0x004460a0`** | **253 b** | — (`double`, ezért nincs sztringkezelés) |
+| 4 | `0x0044fa80` | 1463 b | **`location`** |
+
+⇒ A tábla **tulajdonságonként egy beállítót** tart, és a **`date`** ezek
+közé tartozik. A dátum tehát az **adatbázis-rétegé** (`CThumbDB`), nem a
+mappa- vagy felületi objektumé — ez magyarázza, miért tölti ugyanaz a hívás
+az `albumdata_date` oszlopot **és** a `.picasa.ini`-t (99. kör).
+
+### ⛔ KIMERÍTŐ NEGATÍV: a rést nem hívja senki `call [reg+0x0c]` alakban
+
+A teljes `.text`-et (8 642 912 bájt, `0x00401000`-tól) végigpásztáztam a
+`call dword ptr [reg+0x0c]` kódolásaira (`ff 50 0c` … `ff 57 0c`, a
+SIB-es `0x54` nélkül): **0 találat.**
+
+A pásztázó helyességét ismert pozitívval ellenőriztem ugyanabban a
+futásban: `ff 15` (abszolút hívás) **21 110**, `ff 50` (bármely
+eltolással) **951** találat, és a `0x004417fa` bájtjai (`ff 15 5c 05 c4 00`)
+pontosan visszaolvashatók.
+
+⇒ A hívás **`mov reg, [vtábla+0x0c]` + `call reg`** alakban történik (ezt a
+mintát a `0x00849eab`–`0x00849eb3` — az `autodate` kezelője — meg is
+mutatja `[eax+0xe8]`-cal). Ez a forma bájtmintával **nem** különíthető el a
+sok ezer szerkezetmező-olvasástól.
+
+### Mit NEM mértem — és mi kell hozzá
+
+Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezett
+mappára. Az olcsó lánc itt **kimerült**: a közvetlen hívók (nincs), a
+vtábla-hely (megvan), az RTTI (megvan), a bájtminta (kimerítő negatív).
+A következő lépés már a **drága ág**: célzott dekompiláció a mappafelvételi
+útvonalon, a `CThumbDB`-példány élettartamát követve.
