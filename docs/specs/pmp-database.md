@@ -579,6 +579,63 @@ A kulcs képzése továbbra is **NYITOTT** — de a keresést ezek felé nem ér
 
 *Bizonyítottsági fok: megerősített* (két adatbázis, négy tár, teljes vektorok).
 
+##### A kulcs képzése — HUSZONÖT TOVÁBBI JELÖLT KIZÁRVA, és a kulcs EGYEDI (2026-09-04, #1446)
+
+A hét korábban kizárt `imagedata`-oszlop mellé ez a kör **huszonöt további
+jelöltet** zárt ki, a tulajdonos valódi adatbázisán (`thumbindex.db`
+3338 sor, `thumbs_index.db` ugyanennyi slot), a saját olvasónkkal
+(`pmpimport/thumbindex.py`).
+
+**A minta, amin a mérés futott:** a `thumbindex.db` **2776** sora valódi
+fotó (nem könyvtár, nem üres slot, van neve, `size > 0`, `creation_filetime > 0`).
+
+**1. A bejegyzés SAJÁT mezőiből képzett jelöltek — mind 0/3188:**
+
+| jelölt | jelölt |
+|---|---|
+| `creation_filetime` (teljes 64 bit) | `access_filetime` |
+| `creation_filetime` alsó 32 bit | felső 32 bit |
+| `access_filetime` alsó 32 bit | `size` |
+| `cft_lo ^ size` | `cft_lo + size` |
+| `cft ^ aft` | `cft_hi ^ cft_lo` |
+| `cft_hi + cft_lo` | Unix-időbélyeg (32 bit) |
+| Unix-idő `^ size` | `cft / 10^7` |
+| `cft >> 16` | `size * 2` |
+| a sor indexe | a `kind` mező |
+
+**2. Név- és útvonal-hash jelöltek — mind 0/400:**
+négy alak (fájlnév · kisbetűs fájlnév · teljes útvonal · kisbetűs teljes
+útvonal) × két kódolás (UTF-8 · UTF-16LE) × négy hash (**CRC32**, **djb2**,
+**sdbm**, **FNV-1a**) = **16 kombináció**, egyetlen egyezés nélkül.
+
+**3. ⭐ A kulcs a valódi sorokon EGYEDI: 2776 / 2776, nulla ütközés.**
+
+Ez kizárja azt is, hogy csoportbélyeg legyen (mappa, méret, dátum): egy
+csoportbélyeg ütközne. A kulcs **32 bites** (a legnagyobb mért érték
+`0xfffebc36`), eloszlása egyenletes (a felső bit 1660/3188 sorban áll,
+a páros értékek aránya 1654/3188).
+
+> ⚠️ **Mérési csapda, amibe ez a kör beleesett — a következő kör ne
+> ismételje:** ha a szűrés csak az „üres slot" és a „könyvtár" jelzőt
+> nézi, **412 helykitöltő sor is átmegy** (üres vagy „ 1" név, `size = 0`,
+> `creation_filetime = 0`). Ezek kulcsa ütközik, és a mérés **hamis
+> 217 ütközést** mutat. A helyes szűrés a `size > 0` **és**
+> `creation_filetime > 0` feltételt is beleveszi.
+
+**Pozitív kontroll az importőrünkre:** az `iter_photo_records` szűrője
+(`is_directory` vagy üres név, `importer.py:62`) a valódi adatbázison
+**pontosan 2776 sort** enged át — nincs köztük helykitöltő és nincs
+arc-rekord. A termékkód szűrése tehát HELYES; a fenti csapda csak az
+ad-hoc mérésé volt.
+
+⇒ **A kulcs képzése továbbra is NYITOTT**, de a kereséshez most már ez
+tudható: **per-fotó, 32 bites, egyedi**, és **nem** a fájlnévből, nem az
+útvonalból, nem az időbélyegből, nem a méretből és nem ezek egyszerű
+kombinációjából áll elő. A következő lépés a **bináris oldali író**
+(`CThumbDB`, a `thumbindex.db`-t érintő `0x004f2d90` / `0x004f46b0` /
+`0x004f54b0`), nem újabb adatoldali találgatás.
+
+
 ##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
 
 A fenti fenntartás — hogy a `previews`/`bigthumbs` vektorban **elavult sorok**
