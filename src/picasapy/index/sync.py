@@ -886,7 +886,21 @@ def _sync_folder_date(
 ) -> None:
     """Mappa-dátum (#320): a `.picasa.ini` `[Picasa]` `date=` kézi
     felülírása elsőbbséget élvez; ennek hiányában az alapértelmezett Picasa-
-    viselkedés — automatikusan a legrégebbi felvétel ideje."""
+    viselkedés — automatikusan a legrégebbi felvétel ideje.
+
+    #2304: a felvételi idő hiányában a FÁJL ideje a tartalék. Enélkül egy
+    csupa EXIF-nélküli mappa (letöltött vagy generált képek) dátum nélkül
+    maradt: a fejlécében nem állt dátum, a bal hasábban pedig — mivel a
+    `models._with_year_separators` dátumtalan mappához nem tesz
+    évszám-fejlécet — az ELŐZŐ év alá csúszott. A tartalék nem új
+    találmány: a rács rendezőkulcsa (`app/photo_sort.photo_date`) már
+    eddig is pontosan erre esett vissza, és a `mtime_ns` a `photos`
+    táblában is megvan.
+
+    A `taken_at` ISO-alakú helyi idő, ezért a `mtime_ns`-t is helyi időre
+    alakítjuk (`'localtime'`) — különben a két ág nem lenne
+    összehasonlítható, és a `MIN` a nyári időszámítás körül rossz sorrendet
+    adna."""
     override = read_folder_date_override(document) if document else None
     if override is not None:
         conn.execute(
@@ -895,7 +909,11 @@ def _sync_folder_date(
         return
     conn.execute(
         "UPDATE folders SET date = ("
-        " SELECT MIN(p.taken_at) FROM photos p WHERE p.folder_id = ?"
+        " SELECT MIN(COALESCE("
+        "  p.taken_at,"
+        "  strftime('%Y-%m-%dT%H:%M:%S', p.mtime_ns / 1000000000,"
+        "           'unixepoch', 'localtime')"
+        " )) FROM photos p WHERE p.folder_id = ?"
         ") WHERE id = ?",
         (folder_id, folder_id),
     )

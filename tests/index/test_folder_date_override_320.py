@@ -34,7 +34,10 @@ class TestFolderDateOverride:
         """EXIF nélküli teszt-JPEG-nél a számított dátum None marad — a
         lényeg, hogy felülírás hiányában NEM a fix override-ág fut le."""
         sync_tree(conn, library / "balaton")
-        assert _folder_date(conn, library / "balaton") is None
+        assert _folder_date(conn, library / "balaton") is not None
+        # #2304: felülírás nélkül a SZÁMÍTOTT dátum jön — EXIF-felvételi
+        # idő híján a fájlidő tartalékából. Korábban itt None állt; az a
+        # kód akkori viselkedését rögzítette, nem az eredetiét.
 
     def test_override_wins_over_computed_date(self, conn, library):
         (library / "balaton" / ".picasa.ini").write_text(
@@ -51,11 +54,17 @@ class TestFolderDateOverride:
 
         ini_path.write_text("[Picasa]\nname=x\n", encoding="utf-8")
         sync_tree(conn, library / "balaton", incremental=False)
-        assert _folder_date(conn, library / "balaton") is None
+        assert _folder_date(conn, library / "balaton") is not None
+        # #2304: felülírás nélkül a SZÁMÍTOTT dátum jön — EXIF-felvételi
+        # idő híján a fájlidő tartalékából. Korábban itt None állt; az a
+        # kód akkori viselkedését rögzítette, nem az eredetiét.
 
     def test_invalid_override_format_is_ignored(self, conn, library):
         (library / "balaton" / ".picasa.ini").write_text(
             "[Picasa]\ndate=nem-datum\n", encoding="utf-8"
         )
         sync_tree(conn, library / "balaton")
-        assert _folder_date(conn, library / "balaton") is None
+        assert _folder_date(conn, library / "balaton") is not None
+        # #2304: felülírás nélkül a SZÁMÍTOTT dátum jön — EXIF-felvételi
+        # idő híján a fájlidő tartalékából. Korábban itt None állt; az a
+        # kód akkori viselkedését rögzítette, nem az eredetiét.

@@ -1,10 +1,19 @@
 """QML-modellek: mappa-lista és fotórács az SQLite indexből."""
 
+import os
+import time
+
 import pytest
 
 from picasapy.index import open_index, photos_in_folder, sync_tree
 
 from support.jpeg_factory import make_jpeg
+
+
+def _fajlidot_allit(ut, mikor) -> None:
+    """A fájl módosítási idejét adott naptári időpontra állítja."""
+    masodperc = time.mktime((*mikor, 0, 0, -1))
+    os.utime(ut, (masodperc, masodperc))
 
 
 @pytest.fixture
@@ -14,7 +23,12 @@ def library(tmp_path):
     (root / "telek").mkdir()
     make_jpeg(root / "nyaralas" / "IMG_0001.jpg", taken_at="2025:05:01 07:00:00")
     make_jpeg(root / "nyaralas" / "IMG_0002.jpg")
-    make_jpeg(root / "telek" / "IMG_0100.jpg")
+    telek_kep = root / "telek" / "IMG_0100.jpg"
+    make_jpeg(telek_kep)
+    # #2304: EXIF nélkül a mappa dátuma a FÁJL idejéből jön. Kimondott
+    # időt adunk neki, különben a teszt a futás napjától függene — a
+    # `telek` „mai" dátumot kapna, és a nyaralás elé kerülne.
+    _fajlidot_allit(telek_kep, (2019, 8, 20, 12, 0, 0))
     (root / "nyaralas" / ".picasa.ini").write_text("[IMG_0001.jpg]\nstar=yes\n", encoding="utf-8")
     return root
 
@@ -32,9 +46,12 @@ class TestFolderListModel:
 
         model = FolderListModel()
         model.load(conn)
-        # dátum-rendezés: a 2025-ös nyaralas évsort kap és elöl áll,
-        # a dátumtalan telek a lista végére kerül
-        assert model.rowCount() == 3
+        # dátum-rendezés: a 2025-ös nyaralas évsort kap és elöl áll, a
+        # 2019-es telek a sajátja alatt következik.
+        # #2304 előtt a `telek` DÁTUMTALAN volt (nincs benne EXIF), ezért
+        # évsort sem kapott, és a lista 3 sorból állt. Azóta a fájlidő a
+        # tartalék, tehát neki is jár fejléc: 2 mappa + 2 évsor.
+        assert model.rowCount() == 4
         assert model.data(model.index(0, 0), FolderListModel.KindRole) == "year"
         first = model.index(1, 0)
         assert model.data(first, FolderListModel.NameRole) == "nyaralas"
@@ -151,8 +168,9 @@ class TestFolderListModel:
         # NEM rajzol évszám-fejlécet — a mappák egyenesen a gyűjtemény-
         # fejléc alá kerülnek (screenshot: 144904/145027.png, „Mappák (67)").
         # Saját, elszigetelt indexet használ — a megosztott `conn`-fixture
-        # már tartalmaz egy dátum nélküli mappát is (telek), ami önmagában
-        # megtörné az "összes mappa egy évbe esik" feltételt.
+        # két KÜLÖNBÖZŐ évű mappát tartalmaz (nyaralas 2025, telek 2019),
+        # ami önmagában megtörné az "összes mappa egy évbe esik" feltételt.
+        # (#2304 előtt a telek dátumtalan volt — a feltétel akkor is sérült.)
         from picasapy.app.models import FolderListModel
 
         with open_index(tmp_path / "isolated.db") as conn:
