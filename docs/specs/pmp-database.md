@@ -3131,8 +3131,8 @@ az 1. mező 60,7 % / 96,9 %, a 2. mező 16,9 % / 20,2 %.
 |---|---|---|---|
 | a „Dátum" rendezés kulcsa | metaadat-dátum, ennek hiányában a fájl módosítási ideje | `app/photo_sort.py:66–68`: `taken_at`, ennek hiányában `mtime` — **a SZABÁLY azonos** | — |
 | a kulcs **rögzítettsége** | a beolvasáskor **befagy** a DB-be; a pásztázó csak a 2. mezőt frissíti | a rendezéskor **élőben** olvassuk a `mtime`-ot | #2304 |
-| a 2. mező neve az olvasónkban | a fájl **módosítási** ideje | `pmpimport/thumbindex.py:45`: **`access_filetime`** — megtévesztő név | **#2373** |
-| időzóna | helyi idő → UTC a gép zónájával | az olvasónk nyers `uint64`-et ad, értelmezés nélkül | dokumentálva itt |
+| a 2. mező neve az olvasónkban | a fájl **módosítási** ideje | `pmpimport/thumbindex.py`: **`modified_filetime`** — átnevezve | ✅ #2373 |
+| időzóna | helyi idő → UTC a gép zónájával | az olvasónk nyers `uint64`-et ad; az értelmezés a mezők docstringjében ki van mondva | ✅ #2373 |
 
 > ⛔ **Helyesbítés a 69. tételhez.** Az ottani „eredeti / nálunk" tábla azt
 > sugallta, hogy a **tartalék-szabályunk** tér el az eredetitől („nálunk
