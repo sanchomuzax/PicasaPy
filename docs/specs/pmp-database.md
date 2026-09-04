@@ -115,6 +115,55 @@ Mind a nyolc kód előfordul a tulajdonos valódi adatbázisában (302 `.pmp`:
   `thumbindex.db`, `thumbs_index.db` fájlokat megtartja, és az ini + EXIF/XMP
   adatokból újraépít.
 
+### Az `imagedata` oszlop-REGISZTER — 37 oszlop, névvel és tagoffszettel (#2304)
+
+A `FUN_004127c0` (1893 b) regisztrálja az `imagedata` tábla oszlopait: minden
+oszlophoz **egy név-sztring és egy tagoffszet** tartozik, egységes fordítási
+mintában (`push <név>` → `lea eax, [esi + offszet]` → regisztráló hívás).
+
+Ez a tábla az oszlopkészlet **igazságforrása**: a `.pmp` fájlok megléte
+telepítésenként változik (ld. lentebb a két telepítés eltérését), a regiszter
+viszont azt mondja meg, mit ISMER a program.
+
+| oszlop | tagoffszet | | oszlop | tagoffszet |
+|---|---|---|---|---|
+| `parent` | `+0x16c` | | `uid64` | `+0xaa8` |
+| `filetype` | `+0x22c` | | `aliasparents` | `+0xb10` |
+| `fileflags` | `+0x28c` | | `colorspace` | `+0xc40` |
+| **`creation`** | **`+0x358`** | | `personalbumid` | `+0xca0` |
+| **`modified`** | **`+0x3c0`** | | `suggestionpersonalbumid` | `+0xd00` |
+| **`updated`** | **`+0x428`** | | `facequality` | `+0xd60` |
+| `width` | `+0x490` | | `facerect` | `+0xdc0` |
+| `height` | `+0x4f0` | | `deferredface` | `+0xe28` |
+| `rotate` | `+0x550` | | `deferredregion` | `+0xe88` |
+| `flipped` | `+0x618` | | `facerectdata` | `+0xee8` |
+| `edit_width` | `+0x678` | | `personalbumrecs` | `+0xf48` |
+| `edit_height` | `+0x6d8` | | `personalbumrecvalues` | `+0xfa8` |
+| `caption` | `+0x738` | | `personalbumrecs2` | `+0x1008` |
+| `filters` | `+0x798` | | `personalbumrecvalues2` | `+0x1068` |
+| `textactive` | `+0x858` | | `peoplealbumchecksum` | `+0x10c8` |
+| `edited` | `+0x918` | | **`tagdate`** | **`+0x1128`** |
+| `revertable` | `+0x978` | | `fdbhash` | `+0x1190` |
+| `originslow` | `+0x9d8` | | `backuphash` | `+0x11f0` |
+| `originfast` | `+0xa40` | | | |
+
+**Négy dátum-jellegű oszlop van:** `creation`, `modified`, `updated`
+(egymás után, `+0x358`/`+0x3c0`/`+0x428`) és `tagdate` (`+0x1128`).
+
+**A lépésköz árulkodó.** A szomszédos oszlopok többnyire `0x60` vagy `0x68`
+bájtra vannak egymástól — ez az oszlop-szerkezet mérete. Ahol a lépés `0xc0`
+vagy nagyobb (`parent`→`filetype`, `rotate`→`flipped`,
+`filters`→`textactive`, `textactive`→`edited`, `aliasparents`→`colorspace`),
+ott **regisztrálatlan slot** marad ki: olyan tagok, amelyeket ez a függvény
+nem köt névhez. Hogy azok mik, nincs mérve.
+
+> ⛔ **NE keverd össze a rendezés forrásával.** A rendező-hasonlító
+> (`FUN_004a7890`) egy MÁSIK objektum oszlopait olvassa: ott a név-oszlop
+> `+0xb50`, a dátum-oszlop `+0xc10` (`FUN_004a6dc0` köti be őket). Ezek az
+> offszetek **nem szerepelnek** a fenti táblában, és a lépésközük is más —
+> tehát a rendezés forrása nem az `imagedata` tábla, hanem egy másik
+> szerkezet. A #2304 ezen a ponton tart.
+
 ## Validálás valódi adatbázison (2026-07-16) ✅
 
 Egy valódi, 2 GB-os db3 készleten (Picasa 3.9, ~140 758 thumbindex-bejegyzés,
