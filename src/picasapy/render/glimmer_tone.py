@@ -73,7 +73,12 @@ def apply_vignette(
     """`Vignette=1,Blur,Strength,Fade,szín` — belső, fekete ragyogás a szélektől.
 
     Blur `[0..50]` (alap 35), Strength `[1..2]` (alap 1,4), `xblur=yblur =
-    Blur·0,02·max(W,H)/4` (`filterdesc-registry.md` 4.3).
+    Blur·0,02·max(W,H)/**8**` (`filterdesc-registry.md` 4.3).
+
+    #2159: a docstring korábban `/4`-et írt, a `VIGNETTE_RADIUS_FACTOR`
+    viszont `0.02 / 8.0` — és a konstans fölötti komment a **/8**-at
+    indokolja, valódi Picasa-exportokon mért illesztéssel (Blur=35 → σ≈220,
+    Blur=50 → σ≈310–320). A szöveg tévedett, nem a szám.
     """
     return _glow_vignette(image, blur, strength, color, fade)
 
