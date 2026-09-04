@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.264] – 2026-09-04
+
+### Javítva
+- Az első e-mail-küldéskor a program megkérdezi, melyik levelezőprogrammal
+  küldjön — eddig a választó párbeszéd friss telepítésen soha nem jelent
+  meg magától (#2184).
+
 ## [0.8.263] – 2026-09-04
 
 ### Javítva
