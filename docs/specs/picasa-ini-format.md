@@ -1462,14 +1462,68 @@ szemben **egészben** megy egyetlen beállítóhoz (`[vtbl+0x70]`,
 | *(régi korpusz)* | `0x102` | 0 | **1** | **2** |
 | *(régi korpusz)* | `0` | 0 | **0** | **0** |
 
-**Amit ez ELDÖNT:** a felső 16 bit **minden mintában 0** — a harmadik
-tulajdonság alapértéken áll. A másik kettő értékkészlete eddig **0, 1, 2**,
-egymástól **függetlenül** mozog (a C és a D 8–15. bitje azonos, a 0–7.
-eltér).
+**Amit ez ELDÖNT:** a felső 16 bit **minden mintában 0**. A másik kettő
+értékkészlete eddig **0, 1, 2**, egymástól **függetlenül** mozog (a C és a
+D 8–15. bitje azonos, a 0–7. eltér).
 
-**Amit NEM dönt el:** melyik beállító mit jelent. Az objektum osztálya
-nincs azonosítva (az olvasó szabad függvény, `esi`-ben kapja a példányt),
-ezért a beállítók nevéhez nem jutunk el.
+> ⛔ **Helyesbítés (2026-09-04):** a lap korábban azt írta, hogy a felső 16
+> bit „alapértéken áll". **Nem áll alapértéken.** A konstruktor
+> (`0x005ba5d0`) `mov byte ptr [esi + 0x14], 1` — az alapérték **1**,
+> miközben minden megfigyelt sorban **0**. A megfigyelés tehát nem
+> „érintetlen mező", hanem **az alapérték ellentéte, minden mintában**.
+
+**Amit NEM dönt el:** melyik beállító mit jelent — az offszet nem
+szemantika.
+
+#### Az objektum osztálya: `ytTextSettings` (MEGERŐSÍTVE, 2026-09-04, #2108)
+
+A lap korábban itt megállt („az olvasó szabad függvény, `esi`-ben kapja a
+példányt"). Az osztály **nem a hívási láncból**, hanem a **vtable
+alakjából** azonosítható:
+
+1. Az olvasó négy virtuális slotot hív: `+0x2c`, `+0x30`, `+0x38`, `+0x70`.
+   Az index mind a 2856 RTTI-vtable-jéből **kilencben** van mind a négy
+   slot négy különböző, ≤40 bájtos (tehát beállító-alakú) függvénnyel.
+   Nyolc tárgyilag kizárt; a kilencedik a **`ytTextSettings::vftable`**
+   (`0x00c943d4`, 40 slot).
+2. **Megerősítés:** a `Picasa3.exe` teljes bájtsorában a két
+   `ytTextSettings` vtable-cím (`0x00c943d4`, `0x00c94478`) **pontosan
+   egyszer** fordul elő, és mindkettő ugyanabban a függvényben:
+   `FUN_005ba5d0` — a konstruktor. Épp ezt hívja a `text=` írójának
+   hívója (`0x005bb758  call 0x5ba5d0` a `FUN_005bb630`-ban).
+
+**A négy beállító és a tagja:**
+
+| a `text=` mezője | slot | beállító | tag | típus |
+|---|---|---|---|---|
+| 8. mező, 16–31. bit | `+0x38` | `0x005ba7d0` | `this+0x14` | **byte** |
+| 8. mező, 8–15. bit | `+0x2c` | `0x005ba7a0` | `this+0x2c` | dword |
+| 8. mező, 0–7. bit | `+0x30` | `0x004112e0` | `this+0x28` | dword |
+| **9.** mező, egészben | `+0x70` | `0x005ba8c0` | `this+0x18` | dword |
+
+**A konstruktor adta alapértékek** (`0x005ba5d0`, 119 bájt):
+
+```
++0x10  "Arial"      +0x14  1 (byte)   +0x18  0        +0x1c  0x190 = 400
++0x20  -1           +0x24  0x14 = 20  +0x28  0        +0x2c  0
++0x30  1.0          +0x34  1.0        +0x38  -1       +0x40  0.0
++0x44  0.0          +0x48  0          +0x4c  0        +0x50  1.0   +0x54  0.0
+```
+
+A `+0x1c` alapértéke **400**, ami pontosan a betűsúly alapja (félkövéren
+700, ld. a szöveg-eszköz szakaszát) — tehát a **7. mező (betűsúly) tagja a
+`+0x1c`**, és a `+0x10` a betűtípusé. A `+0x24 = 20` és a `+0x38 = -1`
+jelentése **nincs megmérve**; ránézésre méret, illetve szín, de ezt nem
+állítjuk.
+
+> **Amit hiába próbáltunk:** a fogyasztók tagoffszet-söpréssel **nem**
+> találhatók meg. Az összes ismert tag a `0x10`–`0x54` sávba esik, ami a
+> leggyakoribb struktúra-offszet-tartomány: `esp`/`ebp` bázis kizárásával
+> és ≥8 tag megkövetelésével is **563** jelölt marad, az élükön
+> CRT-függvényekkel. (A #2125-ös söprés azért működött, mert ott az
+> offszet `0x13e`/`0x13f` volt, azaz ritka.) A járható út a hívási gráf a
+> konstruktor felől, vagy a beállítók testvéreiként ott álló getterek
+> hívói.
 
 > ⛔ **A jegy kérdésfeltevése ezzel pontosítandó.** A #2108 „a 8. és 9.
 > mező (igazítás, dőlt, aláhúzott?)" kérdést tesz fel, és **hét** kontrollált
