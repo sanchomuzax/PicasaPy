@@ -351,65 +351,53 @@ Az állapotsor (`0x00745980`) már **kész számokat** kap:
 `printpanel/reviewnowbutton` + `reviewnowbutton2`): a panel a két állapot
 között cserél.
 
-### Mellékleletek a panel `.tre`-jéből
+### ⛔ ÖNHELYESBÍTÉS (2026-09-04): ez a két „melléklelet" DUPLIKÁTUM volt
 
-- **`printpanel/phelpbutton`** — `m_render_offscreen`, és a többi makrója
-  **ki van kommentezve** (`#m_buttontypecolor`, `#m_offsetLB`) ⇒ **letiltott
-  vezérlő**, ugyanaz a minta, mint a főablak 20 képernyőn kívüli eleménél.
-- **`printpanel/froogle`** — a panel bal-alsó sarkában ülő vezérlő
-  (`m_offsetLB`); a kezelője (`0x00744a00`, 764 b) tartalmazza az
-  `IDS_MUST_INSTALL_PRINTER` / „A printer must be installed in order to
-  print." ágat is. *(Hogy a Froogle-gomb hova navigál, NINCS mérve.)*
+Itt eddig két állítás állt a `phelpbutton`-ról és a `froogle`-ról. **Mindkettőt
+a lap KORÁBBI, pontosabb szakasza már tartalmazta** (2026-09-03, „A panel ALSÓ
+AKCIÓGOMBJAI"), és a `phelpbutton`-é ráadásul **pontatlan** volt:
+
+- azt írtam, hogy a gomb „letiltott vezérlő", mert a makrói ki vannak
+  kommentezve. A helyes olvasat: **maga az elem NEM** kikommentezett — csak az
+  ikonja, a felirata, a színe és a horgonya; a `respack.yt` szerint
+  **`vbutton`** (rajz nélküli találati terület). Ld. a „`printpanel/phelpbutton`
+  — a gomb ÉL" szakaszt fent, amely ezt már 2026-09-03-án helyesbítette.
+- a `froogle`-ról írt „NINCS mérve, hova navigál" ugyanígy elavult: a
+  megnyitott cím a lapon **már szerepelt**.
+
+**A tanulság a következő köröknek:** ugyanannak a panelnek a kutatása előtt a
+**meglévő spec-szakaszt kell végigolvasni**, nem csak a saját kódunkat
+grepelni. Két kör (2026-09-04) ezt kihagyta, és részben újra levezette azt,
+ami már le volt írva.
 
 ---
 
-## A `printpanel/froogle` gomb — Froogle-keresés kellékekre (2026-09-04)
+## A `printpanel/froogle` KATTINTÁS-ÚTJA (2026-09-04, kiegészítés)
 
-**Bizalmi fok: megerősített** (bináris). **Javaslat: NE építsük meg** —
-a szolgáltatás megszűnt.
+> A gomb **mit csinál**-ja és a **hatókörön kívül** döntés a fenti
+> „`printpanel/froogle` — Tartozékok keresése a Froogle-en" szakaszban áll
+> (2026-09-03). Ez a szakasz **csak azt teszi hozzá**, amit az nem tartalmazott:
+> a kattintás pontos útját és egy önhelyesbítést.
 
-### ⛔ Előbb egy önhelyesbítés
-
-A 103. kör a `0x00744a00`-ra mutatott mint a gomb kezelőjére. **Ez téves
-volt:** a `0x00744a00` a panel **megnyitási/nyomtató-ellenőrző** ága, és a
-froogle-elemre ott csak egy **általános elem-metódust** hív
-(`0x00744aaf`: `mov eax,[edx+0x68]; call eax`). Ez a `[+0x68]` rés a
-binárisban **181 helyen, 90 függvényben** fordul elő a legkülönfélébb
-vezérlőkön — tehát **nem navigáció**.
-
-### A valódi kattintás-út
-
-`0x00743980` (a panel gomb-elosztója) a `0x0074444e`/`0x00744460`-nál veti
-össze a kattintott elem nevét a `printpanel/froogle` literállal (19 bájt,
-`0x13`), és egyezésnél a `0x007444a4`-nél hívja a **`0x00744750`**-t.
-
-### Mit csinál a `0x00744750` (326 b)
+**A kattintás-út:** `0x00743980` (a panel gomb-elosztója) a
+`0x0074444e`/`0x00744460`-nál veti össze a kattintott elem nevét a
+`printpanel/froogle` literállal (19 bájt, `0x13`), és egyezésnél
+`0x007444a4`-nél hívja a **`0x00744750`**-t (326 b):
 
 | cím | mit tesz |
 |---|---|
-| `0x00744750`–`0x0074475d` | a nyomtató-objektum (`[eax+0xec4]`); ha nincs, **`-1`** |
-| `0x0074475f`–`0x00744774` | a nyomtatólista (`[eax+4]`, elemszám `[eax+8]>>1`, aktuális index `[eax+0x10]`) ⇒ a **kiválasztott nyomtató NEVE** |
-| `0x007447e1` | a megerősítő szöveg: **`ThumbUIPrint::FrooglePrompt`** — *„This feature searches Froogle for printer supplies. We'll send "%s". Do you want to do that?"* (a `%s` a nyomtató neve) |
-| `0x00744828` | `call 0x009bac20` — **igen/nem párbeszéd**; nemre a függvény kilép |
-| `0x00744848` | a cím összeállítása: **`https://uploader.picasa.com/froogle.php?q=%s`** |
-| `0x0074486b` | `call 0x00981860` — megnyitás (böngésző) |
+| `0x00744750`–`0x0074475d` | a nyomtató-objektum (`[eax+0xec4]`); ha nincs → `-1` |
+| `0x0074475f`–`0x00744774` | nyomtatólista (`[eax+4]`, elemszám `[eax+8]>>1`, index `[eax+0x10]`) ⇒ a kiválasztott nyomtató neve |
+| `0x007447e1` | `ThumbUIPrint::FrooglePrompt` |
+| `0x00744828` | `call 0x009bac20` — igen/nem; nemre kilép |
+| `0x00744848` | `https://uploader.picasa.com/froogle.php?q=%s` |
+| `0x0074486b` | `call 0x00981860` — megnyitás |
 
-⇒ A gomb **a kiválasztott nyomtató nevét elküldi a Google Froogle
-vásárlási keresőjének**, hogy kellékeket (patront, papírt) ajánljon —
-**előzetes megerősítés után**.
-
-### Miért nem építjük meg
-
-- A **Froogle** szolgáltatás megszűnt (a Google Shoppingba olvadt), és az
-  `uploader.picasa.com` a Picasa-szolgáltatások leállásával elérhetetlen ⇒
-  a gomb ma **halott hivatkozás** volna.
-- A funkció **adatot küld ki** (a nyomtató nevét) egy külső szolgáltatásnak.
-  Az eredeti ezt megerősítéshez kötötte; nálunk nincs mit megerősíteni,
-  mert nincs hova küldeni.
-
-*(A panel többi eleme változatlanul cél; ez az egy tétel a kivétel.)*
-
----
+⛔ **Önhelyesbítés:** a `0x00744a00` **NEM** a gomb kezelője (egy korábbi
+mondat annak nevezte). Az a panel **megnyitási/nyomtató-ellenőrző** ága
+(`IDS_MUST_INSTALL_PRINTER`), és a froogle-elemre ott csak egy **általános
+elem-metódus** fut (`0x00744aaf`: `mov eax,[edx+0x68]; call eax`) — ez a rés a
+binárisban **181 helyen, 90 függvényben** fordul elő.
 
 ## Két REJTETT nyomtatási beállítás: `PrinterQuality` és `PrinterUseTiles` (2026-09-04)
 
