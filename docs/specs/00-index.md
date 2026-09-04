@@ -750,6 +750,29 @@ LEZÁRVA** — ld. a 13. szakaszt és a fenti bejegyzést.)*
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
+⭐ **2026-09-04 (#2305) — a szerkesztő NAGYÍTÁS-HÁRMASA.** Az `editpanel/fit`
+és az `editpanel/1to1` egy **összeragasztott kétszegmenses gombpár** az
+`editbase` jobb alsó sarkában (`zoombuttcontainer`, `m_offsetRB`), gombonként
+**37 × 22** (x 286…323 és 323…360, y 449…471), utánuk a nagyító (368…392) és a
+csúszka (399…526). **A kattintás művelete kiolvasva:** `fit` → `0.0f`
+(`0x005d5ccc`, `fldz`), `1to1` → **`0.5f`** (`0x005d5d45`, `0x00c7dafc`),
+mindkettő a `0x005ee590` animált beállítóval. ⇒ **a szerkesztő
+nagyítás-csúszkája normalizált értéket tárol: `0.0` = illesztés, `0.5` =
+valódi méret (100 %)** — ezt a visszafelé irányú állapotválasztó
+(`FUN_005d1c70`, 82 b) is ugyanezzel a két konstanssal dönti el.
+⛔ **Az `editpanel/inbetweenzoom` SOSEM LÁTSZIK** (`m_hidden`, 2 × 2 képpont):
+a rádiócsoport „egyik sem" tagja, **nem megépítendő vezérlő**. A hivatalos
+magyar súgók: „Beillesztheti a fotót a megjelenítési területbe" /
+„Fotó megjelenítése tényleges méretben" — a mi fordításunk mindkettőnél más.
+Jegy: **#2305** (komment), a megvalósítás **ÚJ JEGY**.
+
+⚠️ **NYITOTT (ebből a körből):** a normalizált csúszka-érték → tényleges
+nagyítási szorzó **leképezése** (mit ad `0.25` vagy `0.75`). A két rögzített
+pont mérve; a köztes függvény a `FUN_005d1520` (1858 b) hívási láncában van,
+annak konstansai viszont **animáció-időtartamok** (0,3 s és 0,15 s), nem
+skálák. Megszerzés: a `+0xe50` animátor-rés OLVASÓJA a rajzoló oldalon. Jegy:
+**ÚJ JEGY** ehhez a körhöz.
+
 ⭐ **2026-09-03 — a szerkesztő MARADÉK három vezérlője.** Mindhárom
 `m_hidden` alapállapotban, ezért ránézésre nem tűnnek fel. ⭐ **Ugyanaz a
 funkció KÉT ALAKBAN:** a szöveg-overlay láthatósága a **menüben két külön
@@ -1359,7 +1382,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
 | [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
-| [picasa-fo-ablak-elrendezes.md](picasa-fo-ablak-elrendezes.md) | A fő ablak elrendezése — a forrásból; **és a MEGŐRZÖTT állapot** (2026-09-03): `Preferences/mainwinpos` = `rect(%ld %ld %ld %ld)` + `mainwinismax`; az induláskori állapot-alkalmazó `0x0040bf70`; a `HLISTDIV=0.216406` / `VLISTDIV=0.1` **beírva, de SOHA nem olvasva** (három független negatív) — csapda, ne valósítsuk meg; a bal panel osztója a `HLISTOFFSET2=240`, ami **kódból is** megvan (`0xcf48b0`), és a kezelőjében (`ytSplitterOffsetHandler`, `0x009d9d80`) **nincs beégetett alsó/felső határ** |
+| [picasa-fo-ablak-elrendezes.md](picasa-fo-ablak-elrendezes.md) | A fő ablak elrendezése — a forrásból; **és a MEGŐRZÖTT állapot** (2026-09-03): `Preferences/mainwinpos` = `rect(%ld %ld %ld %ld)` + `mainwinismax`; az induláskori állapot-alkalmazó `0x0040bf70`; a `HLISTDIV=0.216406` / `VLISTDIV=0.1` **beírva, de SOHA nem olvasva** (három független negatív) — csapda, ne valósítsuk meg; a bal panel osztója a `HLISTOFFSET2=240`, ami **kódból is** megvan (`0xcf48b0`), és a kezelőjében (`ytSplitterOffsetHandler`, `0x009d9d80`) **nincs beégetett alsó/felső határ** · **2026-09-04 (#2305): az alsó sáv JOBB SZÉLE** — mért sorrend `scale_group` (366…525: `loupehit` 25 + `scalecontainer` 127) → `metadata_group` (545…785, 4 × 60); és három NEGATÍV eredmény: a négy panelkapcsolónak **nincs `Label` sora** (csak `Tooltip`), a csúszka mellett **nincs `−`/`+` gomb** (a 159 képpontot a két gyerek pontosan kitölti), és a két nagyítás-gomb **`editpanel/`-elem**, nem ide való |
 
 ## Felület — auditok és lefedettség
 

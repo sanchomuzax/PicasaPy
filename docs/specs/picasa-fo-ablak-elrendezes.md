@@ -504,3 +504,90 @@ sem**, és nincs `cmp <reg>, <immediate>` sem; az egyetlen immediate-
 szélességére.** A mi `160 … 600` korlátunk (`controller.py:91`) tehát nem
 egy mért eredeti érték átvétele, hanem **saját kiegészítés**. Ez nem
 feltétlenül baj — de ne hivatkozzunk rá úgy, mintha az eredetiből jönne.
+
+---
+
+## A könyvtár-nézet alsó sávjának JOBB SZÉLE — teljes elemlista és három mért NEGATÍV eredmény (2026-09-04, #2305)
+
+> **Bizonyítottság: megerősített.** Minden állítás forrása a `respack.yt`-ból
+> kicsomagolt `thumbui.tre` / `thumbui_text.tre`, illetve a rétegfejlécek
+> `int16 x0,y0,x1,y1` mezői. A tulajdonos 2026-09-04-i képernyőmentése
+> (`Picasa 3`, 1920 × 1200) mindhárom állítást megerősíti.
+
+### A teljes sorrend, mért koordinátákkal
+
+Mindkét csoport `m_offsetRT` a `basecontrolset`-en (jobb felső sarokhoz kötve,
+`thumbui.tre:283` és `thumbui.tre:297`), tehát **a sáv jobb szélén** ülnek,
+ebben a sorrendben. A koordináták a `respack.yt` rétegfejléceiből
+(`respack.yt:3241330` `scale_group`, `respack.yt:3243743` `metadata_group`):
+
+| # | elem | x | szélesség | y | magasság |
+|---|---|---|---|---|---|
+| 1 | `thumbui/scale_group` | 366…525 | 159 | 448…475 | 27 |
+| 1a | └ `thumbui/loupehit` (`m_offsetLT`) | 366…391 | **25** | 451…470 | 19 |
+| 1b | └ └ `thumbui/loupe` (ikon) | 368…391 | 23 | 452…468 | 16 |
+| 1c | └ `thumbui/scalecontainer` (`m_offsetLT`) | 398…525 | **127** | 448…475 | 27 |
+| 2 | `thumbui/metadata_group` | 545…785 | 240 | 448…472 | 24 |
+| 2a | └ `people_toggle` (`m_offsetLT`) | 545…605 | 60 | 448…472 | 24 |
+| 2b | └ `places_toggle` (`m_offsetLT`) | — | 60 | — | 24 |
+| 2c | └ `tags_toggle` (`m_offsetLT`) | — | 60 | — | 24 |
+| 2d | └ `properties_toggle` (**`m_offsetRT`**) | — | 60 | — | 24 |
+
+⇒ **A nagyítás-csúszka MEGELŐZI a négy panelkapcsolót** (525 < 545). Ez eddig
+is benne volt a lapban számként, de a **sorrend** nem következett belőle
+olvasásra; most ki van mondva.
+
+### ⛔ NEGATÍV 1 — a négy kapcsolónak NINCS felirata
+
+A `thumbui_text.tre` 55–65. sorában mind a négy elemnek **kizárólag `Tooltip`
+sora van**, `Label` sora egyiknek sincs. *(Kontroll: közvetlenül alatta
+`Label thumbui/timelinebutton` áll, tehát a fájl ismeri a `Label` kulcsszót;
+és a `#Tooltip thumbui/addkeywords` mutatja, hogy a kikommentelt sor is
+felismerhető alak.)*
+
+A `thumbui.tre` 255–281. sora szerint mindegyik kapcsoló egyetlen gyereket
+tartalmaz — a saját `_icon` rétegét, középre kényszerítve
+(`m_centerX`/`m_centerY`, illetve `XConstraint 0.5, 0.5, 1…2`). **Szövegelem
+nincs bennük.**
+
+Az angol buboréksúgók (`thumbui_text.tre`), a hivatalos magyarral
+(`referencia/panel-feliratok-hu.tsv` 5150–5153):
+
+| elem | angol | magyar |
+|---|---|---|
+| `people_toggle` | Show/Hide People Panel | Az Emberek párbeszédpanel megjelenítése/elrejtése |
+| `places_toggle` | Show/Hide Places Panel | A Helyek párbeszédpanel megjelenítése/elrejtése |
+| `tags_toggle` | Show/Hide Tags Panel | A Címkék párbeszédpanel megjelenítése/elrejtése |
+| `properties_toggle` | Show/Hide Properties Panel | A Tulajdonságok párbeszédpanel megjelenítése/elrejtése |
+
+⚠️ **A típusnév NEM bizonyíték — épp az ellenkezőjét sugallja.** A négy gomb
+sminkje `buttcon_LS_text_RC` / `_MS_text_RC` / `_RS_text_RC`, tehát a **neve
+tartalmazza a `text` szót**. A sminkfájl megnyitva viszont
+(`referencia/tre-eroforrasok/buttcon_LS_text_RC.tre`) csak három
+állapot-képet és a `button_buttcon` tulajdonságot deklarálja — **feliratelemet
+nem**. A `text` a fájlnévben a szegmens-grafika változatát jelöli
+(a másik változat a `thin_*`), nem a feliratot. Ezt az irányt nem kell újra
+végigjárni.
+
+### ⛔ NEGATÍV 2 — a csúszka mellett NINCS `−` és `+` gomb
+
+A `scale_group` **159** képpont széles, és pontosan kitölti a két gyereke:
+`loupehit` 25 + a köztük lévő 7 képpontos rés + `scalecontainer` 127 = **159**.
+A csoport jobb széle (525) egybeesik a csúszka jobb szélével ⇒ **fizikailag
+sincs hely** további gombnak, és a `respack.yt` listájában a `scale_group` és a
+`metadata_group` között csak `loupehit`, `loupe`, `infotext_clip`, `infotext` és
+a kikommentelt `#addkeywords` áll — nagyítás/kicsinyítés gomb nincs.
+
+### ⛔ NEGATÍV 3 — a két nagyítás-gomb NEM ebbe a sávba való
+
+A „Beillesztheti a fotót a megjelenítési területbe" és a „Fotó megjelenítése
+tényleges méretben" buboréksúgójú gombok elemneve **`editpanel/fit`** és
+**`editpanel/1to1`** — vagyis a **szerkesztő (egyképes) nézet** alsó sávjáé,
+nem a könyvtár-nézeté. A könyvtár-nézet sávjában az eredetiben sincsenek ott.
+Részletes leírásuk: [`ui-audit-editor.md`](ui-audit-editor.md), „A szerkesztő
+nagyítás-hármasa".
+
+### Egy viselkedési részlet: `Property mousedown 1`
+
+Mind a négy kapcsoló — és a szerkesztő `fit`/`1to1` gombja is — **lenyomásra**
+sül el, nem felengedésre (`thumbui.tre` 258–281., `editpanel.tre` 1315./1322.).
