@@ -2775,3 +2775,93 @@ amilyen a valóságban nincs.
 nem mondja meg — a hatókör ez az egy, valódi adatbázis.)*
 
 Jegyek: a csillag-hiba **#2335**, a kulcsszó/helyadat-hiány **#2336**.
+
+---
+
+## Az `albumdata_date` oszlop — a mappa dátuma TÁROLT, nem számított (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris + mérés a tulajdonos 2026-08-22-i
+katalógus-mentésén, 144 albumsor / 3338 `thumbindex`-bejegyzés).
+
+Ez az oszlop dönti el, mi áll a mappa fejlécében, és a bal hasáb melyik
+**évcsoportja** alá kerül a mappa (#2304, 1. és 2. eltérés). A kérdés az
+volt, **honnan veszi az eredeti** ezt az értéket.
+
+### A regisztrált albumoszlopok (`0x00415790`)
+
+`token` · `name` · `filename` · **`date`** (`0x00c80d7c`) · `category` ·
+`unread` · `description` · `location` · `uid` · `hascollage` · `inisync`.
+Ugyanez a `date` sztring a `.picasa.ini` `[Picasa] date=` kulcsa is — a
+kettő ugyanaz az érték, két tárolóban.
+
+### Az `autodate` parancs a LEGKORÁBBI elem idejét számolja
+
+A Mappa/Album tulajdonságai lapon van egy **`autodate`** nevű kapcsoló
+(`0x00cc1c20`, 8 bájt; a lap függvénye `0x00849750`, „Folder Properties” /
+`CEditAlbum::folderTitle`). A kezelője `0x00849dc0`:
+
+| cím | mit tesz |
+|---|---|
+| `0x00849df4`–`0x00849e30` | a változott tulajdonság nevét a `0x00cc1c20` (`autodate`) sztringgel veti össze |
+| `0x00849e3e` | `fld qword ptr [0x00c7ccf8]` — a kimeneti `double` **kezdőértéke `949998.0`** (Variant-napban ≈ 4500. év, tehát „+végtelen” őrszem) |
+| `0x00849e54` | `call 0x00441760` — ez számolja ki az értéket |
+| `0x00849e5b` | ha a hívás **nem 0**-t ad, a program **nem ír dátumot** |
+| `0x00849e77`–`0x00849eb3` | különben a **`date`** tulajdonságot állítja be (virtuális hívás `[eax+0xe8]`) |
+
+A `0x00441760` az album elemein megy végig (`[esp+0xb4]`, elemszám
+`= [ecx+4] >> 1`):
+
+- **üres albumnál `-1`-gyel tér vissza** (`0x0044187e`: `or eax,0xffffffff`)
+  ⇒ a hívó ilyenkor nem ír dátumot;
+- az akkumulátor (`[esp+0x18]`/`[esp+0x1c]`, 64 bites pár) **0-ról indul**
+  (`0x00441892`);
+- az összehasonlítás `0x004419d6`–`0x004419e6`: `jb`→kihagy, `ja`→tárol,
+  egyenlő felső szónál `jbe`→kihagy ⇒ **a KISEBB értéket tartja meg**;
+- a végén `0x00441a22` → `0x0098b650` (64 bites idő → `double`), majd
+  `0x00441a2e`: `fstp qword ptr [eax]` a kimeneti mutatóra.
+
+⇒ **Az `autodate` a mappa elemeinek LEGKORÁBBI időbélyegét számolja ki.**
+
+### ⛔ De a TÁROLT mappadátum NEM ez — mérve, 23 mappán
+
+Az `autodate` **egyszeri felhasználói parancs**, nem élő szabály. A
+katalógus-mentésen a `thumbindex` könyvtár-rekordjaihoz egyértelműen
+párosítható **23 mappára** vetettem össze az `albumdata_date`-et a mappában
+lévő képek `thumbindex`-időbélyegeivel:
+
+| hipotézis | egyezés |
+|---|---:|
+| `albumdata_date` == a képek **legkorábbi** ideje | **0 / 23** |
+| `albumdata_date` == a képek **legkésőbbi** ideje | **0 / 23** |
+
+A vizsgált mappára (88 kép) tételesen:
+
+| mit | érték |
+|---|---|
+| tárolt `albumdata_date` | `45244.72859953704` = **2023-11-14 17:29:11** |
+| a képek legkorábbi ideje | 2023-05-10 14:29:43 |
+| a képek legkésőbbi ideje | 2025-05-21 07:22:23 |
+| a mappa saját `thumbindex`-ideje | 2026-03-05 15:32:45 |
+| medián / átlag / leggyakoribb nap | egyik sem egyezik |
+| **pontos egyezés bármelyik kép idejével** | **nincs** (88-ból 0) |
+
+⇒ **A mappa dátuma PERZISZTÁLT érték**: egyszer beáll, és a tartalom
+későbbi változásától **nem** számolódik újra. A 144 albumsorból
+**mindnek van dátuma** (0 üres) — az eredetiben tehát **nem létezik
+„dátumtalan mappa”**.
+
+### Melléklelet: az állapotsor dátumtartománya IGAZOLVA
+
+A #2304 képernyőmentésén az eredeti állapotsora
+„2023. május 10., szerda–2025. május 21., szerda”-t ír. A fenti mérés
+szerint a mappa képeinek `thumbindex`-időbélyegei **pontosan** ezt a két
+szélsőértéket adják ⇒ az állapotsor tartománya a képek 1. időbélyegének
+minimuma és maximuma. Ez **egybevág** a rendezési kulccsal (#2304,
+2026-09-04-i mérés), és önálló megerősítése annak.
+
+### Mit NEM mértem
+
+Hogy a mappa **első** dátumát mi írja be (a mappa fájlrendszer-ideje? az
+első indexeléskori legkorábbi kép?). Az `autodate` ágat kimértem, az
+első beíróét nem — és a windowsos mappaidők a fejlesztői gépről nem
+elérhetők. Ez a #2304-ben nyitott kérdésként szerepel.
