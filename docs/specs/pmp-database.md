@@ -3312,3 +3312,126 @@ csak a 71 hely átnézését.
 | mi a `CThumbDB` teljes objektum-kiosztása | **LEZÁRVA** — 11.3, két forrásból |
 | hol él a példány | **LEZÁRVA** — `[app+0x1034]`, 11.4 |
 | **melyik hívó süti el ELŐSZÖR a dátum-beállítót** | **NYÍLT (örökölt)** — de a keresési tér 528 → 0 releváns találatra szűkült az `[app+0x1034]` úton; a következő lépés a 11.7 (nem dekompiláció) |
+
+## 12. ✅ MEGVAN a mappadátum-beállító MINDKÉT hívója (2026-09-05, #2304)
+
+> **Bizalmi fok: megerősített.** A hívási helyek diszasszemblálva, az
+> argumentumok (azonosító · `double` dátum · `bool`) a beállító prológusával
+> (11.8) és egymással is összeérnek.
+
+A munkasor legrégebbi nyitott kérdése — *melyik hívó süti el a
+mappadátum-beállítót* — **lezárult**. Két hívó van, két külön céllal.
+
+### 12.1 A beállító pontos szignatúrája
+
+`0x004460a0` (`IThumbDB` 3. rés):
+
+| argumentum | hol | mi |
+|---|---|---|
+| 1. | `[ebp+0x08]` | a mappa/album **azonosítója** |
+| 2. | `[ebp+0x0c]` | a **dátum**, OLE Variant `double` |
+| 3. | `[ebp+0x14]` | **`bool`** — kapcsolja a MÁSODIK tárolót |
+
+A törzs:
+
+```
+0x004460e5  add esi, -0x48        ; vissza a valódi CThumbDB-objektumra
+0x004460ea  call 0x004481e0       ; 1. tároló: az ADATBÁZIS — FELTÉTEL NÉLKÜL
+0x004460ef  cmp byte ptr [ebp+0x14], 0
+0x004460f3  je  0x00446184        ; ha a bool HAMIS → itt vége
+0x004460fb… call 0x004543e0       ; 2. tároló: a `.picasa.ini` `date` kulcsa
+```
+
+*(A `0x004460cc`-en betöltött sztring szó szerint **`date`** — `0x00c80d7c`.)*
+
+⭐ Az `add esi, -0x48` **független megerősítése** a 11.2-nek: a metódus
+`this`-e az `IThumbDB` alobjektum, és a törzs számol vissza a `CThumbDB`-re.
+
+### 12.2 A HELYI, automatikus hívó — `FUN_00441ac0` (110 b)
+
+```
+0x00441ae0  fldz · fcomp [esp+0x10]   ; ha a kapott dátum 0 → azonnal kilép
+0x00441af7  fld qword [0xc7ccf8]      ; 949998.0 — a „nincs dátum" őrszem
+0x00441b08  call 0x00441760           ; ← az AUTODATE-számoló (9. szakasz):
+                                      ;   a mappa elemeinek LEGKORÁBBI ideje
+0x00441b0d  test eax,eax · jne …      ; ha nem sikerült (üres mappa) → NEM ír
+0x00441b17  push eax                  ; eax == 0  ⇒ a bool HAMIS
+0x00441b18  mov eax,[edx+0x0c]        ; a 3. rés
+0x00441b1b  sub esp,8 · fstp [esp]    ; a kiszámolt dátum
+0x00441b21  push edi · mov ecx,esi · call eax
+```
+
+⇒ **A helyi mappa dátuma az `autodate` eredménye, és CSAK az adatbázisba
+kerül — a `.picasa.ini`-be NEM** (a bool hamis).
+
+**A három hívási helye** (kimerítő `e8`-pásztázás, 3 találat):
+
+| hívó | mit tudunk róla |
+|---|---|
+| `FUN_00441e00` (207 b), hívás `0x00441ec0` | sztringjei: **„Folders on Disk"**, **„Other Stuff"** — az albumlista két gyűjtőkategóriája ⇒ **a mappa-felvételi út**; hívói: `0x0055ece0`, `0x0055ff80` |
+| `FUN_004aa9f0` (1172 b), hívás `0x004aadc9` | hívója: `0x004a8a30` |
+| `FUN_0055d320` (947 b), hívás `0x0055d41b` | sztringje: `IDS_NORENAME` ⇒ átnevezési út; hívói: `0x0055d120`, `0x0056bfd0`, `0x006db580`, `0x006f2e50` |
+
+### 12.3 Az ONLINE albumok hívója — `FUN_006f2fc0` (1733 b)
+
+```
+0x006f33e5  call 0x0098bbe0       ; a beolvasott dátum érvényes-e
+0x006f33ec  je  0x006f3413        ; ha nem → kihagyja
+0x006f33ee  call 0x004a0d60       ; ← GetThumbDB() — 19 bájtos AKCESSZOR
+0x006f33f3  fld qword [esp+0x90]  ; a hírcsatornából jövő dátum
+0x006f3400  lea ecx,[eax+0x48]    ; IThumbDB*
+0x006f3405  mov eax,[eax+0x0c]    ; a 3. rés
+0x006f3408  push 1                ; ⇒ a bool IGAZ: DB **és** `.picasa.ini`
+0x006f340a  sub esp,8 · fstp [esp] · push edx · call eax
+```
+
+Egyetlen hívója `0x006f3dd2`, a `FUN_006f3cd0`-ban
+(`UploadManager::process_error`, „Failed to upload images") ⇒ az
+**online album (Web Albums) szinkron** ága.
+
+### 12.4 ⛔ MIÉRT nem találta meg négy korábbi pásztázás
+
+Három, egymástól független ok — mindegyik módszertani tanulság:
+
+1. **`GetThumbDB()` akcesszor** (`0x004a0d60`, 19 b:
+   `mov eax,[0x00d67668]` → `[eax+0x1034]`). A hívási helyen tehát **nincs**
+   inline `[app+0x1034]` olvasás ⇒ a 11.5 „71 felvételi hely" listája az
+   online hívót **nem tartalmazta**.
+2. **A helyi hívó MAGA is `CThumbDB`-metódus**, így a `this` már az
+   `IThumbDB` alobjektum ⇒ **nincs `+0x48` igazítás** ⇒ minden `+0x48`-ra
+   horgonyzott pásztázás elvétette.
+3. A 3. rés hívása **bájtmintával nem szűrhető** (796 hely, 528 függvény).
+
+**Ami eldöntötte — a hívás ALAKJA, nem a fogadó:** a beállító `double`-t vesz
+a vermen, tehát a hívás elé kötelezően kikerül a
+`sub esp, 8` + `fstp qword ptr [esp]` pár. Erre pásztázva:
+
+| lépés | találat |
+|---|---:|
+| `sub esp,8` + `fstp [esp]` a teljes `.text`-ben | **356** |
+| ebből 3. rés hívásával a közelben | **58** |
+| ebből a beállító tényleges hívása (elolvasva) | **2** — a 12.2 és a 12.3 |
+
+*(A 356-ból 2: a szűrés **az argumentum TÍPUSÁRA** épült. Ez általánosítható:
+ha a keresett függvény lebegőpontos argumentumot vesz, a `fstp`-minta
+erősebb szűrő, mint bármi, ami a fogadó objektumra horgonyoz.)*
+
+### 12.5 Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a mappa dátumának forrása felvételkor | az `autodate` = a mappa elemeinek legkorábbi ideje (`0x00441760`) | `ini/folder_date.py` — a `.picasa.ini` `date=` sorát olvassa/írja; **automatikus felvételkori számítás nincs mérve** | ld. #2304 |
+| hova írja a helyi út | **csak az adatbázisba** (a bool hamis) | nálunk a `.picasa.ini` az igazságforrás | a különbség tudatos, ld. `dontesek.md` |
+| hova írja az online út | adatbázis **és** `.picasa.ini` | nincs online album ág | hatókörön kívül |
+| üres mappa | `0x00441760` hibát ad ⇒ **nem ír dátumot** | nem mérve | — |
+
+### 12.6 Nyitott kérdések mérlege (12.)
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **melyik hívó süti el a mappadátum-beállítót** | ✅ **LEZÁRVA** — kettő: `FUN_00441ac0` (helyi, autodate, csak DB) és `FUN_006f2fc0` (online album, DB + ini) |
+| mit jelent a beállító 3. argumentuma | **LEZÁRVA** — a `.picasa.ini`-írás kapcsolója (12.1) |
+| miért nem találták meg a korábbi pásztázások | **LEZÁRVA** — akcesszor + interfész-`this` + bájtminta-zaj (12.4) |
+| a `FUN_004aa9f0` és a `FUN_0055d320` pontos felhasználói forgatókönyve | **HATÓKÖRÖN KÍVÜL** — a hívási lánc megvan, de a felületi forgatókönyv megnevezése nem befolyásolja a #2304-et; a `Folders on Disk` út (a mappa-felvétel) igazolva van |
