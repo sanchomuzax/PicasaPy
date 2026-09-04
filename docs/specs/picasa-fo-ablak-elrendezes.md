@@ -733,3 +733,109 @@ Picasa minden indításkor **240 képponton** kezdi.
 a felhasználónak kényelmesebb), a **korlátokat viszont igazítsuk** az
 eredetihez: alsó korlát 240, felső korlát a rendelkezésre álló szélesség
 mínusz 240. Jegy: #2329.
+
+## A `varbutton` KEZELŐ — a felület EGYETLEN ki-be kapcsoló mechanizmusa (2026-09-04, #754)
+
+> **Bizonyítottság: megerősített.** A nyelvtan a bináris formátumsztringjéből
+> és a beolvasó kódból jön; a jelentést **két, egymástól független
+> felhasználás** (jobb és bal fiók) erősíti meg.
+
+A `.tre`-kben tizenegy helyen áll `Handler varbutton …`. Eddig egyik sem
+volt megfejtve — pedig **ez az a mechanizmus, amivel a Picasa felülete
+minden ki-be kapcsolható részét mozgatja**: a jobb oldali fiókot, a
+szerkesztő bal panelét, a teljes képernyős módot, a publikálósávot és a
+kereső sávot is.
+
+### 1. A nyelvtan
+
+| mi | érték | cím |
+|---|---|---|
+| a kezelő neve | `varbutton` | sztring `0x00c7fc00`, név-visszaadó `0x0040aab0` |
+| gyártó | `0x009da240` | tábla-rekord `0x00c80764`–`0x00c80778` |
+| **feldolgozó formátum** | **`%s %f %f %d %s %s`** | `0x00cda73c` |
+| elfogadott mezőszám | **2 … 6** | `0x009da2a3` (`lea eax,[ebp-2] / cmp eax,4 / ja`) |
+| objektum | 0x48 bájt, vtábla `0x00cda77c` | `0x009d7b30` |
+| RTTI típusnév | **`.?AUytVarButtonHandler@@`** | a `0x00cda778` COL-on át |
+
+```
+Handler varbutton <változó> <lenyomott> [<felengedett>] [<animál>] [<cél1>] [<cél2>]
+```
+
+**A két elhagyható érték alapértéke a binárisból, nem találgatásból:**
+
+| mező | alapérték | hol állítja be |
+|---|---|---|
+| `<felengedett>` (2. `%f`) | **−1000.0** | `0x009da25f` tölti a cél-rekeszbe (`0x00cf4da4`) |
+| `<animál>` (`%d`) | **1** | `0x009da294` (`mov dword ptr [esp+0x28], 1`) |
+
+A rekesz-azonosítás a `lea`/`push` sorozat visszaszámolásából: a 2. `%f`
+és az `%d` pontosan azokra a helyekre ír, amelyeket a függvény előre
+feltöltött.
+
+### 2. Mit jelentenek az értékek
+
+Az objektum mezői: `+0x2c` = a lenyomott érték, `+0x30` = a felengedett,
+`+0x34` = az **emlékezett eredeti**, `+0x38` = az animálás-jelző.
+
+A kapcsolás (`0x009d7d5d`–`0x009d7dac`), a gomb `+0x359`-es lenyomott-jelzője
+szerint:
+
+- **lenyomva** → a változó a **`+0x2c`** (1. `%f`) értéket veszi fel; ha
+  `+0x34` még a **−1000** őrszem (`0x00cf4ce8`), előbb **elteszi a
+  változó AKKORI értékét** — ezt fogja visszaadni elengedéskor;
+- **elengedve** → a **`+0x30`** (2. `%f`); de ha az a −1000 őrszem, akkor
+  a `+0x34`-ben eltett **eredeti** érték jön vissza.
+
+⇒ **A második érték elhagyása azt jelenti: „engedéskor állítsd vissza
+oda, ahol volt".** Erre épül a keresősáv (`searchcontainer.tre:27`), ahol
+csak egyetlen érték áll.
+
+**Az animálás:** ha a jelző nem 0, a változó **0,4 másodperc** alatt
+mozog át (`0x009d7dc1` ág; az időtartam a `0x00cf4ce0`-as dupla pontosságú
+`0.4`, a `0x009a5210` által adott aktuális időhöz adva). `0` esetén ugrik.
+
+A záró két `%s` **további elemeket** nevez meg, amelyeket a mozgás
+együtt érint (`0x009da349` a 6. mezőre) — a szerkesztő előnézeti képe így
+nyúlik a fiókkal együtt.
+
+### 3. Mind a tizenegy felhasználás — jelentéssel
+
+| hely | változó | lenyomva | elengedve | animál | együtt mozog |
+|---|---|---|---|---|---|
+| `thumbui.tre:700` | `RIGHTDRAWEROFFSET` | **−280** | 0 | **igen** | `editpanel/previewimage`, `…image2` |
+| `editpanel.tre:1413` | `LEFTDRAWEROFFSET` | 0 | **−279** | **igen** | `editpanel/previewimage` |
+| `editpanel.tre:1404` | `editbackmargin` | 4 | 0 | nem | — |
+| `editpanel.tre:1405` | `previewx0` | 5 | 0 | nem | — |
+| `editpanel.tre:1406` | `previewx1` | −5 | 0 | nem | — |
+| `editpanel.tre:1407` | `previewy0` | 5 | 0 | nem | — |
+| `editpanel.tre:1408` | `previewy1` | −25 | 0 | nem | — |
+| `editpanel.tre:1409` | `movieparenty` | −39 | 0 | nem | — |
+| `panelroot.tre:59` | `tabdiv` | 29 | 0 | *(alap: igen)* | — |
+| `thumbui.tre:85` | `publishbottom` | −105 | −212 | *(alap: igen)* | — |
+| `searchcontainer.tre:27` | `searchtop` | 62 | *(−1000 = vissza az eredetire)* | *(alap: igen)* | — |
+
+**A `fullscreenswitcher` hat változót kapcsol egyszerre** (`editpanel.tre:1404–1409`,
+`Property setpressed 1`): a teljes képernyős mód nem külön ablak, hanem a
+margók **nullázása** — és mind a hat **animálás nélkül**, egyszerre ugrik.
+
+### 4. A két fiók iránya — mert a puszta szám félrevezet
+
+| | `.tre` bizonyíték | mit jelent |
+|---|---|---|
+| **jobb fiók** | `thumbui.tre:534` `XConstraint 0, 1, RIGHTDRAWEROFFSET`, a kapcsoló `Property setpressed 0` | 0 = **csukva** (nulla széles), −280 = **280 képpont széles, nyitva**; induláskor csukva |
+| **bal fiók (szerkesztő)** | `editpanel.tre:1228` `LEFTDRAWEROFFSET=0`, `:1421` a szomszéd `LEFTDRAWEROFFSET, 279`, a kapcsoló `Property setpressed 1` | 0 = **nyitva** (279 széles), −279 = **kicsúszva balra**; induláskor nyitva |
+
+⇒ Mindkettőnél a **lenyomott állapot = látszik a fiók**. A jobb fiók
+szélessége **280**, a bal **279** — a `.tre`-ből, nem becslésből.
+
+### 5. Eredeti / nálunk / teendő
+
+| | eredeti (mért) | nálunk (mért) | eltérés |
+|---|---|---|---|
+| jobb oldali panel | **EGY fiók, 280 képpont** | **négy külön hasáb**: Címkék 190, Helyek 320, Tulajdonságok 210, Emberek 200 (`Main.qml:1977/2014/2029/2048`) | ❌ szerkezet és méret is |
+| nyitás/csukás | **0,4 s animáció** | `visible` átbillentés, animáció nélkül | ❌ |
+| induló állapot | csukva (`setpressed 0`) | csukva (`activeDrawerTab: ""`, `Main.qml:100`) | ✅ |
+| megőrzés | **igen**, `RIGHTDRAWEROFFSET` (ld. a „MEGŐRZÖTT elrendezés-állapot" 3. pontját) | `utolsoFiokLap` (`Main.qml:143`) | eltérő tárolás, nem mérve, hogy túléli-e az újraindítást |
+
+Jegy: **#754** (a négy hasáb → egy fiók). A 0,4 másodperces animáció és a
+280-as szélesség ott, kommentben.
