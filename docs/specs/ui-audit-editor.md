@@ -2145,8 +2145,10 @@ a súgógombokat — nem törölte őket, csak elvette az ikonjukat/feliratukat.
 ## Az effekt-csempe ELŐNÉZETÉNEK betöltési lánca — meddig jutottunk (#2061)
 
 A kérdés: az eredeti az **alap** képen mutatja az effektet, vagy a
-**szerkesztési lánc tetején**? A lánc az alábbi pontig ki van mérve; a
-válasz **NINCS MEG**.
+**szerkesztési lánc tetején**? ✅ **MEGVÁLASZOLVA (2026-09-04): a LÁNC
+TETEJÉN.** A bizonyíték a tulajdonos hat képernyőképe (lentebb); a betöltési
+lánc alábbi mérése változatlanul érvényes — csak a leíró JELENTÉSE került a
+helyére.
 
 ### A betöltő és az EGYETLEN létrehozási helye
 
@@ -2198,22 +2200,62 @@ Visszaadja a `szerkesztőpanel + 0x324` mezőt. Ha `[panel+0x264] != 0`,
 (`0x00a67bfd`–`0x00a67c4e`). Ha `[panel+0x264] == 0`, a meglévőt adja
 vissza változatlanul.
 
-### ⛔ Ami NINCS MEG
+### ✅ A VÁLASZ: a lánc tetején — a tulajdonos képernyőképeiből
 
-Hogy a `[X+8]` / `[X+0xc]` pár **melyik képet** azonosítja: az eredeti
-(alap) fotót, vagy a szerkesztési lánc aktuális tetejét. Ehhez a
-`szerkesztőpanel + 0x324` objektumot kell azonosítani (mi az, ki írja), és
-a `+0x264` feltétel jelentését.
+**Forrás:** `research/#2061-effekt-latszik/` — hat teljes képernyős felvétel a
+windowsos Picasa 3-ból. *(A mappa a `.gitignore` miatt nem kerül a repóba.)*
+A sorozat **három független ELŐTTE/UTÁNA párt** tartalmaz, három KÜLÖNBÖZŐ
+effekt-fülön. A kapcsoló mindháromnál ugyanaz: alkalmazva van-e a
+**Fekete-fehér**. Ezt maga a felület kiírja — a visszavonás-gomb felirata a
+felvételen olvasható:
 
-**Bizalmi fok:** a lánc (osztály, egyetlen létrehozási hely, a leíró alakja
-a két nullával, a hozzáférő viselkedése) **megerősített** — közvetlen
-kiolvasás és kimerítő hívó-keresés. A jelentés **NINCS MÉRVE**; a „két
-nulla + az újraépítés az alap-kép mellett szól" olvasat **feltételes**, és
-ezért nem is állítjuk.
+| pár | fül | ELŐTTE (`Újra: Fekete-fehér` ⇒ NINCS alkalmazva) | UTÁNA (`Visszavonás: Fekete-fehér` ⇒ ALKALMAZVA) |
+|---|---|---|---|
+| 1. | 3. fül (Élesítés…Színátmenet) | a csempék **színesek** | ugyanazok **szürke alapon** mutatják a saját effektjüket |
+| 2. | 5. fül (Infravörös film…Kéttónusú) | Lomo-szerű / Orton-szerű / Poszterizálás / Áttűnés **színes** | ugyanezek **szürkék** |
+| 3. | 4. fül (Felpörgetés…Polaroid) | Lágyítás / Vignetta / Szegély / Polaroid **színes** | ugyanezek **szürkék** |
 
-> **Az OLCSÓBB út továbbra is a tulajdonosé** (a #2061 „A" változata): egy
-> képernyőkép a windowsos Picasából, ahol EGY jól látható effekt (pl.
-> Fekete-fehér) már alkalmazva van. Ha a többi csempe előnézete is
-> szürkeárnyalatos, a bélyegkép a **lánc tetején** áll; ha színes marad, az
-> **alap** képen. Ez egyetlen képpel eldönti azt, amihez a binárison át még
-> több kör kell.
+⇒ **A csempe-előnézet a szerkesztési lánc AKTUÁLIS tetejére alkalmazza a
+saját effektjét**, nem az alap fotóra.
+
+**Kontroll, ami erősíti:** azok a csempék, amelyek a világosságból SAJÁT
+színt állítanak elő — `Hőtérkép`, `Kéttónusú`, `Neon`, `Ceruzarajz` —
+**mindkét** állapotban ugyanolyanok maradnak. Pontosan ez várható, ha a
+bemenetük szürkévé válik: a színük a saját leképezésükből jön, nem a
+forrásból. Ha a csempék az ALAP képet mutatnák, a többi csempe sem
+változott volna.
+
+### ⛔ MEGDŐLT: a „két nulla az alap-kép mellett szól" olvasat
+
+Az előző kör a leíró két hard nullájából és a hozzáférő újraépítéséből
+**feltételesen** arra hajlott, hogy a bemenet az alap fotó — és helyesen
+nem állította. **Ez az olvasat megdőlt.** A `[X+8]` / `[X+0xc]` pár a
+szerkesztési lánc aktuális tetejét azonosítja; a `szerkesztőpanel + 0x324`
+tehát az ÉLŐ szerkesztési állapot leírója, nem az eredeti képé.
+
+### Mikor épül ÚJRA a csempesor — kimerítően
+
+Nem minden apró szerkesztői lépésnél. A csempeépítő `0x005d7c20`-nak a
+teljes `.text`-ben **pontosan két** `call rel32` hívója van:
+
+| hívás | tartalmazó függvény | mikor |
+|---|---|---|
+| `0x005d7a85` | `0x005d78d0` — a fül-tartalomépítő (`editpanel/tabpanel%d`, `editpanel/editcontrols`, **`editpanel/fxthumbs`**) | a fül (újra)építésekor |
+| `0x005e6771` | `0x005e6710` — a billentyűkezelő SHIFT-újraellenőrzése | a Shift le-/felengedésekor (#2141) |
+
+A fül-tartalomépítőnek magának **három** hívója van: `0x005d6b6f` (a
+szerkesztőpanel `0x005d59f0` fül-elágazása — `sub eax,1 / je` lánc, a
+csempés fülek ága), `0x005d7bd3` (`0x005d7b60`, `editpanel/tabpanel%d`) és
+`0x005f818e` (`0x005f8160`, `editpanel/movietab`).
+
+**A hívó-leltár TELJES**, mert közvetett hívás sem lehetséges: a
+`0x005d7c20` és a `0x005d78d0` cím **nyers, négy bájtos alakja NULLA
+alkalommal** fordul elő a fájl bármelyik szekciójában, tehát egyetlen
+függvénymutató-táblában (vtábla, ugrótábla) sincs benne.
+
+⇒ **Csúszka-húzás közben nincs csempe-újraépítés**: ahhoz harmadik hívási
+helyre volna szükség, és olyan nincs.
+
+*Bizonyítottsági fok: **megerősített** — a viselkedés a tulajdonos hat
+felvételéből (három független pár), a hívási helyek kimerítő `e8`-pásztázásból,
+a közvetett hívás kizárása nyers cím-kereséssel.*

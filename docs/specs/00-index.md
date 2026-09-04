@@ -21,7 +21,19 @@ kérdés).
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — 1 nyitott kérdés (a #2061)
 
-⭐ **2026-09-03 — az effekt-csempe előnézetének betöltési lánca kimérve a képforrás-leíróig (#2061), de a leíró JELENTÉSE nincs meg.** A `FilterGridItemLoaderJob` (RTTI `0x00c874ac`) konstruktorára (`0x0050e7b0`) a **teljes `.text`-ben pontosan egy** hívás mutat: `0x005d7e2b`, a csempeépítő `0x005d7c20`-on belül; a futtató (`0x0050e8d0`) az `editpanel/fxpreview%d` elembe tölt. A job egy **16 bájtos leírót** kap (`0x005d7e1f`), aminek az alakja **{0, 0, [X+8], [X+0xc]}** — az első két mező **hard nulla** (`0x005d7c93`, `0x005d7c97`) —, ahol `X` a `0x00a67be0` visszatérése, a **szerkesztőpanel + 0x324**. A hozzáférő `[panel+0x264] != 0` esetén **újraépíti nulláról** a leírót (`0x00a67bfd`–`0x00a67c4e`). **NINCS MÉRVE:** hogy a `[X+8]`/`[X+0xc]` pár az ALAP fotót vagy a szerkesztési lánc tetejét azonosítja; ehhez a `panel+0x324` típusát és íróit kell megtalálni. A kör NEM következtetett a két nullából. **Az olcsóbb út a tulajdonosé:** egy képernyőkép, amin egy jól látható effekt már alkalmazva van — ezért a jegy `felhasználóra-vár`. Jegy: **#2061**.
+⭐ **2026-09-04 — az effekt-csempe előnézete a szerkesztési lánc TETEJÉN áll (#2061, LEZÁRVA; `ui-audit-editor.md`).** A tulajdonos hat képernyőképe (`research/#2061-effekt-latszik/`, a `.gitignore` miatt nem a repóban) **három független ELŐTTE/UTÁNA párt** ad, három KÜLÖNBÖZŐ effekt-fülön; a kapcsoló mindháromnál a Fekete-fehér, és az állapotot a felület maga kiírja (`Újra: Fekete-fehér` vs. `Visszavonás: Fekete-fehér`). Alkalmazott B&W mellett **minden csempe alapja szürke**. ⭐ **Kontroll:** a saját színt előállító csempék (`Hőtérkép`, `Kéttónusú`, `Neon`, `Ceruzarajz`) mindkét állapotban azonosak — pont ez várható. ⛔ **MEGDŐLT** az előző kör feltételes olvasata („a leíró két hard nullája az ALAP kép mellett szól"): a `[X+8]`/`[X+0xc]` pár az ÉLŐ szerkesztési állapot, nem az eredeti kép. ⭐ **A csempesor újraépítése kimerítően:** a `0x005d7c20`-nak **két** `call rel32` hívója van (`0x005d7a85` = a fül-tartalomépítő `0x005d78d0` / `editpanel/fxthumbs`; `0x005e6771` = a billentyűkezelő SHIFT-újraellenőrzése), a fül-tartalomépítőnek **három** — és **közvetett hívás kizárva**: mindkét cím nyers négybájtos alakja **nulla** alkalommal fordul elő bármelyik szekcióban ⇒ csúszka-húzás közben NINCS újraépítés. ⭐ **Nálunk (mérve):** az `app/effect_thumbnails.py` az ALAP képen renderel (kimondott egyszerűsítés, #338) — tehát ez **mért eltérés**. A csere ára lemérve ezen a gépen: a **40** effekt (a modul kommentje még 36-ot ír) teljes újraszámolása egy 200 px-es forrásból **medián 54,5 ms**; a szálszám alig számít (1/2/4 szál: 56,7 / 53,3 / 59,0 ms), és a lánc alkalmazása a 200 px-es forrásra **0,51 ms**. Jegyek: **#2061** (lezárva), **#2273** (a megvalósítás).
+
+⭐ **2026-09-04 — NÉGY kék jelvény van, nem három: a `Színinvertálás` a 2.
+effekt-fülön is jelvényes (#2125, `filterdesc-registry.md`).** Ugyanazokból a
+felvételekből, fülenkénti bontásban: 1. fül **Szépia / Fekete-fehér /
+Melegítés**, 2. fül **Színinvertálás**, 3. fül **egy sem**. Az `Invert`
+`mode="effect"`, tehát a `mode`-ból levezetett lánc szerint nem lehetne
+jelvénye — és a jelvény **két különböző felvételen**, eltérő szerkesztési
+állapot mellett is látszik. ⛔ **MEGDŐLT** a korábbi „három jelvény, mind az
+1. fülön — a kódban nincs út a negyedikhez" állítás. ⛔ **NYITOTT:** ki írja
+még a `FilterDesc + 4`-et (a parser útja `0x008ff847`, a `mode`-ból)? A jegy
+**már nem a tulajdonosra vár** — gépi úton kutatható, `ready` +
+`bináris-kutatható`. Jegy: **#2125**.
 
 ### [picasa-menusor-csoportok.md](picasa-menusor-csoportok.md) — nincs nyitott kérdés
 

@@ -4797,14 +4797,18 @@ konkrét jelentése nincs feltárva.
 `greybalancelabel` és a `filllightlabel` ugyanitt, `m_fxlabel2` stílussal —
 tehát az `m_fxlabel2` **közös felirat-osztály**, nem effekt-specifikus.
 
-### NYITOTT (blokkolt): élő előnézet-e a `fxpreview`?
+### ~~NYITOTT (blokkolt): élő előnézet-e a `fxpreview`?~~ ✅ LEZÁRVA (2026-09-04)
 
-A `.tre` csak a szülő-gyerek viszonyt adja, a tartalmat nem; a `respack.yt`
-**nincs meg** ebben a checkoutban (kerestem, nincs `.yt` fájl); a
-`0x0050e8d0` (133 b) csak a `fxpreview%d` nevet formázza, és **nincs
-rögzített hívója** az xref-táblában. Az olcsó lánc itt kimerült.
+**Igen, élő előnézet — sőt a szerkesztési lánc AKTUÁLIS tetején.** A
+tulajdonos hat képernyőképe (`research/#2061-effekt-latszik/`, három
+független ELŐTTE/UTÁNA pár három effekt-fülön) eldöntötte: a 12 csempe a
+megnyitott fényképet mutatja effektenként, és amikor a képre Fekete-fehér
+kerül, **az összes csempe alapja is szürkévé válik**.
 
-**Amit eldöntene:** egy képernyőkép a windowsos Picasa **Effektusok** füléről.
-Ha a 12 csempe a **megnyitott fényképet** mutatja effektenként, akkor a mi
-statikus SVG-ikonjaink elvi eltérés; ha rajzolt ikonok, akkor a megoldásunk
-helyes. Jegy: **#1869**, `blocked` + `felhasználóra-vár`.
+A teljes levezetés, a csempe-újraépítés kimerítő hívó-leltárával együtt:
+`ui-audit-editor.md`, „Az effekt-csempe ELŐNÉZETÉNEK betöltési lánca".
+Jegyek: **#2061** (lezárva), **#2273** (a megvalósítás), **#1869**.
+
+*(Az itt korábban álló „a `respack.yt` nincs meg ebben a checkoutban"
+megjegyzés a kérdés eldöntéséhez már nem kell; a fenti bizonyíték nem
+erőforrás-alapú.)*
