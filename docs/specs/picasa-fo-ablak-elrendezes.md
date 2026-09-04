@@ -601,3 +601,135 @@ nagyítás-hármasa".
 
 Mind a négy kapcsoló — és a szerkesztő `fit`/`1to1` gombja is — **lenyomásra**
 sül el, nem felengedésre (`thumbui.tre` 258–281., `editpanel.tre` 1315./1322.).
+
+## A KÖNYVTÁR OSZTÓSÁVJA — `ytSplitterOffsetHandler`, 240-es alsó ÉS felső korlát, és hogy MIÉRT nem őrzi meg (2026-09-04, #2329)
+
+> **Bizonyítottság: megerősített.** Minden szám cím + kiolvasott érték. A
+> záró negatív eredmény kimerítő: a teljes PE-t végigpásztázza.
+>
+> Ez a szakasz a fenti „MEGŐRZÖTT elrendezés-állapot" 2. pontját folytatja:
+> ott az dőlt el, hogy a `HLISTDIV` **nem** az osztóvonal; itt az, hogy
+> **mi az**, hogyan viselkedik húzás közben, és hogy induláskor honnan jön.
+
+### 1. Az osztósáv KÉT elem, nem egy
+
+```
+thumbui.tre:512   thumbui/hlisthandle: thumbui/hlistsizer
+thumbui.tre:513                        m_centerY
+thumbui.tre:514                        m_alignL
+thumbui.tre:516   thumbui/hlistsizer:  thumbui/mainuipanel
+thumbui.tre:517                        XConstraint 0, 0, HLISTOFFSET2=240, -4
+thumbui.tre:518                        Handler hsplitoffset HLISTOFFSET2
+thumbui.tre:519                        YConstraint 0, 0, searchtop
+thumbui.tre:520                        YConstraint 1, 1, publishbottom
+```
+
+- **`hlistsizer`** — a húzható sáv. Bal széle a `HLISTOFFSET2` **−4**
+  képponton áll, tehát a fogási zóna 4 képponttal a határvonal ELŐTT
+  kezdődik. Függőlegesen a keresősor aljától (`searchtop`) a publikálósáv
+  tetejéig (`publishbottom`) ér.
+- **`hlisthandle`** — a sávon belüli fogantyú-rajz: **függőlegesen
+  középre** (`m_centerY`), **balra igazítva** (`m_alignL`).
+
+### 2. Mit mozgat egyszerre a húzás
+
+A `HLISTOFFSET2` **három további elem** vízszintes rögzítése is:
+
+| elem | `.tre` sor | mit köt hozzá |
+|---|---|---|
+| `thumbui/listdecrect` | `thumbui.tre:441–443` | a bal hasáb kerete (`XConstraint 1, 0, HLISTOFFSET2`) |
+| `thumbui/albumsback` | `thumbui.tre:506–508` | a rács háttere (`XConstraint 0, 0, HLISTOFFSET2`) |
+| `thumbui/searchgroup` | `thumbui.tre:558–561` | a keresőcsoport bal széle |
+
+⇒ Az osztósáv húzása **egyetlen változón át** mozgatja a hasáb keretét, a
+rácsot és a keresőcsoportot — nincs külön szinkronizálás.
+
+### 3. A kezelő osztálya és az alapérték
+
+| mi | érték | cím |
+|---|---|---|
+| kezelő neve a `.tre`-ben | `hsplitoffset` | sztring: `0x00c7fbd0` |
+| a név-visszaadó tonk | `mov eax, 0xc7fbd0 / ret` | `0x0040aa80` |
+| a beállító tábla sora | 20 bájtos rekord | `0x00c8072c`–`0x00c8073c` |
+| **gyártó függvény** | 0x1c bájtos objektum | **`0x009da130`** |
+| vtábla | 13 bejegyzés | `0x00cda7e8` |
+| RTTI típusnév | **`.?AUytSplitterOffsetHandler@@`** | `0x00d4734c` |
+| **az objektum `+0x18` mezője** | **`240.0`** (float) | a konstans: **`0x00cf48b0`**, betöltés: `0x009da166` |
+
+A **függőleges** osztó (`vsplitoffset`, gyártó `0x009da1b0`) **ugyanezt az
+osztályt és ugyanezt a `240.0` konstanst** használja (`0x009da1e7`); csak
+két bájt-jelzőben tér el (`+0x14`/`+0x15`: `1,1` vízszintesnél,
+`0,1` függőlegesnél).
+
+### 4. ⛔ A 240 nem csak alapérték — ez az ALSÓ KORLÁT, és a felső is belőle jön
+
+A húzást a vtábla eseménykezelője végzi (`0x009d9d80`, esemény-azonosító
+`0x1b`). A korlátozás két lépésben, `0x009d9df4`–`0x009d9e56`:
+
+```asm
+0x009d9df4  fld dword ptr [eax]        ; a JELENLEGI eltolás
+0x009d9df6  fld dword ptr [ebx+0x18]   ; 240.0
+0x009d9df9  fcompp                     ; 240 < jelenlegi ?
+0x009d9dfd  test ah, 0x41 / jne …      ; ha igen: nincs teendő
+0x009d9e06  fld dword ptr [ebx+0x18]   ; különben: 240.0 …
+0x009d9e0e  fstp dword ptr [edx]       ; … BEÍRÁS az eltolásba
+```
+
+```asm
+0x009d9e21  mov edx, [esp+0x28]
+0x009d9e25  sub edx, [esp+0x20]        ; a szülő téglalap SZÉLESSÉGE (jobb − bal)
+0x009d9e2d  fild dword ptr [esp+0x14]
+0x009d9e31  fsub dword ptr [ebx+0x18]  ; szélesség − 240
+0x009d9e34  fld dword ptr [eax]        ; a jelenlegi eltolás
+0x009d9e36  fcomp st(1)                ; jelenlegi > (szélesség − 240) ?
+0x009d9e50  fstp dword ptr [eax]       ; ha igen: BEÍRÁS (szélesség − 240)
+```
+
+⇒ **A bal hasáb szélessége `240` és `(a főpanel szélessége − 240)` közé
+van szorítva** — ugyanaz a konstans mindkét oldalon. Tehát:
+
+- **soha nem lehet keskenyebb 240 képpontnál**;
+- a jobb oldal (a rács) sem szorítható 240 alá;
+- a felső korlát **nem fix szám**, hanem az ablak méretével együtt mozog.
+
+A téglalapot a szülő panel adja (`0x009d9dc5`, a szülő 0x30-as
+vtábla-bejegyzése); ha az eltolás a húzás végén nem változott, a kezelő
+`0x009d9e72`-nél jelzi a „nincs változás" ágat.
+
+### 5. ⛔ KIMERÍTŐ NEGATÍV: az osztósáv állása NEM őrződik meg
+
+A `HLISTOFFSET2` **nem szerepel a bináris egyetlen sztringjében sem**,
+tehát semmilyen kód nem tudja néven olvasni vagy kiírni:
+
+| név | előfordul a PE-ben? | hol |
+|---|---|---|
+| `HLISTOFFSET` (bármely alak) | **0** | csak `thumbui.tre` (5 sor) |
+| `RIGHTDRAWEROFFSET` | 1 | `0x00c7fe08` |
+| `LEFTDRAWEROFFSET` | 1 | `0x00c7fe50` |
+| `HLISTDIV` | 1 | `0x00c8e67c` (az elsőindulási maradék, ld. fent) |
+| `hsplitoffset` | 1 | `0x00c7fbd0` — és **pontosan egy** kódhivatkozás rá: a saját név-visszaadója, `0x0040aa81` |
+
+Módszer: a teljes PE nyers pásztázása a nevekre ÉS a sztringcímek
+mutató-előfordulásaira, szekciónkénti cím-visszafejtéssel; valamint a
+`string_xrefs` index. Ez ugyanaz az eljárás, amivel a `HLISTDIV`
+negatívja készült.
+
+⇒ **A fiókok eltolása (`RIGHTDRAWEROFFSET`, `LEFTDRAWEROFFSET`) MEGŐRZŐDIK**
+— ezeket a `0x0040bf70` induló függvény név szerint olvassa (ld. a fenti
+szakasz 3. pontját) —, **a könyvtár osztósávjáé viszont NEM.** Az eredeti
+Picasa minden indításkor **240 képponton** kezdi.
+
+### 6. Eredeti / nálunk / teendő
+
+| | eredeti (mért) | nálunk (mért) | eltérés |
+|---|---|---|---|
+| alapértelmezett szélesség | **240** (`0x00cf48b0`) | **240** (`controller.py:87`) | ✅ egyezik |
+| **legkisebb** szélesség | **240** (`0x009d9df6`) | **160** (`controller.py:88`) | ❌ 80 képponttal keskenyebbre engedjük |
+| **legnagyobb** szélesség | **panelszélesség − 240** (`0x009d9e31`) | **600** rögzítve (`controller.py:89`) | ❌ fix szám az ablakfüggő helyett |
+| fogási zóna | a határvonal **−4** képponttól (`thumbui.tre:517`) | a `SplitView` alapértelmezett fogantyúja | nem mérve |
+| megőrzés újraindításkor | **nincs** (5. pont) | **van**: `view/folderPaneWidth` (`controller.py:524`) | tudatos eltérés |
+
+**Ajánlás:** a megőrzést **tartsuk meg** (a #322 kifejezetten ezt kérte, és
+a felhasználónak kényelmesebb), a **korlátokat viszont igazítsuk** az
+eredetihez: alsó korlát 240, felső korlát a rendelkezésre álló szélesség
+mínusz 240. Jegy: #2329.
