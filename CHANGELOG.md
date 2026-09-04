@@ -16,8 +16,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   mostantól beszámítja; a nyers képpontfolyam érintetlen marad, így az
   RLE-visszakódolás továbbra is bájtra egyezik (1365/1365).
 
-### Javítva
-
 - Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
   (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
   használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a
