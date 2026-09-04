@@ -9,6 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A Picasa-adatbázis importja átveszi a kulcsszavakat és a helyadatot
+  (#2336). Eddig mindkettő némán elveszett: a tulajdonos adatbázisában ez
+  342 kép kulcsszavait és 219 kép földrajzi helyét érinti. A geotag nélküli
+  képek nem kapnak hamis 0,0 koordinátát.
+
+### Javítva
+
 - A Picasa-adatbázis importja átveszi a csillagozást (#2335). Eddig minden
   kép csillagozatlanként jött be: a csillagokat a Picasa nem
   adatbázis-oszlopban tárolja, hanem a `db3/starlist.txt` listában, amit

@@ -223,3 +223,55 @@ class TestStarlist2335:
         elso, masodik = iter_photo_records(tmp_path, remapper)
         assert elso.star is True, "a .pmp-ből jövő csillag elveszett"
         assert masodik.star is True, "a listából jövő csillag elveszett"
+
+
+class TestKulcsszavakEsHely2336:
+    """#2336: a `tags`, `lat` és `long` oszlopokat is behozzuk.
+
+    A tulajdonos valódi adatmappáján megszámolva: **342** kép kulcsszavai
+    és **219** kép helyadatai vesztek el némán, mert ezek az oszlopok nem
+    szerepeltek a `_COLUMNS` listán.
+
+    A mezőtípusok mérve: `tags` = `0x06` (sztring), `lat`/`long` és
+    `tagdate` = `0x02` (double).
+    """
+
+    def _geo_es_tag(self, tmp_path) -> None:
+        _write_db3(tmp_path)
+        (tmp_path / "imagedata_tags").with_suffix(".pmp").write_bytes(
+            build_pmp_column(0x6, ["", "tópart,nyaralás", "", "", "", ""])
+        )
+        (tmp_path / "imagedata_lat.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 47.4979, 0.0, 0.0, 0.0, 0.0])
+        )
+        (tmp_path / "imagedata_long.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 19.0402, 0.0, 0.0, 0.0, 0.0])
+        )
+
+    def test_a_kulcsszavak_atjonnek(self, tmp_path, remapper):
+        self._geo_es_tag(tmp_path)
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.tags == ("tópart", "nyaralás")
+        assert masodik.tags == ()
+
+    def test_a_helyadat_atjon(self, tmp_path, remapper):
+        self._geo_es_tag(tmp_path)
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.latitude == pytest.approx(47.4979)
+        assert elso.longitude == pytest.approx(19.0402)
+        assert masodik.latitude is None and masodik.longitude is None
+
+    def test_a_nulla_koordinata_NEM_hely(self, tmp_path, remapper):
+        """A `0.0` a hiányzó helyadat alakja az oszlopban (a Picasa nem
+        hagy lyukat) — geotag nélküli képre nem adhatunk Null-szigetet."""
+        self._geo_es_tag(tmp_path)
+        masodik = iter_photo_records(tmp_path, remapper)[1]
+        assert masodik.latitude is None
+
+    def test_az_oszlopok_HIANYA_nem_dol_be(self, tmp_path, remapper):
+        """Régebbi adatmappában nincs `tags`/`lat`/`long` — a részleges
+        import elve szerint ez nem hiba."""
+        _write_db3(tmp_path)
+        elso = iter_photo_records(tmp_path, remapper)[0]
+        assert elso.tags == ()
+        assert elso.latitude is None and elso.longitude is None
