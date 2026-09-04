@@ -374,7 +374,25 @@ Column {
         // (`test_also_sav_elrendezes_1420.py`) ÉLŐBEN visszaméri, hogy a
         // minimumra állított ablakban tényleg nem lóg ki semmi — ha egy
         // betűfüggő elem (a − / + jelek) mégis megnőne, ott bukik el.
-        readonly property real requiredWidth: windowWidthFor(actionCellCount)
+        //: #2305: a FELSŐ sor igénye. A sorrendcsere (csúszka -> négy
+        //: kapcsoló) után a felső sor lett a szűk keresztmetszet: a
+        //: kapcsolók 240 pontja a csúszka MÖGÜL a csúszka ELÉ került, és a
+        //: csillag/forgatás csoport belelógott a csúszkába a 800 pontos
+        //: minimumon (a #1367 őre ezt el is kapta).
+        //:
+        //: A tényleges szélességeket használjuk, nem beégetett számot: a
+        //: csúszka − / + jelei BETŰFÜGGŐK (#1420), tehát a platformonként
+        //: eltérő igényt csak a mért érték adja vissza. Hurok nincs: egyik
+        //: csoport szélessége sem függ az ablakétól.
+        readonly property real felsoSorIgenye: Math.ceil(
+            (trayMainBar.rightMargin
+             + trayStarGroup.width + 12
+             + trayZoomGroup.width + 12
+             + trayMetadataGroup.width
+             + trayMainBar.roundingReserve)
+            / (1 - trayMainBar.splitRatio))
+        readonly property real requiredWidth: Math.max(
+            windowWidthFor(actionCellCount), felsoSorIgenye)
         // #1345 ÚJRAMÉRVE (#1420): a két csoportelválasztó két TELJES
         // cellát tesz a sorba; a küszöb az a szélesség, ahol ez a többlet
         // is elfér. A korábbi `compactBudget = 1120` a RÉGI, egysoros
