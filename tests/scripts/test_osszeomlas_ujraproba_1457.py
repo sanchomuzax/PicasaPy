@@ -84,10 +84,17 @@ class TestAzElszamolasNemNema:
         """Sorrend: előbb az összeomlás-lista, aztán a bukások.
 
         Fordítva a bukások zaja elnyelné — a CI-naplót a végéről olvassuk."""
+        # #2264: a bukás-jelentés külön függvénybe került
+        # (`jelentsd_a_bukasokat`), hogy olcsón mérhető legyen. Ezért a
+        # sorrendet a `main()` TÖRZSÉN belül nézzük — a nyers forrásbeli
+        # pozíció a függvény-kiemeléstől elcsúszna, pedig a kimenet
+        # sorrendje változatlan.
         forras = (_ROOT / "scripts" / "run_tests.py").read_text(encoding="utf-8")
-        lista = forras.find("ELSŐRE ÖSSZEOMLOTT, MÁSODJÁRA ZÖLD")
-        bukasok = forras.find('print("\\nHIBÁS RÉSZFUTÁSOK:"')
-        assert lista != -1 and bukasok != -1
+        torzs = forras[forras.index("def main("):]
+        lista = torzs.find("ELSŐRE ÖSSZEOMLOTT, MÁSODJÁRA ZÖLD")
+        bukasok = torzs.find("jelentsd_a_bukasokat(")
+        assert lista != -1, "a `main()`-ből eltűnt az összeomlás-lista"
+        assert bukasok != -1, "a `main()`-ből eltűnt a bukás-jelentés hívása"
         assert lista < bukasok, (
             "az összeomlás-lista a bukás-jelentés UTÁN áll — a napló végén "
             "a bukások zaja alá kerülne"
