@@ -87,8 +87,9 @@ def is_valid_folder_date(date_iso: str) -> bool:
     """Érvényes-e a `date_iso` ISO 8601 (év-hónap-nap) alakban — a hívó
     (controller-slot, QML-dialógus) ezzel véd a hibás formátum ellen.
 
-    ⚠️ Ez az ÍRÁS kapuja: mi ISO-ban írunk. Az OLVASÁS ennél megengedőbb
-    (`read_folder_date_override`), mert a valódi Picasa Variant-időt ír.
+    ⚠️ Ez az ÍRÁS kapuja: a BEMENET ISO. A kiírt alak viszont **OLE
+    Variant** (#2353) — a Picasa `atof`-fal olvas, és az ISO-ból
+    1905-öt csinálna. Az OLVASÁS mindkét alakot érti.
     """
     return _ervenyes_iso(date_iso.strip())
 
@@ -111,9 +112,44 @@ def read_folder_date_override(document: IniDocument) -> str | None:
     return _variant_datum(nyers)
 
 
+#: A `%f` alapértelmezése hat tizedes — a Picasa-írta sor pontosan ilyen
+#: (`date=46269.390486`), és az írója is `"%f"`-fel formáz (`0x00710332`).
+_VARIANT_TIZEDES = 6
+
+
+def variant_ertek(date_iso: str) -> str:
+    """ISO nap -> a `.picasa.ini`-be írandó OLE Variant-alak (#2353).
+
+    ⚠️ **ISO-t nem szabad kiírni.** A Picasa a `[Picasa] date=` értékét
+    `atof`-fal olvassa (`0x0044248d` → a `0x00c080d7` CRT-hívás),
+    hibajelzés NÉLKÜL: a `date=2019-07-04` sorból nála **`2019.0`** lesz,
+    ami Variant-napként **1905-07-08**. A mappa 1905-be kerülne a bal
+    hasáb évcsoportjában — és mivel a felhasználó ugyanazt a mappát nyitja
+    meg mindkét programban (#2304), ez néma adatromlás.
+
+    A nap egész, tehát a törtrész (a napon belüli idő) nulla; a hat
+    tizedes a `%f` alakját tartja.
+    """
+    nap = datetime.strptime(date_iso, "%Y-%m-%d")
+    return f"{(nap - _VARIANT_ALAPPONT).days:.{_VARIANT_TIZEDES}f}"
+
+
 def with_folder_date_override(document: IniDocument, date_iso: str) -> IniDocument:
-    """Új dokumentum a mappa-dátum felülírásával (`[Picasa]` `date=`)."""
-    return document.with_value(_FOLDER_SECTION, _FOLDER_DATE_KEY, date_iso)
+    """Új dokumentum a mappa-dátum felülírásával (`[Picasa]` `date=`).
+
+    A kiírt alak **OLE Variant** (ld. `variant_ertek`), nem ISO — a
+    bemenet viszont továbbra is ISO, mert a hívók (controller-slot,
+    QML-dialógus) azzal dolgoznak.
+
+    Üres vagy érvénytelen bemenetnél a kulcs **kimarad**: az eredeti író
+    is kihagyja a sort, ha az érték `0.0` (`0x0071031e`–`0x0071032a`).
+    """
+    tisztitott = date_iso.strip()
+    if not _ervenyes_iso(tisztitott):
+        return document.with_removed(_FOLDER_SECTION, _FOLDER_DATE_KEY)
+    return document.with_value(
+        _FOLDER_SECTION, _FOLDER_DATE_KEY, variant_ertek(tisztitott)
+    )
 
 
 def without_folder_date_override(document: IniDocument) -> IniDocument:
