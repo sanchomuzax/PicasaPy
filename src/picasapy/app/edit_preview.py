@@ -89,6 +89,9 @@ class TextOverlaySpec:
     #: régi hívók kimenete változatlan marad.
     font_family: str = DEFAULT_FAMILY
     font_scale: float = 1.0
+    #: #2287: a választott listaérték (8…96); ebből és a kép magasságából
+    #: számol a rajzoló — a `font_scale` csak tartalék.
+    font_size_pt: float | None = None
     bold: bool = False
     italic: bool = False
     underline: bool = False
@@ -275,6 +278,7 @@ class EditPreviewProvider(QQuickImageProvider):
                 opacity=text.opacity,
                 font_family=text.font_family,
                 font_scale=text.font_scale,
+                font_size_pt=text.font_size_pt,
                 bold=text.bold,
                 italic=text.italic,
                 underline=text.underline,

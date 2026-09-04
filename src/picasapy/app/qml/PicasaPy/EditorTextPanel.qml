@@ -100,23 +100,18 @@ ColumnLayout {
             currentIndex: Math.max(0, panel.fontFamilyKeys.indexOf(panel.textFontFamily))
             onActivated: panel.textFontFamilyEdited(panel.fontFamilyKeys[currentIndex])
         }
-        SpinBox {
+        // #2287: az eredetiben ez egy 16 elemű, ABSZOLÚT egész-lista
+        // (`sizelist`, 48 × 21-es legördülő), nem százalék. A lista a
+        // `.data`-ból kiolvasva; a panel `"%d"`-vel írja ki az elemeket.
+        ComboBox {
             objectName: "textFontSizeBox"
-            //: a betűméret a rajzoló méret-szorzójának SZÁZALÉKA
-            from: 20; to: 400; stepSize: 10
-            // A `sizelist` az eredetiben 48 × 21-es LEGÖRDÜLŐ; nálunk
-            // léptethető mező, aminek a két nyílgombbal együtt ennél több
-            // kell. A 90 az implicit 120 helyett — a panel ettől még nem
-            // lesz keskenyebb (a szöveg-panel túlcsordulása régebbi és más
-            // okú, ld. a jelentést), de ez a rész már a mérethez igazodik.
+            model: panel.fontSizeChoices
+            currentIndex: Math.max(0, panel.fontSizeChoices.indexOf(panel.textFontSize))
+            onActivated: panel.textFontSizeEdited(panel.fontSizeChoices[currentIndex])
             Layout.fillWidth: false
             Layout.preferredWidth: 90
             Layout.preferredHeight: 21
-            topPadding: 0
-            bottomPadding: 0
             font.pixelSize: Theme.fontSize - 1
-            value: Math.round(panel.textFontScale * 100)
-            onValueModified: panel.textFontScaleEdited(value / 100)
         }
     }
     RowLayout {

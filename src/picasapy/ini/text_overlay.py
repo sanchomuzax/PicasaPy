@@ -73,15 +73,56 @@ _LEGACY_COORD_SCALE = 10000
 
 #: A geometria `méret` mezőjének alapértéke, ha nincs honnan venni (örökölt
 #: alak migrálása). A korpusz értékei 0.059–0.112 között vannak.
-DEFAULT_TEXT_SIZE = 0.1
+#: #2287: a méretválasztó 16 abszolút értéke, a `.data`-ból kiolvasva
+#: (két azonos példány: `0x00c7dab8` és `0x00c7e4f0`, 16 × `int32`). Az
+#: eredetiben NINCS százalék: a panel egészeket ír ki (`"%d"`,
+#: `0x0062dfde`), és a listaelem a betű abszolút mérete.
+BETUMERETEK: tuple[int, ...] = (
+    8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
+)
+
+#: A `.picasa.ini`-be írt szám és a listaérték közti osztó. Az átváltás a
+#: `0x005b35a0`-ból, utasításról utasításra: `érték × (magasság ÷ 360)`;
+#: a `360.0` a `0xcf3d50`-en. Az író `méret ÷ magasság`-ot tárol (#2271),
+#: tehát a magasság kiesik: **`tárolt = érték ÷ 360`**.
+_MERET_OSZTO = 360.0
+
+
+def tarolt_meret(ertek: int | float) -> float:
+    """A listaértékből a `.picasa.ini`-be írandó szám."""
+    return float(ertek) / _MERET_OSZTO
+
+
+def meret_taroltbol(tarolt: float) -> int:
+    """A tárolt számból a LEGKÖZELEBBI listaérték.
+
+    A fogantyúval átméretezett feliratok nem egész listaértéket adnak
+    (a tulajdonos mintáiból: 18,678 · 40,449 · 37,667), a választónak
+    viszont akkor is mutatnia kell valamit — a legközelebbit adjuk.
+    """
+    nyers = float(tarolt) * _MERET_OSZTO
+    return min(BETUMERETEK, key=lambda e: abs(e - nyers))
+
+
+#: Az alapérték az eredetiben **12** (a panel `+0x2cc` mezőjének kezdő
+#: értéke). A korábbi `0,1` nem volt előállítható a választóval — bár
+#: 0,1 × 360 = 36 véletlenül szerepel a listában.
+DEFAULT_TEXT_SIZE = 12 / 360.0
 
 
 @dataclass(frozen=True)
 class TextGeometry:
     """A felirat helye és mérete — mind a négy mező a képre normalizált.
 
-    `x`/`y`: [0..1] pozíció. `size`: [0..1] arány a kép RÖVIDEBB oldalához.
-    `rotation`: **radián** (nem fok).
+    `x`/`y`: [0..1] pozíció. `rotation`: **radián** (nem fok).
+
+    `size`: a betűméret a kép **MAGASSÁGÁHOZ** normálva — nem a rövidebb
+    oldalhoz, ahogy korábban ez a szöveg állította. Mérve (#2271): egy
+    896 × 1344-es mintán `0,061111 × 1344 = 82,13`, a mért 82 képpont
+    mellett; a rövidebb oldallal 54,8 jönne ki.
+
+    A választható értékek a `BETUMERETEK` listából valók, és a tárolt szám
+    a listaérték **360-ad része** (#2287).
     """
 
     x: float

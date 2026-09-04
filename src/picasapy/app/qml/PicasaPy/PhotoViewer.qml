@@ -350,7 +350,8 @@ Rectangle {
         // #450 (2. lépcső): tipográfia — betűcsalád, méret, B/I/U, igazítás
         editorPanel.fontFamilyCatalogue = editController.textFontFamilies
         editorPanel.textFontFamily = editController.textFontFamily
-        editorPanel.textFontScale = editController.textFontScale
+        editorPanel.textFontSize = editController.textFontSize
+        editorPanel.fontSizeChoices = editController.fontSizeChoices
         editorPanel.textBold = editController.textBold
         editorPanel.textItalic = editController.textItalic
         editorPanel.textUnderline = editController.textUnderline
@@ -1052,8 +1053,8 @@ Rectangle {
                     // mintájára), itt csak a jelzések mennek vissza
                     onTextFontFamilyEdited: (key) =>
                         editController.setTextFontFamily(key)
-                    onTextFontScaleEdited: (value) =>
-                        editController.setTextFontScale(value)
+                    onTextFontSizeEdited: (value) =>
+                        editController.setTextFontSize(value)
                     onTextBoldEdited: (value) => editController.setTextBold(value)
                     onTextItalicEdited: (value) => editController.setTextItalic(value)
                     onTextUnderlineEdited: (value) =>
