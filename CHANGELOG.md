@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A Picasa-adatbázis importja átveszi a csillagozást (#2335). Eddig minden
+  kép csillagozatlanként jött be: a csillagokat a Picasa nem
+  adatbázis-oszlopban tárolja, hanem a `db3/starlist.txt` listában, amit
+  az import nem olvasott. A tulajdonos adatbázisában ez 50 csillagozott
+  képet érint.
+
+### Javítva
+
 - A bal hasáb osztósávja az eredeti korlátait követi (#2329): legkisebb
   szélessége 240 (eddig 160-ig lehetett húzni, 80 képponttal keskenyebbre,
   mint amit az eredeti valaha megenged), a legnagyobb pedig az ablakhoz

@@ -164,3 +164,62 @@ class TestIterPhotoRecords:
         first, _second = iter_photo_records(tmp_path, remapper)
         assert first.faces == ()
         assert first.caption == "Tópart"  # a többi adat megmarad
+
+
+class TestStarlist2335:
+    """#2335: a csillagozás a `db3/starlist.txt`-ben él, NEM `.pmp`-ben.
+
+    A tulajdonos 2026-08-22-i valódi adatmappájában **65** `.pmp` oszlop
+    van, és **nincs köztük `imagedata_star.pmp`** — a `starlist.txt`
+    viszont **50** csillagozott képet sorol fel. Az importunk ebből nullát
+    hozott át: a hiányzó oszlopra a tábla `None`-t ad, a `bool(None)` pedig
+    `False`.
+
+    ⚠️ **Ezért nem fogta meg a régi próbasor:** a `_db3` segéd MAGA hozza
+    létre az `imagedata_star.pmp`-t, tehát olyan adatbázist ír le,
+    amilyen a valóságban nincs. Ez az osztály a VALÓDI alakot próbálja:
+    `starlist.txt`, `star.pmp` nélkül.
+    """
+
+    def _valodi_alak(self, tmp_path) -> int:
+        """A `_write_db3` készlete, de a `star.pmp` TÖRÖLVE, helyette lista."""
+        count = _write_db3(tmp_path)
+        (tmp_path / "imagedata_star.pmp").unlink()
+        # CRLF sorvégek és windowsos abszolút út — ahogy a valódi fájlban
+        (tmp_path / "starlist.txt").write_bytes(
+            b"C:\\Users\\anna\\Pictures\\IMG_0002.jpg\r\n"
+        )
+        return count
+
+    def test_a_starlist_adja_a_csillagot(self, tmp_path, remapper):
+        self._valodi_alak(tmp_path)
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.local_path.endswith("IMG_0001.jpg")
+        assert masodik.local_path.endswith("IMG_0002.jpg")
+        assert masodik.star is True, "a starlist.txt-ben szereplő kép nem csillagos"
+        assert elso.star is False, "a listában NEM szereplő kép csillagot kapott"
+
+    def test_starlist_nelkul_sem_dol_be(self, tmp_path, remapper):
+        """Hiányzó lista és hiányzó oszlop: minden csillagozatlan, hiba
+        nélkül — a részleges import elve."""
+        _write_db3(tmp_path)
+        (tmp_path / "imagedata_star.pmp").unlink()
+        assert all(r.star is False for r in iter_photo_records(tmp_path, remapper))
+
+    def test_a_regi_star_oszlop_TOVABBRA_IS_szamit(self, tmp_path, remapper):
+        """VAGY kapcsolat, nem helyettesítés — a régebbi adatbázisok sem
+        sérülhetnek."""
+        _write_db3(tmp_path)  # a star.pmp-ben az IMG_0001 csillagos
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.star is True
+        assert masodik.star is False
+
+    def test_a_ketto_EGYUTT_is_mukodik(self, tmp_path, remapper):
+        """Ha mindkettő van, a két forrás uniója számít."""
+        _write_db3(tmp_path)
+        (tmp_path / "starlist.txt").write_bytes(
+            b"C:\\Users\\anna\\Pictures\\IMG_0002.jpg\r\n"
+        )
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.star is True, "a .pmp-ből jövő csillag elveszett"
+        assert masodik.star is True, "a listából jövő csillag elveszett"

@@ -21,6 +21,14 @@ from .thumbindex import read_thumb_index, resolve_path
 # az importban hasznosított imagedata-oszlopok (mind opcionális/sparse)
 _COLUMNS = ("caption", "rotate", "star", "filters", "crop64", "deferredregion")
 
+#: #2335: a csillagozás VALÓDI helye. A tulajdonos 2026-08-22-i
+#: adatmappájában 65 `.pmp` oszlop van, és **nincs köztük**
+#: `imagedata_star.pmp` — a csillagozott képeket ez a sima szöveges lista
+#: sorolja fel (soronként egy windowsos abszolút útvonal, CRLF sorvégekkel;
+#: ott 50 kép). Az `imagedata_star.pmp` oszlopot NEM váltja ki: a kettő
+#: UNIÓJA számít, hogy a régebbi adatbázisok se sérüljenek.
+_STARLIST_NAME = "starlist.txt"
+
 
 @dataclass(frozen=True)
 class PhotoRecord:
@@ -56,6 +64,7 @@ def iter_photo_records(
     index_path = _find_thumb_index(db3_dir)
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
+    csillagos = _read_starlist(db3_dir)
 
     records = []
     for entry in entries:
@@ -79,7 +88,11 @@ def iter_photo_records(
                 row=entry.index,
                 caption=table.value("caption", entry.index) or None,
                 rotate=table.value("rotate", entry.index),
-                star=bool(table.value("star", entry.index)),
+                # #2335: a két forrás UNIÓJA — a lista a valódi
+                # adatbázisokban az EGYETLEN forrás, az oszlop a
+                # régebbiekben.
+                star=bool(table.value("star", entry.index))
+                or _normalizal(windows_path) in csillagos,
                 filters=table.value("filters", entry.index) or None,
                 crop64=table.value("crop64", entry.index),
                 faces=faces,
@@ -124,3 +137,30 @@ def _find_thumb_index(db3_dir: Path) -> Path:
         "indítsa el az eredeti Picasát azon a gépen, hogy újraépítse az "
         "adatbázist, majd próbálja meg újra az importot."
     )
+
+
+def _normalizal(windows_path: str) -> str:
+    """Összehasonlítható alak: a Windows az útvonalakat kis-nagybetűre
+    érzéketlenül kezeli, és a `starlist.txt` sorai a `thumbindex`-beliektől
+    eltérő betűzéssel is állhatnak."""
+    return windows_path.replace("/", "\\").rstrip("\\").casefold()
+
+
+def _read_starlist(db3_dir: Path) -> frozenset[str]:
+    """A `starlist.txt` sorai normalizált alakban; üres halmaz, ha nincs.
+
+    A hiány NEM hiba: régebbi adatmappában nincs ilyen fájl, és a
+    részleges import elve szerint egy olvashatatlan lista sem dönti be az
+    importot — ilyenkor a csillagozás az `imagedata_star.pmp`-ből jön (vagy
+    marad üres).
+
+    A fájl kódolása nincs deklarálva; a `latin-1` egyetlen bájtsorra sem
+    dob hibát, és a normalizálás úgyis csak összehasonlításra kell.
+    """
+    utvonal = db3_dir / _STARLIST_NAME
+    try:
+        nyers = utvonal.read_bytes()
+    except OSError:
+        return frozenset()
+    sorok = nyers.decode("latin-1").splitlines()
+    return frozenset(_normalizal(sor.strip()) for sor in sorok if sor.strip())
