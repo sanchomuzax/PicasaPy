@@ -2327,3 +2327,116 @@ helyre volna szükség, és olyan nincs.
 *Bizonyítottsági fok: **megerősített** — a viselkedés a tulajdonos hat
 felvételéből (három független pár), a hívási helyek kimerítő `e8`-pásztázásból,
 a közvetett hívás kizárása nyers cím-kereséssel.*
+
+---
+
+## A szerkesztő NAGYÍTÁS-HÁRMASA — `fit` · `1to1` · `inbetweenzoom` (2026-09-04, #2305)
+
+> **Bizonyítottság: megerősített** az elemnevekre, a geometriára, a
+> `.tre`-kényszerekre, a buboréksúgókra és a kattintás-műveletre (kiolvasott
+> lebegőpontos konstansok); **erős** a rádiócsoport-értelmezésre (a
+> `buttcontainer` típus + a `m_hidden` harmadik tag + a háromágú
+> állapotválasztó együtt, de a keretrendszer `buttcontainer`-szemantikáját
+> külön nem mértem).
+
+### Mi ez, és melyik nézetben
+
+Három elem a `editpanel/zoombuttcontainer` alatt, ami maga
+`editpanel/editbase` **jobb alsó** sarkához kötött (`editpanel.tre:1324`).
+A geometria a `respack.yt` rétegfejléceiből: `respack.yt:829610`
+(`zoombuttcontainer`), `respack.yt:829949` (`fit`), `respack.yt:829644`
+(`1to1`), `respack.yt:829627` (`inbetweenzoom`).
+
+| elem | smink | geometria (x, y) | `.tre` |
+|---|---|---|---|
+| `editpanel/fit` | `globalbuttons/b38l_n/_p/_h` (bal szegmens) | x **286…323** (37), y **449…471** (22) | `m_offsetLT`, `Property mousedown 1` |
+| `editpanel/1to1` | `globalbuttons/b38r_n/_p/_h` (jobb szegmens) | x **323…360** (37), y 449…471 (22) | `m_offsetLT`, `Property mousedown 1` |
+| `editpanel/inbetweenzoom` | **nincs smink** | x 322…324, y 455…457 (**2 × 2**) | **`m_hidden`** |
+| `editpanel/zoombuttcontainer` | — | x 286…360 (74), y 449…471 | `m_offsetRB` az `editbase`-en |
+
+Az ikonok: `editpanel/fit_icon` x 298…312 (14 × 12), `editpanel/1to1_icon`
+x 332…349 (17 × 12) — mindkettő a saját gombján belül középre kényszerítve.
+
+Utánuk, ugyanabban a sávban: `editpanel/zoomup_icon` x 368…392 (a nagyító) és
+`editpanel/zoomslider_container` x 399…526 (a csúszka).
+
+⇒ Az `fit` és a `1to1` egy **összeragasztott kétszegmenses gombpár** (bal +
+jobb szegmens, 37-37 képpont), a csúszkától **balra**.
+
+### ⛔ Az `inbetweenzoom` SOSEM LÁTSZIK — negatív eredmény
+
+A `.tre` `m_hidden`-nek deklarálja, és a rétege 2 × 2 képpont. **Nem
+megépítendő vezérlő**: kizárólag a rádiócsoport „egyik sem" tagja, hogy az
+állapotválasztónak legyen hova mutatnia. Aki ikont keres hozzá, zsákutcába
+megy.
+
+### Buboréksúgók
+
+Forrás: `editpaneltext.tre:29` és `editpaneltext.tre:32`; a rétegek
+`respack.yt:829949` (`fit`) és `respack.yt:829644` (`1to1`).
+
+| elem | angol (`editpaneltext.tre:29`, `:32`) | hivatalos magyar (`panel-feliratok-hu.tsv` 4919–4920) |
+|---|---|---|
+| `editpanel/fit` | Fit Photo inside viewing area | **Beillesztheti a fotót a megjelenítési területbe** |
+| `editpanel/1to1` | Display Photo at actual size | **Fotó megjelenítése tényleges méretben** |
+
+### MIT CSINÁL — a kattintás művelete, kiolvasott konstansokkal
+
+Az elemnév-alapú kezelő `FUN_005d59f0` (7307 b) mindkét gombra ugyanazt a
+függvényt hívja, csak más értékkel:
+
+| gomb | cím | utasítás | átadott érték |
+|---|---|---|---|
+| `editpanel/fit` | `0x005d5ccc` | `fldz` | **0.0f** |
+| `editpanel/1to1` | `0x005d5d45` | `fld dword ptr [0xc7dafc]` | **0.5f** |
+
+Mindkettő: `push 1` · `fstp dword [esp]` · `push <objektum>` ·
+`call 0x005ee590`. A `0x005ee590` (335 b) egy **animált tulajdonság-beállító**:
+az értéket az objektum `+0xe50` rését (double) írja, és ha az aktuális érték
+más, átmenetet indít (`0x009e6010`, időtartam a `0xcf3ae0`-ról).
+
+### A CSÚSZKA ÉRTÉKKÉSZLETE — normalizált, és a 0.5 a 100 %
+
+A visszafelé irányt a `FUN_005d1c70` (82 b) adja meg: a **csúszka aktuális
+értékéből** választja ki, melyik gomb legyen a rádiócsoport kiválasztott
+tagja:
+
+```
+0x005d1c78   ha érték == 0.0f   -> "editpanel/fit"            (0x00c95a94)
+0x005d1c9b   ha érték == 0.5f   -> "editpanel/1to1"           (0x00c95aa4)
+egyébként                        -> "editpanel/inbetweenzoom" (0x00c95ab4)
+```
+
+*(A 0.5 a `0x00c7dafc`-ról kiolvasva; ugyanaz a konstans, amit a `1to1`
+kattintása beállít.)*
+
+⇒ **A szerkesztő nagyítás-csúszkája NEM nagyítási szorzót tárol, hanem egy
+normalizált értéket, amelyben `0.0` = illesztés a nézetbe és `0.5` = valódi
+méret (100 %).** A `0.5` fölötti fél a nagyítás, alatta a köztes állapotok.
+
+⚠️ **NINCS MEG:** a normalizált érték → tényleges nagyítási szorzó képlete
+(mit ad `0.25` vagy `0.75`). A két rögzített pont mérve; a köztes leképezés
+a csúszka saját függvényében van, azt ez a kör nem mérte ki. Megszerzés: a
+`zoomslider/scaleslider` kezelője, illetve a `+0xe50` rés olvasói.
+
+### Eredeti / nálunk / teendő
+
+A „nálunk" oszlop **mérés** (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml`,
+1608–1690. sor).
+
+| tétel | eredeti | nálunk | teendő |
+|---|---|---|---|
+| hol van | az `editbase` jobb alsó sarkában, a sávban | lebegő, sötét, lekerekített doboz a fotó jobb alsó sarkában (`zoomBar`, `color:"#00000059"`, `radius:4`) | a sávba tenni |
+| `fit` gomb | 37 × 22, ikon (`fit_icon` 14 × 12), bal szegmens | `⛶` szöveg-glifa, 26 × 20 | ikon + mért méret |
+| `1to1` gomb | 37 × 22, ikon (`1to1_icon` 17 × 12), jobb szegmens | `1:1` szöveg, 30 × 20 | ikon + mért méret |
+| a kettő viszonya | **összeragasztott** kétszegmenses pár | két külön gomb 4 képpont réssel | szegmenspár |
+| harmadik állapot | `inbetweenzoom`, **rejtett** | nincs | **nem kell megépíteni** |
+| elsülés | `Property mousedown 1` (lenyomásra) | `onClicked` (felengedésre) | lenyomásra |
+| csúszka | 127 képpont, **normalizált** érték (0 = fit, 0.5 = 100 %) | 110 képpont, `from: 0.25, to: 8` = közvetlen szorzó | méret + értékkészlet |
+| magyar súgó (`fit`) | „Beillesztheti a fotót a megjelenítési területbe" | „A kép illesztése a nézetbe" (`picasapy_hu.ts` 4510) | a hivatalos szövegre cserélni |
+| magyar súgó (`1to1`) | „Fotó megjelenítése tényleges méretben" | „A kép valódi méretben" (`picasapy_hu.ts` 4514) | a hivatalos szövegre cserélni |
+| `☺` / `✎` gomb | **nincs** az eredetiben | van (arc-keretek, arc-szerkesztő) | a MI döntésünk — marad, de nem az eredeti része |
+
+*(Az angol forrásszövegeink — `Fit Photo inside viewing area`,
+`Display Photo at actual size` — **pontosan** az eredetiéi; csak a magyar
+fordítás tér el.)*
