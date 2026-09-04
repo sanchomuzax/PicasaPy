@@ -1055,3 +1055,123 @@ feltárva. Jegy: **#2187**.
 `repe cmpsb` ágaiból, a küszöb-képlet három kiolvasott konstansból, a
 tárolók a kezelők sztringjeiből, a geometria a `respack.yt`-ből, a magyar
 feliratok az `i18n-hu`-ból.
+
+---
+
+## 16. A MOTOR KONFIGURÁCIÓJA: `plugins/red.cfg` — leltár és tulajdonosi döntés (#2239, 2026-09-04)
+
+> **Tulajdonosi döntés (2026-09-04, a #2239-en):** *„A dokumentációban
+> kerüljön rögzítésre a korábbi működés, és a majdani új, saját eljárás
+> specifikáció készítésénél lehet figyelembe venni irányadónak. De ez ne
+> kerüljön most is beépítésre."*
+>
+> ⇒ Ez a szakasz **tájékoztató, nem normatív**. A PicasaPy **nem olvassa**
+> és nem is fogja olvasni ezt a fájlt; a leírás akkor lesz hasznos, amikor a
+> saját arcfelismerőnk specifikációja készül.
+
+### Mi ez a fájl
+
+A `Picasa3/plugins/red.cfg` (**2,2 MB**) a `Red.dll` — az eredeti Picasa
+arc- és vörösszem-motorjának — **betanított konfigurációja**: detektorok,
+jellemzőkinyerők, modellek és küszöbök szerializált objektumfája.
+
+⚠️ **A fájl a PARAMÉTEREKET tartalmazza, az ELJÁRÁST nem.** A felismerő
+algoritmus a `Red.dll` kódjában van. Ezért a benne álló számok egy **másik**
+eljárásban nem jelentik ugyanazt — ez a fő oka annak, hogy az átvétele nem
+javasolt.
+
+### A szerializálás formátuma — megfejtve
+
+Minden objektum **hatbájtos fejléccel** kezdődik:
+
+```
+00  <len:1>  <ClassId: len bájt, little-endian>  00
+```
+
+A megfigyelt fájlban `len` mindig **3**. A fejléc után osztályfüggő
+payload jön, a legtöbb osztálynál 4 bájtos verziószámmal indítva.
+
+Négy tároló-osztály payloadja értelmezve:
+
+| ClassId | osztály | payload |
+|---|---|---|
+| `0x15` | `ebs_ObjectList` | 4 bájt elemszám |
+| `0x16` | `ebs_ObjectArr` | 4 bájt elemszám |
+| `0x17` | `ebs_ObjectRef` | **1 bájt** hivatkozási index |
+| `0x18` | `ebs_ObjectFRef` | 1 bájt |
+
+A `ClassId → osztálynév → ősosztály` tábla a `Red.dll` regisztrációs
+sorozatából olvasható ki (**550 osztály**).
+
+### A leltár — mért számok
+
+| | érték |
+|---|---|
+| objektum a fájlban | **19 525** |
+| különböző osztály | **75** |
+| `red.cfg` SHA-256 | `916d69fd…f51835` |
+
+**Osztálycsaládok** (előtag szerint, objektumszámmal):
+
+| előtag | objektum | osztály | mi ez |
+|---|---:|---:|---|
+| `ebs_` | 12 215 | 29 | alaptárolók (tömbök, hivatkozások, adathordozók) |
+| `ets_` | 4 827 | 9 | mátrix/vektor típusok (`CompactVec`, `CompactMat`, `Float3DMat`…) |
+| `vlf_` | 921 | 10 | **lokális jellemzők**: `AdvancedDetector`, `CompactRect/Quad/WaveFeature`, `AngleMap`, `PatchSize` |
+| `vqc_` | 729 | 8 | **kvantálás és leképezés**: `Quantizer`, `L2NormVecMap`, `PrjVecMap`, `SubVecMap`, `Relator` |
+| `egp_` | 561 | 2 | `SpatialGraph` + `SpatialNode` — térbeli gráf |
+| `vfv_` | 242 | 2 | `AdvancedFvc`, `CueInfo` — jellemzővektor-készítés |
+| `vde_` | 12 | 3 | `LocalPoseDetector`, `LocalDetectorSequence`, `LocalDetectorPrlArr` |
+| `vfr_` | 7 | 6 | a **legfelső szint** (ld. lent) |
+| `vrd_` | 6 | 5 | **vörösszem**: `RedEyeDetector`, `RedEyeCorrector`, `HistogramModel`, `GmmModel`, `Codebook` |
+| `vpf_` | 5 | 1 | `EigenShapeMap` — alakmodell |
+
+⭐ **Ebből az egyik legfontosabb megfigyelés:** a fájl **nem csak az
+arcfelismerésé** — a `vrd_*` család a **vörösszem-javítás** detektorát és
+korrektorát is tartalmazza, ugyanabban a konfigurációban.
+
+### A legfelső szint — a feldolgozási lánc, fájlbeli sorrendben
+
+| offszet | objektum | verzió |
+|---|---|---|
+| `0x7` | **`vfr_VdeFaceFinder`** — az arckereső belépési pontja | 201 |
+| `0x21` | `vlf_AdvancedDetector` | 100 |
+| `0x853ae` | **`vfr_VdeLandmarker`** — arcpont-kereső | 201 |
+| `0x853ea` | `vde_LocalPoseDetector` + `vde_LocalDetectorSequence` | 100 |
+| `0xabe46` | `vpf_EigenShapeMap` (összesen **5** példány) | 100 |
+| `0xdefed` | **`vrd_RedEyeDetector`** + két `HistogramModel`, `GmmModel`, `Codebook` | 100 |
+| `0xe0013` | **`vrd_RedEyeCorrector`** | 100 |
+| `0x1734d3` | **`vfr_FeatureVectorCreatorArr`** — a jellemzővektor-készítők | 101 |
+| `0x22b08a` | `vfr_SdkRelator` | 100 |
+| `0x22d07e` | **`vfr_SowGrowStampClusterer`** — a „bélyeg"-klaszterező | 100 |
+| `0x22d0a3` | `vfr_StdClusterRelator` | 100 |
+
+### Az EGYETLEN kiolvasott paraméter-ötös
+
+A `vfr_SowGrowStampClusterer` (`ClassId 0x401038`) payloadja a verzió után
+**három float + két int**:
+
+```
+0,7   0,98   1,0   25 000 000   25 000 000
+```
+
+*(Kiolvasva a `0x22d07e` objektum törzséből; a mezők NEVE nincs megfejtve —
+a két 25 milliós egész nagyságrendje memória- vagy elemkorlátra utal, de ezt
+nem állítjuk.)*
+
+### Amit NEM fejtettünk meg — és tudatosan nem is találgatunk
+
+- a 75 osztályból **71** payload-sémája (a négy tároló-osztályon kívül);
+- a modellobjektumok (súlyok, kaszkádok, kódkönyvek) belső szerkezete;
+- a `SowGrowStampClusterer` öt paraméterének **jelentése**.
+
+### A kutatási eszköz helye
+
+A clean-room parser és a `ClassId`-tábla a **privát `picasapy-agent`
+repóban** él (`eszkozok/redcfg/`), 17 egységteszttel és négypontos golden
+kapuval. A termék-repóba nem kerül: nem termékkód.
+
+*Bizonyítottsági fok: **megerősített** a formátumra, a leltár számaira, az
+osztálycsaládokra, a lánc sorrendjére és a paraméter-ötös értékeire
+(kiolvasva, golden kapuval rögzítve); **nem megfejtett** a payload-sémák
+többsége és a paraméterek jelentése.*
