@@ -2535,3 +2535,101 @@ MEG** — de az olvasónak maszkolnia kell, mert a Picasa is maszkol.
 = az adatfájl mérete" azonosság a **maszkolt** hosszal is teljesül mind a
 17 fájlon (a felső bitek nullák lévén a két számítás itt egybeesik).
 
+
+---
+
+## 9. Az `albumdata_date.pmp` — a MAPPA saját dátuma, VALÓDI adatból mérve (2026-09-04, #2304)
+
+> **Bizonyítottság: megerősített** — nem a binárisból következtetve, hanem a
+> **tulajdonos saját Picasa-adatbázisából** kiolvasva (`Picasa2/db3/`
+> mentés, 2026-08-22), és a futó Picasa képernyőmentésével összevetve.
+>
+> ⚠️ A mentés a tulajdonos magánkatalógusáról készült; **útvonalak és
+> mappanevek nem kerülnek ebbe a lapba**, csak a #2304-ben már nyilvános
+> `AI` mappa, mint mérési eset.
+
+### 9.1 A kérdés
+
+A #2304 három eltérése ugyanarra a mezőre mutatott: az eredeti a mappa
+fejlécében **dátumot** ír („AI — 2023. november 14., kedd"), a bal hasábban
+a **2023**-as évcsoport alá teszi, nálunk pedig nincs fejlécdátum, és az
+évcsoport **2003**. A kérdés: **honnan veszi az eredeti ezt a dátumot?**
+
+### 9.2 A válasz — `albumdata_date.pmp`, OLE Variant `double`
+
+A mentésből kiolvasva (a `pmpimport.pmp_column` olvasónkkal, 144 sor):
+
+| oszlop | az `AI` mappa sora (index 3) |
+|---|---|
+| `albumdata_name` | `AI` |
+| **`albumdata_date`** | **`45244.72859953704`** |
+| `albumdata_category` | `2` |
+
+`45244.72859953704` nap az **1899-12-30**-i Variant-alapponttól ⇒
+**2023-11-14 17:29:11**.
+
+⇒ **Pontosan az a nap, amit az eredeti a fejlécben mutat** („2023. november
+14., **kedd**" — 2023-11-14 valóban kedd), és pontosan az az év, ami alá a
+bal hasábban sorolja. **A fejlécdátum és az évcsoport ugyanabból az egyetlen
+mezőből jön.**
+
+### 9.3 ⛔ NEM a képekből számolódik — negatív eredmény
+
+A 144 sor eloszlása ezt kizárja:
+
+- a **virtuális albumok** (az első három sor, `category` 0 és 8) mindegyike
+  **ugyanazt** az értéket viseli: `46221.615` → 2026-07-18 14:45:36, ami az
+  adatbázis létrehozásának ideje — nem képadat;
+- a **lemezen lévő mappák** (`category = 2`) értékei 2009 és 2026 között
+  szórnak, mappánként külön;
+- az `AI` mappa értéke **egyetlen időpont, másodperc pontossággal** — a
+  benne lévő 82 kép felvételi idejéből semmilyen aggregátum (legkorábbi,
+  legkésőbbi, medián) nem adna másodperc-pontos „17:29:11"-et.
+
+⇒ A mező a **mappa saját dátuma**, amit a Picasa a `.picasa.ini`
+`date=` kulcsába is kiír (ld. [`picasa-ini-format.md`](picasa-ini-format.md);
+a `0x0068ac80` formátumsztringje **`date=%f`**, tehát lebegőpontos).
+
+### 9.4 Az `albumdata_category` mért értékei
+
+Ugyanebből a mentésből, a 144 soron:
+
+| érték | mit jelöl (a sorok alapján) |
+|---|---|
+| `0` | virtuális album (csillagozott, legutóbb frissítve) — `filename` üres |
+| `1` | egy lemezmappa, eltérő besorolással *(egyetlen sor a mintában)* |
+| `2` | **közönséges lemezmappa** — a `filename` a mappa útvonala |
+| `8` | a „Név nélküliek" arc-gyűjtő — `filename` üres |
+
+*Bizonyítottság: **erős*** — az értékkészlet a mintából teljes, a jelentés a
+`filename` üres/nem üres mintázatából és a nevekből következik; a bináris
+oldali kódtáblát külön nem mértem.
+
+### 9.5 MIT AD MA a mi kódunk (mérve)
+
+| hol | mit ad |
+|---|---|
+| `index/schema.py:316–318` | `folders.date TEXT`, és a migráció **`MIN(p.taken_at)`-ból** tölti — a **legkorábbi kép** dátuma |
+| `ini/folder_date.py:57–72` | a `date=` **Variant-olvasója** (alappont 1899-12-30, tartomány 1…73 500) — a #2309 tette be |
+| `index/sync.py:21` | a `read_folder_date_override` be van kötve a szinkronba |
+
+⇒ **A 2003-as évcsoport mechanizmusa ezzel érthető:** ha a `date=` nem
+olvasódik ki, a `folders.date` a **legkorábbi kép** dátumára esik vissza —
+és egy 2003-as (hibás vagy régi) felvételi idejű kép az egész mappát
+2003-hoz sorolja. A #2309 javítása pontosan ezt szünteti meg.
+
+⚠️ **Egy MÉRT eltérés marad:** a `folder_date.py:72` a Variant-időt
+`.date().isoformat()`-tal adja vissza, tehát **az időpontot eldobja**. Az
+eredeti másodperc pontosságú értéket tárol (`17:29:11`). A fejlécre és az
+évcsoportra ez nem hat ki; **holtverseny-feloldásra viszont nálunk nincs
+meg az az információ, ami az eredetinél megvan.** *(Hogy az eredeti
+használja-e valahol az időrészt, ez a kör NEM mérte.)*
+
+### 9.6 Eredeti / nálunk / teendő
+
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a mappa dátumának forrása | `albumdata_date` (= `.picasa.ini` `date=`) | `folders.date`, a `date=`-ből, tartalék `MIN(taken_at)` | — (a #2309 megvan) |
+| pontosság | **másodperc** | **nap** (`folder_date.py:72`) | eldöntendő: megtartsuk-e az időrészt |
+| tartalék, ha nincs `date=` | *nem mérve* — az eredetinél az érték mindig ott van a DB-ben | `MIN(taken_at)` | — |
+| a fejlécdátum és az évcsoport | **ugyanaz az egy mező** | ugyanaz a `folders.date` | — |
