@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.283] – 2026-09-04
+
 ### Javítva
 
 - A bal hasábban az azonos nevű mappák megkülönböztethetők: a sorra
