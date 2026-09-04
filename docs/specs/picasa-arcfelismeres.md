@@ -747,6 +747,36 @@ PMP-fájlt. A kérdés tehát **tudásbeli hiány, nem megvalósítási akadály
 14. szakasz mérlege: 1 LEZÁRVA · 1 NEM ELDŐLT (a folytatás pontos helyével)
 ```
 
+### 14.3 A #1238 LEZÁRVA — az adat, amit kért, már megvolt (2026-09-04)
+
+A **#1238** jegy hat `db3`-oszlopot nevezett meg „értelmezhetetlenként", és
+a tulajdonostól kérte egy végigfuttatott arcfelismerésű `db3` mappa
+másolatát. **Az az adat 2026-08-22 óta megvan és fel van dolgozva** — ez a
+14. szakasz és a „`peoplealbumchecksum` NEM checksum" szakasz épp abból
+készült.
+
+Egy 2026-09-04-i **független újramérés** (a tulajdonos 2026-08-22-i
+adatmappa-mentése, saját `pmpimport` olvasónkkal) a lap számait
+**változtatás nélkül** visszaadta:
+
+| oszlop | mért |
+|---|---|
+| `albumdata_category` = **8** | **10 sor** = a személy-albumok; ebből **9** nevesített (van `albumcontactid`), a tizedik a névtelen-gyűjtő |
+| `albumdata_albumcontactids` | 9 nem üres, u64 |
+| `albumdata_albumpeoplechecksum` | 8 nem nulla (a 9-ből egy `0`) |
+| `imagedata_personalbumid` | **115** nem nulla, értékkészlete a személy-albumok sorindexe |
+| `imagedata_suggestionpersonalbumid` | **1** nem nulla |
+| `imagedata_peoplealbumchecksum` | 301 nem üres, **mind ugyanaz az érték** |
+
+⇒ A jegy **hatóköre teljesült**; ami marad, az kizárólag a **14.2 képlet-kérdése**,
+és az ott van nyilvántartva, a folytatás pontos helyével. A jegy nyitva
+hagyása félrevezette a kutatói kört: `ready` címkével a munkalistán állt,
+miközben a kért anyag rég a birtokunkban volt.
+
+*(Adatvédelem: a személy-albumok a tulajdonos családtagjainak nevét
+viselik, és a `contactid`-k személyazonosítók — sem a nevek, sem az
+azonosítók nem kerülnek erre a lapra.)*
+
 
 ## A `peoplealbumchecksum` NEM checksum — konstans arc-jelző (2026-08-24)
 
