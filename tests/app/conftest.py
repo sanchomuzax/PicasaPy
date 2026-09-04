@@ -48,11 +48,28 @@ def _vard_meg_a_hatterszalakat(app) -> None:
     `QThreadPool`-t tart. A globális pool-t is megvárjuk: a `QRunnable`-ök
     egy része oda kerül, ha valaki `globalInstance()`-t használ.
 
+    #2262: a `QThreadPool` viszont ÖNMAGÁBAN kevés. A
+    `BackgroundWorkerMixin._start_background` sima
+    `threading.Thread(daemon=True)`-t indít, amiről a pool semmit nem tud;
+    egy csak `qt_app`-ot használó tesztfájl (pl. az effekt-paraméteres)
+    így élő szálat hagy maga után, az pedig a `finally`-ben
+    `AppBusyRegistry.end()`-et hív egy addigra megsemmisült Qt-objektumon
+    (`RuntimeError: Signal source has been deleted` egy Python-szál
+    törzséből → `terminate called without an active exception`, `exit -6`).
+    A `wait_for_all_background_workers()` mindkét fajtát bevárja, ezért ez
+    az ELSŐ lépés — még mielőtt a Qt-eseménysort pörgetnénk.
+
     Hibát SEM dobunk, ha valami nem áll le: a lebontás nem tehet tönkre
     egy zöld részfutást. A cél a rendezett kilépés, nem az ítélkezés.
     """
     from PySide6.QtCore import QCoreApplication, QThreadPool
 
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    try:
+        wait_for_all_background_workers(10.0)
+    except Exception:  # noqa: BLE001 — a lebontás sosem bukhat el
+        pass
     try:
         QThreadPool.globalInstance().waitForDone(5000)
     except Exception:  # noqa: BLE001 — a lebontás sosem bukhat el
