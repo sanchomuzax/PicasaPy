@@ -131,6 +131,10 @@ class PrintController(QObject):
         #: nem ini-fájlba) — a CI windows-lába emiatt bukott vissza a
         #: 4×6-os alapértelmezésre a beállított 8×10 helyett.
         self._settings = settings if settings is not None else QSettings()
+        #: #2103: a nyomtató saját beállítójában elfogadott oldalelrendezés.
+        #: `None`, amíg a felhasználó nem járt ott — ilyenkor a nyomtató a
+        #: saját alapértelmezését hozza, ahogy eddig.
+        self._oldalelrendezes: QPageLayout | None = None
 
     def _keszlet(self) -> tuple[NyomatMeret, ...]:
         """A felület nyelvéhez tartozó nyomatméret-készlet (#1961).
@@ -240,6 +244,73 @@ class PrintController(QObject):
         (ld. a modul docstringje) a QML saját választólistájához."""
         return list(QPrinterInfo.availablePrinterNames())
 
+    @Slot(str, result=bool)
+    def openPrinterSetup(self, printer_name: str) -> bool:  # noqa: N802
+        """A nyomtató SAJÁT oldalbeállítója (#2103).
+
+        Az eredetiben ez a `printpanel/psetupbutton`: `OpenPrinter` →
+        `DocumentProperties` (méret) → `DocumentProperties` (megjelenítés)
+        — vagyis az illesztőprogram tulajdonságlapja, nem Picasa-párbeszéd.
+
+        ⚠️ **A tartalom nem másolható:** a `DocumentProperties` a Windows
+        illesztőprogramé. A Qt megfelelője a `QPageSetupDialog`, ami
+        platformonként a rendszer saját lapját hozza. Ami átvehető, az a
+        BELÉPÉSI PONT — a gomb helye és felirata —, nem a lap tartalma.
+
+        Az elfogadott oldalelrendezést megjegyezzük, és a következő
+        nyomtatás azt használja; enélkül a párbeszéd díszlet lenne.
+
+        ⚠️ **Nincs hozzá jelzés.** Az eredmény a VISSZATÉRÉSI ÉRTÉK — egy
+        `printerSetupClosed`-féle jelzést senki nem fogadna: az előnézet a
+        választott nyomatméret arányából dolgozik (`renderPreviewPage`),
+        nem a nyomtató lapjából, tehát nincs mit frissíteni rajta. A
+        néma-jelzés őre ezt jogosan kifogásolta.
+
+        Returns:
+            Igaz, ha a felhasználó elfogadta a beállításokat.
+        """
+        if not printer_name:
+            self.printFailed.emit(self.tr("No printer selected."))
+            return False
+        info = QPrinterInfo.printerInfo(printer_name)
+        if info.isNull():
+            self.printFailed.emit(
+                self.tr("Unknown printer: %1").replace("%1", printer_name)
+            )
+            return False
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setPrinterName(printer_name)
+        # A párbeszéd megnyitása a felhasználói felület dolga; fej nélküli
+        # környezetben (teszt, CI) nincs mit mutatni, ezért ott csak a
+        # jelzés megy ki, és a hívó nem akad el.
+        parbeszed = self._page_setup_dialog(printer)
+        if parbeszed is None:
+            return False
+        elfogadva = bool(parbeszed.exec())
+        if elfogadva:
+            self._oldalelrendezes = printer.pageLayout()
+        return elfogadva
+
+    def _page_setup_dialog(self, printer: QPrinter):
+        """A `QPageSetupDialog` példánya — a teszt ezt cseréli le.
+
+        Külön metódus, mert egy modális rendszerpárbeszéd megnyitása
+        tesztben megállítaná a futást; a lecserélhető gyártó a bekötést
+        mérhetővé teszi anélkül, hogy a termékkódba tesztkapcsoló kerülne.
+        """
+        from PySide6.QtPrintSupport import QPageSetupDialog
+
+        return QPageSetupDialog(printer)
+
+    def _alkalmazd_az_oldalelrendezest(self, printer: QPrinter) -> None:
+        """A `openPrinterSetup`-ban elfogadott elrendezés érvényesítése.
+
+        Ha a felhasználó nem járt a beállítónál, nincs mit tenni — a
+        nyomtató a saját alapértelmezését hozza.
+        """
+        if self._oldalelrendezes is not None:
+            printer.setPageLayout(self._oldalelrendezes)
+
     def _resolve_records(self, rows: Sequence[int]) -> list[PhotoRecord]:
         """A művelet bemenete — #1671: HA A TÁLCA NEM ÜRES, ŐK nyernek.
 
@@ -315,6 +386,9 @@ class PrintController(QObject):
                 )
                 return False
             printer.setPrinterName(printer_name)
+        # #2103: ha a felhasználó járt a nyomtató saját beállítójánál, az
+        # ottani elrendezés érvényes — enélkül a párbeszéd díszlet lenne.
+        self._alkalmazd_az_oldalelrendezest(printer)
         ok = self._run(printer, rows, fit_mode, orientation, copies)
         if ok:
             self.printFinished.emit(printer.printerName() or self.tr("default printer"))

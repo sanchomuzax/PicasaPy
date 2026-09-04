@@ -160,6 +160,10 @@
 <context>
     <name>PrintController</name>
     <message>
+        <source>No printer selected.</source>
+        <translation>Nincs kiválasztva nyomtató.</translation>
+    </message>
+    <message>
         <source>No pictures to print.</source>
         <translation>Nincs nyomtatható kép.</translation>
     </message>
@@ -198,6 +202,16 @@
 </context>
 <context>
     <name>PrintDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Printer Setup</source>
+        <translation>Nyomtató telepítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PrintDialog.qml"/>
+        <source>Open printer setup controls for the selected printer</source>
+        <translation>Nyomtató beállításvezérlőinek megnyitása a kijelölt nyomtatóhoz</translation>
+    </message>
     <message>
         <source>Review</source>
         <translation>Ellenőrzés</translation>
