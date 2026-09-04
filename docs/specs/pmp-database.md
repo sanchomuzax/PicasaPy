@@ -2633,3 +2633,54 @@ használja-e valahol az időrészt, ez a kör NEM mérte.)*
 | pontosság | **másodperc** | **nap** (`folder_date.py:72`) | eldöntendő: megtartsuk-e az időrészt |
 | tartalék, ha nincs `date=` | *nem mérve* — az eredetinél az érték mindig ott van a DB-ben | `MIN(taken_at)` | — |
 | a fejlécdátum és az évcsoport | **ugyanaz az egy mező** | ugyanaz a `folders.date` | — |
+
+## MIT AD MA a mi db3-importunk — MÉRVE a tulajdonos VALÓDI adatbázisán (2026-09-04)
+
+> **Bizonyítottság: megerősített.** A mérés a tulajdonos 2026-08-22-i
+> `Picasa2` adatmappa-mentésén futott (3338 kép, 65 `.pmp` oszlop), a saját
+> `picasapy.pmpimport.pmp_column` olvasónkkal. Adatvédelem: sem útvonal,
+> sem fájlnév nem került erre a lapra.
+
+A `src/picasapy/pmpimport/importer.py:22` **hat** oszlopot hasznosít:
+
+```python
+_COLUMNS = ("caption", "rotate", "star", "filters", "crop64", "deferredregion")
+```
+
+Az alábbi tábla azt mutatja, **mennyi valódi adat áll az egyes
+oszlopokban**, és hogy behozzuk-e:
+
+| oszlop | nem üres érték | behozzuk? |
+|---|---:|---|
+| `imagedata_filters` | **1226** | ✅ |
+| `imagedata_crop64` | **488** | ✅ |
+| `imagedata_tags` (kulcsszavak) | **342** | ❌ nincs a listán |
+| `imagedata_lat` / `imagedata_long` | **219** / **219** | ❌ |
+| `imagedata_geoview` | **219** | ❌ |
+| `imagedata_backuphash` | 178 | — (nem kell, ld. `picasa-ini-format.md`) |
+| `imagedata_tagdate` | **115** | ❌ |
+| `imagedata_rotate` | 86 | ✅ |
+| `imagedata_caption` | 5 | ✅ |
+| `imagedata_text` / `_textactive` | **0** / **0** | ❌ *(üres — ebből a mintából a felirat-réteg nem ellenőrizhető)* |
+
+### ⛔ A `star` oszlop NEM LÉTEZIK a valódi adatbázisban
+
+A mentés **mind a 65** `.pmp` oszlopát kilistázva **nincs
+`imagedata_star.pmp`**. A `table.value()` hiányzó oszlopra `None`-t ad
+(`src/picasapy/pmpimport/table.py:36–41`), a hívó pedig
+`star=bool(table.value("star", …))` (`importer.py:82`) ⇒ **minden kép
+csillagozatlanként jön be, némán.**
+
+A csillagozás valójában a **`db3/starlist.txt`**-ben él (ezen a lapon
+fentebb: 50 sor, CRLF, soronként egy abszolút útvonal) — a mintában
+**50 csillagozott kép**, amelyből az import **nullát** hoz át.
+
+⚠️ **A tesztkészlet ezt nem foghatja meg:** a
+`tests/pmpimport/test_importer.py:60` maga **létrehozza** az
+`imagedata_star.pmp`-t, tehát a zöld teszt egy olyan adatbázist ír le,
+amilyen a valóságban nincs.
+
+*(Hogy MELYIK Picasa-verzió írt valaha `imagedata_star.pmp`-t, ez a mérés
+nem mondja meg — a hatókör ez az egy, valódi adatbázis.)*
+
+Jegyek: a csillag-hiba **#2335**, a kulcsszó/helyadat-hiány **#2336**.
