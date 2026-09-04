@@ -521,3 +521,57 @@ szövegtár maga jelöli használaton kívülinek.
 *(Hogy a `0x9c94` menüparancs melyik ághoz tartozik, NINCS mérve: a
 parancsazonosító a `0x0056e1c0` elosztóban áll, a `ginormous`-út hívója
 viszont a `0x005e60d0`-ban — két külön elosztó.)*
+
+---
+
+## A panel INFORMÁCIÓS mezői — mit ír ki és miből (`0x00745980`, 2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris). Ezt a szakaszt a lap eddig **nem
+tartalmazta**: a `numberprints`, `previewnumber`, `printername`, `paperinfo`
+és `statustext` elemekről sehol nem volt szó.
+
+A panel állapotfrissítője (`0x00745980`, 1484 b) **egyetlen menetben**
+állítja be a következőket:
+
+| cím | elem / erőforrás | segédfüggvény |
+|---|---|---|
+| `0x00745aa4` | `printpanel/croptoggle` | `0x009cd9a0` |
+| `0x00745ac4` | **`IDS_COPIES`** (erőforrás-azonosító **`0x3b` = 59**), az érték a `[ecx+0x20]`-ból | — |
+| `0x00745af5` | **`printpanel/numberprints`** | `0x009cd080` |
+| `0x00745b7c` | **`ThumbUIPrint::PrintCount`** = **`%d of %d`** | — |
+| `0x00745bba` | **`printpanel/previewnumber`** | `0x009cd870` |
+| `0x00745bcc` | **`printpanel/printername`** | `0x009cd870` |
+| `0x00745bde` | **`printpanel/paperinfo`** | `0x009cd870` |
+| `0x00745c05` | `printpanel/nextbutton` | `0x009cd7e0` |
+| `0x00745c29` | `printpanel/prevbutton` | `0x009cd7e0` |
+| `0x00745e01` + `0x00745e10` | **`printpanel/statustext`** | `0x009cd760`, majd `0x009cd870` |
+| `0x00745e1d`–`0x00745e46` | `pnowbutton`, `pnowbutton2`, `reviewnowbutton`, `reviewnowbutton2` | `0x009cd110` |
+
+**A segédfüggvények csoportosítanak** (ez maga is bizonyíték): a
+`printername`, `paperinfo`, `previewnumber` és `statustext` **ugyanazt a
+`0x009cd870`-et** kapja ⇒ ez a **szövegbeállító**; a négy akciógomb
+mind a `0x009cd110`-et ⇒ az a **gomb-állapot**; a két lapozógomb a
+`0x009cd7e0`-et.
+
+### A lapszámlálás és a lapozó KORLÁTOZÁSA
+
+`0x00745b52`–`0x00745b76`:
+
+- a lapok száma **`[esi+0x18] >> 1`** (csomagolt elemszám, `edi`);
+- ha **nulla**, a program meghívja a `0x007774b0(objektum, 1)`-et — vagyis
+  előállít egy lapot;
+- az **aktuális lapindex** (`[ebp+0xec8]`) **a lapszám−1-re korlátozódik**
+  (`0x00745b73`: `lea eax, [edi-1]`), ha kifutna a tartományból.
+
+⇒ A `%d of %d` tehát **aktuális lap + 1 / összes lap**, és a panel a
+lapszám csökkenésekor **magától visszaigazítja** a lapozót.
+
+### Nálunk (mérve, 2026-09-04)
+
+| mező | eredeti | nálunk (`PrintDialog.qml`) |
+|---|---|---|
+| példányszám | `IDS_COPIES` + `numberprints` | megvan (`:373`, #1819) |
+| lapszám | `%d of %d` → `previewnumber` | megvan (`:466`, `%1 / %2`, magyar cserével) |
+| nyomtató neve | `printername` | megvan (`printerName`, `:72`) |
+| **papíradatok** | **`paperinfo`** | **NINCS** — a `PrintDialog.qml`-ben nincs papírméret-kijelző (a `print_controller.py:314` `pageLayout()`-ja megvan, de nem jelenik meg) |
+| állapotsor | `statustext` | megvan (a minőség-üzenet) |
