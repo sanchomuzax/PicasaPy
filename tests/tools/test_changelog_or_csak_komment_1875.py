@@ -130,3 +130,73 @@ class TestAzEgeszOr:
             ),
         )
         assert kod == 1, "kódváltozásra CHANGELOG-mondat kell"
+
+
+class TestQmlKomment:
+    """#2042: a QML `//`-megjegyzés is megjegyzés.
+
+    Élesben (#2036) egy docs-PR bukott el EGYETLEN QML-komment miatt, és a
+    megoldás az lett, hogy a komment kikerült a PR-ből — vagyis az őr
+    munkát tolt ki a fájlból. A `#`-eset a #1875 óta kezelve van; a `//`
+    nem volt.
+    """
+
+    def _diff(self, fajl: str, *sorok: str) -> str:
+        fej = f"--- a/{fajl}\n+++ b/{fajl}\n@@ -1,2 +1,2 @@\n"
+        return fej + "".join(s + "\n" for s in sorok)
+
+    def test_qml_kettos_perjeles_komment_atmegy(self) -> None:
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/Main.qml",
+            "-        // régi magyarázat",
+            "+        // #2042: friss magyarázat",
+        )
+        assert csak_komment_valtozas(diff, "src/picasapy/app/qml/PicasaPy/Main.qml")
+
+    def test_qml_valodi_kodsor_BUKTAT(self) -> None:
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/Main.qml",
+            "+        // magyarázat",
+            "+        visible: false",
+        )
+        assert not csak_komment_valtozas(
+            diff, "src/picasapy/app/qml/PicasaPy/Main.qml"
+        )
+
+    def test_qml_blokk_komment_eseten_a_SZIGOR_nyer(self) -> None:
+        """A `/* */` több sorra nyúlik; egy megváltozott belső sor
+        közönséges kódnak látszik. Bizonytalanságnál a szigorú ág."""
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/Main.qml",
+            "+        /* magyarázat",
+            "+           folytatás */",
+        )
+        assert not csak_komment_valtozas(
+            diff, "src/picasapy/app/qml/PicasaPy/Main.qml"
+        )
+
+    def test_sablonsztring_eseten_a_SZIGOR_nyer(self) -> None:
+        """A JS-sablonsztring (backtick) több sorra nyúlhat, tehát egy
+        `//`-kezdetű sor lehet SZTRING belseje is."""
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/Main.qml",
+            "+        // magyarázat",
+            "+        const s = `https://pelda`",
+        )
+        assert not csak_komment_valtozas(
+            diff, "src/picasapy/app/qml/PicasaPy/Main.qml"
+        )
+
+    def test_qml_fajlnal_a_kettoskereszt_NEM_komment(self) -> None:
+        """A `#` a QML-ben nem megjegyzés (szín-literál kezdete lehet)."""
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/Theme.qml",
+            "+        color: #ff0000",
+        )
+        assert not csak_komment_valtozas(
+            diff, "src/picasapy/app/qml/PicasaPy/Theme.qml"
+        )
+
+    def test_fajlnev_nelkul_a_regi_viselkedes(self) -> None:
+        """Visszafelé kompatibilitás: fájlnév nélkül a `#`-szabály él."""
+        assert csak_komment_valtozas(KOMMENT_DIFF)
