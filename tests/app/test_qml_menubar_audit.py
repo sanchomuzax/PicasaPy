@@ -74,7 +74,8 @@ HIANYZOTT_TETELEK = [
     # Mappa
     ("Hide", None),
     ("Show", None),
-    ("Print Thumbnails...", "Ctrl+Shift+P"),
+    # #2364: az EREDETI erőforrás szövege (ID_FILE_PRINTCONTACTSHEET)
+    ("Print Contact Sheet...", "Ctrl+Shift+P"),
     ("Export as HTML Page...", None),
     ("Move...", None),
     ("Delete...", None),
