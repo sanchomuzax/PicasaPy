@@ -1605,6 +1605,92 @@ nem a mezőt írja nullára, hanem a „nincs körvonal" ágra ugrik**
 (`0x0062f581`), ami a 8. mező alsó bájtját (kitöltés/körvonal mód) állítja.
 Ez megmagyarázza, miért `0.000000` az 5. mező az alapértelmezett sorokban.
 
+##### ✅ A BETŰMÉRET: a lista 16 egész értéke, és `tárolt = érték ÷ 360` (2026-09-04, #2287)
+
+Az előző kör kimérte, hogy a geometria 3. mezője **em-képpont ÷ a kép
+magassága**. A hiányzó láncszem — mi adja az em-képpontot — most megvan.
+
+**1. A méretlista TARTALMA — statikus, 16 egész.** A `.data`-ban két
+azonos példány (`0x00c7dab8` és `0x00c7e4f0`, mindkettő 16 × `int32`):
+
+```
+8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
+```
+
+A panel a tömb mutatóját a `+0x2bc`, a darabszámát a `+0x2c0`, a
+**kiválasztott értéket** a `+0x2cc` tagban tartja. A lista elemeit a
+`0x0062dfde` `push 0xc81844` = **`"%d"`** formátummal írja ki ⇒ a
+legördülőben **egész számok** állnak, nem százalék.
+
+**Az alapérték 12** — kiolvasva: `0x0062d463`
+`mov dword ptr [ebx+0x2cc], 0xc`.
+
+**2. A KIVÁLASZTÁS ÚTJA.** A listaelemre kattintva
+(`0x0063112d`–`0x00631137`) a program eltárolja az egészet a `+0x2cc`-be,
+majd meghívja a `0x005b35a0` átváltót a **rajzterület befoglalójával**:
+
+```
+0x005b35a0   eax = a befoglaló (x0,y0,x1,y1),  edx = a választott EGÉSZ
+0x005b35c4   eax = y1 - y0                      ; a MAGASSÁG
+0x005b35cb   fild  [esp]                        ; (float)magasság
+0x005b35d1   fdiv  qword ptr [0xcf3d50]         ; ÷ 360.0   (kiolvasva)
+0x005b35d7   fild  [esp]                        ; (float)választott érték
+0x005b35e2   fmulp                              ; ⇒ érték × (magasság / 360)
+```
+
+⇒ **`méret_képpont = választott_érték × (kép_magassága ÷ 360)`**
+
+*(Üres befoglalónál — `x0 ≥ x1` vagy `y0 ≥ y1` — az ág elmarad, és az
+érték változatlanul, egészből floatként megy tovább: `0x005b35b7`.)*
+
+Az eredmény a szöveg-objektum `+0x50` tagjába kerül; a **`text=` írója**
+innen olvassa (`0x00a4e518` `call [vtbl+0x98]` → `0x005ba960` =
+`fld [ecx+0x50]`).
+
+**3. A KÖR BEZÁRUL.** Az író a `0x8000` jelzőbit mellett `méret ÷ magasság`-ot
+tárol (ld. fentebb), tehát:
+
+> **tárolt = választott_érték × (magasság/360) ÷ magasság = választott_érték ÷ 360**
+
+A magasság **kiesik** — a tárolt szám tisztán a listaérték 360-ad része.
+
+**4. ELLENŐRZÉS a valódi exportokon — 3/3 találat.** A tulajdonos hat
+felirat-blokkjából **három** pontosan listaértéket ad vissza, a másik három
+nem (azokat kézzel méretezték át a fogantyúval):
+
+| tárolt | × 360 | listaérték? |
+|---|---:|---|
+| `0,033333` | **12,000** | ✔ (az alapérték) |
+| `0,061111` | **22,000** | ✔ |
+| `0,072222` | **26,000** | ✔ |
+| `0,051884` | 18,678 | – |
+| `0,112358` | 40,449 | – |
+| `0,104631` | 37,667 | – |
+
+Mindhárom találat **szerepel** a 16 elemű listában. Véletlen egyezésre
+nincs esély: hat értékből három hat tizedesjegyre egész.
+
+**A teljes leképezés:**
+
+| lista | tárolt | | lista | tárolt |
+|---:|---|---|---:|---|
+| 8 | `0,022222` | | 26 | `0,072222` |
+| 10 | `0,027778` | | 30 | `0,083333` |
+| **12** | `0,033333` | | 36 | `0,100000` |
+| 14 | `0,038889` | | 48 | `0,133333` |
+| 16 | `0,044444` | | 60 | `0,166667` |
+| 18 | `0,050000` | | 72 | `0,200000` |
+| 20 | `0,055556` | | 84 | `0,233333` |
+| 22 | `0,061111` | | 96 | `0,266667` |
+
+⇒ **A „hány képpont a 100%" kérdés tárgytalan:** az eredetiben nincs
+százalék. Abszolút lista van, és a kép magassága **360 egységnek** számít.
+
+*Bizonyítottsági fok: **megerősített** — a lista a `.data`-ból kiolvasva, az
+alapérték és a formátumsztring a kódból, az átváltás és a 360,0 konstans
+utasításról utasításra, a kör bezárása pedig három valódi exporton
+ellenőrizve.*
+
 ##### ✅ A csúszka TARTOMÁNYA: **[0, 1]** — kiolvasva, nem következtetve
 
 Mindkét vezérlő `*/scaleslider`, és a `.tre` szerint azonos elemtípus
