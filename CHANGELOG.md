@@ -40,6 +40,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.279] – 2026-09-04
+
+### Javítva
+- A Picasa által beállított **mappa-dátumot** eddig nem vettük át: a Picasa
+  más számformátumban írja, mint amit vártunk, ezért a program némán
+  eldobta, és a mappa a legrégebbi kép idejét kapta. Mostantól mindkét alakot
+  értjük (#2304).
+
 ## [0.8.278] – 2026-09-04
 
 ### Hozzáadva

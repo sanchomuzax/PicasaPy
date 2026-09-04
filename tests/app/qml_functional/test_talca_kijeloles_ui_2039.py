@@ -80,6 +80,26 @@ def _harom_kep(qml_app, qt_app):
     assert _var(qt_app, lambda: len(_elemek(window, "trayPreviewThumb")) == 3), (
         "nem lett három bélyegkép a tálcán"
     )
+    # ⚠️ #2304: a CI-n KÉTSZER bukott el a `test_csak_a_talcan_kijelolt_kerul_le`
+    # az első kattintás-állításnál, miközben helyben 3×10 futásból egyszer sem.
+    # Az ablak megjelenésére várás a `QTest.mouseClick` ismert előfeltétele: egy
+    # még nem `exposed` ablakra küldött egéresemény elveszhet. A projekt más
+    # kattintós próbái (`test_histogram_panel_geometry_1344`,
+    # `test_collage_settings_tab_946`) már így csinálják; ez a fájl kimaradt.
+    QTest.qWaitForWindowExposed(window, 2000)
+    # A bélyegképek VÉGLEGES helye is előfeltétel: a `_belyegkepek()` az
+    # x-koordináta szerint rendez, tehát átfedő (még elrendezetlen) elemeknél
+    # a sorrend bizonytalan lenne — és a próba egy MÁSIK képre kattintana.
+    assert _var(
+        qt_app,
+        lambda: len(
+            {
+                round(k.mapToScene(QPointF(0, 0)).x())
+                for k in _elemek(window, "trayPreviewThumb")
+            }
+        )
+        == 3,
+    ), "a három bélyegkép nem került külön helyre — a sorrendjük bizonytalan"
     return window, controller
 
 
@@ -176,8 +196,15 @@ class TestAKijelolesEltavolitasa:
 
     def test_csak_a_talcan_kijelolt_kerul_le(self, qml_app, qt_app):
         window, controller = _harom_kep(qml_app, qt_app)
-        _kattints(qt_app, window, _belyegkepek(window)[1])
-        assert _var(qt_app, lambda: list(controller.traySelectedIndexes) == [1])
+        cel = _belyegkepek(window)[1]
+        _kattints(qt_app, window, cel)
+        assert _var(qt_app, lambda: list(controller.traySelectedIndexes) == [1]), (
+            f"a kattintás nem a második képet jelölte ki "
+            f"(kijelölt: {list(controller.traySelectedIndexes)}, "
+            f"a cél x-e: {cel.mapToScene(QPointF(0, 0)).x():.0f}, "
+            f"az ablak: {window.width()}x{window.height()}, "
+            f"látható-e: {window.isExposed()})"
+        )
 
         _gyerek(window, "trayContextMenu").removeSelectionRequested.emit()
         qt_app.processEvents()
