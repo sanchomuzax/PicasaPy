@@ -1,8 +1,25 @@
 """Picasa-kompatibilis médiatípus-felismerés kiterjesztés alapján.
 
 Forrás: Picasa 3.9 hivatalos támogatott-formátum lista (NotebookLM notebook,
-Picasa help). A WebP szándékosan hiányzik — a Picasa nem támogatta; felvétele
-későbbi, tudatos bővítés lehet.
+Picasa help).
+
+⛔ **HELYESBÍTÉS (#2344).** Ez a fejléc korábban azt állította, hogy „a WebP
+szándékosan hiányzik — a Picasa nem támogatta". **Ez téves volt**, három
+független bizonyítékkal:
+
+1. a `SupportWEBP` beállítás **alapértéke 1** (a nyilvántartó `0x006e0cb0`);
+2. a bináris ismeri a kiterjesztést: `.webp` a `0x00467ca0`-n, `*.webp;` a
+   fájlszűrő-listában a `0x00520220`-on, `*.webp` a `0x005e6a20`-on; a
+   `SupportWEBP` kulcs hat függvényben szerepel, köztük a
+   Beállítások-kezelőben (`0x006e1100`);
+3. a tulajdonos **valódi** `thumbindex.db`-jében van `.webp` fájl.
+
+A WebP-képek emiatt **némán eltűntek** a beolvasásból.
+
+⚠️ **A formátum-kapcsolók hatóköre NINCS mérve.** A Picasa formátumonként
+kapcsolható (`SupportGIF` és `SupportPNG` alapértéke **0**, a többié 1), a
+mi szűrőnk viszont feltétel nélküli — a tulajdonos katalógusában mégis 125
+PNG van. Hogy a kapcsoló a beolvasást vezérli-e, külön kutatás (#2344).
 """
 
 from __future__ import annotations
@@ -10,7 +27,16 @@ from __future__ import annotations
 from pathlib import PurePath
 
 PHOTO_EXTENSIONS = frozenset(
-    {".jpeg", ".jpg", ".tif", ".tiff", ".bmp", ".gif", ".psd", ".png", ".tga"}
+    {
+        ".jpeg", ".jpg", ".tif", ".tiff", ".bmp", ".gif", ".psd", ".png",
+        ".tga",
+        # #2344: a Picasa alapból indexeli (`SupportWEBP` = 1), ld. a
+        # modul fejlécét. A megjelenítés is rendben: a szállított PySide6
+        # 6.11.2 `QImageReader`-e olvassa, és a Pillow/OpenCV úton is
+        # megvan. (A fejlesztői gép régebbi 6.8.2.1-e NEM — az a Qt-építés
+        # sajátja, nem termékhiba; ezért nem is szabad rá tesztet kötni.)
+        ".webp",
+    }
 )
 
 RAW_EXTENSIONS = frozenset(

@@ -9,6 +9,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A beolvasás megtalálja a `.webp` képeket (#2344). Eddig némán kimaradtak:
+  a szűrőnkből hiányzott a kiterjesztés, pedig a Picasa alapból indexeli
+  őket — a tulajdonos katalógusában is van ilyen fájl.
+
+### Javítva
+
 - A Picasa-adatbázis importja átveszi a kulcsszavakat és a helyadatot
   (#2336). Eddig mindkettő némán elveszett: a tulajdonos adatbázisában ez
   342 kép kulcsszavait és 219 kép földrajzi helyét érinti. A geotag nélküli
