@@ -408,3 +408,72 @@ vásárlási keresőjének**, hogy kellékeket (patront, papírt) ajánljon —
   mert nincs hova küldeni.
 
 *(A panel többi eleme változatlanul cél; ez az egy tétel a kivétel.)*
+
+---
+
+## Két REJTETT nyomtatási beállítás: `PrinterQuality` és `PrinterUseTiles` (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris; az import IAT-résen át azonosítva).
+
+A panelen van egy eddig dokumentálatlan **minőség-kapcsoló**
+(`printpanel/optimizebutton` ↔ `printpanel/normalbutton` /
+`printpanel/standardbutton`). Mögötte két `Preferences`-kulcs áll.
+
+### Az állapot eldöntése — `0x00745f80` (212 b)
+
+| cím | mit tesz |
+|---|---|
+| `0x00745f85`–`0x00745f9a` | **`PrinterQuality`** (`0x00ca9a18`), **alapérték `2`** |
+| `0x00745fa7`–`0x00745fbe` | **`PrinterUseTiles`** (`0x00cb0cb4`), **alapérték `0`** |
+| `0x00745fd0` | `cmp eax, 0x3e9` (**1001**) — egyezésnél **hamis** |
+| `0x00745fe0` | `test eax, eax` — nullánál **hamis** |
+| `0x00746014` | különben **igaz** (`mov al, 1`) |
+
+⇒ **„Optimalizált" állapot csak akkor, ha `PrinterQuality ≠ 1001` ÉS
+`PrinterUseTiles ≠ 0`.** Mivel a `PrinterUseTiles` alapértéke **0**, a
+panel **alapból a „normál" gombot** mutatja.
+
+### A kapcsoló írója — `0x00746060` (270 b)
+
+`0x0074609e` és `0x007460bc`: **mindkét kulcsot** kiírja, majd
+`0x0074612e`: `call 0x008613b0` — vagyis a változást **azonnal
+érvényesíti** a nyomtatási motorban.
+
+### Hova jut el a `PrinterQuality` — a nyomtató KÉPESSÉG-lekérdezésébe
+
+`0x008614a0` (390 b) beolvassa a `PrinterQuality`-t (`0x008614aa`,
+alapérték szintén **2**: `0x008613e9`), majd `0x00861536`-nál
+`mov edi, dword ptr [0x00c40108]` — ez az IAT-rés, amely a mérés szerint a
+**`GetDeviceCaps`**-re mutat *(a „GetDeviceCaps” hint/name RVA `0x009234c4`
+épp ebben a résben áll)*. Az `edi`-n át átadott indexek sorban:
+
+| index | a Windows dokumentált jelentése |
+|---:|---|
+| `0x0a` = **10** | `VERTRES` |
+| `0x58` = **88** | `LOGPIXELSX` |
+| `0x5a` = **90** | `LOGPIXELSY` |
+| `0x6e` = **110** | `PHYSICALWIDTH` |
+| `0x6f` = **111** | `PHYSICALHEIGHT` |
+| `0x70` = **112** | `PHYSICALOFFSETX` |
+| `0x71` = **113** | `PHYSICALOFFSETY` |
+
+⇒ A `PrinterQuality` a **nyomtatható terület és a felbontás**
+kiszámításában vesz részt — tehát azt befolyásolja, **milyen felbontáson
+rajzolódik a lap**.
+
+### ⛔ KIMERÍTŐ NEGATÍV: a `PrinterUseTiles` nem jut el a rajzolásig
+
+A `PrinterUseTiles` kulcsnak a binárisban **pontosan két** hivatkozója van:
+`0x00745f80` (a panel állapota) és `0x00746060` (az író). **Egyik sem a
+nyomtatási motor.** A neve ellenére tehát ebben a kiadásban a
+csempézett rajzolást **nem** kapcsolja — csak a panel gombállapotát.
+
+*(Összevetésül: a `PrinterQuality`-nak nyolc hivatkozója van, köztük három
+a motorban: `0x00861190`, `0x008613b0`, `0x008614a0`.)*
+
+### Nálunk (mérve, 2026-09-04)
+
+`app/print_controller.py:531`, `:816` — a `QPrinter.resolution()` és a
+`pageRect(DevicePixel)` adja a lapméretet; **minőség-kapcsoló nincs**, és a
+`PrintDialog.qml` `quality` tulajdonsága a **DPI-figyelmeztetésé**, nem
+ezé a beállításé.
