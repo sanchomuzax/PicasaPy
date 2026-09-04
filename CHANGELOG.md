@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.274] – 2026-09-04
+
+### Javítva
+- Ha egy „Másolat mentése" kimenetét kitörlik, és a helyére ugyanazzal a
+  névvel új kép kerül, az új kép többé nem örökli a törölt fájl származását
+  (#2099).
+
 ## [0.8.273] – 2026-09-04
 
 ### Hozzáadva
