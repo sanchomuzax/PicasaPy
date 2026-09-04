@@ -56,7 +56,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 | `gpsversion` | — | globális verziószám (GPS-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `colorspaceversion` | — | globális verziószám (színtér-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `rawversion` | — | globális verziószám (RAW-feldolgozás); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
-| `date` | `2019-07-04` | **PicasaPy-kiterjesztés (#320), élő Picasa-ini-ben validálandó** — a mappa dátumának KÉZI felülírása (ISO 8601, év-hónap-nap). Nem a hivatalos formátum dokumentált kulcsa: sem a Buchinger-visszafejtés, sem az exe string-tábla nem sorol fel mappa-szintű `date`-et (csak az albumoknál, `[.album:token]` alatt van ilyen). Hiányában a mappa dátuma a legrégebbi kép felvételi ideje (`index/sync.py`). Kód: `picasapy.ini.folder_date`. |
+| `date` | `46269.390486` vagy `2019-07-04` | ✅ **A VALÓDI Picasa is írja (#2304, 2026-09-04)** — és **OLE Variant-időként** (napok 1899-12-30 óta), nem ISO-ban. Mért példa a tulajdonos gépéről: `date=46269.390486` = 2026-09-04 09:22:17, pontosan a mappa létrejötte. Ez egyezik az író `date=%f` formátumsztringjével (`0x0068ac80`). A PicasaPy **olvasáskor mindkét alakot érti**, íráskor ISO-t ad (ld. a nyitott kérdést lent). Hiányában a mappa dátuma a legrégebbi kép felvételi ideje (`index/sync.py`). Kód: `picasapy.ini.folder_date`. |
 
 (A verzió-kulcsok forrása: `Picasa3.exe` string-tábla, ld.
 `docs/specs/picasa-exe-strings.md` 2. pont — feltehetően adatbázis-migrációs
@@ -614,8 +614,22 @@ registry-kulcsokban is megtaláltuk: `Software\Lifescape Solutions Inc.\Picasa`.
 |---|---|
 | `name` | `name` — **változatlan** |
 | `description` | a `[.album:]` szekcióba került |
-| `date` — **OLE-dátum** (lebegőpontos napszám) | ISO 8601 a `[.album:]`-ban |
+| `date` — **OLE-dátum** (lebegőpontos napszám) | **`[Picasa]`-ban változatlanul OLE-dátum** (#2304); ISO 8601 csak a `[.album:]`-ban |
 | `category` = „Other Pictures" | `category` = „Folders on Disk" stb. |
+
+⚠️ **Helyesbítés (#2304, 2026-09-04).** Ez a sor korábban azt állította,
+hogy a `date` „ma ISO 8601". A mérés ezt **cáfolja**: a tulajdonos gépén a
+Picasa 3.9 által ma írt ini `[Picasa]` szekciójában `date=46269.390486`
+áll — OLE Variant-idő. Az állítás egyébként a fenti író-táblával is
+ellentmondásban volt: a `0x0068ac80` formátumsztringje **`date=%f`**,
+vagyis lebegőpontos. Az ISO-alak a `[.album:token]` szekciókra igaz, a
+mappa-szintű `[Picasa]`-ra nem. A mi olvasónk emiatt **némán eldobta** a
+valódi Picasa-mappák dátumát (`picasapy.ini.folder_date`), és a szinkron a
+legrégebbi felvételi időre esett vissza.
+
+⚠️ **Nyitott:** nincs mérve, hogy a Picasa **olvasáskor** elfogadja-e az
+ISO-alakot. Csak azt tudjuk, mit ír. Amíg ez nem dőlt el, a mi ISO-írásunk
+kockázat kétirányú munkamenetben.
 
 A **`category`** mező tehát **több mint húsz éve** ugyanazt a szerepet tölti be:
 a mappa/album gyűjteménybe sorolását. A mai `P2category` ennek a leszármazottja.
