@@ -313,8 +313,16 @@ class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
     def test_reanimated_eye_color_has_no_ui_effect_name(self):
         assert "reanimatedeyecolor" not in _EFFECT_NAMES
 
-    def test_picnik_tint_has_no_ui_effect_name(self):
-        assert "picniktint" not in _EFFECT_NAMES
+    def test_picnik_tint_MOST_MAR_felületi_effekt(self):
+        """#2141: a #516 kihagyása MEGDŐLT — de nem önkényesen.
+
+        A #516 azért hagyta ki, mert nincs ecset-eszközünk. A #685
+        mérőszettjének exportja viszont azt mutatja, hogy az EREDETI
+        Picasa is a **teljes képre** futtatja befestés nélkül
+        (ΔE 36,9 — ld. `EMPTY_MASK_DEFAULT_OPS` kommentje), tehát a mi
+        viselkedésünk itt megegyezik az eredetivel. Az 1. effekt-fül 6.
+        csempéje az eredeti csempe-táblája szerint a `PicnikTint`."""
+        assert "picniktint" in _EFFECT_NAMES
 
     def test_picnik_focal_pixelate_has_no_ui_effect_name(self):
         assert "picnikfocalpixelate" not in _EFFECT_NAMES

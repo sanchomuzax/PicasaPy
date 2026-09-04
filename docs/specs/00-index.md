@@ -709,7 +709,7 @@ beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
    felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
    futott a mentés.
 
-### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02; bővítve 2026-09-03, az „ág ↔ üzemmód” LEZÁRVA)
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel: a KIADÁS gomb (ÚJ, 2026-09-02; az „ág ↔ üzemmód” LEZÁRVA 2026-09-04)
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
@@ -826,12 +826,16 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    indoka „egyetlen olvasó" volt), és 16 egymás utáni dwordre képezi a
    kulcsokat; a `0x0066f470` húsz beállító híváshelye kiolvasva. Lap:
    `ajandek-cd-kimenet.md` **10.**
-2. **Melyik ÁG melyik üzemmódhoz tartozik?** A `0x0066f470` három ágon állít
-   értékeket, de a `[ebp+0x13f]` jelzőbit és a `0x0066f546` `test edi, edi`
-   hozzárendelése a három üzemmódhoz (mentés / Ajándék-CD / feltöltés)
-   **NINCS MÉRVE**. **Megszerzés:** a `0x0066f470` (923 b) célzott
-   dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Lap:
-   `ajandek-cd-kimenet.md` 7.; jegy **#2095**.
+2. ~~Melyik ÁG melyik üzemmódhoz tartozik?~~ **LEZÁRVA (2026-09-04, #2095)** —
+   szintén dekompiláció nélkül. A `+0x13e`/`+0x13f` mód-bájtnak a teljes
+   binárisban **egyetlen írója** van (a panel konstruktora, `0x0066bf90`), és
+   **ugyanaz a függvény** választja belőlük a `publish/presentcd_go` /
+   `backup_go` / `replicate_go` vezérlőnevet — a név megnevezi az üzemmódot:
+   `0/–` = **Ajándék-CD**, `≠0/0` = **biztonsági mentés lemezre**,
+   `≠0/≠0` = **replikáció (feltöltés)**. A belépési elemnevek
+   (`thumbui/cdmode` · `backup` · `replicate`) és az ágak tartalma
+   (`option_isupload`, a `PicasaRestore` másolása) függetlenül ugyanezt adja.
+   Lap: `ajandek-cd-kimenet.md` **12.**
 
 ### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-03)
 
@@ -1023,7 +1027,7 @@ mind a négy eltolás pontosan egyszer, azonos (növekvő) sorrendben, azonos
 háromlépéses mintával (név → régi érték olvasása → új érték írása).
 ⇒ **A megvalósító nem feltevésből dolgozik.** Melléklelet: ugyanez az
 olvasó a görbék ELŐTT beolvassa az `ExposureAdjustmentStops` attribútumot a
-`+0x50` tagba (`0x00bb9b88`) — a szerepe NINCS MÉRVE.
+`+0x50` tagba (`0x00bb9b88`). ✅ **A szerepe MÉRVE (2026-09-04)**: az ELŐJELE választ a sötétítő (13,0)·(116,74)·(208,156)·(255,221) és a világosító (0,17)·(47,81)·(129,186)·(221,255) négypontos görbe közt, az ABSZOLÚT ÉRTÉKE az erősség.
 ⛔ Az alkalmazó (`0x00bb9e00`) a keresett `mov r32, [reg+disp8]` alakkal
 **nem** hivatkozik a négy tagra (438 bájton nulla) — de ebből **nem
 következik**, hogy nem használja; más címzési alak vagy paraméterátadás
@@ -1350,7 +1354,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [lanc-szakadasok-leltar.md](lanc-szakadasok-leltar.md) | **Ahol a háttér kész, de a felület nem éri el** — mért leltár: a regisztrált vezérlők közül egy sem holt, de több tucat tag elérhetetlen a QML-ből, jelentős részüket csak a teszt hívja. A pontos, mindig friss számot a lap generált blokkja és a `scripts/kepesseg_or.py` futásának kimenete adja — ide szándékosan nem írjuk ki (#1508, #1512). Négy megerősített lelet (Nyomtatás · arckeresés-indítás · e-mail küldés · visszavonás-gombok) és a naiv `.tagnév` keresés csapdája (négy név két gazdával). Jegyek: **#1472**–**#1476** |
 | [nema-tagok-1052.md](nema-tagok-1052.md) | **A #1052 huszonhat néma vezérlő-tagjának döntése** — tagonként HIBA / SZÁNDÉKOS / HALOTT, kétféle alakú kereséssel igazolva. A jegy **„gomb aktív állapota" feltevése MEGDŐLT**: a #116 az egygombos javításokról szándékosan levette a „benyomva" állapotot, a csempe a `*Enabled` párt köti — a három `*Active` property maradék. Egy új, felhasználót érintő lelet: a vágás „Alaphelyzet" gombja csak a KIJELÖLÉST törli, a mentett vágást nem. Négy tag azóta bekötést kapott (#1472, #1473), egy soron a jegy tévedett (`setSimplified`). Jegy: **#1052** |
 | [picasa-szinkereses.md](picasa-szinkereses.md) | **A hat szín szerinti keresés MEGFEJTVE** — NEM az átlagszínt osztályozza: telítettséggel súlyozott **hue-hisztogram** az egész rasztról, hét vödörrel, a legnagyobb nyer (`0x009dbd10`). Küszöbök: `MAX==0` és `S<=50` képpont kimarad; `b=H/10`; mért **rés** 353,0–358,8°-nál; akromatikus ⇒ mind a három token. Jegy: **#1480** |
-| [picasa-tartalomkulcs.md](picasa-tartalomkulcs.md) | **A tartalom-kulcs (`originfast`) — 10/10 igazolva** valódi fájlokon: `MD5(uint32_le(méret) ‖ első 16834 bájt ‖ utolsó 16834 bájt)` első 8 bájtja. Három téves jelölt mérve kizárva (`onlinechecksum` u32, `originhash` 0/32, `backuphash` u16). Jegyek: **#1481**, **#1482** |
+| [picasa-tartalomkulcs.md](picasa-tartalomkulcs.md) | **A tartalom-kulcs (`originfast`) — 10/10 igazolva** valódi fájlokon: `MD5(uint32_le(méret) ‖ első 16834 bájt ‖ utolsó 16834 bájt)` első 8 bájtja. Három téves jelölt mérve kizárva (`onlinechecksum` u32, `originhash` 0/32, `backuphash` u16). ✅ **2026-09-04 — a PMP-oszloptábla regisztrációja kiolvasva** (#1482): `originslow` **`+0x9d8`**, `originfast` **`+0xa40`** (a `+0x978` a `revertable`), és a kettő **ugyanaz az oszlop-osztály**; a bájt- és az u64-oszlop a vtable 11. résében tér el. Mért negatívum: a két tagot a teljes binárisban csak a regisztráló és a destruktor érinti ⇒ **az érték-írás nem literális tagoffszeten megy**, az `originslow` képletét ne ott keressük. Jegyek: **#1481**, **#1482** |
 | [picasa-mappanezet.md](picasa-mappanezet.md) | **A `Nézet ▸ Mappanézet` MŰKÖDÉS-specje — egy funkcionális félreértést javít**: ez NEM rendezés, hanem a bal hasáb **gyökere és hierarchiája**. A lapos↔fa **kizáró pár** (`[+0x9d]`), az „Egyszerűsített fanézet" viszont **független kapcsoló**, ami a `SimplifiedHierarchy` beállítással az `all` gyökeret **`watched`-re cseréli**. Hat gyökér-token, négy gyökér a helyi menüben, a fejlécfelirat („Alapértelmezett nézet" / „Sajátgép"), a `LastViewRoot`/`LastViewRoot2` tárolás, és a visszaesés a Sajátgépre hibaesetben. Jegyek: **#1407**, **#1454** |
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
 | [picasa-keptalca.md](picasa-keptalca.md) | **A Képtálca (`scratch`, „Selection") MŰKÖDÉS-specje** — a döntő lelet, hogy a tálca **nem marad meg újraindítás után** (három független negatív ellenőrzés); a négy vezérlő felirat NÉLKÜL, csak ikon+súgó; a helyi menü **nyolc sora** (ebből csak kettő a `Tray::` névtérből); a bélyegképek **négyzetesek és középre vágottak** (16 mért eset, a méret-képlet NINCS MEG); a `scratch` a `scratchlabel` FÖLÖTT; az összecsukott mappa-token; **két külön** ürítés-megerősítés; a 36,5%-os doboz-kényszer; a `trayexec` adatvezérelt műveletsor; két negatív eredmény (a `.pbz` placement NEM az alap-sorrend, a `Tray contains:` hibakereső lap); **a rács osztásköze a két irányban AZONOS** (a #1914 „3 px sor / 0 px oszlop" kérése megdőlt, 18.); **a kimeneti gombsor (`outputlayout`) egyetlen 55 × 36-os cellasablonból épül**, és van benne túlcsordulás-gomb („További lehetőségek…"), ami nálunk hiányzik (21., #2191); **a mappa-token teljes feltárása** — típustesztes kiváltó, négy felirat, mért geometria, és hogy a token és a bélyegkép-rács KIZÁRJA egymást (20.) |

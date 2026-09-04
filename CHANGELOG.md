@@ -7,6 +7,28 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.263] – 2026-09-04
+
+### Javítva
+- A bal hasáb három nézet-kapcsolója (fanézet, egyszerűsített fanézet,
+  indexképek a könyvtárban) megmarad a következő indításig — eddig minden
+  induláskor alapállapotba esett (#2154).
+
+## [0.8.262] – 2026-09-04
+
+### Új
+- A súgóban van **Vissza** és **Tartalom** gomb: a keresőből megnyitott
+  lapról vissza lehet lépni, és a tartalomjegyzék egy kattintással elérhető
+  keresés közben is (#2213).
+
+## [0.8.261] – 2026-09-04
+
+### Javítva
+- Az Effektek fül Élesítés, Filmszemcse és Árnyalás csempéje az eredeti
+  Picasa szerinti szűrőt indítja (eddig a régi, „(régi)" jelzésű változatot).
+  A Filmszemcséről eltűnik a kék jelvény, és — az eredetihez hűen —
+  csúszkás panelt nyit (#2141).
+
 ## [0.8.260] – 2026-09-03
 
 ### Javítva

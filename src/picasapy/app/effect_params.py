@@ -95,7 +95,10 @@ class EffectParam:
 
 #: Effektek, amelyeknek nincs állítható paramétere — a gomb azonnal alkalmaz
 #: (ez a Picasa viselkedése is: a Szépia/Fekete-fehér egy kattintás).
-PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "grain2", "invert")
+# #2141: a `grain2` KIKERÜLT — az 1. fül 5. csempéje az eredeti
+# elsődlegesére (`picnikgrain`) kötött, aminek VAN csúszkája. A
+# `grain2` a Shiftes másodlagos, felületi belépési pont nélkül.
+PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "invert")
 
 
 def _slider(key, label, minimum, maximum, default, step=1.0, max_formula=None, default_formula=None) -> EffectParam:
@@ -330,6 +333,21 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("grain", "Grain", 0.0, 50.0, 10.0),
         _checkbox("lighten", "Lighten", default=False),
     ),
+    # --- #2141: a csempe-átkötés HOZTA IDE a következő kettőt -------------
+    # Az 1. effekt-fül Élesítés és Árnyalás csempéje az eredeti
+    # elsődlegesére (`unsharp2`, `PicnikTint`) került át. Katalógus-bejegyzés
+    # nélkül ezek `has_params=False`-ok lettek volna, vagyis a csempe
+    # NÉMÁN elveszi a csúszkát, és alapértékkel azonnal alkalmaz. Az
+    # adatok forrása a szűrő-regiszter (`registry_data.py`, a
+    # `filterdesc.xml`-ből) — nem becslés.
+    #
+    # unsharp2=1,mennyiség — a felső vég 3,0 (az `unsharp` v1-é 1,0),
+    # az alapérték mindkettőnél 0,6
+    "unsharp2": (_p("amount", "Amount", 0.0, 3.0, 0.6, 0.05),),
+    # PicnikTint=1,elhalványítás — a regiszter EGY csúszkát ad („Fade",
+    # 0–100, alap 0). Színválasztója NINCS: az örökölt `tint` az, aminek
+    # `preserve` + `#szín` párja van.
+    "picniktint": (_p("fade", "Fade", 0.0, 100.0, 0.0),),
 }
 
 

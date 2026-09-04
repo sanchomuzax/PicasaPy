@@ -2342,6 +2342,36 @@ tárolja:
 szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
 görbék mellett.
 
+#### Az `ExposureAdjustmentStops` SZEREPE — két kész görbe, előjel szerint (2026-09-04)
+
+A `0x00bcd3b0` (253 b) az értéket **nullához hasonlítja**, és három ágra
+megy. Mindkét nem-nulla ág egy **négypontos** görbét épít
+(`mov eax, 4; call 0x008f2b30`) — csupa beolvasott konstansból:
+
+| ág | a négy `(x, y)` pont | hatás |
+|---|---|---|
+| **sötétítő** (`0x00bcd3c7`) | (13, 0) · (116, 74) · (208, 156) · (255, 221) | minden kimenet a bemenet ALATT |
+| **világosító** (`0x00bcd431`) | (0, 17) · (47, 81) · (129, 186) · (221, 255) | minden kimenet a bemenet FÖLÖTT |
+| **nulla** (`0x00bcd48a`) | — | `0x008f2da0` (82 b) hívása, görbeépítés nélkül |
+
+Utána — mindkét ágon — az **abszolút értéket** veszi és továbbadja:
+
+```
+0x00bcd491  fld  dword ptr [esp + 0x2c]   ; az eredeti érték
+0x00bcd499  call 0x0049f5c0               ; fabs
+0x00bcd4a1  call 0x00bcd4b0               ; (103 b) — az erősség felhasználása
+```
+
+⇒ **Az `ExposureAdjustmentStops` ELŐJELE választja a görbét (sötétít vagy
+világosít), az ABSZOLÚT ÉRTÉKE pedig az erősséget adja.** A két görbe
+egymáshoz közel tükrös, de **nem pontosan** az (a sötétítő 13-nál kezd, a
+világosító 17-nél végződik) — külön szerzett táblák, nem egy képlet két
+iránya.
+
+**Ami NINCS mérve:** mit csinál a `0x00bcd4b0` az abszolút értékkel
+(skálázás? több lépcső?), és mit tesz a nullás ág `0x008f2da0`-ja.
+
+
 ### Amit ez a három eset MÓDSZERTANILAG mutat
 
 1. **Az alapérték mindig ott van a getter előtt.** A minta:
@@ -2626,9 +2656,31 @@ paraméter nő
 
 Ez a **derítőfény (fill light)** jellegű görbe alakja.
 
-> **Ami NINCS mérve:** melyik attribútum az `s` (a négy beolvasott érték
-> közül), és mire megy a másik három; továbbá hogy a két görbe hogyan
-> kapcsolódik össze (sorban? keverve?).
+> ✅ **Mindkét kérdés megválaszolva.** Az `s` a **`fill`** attribútum
+> (2/b. pont). A görbék pedig **SORBAN**, nem keverve:
+>
+> ```
+> 0x00bc218c  call 0x008f3290   ; érték = 1. görbe(érték)
+> 0x00bc21a1  call 0x008f3290   ; érték = 2. görbe(érték)
+> 0x00bc21b6  call 0x008f3290   ; érték = 3. görbe(érték)
+> 0x00bc21bf  fldz ... fcom     ; majd alsó vágás nullára
+> ```
+>
+> A `0x008f3290` (280 b) a **görbe kiértékelése egy pontban**: ha a görbe
+> kevesebb mint két pontból áll, **változatlanul visszaadja** a bemenetet
+> (`0x008f32a0`). A `0x008f2c70` (299 b) ennek a párja: **pont hozzáfűzése**
+> a görbéhez (kapacitás-duplázás, `eax*8` ⇒ 8 bájt = egy `(x, y)` pár).
+>
+> ⇒ **A művelet a bemeneti szintet három görbén futtatja át egymás után
+> (kompozíció), majd nullára vágja alul.** Egy külön ág (`0x00bc2125`–
+> `0x00bc2163`) egyetlen görbét értékel ki, hozzáad egy skálázott tagot, és
+> a `0x008f2e00`-t hívja — mikor lép életbe, **nincs mérve**.
+>
+> **Ami szintén nincs mérve:** melyik veremrekesz melyik görbe. A három
+> kiértékelés a `[esp+0x74]`, `[esp+0x1c]` és `[esp+0x34]` címekre megy, de
+> az építési helyükhöz képest a verem közben eltolódik, és a jelen
+> olvasatból nem dönthető el egyértelműen a párosítás. **Találgatás helyett
+> kimondva marad.**
 
 ### 2/b. ⛔ HELYESBÍTÉS: az `Exposure` NEGYEDIK attribútuma a `fill` — és épp az hajtja az 5 pontos görbét (2026-09-04, #2238)
 

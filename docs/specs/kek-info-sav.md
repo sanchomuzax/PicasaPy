@@ -207,3 +207,116 @@ A mai kódban a szövegnek **nincs külön clipje**, a teljes sávot kapja
 a **szöveg** clipje hiányzik: `bal + 20 … jobb − 20`.
 
 Jegy: **#1934**.
+
+---
+
+## 7. A CÍMKE-rész a sávon — kimérve (2026-09-04, #1913)
+
+A #1913 2. pontja ezt kérte: a referencia-felvételeken a sáv a **címkézett
+képek számát** is kiírja, és a jegy szerint „a forrásminta nem [látszik]…
+enélkül a formátum találgatás". **A forrás megvan.**
+
+### A felirat
+
+| kulcs | angol (bináris) | magyar (`stringres.xml`) |
+|---|---|---|
+| `CThumbUI::GetTagInfo::format` | `Tags: ` | **`Címkék: `** |
+
+Az előállító a **`0x0056f920`** (665 b):
+
+```
+0x0056f9cc  push 0x00c8f470          ; "CThumbUI::GetTagInfo::format"  (a KULCS)
+0x0056f9d1  mov  eax, 0x00c8f468     ; "Tags: "                        (az angol alapérték)
+0x0056f9d6  call 0x009ae560          ; szövegtár-lekérdezés
+```
+
+### A címkénkénti alak — BEÉGETETT, nem honosított
+
+```
+0x0056fa98  push 0x00c8f494          ; "%s (%d)"
+0x0056faa1  call 0x0040ea90          ; sprintf(név, darabszám)
+```
+
+⇒ A sáv címke-része: a honosított **`Címkék: `** előtag, majd címkénként
+**`<név> (<darabszám>)`**. A zárójeles darabszám formátuma **nincs a
+szövegtárban** — beégetett, tehát minden nyelven ugyanaz.
+
+Ez pontosan a felvételen látott alak:
+
+```
+67 képek   …   86,5 MB a lemezen   Címkék: AI image (66)
+```
+
+⇒ **A #1913 2. pontja LEZÁRVA**: a formátum nem találgatás.
+
+> ⚠️ **A sztring nincs a bináris-index sztringtáblájában.** Sem a
+> `CThumbUI::GetTagInfo::format`, sem a `%s (%d)` nem szerepel a
+> `string_xrefs`-ben — a hivatkozó függvényt az utasítás-operandusok
+> közvetlen átfésülése adta meg. A sztring-xref hiányából tehát **nem
+> következik**, hogy a szöveg nincs meg.
+
+### A 3. pont már korábban lezárult
+
+A #1913 3. pontja („a méret-felirat két magyar alakja") **a 2. és 2.1
+szakaszban már benne van** (a #1934 köre vitte be): a `::4` a
+**dátum-tartományos** alak (`… a lemezen`), a `::5` az **egy dátumos**
+(`…/lemez`). A jegyben szereplő feltevés — „nap-számhoz kötés" —
+**helyesnek bizonyult**, csak addigra már mérve is volt.
+
+*(A magyar fordítás következetlensége — `a lemezen` vs `/lemez` — a
+gyártó saját szövegtárában van így; nem a mi hibánk, és átvételkor
+követni kell.)*
+
+---
+
+## 8. A FÜGGŐLEGES TÉRKÖZ a csík és a gombsor közt: **6 képpont** (2026-09-04, #1913)
+
+> ℹ️ **Ez KONTROLL-mérés, nem új eredmény.** A 6 képpontot a **#2173** köre
+> már kimérte és be is építette (`TrayBar.qml`, 2026-09-03). Az itteni
+> levezetés **függetlenül**, a `respack.yt` rétegfejléceiből jött ki —
+> és **ugyanazt** adta. A szám tehát kétszer, két úton igazolt.
+
+A #1913 1. pontja ezt kérte, és kikötötte, hogy a szám a `respack.yt`
+rétegtéglalapjaiból jöjjön, ne becslésből („kitalált 3 vagy 5 képpont
+később mérésnek látszana").
+
+**Kimérve** a `tools/picasa/respack.py` olvasójával, a
+`runtime/respack.yt` 13 bájtos rétegfejléceiből. Az elemek a felületleíróban:
+`thumbui.tre:702` (`thumbui/basecontrolset`) · `thumbui.tre:683`
+(`thumbui/infotext`) · `thumbui.tre:225` (`thumbui/startoggle`) ·
+`thumbui.tre:238` (`thumbui/rotateleft`) · `thumbui.tre:245`
+(`thumbui/rotateright`).
+
+| réteg | téglalap | méret |
+|---|---|---|
+| `thumbui/rect: basecontrolset` *(a teljes vezérlő-sáv)* | (0, **429**)–(800, 534) | 800 × 105 |
+| `thumbui/text( ): infotext` *(a kék csík szövege)* | (183, **429**)–(664, **443**) | 481 × 14 |
+| `thumbui/clip: infotext_clip` | (183, 429)–(664, 443) | 481 × 14 |
+| `thumbui/…: startoggle` *(csillag)* | (289, **449**)–(325, 471) | 36 × 22 |
+| `thumbui/…: rotateleft` | (330, 449)–(366, 471) | 36 × 22 |
+| `thumbui/…: rotateright` | (367, 449)–(403, 471) | 36 × 22 |
+
+```
+a csík ALSÓ éle      443
+a gombsor FELSŐ éle  449
+                     ---
+térköz                 6 képpont
+```
+
+⇒ **A kék csík és a gombsor közti függőleges térköz 6 képpont.** A csík a
+vezérlő-sáv legtetején ül (mindkettő `y0 = 429`), a gombsor 20 képponttal
+lejjebb kezdődik.
+
+### Két melléklelet, ami a bekötésnél számít
+
+1. **A három gomb NEM egyenletesen osztott.** A csillag (289–325) és a
+   balra forgatás (330–366) közt **5** képpont van, a két forgatás közt
+   (366–367) viszont **1**. A csoportosítás tehát: csillag ▏ szünet ▏
+   forgatás-pár.
+2. **A gombsor magassága 22 képpont**, a csíké 14 — a kettő nem egyezik,
+   tehát a `Column` `spacing`-je önmagában nem elég: a két sor saját
+   magassága is mért érték.
+
+*Bizonyítottsági fok: **megerősített** — a számok a `respack.yt`
+rétegfejléceinek `int16 x0, y0, x1, y1` mezőiből valók
+([`picasa-respack-format.md`](picasa-respack-format.md) 3.).*
