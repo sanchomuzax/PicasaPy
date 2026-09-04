@@ -271,6 +271,11 @@ követni kell.)*
 
 ## 8. A FÜGGŐLEGES TÉRKÖZ a csík és a gombsor közt: **6 képpont** (2026-09-04, #1913)
 
+> ℹ️ **Ez KONTROLL-mérés, nem új eredmény.** A 6 képpontot a **#2173** köre
+> már kimérte és be is építette (`TrayBar.qml`, 2026-09-03). Az itteni
+> levezetés **függetlenül**, a `respack.yt` rétegfejléceiből jött ki —
+> és **ugyanazt** adta. A szám tehát kétszer, két úton igazolt.
+
 A #1913 1. pontja ezt kérte, és kikötötte, hogy a szám a `respack.yt`
 rétegtéglalapjaiból jöjjön, ne becslésből („kitalált 3 vagy 5 képpont
 később mérésnek látszana").
