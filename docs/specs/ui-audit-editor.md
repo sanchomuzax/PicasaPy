@@ -2108,6 +2108,74 @@ együtt az `editpanel/weblink`, `quickupload` és `uploadchanges` elemekkel.
 ⇒ **A szerkesztő felismeri, hogy a megnyitott kép egy PROJEKT kimenete**
 (kollázs vagy mozgófilm), és felkínálja a **forrásprojekt újranyitását**.
 
+#### ⭐ A két FELTÖLTŐ gomb kapcsolási feltétele — kimérve (#1935, 2026-09-04)
+
+Ugyanez a `0x00567a00` dönt az `editpanel/quickupload` és
+`editpanel/uploadchanges` gombokról is. Mindkettő **`m_hidden`** a
+`.tre`-ben, és mindkettő az `editpanel/upload_buttons_container`-ben ül
+(`editpanel.tre:1143`–`:1153`).
+
+**A két segédfüggvény — kiolvasva:**
+
+| cím | mit tesz |
+|---|---|
+| `0x009cd730` | elem keresése név szerint, majd **REJTÉS** (`vtbl+0x68`) |
+| `0x009cd760` | elem keresése név szerint, majd **MUTATÁS** (`vtbl+0x6c`) |
+
+**A KÜLSŐ kapu — ha nem teljesül, EGYIK gomb sem látszik:**
+
+```
+0x00567d38   mov ecx, 0x00d353e8          ; a feltöltés-kezelő globális objektum
+0x00567d41   call 0x00563cb0              ; állapotkód -> [esp+0x2c]
+0x00567d46   test byte ptr [esp+0x2c], 4  ; ⬅️ a 4-es BIT
+0x00567d4b   je  0x00567dc9               ; ha nincs: egyik gomb sem
+```
+
+A `0x00563cb0` **pontosan három** állapotkódot ír:
+
+| kód | hol | átmegy a `& 4` szűrőn? | mikor |
+|---:|---|---|---|
+| **8** | `0x00563d31` | **NEM** ⇒ egyik gomb sem | `[obj+0x3094] > 0` **vagy** `[obj+0x30a0] > 0` **vagy** a `0x00431290` igaz |
+| **6** | `0x00563d20`, `0x00563d15` | igen | `0x00562d00` igaz (a szerkesztő valamelyik eszköze aktív: `edittextoverlay` / `cropselection` / `redselection` / `peoplepanel/manual_frame`) vagy `0x005696c0` (`editpanel/previewclip2`) |
+| **5** | `0x00563cff` | igen | a normál eset |
+
+A `0x00431290` (205 b) a **`Preferences\LastUserESState`** kulcsot olvassa
+(`0xc814f0` + `0xc7eafc`), és az eredményétől függ, hogy a kapu zár-e.
+
+**A kapun BELÜL a két gomb KIZÁRJA egymást:**
+
+```
+0x00567d51   cmp eax, 0 ; je 0x567d8b            ; nincs objektum -> a 2. ág
+0x00567d55   cmp [eax+0x1c], [ebp+0xe64]         ; egyezik-e a panel tagjával
+0x00567d5e   jne 0x567d8b
+0x00567d60   eax = [eax+0x38]                    ; egy SZTRING-mutató
+0x00567d63…  ha NULL vagy üres -> a 2. ág
+   1. ág:  0x00567d7a  REJTI a quickupload-ot,  0x00567d84  MUTATJA az uploadchanges-t
+   2. ág:  0x00567da5  REJTI az uploadchanges-t, 0x00567dc4  MUTATJA a quickupload-ot
+```
+
+⇒ **Mindig legfeljebb EGY gomb látszik**: ha a képhez tartozik a fenti
+nem üres sztring, akkor a „változások feltöltése", különben a „gyors
+feltöltés".
+
+⚠️ **Amit NEM azonosítottam:** az `[o+0x38]` mező jelentését (a szomszédos
+`weblink`-ág mintájára **online másolat azonosítója/URL-je** lehet, de ezt
+nem állítom), és az 5/6/8 kódok nevét. A gomb-logika ezek nélkül is teljes.
+
+**A szomszédos `weblink` gomb — ráadás, ugyanabban a menetben:** a
+`0x00567cf3` lekér egy sztringet, és **csak akkor mutatja** a gombot, ha a
+hossza **1-nél nagyobb** (`0x00567d1e cmp eax, 1` / `jbe` → rejtés).
+
+**Feliratok (a szövegtárból):** `OneUp::ID_QUICKUPLOAD` = „Gyors feltöltés"
+(ugyanez `Slingshot::ID_QUICKUPLOAD` néven is), és
+`QuickUploadHandler::ConnectionCheck` = „Fotók feltöltéséhez csatlakoznia
+kell az internethez".
+
+*Bizonyítottsági fok: **megerősített** a rejtés/mutatás párra, a külső kapu
+bitfeltételére, a három állapotkódra és a kizáró szerkezetre (mind
+kiolvasott utasítás); **nem azonosított** az `[o+0x38]` mező és a kódok
+neve.*
+
 **Nálunk a kollázs-ág MEGVAN** (`PhotoViewer.qml:590`, #1002, a
 `collage_save.py:753` is hivatkozik rá), a **mozgófilm-ág nincs**
 (`grep -rn 'editslideshow' src/` → **0**). ⇒ **#2114**.
