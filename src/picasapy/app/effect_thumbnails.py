@@ -5,13 +5,13 @@ renderelt, kicsinyített képét mutatja — nálunk eddig sima felirat-gomb vol
 Ez a modul adja a hozzá tartozó (a `render/chain.py` `apply_filters`-ét és
 az `effect_params.py` katalógusát használó) képszolgáltatót.
 
-KRITIKUS TELJESÍTMÉNY (36 effekt/fotó, a fül megnyitásakor mind egyszerre
+KRITIKUS TELJESÍTMÉNY (40 effekt/fotó, a fül megnyitásakor mind egyszerre
 kérhető): a `thumbnail_provider.py` mintáját követve ASZINKRON, saját
 `QThreadPool`-lal — a QML-szál sosem vár a renderelésre, a kép a `finished`
 jelzéssel érkezik meg, amikor kész. Két gyorsítótár-szint:
 
   - forrás-cache (`_source_for`): a fotó KIS FELBONTÁSÚ (``_SOURCE_EDGE``
-    px-es) dekódolt tömbje, fotónként (útvonal+mtime) EGYSZER — a 36 effekt
+    px-es) dekódolt tömbje, fotónként (útvonal+mtime) EGYSZER — a 40 effekt
     mind erről a közös forrásról indul, a lemez-dekód nem ismétlődik;
   - bélyegkép-cache (`_ThumbCache`): a KÉSZ (effekttel renderelt,
     ``_THUMB_EDGE`` px-re kicsinyített) QImage, (fotó, effekt) kulccsal —
@@ -57,7 +57,7 @@ from PySide6.QtQuick import (
 
 from picasapy.app.edit_controller import _EFFECT_NAMES
 from picasapy.app.effect_params import effect_params, format_param_values
-from picasapy.ini.filters import FilterOp
+from picasapy.ini.filters import FilterOp, parse_filters
 from picasapy.render import apply_filters
 
 from .thumbnail_provider import PLACEHOLDER_COLOR
@@ -82,7 +82,7 @@ _MAX_RENDER_THREADS = 2
 #: forrás-cache kapacitása: az aktuális + az előző fotó, a lapozás mintája
 #: szerint (edit_preview.py `_LRU_CAPACITY`)
 _SOURCE_CACHE_CAPACITY = 2
-#: bélyegkép-cache: bőven elég egyszerre több fotó mind a 36 effektjéhez
+#: bélyegkép-cache: bőven elég egyszerre több fotó mind a 40 effektjéhez
 _THUMB_CACHE_CAPACITY = 256
 
 #: A `filters=`-ben ismert effekt-kulcsok — a `render/chain.py` `_HANDLERS`
@@ -105,6 +105,24 @@ _TOOL_PREVIEW_NAMES: tuple[str, ...] = ("redeye", "enhance", "autolight", "autoc
 _KNOWN_EFFECTS: frozenset[str] = frozenset(EFFECT_NAMES) | frozenset(_TOOL_PREVIEW_NAMES)
 
 PhotoLookup = Callable[[str], "PhotoRecord | None"]
+
+
+def _lanc_teteje(source: "np.ndarray", lanc: str) -> "np.ndarray":
+    """A meglévő `filters=` lánc ráfuttatása a kis forrásra (#2273).
+
+    Üres láncnál a forrást adja vissza változatlanul — a lánc nélküli
+    fotóknál tehát semmi nem lassul. Hibás vagy ismeretlen lánc esetén is
+    a nyers forrás jön vissza: egy csempe-előnézet SOSEM dönthet le
+    semmit, és a rossz előnézet is jobb, mint az üres cella.
+    """
+    if not lanc.strip():
+        return source
+    try:
+        eredmeny, _skipped = apply_filters(source, parse_filters(lanc))
+    except Exception:  # noqa: BLE001 — az előnézet nem szállhat el
+        _log.exception("a csempe-előnézet lánca nem futott le: %r", lanc)
+        return source
+    return eredmeny
 
 
 def _default_op(effect: str) -> FilterOp:
@@ -395,18 +413,43 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         if photo is None:
             return QImage()
         path = Path(photo.folder_path) / photo.name
-        cache_key = (str(path), photo.mtime_ns, effect_key)
+        lanc = getattr(photo, "filters", "") or ""
+        cache_key = self._cache_key(path, photo.mtime_ns, effect_key, lanc)
         cached = self._thumb_cache.get(cache_key)
         if cached is not None:
             return cached
         source = self._source_for(path, photo.mtime_ns)
         if source is None:
             return QImage()
+        # #2273: a csempe a lánc AKTUÁLIS TETEJÉRŐL indul, nem a nyers
+        # fotóból. Az eredeti Picasa is így teszi: ha a képre Fekete-fehér
+        # került, mind a tizenkét csempe alapja is szürke, és a csempe csak
+        # a saját effektjét teszi rá (a tulajdonos hat képernyőképe, három
+        # független előtte/utána pár, három különböző fülön).
+        #
+        # Az ár mérve ezen a gépen: a teljes, 40 effektes készlet
+        # újraszámolása egy MÁR dekódolt 200 px-es forrásból 53 ms; magának
+        # a láncnak az alkalmazása 0,51 ms. A dekódolás (a drága rész) a
+        # `_source_for` cache-ében marad.
+        source = _lanc_teteje(source, lanc)
         op = _default_op(effect_key)
         result, _skipped = apply_filters(source, (op,))
         image = _scale_to_thumb(_rgb_array_to_qimage(result))
         self._thumb_cache.put(cache_key, image)
         return image
+
+    @staticmethod
+    def _cache_key(
+        path: Path, mtime_ns: int, effect_key: str, lanc: str
+    ) -> tuple:
+        """A bélyegkép-cache kulcsa — a LÁNC ujjlenyomatával együtt (#2273).
+
+        A régi kulcs `(útvonal, mtime, effekt)` volt: a lánc változása után
+        a RÉGI bélyegkép jött vissza, hiszen a fájl maga nem változott. A
+        `.picasa.ini` szerkesztése nem nyúl a fotó `mtime`-jához, tehát a
+        hármas önmagában nem tudta megkülönböztetni a két állapotot.
+        """
+        return (str(path), mtime_ns, effect_key, lanc)
 
     def _source_for(self, path: Path, mtime_ns: int) -> np.ndarray | None:
         key = (str(path), mtime_ns)
