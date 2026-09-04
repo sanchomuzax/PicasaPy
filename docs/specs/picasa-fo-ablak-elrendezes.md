@@ -260,6 +260,46 @@ registryben nincs érték.
 | `SupportTGA` | **0** |
 | `SupportAudio` | **0** |
 | `SupportMovies` | *(számított)* |
+
+#### ⚠️ MÉRÉS a tulajdonos valódi katalógusán — és egy MEGDŐLT állítás a saját kódunkban (2026-09-04, #2344)
+
+A fenti kapcsolók **nem elméletiek**: a tulajdonos 2026-08-22-i
+katalógusában (2776 valódi fotósor) a kiterjesztések megoszlása
+
+| kiterjesztés | darab |
+|---|---:|
+| `jpg` | 2416 |
+| `bmp` | 206 |
+| `png` | 125 |
+| `mp4` | 17 |
+| `jpeg` | 8 |
+| `tif` | 3 |
+| **`webp`** | **1** |
+
+⇒ **A Picasa 3.9 INDEXELI a WebP-t.** A bizonyíték háromszoros:
+
+1. a **`SupportWEBP` alapértéke 1** (a fenti tábla, `0x006e0cb0`);
+2. a bináris ismeri a kiterjesztést: `.webp` (`0x00467ca0`),
+   `*.webp;` a szűrőlistában (`0x00520220`), `*.webp` (`0x005e6a20`);
+   a `SupportWEBP` kulcs **hat** függvényben szerepel, köztük a
+   beállítás-nyilvántartóban és a Beállítások-kezelőben (`0x006e1100`);
+3. a tulajdonos valódi `thumbindex.db`-jében **ott van egy `.webp` fájl**
+   — tehát a Picasa a gyakorlatban is beolvasta.
+
+⛔ **Ezzel MEGDŐLT a saját kódunk állítása.** A
+`src/picasapy/scanner/filetypes.py` fejléce ezt írja:
+
+> *„A WebP szándékosan hiányzik — a Picasa nem támogatta; felvétele
+> későbbi, tudatos bővítés lehet."*
+
+A `PHOTO_EXTENSIONS` valóban nem tartalmazza a `.webp`-t (`:12–14`),
+tehát a szkennerünk **nem is látja** ezeket a fájlokat. Jegy: **#2344**.
+
+⚠️ **Amit ez NEM mond meg:** a `SupportGIF` és a `SupportPNG` alapértéke
+**0**, a katalógusban mégis **125 PNG** van. Vagyis a kapcsoló vagy be lett
+kapcsolva, vagy nem a beolvasást vezérli — **ez NINCS mérve**, és a
+`filetypes.py` feltétel nélküli szűrőjével együtt külön kérdés (a jegy
+külön pontja).
 | `SupportQuicktime` | *(számított)* — `0x006e0e1c`: egy vizsgálat eredménye (`setne al`), tehát **„van-e telepítve QuickTime"** |
 
 > ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
