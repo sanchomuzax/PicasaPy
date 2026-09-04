@@ -4919,4 +4919,4 @@ A „Méret" rendezéshez nincs felületi gomb, amiből a szám kiolvasható vol
 **Megszerzés:** a központi parancs-diszpécser (a menübejegyzés `+0x0a` szavas
 azonosítójából kiinduló irányítás), vagy — sokkal olcsóbban — a futó Picasa
 `HKCU\…\Picasa2\Preferences\datesort` értéke a „Méret" kiválasztása után.
-Jegy: **#2318**.
+Jegy: **#2320**.
