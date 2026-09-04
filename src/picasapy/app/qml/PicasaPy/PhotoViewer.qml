@@ -1037,8 +1037,14 @@ Rectangle {
                         !editorPanel.neutralPickerActive
                     onTextFillColorEdited: (hex) => editController.setTextFillColor(hex)
                     onTextOutlineColorEdited: (hex) => editController.setTextOutlineColor(hex)
+                    // #2271: NINCS kerekítés. A körvonalvastagság `[0, 1]`
+                    // FOLYTONOS az eredetiben (ugyanaz a `ytSliderHandler`,
+                    // mint az átlátszatlanságé); a `Math.round` a régi,
+                    // képpontos mértékegység maradványa volt, és minden
+                    // 0,5 alatti értéket nullára — vagyis „nincs körvonal"-ra
+                    // — vágott.
                     onTextOutlineThicknessEdited: (value) =>
-                        editController.setTextOutlineThickness(Math.round(value))
+                        editController.setTextOutlineThickness(value)
                     onTextFillEnabledEdited: (value) => editController.setTextFillEnabled(value)
                     onTextOpacityEdited: (value) => editController.setTextOpacity(value)
                     // #450 (2. lépcső): tipográfia — az ÉRTÉKEKET a

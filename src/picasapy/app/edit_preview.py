@@ -45,6 +45,19 @@ _MAX_PREVIEW_EDGE = 2560
 _LRU_CAPACITY = 2
 
 
+#: #2271: a körvonalvastagság `[0, 1]`-ből képpontba. A felső határ a
+#: KORÁBBI csúszka maximuma (8 képpont) — így a megjelenés nem ugrik meg
+#: a mértékegység-váltástól. ⚠️ Ez KÖZELÍTÉS: az eredeti `[0, 1]` →
+#: képpont képlete nincs megmérve (a jegy a TÁROLÁST mérte ki, a
+#: rajzolást nem). Ha egyszer megmérjük, csak ez az egy szám változik.
+_OUTLINE_MAX_PX = 8
+
+
+def _outline_px(vastagsag: float) -> int:
+    """A `[0, 1]`-es körvonalvastagság képpontban, rajzoláshoz."""
+    return max(0, round(float(vastagsag) * _OUTLINE_MAX_PX))
+
+
 @dataclass(frozen=True)
 class TextOverlaySpec:
     """A szöveg-eszköz (#148/#450) élő előnézetéhez kért egyetlen szöveg-réteg.
@@ -64,7 +77,11 @@ class TextOverlaySpec:
     y: float
     fill_color: tuple[int, int, int] = (255, 255, 255)
     outline_color: tuple[int, int, int] | None = None
-    outline_thickness: int = 0
+    #: #2271: `[0, 1]` folytonos, az eredeti mértékegységében. A
+    #: RAJZOLÁSHOZ képpontra váltjuk (`_OUTLINE_MAX_PX`) — az a leképezés
+    #: KÖZELÍTÉS, mert az eredetiben nincs megmérve; a TÁROLT érték
+    #: viszont mért, és átszámítás nélkül megy a `text=` 5. mezőjébe.
+    outline_thickness: float = 0.0
     fill_enabled: bool = True
     opacity: float = 1.0
     #: #450 (2. lépcső): tipográfia — betűcsalád, méret-szorzó, stílusok és
@@ -253,7 +270,7 @@ class EditPreviewProvider(QQuickImageProvider):
                 text.y,
                 color=text.fill_color,
                 outline_color=text.outline_color,
-                outline_thickness=text.outline_thickness,
+                outline_thickness=_outline_px(text.outline_thickness),
                 fill_enabled=text.fill_enabled,
                 opacity=text.opacity,
                 font_family=text.font_family,

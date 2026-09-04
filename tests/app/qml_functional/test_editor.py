@@ -520,12 +520,15 @@ class TestEditorWiring:
 
         thickness_slider = window.findChild(QObject, "textOutlineThicknessSlider")
         assert thickness_slider is not None
-        thickness_slider.setProperty("value", 4)
+        # #2271: a csúszka mértékegysége [0, 1] lett — az eredetit követve
+        # (`ytSliderHandler`, ami a sáv hosszához normalizál). A 4-es érték
+        # a csúszka felső határán túl volt, ezért 1,0-ra vágódott.
+        thickness_slider.setProperty("value", 0.5)
         QMetaObject.invokeMethod(
             thickness_slider, "moved", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
-        assert edit.property("textOutlineThickness") == 4
+        assert edit.property("textOutlineThickness") == pytest.approx(0.5)
 
         opacity_slider = window.findChild(QObject, "textOpacitySlider")
         assert opacity_slider is not None

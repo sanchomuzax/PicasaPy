@@ -630,10 +630,20 @@ class EditController(QObject, BackgroundWorkerMixin):
         """A körvonal-szín `#rrggbb` alakban (a fill-től KÜLÖN választható)."""
         return _rgb_to_hex(self._text_outline_color)
 
-    @Property(int, notify=toolsChanged)
-    def textOutlineThickness(self) -> int:
-        """A körvonal vastagsága képpontban — `0` esetén nincs körvonal
-        (ez az alapérték)."""
+    #: #2271: a körvonalvastagság az EREDETI mértékegységében, `[0, 1]`
+    #: folytonosan. A kutatói kör kimérte, hogy a csúszka ugyanaz a
+    #: `ytSliderHandler` (`0x00aaf220`), mint az átlátszatlanságé, és maga
+    #: normalizál a sáv hosszához — a korpuszban látott `0,25`/`0,5` a
+    #: csúszka negyed-, illetve félállása. Így az érték ÁTSZÁMÍTÁS NÉLKÜL
+    #: kerül a `text=` blokk 5. mezőjébe.
+    #:
+    #: ⚠️ A RAJZOLÁSHOZ képpont kell. A `[0, 1]` → képpont leképezés az
+    #: eredetiben NINCS megmérve; a `_OUTLINE_MAX_PX` szorzó a MAI vizuális
+    #: megjelenést tartja meg (a régi 0–8-as csúszka maximumát). Ez
+    #: közelítés, és annak is van jelölve — a tárolt érték viszont mért.
+    @Property(float, notify=toolsChanged)
+    def textOutlineThickness(self) -> float:
+        """A körvonal vastagsága `[0, 1]` — `0` esetén nincs körvonal."""
         return self._text_outline_thickness
 
     @Property(bool, notify=toolsChanged)
@@ -754,13 +764,17 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
 
-    @Slot(int)
-    def setTextOutlineThickness(self, value: int) -> None:
-        """A körvonal-vastagság beállítása (>=0 képpont); élő előnézettel."""
+    @Slot(float)
+    def setTextOutlineThickness(self, value: float) -> None:
+        """A körvonal-vastagság beállítása `[0, 1]`-ben; élő előnézettel."""
         self._require_active()
         if value < 0:
             raise ValueError(f"A textOutlineThickness nem lehet negatív: {value}")
-        self._text_outline_thickness = value
+        if value > 1:
+            raise ValueError(
+                f"A textOutlineThickness legfeljebb 1 lehet: {value}"
+            )
+        self._text_outline_thickness = float(value)
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -1573,13 +1587,20 @@ class EditController(QObject, BackgroundWorkerMixin):
                 # feliratunk félkövérként ment ki, a gomb állásától
                 # függetlenül.
                 #
-                # ⚠️ A körvonalvastagság (5. mező) és a betűméret
-                # SZÁNDÉKOSAN marad érintetlen: a mi csúszkáink más
-                # mértékegységben járnak (körvonal 0–8 képpont, méret
-                # 20–400 százalék), mint az ini mezői (0…1 float, illetve
-                # abszolút méret), és a leképezés NINCS megmérve.
-                # Találgatott érték rosszabb, mint a mai alapérték.
                 weight=700 if self._text_bold else 400,
+                # #2271: a KÖRVONALVASTAGSÁG az 5. mezőbe, átszámítás
+                # nélkül. A kutatói kör kimérte, hogy a csúszka `[0, 1]`
+                # folytonos (ugyanaz a `ytSliderHandler`, mint az
+                # átlátszatlanságé), tehát a mi értékünk ugyanabban a
+                # mértékegységben van, mint az ini mezője. Eddig fixen
+                # 0,0 ment ki — a valódi Picasában az »nincs körvonal«,
+                # ezért TŰNT EL minden körvonalunk mentés után.
+                #
+                # ⚠️ A betűméret továbbra sem megy ki: a mérés szerint a
+                # geometria 3. mezőjébe tartozna (em-képpont ÷ a kép
+                # MAGASSÁGA), de a felületi méretválasztónk ma nem em-ben
+                # jár. Külön lépés, külön mérés — ld. a jegyet.
+                unknown_a=float(self._text_outline_thickness),
             ),
         )
         self._text_overlay = previous.with_primary(block)

@@ -104,8 +104,17 @@ class TextStyle:
 
     fill_argb: int
     outline_argb: int
-    weight: int = 700
-    #: A korpuszban `0.000000` és `0.500000`.
+    #: #2271: az alapérték **400** (nem félkövér). A `0x0062d483` szerint a
+    #: stílusblokk súly-mezője alapból 400, félkövéren 700 (a gomb
+    #: `cmp …, 0x2bc` a `0x0062e31a`-n). Korábban itt fixen 700 állt, ezért
+    #: MINDEN feliratunk félkövérként ment ki — a #1994 az írást javította,
+    #: de az osztály alapértéke maradt, tehát egy súly nélkül épített
+    #: `TextStyle` továbbra is félkövéret adott.
+    weight: int = 400
+    #: A KÖRVONALVASTAGSÁG (5. mező). A kutatói kör kimérte (#2271), hogy a
+    #: csúszka `[0, 1]` folytonos — ugyanaz a `ytSliderHandler`, mint az
+    #: átlátszatlanságé —, tehát az érték ÁTSZÁMÍTÁS NÉLKÜL kerül ide.
+    #: A korpuszban `0.000000` és `0.500000`; a 0,0 a »nincs körvonal«.
     unknown_a: float = 0.0
     #: A korpuszban `0` és `258` (`0x102`).
     unknown_b: int = 0
