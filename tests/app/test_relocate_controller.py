@@ -15,10 +15,24 @@ from picasapy.app.relocate_controller import RelocateController
 from picasapy.index import open_index, sync_tree
 
 
-def _quit_on(signal):
+def _quit_on(signal, timeout_ms: int = 5000):
+    """Eseményhurok egy jelzésre — időtúllépéssel.
+
+    ⚠️ #2313: az időtúllépés NEM lehet néma. Korábban a hurok 5000 ms után
+    csendben kilépett, és a rákövetkező állítás úgy bukott el, mintha a
+    várt jelzés el sem hangzott volna — a windows-lábon pontosan ez
+    történt (`['database', 'cache']`, a `done` hiányzott). A hívó a
+    `.lejart` mezőből tudja meg, hogy melyik eset áll fenn.
+    """
     loop = QEventLoop()
+    loop.lejart = True
     signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
+
+    def _megjott():
+        loop.lejart = False
+
+    signal.connect(_megjott)
+    QTimer.singleShot(timeout_ms, loop.quit)
     return loop
 
 
@@ -108,17 +122,35 @@ class TestStartRelocate:
             conn.close()
         assert count == 1
 
-    def test_progress_signal_reports_phases(self, controller, tmp_path):
+    def test_progress_signal_reports_phases(self, controller, tmp_path, qt_app):
+        """A haladás-jelzés a `done` fázissal zárul.
+
+        ⚠️ #2313: a próba a `done` FÁZISRA vár, nem a `relocateFinished`-re.
+        A kettő sorrendje a kódból egyértelmű (`relocate.py`: a `done`
+        progress a `return` ELŐTT megy ki, a `relocateFinished` csak utána),
+        de a szálak közti feldolgozás és a lassabb windows-fájlrendszer
+        mellett az öt másodperces időkorlát előbb lépett be — és a hurok
+        NÉMÁN kilépett. A `done`-ra várva ez nem fordulhat elő, az
+        időtúllépést pedig külön mondjuk ki.
+        """
+        import time
+
         new_root = tmp_path / "uj-hely"
         phases = []
         controller.relocateProgress.connect(
             lambda phase, done, total: phases.append(phase)
         )
-        loop = _quit_on(controller.relocateFinished)
         controller.startRelocate(str(new_root))
-        loop.exec()
 
-        assert "done" in phases
+        hatarido = time.monotonic() + 30.0
+        while "done" not in phases and time.monotonic() < hatarido:
+            qt_app.processEvents()
+            time.sleep(0.01)
+
+        assert "done" in phases, (
+            f"a haladás-jelzés nem zárult `done` fázissal 30 másodpercen "
+            f"belül (látott fázisok: {phases})"
+        )
 
     def test_invalid_destination_inside_source_emits_failure_and_keeps_source(
         self, controller, source
