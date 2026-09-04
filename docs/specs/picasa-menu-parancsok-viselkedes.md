@@ -5077,9 +5077,20 @@ lemezre, az érték **azonos**, és a holtversenyt a NÉV dönti el — innen a
 „`DALL·E` egy tömbben". Az eredeti ezzel szemben egy **beolvasáskor
 rögzített, fájlonként eltérő** időt használ.
 
-⚠️ **Amit ez NEM mond meg:** hogy az 1. FILETIME a fájl létrehozási vagy
-módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
-újraolvasáskor. Ehhez az írót kellene kimérni (`CThumbDB`), nem az adatot.
+✅ **LEZÁRVA (2026-09-05, #2304):** hogy az 1. FILETIME a fájl létrehozási
+vagy módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
+újraolvasáskor. **Egyik sem:** a kép **metaadat-dátuma**, a beolvasás
+pillanatában rögzítve (egyetlen író: `0x004eeb10`, egyetlen hívó:
+`0x00427898`), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
+(a fájl **módosítási** idejét) és a méretet írja felül. A teljes levezetés
+és a mérés: `pmp-database.md` 10. szakasz.
+
+> ⛔ **Helyesbítés az alábbi táblához.** A „nálunk" oszlop azt sugallta,
+> hogy a mi **tartalék-szabályunk** tér el (EXIF hiányában a mai `mtime`).
+> Nem tér el: az eredeti is a fájl módosítási idejére esik vissza, ha a
+> képnek nincs metaadat-dátuma (mérve, `pmp-database.md` 10.4). A valódi
+> különbség a **rögzítettség** — az eredeti a beolvasáskori értéket
+> tárolja, mi minden rendezéskor élőben olvassuk a `mtime`-ot.
 
 *A saját megfelelőnk nem az `mtime` pillanatnyi értéke kell legyen, hanem
 egy **indexeléskor rögzített** időmező — különben a sorrend a fájlok

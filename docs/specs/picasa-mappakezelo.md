@@ -2209,15 +2209,21 @@ Name,Creation Time,Access Time,Size,Type,Dirty,Valid        (fejléc, 0x00c864d4
 A mezők a bejegyzés-rekordból, a `0x004f2951`–`0x004f295f` push-sorrendje
 szerint:
 
-| oszlop | forrás | típus |
-|---|---|---|
-| `Name` | a bejegyzés neve, **idézőjelek közt** | szöveg |
-| `Creation Time` | `[rekord+0x04]` → `0x0098b650` (FILETIME → `double`) | `%f` |
-| `Access Time` | `[rekord+0x0c]` → ugyanaz | `%f` |
-| `Size` | `[rekord+0x14]` | `%d` |
-| **`Type`** | `[rekord+0x18]` | `%d` — **értékkészlet lent** |
-| `Dirty` | `[rekord+0x1c]` (bájt) | `%d` |
-| `Valid` | `[rekord+0x1d]` (bájt) | `%d` |
+| oszlop | forrás | típus | mi VALÓJÁBAN (2026-09-05, #2304) |
+|---|---|---|---|
+| `Name` | a bejegyzés neve, **idézőjelek közt** | szöveg | |
+| `Creation Time` | `[rekord+0x04]` → `0x0098b650` (FILETIME → `double`) | `%f` | a kép **metaadat-dátuma** |
+| `Access Time` | `[rekord+0x0c]` → ugyanaz | `%f` | ⛔ **a NÉV téves** |
+| `Size` | `[rekord+0x14]` | `%d` | |
+| **`Type`** | `[rekord+0x18]` | `%d` — **értékkészlet lent** | |
+| `Dirty` | `[rekord+0x1c]` (bájt) | `%d` | |
+| `Valid` | `[rekord+0x1d]` (bájt) | `%d` | |
+
+⚠️ **A két időoszlop NEVE megtévesztő** (2026-09-05, #2304): az
+`Access Time` valójában a fájl **utolsó módosítási** ideje
+(`ftLastWriteTime`, `0x004e74bd` → `0x004e74dc`), a `Creation Time` pedig
+**nem fájlrendszeri idő**, hanem a kép beolvasáskor rögzített
+metaadat-dátuma. Levezetés és mérés: `pmp-database.md` 10. szakasz.
 
 ⇒ A „piszkos" (`Dirty`) és az „érvényes" (`Valid`) **külön jelző**: a
 változáslista tehát nemcsak azt tartja nyilván, hogy egy bejegyzés
