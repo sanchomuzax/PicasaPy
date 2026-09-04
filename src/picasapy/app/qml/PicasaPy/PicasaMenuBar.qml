@@ -1498,12 +1498,19 @@ MenuBar {
         PicasaMenuItem { text: qsTr("&Upload Manager..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
         MenuSeparator {}
-        MenuItem {
-            objectName: "menuToolsDedup"
-            text: qsTr("Find Duplicates...")
-            onTriggered: bar.dedupRequested()
-        }
-        // #1473: az arckeresés a duplikátum-kereső mellé kerül, mert
+        // #2142: a duplikátum-kereső a KÍSÉRLETI almenübe költözött (az
+        // eredetiben ott a 2. tétel, `eMenuTools::ID_DUPES`) — ld. lent.
+        //
+        // ⚠️ #2142 — TUDATOS ELTÉRÉS: az arckeresésnek az EREDETIBEN NINCS
+        // menüparancsa. A „Find Faces" felirat a teljes szövegtárban nem
+        // szerepel; a #1794 kimérte az Eszközök menü teljes szerkezetét, és
+        // ilyen tétel nincs benne. Mi mégis megtartjuk, a #1473 indoklása
+        // szerint: ugyanaz a fajta munka, mint a duplikátum-keresés — az
+        // egész könyvtárat végigolvasó, megszakítható keresés saját
+        // ablakkal —, és a felhasználónak kell egy belépési pont hozzá.
+        // Ez tehát nem hiány, hanem a mi döntésünk.
+        //
+        // #1473: a tétel MINDIG él — ha
         // ugyanaz a fajta munka: az egész könyvtárat végigolvasó, hosszú,
         // megszakítható keresés saját ablakkal. A tétel MINDIG él — ha a
         // modell hiányzik, azt a megnyíló ablak MONDJA MEG; egy szürke
@@ -1572,8 +1579,19 @@ MenuBar {
             // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta
             MenuItem {
                 objectName: "menuToolsMoveDatabase"
-                text: qsTr("Move Database...")
+                //: #2142: a MÉRT felirat (`eMenuTools::ID_MOVE_DATABASE`) —
+                //: nem „Move Database...". Az eredetiben ez a 8. tétel.
+                text: qsTr("Choose database location...")
                 onTriggered: bar.moveDatabaseRequested()
+            }
+            // #2142: a duplikátum-kereső az eredetiben a KÍSÉRLETI almenü
+            // MÁSODIK tétele (`eMenuTools::ID_DUPES`, „Show Duplicate
+            // Files"), nem a felső szinté. A #1794 mérte ki az Eszközök
+            // menü teljes szerkezetét.
+            MenuItem {
+                objectName: "menuToolsDedup"
+                text: qsTr("Show Duplicate Files")
+                onTriggered: bar.dedupRequested()
             }
             // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
             // is a Kísérleti almenüben lakott, az áthelyezés mellett

@@ -56,6 +56,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.285] – 2026-09-04
+
+### Javítva
+- A duplikátum-kereső az Eszközök menü **Kísérleti** almenüjébe került, oda,
+  ahol az eredeti Picasában is áll, és a hivatalos magyar nevét kapta
+  („Fájlok másodpéldányainak megjelenítése"). Az „Adatbázis helyének
+  kiválasztása…" tétel felirata szintén az eredetié (#2142).
+
 ## [0.8.284] – 2026-09-04
 
 ### Hozzáadva

@@ -180,7 +180,9 @@ VART: dict[str, list[str]] = {
         "Upload Manager...",
         "People Manager...",
         SZ,
-        "Find Duplicates...",
+        # #2142: a duplikátum-kereső a KÍSÉRLETI almenübe költözött (az
+        # eredetiben ott a 2. tétel) — a felső szinten már csak az
+        # arckereső áll, ami a mi tudatos eltérésünk.
         "Find Faces...",
         SZ,
         "Configure Photo Viewer...",
@@ -244,11 +246,13 @@ ELTERESEK = {
         "(Színkezelés + Megjelenítési mód) végére került, mert "
         "megjelenítési beállítás, nem nézetváltó."
     ),
-    "&Tools · Find Duplicates... + Find Faces...": (
-        "Az eredeti Eszközök menü felső szintjén egyik sincs. A "
-        "szövegtárban `eMenuTools::ID_DUPES` („Show Duplicate Files”) "
-        "megvan — valószínűleg a Kísérleti almenüben, amit a mentés nem "
-        "nyit ki. Az áthelyezés bizonyíték nélkül találgatás lenne."
+    "&Tools · Find Faces...": (
+        "Az eredeti Eszközök menüjében NINCS arckereső parancs: a „Find "
+        "Faces” felirat a teljes szövegtárban nem szerepel (#1794 mérte ki "
+        "a menü szerkezetét). Mi a #1473 miatt tartjuk meg — ugyanaz a "
+        "fajta munka, mint a duplikátum-keresés —, tehát TUDATOS eltérés. "
+        "A duplikátum-kereső viszont a #2142-ben a Kísérleti almenübe "
+        "került, ahol az eredetiben is áll (`eMenuTools::ID_DUPES`)."
     ),
     "&Tools · Language >": (
         "Nyelvváltó almenü. Az eredetiben nincs: a Picasa nyelvét a "

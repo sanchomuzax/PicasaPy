@@ -4598,6 +4598,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Show Duplicate Files</source>
+        <translation>Fájlok másodpéldányainak megjelenítése</translation>
+    </message>
+    <message>
+        <source>Choose database location...</source>
+        <translation>Adatbázis helyének kiválasztása…</translation>
+    </message>
+    <message>
         <source>Save &amp;As...</source>
         <translation>Mentés &amp;másként…</translation>
     </message>
