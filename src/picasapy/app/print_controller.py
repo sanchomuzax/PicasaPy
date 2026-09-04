@@ -47,7 +47,8 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QFont, QImage, QPageLayout, QPainter
+from PySide6.QtCore import QMarginsF
+from PySide6.QtGui import QFont, QImage, QPageLayout, QPageSize, QPainter
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
 from picasapy.index import PhotoRecord
@@ -266,6 +267,68 @@ class PrintController(QObject):
         """Az elérhető nyomtatók neve — a natív `QPrintDialog` helyett
         (ld. a modul docstringje) a QML saját választólistájához."""
         return list(QPrinterInfo.availablePrinterNames())
+
+    @Slot(str, result=str)
+    def paperInfo(self, printer_name: str) -> str:  # noqa: N802
+        """A pillanatnyi LAPBEÁLLÍTÁS emberi olvasásra (#2368).
+
+        Az eredeti panel `printpanel/paperinfo` mezőjének megfelelője: a
+        nyomtató neve mellett álló, tisztán szöveges kijelző (a bináris
+        állapotfrissítője, `0x00745980`, mind a négy információs mezőt
+        ugyanazzal a szövegbeállítóval tölti). A felhasználó ebből látja,
+        MILYEN LAPRA fog nyomtatni — a nyomat mérete és a „kis kép"
+        figyelmeztetés is ettől függ.
+
+        A forrás sorrendje:
+
+        1. az `openPrinterSetup`-ban elfogadott elrendezés, ha van — ez az,
+           amit a következő nyomtatás ténylegesen használni fog;
+        2. a nyomtató saját alapértelmezett lapmérete;
+        3. végül A4 — így PDF-módban (nincs nyomtató, nincs mentett
+           elrendezés) sem marad üres a mező.
+
+        ⚠️ A SZÖVEGFORMÁTUM a miénk. A `stringres`-ben nincs hozzá kulcs,
+        és az eredeti futásidőben állítja össze — a #2368 mérése ezt
+        kimondottan nem adta meg. A mezőnév és a méret együtt szerepel,
+        mert az „A4" önmagában nem mond méretet annak, aki nem tudja fejből.
+        """
+        elrendezes = self._papir_elrendezes(printer_name)
+        lapmeret = elrendezes.pageSize()
+        merete = lapmeret.size(QPageSize.Unit.Millimeter)
+        szeles, magas = merete.width(), merete.height()
+        if elrendezes.orientation() == QPageLayout.Orientation.Landscape:
+            szeles, magas = magas, szeles
+            tajolas = self.tr("landscape")
+        else:
+            tajolas = self.tr("portrait")
+        # A `%1`-es alak és a `.arg()` a QString sajátja; a PySide `tr()`
+        # sima `str`-t ad vissza, ezért a helyettesítés a fordítót is
+        # kiszolgáló `%1`-es sablonon `replace`-szel megy.
+        return (
+            self.tr("%1 — %2 × %3 mm, %4")
+            .replace("%1", lapmeret.name())
+            .replace("%2", f"{szeles:.0f}")
+            .replace("%3", f"{magas:.0f}")
+            .replace("%4", tajolas)
+        )
+
+    def _papir_elrendezes(self, printer_name: str) -> QPageLayout:
+        """A `paperInfo` forrás-elrendezése — ld. az ottani sorrendet."""
+        if self._oldalelrendezes is not None:
+            return self._oldalelrendezes
+        if printer_name:
+            info = QPrinterInfo.printerInfo(printer_name)
+            if not info.isNull():
+                return QPageLayout(
+                    info.defaultPageSize(),
+                    QPageLayout.Orientation.Portrait,
+                    QMarginsF(0, 0, 0, 0),
+                )
+        return QPageLayout(
+            QPageSize(QPageSize.PageSizeId.A4),
+            QPageLayout.Orientation.Portrait,
+            QMarginsF(0, 0, 0, 0),
+        )
 
     @Slot(str, result=bool)
     def openPrinterSetup(self, printer_name: str) -> bool:  # noqa: N802
