@@ -634,7 +634,28 @@ Jegy: **#1945**.
    közzététel-panel célzott dekompilációja. Lap: `racs-ures-allapot.md` 5.;
    jegy **#1945**.
 
-### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 2 BLOKKOLT tétel
+### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 1 BLOKKOLT tétel
+
+⭐ **2026-09-04 (13. szakasz) — a MENTÉS-KÉSZLET KÉT LELTÁRFÁJLJA MEGVAN.**
+A tulajdonos átadta egy valódi mentés lemezképét (Picasa 3.9.141.259,
+2026-09-03), és ezzel a **`PicasaManifest.xml` teljes nyelvtana mérve**
+(elemek, attribútumok, CRLF, BOM nélkül, `shouldRestore` csak `NO` értékkel,
+`[P]` / `$Application Data` útvonal-álnevek), a **`files.txt` nyelvtana** pedig
+az író formátumsztringjeiből: `#`-es fejléc, majd tételenként **útvonal /
+felirat / `ft,<négy hex FILETIME-fél>`**, a rejtetteknél `hf,1` — író
+`0x008447b0`, `"w"` módban; a **mentés-ág feliratot ír, `ft,` sort nem**
+(`0x00693bfc`). A két nevet **testvérfüggvény-pár** építi (`0x00843a30` /
+`0x00843a90`), és **ugyanaz a virtuális metódus** írja mindkét fájlt
+(`FUN_00692640` = `PrepareCollection::vftable` **+0x74**). Logikai
+attribútumok: **hamis = `NO` vagy `FALSE`, minden más igaz**
+(`FUN_0040eef0` a `PicasaRestore.exe`-ben) ⇒ `isHidden="YES"`. Az
+`appVersion` a build **`%2.2f`** szerinti alakja (`141.259` → `141.26`).
+⛔ **Negatív eredmény:** az `ft_abs,` rekordfajta **halott** — a `Picasa3.exe`
+soha nem írja, a beolvasóban egyetlen hivatkozása a diszpécser, és
+hétbájtos előtag-átlépés (`add eax, 7`) a teljes fájlban **nulla**
+találat (a pásztázó ismert pozitívval ellenőrizve). ⛔ **Lemezre írt
+készletben `files.txt` NINCS** — a leltár ott a `PicasaManifest.xml`.
+Jegy **#2090** (LEZÁRVA), komment: **#440**.
 
 ⭐ **2026-09-03 (11.1 ÁTÍRVA) — a `files.txt` írása MEGVAN, és két korábbi
 olvasat MEGDŐLT.** A `0x00677f6d` **nem** írás-hívás: a `0x00d69518` mutató
@@ -646,8 +667,8 @@ akkor fut, ha a másolandó elem célja maga a `files.txt` (mért `strcmp`,
 `0x00677d38`). **Sorformázó a Picasa3.exe-ben NINCS**, a `\files.txt` sztring
 egyszer fordul elő és **egyik társ-binárisban sem** (14 index, két lekérdezési
 alak). A kérdés átfogalmazódott: nem „mi a sorformátum", hanem **„mi van a
-forrásfájlban"** — BLOKKOLT, megszerzés: valódi `files.txt`, vagy a
-`0x00678630` dekompilációja — **jegy #2090**. Komment: **#440**.
+forrásfájlban"** — ez **2026-09-04-én LEZÁRVA** (ld. a fenti bejegyzést és a
+13. szakaszt); a **jegy #2090** ezzel lezárva. Komment: **#440**.
 
 ⭐ **2026-09-03 (12. szakasz) — a LEMEZRE ÍRÁS menete.** A 10. szakasz a
 `publish` sávot írta le; ez azt, ami az **OK után** történik. **Mért képlet**
@@ -715,11 +736,10 @@ behúzása** (80 szóköz, a `0x009bfed0` elem-író hívja); és a
 szakaszok: 9. (BKTag), 10. (a `publish` sáv három módja, hét
 beállításkulcsa, öt párbeszéde és tizenhárom tájékoztató szövege).
 
-1. **Mi a `files.txt` sorformátuma?** A név (`\files.txt`, `0x00ca5c78`) és
-   a hely megvan; a függvény **egyetlen formátum-sztringet sem** hivatkozik
-   (csak a három állapotüzenetet), tehát nyers írás. **Megszerzés:** a
-   `0x00677a70` (3005 b) dekompilációja.
-2. **A `BKTag` címke a `.picasa.ini`-be is kikerül, vagy csak az
+*(A „mi a `files.txt` sorformátuma / tartalma" kérdés **2026-09-04-én
+LEZÁRVA** — ld. a 13. szakaszt és a fenti bejegyzést.)*
+
+1. **A `BKTag` címke a `.picasa.ini`-be is kikerül, vagy csak az
    SQLite-indexbe?** ⚠️ A korpusz **nem tudja eldönteni**: a `BKTag`-re
    nulla találat, de a `keywords=`-re **is** — a korpusz kulcsszavakat
    egyáltalán nem tartalmaz. **Megszerzés:** a `0x00670b25` utáni
