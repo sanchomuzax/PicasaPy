@@ -1256,10 +1256,30 @@ mentés állapota két, eddig nem rögzített helyen él:
 
 | elem | bizonyíték |
 |---|---|
-| mentés-készletek könyve | **`backup.xml`** a Picasa adatmappájában (`0x00581920`, `0x0066f2b0` — ugyanaz a kezelő, mint a `contacts.xml`) |
-| a mentés-motor | a **`il_BurnPanel`** (0x67xxxx tartomány): meghajtó-felderítés („Drive Type is %s on %s", `CD-R`/`DVD-R`… debug-sztringek, „No recordable drives detected") és a `backup.xml` kezelője (`0x0066f470`, nyolc hívóval) — a klasszikus Picasa-mentés **CD/DVD-re írás** |
+| mentés-készletek könyve | **`backups.xml`** (TÖBBES SZÁM) a `…\Google\Picasa2\**db3**\` mappában — író `0x006759c0` (1723 b), olvasó `0x00676910` (223 b). Ld. `biztonsagi-mentes.md` 1.1 |
+| a mentés-motor | a **`il_BurnPanel`** (0x67xxxx tartomány): meghajtó-felderítés („Drive Type is %s on %s", `CD-R`/`DVD-R`… debug-sztringek, „No recordable drives detected") — a klasszikus Picasa-mentés **CD/DVD-re írás** |
+| a mentés **beállításai** | `0x0066f470` (923 b, **8 hívóval**) — a `Preferences` alatti **16 `option_*` kulcs** (`option_backup`, `option_manifest`, `option_convertnonjpeg`, `option_noautoruninf`, …). Teljes lista: `ajandek-cd-kimenet.md` |
 | képenkénti könyvelés | `backuphash` ini-kulcs: a korpuszban **14 700 sor** (pl. `backuphash=50247`); a `-backuphash` alak a kulcs **levételét** jelzi — a #440-es „újrafuttatható, inkrementális készletek" pontosan ezen a két helyen könyvel |
 | társprogram-promó | `0x0040d160`: `Software\Google\Google Photos Backup\Preferences` (`welcome_seen`, `SkipABPromo`, `LastABPromo`, `ABRepromptDays`) + `https://photos.google.com/apps` — a Picasa 3.9 végén a Google Fotók-Backup alkalmazást kínálta |
+
+> ⛔ **HELYESBÍTÉS (2026-09-04) — ennek a szakasznak két állítása MEGDŐLT.**
+>
+> 1. **A `backup.xml` NEM a mentés-készletek könyve.** A `0x0066f2b0`
+>    (438 b, **egyetlen** hívóval: `0x0066f58c`) a **névjegyzéket** írja:
+>    a sztringjei `contacts.xml` (`0x00c90e74`) és `backup.xml`
+>    (`0x00c90e94`), közte az elválasztó `\` (`0x00c80910`) ⇒ a
+>    `backup.xml` a `contacts.xml` **előző példánya** ugyanabban a
+>    mappában (`…\Google\Picasa2\contacts\backup.xml`, ld. ugyanennek a
+>    lapnak a mentés-fejezetét). A **készletek** a `backups.xml`-ben
+>    vannak, a `db3\` alatt — a `0x006759c0` sztringjei: `backups.xml`,
+>    `replicates.xml`, `Picasa2Backups` (gyökérelem), `setname`,
+>    `diskroot`, `bkallfiles`, `bkonlypics`, `bkonlyexif`.
+> 2. **A `0x0066f470` NEM a `backup.xml` kezelője**, hanem a **beállítás-
+>    tár**: a 16 `option_*` kulcs olvasója/írója. A „nyolc hívó" szám
+>    helyes volt, csak rossz szerephez tartozott.
+>
+> A tévedés forrása a névhasonlóság (`backup.xml` ↔ `backups.xml`) és az,
+> hogy mindkét függvény a `0x0066fxxx` tartományban ül.
 
 Jegy: **#440**. *(A `thumbui/backup` névparancs és a BurnPanel közötti
 azonnali launcher-lépés a sztring-matcher esethatáránál nem
