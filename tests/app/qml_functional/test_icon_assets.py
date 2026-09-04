@@ -162,12 +162,22 @@ _VIEWER_HEADER_ICONS = (
     "viewer-back-arrow.svg",
 )
 
+#: #2311: a szerkesztő nagyítás-sávjának két gombja. A MÉRETÜK az
+#: eredetiből mért (`editpanel/fit_icon` 14 × 12, `editpanel/1to1_icon`
+#: 17 × 12), a RAJZ a miénk — a projekt egyetlen kicsomagolt Picasa-képet
+#: sem szállít. Korábban szöveg-glifa állt a helyükön (`⛶` és `1:1`).
+_ZOOM_BAR_ICONS = (
+    "zoom-fit.svg",
+    "zoom-actual.svg",
+)
+
 _ALL_ICONS = (
     _EXPECTED_ICONS
     + _EDITOR_TOOL_ICONS
     + _COLLAGE_PANEL_ICONS
     + _COLLAGE_CANVAS_ICONS
     + _VIEWER_HEADER_ICONS
+    + _ZOOM_BAR_ICONS
 )
 
 
@@ -200,6 +210,13 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     "collage-dropdown-arrow.svg",
     # #949: a vissza-nyíl mérete is a `.tre`-ből jön (17 × 15, spec 11.)
     "collage-back.svg",
+    # #2311: a szerkesztő nagyítás-sávjának két ikonja. A méretük a
+    # `respack.yt` rétegfejléceiből MÉRT (`editpanel/fit_icon` 14 × 12,
+    # `editpanel/1to1_icon` 17 × 12) — a 14 × 12 aránya 1,17, ami se nem
+    # négyzetes, se nem 3:2. A szabály itt a MÉRÉSSEL ütközne, ezért a
+    # mérés nyer: a rajz a miénk, az arány az eredetié.
+    "zoom-fit.svg",
+    "zoom-actual.svg",
     # #1927: a négy panelkapcsoló ikonjának méretarányát a `respack.yt`
     # rétegfejlécei adják meg (19×17 · 14×19 · 19×15 · 17×18) — ezek MÉRT
     # arányok, nem a 3:2/négyzetes eszköz-ikon szabály alá tartoznak.
