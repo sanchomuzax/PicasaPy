@@ -942,10 +942,46 @@ felvételei (`research/#2061-effekt-latszik/`) fülenként ezt mutatják:
 
 A `Színinvertálás` (`Invert`) `mode="effect"`, tehát a `mode`-ból levezetett
 lánc szerint **nem lehetne** jelvénye — a jelvénye viszont **két különböző
-felvételen** is látszik, eltérő szerkesztési állapot mellett. ⇒ A korábbi
-„a kódban nincs út a negyedikhez" állítás **hibás volt**: a `FilterDesc + 4`
-írására van egy MÁSODIK út, amit még nem találtunk meg. A keresés nyitva:
-**#2125** (`ready` + `bináris-kutatható`; a jegy már NEM a tulajdonosra vár).
+felvételen** is látszik, eltérő szerkesztési állapot mellett.
+
+##### ⛔ A „második író" hipotézis MEGDŐLT — nyolc független ellenőrzés (2026-09-04, #2125)
+
+A #2125 azt kereste, **ki írja még** a `FilterDesc + 4`-et. **Senki.** Az
+olcsó lánc kimerítve; mind a nyolc lépés a `filterdesc.xml`-t és a kódot
+igazolja:
+
+| # | amit ellenőriztem | eredmény |
+|---:|---|---|
+| 1 | a `FilterDesc` **konstruktorának** (`0x008f6910`) hívói, teljes `.text`-pásztázás | **pontosan egy**: `0x008ff81f`, az XML-elemző |
+| 2 | a `+4` értékadás — első kézből olvasva | `0x008ff847` `mov [eax+4], ecx` = a `mode` egésze (a `+8` a `zerostate`, `0x008ff851`) |
+| 3 | a jelvény-jelző **összes** írása a csempeépítőben (`0x005d7c20`, 1614 b) | **egyetlen**: `0x005d7eca` `sete`, a `cmp eax, 1`-ből |
+| 4 | a jelvény-érték forrása | `call [vtbl+0x14]` a szűrőobjektumon |
+| 5 | a `+0x14` getter (`0x008f6cc0` = `this->desc->[+4]`) hány vtáblában szerepel | **egyben**: `CGenericFilter::vftable` (`0x00cd184c`) |
+| 6 | mind a **2856** RTTI-vtábla `+0x14` slotja: van-e konstans `1`-et adó vagy másik kétszeres indirekció | **nulla**, illetve **egy** (maga a `CGenericFilter`) |
+| 7 | a csempe-tábla (`0x00c7e5a0`) mind a 36 rekordja, és minden id `mode`-ja az XML-ből | **három** `oneclick` (`sepia`, `bw`, `warm`), mind az 1. fülön; **nincs** ismételt `id` |
+| 8 | a jelvény-elem a `respack.yt` `.tre`-jében | csempénként **egy** `fx<N>_adorn` (`m_fxadorner`) — más jelvény-réteg nincs |
+
+⇒ **Ebben a `filterdesc.xml`-ben az `Invert` nem kaphat jelvényt**, és a
+kódban nincs másik út. A felvétel viszont mutatja — és a képernyőkép
+erősebb bizonyíték, mint a mi olvasatunk.
+
+**A jelvény azonossága is ellenőrizve:** a `Színinvertálás` és a `Szépia`
+jelvényét képpont-szinten nagyítva **ugyanaz az elem** (kék negyedkorong a
+jobb alsó sarokban, fehér „1"), tehát nem másik rajz. **A csempe azonossága
+is:** a `filter_Invert_label0` szövegtár-kulcs magyar értéke épp
+„Színinvertálás", és a csempe-tábla 20. rekordja (2. fül, 8. hely) az
+`Invert`.
+
+⇒ **A maradék EGYETLEN magyarázat: a futó telepítés
+`runtime\filterdesc.xml`-je ELTÉR a kutatási másolatunkétól**
+(`research/copy_Picasa_3_7/…`). A Picasa `update/` mappával szállít, a
+`filterdesc.xml` pedig futásidejű adatfájl, amit egy frissítés kicserélhet.
+A telepítésben **egyetlen** `filterdesc.xml` van, és az `oneclick` szó is
+csak abban fordul elő — más forrás tehát nincs.
+
+**Amit ez eldönt:** a kérdés **nem a binárisban** van. A #2125 ezért
+`blocked` + `felhasználóra-vár`, egyetlen, gépies kéréssel: a futó
+telepítés `Picasa3\runtime\filterdesc.xml`-jéből az `Invert` sora.
 
 #### A 21 örökölt szűrőből HÁROM ma is elérhető a felületről (#2148)
 
