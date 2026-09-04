@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.265] – 2026-09-04
+
+### Javítva
+
+- A tesztkészlet lebontása megvárja a `threading.Thread`-es háttérmunkákat
+  is, nem csak a `QThreadPool`-t (#2262). Enélkül egy már véget ért teszt
+  háttérszála a megsemmisült foglaltság-nyilvántartóra emitált, amitől a CI
+  `exit -6`-tal (`terminate called without an active exception`) omlott
+  össze — a beépített újrapróba is.
+
 ## [0.8.264] – 2026-09-04
 
 ### Javítva
