@@ -9,6 +9,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A `respack.yt` kicsomagoló kiolvassa a rétegek átlátszóságát (#2178).
+  Eddig a fejléc 8–9. bájtját eldobtuk, és minden réteget
+  átlátszatlanként adtunk vissza — pedig 140 réteg részben vagy teljesen
+  átlátszó (árnyékok, fátylak, a képtálca kék pirulája). A PNG-kiírás
+  mostantól beszámítja; a nyers képpontfolyam érintetlen marad, így az
+  RLE-visszakódolás továbbra is bájtra egyezik (1365/1365).
+
+### Javítva
+
 - Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
   (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
   használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a

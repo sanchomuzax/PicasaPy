@@ -89,7 +89,7 @@ vászonból negatív origóval; előjel nélkül olvasva ezek méretei
 
 | bájt | a korábbi állítás | valójában |
 |---|---|---|
-| 8 | „0 (ismeretlen; a mintában végig 0)” | **140 rétegen nem 0** |
+| 8 | „0 (ismeretlen; a mintában végig 0)” | **40 rétegen nem 0** |
 | 9 | „1 = normál réteg, 0 = `docbounds`” | a 256 felső bájtja |
 
 A kettő **egyetlen `uint16 LE`**: a réteg átlátszósága, ahol **256 =
@@ -114,6 +114,12 @@ rétegek **pontosan a 100 `docbounds` réteg** — azoknak 0 az
 átlátszóságuk, és nincs egyetlen 0 értékű, nem-`docbounds` réteg sem.
 Véletlen egybeesés, nem szabály; a 8. bájtra adott állítás viszont
 nyíltan megdől.
+
+> **Helyesbítés (2026-09-04):** a lap korábban **140** rétegre mondta, hogy
+> a 8. bájtjuk nem nulla. Újramérve a szám **40** — pontosan a részlegesen
+> átlátszó rétegek (a 100 `docbounds` és a 2629 átlátszatlan réteg 8.
+> bájtja egyaránt 0). A 140 valójában a **9. bájt** nulláinak száma
+> (100 `docbounds` + 40 részlegesen átlátszó). A két szám összecsúszott.
 
 **A részlegesen átlátszó rétegek NEVE igazolja az olvasatot:**
 `modalprogress/shadow` (30%), `capturemoviepanelpopup/filmcontainer_overlayL/C/R`

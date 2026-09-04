@@ -42,6 +42,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 HEADER_SIZE = 13
+#: A fejléc 8–9. bájtjának »teljesen átlátszatlan« értéke (#2178).
+OPAQUE_ALPHA = 256
 ENC_EMPTY = 0
 ENC_RLE = 1
 ENC_SOLID = 2
@@ -71,6 +73,12 @@ class Layer:
     y1: int
     encoding: int
     pixels: bytes  # BGRA, soronként; tömör kitöltésnél is kifejtve
+    #: RÉTEG-SZINTŰ átlátszóság a fejléc 8–9. bájtjából (`uint16 LE`):
+    #: **256 = átlátszatlan**, 0 = teljesen átlátszó (#2178). A képpontok
+    #: SAJÁT alfája ettől független — a kettő szorzódik, ld.
+    #: `composited_pixels`. Alapértéke azért 256, hogy kézzel összerakott
+    #: `Layer` ugyanúgy viselkedjen, mint eddig.
+    alpha: int = OPAQUE_ALPHA
 
     @property
     def width(self) -> int:
@@ -129,6 +137,11 @@ def decode_layer(data: bytes, entry: Entry) -> Layer:
     if off + HEADER_SIZE > entry.end:
         raise RespackError(f"{entry.name}: csonka fejléc.")
     x0, y0, x1, y1 = struct.unpack_from("<4h", data, off)
+    # #2178: a 8–9. bájt EGYETLEN `uint16 LE` átlátszóság (256 =
+    # átlátszatlan), nem két külön jelzőbájt. A csomag 2769 rétegén tíz
+    # különböző érték fordul elő, mind 0 és 256 között — ez zárja ki a
+    # jelzőbit-olvasatot. A 10–11. bájt mind a 2769 rétegen 0.
+    alpha = struct.unpack_from("<H", data, off + 8)[0]
     encoding = data[off + 12]
     body = data[off + HEADER_SIZE : entry.end]
     width, height = x1 - x0, y1 - y0
@@ -156,7 +169,27 @@ def decode_layer(data: bytes, entry: Entry) -> Layer:
     else:
         raise RespackError(f"{entry.name}: ismeretlen kódolás: {encoding}")
 
-    return Layer(entry.name, x0, y0, x1, y1, encoding, pixels)
+    return Layer(entry.name, x0, y0, x1, y1, encoding, pixels, alpha)
+
+
+def composited_pixels(layer: Layer) -> bytes:
+    """A képpontok a RÉTEG-SZINTŰ átlátszósággal beszorozva (BGRA).
+
+    A `Layer.pixels` szándékosan a NYERS képpontfolyamot tartja: arra épül
+    az `encode_layer` bájthű visszakódolása, tehát oda nem szabad
+    beleégetni a réteg alfáját. Ez a függvény adja a megjelenítéshez való
+    alakot — a réteg alfája (0…256, 256 = átlátszatlan) szorzódik a
+    képpont saját alfájával.
+
+    Átlátszatlan rétegnél (`alpha == OPAQUE_ALPHA`) a bemenetet adja
+    vissza változatlanul, másolás nélkül.
+    """
+    if layer.alpha >= OPAQUE_ALPHA:
+        return layer.pixels
+    out = bytearray(layer.pixels)
+    for i in range(3, len(out), 4):
+        out[i] = (out[i] * layer.alpha) // OPAQUE_ALPHA
+    return bytes(out)
 
 
 def encode_layer(layer: Layer) -> bytes:
@@ -249,8 +282,14 @@ def _cmd_png(path: Path, outdir: Path, needle: str | None) -> int:
         if layer.width <= 0 or layer.height <= 0:
             skipped += 1
             continue
+        # #2178: a réteg saját átlátszósága ITT számít bele — a `pixels`
+        # nyers marad, hogy az `encode_layer` bájthű maradjon.
         img = Image.frombytes(
-            "RGBA", (layer.width, layer.height), layer.pixels, "raw", "BGRA"
+            "RGBA",
+            (layer.width, layer.height),
+            composited_pixels(layer),
+            "raw",
+            "BGRA",
         )
         img.save(outdir / f"{_safe_filename(layer.name)}.png")
         written += 1
