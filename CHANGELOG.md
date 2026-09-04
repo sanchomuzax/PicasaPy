@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A bal hasábban az azonos nevű mappák megkülönböztethetők: a sorra
+  mutatva megjelenik a teljes elérési út (#2162). Eddig súgó csak a nem
+  elérhető mappákon volt — épp ott hiányzott, ahol a névütközés zavar (a
+  duplikátum-kereső minden forrásmappában „Duplikátumok" alkönyvtárat hoz
+  létre). A látható felirat változatlan.
+
+### Javítva
+
 - A hat Glimmer-effekt (Holga, Éjjellátó, Ceruzarajz, 60-as évek,
   Kinemaszkóp, HDR-szerű) belső automatikus javítása mostantól az eredeti
   modellt követi (#2229): teljes min–max szinthúzás, vágópont nélkül.
