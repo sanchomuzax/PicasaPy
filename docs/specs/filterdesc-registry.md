@@ -3086,21 +3086,130 @@ lehetséges. A görbék feltehetően a hívótól érkeznek, de ez **NINCS MÉRV
 (bájtszinten kiolvasva, zárt); az alkalmazó hozzáférési módja **NINCS
 MEG**, és a fenti negatívum csak a megnevezett kódolási alakra áll.*
 
-## `QuantizePalette` `Depth` (#2238/2) — részleges mérés, NYITVA marad
+## `QuantizePalette` `Depth` — MEGVAN, és a 3-3-2 tábla NEM tartalék (2026-09-04, #2231)
 
-A `0x00bb5b60` (1510 b) **nem tartalmazza** a 3-3-2 bites paletta
-jellegzetes maszkjait. Keresett minták, a teljes törzsön:
-`and al, 0xE0` · `and al, 0xC0` · `shr al, 5` · `shr al, 6` · `shr al, 2`
-— **mind nulla találat**.
+*(Ez a szakasz **felváltja** a 2026-09-04-i korábbi, „részleges mérés, NYITVA
+marad" változatot. Az akkori negatív keresés — `and al, 0xE0` és társai a
+`0x00bb5b60` törzsén — **helyes volt, de rossz helyen keresett**: a maszkok
+ott vannak, csak `cl`/`dl` regiszterrel (`0x00bb5e04`, `0x00bb5e1c`), és a
+`Depth` egyáltalán nem ebben a függvényben dől el, hanem az oktree
+csomópont-beszúrójában.)*
 
-⚠️ **A negatívum hatóköre:** csak ezekre az alakokra áll. Más regiszterrel
-vagy szélesebb operandussal írt maszkolást ez a keresés nem fedne le.
+> **Bizonyítottság: megerősített** — minden állítás mellett cím áll, minden
+> konstans kiolvasva.
+>
+> ⚠️ **Attribúció:** a `Depth` **jelentését** (oktree-mélységkeret) a #2238
+> köre már helyesen mondta ki; ez a szakasz az **ellenőrzése és a pontos
+> szabálya** (a `> 1` kapu, a lefelé számolás, és hogy az alapérték 2
+> **egyetlen** osztási szintet jelent). A 2–6. pont ezen felül **új**.
 
-**Amit a függvény elejéről kiolvastam:** `0x00bb5b60`
-`mov eax, 0x10ac` / `call 0x00bf6b80` — verem-szondázás egy **4268 bájtos**
-helyi pufferhez. Ez a méret önmagában nem magyaráz palettát; a jelentése
-**NINCS MEG**.
+### 1. `Depth` = az oktree HÁTRALÉVŐ osztási mélysége, és lefelé számol
 
-⇒ A `Depth` jelentése és a tartalék paletta kérdése **NYITVA marad**
-(#2238/2).
+| cím | utasítás | mit jelent |
+|---|---|---|
+| `0x00bcb8e6` | `cmp dword ptr [esi + 0x10], 1` · `jbe` | a csomópont **csak akkor** hasad, ha a hátralévő mélység **> 1** |
+| `0x00bcb9a6` | `sub edx, 1` | a gyerek `Depth − 1`-et örököl |
+| `0x00bcb9bc` | `mov [eax + 0x10], edx` | …és ezt a `+0x10` résbe kapja |
+| `0x00bcb9a0` | `add ecx, 1` → `[eax + 0x0c]` | a gyerek szintje `szülő + 1` |
 
+⇒ **A `Depth` a megengedett hasítások száma.** A `0x00bb5ad0` alkalmazóban
+mért **alapérték 2** (`0x00bb5b1d`, `mov ebx, 2`) ⇒ a gyökér hasad, a nyolc
+gyereke (`Depth = 1`) **már nem**: egyetlen osztási szint, **8 levél**.
+
+### 2. A csomópont — 32 bájt, mért mezőkiosztás
+
+| eltolás | mező | bizonyíték |
+|---|---|---|
+| `+0x00` | mutató a **8 elemű gyerektömbre** (vagy `NULL`) | `0x00bcb8fd`, `0x00bcb986` |
+| `+0x04` | a belefolyt színek **száma** | `0x00bcb942` |
+| `+0x08` | bájt-jelző, létrehozáskor `1` | `0x00bcb9b8` |
+| `+0x0c` | **szint** (a gyökér 0) | `0x00bcb9a3` |
+| `+0x10` | **hátralévő `Depth`** | `0x00bcb9bc` |
+| `+0x14` · `+0x18` · `+0x1c` | R · G · B **összeg** | `0x00bcb933` · `0x00bcb939` · `0x00bcb93f` |
+
+Mind a csomópont, mind a gyerektömb foglalása **32 bájt**
+(`0x00bcb8f2` és `0x00bcb98c`: `push 0x20`).
+
+### 3. A gyerek-index — klasszikus bit-átlapolás (`0x00bcb962`–`0x00bcb984`)
+
+`cl = 7 − szint`, majd:
+
+```
+eax = ((r << 2) >> cl) & 4      ; az r (7−szint). bitje a 2. helyre
+esi = ((g << 1) >> cl) & 2      ; a g   ugyanaz a bitje az 1. helyre
+edx = ( b        >> cl) & 1     ; a b   ugyanaz a bitje a 0. helyre
+index = eax + esi + edx         ; 0…7
+```
+
+⇒ a `szint` szinten a három csatorna **(7 − szint). bitje** dönt.
+
+### 4. Hasítás csak a MÁSODIK színnél
+
+`0x00bcb8ec`: `cmp dword ptr [esi + 4], 1` · `jne` — a gyerektömb akkor jön
+létre, amikor a számláló **pontosan 1** (tehát a második szín érkezésekor), és
+a `0x00bcb919` a **már felhalmozott** összeget (`[esi+0x14]`) színként
+**lenyomja** a fába. Az összegzés és a számlálás **minden szinten** történik
+(`0x00bcb931`–`0x00bcb942`), tehát minden csomópont a teljes alatta lévő
+halmaz összegét tartja.
+
+### 5. ⛔ HELYESBÍTÉS — a 3-3-2 tábla NEM tartalék út
+
+A korábbi olvasat „tartalék útnak" nevezte. **Megdőlt.** A `Steps == 2`
+vizsgálat két ága (`0x00bb5db6` `jne`) **ugyanoda fut össze**:
+
+```
+0x00bb5daf  cmp eax, 2            ; eax = Steps
+0x00bb5db6  jne 0x00bb5dc4
+0x00bb5db9    call 0x00bcb6f0     ; redukálás(2)
+0x00bb5dc2    jmp 0x00bb5dcd
+0x00bb5dc4  add eax, -1
+0x00bb5dc8  call 0x00bcb6f0       ; redukálás(Steps − 1)
+0x00bb5dcd  <<< MINDKÉT ág ide >>>
+```
+
+⇒ a táblák **minden futásban felépülnek**, a redukálás után.
+
+### 6. Mire valók a táblák — gyorsító, nem paletta
+
+**a) Három 256 elemű `dword` tábla** (`0x00bb5e02`–`0x00bb5e53`), a
+verem-keret `0xb8`, `0x4b8` és `0x8b8` eltolásán (fejenként 1024 bájt):
+
+```
+Rtab[i] =  (i & 0xE0)          <<16 | 0xFF000000     ; 0x00bb5e04
+Gtab[i] = ((i >> 3) & 0x1C)    <<16 | 0xFF000000     ; 0x00bb5e1c
+Btab[i] = ((i >> 6) & 0x03)    <<16 | 0xFF000000     ; 0x00bb5e0d
+```
+
+A három érték **ugyanabba a bájtba** kerül, tehát az `Rtab[r] | Gtab[g] |
+Btab[b]` egyetlen `OR`-ral a klasszikus **3-3-2 csomagolt indexet** adja
+(3 bit R, 3 bit G, 2 bit B → 0…255).
+
+**b) A harmadik táblát egy második, 256 menetes ciklus FELÜLÍRJA**
+(`0x00bb6055`–`0x00bb60e8`): minden 3-3-2 rekeszre megkérdezi az oktree-től a
+**legközelebbi palettaszínt** (`0x00bcb9f0`, 475 b), és az eredményt teszi a
+`0x8b8` táblába (`0x00bb60dd`).
+
+**c) A képpontonkénti alkalmazás** ezt az objektumot kapja meg
+(`0x00bb6110` → `0x00bcb2f0`, 744 b).
+
+⇒ **A paletta-leképezés 256 rekeszre ELŐRE ki van számolva**, nem
+képpontonként fut. Ennek **látható következménye**: két olyan szín, amely
+ugyanabba a 3-3-2 rekeszbe esik, **mindig ugyanazt** a kimeneti színt kapja —
+akkor is, ha az oktree egyébként szétválasztaná őket. A tényleges bemeneti
+felbontás tehát **8 × 8 × 4 = 256 rekesz**.
+
+**d) Ezzel a 4268 bájtos (`0x10AC`) veremkeret is megvan:** a három tábla a
+`0xb8`…`0xCB8` tartományt foglalja (3 × 1024 bájt); a korábbi változat ezt
+„NINCS MEG"-nek jelölte.
+
+### 7. Amit a fentiek NEM döntenek el
+
+⚠️ **BLOKKOLT: a `Depth` TÉNYLEGES értéke a szállított `filterdesc.xml`-ben.**
+A binárisból mért **alapérték 2** (az attribútum hiányában ez lép életbe), a
+mi `glimmer_tone.py:282` docstringünk viszont **`Depth=4`**-et állít. Melyik a
+szállított érték, azt csak a futó Picasa `filterdesc.xml`-je mondja meg — az a
+fájl **már kérve van** a **#2125**-ben. *(A különbség nem elhanyagolható:
+`Depth = 2` egy osztási szint, `Depth = 4` három ⇒ redukálás előtt akár 512
+levél.)*
+
+⇒ A `Depth` **jelentése LEZÁRVA**; a szállított **értéke BLOKKOLT** (#2125).
