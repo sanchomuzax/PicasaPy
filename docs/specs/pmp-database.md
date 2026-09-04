@@ -2964,10 +2964,14 @@ sok ezer szerkezetmező-olvasástól.
 ### Mit NEM mértem — és mi kell hozzá
 
 Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezett
-mappára. Az olcsó lánc itt **kimerült**: a közvetlen hívók (nincs), a
-vtábla-hely (megvan), az RTTI (megvan), a bájtminta (kimerítő negatív).
-A következő lépés már a **drága ág**: célzott dekompiláció a mappafelvételi
-útvonalon, a `CThumbDB`-példány élettartamát követve.
+mappára.
+
+> ⛔ **HELYESBÍTVE (2026-09-05, 11. szakasz):** az „olcsó lánc kimerült"
+> megállapítás **korai** volt. A pásztázás csak a `call [reg+0x0c]` alakot
+> nézte, és **kimaradt két lépés**: az `e9`-es (ugró) thunkök és a
+> **több-öröklődéses vtáblák** RTTI-beli feloldása. Mindkettő hozott
+> eredményt — a beállító **`IThumbDB` interfész-metódus**. A folytatás:
+> 11. szakasz.
 
 ## 10. A `thumbindex` KÉT IDŐBÉLYEGE — honnan jön, és mikor frissül (2026-09-05, #2304)
 
@@ -3153,3 +3157,158 @@ felvételi-idő jellegére (10.4, mérés) és a metaadat-hiányos tartalékra
 | mit jelent valójában a 2. mező | **LEZÁRVA** — a fájl módosítási ideje, a CSV-fejléc neve téves (10.2) |
 | mi tölti az 1. mezőt metaadat-dátum hiányában | **LEZÁRVA** — a 2. mezővel egyenlő marad (10.4, erős) |
 | melyik metaadat-tulajdonság a `0x37` (55) | **LEZÁRVA (2026-09-05, #2375)** — EXIF `0x9003` DateTimeOriginal; a kulcs = a tulajdonságtábla `id`-je + 1. Lap: `picasa-metaadat-tulajdonsagok.md` |
+
+## 11. A `CThumbDB` INTERFÉSZ-TÉRKÉPE — a mappadátum-beállító `IThumbDB`-metódus (2026-09-05, #2304)
+
+> **Bizalmi fok: megerősített.** Az objektum-kiosztást **két, egymástól
+> független forrás** adja ugyanúgy: a konstruktor vtábla-írásai és az
+> RTTI osztályhierarchia-leírója.
+
+A 2026-09-04-i szakasz megtalálta a beállítót a `CThumbDB` vtáblájában, de
+a hívóját nem — és „kimerült olcsó láncot" jelentett. **Két lánclépés
+kimaradt**, és mindkettő adott eredményt.
+
+### 11.1 A kimaradt 1. lépés: az UGRÓ thunkök
+
+A korábbi pásztázás csak `e8`-as (hívó) hivatkozásokat keresett. `e9`-es
+(ugró) hivatkozásra pásztázva a három tulajdonság-beállító mindegyikére
+**pontosan egy** találat van:
+
+| beállító | thunk | a thunk kódja |
+|---|---|---|
+| `description` `0x00443c90` | `0x0049f4a0` | `sub ecx, 8` · `jmp 0x00443c90` |
+| **`date` `0x004460a0`** | **`0x0049f390`** | `sub ecx, 8` · `jmp 0x004460a0` |
+| `location` `0x0044fa80` | `0x0049f310` | `sub ecx, 8` · `jmp 0x0044fa80` |
+
+A három thunk egy **~57 darabos, 8 bájtos thunk-futam** része
+(`0x0049f1e0`–`0x0049f59x`; a bináris index mindegyiket külön, 8 bájtos
+függvényként listázza). Ez a MSVC **több-öröklődéses `this`-igazító**
+thunkjeinek szabványos alakja.
+
+⚠️ **Módszertani tanulság:** a thunk **kezdőcímét** kell keresni az
+adatszekciókban, nem az ugrás címét — a vtábla a `0x0049f390`-et tárolja,
+nem a `0x0049f393`-at. Az első pásztázásom emiatt adott nullát.
+
+### 11.2 A kimaradt 2. lépés: az RTTI feloldja, MELYIK interfész
+
+A `CThumbDB` **tizenöt** bázisosztályt hoz (RTTI osztályhierarchia-leíró),
+és a vtáblák „complete object locator"-ának `offset` mezője megmondja,
+melyik bázishoz tartoznak:
+
+| vtábla | `offset` | melyik bázis | tartalmazza a beállítókat? |
+|---|---:|---|---|
+| `0x00c81f78` | 0 | `CThumbDB` / `ytBaseThread` | nem |
+| **`0x00c81fa4`** | **72** | **`IThumbDB`** | **IGEN, közvetlenül** (2/3/4. rés) |
+| `0x00c820d0` | 80 | **`IAlbumStore`** | igen, de **thunkön át** |
+
+A thunkök `sub ecx, 8`-a pontosan a **80 − 72 = 8** eltérés ⇒ az azonosítás
+számtanilag is zár.
+
+⇒ **A `date`/`description`/`location` beállító nem „a `CThumbDB` egy
+metódusa", hanem az `IThumbDB` INTERFÉSZ 2/3/4. metódusa**, amit az
+`IAlbumStore` is meghirdet. Ezért nincs egyetlen közvetlen hívása sem: a
+hívó **interfész-mutatót** tart, nem `CThumbDB*`-ot.
+
+### 11.3 A `CThumbDB` teljes objektum-kiosztása
+
+A konstruktor (`FUN_00415790`, 7851 b) a `0x004157fd`–`0x00415827`
+tartományban írja a vtábla-mutatókat; az értékek **bájtra egyeznek** az
+RTTI `mdisp` értékeivel:
+
+| eltolás | vtábla | bázis (RTTI) |
+|---:|---|---|
+| `+0x00` | `0x00c81f78` | `CThumbDB` / `ytBaseThread` / `IShouldExit` |
+| `+0x48` (72) | `0x00c81fa4` | **`IThumbDB`** |
+| `+0x4c` (76) | `0x00c820a8` | `IThumbnailSource`, `IThumbnailBase` |
+| `+0x50` (80) | `0x00c820d0` | **`IAlbumStore`** |
+| `+0x54` (84) | `0x00c820fc` | `IImageStore` |
+| `+0x58` (88) | `0x00c821a0` | `IGetImage` |
+| `+0x5c` (92) | `0x00c821c8` | `IVirtualFile` |
+| `+0x60` (96) | `0x00c81ee8` / `0x00c81ef8` | **`ytINI::CallBack`** |
+| `+0x64` (100) | `0x00c82648` | **`IAlbumPersistedCallback`** |
+
+*(A további bázisok — `ytSafe` `+4`, `ytBase` `+4`, `ytCriticalBase` `+5` —
+nem hoznak külön vtáblát.)*
+
+⭐ **Két, eddig nem dokumentált szerep:** a `CThumbDB` egyben **`ytINI`
+visszahívás** (`+0x60`) és **`IAlbumPersistedCallback`** (`+0x64`) is —
+vagyis maga az adatbázis-osztály fogadja az ini-feldolgozó és az
+album-perzisztálás értesítéseit.
+
+### 11.4 Hol él a példány
+
+A `FUN_00415790` konstruktornak **három** hívási helye van
+(`0x00402fd3`, `0x00467d1b`, `0x0053ff35`). Az elsőnél a lefoglalt méret
+**`0x34b0`** (13 488 bájt), és a kapott mutató az alkalmazás-objektum
+**`+0x1034`** mezőjébe kerül (`0x00402fdc`).
+
+A `.text`-ben **232** `mov reg, [reg+0x1034]` alakú olvasás van,
+**108** függvényben ⇒ a `CThumbDB`-t a program egésze használja.
+
+### 11.5 ⛔ KIMERÍTŐ NEGATÍVOK — pontosan meghatározott hatókörrel
+
+Mindegyik a teljes `.text`-en (8 642 912 bájt, `0x00401000`-tól):
+
+| amit kerestem | találat |
+|---|---:|
+| `e8` (közvetlen hívás) a három beállítóra | **0** |
+| `e9` (ugrás) a három beállítóra | **3** (a 11.1 thunkjei) |
+| `call dword ptr [reg+0x0c]` bármely regiszterrel | **0** |
+| a beállítók címe adatként (vtábla) | 1–1 (csak `0x00c81fac/b0/b4`) |
+| a thunkök címe adatként | 1–1 (csak `0x00c820d8/dc/e0`) |
+| **`IAlbumStore` felvétele** (`[app+0x1034]` után `+0x50`) | **0** ⇒ a thunk-vtábla a gyakorlatban HALOTT |
+| **`IThumbDB` felvétele** (`[app+0x1034]` után `+0x48`) | **71 hely, 49 függvény** |
+| általános `mov r,[r+0x0c]` + `call r` (bármely osztály 3. rése) | **796 hely, 528 függvény** |
+
+⇒ A bájtminta önmagában **nem** különíti el a hívót (528 függvény), de a
+két halmaz metszete igen szűk.
+
+### 11.6 A metszet — és egy TÉVES RIASZTÁS, ami tanulságos
+
+Az `IThumbDB`-t felvevő 49 függvény és a 3. rést hívó 528 függvény
+metszete **egyetlen** függvény: `FUN_006f5580` (544 b, az online album
+törlésének megerősítője).
+
+**Elolvasva: téves riasztás.** A függvény maga is `IThumbDB`-n át hívott
+`CThumbDB`-metódus (`0x006f558f`: `mov esi, ecx`, majd `0x006f5593`:
+**`lea edi, [esi - 0x48]`** — visszaszámol a valódi objektumra), és a
+`0x006f55a8`-on lévő `mov edx,[eax+0x0c]` az **elsődleges** vtábla
+(`0x00c81f78`) 3. rése, nem az `IThumbDB`-é.
+
+⇒ **A `lea reg, [reg - 0x48]` a `CThumbDB` interfész-metódusainak
+ujjlenyomata** — erre érdemes pásztázni, ha a következő kör a
+`CThumbDB`-metódusokat akarja összegyűjteni.
+
+### 11.7 Mit tud a következő kör — a KONKRÉT következő lépés
+
+A 11.5 negatívjai együtt azt mondják: a beállító hívója **nem** az
+`[app+0x1034]`-ből veszi az interfészt. Marad két lehetőség:
+
+1. a hívó **tagváltozóban tárolja** az `IThumbDB*`-ot (valaki egyszer
+   átadja neki), vagy
+2. **paraméterként kapja**.
+
+**A következő lépés ezért:** meg kell keresni, hol **tárolják el** az
+`[app+0x1034] + 0x48` értéket (`mov [reg+N], reg` a felvétel után) — a 71
+felvételi hely mindegyikén ellenőrizve —, és onnan a tárolót olvasó
+osztályokban keresni a 3. rés hívását. Ez **nem** dekompilációt igényel,
+csak a 71 hely átnézését.
+
+### 11.8 A beállító alakja
+
+`0x004460a0` prológusa: `[ebp+0x08]` az első veremargumentum,
+**`[ebp+0x0c]` egy `double`** (`fld qword ptr [ebp+0x0c]`, `0x004460ba`)
+⇒ a dátumot **OLE Variant lebegőpontos** alakban kapja, ahogy a
+`.picasa.ini` `[Picasa] date=` sora is tárolja (99. kör).
+
+### 11.9 Nyitott kérdések mérlege (11.)
+
+`1 nyílt (ÖRÖKÖLT) · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| van-e a beállítónak ugró (thunk) hivatkozása | **LEZÁRVA** — igen, 1–1 db, 11.1 |
+| melyik interfészhez tartozik a 2/3/4. rés | **LEZÁRVA** — `IThumbDB` (+72), thunkön át `IAlbumStore` (+80), 11.2 |
+| mi a `CThumbDB` teljes objektum-kiosztása | **LEZÁRVA** — 11.3, két forrásból |
+| hol él a példány | **LEZÁRVA** — `[app+0x1034]`, 11.4 |
+| **melyik hívó süti el ELŐSZÖR a dátum-beállítót** | **NYÍLT (örökölt)** — de a keresési tér 528 → 0 releváns találatra szűkült az `[app+0x1034]` úton; a következő lépés a 11.7 (nem dekompiláció) |
