@@ -111,7 +111,16 @@ PicasaMenu {
         text: qsTr("Re&verse sort")
         checkable: true
         checked: menu.sortReverse
-        onTriggered: menu.sortReverseRequested()
+        onTriggered: {
+            menu.sortReverseRequested()
+            // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+            // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+            // látszik, mert a művelet mindig átbillenti az állapotot —
+            // ez szerencse, nem szerkezet (ld. #1471).
+            checked = Qt.binding(function () {
+                return menu.sortReverse
+            })
+        }
     }
     MenuSeparator {}
 
