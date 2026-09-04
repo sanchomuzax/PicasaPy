@@ -1015,3 +1015,81 @@ src/ tests/`): egyetlen találat sincs a mentés-funkcióra — a `badfiles.txt`
 találatai a mappapásztázóhoz tartoznak (#1998). A `src/picasapy/` alatt nincs
 `backup`/`burn` modul. ⇒ A biztonsági mentés **teljes egészében megépítendő**;
 a #440 megvalósítási listája ezzel a két nyelvtannal most már hiánytalan.
+
+---
+
+## 14. A `publish` sáv TIZENKÉT eleme — szerkezeti horgonyokkal (2026-09-04)
+
+> **Miért ez a szakasz.** A 10. és a 13. szakasz ezt a tizenkét elemet
+> **teljes néven leírja**, és a felirataikat a hivatalos magyar
+> szövegtárból idézi — de **szerkezeti horgony nélkül** (nincs `0x`-cím, sem
+> `fájl:sor`). A projekt saját szabálya szerint *„hivatkozás cím nélkül nem
+> bizonyíték"*, ezért a lefedettségi mérés joggal sorolta őket
+> feltáratlannak. Ez a szakasz **pótolja a horgonyokat** — a leírásuk nem
+> változik, a bizonyítottságuk igen.
+>
+> **Bizonyítottság: megerősített** — minden sor a `respack.yt`
+> rétegfejlécéből (`int16 x0,y0,x1,y1`) és a `publish.tre` sorából.
+
+### 14.1 A tizenkét elem — geometria és szülő
+
+| elem | `respack.yt` | x (szélesség) | y (magasság) | szülő (`publish.tre`) |
+|---|---|---|---|---|
+| `publish/backuptext3` | `respack.yt:3035621` | 470…741 (271) | 108…143 (35) | `backup_group` (`publish.tre:254`) |
+| `publish/backupcdheader2` | `respack.yt:3035689` | 490…740 (250) | 43…56 (13) | `backupcdheader2_base` (`publish.tre:238`) |
+| `publish/backup_help` | `respack.yt:3035706` | 777…875 (98) | 175…203 (28) | `backup_group` (`publish.tre:296`) |
+| `publish/replicate_button_group` | `respack.yt:3038903` | 925…1013 (88) | 35…177 (142) | `uploadallback` (`publish.tre:448`) |
+| `publish/rpoptionbox1` | `respack.yt:3046464` | 42…71 (29) | 101…130 (29) | `rpoptions` (`publish.tre:312`) |
+| `publish/label_rpoptionbox1` | `respack.yt:3046847` | 76…159 (83) | 107…123 (16) | `rpoptionbox1` (`publish.tre:309`) |
+| `publish/rpoptionbox2` | `respack.yt:3046864` | 42…71 (29) | 132…161 (29) | `rpoptions` (`publish.tre:320`) |
+| `publish/label_rpoptionbox2` | `respack.yt:3047247` | 76…159 (83) | 139…155 (16) | `rpoptionbox2` (`publish.tre:317`) |
+| `publish/label_rpoptionbox3` | `respack.yt:3047647` | 76…159 (83) | 170…186 (16) | `rpoptionbox3` (`publish.tre:324`) |
+| `publish/giftcdtext` | `respack.yt:3047749` | 35…306 (271) | 74…125 (51) | `pubstep1` (`publish.tre:21`) |
+| `publish/presentcd_help` | `respack.yt:3048914` | 664…762 (98) | 175…203 (28) | `presentation_group` (`publish.tre:154`) |
+| `publish/webpublish_cancel` | `respack.yt:3052697` | 682…770 (88) | 81…109 (28) | `web_group` (`publish.tre:505`) |
+
+**Két szerkezeti tény, ami ebből olvasható ki:**
+
+1. **A két súgógomb azonos méretű és azonos magasságban ül** (98 × 28,
+   y 175…203) — a `backup_help` az `x 777…875`, a `presentcd_help` az
+   `x 664…762` sávban. Ugyanaz a gomb, két üzemmódban.
+2. **A `rpoptionbox1..3` egy 29 × 29-es rádiógomb-oszlop** (`rpoptions`
+   konténer, `respack.yt:3046447`, 199 × 99), 31 képpontos függőleges
+   osztással (101 / 132 / 163), a feliratuk mellettük 83 képpont széles.
+
+### 14.2 ⚠️ A `respack.yt` rétegneve NEM a felirat
+
+A `respack.yt` listája a három rádiógomb feliratának a **tervezővászon
+helyőrzőjét** mutatja:
+
+| elem | a `respack.yt` helyőrzője | a SZÁLLÍTOTT angol felirat (`publish_text.tre`) | hivatalos magyar |
+|---|---|---|---|
+| `label_rpoptionbox1` | `Upload New` | **`Upload`** (`:105`) | „Feltöltés" |
+| `label_rpoptionbox2` | `Change Size` | **`Change options`** (`:111`) | „Opciók módosítása" |
+| `label_rpoptionbox3` | `Change Sync` | **`Remove online`** (`:117`) | „Eltávolítás: online elemek" |
+
+⇒ **Mindhárom helyőrző félrevezet**, a harmadik érdemben is: a
+`Change Sync` helyett a valódi funkció **az online elemek eltávolítása**.
+A feliratot mindig a `*_text.tre`-ből (illetve a hivatalos magyar
+szövegtárból) kell venni, a `respack.yt` zárójeles nevéből **soha**.
+
+*(A 10.3 táblája helyesen a szállított feliratokat idézi — ez a szakasz
+csak a csapdát mondja ki.)*
+
+### 14.3 Egy formátum-részlet: `Tooltip1`
+
+A `publish_text.tre:120` a harmadik rádiógomb súgóját **`Tooltip1`**
+kulcsszóval deklarálja (nem `Tooltip`), miközben a párjai
+(`:108`, `:114`) sima `Tooltip`-ek. A szöveg ettől ugyanaz marad; aki
+szövegtár-feldolgozót ír, **mindkét alakot ismerje fel**.
+
+### 14.4 Amihez nincs saját szövege
+
+- **`publish/replicate_button_group`** — `rect`, tehát tartó: a
+  `replicate_go` (`respack.yt:3038886`) és a `replicate_cancel`
+  (`respack.yt:3038869`) szülője (`publish.tre:436` és `:443`). Felirata
+  nincs, és nem is kell.
+- **`publish/webpublish_cancel`** — `superbutton(button_text_LC, Cancel)`:
+  a feliratát a **sminkparaméter** adja, ezért a `publish_text.tre`-ben
+  nincs külön sora. Ugyanez áll a `backup_cancel` és a
+  `presentcd_cancel` gombra.
