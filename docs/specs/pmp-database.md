@@ -3064,6 +3064,16 @@ vett dátum, a **beolvasás pillanatában** rögzítve — és a pásztázó
 **soha nem frissíti** (10.1). A `949998.0` őrszem ugyanaz, mint a mappa
 `[Picasa] date=` olvasójáé (`picasa-ini-format.md`).
 
+⭐ **2026-09-05 (#2375) — MEGVAN, melyik mező.** A `0x37`-es tulajdonság az
+EXIF **`0x9003` DateTimeOriginal** (a felvétel ideje). A kulcstér nem
+azonos a tulajdonságtábla `id` mezőjével: **a kulcs = `id` + 1**, négy
+független hívási hellyel igazolva. A teljes kulcstér (176 EXIF- + 55
+IPTC-bejegyzés) és a levezetés: **`picasa-metaadat-tulajdonsagok.md`**.
+Melléklelet: a beolvasó ugyanitt olvassa a `0x68` = `0xa420`
+**ImageUniqueID** és a `0xe4` = **IPTC 2:120 Caption/Abstract** mezőt is —
+és mind a hármat a mi `metadata/reader.py`-nk is **ugyanazon a címszámon**
+olvassa (`:41`, `:59`, `:63`), tehát a mezőválasztásban nincs eltérés.
+
 **Időzóna-konvenció:** mindkét mező **helyi** időből készül
 (`TzSpecificLocalTimeToSystemTime` `NULL` zónával = a gép AKKORI zónája),
 tehát a tárolt FILETIME UTC, de a visszaalakításhoz a **helyi** zóna kell.
@@ -3135,11 +3145,11 @@ felvételi-idő jellegére (10.4, mérés) és a metaadat-hiányos tartalékra
 
 ### 10.6 Nyitott kérdések mérlege (10.)
 
-`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
 | az 1. FILETIME létrehozási vagy módosítási idő-e, és frissül-e (69. tétel) | **LEZÁRVA** — egyik sem: beolvasáskori metaadat-dátum, és **nem frissül** (10.1, 10.3) |
 | mit jelent valójában a 2. mező | **LEZÁRVA** — a fájl módosítási ideje, a CSV-fejléc neve téves (10.2) |
 | mi tölti az 1. mezőt metaadat-dátum hiányában | **LEZÁRVA** — a 2. mezővel egyenlő marad (10.4, erős) |
-| melyik metaadat-tulajdonság a `0x37` (55) | **ÁTADVA → #2375** (a kép-metaadat modul, `0x00a357a0`, külön alrendszer) |
+| melyik metaadat-tulajdonság a `0x37` (55) | **LEZÁRVA (2026-09-05, #2375)** — EXIF `0x9003` DateTimeOriginal; a kulcs = a tulajdonságtábla `id`-je + 1. Lap: `picasa-metaadat-tulajdonsagok.md` |
