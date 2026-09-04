@@ -4598,6 +4598,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Save &amp;As...</source>
+        <translation>Mentés &amp;másként…</translation>
+    </message>
+    <message>
+        <source>Save a Cop&amp;y</source>
+        <translation>&amp;Másolat mentése</translation>
+    </message>
+    <message>
         <source>Clear Geotags</source>
         <translation>Geocímkék törlése</translation>
     </message>
@@ -4653,8 +4661,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38"/>
-        <source>New Album...</source>
-        <translation>Új album…</translation>
+        <source>&amp;New Album...</source>
+        <translation>Ú&amp;j album…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39"/>
@@ -4663,33 +4671,33 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40"/>
-        <source>Add File to Picasa...</source>
-        <translation>Fájl felvétele a Picasába…</translation>
+        <source>Add &amp;File to Picasa...</source>
+        <translation>&amp;Fájl felvétele a Picasába…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41"/>
-        <source>Import From...</source>
-        <translation>Importálás forrása…</translation>
+        <source>&amp;Import From...</source>
+        <translation>&amp;Importálás forrása…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45"/>
-        <source>Rename...</source>
-        <translation>Átnevezés…</translation>
+        <source>&amp;Rename...</source>
+        <translation>Átne&amp;vezés…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49"/>
-        <source>Save</source>
-        <translation>Mentés</translation>
+        <source>&amp;Save</source>
+        <translation>Menté&amp;s</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50"/>
-        <source>Revert</source>
-        <translation>Visszaállítás</translation>
+        <source>Rever&amp;t</source>
+        <translation>Vissz&amp;aállítás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53"/>
-        <source>Export Picture to Folder...</source>
-        <translation>Kép exportálása mappába…</translation>
+        <source>Export Pi&amp;cture to Folder...</source>
+        <translation>Kép e&amp;xportálása mappába…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60"/>
@@ -4704,13 +4712,13 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71"/>
-        <source>Print...</source>
-        <translation>Nyomtatás…</translation>
+        <source>&amp;Print...</source>
+        <translation>&amp;Nyomtatás…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72"/>
-        <source>E-Mail...</source>
-        <translation>E-mail…</translation>
+        <source>&amp;E-Mail...</source>
+        <translation>&amp;E-mail…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74"/>
@@ -4734,13 +4742,13 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80"/>
-        <source>Copy All Effects</source>
-        <translation>Az összes effektus másolása</translation>
+        <source>C&amp;opy All Effects</source>
+        <translation>Az összes effektus más&amp;olása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86"/>
-        <source>Paste All Effects</source>
-        <translation>Az összes effektus beillesztése</translation>
+        <source>Paste All E&amp;ffects</source>
+        <translation>Az összes e&amp;ffektus beillesztése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92"/>
@@ -4749,18 +4757,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96"/>
-        <source>Select Starred</source>
-        <translation>Csillagozottak kijelölése</translation>
+        <source>Select &amp;Starred</source>
+        <translation>&amp;Csillagozottak kijelölése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99"/>
-        <source>Invert Selection</source>
-        <translation>Kiválasztás megfordítása</translation>
+        <source>&amp;Invert Selection</source>
+        <translation>Kiválasztás &amp;megfordítása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101"/>
-        <source>Clear Selection</source>
-        <translation>Kijelölés törlése</translation>
+        <source>C&amp;lear Selection</source>
+        <translation>Kijelölés &amp;törlése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106"/>
@@ -4769,23 +4777,23 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107"/>
-        <source>Library View</source>
-        <translation>Könyvtárnézet</translation>
+        <source>&amp;Library View</source>
+        <translation>&amp;Könyvtárnézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="110"/>
-        <source>Small Thumbnails</source>
-        <translation>Kis indexképek</translation>
+        <source>S&amp;mall Thumbnails</source>
+        <translation>&amp;Kis indexképek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="114"/>
-        <source>Normal Thumbnails</source>
-        <translation>Normál indexképek</translation>
+        <source>&amp;Normal Thumbnails</source>
+        <translation>&amp;Normál indexképek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117"/>
-        <source>Edit View</source>
-        <translation>Szerkesztési nézet</translation>
+        <source>&amp;Edit View</source>
+        <translation>&amp;Szerkesztési nézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121"/>
@@ -4796,8 +4804,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128"/>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204"/>
-        <source>Tags</source>
-        <translation>Címkék</translation>
+        <source>&amp;Tags</source>
+        <translation>&amp;Címkék</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133"/>
@@ -4806,23 +4814,23 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134"/>
-        <source>Places</source>
-        <translation>Helyek</translation>
+        <source>&amp;Places</source>
+        <translation>&amp;Helyek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138"/>
-        <source>Slideshow</source>
-        <translation>Diavetítés</translation>
+        <source>&amp;Slideshow</source>
+        <translation>&amp;Diavetítés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141"/>
-        <source>Timeline</source>
-        <translation>Időrend</translation>
+        <source>Ti&amp;meline</source>
+        <translation>I&amp;dőrend</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144"/>
-        <source>Hidden Pictures</source>
-        <translation>Rejtett képek</translation>
+        <source>&amp;Hidden Pictures</source>
+        <translation>&amp;Rejtett képek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
@@ -4831,28 +4839,28 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150"/>
-        <source>Folder View</source>
-        <translation>Mappanézet</translation>
+        <source>&amp;Folder View</source>
+        <translation>&amp;Mappanézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
-        <source>Flat Folder View</source>
-        <translation>Egyszerű mappanézet</translation>
+        <source>&amp;Flat Folder View</source>
+        <translation>&amp;Egyszerű mappanézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
-        <source>Tree View</source>
-        <translation>Fanézet</translation>
+        <source>&amp;Tree View</source>
+        <translation>&amp;Fanézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
-        <source>Simplified Tree View</source>
-        <translation>Egyszerűsített fanézet</translation>
+        <source>&amp;Simplified Tree View</source>
+        <translation>&amp;Egyszerűsített fanézet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
-        <source>Show Thumbnails in Library</source>
-        <translation>Indexképek megjelenítése a könyvtárban</translation>
+        <source>Show &amp;Thumbnails in Library</source>
+        <translation>Indexképek &amp;megjelenítése a könyvtárban</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
@@ -4881,8 +4889,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184"/>
-        <source>Thumbnail Caption</source>
-        <translation>Indexkép felirata</translation>
+        <source>Thumbnail &amp;Caption</source>
+        <translation>Indexkép &amp;felirata</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186"/>
@@ -4891,18 +4899,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192"/>
-        <source>Filename</source>
-        <translation>Fájlnév</translation>
+        <source>&amp;Filename</source>
+        <translation>&amp;Fájlnév</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198"/>
-        <source>Caption</source>
-        <translation>Képfelirat</translation>
+        <source>&amp;Caption</source>
+        <translation>&amp;Képfelirat</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210"/>
-        <source>Resolution</source>
-        <translation>Felbontás</translation>
+        <source>&amp;Resolution</source>
+        <translation>&amp;Felbontás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218"/>
@@ -4911,28 +4919,28 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219"/>
-        <source>Edit Description...</source>
-        <translation>Leírás szerkesztése…</translation>
+        <source>&amp;Edit Description...</source>
+        <translation>&amp;Leírás szerkesztése…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222"/>
-        <source>View Slideshow</source>
-        <translation>Diavetítés megtekintése</translation>
+        <source>&amp;View Slideshow</source>
+        <translation>&amp;Diavetítés megtekintése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227"/>
-        <source>Refresh Thumbnails</source>
-        <translation>Indexképek frissítése</translation>
+        <source>Refresh &amp;Thumbnails</source>
+        <translation>&amp;Indexképek frissítése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230"/>
-        <source>Sort By</source>
-        <translation>Rendezés</translation>
+        <source>&amp;Sort By</source>
+        <translation>&amp;Rendezés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233"/>
-        <source>Remove from Picasa...</source>
-        <translation>Eltávolítás a Picasából…</translation>
+        <source>&amp;Remove from Picasa...</source>
+        <translation>&amp;Eltávolítás a Picasából…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236"/>
@@ -4941,23 +4949,23 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237"/>
-        <source>View and Edit</source>
-        <translation>Megjelenítés és szerkesztés</translation>
+        <source>&amp;View and Edit</source>
+        <translation>&amp;Megjelenítés és szerkesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238"/>
-        <source>Batch Edit</source>
-        <translation>Csoportos szerkesztés</translation>
+        <source>&amp;Batch Edit</source>
+        <translation>&amp;Csoportos szerkesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253"/>
-        <source>Auto Contrast</source>
-        <translation>Automatikus kontraszt</translation>
+        <source>A&amp;uto Contrast</source>
+        <translation>A&amp;utomatikus kontraszt</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259"/>
-        <source>Auto Color</source>
-        <translation>Automatikus szín</translation>
+        <source>&amp;Auto Color</source>
+        <translation>&amp;Automatikus szín</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265"/>
@@ -4971,18 +4979,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277"/>
-        <source>Sharpen</source>
-        <translation>Élesítés</translation>
+        <source>S&amp;harpen</source>
+        <translation>É&amp;lesítés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283"/>
-        <source>Film Grain</source>
-        <translation>Filmszemcse</translation>
+        <source>&amp;Film Grain</source>
+        <translation>Films&amp;zemcse</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289"/>
-        <source>Warmify</source>
-        <translation>Melegítés</translation>
+        <source>&amp;Warmify</source>
+        <translation>&amp;Melegítés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296"/>
@@ -5006,13 +5014,13 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239"/>
-        <source>Undo All Edits</source>
-        <translation>Összes szerkesztés visszavonása</translation>
+        <source>Undo &amp;All Edits</source>
+        <translation>Összes szerkesztés vissz&amp;avonása</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243"/>
-        <source>Hide</source>
-        <translation>Elrejtés</translation>
+        <source>&amp;Hide</source>
+        <translation>&amp;Elrejtés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254"/>
@@ -5021,18 +5029,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255"/>
-        <source>Make a Poster...</source>
-        <translation>Poszter készítése…</translation>
+        <source>Make a &amp;Poster...</source>
+        <translation>&amp;Poszter készítése…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256"/>
-        <source>Picture Collage...</source>
-        <translation>Képkollázs…</translation>
+        <source>&amp;Picture Collage...</source>
+        <translation>&amp;Képkollázs…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257"/>
-        <source>Movie</source>
-        <translation>Mozgófilm</translation>
+        <source>&amp;Movie</source>
+        <translation>&amp;Mozgófilm</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260"/>
@@ -5041,8 +5049,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262"/>
-        <source>Folder Manager...</source>
-        <translation>Mappakezelő…</translation>
+        <source>&amp;Folder Manager...</source>
+        <translation>&amp;Mappakezelő…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265"/>
@@ -5051,18 +5059,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="267"/>
-        <source>Back Up Pictures...</source>
-        <translation>Képek biztonsági mentése…</translation>
+        <source>&amp;Back Up Pictures...</source>
+        <translation>&amp;Képek biztonsági mentése…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="268"/>
-        <source>Adjust Date and Time...</source>
-        <translation>Dátum és idő beállítása…</translation>
+        <source>Adjust &amp;Date and Time...</source>
+        <translation>&amp;Dátum és idő beállítása…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270"/>
-        <source>Options...</source>
-        <translation>Beállítások…</translation>
+        <source>&amp;Options...</source>
+        <translation>&amp;Beállítások…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273"/>
@@ -5071,18 +5079,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274"/>
-        <source>Help Contents and Index</source>
-        <translation>Súgó - tartalom és tárgymutató</translation>
+        <source>&amp;Help Contents and Index</source>
+        <translation>&amp;Súgó - tartalom és tárgymutató</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="275"/>
-        <source>Keyboard Shortcuts</source>
-        <translation>Billentyűkódok</translation>
+        <source>&amp;Keyboard Shortcuts</source>
+        <translation>Billentyű&amp;kódok</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277"/>
-        <source>Check for Updates</source>
-        <translation>Frissítések keresése</translation>
+        <source>&amp;Check for Updates</source>
+        <translation>&amp;Frissítések keresése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281"/>
@@ -5122,38 +5130,38 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95"/>
-        <source>Move to New Folder...</source>
-        <translation>Áthelyezés új mappába…</translation>
+        <source>Mo&amp;ve to New Folder...</source>
+        <translation>Áthel&amp;yezés új mappába…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106"/>
-        <source>Save As...</source>
-        <translation>Mentés másként…</translation>
+        <source>Save &amp;As...</source>
+        <translation>Mentés &amp;másként…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107"/>
-        <source>Save a Copy</source>
-        <translation>Másolat mentése</translation>
+        <source>Save a Cop&amp;y</source>
+        <translation>&amp;Másolat mentése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="132"/>
-        <source>Order Prints...</source>
-        <translation>Papírképek rendelése…</translation>
+        <source>Order Prin&amp;ts...</source>
+        <translation>Papírképek rendelé&amp;se…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139"/>
-        <source>Cut</source>
-        <translation>Kivágás</translation>
+        <source>Cu&amp;t</source>
+        <translation>&amp;Kivágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140"/>
-        <source>Copy</source>
-        <translation>Másolás</translation>
+        <source>&amp;Copy</source>
+        <translation>&amp;Másolás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141"/>
-        <source>Paste</source>
-        <translation>Beillesztés</translation>
+        <source>&amp;Paste</source>
+        <translation>&amp;Beillesztés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157"/>
@@ -5172,8 +5180,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225"/>
-        <source>Search Options</source>
-        <translation>Keresési opciók</translation>
+        <source>Search &amp;Options</source>
+        <translation>Keresési &amp;opciók</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228"/>
@@ -5187,53 +5195,53 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249"/>
-        <source>Display Mode</source>
-        <translation>Megjelenítési mód</translation>
+        <source>&amp;Display Mode</source>
+        <translation>&amp;Megjelenítési mód</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Automatic</source>
-        <translation>Automatikus</translation>
+        <source>&amp;Automatic</source>
+        <translation>&amp;Automatikus</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>24-bit</source>
-        <translation>24 bites</translation>
+        <source>&amp;24-bit</source>
+        <translation>&amp;24 bites</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>16-bit (dithered)</source>
-        <translation>16 bites (szemcsézett)</translation>
+        <source>&amp;16-bit (dithered)</source>
+        <translation>&amp;16 bites (szemcsézett)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Remote Desktop</source>
-        <translation>Távoli asztal</translation>
+        <source>&amp;Remote Desktop</source>
+        <translation>&amp;Távoli asztal</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>LCD Whitepoint</source>
-        <translation>LCD fehérpont</translation>
+        <source>&amp;LCD Whitepoint</source>
+        <translation>&amp;LCD fehérpont</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Projector Mode</source>
-        <translation>Projektor mód</translation>
+        <source>&amp;Projector Mode</source>
+        <translation>&amp;Projektor mód</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Show overflow pixels</source>
-        <translation>Túlcsordult képpontok megjelenítése</translation>
+        <source>&amp;Show overflow pixels</source>
+        <translation>Túlcsordult &amp;képpontok megjelenítése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Mac Gamma (1.6)</source>
-        <translation>Mac gamma (1.6)</translation>
+        <source>&amp;Mac Gamma (1.6)</source>
+        <translation>&amp;Mac gamma (1.6)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Linear Gamma (2.2)</source>
-        <translation>Lineáris gamma (2.2)</translation>
+        <source>Linear &amp;Gamma (2.2)</source>
+        <translation>Lineáris &amp;gamma (2.2)</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
@@ -5242,8 +5250,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250"/>
-        <source>Black and White</source>
-        <translation>Fekete-fehér</translation>
+        <source>&amp;Black and White</source>
+        <translation>&amp;Fekete-fehér</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374"/>
@@ -5257,18 +5265,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378"/>
-        <source>Export as HTML Page...</source>
-        <translation>Exportálás HTML-oldalként…</translation>
+        <source>E&amp;xport as HTML Page...</source>
+        <translation>E&amp;xportálás HTML-oldalként…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384"/>
-        <source>Move...</source>
-        <translation>Áthelyezés…</translation>
+        <source>&amp;Move...</source>
+        <translation>Át&amp;helyezés…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385"/>
-        <source>Delete...</source>
-        <translation>Törlés…</translation>
+        <source>&amp;Delete...</source>
+        <translation>&amp;Törlés…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406"/>
@@ -5282,8 +5290,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="425"/>
-        <source>Add to Screensaver...</source>
-        <translation>Hozzáadás a képernyővédőhöz…</translation>
+        <source>Add to &amp;Screensaver...</source>
+        <translation>Hozzáadás a &amp;képernyővédőhöz…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="426"/>
@@ -5297,13 +5305,13 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440"/>
-        <source>Publish to Blogger...</source>
-        <translation>Közzététel a Bloggeren…</translation>
+        <source>Publish to &amp;Blogger...</source>
+        <translation>Kö&amp;zzététel a Bloggeren…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="450"/>
-        <source>Upload Manager...</source>
-        <translation>Feltöltéskezelő…</translation>
+        <source>&amp;Upload Manager...</source>
+        <translation>&amp;Feltöltéskezelő…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455"/>
@@ -5327,13 +5335,13 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467"/>
-        <source>Upload</source>
-        <translation>Feltöltés</translation>
+        <source>U&amp;pload</source>
+        <translation>&amp;Feltöltés</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468"/>
-        <source>Geotag</source>
-        <translation>Geocímke</translation>
+        <source>&amp;Geotag</source>
+        <translation>&amp;Geocímke</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="469"/>
@@ -5347,8 +5355,8 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481"/>
-        <source>Picasa Forums</source>
-        <translation>Picasa-fórumok</translation>
+        <source>Picasa &amp;Forums</source>
+        <translation>Picasa-&amp;fórumok</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="482"/>

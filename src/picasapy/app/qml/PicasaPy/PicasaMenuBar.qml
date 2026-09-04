@@ -400,7 +400,7 @@ MenuBar {
         // mint a többi kijelölés-függő tétel.
         MenuItem {
             objectName: "menuFileNewAlbum"
-            text: qsTr("New Album...") + "\tCtrl+N"
+            text: qsTr("&New Album...") + "\tCtrl+N"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.newAlbumRequested()
         }
@@ -426,7 +426,7 @@ MenuBar {
         // nincs `enabled` feltétele — ugyanúgy, mint az Importálás forrása…
         MenuItem {
             objectName: "menuFileAddFile"
-            text: qsTr("Add File to Picasa...") + "\tCtrl+O"
+            text: qsTr("Add &File to Picasa...") + "\tCtrl+O"
             onTriggered: bar.addFileRequested()
         }
         // #1615: ÉLŐ tétel. Az importálás nem függ kijelöléstől (a forrást
@@ -434,7 +434,7 @@ MenuBar {
         // — nincs `enabled` feltétele.
         MenuItem {
             objectName: "menuFileImportFrom"
-            text: qsTr("Import From...") + "\tCtrl+M"
+            text: qsTr("&Import From...") + "\tCtrl+M"
             onTriggered: bar.importSourceRequested()
         }
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
@@ -453,13 +453,13 @@ MenuBar {
         // „Új album…"-nál (#1616): kijelölés nélkül nincs mit áthelyezni.
         MenuItem {
             objectName: "menuFileMoveToNewFolder"
-            text: qsTr("Move to New Folder...")
+            text: qsTr("Mo&ve to New Folder...")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.moveToNewFolderRequested()
         }
         MenuItem {
             objectName: "menuFileRename"
-            text: qsTr("Rename...") + "\tF2"
+            text: qsTr("&Rename...") + "\tF2"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.renameRequested()
         }
@@ -475,13 +475,13 @@ MenuBar {
         // (`CThumbUI::FileRevert::undosave`); ld. SaveDialogs.qml.
         MenuItem {
             objectName: "menuFileSave"
-            text: qsTr("Save") + "\tCtrl+S"
+            text: qsTr("&Save") + "\tCtrl+S"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.saveRequested()
         }
         MenuItem {
             objectName: "menuFileRevert"
-            text: qsTr("Revert")
+            text: qsTr("Rever&t")
             // csak akkor van mit visszaállítani, ha a kép már volt mentve
             enabled: bar.photoActionsEnabled && bar.hasSavedBackup
             onTriggered: bar.revertRequested()
@@ -495,13 +495,13 @@ MenuBar {
         // a mért `-001` minta adja, és a teljes kijelölésre hat.
         MenuItem {
             objectName: "menuFileSaveAs"
-            text: qsTr("Save As...")
+            text: qsTr("Save &As...")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.saveAsRequested()
         }
         MenuItem {
             objectName: "menuFileSaveCopy"
-            text: qsTr("Save a Copy")
+            text: qsTr("Save a Cop&y")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.saveCopyRequested()
         }
@@ -509,7 +509,7 @@ MenuBar {
         // „Mentés másként…” és a „Másolat mentése” — nincs közte elválasztó.
         MenuItem {
             objectName: "menuFileExport"
-            text: qsTr("Export Picture to Folder...") + "\tCtrl+Shift+S"
+            text: qsTr("Export Pi&cture to Folder...") + "\tCtrl+Shift+S"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.exportRequested()
         }
@@ -532,7 +532,7 @@ MenuBar {
         // elérhetetlen volt, mert ez a pont helyfoglaló maradt
         MenuItem {
             objectName: "menuFilePrint"
-            text: qsTr("Print...") + "\tCtrl+P"
+            text: qsTr("&Print...") + "\tCtrl+P"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.printRequested()
         }
@@ -540,9 +540,9 @@ MenuBar {
         // jelzés MÉRVE nincs sehova bekötve (ld. `email_controller.py`
         // fejléce — a bekötés az integrátor teendője, még nem történt meg),
         // tehát ez a menütétel is helyfoglaló — a billentyű lekerült.
-        PicasaMenuItem { text: qsTr("E-Mail..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("&E-Mail..."); placeholder: true }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
-        PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Order Prin&ts..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
         // #1527: a Fájl menü zárótétele. A jegy „nincs a menüben"-ként
         // írta le — MÉRVE megvolt (2026-08-24), csak `objectName` nélkül,
@@ -593,29 +593,29 @@ MenuBar {
         // párja az `x-special/gnome-copied-files` első sora.
         MenuItem {
             objectName: "menuEditCut"
-            text: qsTr("Cut") + "\tCtrl+X"
+            text: qsTr("Cu&t") + "\tCtrl+X"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.cutFilesRequested()
         }
         MenuItem {
             objectName: "menuEditCopy"
-            text: qsTr("Copy") + "\tCtrl+C"
+            text: qsTr("&Copy") + "\tCtrl+C"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.copyFilesRequested()
         }
         // #1526: a Beillesztés a fájl-vágólap MÁSIK fele — külön munka
         // (ütközéskezelés, célmappa), ezért egyelőre helyfoglaló marad.
-        PicasaMenuItem { text: qsTr("Paste") + "\tCtrl+V"; placeholder: true }
+        PicasaMenuItem { text: qsTr("&Paste") + "\tCtrl+V"; placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuEditCopyEffects"
-            text: qsTr("Copy All Effects")
+            text: qsTr("C&opy All Effects")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.copyAllEffectsRequested()
         }
         MenuItem {
             objectName: "menuEditPasteEffects"
-            text: qsTr("Paste All Effects")
+            text: qsTr("Paste All E&ffects")
             enabled: bar.photoActionsEnabled && bar.hasAllEffectsClipboard
             onTriggered: bar.pasteAllEffectsRequested()
         }
@@ -629,16 +629,16 @@ MenuBar {
             onTriggered: bar.selectAllRequested()
         }
         MenuItem {
-            text: qsTr("Select Starred")
+            text: qsTr("Select &Starred")
             onTriggered: bar.selectStarredRequested()
         }
         MenuItem {
             objectName: "menuEditInvertSelection"
-            text: qsTr("Invert Selection") + "\tCtrl+I"
+            text: qsTr("&Invert Selection") + "\tCtrl+I"
             onTriggered: bar.invertSelectionRequested()
         }
         MenuItem {
-            text: qsTr("Clear Selection") + "\tCtrl+D"
+            text: qsTr("C&lear Selection") + "\tCtrl+D"
             onTriggered: bar.clearSelectionRequested()
         }
     }
@@ -646,7 +646,7 @@ MenuBar {
         title: qsTr("&View")
         MenuItem {
             objectName: "menuViewLibraryView"
-            text: qsTr("Library View")
+            text: qsTr("&Library View")
             checkable: true
             // A pipa ÁLLANDÓ (a könyvtárnézet mindig aktív, amíg az „Edit
             // View" helykitöltő). Kötés híján itt nincs mit újraértékelni,
@@ -657,14 +657,14 @@ MenuBar {
         }
         MenuSeparator {}
         MenuItem {
-            text: qsTr("Small Thumbnails") + "\tCtrl+1"
+            text: qsTr("S&mall Thumbnails") + "\tCtrl+1"
             onTriggered: bar.thumbSizePreset(96)
         }
         MenuItem {
-            text: qsTr("Normal Thumbnails") + "\tCtrl+2"
+            text: qsTr("&Normal Thumbnails") + "\tCtrl+2"
             onTriggered: bar.thumbSizePreset(144)
         }
-        PicasaMenuItem { text: qsTr("Edit View") + "\tCtrl+3"; placeholder: true }
+        PicasaMenuItem { text: qsTr("&Edit View") + "\tCtrl+3"; placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewProperties"
@@ -675,7 +675,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuViewTags"
-            text: qsTr("Tags") + "\tCtrl+T"
+            text: qsTr("&Tags") + "\tCtrl+T"
             checkable: true
             checked: bar.tagsPanelOpen
             onTriggered: bar.tagsPanelRequested()
@@ -690,7 +690,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuViewPlaces"
-            text: qsTr("Places")
+            text: qsTr("&Places")
             checkable: true
             checked: bar.placesPanelOpen
             onTriggered: bar.placesPanelRequested()
@@ -702,7 +702,7 @@ MenuBar {
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewSlideshow"
-            text: qsTr("Slideshow") + "\tCtrl+4"
+            text: qsTr("&Slideshow") + "\tCtrl+4"
             onTriggered: bar.slideshowRequested()
         }
         // #1903: a tétel HELYE megmarad — az eredetiben létezik —, de
@@ -721,13 +721,13 @@ MenuBar {
         // amit ígér, rosszabb, mint a hiánya (#936).
         MenuItem {
             objectName: "menuViewTimeline"
-            text: qsTr("Timeline") + "\tCtrl+5"
+            text: qsTr("Ti&meline") + "\tCtrl+5"
             enabled: false
             onTriggered: bar.timelineRequested()
         }
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
-        PicasaMenuItem { text: qsTr("Search Options"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Search &Options"); placeholder: true }
         // hiányzott (#324 audit): a jelentése a screenshotokból nem
         // egyértelmű — feltehetően mappacím nélküli indexkép-rács
         PicasaMenuItem {
@@ -738,7 +738,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuViewHidden"
-            text: qsTr("Hidden Pictures")
+            text: qsTr("&Hidden Pictures")
             checkable: true
             // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
             // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
@@ -787,10 +787,10 @@ MenuBar {
         // almenüt kiemelni következetlenséget szülne. Ez külön jegy dolga.
         PicasaMenu {
             objectName: "menuViewDisplayMode"
-            title: qsTr("Display Mode")
+            title: qsTr("&Display Mode")
             MenuItem {
                 objectName: "menuViewDisplayModeAuto"
-                text: qsTr("Automatic")
+                text: qsTr("&Automatic")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "auto"
                 onTriggered: {
@@ -803,7 +803,7 @@ MenuBar {
             MenuSeparator {}
             MenuItem {
                 objectName: "menuViewDisplayModeNormal"
-                text: qsTr("24-bit")
+                text: qsTr("&24-bit")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "normal"
                 onTriggered: {
@@ -815,7 +815,7 @@ MenuBar {
             }
             PicasaMenuItem {
                 objectName: "menuViewDisplayMode16Bit"
-                text: qsTr("16-bit (dithered)")
+                text: qsTr("&16-bit (dithered)")
                 // #1658: megvalósítható (a szabály MÉRVE van: MT-zaj +0…7/0…3/0…7,
                 // telítő), de 16 bites képernyő ma nincs — ezért helyfoglaló,
                 // nem nyugdíjazott: ha egyszer értelmet nyer, bekötjük.
@@ -824,7 +824,7 @@ MenuBar {
             MenuSeparator {}
             PicasaMenuItem {
                 objectName: "menuViewDisplayModeRemoteDesktop"
-                text: qsTr("Remote Desktop")
+                text: qsTr("&Remote Desktop")
                 // #1658: a spec 7. táblázata szerint HATÓKÖRÖN KÍVÜL (RDP-specifikus,
                 // 3-3-3 bites levágás) — sosem kötjük be, tehát nyugdíjazott.
                 placeholder: false
@@ -832,7 +832,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLcd"
-                text: qsTr("LCD Whitepoint")
+                text: qsTr("&LCD Whitepoint")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "lcd"
                 onTriggered: {
@@ -844,7 +844,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewDisplayModeProjector"
-                text: qsTr("Projector Mode")
+                text: qsTr("&Projector Mode")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "projector"
                 onTriggered: {
@@ -857,7 +857,7 @@ MenuBar {
             MenuSeparator {}
             MenuItem {
                 objectName: "menuViewDisplayModeOverflow"
-                text: qsTr("Show overflow pixels")
+                text: qsTr("&Show overflow pixels")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "overflow"
                 onTriggered: {
@@ -874,7 +874,7 @@ MenuBar {
             // `apply_mac_gamma`).
             MenuItem {
                 objectName: "menuViewDisplayModeMacGamma"
-                text: qsTr("Mac Gamma (1.6)")
+                text: qsTr("&Mac Gamma (1.6)")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "mac"
                 onTriggered: {
@@ -886,7 +886,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewDisplayModeLinearGamma"
-                text: qsTr("Linear Gamma (2.2)")
+                text: qsTr("Linear &Gamma (2.2)")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "linear"
                 onTriggered: {
@@ -911,7 +911,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewDisplayModeBlackWhite"
-                text: qsTr("Black and White")
+                text: qsTr("&Black and White")
                 checkable: true
                 checked: bar.ctl && bar.ctl.displayMode === "bw"
                 onTriggered: {
@@ -937,7 +937,7 @@ MenuBar {
         // szerződés. A visszakötés ettől függetlenné teszi a menüt.
         PicasaMenu {
             objectName: "menuViewThumbnailCaption"
-            title: qsTr("Thumbnail Caption")
+            title: qsTr("Thumbnail &Caption")
             MenuItem {
                 objectName: "menuViewThumbCaptionNone"
                 text: qsTr("None")
@@ -952,7 +952,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewThumbCaptionFilename"
-                text: qsTr("Filename")
+                text: qsTr("&Filename")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "filename"
                 onTriggered: {
@@ -964,7 +964,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewThumbCaptionCaption"
-                text: qsTr("Caption")
+                text: qsTr("&Caption")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "caption"
                 onTriggered: {
@@ -976,7 +976,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewThumbCaptionTags"
-                text: qsTr("Tags")
+                text: qsTr("&Tags")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "tags"
                 onTriggered: {
@@ -988,7 +988,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewThumbCaptionResolution"
-                text: qsTr("Resolution")
+                text: qsTr("&Resolution")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
                 onTriggered: {
@@ -1013,7 +1013,7 @@ MenuBar {
         PicasaMenu {
             id: folderViewMenu
             objectName: "menuViewFolderView"
-            title: qsTr("Folder View")
+            title: qsTr("&Folder View")
             // A vezérlő állapota EGY helyen — a tételek pipái ezt olvassák,
             // és a kattintás utáni visszakötés is erre hivatkozik.
             readonly property bool treeMode:
@@ -1046,7 +1046,7 @@ MenuBar {
             // a jelzés után azonnal visszakötjük a `checked`-et.
             MenuItem {
                 objectName: "menuViewFlatFolderView"
-                text: qsTr("Flat Folder View")
+                text: qsTr("&Flat Folder View")
                 checkable: true
                 checked: !folderViewMenu.treeMode
                 onTriggered: {
@@ -1058,7 +1058,7 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuViewTreeView"
-                text: qsTr("Tree View")
+                text: qsTr("&Tree View")
                 checkable: true
                 checked: folderViewMenu.treeMode
                 onTriggered: {
@@ -1156,7 +1156,7 @@ MenuBar {
             // `triggered` eldördül, ezért a jelzés után visszakötjük.
             MenuItem {
                 objectName: "menuViewAlbumThumbnails"
-                text: qsTr("Show Thumbnails in Library")
+                text: qsTr("Show &Thumbnails in Library")
                 checkable: true
                 checked: folderViewMenu.albumThumbsMode
                 onTriggered: {
@@ -1174,7 +1174,7 @@ MenuBar {
             //: eredetiben a harmadik el van választva a pártól.
             MenuItem {
                 objectName: "menuViewSimplifiedTreeView"
-                text: qsTr("Simplified Tree View")
+                text: qsTr("&Simplified Tree View")
                 checkable: true
                 checked: folderViewMenu.simplifiedMode
                 onTriggered: {
@@ -1188,15 +1188,15 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("F&older")
-        PicasaMenuItem { text: qsTr("Edit Description..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Edit Description..."); placeholder: true }
         MenuItem {
             objectName: "menuFolderSlideshow"
-            text: qsTr("View Slideshow") + "\tCtrl+4"
+            text: qsTr("&View Slideshow") + "\tCtrl+4"
             onTriggered: bar.slideshowRequested()
         }
         MenuSeparator {}
         MenuItem {
-            text: qsTr("Refresh Thumbnails")
+            text: qsTr("Refresh &Thumbnails")
             onTriggered: bar.rescanRequested()
         }
         // #324 audit („eltérő"): eredetiben aktív almenü — nálunk is az.
@@ -1221,7 +1221,7 @@ MenuBar {
             // benne a „legutóbbi változtatások") a Nézet menüé és a bal
             // hasábé. A `FolderContextMenu.qml` végig a helyeset használta —
             // ugyanaz a rendezés két helyen, kétféle felirattal állt.
-            title: qsTr("Sort By")
+            title: qsTr("&Sort By")
             MenuItem {
                 objectName: "menuFolderSortByDate"
                 text: qsTr("&Date")
@@ -1290,7 +1290,7 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): mappa szintű elrejtés/megjelenítés — más,
         // mint a Nézet ▸ Rejtett képek (kép-szintű) kapcsoló
-        PicasaMenuItem { text: qsTr("Hide"); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Hide"); placeholder: true }
         PicasaMenuItem { text: qsTr("Show"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit)
@@ -1308,7 +1308,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuFolderWebExport"
-            text: qsTr("Export as HTML Page...")
+            text: qsTr("E&xport as HTML Page...")
             onTriggered: bar.webExportRequested()
         }
         MenuSeparator {}
@@ -1322,42 +1322,42 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuFolderRemoveFromPicasa"
-            text: qsTr("Remove from Picasa...")
+            text: qsTr("&Remove from Picasa...")
             onTriggered: bar.folderRemoveFromPicasaRequested()
         }
         MenuSeparator {}
         // hiányzott (#324 audit): mappa áthelyezése/törlése a lemezen
         MenuItem {
             objectName: "menuFolderMove"
-            text: qsTr("Move...")
+            text: qsTr("&Move...")
             onTriggered: bar.folderMoveRequested()
         }
         MenuItem {
             objectName: "menuFolderDelete"
-            text: qsTr("Delete...")
+            text: qsTr("&Delete...")
             onTriggered: bar.folderDeleteRequested()
         }
     }
     PicasaMenu {
         title: qsTr("&Picture")
-        PicasaMenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; placeholder: true }
+        PicasaMenuItem { text: qsTr("&View and Edit") + "\tCtrl+3"; placeholder: true }
         // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
         // az `eMenuPicture` osztályból ismert — a kijelölt N kép
         // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
         // (`controller.applyEffectMany`, `batch_effect_controller`).
         PicasaMenu {
             objectName: "menuPictureBatchEdit"
-            title: qsTr("Batch Edit")
+            title: qsTr("&Batch Edit")
             enabled: bar.photoActionsEnabled
             MenuItem {
                 objectName: "menuBatchAutoContrast"
-                text: qsTr("Auto Contrast")
+                text: qsTr("A&uto Contrast")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("autolight")
             }
             MenuItem {
                 objectName: "menuBatchAutoColor"
-                text: qsTr("Auto Color")
+                text: qsTr("&Auto Color")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("autocolor")
             }
@@ -1375,19 +1375,19 @@ MenuBar {
             }
             MenuItem {
                 objectName: "menuBatchSharpen"
-                text: qsTr("Sharpen")
+                text: qsTr("S&harpen")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("unsharp")
             }
             MenuItem {
                 objectName: "menuBatchFilmGrain"
-                text: qsTr("Film Grain")
+                text: qsTr("&Film Grain")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("grain2")
             }
             MenuItem {
                 objectName: "menuBatchWarmify"
-                text: qsTr("Warmify")
+                text: qsTr("&Warmify")
                 enabled: bar.photoActionsEnabled
                 onTriggered: bar.batchApplyEffectRequested("warm")
             }
@@ -1419,14 +1419,14 @@ MenuBar {
         // szerkesztési láncát törli, megerősítéssel (Main.qml)
         MenuItem {
             objectName: "menuPictureUndoAllEdits"
-            text: qsTr("Undo All Edits")
+            text: qsTr("Undo &All Edits")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.undoAllEditsRequested()
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuPictureHide"
-            text: qsTr("Hide")
+            text: qsTr("&Hide")
             enabled: bar.photoActionsEnabled
             onTriggered: bar.hideToggleRequested()
         }
@@ -1452,22 +1452,22 @@ MenuBar {
         title: qsTr("&Create")
         // hiányzott (#324 audit)
         PicasaMenuItem { text: qsTr("Set as Desktop Background..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Make a Poster..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Make a &Poster..."); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         MenuItem {
             objectName: "menuCreateCollage"
-            text: qsTr("Picture Collage...")
+            text: qsTr("&Picture Collage...")
             enabled: bar.createActionsEnabled
             onTriggered: bar.collageRequested()
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
-        PicasaMenuItem { text: qsTr("Add to Screensaver..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Add to &Screensaver..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Make a Gift CD..."); placeholder: true }
         // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
         // filmkészítés a submenu egyetlen tételeként maradt életben
         PicasaMenu {
-            title: qsTr("Movie")
+            title: qsTr("&Movie")
             // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
             // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
             enabled: bar.createActionsEnabled
@@ -1481,13 +1481,13 @@ MenuBar {
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
         // hiányzott (#324 audit)
-        PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Publish to &Blogger..."); placeholder: false; retired: true }  // #638
     }
     PicasaMenu {
         title: qsTr("&Tools")
         MenuItem {
             objectName: "menuToolsFolderManager"
-            text: qsTr("Folder Manager...")
+            text: qsTr("&Folder Manager...")
             //: #1768: ugyanaz a parancs (`0x9caa`), ugyanaz a kapu — a
             //: két belépési pont nem viselkedhet másképp.
             enabled: !bar.editorActive
@@ -1495,7 +1495,7 @@ MenuBar {
         }
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
         // az eredetiben is inaktív volt
-        PicasaMenuItem { text: qsTr("Upload Manager..."); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("&Upload Manager..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
         MenuSeparator {}
         MenuItem {
@@ -1519,18 +1519,18 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Back Up Pictures..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Back Up Pictures..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
-        PicasaMenuItem { text: qsTr("Adjust Date and Time..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Adjust &Date and Time..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
-        PicasaMenu { title: qsTr("Upload"); enabled: false }
+        PicasaMenu { title: qsTr("U&pload"); enabled: false }
         // #530: a Geocímke almenü élesedett — az export motorja kész
         // (export/kml.py + earth.py). A feliratok a bináris index szerint:
         // eMenuTools::Geotag = "&Geotag", ID_EXPORT_EARTH =
         // "Export to Google Earth File".
         PicasaMenu {
-            title: qsTr("Geotag")
+            title: qsTr("&Geotag")
             MenuItem {
                 objectName: "menuToolsExportEarth"
                 text: qsTr("Export to Google Earth File")
@@ -1633,7 +1633,7 @@ MenuBar {
         // signal bekötése a Main.qml-ben (forró fájl) az integrátoré
         MenuItem {
             objectName: "menuToolsOptions"
-            text: qsTr("Options...")
+            text: qsTr("&Options...")
             onTriggered: bar.optionsRequested()
         }
     }
@@ -1642,20 +1642,20 @@ MenuBar {
         //: #2054: BEKÖTVE — a súgó a csomagban van, net nélkül is megnyílik.
         MenuItem {
             objectName: "menuHelpContents"
-            text: qsTr("Help Contents and Index") + "\tF1"
+            text: qsTr("&Help Contents and Index") + "\tF1"
             onTriggered: bar.helpRequested("")
         }
-        PicasaMenuItem { text: qsTr("Keyboard Shortcuts"); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Keyboard Shortcuts"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek
-        PicasaMenuItem { text: qsTr("Picasa Forums"); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Picasa &Forums"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Online Information"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Product Release Notes"); placeholder: false; retired: true }  // #638
         // #1774 (mérve): az eredetiben itt NINCS csoporthatár.
         PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Check for Updates"); placeholder: true }
+        PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuHelpPerfMonitor"

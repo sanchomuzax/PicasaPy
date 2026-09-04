@@ -58,7 +58,9 @@ HELYFOGLALO_MARAD = (
 
 @pytest.fixture(scope="module")
 def forras() -> str:
-    return _QML.read_text(encoding="utf-8")
+    # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma — ez a
+    # fájl a kivezetett menütételek MEGLÉTÉT méri, arra nézve jelölés.
+    return _QML.read_text(encoding="utf-8").replace("&", "")
 
 
 def _tetel_sora(forras: str, felirat: str) -> str:

@@ -90,7 +90,11 @@ class TestAHelyesKeszlet:
         `test_qml_menubar_audit` a mnemonik nélküli alakot őrzi. Egy
         kozmetikai eltérésért nem török el egy meglévő őrt — az angol
         oldalon a `&` meglétét nem is mértem."""
-        assert 'title: qsTr("Sort By")' in _mappa_menu_szakasz()
+        # #2152: az `&` a mnemonik jelölése, nem a cím tartalma — a
+        # #1595 azt méri, hogy az almenü CÍME változatlan maradt
+        szakasz = _mappa_menu_szakasz()
+        assert ('title: qsTr("&Sort By")' in szakasz
+                or 'title: qsTr("Sort By")' in szakasz)
 
 
 class TestASajatTobblet:

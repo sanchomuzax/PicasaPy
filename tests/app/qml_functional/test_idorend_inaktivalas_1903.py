@@ -40,10 +40,12 @@ _TOOLBAR = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "MainToolbar.qml"
 ).read_text(encoding="utf-8")
+#: ⚠️ #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma. Ez a fájl a
+#: menütételek MEGLÉTÉT és a gyorsbillentyűjüket méri, arra nézve jelölés.
 _MENU = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+).read_text(encoding="utf-8").replace("&", "")
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
 ).read_text(encoding="utf-8")
