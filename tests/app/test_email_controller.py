@@ -59,9 +59,14 @@ class TestSizeSettingsDefaults:
         controller = _controller([], tmp_path)
         assert controller.singlePictureOriginal is False
 
-    def test_default_uses_default_mail_client(self, qt_app, tmp_path):
+    def test_default_KERDEZ_friss_profilon(self, qt_app, tmp_path):
+        """#2184: MEGFORDULT. Az eredetiben a `DoNotPromptForEmailPref`
+        alapértéke 0, vagyis az első küldéskor a választó párbeszéd
+        MEGJELENIK (`0x00742154`/`0x00742168`, mérve). Korábban nálunk
+        alapból az alapértelmezett kliens ment, és a párbeszéd
+        elérhetetlen volt annak, aki sosem nyitja meg az Opciókat."""
         controller = _controller([], tmp_path)
-        assert controller.useDefaultClient is True
+        assert controller.useDefaultClient is False
 
 
 class TestSizeSettingsPersistence:
@@ -173,9 +178,21 @@ class TestPrepareAttachments:
         assert controller.prepareAttachments([5], True) == []
 
 
+def _kuldo_controller(photos, tmp_path):
+    """Vezérlő, amelyik AZONNAL küld — a választó párbeszéd nélkül.
+
+    #2184 óta friss profilon a `sendRows()` előbb megkérdezi, mivel
+    küldjön (ez az eredeti viselkedése). Ezek a próbák viszont magát a
+    KÜLDÉST mérik, ezért itt előre eldöntjük a kérdést — ugyanúgy, ahogy
+    a felhasználó teszi, ha bepipálja a „ne kérdezz többé"-t."""
+    controller = _controller(photos, tmp_path)
+    controller.setUseDefaultClient(True)
+    return controller
+
+
 class TestSendRows:
     def test_uses_xdg_email_when_available(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         with patch(
             "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
         ), patch("picasapy.app.email_controller._popen") as popen:
@@ -189,7 +206,7 @@ class TestSendRows:
         assert str(Path("/tmp/a.jpg")) in argv
 
     def test_popen_failure_emits_email_failed(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
@@ -203,7 +220,7 @@ class TestSendRows:
         assert events
 
     def test_falls_back_to_mailto_without_xdg_email(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         with patch(
             "picasapy.app.email_controller._which", return_value=None
         ), patch(
@@ -217,7 +234,7 @@ class TestSendRows:
         assert url.startswith("mailto:")
 
     def test_mailto_fallback_with_attachments_warns(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
@@ -230,7 +247,7 @@ class TestSendRows:
         assert events  # figyelmeztetés: a csatolmány elveszik
 
     def test_mailto_fallback_without_attachments_is_silent(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
@@ -243,7 +260,7 @@ class TestSendRows:
         assert events == []
 
     def test_no_mail_program_found_emits_failure(self, qt_app, tmp_path):
-        controller = _controller([], tmp_path)
+        controller = _kuldo_controller([], tmp_path)
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
