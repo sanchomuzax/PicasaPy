@@ -32,10 +32,7 @@ Melegítés**, 2. fül **Színinvertálás**, 3. fül **egy sem**. Az `Invert`
 `mode="effect"`, tehát a `mode`-ból levezetett lánc szerint nem lehetne
 jelvénye — és a jelvény **két különböző felvételen**, eltérő szerkesztési
 állapot mellett is látszik. ⛔ **MEGDŐLT** a korábbi „három jelvény, mind az
-1. fülön — a kódban nincs út a negyedikhez" állítás. ⛔ **NYITOTT:** ki írja
-még a `FilterDesc + 4`-et (a parser útja `0x008ff847`, a `mode`-ból)? A jegy
-**már nem a tulajdonosra vár** — gépi úton kutatható, `ready` +
-`bináris-kutatható`. Jegy: **#2125**.
+1. fülön — a kódban nincs út a negyedikhez" állítás. ⛔ **A „ki írja még a `FilterDesc + 4`-et" kérdés 2026-09-04-én MEGDŐLT: SENKI** — nyolc független ellenőrzés (a `FilterDesc` ctor **egyetlen** hívója; a jelvény-jelző **egyetlen** írása; a getter **egyetlen** vtáblája; mind a **2856** RTTI-vtábla `+0x14` slotja; a 36 csempe `mode`-ja az XML-ből; a `.tre` egyetlen jelvény-rétege). A jelvény képpont-szinten **ugyanaz az elem**, a csempe pedig igazoltan az `Invert` (`filter_Invert_label0` = „Színinvertálás"). ⇒ **a kérdés nem a binárisban van:** a futó telepítés `runtime\filterdesc.xml`-je eltérhet a kutatási másolatunkétól. Jegy: **#2125** (`blocked` + `felhasználóra-vár`, egyetlen gépies kéréssel).
 
 ### [picasa-menusor-csoportok.md](picasa-menusor-csoportok.md) — nincs nyitott kérdés
 
