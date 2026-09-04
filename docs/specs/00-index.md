@@ -358,7 +358,15 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
    sehol nem szerepelt nálunk (a `FolderHierarchyView.qml` fejléce is két
    módról ír). Jegy: **#853**.
 
-### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — nincs nyitott kérdés (2 BLOKKOLT tétel · ÚJ szakasz, 2026-09-03)
+### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — 1 nyitott kérdés (a 14.2: a két `*checksum` oszlop KÉPLETE)
+
+⚠️ **2026-09-04 — a fejléc PONTOSÍTVA.** Korábban „2 BLOKKOLT tétel" állt itt; a mérés szerint ez félrevezető:
+a **14.1** (gyorsítótábla) **LEZÁRVA** (megerősítve, egyetlen üres bejegyzés), a **14.2** pedig **nem a
+tulajdonosra vár** — a hozzá kellő adat **megvan és mérve van** (9 nevesített személy-album, a `db3` arc-oszlopai
+élő adaton). Ami hiányzik, az a **képlet**, és a 14.2 megnevezi a folytatás pontos helyét is (az oszlop
+**indexét** a `0x004127c0` / `0x00415790` regisztrációk sorrendjéből kell kiszámolni, majd a generikus
+oszlop-beállító hívásait szűrni rá). ⇒ **A #1238 emiatt LEZÁRVA** — a jegy még a tulajdonostól kérte azt az
+adatot, ami 2026-08-22 óta a birtokunkban van és fel is van dolgozva.
 
 ⭐ **2026-09-03 (15. szakasz) — a személy-album FEJLÉCSÁVJA és a javaslat-munkafolyamat felülete.** A lap eddig a motort és az adatot írta le; a felület, amin a javaslatokat jóváhagyják, hiányzott. ⛔ **Miért nem látta a lefedettségi mérés:** a kód **puszta levélnéven** hivatkozik az elemekre, és a példány névtere **dinamikus** (`albumheader/%x/%d`, `0x0074ad40`) ⇒ a `string_xrefs`-ben **nulla** találat `faceheaderpanel/`-re. **A fejlécsáv elosztója** (`0x005e0f70`, 3930 b) **25 parancsot** ismer, ebből nyolc a javaslat-munkafolyamaté. ⭐ **A „További javaslatok keresése" LEJJEBB VISZI A KÜSZÖBÖT:** `küszöb = FRSuggestionThreshold / 100 − 0,1` (alapértéken **0,75**), a három konstans kiolvasva (`0x006028be` = 85, `0x00cf3a08` = 100.0, `0x00c7dd30` = 0.1) — és **nem írja vissza** a beállítást (nincs `0x00401900` hívás). **Az elvetés a `.picasa.ini`-be megy:** a `confirmsel`/`ignore`/`removesel` közös kezelője (`0x005c9b00`) a `]ignoreface` és `]unknownface` tokeneket írja. A **„Név hozzáadása"** az Emberek panelt nyitja (`header_addname:%s`). Teljes magyar felirat-készlet + geometria (a `confirmsug` és a `confirmsel` **ugyanazt** a 88 × 27-es téglalapot foglalja — váltakozó gomb), és az „Ismeretlen emberek" testvérpanel két váltógomb-párja. **Nálunk (mérve):** egyetlen általános fejléc öt gombbal (`LightboxHeader.qml`), a javaslat-vezérlőkből **egy sincs**. Jegy: **#2187**.
 
