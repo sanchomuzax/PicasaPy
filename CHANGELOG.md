@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.263] – 2026-09-04
+
+### Javítva
+- A bal hasáb három nézet-kapcsolója (fanézet, egyszerűsített fanézet,
+  indexképek a könyvtárban) megmarad a következő indításig — eddig minden
+  induláskor alapállapotba esett (#2154).
+
 ## [0.8.262] – 2026-09-04
 
 ### Új
