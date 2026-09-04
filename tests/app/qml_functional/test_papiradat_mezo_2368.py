@@ -10,7 +10,14 @@ from __future__ import annotations
 
 import time
 
+from pathlib import Path
+
+import picasapy.app as app_csomag
 from PySide6.QtCore import QMetaObject, QObject, Qt
+
+_QML = (
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PrintDialog.qml"
+).read_text(encoding="utf-8")
 
 MEZO = "printPaperInfoText"
 
@@ -59,4 +66,25 @@ def test_a_mezo_kijut_a_felultre_es_nem_ures(qml_app, qt_app):
     szoveg = str(mezo.property("text"))
     assert any(karakter.isdigit() for karakter in szoveg), (
         f"a mező nem mutat mérőszámot: {szoveg!r}"
+    )
+
+
+def test_a_ket_frissitesi_ut_be_van_kotve() -> None:
+    """A jegy kikötése: nyomtatóváltáskor ÉS az oldalbeállítás után frissül.
+
+    ⚠️ Ez **forrás-szintű** állítás, szándékosan. A nyomtatóváltást futásidőben
+    csak akkor lehetne kimérni, ha a CI-futón legalább KÉT nyomtató volna
+    telepítve — nincs. Az oldalbeállítás pedig modális rendszerpárbeszéd. A
+    két frissítési út meglétét tehát a forrásból állítjuk, és kimondjuk, hogy
+    ez gyengébb bizonyíték, mint a futásidejű mérés.
+    """
+    egysoros = " ".join(_QML.split())
+    assert "onPrinterNameChanged: printWindow.frissitsdAPapiradatot()" in egysoros, (
+        "nyomtatóváltáskor nem frissül a papíradat"
+    )
+    kezd = egysoros.index('objectName: "printPrinterSetupButton"')
+    blokk = egysoros[kezd:kezd + 1200]
+    assert "frissitsdAPapiradatot()" in blokk, (
+        "az oldalbeállító bezárása után nem frissül a papíradat — pedig épp "
+        "az ott elfogadott elrendezés a mező FORRÁSA"
     )
