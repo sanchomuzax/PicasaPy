@@ -477,3 +477,59 @@ a motorban: `0x00861190`, `0x008613b0`, `0x008614a0`.)*
 `pageRect(DevicePixel)` adja a lapméretet; **minőség-kapcsoló nincs**, és a
 `PrintDialog.qml` `quality` tulajdonsága a **DPI-figyelmeztetésé**, nem
 ezé a beállításé.
+
+---
+
+## Az INDEXKÉP (Contact Sheet) — három belépési pont és a hivatalos feliratok (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris + `stringres-en-hu.tsv`).
+
+Az indexkép nem egy funkció, hanem **három külön belépési pont** ugyanarra a
+fogalomra. A `printpanel/photoindexbutton` eddig sehol nem szerepelt a
+lapon és a lefedettségi leltárban sem.
+
+### 1. Nyomtatási MÉRET a panelen
+
+`ytPrintSizes::eContact` (`0x00775ce0`) a többi méret mellett; a súgója
+`ytPrintTip::eContact` (`0x00775f30`): *„Print pictures as a Contact
+Sheet"*. A panel gombja: **`printpanel/photoindexbutton`** (a
+`0x00743980` gomb-elosztójában).
+
+### 2. KOLLÁZS-típus
+
+`0x0082e8b0` (2165 b) hat kollázstípust regisztrál — `picturepile`,
+`picturegrid`, `regulargrid`, `multiexp`, **`contactsheet`**, `framegrid` —
+ikonnal és leírással: `collagepanel/#contact_sheet_icon`,
+`collage::csheet_desc`.
+
+### 3. MENÜPARANCS
+
+`eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET` — a menüépítőben
+(`0x00559150`) **`&Print Contact Sheet...`**.
+
+### ⛳ A hivatalos MAGYAR feliratok (a `stringres-en-hu.tsv`-ből)
+
+| erőforráskulcs | angol | **hivatalos magyar** |
+|---|---|---|
+| `eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET` | `&Print Contact Sheet...` | **`&Indexképek nyomtatása...`** |
+| `ytPrintSizes::eContact` | Contact Sheet | **Indexképek** |
+| `CollageType::eContactSheet` | Contact Sheet | **Indexképek** |
+| `collage::csheet_desc` | Contact Sheet:  Thumbnails with an informative header | **Indexkép: Miniatűr tájékoztató jellegű fejléccel** |
+| `buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24}` | Contact Sheet | **Indexképek** |
+| `buttontooltip:{BB850B65-…}` | Print a contact sheet | **Indexkép nyomtatása** |
+| `IDS_CONFIRM_CONTACTSHEET` | This will create a contact sheet of all the images in the album as a new image.\r\nDo you want to continue? | **Ezzel a művelettel az összes képből egy indexképet hoz létre az albumban új képként.\r\nFolytatja?** |
+
+⚠️ **A magyar szó mindenütt „indexkép", soha nem „bélyegkép".**
+
+### Egy kuriózum: a `ginormous.jpg` út
+
+`0x0057b050` (1225 b, egyetlen hívóval: `0x005e652c`) képet állít elő,
+**`ginormous.jpg`** néven kiírja (`0x0057b3f6`), majd
+`0x0057b471`–`0x0057b477`: `"open"` + `ShellExecute` (`0x00c405e0`) —
+megnyitja. A folyamatjelző szövege *„Making The Ginormous Contact
+Sheet!"*, és a **kulcs-névtere `UNUSED!`** (`0x0057b1ce`) — vagyis a
+szövegtár maga jelöli használaton kívülinek.
+
+*(Hogy a `0x9c94` menüparancs melyik ághoz tartozik, NINCS mérve: a
+parancsazonosító a `0x0056e1c0` elosztóban áll, a `ginormous`-út hívója
+viszont a `0x005e60d0`-ban — két külön elosztó.)*
