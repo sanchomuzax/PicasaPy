@@ -14,6 +14,48 @@ Slider {
 
     readonly property bool isHorizontal: orientation === Qt.Horizontal
 
+    // ------------------------------------------------------------------
+    // #2170: billentyűs léptetés a MÉRT karakterekkel
+    // ------------------------------------------------------------------
+    //
+    // Az eredeti kezelője (`0x005d2290`) a `WM_CHAR`-t nézi, és NÉGY
+    // karaktert ismer: `+` (0x2b) és `=` (0x3d) növel, `−` (0x2d) és `_`
+    // (0x5f) csökkent. A lépés mindkét irányban **0,02** (a konstansok
+    // `0x00cf50d8` / `0x00cf50d4`, kiolvasva), és a FÓKUSZBAN lévő
+    // csúszkára hat (`editslider<N>`, ahol N a panel aktuális indexe).
+    //
+    // ⚠️ **Miért a tartomány 2 %-a, és nem az abszolút 0,02?** Az eredeti
+    // csúszkája NORMALIZÁLT (0…1), ott a 0,02 pontosan 2 %. A mi
+    // csúszkáink tartománya viszont vezérlőnként más (−1…1, 0…255, 0,25…8),
+    // és az abszolút 0,02 ezeken értelmetlen lenne — egy 0…255-ös skálán
+    // észrevehetetlen, egy −1…1-esen viszont a mértnél nagyobb ugrás. A
+    // MÉRT ARÁNYT tartjuk meg. A jegy ezt a döntést kifejezetten kérte
+    // kimondani.
+    readonly property real leptetesAranya: 0.02
+    readonly property real billentyuLepes:
+        (control.to - control.from) * control.leptetesAranya
+
+    /** Léptetés a mért aránnyal. `irany`: +1 növel, −1 csökkent. */
+    function leptesd(irany) {
+        var uj = control.value + irany * control.billentyuLepes
+        control.value = Math.max(control.from, Math.min(control.to, uj))
+        control.moved()
+    }
+
+    //: a léptetés a FÓKUSZBAN lévő csúszkára hat — enélkül a billentyű
+    //: sosem ér célba
+    focusPolicy: Qt.StrongFocus
+
+    Keys.onPressed: function (event) {
+        if (event.text === "+" || event.text === "=") {
+            control.leptesd(1)
+            event.accepted = true
+        } else if (event.text === "-" || event.text === "_") {
+            control.leptesd(-1)
+            event.accepted = true
+        }
+    }
+
     // #700: a sín vastagsága és a fogantyú mérete a HÍVÓ helyen felülírható.
     // Az alapértékek változatlanok (kerek, 14 px-es fogantyú, 4 px-es sín),
     // ezért minden meglévő csúszka ugyanúgy néz ki, mint eddig; az
