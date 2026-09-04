@@ -160,6 +160,10 @@
 <context>
     <name>PrintController</name>
     <message>
+        <source>No printer selected.</source>
+        <translation>Nincs kiválasztva nyomtató.</translation>
+    </message>
+    <message>
         <source>No pictures to print.</source>
         <translation>Nincs nyomtatható kép.</translation>
     </message>
