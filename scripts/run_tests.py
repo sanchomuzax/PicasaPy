@@ -45,6 +45,7 @@ import json
 import os
 import shutil
 import subprocess
+import importlib
 import sys
 import tempfile
 import time
@@ -596,6 +597,57 @@ def _mert_idok() -> dict[str, float]:
         return {}
 
 
+#: #1217: a teszt ezt a fogantyút cseréli, nem a globális
+#: `importlib.import_module`-t — az minden más modulra átszivárogna.
+_import_module = importlib.import_module
+
+
+def kornyezet_sorai() -> list[str]:
+    """A fő verziók egy-egy sorban — a bukás-jelentés mellé (#2264).
+
+    A CI és a fejlesztői gép ma NAGYVERZIÓBAN eltér (OpenCV 4 ↔ 5,
+    PySide6 6.8 ↔ 6.11), ezért egy CI-bukás elemzése vaktában indul: nem
+    tudni, melyik környezetről szól a hibaüzenet. A „helyben nem
+    reprodukálható ⇒ flaky" következtetés emiatt hamis lehet.
+
+    A jelentés SOSEM lehet drágább, mint a hiba, amit kísér: hiányzó vagy
+    sérült csomagnál „ismeretlen" kerül a verzió helyére, kivétel nem
+    szökhet ki.
+    """
+    import platform
+
+    def verzio(modulnev: str, attribútum: str = "__version__") -> str:
+        try:
+            modul = _import_module(modulnev)
+        except Exception:  # noqa: BLE001 — a jelentés nem dönthet le semmit
+            return "ismeretlen (nincs telepítve?)"
+        return str(getattr(modul, attribútum, "ismeretlen"))
+
+    return [
+        f"Python {platform.python_version()} ({platform.machine()}, "
+        f"{platform.system()})",
+        f"PySide6 {verzio('PySide6', '__version__')}",
+        f"OpenCV {verzio('cv2', '__version__')}",
+    ]
+
+
+def jelentsd_a_bukasokat(failures: list[tuple[str, int]]) -> None:
+    """A bukott részfutások + a KÖRNYEZET, amiben történtek (#2264).
+
+    Külön függvény, hogy olcsón mérhető legyen: a `main()` a teljes
+    tesztkészletet futtatja, tehát a jelentés útját csak ezen át lehet
+    ellenőrizni anélkül, hogy percekig várnánk rá.
+    """
+    print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
+    for name, returncode in failures:
+        print(f"  {name}: exit {returncode}", flush=True)
+    # A környezet a bukás MELLÉ tartozik: enélkül nem tudni, melyik gépről
+    # szól a hibaüzenet, és a reprodukció vaktában indul.
+    print("\nA FUTÁS KÖRNYEZETE:", flush=True)
+    for sor in kornyezet_sorai():
+        print(f"  {sor}", flush=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     cov = "--cov" in argv
@@ -706,9 +758,7 @@ def _futtat(
         )
 
     if failures:
-        print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
-        for name, returncode in failures:
-            print(f"  {name}: exit {returncode}", flush=True)
+        jelentsd_a_bukasokat(failures)
         return 1
 
     print("\nMinden részfutás zöld.", flush=True)

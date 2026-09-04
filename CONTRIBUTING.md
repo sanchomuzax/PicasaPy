@@ -30,6 +30,35 @@ python scripts/run_tests.py --cov  # lefedettséggel
 ruff check src/ tests/ scripts/    # lint
 ```
 
+### Ha a CI bukik, de helyben zöld — előbb a VERZIÓKAT nézd (#2264)
+
+A CI és a fejlesztői gép **nagyverzióban** eltérhet: a függőségeink nincsenek
+verzióhoz kötve, tehát a CI minden futásnál a legfrissebbet telepíti. Mérve
+(2026-09-04): OpenCV **4.10 ↔ 5.0**, PySide6 **6.8 ↔ 6.11**, Python
+**3.13 ↔ 3.12**, architektúra **aarch64 ↔ x86-64**.
+
+Ezért a „helyben nem reprodukálható ⇒ flaky" következtetés **hamis lehet**.
+
+A futtató bukáskor kiírja a saját környezetét (`A FUTÁS KÖRNYEZETE`), a
+CI-naplóban pedig a telepítési lépés mutatja a magáét — a kettőt vesd össze
+**először**, mielőtt flakynek könyvelnéd el a hibát.
+
+**A CI verzióival futtatni** (eldobható venv, nem érinti a rendszer-Pythont):
+
+```sh
+python3 -m venv /tmp/ci-venv && /tmp/ci-venv/bin/pip install -q --upgrade pip
+/tmp/ci-venv/bin/pip install -q $(python3 scripts/print_dependencies.py)
+/tmp/ci-venv/bin/python -m pytest tests/app/<a bukott fájl> -q
+```
+
+⚠️ A csomaglisták **egyetlen helyen** élnek (`pyproject.toml`,
+`packaging/qt-runtime-deps.txt`); a `print_dependencies.py` onnan olvas.
+Tételes listát ide se írj — ha a fenti parancs elavul, a szkriptet javítsd.
+
+⚠️ Ez a recept **nem oldja meg** az architektúra-eltérést (aarch64 ↔ x86-64):
+a bináris kerekekben eltérő SIMD-utak futnak. Ha a bukás azok után is csak a
+CI-n jön elő, az önmagában lelet — írd a jegybe.
+
 Az `on<Jelzés>` / `.connect()` fogadó nélkül maradt Qt-jelzéseket külön őr
 figyeli — ez a hibaosztály háromszor ment ki kiadásba (#985, #989, #1001),
 mindannyiszor zöld tesztek mellett:

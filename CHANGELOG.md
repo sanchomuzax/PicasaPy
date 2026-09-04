@@ -31,6 +31,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.266] – 2026-09-04
+
+### Javítva
+- A tesztfuttató a bukás mellé kiírja, milyen környezetben futott (Python,
+  PySide6, OpenCV, architektúra) — eddig egy CI-hiba elemzése vaktában
+  indult, mert a CI és a fejlesztői gép nagyverzióban eltér (#2264).
+
 ## [0.8.265] – 2026-09-04
 
 ### Javítva
