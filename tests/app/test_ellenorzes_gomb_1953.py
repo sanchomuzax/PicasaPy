@@ -151,3 +151,54 @@ class TestAGombAQMLben:
         kezdet = forras.index('objectName: "printReviewButton"')
         blokk = forras[kezdet : kezdet + 900]
         assert "smallPictures" in blokk
+
+
+class TestAKuszobBeallithato2359:
+    """#2359: a „kis kép" küszöbe az eredetiben **rejtett beállítás**.
+
+    Kimérve (`0x0085c060`): a minőség-számoló a `Preferences\\DPIWarning`
+    kulcsot olvassa, **150-es alapértékkel** (`0x0085c08b`:
+    `mov dword ptr [esp+0x1c], 0x96`). Az érték tehát egyezik a miénkkel —
+    de nálunk beégetett állandó volt, nem beállítás.
+
+    Az őrszem is mérve: a panel `cmp esi, 0xf4240` (= **1 000 000**)
+    egyezésnél kihagyja a „Legkisebb kép" sort (`0x00745d15`).
+    """
+
+    def _vezerlo(self, tmp_path, kuszob=None):
+        meretek = {"a.jpg": (900, 600)}  # 4×6-on 150 DPI PONTOSAN
+        for nev, meret in meretek.items():
+            make_jpeg(tmp_path / nev, size=meret)
+        photos = [_FakePhoto(str(tmp_path), n, *m) for n, m in meretek.items()]
+        b = QSettings(str(tmp_path / "s.ini"), QSettings.Format.IniFormat)
+        if kuszob is not None:
+            b.setValue("printing/dpiWarning", kuszob)
+        return PrintController(photo_source=lambda: photos, settings=b)
+
+    def test_alapertelmezes_150(self, tmp_path):
+        v = self._vezerlo(tmp_path)
+        assert v.printQuality([0], "M4X6")["threshold"] == 150
+
+    def test_a_hatar_EGYUTT_mozog_a_beallitassal(self, tmp_path):
+        """A foga: 150 DPI-s kép a 149-es küszöbnél NAGY, a 151-esnél KICSI.
+        Beégetett állandóval ez nem tudna elmozdulni."""
+        assert self._vezerlo(tmp_path, 149).printQuality([0], "M4X6")["small"] == 0
+        assert self._vezerlo(tmp_path, 151).printQuality([0], "M4X6")["small"] == 1
+
+    def test_a_kifogasolt_LISTA_is_a_beallitast_koveti(self, tmp_path):
+        """A két útnak (összegzés és lista) ugyanazt kell mondania —
+        különben a mondat N képet írna, a lista M-et."""
+        assert self._vezerlo(tmp_path, 149).smallPictures([0], "M4X6") == []
+        assert len(self._vezerlo(tmp_path, 151).smallPictures([0], "M4X6")) == 1
+
+    def test_a_kuszob_a_jelentesben_is_a_beallitas(self, tmp_path):
+        assert self._vezerlo(tmp_path, 200).printQuality([0], "M4X6")["threshold"] == 200
+
+    def test_URES_listanal_nincs_legkisebb_ertek(self, tmp_path):
+        """Az eredeti őrszeme: nulla mért képnél a „Legkisebb kép" sor
+        kimarad. Nálunk ezt a `smallest = 0` jelzi."""
+        v = self._vezerlo(tmp_path)
+        osszegzes = v.printQuality([], "M4X6")
+        assert osszegzes["total"] == 0
+        assert osszegzes["smallest"] == 0
+        assert osszegzes["ready"] is False

@@ -201,13 +201,13 @@ class PrintController(QObject):
             (rekord.width or 0, rekord.height or 0)
             for rekord in self._resolve_records(rows)
         ]
-        osszegzes = minoseg_osszegzes(meretek, meret)
+        osszegzes = minoseg_osszegzes(meretek, meret, kuszob=self._dpi_kuszob())
         return {
             "smallest": osszegzes.legkisebb_dpi,
             "small": osszegzes.kicsik,
             "total": osszegzes.osszes,
             "ready": osszegzes.keszen_all,
-            "threshold": KICSI_KUSZOB_DPI,
+            "threshold": self._dpi_kuszob(),
         }
 
     @Slot(list, str, result=list)
@@ -235,8 +235,31 @@ class PrintController(QObject):
             }
             for rekord in self._resolve_records(rows)
         ]
-        kicsik = [t for t in tetelek if t["dpi"] < KICSI_KUSZOB_DPI]
+        kuszob = self._dpi_kuszob()
+        kicsik = [t for t in tetelek if t["dpi"] < kuszob]
         return sorted(kicsik, key=lambda t: t["dpi"])
+
+    #: A küszöb beállítás-kulcsa. Az eredetiben `Preferences\DPIWarning`
+    #: (`0x0085c076`/`0x0085c07b`), alapértéke **150** (`0x0085c08b`).
+    _DPI_KUSZOB_KULCS = "printing/dpiWarning"
+
+    def _dpi_kuszob(self) -> int:
+        """A „kis kép" küszöbe — beállításból, `KICSI_KUSZOB_DPI` alapértékkel.
+
+        ⚠️ MINDKÉT út (az összegzés és a kifogásolt lista) ezt hívja. Ha
+        külön olvasnák, a mondat N kis képet írna, a lista M-et — a #1953
+        épp ezt az ellentmondást szüntette meg.
+
+        Elrontott (nem szám vagy nem pozitív) beállításnál az alapértékre
+        esünk vissza: a nyomtatás-előkészítés nem dőlhet be egy rossz
+        kulcstól.
+        """
+        try:
+            ertek = int(self._settings.value(self._DPI_KUSZOB_KULCS,
+                                             KICSI_KUSZOB_DPI))
+        except (TypeError, ValueError):
+            return KICSI_KUSZOB_DPI
+        return ertek if ertek > 0 else KICSI_KUSZOB_DPI
 
     @Slot(result=list)
     def listPrinters(self) -> list[str]:
