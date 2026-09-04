@@ -207,13 +207,16 @@ Rectangle {
     readonly property var fontFamilyLabels:
         panel.fontFamilyCatalogue.map(function(f) { return f.label })
     property string textFontFamily: ""
-    property real textFontScale: 1
+    //: #2287: a betűméret az eredeti 16 elemű listájából (8…96),
+    //: abszolút egészként — nem százalék.
+    property int textFontSize: 12
+    property var fontSizeChoices: []
     property bool textBold: false
     property bool textItalic: false
     property bool textUnderline: false
     property string textAlign: "left"
     signal textFontFamilyEdited(string key)
-    signal textFontScaleEdited(real value)
+    signal textFontSizeEdited(int value)
     signal textBoldEdited(bool value)
     signal textItalicEdited(bool value)
     signal textUnderlineEdited(bool value)

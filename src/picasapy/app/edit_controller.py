@@ -36,7 +36,8 @@ from picasapy.ini import (
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
-    DEFAULT_TEXT_SIZE,
+    BETUMERETEK,
+    tarolt_meret,
     TextBlock,
     TextGeometry,
     TextOverlay,
@@ -237,7 +238,9 @@ _DEFAULT_TEXT_FONT = "Arial"
 #: vonatkoznak — a mi Hershey-alapú rajzolónk család/méret/dőlt/aláhúzott
 #: beállításai nem képezhetők le rájuk veszteség nélkül.
 _DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
-_DEFAULT_TEXT_SCALE = 1.0
+#: #2287: a betűméret az eredeti 16 elemű listájából (`BETUMERETEK`),
+#: alapértéke **12** (a panel `+0x2cc` mezőjének kezdő értéke).
+_DEFAULT_TEXT_SIZE_PT = 12
 _DEFAULT_TEXT_BOLD = False
 _DEFAULT_TEXT_ITALIC = False
 _DEFAULT_TEXT_UNDERLINE = False
@@ -424,7 +427,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
         self._text_family: str = _DEFAULT_TEXT_FAMILY
-        self._text_scale: float = _DEFAULT_TEXT_SCALE
+        self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
         self._text_bold: bool = _DEFAULT_TEXT_BOLD
         self._text_italic: bool = _DEFAULT_TEXT_ITALIC
         self._text_underline: bool = _DEFAULT_TEXT_UNDERLINE
@@ -672,10 +675,18 @@ class EditController(QObject, BackgroundWorkerMixin):
     def textFontFamily(self) -> str:
         return self._text_family
 
-    @Property(float, notify=toolsChanged)
-    def textFontScale(self) -> float:
-        """A betűméret szorzója — 1,0 az alapérték."""
-        return self._text_scale
+    #: #2287: a betűméret az EREDETI mértékegységében — abszolút egész a
+    #: 16 elemű listából (8…96), nem százalék. A panel a listaelemeket
+    #: `"%d"`-vel írja ki (`0x0062dfde`), tehát egészek.
+    @Property(int, notify=toolsChanged)
+    def textFontSize(self) -> int:
+        """A választott betűméret (a `BETUMERETEK` egyike)."""
+        return self._text_size_pt
+
+    @Property("QVariantList", constant=True)
+    def fontSizeChoices(self) -> list:
+        """A 16 választható méret — a felület legördülőjének modellje."""
+        return list(BETUMERETEK)
 
     @Property(bool, notify=toolsChanged)
     def textBold(self) -> bool:
@@ -702,13 +713,18 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_family = value or _DEFAULT_TEXT_FAMILY
         self._refresh_text_preview()
 
-    @Slot(float)
-    def setTextFontScale(self, value: float) -> None:
-        """A betűméret-szorzó beállítása (pozitív); élő előnézettel."""
+    @Slot(int)
+    def setTextFontSize(self, value: int) -> None:
+        """A betűméret beállítása; élő előnézettel.
+
+        A listán kívüli értéket a LEGKÖZELEBBIRE igazítjuk: a fogantyúval
+        átméretezett feliratok nem egész listaértéket adnak (#2287), a
+        választónak viszont akkor is mutatnia kell valamit.
+        """
         self._require_active()
         if value <= 0:
-            raise ValueError(f"A textFontScale pozitív kell legyen: {value}")
-        self._text_scale = float(value)
+            raise ValueError(f"A textFontSize pozitív kell legyen: {value}")
+        self._text_size_pt = min(BETUMERETEK, key=lambda e: abs(e - int(value)))
         self._refresh_text_preview()
 
     @Slot(bool)
@@ -973,7 +989,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
-        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1040,7 +1056,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
-        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1575,7 +1591,8 @@ class EditController(QObject, BackgroundWorkerMixin):
             geometry=TextGeometry(
                 x=self._text_pending_pos[0],
                 y=self._text_pending_pos[1],
-                size=DEFAULT_TEXT_SIZE,
+                # #2287: a választott listaérték 360-ad része
+                size=tarolt_meret(self._text_size_pt),
             ),
             style=TextStyle(
                 fill_argb=_rgb_to_argb(self._text_fill_color),
@@ -2280,7 +2297,7 @@ class EditController(QObject, BackgroundWorkerMixin):
             "fill_enabled": self._text_fill_enabled,
             "opacity": self._text_opacity,
             "font_family": self._text_family,
-            "font_scale": self._text_scale,
+            "font_size_pt": self._text_size_pt,
             "bold": self._text_bold,
             "italic": self._text_italic,
             "underline": self._text_underline,

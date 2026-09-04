@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.272] – 2026-09-04
+
+### Javítva
+- A szöveg-eszköz betűmérete az eredeti Picasa 16 értékét kínálja (8-tól
+  96-ig), és a választott méret végre bekerül a mentett fájlba is. Eddig
+  százalékot kellett állítani, és a méret sosem mentődött (#2287).
+
 ## [0.8.271] – 2026-09-04
 
 ### Javítva
