@@ -4598,6 +4598,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Save &amp;As...</source>
+        <translation>Mentés &amp;másként…</translation>
+    </message>
+    <message>
+        <source>Save a Cop&amp;y</source>
+        <translation>&amp;Másolat mentése</translation>
+    </message>
+    <message>
         <source>Clear Geotags</source>
         <translation>Geocímkék törlése</translation>
     </message>

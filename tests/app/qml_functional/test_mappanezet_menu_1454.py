@@ -117,8 +117,10 @@ def _menu_item_texts(menu) -> list[str]:
     property több belső elemen (címke, ikon) is megjelenik, azokat az
     osztálynév zárja ki.
     """
+    #: ⚠️ #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma — ez a
+    #: fájl a KÉSZLETET méri (mely tételek vannak az almenüben).
     return [
-        child.property("text")
+        str(child.property("text") or "").replace("&", "")
         for child in menu.findChildren(QObject)
         if "MenuItem" in child.metaObject().className()
     ]
@@ -154,14 +156,16 @@ class TestAMappanezetAlmenuTartalma:
         """#1766: a felvételen mért `eMenuView::` készlet."""
         window, _controller, _engine = qml_app
         texts = _menu_item_texts(_child(window, "menuViewFolderView"))
-        for hosszu in ("Sort by &Creation Date", "Sort by &Recent Changes",
-                       "Sort by &Size", "Sort by &Name", "Re&verse sort"):
+        # ⚠️ #2152: a `_menu_item_texts` mnemonik NÉLKÜL adja a feliratokat
+        for hosszu in ("Sort by Creation Date", "Sort by Recent Changes",
+                       "Sort by Size", "Sort by Name", "Reverse sort"):
             assert hosszu in texts, f"hiányzik a Nézet-készletből: {hosszu}"
 
     def test_a_menusavban_csak_egy_helyen_marad_a_folderSort(self):
         """A `Mappa ▸ Sort By` négy szempontja + a megfordítás — és semmi
         más. Forrásszintű őr: a duplikálás pont így csúszott be."""
-        source = _MENU_QML.read_text(encoding="utf-8")
+        # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma.
+        source = _MENU_QML.read_text(encoding="utf-8").replace("&", "")
         assert source.count("controller.setFolderSort(") == 4
         assert source.count("controller.toggleFolderSortReverse()") == 1
 

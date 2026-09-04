@@ -98,9 +98,9 @@ class TestMenupont:
 
         # kiírt literál: a `stringres` `ID_FILE_IMPORTPICTURE` forrásszövege
         # és a #1154 által MÉRT gyorsbillentyű
-        assert str(_elem(window, "menuFileImportFrom").property("text")) == (
-            "Import From...\tCtrl+M"
-        )
+        # ⚠️ #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma.
+        felirat = str(_elem(window, "menuFileImportFrom").property("text"))
+        assert felirat.replace("&", "") == "Import From...\tCtrl+M"
 
     def test_a_menupontra_kattintva_megnyilik_a_parbeszed(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -233,7 +233,8 @@ class TestForrasEsFordítas:
     a `stringres` szerinti legyen."""
 
     def test_a_menupont_nem_placeholder_a_forrasban(self):
-        forras = _MENU_QML.read_text(encoding="utf-8")
+        # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma.
+        forras = _MENU_QML.read_text(encoding="utf-8").replace("&", "")
         tetel = re.search(
             r"MenuItem\s*\{[^}]*?menuFileImportFrom[^}]*?\}", forras, re.S
         )
@@ -254,7 +255,12 @@ class TestForrasEsFordítas:
         }
 
         # kiírt literálok mindkét oldalon
-        assert forditasok.get("Import From...") == "Importálás forrása…"
+        # ⚠️ #2152: a kulcs és a fordítás is mnemonikot kapott
+        tiszta = {
+            k.replace("&", ""): v.replace("&", "")
+            for k, v in forditasok.items()
+        }
+        assert tiszta.get("Import From...") == "Importálás forrása…"
 
 
 @pytest.mark.parametrize(
