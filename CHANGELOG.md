@@ -40,6 +40,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.280] – 2026-09-04
+
+### Javítva
+- Az alsó sáv négy panelkapcsolója (Emberek · Helyek · Címkék ·
+  Tulajdonságok) az eredeti Picasa szerint **ikon-gomb** lett: a beszorult,
+  levágott feliratok helyett a szöveg a buborék-súgóba került. A négy gomb
+  a **nagyítás-csúszka után** áll, ahogy az eredetiben (#2305).
+
 ## [0.8.279] – 2026-09-04
 
 ### Javítva

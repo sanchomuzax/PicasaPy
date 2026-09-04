@@ -1090,8 +1090,11 @@ Column {
                 Row {
                     id: trayMetadataGroup
                     objectName: "trayMetadataGroup"
-                    anchors.right: trayZoomGroup.left
-                    anchors.rightMargin: 12
+                    //: #2305: a MÉRT sorrend a `respack.yt` x-tartományaiból
+                    //: — `loupehit` 366…391 < `scalecontainer` 398…525 <
+                    //: `metadata_group` 545…785. Vagyis a csúszka MEGELŐZI a
+                    //: négy kapcsolót; korábban fordítva állt.
+                    anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
 
@@ -1146,20 +1149,21 @@ Column {
                                 tray.appWindow.activeDrawerTab =
                                     aktiv ? "" : modelData.nev
                             }
-                            contentItem: Row {
-                                spacing: 4
-                                anchors.verticalCenter: parent.verticalCenter
+                            //: #2305: a felirat NEM a gombon van. Az
+                            //: eredeti négy gombja kizárólag ikonos (a
+                            //: `buttcon_*` típusnevek is ikon-gombot
+                            //: jelölnek), és a 60 × 24-es cellába az ikon
+                            //: MELLETT a szöveg csak levágva fért volna be —
+                            //: a tulajdonos képernyőmentésén „Ember" és
+                            //: „Tulajdon:" látszott. A szöveg nem vész el:
+                            //: buboréksúgó és akadálymentesítési név.
+                            Accessible.name: modelData.felirat
+                            contentItem: Item {
                                 Image {
                                     source: "icons/" + modelData.ikon
                                     width: 16; height: 16
                                     fillMode: Image.PreserveAspectFit
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: modelData.felirat
-                                    color: aktiv ? "white" : Theme.ink
-                                    font.pixelSize: Theme.fontSize - 1
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.centerIn: parent
                                 }
                             }
                         }
@@ -1172,7 +1176,10 @@ Column {
                 Row {
                     id: trayZoomGroup
                     objectName: "trayZoomGroup"
-                    anchors.right: parent.right
+                    //: #2305: a négy panelkapcsoló ELŐTT (ld. ott a mért
+                    //: x-tartományokat).
+                    anchors.right: trayMetadataGroup.left
+                    anchors.rightMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
 

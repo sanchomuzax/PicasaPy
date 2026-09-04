@@ -153,6 +153,16 @@ Mindkettő `m_offsetRT` a `basecontrolset`-en (jobb felső sarokhoz kötve):
 - **`scale_group`** — `loupehit` (nagyító) + `scalecontainer`
   (nagyítás-csúszka).
 
+⭐ **A KETTŐ SORRENDJE (#2305):** a lenti koordináta-táblából **545 > 525**,
+vagyis a `scale_group` (366…525) **megelőzi** a `metadata_group`-ot
+(545…785). Balról jobbra tehát: **nagyító → csúszka → négy panelkapcsoló**.
+A számok eddig is itt álltak, de a sorrend nem következett belőlük
+olvasásra, és a QML fordítva rakta ki őket — a tulajdonos képernyőmentése
+mutatta meg. A gombok emellett **kizárólag ikonosak**: a `buttcon_*`
+típusnevek ikon-gombot jelölnek, és a 60 × 24-es cellába a felirat csak
+levágva férne. Nálunk a felirat a buboréksúgóba és az akadálymentesítési
+névbe került (`Accessible.name`).
+
 *Bizonyítottsági fok: megerősített* — a `thumbui.tre` 300–350. és 620–700.
 sorai, a feliratok a `thumbui_text.tre` 94–121. soraiból. A `m_offset*`
 makrók jelentése (a kötési oldal) a kényszerekből egyértelmű, a hozzájuk
