@@ -31,6 +31,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.267] – 2026-09-04
+
+### Javítva
+- Az effekt-csúszkák hét ponton az eredeti Picasa értékeit követik: a
+  Telítettség végre **negatív** irányba is húzható (a program ezt eddig is
+  tudta, csak a csúszka nem engedte), és több effekt alapértéke a mértre
+  javult (#2236).
+
 ## [0.8.266] – 2026-09-04
 
 ### Javítva
