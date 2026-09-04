@@ -270,3 +270,38 @@ class TestCommitolatlanVerzioemeles:
                "git push origin main")
         fa = kapu._munkakonyvtar(cmd, str(tmp_path))
         assert kapu._blokkolando(cmd, fa) is None
+
+
+class TestSzovegbeniEmlites:
+    """#1056 harmadik lelete: a jegy SZÖVEGE is blokkolt.
+
+    A `_tag_push` a `git push` UTÁNI maradékot a következő `;`/`|`/`&`-ig
+    vizsgálta. Prózában ez egy egész bekezdés lehet, és egy jóval később
+    említett verziószám kiváltotta a blokkolást — így nem lehetett
+    megnyitni magát a hibajelentést, és így akadt el egy jegy-lezáró
+    komment is (2026-09-04).
+
+    A javítás a vizsgált ABLAK szűkítése: valódi `git push`-nál a
+    hivatkozás az első néhány szóban áll, prózában nem.
+    """
+
+    def test_prozaban_kesobb_emlitett_verzio_NEM_blokkol(self):
+        cmd = (
+            "gh issue comment 1 --body 'a `git add && git commit && git push` "
+            "alak teljesen megkerülte a kaput. Élesben ezen az úton ment ki "
+            "a v0.8.265 a ceremónia előtt.'"
+        )
+        assert not kapu._tag_push(cmd)
+
+    @pytest.mark.parametrize("cmd", [
+        "git push origin v0.7.77",
+        "git push --tags",
+        "git push origin main --follow-tags",
+        "git push origin refs/tags/v0.7.77",
+        "git push -u origin v1.2.3",
+    ])
+    def test_valodi_tag_push_TOVABBRA_IS_blokkol(self, cmd):
+        assert kapu._tag_push(cmd)
+
+    def test_a_kozvetlen_argumentum_meg_a_hatodik_szoban_is_szamit(self):
+        assert kapu._tag_push("git push --quiet --force-with-lease origin v9.9.9")
