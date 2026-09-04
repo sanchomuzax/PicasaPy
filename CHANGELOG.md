@@ -9,6 +9,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A lebegő értesítő celláján megjelenik a fogantyú (#2133) — eddig csak a
+  forráskód kommentje sorolta fel, kirajzolva nem volt. Az eredetihez
+  hasonlóan **nem** megfogható vezérlő, csak rajz.
+
+### Javítva
+
 - A beolvasás megtalálja a `.webp` képeket (#2344). Eddig némán kimaradtak:
   a szűrőnkből hiányzott a kiterjesztés, pedig a Picasa alapból indexeli
   őket — a tulajdonos katalógusában is van ilyen fájl.

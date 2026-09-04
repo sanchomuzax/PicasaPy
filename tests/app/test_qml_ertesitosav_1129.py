@@ -260,6 +260,37 @@ class TestACellaGeometriaja:
         pont = zaro.mapToItem(cella, QPointF(0, 0))
         assert (round(pont.x()), round(pont.y())) == (ZARO_X, ZARO_Y)
 
+    def test_a_fogantyu_ki_van_rajzolva(self, cella):
+        """#2133: `gripper` — 233,19 → 7 × 7 a cella koordinátáiban.
+
+        A #2035 kimérte, hogy az eredetiben ez a réteg **kirajzolódik**
+        (szemben a `collapse`-szal, amelyik nem). Nálunk eddig csak a
+        fejléc-komment sorolta fel; a fájl nem építette meg.
+        """
+        fogantyu = _keres(cella, "notifierCellGripper0")
+        assert fogantyu is not None, "hiányzik a `gripper` rajza"
+        assert fogantyu.property("width") == 7
+        assert fogantyu.property("height") == 7
+        pont = fogantyu.mapToItem(cella, QPointF(0, 0))
+        assert (round(pont.x()), round(pont.y())) == (233, 19)
+
+    def test_a_fogantyu_NEM_vezerlo(self, cella):
+        """A foga: az eredetiben nem fogható meg (az üzenetkezelő nem
+        kezel `WM_MOUSEMOVE`/`WM_LBUTTONUP`-ot, a `WM_SETCURSOR` egyetlen
+        kurzort tölt). Aki `MouseArea`-t tesz rá, más programot ír."""
+        fogantyu = _keres(cella, "notifierCellGripper0")
+        egerteruletek = [
+            gy for gy in fogantyu.findChildren(QObject)
+            if gy.metaObject().className().startswith("QQuickMouseArea")
+        ]
+        assert egerteruletek == [], "a fogantyú vezérlőt kapott"
+
+    def test_az_osszecsukas_NINCS_megepitve(self, cella):
+        """A `collapse` az EREDETIBEN sem rajzolódik ki (#2035): a
+        `popup+0x13c` slotra csak a konstruktor és a destruktor hivatkozik.
+        Ha valaki megépíti, ez a próba szól."""
+        assert _keres(cella, "notifierCellCollapse0") is None
+
 
 # --------------------------------------------------------------------------
 # 3. A felirat ELVÁGÓDIK, nem tördel
