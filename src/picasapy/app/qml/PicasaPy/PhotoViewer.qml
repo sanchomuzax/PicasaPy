@@ -1622,25 +1622,58 @@ Rectangle {
                         id: zoomRow
                         anchors.centerIn: parent
                         spacing: 4
-                        PicasaButton {
-                            objectName: "zoomFitButton"
-                            text: "⛶"
-                            width: 26; height: 20
-                            //: Az eredeti kimért felirata.
-                            ToolTip.text: qsTr("Fit Photo inside viewing area")
-                            ToolTip.visible: hovered
-                            ToolTip.delay: 500
-                            onClicked: viewer.zoomFit()
-                        }
-                        PicasaButton {
-                            objectName: "zoomActualButton"
-                            text: "1:1"
-                            width: 30; height: 20
-                            //: Az eredeti kimért felirata.
-                            ToolTip.text: qsTr("Display Photo at actual size")
-                            ToolTip.visible: hovered
-                            ToolTip.delay: 500
-                            onClicked: viewer.zoomActual()
+                        // #2311: a `fit` és az `1to1` ÖSSZERAGASZTOTT
+                        // szegmenspár — mérve `editpanel/fit` x 286…323 és
+                        // `editpanel/1to1` x 323…360 (nincs rés köztük), a
+                        // sminkjük `globalbuttons/b38l_*` / `b38r_*`, azaz
+                        // bal és jobb szegmens. Ezért van saját `Row`
+                        // nulla térközzel: a külső sor 4 képpontos rése a
+                        // párt is szétvágná.
+                        Row {
+                            id: zoomSegmentPair
+                            objectName: "zoomSegmentPair"
+                            spacing: 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            PicasaButton {
+                                objectName: "zoomFitButton"
+                                //: MÉRT méret (`editpanel/fit`)
+                                width: 37; height: 22
+                                //: Az eredeti kimért felirata.
+                                ToolTip.text: qsTr("Fit Photo inside viewing area")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 500
+                                //: `Property mousedown 1` — LENYOMÁSRA sül
+                                //: el, nem felengedésre.
+                                onPressed: viewer.zoomFit()
+                                contentItem: Item {
+                                    Image {
+                                        //: MÉRT ikonméret (`fit_icon` 14 × 12)
+                                        source: "icons/zoom-fit.svg"
+                                        width: 14; height: 12
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+                            PicasaButton {
+                                objectName: "zoomActualButton"
+                                //: MÉRT méret (`editpanel/1to1`)
+                                width: 37; height: 22
+                                //: Az eredeti kimért felirata.
+                                ToolTip.text: qsTr("Display Photo at actual size")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 500
+                                onPressed: viewer.zoomActual()
+                                contentItem: Item {
+                                    Image {
+                                        //: MÉRT ikonméret (`1to1_icon` 17 × 12)
+                                        source: "icons/zoom-actual.svg"
+                                        width: 17; height: 12
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
                         }
                         // #147: arc-keretek be/ki (F billentyűvel egyenértékű)
                         PicasaButton {
@@ -1670,7 +1703,12 @@ Rectangle {
                         PicasaSlider {
                             id: zoomSlider
                             objectName: "zoomSlider"
-                            width: 110; height: 20
+                            //: MÉRT szélesség (`editpanel/zoomslider_container`
+                            //: x 399…526). ⚠️ Az ÉRTÉKKÉSZLET nem változott:
+                            //: az eredeti normalizált (0 = illesztés,
+                            //: 0,5 = 100 %), a köztes leképezés viszont
+                            //: nincs kimérve — külön kutatói jegy.
+                            width: 127; height: 20
                             anchors.verticalCenter: parent.verticalCenter
                             from: 0.25; to: 8
                             onMoved: viewer.setZoom(value)

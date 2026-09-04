@@ -4507,11 +4507,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <source>Fit Photo inside viewing area</source>
-        <translation>A kép illesztése a nézetbe</translation>
+        <translation>Beillesztheti a fotót a megjelenítési területbe</translation>
     </message>
     <message>
         <source>Display Photo at actual size</source>
-        <translation>A kép valódi méretben</translation>
+        <translation>Fotó megjelenítése tényleges méretben</translation>
     </message>
 </context>
 <context>
