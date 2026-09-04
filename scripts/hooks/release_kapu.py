@@ -92,10 +92,25 @@ def _tag_letrehozas(cmd: str) -> bool:
     return False
 
 
+#: Hány szót vizsgálunk a `git push` UTÁN. Valódi pushnál a hivatkozás az
+#: első néhány szóban áll (`origin v1.2.3`, `--follow-tags`, `refs/tags/…`);
+#: prózában viszont a mondat folytatódik, és egy jóval később EMLÍTETT
+#: verziószám kiváltaná a blokkolást. Így nem lehetett megnyitni magát a
+#: #1056-os hibajelentést, és így akadt el egy jegy-lezáró komment is.
+_PUSH_ABLAK = 6
+
+
 def _tag_push(cmd: str) -> bool:
     minta = re.compile(r"(--tags\b|--follow-tags\b|refs/tags/|\sv\d+[.\w]*(\s|$))")
-    return any(minta.search(re.split(r"[|;&]", m)[0])
-               for m in _parancsok(cmd, "git", "push"))
+    for maradek in _parancsok(cmd, "git", "push"):
+        # a parancs vége: az első vezérlő-karakter…
+        parancs = re.split(r"[|;&]", maradek)[0]
+        # …majd csak az első néhány SZÓ. A vezető szóköz megmarad, hogy a
+        # minta `\s`-sel kezdődő ága illeszkedhessen.
+        ablak = " " + " ".join(parancs.split()[:_PUSH_ABLAK])
+        if minta.search(ablak):
+            return True
+    return False
 
 
 def _verziot_emel(cwd: str) -> bool:
