@@ -300,6 +300,38 @@ tehát a szkennerünk **nem is látja** ezeket a fájlokat. Jegy: **#2344**.
 kapcsolva, vagy nem a beolvasást vezérli — **ez NINCS mérve**, és a
 `filetypes.py` feltétel nélküli szűrőjével együtt külön kérdés (a jegy
 külön pontja).
+
+#### A `Support*` kapcsolók HATÓKÖRE — mérve (2026-09-04, #2344)
+
+A fenti kérdés első fele eldőlt: **hol olvassa a program ezeket a
+kulcsokat?** Négy olvasó van, mindegyik megnevezve:
+
+| olvasó | hány kapcsolót olvas | mi ez a függvény — a SAJÁT sztringjei alapján |
+|---|---:|---|
+| **`0x00520220`** (2938 b) | 10 | a **fájlmegnyitó szűrője**: `CAcquireUI::picsfilter`, `CAcquireUI::picsmovfilter`, `CAcquireUI::allfilesfilter`, és a kiterjesztés-csoportok (`*.jpg;*.jpe;*.jpeg;`, `*.bmp;`, `*.psd;`, `*.tif;*.tiff;`, **`*.webp;`**, `*.gif;`, `*.png;`, `*.tga;`, a videós lista) |
+| **`0x0051ceb0`** (901 b) | 10 | kapcsoló-maszkot épít; **hívói:** `0x0051d270` (`import_share`) és `0x0070b050` (`acquirepanel/importstatus1`/`2`) ⇒ az **importálás** ága |
+| **`0x004e04a0`** (1256 b) | 12 (`SupportTXT`-vel) | hívója `0x004183c0` |
+| **`0x004183c0`** (1390 b) | 7 | **indulási/adatbázis-ág**: `Other Stuff`, `#db3\`, `dbVersion`, `RootPath`, `Filters`; hívója `0x00402f90`, a gyűjtemény-nevek helye (`Folders on Disk`, `Hidden Folders`, …) |
+
+A kulcsnevek adatcímei: `SupportBMP` `0x00c80fd4` · `SupportPSD`
+`0x00c80fe0` · `SupportTIF` `0x00c80fec` · **`SupportWEBP` `0x00c80ff8`** ·
+`SupportPNG` `0x00c81004` · `SupportGIF` `0x00c81010`.
+
+⇒ **Mind a négy olvasó az IMPORTÁLÁS/megnyitás vagy az indulás ágán van.**
+Ez egybevág a mérési ellentmondással: a `SupportPNG` alapértéke **0**, a
+tulajdonos katalógusában mégis **125 PNG** van — a kapcsoló tehát nem
+egyszerűen „ez a formátum bekerül-e a katalógusba" jelentésű.
+
+⚠️ **Ami NYITVA marad (örökölt, a munkasorba került):** hogy a **figyelt
+mappák pásztázása** egyáltalán megnézi-e ezt a maszkot. Ehhez a pásztázó
+ágat kell azonosítani, és megmutatni, hogy nem hívja a `0x0051ceb0`-t (vagy
+hívja). **A négy olvasó közt nincs pásztázó függvény** — de ez negatív
+állítás egy nem kimerítő listán, ezért nem elég.
+
+**Következmény a mi oldalunkra (a #2344-hez):** a szűrőnk feltétel
+nélküli, és a tulajdonos katalógusa szerint az eredeti is **indexeli** a
+PNG-t és a BMP-t az alapérték ellenére ⇒ **NE építsünk kapcsolókat** a
+`filetypes.py`-ba emiatt; a #2344 hatóköre marad a `.webp` felvétele.
 | `SupportQuicktime` | *(számított)* — `0x006e0e1c`: egy vizsgálat eredménye (`setne al`), tehát **„van-e telepítve QuickTime"** |
 
 > ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
