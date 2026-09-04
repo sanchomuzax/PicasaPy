@@ -2499,4 +2499,25 @@ A „nálunk" oszlop **mérés** (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml
 
 *(Az angol forrásszövegeink — `Fit Photo inside viewing area`,
 `Display Photo at actual size` — **pontosan** az eredetiéi; csak a magyar
-fordítás tér el.)*
+fordítás tért el.)*
+
+### ✅ Megvalósítva (#2311, 2026-09-04) — a leképezés KIVÉTELÉVEL
+
+| tétel | állapot |
+|---|---|
+| `fit` és `1to1` **ikon**gomb (nem `⛶` / `1:1` glifa) | ✅ saját SVG, `zoom-fit.svg` 14 × 12, `zoom-actual.svg` 17 × 12 (a mért ikonméretek) |
+| gombméret 37 × 22 | ✅ |
+| összeragasztott szegmenspár | ✅ saját `Row` nulla térközzel (`zoomSegmentPair`) — a külső sor 4 képpontos rése a párt szétvágta volna |
+| **lenyomásra** sül el | ✅ `onPressed` |
+| csúszka szélessége 127 | ✅ |
+| a két magyar buboréksúgó | ✅ a hivatalos szövegre cserélve |
+| `inbetweenzoom` vezérlő | ⛔ szándékosan **nem** készült (az eredetiben `m_hidden`) — őr is tiltja |
+| **a csúszka értékkészlete** | ❌ **változatlan** (`0,25…8` közvetlen szorzó) |
+
+⚠️ **Az értékkészlet marad, amíg a köztes leképezés nincs kimérve.** A két
+rögzített pont ismert (`fit` → 0, `1to1` → 0,5), a közte lévő görbe nem —
+a jegy ezt kifejezetten kizárta a hatóköréből. Aki kiméri, itt írja át.
+
+Az ikonok **saját rajzok**: a projekt egyetlen kicsomagolt Picasa-képet sem
+szállít, csak a MÉRETÜK az eredetiből mért. Őr:
+`tests/app/qml_functional/test_nagyitas_sav_2311.py`.

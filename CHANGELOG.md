@@ -40,6 +40,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.281] – 2026-09-04
+
+### Javítva
+- A szerkesztő nagyítás-sávján az „illesztés" és az „1:1" gomb **rajzolt
+  ikont** kapott a korábbi szöveges jelek helyett, az eredeti Picasa méretében
+  és összeragasztott gombpárként; a gombok lenyomásra sülnek el, és a
+  csúszka a mért szélességű lett. A két buborék-súgó a Picasa hivatalos
+  magyar szövegére cserélve (#2311).
+
 ## [0.8.280] – 2026-09-04
 
 ### Javítva
