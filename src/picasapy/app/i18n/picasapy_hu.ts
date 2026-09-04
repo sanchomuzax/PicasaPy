@@ -1755,7 +1755,62 @@
 </context>
 <context>
     <name>EditorPanel</name>
+        <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Retouches</source>
+        <translation>Retusálások</translation>
+    </message>
     <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Red Eye</source>
+        <translation>Vörösszem</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Tuning</source>
+        <translation>Finomhangolás</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Sharpen (Old)</source>
+        <translation>Élesítés (régi)</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Glow (Old)</source>
+        <translation>Ragyogás (régi)</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Film Grain (Old)</source>
+        <translation>Régi filmszemcse</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Tint (Old)</source>
+        <translation>Árnyalás (régi)</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Focal B&amp;W</source>
+        <translation>Fókuszos FF</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>1960&apos;s</source>
+        <translation>60-as évek</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Soften</source>
+        <translation>Lágyítás</translation>
+    </message>
+    <message>
+        <location filename="../edit_action_names.py"/>
+        <source>Comic Book</source>
+        <translation>Képregény</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorPanel.qml"/>
         <source>Legacy Effects</source>
         <translation>Régi effektek</translation>
@@ -6537,7 +6592,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab4</name>
-    <message>
+        <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Film Grain</source>
+        <translation>Filmszemcse</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
         <source>Film Grain (Fine)</source>
         <translation>Filmszemcse (finom)</translation>
@@ -6832,7 +6892,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab1</name>
-    <message>
+        <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Focal B&amp;W</source>
+        <translation>Fókuszos FF</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
         <source>B&amp;W</source>
         <translation>Fekete-fehér</translation>
@@ -6905,7 +6970,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab2</name>
-    <message>
+        <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>1960&apos;s</source>
+        <translation>60-as évek</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
         <source>1960s</source>
         <translation>60-as évek</translation>
@@ -6988,7 +7058,17 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab3</name>
+        <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Soften</source>
+        <translation>Lágyítás</translation>
+    </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Comic Book</source>
+        <translation>Képregény</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Artistic</source>
         <translation>Művészi</translation>
