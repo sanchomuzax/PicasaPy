@@ -73,7 +73,21 @@ def van_erdemi_valtozas(diff: str) -> bool:
     return False
 
 
-def csak_komment_valtozas(diff: str) -> bool:
+#: Fájlkiterjesztés -> a nyelv SORVÉGI megjegyzés-jele. Ami nincs benne,
+#: annál a `#` marad az alapértelmezés (a `.py`, `.toml`, `.sh` mind ilyen).
+#: A `.qml`/`.js` SZÁNDÉKOSAN külön áll: ott a `#` NEM megjegyzés (szín-
+#: literál kezdete lehet), a `//` viszont az (#2042).
+_KOMMENT_JEL: dict[str, str] = {".qml": "//", ".js": "//", ".mjs": "//"}
+
+#: Bizonytalanná tevő jelek a `//`-nyelvekben. A `/* */` több sorra nyúlik,
+#: tehát egy megváltozott belső sor közönséges kódnak látszik; a backtickes
+#: sablonsztring pedig azt teszi lehetővé, hogy egy `//`-kezdetű sor
+#: valójában SZTRING belseje legyen. Bármelyik felbukkanása esetén a
+#: szigorú ág nyer — a téves riasztás bosszantó, a téves ÁTENGEDÉS néma.
+_BIZONYTALAN = ("/*", "*/", "`")
+
+
+def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
     """Csak `#`-megjegyzés (és üres) sorok változtak a fájlban? (#1875)
 
     ⚠️ **A szabály SZÁNDÉKOSAN szűk.** Nem tud kódváltozást elrejteni:
@@ -81,6 +95,14 @@ def csak_komment_valtozas(diff: str) -> bool:
     A Python-DOCSTRING-et NEM kezeli (az nem `#`-sor) — ott a szigor
     marad. A téves riasztás bosszantó, a téves ÁTENGEDÉS néma, ezért a
     kétes eset a szigorú oldalra dől.
+
+    **#2042 — a `//`-nyelvek.** A `.qml`/`.js` fájloknál a `#` NEM
+    megjegyzés (szín-literál kezdete lehet), a `//` viszont az. A `fajl`
+    megadásakor a kiterjesztés dönti el a jelet; fájlnév nélkül a régi,
+    `#`-alapú viselkedés marad. Ha a diffben `/*`, `*/` vagy backtick
+    bukkan fel, a szigorú ág nyer: az előbbi kettő több sorra nyúló blokk,
+    az utóbbi sablonsztring, és mindkettőben egy `//`-kezdetű sor lehet
+    NEM megjegyzés. Élesben a #2036 bukott el egyetlen QML-kommenten.
 
     Üres diff = „nem tudjuk" ⇒ NEM mondjuk kommentnek.
 
@@ -90,13 +112,19 @@ def csak_komment_valtozas(diff: str) -> bool:
     beírását a konstans mellé) elbuktatta, holott egyetlen kódsor sem
     változott, és a CHANGELOG-ba nem-felhasználói mondat került volna.
     """
+    jel = "#"
+    if fajl is not None:
+        jel = _KOMMENT_JEL.get(Path(fajl).suffix.lower(), "#")
+
     latott = False
     for sor in diff.splitlines():
         if not sor or sor[0] not in "+-" or sor.startswith(("+++", "---")):
             continue
         latott = True
         tartalom = sor[1:].strip()
-        if tartalom and not tartalom.startswith("#"):
+        if jel == "//" and any(x in tartalom for x in _BIZONYTALAN):
+            return False
+        if tartalom and not tartalom.startswith(jel):
             return False
     return latott
 
@@ -191,7 +219,8 @@ def main(
         f
         for f in erdemi
         if csak_komment_valtozas(
-            (runner(["git", "diff", f"{beallitas.base}...{beallitas.head}", "--", f]).stdout or "")
+            (runner(["git", "diff", f"{beallitas.base}...{beallitas.head}", "--", f]).stdout or ""),
+            f,
         )
     ]
     if csak_kommentesek:
