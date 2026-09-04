@@ -4997,3 +4997,70 @@ mechanizmus mérve van, a mért eltérésre gyakorolt hatása NINCS mérve.)*
 | a 4. mód | csak kézzel írt registry-értékkel | nincs | **nem kell** megépíteni |
 | névhasonlítás | **ASCII-only** kisbetűsítés (`A`–`Z`) | `casefold()` — **Unicode** | eldöntendő (#2304) |
 
+
+## 69. tétel — a „Mappa rendezésének alapja ▸ Dátum" KULCSA: a `thumbindex` első időbélyege (2026-09-04, #2304)
+
+> **Bizonyítottság: erős.** A választ **mérés** támasztja alá a tulajdonos
+> valódi katalógusán, két független próbával; bit-pontos újrajátszás
+> (a teljes eredeti sorrend) nem készült, ezért nem „megerősített".
+
+A #2304 első kérdése: **melyik mezőt használja az eredeti a mappán belüli
+„Dátum" rendezéshez?** A jegy megfigyelése szerint a Picasa 3 és a
+PicasaPy **első 18 képe azonos**, utána szétválik: az eredeti
+összefésüli a `_<hexa>` és a `DALL·E …` nevű fájlokat, nálunk viszont a
+`DALL·E` fájlok **egy tömbben** jönnek.
+
+### A mérés
+
+Anyag: a tulajdonos 2026-08-22-i `Picasa2` adatmappa-mentése; a szóban
+forgó mappa **88 képe** a `thumbindex.db`-ből, a saját
+`pmpimport.thumbindex` olvasónkkal. A `thumbindex` rekordja **két**
+FILETIME mezőt tárol (`+0x00` és `+0x08`).
+
+**1. próba — a jegyben rögzített első 18 fájlnév sorrendje.** Hány
+egyezik elölről, megszakítás nélkül?
+
+| rendezőkulcs | egyező előtag |
+|---|---:|
+| a rekord **1.** FILETIME-ja | **10 / 18** |
+| a rekord **2.** FILETIME-ja | **10 / 18** |
+| **fájlnév** (kisbetűsen) | **0 / 18** |
+
+⇒ **A név mint kulcs KIZÁRVA.** A tárolt időbélyeg viszont a jegyben
+felsorolt első tíz nevet **pontosan abban a sorrendben** adja vissza.
+*(A 11. elemtől eltér — a mentés 2026-08-22-i, a képernyőkép későbbi.)*
+
+**2. próba — a jegy legbeszédesebb jele: összefésülődnek-e a névcsoportok?**
+A 88 kép három névcsoportba esik (`DALL·E …` 12, `_<hexa>` 23, egyéb 53);
+megszámolva, hányszor VÁLT a csoport a rendezett listában:
+
+| rendezőkulcs | csoportváltás | a `DALL·E` fájlok |
+|---|---:|---|
+| a rekord **1.** FILETIME-ja | **7** | **szétszórva**, a `_<hexa>`-k közé fésülve |
+| a rekord **2.** FILETIME-ja | 6 | **egy tömbben** (12 egymás után) |
+| fájlnév | 4 | egy tömbben |
+
+⇒ Az **1. FILETIME** adja azt a képet, amit a tulajdonos az eredetiben
+lát; a 2. FILETIME és a név ugyanazt a „`DALL·E` egy tömbben" alakot adja,
+mint a mi mai kimenetünk.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a „Dátum" kulcsa | a `thumbindex` rekord **1. FILETIME**-ja (a Picasa saját, beolvasáskor rögzített fájlideje) | `taken_at` (EXIF), ha van; **egyébként a fájl MAI `mtime`-ja** (`app/photo_sort.py:56–64`) |
+| holtverseny | nem mérve | fájlnév kisbetűsen (`photo_sort.py:71`) |
+
+⇒ **Ez magyarázza a jelenséget.** Az EXIF nélküli (letöltött, generált)
+képeknél mi a mai fájlidőre esünk vissza; ha a fájlok egyszerre kerültek a
+lemezre, az érték **azonos**, és a holtversenyt a NÉV dönti el — innen a
+„`DALL·E` egy tömbben". Az eredeti ezzel szemben egy **beolvasáskor
+rögzített, fájlonként eltérő** időt használ.
+
+⚠️ **Amit ez NEM mond meg:** hogy az 1. FILETIME a fájl létrehozási vagy
+módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
+újraolvasáskor. Ehhez az írót kellene kimérni (`CThumbDB`), nem az adatot.
+
+*A saját megfelelőnk nem az `mtime` pillanatnyi értéke kell legyen, hanem
+egy **indexeléskor rögzített** időmező — különben a sorrend a fájlok
+másolásakor megváltozik.*
