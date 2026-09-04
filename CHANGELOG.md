@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.284] – 2026-09-04
+
 ### Javítva
 
 - A bal hasáb osztósávja az eredeti korlátait követi (#2329): legkisebb
