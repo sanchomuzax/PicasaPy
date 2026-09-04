@@ -815,15 +815,113 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     return to_uint8(result)
 
 
+#: A Mitchell–Netravali mag paraméterei: **B = C = 0,4** (#2227). Mérve: az
+#: eredeti `ResizeImageOperation` alkalmazója (`0x00bc3650`) ugyanazt a
+#: `0x00bcb5e0` segédfüggvényt hívja, mint a `RotateImageOperation`, az pedig
+#: a `ytResampler`-t EXPLICIT móddal — lépték = 1 → 0-s (doboz), egyébként
+#: 3-as (Mitchell–Netravali, B = C = 0,4).
+_MITCHELL_B = 0.4
+_MITCHELL_C = 0.4
+
+
+def mitchell_netravali(x: np.ndarray) -> np.ndarray:
+    """A Mitchell–Netravali rekonstrukciós mag `B = C = 0,4`-gyel.
+
+    A klasszikus alak (Mitchell & Netravali, 1988), `|x|` szerint:
+
+        |x| < 1:  ((12−9B−6C)|x|³ + (−18+12B+6C)|x|² + (6−2B)) / 6
+        1 ≤ |x| < 2:  ((−B−6C)|x|³ + (6B+30C)|x|² + (−12B−48C)|x| + (8B+24C)) / 6
+        egyébként: 0
+
+    `B = C = 0,4` mellett az **oldallebeny negatív** (1 és 2 között) — ez a
+    mag azonosító jegye: éles élen enyhe alul-/túllövést ad, amit sem a
+    bilineáris, sem a doboz nem produkál.
+    """
+    tav = np.abs(np.asarray(x, dtype=np.float64))
+    b, c = _MITCHELL_B, _MITCHELL_C
+    belso = (
+        (12 - 9 * b - 6 * c) * tav**3
+        + (-18 + 12 * b + 6 * c) * tav**2
+        + (6 - 2 * b)
+    ) / 6.0
+    kulso = (
+        (-b - 6 * c) * tav**3
+        + (6 * b + 30 * c) * tav**2
+        + (-12 * b - 48 * c) * tav
+        + (8 * b + 24 * c)
+    ) / 6.0
+    return np.where(tav < 1, belso, np.where(tav < 2, kulso, 0.0))
+
+
+def _mintavetel_sulyok(
+    be_meret: int, ki_meret: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Egy tengely mintavételi indexei és súlyai.
+
+    A kimeneti képpont középpontját a bemeneti rácsra vetítjük, és a magot
+    a szomszédos bemeneti mintákon értékeljük ki. **Kicsinyítéskor a mag a
+    léptékkel nyúlik** — ez a szokásos élsimító megoldás.
+
+    ⚠️ A nyújtás NINCS MÉRVE: a bináris annyit árul el, hogy a mód 3-as. Az
+    itteni választás dokumentált döntés, nem visszafejtett viselkedés.
+
+    A széleken a bemeneti index a tartományra csippentődik (peremismétlés),
+    a súlyok pedig sorösszegre normálódnak, hogy a fényesség megmaradjon.
+    """
+    skala = be_meret / ki_meret
+    nyujtas = max(1.0, skala)
+    tamasz = 2.0 * nyujtas
+    kozep = (np.arange(ki_meret) + 0.5) * skala - 0.5
+    elso = np.ceil(kozep - tamasz).astype(np.int64)
+    ablak = int(np.ceil(2 * tamasz)) + 1
+    indexek = elso[:, None] + np.arange(ablak)[None, :]
+    sulyok = mitchell_netravali((kozep[:, None] - indexek) / nyujtas)
+    osszeg = sulyok.sum(axis=1, keepdims=True)
+    # Elvi 0 nem fordul elő (a mag 0-ban pozitív), de a nullosztás
+    # következménye néma NaN-kép lenne — ezért kimondottan kizárjuk.
+    osszeg[osszeg == 0] = 1.0
+    return np.clip(indexek, 0, be_meret - 1), sulyok / osszeg
+
+
+def _tengely_menten(kep: np.ndarray, ki_meret: int, tengely: int) -> np.ndarray:
+    """Átmintavételezés EGY tengely mentén, a másikat érintetlenül hagyva."""
+    be_meret = kep.shape[tengely]
+    if ki_meret == be_meret:
+        return kep          # lépték = 1 → 0-s (doboz) = azonosság
+    indexek, sulyok = _mintavetel_sulyok(be_meret, ki_meret)
+    minta = np.take(kep, indexek, axis=tengely)
+    # a súlyok a (ki_meret, ablak) tengelypárra szólnak: a szorzás után
+    # az ablak-tengely mentén összegzünk
+    alak = [1] * minta.ndim
+    alak[tengely] = ki_meret
+    alak[tengely + 1] = sulyok.shape[1]
+    return (minta * sulyok.reshape(alak)).sum(axis=tengely + 1)
+
+
 def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = True) -> np.ndarray:
-    """`Resize`: a kép átméretezése — `smoothing=False` a Pixelate blokkos
-    (`INTER_NEAREST`) visszanagyítását adja, egyébként bilineáris.
+    """`Resize`: a kép átméretezése.
+
+    `smoothing=True` (az alapérték, mérve: `0x00bc36ac`) esetén a
+    mintavételező **tengelyenként** dönt, a `src/dst` léptékből
+    (`0x00bc3700`–`0x00bc3731`): **lépték = 1 → doboz** (azonosság),
+    egyébként **Mitchell–Netravali B = C = 0,4** (#2227). A művelet
+    szeparábilis: előbb a vízszintes, majd a függőleges tengely.
+
+    ⚠️ `smoothing=False` továbbra is `INTER_NEAREST`. **Ez NEM mérés:** a
+    bináris ezen ága nincs visszafejtve — hogy a 0-s dobozmódot használja-e,
+    vagy tényleg legközelebbi szomszédot, nyitott kérdés.
     """
     validate_image(image)
     width = max(1, int(round(width)))
     height = max(1, int(round(height)))
-    interp = cv2.INTER_LINEAR if smoothing else cv2.INTER_NEAREST
-    return cv2.resize(image, (width, height), interpolation=interp)
+    if not smoothing:
+        return cv2.resize(image, (width, height), interpolation=cv2.INTER_NEAREST)
+    if width == image.shape[1] and height == image.shape[0]:
+        return image.copy()
+    munka = image.astype(np.float64)
+    munka = _tengely_menten(munka, width, 1)
+    munka = _tengely_menten(munka, height, 0)
+    return np.clip(np.rint(munka), 0, 255).astype(image.dtype)
 
 
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
