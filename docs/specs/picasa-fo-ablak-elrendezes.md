@@ -839,3 +839,120 @@ szélessége **280**, a bal **279** — a `.tre`-ből, nem becslésből.
 
 Jegy: **#754** (a négy hasáb → egy fiók). A 0,4 másodperces animáció és a
 280-as szélesség ott, kommentben.
+
+## A FŐABLAK MÓD-GÉPE és a „képernyőn kívülre rakott" elemek (2026-09-04, #440 / #2074)
+
+> **Bizonyítottság: megerősített.** Minden állítás `.tre` fájl + sor. A
+> „soha nem látszik" állítás **kimerítő**: mind a 141 erőforrás-fájlt
+> végigpásztázza.
+
+Két, egymással összefüggő szerkezeti dolog derült ki, és mindkettő **a
+lefedettségi mérésünk pontosságát is érinti**.
+
+### 1. `macros.tre` „MODE MACROS" — a módok teljes leírása egy helyen
+
+A `macros.tre` 192–300. sora egy külön, `# MODE MACROS` felirattal jelölt
+blokk. Minden mód egy makró, és a makró **felsorolja, mely paneleket
+mutatja és melyeket rejti el**. A módváltás tehát nem kódba égetett
+láncolat, hanem erőforrás-adat.
+
+| makró | melyik vezérlő viseli | mit MUTAT | mit REJT |
+|---|---|---|---|
+| `m_enable_albummode` (`macros.tre:196`) | `acquirepanel/anowbutton` (`acquirepanel.tre:264`) | `mainuipanel`, `infowell`, `secretcoinclip` | `acquirepanel`, `printpanel`, `editpanel`, `fullview` |
+| `m_albumtoggle` (`macros.tre:205`) | `thumbui/viewswitch` (`thumbui.tre:36`) | `editpanel`, `1to1`, `fit` | `albumsback`, `throttlegroup`, `listdecrect`, `listbutton`, `hlistsizer`, `searchgroup`, `searchcontainer` |
+| `m_basecontrolset_enable` (`macros.tre:224`) | `thumbui/publishswitcher` (`thumbui.tre:81`) | `basecontrolset`, `importbutton`, `buttongroup1`, `activitycontainer` | — |
+| `m_cdcontrolset_enable` (`macros.tre:233`) | `thumbui/cdmode` (`thumbui.tre:484`) | `controlsettop`, `publishcontrolsets`, `publish/presentation_group`, `cd_label` | `searchcontainer`, `bottombevel_base`, `logo` |
+| `m_backupcontrolset_enable` (`macros.tre:245`) | `thumbui/backup` (`thumbui.tre:96`) | `controlsettop`, `publishcontrolsets`, `publish/backup_group`, `backup_label` | `searchcontainer`, `bottombevel_base`, `logo` |
+| `m_replicatecontrolset_enable` (`macros.tre:257`) | `thumbui/replicate` (`thumbui.tre:76`) | `controlsettop`, `publishcontrolsets`, `publish/replication_group`, `replication_label` | `searchcontainer`, `bottombevel_base`, `logo` |
+| `m_acquire_enable` (`macros.tre:281`) | `thumbui/importbutton` (`thumbui.tre:452`), `thumbui/acquirebutton` (`thumbui.tre:32`) | `panelroot/acquiretab` (+ `downtarget`) | — |
+| `m_print_enable` (`macros.tre:285`) | `outputlayout/pbutton` (`outputlayout.tre:38`) | `thumbui/printpanel` | `acquirepanel`, `editpanel`, `mainuipanel`, `infowell`, `secretcoinclip` |
+
+### 1/b A Biztonsági mentés gombja a KIADOTT felületen nem látszik
+
+```
+thumbui.tre:95    ###currently not shown in UI###
+thumbui.tre:96    thumbui/backup: thumbui/globalmode
+thumbui.tre:100   m_hidden
+```
+
+A `thumbui/backup` — a `m_backupcontrolset_enable` módot viselő gomb —
+**`m_hidden`**, és a forrás saját megjegyzése is kimondja. A mód tehát
+LÉTEZIK és teljesen le van írva, de a kiadott 3.9-es felületen a
+belépési pontja nincs kirakva. *(Hogy a menüből elérhető-e, ez a kör nem
+mérte — a `Property uptarget searchcontainer/searchbutton` sora szerint a
+gomb a keresőgombhoz kapcsolódik.)*
+
+⇒ **A három publikáló mód (Ajándék CD · Biztonsági mentés · Replikáció)
+pontosan ugyanazt a hármat rejti el**: a keresősávot, az alsó
+él-díszítést és a logót. Ez **normatív**: ha ezeket a módokat megépítjük,
+a keresősávnak el kell tűnnie.
+
+⛔ **Három mód-makró DEFINIÁLVA VAN, de egyetlen `.tre`-elem sem viseli:**
+`m_webcontrolset_enable` (`macros.tre:269`), `m_collage_enable`
+(`macros.tre:296`), `m_search_disable` (`macros.tre:221`). *(Hatókör: a 141 erőforrás-fájlban nincs
+használójuk. Hogy a program KÓDBÓL elvégzi-e ugyanezt a mutat/rejt sort —
+a `0x0040bf70` induló függvény név szerint kapcsolgat elemeket —, ez a kör
+NEM mérte.)*
+
+### 2. `m_render_offscreen` — 20 elem, amely SOHA nem látszik
+
+```
+macros.tre:7   #define m_render_offscreen
+macros.tre:8   XConstraint 0, 0, -9999
+macros.tre:9   YConstraint 0, 0, -9999
+```
+
+Ez nem elrejtés (`m_hidden` = `setvisible 0`), hanem **a vászonon kívülre
+helyezés**. Az így megjelölt elem létezik, célozható, van buboréksúgója —
+de **nem rajzolódik oda, ahol a felhasználó láthatná**.
+
+Mind a **20** előfordulás, fájl + sor szerint:
+
+| fájl:sor | elem |
+|---|---|
+| `editpanel.tre:112` | `editpanel/writetodisk` |
+| `editpanel.tre:1358` | `editpanel/edithelpbutton` |
+| `makemoviepanel.tre:549` | `makemoviepanel/viewedit` |
+| `printpanel.tre:239` | `printpanel/phelpbutton` |
+| `printpanel.tre:250` | `printpanel/statustext` |
+| `thumbui.tre:26` | `thumbui/largethumbs` |
+| `thumbui.tre:29` | `thumbui/smallthumbs` |
+| `thumbui.tre:32` | `thumbui/acquirebutton` |
+| `thumbui.tre:40` | `thumbui/horizonadjust` |
+| `thumbui.tre:43` | `thumbui/prev` |
+| `thumbui.tre:48` | `thumbui/next` |
+| `thumbui.tre:53` | `thumbui/fit` |
+| `thumbui.tre:56` | `thumbui/1to1` |
+| `thumbui.tre:59` | `thumbui/morethumbs` |
+| `thumbui.tre:64` | `thumbui/lessthumbs` |
+| `thumbui.tre:69` | `thumbui/soloview` |
+| `thumbui.tre:76` | `thumbui/replicate` |
+| `thumbui.tre:88` | `thumbui/uploadmgr` |
+| `thumbui.tre:103` | `thumbui/visitweb` |
+| `thumbui.tre:106` | `thumbui/makealbum` |
+
+**A `thumbui`-beliek a `root` gyerekei** (a `makealbum` a
+`buttonbarsets`-é; a `writetodisk`, `viewedit`, `phelpbutton`,
+`statustext` a saját paneljüké), és egyiknek sincs második,
+látható definíciója — a `thumbui/next`, `prev`, `fit`, `1to1`,
+`smallthumbs`, `largethumbs`, `visitweb`, `uploadmgr`, `soloview`,
+`replicate`, `morethumbs`, `lessthumbs`, `horizonadjust`, `acquirebutton`,
+`makealbum` **egyszer** szerepel a fájlban, azzal az egy blokkal.
+
+⇒ **Parancs-proxik**: a menü, a gyorsbillentyű és a `showtarget`/`uptarget`
+hivatkozások ezeket célozzák; a látható vezérlő máshol, más néven ül.
+Erre a legjobb bizonyíték a **nagyítás-hármas**: a látható gombok az
+`editpanel/fit` és `editpanel/1to1` (mért geometria: `ui-audit-editor.md`),
+miközben a `thumbui/fit` és `thumbui/1to1` a `−9999`-en áll.
+
+### 3. Következmény a saját lefedettségi mérésünkre
+
+A `docs/specs/ui-lefedettseg-elemek.csv` és a belőle számolt „fehér
+foltok" ezt a 20 elemet **hiányzó felületi elemként** kezelhetik, pedig
+soha nem is látszottak. A `thumbui/acquirebutton` sora ezért ebben a
+körben megkapta a magyarázatot; a többi már korábban `megvan`/`lekutatva`
+besorolást kapott, tehát a számot nem torzítja.
+
+*(A többi panel `m_render_offscreen`-es eleme — `writetodisk`,
+`edithelpbutton`, `phelpbutton`, `statustext`, `viewedit` — nincs a
+lefedettségi táblában feltáratlanként, tehát nem kell átsorolni.)*
