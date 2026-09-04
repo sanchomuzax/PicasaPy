@@ -239,3 +239,40 @@ class TestMikortolHatElesben:
             f"({talalt[0][1]}). Ez nem hiba, de ELLENŐRIZD kézzel is, és "
             f"írd át ezt a próbát"
         )
+
+
+class TestAListaEsAGombokEGYUTT:
+    """A felugró lista feliratai a GOMBOKÉ — nem külön `qsTr()` hívások.
+
+    Az első változatom külön listát írt (`Email`, `Movie`), miközben a
+    gombokon `E-Mail` és `Movie` áll: két igazságforrásból a lista némán
+    elcsúszott volna, és a fordítás-őr két sosem látott szöveget kért
+    számon (a CI ezt meg is fogta).
+    """
+
+    def test_a_felugro_a_gombok_feliratat_veszi(self, qml_app, qt_app):
+        window, _c, _e = qml_app
+        assert _var(qt_app, lambda: window.findChild(QObject, "trayActionRow"))
+        _szelesites(window, qt_app, SZELES)
+        sor = _elem(window, "trayActionRow")
+        feliratok = _lista(sor.property("gombFeliratok"))
+        gombokon = [_elem(window, nev).property("text") for nev in GOMBOK]
+        assert feliratok == gombokon, (
+            "a felugró lista feliratai eltérnek a gombokétól — két "
+            "igazságforrás"
+        )
+
+    def test_a_forras_NEM_ismetli_meg_a_szovegeket(self):
+        """Forrás-szintű őr: a lista a gombok `text`-jére hivatkozzon."""
+        from pathlib import Path
+
+        import picasapy.app as app_csomag
+
+        qml = (Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
+               / "TrayBar.qml").read_text(encoding="utf-8")
+        kezd = qml.index("readonly property var gombFeliratok:")
+        blokk = qml[kezd:qml.index("]", kezd)]
+        assert "qsTr(" not in blokk, (
+            "a felirat-lista újra `qsTr()`-t hív — a gombok `text`-jét "
+            "kell átvennie, különben a két hely elcsúszhat"
+        )

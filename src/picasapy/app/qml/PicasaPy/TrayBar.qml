@@ -1397,9 +1397,15 @@ Column {
                     trayMainBar.actionCellWidth
                 //: a kimeneti gombok felirata, a respack deklarációs
                 //: sorrendjében — a rejtett tételek listája ebből épül
+                //: ⚠️ A feliratokat a GOMBOK adják, nem külön `qsTr()`
+                //: hívások: két igazságforrásból a felugró lista némán
+                //: elcsúszna a gombokétól (az első változatom „Email"-t és
+                //: „Movie"-t írt, a gombokon „E-Mail" és „Mozgófilm" áll),
+                //: és a fordítás-őr is két új, sosem látott szöveget kért
+                //: volna számon.
                 readonly property var gombFeliratok: [
-                    qsTr("Print"), qsTr("Email"), qsTr("Export"),
-                    qsTr("Collage"), qsTr("Movie")
+                    trayPrintBtn.text, trayEmailBtn.text, trayExportBtn.text,
+                    trayCollageBtn.text, trayMovieBtn.text
                 ]
                 //: hány cella fér ki. Ha nem mind, EGY helyet a
                 //: túlcsordulás-gomb foglal el.
