@@ -9,6 +9,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
+  „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett
+  (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
+  a gyorsbillentyű és a funkció sem változott.
+
 - A nyomtatásnál a „kis kép" határa beállítható (#2359). Eddig beégetett
   150 képpont/hüvelyk volt; az eredetiben ez rejtett beállítás, ugyanezzel
   az alapértékkel. A `printing/dpiWarning` kulccsal átállítható.

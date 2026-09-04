@@ -142,7 +142,7 @@ VART: dict[str, list[str]] = {
         "Hide",
         "Show",
         SZ,
-        "Print Thumbnails...",
+        "Print Contact Sheet...",  # #2364
         "Export as HTML Page...",
         SZ,
         "Locate on Disk",

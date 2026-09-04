@@ -5268,7 +5268,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="377"/>
-        <source>Print Thumbnails...</source>
+        <source>Print Contact Sheet...</source>
         <translation>Indexképek nyomtatása…</translation>
     </message>
     <message>

@@ -1303,7 +1303,12 @@ MenuBar {
         // a kettő az eredetiben sem azonos.
         MenuItem {
             objectName: "menuFolderPrintContactSheet"
-            text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"
+            //: #2364: a forrásszöveg az EREDETI erőforrásé
+            //: (`eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET`, a menüépítő
+            //: a `0x00559150`-en). A „Thumbnails" a mi szavunk volt; a
+            //: Picasa a `thumbnail`-t a KÖNYVTÁRNÉZET bélyegképeire
+            //: használja, az itteni fogalom nála „contact sheet".
+            text: qsTr("Print Contact Sheet...") + "\tCtrl+Shift+P"
             onTriggered: bar.printContactSheetRequested()
         }
         MenuItem {
