@@ -671,14 +671,36 @@ MenuBar {
             text: qsTr("Properties")
             checkable: true
             checked: bar.propertiesPanelOpen
-            onTriggered: bar.propertiesPanelRequested()
+            onTriggered: {
+                bar.propertiesPanelRequested()
+                // #1471: a `checkable` MenuItem kattintáskor MAGA billenti
+                // a `checked`-et, és ez az imperatív írás eldobja a fenti
+                // kötést. A fiók-lapoknál ez látszik is: az AKTÍV lapra
+                // kattintva a panel — helyesen (#1773) — nyitva marad, a
+                // pipa viszont lekapcsolna. A kötés visszaállítása
+                // ugyanaz a minta, mint a FolderListContextMenu.qml-ben.
+                checked = Qt.binding(function () {
+                    return bar.propertiesPanelOpen
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewTags"
             text: qsTr("&Tags") + "\tCtrl+T"
             checkable: true
             checked: bar.tagsPanelOpen
-            onTriggered: bar.tagsPanelRequested()
+            onTriggered: {
+                bar.tagsPanelRequested()
+                // #1471: a `checkable` MenuItem kattintáskor MAGA billenti
+                // a `checked`-et, és ez az imperatív írás eldobja a fenti
+                // kötést. A fiók-lapoknál ez látszik is: az AKTÍV lapra
+                // kattintva a panel — helyesen (#1773) — nyitva marad, a
+                // pipa viszont lekapcsolna. A kötés visszaállítása
+                // ugyanaz a minta, mint a FolderListContextMenu.qml-ben.
+                checked = Qt.binding(function () {
+                    return bar.tagsPanelOpen
+                })
+            }
         }
         // #26: az Emberek-panel — a jobb fiók negyedik panelje
         MenuItem {
@@ -686,14 +708,36 @@ MenuBar {
             text: qsTr("People")
             checkable: true
             checked: bar.peoplePanelOpen
-            onTriggered: bar.peoplePanelRequested()
+            onTriggered: {
+                bar.peoplePanelRequested()
+                // #1471: a `checkable` MenuItem kattintáskor MAGA billenti
+                // a `checked`-et, és ez az imperatív írás eldobja a fenti
+                // kötést. A fiók-lapoknál ez látszik is: az AKTÍV lapra
+                // kattintva a panel — helyesen (#1773) — nyitva marad, a
+                // pipa viszont lekapcsolna. A kötés visszaállítása
+                // ugyanaz a minta, mint a FolderListContextMenu.qml-ben.
+                checked = Qt.binding(function () {
+                    return bar.peoplePanelOpen
+                })
+            }
         }
         MenuItem {
             objectName: "menuViewPlaces"
             text: qsTr("&Places")
             checkable: true
             checked: bar.placesPanelOpen
-            onTriggered: bar.placesPanelRequested()
+            onTriggered: {
+                bar.placesPanelRequested()
+                // #1471: a `checkable` MenuItem kattintáskor MAGA billenti
+                // a `checked`-et, és ez az imperatív írás eldobja a fenti
+                // kötést. A fiók-lapoknál ez látszik is: az AKTÍV lapra
+                // kattintva a panel — helyesen (#1773) — nyitva marad, a
+                // pipa viszont lekapcsolna. A kötés visszaállítása
+                // ugyanaz a minta, mint a FolderListContextMenu.qml-ben.
+                checked = Qt.binding(function () {
+                    return bar.placesPanelOpen
+                })
+            }
         }
         MenuSeparator {}
         // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója

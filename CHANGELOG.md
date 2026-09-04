@@ -14,6 +14,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   (#2304). Eddig a fejlécében nem állt dátum, a bal hasábban pedig az
   előző év alá csúszott. A rács rendezése eddig is így számolt.
 
+- A Nézet menü fiók-lapjainál (Tulajdonságok · Címkék · Emberek ·
+  Helyek) a pipa többé nem hazudik (#1471). Eddig a MÁR NYITOTT lapra
+  kattintva a panel — helyesen — nyitva maradt, a pipa viszont
+  lekapcsolt.
+
 - A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
   „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett
   (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
