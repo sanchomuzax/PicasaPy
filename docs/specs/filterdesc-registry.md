@@ -2364,12 +2364,19 @@ lo = a legkisebb index, ahol a hisztogram nem nulla
 hi = a legnagyobb index, ahol a hisztogram nem nulla
 
 ha lo == hi:                       LUT[x] = 255            (a csatorna telítve)
-egyébként:  LUT[x] = clamp( round( (x − lo) / (hi − lo) · 255 + 0,5 ), 0, 255 )
+egyébként:  LUT[x] = clamp( trunc( (x − lo) / (hi − lo) · 255 + 0,5 ), 0, 255 )
 ```
 
+> ⛔ **Helyesbítés (2026-09-04, #2229): CSONKOLÁS, nem kerekítés.** A lap
+> korábban `round`-ot írt. A float→egész átalakítás a **`0x00c29990`**-en
+> megy, ami **`cvttsd2si`** — trunkál; a `+ 0,5` MAGA a felfelé kerekítés
+> idiómája. A különbség nem részletkérdés: `np.round`-dal (bankár-kerekítés)
+> **256 rekeszből 128-ban** más értéket kapnánk. A negatív oldalt a
+> `test eax,eax; jge` ág vágja 0-ra, a felsőt a `cmp eax,0xff`.
+
 A `255,0` a `0x00cf39d0`, a `0,5` a `0x00c72150` (mindkettő dupla
-pontosságú, kiolvasva); a `+0,5` a `0x00c29990` egészre alakítóval együtt
-kerekítés. A `lo` keresése ötösével kibontott ciklus (`0x00bc3180`–
+pontosságú, kiolvasva); a `+0,5` a `0x00c29990` **csonkoló** egészre
+alakítójával együtt adja a felfelé kerekítést. A `lo` keresése ötösével kibontott ciklus (`0x00bc3180`–
 `0x00bc31a9`), a `hi`-é visszafelé megy 255-től.
 
 > ⚠️ **ELTÉRÉS a mai kódunktól — és NEM elírás.** A mi `autofix`-ünk
