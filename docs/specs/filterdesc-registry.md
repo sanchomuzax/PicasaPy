@@ -2331,13 +2331,25 @@ négy hívója van, köztük mindkettő.
 (`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
 `FUN_00c29990` logikai átalakítóval).
 
-> ⚠️ **Eltérés a mai kódunktól.** A `resize_image`
-> (`src/picasapy/render/glimmer_ops.py`) `cv2.INTER_LINEAR`-t használ, ha a
-> `smoothing` be van kapcsolva. Ez **mérhető eltérés** az eredetitől.
-> Jegy: **#2227**.
+> ✅ **Megvalósítva (#2227, 2026-09-04).** A `resize_image`
+> (`src/picasapy/render/glimmer_ops.py`) mostantól a mért viselkedést
+> követi: tengelyenként dönt a `forrás / cél` léptékből — **lépték = 1 →
+> azonosság** (a 0-s dobozmód ilyenkor pontosan az), egyébként **valódi
+> Mitchell–Netravali mag `B = C = 0,4`-gyel**, szeparábilisan. Nem
+> közelítés: a `mitchell_netravali()` a klasszikus képletet számolja, és a
+> próbák a mag értékeit a képletből ellenőrzik (`x = 0`, `1`, `2`), nem a
+> kimenetből.
 
-**Ami NINCS mérve:** hogy `smoothing = false` esetén a bináris a `0`-s
-dobozmódot választja-e, vagy tényleg legközelebbi szomszédot.
+**Ami NINCS mérve — két külön nyitott kérdés:**
+
+1. Hogy `smoothing = false` esetén a bináris a `0`-s dobozmódot
+   választja-e, vagy tényleg legközelebbi szomszédot. Nálunk marad az
+   `INTER_NEAREST`, és a docstring kimondja, hogy ez nem mérés.
+2. **Hogy a mag KICSINYÍTÉSKOR a léptékkel nyúlik-e** (élsimítás). A
+   bináris annyit árul el, hogy a mód 3-as; a `ytResampler` belső
+   lépték-kezelése nincs visszafejtve. A mi implementációnk a szokásos
+   nyújtott magot használja — **dokumentált döntés, nem visszafejtett
+   viselkedés**. Aki ezt kiméri, itt írja át.
 
 ### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
 
