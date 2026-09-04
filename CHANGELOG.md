@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.276] – 2026-09-04
+
+### Javítva
+- A mappa- és albumcím a rács fejlécében az eredeti Picasa meleg sötétbarna
+  színét kapta a majdnem fekete helyett; sötét témán ugyanennek a barnának a
+  világosított párja (#2043).
+
 ## [0.8.275] – 2026-09-04
 
 ### Javítva
