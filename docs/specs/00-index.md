@@ -1027,7 +1027,7 @@ mind a négy eltolás pontosan egyszer, azonos (növekvő) sorrendben, azonos
 háromlépéses mintával (név → régi érték olvasása → új érték írása).
 ⇒ **A megvalósító nem feltevésből dolgozik.** Melléklelet: ugyanez az
 olvasó a görbék ELŐTT beolvassa az `ExposureAdjustmentStops` attribútumot a
-`+0x50` tagba (`0x00bb9b88`) — a szerepe NINCS MÉRVE.
+`+0x50` tagba (`0x00bb9b88`). ✅ **A szerepe MÉRVE (2026-09-04)**: az ELŐJELE választ a sötétítő (13,0)·(116,74)·(208,156)·(255,221) és a világosító (0,17)·(47,81)·(129,186)·(221,255) négypontos görbe közt, az ABSZOLÚT ÉRTÉKE az erősség.
 ⛔ Az alkalmazó (`0x00bb9e00`) a keresett `mov r32, [reg+disp8]` alakkal
 **nem** hivatkozik a négy tagra (438 bájton nulla) — de ebből **nem
 következik**, hogy nem használja; más címzési alak vagy paraméterátadás
