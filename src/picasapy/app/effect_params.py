@@ -125,20 +125,31 @@ def _color(key, label, color) -> EffectParam:
 _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # --- 3. fül: törzs-effektek ---------------------------------------------
     # unsharp=1 mérten azonos az unsharp2=1,0.600000-val
-    "unsharp": (_p("amount", "Amount", 0.0, 2.0, 0.6, 0.05),),
+    # #2236: a felső vég 2,0 -> 1,0 — az eredetin TÚLRA engedtünk
+    "unsharp": (_p("amount", "Amount", 0.0, 1.0, 0.6, 0.05),),
     # sat=1,!telítettség — a vezérlő eddigi alapértéke 0,5
-    "sat": (_p("saturation", "Saturation", 0.0, 1.0, 0.5, 0.01),),
+    # #2236: a NEGATÍV ág eddig elérhetetlen volt a felületről, pedig a
+    # mag előjel szerint két külön magra ágazik (#693). Az alapérték a
+    # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
+    "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
     # glow2=1,intenzitás,sugár
     "glow2": (
-        _p("intensity", "Intensity", 0.0, 1.0, 0.5, 0.01),
+        # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        # ⚠️ A Radius SZÁNDÉKOSAN marad [0…100]: a regiszter [0…1]-e a
+        # LOG-skálán van (`log_base=250`, az egyetlen ilyen csúszka), az
+        # alapértéke (3,0) pedig a tényleges skálán — ezért is nagyobb a
+        # saját maximumánál. A `chain_report.py` ugyanezért hagyja ki a
+        # tartomány-ellenőrzésből.
         _p("radius", "Radius", 0.0, 100.0, 20.0),
     ),
     # radblur=1,x,y,méret,mérték
     "radblur": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("size", "Size", 0.0, 1.0, 0.3, 0.01),
-        _p("amount", "Amount", 0.0, 1.0, 0.5, 0.01),
+        # #2236: a tartomány fele elérhetetlen volt (min 0 -> −1).
+        _p("size", "Size", -1.0, 1.0, 0.3, 0.01),
+        _p("amount", "Amount", -1.0, 1.0, 0.5, 0.01),
     ),
     # radsat=1,x,y,sugár,élesség
     "radsat": (
@@ -149,7 +160,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
     "tint": (
-        _p("preserve", "Preserve Color", 0.0, 1.0, 0.5, 0.01),
+        # #2236: a regiszter szerint [−1…255].
+        _p("preserve", "Preserve Color", -1.0, 255.0, 0.5, 0.01),
         _color("color", "Pick Color", "#ffffff"),
     ),
     # ansel=1,#szín (#717: korábban egyáltalán nem volt katalógus-bejegyzése —
@@ -160,7 +172,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         _p("gradient", "Gradient", 0.0, 1.0, 0.5, 0.01),
-        _p("shade", "Shade", 0.0, 1.0, 0.5, 0.01),
+        # #2236: az alapérték 0,5 -> 0,25 a regiszterből.
+        _p("shade", "Shade", 0.0, 1.0, 0.25, 0.01),
         _color("color", "Pick Color", "#ffffff"),
     ),
     # radtint=1,x,y,feather,#szín (#565/#717: korábban egyáltalán nem volt
