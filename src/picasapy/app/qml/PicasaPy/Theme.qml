@@ -57,7 +57,13 @@ QtObject {
     readonly property color panelYearText: dark ? "#9c988f" : "#7a776f"  // mono évszám-címke
 
     // ------- lightbox / indexkép-csoport -------
-    readonly property color folderTitle: ink          // 16px / 600 sans
+    // #2043: az eredeti Picasa `runtime/constants.ui` fájljának „Album
+    // Layout" blokkja — `alayout_titleColor = #634B45`, meleg sötétbarna.
+    // Ugyanennek a blokknak a betűjét (Georgia) és méretét (20) már
+    // korábban átvettük (`LightboxHeader.qml`), csak a szín maradt ki.
+    // A sötét pár azonos színezet és telítettség, tükrözött világossággal
+    // (32,9% -> 67,1%) — ugyanaz a meleg barna, nem elszürkítve.
+    readonly property color folderTitle: dark ? "#baa29c" : "#634b45"
     readonly property color folderDate: dark ? "#b0aca4" : "#5a5750"
     readonly property color addDescription: dark ? "#8b877f" : "#a29e96" // dőlt
     readonly property color thumbBorder: dark ? "#454545" : "#d9d9d9"

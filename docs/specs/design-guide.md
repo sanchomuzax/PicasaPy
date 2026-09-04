@@ -57,7 +57,7 @@ eltérés van, ez a mérvadó. Az eddigi mintavételünket **megerősítik**
 | `alabel_subhead` | 20 | alcím-sáv magassága |
 | `alayout_gutter` | 24 | lightbox külső margó |
 | `alayout_thumbGutterX` / `Y` | 12 / 22 | **indexkép-rács térközei** — a függőleges nagyobb (felirat helye) |
-| `alayout_titleFont` / `Size` / `Color` | Georgia / 20 / `#634B45` | mappa-cím — ⚠️ a **betű és a méret** átvéve, a **SZÍN NEM** (ld. lent, 2026-09-02) |
+| `alayout_titleFont` / `Size` / `Color` | Georgia / 20 / `#634B45` | mappa-cím — ✅ mind a három átvéve (a szín a #2043-ban, 2026-09-04; sötét témán a világosított párja `#baa29c`) |
 | `alayout_titleOffsetX` | 28 | a cím bal behúzása |
 | `alayout_bodyFont` / `Size` | Georgia / 14 | **a dátumsor is Georgia** ✅ |
 | `thumbsel_color1` / `color2` | `#009EFF` / `#FFFFFF` | **a kijelölt indexkép kerete KÉTSZÍNŰ**: kívül azúr, belül fehér — a mostani egyszínű keretünk ezzel pontosítható |
@@ -321,25 +321,34 @@ pozitívot ad.
 
 | állapot | darab | melyek |
 |---|---:|---|
-| **megvan a kódunkban** | **11** | `alist_bgcolor` · `alist_hicolor_win` · `alist_selcolor_win` · `alist_scatcolor` · `alabel_fldrcol` · `alabel_albumcol` · `alabel_lighttext` · `alabel_darktext` · `thumbsel_color1` · `thumbsel_color2` · `publishtoweb_color` |
+| **megvan a kódunkban** | **12** | `alist_bgcolor` · `alist_hicolor_win` · `alist_selcolor_win` · `alist_scatcolor` · `alabel_fldrcol` · `alabel_albumcol` · `alabel_lighttext` · `alabel_darktext` · `thumbsel_color1` · `thumbsel_color2` · `publishtoweb_color` · `alayout_titleColor` (#2043) |
 | **hatókörön kívül (Mac-változat)** | 3 | `alist_hicolor_mac` · `alist_hicolor2_mac` · `alist_selcolor_mac` — Linux-first projekt, a `_win` párjuk a mérvadó |
-| **NINCS a kódunkban** | **9** | `alayout_titleColor` · `alist_hicolor2_win` · `alist_dragcolor` · `alist_catcolor` · `alist_dotcolor` · `alist_stickycolor` · `alabel_hicol` · `alabel_fldrhicol` · `alabel_albumhicol` |
+| **NINCS a kódunkban** | **8** | `alist_hicolor2_win` · `alist_dragcolor` · `alist_catcolor` · `alist_dotcolor` · `alist_stickycolor` · `alabel_hicol` · `alabel_fldrhicol` · `alabel_albumhicol` |
 
-### ⚠️ A legfontosabb hiányzó: `alayout_titleColor`
+### ✅ `alayout_titleColor` — átvéve (#2043, 2026-09-04)
 
 | | érték | hol |
 |---|---|---|
 | eredeti | **`#634B45`** (meleg sötétbarna) | `constants.ui`, `alayout_titleColor` |
-| nálunk | **`Theme.ink`** = `#1c1b19` világos témán (majdnem fekete) | `Theme.qml:60` (`folderTitle: ink`), használat `LightboxHeader.qml:96` |
+| nálunk, világos témán | **`#634b45`** | `Theme.qml` (`folderTitle`), használat `LightboxHeader.qml` |
+| nálunk, sötét témán | **`#baa29c`** | ugyanott — a téma-politika szerinti pár |
 
-Ugyanannak a konfigurációs blokknak a **másik két értékét átvettük**: a
-`LightboxHeader.qml` `font.family: "Georgia"` és `font.pointSize: 20`
+A sötét pár **azonos színezet (12°) és telítettség (17,9%)**, tükrözött
+világossággal (32,9% → 67,1%) — ugyanaz a meleg barna, nem elszürkítve. Ez
+a projekt téma-politikáját követi: minden szín-tokennek van párja, és a
+hívó QML nem tud a témáról.
+
+Ugyanennek a konfigurációs blokknak a **másik két értékét** korábban vettük
+át: a `LightboxHeader.qml` `font.family: "Georgia"` és `font.pointSize: 20`
 (`alayout_titleFont` / `alayout_titleSize`), és a dátumsor is Georgia 14
-(`alayout_bodyFont` / `alayout_bodySize`). **Csak a szín maradt ki** — ezért
-volt félrevezető a fenti sor `✅` jelölése.
+(`alayout_bodyFont` / `alayout_bodySize`).
+
+⚠️ Az őr a **kirajzolt vezérlőt** olvassa (`folderTitleText.color`), nem a
+tokent: a token helyes értéke önmagában nem bizonyítja, hogy a fejléc azt is
+köti. `tests/app/qml_functional/test_mappacim_szin_2043.py`.
 
 *Bizonyítottsági fok: **megerősített**. A `#634B45` szó szerinti
-konfigurációs érték; a mi oldalunk `Theme.qml:60` + `LightboxHeader.qml:96`.*
+konfigurációs érték.*
 
 ### A maradék nyolc szín — és amit RÓLUK NEM tudunk
 
