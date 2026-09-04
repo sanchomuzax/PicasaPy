@@ -766,12 +766,18 @@ magyar súgók: „Beillesztheti a fotót a megjelenítési területbe" /
 „Fotó megjelenítése tényleges méretben" — a mi fordításunk mindkettőnél más.
 Jegy: **#2305** (komment), a megvalósítás **ÚJ JEGY**.
 
-⚠️ **NYITOTT (ebből a körből):** a normalizált csúszka-érték → tényleges
-nagyítási szorzó **leképezése** (mit ad `0.25` vagy `0.75`). A két rögzített
-pont mérve; a köztes függvény a `FUN_005d1520` (1858 b) hívási láncában van,
-annak konstansai viszont **animáció-időtartamok** (0,3 s és 0,15 s), nem
-skálák. Megszerzés: a `+0xe50` animátor-rés OLVASÓJA a rajzoló oldalon. Jegy:
-**ÚJ JEGY** ehhez a körhöz.
+⭐ **2026-09-04 (#2312) — a nagyítás-csúszka TELJES LEKÉPEZÉSE MEGVAN.**
+A képletet a képelem elrendezője számolja (`FUN_00a5f500`, 3622 b, a
+`+0x3a0` tulajdonságot 13 helyen olvassa); a hatványozó a `0x005568e0`
+`float`-burkolón át a CRT **`pow`** (`0x00c0b410`, `fyl2x` a
+`0x00c0b4ba`-nél), az alap mindig **2.0**. Töréspont **0.5**
+(`0x00a601bc`): alatta **`skála = 1 + (2^(2v) − 1)·(r − 1)`**
+(`0x00a601cf`), fölötte **`skála = r · 2^(4(v − 0.5))`** (`0x00a601fb`),
+ahol a skála az **illesztett** mérethez viszonyul. ⇒ `v=0` → illesztés,
+`v=0.5` → **100 %**, `v=1` → **400 %**, és a felső fél negyedenként
+pontosan duplázódik. ⇒ **az illesztett méretnél kisebbre nem lehet
+zoomolni**, és a **100 % mindig a csúszka felezőpontja**. Jegy: **#2312**
+(lezárva), a megvalósítás: **#2311**.
 
 ⭐ **2026-09-03 — a szerkesztő MARADÉK három vezérlője.** Mindhárom
 `m_hidden` alapállapotban, ezért ránézésre nem tűnnek fel. ⭐ **Ugyanaz a

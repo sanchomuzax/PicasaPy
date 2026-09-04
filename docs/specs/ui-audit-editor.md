@@ -2414,10 +2414,67 @@ kattintása beállít.)*
 normalizált értéket, amelyben `0.0` = illesztés a nézetbe és `0.5` = valódi
 méret (100 %).** A `0.5` fölötti fél a nagyítás, alatta a köztes állapotok.
 
-⚠️ **NINCS MEG:** a normalizált érték → tényleges nagyítási szorzó képlete
-(mit ad `0.25` vagy `0.75`). A két rögzített pont mérve; a köztes leképezés
-a csúszka saját függvényében van, azt ez a kör nem mérte ki. Megszerzés: a
-`zoomslider/scaleslider` kezelője, illetve a `+0xe50` rés olvasói.
+#### A TELJES LEKÉPEZÉS — mérve (2026-09-04, #2312)
+
+*(A 2026-09-04-i első kiadás itt még „NINCS MEG"-et írt; a következő kör
+kimérte. A megszerzés útja a `+0xe50` animátor-rés olvasóin át vezetett.)*
+
+**Az érték útja a csúszkától a képig — négy lépés, mind címmel:**
+
+| # | hol | mit tesz |
+|---|---|---|
+| 1 | `FUN_005ee590` (335 b) | a normalizált értéket az objektum `+0xe50` **animátor**-résébe írja, és átmenetet indít |
+| 2 | `FUN_00571e10` (52 b) | `0x009e5e70`-nel lekéri az animátor **pillanatnyi** értékét, és továbbadja a `FUN_005d1520`-nak |
+| 3 | `FUN_005d1520` (1858 b) | csak **elágaztat** rajta (nulla-e), majd `0x005d19a4`-nél átadja a `FUN_005c5ed0`-nak |
+| 4 | `FUN_005c5ed0` (101 b) | eltárolja a képelem **`+0x3a0`** tulajdonságába, és érvényteleníti a rajzot |
+
+A képletet a képelem elrendező függvénye számolja: **`FUN_00a5f500`** (3622 b),
+amely a `+0x3a0`-t **13 helyen** olvassa.
+
+**A hatványozó:** `0x005568e0` (32 b) — `float` burkoló, amely a két
+argumentumot `st1 = alap`, `st0 = kitevő` sorrendben tölti, és a
+`0x00c0b410`-t hívja. Az **`fyl2x`** (`0x00c0b4ba`) azonosítja: ez a CRT
+**`pow`**. A hívási helyeken az alap mindig a `0x00cf3a48`-ról olvasott
+**`2.0`**.
+
+**A töréspont `0.5`** (`0x00a601bc`, `fcomp` a `+0x3a0`-val, majd
+`test ah, 0x41` / `jne`), és a két ág:
+
+| tartomány | képlet | cím |
+|---|---|---|
+| `0 ≤ v < 0.5` | **`skála = 1 + (2^(2v) − 1) · (r − 1)`** | `0x00a601cf`–`0x00a601f7` |
+| `0.5 ≤ v ≤ 1` | **`skála = r · 2^(4·(v − 0.5))`** | `0x00a601fb`–`0x00a60221` |
+
+ahol **`v`** a normalizált csúszka-érték (`[0, 1]`-re vágva), a **`skála`** az
+**illesztett** mérethez viszonyított szorzó, `r` pedig egy `fild`/`fidiv`
+párral képzett hányados (`0x00a60199`, `0x00a601b4`).
+
+**A két ág folytonos, és a mért rögzített pontokat adja vissza:**
+
+| `v` | skála | mit jelent |
+|---|---|---|
+| `0.0` | `1` | illesztés a nézetbe *(a `fit` gomb ezt állítja be — #2305)* |
+| `0.5` | `r` | **valódi méret, 100 %** *(a `1to1` gomb — #2305)* |
+| `1.0` | `4·r` | **400 %** |
+
+⇒ **`r` = a valódi méret és az illesztett méret aránya** (azaz
+`kép mérete ÷ nézet mérete`). Ez nem feltevés, hanem a két **mért** rögzített
+pontból következik: a `0.5`-nél a skála definíció szerint a 100 %-ot adja, a
+`0`-nál pedig az illesztést. *(Bizonyítottság erre a AZONOSÍTÁSRA: **erős** —
+a képlet alakja megerősített, `r` operandusainak forrását külön nem mértem.)*
+
+**A felső fél negyed-lépésenként pontosan duplázódik** (`2^(4·0.25) = 2`):
+
+| `v` | 0.5 | 0.625 | 0.75 | 0.875 | 1.0 |
+|---|---|---|---|---|---|
+| nagyítás a valódi mérethez képest | 100 % | 141 % | 200 % | 283 % | **400 %** |
+
+⇒ **A szerkesztő maximális nagyítása 400 %**, és **az illesztett méretnél
+kisebbre nem lehet állítani** (a `v = 0` a csúszka alsó vége).
+
+> **Bizonyítottsági fok: megerősített** a képletre — minden konstans
+> kiolvasva (`0x00c7dafc` = 0.5f, `0x00c72150` = 0.5 double,
+> `0x00cf3d30` = 4.0 double, `0x00cf3a48` = 2.0f), a `pow` azonosítva.
 
 ### Eredeti / nálunk / teendő
 
@@ -2432,7 +2489,10 @@ A „nálunk" oszlop **mérés** (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml
 | a kettő viszonya | **összeragasztott** kétszegmenses pár | két külön gomb 4 képpont réssel | szegmenspár |
 | harmadik állapot | `inbetweenzoom`, **rejtett** | nincs | **nem kell megépíteni** |
 | elsülés | `Property mousedown 1` (lenyomásra) | `onClicked` (felengedésre) | lenyomásra |
-| csúszka | 127 képpont, **normalizált** érték (0 = fit, 0.5 = 100 %) | 110 képpont, `from: 0.25, to: 8` = közvetlen szorzó | méret + értékkészlet |
+| csúszka | 127 képpont, **normalizált** érték, **exponenciális** leképezéssel (lásd fent) | 110 képpont, `from: 0.25, to: 8`, **lineáris a szorzóban** | méret + leképezés |
+| a csúszka alsó vége | **az illesztett méret** (`v = 0`) — kisebbre nem állítható | `0.25`, azaz az illesztett méret **negyede** | alsó vég = illesztés |
+| a csúszka felső vége | **`4·r`** = a valódi méret **400 %**-a (képfüggő) | fix `8` × illesztett méret | felső vég = 400 % |
+| a 100 % helye a csúszkán | mindig a **felezőpont** | képfüggő | felezőpont |
 | magyar súgó (`fit`) | „Beillesztheti a fotót a megjelenítési területbe" | „A kép illesztése a nézetbe" (`picasapy_hu.ts` 4510) | a hivatalos szövegre cserélni |
 | magyar súgó (`1to1`) | „Fotó megjelenítése tényleges méretben" | „A kép valódi méretben" (`picasapy_hu.ts` 4514) | a hivatalos szövegre cserélni |
 | `☺` / `✎` gomb | **nincs** az eredetiben | van (arc-keretek, arc-szerkesztő) | a MI döntésünk — marad, de nem az eredeti része |
