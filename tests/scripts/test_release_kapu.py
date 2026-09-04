@@ -170,3 +170,103 @@ class TestVizsgaltFaKiirasa:
         assert str(tmp_path) in hiba
         assert "ág:" in hiba
         assert "#1113" in hiba, "a jegyszám nélkül nem találja meg a magyarázatot"
+
+
+class TestUtvonalFeloldas:
+    """#1056: a `cd` célját FEL kell oldani, mielőtt a session-mappához
+    fűznénk.
+
+    Élesben (2026-08-20) egy MÁSIK repóba szánt feltöltés blokkolódott a
+    PicasaPy verzióemelésére hivatkozva — pedig a célrepóban nincs is
+    `pyproject.toml`. Az ok: a tildés útvonal nem abszolút, ezért előbb
+    hozzáfűztük a munkakönyvtárhoz (`.../PicasaPy/~/Documents/...`), és az
+    `expanduser` ezen már nem segített. A hook így a HÍVÓ mappájában
+    diffelt.
+    """
+
+    def test_tildes_cd_a_home_ala_old_fel(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HOME", str(tmp_path))
+        cel = tmp_path / "Documents" / "masik-repo"
+        cel.mkdir(parents=True)
+        cmd = "cd ~/Documents/masik-repo && git push origin main"
+        assert kapu._munkakonyvtar(cmd, "/tmp") == str(cel)
+
+    def test_puszta_tilde_is_feloldodik(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HOME", str(tmp_path))
+        assert kapu._munkakonyvtar("cd ~ && git push", "/tmp") == str(tmp_path)
+
+    def test_idezojeles_tildes_cd(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HOME", str(tmp_path))
+        cel = tmp_path / "a b"
+        cel.mkdir()
+        cmd = 'cd "~/a b" && git push origin main'
+        assert kapu._munkakonyvtar(cmd, "/tmp") == str(cel)
+
+    def test_ujsor_utani_cd_is_szamit(self, tmp_path):
+        """A `_CD` mintában a `^` nem MULTILINE, ezért egy több soros
+        parancsban az újsorral kezdődő `cd` nem illeszkedett."""
+        cel = tmp_path / "masik"
+        cel.mkdir()
+        cmd = f"echo elso\ncd {cel} && git push origin main"
+        assert kapu._munkakonyvtar(cmd, str(tmp_path)) == str(cel)
+
+
+def _git(cwd, *argv):
+    import subprocess
+
+    subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True,
+                   text=True, encoding="utf-8", errors="replace")
+
+
+def _mini_repo(tmp_path):
+    """Kis git-repó `origin/main`-nel és `pyproject.toml`-lal."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "a@b.c")
+    _git(repo, "config", "user.name", "Teszt")
+    (repo / "pyproject.toml").write_text('version = "0.1.0"\n', encoding="utf-8")
+    _git(repo, "add", "pyproject.toml")
+    _git(repo, "commit", "-qm", "alap")
+    _git(repo, "branch", "-f", "origin/main")   # helyi álnév a diffhez
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    return repo
+
+
+class TestCommitolatlanVerzioemeles:
+    """A kapu a PARANCS ELŐTT fut, ezért `git diff origin/main...HEAD` a
+    commit előtti állapotot látja.
+
+    Élesben (2026-09-04) ezért ment ki egy verzióemelés a ceremónia előtt: a
+    push egyetlen parancsban addolt, commitolt és tolt fel. Külön commitba
+    téve UGYANAZ a kapu azonnal blokkolt — a különbség csak a parancs
+    tagolása volt.
+    """
+
+    def test_commit_es_push_egy_parancsban_BLOKKOL(self, tmp_path):
+        repo = _mini_repo(tmp_path)
+        (repo / "pyproject.toml").write_text('version = "0.2.0"\n', encoding="utf-8")
+        cmd = (f"cd {repo} && git add pyproject.toml && "
+               "git commit -m x && git push origin main")
+        fa = kapu._munkakonyvtar(cmd, str(tmp_path))
+        indok = kapu._blokkolando(cmd, fa)
+        assert indok is not None and "verzióemelést" in indok
+
+    def test_puszta_push_piszkos_munkafaval_ATMEGY(self, tmp_path):
+        """A kapu nem büntetheti az őszinteséget: `git commit` NÉLKÜL a
+        munkafában heverő verzióemelés nem tud kimenni, tehát nincs mit
+        blokkolni. Enélkül az a fejlesztő is elakadna, aki épp a verziót
+        szerkeszti, miközben egy MÁS ágat tol fel."""
+        repo = _mini_repo(tmp_path)
+        (repo / "pyproject.toml").write_text('version = "0.2.0"\n', encoding="utf-8")
+        cmd = f"cd {repo} && git push origin main"
+        fa = kapu._munkakonyvtar(cmd, str(tmp_path))
+        assert kapu._blokkolando(cmd, fa) is None
+
+    def test_commit_es_push_verzioemeles_NELKUL_atmegy(self, tmp_path):
+        repo = _mini_repo(tmp_path)
+        (repo / "olvasslak.md").write_text("szia\n", encoding="utf-8")
+        cmd = (f"cd {repo} && git add -A && git commit -m x && "
+               "git push origin main")
+        fa = kapu._munkakonyvtar(cmd, str(tmp_path))
+        assert kapu._blokkolando(cmd, fa) is None
