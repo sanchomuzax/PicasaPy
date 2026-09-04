@@ -1537,6 +1537,135 @@ jelentése **nincs megmérve**; ránézésre méret, illetve szín, de ezt nem
 **helyes** a beolvasott sorokra. Az ÚJ sorok írásához viszont most már
 megvan a súly, a körvonalvastagság és az igazítás — ld. a **#1994**-et.
 
+#### ⭐ A MÉRTÉKEGYSÉG-LEKÉPEZÉS — mind a kilenc mező forrása, és a két csúszka útja (2026-09-04, #2271)
+
+Az előző kör a **beolvasó** (`0x00a4dd50`) négy setter-hívásából négy mezőt
+kötött taghoz. Az **író** (`0x00a4e3b0`) getterei a maradék ötöt is megadják,
+és ezzel a tábla **teljes**.
+
+**Az író argumentum-sorrendje** (cdecl, a `v1,%u,%u,%f,%f,%f,%f,%u,%u,%u`
+formátum a `0xce42e8`-on, a hívás a `0x00a4e69a`–`0x00a4e6a6`):
+
+| `text=` mező | virtuális slot | getter | **tag** | típus |
+|---|---|---|---|---|
+| 1. kitöltőszín | `+0x24` | `0x00910590` | `+0x20` | dword ARGB |
+| 2. körvonalszín | `+0x60` | `0x005ba870` | `+0x38` | dword ARGB |
+| 3. (`128.000000`) | — | helyi érték | — | — |
+| 4. (`1.000000`) | — | helyi érték | — | — |
+| **5. körvonalvastagság** | `+0x68` | `0x005ba890` | **`+0x3c`** | **float** |
+| **6. átlátszatlanság** | `+0x58` | `0x005ba850` | **`+0x34`** | **float** |
+| 7. betűsúly | `+0x20` | `0x005ba790` | `+0x1c` | dword |
+| 8. bit 16–23 | `+0x48` | `0x005ba810` | `+0x14` | byte |
+| 8. bit 8–15 | `+0x3c` | `0x005ba7e0` | `+0x2c` | dword |
+| 8. bit 0–7 | `+0x40` | `0x005ba7f0` | `+0x28` | dword |
+| 9. jelzőszó | `+0x74` | `0x005ba8d0` | `+0x18` | dword |
+
+A 8. mező **három bájt összefűzése** — az író maga rakja össze
+(`0x005ba810` → `<<16`, `0x005ba7e0` → `<<8`, `0x005ba7f0`), ami
+egymástól függetlenül igazolja az előző kör három-tulajdonságos olvasatát.
+
+##### ✅ A 6. mező (átlátszatlanság): a csúszka értéke VÁLTOZATLANUL, alsó korláttal **0,1**
+
+A `textopacityslider/scaleslider` kezelője (`0x0062f3c0`, a névhasonlítás a
+`0xc9e864`-es sztringre):
+
+```
+0x0062f449   add ebx, 0x2e0                 ; panel + 0x2e0 = az átlátszatlanság
+0x0062f451   call 0x009ddd00                ; a csúszka aktuális értéke -> [ebx]
+0x0062f456   fld  dword ptr [ebx]
+0x0062f460   fcom qword ptr [0xcf4888]      ; összevetés 0.1-gyel  (double)
+0x0062f468   test ah, 5 / jp 0x62f475       ; ha NEM kisebb -> marad
+0x0062f46f   fld  dword ptr [0xc7e4a0]      ; különben: 0.1  (float)
+0x0062f488   fstp dword ptr [ebx]
+…
+0x0062f4a5   fld  dword ptr [ebx]           ; minden kijelölt feliratra:
+0x0062f4af   mov  eax, [edx+0x54]           ; vtbl+0x54 = a +0x34 SETTERE
+0x0062f4b2   call eax
+```
+
+Mindkét konstans **`0.1`** (`0xcf4888` double, `0xc7e4a0` float, kiolvasva).
+⇒ **A 6. mező a csúszka nyers értéke**, semmilyen átszámítás nincs — csak
+**alulról 0,1-re vágva**. Nulla átlátszatlanság tehát nem áll elő.
+
+##### ✅ Az 5. mező (körvonalvastagság): szintén VÁLTOZATLAN — a 0,0 viszont MÓDVÁLTÁS
+
+Ugyanennek a kezelőnek a másik ága (`outlineweightslider/scaleslider`,
+`0xc9e884`):
+
+```
+0x0062f541   call 0x009ddd00                ; a csúszka értéke -> [esp+0xc]
+0x0062f548   fld  dword ptr [esp+0xc] ; fucom st(1)   ; összevetés 0.0-val
+0x0062f555   jnp  0x0062f581                ; EGYENLŐ  -> a „nincs körvonal" ág
+0x0062f55d   mov  edx, [eax+0x64]           ; NEM egyenlő: vtbl+0x64 = a +0x3c SETTERE
+0x0062f56a   call edx                       ; …az értékkel, változtatás nélkül
+```
+
+⇒ **Nem nulla érték: egy az egyben a tagba.** **Pontosan nulla: a program
+nem a mezőt írja nullára, hanem a „nincs körvonal" ágra ugrik**
+(`0x0062f581`), ami a 8. mező alsó bájtját (kitöltés/körvonal mód) állítja.
+Ez megmagyarázza, miért `0.000000` az 5. mező az alapértelmezett sorokban.
+
+##### ✅ A csúszka TARTOMÁNYA: **[0, 1]** — kiolvasva, nem következtetve
+
+Mindkét vezérlő `*/scaleslider`, és a `.tre` szerint azonos elemtípus
+(`Property slider 2`, illetve `5` — ez **mód-jelző**, nem tartomány: az
+egész erőforráskészletben `0`, `2`, `3` és `5` értékei fordulnak elő).
+Az osztály a `ytSliderHandler` (RTTI-vtábla `0x00cda46c`), és az
+érték-beállítója (`vtbl+0x10` → `0x00aaf220`) maga normalizál:
+
+```
+0x00aaf241   call [vtbl+0x28]            ; a SÁV befoglalója -> [esp+0x2c…0x34]
+0x00aaf243   fld  dword ptr [ebp+0xc]    ; a kattintás/húzás helye a sávon
+0x00aaf24a   sub  eax, [esp+0x2c]        ; a sáv HOSSZA
+0x00aaf252   fidiv dword ptr [esp+0x10]  ;  ⇒ hely / sávhossz
+0x00aaf259   fldz … fld1 … fcom/fcomp    ;  ⇒ VÁGÁS 0,0-ra és 1,0-ra
+0x00aaf298   fsubrp                      ; jobbról-balra elrendezésnél: 1 - érték
+```
+
+⇒ **A `scaleslider` értéke definíció szerint [0, 1]**: a sávhosszra normált
+arány. A görgő-lépés megerősíti: `0x00aaf7aa` a görgetés-deltát **15,0**-del
+osztja (egy kattanás), majd `0x00aaf7c8` **0,02**-vel szorozza
+(`0xcf48a8`) — egy kattanás a tartomány **2 %-a**, ötven kattanás a
+teljes sáv.
+
+⇒ A mintákban látott `0,25` és `0,5` tehát a csúszka **negyed**, illetve
+**fél** állása. A megfigyelt értékek mind `n/256` alakúak
+(`0,757813 = 194/256`, `0,476563 = 122/256`), ami a sáv
+képpont-felbontásával összefér.
+
+⇒ **A mi 0–8-as, egész lépésű körvonal-csúszkánk mértékegysége tér el**, nem
+a leképezés: az eredeti csúszkája is `[0, 1]`-es, mint az átlátszatlanságé.
+
+##### ✅ A méret: **em-képpont ÷ a kép MAGASSÁGA** — és van egy második ág
+
+A geometria-blokk 3. floatját ugyanez az író számolja
+(`0x00a4e578`–`0x00a4e5b2`):
+
+```
+0x00a4e57a   mov  edx, [eax+0x74]           ; a 9. mező (jelzőszó)
+0x00a4e581   test eax, 0x8000
+0x00a4e586   jne  0x00a4e5aa                ; ha a 0x8000 bit ÁLL:
+0x00a4e5aa     fld [esp+0x10] ; fdiv [esp+0x1c]      ⇒  méret / magasság
+                                              ; ha NEM áll:
+0x00a4e588     fld [esp+0x10] ; fmul qword [0xcf3d50] ; × 360.0  (kiolvasva)
+0x00a4e592     fdiv [esp+0x1c]                        ⇒  méret × 360 / magasság
+```
+
+Minden ismert mintában a 9. mező `0xC000`/`0xC001`/`0xC008`, tehát a
+**`0x8000` bit ÁLL** ⇒ az egyszerű ág érvényes:
+
+> **a tárolt méret = az em-méret KÉPPONTBAN ÷ a kép MAGASSÁGA**
+
+**Ezt a korábbi képpont-mérés függetlenül igazolja:** a 2. exportnál
+(896 × 1344) a mért em 82, illetve 141 képpont, a számolt
+`0,061111 × 1344 = 82,13` és `0,104631 × 1344 = 140,62`.
+
+*Bizonyítottsági fok: **megerősített** — a tagtérkép az író
+argumentum-sorrendjéből, a két csúszka útja a kezelőből, a 0,1-es korlát
+és a 360,0 kiolvasott konstansokból, a **[0, 1]** tartomány pedig a
+`ytSliderHandler` normalizáló beállítójából. Ebben a szakaszban nincs
+becsült érték.*
+
 #### A panel négy vezérlője, ami eddig sehol nem szerepelt
 
 | elem | magyar felirat / súgó |
@@ -2486,8 +2615,14 @@ mind `n/256` alakú). ⇒ **a felhasználó által állítható érték a 6.**, 
 ⚠️ Ez a **pozíciót** dönti el, a **leképezést nem**: a 3. blokk
 vonásainak belsejében mért tényleges keverési arány **0,53** (33 155
 képpont, élsimított perem nélkül), miközben a 6. mező `0,757813`. A
-csúszka-érték és a megjelenő átlátszatlanság **nem azonos** — a
-leképezés NYITOTT.
+csúszka-érték és a megjelenő átlátszatlanság **nem azonos**.
+
+> **Szűkítve (2026-09-04, #2271):** a TÁROLÁSI út azóta kimérve, és ott
+> **nincs átszámítás** — a csúszka értéke egy az egyben megy a
+> `+0x34` tagba (ld. lentebb, „A mértékegység-leképezés"). Az eltérés
+> tehát **nem az írásban van, hanem a RAJZOLÓBAN**: a `+0x34` tag
+> fogyasztóját kell megtalálni. A kérdés ezzel nem oldódott meg, de a
+> keresés helye eldőlt.
 
 #### ✅ A 8. mező KÉT bájt: igazítás ÉS kitöltés/körvonal mód
 
