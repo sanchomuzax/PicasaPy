@@ -266,3 +266,52 @@ szakaszban már benne van** (a #1934 köre vitte be): a `::4` a
 *(A magyar fordítás következetlensége — `a lemezen` vs `/lemez` — a
 gyártó saját szövegtárában van így; nem a mi hibánk, és átvételkor
 követni kell.)*
+
+---
+
+## 8. A FÜGGŐLEGES TÉRKÖZ a csík és a gombsor közt: **6 képpont** (2026-09-04, #1913)
+
+A #1913 1. pontja ezt kérte, és kikötötte, hogy a szám a `respack.yt`
+rétegtéglalapjaiból jöjjön, ne becslésből („kitalált 3 vagy 5 képpont
+később mérésnek látszana").
+
+**Kimérve** a `tools/picasa/respack.py` olvasójával, a
+`runtime/respack.yt` 13 bájtos rétegfejléceiből. Az elemek a felületleíróban:
+`thumbui.tre:702` (`thumbui/basecontrolset`) · `thumbui.tre:683`
+(`thumbui/infotext`) · `thumbui.tre:225` (`thumbui/startoggle`) ·
+`thumbui.tre:238` (`thumbui/rotateleft`) · `thumbui.tre:245`
+(`thumbui/rotateright`).
+
+| réteg | téglalap | méret |
+|---|---|---|
+| `thumbui/rect: basecontrolset` *(a teljes vezérlő-sáv)* | (0, **429**)–(800, 534) | 800 × 105 |
+| `thumbui/text( ): infotext` *(a kék csík szövege)* | (183, **429**)–(664, **443**) | 481 × 14 |
+| `thumbui/clip: infotext_clip` | (183, 429)–(664, 443) | 481 × 14 |
+| `thumbui/…: startoggle` *(csillag)* | (289, **449**)–(325, 471) | 36 × 22 |
+| `thumbui/…: rotateleft` | (330, 449)–(366, 471) | 36 × 22 |
+| `thumbui/…: rotateright` | (367, 449)–(403, 471) | 36 × 22 |
+
+```
+a csík ALSÓ éle      443
+a gombsor FELSŐ éle  449
+                     ---
+térköz                 6 képpont
+```
+
+⇒ **A kék csík és a gombsor közti függőleges térköz 6 képpont.** A csík a
+vezérlő-sáv legtetején ül (mindkettő `y0 = 429`), a gombsor 20 képponttal
+lejjebb kezdődik.
+
+### Két melléklelet, ami a bekötésnél számít
+
+1. **A három gomb NEM egyenletesen osztott.** A csillag (289–325) és a
+   balra forgatás (330–366) közt **5** képpont van, a két forgatás közt
+   (366–367) viszont **1**. A csoportosítás tehát: csillag ▏ szünet ▏
+   forgatás-pár.
+2. **A gombsor magassága 22 képpont**, a csíké 14 — a kettő nem egyezik,
+   tehát a `Column` `spacing`-je önmagában nem elég: a két sor saját
+   magassága is mért érték.
+
+*Bizonyítottsági fok: **megerősített** — a számok a `respack.yt`
+rétegfejléceinek `int16 x0, y0, x1, y1` mezőiből valók
+([`picasa-respack-format.md`](picasa-respack-format.md) 3.).*
