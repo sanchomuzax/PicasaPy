@@ -119,9 +119,32 @@ ApplicationWindow {
     // alapértelmezés). A fiók ürítése az `ureseidAFiokot()`.
     function valtsFiokLapot(nev) {
         window.activeDrawerTab = nev
+        if (nev !== "") window.utolsoFiokLap = nev
     }
     function ureseidAFiokot() {
         window.activeDrawerTab = ""
+    }
+
+    //: #2163: a `Ctrl+0` (`thumbui/toggle_right_drawer`, `0x005e6206`) a
+    //: jobb fiókot BILLENTI. Bezárás után újranyitva ugyanaz a lap jöjjön
+    //: vissza — enélkül a billentés fele-útja adatvesztésnek látszik: a
+    //: felhasználó a Címkéket zárta be, és az Emberek nyílna ki.
+    property string utolsoFiokLap: "tags"
+
+    //: #2163: a `Ctrl+F` a fejléc keresőmezőjére viszi a fókuszt. A
+    //: `header` a nézőben nincs jelen (ld. a `MainToolbar` bekötését),
+    //: ezért a null-őr nem formaság.
+    function fokuszAKeresore() {
+        if (toolbar && toolbar.fokuszAKeresore) toolbar.fokuszAKeresore()
+    }
+
+    function billentsdAFiokot() {
+        if (window.activeDrawerTab !== "") {
+            window.utolsoFiokLap = window.activeDrawerTab
+            window.ureseidAFiokot()
+        } else {
+            window.valtsFiokLapot(window.utolsoFiokLap)
+        }
     }
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
@@ -604,6 +627,29 @@ ApplicationWindow {
     // `SHORTCUTS.xml`-ben a *Help Contents and Index* `VK_F1`, módosító
     // nélkül); a Shift+F1 a MIÉNK — az eredeti táblájában nincs, a
     // súgó maga is új.
+    //: #2163: az eredeti könyvtárnézeti kezelője (`0x005e60d0`) 34
+    //: billentyűt kezel; ez a három a leképezhetők közül való.
+    Shortcut {
+        objectName: "toggleRightDrawerShortcut"
+        sequence: "Ctrl+0"
+        //: `thumbui/toggle_right_drawer` (`0x005e6206`)
+        onActivated: window.billentsdAFiokot()
+    }
+    Shortcut {
+        objectName: "searchShortcut"
+        sequence: "Ctrl+F"
+        //: `searchcontainer/searchbutton` (`0x005e63bb`) — az eredetiben a
+        //: keresőgombot kattintja; nálunk a keresőmező a gomb szerepét is
+        //: viszi, ezért oda megy a fókusz.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        objectName: "tagsPanelAltShortcut"
+        sequence: "Ctrl+K"
+        //: Az eredetiben UGYANAZ az ág, mint a `Ctrl+T`-é (`0x005e650e`).
+        onActivated: window.valtsFiokLapot("tags")
+    }
+
     Shortcut {
         objectName: "helpShortcut"
         sequence: "F1"

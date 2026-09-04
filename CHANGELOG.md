@@ -37,6 +37,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   `exit -6`-tal (`terminate called without an active exception`) omlott
   össze — a beépített újrapróba is.
 
+## [0.8.265] – 2026-09-04
+
+### Új
+- Három gyorsbillentyű a könyvtárnézetben: **Ctrl+0** a jobb panel
+  ki-/bekapcsolása, **Ctrl+F** a keresés, **Ctrl+K** a Címkék panel
+  (a Ctrl+T párja, ahogy az eredetiben is) (#2163).
+
 ## [0.8.264] – 2026-09-04
 
 ### Javítva
