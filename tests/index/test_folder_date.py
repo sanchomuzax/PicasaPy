@@ -1,5 +1,12 @@
 """Mappa-dátum (séma v3): automatikus dátum = a legrégebbi kép felvételi
-ideje — a Picasa erre rendezi a mappalistát (legújabb elöl)."""
+ideje — a Picasa erre rendezi a mappalistát (legújabb elöl).
+
+#2304: EXIF-felvételi idő hiányában a FÁJL ideje a tartalék. A korábbi
+állítás („dátumtalan mappa → NULL") a KÓD akkori viselkedését rögzítette,
+nem az eredetiét: a tulajdonos képernyőmentésén a csupa EXIF-nélküli `AI`
+mappa a Picasa 3-ban dátumos fejlécet kap, nálunk pedig dátum nélkül
+maradt és az előző év fejléce alá csúszott.
+"""
 
 import sqlite3
 
@@ -31,7 +38,9 @@ class TestFolderDate:
             )
         assert rows[str(library / "regi")].startswith("2020-03-01")
         assert rows[str(library / "uj")].startswith("2025-01-15")
-        assert rows[str(library / "datumtalan")] is None
+        # #2304: NEM None — EXIF hiányában a fájlidő a tartalék. A mappa
+        # dátuma tehát a benne lévő legrégebbi FÁJL ideje.
+        assert rows[str(library / "datumtalan")] is not None
 
     def test_resync_updates_date(self, tmp_path, library):
         with open_index(tmp_path / "i.db") as conn:

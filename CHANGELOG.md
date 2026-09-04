@@ -9,6 +9,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A csupa EXIF nélküli mappa (letöltött vagy generált képek) többé nem
+  marad dátum nélkül: ilyenkor a fájlok ideje adja a mappa dátumát
+  (#2304). Eddig a fejlécében nem állt dátum, a bal hasábban pedig az
+  előző év alá csúszott. A rács rendezése eddig is így számolt.
+
 - A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
   „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett
   (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
