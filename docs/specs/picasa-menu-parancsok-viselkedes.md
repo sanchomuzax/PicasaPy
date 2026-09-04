@@ -4902,3 +4902,98 @@ A `{0, 1, 2, 5}` mind meg van feleltetve vezérlőnek (36. + 67.1); a **4.**
 módhoz **nem ismert** felhasználói vezérlő. Nem zárható ki, hogy belső
 (programból állított) rendezés. **Megszerzés:** a `FUN_004b07c0` összes
 hívója (`edx = 4`-gyel). Jegy: **#2320**.
+
+---
+
+## 68. tétel — a mappalista-rendezés TELJES mód-készlete, és egy ASCII-only névhasonlítás (2026-09-04, #2320)
+
+> **Bizonyítottság: megerősített** — kimerítő hívó-pásztázás és kiolvasott
+> konstansok. Ez a tétel a **36.** és a **67.** lezárása: a mód-készlet
+> ettől kezdve teljes.
+
+### 68.1 A `+0xd8` mód-mezőnek KÉT írója van, és mindkettő elszámolt
+
+| író | mit ír | hívói |
+|---|---|---|
+| `FUN_004a1560` `0x004a1991` | a **nyers registry-értéket** (`Preferences\datesort`), **validálás nélkül** | indulás |
+| `FUN_004b07c0` (75 b) | `edx`-et | **pontosan 3** hívó |
+
+`FUN_004b07c0` három hívója (kimerítő `e8`-pásztázás a `.text`-en):
+
+| hívó | átadott mód |
+|---|---|
+| `0x005db20c` (`FUN_005d9cc0`) | **2** — `thumbui/namesort` |
+| `0x005db26f` (`FUN_005d9cc0`) | **0** — `thumbui/datesort` |
+| `0x005d3127` (`FUN_005d30f0`) | *öröklött* `edx` — továbbadó |
+
+`FUN_005d30f0` **hat** hívója, mind a `FUN_005cb990` parancs-diszpécserben:
+
+| cím | `edx` | jelentés |
+|---|---|---|
+| `0x005cbbf6` | `xor edx, edx` → **0** | dátum |
+| `0x005cbc2d` | `mov edx, 1` | legutóbbi változtatás |
+| `0x005cbc10` | `mov edx, 2` | név |
+| **`0x005cd5f2`** | **`mov edx, 3`** | ⭐ **ÖTÖDIK mód — a 36.3 listája (`0/1/2/5`) ezt sem tartalmazta** |
+| `0x005cc703` | `mov edx, 5` | méret |
+| `0x005cd61c` | `edx = [obj+0xd8]` **változatlan**, `cl = !cl` (`test cl,cl` + `sete cl`) | **a fordítás kapcsolója** |
+
+⇒ **A felületről elérhető mód-készlet: `{0, 1, 2, 3, 5}`**, plusz a
+fordítás-váltó.
+
+### 68.2 ⛔ A 4. mód a felületről ELÉRHETETLEN — negatív eredmény
+
+A 67.2 talált a komparátorban egy `cmp edx, 4` ágat (`0x004a7e2a`). A fenti
+kimerítő pásztázás szerint **egyetlen hívó sem ad át 4-et**:
+
+- a `+0xd8`-nak két írója van, mindkettő elszámolt (68.1);
+- a `FUN_004b07c0` 3 hívója és a `FUN_005d30f0` 6 hívója **mind** felsorolva.
+
+⇒ A 4. mód **csak akkor lép működésbe, ha a `Preferences\datesort` registry-érték
+literálisan 4** — a betöltő ugyanis **nem validál**. Ez tehát vagy **örökölt
+(korábbi verzióbeli) érték**, vagy fejlesztői kapcsoló. **Nem megépítendő.**
+
+*(A 4. mód kulcsa a `0x004502e0`-ból jön — a `[this+0xc4]` adatforráson, mint
+az 1. és az 5. mód kulcsai.)*
+
+### 68.3 ⭐ A 3. mód a NÉV-ággal azonos viselkedésű
+
+A komparátor (`FUN_004a7890`) csak a `0`, `1`, `4`, `5` értékre ágazik el;
+**minden más — tehát a 2 ÉS a 3 is — a sztring-ágra esik** (`0x004a7f5f`).
+A 3. mód ezek szerint **ugyanazt a rendezést adja, mint a 2.**; a
+megkülönböztetése (ha van) nem ebben a komparátorban van.
+
+### 68.4 ⭐ A névhasonlítás ASCII-ONLY kisbetűsítést végez
+
+A sztring-ág (`0x004a7fd2`–`0x004a7ff5`) **beágyazott**, bájtonkénti
+hasonlítás, és a kisbetűsítése **kizárólag az `A`–`Z` tartományra** hat:
+
+```
+0x004a7fda  cmp cl, 0x41       ; 'A'
+0x004a7fdd  jl  …
+0x004a7fdf  cmp cl, 0x5a       ; 'Z'
+0x004a7fe2  jg  …
+0x004a7fe4  add cl, 0x20       ; -> kisbetű
+```
+
+⇒ **Az ékezetes nagybetűk NEM esnek egybe a kisbetűs párjukkal.** A
+`Á` és az `á` két különböző érték marad, és a rendezésben a bájtértékük
+dönt — az ASCII-tartomány (`a`–`z` = 0x61–0x7A) **mindig megelőzi** őket.
+
+⚠️ **Nálunk ez MÁSKÉPP van** (mérve): `models.py:347` a mappalistában
+`f[0].casefold()`, `photo_sort.py:74` a képeknél `r.name.casefold()` — a
+Python `casefold()` **Unicode-tudatos**, tehát az `Á` és az `á` nálunk
+egybeesik. Magyar mappa- és fájlneveknél ez **eltérő sorrendet ad**.
+
+*(Ez a #2304 „a 3. sortól más a sorrend" tételének egy lehetséges,
+önállóan ellenőrizhető oka — de **ok-okozatilag nincs bizonyítva**: a
+mechanizmus mérve van, a mért eltérésre gyakorolt hatása NINCS mérve.)*
+
+### 68.5 Eredeti / nálunk / teendő
+
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| mód-készlet | `{0,1,2,3,5}` + fordítás-váltó; a **4** elérhetetlen | `("name","size","changed", dátum)` (`models.py:344`) | — |
+| a 3. mód | a névvel azonos viselkedés | nincs külön | **nem kell** megépíteni |
+| a 4. mód | csak kézzel írt registry-értékkel | nincs | **nem kell** megépíteni |
+| névhasonlítás | **ASCII-only** kisbetűsítés (`A`–`Z`) | `casefold()` — **Unicode** | eldöntendő (#2304) |
+
