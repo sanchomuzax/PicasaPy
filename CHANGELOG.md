@@ -19,6 +19,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kattintva a panel — helyesen — nyitva maradt, a pipa viszont
   lekapcsolt.
 
+- Öt menüpont felirata rálógott a jelölőnégyzetére (#1750) — köztük a
+  „Show Editing Controls" és a „Use Color Management". Mostantól a
+  feliratok a szomszédjaikkal egy vonalban kezdődnek.
+
 - A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
   „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett
   (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
