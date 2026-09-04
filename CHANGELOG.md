@@ -48,6 +48,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.284] – 2026-09-04
+
+### Hozzáadva
+- A menüsor tételein megjelentek az **aláhúzott betűk** (mnemonikok): eddig
+  144 tételből 11-en volt, most 103-on. A magyar betűk az eredeti Picasa
+  saját honosításából valók — nem az angolból származtatva —, tehát az
+  `Alt`-os billentyűs navigáció ugyanúgy működik, mint ott (#2152).
+
 ## [0.8.283] – 2026-09-04
 
 ### Hozzáadva

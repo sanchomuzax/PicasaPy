@@ -93,10 +93,14 @@ class TestMenupont:
         window, _controller, _engine = qml_app
 
         # kiírt literál: a `stringres` `ID_FILE_OPEN` forrásszövege és a
-        # #1154 által MÉRT gyorsbillentyű
-        assert str(_elem(window, "menuFileAddFile").property("text")) == (
-            "Add File to Picasa...\tCtrl+O"
-        )
+        # #1154 által MÉRT gyorsbillentyű.
+        #
+        # ⚠️ #2152: az `&` a MNEMONIK jelölése (`Add &File to Picasa...`),
+        # nem a felirat tartalma — ez a próba a gyorsbillentyű
+        # megjelenítését méri, azt pedig a mnemonik nem érinti. A
+        # mnemonikot a saját őre méri (`test_menu_mnemonikok_2152.py`).
+        felirat = str(_elem(window, "menuFileAddFile").property("text"))
+        assert felirat.replace("&", "") == "Add File to Picasa...\tCtrl+O"
 
     def test_a_menupontra_kattintva_megnyilik_a_fajlvalaszto(
         self, qml_app, qt_app

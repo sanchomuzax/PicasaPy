@@ -324,11 +324,24 @@ def test_minden_menu_szerkezetet_ellenoriz_a_tabla():
     assert len(_alak()) == 8
 
 
+def _mnemonik_nelkul(tetelek: list[str]) -> list[str]:
+    """Az `&` a MNEMONIK jelölése, nem a felirat tartalma (#2152).
+
+    Ez a fájl a CSOPORTOSZTÁST méri — hogy hol vannak az elválasztók és
+    milyen sorrendben állnak a tételek. A mnemonik-betűket a #2152 vezette
+    át az eredeti szövegtárból, és azokat a saját őre méri
+    (`test_menu_mnemonikok_2152.py`). Ha itt nem hagynánk figyelmen kívül
+    az `&`-t, minden mnemonik-bővítés hamis csoportosztás-eltérésnek
+    látszana.
+    """
+    return [t.replace("&", "") for t in tetelek]
+
+
 def test_a_csoportok_a_mert_eredetit_kovetik():
     kapott = _alak()
     elteres: list[str] = []
     for cim in MENUSOR:
-        if kapott.get(cim) != VART[cim]:
+        if _mnemonik_nelkul(kapott.get(cim, [])) != _mnemonik_nelkul(VART[cim]):
             elteres.append(
                 f"\n[{cim}]\n  mért eredeti: {' | '.join(VART[cim])}"
                 f"\n  nálunk:       {' | '.join(kapott.get(cim, ['—']))}"
