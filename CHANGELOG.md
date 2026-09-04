@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.266] – 2026-09-04
+
 ### Javítva
 
 - A `respack.yt` kicsomagoló kiolvassa a rétegek átlátszóságát (#2178).
