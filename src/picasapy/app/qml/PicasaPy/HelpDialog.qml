@@ -28,7 +28,27 @@ Dialog {
     //: elem `helpTopic`-jára; F1-re a főoldal nyílik.
     property string topic: ""
 
+    // #2213: az előzmény-verem. A felhasználó jelentette, hogy a keresőből
+    // megnyitott lapról nem lehet visszamenni sehová.
+    //
+    // Az előzményt az `onTopicChanged` gyűjti, nem a lépéspontok — így a
+    // fejezetlista, a Markdown-hivatkozás (#2212) és a Shift+F1 MIND
+    // ugyanazt az utat járja, és egy új lépéspont sem tud kimaradni.
+    property var elozmeny: []
+    //: A megelőző fejezet — ebből lesz az előzmény következő eleme. Az
+    //: `onTopicChanged` nem látja a régi értéket, ezért kell külön.
+    property string _elozoTopic: ""
+    //: Visszalépés közben NEM gyűjtünk előzményt, különben a Vissza két
+    //: lap közt ugrálna oda-vissza.
+    property bool _visszalepesFolyamatban: false
+
+    readonly property bool lehetVissza: helpDialog.elozmeny.length > 0
+
     function nyisdMeg(fejezet) {
+        // Új megnyitás = tiszta lap: a korábbi böngészés előzménye már nem
+        // tartozik ide.
+        helpDialog.elozmeny = []
+        helpDialog._elozoTopic = ""
         helpDialog.topic = fejezet && fejezet.length > 0
             ? fejezet
             : (controller ? controller.helpHomeTopic : "index.md")
@@ -36,8 +56,34 @@ Dialog {
         helpDialog.open()
     }
 
+    function vissza() {
+        if (helpDialog.elozmeny.length === 0) return
+        var verem = helpDialog.elozmeny.slice()
+        var cel = verem.pop()
+        helpDialog.elozmeny = verem
+        helpDialog._visszalepesFolyamatban = true
+        helpDialog.topic = cel
+        helpDialog._visszalepesFolyamatban = false
+    }
+
+    function kezdolapra() {
+        if (!controller) return
+        // A keresés törlése is kell: kereséskor a bal hasáb a találatokat
+        // mutatja, és a felhasználó a fejezetlistát várja vissza.
+        keresoMezo.text = ""
+        helpDialog.topic = controller.helpHomeTopic
+    }
+
     onTopicChanged: {
         if (!controller) return
+        if (!helpDialog._visszalepesFolyamatban
+                && helpDialog._elozoTopic !== ""
+                && helpDialog._elozoTopic !== helpDialog.topic) {
+            var verem = helpDialog.elozmeny.slice()
+            verem.push(helpDialog._elozoTopic)
+            helpDialog.elozmeny = verem
+        }
+        helpDialog._elozoTopic = helpDialog.topic
         szovegNezo.text = controller.helpTopicText(helpDialog.topic)
         szovegGorgeto.contentY = 0
     }
@@ -51,6 +97,32 @@ Dialog {
             Layout.preferredWidth: 260
             Layout.fillHeight: true
             spacing: 6
+
+            // #2213: navigáció. A Vissza az előzmény tetejére lép, a
+            // Kezdőlap a tartalomjegyzékre — utóbbi keresés közben is,
+            // mert olyankor a bal hasáb a találatokat mutatja, nem a
+            // fejezetlistát.
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+
+                Button {
+                    objectName: "helpBackButton"
+                    text: qsTr("Back")
+                    // Amíg nincs hova visszalépni, INAKTÍV — nem ígér
+                    // kattinthatóságot, amit nem tud teljesíteni (#1895).
+                    enabled: helpDialog.lehetVissza
+                    onClicked: helpDialog.vissza()
+                }
+
+                Button {
+                    objectName: "helpHomeButton"
+                    text: qsTr("Contents")
+                    onClicked: helpDialog.kezdolapra()
+                }
+
+                Item { Layout.fillWidth: true }
+            }
 
             TextField {
                 id: keresoMezo
