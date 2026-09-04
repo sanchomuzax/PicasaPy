@@ -660,18 +660,36 @@ Column {
                     }
                 }
             }
-            // `thumbui/scratchlabel` — „Kijelölés", `m_centerXY`: üres
-            // tálcánál a felirat a doboz KÖZEPÉN áll, nem a bal szélén
+            // `thumbui/scratchlabel` — „Kijelölés", `m_centerXY`: a doboz
+            // KÖZEPÉN álló ÁLLANDÓ vízjel.
+            //
+            // #2179: az eredetiben ez NEM üres-állapot felirat. A tulajdonos
+            // hat felvétele ugyanabban a mappában, növekvő elemszámmal: 1 és
+            // 3 bélyegképnél a felirat LÁTSZIK, 11-nél eltakarva, 6-nál a
+            // vége (`…lés`) KILÓG a képek jobb oldalán. Az utolsó dönti el a
+            // rétegsorrendet is: a felirat bal része a képek ALATT van.
+            // Ugyanezt mondja a `thumbui.tre` szülő-gyerek viszonya
+            // (`scratchpadbase` — és rajta a `scratchlabel` — előbb
+            // deklarálva, mint a `thumbui/scratch`).
+            //
+            // Ezért NINCS `visible` kötése, és `z: -1`-gyel a bélyegképsor
+            // ALÁ kerül. (A `z` a deklarációs sorrend átrendezése helyett:
+            // a felirat így a `scratchback` gyerekeként marad, ahogy az
+            // eredetiben is a `scratchpadbase`-é.)
             Text {
                 objectName: "trayScratchLabel"
-                // #718: ld. a Repeater fenti null-őrét — ugyanaz a
-                // teardown-ablak érinti ezt a kötést is.
-                visible: trayScratchBack.heldCount === 0
-                         && tray.selectedIndexesOrEmpty.length === 0
+                z: -1
                 anchors.centerIn: parent
                 text: qsTr("Selection")
-                color: Theme.placeholderText
-                font.pixelSize: Theme.fontSize
+                // #2179: a respackből MÉRVE — `thumbui/scratchlabel`
+                // (13,480)–(218,499), szín `#C3C3C3`. A `Theme`
+                // `placeholderText`-je (`#8f8b83`) sötétebb ennél, és más
+                // helyeken is használatban van, ezért itt a mért érték áll.
+                color: "#C3C3C3"
+                // `m_displayfont14` = 14 pt (`docs/specs/picasa-hisztogram.md`,
+                // ugyanaz a betűcsalád), és a felirat mért magassága 19
+                // képpont — a kettő egybevág.
+                font.pixelSize: 14
             }
 
             // #455/#1420: a Picasa 3-gombos OSZLOPA a bélyegképsor jobbján

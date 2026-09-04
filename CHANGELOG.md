@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.271] – 2026-09-04
+
+### Javítva
+- A képtálca „Kijelölés" felirata mindig látszik, és a bélyegképek eltakarják
+  — ahogy az eredeti Picasában. Eddig csak üres tálcánál jelent meg, és a
+  képek fölé rajzolódott (#2179).
+
 ## [0.8.270] – 2026-09-04
 
 ### Javítva
