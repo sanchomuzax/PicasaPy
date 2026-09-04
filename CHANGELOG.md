@@ -48,6 +48,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.283] – 2026-09-04
+
+### Hozzáadva
+- Négy billentyűparancs a projektlapokhoz: **Ctrl+W** bezárja az aktuális
+  lapot, a **Ctrl+Tab** (és Ctrl+Shift+Tab), valamint a **Ctrl+←/→** körbelépteti
+  őket. A szerkesztő csúszkáit a **+ / =** és a **− / _** billentyű lépteti
+  (#2170).
+
 ## [0.8.282] – 2026-09-04
 
 ### Javítva
