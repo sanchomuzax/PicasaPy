@@ -1416,7 +1416,7 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 
 #### Nyitott kérdések mérlege (a stílusblokkra)
 
-`0 nyílt · 3 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`1 nyílt · 3 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -1424,7 +1424,59 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
 | **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **A POZÍCIÓ LEZÁRVA** (2026-09-02, ld. lentebb): a 6. az, ami mozog. A **leképezés** nyitva marad. Az alábbi eredeti szöveg a lezárás ELŐTTI állapotot rögzíti: **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
+| **mi a 8. mező HÁROM része** | **NYITOTT (2026-09-04)** — az olvasó bitekre vágja (ld. fentebb); két rész 0/1/2 értékkészletű és függetlenül mozog, a harmadik (felső 16 bit) minden mintán 0. **Megszerzés:** kontrollált minta, ami a KÉT hármas enumot választja szét. |
 | **mi a `<b>` (9. mező)** | **BLOKKOLT** — 2026-09-02 óta öt értékünk van (`0xC000`, `0xC001`, `0xC008`), és a dőlt/aláhúzott bit-hozzárendelés kézenfekvő, de szétválasztó eset (a kettő EGYÜTT) nincs. Az eredeti indoklás: a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
+
+#### ⭐ A 8. mező NEM egy érték, hanem HÁROM — az OLVASÓ szétvágja (2026-09-04, #2108)
+
+Az olvasó a `0x00a4dd50` (`sscanf` a `0x00a4df98`-on). A kilenc kiolvasott
+értéket **virtuális beállítókkal** teszi az objektumba, és a **8. mezőt
+három részre vágja**:
+
+```
+0x00a4e05c  mov  ecx, [esp + 0x3c]      ; a 8. mező
+0x00a4e065  shr  ecx, 0x10              ; a FELSŐ 16 bit
+0x00a4e06b  call [vtbl + 0x38]
+
+0x00a4e06d  movzx ecx, byte ptr [esp + 0x3d]   ; a 8–15. BIT
+0x00a4e07a  call  [vtbl + 0x2c]
+
+0x00a4e07c  mov  ecx, [esp + 0x3c]
+0x00a4e085  and  ecx, 0xff              ; a 0–7. BIT
+0x00a4e08b  call [vtbl + 0x30]
+```
+
+⇒ **Három külön beállító, három külön tulajdonság.** A **9.** mező ezzel
+szemben **egészben** megy egyetlen beállítóhoz (`[vtbl+0x70]`,
+`0x00a4e04e`).
+
+**A meglévő minták ezzel szétesnek** (a jegy táblájából):
+
+| minta | 8. mező | 16–31. bit | 8–15. bit | 0–7. bit |
+|---|---|---|---|---|
+| A (Arial, 1 sor) | `0x100` | 0 | **1** | **0** |
+| B (Arial Black, 1 sor, forgatott) | `0x100` | 0 | **1** | **0** |
+| C (Arial, 3 sor) | `0x200` | 0 | **2** | **0** |
+| D (Arial Black, 3 sor) | `0x202` | 0 | **2** | **2** |
+| E (Arial Black, 1 sor) | `0x101` | 0 | **1** | **1** |
+| *(régi korpusz)* | `0x102` | 0 | **1** | **2** |
+| *(régi korpusz)* | `0` | 0 | **0** | **0** |
+
+**Amit ez ELDÖNT:** a felső 16 bit **minden mintában 0** — a harmadik
+tulajdonság alapértéken áll. A másik kettő értékkészlete eddig **0, 1, 2**,
+egymástól **függetlenül** mozog (a C és a D 8–15. bitje azonos, a 0–7.
+eltér).
+
+**Amit NEM dönt el:** melyik beállító mit jelent. Az objektum osztálya
+nincs azonosítva (az olvasó szabad függvény, `esi`-ben kapja a példányt),
+ezért a beállítók nevéhez nem jutunk el.
+
+> ⛔ **A jegy kérdésfeltevése ezzel pontosítandó.** A #2108 „a 8. és 9.
+> mező (igazítás, dőlt, aláhúzott?)" kérdést tesz fel, és **hét** kontrollált
+> mintát kér. A mérés szerint viszont a 8. mező **két** (látható)
+> tulajdonságot hordoz, mindkettő **három**-állapotú (0/1/2) — a dőlt és az
+> aláhúzott ellenben **kétállapotú** volna. A kért mintasornak tehát
+> **a két hármas enumot** kell szétválasztania, nem hat logikai kapcsolót.
 
 ⚠️ **Amíg ez a kettő nyitva van, a mi írónk NE találgasson:** a
 `text_overlay.py` mai viselkedése (megőrzés + változatlan visszaírás)
