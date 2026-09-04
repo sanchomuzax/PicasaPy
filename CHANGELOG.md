@@ -14,6 +14,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   fordított rendezés. A hiba eddig nem látszott rajtuk, mert a
   műveletük mindig átbillentette az állapotot.
 
+- A Picasa bélyegkép-indexének második időmezőjét eddig „hozzáférési
+  időnek" neveztük — mérve a fájl **módosítási** ideje (#2373). Csak
+  belső elnevezés, a viselkedés nem változik.
+
 - A csupa EXIF nélküli mappa (letöltött vagy generált képek) többé nem
   marad dátum nélkül: ilyenkor a fájlok ideje adja a mappa dátumát
   (#2304). Eddig a fejlécében nem állt dátum, a bal hasábban pedig az

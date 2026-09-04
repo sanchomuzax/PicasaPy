@@ -6,6 +6,12 @@ Formátum keresztvalidálva (`thumbindex.py` mintaprojekt, ld.
 soronként név + 26 ismeretlen bájt + szülőindex. A leghosszabb PMP-oszlop
 hossza mindig megegyezik a thumbindex bejegyzésszámával — ez adja a
 logikai táblák sor-számát (sparse oszlopoknál a hiányzó indexek üresek).
+
+#2373 — a két időmező NEVE félrevezető volt. A Picasa saját diagnosztikai
+CSV-fejléce („Creation Time", „Access Time") ezen a ponton rossz nevet ad;
+a mért jelentés: az első a kép **metaadat-dátuma** (nem fájlrendszeri
+időbélyeg, és újrapásztázáskor sem frissül), a második a fájl utolsó
+**módosítási** ideje. Mindkettő HELYI időből képzett FILETIME.
 """
 
 from __future__ import annotations
@@ -20,8 +26,9 @@ logger = logging.getLogger(__name__)
 _MAGIC = 0x40466666
 _HEADER = struct.Struct("<II")
 #: A név utáni farok: a 26 korábban ISMERETLEN bájt + a szülőindex.
-#: A mezőket a #2195 mérte ki (`docs/specs/pmp-database.md` 8.):
-#: `uint64` létrehozás- és hozzáférés-FILETIME, `uint32` méret,
+#: A mezőket a #2195 mérte ki (`docs/specs/pmp-database.md` 8.);
+#: a JELENTÉSÜKET a #2373 helyesbítette: `uint64` metaadat-dátum és
+#: `uint64` utolsó MÓDOSÍTÁSI idő (nem hozzáférési), `uint32` méret,
 #: `uint32` típus, `uint8` piszkos, `uint8` érvényes, `uint32` szülő.
 _FAROK = struct.Struct("<QQIIBBI")
 _NO_PARENT = 0xFFFFFFFF
@@ -37,12 +44,28 @@ class ThumbIndexEntry:
     index: int
     name: str
     parent_index: int
-    #: #2195: a korábban ismeretlen 26 bájt kiolvasva. A mezőnevek a
-    #: Picasa saját diagnosztikai CSV-fejlécéből valók
-    #: (`Name, Creation Time, Access Time, Size, Type, Dirty, Valid`).
-    #: FILETIME = 100 ns-os egységek 1601-01-01 óta.
+    #: #2195: a korábban ismeretlen 26 bájt kiolvasva. FILETIME = 100 ns-os
+    #: egységek 1601-01-01 óta.
+    #:
+    #: ⚠️ #2373 — a NEVEK a Picasa saját diagnosztikai CSV-fejlécéből
+    #: származtak (`Name, Creation Time, Access Time, Size, Type, Dirty,
+    #: Valid`), de a jelentésük MÉRVE MÁS. A fejléc ezen a ponton rossz
+    #: nevet ad, és mi azt vettük át.
+    #:
+    #: **Időzóna-konvenció (mindkét mezőre):** a Picasa a
+    #: `TzSpecificLocalTimeToSystemTime`-ot `NULL` zónával hívja, tehát a
+    #: tárolt FILETIME HELYI időből képződik — a visszaalakítása is a
+    #: helyi zónával értelmes, nem UTC-ként.
+
+    #: A kép **metaadat-dátuma**, a beolvasás pillanatában rögzítve.
+    #: **NEM fájlrendszeri időbélyeg**, és a könyvtár-pásztázó **soha nem
+    #: frissíti** — egy újrapásztázás után is a legelső beolvasás értékét
+    #: tartja.
     creation_filetime: int = 0
-    access_filetime: int = 0
+    #: A fájl **utolsó MÓDOSÍTÁSI ideje** (`ftLastWriteTime`) — nem a
+    #: hozzáférési idő, a CSV-fejléc „Access Time" felirata ellenére
+    #: (#2373).
+    modified_filetime: int = 0
     size: int = 0
     #: Mérve a tulajdonos katalógusán: 1 és 5 = könyvtár, 2 = fájl;
     #: emellett 0, 6 és 10 is előfordul. A teljes értékkészlet a #2195
@@ -87,7 +110,7 @@ def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
             raise ThumbIndexFormatError(f"Csonka bejegyzés (#{index}): {path}")
         (
             creation,
-            access,
+            modositva,
             size,
             kind,
             dirty,
@@ -100,7 +123,7 @@ def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
                 name=name,
                 parent_index=parent_index,
                 creation_filetime=creation,
-                access_filetime=access,
+                modified_filetime=modositva,
                 size=size,
                 kind=kind,
                 dirty=dirty,

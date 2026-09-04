@@ -65,7 +65,7 @@ class TestAFarokHetMezeje:
         b = bejegyzesek[0]
         assert b.name == "kep.jpg"
         assert b.creation_filetime == farok[0]
-        assert b.access_filetime == farok[1]
+        assert b.modified_filetime == farok[1]  # #2373: átnevezve
         assert b.size == 4096
         assert b.kind == 2
         assert b.dirty == 1
