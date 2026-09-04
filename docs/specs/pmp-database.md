@@ -2968,3 +2968,178 @@ mappára. Az olcsó lánc itt **kimerült**: a közvetlen hívók (nincs), a
 vtábla-hely (megvan), az RTTI (megvan), a bájtminta (kimerítő negatív).
 A következő lépés már a **drága ág**: célzott dekompiláció a mappafelvételi
 útvonalon, a `CThumbDB`-példány élettartamát követve.
+
+## 10. A `thumbindex` KÉT IDŐBÉLYEGE — honnan jön, és mikor frissül (2026-09-05, #2304)
+
+A 8.1 leírta a rekord bájtszintű alakját, és a két `uint64` mezőt a Picasa
+**saját** diagnosztikai CSV-fejléce szerint nevezte el („Creation Time",
+„Access Time"). Ez a szakasz megmondja, **mi tölti** őket, és **mikor
+frissülnek** — mert a fejléc egyik neve **félrevezető**.
+
+A kérdést a lap 69. tétele (`picasa-menu-parancsok-viselkedes.md`) hagyta
+nyitva: *„az 1. FILETIME a fájl létrehozási vagy módosítási ideje-e a
+forrásrendszeren, és frissíti-e a Picasa újraolvasáskor?"* Mindkét felére
+van válasz.
+
+### 10.1 A pásztázó CSAK a módosítási időt és a méretet olvassa
+
+A könyvtárbejáró (`FUN_004e62d0`, 6 720 b) a `WIN32_FIND_DATAA`-t a saját
+objektumában tartja: a szerkezet az objektum **`+0x208`**-án ül, a
+kereső-fogantyú a **`+0x348`**-on, az objektum mérete **`0x34c`**.
+*(Igazolás: `0x004e6cac` `lea eax,[ebp+0x208]` a `FindNextFile`-nak, és
+`0x004e6cc2` `lea edx,[ebp+0x234]` a névre — `0x208 + 0x2c` pontosan a
+`cFileName` eltolása.)*
+
+Az egész pásztázó ebből **négy mezőt** olvas ki:
+
+| mező | eltolás | hol olvassa |
+|---|---|---|
+| `dwFileAttributes` | `+0x208` | `0x004e6834`, `0x004e6e03`, `0x004e706b`, … |
+| **`ftLastWriteTime`** | `+0x21c` / `+0x220` | `0x004e6826`, `0x004e6d6b`, `0x004e6f02`, `0x004e7187`, `0x004e7393`, `0x004e74bd`, `0x004e7541`, `0x004e806e` |
+| `nFileSizeLow` | `+0x228` | `0x004e73dc`, `0x004e74b4`, `0x004e7551`, `0x004e8083` |
+| `cFileName` | `+0x234` | `0x004e6cc4`, `0x004e8719`, `0x004e8b67`, `0x004e8f3f` |
+
+⛔ **Kimerítő negatív:** a `0x004d0000`–`0x00520000` tartomány teljes
+`.text`-pásztázása szerint a **`ftCreationTime` (`+0x20c`)** és a
+**`ftLastAccessTime` (`+0x214`)** eltolására **egyetlen hivatkozás sincs**
+a bejáró függvénycsoportjában (`0x004e6800`–`0x004e8100`); a `+0x20c`
+hét, a `+0x214` hat találata mind a `0x0051xxxx` / `0x004d6xxx`
+tartományban, más osztályokban van. A pásztázó **ismert pozitívjai**
+(`+0x21c`/`+0x220`/`+0x228`/`+0x234`) ugyanezzel a módszerrel
+előjöttek ⇒ a negatív eredmény nem a minta hibája.
+
+*(A `FindFirstFileW`-t egy ANSI-burkoló hívja — `FUN_009aed50`, ami a
+`WIN32_FIND_DATAW`-t átmásolja és a két névmezőt
+`WideCharToMultiByte`-tal alakítja; a `FindNextFile` a `[0x00d694cc]`
+függvénymutatón át megy, ezért nincs közvetlen hívója az indexben.)*
+
+### 10.2 A 2. mező NEM „hozzáférési idő", hanem a fájl MÓDOSÍTÁSI ideje
+
+A változásfigyelő (`0x004e74b2`–`0x004e74e5`) a rekord `+0x0c` és `+0x14`
+mezőjét veti össze a **friss** `ftLastWriteTime`-mal és `nFileSizeLow`-val,
+és eltérés esetén **felül is írja** őket:
+
+```
+0x004e74b2  mov esi, [edx+0x228]     ; nFileSizeLow
+0x004e74bb  mov ecx, [edx+0x21c]     ; ftLastWriteTime.lo
+0x004e74c1  mov edi, [edx+0x220]     ; ftLastWriteTime.hi
+0x004e74ca  cmp ecx, [eax+0x0c] …    ; a rekord 2. időbélyege
+0x004e74dc  mov [eax+0x0c], ecx      ; ← felülírás
+0x004e74df  mov [eax+0x10], edi
+0x004e74e2  mov [eax+0x14], esi      ; méret
+```
+
+⇒ **A rekord `+0x0c` mezője a fájl utolsó MÓDOSÍTÁSI ideje** (`mtime`),
+nem a hozzáférési ideje. A Picasa saját CSV-fejléce („Access Time") ezen a
+ponton **rossz nevet ad** a mezőnek. *(A `picasa-mappakezelo.md` 16.2/b
+oszloptáblája az eltolásokat helyesen adja meg; a NÉV az, ami félrevezet.)*
+
+### 10.3 Az 1. mező egyetlen írója: a kép METAADAT-dátuma
+
+A rekord `+0x04` mezőjét egyetlen beállító írja:
+
+| lépés | cím |
+|---|---|
+| beállító (`objektum` `eax`-ben, `index` + `double*` a veremben) | **`0x004eeb10`** |
+| `double` → `SYSTEMTIME` | `0x0098b8f0` |
+| `TzSpecificLocalTimeToSystemTime(NULL, …)` | `0x004eeb9e` |
+| `SystemTimeToFileTime(&st, rekord+4)` | `0x004eebad` (`add ebp,4` a `0x004eeba4`-en) |
+| a DB piszkos-jelzője: `[obj+0x5c]++`, `[obj+0x60] = 1` | `0x004eebb3`–`0x004eebb7` |
+
+⛔ **A beállítónak a TELJES binárisban egyetlen hívója van:**
+`0x00427898`, a képbeolvasó `FUN_00425f60`-on belül. A hívási hely:
+
+```
+0x00427844  mov edi, 0x37            ; metaadat-tulajdonság azonosítója (55)
+0x00427860  call 0x9f05c0            ; kikeresés a kép metaadat-táblájából
+0x00427867  jne  …                   ; nincs ilyen tulajdonság → KIMARAD
+0x00427869  fld  qword [0xc7ccf8]    ; 949998.0 — a „nincs dátum" őrszem
+0x0042787f  call 0x98bc10            ; dátum-szöveg → Variant double
+0x00427886  jne  …                   ; nem értelmezhető / őrszem → KIMARAD
+0x00427898  call 0x4eeb10            ; ← a beállító
+```
+
+⇒ **Az 1. mező NEM fájlrendszeri időbélyeg.** A kép saját metaadatából
+vett dátum, a **beolvasás pillanatában** rögzítve — és a pásztázó
+**soha nem frissíti** (10.1). A `949998.0` őrszem ugyanaz, mint a mappa
+`[Picasa] date=` olvasójáé (`picasa-ini-format.md`).
+
+**Időzóna-konvenció:** mindkét mező **helyi** időből készül
+(`TzSpecificLocalTimeToSystemTime` `NULL` zónával = a gép AKKORI zónája),
+tehát a tárolt FILETIME UTC, de a visszaalakításhoz a **helyi** zóna kell.
+Ugyanez a lánc futja a `thumbindex` visszatöltésekor is
+(`0x004e0aa0`, hívja `0x004f2ef0` ← `0x004f46b0`), ahol a két `double`-ből
+`+0x04` és `+0x0c` lesz, a `+0x18`/`+0x1c`/`+0x20`/`+0x21` forrásmezőkből
+pedig a méret / típus / dirty / valid.
+
+### 10.4 MÉRÉS a tulajdonos valódi katalógusán (140 758 rekord)
+
+Anyag: `research/testdata/Picasa2/db3/thumbindex.db`. A vizsgálat a
+**névbe kódolt felvételi időt** használja külső igazságforrásként
+(`YYYYMMDD_HHMMSS` alak, 56 540 fájl), a mezőt UTC→`Europe/Budapest`
+váltás után hasonlítva:
+
+| | másodpercre egyezik | percen belül | eltér |
+|---|---:|---:|---:|
+| **1. mező** | 33 625 (59,5 %) | 51 883 (91,8 %) | 4 143 (7,3 %) |
+| 2. mező | 14 348 (25,4 %) | 18 121 (32,1 %) | 37 389 (66,1 %) |
+
+Ahol a két mező **különbözik** (44 030 fájl), az elkülönülés még élesebb:
+az 1. mező 60,7 % / 96,9 %, a 2. mező 16,9 % / 20,2 %.
+
+⇒ **Az 1. mező a felvételi idő**, a 2. nem. Ez független megerősítése a
+10.3 bináris láncának.
+
+**Két további mérés:**
+
+1. **Az 1. mező soha nem hiányzik.** A 135 433 nem üres rekordból
+   `0` darabon nulla az 1. mező; a 2. mező **1 101**-szer nulla — köztük a
+   `C:\` gyökéré, amire nincs `FIND_DATA`. ⇒ a 2. mező a pásztázásból jön,
+   az 1. nem.
+2. **Metaadat-dátum hiányában a két mező egybeesik.** Kiterjesztésenként,
+   a nem nulla időbélyegű fájlokon:
+
+   | kiterjesztés | darab | `1. == 2.` |
+   |---|---:|---:|
+   | `.png` | 33 | **32 (97,0 %)** |
+   | `.jpeg` | 2 104 | 1 292 (61,4 %) |
+   | `.jpg` | 119 456 | 36 745 (30,8 %) |
+
+   A PNG-k jellemzően nem hordoznak EXIF felvételi dátumot. ⇒ ha a
+   `0x37`-es tulajdonság hiányzik, az 1. mező a fájl módosítási idejével
+   marad egyenlő. *(A mintaelemszám 33 — ezért **erős**, nem
+   megerősített; és a kezdőértéket adó függvényt nem neveztük meg,
+   csak a viselkedést mértük.)*
+
+### 10.5 Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a „Dátum" rendezés kulcsa | metaadat-dátum, ennek hiányában a fájl módosítási ideje | `app/photo_sort.py:66–68`: `taken_at`, ennek hiányában `mtime` — **a SZABÁLY azonos** | — |
+| a kulcs **rögzítettsége** | a beolvasáskor **befagy** a DB-be; a pásztázó csak a 2. mezőt frissíti | a rendezéskor **élőben** olvassuk a `mtime`-ot | #2304 |
+| a 2. mező neve az olvasónkban | a fájl **módosítási** ideje | `pmpimport/thumbindex.py:45`: **`access_filetime`** — megtévesztő név | **#2373** |
+| időzóna | helyi idő → UTC a gép zónájával | az olvasónk nyers `uint64`-et ad, értelmezés nélkül | dokumentálva itt |
+
+> ⛔ **Helyesbítés a 69. tételhez.** Az ottani „eredeti / nálunk" tábla azt
+> sugallta, hogy a **tartalék-szabályunk** tér el az eredetitől („nálunk
+> EXIF-hiány esetén a mai `mtime`"). A 10.3–10.4 szerint a szabály
+> **ugyanaz**; a mért különbség a **rögzítettség**: az eredeti a
+> beolvasáskori értéket tárolja és nem frissíti, mi minden rendezéskor a
+> pillanatnyi `mtime`-ot olvassuk.
+
+*Bizonyítottsági fok: **megerősített** a pásztázó négy mezőjére és a
+kimerítő negatívra (10.1), a 2. mező jelentésére (10.2), a beállító
+egyetlen hívójára és az időzóna-láncra (10.3); **erős** az 1. mező
+felvételi-idő jellegére (10.4, mérés) és a metaadat-hiányos tartalékra
+(n = 33).*
+
+### 10.6 Nyitott kérdések mérlege (10.)
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| az 1. FILETIME létrehozási vagy módosítási idő-e, és frissül-e (69. tétel) | **LEZÁRVA** — egyik sem: beolvasáskori metaadat-dátum, és **nem frissül** (10.1, 10.3) |
+| mit jelent valójában a 2. mező | **LEZÁRVA** — a fájl módosítási ideje, a CSV-fejléc neve téves (10.2) |
+| mi tölti az 1. mezőt metaadat-dátum hiányában | **LEZÁRVA** — a 2. mezővel egyenlő marad (10.4, erős) |
+| melyik metaadat-tulajdonság a `0x37` (55) | **ÁTADVA → #2375** (a kép-metaadat modul, `0x00a357a0`, külön alrendszer) |
