@@ -642,6 +642,50 @@ az öt konstans kiolvasva). ⚠️ Amit ez **nem** mond meg: hogy a
 paraméter a hívási lánc melyik szintjéről jön — az a `0x00bb8f70` hívóinak
 kérdése, nem ezé a lapé.
 
+#### A négy eltérés HATÁSA a mi kimenetünkre — mérve, mind a négy NEGATÍV (#2159)
+
+A fenti kiolvasás megmondja, **mit csinál** az eredeti maszképítő. Az, hogy
+a mi modellünkbe átvezetve **javítana-e**, külön kérdés — és a mérés
+szerint egyik sem javít. A #879 tanulsága szerint a megfejtett mechanizmus
+önmagában nem diagnózis, ezért mind a négyet egyenként vezettük be és
+mértük.
+
+**Mérőszett:** `referencia/vignette/*` (valódi Picasa-export), forráskép
+`referencia/lomo/Lomo no effect/…`, 2560×1702. Metrika: csatornánkénti
+átlagos |Δ| szintben.
+
+| eltérés | `Vignette default` átlag \|Δ\| | verdikt |
+|---|---:|---|
+| — (a mai modell) | **0,892** | viszonyítási alap |
+| egész, lépcsős blur-sugár (`r = min(255, trunc(ceil((b−1)·0,5)·q + 1))`) | **17,69** | **13× romlás** |
+| `xblur/yblur` vágás 253-ra | 0,892 | hatástalan (ld. lent) |
+| `strength` 8.8-as fixpont (`trunc(s·256)/256`) | 0,888 | a zajszint alatt |
+| `glowalpha` bájtra kvantálva (`trunc(a·255)/255`) | 0,892 | azonosság ezen az úton |
+
+**Miért hatástalan a három kicsi — mindegyikre megvan az ok:**
+
+1. **A 253-as vágás nem aktiválódik** az alapesetben: a mi sugarunk
+   `35 · 0,0025 · 2560 = 224`. Ahol viszont aktiválódik (`Vignette size
+   max`, blur=50 → sugár 320), ott **ötszörös romlást** ad (1,224 → 5,983).
+   Ez **kontroll-mérés**: a `glimmer_tone.py` kommentje ugyanezt már
+   rögzítette a 255-ös korlátra (5,79 vs 1,22).
+2. **A 8.8-as fixpont a mérési zaj alatt van.** `strength = 1,4`-nél az
+   eltérés `0,0016`; a csúszka két végpontján (`1,0`, `2,0`) a 8.8-as alak
+   **pontos**, ott az eltérés szigorúan nulla.
+3. **A `glowalpha` a Vignette/Matte úton mindig `1,0`**, és
+   `trunc(1,0·255)/255 = 1,0`. Más Glow-hívásoknál (ahol az alfa nem 1,0) a
+   kvantálás hatása **nincs mérve**.
+
+**Amit a mérés POZITÍVAN mutat:** a `Vignette size min` (blur=0) esetben az
+eltérés **pontosan 0,000**, és az alapesetben a kép középső 2%-ában
+(`r < 0,2`) is nulla. A kép alap-útja (dekódolás, színtér, változatlan
+képpontok) tehát hibátlan — a teljes maradék hiba a vignetta-súly
+ALAKJÁBAN ül.
+
+⇒ **Egyiket sem építettük be.** A mi analitikus (`erf`-alapú) modellünk és
+az eredeti dobozmenetes maszképítője nem ugyanaz a számítás; a bináris
+konstansainak egyenkénti átemelése ezért nem közelít, hanem ront.
+
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
 A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
