@@ -40,6 +40,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.282] – 2026-09-04
+
+### Javítva
+- Belső: az adatbázis-áthelyezés ellenőrző próbája Windowson elbukott, mert
+  a lassabb fájlrendszeren nem várta ki a művelet végét. A termék működése
+  nem változott (#2313).
+
 ## [0.8.281] – 2026-09-04
 
 ### Javítva
