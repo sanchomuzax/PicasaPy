@@ -7201,7 +7201,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../../render/legacy_effects.py"/>
-        <source>Directional Sharpening</source>
+        <source>Directional Sharpen</source>
         <translation>Irányított élesítés</translation>
     </message>
     <message>
@@ -7226,17 +7226,17 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../../render/legacy_effects.py"/>
-        <source>Shadow and Highlight</source>
+        <source>Shadow &amp; Highlight</source>
         <translation>Árnyék és kiemelés</translation>
     </message>
     <message>
         <location filename="../../render/legacy_effects.py"/>
-        <source>White Point</source>
+        <source>Whitepoint</source>
         <translation>Fehérpont</translation>
     </message>
     <message>
         <location filename="../../render/legacy_effects.py"/>
-        <source>Gamma Correction</source>
+        <source>Gamma Correct</source>
         <translation>Gammakorrekció</translation>
     </message>
     <message>
@@ -7251,7 +7251,7 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../../render/legacy_effects.py"/>
-        <source>Softening</source>
+        <source>Blur</source>
         <translation>Elhomályosítás</translation>
     </message>
     <message>

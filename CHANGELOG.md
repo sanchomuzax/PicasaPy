@@ -31,6 +31,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.268] – 2026-09-04
+
+### Javítva
+- A „Régi effektek" fül öt felirata az eredeti Picasa szövegét követi
+  (Elhomályosítás, Irányított élesítés, Gammakorrekció, Árnyék és kiemelés,
+  Fehérpont). Hat felirat szándékosan megtartja a megkülönböztető toldatát,
+  mert enélkül azonos nevű sorok állnának egymás alatt (#2270).
+
 ## [0.8.267] – 2026-09-04
 
 ### Javítva
