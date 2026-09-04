@@ -9,12 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
-- Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
-  (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
-  használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a
-  részfutást — a már lefutott próbák eredményével együtt. Új őr követeli
-  meg minden Qt-alkalmazást példányosító tesztmodultól a fejnélküli
-  alapértelmezést.
+- A Visszavonás/Újra gomb feliratai a szerkesztő-panelen az eredeti Picasa
+  szövegtárát követik (#2240). Tizenhárom felirat változott; a legfontosabb,
+  hogy a régi effekt-változatok végre megkülönböztethetők: „Élesítés (régi)"
+  vs „Élesítés", „Ragyogás (régi)" vs „Ragyogás", „Régi filmszemcse" vs
+  „Filmszemcse", „Árnyalás (régi)" vs „Árnyalás". Megszűnt a „Lágy fókusz"
+  ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
+  végre azt ígéri, amit csinál.
 
 ## [0.8.266] – 2026-09-04
 

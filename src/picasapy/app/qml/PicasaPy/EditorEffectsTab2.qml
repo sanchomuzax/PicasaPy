@@ -89,7 +89,7 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectSixties"
-            label: qsTr("1960s")
+            label: qsTr("1960's")
             onButtonClicked: if (!panel.tryOpenParamPanel("sixties", label)) panel.effectRequested("sixties")
             thumbSource: panel.effectThumbSource("sixties")
             badge: panel.hasBadge("sixties")

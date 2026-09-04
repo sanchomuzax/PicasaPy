@@ -88,7 +88,7 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectPicnikGrain"
-            label: qsTr("Film Grain (Fine)")
+            label: qsTr("Film Grain")
             onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
             thumbSource: panel.effectThumbSource("picnikgrain")
             badge: panel.hasBadge("picnikgrain")

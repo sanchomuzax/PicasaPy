@@ -54,7 +54,7 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectSoften"
-            label: qsTr("Soft Focus")
+            label: qsTr("Soften")
             onButtonClicked: if (!panel.tryOpenParamPanel("soften", label)) panel.effectRequested("soften")
             thumbSource: panel.effectThumbSource("soften")
             badge: panel.hasBadge("soften")
@@ -105,7 +105,7 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectComicize"
-            label: qsTr("Comicize")
+            label: qsTr("Comic Book")
             onButtonClicked: if (!panel.tryOpenParamPanel("comicize", label)) panel.effectRequested("comicize")
             thumbSource: panel.effectThumbSource("comicize")
             badge: panel.hasBadge("comicize")

@@ -129,7 +129,7 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectRadsat"
-            label: qsTr("Focal Saturation")
+            label: qsTr("Focal B&W")
             onButtonClicked: if (!panel.tryOpenParamPanel("radsat", label)) panel.effectRequested("radsat")
             thumbSource: panel.effectThumbSource("radsat")
             badge: panel.hasBadge("radsat")
