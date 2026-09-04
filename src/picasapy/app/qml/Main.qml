@@ -1589,8 +1589,16 @@ ApplicationWindow {
             objectName: "folderPane"
             // #305: null-őr — a controller a leépítéskor átmenetileg null
             SplitView.preferredWidth: controller ? controller.folderPaneWidth : 240
-            SplitView.minimumWidth: 160
-            SplitView.maximumWidth: 600
+            //: #2329: MÉRT korlátok. A legkisebb szélesség ugyanaz a szám,
+            //: mint az alapértelmezés (240) — a hasáb nem húzható alá.
+            SplitView.minimumWidth: 240
+            //: A felső korlát az eredetiben ABLAKFÜGGŐ: a főpanel
+            //: szélessége mínusz 240 (`0x009d9e21`–`0x009d9e50`). A fix 600
+            //: széles ablakon szűkebb volt az eredetinél, keskenyen pedig
+            //: tágabb. A `Math.max` azért kell, hogy nagyon keskeny
+            //: ablakon se csússzon a maximum a minimum ALÁ — a `SplitView`
+            //: ilyenkor kiszámíthatatlanul viselkedne.
+            SplitView.maximumWidth: Math.max(240, mainSplit.width - 240)
 
             // A húzott szélesség mentése — késleltetve, hogy a húzás közbeni
             // pixelenkénti változás ne írja folyamatosan a QSettings-t.

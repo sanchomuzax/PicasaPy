@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A bal hasáb osztósávja az eredeti korlátait követi (#2329): legkisebb
+  szélessége 240 (eddig 160-ig lehetett húzni, 80 képponttal keskenyebbre,
+  mint amit az eredeti valaha megenged), a legnagyobb pedig az ablakhoz
+  kötött — széles ablakon a korábbi fix 600-nál tovább húzható. A mentett,
+  240-nél keskenyebb érték induláskor felemelkedik.
+
+### Javítva
+
 - A bal hasábban az azonos nevű mappák megkülönböztethetők: a sorra
   mutatva megjelenik a teljes elérési út (#2162). Eddig súgó csak a nem
   elérhető mappákon volt — épp ott hiányzott, ahol a névütközés zavar (a
