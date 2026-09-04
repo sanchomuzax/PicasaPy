@@ -224,8 +224,12 @@ ColumnLayout {
         id: textOutlineThicknessSlider
         objectName: "textOutlineThicknessSlider"
         Layout.fillWidth: true
-        from: 0; to: 8
-        stepSize: 1
+        // #2271: az EREDETI mértékegysége `[0, 1]` folytonos — a csúszka
+        // ugyanaz a `ytSliderHandler`, mint az átlátszatlanságé, és maga
+        // normalizál a sáv hosszához (a korpuszban látott 0,25 és 0,5 a
+        // negyed-, illetve félállás). Korábban 0–8 „képpont" volt, ezért
+        // az érték nem is volt közvetlenül a fájlba írható.
+        from: 0; to: 1
         value: panel.textOutlineThickness
         onMoved: panel.textOutlineThicknessEdited(value)
     }

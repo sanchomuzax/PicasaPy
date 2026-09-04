@@ -31,6 +31,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.269] – 2026-09-04
+
+### Javítva
+- A szöveg-eszköz körvonala végre megmarad mentés után, és a feliratok nem
+  mennek ki mind félkövérként. A körvonal-csúszka az eredeti Picasa
+  mértékegységét követi, és a 0,5 alatti értékek sem tűnnek el (#2271).
+
 ## [0.8.268] – 2026-09-04
 
 ### Javítva

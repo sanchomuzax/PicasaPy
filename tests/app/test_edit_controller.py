@@ -1344,19 +1344,19 @@ class TestTextStyle:
         controller.beginEdit("1", str(photo))
         controller.setTextFillColor("#ff0000")
         controller.setTextOutlineColor("#00ff00")
-        controller.setTextOutlineThickness(3)
+        controller.setTextOutlineThickness(0.375)   # #2271: [0,1]
         controller.setTextFillEnabled(False)
         controller.setTextOpacity(0.5)
         assert controller.textFillColor == "#ff0000"
         assert controller.textOutlineColor == "#00ff00"
-        assert controller.textOutlineThickness == 3
+        assert controller.textOutlineThickness == pytest.approx(0.375)
         assert controller.textFillEnabled is False
         assert controller.textOpacity == 0.5
 
     def test_reset_to_defaults_on_new_begin_edit(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.setTextFillColor("#ff0000")
-        controller.setTextOutlineThickness(5)
+        controller.setTextOutlineThickness(0.625)   # #2271: [0,1]
         controller.endEdit()
         controller.beginEdit("1", str(photo))
         assert controller.textFillColor == "#ffffff"
@@ -1373,10 +1373,13 @@ class TestTextStyle:
             controller.setTextOpacity(1.5)
 
     def test_csak_a_ket_szin_kerul_iniba(self, controller, photo):
-        """#371: a `text=` stílus-mezőjének KÉT színe van (kitöltés,
-        körvonal) — ezek mentődnek. A körvonal-vastagságnak, a kitöltés
-        ki/be-nek és az átlátszóságnak NINCS megfelelő mezője, ezért azok
-        munkamenet-szintűek maradnak."""
+        """#371 + #2271: a `text=` stílus-mezőjéből a két szín ÉS a
+        körvonalvastagság mentődik.
+
+        ⚠️ A #2271 megdöntötte a próba eredeti premisszáját: a
+        vastagságnak IGENIS van mezője (az 5.), a kutatói kör kimérte.
+        A kitöltés ki/be és az átlátszóság továbbra is munkamenet-szintű
+        marad — azoknak tényleg nincs hova mentődniük."""
         from picasapy.ini.text_overlay import parse_text
 
         controller.beginEdit("1", str(photo))
@@ -1385,15 +1388,19 @@ class TestTextStyle:
         controller.previewTextPlacement(0.5, 0.5)
         controller.setTextFillColor("#ff0000")
         controller.setTextOutlineColor("#00ff00")
-        controller.setTextOutlineThickness(2)
+        controller.setTextOutlineThickness(0.25)    # #2271: [0,1]
         controller.setTextFillEnabled(False)
         controller.setTextOpacity(0.4)
         controller.applyText()
         style = parse_text(_text_ertek(photo)).blocks[0].style
         assert style.fill_argb == 0xFFFF0000
         assert style.outline_argb == 0xFF00FF00
-        # a mentés utáni újranyitás a vastagságot/átlátszóságot alapértékre
-        # állítja: ezeknek nincs hova mentődniük
+        # #2271: a VASTAGSÁG most már kimegy a fájlba — mérjük is meg.
+        assert style.unknown_a == pytest.approx(0.25), (
+            "a körvonalvastagság nem került az 5. mezőbe"
+        )
+        # az átlátszóság viszont továbbra is munkamenet-szintű: annak
+        # tényleg nincs hova mentődnie
         controller.endEdit()
         controller.beginEdit("1", str(photo))
         assert controller.textOutlineThickness == 0
@@ -1406,7 +1413,7 @@ class TestTextStyle:
         controller.setTextDraft("A")
         controller.previewTextPlacement(0.5, 0.5)
         base = provider.requestImage("1", None, None)
-        controller.setTextOutlineThickness(4)
+        controller.setTextOutlineThickness(0.5)     # #2271: [0,1]
         controller.setTextOutlineColor("#00ff00")
         styled = provider.requestImage("1", None, None)
         assert base != styled
