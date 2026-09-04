@@ -803,8 +803,35 @@ Rectangle {
                                    ? Theme.panelSelectionText : Theme.ink
                         }
                     }
-                    ToolTip.visible: offline && folderRowMouse.containsMouse
-                    ToolTip.text: qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
+                    // #2162: TUDATOS ELTÉRÉS — a teljes útvonal a súgóban.
+                    //
+                    // Két KÜLÖNBÖZŐ mappa azonos alapnévvel a lapos listán
+                    // megkülönböztethetetlen volt. Nem elméleti gond: a
+                    // duplikátum-kereső minden forrásmappában saját
+                    // „Duplikátumok" alkönyvtárat hoz létre, tehát a
+                    // felhasználónál rendszeresen keletkezik több ilyen nevű
+                    // mappa — a tulajdonos ezt hibás duplikációnak látta
+                    // (#1909 → #1923; a mérés szerint duplikáció NINCS, a
+                    // `folders.path` egyedi).
+                    //
+                    // ⚠️ Az EREDETI ilyenkor SEMMIT nem mutat — három
+                    // független forrásból mérve (#2162):
+                    //   1. a szövegtár 3524 bejegyzése közt nincs mappasor-
+                    //      súgó és nincs útvonal-tipp;
+                    //   2. a 141 erőforrás-fa közül a mappalistát EGYETLEN
+                    //      helyen definiálja, a Mappakezelő PÁRBESZÉDBEN
+                    //      (`foldermgr/foldertree`) — a bal hasáb listájának
+                    //      nincs saját eleme;
+                    //   3. a panel-gyökér sem tartalmaz mappalista-elemet.
+                    //
+                    // Ezért ez NEM „javítás", hanem kimondott többlet. A
+                    // LÁTHATÓ felirat változatlan marad (csak az alapnév),
+                    // tehát a felület az eredetivel egyező; a különbség csak
+                    // rámutatáskor jelenik meg.
+                    ToolTip.visible: kind === "folder" && folderRowMouse.containsMouse
+                    ToolTip.text: offline
+                        ? path + "\n" + qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
+                        : path
                     MouseArea {
                         id: folderRowMouse
                         enabled: kind === "folder"
