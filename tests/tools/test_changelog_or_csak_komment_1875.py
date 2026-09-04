@@ -175,9 +175,13 @@ class TestQmlKomment:
             diff, "src/picasapy/app/qml/PicasaPy/Main.qml"
         )
 
-    def test_sablonsztring_eseten_a_SZIGOR_nyer(self) -> None:
-        """A JS-sablonsztring (backtick) több sorra nyúlhat, tehát egy
-        `//`-kezdetű sor lehet SZTRING belseje is."""
+    def test_nem_komment_sor_a_diffben_BUKTAT(self) -> None:
+        """Vegyes diff: a nem-komment sor már a `startswith` próbán elbukik.
+
+        (Korábban ezt a próbát »sablonsztring« címen a backtick-szabály is
+        megfogta volna — de nem az fogta meg, hanem ez. Ld. a #2306-os
+        regresszió-próbát alább.)
+        """
         diff = self._diff(
             "src/picasapy/app/qml/PicasaPy/Main.qml",
             "+        // magyarázat",
@@ -185,6 +189,25 @@ class TestQmlKomment:
         )
         assert not csak_komment_valtozas(
             diff, "src/picasapy/app/qml/PicasaPy/Main.qml"
+        )
+
+    def test_2306_backtick_a_KOMMENTBEN_nem_buktat(self) -> None:
+        """#2306: a projekt MINDEN kommentje backtickkel jelöli az
+        azonosítókat — ha a backtick önmagában szigorra váltana, az őr
+        gyakorlatilag az összes valódi QML-komment-változást megfogná.
+
+        Élesben meg is történt: a #2302 (tisztán komment-változás a
+        `PicasaMenuBar.qml`-ben) ezen bukott el az ubuntu-lábon. A #2042
+        próbái csak azért voltak zöldek, mert backtick NÉLKÜLI mintákat
+        használtak — a bővítés a valódi kódon sosem tudott működni.
+        """
+        diff = self._diff(
+            "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml",
+            "-        // (`eMenuEdit::ID_UNDO`). A felirat megnevezi a műveletet",
+            "+        // a `docs/specs/picasa-menusor-csoportok.md` szerint mérve",
+        )
+        assert csak_komment_valtozas(
+            diff, "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
         )
 
     def test_qml_fajlnal_a_kettoskereszt_NEM_komment(self) -> None:

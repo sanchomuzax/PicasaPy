@@ -79,12 +79,23 @@ def van_erdemi_valtozas(diff: str) -> bool:
 #: literál kezdete lehet), a `//` viszont az (#2042).
 _KOMMENT_JEL: dict[str, str] = {".qml": "//", ".js": "//", ".mjs": "//"}
 
-#: Bizonytalanná tevő jelek a `//`-nyelvekben. A `/* */` több sorra nyúlik,
-#: tehát egy megváltozott belső sor közönséges kódnak látszik; a backtickes
-#: sablonsztring pedig azt teszi lehetővé, hogy egy `//`-kezdetű sor
-#: valójában SZTRING belseje legyen. Bármelyik felbukkanása esetén a
-#: szigorú ág nyer — a téves riasztás bosszantó, a téves ÁTENGEDÉS néma.
-_BIZONYTALAN = ("/*", "*/", "`")
+#: Bizonytalanná tevő jelek a `//`-nyelvekben: a `/* */` több sorra nyúlik,
+#: tehát egy megváltozott belső sor közönséges kódnak látszik.
+#:
+#: ⛔ **A backtick KIKERÜLT innen (#2306).** A #2042-ben azért tettem be, mert
+#: sablonsztringben egy `//`-kezdetű sor lehet SZTRING belseje. A gyakorlatban
+#: viszont a projekt MINDEN kommentje backtickkel jelöli az azonosítókat
+#: (`\`Main.qml\``, `\`docs/specs/…\``), tehát a szabály nem szélső esetet
+#: fogott meg, hanem gyakorlatilag az ÖSSZES valódi QML-komment-változást — a
+#: #2302-es PR-t élesben el is buktatta. A tesztek csak azért voltak zöldek,
+#: mert backtick nélküli mintákat használtak.
+#:
+#: Amit elveszítünk: azt az esetet, amikor egy `//`-kezdetű sor egy KORÁBBAN
+#: nyitott sablonsztring belseje. Ez ugyanaz a maradék kockázat, ami a
+#: `#`-nyelveknél a háromszoros idézőjelnél is fennáll (#1875), és amit a
+#: `/*`/`*/` ág továbbra sem enged át. A vegyes diffet nem ez védi: egy
+#: nem-komment sor már a `startswith` próbán elbukik.
+_BIZONYTALAN = ("/*", "*/")
 
 
 def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
