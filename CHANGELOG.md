@@ -9,6 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A mappa dátumát a Picasa által olvasható alakban írjuk a
+  `.picasa.ini`-be (#2353). Eddig ISO-dátumot írtunk, amit a Picasa
+  számként olvas — a `2019-07-04`-ből nála 1905 lett. Aki ugyanazt a
+  mappát mindkét programban nyitja meg, ezentúl ugyanazt a dátumot látja.
+
+### Javítva
+
 - A lebegő értesítő celláján megjelenik a fogantyú (#2133) — eddig csak a
   forráskód kommentje sorolta fel, kirajzolva nem volt. Az eredetihez
   hasonlóan **nem** megfogható vezérlő, csak rajz.
