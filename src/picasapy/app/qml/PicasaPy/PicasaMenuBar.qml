@@ -787,7 +787,17 @@ MenuBar {
             // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
             // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
             checked: (bar.ctl && bar.ctl.showHidden !== undefined) ? bar.ctl.showHidden : false
-            onTriggered: controller.toggleShowHidden()
+            onTriggered: {
+                controller.toggleShowHidden()
+                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                // látszik, mert a művelet mindig átbillenti az állapotot —
+                // ez szerencse, nem szerkezet (ld. #1471).
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.showHidden !== undefined)
+                        ? bar.ctl.showHidden : false
+                })
+            }
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
@@ -799,7 +809,17 @@ MenuBar {
             text: qsTr("Dark Theme")
             checkable: true
             checked: (bar.ctl && bar.ctl.darkTheme !== undefined) ? bar.ctl.darkTheme : false
-            onTriggered: controller.toggleDarkTheme()
+            onTriggered: {
+                controller.toggleDarkTheme()
+                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                // látszik, mert a művelet mindig átbillenti az állapotot —
+                // ez szerencse, nem szerkezet (ld. #1471).
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.darkTheme !== undefined)
+                        ? bar.ctl.darkTheme : false
+                })
+            }
         }
         // #1774 (mérve): a Megjelenítési mód UGYANEBBEN a csoportban van,
         // mint a Színkezelés használata — nincs közte elválasztó.
@@ -1186,6 +1206,13 @@ MenuBar {
                 checked: folderViewMenu.rendezesForditott
                 onTriggered: {
                     if (controller) controller.togglePaneSortReverse()
+                    // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                    // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                    // látszik, mert a művelet mindig átbillenti az állapotot —
+                    // ez szerencse, nem szerkezet (ld. #1471).
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.rendezesForditott
+                    })
                 }
             }
             MenuSeparator {}
@@ -1328,7 +1355,17 @@ MenuBar {
                 checkable: true
                 checked: (bar.ctl && bar.ctl.folderSortReverse !== undefined)
                     ? bar.ctl.folderSortReverse : false
-                onTriggered: controller.toggleFolderSortReverse()
+                onTriggered: {
+                    controller.toggleFolderSortReverse()
+                    // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                    // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                    // látszik, mert a művelet mindig átbillenti az állapotot —
+                    // ez szerencse, nem szerkezet (ld. #1471).
+                    checked = Qt.binding(function () {
+                        return (bar.ctl && bar.ctl.folderSortReverse !== undefined)
+                            ? bar.ctl.folderSortReverse : false
+                    })
+                }
             }
         }
         MenuSeparator {}
@@ -1730,7 +1767,17 @@ MenuBar {
             checkable: true
             checked: (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
                 ? bar.ctl.perfMonitorEnabled : false
-            onTriggered: controller.togglePerfMonitor()
+            onTriggered: {
+                controller.togglePerfMonitor()
+                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                // látszik, mert a művelet mindig átbillenti az állapotot —
+                // ez szerencse, nem szerkezet (ld. #1471).
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.perfMonitorEnabled !== undefined)
+                        ? bar.ctl.perfMonitorEnabled : false
+                })
+            }
         }
         // #1654: TARTÓS tesztüzem. A Teljesítmény-monitorral szemben ez
         // TÚLÉLI a kilépést, és a KÖVETKEZŐ indulást naplózza az első
@@ -1746,7 +1793,17 @@ MenuBar {
             checkable: true
             checked: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
                 ? bar.ctl.tesztuzemEnabled : false
-            onTriggered: bar.ctl.toggleTesztuzem()
+            onTriggered: {
+                bar.ctl.toggleTesztuzem()
+                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
+                // látszik, mert a művelet mindig átbillenti az állapotot —
+                // ez szerencse, nem szerkezet (ld. #1471).
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
+                        ? bar.ctl.tesztuzemEnabled : false
+                })
+            }
         }
         // Egykattintásos átadás — CSAK tesztüzemben látszik. A `height`
         // nullázása azért kell, mert a rejtett MenuItem különben üres
