@@ -184,23 +184,41 @@ class TestUtvonalFeloldas:
     diffelt.
     """
 
-    def test_tildes_cd_a_home_ala_old_fel(self, tmp_path, monkeypatch):
+    @pytest.fixture
+    def home(self, tmp_path, monkeypatch):
+        """Átirányított home-könyvtár — MINDKÉT platformon (#2284).
+
+        Windowson az `os.path.expanduser` a `HOME`-ot **nem nézi**: a
+        `ntpath.expanduser` sorrendje `USERPROFILE`, majd
+        `HOMEDRIVE` + `HOMEPATH`. Csak a `HOME` átállításával a valódi
+        futtatói home jött vissza, és a főág CI-je két körön át piros volt.
+        Ugyanez a csapda máshol is meg van jegyezve:
+        `tests/app/test_initial_scan.py`, `tests/scanner/test_name_filters.py`.
+        """
         monkeypatch.setenv("HOME", str(tmp_path))
-        cel = tmp_path / "Documents" / "masik-repo"
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))
+        monkeypatch.delenv("HOMEDRIVE", raising=False)
+        monkeypatch.delenv("HOMEPATH", raising=False)
+        return tmp_path
+
+    def test_tildes_cd_a_home_ala_old_fel(self, home):
+        cel = home / "Documents" / "masik-repo"
         cel.mkdir(parents=True)
         cmd = "cd ~/Documents/masik-repo && git push origin main"
-        assert kapu._munkakonyvtar(cmd, "/tmp") == str(cel)
+        # `pathlib`-bel hasonlítunk: az `expanduser` a tildét a home-ra
+        # cseréli, a maradékot viszont VÁLTOZATLANUL hagyja — Windowson
+        # ezért kevert elválasztójú út jön ki (`C:\...\tmp/Documents/...`),
+        # ami ugyanaz a könyvtár, csak nem ugyanaz a sztring.
+        assert pathlib.Path(kapu._munkakonyvtar(cmd, "/tmp")) == cel
 
-    def test_puszta_tilde_is_feloldodik(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HOME", str(tmp_path))
-        assert kapu._munkakonyvtar("cd ~ && git push", "/tmp") == str(tmp_path)
+    def test_puszta_tilde_is_feloldodik(self, home):
+        assert pathlib.Path(kapu._munkakonyvtar("cd ~ && git push", "/tmp")) == home
 
-    def test_idezojeles_tildes_cd(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HOME", str(tmp_path))
-        cel = tmp_path / "a b"
+    def test_idezojeles_tildes_cd(self, home):
+        cel = home / "a b"
         cel.mkdir()
         cmd = 'cd "~/a b" && git push origin main'
-        assert kapu._munkakonyvtar(cmd, "/tmp") == str(cel)
+        assert pathlib.Path(kapu._munkakonyvtar(cmd, "/tmp")) == cel
 
     def test_ujsor_utani_cd_is_szamit(self, tmp_path):
         """A `_CD` mintában a `^` nem MULTILINE, ezért egy több soros
