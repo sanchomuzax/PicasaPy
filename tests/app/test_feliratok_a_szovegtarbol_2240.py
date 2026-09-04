@@ -80,14 +80,26 @@ SZOVEGTAR: dict[str, str] = {
 
 #: Ahol SZÁNDÉKOSAN eltérünk — kulcs -> indoklás. Üres szótár = nincs
 #: kivétel; új tétel csak kimondott okkal kerülhet ide.
+#: #2270: a „Régi effektek" fül (`render/legacy_effects.py`) öt felirata
+#: azóta a szövegtárat követi; hat viszont SZÁNDÉKOSAN tér el, mert
+#: átvételük után a fülön azonos feliratú sorok állnának egymás alatt.
+#:
+#: A döntés mérésen áll (#2148): az eredetiben ezek a szűrők EGY LISTÁBAN
+#: SEM szerepelnek — a 21-ből három érhető el a felületről, azok is külön
+#: helyeken. Az eredetinek sosem kellett megkülönböztetnie őket; a mi
+#: fülünk viszont mind a húszat egymás alá teszi (#571).
+_TOLDAT_INDOK = (
+    "a Régi effektek fülön azonos feliratú sorokat adna; az eredetiben "
+    "ezek a szűrők egy listában sem szerepelnek (#2148, #2270)"
+)
+
 KIVETELEK: dict[str, str] = {
-    # A „Régi effektek" fül katalógusa (`render/legacy_effects.py`) külön
-    # modul és külön felület; ott az eredeti HÁROM párt/hármast azonos
-    # felirattal hagy (`autobacklight`/`fill`, `focalpixelate`/
-    # `picnikfocalpixelate`, `triple`/`triple2`/`triple3`), ami egy
-    # LISTÁBAN megkülönböztethetetlen tételeket adna. Az ottani feliratok
-    # átvétele önálló döntés, önálló jeggyel — ez az őr ezért csak a
-    # szerkesztő-panel (`EditorPanel`) feliratait méri.
+    "autobacklight": _TOLDAT_INDOK,   # az eredetiben „Fill Light", mint a `fill`
+    "fill": _TOLDAT_INDOK,            # ua.
+    "triple": _TOLDAT_INDOK,          # az eredetiben „Lighting Fixes", mint a v2/v3
+    "triple2": _TOLDAT_INDOK,
+    "triple3": _TOLDAT_INDOK,
+    "focalpixelate": _TOLDAT_INDOK,   # a `picnikfocalpixelate`-tel ütközne
 }
 
 
