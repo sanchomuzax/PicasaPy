@@ -12,7 +12,13 @@ import QtQuick
 //   basedecrect       226,0 →  21 × 45     jobb oldali vezérlősáv
 //   close             231,4 →  11 × 11     bezárás (jobb FELSŐ)
 //   gripper          233,19 →   7 ×  7     fogantyú (jobb KÖZÉP)
-//   collapse         231,30 →  11 × 11     összecsukás (jobb ALSÓ)
+//   collapse         231,30 →  11 × 11     összecsukás — NEM RAJZOLJUK
+//
+// A `collapse` réteg SZÁNDÉKOSAN hiányzik (#2035/#2133): az eredetiben
+// betöltődik és felszabadul, de SOSEM rajzolódik ki — a `popup+0x13c`
+// slotra a 0x00654800–0x0065AC00 tartományban csak a konstruktor
+// (0x00657046) és a destruktor (0x006572d3) hivatkozik. Aki megépíti,
+// olyan vezérlőt ad a felületre, ami az eredetiben nincs.
 //
 // ## Amiért a felirat NEM tördel
 //
@@ -213,6 +219,46 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: cella.closed()
+            }
+        }
+
+        //: `gripper` — 233,19 → 7 × 7 a CELLA koordinátáiban, azaz 7,19 a
+        //: sávon belül (#2133).
+        //:
+        //: ⚠️ RAJZ, NEM VEZÉRLŐ. A #2035 kimérte, hogy az eredetiben a
+        //: fogantyú kirajzolódik, de nem fogható meg: az ablak
+        //: üzenetkezelője nem kezel `WM_MOUSEMOVE`-ot és `WM_LBUTTONUP`-ot,
+        //: a `WM_SETCURSOR` pedig egyetlen kurzort tölt (`IDC_ARROW`).
+        //: Ezért NINCS `MouseArea` és NINCS `cursorShape` — aki idetesz
+        //: egyet, más programot ír.
+        //:
+        //: A GEOMETRIA mért (a `respack.yt` rétegfejlécéből); a MINTÁZAT
+        //: nem: hogy a hét képpont pontosan hogyan van kitöltve, a
+        //: rétegképből nem olvastuk ki. A három vonás a szokásos
+        //: fogantyú-jel, tudatos közelítés.
+        Item {
+            objectName: "notifierCellGripper" + cella.cellIndex
+            x: 7
+            y: 19
+            width: 7
+            height: 7
+
+            Canvas {
+                anchors.fill: parent
+                onPaint: {
+                    const ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.strokeStyle = Theme.ink
+                    ctx.globalAlpha = 0.55
+                    ctx.lineWidth = 1
+                    for (let i = 0; i < 3; ++i) {
+                        const y = 1.5 + i * 2
+                        ctx.beginPath()
+                        ctx.moveTo(0.5, y)
+                        ctx.lineTo(width - 0.5, y)
+                        ctx.stroke()
+                    }
+                }
             }
         }
     }
