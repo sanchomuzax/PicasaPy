@@ -72,7 +72,7 @@ jelvénye — és a jelvény **két különböző felvételen**, eltérő szerke
 
 ⭐ **2026-09-03 — a lap 7.1 pontja LEZÁRVA: megvan a menün kívüli billentyűk kódba írt elágazása (#442).** A 7.1 azt írta, hogy „nem fejtettük vissza, hol áll össze a (billentyű, módosító) → cmd leképezés a menün kívüli billentyűkre… statikus tömböt kerestünk — nincs a fájlban, tehát kódba írt elágazás". **A feltevés helyes volt, és a kód meg is van:** a könyvtárnézet kezelője a **`0x005e60d0`**, egy ugrótáblás `switch` — `movsx edi, word ptr [esi+8]` (VK) → `lea eax,[edi−0xd]` → `cmp eax,0x6b` → `movzx ecx, byte ptr [eax + 0x5e66a4]` (**indextábla, 108 bájt**) → `jmp dword ptr [ecx*4 + 0x5e6614]` (**ugrótábla, 36 bejegyzés**). Mindkét tábla kiolvasva ⇒ **34 kezelt billentyű**, ebből **8** közvetlen vezérlő-kattintás (`0x009cd8a0(elemnév)` → vtable `+0x78`): **`Ctrl+0` → `thumbui/toggle_right_drawer`** (a jobb fiók), **`Ctrl+9` → `editpanel/toggle_left_drawer`** (a bal fiók), **`Ctrl+F` → `searchcontainer/searchbutton`**, `Ctrl+1/2/3` → `smallthumbs`/`largethumbs`/`fullview`, `Ctrl+N` → `newalbum`, `Ctrl+F6/F7/F8` → `dupesearch`/`loadsim`/`clearsim`. A `Ctrl` kötelező (`0x005e6178`); a `Shift`/`Alt` a `0x005c5f90` szerkezetének `+1`/`+2` mezője — az azonosítás **két független egyezésből** (a lap 3.3 táblája: `Ctrl+3` = szerkesztési nézet, `Ctrl+R`/`Ctrl+Shift+R` = forgatás). ⭐ **Ezzel a 7.2 pont tizenkét ⬜ rekeszéből HÉT megoldódott** (`Ctrl+K` — ugyanaz az ág, mint a `Ctrl+T`; `Ctrl+Shift+B` = `bw`; `Ctrl+Shift+E` = `enhance`; `Ctrl+F`; `Ctrl+Shift+H`; `Ctrl+Shift+V`; és **`Ctrl+W`: NINCS ág**), a maradék öt (`F11`, `/`, `,`, `.`, 47.) pedig **a kezelő VK-tartományán kívül** esik. **Negatív eredmény, mérve:** `Ctrl+7`, `Ctrl+J`, `Ctrl+Q`, `Ctrl+W`, `Ctrl+Z`, `Ctrl+F1`…`F5` és a `0x0E`–`0x2F` tartomány a kihagyó ágra mutat — ezekre ne kössünk semmit. **Nálunk (mérve):** 27 `Shortcut` elem, 24 kombináció; a 34 ágból **20 hiányzik**. Jegyek: **#442** (lezárva), **#2163** (a húsz bekötése), **#2164** (a szerkesztő/diavetítés/párbeszédek kezelői).
 
-### [filterdesc-registry.md](filterdesc-registry.md) — 1 nyitott kérdés (a #2125)
+### [filterdesc-registry.md](filterdesc-registry.md) — 1 nyitott kérdés (a #2125; a `QuantizePalette` `Depth` szállított ÉRTÉKE is ugyanabból a fájlból derül ki)
 
 ⭐ **2026-09-03 — a Glow maszképítője (`0x00bcc2e0`) TELJESEN kiolvasva, és a lépcsős képlet ROSSZ paraméterhez volt kötve (#2102).** A két 255-re vágott egész a **két blur-sugár**: `r_x = min(255, trunc(ceil((xblur−1)·0,5)·quality + 1))` és ugyanez `yblur`-rel — a két blokk azért néz ki egyformának, mert az elsőt egy `push ecx` (`0x00bcc3d4`) előzi meg, így ott az `[esp+0x88]` a bázis `[esp+0x84]`, azaz az `xblur`. ⛔ **HELYESBÍTÉS:** az előző kör a `ceil((s−1)/2)` képletet a **`strength`**-hez kötötte, és ebből azt jósolta, hogy a tag minden Glow-hívásra állandó 1 — **mindkettő megdőlt**. A `strength` valójában a `0x00bcbd90`-ben lép be **8.8-as fixpontos szorzóként**: `trunc(strength × 256)` (`0x00cf39d8` = 256,0), négyszer az `mm7`-be, mellette a `0x0100` (= 1,0) az `xmm7`-be és a `0x0080` (= 0,5 kerekítés) az `mm6`-ba. **A vágások mind kiolvasva** (`0x00bc52c0` + a hívó törzse): `glowalpha` **[0,1]** → bájt `trunc(a×255)`; `xblur`, `yblur` **[0, 253]** (`0x00cf0b4c` = 253,0f); `strength` **[0, 255]**; `quality` egész **[1, 15]** (alap 3). **A blur átváltója (`0x00bb89b0`) is teljesen kiolvasva** — zárt alakja `k = (p<255) ? 1 : 255/p`, `X = ((100+d) − d·k)/p`, `return (X>3) ? k : k·X/3` —, és **a gyakorlatban azonosság: minden filterdesc-beli Glow-értékre pontosan 1,0**, a képmérettől függetlenül. **Nálunk (mérve):** a `glimmer_ops.py` a nyers blurt szigmaként használja (`:575`) és a `strength`-et **[0,1]-re vágott** keverési súlyként (`:578`) — négy pontos eltérés. ⚠️ **A hatás NINCS mérve**, ezért a megvalósítási jegy MÉRÉSSEL kezdődik: **#2159**. Jegyek: **#2102** (lezárva), **#2159**.
 
@@ -1097,11 +1097,14 @@ olvasó a görbék ELŐTT beolvassa az `ExposureAdjustmentStops` attribútumot a
 ⛔ Az alkalmazó (`0x00bb9e00`) a keresett `mov r32, [reg+disp8]` alakkal
 **nem** hivatkozik a négy tagra (438 bájton nulla) — de ebből **nem
 következik**, hogy nem használja; más címzési alak vagy paraméterátadás
-nincs kizárva. ⛔ A `Depth` kérdése (#2238/2) **NYITVA**: a `0x00bb5b60`-ban
-a 3-3-2 paletta öt keresett bitmaszk-alakja **nulla** találatot ad (a
-negatívum csak ezekre az alakokra áll); a függvény egy **4268 bájtos**
-helyi puffert szondáz (`mov eax, 0x10ac`), aminek a jelentése nincs meg.
-Jegy: **#2238**.
+nincs kizárva. ✅ **A `Depth` kérdése (#2238/2) 2026-09-04-én LEZÁRVA** (#2231): az akkori
+öt bitmaszk-keresés **helyes volt, de rossz helyen** — a maszkok a
+`0x00bb5e04` és `0x00bb5e1c` körül állnak, `cl`/`dl` regiszterrel, a `Depth`
+pedig **nem is ebben a függvényben** dől el, hanem az oktree
+csomópont-beszúrójában (`0x00bcb8e6`: `cmp [csomópont+0x10], 1` · `jbe` ⇒
+csak `Depth > 1` esetén hasít; `0x00bcb9a6`: a gyerek `Depth − 1`-et örököl).
+A **4268 bájtos** puffer is megvan: **három 1024 bájtos, 256 elemű tábla**
+a `0xb8`, `0x4b8` és `0x8b8` eltoláson. Jegy: **#2231**.
 
 ⭐ **2026-09-04 — a `rainbow` ALT-os ágának kapcsolója LEZÁRVA: a
 `0x00d67849` = „a Picasa az ELŐTÉRBEN van" (`filterdesc-registry.md`,
