@@ -2361,11 +2361,11 @@ helyre, a `"w"` nyitásra, a hét oszlop forrására, a `badfiles.txt`
 létére, a 4/5 `Type`-értékre, a névfeloldás szabályára, a
 `FUN_004e2990` szülőlekérdezőre és a `DirscanRegression` hatására;
 **erős** (nem megerősített) a `Type = 5` = „hibás könyvtár" olvasat;
-a `Type = 25` JELENTÉSE **NINCS MEG**.*
+a `Type = 25` **negatívan lezárva** (2026-09-05): nem fájlformátum-típus.*
 
 #### Nyitott kérdések mérlege (16.2/b)
 
-`0 nyílt · 7 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 *(2026-09-05: a két blokkolt tételből az egyik teljesen lezárult, a másik
 háromnegyedéig — csak a `Type = 25` jelentése maradt.)*
@@ -2380,7 +2380,7 @@ háromnegyedéig — csak a `Type = 25` jelentése maradt.)*
 | mit jelent a `Type` **1** | ✅ **LEZÁRVA** — könyvtár (`pmp-database.md` 8.1, két katalóguson mérve; a tétel itt **elavultan** állt blokkoltként) |
 | mit jelent a `Type` **1001** | ✅ **LEZÁRVA** — arcsablon-bejegyzés (ua., halmaz-azonosság a `facetemplatesV2_index.db`-vel, 412 = 412); a `+26` mezője **nem** szülőindex, és az eredeti nem is olvassa annak (`FUN_004e2990`) |
 | a névfeloldás pontos szabálya | ✅ **LEZÁRVA** — `valid == 0` vagy `Type ∈ {1, 5, 25, 1001}` ⇒ a név a teljes út; különben szülő + név; hibás szülőnél tartalék sztring, **nem kivétel** (`0x004f27f3`–`0x004f2887`) |
-| **mit jelent a `Type` 25 (`0x19`)** | **BLOKKOLT** — a szerepe három ponton körülhatárolt (fent), a jelentése nincs meg. Megnézve: `mov reg,25`, `mov [reg+disp8],25`, `cmp reg,25` teljes `.text`-pásztázás ⇒ a bejáró tartományában **nincs író**; sztring nincs; a tulajdonos két katalógusában **0 előfordulás**. **Megszerzés:** olyan katalógus, amelyben előfordul, vagy a `0x004ea0c0` / `0x004efbb0` menet dekompilációja. |
+| **mit jelent a `Type` 25 (`0x19`)** | ✅ **LEZÁRVA (2026-09-05), NEGATÍVAN** — a `típus` a fájltípus-tábla 30 ágú kapcsolójából jön (`0x004fadb0`, tábla `0x004fb948`), a tárolt érték az **ágindex + 2**; a 25 a **23. ág**, az pedig a **közös alapeset** (`0x004fb93f`), ami **egyetlen kiterjesztést sem regisztrál** ⇒ **nem fájlformátum-típus**, hanem szerkezeti — egybevág a `{1, 5, 25, 1001}` és `{1, 25, 26}` halmazokkal. A pontos szerepe nincs megnevezve, de a formátum-irány kizárva. Lap: `pmp-database.md`, „A `típus` FORRÁSA"; terméki lelet: **#2415**. |
 | **mit csinál a `DirscanRegression`** | ✅ **LEZÁRVA** — a bejárás végén 4. módú CSV + **`ExitProcess`** (`0x004e9d37`–`0x004e9d42`); egyszer olvasott, gyorsítótárazott kapcsoló; a függvény időt is mér. Fejlesztői regressziós futtató, a termékre nincs hatása. |
 
 ### 16.3 Amit ez a #1275-re kimond

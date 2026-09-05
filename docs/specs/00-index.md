@@ -415,7 +415,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 
 ### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 1 BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül; 2026-09-05: kettőből egy lezárult, a másik háromnegyedéig)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — nincs BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül; 2026-09-05: mindkettő lezárult, a `Type = 25` negatívan)
 
 ⭐ **2026-09-02 (16.2/b) — a könyvtárbejáró hibakereső kiíratása TELJESEN
 feltárva, és egy eddig sehol nem dokumentált MÁSODIK kimenettel.** A
@@ -456,15 +456,18 @@ háromnegyedéig; dekompiláció nélkül, helyi diszasszemblátumból.**
 - ✅ **ÚJ (erős): a `Type = 5` „HIBÁS könyvtár"**, nem „2. fajta" — a
   `badfiles.txt`-írója feltétel nélkül listázza (`0x004f2aaa`).
 
-1. **Mit jelent a `Type` 25 (`0x19`)?** A szerepe három ponton
-   körülhatárolt (a teljes-út halmaz tagja; a „piszkosra állítás"
-   menetből a 26-tal együtt kivéve, `0x004efbdc`; az `{5, 25}` páros
-   kihagy egy összesítést, `0x004ea0e5`), de a **jelentése nincs meg**.
-   Megnézve: `mov reg,25` / `mov [reg+disp8],25` / `cmp reg,25` teljes
-   `.text`-pásztázás ⇒ a bejáró tartományában **nincs író**; sztring
-   nincs; a tulajdonos két katalógusában **0 előfordulás**.
-   **Megszerzés:** olyan katalógus, amelyben előfordul, **vagy** a
-   `0x004ea0c0` / `0x004efbb0` menet célzott dekompilációja.
+⭐ **2026-09-05 (122. kör) — a `Type = 25` NEGATÍVAN eldőlt.** A `típus`
+mező forrása a **fájltípus-tábla 30 ágú kapcsolója** (`0x004fadb0`, tábla
+`0x004fb948`); a tárolt érték az **ágindex + 2** (tíz független ponton
+igazolva a `pmp-database.md` 8.1 mért táblájával). A **25-ös tárolt érték a
+23. ághoz** tartozik, az pedig a **közös alapeset** (`0x004fb93f`), amely
+**egyetlen kiterjesztést sem regisztrál**. ⇒ **A 25 nem
+fájlformátum-típus** — egybevág azzal, hogy a bejáró a `{1, 5, 25, 1001}`
+és a `{1, 25, 26}` **szerkezeti** halmazokban használja. A pontos szerepe
+továbbra sincs megnevezve, de a formátum-irány **kizárva**. Részletek és a
+teljes kiterjesztés↔típus tábla: `pmp-database.md`, „A `típus` FORRÁSA".
+⛔ Terméki lelet: a `.jpe`, `.mpeg` és `.ty` **hiányzik** a beolvasó
+szűrőnkből → **#2415**.
 
 ✅ **2026-08-24 — a két megmaradt „erős, nem megerősített" állítás MEGERŐSÍTVE:**
 
