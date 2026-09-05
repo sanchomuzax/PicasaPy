@@ -55,6 +55,18 @@ import pytest
 from support.jpeg_factory import make_jpeg
 
 
+def _fix_varakozas(qt_app, masodperc: float) -> None:
+    """SZÁNDÉKOS, feltétel nélküli várakozás — nincs mire állítani.
+
+    #2408: a `_var(qt_app, lambda: False, N)` alak ugyanezt csinálta, de
+    várakozásnak látszott. A megkülönböztetés azért kell, mert a csupasz
+    FELTÉTELES várakozásokat `assert`-elni kell (időtúllépéskor különben
+    egy későbbi állítás bukik félrevezetően), a fix késleltetéseket
+    viszont nem lehet — a feltételük szándékosan sosem teljesül.
+    """
+    _var(qt_app, lambda: False, masodperc)
+
+
 def _var(qt_app, feltetel, masodperc: float = 20.0) -> bool:
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
@@ -148,7 +160,10 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool, lekerdezes: bool
         ctl._watcher = None
     if not lekerdezes and ctl._folder_poll_timer is not None:
         ctl._folder_poll_timer.stop()
-    _var(qt_app, lambda: not ctl._sync_running)
+    assert _var(qt_app, lambda: not ctl._sync_running), (
+        "#2408: az induló szinkron nem állt le időben — a fixture hiányos "
+        "állapotot adna át, és a bukás egy KÉSŐBBI állításon jelentkezne"
+    )
     fileops = FileOpsController()
     app_module.wire_fileops(fileops, ctl)
     return ctl, fileops
@@ -264,7 +279,7 @@ class TestAGyokerKovetese:
         fileops.moveFolder(str(library), str(tmp_path / "mashol"))
 
         assert _var(qt_app, lambda: bool(kesz), 15.0), "nem futott célzott szinkron"
-        _var(qt_app, lambda: False, 0.5)
+        _fix_varakozas(qt_app, 0.5)
         mappak, fotok = _index_allapot(tmp_path / "index.db")
         assert mappak == (
             str(uj),
@@ -331,7 +346,7 @@ class TestProdukciosIdozitokkel:
         fileops.moveFolder(str(library), str(tmp_path / "mashol"))
 
         # két teljes lekérdezési kör (2 × FOLDER_POLL_MS) + ráhagyás
-        _var(qt_app, lambda: False, 25.0)
+        _fix_varakozas(qt_app, 25.0)
         mappak, fotok = _index_allapot(tmp_path / "index.db")
         assert fotok == 3, (
             f"a lekérdezési kör kiürítette az indexet (fotók: {fotok}) — a "
@@ -371,13 +386,17 @@ class TestHaMasMappaAllARegiHelyen:
             watched_file=tmp_path / "WatchedFolders.txt",
         )
         ctl.start()
-        _var(qt_app, lambda: not ctl._sync_running)
+        assert _var(qt_app, lambda: not ctl._sync_running), (
+            "#2408: a szinkron nem állt le időben"
+        )
         if ctl._watcher is not None:
             ctl._watcher.stop()
             ctl._watcher = None
         if ctl._folder_poll_timer is not None:
             ctl._folder_poll_timer.stop()
-        _var(qt_app, lambda: not ctl._sync_running)
+        assert _var(qt_app, lambda: not ctl._sync_running), (
+            "#2408: a szinkron nem állt le időben"
+        )
         fileops = FileOpsController()
         # ⚠️ A SORREND a lényeg: ez a feliratkozó a `wire_fileops` ELŐTT
         # kötődik be, tehát ELŐBB fut — mire a vezérlő megkapja a jelzést, a
@@ -394,7 +413,7 @@ class TestHaMasMappaAllARegiHelyen:
 
         fileops.moveFolder(str(library), str(tmp_path / "mashol"))
 
-        _var(qt_app, lambda: False, 1.0)
+        _fix_varakozas(qt_app, 1.0)
         assert list(ctl.watchedFolders) == [str(library)], (
             "a régi néven ÁLLÓ, létező mappa mellett is átírtuk a horgonyt"
         )
@@ -412,7 +431,7 @@ class TestHaMasMappaAllARegiHelyen:
         fileops.moveFolder(str(library), str(tmp_path / "mashol"))
 
         assert _var(qt_app, lambda: bool(kesz), 15.0)
-        _var(qt_app, lambda: False, 0.5)
+        _fix_varakozas(qt_app, 0.5)
         mappak, fotok = _index_allapot(tmp_path / "index.db")
         assert str(library / "album") in mappak, (
             "a könyvtár némán kiürült, pedig nem tudtuk követni a gyökeret"
