@@ -3178,6 +3178,56 @@ időzítése.
 gombokat nem; a „Továbbiak…" belépési pontja külön lapon van
 ([`getmore-klipgyujto-mod.md`](getmore-klipgyujto-mod.md) 1.1).
 
+### 2.11 ⭐ A `makemoviepanel` TELJES ELEMLELTÁRA — és a VALÓDI hiánylista (2026-09-06)
+
+A UI-lefedettségi rangsor a `makemoviepanel`-t **49 feltáratlan elemmel** hozza
+az első helyre. Ez a szakasz **megméri**, mennyi ebből valódi hiány.
+
+**A mérés:** a `makemoviepanel.tre` **102** elemnevet deklarál
+(`^makemoviepanel/<név>:` sorok, egyedi). Ezek közül a `docs/specs/*.md`
+**60**-at említ **teljes néven**; **42**-t nem.
+
+#### A 42 nem említett elem — osztályozva a `.tre` szülőviszonyából
+
+| csoport | darab | elemek | építendő? |
+|---|---:|---|---|
+| **ikon-gyerek** (egy már dokumentált gomb ikonja/felirata) | 12 | `add_icon` (`addtomovie`), `back_icon` (`addclips`), `bold_icon` (`bold`), `delete_icon` (`deleteclips`), `export_youtube_icon` (`export_youtube`), `inserticon` (`insert_slide`), `italic_icon` (`italic`), `outline_icon` (`outline`), `removeicon` (`remove_slide`), `bgcolorpicker_bevel` (`backcolor`), `txcolorpicker_bevel`, `show_captions_label` (`show_captions`) | **nem** — a gazdájuk része |
+| **konténer / vágókeret / alaplap** | 15 | `basepanel` (root), `insetleft`, `filmbase`, `filmclip`, `filmcontainer`, `filmoverlaycontainer`, `infotext_clip`, `previewpanel`, `moviebk`, `movieparent_tracker`, `video_control_container`, `audioclip`, `tabs`, `tabpanel1`, `tabpanel3` | **nem** — szerkezet |
+| **csúszka-tok** (a csúszka maga dokumentált) | 4 | `burstslider_container`, `durationslider_container`, `lengthslider_container`, `transitionslider_container` | **nem** |
+| **elválasztó / osztóvonal** | 4 | `sepA`, `sepB`, `vdiv1`, `vdiv2` | **nem** — dísz |
+| **kezdetben rejtett** (`m_hidden`) | 4 | `backcolor`, `movieparent`, `previewimage`, (+ a `tabpanel1`/`tabpanel3` a fülváltás miatt) | **feltételes** |
+| **VALÓDI, eddig nem dokumentált** | **3** | **`albumname`**, **`indicator`**, **`audiostrip`** | **igen** |
+
+⇒ **A panelre a tényleges hiány három elem, nem 49.** A rangsor száma a
+szerkezeti elemeket is beszámolja.
+
+#### A három valódi elem — MŰKÖDÉS
+
+| elem | mit tudunk | bizonyíték |
+|---|---|---|
+| **`albumname`** | felirat a **1. fülön** (`m_displayfont12`, `XConstraint 0, 0, 35`, `Property textwrap 0`); a szövegét **két** függvény állítja | sztring `0x00c9c9e8`; hivatkozók `0x0061a6c0` (429 b), `0x0061bbd0` (614 b) |
+| **`indicator`** | a **filmszalag lejátszásjelzője**: a `filmstrip` gyereke, vízszintesen középre kényszerítve (`m_centerX`, `YConstraint 0, 0, 0`); a húzás-/találatkezelő kiszámolja a **téglalapja közepét** (`(x0+x1)/2`, `(y0+y1)/2`) | sztring `0x00c9c52c`; a panelépítő `0x00613b50` és a kezelő **`FUN_006214e0`** (2020 b): elemkeresés `0x0062166b`, középpont `0x00621684`–`0x006216c1` |
+| **`audiostrip`** | a filmszalaggal párhuzamos **hangsáv-csík** (`audioclip` → `filmcontainer`, `m_scaleXY`) | csak a `.tre` |
+
+#### ⛔ NEGATÍV LELET: az `audiostrip` és az `audioclip` nevére NINCS kódhivatkozás
+
+A `string_xrefs` szerint a `makemoviepanel/audiostrip` és a
+`makemoviepanel/audioclip` **egyetlen** függvényből sem kerül elő névvel —
+szemben a `filmstrip`-pel (`0x00613b50`), az `indicator`-ral
+(`0x00613b50`, `0x006214e0`), a `previewimage`-dzsel (`0x00618050`,
+`0x0061ca80`), a `backcolor`-ral (`0x00621240`) és a `show_captions`-szel
+(`0x00618050`, `0x0061df10`).
+
+⇒ **A hangsáv-csíkot a kód sosem kéri le a nevén.** Vagy a szülőjén
+keresztül vezérli, vagy **maradvány** a fájlban. Ez nem azt jelenti, hogy a
+felületen nincs ott — csak azt, hogy **nevesített kezelője nincs**.
+
+> **Bizonyítottság:** **megerősített** a 102-es elemszám, a 60/42-es
+> megoszlás, az osztályozás (a `.tre` szülőviszonyából) és a sztring-xref
+> jelenléte/hiánya; **erős** az `indicator` „lejátszásjelző" olvasata (a
+> geometriai kényszer + a középpontszámítás együtt, futásidejű
+> megerősítés nélkül).
+
 ### 2.10 A `titledialog` — a szöveges dia szerkesztője (2026-09-01)
 
 *A 2.9 megtalálta az `insert_slide` névparancsot („Add a new text
