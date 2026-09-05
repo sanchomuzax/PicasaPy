@@ -376,5 +376,5 @@ def test_a_bezaras_gomb_ugyanazt_teszi_mint_az_esc(qt_app):
     # #1463: itt korábban fix `QTest.qWait(50)` állt — a teszt arra fogadott,
     # hogy 50 ms alatt körbeér a kattintás. A VALÓDI feltétel az, ami az
     # alábbi állítás tárgya is: a gomb elsütötte a `closeCollage()`-t.
-    _var(lambda: stub.close_calls == 1)
+    assert _var(lambda: stub.close_calls == 1), "#2408: a bezaras-hivas nem erkezett meg idoben"
     assert stub.close_calls == 1

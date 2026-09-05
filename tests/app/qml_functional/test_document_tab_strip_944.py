@@ -77,7 +77,7 @@ def _view(qt_app, qml: str, width: int, height: int):
     _KEEPALIVE.extend((view, root, component))
     view.show()
     view.requestActivate()
-    _wait_for(qt_app, view.isActive)
+    assert _wait_for(qt_app, view.isActive), "#2408: a nezet nem lett aktiv idoben"
     return view, root
 
 

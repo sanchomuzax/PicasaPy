@@ -379,11 +379,11 @@ class TestAJobbklikkASorSajatMenujetAdja:
         # nyílt-e meg, azt az alatta lévő két állítás mondja meg.
         hier_menu = _child(pane, "hierFolderContextMenu")
         lista_menu = _child(pane, "folderListContextMenu")
-        _var(
+        assert _var(
             qt_app,
             lambda: hier_menu.property("visible")
             or lista_menu.property("visible"),
-        )
+        ), "#2408: egyik menu sem nyilt ki idoben"
 
         assert hier_menu.property("visible") is True, (
             "a fasor jobbklikkje nem a HierFolder menüt adta (#732-osztály)"
