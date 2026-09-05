@@ -882,10 +882,106 @@ a hat tizedes (`scale="337.000000"`) ezt a mintáinkon is igazolja.
 *(Részletek: `picasa-create-features.md`, „A MEZŐ AZONOSSÁGA az ÍRÓ
 oldaláról is megerősítve".)*
 
-**Mi döntené el:** egy **fekvő** tájolású `contactsheet`-minta (a meglévő
-AI6 álló). Ha ott is 313, fix szám; ha más, a lapmérettel skálázódik, és
-a két érték hányadosa megadja a képletet. → **#1412**
-(`blocked` + `felhasználóra-vár`).
+### 17.5 ⭐ A `scale` EGÉSZ SZÁMRA KVANTÁLT — 95/97 (2026-09-05, #1412)
+
+A tizenkét arany `.cxf` **97** `scale` értékéből **95 pontosan egész**. A
+kivétel **kettő**, mindkettő az `AI2.cxf`-ben: `267,607788` és `295,392395`.
+
+Ráadásul a `picturepile` hat értéke — **238 · 249 · 263 · 280 · 303 · 337** —
+**betű szerint ugyanaz** hat független kollázsban (`AI1`, `AI2`, `AI8`, `AI9`,
+`AI10`, `AI`, `lake-allo-piszkozat`), más képekkel és más elrendezéssel.
+
+⇒ **A `scale` előállítója egész értéket ad**, és a kollázs mérete egy
+**diszkrét létrán** mozog. A két tört érték az `AI2`-ben a létrán kívül esik ⇒
+**a kézi átméretezés megkerüli a létrát** — ez az egyetlen minta, amelyben a
+tulajdonos csomópontot húzott át.
+
+*(Bizonyítottsági fok: **megerősített** — puszta számolás a mintákon.)*
+
+### 17.6 ⭐ Az AI6 vízszintes rácsa PONTOS EGÉSZEKBŐL áll
+
+| mennyiség | érték (1024-es egység) |
+|---|---|
+| bal margó (`x` az 1. oszlopban) | **90,000** |
+| oszlop-osztás | **300,000** (90 · 390 · 690) |
+| cella-szélesség (`w`) | **242,000** |
+| a keskeny kép `w`-je | **155,000** |
+| a keskeny kép `x`-e | **733,000** = 690 + **43** |
+
+A keskeny kép **vízszintesen KÖZÉPRE** kerül a 242-es cellában:
+`(242 − 155) / 2 = 43,5` → **43** (lefelé kerekítve). Függőlegesen viszont
+**nem** középre: mind a három első sorbeli csomópont `y`-a azonos
+(**227,055**), a magasságok eltérnek (302,574 és 276,636) ⇒ **felülre
+igazítva**. A sor-osztás **359,088**.
+
+*(Bizonyítottsági fok: **megerősített** — az `AI6.cxf` mind a kilenc
+csomópontján kiszámolva.)*
+
+### 17.7 ⛔ MEGDŐLT: „a 313-at a kollázs-sáv egyik mutatós írója adja"
+
+A 2026-09-02-i kör azt a következtetést hagyta hátra, hogy a végleges
+`scale`-t a kollázs-sáv **37 mutatós `+0x2c`-írója** közül valamelyik adja.
+**Ez nem igaz**, és a pásztázás számai sem álltak meg.
+
+**A hiba oka:** a `+0x2c` eltolású írások túlnyomó többsége
+**`[esp + 0x2c]` lokális változó**, nem struktúramező. A helyes szűrő a
+ModRM/SIB alakra néz: SIB-nél a `base == 100b` (esp), mutatós alaknál az
+`rm ∈ {100b, 101b}` (SIB, illetve `disp32`) esetet **ki kell hagyni**.
+
+Ezzel újramérve, a kollázs-sávban (`0x820000`–`0x896000`) **47** valódi
+`+0x2c`-író van, és közülük **float**-ot csak ez a hat ír:
+
+| cím | mit csinál |
+|---|---|
+| `0x00822230` (3 írás) | hat egymást követő float (`+0x18`…`+0x2c`) skálázása — **nem a csomópont**, egy általános geometria-segéd (hívói: `0x0081fc30`, `0x00823620`) |
+| `0x00823620` (`0x00823dd3`) | ugyanaz a modul (`AlignedImageCollection` ág, `0x00699cd0`) |
+| `0x008341b0` (`0x00834264`) | a **csomópont `operator=`** — másol (a teljes 56 bájtos mezőlista végigolvasva) |
+| `0x0087b830` (`0x0087b898`) | csomópontok közti másolás |
+| `0x00885060` (`0x0088522d`) | a **`regulargrid` elrendezője** — `fld1` ⇒ **1,0** |
+| `0x00888210` (`0x008885bc`) | a **`contactsheet` elrendezője** — `fld1` ⇒ **1,0** |
+
+⇒ **A kollázs-sávban a csomópont `scale`-jét CSAK a két elrendező (mindkettő
+állandó 1,0) és a másolók írják.** Egyetlen olyan hely sincs, ami 313-at vagy
+330-at számolna.
+
+### 17.8 ⭐ A HARMADIK író: a `.cxf` BEOLVASÓJA — közvetlenül a csomópontba
+
+A `0x00832830`-as elemző az attribútumokat `atof`-fal (`0x00c080d7`) olvassa,
+és **közvetlenül** a csomópont mezőibe teszi:
+
+```
+0x00833240  fstp dword ptr [ebx + 0x64]   ; theta
+0x008332b7  fstp dword ptr [ebx + 0x68]   ; scale
+```
+
+A `0x64 − 0x28 = 0x68 − 0x2c = 0x3c` ⇒ az `ebx` egy **burkoló**, amelyben a
+csomópont a **`+0x3c`**-nél kezdődik. Ugyanezt a `+0x68` eltolást a
+kollázs-sávban rajta kívül **senki nem írja** float-tal (kimerítő pásztázás).
+
+⇒ **A `scale` három forrása a sávban: a két elrendező (1,0), a beolvasó (a
+fájl saját értéke), és a másolók.** Semmi más.
+
+### 17.9 ⛳ POZITÍV KONTROLL: a `multiexp` 1,0-ja végigmegy
+
+Az `AI7.cxf` (`multiexp`) `scale="1.000000"` — **pontosan az elrendező
+`fld1`-je**. Tehát az „elrendező → fájl" út egy témán **végig igazolt**, és a
+mezőazonosság sem kérdéses. A többi témánál viszont valami **felülírja** —
+és az a valami a mérés szerint **nincs a kollázs-sávban**.
+
+### 17.10 A KÖVETKEZŐ lépés (a korábbi helyett)
+
+1. **A sávon KÍVÜL kell keresni** az írót — a fenti szűrővel, az egész
+   `.text`-en, a csomópont-alakra (`+0x28` és `+0x2c` float egy függvényben).
+2. **Vagy mutatón át ír**: a sávban **10** `lea r, [r+0x2c]` hely van
+   (`0x00823c21`, `0x008300dc`, `0x0083198a`, `0x00834af3`, `0x00860032`,
+   `0x00879909`, `0x00879b7b`, `0x00879d18`, `0x0087e0cd`, `0x008831c8`,
+   `0x0088ab66`) — eltolás-alapú pásztázás ezeket **nem látja**.
+3. A fekvő `contactsheet`-minta továbbra is **független** ellenőrzés lenne,
+   de a kérdést már nem ez dönti el elsőként.
+
+**Mi döntené el (kiegészítve 2026-09-05):** elsősorban a 17.10 két gépi
+lépése; a **fekvő** tájolású `contactsheet`-minta (a meglévő AI6 álló)
+független megerősítés maradna. → **#1412** (`ready` + `bináris-kutatható`).
 
 *Bizonyítottsági fok: **megerősített** a hat téma aránytáblája, a
 `scale` = rajzolt méret értelmezés és az 1024-es egységrendszer;
