@@ -230,7 +230,7 @@ Item {
         // Ok: a panelen folyamatosan futó animáció elmozdítja a vászon
         // rajzolásának időzítését, és a teszt grabje más képkockát kap. A
         // döntés (a gomb pulzáljon-e, és ha igen, hogyan legyen az őr
-        // időzítés-tűrő) külön jegy: #2448.
+        // időzítés-tűrő) külön jegy: #2450.
         text: qsTr("Create Collage")
         //: Buboréksúgó a „Kollázs létrehozása" gombon.
         ToolTip.text: qsTr("Save as a JPG in the Collages album (in the Projects "
