@@ -121,23 +121,98 @@ ha EmailMovie == 1:
 > `[+0x30]` és a `[+0x34]` szintén darabszám-jellegű (két egymásba ágyazott
 > ciklus határa), tehát a szomszédos rések is számlálók.
 
-**Ami NINCS MEG: a Beállítások E-mail fülén a csúszka LÉPÉSEI.** A
-`Beállítások` párbeszéd natív Win32 lap (`CGeneralPrefsPage`), a feliratai a PE
-erőforrás-táblában élnek, nem a `.tre`/`stringres` anyagban — ezért a
-szövegtárból nem jönnek elő. Amit tudunk: a **`%d pixels (for e-mail)`**,
-`%d pixels (for Web pages)`, `%d pixels (for large Web pages)` és
-`%d pixels (for large monitors)` sablonok **ott vannak** a `Picasa3.exe`
-sztringtáblájában (UTF-16-ban megtalálva) — tehát a felirat a számot
-**futásidőben** kapja.
+### 3/b A Beállítások **E-mail** fülének teljes tartalma — LEZÁRVA (2026-09-05)
 
-**Erős, de nem bizonyított kapcsolat:** az Exportálás párbeszéd
-méret-előbeállításai **mérve** `320 | 480 | 640 | 800 | 1024 | 1200 | 1600`
-(`export/bind17.list`, ld. [`export-parbeszed.md`](export-parbeszed.md)), és az
-`EmailExportSize` alapértéke — **480** — ennek a listának a **második** eleme.
-Hogy az E-mail fül csúszkája ugyanezt a hét értéket kínálja-e (plusz az
-„eredeti méret" = 0), az **NINCS MÉRVE**. Megszerzése: **egyetlen képernyőkép**
-a futó Picasa `Eszközök ▸ Beállítások ▸ E-mail` lapjáról — ott a csúszka
-felirata kiírja az aktuális képpontszámot. Jegy: **#2020**.
+⛔ **HELYESBÍTÉS.** A lap korábbi kiadása azt állította, hogy a `Beállítások`
+párbeszéd **natív Win32 lap**, ezért a feliratai „a PE erőforrás-táblában
+élnek, nem a `.tre`/`stringres` anyagban". **Ez téves.** A fül **teljes
+egészében stringres-panel** (`options/…` névtér), és a saját kutatási
+anyagunkban **mindvégig megvolt**:
+`referencia/i18n-hu/options.xml` és `referencia/panel-feliratok-hu.tsv`.
+A téves indoklás miatt a kérdés fölöslegesen a tulajdonos képernyőképére várt.
+
+**A méret-csúszka NYOLC fokozata — MÉRVE, nem becslés:**
+
+```
+options/bind47.list   = 160|320|480|640|800|1024|1200|1600
+options/bind47.format = %s képpont
+```
+
+**Az Exportálás listájával nem azonos.** Az export hét értéket kínál
+(`export/bind17.list` = `320|480|640|800|1024|1200|1600`), az E-mail fül
+nyolcat — az eltérés a **160**, amit csak az E-mail fül ad. Ezzel a korábbi
+„a 480 az export-lista **második** eleme" kapcsolat **elvetve**: a 480 az
+E-mail fül listájának a **harmadik** eleme.
+
+**A `bind51` NEM második csúszka**, hanem az „Egyedülálló képek mérete"
+csoport első választógombjának **feliratkötése**: a `format`
+(`Több elemmel azonos (%s képpont)`) ugyanabból a nyolcelemű listából kapja a
+számot, mint a csúszka. Ezért egyezik a két `list` sor.
+
+**A fül teljes elemlistája, erőforrás-sorrendben** (magyar hivatalos felirat,
+`referencia/i18n-hu/options.xml`):
+
+| elem | felirat |
+|---|---|
+| `options/tab36.title` | **E-mail** *(a fül neve)* |
+| `options/labelgroup38.title` | Levelezőprogram: |
+| `options/radio40.title` | Minden képküldésnél kiválasztom |
+| `options/defaultmail.title` | A számítógép alapértelmezett levelezőprogramjának használata |
+| `options/radio42.title` | **A Google Fiók használata** |
+| `options/labelgroup43.title` | Több kép mérete: |
+| `options/label46.title` | 1024 képpont |
+| `options/bind47.format` / `.list` | `%s képpont` / `160\|320\|480\|640\|800\|1024\|1200\|1600` |
+| `options/labelgroup48.title` | Egyedülálló képek mérete: |
+| `options/radio50.title` | Több elemmel azonos (1024 képpont) |
+| `options/bind51.format` / `.list` | `Több elemmel azonos (%s képpont)` / ugyanaz a nyolc |
+| `options/radio52.title` | Eredeti méret |
+| `options/labelgroup53.title` | Mozgófilmek küldése másként: |
+| `options/radio55.title` | Első képkocka |
+| `options/radio56.title` | Teljes mozgófilm |
+| `options/labelgroup57.title` | Kimeneti formátum: |
+| `options/UseHTMLMailer.title` | Szövegközi fotók és képfeliratok küldése (csak Outlookban) |
+
+⚠️ **A táblázat sorrendje az erőforrásé, NEM a képernyőé.** Az `options`
+panelnek **nincs meg** a respack-geometriája a kutatási anyagban (csak
+`export.fen` van), tehát az elemek helyét ez a lap **nem** mondja meg.
+
+⚠️ **A `label46` / `radio50` szövegében szereplő 1024 nem alapérték**, hanem az
+erőforrásba befagyott pillanatkép. A tényleges alapérték a registryből **480**
+(`Preferences\EmailExportSize`, `0x00743094`: `mov dword ptr [esp+0x18], 0x1e0`
+— a szomszédos két olvasás `EmailSinglePicture` `0x00ca9b18` és `EmailMovie`
+`0x00ca9b2c`, mindkettő alapértéke **0**).
+
+**Nálunk (MÉRVE):** `src/picasapy/mailer/command.py:22`
+`EMAIL_SIZE_STEPS = (160, 320, 480, 640, 800, 1024, 1200, 1600)` — a nyolc
+fokozat és a 480-as alapérték **már helyes** (a #2020 a tulajdonos futó
+Picasájából vette). Ez a kör tehát **független, gépi megerősítés**: a lista
+képernyőkép nélkül is kiolvasható volt. Az `OptionsTabEmail.qml`-ből viszont
+**hiányzik a harmadik levelezőgomb** (`radio42`, „A Google Fiók használata"),
+és a csoport címe nálunk „Choose your mail client:" a mért
+„Levelezőprogram:" helyett → jegy: **#2432**.
+
+#### Amit ez a kör KIZÁRT (negatív leletek)
+
+1. **Nincs a binárisban összefüggő méret-tábla.** A `320,480,640,800,1024,1200,1600`
+   sorozat sem `int32`-ként, sem `int16`-ként **nem fordul elő** a
+   `Picasa3.exe`-ben — a listák szövegként, a stringres `.list`
+   erőforrásokban élnek.
+2. **A `%d pixels (…)` sablonok nem ezen a fülön dolgoznak.** Megvannak a PE
+   sztringtáblájában — RT_STRING **9. blokk** (lang 1033, adat-RVA `0x00a03458`,
+   1224 bájt): **140** = `%d pixels (for large Web pages)` (`0x00e03850`),
+   **141** = `%d pixels (for Web pages)` (`0x00e03890`), **142** =
+   `%d pixels (for e-mail)` (`0x00e038c4`); a `%d pixels (for large monitors)`
+   másik blokkban, `0x00e041fe`. **De:** a `LoadStringW` **nincs importálva**, a
+   `LoadStringA` egyetlen IAT-rekeszére (`0x009ae710`) pedig **a teljes fájlban
+   nulla hivatkozás** van ⇒ ezeket a sablonokat a Win32 sztring-API-n át nem
+   tölti be senki. A fülön ténylegesen használt formátum a
+   `options/bind47.format`.
+3. ⛔ **Módszertani helyesbítés:** a `push 0x8c`…`push 0x8f` négyes a
+   `0x0047820e`–`0x0047829c` tartományban **nem** sztringazonosító-betöltés.
+   A hívott `0x0049c900` **hasítótáblás keresés** (`div dword ptr [edi+4]`,
+   vödörlánc, `cmp dword ptr [ebp+8], <kulcs>`), a négy szám pedig **kulcs**.
+   Az azonos számérték keresése önmagában nem bizonyíték — a **hívott
+   függvényt** is meg kell nézni.
 
 ## 4. Az üzenetek — ezek LE VANNAK fordítva
 
