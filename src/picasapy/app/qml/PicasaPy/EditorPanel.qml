@@ -273,6 +273,27 @@ Rectangle {
     signal finetunePreview(real fill, real highlights, real shadows, real temp)
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
 
+    // ------------------------------------------------------------------
+    // #2146: a Shift MÁSODLAGOS szűrőt ad kilenc csempén
+    // ------------------------------------------------------------------
+    //
+    // Az eredeti az effekt-fül FELÉPÜLÉSEKOR egyszer kérdezi le a Shift
+    // állapotát (`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`), és a bitet
+    // eltárolja (`[ecx+0x33a8]`); a csempék ezután a TÁROLT értéket nézik.
+    // Ezért nem `Keys`-figyelő és nem kötés: a fül láthatóvá válásakor
+    // olvassuk ki, egyszer.
+    //
+    // Ha képkockánként kérdeznénk, a csempék a Shift minden le-fel
+    // nyomására átbillennének — az eredeti pontosan ezt NEM teszi.
+    property bool shiftMasodlagos: false
+
+    function frissitsdAShiftAllapotot() {
+        if (typeof editController !== "undefined" && editController)
+            panel.shiftMasodlagos = editController.shiftLenyomva()
+    }
+
+    Component.onCompleted: panel.frissitsdAShiftAllapotot()
+
     // Effektek (#20): minden gomb új réteget fűz a láncra (append-only)
     signal effectRequested(string name)
 
@@ -581,6 +602,9 @@ Rectangle {
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
+        // #2146: az effekt-fülek megjelenésekor újra kell olvasni a Shift
+        // állapotát — az eredeti is a fül FELÉPÜLÉSEKOR teszi, egyszer.
+        panel.frissitsdAShiftAllapotot()
         // #583: fülváltáskor a nyitott effekt-paraméter alpanel BEZÁRUL, és
         // az élő előnézete elvész (a mentett lánc érintetlen marad — ez a
         // Mégse ága). Enélkül nyitva maradt, és mivel a láthatósága csak a

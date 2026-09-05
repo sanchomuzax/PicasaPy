@@ -88,10 +88,15 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectPicnikGrain"
-            label: qsTr("Film Grain")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
-            thumbSource: panel.effectThumbSource("picnikgrain")
-            badge: panel.hasBadge("picnikgrain")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
+            //: az eredeti csempe-táblája (picnikgrain -> grain)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "grain" : "picnikgrain"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
     }
 

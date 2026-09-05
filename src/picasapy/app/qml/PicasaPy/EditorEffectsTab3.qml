@@ -70,17 +70,27 @@ ColumnLayout {
         // kisbetűvel küldjük az effectRequested jelet.
         PanelButton {
             objectName: "effectVignette"
-            label: qsTr("Vignette")
-            onButtonClicked: if (!panel.tryOpenParamPanel("vignette", label)) panel.effectRequested("vignette")
-            thumbSource: panel.effectThumbSource("vignette")
-            badge: panel.hasBadge("vignette")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Matte") : qsTr("Vignette")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (matte) —
+            //: az eredeti csempe-táblája (vignette -> matte)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "matte" : "vignette"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectPixelate"
-            label: qsTr("Pixelate")
-            onButtonClicked: if (!panel.tryOpenParamPanel("pixelate", label)) panel.effectRequested("pixelate")
-            thumbSource: panel.effectThumbSource("pixelate")
-            badge: panel.hasBadge("pixelate")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Focal Pixelate") : qsTr("Pixelate")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (picnikfocalpixelate) —
+            //: az eredeti csempe-táblája (pixelate -> picnikfocalpixelate)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "picnikfocalpixelate" : "pixelate"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectFocalZoom"
@@ -112,10 +122,15 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectBorder"
-            label: qsTr("Border")
-            onButtonClicked: if (!panel.tryOpenParamPanel("border", label)) panel.effectRequested("border")
-            thumbSource: panel.effectThumbSource("border")
-            badge: panel.hasBadge("border")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Rounded Edges") : qsTr("Border")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (roundededges) —
+            //: az eredeti csempe-táblája (border -> roundededges)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "roundededges" : "border"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectDropShadow"

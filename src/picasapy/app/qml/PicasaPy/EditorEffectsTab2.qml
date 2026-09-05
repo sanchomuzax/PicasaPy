@@ -103,10 +103,15 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectHeatMap"
-            label: qsTr("Heat Map")
-            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap", label)) panel.effectRequested("heatmap")
-            thumbSource: panel.effectThumbSource("heatmap")
-            badge: panel.hasBadge("heatmap")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Night Vision") : qsTr("Heat Map")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (nightvision) —
+            //: az eredeti csempe-táblája (heatmap -> nightvision)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "nightvision" : "heatmap"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectCrossProcess"

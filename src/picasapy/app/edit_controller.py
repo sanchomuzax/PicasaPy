@@ -2209,6 +2209,30 @@ class EditController(QObject, BackgroundWorkerMixin):
         return True
 
     @Slot(result=bool)
+    def shiftLenyomva(self) -> bool:  # noqa: N802 — QML-stílusú név
+        """Le van-e nyomva a Shift ÉPPEN MOST (#2146)?
+
+        Az eredeti az effekt-fül felépülésekor **egyszer** kérdezi le
+        (`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`), és a bitet eltárolja
+        (`[ecx+0x33a8]`); a kilenc érintett csempe ezután ezt a tárolt
+        értéket nézi, nem a pillanatnyi billentyűállapotot. A QML-ben
+        nincs erre API — a `Qt.ShiftModifier` csak eseményből érhető el,
+        a fül felépülése viszont nem billentyűesemény.
+
+        ⚠️ A hívó felelőssége, hogy **egyszer** hívja (a fül láthatóvá
+        válásakor), és az eredményt eltárolja. Ha képkockánként kérdezné,
+        a csempék a Shift minden le-fel nyomására átbillennének — az
+        eredeti pontosan ezt NEM teszi.
+        """
+        from PySide6.QtCore import Qt as QtNs
+        from PySide6.QtGui import QGuiApplication
+
+        return bool(
+            QGuiApplication.queryKeyboardModifiers()
+            & QtNs.KeyboardModifier.ShiftModifier
+        )
+
+    @Slot(result=bool)
     def applyColorWand(self) -> bool:  # noqa: N802 — QML-stílusú név
         """A szín-varázspálca (#551): a viszonyítási színt a PROGRAM választja.
 

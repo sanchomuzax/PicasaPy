@@ -54,10 +54,15 @@ ColumnLayout {
             // #2141: az eredeti 1. csempéje az `unsharp2` (a `0x00c7e5a0` tábla [0]);
             // az `unsharp` a SHIFTes másodlagos, saját felirata
             // „Sharpen (Old)” (#2141)
-            label: qsTr("Sharpen")
-            onButtonClicked: if (!panel.tryOpenParamPanel("unsharp2", label)) panel.effectRequested("unsharp2")
-            thumbSource: panel.effectThumbSource("unsharp2")
-            badge: panel.hasBadge("unsharp2")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Sharpen (Old)") : qsTr("Sharpen")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (unsharp) —
+            //: az eredeti csempe-táblája (unsharp2 -> unsharp)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "unsharp" : "unsharp2"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSepia"
@@ -85,19 +90,29 @@ ColumnLayout {
             // #2141: az eredeti 5. csempéje a `PicnikGrain`; a `grain2` nálunk
             // `oneclick`, ezért a csempe JELVÉNYT kapott, holott az
             // eredetin nincs — a `PicnikGrain` módja `effect` (#2141)
-            label: qsTr("Film Grain")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
-            thumbSource: panel.effectThumbSource("picnikgrain")
-            badge: panel.hasBadge("picnikgrain")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
+            //: az eredeti csempe-táblája (picnikgrain -> grain)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "grain" : "picnikgrain"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectTint"
             // #2141: az eredeti 6. csempéje a `PicnikTint`; a `tint` a SHIFTes
             // másodlagos, saját felirata „Tint (Old)” (#2141)
-            label: qsTr("Tint")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picniktint", label)) panel.effectRequested("picniktint")
-            thumbSource: panel.effectThumbSource("picniktint")
-            badge: panel.hasBadge("picniktint")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Tint (Old)") : qsTr("Tint")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (tint) —
+            //: az eredeti csempe-táblája (picniktint -> tint)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "tint" : "picniktint"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSat"
@@ -115,10 +130,15 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectGlow2"
-            label: qsTr("Glow")
-            onButtonClicked: if (!panel.tryOpenParamPanel("glow2", label)) panel.effectRequested("glow2")
-            thumbSource: panel.effectThumbSource("glow2")
-            badge: panel.hasBadge("glow2")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Glow (Old)") : qsTr("Glow")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (glow) —
+            //: az eredeti csempe-táblája (glow2 -> glow)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "glow" : "glow2"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectAnsel"
@@ -136,10 +156,15 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectDirTint"
-            label: qsTr("Graduated Tint")
-            onButtonClicked: if (!panel.tryOpenParamPanel("dir_tint", label)) panel.effectRequested("dir_tint")
-            thumbSource: panel.effectThumbSource("dir_tint")
-            badge: panel.hasBadge("dir_tint")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Radial Tint") : qsTr("Graduated Tint")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (radtint) —
+            //: az eredeti csempe-táblája (dir_tint -> radtint)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "radtint" : "dir_tint"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            thumbSource: panel.effectThumbSource(szuro)
+            badge: panel.hasBadge(szuro)
         }
     }
 }
