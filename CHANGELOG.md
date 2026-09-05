@@ -21,6 +21,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A Picasa-adatbázis importja sérült bejegyzésnél sem áll le** (#2404).
+  Eddig egyetlen hibás sor az egész importot megszakította hibaüzenettel;
+  mostantól az a bejegyzés a saját nevével kerül be, a többi ezer pedig
+  változatlanul. Az útvonalak felismerése is az eredeti Picasa szabályát
+  követi (a bejegyzés típusát nézi), nem a korábbi közelítést.
+
 - **A Szemcse effekt kétszer alkalmazva már tényleg kétszer hat** (#907).
   Eddig a második szemcse **nyomtalan** volt: ugyanazt a zajmintát rajzolta
   ugyanoda, tehát a kép bájtra változatlan maradt. Az eredeti Picasa minden
