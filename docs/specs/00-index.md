@@ -980,19 +980,34 @@ szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátor
 tartalékra esik, ugyanarra, mint a névfeloldás. ⇒ Aki kompatibilis
 gyorsítótárat ír, a **sorrendet** kell eltalálnia.
 
-1. **Melyik hívó ad KIFEJEZETTEN 0-t?** A kapcsoló a `CThumbDB`
-   **34. réséből** (`0x00c82184`, vtábla `0x00c820fc`, COL `0x00cfa164`,
-   `offset = 84`) jön. **Megnézve:** a `call dword ptr [reg+0x88]` alakra
-   **0 találat**; a `mov reg,[reg+0x88]` **286** találatából **93** olyan,
-   amit `call reg` követ — ezek nagy része más osztály azonos eltolása.
-   **Megszerzés:** a 93 jelölt szűrése arra, melyik fogadó `CThumbDB`
-   másodlagos felülete (`this+0x54`), vagy a lap 11. szakaszának
-   felület-térképe.
+⭐ **2026-09-05 (121. kör) — MELYIK HÍVÓ ad 0-t: LEZÁRVA.** A metódus
+`ret 0x18`-ja (`0x0042a844`) hat verem-argumentumot ír elő, a mód a 2.
+(a hívás előtti 5. push). Erre szűrve a 93 jelöltből **29** marad:
+**10 ad literál `0`-t** (`0x004245eb` · `0x0042f6c0` · `0x0042f710` ·
+`0x0043bc8e` · `0x0045a966` · `0x00481993` · `0x0064bea8` · `0x006a969f` ·
+`0x006ac079` · `0x00793740`), 5 literál `1`-et, 14 futásidejűt. ⭐ **Két
+0-s hívó teljesen elolvasva** (`FUN_0042f6a0`, 74 b; `FUN_00793720`, 70 b):
+mindkettő `CThumbDB` **másodlagos felület** (`[esi-4]` vtábla, `lea ecx,[esi-4]`),
+és mindkettő **ÜRES sztringgel** hív (`0x00c7f979`, kiolvasva: `""`). ⇒ **A
+2. mód akkor jár, ha a hívónak nincs második sztringje** — az 1. mód
+ugyanis két sztringet hajt a hash-be, és üressel az értelmetlen volna.
+
+⭐ **Ezzel a 615-ös tétel magyarázata ÚJRA KISZÉLESEDETT** (a 120. kör
+szűkítése után): a 2. mód **nem** korlátozódik a szülő nélküli
+bejegyzésekre, mert tíz hívóhely kifejezetten kéri. ⇒ A döntő lépés megint
+a legolcsóbb: a `Checksum₂` kiszámolása a 615 sorra.
+
+1. **Mind a 29 jelölt a `CThumbDB` 34. rése?** Kettő megerősítve; a
+   többinél a hívási minta azonos (`…, m, 1, 1, m, …`), de nincs külön
+   igazolva, hogy a fogadó `CThumbDB`. **Megszerzés:** hívóhelyenként a
+   fogadó típusának ellenőrzése (a vtábla honnan jön), vagy a lap 11.
+   szakaszának felület-térképe.
 2. **A 615 nem egyező sor oka** — „elavult ellenőrzőösszeg" **vagy** „a 2.
    módban íródott". ⚠️ **2026-09-05-i szűkítés:** a 615 sor **mind
    fájl-típusú**, tehát van szülőjük ⇒ a 2. mód náluk csak úgy jöhetett
-   szóba, ha a hívó kifejezetten `0`-t adott. **Megszerzés:** a `Checksum₂`
-   újraszámolása a 615 sorra (olcsó, új adat nélkül), és/vagy az 1. pont.
+   szóba, ha a hívó kifejezetten `0`-t adott — és a 121. kör szerint **tíz
+   hívóhely pontosan ezt teszi**. **Megszerzés:** a `Checksum₂`
+   újraszámolása a 615 sorra (olcsó, új adatgyűjtés nélkül).
 
 ⭐ **2026-09-02 — SAJÁT HELYESBÍTÉS a bélyegkép-gyorstár kulcsvektorán:** a lap
 korábbi következtetése („a kulcs tárankénti, nem globális fotó-azonosító")
