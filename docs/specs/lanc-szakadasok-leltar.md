@@ -126,7 +126,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
-| `editController` | `hasSavedRedeye` | Property | `app/edit_controller.py` | MÉRVE — MENTETT javítást jelez; az `EditorPanel.qml:132` SAJÁT, MÁS jelentésű `redeyeActive`-ot tart (nyitott eszköz). #2393: a névazonosság félrevitte a #1485-öt, ezért az átnevezés. |
+| `editController` | `hasSavedRedeye` | Property | `app/edit_controller.py` | MÉRVE — MENTETT javítást jelez; az EditorPanel.qml:132 SAJÁT, MÁS jelentésű `redeyeActive`-ot tart (nyitott eszköz) — #2393 |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
