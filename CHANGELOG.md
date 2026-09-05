@@ -7,6 +7,40 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.290] – 2026-09-05
+
+### Hozzáadva
+
+- **A rejtett mappák jelszóval védhetők** (#1637), ahogy az eredeti
+  Picasában. A „Rejtett mappák megjelenítése" mostantól jelszót kér, ha
+  a felhasználó beállított egyet; a jelszó nem a fájlokat titkosítja,
+  hanem — az eredetihez hasonlóan — a megjelenítést kapuzza. A
+  jelszókérés ágán a menü pipája nem billen át, amíg a helyes jelszó meg
+  nem érkezik (#2377), tehát a pipa nem hazudik.
+- A beállított jelszó **le is vehető**: a párbeszéd „A jelszó törlése"
+  gombjával. Enélkül a felhasználó egyszer beállítja, és soha többé nem
+  tud megszabadulni tőle — a vezérlő tagja megvolt, csak nem vezetett
+  hozzá út a felületről.
+
+### Javítva
+
+- A `checked`-kötés forrás-őre (#2377) beágyazott `if … {} else {}`
+  ágnál elvágta a menütétel törzsét, és a törzs VÉGÉN álló, helyes
+  visszaállítást már nem látta — hamis leletet adott. Az őr mostantól
+  zárójel-párosítással olvassa a törzset.
+
+## [0.8.289] – 2026-09-05
+
+### Változott
+
+- **Gyorsabb indulás: a fájlművelet-párbeszédek csak akkor épülnek fel,
+  amikor tényleg kellenek** (#1612). A törlés-, átnevezés-, áthelyezés- és
+  ütközés-párbeszédek eddig a főablakkal együtt jöttek létre, holott a
+  legtöbb munkamenetben egyiket sem nyitja meg az ember. Mérve: **568-cal
+  kevesebb objektum** és **135 ms-mal rövidebb betöltés** (12 váltakozó
+  kör, minimum-statisztika — `docs/benchmarks/2026-09-02-qml-betoltes-1612.md`).
+  A párbeszédek viselkedése változatlan.
+
 ## [0.8.288] – 2026-09-05
 
 ### Javítva

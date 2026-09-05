@@ -118,6 +118,9 @@ MenuBar {
     // #444: van-e a kijelölésben MÁR mentett kép — enélkül a
     // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
     property bool hasSavedBackup: false
+    //: #1637: a rejtettek feloldása jelszóval / a jelszó beállítása
+    signal hiddenUnlockRequested()
+    signal hiddenPasswordRequested()
     signal rescanRequested()
     signal aboutRequested()
     signal thumbSizePreset(int size)
@@ -787,12 +790,21 @@ MenuBar {
             // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
             // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
             checked: (bar.ctl && bar.ctl.showHidden !== undefined) ? bar.ctl.showHidden : false
+            // #1637: ha van beállított jelszó és még nincs feloldva, a
+            // kapcsoló NEM némán marad ki — a gazda jelszót kér. Enélkül a
+            // menüpont hatástalannak látszana (a projekt visszatérő kára).
             onTriggered: {
-                controller.toggleShowHidden()
+                var zarva = bar.ctl && bar.ctl.hiddenPasswordSet === true
+                            && bar.ctl.hiddenUnlocked !== true
+                if (zarva && !bar.ctl.showHidden) {
+                    bar.hiddenUnlockRequested()
+                } else {
+                    controller.toggleShowHidden()
+                }
                 // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
-                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
-                // látszik, mert a művelet mindig átbillenti az állapotot —
-                // ez szerencse, nem szerkezet (ld. #1471).
+                // `checked`-et, és ez eldobja a fenti kötést. A jelszó-kérés
+                // ágán ez különösen fontos: ott a `showHidden` NEM változik,
+                // tehát a pipa hazudna a következő megnyitásig (#1471).
                 checked = Qt.binding(function () {
                     return (bar.ctl && bar.ctl.showHidden !== undefined)
                         ? bar.ctl.showHidden : false

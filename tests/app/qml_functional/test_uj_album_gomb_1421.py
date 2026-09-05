@@ -72,7 +72,7 @@ class TestUGYANAZ_az_ut:
         """A bináris szerint a menütétel a gomb kattintását szimulálja —
         nálunk is egy dialógus, egy út."""
         fo = _MAIN.read_text(encoding="utf-8")
-        assert fo.count("onNewAlbumRequested: fileOpsDialogs.openNewAlbum") >= 2, (
+        assert fo.count("onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum") >= 2, (
             "a menü és az eszköztár nem ugyanahhoz a párbeszédhez köt"
         )
 

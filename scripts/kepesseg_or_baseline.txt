@@ -66,7 +66,6 @@ controller.pasteEffects ELDÖNTVE (#1534) — a beillesztés; a felületé a KÖ
 controller.undoPasteEffects ELDÖNTVE (#1534) — a visszavonás; az eredetiben nincs megfelelője; ADR-007
 
 # -- FELVÁLTVA: a felület egy másik, bővebb alakot hív ---------------------
-controller.setShowHidden FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml)
 controller.setDarkTheme FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml)
 controller.removeWatchedFolder FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből
 controller.folderDescription FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja

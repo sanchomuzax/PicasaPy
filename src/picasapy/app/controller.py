@@ -22,6 +22,8 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from picasapy.hidden_password import egyezik as jelszo_egyezik
+from picasapy.hidden_password import modern_lenyomat, picasa_lenyomat
 from picasapy.index import (
     album_photos,
     albums_in_index,
@@ -635,6 +637,87 @@ class AppController(
 
     # -- rejtett képek (#17) -------------------------------------------------
 
+    # -- a rejtettek JELSZÓ-kapuja (#1637) -----------------------------------
+    #
+    # A tulajdonos döntése (2026-09-03): a Picasa-kompatibilis (hex MD5) és a
+    # modern (sózott PBKDF2) alak EGYÜTT él, az ellenőrzés mindkettőt
+    # elfogadja — így egy Picasában beállított jelszó nem zárja ki a
+    # felhasználót, és az átállás fokozatos lehet.
+    #
+    # ⚠️ Ez a kapu a MEGJELENÍTÉST zárja, nem a fájlokat: a rejtett mappák a
+    # lemezen változatlanul ott vannak. A felület ezt mondja ki.
+
+    _HIDDEN_PWD_KEY = "view/hiddenPasswordHash"
+
+    # #1476: SIMA Python-tulajdonság, nem `Property` — a QML-nek a
+    # `hiddenPasswordSet` logikai válasza kell, a LENYOMAT maga nem való a
+    # felületre. Qt-Propertyként a képesség-őr joggal jelezné szakadásnak.
+    @property
+    def hiddenPasswordHash(self) -> str:
+        """A tárolt lenyomat (sosem a nyílt jelszó); üres, ha nincs jelszó."""
+        return str(self._get_settings().value(self._HIDDEN_PWD_KEY, "") or "")
+
+    @Property(bool, notify=statusChanged)
+    def hiddenPasswordSet(self) -> bool:
+        """Van-e egyáltalán beállított jelszó."""
+        return bool(self.hiddenPasswordHash)
+
+    # #1476: nem `Slot` — a felület a `setHiddenPassword`-öt hívja, ez a
+    # NYERS lenyomat útja (átvétel, teszt). A QML-nek nincs dolga vele.
+    def setHiddenPasswordHash(self, hash_value: str) -> None:
+        """A LENYOMAT közvetlen beállítása (import, teszt). A feloldás
+        állapotát nullázza — új jelszó után újra kérni kell."""
+        self._get_settings().setValue(self._HIDDEN_PWD_KEY, str(hash_value))
+        self.lockHidden()
+
+    @Slot(str, bool)
+    def setHiddenPassword(self, password: str, modern: bool = False) -> None:
+        """Jelszó beállítása a választott alakban.
+
+        Args:
+            password: a nyílt jelszó — NEM tárolódik, csak a lenyomata.
+            modern: `True`-nál sózott PBKDF2 (a windowsos Picasa nem nyitja),
+                `False`-nál a Picasa-kompatibilis hex MD5.
+        """
+        keszit = modern_lenyomat if modern else picasa_lenyomat
+        self.setHiddenPasswordHash(keszit(password))
+
+    @Slot()
+    def clearHiddenPassword(self) -> None:
+        """A jelszó törlése — a rejtettek innentől kapu nélkül nézhetők."""
+        self._get_settings().remove(self._HIDDEN_PWD_KEY)
+        self.lockHidden()
+
+    @Slot(str, result=bool)
+    def unlockHidden(self, password: str) -> bool:
+        """Feloldás a beírt jelszóval. Csak a munkamenetre szól."""
+        if jelszo_egyezik(self.hiddenPasswordHash, password):
+            self._hidden_unlocked = True
+            self.statusChanged.emit()
+            return True
+        return False
+
+    # #1476: nem `Slot` — a visszazárást a jelszó beállítása és törlése
+    # végzi, magától. A felületről NEM hívható, mert az eredeti Picasában
+    # sincs „zárd vissza most" parancs; ha egyszer mérve lesz, kaphat.
+    def lockHidden(self) -> None:
+        """Visszazárás: a kapcsoló is visszaáll, hogy a rejtettek eltűnjenek."""
+        self._hidden_unlocked = False
+        if self._get_settings().value("view/showHidden", "false") in (
+            True,
+            "true",
+            "1",
+        ):
+            self._get_settings().setValue("view/showHidden", False)
+            self._refresh_view()
+            self._reload_folders()
+        self.statusChanged.emit()
+
+    @Property(bool, notify=statusChanged)
+    def hiddenUnlocked(self) -> bool:
+        """Fel van-e oldva EBBEN a munkamenetben."""
+        return bool(getattr(self, "_hidden_unlocked", False))
+
     @Property(bool, notify=statusChanged)
     def showHidden(self):
         """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva)."""
@@ -648,6 +731,11 @@ class AppController(
         # frissült — a mappa így csak egy későbbi, más okból kiváltott
         # újratöltéskor bukkant elő. A kapcsoló látszólag működött (a
         # rejtett KÉPEK azonnal megjelentek), ezért maradt észrevétlen.
+        # #1637: ha van beállított jelszó, a bekapcsolás CSAK feloldás után
+        # mehet — enélkül a kapu csak látszólag zárna.
+        if show and self.hiddenPasswordSet and not self.hiddenUnlocked:
+            self.statusChanged.emit()
+            return
         self._get_settings().setValue("view/showHidden", bool(show))
         self._refresh_view()
         self._reload_folders()

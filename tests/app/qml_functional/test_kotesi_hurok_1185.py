@@ -34,6 +34,8 @@ from PySide6.QtCore import (
     qInstallMessageHandler,
 )
 
+from support.qml_halasztott import epitsd_fel_ha_fileops
+
 #: a fájlművelet-párbeszédek, amiknek tördelő szövegük van
 PARBESZEDEK = (
     "moveConfirmDialog",
@@ -54,6 +56,7 @@ def _megnyit_es_figyel(window, qt_app, nevek):
     elozo = qInstallMessageHandler(kezelo)
     try:
         for nev in nevek:
+            epitsd_fel_ha_fileops(window, nev)  # #1612
             parbeszed = window.findChild(QObject, nev)
             assert parbeszed is not None, f"{nev} nem található"
             if parbeszed.property("message") is not None:

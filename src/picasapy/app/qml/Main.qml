@@ -853,7 +853,7 @@ ApplicationWindow {
     Shortcut {
         sequence: "F2"
         onActivated: if (!window.viewerOpen && window.selectedIndex >= 0)
-                         fileOpsDialogs.openRename(window.selectedIndex)
+                         fileOpsDialogs.ensure().openRename(window.selectedIndex)
     }
     Shortcut {
         sequence: "Ctrl+Shift+S"
@@ -885,7 +885,7 @@ ApplicationWindow {
         enabled: window.viewerOpen && photoViewer.currentIndex >= 0
         onActivated: {
             var p = controller.photos.filePathAt(photoViewer.currentIndex)
-            if (p.length > 0) fileOpsDialogs.openDelete([p])
+            if (p.length > 0) fileOpsDialogs.ensure().openDelete([p])
         }
     }
 
@@ -915,6 +915,11 @@ ApplicationWindow {
         createActionsEnabled: !window.viewerOpen
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
+        // #1637: a rejtettek jelszó-kapuja. A menüsor csak JELEZ; a
+        // párbeszédet a gazda nyitja, és a gazda írja vissza a vezérlőt —
+        // így a párbeszéd önálló, újrahasznosítható komponens marad.
+        onHiddenUnlockRequested: hiddenPasswordDialog.ensure().openUnlock()
+        onHiddenPasswordRequested: hiddenPasswordDialog.ensure().openSet()
         onRescanRequested: controller.rescan()
         // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
         // így egy fájlkezelőbe közvetlenül beilleszthetők
@@ -968,8 +973,8 @@ ApplicationWindow {
             clearGeotagDialog.openFor(window.selectedRows())
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
-            ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
-            : fileOpsDialogs.openRename(window.selectedIndex)
+            ? fileOpsDialogs.ensure().openRenameMany(window.selectedIndexes)
+            : fileOpsDialogs.ensure().openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
         // #449: adatbázis-tömörítés (`compacting.fen`)
@@ -989,7 +994,7 @@ ApplicationWindow {
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
         // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
         // helyi menü példányán)
-        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
         // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
         onImportSourceRequested: importSourceDialog.open()
@@ -999,7 +1004,7 @@ ApplicationWindow {
         // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
         // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
         onMoveToNewFolderRequested:
-            fileOpsDialogs.openMoveToNewFolder(window.selectedPaths())
+            fileOpsDialogs.ensure().openMoveToNewFolder(window.selectedPaths())
         // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
         onPrintRequested: window.openPrint()
         // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
@@ -1008,7 +1013,7 @@ ApplicationWindow {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
-        onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
         // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
         // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
         // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
@@ -1355,7 +1360,7 @@ ApplicationWindow {
         onImportRequested: importSourceDialog.open()
         // #1421: az eszköztár `newalbum` gombja UGYANOTT köt ki, mint a
         // Fájl ▸ Új album… és a kép-helyimenü tétele — egy út, egy dialógus.
-        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
@@ -1482,7 +1487,7 @@ ApplicationWindow {
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
         // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
         // megerősítő dialógus itt él (a menü maga a PhotoViewer-ben)
-        onDeleteRequested: function(path) { fileOpsDialogs.openDelete([path]) }
+        onDeleteRequested: function(path) { fileOpsDialogs.ensure().openDelete([path]) }
     }
 
     // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
@@ -1703,7 +1708,7 @@ ApplicationWindow {
             // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
             // indított (Fájl → Új album), hogy ne legyen két, kicsit
             // másképp viselkedő út ugyanarra.
-            onNewAlbumDropped: fileOpsDialogs.openNewAlbum(window.selectedIndexes)
+            onNewAlbumDropped: fileOpsDialogs.ensure().openNewAlbum(window.selectedIndexes)
             onPhotosDroppedOnAlbum: function(token) {
                 if (controller && window.selectedIndexes.length > 0)
                     controller.addRowsToAlbum(window.selectedIndexes, token)
@@ -2473,8 +2478,8 @@ ApplicationWindow {
         }
         onResetFacesRequested: resetFacesConfirm.open()   // mindig kérdez
         onHideToggleRequested: window.toggleHiddenSelection()
-        onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())
-        onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())
+        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.fileOpTargetRow)
             if (p.length > 0) fileOpsController.revealPhoto(p)
@@ -2527,7 +2532,7 @@ ApplicationWindow {
                 controller.removeRowsFromAlbum(
                     window.selectedRows(), controller.currentAlbumToken)
         }
-        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
         // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
         // csak személy-albumban látszanak (üres `personName` = rejtve).
         personName: controller ? controller.currentPersonName : ""
@@ -2603,6 +2608,55 @@ ApplicationWindow {
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
     // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
+    // #1637: a »Rejtett mappák« jelszava — HALASZTVA (#1719/#1720). A
+    // legtöbb munkamenetben soha nem nyílik meg; a hívók az `ensure()`-ön
+    // át érik el. A jelzéseket a `Component` belsejében kötjük, mert a
+    // burkoló nem továbbítja őket (#1743).
+    DeferredDialog {
+        id: hiddenPasswordDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            HiddenPasswordDialog {
+                // #1637: a törlés csak akkor kínálható fel, ha VAN mit törölni
+                jelszoLetezik: controller
+                               ? controller.hiddenPasswordSet === true : false
+                onTorlesKert: if (controller) controller.clearHiddenPassword()
+                onAccepted: {
+                    if (!controller) return
+                    if (mode === "set") {
+                        controller.setHiddenPassword(
+                            enteredPassword, modernRequested)
+                    } else if (controller.unlockHidden(enteredPassword)) {
+                        controller.setShowHidden(true)
+                    } else {
+                        hiddenPasswordRosszUzenet.ensure().open()
+                    }
+                }
+            }
+        }
+    }
+
+    // #1637: a rossz jelszó üzenete — HALASZTVA, két okból. (1) A legtöbb
+    // munkamenetben soha nem kell. (2) A `ConfirmDialog` belsejében a
+    // felirat `objectName`-je (`confirmMessageLabel`) MINDEN példányban
+    // ugyanaz, és a tesztek `findChild`-dal keresik: egy induláskor felépülő
+    // ÚJ példány elé kerülne a fa bejárásában a fájlművelet-párbeszédeknek,
+    // és azok állításai a MI szövegünket kapták volna vissza (éles próbán
+    // hat teszt bukott el ezen). Halasztva a példány addig nem is létezik.
+    DeferredDialog {
+        id: hiddenPasswordRosszUzenet
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "hiddenPasswordWrongDialog"
+                //: rossz jelszó a rejtett mappákhoz (#1637)
+                title: qsTr("Wrong password")
+                message: qsTr("The password does not match. The hidden folders stay hidden.")
+                onAccepted: hiddenPasswordDialog.ensure().openUnlock()
+            }
+        }
+    }
+
     CollageDraftDialog {
         id: collageDraftDialog
         onRestored: documentTabStrip.activateTab(window.collageTabId)
@@ -2656,10 +2710,44 @@ ApplicationWindow {
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
-    FileOpsDialogs {
+    //: #1612: halasztva — a fájlművelet-párbeszédek 571 QObjectet építettek
+    //: fel MINDEN induláskor, holott a legtöbb indulásnál egyet sem nyit meg
+    //: a felhasználó. A vezérlő jelzéseit a lenti, MINDIG álló `Connections`
+    //: fogadja, nem a komponens belseje (#1743, #2096).
+    DeferredDialog {
         id: fileOpsDialogs
         objectName: "fileOpsDialogs"
-        appWindow: window
+        anchors.fill: parent
+        sourceComponent: Component {
+            //: a BELSŐ példány saját neve — a burok (`fileOpsDialogs`) a
+            //: `Loader`, a párbeszédeket tartó `Item` ez. A tesztek az
+            //: `ensure()` után ezen a néven érik el a nyilvános belépőket.
+            FileOpsDialogs {
+                objectName: "fileOpsDialogsItem"
+                appWindow: window
+            }
+        }
+    }
+
+    //: #1612: a fájlművelet-vezérlő hallgatói. Azért ITT állnak és nem a
+    //: komponensben, mert az halasztott: a `fileOpsController` jelzései nem
+    //: csak a saját párbeszédeiből indulhatnak — a mappafa
+    //: áthelyezés/törlés útja (`FolderPane.qml`) is ezen jelez. Az
+    //: `ensure()` mindhárom ágon KÖTELEZŐ: mind a három a FELHASZNÁLÓNAK
+    //: szól, tehát némán elmaradnia nem szabad.
+    Connections {
+        target: fileOpsController
+        function onBatchProgress(operation, destination, done, total, speed) {
+            fileOpsDialogs.ensure().reportBatch(
+                operation, destination, done, total, speed)
+        }
+        function onBatchFinished(operation, done, skipped, failed, reason) {
+            fileOpsDialogs.ensure().finishBatch(
+                operation, done, skipped, failed, reason)
+        }
+        function onOperationFailed(operation, message) {
+            fileOpsDialogs.ensure().showOperationError(operation, message)
+        }
     }
 
     // exportálás mappába (#16, Ctrl+Shift+S; ExportDialogs.qml, #150)

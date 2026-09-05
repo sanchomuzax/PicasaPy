@@ -28,6 +28,7 @@ from PySide6.QtGui import QKeyEvent
 
 from support.jpeg_factory import make_jpeg
 from support.qml_focus import fokuszt_ad
+from support.qml_halasztott import epitsd_fel_ha_fileops
 
 
 def _ujraolvas(controller, qt_app) -> None:
@@ -53,6 +54,11 @@ def _feed(qml_app, qt_app):
 
 
 def _gyerek(window, nev):
+    # #1612: a fájlművelet-párbeszédek halasztva épülnek fel, tehát
+    # induláskor `findChild`-dal `None`-ok. Ez a teszt a párbeszéd
+    # VISELKEDÉSÉT méri, nem a felépülés pillanatát, ezért ugyanazt
+    # tesszük meg előre, amit a felhasználói út is.
+    epitsd_fel_ha_fileops(window, nev)
     elem = window.findChild(QObject, nev)
     assert elem is not None, f"a(z) {nev} nem található"
     return elem

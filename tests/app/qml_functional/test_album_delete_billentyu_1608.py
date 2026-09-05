@@ -50,6 +50,15 @@ def _gyerek(window, nev):
     return elem
 
 
+def _nem_nyilt_meg(window) -> bool:
+    """#1612 óta a törlés-megerősítő HALASZTOTT: ha a Delete nem a lemezről
+    törlés ágára ment, a párbeszéd létre sem jön. A hiánya erősebb állítás,
+    mint a `visible is False` — de mindkettőt elfogadjuk, mert a párbeszédet
+    egy korábbi lépés már felépíthette ugyanabban a tesztben."""
+    par = window.findChild(QObject, "deleteConfirmDialog")
+    return par is None or par.property("visible") is False
+
+
 def _fokusz(elem, qt_app):
     elem.setProperty("focus", True)
     QMetaObject.invokeMethod(
@@ -94,9 +103,8 @@ def _megerositi_ha_nyilt(window, controller, qt_app):
     HIBÁS ágon viszont végigviszi a törlést, és így a hívó „a fájl a
     lemezen maradt" állítása valódi mérés lesz."""
     confirm = window.findChild(QObject, "deleteConfirmDialog")
-    assert confirm is not None
-    if not confirm.property("visible"):
-        return
+    if confirm is None or not confirm.property("visible"):
+        return  # #1612: halasztott — létre sem jött, tehát nem is nyílt meg
     assert confirm.property("trashAvailable"), (
         "a teszt-környezetben nincs lomtár — a mérés nem érvényes"
     )
@@ -154,12 +162,11 @@ class TestMappaNezetbenTOVABBRA_IS_Torol:
         assert controller.currentAlbumToken == ""
         assert controller.currentPersonName == ""
         _kijelol(window, qt_app)
-        confirm = _gyerek(window, "deleteConfirmDialog")
-        assert confirm.property("visible") is False
+        assert _nem_nyilt_meg(window)
 
         _delete_billentyu(window, qt_app)
 
-        assert confirm.property("visible") is True, (
+        assert _gyerek(window, "deleteConfirmDialog").property("visible") is True, (
             "mappa-nézetben a Delete-nek TOVÁBBRA IS a lemezről törlést "
             "kell kérdeznie (#1608 nem szüntetheti meg a mappa-ágat)"
         )
@@ -237,9 +244,7 @@ class TestAlbumNezetbenNemTorol:
 
         _delete_billentyu(window, qt_app)
 
-        assert _gyerek(window, "deleteConfirmDialog").property(
-            "visible"
-        ) is False, "album-nézetben a Delete a lemezről törlést kérdezte"
+        assert _nem_nyilt_meg(window), "album-nézetben a Delete a lemezről törlést kérdezte"
 
     def test_a_kep_kiesik_az_albumbol(self, qml_app, qt_app, tmp_path):
         window, controller, _engine = qml_app
@@ -276,9 +281,7 @@ class TestEmberekAlbumbanNemTorol:
         assert kep.exists(), (
             "ADATVESZTÉS: Emberek-albumban a Delete letörölte a fájlt"
         )
-        assert _gyerek(window, "deleteConfirmDialog").property(
-            "visible"
-        ) is False
+        assert _nem_nyilt_meg(window)
         assert _gyerek(window, "removePeopleFacesDialog").property(
             "visible"
         ) is True, (
@@ -337,9 +340,7 @@ class TestAMenutetelUgyanaztCsinaljaMintABillentyu:
         qt_app.processEvents()
 
         assert (lib / "a.jpg").exists()
-        assert _gyerek(window, "deleteConfirmDialog").property(
-            "visible"
-        ) is False
+        assert _nem_nyilt_meg(window)
         ini = (lib / ".picasa.ini").read_text(encoding="utf-8")
         assert f"albums={_TOKEN}" not in ini
 

@@ -21,19 +21,32 @@ A javítás a `DeferredDialog` (`Loader { active: false }`). A ma esti
 mérés a mai main-en: **QML betöltése 1718 ms** (meleg) / 2506 ms (hideg),
 tehát a regresszió megszűnt.
 
-## Egy MÉRÉS, amit a tábla őriz
+## Egy MÉRÉS, amit a tábla ŐRZÖTT — és amit egy KONTROLL megfordított
 
-A `FileOpsDialogs` halasztását kipróbáltuk, és **elvetettük — méréssel**:
+A `FileOpsDialogs` halasztása egy körben már elbukott: 551 objektummal
+kevesebb, időben viszont semmi (1718 → 1757 ms). A #1612 2026-09-05-i
+köre **megismételte a mérést**, és a verdikt megfordult — nem azért, mert
+a kód változott, hanem mert a MÉRÉS volt gyenge.
 
-| | main | halasztva |
-|---|---:|---:|
-| indulási fa objektumai | 12 343 | 11 792 |
-| QML betöltése | 1718 ms | 1757 ms |
+A gép terhelés alatt ugyanazon a kódon 4,3 és 6,0 s között ingadozik,
+tehát egyetlen párból nem lehet 40 ms-ot kiolvasni. A kontroll **12
+váltakozó A/B kört** futtatott két munkafában, és a MINIMUMOT vette
+(a zaj csak hozzáad, tehát a minimum áll legközelebb a terheletlen
+géphez):
 
-551 objektummal kevesebb, **időben viszont semmi** (szóráson belül).
-Cserébe 14 tesztfájl keresi közvetlenül a párbeszéd gyerekeit. Mérhető
-haszon nélküli, nagy kockázatú változtatás — ezért került a felmentések
-közé, a számokkal együtt, hogy egy későbbi kör ne kezdje elölről.
+| | main | halasztva | különbség |
+|---|---:|---:|---:|
+| indulási fa objektumai | 13 459 | 12 891 | **−568 (−4,2 %)** |
+| QML betöltése, meleg (12 kör MIN) | 2739,7 ms | 2604,6 ms | **−135 ms (−4,9 %)** |
+| QML betöltése, hideg (12 kör MIN) | 3327,3 ms | 3167,3 ms | **−160 ms (−4,8 %)** |
+
+Az időnyereség **arányos** a determinisztikus objektum-csökkenéssel, és
+mindkét irányban (hideg és meleg) ugyanoda mutat. A „14 tesztfájl"
+becslés is túlzó volt: valójában **kettő** kötött a párbeszéd gyerekeire.
+
+⚠️ A tanulság nem az, hogy a régi verdikt hazudott, hanem hogy **egyetlen
+futáspár nem mérés** ezen a gépen. A medián és az átlag ma sem mutat
+különbséget — azokat egyetlen 4,7 s-os kiugrás elviszi.
 
 ## Miért SZERKEZETI őr, és nem időmérés
 
@@ -73,14 +86,6 @@ AZONNAL_EPULO = {
         "`openIfNeeded()` a főablak `Component.onCompleted`-jében fut, "
         "feltétel nélkül, tehát az `ensure()` ugyanabban a pillanatban "
         "felépítené. Nulla nyereség, plusz egy indirekció."
-    ),
-    "FileOpsDialogs": (
-        "603 sor, a leghosszabb párbeszéd-fájlunk — a halasztása MÉRVE "
-        "551 objektumot spórolna (12 343 → 11 792), IDŐBEN viszont "
-        "semmit (1718 → 1757 ms, szóráson belül). Cserébe 14 tesztfájl "
-        "keresi közvetlenül a gyerekeit, tehát mind átkötendő lenne. "
-        "Mérhető haszon nélküli, nagy kockázatú változtatás — külön kör "
-        "dolga, ha egyszer lassabb gépen mérhető nyereséget mutat (#1719)."
     ),
     "AddFileDialog": (
         "#1633: 63 soros burkoló a NATÍV `QtQuick.Dialogs` fájlválasztó "

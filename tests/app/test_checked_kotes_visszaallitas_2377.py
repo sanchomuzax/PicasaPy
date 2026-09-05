@@ -33,19 +33,58 @@ from pathlib import Path
 
 _QML_GYOKER = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml"
 
-#: a `MenuItem { ... }` blokkok — a QML-ben a tételek egy szinten állnak,
-#: ezért a nem mohó törzs + a záró kapcsos zárójel elég a felbontáshoz
-_TETEL = re.compile(r"MenuItem\s*\{(.*?)\n(\s*)\}", re.S)
+#: a `MenuItem {` nyitása — a törzset innen ZÁRÓJEL-PÁROSÍTÁSSAL olvassuk
+#: ki, nem mintával.
+#:
+#: ⚠️ 2026-09-05-ig a törzs a `MenuItem\s*\{(.*?)\n(\s*)\}` nem mohó
+#: mintával jött, ami az ELSŐ önálló sorban álló `}`-nál elvágta. Amint egy
+#: `onTriggered` törzsébe `if … { … } else { … }` került, a minta a belső
+#: ág záró zárójeleénél vágott — a törzs VÉGÉN álló `Qt.binding(...)`
+#: visszaállítás kimaradt a szövegből, és az őr HAMIS leletet adott egy
+#: helyes tételre (#1637, `menuViewHidden`). A szerkezetet nem szabad
+#: mintával közelíteni, ha egyszer beágyazódik.
+_TETEL_NYITAS = re.compile(r"MenuItem\s*\{")
 _CHECKED = re.compile(r"checked:\s*(.+)")
 _OBJNEV = re.compile(r'objectName:\s*"([^"]+)"')
+
+
+def _torzs(szoveg: str, nyitas_vege: int) -> str:
+    """A `{`-tól a PÁRJÁIG tartó törzs — beágyazott blokkokkal együtt.
+
+    A QML-ben a karakterláncok tartalmazhatnak kapcsos zárójelet, ezért az
+    idézőjeles részeket átugorjuk; enélkül egy `text: "{}"` elcsúsztatná a
+    számlálót.
+    """
+    melyseg = 1
+    i = nyitas_vege
+    idezojel = ""
+    while i < len(szoveg) and melyseg > 0:
+        karakter = szoveg[i]
+        if idezojel:
+            if karakter == "\\":
+                i += 2
+                continue
+            if karakter == idezojel:
+                idezojel = ""
+        elif karakter in ("'", '"'):
+            idezojel = karakter
+        elif karakter == "{":
+            melyseg += 1
+        elif karakter == "}":
+            melyseg -= 1
+            if melyseg == 0:
+                return szoveg[nyitas_vege:i]
+        i += 1
+    # pár nélküli nyitás: a fájl végéig tartó törzzsel dolgozunk tovább
+    return szoveg[nyitas_vege:]
 
 
 def _kotott_checked_visszaallitas_nelkul() -> list[str]:
     talalatok = []
     for ut in sorted(_QML_GYOKER.rglob("*.qml")):
         szoveg = ut.read_text(encoding="utf-8")
-        for talalat in _TETEL.finditer(szoveg):
-            torzs = talalat.group(1)
+        for talalat in _TETEL_NYITAS.finditer(szoveg):
+            torzs = _torzs(szoveg, talalat.end())
             if "checkable: true" not in torzs or "Qt.binding" in torzs:
                 continue
             checked = _CHECKED.search(torzs)
@@ -79,10 +118,55 @@ def test_az_or_talal_is_valamit() -> None:
     """
     jelolhetok = 0
     for ut in _QML_GYOKER.rglob("*.qml"):
-        for talalat in _TETEL.finditer(ut.read_text(encoding="utf-8")):
-            if "checkable: true" in talalat.group(1):
+        szoveg = ut.read_text(encoding="utf-8")
+        for talalat in _TETEL_NYITAS.finditer(szoveg):
+            if "checkable: true" in _torzs(szoveg, talalat.end()):
                 jelolhetok += 1
     assert jelolhetok >= 20, (
-        f"csak {jelolhetok} jelölhető menütételt találtam — a minta "
+        f"csak {jelolhetok} jelölhető menütételt találtam — a felbontás "
         "valószínűleg elromlott, az őr így semmit nem védene"
+    )
+
+
+def test_az_or_meglatja_a_beagyazott_ag_utan_allo_visszaallitast() -> None:
+    """A 2026-09-05-i hamis lelet fogása: `if … {} else {}` a törzs KÖZEPÉN.
+
+    A régi, nem mohó minta a belső ág záró zárójelénél elvágta a törzset, és
+    a törzs VÉGÉN álló `Qt.binding(...)`-ot már nem látta — helyes tételre
+    adott leletet. Ez a próba MINDKÉT irányt méri: a beágyazott ág után álló
+    visszaállítást el kell fogadni, a hiányzót viszont meg kell találni.
+    """
+    jo = """
+    MenuItem {
+        objectName: "proba"
+        checkable: true
+        checked: ctl.valami
+        onTriggered: {
+            if (ctl.zarva) {
+                ctl.kerdez()
+            } else {
+                ctl.billent()
+            }
+            checked = Qt.binding(function () { return ctl.valami })
+        }
+    }
+    """
+    rossz = jo.replace(
+        "            checked = Qt.binding(function () "
+        "{ return ctl.valami })\n", ""
+    )
+    assert rossz != jo, "a próba mintája elavult — a visszaállítás sora nem illeszkedett"
+
+    def _talal(qml: str) -> bool:
+        m = _TETEL_NYITAS.search(qml)
+        assert m is not None
+        torzs = _torzs(qml, m.end())
+        return "checkable: true" in torzs and "Qt.binding" not in torzs
+
+    assert not _talal(jo), (
+        "a beágyazott ág UTÁN álló visszaállítást nem látja meg az őr — "
+        "hamis leletet adna a helyes tételre"
+    )
+    assert _talal(rossz), (
+        "a hiányzó visszaállítást sem találja meg — az őrnek nincs foga"
     )
