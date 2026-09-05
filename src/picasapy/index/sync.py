@@ -716,13 +716,18 @@ def move_folder_tree(
 
 def _ensure_photo_hashes(conn: sqlite3.Connection) -> None:
     """A #294 hash-gyorsítótár lusta létrehozása — a `move_folder_tree`
-    régi (a tábla bevezetése előtt született) indexen is futhat."""
+    régi (a tábla bevezetése előtt született) indexen is futhat.
+
+    A MAI alakot hozza létre (#1494: nullázható `dhash` + `originfast`), a
+    `schema.py` `_PHOTO_HASHES_DDL`-jével egyezően. Egy MÁR LÉTEZŐ
+    táblát nem alakít át — az a sémaverzió-migráció dolga."""
     conn.execute(
         "CREATE TABLE IF NOT EXISTS photo_hashes ("
         " path TEXT PRIMARY KEY,"
         " mtime_ns INTEGER NOT NULL,"
         " size INTEGER NOT NULL,"
-        " dhash INTEGER NOT NULL)"
+        " dhash INTEGER,"
+        " originfast INTEGER)"
     )
 
 

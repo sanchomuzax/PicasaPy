@@ -20,7 +20,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
 
-from picasapy.dedup.exact import ExactDuplicateGroup, group_exact_duplicates
+from picasapy.dedup.exact import (
+    ExactDuplicateGroup,
+    FastKeySource,
+    group_exact_duplicates,
+)
 from picasapy.dedup.phash import compute_dhash
 from picasapy.dedup.similar import (
     DEFAULT_PHASH_THRESHOLD,
@@ -108,6 +112,7 @@ def find_duplicates(
     progress: DedupProgressCallback | None = None,
     should_stop: Callable[[], bool] | None = None,
     dhash_source: Callable[[Path], int | None] | None = None,
+    fast_key_source: FastKeySource | None = None,
 ) -> DuplicateReport:
     """Duplikátum- és hasonlóság-keresés a megadott képútvonalakon.
 
@@ -129,6 +134,11 @@ def find_duplicates(
     `dhash_source`: a lenyomat forrása képenként (alapértelmezés a lemezről
     számoló `compute_dhash`); a hívó ide adhat gyorsítótárazott értéket.
 
+    `fast_key_source` (#1494): ugyanez a pontos réteg Picasa-gyorskulcsára
+    (alapértelmezés a lemezről számoló `picasa_fast_key`). Index-hátterű
+    forrással az ismételt keresés a változatlan képek fájlvégeit sem
+    olvassa be újra.
+
     A bemenetet nem mutálja, és nem is szűri/rendezi a hívó számára látható
     módon — az eredmény (`DuplicateReport`) determinisztikus sorrendű,
     független a `paths` bemeneti sorrendjétől."""
@@ -139,6 +149,7 @@ def find_duplicates(
     exact_groups = group_exact_duplicates(
         normalized,
         progress=lambda done: reporter.step(PHASE_EXACT, done),
+        fast_key_source=fast_key_source,
     )
     if reporter.stopped():
         return _CANCELLED

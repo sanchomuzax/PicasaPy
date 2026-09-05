@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -23,13 +23,85 @@ SCHEMA_VERSION = 15
 #     túléli, és a keresés indexen kívüli útvonalra is használható.
 # A PRIMARY KEY az útvonal: a megváltozott fájl SORA cserélődik (upsert),
 # nem halmozódik — a cache mérete a könyvtárral marad arányos.
-_PHOTO_HASHES_DDL = """
+#
+# ⚠️ **TÖRTÉNETI ALAK — CSAK a `MIGRATIONS[5]`-é.** Ez a szöveg a v4→v5
+# migrációt írja le, ami már élesben lefutott: utólag módosítani a már
+# migrált indexeket zavarná össze. A tábla MAI alakja a
+# `_PHOTO_HASHES_DDL`, és a friss telepítés KÖZVETLENÜL azt hozza létre —
+# ez a konstans oda nem kerül be.
+_PHOTO_HASHES_V5_DDL = """
 CREATE TABLE IF NOT EXISTS photo_hashes (
     path TEXT PRIMARY KEY,
     mtime_ns INTEGER NOT NULL,
     size INTEGER NOT NULL,
     dhash INTEGER NOT NULL
 );
+"""
+
+# #1494 — a Picasa fej+farok GYORSKULCSA (`originfast`, `dedup/fastkey.py`)
+# ugyanabban a sorban, mint a dHash: a kulcsa ugyanaz a fájl-azonosság
+# (útvonal + mtime_ns + méret), tehát önálló tábla csak ugyanazt az adatot
+# ismételné. A kulcs — a dHash-sel egyezően — tisztán származtatott: a
+# fájlból bármikor újraszámolható, a tábla eldobható.
+#
+# KÉT változás, és mindkettő kényszer, nem ízlés:
+#
+# 1. `originfast INTEGER` — NULL-ozható, mert a MEGLÉVŐ sorokhoz nem
+#    számolunk kulcsot a migrációkor (a jegy 1. pontja): lustán töltődik,
+#    amikor a duplikátum-keresés vagy az importálás úgyis beolvassa a
+#    fájl két végét.
+# 2. A `dhash` NOT NULL megkötése MEGSZŰNIK. Az importálás duplikátum-
+#    szűrője (#441, `importsource.duplicate_paths`) SOHA nem számol
+#    dHash-t, csak gyorskulcsot — `NOT NULL` dhash mellett a kulcsnak nem
+#    volna hova beírnia magát. Az SQLite a NOT NULL-t nem tudja
+#    `ALTER TABLE`-lel levenni, ezért a lépés tábla-ÚJRAÉPÍTÉS; a sorok
+#    átmásolódnak, adat nem vész el.
+#
+# ⚠️ A két oszlop EGY soron osztozik, tehát mindkettő írója felel a másik
+# ÉRVÉNYESSÉGÉÉRT is: ha a fájl azonossága közben megváltozott, a sorban
+# maradó másik érték már idegen fájlra vonatkozna (ld. `hashes.py`).
+#
+# ⚠️ A tábla MAI alakja — a friss telepítés `DDL`-je EZT futtatja, és semmi
+# mást a `photo_hashes`-re. A v15→v16 migrációnak SAJÁT, befagyasztott
+# másolata van (`_PHOTO_HASHES_FASTKEY_MIGRATION`): egy konstans nem
+# szolgálhat egyszerre „mai alakként" és „történeti szkriptként", mert a
+# következő oszlop-bővítéskor a már lefutott migráció is megváltozna
+# (ugyanaz a csapda, amire a `_PHOTO_HASHES_V5_DDL` figyelmeztet).
+_PHOTO_HASHES_DDL = """
+CREATE TABLE IF NOT EXISTS photo_hashes (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    dhash INTEGER,
+    originfast INTEGER
+);
+"""
+
+# #1494 — a v15→v16 migráció BEFAGYASZTOTT szkriptje. Szándékosan ismétli a
+# fenti oszlop-listát: a két útnak (friss telepítés kontra migrálás) MA
+# ugyanoda kell érkeznie, a jövőbeli bővítések viszont már nem érinthetik
+# ezt a lefutott lépést.
+#
+# A sorrend — átnevezés, ÚJ tábla a végleges néven, másolás, eldobás — nem
+# ízlés: így a `sqlite_master.sql` szövege BITRE ugyanaz lesz, mint friss
+# telepítésnél. Fordított sorrendnél (`…_1494` építése, majd átnevezése) az
+# `ALTER TABLE … RENAME` idézőjelbe teszi a tábla nevét a tárolt SQL-ben
+# (`CREATE TABLE "photo_hashes"`), és a két út sémája elszakadna egymástól.
+_PHOTO_HASHES_FASTKEY_MIGRATION = """
+ALTER TABLE photo_hashes RENAME TO photo_hashes_v15;
+
+CREATE TABLE photo_hashes (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    dhash INTEGER,
+    originfast INTEGER
+);
+
+INSERT INTO photo_hashes(path, mtime_ns, size, dhash)
+    SELECT path, mtime_ns, size, dhash FROM photo_hashes_v15;
+
+DROP TABLE photo_hashes_v15;
 """
 
 _FTS_DDL = """
@@ -327,7 +399,7 @@ ALTER TABLE photos ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
     # #294: a dHash-gyorsítótár tábla. Üresen jön létre — a meglévő
     # indexekhez nem kell újraszámolni semmit, az első duplikátum-keresés
     # tölti fel magától.
-    5: _PHOTO_HASHES_DDL,
+    5: _PHOTO_HASHES_V5_DDL,
     # #30: geocímke — az ini nyers `geotag=` értéke és a fájl EXIF GPS-e
     # külön oszlopban (a feloldás sorrendje: ini, majd EXIF). Üresen jön
     # létre; a következő szinkron tölti fel, újraindexelés nélkül is.
@@ -379,4 +451,9 @@ ALTER TABLE folders ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
     14: """
 ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
 """,
+    # #1494: a gyorskulcs (`originfast`) oszlopa + a `dhash` NOT NULL
+    # megkötésének feloldása (ld. `_PHOTO_HASHES_FASTKEY_MIGRATION`). A meglévő
+    # dHash-sorok átmásolódnak, a kulcs-oszlopuk NULL-lal indul: nincs
+    # újraszámolás, a következő duplikátum-keresés/importálás tölti fel.
+    15: _PHOTO_HASHES_FASTKEY_MIGRATION,
 }

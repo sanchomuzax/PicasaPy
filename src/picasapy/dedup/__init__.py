@@ -13,6 +13,7 @@ from __future__ import annotations
 from picasapy.dedup.api import DuplicateReport, find_duplicates
 from picasapy.dedup.exact import (
     ExactDuplicateGroup,
+    FastKeySource,
     file_content_hash,
     group_exact_duplicates,
 )
@@ -34,6 +35,7 @@ __all__ = [
     "FEJ_MERET",
     "DuplicateReport",
     "ExactDuplicateGroup",
+    "FastKeySource",
     "SimilarGroup",
     "compute_dhash",
     "file_content_hash",

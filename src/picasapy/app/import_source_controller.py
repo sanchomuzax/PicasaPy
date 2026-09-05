@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import sqlite3
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Callable
 
@@ -61,7 +62,12 @@ from picasapy.importsource import (
     duplicate_paths,
     scan_source,
 )
-from picasapy.index import PhotoRecord, all_photos, open_index
+from picasapy.index import (
+    IndexFastKeySource,
+    PhotoRecord,
+    all_photos,
+    open_index,
+)
 from picasapy.ini import load_document, save_document, update_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
@@ -148,18 +154,47 @@ def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord
     )
 
 
-def _library_paths(index_path: str | Path) -> tuple[Path, ...]:
+def _library_paths(conn: sqlite3.Connection) -> tuple[Path, ...]:
     """A jelenleg indexelt könyvtár teljes fájl-útvonalai (#441 duplikátum-
-    kizárás forrása). Hiányzó/olvashatatlan indexnél üres tuple — az
-    "Exclude Duplicates" ekkor egyszerűen nem talál semmit, NEM hibázik."""
+    kizárás forrása)."""
+    return tuple(
+        Path(record.folder_path) / record.name for record in all_photos(conn)
+    )
+
+
+def _duplikatumok(
+    index_path: str | Path, candidates: Sequence[ImportCandidate]
+) -> frozenset[Path]:
+    """A könyvtárral tartalom-egyező jelöltek (#441), index-hátterű
+    gyorskulccsal (#1494).
+
+    A kapcsolat az ÖSSZEVETÉS TELJES idejére nyitva marad — ezért tud a
+    könyvtárbeli fájlok gyorskulcsa az indexből jönni, és ezért kerülhet
+    az újonnan számolt kulcs mindjárt vissza is oda. A második importálási
+    kör így a könyvtár változatlan képeinek fájlvégeit sem olvassa be újra.
+
+    Hiányzó/olvashatatlan indexnél üres halmaz — az "Exclude Duplicates"
+    ekkor egyszerűen nem talál semmit, NEM hibázik.
+
+    ⚠️ A gyorstár mentése a KÉSZ eredményt nem ronthatja el: a `flush()`
+    maga commitol és maga nyeli el a saját index-hibáit (ld. ott), ezért
+    állhat a `finally`-ben. Csupasz `conn.commit()` itt SOHA ne legyen —
+    zárolt vagy tele indexen az a külső `except`-be esne, és az "Exclude
+    Duplicates" szótlanul nem találna semmit, a felhasználó pedig
+    újraimportálná a már meglévő képeit (#1494 átnézés, 1. lelet)."""
     try:
         with open_index(index_path) as conn:
-            return tuple(
-                Path(record.folder_path) / record.name
-                for record in all_photos(conn)
-            )
+            kulcsforras = IndexFastKeySource(conn)
+            try:
+                return duplicate_paths(
+                    candidates,
+                    _library_paths(conn),
+                    library_key_source=kulcsforras,
+                )
+            finally:
+                kulcsforras.flush()
     except (OSError, sqlite3.Error):
-        return ()
+        return frozenset()
 
 
 class ImportSourceController(BackgroundWorkerMixin, QObject):
@@ -516,7 +551,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 self.sourceScanFailed.emit(str(error))
                 return
 
-            duplicates = duplicate_paths(candidates, _library_paths(self._index_path))
+            duplicates = _duplikatumok(self._index_path, candidates)
 
             self._candidates = candidates
             # #441: új forrás → a korábbi forgatások/csillagok nem élnek

@@ -59,7 +59,18 @@ def file_content_hash(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def _kulcs_szerint_ellenorzendok(candidates: list[Path], size: int) -> list[Path]:
+#: A gyorskulcs forrása képenként (#1494). Alapértelmezésben a lemezről
+#: számoló `picasa_fast_key`; a hívó adhat index-hátterűt is
+#: (`index.IndexFastKeySource`), és akkor a MÁSODIK kör egyetlen fájlvéget
+#: sem olvas be újra. A szerződés a `dhash_source`-éval (#294) azonos: a
+#: `None` azt jelenti, „ennek a fájlnak nincs kulcsa" (üres vagy
+#: olvashatatlan), nem azt, hogy „nem tudom".
+FastKeySource = Callable[[Path], int | None]
+
+
+def _kulcs_szerint_ellenorzendok(
+    candidates: list[Path], size: int, fast_key_source: FastKeySource
+) -> list[Path]:
     """Az azonos méretű jelöltekből azok, akikre tényleg kell teljes hash.
 
     A gyors kulcs (2. lépés) minden jelöltre legfeljebb ~33 KB-ot olvas; akinek
@@ -76,7 +87,7 @@ def _kulcs_szerint_ellenorzendok(candidates: list[Path], size: int) -> list[Path
         return list(candidates)
     kulcs_szerint: dict[int | None, list[Path]] = defaultdict(list)
     for candidate in candidates:
-        kulcs_szerint[picasa_fast_key(candidate)].append(candidate)
+        kulcs_szerint[fast_key_source(candidate)].append(candidate)
     return [
         candidate
         for kulcs, csoport in kulcs_szerint.items()
@@ -88,8 +99,14 @@ def _kulcs_szerint_ellenorzendok(candidates: list[Path], size: int) -> list[Path
 def group_exact_duplicates(
     paths: Sequence[Path],
     progress: Callable[[int], object] | None = None,
+    fast_key_source: FastKeySource | None = None,
 ) -> tuple[ExactDuplicateGroup, ...]:
     """Bitre azonos fájlok csoportosítása.
+
+    `fast_key_source` (#1494): a 2. lépés kulcsforrása; alapértelmezésben a
+    lemezről számoló `picasa_fast_key`. Index-hátterű forrással
+    (`index.IndexFastKeySource`) az ISMÉTELT keresés a változatlan képek
+    fájlvégeit sem olvassa be újra — a #294 dHash-gyorstárának mintájára.
 
     `progress` (#294): a feldolgozott képek KUMULÁLT száma, képenként hívva;
     igaz visszatérési érték megszakítás-kérés, ilyenkor a függvény üres
@@ -102,6 +119,7 @@ def group_exact_duplicates(
     a csoportok az első (rendezett) útvonaluk szerint következnek, a
     csoporton belüli útvonalak szintén rendezve vannak — így a kimenet a
     bemeneti sorrendtől függetlenül reprodukálható."""
+    kulcsforras = picasa_fast_key if fast_key_source is None else fast_key_source
     by_size: dict[int, list[Path]] = defaultdict(list)
     for path in paths:
         try:
@@ -118,7 +136,7 @@ def group_exact_duplicates(
             if progress is not None and progress(done):
                 return ()
             continue
-        ellenorzendok = _kulcs_szerint_ellenorzendok(candidates, size)
+        ellenorzendok = _kulcs_szerint_ellenorzendok(candidates, size, kulcsforras)
         done += len(candidates) - len(ellenorzendok)  # a kulccsal kizártak
         if progress is not None and done and progress(done):
             return ()

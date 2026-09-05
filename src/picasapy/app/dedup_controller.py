@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import sqlite3
 import threading
 from pathlib import Path
 
@@ -52,6 +53,7 @@ from picasapy.dedup import find_duplicates
 from picasapy.dedup.phash import compute_dhash
 from picasapy.fileops import delete_to_trash, move_photo
 from picasapy.index import (
+    IndexFastKeySource,
     PhotoRecord,
     all_photos,
     load_dhashes,
@@ -115,6 +117,34 @@ def _photo_path(photo: PhotoRecord) -> str:
     """A fotó teljes (abszolút) elérési útja — ez a kulcs a
     `find_duplicates` bemenetéhez és a csoportok elem-azonosításához."""
     return str(Path(photo.folder_path) / photo.name)
+
+
+def _fajl_azonossagok(
+    photos: tuple[PhotoRecord, ...],
+) -> dict[str, tuple[str, int, int]]:
+    """Útvonal → `(útvonal, mtime_ns, méret)` a `photo_hashes` KÉT
+    gyorstárához (#294 dHash és #1494 gyorskulcs).
+
+    EGYETLEN forrás mindkettőnek, és ez nem stílus-kérdés: a két érték egy
+    soron osztozik, és minden írás NULL-ozza a párját, ha a sorban tárolt
+    azonosság nem egyezik a most beírttal. Két külön mérésből (indexbeli
+    rekord kontra friss `stat()`) a szinkron óta megváltozott fájlokra a
+    kettő eltérne, és a két gyorstár körönként váltakozva ürítené egymást.
+
+    A mérce a LEMEZ mai állapota — a `.stat()` —, nem az indexbeli rekord:
+    a rekord az utolsó szinkroné, és egy azóta kicserélt fájlra a tárolt
+    (idegen) kulcsot adná vissza. Elérhetetlen fájlnál (levált NAS-mount,
+    időközben törölt kép) marad a rekord értéke: lekérdezésre az is jó, és
+    a hash-ek úgyis `None`-t adnak majd rá, tehát írás nem lesz belőle."""
+    azonossagok: dict[str, tuple[str, int, int]] = {}
+    for photo in photos:
+        path = _photo_path(photo)
+        try:
+            adat = Path(path).stat()
+            azonossagok[path] = (path, adat.st_mtime_ns, adat.st_size)
+        except OSError:
+            azonossagok[path] = (path, photo.mtime_ns, photo.size)
+    return azonossagok
 
 
 def _thumb_url(photo_id: int | None) -> str:
@@ -316,20 +346,36 @@ class DedupController(BackgroundWorkerMixin, QObject):
 
         A cache kulcsa a fájl azonossága (`útvonal, mtime_ns, méret`), így
         egy változatlan kép soha nem dekódolódik újra — ez teszi az
-        ismételt keresést azonnal indulóvá (#294)."""
-        keys = {
-            _photo_path(photo): (_photo_path(photo), photo.mtime_ns, photo.size)
-            for photo in photos
-        }
+        ismételt keresést azonnal indulóvá (#294).
+
+        Ugyanez a gyorstár szolgálja ki a PONTOS réteg Picasa-gyorskulcsát
+        is (#1494, `originfast`): a második körben a változatlan képek
+        fájlvégeit sem kell újra beolvasni."""
+        keys = _fajl_azonossagok(photos)
         cached = load_dhashes(conn, tuple(keys.values()))
         pending: list[tuple[str, int, int, int]] = []
 
         def flush() -> None:
+            """A dHash-köteg kiírása ÉS commitolása.
+
+            Index-hiba (zárolás, tele lemez) nem buktathatja meg a KÉSZ
+            keresést: a gyorstár kényelmi szolgáltatás, a jelentés
+            helyessége nem függ tőle — védelem nélkül a `_run_scan`
+            `except`-je `scanFailed`-et emittálna egy kész eredmény
+            helyett (#1494 átnézés, 5. lelet)."""
             if not pending:
                 return
-            save_dhashes(conn, pending)
-            conn.commit()
+            koteg = tuple(pending)
             pending.clear()
+            try:
+                save_dhashes(conn, koteg)
+                conn.commit()
+            except sqlite3.Error:
+                _log.warning("#294: a dHash-ek mentése nem sikerült", exc_info=True)
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    _log.warning("#294: a visszagörgetés sem sikerült", exc_info=True)
 
         def dhash_source(path: Path) -> int | None:
             key = keys.get(str(path))
@@ -342,6 +388,8 @@ class DedupController(BackgroundWorkerMixin, QObject):
                     flush()
             return value
 
+        gyorskulcs = IndexFastKeySource(conn, keys)
+
         try:
             return find_duplicates(
                 list(keys),
@@ -350,8 +398,13 @@ class DedupController(BackgroundWorkerMixin, QObject):
                 ),
                 should_stop=stop_event.is_set,
                 dhash_source=dhash_source,
+                fast_key_source=gyorskulcs,
             )
         finally:
+            # mindkét `flush()` commitol ÉS elnyeli a saját hibáját, tehát
+            # innen se kész eredményt elvivő kivétel, se bent maradó írási
+            # zár nem indulhat (#1494 átnézés, 2./5. lelet)
+            gyorskulcs.flush()
             flush()
 
     def _emit_progress(self, phase: str, done: int, total: int, stop_event) -> bool:
