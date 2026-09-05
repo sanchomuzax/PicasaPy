@@ -374,6 +374,35 @@ tartalom elejére (`0x00985ff0`, hossz `0x1e`).
 utasításszinten valóban feltétel nélkül teszi elé, de a felhasználó 694
 album-jellegű fájljából egy sem tartalmazza.
 
+##### ⭐ MEGVAN, MIÉRT (2026-09-05): az író az EXPORT/ELŐKÉSZÍTÉS ága, nem az általános `.picasa.ini`-író
+
+Az ellentmondás feloldva: **rossz írót néztünk**.
+
+| megfigyelés | bizonyíték |
+|---|---|
+| a `.picasa.ini` literált **43 függvény** érinti | `string_xrefs`, kimerítő |
+| a `FUN_0068ac80` ezek **egyike**, és **két** közvetlen hívója van | `0x00696d31`, `0x0069b87d` (kimerítő `e8` pásztázás) |
+| a két hívó gazdája is **egy-egy** hívóval rendelkezik | `FUN_006956d0` ← `0x00695609`; `FUN_0069b240` ← vtáblából |
+| **KI a gazda — RTTI-vel feloldva** | a `FUN_0069b240` mutatója két vtáblában áll: `0x00ca7cc0` (fej `0x00ca7c54`) ⇒ **`PrepareCollection`**, és `0x00ca7df8` (fej `0x00ca7d8c`) ⇒ **`AlignedImageCollection`** |
+
+⇒ A `[encoding]`-fejlécet író függvény az **export/előkészítés** ágán ül
+(„prepare collection"), nem azon az úton, amelyik a felhasználó
+fotómappáiba ír. Ezért nem találjuk a korpuszban: a korpusz a **forrás**
+mappákat tartalmazza.
+
+**Élő kontroll (2026-09-05):** a `research/testdata/` alatt **71**
+`.picasa.ini` van, ezek közül **0** tartalmaz `[encoding]` szekciót, és
+`Picasa.ini` (nagy kezdőbetűs) fájl **egy sincs**.
+
+⛔ **BLOKKOLT részkérdés (SAJÁT, ebben a körben):** ír-e a friss export
+ténylegesen `[encoding]` fejlécet? A `research/#2007-rotate-ini/` minta
+**exportált** mappa (`P2category=Exported Pictures`), és **nincs** benne —
+de azt a fájlt az importálás és a négyszeri forgatás **újraírta**, tehát
+nem dönt. **Megszerzés:** egy friss export a valódi Picasából, amelyet
+utána **nem** importálunk vissza és nem szerkesztünk; ha annak a
+`.picasa.ini`-je `[encoding]`-gal kezdődik, az állítás megerősítve. Jegy:
+**#2452**.
+
 **A legvalószínűbb magyarázat** (a korpusz `date=40452` = 2010-es
 sorszámdátumai alapján), hogy ezek a fájlok **korábbi Picasa-változattól**
 származnak, és a tulajdonos azóta nem íratta újra őket. ⚠️ **Ez
