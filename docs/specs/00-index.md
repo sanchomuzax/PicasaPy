@@ -968,16 +968,31 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
 
 ⭐ **2026-09-03 (8. szakasz) — a `thumbindex.db` és a `*_index.db` BÁJTFORMÁTUMA megfejtve.** A `thumbindex.db`: `uint32` magic `0x40466666` + `uint32` rekordszám + rekordonként **ASCIIZ útvonal + 30 bájtos farok** (két `FILETIME`, méret, típus, `dirty`, `valid`, kiegészítő). ⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce** — a bináris rekord és a `WriteDirscannerCSV` kimenete ugyanaz a szerkezet. A három `*_index.db`: **float verzió (1.6) + NÉGY párhuzamos `uint32`-tömb** (üres · **Checksum** · **Offset** · **Size**) — ⚠️ **ez a lap 8.2 szakaszának HELYESBÍTETT modellje**; a korábban itt állt „20 bájt fejléc + 12 bájt/slot (`uint64 q` + `uint32 u`)" leírás **MEGDŐLT** (a két modell bitre ugyanazt a fájlméretet adja, ezért a méret-ellenőrzés nem szűrte ki). Az indexbejegyzés 2026-09-05-ig hordozta az elavult alakot. **Ellenőrizve:** 140 758 rekord 0 bájt maradékkal; 1 689 080 = 20 + 140 755 × 12 és 3 287 072 = 20 + 273 921 × 12 pontosan. ⭐ **2026-09-04: a kulcs (a Picasa szóhasználatában `Checksum`) KÉPLETE MEGVAN** és mért (8.10): `(JS_hash(teljes_út) mod 1 000 231) ^ rol(idő_lo,13) ^ rol(idő_hi,17) ^ rol(méret,18)`, ahol az idő a **második** FILETIME; három katalóguson 48 605 + 2 161 + 1 932 pontos 32 bites egyezés. ⚠️ **A korábban itt felsorolt kizárások (10 mező-összevetés, 24 hash-kombináció) a MEGDŐLT szerkezet-modellre épültek — ne tekintsd őket érvényesnek** (a lap 8.6 visszavonta őket). ⭐ **2026-09-05: KÉT ellenőrzőösszeg-mód van.** A számoló `FUN_006b99f0` egyetlen verem-paramétere kapcsoló; a **2. módban** (`0x006b9b26`) **nincs útvonal és nincs méret**: `rol(q_lo,13) ^ rol(q_hi,17)`, ahol `q = (FILETIME + 5 000 000) / 10 000 000` — vagyis **egész másodpercre kerekített** idő. A hat hívóból öt fixen `1`-et ad, egy (`0x004e3c13`) futásidejűt, ami a `CThumbDB` **34. réséből** ered. Jegyek: **#2195** (olvasó, kommentelve), **#1** (db3-import gyűjtő).
 
-1. **Melyik hívó kéri a 2. ellenőrzőösszeg-módot?** A kapcsoló a `CThumbDB`
-   **34. rését** (`0x00c82184`, vtábla `0x00c820fc`, COL `0x00cfa164`,
-   `offset = 84`) hívó kódból jön. **Megnézve:** a `call dword ptr [reg+0x88]`
-   alakra **0 találat** a teljes `.text`-en ⇒ a hívás regiszterbe töltve megy.
-   **Megszerzés:** a `mov reg,[reg+0x88]` 286 találatának szűrése arra,
-   melyiket követi `call reg`, vagy a lap 11. szakaszának `CThumbDB`
+⭐ **2026-09-05 (120. kör) — MIKOR jut a 2. mód: LEZÁRVA.** Az egyetlen
+futásidejű hívóhely elágazása szerint **három feltétel bármelyike** a 2.
+módot választja: a hívó kifejezetten `0`-t ad (`0x004e3bc2`), **vagy** a
+rekord `Type`-ja `0` (`0x004e3bcb`), **vagy** nincs szülője
+(`0x004e3bd7`). Mivel a `+26 == 0xFFFFFFFF` szentinel pontosan a
+`Type ∈ {0,1,5}` halmazon áll (8.1), **a könyvtárak és az üres slotok
+mindig a 2. módot kapják**. ⭐ **Az 1. mód KÉT sztringet hasheli** — a
+szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátorba
+(`0x004e3bdd`–`0x004e3c0e`); hibás szülőindexnél a `[objektum+0x550]`
+tartalékra esik, ugyanarra, mint a névfeloldás. ⇒ Aki kompatibilis
+gyorsítótárat ír, a **sorrendet** kell eltalálnia.
+
+1. **Melyik hívó ad KIFEJEZETTEN 0-t?** A kapcsoló a `CThumbDB`
+   **34. réséből** (`0x00c82184`, vtábla `0x00c820fc`, COL `0x00cfa164`,
+   `offset = 84`) jön. **Megnézve:** a `call dword ptr [reg+0x88]` alakra
+   **0 találat**; a `mov reg,[reg+0x88]` **286** találatából **93** olyan,
+   amit `call reg` követ — ezek nagy része más osztály azonos eltolása.
+   **Megszerzés:** a 93 jelölt szűrése arra, melyik fogadó `CThumbDB`
+   másodlagos felülete (`this+0x54`), vagy a lap 11. szakaszának
    felület-térképe.
 2. **A 615 nem egyező sor oka** — „elavult ellenőrzőösszeg" **vagy** „a 2.
-   módban íródott". **Megszerzés (olcsó, új adat NÉLKÜL):** a `Checksum₂`
-   újraszámolása ugyanazon a katalóguson, a nem egyező sorokra.
+   módban íródott". ⚠️ **2026-09-05-i szűkítés:** a 615 sor **mind
+   fájl-típusú**, tehát van szülőjük ⇒ a 2. mód náluk csak úgy jöhetett
+   szóba, ha a hívó kifejezetten `0`-t adott. **Megszerzés:** a `Checksum₂`
+   újraszámolása a 615 sorra (olcsó, új adat nélkül), és/vagy az 1. pont.
 
 ⭐ **2026-09-02 — SAJÁT HELYESBÍTÉS a bélyegkép-gyorstár kulcsvektorán:** a lap
 korábbi következtetése („a kulcs tárankénti, nem globális fotó-azonosító")
