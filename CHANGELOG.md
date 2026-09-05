@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.291] – 2026-09-05
+
+### Változott
+
+- **A függőséglista megkülönbözteti a mindenkinek kötelező és a csak
+  bizonyos Linux-telepítéshez kellő csomagokat** (#1491). A
+  `packaging/qt-runtime-deps.txt` egy fájl maradt, de a disztribúció-függő
+  tételek külön `[csak-disztribucios]` szakaszba kerültek; a telepítő új
+  `--apt-teljes` kapcsolóval kéri őket, a folyamatos ellenőrzés pedig
+  továbbra is a szűk listát kapja. A megkülönböztetés hiánya korábban
+  egyszer már megbénította az egész ellenőrző rendszert.
+
 ## [0.8.290] – 2026-09-05
 
 ### Hozzáadva
