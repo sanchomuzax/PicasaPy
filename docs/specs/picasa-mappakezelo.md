@@ -2245,15 +2245,107 @@ jelenti, hogy a Picasa a bejegyzést NEM tudta feldolgozni.** A
 könyvtárbejáró tehát **nyilvántartja a hibás fájlokat és mappákat**, és
 kérésre ki is listázza őket.
 
-*(A `0x004f2804`–`0x004f2825` ág további `Type`-értékeket különböztet meg
-— **1**, **5**, **0x19 = 25**, **0x3e9 = 1001** —, de ezek jelentése a
-névfeloldás ágában van, és **nincs mérve**. Lásd a mérleget.)*
+#### ✅ A `Type` további értékei — LEZÁRVA (2026-09-05)
 
-#### Egy második fejlesztői kapcsoló: `DirscanRegression`
+> ⚠️ **Helyesbítés: ez a tétel részben ELAVULT volt.** A `Type = 1`
+> (könyvtár) és a `Type = 1001` (arcsablon-bejegyzés) jelentését a
+> **`pmp-database.md` 8.1** már **megmérte** két valódi katalóguson — a
+> 1001-et halmaz-azonossággal a `facetemplatesV2_index.db` foglalt
+> slotjaival (412 = 412). A blokkolás azért maradt itt, mert a választ egy
+> MÁSIK lap adta meg. *(A tanulság a `docs/specs/00-index.md`-be is
+> átvezetve.)*
 
-A hívók egyike (`0x004e9b00`, 649 b) a `Preferences\`**`DirscanRegression`**
-kulcsot olvassa. ⇒ a bejárónak **regressziós üzemmódja** is volt. A
-kulcs hatása **nincs mérve**.
+**Ami ebben a körben ÚJ — a névfeloldás pontos szabálya**
+(`0x004f27f3`–`0x004f2825`, megerősített):
+
+```
+ha  rekord.valid (+0x1d) == 0            → a NÉV önmagában a teljes út
+ha  rekord.Type  (+0x18) ∈ {1, 5, 25, 1001} → a NÉV önmagában a teljes út
+különben                                  → szülő_neve + név
+```
+
+A szülőág is feltételes: ha a `+0x20` a rekordszámon kívülre mutat
+(`0x004f282e`), vagy a **szülő** `Type`-ja `0` (`0x004f284a`), a Picasa a
+`[objektum+0x550]` tartalék sztringre esik vissza — **kivételt nem dob**.
+
+**⭐ A `Type = 1001` és a `+26` mező — a mért anomália MAGYARÁZATA.** A
+`pmp-database.md` 8.1 azt mérte, hogy a kis katalógusban **412** bejegyzés
+`+26` mezője nem mutat mappa-slotra, és hogy ez a 412 pontosan a
+`Type = 1001` halmaz. A bináris megmondja, miért: a szülőlekérdező
+**`FUN_004e2990` (66 b, `ret 4`)** így szól —
+
+```
+ha index >= rekordszám            → -1
+ha rekord.Type == 1001            → -1        (0x004e29bb)
+ha rekord.+0x20 == 0xFFFFFFFF     → -1        (0x004e29c7)
+különben                          → rekord.+0x20
+```
+
+⇒ **arcsablon-bejegyzésen a `+26` mező NEM szülőindex**, és az eredeti
+soha nem is olvassa annak. Az anomália tehát nem adathiba.
+
+**A `Type = 5` — „hibás könyvtár", nem „másik fajta könyvtár"** *(erős, nem
+megerősített)*. A `badfiles.txt`-írója (`0x004f2a40`–`0x004f2ae0`) a
+teljes rekordtömbön végigmegy, és **feltétel nélkül** kiírja a
+`Type == 4`-eseket `(badfile)`, a `Type == 5`-ösöket `(baddirectory)`
+címkével. Egy `badfiles.txt` nevű fájl nem sorolná fel az összes rendes
+mappát; és a mért darabszám is ezt támogatja (`pmp-database.md` 8.1:
+**6**, illetve **19** darab a **2 338**, illetve **115** darab `Type = 1`
+mellett). ⇒ A `pmp-database.md` „könyvtár (2. fajta)" sora **pontosítandó**.
+
+**A `Type = 25` (`0x19`) — a JELENTÉSE továbbra sincs meg**, de a szerepe
+három ponton körülhatárolt:
+
+| hol | mit mond ki |
+|---|---|
+| `0x004f2822` környéke | a `{1, 5, 25, 1001}` halmaz tagja ⇒ **a neve teljes út** |
+| `0x004efbcc`–`0x004efbe4` | a „piszkosra állítás" menetben a `{1, 25}` ágba esik, **de** a 25 és a 26 (`0x1a`) **ki van véve** a `dirty = 1` + hozzáférési idő nullázása alól |
+| `0x004ea0e0`–`0x004ea0e8` | az `{5, 25}` páros kihagy egy összesítő ágat |
+
+**Amit hozzá megnéztem, eredmény nélkül:** a `.text` teljes pásztázása
+`mov reg,25`, `mov [reg+disp8],25` és `cmp reg,25` alakra — a
+könyvtárbejáró tartományában (`0x4e0000`–`0x510000`) **egyetlen ÍRÓ sincs**,
+csak olvasók; sztring sem tartozik hozzá. A tulajdonos két katalógusában
+**0 előfordulás** (`pmp-database.md` 8.1 típus-táblája). **Megszerzés:** egy
+olyan katalógus, amelyben előfordul, **vagy** a `0x004ea0c0` és a
+`0x004efbb0` menet célzott dekompilációja.
+
+#### ✅ A `DirscanRegression` kapcsoló — LEZÁRVA (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A teljes ág elolvasva, az
+> importált függvények névfeloldásával.
+
+A `0x004e9b00` (649 b) a bejárás **befejező** ága. Ami ott történik:
+
+```
+0x004e9cdc  test byte [0x00da03c4], 1     ; már beolvastuk a kulcsot?
+0x004e9ce3  jne  0x004e9d2e               ; igen → egyszer-olvasás
+0x004e9ce5  or   dword [0x00da03c4], 1
+0x004e9cec  push "DirscanRegression"      ; 0x00c86458
+0x004e9cf1  push "Preferences"            ; 0x00c7eafc
+0x004e9d05  call 0x00407a20               ; a beállítás beolvasása
+0x004e9d0e  call 0x004019b0               ; → logikai érték
+0x004e9d17  mov  byte [0x00da03c0], al    ; a gyorsítótárazott KAPCSOLÓ
+0x004e9d2e  cmp  byte [0x00da03c0], 0
+0x004e9d34  je   0x004e9d78               ; ha 0 → semmi nem történik
+0x004e9d37  mov  ecx, 4                   ; ⇒ a CSV-író NEGYEDIK módja
+0x004e9d3c  call 0x004f25f0
+0x004e9d42  call dword [0x00c4023c]       ; ⇒ ExitProcess
+```
+
+⇒ **`Preferences\DirscanRegression = 1` esetén a Picasa a bejárás végén
+kiírja a 4. módú CSV-t (a `WriteDirscannerCSV` kaput megkerülve), és
+azonnal KILÉP** (`ExitProcess`). A kulcsot a folyamat **egyszer** olvassa
+be (a `0x00da03c4` bit 0 őrzi), és a `0x00da03c0` bájtban tartja.
+
+Ugyanez a függvény **méri is a bejárást**: `QueryPerformanceCounter`
+(`0x004e9b0b`, `0x004e9ba7`, `0x004e9bba`) és
+`QueryPerformanceFrequency` (`0x004e9be2`).
+
+⇒ Ez egy **fejlesztői regressziós futtató**: indítsd el a Picasát, hagyd
+lefutni a bejárást, kapsz egy CSV-t és egy időmérést, a program kilép.
+**A termékre nincs hatása** — a kulcs alapértelmezés szerint hiányzik, és
+a felhasználó felületén sehol nem állítható.
 
 #### Eredeti / nálunk / teendő
 
@@ -2266,12 +2358,17 @@ kulcs hatása **nincs mérve**.
 
 *Bizonyítottsági fok: **megerősített** a négy módra, a kapura, a `#db3\`
 helyre, a `"w"` nyitásra, a hét oszlop forrására, a `badfiles.txt`
-létére és a 4/5 `Type`-értékre; a további `Type`-értékek és a
-`DirscanRegression` hatása **nincs mérve**.*
+létére, a 4/5 `Type`-értékre, a névfeloldás szabályára, a
+`FUN_004e2990` szülőlekérdezőre és a `DirscanRegression` hatására;
+**erős** (nem megerősített) a `Type = 5` = „hibás könyvtár" olvasat;
+a `Type = 25` JELENTÉSE **NINCS MEG**.*
 
 #### Nyitott kérdések mérlege (16.2/b)
 
-`0 nyílt · 5 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 7 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+*(2026-09-05: a két blokkolt tételből az egyik teljesen lezárult, a másik
+háromnegyedéig — csak a `Type = 25` jelentése maradt.)*
 
 | kérdés | állapot |
 |---|---|
@@ -2280,8 +2377,11 @@ létére és a 4/5 `Type`-értékre; a további `Type`-értékek és a
 | mi a sorformátum, honnan a hét oszlop | **LEZÁRVA** — `"%s",%f,%f,%d,%d,%d,%d` + a rekord-eltolások |
 | van-e másik kimenet | **LEZÁRVA** — **igen: `badfiles.txt`** |
 | mit jelent a `Type` 4 és 5 | **LEZÁRVA** — hibás fájl / hibás mappa |
-| **mit jelent a `Type` 1, 25 és 1001** | **BLOKKOLT** — a névfeloldó ág `0x004f2804`–`0x004f2825` különbözteti meg őket, de a jelentésükre nincs sztring. **Megszerzés:** a `ytDirScannerChangeList` osztály dekompilációja. **A #1997-et nem blokkolja** (a 4/5 elég a hibalistához). |
-| **mit csinál a `DirscanRegression`** | **BLOKKOLT** — csak a kulcs olvasása látszik (`0x004e9b00`). **Megszerzés:** a `0x004e9b00` dekompilációja. **Fejlesztői kapcsoló**, a termékre nincs hatása. |
+| mit jelent a `Type` **1** | ✅ **LEZÁRVA** — könyvtár (`pmp-database.md` 8.1, két katalóguson mérve; a tétel itt **elavultan** állt blokkoltként) |
+| mit jelent a `Type` **1001** | ✅ **LEZÁRVA** — arcsablon-bejegyzés (ua., halmaz-azonosság a `facetemplatesV2_index.db`-vel, 412 = 412); a `+26` mezője **nem** szülőindex, és az eredeti nem is olvassa annak (`FUN_004e2990`) |
+| a névfeloldás pontos szabálya | ✅ **LEZÁRVA** — `valid == 0` vagy `Type ∈ {1, 5, 25, 1001}` ⇒ a név a teljes út; különben szülő + név; hibás szülőnél tartalék sztring, **nem kivétel** (`0x004f27f3`–`0x004f2887`) |
+| **mit jelent a `Type` 25 (`0x19`)** | **BLOKKOLT** — a szerepe három ponton körülhatárolt (fent), a jelentése nincs meg. Megnézve: `mov reg,25`, `mov [reg+disp8],25`, `cmp reg,25` teljes `.text`-pásztázás ⇒ a bejáró tartományában **nincs író**; sztring nincs; a tulajdonos két katalógusában **0 előfordulás**. **Megszerzés:** olyan katalógus, amelyben előfordul, vagy a `0x004ea0c0` / `0x004efbb0` menet dekompilációja. |
+| **mit csinál a `DirscanRegression`** | ✅ **LEZÁRVA** — a bejárás végén 4. módú CSV + **`ExitProcess`** (`0x004e9d37`–`0x004e9d42`); egyszer olvasott, gyorsítótárazott kapcsoló; a függvény időt is mér. Fejlesztői regressziós futtató, a termékre nincs hatása. |
 
 ### 16.3 Amit ez a #1275-re kimond
 

@@ -415,7 +415,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 
 ### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 1 BLOKKOLT tétel (a hatókörön kívüli Apple-ágon felül; 2026-09-05: kettőből egy lezárult, a másik háromnegyedéig)
 
 ⭐ **2026-09-02 (16.2/b) — a könyvtárbejáró hibakereső kiíratása TELJESEN
 feltárva, és egy eddig sehol nem dokumentált MÁSODIK kimenettel.** A
@@ -430,13 +430,41 @@ függvényben készül: a `Type == 4` → `%s (badfile)`, a `Type == 5` →
 mappákat**. ⛔ Ebből termékhiba is előkerült: a mi `scanner/walker.py`-unk
 **hét `OSError`-ágat némán elnyel** → **#1998**.
 
-1. **Mit jelent a `Type` 1, 25 (`0x19`) és 1001 (`0x3e9`) értéke?** A
-   névfeloldó ág (`0x004f2804`–`0x004f2825`) megkülönbözteti őket, de
-   sztring nincs hozzájuk. **Megszerzés:** a `ytDirScannerChangeList`
-   dekompilációja. A #1998-at nem blokkolja.
-2. **Mit csinál a `Preferences\DirscanRegression` kulcs?** Csak az
-   olvasása látszik (`0x004e9b00`, 649 b). **Fejlesztői kapcsoló**, a
-   termékre nincs hatása. **Megszerzés:** a `0x004e9b00` dekompilációja.
+⭐ **2026-09-05 — a két blokkolt tételből EGY teljesen lezárult, a másik
+háromnegyedéig; dekompiláció nélkül, helyi diszasszemblátumból.**
+
+- ✅ **A `DirscanRegression`:** a bejárás végén, ha a kulcs be van
+  kapcsolva, a Picasa kiírja a **4. módú** CSV-t (a `WriteDirscannerCSV`
+  kaput megkerülve) és **azonnal kilép** (`ExitProcess`,
+  `0x004e9d37`–`0x004e9d42`). Egyszer olvassa be (őrbit a `0x00da03c4`-en),
+  a `0x00da03c0` bájtban tartja; ugyanez a függvény
+  `QueryPerformanceCounter`-rel **méri is** a bejárást. ⇒ fejlesztői
+  regressziós futtató, a termékre nincs hatása.
+- ⚠️ **Helyesbítés — a `Type`-tétel részben ELAVULT volt:** az `1`
+  (könyvtár) és az `1001` (arcsablon-bejegyzés) jelentését a
+  `pmp-database.md` 8.1 **már megmérte** két valódi katalóguson (a 1001-et
+  halmaz-azonossággal, 412 = 412). A blokkolás azért maradt, mert a
+  választ MÁSIK lap adta.
+- ✅ **ÚJ: a névfeloldás pontos szabálya.** `valid == 0` **vagy**
+  `Type ∈ {1, 5, 25, 1001}` ⇒ a név önmagában a teljes út; különben
+  szülő + név; hibás vagy `Type = 0` szülőnél **tartalék sztring, nem
+  kivétel** (`0x004f27f3`–`0x004f2887`).
+- ✅ **ÚJ: a `pmp-database.md` mért 412-es anomáliája megmagyarázva** — a
+  `FUN_004e2990` (66 b) szülőlekérdező a `Type == 1001`-et a `+26`
+  beolvasása ELŐTT zárja rövidre; arcsablon-bejegyzésen az a mező nem
+  szülőindex. ⇒ terméki lelet: a mi szabályunk más → **#2404**.
+- ✅ **ÚJ (erős): a `Type = 5` „HIBÁS könyvtár"**, nem „2. fajta" — a
+  `badfiles.txt`-írója feltétel nélkül listázza (`0x004f2aaa`).
+
+1. **Mit jelent a `Type` 25 (`0x19`)?** A szerepe három ponton
+   körülhatárolt (a teljes-út halmaz tagja; a „piszkosra állítás"
+   menetből a 26-tal együtt kivéve, `0x004efbdc`; az `{5, 25}` páros
+   kihagy egy összesítést, `0x004ea0e5`), de a **jelentése nincs meg**.
+   Megnézve: `mov reg,25` / `mov [reg+disp8],25` / `cmp reg,25` teljes
+   `.text`-pásztázás ⇒ a bejáró tartományában **nincs író**; sztring
+   nincs; a tulajdonos két katalógusában **0 előfordulás**.
+   **Megszerzés:** olyan katalógus, amelyben előfordul, **vagy** a
+   `0x004ea0c0` / `0x004efbb0` menet célzott dekompilációja.
 
 ✅ **2026-08-24 — a két megmaradt „erős, nem megerősített" állítás MEGERŐSÍTVE:**
 
