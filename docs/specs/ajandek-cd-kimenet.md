@@ -214,12 +214,65 @@ BLOKKOLT-ból LEZÁRVA-ba tette — 12. szakasz, #2095.)*
 | **a belépési pontok** | **LEZÁRVA (2026-09-03)** — öt, ebből kettő a `.tre`-ben kikommentezve (**9.**) |
 | **melyik ÁG melyik üzemmódhoz tartozik** | **LEZÁRVA (2026-09-03)** — a **12.** szakasz: `+0x13e` = 0 → Ajándék-CD, `+0x13e` ≠ 0 & `+0x13f` = 0 → biztonsági mentés, `+0x13e` ≠ 0 & `+0x13f` ≠ 0 → replikáció/feltöltés. A két bájtnak **egyetlen írója** van (a panel konstruktora, `0x0066bf90`), és ugyanaz a függvény választja belőlük a `publish/presentcd_go` / `backup_go` / `replicate_go` vezérlőnevet — ez nevezi meg az üzemmódot. A belépési elemnevek (`thumbui/cdmode` · `backup` · `replicate`) ugyanezt adják. Jegy: **#2095**. |
 | a panel HÁROM jelölőnégyzete | **LEZÁRVA (2026-09-03)** — felirat, tároló, alapérték és hatás mind mérve (**11.**) |
-| mit csinál a KIADÁS gomb | **BLOKKOLT** — nincs `IOCTL_STORAGE_EJECT_MEDIA` sztring, az `mciSendStringA` négy betöltése távol van a lemez-kódtól; a `CDVDR.yti` COM-oldalán megy. **Ugyanaz a tétel, mint a #2074** (11.4) |
+| mit csinál a KIADÁS gomb | ✅ **LEZÁRVA (2026-09-05)** — a kiadást a **Windows IMAPI2 COM-komponense** végzi, nem a mi binárisaink: a `CDVDR.yti` a `MsftDiscRecorder2` (`0x0004560c`) és a `MsftDiscFormat2Data` (`0x00045aa8`) **CLSID**-jét hordozza és `CoCreateInstance`-szal példányosít, miközben `DeviceIoControl`-t **nem** importál, IOCTL-konstansa **nincs**, `\\.\` eszközútvonala **nincs**. A `Picasa3.exe` szintén **nem importál `DeviceIoControl`-t**. ⇒ a kiadás `IDiscRecorder2::EjectMedia()`, **vtábla-metódus** — ezért nincs hozzá sem sztring, sem IOCTL. Ld. **13.** |
 | a megszűnt webes ág két eleme | **HATÓKÖRÖN KÍVÜL** — `upgradestorage`, `uploadallsync`: a Picasa Web Albums tárhely-vásárlás és -szinkron (11.6); eldöntötte: `biztonsagi-mentes.md` 7., 2026-09-02 |
 | Daemon Tools / `d:\cdtemp\temp.iso` | **HATÓKÖRÖN KÍVÜL** — fejlesztői teszt-maradvány, nem felhasználói funkció; eldöntötte: ez a kör, 2026-09-02 |
 
+## 13. ✅ A KIADÁS gomb — a kiadást a WINDOWS végzi (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** arra, hogy a kiadás egyik
+> binárisunkban sincs megvalósítva, és hogy a lemezíró bővítmény
+> **IMAPI2 COM**-on át dolgozik.
+
+A 7. mérleg indoklása az volt, hogy *„nincs `IOCTL_STORAGE_EJECT_MEDIA`
+sztring"*. ⚠️ **Ez a keresés eleve nem találhatott semmit:** az
+`IOCTL_STORAGE_EJECT_MEDIA` **nem sztring, hanem szám** (`0x002D4808`).
+A helyes keresés a **konstansra** megy.
+
+**A mérés (mindkét binárison):**
+
+| amit kerestem | `Picasa3.exe` | `CDVDR.yti` (405 504 B) |
+|---|---|---|
+| `IOCTL_STORAGE_EJECT_MEDIA` (`0x002D4808`) nyers 32 bites konstansként | **0 találat** | **0 találat** |
+| `IOCTL_STORAGE_LOAD_MEDIA` (`0x002D480C`) | 0 | 0 |
+| `IOCTL_STORAGE_MEDIA_REMOVAL` · `FSCTL_LOCK/UNLOCK/DISMOUNT_VOLUME` | 0 | — |
+| **`DeviceIoControl` import** | **NINCS** | **NINCS** |
+| `\\.\` eszközútvonal-előtag | NINCS | NINCS |
+| `cdaudio` · `door open` · `door closed` (MCI-parancsok) | **NINCS** | — |
+| `Eject` / `eject` sztring | — | **NINCS** |
+
+⇒ **A `Picasa3.exe` egyáltalán nem tud IOCTL-t kiadni** (nincs importálva
+a `DeviceIoControl`), és MCI-ajtóparancsot sem küld — az `mciSendStringA`
+betöltései tehát **bizonyosan nem** a lemezkiadáshoz tartoznak.
+
+**Ami VAN — a lemezíró bővítményben:**
+
+| bizonyíték | hol |
+|---|---|
+| `MsftDiscRecorder2` CLSID (`2735412E-7F64-5B0F-8F00-5D77AFBE261E`) | `CDVDR.yti` **`0x0004560c`** |
+| `MsftDiscFormat2Data` CLSID (`27354130-…`) | `CDVDR.yti` **`0x00045aa8`** |
+| `CoCreateInstance` | `CDVDR.yti` `0x0004e6ba` |
+| `IMAPI` literál | `CDVDR.yti` `0x0005150a` |
+| a bővítmény DLL-függőségei | csak `ADVAPI32` · `COMCTL32` · `COMDLG32` · `GDI32` · `KERNEL32` · `OLE32` · `OLEAUT32` · `SHELL32` · `SHLWAPI` · `USER32` — **eszközvezérlő API egy sem** |
+
+⇒ **A kiadás a Windows saját `IDiscRecorder2::EjectMedia()` metódusa**,
+COM-vtáblán át hívva. Ezért nincs hozzá sem sztring, sem IOCTL-konstans
+egyetlen Picasa-binárisban sem: **a művelet nem a Picasáé**.
+
+**Mit jelent ez nálunk (Linux):** IMAPI nincs; a megfelelője a rendszer
+saját lemezkiadása (pl. `eject`, illetve UDisks). ⇒ Az Ajándék-CD ágának
+megépítésekor a kiadás **platform-szolgáltatás**, nem saját logika — a
+`#2074` hatókörébe tartozik, de a hardveres ág nélkül is megépíthető
+részekkel nem ütközik.
+
 ## 8. Amit KIZÁRTAM
 
+- **„a kiadást a Picasa maga csinálja"** — **MEGDŐLT (2026-09-05):** egyik
+  binárisunk sem importál `DeviceIoControl`-t, és IOCTL-konstans sincs
+  bennük; a kiadás a Windows IMAPI2 COM-objektumáé (13.).
+- **„nincs `IOCTL_STORAGE_EJECT_MEDIA` sztring, tehát nincs IOCTL-os kiadás"**
+  — a KÖVETKEZTETÉS igaz, de az INDOK rossz volt: az IOCTL **szám**, nem
+  sztring; a helyes keresés a `0x002D4808` konstansra megy (13.).
 - **„az Ajándék-CD csak képeket másol"** — nem: **teljes önjáró lemez**,
   két platform vetítőjével és visszaállítójával.
 - **„a lemez mappanevei angolok"** — nem: a szövegtárból jönnek

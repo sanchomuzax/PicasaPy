@@ -841,7 +841,21 @@ LEZÁRVA** — ld. a 13. szakaszt és a fenti bejegyzést.)*
    felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol
    futott a mentés.
 
-### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — 1 BLOKKOLT tétel: a KIADÁS gomb (ÚJ, 2026-09-02; az „ág ↔ üzemmód” LEZÁRVA 2026-09-04)
+### [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) — nincs BLOKKOLT tétel (2026-09-05-én a KIADÁS gomb is lezárult)
+
+⭐ **2026-09-05 — a KIADÁS gomb LEZÁRVA: a kiadást a WINDOWS végzi.** A
+korábbi blokkolás indoka („nincs `IOCTL_STORAGE_EJECT_MEDIA` **sztring**")
+**rossz kereséssel** dolgozott: az IOCTL **szám** (`0x002D4808`), nem
+sztring. A konstansra keresve **mindkét binárison 0 találat**, és — ez a
+döntő — **egyik sem importálja a `DeviceIoControl`-t**; `\\.\`
+eszközútvonal, `cdaudio`/`door open` MCI-parancs, `Eject` sztring sincs
+sehol. Ami VAN: a `CDVDR.yti` hordozza a **`MsftDiscRecorder2`**
+(`0x0004560c`) és a **`MsftDiscFormat2Data`** (`0x00045aa8`) **CLSID**-jét,
+`CoCreateInstance`-szal példányosít, és a DLL-függőségei közt **egyetlen
+eszközvezérlő API sincs**. ⇒ a kiadás a Windows **`IDiscRecorder2::EjectMedia()`**
+COM-metódusa — ezért nincs hozzá nyom a Picasa binárisaiban. Linuxon a
+megfelelője platform-szolgáltatás (`eject` / UDisks). Lap: 13.;
+jegy-komment: **#2074**.
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — nincs nyitott kérdés
 
