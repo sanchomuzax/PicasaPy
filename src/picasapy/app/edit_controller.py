@@ -3,6 +3,8 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import logging
 from pathlib import Path
 
@@ -1644,6 +1646,27 @@ class EditController(QObject, BackgroundWorkerMixin):
                 # MAGASSÁGA), de a felületi méretválasztónk ma nem em-ben
                 # jár. Külön lépés, külön mérés — ld. a jegyet.
                 unknown_a=float(self._text_outline_thickness),
+                # #2448: a DŐLT és az ALÁHÚZOTT a 9. mező 0. és 3. bitje.
+                # Eddig mindkettőt megrajzoltuk, de a mező fixen `0xC000`
+                # ment ki — a felirat újranyitáskor elvesztette a dőltségét
+                # és az aláhúzását.
+                #
+                # ⚠️ A mezőt a `with_style_flags` állítja, NEM a
+                # konstruktor: a többi bitet (köztük a fel nem tárt
+                # `0x4000`/`0x8000`-et) meg kell őrizni. Ezért indul a
+                # KORÁBBI stílusból, ha van.
+            ),
+        )
+        korabbi = previous.primary.style if previous.primary else None
+        stilus = block.style
+        if korabbi is not None:
+            # a korábbi mező bitjeit visszük tovább (köztük a fel nem
+            # tártakat); a két ismertet alább állítjuk
+            stilus = replace(stilus, trailer=korabbi.trailer)
+        block = replace(
+            block,
+            style=stilus.with_style_flags(
+                italic=self._text_italic, underline=self._text_underline
             ),
         )
         self._text_overlay = previous.with_primary(block)

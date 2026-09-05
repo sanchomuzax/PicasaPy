@@ -21,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A dőlt és aláhúzott felirat megmarad mentés után** (#2448). Eddig
+  megrajzoltuk a képre, de a beállítás nem került bele a fájlba: a kép
+  újranyitásakor a felirat visszaállt normálra. Mostantól mindkettő
+  megmarad, és a Picasával készített dőlt/aláhúzott feliratokat is helyesen
+  ismerjük fel.
+
+
 - *(Nincs látható változás.)* A **Poszterizálás** effektről eddig azt
   állítottuk a kódban, hogy a mi egyszerűsített számításunk egyenértékű az
   eredetivel — de ezt soha nem mértük meg. Most megmértük a valódi
