@@ -22,6 +22,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   álltak. A menü megjelenése ezzel a korábbi, ismert állapotára tér
   vissza; a jegy újranyílt.
 
+- Az alsó állapotsor a csupa EXIF nélküli mappáknál is kiírja a
+  dátumtartományt (#2304) — eddig ott csak a darabszám és a méret
+  látszott, holott az eredeti Picasa dátumot is mutat.
+
 - Belső elnevezés: a szerkesztő vezérlőjének „van mentett
   vörösszem-javítás" jelzője beszédes nevet kapott (#2393). A
   viselkedés nem változik.
