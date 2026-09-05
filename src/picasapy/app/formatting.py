@@ -16,6 +16,8 @@ from PySide6.QtCore import QDate, QDateTime, QLocale, QUrl
 
 from picasapy.metadata import read_exif_details
 
+from .photo_sort import photo_date
+
 # útvonal-vég leválasztása mappa-névhez (per- és backslash-tűrő)
 PATH_TAIL = re.compile(r"[/\\]")
 
@@ -141,9 +143,66 @@ def long_date(iso: str, locale: QLocale) -> str:
     return locale.toString(date, QLocale.FormatType.LongFormat)
 
 
+def photo_dates(records) -> list[str]:
+    """Egy KÉPHALMAZ dátumai növekvő sorrendben, ISO-alakban (#2304).
+
+    A mappa-fejléc (`first_date_text`), az állapotsor dátumtartománya
+    (`status_text`) és — a `controller._show`-n át — a `folderDateText`
+    property KÖZÖS forrása, hogy a három felirat ne mondhasson mást
+    ugyanarról a mappáról.
+
+    **Mindent vagy semmit tartalék.** Ha a halmazban akár EGYETLEN
+    felvételi idő is van, kizárólag a felvételi idők számítanak; a
+    fájlidőre csak akkor esünk vissza, ha EGYIK rekordnak sincs
+    `taken_at`-je. Ez szándékosan szűkebb, mint a rekordonkénti
+    visszaesés (`photo_sort.photo_date`): ott a cél egy teljes rendezés,
+    itt egy szélsőérték, és a rekordonkénti tartalék mellett egyetlen
+    romlott vagy régi `mtime`-ú fájl egy EXIF-fel bíró mappa dátumát is
+    évekkel korábbra húzná. A mérés (#2304, a tulajdonos `AI` mappája: 82
+    médiafájl, egyikben sincs EXIF felvételi idő) csak a „egyetlen képnek
+    sincs EXIF-je" esetet fedi — a tartalék se tegyen többet annál.
+
+    **A fájlidő dobhat.** A `photo_date` a `datetime.fromtimestamp`-en át
+    megy, ami romlott indexsorra kivételt ad (mérve: `mtime_ns = 10**26`
+    → `OSError: [Errno 75] Value too large for defined data type`). Az
+    ilyen rekordot KIHAGYJUK: a fejléc-építés a rács `_show`-jának
+    közepén fut, egyetlen hibás sor nem viheti ki az egész rácsot.
+    """
+    taken = sorted(record.taken_at for record in records if record.taken_at)
+    if taken:
+        return taken
+    fallback: list[str] = []
+    for record in records:
+        try:
+            fallback.append(photo_date(record))
+        except (OSError, ValueError, OverflowError):
+            continue
+    return sorted(fallback)
+
+
 def first_date_text(records, locale: QLocale) -> str:
-    """A csoport fejléc-dátuma: a legkorábbi felvétel hosszú dátuma."""
-    dates = sorted(r.taken_at for r in records if r.taken_at)
+    """A csoport fejléc-dátuma: a legkorábbi felvétel hosszú dátuma.
+
+    #2304 (1. eltérés): EXIF-felvételi idő híján a FÁJL ideje a tartalék
+    (a részletek és a hatókör a `photo_dates`-nél). Enélkül egy csupa
+    EXIF-nélküli mappa (letöltött vagy generált képek) fejléce dátum
+    NÉLKÜL maradt, holott az eredeti Picasa ott is ír dátumot.
+
+    **A tartalék hatóköre — mely `taken_at`-olvasók kapják meg és melyek
+    nem.** Megkapja mind a négy hely, amely egy MAPPA (vagy képhalmaz)
+    EGÉSZÉT datálja: a rács rendezőkulcsa (`photo_sort.photo_date`), az
+    állapotsor dátumtartománya (`status_text`), a mappa indexelt dátuma
+    (`index/sync._sync_folder_date`) és — ötödikként, a `photo_dates`-en
+    át — a `controller._show` `folderDateText`-je. NEM kapja meg viszont
+    egyetlen olyan olvasó sem, amely EGY KÉP saját felvételi idejét
+    mutatja vagy írja: a kék infó-sáv (`photo_info_text`), a nyomtatás
+    képfelirata (`print_controller`), a dátum-átállítás és az időbélyeg
+    (`photo_ops_controller`), a keresés és a lekérdezések
+    (`search_results`, `index/queries`, `models`). Ott a fájlidő nem
+    tartalék, hanem hazugság lenne: a felhasználó azt látná, hogy a
+    képnek van felvételi ideje, holott nincs.
+    """
+    dates = photo_dates(records)
     return long_date(dates[0], locale) if dates else ""
 
 
@@ -417,12 +476,10 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     # #2304: EXIF-felvételi idő híján a FÁJL ideje a tartalék. Enélkül egy
     # csupa EXIF-nélküli mappánál (letöltött vagy generált képek) a
     # dátumtartomány egyszerűen kimaradt az állapotsorból, holott az
-    # eredeti Picasa ott is ír dátumot. A tartalék nem új: a rács
-    # rendezőkulcsa (`photo_sort.photo_date`) és — ugyancsak a #2304 óta —
-    # a mappa dátuma is pontosan erre esik vissza.
-    from .photo_sort import photo_date
-
-    dates = sorted(photo_date(r) for r in records)
+    # eredeti Picasa ott is ír dátumot. A `photo_dates` KÖZÖS a
+    # mappa-fejléccel, hogy a két felirat ne mondhasson mást ugyanarról a
+    # halmazról; a „mindent vagy semmit" tartalék indoklása is ott áll.
+    dates = photo_dates(records)
     date_part = ""
     if dates:
         first = long_date(dates[0], locale)

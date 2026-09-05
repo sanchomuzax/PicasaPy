@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.295] – 2026-09-06
+
+### Javítva
+
+- **A rács mappa-fejlécében EXIF nélkül is áll dátum** (#2304). A csupa
+  felvételi idő nélküli mappáknál (letöltött vagy generált képek) a
+  fejléc dátum nélkül maradt, holott az eredeti Picasa ott is mutat
+  dátumot; ilyenkor mostantól a fájlok ideje adja a dátumot. Ez a
+  negyedik hely, ahol ugyanez a tartalék működik — a rács rendezése, az
+  alsó állapotsor és a mappa indexelt dátuma után. A tartalék
+  szándékosan szűk: ha a mappában akár egyetlen felvételi idő is van,
+  csak azok számítanak, tehát egy rossz órájú vagy régi fájl nem
+  húzhatja évekkel korábbra a fejlécet. Egy romlott időbélyegű fájl
+  többé nem viheti el az egész rács fejléc-építését sem.
+
 ## [0.8.294] – 2026-09-05
 
 ### Javítva
