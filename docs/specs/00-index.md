@@ -358,7 +358,9 @@ rendezésének három módja** (`Preferences\peoplesort`), ld.
    sehol nem szerepelt nálunk (a `FolderHierarchyView.qml` fejléce is két
    módról ír). Jegy: **#853**.
 
-### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — 1 nyitott kérdés (a 14.2: a két `*checksum` oszlop KÉPLETE)
+### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — 1 nyitott kérdés (a 14.2: az `albumpeoplechecksum` KÉPLETE)
+
+⭐ **2026-09-05 (14.4) — a keresési tér a teljes binárisról KÉT függvényre szűkült.** A 14.2 javaslata (számold ki az oszlop indexét a regisztrációk sorrendjéből) **fölösleges volt**: az oszlopok **tagobjektumok fix eltoláson**, tehát elég az eltolásra pásztázni. Az `albumpeoplechecksum` a **`CThumbDB + 0x27b0`**, az `albumcontactids` a `+0x2748` (a regisztrációs `mov eax, <névhossz>` — 19, illetve 15 — bájtra hitelesíti a párosítást, `0x00415bcc` / `0x00415bbc`). ⛔ **Kimerítő:** a teljes `.text`-ben **hat** hely nyúl a `+0x27b0`-hoz, és közülük **egyetlen ír**: `0x0048f79d` a `FUN_0048ef20`-ban; az érték a `0x0048f7f8`-on lévő veremrekeszből jön, és **csak változás esetén** íródik (`0x0048f7fe`). Összevetésül az `albumcontactids` 15 helyen, 12 függvényben szerepel. **A képlet továbbra sincs meg**, de a folytatás két megnevezett függvény célzott olvasása (`FUN_0048ef20`, `FUN_0048af60`), és a 9 album mért értéke a repóban van, tehát azonnal ellenőrizhető. Jegy: **#2391**.
 
 ⚠️ **2026-09-04 — a fejléc PONTOSÍTVA.** Korábban „2 BLOKKOLT tétel" állt itt; a mérés szerint ez félrevezető:
 a **14.1** (gyorsítótábla) **LEZÁRVA** (megerősítve, egyetlen üres bejegyzés), a **14.2** pedig **nem a
@@ -1409,7 +1411,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | Főablak: mappafa, eszköztár, tálca, görgetősáv |
 | [ui-audit-menus.md](ui-audit-menus.md) | A teljes menürendszer |
 | [ui-audit-context-menus.md](ui-audit-context-menus.md) | Jobbklikkes helyi menük |
-| [ui-lefedettseg.md](ui-lefedettseg.md) | Az eredeti panelek ↔ a mi QML-fánk megfeleltetése |
+| [ui-lefedettseg.md](ui-lefedettseg.md) | Az eredeti panelek ↔ a mi QML-fánk megfeleltetése · ⛔ **2026-09-05: a KUTATÁSI axis KIMERÜLT.** A `ui-lefedettseg-elemek.csv` 173 tétele: **120 `megvan` · 49 `lekutatva` · 3 `nem-cél` · 1 `hiányzik`** ⇒ **nulla feltáratlan elem**. A megmaradt 49 `lekutatva` tétel **megvalósítási**, nem kutatási hiány (panelenként: publish 12, makemoviepanel 9, editpanel 7, keywords 5, thumbui 5, video_control_bar 3, outputlayout 2, searchoptions 2, video_control_bar2 2, searchcontainer 1, printpanel 1), az egyetlen `hiányzik` (`thumbui/hviewtoggle` — `thumbui.tre:406/412/415`, a folderview+flatview gombpár tartója) pedig a #1421/#1454 alatt fut. ⇒ **Kutatói kör ebből az axisból már nem tud témát venni** — a `00-index` nyitott kérdései és a lapok BLOKKOLT tételei a következő forrás. |
 | [picasa-beviteli-mezok.md](picasa-beviteli-mezok.md) | Beviteli mezők és párbeszédpanelek |
 | [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) | **A gyorsbillentyűk teljes tára ÉS a funkciójuk** — a `Picasa3i18n.dll` 48 rekeszes `SHORTCUTS.XML` keymapje (nyolc nyelv, **magyar nincs** → az angol alaptábla fut); a menüsáv 32 és a helyi menük 44 rekordja **parancsazonosítóval és rekordcímmel**; a jelzőbájt három bitje mérve (a 2. bit fordított: `Ctrl` akkor van, ha 0); a keymap kommentjei **három helyen elavultak** (`Ctrl+S`, `Ctrl+T`, `Ctrl+W`); és a mai kiosztásunk tételes összevetése (34 egyedi kombinációból 18 megvan / 2 eltér / 14 hiányzik). Jegy: **#1154** |
 
