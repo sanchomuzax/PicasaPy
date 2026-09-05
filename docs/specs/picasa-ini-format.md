@@ -420,10 +420,129 @@ tokenjévé alakul** — nem a `crop=` kulcs új értékévé.
 `DigicamPictureThreshold`) ⇒ **a migráció beolvasáskor fut**, nem külön
 konverter-lépésben.
 
-⚠️ **Az öt szám JELENTÉSE (melyik a bal/felső/jobb/alsó, és mi az ötödik)
-NINCS MÉRVE.** Négy szó megy a 64 bitbe, tehát az ötödik más szerepű —
-de a `sscanf` kimeneti címeinek veremre pakolása ezen az olvasási
-szinten nem fejthető ki egyértelműen. Lásd a mérleget.
+#### ✅ Az öt szám JELENTÉSE — LEZÁRVA (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A mezőfelosztást **három egymástól
+> független bizonyíték** rögzíti (alapérték-blokk · metszés-irány ·
+> tartomány-ellenőrzés), nem egyetlen illesztés. Ghidra nem kellett — a
+> `pe_dis.py` diszasszemblátumából, verem-eltolás visszaszámolásával jött ki.
+
+```
+crop=<ELDOBOTT>,<bal>,<felső>,<jobb>,<alsó>;      képpontban, az EREDETI képen
+```
+
+| mező | hova kerül (verem) | alapérték | mi lesz belőle |
+|---|---|---:|---|
+| 1. | `E+0x50` | `0` | **eldobva** — ld. lent |
+| 2. | `E+0x24` | `0` | **bal** |
+| 3. | `E+0x28` | `0` | **felső** |
+| 4. | `E+0x2c` | `-1` | **jobb** |
+| 5. | `E+0x30` | `-1` | **alsó** |
+
+*(`E` = az `esp` a `sscanf` hívási blokkjának elején, `0x00422342`. A
+`sscanf` cdecl, tehát a **legelső `push` a legutolsó paraméter**: a
+`0x00422342`–`0x0042235a` öt `lea`+`push` párja fordított sorrendben
+`E+0x30 · E+0x2c · E+0x28 · E+0x24 · E+0x50`.)*
+
+**1. bizonyíték — az ALAPÉRTÉK-blokk** (`0x004222e8`–`0x004222f8`, `esp = E`;
+hogy itt az `esp` ugyanaz, mint a `sscanf`-nál, azt a `0x00422327` /
+`0x00422333` **azonos `[esp+0x34]` hivatkozáspárja** rögzíti):
+
+```
+mov [esp+0x50], esi   ; 0   ← 1. mező
+mov [esp+0x24], esi   ; 0   ← 2. mező
+mov [esp+0x28], esi   ; 0   ← 3. mező
+mov [esp+0x2c], eax   ; -1  ← 4. mező
+mov [esp+0x30], eax   ; -1  ← 5. mező
+```
+
+⇒ a 2–5. mező egyetlen **`(0, 0, -1, -1)` alapértékű téglalap** — a
+klasszikus „üres/beállítatlan" rect —, az 1. mező pedig **külön skalár**.
+
+**2. bizonyíték — a METSZÉS iránya** (`0x00422491`, `FUN_009b4960`). A
+függvény két téglalapot metsz: a **0.** és **1.** mezőre `max`-ot
+(`0x009b4981`, `0x009b498f`), a **2.** és **3.** mezőre `min`-t
+(`0x009b499e`…) alkalmaz. A hívás:
+
+```
+0x00422464  lea edx,[esp+0xa8]  ; kimenet
+0x00422470  lea edx,[esp+0x28]  ; = E+0x24 → a BEOLVASOTT téglalap
+0x00422474  lea ecx,[esp+0x7c]  ; = E+0x78 = {0, 0, W, H}
+```
+
+⇒ a beolvasott négyes **ugyanaz a memóriaterület**, amit a `sscanf`
+kitöltött, és a metszés `max/max/min/min` mintája **csak** a
+`(bal, felső, jobb, alsó)` felosztással értelmes — egy `(x, y, szélesség,
+magasság)` négyest így metszeni értelmetlen. Az eredményt a
+`0x00422496`–`0x004224b2` visszaírja ugyanoda.
+
+**3. bizonyíték — a TARTOMÁNY-ellenőrzés** (`0x004224b0`–`0x00422500`).
+A `W` és `H` a függvény 3. és 4. paramétere (`[esp+0xc8]`, `[esp+0xcc]`;
+ugyanaz a kettő, amiből a `{0,0,W,H}` kerettéglalap készül):
+
+| ellenőrzés | cím | mit mond ki |
+|---|---|---|
+| `cmp ecx,edx ; jge kilép` | `0x004224b0` | **bal < jobb** |
+| `cmp edx,eax ; jge kilép` | `0x004224c0` | **felső < alsó** |
+| `max(0, bal) == bal` | `0x004224c8`, `0x004224e4` | **bal ≥ 0** |
+| `max(0, felső) == felső` | `0x004224ce`, `0x004224f6` | **felső ≥ 0** |
+| `min(W, jobb) == jobb` | `0x004224d4`, `0x004224ec` | **jobb ≤ W** |
+| `min(H, alsó) == alsó` | `0x004224de`, `0x004224fe` | **alsó ≤ H** |
+
+⇒ az egység **képpont**, a viszonyítás a **teljes kép** `W × H` mérete.
+
+**Amivé lesz** (`0x00422506`–`0x00422587`): a `FUN_009b9290` a téglalapot a
+`W`/`H`-val **normalizálja** (lebegőpontos osztás, `0x009b92e5`), majd a
+csomagoló négy 16 bites szóként fűzi össze —
+`bal<<48 | felső<<32 | jobb<<16 | alsó` —, ami **pontosan a `rect64`
+mezősorrendje** (`ini/rect64.py:35`). Ez egyben **független
+kontrollpróba**: ha a felosztásunk téves volna, a `rect64` sorrendje nem
+jönne ki.
+
+⚠️ **Az 1. mezőt a Picasa 3 ELDOBJA.** A `sscanf` az `E+0x50` rekeszbe
+olvassa, amit a függvény `0`-ra állít, és **egyetlen utasítás sem olvas
+vissza**. *(Kimerítő ellenőrzés: a 2547 bájtos törzs MINDEN `esp`-relatív
+hivatkozása közül azok, amelyek bármely előforduló `esp`-állásnál `E+0x50`-t
+adnának — `0x50 · 0x54 · 0x58 · 0x5c · 0x60 · 0x64` eltolás — sorra:
+`0x004222e8` (írás), `0x0042237b` és `0x00422b7c` (`lea`, de `esp = E-4`
+mellett `E+0x4c`-t adnak, az pedig a `0x0042c830` kimeneti paramétere),
+`0x00422388`, `0x004226c8`, `0x004226cc`, `0x004223cf`, `0x004223d4`,
+`0x004223d8` — mind más rekesz vagy írás. **Olvasás nincs.**)*
+Az átalakított token előtagja fixen `=1,` (`0x00c8131c`), tehát az érték a
+kimenetben sem jelenik meg.
+
+#### ✅ Mi lesz a `crop=` sorral írás után — a KIMENET oldala (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** arra, amit a *író* tesz; a
+> „mi marad a fájlban egy legacy-migráció után" **erős következtetés**,
+> mérés nélkül — ld. a mérleget.
+
+A képenkénti szekciók írója (`0x0068b320`) **egyetlen** `crop=` alakot
+ismer, és a memóriabeli 64 bites értékből állítja elő:
+
+```
+0x0068b5fd  mov edi,[esi+0x60]        ; a crop64 alsó 32 bitje
+0x0068b600  mov esi,[esi+0x64]        ; a felső 32 bitje
+0x0068b60c  mov eax,edi
+0x0068b60e  or  eax,esi
+0x0068b610  je  0x0068b657            ; ⇒ ha az érték 0, a SOR KIMARAD
+0x0068b614  push 0x00c82fcc           ; "%I64x"
+0x0068b63d  push 0x00ca786c           ; "crop=rect64(%s)\n"
+```
+
+⇒ **két kimondható tény:**
+
+1. A Picasa 3 **soha nem ír ötszámos `crop=` sort** — a régi alak csak
+   bemenet lehet.
+2. **Nulla értéknél a `crop=` kulcs egyáltalán nem kerül a fájlba**
+   (`or` + `je`), nem `crop=rect64(0000000000000000)`.
+
+**Ami ebből következtetés, nem mérés:** a migráció a régi sorból
+`filters=`-lánc **`crop64` tokent** gyárt (fent), nem a `crop` kulcs
+értékét — a `[obj+0x60/0x64]` mezőt tehát nem ez a út tölti fel. Ha más
+sem tölti fel, akkor a következő teljes kiíráskor a `crop=` sor
+**eltűnik**, és a vágás már csak a `filters=`-ben él. Ez falszifikálható
+állítás; az eldöntéséhez egy migráció előtti/utáni fájlpár kell.
 
 #### Élő adat: a korpuszban MÁR NINCS régi alak
 
@@ -447,7 +566,23 @@ eredetivel. A régi alakot viszont **nem ismerjük fel**: nálunk a
 
 ⇒ Egy Picasa 3-mal még sosem megnyitott, Picasa 2-es korú gyűjteményben
 a **vágás nem érvényesülne** nálunk. Jegy: **#2008** (alacsony
-prioritás — a tulajdonos korpuszában nulla előfordulás).
+prioritás — a tulajdonos korpuszában nulla előfordulás). **2026-09-05 óta
+a #2008 megvalósítható**: a mezőfelosztás megvan (fent).
+
+**A kiírás oldalán viszont EGYEZÜNK** (mérve, `app/edit_controller.py:2026`–
+`:2032`): ha nincs vágás, a `crop` kulcsot **töröljük**
+(`document.with_removed(..., "crop")`) — pontosan úgy, ahogy az eredeti
+`or eax,esi ; je` ága (`0x0068b610`). Nincs teendő.
+
+#### Nyitott kérdések mérlege (a legacy `crop=`-ra)
+
+| kérdés | állapot |
+|---|---|
+| melyik szám melyik koordináta | ✅ **LEZÁRVA** (2026-09-05) — `<eldobott>,bal,felső,jobb,alsó` képpontban; három független bizonyíték, fent |
+| mi az ötödik (valójában az ELSŐ) szám | ✅ **LEZÁRVA** — a Picasa 3 **eldobja**: a rekeszt `0`-ra állítja és soha nem olvassa vissza (kimerítő eltolás-ellenőrzés, fent) |
+| mi lesz a `crop=` sorral migráció után | ✅ **LEZÁRVA az ÍRÓ oldalán** — a Picasa 3 csak `crop=rect64(%s)` alakot ír, és 0 értéknél a sort **elhagyja** (`0x0068b610`). Hogy egy legacy-migráció után a sor eltűnik-e, **erős következtetés**, nem mérés — a falszifikáláshoz egy migráció előtti/utáni fájlpár kell |
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 ## `rect64` kódolás (crop + arcok)
 
