@@ -19,7 +19,7 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-### [ui-audit-editor.md](ui-audit-editor.md) — 1 nyitott kérdés (a #2061)
+### [ui-audit-editor.md](ui-audit-editor.md) — ✅ nincs nyitott kérdés (a #2061 2026-09-04-én LEZÁRULT; a fejléc 2026-09-05-ig elavult volt)
 
 ⭐ **2026-09-04 — a `plugins/red.cfg` LELTÁRA a `picasa-arcfelismeres.md`-ben (#2239, TULAJDONOSI DÖNTÉS alapján tájékoztató, nem normatív).** A tulajdonos 2026-09-04-én úgy döntött: *a korábbi működés kerüljön a dokumentációba, és a majdani saját eljárás specifikációjánál legyen irányadó, de **most ne épüljön be***. ⭐ **A fájl:** a `Red.dll` arc- ÉS vörösszem-motorjának betanított konfigurációja (2,2 MB) — **19 525 objektum, 75 osztály**. A szerializálás hatbájtos fejléce (`00 <len> <ClassId> 00`) és négy tároló-osztály payloadja megfejtve; a `ClassId→osztálynév` tábla a DLL regisztrációs sorozatából (550 osztály). ⭐ **Osztálycsaládok:** `ebs_` 12 215 (tárolók) · `ets_` 4 827 (mátrix/vektor) · `vlf_` 921 (lokális jellemzők) · `vqc_` 729 (kvantálás) · `egp_` 561 (térbeli gráf) · `vfv_` 242 · `vde_` 12 · `vfr_` 7 (legfelső szint) · **`vrd_` 6 (VÖRÖSSZEM — ugyanez a fájl a vörösszem-detektort és -korrektort is tartalmazza)** · `vpf_` 5. ⭐ **A lánc sorrendje** a `vfr_VdeFaceFinder`-től a `vfr_SowGrowStampClusterer`-ig, offszetekkel. ⭐ **Az egyetlen kiolvasott paraméter-ötös:** a klaszterező `0,7 / 0,98 / 1,0 / 25 000 000 / 25 000 000` (a mezők NEVE nincs megfejtve). ⛔ **Nem megfejtett:** a 75 osztályból 71 payload-sémája és a paraméterek jelentése. ⚠️ **A fájl a PARAMÉTEREKET adja, az ELJÁRÁST nem** — ez a fő oka annak, hogy az átvétele nem javasolt. A parser a privát repóban marad. Jegy: **#2239** (lezárva).
 
@@ -586,7 +586,7 @@ kulcsa az INI FÁJL saját dátuma" szakasza.
 A megmaradt szál (miért nem jelenik meg mégsem a `filters=`) **nem a
 kiváltás** kérdése — a szigorú beolvasás ága, **#685**.
 
-### [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) — ✅ nincs nyitott kérdés (a blokkolt tétel 2026-09-05-én lezárult)
 
 ⭐ **2026-09-02, #1905-kör:** a szerkesztő fejlécének mind a hét vezérlője
 kimérve (a tervezővászon mérete = a futásidejű képpontméret, hat elemen
@@ -595,12 +595,7 @@ igazolva a tulajdonos felvételén); a „paletta-ikonos gomb" = **`quickupload`
 a filmszalag **hét férőhelyes** (`7 × 28 + 6 × 3 = 214`), az aktuális kép
 **mindig a középső férőhelyen**; a hisztogram-doboz horgonya **`root.alsó − 95`**.
 
-1. **A bélyegképre kattintás szemantikája** — hogy a kattintás kijelöli-e
-   azt a képet, NINCS mérve. Az olcsó lánc kimerült (`.tre`: csak
-   `m_scaleXY`, se `Handler`, se `Property`; szövegtár: nincs; sztring-xref:
-   öt függvény, egyikben sem kattintás-ág). **Megszerzés:** célzott
-   Ghidra-kör a `CFilmstrip::vftable` (`0x00c9359c`) egérkezelő rekeszére.
-   Lap: `szerkeszto-felso-sav.md` 5.5; jegy **#1905**.
+✅ **2026-09-05 — a bélyegképre kattintás szemantikája LEZÁRVA, és Ghidra NEM kellett.** A `CFilmstrip::vftable` (`0x00c9359c`) **29. rése** a `FUN_005a73d0` (1 520 b); az eseménykódot a `[esemény+8]` hozza (`0x005a7427`), a jelentésük a `picasa-eger-es-kijeloles.md` 4.2/b **már megerősített** táblájából. ⭐ **A kattintás KIVÁLASZT — de a gomb FELENGEDÉSÉRE** (kód 4, `0x005a7781`): lenyomásra (kód 1 **és 0x0d — ugyanaz az ág**) a kezelő csak találat-vizsgálatot végez (`[vtbl+0x80]` → `[this+0x380]`), elmenti a húzás kezdő X-ét (`[this+0x378]`) és megfogja az egeret. ⭐ **Üres területre kattintás nem választ** (`[this+0x380] == -1` ág, `0x005a77a6`). ⭐ **A kiválasztás VISSZAVONHATÓ:** az új index beáll (`[this+0x388]`), kimegy a **`filmstripmove`** értesítés (`0x00c93584`, `[vtbl+0x70]`), és ha a gazda **`0xF4242`**-vel válaszol, a régi index **visszaáll** (`0x005a7813`); elfogadva a `[vtbl+0x84]` görget/középre állít **`-1.0`**-lel (`0x00cf3ed0`). ✅ **Nálunk (mérve):** `PhotoViewer.qml:716–718` `TapHandler.onTapped` = **felengedés** ⇒ a lényegi viselkedés MEGEGYEZIK; a vétó-út hiánya **nem termékhiba** (nálunk nincs elutasítási ág, amit vétózni lehetne). Jegy: **#1935**.
 
 ### [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
 
