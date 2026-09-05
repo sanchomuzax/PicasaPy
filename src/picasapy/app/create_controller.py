@@ -378,13 +378,55 @@ class CreateMixin(BackgroundWorkerMixin):
     #: NÉMÁN nem csinált semmit. Mérve: `staticMetaObject`-ben
     #: `_alapertelmezett_film_cel(QVariantList,QString,int,double)`
     #: szerepelt, `exportMovie` nem.
+    @staticmethod
+    def _film_beallitas(
+        width: int, height: int, seconds_per_photo: float
+    ) -> MovieSettings:
+        """A `MovieSettings` összeállítása — külön metódus, hogy mérhető legyen.
+
+        #1977 (7. pont): a szélesség KAPOTT érték, nem 16:9-ből
+        származtatott. Az eredeti hét mérete közül **öt 4:3-as**
+        (320×240, 640×480, 800×600, 1024×768, 1600×1200); azokra a
+        származtatás torzítana — 1024-es magasságból 1820 jönne ki 768
+        helyett.
+
+        `width=0` a RÉGI, négyargumentumos hívási alak: ilyenkor 16:9-ből
+        számolunk, tehát a meglévő 720p/1080p hívások változatlanok.
+        """
+        if not width:
+            width = (height * 16 // 9) // 2 * 2
+        return MovieSettings(
+            width=max(2, int(width)) // 2 * 2,
+            height=height,
+            seconds_per_photo=seconds_per_photo,
+            # az áttűnés a képenkénti idő harmada, de legfeljebb 0,5 mp:
+            # rövid diáknál (1 mp) a fix 0,5 mp-es áttűnés hosszabb
+            # lenne, mint amennyi ideig a kép áll — az érvénytelen
+            transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
+        )
+
     @Slot(list, str, int, float)
+    @Slot(list, str, int, float, int)
     def exportMovie(
-        self, rows, target_url: str, height: int, seconds_per_photo: float
+        self,
+        rows,
+        target_url: str,
+        height: int,
+        seconds_per_photo: float,
+        width: int = 0,
     ) -> None:
         """Diavetítés-videó a kijelölt képekből (MP4).
 
-        `height`: a videó magassága (720/1080); a szélesség 16:9-ből jön."""
+        `height` a videó magassága, `width` a szélessége. #1977: a
+        szélesség KÜLÖN paraméter, mert az eredeti hét mérete közül öt
+        4:3-as. `width=0` ⇒ 16:9-ből (a régi hívási alak).
+
+        ⚠️ **A kimenet MP4 (`mp4v`), az eredeti `.wmv`-jével szemben** — és
+        ez SZÁNDÉKOS, nem elmaradás. A `.wmv` írásához Windows-specifikus
+        kodek kellene; az OpenCV `mp4v`-je minden platformon megy, külön
+        telepítés nélkül (`movie/slideshow.py:27-28`). Egy későbbi kör ne
+        „javítsa vissza": a konténer eltérése a hordozhatóság ára.
+        """
         # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
         self._ensure_output_resync_wired()
         sources = self._sources_for(rows)[:_MAX_ITEMS]
@@ -410,14 +452,8 @@ class CreateMixin(BackgroundWorkerMixin):
                 )
                 return
         try:
-            settings = MovieSettings(
-                width=(height * 16 // 9) // 2 * 2,
-                height=height,
-                seconds_per_photo=seconds_per_photo,
-                # az áttűnés a képenkénti idő harmada, de legfeljebb 0,5 mp:
-                # rövid diáknál (1 mp) a fix 0,5 mp-es áttűnés hosszabb
-                # lenne, mint amennyi ideig a kép áll — az érvénytelen
-                transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
+            settings = self._film_beallitas(
+                width, height, seconds_per_photo
             )
         except ValueError as error:
             self.movieFailed.emit(str(error))

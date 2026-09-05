@@ -9,6 +9,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Hozzáadva
 
+- A Mozgófilm-párbeszéd mind a hét eredeti felbontást kínálja
+  (#1977) — eddig csak 720p és 1080p volt. Az öt 4:3-as méret nem
+  torzul: a szélesség mostantól a választott mérethez tartozik, nem
+  16:9-ből számolódik. Az alapértelmezés változatlanul 720p.
+
 - A nyomtatási párbeszéden megjelenik, MILYEN LAPRA fog nyomtatni
   (#2368) — papírnév, méret milliméterben és tájolás, a kiválasztott
   nyomtató valódi lapbeállításából. Eddig ez a mező hiányzott,
