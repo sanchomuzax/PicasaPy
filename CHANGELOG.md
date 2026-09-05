@@ -21,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A gombok visszajeleznek, ha föléjük viszed az egeret** (#883) — eddig
+  csak a lenyomás látszott. Az eredeti Picasa négy állapotot rajzol; nálunk
+  kettő volt. Mostantól rámutatáskor a gomb bal-felső éle besötétedik, a
+  bekapcsolt gomb arany keretet kap, a lenyomott árnyalat pedig a helyes
+  irányba tér el (melegebb szürke, nem hidegebb). A zöld gomb — ahogy az
+  eredetiben — szándékosan nem reagál rámutatásra.
+
 - **A vágó méretarány-listája a valódi 13 tételre csökkent** (#876). Hat
   olyan méret szerepelt benne, ami az eredeti Picasa vágójában nincs: a
   »Jelenlegi megjelenítés« a kollázs oldalformátumáé, a 4x6 / 5x7 / 8x10 /
