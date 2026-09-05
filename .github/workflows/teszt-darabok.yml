@@ -130,12 +130,15 @@ jobs:
         # A darab a SAJÁT `.coverage`-ét írja; az összefésülés a hívó
         # munkafolyamat záró jobjáé — egy darab száma önmagában nem
         # lefedettség, és totálként mutatni rosszabb, mint nem mutatni.
-        run: |
-          if [ "${{ inputs.cov }}" = "true" ]; then
-            python scripts/run_tests.py --shard ${{ matrix.shard }}/4 --cov
-          else
-            python scripts/run_tests.py --shard ${{ matrix.shard }}/4
-          fi
+        #
+        # ⚠️ A kapcsoló GitHub-KIFEJEZÉS, nem shell-elágazás. Az első
+        # változatom bash `if`-et írt ide — a windows-runner viszont
+        # PowerShellt futtat (ennek a lépésnek nincs `shell: bash`-e), és
+        # MIND A NÉGY windows-darab elhasalt rajta. A `shell: bash`
+        # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
+        # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
+        # állítja össze, a shellhez nem nyúl.
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4 ${{ inputs.cov && '--cov' || '' }}
 
       - name: Lefedettségi adatfájl feltöltése
         # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
