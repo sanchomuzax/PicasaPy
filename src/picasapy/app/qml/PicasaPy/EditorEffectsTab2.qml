@@ -103,10 +103,22 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectHeatMap"
-            label: qsTr("Heat Map")
-            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap", label)) panel.effectRequested("heatmap")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Night Vision") : qsTr("Heat Map")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (nightvision) —
+            //: az eredeti csempe-táblája (heatmap -> nightvision)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "nightvision" : "heatmap"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("heatmap")
-            badge: panel.hasBadge("heatmap")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectCrossProcess"

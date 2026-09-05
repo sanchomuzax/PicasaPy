@@ -250,6 +250,16 @@ class TestEffectThumbSourceWiring:
         qml_keys = set(
             re.findall(r'panel\.effectThumbSource\("([a-z0-9_]+)"\)', _QML_SOURCE)
         )
+        # ⚠️ #2146: kilenc csempe NEM literált ad a `effectThumbSource`-nak,
+        # hanem a `szuro` tulajdonságot, ami a Shift állapotától függően
+        # választ elsődleges és másodlagos kulcs közül. A választó kifejezés
+        # MINDKÉT ágát fel kell venni, különben ez az őr azt hinné, hogy a
+        # katalógus bővült felület nélkül.
+        for elso, masodik in re.findall(
+            r'property string szuro:[^?]*\?\s*"([a-z0-9_]+)"\s*:\s*"([a-z0-9_]+)"',
+            _QML_SOURCE,
+        ):
+            qml_keys.update((elso, masodik))
         assert qml_keys == set(EFFECT_NAMES)
 
 

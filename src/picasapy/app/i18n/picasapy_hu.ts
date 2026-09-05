@@ -6648,6 +6648,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab4</name>
+    <message>
+        <source>Film Grain (Old)</source>
+        <translation>Régi filmszemcse</translation>
+    </message>
         <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
         <source>Film Grain</source>
@@ -6948,6 +6952,26 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab1</name>
+    <message>
+        <source>Sharpen (Old)</source>
+        <translation>Élesítés (régi)</translation>
+    </message>
+    <message>
+        <source>Film Grain (Old)</source>
+        <translation>Régi filmszemcse</translation>
+    </message>
+    <message>
+        <source>Tint (Old)</source>
+        <translation>Árnyalás (régi)</translation>
+    </message>
+    <message>
+        <source>Glow (Old)</source>
+        <translation>Ragyogás (régi)</translation>
+    </message>
+    <message>
+        <source>Radial Tint</source>
+        <translation>Sugaras árnyalás</translation>
+    </message>
         <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
         <source>Focal B&amp;W</source>
@@ -7114,6 +7138,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>EditorEffectsTab3</name>
+    <message>
+        <source>Matte</source>
+        <translation>Matt</translation>
+    </message>
+    <message>
+        <source>Focal Pixelate</source>
+        <translation>Képpontnövelés</translation>
+    </message>
         <message>
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Soften</source>

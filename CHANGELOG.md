@@ -223,6 +223,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
   végre azt ígéri, amit csinál.
 
+## [0.8.286] – 2026-09-05
+
+### Hozzáadva
+- A szerkesztő effekt-csempéin a **Shift** lenyomva tartása kilenc csempén
+  másik szűrőt ad — ahogy az eredeti Picasában —, és a csempe felirata is
+  megmondja, mit kapsz („Film Grain (Old)", „Radial Tint" és így tovább).
+  A többi csempére a Shift nem hat (#2146).
+
 ## [0.8.285] – 2026-09-04
 
 ### Javítva

@@ -88,10 +88,22 @@ ColumnLayout {
         }
         PanelButton {
             objectName: "effectPicnikGrain"
-            label: qsTr("Film Grain")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
+            //: az eredeti csempe-táblája (picnikgrain -> grain)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "grain" : "picnikgrain"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picnikgrain")
-            badge: panel.hasBadge("picnikgrain")
+            badge: panel.hasBadge(szuro)
         }
     }
 
