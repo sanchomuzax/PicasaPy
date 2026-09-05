@@ -1413,7 +1413,30 @@ class TestLibraryFeed:
         controller.selectFolder(str(two_folders / "nyaralas"))
         by_name = {g["name"]: g for g in controller.feedGroups}
         assert "2025" in by_name["nyaralas"]["dateText"]  # IMG_0001 taken_at
-        assert by_name["telek"]["dateText"] == ""  # nincs felvételi dátum
+        # #2304 (1. eltérés): a `telek` fixtúrában NINCS felvételi dátum,
+        # de a fejléc a FÁJL idejére esik vissza — ahogy az állapotsor, a
+        # rendezőkulcs és a mappa indexelt dátuma is. Ez a sor korábban a
+        # dátumtalan fejlécet rögzítette, vagyis magát a hibát. Az elvárt
+        # évet NEM „nem üres"-ként állítjuk: a fájl ideje a fixtúra
+        # futásideje, tehát kiszámolható.
+        from datetime import datetime
+
+        mtime = (two_folders / "telek" / "IMG_0100.jpg").stat().st_mtime
+        elvart_ev = str(datetime.fromtimestamp(mtime).year)
+        assert elvart_ev in by_name["telek"]["dateText"], by_name["telek"]["dateText"]
+
+    def test_folder_date_text_matches_header(self, controller, two_folders):
+        """#2304 (2. lelet): a `folderDateText` property (ma bekötetlen) a
+        fejléccel KÖZÖS `photo_dates`-ből számol, nem nyers `taken_at`-ből."""
+        from PySide6.QtCore import QLocale
+
+        from picasapy.app import formatting
+
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        varhato = formatting.first_date_text(
+            controller.photos.photos, QLocale()
+        )
+        assert controller.folderDateText == varhato != ""
 
     def test_sort_change_reorders_feed(self, controller, two_folders):
         """#321: a rendezés a RÁCSOT rendezi át — a bal hasáb sorrendje

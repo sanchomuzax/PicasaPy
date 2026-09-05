@@ -1265,7 +1265,13 @@ class AppController(
         self._provider.register_photos(records)
         self._photos.set_photos(records)
         self._update_feed_groups(records)
-        dates = sorted(r.taken_at for r in records if r.taken_at)
+        # #2304: a mappa-fejléc dátumsora — a `formatting.first_date_text`-tel
+        # és az állapotsorral KÖZÖS `photo_dates`-en át, hogy EXIF nélküli
+        # mappában is legyen dátum, és hogy a három felirat ne mondhasson
+        # mást ugyanarról a mappáról. (Ez a property ma bekötetlen —
+        # `scripts/kepesseg_or_baseline.txt` —, de bekötéskor a hiba
+        # azonnal visszatérne.)
+        dates = formatting.photo_dates(records)
         self._folder_date = (
             formatting.long_date(dates[0], QLocale()) if dates else ""
         )
