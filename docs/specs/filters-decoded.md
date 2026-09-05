@@ -4911,3 +4911,82 @@ egyesítése (`darken`) **egyezik** — azokat a #569 helyesen fejtette meg.
 
 *Bizonyítottsági fok: **megerősített** — mindhárom sor a `filterdesc.xml`
 szó szerinti tartalma. A #685 mérőkészletén a hatásuk NINCS megmérve.*
+
+
+## A Comicize PONTMASZKJA — a maszk STATIKUS, a tónus máshonnan jön (2026-09-05, #2476)
+
+A #569 óta nyitva állt „a pontmag élsimítása", a #1606 pedig megmérte, hogy a
+raszterünk kb. **1,5×** túl erős. Ez a kör megadja a szerkezeti okot és a
+mért profilt.
+
+### ⭐ A `TiledImageMask` nem kap tónus-bemenetet
+
+A `filterdesc.xml` Comicize-ában a két maszk (`_mskColorSpots1`,
+`_mskColorSpots2`) **mindössze ennyit kap**: `tileWidth`, `tileHeight`,
+`alphaMin="0.0"`, `width`, `height` (+ a másodiknak `offsetX/Y = dotSize/2`).
+**Nincs köztük semmi, ami a képtől függne.**
+
+⇒ A maszk egy **állandó pontrács**; a tónus a láncból jön:
+`AdjustCurves` (a `DotContrast` térdpontjával) → `PixelateImageOperation`
+(`dotSize × dotSize`) → `BW` → küszöbgörbe → `GetVarImageOperation … Mask={_msk}`.
+
+⚠️ **Nálunk fordítva van.** Az `apply_comicize`
+(`src/picasapy/render/effects_artistic.py:42`) a `halftone_branch`-et hívja,
+az pedig a **pont SUGARÁT modulálja a tónussal**
+(`halftone.py:82` — `radius = 1 − tone`, a beírt körhöz mérve, azaz fekete
+tónusnál 12 képpont a 24-es csempében). A `tiled_dot_mask` — ami a
+`TiledImageMask` tényleges megfelelője, és a modulból ki is van vezetve
+(`halftone.py:94`) — **a Comicize útján nincs használatban**.
+
+### A rajzoló primitív: KÉTMEGÁLLÓS színátmenet
+
+A csempe-előállító (`0x00bbaa90`, ld. `filterdesc-registry.md` 4.11) két
+függvényt hív a rajzoláshoz: `0x008f3840` (öt float: a téglalap) és
+`0x008f3970` (2158 b). Ugyanezt a **párost és ugyanazzal a harmadik
+argumentummal (2)** hívja a `CircularGradientImageMask` előállítója is
+(`0x00bc2a50`, `0x00bc2d14`–`0x00bc2d1d`).
+
+A harmadik argumentum **nem alakzat-azonosító, hanem MEGÁLLÓSZÁM**: a
+`0x008f3970` az `[ebp+8]`-at bájttömbként olvassa (`0x008f39c2`), és
+`[ebp+0xc] − 1` hosszú cikluson hasonlítja össze a szomszédos elemeket
+(`0x008f39dd`–`0x008f3a01`). A harmadik hívó (`0x008ed730`, `0x008edcf9`)
+**15**-öt ad át.
+
+⇒ **A féltónusos pont ugyanazzal a kétmegállós színátmenet-primitívvel
+készül, mint a kör-maszk** — tehát a pereme nem kemény küszöb, hanem rámpa
+két sugár között; a csempe alapból a cella **0,8-szeresére** méretezve,
+középre igazítva (4.11).
+
+### A MÉRT profil — referencia vs. miénk
+
+Mérőanyag: `research/comicize-sweep/effekt5_kepregeny_dotcontrast/` —
+`Comicize_050.jpg` (`filters=Comicize=1,20,50,50`) és a Picasa exportja
+(`export/`), 1600×1200, `dotSize = round(1600/70)+1 = 24`.
+Módszer: a kimenet **fázis-hajtogatása** a 24-es csemperácsra (csempénként a
+saját átlagát levonva), majd a pont közepétől számított sugárprofil.
+
+| sugár (px) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|---|
+| **referencia** (normált) | 1,00 | 0,93 | 0,82 | 0,66 | **0,40** | 0,05 | 0,00 | 0,01 | 0,00 |
+| **miénk** (normált) | 1,00 | 0,78 | 0,56 | 0,40 | 0,27 | 0,17 | 0,08 | 0,02 | 0,00 |
+
+- **Csúcs-csúcs amplitúdó:** referencia **13,20** szint · miénk **25,89** ⇒ **1,96×**.
+- **Csempénkénti amplitúdó** (mind a 3 300 csempén): referencia **26,2** ·
+  miénk **36,4** ⇒ **1,39×** — ez erősíti meg függetlenül a #1606
+  „kb. 1,5×" leletét.
+- **Alak:** a referencia **fennsíkos** (1,00 / 0,93 / 0,82), majd `r = 4`
+  és `r = 6` között meredeken nullára esik; a miénk **fennsík nélkül**,
+  monoton lejt, és `r ≈ 7`-ig elhúzódó farka van.
+
+⇒ Két, egymástól független eltérés: **túl erős** ÉS **túl szétkent**.
+
+**Bizonyítottsági fok:** *megerősített* a maszk tónus-függetlenségére
+(a `filterdesc.xml` attribútumlistája), a megállószámra és a közös
+primitívre (közvetlen kiolvasás), valamint a fenti mért profilra.
+⚠️ **NINCS mérve**, hogy a két megálló pontosan hol áll — a mért profil a
+**kompozit kimeneté**, nem a nyers maszké (a lánc görbéi, elmosása,
+`multiply`/`darken` lépései közte vannak. A #879 szabálya szerint a
+mechanizmus önmagában nem diagnózis.)
+
+⚠️ **A mérés korlátja:** a mérőkép lapos csempéi csak a **64–159** közti
+forrás-tónust fedik le; világos és sötét végen nincs adat.
