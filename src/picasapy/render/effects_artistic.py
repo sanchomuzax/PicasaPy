@@ -38,7 +38,7 @@ from __future__ import annotations
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-from picasapy.render.curves import validate_image
+from picasapy.render.curves import curve_lut, lut_ramp, validate_image
 from picasapy.render.halftone import dot_size_for, halftone_branch
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
@@ -219,6 +219,48 @@ def pixelate_shifted(
     return np.roll(nagy, shift=(dy, dx), axis=(0, 1))
 
 
+#: A `Comicize` fő küszöbgörbéjének RÖGZÍTETT töréspontjai — a
+#: `filterdesc.xml` `<filter id="Comicize">` blokkjának
+#: `AdjustCurvesImageOperation MasterCurve`-je szó szerint (#1606):
+#: `[{0,0}, {24,24}, {48,48}, {90+DotContrast·1,5, 254}, {255,255}]`.
+#: A negyedik pont x-ét a DotContrast mozgatja, a többi négy kötött.
+_COMICIZE_CURVE_HEAD = ((0.0, 0.0), (24.0, 24.0), (48.0, 48.0))
+_COMICIZE_CURVE_TAIL = (255.0, 255.0)
+#: A mozgó pont y-ja — a `filterdesc.xml`-ben 254, NEM 255.
+_COMICIZE_CURVE_KNEE_Y = 254.0
+
+
+def comicize_master_curve(dot_contrast: float) -> np.ndarray:
+    """A `Comicize` fő küszöbgörbéje 256 elemű float LUT-ként (#1606).
+
+    A korábbi modell ezt `érték · 255 / (90 + DotContrast·1,5)` lineáris
+    skálázásra egyszerűsítette. A `filterdesc.xml` viszont ÖTPONTOS
+    görbét ad, és a natív kiértékelés természetes köbös spline (#629,
+    `curves.curve_lut`) — a két alsó pont (24 és 48) miatt az árnyékok
+    IDENTITÁSBAN maradnak, a lineáris skálázás viszont már ott is
+    másfélszeresre húzta őket.
+
+    A mozgó töréspont x-e a képhatárhoz van vágva: a csúszka tartománya
+    `0…100`, tehát `DotContrast = 100`-nál `90 + 150 = 240`, ami még
+    belefér. A vágás csak védőkorlát arra az esetre, ha a hívó ezen a
+    tartományon kívüli értéket ad (a görbe x-einek szigorúan növekvőnek
+    kell lenniük).
+
+    ⚠️ **A spline 255 fölé lő, és ezt VÁGNI kell.** A meredek negyedik
+    szakasz miatt a köbös spline a `0…100` tartományban VÉGIG 255 fölé megy,
+    majd visszaereszkedik 255-re — a nyers maximum `DotContrast = 0`-nál
+    417, az alapállásban (50) 272, `100`-nál pedig épp 255. Vágás nélkül a
+    LUT NEM monoton, és a raszter a világos tónusokon visszafordulna. A natív művelet 8 bites pufferbe ír,
+    tehát ott ugyanez a vágás történik (ld. `curves.apply_lut`); a vágott
+    görbe monoton nemcsökkenő.
+    """
+    knee_x = float(np.clip(90.0 + dot_contrast * 1.5, 49.0, 254.0))
+    curve = curve_lut(
+        (*_COMICIZE_CURVE_HEAD, (knee_x, _COMICIZE_CURVE_KNEE_Y), _COMICIZE_CURVE_TAIL)
+    )
+    return np.clip(curve, 0.0, 255.0)
+
+
 def apply_comicize(
     image: np.ndarray,
     blur_xy: float = 20.0,
@@ -238,19 +280,41 @@ def apply_comicize(
        SZÉLESSÉGÉBŐL (ld. `halftone.dot_size_for`);
     2. elő-elmosás `radius = 1 + 20·BlurXY/100` szigmával, **DARKEN** módban
        visszakeverve — ettől a sötét vonalak vastagodnak, a világosak nem;
-    3. küszöbgörbe, amelynek a FELSŐ kontrollpontját a `DotContrast` mozgatja:
-       `90 + DotContrast·1,5`;
+    3. **ötpontos** küszöbgörbe (`comicize_master_curve`), amelynek a mozgó
+       kontrollpontját a `DotContrast` tolja: `90 + DotContrast·1,5`;
     4. pixelesítés a csempeméretre, majd szürkeárnyalatos (BW) átalakítás —
        innen jön a pontonkénti „festéksűrűség";
     5. **két ág**, csempézett pontmaszkkal: az első eltolása `(0, 0)`, a
        másodiké `(dotSize/2, dotSize/2)`; az ágak **DARKEN**-nel egyesülnek;
     6. a blokk alfája `0,5 − DotFade/200`;
-    7. a kész raszter **DARKEN** jelleggel kerül az eredeti képre.
+    7. a kész raszter **DARKEN** jelleggel kerül a 2. lépés kimenetére (az
+       ELMOSOTT-SÖTÉTÍTETT képre, nem az eredetire) — a `filterdesc.xml`-ben
+       a `_opBlur` és a raszter EGY `NestedImageOperation` egymás utáni
+       gyermekei, tehát az elmosás benne marad a kimenetben (#1606).
+
+    **Amit a #1606 MÉRÉSE elvetett.** A `filterdesc.xml` három további
+    lépést is leír; a `research/comicize-sweep/` 15 eredeti
+    Picasa-exportján egyik sem javított, ezért NINCSENEK benne (a jegy
+    nyitott kérdései). A számok alább a 7. lépés javítása UTÁNI
+    állapotból indulnak:
+
+    * a raszter felvitele `multiply` (nálunk `darken`): átlag ΔE 3,08 → 3,10,
+      SSIM 0,723 → 0,719, és a raszter amplitúdója tovább TÁVOLODOTT a
+      referenciáétól (5,62 → 6,20, a referencia 3,77);
+    * a blokkot nyitó fekete `Glow` (`glowalpha=1`,
+      `σ = 35·0,02·max(W,H)/2`): ΔE 3,08 → 5,15, SSIM 0,723 → 0,625;
+    * az ágankénti küszöbgörbe `[{0,0},{150,0},{160,255},{255,255}]` + `add`
+      visszakeverés: ELNYELI a rasztert (a csempén belüli fázisprofil
+      amplitúdója 0,32-re esik, a referenciáé 3,65–7,60). A SSIM-je
+      látszólag jobb (0,811) — épp azért, mert nem rajzol rasztert; ez a
+      metrika csapdája, nem javulás.
 
     **Nyitott részlet** (a #569 elfogadási feltétele szerint is): a natív
-    pontmaszk pontos antialiasingja és peremkerekítése — ehhez golden-
-    összevetés kell (#317). A raszter szerkezete, a csempeméret képlete és a
-    keverési módok viszont a `filterdesc.xml`-ből és a natív kódból valók.
+    pontmaszk pontos antialiasingja és peremkerekítése. A mérés szerint a
+    raszterünk ~1,5-szer erősebb a kelleténél (amplitúdó 5,70 vs a
+    referencia 3,77), és a `DotContrast` válaszgörbéje is meredekebb
+    (0,58…10,91 a referencia 1,66…5,04-e helyett) — ez az, amit a fenti
+    három lépés önmagában nem javít.
     """
     validate_image(image)
     for name, value in (
@@ -270,9 +334,9 @@ def apply_comicize(
     blurred = cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma, sigmaY=sigma)
     darkened = np.minimum(image_f, blurred)
 
-    # 3. küszöbgörbe — a felső kontrollpont a DotContrast-tól függ
-    upper = float(np.clip(90.0 + min(dot_contrast, 100.0) * 1.5, 1.0, 255.0))
-    curved = np.clip(darkened * (255.0 / upper), 0.0, 255.0)
+    # 3. küszöbgörbe — ÖTPONTOS spline, a mozgó pontot a DotContrast tolja
+    curve = comicize_master_curve(min(dot_contrast, 100.0))
+    curved = np.interp(darkened, lut_ramp(), curve).astype(np.float32)
 
     # 4-5. KÉT fázis, mindkettő SAJÁT pixelesítéssel (#1351).
     #
@@ -292,8 +356,10 @@ def apply_comicize(
     )
     raster = np.minimum(branch_a, branch_b)
 
-    # 6-7. a blokk alfájával, DARKEN jelleggel az EREDETI képre
+    # 6-7. a blokk alfájával, DARKEN jelleggel — az ELMOSOTT-SÖTÉTÍTETT
+    # képre, mert a `filterdesc.xml`-ben a `_opBlur` és a raszter
+    # (`_opColorSpots`) EGY `NestedImageOperation` egymás utáni gyermekei.
     alpha = float(np.clip(0.5 - min(dot_fade, 100.0) / 200.0, 0.0, 1.0))
     raster_rgb = np.repeat(raster[..., np.newaxis], 3, axis=-1)
-    combined = np.minimum(image_f, raster_rgb)
-    return _to_uint8(image_f + alpha * (combined - image_f))
+    combined = np.minimum(darkened, raster_rgb)
+    return _to_uint8(darkened + alpha * (combined - darkened))

@@ -155,9 +155,17 @@ class TestComicizeParameters:
         out = apply_comicize(_flat(120), dot_contrast=value)
         assert out.dtype == np.uint8
 
-    def test_higher_dot_contrast_prints_less_ink(self):
-        # a felső kontrollpont `90 + DotContrast*1,5`: nagyobb érték =
-        # laposabb görbe = világosabb festéksűrűség = kisebb pontok
+    def test_higher_dot_contrast_prints_more_ink(self):
+        # A mozgó kontrollpont `90 + DotContrast*1,5`: nagyobb érték = a
+        # görbe KÉSŐBB fut ki fehérre = több középtónus marad sötét = több
+        # festék, tehát SÖTÉTEBB kimenet. (A #1606 mérése ezt a Picasa-
+        # referencián is megerősítette: a `research/comicize-sweep/`
+        # `effekt5_kepregeny_dotcontrast` exportjainak ÁTLAGA — vagyis
+        # maga a festékmennyiség — mind az öt álláson csökken:
+        # 125,09 · 124,47 · 124,01 · 123,66 · 123,38.)
+        #
+        # ⚠️ Az állítás mindig is ez volt (`high < low`), csak a NÉV és a
+        # megjegyzés mondta az ellenkezőjét — a #1606 javította.
         wide = _flat(120, height=200, width=700)
         low = apply_comicize(wide, dot_contrast=0.0).mean()
         high = apply_comicize(wide, dot_contrast=100.0).mean()
