@@ -213,6 +213,16 @@ sora **`#` nélkül** áll, tehát náluk az ismétlés él
 > osztásközt használ; ez 4 képponttal szellősebb az eredetinél. A #1420
 > ezt SZÁNDÉKOSAN nem változtatta meg (a #1345 őreinek területe), de a
 > lelet itt rögzítve marad.
+>
+> ✅ **ELDŐLT (2026-09-05, #1504): az 55 nyer, és megvan az OKA.** Az
+> elrendező (`0x00597f80`) a kurzort a gyerek elrendezés utáni, **tényleges**
+> szélességével lépteti (`0x0059883e`–`0x00598863`: `x1 − x0`, majd
+> akkumulátorhoz adás) — az pedig a gomb saját respack-doboza, **55**. A
+> `59 × 40` a `docbounds` cella-grafika mérete, nem osztásköz. A konténer
+> `Property cellwidth 50`-et deklarál (`outputlayout.tre`), amit a
+> `0x00597390` a `+0x274` tagba tesz és a `0x0059862c` olvas — de a
+> léptetésben ez az érték nem jelenik meg. Levezetés:
+> `picasa-keptalca.md`, „A kimeneti sor LÉPTETÉSE".
 
 
 ### 5.1 A szerkezeti kulcs: a 36,5 %-os osztópont
