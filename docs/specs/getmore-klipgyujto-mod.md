@@ -204,13 +204,32 @@ mond. A helyes cél a **`FUN_00608da0`**.
 `thumbui/webcambutton`-t.** A `single_action_return` gombra sem
 `Property throb 1` a `.tre`-ben, sem névvel megcímzett parancs nincs.
 
-**⛔ Ami ettől még NYITVA marad:** a `FUN_00608da0` két bekapcsolása
-**bármelyik** elemre eshet (az elemet paraméterként kapja), tehát a
-„nem throb-ol" állítás **nem bizonyított**, csak alátámasztott. A függvénynek
-**nincs közvetlen hívója** (`e8 rel32` pásztázás: 0 találat) ⇒ virtuális
-metódus. **Megszerzés (ÚJ, éles):** a `FUN_00608da0` vtábla-résének
-megkeresése (a mutatójára hivatkozó `.rdata`-cím, majd a rés hívói), és
-annak eldöntése, hogy a `[esp+0x168]` feltétel mikor igaz.
+**✅ LEZÁRVA (2026-09-05, 125. kör) — a visszatérő gomb NEM villog.**
+A két név nélküli bekapcsoló (`0x00609251`, `0x00609605`) ugyanabban a
+`FUN_00608da0`-ban ül, és az **nem** egy meglévő felületi elemre hat:
+
+| lépés | bizonyíték |
+|---|---|
+| a függvény **új objektumot gyárt** | `0x00608db1`: `push 0x420` (1056 bájt) → `call 0x0097c5d0` (foglalás), majd `0x00608dca`: `call 0x00608700` (konstruktor) |
+| kié a függvény | a `0x00608da0` mutatója a `.rdata`-ban **egyszer** áll: `0x00c80594` ⇒ vtábla-fej `0x00c8058c`, **2. rés** |
+| melyik osztályé | a vtábla −4 helyén a COL `0x00cf853c`, `offset = 0` ⇒ **`ytPopupListNodeCreator`** |
+
+⇒ A két bekapcsolás a **frissen létrehozott felugró-lista tételre** hat,
+nem a `thumbui` sávjában álló, `.tre`-ből származó gombra. A
+`single_action_return` **nem lehet** a célpontjuk.
+
+**Ezzel a teljes bizonyítás:** a gombra (a) a `.tre` nem ír
+`Property throb 1`-et, (b) nincs rá névvel megcímzett `eThrobOff`/throb
+parancs (a binárisban egyetlen elemnév van, a `thumbui/webcambutton`), és
+(c) a két név nélküli bekapcsoló más objektumfajtára hat. ⇒ **A visszatérő
+gomb villogása kizárva.** A negyedik (`_t`) bőr rajta **használatlan**.
+
+⚠️ **Amit ez NEM mond meg** (mérve nincs, és NEM is ennek a lapnak a
+kérdése): **melyik** felugró-lista tétel villog és **mikor** — a feltétel
+(`[esp+0x168]`, illetve `[esp+0xb8]`) a `FUN_00608da0` helyi rekesze,
+amelyet egy korábbi hívás tölt fel. A `ytPopupListNodeCreator`
+viselkedése külön téma.
+
 
 
 ## 4. Eredeti / nálunk / teendő
@@ -241,7 +260,7 @@ A „nálunk" oszlop **mérés** a `9a4f98ac` main-en.
 | mit tesz a ✕ | **LEZÁRVA** — csak elrejti a sávot (`hidetarget`), 2.3 |
 | hol van a sáv | **LEZÁRVA** — az alsó sávban, a kimeneti gombok fölött, 2.4/3.1 |
 | a sáv mérete | **LEZÁRVA** — a tároló kényszer-vezérelt, a tartalma fix, 3.1–3.2 |
-| villog-e a visszatérő gomb | **BLOKKOLT, de SZŰKÍTVE (2026-09-05)** — a throb jelző az `elem+0x35b`; a `.tre` állítja be, az `eThrobOff` parancs **csak törli** (`0x00601eb0`); futásidőben három hely kapcsolja be, ebből **egy névvel** — és az a `thumbui/webcambutton`. A binárisban `eThrobOn` **nincs**, és a visszatérő gombot **semmi nem nevezi meg**. ⛔ A korábban javasolt `0x00601090` **zsákutca** (az a parancs-diszpécser, csak töröl). **Új út:** a `FUN_00608da0` (virtuális metódus, 0 közvetlen hívó) vtábla-résének felderítése. 3.3 |
+| villog-e a visszatérő gomb | ✅ **LEZÁRVA (2026-09-05), NEGATÍVAN** — a két név nélküli throb-bekapcsoló a `ytPopupListNodeCreator` **2. rése** (`0x00c80594` → vtábla `0x00c8058c`, COL `0x00cf853c`), és **frissen gyártott felugró-lista tételre** hat (`push 0x420` + konstruktor), nem `.tre`-elemre ⇒ a `single_action_return`-t nem érintheti. Korábbi állapot: — a throb jelző az `elem+0x35b`; a `.tre` állítja be, az `eThrobOff` parancs **csak törli** (`0x00601eb0`); futásidőben három hely kapcsolja be, ebből **egy névvel** — és az a `thumbui/webcambutton`. A binárisban `eThrobOn` **nincs**, és a visszatérő gombot **semmi nem nevezi meg**. ⛔ A korábban javasolt `0x00601090` **zsákutca** (az a parancs-diszpécser, csak töröl). **Új út:** a `FUN_00608da0` (virtuális metódus, 0 közvetlen hívó) vtábla-résének felderítése. 3.3 |
 
 ## 6. Amit KIZÁRTAM
 

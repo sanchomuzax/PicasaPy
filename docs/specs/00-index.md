@@ -643,7 +643,7 @@ a filmszalag **hét férőhelyes** (`7 × 28 + 6 × 3 = 214`), az aktuális kép
 
 ✅ **2026-09-05 — a bélyegképre kattintás szemantikája LEZÁRVA, és Ghidra NEM kellett.** A `CFilmstrip::vftable` (`0x00c9359c`) **29. rése** a `FUN_005a73d0` (1 520 b); az eseménykódot a `[esemény+8]` hozza (`0x005a7427`), a jelentésük a `picasa-eger-es-kijeloles.md` 4.2/b **már megerősített** táblájából. ⭐ **A kattintás KIVÁLASZT — de a gomb FELENGEDÉSÉRE** (kód 4, `0x005a7781`): lenyomásra (kód 1 **és 0x0d — ugyanaz az ág**) a kezelő csak találat-vizsgálatot végez (`[vtbl+0x80]` → `[this+0x380]`), elmenti a húzás kezdő X-ét (`[this+0x378]`) és megfogja az egeret. ⭐ **Üres területre kattintás nem választ** (`[this+0x380] == -1` ág, `0x005a77a6`). ⭐ **A kiválasztás VISSZAVONHATÓ:** az új index beáll (`[this+0x388]`), kimegy a **`filmstripmove`** értesítés (`0x00c93584`, `[vtbl+0x70]`), és ha a gazda **`0xF4242`**-vel válaszol, a régi index **visszaáll** (`0x005a7813`); elfogadva a `[vtbl+0x84]` görget/középre állít **`-1.0`**-lel (`0x00cf3ed0`). ✅ **Nálunk (mérve):** `PhotoViewer.qml:716–718` `TapHandler.onTapped` = **felengedés** ⇒ a lényegi viselkedés MEGEGYEZIK; a vétó-út hiánya **nem termékhiba** (nálunk nincs elutasítási ág, amit vétózni lehetne). Jegy: **#1935**.
 
-### [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) — nincs BLOKKOLT tétel (2026-09-05-én lezárult)
 
 ⭐ **2026-09-02:** a `thumbui` `single_action_*` hármasa feltárva — a
 kollázs/filmkészítő **klip-gyűjtő módja**. Két belépési pont, három
@@ -664,13 +664,21 @@ webkamera-gomb. ⛔ **A korábban javasolt `0x00601090` ZSÁKUTCA:** az a
 parancs-diszpécser, és az `eThrobOff` ága a jelzőt **csak törli** — a
 bekapcsolásról semmit nem mond.
 
-1. **Villog-e a visszatérő gomb?** Nincs rá `Property throb 1` a `.tre`-ben,
-   és névvel megcímzett parancs sem — de a `FUN_00608da0` két
-   bekapcsolása **bármely** elemre eshet, ezért a nemleges válasz
-   **alátámasztott, nem bizonyított**. **Megszerzés (ÚJ, éles):** a
-   `FUN_00608da0` **vtábla-résének** felderítése (közvetlen hívója nincs:
-   `e8 rel32` pásztázás → 0 találat), és a `[esp+0x168]` feltétel
-   feltárása.
+⭐ **2026-09-05 (125. kör) — LEZÁRVA, NEGATÍVAN: a visszatérő gomb NEM
+villog.** A két név nélküli throb-bekapcsoló ugyanabban a
+`FUN_00608da0`-ban ül, és az **új objektumot gyárt** (`0x00608db1`:
+`push 0x420` → foglalás, majd `0x00608dca` konstruktor). A függvény
+mutatója a `.rdata`-ban **egyszer** áll (`0x00c80594`) ⇒ vtábla-fej
+`0x00c8058c`, **2. rés**, COL `0x00cf853c` (`offset = 0`) ⇒ az osztály
+**`ytPopupListNodeCreator`**. A bekapcsolás tehát a **frissen létrehozott
+felugró-lista tételre** hat, nem `.tre`-ből származó gombra. Ezzel a
+bizonyítás teljes: sem `.tre`-tulajdonság, sem névvel megcímzett parancs,
+sem a két név nélküli út nem érheti el a `single_action_return`-t ⇒ a
+negyedik (`_t`) bőr rajta **használatlan**. Jegy-komment: **#1939**.
+
+⚠️ Külön téma (nem ennek a lapnak a kérdése, jegy nem tartozik hozzá):
+**melyik** felugró-lista tétel villog és **mikor** — a feltétel a
+`FUN_00608da0` helyi rekesze, amit egy korábbi hívás tölt.
    Lap: `getmore-klipgyujto-mod.md` 3.3; jegy **#1939**.
 
 ### [racs-nagyito.md](racs-nagyito.md) — nincs nyitott kérdés (2026-09-05)
