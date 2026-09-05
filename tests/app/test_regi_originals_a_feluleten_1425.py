@@ -64,6 +64,10 @@ def _wait(signal, qt_app, timeout_ms=15000):
     QTimer.singleShot(timeout_ms, loop.quit)
     loop.exec()
     qt_app.processEvents()
+    # #2408: idotullepeskor a `result` uresen maradna, es a bukas egy
+    # kesobbi allitason jelentkezne — a muvelet helyett a VARAKOZASRA
+    # mutatva. A segito ezert maga all meg.
+    assert result, f"#2408: a jelzes {timeout_ms} ms alatt nem erkezett meg"
     return result
 
 
