@@ -1152,3 +1152,212 @@ szövegtár-feldolgozót ír, **mindkét alakot ismerje fel**.
   a feliratát a **sminkparaméter** adja, ezért a `publish_text.tre`-ben
   nincs külön sora. Ugyanez áll a `backup_cancel` és a
   `presentcd_cancel` gombra.
+
+## 15. A `publish` sáv ÁLLAPOT-FRISSÍTŐJE — `FUN_00670160` (2026-09-05)
+
+A 14. szakasz a sáv elemeit **szerkezeti horgonyokkal** adta meg (hol vannak).
+Ez a szakasz azt írja le, **mikor mit mutat** belőlük a program — vagyis a
+sáv MŰKÖDÉSÉT. Egyetlen függvény dönti el: `FUN_00670160` (1253 b,
+`ret 0xc` ⇒ **három paraméter**; a harmadik, `[ebp+0x10]`, a **mód**).
+
+**Hívói (kimerítő `e8 rel32` pásztázás a teljes `.text`-en, négy találat):**
+`0x006708b1` és `0x00670e44` (`FUN_006706d0`, a sáv felépítése) ·
+`0x00676aa0` (`FUN_006769f0`, készletváltás) · `0x0067ba83`
+(`FUN_0067b7e0`, a készlet-legördülő).
+
+### 15.1 A mód: honnan jön és milyen értékeket vesz fel
+
+A mód a panel `+0xd4` mezője. **Írói, mérve** — a parancsdiszpécserben
+(`FUN_00679ca0`) mindhárom `rpoptionbox` a saját értékét teszi bele:
+
+| kattintott elem | felirat (hivatalos magyar) | `[panel+0xd4]` | cím |
+|---|---|---|---|
+| `publish/rpoptionbox1` | „Feltöltés" | **1** | `0x0067b1e9` |
+| `publish/rpoptionbox2` | „Opciók módosítása" | **2** | `0x0067b17e` |
+| `publish/rpoptionbox3` | „Online eltávolítás" | **3** | `0x0067b243` |
+
+Kezdőérték **1** (`0x00670823`), és a felépítéskor a 0-t is 1-re javítja
+(`0x00670896`), mielőtt átadja (`0x006708ad`–`0x006708b1`).
+
+⚠️ Ez a **feltöltési al-mód**, nem a sáv három fő üzemmódja (mentés /
+Ajándék-CD / webre töltés). A fő módot a `publish/%s_go` parancsnév adja
+(10. szakasz).
+
+### 15.2 ⛔ NEGATÍV EREDMÉNY: a `buoptionbox` hármas HALOTT
+
+A függvényben **három, egymással azonos szerkezetű blokk** ül
+(`0x0067026b`, `0x00670342`, `0x00670419`), amelyek a módot rendre **0**-val
+(`0x006702a3`), **1**-gyel (`0x0067037a`) és **2**-vel (`0x00670451`)
+hasonlítják össze, és egyezéskor a `buttontoggle` tulajdonságot
+(`0x00c96924`) alkalmaznák egy vezérlőre. **Mindhárom blokk UGYANAZT a nevet
+kéri:** `publish/buoptionbox1` (`0x00ca459c`) — a második és a harmadik
+nyilván `buoptionbox2`/`buoptionbox3` akart lenni.
+
+**Ilyen elem viszont nincs.** Kimerítő keresés a **141** kicsomagolt `.tre`
+erőforráson (`referencia/tre-eroforrasok/`), **ismert pozitív kontrollal**:
+
+| minta | találat |
+|---|---|
+| `buoptionbox` | **0 fájl** |
+| `rpoptionbox1` (kontroll) | `publish.tre`, `publish_text.tre` |
+
+A `publish.tre` egyetlen `#include`-ja a `publish_text.tre`, tehát a panel
+elemkészlete teljes (**125** deklaráció), és a testvérek — `optionbox1..3`,
+`rpoptionbox1..3` — mind benne vannak. A névfeloldó (`0x009c2fc0`) `NULL`-t
+ad, a rákövetkező `__RTDynamicCast` (`0x00c07db2`, `ytDrawNode` →
+`ytButtonNode`) is `NULL`-t, és mindhárom blokk azonnal kilép.
+
+**Másodlagos jel ugyanerre:** a blokkok **0/1/2**-t várnak, a `+0xd4` viszont
+mérten **1/2/3** értékeket vesz fel (15.1). ⇒ **A hármas nem élő funkció,
+hanem az eredetiben bennragadt, elavult kód.** A fejlesztésnek nem kell
+megépítenie.
+
+### 15.3 Amit a függvény VALÓBAN csinál — négy élő állapotszabály
+
+Az elemek `+0x20e` bájtja a **REJTETT** jelző (1 = rejtve). *Független
+igazolás:* a `FUN_0066fde0` a `publish/backup_set_menu`-t **1**-re állítja,
+ha a készlet-tömb üres (`test [panel+0x2b4], 0xfffffffe` → `0x0066fe24`), és
+**0**-ra, ha nem (`0x0066fe59`). A `+0x8 |= 2` mindenütt az újrarajzolás
+kérése.
+
+| # | elem | szabály | cím |
+|---|---|---|---|
+| 1 | **`publish/backup_go`** felirata | ha a kiválasztott készlet neve (`[panel+0x168]`) **nem üres** → `il_BurnPanel::bkbutton` = **„Biztonsági mentés"**; ha üres → `il_BurnPanel::burnbutton` = **„Írás"** | `0x0067051b`–`0x00670581` |
+| 2 | **`publish/deletebackupset`** | **rejtve**, ha a készletek száma **≤ 1** (`([panel+0x2b4] & ~1) ≤ 2`, `setbe`) | `0x006705c9`–`0x006705e4` |
+| 3 | **`publish/backup_set_menu`** | **rejtve**, ha **nincs egy készlet sem** | `0x0066fdee`–`0x0066fe59` |
+| 4 | **`publish/backupcdheader`** | **kétállapotú** szövegelem: index **1**, ha a készletnév nem üres, különben **0**; a darabszám `[elem+0x300] >> 1`, a tömb `[elem+0x2fc]`, a beállító `[vtbl+0x14]` | `0x006705ea`–`0x0067063a` |
+
+A 4. pont **szöveges tartalma** a `publish_text.tre`-ből (a deklaráció
+sorrendje adja az indexet — ez a lánc egyetlen NEM külön igazolt láncszeme):
+
+| index | kulcs | angol | hivatalos magyar |
+|---|---|---|---|
+| 0 | `Text1 publish/backupcdheader` | *Create a Backup CD* | **„Biztonsági másolat létrehozása CD-re/DVD-re"** |
+| 1 | `Text2 publish/backupcdheader` | *Create a Set or use an existing one* | **„Készlet létrehozása vagy egy meglévő használata"** |
+
+### 15.4 Nálunk (MÉRVE, 2026-09-05)
+
+`grep -rln "backup_go\|deletebackupset\|backupcdheader\|backup_set_menu"
+src/` → **0 találat**; a `src/picasapy/app/qml/PicasaPy/` alatt nincs
+publish-sáv (csak `ExportDialogs.qml` és `WebExportDialog.qml`, más funkció).
+A „backup" előfordulásai a `SaveDialogs.qml`-ben a **szerkesztés-mentés**
+biztonsági másolatáról szólnak, nem erről a sávról. ⇒ **A sáv nálunk nem
+létezik**; ez a szakasz a megépítéséhez ad viselkedési szerződést (#440).
+
+### 15.5 Bizonyítottsági fok
+
+**Megerősített** a 15.1, a 15.2 és a 15.3 minden sora (cím + kiolvasott
+érték, a `+0x20e` jelentése két független helyről). **Erős, de nem külön
+igazolt** a 15.3/4. index→`Text1`/`Text2` megfeleltetése: az indexet a kód
+adja, a sorrendet az erőforrás deklarációs sorrendje.
+
+### 15.6 A mód KIMERÍTŐ írói és olvasói — és egy KIZÁRT névrokon
+
+A 15.1 három íróját utólag **kimerítő pásztázás** ellenőrizte a teljes
+`.text`-en (a `c7 83 d4 00 00 00` és `c7 86 d4 00 00 00` bájtminta, azaz
+minden `mov [ebx/esi+0xd4], imm32`), majd a teljes mentés-modulra
+(`0x0066c000`–`0x00680000`) minden `+0xd4` hivatkozás:
+
+| | találat |
+|---|---|
+| **írók a `CBurnPanel`-en** | **három**, mind a `FUN_00679ca0`-ban: `0x0067b17e` = 2 · `0x0067b1e9` = 1 · `0x0067b243` = 3 |
+| kezdőérték / 0→1 javítás | `0x00670823` · `0x00670896` (`FUN_006706d0`) |
+| **olvasók** | `FUN_0066cb20` (`0x0066cb32`, `0x0066cbcd`, `0x0066cd9e`) · `FUN_0066e970` · `FUN_0066ea40` · `FUN_0066eac0` · `FUN_0066eb40` (kétszer) · `FUN_006772b0` · `FUN_0067b7e0` · `FUN_0067be30` — **nyolc további függvény**, mind 1/2/3-mal hasonlít |
+
+⇒ a mód **nem díszlet**: a panel viselkedésének nyolc pontján dönt.
+
+⛔ **KIZÁRVA — a `FUN_00679310` `+0xd4`-e MÁS OSZTÁLYÉ.** A pásztázás
+negyedik-ötödik találata (`0x00679412` = 1, `0x0067945d` = 2) nem a
+mentés-panelé:
+
+- a függvény `__thiscall` (`mov esi, ecx`, `0x00679316`), és **nulla
+  közvetlen hívója van** (kimerítő `e8 rel32` pásztázás a `.text`-en) ⇒
+  csak vtáblán át hívható;
+- a címe **egyetlen** adathelyen szerepel: `0x00ca6a18` — ez a
+  **`NewBkDialog::vftable`** belseje (RTTI-horgony `0x00ca68b4`, a
+  következő RTTI-vtábla `0x00ca6a24`; a `CBurnPanel` vtáblái ettől távol,
+  `0x00ca62e8`–`0x00ca6384`);
+- a `CBurnPanel` módja mérten **1/2/3**, ezé **0/1/2**.
+
+⇒ **ugyanaz az eltolás, másik objektum.** A `NewBkDialog` saját `+0xd4`-e
+a 15.7-ben.
+
+### 15.7 A mód LÁTHATÓ következménye — a tárhely-előrejelzés FŐNEVE
+
+A `FUN_0066cb20` (`0x0066cd9e`) a módból **szót** választ, és azt teszi a
+Picasa Web Albums tárhely-előrejelzésébe:
+
+| mód | szövegtár-kulcs | angol | **hivatalos magyar** | cím |
+|---:|---|---|---|---|
+| 1 | `il_BurnPanel::upload` | *this upload* | **„feltöltés"** | `0x0066cdb5` |
+| 2 | `il_BurnPanel::change` | *this change* | **„módosítás"** | `0x0066cdcd` |
+| 3 | `il_BurnPanel::removal` | *this removal* | **„eltávolítás"** | `0x0066cdc1` |
+
+A szó a **`publish/final_storage`** elem szövegébe kerül (`0x00ca3a54`,
+beállítás `0x0066ce0b`–`0x0066ce2b`). A függvény négy mondatból választ —
+aszerint, hogy **változik-e** a tárhelyhasználat, és hogy van-e **kvóta**:
+
+| kulcs | angol | **hivatalos magyar** | cím |
+|---|---|---|---|
+| `PWA_storage_total` | *After %1$s, you will be using approximately %2$s (%3$d%%) of %4$s.* | **„A(z) %1$s utáni tárhelyhasználat körülbelül: %2$s (%3$d%%) / %4$s."** | `0x0066ceee` |
+| `PWA_storage_total_nolimit` | *After %1$s, … approximately %2$s.* | **„A(z) %1$s utáni tárhelyhasználat körülbelül: %2$s."** | `0x0066d004` |
+| `PWA_no_storage_change` | *This will not change your storage usage. You are currently using %1$s (%2$d%%) of %3$s.* | **„Ez a művelet nincs hatással a tárhelyhasználatra. Jelenlegi tárhelyhasználat: %3$s/%1$s (%2$d%%)."** | `0x0066d0ea` |
+| `PWA_no_storage_change_nolimit` | *This will not change your storage usage. You are currently using %s.* | **„…: %s."** | `0x0066d187` |
+
+Amíg a méret számolása tart, a `publish/final_storage`
+**`il_BurnPanel::calculating`** = *Calculating…* / **„Számítás…"**
+(`0x0066cdf5`). Két testvér-elem ugyanitt: `publish/needed_storage`
+(`0x0066cd6a`) és `publish/full_storage` (`0x0066cd78`); a hosszú szöveg
+levágása a `publish/storage_clip` (`0x0066cf6e`).
+
+⚠️ **A magyar FELCSERÉLI a sorszámokat** a `PWA_no_storage_change`-ben
+(`%3$s/%1$s`), ahogy a 3. szakasz másolási szövege is. **Pozíció szerinti
+helyettesítés itt rossz mondatot ad** — a magyar fordítás sorszámozott
+helyőrzőket használ.
+
+### 15.8 A `NewBkDialog` vezérlői — a készlet-párbeszéd MŰKÖDÉSE
+
+A 15.6 kizárása közben előkerült, hogy a **„Mentési készlet" /
+„Mentési készlet szerkesztése" párbeszéd** (`NewBkDialog`, vtábla
+`0x00ca68b4`) **négy nevesített vezérlőt** olvas-ír, egy név→elem
+kereső-táblán át (`0x0052e590`, hash-alapú keresés):
+
+| vezérlőnév | sztring | hol fordul elő |
+|---|---|---|
+| `name` | `0x00c7fa20` | `FUN_00679310` (`0x00679340`) · `FUN_00678e80` (`0x006791d0`) · `FUN_00679570` (`0x0067957f`) |
+| `files` | `0x00c89a00` | `FUN_00679310` (`0x006793cd`, `0x0067941e`) · `FUN_00678e80` (`0x00679113`) |
+| `type` | `0x00c83fe4` | `FUN_00679310` (`0x00679467`) · `FUN_00678e80` (`0x00678ef1`, `0x00678f48`) · `FUN_00679570` (`0x006795f6`) |
+| `disk` | `0x00ca5e5c` | `FUN_00679310` (`0x006794aa`) · `FUN_00678e80` (`0x006790cb`) · `FUN_00679570` (`0x0067967e`) |
+
+Az `FUN_00678e80` ezeken kívül a `typegroup` csoportot is nevesíti
+(`0x0067921b`) — ez a `files`/`type` rádiók közös szülője.
+
+**A három szerep** (mindhárom `__thiscall`, a `NewBkDialog` vtáblájából):
+
+| függvény | mit csinál |
+|---|---|
+| `FUN_00678e80` (1167 b) | a párbeszéd felépítése; itt van a **„Mentési készlet szerkesztése"** cím és a **„Módosítás"** gomb (`il_NewBkDialog::EditTitle` / `::EditOKButton`, 4. szakasz), és a `Preferences\ShowUnixPaths` olvasása |
+| `FUN_00679310` (596 b) | a vezérlők → objektum irány: a `files` vezérlő állapotából áll elő a `[this+0xd4]` **tartalom-mód** (0 alap · **1** ha a lekérdezés 1-et ad, `0x00679412` · **2** ha 2-t, `0x0067945d`), a `disk` a `[this+0xd0]`-ba |
+| `FUN_00679570` (985 b) | a fordított irány: `name` · `type` · `disk` visszaírása |
+
+⭐ **A `[this+0xd4]` értékkészlete `0/1/2`, és pontosan ez a
+`backups.xml` `type` mezőjének értékkészlete** (2.1: `+0x0c` = 0 →
+`bkallfiles`, 1 → `bkonlypics`, 2 → `bkonlyexif`). **Bizonyítottsági fok:
+erős, nem külön igazolt** — az értékkészlet, a funkció és az, hogy ez a
+párbeszéd szerkeszti a készletet, egybevág, de a `[dlg+0xd4]` →
+`[rekord+0x0c]` **másoló utasítást nem sikerült megtalálni** (a
+`FUN_00679310` csak vtáblán át hívható, közvetlen hívó nincs). A
+megvalósításnak ez nem akadály: a párbeszédnek a három tartalom-módot kell
+felkínálnia, és a választást a `type` mezőbe írnia.
+
+### 15.9 Nálunk (MÉRVE, 2026-09-05) — a 15.6–15.8 elemei
+
+```
+grep -rn "final_storage\|needed_storage\|full_storage\|storage_clip\|PWA_storage\|typegroup" src/  → 0
+grep -rn "backup_go\|deletebackupset\|backupcdheader\|backup_set_menu" src/                        → 0
+```
+
+Kontroll, hogy a minta nem hibás: `grep -rniE "storage" src/ --include=*.py
+--include=*.qml` → **64 találat**, de **mind** a helyi adatmappa-kezelés
+(`app/platform_storage.py`, `StoragePaths`, `bootstrap_storage`) — a
+tárhely-előrejelzésből nálunk **semmi** nincs meg.
