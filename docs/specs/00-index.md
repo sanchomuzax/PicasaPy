@@ -964,9 +964,20 @@ lemez mappanevei **honosítottak**. Nálunk a menüpont **halott helyőrző**
    (`option_isupload`, a `PicasaRestore` másolása) függetlenül ugyanezt adja.
    Lap: `ajandek-cd-kimenet.md` **12.**
 
-### [pmp-database.md](pmp-database.md) — 1 nyitott kérdés (ÚJ szakasz, 2026-09-03)
+### [pmp-database.md](pmp-database.md) — 2 BLOKKOLT tétel (2026-09-05)
 
-⭐ **2026-09-03 (8. szakasz) — a `thumbindex.db` és a `*_index.db` BÁJTFORMÁTUMA megfejtve.** A `thumbindex.db`: `uint32` magic `0x40466666` + `uint32` rekordszám + rekordonként **ASCIIZ útvonal + 30 bájtos farok** (két `FILETIME`, méret, típus, `dirty`, `valid`, kiegészítő). ⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce** — a bináris rekord és a `WriteDirscannerCSV` kimenete ugyanaz a szerkezet. A három `*_index.db`: **20 bájt fejléc** (float verzió = 1.6 + slotszám) + **12 bájt/slot** (`uint64 q` + `uint32 u`). **Ellenőrizve:** 140 758 rekord 0 bájt maradékkal; 1 689 080 = 20 + 140 755 × 12 és 3 287 072 = 20 + 273 921 × 12 pontosan. ⛔ **A kulcs képzésére KÉT további hipotézis-család elesett:** közvetlen mező-egyezés az útvonal-indexszel (10 összevetés × 117 794 fájl-slot, **nulla**) és útvonal-hash (24 kombináció — CRC-32/FNV/djb2/MD5 × teljes út/kisbetűs/fájlnév —, **nulla**). **A kulcs jellege mérve:** a `q` 135 345/135 858 **egyedi** (99,6%), de a bit-eloszlása **nem egyenletes** (a felső bitek 0,16–0,33), az `u` viszont csak 72,5%-ban egyedi ⇒ a kettő **nem ugyanannak a két fele**. ⇒ A következő kör a `q` **előállítási helyét** keresse (a `0x00415790` store-objektum írás-metódusa), ne hash-családokat. Jegyek: **#2195** (olvasó), **#1** (db3-import gyűjtő, kommentelve).
+⭐ **2026-09-03 (8. szakasz) — a `thumbindex.db` és a `*_index.db` BÁJTFORMÁTUMA megfejtve.** A `thumbindex.db`: `uint32` magic `0x40466666` + `uint32` rekordszám + rekordonként **ASCIIZ útvonal + 30 bájtos farok** (két `FILETIME`, méret, típus, `dirty`, `valid`, kiegészítő). ⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce** — a bináris rekord és a `WriteDirscannerCSV` kimenete ugyanaz a szerkezet. A három `*_index.db`: **float verzió (1.6) + NÉGY párhuzamos `uint32`-tömb** (üres · **Checksum** · **Offset** · **Size**) — ⚠️ **ez a lap 8.2 szakaszának HELYESBÍTETT modellje**; a korábban itt állt „20 bájt fejléc + 12 bájt/slot (`uint64 q` + `uint32 u`)" leírás **MEGDŐLT** (a két modell bitre ugyanazt a fájlméretet adja, ezért a méret-ellenőrzés nem szűrte ki). Az indexbejegyzés 2026-09-05-ig hordozta az elavult alakot. **Ellenőrizve:** 140 758 rekord 0 bájt maradékkal; 1 689 080 = 20 + 140 755 × 12 és 3 287 072 = 20 + 273 921 × 12 pontosan. ⭐ **2026-09-04: a kulcs (a Picasa szóhasználatában `Checksum`) KÉPLETE MEGVAN** és mért (8.10): `(JS_hash(teljes_út) mod 1 000 231) ^ rol(idő_lo,13) ^ rol(idő_hi,17) ^ rol(méret,18)`, ahol az idő a **második** FILETIME; három katalóguson 48 605 + 2 161 + 1 932 pontos 32 bites egyezés. ⚠️ **A korábban itt felsorolt kizárások (10 mező-összevetés, 24 hash-kombináció) a MEGDŐLT szerkezet-modellre épültek — ne tekintsd őket érvényesnek** (a lap 8.6 visszavonta őket). ⭐ **2026-09-05: KÉT ellenőrzőösszeg-mód van.** A számoló `FUN_006b99f0` egyetlen verem-paramétere kapcsoló; a **2. módban** (`0x006b9b26`) **nincs útvonal és nincs méret**: `rol(q_lo,13) ^ rol(q_hi,17)`, ahol `q = (FILETIME + 5 000 000) / 10 000 000` — vagyis **egész másodpercre kerekített** idő. A hat hívóból öt fixen `1`-et ad, egy (`0x004e3c13`) futásidejűt, ami a `CThumbDB` **34. réséből** ered. Jegyek: **#2195** (olvasó, kommentelve), **#1** (db3-import gyűjtő).
+
+1. **Melyik hívó kéri a 2. ellenőrzőösszeg-módot?** A kapcsoló a `CThumbDB`
+   **34. rését** (`0x00c82184`, vtábla `0x00c820fc`, COL `0x00cfa164`,
+   `offset = 84`) hívó kódból jön. **Megnézve:** a `call dword ptr [reg+0x88]`
+   alakra **0 találat** a teljes `.text`-en ⇒ a hívás regiszterbe töltve megy.
+   **Megszerzés:** a `mov reg,[reg+0x88]` 286 találatának szűrése arra,
+   melyiket követi `call reg`, vagy a lap 11. szakaszának `CThumbDB`
+   felület-térképe.
+2. **A 615 nem egyező sor oka** — „elavult ellenőrzőösszeg" **vagy** „a 2.
+   módban íródott". **Megszerzés (olcsó, új adat NÉLKÜL):** a `Checksum₂`
+   újraszámolása ugyanazon a katalóguson, a nem egyező sorokra.
 
 ⭐ **2026-09-02 — SAJÁT HELYESBÍTÉS a bélyegkép-gyorstár kulcsvektorán:** a lap
 korábbi következtetése („a kulcs tárankénti, nem globális fotó-azonosító")

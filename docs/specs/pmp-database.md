@@ -713,10 +713,14 @@ formátumfüggő (jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), é
 615-ből 393-nál a két FILETIME azonos. A legvalószínűbb magyarázat, hogy
 ezeknél a **tárolt ellenőrzőösszeg elavult** a bejegyzés mai
 attribútumaihoz képest (a fájl megváltozott, a bélyegkép nem épült újra) —
-**de ez NINCS bizonyítva**. ⛔ **BLOKKOLT:** eldöntéséhez olyan katalógus
-kell, amelyben a bélyegképek frissen épültek újra (a tulajdonos gépén,
-a bélyegkép-gyorsítótár törlése után), vagy a **bélyegkép-ÍRÓ** ágának
-kimérése — az mutatná meg, milyen attribútumokkal bélyegez íráskor.
+**de ez NINCS bizonyítva**. ⛔ **BLOKKOLT — de 2026-09-05 óta OLCSÓBBAN
+feloldható.** A 8.10 új szakasza szerint a számoló függvénynek **két módja**
+van, és a másodikban **nincs útvonal**: `rol(q_lo,13) ^ rol(q_hi,17)`, ahol
+`q` a FILETIME egész másodpercre kerekítve. ⇒ **Versengő magyarázat:** a
+615 sor nem elavult, hanem **a 2. módban** íródott. **Megszerzés (új, olcsó):**
+ugyanazon a katalóguson, a 615 nem egyező sorra újra kell számolni a
+`Checksum₂`-t — **új adatgyűjtés nem kell**. A korábbi két út (frissen épült
+katalógus, illetve az ÍRÓ ág kimérése) megmarad tartaléknak.
 
 
 ##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
@@ -2456,6 +2460,9 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 |---|---|---|
 | a kulcs képzésének képlete | ✅ **MEGVAN** (2026-09-03, ld. 8.10) | — |
 | mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
+| hány ellenőrzőösszeg-mód van | ✅ **LEZÁRVA (2026-09-05)** — **kettő**; a 2. útvonal és méret nélküli, másodperc-felbontású (8.10) | — |
+| **melyik hívó kéri a 2. módot** | **BLOKKOLT** — a kapcsoló a `CThumbDB` **34. rését** hívó kódból jön; a rés hívói indirekt (regiszteres) hívással mennek | a `mov reg,[reg+0x88]` 286 találatának szűrése `call reg`-re, vagy a 11. szakasz felület-térképe |
+| **a nem egyező 615 sor oka** | **BLOKKOLT, de olcsóbb** | `Checksum₂` újraszámolása ugyanazon a katalóguson |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
 Picasa bélyegkép-gyorsítótárát (8.3–8.4) — csak ahhoz kell, hogy olyan
@@ -2642,6 +2649,76 @@ A 8.1 ezt „hozzáférés"-ként nevezi meg (a `WriteDirscannerCSV`
 ideje: a Picasa erre alapozza az elavulás-vizsgálatot, amit a hozzáférési
 időre értelmetlen volna. *A CSV-fejléc szava megmarad, de a szerepét itt
 mondjuk ki.*
+
+#### ⭐ KÉT ellenőrzőösszeg-mód van — a másodikban NINCS útvonal (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a második mód képletére és a
+> hívóhelyek számbavételére; **feltételes** arra, hogy ez magyarázza-e a
+> lentebb tárgyalt nem egyező sorokat — az még mérés kérdése.
+
+A számoló függvény (`FUN_006b99f0`, 350 b, `ret 4`) **egyetlen
+verem-paramétere egy kapcsoló**, és két különböző képletre ágazik el:
+
+```asm
+0x006b99f0  cmp byte ptr [esp+4], 0
+0x006b99f5  je  0x006b9b26          ; ⇒ MÁSODIK mód
+```
+
+**1. mód (kapcsoló ≠ 0) — a fenti, dokumentált képlet.**
+
+**2. mód (kapcsoló = 0), `0x006b9b26`–`0x006b9b4b` — ÚJ:**
+
+```asm
+0x006b9b26  mov ecx, [edi+0x0c]      ; a FILETIME alsó 32 bitje
+0x006b9b29  mov edx, [edi+0x10]      ; a felső 32 bitje
+0x006b9b2e  add ecx, 0x4c4b40        ; +5 000 000  (fél másodperc)
+0x006b9b39  adc edx, 0               ; 64 biten
+0x006b9b34  push 0x989680            ; 10 000 000  (= 1 másodperc)
+0x006b9b3e  call 0x00c13b70          ; 64 bites osztás
+0x006b9b43  rol eax, 0x0d            ; rol(hányados_lo, 13)
+0x006b9b46  rol edx, 0x11            ; rol(hányados_hi, 17)
+0x006b9b49  xor eax, edx
+```
+
+```
+Checksum₂ = rol( q_lo, 13 ) ^ rol( q_hi, 17 )
+            ahol  q = (FILETIME + 5 000 000) / 10 000 000
+```
+
+A `FILETIME` 100 ns-os egységekben számol, tehát a `+5 000 000` és a
+`/10 000 000` együtt **egész másodpercre kerekít**. ⇒ A második mód
+**másodperc-felbontású időbélyeg-lenyomat**, amelyben **sem az útvonal,
+sem a fájlméret nem szerepel**.
+
+**Ki melyik módot kéri** — a `.text` teljes `e8 rel32` pásztázása szerint a
+függvénynek **hat** hívója van:
+
+| hívó | a kapcsoló |
+|---|---|
+| `0x00424dd1`, `0x004282f7`, `0x00568206`, `0x00568336`, `0x00602084` | `push 1` — **rögzített 1. mód** |
+| **`0x004e3c13`** (`FUN_004e3ab0`, 554 b) | **futásidejű érték** (`[esp+0x1c]` = a függvény 3. paramétere) |
+
+A futásidejű ág forrása egy szinttel feljebb: a `FUN_004e3ab0` egyetlen
+hívója a `0x0042a832`, amely a saját 2. paraméterét (`[ebp+0xc]`) adja
+tovább; ez a függvény (`FUN_0042a800`) pedig **`CThumbDB` virtuális
+metódus**: a mutatója a `0x00c82184` rekeszben áll, a vtábla feje
+`0x00c820fc`, a hozzá tartozó COL `0x00cfa164` (`offset = 84`), tehát ez a
+`CThumbDB` **másodlagos felülete**, a **34. rés**.
+
+⛔ **Ameddig eljutottam:** a 34. rés hívóit **nem** sikerült kimerítően
+megtalálni — a hívás nem `call dword ptr [reg+0x88]` alakban megy
+(**0 találat** a teljes `.text`-en), hanem regiszterbe töltve; a
+`mov reg,[reg+0x88]` minta viszont **286** helyen áll, és azok túlnyomó
+része más szerkezet ugyanazon eltolása. **Megszerzés:** a 286 találat
+szűrése arra, melyiket követi `call reg` ugyanabban a bázisblokkban,
+vagy a `CThumbDB` felület-térkép (11. szakasz) 34. résének visszakeresése.
+
+**Amit ez a lenti „nem egyező sorok" tételre jelent:** a 615 sor nem
+feltétlenül **elavult** — lehet, hogy **a 2. módban** íródott. Ez
+**olcsón eldönthető**: ugyanazon a katalóguson újra kell számolni a nem
+egyező sorokra a `Checksum₂`-t. Ha egyeznek, a „elavult" magyarázat
+megdőlt; ha nem, megerősödött. **Ehhez új adatgyűjtés NEM kell** — csak
+egy újramérés a meglévő katalóguson.
 
 #### Miért nem egyezik MINDEN bejegyzés — és miért nem hiba ez
 
