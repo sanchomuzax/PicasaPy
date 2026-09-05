@@ -1,7 +1,15 @@
 """Picasa-kompatibilis médiatípus-felismerés kiterjesztés alapján.
 
-Forrás: Picasa 3.9 hivatalos támogatott-formátum lista (NotebookLM notebook,
-Picasa help).
+Forrás: a Picasa binárisának **fájltípus-táblája** — egy 30 ágú ugrótáblás
+kapcsoló (`0x004fadb0`, a tábla `0x004fb948`), amelynek minden ága
+kiterjesztés-sztringeket regisztrál (#2415). A korábbi forrás, a Picasa 3.9
+hivatalos támogatott-formátum listája (NotebookLM notebook, Picasa help),
+kiegészítésként megmarad — de a mért tábla az erősebb bizonyíték: a súgó
+listájából három kiterjesztés hiányzott.
+
+⚠️ A tábla **16. ága dinamikusan** tölti a listáját (`call 0x00a4c720`),
+ezért az ott nem látszó videó-kiterjesztések (`.3g2` … `.tod`) hiánya
+**nem** negatív bizonyíték — azokat a súgó-lista alapján tartjuk.
 
 ⛔ **HELYESBÍTÉS (#2344).** Ez a fejléc korábban azt állította, hogy „a WebP
 szándékosan hiányzik — a Picasa nem támogatta". **Ez téves volt**, három
@@ -30,6 +38,9 @@ PHOTO_EXTENSIONS = frozenset(
     {
         ".jpeg", ".jpg", ".tif", ".tiff", ".bmp", ".gif", ".psd", ".png",
         ".tga",
+        # #2415: a 0. ág a `.jpg`/`.jpeg` mellett a `.jpe`-t is
+        # regisztrálja (`0x004fadc1`). A súgó-listából hiányzott.
+        ".jpe",
         # #2344: a Picasa alapból indexeli (`SupportWEBP` = 1), ld. a
         # modul fejlécét. A megjelenítés is rendben: a szállított PySide6
         # 6.11.2 `QImageReader`-e olvassa, és a Pillow/OpenCV úton is
@@ -52,6 +63,9 @@ VIDEO_EXTENSIONS = frozenset(
         ".3g2", ".3gp", ".asf", ".avi", ".divx", ".m2t", ".m2ts", ".m4v",
         ".mkv", ".mmv", ".mod", ".mov", ".mp4", ".mpg", ".mts", ".tod",
         ".wmv",
+        # #2415: a 8. ág a `.mpg` mellett ezt a kettőt is regisztrálja
+        # (`0x004fb0f1`). A súgó-listából mindkettő hiányzott.
+        ".mpeg", ".ty",
     }
 )
 

@@ -523,15 +523,28 @@ VALÓDI HIBÁT is.
 után tehát az **Impact** jön, a `Radius` **nem** a harmadik numerikus mező —
 a korábbi kód innen olvasta, ezért a két csúszka hatása fel volt cserélve.
 
-**Közös körmaszk** (mindkét effekt ugyanazt használja), teljes felbontásra
-visszaskálázott sugárral:
+**⛔ HELYESBÍTÉS (2026-09-05, #2456): a körmaszk NEM közös.** A szállított
+`runtime/filterdesc.xml` a két effektnek **két különböző** sugárképletet ad;
+az előnézet→teljes felbontás átváltó **csak a `FocalZoom`-ban** áll ott:
 
-    inner = Radius · (imageWidth / fullResWidth) · Hardness/101
-    outer = Radius · (imageWidth / fullResWidth) · (2 − Hardness/101)
+| | `FocalZoom` (`filterdesc.xml:898`) | `PicnikFocalPixelate` (`filterdesc.xml:870`) |
+|---|---|---|
+| `innerRadius` | `Radius · imageWidth/fullResImageWidth · Hardness/101` | `Radius · Hardness/101` |
+| `outerRadius` | `Radius · imageWidth/fullResImageWidth · (2 − Hardness/101)` | `Radius · (2 − Hardness/101)` |
+| a `_sldrRadius` maximuma | `Math.min(fullResImageWidth, fullResImageHeight)/2` | `Math.min(imagewidth, imageheight)/2` |
+| `fullres` attribútum | `2` | `1` |
 
-Belül alfa 0 (a hatás nem éri el: éles marad), kívül 1. A 101-es osztó
-szándékos: `Hardness = 100` mellett is marad egy hajszálnyi átmenet. Záró
-keverés: `1 − Fade/100`.
+Belül alfa 0 (a hatás nem éri el: éles marad), kívül 1 — a `PicnikFocalPixelate`
+`_chkReverse` jelölője **megcseréli** a kettőt (`outerAlpha="{_chkReverse.selected?0:1}"`,
+`innerAlpha="{_chkReverse.selected?1:0}"`), tehát alapállásban **a körön KÍVÜL**
+pixelez. A 101-es osztó szándékos: `Hardness = 100` mellett is marad egy
+hajszálnyi átmenet. Záró keverés: `1 − Fade/100` (`BlendAlpha`).
+
+⚠️ **Nálunk (mérve, `render/focal.py:40`):** a `focal_mask()` KÖZÖS, és a
+`scale` (`imageWidth/fullResWidth`) tényezőt a `PicnikFocalPixelate`-re is
+alkalmazza; a `Reverse` vezérlő nálunk **nem létezik**. Teljes felbontású
+renderen (`scale = 1,0`) az első eltérés nem látszik, kicsinyített előnézeten
+igen. Jegy: **#2456**.
 
 **`FocalZoom` natív kernel:** `N = min(trunc(Impact) + 5, 30)` zoomminta, a
 legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel.
@@ -543,19 +556,40 @@ szomszéd, nem interpoláció) — ettől élesek a blokkok.
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
-> ⚠️ **MÉRVE (#1142): a 3.9.141.259 a `PicnikFocalPixelate`-et sem futtatja
-> le.** A `merokit-2` szettben mindkét alak — a hétparaméteres
-> `PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;`
-> és a négyparaméteres `PicnikFocalPixelate=1,40.000000,60.000000,50.000000,0.000000;`
-> — **a forrást adta vissza** (0,164 eltérés = a JPEG-újratömörítés
-> zajszintje), miközben a PicasaPy 29,19-es eltérést okozott. A lánc ezért
-> a #1142 óta NEM futtatja (`chain.MEASURED_NOT_RUNNING_OPS`); a fenti
-> csővezeték maga megmarad (`render/focal.py`), csak nem hívjuk.
+> ⚠️ **MÉRVE (#1142): a 3.9.141.259 a `PicnikFocalPixelate`-et a szettben
+> nem futtatta le** — a `merokit-2` mindkét próbált alakja **a forrást adta
+> vissza** (ΔE 0,181 = a JPEG-újratömörítés zajszintje), miközben a PicasaPy
+> 29,19-es eltérést okozott. A lánc ezért a #1142 óta NEM futtatja
+> (`chain.MEASURED_NOT_RUNNING_OPS`); a csővezeték maga megmarad
+> (`render/focal.py`), csak nem hívjuk.
 >
-> Hogy az OK a névregisztráció hiánya vagy a paraméterszám, a mérés nem
-> dönti el: mindkét paraméterszám egyformán tétlen maradt. Azt sem tudjuk,
-> hogy a tag **elvágja-e** mögötte a láncot (#1140) — a szettben egyik
-> esetben sem áll mögötte másik tag.
+> ⛔ **HELYESBÍTÉS (2026-09-05, #2456) — a verdikt NEM megalapozott, mert a
+> szűrő SAJÁT paraméteralakját egyik próba sem használta.**
+>
+> 1. **A két próbált alak 6, illetve 4 érték** (nem „hét és négy”):
+>    `PicnikFocalPixelate=1,0.5,0.5,40,60,50,0;` a `FocalZoom` alakja
+>    (puck + 4 csúszka), `PicnikFocalPixelate=1,40,60,50,0;` négy érték.
+>    Az 1. kör szettjében ugyanez **egyetlen** értékkel ment
+>    (`PicnikFocalPixelate=1,20.000000;`).
+> 2. **A szűrő saját aritása 7.** A #685 szettjében **30 szűrőből 30** pontosan
+>    `vezérlőszám + (puck ? 2 : 0)` értéket kapott, és **mindegyiknek volt
+>    ható esete**; egyedül a `PicnikFocalPixelate` nem kapta meg a magáét
+>    (5 vezérlő — `Impact`, `Radius`, `Hardness`, `Fade`, `Reverse` — + puck
+>    = **7**). A szabályt a legközelebbi testvér hitelesíti: a `FocalZoom`
+>    4 + 2 = 6 értékkel ténylegesen lefut (ΔE 7,61).
+> 3. **Rövid lista sehol nem hatott.** A `merokit-2` „halott” csoportjában
+>    **9 rövid alak** futott (`blur`, `colorfix`, `whitept`, `triple`,
+>    `focalpixelate`), és **mind a 9 tétlen maradt** — köztük a `triple=1;`,
+>    ugyanaz a `triple`, amely a saját aritásán **ΔE 21,42**-t ad. Vagyis a
+>    „nem történt semmi” a rövid alakoknál nem a szűrőre, hanem a lista
+>    hosszára bizonyíték.
+>
+> ⇒ A „az eredeti sem futtatja” állítás **egy hetes alakkal mért exportig**
+> nyitott. A `MEASURED_NOT_RUNNING_OPS`-bejegyzést addig NEM szabad sem
+> igazolásként, sem cáfolatként idézni. Jegy: **#2456** (`blocked`).
+>
+> Amit a helyesbítés NEM érint: hogy a tag **elvágja-e** mögötte a láncot
+> (#1140) — a szettben egyik esetben sem áll mögötte másik tag.
 
 **Nyitott:** a pontos perem-/interpolációs szabály a mintavételezésnél —
 golden-összevetéssel rögzíthető (#317).

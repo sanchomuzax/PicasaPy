@@ -160,7 +160,7 @@ ténylegesen előforduló értéktartományt** mutatják.
 | `Comicize` | Comic Book | effect | fullres+slow | ld. 4. pont | — | — |
 | `CrossProcess` | Cross Process | effect | fullres | ld. 4. pont | — | — |
 | `DropShadow` | Drop Shadow | effect | fullres+slow+resize | ld. 4. pont | — | — |
-| `PicnikFocalPixelate` | Focal Pixelate | effect | fullres | ld. 4. pont | — | puck |
+| `PicnikFocalPixelate` | Focal Pixelate | effect | fullres | ld. 4. pont | — | puck — **ini-aritása 7** (puck + 5 vezérlő), és a #685 szettje sosem ezt próbálta: ld. 4.1/b és 4.1/c (#2456) |
 | `FocalZoom` | Focal Zoom | effect | fullres | ld. 4. pont | — | puck |
 | `PicnikGrain` | Film Grain | effect | fullres+slow | ld. 4. pont | — | — |
 | `HDR` | HDR-ish | effect | fullres+slow | ld. 4. pont | — | — |
@@ -267,7 +267,91 @@ Két nyitott részlet:
   `filterdesc` alapértéke `true`, az ini-ben `0` áll. A polaritás
   ellenőrizendő egy célzott exporttal.
 - `FocalZoom=1,0.5,0.5,50.0,50.0,50.0,0.0` — itt a **puck (x, y) elöl** van,
-  a natív szűrők mintájára; a `PicnikFocalPixelate`-ra nincs valós mintánk.
+  a natív szűrők mintájára; a `PicnikFocalPixelate`-ra **továbbra sincs valós
+  mintánk**, és a #685 szettje sem adta meg neki a saját alakját — ld. 4.1/b.
+
+### 4.1/b A paraméter-aritás SZABÁLYA, és az egyetlen szűrő, amely sosem kapta meg a magáét (2026-09-05, #2456)
+
+**A szabály:** egy Glimmer-effekt `.picasa.ini`-alakja pontosan
+
+    <vezérlőszám> + (van puck ? 2 : 0)
+
+értéket visz az engedélyező `1` után; a puck (x, y) elöl, utána a vezérlők a
+`filterdesc.xml`-beli **deklarációs sorrendben** (a jelölők is, záró
+`0`/`1`-ként — pl. `Sixties`, `PicnikGrain`).
+
+**Mérve** a `referencia/meroszett-685-verdikt.json` (178 tétel) és a
+`filterdesc.xml` összevetésével: a szettben szereplő **31 Glimmer-effektből 30**
+pontosan ennyi értéket kapott, és mind a 30-nak volt ható esete. A kivétel:
+
+| effekt | vezérlők | puck | a szabály szerinti aritás | amit a szett próbált |
+|---|---|---|---|---|
+| `FocalZoom` | 4 | ✔ | **6** | 6 → lefut (ΔE 7,61) |
+| `Pixelate` | 3 | — | **3** | 3 → lefut (ΔE 7,96 / 23,30) |
+| `PicnikGrain` | 2 | — | **2** | 2 → lefut (ΔE 3,09 / 14,24) |
+| `PicnikTint` | 2 | — | **2** | 2 → lefut (ΔE 36,93) |
+| **`PicnikFocalPixelate`** | **5** | ✔ | **7** | **1 · 4 · 6 — hetes alak SOHA** |
+
+A `PicnikFocalPixelate` ötödik vezérlője a `_chkReverse` jelölő
+(`filterdesc.xml:869`), amit a korábbi leírásaink kihagytak; a szett hatos
+alakja a **`FocalZoom` vezérlőkészletét** másolta, nem ezét.
+
+**Rövid lista sehol nem hatott.** A `meroszett-685-2kor.json` „halott”
+csoportjában **9 rövid alak** futott le (`blur`, `colorfix`, `whitept`,
+`triple`, `focalpixelate`), és **mind a 9 tétlen maradt** — köztük a
+`triple=1;`, holott ugyanaz a `triple` a saját hármas alakján **ΔE 21,42**-t
+ad. ⇒ A rövid alaknál a „nem történt semmi” a **lista hosszára** bizonyíték,
+nem a szűrőre.
+
+**Következmény:** az az állítás, hogy „a 3.9.141.259 a `PicnikFocalPixelate`-et
+sem futtatja le” (#1142, `chain.MEASURED_NOT_RUNNING_OPS`), **kizárólag rövid
+alakokon nyugszik**, tehát nem megalapozott. Egyetlen export dönti el:
+
+    PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000,0.000000;
+
+(`Reverse = 0` mellett a hatás a körön KÍVÜL jelentkezik, tehát a kép nagy
+részén — összetéveszthetetlen.) Jegy: **#2456** (`blocked`).
+
+### 4.1/c A `PicnikFocalPixelate` teljes műveletgráfja (`filterdesc.xml:859–886`)
+
+A szállított leíró a teljes algoritmust megadja — ez nem következtetés,
+hanem a fájl tartalma:
+
+| lépés | mit ad |
+|---|---|
+| `CircularGradientImageMask` (`:870`) | `xCenter/yCenter` = a puck (`xFocus`, `yFocus`); `innerRadius = Radius · Hardness/101`; `outerRadius = Radius · (2 − Hardness/101)`; `outerAlpha = Reverse ? 0 : 1`, `innerAlpha = Reverse ? 1 : 0` |
+| `NestedImageOperation` (`:871`) | `BlendAlpha = 1 − Fade/100`, **`Mask = {_msk}`**, `dynamicAlphaCachePriority = 10` |
+| 1. gyerek `ResizeImageOperation` (`:873`) | `W/Impact × H/Impact`, `ignoreObjects="true"` |
+| 2. gyerek `ResizeImageOperation` (`:874`) | vissza `W × H`-ra, **`smoothing="false"`** (legközelebbi szomszéd) |
+
+Csúszkák (`:865–869`): `Impact` 2–100 (alap 20) · `Radius` 10–`min(W,H)/2`
+(alap a tartomány közepe) · `Hardness` 0–100 (alap 50) · `Fade` 0–100 (alap 0)
+· `Reverse` jelölő (alap ki). `<presets>`: `8 · 20 · 90 · 0,5 · 0,5` — a
+`FocalZoom` presetjének mintájára `Impact · Radius · Hardness · puckX · puckY`
+(a `Fade` és a `Reverse` nincs benne).
+
+⭐ **Kimerítő pásztázás mind a 84 szűrőn:** a `PicnikFocalPixelate` az
+**egyetlen**, ahol egy számított `CircularGradientImageMask` magán a
+`NestedImageOperation`-ön ül. A másik három `CircularGradientImageMask`-használó
+(`FocalZoom` `:898`, `Holga` `:971`, `Lomo` `:1045`) a **gyerekre** köti; a
+másik két `Mask`-os `Nested` (`Pixelate` `:1199`, `ReanimatedEyeColor` `:1283`) a
+festő-maszkot (`_mctr.mask`) használja. Ez a szerkezeti egyediség a
+legerősebb jelöltje annak, hogy a lánc-úton miért maradhatna tétlen — de
+**nincs megmérve**, ezért csak jelölt.
+
+⛔ **Negatív lelet, hogy ne járja újra senki:** a `Picasa3.exe` hivatkozik a
+`runtime\picnik_effects\` könyvtárra (`0x00c7f168`, hívók: `0x004051b0`,
+`0x0053fe30`) és a `%s%sEffect.mxml` formátumsztringre (`0x00cd1788`) — mindkettőt a
+`<filter>`-olvasó `0x008ff550` használja, a `Picnik` sztringgel (`0x00cd1780`)
+egy kódblokkban: `0x008ff8c1` (`Picnik`) és `0x008ff907` (a formátumsztring)
+70 bájtra egymástól. *(Hogy a `0x9870d0` hívás valóban előtagot vág-e le, itt
+nincs bizonyítva; a névalak-szabályt a `picasa-effekt-feliratok.md` rögzíti,
+`erős` bizalmi fokkal.)* — **a szállított telepítésben ez a könyvtár nem
+létezik**
+(`research/copy_Picasa_3_7/Picasa3/runtime/`: csak `geotag/` és `slingshot/`).
+A `PicnikGrain` és a `PicnikTint` viszont MÉRTEN lefut ⇒ a hiányzó
+`picnik_effects/` **nem** magyarázza a tétlenséget, és a `Picnik` előtagú
+nevet a lánc felismeri.
 
 ### 4.2 Vezérlők effektenként (min–max–alap)
 
