@@ -611,18 +611,31 @@ visszatérő felirat (`collagepanel::back_to_collage` · `CMakeMoviePanel::back_
    teszi. **Megszerzés:** célzott Ghidra-kör a `0x00601090`-re (`eThrobOff`).
    Lap: `getmore-klipgyujto-mod.md` 3.3; jegy **#1939**.
 
-### [racs-nagyito.md](racs-nagyito.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [racs-nagyito.md](racs-nagyito.md) — nincs nyitott kérdés (2026-09-05)
+
+⭐ **2026-09-05:** az utolsó blokkolt tétel — **„mekkora a nagyítás?"** —
+**LEZÁRVA**, és a válasz az, hogy **nincs nagyítási arány**. A rajzoló ág
+(`0x0077bb10`) elolvasva: a lencse a **teljes méretű képet 1:1-ben**
+rajzolja egy **161 × 161**-es felületre (`0x0077c445`: `mov edx, 0xa1`),
+csak eltolva, hogy a kurzor alatti képpont a **közepére** essen (a `80.0`
+a `0x00cf4c30`-ból, a teljes binárisban **egyetlen** hivatkozással —
+`0x0077bc5c`; és 80 = a 161 pontos közepe). A célterület
+(`0x0077bcf5`–`0x0077bd19`) szélessége algebrailag `W`, magassága `H`,
+tehát **skálázás nincs** — ez nem illesztés, hanem a kifejezés
+következménye. Ezért nem talált arányt hét függvény átolvasása sem.
+Kizárva: a `2276,5556` (`0x00d35808`, 15 olvasó a `.text`-ben, író nincs)
+és a `0,5` (`0x00c72150`, a kép közepét számolja). Lap:
+`racs-nagyito.md` 5/b.
+
+⚠️ **Ebből terméki hiba lett:** nálunk a lencse a **bélyegképet** mutatja
+zsugorítva (`LightboxFeed.qml:963` `source: elem.thumbUrl`), a
+`nagyitas: 2.5` tulajdonság (`:846`) pedig **sehol nincs felhasználva** —
+a nagyítónk **nem nagyít**. Jegy: **#2399**.
 
 ⭐ **2026-09-02:** a rács-nagyító működése feltárva — az 51.3 három korábbi
 blokkolt részkérdéséből **három lezárva**. Helyesbítés: az 51.3
 „nálunk nincs" állítása **elavult** (a #1808 azóta megépítette, a #1911
 vette ki a gombot). Jegy-komment: **#1911**, **#460**.
-
-1. **Mekkora a nagyítás?** A kezelő (`0x0077be10`) és négy testvére
-   (`0x0077b4b0`, `0x0077b6e0`, `0x0077b780`, `0x0077b8e0`) teljes
-   diszasszemblátumában **nincs nagyítási arány**. **Megszerzés:** a
-   rajzoló ág, `0x0077bb10` célzott dekompilációja (a `80.0` és a
-   `2276,5556` konstansokkal). Lap: `racs-nagyito.md` 6.; jegy **#1911**.
 
 ### [racs-ures-allapot.md](racs-ures-allapot.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
 
@@ -1389,7 +1402,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [szerkeszto-panel-meretek.md](szerkeszto-panel-meretek.md) | A szerkesztő bal panelje (201 elem) — **az 1. fül gombsorrendjének EGYETLEN érvényes forrása** |
 | [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) | **A szerkesztő FELSŐ SÁVJA (`oneup_controls`)** — a hét vezérlő képpontos geometriája két, egymást igazoló forrásból; a „paletta-ikonos gomb" = `quickupload` (Web Albums Drop Box); a filmszalag **hét férőhelyes**, az aktuális kép **mindig középen**; a kijelölés-keret `#009EFF`+`#D4D4D4`; a hisztogram-doboz horgonya `root.alsó − 95` |
 | [getmore-klipgyujto-mod.md](getmore-klipgyujto-mod.md) | **A „Továbbiak…" klip-gyűjtő MÓD** — két belépési pont (kollázs, filmkészítő), a visszatérő gomb **pontosan három** felirata, a kijelölés a **képtálcán át** megy a projektbe, a ✕ **csak elrejti** a sávot (`hidetarget`), és a sáv **eltakarja** a Nyomtatás/E-mail/Export/Feltöltés sort |
-| [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik** |
+| [racs-nagyito.md](racs-nagyito.md) | **A rács-NAGYÍTÓ** — kör alakú üveglencse **103 × 103** (belső 65), a `loupe_sm` a **belső rétege** (51 × 51); a kurzor **közepére** ül; **áttűnéssel** jelenik meg (0,4 be / 1,2 ki, alfa 1…256); **nincs saját egérmutató** (mért negatív); nálunk a réteg megvan, a **kapcsoló hiányzik**; **nincs nagyítási arány** — a teljes méretű kép **1:1**-es, 161 × 161-es kivágata a kurzor alatti képpontra középezve (`0x0077c445`, `0x0077bcf5`), nálunk viszont a bélyegkép zsugorítva (#2399) |
 | [racs-ures-allapot.md](racs-ures-allapot.md) | **A rács ÜRES ÁLLAPOTA** — a `lightbox_bgtext` **hét** kontextus-szövege (ebből négy megnyugtató, nem hibaüzenet), a választó `0x00676b10` és a `LastUserESState`-től függő márkaváltás („Picasa Web Albums" ↔ „Google Photos"); és hogy a **„Keresés mindenhol" gomb HALOTT** az eredetiben (négy lekérdezés-alak + pozitív kontroll) |
 | [biztonsagi-mentes.md](biztonsagi-mentes.md) | **A biztonsági mentés MŰKÖDÉSE** — `backups.xml` a **`db3`** mappában (`setname` · `diskroot` · `filter` · `type`), **három tartalom-mód** (`bkallfiles`/`bkonlypics`/`bkonlyexif`), a célmappába írt `files.txt`, a honosított alapértelmezett mappanév, a lemezhely-ellenőrzés — és hogy **ugyanaz a függvény írja a `replicates.xml`-t is** · ⭐ **2026-09-04 (14. szakasz): a `publish` sáv TIZENKÉT elemének SZERKEZETI HORGONYA** — a lap eddig teljes néven leírta őket, de `0x`-cím és `fájl:sor` nélkül, ezért a lefedettségi mérés feltáratlannak sorolta; most mind a 12-nek megvan a `respack.yt` eltolása, a geometriája és a `publish.tre` szülősora. ⚠️ **Csapda kimondva:** a `respack.yt` zárójeles rétegneve a tervezővászon **helyőrzője**, NEM a felirat — a három `label_rpoptionbox` mindegyikénél félrevezet (`Change Sync` helyett a valódi funkció **az online elemek eltávolítása**). Formátum-részlet: a `publish_text.tre:120` **`Tooltip1`** kulcsszóval deklarál |
 | [ajandek-cd-kimenet.md](ajandek-cd-kimenet.md) | **Az Ajándék-CD / mentő lemez KIMENETE** — a lemez **önjáró**, Windows ÉS macOS vetítővel és visszaállítóval, telepítővel és letöltő-linkkel; az `autorun.inf` **pontos sablonja**; a **16 kimeneti beállítás** teljes listája; és hogy a lemez mappanevei **honosítottak** („Biztonsági mentés" / „Képek"). ✅ **2026-09-03 — a HÁROM ÜZEMMÓD szétválasztva** (#2095): a panel `+0x13e`/`+0x13f` bájtja dönt — `0/–` = **Ajándék-CD**, `≠0/0` = **biztonsági mentés lemezre**, `≠0/≠0` = **replikáció (feltöltés)**; a két bájtnak egyetlen írója van (a konstruktor, `0x0066bf90`), és ugyanaz választja belőlük a `publish/presentcd_go` / `backup_go` / `replicate_go` vezérlőnevet. Üzemmódonkénti alapérték-tábla a 12.4-ben; a méretfokozatok **eredeti / 640 / 800 / 1600**; a replikációs módban **nincs kiadás-gomb**. Két helyesbítés: az `option_backup` a mentés-ágon **1** (nem 0), és a 16 `option_*` tagoffszet a **motorobjektumhoz** tartozik, nem a 984 bájtos panelhez. |
