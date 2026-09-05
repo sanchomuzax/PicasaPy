@@ -239,7 +239,77 @@ A `respack.yt` rétegfejléceiből (`int16 x0,y0,x1,y1`), minden gombra
 | elválasztó (`separator`) | 28, 8 | 30, 35 | **2 × 27** |
 
 ⇒ **Minden művelet-gomb 55 × 36 képpont, egy 59 × 40-es cellában** (2
-képpont körbe). Az elválasztó 2 képpont széles, 27 magas, a cellán belül
+képpont körbe).
+
+> ⚠️ **A 59 NEM az osztásköz** (2026-09-05, #1504). A sor vízszintes
+> léptetése a gomb **saját, kirajzolt szélessége (55)** — ld. lent, „A
+> kimeneti sor LÉPTETÉSE". A `59 × 40` a cella-grafika (`docbounds`) mérete,
+> nem a szomszéd gomb távolsága.
+
+### A kimeneti sor LÉPTETÉSE — a `cellwidth` és a valódi lépés (2026-09-05, #1504)
+
+A `#1345` a sor osztásközét a respack rétegfejlécéből (59) vezette le; a
+`#1420` kirajzolt Picasa-képernyőképen **55**-öt mért (a három felirat közepe
+867,5 · 922,5 · 977,5). **A képernyőkép nyer, és most már tudjuk, miért.**
+
+**1. A konténer deklarál egy cellaméretet.** Az `outputlayout.tre`
+utolsó blokkja — az egyetlen hely az EGÉSZ `.tre`-készletben, ahol ezek a
+nevek előfordulnak:
+
+```
+outputlayout/overflowcontainer: root
+m_offsetT
+m_scaleX
+Property cellwidth  50
+Property cellheight 52
+```
+
+**2. A két nevet egyetlen függvény ismeri.** A `cellwidth`/`cellheight`
+sztringre (`0x00c92150`, `0x00c9215c`) egyetlen hivatkozás van, a
+`0x00597390` tulajdonság-beállítóban, amely a `center`-t is kezeli:
+
+| tulajdonság | tagoffszet | tárolás |
+|---|---|---|
+| `center` | `+0x29c` | bájt (`0x00597482`) |
+| **`cellwidth`** | **`+0x274`** | dword (`0x00597549`) |
+| **`cellheight`** | **`+0x278`** | dword (`0x00597611`) |
+
+**3. Az elrendező (`0x00597f80`) így használja** (`0x0059862c`):
+
+```
+mov eax, [ebx+0x274]        ; cellwidth
+test eax, eax
+je  <a gyerek SAJÁT szélessége>   ; 0x0059864a: a gyerek befoglalójából
+fild …                            ; egyébként float(cellwidth)
+```
+
+**4. ⭐ De a KURZOR nem ezzel lép.** A ciklus végén
+(`0x0059883e`–`0x00598863`):
+
+```
+mov ecx, [esp+0xc0]         ; a gyerek befoglalójának x1
+sub ecx, [esp+0xb8]         ; − x0  ⇒ a gyerek TÉNYLEGES szélessége
+fild dword ptr [esp+0x18]
+fadd dword ptr [esp+0x30]   ; akkumulátor += ez a szélesség
+fstp dword ptr [esp+0x30]
+```
+
+⇒ **A sor a gyerek elrendezés UTÁNI, tényleges szélességével lép tovább** —
+és az a gomb saját respack-doboza: **55**. Ezért mér a képernyőkép 55-öt, és
+ezért nincs hézag a gombok között.
+
+**Bizonyítottsági fok:** *megerősített* a `.tre`-tulajdonságokra, a
+tagoffszetekre és arra, hogy az akkumulátor a gyerek tényleges szélességét
+adja hozzá (mind közvetlen kiolvasás). *Erős* arra, hogy emiatt 55 a lépés
+(a gomb respack-doboza 55, és a kirajzolt kép is 55-öt ad). **NINCS
+visszaolvasva:** pontosan melyik téglalapot kapja a gyerek a `cellwidth`
+(50) értékből — a deklarált 50 a léptetésben nem jelenik meg.
+
+⛔ **Amit ez KIZÁR:** a `59` mint osztásköz. A `59 × 40` a `docbounds`
+cella-grafika mérete; a léptetéshez semmi köze. A PicasaPy `TrayBar.qml`
+`actionCellWidth: 59` állandója (`:333`) ezért **4 képponttal szellősebb**
+soronként — gombonként, összesen ~20 képponttal.
+ Az elválasztó 2 képpont széles, 27 magas, a cellán belül
 vízszintesen középen (28…30), felülről 8, alulról 5 képpont behúzással.
 
 *Bizonyítottsági fok: **megerősített** — közvetlen rétegfejléc-olvasás.*
