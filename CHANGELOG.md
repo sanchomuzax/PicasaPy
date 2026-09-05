@@ -21,6 +21,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A »Frissítés« menüpont most már visszajelez** (#1458). Ha épp futott egy
+  háttérbeli beolvasás, a kattintás után semmi látható nem történt — pedig a
+  kérés nem veszett el, csak sorra várt. Hálózati meghajtón ez fél percig is
+  eltarthatott, és úgy nézett ki, mintha a menüpont nem működne. Mostantól
+  a kattintás pillanatától látszik az alsó folyamatjelző sáv.
+
 - **Mappa felvétele és a »Keresés egyszer« nem ütközik a háttérben futó
   beolvasással** (#2389). Eddig a két művelet akkor is nekiindult, ha épp
   futott egy másik indexelés — a két egyidejű író adatbázis-hibát adott, és
