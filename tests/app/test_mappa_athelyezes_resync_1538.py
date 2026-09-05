@@ -200,14 +200,20 @@ class TestAzAthelyezettMappaAzUjHelyenLatszik:
             watched_file=tmp_path / "WatchedFolders.txt",
         )
         ctl.start()
-        _var(qt_app, lambda: not ctl._sync_running)
+        assert _var(qt_app, lambda: not ctl._sync_running), (
+            "#2408: a szinkron nem állt le időben — a teszt hiányos "
+            "állapoton menne tovább"
+        )
         # a figyelő és a lekérdezés is LE: csak a célzott resync maradhat
         if ctl._watcher is not None:
             ctl._watcher.stop()
             ctl._watcher = None
         if ctl._folder_poll_timer is not None:
             ctl._folder_poll_timer.stop()
-        _var(qt_app, lambda: not ctl._sync_running)
+        assert _var(qt_app, lambda: not ctl._sync_running), (
+            "#2408: a szinkron nem állt le időben — a teszt hiányos "
+            "állapoton menne tovább"
+        )
         fileops = FileOpsController()
         app_module.wire_fileops(fileops, ctl)
         yield ctl, fileops, library, tmp_path

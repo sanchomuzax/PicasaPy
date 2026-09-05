@@ -60,6 +60,14 @@ def _wait(signal, qt_app, timeout_ms=15000):
     QTimer.singleShot(timeout_ms, loop.quit)
     loop.exec()
     qt_app.processEvents()
+    # #2408: időtúllépéskor a `result` ÜRESEN maradna, és a hívó egy
+    # `result["done"]`-on kapna KeyError-t vagy `None`-t — a bukás a
+    # műveletre mutatna, holott a VÁRAKOZÁS járt le. Pontosan ez az alak
+    # vitte félre a #1038 tray-export bukását.
+    assert result, (
+        f"#2408: a jelzés {timeout_ms} ms alatt nem érkezett meg — "
+        "a művelet nem fejeződött be, vagy a jelzés nincs bekötve"
+    )
     return result
 
 
