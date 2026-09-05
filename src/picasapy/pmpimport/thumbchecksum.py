@@ -52,6 +52,11 @@ szülője. ⇒ a könyvtárak és az üres slotok mindig a 2. módot kapják.
 
 from __future__ import annotations
 
+import logging
+from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
+
 #: A JS-hash kezdőértéke (`0x006b98cb`).
 _HASH_KEZDET = 0x12345678
 
@@ -129,7 +134,70 @@ def utvonalas_modot_kell(
     return bool(kert_mod) and tipus != 0 and van_szuloje
 
 
+@dataclass(frozen=True)
+class EllenorzoJelentes:
+    """Egy index-fájl ellenőrzésének összesítése — kivétel NÉLKÜL.
+
+    A nem egyező sor **ma is használható adat**: a 4%-os eltérés oka nincs
+    eldöntve (másik Picasa-verzió? más kódlap? romlás?), és az eredeti
+    verifikálója ráadásul időzóna-toleráns, amit mi nem utánzunk. Kivételt
+    dobni erre annyi volna, mint egy meg nem értett jelenség miatt eldobni
+    a katalógus 4%-át.
+    """
+
+    osszes: int
+    utvonalas_egyezik: int
+    idobelyeges_egyezik: int
+    nem_egyezik: int
+
+    @property
+    def egyezik(self) -> int:
+        return self.utvonalas_egyezik + self.idobelyeges_egyezik
+
+    @property
+    def egyezes_aranya(self) -> float:
+        return self.egyezik / self.osszes if self.osszes else 1.0
+
+
+def ellenorizd(parok, *, kodolas: str = "utf-8") -> EllenorzoJelentes:
+    """Slot–bejegyzés párok ellenőrzése; NEM dob, jelentést ad.
+
+    `parok`: `(tarolt_checksum, teljes_ut, filetime, meret)` négyesek.
+
+    Mindkét módot megpróbálja, mert a MÓD a rekordból nem mindig
+    állapítható meg utólag (a `kert_mod` a hívó futásidejű döntése volt).
+    Ez a mérésnek elég: az `utvonalas_modot_kell` külön áll annak, aki a
+    módot előre tudja.
+    """
+    utvonalas = idobelyeges = nem = 0
+    ossz = 0
+    for tarolt, teljes_ut, filetime, meret in parok:
+        ossz += 1
+        if tarolt == checksum_utvonalas(
+            teljes_ut, filetime, meret, kodolas=kodolas
+        ):
+            utvonalas += 1
+        elif tarolt == checksum_idobelyeges(filetime):
+            idobelyeges += 1
+        else:
+            nem += 1
+    jelentes = EllenorzoJelentes(ossz, utvonalas, idobelyeges, nem)
+    if nem:
+        logger.warning(
+            "A thumbindex %d slotjából %d ellenőrzőösszege egyikkel sem "
+            "egyezik (%d útvonalas, %d időbélyeges) — az adatot NEM dobjuk "
+            "el, csak jelezzük",
+            ossz,
+            nem,
+            utvonalas,
+            idobelyeges,
+        )
+    return jelentes
+
+
 __all__ = [
+    "EllenorzoJelentes",
+    "ellenorizd",
     "checksum_idobelyeges",
     "checksum_utvonalas",
     "js_hash",

@@ -169,3 +169,49 @@ class TestModvalasztas:
             )
             is False
         )
+
+
+class TestEllenorzoJelentes:
+    """Az összesítő NEM dob — a nem egyező sor ma is használható adat."""
+
+    def test_a_nem_egyezo_sor_NEM_dob_kivetelt(self, caplog):
+        import logging
+
+        from picasapy.pmpimport.thumbchecksum import ellenorizd
+
+        with caplog.at_level(logging.WARNING):
+            jelentes = ellenorizd([(0xDEADBEEF, "C:\\a.jpg", 10**9, 100)])
+
+        assert jelentes.nem_egyezik == 1
+        assert jelentes.egyezik == 0
+        assert any("NEM dobjuk el" in r.getMessage() for r in caplog.records), (
+            "a nem egyezést jelezni KELL — némán elnyelni ugyanolyan rossz, "
+            "mint kivételt dobni miatta"
+        )
+
+    def test_az_egyezo_sorokat_MOD_szerint_bontja(self):
+        from picasapy.pmpimport.thumbchecksum import (
+            checksum_idobelyeges,
+            checksum_utvonalas,
+            ellenorizd,
+        )
+
+        ut, ft, meret = "C:\\kepek\\a.jpg", 132_000_000_000_000_000, 4096
+        jelentes = ellenorizd(
+            [
+                (checksum_utvonalas(ut, ft, meret), ut, ft, meret),
+                (checksum_idobelyeges(ft), ut, ft, meret),
+                (0, ut, ft, meret),
+            ]
+        )
+
+        assert jelentes.osszes == 3
+        assert jelentes.utvonalas_egyezik == 1
+        assert jelentes.idobelyeges_egyezik == 1
+        assert jelentes.nem_egyezik == 1
+        assert jelentes.egyezes_aranya == pytest.approx(2 / 3)
+
+    def test_ures_bemenetre_teljes_egyezes(self):
+        from picasapy.pmpimport.thumbchecksum import ellenorizd
+
+        assert ellenorizd([]).egyezes_aranya == 1.0
