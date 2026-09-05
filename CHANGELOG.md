@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.296] – 2026-09-06
+
+### Javítva
+
+- **Az új `.picasa.ini` fájlok a Picasa sorvégjelével készülnek**
+  (#2491 részeredménye). Eddig az általunk LÉTREHOZOTT ini-fájlok Unix-
+  sorvéggel íródtak, a Picasáé viszont Windows-sorvégű; a meglévő fájlok
+  sorvégét eddig is megőriztük. A 114 valódi fájlból álló referencia-
+  készletben a Picasa által írt 75 fájl mind Windows-sorvégű.
+
+  ⚠️ Ez **nem** oldja meg azt a bejelentést, hogy a Picasa nem veszi észre
+  a PicasaPy-ban rátett effektet (#2491): a mérés szerint a Picasa a mi
+  Unix-sorvégű sorainkat is beolvasta és feldolgozta. Ez hűség-javítás.
+
 ## [0.8.295] – 2026-09-06
 
 ### Javítva

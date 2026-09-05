@@ -152,15 +152,18 @@ class TestWithValue:
         assert new.serialize() == "[a.jpg]\nstar=yes\n[b.jpg]\nstar=yes\n"
 
     def test_add_section_after_header_only_section(self):
+        # #2491: a dokumentumban egyetlen LEZÁRT sor sincs, tehát nincs mit
+        # örökölni — az új sorok a Picasa saját sorvégjelét (CRLF) kapják.
         doc = parse_document("[a.jpg]")
         new = doc.with_value("b.jpg", "star", "yes")
-        assert new.serialize() == "[a.jpg]\n[b.jpg]\nstar=yes\n"
+        assert new.serialize() == "[a.jpg]\r\n[b.jpg]\r\nstar=yes\r\n"
 
     def test_add_key_to_unterminated_header_only_section(self):
         # A fejléc sorvégjel nélkül ér véget: a kulcs nem ragadhat rá.
+        # A pótolt sorvégjel #2491 óta CRLF (nincs örökölhető minta).
         doc = parse_document("[a.jpg]")
         new = doc.with_value("a.jpg", "star", "yes")
-        assert new.serialize() == "[a.jpg]\nstar=yes\n"
+        assert new.serialize() == "[a.jpg]\r\nstar=yes\r\n"
 
     def test_add_key_to_header_only_section(self):
         doc = parse_document("[a.jpg]\n")
@@ -168,8 +171,9 @@ class TestWithValue:
         assert new.serialize() == "[a.jpg]\nstar=yes\n"
 
     def test_empty_document_gets_section(self):
+        # #2491: ÚJ `.picasa.ini` — a Picasa kizárólag CRLF-fel ír.
         new = parse_document("").with_value("a.jpg", "star", "yes")
-        assert new.serialize() == "[a.jpg]\nstar=yes\n"
+        assert new.serialize() == "[a.jpg]\r\nstar=yes\r\n"
 
 
 class TestWithRemoved:
