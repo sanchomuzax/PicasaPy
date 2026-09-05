@@ -101,3 +101,56 @@ class TestBeallitoMod:
         („Can't find converter"), ezért a QML maga adja meg logikai
         alakban — enélkül ez az állítás mérhetetlen volna."""
         assert parbeszed.property("jelszoRejtve") is True
+
+
+class TestJelszoTorles:
+    """#1637: a beállított jelszó LEVEHETŐ a felületről.
+
+    A vezérlőnek megvolt a törlő tagja, csak nem vezetett hozzá út a
+    felületről — a felhasználó egyszer beállította volna a jelszót, és soha
+    többé nem tud megszabadulni tőle. A képesség-őr (#1476) fogta meg.
+
+    ⚠️ A gombra KATTINTUNK, nem a jelet emitáljuk: a néma vezérlő (rossz
+    `visible`, elgépelt `objectName`) csak így derül ki.
+    """
+
+    def test_nincs_torles_gomb_amig_nincs_jelszo(self, parbeszed, qt_app):
+        parbeszed.setProperty("jelszoLetezik", False)
+        parbeszed.metaObject().invokeMethod(parbeszed, "openSet")
+        qt_app.processEvents()
+        assert not _mezo(parbeszed, "hiddenPasswordClear").property("visible"), (
+            "a törlés akkor is felkínálva, amikor nincs beállított jelszó"
+        )
+
+    def test_a_torles_gomb_latszik_ha_van_jelszo(self, parbeszed, qt_app):
+        parbeszed.setProperty("jelszoLetezik", True)
+        parbeszed.metaObject().invokeMethod(parbeszed, "openSet")
+        qt_app.processEvents()
+        assert _mezo(parbeszed, "hiddenPasswordClear").property("visible"), (
+            "beállított jelszó mellett sem látszik a törlés"
+        )
+
+    def test_a_feloldas_modban_NINCS_torles(self, parbeszed, qt_app):
+        """Feloldáskor a jelszót nem lehet egy kattintással megkerülni."""
+        parbeszed.setProperty("jelszoLetezik", True)
+        parbeszed.metaObject().invokeMethod(parbeszed, "openUnlock")
+        qt_app.processEvents()
+        assert not _mezo(parbeszed, "hiddenPasswordClear").property("visible"), (
+            "a feloldás módban is felkínálja a törlést — a kapu megkerülhető"
+        )
+
+    def test_a_KATTINTAS_jelez_es_bezar(self, parbeszed, qt_app):
+        parbeszed.setProperty("jelszoLetezik", True)
+        parbeszed.metaObject().invokeMethod(parbeszed, "openSet")
+        qt_app.processEvents()
+
+        jelzett = []
+        parbeszed.torlesKert.connect(lambda: jelzett.append(True))
+        gomb = _mezo(parbeszed, "hiddenPasswordClear")
+        gomb.metaObject().invokeMethod(gomb, "clicked")
+        qt_app.processEvents()
+
+        assert jelzett == [True], "a törlés gombja nem jelzett a gazdának"
+        assert not parbeszed.property("visible"), (
+            "a törlés után a párbeszéd nyitva maradt"
+        )

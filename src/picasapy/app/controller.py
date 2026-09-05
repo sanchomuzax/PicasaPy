@@ -649,7 +649,10 @@ class AppController(
 
     _HIDDEN_PWD_KEY = "view/hiddenPasswordHash"
 
-    @Property(str, notify=statusChanged)
+    # #1476: SIMA Python-tulajdonság, nem `Property` — a QML-nek a
+    # `hiddenPasswordSet` logikai válasza kell, a LENYOMAT maga nem való a
+    # felületre. Qt-Propertyként a képesség-őr joggal jelezné szakadásnak.
+    @property
     def hiddenPasswordHash(self) -> str:
         """A tárolt lenyomat (sosem a nyílt jelszó); üres, ha nincs jelszó."""
         return str(self._get_settings().value(self._HIDDEN_PWD_KEY, "") or "")
@@ -659,7 +662,8 @@ class AppController(
         """Van-e egyáltalán beállított jelszó."""
         return bool(self.hiddenPasswordHash)
 
-    @Slot(str)
+    # #1476: nem `Slot` — a felület a `setHiddenPassword`-öt hívja, ez a
+    # NYERS lenyomat útja (átvétel, teszt). A QML-nek nincs dolga vele.
     def setHiddenPasswordHash(self, hash_value: str) -> None:
         """A LENYOMAT közvetlen beállítása (import, teszt). A feloldás
         állapotát nullázza — új jelszó után újra kérni kell."""
@@ -693,7 +697,9 @@ class AppController(
             return True
         return False
 
-    @Slot()
+    # #1476: nem `Slot` — a visszazárást a jelszó beállítása és törlése
+    # végzi, magától. A felületről NEM hívható, mert az eredeti Picasában
+    # sincs „zárd vissza most" parancs; ha egyszer mérve lesz, kaphat.
     def lockHidden(self) -> None:
         """Visszazárás: a kapcsoló is visszaáll, hogy a rejtettek eltűnjenek."""
         self._hidden_unlocked = False

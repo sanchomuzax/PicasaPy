@@ -29,6 +29,10 @@ Dialog {
 
     //: "unlock" = feloldás egy meglévő jelszóval, "set" = új jelszó megadása
     property string mode: "unlock"
+    //: van-e MA beállított jelszó — ettől függ, hogy a törlés felkínálható-e
+    property bool jelszoLetezik: false
+    //: a felhasználó a meglévő jelszó TÖRLÉSÉT kérte (a gazda intézi)
+    signal torlesKert()
     //: a beírt jelszó — a hívó az `accepted` jelben ezt olvassa
     readonly property string enteredPassword: pwField.text
     //: beállításnál: erős (modern) tárolást kért-e a felhasználó
@@ -115,6 +119,22 @@ Dialog {
             visible: root.mode === "set"
             font.pixelSize: Theme.fontSize
             text: qsTr("Stronger protection (Picasa cannot open it)")
+        }
+
+        // #1637: a beállított jelszó LEVEHETŐ. Enélkül a felhasználó egyszer
+        // beállítja, és soha többé nem tud megszabadulni tőle — a jelszót
+        // törlő vezérlő-tag megvolt, csak nem vezetett hozzá út a felületről
+        // (a képesség-őr, #1476, pontosan ezt fogta meg).
+        Button {
+            objectName: "hiddenPasswordClear"
+            visible: root.mode === "set" && root.jelszoLetezik
+            Layout.alignment: Qt.AlignLeft
+            font.pixelSize: Theme.fontSize
+            text: qsTr("Remove the password")
+            onClicked: {
+                root.torlesKert()
+                root.close()
+            }
         }
 
         // ⚠️ Ez a mondat a jegy követelménye — ne töröld optikai okból.

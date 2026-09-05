@@ -3736,6 +3736,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <message>
+        <source>Wrong password</source>
+        <translation>Hibás jelszó</translation>
+    </message>
+    <message>
+        <source>The password does not match. The hidden folders stay hidden.</source>
+        <translation>A jelszó nem egyezik. A rejtett mappák rejtve maradnak.</translation>
+    </message>
         <message>
         <location filename="../qml/Main.qml" line="1076"/>
         <source>Change Location</source>
@@ -8915,6 +8923,45 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <location filename="../qml/PicasaPy/HelpDialog.qml" line="59"/>
         <source>Search in help</source>
         <translation>Keresés a súgóban</translation>
+    </message>
+</context>
+<context>
+    <name>HiddenPasswordDialog</name>
+    <message>
+        <source>Enter a password to use for the hidden folders.</source>
+        <translation>Adjon meg egy jelszót a rejtett mappákhoz.</translation>
+    </message>
+    <message>
+        <source>Enter the password to show the hidden folders.</source>
+        <translation>Adja meg a jelszót a rejtett mappák megjelenítéséhez.</translation>
+    </message>
+    <message>
+        <source>Hidden folders are locked</source>
+        <translation>A rejtett mappák zárolva vannak</translation>
+    </message>
+    <message>
+        <source>Password for hidden folders</source>
+        <translation>A rejtett mappák jelszava</translation>
+    </message>
+    <message>
+        <source>Stronger protection (Picasa cannot open it)</source>
+        <translation>Erősebb védelem (a Picasa nem nyitja meg)</translation>
+    </message>
+    <message>
+        <source>The passwords do not match.</source>
+        <translation>A két jelszó nem egyezik.</translation>
+    </message>
+    <message>
+        <source>This only hides the folders inside PicasaPy. The files stay on the disk and can be opened with any file manager.</source>
+        <translation>Ez csak a PicasaPy-n belül rejti el a mappákat. A fájlok a lemezen maradnak, és bármelyik fájlkezelővel megnyithatók.</translation>
+    </message>
+    <message>
+        <source>Type the password again</source>
+        <translation>Írja be újra a jelszót</translation>
+    </message>
+    <message>
+        <source>Remove the password</source>
+        <translation>A jelszó törlése</translation>
     </message>
 </context>
 </TS>

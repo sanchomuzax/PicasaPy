@@ -17,6 +17,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   hanem — az eredetihez hasonlóan — a megjelenítést kapuzza. A
   jelszókérés ágán a menü pipája nem billen át, amíg a helyes jelszó meg
   nem érkezik (#2377), tehát a pipa nem hazudik.
+- A beállított jelszó **le is vehető**: a párbeszéd „A jelszó törlése"
+  gombjával. Enélkül a felhasználó egyszer beállítja, és soha többé nem
+  tud megszabadulni tőle — a vezérlő tagja megvolt, csak nem vezetett
+  hozzá út a felületről.
+
+### Javítva
+
+- A `checked`-kötés forrás-őre (#2377) beágyazott `if … {} else {}`
+  ágnál elvágta a menütétel törzsét, és a törzs VÉGÉN álló, helyes
+  visszaállítást már nem látta — hamis leletet adott. Az őr mostantól
+  zárójel-párosítással olvassa a törzset.
 
 ## [0.8.289] – 2026-09-05
 
