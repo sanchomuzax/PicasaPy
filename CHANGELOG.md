@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.287] – 2026-09-05
+
 ### Hozzáadva
 
 - A Mozgófilm-párbeszéd mind a hét eredeti felbontást kínálja
