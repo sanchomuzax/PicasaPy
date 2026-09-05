@@ -540,7 +540,9 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 3 BLOKKOLT tétel (a `text=` stílusblokk és a `rotate(0)`; a legacy `crop=` 2026-09-05-én LEZÁRULT)
+### [picasa-ini-format.md](picasa-ini-format.md) — 1 BLOKKOLT tétel (a `rotate(0)`; a `text=` stílusblokk két tétele 2026-09-05-én LEZÁRULT)
+
+⭐ **2026-09-05 — a `text=` stílusblokk KÉT blokkolt tétele LEZÁRVA, dekompiláció nélkül.** ⭐ **A 9. mező BITJEI:** a mezőt egy általános jelzőkapcsoló állítja (`0x005ba8a0`, a `0x00c943d4` vtábla **`+0x6c`** rése: `if (bool) [ecx+0x18] |= maszk; else &= ~maszk`), és a `+0x18` tag épp a 9. mező. **Bit 0 (`0x0001`) = ALÁHÚZOTT** (`0x0062ebb3`: az `edittextpanel/underline` ágban `push 1`); **bit 3 (`0x0008`) = DŐLT** (`0x005ba7b0`, vtbl `+0x34`: `push 8`, az `edittextpanel/italic` ág hívja). ⇒ a korpusz `0xC000`/`0xC001`/`0xC008` hármasa maradéktalanul megmagyarázva. Bit 14 (`0x4000`) a felirat létrehozásakor bekapcsolva születik (`0x005f633f`) és a `0x005bae39` szerint „egy méretarány pontosan 1.0"-t jelöl — **felhasználói jelentése nincs megállapítva**; bit 15 (`0x8000`) forrása **NINCS MEG** (a konstruktor a szót 0-ra állítja, és `push 0xC000`/`push 0x8000` + jelzőkapcsoló a binárisban sehol). ⛔ **KIZÁRVA: a félkövér nem bit ebben a mezőben** — az `edittextpanel/bold` ág a **betűsúlyt** írja (`0x0062e972`: `and eax,0x12c` + `add eax,0x190` ⇒ **700** be / **400** ki), a 7. mezőbe. ⭐ **Az ÁTLÁTSZATLANSÁG sora elavult jelölés volt:** „a leképezés nyitva marad" állt benne, holott a lap „A 6. mező (átlátszatlanság)" szakasza már megválaszolta (a csúszka nyers értéke, alulról 0,1-re vágva, `0x0062f449`–`0x0062f488`) — javítva. **Nálunk (mérve):** a `trailer` mező állandó `49152`, változatlanul őrizve; a rajzolónk viszont tudja a dőltet és az aláhúzást ⇒ **megrajzoljuk, de nem mentjük** → **#2448**.
 
 ⛔ **2026-09-02 — SAJÁT HELYESBÍTÉS a `geotag` írásán:** a lap írási-sorrend
 táblája azt állította, hogy a kulcsnak „két ága" van (`%lf %lf` **vagy**
