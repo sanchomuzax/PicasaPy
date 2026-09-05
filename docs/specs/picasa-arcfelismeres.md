@@ -819,10 +819,11 @@ nyolc nem nulla, egymástól független 32 bites érték.
 3. **„Egyszerű `a·K + b` a tagképek sorindexein."** ❌ A két 2 tagú albumra
    (`0x00060b93` és `0x00063ce2`) nincs olyan egész `K`, ami mindkettőt adná.
 
-**Ami a következő lépés:** a tagképek **fájlazonosítói** (nem sorindexei) —
-de ebben az adatbázisban az `imagedata_0` tábla **4 bájtos** (csak a magic),
-tehát a névoszlop nincs meg; a képek azonosítói a bélyegkép-indexből
-jönnének.
+**Ami a következő lépés:** ⛔ **HELYESBÍTVE (2026-09-05, 14.4):** a korábbi
+javaslat („a tagképek fájlazonosítói") **találgatás volt, adatoldalról**.
+A 14.4 szakasz megmutatja, hogy a kérdés **kódoldalról** sokkal szűkebb: a
+teljes binárisban **hat** hely nyúl a `albumpeoplechecksum` oszlophoz, és
+közülük **egyetlen** írja.
 
 ### A többi oszlop állapota ugyanebben az adatbázisban
 
@@ -1205,3 +1206,92 @@ kapuval. A termék-repóba nem kerül: nem termékkód.
 osztálycsaládokra, a lánc sorrendjére és a paraméter-ötös értékeire
 (kiolvasva, golden kapuval rögzítve); **nem megfejtett** a payload-sémák
 többsége és a paraméterek jelentése.*
+
+
+## 14.4 Az `albumpeoplechecksum` ÍRÓJA — a keresési tér a teljes binárisról EGY függvényre szűkült (2026-09-05)
+
+> **Bizalmi fok: megerősített** az oszlop memóriabeli helyére, a hat érintő
+> helyre és az írás pontos utasítására; **a KÉPLET továbbra sincs meg.**
+
+A 14.2 azt írta, hogy a folytatáshoz „az oszlop indexét a `0x004127c0` /
+`0x00415790` regisztrációk sorrendjéből kell kiszámolni". A regisztrációt
+elolvasva kiderült, hogy **nincs szükség indexre**: az oszlopok
+**tagobjektumok fix eltolásokon**, tehát elég az eltolásra pásztázni.
+
+### 14.4.1 Az oszlop memóriabeli helye
+
+A `CThumbDB` konstruktora (`FUN_00415790`) **33 nevet** regisztrál, ebből az
+`albumdata` tábláé sorrendben: `token · name · filename · date · category ·
+unread · description · location · uid · hascollage · inisync · … ·
+albumcontactids · albumpeoplechecksum`.
+
+| oszlop | regisztráció | névhossz | a tagobjektum eltolása |
+|---|---|---:|---|
+| `albumcontactids` | `0x00415bbc` | `0x0f` = 15 ✓ | **`CThumbDB + 0x2748`** |
+| **`albumpeoplechecksum`** | **`0x00415bcc`** | `0x13` = 19 ✓ | **`CThumbDB + 0x27b0`** |
+
+*(A névhossz a `mov eax, <len>` közvetlen értékéből jön, és bájtra egyezik a
+sztring hosszával — ez hitelesíti a párosítást.)*
+
+### 14.4.2 ⛔ KIMERÍTŐ: hat hely nyúl az oszlophoz, EGY írja
+
+A teljes `.text` pásztázása a `+0x27b0` eltolásra:
+
+| cím | függvény | mit csinál |
+|---|---|---|
+| `0x00415be8` | `FUN_00415790` | a konstruktor — létrehozza |
+| `0x00417fd5` | `FUN_00417770` (2624 b) | ua. tömbben a `+0x2748`-cal — életciklus |
+| `0x0048be5d` | `FUN_0048bd80` (888 b) | egy érintés |
+| `0x0048c18c` | `FUN_0048c100` (817 b) | egy érintés |
+| **`0x0048f545`** | **`FUN_0048ef20` (5143 b)** | **OLVASÁS** — összeveti a tárolt értéket |
+| **`0x0048f79d`** | **ua.** | **ÍRÁS** |
+
+Összevetésül: az `albumcontactids` (`+0x2748`) **15** helyen, **12**
+függvényben szerepel — a checksum-oszlop tehát nagyságrenddel szűkebb.
+
+### 14.4.3 Az írás pontos utasításai
+
+```
+0x0048f79d  add ebx, 0x27b0          ; az oszlopobjektum
+0x0048f7a3  call [0xc40284]          ; GetCurrentThreadId — a szokásos zár
+…
+0x0048f7f5  lea eax, [ebx + 0x5c]    ; a cella (vagy a tömbelem, 0x0048f7f0)
+0x0048f7f8  mov ecx, [esp + 0x30]    ; ← AZ ÚJ ÉRTÉK
+0x0048f7fc  cmp [eax], ecx
+0x0048f7fe  je  0x0048f9ec           ; ha VÁLTOZATLAN → nem ír, nem piszkít
+```
+
+⇒ A checksum **csak akkor íródik, ha megváltozott** — összhangban azzal,
+hogy származtatott, gyorsítótár-jellegű adat (14.2).
+
+A `FUN_0048ef20` a `0x0048f68b`-en meghívja a `FUN_0048af60`-at (2188 b),
+amelynek visszatérési kódját a `0` és a `0xf4242` ellen vizsgálja
+(`0x0048f690`, `0x0048f694`) — ez a legvalószínűbb helye a tényleges
+számításnak.
+
+### 14.4.4 A KONKRÉT következő lépés (a 14.2-é helyett)
+
+1. `FUN_0048ef20` (5143 b) — honnan kapja az `[esp+0x30]`-at a `0x0048f7f8`
+   előtt. A függvény nagy, de a kérdés egyetlen veremrekeszre szűkült.
+2. `FUN_0048af60` (2188 b) — a jelölt számoló; a `0xf4242` és a `0xf4241`
+   (`0x0048f660`) állapotkódok is innen jönnek.
+3. Ellenőrzés a meglévő adaton: a 14.2 kilenc albumának értéke a
+   `research/testdata/Picasa2-arcok/` adatbázisban megvan, tehát a képlet
+   **azonnal ellenőrizhető**, ha megvan.
+
+⚠️ Ez **nem** dekompilációt igényel, csak a két függvény célzott olvasását.
+
+### 14.4.5 Jegy
+
+**#2391** — `ready` · `bináris-kutatható` · `P4` (a PicasaPy nem ír PMP-t, tehát ez tudásbeli hiány, nem megvalósítási akadály).
+
+### 14.4.6 Mérleg (14.4)
+
+`1 nyílt (ÖRÖKÖLT: a képlet) · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| hol él az oszlop a memóriában | **LEZÁRVA** — `CThumbDB + 0x27b0` (14.4.1) |
+| ki írja | **LEZÁRVA** — egyetlen hely: `0x0048f79d` a `FUN_0048ef20`-ban (14.4.2) |
+| mikor ír | **LEZÁRVA** — csak változás esetén (`0x0048f7fe`) |
+| **mi a KÉPLET** | **NYÍLT (örökölt, 2026-08-22 óta)** — de a keresési tér a teljes binárisról két függvényre szűkült (14.4.4) |
