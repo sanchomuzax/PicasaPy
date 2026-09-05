@@ -21,6 +21,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- *(Előkészítés, ma még nem látszik.)* Felismerjük a **Picasa 2 korabeli
+  vágás-formátumot** (#2008). Egy olyan gyűjteményben, amit még sosem
+  nyitottak meg Picasa 3-mal, a vágás régi alakban áll — eddig ezen a
+  programunk hibára futott volna, és a vágás elveszik. **Egyelőre semmi nem
+  hívja**, tehát a viselkedés változatlan; a beolvasásba a következő körben
+  kerül be.
+
+
 - **A panel fő gombja most már finoman villog** (#2438) — ahogy az eredeti
   Picasában. Ez mutatja meg, melyik gombra kell nyomni a művelet
   befejezéséhez: egyelőre a klipgyűjtő „Vissza" gombja pulzál, amíg rá nem
