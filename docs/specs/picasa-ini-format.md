@@ -1572,9 +1572,56 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 | hány mező, milyen típussal | **LEZÁRVA** — a formátumsztringből (`0x00ce42e8`) |
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
-| **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **A POZÍCIÓ LEZÁRVA** (2026-09-02, ld. lentebb): a 6. az, ami mozog. A **leképezés** nyitva marad. Az alábbi eredeti szöveg a lezárás ELŐTTI állapotot rögzíti: **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
+| **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **TELJESEN LEZÁRVA** — a **6.** az, és a **leképezés is megvan**: a csúszka nyers értéke, alulról **0,1**-re vágva (`0x0062f449`–`0x0062f488`). *(A sor 2026-09-05-ig „a leképezés nyitva marad" jelöléssel állt, holott az alábbi „A 6. mező (átlátszatlanság)" szakasz már megválaszolta — elavult jelölés volt.)* |
 | **mi a 8. mező HÁROM része** | **NYITOTT (2026-09-04)** — az olvasó bitekre vágja (ld. fentebb); két rész 0/1/2 értékkészletű és függetlenül mozog, a harmadik (felső 16 bit) minden mintán 0. **Megszerzés:** kontrollált minta, ami a KÉT hármas enumot választja szét. |
-| **mi a `<b>` (9. mező)** | **BLOKKOLT** — 2026-09-02 óta öt értékünk van (`0xC000`, `0xC001`, `0xC008`), és a dőlt/aláhúzott bit-hozzárendelés kézenfekvő, de szétválasztó eset (a kettő EGYÜTT) nincs. Az eredeti indoklás: a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
+| **mi a `<b>` (9. mező)** | ✅ **LEZÁRVA (2026-09-05)** — **bit 0 = aláhúzott**, **bit 3 = dőlt**, a binárisból (ld. lentebb). A `0xC000`/`0xC001`/`0xC008` hármas ezzel maradéktalanul megmagyarázva. Bit 14 jelentése **nincs megállapítva**, bit 15 forrása **NINCS MEG**. ⛔ A félkövér **nem** ebben a mezőben van. |
+
+#### ⭐ A 9. mező BITJEI — dőlt és aláhúzott, a binárisból (2026-09-05, #2448)
+
+A mező egy **bitmező**, és az állítója egy általános jelzőkapcsoló:
+`0x005ba8a0` (a `0x00c943d4` vtábla **`+0x6c`** rése):
+
+```
+if (bool) [ecx+0x18] |= maszk;  else  [ecx+0x18] &= ~maszk;
+```
+
+A `+0x18` tag épp az, amit az író a 9. mezőként kiír
+(getter `0x005ba8d0`, vtbl `+0x74`).
+
+| bit | maszk | jelentés | bizonyíték |
+|---:|---:|---|---|
+| 0 | `0x0001` | **aláhúzott** | `0x0062ebb3`–`0x0062ebb9`: az `edittextpanel/underline` ágban `push 1` |
+| 3 | `0x0008` | **dőlt** | `0x005ba7b0` (vtbl `+0x34`): `push 8`; ezt hívja az `edittextpanel/italic` ág (`0x0062ea5c`) |
+| 14 | `0x4000` | *(felhasználói jelentése NINCS MEGÁLLAPÍTVA)* | `0x005f633f`: a felirat létrehozásakor `push 1; push 0x4000`; `0x005bae39`: igaz, ha egy méretarány pontosan `1.0` |
+| 15 | `0x8000` | **NINCS MEG** | a konstruktor a szót **0**-ra állítja (`0x005ba60b`); `push 0xC000` / `push 0x8000` + jelzőkapcsoló a binárisban **sehol** |
+
+⇒ A korpusz három értéke maradéktalanul megmagyarázva: **`0xC000`** (egyik
+sem) · **`0xC001`** (aláhúzott) · **`0xC008`** (dőlt).
+
+**A gomb-kezelő**, ahonnan mindez kiolvasható: `FUN_0062e8f0` (2317 b),
+amely elemnév szerint ágazik szét — `edittextpanel/bold` · `italic` ·
+`no_fill` · `underline` · `usecaption` · `clearall` · `edittextapply` ·
+`edittextcancel` · `no_outline` · `leftalign` · `centeralign` · `rightalign`.
+
+##### ⛔ Amit ez KIZÁR: a félkövér NEM bit ebben a mezőben
+
+Az `edittextpanel/bold` ág (`0x0062e972`–`0x0062e984`) a **betűsúlyt** írja:
+
+```
+neg al ; sbb eax, eax ; and eax, 0x12c ; add eax, 0x190
+```
+
+⇒ bekapcsolva `0x12c + 0x190` = **700**, kikapcsolva **400**, és ez a
+**7. mezőbe** megy (vtbl `+0x0c` → `[ecx+0x1c]`). Ez független megerősítése
+a #2271 mérésének.
+
+##### Nálunk (MÉRVE)
+
+`src/picasapy/ini/text_overlay.py:171` — `trailer: int = 49152` **állandó**;
+a `:294` beolvassa, a `:312` változatlanul visszaírja ⇒ a round-trip
+hibátlan, de a **jelentést nem használjuk**. A rajzolónk viszont tudja a
+dőltet és az aláhúzást (`render/text_overlay.py:163–164`, `:124`, `:223`)
+⇒ **megrajzoljuk, de nem mentjük**. Jegy: **#2448**.
 
 #### ⭐ A 8. mező NEM egy érték, hanem HÁROM — az OLVASÓ szétvágja (2026-09-04, #2108)
 
