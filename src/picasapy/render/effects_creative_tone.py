@@ -148,6 +148,14 @@ def apply_crossprocess(image: np.ndarray, strength: float = 1.0) -> np.ndarray:
 def apply_quantizepalette(image: np.ndarray, levels: int = 4) -> np.ndarray:
     """Színszám-csökkentés (poszterizálás) — KÖZELÍTÉS (#329, kalibráció: #317).
 
+    ⚠️ **A `levels=4` alapérték NEM a `filterdesc.xml` `Depth = 4`-e** (#2454).
+    A kettő véletlenül egyezik, de más fogalom: a `Depth` az eredeti
+    oktree-jének osztási szintjeit jelöli, ez itt a kvantálási szintek
+    száma. **A lánc nem ezt a függvényt hívja** — a `picnikposterize`
+    kezelője a `glimmer_tone.apply_quantizepalette`-re megy
+    (`chain.py:652` → `chain_glimmer_handlers.py:128`); ide csak
+    `tests/render/test_effects_creative.py` hivatkozik.
+
     Modell: csatornánként egyenletes lépésközű kvantálás
     (`levels` szint 0..255 között), a klasszikus poszterizáló szűrők
     szokásos definíciója. A Picasa `QuantizePalette` pontos (esetleg
