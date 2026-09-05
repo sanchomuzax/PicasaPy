@@ -4,6 +4,9 @@ könyvtárfán/indexen, mock nélkül."""
 
 from __future__ import annotations
 
+import os
+import sqlite3
+
 import numpy as np
 import pytest
 from PIL import Image
@@ -371,3 +374,79 @@ class TestBackgroundThreadTeardown:
         loop.exec()
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestGyorstarSzerzodes:
+    """A két gyorstár és a KÉSZ jelentés viszonya (#1494 átnézés, 3./5. lelet)."""
+
+    def _konyvtar(self, tmp_path):
+        lib = tmp_path / "kepek"
+        lib.mkdir()
+        original = _gradient_jpeg(lib / "a.jpg")
+        (lib / "b.jpg").write_bytes(original.read_bytes())
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, lib)
+        return lib, db
+
+    def test_a_ket_gyorstar_egyutt_el_ugyanazon_a_soron(
+        self, make_controller, tmp_path, provider
+    ):
+        """ŐR (3. lelet): a dHash és a gyorskulcs UGYANABBÓL az
+        azonosság-forrásból dolgozik, ezért egy soron megférnek.
+
+        A szinkron ÓTA megváltozott fájl a próba lényege: itt tért el a
+        rekordbeli (`PhotoRecord.mtime_ns`) és a friss `stat()` szerinti
+        azonosság, és a két írás ilyenkor NULL-ozta egymást — a #294 fő
+        nyeresége (a JPEG-dekódolás megspórolása) épp ezekre a képekre
+        veszett el minden második körben."""
+        lib, db = self._konyvtar(tmp_path)
+        # a szinkron óta „hozzáért" valaki a fájlokhoz: az indexbeli
+        # rekord mtime-ja elavul, a tartalom változatlan
+        for nev in ("a.jpg", "b.jpg"):
+            os.utime(lib / nev, ns=(0, 1_000_000_000))
+
+        dedup = make_controller(db, provider)
+        loop = _quit_on(dedup.scanFinished)
+        dedup.scanForDuplicates()
+        loop.exec()
+
+        with open_index(db) as conn:
+            sorok = {
+                sor["path"]: (sor["dhash"], sor["originfast"])
+                for sor in conn.execute(
+                    "SELECT path, dhash, originfast FROM photo_hashes"
+                )
+            }
+        for nev in ("a.jpg", "b.jpg"):
+            dhash, gyorskulcs = sorok[str(lib / nev)]
+            assert dhash is not None, f"{nev}: a gyorskulcs kiütötte a dHash-t"
+            assert gyorskulcs is not None, f"{nev}: a dHash kiütötte a gyorskulcsot"
+
+    def test_a_gyorstar_mentes_hibaja_nem_buktatja_a_keresest(
+        self, make_controller, tmp_path, provider, monkeypatch
+    ):
+        """ŐR (5. lelet): zárolt indexen is a KÉSZ jelentés megy ki, nem
+        `scanFailed` — a gyorstár feltöltése kényelmi szolgáltatás."""
+        lib, db = self._konyvtar(tmp_path)
+
+        def bukik(*_args, **_kwargs):
+            raise sqlite3.OperationalError("database is locked")
+
+        monkeypatch.setattr("picasapy.app.dedup_controller.save_dhashes", bukik)
+        monkeypatch.setattr(
+            "picasapy.index.fast_key_source.save_fast_keys", bukik
+        )
+
+        dedup = make_controller(db, provider)
+        kesz, hibak = [], []
+        dedup.scanFinished.connect(kesz.append)
+        dedup.scanFailed.connect(hibak.append)
+        loop = _quit_on(dedup.scanFinished)
+        dedup.scanForDuplicates()
+        loop.exec()
+
+        assert hibak == []
+        assert len(kesz) == 1
+        exact = [csoport for csoport in kesz[0] if csoport["kind"] == "exact"]
+        assert len(exact) == 1

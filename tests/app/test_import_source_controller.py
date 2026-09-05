@@ -850,3 +850,66 @@ class TestRecentSources:
             self._scan_folder(controller, tmp_path, f"kartya{index}")
 
         assert len(list(controller.recentSources)) == MAX_RECENT_SOURCES
+
+
+class _CommitBukikKapcsolat:
+    """A valódi kapcsolat, de a `commit()` zárolást jelez.
+
+    Az `sqlite3.Connection.commit` írásvédett attribútum, tehát
+    monkeypatchelni nem lehet — a hibás commit útját csak burkolóval lehet
+    kipróbálni."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def __getattr__(self, nev):
+        return getattr(self._conn, nev)
+
+    def commit(self):
+        import sqlite3
+
+        raise sqlite3.OperationalError("database is locked")
+
+
+class TestDuplikatumokGyorstarHiba:
+    """ŐR (#1494 átnézés, 1. lelet): a gyorskulcs-gyorstár mentésének
+    hibája nem dobhatja el a KÉSZ duplikátum-listát.
+
+    A `finally`-ben álló csupasz `conn.commit()` zárolt vagy tele indexen a
+    külső `except`-be esett, és az "Exclude Duplicates" szótlanul ÜRES
+    halmazt adott vissza — a felhasználó pedig újraimportálta a már meglévő
+    képeit. A gyorstár feltöltése kényelmi szolgáltatás: a helyes eredmény
+    nem függhet tőle."""
+
+    def test_a_lista_akkor_is_megjon_ha_a_gyorstar_commitja_bukik(
+        self, tmp_path, monkeypatch
+    ):
+        import contextlib
+
+        from picasapy.app import import_source_controller as vezerlo
+        from picasapy.importsource import ImportCandidate
+        from picasapy.index import open_index, sync_tree
+
+        library = tmp_path / "konyvtar"
+        library.mkdir()
+        make_jpeg(library / "eredeti.jpg", size=(64, 64))
+        index_db = tmp_path / "index.db"
+        with open_index(index_db) as conn:
+            sync_tree(conn, library)
+
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "eredeti.jpg", size=(64, 64))  # bitre azonos
+
+        @contextlib.contextmanager
+        def buko_commitu_index(path):
+            with open_index(path) as conn:
+                yield _CommitBukikKapcsolat(conn)
+
+        monkeypatch.setattr(vezerlo, "open_index", buko_commitu_index)
+
+        eredmeny = vezerlo._duplikatumok(
+            index_db, (ImportCandidate(path=source / "eredeti.jpg", date=None),)
+        )
+
+        assert eredmeny == frozenset({source / "eredeti.jpg"})

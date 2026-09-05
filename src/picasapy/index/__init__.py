@@ -36,7 +36,8 @@ from .faces_detected import (
     unignore_faces,
     unnamed_faces,
 )
-from .hashes import load_dhashes, save_dhashes
+from .fast_key_source import IndexFastKeySource
+from .hashes import load_dhashes, load_fast_keys, save_dhashes, save_fast_keys
 from .queries import (
     PhotoRecord,
     SearchSuggestion,
@@ -118,7 +119,9 @@ __all__ = [
     "video_photos",
     "group_unnamed_faces",
     "load_color_tokens",
+    "IndexFastKeySource",
     "load_dhashes",
+    "load_fast_keys",
     "ignored_faces",
     "named_centroids",
     "mark_faces_ignored",
@@ -147,6 +150,7 @@ __all__ = [
     "reset_all_faces",
     "save_colors",
     "save_dhashes",
+    "save_fast_keys",
     "SearchSuggestion",
     "search_photos",
     "search_suggestions",

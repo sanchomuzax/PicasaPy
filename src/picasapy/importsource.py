@@ -28,7 +28,7 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable, Sequence
 
-from picasapy.dedup.exact import file_content_hash
+from picasapy.dedup.exact import FastKeySource, file_content_hash
 from picasapy.dedup.fastkey import picasa_fast_key
 from picasapy.metadata.reader import read_file_metadata
 from picasapy.scanner import media_kind_of, scan_tree
@@ -251,6 +251,7 @@ def destination_subpath_for_mode(
 def duplicate_paths(
     candidates: Sequence[ImportCandidate],
     library_paths: Iterable[Path],
+    library_key_source: FastKeySource | None = None,
 ) -> frozenset[Path]:
     """A `candidates` közül azok elérési útjai, amelyek TARTALMA megegyezik
     egy `library_paths`-beli (már indexelt, azaz "már importálva a
@@ -264,8 +265,19 @@ def duplicate_paths(
     kimondó mérce a SHA-256 marad: egy téves egyezés itt azt jelentené,
     hogy egy fénykép szótlanul kimarad az importálásból.
 
+    `library_key_source` (#1494): a KÖNYVTÁRBELI fájlok gyorskulcsának
+    forrása; alapértelmezésben a lemezről számoló `picasa_fast_key`.
+    Index-hátterű forrással (`index.IndexFastKeySource`) a MÁSODIK
+    importálási kör a könyvtár változatlan képeinek fájlvégeit sem olvassa
+    be újra.
+
+    ⚠️ A JELÖLTEK kulcsa szándékosan MARAD számolt: azok kártyáról/kamerából
+    jönnek, a következő körben már nem lesznek ott, tehát az indexben csak
+    idegen útvonalú szemétsorokat hagynának — a nyereség nulla volna.
+
     Az olvashatatlan (törölt/elérhetetlen) fájlok szótlanul kimaradnak az
     összevetésből — sem duplikátumnak, sem egyedinek nem számítanak."""
+    kulcsforras = picasa_fast_key if library_key_source is None else library_key_source
     library_by_size: dict[int, list[Path]] = {}
     for path in library_paths:
         try:
@@ -297,7 +309,7 @@ def duplicate_paths(
         kulcs_egyezok = []
         for library_path in same_size:
             if library_path not in library_key_cache:
-                library_key_cache[library_path] = picasa_fast_key(library_path)
+                library_key_cache[library_path] = kulcsforras(library_path)
             if library_key_cache[library_path] == candidate_key:
                 kulcs_egyezok.append(library_path)
         if not kulcs_egyezok:

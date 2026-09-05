@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.292] – 2026-09-05
+
+### Változott
+
+- **A duplikátum-keresés és az importálás nem olvassa újra ugyanazokat a
+  fájlokat minden körben** (#1494). A Picasa gyorskulcsa (a fájl elejéből
+  és végéből számolt azonosító) mostantól az indexben tárolódik, és csak
+  akkor számolódik újra, ha a fájl tényleg megváltozott. Az azonos méretű
+  fényképek — a saját gyűjteményben mérve a fényképek 23,5%-a — a MÁSODIK
+  körtől nulla bájt újraolvasással azonosíthatók; ez körönként mintegy
+  27 MB megspórolt lemez- (NAS esetén hálózati) olvasás.
+
 ## [0.8.291] – 2026-09-05
 
 ### Változott

@@ -25,7 +25,7 @@ import pytest
 from PySide6.QtCore import QSettings
 
 from picasapy.index import open_index, sync_tree
-from picasapy.index.schema import SCHEMA_VERSION
+from picasapy.index.schema import MIGRATIONS, SCHEMA_VERSION
 from support.jpeg_factory import make_jpeg
 
 _CTL = (
@@ -63,7 +63,18 @@ class TestAzIndex:
         assert "unread" in oszlopok
 
     def test_a_semaverzio_lepett(self):
-        assert SCHEMA_VERSION == 15
+        """A #1644 lépése MEGVAN — de nem rögzítjük a MAI verziószámot.
+
+        Az egzakt egyenlőség (`== 15`) minden későbbi sémabővítéstől
+        elbukott volna, holott ennek a jegynek a lépéséhez semmi köze:
+        a #1494 v16-ra emelése például pontosan ezen akadt el. A
+        MAI verziót szándékosan EGY helyen rögzítjük
+        (`tests/index/test_hashes.py`); itt az a kérdés, hogy a saját
+        migrációnk a helyén van-e.
+        """
+        assert 14 in MIGRATIONS, "a #1644 migrációs lépése eltűnt"
+        assert "unread" in MIGRATIONS[14]
+        assert SCHEMA_VERSION >= 15
 
 
 class TestAJelolo:

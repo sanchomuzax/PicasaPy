@@ -11,10 +11,10 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v15: az „olvasatlan" mappajelölő (#1644) — `folders.unread`
-        # (v14: az útvonal-feloldás gyorstára, #1859 —
-        # `resolved_root_cache`
-        assert SCHEMA_VERSION == 15
+        # v16: a Picasa-gyorskulcs oszlopa (#1494) — `photo_hashes.
+        # originfast`, és ezzel együtt a `dhash` NOT NULL feloldása
+        # (v15: az „olvasatlan" mappajelölő, #1644 — `folders.unread`)
+        assert SCHEMA_VERSION == 16
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
