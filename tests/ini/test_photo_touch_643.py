@@ -59,13 +59,24 @@ def folder(tmp_path, monkeypatch):
 
 @pytest.fixture
 def folder_be(folder, monkeypatch):
-    """Ugyanaz a mappa, de az érintés KIFEJEZETTEN bekapcsolva.
+    """Ugyanaz a mappa, az érintés KIFEJEZETTEN bekapcsolva.
 
-    A #1320 óta ez a nem alapértelmezett ág; a régi „alapból BE" tesztek
-    ezen a fixture-ön futnak tovább, mert a viselkedésük maga nem változott,
-    csak az kell hozzá, hogy a felhasználó kérje.
+    A #2491 óta ez az ALAPÉRTELMEZÉS is; a fixture megmarad, mert a rá
+    épülő próbák a kifejezett bekapcsolást is le akarják fedni.
     """
     monkeypatch.setenv(TOUCH_ENV_VAR, "1")
+    return folder
+
+
+@pytest.fixture
+def folder_ki(folder, monkeypatch):
+    """Ugyanaz a mappa, az érintés KIFEJEZETTEN kikapcsolva (#2491).
+
+    A #2491 óta a kikapcsolás a nem alapértelmezett ág — az a felhasználóé,
+    aki inkább vállalja, hogy a futó Picasa nem frissül, csak ne íródjon át
+    a fotói időbélyege.
+    """
+    monkeypatch.setenv(TOUCH_ENV_VAR, "0")
     return folder
 
 
@@ -77,21 +88,30 @@ def _write_filters(folder, section: str = "kep.jpg", value: str = "bw=1;") -> No
     )
 
 
-class TestAlapertelmezesKI:
-    """#1320: alapértelmezésben a képfájlhoz HOZZÁ SEM NYÚLUNK.
+class TestAlapertelmezesBE:
+    """#2491: alapértelmezésben MEGÉRINTJÜK a képfájlt.
 
-    Az újraolvasás kulcsa a `.picasa.ini` saját írási ideje; a fotó
-    `mtime`-jának átírása mért haszon nélküli, visszafordíthatatlan
-    mellékhatás az éles fotógyűjteményen.
+    ⚠️ Ez 2026-09-06-án fordult meg. A #1320 (ADR-006) azért tette
+    opt-inné, mert a haszna nem volt mérve; a tulajdonos mérése azóta
+    megvan: érintés nélkül a FUTÓ Picasa nem veszi észre a
+    szerkesztésünket, érintéssel azonnal frissül. Az ini saját dátuma csak
+    a későbbi, HIDEG beolvasást dönti el — az a mérés (783/787) változatlan.
+
+    Az ár tudatosan vállalt: a képfájlok `mtime`-ja átíródik.
     """
 
-    def test_a_kapcsolo_alapertelmezese_ki(self):
-        assert is_touch_enabled({}) is False
+    def test_a_kapcsolo_alapertelmezese_be(self):
+        assert is_touch_enabled({}) is True
 
-    def test_a_kep_mtime_ja_bitre_azonos_marad(self, folder):
+    def test_a_kep_mtime_ja_FRISSUL(self, folder):
         elotte = (folder / "kep.jpg").stat().st_mtime_ns
         _write_filters(folder)
-        assert (folder / "kep.jpg").stat().st_mtime_ns == elotte == _OLD_NS
+        assert (folder / "kep.jpg").stat().st_mtime_ns > elotte == _OLD_NS
+
+    def test_a_NEM_erintett_kep_mtime_ja_valtozatlan(self, folder):
+        """Csak a változott szakaszhoz tartozó fájlt érintjük meg."""
+        _write_filters(folder)
+        assert (folder / "masik.jpg").stat().st_mtime_ns == _OLD_NS
 
     def test_az_atime_sem_valtozik(self, folder):
         _write_filters(folder)
@@ -152,9 +172,9 @@ class TestANaploLathatovaTeszi:
             "1 képfájl" in record.getMessage() for record in caplog.records
         ), [r.getMessage() for r in caplog.records]
 
-    def test_kikapcsolva_nincs_ilyen_naplosor(self, folder, caplog):
+    def test_kikapcsolva_nincs_ilyen_naplosor(self, folder_ki, caplog):
         with caplog.at_level("INFO", logger="picasapy.ini.photo_touch"):
-            _write_filters(folder)
+            _write_filters(folder_ki)
         assert not any("képfájl" in record.getMessage() for record in caplog.records)
 
 
@@ -193,7 +213,7 @@ class TestCsakAzErintettKep:
 class TestKapcsolo:
     """A kapcsoló mindkét irányban, a `PICASAPY_*` szokásos elnéző olvasatával."""
 
-    @pytest.mark.parametrize("kikapcsolo", ["0", "false", "no", "off", "FALSE", ""])
+    @pytest.mark.parametrize("kikapcsolo", ["0", "false", "no", "off", "FALSE", "ki", "nem"])
     def test_kikapcsolva_semmi_nem_valtozik(self, folder, monkeypatch, kikapcsolo):
         monkeypatch.setenv(TOUCH_ENV_VAR, kikapcsolo)
         _write_filters(folder)
@@ -214,11 +234,20 @@ class TestKapcsolo:
         _write_filters(folder)
         assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
 
-    def test_ismeretlen_ertek_nem_kapcsol_be(self, folder, monkeypatch):
-        """Elgépelésre a BIZTONSÁGOS irányba dőlünk: nem nyúlunk a fájlhoz."""
-        monkeypatch.setenv(TOUCH_ENV_VAR, "talán")
+    @pytest.mark.parametrize("ismeretlen", ["talán", "", "   "])
+    def test_ismeretlen_ertek_a_MUKODO_iranyba_dol(
+        self, folder, monkeypatch, ismeretlen
+    ):
+        """#2491: elgépelésre és üres értékre BEkapcsolva maradunk.
+
+        Megfordult a #1320-hoz képest: akkor a „biztonságos" irány az
+        érintetlen fájl volt. Mérés óta a kikapcsolás ára a megszakadt
+        együttélés — a tulajdonos a két programot EGYSZERRE használja —,
+        ezért az elgépelés nem némíthatja el a frissítést.
+        """
+        monkeypatch.setenv(TOUCH_ENV_VAR, ismeretlen)
         _write_filters(folder)
-        assert (folder / "kep.jpg").stat().st_mtime_ns == _OLD_NS
+        assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
 
 
 class TestHibaturés:

@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.297] – 2026-09-06
+
+### Javítva
+
+- **A Picasa megint azonnal észreveszi, amit a PicasaPy-ban szerkesztesz**
+  (#2491). Egy augusztus 24-i döntés kikapcsolta, hogy a mentés a képfájl
+  módosítási idejét is megérintse — akkor a mérés szerint ez felesleges
+  volt. A tulajdonos mérése most az ellenkezőjét mutatta: enélkül a
+  **futó** Picasa nem frissül, ezzel viszont azonnal. A két korábbi mérés
+  nem mond ellent egymásnak: a `.picasa.ini` saját dátuma a későbbi,
+  hideg beolvasást dönti el, a futó program élő frissítését viszont a
+  képfájl változása váltja ki.
+
+  Az ára tudatosan vállalt: a **szerkesztett** képek módosítási ideje
+  átíródik (a többihez nem nyúlunk). Kikapcsolható a
+  `PICASAPY_TOUCH_PHOTO_MTIME=0` beállítással.
+
 ## [0.8.296] – 2026-09-06
 
 ### Javítva

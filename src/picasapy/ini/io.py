@@ -8,10 +8,12 @@ a Picasa a mappa `.picasa.ini`-jének írási idejét tárolja
 (`albumdata_inisync`), és ha a lemezen lévő fájl újabb, újraolvassa. Ehhez
 tehát ezen a ponton nincs külön teendő.
 
-#643: a `photo_touch` modul emellett meg tudja érinteni a változott fotók
-MTIME-ját is, de ez egy feltételezett, Picasa-oldalon nem mért út, ezért
-**alapértelmezésben ki van kapcsolva** (`PICASAPY_TOUCH_PHOTO_MTIME=1`
-kapcsolja be). Az indoklás a `photo_touch` fejlécében és a
+#643 / #2491: a `photo_touch` modul emellett megérinti a változott fotók
+MTIME-ját is, és ez 2026-09-06 óta **alapértelmezésben BE van kapcsolva**
+(`PICASAPY_TOUCH_PHOTO_MTIME=0` kapcsolja ki). A tulajdonos mérése szerint
+enélkül a FUTÓ Picasa nem veszi észre a szerkesztésünket, ezzel viszont
+azonnal frissül — az ini saját dátuma csak a későbbi, hideg beolvasást
+dönti el. Az indoklás a `photo_touch` fejlécében és a
 `docs/decisions/photo-mtime-erintes.md` ADR-ben él.
 """
 

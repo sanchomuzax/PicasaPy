@@ -1,5 +1,26 @@
 # ADR-006: A képfájl `mtime`-jának megérintése — alapértelmezésben KI
 
+> ## ⚠️ FELÜLÍRVA — ADR-007 (2026-09-06, #2491)
+> **Az alapértelmezés visszaállt BE-re.** Ez a lap történeti: az érvelése
+> egy ponton hiányos volt, és a tulajdonos mérése ezt megmutatta.
+>
+> | lépés (v0.8.293, Windows 11, 2026-09-05) | eredmény |
+> |---|---|
+> | effekt a PicasaPy-ban, érintés NÉLKÜL | a `.picasa.ini` frissül, a `filters=` benne van — a **futó Picasa mégsem** veszi észre |
+> | ugyanez `PICASAPY_TOUCH_PHOTO_MTIME=1` mellett | a Picasa alatt **azonnal frissül a kép** |
+>
+> A két mechanizmus MÁS kérdésre válasz, és mindkettő igaz: az **ini saját
+> dátuma** a későbbi, HIDEG beolvasást dönti el (ez az alábbi 783/787-es
+> mérés, változatlanul érvényes); a **futó** Picasa élő frissítését viszont
+> a **képfájl** `LAST_WRITE`-ja váltja ki. Az alábbi lap épp ezt a
+> lehetőséget nevezi meg mint amit „NEM cáfoltunk".
+>
+> Az alábbi lap **ára-érve továbbra is igaz**: a képfájlok `mtime`-ja
+> átíródik. Ezt tudatosan vállaljuk, mert a tulajdonos a két programot
+> EGYSZERRE használja, és enélkül az együttélés — a projekt alapígérete —
+> nem működik. A mi oldalunkon jelentkező mellékhatást (a fájlidőre eső
+> dátum és rendezés elmozdulása EXIF nélkül) a **#2486** oldja meg.
+
 Dátum: 2026-08-24 · Státusz: ELFOGADVA · jegy: #1320 (a #643 örökségéből)
 
 ## A helyzet

@@ -50,7 +50,40 @@ mérlege"):
 16.5-ben megerősített. Az értesítés léte azonban nem mond semmit arról,
 hogy a fotó `mtime`-ja számít-e; a frissességet az ini dátuma dönti el.)*
 
-## A döntés: az alapértelmezés KI (#1320)
+## ⚠️ 2026-09-06: A DÖNTÉS MEGFORDULT — az alapértelmezés BE (#2491)
+
+A fenti érvelés egy pontban hiányos volt, és a tulajdonos mérése ezt
+mutatta meg. Az ADR-006 maga írja le, hogy amit NEM cáfoltunk, az a
+változás-értesítés (`FindFirstChangeNotification`, szűrő `0x17`, benne a
+`LAST_WRITE` bittel, rekurzívan) — és hozzátette, hogy „az értesítés léte
+azonban nem mond semmit arról, hogy a fotó `mtime`-ja számít-e".
+
+**A tulajdonos mérése (2026-09-05, v0.8.293, Windows 11) eldöntötte:**
+
+| lépés | eredmény |
+|---|---|
+| effekt a PicasaPy-ban, érintés NÉLKÜL | a `.picasa.ini` módosítási ideje frissül, a `filters=` sor benne van — a **futó Picasa mégsem** veszi észre |
+| ugyanez `PICASAPY_TOUCH_PHOTO_MTIME=1` mellett | a Picasa alatt **azonnal frissül a kép** |
+
+Vagyis a KÉT mechanizmus más kérdésre válasz, és mindkettő igaz:
+
+* az **ini saját dátuma** azt dönti el, hogy egy **későbbi, hideg**
+  beolvasás újraolvassa-e a mappát (ez az ADR-006 mérése, 783/787);
+* a **futó** Picasa élő frissítését a **képfájl** `LAST_WRITE`-ja váltja
+  ki — a `.picasa.ini` írása erre nem elég.
+
+A tulajdonos a két programot EGYSZERRE használja ugyanazon a mappán, tehát
+a futó eset a valódi eset. Az alapértelmezés ezért BE; a kapcsoló megmarad
+KIkapcsolóként.
+
+**Az ár, amit tudatosan vállalunk** (és ami az ADR-006 igaza volt): a
+képfájlok `mtime`-ja átíródik. Ennek van egy MI OLDALUNKON jelentkező
+mellékhatása is: EXIF felvételi idő híján a mi dátumunk és rendezésünk a
+fájlidőre esik vissza (#2372, #2304), tehát a szerkesztett képek dátuma
+elmozdulhat. Ezt a **#2486** oldja meg (befagyasztott „első látáskori"
+időbélyeg) — a mostani döntés a #2486 fontosságát megemeli.
+
+## A RÉGI döntés (#1320, ADR-006) — történeti
 
 Egy éles, családi fotógyűjtemény időbélyegeinek átírása
 **visszafordíthatatlan** mellékhatás (fájlkezelős rendezés, `rsync`
@@ -104,12 +137,17 @@ _utime = os.utime
 
 _log = logging.getLogger(__name__)
 
-#: A BEKAPCSOLÓ környezeti változó. Hiányában KI (#1320 döntése).
+#: A kapcsoló környezeti változó. **Hiányában BE** — a #2491 mérése óta
+#: (ADR-007); korábban a hiánya KI-t jelentett (#1320, ADR-006).
 TOUCH_ENV_VAR = "PICASAPY_TOUCH_PHOTO_MTIME"
 
 #: „Igaz" értékek — a `PICASAPY_*` kapcsolók szokásos, elnéző olvasata.
-#: Bármi más (üres érték, elgépelés) a BIZTONSÁGOS irányba dől: nem érintünk.
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on", "igen", "be"})
+
+#: „Hamis" értékek: ezekkel lehet KIkapcsolni. Bármi MÁS (elgépelés, üres
+#: érték) a MŰKÖDŐ irányba dől, mert a #2491 óta a kikapcsolás ára a
+#: megszakadt együttélés — az a drágább hiba.
+_FALSE_VALUES = frozenset({"0", "false", "no", "off", "nem", "ki"})
 
 #: Óraeltérés-tartalék: ha a képfájl mtime-ja a JÖVŐBEN van (NAS és gép
 #: órája eltér, ami a felhasználó pontos helyzete), a „most" beállítása
@@ -122,23 +160,27 @@ _SKEW_BUMP_NS = 1_000_000_000
 
 
 def is_touch_enabled(environ: Mapping[str, str] | None = None) -> bool:
-    """Be van-e kapcsolva a képfájl-érintés (alapértelmezésben NEM).
+    """Be van-e kapcsolva a képfájl-érintés (alapértelmezésben IGEN).
 
-    A #1320 óta ez opt-in: a képfájl `mtime`-jának átírása nem része az
-    eredeti Picasa mechanizmusának, ezért csak kifejezett kérésre fut.
+    ⚠️ **Az alapértelmezés 2026-09-06-án megfordult** (#2491, ADR-007). A
+    #1320 (ADR-006) opt-inné tette, mert a haszna nem volt mérve; a
+    tulajdonos mérése azóta megvan, és egyértelmű: érintés nélkül a futó
+    Picasa NEM veszi észre a szerkesztésünket, érintéssel **azonnal**
+    frissül. A kapcsoló megmarad, de mostantól KIkapcsolóként.
 
     Args:
         environ: A vizsgálandó környezet; alapértelmezésben `os.environ`
             (a paraméter a tesztelhetőséget szolgálja).
 
     Returns:
-        True, ha a `PICASAPY_TOUCH_PHOTO_MTIME` értéke kifejezetten „igaz".
+        False, ha a `PICASAPY_TOUCH_PHOTO_MTIME` értéke kifejezetten
+        „hamis"; minden más esetben (hiányzó, üres, ismeretlen érték) True.
     """
     env = os.environ if environ is None else environ
     raw = env.get(TOUCH_ENV_VAR)
     if raw is None:
-        return False
-    return raw.strip().casefold() in _TRUE_VALUES
+        return True
+    return raw.strip().casefold() not in _FALSE_VALUES
 
 
 def changed_photo_sections(before: IniDocument, after: IniDocument) -> tuple[str, ...]:

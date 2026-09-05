@@ -76,7 +76,8 @@ kódtól).
   `.picasa.ini` SAJÁT írási idejét figyeli (`albumdata_inisync`, 99,5%-os
   mért egyezés), a képfájl dátuma nála nem játszik szerepet; ez az út tehát
   a mi kiegészítésünk. Alapértelmezésben KI, kizárólag
-  `PICASAPY_TOUCH_PHOTO_MTIME=1` mellett fut. Indoklás: ADR-006,
+  `PICASAPY_TOUCH_PHOTO_MTIME=0` kapcsolja KI — 2026-09-06 óta
+  alapértelmezésben FUT (#2491, ADR-007). Indoklás: ADR-006,
   `docs/decisions/photo-mtime-erintes.md`.
 - `src/picasapy/ini/redeye.py` (#445) — a vörösszem-jelölések saját
   `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem

@@ -951,6 +951,14 @@ kísérlet, nem elmélet.
 > megkerülési út ezért **feltételezett**, és a #1320 óta **opt-in**:
 > `PICASAPY_TOUCH_PHOTO_MTIME=1`. Alapértelmezésben a képfájlokhoz hozzá
 > sem nyúlunk.
+>
+> ⚠️ **2026-09-06 (#2491): AZ ALAPÉRTELMEZÉS MEGFORDULT — BE.**
+> A tulajdonos mérése: érintés NÉLKÜL a `.picasa.ini` frissül és a
+> `filters=` benne van, a **futó** Picasa mégsem veszi észre;
+> érintéssel **azonnal** frissül. Az alábbi mérés (783/787) a HIDEG
+> beolvasásra változatlanul érvényes — a két mechanizmus MÁS
+> kérdésre válasz. Az alábbi bekezdések innen történetiek.
+
 
 Az `update_document` (`src/picasapy/ini/io.py`) — ha a kapcsoló be van
 kapcsolva — a sikeres ini-mentés után megérinti azoknak a fotóknak a
@@ -968,7 +976,7 @@ egyformán viselkedik.
 | melyik fájlra | az ini MELLETTI, azonos nevű, LÉTEZŐ fájlra; hiányzó képet, alkönyvtárat, `..`-t kihagy |
 | milyen érték | „most"; ha a képfájl mtime-ja a jövőben van (NAS-óraeltérés), akkor a jelenleginél 1 másodperccel későbbre — hogy biztosan újabbnak látsszon |
 | hibatűrés | az `utime` bukása (írásvédett kép, hálózati megosztás) **naplózott figyelmeztetés**, a mentés érvényes marad |
-| bekapcsolás | `PICASAPY_TOUCH_PHOTO_MTIME=1` (`true`/`yes`/`on`/`igen`/`be` is jó). **Hiányában KI** (#1320). Bármi más érték is KI — elgépelésre a biztonságos irányba dőlünk. Környezeti változó, mert az `ini` réteg szándékosan Qt-mentes, és ez kísérleti kapcsoló, nem felhasználói beállítás. |
+| kapcsolás | **Hiányában BE** (#2491, 2026-09-06 — korábban KI, #1320). `PICASAPY_TOUCH_PHOTO_MTIME=0` kapcsolja KI (`false`/`no`/`off`/`nem`/`ki` is jó). Bármi MÁS érték BE — a #2491 óta az elgépelés nem némíthatja el a frissítést, mert a kikapcsolás ára a megszakadt együttélés. Környezeti változó, mert az `ini` réteg szándékosan Qt-mentes. |
 | láthatóság | bekapcsolt állapotban a modul `INFO` szinten naplózza, hány képfájl időbélyegét írta át és melyik mappában (#1320) |
 
 > ⚠️ **Amit ez NEM állít.** Hogy a valódi, windowsos Picasa emiatt tényleg
