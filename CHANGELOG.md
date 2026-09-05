@@ -21,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A rács nagyítója végre NAGYÍT** (#2399). Eddig a bélyegképet
+  zsugorította a lencse méretére — azaz kevesebbet mutatott, mint a
+  csempe maga. Mostantól a teljes felbontású képből vág ki egy 65 × 65
+  képpontos darabot a kurzor alatti pont körül, és azt rajzolja 1:1-ben,
+  ahogyan az eredeti Picasa is teszi (a binárisból kimért viselkedés:
+  nincs nagyítási arány, csak eltolás).
+
 - **A dőlt és aláhúzott felirat megmarad mentés után** (#2448). Eddig
   megrajzoltuk a képre, de a beállítás nem került bele a fájlba: a kép
   újranyitásakor a felirat visszaállt normálra. Mostantól mindkettő
@@ -33,7 +40,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   eredetivel — de ezt soha nem mértük meg. Most megmértük a valódi
   Picasa-exporthoz képest, és **igaz**: a hatás 99%-át eltaláljuk. A
   program viselkedése változatlan, csak már bizonyítékunk is van rá (#2454).
-
 
 - *(Előkészítés, ma még nem látszik.)* Felismerjük a **Picasa 2 korabeli
   vágás-formátumot** (#2008). Egy olyan gyűjteményben, amit még sosem

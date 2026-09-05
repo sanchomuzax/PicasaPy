@@ -128,20 +128,31 @@ class TestANagyitoReteg:
         assert "Math.max(0, Math.min(groupFlow.width" in blokk
         assert "Math.max(0, Math.min(groupFlow.height" in blokk
 
-    def test_a_nagyitott_kep_NAGYOBB_felbontast_ker(self):
+    def test_a_nagyitott_kep_a_TELJES_kepbol_jon(self):
         """Enélkül a bélyegkép képpontjait nagyítanánk fel — a nagyító
-        épp az élesség eldöntésére való."""
-        blokk = _blokk(_FEED, 'objectName: "feedLoupeImage"', 1600)
-        assert "sourceSize.width: Math.round(loupe.width)" in blokk
+        épp az élesség eldöntésére való.
+
+        ⚠️ #2399: a próba korábban a `sourceSize`-t állította, ami csak a
+        LEKÉRT felbontásról szólt — és zöld maradt akkor is, amikor a
+        lencse a bélyegkép EGÉSZÉT zsugorította a 65 × 65-ös területre,
+        vagyis kicsinyített nagyítás helyett. Most a forrást állítjuk.
+        A tartalom részletes őre: `test_racs_nagyito_tartalom_2399.py`.
+        """
+        blokk = _blokk(_FEED, 'objectName: "feedLoupeImage"', 3200)
+        assert "fileUrl" in blokk, "a lencse nem a teljes képből dolgozik"
+        assert "elem.thumbUrl" not in blokk, (
+            "a lencse megint a bélyegképet mutatja"
+        )
 
 
-class TestASajatDontes:
-    def test_a_nagyitas_merteke_NEVVEL_all_a_kodban(self):
-        assert "readonly property real nagyitas:" in _FEED
+class TestNincsNagyitasiArany:
+    """⚠️ #2399: a `nagyitas: 2.5` SAJÁT DÖNTÉS volt, és holt tulajdonság
+    maradt — a projekt egészében egyszer fordult elő, a deklarációjában.
+    A mérés szerint az eredetinek NINCS aránya: 1:1-ben rajzol, csak
+    eltolva. A két korábbi próba (a név megléte és a „saját döntés"
+    indoklás) ezzel tárgytalanná vált."""
 
-    def test_a_forras_KIMONDJA_hogy_sajat_dontes(self):
-        """A jegy: »ne állítsa, hogy az eredetit másolja«."""
-        kezd = _FEED.index("readonly property real nagyitas:")
-        elotte = _FEED[max(0, kezd - 700) : kezd]
-        assert "SAJÁT DÖNTÉS" in elotte
-        assert "nem mért érték" in elotte
+    def test_nincs_holt_nagyitas_tulajdonsag(self):
+        import re
+
+        assert not re.findall(r"property\s+\w+\s+nagyitas\s*:", _FEED)
