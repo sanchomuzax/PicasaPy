@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.289] – 2026-09-05
+
+### Változott
+
+- **Gyorsabb indulás: a fájlművelet-párbeszédek csak akkor épülnek fel,
+  amikor tényleg kellenek** (#1612). A törlés-, átnevezés-, áthelyezés- és
+  ütközés-párbeszédek eddig a főablakkal együtt jöttek létre, holott a
+  legtöbb munkamenetben egyiket sem nyitja meg az ember. Mérve: **568-cal
+  kevesebb objektum** és **135 ms-mal rövidebb betöltés** (12 váltakozó
+  kör, minimum-statisztika — `docs/benchmarks/2026-09-02-qml-betoltes-1612.md`).
+  A párbeszédek viselkedése változatlan.
+
 ## [0.8.288] – 2026-09-05
 
 ### Javítva

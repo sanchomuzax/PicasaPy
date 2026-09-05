@@ -62,6 +62,25 @@ Item {
         newAlbumDialog.openFor(rows)
     }
 
+    // #1612: a vezérlő VISSZAJELZÉSEI. A hozzájuk tartozó `Connections`
+    // SZÁNDÉKOSAN nem itt áll, hanem a `Main.qml`-ben (a #2096 mintája):
+    // ez a komponens halasztott, és a `fileOpsController` jelzései nem csak
+    // innen indulhatnak — a mappafa áthelyezés/törlés útja
+    // (`FolderPane.qml`, `moveFolder`/`deleteFolder`) is ezen jelez vissza.
+    // Belső hallgatóval a hibaüzenet NÉMÁN elmaradna, amíg a felhasználó
+    // egyszer sem nyitott meg fájlművelet-párbeszédet.
+    function reportBatch(operation, destination, done, total, speed) {
+        batchProgressDialog.report(operation, destination, done, total, speed)
+    }
+    function finishBatch(operation, done, skipped, failed, reason) {
+        batchProgressDialog.close()
+        batchSummaryDialog.showFor(operation, done, skipped, failed, reason)
+    }
+    function showOperationError(operation, message) {
+        fileOpsErrorDialog.message = message
+        fileOpsErrorDialog.open()
+    }
+
     Dialog {
         id: renameDialog
         objectName: "renameDialog"
@@ -586,18 +605,4 @@ Item {
         }
     }
 
-    Connections {
-        target: fileOpsController
-        function onBatchProgress(operation, destination, done, total, speed) {
-            batchProgressDialog.report(operation, destination, done, total, speed)
-        }
-        function onBatchFinished(operation, done, skipped, failed, reason) {
-            batchProgressDialog.close()
-            batchSummaryDialog.showFor(operation, done, skipped, failed, reason)
-        }
-        function onOperationFailed(operation, message) {
-            fileOpsErrorDialog.message = message
-            fileOpsErrorDialog.open()
-        }
-    }
 }

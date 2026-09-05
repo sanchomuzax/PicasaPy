@@ -40,6 +40,13 @@ def _elem(window, nev):
     return obj
 
 
+def _nem_nyilt_meg(window) -> bool:
+    """#1612: a `FileOpsDialogs` halasztott — nyitás előtt a párbeszéd létre
+    sem jön. A hiánya erősebb állítás, mint a `visible is False`."""
+    par = window.findChild(QObject, "moveToNewFolderDialog")
+    return par is None or par.property("visible") is False
+
+
 def _select_row(window, qt_app, row):
     window.setProperty("selectedIndexes", [row])
     window.setProperty("selectedIndex", row)
@@ -105,12 +112,11 @@ class TestAMenutetelElo:
     def test_a_menupontra_kattintva_megnyilik_a_dialog(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _select_row(window, qt_app, 0)
-        dialog = _elem(window, "moveToNewFolderDialog")
-        assert dialog.property("visible") is False
+        assert _nem_nyilt_meg(window)
 
         _kattint(window, qt_app, "menuFileMoveToNewFolder")
 
-        assert dialog.property("visible") is True, (
+        assert _elem(window, "moveToNewFolderDialog").property("visible") is True, (
             "a menütétel nem nyitotta meg a párbeszédet"
         )
 
@@ -121,11 +127,10 @@ class TestAMenutetelElo:
         önmagában NEM garantálja, hogy a hívott függvény óvatos."""
         window, _controller, _engine = qml_app
         _clear_selection(window, qt_app)
-        dialog = _elem(window, "moveToNewFolderDialog")
 
         _kattint(window, qt_app, "menuFileMoveToNewFolder")
 
-        assert dialog.property("visible") is False, (
+        assert _nem_nyilt_meg(window), (
             "kijelölés nélkül is megnyílt a párbeszéd"
         )
 

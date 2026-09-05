@@ -23,6 +23,7 @@ from PySide6.QtCore import (
 )
 
 from support.halasztott_parbeszed import nyisd_meg
+from support.qml_halasztott import epitsd_fel_ha_fileops
 
 
 # a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
@@ -35,6 +36,8 @@ def _child(window, name):
     # építtetjük fel őket.
     if name.startswith("export"):
         nyisd_meg(window, "exportDialog")
+    # #1612: a fájlművelet-párbeszédek is halasztottak
+    epitsd_fel_ha_fileops(window, name)
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
     return obj

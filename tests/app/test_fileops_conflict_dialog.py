@@ -16,6 +16,22 @@ from picasapy.app.fileops_controller import FileOpsController
 QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 
+def _fileops(window):
+    """#1612: a `FileOpsDialogs` halasztott — a burok `ensure()`-je építi fel.
+
+    A korábbi `findChild(...) or window` alak ELREJTETTE volna a hibát: a
+    `window`-on nincs `startBatch`, tehát az `invokeMethod` némán nem csinál
+    semmit. Ezért itt nincs tartalék ág — ha a példány nincs meg, a teszt
+    ezen a soron bukik, nem három állítással később.
+    """
+    burok = window.findChild(QObject, "fileOpsDialogs")
+    assert burok is not None, "a fileOpsDialogs burok nincs meg"
+    assert QMetaObject.invokeMethod(burok, "ensure"), "az ensure() nem hívható"
+    elem = window.findChild(QObject, "fileOpsDialogsItem")
+    assert elem is not None, "az ensure() nem építette fel a párbeszédeket"
+    return elem
+
+
 def _child(window, name):
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
@@ -142,6 +158,7 @@ class TestOriginalWording:
 class TestQmlWiring:
     def test_confirm_dialog_offers_the_move_files_button(self, qml_app, qt_app):
         window, _controller, lib, _engine = qml_app
+        _fileops(window)  # #1612: halasztott — előbb fel kell épülnie
         dialog = _child(window, "moveConfirmDialog")
         dest = Path(lib).parent / "cel"
         dest.mkdir()
@@ -168,7 +185,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "a.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),
@@ -196,7 +213,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "a.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),
@@ -218,7 +235,7 @@ class TestQmlWiring:
         source = str(Path(lib) / "b.jpg")
 
         QMetaObject.invokeMethod(
-            window.findChild(QObject, "fileOpsDialogs") or window,
+            _fileops(window),
             "startBatch", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", "move"), Q_ARG("QVariant", [source]),
             Q_ARG("QVariant", str(dest)),
