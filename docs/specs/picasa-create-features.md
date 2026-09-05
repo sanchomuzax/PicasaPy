@@ -112,10 +112,17 @@ a kiírás előtt a Picasa **negálja** (`0x00868947`).
 - **Automatikus mentés + helyreállítás:** `CAutosaveCollageThread`,
   `autosave.cxf`, és a `collage::recoveredautosave` / `lastautosave`
   üzenetek — a Picasa összeomlás után felajánlotta a visszaállítást.
-- A kimeneti mappa mellé **`.picasa.ini` készül** `[encoding] utf8=1` és
-  `[Picasa] name=…` szekciókkal (az `.exe`-ben közvetlenül az `autosave.cxf`
-  után állnak ezek a format-sztringek) — vagyis a projekt-albumok is a
-  normál ini-modellt használják.
+- A kimeneti mappa mellé **`.picasa.ini` készül**. ⛔ **HELYESBÍTVE
+  (2026-09-05):** a lap korábban azt állította, hogy `[encoding] utf8=1` és
+  `[Picasa] name=…` szekciókkal — **az állítás SZTRING-SZOMSZÉDSÁGBÓL
+  következett** („az `.exe`-ben közvetlenül az `autosave.cxf` után állnak
+  ezek a format-sztringek"), és **téves**. Ezeket a formátumsztringeket a
+  `FUN_0068ac80` használja, amelynek a hívási lánca RTTI-vel feloldva a
+  **`PrepareCollection`** / **`AlignedImageCollection`** osztályokhoz vezet
+  — az **export/előkészítés** ága, nem a kollázs-mentés. A valódi kimenet a
+  felhasználó gyűjteményében `[Picasa]` + `P2category=Projects (internal)`,
+  és a korpuszban **egyetlen** `[encoding]` szekció sincs (#1050). Részletek:
+  [`picasa-ini-format.md`](picasa-ini-format.md), „a `[encoding]` fejléc".
 
 ### 1.6 A `.cxf` formátum — MEGFEJTVE valódi mintából (2026-08-07)
 
