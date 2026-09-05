@@ -95,8 +95,15 @@ ColumnLayout {
             readonly property string szuro: panel.shiftMasodlagos
                                             ? "grain" : "picnikgrain"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
-            thumbSource: panel.effectThumbSource(szuro)
-            badge: panel.hasBadge(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
+            thumbSource: panel.effectThumbSource("picnikgrain")
+            badge: panel.hasBadge("picnikgrain")
         }
     }
 

@@ -161,13 +161,33 @@ class TestAFrissitesBEKOTESE:
         ), "induláskor nem olvassuk ki a Shift állapotát"
 
     def test_a_frissito_a_VEZERLOT_hivja(self):
+        # ⚠️ A függvény TELJES törzse kell, kapcsos zárójel szerint vágva:
+        # rögzített karakterablakkal egy jogos komment-bővítés kivágná a
+        # keresett sort, és a próba hamisan bukna (ez meg is történt).
         kezd = _PANEL.index("function frissitsdAShiftAllapotot")
-        blokk = _PANEL[kezd : kezd + 400]
+        nyito = _PANEL.index("{", kezd)
+        melyseg = 0
+        vege = nyito
+        for i in range(nyito, len(_PANEL)):
+            if _PANEL[i] == "{":
+                melyseg += 1
+            elif _PANEL[i] == "}":
+                melyseg -= 1
+                if melyseg == 0:
+                    vege = i + 1
+                    break
+        blokk = _PANEL[kezd:vege]
         assert "editController.shiftLenyomva()" in blokk, (
             "a frissítő nem a vezérlőt kérdezi — a QML-ből nincs más mód a "
             "pillanatnyi Shift-állapot megismerésére"
         )
-        assert 'typeof editController !== "undefined"' in blokk, (
-            "hiányzik a #305 null-őr: a QML-tesztek egy része csonk "
-            "vezérlőt ad, és az engine leépítésekor is null lehet"
+        assert 'typeof editController === "undefined"' in blokk, (
+            "hiányzik a #305 null-őr: az engine leépítésekor a vezérlő "
+            "null lehet"
+        )
+        assert 'typeof editController.shiftLenyomva !== "function"' in blokk, (
+            "⚠️ a null-őr NEM ELÉG: a QML-tesztek csonk vezérlője LÉTEZIK, "
+            "csak ezt a metódust nem ismeri — a hívás `TypeError`-t dobna, "
+            "az pedig megszakítaná a fülváltás-kezelő hátralévő részét "
+            "(a paraméter-panel bezárását). A CI ezt el is kapta."
         )

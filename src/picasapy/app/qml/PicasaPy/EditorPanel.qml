@@ -288,8 +288,19 @@ Rectangle {
     property bool shiftMasodlagos: false
 
     function frissitsdAShiftAllapotot() {
-        if (typeof editController !== "undefined" && editController)
-            panel.shiftMasodlagos = editController.shiftLenyomva()
+        //: ⚠️ A #305 null-őr ITT NEM ELÉG. A QML-tesztek egy része CSONK
+        //: vezérlőt ad (`_FakeEditController`), ami LÉTEZIK, csak ezt a
+        //: metódust nem ismeri — a puszta `editController` vizsgálat
+        //: átengedné, és a hívás `TypeError`-t dobna. A kivétel pedig
+        //: MEGSZAKÍTANÁ az `onActiveTabChanged` kezelő hátralévő részét
+        //: (a paraméter-panel bezárását!), tehát egy látszólag ártatlan
+        //: új hívás vinne el egy egészen más funkciót. A CI ezt el is
+        //: kapta (#2146).
+        if (typeof editController === "undefined" || !editController)
+            return
+        if (typeof editController.shiftLenyomva !== "function")
+            return
+        panel.shiftMasodlagos = editController.shiftLenyomva()
     }
 
     Component.onCompleted: panel.frissitsdAShiftAllapotot()
