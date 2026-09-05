@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.294] – 2026-09-05
+
+### Javítva
+
+- **A jelölőnégyzetes menüpontok felirata már nem lóg rá a négyzetre**
+  (#1750). Öt menüpont volt érintett; a felirat a tétel bal széléről
+  indult, a négyzet alól. Az ok: ezek a tételek saját feliratrajzolót
+  kapnak (a menü aláhúzott betűi miatt), és abból kimaradt a jelölőnek
+  fenntartott hely. A jelölő nélküli menüpontok igazítása változatlan.
+
 ## [0.8.293] – 2026-09-05
 
 ### Javítva

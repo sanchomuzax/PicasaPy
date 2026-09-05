@@ -77,6 +77,26 @@ MenuItem {
     // nem betűként látszik. A színezés és a jobb oldali térköz miatt kell
     // saját `contentItem`; ezt az `IconLabel` ugyanúgy tudja.
     contentItem: IconLabel {
+        // #1750: HELY A JELÖLŐNEK. A Qt alapértelmezett `MenuItem`-je a
+        // saját `contentItem`-jében kihagyja a jelölő (és az almenü-nyíl)
+        // helyét; mi viszont saját `contentItem`-et adunk (#757, a
+        // mnemonikus `&` miatt), és ez a behúzás kimaradt belőle. Emiatt a
+        // felirat a tétel bal széléről indult — a jelölőnégyzet ALÓL.
+        //
+        // A tulajdonos képernyőmentése (v0.8.146) angol nyelven is mutatta,
+        // tehát nem fordítás-hossz kérdése. A sima `MenuItem`-et használó
+        // (működő) menüpontokon nem látszott: azok az alapértelmezett
+        // `contentItem`-et kapják. Öt jelölőnégyzetes `PicasaMenuItem` volt
+        // érintett.
+        //
+        // A behúzás FELTÉTELES — ez nem finomkodás: ha minden tétel kapna
+        // behúzást, a jelölő nélküli sorok feliratai elcsúsznának a menü
+        // többi sorához képest, és a hibát egy másikra cserélnénk.
+        readonly property real jeloloHely: control.checkable && control.indicator
+            ? control.indicator.width + control.spacing : 0
+        readonly property real nyilHely: control.subMenu && control.arrow
+            ? control.arrow.width + control.spacing : 0
+        leftPadding: !control.mirrored ? jeloloHely : nyilHely
         text: control.text
         font: control.font
         // a nyugdíjazott tétel ugyanúgy halvány, mint a helyfoglaló — a
@@ -85,8 +105,10 @@ MenuItem {
             ? Theme.textGray
             : (control.sajat ? Theme.linkBlue : Theme.ink)
         alignment: Qt.AlignLeft | Qt.AlignVCenter
-        // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást
-        rightPadding: control.placeholder ? placeholderDot.width + 8 : 0
+        // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást,
+        // és (#1750) az almenü-nyílnak — tükrözött elrendezésben a jelölőnek
+        rightPadding: (control.placeholder ? placeholderDot.width + 8 : 0)
+            + (!control.mirrored ? nyilHely : jeloloHely)
     }
 
     Rectangle {
