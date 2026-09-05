@@ -96,6 +96,8 @@ négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A m
 
 ### [picasa-create-features.md](picasa-create-features.md) — 1 nyitott kérdés (a #1412)
 
+⭐ **2026-09-05 — a `.cxf` `scale` ÍRÓJA megvan, és semmit nem alakít át (#1412).** A lap eddig a `+0x2c` mezőt csak a **layout** oldaláról azonosította a `scale`-lel; most az **író** oldaláról is megvan, tehát a mezőazonosság **két független forrásból** áll. `FUN_008347b0` (ugyanaz, amelyik az `albumTitle`/`orientation`/`shadows`/`theta` attribútumokat is írja): `0x00835096` `push "scale"` (`0x00cbf80c`) → `0x008350ab` `mov ecx,[ebx+0x48]` → `0x008350ae` `mov edx,[esp+0x24]` → **`0x008350b2` `fld dword ptr [edx+ecx+0x2c]`** → `%f` (`0x00c817c0`) → `0x008350c9`. ⛳ **Kontroll a valódi fájlon:** a `%f` **hat tizedest** ad, és a mintáink pontosan így néznek ki (`scale="337.000000"`, `scale="1.000000"`) ⇒ nem másik függvény írja. ⇒ **a fájlban álló `313` pontosan a csomópont `+0x2c` mezője a mentés pillanatában**, íráskori átszámítás nincs. ⚠️ **Ez a kör NEM vezette le a 313-at**, és a `+0x2c` íróinak pásztázása a 2026-09-02-i eredményt **reprodukálta** (indexelt/SSE/disp32 alakú író nincs; a kollázs-sáv egyetlen mutatós találata, `0x0087b895`–`0x0087b898`, csak **másol** két csomópont közt). A **#1412 marad blokkolt**: a legolcsóbb út továbbra is egy **fekvő** tájolású Indexkép-`.cxf` a tulajdonos Picasájából.
+
 ⭐ **2026-09-03 (2.1 bővítés) — a 22 átmenet HIVATALOS MAGYAR neve.** A lap
 eddig csak az **angol** neveket adta meg, és a **#432 sem** tartalmazta a
 magyart — így a legördülő magyar felületen angolul jelent volna meg. A teljes
