@@ -78,7 +78,13 @@ class IndexWriterQueue:
         self._uresjarat = threading.Event()
         self._uresjarat.set()
 
-    def submit(self, munka: _Munka, *, name: str = "picasapy-index-iro") -> bool:
+    #: A futtató szál neve. SZÁNDÉKOSAN nem a munkáé: a szál nem „a
+    #: mappa-hozzáadás szála", hanem a soré, amely több munkát is elvisz —
+    #: és a diagnosztikában (`threading.enumerate`, teszt-naplók) ez a
+    #: különbség dönti el, hogy egy vagy két ÍRÓ van a rendszerben.
+    RUNNER_NAME = "picasapy-index-iro"
+
+    def submit(self, munka: _Munka, *, name: str = "") -> bool:
         """Beadja a munkát. `True`, ha azonnal indul; `False`, ha várólistára
         került (a hívó ebből tudja, hogy visszajelzést kell adnia)."""
         with self._lock:
@@ -88,7 +94,7 @@ class IndexWriterQueue:
             if self._fut:
                 return False
             self._fut = True
-        self._start_background(self._futtato, name=name)
+        self._start_background(self._futtato, name=self.RUNNER_NAME)
         return azonnal
 
     def wait_idle(self, timeout_s: float) -> bool:

@@ -56,6 +56,7 @@ from .exported_folders import (
 from .folder_freshness import next_sweep_batch, stale_folders
 from .folder_manager_save_controller import FolderManagerSaveMixin
 from .formatting import to_local_path
+from .index_writer_queue import IndexWriterQueue
 from .initial_scan import (
     SKIP_INITIAL_SCAN_KEY,
     folders_for_choice,
@@ -577,6 +578,33 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         self._get_settings().setValue(SKIP_INITIAL_SCAN_KEY, "true")
         self.initialScanChanged.emit()
 
+    @property
+    def _index_iro_sor(self) -> IndexWriterQueue:
+        """A KÖZVETLEN FELHASZNÁLÓI index-írások sora (#2389).
+
+        Lusta: a legtöbb munkamenetben egyetlen mappát sem vesznek fel, és
+        akkor szál sem indul. A `_start_background` NEM közvetlenül megy át,
+        hanem lambdán keresztül — a tesztek a vezérlő attribútumát cserélik
+        ki (`monkeypatch.setattr(controller, "_start_background", …)`), és a
+        korai kötés ezt megkerülné.
+        """
+        sor = getattr(self, "_iro_sor", None)
+        if sor is None:
+            sor = IndexWriterQueue(
+                lambda munka, *, name: self._start_background(munka, name=name),
+                is_busy=self._fut_mas_index_iro,
+            )
+            self._iro_sor = sor
+        return sor
+
+    def _fut_mas_index_iro(self) -> bool:
+        """Fut-e NEM a soron indult index-író (a másik három belépési pont)."""
+        return bool(
+            getattr(self, "_sync_running", False)
+            or getattr(self, "_dirty_running", False)
+            or getattr(self, "_sweep_running", False)
+        )
+
     @Slot(str)
     def addWatchedFolder(self, path_or_url: str) -> None:
         """Új figyelt mappa (Mappakezelő / első indítás). file:// URL-t is
@@ -626,7 +654,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
-        self._start_background(worker, name="picasapy-sync-addfolder")
+        # #2389: SOROSÍTVA, nem kihagyva. Futó író mellett a munka
+        # várólistára kerül és a sorára kerülve lefut — a mappa tehát
+        # biztosan bekerül. A kék sáv a beadástól a sor kiürüléséig pörög
+        # (a `_start_background` bejelentkezik a busy-registrybe), így a
+        # késleltetés sem néma.
+        self._index_iro_sor.submit(worker, name="picasapy-sync-addfolder")
 
     @Slot(str)
     def scanFolderOnce(self, path_or_url: str) -> None:
@@ -674,7 +707,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
-        self._start_background(worker, name="picasapy-sync-scanonce")
+        # #2389: SOROSÍTVA, nem kihagyva. Futó író mellett a munka
+        # várólistára kerül és a sorára kerülve lefut — a mappa tehát
+        # biztosan bekerül. A kék sáv a beadástól a sor kiürüléséig pörög
+        # (a `_start_background` bejelentkezik a busy-registrybe), így a
+        # késleltetés sem néma.
+        self._index_iro_sor.submit(worker, name="picasapy-sync-scanonce")
 
     @Slot(str)
     def removeFolder(self, path: str) -> None:
