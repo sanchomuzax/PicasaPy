@@ -3710,3 +3710,110 @@ erősebb szűrő, mint bármi, ami a fogadó objektumra horgonyoz.)*
 | mit jelent a beállító 3. argumentuma | **LEZÁRVA** — a `.picasa.ini`-írás kapcsolója (12.1) |
 | miért nem találták meg a korábbi pásztázások | **LEZÁRVA** — akcesszor + interfész-`this` + bájtminta-zaj (12.4) |
 | a `FUN_004aa9f0` és a `FUN_0055d320` pontos felhasználói forgatókönyve | **HATÓKÖRÖN KÍVÜL** — a hívási lánc megvan, de a felületi forgatókönyv megnevezése nem befolyásolja a #2304-et; a `Folders on Disk` út (a mappa-felvétel) igazolva van |
+
+## 13. Az ellenőrzőösszeg-mód BELÉPÉSI PONTJA egyetlen, és `CThumbDB`-é (2026-09-05, #2435)
+
+A munkasor tétele így szólt: *„mind a 29 jelölt `CThumbDB`-e?"* — a 121.
+szakasz ugyanis egy **push-számláláson** alapuló jelöltlistából csak kettőt
+olvasott végig kézzel. A kérdés eldőlt, **de nem a jelöltlistán keresztül**:
+a hívási lánc egyedisége önmagában megadja a választ, számlálás nélkül.
+
+### 13.1 A lánc — kimerítő, mindhárom szinten
+
+| szint | cím | hány belépési pont |
+|---|---|---|
+| a **számoló** | `0x006b99f0` | **6** közvetlen `e8` hívó (`0x00424dd1`, `0x004282f7`, `0x004e3c13`, `0x00568206`, `0x00568336`, `0x00602084`) |
+| a **módválasztó** | `0x004e3ab0` | **1** — `0x0042a832`, és ez a `0x0042a800` törzsében van |
+| a **vtábla-metódus** | `0x0042a800` | **0** közvetlen hívó; a címe a **teljes fájlban egyetlen helyen** szerepel: `0x00c82184` |
+
+`0x00c82184` a `0x00c820fc` vtábla **34. rése** — a `CThumbDB` 84-es
+objektum-eltolású interfésze (COL `0x00cfa164`, 11.2). A vtábla 40 réses.
+
+⇒ **A futásidejű módválasztásba egyetlen út vezet**, és az a `CThumbDB`
+34. rése. Nincs másik hívó, nincs thunk, nincs másik vtábla.
+
+### 13.2 A DÖNTŐ mérés: a hat argumentum egyedi
+
+A `0x0042a800` **`ret 0x18`**-cal tér vissza ⇒ **hat verem-argumentum**.
+Megkérdeztem az egész binárist, van-e másik ilyen 34. rés:
+
+| pásztázás | jelölt 34. rés-cél | ebből `ret 0x18` |
+|---|---|---|
+| vtábla-fej szabállyal (175 vtábla ≥35 réssel) | 49 | **1** — `0x0042a800` |
+| ⛳ **kontroll: fej-szabály NÉLKÜL** (minden pozíció, ahol 35 egymás utáni kódmutató áll) | **2233** | **1** — `0x0042a800` |
+
+A kontrollpásztázás szándékosan **maximálisan megengedő**: nem követeli meg,
+hogy a talált tömb valódi vtábla legyen. A ret-értéket mindig a függvény
+**saját index-határain belül** olvastam, nem lineáris túlfutással.
+
+Az indexben nem szereplő 13 találat egyike sem függvénykezdet — kézzel
+ellenőrizve: `0x00558000` egy törzs közepe (`je`-vel kezdődik),
+`0x00920fec` **maga a `ret 0x18` bájtsorozat** (egy másik függvény farka),
+`0x0092223a` értelmezhetetlen (`xchg`, majd `int3` kitöltés).
+
+⇒ **Bármely hatargumentumú, 34. résen át menő hívás csak a `0x0042a800`-ra
+mutathat**, az pedig egyetlen vtáblában él. **A jelöltek `CThumbDB`-k —
+megerősített.** *(A kérdés per-hívóhelyes fogadó-elemzés nélkül eldőlt.)*
+
+### 13.3 ⛔ HELYESBÍTÉS: a „29 jelölt" szám nem reprodukálható
+
+A 121. szakasz **29** jelöltet említ (10 literál `0`, 5 literál `1`, 14
+futásidejű). Újramérve a szám **a számlálási szabálytól függ**:
+
+| szabály | jelölt |
+|---|---|
+| push-ok csak a `mov`↔`call` közti 48 bájtban | **17** |
+| push-ok a bázisblokk határáig visszafelé | **27** |
+| ugyanaz, de a **prológus-regisztermentéseket** levonva | **21** |
+
+A hiba forrása megnevezhető: kilenc találatnál a „hat push" valójában a
+**függvény prológusa** volt (`push ebp/ebx/esi/edi` a függvény első ~30
+bájtjában), nem argumentum — pl. `0x0043242e` a `0x00432410`-es függvény
+30. bájtján áll.
+
+**Ezért a jelöltszám nem is hordoz bizonyítékot** — a 13.2 uniqueness-mérése
+igen. A számot ne idézze senki tényként; a 121. szakasz **következtetése**
+viszont áll, mert az a *literál* argumentumokon nyugszik, és azok stabilak:
+mindhárom számlálási szabály ad **literál `0`**-t adó hívóhelyeket, köztük a
+két kézzel végigolvasott `FUN_0042f6a0` (`0x0042f6c0`) és `FUN_00793720`
+(`0x00793740`) — mindkettő üres sztringgel (`0x00c7f979`).
+
+### 13.4 A hívás alakja (a két végigolvasott hívóhelyről, MÉRVE)
+
+```
+push <kimeneti puffer>   ; arg6
+push 0                   ; arg5
+push 1                   ; arg4
+push 1                   ; arg3
+push 0                   ; arg2  <- a MÓD (0 ⇒ a 2. ellenőrzőösszeg-mód)
+push <azonosító>         ; arg1
+mov  ecx, <CThumbDB+84>  ; this — a másodlagos felület
+call [vtábla+0x88]
+```
+
+A `0x0042a800` prológusa ezt megerősíti: `mov esi,[ebp+8]` (arg1),
+`mov eax,[ebp+0xc]` (arg2), és később `mov byte ptr [ebp+0xc], 0` — az arg2
+**bájtként** íródik ⇒ logikai kapcsoló. Minden literál hívóhely `0`-t vagy
+`1`-et ad, ami ezzel összefér.
+
+**Bizonyítottsági fok:** a 13.1 és a 13.2 **megerősített** (kimerítő
+pásztázás + kontroll); a 13.4 alakja **megerősített** két hívóhelyen,
+**erős** a többin (a hívott függvény egyedisége miatt).
+
+### 13.5 Nálunk (MÉRVE)
+
+`src/picasapy/pmpimport/thumbindex.py:169` — a `SlotIndexEntry.checksum`
+mezőt **beolvassuk**, de sehol nem **számoljuk ki** és nem hasonlítjuk
+össze: a `grep -rn "checksum" src/ --include=*.py` a `thumbindex.py`-n
+kívül egyetlen érdemi találatot sem ad, és a mezőt egyedül a
+`tests/pmpimport/test_thumbindex_farok_2195.py` érinti. Egyik mód képlete
+sincs megvalósítva. → jegy **#2435**.
+
+### 13.6 Nyitott kérdések mérlege (13.)
+
+`0 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **mind a jelölt hívóhely `CThumbDB`-e?** | ✅ **LEZÁRVA** — igen, a 13.2 egyediség-mérése alapján; per-hívóhelyes elemzés nem kell |
+| a „29 jelölt" szám helyessége | ✅ **LEZÁRVA (megdőlt)** — a szám szabályfüggő (17/21/27); nem bizonyíték, és nem is szükséges (13.3) |
