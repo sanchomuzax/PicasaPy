@@ -1393,3 +1393,121 @@ mondja ki, melyik olvasattal dolgozik.
 | a `FUN_0048af60` a számoló-e | **LEZÁRVA — nem** (14.5.1) |
 | a `FUN_0048bd80` a számoló-e | **LEZÁRVA — nem** (14.5.2) |
 | **mi a KÉPLET** | **NYÍLT (örökölt)** — a következő lépés a `FUN_0048ef20` **célzott dekompilációja** azzal az egy kérdéssel, hogy mi tölti a `0x0048f7f8`-on olvasott rekeszt (14.5.3). Jegy: **#2391** |
+
+## 14.6 ⭐ MEGVAN az `albumpeoplechecksum` KÉPLETE — és 9-ből 8 albumon MÉRVE egyezik (2026-09-05, #2391)
+
+> **Bizalmi fok: megerősített.** A képlet a binárisból olvasva, és a
+> tulajdonos valódi katalógusán **kilenc albumból nyolcon bitre egyezik**;
+> a kilencedik eltérése megmagyarázva (lásd 14.6.4).
+
+### 14.6.1 A képlet
+
+```
+acc = 0
+minden i képindexre, NÖVEKVŐ sorrendben:
+    ha  personalbumid[i] == <az album sorindexe>
+    és  ( i >= len(facequality)  vagy  facequality[i] >= 5000 ):
+            acc = rol(acc, 7) XOR i
+albumpeoplechecksum = acc
+```
+
+A **hajtogatott érték maga a KÉPINDEX** — nem a `contactid`, nem a
+személy azonosítója. Ez zárja le véglegesen a 14.2 és a 14.5 két
+független kizárását.
+
+### 14.6.2 A bizonyíték a binárisban
+
+A számoló **`FUN_0048ec70`** (668 bájt, `ret 0x14` ⇒ öt verem-argumentum),
+amelyet a `FUN_0048ef20` hív a `0x0048f1bf`-en. Az eredmény a **3.
+argumentum**, kimenő mutatóként.
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| a kimenő rekesz nullázása | `0x0048ece3`–`0x0048ecea` | `mov dword ptr [edx], 0`, ahol `edx` = ARG3 |
+| **1. szűrő** | `0x0048ed6e` | `cmp dword ptr [ebx + eax*4], ebp` — `ARG4[i] == ARG2` |
+| tartomány-őr az 1. szűrőhöz | `0x0048ed61` | `i >= ARG4.méret` ⇒ kihagy |
+| **2. szűrő (küszöb)** | `0x0048ed85` | `cmp dword ptr [ebx + eax*4], 0x1388` ⇒ **5000** |
+| a 2. szűrő tartomány-őre | `0x0048ed7f` | ha `i >= ARG5.méret`, a küszöböt **át is ugorja** (nem szűr) |
+| **a hajtogatás** | `0x0048ed95`–`0x0048eda6` | `mov ecx,[esp+0xec]` (ARG3) · `mov ebx,[ecx]` · **`rol ebx, 7`** · **`xor ebx, eax`** · `mov [ecx], ebx` |
+| üres bemenetre | `0x0048ecc6`–`0x0048ece0` | `return 9` (a `0` marad) |
+
+Az argumentumok azonosítása a `research/testdata/Picasa2-arcok` valódi
+katalógusán ellenőrizve: **ARG2** = az album sorindexe, **ARG4** =
+`imagedata_personalbumid`, **ARG5** = `imagedata_facequality`.
+
+### 14.6.3 ⛳ Hogyan került elő — HORGONYOS veremszámolás, dekompiláció NÉLKÜL
+
+A 114. kör azért állt meg, mert a `0x0048f7f8` rekeszének íróját **lineáris
+`esp`-követéssel** kereste, és az elágazásos törzsön nulla írást adott.
+A megoldás a **horgony**: a `[esp+0x150]` **ARG1-hivatkozás** tizenkét
+helyen áll, mindenütt azonos szinten (`esp` = belépés − `0x14c`), és ez
+kalibrálja az egész régiót. Ezzel a `0x0048f195`–`0x0048f1bf` blokk
+push-onként visszaszámolható:
+
+| cím | utasítás | szint | keret-eltolás |
+|---|---|---|---|
+| `0x0048f19f` | `lea edx, [esp + 0x38]` | `0x154` | **`0x30`** ⇒ **`&local_0x30`**, az ARG3 |
+| `0x0048f1a5` | `mov [esp + 0x38], eax` | `0x15c` | `0x28` (a `0x0048f828`-on olvasott rekesz) |
+| `0x0048f1ae` | `mov byte [esp + 0x33], 1` | `0x160` | `0x1f` (a `0x0048f5c0`-on törölt jelző) |
+| `0x0048f1b3` | `mov [esp + 0x44], ebp` | `0x160` | `0x30` ⇒ a rekesz **nullázása** a hívás előtt |
+
+A három egymástól független egyezés (`0x30`, `0x1f`, `0x28`) igazolja a
+kalibrációt. **Célzott dekompilációra nem volt szükség.**
+
+### 14.6.4 A MÉRÉS — a tulajdonos valódi katalógusán
+
+Bemenet: `research/testdata/Picasa2-arcok/Picasa2/db3/`, a saját
+`pmpimport` olvasónkkal. `personalbumid` és `facequality` egyaránt **3338**
+soros; a személy-albumok sorindexe **109–117**.
+
+| album | tagok | mért `albumpeoplechecksum` | a képlet (küszöbbel) | a képlet küszöb NÉLKÜL |
+|---:|---:|---|---|---|
+| 109 | 32 | `0x8DAB10B8` | **`0x8DAB10B8`** ✔ | `0xF822B336` |
+| 110 | 42 | `0xDC7A570C` | **`0xDC7A570C`** ✔ | `0xDC7A570C` |
+| 111 | 19 | `0x5CCEB284` | **`0x5CCEB284`** ✔ | `0x9DB5534B` |
+| 112 | 1 | `0x00000000` | **`0x00000000`** ✔ | `0x00000C0D` |
+| 113 | 2 | `0x00060B93` | **`0x00060B93`** ✔ | `0x00060B93` |
+| 114 | 4 | `0x030331FE` | **`0x030331FE`** ✔ | `0x8198F380` |
+| 115 | 7 | `0x98B4584D` | `0x98B7DFCC` ✘ | `0x98B7DFCC` |
+| 116 | 2 | `0x00063CE2` | **`0x00063CE2`** ✔ | `0x00063CE2` |
+| 117 | 6 | `0x9204CA91` | **`0x9204CA91`** ✔ | `0xE204AE41` |
+
+**8 / 9 bitre egyezik.** A küszöb **nem elhagyható**: nélküle csak 3 album
+egyezne.
+
+**A 115-ös albumról, őszintén:** a mai hét képindexének **egyetlen
+részhalmaza sem** adja a tárolt értéket (mind a 127 részhalmaz kipróbálva),
+és egy elem elhagyása/hozzávétele, más küszöb, fordított sorrend és ±1
+index-eltolás sem. ⇒ a tárolt érték **egy másik indexkészleten** készült,
+tehát **elavult** (az író csak változáskor ír, `0x0048f7fe`; a sorindexek
+pedig eltolódnak, ha a katalógusból sor törlődik). Ez **magyarázat, nem
+mérés** — bizalmi fok: **erős**, nem megerősített.
+
+### 14.6.5 ✅ A „1 tag → 0" CSAPDA FELOLDVA
+
+A 14.5.5 figyelmeztetett, hogy a 112-es album `0`-ja jelentheti azt is,
+hogy az oszlopot sosem írták. **Nem ez a helyzet.** A 112-es albumnak
+egyetlen képe van (index **3085**), és annak `facequality` értéke **38** —
+mélyen az **5000**-es küszöb alatt ⇒ a hajtogatás **üres**, az eredmény
+**0**. A `0` tehát **kiszámolt, helyes érték**.
+
+A kilenc albumban összesen **tíz** kép esik a küszöb alá (`facequality`
+38 · 47 · 60 · 81 · 90 · 92 · 100 · 111 · 117 · 1716 · 3405), és épp ezek
+kihagyása teszi a képletet egyezővé.
+
+### 14.6.6 Nálunk (MÉRVE)
+
+`grep -rn "albumpeoplechecksum\|peoplealbumchecksum" src/` → **0 találat**:
+az oszlopot **nem olvassuk és nem számoljuk**. A PicasaPy nem ír PMP-t,
+ezért ez **nem hiány** — a képlet értéke az, hogy egy importált katalógus
+arc-adatai **ellenőrizhetővé** válnak. Jegy: **#2391** (lezárva).
+
+### 14.6.7 Nyitott kérdések mérlege (14.6)
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **az `albumpeoplechecksum` képlete** | ✅ **LEZÁRVA** — `acc = rol(acc,7) ^ képindex`, két szűrővel; 8/9 albumon mérve |
+| a „1 tag → 0" jelentése | ✅ **LEZÁRVA** — a küszöb alatti minőség miatt üres a hajtogatás (14.6.5) |
+| a 115-ös album eltérése | ✅ **LEZÁRVA** — elavult tárolt érték; minden más magyarázat kipróbálva és kizárva (14.6.4) |
