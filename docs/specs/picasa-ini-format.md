@@ -84,6 +84,7 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
+| `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
 | `originhash` | `033f1132c874...` | szerkesztési verem integritás-hash |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
 | `screensaver` | `yes` | képernyővédőben szerepel |
@@ -832,6 +833,66 @@ Ugyanaz a fájl két különböző időpontban írva más `backuphash`-t kap.
   mintákkal (szimulációval 2015–2026 közötti időpontokra 16 298…62 695).
 - **Nem ez okozza a #643-as beolvasási hibát** — a Picasa a szakaszunkat
   akkor sem olvasná be, ha volna benne `backuphash`.
+
+### ⭐ A `<készletnév>-backuphash` — a MENTÉS-KÉSZLETENKÉNTI másodpéldány (2026-09-05, #440)
+
+A `backuphash` mellett a Picasa **ugyanabba a szakaszba** egy MÁSODIK,
+készletenkénti kulcsot is ír, amikor a képet biztonsági mentésbe teszi:
+
+```ini
+[photo01__bw.jpg]
+filters=bw=1;
+backuphash=40037
+BKTag Saját mentési készlet-backuphash=40037
+```
+
+**A kulcs neve összefűzésből áll:** `<a készlet belső neve>` + `-backuphash`,
+ahol a belső név maga is összefűzés: `"BKTag "` + a készlet **megjelenített**
+neve. Az alapértelmezett megjelenített név honosított
+(`il_BurnPanel::bksetname`, angolul `My Backup Set`, magyarul
+**„Saját mentési készlet"**).
+
+| lépés | bizonyíték |
+|---|---|
+| a `"-backuphash"` utótag literál | `0x00c81450` |
+| az összefűzés (`<név>` + utótag) | `0x00429d1c`–`0x00429d25` (`0x00985af0` = sztringhozzáfűzés) |
+| ugyanez az átnevezés két oldalára (régi és új név) | `0x00473fd5` és `0x0047402f` |
+| az érték kiolvasása az adatbázisból ezen a kulcsnéven | `0x00429d3b` → `0x006a5790` |
+| ha az érték **0**, új bélyeg készül az AKTUÁLIS IDŐBŐL | `0x00429d4d` → `0x0098b6e0`, majd a XOR-hajtás `0x00429d5c`–`0x00429d6c` |
+| a `.picasa.ini`-be írás | `0x00429d86` → `0x00454710` → `0x00454770` (ott `0x00454846` = `.picasa.ini`, `0x00454904` = `backuphash`, `0x004548d8` = `%d`) |
+| az adatbázisba írás ugyanazzal az értékkel | `0x00429d9f` → `0x006a5a60` |
+
+**Az érték képlete AZONOS a sima `backuphash`-ével** — ugyanaz a XOR-hajtás
+ugyanabból a `0x0098b6e0`-ból (`__time64` → `localtime64` → `0x0098b550`),
+ezt ez a kör a `0x00454770`-ben és a `0x00429cf0`-ben **egymástól függetlenül
+kétszer** olvasta ki. ⇒ **időbélyeg-lenyomat, nem tartalom-hash.**
+
+⛳ **ÉLŐ MINTA (a bizonyíték java):** a tulajdonos gépén a 2026-09-03-i
+mentés után egy valódi `.picasa.ini`-ben **20 szakasz** mindegyike hordozza a
+kulcsot, mindegyik `40037` értékkel — ÉS a sima `backuphash` is `40037`
+ugyanott. A korpusz többi öt `backuphash`-t tartalmazó fájljában
+készletenkénti kulcs **nincs**, és ott a sima érték képenként KÜLÖNBÖZŐ
+(13/13, 11/11, 8/8, 1/1, 1/1). Ez pontosan az időbélyeg-olvasatot támasztja
+alá: egy mappa `.picasa.ini`-je egyszerre íródik, tehát egy mentési menetben
+minden szakasz ugyanazt a bélyeget kapja.
+
+⇒ **Az inkrementalitás összehasonlítás:** ha a `<készlet>-backuphash` egyenlő
+a sima `backuphash`-sel, a kép abban a készletben naprakész; ha eltér vagy
+hiányzik, a mentésbe be kell kerülnie.
+
+⛔ **Ami MEGDŐLT:** a `biztonsagi-mentes.md` 9. szakaszának korábbi olvasata,
+hogy a mentés a képekre **kulcsszót** (`keywords=`) tesz. A `"BKTag "` és a
+`"BKTag %s"` literál a teljes `Picasa3.exe`-ben **pontosan egy-egy** helyről
+hivatkozott (`0x00670b04`, `0x0067ad63`, kimerítő négybájtos pásztázás), és
+mindkettő a mentés-készlet rekordjának `setname` mezőjét építi, amit a
+`0x006759c0` a `backups.xml`-be ír. Kulcsszó-tárolóhoz **egyik úton sincs
+kapcsolat**.
+
+⚠️ **Nálunk (MÉRVE, 2026-09-05):** az `ini/document.py` a kulcsot
+szóközökkel és ékezetekkel együtt **helyesen** olvassa, adja vissza
+(`Section.get`) és írja ki (round-trip **bitre azonos**), és egy
+`with_value`-szerkesztés után is megmarad. Tehát nincs mit javítani — de
+**őr-teszt nincs rá** (a tesztek csak a sima `backuphash`-t ismerik) — **#2462**.
 
 ## ⚠️ A beolvasás életciklusa — mikor BEMENET és mikor KIMENET (#643, 2026-08-14)
 
