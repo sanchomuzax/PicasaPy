@@ -4,3 +4,5 @@
 2026-09-03T03:11:42+02:00 sugo frissitve es feltoltve
 2026-09-04T03:09:29+02:00 elokeszitve (054caefdcc1215975e5b845424d25b1a8c45c9eb -> 114777d): 71 erintett fajl a src/ alatt
 2026-09-05T03:09:30+02:00 elokeszitve (114777d751ca61f0be008220f01a163815774880 -> 8aebf33): 63 erintett fajl a src/ alatt
+2026-09-05T03:26:02+02:00 a session nem valtoztatott a sugon (114777d751ca61f0be008220f01a163815774880 -> 8aebf33)
+2026-09-05T03:26:15+02:00 kezi utojatek: a "lezar" push-a non-fast-forward miatt elbukott (kozben mas session pusholt); rebase utan a 00fbeb6e felment, majd a lezar masodszorra lefutott — az "a session nem valtoztatott a sugon" sor emiatt FELREVEZETO, a sugo valojaban frissult
