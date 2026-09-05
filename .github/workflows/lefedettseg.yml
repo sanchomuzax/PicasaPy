@@ -33,6 +33,15 @@ on:
     # ütemezési csúcsával ne torlódjon
     - cron: "17 3 * * 0"
   workflow_dispatch:
+  # ⚠️ SZÁNDÉKOS próba-ág, nem maradék. A projekt botja NEM kaphat
+  # `actions: write` jogot, tehát neki a `workflow_dispatch` 403 — egy
+  # munkafolyamatot viszont KÖTELEZŐ lefuttatni, mielőtt késznek mondjuk
+  # (őr, ami sosem futott, nem őr). Erre való ez az ág-minta: aki ezen a
+  # munkafolyamaton változtat, egy `lefedettseg-proba/…` ágra pusholva ki
+  # tudja próbálni. Rendes ágakon és PR-eken soha nem indul.
+  push:
+    branches:
+      - "lefedettseg-proba/**"
 
 permissions:
   contents: read
