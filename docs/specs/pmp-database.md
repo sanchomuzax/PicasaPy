@@ -741,15 +741,43 @@ A bal oszlop pontosan reprodukálja a korábbi mérés számait (2161 · 48 605 
 módosítási, sem a metaadat-idővel (0 / 615). Ugyanez a nagy katalógus
 maradékára is: **0 / 4042**.
 
-**A nagy katalógus maradék 4042 sora** (a 3,04 %) — amit tudunk róla:
-`cs ^ (idő- és mérettagok)` **4041 esetben kisebb, mint 1 000 231**, vagyis
-a modulus tartományába esik ⇒ **az időbélyeg és a méret a rekordban HELYES,
-csak az útvonal-hash tér el.** Ez a fájl **átnevezésére/áthelyezésére**
-mutat (a bejegyzés útvonala megváltozott, az ellenőrzőösszeg nem íródott
-újra). Bizalmi fok: **erős**, nem megerősített — a maradék sorok
-kiterjesztés szerint jpg 3622 · jpeg 265 · png 122 · mp4 25 · gif 6 ·
-webp 2, és 3979 közülük tiszta ASCII útvonalú, tehát az előjel-hibával már
-nem magyarázhatók.
+**A nagy katalógus maradék 4042 sora** (a 3,04 %) — **MEGERŐSÍTVE
+(2026-09-05): a fájlok ÁTHELYEZÉSE.**
+
+Első jel: `cs ^ (idő- és mérettagok)` **4041 esetben kisebb, mint
+1 000 231**, vagyis a modulus tartományába esik ⇒ az időbélyeg és a méret a
+rekordban **helyes**, csak az útvonal-hash tér el.
+
+**A bizonyítás — visszakeresés.** Ha a fájl áthelyeződött, a **neve
+megmaradt**, csak a szülő könyvtára más. A katalógus **7669
+könyvtár-bejegyzésének** mindegyikére kiszámoltam az útvonal-előtag
+hash-ét, majd soronként megkerestem, melyik előtaggal folytatva adja a
+fájl neve épp a **tárolt** ellenőrzőösszeget:
+
+| | |
+|---|---:|
+| nem egyező sor | 4 042 |
+| **egy MÁSIK, ma is létező könyvtárral megmagyarázva** | **3 976 (98,4 %)** |
+| nem magyarázva | 66 |
+| **különböző „régi" szülő, ami mindezt lefedi** | **29** |
+
+⛳ **Kontroll:** egy ismerten EGYEZŐ sorra ugyanez a keresés a **saját mai
+szülőjét** találja meg — a kereső tehát nem ad össze-vissza találatokat.
+
+⛳ **Miért nem lehet véletlen:** 7669 jelölt és 1/1 000 231 találati esély
+mellett soronként ~0,77 % a véletlen egyezés, tehát 4042 sorra **~31**
+véletlen találat várható — nem 3976. És főleg: a találatok **29 könyvtárra
+koncentrálódnak** (egyetlenre 1081 fájl), miközben a véletlen egyenletesen
+szórna szét 7669 között. Ez zárja ki a véletlent.
+
+⇒ **Az ellenőrzőösszeg eltérése — ha az idő- és mérettagok stimmelnek —
+azt jelenti, hogy a fájl ÁTHELYEZŐDÖTT**, és a régi hely a maradékból
+**visszakereshető**. Bizalmi fok: **megerősített**.
+
+*(A maradék sorok kiterjesztés szerint jpg 3622 · jpeg 265 · png 122 ·
+mp4 25 · gif 6 · webp 2; 3979 közülük tiszta ASCII útvonalú, tehát az
+előjel-hibával már nem magyarázhatók. Adatvédelmi okból a könyvtárak
+nevei nem kerülnek ki — csak a sorindexük és a darabszámuk.)*
 
 *(A `valid` mező nem magyarázza: a nagy katalógus MINDEN sora `valid=1`.)*
 
