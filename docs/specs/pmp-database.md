@@ -2461,7 +2461,9 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 | a kulcs képzésének képlete | ✅ **MEGVAN** (2026-09-03, ld. 8.10) | — |
 | mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
 | hány ellenőrzőösszeg-mód van | ✅ **LEZÁRVA (2026-09-05)** — **kettő**; a 2. útvonal és méret nélküli, másodperc-felbontású (8.10) | — |
-| **melyik hívó kéri a 2. módot** | **BLOKKOLT** — a kapcsoló a `CThumbDB` **34. rését** hívó kódból jön; a rés hívói indirekt (regiszteres) hívással mennek | a `mov reg,[reg+0x88]` 286 találatának szűrése `call reg`-re, vagy a 11. szakasz felület-térképe |
+| **mikor jut a 2. mód** | ✅ **LEZÁRVA (2026-09-05)** — három feltétel bármelyikére: a hívó 0-t ad · `Type = 0` · nincs szülő (`0x004e3bc2`/`0x004e3bcb`/`0x004e3bd7`) | — |
+| mit hasheli az 1. mód | ✅ **LEZÁRVA** — **két** sztringet: a szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátorba (`0x004e3bdd`–`0x004e3c0e`) | — |
+| **melyik hívó ad KIFEJEZETTEN 0-t** | **BLOKKOLT** — a kapcsoló a `CThumbDB` **34. rését** hívó kódból jön. **Megnézve:** a `call dword ptr [reg+0x88]` alakra 0 találat; a `mov reg,[reg+0x88]` 286 találatából **93** olyan, amit `call reg` követ — ezek túlnyomó része más osztály azonos eltolása | a 93 jelölt szűrése arra, melyik fogadó `CThumbDB`-példány másodlagos felülete (`this+0x54`), vagy a 11. szakasz felület-térképe |
 | **a nem egyező 615 sor oka** | **BLOKKOLT, de olcsóbb** | `Checksum₂` újraszámolása ugyanazon a katalóguson |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
@@ -2713,12 +2715,57 @@ része más szerkezet ugyanazon eltolása. **Megszerzés:** a 286 találat
 szűrése arra, melyiket követi `call reg` ugyanabban a bázisblokkban,
 vagy a `CThumbDB` felület-térkép (11. szakasz) 34. résének visszakeresése.
 
+#### ⭐ MIKOR választ a Picasa 2. módot — a szabály (2026-09-05, 120. kör)
+
+> **Bizonyítottsági fok: megerősített.** Az egyetlen futásidejű hívóhely
+> (`FUN_004e3ab0`) elágazása utasításról utasításra elolvasva.
+
+```asm
+0x004e3bbc  mov  ecx, [esp+0x1c]      ; a mód-kapcsoló (a függvény 3. paramétere)
+0x004e3bc0  test cl, cl
+0x004e3bc2  je   0x004e3c70           ; (1) a kapcsoló 0        → 2. MÓD
+0x004e3bc8  cmp  dword [edi+0x18], 0
+0x004e3bcb  je   0x004e3c70           ; (2) a rekord Type-ja 0  → 2. MÓD
+0x004e3bd1  mov  eax, [edi+0x20]
+0x004e3bd4  cmp  eax, -1
+0x004e3bd7  je   0x004e3c70           ; (3) nincs szülő          → 2. MÓD
+            ; különben: 1. MÓD, a SZÜLŐ rekordjával
+0x004e3c70  push ecx                  ; a 2. mód ága
+0x004e3c71  xor  ecx, ecx             ; a második sztring-mutató = NULL
+0x004e3c73  jmp  0x004e3c13           ; ugyanaz a hívás
+```
+
+⇒ **Három feltétel bármelyike a 2. módot választja:** a hívó kifejezetten
+0-t ad, **vagy** a bejegyzés `Type`-ja 0 (üres slot), **vagy** nincs
+szülője (`+26 == 0xFFFFFFFF`). A 8.1 mérése szerint a szentinel pontosan a
+`Type ∈ {0, 1, 5}` halmazon áll ⇒ **a könyvtár-bejegyzések és az üres
+slotok mindig a 2. módot kapják**.
+
+#### ⭐ Az 1. mód KÉT sztringet hasheli — így kerül bele a „teljes út"
+
+A számoló két bemeneti sztringet fogad: az `edi` rekord sajátját és az
+`ecx`-ben átadottat. Az 1. módú ág (`0x004e3bdd`–`0x004e3c0e`) az `ecx`-be
+a **szülő rekord** nevét tölti; ha a szülőindex a rekordszámon kívülre
+mutat, a `[objektum+0x550]` **tartalék sztringre** esik vissza
+(`0x004e3c08`) — ugyanaz a tartalék, mint a névfeloldásban
+(`picasa-mappakezelo.md` 16.2/b).
+
+⇒ A „`JS_hash(teljes_út)`" a gyakorlatban **`JS_hash(szülő_neve ‖ saját_név)`**,
+külön összefűzés nélkül: a hurok (`0x006b9a12`–`0x006b9a9e`) a két
+sztringet egymás után hajtja bele ugyanabba az akkumulátorba. Aki
+kompatibilis gyorsítótárat ír, ezt a **sorrendet** kell eltalálnia.
+
 **Amit ez a lenti „nem egyező sorok" tételre jelent:** a 615 sor nem
-feltétlenül **elavult** — lehet, hogy **a 2. módban** íródott. Ez
-**olcsón eldönthető**: ugyanazon a katalóguson újra kell számolni a nem
-egyező sorokra a `Checksum₂`-t. Ha egyeznek, a „elavult" magyarázat
-megdőlt; ha nem, megerősödött. **Ehhez új adatgyűjtés NEM kell** — csak
-egy újramérés a meglévő katalóguson.
+feltétlenül **elavult** — lehet, hogy **a 2. módban** íródott. ⚠️ **2026-09-05-i SZŰKÍTÉS:** a
+fenti szabály szerint a 2. mód automatikusan csak `Type = 0` vagy
+szülő nélküli bejegyzésre jut, a 615 sor viszont **mind fájl-típusú**
+(jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), tehát VAN szülőjük.
+⇒ Náluk a 2. mód **csak úgy** jöhetett szóba, ha a hívó **kifejezetten
+0-t adott**. A versengő magyarázat tehát **nem dőlt meg, de szűkült**: nem
+elég a `Checksum₂`-t kiszámolni — azt is meg kell tudni, hogy melyik hívó
+ad 0-t. **Megszerzés:** (a) a `Checksum₂` újraszámolása a 615 sorra —
+ha egyezik, kész; ha nem, a „elavult" magyarázat erősödik; (b) a
+`CThumbDB` 34. rés hívóinak azonosítása.
 
 #### Miért nem egyezik MINDEN bejegyzés — és miért nem hiba ez
 
