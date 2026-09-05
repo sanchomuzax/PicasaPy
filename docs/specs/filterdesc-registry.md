@@ -1928,6 +1928,30 @@ Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irá
 peremet), és a csempe a rendelkezésre álló területhez képest **középre
 igazítva** indul, nem a bal felső sarokból.
 
+##### ⭐ A csempe rajzolása: KÉTMEGÁLLÓS színátmenet, közös a kör-maszkkal (2026-09-05, #2476)
+
+A `0x00bbaa90` a méretezett téglalap kiszámítása után **két** függvényt hív:
+`0x008f3840` (`0x00bbaca9`, öt float — a téglalap) és `0x008f3970`
+(`0x00bbacc3`, 2158 b). **Ugyanezt a párost hívja a
+`CircularGradientImageMask` előállítója is** (`0x00bc2a50`, a hívás
+`0x00bc2d1d`), és **ugyanazzal a harmadik argumentummal: 2.**
+
+A harmadik argumentum **nem alakzat-azonosító, hanem MEGÁLLÓSZÁM.** A
+`0x008f3970` az `[ebp+8]`-at bájttömbként olvassa (`0x008f39c2`
+`movzx ecx, byte ptr [ecx]`), és `[ebp+0xc] − 1` hosszú cikluson hasonlítja
+a szomszédos elemeket (`0x008f39dd` `lea ecx,[esi-1]`, `0x008f39f6`–
+`0x008f3a01`). A harmadik hívó (`0x008ed730`) **15** megállót ad át
+(`0x008edcf9` `push 0xf`).
+
+⇒ A féltónusos pont pereme **nem kemény küszöb**, hanem rámpa két megálló
+között — ugyanaz a primitív, mint a kör-maszké. A csempe alapból a cella
+**0,8-szeresére** méretezve, középre igazítva (ld. fent).
+
+⚠️ **NINCS visszaolvasva**, hol áll pontosan a két megálló (a
+`0x008f3840` öt floatja és a `0x00bbac13`–`0x00bbac39` blokk 1/0 értékei
+adnák meg). A mért kompozit profil és a hatás a mi kimenetünkre:
+`filters-decoded.md`, „A Comicize PONTMASZKJA".
+
 #### `EdgeDetectionSobel` — a kernel teljesen megvan
 
 A `glimmer::EdgeDetectionSobelImageOperation` 6. slotja (`0x00bb6620`) egy
