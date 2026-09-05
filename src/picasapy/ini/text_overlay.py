@@ -73,21 +73,67 @@ _LEGACY_COORD_SCALE = 10000
 
 #: A geometria `méret` mezőjének alapértéke, ha nincs honnan venni (örökölt
 #: alak migrálása). A korpusz értékei 0.059–0.112 között vannak.
-DEFAULT_TEXT_SIZE = 0.1
+#: #2287: a méretválasztó 16 abszolút értéke, a `.data`-ból kiolvasva
+#: (két azonos példány: `0x00c7dab8` és `0x00c7e4f0`, 16 × `int32`). Az
+#: eredetiben NINCS százalék: a panel egészeket ír ki (`"%d"`,
+#: `0x0062dfde`), és a listaelem a betű abszolút mérete.
+BETUMERETEK: tuple[int, ...] = (
+    8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
+)
+
+#: A `.picasa.ini`-be írt szám és a listaérték közti osztó. Az átváltás a
+#: `0x005b35a0`-ból, utasításról utasításra: `érték × (magasság ÷ 360)`;
+#: a `360.0` a `0xcf3d50`-en. Az író `méret ÷ magasság`-ot tárol (#2271),
+#: tehát a magasság kiesik: **`tárolt = érték ÷ 360`**.
+_MERET_OSZTO = 360.0
+
+
+def tarolt_meret(ertek: int | float) -> float:
+    """A listaértékből a `.picasa.ini`-be írandó szám."""
+    return float(ertek) / _MERET_OSZTO
+
+
+def meret_taroltbol(tarolt: float) -> int:
+    """A tárolt számból a LEGKÖZELEBBI listaérték.
+
+    A fogantyúval átméretezett feliratok nem egész listaértéket adnak
+    (a tulajdonos mintáiból: 18,678 · 40,449 · 37,667), a választónak
+    viszont akkor is mutatnia kell valamit — a legközelebbit adjuk.
+    """
+    nyers = float(tarolt) * _MERET_OSZTO
+    return min(BETUMERETEK, key=lambda e: abs(e - nyers))
+
+
+#: Az alapérték az eredetiben **12** (a panel `+0x2cc` mezőjének kezdő
+#: értéke). A korábbi `0,1` nem volt előállítható a választóval — bár
+#: 0,1 × 360 = 36 véletlenül szerepel a listában.
+DEFAULT_TEXT_SIZE = 12 / 360.0
 
 
 @dataclass(frozen=True)
 class TextGeometry:
     """A felirat helye és mérete — mind a négy mező a képre normalizált.
 
-    `x`/`y`: [0..1] pozíció. `size`: [0..1] arány a kép RÖVIDEBB oldalához.
-    `rotation`: **radián** (nem fok).
+    `x`/`y`: [0..1] pozíció. `rotation`: **radián** (nem fok).
+
+    `size`: a betűméret a kép **MAGASSÁGÁHOZ** normálva — nem a rövidebb
+    oldalhoz, ahogy korábban ez a szöveg állította. Mérve (#2271): egy
+    896 × 1344-es mintán `0,061111 × 1344 = 82,13`, a mért 82 képpont
+    mellett; a rövidebb oldallal 54,8 jönne ki.
+
+    A választható értékek a `BETUMERETEK` listából valók, és a tárolt szám
+    a listaérték **360-ad része** (#2287).
     """
 
     x: float
     y: float
     size: float = DEFAULT_TEXT_SIZE
     rotation: float = 0.0
+
+
+#: A 9. mező ismert bitjei (#2448). A többi bit jelentése NINCS feltárva.
+_ALAHUZOTT_BIT = 0x0001
+_DOLT_BIT = 0x0008
 
 
 @dataclass(frozen=True)
@@ -104,8 +150,17 @@ class TextStyle:
 
     fill_argb: int
     outline_argb: int
-    weight: int = 700
-    #: A korpuszban `0.000000` és `0.500000`.
+    #: #2271: az alapérték **400** (nem félkövér). A `0x0062d483` szerint a
+    #: stílusblokk súly-mezője alapból 400, félkövéren 700 (a gomb
+    #: `cmp …, 0x2bc` a `0x0062e31a`-n). Korábban itt fixen 700 állt, ezért
+    #: MINDEN feliratunk félkövérként ment ki — a #1994 az írást javította,
+    #: de az osztály alapértéke maradt, tehát egy súly nélkül épített
+    #: `TextStyle` továbbra is félkövéret adott.
+    weight: int = 400
+    #: A KÖRVONALVASTAGSÁG (5. mező). A kutatói kör kimérte (#2271), hogy a
+    #: csúszka `[0, 1]` folytonos — ugyanaz a `ytSliderHandler`, mint az
+    #: átlátszatlanságé —, tehát az érték ÁTSZÁMÍTÁS NÉLKÜL kerül ide.
+    #: A korpuszban `0.000000` és `0.500000`; a 0,0 a »nincs körvonal«.
     unknown_a: float = 0.0
     #: A korpuszban `0` és `258` (`0x102`).
     unknown_b: int = 0
@@ -117,8 +172,47 @@ class TextStyle:
     constant_1a: float = 1.0
     #: A korpuszban állandó `1.000000` (az `unknown_a` után).
     constant_1b: float = 1.0
-    #: A korpuszban állandó `49152` (`0xC000`).
+    #: A `text=` blokk 9. mezője — **bitmező**, nem állandó (#2448).
+    #:
+    #: A korpuszban `49152` (`0xC000`) a leggyakoribb, de két bit jelentése
+    #: a binárisból kiolvasva:
+    #:
+    #: | bit | maszk | jelentés | cím |
+    #: |---:|---:|---|---|
+    #: | 0 | `0x0001` | **aláhúzott** | `0x0062ebb3`–`0x0062ebb9` |
+    #: | 3 | `0x0008` | **dőlt** | `0x005ba7b0` + `0x0062ea5c` |
+    #:
+    #: ⚠️ A többi bit (köztük a `0x4000` és a `0x8000`) jelentése **NINCS
+    #: feltárva**. A szerializálás ezért a mezőt NEM építi újra a két
+    #: ismert bitből, hanem a beolvasottat őrzi meg, és csak a két ismert
+    #: bitet állítja — különben egy meg nem értett bit némán elveszne.
     trailer: int = 49152
+
+    @property
+    def underline(self) -> bool:
+        """Aláhúzott felirat (a 9. mező **0. bitje**)."""
+        return bool(self.trailer & _ALAHUZOTT_BIT)
+
+    @property
+    def italic(self) -> bool:
+        """Dőlt felirat (a 9. mező **3. bitje**)."""
+        return bool(self.trailer & _DOLT_BIT)
+
+    def with_style_flags(self, *, italic: bool, underline: bool) -> TextStyle:
+        """Új stílus a két ismert bit átállításával.
+
+        ⚠️ A **többi bit változatlan marad.** Ez nem óvatoskodás: a `0x4000`
+        és a `0x8000` jelentése nincs feltárva, és egy újraépített mező
+        némán elvinné őket — a felhasználó `.picasa.ini`-jéből olyan
+        információt, amit nem is értünk.
+        """
+        maradek = self.trailer & ~(_DOLT_BIT | _ALAHUZOTT_BIT)
+        uj = maradek
+        if italic:
+            uj |= _DOLT_BIT
+        if underline:
+            uj |= _ALAHUZOTT_BIT
+        return replace(self, trailer=uj)
 
 
 @dataclass(frozen=True)

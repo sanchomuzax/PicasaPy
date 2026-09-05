@@ -37,12 +37,27 @@ A `tests/app/test_undo_labels_465.py` őrzi, hogy minden bejegyzéshez tartozik
 BEFEJEZETT fordítás — ha egy kontextus elgurulna, a teszt megbukik, nem a
 felhasználó felülete lesz félig angol.
 
-## Verziós alakok
+## Verziós alakok — az eredeti HÁROM párt megkülönbözteti (#2240)
 
 A Picasa több szűrőt verziózott (`glow`/`glow2`, `grain`/`grain2`,
 `unsharp`/`unsharp2`, `finetune`/`finetune2`), a vágást pedig `crop64`
-néven írja a `.picasa.ini`-be. A felhasználó mindkét alak mögött ugyanazt az
-eszközt ismeri, ezért ugyanazt a nevet kapják.
+néven írja a `.picasa.ini`-be.
+
+Korábban mindegyik pár ugyanazt a nevet kapta. Az eredeti szövegtár
+(`filter_*_label0`) szerint ez **három párnál téves**: a régi változat
+külön, „(Old)" jelzésű feliratot visel, épp azért, hogy a felhasználó
+lássa, régi effektet von vissza.
+
+| kulcs | felirat | magyar |
+|---|---|---|
+| `unsharp` / `unsharp2` | Sharpen (Old) / Sharpen | Élesítés (régi) / Élesítés |
+| `glow` / `glow2` | Glow (Old) / Glow | Ragyogás (régi) / Ragyogás |
+| `grain` / `grain2` | Film Grain (Old) / Film Grain | Régi filmszemcse / Filmszemcse |
+| `tint` / `picniktint` | Tint (Old) / Tint | Árnyalás (régi) / Árnyalás |
+| `finetune` / `finetune2` | Tuning / Tuning | Finomhangolás (AZONOS) |
+
+A `crop64` továbbra is a `crop` alakja — a `.picasa.ini` kulcsa, nem külön
+eszköz.
 """
 
 from __future__ import annotations
@@ -64,13 +79,13 @@ def _tools() -> dict[str, str]:
     return {
         "crop": "Crop",
         "tilt": "Straighten",
-        "retouch": "Retouch",
-        "redeye": "Redeye",
+        "retouch": "Retouches",
+        "redeye": "Red Eye",
         "text": "Text",
         "enhance": "I'm Feeling Lucky",
         "autolight": "Auto Contrast",
         "autocolor": "Auto Color",
-        "finetune": "Fine Tuning",
+        "finetune": "Tuning",
     }
 
 
@@ -80,15 +95,18 @@ def _effects() -> dict[str, str]:
     `label:` értékei, ld. `EditorEffectsTab1..4.qml`)."""
     return {
         # 1. fül — Effektek
-        "unsharp": "Sharpen",
+        "unsharp": "Sharpen (Old)",
+        "unsharp2": "Sharpen",
         "sepia": "Sepia",
         "bw": "B&W",
         "warm": "Warmify",
         "grain2": "Film Grain",
-        "tint": "Tint",
+        "grain": "Film Grain (Old)",
+        "tint": "Tint (Old)",
         "sat": "Saturation",
         "radblur": "Soft Focus",
         "glow2": "Glow",
+        "glow": "Glow (Old)",
         "ansel": "Filtered B&W",
         # #711: a `desat` UGYANEZ a szűrő egy régebbi kulcs alatt — a
         # renderelése is az `apply_ansel`-re megy. A név nem találgatás: az
@@ -97,7 +115,7 @@ def _effects() -> dict[str, str]:
         # 282. sor), tehát a felhasználó ugyanazt a nevet látja, mint a régi
         # programban.
         "desat": "Filtered B&W",
-        "radsat": "Focal Saturation",
+        "radsat": "Focal B&W",
         "dir_tint": "Graduated Tint",
         # 2. fül — Kreatív
         "ir": "Infrared Film",
@@ -106,7 +124,7 @@ def _effects() -> dict[str, str]:
         "hdr": "HDR-ish",
         "cinemascope": "Cinemascope",
         "orton": "Orton-ish",
-        "sixties": "1960s",
+        "sixties": "1960's",
         "invert": "Invert Colors",
         "heatmap": "Heat Map",
         "crossprocess": "Cross Process",
@@ -114,12 +132,12 @@ def _effects() -> dict[str, str]:
         "twotone": "Duo-Tone",
         # 3. fül — Művészi
         "boost": "Boost",
-        "soften": "Soft Focus",
+        "soften": "Soften",
         "pixelate": "Pixelate",
         "focalzoom": "Focal Zoom",
         "pencilsketch": "Pencil Sketch",
         "neon": "Neon",
-        "comicize": "Comicize",
+        "comicize": "Comic Book",
         "border": "Border",
         "dropshadow": "Drop Shadow",
         "museummatte": "Museum Matte",
@@ -130,7 +148,10 @@ def _effects() -> dict[str, str]:
         "nightvision": "Night Vision",
         "localcontrast": "Local Contrast",
         "roundededges": "Rounded Edges",
-        "picnikgrain": "Film Grain (Fine)",
+        "picnikgrain": "Film Grain",
+        # #2141: az 1. fül 6. csempéje ezt hívja. A felirat az EREDETI
+        # szövegtárból: `filter_PicnikTint_label0` = Tint / Árnyalás.
+        "picniktint": "Tint",
     }
 
 
@@ -139,10 +160,9 @@ def _effects() -> dict[str, str]:
 #: későbbi szűrő-változatai (ld. `render/chain.py`).
 _ALIASES: dict[str, str] = {
     "crop64": "crop",
+    # A `finetune`/`finetune2` az EGYETLEN verziós pár, amelynek az eredeti
+    # szövegtárban is AZONOS a felirata („Tuning" / „Finomhangolás").
     "finetune2": "finetune",
-    "unsharp2": "unsharp",
-    "glow": "glow2",
-    "grain": "grain2",
 }
 
 
@@ -172,10 +192,13 @@ ACTION_LABELS: dict[str, tuple[str, str]] = _build_labels()
 #: nevük, innen kerülnek át a névtárba.
 UNNAMED_CHAIN_KEYS: frozenset[str] = frozenset(
     {
-        # a Picnik (Kreatív Kit) saját szűrői — a felület sosem kínálta őket
         # (a `picnikfocalpixelate` a #1142-ben KIKERÜLT: a renderelő már nem
         # ismeri, mert a mérés szerint az eredeti Picasa sem futtatja)
-        "picniktint",
+        #
+        # #2141: a `picniktint` is KIKERÜLT innen. A „szótárban sem
+        # szerepelnek" indoklás rá NEM állt: az eredeti szövegtárban ott a
+        # felirata (`filter_PicnikTint_label0` = Tint / Árnyalás), és a
+        # felület azóta kínálja is — az 1. effekt-fül 6. csempéjén.
         # a vörösszem-javítás belső, szem-szín visszaállító lépése
         "reanimatedeyecolor",
     }

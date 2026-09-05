@@ -110,10 +110,11 @@ class TestUjAlbumMenupontEsCtrlN:
 
     def test_a_felirat_a_hirdetett_billentyut_is_tartalmazza(self, qml_app):
         window, _controller, _engine = qml_app
-        # kiírt literál — nem a termékből származtatva (#1576 tanulsága)
-        assert str(_elem(window, "menuFileNewAlbum").property("text")) == (
-            "New Album...\tCtrl+N"
-        )
+        # kiírt literál — nem a termékből származtatva (#1576 tanulsága).
+        # ⚠️ #2152: az `&` a MNEMONIK jelölése; ez a próba a HIRDETETT
+        # BILLENTYŰT méri a feliratban, arra nézve jelölés.
+        felirat = str(_elem(window, "menuFileNewAlbum").property("text"))
+        assert felirat.replace("&", "") == "New Album...\tCtrl+N"
 
     def test_a_menupontra_kattintva_megnyilik_a_dialog(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -204,7 +205,9 @@ class TestUjAlbumMenupontEsCtrlN:
         assert _elem(window, "newAlbumDialog").property("visible") is False
 
     def test_a_menupont_nem_placeholder_a_forrasban(self):
-        forras = _MENU_QML.read_text(encoding="utf-8")
+        # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma —
+        # ez a próba a GYORSBILLENTYŰT méri a feliratban.
+        forras = _MENU_QML.read_text(encoding="utf-8").replace("&", "")
         tetel = re.search(
             r"MenuItem\s*\{[^}]*?menuFileNewAlbum[^}]*?\}", forras, re.S
         )
@@ -247,7 +250,8 @@ class TestNemaCimkekLekerultBillentyuvel:
                 szoveg = obj.property("text")
             except Exception:  # pragma: no cover - defenzív
                 continue
-            if szoveg is not None and str(szoveg) == vart_szoveg:
+            # ⚠️ #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma
+            if szoveg is not None and str(szoveg).replace("&", "") == vart_szoveg:
                 talalat = obj
                 break
         assert talalat is not None, f"nincs '{vart_szoveg}' feliratú tétel"
@@ -380,7 +384,12 @@ class TestSweepOr:
         # Másolás (Ctrl+C) élővé vált — a képek fájljai a vágólapra
         # kerülnek, és a billentyű FÓKUSZ-ÉRZÉKENY (szövegmezőben a mezőé
         # marad, #1571). Két tétellel kevesebb a néma hirdető.
-        assert len(helyfoglalo_hirdetok) >= 4, (
+        # ⚠️ #2054: 4 → 3. NEGYEDSZER: a Súgó ▸ „Súgó - tartalom és
+        # tárgymutató" (F1) élővé vált — a súgó szövege eddig is megvolt
+        # (28 fájl), csak a programból nem lehetett megnyitni. A menütétel
+        # mostantól valódi `MenuItem`, ami megnyitja a nézőt, és az F1 is
+        # él. A szám tehát megint azért csökken, mert javult valami.
+        assert len(helyfoglalo_hirdetok) >= 3, (
             "a mérésnek meg kell találnia a spec szerinti kilenc "
             "hatókörön-kívüli helyfoglaló tételt — ha ez a szám lecsökkent, "
             "vagy a regex tört el, vagy tényleg javult valami (ellenőrizd!)"

@@ -149,13 +149,14 @@ Win32 registry-részlet, a mi tárolásunkra nézve közömbös — ld. 8. pont.
 
 ### 4.5 A három érintett felületi vezérlő
 
+*Forrás: `thumbui.tre:412` (`thumbui/flatview`) · `thumbui.tre:406` (`thumbui/folderview`) · `thumbui.tre:421` (`thumbui/folderviewpopup`) — és további 1 elem ugyanott.*
+
 | vezérlő | hívás | mikor aktív |
 |---|---|---|
 | `thumbui/folderview` | `0x9cd8f0` | mindig (a gyökérválasztó legördülő) |
 | `thumbui/flatview` | `0x9cd8f0`, paraméter = `[esp+0x14]==0` | **csak lapos módban** |
 | `thumbui/soloview` | `0x9cd9a0` | az eredménye a `[+0x9c]` mezőbe megy |
 | `thumbui/folderviewpopup` | `0x9cd080` | a helyi menü |
-
 ### 4.5/b ⚠️ HELYESBÍTÉS: a három rendszermappa NEM önálló gyökér
 
 *(Utólagos mérés, 2026-08-25 — a 2.2 szakasz „négy gyökér" megfogalmazása

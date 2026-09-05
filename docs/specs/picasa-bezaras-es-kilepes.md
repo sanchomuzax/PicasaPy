@@ -21,6 +21,8 @@ független mechanizmus él egymás mellett:
 
 ## 1. szint — nézet-kilépők (NEM zárják az appot)
 
+*Forrás: `editoneup.tre:40` (`editoneup/exit`) · `editoneup.tre:83` (`editoneup/prev`) · `oneup.tre:40` (`oneup/exit`) — és további 1 elem ugyanott.*
+
 Három külön kilépő vezérlő létezik, mindegyik a saját nézetéhez tartozik:
 
 | vezérlő | nézet | szomszédai a `.tre`-ben |
@@ -39,7 +41,6 @@ Ezek **visszalépnek az előző szintre**, nem zárnak alkalmazást.
 A szerkesztő nézetnek ezen felül **külön `back` vezérlője** is van
 (`editoneup/back`, `editoneup/stripback`) — a kilépés és a visszalépés két
 külön dolog.
-
 ## 2. szint — lap bezárása (projekt), HÁROM választással
 
 A kollázs- és a filmszerkesztő **lapként** viselkedik, és a lap bezárásakor —

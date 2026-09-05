@@ -48,16 +48,30 @@ class GeoPoint:
 
 
 def format_geotag(latitude: float, longitude: float) -> str:
-    """`szélesség,hosszúság` a Picasa formátumában (hat tizedesjegy).
+    """`szélesség,hosszúság` a Picasa formátumában — MINDIG hat tizedesjegy.
 
-    A felesleges záró nullák lemaradnak, hogy a kerek koordináta ne
-    „33.770556" helyett „33.770556000" alakban íródjon vissza."""
+    ⚠️ **A záró nullákat NEM vágjuk le** (#2012). A régi változat
+    `rstrip("0")`-t hívott, azzal az indokkal, hogy „a kerek koordináta ne
+    `33.770556000` alakban íródjon vissza" — ez az indok téves volt: a
+    `%.6f` sosem ad hatnál több tizedest, tehát a levágás kizárólag olyan
+    jegyeket vett el, amiket a Picasa megtart. Nem volt olyan eset, amiben
+    segített volna.
+
+    Mért bizonyíték a hat tizedesjegyre:
+
+    - a `Picasa3.exe` a `geotag` kulcsot (`0x00c81874`, írás `0x007d582e`)
+      `%lf,%lf` formátummal írja (`0x00c8187c`, a `sprintf` `0x007d57fb`);
+      MSVC-ben a `printf`-beli `%lf` azonos a `%f`-fel, tehát hat tizedes;
+    - a tulajdonos 859 fájlos `.picasa.ini`-korpuszában mind a **84** valós
+      `geotag=` érték 6/6 tizedesjeggyel áll.
+
+    A BEOLVASÁS (`parse_geotag`) változatlanul tűrő marad: a korábbi
+    verzióink írta rövid alakot is el kell tudni olvasni.
+    """
     point = GeoPoint(float(latitude), float(longitude))
-    parts = []
-    for value in (point.latitude, point.longitude):
-        text = f"{value:.{_PRECISION}f}".rstrip("0").rstrip(".")
-        parts.append(text if text not in ("", "-") else "0")
-    return ",".join(parts)
+    return ",".join(
+        f"{value:.{_PRECISION}f}" for value in (point.latitude, point.longitude)
+    )
 
 
 def parse_geotag(text: str | None) -> GeoPoint | None:

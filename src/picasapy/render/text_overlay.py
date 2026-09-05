@@ -51,7 +51,27 @@ _ALIGNMENTS = ("left", "center", "right")
 
 
 def _size_px_for(font_scale: float) -> int:
+    """A régi, kép-független út — tartalék (#2287).
+
+    Csak akkor fut, ha a hívó NEM ad `font_size_pt`-t; a szerkesztő ma
+    mindig ad. Megtartva, hogy a `font_scale`-t használó régebbi hívók
+    (és a saját próbáink) változatlanul működjenek.
+    """
     return max(1, round(font_scale * _SCALE_TO_PIXELS))
+
+
+def betumeret_keppontban(font_size_pt: float, kep_magassag: int) -> int:
+    """A listaértékből képpont — az EREDETI képlete (#2287).
+
+    A `0x005b35a0` utasításról utasításra: `érték × (magasság ÷ 360)`; a
+    `360.0` a `0xcf3d50`-en. A kép magassága tehát nem esik ki: ugyanaz a
+    felirat nagyobb képen arányosan nagyobb.
+
+    Ez zárja be a kört a tárolással: az író `méret ÷ magasság`-ot tárol
+    (#2271), ezért a `.picasa.ini`-ben `érték ÷ 360` áll — de a
+    RAJZOLÁSHOZ vissza kell szorozni a magassággal.
+    """
+    return max(1, round(float(font_size_pt) * kep_magassag / 360.0))
 
 
 def _draw_hershey(
@@ -128,6 +148,10 @@ def apply_text_overlay(
     y: float,
     *,
     font_scale: float = 1.0,
+    #: #2287: a választott listaérték (8…96). Ha meg van adva, EZ dönt,
+    #: és a méret a kép magasságából számolódik — a `font_scale` csak
+    #: a régebbi hívók tartalék-útja.
+    font_size_pt: float | None = None,
     color: tuple[int, int, int] = (255, 255, 255),
     thickness: int = 2,
     outline_color: tuple[int, int, int] | None = None,
@@ -188,12 +212,18 @@ def apply_text_overlay(
         raise ValueError(f"Ismeretlen igazítás: {align!r}")
     height, width = image.shape[:2]
     origin = (round(x * width), round(y * height))
-    font = load_font(
-        font_family, _size_px_for(font_scale), bold=bold, italic=italic
+    # #2287: ha a hívó a listaértéket adja, a méret a KÉP MAGASSÁGÁBÓL
+    # számolódik (az eredeti képlete); `font_size_pt` nélkül a régi,
+    # kép-független tartalék-út fut.
+    meret_px = (
+        betumeret_keppontban(font_size_pt, height)
+        if font_size_pt is not None
+        else _size_px_for(font_scale)
     )
+    font = load_font(font_family, meret_px, bold=bold, italic=italic)
     if font is None:
         layer = _draw_hershey(
-            result, content, origin, font_scale, color, thickness,
+            result, content, origin, meret_px / _SCALE_TO_PIXELS, color, thickness,
             outline_color, outline_thickness, fill_enabled, has_outline,
         )
     else:

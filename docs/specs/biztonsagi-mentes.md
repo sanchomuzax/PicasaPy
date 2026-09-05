@@ -83,6 +83,13 @@ van**, a `thumbindex.db` és a `.pmp`-k mellett. *Bizonyítottság:
 más fájlnéven. Aki a mentést megvalósítja, egy szerkezetet ír meg kettő
 helyett.
 
+> ✅ **A jelzőbit JELENTÉSE kimérve (2026-09-03, #2095).** A `+0x13f` a panel
+> **üzemmód-bájtja**: `0` = biztonsági mentés lemezre (`thumbui/backup`,
+> `publish/backup_go`), `1` = replikáció (`thumbui/replicate`,
+> `publish/replicate_go`, kiadás-gomb nélkül). A szomszédja, a `+0x13e`,
+> az Ajándék-CD-t választja le. Levezetés:
+> [`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md) 12. szakasz.
+
 ## 2. A `backups.xml` mezői — a bejárás sorrendjében
 
 A függvény a `[ebp+0x2b0]`-ból induló rekordtömböt járja be, és
@@ -194,7 +201,10 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 9 lezárva · 2 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 11 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+
+*(2026-09-05: az utolsó blokkolt tétel — „a `BKTag` a `.picasa.ini`-be is
+kikerül-e" — LEZÁRULT; a válasz IGEN, kulcs-előtagként, ld. 9.2.)*
 
 *(A 2026-09-03 előtti sor `1 hatókörön kívül`-t írt, miközben a tábla kettőt
 sorolt fel — elszámolási hiba, javítva.)*
@@ -207,20 +217,31 @@ sorolt fel — elszámolási hiba, javítva.)*
 | mi a célmappa alapértéke | **LEZÁRVA** — honosított `\Picasa biztonsági másolat\` (4.) |
 | mit ír a célmappába | **LEZÁRVA** — `files.txt` (3.) |
 | **melyik könyvtárban van a `backups.xml`** | **LEZÁRVA (2026-09-02)** — a `#db3\` token (`0x00c7eeb8`), átadva írásnál `0x00670ca8`, olvasásnál `0x00670aa8`. **A korábbi „`Picasa2Backups` mappa" olvasat MEGDŐLT** — az a fájl XML-gyökéreleme (1.1). |
-| **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-02)** — adatbázis-címke, `BKTag ` + a készlet neve (9.) |
+| **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-05-én PONTOSÍTVA)** — készletenkénti IDŐBÉLYEG a képen: `BKTag <készletnév>-backuphash`, a `.picasa.ini`-ben ÉS az adatbázisban (9.2). A 2026-09-02-i „adatbázis-CÍMKE” megfogalmazás pontatlan volt: a `BKTag <név>` a készlet BELSŐ NEVE (a `backups.xml` `setname` mezője), nem a képre tett címke. |
 | hogyan nyitja a fájlt | **LEZÁRVA (2026-09-02)** — `"wb"`, előtte leveszi a csak-olvasható jelzőt (1.1/b) |
 | **a `files.txt` ÍRÁSÁNAK MENETE** | **LEZÁRVA (2026-09-03)** — nem sorformázás, hanem **bájtra fűzés**: két megnyitás, két teljes beolvasás, `SetFilePointer` a fájl elejére, majd a régi és az új tartalom kiírása (11.1/b). A blokk **csak akkor fut**, ha a másolandó elem célja maga a `files.txt` (11.1/a). |
-| **mi a `files.txt` TARTALMA** | **BLOKKOLT (2026-09-03)** — a korábbi „mi a SORFORMÁTUM" kérdés **rossz kérdés volt**: a Picasa3.exe-ben nincs sorformázó, a fájlba nyers bájtblokk megy a *forrásfájlból* (11.1/c). ⚠️ A korábbi indoklás — „az író hívás futásidejű mutatón megy, ezért nem oldható fel" — **MEGDŐLT**: a `0x00677f6d` nem író, hanem `GetFileAttributesEx`, és minden ilyen mutató feloldható (módszertan 21.). **Megszerzés:** valódi `files.txt` egy gépről, ahol futott a mentés, VAGY a `0x00678630` célzott dekompilációja (11.1/d). |
-| **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **BLOKKOLT** — a címke létezése mérve (9.), a TÁROLÓJA nem. ⚠️ **A korpusz nem tudja eldönteni:** a `BKTag`-re nulla találat, de a `keywords=` sorra **is** nulla — a korpusz kulcsszavakat egyáltalán nem tartalmaz, tehát a hiány nem bizonyíték. **Megszerzés:** a `0x00670b25` utáni felhasználó dekompilációja, vagy egy `.picasa.ini` olyan gépről, ahol futott a mentés. |
+| **mi a `files.txt` TARTALMA** | **LEZÁRVA (2026-09-04)** — teljes nyelvtan a 13.3-ban: `#`-es fejléc (`# Created on %s by %s` · `# version: %s` · `# platform: %s %s`), majd tételenként **útvonal / felirat / `ft,<c_lo>,<c_hi>,<m_lo>,<m_hi>`**, a rejtett tételeknél `hf,1`. Író: `0x008447b0`, `"w"` módban. A mentés-ág **feliratot ír, `ft,` sort nem** (hívási hely `0x00693bfc`: `push 1` / `push 0`). A beolvasót a `PicasaRestore.exe` `FUN_00412550` + `FUN_0040f7d0` adja. Anyag: a tulajdonos 2026-09-03-i mentőlemeze. |
+| **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **LEZÁRVA (2026-09-05)** — **IGEN, de nem címkeként:** a készlet belső neve a per-kép ini-KULCS ELŐTAGJA — `BKTag <készletnév>-backuphash=<érték>` (9.2). Élő minta a tulajdonos 2026-09-03-i mentése után: 20/20 szakasz, mind `40037`. Bináris oldalról: az összefűzés `0x00429d1c`–`0x00429d25`, az ini-írás `0x00429d86` → `0x00454770`. ⛔ **A „kulcsszó lesz belőle” olvasat MEGDŐLT** (8.). |
 | **a webre töltés (`replicate`) ága** | **HATÓKÖRÖN KÍVÜL** — a Picasa Web Albums / Google Fotók szolgáltatás megszűnt; a szövegek és a kulcsok a 10. szakaszban a teljesség kedvéért állnak. *(Ez a lap rögzíti a döntést; a `publish` sáv mentés- és CD-ága ettől függetlenül ÉLŐ.)* |
 | **mit csinál a Wine-ág másképp** | **HATÓKÖRÖN KÍVÜL** — a `0x00678be0` Wine alatt más célmappát épít (`wine_get_unix_file_name`), de mi **natív Linuxon** futunk, nem Wine alatt; a mi célmappánk a rendszer saját konvenciója szerint áll elő. |
 
 ## 8. Amit KIZÁRTAM
 
-- **„a `backuphash` ini-kulcs mondja meg, mi van már mentve"** — nem: a
+- **„a mentés KULCSSZÓT (`keywords=`) tesz a képekre”** — MEGDŐLT
+  (2026-09-05). A `"BKTag "` (`0x00ca4698`) és a `"BKTag %s"` (`0x00ca614c`)
+  literálra a teljes `Picasa3.exe`-ben **pontosan egy-egy** kódhivatkozás van
+  (`0x00670b04`, `0x0067ad63`; kimerítő négybájtos pásztázás az egész
+  fájlon), és mindkettő a mentés-készlet rekordjának **`setname`** mezőjét
+  építi. A `.picasa.ini` kulcsszóíróját (`keywords=%s`, `0x0068b8bd`) egyik
+  út sem éri el. A képre tett bélyeg **külön ini-kulcs**, nem kulcsszó (9.2).
+
+- **„a SIMA `backuphash` ini-kulcs mondja meg, mi van már mentve"** — nem: a
   `backuphash` az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték
-  ([`picasa-ini-format.md`](picasa-ini-format.md), #643), nem tartalom-hash
-  és nem mentés-nyilvántartás.
+  ([`picasa-ini-format.md`](picasa-ini-format.md), #643), nem tartalom-hash.
+  ⚠️ **2026-09-05-i pontosítás:** a mentés-nyilvántartást viszont a
+  **készletenkénti testvérkulcs** adja — `BKTag <készletnév>-backuphash` —,
+  ugyanazzal a képlettel; a kettő ÖSSZEHASONLÍTÁSA a döntés (9.2). A
+  kizárás tehát csak az ELŐTAG NÉLKÜLI kulcsra áll.
 - **„a »biztonsági másolat« szöveg a mentés-készletekhez tartozik"** — az
   5. szakasz névcsapdája: a `CThumbUI::FileSave::messagetagX` a
   szerkesztés-mentés párbeszédé.
@@ -255,13 +276,58 @@ a készlet neve.**
 | átnevezéskor `"BKTag %s"` formátummal áll elő | `0x00679ca0` (`0x00ca614c`) |
 | hiba esetén: **„A mentési készletet nem lehet átnevezni"** (`il_NewBkDlgRenameError`) | `0x00679ca0` |
 
-⇒ **A „mi van már mentve" kérdést nem egy külön nyilvántartás dönti el,
-hanem a képekre tett címke.** A nálunk erre használható megfelelő a
-`.picasa.ini` `keywords=` / a címke-index — a fejlesztésnek NEM kell külön
-mentés-adatbázist építenie.
+⇒ **A `BKTag <készletnév>` a készlet BELSŐ NEVE**, amit a `0x006759c0` a
+`backups.xml` **`setname`** attribútumába ír (a megjelenített név külön, a
+`name` attribútumban áll). 2026-09-05-én **két helyről** igazolva: a
+`0x00679ca0` átnevezés-ága ugyanezt a `BKTag %s` alakot hasonlítja a rekord
+`+0x04` mezőjéhez (`0x0067ad84`–`0x0067ad94`), a `0x006759c0` pedig ugyanezt
+a `+0x04`-et írja ki `setname` néven (`0x00675c14`).
 
-⚠️ **Amit ez NEM mond meg:** hogy a címke a `.picasa.ini`-be vagy csak az
-SQLite-indexbe kerül-e. Lásd a 7. szakasz mérlegét.
+⛔ **HELYESBÍTÉS (2026-09-05):** a szakasz első kiadása azt írta, hogy a
+készletnév „a képekre tett CÍMKE”, és hogy nálunk a `keywords=` a
+megfelelője. **Ez téves volt.** A képre tett bélyeg a 9.2 szerinti KÜLÖN
+ini-kulcs, és kulcsszó sehol nem keletkezik.
+
+### 9.2 A KÉPRE tett bélyeg: `BKTag <készletnév>-backuphash` (2026-09-05)
+
+**A kép szakaszába külön kulcs kerül**, aminek a NEVE hordozza a készletet,
+az ÉRTÉKE pedig ugyanaz a 16 bites időbélyeg-lenyomat, mint a sima
+`backuphash`-é:
+
+```ini
+[photo01__bw.jpg]
+filters=bw=1;
+backuphash=40037
+BKTag Saját mentési készlet-backuphash=40037
+```
+
+| lépés | bizonyíték |
+|---|---|
+| a `-backuphash` utótag literálja | `0x00c81450` |
+| kulcsnév = `<készlet belső neve>` + utótag | `0x00429d1c`–`0x00429d25` (`0x00985af0`) |
+| átnevezéskor a RÉGI és az ÚJ kulcsnév is felépül | `0x00473fd5` / `0x0047402f` (hívó: `0x0067ae70`) |
+| az adatbázisbeli érték kiolvasása ezen a néven | `0x00429d3b` → `0x006a5790` |
+| ha **0**, új bélyeg az aktuális időből | `0x00429d4d` → `0x0098b6e0`; XOR-hajtás `0x00429d5c`–`0x00429d6c` |
+| kiírás a `.picasa.ini`-be | `0x00429d86` → `0x00454710` → `0x00454770` (`.picasa.ini` = `0x00454846`, `backuphash` = `0x00454904`, `%d` = `0x004548d8`) |
+| kiírás az adatbázisba | `0x00429d9f` → `0x006a5a60` |
+
+⛳ **ÉLŐ MINTA:** a tulajdonos 2026-09-03-i mentése után egy valódi
+`.picasa.ini`-ben **20/20 szakasz** hordozza a kulcsot, mind `40037`
+értékkel; ugyanott a sima `backuphash` is `40037`. A korpusz további öt,
+`backuphash`-t tartalmazó fájljában készletenkénti kulcs **nincs**, és ott a
+sima érték képenként különböző (13/13 · 11/11 · 8/8 · 1/1 · 1/1). Ez az
+időbélyeg-olvasatot erősíti: egy mappa ini-je egyszerre íródik, tehát egy
+mentési menet minden szakasza ugyanazt a bélyeget kapja.
+
+⇒ **Az inkrementalitás ÖSSZEHASONLÍTÁSSAL dönthető el:** ha
+`<készlet>-backuphash == backuphash`, a kép naprakész abban a készletben; ha
+eltér vagy hiányzik, mentendő. *(A képlet és a mezőleírás:
+[`picasa-ini-format.md`](picasa-ini-format.md), „A `<készletnév>-backuphash`".)*
+
+⚠️ **Nálunk (MÉRVE, 2026-09-05):** az `ini/document.py` a szóközös, ékezetes
+kulcsot helyesen olvassa (`Section.get`) és bitre azonosan írja vissza, és
+`with_value`-szerkesztés után is megmarad — **javítanivaló nincs**, őr-teszt
+viszont nincs rá: **#2462**.
 
 ### 9.1 Az utoljára használt készlet és az alapértelmezett név
 
@@ -331,6 +397,8 @@ a szövegek a teljesség kedvéért állnak itt.
 
 ### 10.3 A sáv TÁJÉKOZTATÓ szövegei — teljes lista
 
+*Forrás: `publish.tre:296` (`publish/backup_help`) · `publish.tre:238` (`publish/backupcdheader2`) · `publish.tre:249` (`publish/backuptext2`) — és további 10 elem ugyanott.*
+
 Ezeknek **nincs bináris címük**: a `respack.yt` szöveg-rétegei hordozzák
 őket, a hivatalos magyar alak a `referencia/panel-feliratok-hu.tsv`-ben
 áll (a sorszám a bizonyíték).
@@ -360,7 +428,6 @@ a **`publish/webpublish_cancel`** és a **`publish/replicate_cancel`**
 „Mégse". Mindhárom a webes ághoz tartozik ⇒ **hatókörön kívül** (7.).
 
 ---
-
 ## 11. A `files.txt` ÍRÁSA és a replikáció ikertestvére (2026-09-02, 11.1 átírva 2026-09-03)
 
 ### 11.1 A `files.txt`-t a Picasa NEM formázza — BÁJTRA fűzi össze
@@ -757,3 +824,331 @@ jelentése. A megszerzés útja már nem a sztring- vagy konstanskeresés, hanem
 **a `0x2xx` mezőt beállító hívási lánc** felderítése a `CDVDR.yti`
 COM-oldaláról (`IDiscRecorder2` → `CurrentPhysicalMediaType`), célzott
 dekompilációval. Jegy: **#2074**.
+
+---
+
+## 13. A MENTÉS-KÉSZLET KÉT LELTÁRFÁJLJA: `files.txt` és `PicasaManifest.xml` (2026-09-04)
+
+> **Bizonyítottság: megerősített.** A `PicasaManifest.xml` nyelvtana **valódi
+> kimenetből** mérve (a tulajdonos 2026-09-03-án futtatott egy mentést a
+> windowsos Picasa 3.9.141.259-cel, és a lemezképet átadta); a `files.txt`
+> nyelvtana az **író függvény** formátumsztringjeiből és kibocsátási
+> sorrendjéből, a **beolvasó** oldalról pedig a `PicasaRestore.exe`
+> elemzőjéből. Minden állítás mellett cím vagy fájl+offset áll.
+>
+> **A 7. mérleg „mi a `files.txt` TARTALMA" sora ezzel LEZÁRVA.** Jegy: **#2090**.
+
+### 13.0 Az anyag
+
+`research/ISO-k/CD0.iso` — 13 246 464 bájt, ISO9660, kötetazonosító
+`PICASA_CD`, 236 fájl / 143 mappa. *(A `research/` gitignore alatt van: a
+lemezkép nem kerül a repóba.)* A készítő önbevallása a lemezen:
+
+```xml
+<createdBy app="Picasa" appVersion="141.26" platform="Windows"
+           platformVersion="6_2" date="3 Sep 2026 23:51:08 +0200"/>
+```
+
+### 13.1 Egy valódi mentőlemez tartalma
+
+| tétel | mi ez |
+|---|---|
+| `PicasaManifest.xml` | a leltár (49 220 B) |
+| `PicasaRestore.exe` | a windowsos visszaállító (1 091 912 B) |
+| `Picasa Restore.app/` | a macOS visszaállító (211 fájl) |
+| `autorun.inf` | `[autorun]` / `open=PicasaRestore.exe` / `icon=PicasaRestore.exe,0` / `SHELL=OPEN`, CRLF |
+| `$Application Data\…` | a Picasa saját adatai (itt: `Google\Picasa2\contacts\backup.xml`) |
+| `[P]\…` | a mentett képek, útvonal-álnév alatt |
+
+⚠️ **`files.txt` NINCS a lemezen** — mérve: a `files.txt` bájtsorozat a teljes
+lemezképben **pontosan egyszer** fordul elő, és a macOS visszaállító Mach-O
+sztringtáblájában (offset `0x46fa80`, a `/Volumes/Picasa CD` szomszédságában),
+nem önálló fájlként. ⇒ **A lemezre írt készlet leltára a
+`PicasaManifest.xml`;** a `files.txt` a *mappába* mentés leltára (11.1).
+
+### 13.2 A két név EGY helyről jön — testvérfüggvény-pár
+
+| függvény | mit épít | bizonyíték |
+|---|---|---|
+| `0x00843a30` (94 b) | **`files.txt`** | `push 0xcc17c4` = `"txt"` · `push 0xc89a00` = `"files"` · `push 0xcc17c8` = `"%s.%s"` |
+| `0x00843a90` (94 b) | **`PicasaManifest.xml`** | `push 0xc9134c` = `"xml"` · `push 0xcc17d0` = `"PicasaManifest"` · ugyanaz a `"%s.%s"` |
+
+Mindkettőt **ugyanaz a metódus** hívja: `FUN_00692640` (7661 b) — a `files.txt`
+nevet `0x00693b5c`-nél, a `PicasaManifest.xml`-t `0x00694178`-nál —, és
+ugyanez a metódus hívja a két **írót** is (`0x00693c09` → `0x008447b0`;
+`0x00693ff2` → `0x00844e40`). A metódus nem közvetlen hívással érhető el:
+kimerítő `e8`-pásztázás a `.text`-en **nulla** hívót ad, viszont a teljes
+képmásban két helyen áll mutatóként — `0x00ca7cc8` és `0x00ca7e00` —, mindkettő
+a saját vtáblája **+0x74** rése: `PrepareCollection::vftable` (`0x00ca7c54`) és
+`AlignedImageCollection::vftable` (`0x00ca7d8c`).
+
+⇒ **A leltárírás a mentendő gyűjtemény egy virtuális metódusa**, és **mindkét
+fájlt egy menetben írja**.
+
+### 13.3 A `files.txt` NYELVTANA — író: `0x008447b0` (1676 b)
+
+Megnyitás: `0x00844855` — `push 0x2000` (8 KB puffer), `push 0xc7ebe4` = **`"w"`**.
+⇒ az író **csonkolva, elölről** írja a fájlt. *(A célmappában látott
+hozzáfűződés a 11.1/b másolóblokk műve: az veszi ezt a kimenetet, és fűzi a
+meglévő `files.txt` végére.)*
+
+**Fejléc** — a kibocsátás sorrendjében, mind kiolvasott formátumsztring:
+
+| cím | formátum | értéke a mintában |
+|---|---|---|
+| `0x00844930` | `# Created on %s by %s` | dátum, illetve az alkalmazás neve |
+| `0x0084493b` | `\n` | |
+| `0x00844946` + `0x00844951` | `#` + `\n` | üres megjegyzéssor |
+| `0x00844974` + `0x00844982` | `# version: %s` + `\n` | az alkalmazás verziója |
+| `0x008449ba` + `0x008449c7` | `# platform: %s %s` + `\n` | `Windows` + a verzió (`0x00843af0`; a tartalék `???`, az elválasztó `_`) |
+| `0x008449d2`, `0x008449dd` | `\n`, `\n` | üres sorok a törzs előtt |
+
+**Törzs — a látható tételek** (tömb `[ebx+8]`, darabszám `[ebx+0xc]>>1`, elemméret
+**0x1c** bájt, `0x00844b97`: `add [esp+0x2c], 0x1c`):
+
+```
+<útvonal>            ← elem +0x08, formátum "%s\n" (0x00844a59)
+<felirat>            ← elem +0x0c, "%s\n" (0x00844aa3); üres felirat esetén puszta "\n" (0x00844ab3)
+ft,<c_lo>,<c_hi>,<m_lo>,<m_hi>   ← "ft,%x,%x,%x,%x\n" (0x00844b66)
+```
+
+Az `ft` négy értéke **`WIN32_FILE_ATTRIBUTE_DATA`-ból** jön: a
+`0x00844b1e`-nél hívott `0x00a61e10` a `0x00d69518` thunkon át
+**`GetFileAttributesEx`**-et hív *(a thunk feloldása:
+[`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 21.)*, és a
+négy `push` a struktúra `+0x04`/`+0x08` (`ftCreationTime` alsó/felső) és
+`+0x14`/`+0x18` (`ftLastWriteTime` alsó/felső) résére mutat. ⇒ **két FILETIME,
+kisbetűs hexában, `%x` szerint — nincs nulla-feltöltés és nincs `0x` előtag.**
+
+**Törzs — a rejtett tételek** (második tömb, `[ebx+0x20]`, darabszám
+`[ebx+0x24]>>1`, mutató-tömb 4 bájtos lépéssel, `0x00844bb4`–`0x00844bee`):
+
+```
+<útvonal>
+hf,1                 ← "hf,1\n" (0x00844bd5)
+```
+
+**A két rovat KAPCSOLHATÓ, és a mentés-ág beállítása MÉRVE.** Az író 3. és 4.
+paramétere (`[esp+0x3b8]`, `[esp+0x3bc]`) kapcsolja a feliratot, illetve az
+`ft,` sort. A hívási hely (`0x00693bfc`–`0x00693c09`):
+
+```
+push edi      ; edi = 0  (0x00693b20: xor edi, edi)   -> 4. param = 0
+push 1                                                 -> 3. param = 1
+```
+
+⇒ **a mentés-ág feliratot ír, `ft,` sort NEM.** *(Ha egyik sincs bekapcsolva,
+a `0x00844b89` egy üres sort ír a tétel után — a rekordok így is
+háromsorosak maradnak.)*
+
+### 13.4 A `files.txt` BEOLVASÁSA — `PicasaRestore.exe`
+
+*(Ugyanaz a bináris, amit a lemezre másol: SHA-256
+`8d4daf5c…ff7f02f7`, `referencia/binary-index-picasarestore`.)*
+
+A `FUN_00412550` (2130 b) építi fel a `files.txt` nevet (`0x00412589` →
+`0x0040eb20`), és soronként **három előtagot** ismer föl
+(`0x0041d720` = „ezzel kezdődik-e", kis-nagybetűre érzékeny):
+
+| cím | előtag | mit tesz |
+|---|---|---|
+| `0x0041279b` | `ft,` | a sort a **legutóbb felvett tételhez** csatolja (`0x0040e810`, CString-értékadó a tétel `+8` résébe) |
+| `0x004127af` | `ft_abs,` | **ugyanoda ugrik** (`0x0041280a`) |
+| `0x004127c3` | `hf,1` | a tételt rejtettnek jelöli (`0x0040f150`) |
+| — | bármi más | a sor **útvonal**: új tétel |
+
+A ténylegesen értelmező függvény a `FUN_0040f7d0` (429 b): `0x0040f922`-nél
+**`add eax, 3`** — fix hárombájtos előtag-átlépés —, majd
+`sscanf(sor+3, "%x,%x,%x,%x", …)` (`0x0040f925` → `0x0045d5d6`), és csak akkor
+fogadja el, ha **mind a négy** mezőt beolvasta (`cmp eax, 4`).
+
+#### ⛔ `ft_abs,` — FELISMERT, DE HALOTT rekordfajta (negatív eredmény)
+
+- A `Picasa3.exe` **soha nem írja**: az `ft_abs` sztring a
+  `picasa3-index` string-táblájában nem szerepel (a `ft,%x,%x,%x,%x\n` és a
+  `hf,1\n` igen, mindkettő a `0x008447b0`-nál).
+- A `PicasaRestore.exe`-ben a `"ft_abs,"` sztring címére (`0x0047cf1c`)
+  **pontosan egy** hivatkozás van a teljes képmásban: `0x004127b0`, a fenti
+  diszpécser.
+- Hétbájtos előtag-átlépés **sehol nincs**: az `add eax, 7` (`83 c0 07`)
+  bájtminta a **teljes fájlban nulla** találat. *(A pásztázó ismert pozitívval
+  ellenőrizve: `add eax, 3` = 7, `add eax, 4` = 295 találat, és a 7 közül az
+  egyik épp a fenti `0x0040f922`.)*
+
+⇒ Egy `ft_abs,` sor a közös ágon eltárolódik, de az egyetlen értelmező a
+`"abs,"` maradékra futna rá, és **négynél kevesebb mezőt olvasna** ⇒ elutasítás.
+**Ez a build tehát az `ft_abs,`-ot nem használja.** A további keresést ezen az
+úton nem kell megismételni.
+
+#### A beolvasás KAPUJA: Wine + `platform`
+
+A `FUN_0040f980` két dolgot ad vissza, és a `0x0040f8c6`/`0x0040f8ce` ezek
+alapján **átugorja az `ft,` feldolgozását**:
+
+1. **Wine-e a futtató környezet** —
+   `GetProcAddress(GetModuleHandle("kernel32"), "wine_get_unix_file_name")`
+   (`0x0047d35c`, `0x0047d344`), az eredmény a `0x00499b84` gyorsítóban;
+2. **a leltár `platform` mezője `"Windows"`-e** (`0x0047ceac`,
+   `0x0040f9cf`).
+
+⇒ Wine alatt, illetve nem-Windows leltárnál a visszaállító **nem veszi
+figyelembe az időbélyegeket**.
+
+### 13.5 A `PicasaManifest.xml` NYELVTANA
+
+Írók, a kibocsátás sorrendjében:
+
+| függvény | mit ír |
+|---|---|
+| `0x00844e40` (839 b) | a dokumentum: `"w"` mód (`0x00844eca`), `<?xml …?>` (`0x00844f39`), `<PicasaManifest version="2.1">` (`0x00844f60`, `0x00844f89`, `0x00844fa0`), majd a `<hiddenFiles>` blokk (`0x00844fed`) `<file>` (`0x00845030`) / `<path>` (`0x00845059`) / `isHidden` (`0x008450b3`) elemekkel |
+| `0x008451a0` | `<createdBy app=… appVersion=…/>` (`0x008451fa`, `0x00845255`, `0x008452bc`) |
+| `0x00845470` (935 b) | `<files pathstyle="Windows" datestyle="RFC822">` (`0x008454a9`, `0x008454cc`, `0x008454e1`, `0x00845507`, `0x0084551c`), és tételenként `<file created=… modified=… shouldRestore="NO" caption=…><path>…</path></file>` (`0x00845560`, `0x00845641`, `0x0084567e`, `0x008456d1`, `0x008456e8`, `0x00845722`, `0x00845789`) |
+| `0x00843af0` | a `platform` értéke: `"Windows"`, tartalék `"???"`, a verzió elválasztója `_` |
+
+**Fájlszintű tények a valódi mintából** (49 220 bájt): **CRLF** sorvég
+(711 CRLF, 0 magányos LF), **nincs BOM**, egyszóközös behúzás szintenként,
+záró sorvég a `</PicasaManifest>` után, kódolás UTF-8.
+
+**A `shouldRestore` szemantikája — mérve, nem következtetve.** A mintában 235
+`<file>` tétel van; **213**-on áll `shouldRestore="NO"`, **22**-n *nincs ott az
+attribútum*. A 213 kivétel nélkül a visszaállító saját fájljai
+(`\Picasa Restore.app\…`, `PicasaRestore.exe`, `autorun.inf`), a 22 pedig a
+felhasználó tartalma (a képek, a `.picasa.ini` és a
+`$Application Data\Google\Picasa2\contacts\backup.xml`). ⇒ **az attribútum
+csak `NO` értékkel jelenik meg; a hiánya = „visszaállítandó".** Más érték a
+mintában nem fordul elő. *(A `Picasa3.exe` `NO` literálja: `0x008456d1`.)*
+
+**Útvonal-álnevek** (a `<path>` első szegmense):
+
+| álnév | mire mutat | db a mintában |
+|---|---|---|
+| `[P]` | a mentett képek gyökere | 21 |
+| `$Application Data` | a Picasa alkalmazásadatai | 1 |
+| *(nincs)* | a lemez gyökere (`\PicasaRestore.exe`, `\autorun.inf`, `\Picasa Restore.app\…`) | 213 |
+
+#### A logikai attribútumok ÉRTÉKKÉSZLETE — `YES` / `NO` (mérve)
+
+A `Picasa3.exe` manifest-literáltömbje (`0xcc1780`-tól, egy blokkban) ezt
+tartalmazza:
+
+```
+platformVersion · platform · appID · appVersion · createdBy · YES · txt ·
+%s.%s · PicasaManifest · Windows · ??? · %2.2f · NO · FALSE
+```
+
+A beolvasó oldalon a logikai attribútumot a `FUN_0040eef0` (598 b) fejti meg,
+és **pontosan két literált** hasonlít össze: `"NO"` (`0x0040ef91`) és
+`"FALSE"` (`0x0040f078`). ⇒ **hamis = `NO` vagy `FALSE`; minden más érték
+igaz.** Ez megmagyarázza, miért `NO` az egyetlen `shouldRestore`-érték a
+mintában: az „igaz" az alapértelmezés, azt nem kell kiírni.
+
+⇒ **`isHidden="YES"`** a rejtett tétel jelölése (az író a `0x008450a2`-nél
+`push 1`-gyel adja át az igaz értéket, a név `0x00cc173c` = `isHidden`,
+8 karakter). **A mintában nincs rá példa** — nem volt rejtett fájl a
+készletben —, de az alak a két oldal literáljaiból **erős**.
+
+⇒ **`caption="<felirat>"`** a `<file>` elem attribútuma (író: `0x00845789`;
+beolvasó: `FUN_00411da0`, `0x00411ed6`). A mintában nincs rá példa, mert
+egyik képnek sem volt felirata.
+
+#### ⭐ Az `appVersion` FORMÁTUMA: `%2.2f`
+
+A fenti literáltömbben a `%2.2f` az egyetlen lebegőpontos formátum, és a
+mintában `appVersion="141.26"` áll — a **Picasa 3.9.141.259** build-számának
+(`141.259`) `%2.2f` szerinti alakja pontosan `141.26`. ⇒ **az `appVersion`
+nem a teljes verziószám, hanem a build két tizedesre kerekítve.**
+*Bizonyítottság: **erős*** — a literál helye és a minta értéke egybevág, de a
+hívási láncot nem követtem végig.
+
+**Az `appID` egyik oldalon sem íródik ki.** A literál MINDKÉT bináris
+tömbjében ott van (`Picasa3.exe` `0xcc1780`-as blokk; `PicasaRestore.exe`
+`0x7cec0` környéke), de a `Picasa3.exe` string-xref táblájában nincs rá
+hivatkozás, és a valódi mintában sem szerepel. A beolvasó ugyanitt ismer egy
+`"2."` előtag-ellenőrzést (a `version="2.1"`-hez) és a `Linux` / `Wine`
+platformneveket.
+
+### 13.6 MIT AD MA a mi kódunk
+
+**Semmit.** Mérve (`grep -rn "files\.txt\|PicasaManifest\|shouldRestore\|hiddenFiles"
+src/ tests/`): egyetlen találat sincs a mentés-funkcióra — a `badfiles.txt`
+találatai a mappapásztázóhoz tartoznak (#1998). A `src/picasapy/` alatt nincs
+`backup`/`burn` modul. ⇒ A biztonsági mentés **teljes egészében megépítendő**;
+a #440 megvalósítási listája ezzel a két nyelvtannal most már hiánytalan.
+
+---
+
+## 14. A `publish` sáv TIZENKÉT eleme — szerkezeti horgonyokkal (2026-09-04)
+
+> **Miért ez a szakasz.** A 10. és a 13. szakasz ezt a tizenkét elemet
+> **teljes néven leírja**, és a felirataikat a hivatalos magyar
+> szövegtárból idézi — de **szerkezeti horgony nélkül** (nincs `0x`-cím, sem
+> `fájl:sor`). A projekt saját szabálya szerint *„hivatkozás cím nélkül nem
+> bizonyíték"*, ezért a lefedettségi mérés joggal sorolta őket
+> feltáratlannak. Ez a szakasz **pótolja a horgonyokat** — a leírásuk nem
+> változik, a bizonyítottságuk igen.
+>
+> **Bizonyítottság: megerősített** — minden sor a `respack.yt`
+> rétegfejlécéből (`int16 x0,y0,x1,y1`) és a `publish.tre` sorából.
+
+### 14.1 A tizenkét elem — geometria és szülő
+
+| elem | `respack.yt` | x (szélesség) | y (magasság) | szülő (`publish.tre`) |
+|---|---|---|---|---|
+| `publish/backuptext3` | `respack.yt:3035621` | 470…741 (271) | 108…143 (35) | `backup_group` (`publish.tre:254`) |
+| `publish/backupcdheader2` | `respack.yt:3035689` | 490…740 (250) | 43…56 (13) | `backupcdheader2_base` (`publish.tre:238`) |
+| `publish/backup_help` | `respack.yt:3035706` | 777…875 (98) | 175…203 (28) | `backup_group` (`publish.tre:296`) |
+| `publish/replicate_button_group` | `respack.yt:3038903` | 925…1013 (88) | 35…177 (142) | `uploadallback` (`publish.tre:448`) |
+| `publish/rpoptionbox1` | `respack.yt:3046464` | 42…71 (29) | 101…130 (29) | `rpoptions` (`publish.tre:312`) |
+| `publish/label_rpoptionbox1` | `respack.yt:3046847` | 76…159 (83) | 107…123 (16) | `rpoptionbox1` (`publish.tre:309`) |
+| `publish/rpoptionbox2` | `respack.yt:3046864` | 42…71 (29) | 132…161 (29) | `rpoptions` (`publish.tre:320`) |
+| `publish/label_rpoptionbox2` | `respack.yt:3047247` | 76…159 (83) | 139…155 (16) | `rpoptionbox2` (`publish.tre:317`) |
+| `publish/label_rpoptionbox3` | `respack.yt:3047647` | 76…159 (83) | 170…186 (16) | `rpoptionbox3` (`publish.tre:324`) |
+| `publish/giftcdtext` | `respack.yt:3047749` | 35…306 (271) | 74…125 (51) | `pubstep1` (`publish.tre:21`) |
+| `publish/presentcd_help` | `respack.yt:3048914` | 664…762 (98) | 175…203 (28) | `presentation_group` (`publish.tre:154`) |
+| `publish/webpublish_cancel` | `respack.yt:3052697` | 682…770 (88) | 81…109 (28) | `web_group` (`publish.tre:505`) |
+
+**Két szerkezeti tény, ami ebből olvasható ki:**
+
+1. **A két súgógomb azonos méretű és azonos magasságban ül** (98 × 28,
+   y 175…203) — a `backup_help` az `x 777…875`, a `presentcd_help` az
+   `x 664…762` sávban. Ugyanaz a gomb, két üzemmódban.
+2. **A `rpoptionbox1..3` egy 29 × 29-es rádiógomb-oszlop** (`rpoptions`
+   konténer, `respack.yt:3046447`, 199 × 99), 31 képpontos függőleges
+   osztással (101 / 132 / 163), a feliratuk mellettük 83 képpont széles.
+
+### 14.2 ⚠️ A `respack.yt` rétegneve NEM a felirat
+
+A `respack.yt` listája a három rádiógomb feliratának a **tervezővászon
+helyőrzőjét** mutatja:
+
+| elem | a `respack.yt` helyőrzője | a SZÁLLÍTOTT angol felirat (`publish_text.tre`) | hivatalos magyar |
+|---|---|---|---|
+| `label_rpoptionbox1` | `Upload New` | **`Upload`** (`:105`) | „Feltöltés" |
+| `label_rpoptionbox2` | `Change Size` | **`Change options`** (`:111`) | „Opciók módosítása" |
+| `label_rpoptionbox3` | `Change Sync` | **`Remove online`** (`:117`) | „Eltávolítás: online elemek" |
+
+⇒ **Mindhárom helyőrző félrevezet**, a harmadik érdemben is: a
+`Change Sync` helyett a valódi funkció **az online elemek eltávolítása**.
+A feliratot mindig a `*_text.tre`-ből (illetve a hivatalos magyar
+szövegtárból) kell venni, a `respack.yt` zárójeles nevéből **soha**.
+
+*(A 10.3 táblája helyesen a szállított feliratokat idézi — ez a szakasz
+csak a csapdát mondja ki.)*
+
+### 14.3 Egy formátum-részlet: `Tooltip1`
+
+A `publish_text.tre:120` a harmadik rádiógomb súgóját **`Tooltip1`**
+kulcsszóval deklarálja (nem `Tooltip`), miközben a párjai
+(`:108`, `:114`) sima `Tooltip`-ek. A szöveg ettől ugyanaz marad; aki
+szövegtár-feldolgozót ír, **mindkét alakot ismerje fel**.
+
+### 14.4 Amihez nincs saját szövege
+
+- **`publish/replicate_button_group`** — `rect`, tehát tartó: a
+  `replicate_go` (`respack.yt:3038886`) és a `replicate_cancel`
+  (`respack.yt:3038869`) szülője (`publish.tre:436` és `:443`). Felirata
+  nincs, és nem is kell.
+- **`publish/webpublish_cancel`** — `superbutton(button_text_LC, Cancel)`:
+  a feliratát a **sminkparaméter** adja, ezért a `publish_text.tre`-ben
+  nincs külön sora. Ugyanez áll a `backup_cancel` és a
+  `presentcd_cancel` gombra.

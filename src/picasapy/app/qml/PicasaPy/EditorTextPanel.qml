@@ -100,23 +100,18 @@ ColumnLayout {
             currentIndex: Math.max(0, panel.fontFamilyKeys.indexOf(panel.textFontFamily))
             onActivated: panel.textFontFamilyEdited(panel.fontFamilyKeys[currentIndex])
         }
-        SpinBox {
+        // #2287: az eredetiben ez egy 16 elemű, ABSZOLÚT egész-lista
+        // (`sizelist`, 48 × 21-es legördülő), nem százalék. A lista a
+        // `.data`-ból kiolvasva; a panel `"%d"`-vel írja ki az elemeket.
+        ComboBox {
             objectName: "textFontSizeBox"
-            //: a betűméret a rajzoló méret-szorzójának SZÁZALÉKA
-            from: 20; to: 400; stepSize: 10
-            // A `sizelist` az eredetiben 48 × 21-es LEGÖRDÜLŐ; nálunk
-            // léptethető mező, aminek a két nyílgombbal együtt ennél több
-            // kell. A 90 az implicit 120 helyett — a panel ettől még nem
-            // lesz keskenyebb (a szöveg-panel túlcsordulása régebbi és más
-            // okú, ld. a jelentést), de ez a rész már a mérethez igazodik.
+            model: panel.fontSizeChoices
+            currentIndex: Math.max(0, panel.fontSizeChoices.indexOf(panel.textFontSize))
+            onActivated: panel.textFontSizeEdited(panel.fontSizeChoices[currentIndex])
             Layout.fillWidth: false
             Layout.preferredWidth: 90
             Layout.preferredHeight: 21
-            topPadding: 0
-            bottomPadding: 0
             font.pixelSize: Theme.fontSize - 1
-            value: Math.round(panel.textFontScale * 100)
-            onValueModified: panel.textFontScaleEdited(value / 100)
         }
     }
     RowLayout {
@@ -224,8 +219,12 @@ ColumnLayout {
         id: textOutlineThicknessSlider
         objectName: "textOutlineThicknessSlider"
         Layout.fillWidth: true
-        from: 0; to: 8
-        stepSize: 1
+        // #2271: az EREDETI mértékegysége `[0, 1]` folytonos — a csúszka
+        // ugyanaz a `ytSliderHandler`, mint az átlátszatlanságé, és maga
+        // normalizál a sáv hosszához (a korpuszban látott 0,25 és 0,5 a
+        // negyed-, illetve félállás). Korábban 0–8 „képpont" volt, ezért
+        // az érték nem is volt közvetlenül a fájlba írható.
+        from: 0; to: 1
         value: panel.textOutlineThickness
         onMoved: panel.textOutlineThicknessEdited(value)
     }

@@ -29,6 +29,8 @@ teljességén áll.*
 
 ## 2. A vezérlők — és amiben a #455 leírása PONTATLAN
 
+*Forrás: `thumbui.tre:337` (`thumbui/addtobuttcon`) · `thumbui.tre:326` (`thumbui/scratchclear`) · `thumbui.tre:317` (`thumbui/scratchhold`) — és további 1 elem ugyanott.*
+
 A `.tre` szerint a tálca **négy** vezérlőt hordoz. **A gombokon NINCS
 felirat**: a `.tre`-ben a `#Label` sorok **ki vannak kommentezve**, tehát
 ikon + súgóbuborék az egész.
@@ -43,7 +45,6 @@ ikon + súgóbuborék az egész.
 ⚠️ A **#455 „Kijelölés megtartása" / „Kijelölés eltávolítása" gombfeliratot**
 említ. Ezek **nem gombfeliratok**, hanem a `Tray` **helyi menü** két
 parancsának feliratai (ld. 3.).
-
 ### 2.1 Geometria — kényszerekből, nem respackből
 
 A tálca dobozát a `.tre` kényszerei adják (a respackben csak az **ikonok**
@@ -544,7 +545,10 @@ bélyegkép **eltakarja a „Kijelölés" felirat bal részét**, és a felirat 
 (`…lés`) **kilóg a képek jobb oldalán**.
 
 ⇒ A bélyegképek a felirat **fölé** rajzolódnak, és a felirat **nem tűnik el**,
-ha a tálca nem üres. *(Nálunk `visible: false` lesz — a #1916 javítja.)*
+ha a tálca nem üres. *(Nálunk MA fordítva van: a felirat csak ÜRES tálcánál látszik, és a
+bélyegképek FÖLÉ rajzolódik. Ez a pont korábban azt írta, hogy „a #1916
+javítja” — a **#1916 lezárt**, és a négyzetes bélyegképekről szólt, nem
+erről. A javítás jegye: **#2179**.)*
 
 *Bizonyítottsági fok: **megerősített**.*
 
@@ -568,8 +572,12 @@ scratch/highlight:  scratch/albumlabel  (−4/+4 vízszintesen, +1 függőlegese
 A `scratch.tre` saját megjegyzése: *„I chose this dumb constraint because the
 tray can get so small that there's no room for text"*.
 
-**Nyitva:** mi teszi a mappát a tálcára (a `Tray::` névtérben nincs rá parancs),
-és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.
+~~**Nyitva:** mi teszi a mappát a tálcára (a `Tray::` névtérben nincs rá parancs),
+és a felirat pontos formátumsztringje — mindkettő **NINCS MEG**.~~
+
+⇒ **MINDKETTŐ MEGVAN**, ld. a **20. pontot** — és ugyanott két állítás
+helyesbítve is van ebből a szakaszból (a „kép-köteg ikon” valójában egyetlen
+borítófotó, a felirat elválasztója pedig kis-, nem nagykötőjel).
 
 Jegy: **#1919**.
 
@@ -724,3 +732,326 @@ eltolások, betűk), album-elrendezés (`alayout_gutter=24`,
 (`publishtoweb_color=#0000FF`).
 
 Jegy: **#2039**.
+
+---
+
+## 20. LEZÁRVA: a mappa-token TELJESEN feltárva — kiváltó, négy felirat, geometria, és a rács kizárása (2026-09-03, #1919)
+
+A 17. pont három kérdést hagyott nyitva. **Mindhárom megvan**, és közben
+két állítása helyesbítendő.
+
+### 20.1 MI VÁLTJA KI — típusteszt, nem parancs (megerősített)
+
+A tokent **nem parancs teszi a tálcára, hanem a kijelölés TÍPUSA**.
+
+A `CThumbUI` „állítsd be az aktuális kijelölés-csomópontot” függvénye
+`0x0056bc10` (945 b). A bejövő objektumon (`eax`) **dinamikus
+típuskonverziót** végez:
+
+```
+0x0056bc43  push 0 ; push 0xd3db90 ; push 0xd3e720 ; push 0 ; push esi
+0x0056bc52  call 0x00c07db2        ; __RTDynamicCast(inptr, 0, SrcType, TargetType, 0)
+```
+
+A két típusleíró a nevét is megadja (a `TypeDescriptor` +8-tól):
+
+| cím | mangolt név | jelentés |
+|---|---|---|
+| `0x00d3e720` | `.?AVCSelectionNode@@` | a forrástípus: bármilyen kijelölés |
+| `0x00d3db90` | `.?AVCAlbumSelectionNode@@` | **a céltípus: EGÉSZ mappa/album kijelölése** |
+
+Ha a konverzió sikerül (és nem ugyanaz, mint eddig), a mutató a
+`CThumbUI` `+0xeac` mezőjébe kerül, hivatkozásszámlálással:
+
+```
+0x0056bd43  mov dword ptr [edi + 0xeac], ebx
+0x0056bd49  … call [ebx].vtbl+4          ; AddRef
+```
+
+⇒ A `+0xeac` **csak akkor nem null, ha a kijelölés egy egész
+mappa/album**. Ez magyarázza a 17. pont megfigyelését, hogy a `Tray::`
+névtérben nincs „mappa a tálcára” parancs: **nincs is ilyen parancs.**
+
+### 20.2 A felirat NÉGY változatban áll elő — nem egyben
+
+A rajzoló `0x0056ba10` (`CThumbUI::UpdateAlbumCover`, 498 b). A szöveget
+egy háromhelyes formátumsztringből rakja össze
+(`0x0056bb75`–`0x0056bb7d`, `call 0x0040eab0`, sorrend: formátum, `%s`,
+`%d`, `%s`):
+
+| lépés | cím | mit dönt el |
+|---|---|---|
+| van-e kijelölt mappa | `0x0056babc` (`[edi+0xeac]` null-teszt) | ha null → **„Nincs kijelölés”** |
+| hány elem | `0x0056bacc` (`call 0x00716cb0`) | a `%d`; ha **0**, szintén „Nincs kijelölés” (`0x0056baed`) |
+| mappa vagy album | `0x0056bae6` (`call 0x004461a0`) | az első `%s` |
+| egyes vagy többes | `0x0056bb26` (`cmp ebp, 1`) | a második `%s` |
+
+A teljes szótár (`referencia/stringres-en-hu.tsv` 759–764. sor):
+
+| kulcs | angol | magyar | mikor |
+|---|---|---|---|
+| `CThumbUI::UpdateAlbumCover` | `%1$s - %2$d %3$s` | `%1$s - %2$d %3$s` | a keret |
+| `CThumbUI::UpdateAlbumAlbum` | `Album Selected` | **Kiválasztott album** | `0x004461a0` ≠ 0 |
+| `CThumbUI::UpdateAlbumFolder` | `Folder Selected` | **Kiválasztott mappa** | `0x004461a0` = 0 |
+| `CThumbUI::UpdateAlbumphoto` | `photo` | **fotó** | darabszám = 1 |
+| `CThumbUI::UpdateAlbumCoverphotos` | `photos` | **fotó** | darabszám ≠ 1 |
+| `CThumbUI::UpdateAlbumCoverNoSel` | `No selection` | **Nincs kijelölés** | nincs mappa VAGY 0 elem |
+
+A binárisba fordított angol alapértékek ugyanezek:
+`0x00c8f070` = `%s - %d %s`, `0x00c8efd8` = `Album Selected`,
+`0x00c8f004` = `Folder Selected`, `0x00c84c10` = `photo`,
+`0x00c84c18` = `photos`, `0x00c8f0ac` = `No selection`.
+
+> ⚠️ **Helyesbítés a 17. ponthoz és a #1919 törzséhez.** Ott
+> „Kiválasztott mappa **–** 82 fotó” áll, **nagykötőjellel**. A mért
+> formátum **kiskötőjelet** használ (`%s - %d %s`). A képernyőképről
+> való leolvasás tévedett; a mért formátum a mérvadó.
+>
+> A magyar egyes és többes szám **azonos** („fotó”) — ez magyarul helyes
+> (szám után egyes szám), nem szótárhiba.
+
+### 20.3 A `0x004461a0` jelentése — független keresztellenőrzéssel
+
+Ugyanez a függvény dönti el a **helyi menü címét** is, egy tőle független
+helyen (`0x00537fb0`, `[esi+0xeac]` → `call 0x004461a0` a `0x00537fdc`-n):
+
+| eredmény | menücím | kulcs |
+|---|---|---|
+| ≠ 0 | `&Album` | `ThumbUIOutput::AlbumMenu` |
+| = 0 | `F&older` | `ThumbUIOutput::FolderMenu` |
+
+⇒ `0x004461a0` = *„a kijelölés ALBUM-e (szemben a mappával)?”* — két
+egymástól független felhasználási hely adja ugyanazt a jelentést.
+
+### 20.4 ⛔ A token KIZÁRJA a bélyegkép-rácsot — a #1919 „Kész, ha” listája TÉVED
+
+A #1919 kéri, hogy „a tálca **vegyesen** is tudjon képet és tokent
+tartani”. **Ilyen állapot az eredetiben nincs.** Három független
+bizonyíték:
+
+1. **A token a teljes tálca-vásznat elfoglalja.** A `respack.yt`-ben a
+   `scratch/album` téglalapja **bájtra azonos** a `scratch/docbounds`
+   (dokumentumhatár) téglalapjával: mindkettő **(0,0)–(174,87)**.
+2. **A tálca bélyegkép-területe épp ezt a vásznat mutatja.** A
+   `thumbui/scratch` réteg fajtája a csomagban
+   `layer:thumbui/clip(scratch): scratch` — vagyis egy **kivágás a
+   `scratch` panelre**. Amit a token elfoglal, arra rács nem fér.
+3. **Húsz felvétel, nulla vegyes eset.** A
+   `research/Picasa3-also-talca-ikonok-viselkedese/` sorozatban pontosan
+   **egy** felvételen látszik a token (`…214629.jpg`, akkor rács nélkül),
+   a maradék tizenkilencen rács van, token nélkül.
+
+⇒ A megvalósításban a tálca **VAGY** bélyegképeket mutat, **VAGY** egy
+tokent. A #1919 vonatkozó „Kész, ha” pontját törölni kell.
+
+### 20.5 Geometria — MÉRVE
+
+*Forrás: `scratch.tre:36` (`scratch/album`) · `scratch.tre:10` (`scratch/albumcover`) · `scratch.tre:31` (`scratch/albumlabel`) — és további 2 elem ugyanott.*
+
+**A csomagból** (tervezővászon-koordináták, `int16 x0,y0,x1,y1`):
+
+| réteg | téglalap | méret | szín |
+|---|---|---|---|
+| `scratch/docbounds` | (0,0)–(174,87) | 174 × 87 | — |
+| `scratch/album` | (0,0)–(174,87) | **174 × 87** | — |
+| `scratch/albumsize` | (63,31)–(94,53) | 31 × 22 | — |
+| `scratch/albumcover` | (63,31)–(94,53) | 31 × 22 | — |
+| `scratch/albumlabel` | (45,30)–(165,52) | 120 × 22 | `#F5F5F5` |
+| `scratch/highlight` | (45,36)–(165,52) | **120 × 16** | `#2E72A1`, **70%** |
+
+A futásidejű elrendezést a `scratch.tre` kényszerei adják (17. pont): a
+`albumsize` a `album` mind a négy oldalán 8 képpont behúzással, a borító
+és a felirat egyaránt **középre**, a pirula a felirat körül −4/+4
+vízszintesen és +1 függőlegesen, `round 2`, `predraw`.
+
+**A képernyőn** (`…214629.jpg`, 1920×1080):
+
+| mit | mért érték |
+|---|---|
+| kék pirula | x 251–392, y 979–995 → **142 × 17 px** |
+| pirula színe | **RGB(107, 153, 186)** |
+| borítófotó | x 309–337 → **29 px széles**, álló, vetett árnyékkal |
+
+A pirula magassága (17) a vászonértékkel (16) egyezik ⇒ a token
+**nincs felnagyítva**, a vászonegység itt képernyő-képpont. A pirula
+**szélessége a szöveggel nő** (142 > 120), tehát a 120 vászonszélesség
+helyőrző.
+
+> ⚠️ **Helyesbítés a 17. ponthoz:** a borító **nem** „kép-köteg ikon”,
+> hanem **egyetlen borítófotó** vetett árnyékkal, oldalarány-tartóan az
+> `albumsize` dobozba illesztve (a réteg fajtája `bicubic`). A mappánként
+> MENTETT borító tárolása a #2049 lelete (`albums.db`).
+
+> **A pirula 70%-a önálló lelet:** a réteg fejlécének 8–9. bájtja
+> **átlátszóság** (`uint16`, 256 = átlátszatlan), amit a kicsomagolónk ma
+> eldob, és amit a `picasa-respack-format.md` tévesen ír le. Jegy:
+> **#2178**. A 179/256 = 69,9% fehér fölött RGB(109,157,189)-et ad — a
+> képernyőn mért (107,153,186) ettől csatornánként ≤4-gyel tér el.
+### 20.6 ⛔ NEGATÍV: a `0x00d67914` NEM funkciókapcsoló
+
+Az `UpdateAlbumCover` a `scratch/albumcover` feloldását egy globális
+null-tesztre köti (`0x0056ba7b`: `cmp dword ptr [0xd67914], ebx`), és
+ugyanez a teszt őrzi a `scratch/album` bekötését is (`0x00572b90`). Ez
+**nem** azt jelenti, hogy a token funkciókapcsoló mögött van: a globális
+egy **indulási szingleton mutatója**, amit a `0x009c3a20` állít elő
+(`push 0x1c70` = 7280 bájt lefoglalása, majd `call 0x009c3050`
+konstruktor). A teszt csak azt kérdezi, felépült-e már a yt felületmotor.
+
+*Bizonyítottsági fok: 20.1–20.5 **megerősített**; 20.6 **megerősített**
+(a foglalás és a konstruktorhívás a kódban áll).*
+
+Jegyek: **#1919** (a token megvalósítása), **#2178** (respack-átlátszóság),
+**#2179** (a „Kijelölés” vízjel).
+
+---
+
+## 21. A tálca alatti KIMENETI gombsor — `outputlayout`, és a hiányzó túlcsordulás-gomb (2026-09-03)
+
+A 7. és a 11. pont a tálca **három** gombjáról szól (megtartás, ürítés,
+albumhoz adás). A tálca **jobb oldalán** viszont van egy másik, önálló
+gombsor: a kimeneti műveleteké (`outputlayout`) — nyomtatás, e-mail,
+exportálás, kollázs, film. Ez a szakasz azt írja le.
+
+### 21.1 A sor EGYETLEN cellasablonból épül
+
+A `respack.yt` mért geometriája szerint az `outputlayout` **nem egy sáv,
+hanem egy CELLA**: a `outputlayout/docbounds` **59 × 40**, és **mind a
+kilenc gomb ugyanazt a téglalapot foglalja** — (2,2)–(57,38), azaz
+**55 × 36**. A gombok tehát ugyanannak a cellának a **változatai**,
+amiket a konténer példányosít:
+
+| elem | téglalap | méret |
+|---|---|---|
+| `outputlayout/docbounds` | (0,0)–(59,40) | 59 × 40 |
+| `outputlayout/overflowcontainer` *(típusa: `overflow:`)* | (0,0)–(59,40) | 59 × 40 |
+| `outputlayout/pbutton` (nyomtatás) | (2,2)–(57,38) | **55 × 36** |
+| `outputlayout/ebutton` (e-mail) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/folderbutton` (exportálás) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/orderbutton` (vásárlás) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/sharewith` (Hello) | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/blogger` | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/collage` | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/makemovie` | (2,2)–(57,38) | 55 × 36 |
+| **`outputlayout/morebutton`** *(típusa: `buttcon`)* | (2,2)–(57,38) | 55 × 36 |
+| `outputlayout/separator` | (28,8)–(30,35) | **2 × 27** |
+
+A **gazda** a főablakban: `thumbui/outputs`, típusa
+`rect(0, outputlayout)` — **(373,480)–(797,509), 424 × 29**. Vagyis a
+424 × 29-es sávban ismétlődik az `outputlayout` cella.
+
+Az ikonok saját méretei: `pbutton_icon` 15 × 12, `ebutton_icon` 16 × 11,
+`folderbutton_icon` 17 × 13, `orderbutton_icon` 13 × 11,
+`sharewith_icon` 40 × 21, `blogger_icon` 17 × 19, `collage_icon` 16 × 15,
+`movie_icon` 17 × 15, `export7_icon` 13 × 7, `default_icon` 16 × 15,
+`earth_icon` 17 × 17.
+
+Szerkezeti horgony: `outputlayout.tre` — minden gomb az
+`outputlayout/overflowcontainer` gyereke, a konténer pedig a `root`-é
+(`outputlayout.tre:1`–`:36`).
+
+### 21.2 ⭐ A `morebutton` a TÚLCSORDULÁS-gomb — nálunk nincs
+
+*Forrás: `outputlayout.tre:99` (`outputlayout/blogger`) · `outputlayout.tre:111` (`outputlayout/collage`) · `outputlayout.tre:51` (`outputlayout/ebutton`) — és további 6 elem ugyanott.*
+
+| | angol | **magyar** |
+|---|---|---|
+| felirat | More... | **További lehetőségek...** |
+| buboréksúgó | Click here for more options | **Kattintson ide a további opciókért** |
+
+A konténer típusa a `respack.yt`-ben **`overflow:`** — ez az a
+konténerfajta, ami a ki nem férő gyerekeket egy gomb mögé rejti; a
+`morebutton` ennek a gombja (típusa `buttcon`, saját ikonja az
+`export7_icon`, 13 × 7).
+
+⇒ **A gombsor szélesség-érzékeny**: ha a 424 × 29-es sávba nem fér ki
+minden 55 × 36-os cella, a maradék a „További lehetőségek…" mögé kerül.
+
+**A többi gomb hivatalos magyar felirata és súgója** (forrás:
+`referencia/i18n-hu/outputlayout_text.xml`, angol:
+`referencia/tre-eroforrasok/outputlayout_text.tre`):
+
+| elem | felirat | buboréksúgó |
+|---|---|---|
+| `outputlayout/pbutton` | **Nyomtatás** | A Fotótálcán található fotók nyomtatása |
+| `outputlayout/ebutton` | **E-mail** | A Fotótálcán található fotókat elküldheti e-mailben |
+| `outputlayout/folderbutton` | **Exportálás** | Átmásolja a Fotótálcán található fotókat egy a merevlemezen található mappába |
+| `outputlayout/orderbutton` | **Vásárlás** | Rendeljen nyomatokat és egyéb termékeket kedvenc online szolgáltatójától |
+| `outputlayout/collage` | **Kollázs** | Készítsen fotókollázst a kijelölt képekből |
+| `outputlayout/makemovie` | **Mozgófilm** | Mozgófilmes prezentáció létrehozása a kijelölt elemek alapján |
+| `outputlayout/sharewith` | **Hello** | A Fotótálcán található fotókat elküldheti a Hello programba |
+| `outputlayout/blogger` | **Blogger** | Fotók feltöltése a Bloggerre |
+| **`outputlayout/morebutton`** | **További lehetőségek...** | **Kattintson ide a további opciókért** |
+
+*(A `sharewith` (Hello) és a `blogger` megszűnt Google-szolgáltatásokhoz
+tartozik — hatókörön kívül, ugyanazon az alapon, mint a `publish` webes
+ága.)*
+### 21.3 Eredeti / nálunk — MÉRVE
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a cella mérete | **55 × 36**, a gazdasáv 424 × 29 | nem mérve — a gombok a `TrayBar.qml` sorában élnek |
+| Nyomtatás · E-mail | `pbutton` · `ebutton` | megvan (`TrayBar.qml:62` környéke) |
+| Exportálás | `folderbutton` | megvan (`TrayBar.qml:48`) |
+| Kollázs · Film | `collage` · `makemovie` | megvan (`trayCollageButton`, `trayMovieButton`) |
+| **túlcsordulás-gomb** | **`morebutton`**, „További lehetőségek…" | ⛔ **NINCS** — 0 találat `morebutton`/„további lehetőség"/overflow névre a `src/`-ben |
+| Vásárlás · Hello · Blogger | `orderbutton` · `sharewith` · `blogger` | hatókörön kívül (megszűnt szolgáltatások) |
+
+⇒ Nálunk a gombsor **nem kezeli a szűk helyet**: keskeny ablaknál a
+gombok elfogynak vagy összenyomódnak, az eredeti viszont a maradékot a
+„További lehetőségek…" mögé rejti. Jegy: **#2191**.
+
+*Bizonyítottsági fok: **megerősített*** — a geometria a `respack.yt`-ből,
+a konténer `overflow:` típusa ugyanonnan, a feliratok az `i18n-hu`-ból.
+
+---
+
+## 22. A „További lehetőségek…" gomb VISELKEDÉSE — kimérve (2026-09-04, #1672)
+
+A 21. szakasz a `morebutton` **helyét és feliratát** adta meg. Ez a szakasz
+azt, hogy **mit csinál** — a #1672 kifejezetten ezt kérte („a viselkedése
+kimérve, mielőtt bekötjük — ne a feliratból következtessünk").
+
+**A kattintás útja.** A felületi parancsdiszpécser (`0x005d9cc0`) az
+elemnévre hasonlít, és a `outputlayout/morebutton` ágon **egyetlen**
+függvényt hív:
+
+```
+0x005dad25  cmp ecx, 0x00c8f6dc          ; "outputlayout/morebutton"
+0x005dad2b  sete cl
+0x005dad33  call 0x005fe090              ; a kezelő
+```
+
+**A kezelő (`0x005fe090`, 150 b) két csomópontot ér el, névvel:**
+
+```
+0x005fe099  "outputlayout/morebutton"          -> a gomb csomópontja
+0x005fe0c2  cmp byte ptr [eax + 0x359], 0      ; a gomb egy állapotbájtja
+0x005fe0d3  sete al
+0x005fe0dd  mov byte ptr [edx + 0x264], al     ; a főablak [+0xea0] objektumába, INVERTÁLVA
+
+0x005fe0e5  "outputlayout/overflowcontainer"   -> a túlcsordulás-konténer
+0x005fe110  mov dword ptr [eax + 0x268], 0xffffffff
+0x005fe11f  call [vtbl + 0x38]                 ; a konténer 14. rése
+```
+
+⇒ **A gomb a `outputlayout/overflowcontainer` állapotát billenti**, és a
+konténer saját metódusát hívja meg rá. A `.tre` szerint ebben a
+konténerben ül a kimeneti sor **összes** gombja
+(`separator`, `pbutton`, `ebutton`, `folderbutton`, `orderbutton`,
+`sharewith`, `blogger`, `collage`, és maga a `morebutton` is —
+`outputlayout.tre:30`–`136`).
+
+⇒ **A „További lehetőségek…" tehát nem külön menüt nyit, hanem a
+túlcsordulás-konténert nyitja/zárja** — pontosan azt, amit a hivatalos
+buboréksúgó ígér („Kattintson ide a további opciókért"). A felirat és a
+viselkedés **egybeesik**; a #1672 aggálya („ne a feliratból
+következtessünk") itt megnyugtatóan zárul.
+
+**Ami NINCS mérve:** mit csinál a konténer 14. rése (a `[+0x268] = −1`
+beállítás után hívott metódus), és mi a `[+0x359]` állapotbájt pontos
+jelentése a gombon. A **kötéshez** ez nem szükséges: a mi oldalunkon a
+túlcsordulás-viselkedés a felületi keretrendszer dolga.
+
+*Bizonyítottsági fok: **megerősített** a hívási láncra és a két érintett
+csomópontra (kiolvasott utasítások, névvel); **nincs mérve** a konténer
+metódusának tartalma.*

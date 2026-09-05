@@ -7,6 +7,8 @@ A néző bal alsó doboza. Belső neve **`nerdview`**, a felirata a
 
 ## 1. A teljes panel: 238 × 144
 
+*Forrás: `editpanel.tre:1005` (`editpanel/previewimage`).*
+
 A `respack.yt` rétegfejléceiből (13 bájt, `int16 x0,y0,x1,y1`), a
 `nerdview/docbounds`-hoz **relatív** koordinátákkal:
 
@@ -32,7 +34,6 @@ A `respack.yt` rétegfejléceiből (13 bájt, `int16 x0,y0,x1,y1`), a
   térköz**;
 - a bezáró gomb a `.tre`-ben **ki van kommentezve** (`#nerdview/close: root`),
   tehát a 3.9-ben **nem látszik**.
-
 ## 2. A felirat betűje
 
 `nerdview.tre`:

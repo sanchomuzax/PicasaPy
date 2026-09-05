@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
 
 from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
 
@@ -88,15 +88,55 @@ class FolderHierarchyController(QObject):
     rowsChanged = Signal()
     simplifiedChanged = Signal()
     treeViewChanged = Signal()
+    #: #2049: a mappa-borítók (fotó-kupacok) megjelenítése.
+    albumThumbsChanged = Signal()
 
-    def __init__(self, parent=None):
+    #: #2154: a három nézet-kapcsoló `QSettings`-kulcsa. Az eredetiben
+    #: mindhárom tartós felhasználói beállítás a `Preferences` alatt
+    #: (`SimplifiedHierarchy`, `ShowAlbumThumbnails2`); nálunk a `view/`
+    #: rekeszbe kerülnek, ahol a hasáb többi nézet-beállítása is él.
+    _KULCS_TREE_VIEW = "view/folderTreeView"
+    _KULCS_SIMPLIFIED = "view/folderSimplified"
+    _KULCS_ALBUM_THUMBS = "view/folderAlbumThumbs"
+
+    def __init__(self, parent=None, settings: QSettings | None = None):
         super().__init__(parent)
+        self._settings = settings
         self._folders: tuple[dict, ...] = ()
         self._expanded: frozenset[str] = frozenset()
-        self._simplified = False
-        self._tree_view = False
+        self._simplified = self._olvas(self._KULCS_SIMPLIFIED)
+        #: #2049: a mappa-borítók megjelenítése — az eredetiben is
+        #: kikapcsolva indul (`ShowAlbumThumbnails2`, alapérték 0).
+        self._album_thumbs = self._olvas(self._KULCS_ALBUM_THUMBS)
+        self._tree_view = self._olvas(self._KULCS_TREE_VIEW)
         self._rows: tuple[dict, ...] = ()
         self._rebuild()
+
+    # -- tartós beállítások (#2154) --------------------------------------
+
+    def _get_settings(self) -> QSettings:
+        """Lusta alapértelmezés — a `controller.py` mintájára.
+
+        A tesztek saját, eldobható objektumot adnak át; az alkalmazás
+        paraméter nélkül hozza létre a vezérlőt."""
+        if self._settings is None:
+            self._settings = QSettings("PicasaPy", "PicasaPy")
+        return self._settings
+
+    def _olvas(self, kulcs: str) -> bool:
+        """Egy kapcsoló beolvasása; MINDHÁROM alapértéke kikapcsolt.
+
+        A `QSettings` az `.ini`-alakból sztringet ad vissza („true"),
+        a natív tárolóból viszont `bool`-t — ezért mindkettőt kezeljük.
+        Ismeretlen érték kikapcsoltnak számít: hibás beállítás-fájl ne
+        billentsen be egy nézetet a felhasználó tudta nélkül."""
+        ertek = self._get_settings().value(kulcs, False)
+        if isinstance(ertek, bool):
+            return ertek
+        return str(ertek).strip().casefold() in ("true", "1", "yes")
+
+    def _ir(self, kulcs: str, ertek: bool) -> None:
+        self._get_settings().setValue(kulcs, bool(ertek))
 
     # -- adatforrás -----------------------------------------------------
 
@@ -134,6 +174,7 @@ class FolderHierarchyController(QObject):
         if bool(value) == self._tree_view:
             return
         self._tree_view = bool(value)
+        self._ir(self._KULCS_TREE_VIEW, self._tree_view)   # #2154
         self.treeViewChanged.emit()
 
     # -- egyszerűsített fanézet (`SimplifiedHierarchy`) ------------------
@@ -160,8 +201,41 @@ class FolderHierarchyController(QObject):
         if bool(value) == self._simplified:
             return
         self._simplified = bool(value)
+        self._ir(self._KULCS_SIMPLIFIED, self._simplified)   # #2154
         self.simplifiedChanged.emit()
         self._rebuild()
+
+    # -- mappa-borítók (#2049) ------------------------------------------
+
+    @Property(bool, notify=albumThumbsChanged)
+    def albumThumbs(self) -> bool:
+        """„Indexképek megjelenítése a könyvtárban" — a fasorok ikonja
+        helyett fotó-kupac.
+
+        Az eredeti kulcsa `Preferences` ▸ `ShowAlbumThumbnails2`, alapértéke
+        **0** (`0x00761870`), ezért nálunk is kikapcsolva indul.
+
+        ⚠️ Ez a kapcsoló — az „Egyszerűsített fanézet"-hez hasonlóan —
+        **nem marad meg** újraindításig: a `folder_hierarchy_controller`
+        egyik kapcsolója sem ír `QSettings`-be. Ez meglévő hiányosság,
+        nem ezé a jegyé.
+        """
+        return self._album_thumbs
+
+    # SZÁNDÉKOSAN nincs közvetlen QML-hivatkozása: a menü a
+    # `toggleAlbumThumbs`-t hívja, és AZ hívja ezt — ugyanaz a felállás,
+    # mint a `setSimplified`-nél (#1052).
+    @Slot(bool)
+    def setAlbumThumbs(self, value: bool) -> None:
+        if bool(value) == self._album_thumbs:
+            return
+        self._album_thumbs = bool(value)
+        self._ir(self._KULCS_ALBUM_THUMBS, self._album_thumbs)   # #2154
+        self.albumThumbsChanged.emit()
+
+    @Slot()
+    def toggleAlbumThumbs(self) -> None:
+        self.setAlbumThumbs(not self._album_thumbs)
 
     @Slot()
     def toggleSimplified(self) -> None:

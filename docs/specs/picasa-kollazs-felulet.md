@@ -2344,6 +2344,8 @@ amelyek még NINCSENEK a kollázson.
 
 ### A három gomb súgója ugyanezt mondja
 
+*Forrás: `collagepanel.tre:185` (`collagepanel/addclips`) · `collagepanel.tre:196` (`collagepanel/deleteclips`) · `collagepanel.tre:206` (`collagepanel/getmoreclips`).*
+
 | elem | felirat | súgó |
 |---|---|---|
 | `collagepanel/addclips` | `+` | **„Add selected clips to the collage"** |
@@ -2354,7 +2356,6 @@ A három együtt egy zárt munkafolyamat: a **tálcába** a Könyvtárból hozol
 képet („Get more…"), a tálcáról a kollázsra teszed (`+`), vagy kiveszed a
 **tálcáról** (`–`). A fül tehát **készlet**, amiből válogatsz — nem a
 kollázs tartalma, és nem is egyszerűen „a mappa képei".
-
 ### A „Klipek (N)" szám — a bináris megerősíti
 
 A fülfeliratot a `0x0083b890` állítja be (`collageUI::tab2_title` =

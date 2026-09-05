@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 12" width="17" height="12">
+  <!-- PicasaPy sajat rajz (#2311): "foto megjelenitese tenyleges meretben".
+       A MERT meret az eredeti `editpanel/1to1_icon`-e: 17 x 12
+       (respack.yt, x 332...349). A rajz a MIENK.
+
+       A jelentes: 1:1 aranyparos - ket fuggoleges vonas kozott ket pont. -->
+  <g fill="#ffffff">
+    <rect x="1" y="1" width="1.5" height="10"/>
+    <rect x="4" y="1" width="1.5" height="10"/>
+    <circle cx="8.5" cy="4" r="0.9"/>
+    <circle cx="8.5" cy="8" r="0.9"/>
+    <rect x="11.5" y="1" width="1.5" height="10"/>
+    <rect x="14.5" y="1" width="1.5" height="10"/>
+  </g>
+</svg>

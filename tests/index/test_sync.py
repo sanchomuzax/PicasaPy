@@ -1,5 +1,7 @@
 """Ismételhető szinkron: scan + .picasa.ini → index (7. rögzített döntés)."""
 
+import os
+
 import pytest
 
 from picasapy.index import (
@@ -221,11 +223,21 @@ class TestSyncTree:
         sync_tree(conn, library)
         assert photos_in_folder(conn, library / "nyaralas")[0].size == 99
 
+    @pytest.mark.skipif(
+        os.name != "posix",
+        reason="#1864: a `chmod(0)` csak POSIX-on tesz olvashatatlanná. "
+        "Windowson a read-only bitet állítja, a fájl OLVASHATÓ marad — a "
+        "próba tehát nem az olvashatatlan ini-t mérné.",
+    )
     def test_unreadable_ini_treated_as_missing(self, conn, library):
         # Zárolt/olvashatatlan ini (pl. a futó Picasa fogja) nem buktathatja
         # el a szinkront — a képek metaadat nélkül is bekerülnek.
-        import os
-
+        #
+        # ⚠️ #1864: a lenti `os.access` ág KORÁBBAN Windowson is elsült, és
+        # „root alatt minden olvasható" indokkal hagyta ki a próbát. Ez
+        # félrevezető volt: a windowsos futtató azt olvashatta, hogy
+        # rootként fut. A platform-kihagyás ezért KÜLÖN, kimondott
+        # feltétel; a root-ág POSIX-on marad, ahol tényleg root-kérdés.
         ini = library / "nyaralas" / ".picasa.ini"
         ini.chmod(0)
         if os.access(ini, os.R_OK):  # rootként futva nincs értelme

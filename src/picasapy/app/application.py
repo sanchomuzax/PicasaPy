@@ -55,6 +55,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
+from .folder_cover_provider import FolderCoverProvider
 from .controller import AppController
 from .data_location import read_data_root
 from .error_log import error_log_path, install_error_log
@@ -1236,6 +1237,19 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
     # (lusta init), mert a kollázs állapota is ott él.
     engine.addImageProvider("collagepreview", controller.collage_preview_provider)
+
+    # #2049: a bal hasáb fasorainak fotó-kupac borítója. A lekérdező az
+    # INDEXBŐL veszi a mappa fotóit, névsorban — a kupacba a lista első
+    # legfeljebb négy eleme kerül (`0x004237ab`), tehát a sorrend
+    # látszik is a képen.
+    def _borito_fajljai(mappa: str):
+        from picasapy.index.queries import photos_in_folder
+
+        with open_index(data_dir / "index.db") as conn:
+            return [Path(rekord.path) for rekord in photos_in_folder(conn, mappa)[:4]]
+
+    folder_cover_provider = FolderCoverProvider(_borito_fajljai)
+    engine.addImageProvider("foldercover", folder_cover_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.

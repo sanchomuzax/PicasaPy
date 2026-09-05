@@ -25,6 +25,8 @@ hiányok):
 
 ## 1. Belépési pontok — hogyan jutok a kollázshoz
 
+*Forrás: `editpanel.tre:1350` (`editpanel/editcollage`) · `faceheaderpanel.tre:100` (`faceheaderpanel/create_collage`) · `headerpanel.tre:89` (`headerpanel/create_collage`).*
+
 | # | eredeti | nálunk | jegy |
 |---|---|---|---|
 | 1.1 | **Létrehozás ▸ Képkollázs…** menü | ✅ megvan, a lapot nyitja | — |
@@ -33,7 +35,6 @@ hiányok):
 | 1.4 | `outputlayout/button(collage)` a kimeneti sávban (2, 2) 55×36 | ✅ **megvan** — `TrayBar.qml` *(2026-08-19-én ellenőrizve)* | — |
 | 1.5 | a **Kollázsok** album elemére duplakattintás → a `.cxf` visszatöltése | ❌ nincs | **#1002** (a `.cxf` írása: **#969**) |
 | 1.6 | **`editpanel/editcollage`** — „Kollázs szerkesztése" a szerkesztő fejlécében (142, 9) 128×22 | ❌ nincs | **#1002** |
-
 ## 2. A bal hasáb — „Beállítások" lap
 
 | # | eredeti | nálunk | jegy |

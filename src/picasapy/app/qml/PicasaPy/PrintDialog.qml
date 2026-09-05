@@ -75,6 +75,18 @@ Window {
             ? "" : printWindow.printers[printWindow.printerIndex - 1]
     property string pdfTarget: ""
 
+    //: #2368: a pillanatnyi lapbeállítás emberi olvasásra. NEM kötés: a
+    //: `paperInfo()` a vezérlő mentett elrendezését olvassa, ami a
+    //: nyomtató oldalbeállítójában változhat — ezért kimondott
+    //: frissítéssel jár (nyomtatóváltás és oldalbeállítás után).
+    property string papiradat: ""
+    function frissitsdAPapiradatot() {
+        if (typeof printController !== "undefined" && printController)
+            printWindow.papiradat = printController.paperInfo(printWindow.printerName)
+    }
+    onPrinterNameChanged: printWindow.frissitsdAPapiradatot()
+    Component.onCompleted: printWindow.frissitsdAPapiradatot()
+
     property string fitMode: "fit"          // PrintFitMode.FIT / .FILL
     property string orientation: "auto"     // PrintOrientation
 
@@ -559,6 +571,49 @@ Window {
                 // a `currentIndex` a választó SAJÁTJA — a párbeszéd innen
                 // olvassa (`printerIndex`), nem fordítva (ld. ott)
             }
+            // #2103: belépési pont a nyomtató SAJÁT beállításaihoz
+            // (`printpanel/psetupbutton`). Az eredetiben az illesztőprogram
+            // tulajdonságlapját nyitja (`OpenPrinter` →
+            // `DocumentProperties` ×2, `0x00861750`); nálunk a Qt
+            // oldalbeállítóját, mert a `DocumentProperties` a Windows
+            // illesztőprogramé. A gomb HELYE és FELIRATA az, ami átvehető.
+            PicasaButton {
+                id: nyomtatoBeallitas
+                objectName: "printPrinterSetupButton"
+                //: `printpanel/setuplabel`
+                text: qsTr("Printer Setup")
+                //: A PDF-cél nem illesztőprogram: nincs mit beállítani.
+                enabled: !printWindow.pdfSelected
+                ToolTip.text: qsTr(
+                    "Open printer setup controls for the selected printer")
+                ToolTip.visible: nyomtatoBeallitas.hovered
+                ToolTip.delay: 500
+                onClicked: {
+                    if (typeof printController !== "undefined" && printController) {
+                        printController.openPrinterSetup(printWindow.printerName)
+                        // #2368: az oldalbeállító elfogadott elrendezése a
+                        // papíradat FORRÁSA — a mezőt tehát a párbeszéd
+                        // bezárása után frissíteni kell, különben a régi
+                        // lapot mutatná.
+                        printWindow.frissitsdAPapiradatot()
+                    }
+                }
+            }
+        }
+
+        // -- papíradat (#2368) -------------------------------------------
+        // Az eredeti panel `printpanel/paperinfo` mezője: tisztán SZÖVEGES
+        // kijelző a nyomtató neve mellett (az állapotfrissítő, `0x00745980`,
+        // mind a négy információs mezőt ugyanazzal a szövegbeállítóval
+        // tölti). Innen látja a felhasználó, MILYEN LAPRA fog nyomtatni —
+        // a nyomat mérete és a „kis kép" figyelmeztetés is ettől függ.
+        Text {
+            objectName: "printPaperInfoText"
+            Layout.fillWidth: true
+            elide: Text.ElideRight
+            text: printWindow.papiradat
+            font.pixelSize: Theme.fontSizeLadder[0]
+            color: Theme.textGray
         }
 
         // -- a PDF célfájlja (csak PDF-módban) ----------------------------

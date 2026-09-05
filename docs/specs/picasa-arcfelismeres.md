@@ -747,6 +747,36 @@ PMP-fájlt. A kérdés tehát **tudásbeli hiány, nem megvalósítási akadály
 14. szakasz mérlege: 1 LEZÁRVA · 1 NEM ELDŐLT (a folytatás pontos helyével)
 ```
 
+### 14.3 A #1238 LEZÁRVA — az adat, amit kért, már megvolt (2026-09-04)
+
+A **#1238** jegy hat `db3`-oszlopot nevezett meg „értelmezhetetlenként", és
+a tulajdonostól kérte egy végigfuttatott arcfelismerésű `db3` mappa
+másolatát. **Az az adat 2026-08-22 óta megvan és fel van dolgozva** — ez a
+14. szakasz és a „`peoplealbumchecksum` NEM checksum" szakasz épp abból
+készült.
+
+Egy 2026-09-04-i **független újramérés** (a tulajdonos 2026-08-22-i
+adatmappa-mentése, saját `pmpimport` olvasónkkal) a lap számait
+**változtatás nélkül** visszaadta:
+
+| oszlop | mért |
+|---|---|
+| `albumdata_category` = **8** | **10 sor** = a személy-albumok; ebből **9** nevesített (van `albumcontactid`), a tizedik a névtelen-gyűjtő |
+| `albumdata_albumcontactids` | 9 nem üres, u64 |
+| `albumdata_albumpeoplechecksum` | 8 nem nulla (a 9-ből egy `0`) |
+| `imagedata_personalbumid` | **115** nem nulla, értékkészlete a személy-albumok sorindexe |
+| `imagedata_suggestionpersonalbumid` | **1** nem nulla |
+| `imagedata_peoplealbumchecksum` | 301 nem üres, **mind ugyanaz az érték** |
+
+⇒ A jegy **hatóköre teljesült**; ami marad, az kizárólag a **14.2 képlet-kérdése**,
+és az ott van nyilvántartva, a folytatás pontos helyével. A jegy nyitva
+hagyása félrevezette a kutatói kört: `ready` címkével a munkalistán állt,
+miközben a kért anyag rég a birtokunkban volt.
+
+*(Adatvédelem: a személy-albumok a tulajdonos családtagjainak nevét
+viselik, és a `contactid`-k személyazonosítók — sem a nevek, sem az
+azonosítók nem kerülnek erre a lapra.)*
+
 
 ## A `peoplealbumchecksum` NEM checksum — konstans arc-jelző (2026-08-24)
 
@@ -789,10 +819,11 @@ nyolc nem nulla, egymástól független 32 bites érték.
 3. **„Egyszerű `a·K + b` a tagképek sorindexein."** ❌ A két 2 tagú albumra
    (`0x00060b93` és `0x00063ce2`) nincs olyan egész `K`, ami mindkettőt adná.
 
-**Ami a következő lépés:** a tagképek **fájlazonosítói** (nem sorindexei) —
-de ebben az adatbázisban az `imagedata_0` tábla **4 bájtos** (csak a magic),
-tehát a névoszlop nincs meg; a képek azonosítói a bélyegkép-indexből
-jönnének.
+**Ami a következő lépés:** ⛔ **HELYESBÍTVE (2026-09-05, 14.4):** a korábbi
+javaslat („a tagképek fájlazonosítói") **találgatás volt, adatoldalról**.
+A 14.4 szakasz megmutatja, hogy a kérdés **kódoldalról** sokkal szűkebb: a
+teljes binárisban **hat** hely nyúl a `albumpeoplechecksum` oszlophoz, és
+közülük **egyetlen** írja.
 
 ### A többi oszlop állapota ugyanebben az adatbázisban
 
@@ -811,3 +842,672 @@ szabálya **nyitva marad**.*
 
 ⚠️ **Adatvédelem:** a szóban forgó adatbázis valódi családi neveket
 tartalmaz. A mérések ide csak **album-indexszel** kerülnek, névvel soha.
+
+---
+
+## 15. A SZEMÉLY-ALBUM FEJLÉCSÁVJA — a javaslat-munkafolyamat FELÜLETE (2026-09-03)
+
+A lap eddig a **motort** és az **adatot** írta le (3–4. szakasz). A
+felület, amin a felhasználó a javaslatokat jóváhagyja vagy elveti,
+hiányzott. Ez a szakasz azt pótolja — a `faceheaderpanel` a személy-album
+fejlécsávja, `unknownfaceheaderpanel` pedig az „Ismeretlen emberek"
+albumé.
+
+### 15.1 Miért nem találta eddig a lefedettségi mérés
+
+A panel elemeire a kód **nem a `faceheaderpanel/…` teljes néven**
+hivatkozik, hanem **puszta levélnéven** (`faceheaderpanel/confirmsug`, `faceheaderpanel/moresug`, …), és
+a példányosításkor **dinamikusan generált** névteret használ:
+
+| sablon | cím |
+|---|---|
+| `albumheader/%x/%d` | `0x0074ad40` |
+| `albumheader/%x/%d/face_zoom` · `…/picture_zoom` | `0x00767e50` |
+| `globalalbums%x/%d` | `0x0074ad40` |
+| `albumheader_%d %x` | `0x0074ad40` |
+
+⇒ A `string_xrefs`-ben **nulla** találat van `faceheaderpanel/`-re. A
+panel-építő (`0x0074ad40`, 3938 b) három változat közül választ:
+`headerpanel` · `faceheaderpanel` · `unknownfaceheaderpanel`.
+
+### 15.2 A TELJES parancskészlet — a fejlécsáv elosztójából
+
+A `0x005e0f70` (3930 b) `repe cmpsb`-vel veti össze a megnyomott elem
+levélnevét, és **25 parancsot** ismer. A javaslat-munkafolyamathoz
+tartozók vastagon:
+
+| # | parancs | kezelő | cím az elosztóban |
+|---:|---|---|---|
+| 1 | `websync0` / `websync1` | `0x005e26a0` | `0x005e1026`, `0x005e105c` |
+| 2 | `sync_options` | `0x005e26a0` | `0x005e1092` |
+| 3 | `save_edits` | `0x0053a790` | `0x005e10e6` |
+| 4 | `create_cd` | `0x009cd8a0` | `0x005e113a` |
+| 5 | `create_movie` | `0x0057cb60` | `0x005e118a` |
+| 6 | `create_collage` | `0x007463c0` | `0x005e120a` |
+| 7 | `select_star` | `0x005e50c0` | `0x005e1271` |
+| 8 | `pwa_button` | `0x00543ad0` | `0x005e12c0` |
+| 9 | `face_zoom` / `picture_zoom` | `0x005e5290` | `0x005e1314`, `0x005e134b`, `0x005e1b56` |
+| 10 | `showunknown` / `showignored` | `0x005e5110` | `0x005e1381`, `0x005e13b7` |
+| 11 | `select_faces` | `0x005e5110` | `0x005e13ed` |
+| 12 | `play` | `0x005e8a70` | `0x005e143c` |
+| 13 | `share` | `0x0059e920` | `0x005e148d` |
+| 14 | `view_online` | `0x005e0ef0` | `0x005e14df` |
+| 15 | **`selectsug`** | `0x006024e0` | `0x005e1520` |
+| 16 | **`moresug`** | **`0x00602890`** | `0x005e1570` |
+| 17 | **`confirmsug`** | **`0x00602640`** | `0x005e15bf` |
+| 18 | **`confirmsel`** | **`0x005c9b00`** | `0x005e160f` |
+| 19 | **`ignore`** | **`0x005c9b00`** | `0x005e1645` |
+| 20 | **`addname`** | **`0x00602970`** | `0x005e169a` |
+| 21 | **`sug_filter`** | vtable-hívás | `0x005e16e9` |
+| 22 | **`removesel`** | **`0x005c9b00`** | `0x005e177b` |
+| 23 | `create_face_movie` | `0x00603660` | `0x005e17d0` |
+| 24 | `set_thumbnail` | `0x00603660` | `0x005e180c` |
+| 25 | `folderbutton` | `0x004adfe0` | `0x005e185b` |
+
+### 15.3 MIT CSINÁLNAK — a három adat-válasz
+
+#### a) „További javaslatok keresése" LEJJEBB VISZI A KÜSZÖBÖT
+
+A `faceheaderpanel/moresug` kezelője (`0x00602890`, 216 b) beolvassa a beállítást és
+számol:
+
+```
+0x006028be  mov  dword ptr [esp+0x18], 0x55   ; alapérték 85 (= a 1.2 pont FRSuggestionThreshold-ja)
+0x006028c6  call 0x00407a20                   ; "Preferences" / "FRSuggestionThreshold"
+0x006028cf  call 0x004019b0                   ; kiolvasás
+0x0060293a  fdiv qword ptr [0xcf3a08]         ; ÷ 100.0
+0x00602949  fsub qword ptr [0xc7dd30]         ; − 0.1
+0x0060295b  call 0x0047baf0                   ; a keresés indítása ezzel az értékkel
+```
+
+⇒ **`küszöb = FRSuggestionThreshold / 100 − 0,1`**, alapértéken
+**0,85 − 0,1 = 0,75**. A konstansok kiolvasva: `0x00cf3a08` = **100.0**,
+`0x00c7dd30` = **0.1**, az alapérték **0x55 = 85**.
+
+⛔ **A gomb NEM írja vissza a beállítást.** A `0x00602890`-ben **nincs**
+`0x00401900` (a beállítás-író) hívás — mechanikusan ellenőrizve. Vagyis
+ismételt megnyomás **ugyanazt** a 0,1-del csökkentett küszöböt használja,
+nem visz egyre lejjebb.
+
+#### b) A jóváhagyás / elvetés a `.picasa.ini`-be ír
+
+A `faceheaderpanel/confirmsel`, `faceheaderpanel/ignore` és `faceheaderpanel/removesel` **ugyanazt** a kezelőt hívja
+(`0x005c9b00`, 5744 b), és annak sztringjei megnevezik a tárolót:
+
+| sztring | mi |
+|---|---|
+| `.picasa.ini` | a célfájl |
+| **`]ignoreface`** | az elvetett arc jelölése |
+| **`]unknownface`** | az ismeretlen arc jelölése |
+| `]search` | (ugyanennek a kezelőnek a másik ága) |
+
+⇒ A javaslat elvetése **nem** az adatbázisban marad: a `.picasa.ini`
+kapja meg — ugyanabban a rendszerben, amit a 3.1 pont ír le.
+
+#### c) A „Név hozzáadása" a jobb oldali fiókot nyitja
+
+Az `faceheaderpanel/addname` kezelője (`0x00602970`, 147 b) két sztringet használ:
+`rightdrawerpanel/peoplepanel` és a **`header_addname:%s`** parancs-token
+⇒ a gomb az **Emberek panelt** nyitja meg, a nevet a tokenben átadva.
+
+### 15.4 A feliratok — angol ÉS hivatalos magyar
+
+| elem | típus | angol | **magyar** |
+|---|---|---|---|
+| `faceheaderpanel/confirmsug` | felirat | Confirm all | **Az összes jóváhagyása** |
+| `faceheaderpanel/confirmsug` | súgó | Confirm all suggestions | **Az összes javaslat jóváhagyása** |
+| `faceheaderpanel/confirmsel` | felirat | Confirm | **Jóváhagyás** |
+| `faceheaderpanel/confirmsel` | súgó | Confirm selected suggestions | **Kijelölt javaslatok jóváhagyása** |
+| `faceheaderpanel/removesel` | felirat | Remove | **Eltávolítás** |
+| `faceheaderpanel/removesel` | súgó | Remove selected suggestions | **Kijelölt javaslatok törlése** |
+| `faceheaderpanel/moresug` | felirat | Find more suggestions | **További javaslatok keresése** |
+| `faceheaderpanel/sug_filter` | súgó | Show only suggestions (when toggled on) | **Csak a javaslatok megjelenítése (ha be van kapcsolva)** |
+| `faceheaderpanel/sug_label` | szöveg | Suggestions: | **Javaslatok:** |
+| `faceheaderpanel/face_zoom` | súgó | View zoomed in to the face | **Megjelenítés az arcra közelítve** |
+| `faceheaderpanel/picture_zoom` | súgó | View zoomed out to the full picture | **Megjelenítés a teljes képre távolítva** |
+| `faceheaderpanel/set_thumbnail` | súgó | Set as People Album Thumbnail | **Beállítás indexképként az Emberek albumban** |
+| `faceheaderpanel/create_face_movie` | súgó | Create Face Movie | **Mozgófilm létrehozása arcokból** |
+| `faceheaderpanel/create_movie` | súgó | Create Movie Presentation | **Mozgófilmes prezentáció létrehozása** |
+| `faceheaderpanel/create_collage` | súgó | Create Photo Collage | **Fotókollázs készítése** |
+| `faceheaderpanel/play` | súgó | Play Fullscreen Slideshow | **Diavetítés teljes képernyőn** |
+| `faceheaderpanel/pwa_button` | súgó | Open PWA web page | **Picasa Webalbumok-beli weboldal megnyitása** |
+
+Forrás — **sorszámmal, hogy a lefedettségi mérés is lássa**:
+`faceheaderpaneltext.tre:44` (`faceheaderpanel/confirmsug` felirata),
+`faceheaderpaneltext.tre:50` (`faceheaderpanel/removesel`),
+`faceheaderpaneltext.tre:53` (`faceheaderpanel/moresug`),
+`faceheaderpaneltext.tre:35` (`faceheaderpanel/sug_filter` súgója),
+`faceheaderpaneltext.tre:68` (`faceheaderpanel/face_zoom`),
+`faceheaderpaneltext.tre:74` (`faceheaderpanel/sug_label`);
+a magyar alakok: `referencia/i18n-hu/faceheaderpaneltext.xml`.
+
+**A munkafolyamat útmutató szövege** (`stringres-en-hu.tsv` 2072. sor):
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `PeopleAlbum::ConfirmText` | Press checkmark to confirm match, press "x" to ignore. | **Az egyezés megerősítéséhez kattintson a pipa, az elvetéshez pedig az "x" ikonra.** |
+
+### 15.5 Geometria — `respack.yt`, a 532 × 90 vászonban
+
+A `faceheaderpanel/docbounds` **532 × 90**; a `faceheaderpanel/headerbase` 532 × 86, alatta
+egy 532 × 4 `faceheaderpanel/shadow`.
+
+**Szerkezeti horgony** (a szülő-gyerek viszony, ahonnan a kényszerek jönnek):
+`faceheaderpanel.tre:125` (`faceheaderpanel/face_zoom` a `zoom_container`-ben),
+`faceheaderpanel.tre:136` (`faceheaderpanel/zoom_container`),
+`faceheaderpanel.tre:169` (`faceheaderpanel/sug_filter`),
+`faceheaderpanel.tre:181` (`faceheaderpanel/confirmsug`),
+`faceheaderpanel.tre:190` (`faceheaderpanel/removesel`),
+`faceheaderpanel.tre:194` (`faceheaderpanel/moresug`).
+
+| elem | téglalap | méret |
+|---|---|---|
+| `faceheaderpanel/faceicon` (+ árnyék) | (12,8)–(71,79) | 59 × 71 |
+| `faceheaderpanel/album_title` | (80,7)–(399,28) | 319 × 21 |
+| `faceheaderpanel/album_title_clip` | (80,7)–(399,40) | 319 × 33 |
+| `faceheaderpanel/zoom_container` | (457,4)–(527,25) | 70 × 21 |
+| `faceheaderpanel/face_zoom` | (457,4)–(492,25) | **35 × 21** |
+| `faceheaderpanel/picture_zoom` | (492,4)–(527,25) | **35 × 21** |
+| `faceheaderpanel/zoom_label` | (189,25)–(527,38) | 338 × 13 |
+| `faceheaderpanel/create_label` | (80,40)–(418,53) | 338 × 13 |
+| `faceheaderpanel/sug_label` / `faceheaderpanel/sug_hottip` | (318,40)–(527,53) | 209 × 13 |
+| `faceheaderpanel/selecthelp` | (357,41)–(527,54) | 170 × 13 |
+| `faceheaderpanel/play` | (80,55)–(109,82) | 29 × 27 |
+| `faceheaderpanel/dividers` | (111,61)–(112,78) | **1 × 17** |
+| `faceheaderpanel/create_collage` | (115,55)–(144,82) | 29 × 27 |
+| `faceheaderpanel/create_movie` | (147,55)–(176,82) | 29 × 27 |
+| `faceheaderpanel/create_face_movie` | (179,55)–(208,82) | 29 × 27 |
+| `faceheaderpanel/set_thumbnail` | (211,55)–(240,82) | 29 × 27 |
+| `faceheaderpanel/pwa_button` | (243,55)–(272,82) | 29 × 27 |
+| `faceheaderpanel/sug_filter` | (316,55)–(345,82) | 29 × 27 |
+| **`faceheaderpanel/moresug`** | (348,55)–(527,82) | **179 × 27** |
+| **`faceheaderpanel/confirmsug`** | (348,55)–(436,82) | **88 × 27** |
+| **`faceheaderpanel/confirmsel`** | (348,55)–(436,82) | **88 × 27** |
+| **`faceheaderpanel/removesel`** | (439,55)–(527,82) | **88 × 27** |
+
+⇒ **A `faceheaderpanel/confirmsug` és a `faceheaderpanel/confirmsel` UGYANAZT a téglalapot foglalja el** —
+váltakozó gomb: kijelölés nélkül „Az összes jóváhagyása", kijelöléssel
+„Jóváhagyás". A `faceheaderpanel/moresug` a teljes maradék szélességet elfoglalja
+(179 px), amikor nincs jóváhagyás-pár.
+
+*(A `#`-előtagú rétegek — `#sug_filter_icon`, `#button: create_cd`,
+`#button: select_star`, `#button: toggle_faces`, `#text(Select): select_label`,
+`#button: sync_options`, `#text(xx photos edited): edit_count`,
+`#button(save_edits): save_edits`, `#button(share): share`,
+`#butlink(view_online): view_online`, `#superbutton(…selectsug): selectsug`,
+`#text(Description): album_description`, `#title_fade0/1` — a
+`picasa-respack-format.md` 2. pontja szerint **rétegtípus-jelölés**, nem
+holt kód.)*
+
+### 15.6 Az „Ismeretlen emberek" TESTVÉRPANEL
+
+Az `unknownfaceheaderpanel` ugyanabban a 532 × 90 vászonban él, de más a
+gombkészlete. Szerkezeti horgony: `unknownfaceheaderpanel.tre:38`
+(`unknownfaceheaderpanel/showignored`), `:43`
+(`unknownfaceheaderpanel/showunknown`), `:53`
+(`unknownfaceheaderpanel/ignore`), `:70`
+(`unknownfaceheaderpanel/addname`), `:58`
+(`unknownfaceheaderpanel/addname_instructions`).
+
+| elem | téglalap | méret | szerep |
+|---|---|---|---|
+| `unknownfaceheaderpanel/showall` / `unknownfaceheaderpanel/cluster` | (278,14)–(398,41) | 120 × 27 | a `unknownfaceheaderpanel/clustering_container` váltógombjai |
+| `unknownfaceheaderpanel/showunknown` / `unknownfaceheaderpanel/showignored` | (403,14)–(523,41) | 120 × 27 | a `unknownfaceheaderpanel/viewtype_container` váltógombjai |
+| `unknownfaceheaderpanel/addname` | (235,60)–(398,80) | **163 × 20** | „Név hozzáadása" |
+| `unknownfaceheaderpanel/ignore` | (403,56)–(523,83) | 120 × 27 | „Elvetés" |
+| `unknownfaceheaderpanel/addname_instructions` | (52,42)–(523,55) | 471 × 13 | útmutató szöveg |
+| `unknownfaceheaderpanel/info_text` | (12,57)–(297,78) | 285 × 21 | állapotszöveg |
+| `unknownfaceheaderpanel/faceicon` | (11,12)–(47,48) | 36 × 36 | a kisebb arcikon |
+| `unknownfaceheaderpanel/album_title` | (52,14)–(429,35) | 377 × 21 | — |
+
+⇒ **Két váltógomb-pár egymás mellett**: a csoportosítás (`unknownfaceheaderpanel/showall` ↔
+`unknownfaceheaderpanel/cluster`) és a nézet (`unknownfaceheaderpanel/showunknown` ↔ `unknownfaceheaderpanel/showignored`).
+
+### 15.7 Eredeti / nálunk — MÉRVE
+
+*Forrás: `faceheaderpanel.tre:185` (`faceheaderpanel/confirmsel`) · `faceheaderpanel.tre:181` (`faceheaderpanel/confirmsug`) · `faceheaderpanel.tre:125` (`faceheaderpanel/face_zoom`) — és további 4 elem ugyanott.*
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a fejlécsáv | **három** változat (`headerpanel`, `faceheaderpanel`, `unknownfaceheaderpanel`) | **egy**, általános: `LightboxHeader.qml` |
+| gombok a fejlécen | 25 parancs (15.2) | **öt**: `headerPlayButton` (162), `headerSelectStarredButton` (177), `headerSaveEditsButton` (189), `headerCollageButton` (209), `headerUploadButton` (229) |
+| javaslat-vezérlők | `faceheaderpanel/confirmsug`, `faceheaderpanel/confirmsel`, `faceheaderpanel/removesel`, `faceheaderpanel/moresug`, `faceheaderpanel/sug_filter`, `faceheaderpanel/selectsug`, `faceheaderpanel/addname`, `faceheaderpanel/ignore` | **egyik sincs** — 0 találat `confirmAll`/`moresug`/arc-javaslat névre a `src/`-ben |
+| arc-nagyítás váltó | `faceheaderpanel/face_zoom` ↔ `faceheaderpanel/picture_zoom` | **nincs** |
+| a küszöb-lazítás | `FRSuggestionThreshold/100 − 0,1` | **nincs** |
+
+*(A `render/crop_suggest.py` a **vágási** javaslatoké — más funkció, nem
+ez.)*
+
+⇒ A javaslat-munkafolyamat felülete nálunk **teljesen hiányzik**, pedig az
+adatréteg (`personalbumrecs`, `suggestionpersonalbumid` — 3.4/d) már
+feltárva. Jegy: **#2187**.
+
+*Bizonyítottsági fok: **megerősített*** — a parancskészlet az elosztó
+`repe cmpsb` ágaiból, a küszöb-képlet három kiolvasott konstansból, a
+tárolók a kezelők sztringjeiből, a geometria a `respack.yt`-ből, a magyar
+feliratok az `i18n-hu`-ból.
+
+---
+
+## 16. A MOTOR KONFIGURÁCIÓJA: `plugins/red.cfg` — leltár és tulajdonosi döntés (#2239, 2026-09-04)
+
+> **Tulajdonosi döntés (2026-09-04, a #2239-en):** *„A dokumentációban
+> kerüljön rögzítésre a korábbi működés, és a majdani új, saját eljárás
+> specifikáció készítésénél lehet figyelembe venni irányadónak. De ez ne
+> kerüljön most is beépítésre."*
+>
+> ⇒ Ez a szakasz **tájékoztató, nem normatív**. A PicasaPy **nem olvassa**
+> és nem is fogja olvasni ezt a fájlt; a leírás akkor lesz hasznos, amikor a
+> saját arcfelismerőnk specifikációja készül.
+
+### Mi ez a fájl
+
+A `Picasa3/plugins/red.cfg` (**2,2 MB**) a `Red.dll` — az eredeti Picasa
+arc- és vörösszem-motorjának — **betanított konfigurációja**: detektorok,
+jellemzőkinyerők, modellek és küszöbök szerializált objektumfája.
+
+⚠️ **A fájl a PARAMÉTEREKET tartalmazza, az ELJÁRÁST nem.** A felismerő
+algoritmus a `Red.dll` kódjában van. Ezért a benne álló számok egy **másik**
+eljárásban nem jelentik ugyanazt — ez a fő oka annak, hogy az átvétele nem
+javasolt.
+
+### A szerializálás formátuma — megfejtve
+
+Minden objektum **hatbájtos fejléccel** kezdődik:
+
+```
+00  <len:1>  <ClassId: len bájt, little-endian>  00
+```
+
+A megfigyelt fájlban `len` mindig **3**. A fejléc után osztályfüggő
+payload jön, a legtöbb osztálynál 4 bájtos verziószámmal indítva.
+
+Négy tároló-osztály payloadja értelmezve:
+
+| ClassId | osztály | payload |
+|---|---|---|
+| `0x15` | `ebs_ObjectList` | 4 bájt elemszám |
+| `0x16` | `ebs_ObjectArr` | 4 bájt elemszám |
+| `0x17` | `ebs_ObjectRef` | **1 bájt** hivatkozási index |
+| `0x18` | `ebs_ObjectFRef` | 1 bájt |
+
+A `ClassId → osztálynév → ősosztály` tábla a `Red.dll` regisztrációs
+sorozatából olvasható ki (**550 osztály**).
+
+### A leltár — mért számok
+
+| | érték |
+|---|---|
+| objektum a fájlban | **19 525** |
+| különböző osztály | **75** |
+| `red.cfg` SHA-256 | `916d69fd…f51835` |
+
+**Osztálycsaládok** (előtag szerint, objektumszámmal):
+
+| előtag | objektum | osztály | mi ez |
+|---|---:|---:|---|
+| `ebs_` | 12 215 | 29 | alaptárolók (tömbök, hivatkozások, adathordozók) |
+| `ets_` | 4 827 | 9 | mátrix/vektor típusok (`CompactVec`, `CompactMat`, `Float3DMat`…) |
+| `vlf_` | 921 | 10 | **lokális jellemzők**: `AdvancedDetector`, `CompactRect/Quad/WaveFeature`, `AngleMap`, `PatchSize` |
+| `vqc_` | 729 | 8 | **kvantálás és leképezés**: `Quantizer`, `L2NormVecMap`, `PrjVecMap`, `SubVecMap`, `Relator` |
+| `egp_` | 561 | 2 | `SpatialGraph` + `SpatialNode` — térbeli gráf |
+| `vfv_` | 242 | 2 | `AdvancedFvc`, `CueInfo` — jellemzővektor-készítés |
+| `vde_` | 12 | 3 | `LocalPoseDetector`, `LocalDetectorSequence`, `LocalDetectorPrlArr` |
+| `vfr_` | 7 | 6 | a **legfelső szint** (ld. lent) |
+| `vrd_` | 6 | 5 | **vörösszem**: `RedEyeDetector`, `RedEyeCorrector`, `HistogramModel`, `GmmModel`, `Codebook` |
+| `vpf_` | 5 | 1 | `EigenShapeMap` — alakmodell |
+
+⭐ **Ebből az egyik legfontosabb megfigyelés:** a fájl **nem csak az
+arcfelismerésé** — a `vrd_*` család a **vörösszem-javítás** detektorát és
+korrektorát is tartalmazza, ugyanabban a konfigurációban.
+
+### A legfelső szint — a feldolgozási lánc, fájlbeli sorrendben
+
+| offszet | objektum | verzió |
+|---|---|---|
+| `0x7` | **`vfr_VdeFaceFinder`** — az arckereső belépési pontja | 201 |
+| `0x21` | `vlf_AdvancedDetector` | 100 |
+| `0x853ae` | **`vfr_VdeLandmarker`** — arcpont-kereső | 201 |
+| `0x853ea` | `vde_LocalPoseDetector` + `vde_LocalDetectorSequence` | 100 |
+| `0xabe46` | `vpf_EigenShapeMap` (összesen **5** példány) | 100 |
+| `0xdefed` | **`vrd_RedEyeDetector`** + két `HistogramModel`, `GmmModel`, `Codebook` | 100 |
+| `0xe0013` | **`vrd_RedEyeCorrector`** | 100 |
+| `0x1734d3` | **`vfr_FeatureVectorCreatorArr`** — a jellemzővektor-készítők | 101 |
+| `0x22b08a` | `vfr_SdkRelator` | 100 |
+| `0x22d07e` | **`vfr_SowGrowStampClusterer`** — a „bélyeg"-klaszterező | 100 |
+| `0x22d0a3` | `vfr_StdClusterRelator` | 100 |
+
+### Az EGYETLEN kiolvasott paraméter-ötös
+
+A `vfr_SowGrowStampClusterer` (`ClassId 0x401038`) payloadja a verzió után
+**három float + két int**:
+
+```
+0,7   0,98   1,0   25 000 000   25 000 000
+```
+
+*(Kiolvasva a `0x22d07e` objektum törzséből; a mezők NEVE nincs megfejtve —
+a két 25 milliós egész nagyságrendje memória- vagy elemkorlátra utal, de ezt
+nem állítjuk.)*
+
+### Amit NEM fejtettünk meg — és tudatosan nem is találgatunk
+
+- a 75 osztályból **71** payload-sémája (a négy tároló-osztályon kívül);
+- a modellobjektumok (súlyok, kaszkádok, kódkönyvek) belső szerkezete;
+- a `SowGrowStampClusterer` öt paraméterének **jelentése**.
+
+### A kutatási eszköz helye
+
+A clean-room parser és a `ClassId`-tábla a **privát `picasapy-agent`
+repóban** él (`eszkozok/redcfg/`), 17 egységteszttel és négypontos golden
+kapuval. A termék-repóba nem kerül: nem termékkód.
+
+*Bizonyítottsági fok: **megerősített** a formátumra, a leltár számaira, az
+osztálycsaládokra, a lánc sorrendjére és a paraméter-ötös értékeire
+(kiolvasva, golden kapuval rögzítve); **nem megfejtett** a payload-sémák
+többsége és a paraméterek jelentése.*
+
+
+## 14.4 Az `albumpeoplechecksum` ÍRÓJA — a keresési tér a teljes binárisról EGY függvényre szűkült (2026-09-05)
+
+> **Bizalmi fok: megerősített** az oszlop memóriabeli helyére, a hat érintő
+> helyre és az írás pontos utasítására; **a KÉPLET továbbra sincs meg.**
+
+A 14.2 azt írta, hogy a folytatáshoz „az oszlop indexét a `0x004127c0` /
+`0x00415790` regisztrációk sorrendjéből kell kiszámolni". A regisztrációt
+elolvasva kiderült, hogy **nincs szükség indexre**: az oszlopok
+**tagobjektumok fix eltolásokon**, tehát elég az eltolásra pásztázni.
+
+### 14.4.1 Az oszlop memóriabeli helye
+
+A `CThumbDB` konstruktora (`FUN_00415790`) **33 nevet** regisztrál, ebből az
+`albumdata` tábláé sorrendben: `token · name · filename · date · category ·
+unread · description · location · uid · hascollage · inisync · … ·
+albumcontactids · albumpeoplechecksum`.
+
+| oszlop | regisztráció | névhossz | a tagobjektum eltolása |
+|---|---|---:|---|
+| `albumcontactids` | `0x00415bbc` | `0x0f` = 15 ✓ | **`CThumbDB + 0x2748`** |
+| **`albumpeoplechecksum`** | **`0x00415bcc`** | `0x13` = 19 ✓ | **`CThumbDB + 0x27b0`** |
+
+*(A névhossz a `mov eax, <len>` közvetlen értékéből jön, és bájtra egyezik a
+sztring hosszával — ez hitelesíti a párosítást.)*
+
+### 14.4.2 ⛔ KIMERÍTŐ: hat hely nyúl az oszlophoz, EGY írja
+
+A teljes `.text` pásztázása a `+0x27b0` eltolásra:
+
+| cím | függvény | mit csinál |
+|---|---|---|
+| `0x00415be8` | `FUN_00415790` | a konstruktor — létrehozza |
+| `0x00417fd5` | `FUN_00417770` (2624 b) | ua. tömbben a `+0x2748`-cal — életciklus |
+| `0x0048be5d` | `FUN_0048bd80` (888 b) | egy érintés |
+| `0x0048c18c` | `FUN_0048c100` (817 b) | egy érintés |
+| **`0x0048f545`** | **`FUN_0048ef20` (5143 b)** | **OLVASÁS** — összeveti a tárolt értéket |
+| **`0x0048f79d`** | **ua.** | **ÍRÁS** |
+
+Összevetésül: az `albumcontactids` (`+0x2748`) **15** helyen, **12**
+függvényben szerepel — a checksum-oszlop tehát nagyságrenddel szűkebb.
+
+### 14.4.3 Az írás pontos utasításai
+
+```
+0x0048f79d  add ebx, 0x27b0          ; az oszlopobjektum
+0x0048f7a3  call [0xc40284]          ; GetCurrentThreadId — a szokásos zár
+…
+0x0048f7f5  lea eax, [ebx + 0x5c]    ; a cella (vagy a tömbelem, 0x0048f7f0)
+0x0048f7f8  mov ecx, [esp + 0x30]    ; ← AZ ÚJ ÉRTÉK
+0x0048f7fc  cmp [eax], ecx
+0x0048f7fe  je  0x0048f9ec           ; ha VÁLTOZATLAN → nem ír, nem piszkít
+```
+
+⇒ A checksum **csak akkor íródik, ha megváltozott** — összhangban azzal,
+hogy származtatott, gyorsítótár-jellegű adat (14.2).
+
+A `FUN_0048ef20` a `0x0048f68b`-en meghívja a `FUN_0048af60`-at (2188 b),
+amelynek visszatérési kódját a `0` és a `0xf4242` ellen vizsgálja
+(`0x0048f690`, `0x0048f694`) — ez a legvalószínűbb helye a tényleges
+számításnak.
+
+### 14.4.4 A KONKRÉT következő lépés (a 14.2-é helyett)
+
+1. `FUN_0048ef20` (5143 b) — honnan kapja az `[esp+0x30]`-at a `0x0048f7f8`
+   előtt. A függvény nagy, de a kérdés egyetlen veremrekeszre szűkült.
+2. `FUN_0048af60` (2188 b) — a jelölt számoló; a `0xf4242` és a `0xf4241`
+   (`0x0048f660`) állapotkódok is innen jönnek.
+3. Ellenőrzés a meglévő adaton: a 14.2 kilenc albumának értéke a
+   `research/testdata/Picasa2-arcok/` adatbázisban megvan, tehát a képlet
+   **azonnal ellenőrizhető**, ha megvan.
+
+⚠️ Ez **nem** dekompilációt igényel, csak a két függvény célzott olvasását.
+
+### 14.4.5 Jegy
+
+**#2391** — `ready` · `bináris-kutatható` · `P4` (a PicasaPy nem ír PMP-t, tehát ez tudásbeli hiány, nem megvalósítási akadály).
+
+### 14.4.6 Mérleg (14.4)
+
+`1 nyílt (ÖRÖKÖLT: a képlet) · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| hol él az oszlop a memóriában | **LEZÁRVA** — `CThumbDB + 0x27b0` (14.4.1) |
+| ki írja | **LEZÁRVA** — egyetlen hely: `0x0048f79d` a `FUN_0048ef20`-ban (14.4.2) |
+| mikor ír | **LEZÁRVA** — csak változás esetén (`0x0048f7fe`) |
+| **mi a KÉPLET** | **NYÍLT (örökölt, 2026-08-22 óta)** — de a keresési tér a teljes binárisról két függvényre szűkült (14.4.4) |
+
+## 14.5 Az `albumpeoplechecksum` — KÉT jelölt kiesett, és megvan, HOL áll meg az olcsó ág (2026-09-05, #2391)
+
+> **Bizalmi fok: megerősített** a két kizárásra és a megállási pont okára;
+> **a képlet továbbra sincs meg.**
+
+A 14.4 két jelöltet nevezett meg a számításra. **Mindkettő kiesett.**
+
+### 14.5.1 ⛔ `FUN_0048af60` NEM a számoló — sztring/vektor-másoló
+
+| megfigyelés | cím |
+|---|---|
+| **egyetlen** hívója van (`0x0048f68b`), tehát nem általános segéd | kimerítő `e8`-pásztázás |
+| a törzse először a **`FUN_00448fb0`**-at hívja | `0x0048af7a` |
+| a `FUN_00448fb0` a **generikus oszlopolvasó** (21 hívó), és az `albumcontactids` oszlopot (`+0x2748`) éri el | `0x00448fbc` |
+| ha a kiolvasott 64 bites érték **nulla**, `9`-cel tér vissza | `0x0048af83`–`0x0048af98` |
+| a maradék törzs **csomagolt hosszú sztring/vektor másolása** (`shr len,1`, `and [edi+4],1`, felszabadítás `0x0097caf0`-val) | `0x0048afa2`–`0x0048b113` |
+
+⇒ Ez a függvény **beolvassa az album `albumcontactids` értékét és átmásolja**
+— nem számol ellenőrzőösszeget.
+
+### 14.5.2 ⛔ `FUN_0048bd80` NEM a számoló — felszabadító/átméretező ág
+
+A `0x0048be5d` előtti utasítások a **vektort ürítik** (`0x0048be4a`
+felszabadítás, `0x0048be52` a csomagolt hossz nullázása, `0x0048be56`
+`[ebx+0x48] = 0`), és csak utána zárolja az oszlopot. Számítás nincs benne.
+
+### 14.5.3 ⛔ ITT áll meg az olcsó ág — és pontosan miért
+
+Az írás a `0x0048f7f8`-on lévő **veremrekeszből** veszi az értéket. A
+`FUN_0048ef20` teljes törzsében a **nyers `[esp + 0x30]` alakra**
+mindössze hét hivatkozás van:
+
+| cím | mi |
+|---|---|
+| `0x0048f5b8`, `0x0048f7f8`, `0x0048f9b6` | **olvasás** (a checksum-ág) |
+| `0x004900c9`, `0x00490281` | **írás** — de egy **16 bites tömbön** futó ciklusban (`0x0049026e`: `mov word ptr [edx+ecx*2], ax`), és a `0x00490272`/`0x0049027a`/`0x0049027f` szerint **ciklusszámláló**, nem checksum |
+| `0x004900dc`, `0x00490272` | ua. ciklus olvasásai |
+
+⇒ **A checksum-ág olvasásaihoz tartozó ÍRÁS nincs ugyanezen a nyers
+eltoláson** — vagyis a két hely **eltérő `esp`-állapotban** van (élő
+hívás-argumentum push-ok miatt). A veremrekesz azonosításához
+**bázisblokkonkénti `esp`-követés** kell; a lineáris követés egy 5 143
+bájtos, elágazásokkal teli törzsön nem megbízható.
+
+> **Ez az a pont, ahol a drága ág (célzott dekompiláció) INDOKOLT** — és
+> most **pontos kérdéssel**: *mi tölti fel a `0x0048f7f8`-on olvasott
+> lokális rekeszt?* A dekompilátor a veremrekeszeket nevesíti, tehát ez neki
+> egyetlen ránézés.
+
+### 14.5.4 A contactid-hipotézis MÁSODSZOR is megdőlt — független adaton
+
+A 14.2 kizárta, hogy a checksum az `albumcontactids`-ből képződne (alsó 32,
+felső 32, XOR). Most a két oszlop **egymás mellé mérve**
+(`research/testdata/Picasa2-arcok/Picasa2/db3/`, saját `pmpimport`
+olvasónkkal, `albumcontactids` mezőtípus `0x4` = `uint64`,
+`albumpeoplechecksum` `0x1` = `uint32`):
+
+| album | tagok | `albumpeoplechecksum` |
+|---:|---:|---|
+| 109 | 32 | `0x8DAB10B8` |
+| 110 | 42 | `0xDC7A570C` |
+| 111 | 19 | `0x5CCEB284` |
+| **112** | **1** | **`0x00000000`** |
+| 113 | 2 | `0x00060B93` |
+| 114 | 4 | `0x030331FE` |
+| 115 | 7 | `0x98B4584D` |
+| 116 | 2 | `0x00063CE2` |
+| 117 | 6 | `0x9204CA91` |
+
+A **112-es albumnak van** `albumcontactids` értéke (nem nulla, egyedi), a
+checksumja mégis **0** ⇒ a checksum **nem függvénye a contactidnek**.
+Ez a 14.2 kizárásának **független megerősítése**, más úton.
+
+*(Adatvédelem: a contactid-értékek személyazonosítók, ezért nem kerülnek ki
+erre a lapra — csak az album-index és a checksum.)*
+
+### 14.5.5 ⚠️ CSAPDA a következő körnek: az „1 tag → 0" NEM törvény
+
+Kézenfekvő a „egy tagnál nulla ⇒ a képlet párokból/különbségekből épül"
+olvasat. **Ne építs rá.** Ugyanilyen jól magyarázza az adatot, hogy az
+oszlop **még nincs kiszámolva** ezen az albumon: a 14.4.3 szerint az író
+**csak változás esetén** ír (`0x0048f7fe`), tehát a `0` jelentheti azt is,
+hogy „még sosem írták".
+
+**A két olvasat közt az adat nem dönt** — ezért egyik sem használható
+kiindulásnak. Aki a képletet illeszti, **hagyja ki a 112-es albumot**, vagy
+mondja ki, melyik olvasattal dolgozik.
+
+### 14.5.6 Mérleg (14.5)
+
+`1 nyílt (ÖRÖKÖLT: a képlet) · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| a `FUN_0048af60` a számoló-e | **LEZÁRVA — nem** (14.5.1) |
+| a `FUN_0048bd80` a számoló-e | **LEZÁRVA — nem** (14.5.2) |
+| **mi a KÉPLET** | **NYÍLT (örökölt)** — a következő lépés a `FUN_0048ef20` **célzott dekompilációja** azzal az egy kérdéssel, hogy mi tölti a `0x0048f7f8`-on olvasott rekeszt (14.5.3). Jegy: **#2391** |
+
+## 14.6 ⭐ MEGVAN az `albumpeoplechecksum` KÉPLETE — és 9-ből 8 albumon MÉRVE egyezik (2026-09-05, #2391)
+
+> **Bizalmi fok: megerősített.** A képlet a binárisból olvasva, és a
+> tulajdonos valódi katalógusán **kilenc albumból nyolcon bitre egyezik**;
+> a kilencedik eltérése megmagyarázva (lásd 14.6.4).
+
+### 14.6.1 A képlet
+
+```
+acc = 0
+minden i képindexre, NÖVEKVŐ sorrendben:
+    ha  personalbumid[i] == <az album sorindexe>
+    és  ( i >= len(facequality)  vagy  facequality[i] >= 5000 ):
+            acc = rol(acc, 7) XOR i
+albumpeoplechecksum = acc
+```
+
+A **hajtogatott érték maga a KÉPINDEX** — nem a `contactid`, nem a
+személy azonosítója. Ez zárja le véglegesen a 14.2 és a 14.5 két
+független kizárását.
+
+### 14.6.2 A bizonyíték a binárisban
+
+A számoló **`FUN_0048ec70`** (668 bájt, `ret 0x14` ⇒ öt verem-argumentum),
+amelyet a `FUN_0048ef20` hív a `0x0048f1bf`-en. Az eredmény a **3.
+argumentum**, kimenő mutatóként.
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| a kimenő rekesz nullázása | `0x0048ece3`–`0x0048ecea` | `mov dword ptr [edx], 0`, ahol `edx` = ARG3 |
+| **1. szűrő** | `0x0048ed6e` | `cmp dword ptr [ebx + eax*4], ebp` — `ARG4[i] == ARG2` |
+| tartomány-őr az 1. szűrőhöz | `0x0048ed61` | `i >= ARG4.méret` ⇒ kihagy |
+| **2. szűrő (küszöb)** | `0x0048ed85` | `cmp dword ptr [ebx + eax*4], 0x1388` ⇒ **5000** |
+| a 2. szűrő tartomány-őre | `0x0048ed7f` | ha `i >= ARG5.méret`, a küszöböt **át is ugorja** (nem szűr) |
+| **a hajtogatás** | `0x0048ed95`–`0x0048eda6` | `mov ecx,[esp+0xec]` (ARG3) · `mov ebx,[ecx]` · **`rol ebx, 7`** · **`xor ebx, eax`** · `mov [ecx], ebx` |
+| üres bemenetre | `0x0048ecc6`–`0x0048ece0` | `return 9` (a `0` marad) |
+
+Az argumentumok azonosítása a `research/testdata/Picasa2-arcok` valódi
+katalógusán ellenőrizve: **ARG2** = az album sorindexe, **ARG4** =
+`imagedata_personalbumid`, **ARG5** = `imagedata_facequality`.
+
+### 14.6.3 ⛳ Hogyan került elő — HORGONYOS veremszámolás, dekompiláció NÉLKÜL
+
+A 114. kör azért állt meg, mert a `0x0048f7f8` rekeszének íróját **lineáris
+`esp`-követéssel** kereste, és az elágazásos törzsön nulla írást adott.
+A megoldás a **horgony**: a `[esp+0x150]` **ARG1-hivatkozás** tizenkét
+helyen áll, mindenütt azonos szinten (`esp` = belépés − `0x14c`), és ez
+kalibrálja az egész régiót. Ezzel a `0x0048f195`–`0x0048f1bf` blokk
+push-onként visszaszámolható:
+
+| cím | utasítás | szint | keret-eltolás |
+|---|---|---|---|
+| `0x0048f19f` | `lea edx, [esp + 0x38]` | `0x154` | **`0x30`** ⇒ **`&local_0x30`**, az ARG3 |
+| `0x0048f1a5` | `mov [esp + 0x38], eax` | `0x15c` | `0x28` (a `0x0048f828`-on olvasott rekesz) |
+| `0x0048f1ae` | `mov byte [esp + 0x33], 1` | `0x160` | `0x1f` (a `0x0048f5c0`-on törölt jelző) |
+| `0x0048f1b3` | `mov [esp + 0x44], ebp` | `0x160` | `0x30` ⇒ a rekesz **nullázása** a hívás előtt |
+
+A három egymástól független egyezés (`0x30`, `0x1f`, `0x28`) igazolja a
+kalibrációt. **Célzott dekompilációra nem volt szükség.**
+
+### 14.6.4 A MÉRÉS — a tulajdonos valódi katalógusán
+
+Bemenet: `research/testdata/Picasa2-arcok/Picasa2/db3/`, a saját
+`pmpimport` olvasónkkal. `personalbumid` és `facequality` egyaránt **3338**
+soros; a személy-albumok sorindexe **109–117**.
+
+| album | tagok | mért `albumpeoplechecksum` | a képlet (küszöbbel) | a képlet küszöb NÉLKÜL |
+|---:|---:|---|---|---|
+| 109 | 32 | `0x8DAB10B8` | **`0x8DAB10B8`** ✔ | `0xF822B336` |
+| 110 | 42 | `0xDC7A570C` | **`0xDC7A570C`** ✔ | `0xDC7A570C` |
+| 111 | 19 | `0x5CCEB284` | **`0x5CCEB284`** ✔ | `0x9DB5534B` |
+| 112 | 1 | `0x00000000` | **`0x00000000`** ✔ | `0x00000C0D` |
+| 113 | 2 | `0x00060B93` | **`0x00060B93`** ✔ | `0x00060B93` |
+| 114 | 4 | `0x030331FE` | **`0x030331FE`** ✔ | `0x8198F380` |
+| 115 | 7 | `0x98B4584D` | `0x98B7DFCC` ✘ | `0x98B7DFCC` |
+| 116 | 2 | `0x00063CE2` | **`0x00063CE2`** ✔ | `0x00063CE2` |
+| 117 | 6 | `0x9204CA91` | **`0x9204CA91`** ✔ | `0xE204AE41` |
+
+**8 / 9 bitre egyezik.** A küszöb **nem elhagyható**: nélküle csak 3 album
+egyezne.
+
+**A 115-ös albumról, őszintén:** a mai hét képindexének **egyetlen
+részhalmaza sem** adja a tárolt értéket (mind a 127 részhalmaz kipróbálva),
+és egy elem elhagyása/hozzávétele, más küszöb, fordított sorrend és ±1
+index-eltolás sem. ⇒ a tárolt érték **egy másik indexkészleten** készült,
+tehát **elavult** (az író csak változáskor ír, `0x0048f7fe`; a sorindexek
+pedig eltolódnak, ha a katalógusból sor törlődik). Ez **magyarázat, nem
+mérés** — bizalmi fok: **erős**, nem megerősített.
+
+### 14.6.5 ✅ A „1 tag → 0" CSAPDA FELOLDVA
+
+A 14.5.5 figyelmeztetett, hogy a 112-es album `0`-ja jelentheti azt is,
+hogy az oszlopot sosem írták. **Nem ez a helyzet.** A 112-es albumnak
+egyetlen képe van (index **3085**), és annak `facequality` értéke **38** —
+mélyen az **5000**-es küszöb alatt ⇒ a hajtogatás **üres**, az eredmény
+**0**. A `0` tehát **kiszámolt, helyes érték**.
+
+A kilenc albumban összesen **tíz** kép esik a küszöb alá (`facequality`
+38 · 47 · 60 · 81 · 90 · 92 · 100 · 111 · 117 · 1716 · 3405), és épp ezek
+kihagyása teszi a képletet egyezővé.
+
+### 14.6.6 Nálunk (MÉRVE)
+
+`grep -rn "albumpeoplechecksum\|peoplealbumchecksum" src/` → **0 találat**:
+az oszlopot **nem olvassuk és nem számoljuk**. A PicasaPy nem ír PMP-t,
+ezért ez **nem hiány** — a képlet értéke az, hogy egy importált katalógus
+arc-adatai **ellenőrizhetővé** válnak. Jegy: **#2391** (lezárva).
+
+### 14.6.7 Nyitott kérdések mérlege (14.6)
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **az `albumpeoplechecksum` képlete** | ✅ **LEZÁRVA** — `acc = rol(acc,7) ^ képindex`, két szűrővel; 8/9 albumon mérve |
+| a „1 tag → 0" jelentése | ✅ **LEZÁRVA** — a küszöb alatti minőség miatt üres a hajtogatás (14.6.5) |
+| a 115-ös album eltérése | ✅ **LEZÁRVA** — elavult tárolt érték; minden más magyarázat kipróbálva és kizárva (14.6.4) |

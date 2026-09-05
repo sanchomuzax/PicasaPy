@@ -348,13 +348,85 @@ class CreateMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-collage")
 
+    def _alapertelmezett_film_cel(self, sources) -> Path:
+        """A film célfájlja, ha a felhasználó nem adott meg egyet (#1977).
+
+        A mappa a `Picasa` alatti (meglévő vagy honosított) Filmek-mappa,
+        és **projekt-mappaként be is jelöljük** — enélkül a bal hasáb
+        Projektek gyűjteménye nem tudja hova sorolni (ugyanaz a hiba,
+        amit a kollázsnál a `write_album_ini` javított).
+
+        A fájlnév töve a KÖZÖS forrásmappa neve; ha a képek több mappából
+        jönnek, a mért alapnév (`diavetites_jellegu_film`).
+        """
+        from . import movie_output
+
+        # A `_get_settings()` a többi ág mintája (ld. a piszkozat-mappát
+        # a 124. sorban) — enélkül a próbák a VALÓDI `~/Képek`-be írnának.
+        beallitott = self._get_settings().value(movie_output.OUTPUT_DIR_KEY)
+        mappa = movie_output.tartalek_mappa(movie_output.output_dir(beallitott))
+        movie_output.write_album_ini(mappa, mappa.name)
+        szulok = {Path(s).parent for s in sources}
+        cim = next(iter(szulok)).name if len(szulok) == 1 else ""
+        return movie_output.output_path(mappa, cim)
+
+    #: #1977 REGRESSZIÓ (#2185): ez a dekorátor korábban ITT állt, de a
+    #: `_alapertelmezett_film_cel` beszúrása ALÁJA került, és így a
+    #: PRIVÁT segítő kapta meg a slotot — az `exportMovie` pedig
+    #: kiesett a meta-objektumból, tehát a QML `controller.exportMovie(…)`
+    #: hívása nem érte el. A Mozgófilm-párbeszéd OK gombja így
+    #: NÉMÁN nem csinált semmit. Mérve: `staticMetaObject`-ben
+    #: `_alapertelmezett_film_cel(QVariantList,QString,int,double)`
+    #: szerepelt, `exportMovie` nem.
+    @staticmethod
+    def _film_beallitas(
+        width: int, height: int, seconds_per_photo: float
+    ) -> MovieSettings:
+        """A `MovieSettings` összeállítása — külön metódus, hogy mérhető legyen.
+
+        #1977 (7. pont): a szélesség KAPOTT érték, nem 16:9-ből
+        származtatott. Az eredeti hét mérete közül **öt 4:3-as**
+        (320×240, 640×480, 800×600, 1024×768, 1600×1200); azokra a
+        származtatás torzítana — 1024-es magasságból 1820 jönne ki 768
+        helyett.
+
+        `width=0` a RÉGI, négyargumentumos hívási alak: ilyenkor 16:9-ből
+        számolunk, tehát a meglévő 720p/1080p hívások változatlanok.
+        """
+        if not width:
+            width = (height * 16 // 9) // 2 * 2
+        return MovieSettings(
+            width=max(2, int(width)) // 2 * 2,
+            height=height,
+            seconds_per_photo=seconds_per_photo,
+            # az áttűnés a képenkénti idő harmada, de legfeljebb 0,5 mp:
+            # rövid diáknál (1 mp) a fix 0,5 mp-es áttűnés hosszabb
+            # lenne, mint amennyi ideig a kép áll — az érvénytelen
+            transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
+        )
+
     @Slot(list, str, int, float)
+    @Slot(list, str, int, float, int)
     def exportMovie(
-        self, rows, target_url: str, height: int, seconds_per_photo: float
+        self,
+        rows,
+        target_url: str,
+        height: int,
+        seconds_per_photo: float,
+        width: int = 0,
     ) -> None:
         """Diavetítés-videó a kijelölt képekből (MP4).
 
-        `height`: a videó magassága (720/1080); a szélesség 16:9-ből jön."""
+        `height` a videó magassága, `width` a szélessége. #1977: a
+        szélesség KÜLÖN paraméter, mert az eredeti hét mérete közül öt
+        4:3-as. `width=0` ⇒ 16:9-ből (a régi hívási alak).
+
+        ⚠️ **A kimenet MP4 (`mp4v`), az eredeti `.wmv`-jével szemben** — és
+        ez SZÁNDÉKOS, nem elmaradás. A `.wmv` írásához Windows-specifikus
+        kodek kellene; az OpenCV `mp4v`-je minden platformon megy, külön
+        telepítés nélkül (`movie/slideshow.py:27-28`). Egy későbbi kör ne
+        „javítsa vissza": a konténer eltérése a hordozhatóság ára.
+        """
         # #1539: a bekötés a GUI-szálon, a háttérszál indítása ELŐTT
         self._ensure_output_resync_wired()
         sources = self._sources_for(rows)[:_MAX_ITEMS]
@@ -363,17 +435,25 @@ class CreateMixin(BackgroundWorkerMixin):
             self.movieFailed.emit(self.tr("No pictures are selected."))
             return
         if not target:
-            self.movieFailed.emit(self.tr("No target file was chosen."))
-            return
+            # #1977: cél nélkül NEM hibázunk — az eredeti sem kér célfájlt.
+            # A mappát a program adja (`Picasa`/honosított Filmek), a nevet
+            # a forrásmappa címéből képezzük, ütközésnél sorszámozva. Ha a
+            # mappa nem hozható létre, a rendszer Videók mappája a tartalék
+            # (`0x00620af9`–`0x00620b1d`), és ez SEM hibaüzenet.
+            try:
+                target = str(self._alapertelmezett_film_cel(sources))
+            except OSError as hiba:
+                # A részletet NAPLÓZZUK, nem a felhasználónak mondjuk: az
+                # `OSError` szövege fejlesztői (errno, útvonal), és a
+                # honosítása is külön csapda volna (%1-helyettesítő).
+                logger.warning("a film mappája nem hozható létre: %s", hiba)
+                self.movieFailed.emit(
+                    self.tr("The movie folder could not be created.")
+                )
+                return
         try:
-            settings = MovieSettings(
-                width=(height * 16 // 9) // 2 * 2,
-                height=height,
-                seconds_per_photo=seconds_per_photo,
-                # az áttűnés a képenkénti idő harmada, de legfeljebb 0,5 mp:
-                # rövid diáknál (1 mp) a fix 0,5 mp-es áttűnés hosszabb
-                # lenne, mint amennyi ideig a kép áll — az érvénytelen
-                transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
+            settings = self._film_beallitas(
+                width, height, seconds_per_photo
             )
         except ValueError as error:
             self.movieFailed.emit(str(error))

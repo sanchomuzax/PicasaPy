@@ -77,6 +77,13 @@ Rectangle {
         (pane.hierarchyController && pane.hierarchyController.treeView !== undefined)
             ? pane.hierarchyController.treeView : false
     // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
+    //: #2049: „Indexképek megjelenítése a könyvtárban" — ugyanaz a
+    //: kapcsoló, mint a `Nézet ▸ Mappanézet` menü tételéé. A
+    //: `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+    readonly property bool albumThumbs:
+        (pane.hierarchyController && pane.hierarchyController.albumThumbs !== undefined)
+            ? pane.hierarchyController.albumThumbs : false
+
     readonly property int hierarchyRowCount:
         pane.hierarchyController ? pane.hierarchyController.rows.length : 0
     signal folderChosen(string path)
@@ -722,11 +729,62 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left; anchors.leftMargin: 12
                         spacing: 5
-                        FolderIcon {
-                            size: 13
+                        // #2049: az eredeti a Mappák-lista sorain nem sárga
+                        // mappaikont mutat, hanem a mappa első legfeljebb
+                        // négy fotójából összeállított kis kupacot — de
+                        // CSAK ha az „Indexképek megjelenítése a
+                        // könyvtárban" be van kapcsolva
+                        // (`ShowAlbumThumbnails2`, alapérték 0). Ha nincs
+                        // borító (kép nélküli mappa), a sor visszaesik a
+                        // mappaikonra: az eredeti is helyettesítő ikonokat
+                        // sorol fel erre (`0x00761870`: `icons/folder`,
+                        // `icons/album`, `icons/smartalbum`, …).
+                        Item {
+                            objectName: "folderRowCover"
+                            // #2215: a hely a KUPAC arányához igazodik (a
+                            // 13 a mappaikon mérete); fix szélességgel a
+                            // mappanév ráfolyt a szélesebb kupacokra.
+                            width: boritoLatszik && folderRowCoverImage.implicitHeight > 0
+                                ? Math.max(13, Math.ceil(
+                                    height * folderRowCoverImage.implicitWidth
+                                    / folderRowCoverImage.implicitHeight))
+                                : 13
+                            height: 18
                             anchors.verticalCenter: parent.verticalCenter
-                            // az elérhetetlen mappa ikonja halvány (#459/5)
                             opacity: offline ? 0.45 : 1.0
+
+                            // #2215: a `Ready` önmagában nem elég — a
+                            // szolgáltató korábban 1×1 átlátszó képet adott
+                            // borító hiányában, ami sikeresen betöltődik,
+                            // tehát elrejtette a mappaikont is.
+                            readonly property bool boritoLatszik:
+                                pane.albumThumbs
+                                && folderRowCoverImage.status === Image.Ready
+                                && folderRowCoverImage.implicitWidth > 1
+
+                            FolderIcon {
+                                objectName: "folderRowIcon"
+                                size: 13
+                                visible: !parent.boritoLatszik
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Image {
+                                id: folderRowCoverImage
+                                objectName: "folderRowCoverImage"
+                                anchors.centerIn: parent
+                                height: parent.height
+                                fillMode: Image.PreserveAspectFit
+                                visible: parent.boritoLatszik
+                                asynchronous: true
+                                // ⚠️ Kikapcsolva ÜRES a forrás, tehát a
+                                // szolgáltató meg sem szólal: négy JPEG
+                                // dekódolása mappánként nem indul el
+                                // feleslegesen.
+                                source: pane.albumThumbs
+                                        ? "image://foldercover/" + path
+                                        : ""
+                            }
                         }
                         Text {
                             objectName: "folderRowLabel"
@@ -745,8 +803,35 @@ Rectangle {
                                    ? Theme.panelSelectionText : Theme.ink
                         }
                     }
-                    ToolTip.visible: offline && folderRowMouse.containsMouse
-                    ToolTip.text: qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
+                    // #2162: TUDATOS ELTÉRÉS — a teljes útvonal a súgóban.
+                    //
+                    // Két KÜLÖNBÖZŐ mappa azonos alapnévvel a lapos listán
+                    // megkülönböztethetetlen volt. Nem elméleti gond: a
+                    // duplikátum-kereső minden forrásmappában saját
+                    // „Duplikátumok" alkönyvtárat hoz létre, tehát a
+                    // felhasználónál rendszeresen keletkezik több ilyen nevű
+                    // mappa — a tulajdonos ezt hibás duplikációnak látta
+                    // (#1909 → #1923; a mérés szerint duplikáció NINCS, a
+                    // `folders.path` egyedi).
+                    //
+                    // ⚠️ Az EREDETI ilyenkor SEMMIT nem mutat — három
+                    // független forrásból mérve (#2162):
+                    //   1. a szövegtár 3524 bejegyzése közt nincs mappasor-
+                    //      súgó és nincs útvonal-tipp;
+                    //   2. a 141 erőforrás-fa közül a mappalistát EGYETLEN
+                    //      helyen definiálja, a Mappakezelő PÁRBESZÉDBEN
+                    //      (`foldermgr/foldertree`) — a bal hasáb listájának
+                    //      nincs saját eleme;
+                    //   3. a panel-gyökér sem tartalmaz mappalista-elemet.
+                    //
+                    // Ezért ez NEM „javítás", hanem kimondott többlet. A
+                    // LÁTHATÓ felirat változatlan marad (csak az alapnév),
+                    // tehát a felület az eredetivel egyező; a különbség csak
+                    // rámutatáskor jelenik meg.
+                    ToolTip.visible: kind === "folder" && folderRowMouse.containsMouse
+                    ToolTip.text: offline
+                        ? path + "\n" + qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
+                        : path
                     MouseArea {
                         id: folderRowMouse
                         enabled: kind === "folder"

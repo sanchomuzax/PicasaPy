@@ -142,6 +142,41 @@ class TestPasteAllEffects:
         assert f"filters={expected}" in b_block
         assert "sat=1,-0.2" not in b_block, "a cél régi lánca nem íródott felül"
 
+    def test_ismeretlen_lanc_bejegyzes_is_atmegy(self, controller, library):
+        """#2380: idegen/ismeretlen szűrőnév is átmásolódik (#73/#152 elv).
+
+        Ez az állítás a most eltávolított `EffectsClipboardMixin` tesztjéből
+        került át — az volt az EGYETLEN olyan viselkedése, amit az élő
+        `*AllEffects*` készlet nem fedett. A round-trip elv szerint egy
+        általunk nem ismert bejegyzés (amit a valódi Picasa vagy egy újabb
+        verziója írt) nem veszhet el a másolás-beillesztésen.
+        """
+        from picasapy.ini import load_document, save_document
+
+        ini = library / ".picasa.ini"
+        dokumentum = load_document(ini).with_value(
+            "a.jpg",
+            "filters",
+            "enhance=1;JOVENOSZKA=1,x1,y2;",
+            # carried: nem a mi írói utunk — idegen program írta a láncot,
+            # a round-trip őr ezért nem utasítja vissza (ld. `ini.filter_guard`)
+            carried=True,
+        )
+        save_document(dokumentum, ini, backup=False)
+        # a másoló a lánc INDEXBELI példányát olvassa (`photo.filters`), ezért
+        # a fájlírás után újra kell szinkronizálni — a `rescan()` háttérszálon
+        # fut, itt determinisztikus lépés kell
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library))
+
+        controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+
+        assert "JOVENOSZKA=1,x1,y2;" in _ini_section(library, "b.jpg")["filters"]
+
     def test_writes_the_crop_mirror_key(self, controller, library):
         """#1544: a `crop=rect64(...)` tükör-kulcs a lánccal együtt jár.
 

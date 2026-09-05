@@ -68,6 +68,10 @@ DOCS_OLVASO_TESZTEK: tuple[str, ...] = (
     #: (76 megnyitott `docs/`-lap) — nem kézi feltevés.
     "tests/scripts/test_spec_elavulas_jelzes_1958.py",
     "tests/test_index_leltar_szam_1512.py",
+    #: #2182: a 22.4-es horgony-előírás őre — MINDEN `docs/specs/*.md`
+    #: lapot megnyitja, tehát csak-`docs/` PR-en is futnia kell. Enélkül
+    #: épp az a változás kerülné el az őrt, amelyet őrizni hivatott.
+    "tests/test_spec_horgony_or_2182.py",
     "tests/test_ui_lefedettseg_megfeleltetes_707.py",
     "tests/tools/test_check_decision_links_1623.py",
     "tests/tools/test_check_protected_features_1187.py",

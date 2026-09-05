@@ -48,6 +48,7 @@ from .collage_controller import CollageMixin
 from .color_index_controller import ColorIndexMixin
 from .language_controller import LanguageMixin
 from .display_mode_controller import DisplayModeMixin
+from .help_controller import HelpMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
 from .custom_collections_controller import CustomCollectionsMixin
@@ -86,8 +87,24 @@ _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 # A korábbi 230 becslés volt; a `design-guide.md` két helyen 386-ot,
 # illetve 210-et állított — mindkettő téves, a #587 javította.
 FOLDER_PANE_WIDTH_DEFAULT = 240
-FOLDER_PANE_WIDTH_MIN = 160
-FOLDER_PANE_WIDTH_MAX = 600
+
+#: #2329: az eredeti osztósáv legkisebb szélessége UGYANAZ a szám, mint az
+#: alapértelmezés — a hasáb nem húzható 240 alá. Mérve: a kezelő osztálya
+#: `ytSplitterOffsetHandler` (RTTI `0x00d4734c`), a gyártó a `+0x18`
+#: mezőbe **240.0**-t tölt (`0x009da130`, konstans a `0x00cf48b0`-on), az
+#: alsó korlátot a `0x009d9df4`–`0x009d9e0e` érvényesíti.
+FOLDER_PANE_WIDTH_MIN = 240
+
+#: ⚠️ Ez NEM az eredeti felső korlátja, csak biztonsági határ.
+#:
+#: Az eredetié **ablakfüggő**: a főpanel szélessége − 240
+#: (`0x009d9e21`–`0x009d9e50`: `sub`, `fsub`, `fcomp`). Egy ablakméretet
+#: nem ismerő Python-oldali vágás ezt nem tudja kiszámolni, ezért a
+#: TÉNYLEGES korlátot a QML adja (`Main.qml`, `SplitView.maximumWidth`).
+#: Itt csak annyi a dolga, hogy egy elrontott vagy idegen gépről örökölt
+#: beállítás ne tegye használhatatlanná a felületet — a korábbi fix 600
+#: viszont széles ablakon SZŰKEBB volt az eredetinél, ezért emelkedett.
+FOLDER_PANE_WIDTH_MAX = 4000
 
 
 def _clamp_folder_pane_width(width: int) -> int:
@@ -95,6 +112,8 @@ def _clamp_folder_pane_width(width: int) -> int:
 
 
 class AppController(
+    #: #2054: a felhasználói súgó fejezetei, szövege és keresése
+    HelpMixin,
     CustomAspectRatiosMixin,
     CustomCollectionsMixin,
     # #644: a saját szerkesztések védelme a párhuzamosan futó Picasa
@@ -210,6 +229,9 @@ class AppController(
         # szinkron végén be kell hozni a lemaradást (ld. a
         # `_on_folders_dirty` és a `_flush_pending_dirty` docstringjét)
         self._pending_dirty: set[str] = set()
+        #: #1458: hány FELHASZNÁLÓI kérés vár a `_pending_dirty`-ben nyitott
+        #: foglaltság-bejegyzéssel. A `_flush_pending_dirty` ennyit zár.
+        self._pending_busy: int = 0
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""
@@ -484,6 +506,11 @@ class AppController(
                 # #1637: a rejtett mappákat ugyanaz a kapcsoló hozza
                 # vissza, ami a rejtett fotókat — nem külön beállítás
                 include_hidden=self.showHidden,
+                # #2031: a PROJEKT-mappák csak a Projektek alatt látszanak
+                # (a `P2category` kizáró, #1033). Az útvonalak MÁR itt
+                # vannak — a hasáb-gyűjtemények betöltése cache-eli őket —,
+                # tehát nem kell újabb `.picasa.ini`-söprés.
+                exclude_paths=[m.path for m in self._project_folders],
             )
         self.statusChanged.emit()
 

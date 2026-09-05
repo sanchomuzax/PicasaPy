@@ -197,6 +197,20 @@ Window {
         id: oszlop
         width: parent.width
 
+        //: #2157: a „B" sáv a cella SORSZÁMÁT szorozza a cellamagassággal
+        //: (`[popup+0x1c0]` = 45), és ez is kulcskockás — vagyis ha egy
+        //: fölöttes cella eltűnik, a többi ODACSÚSZIK az új helyére, nem
+        //: ugrik. A `Column` `move` átmenete pontosan ezt adja, ugyanazzal
+        //: az időzítéssel és görbével, mint a vízszintes csúszás.
+        move: Transition {
+            NumberAnimation {
+                objectName: "notifierStackAnim"
+                properties: "y"
+                duration: 600
+                easing.type: Easing.OutExpo
+            }
+        }
+
         opacity: notifier.hasCells ? 1.0 : 0.0
 
         Behavior on opacity {
@@ -205,6 +219,15 @@ Window {
                 objectName: "notifierFadeAnim"
                 //: Az IRÁNY dönt: 0,25 s be, 0,5 s ki — ugyanaz az alak,
                 //: mint a #1000 gyűrűjénél.
+                //:
+                //: ⚠️ #2157: az EREDETIBEN nincs átlátszóság-animáció, ott
+                //: a cellák csúsznak. Ez a halványítás mégis MARAD, de
+                //: már nem a cellákra: az ablak EGÉSZÉRE vonatkozik, és
+                //: csak akkor fut le, amikor az utolsó cella is elment
+                //: (`hasCells` false). Enélkül a `visible` váltása egy
+                //: képkocka alatt kapná el az ablakot — a mi ablakunk a
+                //: cellák konténere is, az eredetié nem. A cellák saját
+                //: mozgása mostantól TISZTÁN csúszás.
                 duration: notifier.hasCells
                           ? notifier.fadeInMs : notifier.fadeOutMs
             }
@@ -238,10 +261,16 @@ Window {
                             && controller)
                         controller.selectFolder(mappa)
                     sav.activated(fajta, cel)
-                    sav.dismissAt(sorszam)
+                    //: #2157: a navigáció AZONNAL megy (a felhasználó
+                    //: arra kattintott), a cella pedig közben kicsúszik;
+                    //: a `kicsuszasKesz` veszi ki a listából.
+                    kicsuszik()
                 }
-                onClosed: notifier.dismissAt(index)
-                onExpired: notifier.dismissAt(index)
+                //: #2157: nem azonnali törlés — előbb a 300 ms-os
+                //: visszacsúszás, különben az animáció levágódna.
+                onClosed: kicsuszik()
+                onExpired: kicsuszik()
+                onKicsuszasKesz: notifier.dismissAt(index)
             }
         }
     }

@@ -66,17 +66,99 @@ Button {
     readonly property bool accented: control.accent !== Qt.color("transparent")
 
     // --- a gomb tényleges színei (a background/contentItem ezeket használja) ---
+    //
+    // #883: az eredetinek NÉGY állapota van, nekünk kettő volt. A hiányzó
+    // kettő nem díszítés:
+    //
+    //   * a RÁMUTATÁS nem külön kitöltés, hanem a felső 2 képpontsor és a
+    //     bal 2 oszlop sötétedése (belső árnyék bal-felülről) — ezért NEM a
+    //     gradienst állítja, hanem külön réteget rajzol (`hoverShade`);
+    //   * a BEKAPCSOLT állapot arany keretet kap, a kitöltése változatlan.
+    //
+    // A LENYOMOTT iránya is javult: az eredeti MELEGÍT (`#A4A19D` … `#CBC6C2`,
+    // R>G>B), a korábbi `Qt.darker` hideg szürkét adott — rossz irányba.
+    //
+    // ⚠️ A ZÖLD (akcentusos) gomb az eredetiben MIND A HÁROM állapotban
+    // ugyanazt a képet használja (`b1_decrect_green_n`): se rámutatás-, se
+    // lenyomás-visszajelzése nincs, csak a szövege fehér. Nálunk eddig
+    // sötétedett — ez is eltérés volt.
     readonly property color surfaceTop: control.accented
         ? Qt.lighter(control.accent, 1.25)
-        : (control.down ? Qt.darker(Theme.buttonBg, 1.12)
-                        : Qt.lighter(Theme.buttonBg, 1.08))
+        : (control.down ? Theme.buttonTopDown : Theme.buttonTopNormal)
     readonly property color surfaceBottom: control.accented
         ? control.accent
-        : (control.down ? Qt.darker(Theme.buttonBg, 1.22) : Theme.buttonBg)
+        : (control.down ? Theme.buttonBottomDown : Theme.buttonBottomNormal)
+
+    //: a rámutatás-árnyék akkor látszik, ha a mutató a gombon van, a gomb
+    //: nincs lenyomva, és nem az akcentusos (zöld) változat
+    readonly property bool showingHoverShade:
+        control.hovered && !control.down && !control.accented
+    readonly property color nyugalmiKeret: control.accented
+        ? Qt.darker(control.accent, 1.3)
+        : (control.checked ? Theme.buttonToggledBorder : Theme.buttonBorder)
+
+    // --- #2438: a panel FŐ gombja PULZÁL -------------------------------
+    //
+    // Az eredetiben minden panel fő cselekvésének gombja lassan villog
+    // („throb" állapot, a `respack.yt` `superbutton` kötéslistájának 13
+    // eleme). Ez NEM díszítés: ez mondja meg a felhasználónak, melyik
+    // gombra kell nyomnia a művelet befejezéséhez.
+    //
+    // A pulzálás a KERETET mozgatja, a kitöltést nem — az eredeti `_t`
+    // állapotképe is csak a keretben tér el a nyugalmitól.
+    //
+    // ⚠️ AZ ÜTEM NINCS MÉRVE. A `_t` kép a végállapotot adja meg, a
+    // periódust és a görbét nem. A választott 1600 ms oda-vissza,
+    // `Easing.InOutSine` — visszafogott és egyenletes; ha egyszer valaki
+    // lemér egy képernyőfelvételt, EZT a két számot kell cserélni.
+    property bool throbbing: false
+
+    //: Kattintás után a pulzálás leáll: a gomb elvégezte a dolgát.
+    //: Ha a hívó újra `throbbing: true`-t állít, újraindul.
+    property bool _throbMegnyomva: false
+    onThrobbingChanged: control._throbMegnyomva = false
+    // ⚠️ NEM `onClicked:` a komponensben! A használati hely saját
+    // `onClicked`-je FELÜLÍRNÁ, és a legtöbb gombnak van sajátja — a
+    // pulzálás így épp azokon nem állna le, ahova szántuk. A `Connections`
+    // a jelzésre köt, nem a kezelő-résre, tehát nem ütközik.
+    Connections {
+        target: control
+        function onClicked() { control._throbMegnyomva = true }
+    }
+
+    readonly property bool throbFut:
+        control.throbbing && control.enabled && !control.down
+        && !control._throbMegnyomva
+
+    property color _throbSzin: control.nyugalmiKeret
+
+    SequentialAnimation on _throbSzin {
+        running: control.throbFut
+        loops: Animation.Infinite
+        alwaysRunToEnd: true
+        ColorAnimation {
+            to: "#629BC3"
+            duration: 800
+            easing.type: Easing.InOutSine
+        }
+        ColorAnimation {
+            to: control.nyugalmiKeret
+            duration: 800
+            easing.type: Easing.InOutSine
+        }
+    }
+
+    readonly property color borderColor:
+        control.throbFut ? control._throbSzin : control.nyugalmiKeret
     // #893: a letiltott gomb felirata NEM kap külön szürkítést. Az
     // eredetiben a felirat a gomb gyerekcsomópontja, tehát ugyanazt a
     // negyedelt alfát örökli — a szín maga változatlan marad.
-    readonly property color inkColor: control.accented ? "white" : Theme.ink
+    // #883: a felirat az eredetiben `CC000000`, azaz a tinta 80%-os
+    // átlátszatlansággal. Nem szürke SZÍN — a színt a téma adja, az alfát az
+    // eredeti; így sötét témán is helyes marad (a #336 tanulsága).
+    readonly property color inkColor: control.accented
+        ? "white"
+        : Qt.rgba(Theme.ink.r, Theme.ink.g, Theme.ink.b, 0.8)
 
     // #893: a letiltott csomópont alfáját az eredeti rajzoló NÉGGYEL OSZTJA
     // (`0x009e3178: shr dword ptr [edx+0x5c], 2`), közvetlenül a rajzolás
@@ -86,13 +168,33 @@ Button {
     opacity: control.enabled ? 1.0 : 0.25
 
     background: Rectangle {
-        radius: 3
+        // az eredeti sarka ≈ 2,5 px sugarú, élsimított lekerekítés
+        radius: 2.5
         border.width: 1
-        border.color: control.accented
-                      ? Qt.darker(control.accent, 1.3) : Theme.chromeBorder
+        border.color: control.borderColor
         gradient: Gradient {
             GradientStop { position: 0.0; color: control.surfaceTop }
             GradientStop { position: 1.0; color: control.surfaceBottom }
+        }
+
+        // A rámutatás belső árnyéka: felül 2 képpont, balra 2 oszlop.
+        // SZÁNDÉKOSAN nem a teljes felület sötétedik — az eredetiben a
+        // kitöltés változatlan marad, csak ez a két sáv.
+        Rectangle {
+            objectName: "picasaButtonHoverShadeTop"
+            visible: control.showingHoverShade
+            color: Theme.buttonHoverShade
+            height: 2
+            anchors { top: parent.top; left: parent.left; right: parent.right
+                      topMargin: 1; leftMargin: 1; rightMargin: 1 }
+        }
+        Rectangle {
+            objectName: "picasaButtonHoverShadeLeft"
+            visible: control.showingHoverShade
+            color: Theme.buttonHoverShade
+            width: 2
+            anchors { top: parent.top; bottom: parent.bottom; left: parent.left
+                      topMargin: 1; bottomMargin: 1; leftMargin: 1 }
         }
     }
 

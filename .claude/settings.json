@@ -62,6 +62,15 @@
             "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/basetemp_kapu.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/szabalyvaltozas_jelzo.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

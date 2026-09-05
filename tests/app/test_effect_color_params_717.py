@@ -90,8 +90,22 @@ class TestChainCarriesTheFullParameterSet:
     """A kiírt `filters=` lánc — a TÉNYLEGES szöveg, nem a szándék."""
 
     def test_tint_writes_the_color(self, editing):
+        """#2146: a `tint` ismét alkalmazható — SHIFTTEL.
+
+        A #2141 idején nem volt felületi belépési pontja: az 1. fül 6.
+        csempéje az eredeti elsődlegesére (`picniktint`) kötött, a `tint`
+        pedig a Shiftes másodlagos. A #2141 kommentje ezt előre jelezte:
+        „a Shift-ág megépítése a #2146".
+
+        A Shift-ág megépült (nyolc csempén), tehát a `tint` visszakerült a
+        vezérlő `_EFFECT_NAMES` listájába — enélkül a Shifttel megnyomott
+        csempe `ValueError`-t adna. A próba eredeti SZÁNDÉKA is teljesül
+        megint: a lánc a teljes paraméter-készletet viszi, a színt is."""
         editing.applyEffectWithParams("tint", [0.5, "#336699"])
-        assert _chain(editing) == "tint=1,0.500000,00336699;"
+        assert _chain(editing) == "tint=1,0.500000,00336699;", (
+            "a `tint` nem alkalmazható a felületről — pedig a #2146 óta a "
+            "Shiftes csempe ezt hívja"
+        )
 
     def test_ansel_writes_the_color(self, editing):
         editing.applyEffectWithParams("ansel", ["#336699"])

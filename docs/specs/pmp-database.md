@@ -115,6 +115,55 @@ Mind a nyolc kód előfordul a tulajdonos valódi adatbázisában (302 `.pmp`:
   `thumbindex.db`, `thumbs_index.db` fájlokat megtartja, és az ini + EXIF/XMP
   adatokból újraépít.
 
+### Az `imagedata` oszlop-REGISZTER — 37 oszlop, névvel és tagoffszettel (#2304)
+
+A `FUN_004127c0` (1893 b) regisztrálja az `imagedata` tábla oszlopait: minden
+oszlophoz **egy név-sztring és egy tagoffszet** tartozik, egységes fordítási
+mintában (`push <név>` → `lea eax, [esi + offszet]` → regisztráló hívás).
+
+Ez a tábla az oszlopkészlet **igazságforrása**: a `.pmp` fájlok megléte
+telepítésenként változik (ld. lentebb a két telepítés eltérését), a regiszter
+viszont azt mondja meg, mit ISMER a program.
+
+| oszlop | tagoffszet | | oszlop | tagoffszet |
+|---|---|---|---|---|
+| `parent` | `+0x16c` | | `uid64` | `+0xaa8` |
+| `filetype` | `+0x22c` | | `aliasparents` | `+0xb10` |
+| `fileflags` | `+0x28c` | | `colorspace` | `+0xc40` |
+| **`creation`** | **`+0x358`** | | `personalbumid` | `+0xca0` |
+| **`modified`** | **`+0x3c0`** | | `suggestionpersonalbumid` | `+0xd00` |
+| **`updated`** | **`+0x428`** | | `facequality` | `+0xd60` |
+| `width` | `+0x490` | | `facerect` | `+0xdc0` |
+| `height` | `+0x4f0` | | `deferredface` | `+0xe28` |
+| `rotate` | `+0x550` | | `deferredregion` | `+0xe88` |
+| `flipped` | `+0x618` | | `facerectdata` | `+0xee8` |
+| `edit_width` | `+0x678` | | `personalbumrecs` | `+0xf48` |
+| `edit_height` | `+0x6d8` | | `personalbumrecvalues` | `+0xfa8` |
+| `caption` | `+0x738` | | `personalbumrecs2` | `+0x1008` |
+| `filters` | `+0x798` | | `personalbumrecvalues2` | `+0x1068` |
+| `textactive` | `+0x858` | | `peoplealbumchecksum` | `+0x10c8` |
+| `edited` | `+0x918` | | **`tagdate`** | **`+0x1128`** |
+| `revertable` | `+0x978` | | `fdbhash` | `+0x1190` |
+| `originslow` | `+0x9d8` | | `backuphash` | `+0x11f0` |
+| `originfast` | `+0xa40` | | | |
+
+**Négy dátum-jellegű oszlop van:** `creation`, `modified`, `updated`
+(egymás után, `+0x358`/`+0x3c0`/`+0x428`) és `tagdate` (`+0x1128`).
+
+**A lépésköz árulkodó.** A szomszédos oszlopok többnyire `0x60` vagy `0x68`
+bájtra vannak egymástól — ez az oszlop-szerkezet mérete. Ahol a lépés `0xc0`
+vagy nagyobb (`parent`→`filetype`, `rotate`→`flipped`,
+`filters`→`textactive`, `textactive`→`edited`, `aliasparents`→`colorspace`),
+ott **regisztrálatlan slot** marad ki: olyan tagok, amelyeket ez a függvény
+nem köt névhez. Hogy azok mik, nincs mérve.
+
+> ⛔ **NE keverd össze a rendezés forrásával.** A rendező-hasonlító
+> (`FUN_004a7890`) egy MÁSIK objektum oszlopait olvassa: ott a név-oszlop
+> `+0xb50`, a dátum-oszlop `+0xc10` (`FUN_004a6dc0` köti be őket). Ezek az
+> offszetek **nem szerepelnek** a fenti táblában, és a lépésközük is más —
+> tehát a rendezés forrása nem az `imagedata` tábla, hanem egy másik
+> szerkezet. A #2304 ezen a ponton tart.
+
 ## Validálás valódi adatbázison (2026-07-16) ✅
 
 Egy valódi, 2 GB-os db3 készleten (Picasa 3.9, ~140 758 thumbindex-bejegyzés,
@@ -574,10 +623,163 @@ JPEG-je és a `thumbs2` 72 képpontosa ugyanarra a slotra más bájtokat tesz).
 összevetettük a `imagedata_originfast`, `originslow`, `onlinechecksum`,
 `long`, `rotate`, `filetype` és `tagdate` oszlopokkal, alsó és felső 32 biten
 egyaránt: **egyetlen egyezés sem** (0/3 204 mind a tizennégy összevetésben).
-A kulcs képzése továbbra is **NYITOTT** — de a keresést ezek felé nem érdemes
-újra elindítani.
+~~A kulcs képzése továbbra is **NYITOTT**~~ — **ELAVULT JELÖLÉS, javítva
+2026-09-04:** a képlet a **8.10** szakaszban megvan és mérve van. Ez a
+bekezdés csak azt rögzíti, hogy ezek az EGYSZERŰ jelöltek külön-külön nem
+adják ki — a tényleges képlet összetett.
 
 *Bizonyítottsági fok: megerősített* (két adatbázis, négy tár, teljes vektorok).
+
+##### ⚠️ HELYESBÍTVE — a kulcs képlete NEM volt nyitott (2026-09-04, #1446)
+
+> **Ez a szakasz eredetileg azt állította, hogy a kulcs képzése nyitott, és
+> 25 további jelöltet zárt ki. Az állítás TÉVES volt:** ugyanennek a lapnak a
+> **8.10** szakasza már 2026-09-03 óta tartalmazza a **teljes képletet**, a
+> bináris címeivel. A tévedés oka: a fenti, 8.2-korabeli „a kulcs képzése
+> továbbra is NYITOTT" mondat **elavult jelölés** volt, és a kör azt vette
+> alapul ahelyett, hogy a lap saját későbbi szakaszát elolvasta volna.
+> Az elavult mondatokat ez a kör javította.
+>
+> Ami a mérésből ÉRVÉNYES marad, az alább áll — kiegészítve a **8.10
+> független ellenőrzésével**.
+
+A hét korábban kizárt `imagedata`-oszlop mellé ez a kör **huszonöt további
+jelöltet** zárt ki, a tulajdonos valódi adatbázisán (`thumbindex.db`
+3338 sor, `thumbs_index.db` ugyanennyi slot), a saját olvasónkkal
+(`pmpimport/thumbindex.py`).
+
+**A minta, amin a mérés futott:** a `thumbindex.db` **2776** sora valódi
+fotó (nem könyvtár, nem üres slot, van neve, `size > 0`, `creation_filetime > 0`).
+
+**1. A bejegyzés SAJÁT mezőiből képzett jelöltek — mind 0/3188:**
+
+| jelölt | jelölt |
+|---|---|
+| `creation_filetime` (teljes 64 bit) | `access_filetime` |
+| `creation_filetime` alsó 32 bit | felső 32 bit |
+| `access_filetime` alsó 32 bit | `size` |
+| `cft_lo ^ size` | `cft_lo + size` |
+| `cft ^ aft` | `cft_hi ^ cft_lo` |
+| `cft_hi + cft_lo` | Unix-időbélyeg (32 bit) |
+| Unix-idő `^ size` | `cft / 10^7` |
+| `cft >> 16` | `size * 2` |
+| a sor indexe | a `kind` mező |
+
+**2. Név- és útvonal-hash jelöltek — mind 0/400:**
+négy alak (fájlnév · kisbetűs fájlnév · teljes útvonal · kisbetűs teljes
+útvonal) × két kódolás (UTF-8 · UTF-16LE) × négy hash (**CRC32**, **djb2**,
+**sdbm**, **FNV-1a**) = **16 kombináció**, egyetlen egyezés nélkül.
+
+**3. ⭐ A kulcs a valódi sorokon EGYEDI: 2776 / 2776, nulla ütközés.**
+
+Ez kizárja azt is, hogy csoportbélyeg legyen (mappa, méret, dátum): egy
+csoportbélyeg ütközne. A kulcs **32 bites** (a legnagyobb mért érték
+`0xfffebc36`), eloszlása egyenletes (a felső bit 1660/3188 sorban áll,
+a páros értékek aránya 1654/3188).
+
+> ⚠️ **Mérési csapda, amibe ez a kör beleesett — a következő kör ne
+> ismételje:** ha a szűrés csak az „üres slot" és a „könyvtár" jelzőt
+> nézi, **412 helykitöltő sor is átmegy** (üres vagy „ 1" név, `size = 0`,
+> `creation_filetime = 0`). Ezek kulcsa ütközik, és a mérés **hamis
+> 217 ütközést** mutat. A helyes szűrés a `size > 0` **és**
+> `creation_filetime > 0` feltételt is beleveszi.
+
+**Pozitív kontroll az importőrünkre:** az `iter_photo_records` szűrője
+(`is_directory` vagy üres név, `importer.py:62`) a valódi adatbázison
+**pontosan 2776 sort** enged át — nincs köztük helykitöltő és nincs
+arc-rekord. A termékkód szűrése tehát HELYES; a fenti csapda csak az
+ad-hoc mérésé volt.
+
+⇒ A kizárások **érvényesek maradnak** — de nem azért, mert a képlet
+ismeretlen, hanem mert a képlet **összetett**: egyik egyszerű jelölt sem
+adhatta ki. A tényleges képlet a **8.10** szakaszban áll:
+`(JS_hash(teljes_út) mod 1 000 231) ^ rol(idő_lo,13) ^ rol(idő_hi,17) ^ rol(méret,18)`.
+
+**A 8.10 FÜGGETLEN ELLENŐRZÉSE (ez a kör, a tulajdonos valódi katalógusán):**
+
+| beállítás | egyezés |
+|---|---:|
+| a **második** FILETIME (`+8`, a rekord „hozzáférés" mezője), bájtonkénti ASCII-hajtás | **2161 / 2776** |
+| ugyanez az **első** FILETIME-mal | **0 / 2776** |
+| ugyanez **UTF-16LE** útvonal-kódolással | **0 / 2776** |
+| UTF-8 · cp1250 · cp1252 · latin1 kódolással | **mind 2161 / 2776** (azonos, mert a hajtás bájtonkénti) |
+
+⇒ **A képlet és a mezőválasztás MEGERŐSÍTVE.** A kódolás bájtonkénti
+(nem széles karakteres); a négy egybájtos kódolás azonos eredménye ezt
+mutatja.
+
+✅ **LEZÁRVA (2026-09-05): a 615 sor oka az ELŐJELES BÁJT volt.**
+
+A korábbi mérés 2776 sorból 2161-et talált egyezőnek, és a maradék **615**
+sorra két magyarázat versengett (elavult gyorsítótár, illetve a 2. mód).
+**Egyik sem igaz.** A hasholó ciklus (`0x006b9a3f`, `0x006b9a47`) a bájtot
+**`movsx`-szel, előjelesen** tölti be; a mi képlet-leírásunk előjel nélkül
+adta meg. ASCII néven a kettő azonos, nem-ASCII néven nem.
+
+**A szétválás tökéletes volt, kivétel nélkül:**
+
+| útvonal | egyezett (előjel nélkül) | nem egyezett |
+|---|---:|---:|
+| csak ASCII | **2161** | 0 |
+| tartalmaz nem-ASCII bájtot | 0 | **615** |
+
+Az előjeles bájttal, **UTF-8** kódolású útvonalon a szétválás megszűnik.
+Három katalóguson újramérve (`research/testdata/`, saját olvasónkkal;
+könyvtár-bejegyzések és nulla ellenőrzőösszegű sorok nélkül):
+
+| katalógus | vizsgált | előjel NÉLKÜL | **ELŐJELESEN** |
+|---|---:|---:|---:|
+| „arcok" | 2 776 | 2 161 | **2 776 (100 %)** |
+| nagy | 133 089 | 48 605 | **129 047 (96,96 %)** |
+| „másolat" | 2 354 | 1 932 | **2 354 (100 %)** |
+
+A bal oszlop pontosan reprodukálja a korábbi mérés számait (2161 · 48 605 ·
+1932), tehát a két mérés ugyanazt a halmazt nézi.
+
+⛔ **A 2. mód magyarázata ELVETVE — mérve.** A 615 sorra a
+`rol(q_lo,13) ^ rol(q_hi,17)` képlet **egyetlen** egyezést sem ad, sem a
+módosítási, sem a metaadat-idővel (0 / 615). Ugyanez a nagy katalógus
+maradékára is: **0 / 4042**.
+
+**A nagy katalógus maradék 4042 sora** (a 3,04 %) — **MEGERŐSÍTVE
+(2026-09-05): a fájlok ÁTHELYEZÉSE.**
+
+Első jel: `cs ^ (idő- és mérettagok)` **4041 esetben kisebb, mint
+1 000 231**, vagyis a modulus tartományába esik ⇒ az időbélyeg és a méret a
+rekordban **helyes**, csak az útvonal-hash tér el.
+
+**A bizonyítás — visszakeresés.** Ha a fájl áthelyeződött, a **neve
+megmaradt**, csak a szülő könyvtára más. A katalógus **7669
+könyvtár-bejegyzésének** mindegyikére kiszámoltam az útvonal-előtag
+hash-ét, majd soronként megkerestem, melyik előtaggal folytatva adja a
+fájl neve épp a **tárolt** ellenőrzőösszeget:
+
+| | |
+|---|---:|
+| nem egyező sor | 4 042 |
+| **egy MÁSIK, ma is létező könyvtárral megmagyarázva** | **3 976 (98,4 %)** |
+| nem magyarázva | 66 |
+| **különböző „régi" szülő, ami mindezt lefedi** | **29** |
+
+⛳ **Kontroll:** egy ismerten EGYEZŐ sorra ugyanez a keresés a **saját mai
+szülőjét** találja meg — a kereső tehát nem ad össze-vissza találatokat.
+
+⛳ **Miért nem lehet véletlen:** 7669 jelölt és 1/1 000 231 találati esély
+mellett soronként ~0,77 % a véletlen egyezés, tehát 4042 sorra **~31**
+véletlen találat várható — nem 3976. És főleg: a találatok **29 könyvtárra
+koncentrálódnak** (egyetlenre 1081 fájl), miközben a véletlen egyenletesen
+szórna szét 7669 között. Ez zárja ki a véletlent.
+
+⇒ **Az ellenőrzőösszeg eltérése — ha az idő- és mérettagok stimmelnek —
+azt jelenti, hogy a fájl ÁTHELYEZŐDÖTT**, és a régi hely a maradékból
+**visszakereshető**. Bizalmi fok: **megerősített**.
+
+*(A maradék sorok kiterjesztés szerint jpg 3622 · jpeg 265 · png 122 ·
+mp4 25 · gif 6 · webp 2; 3979 közülük tiszta ASCII útvonalú, tehát az
+előjel-hibával már nem magyarázhatók. Adatvédelmi okból a könyvtárak
+nevei nem kerülnek ki — csak a sorindexük és a darabszámuk.)*
+
+*(A `valid` mező nem magyarázza: a nagy katalógus MINDEN sora `valid=1`.)*
 
 ##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
 
@@ -1688,27 +1890,32 @@ példa ugyanabból az adatbázisból (a `albumdata_name` / `_token` /
 ⇒ A borító **mappánként egy**, és a gyűjtemény-jellegű sorok (pl.
 `]unknownface`) is kapnak egyet.
 
-### 5. ⚠️ Ami NINCS MÉRVE: MELYIK fotókból áll a kupac
+### 5. MELYIK fotókból áll a kupac — MEGVÁLASZOLVA a 7. szakaszban
 
-**Nem tudjuk**, hogy a kupac elülső lapja (és a mögötte lévők) melyik fotók,
-és milyen szabály választja ki őket (első? legrégebbi? legutóbb módosított?
-csillagozott?).
+> ⚠️ **Ez a szakasz korábban azt írta, hogy a kérdés nincs megmérve.**
+> A 2026-09-02-i folytatás (6.4 és 7.) végigolvasta a `0x00423500`
+> előállítót és a `0x00423780` összeállítót, és megválaszolta. A régi
+> szöveget azért hagyjuk itt átfogalmazva, mert a **kudarcba fulladt
+> módszer tanulsága** önmagában is érték.
 
-**Amit megpróbáltam, és miért nem döntött:** a saját `2025-05-xx`
-tesztmappánk borítóját (72×114) kirendereltem, az elülső lap dobozát az
-alfa-maszkból kivágtam (49×92, arány 0,533), és képaláírás-mentes
-képjel-összevetéssel kerestem a mappa 241 fájlja között. A legjobb két
-találat **0,96 és 1,03** hibaértékkel jött — **nem különül el**, mert a
-kivágott doboz a mögöttes lapokból is tartalmaz sávot. Ez a módszer így
-**nem alkalmas** a döntésre, és becsült választ nem adunk.
+**A válasz:** a kupacba az album SAJÁT elemlistájának első `min(N, 4)`
+eleme kerül, és a lista **első** eleme kerül legfelülre. Nem a
+legrégebbi, nem a legújabb, nem a csillagozott — a **lista eleje**. A
+részletes levezetés, a geometria és az árnyék a **7. szakaszban** áll.
 
-**A megszerzés útja:** a borítót előállító függvény megkeresése a
-binárisban. A tár-oldal megvan (`m_albumThumbs`, `0x00415790`), a fogyasztók
-is (`0x00761870` listaépítő, `0x0056ba10` tálca-token), az **előállító**
-viszont nem — sem RTTI-név (`*AlbumThumb*`, `*Cover*`, `*Stack*`: nincs
-találat), sem sztring nem vezet rá.
+#### Amit előbb megpróbáltunk, és miért NEM döntött
 
-Jegy: **#2049**.
+A saját `2025-05-xx` tesztmappánk borítóját (72×114) kirendereltük, az
+elülső lap dobozát az alfa-maszkból kivágtuk (49×92, arány 0,533), és
+képaláírás-mentes képjel-összevetéssel kerestük a mappa 241 fájlja
+között. A legjobb két találat **0,96 és 1,03** hibaértékkel jött —
+**nem különül el**, mert a kivágott doboz a mögöttes lapokból is
+tartalmaz sávot.
+
+**A tanulság:** a kép-oldali visszafejtés itt elvi korlátba ütközött, a
+kód-oldali viszont egyértelmű választ adott. Hasonló kérdésnél érdemes
+előbb az előállító függvényt megkeresni, és csak utána mérni a
+kimeneten.
 
 ### 6. A borító ÉLETCIKLUSA — hol van a kód (2026-09-02, folytatás)
 
@@ -1999,3 +2206,1674 @@ bármikor megismételhető.
 | „a kupac elrendezése futásonként változik" | `srand(rés ^ 0x133475)` — **albumonként rögzített**, `0x00423a2b` |
 | „a borító mérete rögzített (pl. 144×144)" | a vászon a befoglaló téglalap, `0x00423f70`–`0x00423f75`; élő adat: 72–119 képpont |
 | „a 32%-nyi félig átlátszó képpont élsimítás" | az alfa-hisztogram egyenletesen lefutó, és a félig átlátszók 59%-a feketés — lágy árnyék |
+
+---
+
+## 8. A `thumbindex.db` és a `*_index.db` BÁJTSZINTŰ formátuma — megfejtve (2026-09-03)
+
+A lap eddig annyit mondott, hogy a `thumbindex.db` „az útvonal-index", és
+hogy a slot indexe azonos a PMP-sorindexszel. A **formátumát** nem írta le.
+Most igen — és mindkettő **maradék nélkül** kiparszolható.
+
+> ⚠️ **Adatvédelem:** az alábbi számok a tulajdonos valódi katalógusából
+> származnak. Konkrét útvonalat, fájlnevet ez a lap **nem** tartalmaz, és
+> nem is szabad ide másolni.
+
+### 8.1 `thumbindex.db` — az útvonal-index (HELYESBÍTVE 2026-09-03)
+
+> ⚠️ **Két lényeges javítás az első kiadáshoz képest.** (1) A rekord
+> **NEM teljes útvonalat** tárol fájloknál, hanem csak a **nevet** — a
+> teljes út a szülőmappa rekordjából áll össze. (2) A `típus` **nem**
+> „mappa vagy fájl", hanem **felismert formátumkód**, tizenkét mért
+> értékkel. Aki az első kiadás szerint ír parsert, rossz útvonalakat kap.
+
+```
++0   uint32   magic = 0x40466666      ("ffF@" ASCII-ként)
++4   uint32   rekordszám (N)
++8   N × rekord:
+        ASCIIZ  NÉV (fájlnál csak a fájlnév; mappánál a teljes,
+                „\"-re végződő útvonal) — változó hosszú, NUL-lezárt
+        +0   uint64  FILETIME — létrehozás
+        +8   uint64  FILETIME — hozzáférés
+        +16  uint32  méret bájtban
+        +20  uint32  típus — FORMÁTUMKÓD (lásd lentebb)
+        +24  uint8   „dirty"
+        +25  uint8   „valid"
+        +26  uint32  szülőmappa slotindexe, vagy 0xFFFFFFFF
+        ⇒ a farok pontosan 30 bájt
+```
+
+⭐ **A hét mező PONTOSAN a 2. szakasz diagnosztikai CSV-fejléce:**
+`Name, Creation Time, Access Time, Size, Type, Dirty, Valid`. A `Name`
+oszlop neve tehát **szó szerint igaz volt** — név, nem útvonal; az első
+kiadás olvasta félre.
+
+#### A teljes útvonal összeállítása
+
+| mérés (2 katalógus) | nagy katalógus | kis katalógus |
+|---|---:|---:|
+| fájl-bejegyzés (`+26 ≠ 0xFFFFFFFF`) | 133 089 | 3 188 |
+| ebből a NÉV `\`-t tartalmaz | **0** | **0** |
+| a `+26` érvényes, `\`-re végződő mappa-slotra mutat | **133 089 / 133 089** | 2 776 / 3 188 |
+
+⇒ `teljes_út(i) = név(szülő(i)) + név(i)`.
+
+A kis katalógusban hiányzó **412** eset pontosan a `típus = 1001`
+bejegyzések halmaza (ld. lentebb) — azok nem fájlok.
+
+#### A `típus` mező — FELISMERT formátum, nem kiterjesztés
+
+| típus | mi | nagy katalógus | kis katalógus |
+|---:|---|---:|---:|
+| 0 | **üres rekord** (szabad slot) | 5 325 | 16 |
+| 1 | könyvtár | 2 338 | 115 |
+| 2 | JPEG | 121 593 | 2 424 |
+| 3 | GIF | 394 | — |
+| 5 | **hibás könyvtár** (a bejáró nem tudta feldolgozni) — *erős, 2026-09-05* | 6 | 19 |
+| 6 | BMP | 707 | 206 |
+| 8 | AVI | 37 | — |
+| 10 | MP4 / MPG / MTS | 2 645 | 17 |
+| 11 | WMV | 13 | — |
+| 13 | TIFF | — | 3 |
+| 14 | PNG | 7 693 | 125 |
+| 22 | TGA | 1 | — |
+| 31 | WebP | 6 | 1 |
+| 1001 | **arcsablon-bejegyzés** (a `+26` mezője NEM szülőindex) | — | 412 |
+
+**A besorolás a TARTALOM alapján történik, nem a kiterjesztésből.** A nagy
+katalógusban:
+
+- 33 `.png` **kiterjesztésű** fájl `típus = 2` (JPEG),
+- 26 `.jpg` és 4 `.jpeg` `típus = 14` (PNG),
+- a hat `típus = 31` (WebP) közül kettő `.jpg`/`.png` nevű.
+
+⇒ Egy átnevezett/rosszul elnevezett fájlt a Picasa a valódi formátuma
+szerint jegyez be. A saját olvasónk **ne a kiterjesztésből** következtessen.
+
+#### ⭐ A `típus` FORRÁSA: a fájltípus-tábla 30 ágú kapcsolója (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a kapcsolótáblára és az
+> ágakhoz tartozó kiterjesztésekre (mind kiolvasott sztring); **erős** a
+> tárolt `típus` = ágindex **+ 2** megfeleltetésre (tíz független pont).
+
+A `típus` mező nem a bélyegkép-rétegé: a **fájltípus-táblából** jön, amit a
+`Support*` kapcsolók építenek (`konyvtar-ablak-meretek.md`, #2344 lánca:
+`0x00402f90` → `0x004183c0` → `0x004e04a0` → **`0x004fadb0`** →
+`0x004fa590`). A `0x004fadb0` egy **30 ágú ugrótáblás kapcsoló**:
+
+```asm
+0x004fadba  jmp dword ptr [eax*4 + 0x004fb948]
+```
+
+A tábla minden ága **kiterjesztés-sztringeket** regisztrál a modul
+`+0x3dc` tömbjébe (8 bájtos bejegyzések: `char* kiterjesztés`, `uint32
+típusérték` — `0x004fa5b6` / `0x004fa5de`).
+
+| ág | a regisztrált kiterjesztések | tárolt `típus` (ág + 2) |
+|---:|---|---:|
+| 0 | `.jpg` · `.jpeg` · **`.jpe`** | **2** ✔ mérve |
+| 1 | `.gif` | **3** ✔ |
+| 4 | `.bmp` | **6** ✔ |
+| 5 | `.psd` | 7 |
+| 6 | `.avi` · `.divx` | **8** ✔ |
+| 7 | `.mov` · `.mp4` | **10** ✔ |
+| 8 | `.mpg` · **`.mpeg`** · **`.ty`** | 10 |
+| 9 | `.wmv` | **11** ✔ |
+| 10 | `.asf` | 12 |
+| 11 | `.tif` · `.tiff` | **13** ✔ |
+| 12 | `.png` | **14** ✔ |
+| 13 | `.mp3` | 15 |
+| 14 | `.wav` | 16 |
+| 15 | `.wma` | 17 |
+| 16 | **dinamikus lista** (`call 0x00a4c720` tölti fel, nem literál) | 18 |
+| 17 | `.pal` | 19 |
+| 19 | `.url` | 21 |
+| 20 | `.tga` | **22** ✔ |
+| 25 | `.txt` | 27 |
+| 26 | `.cpp` · `.h` · `.cc` | 28 |
+| 27 | `.ogg` | 29 |
+| 29 | `.webp` | **31** ✔ |
+| 2 · 3 · 18 · 21 · **23** · 22 · 24 · 28 | **közös alapeset** (`0x004fb93f`) — **nem regisztrál kiterjesztést** | 4 · 5 · 20 · 23 · **25** · 24 · 26 · 30 |
+
+**A „+2" megfeleltetés bizonyítéka:** a 8.1 típus-táblája a tulajdonos két
+katalógusán MÉRTE a tárolt értékeket. Tíz formátumnál az ágindex és a mért
+tárolt érték különbsége **mindig pontosan 2** (a ✔-es sorok:
+jpg 0→2 · gif 1→3 · bmp 4→6 · avi 6→8 · mp4 7→10 · wmv 9→11 · tif 11→13 ·
+png 12→14 · tga 20→22 · webp 29→31). Tíz független egyezés véletlenül
+kizárt. *(A kapcsoló feje maga nem mutat eltolást — az `eax`-et a hívó adja,
+`0x004e04a0`.)*
+
+⇒ **Kiterjesztés nélküli fájl vagy ismeretlen kiterjesztés esetén a
+besoroló `0x3e8 = 1000`-et ad** (`0x004e2c40`, ld. `konyvtar-ablak-meretek.md`).
+
+#### ⭐ Ezzel a `típus = 25` kérdése is eldőlt — NEGATÍV válasz
+
+A `picasa-mappakezelo.md` 16.2/b BLOKKOLT tétele („mit jelent a `Type` 25?")
+így **megválaszolható, negatívan**: a 25-ös tárolt érték a **23. ághoz**
+tartozik, az pedig a **közös alapeset** — **nem regisztrál egyetlen
+kiterjesztést sem**. ⇒ A 25 **nem fájlformátum-típus**. Ez egybevág azzal,
+ahol a bejáró használja: a `{1, 5, 25, 1001}` „a név már teljes út" halmaz
+és a `{1, 25, 26}` frissítés-mentes család **mind szerkezeti** típus
+(könyvtár · hibás könyvtár · arcsablon). ⇒ A 25 is **szerkezeti**, nem
+formátum — a pontos szerepe továbbra sincs megnevezve, de a
+formátum-irány **kizárva**.
+
+#### `típus = 0` — üres rekord
+
+Mind az 5 325 (illetve 16) ilyen bejegyzésen: a **név üres**, a méret `0`,
+a `dirty` és a `valid` `0`, mindkét FILETIME `0`, a `+26` pedig
+`0xFFFFFFFF`. ⇒ Ez **szabad slot**, nem tartalom. Ez magyarázza, miért nem
+zsugorodnak a slot-tömbök (8.4) és mire való a `valid` bájt.
+
+#### `típus = 1001` — arcsablon
+
+A kis katalógusban a `típus = 1001` bejegyzések halmaza **pontosan
+megegyezik** a `facetemplatesV2_index.db` foglalt slotjainak halmazával —
+**412 = 412, metszet 412**, azaz halmaz-azonosság, nem csak darabszám.
+⇒ Ezek nem lemezes fájlok, hanem az arcfelismerés sablon-bejegyzései,
+amelyek ugyanabban az azonosítótérben ülnek, mint a képek.
+
+#### ⭐ A `típus` a NÉVFELOLDÁST is vezérli (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a szabályra és a szülőlekérdezőre;
+> **erős** a `típus = 5` = „hibás könyvtár" olvasatra. Forrás: a
+> könyvtárbejáró névfeloldó ága, `picasa-mappakezelo.md` 16.2/b.
+
+Az eredeti **nem** a `+26` szentinelből dönti el, hogy a név teljes út-e,
+hanem a `típus`ból (`0x004f27f3`–`0x004f2825`):
+
+```
+ha  valid (+25) == 0                      → a NÉV önmagában a teljes út
+ha  típus ∈ {1, 5, 25, 1001}              → a NÉV önmagában a teljes út
+különben                                   → szülő_neve + név
+```
+
+A szülőág is feltételes: ha a `+26` a rekordszámon kívülre mutat, vagy a
+**szülő** típusa `0`, a Picasa egy tartalék sztringre esik vissza —
+**kivételt nem dob**.
+
+⭐ **Ez magyarázza a fenti 412-es anomáliát.** A szülőlekérdező
+**`FUN_004e2990`** (66 b) a `típus == 1001` esetet **a `+26` beolvasása
+ELŐTT** −1-gyel zárja rövidre (`0x004e29bb`). Egy arcsablon-bejegyzés `+26`
+mezője tehát **nem szülőindex**, és az eredeti soha nem olvassa annak — a
+mért „412 esetben nem mutat mappára" nem adathiba, hanem a formátum
+szabálya.
+
+⛔ **Nálunk (mérve):** a `pmpimport/thumbindex.py` `is_directory`-ja a
+`+26 == 0xFFFFFFFF` szentinelt nézi (`:57`), a `resolve_path` pedig hibás
+szülőindexnél **kivételt dob** (`:231`) — mindkettő eltér az eredeti
+szabályától; a beolvasott `kind` mezőt (`:50`) a `src/` **sehol nem
+használja**. Jegy: **#2404**.
+
+#### `+26 == 0xFFFFFFFF` — pontos szabály
+
+A jelölő **pontosan** a `típus ∈ {0, 1, 5}` bejegyzéseken áll (nagy
+katalógus: 7 669 = 5 325 + 2 338 + 6; kis: 150 = 16 + 115 + 19). A többi
+bejegyzésen kis egész (nagy katalógus: 6 … 140 734, 2 305 egyedi érték —
+nagyságrendben a mappák száma).
+
+**Ellenőrzés:** a tulajdonos katalógusán a fejléc **140 758** rekordot
+ígér, és a parser pontosan ennyit olvas ki — **0 bájt maradékkal**.
+
+### 8.2 `*_index.db` — NÉGY párhuzamos tömb (HELYESBÍTVE 2026-09-03)
+
+> ⚠️ **Ez a szakasz helyesbíti önmagát.** A lap első, ugyanaznapi kiadása
+> „20 bájt fejléc + N × 12 bájtos rekord (`uint64 q` + `uint32 u`)"-t írt le.
+> **A szerkezet téves volt.** A két modell **bitre ugyanazt a fájlméretet**
+> adja — `20 + 12N` —, ezért a méret-ellenőrzés nem tudta megkülönböztetni
+> őket. Az alábbi leírás a bináris ÍRÓ KÓDJÁBÓL jön, nem méret-illesztésből.
+
+#### Az író
+
+A tár-osztály másodlagos vtáblájának (`0x00ca84e8`) **1. rekesze**:
+`0x006b7fc0` (786 b). A tár-objektumot a `0x00415ab6` hívás építi
+(`0x006b5d40`, 146 b), amely `[edi] = 0x00ca84bc` és `[edi+0x48] =
+0x00ca84e8` vtáblákat állítja be.
+
+| cím | mit tesz |
+|---|---|
+| `0x006b8071` | `fld dword ptr [0x00d678e0]` — a verzió-float betöltése |
+| `0x006b807f` | `edi = 0x00c85ef8` → a `"wbS"` fopen-mód sztringje |
+| `0x006b8088` | `call 0x009917f0` — fájlmegnyitás írásra |
+| `0x006b80a2` | `fwrite(puffer, 4, 1, f)` — **a 4 bájtos verzió** |
+| `0x006b81ae` | `call 0x0099c1e0` a `[esi+0x0c]` tárolóra |
+| `0x006b81c4` | `call 0x0099c1e0` a `[esi+0x14]` tárolóra |
+| `0x006b81de` | `call 0x0099c1e0` a `[esi+0x1c]` tárolóra |
+| `0x006b81fc` | `call [[ebx]+0x20]` — a **leszármazott** saját tömbje |
+
+A verzió-float forrása globális: `0x004056c9`-nél
+`fld dword ptr [0x00cf50b8]` / `fstp dword ptr [0x00d678e0]`, ahol
+`[0x00cf50b8] = 0x3fcccccd` = **1.6**. Ez a konstans a teljes binárisban
+**kétszer** fordul elő, és a globálisnak **kilenc** olvasója van — az egyik
+épp a `0x006b8073`, azaz ez a metódus.
+
+A tároló-író `0x0099c1e0` (91 b) mindössze ennyit tesz:
+
+| cím | mit tesz |
+|---|---|
+| `0x0099c1eb` | `esi = [edi+4] >> 1` — **az elemszám** |
+| `0x0099c1fd` | `fwrite(&esi, 4, 1, f)` — a darabszám kiírása |
+| `0x0099c228` | `fwrite([edi], 4, esi, f)` — `esi` darab **4 bájtos** elem |
+
+⇒ Nincs 12 bájtos rekord. **Négy, egymás után kiírt `uint32`-tömb van,
+mindegyik előtt a saját darabszáma.**
+
+#### A formátum
+
+```
++0        float32   verzió           ; a 0x00d678e0 globálból, minden mintában 1.6
+          uint32    n0               ; 0. tömb elemszáma — MINDEN mintában 0
+          uint32    n1 = N           ; slotszám
+          N × uint32   kulcs         ; forrás-azonosító bélyeg (ld. 8.5)
+          uint32    n2 = N
+          N × uint32   eltolás       ; bájteltolás a <név>_0.db adatfájlban
+          uint32    n3 = N
+          N × uint32   hossz         ; a blob hossza bájtban; 0 = üres slot
+```
+
+#### Az ellenőrzés, ami a méret-egyezésnél erősebb
+
+A **legutolsó `eltolás + hossz`** értéknek meg kell egyeznie a hozzá tartozó
+`<név>_0.db` adatfájl méretével. Három független katalóguson:
+
+| index | slot | foglalt | utolsó vég | az adatfájl mérete | egyezik |
+|---|---:|---:|---:|---:|:--:|
+| `albums_index.db` | 144 | 37 | 1 328 872 | 1 328 872 | ✅ |
+| `thumbs_index.db` | 3 338 | 3 204 | 15 071 085 | 15 071 085 | ✅ |
+| `thumbs2_index.db` | 140 755 | 133 454 | 279 202 618 | 279 202 618 | ✅ |
+
+Mindhárom fájl **0 bájt maradékkal** parszolható a fenti modellel.
+A blobok többsége hézagmentesen követi egymást (`thumbs2`: 128 444 /
+133 453 szomszédpár érintkezik) — a hézagok a törölt bejegyzések helyei.
+
+### 8.3 A blobok NYERS JPEG-ek
+
+A `thumbs`, `thumbs2`, `bigthumbs` és `previews` első foglalt blobja
+egyaránt `ff d8 ff e0 00 10 4a 46` kezdetű, azaz **JFIF-fejlécű JPEG**.
+Nincs saját fejléc, nincs képméret-előtag: az `eltolás`/`hossz` páros
+közvetlenül egy JPEG-fájlt határol ki az adatfájlból.
+
+⚠️ **Az `albums.db` KIVÉTEL:** ott a blob 8 bájt fejléc (`uint32 width`,
+`uint32 height`) + `w·h·4` bájt **BGRA** — ld. a lap „ÖTÖDIK bélyegkép-tár"
+szakaszát. A **keret** (a négy tömb) mind az ötnél azonos; csak a blob
+tartalma tér el.
+
+⇒ **A PicasaPy egy `open()` + `seek()` + `read()`-del kiveheti az eredeti
+Picasa bélyegképét.** Ehhez a kulcs képzését NEM kell ismerni.
+
+### 8.4 A slot sorszáma MAGA az azonosító — nincs kulcskeresés
+
+A `thumbs`, `thumbs2` és `facetemplatesV2` slotszáma együtt mozog a
+`thumbindex.db` rekordszámával:
+
+| katalógus | `thumbindex` N | `thumbs` | `thumbs2` | `facetemplatesV2` | `bigthumbs` | `previews` | `albums` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A | 140 758 | 140 755 | 140 755 | — | 273 921 | 273 921 | 2 371 |
+| B | 3 338 | **3 338** | **3 338** | **3 338** | 6 169 | 5 971 | 144 |
+| C | 2 903 | **2 903** | **2 903** | 2 882 | 6 169 | 5 971 | 125 |
+
+Két katalógusban **pontosan egyenlő**, a harmadikban 3-mal kevesebb (a
+`thumbindex` három újabb bejegyzéséhez még nem készült bélyegkép).
+
+⇒ A `<név>_index.db` **nem hash-tábla**: a slot indexe azonos a
+`thumbindex.db` rekordsorszámával. *Megerősítő mérés:* `kulcs % slotszám ==
+slot` a 3 204 foglalt slotból **0**-ra teljesül, és a slotszám nem
+kettőhatvány — nyitott címzésű táblának egyik sem volna igaz.
+
+**A `bigthumbs` és a `previews` UGYANEBBEN az azonosítótérben él** — a
+nagyobb slotszámuk túlfoglalás, nem másik tér. A bizonyíték a **legutolsó
+FOGLALT slot indexe**:
+
+| katalógus | `thumbindex` N | `bigthumbs` slot | utolsó foglalt idx | foglalt |
+|---|---:|---:|---:|---:|
+| A | 140 758 | 273 921 | 140 741 | 14 531 |
+| B | 3 338 | 6 169 | 3 748 | 1 221 |
+| C | 2 903 | 6 169 | **2 902 = N−1** | 399 |
+
+A C katalógusban a legutolsó foglalt slot **pontosan** a `thumbindex` utolsó
+rekordja; az A-ban 17-tel alatta van. A tömb tehát a `thumbindex`
+sorszámával indexelődik, csak **jóval nagyobbra van foglalva, és sosem
+zsugorodik** — a `bigthumbs`/`previews` mindkét kis katalógusban azonos
+(6 169 / 5 971), mert közös előzményből örökölték.
+
+A B katalógusban a 3 748 **túllóg** a mai N=3 338-on: ott a `thumbindex`
+zsugorodott (részhalmaz-katalógus), és a fölötte maradt bejegyzések
+elárvultak. ⇒ **Olvasáskor a slotszám fölé nem szabad indexelni, és az
+N-en túli foglalt slotokat el kell dobni.**
+
+### 8.5 Mi a kulcstömb — NEM tartalom-ellenőrzőösszeg
+
+A `thumbs` és a `thumbs2` kulcstömbje **bitre azonos** (3 338 / 3 338
+egyezés), miközben a bennük tárolt JPEG-ek különbözőek. ⇒ a kulcs a
+**forrásból** származik, nem a tárolt blobból.
+
+A „tartalom-hash" hipotézist **kétirányú mérés cáfolja**:
+
+| irány | `thumbs` | `previews` |
+|---|---:|---:|
+| ugyanaz a kulcs, de a blobok NEM azonosak | 217 / 217 csoport | 161 / 161 csoport |
+| azonos blob, de ELTÉRŐ kulcs | 310 eset | 18 eset |
+
+Egyik irányban sem áll a megfeleltetés. **Elvetve.**
+
+A `thumbindex.db` 30 bájtos farkában sem szerepel: a farok mind a 27
+lehetséges eltolásán megnézve egyetlen `uint32` sem esik a kulcshalmazba
+20%-nál nagyobb arányban.
+
+**Amit tudunk:** ugyanaz az útvonal **324** esetben visel két különböző
+kulcsot (3 204 foglalt slotra 1 532 egyedi útvonal jut) ⇒ a kulcs az
+útvonalon **kívül** legalább egy változó bemenetet is használ.
+
+### 8.6 VISSZAVONVA: a korábbi kiadás `q`/`u` mérései
+
+A lap első kiadásának 8.3 és 8.4 szakasza egy 12 bájtos rekord `q` és `u`
+mezőjét elemezte. **Ez a két mező nem létezik.** A téves olvasás a
+kulcs-, eltolás- és hossztömb egymás melletti bájtjait ragasztotta össze,
+ezért az ott közölt kizárások (10 mező-összevetés, 24 hash-kombináció) és
+statisztikák (egyediségi arányok, bit-eloszlás) **nem érvényesek** — nem
+egy valódi mezőre vonatkoztak. Aki a kulcs képzését kutatja, **ne
+támaszkodjon rájuk**, és ne tekintse a felsorolt hash-családokat kizártnak.
+
+⭐ **A visszavont szakaszban ott volt a saját cáfolata is:** a „`q`" felső
+bitjeinek 1-aránya `0,33 … 0,16` volt, 0,50 helyett. Ezt a kiadás
+érdekességként írta le. Valójában ez pontosan az, amit **kis egész számok
+felső bitjeitől** várunk — az eltolás-tömbtől. A ferde bit-eloszlás nem a
+hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
+
+### 8.7 Ami NYITVA marad
+
+| kérdés | állapot | a következő lépés |
+|---|---|---|
+| a kulcs képzésének képlete | ✅ **MEGVAN** (2026-09-03, ld. 8.10) | — |
+| mi indexeli a `bigthumbs`/`previews` slotokat | **LEZÁRVA** e körben | ugyanaz az azonosítótér, túlfoglalt tömbbel — ld. 8.4 |
+| hány ellenőrzőösszeg-mód van | ✅ **LEZÁRVA (2026-09-05)** — **kettő**; a 2. útvonal és méret nélküli, másodperc-felbontású (8.10) | — |
+| **mikor jut a 2. mód** | ✅ **LEZÁRVA (2026-09-05)** — három feltétel bármelyikére: a hívó 0-t ad · `Type = 0` · nincs szülő (`0x004e3bc2`/`0x004e3bcb`/`0x004e3bd7`) | — |
+| mit hasheli az 1. mód | ✅ **LEZÁRVA** — **két** sztringet: a szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátorba (`0x004e3bdd`–`0x004e3c0e`) | — |
+| **melyik hívó ad KIFEJEZETTEN 0-t** | ✅ **LEZÁRVA (2026-09-05)** — a `ret 0x18` (hat argumentum) szerint szűrve a 93 jelöltből **29** marad; ezekből **10 ad literál `0`-t**, 5 literál `1`-et, 14 futásidejűt. Két 0-s hívó (`FUN_0042f6a0`, `FUN_00793720`) teljesen elolvasva: `CThumbDB` másodlagos felület, **üres második sztringgel** | — |
+| mind a 29 jelölt `CThumbDB`-e? | **feltételes** — kettő megerősítve; a többinél a hívási minta azonos (`…, m, 1, 1, m, …`), de nincs külön igazolva | a fogadó típusának ellenőrzése hívóhelyenként |
+| **a nem egyező 615 sor oka** | ✅ **LEZÁRVA (2026-09-05)** — az **előjeles bájt** (`movsx`) hiányzott a képlet-leírásunkból; előjelesen, UTF-8 úton **2776/2776**. A 2. mód magyarázata **mérve elvetve** (0/615). Ld. a 8.4 „LEZÁRVA" blokkját. | — |
+
+**A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
+Picasa bélyegkép-gyorsítótárát (8.3–8.4) — csak ahhoz kell, hogy olyan
+gyorsítótárat ÍRJUNK, amit a Picasa frissnek fogad el.
+
+*Bizonyítottsági fok: a **formátum megerősített** (az író kódjából olvasva
+ÉS három katalóguson maradék nélkül, az adatfájl méretével egyezően
+ellenőrizve); ~~a **kulcs képzése NYITOTT**~~ — **ELAVULT, javítva 2026-09-04:** a képlet a 8.10-ben megvan és mérve van.*
+
+Jegyek: **#2195** (olvasó a két formátumhoz), **#1** (a db3-import gyűjtő).
+
+### 8.8 Melléklelet: a `onlinechecksum` algoritmusa — MEGFEJTVE, de nem ellenőrizhető
+
+A bélyegkép-kulcs keresése közben a tár-osztály fordítási egységében
+találtam **egyetlen** forgatás-alapú hash-t: `0x006b9870` (371 b). **Nem ez
+a bélyegkép-kulcs.** Az azonosítást az egyetlen hívója dönti el:
+`0x006ecd50` (835 b), amelynek sztringjei `onlinechecksum` és
+`LHUpload: Image %d (onlineID = %s) cannot be found in album feed…` ⇒ a
+megszűnt **Picasa Web Albums** szinkronjához tartozik.
+
+Mivel a megfejtés készen volt, itt marad — a `imagedata_onlinechecksum`
+PMP-oszlop olvasásához kellhet.
+
+#### A sztring-hash
+
+```
+h = 0x12345678
+minden bájtra:
+    ha 'A' <= c <= 'Z':  c += 0x20        # csak az ASCII nagybetűk
+    ha c >= 0x80:        c -= 256         # ⚠️ ELŐJELES bájt (movsx)
+    h ^= ((h << 5) + c + (h >> 2))        # 32 biten, előjeles összeadás
+h_út = h mod 1000231                      # 0xF4327
+```
+
+⚠️ **Az előjeles bájt NEM részletkérdés** (2026-09-05 helyesbítés): a
+`0x006b98da` és a `0x006b98e2` egyaránt **`movsx eax, al`**, tehát a
+0x80-nál nagyobb bájtok **negatív** számként adódnak hozzá. ASCII néven ez
+nem látszik; nem-ASCII néven a hash teljesen eltér. A 8.10 mérése ezen
+bukott 615 soron — ld. **8.10.6**.
+
+| cím | mit ad |
+|---|---|
+| `0x006b98cb` | `ecx = 0x12345678` — a kezdőérték |
+| `0x006b98d2`–`0x006b98e2` | `'A'..'Z'` → `+0x20` (kisbetűsítés) |
+| `0x006b98e5`–`0x006b98f9` | `h ^= (h<<5) + c + (h>>2)` |
+| `0x006b98ff`–`0x006b9917` | osztás-idióma: `mod 0xF4327` = **1 000 231** |
+
+#### Az időbélyeg-tagok
+
+```
+mp   = (FILETIME + 5 000 000) / 10 000 000     # egész MÁSODPERC, kerekítve
+A    = rol(mp_lo,13) ^ rol(mp_hi,17) ^ <2. paraméter>
+B    = rol(ft_hi,17) ^ rol(ft_lo,13)
+kulcs_alap = h_út ^ B ^ A
+```
+
+| cím | mit ad |
+|---|---|
+| `0x006b987e` / `0x006b9883` | `+0x4C4B40` (5 000 000) és `/0x989680` (10 000 000) |
+| `0x006b988d` | `call 0x00c13b70` — 64 bites osztás |
+| `0x006b9892`–`0x006b989a` | `rol 13` / `rol 17` / `xor` / `xor <param2>` |
+| `0x006b99c0`–`0x006b99c4` | a végső `xor` a nem-egyező ágon |
+
+#### ⭐ Az érdekes rész: IDŐZÓNA-TOLERÁNS egyeztetés
+
+A függvény nem egyetlen értéket számol, hanem **végigpróbál minden egész
+órás időzóna-eltolást −12 h és +12 h között**, és mindegyikre megnézi,
+egyezik-e a tárolt ellenőrzőösszeggel:
+
+| cím | mit tesz |
+|---|---|
+| `0x006b991b` | `ebx = 0xFFFF5740` = **−43 200 s** (−12 óra) |
+| `0x006b9920`–`0x006b99a4` | az eltolt időből képzett jelölt kiszámítása |
+| `0x006b99a8` | `cmp eax, [esp+0x40]` — összevetés a **várt** összeggel |
+| `0x006b99ae` | `add ebx, 0xE10` = **+3 600 s** (egy óra) |
+| `0x006b99b4` | `cmp ebx, 0xA8C0` = **+43 200 s** — a ciklus vége |
+
+⇒ Huszonöt jelölt. A Picasa tehát **tudta**, hogy egy fájl időbélyege
+időzóna-váltás vagy hordozható meghajtó miatt egész órát ugorhat, és ezt
+nem tekintette változásnak. Ez a tervezői döntés önmagában is átvehető.
+
+#### ⛔ Amit NEM tudok róla
+
+**A képlet élő adaton NINCS ellenőrizve.** A `imagedata_onlinechecksum.pmp`
+oszlop **mind a három** mintakatalógusban teljesen üres (0 nem üres érték
+3 011, illetve 140 661 sorból) — a szolgáltatás megszűnt, a tulajdonos
+sosem használta. A `<2. paraméter>` (a `[esp+0x44]`-en érkező keverőérték)
+azonosítása ezért **NINCS MEG**; a hívó `0x006ecd50` átvilágítása adná meg.
+
+*Bizonyítottsági fok: az **algoritmus lépései megerősítettek** (címenként
+kiolvasva); a **teljes képlet feltételes**, mert nincs hozzá minta.*
+
+### 8.9 A bélyegkép-kulcs: mit zártam ki a VALÓDI kulcstömbön
+
+A 8.6 szakasz visszavonta az előző kör kizárásait, mert azok nem létező
+mezőkre vonatkoztak. Ez a szakasz a pótlásuk — mind a **valódi**
+kulcstömbön mérve, a `thumbs_index.db` 3 204 foglalt slotján.
+
+| próba | kombináció | egyezés |
+|---|---:|---:|
+| közvetlen mező-egyezés (méret, mindkét FILETIME fele, `+26`, XOR-párok) | 9 | **0** |
+| hash a TÁROLT néven (teljes/kisbetűs/fájlnév/UTF-16 × CRC-32, FNV-1a, FNV-1, djb2, djb2-xor, sdbm, Jenkins, MD5 alsó/felső, SHA-1 alsó) | 60 | **0** |
+| hash a **rekonstruált teljes úton** (8.1 szerint) × Picasa-JS-hash, CRC-32, FNV-1a, djb2, sdbm, MD5 | 28 | **0** |
+| **minden** numerikus PMP-oszlop (`uint32`, valamint `uint64` alsó/felső fele) | 59 fájl | **0** |
+
+⚠️ **A 60-as sor bemenete a TÁROLT név volt**, ami a 8.1 helyesbítése előtt
+tévesen teljes útvonalnak látszott. A 28-as sor az ezzel javított,
+összeállított teljes úton futott — szintén nullával.
+
+⇒ A kulcs **nem** az útvonal önmagában, **nem** az időbélyeg vagy a méret
+önmagában, és **nem** áll elő egyik ismert PMP-oszlopból sem. Marad a
+bináris: a `[this+0x0c]` tárolót feltöltő kód.
+
+### 8.10 ⭐ AZ ELLENŐRZŐÖSSZEG KÉPLETE — MEGVAN
+
+Az „első tömb" (8.2), amit a korábbi körök „kulcsnak" neveztek, a Picasa saját
+szóhasználatában **Checksum**. A képlete megvan, és mért.
+
+#### A név a Picasa SAJÁT diagnosztikai kimenetéből
+
+Az osztály neve **`CBlockFile`**, forrása `.\thumblab\CBlockFile.cpp`
+(a sztring a `0x006b8640` és a `0x006b9030` függvényben áll). Van hozzá
+CSV-kiíró: `0x006b5e00`, „Write blockfile CSV", fejléce
+
+```
+Size,Offset,Checksum
+```
+
+soronként `%d,%d,%d`. A kiírás sorrendje (`0x006b5ed6`–`0x006b5ef1`,
+cdecl, tehát fordított push-sorrend) egyértelműen megfelelteti a
+tárolókat:
+
+| objektum-eltolás | a `0x0099c1e0` hívási sorrendjében | CSV-oszlop |
+|---|---|---|
+| `+0x54` | 1. tömb | **Checksum** |
+| `+0x5c` | 2. tömb | **Offset** |
+| `+0x64` | 3. tömb | **Size** |
+
+⇒ A 8.2 „kulcs / eltolás / hossz" elnevezése helyes volt; innentől a
+Picasa saját nevét használjuk.
+
+#### A képlet
+
+```
+Checksum = ( JS_hash(teljes_út) mod 1 000 231 )
+           ^ rol(idő_lo, 13)
+           ^ rol(idő_hi, 17)
+           ^ rol(fájlméret, 18)
+```
+
+ahol a `JS_hash` ugyanaz, mint a 8.8-ban:
+
+```
+h = 0x12345678
+minden bájtra:  ha 'A' <= c <= 'Z': c += 0x20
+                ha c >= 0x80:       c -= 256         # ⚠️ ELŐJELES (movsx)
+                h ^= ((h << 5) + c + (h >> 2))       # 32 biten
+```
+
+⚠️ **Az útvonal bájtjai UTF-8-ban, ELŐJELESEN** — a `0x006b9a3f` /
+`0x006b9a47` mindkét ága `movsx ecx, cl`. Enélkül minden nem-ASCII nevű
+bejegyzés hibás értéket ad (8.10.6).
+
+és `idő` a `thumbindex.db` rekordjának **MÁSODIK** FILETIME mezője (`+8`).
+
+| cím | mit ad |
+|---|---|
+| `0x006b9af8`–`0x006b9b08` | az osztás-idióma: `mod 0xF4327` = **1 000 231** |
+| `0x006b9b0a` / `0x006b9b0d` | `edx = [edi+0x10]`, `rol edx, 0x11` (17) |
+| `0x006b9b0a` / `0x006b9b10` | `eax = [edi+0x14]`, `rol eax, 0x12` (18) |
+| `0x006b9b15` / `0x006b9b18` | `eax = [edi+0x0c]`, `rol eax, 0x0d` (13) |
+| `0x006b9b13`–`0x006b9b1d` | a három `xor`, majd `xor ecx, edx` |
+| `0x006b9b20`–`0x006b9b23` | `eax = ecx`, `ret 4` |
+
+#### Az ellenőrzés
+
+Pontos, 32 bites egyezés, három független katalóguson:
+
+| katalógus | vizsgált bejegyzés | **pontos egyezés** |
+|---|---:|---:|
+| nagy (a tulajdonos élő katalógusa) | 133 089 | **48 605** |
+| kis „arcok" | 3 188 | **2 161** |
+| kis „másolat" | 2 603 | **1 932** |
+
+Negyvennyolcezer véletlen 32 bites egyezés kizárt (várható érték
+gyakorlatilag nulla), ezért a képlet **megerősített**.
+
+#### Melyik időbélyeg — és a 8.1 mezőneve pontosításra szorul
+
+A `+0`-s FILETIME-mal számolt egyezések **valódi részhalmazai** a `+8`-cal
+számoltaknak (1 337 ⊂ 2 161): a `+0` csak ott „talál", ahol a két bélyeg
+amúgy is azonos. ⇒ **A használt mező a `+8`.**
+
+A 8.1 ezt „hozzáférés"-ként nevezi meg (a `WriteDirscannerCSV`
+`Access Time` fejléce nyomán). Viselkedése alapján ez az **írás/módosítás**
+ideje: a Picasa erre alapozza az elavulás-vizsgálatot, amit a hozzáférési
+időre értelmetlen volna. *A CSV-fejléc szava megmarad, de a szerepét itt
+mondjuk ki.*
+
+#### ⭐ KÉT ellenőrzőösszeg-mód van — a másodikban NINCS útvonal (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a második mód képletére és a
+> hívóhelyek számbavételére; **feltételes** arra, hogy ez magyarázza-e a
+> lentebb tárgyalt nem egyező sorokat — az még mérés kérdése.
+
+A számoló függvény (`FUN_006b99f0`, 350 b, `ret 4`) **egyetlen
+verem-paramétere egy kapcsoló**, és két különböző képletre ágazik el:
+
+```asm
+0x006b99f0  cmp byte ptr [esp+4], 0
+0x006b99f5  je  0x006b9b26          ; ⇒ MÁSODIK mód
+```
+
+**1. mód (kapcsoló ≠ 0) — a fenti, dokumentált képlet.**
+
+**2. mód (kapcsoló = 0), `0x006b9b26`–`0x006b9b4b` — ÚJ:**
+
+```asm
+0x006b9b26  mov ecx, [edi+0x0c]      ; a FILETIME alsó 32 bitje
+0x006b9b29  mov edx, [edi+0x10]      ; a felső 32 bitje
+0x006b9b2e  add ecx, 0x4c4b40        ; +5 000 000  (fél másodperc)
+0x006b9b39  adc edx, 0               ; 64 biten
+0x006b9b34  push 0x989680            ; 10 000 000  (= 1 másodperc)
+0x006b9b3e  call 0x00c13b70          ; 64 bites osztás
+0x006b9b43  rol eax, 0x0d            ; rol(hányados_lo, 13)
+0x006b9b46  rol edx, 0x11            ; rol(hányados_hi, 17)
+0x006b9b49  xor eax, edx
+```
+
+```
+Checksum₂ = rol( q_lo, 13 ) ^ rol( q_hi, 17 )
+            ahol  q = (FILETIME + 5 000 000) / 10 000 000
+```
+
+A `FILETIME` 100 ns-os egységekben számol, tehát a `+5 000 000` és a
+`/10 000 000` együtt **egész másodpercre kerekít**. ⇒ A második mód
+**másodperc-felbontású időbélyeg-lenyomat**, amelyben **sem az útvonal,
+sem a fájlméret nem szerepel**.
+
+**Ki melyik módot kéri** — a `.text` teljes `e8 rel32` pásztázása szerint a
+függvénynek **hat** hívója van:
+
+| hívó | a kapcsoló |
+|---|---|
+| `0x00424dd1`, `0x004282f7`, `0x00568206`, `0x00568336`, `0x00602084` | `push 1` — **rögzített 1. mód** |
+| **`0x004e3c13`** (`FUN_004e3ab0`, 554 b) | **futásidejű érték** (`[esp+0x1c]` = a függvény 3. paramétere) |
+
+A futásidejű ág forrása egy szinttel feljebb: a `FUN_004e3ab0` egyetlen
+hívója a `0x0042a832`, amely a saját 2. paraméterét (`[ebp+0xc]`) adja
+tovább; ez a függvény (`FUN_0042a800`) pedig **`CThumbDB` virtuális
+metódus**: a mutatója a `0x00c82184` rekeszben áll, a vtábla feje
+`0x00c820fc`, a hozzá tartozó COL `0x00cfa164` (`offset = 84`), tehát ez a
+`CThumbDB` **másodlagos felülete**, a **34. rés**.
+
+⛔ **Ameddig eljutottam:** a 34. rés hívóit **nem** sikerült kimerítően
+megtalálni — a hívás nem `call dword ptr [reg+0x88]` alakban megy
+(**0 találat** a teljes `.text`-en), hanem regiszterbe töltve; a
+`mov reg,[reg+0x88]` minta viszont **286** helyen áll, és azok túlnyomó
+része más szerkezet ugyanazon eltolása. **Megszerzés:** a 286 találat
+szűrése arra, melyiket követi `call reg` ugyanabban a bázisblokkban,
+vagy a `CThumbDB` felület-térkép (11. szakasz) 34. résének visszakeresése.
+
+#### ⭐ MIKOR választ a Picasa 2. módot — a szabály (2026-09-05, 120. kör)
+
+> **Bizonyítottsági fok: megerősített.** Az egyetlen futásidejű hívóhely
+> (`FUN_004e3ab0`) elágazása utasításról utasításra elolvasva.
+
+```asm
+0x004e3bbc  mov  ecx, [esp+0x1c]      ; a mód-kapcsoló (a függvény 3. paramétere)
+0x004e3bc0  test cl, cl
+0x004e3bc2  je   0x004e3c70           ; (1) a kapcsoló 0        → 2. MÓD
+0x004e3bc8  cmp  dword [edi+0x18], 0
+0x004e3bcb  je   0x004e3c70           ; (2) a rekord Type-ja 0  → 2. MÓD
+0x004e3bd1  mov  eax, [edi+0x20]
+0x004e3bd4  cmp  eax, -1
+0x004e3bd7  je   0x004e3c70           ; (3) nincs szülő          → 2. MÓD
+            ; különben: 1. MÓD, a SZÜLŐ rekordjával
+0x004e3c70  push ecx                  ; a 2. mód ága
+0x004e3c71  xor  ecx, ecx             ; a második sztring-mutató = NULL
+0x004e3c73  jmp  0x004e3c13           ; ugyanaz a hívás
+```
+
+⇒ **Három feltétel bármelyike a 2. módot választja:** a hívó kifejezetten
+0-t ad, **vagy** a bejegyzés `Type`-ja 0 (üres slot), **vagy** nincs
+szülője (`+26 == 0xFFFFFFFF`). A 8.1 mérése szerint a szentinel pontosan a
+`Type ∈ {0, 1, 5}` halmazon áll ⇒ **a könyvtár-bejegyzések és az üres
+slotok mindig a 2. módot kapják**.
+
+#### ⭐ Az 1. mód KÉT sztringet hasheli — így kerül bele a „teljes út"
+
+A számoló két bemeneti sztringet fogad: az `edi` rekord sajátját és az
+`ecx`-ben átadottat. Az 1. módú ág (`0x004e3bdd`–`0x004e3c0e`) az `ecx`-be
+a **szülő rekord** nevét tölti; ha a szülőindex a rekordszámon kívülre
+mutat, a `[objektum+0x550]` **tartalék sztringre** esik vissza
+(`0x004e3c08`) — ugyanaz a tartalék, mint a névfeloldásban
+(`picasa-mappakezelo.md` 16.2/b).
+
+⇒ A „`JS_hash(teljes_út)`" a gyakorlatban **`JS_hash(szülő_neve ‖ saját_név)`**,
+külön összefűzés nélkül: a hurok (`0x006b9a12`–`0x006b9a9e`) a két
+sztringet egymás után hajtja bele ugyanabba az akkumulátorba. Aki
+kompatibilis gyorsítótárat ír, ezt a **sorrendet** kell eltalálnia.
+
+#### ⭐ KI kéri a 2. módot — legalább két hívó, ÜRES második sztringgel (2026-09-05, 121. kör)
+
+> **Bizonyítottsági fok: megerősített** a két teljesen elolvasott hívóra és
+> a számbavételre; **feltételes** arra, hogy a 29 jelöltből mind a
+> `CThumbDB` 34. rése.
+
+**A szűrés.** A `CThumbDB` 34. rését hívó kód `call dword ptr [reg+0x88]`
+alakban **nem** látszik (0 találat); regiszterbe töltve hív. A
+`mov reg,[reg+0x88]` **286** találatából **93**-at követ `call reg`. A
+metódus `ret 0x18` (`0x0042a844`) ⇒ **hat verem-argumentum**; a mód a
+**2.** (`[ebp+0xc]`), tehát a hívás előtti **5. push**. A 93-ból **29**
+gyűjt legalább hat pusht:
+
+| a 2. argumentum (a mód) | darab | néhány cím |
+|---|---:|---|
+| literál **`0`** | **10** | `0x004245eb` · `0x0042f6c0` · `0x0042f710` · `0x0043bc8e` · `0x0045a966` · `0x00481993` · `0x0064bea8` · `0x006a969f` · `0x006ac079` · `0x00793740` |
+| literál **`1`** | 5 | `0x0043bcfe` · `0x004aa47f` · `0x0065b180` · `0x0065b323` · `0x0065b3c3` |
+| regiszter (futásidejű) | 14 | `0x00424cd6` · `0x00425297` · … |
+
+**Két hívó teljesen elolvasva** — mindkettő `CThumbDB`, mindkettő 0-t ad:
+
+```asm
+; FUN_0042f6a0 (74 b)
+0x0042f6a3  push 0x00c7f979          ; ⇒ ÜRES sztring ("")
+0x0042f6b8  call 0x00985ff0          ; std::string felépítése belőle
+0x0042f6bd  mov  eax, [esi-4]        ; a MÁSODLAGOS felület vtáblája
+0x0042f6c0  mov  eax, [eax+0x88]     ; 34. rés
+0x0042f6c8  push edx                 ; arg6 = az ÜRES sztring
+0x0042f6cd  push 0                   ; arg5
+0x0042f6cf  push 1                   ; arg4
+0x0042f6d1  push 1                   ; arg3
+0x0042f6d3  lea  ecx, [esi-4]        ; this = a másodlagos felület
+0x0042f6d6  push 0                   ; arg2 = a MÓD  → 2. MÓD
+0x0042f6d8  push edx                 ; arg1
+0x0042f6d9  call eax
+```
+
+A `FUN_00793720` (70 b) **ugyanez a minta**, ugyanazzal az üres sztringgel
+(`0x00c7f979`) és ugyanazzal a `0`-val.
+
+⇒ **A 2. mód akkor jár, ha a hívónak nincs második sztringje.** Az 1. mód
+két sztringet hajt a hash-be (ld. lentebb); ha a második üres, a hashelés
+értelmetlen volna — a Picasa ilyenkor az **idő-alapú** összeget használja.
+A `0x00c7f979` **üres sztring** (a bájt a helyén `0x00`; a szomszédja a
+`"full"` literál), tehát ez nem következtetés, hanem kiolvasott érték.
+
+✅ **HELYESBÍTVE (2026-09-05): a „versengő magyarázat" MEGDŐLT.** Az itt
+felvetett gondolat — hogy a nem egyező sorok a 2. módban íródtak — **mérve
+elvetve**: a 615 sorra a 2. mód képlete **nulla** egyezést ad (a nagy
+katalógus 4042-es maradékára szintén nulla). A valódi ok az **előjeles
+bájt** volt a sztring-hashben; a részletek a 8.4 „LEZÁRVA" blokkjában.
+
+#### Miért nem egyezik MINDEN bejegyzés — és miért nem hiba ez
+
+Az egyezési arány katalóguskorral csökken:
+
+| katalógus | jelleg | egyezés |
+|---|---|---:|
+| kis „másolat" | frissen épült | **74,2 %** |
+| kis „arcok" | frissen épült | **67,8 %** |
+| nagy | évek óta élő | **36,5 %** |
+
+⇒ **Az eltérés maga a jelzés**, amiért a mező létezik: a gyorsítótárban álló
+bélyegkép elavult a forrásfájlhoz képest. A `dirty`/`valid` bájt ezt **nem**
+jelöli (mind a 121 593 vizsgált JPEG-bejegyzés `dirty=0, valid=1`), tehát az
+elavulás felismerése kizárólag az ellenőrzőösszegen múlik.
+
+⚠️ **Amit ez NEM bizonyít:** hogy minden egyes nem egyező bejegyzés
+elavult. A katalóguskorral való együttmozgás alátámasztja, de nem
+bizonyítja. A döntő kísérlet — egy fájl módosítása a windowsos Picasa
+mellett, majd az összeg újramérése — **tulajdonosi közreműködést igényel**;
+a leletet nem tartja fel.
+
+*Bizonyítottsági fok: a **képlet megerősített** (a binárisból kiolvasva ÉS
+48 605 pontos egyezéssel három katalóguson); az **eltérések oka erős**, de
+egyedi szinten nincs bizonyítva.*
+
+### 8.11 A `CBlockFile` NEM bélyegkép-specifikus — négy másik fájl ugyanez
+
+Az író metódus (`0x006b75f0`) **19 hívási helyről** hívódik. Köztük:
+
+| hívó | mire használja |
+|---|---|
+| `0x0080f830` | **`makemoviecache.db`** — a filmkészítő gyorstára (`makemoviecache\`) |
+| `0x007ead60` | a **hasonlóság-kereső adatbázisa** (`CSimSearch::updating`, „Updating similarity database (will be fast next time)") |
+| `0x00439a80` | album-tokenek (`]album`, `]screensaver`, `]web_`) |
+| `0x004290e0` | `runtime\missing.jpg` |
+| `0x00425f60` | geo-nézet (`geoview`, „Use EXIF thumbnails") |
+
+⇒ **A 8.2-ben leírt keret ezekre a fájlokra is érvényes.** Aki megírja a
+`*_index.db` olvasóját, ingyen kapja a filmkészítő-gyorstár és a
+hasonlóság-adatbázis olvasását is. *(Ezekre a repóban nincs mintafájl —
+a formátum-azonosság a közös íróból következik, nem mintából.)*
+
+### 8.12 A `Size` mező 24 BITES — és ebből 16 MB-os blob-korlát következik
+
+A `Size` szót a kód **`& 0xFFFFFF`**-fel maszkolja (CSV-kiíró:
+`0x006b5eea`; továbbá `0x006b6bc3` és `0x006b952f`). Az író metódus
+**elutasítja** a nagyobb blobot:
+
+```
+0x006b75f7   cmp dword ptr [eax], 0xffffff
+0x006b7603   ja  0x006b7e3f          ; hibakijárat
+```
+
+⇒ Egy blob legfeljebb **16 777 215 bájt**.
+
+**Mérés a felső 8 bitre:** mind a 17 mintaindexben, három katalóguson,
+**302 000-nél több** foglalt bejegyzésen a `Size` szó felső nyolc bitje
+**nulla**. Élő minta tehát arra, hogy ezek a bitek mit jelentenek, **NINCS
+MEG** — de az olvasónak maszkolnia kell, mert a Picasa is maszkol.
+
+⚠️ **A 8.2 ellenőrzése ezzel pontosítva:** a „legutolsó `eltolás + hossz`
+= az adatfájl mérete" azonosság a **maszkolt** hosszal is teljesül mind a
+17 fájlon (a felső bitek nullák lévén a két számítás itt egybeesik).
+
+
+---
+
+## 9. Az `albumdata_date.pmp` — a MAPPA saját dátuma, VALÓDI adatból mérve (2026-09-04, #2304)
+
+> **Bizonyítottság: megerősített** — nem a binárisból következtetve, hanem a
+> **tulajdonos saját Picasa-adatbázisából** kiolvasva (`Picasa2/db3/`
+> mentés, 2026-08-22), és a futó Picasa képernyőmentésével összevetve.
+>
+> ⚠️ A mentés a tulajdonos magánkatalógusáról készült; **útvonalak és
+> mappanevek nem kerülnek ebbe a lapba**, csak a #2304-ben már nyilvános
+> `AI` mappa, mint mérési eset.
+
+### 9.1 A kérdés
+
+A #2304 három eltérése ugyanarra a mezőre mutatott: az eredeti a mappa
+fejlécében **dátumot** ír („AI — 2023. november 14., kedd"), a bal hasábban
+a **2023**-as évcsoport alá teszi, nálunk pedig nincs fejlécdátum, és az
+évcsoport **2003**. A kérdés: **honnan veszi az eredeti ezt a dátumot?**
+
+### 9.2 A válasz — `albumdata_date.pmp`, OLE Variant `double`
+
+A mentésből kiolvasva (a `pmpimport.pmp_column` olvasónkkal, 144 sor):
+
+| oszlop | az `AI` mappa sora (index 3) |
+|---|---|
+| `albumdata_name` | `AI` |
+| **`albumdata_date`** | **`45244.72859953704`** |
+| `albumdata_category` | `2` |
+
+`45244.72859953704` nap az **1899-12-30**-i Variant-alapponttól ⇒
+**2023-11-14 17:29:11**.
+
+⇒ **Pontosan az a nap, amit az eredeti a fejlécben mutat** („2023. november
+14., **kedd**" — 2023-11-14 valóban kedd), és pontosan az az év, ami alá a
+bal hasábban sorolja. **A fejlécdátum és az évcsoport ugyanabból az egyetlen
+mezőből jön.**
+
+### 9.3 ⛔ NEM a képekből számolódik — negatív eredmény
+
+A 144 sor eloszlása ezt kizárja:
+
+- a **virtuális albumok** (az első három sor, `category` 0 és 8) mindegyike
+  **ugyanazt** az értéket viseli: `46221.615` → 2026-07-18 14:45:36, ami az
+  adatbázis létrehozásának ideje — nem képadat;
+- a **lemezen lévő mappák** (`category = 2`) értékei 2009 és 2026 között
+  szórnak, mappánként külön;
+- az `AI` mappa értéke **egyetlen időpont, másodperc pontossággal** — a
+  benne lévő 82 kép felvételi idejéből semmilyen aggregátum (legkorábbi,
+  legkésőbbi, medián) nem adna másodperc-pontos „17:29:11"-et.
+
+⇒ A mező a **mappa saját dátuma**, amit a Picasa a `.picasa.ini`
+`date=` kulcsába is kiír (ld. [`picasa-ini-format.md`](picasa-ini-format.md);
+a `0x0068ac80` formátumsztringje **`date=%f`**, tehát lebegőpontos).
+
+### 9.4 Az `albumdata_category` mért értékei
+
+Ugyanebből a mentésből, a 144 soron:
+
+| érték | mit jelöl (a sorok alapján) |
+|---|---|
+| `0` | virtuális album (csillagozott, legutóbb frissítve) — `filename` üres |
+| `1` | egy lemezmappa, eltérő besorolással *(egyetlen sor a mintában)* |
+| `2` | **közönséges lemezmappa** — a `filename` a mappa útvonala |
+| `8` | a „Név nélküliek" arc-gyűjtő — `filename` üres |
+
+*Bizonyítottság: **erős*** — az értékkészlet a mintából teljes, a jelentés a
+`filename` üres/nem üres mintázatából és a nevekből következik; a bináris
+oldali kódtáblát külön nem mértem.
+
+### 9.5 MIT AD MA a mi kódunk (mérve)
+
+| hol | mit ad |
+|---|---|
+| `index/schema.py:316–318` | `folders.date TEXT`, és a migráció **`MIN(p.taken_at)`-ból** tölti — a **legkorábbi kép** dátuma |
+| `ini/folder_date.py:57–72` | a `date=` **Variant-olvasója** (alappont 1899-12-30, tartomány 1…73 500) — a #2309 tette be |
+| `index/sync.py:21` | a `read_folder_date_override` be van kötve a szinkronba |
+
+⇒ **A 2003-as évcsoport mechanizmusa ezzel érthető:** ha a `date=` nem
+olvasódik ki, a `folders.date` a **legkorábbi kép** dátumára esik vissza —
+és egy 2003-as (hibás vagy régi) felvételi idejű kép az egész mappát
+2003-hoz sorolja. A #2309 javítása pontosan ezt szünteti meg.
+
+⚠️ **Egy MÉRT eltérés marad:** a `folder_date.py:72` a Variant-időt
+`.date().isoformat()`-tal adja vissza, tehát **az időpontot eldobja**. Az
+eredeti másodperc pontosságú értéket tárol (`17:29:11`). A fejlécre és az
+évcsoportra ez nem hat ki; **holtverseny-feloldásra viszont nálunk nincs
+meg az az információ, ami az eredetinél megvan.** *(Hogy az eredeti
+használja-e valahol az időrészt, ez a kör NEM mérte.)*
+
+### 9.6 Eredeti / nálunk / teendő
+
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a mappa dátumának forrása | `albumdata_date` (= `.picasa.ini` `date=`) | `folders.date`, a `date=`-ből, tartalék `MIN(taken_at)` | — (a #2309 megvan) |
+| pontosság | **másodperc** | **nap** (`folder_date.py:72`) | eldöntendő: megtartsuk-e az időrészt |
+| tartalék, ha nincs `date=` | *nem mérve* — az eredetinél az érték mindig ott van a DB-ben | `MIN(taken_at)` | — |
+| a fejlécdátum és az évcsoport | **ugyanaz az egy mező** | ugyanaz a `folders.date` | — |
+
+## MIT AD MA a mi db3-importunk — MÉRVE a tulajdonos VALÓDI adatbázisán (2026-09-04)
+
+> **Bizonyítottság: megerősített.** A mérés a tulajdonos 2026-08-22-i
+> `Picasa2` adatmappa-mentésén futott (3338 kép, 65 `.pmp` oszlop), a saját
+> `picasapy.pmpimport.pmp_column` olvasónkkal. Adatvédelem: sem útvonal,
+> sem fájlnév nem került erre a lapra.
+
+A `src/picasapy/pmpimport/importer.py:22` **hat** oszlopot hasznosít:
+
+```python
+_COLUMNS = ("caption", "rotate", "star", "filters", "crop64", "deferredregion")
+```
+
+Az alábbi tábla azt mutatja, **mennyi valódi adat áll az egyes
+oszlopokban**, és hogy behozzuk-e:
+
+| oszlop | nem üres érték | behozzuk? |
+|---|---:|---|
+| `imagedata_filters` | **1226** | ✅ |
+| `imagedata_crop64` | **488** | ✅ |
+| `imagedata_tags` (kulcsszavak) | **342** | ❌ nincs a listán |
+| `imagedata_lat` / `imagedata_long` | **219** / **219** | ❌ |
+| `imagedata_geoview` | **219** | ❌ |
+| `imagedata_backuphash` | 178 | — (nem kell, ld. `picasa-ini-format.md`) |
+| `imagedata_tagdate` | **115** | ❌ |
+| `imagedata_rotate` | 86 | ✅ |
+| `imagedata_caption` | 5 | ✅ |
+| `imagedata_text` / `_textactive` | **0** / **0** | ❌ *(üres — ebből a mintából a felirat-réteg nem ellenőrizhető)* |
+
+### ⛔ A `star` oszlop NEM LÉTEZIK a valódi adatbázisban
+
+A mentés **mind a 65** `.pmp` oszlopát kilistázva **nincs
+`imagedata_star.pmp`**. A `table.value()` hiányzó oszlopra `None`-t ad
+(`src/picasapy/pmpimport/table.py:36–41`), a hívó pedig
+`star=bool(table.value("star", …))` (`importer.py:82`) ⇒ **minden kép
+csillagozatlanként jön be, némán.**
+
+A csillagozás valójában a **`db3/starlist.txt`**-ben él (ezen a lapon
+fentebb: 50 sor, CRLF, soronként egy abszolút útvonal) — a mintában
+**50 csillagozott kép**, amelyből az import **nullát** hoz át.
+
+⚠️ **A tesztkészlet ezt nem foghatja meg:** a
+`tests/pmpimport/test_importer.py:60` maga **létrehozza** az
+`imagedata_star.pmp`-t, tehát a zöld teszt egy olyan adatbázist ír le,
+amilyen a valóságban nincs.
+
+*(Hogy MELYIK Picasa-verzió írt valaha `imagedata_star.pmp`-t, ez a mérés
+nem mondja meg — a hatókör ez az egy, valódi adatbázis.)*
+
+Jegyek: a csillag-hiba **#2335**, a kulcsszó/helyadat-hiány **#2336**.
+
+---
+
+## Az `albumdata_date` oszlop — a mappa dátuma TÁROLT, nem számított (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris + mérés a tulajdonos 2026-08-22-i
+katalógus-mentésén, 144 albumsor / 3338 `thumbindex`-bejegyzés).
+
+Ez az oszlop dönti el, mi áll a mappa fejlécében, és a bal hasáb melyik
+**évcsoportja** alá kerül a mappa (#2304, 1. és 2. eltérés). A kérdés az
+volt, **honnan veszi az eredeti** ezt az értéket.
+
+### A regisztrált albumoszlopok (`0x00415790`)
+
+`token` · `name` · `filename` · **`date`** (`0x00c80d7c`) · `category` ·
+`unread` · `description` · `location` · `uid` · `hascollage` · `inisync`.
+Ugyanez a `date` sztring a `.picasa.ini` `[Picasa] date=` kulcsa is — a
+kettő ugyanaz az érték, két tárolóban.
+
+### Az `autodate` parancs a LEGKORÁBBI elem idejét számolja
+
+A Mappa/Album tulajdonságai lapon van egy **`autodate`** nevű kapcsoló
+(`0x00cc1c20`, 8 bájt; a lap függvénye `0x00849750`, „Folder Properties” /
+`CEditAlbum::folderTitle`). A kezelője `0x00849dc0`:
+
+| cím | mit tesz |
+|---|---|
+| `0x00849df4`–`0x00849e30` | a változott tulajdonság nevét a `0x00cc1c20` (`autodate`) sztringgel veti össze |
+| `0x00849e3e` | `fld qword ptr [0x00c7ccf8]` — a kimeneti `double` **kezdőértéke `949998.0`** (Variant-napban ≈ 4500. év, tehát „+végtelen” őrszem) |
+| `0x00849e54` | `call 0x00441760` — ez számolja ki az értéket |
+| `0x00849e5b` | ha a hívás **nem 0**-t ad, a program **nem ír dátumot** |
+| `0x00849e77`–`0x00849eb3` | különben a **`date`** tulajdonságot állítja be (virtuális hívás `[eax+0xe8]`) |
+
+A `0x00441760` az album elemein megy végig (`[esp+0xb4]`, elemszám
+`= [ecx+4] >> 1`):
+
+- **üres albumnál `-1`-gyel tér vissza** (`0x0044187e`: `or eax,0xffffffff`)
+  ⇒ a hívó ilyenkor nem ír dátumot;
+- az akkumulátor (`[esp+0x18]`/`[esp+0x1c]`, 64 bites pár) **0-ról indul**
+  (`0x00441892`);
+- az összehasonlítás `0x004419d6`–`0x004419e6`: `jb`→kihagy, `ja`→tárol,
+  egyenlő felső szónál `jbe`→kihagy ⇒ **a KISEBB értéket tartja meg**;
+- a végén `0x00441a22` → `0x0098b650` (64 bites idő → `double`), majd
+  `0x00441a2e`: `fstp qword ptr [eax]` a kimeneti mutatóra.
+
+⇒ **Az `autodate` a mappa elemeinek LEGKORÁBBI időbélyegét számolja ki.**
+
+### ⛔ De a TÁROLT mappadátum NEM ez — mérve, 23 mappán
+
+Az `autodate` **egyszeri felhasználói parancs**, nem élő szabály. A
+katalógus-mentésen a `thumbindex` könyvtár-rekordjaihoz egyértelműen
+párosítható **23 mappára** vetettem össze az `albumdata_date`-et a mappában
+lévő képek `thumbindex`-időbélyegeivel:
+
+| hipotézis | egyezés |
+|---|---:|
+| `albumdata_date` == a képek **legkorábbi** ideje | **0 / 23** |
+| `albumdata_date` == a képek **legkésőbbi** ideje | **0 / 23** |
+
+A vizsgált mappára (88 kép) tételesen:
+
+| mit | érték |
+|---|---|
+| tárolt `albumdata_date` | `45244.72859953704` = **2023-11-14 17:29:11** |
+| a képek legkorábbi ideje | 2023-05-10 14:29:43 |
+| a képek legkésőbbi ideje | 2025-05-21 07:22:23 |
+| a mappa saját `thumbindex`-ideje | 2026-03-05 15:32:45 |
+| medián / átlag / leggyakoribb nap | egyik sem egyezik |
+| **pontos egyezés bármelyik kép idejével** | **nincs** (88-ból 0) |
+
+⇒ **A mappa dátuma PERZISZTÁLT érték**: egyszer beáll, és a tartalom
+későbbi változásától **nem** számolódik újra. A 144 albumsorból
+**mindnek van dátuma** (0 üres) — az eredetiben tehát **nem létezik
+„dátumtalan mappa”**.
+
+### Melléklelet: az állapotsor dátumtartománya IGAZOLVA
+
+A #2304 képernyőmentésén az eredeti állapotsora
+„2023. május 10., szerda–2025. május 21., szerda”-t ír. A fenti mérés
+szerint a mappa képeinek `thumbindex`-időbélyegei **pontosan** ezt a két
+szélsőértéket adják ⇒ az állapotsor tartománya a képek 1. időbélyegének
+minimuma és maximuma. Ez **egybevág** a rendezési kulccsal (#2304,
+2026-09-04-i mérés), és önálló megerősítése annak.
+
+### Mit NEM mértem
+
+Hogy a mappa **első** dátumát mi írja be (a mappa fájlrendszer-ideje? az
+első indexeléskori legkorábbi kép?). Az `autodate` ágat kimértem, az
+első beíróét nem — és a windowsos mappaidők a fejlesztői gépről nem
+elérhetők. Ez a #2304-ben nyitott kérdésként szerepel.
+
+---
+
+## A mappa-tulajdonságok beállítói: a `CThumbDB` vtábla (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris + a bináris index RTTI-táblája).
+
+A 99. kör megtalálta a mappadátum-beállítót (`0x004460a0`), de közvetlen
+hívója nem volt. Most megvan, **hol ül**: a `CThumbDB` osztály
+virtuális táblájában.
+
+### A tábla és a rés
+
+A bináris index RTTI-táblája szerint **`CThumbDB::vftable` a `0x00c81fa4`**-en
+kezdődik (`vtable_rva` `0x00881fa4`). A mutatónk a `0x00c81fb0`-on ül, tehát
+a **3. rés** (eltolás `0x0c`) — a visszafelé olvasott vtábla-kezdet és az
+index egymástól függetlenül ugyanezt adja.
+
+### A szomszédos rések: tulajdonságonként egy beállító
+
+| rés | cím | méret | sztringje |
+|---:|---|---:|---|
+| 2 | `0x00443c90` | 1463 b | **`description`** |
+| **3** | **`0x004460a0`** | **253 b** | — (`double`, ezért nincs sztringkezelés) |
+| 4 | `0x0044fa80` | 1463 b | **`location`** |
+
+⇒ A tábla **tulajdonságonként egy beállítót** tart, és a **`date`** ezek
+közé tartozik. A dátum tehát az **adatbázis-rétegé** (`CThumbDB`), nem a
+mappa- vagy felületi objektumé — ez magyarázza, miért tölti ugyanaz a hívás
+az `albumdata_date` oszlopot **és** a `.picasa.ini`-t (99. kör).
+
+### ⛔ KIMERÍTŐ NEGATÍV: a rést nem hívja senki `call [reg+0x0c]` alakban
+
+A teljes `.text`-et (8 642 912 bájt, `0x00401000`-tól) végigpásztáztam a
+`call dword ptr [reg+0x0c]` kódolásaira (`ff 50 0c` … `ff 57 0c`, a
+SIB-es `0x54` nélkül): **0 találat.**
+
+A pásztázó helyességét ismert pozitívval ellenőriztem ugyanabban a
+futásban: `ff 15` (abszolút hívás) **21 110**, `ff 50` (bármely
+eltolással) **951** találat, és a `0x004417fa` bájtjai (`ff 15 5c 05 c4 00`)
+pontosan visszaolvashatók.
+
+⇒ A hívás **`mov reg, [vtábla+0x0c]` + `call reg`** alakban történik (ezt a
+mintát a `0x00849eab`–`0x00849eb3` — az `autodate` kezelője — meg is
+mutatja `[eax+0xe8]`-cal). Ez a forma bájtmintával **nem** különíthető el a
+sok ezer szerkezetmező-olvasástól.
+
+### Mit NEM mértem — és mi kell hozzá
+
+Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezett
+mappára.
+
+> ⛔ **HELYESBÍTVE (2026-09-05, 11. szakasz):** az „olcsó lánc kimerült"
+> megállapítás **korai** volt. A pásztázás csak a `call [reg+0x0c]` alakot
+> nézte, és **kimaradt két lépés**: az `e9`-es (ugró) thunkök és a
+> **több-öröklődéses vtáblák** RTTI-beli feloldása. Mindkettő hozott
+> eredményt — a beállító **`IThumbDB` interfész-metódus**. A folytatás:
+> 11. szakasz.
+
+## 10. A `thumbindex` KÉT IDŐBÉLYEGE — honnan jön, és mikor frissül (2026-09-05, #2304)
+
+A 8.1 leírta a rekord bájtszintű alakját, és a két `uint64` mezőt a Picasa
+**saját** diagnosztikai CSV-fejléce szerint nevezte el („Creation Time",
+„Access Time"). Ez a szakasz megmondja, **mi tölti** őket, és **mikor
+frissülnek** — mert a fejléc egyik neve **félrevezető**.
+
+A kérdést a lap 69. tétele (`picasa-menu-parancsok-viselkedes.md`) hagyta
+nyitva: *„az 1. FILETIME a fájl létrehozási vagy módosítási ideje-e a
+forrásrendszeren, és frissíti-e a Picasa újraolvasáskor?"* Mindkét felére
+van válasz.
+
+### 10.1 A pásztázó CSAK a módosítási időt és a méretet olvassa
+
+A könyvtárbejáró (`FUN_004e62d0`, 6 720 b) a `WIN32_FIND_DATAA`-t a saját
+objektumában tartja: a szerkezet az objektum **`+0x208`**-án ül, a
+kereső-fogantyú a **`+0x348`**-on, az objektum mérete **`0x34c`**.
+*(Igazolás: `0x004e6cac` `lea eax,[ebp+0x208]` a `FindNextFile`-nak, és
+`0x004e6cc2` `lea edx,[ebp+0x234]` a névre — `0x208 + 0x2c` pontosan a
+`cFileName` eltolása.)*
+
+Az egész pásztázó ebből **négy mezőt** olvas ki:
+
+| mező | eltolás | hol olvassa |
+|---|---|---|
+| `dwFileAttributes` | `+0x208` | `0x004e6834`, `0x004e6e03`, `0x004e706b`, … |
+| **`ftLastWriteTime`** | `+0x21c` / `+0x220` | `0x004e6826`, `0x004e6d6b`, `0x004e6f02`, `0x004e7187`, `0x004e7393`, `0x004e74bd`, `0x004e7541`, `0x004e806e` |
+| `nFileSizeLow` | `+0x228` | `0x004e73dc`, `0x004e74b4`, `0x004e7551`, `0x004e8083` |
+| `cFileName` | `+0x234` | `0x004e6cc4`, `0x004e8719`, `0x004e8b67`, `0x004e8f3f` |
+
+⛔ **Kimerítő negatív:** a `0x004d0000`–`0x00520000` tartomány teljes
+`.text`-pásztázása szerint a **`ftCreationTime` (`+0x20c`)** és a
+**`ftLastAccessTime` (`+0x214`)** eltolására **egyetlen hivatkozás sincs**
+a bejáró függvénycsoportjában (`0x004e6800`–`0x004e8100`); a `+0x20c`
+hét, a `+0x214` hat találata mind a `0x0051xxxx` / `0x004d6xxx`
+tartományban, más osztályokban van. A pásztázó **ismert pozitívjai**
+(`+0x21c`/`+0x220`/`+0x228`/`+0x234`) ugyanezzel a módszerrel
+előjöttek ⇒ a negatív eredmény nem a minta hibája.
+
+*(A `FindFirstFileW`-t egy ANSI-burkoló hívja — `FUN_009aed50`, ami a
+`WIN32_FIND_DATAW`-t átmásolja és a két névmezőt
+`WideCharToMultiByte`-tal alakítja; a `FindNextFile` a `[0x00d694cc]`
+függvénymutatón át megy, ezért nincs közvetlen hívója az indexben.)*
+
+### 10.2 A 2. mező NEM „hozzáférési idő", hanem a fájl MÓDOSÍTÁSI ideje
+
+A változásfigyelő (`0x004e74b2`–`0x004e74e5`) a rekord `+0x0c` és `+0x14`
+mezőjét veti össze a **friss** `ftLastWriteTime`-mal és `nFileSizeLow`-val,
+és eltérés esetén **felül is írja** őket:
+
+```
+0x004e74b2  mov esi, [edx+0x228]     ; nFileSizeLow
+0x004e74bb  mov ecx, [edx+0x21c]     ; ftLastWriteTime.lo
+0x004e74c1  mov edi, [edx+0x220]     ; ftLastWriteTime.hi
+0x004e74ca  cmp ecx, [eax+0x0c] …    ; a rekord 2. időbélyege
+0x004e74dc  mov [eax+0x0c], ecx      ; ← felülírás
+0x004e74df  mov [eax+0x10], edi
+0x004e74e2  mov [eax+0x14], esi      ; méret
+```
+
+⇒ **A rekord `+0x0c` mezője a fájl utolsó MÓDOSÍTÁSI ideje** (`mtime`),
+nem a hozzáférési ideje. A Picasa saját CSV-fejléce („Access Time") ezen a
+ponton **rossz nevet ad** a mezőnek. *(A `picasa-mappakezelo.md` 16.2/b
+oszloptáblája az eltolásokat helyesen adja meg; a NÉV az, ami félrevezet.)*
+
+### 10.3 Az 1. mező egyetlen írója: a kép METAADAT-dátuma
+
+A rekord `+0x04` mezőjét egyetlen beállító írja:
+
+| lépés | cím |
+|---|---|
+| beállító (`objektum` `eax`-ben, `index` + `double*` a veremben) | **`0x004eeb10`** |
+| `double` → `SYSTEMTIME` | `0x0098b8f0` |
+| `TzSpecificLocalTimeToSystemTime(NULL, …)` | `0x004eeb9e` |
+| `SystemTimeToFileTime(&st, rekord+4)` | `0x004eebad` (`add ebp,4` a `0x004eeba4`-en) |
+| a DB piszkos-jelzője: `[obj+0x5c]++`, `[obj+0x60] = 1` | `0x004eebb3`–`0x004eebb7` |
+
+⛔ **A beállítónak a TELJES binárisban egyetlen hívója van:**
+`0x00427898`, a képbeolvasó `FUN_00425f60`-on belül. A hívási hely:
+
+```
+0x00427844  mov edi, 0x37            ; metaadat-tulajdonság azonosítója (55)
+0x00427860  call 0x9f05c0            ; kikeresés a kép metaadat-táblájából
+0x00427867  jne  …                   ; nincs ilyen tulajdonság → KIMARAD
+0x00427869  fld  qword [0xc7ccf8]    ; 949998.0 — a „nincs dátum" őrszem
+0x0042787f  call 0x98bc10            ; dátum-szöveg → Variant double
+0x00427886  jne  …                   ; nem értelmezhető / őrszem → KIMARAD
+0x00427898  call 0x4eeb10            ; ← a beállító
+```
+
+⇒ **Az 1. mező NEM fájlrendszeri időbélyeg.** A kép saját metaadatából
+vett dátum, a **beolvasás pillanatában** rögzítve — és a pásztázó
+**soha nem frissíti** (10.1). A `949998.0` őrszem ugyanaz, mint a mappa
+`[Picasa] date=` olvasójáé (`picasa-ini-format.md`).
+
+⭐ **2026-09-05 (#2375) — MEGVAN, melyik mező.** A `0x37`-es tulajdonság az
+EXIF **`0x9003` DateTimeOriginal** (a felvétel ideje). A kulcstér nem
+azonos a tulajdonságtábla `id` mezőjével: **a kulcs = `id` + 1**, négy
+független hívási hellyel igazolva. A teljes kulcstér (176 EXIF- + 55
+IPTC-bejegyzés) és a levezetés: **`picasa-metaadat-tulajdonsagok.md`**.
+Melléklelet: a beolvasó ugyanitt olvassa a `0x68` = `0xa420`
+**ImageUniqueID** és a `0xe4` = **IPTC 2:120 Caption/Abstract** mezőt is —
+és mind a hármat a mi `metadata/reader.py`-nk is **ugyanazon a címszámon**
+olvassa (`:41`, `:59`, `:63`), tehát a mezőválasztásban nincs eltérés.
+
+**Időzóna-konvenció:** mindkét mező **helyi** időből készül
+(`TzSpecificLocalTimeToSystemTime` `NULL` zónával = a gép AKKORI zónája),
+tehát a tárolt FILETIME UTC, de a visszaalakításhoz a **helyi** zóna kell.
+Ugyanez a lánc futja a `thumbindex` visszatöltésekor is
+(`0x004e0aa0`, hívja `0x004f2ef0` ← `0x004f46b0`), ahol a két `double`-ből
+`+0x04` és `+0x0c` lesz, a `+0x18`/`+0x1c`/`+0x20`/`+0x21` forrásmezőkből
+pedig a méret / típus / dirty / valid.
+
+### 10.4 MÉRÉS a tulajdonos valódi katalógusán (140 758 rekord)
+
+Anyag: `research/testdata/Picasa2/db3/thumbindex.db`. A vizsgálat a
+**névbe kódolt felvételi időt** használja külső igazságforrásként
+(`YYYYMMDD_HHMMSS` alak, 56 540 fájl), a mezőt UTC→`Europe/Budapest`
+váltás után hasonlítva:
+
+| | másodpercre egyezik | percen belül | eltér |
+|---|---:|---:|---:|
+| **1. mező** | 33 625 (59,5 %) | 51 883 (91,8 %) | 4 143 (7,3 %) |
+| 2. mező | 14 348 (25,4 %) | 18 121 (32,1 %) | 37 389 (66,1 %) |
+
+Ahol a két mező **különbözik** (44 030 fájl), az elkülönülés még élesebb:
+az 1. mező 60,7 % / 96,9 %, a 2. mező 16,9 % / 20,2 %.
+
+⇒ **Az 1. mező a felvételi idő**, a 2. nem. Ez független megerősítése a
+10.3 bináris láncának.
+
+**Két további mérés:**
+
+1. **Az 1. mező soha nem hiányzik.** A 135 433 nem üres rekordból
+   `0` darabon nulla az 1. mező; a 2. mező **1 101**-szer nulla — köztük a
+   `C:\` gyökéré, amire nincs `FIND_DATA`. ⇒ a 2. mező a pásztázásból jön,
+   az 1. nem.
+2. **Metaadat-dátum hiányában a két mező egybeesik.** Kiterjesztésenként,
+   a nem nulla időbélyegű fájlokon:
+
+   | kiterjesztés | darab | `1. == 2.` |
+   |---|---:|---:|
+   | `.png` | 33 | **32 (97,0 %)** |
+   | `.jpeg` | 2 104 | 1 292 (61,4 %) |
+   | `.jpg` | 119 456 | 36 745 (30,8 %) |
+
+   A PNG-k jellemzően nem hordoznak EXIF felvételi dátumot. ⇒ ha a
+   `0x37`-es tulajdonság hiányzik, az 1. mező a fájl módosítási idejével
+   marad egyenlő. *(A mintaelemszám 33 — ezért **erős**, nem
+   megerősített; és a kezdőértéket adó függvényt nem neveztük meg,
+   csak a viselkedést mértük.)*
+
+### 10.5 Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a „Dátum" rendezés kulcsa | metaadat-dátum, ennek hiányában a fájl módosítási ideje | `app/photo_sort.py:66–68`: `taken_at`, ennek hiányában `mtime` — **a SZABÁLY azonos** | — |
+| a kulcs **rögzítettsége** | a beolvasáskor **befagy** a DB-be; a pásztázó csak a 2. mezőt frissíti | a rendezéskor **élőben** olvassuk a `mtime`-ot | #2304 |
+| a 2. mező neve az olvasónkban | a fájl **módosítási** ideje | `pmpimport/thumbindex.py`: **`modified_filetime`** — átnevezve | ✅ #2373 |
+| időzóna | helyi idő → UTC a gép zónájával | az olvasónk nyers `uint64`-et ad; az értelmezés a mezők docstringjében ki van mondva | ✅ #2373 |
+
+> ⛔ **Helyesbítés a 69. tételhez.** Az ottani „eredeti / nálunk" tábla azt
+> sugallta, hogy a **tartalék-szabályunk** tér el az eredetitől („nálunk
+> EXIF-hiány esetén a mai `mtime`"). A 10.3–10.4 szerint a szabály
+> **ugyanaz**; a mért különbség a **rögzítettség**: az eredeti a
+> beolvasáskori értéket tárolja és nem frissíti, mi minden rendezéskor a
+> pillanatnyi `mtime`-ot olvassuk.
+
+*Bizonyítottsági fok: **megerősített** a pásztázó négy mezőjére és a
+kimerítő negatívra (10.1), a 2. mező jelentésére (10.2), a beállító
+egyetlen hívójára és az időzóna-láncra (10.3); **erős** az 1. mező
+felvételi-idő jellegére (10.4, mérés) és a metaadat-hiányos tartalékra
+(n = 33).*
+
+### 10.6 Nyitott kérdések mérlege (10.)
+
+`0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| az 1. FILETIME létrehozási vagy módosítási idő-e, és frissül-e (69. tétel) | **LEZÁRVA** — egyik sem: beolvasáskori metaadat-dátum, és **nem frissül** (10.1, 10.3) |
+| mit jelent valójában a 2. mező | **LEZÁRVA** — a fájl módosítási ideje, a CSV-fejléc neve téves (10.2) |
+| mi tölti az 1. mezőt metaadat-dátum hiányában | **LEZÁRVA** — a 2. mezővel egyenlő marad (10.4, erős) |
+| melyik metaadat-tulajdonság a `0x37` (55) | **LEZÁRVA (2026-09-05, #2375)** — EXIF `0x9003` DateTimeOriginal; a kulcs = a tulajdonságtábla `id`-je + 1. Lap: `picasa-metaadat-tulajdonsagok.md` |
+
+## 11. A `CThumbDB` INTERFÉSZ-TÉRKÉPE — a mappadátum-beállító `IThumbDB`-metódus (2026-09-05, #2304)
+
+> **Bizalmi fok: megerősített.** Az objektum-kiosztást **két, egymástól
+> független forrás** adja ugyanúgy: a konstruktor vtábla-írásai és az
+> RTTI osztályhierarchia-leírója.
+
+A 2026-09-04-i szakasz megtalálta a beállítót a `CThumbDB` vtáblájában, de
+a hívóját nem — és „kimerült olcsó láncot" jelentett. **Két lánclépés
+kimaradt**, és mindkettő adott eredményt.
+
+### 11.1 A kimaradt 1. lépés: az UGRÓ thunkök
+
+A korábbi pásztázás csak `e8`-as (hívó) hivatkozásokat keresett. `e9`-es
+(ugró) hivatkozásra pásztázva a három tulajdonság-beállító mindegyikére
+**pontosan egy** találat van:
+
+| beállító | thunk | a thunk kódja |
+|---|---|---|
+| `description` `0x00443c90` | `0x0049f4a0` | `sub ecx, 8` · `jmp 0x00443c90` |
+| **`date` `0x004460a0`** | **`0x0049f390`** | `sub ecx, 8` · `jmp 0x004460a0` |
+| `location` `0x0044fa80` | `0x0049f310` | `sub ecx, 8` · `jmp 0x0044fa80` |
+
+A három thunk egy **~57 darabos, 8 bájtos thunk-futam** része
+(`0x0049f1e0`–`0x0049f59x`; a bináris index mindegyiket külön, 8 bájtos
+függvényként listázza). Ez a MSVC **több-öröklődéses `this`-igazító**
+thunkjeinek szabványos alakja.
+
+⚠️ **Módszertani tanulság:** a thunk **kezdőcímét** kell keresni az
+adatszekciókban, nem az ugrás címét — a vtábla a `0x0049f390`-et tárolja,
+nem a `0x0049f393`-at. Az első pásztázásom emiatt adott nullát.
+
+### 11.2 A kimaradt 2. lépés: az RTTI feloldja, MELYIK interfész
+
+A `CThumbDB` **tizenöt** bázisosztályt hoz (RTTI osztályhierarchia-leíró),
+és a vtáblák „complete object locator"-ának `offset` mezője megmondja,
+melyik bázishoz tartoznak:
+
+| vtábla | `offset` | melyik bázis | tartalmazza a beállítókat? |
+|---|---:|---|---|
+| `0x00c81f78` | 0 | `CThumbDB` / `ytBaseThread` | nem |
+| **`0x00c81fa4`** | **72** | **`IThumbDB`** | **IGEN, közvetlenül** (2/3/4. rés) |
+| `0x00c820d0` | 80 | **`IAlbumStore`** | igen, de **thunkön át** |
+
+A thunkök `sub ecx, 8`-a pontosan a **80 − 72 = 8** eltérés ⇒ az azonosítás
+számtanilag is zár.
+
+⇒ **A `date`/`description`/`location` beállító nem „a `CThumbDB` egy
+metódusa", hanem az `IThumbDB` INTERFÉSZ 2/3/4. metódusa**, amit az
+`IAlbumStore` is meghirdet. Ezért nincs egyetlen közvetlen hívása sem: a
+hívó **interfész-mutatót** tart, nem `CThumbDB*`-ot.
+
+### 11.3 A `CThumbDB` teljes objektum-kiosztása
+
+A konstruktor (`FUN_00415790`, 7851 b) a `0x004157fd`–`0x00415827`
+tartományban írja a vtábla-mutatókat; az értékek **bájtra egyeznek** az
+RTTI `mdisp` értékeivel:
+
+| eltolás | vtábla | bázis (RTTI) |
+|---:|---|---|
+| `+0x00` | `0x00c81f78` | `CThumbDB` / `ytBaseThread` / `IShouldExit` |
+| `+0x48` (72) | `0x00c81fa4` | **`IThumbDB`** |
+| `+0x4c` (76) | `0x00c820a8` | `IThumbnailSource`, `IThumbnailBase` |
+| `+0x50` (80) | `0x00c820d0` | **`IAlbumStore`** |
+| `+0x54` (84) | `0x00c820fc` | `IImageStore` |
+| `+0x58` (88) | `0x00c821a0` | `IGetImage` |
+| `+0x5c` (92) | `0x00c821c8` | `IVirtualFile` |
+| `+0x60` (96) | `0x00c81ee8` / `0x00c81ef8` | **`ytINI::CallBack`** |
+| `+0x64` (100) | `0x00c82648` | **`IAlbumPersistedCallback`** |
+
+*(A további bázisok — `ytSafe` `+4`, `ytBase` `+4`, `ytCriticalBase` `+5` —
+nem hoznak külön vtáblát.)*
+
+⭐ **Két, eddig nem dokumentált szerep:** a `CThumbDB` egyben **`ytINI`
+visszahívás** (`+0x60`) és **`IAlbumPersistedCallback`** (`+0x64`) is —
+vagyis maga az adatbázis-osztály fogadja az ini-feldolgozó és az
+album-perzisztálás értesítéseit.
+
+### 11.4 Hol él a példány
+
+A `FUN_00415790` konstruktornak **három** hívási helye van
+(`0x00402fd3`, `0x00467d1b`, `0x0053ff35`). Az elsőnél a lefoglalt méret
+**`0x34b0`** (13 488 bájt), és a kapott mutató az alkalmazás-objektum
+**`+0x1034`** mezőjébe kerül (`0x00402fdc`).
+
+A `.text`-ben **232** `mov reg, [reg+0x1034]` alakú olvasás van,
+**108** függvényben ⇒ a `CThumbDB`-t a program egésze használja.
+
+### 11.5 ⛔ KIMERÍTŐ NEGATÍVOK — pontosan meghatározott hatókörrel
+
+Mindegyik a teljes `.text`-en (8 642 912 bájt, `0x00401000`-tól):
+
+| amit kerestem | találat |
+|---|---:|
+| `e8` (közvetlen hívás) a három beállítóra | **0** |
+| `e9` (ugrás) a három beállítóra | **3** (a 11.1 thunkjei) |
+| `call dword ptr [reg+0x0c]` bármely regiszterrel | **0** |
+| a beállítók címe adatként (vtábla) | 1–1 (csak `0x00c81fac/b0/b4`) |
+| a thunkök címe adatként | 1–1 (csak `0x00c820d8/dc/e0`) |
+| **`IAlbumStore` felvétele** (`[app+0x1034]` után `+0x50`) | **0** ⇒ a thunk-vtábla a gyakorlatban HALOTT |
+| **`IThumbDB` felvétele** (`[app+0x1034]` után `+0x48`) | **71 hely, 49 függvény** |
+| általános `mov r,[r+0x0c]` + `call r` (bármely osztály 3. rése) | **796 hely, 528 függvény** |
+
+⇒ A bájtminta önmagában **nem** különíti el a hívót (528 függvény), de a
+két halmaz metszete igen szűk.
+
+### 11.6 A metszet — és egy TÉVES RIASZTÁS, ami tanulságos
+
+Az `IThumbDB`-t felvevő 49 függvény és a 3. rést hívó 528 függvény
+metszete **egyetlen** függvény: `FUN_006f5580` (544 b, az online album
+törlésének megerősítője).
+
+**Elolvasva: téves riasztás.** A függvény maga is `IThumbDB`-n át hívott
+`CThumbDB`-metódus (`0x006f558f`: `mov esi, ecx`, majd `0x006f5593`:
+**`lea edi, [esi - 0x48]`** — visszaszámol a valódi objektumra), és a
+`0x006f55a8`-on lévő `mov edx,[eax+0x0c]` az **elsődleges** vtábla
+(`0x00c81f78`) 3. rése, nem az `IThumbDB`-é.
+
+⇒ **A `lea reg, [reg - 0x48]` a `CThumbDB` interfész-metódusainak
+ujjlenyomata** — erre érdemes pásztázni, ha a következő kör a
+`CThumbDB`-metódusokat akarja összegyűjteni.
+
+### 11.7 Mit tud a következő kör — a KONKRÉT következő lépés
+
+A 11.5 negatívjai együtt azt mondják: a beállító hívója **nem** az
+`[app+0x1034]`-ből veszi az interfészt. Marad két lehetőség:
+
+1. a hívó **tagváltozóban tárolja** az `IThumbDB*`-ot (valaki egyszer
+   átadja neki), vagy
+2. **paraméterként kapja**.
+
+**A következő lépés ezért:** meg kell keresni, hol **tárolják el** az
+`[app+0x1034] + 0x48` értéket (`mov [reg+N], reg` a felvétel után) — a 71
+felvételi hely mindegyikén ellenőrizve —, és onnan a tárolót olvasó
+osztályokban keresni a 3. rés hívását. Ez **nem** dekompilációt igényel,
+csak a 71 hely átnézését.
+
+### 11.8 A beállító alakja
+
+`0x004460a0` prológusa: `[ebp+0x08]` az első veremargumentum,
+**`[ebp+0x0c]` egy `double`** (`fld qword ptr [ebp+0x0c]`, `0x004460ba`)
+⇒ a dátumot **OLE Variant lebegőpontos** alakban kapja, ahogy a
+`.picasa.ini` `[Picasa] date=` sora is tárolja (99. kör).
+
+### 11.9 Nyitott kérdések mérlege (11.)
+
+`1 nyílt (ÖRÖKÖLT) · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| van-e a beállítónak ugró (thunk) hivatkozása | **LEZÁRVA** — igen, 1–1 db, 11.1 |
+| melyik interfészhez tartozik a 2/3/4. rés | **LEZÁRVA** — `IThumbDB` (+72), thunkön át `IAlbumStore` (+80), 11.2 |
+| mi a `CThumbDB` teljes objektum-kiosztása | **LEZÁRVA** — 11.3, két forrásból |
+| hol él a példány | **LEZÁRVA** — `[app+0x1034]`, 11.4 |
+| **melyik hívó süti el ELŐSZÖR a dátum-beállítót** | **NYÍLT (örökölt)** — de a keresési tér 528 → 0 releváns találatra szűkült az `[app+0x1034]` úton; a következő lépés a 11.7 (nem dekompiláció) |
+
+## 12. ✅ MEGVAN a mappadátum-beállító MINDKÉT hívója (2026-09-05, #2304)
+
+> **Bizalmi fok: megerősített.** A hívási helyek diszasszemblálva, az
+> argumentumok (azonosító · `double` dátum · `bool`) a beállító prológusával
+> (11.8) és egymással is összeérnek.
+
+A munkasor legrégebbi nyitott kérdése — *melyik hívó süti el a
+mappadátum-beállítót* — **lezárult**. Két hívó van, két külön céllal.
+
+### 12.1 A beállító pontos szignatúrája
+
+`0x004460a0` (`IThumbDB` 3. rés):
+
+| argumentum | hol | mi |
+|---|---|---|
+| 1. | `[ebp+0x08]` | a mappa/album **azonosítója** |
+| 2. | `[ebp+0x0c]` | a **dátum**, OLE Variant `double` |
+| 3. | `[ebp+0x14]` | **`bool`** — kapcsolja a MÁSODIK tárolót |
+
+A törzs:
+
+```
+0x004460e5  add esi, -0x48        ; vissza a valódi CThumbDB-objektumra
+0x004460ea  call 0x004481e0       ; 1. tároló: az ADATBÁZIS — FELTÉTEL NÉLKÜL
+0x004460ef  cmp byte ptr [ebp+0x14], 0
+0x004460f3  je  0x00446184        ; ha a bool HAMIS → itt vége
+0x004460fb… call 0x004543e0       ; 2. tároló: a `.picasa.ini` `date` kulcsa
+```
+
+*(A `0x004460cc`-en betöltött sztring szó szerint **`date`** — `0x00c80d7c`.)*
+
+⭐ Az `add esi, -0x48` **független megerősítése** a 11.2-nek: a metódus
+`this`-e az `IThumbDB` alobjektum, és a törzs számol vissza a `CThumbDB`-re.
+
+### 12.2 A HELYI, automatikus hívó — `FUN_00441ac0` (110 b)
+
+```
+0x00441ae0  fldz · fcomp [esp+0x10]   ; ha a kapott dátum 0 → azonnal kilép
+0x00441af7  fld qword [0xc7ccf8]      ; 949998.0 — a „nincs dátum" őrszem
+0x00441b08  call 0x00441760           ; ← az AUTODATE-számoló (9. szakasz):
+                                      ;   a mappa elemeinek LEGKORÁBBI ideje
+0x00441b0d  test eax,eax · jne …      ; ha nem sikerült (üres mappa) → NEM ír
+0x00441b17  push eax                  ; eax == 0  ⇒ a bool HAMIS
+0x00441b18  mov eax,[edx+0x0c]        ; a 3. rés
+0x00441b1b  sub esp,8 · fstp [esp]    ; a kiszámolt dátum
+0x00441b21  push edi · mov ecx,esi · call eax
+```
+
+⇒ **A helyi mappa dátuma az `autodate` eredménye, és CSAK az adatbázisba
+kerül — a `.picasa.ini`-be NEM** (a bool hamis).
+
+**A három hívási helye** (kimerítő `e8`-pásztázás, 3 találat):
+
+| hívó | mit tudunk róla |
+|---|---|
+| `FUN_00441e00` (207 b), hívás `0x00441ec0` | sztringjei: **„Folders on Disk"**, **„Other Stuff"** — az albumlista két gyűjtőkategóriája ⇒ **a mappa-felvételi út**; hívói: `0x0055ece0`, `0x0055ff80` |
+| `FUN_004aa9f0` (1172 b), hívás `0x004aadc9` | hívója: `0x004a8a30` |
+| `FUN_0055d320` (947 b), hívás `0x0055d41b` | sztringje: `IDS_NORENAME` ⇒ átnevezési út; hívói: `0x0055d120`, `0x0056bfd0`, `0x006db580`, `0x006f2e50` |
+
+### 12.3 Az ONLINE albumok hívója — `FUN_006f2fc0` (1733 b)
+
+```
+0x006f33e5  call 0x0098bbe0       ; a beolvasott dátum érvényes-e
+0x006f33ec  je  0x006f3413        ; ha nem → kihagyja
+0x006f33ee  call 0x004a0d60       ; ← GetThumbDB() — 19 bájtos AKCESSZOR
+0x006f33f3  fld qword [esp+0x90]  ; a hírcsatornából jövő dátum
+0x006f3400  lea ecx,[eax+0x48]    ; IThumbDB*
+0x006f3405  mov eax,[eax+0x0c]    ; a 3. rés
+0x006f3408  push 1                ; ⇒ a bool IGAZ: DB **és** `.picasa.ini`
+0x006f340a  sub esp,8 · fstp [esp] · push edx · call eax
+```
+
+Egyetlen hívója `0x006f3dd2`, a `FUN_006f3cd0`-ban
+(`UploadManager::process_error`, „Failed to upload images") ⇒ az
+**online album (Web Albums) szinkron** ága.
+
+### 12.4 ⛔ MIÉRT nem találta meg négy korábbi pásztázás
+
+Három, egymástól független ok — mindegyik módszertani tanulság:
+
+1. **`GetThumbDB()` akcesszor** (`0x004a0d60`, 19 b:
+   `mov eax,[0x00d67668]` → `[eax+0x1034]`). A hívási helyen tehát **nincs**
+   inline `[app+0x1034]` olvasás ⇒ a 11.5 „71 felvételi hely" listája az
+   online hívót **nem tartalmazta**.
+2. **A helyi hívó MAGA is `CThumbDB`-metódus**, így a `this` már az
+   `IThumbDB` alobjektum ⇒ **nincs `+0x48` igazítás** ⇒ minden `+0x48`-ra
+   horgonyzott pásztázás elvétette.
+3. A 3. rés hívása **bájtmintával nem szűrhető** (796 hely, 528 függvény).
+
+**Ami eldöntötte — a hívás ALAKJA, nem a fogadó:** a beállító `double`-t vesz
+a vermen, tehát a hívás elé kötelezően kikerül a
+`sub esp, 8` + `fstp qword ptr [esp]` pár. Erre pásztázva:
+
+| lépés | találat |
+|---|---:|
+| `sub esp,8` + `fstp [esp]` a teljes `.text`-ben | **356** |
+| ebből 3. rés hívásával a közelben | **58** |
+| ebből a beállító tényleges hívása (elolvasva) | **2** — a 12.2 és a 12.3 |
+
+*(A 356-ból 2: a szűrés **az argumentum TÍPUSÁRA** épült. Ez általánosítható:
+ha a keresett függvény lebegőpontos argumentumot vesz, a `fstp`-minta
+erősebb szűrő, mint bármi, ami a fogadó objektumra horgonyoz.)*
+
+### 12.5 Eredeti / nálunk / teendő
+
+| | eredeti (mérve) | nálunk (**mérve**) | teendő |
+|---|---|---|---|
+| a mappa dátumának forrása felvételkor | az `autodate` = a mappa elemeinek legkorábbi ideje (`0x00441760`) | `ini/folder_date.py` — a `.picasa.ini` `date=` sorát olvassa/írja; **automatikus felvételkori számítás nincs mérve** | ld. #2304 |
+| hova írja a helyi út | **csak az adatbázisba** (a bool hamis) | nálunk a `.picasa.ini` az igazságforrás | a különbség tudatos, ld. `dontesek.md` |
+| hova írja az online út | adatbázis **és** `.picasa.ini` | nincs online album ág | hatókörön kívül |
+| üres mappa | `0x00441760` hibát ad ⇒ **nem ír dátumot** | nem mérve | — |
+
+### 12.6 Nyitott kérdések mérlege (12.)
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **melyik hívó süti el a mappadátum-beállítót** | ✅ **LEZÁRVA** — kettő: `FUN_00441ac0` (helyi, autodate, csak DB) és `FUN_006f2fc0` (online album, DB + ini) |
+| mit jelent a beállító 3. argumentuma | **LEZÁRVA** — a `.picasa.ini`-írás kapcsolója (12.1) |
+| miért nem találták meg a korábbi pásztázások | **LEZÁRVA** — akcesszor + interfész-`this` + bájtminta-zaj (12.4) |
+| a `FUN_004aa9f0` és a `FUN_0055d320` pontos felhasználói forgatókönyve | **HATÓKÖRÖN KÍVÜL** — a hívási lánc megvan, de a felületi forgatókönyv megnevezése nem befolyásolja a #2304-et; a `Folders on Disk` út (a mappa-felvétel) igazolva van |
+
+## 13. Az ellenőrzőösszeg-mód BELÉPÉSI PONTJA egyetlen, és `CThumbDB`-é (2026-09-05, #2435)
+
+A munkasor tétele így szólt: *„mind a 29 jelölt `CThumbDB`-e?"* — a 121.
+szakasz ugyanis egy **push-számláláson** alapuló jelöltlistából csak kettőt
+olvasott végig kézzel. A kérdés eldőlt, **de nem a jelöltlistán keresztül**:
+a hívási lánc egyedisége önmagában megadja a választ, számlálás nélkül.
+
+### 13.1 A lánc — kimerítő, mindhárom szinten
+
+| szint | cím | hány belépési pont |
+|---|---|---|
+| a **számoló** | `0x006b99f0` | **6** közvetlen `e8` hívó (`0x00424dd1`, `0x004282f7`, `0x004e3c13`, `0x00568206`, `0x00568336`, `0x00602084`) |
+| a **módválasztó** | `0x004e3ab0` | **1** — `0x0042a832`, és ez a `0x0042a800` törzsében van |
+| a **vtábla-metódus** | `0x0042a800` | **0** közvetlen hívó; a címe a **teljes fájlban egyetlen helyen** szerepel: `0x00c82184` |
+
+`0x00c82184` a `0x00c820fc` vtábla **34. rése** — a `CThumbDB` 84-es
+objektum-eltolású interfésze (COL `0x00cfa164`, 11.2). A vtábla 40 réses.
+
+⇒ **A futásidejű módválasztásba egyetlen út vezet**, és az a `CThumbDB`
+34. rése. Nincs másik hívó, nincs thunk, nincs másik vtábla.
+
+### 13.2 A DÖNTŐ mérés: a hat argumentum egyedi
+
+A `0x0042a800` **`ret 0x18`**-cal tér vissza ⇒ **hat verem-argumentum**.
+Megkérdeztem az egész binárist, van-e másik ilyen 34. rés:
+
+| pásztázás | jelölt 34. rés-cél | ebből `ret 0x18` |
+|---|---|---|
+| vtábla-fej szabállyal (175 vtábla ≥35 réssel) | 49 | **1** — `0x0042a800` |
+| ⛳ **kontroll: fej-szabály NÉLKÜL** (minden pozíció, ahol 35 egymás utáni kódmutató áll) | **2233** | **1** — `0x0042a800` |
+
+A kontrollpásztázás szándékosan **maximálisan megengedő**: nem követeli meg,
+hogy a talált tömb valódi vtábla legyen. A ret-értéket mindig a függvény
+**saját index-határain belül** olvastam, nem lineáris túlfutással.
+
+Az indexben nem szereplő 13 találat egyike sem függvénykezdet — kézzel
+ellenőrizve: `0x00558000` egy törzs közepe (`je`-vel kezdődik),
+`0x00920fec` **maga a `ret 0x18` bájtsorozat** (egy másik függvény farka),
+`0x0092223a` értelmezhetetlen (`xchg`, majd `int3` kitöltés).
+
+⇒ **Bármely hatargumentumú, 34. résen át menő hívás csak a `0x0042a800`-ra
+mutathat**, az pedig egyetlen vtáblában él. **A jelöltek `CThumbDB`-k —
+megerősített.** *(A kérdés per-hívóhelyes fogadó-elemzés nélkül eldőlt.)*
+
+### 13.3 ⛔ HELYESBÍTÉS: a „29 jelölt" szám nem reprodukálható
+
+A 121. szakasz **29** jelöltet említ (10 literál `0`, 5 literál `1`, 14
+futásidejű). Újramérve a szám **a számlálási szabálytól függ**:
+
+| szabály | jelölt |
+|---|---|
+| push-ok csak a `mov`↔`call` közti 48 bájtban | **17** |
+| push-ok a bázisblokk határáig visszafelé | **27** |
+| ugyanaz, de a **prológus-regisztermentéseket** levonva | **21** |
+
+A hiba forrása megnevezhető: kilenc találatnál a „hat push" valójában a
+**függvény prológusa** volt (`push ebp/ebx/esi/edi` a függvény első ~30
+bájtjában), nem argumentum — pl. `0x0043242e` a `0x00432410`-es függvény
+30. bájtján áll.
+
+**Ezért a jelöltszám nem is hordoz bizonyítékot** — a 13.2 uniqueness-mérése
+igen. A számot ne idézze senki tényként; a 121. szakasz **következtetése**
+viszont áll, mert az a *literál* argumentumokon nyugszik, és azok stabilak:
+mindhárom számlálási szabály ad **literál `0`**-t adó hívóhelyeket, köztük a
+két kézzel végigolvasott `FUN_0042f6a0` (`0x0042f6c0`) és `FUN_00793720`
+(`0x00793740`) — mindkettő üres sztringgel (`0x00c7f979`).
+
+### 13.4 A hívás alakja (a két végigolvasott hívóhelyről, MÉRVE)
+
+```
+push <kimeneti puffer>   ; arg6
+push 0                   ; arg5
+push 1                   ; arg4
+push 1                   ; arg3
+push 0                   ; arg2  <- a MÓD (0 ⇒ a 2. ellenőrzőösszeg-mód)
+push <azonosító>         ; arg1
+mov  ecx, <CThumbDB+84>  ; this — a másodlagos felület
+call [vtábla+0x88]
+```
+
+A `0x0042a800` prológusa ezt megerősíti: `mov esi,[ebp+8]` (arg1),
+`mov eax,[ebp+0xc]` (arg2), és később `mov byte ptr [ebp+0xc], 0` — az arg2
+**bájtként** íródik ⇒ logikai kapcsoló. Minden literál hívóhely `0`-t vagy
+`1`-et ad, ami ezzel összefér.
+
+**Bizonyítottsági fok:** a 13.1 és a 13.2 **megerősített** (kimerítő
+pásztázás + kontroll); a 13.4 alakja **megerősített** két hívóhelyen,
+**erős** a többin (a hívott függvény egyedisége miatt).
+
+### 13.5 Nálunk (MÉRVE)
+
+`src/picasapy/pmpimport/thumbindex.py:169` — a `SlotIndexEntry.checksum`
+mezőt **beolvassuk**, de sehol nem **számoljuk ki** és nem hasonlítjuk
+össze: a `grep -rn "checksum" src/ --include=*.py` a `thumbindex.py`-n
+kívül egyetlen érdemi találatot sem ad, és a mezőt egyedül a
+`tests/pmpimport/test_thumbindex_farok_2195.py` érinti. Egyik mód képlete
+sincs megvalósítva. → jegy **#2435**.
+
+### 13.6 Nyitott kérdések mérlege (13.)
+
+`0 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| **mind a jelölt hívóhely `CThumbDB`-e?** | ✅ **LEZÁRVA** — igen, a 13.2 egyediség-mérése alapján; per-hívóhelyes elemzés nem kell |
+| a „29 jelölt" szám helyessége | ✅ **LEZÁRVA (megdőlt)** — a szám szabályfüggő (17/21/27); nem bizonyíték, és nem is szükséges (13.3) |

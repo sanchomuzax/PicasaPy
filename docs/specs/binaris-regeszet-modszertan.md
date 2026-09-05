@@ -350,6 +350,8 @@ az azonosító ugyanaz, amit a `.tre` használ, tehát a két forrás **közvetl
 
 ### ⚠️ A csapda: az ABSZOLÚT pozíció tervezőrajz, nem futásidő
 
+*Forrás: `thumbui.tre:516` (`thumbui/hlistsizer`) · `thumbui.tre:441` (`thumbui/listdecrect`).*
+
 A csomag egy **tervezővászon** koordinátáit tárolja; futásidőben a `.tre`
 kényszerei újrahorgonyozzák az elemeket. A kettőt összekeverni téves számhoz
 vezet:
@@ -366,7 +368,6 @@ Ahol van kényszer, az nyer — ld. a 13. szakaszt („Az explicitebb forrás ny
 
 Az elválasztó **8 képpont széles** (210..218) — ez viszont méret, tehát
 érvényes, függetlenül attól, hogy hol ül.
-
 ## Még fel nem emelt kövek
 
 | kő | mit adhat | költség |
@@ -1115,6 +1116,8 @@ levélnévre külön-külön:
 
 ### ⛔ A KONTROLL MEGBUKTATTA
 
+*Forrás: `printoptions.tre:119` (`printoptions/usenotext`) · `thumbui.tre:96` (`thumbui/backup`) · `thumbui.tre:287` (`thumbui/loupehit`).*
+
 Kiválasztottunk olyan elemeket, amelyekről **más körök már bizonyították, hogy
 valódiak**, és megnéztük, mit mond rájuk a mérés:
 
@@ -1128,7 +1131,6 @@ valódiak**, és megnéztük, mit mond rájuk a mérés:
 ⇒ **A mérőszám önmagában használhatatlan.** A `.tre` motor sok elemet
 **deklaratívan** kezel (találati zóna, felirat-gyerek, ikon-gyerek, konténer),
 azokat a kódnak sosem kell néven szólítania.
-
 ### Két MEGNEVEZETT hamis-pozitív osztály
 
 1. **Dinamikusan összerakott név.** A kód `%d`-vel állítja elő. Mérve, a
@@ -1465,3 +1467,174 @@ felvétele így megelőző javítás, nem hibajavítás.
 > *Bizonyítottsági fok: **megerősített*** — minden szám a
 > `ui-lefedettseg.md` és a `docs/specs/` kézzel írt lapjainak
 > újrafuttatható összevetéséből jön.
+
+### 22.5 A 22.4 szabályát MEGSÉRTETTÜK — és tizenkét elem évekig „feltáratlan" volt (2026-09-03)
+
+*Forrás: `acquirepanel.tre:210` (`acquirepanel/sync_options_button`) · `headerpanel.tre:32` (`headerpanel/play`) · `outputlayout.tre:99` (`outputlayout/blogger`) — és további 1 elem ugyanott.*
+
+A 22.4 pont előírja, hogy a bizonyító szakaszban legyen `0x…` cím vagy
+`fájl:sor`. Ez a kör **lemérte, mennyibe kerül, ha ezt megsértjük.**
+
+**A mérés menete.** A `ui-lefedettseg.md` hiánylistáiból kigyűjtöttem
+mind a **100** `feltáratlan` (kutatói kört igénylő) tételt, és
+megnéztem, szerepel-e a **teljes** `panel/elem` nevük valamelyik kézzel
+írt spec-lapon.
+
+| | darab |
+|---|---|
+| `feltáratlan` tétel összesen | **100** |
+| ebből a TELJES neve szerepel egy spec-lapon | **19** |
+| ebből a mérő saját függvénye mégis megtalálja | 1 |
+| ⇒ **némán elveszett** (le van írva, mégis feltáratlannak látszik) | **18** |
+| a 18-ból: a szakaszában NINCS horgony ⇒ a **cím-kapu** ejti el | **18/18** |
+
+**A cím-kapu mechanizmusa.** A `lekutatott_elemek()` szakaszonként dolgozik,
+és egy szakaszt csak akkor fogad el bizonyítékként, ha talál benne
+`0x00…` címet vagy `fájl.kiterjesztés:sorszám` alakot. Ha nem talál,
+a **teljes szakaszt átugorja** — bármit is írtunk bele. Ez szándékos
+(horgony nélküli próza nem bizonyíték), de a hatása néma.
+
+**A 18-ból 12 VALÓDI dokumentáció volt.** A `picasa-nyomtatas.md`
+„A nyomtatási beállítások párbeszéd" szakaszának 26 soros elemtáblája
+teljes névvel, típussal és hivatalos magyar felirattal írja le őket — a
+szakasz forrásaként viszont csak `referencia/i18n-hu/printoptionstext.xml`
+állt, **sorszám nélkül**, és az `.xml` nem is szerepel a horgony-minta
+kiterjesztései közt (`py|qml|cpp|h|tre|yt|ini`).
+
+⇒ **A javítás egyetlen bekezdés volt** — `printoptions.tre` és
+`printoptionstext.tre` sorszámok a szakaszba. Mérve, előtte/utána:
+
+```
+előtte:  feltáratlan 100 · lekutatva 154
+utána:   feltáratlan  88 · lekutatva 166
+```
+
+**A maradék 6 NEM dokumentáció** — és ezt fontos kimondani, mert a
+„teljes név szerepel egy lapon" próba önmagában **túl laza**:
+
+| tétel | hol szerepel | miért NEM bizonyíték |
+|---|---|---|
+| `headerpanel/play`, `create_movie`, `websync0`, `acquirepanel/sync_options_button`, `peoplepanel/manual_cancel` | `picasa-eger-es-kijeloles.md` | **kurzor-tulajdonság** felsorolásai („nyíl-kurzor marad") — azt mondják meg, milyen a mutató fölötte, nem azt, mit CSINÁL |
+| `outputlayout/blogger` | `binaris-regeszet-modszertan.md` 22.3 | épp azt a részsztring-hibát dokumentálja, aminek a példája |
+
+⇒ **A puszta névelőfordulás nem lefedettség.** Aki ilyen mérést végez,
+nézze meg a találati SORT is — ez a kör az első futásában 68%-os hamis
+arányt mért, és az kizárólag azért jött ki, mert a puszta elemnévre
+keresett, és a „megvan másutt" szakaszt is beszippantotta. A helyes szám
+**12/100**.
+#### 22.5/b MÁSNAP MEGISMÉTLŐDÖTT — ugyanaz a kör, aki leírta (2026-09-03)
+
+A 22.5 megírása után **néhány órával** a következő kutatói kör új
+szakaszt adott a `picasa-arcfelismeres.md`-hez (15.), és **kétszer is**
+beleesett ugyanabba:
+
+1. **Puszta levélnév** a táblákban (`` `confirmsug` `` a
+   `` `faceheaderpanel/confirmsug` `` helyett) — a 22.4 első pontja.
+2. Miután ez javult, **horgony nélküli szakaszok** maradtak (a felirat- és
+   a geometria-tábla `.tre`/`.xml`/`.tsv` forrásokra hivatkozott
+   **sorszám nélkül**) — a 22.4 második pontja.
+
+Mérve, lépésenként:
+
+```
+a szakasz megírása után:            feltáratlan 84   (semmi nem mozdult)
+minősített elemnevek után:          feltáratlan 81
++ sorszámos horgonyok után:         feltáratlan 69
+```
+
+⚠️ **Egy harmadik hiba is bejött a javítás közben:** a gépi
+„minősítsük mind" csere a **testvérpanel** elemeit is `faceheaderpanel/`
+előtaggal látta el (`showunknown`, `addname`, `ignore` — ezek az
+`unknownfaceheaderpanel`-é). Ez **hamis** minősített nevet gyárt, amit a
+`felulbiralas_ervenyes()` sem fog meg, mert az csak azt nézi, hogy a lap
+említi-e az elemet. Kézzel javítva.
+
+⇒ **A szabály ismerete nem elég**: az a kör sértette meg, amelyik a
+napszakot a szabály dokumentálásával töltötte. Ez a legerősebb érv a
+**#2182** őrre.
+
+### 22.5/c AZ ŐR MEGVAN — és megmérte, mekkora az adósság (2026-09-03, #2182)
+
+A 22.4 mostantól **betartatott**: a `tests/test_spec_horgony_or_2182.py` minden
+`docs/specs/*.md` lapon végigmegy, a mérővel AZONOS szakaszolással és
+mintákkal, és elbukik, ha egy szakasz **táblasorban** dokumentál
+`panel/elem` alakú UI-elemnevet, de nincs benne `0x00…` cím vagy
+`fájl.tre:sor` horgony. A hibaüzenet megnevezi a lapot, a szakasz címét és az
+érintett elemeket.
+
+**Amit a bevezetés mért — az adósság nagysága:**
+
+| olvasat | szakasz | lap |
+|---|---|---|
+| táblasorban dokumentált elem (erre bukik az őr) | **58** | 30 |
+| bármely elemnév-említés, folyó szövegben is | 150 | 40 |
+
+A szűkebb olvasat a szándék: a prózai említés — például egy nyitott kérdés
+megfogalmazása — nem dokumentáció, tehát nem is veszít el semmit a mérésben;
+a tág kapu viszont minden őszinte írásbeli felvetést büntetne.
+
+Az 58 tétel nevesített, **szakaszonkénti** listán áll
+(`tests/support/spec_horgony_ismert_sertesek.json`), hogy az őr a meglévők
+javítása nélkül is bevezethető legyen. A lista leürítése a **#2193** dolga, és
+nem tud elrohadni: külön teszt bukik el, ha egy javított vagy átnevezett
+szakasz bent marad rajta (a #659 tanulsága — az elavult bejegyzés némán
+elnyeli a regressziót).
+
+⚠️ A mérő maga **továbbra is némán** ugorja át a horgony nélküli szakaszt; a
+figyelmeztetés a privát repó dolga (agent-#38). Az őr a commitot fogja meg, a
+figyelmeztetés a mérés futtatóját — két külön belépési pont.
+
+### 22.6 A lefedettségi axis mint KUTATÁSI forrás — kimerült (2026-09-03)
+
+A 22.5 auditját a maradék listára is lefuttatva kiderült, hogy a
+`feltáratlan` lista **már nem munkalista**. A **69** tétel mindegyikét
+megvizsgálva:
+
+| | darab |
+|---|---|
+| a **minősített** `panel/elem` név szerepel egy spec-lapon | 5 |
+| a **levélnév** és a **panel neve** ugyanazon a lapon | 55 |
+| ⇒ **bizonyíthatóan már dokumentált** | **60** (87%) |
+| semmilyen nyom | **9** |
+
+A 60 tétel gazdalapja minden esetben a panel **saját** lapja — pl. mind a
+tíz `compose_mail` és mind a kilenc `choose_mail` a
+`picasa-email-kuldes.md`-en, mind a hét `titledialog` a
+`picasa-create-features.md`-en, mind az öt `edittextpanel` a
+`szerkeszto-panel-meretek.md`-en. Nem szórvány-találatok: a panel
+dokumentációja megvan, csak **levélnéven és horgony nélkül**, ezért a
+mérő nem látja (22.4–22.5).
+
+**A kilenc valóban nyitottból mérve:**
+
+| tétel | verdikt |
+|---|---|
+| `activity/activitybutton` + `uploadmgr/{itemlist, minibutton, pause, resume, cleanup, throttlechk}` (**7**) | **HATÓKÖRÖN KÍVÜL** — ugyanaz a funkció: az `activitybutton` a **Feltöltéskezelőt** nyitja (`0x007d3f90`: „Upload Manager", `uploadmgr::title`, `%.2f KBps`, „Paused"), ami Picasa Web Albums-gépezet |
+| `uploadallinstructionpanel/close` | a testvér `instructionpanel/close` **már mérve** (14 × 14, „Oldalpanel bezárása") — ugyanaz a vezérlő a másik panelen |
+| **`outputlayout/morebutton`** | ✅ **EZ A KÖR FELTÁRTA** — a kimeneti gombsor túlcsordulás-gombja; `picasa-keptalca.md` 21., jegy **#2191** |
+
+⛔ **Negatív lelet a `.ioq` sorokról.** A `db3` store-inicializáló
+(`0x00415790`) három ki/bemeneti sort regisztrál:
+`ioqueue\slingshot.ioq`, `ioqueue\filesafe.ioq`, `ioqueue\albumsafe.ioq`.
+A `slingshot.ioq` egy webalbum/RSS-környezetben is felbukkan
+(`0x007d94c0`: „Web Albums", „Recent Activity", `feed.rss`,
+„Temporary Feeds"), a **`filesafe.ioq` és az `albumsafe.ioq` viszont a
+teljes binárisban SEHOL máshol nem szerepel**. Élő mintánkban
+(`research/testdata/Picasa2/ioqueue/`) mind a három fájl **0 bájtos**.
+⇒ Nincs miből visszafejteni őket; ha valaha kellenek, nem üres fájl kell,
+hanem egy használt sorral rendelkező adatmappa.
+
+⇒ **A következő kutatói körök NE az axisból válasszanak.** Amíg a
+**#2182** őre meg nem épül és a 60 tétel horgonyt nem kap, az axis
+„feltáratlan" oszlopa a dokumentáltság hiányát méri, nem a tudásét.
+Forrásnak marad a `ready` címkés kutatási jegy, a `00-index.md`
+kérdés-listája és a `research-plan.md`.
+
+**Ami ebből a jövőre nézve következik:** a 22.4 szabályát ma **semmi nem
+tartatja be**. Egy új spec-lap, ami horgony nélküli elemtáblát ír, ugyanígy
+némán kiesik a mérésből, és a következő kutatói körök újra fel fogják
+tárni, ami már fel van tárva. Erre őr kell — jegy: **#2182**.
+
+> *Bizonyítottsági fok: **megerősített*** — a 18/18-as ok-hozzárendelés a
+> mérő saját `_szakaszok()` + `CIM_MINTA` függvényeivel futtatva, az
+> előtte/utána szám pedig a generátor két futásából.

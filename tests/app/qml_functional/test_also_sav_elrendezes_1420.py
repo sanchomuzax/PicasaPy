@@ -110,26 +110,43 @@ class TestASavMagassaga:
         assert _elem(window, "trayInfoBar").property("height") == 14
         assert _elem(window, "trayMainBar").property("height") == 91
 
-    def test_a_keptalca_81_magas_5_terkozzel_es_5_also_hezaggal(
+    def test_a_keptalca_81_magas_6_terkozzel_es_4_also_hezaggal(
         self, qml_app_module, qt_app
     ):
-        """#1914: `scratchback` y 449…530 a `basecontrolset` 429…534-én
-        belül ⇒ a kék csík (…443) alatt **5 pont térköz**, alul **5**.
+        """#1913: a térköz **6**, az alsó hézag **4** — nem 5 és 5.
 
-        Ez a jegy lényege: az 5 pontos térköz hiányzott, ezért értek a
-        gombok a csíkhoz."""
+        A #1914 a felosztás ÖSSZEGÉT eltalálta (105), a KETTÉVÁGÁST nem.
+        Onnan indult, hogy „az első vezérlők felső éle y 448" — és ez
+        igaz is, de MÁS vezérlőkre: a `respack.yt` szerint
+
+            thumbui/rect: scale_group        y 448…475   (nagyító)
+            thumbui/rect: metadata_group     y 448…472   (Személyek/Helyek/…)
+            thumbui/rect: scratchback        y **449**…530  (a TÁLCA doboza)
+            thumbui/superbutton…: rotateleft y **449**…471
+            thumbui/buttcon…: startoggle     y **449**…471
+
+        A tálca doboza és a hozzá tartozó gombsor tehát **449**-től indul,
+        nem 448-tól. Az `infotext` y 429…443, és a rétegfejléc `y1`
+        NYÍLT — a képpontszám igazolja: a `scratchclear_icon`
+        (255,480,266,491) blobja 484 bájt = 11×11×4 (BGRA). Az `infotext`
+        tehát a 442. sorig tart, az első tálca-sor a 449. ⇒
+
+            443,444,445,446,447,448  =  **6 pont térköz**
+            534 − 530                =  **4 pont alsó hézag**
+            14 + 6 + 81 + 4          =  105 ✓
+        """
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, 1280)
         sav = _elem(window, "trayMainBar")
         talca = _elem(window, "trayScratchBack")
         assert talca.property("height") == 81
-        assert _y_a_savban(window, "trayScratchBack") == pytest.approx(5, abs=TURES), (
-            "a kék csík alól hiányzik az 5 pontos MÉRT térköz (#1914)"
+        assert _y_a_savban(window, "trayScratchBack") == pytest.approx(6, abs=TURES), (
+            "a kék csík alatti térköz nem a MÉRT 6 pont (#1913)"
         )
         alsó_hézag = sav.property("height") - (
             _y_a_savban(window, "trayScratchBack") + talca.property("height")
         )
-        assert alsó_hézag == pytest.approx(5, abs=TURES)
+        assert alsó_hézag == pytest.approx(4, abs=TURES)
 
     def test_nincs_holt_sav_a_jobb_oldalon(self, qml_app_module, qt_app):
         """A magasságot ÖNMAGÁBAN emelni hiba lenne: a jobb oldalon is

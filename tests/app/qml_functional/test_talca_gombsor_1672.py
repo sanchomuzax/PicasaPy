@@ -17,13 +17,14 @@ a Blogger-integráció szolgáltatása **bizonyíthatóan megszűnt**, tehát
 kivezetett gombként kerülnek be — a helyük az eredetié, de a
 buboréksúgójuk kimondja, hogy a szolgáltatás nincs többé.
 
-## A „További…" NEM került be
+## A „További…" azóta BEKERÜLT (#2191)
 
-A jegy külön feltétele: *„a »További…« viselkedése kimérve, mielőtt
-bekötjük — ne a feliratból következtessünk."* Nincs mérve, tehát nem
-építjük meg. A `TrayActionSeparator` kommentje már ma is megnevezi
-(`morebutton`/`overflow`) mint a szűk ablak kezelésének eredeti
-megoldását — ez önálló mérést kíván.
+A jegy külön feltétele az volt: *„a »További…« viselkedése kimérve,
+mielőtt bekötjük — ne a feliratból következtessünk."* A #2191 kimérte (a
+`respack.yt` `outputlayout/morebutton` gombja és a szövegtár két
+felirata), ezért az itteni tiltó őr **leváltva**: mostantól azt kéri
+számon, hogy a gomb a MÉRT tulajdonságaival legyen jelen. A viselkedését
+a `test_kimeneti_tulcsordulas_2191.py` méri.
 """
 
 from __future__ import annotations
@@ -112,12 +113,21 @@ class TestASzukAblak:
         )
 
 
-class TestAmiNEMkeszult:
-    def test_a_morebutton_NINCS_bekotve(self):
-        """A jegy előírja: előbb mérés, aztán bekötés. Ha valaki mégis
-        felveszi, ez a teszt kérdezzen rá, hogy megmérte-e."""
+class TestAMorebuttonMarBent:
+    """A #1672 tiltó őrének utódja: a mérés megvan (#2191), tehát a gomb
+    a helyén kell legyen — de csak a MÉRT feliratokkal."""
+
+    def test_a_morebutton_BE_van_kotve(self):
         forras = _TRAY.read_text(encoding="utf-8")
-        assert 'objectName: "trayMoreButton"' not in forras, (
-            "a „További…” bekerült — a #1672 szerint a viselkedését ELŐBB "
-            "ki kell mérni, nem a feliratából következtetni"
+        assert 'objectName: "trayMoreButton"' in forras, (
+            "eltűnt a „További…” — a #2191 kimérte és bekötötte"
         )
+
+    def test_a_MERT_forrasszoveget_hasznalja(self):
+        """A szövegtárból: `More...` és `Click here for more options` —
+        szabadon fordított alak itt nem elfogadható."""
+        forras = _TRAY.read_text(encoding="utf-8")
+        kezd = forras.index('objectName: "trayMoreButton"')
+        blokk = forras[kezd:kezd + 900]
+        assert 'text: qsTr("More...")' in blokk
+        assert 'qsTr("Click here for more options")' in blokk

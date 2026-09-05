@@ -38,6 +38,26 @@ class LegacyEffect(NamedTuple):
 #:
 #: A `debug` („For debugging") SZÁNDÉKOSAN kimarad: fejlesztői eszköz volt,
 #: nem felhasználói effekt.
+#:
+#: #2270 — A FELIRATOK ÉS AZ EREDETI SZÖVEGTÁR
+#:
+#: Öt felirat (`blur`, `dir_sharp`, `gamma`, `shadow`, `whitept`) az
+#: eredeti szövegtárat (`filter_*_label0`) követi.
+#:
+#: Hat viszont SZÁNDÉKOSAN tér el, megkülönböztető toldattal:
+#: `autobacklight`/`fill` (az eredetiben mindkettő „Fill Light"),
+#: `triple`/`triple2`/`triple3` (mindhárom „Lighting Fixes") és a
+#: `focalpixelate`. Átvételük után a fülön AZONOS feliratú sorok
+#: állnának egymás alatt — a felhasználó nem tudná megmondani, melyikre
+#: kattint.
+#:
+#: A döntés mérésen áll (#2148): az eredetiben ezek a szűrők EGY
+#: LISTÁBAN SEM szerepelnek — a 21-ből mindössze három érhető el a
+#: felületről (`radtint` a 12. csempén Shifttel, `autobacklight` az
+#: Alapvető javítások gombján, `rainbow` a Kiegyenesítés gombján
+#: ALT-tal), és azok is külön helyeken. Az eredetinek tehát sosem
+#: kellett megkülönböztetnie őket. Ez a fül a MI szerkezetünk (#571),
+#: ezért a megkülönböztetés a mi igényünk — nem az eredeti hibája.
 LEGACY_EFFECTS: tuple[LegacyEffect, ...] = (
     # --- a natív visszafejtésből már megvan a modell ---------------------
     LegacyEffect("radtint", "Radial Tint"),
@@ -50,18 +70,18 @@ LEGACY_EFFECTS: tuple[LegacyEffect, ...] = (
     LegacyEffect("linblur", "Linear Blur"),
     LegacyEffect("dir_sat", "Directional Saturation"),
     LegacyEffect("dir_brite", "Directional Brightness"),
-    LegacyEffect("dir_sharp", "Directional Sharpening"),
+    LegacyEffect("dir_sharp", "Directional Sharpen"),
     # --- csak régi ini-ből olvasható, natív kód még megfejtetlen ---------
     LegacyEffect("triple", "Lighting Fixes (v1)"),
     LegacyEffect("triple2", "Lighting Fixes (v2)"),
     LegacyEffect("triple3", "Lighting Fixes (v3)"),
     LegacyEffect("colorfix", "Color Fixes"),
-    LegacyEffect("shadow", "Shadow and Highlight"),
-    LegacyEffect("whitept", "White Point"),
-    LegacyEffect("gamma", "Gamma Correction"),
+    LegacyEffect("shadow", "Shadow & Highlight"),
+    LegacyEffect("whitept", "Whitepoint"),
+    LegacyEffect("gamma", "Gamma Correct"),
     LegacyEffect("contrast", "Contrast"),
     LegacyEffect("colortemp", "Color Temperature"),
-    LegacyEffect("blur", "Softening"),
+    LegacyEffect("blur", "Blur"),
     LegacyEffect("backlight", "Backlight Fix"),
     LegacyEffect("rainbow", "Rainbow"),
     LegacyEffect("autocontrast", "Auto Contrast"),

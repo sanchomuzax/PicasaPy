@@ -155,6 +155,10 @@ sértené a projekt alapszabályát, és a #1475 döntését is.
 
 **2. A réteget NEM töröljük — mert a TARTALMI viselkedése a hűséges.**
 
+> ⚠️ **AZ INDOKLÁS ELÉVÜLT (#2380, 2026-09-05).** A döntés maga marad, de
+> nem ezen az alapon — az alapja megszűnt. Ld. az „Elévült indoklás"
+> szakaszt alább.
+
 A 2. pont fényében a #152 réteg „mindent átviszünk" szemantikája
 **egyezik az eredetivel**, a bekötött kötegelt rétegé pedig **nem**. A
 törlés éppen a helyes referencia-megvalósítást dobná el.
@@ -166,6 +170,9 @@ vermet **nem** kell átvinni.
 
 **4. A valódi hiba a KÖTEGELT rétegben van — külön jegyet kíván.**
 
+> ✅ **ELVÉGEZVE (#1544).** Az itt leírt hiba megszűnt; a szakasz a döntés
+> történeteként marad. A mai mérés az „Elévült indoklás" szakaszban.
+
 A ma élő „Az összes effektus beillesztése" **elveszíti a vágást** (és a
 `redeye`/`retouch` régiókat), miközben az eredeti átviszi őket. Ez a
 felhasználónál látható eltérés, és **nem** ennek az ADR-nek a hatóköre: a
@@ -175,6 +182,49 @@ tesztkészletet érinti, ezért önálló jegyben végzendő.
 Az illeszkedő végállapot: **egyetlen** menüparancs, amely — az eredeti
 kétágú kezelőjéhez hasonlóan — a szerkesztő nyitottsága szerint választ
 ágat, és **mindkét** ágon a teljes láncot viszi át.
+
+## Elévült indoklás — a 2. döntés alapja megszűnt (#2380, 2026-09-05)
+
+A 2. döntés indoka **egyetlen tényen állt**: a bekötött (kötegelt) réteg
+SZŰR — eldobja a `crop64`-et és a `redeye`/`retouch` régiókat —, a #152-es
+réteg viszont mindent átvisz, tehát az a hűséges.
+
+**Ez ma nem igaz.** Mérve a mai kódon (`picasapy.edit.effect_clipboard`,
+a bekötött réteg tiszta logikája):
+
+```
+bemenet : crop64=1,45930000ba03defe;redeye=1;retouch=1,abc;autolight=1;moviestart=1;ismeretlenX=1,7;
+másolás : crop64=1,45930000ba03defe;redeye=1;retouch=1,abc;autolight=1;moviestart=1;ismeretlenX=1,7;
+beillesztés: crop64=1,45930000ba03defe;redeye=1;retouch=1,abc;ismeretlenX=1,7;
+crop= tükör: rect64(45930000ba03defe)
+```
+
+A másolás **bájtazonos** a bemenettel: se a `crop64`, se a `redeye`, se a
+`retouch`, se a `moviestart`, se az **ismeretlen** bejegyzés nem esik ki.
+A tükör-kulcs is a lánc `crop64`-jével áll.
+
+A szűrés a #1544-gyel szűnt meg, miután a #1534 a `Picasa3.exe`
+diszasszemblálásával igazolta, hogy az eredeti másolás-kezelője a
+`filterdesc.xml` `mode="history"` attribútumát **soha nem olvassa**.
+
+### Mi következik ebből
+
+A két réteg tartalmi viselkedése ezen a ponton **megegyezik**, tehát a
+„#152 a hűséges referencia" érv nem tartja többé életben a réteget. Ez
+**nem** jelenti, hogy a réteg törölhető — csak azt, hogy a megtartásához
+MÁS indok kell, vagy nincs.
+
+**A döntést ez az átvezetés szándékosan nem nyitja újra.** Az ADR alatt
+álló kód eltávolítása önálló, ADR-t MÓDOSÍTÓ jegyet kíván (a
+`check_decision_links.py` őre a „Megvalósítja" mezőn át köti); egy
+„halott kód" jeggyel takarítani épp az a hiba, amit a #2380 első köre
+elkövetett és visszavont.
+
+**Ami MEGVAN a törlés előfeltételeiből:** a halott réteg egyetlen, az élő
+készletből hiányzó állítása (ismeretlen lánc-bejegyzés megőrzése)
+átvezetve az élő ágra (#2384), és az élő ág átmegy rajta. **Ami HIÁNYZIK:**
+a réteg többszintű undo-vermének kérdése (3. döntés) és a
+`test_warning_guard.py` várt-figyelmeztetés listájának átvezetése.
 
 ## Ami nyitva marad — és mi döntené el
 

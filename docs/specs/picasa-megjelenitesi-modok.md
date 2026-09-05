@@ -521,6 +521,8 @@ menü-feliratok és a pipák pontos párosítása.
 
 #### ✅ A párosítás LEZÁRVA a tulajdonos képeivel (2026-08-30)
 
+*Forrás: `searchcontainer.tre:19` (`searchcontainer/searchbutton`) · `thumbui.tre:375` (`thumbui/newalbum`).*
+
 A tulajdonos két képernyőképet küldött (`1852-nezet-menu` mappa,
 `/mnt/nas/My Pictures/1852-nezet-menu/`):
 
@@ -584,7 +586,6 @@ checkable, és a pipa azon a soron jelenik meg.
 *Bizonyítottsági fok: **megerősített** minden állítás, ami mellett `0x…`
 cím áll (a függvénytörzsek szó szerinti tartalma); a menü-felirat ↔
 azonosító párosítás — **megerősített** (a tulajdonos képeivel, 2026-08-30).*
-
 ## 6. Tárolás, alapértelmezés, indulási állapot
 
 **MÉRVE — a mód NEM tárolódik el sehol.** A `0x00575670` (az egyetlen

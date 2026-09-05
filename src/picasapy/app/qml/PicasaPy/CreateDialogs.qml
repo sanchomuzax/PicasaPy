@@ -61,13 +61,6 @@ Item {
                 dialogs.collageKinds[collageKindBox.currentIndex],
                 dialogs.collageBorders[collageBorderBox.currentIndex])
         }
-        Connections {
-            target: controller
-            function onCollagePreviewReady(revision) {
-                collageDialog.previewRevision = revision
-            }
-        }
-
         function openForSelection() {
             // #922: MINDIG megnyílik. Korábban forrás nélkül némán
             // visszatért, és a kattintás nyomtalanul elnyelődött — az
@@ -202,7 +195,17 @@ Item {
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetFile: ""
         // a felbontás-lista indexei → videó-magasság
-        readonly property var heightOptions: [720, 1080]
+        //: #1977 (7. pont): az eredeti HÉT mérete
+        //: (`docs/specs/picasa-create-features.md` 2.6/c). Öt közülük
+        //: 4:3-as, ezért a SZÉLESSÉG is kell — a korábbi 16:9-es
+        //: származtatás azokat torzította volna (1024-es magasságból
+        //: 1820 jött volna ki 768 helyett).
+        readonly property var sizeOptions: [
+            [320, 240], [640, 480], [800, 600], [1024, 768],
+            [1600, 1200], [1280, 720], [1920, 1080],
+        ]
+        //: az alapértelmezés a 720p — a lista hatodik eleme
+        readonly property int defaultSizeIndex: 5
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
@@ -210,16 +213,19 @@ Item {
                     && dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
-        onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
-            function() { return movieDialog.targetFile.length > 0 })
+        //: #1977: az OK MINDIG engedélyezett — az eredeti sem kér
+        //: célfájlt. Cél nélkül a vezérlő a `Picasa`/honosított Filmek
+        //: mappába ír, a forrásmappa nevével, ütközésnél sorszámozva.
+        //: A fájlválasztó megmarad „Mentés másként"-ként.
+        onOpened: standardButton(Dialog.Ok).enabled = true
         onAccepted: {
             movieProgressDialog.done = 0
             movieProgressDialog.total = dialogs.appWindow.selectedIndexes.length
             movieProgressDialog.open()
+            var meret = movieDialog.sizeOptions[movieHeightBox.currentIndex]
             controller.exportMovie(
                 dialogs.appWindow.selectedIndexes, movieDialog.targetFile,
-                movieDialog.heightOptions[movieHeightBox.currentIndex],
-                movieSeconds.value / 10.0)
+                meret[1], movieSeconds.value / 10.0, meret[0])
         }
         ColumnLayout {
             spacing: 10
@@ -241,7 +247,11 @@ Item {
                     id: movieHeightBox
                     objectName: "movieHeightBox"
                     Layout.preferredWidth: 160
-                    model: ["720p", "1080p"]
+                    model: [
+                        "320 × 240", "640 × 480", "800 × 600", "1024 × 768",
+                        "1600 × 1200", "1280 × 720 (720p)", "1920 × 1080 (1080p)",
+                    ]
+                    currentIndex: movieDialog.defaultSizeIndex
                 }
             }
             RowLayout {
@@ -382,37 +392,58 @@ Item {
         return text
     }
 
-    Connections {
-        target: controller
-        function onCollageFinished(path, used, skipped, missing) {
-            createResultDialog.message =
-                qsTr("Collage saved: %1").arg(path)
-                + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped, missing)
-            createResultDialog.open()
-        }
-        function onCollageFailed(message) {
-            createResultDialog.message =
-                qsTr("The collage could not be created.") + "\n" + message
-            createResultDialog.open()
-        }
-        function onMovieProgress(done, total) {
-            movieProgressDialog.done = done
-            movieProgressDialog.total = total
-        }
-        function onMovieFinished(path, used, skipped, missing) {
-            movieProgressDialog.close()
-            createResultDialog.message =
-                qsTr("Movie saved: %1").arg(path)
-                + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped, missing)
-            createResultDialog.open()
-        }
-        function onMovieFailed(message) {
-            movieProgressDialog.close()
-            createResultDialog.message =
-                qsTr("The movie could not be created.") + "\n" + message
-            createResultDialog.open()
-        }
+    // #2096: a vezérlő jelzéseit NEM itt fogadjuk. Ez a komponens a #1612 óta
+    // HALASZTOTT (`DeferredDialog`), tehát amíg a felhasználó meg nem
+    // nyitotta, egy itteni `Connections` NEM LÉTEZNE — a jelzés senkihez nem
+    // érne el, és a visszajelzés némán elmaradna. A kollázs a Kollázs
+    // PANELRŐL is indítható, tehát ez nem elméleti eset (#1743 őre fogta meg).
+    //
+    // A `Main.qml` mindig álló `Connections`-e hívja az alábbi függvényeket,
+    // az `ensure()` után. A logika változatlan; csak a HALLGATÓ került ki.
+    // Ugyanez a minta, mint a `SaveDialogs.qml`-nél.
+
+    //: A kollázs élő előnézetének új változata (a panel jelzi).
+    function frissitsdAzElonezetet(revision) {
+        collageDialog.previewRevision = revision
+    }
+
+    //: A kollázs elkészült — az összegző párbeszéd megnyitása.
+    function jelezdAKollazsSikert(path, used, skipped, missing) {
+        createResultDialog.message =
+            qsTr("Collage saved: %1").arg(path)
+            + "\n" + qsTr("%1 pictures used.").arg(used)
+            + dialogs._skippedSuffix(skipped, missing)
+        createResultDialog.open()
+    }
+
+    //: A kollázs nem készült el.
+    function jelezdAKollazsHibajat(message) {
+        createResultDialog.message =
+            qsTr("The collage could not be created.") + "\n" + message
+        createResultDialog.open()
+    }
+
+    //: A film haladása.
+    function frissitsdAFilmHaladast(done, total) {
+        movieProgressDialog.done = done
+        movieProgressDialog.total = total
+    }
+
+    //: A film elkészült.
+    function jelezdAFilmSikert(path, used, skipped, missing) {
+        movieProgressDialog.close()
+        createResultDialog.message =
+            qsTr("Movie saved: %1").arg(path)
+            + "\n" + qsTr("%1 pictures used.").arg(used)
+            + dialogs._skippedSuffix(skipped, missing)
+        createResultDialog.open()
+    }
+
+    //: A film nem készült el.
+    function jelezdAFilmHibajat(message) {
+        movieProgressDialog.close()
+        createResultDialog.message =
+            qsTr("The movie could not be created.") + "\n" + message
+        createResultDialog.open()
     }
 }

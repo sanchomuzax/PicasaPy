@@ -108,6 +108,32 @@ Item {
             root.activateTab(root.libraryTabId)
     }
 
+    /** Lapváltás a soron KÖRBE (#2170).
+
+        Az eredeti kezelője (`0x005b2390`) a `0x005b22b0(panel, ±1)`
+        léptetőt hívja mind a négy billentyűre. A „sor" nálunk a KÖNYVTÁR
+        fülét is tartalmazza — a felhasználó számára az is egy fül —, ezért
+        a léptetés azon is átmegy.
+
+        `irany`: +1 a következő, −1 az előző lap felé.
+    */
+    function lepjAKovetkezoLapra(irany) {
+        var sor = [root.libraryTabId]
+        var tabs = root.projectTabs
+        for (var i = 0; i < tabs.length; ++i) {
+            if (tabs[i] && tabs[i].id !== undefined)
+                sor.push(tabs[i].id)
+        }
+        if (sor.length < 2)
+            return
+        var most = sor.indexOf(root.activeTabId)
+        if (most < 0)
+            most = 0
+        //: a `% sor.length` a KÖRBEJÁRÁS: az utolsó után a könyvtár jön
+        var cel = (most + irany + sor.length) % sor.length
+        root.activateTab(sor[cel])
+    }
+
     // `Property escapekey 1` (3.3): az Esc a LAPOT zárja. Csak akkor él, ha
     // tényleg van zárható, aktív lap — és nem akkor, amikor már a kérdés áll
     // a képernyőn (ott az Esc a Mégse útja).
@@ -116,6 +142,40 @@ Item {
         enabled: root.hasProjectTabs && !root.libraryActive
                  && !closeConfirm.visible
         onActivated: root.requestCloseActive()
+    }
+
+    // #2170: a négy MÉRT projektlap-billentyű. Az eredeti kezelője
+    // (`0x005b2390`) `Ctrl`-t követel; a `Ctrl+W` a bezárás
+    // (`0x005b31a0`), a másik három a ±1-es léptető (`0x005b22b0`).
+    //
+    // ⚠️ A `Ctrl+W` a MEGLÉVŐ bezárás-úton megy (`requestCloseActive`),
+    // nem külön ágon: a piszkos lap kérdését így nem kerüli meg — ugyanaz
+    // a megfontolás, mint az `Esc`-nél (a fájl 3. invariánsa).
+    Shortcut {
+        sequence: "Ctrl+W"
+        enabled: root.hasProjectTabs && !root.libraryActive
+                 && !closeConfirm.visible
+        onActivated: root.requestCloseActive()
+    }
+    Shortcut {
+        sequence: "Ctrl+Tab"
+        enabled: root.hasProjectTabs && !closeConfirm.visible
+        onActivated: root.lepjAKovetkezoLapra(1)
+    }
+    Shortcut {
+        sequence: "Ctrl+Shift+Tab"
+        enabled: root.hasProjectTabs && !closeConfirm.visible
+        onActivated: root.lepjAKovetkezoLapra(-1)
+    }
+    Shortcut {
+        sequence: "Ctrl+Right"
+        enabled: root.hasProjectTabs && !closeConfirm.visible
+        onActivated: root.lepjAKovetkezoLapra(1)
+    }
+    Shortcut {
+        sequence: "Ctrl+Left"
+        enabled: root.hasProjectTabs && !closeConfirm.visible
+        onActivated: root.lepjAKovetkezoLapra(-1)
     }
 
     Rectangle {

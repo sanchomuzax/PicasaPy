@@ -38,6 +38,8 @@ interakcióhoz kötve.
 
 ### 1.3 Más elemek vezérlése — a deklaratív kötések
 
+*Forrás: `editpanel.tre:1124` (`editpanel/sbutton`) · `thumbui.tre:468` (`thumbui/sbutton`).*
+
 | tulajdonság | db | mit jelent |
 |---|---:|---|
 | `hidetarget` | 126 | elsüléskor **elrejt** egy másik elemet |
@@ -50,8 +52,9 @@ interakcióhoz kötve.
 | `alias` | 7 | **ugyanaz a parancs, másik helyen** (pl. `editpanel/sbutton` = `thumbui/sbutton`) |
 | `buddy` | 3 | páros vezérlő (színkerék ↔ csúszka-korong) |
 | `prenotify 1` | 2 | a váltás ELŐTT értesít |
-
 ### 1.4 Húzás és görgetés
+
+*Forrás: `throttlethumb_mac.tre:3` (`throttle/throttlethumb`).*
 
 | tulajdonság | db | hol |
 |---|---:|---|
@@ -61,7 +64,6 @@ interakcióhoz kötve.
 | `handlealphakeys` | 2 | betűleütésre ugrik a listában (`fontfamily`) |
 
 ---
-
 ## 1/b A motor TELJES tulajdonság-szótára (2026-08-17, #905)
 
 Az 1. szakasz listája a **szállított `.tre` fájlokból** készült. A parszer
@@ -144,6 +146,8 @@ levágandó rész kontúrjai olvashatók maradnak.
 
 ## 2. A 49 vezérlő, ami LENYOMÁSRA sül el
 
+*Forrás: `acquirepanel.tre:210` (`acquirepanel/sync_options_button`) · `compose_mail.tre:139` (`compose_mail/ltr`) · `compose_share.tre:129` (`compose_share/ltr`) — és további 12 elem ugyanott.*
+
 Ez a Windows-szabvány ellentéte (ott a gomb felengedésre sül el, és a
 lenyomás után elhúzva a kattintás visszavonható). A Picasában a következők
 **azonnal**, lenyomásra hatnak:
@@ -162,6 +166,45 @@ lenyomás után elhúzva a kattintás visszavonható). A Picasában a következ�
 **A minta:** ami **nézetet vált vagy menüt nyit**, az lenyomásra hat; ami
 **műveletet hajt végre** (Mentés, Mégse, Kollázs létrehozása), az a
 szabványos felengedésre.
+### 2.2 A hét vezérlő, amit CSAK ez a tábla említett — feloldva (2026-09-04, #2093)
+
+A fenti tábla azt mondja meg, **mikor** sül el egy gomb, azt nem, hogy **mit
+csinál**. Hét elem csak itt szerepelt az egész specifikációban, ezért a
+lefedettségi mérő `feltáratlan`-nak sorolta őket. Az eredeti **saját
+felirata és buboréksúgója** viszont megvan — és a projekt szabálya szerint
+[a `.tre` szövegforrás az igazságforrás](binaris-regeszet-modszertan.md):
+azonosítóból nem következtetünk, ha van hozzá hivatalos felirat.
+
+| elem | hivatalos magyar szöveg | hol áll a `.tre`-ben |
+|---|---|---|
+| `acquirepanel/sync_options_button` | felirat: **„Opciók"**; buboréksúgó: **„Online opciók"** | `acquirepanel.tre:208` |
+| `headerpanel/create_movie` | **„Mozgófilmes prezentáció létrehozása"** | `headerpanel.tre:79` |
+| `headerpanel/play` | **„Diavetítés teljes képernyőn"** | `headerpanel.tre:32` |
+| `headerpanel/websync0` | **„Feltöltés és a későbbi változások szinkronizálása az internettel"** | `headerpanel.tre:52` |
+| `peoplepanel/manual_cancel` | felirat: **„Mégse"** | `peoplepanel.tre:38` |
+| `printpanel/captionoptionsbutton` | **„A nyomtatni kívánt fotók szegélyeinek és szövegének beállítása"** | `printpanel.tre:46` |
+| `editpanel/weblink` | **„Ugrás az ehhez a fotóhoz társított webhelyre"** | `editpanel.tre:1160` |
+
+**Amit a kód tesz hozzá** (a sztring-xrefek szerint — ezek a függvények a
+panelt építik, nem a kattintást kezelik):
+
+| elem | a hivatkozó panel-függvény | mit árul el |
+|---|---|---|
+| `acquirepanel/sync_options_button` | `0x00518b40` (929 b) | ugyanez a függvény kezeli az `acquirepanel/sync_starred` elemet is ⇒ az „Opciók" a **feltöltési** beállításokat nyitja, köztük a „csak csillagozottak" kapcsolót |
+| `editpanel/weblink` | `0x00567a00` (1035 b) | egy csoportban van az `editpanel/quickupload`, `uploadchanges`, `editcollage`, `editslideshow` elemekkel ⇒ a szerkesztő **környezeti műveletsorának** tagja |
+| `peoplepanel/manual_cancel` | `0x005d23d0` (1009 b) | az `editpanel/cropselection`, `retouchoverlay`, `edittextoverlay` társaságában ⇒ **átfedés-kezelő** ág; a „Mégse" a kézi arcfelvitelt zárja le |
+| `printpanel/captionoptionsbutton` | `0x00743980` (3533 b) | a teljes nyomtatási gombkészlettel együtt (`walletbutton`, `3x5button`, …, `PrintLastSize`) ⇒ a nyomtatási panel saját beállítás-ága — a megvalósítási jegye a **#1780** |
+
+> ⚠️ **Amit ez NEM ad meg:** egyik gomb **kattintás-kezelőjét** sem
+> olvastuk ki. A fenti sorok a *felhasználónak látszó* jelentést rögzítik
+> (a gyártó saját szövegével) és a panel-hovatartozást — nem a
+> végrehajtott kódot. A `headerpanel/create_movie`, `play` és `websync0`
+> névre a binárisban **egyetlen sztring-hivatkozás sincs**: azokat a
+> fejlécsáv általános, táblavezérelt kezelője kapcsolja.
+
+*Bizonyítottsági fok: **megerősített** a feliratokra és a `.tre`-helyekre
+(kiolvasott sorok), **erős** a panel-hovatartozásra (sztring-xref),
+**nincs mérve** a kattintás-kezelő.*
 
 ### 2.1 A mechanizmus a kódban — megerősítve
 
@@ -516,6 +559,8 @@ húzást a saját csomópont-rendszere követi.
 
 ## 6. Handler-ek — a tíz viselkedés-kötés
 
+*Forrás: `editpanel.tre:941` (`editpanel/edittextghost`) · `editpanel.tre:946` (`editpanel/edittextoverlay`) · `editpanel.tre:1401` (`editpanel/fullscreenswitcher`) — és további 7 elem ugyanott.*
+
 A `.tre`-ben a `Handler <név> <argumentumok>` sor köt egy elemhez egy
 kódbeli viselkedést. **Összesen 24 kötés, 10 fajta:**
 
@@ -533,8 +578,9 @@ kódbeli viselkedést. **Összesen 24 kötés, 10 fajta:**
 | **`hsplitoffset`** | 1 | `thumbui/hlistsizer` — **a bal panel és a rács közti húzható elválasztó** |
 
 ---
-
 ## 7. Ismétlő és kurzort nem váltó vezérlők
+
+*Forrás: `editoneup.tre:148` (`editoneup/minusone`) · `editoneup.tre:140` (`editoneup/plusone`) · `keywords.tre:67` (`keywords/closebutton`) — és további 4 elem ugyanott.*
 
 **`setautorepeat`** — nyomva tartva ismétel:
 
@@ -562,7 +608,6 @@ a `showtextcheckbox`, a `keywords/closebutton`, és három
 `makemoviepanel` jelölőnégyzet.
 
 ---
-
 ## 8. Az Esc-billentyű — 11 gomb
 
 `Property escapekey 1`: `acquirepanel/acancelbutton` ·

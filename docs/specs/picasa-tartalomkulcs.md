@@ -312,3 +312,47 @@ marad; ha nem tér vissza, a bent maradt sorok tétlenek.
 **Ami NYITOTT marad:** ha az eltűnt fájl helyére a KÖVETKEZŐ szinkron előtt új
 fájl kerül ugyanazzal a névvel, a régi sor megmarad — a tábla ma nem tárol se
 méretet, se mtime-ot, amiből a csere látszana. Külön jegy: **#2099**.
+
+---
+
+## A PMP-oszloptábla regisztrációja — a két tartalomkulcs HELYE és TÍPUSA (2026-09-04, #1482)
+
+A `0x004127c0` regisztrálja a `imagedata_*` oszlopokat. A minta:
+`push "<név>"`, majd `lea eax, [esi + OFFSZET]; call <regisztráló>` — **a
+név a KÖVETKEZŐ regisztrációhoz tartozik**, nem az előzőhöz. (Ez a
+sorrend félreolvasható; a #1482 jegye emiatt írt téves tagoffszetet.)
+
+| név | tag | regisztráló | típus |
+|---|---|---|---|
+| `edited` | `+0x918` | `0x00496020` | bájt |
+| `revertable` | `+0x978` | `0x00496020` | bájt |
+| **`originslow`** | **`+0x9d8`** | `0x00495360` | **u64** |
+| **`originfast`** | **`+0xa40`** | `0x00495360` | **u64** |
+| `uid64` | `+0xaa8` | `0x00495360` | u64 |
+| `aliasparents` | `+0xb10` | `0x00494c50` | *(más)* |
+
+**A két regisztráló két oszlop-TÍPUS**, és a különbség a vtable **11.
+résében** olvasható ki (a többi rés azonos):
+
+| regisztráló | 11. rés | mit csinál |
+|---|---|---|
+| `0x00496020` | `0x00496180` (40 b) | `add eax, edx; movsx eax, byte ptr [eax]` ⇒ **1 bájt/elem** |
+| `0x00495360` | `0x00495e90` (48 b) | `lea ecx, [eax + edx*8]`, majd `[ecx+4] XOR [ecx]` ⇒ **8 bájt/elem**, és 32 bites hasítást ad vissza |
+
+⇒ **Az `originslow` és az `originfast` UGYANAZ az oszlop-osztály** — a
+különbségük nem a tárolásban van, hanem az értéket előállító kódban.
+
+### Mért NEGATÍV eredmény: tagoffszeten senki nem éri el őket
+
+A bináris **összes** indexelt függvényét diszasszemblálva a `[reg + 0x9d8]`
+és a `[reg + 0xa40]` alakra a lemez-/adatbázis-kódban **pontosan két**
+találat van mindkettőre: a fenti regisztráló és a destruktor
+(`0x00413020`, ugyanazt a takarítót hívja minden oszlop-tagra). A többi
+találat más osztályok azonos offszete vagy veremcím.
+
+⇒ **Az érték-írás az oszloplistán át megy**, nem literális tagoffszeten. Az
+`originslow` képletét kereső kör ezért **ne** a tagra írókat keresse — az
+az út bizonyítottan üres.
+
+*(Az `originslow` és `originfast` sztringre is egyetlen hivatkozás van az
+egész binárisban: ugyanez a regisztráló. Néven sem érhetők el.)*

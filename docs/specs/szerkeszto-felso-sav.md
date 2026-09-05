@@ -182,21 +182,105 @@ Kör alakúak (`globalbuttons/lfs_*`, `globalbuttons/rfs_*`), **29 × 30**, a
 `filmcontainer` bal és jobb szélén (`m_offsetLT` / `m_offsetRT`), és
 **mindkettőn `m_autorepeat`** ⇒ **nyomva tartva folyamatosan léptetnek.**
 
-### 5.5 ⛔ Amit a kattintásról NEM tudunk
+### 5.5 ✅ A kattintás szemantikája — LEZÁRVA (2026-09-05, #1935)
 
-Hogy a **bélyegképre kattintás** kiválasztja-e azt a képet, **NINCS
-mérve.** Az olcsó lánc kimerült: az `editpanel.tre` a `filmstrip`-re
-egyetlen `m_scaleXY`-t ad és **semmilyen `Handler`/`Property` sort**; a
-szövegtárban nincs rá felirat; a sztring-xref öt függvényt ad
-(`0x00566a70` = az infósor-építő, `0x00567820`, `0x00579360`,
-`0x00579550`, `0x005de8e0`), egyikben sem kattintás-szemantika.
+> **Bizalmi fok: megerősített.** A `CFilmstrip` eseménykezelője
+> diszasszemblálva, az eseménykódok a `picasa-eger-es-kijeloles.md` 4.2/b
+> **már megerősített** táblájából. Ghidra nem kellett.
 
-**A megszerzés útja:** a `CFilmstrip::vftable` (`0x00c9359c`,
-RVA `0x0089359c`) egérkezelő rekesze — célzott Ghidra-kör
-(`picasa-x86-research`).
+**A kattintás KIVÁLASZTJA a képet — de a gomb FELENGEDÉSÉRE, nem a
+lenyomására**, és a kiválasztás **visszavonható**.
 
-*A centrírozás (5.2) ettől függetlenül MÉRT: ha a kattintás kijelöl,
-a szalag szükségszerűen újraközepez.*
+#### Az eseménykezelő és a kezelt kódok
+
+A `CFilmstrip::vftable` (`0x00c9359c`) **29. rése** a
+`FUN_005a73d0` (1 520 b). Az eseménykódot a `[esemény+8]` hozza
+(`0x005a7427`), és a kezelő **kilenc** kódra ágazik:
+
+| kód | jelentés (4.2/b) | a filmszalag ága |
+|---:|---|---|
+| `1` | **bal gomb LE** | `0x005a7860` → közös ág a `0x0d`-vel |
+| `0x0d` | (a 4.2/b-ben nincs megfejtve) | **ugyanaz az ág, mint az 1** |
+| `2` | egérmozgás | `0x005a7453` |
+| `4` | **gomb FEL** | `0x005a7781` |
+| `5` | jobb gomb le | `0x005a78fe` |
+| `0x0e`, `0x0f` | belépés/kilépés-jellegű | `0x005a76d1`, `0x005a76d6` |
+| `0x13` | találat-vizsgálat / kurzor | `0x005a742c` → `[vtbl+0x8c]` egy `double`-lel |
+| `0x17` | — | `0x005a795d` |
+
+#### LENYOMÁSKOR (kód 1 és 0x0d): csak céloz, nem választ
+
+```
+0x005a786e  cmp byte [esemény+0x6c], 0   ; szűrő — ha áll, nem kezeli
+0x005a7893  call [gazda_vtbl+4] (this, 1); értesítés a gazdának
+0x005a789b  [this+0x380] = -1            ; a „megfogott férőhely" törlése
+0x005a78d4  call [vtbl+0x80] (x, y, &[this+0x380])   ; TALÁLAT-VIZSGÁLAT:
+                                          ; a kezelő ide írja a férőhely indexét
+0x005a78dc  [this+0x378] = x             ; a húzás kezdőpontja
+0x005a78e4  [kimenő] = this              ; egérfogás (capture)
+0x005a78f0  return 0xF4240               ; „kezeltem"
+```
+
+⇒ **Lenyomásra semmi nem választódik ki** — a kezelő csak kiszámolja,
+melyik férőhelyre esett a kattintás, elmenti a húzás kezdő X-ét, és
+megfogja az egeret.
+
+#### FELENGEDÉSKOR (kód 4): ITT történik a kiválasztás
+
+```
+0x005a7796  call 0x009df260 / 0x00a57630 ; egérfogás elengedése
+0x005a77a0  eax = [this+0x380]           ; a lenyomáskor eltalált férőhely
+0x005a77a6  cmp eax, -1 · je 0x005a7852  ; ha üresre kattintott → NINCS kiválasztás
+0x005a77af  ecx = [this+0x388]           ; az EDDIGI aktuális index — elmentve
+0x005a77b5  [this+0x388] = eax           ; ← AZ ÚJ AKTUÁLIS INDEX
+0x005a77be  push 0x00c93584              ; a értesítés neve: "filmstripmove"
+0x005a77ee  call 0x00591560              ; az értesítés összeállítása
+0x005a7802  call [vtbl+0x70] (&üzenet)   ; a gazda kezelője
+0x005a7804  cmp eax, 0xF4242             ; ha a gazda VISSZAUTASÍTJA…
+0x005a7813  [this+0x388] = [mentett]     ; …a RÉGI index visszaáll  ← VISSZAVONÁS
+0x005a7847  call [vtbl+0x84] (új index, -1.0)  ; elfogadva → görgetés/középre állítás
+```
+
+⇒ Három, egymástól független állítás, mind a kódból:
+
+1. **A kiválasztás a FELENGEDÉSRE történik** (kód 4), nem a lenyomásra.
+2. **Üres területre kattintás nem választ** (`[this+0x380] == -1` ág).
+3. **A kiválasztás VISSZAVONHATÓ**: az új index előbb beáll, majd a
+   `filmstripmove` értesítés megy ki; ha a gazda `0xF4242`-vel
+   („nem kezeltem") válaszol, a **régi index visszaáll**.
+
+A `-1.0` (`0x00cf3ed0`, kiolvasva) a `[vtbl+0x84]`-nek átadott
+lebegőpontos paraméter — az 5.2 középre állítása ezen az ágon fut le,
+tehát a centrírozás **a kiválasztás következménye**, ahogy az 5.5 korábbi
+változata sejtette.
+
+#### MIT AD MA — nálunk (mérve)
+
+`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml:716–718`:
+
+```qml
+TapHandler {
+    onTapped: viewer.currentIndex = parent.racsSor
+}
+```
+
+A Qt `TapHandler`-e a `tapped`-et **felengedésre** adja (és húzásra
+elejti) ⇒ **a lényegi viselkedésünk MEGEGYEZIK az eredetivel**: a
+kiválasztás felengedésre történik, húzásra nem, és üres területre nincs
+delegate, tehát kattintás sem.
+
+| | eredeti (mért) | nálunk (mért) | teendő |
+|---|---|---|---|
+| mikor választ | **felengedésre** (kód 4) | `TapHandler.onTapped` = felengedés ✓ | nincs |
+| üres területre | nem választ | nincs delegate ⇒ nem választ ✓ | nincs |
+| visszavonhatóság | a gazda `0xF4242`-vel visszautasíthatja | **nincs vétó-út** | ld. lent |
+| utána | `[vtbl+0x84]`-gyel középre állít | `highlightMoveDuration: 100`, de nem középre (5.2) | az 5.2 sora már rögzíti |
+
+⚠️ **A vétó-út hiánya nem termékhiba.** Az eredetiben azért van, mert a
+szalag gazdája (a szerkesztő) elutasíthatja a váltást — például
+mentetlen szerkesztésnél. **Nálunk ilyen elutasítási ág nincs**, tehát
+nincs mit vétózni; ha a #6 (kétképes mód) vagy egy „mentetlen módosítás"
+párbeszéd megépül, akkor lesz értelme. Addig **nem teendő**.
 
 ## 6. Eredeti / nálunk / teendő
 
@@ -230,7 +314,7 @@ Nálunk: fejléc `y 691…704`, rajz `y 712…782` (**70 magas**) ⇒ a doboz
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 6 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 7 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -240,7 +324,7 @@ Nálunk: fejléc `y 691…704`, rajz `y 712…782` (**70 magas**) ⇒ a doboz
 | mit tesz a két nyíl | **LEZÁRVA** — léptet, `m_autorepeat`, 5.4 |
 | hol áll az aktuális kép | **LEZÁRVA** — mindig középen, 5.2 |
 | a hisztogram-doboz horgonya | **LEZÁRVA** — `root.alsó − 95`, 6. |
-| mi történik a bélyegképre KATTINTVA | **BLOKKOLT** — célzott Ghidra-kör a `CFilmstrip::vftable`-re (`0x00c9359c`), 5.5 |
+| mi történik a bélyegképre KATTINTVA | ✅ **LEZÁRVA (2026-09-05)** — kiválaszt, de a gomb **FELENGEDÉSÉRE**; üres területre nem választ; a kiválasztás **visszavonható** (`filmstripmove` értesítés, `0xF4242` = elutasítás). 5.5. ⛔ **Ghidra NEM kellett**: a `CFilmstrip::vftable` 29. rése (`FUN_005a73d0`) diszasszemblálva, az eseménykódok jelentése a `picasa-eger-es-kijeloles.md` 4.2/b már megerősített táblájából |
 
 ## 8. Amit KIZÁRTAM
 

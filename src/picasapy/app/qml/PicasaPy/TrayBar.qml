@@ -86,6 +86,19 @@ Column {
     readonly property string collageWaitText:
         qsTr("Waiting for the collage to be created…")
 
+    // #2039: a tálca SAJÁT kijelölése (tálca-indexek). #1572 null-őr: a
+    // próbák csonk-vezérlőjén ez a tulajdonság nem is létezik.
+    readonly property var traySelectedIndexes: {
+        if (!tray.ctl || tray.ctl.traySelectedIndexes === undefined) return []
+        var lista = tray.ctl.traySelectedIndexes
+        return (lista === null) ? [] : lista
+    }
+    readonly property bool trayHasSelection: tray.traySelectedIndexes.length > 0
+
+    function trayIndexSelected(index) {
+        return tray.traySelectedIndexes.indexOf(index) >= 0
+    }
+
     readonly property var selectedIndexesOrEmpty:
         (tray.appWindow && tray.appWindow.selectedIndexes)
             ? tray.appWindow.selectedIndexes
@@ -135,11 +148,24 @@ Column {
     //
     //     thumbui/rect: basecontrolset   y 429…534   105 magas
     //     thumbui/text( ): infotext      y 429…443    14 magas
-    //     az első vezérlők felső éle     y 448        ⇒ 5 pont TÉRKÖZ
     //     thumbui/rect: scratchback      y 449…530    81 magas
-    //     a sáv alja                     y 534        ⇒ 5 pont alsó hézag
+    //     a sáv alja                     y 534
     //
-    //     14 (csík) + 5 (térköz) + 81 (doboz) + 5 (alsó) = 105 ✓
+    //     14 (csík) + 6 (térköz) + 81 (doboz) + 4 (alsó) = 105 ✓
+    //
+    // ⚠️ #1913 HELYESBÍTÉS: a #1914 az összeget eltalálta, a kettévágást
+    // nem — 5+5 helyett 6+4 a mért érték. A tévedés forrása, hogy „az
+    // első vezérlők felső éle y 448"; ez IGAZ, de MÁS vezérlőkre:
+    //
+    //     thumbui/rect: scale_group      y 448…475   (nagyító)
+    //     thumbui/rect: metadata_group   y 448…472   (Személyek/Helyek/…)
+    //     thumbui/rect: scratchback      y 449…530   ← a TÁLCA doboza
+    //     …: rotateleft / startoggle     y 449…471   ← és a gombsora
+    //
+    // A rétegfejléc `y1`-e NYÍLT (a képpontszám igazolja: a
+    // `scratchclear_icon` 255,480,266,491 blobja 484 bájt = 11×11×4
+    // BGRA), tehát az `infotext` a 442. sorig tart, az első tálca-sor a
+    // 449. — közte 443…448, azaz HAT pont.
     //
     // ⚠️ VISSZAVONT ELTÉRÉS: a #1420 óta a csík nálunk 20 képpont volt,
     // „szándékos és dokumentált eltérés (olvashatóság,
@@ -265,9 +291,18 @@ Column {
                 if (tray.ctl && typeof tray.ctl.holdRows === "function")
                     tray.ctl.holdRows(tray.selectedIndexesOrEmpty)
             }
+            // #2039: ha a TÁLCÁN van kijelölés, arra hat — az eredetiben a
+            // tálca saját `CSelectionNode`-ja dönt, nem a rácsé. Ha a
+            // tálcán nincs kijelölve semmi, marad a régi út (a rács
+            // kijelöléséből vesz ki), hogy a parancs ne legyen néma.
             onRemoveSelectionRequested: {
-                if (tray.ctl && typeof tray.ctl.removeHeldRows === "function")
+                if (!tray.ctl) return
+                if (tray.trayHasSelection
+                    && typeof tray.ctl.removeTraySelected === "function") {
+                    tray.ctl.removeTraySelected()
+                } else if (typeof tray.ctl.removeHeldRows === "function") {
                     tray.ctl.removeHeldRows(tray.selectedIndexesOrEmpty)
+                }
             }
             // #1917: az öt ÖRÖKÖLT tétel — más névterekből, de ugyanarra a
             // kijelölésre hat, mint a rács helyi menüjének párja. A jelzést
@@ -339,7 +374,25 @@ Column {
         // (`test_also_sav_elrendezes_1420.py`) ÉLŐBEN visszaméri, hogy a
         // minimumra állított ablakban tényleg nem lóg ki semmi — ha egy
         // betűfüggő elem (a − / + jelek) mégis megnőne, ott bukik el.
-        readonly property real requiredWidth: windowWidthFor(actionCellCount)
+        //: #2305: a FELSŐ sor igénye. A sorrendcsere (csúszka -> négy
+        //: kapcsoló) után a felső sor lett a szűk keresztmetszet: a
+        //: kapcsolók 240 pontja a csúszka MÖGÜL a csúszka ELÉ került, és a
+        //: csillag/forgatás csoport belelógott a csúszkába a 800 pontos
+        //: minimumon (a #1367 őre ezt el is kapta).
+        //:
+        //: A tényleges szélességeket használjuk, nem beégetett számot: a
+        //: csúszka − / + jelei BETŰFÜGGŐK (#1420), tehát a platformonként
+        //: eltérő igényt csak a mért érték adja vissza. Hurok nincs: egyik
+        //: csoport szélessége sem függ az ablakétól.
+        readonly property real felsoSorIgenye: Math.ceil(
+            (trayMainBar.rightMargin
+             + trayStarGroup.width + 12
+             + trayZoomGroup.width + 12
+             + trayMetadataGroup.width
+             + trayMainBar.roundingReserve)
+            / (1 - trayMainBar.splitRatio))
+        readonly property real requiredWidth: Math.max(
+            windowWidthFor(actionCellCount), felsoSorIgenye)
         // #1345 ÚJRAMÉRVE (#1420): a két csoportelválasztó két TELJES
         // cellát tesz a sorba; a küszöb az a szélesség, ahol ez a többlet
         // is elfér. A korábbi `compactBudget = 1120` a RÉGI, egysoros
@@ -376,10 +429,11 @@ Column {
             id: trayScratchBack
             objectName: "trayScratchBack"
             x: 5
-            //: #1914: MÉRT térköz a kék csík alatt — `infotext` y 443-ig,
-            //: az első vezérlők y 448-tól. Ez az 5 pont hiányzott, ezért
-            //: értek a gombok a csíkhoz.
-            y: 5
+            //: #1913: MÉRT térköz a kék csík alatt — `infotext` y 443-ig
+            //: (nyílt), a `scratchback` y 449-től ⇒ HAT pont. (A #1914 itt
+            //: ötöt írt, mert a 448-tól induló nagyító-/metaadat-csoportot
+            //: mérte, nem a tálcát.)
+            y: 6
             width: Math.max(0, trayMainBar.splitX - 15 - x)
             height: 81
             color: Theme.trayPanelBg
@@ -501,11 +555,10 @@ Column {
                         ? trayScratchBack.heldCount
                         : tray.selectedIndexesOrEmpty.length
                     delegate: Image {
+                        id: trayThumb
                         objectName: "trayPreviewThumb"
                         required property int index
-                        // #1420: az eredeti tálcáján a bélyegképek a doboz
-                        // TELJES belső magasságát kitöltik (a képernyőképen
-                        // ~70 képpont), oldalarányt tartva — a korábbi
+
                         // 20 × 20-as rács a 81 képpontos dobozban holt
                         // helyet hagyott volna.
                         height: trayScratchStrip.thumbHeight
@@ -523,6 +576,57 @@ Column {
                         fillMode: Image.PreserveAspectCrop
                         clip: true
                         asynchronous: true
+
+                        // #2039: a tálcának SAJÁT kijelölése van — az
+                        // eredetiben ugyanolyan `CSelectionNode`, mint a
+                        // rácsé (`picasa-keptalca.md` 13.). A kattintás a
+                        // VEZÉRLŐN megy át, a módosítókkal együtt.
+                        readonly property bool trayCellSelected:
+                            tray.trayIndexSelected(trayThumb.index)
+
+                        TapHandler {
+                            objectName: "trayThumbTap"
+                            acceptedButtons: Qt.LeftButton
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onSingleTapped: function (eventPoint, button) {
+                                if (!tray.ctl
+                                    || typeof tray.ctl.selectTrayIndex !== "function")
+                                    return
+                                tray.ctl.selectTrayIndex(
+                                    trayThumb.index,
+                                    (point.modifiers & Qt.ControlModifier) !== 0,
+                                    (point.modifiers & Qt.ShiftModifier) !== 0)
+                            }
+                        }
+
+                        // A kijelölés KÉTVONALAS kerete — ugyanaz a réteg,
+                        // mint a rácsban (`ThumbDelegate.qml` 89–108.):
+                        // kívül `Theme.thumbSelection` (#009EFF), belül a
+                        // kártya színe. Nem új stílus, hanem a meglévő
+                        // újrahasználása (`constants.ui` thumbsel_color1/2).
+                        Rectangle {
+                            objectName: "trayThumbSelectionOuter"
+                            visible: trayThumb.trayCellSelected
+                            z: -1
+                            anchors.centerIn: parent
+                            readonly property int outerWidth: 2
+                            readonly property int innerWidth: 1
+                            width: parent.width + 2 * (outerWidth + innerWidth)
+                            height: parent.height + 2 * (outerWidth + innerWidth)
+                            color: Theme.thumbSelection
+                        }
+                        Rectangle {
+                            objectName: "trayThumbSelectionInner"
+                            visible: trayThumb.trayCellSelected
+                            z: -1
+                            anchors.centerIn: parent
+                            width: parent.width + 2
+                            height: parent.height + 2
+                            color: Theme.thumbCard
+                        }
+                        // #1420: az eredeti tálcáján a bélyegképek a doboz
+                        // TELJES belső magasságát kitöltik (a képernyőképen
+                        // ~70 képpont), oldalarányt tartva — a korábbi
 
                         // #1918: a MEGTARTOTT kép jelvénye a bélyegképen.
                         //
@@ -574,18 +678,36 @@ Column {
                     }
                 }
             }
-            // `thumbui/scratchlabel` — „Kijelölés", `m_centerXY`: üres
-            // tálcánál a felirat a doboz KÖZEPÉN áll, nem a bal szélén
+            // `thumbui/scratchlabel` — „Kijelölés", `m_centerXY`: a doboz
+            // KÖZEPÉN álló ÁLLANDÓ vízjel.
+            //
+            // #2179: az eredetiben ez NEM üres-állapot felirat. A tulajdonos
+            // hat felvétele ugyanabban a mappában, növekvő elemszámmal: 1 és
+            // 3 bélyegképnél a felirat LÁTSZIK, 11-nél eltakarva, 6-nál a
+            // vége (`…lés`) KILÓG a képek jobb oldalán. Az utolsó dönti el a
+            // rétegsorrendet is: a felirat bal része a képek ALATT van.
+            // Ugyanezt mondja a `thumbui.tre` szülő-gyerek viszonya
+            // (`scratchpadbase` — és rajta a `scratchlabel` — előbb
+            // deklarálva, mint a `thumbui/scratch`).
+            //
+            // Ezért NINCS `visible` kötése, és `z: -1`-gyel a bélyegképsor
+            // ALÁ kerül. (A `z` a deklarációs sorrend átrendezése helyett:
+            // a felirat így a `scratchback` gyerekeként marad, ahogy az
+            // eredetiben is a `scratchpadbase`-é.)
             Text {
                 objectName: "trayScratchLabel"
-                // #718: ld. a Repeater fenti null-őrét — ugyanaz a
-                // teardown-ablak érinti ezt a kötést is.
-                visible: trayScratchBack.heldCount === 0
-                         && tray.selectedIndexesOrEmpty.length === 0
+                z: -1
                 anchors.centerIn: parent
                 text: qsTr("Selection")
-                color: Theme.placeholderText
-                font.pixelSize: Theme.fontSize
+                // #2179: a respackből MÉRVE — `thumbui/scratchlabel`
+                // (13,480)–(218,499), szín `#C3C3C3`. A `Theme`
+                // `placeholderText`-je (`#8f8b83`) sötétebb ennél, és más
+                // helyeken is használatban van, ezért itt a mért érték áll.
+                color: "#C3C3C3"
+                // `m_displayfont14` = 14 pt (`docs/specs/picasa-hisztogram.md`,
+                // ugyanaz a betűcsalád), és a felirat mért magassága 19
+                // képpont — a kettő egybevág.
+                font.pixelSize: 14
             }
 
             // #455/#1420: a Picasa 3-gombos OSZLOPA a bélyegképsor jobbján
@@ -770,15 +892,16 @@ Column {
             id: trayRightPane
             objectName: "trayRightPane"
             x: trayMainBar.splitX
-            //: #1914: ugyanaz az 5 pontos MÉRT térköz, mint a
-            //: `scratchback`-en — a jobb oldali vezérlők felső éle is
-            //: y 448-tól indul (az `infotext` y 443-ig tart).
-            y: 5
+            //: #1913: ugyanaz a 6 pontos MÉRT térköz, mint a
+            //: `scratchback`-en — a csillag és a két forgatás
+            //: (`startoggle`, `rotateleft`, `rotateright`) is y **449**-től
+            //: indul, nem 448-tól.
+            y: 6
             width: Math.max(
                 0, trayMainBar.width - trayMainBar.rightMargin - x)
             height: parent.height - y
 
-            // --- felső sor (a sáv tetejétől 448…471 → itt 0…22) ---
+            // --- felső sor (a sáv tetejétől 449…471 → itt 0…22) ---
             Item {
                 id: trayTopRow
                 objectName: "trayTopRow"
@@ -813,7 +936,7 @@ Column {
                         //: szó szerint (`referencia/ui-leltar.csv`). Eddig
                         //: nem volt súgója.
                         ToolTip.text: qsTr("Add/Remove Star")
-                        ToolTip.visible: hovered
+                        ToolTip.visible: trayMoreBtn.hovered
                         ToolTip.delay: 500
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
@@ -985,8 +1108,11 @@ Column {
                 Row {
                     id: trayMetadataGroup
                     objectName: "trayMetadataGroup"
-                    anchors.right: trayZoomGroup.left
-                    anchors.rightMargin: 12
+                    //: #2305: a MÉRT sorrend a `respack.yt` x-tartományaiból
+                    //: — `loupehit` 366…391 < `scalecontainer` 398…525 <
+                    //: `metadata_group` 545…785. Vagyis a csúszka MEGELŐZI a
+                    //: négy kapcsolót; korábban fordítva állt.
+                    anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
 
@@ -1041,20 +1167,21 @@ Column {
                                 tray.appWindow.activeDrawerTab =
                                     aktiv ? "" : modelData.nev
                             }
-                            contentItem: Row {
-                                spacing: 4
-                                anchors.verticalCenter: parent.verticalCenter
+                            //: #2305: a felirat NEM a gombon van. Az
+                            //: eredeti négy gombja kizárólag ikonos (a
+                            //: `buttcon_*` típusnevek is ikon-gombot
+                            //: jelölnek), és a 60 × 24-es cellába az ikon
+                            //: MELLETT a szöveg csak levágva fért volna be —
+                            //: a tulajdonos képernyőmentésén „Ember" és
+                            //: „Tulajdon:" látszott. A szöveg nem vész el:
+                            //: buboréksúgó és akadálymentesítési név.
+                            Accessible.name: modelData.felirat
+                            contentItem: Item {
                                 Image {
                                     source: "icons/" + modelData.ikon
                                     width: 16; height: 16
                                     fillMode: Image.PreserveAspectFit
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: modelData.felirat
-                                    color: aktiv ? "white" : Theme.ink
-                                    font.pixelSize: Theme.fontSize - 1
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.centerIn: parent
                                 }
                             }
                         }
@@ -1067,7 +1194,10 @@ Column {
                 Row {
                     id: trayZoomGroup
                     objectName: "trayZoomGroup"
-                    anchors.right: parent.right
+                    //: #2305: a négy panelkapcsoló ELŐTT (ld. ott a mért
+                    //: x-tartományokat).
+                    anchors.right: trayMetadataGroup.left
+                    anchors.rightMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
 
@@ -1258,6 +1388,86 @@ Column {
                 y: 38
                 spacing: 0
 
+                // ---- #2191: túlcsordulás ------------------------------
+                //
+                // Az eredetiben a sor konténere `overflow:` típusú, és a
+                // ki nem férő tételek egy dedikált gomb mögé kerülnek
+                // (`outputlayout/morebutton`, 55 × 36 — mint a másik
+                // nyolc). A gombok NEM nyomódnak össze: a mért méret
+                // kötelező, épp ezért kell a túlcsordulás.
+                //
+                //: a sávban maradó hely a sor kezdetétől a jobb margóig
+                //: A kimeneti gomboknak jutó hely. ⚠️ NEM a sor `x`-éből
+                //: számol: a sáv szélesség-modellje a #1420 óta a
+                //: `windowWidthFor()`-ban van levezetve (osztópont, jobb
+                //: margó, 140-es eltolás, kerekítési ráhagyás) — ez itt
+                //: annak az INVERZE, hogy egyetlen igazságforrás legyen.
+                //: A kivezetett gombok és a csoportelválasztók helyét le
+                //: kell vonni, mert azok a sorban a kimenetiek ELŐTT ülnek.
+                readonly property int elerhetoSzelesseg: Math.max(
+                    0,
+                    (1 - trayMainBar.splitRatio) * trayMainBar.width
+                        - trayMainBar.rightMargin
+                        - trayMainBar.outputsOffset
+                        - trayMainBar.roundingReserve
+                        - (trayMainBar.retiredVisible
+                           ? trayMainBar.retiredCellCount
+                             * trayMainBar.actionCellWidth
+                           : 0)
+                        - (trayMainBar.separatorsVisible
+                           ? 2 * trayMainBar.actionCellWidth
+                           : 0))
+                //: egy cella teljes szélessége (a mért 59; a gomb 55 + 2-2)
+                readonly property int cellaSzelesseg:
+                    trayMainBar.actionCellWidth
+                //: a kimeneti gombok felirata, a respack deklarációs
+                //: sorrendjében — a rejtett tételek listája ebből épül
+                //: ⚠️ A feliratokat a GOMBOK adják, nem külön `qsTr()`
+                //: hívások: két igazságforrásból a felugró lista némán
+                //: elcsúszna a gombokétól (az első változatom „Email"-t és
+                //: „Movie"-t írt, a gombokon „E-Mail" és „Mozgófilm" áll),
+                //: és a fordítás-őr is két új, sosem látott szöveget kért
+                //: volna számon.
+                readonly property var gombFeliratok: [
+                    trayPrintBtn.text, trayEmailBtn.text, trayExportBtn.text,
+                    trayCollageBtn.text, trayMovieBtn.text
+                ]
+                //: hány cella fér ki. Ha nem mind, EGY helyet a
+                //: túlcsordulás-gomb foglal el.
+                readonly property int kiferoCellak: {
+                    var osszes = trayActionRow.gombFeliratok.length
+                    var fer = Math.floor(
+                        trayActionRow.elerhetoSzelesseg
+                        / trayActionRow.cellaSzelesseg)
+                    if (fer >= osszes) return osszes
+                    return Math.max(0, fer - 1)   // egy hely a „További…"-nak
+                }
+                readonly property bool vanRejtett:
+                    trayActionRow.kiferoCellak < trayActionRow.gombFeliratok.length
+                //: a ki NEM férő gombok feliratai — ebből épül a felugró
+                //: lista. A tesztek is ezt mérik: a lista PONTOS kinézete
+                //: nincs mérve (a respack csak a gombot adja), a TARTALMA
+                //: viszont ellenőrizhető.
+                readonly property var rejtettFeliratok:
+                    trayActionRow.gombFeliratok.slice(trayActionRow.kiferoCellak)
+
+                //: a hívó cellák ezzel kérdezik meg, látszanak-e
+                function cellaLatszik(index) {
+                    return index < trayActionRow.kiferoCellak
+                }
+
+                //: a felugró listából indított művelet ugyanazt a jelet
+                //: küldi, mint a sorbeli gomb — a rejtett tétel nem
+                //: „másik" funkció, csak máshol érhető el
+                function rejtettMuveletInditasa(menuIndex) {
+                    var i = trayActionRow.kiferoCellak + menuIndex
+                    if (i === 0) tray.printRequested()
+                    else if (i === 1) tray.emailRequested()
+                    else if (i === 2) tray.exportRequested()
+                    else if (i === 3) tray.collageRequested()
+                    else if (i === 4) tray.movieRequested()
+                }
+
                 // #1345: a kimeneti sáv gombjai a `respack.yt` MÉRT
                 // geometriájával — mindegyik **55 × 36** képpont, egy
                 // **59 × 40**-es cellában (`TrayActionCell`;
@@ -1270,6 +1480,8 @@ Column {
                 // (`docs/specs/ui-lefedettseg.md` `outputlayout`
                 // hiánylistája).
                 TrayActionCell {
+                    //: #2191: a 0. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(0)
                     TrayActionButton {
                         id: trayPrintBtn
                         objectName: "trayPrintButton"
@@ -1295,6 +1507,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 1. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(1)
                     TrayActionButton {
                         id: trayEmailBtn
                         objectName: "trayEmailButton"
@@ -1316,6 +1530,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 2. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(2)
                     TrayActionButton {
                         id: trayExportBtn
                         objectName: "trayExportButton"
@@ -1402,6 +1618,8 @@ Column {
                 // fordítás, hanem átvétel a Picasa saját honosítási
                 // táblájából (`outputlayout_text.tre`).
                 TrayActionCell {
+                    //: #2191: a 3. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(3)
                     TrayActionButton {
                         id: trayCollageBtn
                         objectName: "trayCollageButton"
@@ -1425,6 +1643,8 @@ Column {
                     }
                 }
                 TrayActionCell {
+                    //: #2191: a 4. cella — a sor számolja, kifér-e
+                    visible: trayActionRow.cellaLatszik(4)
                     TrayActionButton {
                         id: trayMovieBtn
                         objectName: "trayMovieButton"
@@ -1440,6 +1660,47 @@ Column {
                     }
                 }
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
+
+                // #2191: `outputlayout/morebutton` — a ki nem férő gombok
+                // mögötte, felugró listában. Csak akkor látszik, ha van
+                // rejtett tétel.
+                TrayActionCell {
+                    objectName: "trayMoreCell"
+                    visible: trayActionRow.vanRejtett
+                    TrayActionButton {
+                        id: trayMoreBtn
+                        objectName: "trayMoreButton"
+                        anchors.fill: parent
+                        //: `outputlayout_text` — angolul „More...”
+                        text: qsTr("More...")
+                        iconSource: "icons/export.svg"
+                        iconObjectName: "trayMoreIcon"
+                        labelObjectName: "trayMoreLabel"
+                        enabled: true
+                        onClicked: trayMoreMenu.popup()
+                        //: `Click here for more options`
+                        ToolTip.text: qsTr("Click here for more options")
+                        ToolTip.visible: trayMoreBtn.hovered
+                        ToolTip.delay: 500
+                    }
+                }
+            }
+
+            // #2191: a rejtett tételek listája. ⚠️ A felugró PONTOS
+            // kinézete NINCS mérve — a `respack.yt` csak a gombot adja, a
+            // tartalom futásidőben épül —, ezért a legegyszerűbb, a
+            // többi helyi menünkkel egyező alakot használjuk.
+            Menu {
+                id: trayMoreMenu
+                objectName: "trayMoreMenu"
+                Repeater {
+                    model: trayActionRow.rejtettFeliratok
+                    delegate: MenuItem {
+                        objectName: "trayMoreItem"
+                        text: modelData
+                        onTriggered: trayActionRow.rejtettMuveletInditasa(index)
+                    }
+                }
             }
         }
 
@@ -1533,6 +1794,10 @@ Column {
                 anchors.right: traySingleActionClose.left
                 anchors.rightMargin: 3
                 accent: Theme.picasaGreen
+                // #2438: az eredetiben ez a `thumbui/single_action_return`, a
+                // 13 pulzáló elem egyike — a klip-gyűjtő módban EZ a fő
+                // cselekvés, tehát ez mutatja meg, hol lehet visszalépni.
+                throbbing: true
                 text: qsTr("Back to Collage")
                 ToolTip.text: qsTr("Go back to what you were editing")
                 ToolTip.visible: hovered

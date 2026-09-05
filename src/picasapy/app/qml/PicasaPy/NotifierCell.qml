@@ -12,7 +12,13 @@ import QtQuick
 //   basedecrect       226,0 →  21 × 45     jobb oldali vezérlősáv
 //   close             231,4 →  11 × 11     bezárás (jobb FELSŐ)
 //   gripper          233,19 →   7 ×  7     fogantyú (jobb KÖZÉP)
-//   collapse         231,30 →  11 × 11     összecsukás (jobb ALSÓ)
+//   collapse         231,30 →  11 × 11     összecsukás — NEM RAJZOLJUK
+//
+// A `collapse` réteg SZÁNDÉKOSAN hiányzik (#2035/#2133): az eredetiben
+// betöltődik és felszabadul, de SOSEM rajzolódik ki — a `popup+0x13c`
+// slotra a 0x00654800–0x0065AC00 tartományban csak a konstruktor
+// (0x00657046) és a destruktor (0x006572d3) hivatkozik. Aki megépíti,
+// olyan vezérlőt ad a felületre, ami az eredetiben nincs.
 //
 // ## Amiért a felirat NEM tördel
 //
@@ -41,6 +47,65 @@ Rectangle {
     property string payload: ""
     /** Meddig marad kint magától (ms) — a sáv adja. */
     property int lifetimeMs: 0
+
+    // ------------------------------------------------------------------
+    // #2157 — a cella CSÚSZIK, nem halványodik
+    // ------------------------------------------------------------------
+    //
+    // A rajzoló két kulcskockás sávot értékel ki minden képkockán
+    // (`0x00655950` → `0x009e5e70`). Az „A" sáv a cellaszélességet
+    // (`[popup+0x1bc]` = 247) szorozza: élő cellán a célja **−1,0**,
+    // elbocsátáskor **0,0**. Vagyis a cella egy TELJES cellaszélességet
+    // tesz meg vízszintesen — nálunk ez a `[bent ? 0 : width]` pár, mert
+    // a sáv ablaka pontosan egy cella széles, tehát a kilógó cella
+    // magától eltűnik.
+
+    /** Bent van-e a cella (a sáv ablakában), vagy kicsúszva. */
+    property bool bent: false
+    //: `0x00c7e304` — a becsúszás hossza.
+    readonly property int beMs: 600
+    //: `0x00c7dcc8` — a visszacsúszás FELEANNYI. Ez az eredeti
+    //: aszimmetriája, nem elírás.
+    readonly property int visszaMs: 300
+
+    /** A kicsúszás lefutott — a sáv innen veheti ki a cellát. */
+    signal kicsuszasKesz()
+
+    /** Indítsd a kicsúszást; a `kicsuszasKesz` a végén jelez. */
+    function kicsuszik() {
+        cella.bent = false
+        kicsuszasOra.restart()
+    }
+
+    x: cella.bent ? 0 : cella.width
+
+    Behavior on x {
+        NumberAnimation {
+            objectName: "notifierSlideAnim" + cella.cellIndex
+            duration: cella.bent ? cella.beMs : cella.visszaMs
+            //: Az eredeti görbéje a saját `u = 8·t` skáláján
+            //: exponenciális (`0x0072df60`). A Qt-görbék közül az
+            //: `OutExpo` adja vissza ezt a jelleget — gyors indulás,
+            //: lágy beállás. ⚠️ A pontos, képkockára menő egyezés
+            //: **nincs mérve**: a bináris a saját skáláján számol, és a
+            //: két görbe-család nem feleltethető meg egymásnak
+            //: közvetlenül. A jelleg mért, a konkrét Qt-görbe választás.
+            easing.type: Easing.OutExpo
+        }
+    }
+
+    Component.onCompleted: cella.bent = true
+
+    //: A kicsúszás órája — a jel csak azután megy ki, hogy a cella
+    //: tényleg elhagyta az ablakot; enélkül a törlés levágná az
+    //: animációt, és megint „ugrás" látszana.
+    Timer {
+        id: kicsuszasOra
+        objectName: "notifierCellSlideOut" + cella.cellIndex
+        interval: cella.visszaMs
+        repeat: false
+        onTriggered: cella.kicsuszasKesz()
+    }
 
     /** A felhasználó a cellára kattintott: vigyen az eredményhez. */
     signal activated()
@@ -154,6 +219,46 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: cella.closed()
+            }
+        }
+
+        //: `gripper` — 233,19 → 7 × 7 a CELLA koordinátáiban, azaz 7,19 a
+        //: sávon belül (#2133).
+        //:
+        //: ⚠️ RAJZ, NEM VEZÉRLŐ. A #2035 kimérte, hogy az eredetiben a
+        //: fogantyú kirajzolódik, de nem fogható meg: az ablak
+        //: üzenetkezelője nem kezel `WM_MOUSEMOVE`-ot és `WM_LBUTTONUP`-ot,
+        //: a `WM_SETCURSOR` pedig egyetlen kurzort tölt (`IDC_ARROW`).
+        //: Ezért NINCS `MouseArea` és NINCS `cursorShape` — aki idetesz
+        //: egyet, más programot ír.
+        //:
+        //: A GEOMETRIA mért (a `respack.yt` rétegfejlécéből); a MINTÁZAT
+        //: nem: hogy a hét képpont pontosan hogyan van kitöltve, a
+        //: rétegképből nem olvastuk ki. A három vonás a szokásos
+        //: fogantyú-jel, tudatos közelítés.
+        Item {
+            objectName: "notifierCellGripper" + cella.cellIndex
+            x: 7
+            y: 19
+            width: 7
+            height: 7
+
+            Canvas {
+                anchors.fill: parent
+                onPaint: {
+                    const ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.strokeStyle = Theme.ink
+                    ctx.globalAlpha = 0.55
+                    ctx.lineWidth = 1
+                    for (let i = 0; i < 3; ++i) {
+                        const y = 1.5 + i * 2
+                        ctx.beginPath()
+                        ctx.moveTo(0.5, y)
+                        ctx.lineTo(width - 0.5, y)
+                        ctx.stroke()
+                    }
+                }
             }
         }
     }

@@ -165,7 +165,15 @@ def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000):
         pause = QEventLoop()
         QTimer.singleShot(20, pause.quit)
         pause.exec()
-    return prev
+    # #2408: időtúllépéskor NEM adjuk vissza némán az utolsó értéket. A
+    # korábbi `return prev` alak azt jelentette, hogy a hívó nem tudja
+    # megkülönböztetni a „beállt" és a „lejárt" esetet — a bukás így egy
+    # KÉSŐBBI állításon jelentkezett, félrevezetően. A segítő maga áll meg,
+    # így mind az öt csupasz hívási helye biztonságos marad.
+    raise AssertionError(
+        f"#2408: a görgetés {timeout_ms} ms alatt sem állt be "
+        f"(utolsó contentY: {prev})"
+    )
 
 
 def _open_viewer(window, qt_app, index=0):

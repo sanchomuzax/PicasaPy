@@ -63,13 +63,15 @@ class TestSyncRender:
         )
 
     def test_all_catalogue_effects_render_without_crashing(self, qt_app, tmp_path):
-        """A panel mind a 41 effekt-gombja adjon KÉSZ (nem placeholder)
-        bélyegképet — egyik effekt se dobjon ki kivételt idáig."""
+        """A katalógus MINDEN effektje adjon KÉSZ (nem placeholder)
+        bélyegképet — egyik se dobjon ki kivételt idáig.
+
+        A darabszámot a `test_public_effect_names_stay_45` őrzi; itt csak a
+        renderelhetőség a kérdés."""
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
         records = _library(tmp_path)
         provider = _provider(records)
-        assert len(EFFECT_NAMES) == 41
         for effect in EFFECT_NAMES:
             image = provider.requestImage(f"{records[0].id}/{effect}", None, None)
             assert not image.isNull(), effect
@@ -85,12 +87,22 @@ class TestToolPreviewNames:
     katalógus tagjai, mégis renderelhetők a `render/chain.py` `_HANDLERS`
     meglévő "enhance"/"autolight"/"autocolor"/"redeye" kulcsain át."""
 
-    def test_public_effect_names_stay_41(self):
-        # a meglévő, 41 elemű katalógus (#516: +5) NEM bővül tovább — külön halmaz kezeli az
-        # eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS)
+    def test_public_effect_names_stay_45(self):
+        # a katalógus (#516: +5) csak MÉRT okból bővül — külön halmaz kezeli
+        # az eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS).
+        #
+        # #2141: 41 -> 40. Kikerült az `unsharp`, `grain2`, `tint` (a
+        # csempék az eredeti elsődlegesére kötöttek), bekerült az
+        # `unsharp2` és a `picniktint`; a `picnikgrain` már benne volt.
+        #
+        # #2146: 40 -> 45. A Shift-ág MEGÉPÜLT, tehát a másodlagos szűrők
+        # ismét elérhetők a felületről (`unsharp`, `grain`, `tint`, `glow`,
+        # `radtint`) — enélkül a Shifttel megnyomott csempe `ValueError`-t
+        # adna. A #2141 kommentje ezt előre jelezte: „a Shift-ág megépítése
+        # a #2146".
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
-        assert len(EFFECT_NAMES) == 41
+        assert len(EFFECT_NAMES) == 45
 
     def test_tool_preview_names_render_real_thumbnails(self, qt_app, tmp_path):
         records = _library(tmp_path)

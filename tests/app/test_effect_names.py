@@ -29,15 +29,28 @@ _QML_DIR = (
 
 
 def _effects_requested_by_the_ui() -> set[str]:
-    """Az effekt-fülek gombjai által küldött nevek, a QML-ből kiolvasva."""
+    """Az effekt-fülek gombjai által küldött nevek, a QML-ből kiolvasva.
+
+    ⚠️ #2146 óta kilenc csempe NEM literált küld, hanem a `szuro`
+    tulajdonságot, ami a Shift állapotától függően választ elsődleges és
+    másodlagos szűrő közül:
+
+        readonly property string szuro: panel.shiftMasodlagos
+                                        ? "unsharp" : "unsharp2"
+        onButtonClicked: … panel.effectRequested(szuro)
+
+    A választó kifejezés MINDKÉT ágát fel kell venni, különben ez a
+    katalógus-őr azt hinné, hogy a csempe eltűnt (és a #2146 CI-jén
+    pontosan ezt hitte).
+    """
     found: set[str] = set()
     for path in _QML_DIR.glob("*.qml"):
-        found.update(
-            re.findall(
-                r'panel\.effectRequested\("([^"]+)"\)',
-                path.read_text(encoding="utf-8"),
-            )
-        )
+        szoveg = path.read_text(encoding="utf-8")
+        found.update(re.findall(r'panel\.effectRequested\("([^"]+)"\)', szoveg))
+        for elso, masodik in re.findall(
+            r'property string szuro:[^?]*\?\s*"([^"]+)"\s*:\s*"([^"]+)"', szoveg
+        ):
+            found.update((elso, masodik))
     return found
 
 
@@ -58,9 +71,11 @@ class TestEffectNameCoverage:
 
     def test_sharpen_and_vignette_are_present(self):
         # a két konkrét hiány, amit a felhasználó bejelentett
-        assert "unsharp" in _EFFECT_NAMES
+        # #2141: az Élesítés kulcsa az eredeti elsődlegese
+        assert "unsharp2" in _EFFECT_NAMES
         assert "vignette" in _EFFECT_NAMES
-        assert "unsharp" in _effects_requested_by_the_ui()
+        # #2141: az Élesítés csempe az eredeti elsődlegesét hívja
+        assert "unsharp2" in _effects_requested_by_the_ui()
         assert "vignette" in _effects_requested_by_the_ui()
 
 

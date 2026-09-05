@@ -117,7 +117,9 @@ class TestMissingEffectButtons:
 
     @pytest.mark.parametrize(
         "object_name,key",
-        [("effectUnsharp", "unsharp"), ("effectVignette", "vignette")],
+        # #2141: az Élesítés csempe az eredeti ELSŐDLEGESÉT (`unsharp2`)
+        # hívja; az `unsharp` a Shiftes másodlagos („Sharpen (Old)").
+        [("effectUnsharp", "unsharp2"), ("effectVignette", "vignette")],
     )
     def test_click_emits_effect_requested_with_lowercase_key(
         self, qml_engine, qt_app, object_name, key

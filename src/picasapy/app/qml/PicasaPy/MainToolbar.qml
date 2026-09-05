@@ -8,6 +8,14 @@ import QtQuick.Layouts
 // frissítés és a kijelölés-ürítés a Main.qml dolga marad.
 Rectangle {
     id: toolbar
+
+    //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) ide
+    //: viszi a fókuszt. A gazdának NEM kell ismernie az eszköztár belső
+    //: elemeit — ez a függvény a határ.
+    function fokuszAKeresore() {
+        searchField.forceActiveFocus()
+        searchField.selectAll()
+    }
     objectName: "mainToolbar"
     // #587: a felső sáv magassága a `thumbui.tre` `searchtop` konstansa —
     // 35 képpont. Ez a SÁV magassága (a panelek innen kezdődnek); a

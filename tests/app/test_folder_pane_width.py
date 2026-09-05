@@ -89,3 +89,73 @@ class TestFolderPaneWidth:
             watched_file=tmp_path / "WatchedFolders.txt",
         )
         assert second.folderPaneWidth == 288
+
+
+class TestMertKorlatok2329:
+    """#2329: az eredeti osztósáv legkisebb szélessége **240**, a
+    legnagyobb pedig **ablakfüggő** (a főpanel szélessége − 240).
+
+    Mérve: a kezelő osztálya `ytSplitterOffsetHandler` (RTTI `0x00d4734c`);
+    a gyártó a `+0x18` mezőbe **240.0**-t tölt (`0x009da130`, a konstans a
+    `0x00cf48b0`-on); az alsó korlát a `0x009d9df4`–`0x009d9e0e`, a felső a
+    `0x009d9e21`–`0x009d9e50` (`sub`, `fsub`, `fcomp`).
+
+    A felső korlát ablakfüggő, tehát a Python-oldali vágás nem tudja
+    egyedül eldönteni — ott csak biztonsági határ marad. Az ablakhoz kötést
+    a QML végzi, azt a `test_fo_ablak_elrendezes_587.py` méri.
+    """
+
+    def test_a_legkisebb_szelesseg_240(self) -> None:
+        """A foga: 160-nal a hasáb 80 képponttal keskenyebbre húzható
+        volt, mint amit az eredeti valaha megenged."""
+        assert FOLDER_PANE_WIDTH_MIN == 240
+
+    def test_a_legkisebb_egyezik_az_alapertelmezessel(self) -> None:
+        """Az eredetiben ugyanaz a szám — a sáv nem húzható az
+        alapértelmezés alá."""
+        assert FOLDER_PANE_WIDTH_MIN == FOLDER_PANE_WIDTH_DEFAULT
+
+    def test_a_240_nel_keskenyebb_mentett_ertek_felemelkedik(
+        self, controller
+    ) -> None:
+        """Aki korábban 160-ra húzta, induláskor 240-et kap — a getter
+        vágása ezt magától megteszi, de kimondva is állítjuk."""
+        controller._get_settings().setValue("view/folderPaneWidth", 170)
+        assert controller.folderPaneWidth == 240
+
+    def test_szeles_ablakhoz_valo_ertek_is_atmegy(self, controller) -> None:
+        """A 600-as fix felső korlát széles ablakon TÚL SZŰK volt: az
+        eredeti ott a szélesség − 240-ig enged. A Python-oldali határ ezért
+        följebb kerül; a valódi, ablakfüggő korlátot a QML adja."""
+        controller.setFolderPaneWidth(900)
+        assert controller.folderPaneWidth == 900
+
+
+def test_a_QML_felso_korlatja_ABLAKFUGGO() -> None:
+    """#2329: a `SplitView.maximumWidth` nem lehet fix szám.
+
+    Az eredetié a főpanel szélessége − 240. A fix 600 széles ablakon
+    SZŰKEBB volt az eredetinél, keskeny ablakon viszont tágabb — ezért a
+    kötésnek a tárolóra kell hivatkoznia. Ez a próba a forrást nézi: a
+    kirajzolt szélességet a `test_fo_ablak_elrendezes_587.py` méri.
+    """
+    from pathlib import Path as _P
+
+    qml = (
+        _P(__file__).resolve().parents[2]
+        / "src" / "picasapy" / "app" / "qml" / "Main.qml"
+    ).read_text(encoding="utf-8")
+    import re
+
+    m = re.search(r"^\s*SplitView\.maximumWidth:(.*)$", qml, re.MULTILINE)
+    assert m, "nem találom a SplitView.maximumWidth kötést"
+    kifejezes = m.group(1).strip()
+    assert not re.fullmatch(r"\d+", kifejezes), (
+        "a felső korlát FIX szám — az eredetié ablakfüggő: " + kifejezes
+    )
+    assert "mainSplit.width" in kifejezes, (
+        "a felső korlát nem a tároló szélességéhez kötött: " + kifejezes
+    )
+    assert "240" in kifejezes, (
+        "a mért levonás (− 240) hiányzik a kötésből: " + kifejezes
+    )

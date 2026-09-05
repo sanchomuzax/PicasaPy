@@ -232,6 +232,8 @@ A `nerdview` panel alsó része **két, fix szélességű szövegoszlop**.
 
 ### 6.1 Geometria (`respack.yt`)
 
+*Forrás: `nerdviewdetail_mac.tre:1` (`nerdview/detail1`) · `nerdviewdetail_mac.tre:4` (`nerdview/detail2`).*
+
 | elem | pozíció | méret |
 |---|---|---|
 | **`nerdview/detail1`** (bal) | (**13**, **82**) | **138 × 41** |
@@ -245,7 +247,6 @@ Ebből következik:
 - mindkettő **41 px magas**, `y = 82`-től;
 - a hisztogram alja `25 + 59 = 84`, tehát a szövegblokk **2 képponttal
   feljebb kezdődik** — enyhén rálóg.
-
 ### 6.2 Tipográfia
 
 | platform | erőforrás | betű |
@@ -373,6 +374,8 @@ dokkolt**, és a fiókkal együtt csúszik ki a képernyőről, ha a felhasznál
 > képpontra tette volna.
 
 ### 7.2 A megjelenítés — két kapcsoló, mindkettő rejtve
+
+*Forrás: `thumbui.tre:91` (`thumbui/histogram`).*
 
 | kapcsoló | hol | méret | állapot |
 |---|---|---|---|

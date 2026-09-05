@@ -105,3 +105,15 @@ ENV_FILE="${CLAUDE_ENV_FILE:-${CODEX_ENV_FILE:-}}"
 if [ -n "$ENV_FILE" ]; then
   echo 'export QT_QPA_PLATFORM=offscreen' >> "$ENV_FILE"
 fi
+
+# A szabálykönyvből CSAK a két CLAUDE.md töltődik be magától; a PROTOKOLL.md és
+# a docs/lapok.md nem. A 2026-09-02/03-i kör bizonyította, hogy a puszta
+# hivatkozás kevés: a repó-szétválasztás szabálya BE VOLT töltve, és aznap
+# kétszer sérült. Ezért a néhány teherhordó szabályt minden induláskor
+# kiírjuk — a szöveg a privát repóban él, mert a munkavégzés módja.
+EMLEKEZTETO="$HOME/picasapy-agent/eszkozok/session_emlekezteto.md"
+if [ -r "$EMLEKEZTETO" ]; then
+  echo
+  cat "$EMLEKEZTETO"
+  echo
+fi

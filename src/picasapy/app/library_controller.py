@@ -56,6 +56,7 @@ from .exported_folders import (
 from .folder_freshness import next_sweep_batch, stale_folders
 from .folder_manager_save_controller import FolderManagerSaveMixin
 from .formatting import to_local_path
+from .index_writer_queue import IndexWriterQueue
 from .initial_scan import (
     SKIP_INITIAL_SCAN_KEY,
     folders_for_choice,
@@ -577,6 +578,33 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         self._get_settings().setValue(SKIP_INITIAL_SCAN_KEY, "true")
         self.initialScanChanged.emit()
 
+    @property
+    def _index_iro_sor(self) -> IndexWriterQueue:
+        """A KÖZVETLEN FELHASZNÁLÓI index-írások sora (#2389).
+
+        Lusta: a legtöbb munkamenetben egyetlen mappát sem vesznek fel, és
+        akkor szál sem indul. A `_start_background` NEM közvetlenül megy át,
+        hanem lambdán keresztül — a tesztek a vezérlő attribútumát cserélik
+        ki (`monkeypatch.setattr(controller, "_start_background", …)`), és a
+        korai kötés ezt megkerülné.
+        """
+        sor = getattr(self, "_iro_sor", None)
+        if sor is None:
+            sor = IndexWriterQueue(
+                lambda munka, *, name: self._start_background(munka, name=name),
+                is_busy=self._fut_mas_index_iro,
+            )
+            self._iro_sor = sor
+        return sor
+
+    def _fut_mas_index_iro(self) -> bool:
+        """Fut-e NEM a soron indult index-író (a másik három belépési pont)."""
+        return bool(
+            getattr(self, "_sync_running", False)
+            or getattr(self, "_dirty_running", False)
+            or getattr(self, "_sweep_running", False)
+        )
+
     @Slot(str)
     def addWatchedFolder(self, path_or_url: str) -> None:
         """Új figyelt mappa (Mappakezelő / első indítás). file:// URL-t is
@@ -626,7 +654,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
-        self._start_background(worker, name="picasapy-sync-addfolder")
+        # #2389: SOROSÍTVA, nem kihagyva. Futó író mellett a munka
+        # várólistára kerül és a sorára kerülve lefut — a mappa tehát
+        # biztosan bekerül. A kék sáv a beadástól a sor kiürüléséig pörög
+        # (a `_start_background` bejelentkezik a busy-registrybe), így a
+        # késleltetés sem néma.
+        self._index_iro_sor.submit(worker, name="picasapy-sync-addfolder")
 
     @Slot(str)
     def scanFolderOnce(self, path_or_url: str) -> None:
@@ -674,7 +707,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
-        self._start_background(worker, name="picasapy-sync-scanonce")
+        # #2389: SOROSÍTVA, nem kihagyva. Futó író mellett a munka
+        # várólistára kerül és a sorára kerülve lefut — a mappa tehát
+        # biztosan bekerül. A kék sáv a beadástól a sor kiürüléséig pörög
+        # (a `_start_background` bejelentkezik a busy-registrybe), így a
+        # késleltetés sem néma.
+        self._index_iro_sor.submit(worker, name="picasapy-sync-scanonce")
 
     @Slot(str)
     def removeFolder(self, path: str) -> None:
@@ -815,7 +853,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
     # -- háttér-szinkron -----------------------------------------------------
 
     @Slot(list)
-    def _on_folders_dirty(self, folders) -> None:
+    def _on_folders_dirty(self, folders, *, felhasznaloi: bool = False) -> None:
         """A watcher által jelzett (esetleg több) mappa célzott, nem-
         rekurzív szinkronja EGY háttérszálon (#143).
 
@@ -849,6 +887,22 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # alatt érkező jelzéseket is. Halmaz, tehát egyetlen mappa sem
             # veszhet el akkor sem, ha közben több jelzés fut be.
             self._pending_dirty.update(paths)
+            # #1458: a FELHASZNÁLÓ kérése látszódjon is. A kérés nem vész el
+            # (a halmaz megőrzi), de a felhasználó ebből semmit nem lát:
+            # rákattint a „Frissítés"-re, és lassú hálózati köteten fél
+            # percig nem történik semmi látható. A `_start_background`
+            # bejelentkezne a foglaltság-nyilvántartóba, csakhogy ezen az
+            # ágon nem indul szál — ezért itt jelentkezünk be, és a
+            # `_flush_pending_dirty` zárja a bejegyzést.
+            #
+            # ⚠️ Az AUTOMATIKUS (figyelőből jövő) jelzés SZÁNDÉKOSAN nem
+            # jelentkezik be: ott nincs kattintás, amire válaszolni kellene,
+            # és a folyamatosan pörgő sáv zavaró lenne. A watcher a
+            # `watcherDirty` kapcsolaton át hív, argumentum nélkül — tehát
+            # az alapértelmezés a helyes viselkedése.
+            if felhasznaloi:
+                get_app_busy_registry().begin()
+                self._pending_busy += 1
             return
 
         def worker():
@@ -1087,8 +1141,26 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             )
             return ()
 
+    #: #1977: a `@Slot()` NÉLKÜL a QML `controller.rescan()` hívása
+    #: `TypeError: … is not a function`-nel elszáll — a „Frissítés"
+    #: menüpont némán nem csinál semmit. A dekorátor a #150-es
+    #: mixin-felbontáskor még megvolt (`8de1358e`), azóta kiesett.
+    @Slot()
     def rescan(self) -> None:
-        if self._sync_running:
+        """Teljes újrapásztázás — az ötperces időzítő és a „Frissítés" menü.
+
+        #1456: a `_dirty_running`-ot IS nézi. Enélkül a célzott szinkron
+        (`_on_folders_dirty`, #1440) mellé indult egy második index-író, és
+        a felhasználó `sqlite3.OperationalError` → `syncFailed` hibát
+        látott — ugyanaz a hibaosztály, mint a #1440-ben, csak másik
+        belépési ponton.
+
+        **Kihagy, nem várólistáz.** A #1440 `_pending_dirty` várólistája ott
+        azért kell, mert egy KONKRÉT mappa jelzése veszne el; itt nincs
+        ilyen: a rescan az egészet nézi, az időzítő öt perc múlva újra
+        próbál, és a futó szinkron végén amúgy is frissül a nézet.
+        """
+        if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
@@ -1148,6 +1220,13 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             return
         folders = sorted(self._pending_dirty)
         self._pending_dirty = set()
+        # #1458: a várakozás közben nyitott foglaltság-bejegyzések záródnak.
+        # A `_on_folders_dirty` alább ÚJ bejegyzést nyithat (ha megint nem
+        # tud indulni), ezért a lezárás ELŐBB történik — különben a két
+        # bejegyzés egymásra torlódna, és a sáv sosem állna meg.
+        varakozo, self._pending_busy = self._pending_busy, 0
+        for _ in range(varakozo):
+            get_app_busy_registry().end()
         try:
             self._on_folders_dirty(folders)
         except BaseException:
@@ -1201,7 +1280,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         blokkolja a UI-szálat; a végén a syncFinished frissíti a nézetet."""
         if not folder_path:
             return
-        self._on_folders_dirty([folder_path])
+        # #1458: ez a felhasználó KATTINTÁSA (Frissítés menüpont, néző
+        # bezárása) — futó író mellett a kérés várólistára kerül, és a
+        # visszajelzés nélkül úgy néz ki, mintha semmi nem történt volna.
+        self._on_folders_dirty([folder_path], felhasznaloi=True)
 
     # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `wire_fileops` PYTHON-oldali
     # kötése (`folderMoved` → itt), a QML soha nem hívja. Slotként a

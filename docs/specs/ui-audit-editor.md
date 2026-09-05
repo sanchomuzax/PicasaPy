@@ -225,6 +225,8 @@ for e in respack.read_index(adat):
 
 ### A panel váza
 
+*Forrás: `editpanel.tre:1332` (`editpanel/albumview`) · `editpanel.tre:1225` (`editpanel/edittabbase`) · `editpanel.tre:1416` (`editpanel/insetleft`) — és további 2 elem ugyanott.*
+
 | elem | téglalap | méret |
 |---|---|---|
 | `editpanel/albumview` („Vissza a könyvtárhoz") | x 10..132, y **9..31** | 122 × 22 |
@@ -240,7 +242,6 @@ kezdődik.** Ez egybevág a `.tre` `LEFTDRAWEROFFSET` alapértékével (**279**,
 > A „Vissza a könyvtárhoz" gomb a felső **0–40 px**-es sávban ül, és
 > **rajta kívül semmi más nincs ott**. A szerkesztőben az eredeti Picasa
 > nem tart fenn alkalmazás-szintű eszköztárat.
-
 ### ÖT fül, amik pontosan kitöltik a panelt
 
 | fül | x | szélesség |
@@ -596,6 +597,8 @@ panelcím tipográfiailag azonos. *(megerősített)*
 
 ### 4.2 Az alpanel és a Finomhangolás fül UGYANAZT a vezérlőkészletet használja
 
+*Forrás: `editpanel.tre:621` (`editpanel/cancel`) · `editpanel.tre:640` (`editpanel/colorwheel0`) · `editpanel.tre:598` (`editpanel/droppertoggle`) — és további 5 elem ugyanott.*
+
 Ez a szakasz kulcsa. ▶**ERŐFORRÁS**, `editpanel.tre`:
 
 - a 2. fül gombja megjeleníti a közös vezérlő-tárolót:
@@ -625,7 +628,6 @@ paraméter-alakzatokat is — a `Border` (2 szín + 4 szám) és a `DropShadow`
 **Következmény:** a `2026-07-17 20 56 42.png` (2. fül) **ugyanazokat a
 csúszkapéldányokat mutatja**, amelyeket a paraméter-alpanel is használ —
 tehát a lenti geometria közvetlen mérésből származik. *(erős)*
-
 ### 4.3 A csúszka geometriája (mérés a 2. fül felvételén)
 
 `2026-07-17 20 56 42.png`, 1920×1080, 1:1:
@@ -684,6 +686,8 @@ kell kezelni, nem véletlenként.)
 
 ### 4.6 A gombsor — és összevetés a vágás-panel gombjaival
 
+*Forrás: `editpanel.tre:621` (`editpanel/cancel`) · `editpanel.tre:834` (`editpanel/crop_well`) · `editpanel.tre:821` (`editpanel/cropapply`) — és további 3 elem ugyanott.*
+
 ▶**ERŐFORRÁS**, `editpanel.tre` 603–630:
 
 ```
@@ -731,8 +735,9 @@ képről olvasott tooltipjét, immár erőforrás-szinten is.
 Unicode-karakter, és a **felirat jobb oldalán**, a gomb jobb szélétől 9
 px-re ül — ugyanúgy a vágás-panelen és a paraméter-alpanelen. A két helyen
 **egyetlen közös gombkomponenst** érdemes bevezetni.
-
 ### 4.x Kicsomagolt bitkép-mérések (#700)
+
+*Forrás: `editpanel.tre:616` (`editpanel/cancel_icon`) · `editpanel.tre:603` (`editpanel/ok_icon`).*
 
 A #700 megvalósítási köre a `respack.py`-vel **ki is csomagolta** az érintett
 rétegeket; három számszerű adat innen való, és egy korábbi állítást helyesbít:
@@ -752,7 +757,6 @@ képernyőképes megfigyeléssel; ugyanaz a két kép szolgálja ki a vágás-pa
 Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás, derítőfény,
 retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
 csúszkája tehát **szándékosan más arányú**, nem a közös vezérlő.
-
 ### 4.y A csúszka-FELIRAT honnan jön — LEZÁRVA (2026-08-15)
 
 A #700 nyitva hagyta, hogy a Holga első csúszkája „Méret" vagy
@@ -1487,6 +1491,8 @@ amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
 
 ### A sáv mind a 19 eleme
 
+*Forrás: `video_control_bar.tre:22` (`video_control_bar/endthumb`) · `video_control_bar.tre:6` (`video_control_bar/lefttrim`) · `video_control_bar.tre:91` (`video_control_bar/moviemode1`) — és további 16 elem ugyanott.*
+
 **Vágó-csúszka (trim)**
 
 | elem | horgony |
@@ -1530,7 +1536,6 @@ amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
 
 `video_control_bar/controlbar: root` — X-re nyújtva, felülre igazítva ·
 `video_control_bar/moviecontrolsclip` — a `controlbar` bal-felső sarkához
-
 ### ⚠️ A buboréksúgók NINCSENEK lefordítva
 
 A három súgószöveg **közvetlenül a `.tre`-ben** áll, angolul, és a
@@ -1627,6 +1632,8 @@ nyitott pontot az effekt-panelen.
 
 #### Az 1. fül deklarációs sorrendje (`editpanel.tre` 130–240) — NEM a megjelenítési
 
+*Forrás: `editpanel.tre:172` (`editpanel/autocolor`) · `editpanel.tre:179` (`editpanel/autolighting`) · `editpanel.tre:136` (`editpanel/crop`) — és további 8 elem ugyanott.*
+
 | # | elem | mi ez |
 |---:|---|---|
 | 1 | `editpanel/crop` | Vágás |
@@ -1644,7 +1651,6 @@ nyitott pontot az effekt-panelen.
 A `picnik` gomb **stílusa a többivel azonos**: `m_buttontypecolor`,
 `m_offsetLT`, `Property hitchildren 1`, és a felirata alatta áll
 (`editpanel/picnik-label`, `m_buttonfontCbelow`).
-
 #### Mit csinált
 
 A **Picnik** (magyarul **„Kreatív készlet"**) a Google online
@@ -2102,6 +2108,74 @@ együtt az `editpanel/weblink`, `quickupload` és `uploadchanges` elemekkel.
 ⇒ **A szerkesztő felismeri, hogy a megnyitott kép egy PROJEKT kimenete**
 (kollázs vagy mozgófilm), és felkínálja a **forrásprojekt újranyitását**.
 
+#### ⭐ A két FELTÖLTŐ gomb kapcsolási feltétele — kimérve (#1935, 2026-09-04)
+
+Ugyanez a `0x00567a00` dönt az `editpanel/quickupload` és
+`editpanel/uploadchanges` gombokról is. Mindkettő **`m_hidden`** a
+`.tre`-ben, és mindkettő az `editpanel/upload_buttons_container`-ben ül
+(`editpanel.tre:1143`–`:1153`).
+
+**A két segédfüggvény — kiolvasva:**
+
+| cím | mit tesz |
+|---|---|
+| `0x009cd730` | elem keresése név szerint, majd **REJTÉS** (`vtbl+0x68`) |
+| `0x009cd760` | elem keresése név szerint, majd **MUTATÁS** (`vtbl+0x6c`) |
+
+**A KÜLSŐ kapu — ha nem teljesül, EGYIK gomb sem látszik:**
+
+```
+0x00567d38   mov ecx, 0x00d353e8          ; a feltöltés-kezelő globális objektum
+0x00567d41   call 0x00563cb0              ; állapotkód -> [esp+0x2c]
+0x00567d46   test byte ptr [esp+0x2c], 4  ; ⬅️ a 4-es BIT
+0x00567d4b   je  0x00567dc9               ; ha nincs: egyik gomb sem
+```
+
+A `0x00563cb0` **pontosan három** állapotkódot ír:
+
+| kód | hol | átmegy a `& 4` szűrőn? | mikor |
+|---:|---|---|---|
+| **8** | `0x00563d31` | **NEM** ⇒ egyik gomb sem | `[obj+0x3094] > 0` **vagy** `[obj+0x30a0] > 0` **vagy** a `0x00431290` igaz |
+| **6** | `0x00563d20`, `0x00563d15` | igen | `0x00562d00` igaz (a szerkesztő valamelyik eszköze aktív: `edittextoverlay` / `cropselection` / `redselection` / `peoplepanel/manual_frame`) vagy `0x005696c0` (`editpanel/previewclip2`) |
+| **5** | `0x00563cff` | igen | a normál eset |
+
+A `0x00431290` (205 b) a **`Preferences\LastUserESState`** kulcsot olvassa
+(`0xc814f0` + `0xc7eafc`), és az eredményétől függ, hogy a kapu zár-e.
+
+**A kapun BELÜL a két gomb KIZÁRJA egymást:**
+
+```
+0x00567d51   cmp eax, 0 ; je 0x567d8b            ; nincs objektum -> a 2. ág
+0x00567d55   cmp [eax+0x1c], [ebp+0xe64]         ; egyezik-e a panel tagjával
+0x00567d5e   jne 0x567d8b
+0x00567d60   eax = [eax+0x38]                    ; egy SZTRING-mutató
+0x00567d63…  ha NULL vagy üres -> a 2. ág
+   1. ág:  0x00567d7a  REJTI a quickupload-ot,  0x00567d84  MUTATJA az uploadchanges-t
+   2. ág:  0x00567da5  REJTI az uploadchanges-t, 0x00567dc4  MUTATJA a quickupload-ot
+```
+
+⇒ **Mindig legfeljebb EGY gomb látszik**: ha a képhez tartozik a fenti
+nem üres sztring, akkor a „változások feltöltése", különben a „gyors
+feltöltés".
+
+⚠️ **Amit NEM azonosítottam:** az `[o+0x38]` mező jelentését (a szomszédos
+`weblink`-ág mintájára **online másolat azonosítója/URL-je** lehet, de ezt
+nem állítom), és az 5/6/8 kódok nevét. A gomb-logika ezek nélkül is teljes.
+
+**A szomszédos `weblink` gomb — ráadás, ugyanabban a menetben:** a
+`0x00567cf3` lekér egy sztringet, és **csak akkor mutatja** a gombot, ha a
+hossza **1-nél nagyobb** (`0x00567d1e cmp eax, 1` / `jbe` → rejtés).
+
+**Feliratok (a szövegtárból):** `OneUp::ID_QUICKUPLOAD` = „Gyors feltöltés"
+(ugyanez `Slingshot::ID_QUICKUPLOAD` néven is), és
+`QuickUploadHandler::ConnectionCheck` = „Fotók feltöltéséhez csatlakoznia
+kell az internethez".
+
+*Bizonyítottsági fok: **megerősített** a rejtés/mutatás párra, a külső kapu
+bitfeltételére, a három állapotkódra és a kizáró szerkezetre (mind
+kiolvasott utasítás); **nem azonosított** az `[o+0x38]` mező és a kódok
+neve.*
+
 **Nálunk a kollázs-ág MEGVAN** (`PhotoViewer.qml:590`, #1002, a
 `collage_save.py:753` is hivatkozik rá), a **mozgófilm-ág nincs**
 (`grep -rn 'editslideshow' src/` → **0**). ⇒ **#2114**.
@@ -2135,3 +2209,315 @@ a súgógombokat — nem törölte őket, csak elvette az ikonjukat/feliratukat.
 > `panel-feliratok-hu.tsv` sorából, minden szerkezet az `editpanel.tre` és a
 > `respack.yt` bejegyzéseiből; a `Preferences`-hiány **két** lekérdezési
 > alakkal; a mi oldalunk greppel mérve.
+
+## Az effekt-csempe ELŐNÉZETÉNEK betöltési lánca — meddig jutottunk (#2061)
+
+A kérdés: az eredeti az **alap** képen mutatja az effektet, vagy a
+**szerkesztési lánc tetején**? ✅ **MEGVÁLASZOLVA (2026-09-04): a LÁNC
+TETEJÉN.** A bizonyíték a tulajdonos hat képernyőképe (lentebb); a betöltési
+lánc alábbi mérése változatlanul érvényes — csak a leíró JELENTÉSE került a
+helyére.
+
+### A betöltő és az EGYETLEN létrehozási helye
+
+| mi | hol |
+|---|---|
+| a betöltő osztály | `FilterGridItemLoaderJob`, RTTI-vtábla `0x00c874ac` (+ `0x00c874bc`) |
+| a konstruktora | `0x0050e7b0` (139 b) |
+| a **létrehozás egyetlen helye** | `0x005d7e2b` — a csempeépítő `0x005d7c20`-on belül |
+| a futtató metódusa | `0x0050e8d0`, az `editpanel/fxpreview%d` elembe tölt (`0x00c871e4`) |
+
+A hívó kimerítő pásztázással **egyetlen** (a teljes `.text`-ben a
+`0x0050e7b0`-ra pontosan egy `call rel32` mutat).
+
+### Amit a job KAP
+
+```
+0x005d7e07  push 0x4c            ; 76 bájt: a job mérete
+0x005d7e09  call 0x97c5d0        ; foglalás
+0x005d7e1b  mov eax, [esp+0x24]  ; a csempe sorszáma
+0x005d7e24  add eax, 1           ;   -> editpanel/fxpreview<N>
+0x005d7e27  lea ecx, [esp+0x14]  ; a szűrő NEVE (sztring)
+0x005d7e1f  lea edx, [esp+0x48]  ; ★ egy 16 bájtos LEÍRÓ
+0x005d7e2b  call 0x50e7b0
+```
+
+A konstruktor a leíró **négy dwordjét** a `this+0x14`…`this+0x20`-ba másolja
+(`0x0050e7ed`–`0x0050e801`).
+
+### A leíró feltöltése — két mezője HARD NULLA
+
+```
+0x005d7c83  push esi
+0x005d7c86  call 0xa67be0        ; -> eax = a szerkesztőpanel + 0x324
+0x005d7c8b  mov ecx, [eax+8]
+0x005d7c8e  mov edx, [eax+0xc]
+0x005d7c93  mov [esp+0x4c], ebx  ; ★ 0
+0x005d7c97  mov [esp+0x50], ebx  ; ★ 0
+0x005d7c9b  mov [esp+0x54], ecx  ;   [X+8]
+0x005d7c9f  mov [esp+0x58], edx  ;   [X+0xc]
+```
+
+⇒ A leíró alakja **{0, 0, [X+8], [X+0xc]}**.
+
+### A hozzáférő (`0x00a67be0`, 128 b)
+
+Visszaadja a `szerkesztőpanel + 0x324` mezőt. Ha `[panel+0x264] != 0`,
+**előbb újraépíti nulláról**: egy teljesen kinullázott, `+0x1c`-n `1`-es,
+`+0x28`-on `0xFFFFFFFF`-es szerkezetet másol a `+0x324`-be
+(`0x00a67bfd`–`0x00a67c4e`). Ha `[panel+0x264] == 0`, a meglévőt adja
+vissza változatlanul.
+
+### ✅ A VÁLASZ: a lánc tetején — a tulajdonos képernyőképeiből
+
+**Forrás:** `research/#2061-effekt-latszik/` — hat teljes képernyős felvétel a
+windowsos Picasa 3-ból. *(A mappa a `.gitignore` miatt nem kerül a repóba.)*
+A sorozat **három független ELŐTTE/UTÁNA párt** tartalmaz, három KÜLÖNBÖZŐ
+effekt-fülön. A kapcsoló mindháromnál ugyanaz: alkalmazva van-e a
+**Fekete-fehér**. Ezt maga a felület kiírja — a visszavonás-gomb felirata a
+felvételen olvasható:
+
+| pár | fül | ELŐTTE (`Újra: Fekete-fehér` ⇒ NINCS alkalmazva) | UTÁNA (`Visszavonás: Fekete-fehér` ⇒ ALKALMAZVA) |
+|---|---|---|---|
+| 1. | 3. fül (Élesítés…Színátmenet) | a csempék **színesek** | ugyanazok **szürke alapon** mutatják a saját effektjüket |
+| 2. | 5. fül (Infravörös film…Kéttónusú) | Lomo-szerű / Orton-szerű / Poszterizálás / Áttűnés **színes** | ugyanezek **szürkék** |
+| 3. | 4. fül (Felpörgetés…Polaroid) | Lágyítás / Vignetta / Szegély / Polaroid **színes** | ugyanezek **szürkék** |
+
+⇒ **A csempe-előnézet a szerkesztési lánc AKTUÁLIS tetejére alkalmazza a
+saját effektjét**, nem az alap fotóra.
+
+**Kontroll, ami erősíti:** azok a csempék, amelyek a világosságból SAJÁT
+színt állítanak elő — `Hőtérkép`, `Kéttónusú`, `Neon`, `Ceruzarajz` —
+**mindkét** állapotban ugyanolyanok maradnak. Pontosan ez várható, ha a
+bemenetük szürkévé válik: a színük a saját leképezésükből jön, nem a
+forrásból. Ha a csempék az ALAP képet mutatnák, a többi csempe sem
+változott volna.
+
+### ⛔ MEGDŐLT: a „két nulla az alap-kép mellett szól" olvasat
+
+Az előző kör a leíró két hard nullájából és a hozzáférő újraépítéséből
+**feltételesen** arra hajlott, hogy a bemenet az alap fotó — és helyesen
+nem állította. **Ez az olvasat megdőlt.** A `[X+8]` / `[X+0xc]` pár a
+szerkesztési lánc aktuális tetejét azonosítja; a `szerkesztőpanel + 0x324`
+tehát az ÉLŐ szerkesztési állapot leírója, nem az eredeti képé.
+
+### Mikor épül ÚJRA a csempesor — kimerítően
+
+Nem minden apró szerkesztői lépésnél. A csempeépítő `0x005d7c20`-nak a
+teljes `.text`-ben **pontosan két** `call rel32` hívója van:
+
+| hívás | tartalmazó függvény | mikor |
+|---|---|---|
+| `0x005d7a85` | `0x005d78d0` — a fül-tartalomépítő (`editpanel/tabpanel%d`, `editpanel/editcontrols`, **`editpanel/fxthumbs`**) | a fül (újra)építésekor |
+| `0x005e6771` | `0x005e6710` — a billentyűkezelő SHIFT-újraellenőrzése | a Shift le-/felengedésekor (#2141) |
+
+A fül-tartalomépítőnek magának **három** hívója van: `0x005d6b6f` (a
+szerkesztőpanel `0x005d59f0` fül-elágazása — `sub eax,1 / je` lánc, a
+csempés fülek ága), `0x005d7bd3` (`0x005d7b60`, `editpanel/tabpanel%d`) és
+`0x005f818e` (`0x005f8160`, `editpanel/movietab`).
+
+**A hívó-leltár TELJES**, mert közvetett hívás sem lehetséges: a
+`0x005d7c20` és a `0x005d78d0` cím **nyers, négy bájtos alakja NULLA
+alkalommal** fordul elő a fájl bármelyik szekciójában, tehát egyetlen
+függvénymutató-táblában (vtábla, ugrótábla) sincs benne.
+
+⇒ **Csúszka-húzás közben nincs csempe-újraépítés**: ahhoz harmadik hívási
+helyre volna szükség, és olyan nincs.
+
+*Bizonyítottsági fok: **megerősített** — a viselkedés a tulajdonos hat
+felvételéből (három független pár), a hívási helyek kimerítő `e8`-pásztázásból,
+a közvetett hívás kizárása nyers cím-kereséssel.*
+
+---
+
+## A szerkesztő NAGYÍTÁS-HÁRMASA — `fit` · `1to1` · `inbetweenzoom` (2026-09-04, #2305)
+
+> **Bizonyítottság: megerősített** az elemnevekre, a geometriára, a
+> `.tre`-kényszerekre, a buboréksúgókra és a kattintás-műveletre (kiolvasott
+> lebegőpontos konstansok); **erős** a rádiócsoport-értelmezésre (a
+> `buttcontainer` típus + a `m_hidden` harmadik tag + a háromágú
+> állapotválasztó együtt, de a keretrendszer `buttcontainer`-szemantikáját
+> külön nem mértem).
+
+### Mi ez, és melyik nézetben
+
+Három elem a `editpanel/zoombuttcontainer` alatt, ami maga
+`editpanel/editbase` **jobb alsó** sarkához kötött (`editpanel.tre:1324`).
+A geometria a `respack.yt` rétegfejléceiből: `respack.yt:829610`
+(`zoombuttcontainer`), `respack.yt:829949` (`fit`), `respack.yt:829644`
+(`1to1`), `respack.yt:829627` (`inbetweenzoom`).
+
+| elem | smink | geometria (x, y) | `.tre` |
+|---|---|---|---|
+| `editpanel/fit` | `globalbuttons/b38l_n/_p/_h` (bal szegmens) | x **286…323** (37), y **449…471** (22) | `m_offsetLT`, `Property mousedown 1` |
+| `editpanel/1to1` | `globalbuttons/b38r_n/_p/_h` (jobb szegmens) | x **323…360** (37), y 449…471 (22) | `m_offsetLT`, `Property mousedown 1` |
+| `editpanel/inbetweenzoom` | **nincs smink** | x 322…324, y 455…457 (**2 × 2**) | **`m_hidden`** |
+| `editpanel/zoombuttcontainer` | — | x 286…360 (74), y 449…471 | `m_offsetRB` az `editbase`-en |
+
+Az ikonok: `editpanel/fit_icon` x 298…312 (14 × 12), `editpanel/1to1_icon`
+x 332…349 (17 × 12) — mindkettő a saját gombján belül középre kényszerítve.
+
+Utánuk, ugyanabban a sávban: `editpanel/zoomup_icon` x 368…392 (a nagyító) és
+`editpanel/zoomslider_container` x 399…526 (a csúszka).
+
+⇒ Az `fit` és a `1to1` egy **összeragasztott kétszegmenses gombpár** (bal +
+jobb szegmens, 37-37 képpont), a csúszkától **balra**.
+
+### ⛔ Az `inbetweenzoom` SOSEM LÁTSZIK — negatív eredmény
+
+A `.tre` `m_hidden`-nek deklarálja, és a rétege 2 × 2 képpont. **Nem
+megépítendő vezérlő**: kizárólag a rádiócsoport „egyik sem" tagja, hogy az
+állapotválasztónak legyen hova mutatnia. Aki ikont keres hozzá, zsákutcába
+megy.
+
+### Buboréksúgók
+
+Forrás: `editpaneltext.tre:29` és `editpaneltext.tre:32`; a rétegek
+`respack.yt:829949` (`fit`) és `respack.yt:829644` (`1to1`).
+
+| elem | angol (`editpaneltext.tre:29`, `:32`) | hivatalos magyar (`panel-feliratok-hu.tsv` 4919–4920) |
+|---|---|---|
+| `editpanel/fit` | Fit Photo inside viewing area | **Beillesztheti a fotót a megjelenítési területbe** |
+| `editpanel/1to1` | Display Photo at actual size | **Fotó megjelenítése tényleges méretben** |
+
+### MIT CSINÁL — a kattintás művelete, kiolvasott konstansokkal
+
+Az elemnév-alapú kezelő `FUN_005d59f0` (7307 b) mindkét gombra ugyanazt a
+függvényt hívja, csak más értékkel:
+
+| gomb | cím | utasítás | átadott érték |
+|---|---|---|---|
+| `editpanel/fit` | `0x005d5ccc` | `fldz` | **0.0f** |
+| `editpanel/1to1` | `0x005d5d45` | `fld dword ptr [0xc7dafc]` | **0.5f** |
+
+Mindkettő: `push 1` · `fstp dword [esp]` · `push <objektum>` ·
+`call 0x005ee590`. A `0x005ee590` (335 b) egy **animált tulajdonság-beállító**:
+az értéket az objektum `+0xe50` rését (double) írja, és ha az aktuális érték
+más, átmenetet indít (`0x009e6010`, időtartam a `0xcf3ae0`-ról).
+
+### A CSÚSZKA ÉRTÉKKÉSZLETE — normalizált, és a 0.5 a 100 %
+
+A visszafelé irányt a `FUN_005d1c70` (82 b) adja meg: a **csúszka aktuális
+értékéből** választja ki, melyik gomb legyen a rádiócsoport kiválasztott
+tagja:
+
+```
+0x005d1c78   ha érték == 0.0f   -> "editpanel/fit"            (0x00c95a94)
+0x005d1c9b   ha érték == 0.5f   -> "editpanel/1to1"           (0x00c95aa4)
+egyébként                        -> "editpanel/inbetweenzoom" (0x00c95ab4)
+```
+
+*(A 0.5 a `0x00c7dafc`-ról kiolvasva; ugyanaz a konstans, amit a `1to1`
+kattintása beállít.)*
+
+⇒ **A szerkesztő nagyítás-csúszkája NEM nagyítási szorzót tárol, hanem egy
+normalizált értéket, amelyben `0.0` = illesztés a nézetbe és `0.5` = valódi
+méret (100 %).** A `0.5` fölötti fél a nagyítás, alatta a köztes állapotok.
+
+#### A TELJES LEKÉPEZÉS — mérve (2026-09-04, #2312)
+
+*(A 2026-09-04-i első kiadás itt még „NINCS MEG"-et írt; a következő kör
+kimérte. A megszerzés útja a `+0xe50` animátor-rés olvasóin át vezetett.)*
+
+**Az érték útja a csúszkától a képig — négy lépés, mind címmel:**
+
+| # | hol | mit tesz |
+|---|---|---|
+| 1 | `FUN_005ee590` (335 b) | a normalizált értéket az objektum `+0xe50` **animátor**-résébe írja, és átmenetet indít |
+| 2 | `FUN_00571e10` (52 b) | `0x009e5e70`-nel lekéri az animátor **pillanatnyi** értékét, és továbbadja a `FUN_005d1520`-nak |
+| 3 | `FUN_005d1520` (1858 b) | csak **elágaztat** rajta (nulla-e), majd `0x005d19a4`-nél átadja a `FUN_005c5ed0`-nak |
+| 4 | `FUN_005c5ed0` (101 b) | eltárolja a képelem **`+0x3a0`** tulajdonságába, és érvényteleníti a rajzot |
+
+A képletet a képelem elrendező függvénye számolja: **`FUN_00a5f500`** (3622 b),
+amely a `+0x3a0`-t **13 helyen** olvassa.
+
+**A hatványozó:** `0x005568e0` (32 b) — `float` burkoló, amely a két
+argumentumot `st1 = alap`, `st0 = kitevő` sorrendben tölti, és a
+`0x00c0b410`-t hívja. Az **`fyl2x`** (`0x00c0b4ba`) azonosítja: ez a CRT
+**`pow`**. A hívási helyeken az alap mindig a `0x00cf3a48`-ról olvasott
+**`2.0`**.
+
+**A töréspont `0.5`** (`0x00a601bc`, `fcomp` a `+0x3a0`-val, majd
+`test ah, 0x41` / `jne`), és a két ág:
+
+| tartomány | képlet | cím |
+|---|---|---|
+| `0 ≤ v < 0.5` | **`skála = 1 + (2^(2v) − 1) · (r − 1)`** | `0x00a601cf`–`0x00a601f7` |
+| `0.5 ≤ v ≤ 1` | **`skála = r · 2^(4·(v − 0.5))`** | `0x00a601fb`–`0x00a60221` |
+
+ahol **`v`** a normalizált csúszka-érték (`[0, 1]`-re vágva), a **`skála`** az
+**illesztett** mérethez viszonyított szorzó, `r` pedig egy `fild`/`fidiv`
+párral képzett hányados (`0x00a60199`, `0x00a601b4`).
+
+**A két ág folytonos, és a mért rögzített pontokat adja vissza:**
+
+| `v` | skála | mit jelent |
+|---|---|---|
+| `0.0` | `1` | illesztés a nézetbe *(a `fit` gomb ezt állítja be — #2305)* |
+| `0.5` | `r` | **valódi méret, 100 %** *(a `1to1` gomb — #2305)* |
+| `1.0` | `4·r` | **400 %** |
+
+⇒ **`r` = a valódi méret és az illesztett méret aránya** (azaz
+`kép mérete ÷ nézet mérete`). Ez nem feltevés, hanem a két **mért** rögzített
+pontból következik: a `0.5`-nél a skála definíció szerint a 100 %-ot adja, a
+`0`-nál pedig az illesztést. *(Bizonyítottság erre a AZONOSÍTÁSRA: **erős** —
+a képlet alakja megerősített, `r` operandusainak forrását külön nem mértem.)*
+
+**A felső fél negyed-lépésenként pontosan duplázódik** (`2^(4·0.25) = 2`):
+
+| `v` | 0.5 | 0.625 | 0.75 | 0.875 | 1.0 |
+|---|---|---|---|---|---|
+| nagyítás a valódi mérethez képest | 100 % | 141 % | 200 % | 283 % | **400 %** |
+
+⇒ **A szerkesztő maximális nagyítása 400 %**, és **az illesztett méretnél
+kisebbre nem lehet állítani** (a `v = 0` a csúszka alsó vége).
+
+> **Bizonyítottsági fok: megerősített** a képletre — minden konstans
+> kiolvasva (`0x00c7dafc` = 0.5f, `0x00c72150` = 0.5 double,
+> `0x00cf3d30` = 4.0 double, `0x00cf3a48` = 2.0f), a `pow` azonosítva.
+
+### Eredeti / nálunk / teendő
+
+A „nálunk" oszlop **mérés** (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml`,
+1608–1690. sor).
+
+| tétel | eredeti | nálunk | teendő |
+|---|---|---|---|
+| hol van | az `editbase` jobb alsó sarkában, a sávban | lebegő, sötét, lekerekített doboz a fotó jobb alsó sarkában (`zoomBar`, `color:"#00000059"`, `radius:4`) | a sávba tenni |
+| `fit` gomb | 37 × 22, ikon (`fit_icon` 14 × 12), bal szegmens | `⛶` szöveg-glifa, 26 × 20 | ikon + mért méret |
+| `1to1` gomb | 37 × 22, ikon (`1to1_icon` 17 × 12), jobb szegmens | `1:1` szöveg, 30 × 20 | ikon + mért méret |
+| a kettő viszonya | **összeragasztott** kétszegmenses pár | két külön gomb 4 képpont réssel | szegmenspár |
+| harmadik állapot | `inbetweenzoom`, **rejtett** | nincs | **nem kell megépíteni** |
+| elsülés | `Property mousedown 1` (lenyomásra) | `onClicked` (felengedésre) | lenyomásra |
+| csúszka | 127 képpont, **normalizált** érték, **exponenciális** leképezéssel (lásd fent) | 110 képpont, `from: 0.25, to: 8`, **lineáris a szorzóban** | méret + leképezés |
+| a csúszka alsó vége | **az illesztett méret** (`v = 0`) — kisebbre nem állítható | `0.25`, azaz az illesztett méret **negyede** | alsó vég = illesztés |
+| a csúszka felső vége | **`4·r`** = a valódi méret **400 %**-a (képfüggő) | fix `8` × illesztett méret | felső vég = 400 % |
+| a 100 % helye a csúszkán | mindig a **felezőpont** | képfüggő | felezőpont |
+| magyar súgó (`fit`) | „Beillesztheti a fotót a megjelenítési területbe" | „A kép illesztése a nézetbe" (`picasapy_hu.ts` 4510) | a hivatalos szövegre cserélni |
+| magyar súgó (`1to1`) | „Fotó megjelenítése tényleges méretben" | „A kép valódi méretben" (`picasapy_hu.ts` 4514) | a hivatalos szövegre cserélni |
+| `☺` / `✎` gomb | **nincs** az eredetiben | van (arc-keretek, arc-szerkesztő) | a MI döntésünk — marad, de nem az eredeti része |
+
+*(Az angol forrásszövegeink — `Fit Photo inside viewing area`,
+`Display Photo at actual size` — **pontosan** az eredetiéi; csak a magyar
+fordítás tért el.)*
+
+### ✅ Megvalósítva (#2311, 2026-09-04) — a leképezés KIVÉTELÉVEL
+
+| tétel | állapot |
+|---|---|
+| `fit` és `1to1` **ikon**gomb (nem `⛶` / `1:1` glifa) | ✅ saját SVG, `zoom-fit.svg` 14 × 12, `zoom-actual.svg` 17 × 12 (a mért ikonméretek) |
+| gombméret 37 × 22 | ✅ |
+| összeragasztott szegmenspár | ✅ saját `Row` nulla térközzel (`zoomSegmentPair`) — a külső sor 4 képpontos rése a párt szétvágta volna |
+| **lenyomásra** sül el | ✅ `onPressed` |
+| csúszka szélessége 127 | ✅ |
+| a két magyar buboréksúgó | ✅ a hivatalos szövegre cserélve |
+| `inbetweenzoom` vezérlő | ⛔ szándékosan **nem** készült (az eredetiben `m_hidden`) — őr is tiltja |
+| **a csúszka értékkészlete** | ❌ **változatlan** (`0,25…8` közvetlen szorzó) |
+
+⚠️ **Az értékkészlet marad, amíg a köztes leképezés nincs kimérve.** A két
+rögzített pont ismert (`fit` → 0, `1to1` → 0,5), a közte lévő görbe nem —
+a jegy ezt kifejezetten kizárta a hatóköréből. Aki kiméri, itt írja át.
+
+Az ikonok **saját rajzok**: a projekt egyetlen kicsomagolt Picasa-képet sem
+szállít, csak a MÉRETÜK az eredetiből mért. Őr:
+`tests/app/qml_functional/test_nagyitas_sav_2311.py`.

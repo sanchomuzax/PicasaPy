@@ -48,7 +48,7 @@ csoportszerkezet a mentésből hiánytalanul kiolvasható.
 | 8 | Nyomtatás… `Ctrl+P` · E-mail… `Ctrl+E` · Papírképek rendelése… |
 | 9 | Kilépés |
 
-### Szerkesztés — 12 tétel, 4 csoport
+### Szerkesztés — 11 tétel, 4 csoport
 
 | # | tételek |
 |---|---|
@@ -61,6 +61,87 @@ csoportszerkezet a mentésből hiánytalanul kiolvasható.
 `eMenuEdit::ID_UNDO` és `ID_REDO`, a mentésen viszont **egyik sem
 jelenik meg** — pedig a menü többi inaktív tétele igen. Vagyis a
 Visszavonás/Ismétlés nem a menüsáv Szerkesztés menüjének állandó tétele.
+
+### A Szerkesztés menü TELJES szerkezete — a binárisból (#1795)
+
+A menüt ugyanaz a táblavezérelt függvény építi, mint az Eszközök menüt
+(`0x00559150`). A Szerkesztés almenü **egyetlen rekord-tábla** a `.data`-ban:
+
+- **a tábla kezdete `0x00d6db80`**, rekordméret **20 bájt**;
+- **a darabszám-konstans `14`** (`push 0xe` a `0x00559c76`-on, a
+  `0x00559c82` regisztráló hívása előtt, a gyerekmutatóval együtt:
+  `push 0xd6db80`, `0x00559c7c`).
+
+**14 = 11 tétel + 3 elválasztó.** Az elválasztó rekord mind a 20 bájtja
+nulla; a három elválasztó a 3., 6. és 9. rekord (`0x00d6dbbc`,
+`0x00d6dbf8`, `0x00d6dc34`), tehát a csoportosztás **3 | 2 | 2 | 4** —
+pontosan az, amit a tulajdonos képernyőmentése mutat.
+
+**Rekord-alak** (mind a 14-re azonos):
+
+| eltolás | tartalom |
+|---|---|
+| `+0x00` | a honosított felirat mutatója (a kulcsból feloldva, `call 0x009ae560`) |
+| `+0x04` | a gyorsbillentyű betűje (ASCII sztring) vagy `0` |
+| `+0x08` | `word` — mind a 14 rekordon `0` |
+| `+0x0a` | `word` — a **parancsazonosító** |
+| `+0x0c`, `+0x10` | `0` |
+
+**A tábla TELJES tartalma, kiolvasva:**
+
+| # | cím | kulcs | eredeti EN felirat | HU felirat | gyorsb. | parancs |
+|---|---|---|---|---|---|---|
+| 0 | `0x00d6db80` | `eMenuEdit::ID_CUT` | `Cu&t` | `&Kivágás` | `X` | `0x9d39` (40249) |
+| 1 | `0x00d6db94` | `eMenuEdit::ID_COPY` | `&Copy` | `&Másolás` | `C` | `0x9d3b` (40251) |
+| 2 | `0x00d6dba8` | `eMenuEdit::ID_PASTE` | `&Paste` | `&Beillesztés` | `V` | `0x9d3c` (40252) |
+| 3 | `0x00d6dbbc` | — | — | — | — | **elválasztó** |
+| 4 | `0x00d6dbd0` | `eMenuEdit::ID_EDIT_COPYALLEFFECTS` | `C&opy All Effects` | `Az összes effektus más&olása` | — | `0x9d6f` (40303) |
+| 5 | `0x00d6dbe4` | `eMenuEdit::ID_EDIT_PASTEALLEFFECTS` | `Paste All E&ffects` | `Az összes e&ffektus beillesztése` | — | `0x9d70` (40304) |
+| 6 | `0x00d6dbf8` | — | — | — | — | **elválasztó** |
+| 7 | `0x00d6dc0c` | `eMenuEdit::ID_EDIT_COPYTEXT` | `Copy Text` | `Szöveg másolása` | — | `0x9ded` (40429) |
+| 8 | `0x00d6dc20` | `eMenuEdit::ID_EDIT_PASTETEXT` | `Paste Text` | `Szöveg beillesztése` | — | `0x9dee` (40430) |
+| 9 | `0x00d6dc34` | — | — | — | — | **elválasztó** |
+| 10 | `0x00d6dc48` | `eMenuEdit::ID_ALBUM_SELECTALLPICTURES` | `Select &All` | `Az ö&sszes kijelölése` | `A` | `0x9cb8` (40120) |
+| 11 | `0x00d6dc5c` | `eMenuEdit::ID_SELECTSTAR` | `Select &Starred` | `&Csillagozottak kijelölése` | — | `0x9d5b` (40283) |
+| 12 | `0x00d6dc70` | `eMenuEdit::ID_SELECT_INVERT` | `&Invert Selection` | `Kiválasztás &megfordítása` | `I` | `0x9c47` (40007) |
+| 13 | `0x00d6dc84` | `eMenuEdit::ID_CLEAR_SELECTION` | `C&lear Selection` | `Kijelölés &törlése` | `D` | `0x9c90` (40080) |
+
+⚠️ Két tételnek **nincs** aláhúzott betűje az eredetiben (`Copy Text`,
+`Paste Text`), a `Select &Starred`-nek pedig **nincs gyorsbillentyűje** —
+ezek nem elírások, hanem a mért állapot.
+
+#### ⛔ Visszavonás/Ismétlés a Szerkesztés menüben NINCS — és nem is lehet
+
+A #1774 köre azt gyanította, hogy a menüépítő **feltételesen** teszi be a
+visszavonást (van-e visszavonható lépés), és a mentés készítésekor épp nem
+volt ilyen. **Ez megdőlt, két független mérésből:**
+
+1. **A tábla statikus.** A 14 rekordot feltöltő kódblokk
+   (`0x005598b2`–`0x00559c4c`) **pontosan 11 feltételes ugrást** tartalmaz,
+   és mind a 11 ugyanaz: a felirat-feloldás `NULL`-ellenőrzése
+   (`cmp eax, ebx` / `je`). **Állapotfüggő elágazás nincs benne**, tehát a
+   menü darabszáma és tartalma futásidőben nem változik. (A blokk elején
+   álló `test byte ptr [0xda03a8], al` / `jne` **egyszeri inicializálás**
+   őre, nem tételválasztás.)
+2. **A kulcs nem létezik a programban.** Az `eMenuEdit::ID_UNDO` és az
+   `eMenuEdit::ID_REDO` literál a `Picasa3.exe` teljes fájljában
+   **0 alkalommal** fordul elő — sem ASCII-ban, sem UTF-16LE-ben. A
+   feliratok csak az erőforrás-szövegtárban élnek
+   (`stringres-en-hu.tsv`: „Undo"/„Visszavonás", „Redo"/„Újra"), amit
+   **semmi nem kér el** — ezek **halott erőforrás-bejegyzések**.
+
+#### Hol VAN visszavonás az eredetiben — mind a négy hely
+
+| hol | erőforrás / elem | felirat (EN / HU) |
+|---|---|---|
+| a szerkesztő panel gombja | `editpanel/filter_undo`, `CFilterStackUI::undolabel` / `undoname` | `Undo` / `Visszavonás`, illetve `Undo <effekt>` / `Visszavonás: <effekt>` |
+| **Kép** menü | `eMenuPicture::ID_PICTURE_REVERT` | `Undo &All Edits` / `Összes szerkesztés vissz&avonása` |
+| szövegmező helyi menüje | `Address::ID_UNDO`, a menüt a `0x007331e0` építi (7 tétel: Visszavonás · Kivágás · Másolás · Beillesztés · Törlés · Az összes kijelölése · Automatikus kitöltés) | `&Undo` / `&Visszavonás` |
+| mentés-visszavonó párbeszéd | `CThumbUI::FileRevert::undosave` | `Undo Save` / `Mentés visszavonása` |
+
+**Bizalmi fok: megerősített.** A tábla, a darabszám, az elválasztók, a
+parancsazonosítók és az ugrás-számlálás közvetlen kiolvasásból; a
+negatív eredmény teljes fájl-pásztázásból (két kódolás).
 
 ### Nézet — 19 tétel, 8 csoport
 
@@ -118,9 +199,93 @@ pipái függetlenek.
 | 5 | Gombok konfigurálása… · Beállítások… |
 
 A menü **nem tartalmaz** duplikátum- vagy arckereső tételt a felső szinten.
-A szövegtárban a `eMenuTools::ID_DUPES` („Show Duplicate Files") megvan, a
-mentésen viszont nincs a felső szinten — a **Kísérleti** almenüben lehet,
-amelynek tartalmát ez a mentés nem nyitja ki.
+✅ **A Kísérleti almenü tartalma azóta KIMÉRVE** — ld. a következő szakaszt
+(#1794): a `ID_DUPES` ott van, a második helyen.
+
+### Az Eszközök menü TELJES szerkezete — a binárisból (#1794)
+
+A menüt **egyetlen** függvény építi: `0x00559150` (15 495 b). Nem
+`AppendMenuW`-vel — az egész függvényben **két** Win32-hívás van
+(`0x00559169`, `0x0055cda7`) —, hanem egy `.data`-beli **rekord-táblát** tölt
+fel mezőnként (`0x00d6e678`…`0x00d6e9a8`). Az `eMenuTools::` névtér mind a
+**36** kulcsa ebben az egy függvényben szerepel.
+
+A felépítés sorrendje adja a csoportosítást; a három almenü-cím (`Upload`,
+`Geotag`, `Experimental`) rekordja egy **gyerek-mutatót** és egy
+**darabszámot** kap.
+
+#### A KÍSÉRLETI almenü — kilenc tétel
+
+A `0x0055c91e` a gyerek-mutatót `0x00d6e798`-ra állítja, a `0x0055c928` pedig
+a darabszámot **`9`-re** — konstansként. Pontosan kilenc tétel épül fel
+összefüggő blokkban (`0x0055c295`…`0x0055c4c9`), a színblokk után és a
+felső szintű blokk előtt:
+
+| # | kulcs | angol | magyar |
+|---|---|---|---|
+| 1 | `ID_FTPWEB` | Publish via FTP... | Közzététel FTP-n keresztül... |
+| 2 | **`ID_DUPES`** | **Show Duplicate Files** | **Fájlok másodpéldányainak megjelenítése** |
+| 3 | `Searchfor` ▸ | Search for... | Keresés... |
+| 4 | `ID_SAVESEARCH` | Save &search results... | Keresési eredmények &mentése... |
+| 5 | `ID_SEARCHTOKEN` | Show &tag as album... | &Címke megjelenítése albumként... |
+| 6 | `ID_PASSPORT` | &Passport photo... | Útle&vélkép... |
+| 7 | `ID_DELETE_EMPTY_ALBUMS` | Delete empty online albums... | Üres online albumok törlése... |
+| 8 | `ID_MOVE_DATABASE` | Choose database location... | Adatbázis helyének kiválasztása... |
+| 9 | `ID_WRITE_XMP_FACES` | Write faces to XMP... | Arcinformációk írása XMP-adatokba... |
+
+⇒ **A #1794 feltevése beigazolódott: a `ID_DUPES` a Kísérleti almenüben van**,
+a második helyen.
+
+#### A „Keresés…" ALMENÜ — hat szín
+
+A 3. tétel maga is almenü: a `0x0055c078`…`0x0055c1c8` blokk hat színt épít,
+ebben a sorrendben:
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `ID_S_RED` | &Red | &Piros |
+| `ID_S_ORANGE` | &Orange | &Narancssárga |
+| `ID_S_YELLOW` | &Yellow | &Sárga |
+| `ID_S_GREEN` | &Green | &Zöld |
+| `ID_S_BLUE` | &Blue | &Kék |
+| `ID_S_PURPLE` | &Purple | &Lila |
+
+#### A másik két almenü
+
+| almenü | tételek |
+|---|---|
+| **Feltöltés** (`Upload`) | `ID_TOOLS_UPLOAD` (Feltöltés a Google Fotókba) · `ID_TOOLS_COLLAB` (Feltöltés közös szerkesztésű webalbumba) · `ID_TOOLS_YOUTUBE` (Feltöltés a YouTube webhelyre) |
+| **Geocímke** (`Geotag`) | `ID_PICTURE_GEOTAG` (Geocímkézés a Google Earth programmal…) · `ID_VIEW_EARTH` (Megtekintés a Google Earth programban…) · `ID_PICTURE_GEOUNTAG` (Geocímkék törlése) · `ID_EXPORT_EARTH` (Exportálás Google Earth-fájlba) |
+
+#### A felső szint
+
+`0x0055c54c`…`0x0055c7b6`: `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` ·
+`ID_TOOLS_UPLOADMGR` · `ID_TOOLS_CONTACTMGR` · `ID_TOOLS_CONFIG_SLINGSHOT` ·
+`ID_TOOLS_CONFIG_SCREENSAVER` · `ID_TOOLS_BACKUP` · `ID_TOOLS_BATCH_UPLOAD` ·
+`ID_TOOLS_ADJUST_TIMESTAMP` · `ID_TOOLS_DOWNLOAD_FACES`; utána a három
+almenü-cím, végül `ID_TOOLS_BUTTONMGR` és `ID_TOOLS_OPTIONS`.
+
+Ez **fedi a tulajdonos képernyőmentését**, egy tétellel több:
+`ID_TOOLS_DOWNLOAD_FACES` („Névcímkék letöltése a Picasa Webalbumokból") —
+a mentésen nem látszik, valószínűleg feltételes.
+
+#### ⛔ „Find Faces" — az EGÉSZ szövegtárban NINCS
+
+Nem csak az `eMenuTools` névtérből hiányzik: a `stringres-en-hu.tsv`
+**teljes** állományában nincs „Find Faces" felirat. A „duplicate/másodpéldány"
+találatok mind máshova tartoznak (`CAcquireUI::…`, `CThumbUI::MoveFiles…`,
+`ContactManagerDlg::DupFoundTitle`, `IDS_NORENAME`).
+
+⇒ Az **arckeresés az eredetiben nem menüparancs**. A miénk tudatos eltérés.
+
+**Bizalmi fok.** A tételek, a feliratok, a sorrend és a „Find Faces"
+negatívum: **megerősített** (közvetlen kiolvasás, kimerítő keresés). Az,
+hogy a kilenc elemű blokk a **Kísérleti** almenüé: **erős** — a
+darabszám-konstans `9` egyedül erre a blokkra illik (a másik két almenü 3 és
+4 elemű, és a darabszámuk regiszterből jön), de a rekord-tábla mezőkiosztását
+nem fejtettem meg teljesen, tehát a hozzárendelés levezetés, nem közvetlen
+olvasat.
+
 
 ### Súgó — 10 tétel, 4 csoport
 
@@ -178,5 +343,11 @@ mért eredeti menü is 253 képpont — a korlát a gyakorlatban sosem lép
   őket (a Rendezés készletére a #1595 és a #1766 fut);
 - a 4. menü **kontextusfüggő** címkéje (Mappa ↔ Album) — a mentés mappa-
   nézetben készült, tehát csak a „Mappa" alakot mutatja;
-- a **mnemonikok**: a képen az aláhúzás nem látszik (a Windows alapból
-  elrejti, amíg az `Alt`-ot le nem nyomják).
+- ~~a **mnemonikok**~~ — **MEGVÁLASZOLVA (2026-09-03, #1795 köre).** A képen
+  tényleg nem látszik az aláhúzás (a Windows elrejti, amíg az `Alt`-ot le
+  nem nyomják), de a **szövegtár megadja**: 189 `eMenu*::` kulcsból 145-ben
+  van angol és **142-ben magyar** mnemonik, és a magyar betű gyakran **nem**
+  az angol (`Cu&t` → `&Kivágás`). A teljes leképzés kinyerve:
+  `picasapy-agent/referencia/menu-mnemonikok.tsv` (248 sor). A Szerkesztés
+  menü mind a 11 tételének mnemonikja a fenti táblában áll. Nálunk 144
+  menütétel-feliratból **11**-en van mnemonik — átvezetés: **#2152**.

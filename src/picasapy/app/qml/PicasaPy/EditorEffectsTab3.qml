@@ -50,14 +50,14 @@ ColumnLayout {
             label: qsTr("Boost")
             onButtonClicked: if (!panel.tryOpenParamPanel("boost", label)) panel.effectRequested("boost")
             thumbSource: panel.effectThumbSource("boost")
-            appliedCount: panel.effectAppliedCount("boost")
+            badge: panel.hasBadge("boost")
         }
         PanelButton {
             objectName: "effectSoften"
-            label: qsTr("Soft Focus")
+            label: qsTr("Soften")
             onButtonClicked: if (!panel.tryOpenParamPanel("soften", label)) panel.effectRequested("soften")
             thumbSource: panel.effectThumbSource("soften")
-            appliedCount: panel.effectAppliedCount("soften")
+            badge: panel.hasBadge("soften")
         }
         // #704 (▶KÉP, `2026-07-17 20 56 55.png`, 1. sor 3. csempéje):
         // a Vignetta EZEN a fülön van, a Lágyítás után és a
@@ -70,73 +70,110 @@ ColumnLayout {
         // kisbetűvel küldjük az effectRequested jelet.
         PanelButton {
             objectName: "effectVignette"
-            label: qsTr("Vignette")
-            onButtonClicked: if (!panel.tryOpenParamPanel("vignette", label)) panel.effectRequested("vignette")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Matte") : qsTr("Vignette")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (matte) —
+            //: az eredeti csempe-táblája (vignette -> matte)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "matte" : "vignette"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("vignette")
-            appliedCount: panel.effectAppliedCount("vignette")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectPixelate"
             label: qsTr("Pixelate")
-            onButtonClicked: if (!panel.tryOpenParamPanel("pixelate", label)) panel.effectRequested("pixelate")
+            //: ⚠️ #2146: a MÉRT Shift-pár `pixelate` -> `picnikfocalpixelate`
+            //: lenne, de a `render/chain.py` `_HANDLERS` táblájában
+            //: NINCS kezelője — alkalmazni sem tudnánk, a kattintás
+            //: `ValueError`-t adna. A Shift-ág ezért NEM épült meg
+            //: ezen a csempén; a többi nyolcon igen.
+            readonly property string szuro: "pixelate"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("pixelate")
-            appliedCount: panel.effectAppliedCount("pixelate")
+            badge: panel.hasBadge("pixelate")
         }
         PanelButton {
             objectName: "effectFocalZoom"
             label: qsTr("Focal Zoom")
             onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom", label)) panel.effectRequested("focalzoom")
             thumbSource: panel.effectThumbSource("focalzoom")
-            appliedCount: panel.effectAppliedCount("focalzoom")
+            badge: panel.hasBadge("focalzoom")
         }
         PanelButton {
             objectName: "effectPencilSketch"
             label: qsTr("Pencil Sketch")
             onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch", label)) panel.effectRequested("pencilsketch")
             thumbSource: panel.effectThumbSource("pencilsketch")
-            appliedCount: panel.effectAppliedCount("pencilsketch")
+            badge: panel.hasBadge("pencilsketch")
         }
         PanelButton {
             objectName: "effectNeon"
             label: qsTr("Neon")
             onButtonClicked: if (!panel.tryOpenParamPanel("neon", label)) panel.effectRequested("neon")
             thumbSource: panel.effectThumbSource("neon")
-            appliedCount: panel.effectAppliedCount("neon")
+            badge: panel.hasBadge("neon")
         }
         PanelButton {
             objectName: "effectComicize"
-            label: qsTr("Comicize")
+            label: qsTr("Comic Book")
             onButtonClicked: if (!panel.tryOpenParamPanel("comicize", label)) panel.effectRequested("comicize")
             thumbSource: panel.effectThumbSource("comicize")
-            appliedCount: panel.effectAppliedCount("comicize")
+            badge: panel.hasBadge("comicize")
         }
         PanelButton {
             objectName: "effectBorder"
-            label: qsTr("Border")
-            onButtonClicked: if (!panel.tryOpenParamPanel("border", label)) panel.effectRequested("border")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Rounded Edges") : qsTr("Border")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (roundededges) —
+            //: az eredeti csempe-táblája (border -> roundededges)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "roundededges" : "border"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("border")
-            appliedCount: panel.effectAppliedCount("border")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectDropShadow"
             label: qsTr("Drop Shadow")
             onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow", label)) panel.effectRequested("dropshadow")
             thumbSource: panel.effectThumbSource("dropshadow")
-            appliedCount: panel.effectAppliedCount("dropshadow")
+            badge: panel.hasBadge("dropshadow")
         }
         PanelButton {
             objectName: "effectMuseumMatte"
             label: qsTr("Museum Matte")
             onButtonClicked: if (!panel.tryOpenParamPanel("museummatte", label)) panel.effectRequested("museummatte")
             thumbSource: panel.effectThumbSource("museummatte")
-            appliedCount: panel.effectAppliedCount("museummatte")
+            badge: panel.hasBadge("museummatte")
         }
         PanelButton {
             objectName: "effectPolaroid"
             label: qsTr("Polaroid")
             onButtonClicked: if (!panel.tryOpenParamPanel("polaroid", label)) panel.effectRequested("polaroid")
             thumbSource: panel.effectThumbSource("polaroid")
-            appliedCount: panel.effectAppliedCount("polaroid")
+            badge: panel.hasBadge("polaroid")
         }
     }
 }

@@ -10,6 +10,9 @@ Testvérlap: [`biztonsagi-mentes.md`](biztonsagi-mentes.md) (a
 készlet-formátum és a másolás).
 Jegyek: **#32** (Ajándék-CD) · **#440** (mentés).
 
+⭐ **A három üzemmód** (Ajándék-CD · biztonsági mentés · replikáció) szétválasztása
+a **12.** szakaszban — ez dönti el, melyik alapérték melyik ágon él.
+
 ## 1. ⭐ A lemez ÖNJÁRÓ — és MINDKÉT platformra
 
 A kiírás **négy külön másoló** függvényen megy át. Mindegyik a telepítés
@@ -191,13 +194,14 @@ filmek), és a befejező visszajelzés.
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 8 lezárva · 2 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 9 lezárva · 1 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
 
 *(A számok a lenti tábla sorainak MEGSZÁMOLÁSÁBÓL jönnek, nem fejből: a
 2026-09-03 délelőtti sor `7 lezárva`-t írt, miközben a tábla nyolcat
 sorolt fel — javítva. A délutáni kör három sort tett hozzá: a három
 jelölőnégyzet LEZÁRVA, a Kiadás gomb BLOKKOLT, a megszűnt webes ág két
-eleme HATÓKÖRÖN KÍVÜL.)*
+eleme HATÓKÖRÖN KÍVÜL. Az éjszakai kör az „ág ↔ üzemmód" sort
+BLOKKOLT-ból LEZÁRVA-ba tette — 12. szakasz, #2095.)*
 
 | kérdés | állapot |
 |---|---|
@@ -208,14 +212,67 @@ eleme HATÓKÖRÖN KÍVÜL.)*
 | mi történik a kiírás után | **LEZÁRVA** — párbeszéd + `LaunchAutoRun` (5.) |
 | ~~a 16 beállítás ÉRTÉKKÉSZLETE~~ | **LEZÁRVA (2026-09-03)** — a **10.** szakasz: a kulcsok logikai (0/1) vagy egész típusúak, felsorolás nincs; húsz beállító híváshely értéke kiolvasva, köztük `option_jpegquality = 85`. Dekompiláció nem kellett. *(A blokkolás indoka — „a sztring-xref **egyetlen** olvasót ad" — megdőlt: a `0x0068eea0` a második, és épp az az olvasó.)* |
 | **a belépési pontok** | **LEZÁRVA (2026-09-03)** — öt, ebből kettő a `.tre`-ben kikommentezve (**9.**) |
-| **melyik ÁG melyik üzemmódhoz tartozik** | **BLOKKOLT, de SZŰKÍTVE (2026-09-03)** — a hívó megvan (`0x0067b0ee`), és a `0x0066f546`-os elágazást vezérlő `edi` **az objektum `+0x13e` bájtja**, a mód-jelző pedig a szomszédja (`+0x13f`) — **11.7**. A két bájt JELENTÉSE nincs mérve. **Megszerzés:** a `0x0066f470` (923 b) célzott dekompilációja, VAGY egy valódi kiírt lemez tartalomjegyzéke. Jegy: **#2095**. |
+| **melyik ÁG melyik üzemmódhoz tartozik** | **LEZÁRVA (2026-09-03)** — a **12.** szakasz: `+0x13e` = 0 → Ajándék-CD, `+0x13e` ≠ 0 & `+0x13f` = 0 → biztonsági mentés, `+0x13e` ≠ 0 & `+0x13f` ≠ 0 → replikáció/feltöltés. A két bájtnak **egyetlen írója** van (a panel konstruktora, `0x0066bf90`), és ugyanaz a függvény választja belőlük a `publish/presentcd_go` / `backup_go` / `replicate_go` vezérlőnevet — ez nevezi meg az üzemmódot. A belépési elemnevek (`thumbui/cdmode` · `backup` · `replicate`) ugyanezt adják. Jegy: **#2095**. |
 | a panel HÁROM jelölőnégyzete | **LEZÁRVA (2026-09-03)** — felirat, tároló, alapérték és hatás mind mérve (**11.**) |
-| mit csinál a KIADÁS gomb | **BLOKKOLT** — nincs `IOCTL_STORAGE_EJECT_MEDIA` sztring, az `mciSendStringA` négy betöltése távol van a lemez-kódtól; a `CDVDR.yti` COM-oldalán megy. **Ugyanaz a tétel, mint a #2074** (11.4) |
+| mit csinál a KIADÁS gomb | ✅ **LEZÁRVA (2026-09-05)** — a kiadást a **Windows IMAPI2 COM-komponense** végzi, nem a mi binárisaink: a `CDVDR.yti` a `MsftDiscRecorder2` (`0x0004560c`) és a `MsftDiscFormat2Data` (`0x00045aa8`) **CLSID**-jét hordozza és `CoCreateInstance`-szal példányosít, miközben `DeviceIoControl`-t **nem** importál, IOCTL-konstansa **nincs**, `\\.\` eszközútvonala **nincs**. A `Picasa3.exe` szintén **nem importál `DeviceIoControl`-t**. ⇒ a kiadás `IDiscRecorder2::EjectMedia()`, **vtábla-metódus** — ezért nincs hozzá sem sztring, sem IOCTL. Ld. **13.** |
 | a megszűnt webes ág két eleme | **HATÓKÖRÖN KÍVÜL** — `upgradestorage`, `uploadallsync`: a Picasa Web Albums tárhely-vásárlás és -szinkron (11.6); eldöntötte: `biztonsagi-mentes.md` 7., 2026-09-02 |
 | Daemon Tools / `d:\cdtemp\temp.iso` | **HATÓKÖRÖN KÍVÜL** — fejlesztői teszt-maradvány, nem felhasználói funkció; eldöntötte: ez a kör, 2026-09-02 |
 
+## 13. ✅ A KIADÁS gomb — a kiadást a WINDOWS végzi (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** arra, hogy a kiadás egyik
+> binárisunkban sincs megvalósítva, és hogy a lemezíró bővítmény
+> **IMAPI2 COM**-on át dolgozik.
+
+A 7. mérleg indoklása az volt, hogy *„nincs `IOCTL_STORAGE_EJECT_MEDIA`
+sztring"*. ⚠️ **Ez a keresés eleve nem találhatott semmit:** az
+`IOCTL_STORAGE_EJECT_MEDIA` **nem sztring, hanem szám** (`0x002D4808`).
+A helyes keresés a **konstansra** megy.
+
+**A mérés (mindkét binárison):**
+
+| amit kerestem | `Picasa3.exe` | `CDVDR.yti` (405 504 B) |
+|---|---|---|
+| `IOCTL_STORAGE_EJECT_MEDIA` (`0x002D4808`) nyers 32 bites konstansként | **0 találat** | **0 találat** |
+| `IOCTL_STORAGE_LOAD_MEDIA` (`0x002D480C`) | 0 | 0 |
+| `IOCTL_STORAGE_MEDIA_REMOVAL` · `FSCTL_LOCK/UNLOCK/DISMOUNT_VOLUME` | 0 | — |
+| **`DeviceIoControl` import** | **NINCS** | **NINCS** |
+| `\\.\` eszközútvonal-előtag | NINCS | NINCS |
+| `cdaudio` · `door open` · `door closed` (MCI-parancsok) | **NINCS** | — |
+| `Eject` / `eject` sztring | — | **NINCS** |
+
+⇒ **A `Picasa3.exe` egyáltalán nem tud IOCTL-t kiadni** (nincs importálva
+a `DeviceIoControl`), és MCI-ajtóparancsot sem küld — az `mciSendStringA`
+betöltései tehát **bizonyosan nem** a lemezkiadáshoz tartoznak.
+
+**Ami VAN — a lemezíró bővítményben:**
+
+| bizonyíték | hol |
+|---|---|
+| `MsftDiscRecorder2` CLSID (`2735412E-7F64-5B0F-8F00-5D77AFBE261E`) | `CDVDR.yti` **`0x0004560c`** |
+| `MsftDiscFormat2Data` CLSID (`27354130-…`) | `CDVDR.yti` **`0x00045aa8`** |
+| `CoCreateInstance` | `CDVDR.yti` `0x0004e6ba` |
+| `IMAPI` literál | `CDVDR.yti` `0x0005150a` |
+| a bővítmény DLL-függőségei | csak `ADVAPI32` · `COMCTL32` · `COMDLG32` · `GDI32` · `KERNEL32` · `OLE32` · `OLEAUT32` · `SHELL32` · `SHLWAPI` · `USER32` — **eszközvezérlő API egy sem** |
+
+⇒ **A kiadás a Windows saját `IDiscRecorder2::EjectMedia()` metódusa**,
+COM-vtáblán át hívva. Ezért nincs hozzá sem sztring, sem IOCTL-konstans
+egyetlen Picasa-binárisban sem: **a művelet nem a Picasáé**.
+
+**Mit jelent ez nálunk (Linux):** IMAPI nincs; a megfelelője a rendszer
+saját lemezkiadása (pl. `eject`, illetve UDisks). ⇒ Az Ajándék-CD ágának
+megépítésekor a kiadás **platform-szolgáltatás**, nem saját logika — a
+`#2074` hatókörébe tartozik, de a hardveres ág nélkül is megépíthető
+részekkel nem ütközik.
+
 ## 8. Amit KIZÁRTAM
 
+- **„a kiadást a Picasa maga csinálja"** — **MEGDŐLT (2026-09-05):** egyik
+  binárisunk sem importál `DeviceIoControl`-t, és IOCTL-konstans sincs
+  bennük; a kiadás a Windows IMAPI2 COM-objektumáé (13.).
+- **„nincs `IOCTL_STORAGE_EJECT_MEDIA` sztring, tehát nincs IOCTL-os kiadás"**
+  — a KÖVETKEZTETÉS igaz, de az INDOK rossz volt: az IOCTL **szám**, nem
+  sztring; a helyes keresés a `0x002D4808` konstansra megy (13.).
 - **„az Ajándék-CD csak képeket másol"** — nem: **teljes önjáró lemez**,
   két platform vetítőjével és visszaállítójával.
 - **„a lemez mappanevei angolok"** — nem: a szövegtárból jönnek
@@ -265,6 +322,8 @@ indul** — pedig a visszafejtési sorrend első kérdése ez
 
 ### 9.1 A hivatalos magyar feliratok
 
+*Forrás: `publish.tre:129` (`publish/presentcd_go`) · `publish.tre:154` (`publish/presentcd_help`) · `thumbui.tre:484` (`thumbui/cdmode`).*
+
 | elem | angol | **hivatalos magyar** |
 |---|---|---|
 | `eMenuCreate::ID_BURNCD` | Create a &Gift CD... | **„&Ajándék CD készítése…"** |
@@ -275,7 +334,6 @@ indul** — pedig a visszafejtési sorrend első kérdése ez
 
 *(A buboréksúgó fontos: kimondja, hogy a lemez célja a **beépített
 diavetítés** — ez köti össze a 9. szakaszt az 1.-vel.)*
-
 ### 9.2 A két kikommentezett gomb JELENTŐSÉGE
 
 A `#` a `.tre`-ben megjegyzés — ez mérve van
@@ -540,5 +598,160 @@ A hívó megvan: **`0x0067b0ee`**, és így hívja:
 
 ⇒ A `0x0066f470` `edi`-je (ami a `0x0066f546`-nál a nagy elágazást vezérli)
 **az objektum `+0x13e` bájtja**, nem független paraméter. A mód-jelző
-(`+0x13f`) a **szomszédja**. **A két bájt JELENTÉSE továbbra sincs mérve** —
-a #2095 nyitva marad, de a kérdés most már két konkrét tagváltozóra szűkül.
+(`+0x13f`) a **szomszédja**.
+
+> ✅ **A folytatás a 12. szakaszban van (2026-09-03, éjszaka).** A két bájt
+> jelentése azóta **kimérve**, a #2095 lezárva.
+
+---
+
+## 12. ⭐ AZ ÁG ↔ ÜZEMMÓD HOZZÁRENDELÉS — LEZÁRVA (2026-09-03, #2095)
+
+A 7. mérleg utolsó BLOKKOLT tétele — *„melyik ág melyik üzemmódhoz
+tartozik"* — **megoldva**. A `0x0066f470` teljes törzse, a mód-bájtok
+**egyetlen írója** és a három belépési híváshely kiolvasva.
+
+### 12.1 A két mód-bájt jelentése
+
+A `+0x13e` és a `+0x13f` **nem független paraméter**: a panel-objektum
+(`0x3d8` = 984 bájt, a főablak `+0x30f4` mezőjében) két szomszédos
+tagváltozója, és **pontosan egy helyen** kapnak értéket:
+
+```
+; a panel konstruktora, 0x0066bf90 (1593 b) — az EGYETLEN író
+0x0066c046  mov cl, byte ptr [esp + 0x14d8]   ; 3. paraméter
+0x0066c04d  mov dl, byte ptr [esp + 0x14dc]   ; 4. paraméter
+0x0066c060  mov byte ptr [ebp + 0x13e], cl
+0x0066c066  mov byte ptr [ebp + 0x13f], dl
+```
+
+*(Mérés: a bináris **összes** indexelt függvényét diszasszemblálva a
+`[reg + 0x13e]` / `[reg + 0x13f]` alakra **78 találat** van, ebből a
+lemez-kód tartományában **egyetlen írás** — a fenti kettő. A többi mind
+olvasás, vagy más osztály azonos offszete.)*
+
+### 12.2 A hozzárendelés — a vezérlőnév-választás dönti el
+
+Ugyanez a konstruktor **közvetlenül a beállítás után** ebből a két bájtból
+választja ki a panel indító- és kiadás-gombjának nevét. Ez a **független
+horgony**: a vezérlőnév megnevezi az üzemmódot.
+
+```
+0x0066c248  cmp byte ptr [ebp + 0x13e], 0
+0x0066c24e  je  0x66c377                      ; -> "publish/presentcd_go"
+0x0066c254  cmp byte ptr [ebp + 0x13f], 0
+0x0066c25a  mov edx, "publish/backup_go"      ; 0x13f == 0
+0x0066c25f  je  0x66c266
+0x0066c261  mov edx, "publish/replicate_go"   ; 0x13f != 0
+...
+0x0066c2d4  cmp byte ptr [ebp + 0x13f], 0
+0x0066c2da  je  0x66c2ef                      ; -> "publish/backup_eject"
+0x0066c2e8  mov edi, 0xc7f979                 ; ÜRES sztring (a bájt ott 0x00)
+```
+
+| `+0x13e` | `+0x13f` | **üzemmód** | indítógomb | kiadás-gomb |
+|---|---|---|---|---|
+| **0** | – | **Ajándék-CD** | `publish/presentcd_go` | `publish/presentcd_eject` |
+| **≠0** | **0** | **biztonsági mentés (lemez)** | `publish/backup_go` | `publish/backup_eject` |
+| **≠0** | **≠0** | **replikáció / feltöltés** | `publish/replicate_go` | **nincs** (üres név) |
+
+⇒ A replikációs módban **nincs kiadás-gomb** — logikus: az nem lemez.
+
+### 12.3 A harmadik, független megerősítés: a belépési híváshelyek
+
+A konstruktort egyetlen függvény hívja (`0x0067be30`, 4032 b), azt pedig a
+felületi parancsdiszpécser `0x005d9cc0`. A diszpécser **elemnévre**
+hasonlít, és a mód-bájtokat **konstansként** adja át:
+
+| kattintott elem | `0x0067be30` 3. par. → `+0x13e` | 4. par. → `+0x13f` | híváshely |
+|---|---|---|---|
+| `thumbui/cdmode` | **0** | **0** | `0x005db4d5` |
+| `thumbui/backup` | **1** | **0** | `0x005db7ee` |
+| `thumbui/replicate` | **1** | **1** *(`sete` az elemnév-egyezésre)* | `0x005db7ee` |
+| `thumbui/webmode` | 0 | 0 | `0x005db62e` |
+
+A `thumbui/backup` és a `thumbui/replicate` **ugyanazt a híváshelyet**
+használja (`0x005db6c4` és `0x005db720` a két névhasonlítás); a `+0x13f`
+értéke ott `sete` eredménye: **1, ha a kattintott elem a `replicate`**.
+
+> ⚠️ **A `thumbui/webmode` NEM negyedik mód.** A mód-bájtjai azonosak a
+> `cdmode`-éval; a webes ág az **ötödik** paraméterrel (`[ebp+0x18]`)
+> különbözik, ami egy MÁSIK objektum (`[ebx+0x2c0]`) `+0x312`/`+0x313`/
+> `+0x318` bájtjait állítja (`0x0067c275`–`0x0067c2a6`). A kimeneti
+> beállítások elágazása tehát **három**ágú, nem négy.
+
+### 12.4 A 10.3 húsz híváshelye üzemmódonként
+
+| beállítás | **Ajándék-CD** | **mentés (lemez)** | **replikáció** |
+|---|---|---|---|
+| mappanév-kulcs | `il_BurnPanel::picfolder` → „Pictures” | `il_BurnPanel::bkfolder` → „Backup” | `il_BurnPanel::bkfolder` |
+| `option_backup` | 0 | **1** | 0 |
+| `option_inifile` | – | **1** *(ha `[+0xf8] ≠ 0`)* | – |
+| `option_manifest` | 1 *(ha vetítő vagy telepítő kerül a lemezre)* | **1** | – |
+| `option_manifestcaptions` | 1 *(ugyanazzal a feltétellel)* | – | – |
+| `option_manifestfiletimes` | – | **1** | – |
+| `option_noautoruninf` | – | **1** *(ha a `[+0x168]` sztring nem üres)* | – |
+| `option_useorig` | `1`, ha a választott méret 0 (= eredeti) | – | – |
+| `option_preservemovies` | **1** | – | **1** |
+| `option_convertnonjpeg` | `Preferences\CDSlideshow` értéke | – | **1** |
+| `option_estimate` | a választott méret, ha nem 0 | – | `[+0xd8] ≠ 0` |
+| `option_imagesizelimit` | a választott méret | – | `[+0xd8]` |
+| `option_isupload` | – | – | **1** |
+| `option_jpegquality` | **85** | – | – |
+| `option_thumbsize` | **0** | – | – |
+| `option_createhtml` | **0** | – | – |
+| a `PicasaRestore` másolása (`0x0066f9f0`) | – | **mindig** | – |
+| a vetítő/telepítő másolása (`0x0066fae0`/`0x0066fca0`) | a két `Preferences`-kapcsoló szerint | – | – |
+| a záró `vtbl+0x10` hívás argumentuma | **1** | **0** | **2** |
+
+**A méretválasztó tábla** (az Ajándék-CD ágon, `[ebp+0x188]` az index):
+
+```
+0x0066f658  [esp+0x18] = 0        ; 0 = eredeti méret
+0x0066f660  [esp+0x1c] = 0x280    ; 640
+0x0066f668  [esp+0x20] = 0x320    ; 800
+0x0066f670  [esp+0x24] = 0x640    ; 1600
+```
+
+⇒ Négy fokozat: **eredeti · 640 · 800 · 1600** képpont. Ez az érték megy
+egyszerre az `option_estimate` és az `option_imagesizelimit` kulcsba.
+
+> ⛔ **HELYESBÍTÉS a 10.3-hoz.** Ott az `option_backup` értéke „`eax` (a
+> `0x0066f535` `xor eax,eax` után **0**)”. **Ez csak két ágon igaz.** A
+> mentés-ágon a `0x0066f4fb` `mov eax, 1` fut, tehát
+> **`option_backup = 1`** — épp ez a kulcs különbözteti meg a mentést a
+> másik kettőtől. A korábbi olvasat egyetlen belépési utat követett.
+
+### 12.5 Az elágazás gyökere: KÉT motorobjektum
+
+A `0x0066f470` legelső döntése nem is beállítás, hanem az, **melyik
+objektumba** ír:
+
+```
+0x0066f491  cmp byte ptr [ebp + 0x13f], 0
+0x0066f4a1  mov eax, [ebp + 0xfc]  /  0x0066f4a7  mov esi, [eax + 0x48]   ; 0x13f != 0
+0x0066f4ac  mov esi, [eax + 0x4c]                                        ; 0x13f == 0  (eax = [ebp+0xf8])
+```
+
+⇒ A lemez-ág és a replikációs ág **külön motorobjektumot** hajt meg. Ha
+mindkét mutató (`+0xf8`, `+0xfc`) nulla, a függvény azonnal visszatér
+(`0x0066f48b`) — semmilyen beállítás nem íródik.
+
+> **Pontosítás a 10.2-höz:** a 16 `option_*` kulcs tagoffszete
+> (`+0x454`…`+0x490`) **ehhez a motorobjektumhoz** tartozik, nem a
+> panelhez. A panel mindössze `0x3d8` = 984 bájt (`0x0067c504`
+> `push 0x3d8` a foglalásnál), tehát a `+0x454` bele sem férne.
+
+### 12.6 Bizonyítottsági fok és módszer
+
+**Megerősített.** Minden állítás mögött kiolvasott utasítás áll; a
+hozzárendelést **három egymástól független horgony** adja ki ugyanúgy:
+(1) a vezérlőnév-választás (12.2), (2) a belépési elemnevek (12.3),
+(3) az ágak tartalma (`option_isupload` a replikációs, a `PicasaRestore`
+másolása a mentés-ágon).
+
+Módszer: **helyi diszasszemblálás**, felhős dekompiláció nélkül. A
+bináris-index `file_offset` mezője ennél a PE-nél megegyezik az RVA-val, és
+a helyi `Picasa3.exe` SHA-256-a bitre azonos az indexeltével
+(`644b7bec…3ddc96`, `meta.binary_sha256`), tehát a cím → fájloffszet
+leképezés ellenőrzött.

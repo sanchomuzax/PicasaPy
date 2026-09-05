@@ -146,6 +146,22 @@ def _cellak(sav_objektum) -> list:
         index += 1
 
 
+def _kicsuszasra_var(qt_app, feltetel, masodperc: float = 2.0) -> bool:
+    """#2157 óta az elbocsátás NEM azonnali: a cella előbb kicsúszik
+    (300 ms), és csak utána kerül ki a listából. A „elviszi a cellát"
+    állítások ezért nem `processEvents()`-szel, hanem várakozással
+    mérendők — a szándékuk változatlan."""
+    import time
+
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        if feltetel():
+            return True
+        qt_app.processEvents()
+        time.sleep(0.01)
+    return False
+
+
 def _kattints(ablak, elem) -> None:
     """IGAZI egérkattintás a vezérlő közepére.
 
@@ -243,6 +259,37 @@ class TestACellaGeometriaja:
         assert zaro.property("height") == ZARO_MERET
         pont = zaro.mapToItem(cella, QPointF(0, 0))
         assert (round(pont.x()), round(pont.y())) == (ZARO_X, ZARO_Y)
+
+    def test_a_fogantyu_ki_van_rajzolva(self, cella):
+        """#2133: `gripper` — 233,19 → 7 × 7 a cella koordinátáiban.
+
+        A #2035 kimérte, hogy az eredetiben ez a réteg **kirajzolódik**
+        (szemben a `collapse`-szal, amelyik nem). Nálunk eddig csak a
+        fejléc-komment sorolta fel; a fájl nem építette meg.
+        """
+        fogantyu = _keres(cella, "notifierCellGripper0")
+        assert fogantyu is not None, "hiányzik a `gripper` rajza"
+        assert fogantyu.property("width") == 7
+        assert fogantyu.property("height") == 7
+        pont = fogantyu.mapToItem(cella, QPointF(0, 0))
+        assert (round(pont.x()), round(pont.y())) == (233, 19)
+
+    def test_a_fogantyu_NEM_vezerlo(self, cella):
+        """A foga: az eredetiben nem fogható meg (az üzenetkezelő nem
+        kezel `WM_MOUSEMOVE`/`WM_LBUTTONUP`-ot, a `WM_SETCURSOR` egyetlen
+        kurzort tölt). Aki `MouseArea`-t tesz rá, más programot ír."""
+        fogantyu = _keres(cella, "notifierCellGripper0")
+        egerteruletek = [
+            gy for gy in fogantyu.findChildren(QObject)
+            if gy.metaObject().className().startswith("QQuickMouseArea")
+        ]
+        assert egerteruletek == [], "a fogantyú vezérlőt kapott"
+
+    def test_az_osszecsukas_NINCS_megepitve(self, cella):
+        """A `collapse` az EREDETIBEN sem rajzolódik ki (#2035): a
+        `popup+0x13c` slotra csak a konstruktor és a destruktor hivatkozik.
+        Ha valaki megépíti, ez a próba szól."""
+        assert _keres(cella, "notifierCellCollapse0") is None
 
 
 # --------------------------------------------------------------------------
@@ -390,7 +437,7 @@ class TestTobbCella:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
+        assert _kicsuszasra_var(qt_app, lambda: len(_cellak(objektum)) == 1)
 
         maradt = _cellak(objektum)
         assert len(maradt) == 1
@@ -423,9 +470,9 @@ class TestKattintas:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellHit0"))
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_a_zaro_vezerlo_elviszi_a_cellat(self, sav):
         objektum, _c, import_controller, qt_app = sav
@@ -434,9 +481,9 @@ class TestKattintas:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_a_zaras_NEM_navigal(self, sav):
         """A záró vezérlő a cella FÖLÖTT ül — ha a kattintás átszivárogna
@@ -490,9 +537,9 @@ class TestAzIdozites:
         QMetaObject.invokeMethod(
             ora, "triggered", Qt.ConnectionType.DirectConnection
         )
-        qt_app.processEvents()
-
-        assert objektum.property("hasCells") is False
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
 
     def test_az_atmenet_iranya_donti_el_a_hosszat(self, sav):
         """0,25 s be, 0,5 s ki — ugyanaz az alak, mint a #1000-nél."""
@@ -506,7 +553,9 @@ class TestAzIdozites:
         cellak = _cellak(objektum)
 
         _kattints(objektum, _keres(cellak[0], "notifierCellClose0"))
-        qt_app.processEvents()
+        assert _kicsuszasra_var(
+            qt_app, lambda: objektum.property("hasCells") is False
+        )
         assert animacio.property("duration") == objektum.property("fadeOutMs")
 
 

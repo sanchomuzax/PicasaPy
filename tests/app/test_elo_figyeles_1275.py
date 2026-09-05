@@ -94,7 +94,10 @@ def elo_controller(qt_app, tmp_path, library):
     )
     ctl.start()
     # a kezdeti szinkron fusson le, mielőtt a teszt bármit állít
-    _var(qt_app, lambda: not ctl._sync_running, 20.0)
+    assert _var(qt_app, lambda: not ctl._sync_running, 20.0), (
+        "#2408: a szinkron nem állt le 20 s alatt — a teszt hiányos "
+        "állapoton menne tovább"
+    )
     yield ctl
     ctl.shutdown()
     assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"

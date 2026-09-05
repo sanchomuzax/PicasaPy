@@ -1,0 +1,43 @@
+{
+  "_megjegyzes": "A #2193 kiürítette a listát: 58-ból 54 szakasz megkapta a valódi `.tre`-horgonyát (a definíciós sort a `referencia/tre-eroforrasok/` adja). A maradék NÉGY nem dokumentációs hiány, hanem az őr elemminta-illesztésének műterméke: mind a négy név HELYŐRZŐ vagy paraméteres alak (`outputlayout/button(collage)`, `outputlayout/docbounds`, `editpanel/fxN`, `editpanel/editsliderN_container`), és EGYIK SEM szerepel a 2020 elemű leltárban — tehát `feltáratlan`-ként sem jelenhetnek meg, a mérésből semmit nem vesznek el. Horgonyt hozzájuk találgatni nem lehet: nincs mihez.",
+  "_jegy": "#2193",
+  "_felvetel_datuma": "2026-09-04 (a #2193 utáni maradék)",
+  "sertesek": [
+    {
+      "lap": "picasa-create-features.md",
+      "cim": "#### 1.10.5 Belépési pontok a kollázsba",
+      "elemek": [
+        "outputlayout/button"
+      ],
+      "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
+      "elem_db": 1
+    },
+    {
+      "lap": "picasa-keptalca.md",
+      "cim": "## 11. A műveletsor gombjainak MÉRT geometriája (2026-08-24)",
+      "elemek": [
+        "outputlayout/docbounds"
+      ],
+      "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
+      "elem_db": 1
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 3.2 A rács geometriája (megerősített)",
+      "elemek": [
+        "editpanel/fxN"
+      ],
+      "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
+      "elem_db": 1
+    },
+    {
+      "lap": "ui-audit-editor.md",
+      "cim": "### 4.3 A csúszka geometriája (mérés a 2. fül felvételén)",
+      "elemek": [
+        "editpanel/editsliderN_container"
+      ],
+      "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
+      "elem_db": 1
+    }
+  ]
+}

@@ -50,84 +50,96 @@ ColumnLayout {
             label: qsTr("Infrared Film")
             onButtonClicked: if (!panel.tryOpenParamPanel("ir", label)) panel.effectRequested("ir")
             thumbSource: panel.effectThumbSource("ir")
-            appliedCount: panel.effectAppliedCount("ir")
+            badge: panel.hasBadge("ir")
         }
         PanelButton {
             objectName: "effectLomo"
             label: qsTr("Lomo-ish")
             onButtonClicked: if (!panel.tryOpenParamPanel("lomo", label)) panel.effectRequested("lomo")
             thumbSource: panel.effectThumbSource("lomo")
-            appliedCount: panel.effectAppliedCount("lomo")
+            badge: panel.hasBadge("lomo")
         }
         PanelButton {
             objectName: "effectHolga"
             label: qsTr("Holga-ish")
             onButtonClicked: if (!panel.tryOpenParamPanel("holga", label)) panel.effectRequested("holga")
             thumbSource: panel.effectThumbSource("holga")
-            appliedCount: panel.effectAppliedCount("holga")
+            badge: panel.hasBadge("holga")
         }
         PanelButton {
             objectName: "effectHdr"
             label: qsTr("HDR-ish")
             onButtonClicked: if (!panel.tryOpenParamPanel("hdr", label)) panel.effectRequested("hdr")
             thumbSource: panel.effectThumbSource("hdr")
-            appliedCount: panel.effectAppliedCount("hdr")
+            badge: panel.hasBadge("hdr")
         }
         PanelButton {
             objectName: "effectCinemascope"
             label: qsTr("Cinemascope")
             onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope", label)) panel.effectRequested("cinemascope")
             thumbSource: panel.effectThumbSource("cinemascope")
-            appliedCount: panel.effectAppliedCount("cinemascope")
+            badge: panel.hasBadge("cinemascope")
         }
         PanelButton {
             objectName: "effectOrton"
             label: qsTr("Orton-ish")
             onButtonClicked: if (!panel.tryOpenParamPanel("orton", label)) panel.effectRequested("orton")
             thumbSource: panel.effectThumbSource("orton")
-            appliedCount: panel.effectAppliedCount("orton")
+            badge: panel.hasBadge("orton")
         }
         PanelButton {
             objectName: "effectSixties"
-            label: qsTr("1960s")
+            label: qsTr("1960's")
             onButtonClicked: if (!panel.tryOpenParamPanel("sixties", label)) panel.effectRequested("sixties")
             thumbSource: panel.effectThumbSource("sixties")
-            appliedCount: panel.effectAppliedCount("sixties")
+            badge: panel.hasBadge("sixties")
         }
         PanelButton {
             objectName: "effectInvert"
             label: qsTr("Invert Colors")
             onButtonClicked: if (!panel.tryOpenParamPanel("invert", label)) panel.effectRequested("invert")
             thumbSource: panel.effectThumbSource("invert")
-            appliedCount: panel.effectAppliedCount("invert")
+            badge: panel.hasBadge("invert")
         }
         PanelButton {
             objectName: "effectHeatMap"
-            label: qsTr("Heat Map")
-            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap", label)) panel.effectRequested("heatmap")
+            label: panel.shiftMasodlagos
+                   ? qsTr("Night Vision") : qsTr("Heat Map")
+            //: #2146: Shifttel a MÁSODLAGOS szűrő (nightvision) —
+            //: az eredeti csempe-táblája (heatmap -> nightvision)
+            readonly property string szuro: panel.shiftMasodlagos
+                                            ? "nightvision" : "heatmap"
+            onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
+            //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
+            //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
+            //: NINCS MÉRVE — és hat másodlagos kulcs a mi
+            //: bélyegkép-katalógusunkban sincs benne
+            //: (`effect_thumbnails.EFFECT_NAMES`), tehát üres
+            //: csempét adna. A render-láncban mind a kilenc
+            //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("heatmap")
-            appliedCount: panel.effectAppliedCount("heatmap")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectCrossProcess"
             label: qsTr("Cross Process")
             onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess", label)) panel.effectRequested("crossprocess")
             thumbSource: panel.effectThumbSource("crossprocess")
-            appliedCount: panel.effectAppliedCount("crossprocess")
+            badge: panel.hasBadge("crossprocess")
         }
         PanelButton {
             objectName: "effectQuantizePalette"
             label: qsTr("Posterize")
             onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette", label)) panel.effectRequested("quantizepalette")
             thumbSource: panel.effectThumbSource("quantizepalette")
-            appliedCount: panel.effectAppliedCount("quantizepalette")
+            badge: panel.hasBadge("quantizepalette")
         }
         PanelButton {
             objectName: "effectTwoTone"
             label: qsTr("Duo-Tone")
             onButtonClicked: if (!panel.tryOpenParamPanel("twotone", label)) panel.effectRequested("twotone")
             thumbSource: panel.effectThumbSource("twotone")
-            appliedCount: panel.effectAppliedCount("twotone")
+            badge: panel.hasBadge("twotone")
         }
     }
 }

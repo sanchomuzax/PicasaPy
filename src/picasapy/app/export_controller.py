@@ -21,6 +21,7 @@ from picasapy.export import (
     resolve_export_quality,
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
+from picasapy.lazy_cv2 import elore_betolt
 
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -446,6 +447,15 @@ class ExportMixin(BackgroundWorkerMixin):
                 self.noteOutputWritten(str(report.exported[0]))
             self.exportFinished.emit(len(report.exported), len(report.failed))
 
+        # #2370: a cv2-t a HÍVÓ (GUI-)szálon hozzuk be, a háttérszál
+        # INDÍTÁSA ELŐTT. Ha ez itt kimarad, az első `import cv2` az
+        # export-munkaszálon fut le (`exporter._decode_image` →
+        # `lazy_cv2.__getattr__`), és Windowson a párhuzamos
+        # szemétgyűjtéssel ACCESS_VIOLATION-t adott — hat egymást követő
+        # main-futáson. Ugyanaz a szándék, mint a fenti
+        # `_ensure_output_resync_wired()`-nél (#1539): ami a GUI-szálra
+        # való, az a szálindítás elé kerül.
+        elore_betolt()
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-export")
 

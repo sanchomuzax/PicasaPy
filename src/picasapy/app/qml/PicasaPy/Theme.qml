@@ -57,7 +57,13 @@ QtObject {
     readonly property color panelYearText: dark ? "#9c988f" : "#7a776f"  // mono évszám-címke
 
     // ------- lightbox / indexkép-csoport -------
-    readonly property color folderTitle: ink          // 16px / 600 sans
+    // #2043: az eredeti Picasa `runtime/constants.ui` fájljának „Album
+    // Layout" blokkja — `alayout_titleColor = #634B45`, meleg sötétbarna.
+    // Ugyanennek a blokknak a betűjét (Georgia) és méretét (20) már
+    // korábban átvettük (`LightboxHeader.qml`), csak a szín maradt ki.
+    // A sötét pár azonos színezet és telítettség, tükrözött világossággal
+    // (32,9% -> 67,1%) — ugyanaz a meleg barna, nem elszürkítve.
+    readonly property color folderTitle: dark ? "#baa29c" : "#634b45"
     readonly property color folderDate: dark ? "#b0aca4" : "#5a5750"
     readonly property color addDescription: dark ? "#8b877f" : "#a29e96" // dőlt
     readonly property color thumbBorder: dark ? "#454545" : "#d9d9d9"
@@ -96,6 +102,34 @@ QtObject {
     readonly property color trackBg: dark ? "#3a3a3a" : "#dddddd"     // haladásjelző sín
     readonly property color shadeLight: dark ? "#3f3f3f" : "#ffffff"  // kiemelt él
     readonly property color shadeDark: dark ? "#161616" : "#9a9a9a"   // árnyék-él
+
+    // ------- #883: a gomb NÉGY állapota — MÉRVE a `respack.yt`-ből -------
+    //
+    // ⚠️ A világos ág értékei az EREDETI Picasa képpontjai
+    // (`globalbuttons/b1_decrect_*`, spec: `picasa-gomb-es-menu-rendszer.md`).
+    // A sötét ág SZÁRMAZTATOTT: az eredetinek nincs sötét témája, tehát ott
+    // nincs mit átvenni — beégetni viszont TILOS. A #336 pontosan ezen bukott
+    // meg: fix világos háttér + témafüggő felirat = üres gombok sötét témán.
+    readonly property color buttonTopNormal:
+        dark ? Qt.lighter(buttonBg, 1.08) : "#f9f9f9"
+    readonly property color buttonBottomNormal:
+        dark ? buttonBg : "#d0d0d0"
+    // A lenyomott az eredetiben MELEGEBB (nem hidegebb): #A4A19D … #CBC6C2 —
+    // a szürkék R>G>B irányba tolódnak. A korábbi `Qt.darker` hideg szürkét
+    // adott, azaz ROSSZ IRÁNYBA tért el.
+    readonly property color buttonTopDown:
+        dark ? Qt.darker(buttonBg, 1.15) : "#a4a19d"
+    readonly property color buttonBottomDown:
+        dark ? Qt.darker(buttonBg, 1.05) : "#cbc6c2"
+    // A rámutatás NEM külön kitöltés: a felső 2 képpontsor és a bal 2 oszlop
+    // sötétedik (belső árnyék bal-felülről), a többi marad a normál.
+    readonly property color buttonHoverShade:
+        dark ? Qt.darker(buttonBg, 1.25) : "#d6d6d6"
+    readonly property color buttonBorder:
+        dark ? chromeBorder : "#bbbbbb"
+    // A bekapcsolt állapot ARANY keretet kap, a kitöltése változatlan.
+    // Ez SZÍNJELZÉS, nem téma-elem: mindkét témán ugyanaz.
+    readonly property color buttonToggledBorder: "#c39b62"
 
     // ------- #314: sötét téma kozmetikai javítások -------
     // splash-logó háttérkorongja: az eredeti Picasa-logó is fehér korongon

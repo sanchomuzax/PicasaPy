@@ -242,6 +242,8 @@ m_hidden
 
 ### 4.4 A megvalósítás és EGY MEGDŐLT elvárás (2026-08-24, #1072)
 
+*Forrás: `editpanel.tre:686` (`editpanel/render_now`).*
+
 A PISZKOZAT-állapot ezzel a körrel a kódban is létezik:
 
 | a jegy elvárása | mi lett belőle |
@@ -869,6 +871,16 @@ ennyire szűkíti:
 **Feltevés — NEM mérés:** a `contactsheet` cellája feliratot is tartalmaz
 (ez a téma lényege), tehát a 313 a **kép + felirat** együttes magassága
 lehet; a különbség ekkor ≈ 10,4 egység. A `.cxf` ezt nem tartalmazza.
+
+✅ **2026-09-05 — az ÍRÓ megvan, és nem alakít át semmit.** A `.cxf`
+`scale` attribútumát a `FUN_008347b0` írja: `0x00835096` (`"scale"`) →
+`0x008350b2` `fld dword ptr [edx+ecx+0x2c]` → `%f` (`0x00c817c0`). ⇒ a
+fájlban álló szám **pontosan** a csomópont `+0x2c` mezője a mentéskor;
+a hat tizedes (`scale="337.000000"`) ezt a mintáinkon is igazolja.
+**Ez nem vezeti le a 313-at**, de kizárja, hogy az írás közben történne
+átszámítás — a kérdés tisztán az, mi írja felül a layout `1,0`-ját.
+*(Részletek: `picasa-create-features.md`, „A MEZŐ AZONOSSÁGA az ÍRÓ
+oldaláról is megerősítve".)*
 
 **Mi döntené el:** egy **fekvő** tájolású `contactsheet`-minta (a meglévő
 AI6 álló). Ha ott is 313, fix szám; ha más, a lapmérettel skálázódik, és

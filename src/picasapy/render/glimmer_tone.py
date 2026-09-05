@@ -73,7 +73,12 @@ def apply_vignette(
     """`Vignette=1,Blur,Strength,Fade,szín` — belső, fekete ragyogás a szélektől.
 
     Blur `[0..50]` (alap 35), Strength `[1..2]` (alap 1,4), `xblur=yblur =
-    Blur·0,02·max(W,H)/4` (`filterdesc-registry.md` 4.3).
+    Blur·0,02·max(W,H)/**8**` (`filterdesc-registry.md` 4.3).
+
+    #2159: a docstring korábban `/4`-et írt, a `VIGNETTE_RADIUS_FACTOR`
+    viszont `0.02 / 8.0` — és a konstans fölötti komment a **/8**-at
+    indokolja, valódi Picasa-exportokon mért illesztéssel (Blur=35 → σ≈220,
+    Blur=50 → σ≈310–320). A szöveg tévedett, nem a szám.
     """
     return _glow_vignette(image, blur, strength, color, fade)
 
@@ -280,11 +285,40 @@ def apply_twotone(
 
 def apply_quantizepalette(image, steps: float = 8.0, smoothing: float = 80.0, fade: float = 0.0):
     """`QuantizePalette=1,Steps,Smoothing,Fade` — előzetes lágy elmosás
-    (`(100−Smoothing)/10 + 0,1` szigma) → egyenletes lépésközű kvantálás
-    (`Depth=4` — az RGB-csatornánkénti `Steps` szintre kvantálás; a
-    `Depth` konstans a `filterdesc.xml`-ben nem az RGB-mélységet, hanem a
-    belső paletta-keresés lépésszámát jelöli, itt a lineáris kvantálással
-    egyenértékű).
+    (`(100−Smoothing)/10 + 0,1` szigma) → csatornánként egyenletes
+    lépésközű kvantálás `Steps` szintre.
+
+    ## A `Depth = 4` és a lineáris közelítés — MÉRVE (#2454)
+
+    A `filterdesc.xml` `Depth = 4`-et szállít, ami az eredetiben oktree-t
+    jelöl (3 osztási szint), nem RGB-mélységet. Mi lineárisan kvantálunk.
+    Ez a docstring korábban azt ÁLLÍTOTTA, hogy a kettő „egyenértékű" —
+    **bizonyíték nélkül**. Most van bizonyíték.
+
+    Mérve a NAS-mérőszett három szállított beállításán, a Picasa saját
+    exportjához hasonlítva (ΔE, CIE Lab, átlagos képpont-távolság):
+
+    ```
+    eset  Steps Smoothing Fade   ΔE mi↔Picasa   ΔE forrás↔Picasa
+    alap     8       80     0          0,268           19,009
+    min      2        0     0          0,687           73,485
+    max     30      100   100          0,136            0,136
+    ```
+
+    A viszonyítás adja az értelmét: a `min` esetben az érintetlen forrás
+    73,5-tel tér el az eredeti kimenetétől, a mienk **0,687-tel** — a hatás
+    99,1%-át eltaláljuk. A 0,1–0,7 a JPEG-újrakódolás zajszintje.
+
+    ⇒ A lineáris kvantálás a **szállított beállításokon** mérhetően
+    egyenértékű; az oktree-út megvalósítása nem indokolt.
+
+    ⚠️ **A `max` eset semmit nem bizonyít a kvantálásról:** ott
+    `Fade = 100`, tehát a hatás teljesen elhalványul, és a kimenet a
+    forrás. Kontrollnak jó (a `fade`-kezelés helyes), a kvantálás hűségéről
+    nem szól.
+
+    ⚠️ **Csak három beállításra mérve**, a szállítottakra — a `Steps`
+    teljes tartományára (2…30) nem.
     """
     import numpy as np
 

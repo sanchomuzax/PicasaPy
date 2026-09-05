@@ -142,7 +142,7 @@ VART: dict[str, list[str]] = {
         "Hide",
         "Show",
         SZ,
-        "Print Thumbnails...",
+        "Print Contact Sheet...",  # #2364
         "Export as HTML Page...",
         SZ,
         "Locate on Disk",
@@ -180,7 +180,9 @@ VART: dict[str, list[str]] = {
         "Upload Manager...",
         "People Manager...",
         SZ,
-        "Find Duplicates...",
+        # #2142: a duplikátum-kereső a KÍSÉRLETI almenübe költözött (az
+        # eredetiben ott a 2. tétel) — a felső szinten már csak az
+        # arckereső áll, ami a mi tudatos eltérésünk.
         "Find Faces...",
         SZ,
         "Configure Photo Viewer...",
@@ -227,22 +229,30 @@ VART: dict[str, list[str]] = {
 #: tesztben, hogy a szerkezet és az indoka EGY helyen legyen olvasható.
 ELTERESEK = {
     "&Edit · Undo Paste All Effects + Undo Batch Edit": (
-        "A mentésen a Szerkesztés menü NEM kezdődik visszavonás-"
-        "csoporttal, pedig az inaktív tételei látszanak. A szövegtárban "
-        "viszont van `eMenuEdit::ID_UNDO` és `ID_REDO`. A mi két tételünk "
-        "élő funkció; amíg nem tudjuk, mikor jelenik meg az eredetiben, "
-        "nem vesszük ki."
+        "Az eredeti Szerkesztés menüjében SOHA nincs visszavonás — nem "
+        "állapotfüggő, hanem nincs is: a menü statikus (11 tétel + 3 "
+        "elválasztó, konstans darabszám, elágazás nélkül), és a korábban "
+        "hivatkozott erőforrás-kulcs a binárisban NULLA előfordulású, "
+        "miközben a menü teljes kulcskészlete kiolvasható és pontosan "
+        "tizenegy elemű — visszavonás nincs köztük. "
+        "Mérve a #1795-ben, a tábla a picasa-menusor-csoportok.md-ben; a "
+        "helyesbítés a #2151. A mi két tételünk TUDATOS TÖBBLET, mert ez "
+        "a két bulk-művelet egyetlen belépési pontja — kivéve őket "
+        "visszavonhatatlanná válnának, áthelyezni pedig nincs hova, mert "
+        "a szomszédos menük szerkezete is mért."
     ),
     "&View · Dark Theme": (
         "Sötét téma — nálunk van, az eredetiben nincs. A mért 7. csoport "
         "(Színkezelés + Megjelenítési mód) végére került, mert "
         "megjelenítési beállítás, nem nézetváltó."
     ),
-    "&Tools · Find Duplicates... + Find Faces...": (
-        "Az eredeti Eszközök menü felső szintjén egyik sincs. A "
-        "szövegtárban `eMenuTools::ID_DUPES` („Show Duplicate Files”) "
-        "megvan — valószínűleg a Kísérleti almenüben, amit a mentés nem "
-        "nyit ki. Az áthelyezés bizonyíték nélkül találgatás lenne."
+    "&Tools · Find Faces...": (
+        "Az eredeti Eszközök menüjében NINCS arckereső parancs: a „Find "
+        "Faces” felirat a teljes szövegtárban nem szerepel (#1794 mérte ki "
+        "a menü szerkezetét). Mi a #1473 miatt tartjuk meg — ugyanaz a "
+        "fajta munka, mint a duplikátum-keresés —, tehát TUDATOS eltérés. "
+        "A duplikátum-kereső viszont a #2142-ben a Kísérleti almenübe "
+        "került, ahol az eredetiben is áll (`eMenuTools::ID_DUPES`)."
     ),
     "&Tools · Language >": (
         "Nyelvváltó almenü. Az eredetiben nincs: a Picasa nyelvét a "
@@ -318,11 +328,24 @@ def test_minden_menu_szerkezetet_ellenoriz_a_tabla():
     assert len(_alak()) == 8
 
 
+def _mnemonik_nelkul(tetelek: list[str]) -> list[str]:
+    """Az `&` a MNEMONIK jelölése, nem a felirat tartalma (#2152).
+
+    Ez a fájl a CSOPORTOSZTÁST méri — hogy hol vannak az elválasztók és
+    milyen sorrendben állnak a tételek. A mnemonik-betűket a #2152 vezette
+    át az eredeti szövegtárból, és azokat a saját őre méri
+    (`test_menu_mnemonikok_2152.py`). Ha itt nem hagynánk figyelmen kívül
+    az `&`-t, minden mnemonik-bővítés hamis csoportosztás-eltérésnek
+    látszana.
+    """
+    return [t.replace("&", "") for t in tetelek]
+
+
 def test_a_csoportok_a_mert_eredetit_kovetik():
     kapott = _alak()
     elteres: list[str] = []
     for cim in MENUSOR:
-        if kapott.get(cim) != VART[cim]:
+        if _mnemonik_nelkul(kapott.get(cim, [])) != _mnemonik_nelkul(VART[cim]):
             elteres.append(
                 f"\n[{cim}]\n  mért eredeti: {' | '.join(VART[cim])}"
                 f"\n  nálunk:       {' | '.join(kapott.get(cim, ['—']))}"
@@ -338,3 +361,54 @@ def test_az_elteresek_indoka_le_van_irva():
     """Minden tudott eltéréshez tartozzon érdemi magyarázat."""
     for kulcs, indok in ELTERESEK.items():
         assert len(indok) > 60, f"{kulcs}: az indok túl szűkszavú"
+
+
+class TestAMappanezetAlmenuSORRENDJE:
+    """#2019: az „Egyszerűsített fanézet" az almenü LEGALJÁN áll.
+
+    A tulajdonos felvétele (`research/#1766-nezet-mappanezet-almenu.png`)
+    szerint az eredeti sorrend a rendezés-blokk után:
+
+        Indexképek megjelenítése a könyvtárban
+        Egyszerűsített fanézet
+
+    Nálunk a #1454 óta fordítva volt: a nézet-hármas együtt állt, holott
+    az eredetiben a harmadik el van választva a pártól.
+    """
+
+    def _almenu(self) -> str:
+        from pathlib import Path
+
+        import picasapy.app
+
+        forras = (
+            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+        ).read_text(encoding="utf-8")
+        kezdet = forras.index('objectName: "menuViewFolderView"')
+        nyito = forras.rindex("{", 0, kezdet)
+        melyseg = 0
+        for i in range(nyito, len(forras)):
+            if forras[i] == "{":
+                melyseg += 1
+            elif forras[i] == "}":
+                melyseg -= 1
+                if melyseg == 0:
+                    return forras[nyito : i + 1]
+        raise AssertionError("a Mappanézet almenü zárójele nem záródik be")
+
+    def test_az_indexkepek_tetel_ELOBB_all(self):
+        blokk = self._almenu()
+        assert blokk.index('objectName: "menuViewAlbumThumbnails"') < blokk.index(
+            'objectName: "menuViewSimplifiedTreeView"'
+        ), (
+            "az „Egyszerűsített fanézet” nem az almenü legalján áll — az "
+            "eredetiben az „Indexképek…” után jön (#2019)"
+        )
+
+    def test_mindketto_a_RENDEZES_blokk_utan_all(self):
+        """Nem elég a kettő egymáshoz képesti sorrendje: az elválasztó
+        utáni csoportban kell lenniük."""
+        blokk = self._almenu()
+        utolso_rendezes = blokk.index('objectName: "menuViewSortReverse"')
+        for nev in ("menuViewAlbumThumbnails", "menuViewSimplifiedTreeView"):
+            assert blokk.index(f'objectName: "{nev}"') > utolso_rendezes

@@ -95,7 +95,10 @@ class EffectParam:
 
 #: Effektek, amelyeknek nincs állítható paramétere — a gomb azonnal alkalmaz
 #: (ez a Picasa viselkedése is: a Szépia/Fekete-fehér egy kattintás).
-PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "grain2", "invert")
+# #2141: a `grain2` KIKERÜLT — az 1. fül 5. csempéje az eredeti
+# elsődlegesére (`picnikgrain`) kötött, aminek VAN csúszkája. A
+# `grain2` a Shiftes másodlagos, felületi belépési pont nélkül.
+PARAMETERLESS_EFFECTS: tuple[str, ...] = ("sepia", "bw", "warm", "invert")
 
 
 def _slider(key, label, minimum, maximum, default, step=1.0, max_formula=None, default_formula=None) -> EffectParam:
@@ -122,20 +125,31 @@ def _color(key, label, color) -> EffectParam:
 _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # --- 3. fül: törzs-effektek ---------------------------------------------
     # unsharp=1 mérten azonos az unsharp2=1,0.600000-val
-    "unsharp": (_p("amount", "Amount", 0.0, 2.0, 0.6, 0.05),),
+    # #2236: a felső vég 2,0 -> 1,0 — az eredetin TÚLRA engedtünk
+    "unsharp": (_p("amount", "Amount", 0.0, 1.0, 0.6, 0.05),),
     # sat=1,!telítettség — a vezérlő eddigi alapértéke 0,5
-    "sat": (_p("saturation", "Saturation", 0.0, 1.0, 0.5, 0.01),),
+    # #2236: a NEGATÍV ág eddig elérhetetlen volt a felületről, pedig a
+    # mag előjel szerint két külön magra ágazik (#693). Az alapérték a
+    # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
+    "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
     # glow2=1,intenzitás,sugár
     "glow2": (
-        _p("intensity", "Intensity", 0.0, 1.0, 0.5, 0.01),
+        # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        # ⚠️ A Radius SZÁNDÉKOSAN marad [0…100]: a regiszter [0…1]-e a
+        # LOG-skálán van (`log_base=250`, az egyetlen ilyen csúszka), az
+        # alapértéke (3,0) pedig a tényleges skálán — ezért is nagyobb a
+        # saját maximumánál. A `chain_report.py` ugyanezért hagyja ki a
+        # tartomány-ellenőrzésből.
         _p("radius", "Radius", 0.0, 100.0, 20.0),
     ),
     # radblur=1,x,y,méret,mérték
     "radblur": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("size", "Size", 0.0, 1.0, 0.3, 0.01),
-        _p("amount", "Amount", 0.0, 1.0, 0.5, 0.01),
+        # #2236: a tartomány fele elérhetetlen volt (min 0 -> −1).
+        _p("size", "Size", -1.0, 1.0, 0.3, 0.01),
+        _p("amount", "Amount", -1.0, 1.0, 0.5, 0.01),
     ),
     # radsat=1,x,y,sugár,élesség
     "radsat": (
@@ -146,7 +160,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
     "tint": (
-        _p("preserve", "Preserve Color", 0.0, 1.0, 0.5, 0.01),
+        # #2236: a regiszter szerint [−1…255].
+        _p("preserve", "Preserve Color", -1.0, 255.0, 0.5, 0.01),
         _color("color", "Pick Color", "#ffffff"),
     ),
     # ansel=1,#szín (#717: korábban egyáltalán nem volt katalógus-bejegyzése —
@@ -157,7 +172,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         _p("gradient", "Gradient", 0.0, 1.0, 0.5, 0.01),
-        _p("shade", "Shade", 0.0, 1.0, 0.5, 0.01),
+        # #2236: az alapérték 0,5 -> 0,25 a regiszterből.
+        _p("shade", "Shade", 0.0, 1.0, 0.25, 0.01),
         _color("color", "Pick Color", "#ffffff"),
     ),
     # radtint=1,x,y,feather,#szín (#565/#717: korábban egyáltalán nem volt
@@ -330,6 +346,21 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("grain", "Grain", 0.0, 50.0, 10.0),
         _checkbox("lighten", "Lighten", default=False),
     ),
+    # --- #2141: a csempe-átkötés HOZTA IDE a következő kettőt -------------
+    # Az 1. effekt-fül Élesítés és Árnyalás csempéje az eredeti
+    # elsődlegesére (`unsharp2`, `PicnikTint`) került át. Katalógus-bejegyzés
+    # nélkül ezek `has_params=False`-ok lettek volna, vagyis a csempe
+    # NÉMÁN elveszi a csúszkát, és alapértékkel azonnal alkalmaz. Az
+    # adatok forrása a szűrő-regiszter (`registry_data.py`, a
+    # `filterdesc.xml`-ből) — nem becslés.
+    #
+    # unsharp2=1,mennyiség — a felső vég 3,0 (az `unsharp` v1-é 1,0),
+    # az alapérték mindkettőnél 0,6
+    "unsharp2": (_p("amount", "Amount", 0.0, 3.0, 0.6, 0.05),),
+    # PicnikTint=1,elhalványítás — a regiszter EGY csúszkát ad („Fade",
+    # 0–100, alap 0). Színválasztója NINCS: az örökölt `tint` az, aminek
+    # `preserve` + `#szín` párja van.
+    "picniktint": (_p("fade", "Fade", 0.0, 100.0, 0.0),),
 }
 
 

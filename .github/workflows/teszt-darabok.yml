@@ -15,6 +15,15 @@ on:
         description: A futtató platformja (ubuntu-latest / windows-latest)
         required: true
         type: string
+      cov:
+        # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
+        # A `--cov` minden részfutást `coverage run -p` alá tesz, ami a
+        # teljes készleten érezhető lassulás — a PR-ek körét nem terhelheti.
+        # A `lefedettseg.yml` kapcsolja be, saját, ritkább körben.
+        description: Mérje-e a lefedettséget (`--cov` + melléktermék)
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   darab:
@@ -116,4 +125,62 @@ jobs:
         # lefedettség volna — egy részleges számot totálként mutatni
         # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
         # jegyre került; a `--cov` helyben változatlanul működik.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
+        #
+        # #1156: a `--cov` visszatért, de CSAK a külön körben (`cov` input).
+        # A darab a SAJÁT `.coverage`-ét írja; az összefésülés a hívó
+        # munkafolyamat záró jobjáé — egy darab száma önmagában nem
+        # lefedettség, és totálként mutatni rosszabb, mint nem mutatni.
+        #
+        # ⚠️ A kapcsoló GitHub-KIFEJEZÉS, nem shell-elágazás. Az első
+        # változatom bash `if`-et írt ide — a windows-runner viszont
+        # PowerShellt futtat (ennek a lépésnek nincs `shell: bash`-e), és
+        # MIND A NÉGY windows-darab elhasalt rajta. A `shell: bash`
+        # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
+        # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
+        # állítja össze, a shellhez nem nyúl.
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4 ${{ inputs.cov && '--cov' || '' }}
+
+      - name: Lefedettségi adatfájl feltöltése
+        # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
+        # `if-no-files-found: error` szándékos: ha a mérés némán elmaradna,
+        # a záró job hiányos számot adna ki teljesként — épp az a hiba,
+        # ami miatt a #1127 kivette a `--cov`-ot.
+        if: inputs.cov && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lefedettseg-${{ matrix.shard }}
+          path: .coverage
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+      # #1864: a windows-láb NEM blokkol (kísérleti), és épp ezért a
+      # bukása hetekig észrevétlen maradt: négy export-hibaág minden
+      # PR-en elbukott, és a zöld összképben senki nem nézett bele.
+      #
+      # Ez a lépés láthatóvá teszi anélkül, hogy blokkolna: a futás
+      # ÖSSZEGZŐ LAPJÁRA ír (`$GITHUB_STEP_SUMMARY`), ami a webes felületen
+      # a job tetején jelenik meg. Nem `exit 1` — a láb kísérleti marad.
+      #
+      # ⚠️ SZÁNDÉKOSAN nem a záró (kötelező) jobba került: oda kötve minden
+      # PR-nek meg kellene VÁRNIA a windows-lábat, ami a beolvasztást a
+      # lassabb platformhoz kötné. A #1863 óta épp az a felállás, hogy a
+      # kötelező ellenőrzés csak az ubuntu-darabokra vár.
+      - name: A windows-láb bukása LÁTHATÓ legyen (#1864)
+        if: ${{ failure() && runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          {
+            echo "## ⚠️ A windows-láb elbukott — ${{ matrix.shard }}/4 darab"
+            echo
+            echo "Ez a láb **nem blokkol** (kísérleti), de a bukása"
+            echo "lefedettség-vesztést jelent: az itt elbukó állítások"
+            echo "azon a platformon nincsenek mérve."
+            echo
+            echo "A bukó részfutások a fenti \"Run tests\" lépés naplójában,"
+            echo "a \"HIBÁS RÉSZFUTÁSOK:\" sor alatt állnak tételesen."
+            echo
+            echo "Ha a bukás tartós és nem javítható a platformon, a"
+            echo "kihagyást KIMONDOTT \`skipif\`-fel kell rögzíteni, valódi"
+            echo "indokkal — nem szabad némán elbukni hagyni (#1864)."
+          } >> "$GITHUB_STEP_SUMMARY"

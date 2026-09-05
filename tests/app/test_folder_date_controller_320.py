@@ -60,7 +60,9 @@ class TestSetFolderDate:
         host.setFolderDate(str(folder), "2020-01-15")
         text = (folder / ".picasa.ini").read_text(encoding="utf-8")
         assert "name=Nyár" in text
-        assert "date=2020-01-15" in text
+        # #2353: a kiírt alak OLE VARIANT, nem ISO — a Picasa `atof`-fal
+        # olvassa, és az ISO-ból 1905-öt csinálna. (43845 = 2020-01-15.)
+        assert "date=43845.000000" in text
 
     def test_invalid_format_is_ignored(self, host, folder):
         host.setFolderDate(str(folder), "nem-datum")

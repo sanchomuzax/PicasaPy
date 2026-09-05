@@ -234,20 +234,66 @@ def gaussian_blur_f(image_f: np.ndarray, xblur: float, yblur: float | None = Non
     return cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma_x, sigmaY=sigma_y)
 
 
-def autofix(image: np.ndarray) -> np.ndarray:
-    """`AutoFix`: a Picasa belső, effekt-csővezetékekben újrahasznált
-    automatikus javítása — megfejtett modell (#535): ugyanaz a hisztogram-
-    darabszám alapú lineáris szinthúzás, mint a „Jó napom van" (I'm Feeling
-    Lucky) `apply_enhance`-e (ld. `apply_channel_levels_stretch` docstringjét
-    a bizonyítékért). A vágópont-keverés az ALAPÉRTELMEZETT 0,30: a natív
-    `0x009db610`-nek ezek a hívói is a `-1,0` jelzőt adják át (#721). Ez hat
-    Glimmer-effektet is érint (Holga, NightVision, PencilSketch, Sixties,
-    Cinemascope, HDR-család), amelyek belül `AutoFix`-et hívnak.
-    """
-    from picasapy.render.ops import apply_channel_levels_stretch
+#: Az `AutoFix` LUT-képletének kiolvasott konstansai (#2229):
+#: `0x00cf39d0` = 255,0 és `0x00c72150` = 0,5.
+_AUTOFIX_SKALA = 255.0
+_AUTOFIX_KEREKITES = 0.5
 
+
+def autofix(image: np.ndarray) -> np.ndarray:
+    """`AutoFix`: a Glimmer belső, effekt-csővezetékekben újrahasznált
+    automatikus javítása — **vágás nélküli min–max szinthúzás** (#2229).
+
+    ⚠️ **NEM azonos a „Jó napom van"-nal.** A natív parancs
+    (`0x009db610`, #535/#721) vágópont-keverést végez; a Glimmer
+    `AutoFixImageOperation` **másik kódút**, és a munkavégzője
+    (`0x00bc2d70`) mást csinál:
+
+    1. három **egyszerű** 256 rekeszes hisztogram (`0x00bc2e50`) —
+       vágás, súlyozás, percentilis **nincs** benne;
+    2. csatornánként LUT (`0x00bc3170`):
+
+    ```
+    lo = az első nem üres rekesz,  hi = az utolsó nem üres rekesz
+    lo == hi  ->  LUT[x] = 255
+    egyébként ->  LUT[x] = clamp(trunc((x − lo)/(hi − lo)·255 + 0,5), 0, 255)
+    ```
+
+    A `255,0` és a `0,5` konstans kiolvasva (`0x00cf39d0`, `0x00c72150`).
+
+    A különbség nem elméleti: egyetlen kiugró szélső képpont a vágópontos
+    modellben eltűnik, itt viszont **meghatározza a tartományt**. Hat
+    Glimmer-effekt hívja belül (Holga, NightVision, PencilSketch, Sixties,
+    Cinemascope, HDR-család), tehát mindegyik kimenetét érinti.
+
+    *(A natív `0x00bc2d70` 1000 képpont fölött lekicsinyített mintán
+    számol — a MI hisztogramunk a teljes képet nézi. A LUT szempontjából
+    ez csak a szélső rekeszek ritka esetén térhet el, és a mintavételezés
+    pontos rácsa nincs megmérve; találgatott közelítés rosszabb volna,
+    mint a teljes minta.)*
+    """
     validate_image(image)
-    return apply_channel_levels_stretch(image)
+    kimenet = np.empty_like(image)
+    for csatorna in range(image.shape[2]):
+        sik = image[..., csatorna]
+        hasznalt = np.flatnonzero(np.bincount(sik.reshape(-1), minlength=256))
+        lo, hi = int(hasznalt[0]), int(hasznalt[-1])
+        if lo == hi:
+            kimenet[..., csatorna] = 255
+            continue
+        x = np.arange(256, dtype=np.float64)
+        # CSONKOLÁS, nem kerekítés: a natív út a `0x00c29990`-en át megy,
+        # ami `cvttsd2si` — trunkál. A `+ 0,5` MAGA a felfelé kerekítés
+        # idiómája; `np.round`-dal kétszer kerekítenénk, és a felezőpontok
+        # a numpy bankár-kerekítése miatt páros felé csúsznának el
+        # (pl. 101,5 -> 102 helyett a natív 101-et ad).
+        lut = np.clip(
+            np.floor((x - lo) / (hi - lo) * _AUTOFIX_SKALA + _AUTOFIX_KEREKITES),
+            0.0,
+            255.0,
+        ).astype(np.uint8)
+        kimenet[..., csatorna] = lut[sik]
+    return kimenet
 
 
 def _telitettseg_k(saturation: float) -> float:
@@ -593,6 +639,14 @@ def noise_layer(
     """`Noise`: egyenletes eloszlású zajréteg float32 [0,255], `seed`-del
     determinisztikus (a Picasa saját PRNG-je nem publikus — a determinisztikus
     reprodukálhatóság a lényeg, nem a bitre azonos zajminta).
+
+    ⚠️ **A RÖGZÍTETT mag csak tesztelési célra való** (#907). Az eredeti
+    szemcséje nem determinisztikus: két egymás utáni alkalmazás FÜGGETLEN
+    zajmintát ad (a #685 mérőszettjén ΔE 1,804 → 2,671, ami a √2-es
+    szórásnövekedés, nem a kétszeres amplitúdó). Aki termelő úton hívja ezt,
+    **minden alkalmazáshoz új magot adjon** — különben kétszer alkalmazva
+    kétszer akkora hatást kap, mint az eredetiben. A `glimmer_artistic.
+    apply_picnik_grain` ezt a `seed=None` alapértékkel oldja meg.
     """
     rng = np.random.default_rng(seed)
     if grayscale:
@@ -769,15 +823,113 @@ def tint_luma_preserving(image: np.ndarray, color: tuple[int, int, int]) -> np.n
     return to_uint8(result)
 
 
+#: A Mitchell–Netravali mag paraméterei: **B = C = 0,4** (#2227). Mérve: az
+#: eredeti `ResizeImageOperation` alkalmazója (`0x00bc3650`) ugyanazt a
+#: `0x00bcb5e0` segédfüggvényt hívja, mint a `RotateImageOperation`, az pedig
+#: a `ytResampler`-t EXPLICIT móddal — lépték = 1 → 0-s (doboz), egyébként
+#: 3-as (Mitchell–Netravali, B = C = 0,4).
+_MITCHELL_B = 0.4
+_MITCHELL_C = 0.4
+
+
+def mitchell_netravali(x: np.ndarray) -> np.ndarray:
+    """A Mitchell–Netravali rekonstrukciós mag `B = C = 0,4`-gyel.
+
+    A klasszikus alak (Mitchell & Netravali, 1988), `|x|` szerint:
+
+        |x| < 1:  ((12−9B−6C)|x|³ + (−18+12B+6C)|x|² + (6−2B)) / 6
+        1 ≤ |x| < 2:  ((−B−6C)|x|³ + (6B+30C)|x|² + (−12B−48C)|x| + (8B+24C)) / 6
+        egyébként: 0
+
+    `B = C = 0,4` mellett az **oldallebeny negatív** (1 és 2 között) — ez a
+    mag azonosító jegye: éles élen enyhe alul-/túllövést ad, amit sem a
+    bilineáris, sem a doboz nem produkál.
+    """
+    tav = np.abs(np.asarray(x, dtype=np.float64))
+    b, c = _MITCHELL_B, _MITCHELL_C
+    belso = (
+        (12 - 9 * b - 6 * c) * tav**3
+        + (-18 + 12 * b + 6 * c) * tav**2
+        + (6 - 2 * b)
+    ) / 6.0
+    kulso = (
+        (-b - 6 * c) * tav**3
+        + (6 * b + 30 * c) * tav**2
+        + (-12 * b - 48 * c) * tav
+        + (8 * b + 24 * c)
+    ) / 6.0
+    return np.where(tav < 1, belso, np.where(tav < 2, kulso, 0.0))
+
+
+def _mintavetel_sulyok(
+    be_meret: int, ki_meret: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Egy tengely mintavételi indexei és súlyai.
+
+    A kimeneti képpont középpontját a bemeneti rácsra vetítjük, és a magot
+    a szomszédos bemeneti mintákon értékeljük ki. **Kicsinyítéskor a mag a
+    léptékkel nyúlik** — ez a szokásos élsimító megoldás.
+
+    ⚠️ A nyújtás NINCS MÉRVE: a bináris annyit árul el, hogy a mód 3-as. Az
+    itteni választás dokumentált döntés, nem visszafejtett viselkedés.
+
+    A széleken a bemeneti index a tartományra csippentődik (peremismétlés),
+    a súlyok pedig sorösszegre normálódnak, hogy a fényesség megmaradjon.
+    """
+    skala = be_meret / ki_meret
+    nyujtas = max(1.0, skala)
+    tamasz = 2.0 * nyujtas
+    kozep = (np.arange(ki_meret) + 0.5) * skala - 0.5
+    elso = np.ceil(kozep - tamasz).astype(np.int64)
+    ablak = int(np.ceil(2 * tamasz)) + 1
+    indexek = elso[:, None] + np.arange(ablak)[None, :]
+    sulyok = mitchell_netravali((kozep[:, None] - indexek) / nyujtas)
+    osszeg = sulyok.sum(axis=1, keepdims=True)
+    # Elvi 0 nem fordul elő (a mag 0-ban pozitív), de a nullosztás
+    # következménye néma NaN-kép lenne — ezért kimondottan kizárjuk.
+    osszeg[osszeg == 0] = 1.0
+    return np.clip(indexek, 0, be_meret - 1), sulyok / osszeg
+
+
+def _tengely_menten(kep: np.ndarray, ki_meret: int, tengely: int) -> np.ndarray:
+    """Átmintavételezés EGY tengely mentén, a másikat érintetlenül hagyva."""
+    be_meret = kep.shape[tengely]
+    if ki_meret == be_meret:
+        return kep          # lépték = 1 → 0-s (doboz) = azonosság
+    indexek, sulyok = _mintavetel_sulyok(be_meret, ki_meret)
+    minta = np.take(kep, indexek, axis=tengely)
+    # a súlyok a (ki_meret, ablak) tengelypárra szólnak: a szorzás után
+    # az ablak-tengely mentén összegzünk
+    alak = [1] * minta.ndim
+    alak[tengely] = ki_meret
+    alak[tengely + 1] = sulyok.shape[1]
+    return (minta * sulyok.reshape(alak)).sum(axis=tengely + 1)
+
+
 def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = True) -> np.ndarray:
-    """`Resize`: a kép átméretezése — `smoothing=False` a Pixelate blokkos
-    (`INTER_NEAREST`) visszanagyítását adja, egyébként bilineáris.
+    """`Resize`: a kép átméretezése.
+
+    `smoothing=True` (az alapérték, mérve: `0x00bc36ac`) esetén a
+    mintavételező **tengelyenként** dönt, a `src/dst` léptékből
+    (`0x00bc3700`–`0x00bc3731`): **lépték = 1 → doboz** (azonosság),
+    egyébként **Mitchell–Netravali B = C = 0,4** (#2227). A művelet
+    szeparábilis: előbb a vízszintes, majd a függőleges tengely.
+
+    ⚠️ `smoothing=False` továbbra is `INTER_NEAREST`. **Ez NEM mérés:** a
+    bináris ezen ága nincs visszafejtve — hogy a 0-s dobozmódot használja-e,
+    vagy tényleg legközelebbi szomszédot, nyitott kérdés.
     """
     validate_image(image)
     width = max(1, int(round(width)))
     height = max(1, int(round(height)))
-    interp = cv2.INTER_LINEAR if smoothing else cv2.INTER_NEAREST
-    return cv2.resize(image, (width, height), interpolation=interp)
+    if not smoothing:
+        return cv2.resize(image, (width, height), interpolation=cv2.INTER_NEAREST)
+    if width == image.shape[1] and height == image.shape[0]:
+        return image.copy()
+    munka = image.astype(np.float64)
+    munka = _tengely_menten(munka, width, 1)
+    munka = _tengely_menten(munka, height, 0)
+    return np.clip(np.rint(munka), 0, 255).astype(image.dtype)
 
 
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:

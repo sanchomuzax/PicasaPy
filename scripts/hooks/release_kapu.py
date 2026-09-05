@@ -47,7 +47,11 @@ _VERZIO_SOR = re.compile(r"^[+-]\s*version\s*=", re.MULTILINE)
 # alakban — enélkül a verzióemelés-őr a főmappában nézne diffet, ahol nincs
 # eltérés, és NÉMÁN átengedne minden kiadást. Éles próbán bukott meg
 # (2026-08-19): a verzióemelő push simán átment.
-_CD = re.compile(r"(?:^|[;&|]\s*)cd\s+(?P<ut>'[^']*'|\"[^\"]*\"|[^\s;&|]+)")
+_CD = re.compile(
+    # #1056: a `\n` ág nélkül egy több soros parancsban az újsorral kezdődő
+    # `cd` egyáltalán nem illeszkedett — a `_POZICIO` minta ezt már kezelte.
+    r"(?:^|[;&|]\s*|\n\s*)cd\s+(?P<ut>'[^']*'|\"[^\"]*\"|[^\s;&|]+)"
+)
 
 
 def _munkakonyvtar(cmd: str, cwd: str) -> str:
@@ -57,8 +61,15 @@ def _munkakonyvtar(cmd: str, cwd: str) -> str:
         utolso = m.group("ut").strip("'\"")
     if not utolso:
         return cwd
-    ut = utolso if os.path.isabs(utolso) else os.path.join(cwd, utolso)
-    ut = os.path.expanduser(ut)
+    # #1056: az `expanduser` az ELSŐ lépés. Fordítva a tildés útvonal nem
+    # abszolút, ezért előbb a munkakönyvtárhoz fűződne
+    # (`.../PicasaPy/~/Documents/masik-repo`), amin az `expanduser` már nem
+    # segít — a hook így a HÍVÓ mappájában diffelne. Élesben egy MÁSIK
+    # repóba szánt feltöltés blokkolódott emiatt, a PicasaPy
+    # verzióemelésére hivatkozva.
+    ut = os.path.expanduser(utolso)
+    if not os.path.isabs(ut):
+        ut = os.path.join(cwd, ut)
     return ut if os.path.isdir(ut) else cwd
 
 
@@ -81,10 +92,25 @@ def _tag_letrehozas(cmd: str) -> bool:
     return False
 
 
+#: Hány szót vizsgálunk a `git push` UTÁN. Valódi pushnál a hivatkozás az
+#: első néhány szóban áll (`origin v1.2.3`, `--follow-tags`, `refs/tags/…`);
+#: prózában viszont a mondat folytatódik, és egy jóval később EMLÍTETT
+#: verziószám kiváltaná a blokkolást. Így nem lehetett megnyitni magát a
+#: #1056-os hibajelentést, és így akadt el egy jegy-lezáró komment is.
+_PUSH_ABLAK = 6
+
+
 def _tag_push(cmd: str) -> bool:
     minta = re.compile(r"(--tags\b|--follow-tags\b|refs/tags/|\sv\d+[.\w]*(\s|$))")
-    return any(minta.search(re.split(r"[|;&]", m)[0])
-               for m in _parancsok(cmd, "git", "push"))
+    for maradek in _parancsok(cmd, "git", "push"):
+        # a parancs vége: az első vezérlő-karakter…
+        parancs = re.split(r"[|;&]", maradek)[0]
+        # …majd csak az első néhány SZÓ. A vezető szóköz megmarad, hogy a
+        # minta `\s`-sel kezdődő ága illeszkedhessen.
+        ablak = " " + " ".join(parancs.split()[:_PUSH_ABLAK])
+        if minta.search(ablak):
+            return True
+    return False
 
 
 def _verziot_emel(cwd: str) -> bool:
@@ -97,6 +123,40 @@ def _verziot_emel(cwd: str) -> bool:
     except Exception:
         return False
     return bool(_VERZIO_SOR.search(diff))
+
+
+def _verziot_emel_commitolatlanul(cwd: str) -> bool:
+    """A MUNKAFÁBAN (indexben vagy azon kívül) áll-e verzióemelés?
+
+    A hook a parancs ELŐTT fut, ezért a `_verziot_emel` a commit előtti
+    `HEAD`-et diffeli — egy `git add && git commit && git push` alak így
+    teljesen megkerülte a kaput. Élesben megtörtént (2026-09-04): a
+    verzióemelés kiment a ceremónia előtt, miközben UGYANAZ a kapu külön
+    commitba téve azonnal blokkolt.
+
+    A `git diff HEAD` az indexet és a munkafát EGYÜTT veti össze a
+    `HEAD`-del, tehát egyetlen hívás elég.
+    """
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "HEAD", "--", "pyproject.toml"],
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15,
+        ).stdout
+    except Exception:
+        return False
+    return bool(_VERZIO_SOR.search(diff))
+
+
+def _commitol_is(cmd: str) -> bool:
+    """A parancs tartalmaz-e `git commit`-ot PARANCSPOZÍCIÓBAN.
+
+    Ez a kapcsoló szándékosan szűk: puszta `git push` mellett a munkafában
+    heverő verzióemelés NEM tud kimenni, tehát nincs mit blokkolni. Enélkül
+    az is elakadna, aki épp a verziót szerkeszti, miközben egy MÁSIK ágat
+    tol fel — a kapu nem büntetheti az őszinte munkát.
+    """
+    return bool(_parancsok(cmd, "git", "commit"))
 
 
 def _pr_verziot_emel(cmd: str, cwd: str) -> bool:
@@ -151,7 +211,10 @@ def _blokkolando(cmd: str, cwd: str) -> str | None:
         return "git tag létrehozása"
     if _tag_push(cmd):
         return "tag push (kiadás publikálása)"
-    if _parancsok(cmd, "git", "push") and _verziot_emel(cwd):
+    if _parancsok(cmd, "git", "push") and (
+        _verziot_emel(cwd)
+        or (_commitol_is(cmd) and _verziot_emel_commitolatlanul(cwd))
+    ):
         return ("verzióemelést tartalmazó push — a main-re érve a release.yml "
                 "AUTOMATIKUSAN kiadást csinál belőle")
     if _pr_verziot_emel(cmd, cwd):

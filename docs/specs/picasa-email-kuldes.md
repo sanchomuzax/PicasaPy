@@ -12,19 +12,26 @@ Két lehetőség, mindegyik cím + magyarázó sor:
 
 | elem | felirat |
 |---|---|
-| `mail1` | **MAIL CLIENT** |
-| `mail1a` | Use my default email program. |
-| `mail2` | **Google Mail** |
-| `mail2a` | Use my Gmail or Google account. |
-| `gmailsignup1` | Don't have Gmail? Get a free account. *(webcím: `http://mail.google.com`)* |
-| `remember` | **Remember this setting, don't display this dialog again.** |
-| `help` | Help |
-| `mailcancel` | Cancel |
+| `choose_mail/mail1` | **MAIL CLIENT** |
+| `choose_mail/mail1a` | Use my default email program. |
+| `choose_mail/mail2` | **Google Mail** |
+| `choose_mail/mail2a` | Use my Gmail or Google account. |
+| `choose_mail/gmailsignup1` | Don't have Gmail? Get a free account. *(webcím: `http://mail.google.com`)* |
+| `choose_mail/remember` | **Remember this setting, don't display this dialog again.** |
+| `choose_mail/help` | Help |
+| `choose_mail/mailcancel` | Cancel |
 
-Elemek: `picker` · `selectheader` · `selecttext` · `mymail` (+ ikon) ·
-`gsender` (+ ikon) · `googsender_icon` · `checkbox` ·
-`remember_container` · `prefcontainer` · `helpbutton` (+ ikon) ·
-`cancelbutton` (+ ikon).
+Elemek: `choose_mail/picker` · `choose_mail/selectheader` ·
+`choose_mail/selecttext` · `choose_mail/mymail` (+ ikon) ·
+`choose_mail/gsender` (+ ikon) · `choose_mail/googsender_icon` ·
+`choose_mail/checkbox` · `choose_mail/remember_container` ·
+`choose_mail/prefcontainer` · `choose_mail/helpbutton` (+ ikon) ·
+`choose_mail/cancelbutton` (+ ikon).
+
+> **Miért a teljes név?** A levélnevek közt van `help`, `picker` és
+> `checkbox` — prózában eltéveszthetők, és a lefedettségi mérő sem találja
+> meg őket levélnéven (#2093). A táblák ezért a `panel/elem` alakot
+> használják.
 
 A „ne kérdezd újra" jelölő a **`DoNotPromptForEmailPref`** kulcsba ír
 (`0x006e1100`).
@@ -34,16 +41,24 @@ A „ne kérdezd újra" jelölő a **`DoNotPromptForEmailPref`** kulcsba ír
 **Negyven elem.** A Picasa nem csak átadta a képeket a levelezőnek: **saját
 üzenetszerkesztője** volt, Gmail-bejelentkezéssel.
 
+*Forrás: `compose_mail.tre` (173 sor) — a felületleíró saját sorai, pl.
+`compose_mail.tre:68` a `compose_mail/topstrip`, `compose_mail.tre:63` a
+`compose_mail/send`, `compose_mail.tre:83` a `compose_mail/changeuser`.*
+
 | csoport | elemek |
 |---|---|
-| fejléc | `topstrip` · `topentry` · `to` + `to_text` („To:") · `subject` + `subject_text` („Subject:") |
-| üzenet | `compose` · `composeclip` · `content` |
-| melléklet | `piccontainer` · `preview` · `picstroke` · `clipicon` · `discardimage` (+ ikon) |
-| lapozás | `navleft` (+ ikon) · `navright` (+ ikon) |
-| **írásirány** | **`ltr`** (+ ikon) · **`rtl`** (+ ikon) · `bidi_container` |
-| fiók | `gmail` · `googlemail` · `curuser` · `changeuser` („Change User") · `logininfo` |
-| gombok | `send` / `sendb` („Send") · `discard` / `discardb` („Discard") · fókuszált párjaik (`focsend`, `focsendb`, `focdiscard`, `focdiscardb`) |
-| egyéb | `bottomstrip` · `divider` · `infotext` |
+| fejléc | `compose_mail/topstrip` · `compose_mail/topentry` · `compose_mail/to` + `compose_mail/to_text` („To:") · `compose_mail/subject` + `compose_mail/subject_text` („Subject:") |
+| üzenet | `compose_mail/compose` · `compose_mail/composeclip` · `compose_mail/content` |
+| melléklet | `compose_mail/piccontainer` · `compose_mail/preview` · `compose_mail/picstroke` · `compose_mail/clipicon` · `compose_mail/discardimage` (+ ikon) |
+| lapozás | `compose_mail/navleft` (+ ikon) · `compose_mail/navright` (+ ikon) |
+| **írásirány** | **`compose_mail/ltr`** (+ ikon) · **`compose_mail/rtl`** (+ ikon) · `compose_mail/bidi_container` |
+| fiók | `compose_mail/gmail` · `compose_mail/googlemail` · `compose_mail/curuser` · `compose_mail/changeuser` („Change User") · `compose_mail/logininfo` |
+| gombok | `compose_mail/send` / `compose_mail/sendb` („Send") · `compose_mail/discard` / `compose_mail/discardb` („Discard") · fókuszált párjaik (`compose_mail/focsend`, `compose_mail/focsendb`, `compose_mail/focdiscard`, `compose_mail/focdiscardb`) |
+| egyéb | `compose_mail/bottomstrip` · `compose_mail/divider` · `compose_mail/infotext` |
+
+*(A teljes `compose_mail/` előtag azért áll ki, mert a levélnevek közt van
+`preview`, `content` és `send` — prózában eltéveszthetők, és a lefedettségi
+mérő sem találja meg őket levélnéven; #2093.)*
 
 > **Kétirányú írás**: a szerkesztő külön **balról-jobbra / jobbról-balra**
 > kapcsolót kínált (`ltr` / `rtl`, `bidi_container`) — arab és héber
@@ -106,23 +121,98 @@ ha EmailMovie == 1:
 > `[+0x30]` és a `[+0x34]` szintén darabszám-jellegű (két egymásba ágyazott
 > ciklus határa), tehát a szomszédos rések is számlálók.
 
-**Ami NINCS MEG: a Beállítások E-mail fülén a csúszka LÉPÉSEI.** A
-`Beállítások` párbeszéd natív Win32 lap (`CGeneralPrefsPage`), a feliratai a PE
-erőforrás-táblában élnek, nem a `.tre`/`stringres` anyagban — ezért a
-szövegtárból nem jönnek elő. Amit tudunk: a **`%d pixels (for e-mail)`**,
-`%d pixels (for Web pages)`, `%d pixels (for large Web pages)` és
-`%d pixels (for large monitors)` sablonok **ott vannak** a `Picasa3.exe`
-sztringtáblájában (UTF-16-ban megtalálva) — tehát a felirat a számot
-**futásidőben** kapja.
+### 3/b A Beállítások **E-mail** fülének teljes tartalma — LEZÁRVA (2026-09-05)
 
-**Erős, de nem bizonyított kapcsolat:** az Exportálás párbeszéd
-méret-előbeállításai **mérve** `320 | 480 | 640 | 800 | 1024 | 1200 | 1600`
-(`export/bind17.list`, ld. [`export-parbeszed.md`](export-parbeszed.md)), és az
-`EmailExportSize` alapértéke — **480** — ennek a listának a **második** eleme.
-Hogy az E-mail fül csúszkája ugyanezt a hét értéket kínálja-e (plusz az
-„eredeti méret" = 0), az **NINCS MÉRVE**. Megszerzése: **egyetlen képernyőkép**
-a futó Picasa `Eszközök ▸ Beállítások ▸ E-mail` lapjáról — ott a csúszka
-felirata kiírja az aktuális képpontszámot. Jegy: **#2020**.
+⛔ **HELYESBÍTÉS.** A lap korábbi kiadása azt állította, hogy a `Beállítások`
+párbeszéd **natív Win32 lap**, ezért a feliratai „a PE erőforrás-táblában
+élnek, nem a `.tre`/`stringres` anyagban". **Ez téves.** A fül **teljes
+egészében stringres-panel** (`options/…` névtér), és a saját kutatási
+anyagunkban **mindvégig megvolt**:
+`referencia/i18n-hu/options.xml` és `referencia/panel-feliratok-hu.tsv`.
+A téves indoklás miatt a kérdés fölöslegesen a tulajdonos képernyőképére várt.
+
+**A méret-csúszka NYOLC fokozata — MÉRVE, nem becslés:**
+
+```
+options/bind47.list   = 160|320|480|640|800|1024|1200|1600
+options/bind47.format = %s képpont
+```
+
+**Az Exportálás listájával nem azonos.** Az export hét értéket kínál
+(`export/bind17.list` = `320|480|640|800|1024|1200|1600`), az E-mail fül
+nyolcat — az eltérés a **160**, amit csak az E-mail fül ad. Ezzel a korábbi
+„a 480 az export-lista **második** eleme" kapcsolat **elvetve**: a 480 az
+E-mail fül listájának a **harmadik** eleme.
+
+**A `bind51` NEM második csúszka**, hanem az „Egyedülálló képek mérete"
+csoport első választógombjának **feliratkötése**: a `format`
+(`Több elemmel azonos (%s képpont)`) ugyanabból a nyolcelemű listából kapja a
+számot, mint a csúszka. Ezért egyezik a két `list` sor.
+
+**A fül teljes elemlistája, erőforrás-sorrendben** (magyar hivatalos felirat,
+`referencia/i18n-hu/options.xml`):
+
+| elem | felirat |
+|---|---|
+| `options/tab36.title` | **E-mail** *(a fül neve)* |
+| `options/labelgroup38.title` | Levelezőprogram: |
+| `options/radio40.title` | Minden képküldésnél kiválasztom |
+| `options/defaultmail.title` | A számítógép alapértelmezett levelezőprogramjának használata |
+| `options/radio42.title` | **A Google Fiók használata** |
+| `options/labelgroup43.title` | Több kép mérete: |
+| `options/label46.title` | 1024 képpont |
+| `options/bind47.format` / `.list` | `%s képpont` / `160\|320\|480\|640\|800\|1024\|1200\|1600` |
+| `options/labelgroup48.title` | Egyedülálló képek mérete: |
+| `options/radio50.title` | Több elemmel azonos (1024 képpont) |
+| `options/bind51.format` / `.list` | `Több elemmel azonos (%s képpont)` / ugyanaz a nyolc |
+| `options/radio52.title` | Eredeti méret |
+| `options/labelgroup53.title` | Mozgófilmek küldése másként: |
+| `options/radio55.title` | Első képkocka |
+| `options/radio56.title` | Teljes mozgófilm |
+| `options/labelgroup57.title` | Kimeneti formátum: |
+| `options/UseHTMLMailer.title` | Szövegközi fotók és képfeliratok küldése (csak Outlookban) |
+
+⚠️ **A táblázat sorrendje az erőforrásé, NEM a képernyőé.** Az `options`
+panelnek **nincs meg** a respack-geometriája a kutatási anyagban (csak
+`export.fen` van), tehát az elemek helyét ez a lap **nem** mondja meg.
+
+⚠️ **A `label46` / `radio50` szövegében szereplő 1024 nem alapérték**, hanem az
+erőforrásba befagyott pillanatkép. A tényleges alapérték a registryből **480**
+(`Preferences\EmailExportSize`, `0x00743094`: `mov dword ptr [esp+0x18], 0x1e0`
+— a szomszédos két olvasás `EmailSinglePicture` `0x00ca9b18` és `EmailMovie`
+`0x00ca9b2c`, mindkettő alapértéke **0**).
+
+**Nálunk (MÉRVE):** `src/picasapy/mailer/command.py:22`
+`EMAIL_SIZE_STEPS = (160, 320, 480, 640, 800, 1024, 1200, 1600)` — a nyolc
+fokozat és a 480-as alapérték **már helyes** (a #2020 a tulajdonos futó
+Picasájából vette). Ez a kör tehát **független, gépi megerősítés**: a lista
+képernyőkép nélkül is kiolvasható volt. Az `OptionsTabEmail.qml`-ből viszont
+**hiányzik a harmadik levelezőgomb** (`radio42`, „A Google Fiók használata"),
+és a csoport címe nálunk „Choose your mail client:" a mért
+„Levelezőprogram:" helyett → jegy: **#2432**.
+
+#### Amit ez a kör KIZÁRT (negatív leletek)
+
+1. **Nincs a binárisban összefüggő méret-tábla.** A `320,480,640,800,1024,1200,1600`
+   sorozat sem `int32`-ként, sem `int16`-ként **nem fordul elő** a
+   `Picasa3.exe`-ben — a listák szövegként, a stringres `.list`
+   erőforrásokban élnek.
+2. **A `%d pixels (…)` sablonok nem ezen a fülön dolgoznak.** Megvannak a PE
+   sztringtáblájában — RT_STRING **9. blokk** (lang 1033, adat-RVA `0x00a03458`,
+   1224 bájt): **140** = `%d pixels (for large Web pages)` (`0x00e03850`),
+   **141** = `%d pixels (for Web pages)` (`0x00e03890`), **142** =
+   `%d pixels (for e-mail)` (`0x00e038c4`); a `%d pixels (for large monitors)`
+   másik blokkban, `0x00e041fe`. **De:** a `LoadStringW` **nincs importálva**, a
+   `LoadStringA` egyetlen IAT-rekeszére (`0x009ae710`) pedig **a teljes fájlban
+   nulla hivatkozás** van ⇒ ezeket a sablonokat a Win32 sztring-API-n át nem
+   tölti be senki. A fülön ténylegesen használt formátum a
+   `options/bind47.format`.
+3. ⛔ **Módszertani helyesbítés:** a `push 0x8c`…`push 0x8f` négyes a
+   `0x0047820e`–`0x0047829c` tartományban **nem** sztringazonosító-betöltés.
+   A hívott `0x0049c900` **hasítótáblás keresés** (`div dword ptr [edi+4]`,
+   vödörlánc, `cmp dword ptr [ebp+8], <kulcs>`), a négy szám pedig **kulcs**.
+   Az azonos számérték keresése önmagában nem bizonyíték — a **hívott
+   függvényt** is meg kell nézni.
 
 ## 4. Az üzenetek — ezek LE VANNAK fordítva
 
@@ -232,3 +322,146 @@ rádiógombot az Opciók lapon. Gombok: **Súgó** · **Mégse**.
 
 A két ⚠️ **szándékos, platformból következő eltérés**, nem hiány: olyan
 integrációt ígérnének, ami nem létezik.
+
+---
+
+## ⭐ 6. HOL tárolódnak a beállítások, és MIT ír a választó párbeszéd (2026-09-03)
+
+A lap eddig felsorolta a beállítás-**kulcsokat** (3. szakasz), de nem mondta
+meg, **hol vannak**, mi az **alapértékük**, és **mikor** íródnak. Ez a
+szakasz ezt pótolja — és a tároló nem csak az e-mailre igaz, hanem a Picasa
+**összes** beállítására.
+
+### 6.1 A tároló: a Windows-registry, `HKEY_CURRENT_USER` alatt
+
+```
+HKEY_CURRENT_USER\SOFTWARE\Google\Picasa\Picasa2\Preferences\<kulcs>
+```
+
+Ez a teljes útvonal **szó szerint** benne van a binárisban
+(`0x00c8ae5c`), és három, egy helyen beállított darabból áll össze —
+ezért adnak a kulcsonkénti hívások csak szekció+kulcs párost:
+
+| darab | cím | érték |
+|---|---|---|
+| registry-bázis | `0x00c7f0c4` | `SOFTWARE\Google\Picasa\` |
+| termék-alkulcs | `0x00c7edd0` | `Picasa2` |
+| alapértelmezett szekció | `0x00c7eafc` | `Preferences` |
+| *(az AppData-almappa, külön célra)* | `0x00c7eaec` | `Google\Picasa2` |
+| *(a helyi adatmappa kulcsa)* | `0x00c7ef0c` | `AppLocalDataPath` |
+
+Az összeszerelés az inicializáló blokkban látszik (`0x00407330`:
+`0x0040738d`, `0x00407395`, `0x0040739d`; ugyanez a blokk a `0x00541b30`-ban
+`0x00541b9b`–`0x00541bab`).
+
+**A `HKEY_CURRENT_USER` konstans kiolvasva:** `mov eax, 0x80000001` —
+a beállítás-objektum építőjében (`0x00407a3b`) és a színkezelés
+olvasásánál (`0x00541bd8`) egyaránt.
+
+**A teljes útvonal használatban, bizonyítékként:** a `0x00541b30`
+így olvassa az `EnableColorManagement`-et:
+
+```
+0x00541bc9  push 0xc8ae44            ; "EnableColorManagement"
+0x00541bd3  mov  ecx, 0xc8ae5c       ; "SOFTWARE\Google\Picasa\Picasa2\Preferences\"
+0x00541bd8  mov  eax, 0x80000001     ; HKEY_CURRENT_USER
+0x00541be9  call 0x00408060          ; a beállítás-objektum építője
+0x00541bf8  call 0x004019b0          ; ÉRTÉK OLVASÁSA
+```
+
+> **Nem fájlban van.** A `research/testdata/` alatti valódi Picasa-adatmappa
+> (`Picasa2/`: `cache`, `db3`, `ioqueue`, `runtime`, `tmp`) **egyetlen**
+> beállításfájlt sem tartalmaz — se `.ini`, se `.xml`, se `prefs`.
+
+### 6.2 A hozzáférés-készlet
+
+| függvény | méret | mit csinál |
+|---|---|---|
+| `0x00407a20` | 297 b | beállítás-objektumot épít: `(alapérték, szekció, kulcs)`, `HKEY_CURRENT_USER` |
+| `0x00408060` | 319 b | a kulcs-útvonal megnyitása; a háttér-objektum a `+0x18` mezőbe kerül |
+| `0x004019b0` | 211 b | **olvasás** (a tárolt érték, vagy az alapérték) |
+| `0x00401900` | 171 b | **írás** |
+| `0x004018e0` | 23 b | kényelmi burkoló: `(0, "Preferences", kulcs)` |
+| `0x00923720` / `0x009237f0` | — | a tényleges `Reg*` API-hívások (`RegCreateKeyExA`/`RegSetValueExA`, ill. `RegOpenKeyExW`/`RegQueryValueEx*`) |
+
+### 6.3 A `Preferences` HÉT alszekciója
+
+A kulcsok nem mind laposak; a binárisban ezek az alszekció-nevek állnak:
+
+| alszekció | cím | mire |
+|---|---|---|
+| `Preferences\HotFolders` | `0x00c81040` | figyelt mappák |
+| `Preferences\Plugins\` | `0x00ca79bc` | bővítmények |
+| `Preferences\Buttons\Exclude` | `0x00cb20d8` | a gombsávból kihagyott gombok |
+| `Preferences\Buttons\UserConfig` | `0x00cb20f4` | a gombsáv felhasználói összeállítása |
+| `Preferences\AspectRatios` | `0x00cb832c` | a vágási oldalarányok |
+| `Preferences\PrinterData` | `0x00cc3cd0` | nyomtató-beállítások |
+| `Preferences\RSSDownload` | `0x00cab75c` | RSS-letöltés |
+
+### 6.4 A `choose_mail` párbeszéd — MIT ír, MIKOR
+
+**A kapu** (`0x007420f0`, 479 b) minden küldés előtt lefut:
+
+```
+0x00742132  mov  dword ptr [esp+0x20], 3   ; EmailPrepType ALAPÉRTÉKE = 3
+0x0074213a  call 0x00407a20                ; "Preferences" / "EmailPrepType"
+0x00742154  mov  dword ptr [esp+0x20], ebp ; DoNotPromptForEmailPref ALAPÉRTÉKE = 0
+0x00742158  call 0x00407a20                ; "Preferences" / "DoNotPromptForEmailPref"
+0x0074215d  call 0x004019b0                ; a DoNotPrompt kiolvasása
+0x00742168  je   0x007421b3                ; ha 0 → MUTASD a choose_mail-t
+0x0074216e  call 0x004019b0                ; különben a tárolt EmailPrepType-ot adja vissza
+```
+
+⇒ **Alapértékek, kiolvasva:** `EmailPrepType` = **3**,
+`DoNotPromptForEmailPref` = **0**. Vagyis **friss telepítésen az első
+küldéskor a párbeszéd MEGJELENIK.**
+
+**Az OK-ág** (`0x0084fb10`, 494 b) a megnyomott gomb nevét `repe cmpsb`-vel
+veti össze, és két értéket ismer:
+
+| gomb | elemnév | `EmailPrepType` | cím |
+|---|---|---|---|
+| „Ezt használom" | `choose_mail/mymail` | **3** | `0x0084fb91`, `0x0084fb96` |
+| Google Mail | `choose_mail/gsender` | **5** | `0x0084fbff` |
+
+*(A `choose_mail/cancelbutton` és a `choose_mail/helpbutton` a másik két ág.)*
+
+**A megőrzés szabálya** (`0x0084f6b0`, 237 b) — ez a szakasz lényege:
+
+```
+0x0084f6f6  mov bl, byte ptr [eax+0x359]  ; a choose_mail/checkbox állapota
+0x0084f6fc  push 0xca9b58                 ; "DoNotPromptForEmailPref"
+0x0084f718  call 0x00407a20 …             ; MINDIG kiírja
+0x0084f72e  test bl, bl
+0x0084f730  je   0x0084f77b               ; ha NINCS bepipálva → kilép
+0x0084f732  push 0xca9b48                 ; "EmailPrepType"
+0x0084f74b  call 0x00407a20 …             ; CSAK bepipálva írja ki
+```
+
+⇒ **A választott mód csak akkor marad meg, ha a „Ne kérdezze újra"
+jelölőnégyzet be van pipálva.** A futó munkamenetre viszont a választás
+*mindig* érvényes (`0x0084fb96`: `mov dword ptr [edx], 3` — a
+memóriabeli állapotba a jelölőnégyzettől függetlenül bekerül).
+
+Az elem, amit a `[eax+0x359]` olvas: **`choose_mail/checkbox`**
+(`0x00cc23ec`) — a „Remember this setting, don't display this dialog
+again." / **„Ne jelenítse meg többé ezt a párbeszédpanelt"**.
+
+### 6.5 Eredeti / nálunk — MÉRVE
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| tároló | `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\` | `QSettings` (`email_controller.py:155`) |
+| kulcs: a mód | `EmailPrepType` (3 = saját levelező, 5 = Gmail) | `mail/useDefaultClient` (logikai) |
+| kulcs: kérdezzen-e | `DoNotPromptForEmailPref` | *ugyanaz a kulcs* — a kettő egybeolvasztva |
+| **alapérték: kérdezzen-e** | **0 → KÉRDEZ** | **`True` → NEM kérdez** (`email_controller.py:158`) |
+| a kapu | `0x007420f0` | `sendRows()` (`email_controller.py:381`) — helyes |
+| Google Mail-ág | `EmailPrepType = 5` | **tudatosan halott** (`EmailChoiceDialog.qml:13`) |
+
+⇒ **Egy mért eltérés marad:** az alapérték. Nálunk friss telepítésen a
+választó párbeszéd **soha nem jelenik meg** magától — csak akkor, ha a
+felhasználó előbb átállítja az Opciók rádiógombját. Jegy: **#2184**.
+
+*Bizonyítottsági fok: **megerősített*** — a bázis három darabja és az
+összeszerelt teljes útvonal is kiolvasva; a `HKEY_CURRENT_USER` konstans
+két helyen; az alapértékek, a kapu és a két módérték a diszasszemblyből.

@@ -3,6 +3,8 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import logging
 from pathlib import Path
 
@@ -36,7 +38,8 @@ from picasapy.ini import (
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
-    DEFAULT_TEXT_SIZE,
+    BETUMERETEK,
+    tarolt_meret,
     TextBlock,
     TextGeometry,
     TextOverlay,
@@ -52,6 +55,7 @@ from picasapy.render.chain import (
     can_offer_filter_control,
 )
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
+from picasapy.render.registry import one_click_keys
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
 from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
@@ -110,12 +114,30 @@ _LEGACY_EFFECT_NAMES = tuple(
     sorted(key for key in LEGACY_EFFECT_KEYS if can_offer_filter_control(key))
 )
 _EFFECT_NAMES = (
+    # #2141: az 1. effekt-fül első hat csempéje az EREDETI elsődlegesét
+    # hívja (a `0x00c7e5a0` csempe-tábla szerint). Az `unsharp`, `grain`
+    # és `tint` a SHIFTes másodlagos — a #2141 idején nem volt felületi
+    # belépési pontjuk, ezért kimaradtak innen.
+    #
+    # #2146: a Shift-ág MEGÉPÜLT, tehát a másodlagosok visszakerülnek —
+    # enélkül a Shifttel megnyomott csempe `ValueError`-t adna (a
+    # `test_effect_names.py` őre pontosan ezt fogta meg).
+    #
+    # ⚠️ A `picnikfocalpixelate` KIMARAD: a `render/chain.py` `_HANDLERS`
+    # táblájában NINCS kezelője, tehát alkalmazni sem tudnánk. A
+    # `pixelate` csempe Shift-ága emiatt nem épült meg — külön jegy, ld.
+    # a #2146 lezárását.
     "unsharp",
+    "grain",
+    "tint",
+    "glow",
+    "radtint",
+    "unsharp2",
     "sepia",
     "bw",
     "warm",
-    "grain2",
-    "tint",
+    "picnikgrain",
+    "picniktint",
     "sat",
     "radblur",
     "glow2",
@@ -152,7 +174,8 @@ _EFFECT_NAMES = (
     "museummatte",
     "polaroid",
     "roundededges",
-    "picnikgrain",
+    # #2141: a `picnikgrain` FÖLJEBB került, az 1. fül 5. csempéjéhez —
+    # itt duplikátum volna.
 )
 
 #: Amit a szerkesztő ténylegesen a láncra tehet: a felület fülein szereplő
@@ -185,6 +208,7 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "localcontrast": "LocalContrast",
     "roundededges": "RoundedEdges",
     "picnikgrain": "PicnikGrain",
+    "picniktint": "PicnikTint",
     "boost": "Boost",
     "soften": "Soften",
     "pixelate": "Pixelate",
@@ -227,7 +251,9 @@ _DEFAULT_TEXT_FONT = "Arial"
 #: vonatkoznak — a mi Hershey-alapú rajzolónk család/méret/dőlt/aláhúzott
 #: beállításai nem képezhetők le rájuk veszteség nélkül.
 _DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
-_DEFAULT_TEXT_SCALE = 1.0
+#: #2287: a betűméret az eredeti 16 elemű listájából (`BETUMERETEK`),
+#: alapértéke **12** (a panel `+0x2cc` mezőjének kezdő értéke).
+_DEFAULT_TEXT_SIZE_PT = 12
 _DEFAULT_TEXT_BOLD = False
 _DEFAULT_TEXT_ITALIC = False
 _DEFAULT_TEXT_UNDERLINE = False
@@ -414,7 +440,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
         self._text_family: str = _DEFAULT_TEXT_FAMILY
-        self._text_scale: float = _DEFAULT_TEXT_SCALE
+        self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
         self._text_bold: bool = _DEFAULT_TEXT_BOLD
         self._text_italic: bool = _DEFAULT_TEXT_ITALIC
         self._text_underline: bool = _DEFAULT_TEXT_UNDERLINE
@@ -503,6 +529,17 @@ class EditController(QObject, BackgroundWorkerMixin):
         names = {op.name.casefold() for op in self._session.ops}
         return sorted(names & LEGACY_EFFECT_KEYS)
 
+    @Property("QVariant", constant=True)
+    def oneClickEffects(self):
+        """#2126: a `mode="oneclick"` szűrők kulcsai — a kék jelvényhez.
+
+        ÁLLANDÓ: a mód a szűrő-leíró tulajdonsága, nem a munkamenet
+        állapota, ezért `constant=True` (a felületnek nem kell újraszámolnia
+        minden lánc-módosításnál). A forrás egyetlen helyen van:
+        `render.registry.one_click_keys()`.
+        """
+        return list(one_click_keys())
+
     @Property("QVariant", notify=revisionChanged)
     def effectChainCounts(self):
         """Melyik szűrő HÁNYSZOR szerepel a szerkesztési láncban (#704).
@@ -527,7 +564,22 @@ class EditController(QObject, BackgroundWorkerMixin):
         return counts
 
     @Property(bool, notify=toolsChanged)
-    def redeyeActive(self) -> bool:
+    def hasSavedRedeye(self) -> bool:
+        """Van-e a képen **MENTETT** vörösszem-javítás.
+
+        ⚠️ #2393: ez **NEM** a nyitott eszköz jelzője. A neve korábban
+        `redeyeActive` volt, ami ütközött az `EditorPanel.qml:132`
+        azonos nevű, de ELLENTÉTES jelentésű mód-kapcsolójával (ott a
+        csempe „benyomva" állapota, vagyis hogy az eszköz NYITVA van).
+
+        A névazonosság már félrevitt egy jegyet: a #1485 duplikált
+        állapotnak nézte a kettőt, és a panel összekötését írta elő. Az a
+        javítás hibás lett volna — egy mentett javítású képnél a csempe
+        állandóan benyomva látszana.
+
+        Ugyanez a megkülönböztetés áll a `hasRetouch`-nál is, közvetlenül
+        alább (#116).
+        """
         return self._session.has("redeye")
 
     # -- retusálás (#148) ---------------------------------------------------
@@ -609,10 +661,20 @@ class EditController(QObject, BackgroundWorkerMixin):
         """A körvonal-szín `#rrggbb` alakban (a fill-től KÜLÖN választható)."""
         return _rgb_to_hex(self._text_outline_color)
 
-    @Property(int, notify=toolsChanged)
-    def textOutlineThickness(self) -> int:
-        """A körvonal vastagsága képpontban — `0` esetén nincs körvonal
-        (ez az alapérték)."""
+    #: #2271: a körvonalvastagság az EREDETI mértékegységében, `[0, 1]`
+    #: folytonosan. A kutatói kör kimérte, hogy a csúszka ugyanaz a
+    #: `ytSliderHandler` (`0x00aaf220`), mint az átlátszatlanságé, és maga
+    #: normalizál a sáv hosszához — a korpuszban látott `0,25`/`0,5` a
+    #: csúszka negyed-, illetve félállása. Így az érték ÁTSZÁMÍTÁS NÉLKÜL
+    #: kerül a `text=` blokk 5. mezőjébe.
+    #:
+    #: ⚠️ A RAJZOLÁSHOZ képpont kell. A `[0, 1]` → képpont leképezés az
+    #: eredetiben NINCS megmérve; a `_OUTLINE_MAX_PX` szorzó a MAI vizuális
+    #: megjelenést tartja meg (a régi 0–8-as csúszka maximumát). Ez
+    #: közelítés, és annak is van jelölve — a tárolt érték viszont mért.
+    @Property(float, notify=toolsChanged)
+    def textOutlineThickness(self) -> float:
+        """A körvonal vastagsága `[0, 1]` — `0` esetén nincs körvonal."""
         return self._text_outline_thickness
 
     @Property(bool, notify=toolsChanged)
@@ -641,10 +703,18 @@ class EditController(QObject, BackgroundWorkerMixin):
     def textFontFamily(self) -> str:
         return self._text_family
 
-    @Property(float, notify=toolsChanged)
-    def textFontScale(self) -> float:
-        """A betűméret szorzója — 1,0 az alapérték."""
-        return self._text_scale
+    #: #2287: a betűméret az EREDETI mértékegységében — abszolút egész a
+    #: 16 elemű listából (8…96), nem százalék. A panel a listaelemeket
+    #: `"%d"`-vel írja ki (`0x0062dfde`), tehát egészek.
+    @Property(int, notify=toolsChanged)
+    def textFontSize(self) -> int:
+        """A választott betűméret (a `BETUMERETEK` egyike)."""
+        return self._text_size_pt
+
+    @Property("QVariantList", constant=True)
+    def fontSizeChoices(self) -> list:
+        """A 16 választható méret — a felület legördülőjének modellje."""
+        return list(BETUMERETEK)
 
     @Property(bool, notify=toolsChanged)
     def textBold(self) -> bool:
@@ -671,13 +741,18 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_family = value or _DEFAULT_TEXT_FAMILY
         self._refresh_text_preview()
 
-    @Slot(float)
-    def setTextFontScale(self, value: float) -> None:
-        """A betűméret-szorzó beállítása (pozitív); élő előnézettel."""
+    @Slot(int)
+    def setTextFontSize(self, value: int) -> None:
+        """A betűméret beállítása; élő előnézettel.
+
+        A listán kívüli értéket a LEGKÖZELEBBIRE igazítjuk: a fogantyúval
+        átméretezett feliratok nem egész listaértéket adnak (#2287), a
+        választónak viszont akkor is mutatnia kell valamit.
+        """
         self._require_active()
         if value <= 0:
-            raise ValueError(f"A textFontScale pozitív kell legyen: {value}")
-        self._text_scale = float(value)
+            raise ValueError(f"A textFontSize pozitív kell legyen: {value}")
+        self._text_size_pt = min(BETUMERETEK, key=lambda e: abs(e - int(value)))
         self._refresh_text_preview()
 
     @Slot(bool)
@@ -733,13 +808,17 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
 
-    @Slot(int)
-    def setTextOutlineThickness(self, value: int) -> None:
-        """A körvonal-vastagság beállítása (>=0 képpont); élő előnézettel."""
+    @Slot(float)
+    def setTextOutlineThickness(self, value: float) -> None:
+        """A körvonal-vastagság beállítása `[0, 1]`-ben; élő előnézettel."""
         self._require_active()
         if value < 0:
             raise ValueError(f"A textOutlineThickness nem lehet negatív: {value}")
-        self._text_outline_thickness = value
+        if value > 1:
+            raise ValueError(
+                f"A textOutlineThickness legfeljebb 1 lehet: {value}"
+            )
+        self._text_outline_thickness = float(value)
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -938,7 +1017,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
-        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1005,7 +1084,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
-        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
@@ -1535,15 +1614,59 @@ class EditController(QObject, BackgroundWorkerMixin):
         previous = self._text_overlay or TextOverlay()
         block = TextBlock(
             content=self._text_draft,
-            font=_DEFAULT_TEXT_FONT,
+            # #1994: a VÁLASZTOTT betűtípus, nem a beégetett alapérték.
+            font=self._text_family,
             geometry=TextGeometry(
                 x=self._text_pending_pos[0],
                 y=self._text_pending_pos[1],
-                size=DEFAULT_TEXT_SIZE,
+                # #2287: a választott listaérték 360-ad része
+                size=tarolt_meret(self._text_size_pt),
             ),
             style=TextStyle(
                 fill_argb=_rgb_to_argb(self._text_fill_color),
                 outline_argb=_rgb_to_argb(self._text_outline_color),
+                # #1994: a betűsúly a félkövér gomb állásából. A stílusblokk
+                # 8. mezője (`0x0062d483`): alap **400**, félkövéren **700**
+                # (a gomb `cmp …, 0x2bc` a `0x0062e31a`-n). Eddig a
+                # `TextStyle` alapértéke fixen 700 volt, tehát MINDEN
+                # feliratunk félkövérként ment ki, a gomb állásától
+                # függetlenül.
+                #
+                weight=700 if self._text_bold else 400,
+                # #2271: a KÖRVONALVASTAGSÁG az 5. mezőbe, átszámítás
+                # nélkül. A kutatói kör kimérte, hogy a csúszka `[0, 1]`
+                # folytonos (ugyanaz a `ytSliderHandler`, mint az
+                # átlátszatlanságé), tehát a mi értékünk ugyanabban a
+                # mértékegységben van, mint az ini mezője. Eddig fixen
+                # 0,0 ment ki — a valódi Picasában az »nincs körvonal«,
+                # ezért TŰNT EL minden körvonalunk mentés után.
+                #
+                # ⚠️ A betűméret továbbra sem megy ki: a mérés szerint a
+                # geometria 3. mezőjébe tartozna (em-képpont ÷ a kép
+                # MAGASSÁGA), de a felületi méretválasztónk ma nem em-ben
+                # jár. Külön lépés, külön mérés — ld. a jegyet.
+                unknown_a=float(self._text_outline_thickness),
+                # #2448: a DŐLT és az ALÁHÚZOTT a 9. mező 0. és 3. bitje.
+                # Eddig mindkettőt megrajzoltuk, de a mező fixen `0xC000`
+                # ment ki — a felirat újranyitáskor elvesztette a dőltségét
+                # és az aláhúzását.
+                #
+                # ⚠️ A mezőt a `with_style_flags` állítja, NEM a
+                # konstruktor: a többi bitet (köztük a fel nem tárt
+                # `0x4000`/`0x8000`-et) meg kell őrizni. Ezért indul a
+                # KORÁBBI stílusból, ha van.
+            ),
+        )
+        korabbi = previous.primary.style if previous.primary else None
+        stilus = block.style
+        if korabbi is not None:
+            # a korábbi mező bitjeit visszük tovább (köztük a fel nem
+            # tártakat); a két ismertet alább állítjuk
+            stilus = replace(stilus, trailer=korabbi.trailer)
+        block = replace(
+            block,
+            style=stilus.with_style_flags(
+                italic=self._text_italic, underline=self._text_underline
             ),
         )
         self._text_overlay = previous.with_primary(block)
@@ -2120,6 +2243,30 @@ class EditController(QObject, BackgroundWorkerMixin):
         return True
 
     @Slot(result=bool)
+    def shiftLenyomva(self) -> bool:  # noqa: N802 — QML-stílusú név
+        """Le van-e nyomva a Shift ÉPPEN MOST (#2146)?
+
+        Az eredeti az effekt-fül felépülésekor **egyszer** kérdezi le
+        (`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`), és a bitet eltárolja
+        (`[ecx+0x33a8]`); a kilenc érintett csempe ezután ezt a tárolt
+        értéket nézi, nem a pillanatnyi billentyűállapotot. A QML-ben
+        nincs erre API — a `Qt.ShiftModifier` csak eseményből érhető el,
+        a fül felépülése viszont nem billentyűesemény.
+
+        ⚠️ A hívó felelőssége, hogy **egyszer** hívja (a fül láthatóvá
+        válásakor), és az eredményt eltárolja. Ha képkockánként kérdezné,
+        a csempék a Shift minden le-fel nyomására átbillennének — az
+        eredeti pontosan ezt NEM teszi.
+        """
+        from PySide6.QtCore import Qt as QtNs
+        from PySide6.QtGui import QGuiApplication
+
+        return bool(
+            QGuiApplication.queryKeyboardModifiers()
+            & QtNs.KeyboardModifier.ShiftModifier
+        )
+
+    @Slot(result=bool)
     def applyColorWand(self) -> bool:  # noqa: N802 — QML-stílusú név
         """A szín-varázspálca (#551): a viszonyítási színt a PROGRAM választja.
 
@@ -2223,7 +2370,7 @@ class EditController(QObject, BackgroundWorkerMixin):
             "fill_enabled": self._text_fill_enabled,
             "opacity": self._text_opacity,
             "font_family": self._text_family,
-            "font_scale": self._text_scale,
+            "font_size_pt": self._text_size_pt,
             "bold": self._text_bold,
             "italic": self._text_italic,
             "underline": self._text_underline,

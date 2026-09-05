@@ -56,7 +56,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 | `gpsversion` | — | globális verziószám (GPS-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `colorspaceversion` | — | globális verziószám (színtér-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `rawversion` | — | globális verziószám (RAW-feldolgozás); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
-| `date` | `2019-07-04` | **PicasaPy-kiterjesztés (#320), élő Picasa-ini-ben validálandó** — a mappa dátumának KÉZI felülírása (ISO 8601, év-hónap-nap). Nem a hivatalos formátum dokumentált kulcsa: sem a Buchinger-visszafejtés, sem az exe string-tábla nem sorol fel mappa-szintű `date`-et (csak az albumoknál, `[.album:token]` alatt van ilyen). Hiányában a mappa dátuma a legrégebbi kép felvételi ideje (`index/sync.py`). Kód: `picasapy.ini.folder_date`. |
+| `date` | `46269.390486` vagy `2019-07-04` | ✅ **A VALÓDI Picasa is írja (#2304, 2026-09-04)** — és **OLE Variant-időként** (napok 1899-12-30 óta), nem ISO-ban. Mért példa a tulajdonos gépéről: `date=46269.390486` = 2026-09-04 09:22:17, pontosan a mappa létrejötte. Ez egyezik az író `date=%f` formátumsztringjével (`0x0068ac80`). A PicasaPy **olvasáskor mindkét alakot érti**, íráskor ISO-t ad (ld. a nyitott kérdést lent). Hiányában a mappa dátuma a legrégebbi kép felvételi ideje (`index/sync.py`). Kód: `picasapy.ini.folder_date`. |
 
 (A verzió-kulcsok forrása: `Picasa3.exe` string-tábla, ld.
 `docs/specs/picasa-exe-strings.md` 2. pont — feltehetően adatbázis-migrációs
@@ -84,6 +84,7 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
+| `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
 | `originhash` | `033f1132c874...` | szerkesztési verem integritás-hash |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
 | `screensaver` | `yes` | képernyővédőben szerepel |
@@ -374,6 +375,35 @@ tartalom elejére (`0x00985ff0`, hossz `0x1e`).
 utasításszinten valóban feltétel nélkül teszi elé, de a felhasználó 694
 album-jellegű fájljából egy sem tartalmazza.
 
+##### ⭐ MEGVAN, MIÉRT (2026-09-05): az író az EXPORT/ELŐKÉSZÍTÉS ága, nem az általános `.picasa.ini`-író
+
+Az ellentmondás feloldva: **rossz írót néztünk**.
+
+| megfigyelés | bizonyíték |
+|---|---|
+| a `.picasa.ini` literált **43 függvény** érinti | `string_xrefs`, kimerítő |
+| a `FUN_0068ac80` ezek **egyike**, és **két** közvetlen hívója van | `0x00696d31`, `0x0069b87d` (kimerítő `e8` pásztázás) |
+| a két hívó gazdája is **egy-egy** hívóval rendelkezik | `FUN_006956d0` ← `0x00695609`; `FUN_0069b240` ← vtáblából |
+| **KI a gazda — RTTI-vel feloldva** | a `FUN_0069b240` mutatója két vtáblában áll: `0x00ca7cc0` (fej `0x00ca7c54`) ⇒ **`PrepareCollection`**, és `0x00ca7df8` (fej `0x00ca7d8c`) ⇒ **`AlignedImageCollection`** |
+
+⇒ A `[encoding]`-fejlécet író függvény az **export/előkészítés** ágán ül
+(„prepare collection"), nem azon az úton, amelyik a felhasználó
+fotómappáiba ír. Ezért nem találjuk a korpuszban: a korpusz a **forrás**
+mappákat tartalmazza.
+
+**Élő kontroll (2026-09-05):** a `research/testdata/` alatt **71**
+`.picasa.ini` van, ezek közül **0** tartalmaz `[encoding]` szekciót, és
+`Picasa.ini` (nagy kezdőbetűs) fájl **egy sincs**.
+
+⛔ **BLOKKOLT részkérdés (SAJÁT, ebben a körben):** ír-e a friss export
+ténylegesen `[encoding]` fejlécet? A `research/#2007-rotate-ini/` minta
+**exportált** mappa (`P2category=Exported Pictures`), és **nincs** benne —
+de azt a fájlt az importálás és a négyszeri forgatás **újraírta**, tehát
+nem dönt. **Megszerzés:** egy friss export a valódi Picasából, amelyet
+utána **nem** importálunk vissza és nem szerkesztünk; ha annak a
+`.picasa.ini`-je `[encoding]`-gal kezdődik, az állítás megerősítve. Jegy:
+**#2452**.
+
 **A legvalószínűbb magyarázat** (a korpusz `date=40452` = 2010-es
 sorszámdátumai alapján), hogy ezek a fájlok **korábbi Picasa-változattól**
 származnak, és a tulajdonos azóta nem íratta újra őket. ⚠️ **Ez
@@ -420,10 +450,129 @@ tokenjévé alakul** — nem a `crop=` kulcs új értékévé.
 `DigicamPictureThreshold`) ⇒ **a migráció beolvasáskor fut**, nem külön
 konverter-lépésben.
 
-⚠️ **Az öt szám JELENTÉSE (melyik a bal/felső/jobb/alsó, és mi az ötödik)
-NINCS MÉRVE.** Négy szó megy a 64 bitbe, tehát az ötödik más szerepű —
-de a `sscanf` kimeneti címeinek veremre pakolása ezen az olvasási
-szinten nem fejthető ki egyértelműen. Lásd a mérleget.
+#### ✅ Az öt szám JELENTÉSE — LEZÁRVA (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A mezőfelosztást **három egymástól
+> független bizonyíték** rögzíti (alapérték-blokk · metszés-irány ·
+> tartomány-ellenőrzés), nem egyetlen illesztés. Ghidra nem kellett — a
+> `pe_dis.py` diszasszemblátumából, verem-eltolás visszaszámolásával jött ki.
+
+```
+crop=<ELDOBOTT>,<bal>,<felső>,<jobb>,<alsó>;      képpontban, az EREDETI képen
+```
+
+| mező | hova kerül (verem) | alapérték | mi lesz belőle |
+|---|---|---:|---|
+| 1. | `E+0x50` | `0` | **eldobva** — ld. lent |
+| 2. | `E+0x24` | `0` | **bal** |
+| 3. | `E+0x28` | `0` | **felső** |
+| 4. | `E+0x2c` | `-1` | **jobb** |
+| 5. | `E+0x30` | `-1` | **alsó** |
+
+*(`E` = az `esp` a `sscanf` hívási blokkjának elején, `0x00422342`. A
+`sscanf` cdecl, tehát a **legelső `push` a legutolsó paraméter**: a
+`0x00422342`–`0x0042235a` öt `lea`+`push` párja fordított sorrendben
+`E+0x30 · E+0x2c · E+0x28 · E+0x24 · E+0x50`.)*
+
+**1. bizonyíték — az ALAPÉRTÉK-blokk** (`0x004222e8`–`0x004222f8`, `esp = E`;
+hogy itt az `esp` ugyanaz, mint a `sscanf`-nál, azt a `0x00422327` /
+`0x00422333` **azonos `[esp+0x34]` hivatkozáspárja** rögzíti):
+
+```
+mov [esp+0x50], esi   ; 0   ← 1. mező
+mov [esp+0x24], esi   ; 0   ← 2. mező
+mov [esp+0x28], esi   ; 0   ← 3. mező
+mov [esp+0x2c], eax   ; -1  ← 4. mező
+mov [esp+0x30], eax   ; -1  ← 5. mező
+```
+
+⇒ a 2–5. mező egyetlen **`(0, 0, -1, -1)` alapértékű téglalap** — a
+klasszikus „üres/beállítatlan" rect —, az 1. mező pedig **külön skalár**.
+
+**2. bizonyíték — a METSZÉS iránya** (`0x00422491`, `FUN_009b4960`). A
+függvény két téglalapot metsz: a **0.** és **1.** mezőre `max`-ot
+(`0x009b4981`, `0x009b498f`), a **2.** és **3.** mezőre `min`-t
+(`0x009b499e`…) alkalmaz. A hívás:
+
+```
+0x00422464  lea edx,[esp+0xa8]  ; kimenet
+0x00422470  lea edx,[esp+0x28]  ; = E+0x24 → a BEOLVASOTT téglalap
+0x00422474  lea ecx,[esp+0x7c]  ; = E+0x78 = {0, 0, W, H}
+```
+
+⇒ a beolvasott négyes **ugyanaz a memóriaterület**, amit a `sscanf`
+kitöltött, és a metszés `max/max/min/min` mintája **csak** a
+`(bal, felső, jobb, alsó)` felosztással értelmes — egy `(x, y, szélesség,
+magasság)` négyest így metszeni értelmetlen. Az eredményt a
+`0x00422496`–`0x004224b2` visszaírja ugyanoda.
+
+**3. bizonyíték — a TARTOMÁNY-ellenőrzés** (`0x004224b0`–`0x00422500`).
+A `W` és `H` a függvény 3. és 4. paramétere (`[esp+0xc8]`, `[esp+0xcc]`;
+ugyanaz a kettő, amiből a `{0,0,W,H}` kerettéglalap készül):
+
+| ellenőrzés | cím | mit mond ki |
+|---|---|---|
+| `cmp ecx,edx ; jge kilép` | `0x004224b0` | **bal < jobb** |
+| `cmp edx,eax ; jge kilép` | `0x004224c0` | **felső < alsó** |
+| `max(0, bal) == bal` | `0x004224c8`, `0x004224e4` | **bal ≥ 0** |
+| `max(0, felső) == felső` | `0x004224ce`, `0x004224f6` | **felső ≥ 0** |
+| `min(W, jobb) == jobb` | `0x004224d4`, `0x004224ec` | **jobb ≤ W** |
+| `min(H, alsó) == alsó` | `0x004224de`, `0x004224fe` | **alsó ≤ H** |
+
+⇒ az egység **képpont**, a viszonyítás a **teljes kép** `W × H` mérete.
+
+**Amivé lesz** (`0x00422506`–`0x00422587`): a `FUN_009b9290` a téglalapot a
+`W`/`H`-val **normalizálja** (lebegőpontos osztás, `0x009b92e5`), majd a
+csomagoló négy 16 bites szóként fűzi össze —
+`bal<<48 | felső<<32 | jobb<<16 | alsó` —, ami **pontosan a `rect64`
+mezősorrendje** (`ini/rect64.py:35`). Ez egyben **független
+kontrollpróba**: ha a felosztásunk téves volna, a `rect64` sorrendje nem
+jönne ki.
+
+⚠️ **Az 1. mezőt a Picasa 3 ELDOBJA.** A `sscanf` az `E+0x50` rekeszbe
+olvassa, amit a függvény `0`-ra állít, és **egyetlen utasítás sem olvas
+vissza**. *(Kimerítő ellenőrzés: a 2547 bájtos törzs MINDEN `esp`-relatív
+hivatkozása közül azok, amelyek bármely előforduló `esp`-állásnál `E+0x50`-t
+adnának — `0x50 · 0x54 · 0x58 · 0x5c · 0x60 · 0x64` eltolás — sorra:
+`0x004222e8` (írás), `0x0042237b` és `0x00422b7c` (`lea`, de `esp = E-4`
+mellett `E+0x4c`-t adnak, az pedig a `0x0042c830` kimeneti paramétere),
+`0x00422388`, `0x004226c8`, `0x004226cc`, `0x004223cf`, `0x004223d4`,
+`0x004223d8` — mind más rekesz vagy írás. **Olvasás nincs.**)*
+Az átalakított token előtagja fixen `=1,` (`0x00c8131c`), tehát az érték a
+kimenetben sem jelenik meg.
+
+#### ✅ Mi lesz a `crop=` sorral írás után — a KIMENET oldala (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** arra, amit a *író* tesz; a
+> „mi marad a fájlban egy legacy-migráció után" **erős következtetés**,
+> mérés nélkül — ld. a mérleget.
+
+A képenkénti szekciók írója (`0x0068b320`) **egyetlen** `crop=` alakot
+ismer, és a memóriabeli 64 bites értékből állítja elő:
+
+```
+0x0068b5fd  mov edi,[esi+0x60]        ; a crop64 alsó 32 bitje
+0x0068b600  mov esi,[esi+0x64]        ; a felső 32 bitje
+0x0068b60c  mov eax,edi
+0x0068b60e  or  eax,esi
+0x0068b610  je  0x0068b657            ; ⇒ ha az érték 0, a SOR KIMARAD
+0x0068b614  push 0x00c82fcc           ; "%I64x"
+0x0068b63d  push 0x00ca786c           ; "crop=rect64(%s)\n"
+```
+
+⇒ **két kimondható tény:**
+
+1. A Picasa 3 **soha nem ír ötszámos `crop=` sort** — a régi alak csak
+   bemenet lehet.
+2. **Nulla értéknél a `crop=` kulcs egyáltalán nem kerül a fájlba**
+   (`or` + `je`), nem `crop=rect64(0000000000000000)`.
+
+**Ami ebből következtetés, nem mérés:** a migráció a régi sorból
+`filters=`-lánc **`crop64` tokent** gyárt (fent), nem a `crop` kulcs
+értékét — a `[obj+0x60/0x64]` mezőt tehát nem ez a út tölti fel. Ha más
+sem tölti fel, akkor a következő teljes kiíráskor a `crop=` sor
+**eltűnik**, és a vágás már csak a `filters=`-ben él. Ez falszifikálható
+állítás; az eldöntéséhez egy migráció előtti/utáni fájlpár kell.
 
 #### Élő adat: a korpuszban MÁR NINCS régi alak
 
@@ -447,7 +596,23 @@ eredetivel. A régi alakot viszont **nem ismerjük fel**: nálunk a
 
 ⇒ Egy Picasa 3-mal még sosem megnyitott, Picasa 2-es korú gyűjteményben
 a **vágás nem érvényesülne** nálunk. Jegy: **#2008** (alacsony
-prioritás — a tulajdonos korpuszában nulla előfordulás).
+prioritás — a tulajdonos korpuszában nulla előfordulás). **2026-09-05 óta
+a #2008 megvalósítható**: a mezőfelosztás megvan (fent).
+
+**A kiírás oldalán viszont EGYEZÜNK** (mérve, `app/edit_controller.py:2026`–
+`:2032`): ha nincs vágás, a `crop` kulcsot **töröljük**
+(`document.with_removed(..., "crop")`) — pontosan úgy, ahogy az eredeti
+`or eax,esi ; je` ága (`0x0068b610`). Nincs teendő.
+
+#### Nyitott kérdések mérlege (a legacy `crop=`-ra)
+
+| kérdés | állapot |
+|---|---|
+| melyik szám melyik koordináta | ✅ **LEZÁRVA** (2026-09-05) — `<eldobott>,bal,felső,jobb,alsó` képpontban; három független bizonyíték, fent |
+| mi az ötödik (valójában az ELSŐ) szám | ✅ **LEZÁRVA** — a Picasa 3 **eldobja**: a rekeszt `0`-ra állítja és soha nem olvassa vissza (kimerítő eltolás-ellenőrzés, fent) |
+| mi lesz a `crop=` sorral migráció után | ✅ **LEZÁRVA az ÍRÓ oldalán** — a Picasa 3 csak `crop=rect64(%s)` alakot ír, és 0 értéknél a sort **elhagyja** (`0x0068b610`). Hogy egy legacy-migráció után a sor eltűnik-e, **erős következtetés**, nem mérés — a falszifikáláshoz egy migráció előtti/utáni fájlpár kell |
+
+`0 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 ## `rect64` kódolás (crop + arcok)
 
@@ -614,8 +779,22 @@ registry-kulcsokban is megtaláltuk: `Software\Lifescape Solutions Inc.\Picasa`.
 |---|---|
 | `name` | `name` — **változatlan** |
 | `description` | a `[.album:]` szekcióba került |
-| `date` — **OLE-dátum** (lebegőpontos napszám) | ISO 8601 a `[.album:]`-ban |
+| `date` — **OLE-dátum** (lebegőpontos napszám) | **`[Picasa]`-ban változatlanul OLE-dátum** (#2304); ISO 8601 csak a `[.album:]`-ban |
 | `category` = „Other Pictures" | `category` = „Folders on Disk" stb. |
+
+⚠️ **Helyesbítés (#2304, 2026-09-04).** Ez a sor korábban azt állította,
+hogy a `date` „ma ISO 8601". A mérés ezt **cáfolja**: a tulajdonos gépén a
+Picasa 3.9 által ma írt ini `[Picasa]` szekciójában `date=46269.390486`
+áll — OLE Variant-idő. Az állítás egyébként a fenti író-táblával is
+ellentmondásban volt: a `0x0068ac80` formátumsztringje **`date=%f`**,
+vagyis lebegőpontos. Az ISO-alak a `[.album:token]` szekciókra igaz, a
+mappa-szintű `[Picasa]`-ra nem. A mi olvasónk emiatt **némán eldobta** a
+valódi Picasa-mappák dátumát (`picasapy.ini.folder_date`), és a szinkron a
+legrégebbi felvételi időre esett vissza.
+
+⚠️ **Nyitott:** nincs mérve, hogy a Picasa **olvasáskor** elfogadja-e az
+ISO-alakot. Csak azt tudjuk, mit ír. Amíg ez nem dőlt el, a mi ISO-írásunk
+kockázat kétirányú munkamenetben.
 
 A **`category`** mező tehát **több mint húsz éve** ugyanazt a szerepet tölti be:
 a mappa/album gyűjteménybe sorolását. A mai `P2category` ennek a leszármazottja.
@@ -654,6 +833,66 @@ Ugyanaz a fájl két különböző időpontban írva más `backuphash`-t kap.
   mintákkal (szimulációval 2015–2026 közötti időpontokra 16 298…62 695).
 - **Nem ez okozza a #643-as beolvasási hibát** — a Picasa a szakaszunkat
   akkor sem olvasná be, ha volna benne `backuphash`.
+
+### ⭐ A `<készletnév>-backuphash` — a MENTÉS-KÉSZLETENKÉNTI másodpéldány (2026-09-05, #440)
+
+A `backuphash` mellett a Picasa **ugyanabba a szakaszba** egy MÁSODIK,
+készletenkénti kulcsot is ír, amikor a képet biztonsági mentésbe teszi:
+
+```ini
+[photo01__bw.jpg]
+filters=bw=1;
+backuphash=40037
+BKTag Saját mentési készlet-backuphash=40037
+```
+
+**A kulcs neve összefűzésből áll:** `<a készlet belső neve>` + `-backuphash`,
+ahol a belső név maga is összefűzés: `"BKTag "` + a készlet **megjelenített**
+neve. Az alapértelmezett megjelenített név honosított
+(`il_BurnPanel::bksetname`, angolul `My Backup Set`, magyarul
+**„Saját mentési készlet"**).
+
+| lépés | bizonyíték |
+|---|---|
+| a `"-backuphash"` utótag literál | `0x00c81450` |
+| az összefűzés (`<név>` + utótag) | `0x00429d1c`–`0x00429d25` (`0x00985af0` = sztringhozzáfűzés) |
+| ugyanez az átnevezés két oldalára (régi és új név) | `0x00473fd5` és `0x0047402f` |
+| az érték kiolvasása az adatbázisból ezen a kulcsnéven | `0x00429d3b` → `0x006a5790` |
+| ha az érték **0**, új bélyeg készül az AKTUÁLIS IDŐBŐL | `0x00429d4d` → `0x0098b6e0`, majd a XOR-hajtás `0x00429d5c`–`0x00429d6c` |
+| a `.picasa.ini`-be írás | `0x00429d86` → `0x00454710` → `0x00454770` (ott `0x00454846` = `.picasa.ini`, `0x00454904` = `backuphash`, `0x004548d8` = `%d`) |
+| az adatbázisba írás ugyanazzal az értékkel | `0x00429d9f` → `0x006a5a60` |
+
+**Az érték képlete AZONOS a sima `backuphash`-ével** — ugyanaz a XOR-hajtás
+ugyanabból a `0x0098b6e0`-ból (`__time64` → `localtime64` → `0x0098b550`),
+ezt ez a kör a `0x00454770`-ben és a `0x00429cf0`-ben **egymástól függetlenül
+kétszer** olvasta ki. ⇒ **időbélyeg-lenyomat, nem tartalom-hash.**
+
+⛳ **ÉLŐ MINTA (a bizonyíték java):** a tulajdonos gépén a 2026-09-03-i
+mentés után egy valódi `.picasa.ini`-ben **20 szakasz** mindegyike hordozza a
+kulcsot, mindegyik `40037` értékkel — ÉS a sima `backuphash` is `40037`
+ugyanott. A korpusz többi öt `backuphash`-t tartalmazó fájljában
+készletenkénti kulcs **nincs**, és ott a sima érték képenként KÜLÖNBÖZŐ
+(13/13, 11/11, 8/8, 1/1, 1/1). Ez pontosan az időbélyeg-olvasatot támasztja
+alá: egy mappa `.picasa.ini`-je egyszerre íródik, tehát egy mentési menetben
+minden szakasz ugyanazt a bélyeget kapja.
+
+⇒ **Az inkrementalitás összehasonlítás:** ha a `<készlet>-backuphash` egyenlő
+a sima `backuphash`-sel, a kép abban a készletben naprakész; ha eltér vagy
+hiányzik, a mentésbe be kell kerülnie.
+
+⛔ **Ami MEGDŐLT:** a `biztonsagi-mentes.md` 9. szakaszának korábbi olvasata,
+hogy a mentés a képekre **kulcsszót** (`keywords=`) tesz. A `"BKTag "` és a
+`"BKTag %s"` literál a teljes `Picasa3.exe`-ben **pontosan egy-egy** helyről
+hivatkozott (`0x00670b04`, `0x0067ad63`, kimerítő négybájtos pásztázás), és
+mindkettő a mentés-készlet rekordjának `setname` mezőjét építi, amit a
+`0x006759c0` a `backups.xml`-be ír. Kulcsszó-tárolóhoz **egyik úton sincs
+kapcsolat**.
+
+⚠️ **Nálunk (MÉRVE, 2026-09-05):** az `ini/document.py` a kulcsot
+szóközökkel és ékezetekkel együtt **helyesen** olvassa, adja vissza
+(`Section.get`) és írja ki (round-trip **bitre azonos**), és egy
+`with_value`-szerkesztés után is megmarad. Tehát nincs mit javítani — de
+**őr-teszt nincs rá** (a tesztek csak a sima `backuphash`-t ismerik) — **#2462**.
 
 ## ⚠️ A beolvasás életciklusa — mikor BEMENET és mikor KIMENET (#643, 2026-08-14)
 
@@ -1416,20 +1655,388 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 
 #### Nyitott kérdések mérlege (a stílusblokkra)
 
-`0 nyílt · 3 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`1 nyílt · 3 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
 | hány mező, milyen típussal | **LEZÁRVA** — a formátumsztringből (`0x00ce42e8`) |
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
-| **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **A POZÍCIÓ LEZÁRVA** (2026-09-02, ld. lentebb): a 6. az, ami mozog. A **leképezés** nyitva marad. Az alábbi eredeti szöveg a lezárás ELŐTTI állapotot rögzíti: **BLOKKOLT** — mindkettő `1.000000` minden valós mintán. **Megszerzés:** egy `.picasa.ini`, amelyben a felirat **csökkentett átlátszatlansággal** készült a valódi Picasában (a tulajdonos elő tudja állítani: szöveg-eszköz → Átlátszóság csúszka ≠ maximum → mentés). Egyetlen ilyen sor eldönti. |
-| **mi a `<b>` (9. mező)** | **BLOKKOLT** — 2026-09-02 óta öt értékünk van (`0xC000`, `0xC001`, `0xC008`), és a dőlt/aláhúzott bit-hozzárendelés kézenfekvő, de szétválasztó eset (a kettő EGYÜTT) nincs. Az eredeti indoklás: a korpusz két értéke (`0`, `258`) nem elég; az `<a>`-val való együttmozgás következtetés. **Megszerzés:** ugyanaz az egy minta, ha benne az igazítás és a körvonal is eltér az alapértelmezettől; vagy a `0x00a4e3b0` író virtuális hívásainak dekompilációja. |
+| **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **TELJESEN LEZÁRVA** — a **6.** az, és a **leképezés is megvan**: a csúszka nyers értéke, alulról **0,1**-re vágva (`0x0062f449`–`0x0062f488`). *(A sor 2026-09-05-ig „a leképezés nyitva marad" jelöléssel állt, holott az alábbi „A 6. mező (átlátszatlanság)" szakasz már megválaszolta — elavult jelölés volt.)* |
+| **mi a 8. mező HÁROM része** | **NYITOTT (2026-09-04)** — az olvasó bitekre vágja (ld. fentebb); két rész 0/1/2 értékkészletű és függetlenül mozog, a harmadik (felső 16 bit) minden mintán 0. **Megszerzés:** kontrollált minta, ami a KÉT hármas enumot választja szét. |
+| **mi a `<b>` (9. mező)** | ✅ **LEZÁRVA (2026-09-05)** — **bit 0 = aláhúzott**, **bit 3 = dőlt**, a binárisból (ld. lentebb). A `0xC000`/`0xC001`/`0xC008` hármas ezzel maradéktalanul megmagyarázva. Bit 14 jelentése **nincs megállapítva**, bit 15 forrása **NINCS MEG**. ⛔ A félkövér **nem** ebben a mezőben van. |
+
+#### ⭐ A 9. mező BITJEI — dőlt és aláhúzott, a binárisból (2026-09-05, #2448)
+
+A mező egy **bitmező**, és az állítója egy általános jelzőkapcsoló:
+`0x005ba8a0` (a `0x00c943d4` vtábla **`+0x6c`** rése):
+
+```
+if (bool) [ecx+0x18] |= maszk;  else  [ecx+0x18] &= ~maszk;
+```
+
+A `+0x18` tag épp az, amit az író a 9. mezőként kiír
+(getter `0x005ba8d0`, vtbl `+0x74`).
+
+| bit | maszk | jelentés | bizonyíték |
+|---:|---:|---|---|
+| 0 | `0x0001` | **aláhúzott** | `0x0062ebb3`–`0x0062ebb9`: az `edittextpanel/underline` ágban `push 1` |
+| 3 | `0x0008` | **dőlt** | `0x005ba7b0` (vtbl `+0x34`): `push 8`; ezt hívja az `edittextpanel/italic` ág (`0x0062ea5c`) |
+| 14 | `0x4000` | *(felhasználói jelentése NINCS MEGÁLLAPÍTVA)* | `0x005f633f`: a felirat létrehozásakor `push 1; push 0x4000`; `0x005bae39`: igaz, ha egy méretarány pontosan `1.0` |
+| 15 | `0x8000` | **NINCS MEG** | a konstruktor a szót **0**-ra állítja (`0x005ba60b`); `push 0xC000` / `push 0x8000` + jelzőkapcsoló a binárisban **sehol** |
+
+⇒ A korpusz három értéke maradéktalanul megmagyarázva: **`0xC000`** (egyik
+sem) · **`0xC001`** (aláhúzott) · **`0xC008`** (dőlt).
+
+**A gomb-kezelő**, ahonnan mindez kiolvasható: `FUN_0062e8f0` (2317 b),
+amely elemnév szerint ágazik szét — `edittextpanel/bold` · `italic` ·
+`no_fill` · `underline` · `usecaption` · `clearall` · `edittextapply` ·
+`edittextcancel` · `no_outline` · `leftalign` · `centeralign` · `rightalign`.
+
+##### ⛔ Amit ez KIZÁR: a félkövér NEM bit ebben a mezőben
+
+Az `edittextpanel/bold` ág (`0x0062e972`–`0x0062e984`) a **betűsúlyt** írja:
+
+```
+neg al ; sbb eax, eax ; and eax, 0x12c ; add eax, 0x190
+```
+
+⇒ bekapcsolva `0x12c + 0x190` = **700**, kikapcsolva **400**, és ez a
+**7. mezőbe** megy (vtbl `+0x0c` → `[ecx+0x1c]`). Ez független megerősítése
+a #2271 mérésének.
+
+##### Nálunk (MÉRVE)
+
+`src/picasapy/ini/text_overlay.py:171` — `trailer: int = 49152` **állandó**;
+a `:294` beolvassa, a `:312` változatlanul visszaírja ⇒ a round-trip
+hibátlan, de a **jelentést nem használjuk**. A rajzolónk viszont tudja a
+dőltet és az aláhúzást (`render/text_overlay.py:163–164`, `:124`, `:223`)
+⇒ **megrajzoljuk, de nem mentjük**. Jegy: **#2448**.
+
+#### ⭐ A 8. mező NEM egy érték, hanem HÁROM — az OLVASÓ szétvágja (2026-09-04, #2108)
+
+Az olvasó a `0x00a4dd50` (`sscanf` a `0x00a4df98`-on). A kilenc kiolvasott
+értéket **virtuális beállítókkal** teszi az objektumba, és a **8. mezőt
+három részre vágja**:
+
+```
+0x00a4e05c  mov  ecx, [esp + 0x3c]      ; a 8. mező
+0x00a4e065  shr  ecx, 0x10              ; a FELSŐ 16 bit
+0x00a4e06b  call [vtbl + 0x38]
+
+0x00a4e06d  movzx ecx, byte ptr [esp + 0x3d]   ; a 8–15. BIT
+0x00a4e07a  call  [vtbl + 0x2c]
+
+0x00a4e07c  mov  ecx, [esp + 0x3c]
+0x00a4e085  and  ecx, 0xff              ; a 0–7. BIT
+0x00a4e08b  call [vtbl + 0x30]
+```
+
+⇒ **Három külön beállító, három külön tulajdonság.** A **9.** mező ezzel
+szemben **egészben** megy egyetlen beállítóhoz (`[vtbl+0x70]`,
+`0x00a4e04e`).
+
+**A meglévő minták ezzel szétesnek** (a jegy táblájából):
+
+| minta | 8. mező | 16–31. bit | 8–15. bit | 0–7. bit |
+|---|---|---|---|---|
+| A (Arial, 1 sor) | `0x100` | 0 | **1** | **0** |
+| B (Arial Black, 1 sor, forgatott) | `0x100` | 0 | **1** | **0** |
+| C (Arial, 3 sor) | `0x200` | 0 | **2** | **0** |
+| D (Arial Black, 3 sor) | `0x202` | 0 | **2** | **2** |
+| E (Arial Black, 1 sor) | `0x101` | 0 | **1** | **1** |
+| *(régi korpusz)* | `0x102` | 0 | **1** | **2** |
+| *(régi korpusz)* | `0` | 0 | **0** | **0** |
+
+**Amit ez ELDÖNT:** a felső 16 bit **minden mintában 0**. A másik kettő
+értékkészlete eddig **0, 1, 2**, egymástól **függetlenül** mozog (a C és a
+D 8–15. bitje azonos, a 0–7. eltér).
+
+> ⛔ **Helyesbítés (2026-09-04):** a lap korábban azt írta, hogy a felső 16
+> bit „alapértéken áll". **Nem áll alapértéken.** A konstruktor
+> (`0x005ba5d0`) `mov byte ptr [esi + 0x14], 1` — az alapérték **1**,
+> miközben minden megfigyelt sorban **0**. A megfigyelés tehát nem
+> „érintetlen mező", hanem **az alapérték ellentéte, minden mintában**.
+
+**Amit NEM dönt el:** melyik beállító mit jelent — az offszet nem
+szemantika.
+
+#### Az objektum osztálya: `ytTextSettings` (MEGERŐSÍTVE, 2026-09-04, #2108)
+
+A lap korábban itt megállt („az olvasó szabad függvény, `esi`-ben kapja a
+példányt"). Az osztály **nem a hívási láncból**, hanem a **vtable
+alakjából** azonosítható:
+
+1. Az olvasó négy virtuális slotot hív: `+0x2c`, `+0x30`, `+0x38`, `+0x70`.
+   Az index mind a 2856 RTTI-vtable-jéből **kilencben** van mind a négy
+   slot négy különböző, ≤40 bájtos (tehát beállító-alakú) függvénnyel.
+   Nyolc tárgyilag kizárt; a kilencedik a **`ytTextSettings::vftable`**
+   (`0x00c943d4`, 40 slot).
+2. **Megerősítés:** a `Picasa3.exe` teljes bájtsorában a két
+   `ytTextSettings` vtable-cím (`0x00c943d4`, `0x00c94478`) **pontosan
+   egyszer** fordul elő, és mindkettő ugyanabban a függvényben:
+   `FUN_005ba5d0` — a konstruktor. Épp ezt hívja a `text=` írójának
+   hívója (`0x005bb758  call 0x5ba5d0` a `FUN_005bb630`-ban).
+
+**A négy beállító és a tagja:**
+
+| a `text=` mezője | slot | beállító | tag | típus |
+|---|---|---|---|---|
+| 8. mező, 16–31. bit | `+0x38` | `0x005ba7d0` | `this+0x14` | **byte** |
+| 8. mező, 8–15. bit | `+0x2c` | `0x005ba7a0` | `this+0x2c` | dword |
+| 8. mező, 0–7. bit | `+0x30` | `0x004112e0` | `this+0x28` | dword |
+| **9.** mező, egészben | `+0x70` | `0x005ba8c0` | `this+0x18` | dword |
+
+**A konstruktor adta alapértékek** (`0x005ba5d0`, 119 bájt):
+
+```
++0x10  "Arial"      +0x14  1 (byte)   +0x18  0        +0x1c  0x190 = 400
++0x20  -1           +0x24  0x14 = 20  +0x28  0        +0x2c  0
++0x30  1.0          +0x34  1.0        +0x38  -1       +0x40  0.0
++0x44  0.0          +0x48  0          +0x4c  0        +0x50  1.0   +0x54  0.0
+```
+
+A `+0x1c` alapértéke **400**, ami pontosan a betűsúly alapja (félkövéren
+700, ld. a szöveg-eszköz szakaszát) — tehát a **7. mező (betűsúly) tagja a
+`+0x1c`**, és a `+0x10` a betűtípusé. A `+0x24 = 20` és a `+0x38 = -1`
+jelentése **nincs megmérve**; ránézésre méret, illetve szín, de ezt nem
+állítjuk.
+
+> **Amit hiába próbáltunk:** a fogyasztók tagoffszet-söpréssel **nem**
+> találhatók meg. Az összes ismert tag a `0x10`–`0x54` sávba esik, ami a
+> leggyakoribb struktúra-offszet-tartomány: `esp`/`ebp` bázis kizárásával
+> és ≥8 tag megkövetelésével is **563** jelölt marad, az élükön
+> CRT-függvényekkel. (A #2125-ös söprés azért működött, mert ott az
+> offszet `0x13e`/`0x13f` volt, azaz ritka.) A járható út a hívási gráf a
+> konstruktor felől, vagy a beállítók testvéreiként ott álló getterek
+> hívói.
+
+> ⛔ **A jegy kérdésfeltevése ezzel pontosítandó.** A #2108 „a 8. és 9.
+> mező (igazítás, dőlt, aláhúzott?)" kérdést tesz fel, és **hét** kontrollált
+> mintát kér. A mérés szerint viszont a 8. mező **két** (látható)
+> tulajdonságot hordoz, mindkettő **három**-állapotú (0/1/2) — a dőlt és az
+> aláhúzott ellenben **kétállapotú** volna. A kért mintasornak tehát
+> **a két hármas enumot** kell szétválasztania, nem hat logikai kapcsolót.
 
 ⚠️ **Amíg ez a kettő nyitva van, a mi írónk NE találgasson:** a
 `text_overlay.py` mai viselkedése (megőrzés + változatlan visszaírás)
 **helyes** a beolvasott sorokra. Az ÚJ sorok írásához viszont most már
 megvan a súly, a körvonalvastagság és az igazítás — ld. a **#1994**-et.
+
+#### ⭐ A MÉRTÉKEGYSÉG-LEKÉPEZÉS — mind a kilenc mező forrása, és a két csúszka útja (2026-09-04, #2271)
+
+Az előző kör a **beolvasó** (`0x00a4dd50`) négy setter-hívásából négy mezőt
+kötött taghoz. Az **író** (`0x00a4e3b0`) getterei a maradék ötöt is megadják,
+és ezzel a tábla **teljes**.
+
+**Az író argumentum-sorrendje** (cdecl, a `v1,%u,%u,%f,%f,%f,%f,%u,%u,%u`
+formátum a `0xce42e8`-on, a hívás a `0x00a4e69a`–`0x00a4e6a6`):
+
+| `text=` mező | virtuális slot | getter | **tag** | típus |
+|---|---|---|---|---|
+| 1. kitöltőszín | `+0x24` | `0x00910590` | `+0x20` | dword ARGB |
+| 2. körvonalszín | `+0x60` | `0x005ba870` | `+0x38` | dword ARGB |
+| 3. (`128.000000`) | — | helyi érték | — | — |
+| 4. (`1.000000`) | — | helyi érték | — | — |
+| **5. körvonalvastagság** | `+0x68` | `0x005ba890` | **`+0x3c`** | **float** |
+| **6. átlátszatlanság** | `+0x58` | `0x005ba850` | **`+0x34`** | **float** |
+| 7. betűsúly | `+0x20` | `0x005ba790` | `+0x1c` | dword |
+| 8. bit 16–23 | `+0x48` | `0x005ba810` | `+0x14` | byte |
+| 8. bit 8–15 | `+0x3c` | `0x005ba7e0` | `+0x2c` | dword |
+| 8. bit 0–7 | `+0x40` | `0x005ba7f0` | `+0x28` | dword |
+| 9. jelzőszó | `+0x74` | `0x005ba8d0` | `+0x18` | dword |
+
+A 8. mező **három bájt összefűzése** — az író maga rakja össze
+(`0x005ba810` → `<<16`, `0x005ba7e0` → `<<8`, `0x005ba7f0`), ami
+egymástól függetlenül igazolja az előző kör három-tulajdonságos olvasatát.
+
+##### ✅ A 6. mező (átlátszatlanság): a csúszka értéke VÁLTOZATLANUL, alsó korláttal **0,1**
+
+A `textopacityslider/scaleslider` kezelője (`0x0062f3c0`, a névhasonlítás a
+`0xc9e864`-es sztringre):
+
+```
+0x0062f449   add ebx, 0x2e0                 ; panel + 0x2e0 = az átlátszatlanság
+0x0062f451   call 0x009ddd00                ; a csúszka aktuális értéke -> [ebx]
+0x0062f456   fld  dword ptr [ebx]
+0x0062f460   fcom qword ptr [0xcf4888]      ; összevetés 0.1-gyel  (double)
+0x0062f468   test ah, 5 / jp 0x62f475       ; ha NEM kisebb -> marad
+0x0062f46f   fld  dword ptr [0xc7e4a0]      ; különben: 0.1  (float)
+0x0062f488   fstp dword ptr [ebx]
+…
+0x0062f4a5   fld  dword ptr [ebx]           ; minden kijelölt feliratra:
+0x0062f4af   mov  eax, [edx+0x54]           ; vtbl+0x54 = a +0x34 SETTERE
+0x0062f4b2   call eax
+```
+
+Mindkét konstans **`0.1`** (`0xcf4888` double, `0xc7e4a0` float, kiolvasva).
+⇒ **A 6. mező a csúszka nyers értéke**, semmilyen átszámítás nincs — csak
+**alulról 0,1-re vágva**. Nulla átlátszatlanság tehát nem áll elő.
+
+##### ✅ Az 5. mező (körvonalvastagság): szintén VÁLTOZATLAN — a 0,0 viszont MÓDVÁLTÁS
+
+Ugyanennek a kezelőnek a másik ága (`outlineweightslider/scaleslider`,
+`0xc9e884`):
+
+```
+0x0062f541   call 0x009ddd00                ; a csúszka értéke -> [esp+0xc]
+0x0062f548   fld  dword ptr [esp+0xc] ; fucom st(1)   ; összevetés 0.0-val
+0x0062f555   jnp  0x0062f581                ; EGYENLŐ  -> a „nincs körvonal" ág
+0x0062f55d   mov  edx, [eax+0x64]           ; NEM egyenlő: vtbl+0x64 = a +0x3c SETTERE
+0x0062f56a   call edx                       ; …az értékkel, változtatás nélkül
+```
+
+⇒ **Nem nulla érték: egy az egyben a tagba.** **Pontosan nulla: a program
+nem a mezőt írja nullára, hanem a „nincs körvonal" ágra ugrik**
+(`0x0062f581`), ami a 8. mező alsó bájtját (kitöltés/körvonal mód) állítja.
+Ez megmagyarázza, miért `0.000000` az 5. mező az alapértelmezett sorokban.
+
+##### ✅ A BETŰMÉRET: a lista 16 egész értéke, és `tárolt = érték ÷ 360` (2026-09-04, #2287)
+
+Az előző kör kimérte, hogy a geometria 3. mezője **em-képpont ÷ a kép
+magassága**. A hiányzó láncszem — mi adja az em-képpontot — most megvan.
+
+**1. A méretlista TARTALMA — statikus, 16 egész.** A `.data`-ban két
+azonos példány (`0x00c7dab8` és `0x00c7e4f0`, mindkettő 16 × `int32`):
+
+```
+8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
+```
+
+A panel a tömb mutatóját a `+0x2bc`, a darabszámát a `+0x2c0`, a
+**kiválasztott értéket** a `+0x2cc` tagban tartja. A lista elemeit a
+`0x0062dfde` `push 0xc81844` = **`"%d"`** formátummal írja ki ⇒ a
+legördülőben **egész számok** állnak, nem százalék.
+
+**Az alapérték 12** — kiolvasva: `0x0062d463`
+`mov dword ptr [ebx+0x2cc], 0xc`.
+
+**2. A KIVÁLASZTÁS ÚTJA.** A listaelemre kattintva
+(`0x0063112d`–`0x00631137`) a program eltárolja az egészet a `+0x2cc`-be,
+majd meghívja a `0x005b35a0` átváltót a **rajzterület befoglalójával**:
+
+```
+0x005b35a0   eax = a befoglaló (x0,y0,x1,y1),  edx = a választott EGÉSZ
+0x005b35c4   eax = y1 - y0                      ; a MAGASSÁG
+0x005b35cb   fild  [esp]                        ; (float)magasság
+0x005b35d1   fdiv  qword ptr [0xcf3d50]         ; ÷ 360.0   (kiolvasva)
+0x005b35d7   fild  [esp]                        ; (float)választott érték
+0x005b35e2   fmulp                              ; ⇒ érték × (magasság / 360)
+```
+
+⇒ **`méret_képpont = választott_érték × (kép_magassága ÷ 360)`**
+
+*(Üres befoglalónál — `x0 ≥ x1` vagy `y0 ≥ y1` — az ág elmarad, és az
+érték változatlanul, egészből floatként megy tovább: `0x005b35b7`.)*
+
+Az eredmény a szöveg-objektum `+0x50` tagjába kerül; a **`text=` írója**
+innen olvassa (`0x00a4e518` `call [vtbl+0x98]` → `0x005ba960` =
+`fld [ecx+0x50]`).
+
+**3. A KÖR BEZÁRUL.** Az író a `0x8000` jelzőbit mellett `méret ÷ magasság`-ot
+tárol (ld. fentebb), tehát:
+
+> **tárolt = választott_érték × (magasság/360) ÷ magasság = választott_érték ÷ 360**
+
+A magasság **kiesik** — a tárolt szám tisztán a listaérték 360-ad része.
+
+**4. ELLENŐRZÉS a valódi exportokon — 3/3 találat.** A tulajdonos hat
+felirat-blokkjából **három** pontosan listaértéket ad vissza, a másik három
+nem (azokat kézzel méretezték át a fogantyúval):
+
+| tárolt | × 360 | listaérték? |
+|---|---:|---|
+| `0,033333` | **12,000** | ✔ (az alapérték) |
+| `0,061111` | **22,000** | ✔ |
+| `0,072222` | **26,000** | ✔ |
+| `0,051884` | 18,678 | – |
+| `0,112358` | 40,449 | – |
+| `0,104631` | 37,667 | – |
+
+Mindhárom találat **szerepel** a 16 elemű listában. Véletlen egyezésre
+nincs esély: hat értékből három hat tizedesjegyre egész.
+
+**A teljes leképezés:**
+
+| lista | tárolt | | lista | tárolt |
+|---:|---|---|---:|---|
+| 8 | `0,022222` | | 26 | `0,072222` |
+| 10 | `0,027778` | | 30 | `0,083333` |
+| **12** | `0,033333` | | 36 | `0,100000` |
+| 14 | `0,038889` | | 48 | `0,133333` |
+| 16 | `0,044444` | | 60 | `0,166667` |
+| 18 | `0,050000` | | 72 | `0,200000` |
+| 20 | `0,055556` | | 84 | `0,233333` |
+| 22 | `0,061111` | | 96 | `0,266667` |
+
+⇒ **A „hány képpont a 100%" kérdés tárgytalan:** az eredetiben nincs
+százalék. Abszolút lista van, és a kép magassága **360 egységnek** számít.
+
+*Bizonyítottsági fok: **megerősített** — a lista a `.data`-ból kiolvasva, az
+alapérték és a formátumsztring a kódból, az átváltás és a 360,0 konstans
+utasításról utasításra, a kör bezárása pedig három valódi exporton
+ellenőrizve.*
+
+##### ✅ A csúszka TARTOMÁNYA: **[0, 1]** — kiolvasva, nem következtetve
+
+Mindkét vezérlő `*/scaleslider`, és a `.tre` szerint azonos elemtípus
+(`Property slider 2`, illetve `5` — ez **mód-jelző**, nem tartomány: az
+egész erőforráskészletben `0`, `2`, `3` és `5` értékei fordulnak elő).
+Az osztály a `ytSliderHandler` (RTTI-vtábla `0x00cda46c`), és az
+érték-beállítója (`vtbl+0x10` → `0x00aaf220`) maga normalizál:
+
+```
+0x00aaf241   call [vtbl+0x28]            ; a SÁV befoglalója -> [esp+0x2c…0x34]
+0x00aaf243   fld  dword ptr [ebp+0xc]    ; a kattintás/húzás helye a sávon
+0x00aaf24a   sub  eax, [esp+0x2c]        ; a sáv HOSSZA
+0x00aaf252   fidiv dword ptr [esp+0x10]  ;  ⇒ hely / sávhossz
+0x00aaf259   fldz … fld1 … fcom/fcomp    ;  ⇒ VÁGÁS 0,0-ra és 1,0-ra
+0x00aaf298   fsubrp                      ; jobbról-balra elrendezésnél: 1 - érték
+```
+
+⇒ **A `scaleslider` értéke definíció szerint [0, 1]**: a sávhosszra normált
+arány. A görgő-lépés megerősíti: `0x00aaf7aa` a görgetés-deltát **15,0**-del
+osztja (egy kattanás), majd `0x00aaf7c8` **0,02**-vel szorozza
+(`0xcf48a8`) — egy kattanás a tartomány **2 %-a**, ötven kattanás a
+teljes sáv.
+
+⇒ A mintákban látott `0,25` és `0,5` tehát a csúszka **negyed**, illetve
+**fél** állása. A megfigyelt értékek mind `n/256` alakúak
+(`0,757813 = 194/256`, `0,476563 = 122/256`), ami a sáv
+képpont-felbontásával összefér.
+
+⇒ **A mi 0–8-as, egész lépésű körvonal-csúszkánk mértékegysége tér el**, nem
+a leképezés: az eredeti csúszkája is `[0, 1]`-es, mint az átlátszatlanságé.
+
+##### ✅ A méret: **em-képpont ÷ a kép MAGASSÁGA** — és van egy második ág
+
+A geometria-blokk 3. floatját ugyanez az író számolja
+(`0x00a4e578`–`0x00a4e5b2`):
+
+```
+0x00a4e57a   mov  edx, [eax+0x74]           ; a 9. mező (jelzőszó)
+0x00a4e581   test eax, 0x8000
+0x00a4e586   jne  0x00a4e5aa                ; ha a 0x8000 bit ÁLL:
+0x00a4e5aa     fld [esp+0x10] ; fdiv [esp+0x1c]      ⇒  méret / magasság
+                                              ; ha NEM áll:
+0x00a4e588     fld [esp+0x10] ; fmul qword [0xcf3d50] ; × 360.0  (kiolvasva)
+0x00a4e592     fdiv [esp+0x1c]                        ⇒  méret × 360 / magasság
+```
+
+Minden ismert mintában a 9. mező `0xC000`/`0xC001`/`0xC008`, tehát a
+**`0x8000` bit ÁLL** ⇒ az egyszerű ág érvényes:
+
+> **a tárolt méret = az em-méret KÉPPONTBAN ÷ a kép MAGASSÁGA**
+
+**Ezt a korábbi képpont-mérés függetlenül igazolja:** a 2. exportnál
+(896 × 1344) a mért em 82, illetve 141 képpont, a számolt
+`0,061111 × 1344 = 82,13` és `0,104631 × 1344 = 140,62`.
+
+*Bizonyítottsági fok: **megerősített** — a tagtérkép az író
+argumentum-sorrendjéből, a két csúszka útja a kezelőből, a 0,1-es korlát
+és a 360,0 kiolvasott konstansokból, a **[0, 1]** tartomány pedig a
+`ytSliderHandler` normalizáló beállítójából. Ebben a szakaszban nincs
+becsült érték.*
 
 #### A panel négy vezérlője, ami eddig sehol nem szerepelt
 
@@ -2380,8 +2987,14 @@ mind `n/256` alakú). ⇒ **a felhasználó által állítható érték a 6.**, 
 ⚠️ Ez a **pozíciót** dönti el, a **leképezést nem**: a 3. blokk
 vonásainak belsejében mért tényleges keverési arány **0,53** (33 155
 képpont, élsimított perem nélkül), miközben a 6. mező `0,757813`. A
-csúszka-érték és a megjelenő átlátszatlanság **nem azonos** — a
-leképezés NYITOTT.
+csúszka-érték és a megjelenő átlátszatlanság **nem azonos**.
+
+> **Szűkítve (2026-09-04, #2271):** a TÁROLÁSI út azóta kimérve, és ott
+> **nincs átszámítás** — a csúszka értéke egy az egyben megy a
+> `+0x34` tagba (ld. lentebb, „A mértékegység-leképezés"). Az eltérés
+> tehát **nem az írásban van, hanem a RAJZOLÓBAN**: a `+0x34` tag
+> fogyasztóját kell megtalálni. A kérdés ezzel nem oldódott meg, de a
+> keresés helye eldőlt.
 
 #### ✅ A 8. mező KÉT bájt: igazítás ÉS kitöltés/körvonal mód
 
@@ -2433,3 +3046,67 @@ tengelye **−18,72°**, a radián-olvasat **−19,30°**-ot ad; fokként
 A horgonypont a szöveg**doboz** bal felső sarka, nem az első soré: a 3.
 blokk horgonya 270,1, a doboz bal széle 275 (a leghosszabb sor), miközben
 a 2. és 3. sor 699-nél és 704-nél kezdődik.
+
+---
+
+## A `[Picasa] date=` OLVASÓJA — `atof`, és az ISO-alak NÉMÁN elromlik (2026-09-04, #2304)
+
+**Bizalmi fok: megerősített** (bináris).
+
+A lap eddig az **írót** dokumentálta (`date=%f`, `0x0068ac80`). A nyitott
+kérdés az volt — a `picasapy.ini.folder_date` modul fejléce is kimondta —,
+hogy **elfogadja-e a Picasa az ISO-alakot olvasáskor**. Most kimértem: **nem.**
+
+### Az olvasó (`0x00441ed0`, a `[Picasa]` szakasz beolvasása)
+
+| cím | mit tesz |
+|---|---|
+| `0x00442456`–`0x00442465` | a `Picasa` / `date` (`0x00c80d7c`) kulcs nyers sztringjét kéri |
+| `0x0044246a` | **alapérték `949998.0`** (`fld qword ptr [0x00c7ccf8]`) — ugyanaz az „+végtelen” őrszem, amit az `autodate` minimum-keresése is használ |
+| `0x0044247a`–`0x0044248a` | üres/hiányzó értéknél marad az alapérték |
+| `0x0044248d` | **`call 0x00c080d7`** — CRT sztring→`double` (`atof`) |
+| `0x00442492` | az eredmény a mappaobjektum dátummezőjébe |
+
+⇒ **`atof`, hibajelzés nélkül.** Egy `date=2026-09-04` sor eredménye
+**`2026.0`**, ami Variant-napként **1905-07-18** — a Picasa ezt némán
+elfogadja, és a mappa 1905-be kerül a bal hasáb évcsoportjában.
+
+### Az ÍRÓ oldal, mappa-szinten
+
+A `0x00710080` a mappa `.picasa.ini`-jének `[Picasa]` szakaszát írja:
+
+- `0x0071031e`–`0x0071032a`: a dátumot **`0.0`-val veti össze, és nullánál
+  KIHAGYJA a sort** — dátumtalan mappánál tehát nincs `date=` kulcs;
+- `0x00710332`: a formátum **`"%f"`** (`0x00c817c0`) ⇒ hat tizedes;
+- `0x00710353`–`0x00710358`: kulcs `date`, szakasz `Picasa`;
+- az érték forrása a mappaobjektum **`+0x198`** `double` mezője
+  (`0x00710028`).
+
+### A KÖZÖS beállító: egy hívás, KÉT tároló
+
+`0x004460a0` — `(azonosító, double dátum, bool ini-t-is)`; közvetlen hívója
+nincs, **vtáblán át** érhető el (mutató a `0x00c81fb0`-on):
+
+| cím | mit tesz |
+|---|---|
+| `0x004460d8` | `call 0x006a5c60` — az **adatbázis** `date` oszlopa |
+| `0x004460ef` | a harmadik argumentum (`[ebp+0x14]`) kapuja |
+| `0x0044615a` | **`"%f"`** formázás |
+| `0x00446176` | `call 0x0045c0a0` — a **`.picasa.ini`** `date` kulcsa |
+
+⇒ A mappa dátuma **egy ponton** áll be, és onnan megy **mindkét** tárolóba;
+az ini-írás külön kapcsolható.
+
+### A mező születési értéke
+
+A `.text`-ben **három** közvetlen `fstp qword ptr [reg+0x198]` írás van, és
+**mind a három konstruktor**: `0x006e8326` és `0x006e8ba0` a **`949998.0`**
+őrszemet, `0x0070aced` a **`0.0`**-t teszi be. ⇒ A tényleges dátum tehát
+**nem** a konstruktorból, hanem a fenti beállítón át érkezik.
+
+### Mit NEM mértem
+
+Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezett
+mappára. A beállító helye megvan (`0x004460a0`, vtábla-mutató a
+`0x00c81fb0`-on), de a hívóit vtábla-résen keresztül kell megkeresni, nem
+szöveges kereséssel.

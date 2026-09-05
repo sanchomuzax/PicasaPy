@@ -37,7 +37,7 @@ def photo(tmp_path):
 class TestBeginEdit:
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
         assert "enhance" not in controller.effectChainCounts
         assert controller.revision == 1
         assert controller.previewSource == "image://editpreview/1?rev=1"
@@ -121,7 +121,7 @@ class TestToggleTool:
         controller.toggleTool("redeye")
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=" not in ini_text
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
     def test_preserves_unrelated_keys(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
@@ -826,8 +826,10 @@ class TestEffects:
 
     def test_apply_effect_pushes_undo(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        controller.applyEffect("grain2")
-        assert controller.undoAction == "grain2"
+        # #2141: a `grain2` a Shiftes másodlagos, felületről már nem
+        # alkalmazható; az 1. fül 5. csempéje a `picnikgrain`-t hívja.
+        controller.applyEffect("picnikgrain")
+        assert controller.undoAction == "picnikgrain"
         controller.undo()
         assert self._filters(photo) == ""
 
@@ -1324,6 +1326,51 @@ class TestTextTool:
         assert controller.textDraft == "Cím"
 
 
+class TestSzovegStilusbitek2448:
+    """#2448: a dőlt/aláhúzott a `text=` 9. mezőjének 0. és 3. bitje.
+
+    Eddig megrajzoltuk, de a mező fixen `0xC000` ment ki — a felirat
+    újranyitáskor elvesztette a dőltségét és az aláhúzását. A bit-szintű
+    állítások a `tests/ini/test_felirat_dolt_alahuzott_2448.py`-ban vannak;
+    itt a TELJES út mérjük: kapcsoló → Alkalmaz → a kiírt sor.
+    """
+
+    @staticmethod
+    def _trailer(ini_szoveg: str) -> int:
+        sorok = [s for s in ini_szoveg.splitlines() if s.startswith("text=")]
+        assert sorok, f"nincs text= sor:\n{ini_szoveg}"
+        return int(sorok[0].rstrip(";").split(",")[-1])
+
+    def _alkalmaz(self, controller, photo, *, dolt=False, alahuzott=False):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Próba")
+        controller.setTextItalic(dolt)
+        controller.setTextUnderline(alahuzott)
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        return self._trailer(
+            (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        )
+
+    def test_a_DOLT_es_ALAHUZOTT_bit_kimegy(self, controller, photo):
+        trailer = self._alkalmaz(controller, photo, dolt=True, alahuzott=True)
+        assert trailer & 0x0008, f"a DŐLT bit nem ment ki: {trailer:#06x}"
+        assert trailer & 0x0001, f"az ALÁHÚZOTT bit nem ment ki: {trailer:#06x}"
+
+    def test_a_KIKAPCSOLT_allapot_sem_hazudik(self, controller, photo):
+        trailer = self._alkalmaz(controller, photo)
+        assert not trailer & 0x0008
+        assert not trailer & 0x0001
+
+    def test_a_FEL_NEM_TART_bitek_megmaradnak(self, controller, photo):
+        """A `0xC000` a korpusz alapja — a mentés nem tüntetheti el."""
+        trailer = self._alkalmaz(controller, photo, dolt=True)
+        assert trailer & 0xC000 == 0xC000, (
+            f"a fel nem tárt bitek elvesztek: {trailer:#06x}"
+        )
+
+
 class TestTextStyle:
     """#450: kitöltés+körvonal szín, körvonal-vastagság, kitöltés ki/be,
     átlátszóság. #371 óta a KÉT SZÍN mentődik (a `text=` stílus-mezőjének
@@ -1342,19 +1389,19 @@ class TestTextStyle:
         controller.beginEdit("1", str(photo))
         controller.setTextFillColor("#ff0000")
         controller.setTextOutlineColor("#00ff00")
-        controller.setTextOutlineThickness(3)
+        controller.setTextOutlineThickness(0.375)   # #2271: [0,1]
         controller.setTextFillEnabled(False)
         controller.setTextOpacity(0.5)
         assert controller.textFillColor == "#ff0000"
         assert controller.textOutlineColor == "#00ff00"
-        assert controller.textOutlineThickness == 3
+        assert controller.textOutlineThickness == pytest.approx(0.375)
         assert controller.textFillEnabled is False
         assert controller.textOpacity == 0.5
 
     def test_reset_to_defaults_on_new_begin_edit(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.setTextFillColor("#ff0000")
-        controller.setTextOutlineThickness(5)
+        controller.setTextOutlineThickness(0.625)   # #2271: [0,1]
         controller.endEdit()
         controller.beginEdit("1", str(photo))
         assert controller.textFillColor == "#ffffff"
@@ -1371,10 +1418,13 @@ class TestTextStyle:
             controller.setTextOpacity(1.5)
 
     def test_csak_a_ket_szin_kerul_iniba(self, controller, photo):
-        """#371: a `text=` stílus-mezőjének KÉT színe van (kitöltés,
-        körvonal) — ezek mentődnek. A körvonal-vastagságnak, a kitöltés
-        ki/be-nek és az átlátszóságnak NINCS megfelelő mezője, ezért azok
-        munkamenet-szintűek maradnak."""
+        """#371 + #2271: a `text=` stílus-mezőjéből a két szín ÉS a
+        körvonalvastagság mentődik.
+
+        ⚠️ A #2271 megdöntötte a próba eredeti premisszáját: a
+        vastagságnak IGENIS van mezője (az 5.), a kutatói kör kimérte.
+        A kitöltés ki/be és az átlátszóság továbbra is munkamenet-szintű
+        marad — azoknak tényleg nincs hova mentődniük."""
         from picasapy.ini.text_overlay import parse_text
 
         controller.beginEdit("1", str(photo))
@@ -1383,15 +1433,19 @@ class TestTextStyle:
         controller.previewTextPlacement(0.5, 0.5)
         controller.setTextFillColor("#ff0000")
         controller.setTextOutlineColor("#00ff00")
-        controller.setTextOutlineThickness(2)
+        controller.setTextOutlineThickness(0.25)    # #2271: [0,1]
         controller.setTextFillEnabled(False)
         controller.setTextOpacity(0.4)
         controller.applyText()
         style = parse_text(_text_ertek(photo)).blocks[0].style
         assert style.fill_argb == 0xFFFF0000
         assert style.outline_argb == 0xFF00FF00
-        # a mentés utáni újranyitás a vastagságot/átlátszóságot alapértékre
-        # állítja: ezeknek nincs hova mentődniük
+        # #2271: a VASTAGSÁG most már kimegy a fájlba — mérjük is meg.
+        assert style.unknown_a == pytest.approx(0.25), (
+            "a körvonalvastagság nem került az 5. mezőbe"
+        )
+        # az átlátszóság viszont továbbra is munkamenet-szintű: annak
+        # tényleg nincs hova mentődnie
         controller.endEdit()
         controller.beginEdit("1", str(photo))
         assert controller.textOutlineThickness == 0
@@ -1404,7 +1458,7 @@ class TestTextStyle:
         controller.setTextDraft("A")
         controller.previewTextPlacement(0.5, 0.5)
         base = provider.requestImage("1", None, None)
-        controller.setTextOutlineThickness(4)
+        controller.setTextOutlineThickness(0.5)     # #2271: [0,1]
         controller.setTextOutlineColor("#00ff00")
         styled = provider.requestImage("1", None, None)
         assert base != styled
@@ -1784,7 +1838,7 @@ class TestRedeyeTool:
         controller.applyRedeye()
         text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert text.startswith("[IMG_0001.jpg]\nfilters=redeye=1,")
-        assert controller.redeyeActive is True
+        assert controller.hasSavedRedeye is True  # #2393: átnevezve
         assert controller.redeyeRegionCount == 0
 
     def test_apply_without_regions_writes_plain_picasa_entry(self, controller, photo):
@@ -1809,7 +1863,7 @@ class TestRedeyeTool:
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.applyRedeye()
         controller.undo()
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
     def test_auto_reports_found_spots(self, controller, tmp_path):
         """A sikerüzenet a TÉNYLEGESEN talált foltokból jön."""
@@ -2003,3 +2057,66 @@ class TestChainRejectionReachesTheUser:
 
         assert rejected == ["A szerkesztés nem menthető: teszt."]
         assert failed == []
+
+
+class TestASzovegStilusaAFAJLBA_KERUL:
+    """#1994: a felületen beállított stílus eddig NEM került a fájlba.
+
+    A `text=` stílusblokk 8. mezője a **betűsúly** (`0x0062d483`; a
+    félkövér gomb `cmp …, 0x2bc` = 700 a `0x0062e31a`-n, alap 400).
+    Nálunk a `TextStyle` alapértéke fixen 700 volt, tehát MINDEN felirat
+    félkövérként ment ki — a gomb állása nem számított.
+
+    ⚠️ Amit ez a próbakészlet SZÁNDÉKOSAN nem állít: a körvonalvastagság
+    és a betűméret mezőjét. A mi csúszkáink más mértékegységben járnak,
+    mint az ini mezői (körvonal: 0–8 képpont vs. 0…1 float; méret: 20–400
+    SZÁZALÉK vs. abszolút érték), és a leképezés nincs megmérve.
+    Találgatni tilos — ld. a jegy kommentjét.
+    """
+
+    def _mentett_stilus(self, controller, photo) -> list[str]:
+        """A `text=` sor stílusblokkja mezőkre bontva."""
+        ertek = _text_ertek(photo)
+        # a blokk a `v1,`-gyel kezdődik és `;`-ig tart
+        eleje = ertek.index("v1,")
+        return ertek[eleje:].split(";")[0].split(",")
+
+    def _felirat(self, controller, photo, *, bold: bool = False, csalad: str | None = None):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.setTextBold(bold)
+        if csalad is not None:
+            controller.setTextFontFamily(csalad)
+        controller.previewTextPlacement(0.25, 0.75)
+        controller.applyText()
+
+    def test_a_felkover_gomb_BEKAPCSOLVA_700_at_ir(self, controller, photo):
+        self._felirat(controller, photo, bold=True)
+        assert self._mentett_stilus(controller, photo)[7] == "700"
+
+    def test_a_felkover_gomb_KIKAPCSOLVA_400_at_ir(self, controller, photo):
+        self._felirat(controller, photo, bold=False)
+        mezok = self._mentett_stilus(controller, photo)
+        assert mezok[7] == "400", (
+            f"kikapcsolt félkövérrel is {mezok[7]} ment ki — a gomb állása "
+            "nem számít, minden felirat félkövér lesz a Picasában"
+        )
+
+    def test_a_ket_allas_KULONBOZO_sort_ad(self, controller, photo):
+        """Ellenpróba: nem véletlenül egyezik a két érték."""
+        self._felirat(controller, photo, bold=True)
+        felkover = _text_ertek(photo)
+        (photo.parent / ".picasa.ini").unlink()
+        self._felirat(controller, photo, bold=False)
+        assert _text_ertek(photo) != felkover
+
+    def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(self, controller, photo):
+        # a lista `{key, label}` szótárakból áll (a lenyíló adata)
+        kulcsok = [cs["key"] for cs in controller.textFontFamilies]
+        mas = next((cs for cs in kulcsok if cs != "Arial"), None)
+        assert mas is not None, "a panel csak egy betűtípust kínál — a próba tárgytalan"
+        self._felirat(controller, photo, csalad=mas)
+        assert mas in _text_ertek(photo), (
+            f"a választott betűtípus ({mas}) nem került a fájlba"
+        )

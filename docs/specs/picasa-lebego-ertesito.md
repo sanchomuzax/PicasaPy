@@ -507,6 +507,340 @@ renderelési ciklusból jön.)*
 hívás-hiány az indexből; a rekesz-szerep a dekompilált `0x006575b0`
 tartalmából — óra + határidő + eltávolítás, ld. a 2026-08-26-i szakaszt).*
 
+
+## Az animáció ALAKJA — MÉRVE (#2034, 2026-09-03)
+
+A #1130 2. pontjának maradéka. A válasz **egyik felkínált lehetőség sem**:
+nem vízszintes becsúszás és nem áttűnés, hanem **két absztrakt skalársáv
+kulcskockás animációja**, cellánként.
+
+### A képkockánkénti tick szerkezete (`0x006575b0`)
+
+A cellák a `[popup+0x90]` tömbben ülnek, **cellánként `0xC8` = 200 bájt**
+(`add ebx, 0xc8`, `0x00657893`); a darabszám `[popup+0x94] >> 1`
+(`0x0065788b`). Minden cellára, minden képkockán:
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| lejárat | `0x00657741` | `fldz; fcomp [cella+0xb8]` — ha a határidő > 0 **és** `most > határidő` → `call 0x655be0` (elbocsátás) |
+| animáció | `0x0065777e`–`0x006577d9` | ld. lent |
+| pozíció | `0x006577ea`–`0x0065782d` | `call 0x655950` a CÉL-pozícióra, majd `[cella+0xb0]`/`[cella+0xb4]` **közvetlen** `mov` |
+
+### A két animált sáv
+
+Cellánként **két** növekvő kulcskocka-tömb: `cella+0x80…0x94` és
+`cella+0x98…0xac`. A kulcskocka **40 bájt** (`0x009e6010`: `eax*5*8`), az
+utolsó kulcskocka ÉRTÉKE a `[bázis + n·40 − 0x18]` qword.
+
+- **Kiolvasó:** `0x006559b0` — mindkét sáv utolsó értékét egy `float[2]`-be írja.
+- **Író:** `0x006558b0` — `t0 = most` (`0x009a5210`), `t1 = most + időtartam`,
+  és **mindkét** sávhoz fűz egy kulcskockát (`0x00655900` és `0x0065593b`).
+
+A tick minden képkockán összeveti a sávok aktuális végértékét a **céllal**:
+
+```
+0x0065777e  fld dword [0xcf3ed0]   ; −1,0f        → cél[0]
+0x0065778e  fld dword [esp+0x20]   ; a cella SORSZÁMA → cél[1]
+0x00657796  call 0x6559b0          ; a sávok mostani végértéke
+0x0065779f  fcomp qword [0xcf3f58] ; ≠ −1,0 ?
+0x006577b0  fld dword [ecx+4]      ; ≠ sorszám ?
+0x006577bc  fld dword [0xc7e304]   ; ha bármelyik eltér: időtartam = 0,6 s
+0x006577ca  call 0x6558b0          ; új kulcskocka MINDKÉT sávra
+0x006577d3  fadd qword [0xc7e328]  ; sorszám += 1,0  (a következő cellához)
+```
+
+**Kiolvasott konstansok** — egyik sem becslés:
+
+| cím | típus | érték | mi |
+|---|---|---|---|
+| `0x00c7e304` | float | **0,6** | az átmenet **hossza másodpercben** |
+| `0x00cf3ed0` | float | **−1,0** | az 1. sáv célértéke (állandó) |
+| `0x00cf3f58` | double | −1,0 | ugyanez az összehasonlításhoz |
+| `0x00c7e328` | double | 1,0 | a sorszám-léptető |
+
+### A GÖRBE — `0x0072df60`, kiolvasva
+
+Az `0x006558b0` a kulcskockába a `0x0072df60` **függvénymutatót** teszi
+(`0x006558b3  mov dword ptr [esp], 0x72df60`). Ez maga a lazítás:
+
+```
+0x0072df60  fld1 / fcom            ; t ≥ 1 → 1,0     (telítés)
+0x0072df78  fldz / fcom            ; t ≤ 0 → 0,0
+0x0072dfab  fmul qword [0xc7ea10]  ; u = 8·t          (0xc7ea10 = 8,0)
+0x0072dfce  call 0x40eac0          ; exponenciális
+```
+
+⇒ **exponenciális lazítás `u = 8·t` skálán**, nem lineáris és nem
+koszinuszos. A `0x00c7ea10` = **8,0** kiolvasva.
+
+### Mit jelent ez a felbukkanásra
+
+1. **A vízszintes pozíció nem interpolálódik a tickben:** a
+   `[cella+0xb0]`/`[cella+0xb4]` értéket a tick **közvetlen `mov`-val**
+   írja (`0x00657827`, `0x0065782d`), miután a `0x00655950` kiszámolta. A
+   „képernyőn kívüli parkolóhely" (`left = 10000`, ld. fent) tehát **nem**
+   egy vízszintes becsúszás kiindulópontja.
+2. **Ami tényleg animálódik:** a két sáv — az egyik célértéke **állandó
+   −1,0**, a másiké a cella **sorszáma a veremben**. Amikor egy értesítés
+   elbocsátódik és a többi feljebb lép, a sorszám megváltozik, és a cella
+   **0,6 s alatt, exponenciális görbével** csúszik az új helyére.
+
+**Bizalmi fok:** a szerkezet, a 0,6 s, a −1,0, a 8,0 és a görbe
+**megerősített** (közvetlen kiolvasás). **NINCS MEG:** hogy a rajzoló
+oldal a két sávértéket pontosan MELYIK képi mennyiséggé fordítja (eltolás,
+átlátszóság, mindkettő) — ez a rajzoló ág olvasása, külön kör.
+
+
+### A két sáv TELJES állapotgépe — mérve (#2122)
+
+A #2034 megtalálta a két animált skalársávot; ez a szakasz a **teljes
+életciklusukat** rögzíti. A `0x006558b0` (a sáv-író) hívási helyeit
+kimerítően végigpásztáztam: **pontosan kettő van**.
+
+| esemény | cél (A sáv, B sáv) | időtartam | hol |
+|---|---|---|---|
+| **létrehozás** | a struktúrák üresek, az érték **0,0** | — | `0x006557a0`, `0x006557b8` |
+| **élő cella** (képkockánként) | (**−1,0** , a cella **sorszáma**) | **0,6 s** (`0x00c7e304`) | `0x006577ca` |
+| **elbocsátás** | (**0,0** , **0,0**) | **0,3 s** (`0x00c7dcc8`) | `0x00655c98` |
+
+⇒ Az „A" sáv a megjelenéskor **0 → −1**, az eltűnéskor **−1 → 0**; a „B" sáv
+**0 → sorszám**, majd vissza 0-ra. **Az eltűnés kétszer gyorsabb, mint a
+beállás** (0,3 s vs 0,6 s) — mindkét szám kiolvasva.
+
+**Az elbocsátás egyben** (`0x00655be4`, a `0x00655c80`-tól):
+
+```
+0x00655c80  fldz                       ; 0,0
+0x00655c83  fst  dword [esp+0x14]      ; cél[0] = 0,0   (A sáv)
+0x00655c8b  fstp dword [esp+0x18]      ; cél[1] = 0,0   (B sáv)
+0x00655c8f  fld  dword [0xc7dcc8]      ; 0,30 s
+0x00655c98  call 0x6558b0
+0x00655ca5  mov  byte [cella+0x11], 1  ; „elbocsátás alatt" jelző
+0x00655cb0  fstp qword [cella+0xb8]    ; a HATÁRIDŐ nullázva
+```
+
+A `+0x11` jelzőt a tick nézi (`0x00657774`): amíg áll, a cellára **nem** állít
+új célt — tehát az elbocsátás animációja nem kap ellenparancsot.
+
+**A cella kezdőállapota** (a konstruktor, `0x006556e0`–`0x0065580a`):
+`+0x80`/`+0x98` bájt = 0, `+0x88`/`+0xa0` = **0,0**, `+0x90`/`+0x94` és
+`+0xa8`/`+0xac` = 0 (üres kulcskocka-tömbök), `+0xb0`/`+0xb4` = 0,0 (pozíció),
+`+0xb8` = 0,0 (határidő), **`+0x0c` = −1,0** (`0x00cf3ed0` — ugyanaz a
+konstans, amit a tick az A sáv céljának ad), `+0x04` = `0x7FFFFFFF`,
+`+0x10` = 1.
+
+**A sáv-struktúra alakja** (a `0x009e6010` fűzőből és a konstruktorból):
+`+0x00` bájt jelző · `+0x08` qword **aktuális érték** · `+0x10` tömb-mutató ·
+`+0x14` darabszám. A kulcskocka **40 bájt**, és az **első mezője a görbe
+függvénymutatója** (`0x006558b3  mov dword ptr [esp], 0x72df60`).
+
+**A kulcskocka-rendszer NEM az értesítőé:** a `0x009e6010` fűzőnek **22**
+hívója van a binárisban (`0x0040b290`, `0x005a6e30`, `0x0072e1f0`,
+`0x00809cd0`, … ) — általános animált-skalár szolgáltatás.
+
+#### ⛔ NEGATÍV EREDMÉNY, mérve: az értesítő NEM olvassa a sávok értékét
+
+> ⚠️ **A MÉRÉS ÁLL, A KÖVETKEZTETÉS NEM.** A `cella+0x88`/`+0xa0`
+> gyorsítótárazott értéket tényleg nem olvassa senki rajzoláshoz — de a rajzoló
+> **újra kiértékeli** a sávokat (`0x00658423`, `0x0065903b`, `0x006590b4` →
+> `0x00655950`). A sávok jelentése ezzel megvan: ld. lent, „A két sáv
+> JELENTÉSE — MEGVÁLASZOLVA (#2122)".
+
+A `0x00654800`–`0x0065AC00` teljes tartományt (a `CNotifierPopup` és a
+`CBaseNotifier` MINDEN vtable-metódusa beleesik) végigpásztáztam a
+`cella+0x88` és `cella+0xa0` hozzáférésekre. Az összes találat:
+
+| cím | mit csinál |
+|---|---|
+| `0x006559bc`, `0x006559e7` | a **legutolsó kulcskocka** kiolvasása (`0x006559b0`) |
+| `0x006564eb`, `0x006564f7` | cella-**másolás** |
+| `0x00656b8e`, `0x00656b95` | cella-**másolás** |
+| `0x006557a0`, `0x006557b8` | a **konstruktor** nullázása |
+
+**Rajzoló olvasás nincs köztük.** Ugyanígy a `cella+0xb0`/`+0xb4` (pozíció)
+is csak írás és másolás. ⇒ A sávokat **valaki más** fordítja képi
+mennyiséggé — a `yt` keretrendszer oldalán.
+
+> **Ami tehát NINCS MEG:** melyik képi mennyiség (eltolás, átlátszóság,
+> méret) olvassa a két sávot. A következő lépés a `yt` animált-tulajdonság
+> rendszer **kiértékelője**: a `0x009e6010` szomszédságában lévő
+> „érték időpillanatban" rutin, és az, hogy a cella melyik rajzoló
+> hívásba adja át magát. Jegy: **#2122**.
+
+**Bizalmi fok:** az állapotgép, a két időtartam (0,6 s / 0,3 s), a
+kezdőértékek és a negatív pásztázás **megerősített** (közvetlen kiolvasás,
+kimerítő keresés a megadott tartományon). A sávok *jelentése* **NINCS
+MÉRVE** — a „(x-tényező, rekesz-sorszám)" olvasat kézenfekvő, de
+bizonyítatlan, ezért nem is állítjuk.
+
+
+#### A két sáv JELENTÉSE — MEGVÁLASZOLVA (#2122)
+
+A #2034 és a #2122 köre a sávokat „absztrakt skalársávnak" nevezte, mert a
+`cella+0x88` / `+0xa0` (a sávok pillanatnyi értéke) hozzáféréseit végigpásztázva
+**nem talált rajzoló olvasást**. A pásztázás helyes volt — a következtetés
+nem: a rajzoló **nem a gyorsítótárazott értéket olvassa, hanem újra kiértékeli
+a sávokat**.
+
+##### A lánc
+
+```
+0x00655950(cella) → out[2 float]
+    edi = cella + 0x80 (A sáv) → call 0x009e5e70(t)   ; „érték t időpontban"
+    edi = cella + 0x98 (B sáv) → call 0x009e5e70(t)
+```
+
+A `0x009e5e70` az **általános kulcskocka-kiértékelő**: ha a sávnak nincs
+kulcskockája, a `[sáv+8]`-at adja vissza, egyébként interpolál.
+
+**Két helyen hívják:**
+
+1. a **tick**-ben (`0x006577ea`) — az eredményt összeveti a `cella+0xb0`/`+0xb4`
+   párral, és **ha eltér**, beírja (`0x00657827`) és `[esp+0x16] = 1`-et állít.
+   A jelzőt a tick vége nézi (`0x00657bda`), és a popup **vtable +0x50**
+   metódusát (`0x00658340`) hívja — újrarajzolás. ⇒ a `+0xb0`/`+0xb4` **nem
+   rajzolási forrás, hanem VÁLTOZÁS-ŐR** (utolsó ismert pozíció).
+2. a **rajzolóban** (`0x00658423` méretezés, `0x0065903b` / `0x006590b4`
+   cellaelhelyezés) — itt születik a tényleges képpont-pozíció.
+
+##### A skálázás — ez adja meg a MÉRTÉKEGYSÉGET
+
+A cellaelhelyezésben (`0x0065903b` ága):
+
+```
+0x00659040  fild [esp+0x74]        ; = [popup+0x1c0]
+0x00659052  fmul [esp+0xdc]        ; × B sáv
+0x00659061  fistp …                ; → Y
+0x00659069  fild [esp+0x70]        ; = [popup+0x1bc]
+0x0065907b  fmul [esp+0xd8]        ; × A sáv
+0x0065908a  fistp …                ; → X
+```
+
+(`[esp+0x70] = [popup+0x1bc]`, `[esp+0x74] = [popup+0x1c0]`, beállítva a
+`0x00658896`–`0x006588d2`-n.)
+
+A `popup+0x1b4` a **`notifier/cell1` réteg** rekesze (ld. a rétegtáblát), a
+rétegstruktúra `+8` mezője a **szélesség**, a `+0xc` a **magasság** — ezt a
+fogantyú rajzolása bizonyítja (`0x0065879b`: `[esi+8]` szélességből vonja ki a
+`[popup+0x1e4]`-et, `[esi+0xc]` a magasság). Tehát:
+
+| mező | mi | érték (respack) |
+|---|---|---|
+| `popup+0x1bc` | `notifier/cell1` **szélessége** | **247 px** |
+| `popup+0x1c0` | `notifier/cell1` **magassága** | **45 px** |
+| `popup+0x1e4` | `notifier/basedecrect` **szélessége** | **21 px** |
+
+**Független megerősítés a magasságra:** a kattintáskezelő a cella sorszámát
+`(egérY − 2) / [popup+0x1c0]` alakban számolja (`0x00657eb4`) — ez csak akkor
+ad sorszámot, ha a mező a **cellamagasság**.
+
+##### A válasz
+
+| sáv | mit szoroz | mit jelent | élő cella célja | elbocsátás célja |
+|---|---|---|---|---|
+| **A** (`cella+0x80`) | `247 px` (cellaszélesség) | **vízszintes eltolás cellaszélesség-egységben** | **−1,0** = −247 px | 0,0 = 0 px |
+| **B** (`cella+0x98`) | `45 px` (cellamagasság) | **függőleges eltolás cellamagasság-egységben** | a cella **sorszáma** = sorszám × 45 px | 0,0 = 0 px |
+
+⇒ **A `−1,0` jelentése: pontosan EGY cellaszélességnyi (247 képpont)
+vízszintes eltolás.** A cella tehát a horgonyzási helyétől egy teljes
+cellaszélességgel elcsúszva áll meg — ez a **becsúszás**, 0,6 s alatt,
+exponenciális görbével; elbocsátáskor 0,3 s alatt csúszik vissza a 0-ra.
+
+##### ⛔ HELYESBÍTÉS a #2034 köréhez
+
+A #2034 köre azt írta: *„A becsúszás-hipotézis MEGDŐLT: a pozíciót
+(`cella+0xb0`/`+0xb4`) a tick közvetlen `mov`-val írja (`0x00657827`), tehát a
+képernyőn kívüli parkolóhely nem egy vízszintes animáció kiindulópontja."*
+
+**Ez téves volt.** A `mov` valóban közvetlen, de az **általa írt érték a
+sáv-kiértékelőtől jön** (`0x006577ea` → `0x00655950`), és a rajzoló amúgy is
+újra kiértékel. A becsúszás **valódi**, és a mértéke pontosan egy cellaszélesség.
+
+##### Az RTL-jelző — mért aszimmetria
+
+A cellaelhelyezés a `0x00d678d4` globális bájton ágazik el. Ez a **jobbról
+balra (RTL) elrendezés** jelzője: a `0x0098f8af`–`0x0098f8e1` blokk a
+`Preferences` / `RTL` beállításkulcsból tölti (`0x00cd8b58` = `"RTL"`,
+`0x00c7eafc` = `"Preferences"`). A programban **114** hivatkozás van rá.
+
+**Mérve, aszimmetria:** a nem-RTL ágban (`0x0065903b`) az X-et az **A sáv**
+adja (`round(A × 247) + [esp+0xc8]`), az RTL ágban (`0x006590ad`) viszont az X
+egy kész értékből jön (`[esp+0xd0]`), és **csak a B sávot** használja. Az Y
+mindkét ágban `round(B × 45) + 2`. Ennek az okát nem mértük ki — de a magyar
+(balról jobbra) felület mindig a **nem-RTL** ágon megy, tehát a becsúszás
+onnan olvasandó.
+
+### A jobb sáv három rétege: EGYIK SEM vezérlő (#2035)
+
+A `respack.yt` három réteget ad a cella jobb szélső, 21 képpontos sávjában
+(`close`, `gripper`, `collapse`). A kérdés az volt, mit CSINÁLNAK. A válasz:
+**a fogantyú puszta rajz, az összecsukás pedig meg sem jelenik.**
+
+#### A rétegek slotjai — a betöltő (`0x00656fe0`) alapján
+
+| slot | réteg | hivatkozások a `0x00654800`–`0x0065AC00` tartományban |
+|---|---|---|
+| `popup+0x114` | `notifier/close` | ctor · dtor · **rajz** (`0x006586a2`) |
+| `popup+0x13c` | `notifier/collapse` | ctor (`0x00657046`) · dtor (`0x006572d3`) — **más SEMMI** |
+| `popup+0x164` | `notifier/cellbase` | 5 |
+| `popup+0x18c` | `notifier/gripper` | ctor · név · dtor · **rajz** (`0x0065878e`) |
+| `popup+0x1b4` | `notifier/cell1` | 3 |
+| `popup+0x1dc` | `notifier/basedecrect` | 4 |
+| `popup+0x204` | `notifier/progressbase` | 4 |
+| `popup+0x22c` | `notifier/progressfill` | 4 |
+
+A rétegkezelő 0x28 = 40 bájtos; a nevek a `0x00ca268c`–`0x00ca2718`
+sztringekből, a `0x00410fa0` értékadóval kerülnek a slotokba.
+
+⇒ **Az `összecsukás` réteg betöltődik és felszabadul, de sosem rajzolódik
+ki.** Halott erőforrás — mint a `#1869` kommentelt elemei.
+
+#### Az ablak ÜZENETKEZELŐJE — a teljes lista
+
+A `CNotifierPopup` vtable 11. rekesze, a `0x00657d10` (1253 b), pontosan
+**hat** üzenetet kezel:
+
+| érték | üzenet | hol |
+|---|---|---|
+| `0x201` | **WM_LBUTTONDOWN** | `0x00657e94` |
+| `0x214` | WM_SIZING | `0x00657da9` |
+| `0x216` | WM_MOVING | `0x00657db0` |
+| `0x20` | WM_SETCURSOR | `0x006580db` |
+| `0x10` | WM_CLOSE | `0x00658129` |
+| `0x18` | WM_SHOWWINDOW | `0x0065815e` |
+
+**NINCS `WM_MOUSEMOVE` (0x200) és NINCS `WM_LBUTTONUP` (0x202).** Húzáshoz
+mindkettő kellene — az ablak tehát **nem tud vonszolást megvalósítani**.
+
+A `WM_SETCURSOR` ága egyetlen kurzort tölt: `LoadCursorA(NULL, 0x7F00)` =
+**IDC_ARROW** (`0x006580e0`–`0x006580ee`). Méretező vagy mozgató kurzor
+sehol.
+
+#### A kattintás — EGYETLEN téglalap, EGYETLEN jelző
+
+```
+0x00657e9f  movsx eax, word [msg+0xc]      ; x = LOWORD(lParam)
+0x00657ea7  movsx eax, word [msg+0xe]      ; y = HIWORD(lParam)
+0x00657eaf  add eax, -2
+0x00657eb4  div dword [popup+0x1c0]        ; cellaIndex = (y − 2) / cellaMagasság
+0x00657ed8  cmp …                          ; x ∈ [popup+0x12c , +0x11c + +0x12c)
+0x00657eea  cmp …                          ; y ∈ [popup+0x130 , +0x120 + +0x130)
+0x00657f13  mov byte [cella+0x14], 1       ; ★ az EGYETLEN következmény
+```
+
+Nincs külön találati vizsgálat a `close`, a `gripper` vagy a `collapse`
+téglalapjára — **egy** doboz, **egy** jelző, a cellasor pedig osztásból jön.
+
+**Bizalmi fok: megerősített.** A hivatkozás-számok kimerítő pásztázásból
+valók a megnevezett tartományon (a `CNotifierPopup` és a `CBaseNotifier`
+minden vtable-metódusa beleesik); az üzenetlista a kezelő teljes
+végigolvasásából.
+
+> **Következmény a megvalósításra:** a **fogantyút KI KELL rajzolni**
+> (7 × 7, a cellán belül 233, 19), mert az eredetiben látszik — de
+> **nem szabad megfogható vezérlőnek megépíteni**. Az **összecsukást
+> egyáltalán nem rajzoljuk ki**. Jegy: **#2133**.
+
 ## Elszámolás — az öt eredeti kérdés állapota (2026-09-02, #1130 zárása)
 
 A #1130 törzse még az első kör öt nyitott kérdését sorolta; a lap azóta
@@ -516,7 +850,7 @@ maradhat „félig nyitva"** — ami tényleg nyitott, annak önálló jegy jár
 | # | kérdés | állapot | hol |
 |---|---|---|---|
 | 1 | geometria | ✅ **LEZÁRVA** | „Geometria — MÉRVE A BINÁRISBÓL" + „Melyik ÉLHEZ képest a 144 képpont" |
-| 2 | animáció | ⚠️ **RÉSZBEN** — az ÜTEMFORRÁS lezárva, a látható ALAK nem | „Az animáció ÜTEMFORRÁSA — a vtable 0x60 rekesze" |
+| 2 | animáció | ✅ **LEZÁRVA** (#2034) — ütemforrás ÉS alak | „Az animáció ÜTEMFORRÁSA…" + „Az animáció ALAKJA — MÉRVE" |
 | 3 | élettartam | ✅ **LEZÁRVA** | „A cella élettartama — MEGFEJTVE": abszolút határidő `+0xb8`-on, képkockánkénti ellenőrzés |
 | 4 | észlelési ág | ✅ **LEZÁRVA** | „4. ág — új képek észlelése" |
 | 5 | események listája | ✅ **LEZÁRVA** (bizonyítottan nincs ilyen lista) | „Hány eseménye van?" |
@@ -542,3 +876,33 @@ A méret mindkettőnél mérve van, a **viselkedésük nincs** — a fogantyú
 mozgatása ütközik a munkaterülethez horgonyzással (`0x00658200`), az
 összecsukás célállapotának mérete pedig sehol nincs kimérve. Ezért nem
 építjük meg találgatásból. Külön jegy: **#2035**.
+
+#### Az ANIMÁCIÓ — ✅ megvalósítva (#2157, 2026-09-04)
+
+| | eredeti (mérve) | nálunk MOST |
+|---|---|---|
+| megjelenés | **vízszintes csúszás 247 px-en**, 0,6 s, exponenciális (`u = 8·t`) | ✅ `x: width → 0`, **600 ms**, `Easing.OutExpo` (`NotifierCell.qml`) |
+| eltűnés | **visszacsúszás 0-ra**, 0,3 s | ✅ `x: 0 → width`, **300 ms**, ugyanaz a görbe |
+| a cella függőleges helye | **animált**: sorszám × 45 px, ugyanaz a görbe | ✅ a `Column` `move` átmenete, 600 ms, `OutExpo` |
+| ütemezés | képkockánkénti tick, a pozíció újraszámolva | Qt `Behavior on x` + `Transition` |
+
+**Az elbocsátás késleltetése.** A cella törlése a listából mostantól a
+kicsúszás UTÁN történik (`kicsuszasKesz` jel, 300 ms): korábban a `dismissAt`
+azonnal futott, ami levágta volna az animációt, és megint „ugrás" látszana.
+
+**Az átlátszóság-animáció sorsa — kimondva.** Az eredetiben **nincs**
+átlátszóság-animáció. A `notifierFadeAnim` mégis megmaradt, de **nem a
+cellákra**: az ablak egészére vonatkozik, és csak akkor fut, amikor az
+utolsó cella is elment. Erre nálunk azért van szükség, mert a mi értesítőnk
+egyetlen `Window`, amelynek a `visible`-je a cellák létén múlik — az
+eredetié nem így épül fel. A cellák saját mozgása tisztán csúszás.
+
+⚠️ **Ami NINCS mérve:** a pontos görbe-egyezés. Az eredeti a saját `u = 8·t`
+skáláján exponenciális; hogy melyik Qt-görbe adja vissza képkockára pontosan,
+nem dőlt el. Az `Easing.OutExpo` a **jelleget** követi (gyors indulás, lágy
+beállás), és ez a választás a kódban is meg van indokolva. Aki kiméri,
+itt írja át.
+
+Őrök: `tests/app/test_ertesito_csuszas_2157.py` — forrás-szinten a
+konstansok és a görbe, élő objektumon a cella `x`-e, az animáció
+időtartamai és a két cella 45 képpontos távolsága.

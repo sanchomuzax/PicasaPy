@@ -19,7 +19,21 @@ from .table import read_table
 from .thumbindex import read_thumb_index, resolve_path
 
 # az importban hasznosított imagedata-oszlopok (mind opcionális/sparse)
-_COLUMNS = ("caption", "rotate", "star", "filters", "crop64", "deferredregion")
+#: #2336: a `tags`, `lat` és `long` a valódi adatbázisban 342, illetve
+#: 219 képet érint — eddig NÉMÁN elvesztek, mert nem szerepeltek itt.
+#: Mezőtípusok mérve: `tags` = 0x06 (sztring), `lat`/`long` = 0x02 (double).
+_COLUMNS = (
+    "caption", "rotate", "star", "filters", "crop64", "deferredregion",
+    "tags", "lat", "long",
+)
+
+#: #2335: a csillagozás VALÓDI helye. A tulajdonos 2026-08-22-i
+#: adatmappájában 65 `.pmp` oszlop van, és **nincs köztük**
+#: `imagedata_star.pmp` — a csillagozott képeket ez a sima szöveges lista
+#: sorolja fel (soronként egy windowsos abszolút útvonal, CRLF sorvégekkel;
+#: ott 50 kép). Az `imagedata_star.pmp` oszlopot NEM váltja ki: a kettő
+#: UNIÓJA számít, hogy a régebbi adatbázisok se sérüljenek.
+_STARLIST_NAME = "starlist.txt"
 
 
 @dataclass(frozen=True)
@@ -34,6 +48,14 @@ class PhotoRecord:
     star: bool
     filters: str | None
     crop64: int | None
+    #: #2336: kulcsszavak. Az oszlop egyetlen sztring, vesszővel elválasztva
+    #: (ugyanaz az alak, mint a `.picasa.ini` `keywords=` kulcsa).
+    tags: tuple[str, ...]
+    #: #2336: földrajzi hely. A **0,0 nem hely**, hanem a hiányzó érték
+    #: alakja — a Picasa nem hagy lyukat az oszlopban —, ezért `None`-ra
+    #: fordul: geotag nélküli képre nem adhatunk Null-szigetet.
+    latitude: float | None
+    longitude: float | None
     faces: tuple[DeferredFace, ...]
 
 
@@ -56,6 +78,7 @@ def iter_photo_records(
     index_path = _find_thumb_index(db3_dir)
     entries = read_thumb_index(index_path)
     table = read_table(db3_dir, "imagedata")
+    csillagos = _read_starlist(db3_dir)
 
     records = []
     for entry in entries:
@@ -79,9 +102,16 @@ def iter_photo_records(
                 row=entry.index,
                 caption=table.value("caption", entry.index) or None,
                 rotate=table.value("rotate", entry.index),
-                star=bool(table.value("star", entry.index)),
+                # #2335: a két forrás UNIÓJA — a lista a valódi
+                # adatbázisokban az EGYETLEN forrás, az oszlop a
+                # régebbiekben.
+                star=bool(table.value("star", entry.index))
+                or _normalizal(windows_path) in csillagos,
                 filters=table.value("filters", entry.index) or None,
                 crop64=table.value("crop64", entry.index),
+                tags=_split_tags(table.value("tags", entry.index)),
+                latitude=_koordinata(table.value("lat", entry.index)),
+                longitude=_koordinata(table.value("long", entry.index)),
                 faces=faces,
             )
         )
@@ -124,3 +154,62 @@ def _find_thumb_index(db3_dir: Path) -> Path:
         "indítsa el az eredeti Picasát azon a gépen, hogy újraépítse az "
         "adatbázist, majd próbálja meg újra az importot."
     )
+
+
+def _normalizal(windows_path: str) -> str:
+    """Összehasonlítható alak: a Windows az útvonalakat kis-nagybetűre
+    érzéketlenül kezeli, és a `starlist.txt` sorai a `thumbindex`-beliektől
+    eltérő betűzéssel is állhatnak."""
+    return windows_path.replace("/", "\\").rstrip("\\").casefold()
+
+
+def _read_starlist(db3_dir: Path) -> frozenset[str]:
+    """A `starlist.txt` sorai normalizált alakban; üres halmaz, ha nincs.
+
+    A hiány NEM hiba: régebbi adatmappában nincs ilyen fájl, és a
+    részleges import elve szerint egy olvashatatlan lista sem dönti be az
+    importot — ilyenkor a csillagozás az `imagedata_star.pmp`-ből jön (vagy
+    marad üres).
+
+    A fájl kódolása nincs deklarálva; a `latin-1` egyetlen bájtsorra sem
+    dob hibát, és a normalizálás úgyis csak összehasonlításra kell.
+    """
+    utvonal = db3_dir / _STARLIST_NAME
+    try:
+        nyers = utvonal.read_bytes()
+    except OSError:
+        return frozenset()
+    sorok = nyers.decode("latin-1").splitlines()
+    return frozenset(_normalizal(sor.strip()) for sor in sorok if sor.strip())
+
+
+def _split_tags(nyers: str | None) -> tuple[str, ...]:
+    """A `imagedata_tags` sztringje kulcsszó-listává (#2336).
+
+    Az alak megegyezik a `.picasa.ini` `keywords=` kulcsáéval: vesszővel
+    elválasztott lista. Az üres darabokat eldobjuk, a szóközöket levágjuk —
+    a Picasa nem normalizál, tehát a `"a, b"` és az `"a,b"` ugyanaz.
+    """
+    if not nyers:
+        return ()
+    return tuple(darab.strip() for darab in nyers.split(",") if darab.strip())
+
+
+def _koordinata(ertek: float | None) -> float | None:
+    """A `lat`/`long` oszlop értéke, a hiányt `None`-ra fordítva (#2336).
+
+    ⚠️ A **0,0 nem hely**. A Picasa a geotag nélküli képeknél is kitölti az
+    oszlopot (nem hagy lyukat), és a hiányt nullával jelöli. Nullaként
+    átvéve minden geotag nélküli kép a Guineai-öbölbe (Null-sziget) kerülne
+    a Helyek-panelen.
+
+    A valódi 0,0-s koordináta elvesztése elméleti kockázat: az Egyenlítő és
+    a kezdő délkör metszéspontja nyílt tenger.
+    """
+    if ertek is None:
+        return None
+    try:
+        szam = float(ertek)
+    except (TypeError, ValueError):
+        return None
+    return None if szam == 0.0 else szam

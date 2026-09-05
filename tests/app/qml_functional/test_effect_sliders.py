@@ -144,7 +144,7 @@ class TestParamSubpanelIsolatedOpening:
         [
             (2, "effectSat", "sat", 1),
             (2, "effectVignette", "vignette", 4),
-            (2, "effectUnsharp", "unsharp", 1),
+            (2, "effectUnsharp", "unsharp2", 1),   # #2141
             (2, "effectRadblur", "radblur", 4),
             # #717: a záró színparaméter felvétele óta 5 (x, y, gradiens,
             # árnyalás, szín)
@@ -204,7 +204,10 @@ class TestParamSubpanelIsolatedOpening:
             ("effectSepia", "sepia"),
             ("effectBw", "bw"),
             ("effectWarm", "warm"),
-            ("effectGrain2", "grain2"),
+            # #2141: az `effectGrain2` KIKERÜLT innen. A csempe az eredeti
+            # elsődlegesét (`PicnikGrain`) hívja, aminek — az eredetihez
+            # hűen (`mode="effect"`) — VAN csúszkája, tehát alpanelt nyit.
+            # A `grain2` (`oneclick`) a Shiftes másodlagos.
         ],
     )
     def test_parameterless_effect_click_does_not_open_subpanel(
@@ -299,7 +302,17 @@ class TestParamSubpanelIsolatedApplyCancel:
         assert fake.preview_calls
         name, values = fake.preview_calls[-1]
         assert name == "sat"
-        assert values == pytest.approx([0.5])
+        # #2236: az alapérték a szűrő-regiszterből jön (0,1618), nem a
+        # korábbi, kerek 0,5-ből. A próba SZÁNDÉKA — az előnézet azonnal
+        # az alapértékkel indul — változatlan, ezért a katalógustól
+        # kérdezzük meg, mi az; így egy jövőbeli mérés sem buktatja el.
+        from picasapy.app.effect_params import effect_params
+
+        vart = [p.default for p in effect_params("sat")]
+        assert values == pytest.approx(vart)
+        assert vart == pytest.approx([0.1618]), (
+            "a `sat` alapértéke elmozdult a regiszterétől — nézd meg a #2236-ot"
+        )
 
     def test_debounced_preview_fires_after_drag(self, qml_engine, qt_app):
         panel, fake = self._open(qml_engine, qt_app, "effectSat", active_tab=2)

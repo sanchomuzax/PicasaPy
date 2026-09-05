@@ -33,7 +33,15 @@ _MENU_QML = (
 
 
 def _source() -> str:
-    return _MENU_QML.read_text(encoding="utf-8")
+    """A menüsáv forrása, MNEMONIK-JELÖLÉS NÉLKÜL.
+
+    ⚠️ #2152: a feliratokba bekerült az `&` (a mnemonik betűje az eredeti
+    honosításából). Ez a fájl a menü SZERKEZETÉT auditálja — mely tételek
+    vannak meg, látszik-e a gyorsbillentyű a feliratban —, és arra nézve az
+    `&` jelölés, nem tartalom. A mnemonikokat a saját őrük méri
+    (`test_menu_mnemonikok_2152.py`), ütközés-vizsgálattal együtt.
+    """
+    return _MENU_QML.read_text(encoding="utf-8").replace("&", "")
 
 
 # -- 1. réteg: a korábban teljesen hiányzó feliratok mindegyike bekerült ---
@@ -66,7 +74,8 @@ HIANYZOTT_TETELEK = [
     # Mappa
     ("Hide", None),
     ("Show", None),
-    ("Print Thumbnails...", "Ctrl+Shift+P"),
+    # #2364: az EREDETI erőforrás szövege (ID_FILE_PRINTCONTACTSHEET)
+    ("Print Contact Sheet...", "Ctrl+Shift+P"),
     ("Export as HTML Page...", None),
     ("Move...", None),
     ("Delete...", None),

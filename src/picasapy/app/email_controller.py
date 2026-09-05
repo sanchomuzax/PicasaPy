@@ -155,8 +155,15 @@ class EmailController(QObject):
         self._settings = settings if settings is not None else QSettings()
         self._email_size = self._betolt_meretet()
         self._single_original = self._betolt_egy_kep_kapcsolot()
+        #: #2184: friss profilon a program MEGKÉRDEZI, mivel küldjön.
+        #: Az eredetiben a `DoNotPromptForEmailPref` alapértéke 0
+        #: (`0x00742154`: `ebp = 0`, majd `0x00742168 je` → MUTASD a
+        #: párbeszédet). Nálunk az alapérték `True` volt, vagyis alapból
+        #: NEM kérdeztünk — így a választó párbeszéd (és benne a „ne
+        #: kérdezz többé" jelölőnégyzet) elérhetetlen maradt annak, aki
+        #: sosem nyitja meg az Opciókat.
         self._use_default_client = _coerce_bool(
-            self._settings.value(_USE_DEFAULT_CLIENT_KEY), True
+            self._settings.value(_USE_DEFAULT_CLIENT_KEY), False
         )
 
     # -- méret-beállítások (OptionsTabEmail.qml csúszdái) ------------------

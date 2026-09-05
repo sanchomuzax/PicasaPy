@@ -49,7 +49,11 @@ class TestWriteOverride:
         updated = with_folder_date_override(document, "2022-06-01")
         assert "utf8=1" in updated.serialize()
         assert "name=Nyár" in updated.serialize()
-        assert "date=2022-06-01" in updated.serialize()
+        # #2353: a kiírt alak OLE VARIANT, nem ISO — a Picasa `atof`-fal
+        # olvassa, és a `date=2022-06-01` sorból nála 2022.0 (= 1905) lenne.
+        # A visszaolvasás viszont változatlanul az ISO napot adja.
+        assert "date=44713.000000" in updated.serialize()
+        assert read_folder_date_override(updated) == "2022-06-01"
 
     def test_without_override_removes_key_only(self):
         document = parse_document("[Picasa]\ndate=2019-01-01\nname=x\n")

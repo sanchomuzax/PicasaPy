@@ -32,9 +32,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-#: A „kicsi kép" küszöbe képpont/hüvelykben. ⚠️ SAJÁT DÖNTÉS, nem mért
-#: érték — ld. a modul docstringjét. Egy helyen áll, hogy a mérés
-#: elkészültekor egyetlen sort kelljen átírni.
+#: A „kicsi kép" küszöbének ALAPÉRTÉKE képpont/hüvelykben.
+#:
+#: ✅ **MÉRT érték** (#2359). A modul korábban azt írta ide, hogy „SAJÁT
+#: DÖNTÉS, nem mért érték" — a mérés azóta megvan, és a döntést
+#: igazolta: a minőség-számoló (`0x0085c060`) a `Preferences\DPIWarning`
+#: kulcsot olvassa, és az alapértéket a `0x0085c08b` tölti be
+#: (`mov dword ptr [esp+0x1c], 0x96` = **150**).
+#:
+#: Az eredetiben ez **rejtett beállítás**, nem fix szám — nálunk a
+#: `printing/dpiWarning` kulcs írja felül (ld. `PrintController`).
 KICSI_KUSZOB_DPI = 150
 
 

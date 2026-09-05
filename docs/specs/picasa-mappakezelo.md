@@ -115,7 +115,7 @@ keretrendszer **magától** cseréli a két ikont, kód nélkül.
 | elem | angol | magyar (a képernyőképről is) |
 |---|---|---|
 | `folder_list_label` | Folder List | **Mappalista** |
-| `instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
+| `foldermgr/instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
 | `status_label` | For the current folder: | **Az aktuális mappa esetében:** |
 | `scan_once_label` | Scan Once | **Keresés egyszer** |
 | `remove_label` | Remove from Picasa | **Eltávolítás a Picasából** |
@@ -136,13 +136,16 @@ Ezt a tulajdonos két képernyőképe **közvetlenül** igazolja.
 
 ### 2.1 A szabályok a `.tre`-ből
 
+*Forrás: `foldermgr.tre` — pl. a `foldermgr/instructions_text` a
+`foldermgr.tre:23` sorban áll.*
+
 | elem | vízszintesen | függőlegesen |
 |---|---|---|
 | `base` | **nyúlik** (`m_scaleX`) | alul rögzítve (`m_offsetB`) |
 | `left_side` / `right_side` | mindig **fele-fele**, 4 képpont külső margóval | az ablak aljáig |
 | `foldertree` | **nyúlik** | **nyúlik**, az alja `−60` |
 | `watched_folders` | **nyúlik** (`−10`) | **nyúlik**, az alja `−60` |
-| `instructions_text` | **fix 232** széles | fix 73 magas |
+| `foldermgr/instructions_text` | **fix 232** széles | fix 73 magas |
 | `status_decrect` (a csoportkeret) | **fix 231** széles | **fix 172** magas |
 | `status_group`, a három rádió, a `frexclude` | fix | fix |
 | `line` | **nyúlik** (`m_scaleX`) | fix |
@@ -448,6 +451,8 @@ egyértelműsítik a szerep→ikon párosítást. Folytatás, ha kell:
 
 #### A fa ikonjai MÁS erőforrások, mint a rádiósoroké
 
+*Forrás: `foldermgr.tre:46` (`foldermgr/icon_always`) · `foldermgr.tre:43` (`foldermgr/icon_exclude`) · `foldermgr.tre:40` (`foldermgr/icon_once`) — és további 1 elem ugyanott.*
+
 | szerep | a jobb oldali rádiósorban | **a fában** | azonos? |
 |---|---|---|---|
 | Keresés egyszer | `foldermgr/icon_once` (643 b) | `icons/folder_manager_scan_once` (643 b) | **igen** |
@@ -463,7 +468,6 @@ erőforrásnevekre (a kód szó szerint ezeket kéri, a `constants.ui` szöveges
 fájl) · **megerősített** a 22 képpontos sormagasságra (kódból ÉS
 képernyőképről) · **megerősített** a kijelölés színére mint MÉRÉSRE (két
 független képernyőkép), de a forrása ismeretlen.*
-
 ### 4.5 Mi történik a fában KATTINTÁSRA
 
 A fa és a „Figyelt mappák" lista eseményeit a `0x007c5830` (971 bájt)
@@ -1983,6 +1987,8 @@ hibaüzenet nélkül.
 
 ## 15. „Eltávolítás a Picasából…" — a MENÜPONT teljes működése (2026-08-22)
 
+*Forrás: `foldermgr.tre:49` (`foldermgr/remove_label`).*
+
 ⚠️ **Ez NEM a Mappakezelő rádiógombja.** Két, magyarul majdnem azonos nevű
 dolog létezik, és a **hármaspont** különbözteti meg őket:
 
@@ -1990,7 +1996,6 @@ dolog létezik, és a **hármaspont** különbözteti meg őket:
 |---|---|---|
 | `foldermgr/remove_label` | „Eltávolítás a Picasából" | a **Mappakezelő rádiógombja** (állapot, ld. 5.) |
 | **`Folder::ID_MANAGE_ALBUM`** | **„Eltávolítás a Picasából…"** | **helyi menü / Mappa menü parancsa** — ez a szakasz |
-
 ### 15.1 A belépési pontok
 
 A parancskulcs **két** helyen szerepel:
@@ -2204,15 +2209,21 @@ Name,Creation Time,Access Time,Size,Type,Dirty,Valid        (fejléc, 0x00c864d4
 A mezők a bejegyzés-rekordból, a `0x004f2951`–`0x004f295f` push-sorrendje
 szerint:
 
-| oszlop | forrás | típus |
-|---|---|---|
-| `Name` | a bejegyzés neve, **idézőjelek közt** | szöveg |
-| `Creation Time` | `[rekord+0x04]` → `0x0098b650` (FILETIME → `double`) | `%f` |
-| `Access Time` | `[rekord+0x0c]` → ugyanaz | `%f` |
-| `Size` | `[rekord+0x14]` | `%d` |
-| **`Type`** | `[rekord+0x18]` | `%d` — **értékkészlet lent** |
-| `Dirty` | `[rekord+0x1c]` (bájt) | `%d` |
-| `Valid` | `[rekord+0x1d]` (bájt) | `%d` |
+| oszlop | forrás | típus | mi VALÓJÁBAN (2026-09-05, #2304) |
+|---|---|---|---|
+| `Name` | a bejegyzés neve, **idézőjelek közt** | szöveg | |
+| `Creation Time` | `[rekord+0x04]` → `0x0098b650` (FILETIME → `double`) | `%f` | a kép **metaadat-dátuma** |
+| `Access Time` | `[rekord+0x0c]` → ugyanaz | `%f` | ⛔ **a NÉV téves** |
+| `Size` | `[rekord+0x14]` | `%d` | |
+| **`Type`** | `[rekord+0x18]` | `%d` — **értékkészlet lent** | |
+| `Dirty` | `[rekord+0x1c]` (bájt) | `%d` | |
+| `Valid` | `[rekord+0x1d]` (bájt) | `%d` | |
+
+⚠️ **A két időoszlop NEVE megtévesztő** (2026-09-05, #2304): az
+`Access Time` valójában a fájl **utolsó módosítási** ideje
+(`ftLastWriteTime`, `0x004e74bd` → `0x004e74dc`), a `Creation Time` pedig
+**nem fájlrendszeri idő**, hanem a kép beolvasáskor rögzített
+metaadat-dátuma. Levezetés és mérés: `pmp-database.md` 10. szakasz.
 
 ⇒ A „piszkos" (`Dirty`) és az „érvényes" (`Valid`) **külön jelző**: a
 változáslista tehát nemcsak azt tartja nyilván, hogy egy bejegyzés
@@ -2234,15 +2245,107 @@ jelenti, hogy a Picasa a bejegyzést NEM tudta feldolgozni.** A
 könyvtárbejáró tehát **nyilvántartja a hibás fájlokat és mappákat**, és
 kérésre ki is listázza őket.
 
-*(A `0x004f2804`–`0x004f2825` ág további `Type`-értékeket különböztet meg
-— **1**, **5**, **0x19 = 25**, **0x3e9 = 1001** —, de ezek jelentése a
-névfeloldás ágában van, és **nincs mérve**. Lásd a mérleget.)*
+#### ✅ A `Type` további értékei — LEZÁRVA (2026-09-05)
 
-#### Egy második fejlesztői kapcsoló: `DirscanRegression`
+> ⚠️ **Helyesbítés: ez a tétel részben ELAVULT volt.** A `Type = 1`
+> (könyvtár) és a `Type = 1001` (arcsablon-bejegyzés) jelentését a
+> **`pmp-database.md` 8.1** már **megmérte** két valódi katalóguson — a
+> 1001-et halmaz-azonossággal a `facetemplatesV2_index.db` foglalt
+> slotjaival (412 = 412). A blokkolás azért maradt itt, mert a választ egy
+> MÁSIK lap adta meg. *(A tanulság a `docs/specs/00-index.md`-be is
+> átvezetve.)*
 
-A hívók egyike (`0x004e9b00`, 649 b) a `Preferences\`**`DirscanRegression`**
-kulcsot olvassa. ⇒ a bejárónak **regressziós üzemmódja** is volt. A
-kulcs hatása **nincs mérve**.
+**Ami ebben a körben ÚJ — a névfeloldás pontos szabálya**
+(`0x004f27f3`–`0x004f2825`, megerősített):
+
+```
+ha  rekord.valid (+0x1d) == 0            → a NÉV önmagában a teljes út
+ha  rekord.Type  (+0x18) ∈ {1, 5, 25, 1001} → a NÉV önmagában a teljes út
+különben                                  → szülő_neve + név
+```
+
+A szülőág is feltételes: ha a `+0x20` a rekordszámon kívülre mutat
+(`0x004f282e`), vagy a **szülő** `Type`-ja `0` (`0x004f284a`), a Picasa a
+`[objektum+0x550]` tartalék sztringre esik vissza — **kivételt nem dob**.
+
+**⭐ A `Type = 1001` és a `+26` mező — a mért anomália MAGYARÁZATA.** A
+`pmp-database.md` 8.1 azt mérte, hogy a kis katalógusban **412** bejegyzés
+`+26` mezője nem mutat mappa-slotra, és hogy ez a 412 pontosan a
+`Type = 1001` halmaz. A bináris megmondja, miért: a szülőlekérdező
+**`FUN_004e2990` (66 b, `ret 4`)** így szól —
+
+```
+ha index >= rekordszám            → -1
+ha rekord.Type == 1001            → -1        (0x004e29bb)
+ha rekord.+0x20 == 0xFFFFFFFF     → -1        (0x004e29c7)
+különben                          → rekord.+0x20
+```
+
+⇒ **arcsablon-bejegyzésen a `+26` mező NEM szülőindex**, és az eredeti
+soha nem is olvassa annak. Az anomália tehát nem adathiba.
+
+**A `Type = 5` — „hibás könyvtár", nem „másik fajta könyvtár"** *(erős, nem
+megerősített)*. A `badfiles.txt`-írója (`0x004f2a40`–`0x004f2ae0`) a
+teljes rekordtömbön végigmegy, és **feltétel nélkül** kiírja a
+`Type == 4`-eseket `(badfile)`, a `Type == 5`-ösöket `(baddirectory)`
+címkével. Egy `badfiles.txt` nevű fájl nem sorolná fel az összes rendes
+mappát; és a mért darabszám is ezt támogatja (`pmp-database.md` 8.1:
+**6**, illetve **19** darab a **2 338**, illetve **115** darab `Type = 1`
+mellett). ⇒ A `pmp-database.md` „könyvtár (2. fajta)" sora **pontosítandó**.
+
+**A `Type = 25` (`0x19`) — a JELENTÉSE továbbra sincs meg**, de a szerepe
+három ponton körülhatárolt:
+
+| hol | mit mond ki |
+|---|---|
+| `0x004f2822` környéke | a `{1, 5, 25, 1001}` halmaz tagja ⇒ **a neve teljes út** |
+| `0x004efbcc`–`0x004efbe4` | a „piszkosra állítás" menetben a `{1, 25}` ágba esik, **de** a 25 és a 26 (`0x1a`) **ki van véve** a `dirty = 1` + hozzáférési idő nullázása alól |
+| `0x004ea0e0`–`0x004ea0e8` | az `{5, 25}` páros kihagy egy összesítő ágat |
+
+**Amit hozzá megnéztem, eredmény nélkül:** a `.text` teljes pásztázása
+`mov reg,25`, `mov [reg+disp8],25` és `cmp reg,25` alakra — a
+könyvtárbejáró tartományában (`0x4e0000`–`0x510000`) **egyetlen ÍRÓ sincs**,
+csak olvasók; sztring sem tartozik hozzá. A tulajdonos két katalógusában
+**0 előfordulás** (`pmp-database.md` 8.1 típus-táblája). **Megszerzés:** egy
+olyan katalógus, amelyben előfordul, **vagy** a `0x004ea0c0` és a
+`0x004efbb0` menet célzott dekompilációja.
+
+#### ✅ A `DirscanRegression` kapcsoló — LEZÁRVA (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A teljes ág elolvasva, az
+> importált függvények névfeloldásával.
+
+A `0x004e9b00` (649 b) a bejárás **befejező** ága. Ami ott történik:
+
+```
+0x004e9cdc  test byte [0x00da03c4], 1     ; már beolvastuk a kulcsot?
+0x004e9ce3  jne  0x004e9d2e               ; igen → egyszer-olvasás
+0x004e9ce5  or   dword [0x00da03c4], 1
+0x004e9cec  push "DirscanRegression"      ; 0x00c86458
+0x004e9cf1  push "Preferences"            ; 0x00c7eafc
+0x004e9d05  call 0x00407a20               ; a beállítás beolvasása
+0x004e9d0e  call 0x004019b0               ; → logikai érték
+0x004e9d17  mov  byte [0x00da03c0], al    ; a gyorsítótárazott KAPCSOLÓ
+0x004e9d2e  cmp  byte [0x00da03c0], 0
+0x004e9d34  je   0x004e9d78               ; ha 0 → semmi nem történik
+0x004e9d37  mov  ecx, 4                   ; ⇒ a CSV-író NEGYEDIK módja
+0x004e9d3c  call 0x004f25f0
+0x004e9d42  call dword [0x00c4023c]       ; ⇒ ExitProcess
+```
+
+⇒ **`Preferences\DirscanRegression = 1` esetén a Picasa a bejárás végén
+kiírja a 4. módú CSV-t (a `WriteDirscannerCSV` kaput megkerülve), és
+azonnal KILÉP** (`ExitProcess`). A kulcsot a folyamat **egyszer** olvassa
+be (a `0x00da03c4` bit 0 őrzi), és a `0x00da03c0` bájtban tartja.
+
+Ugyanez a függvény **méri is a bejárást**: `QueryPerformanceCounter`
+(`0x004e9b0b`, `0x004e9ba7`, `0x004e9bba`) és
+`QueryPerformanceFrequency` (`0x004e9be2`).
+
+⇒ Ez egy **fejlesztői regressziós futtató**: indítsd el a Picasát, hagyd
+lefutni a bejárást, kapsz egy CSV-t és egy időmérést, a program kilép.
+**A termékre nincs hatása** — a kulcs alapértelmezés szerint hiányzik, és
+a felhasználó felületén sehol nem állítható.
 
 #### Eredeti / nálunk / teendő
 
@@ -2255,12 +2358,17 @@ kulcs hatása **nincs mérve**.
 
 *Bizonyítottsági fok: **megerősített** a négy módra, a kapura, a `#db3\`
 helyre, a `"w"` nyitásra, a hét oszlop forrására, a `badfiles.txt`
-létére és a 4/5 `Type`-értékre; a további `Type`-értékek és a
-`DirscanRegression` hatása **nincs mérve**.*
+létére, a 4/5 `Type`-értékre, a névfeloldás szabályára, a
+`FUN_004e2990` szülőlekérdezőre és a `DirscanRegression` hatására;
+**erős** (nem megerősített) a `Type = 5` = „hibás könyvtár" olvasat;
+a `Type = 25` **negatívan lezárva** (2026-09-05): nem fájlformátum-típus.*
 
 #### Nyitott kérdések mérlege (16.2/b)
 
-`0 nyílt · 5 lezárva · 2 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+*(2026-09-05: a két blokkolt tételből az egyik teljesen lezárult, a másik
+háromnegyedéig — csak a `Type = 25` jelentése maradt.)*
 
 | kérdés | állapot |
 |---|---|
@@ -2269,8 +2377,11 @@ létére és a 4/5 `Type`-értékre; a további `Type`-értékek és a
 | mi a sorformátum, honnan a hét oszlop | **LEZÁRVA** — `"%s",%f,%f,%d,%d,%d,%d` + a rekord-eltolások |
 | van-e másik kimenet | **LEZÁRVA** — **igen: `badfiles.txt`** |
 | mit jelent a `Type` 4 és 5 | **LEZÁRVA** — hibás fájl / hibás mappa |
-| **mit jelent a `Type` 1, 25 és 1001** | **BLOKKOLT** — a névfeloldó ág `0x004f2804`–`0x004f2825` különbözteti meg őket, de a jelentésükre nincs sztring. **Megszerzés:** a `ytDirScannerChangeList` osztály dekompilációja. **A #1997-et nem blokkolja** (a 4/5 elég a hibalistához). |
-| **mit csinál a `DirscanRegression`** | **BLOKKOLT** — csak a kulcs olvasása látszik (`0x004e9b00`). **Megszerzés:** a `0x004e9b00` dekompilációja. **Fejlesztői kapcsoló**, a termékre nincs hatása. |
+| mit jelent a `Type` **1** | ✅ **LEZÁRVA** — könyvtár (`pmp-database.md` 8.1, két katalóguson mérve; a tétel itt **elavultan** állt blokkoltként) |
+| mit jelent a `Type` **1001** | ✅ **LEZÁRVA** — arcsablon-bejegyzés (ua., halmaz-azonosság a `facetemplatesV2_index.db`-vel, 412 = 412); a `+26` mezője **nem** szülőindex, és az eredeti nem is olvassa annak (`FUN_004e2990`) |
+| a névfeloldás pontos szabálya | ✅ **LEZÁRVA** — `valid == 0` vagy `Type ∈ {1, 5, 25, 1001}` ⇒ a név a teljes út; különben szülő + név; hibás szülőnél tartalék sztring, **nem kivétel** (`0x004f27f3`–`0x004f2887`) |
+| **mit jelent a `Type` 25 (`0x19`)** | ✅ **LEZÁRVA (2026-09-05), NEGATÍVAN** — a `típus` a fájltípus-tábla 30 ágú kapcsolójából jön (`0x004fadb0`, tábla `0x004fb948`), a tárolt érték az **ágindex + 2**; a 25 a **23. ág**, az pedig a **közös alapeset** (`0x004fb93f`), ami **egyetlen kiterjesztést sem regisztrál** ⇒ **nem fájlformátum-típus**, hanem szerkezeti — egybevág a `{1, 5, 25, 1001}` és `{1, 25, 26}` halmazokkal. A pontos szerepe nincs megnevezve, de a formátum-irány kizárva. Lap: `pmp-database.md`, „A `típus` FORRÁSA"; terméki lelet: **#2415**. |
+| **mit csinál a `DirscanRegression`** | ✅ **LEZÁRVA** — a bejárás végén 4. módú CSV + **`ExitProcess`** (`0x004e9d37`–`0x004e9d42`); egyszer olvasott, gyorsítótárazott kapcsoló; a függvény időt is mér. Fejlesztői regressziós futtató, a termékre nincs hatása. |
 
 ### 16.3 Amit ez a #1275-re kimond
 
@@ -2653,3 +2764,50 @@ menüpont nem ugyanaz.
 bájtkereséssel, elcsúszás-mentesen; a mód-értékek diszasszemblálva.
 **Nem vizsgáltam**, mit csinál a mód-jelző a `0x005ce590`-en belül — ez
 külön kérdés, és nem blokkolja a fenti következtetést.*
+
+## A »Rejtett mappák« JELSZAVA — mérve a binárisból (#1637)
+
+Az eredeti a rejtett mappák gyűjteményét jelszóval védhetővé teszi
+(`IDS_PROMPT_HIDDEN_PWD_MESSAGE`, `IDS_WARN_NO_HIDDEN_PWD`). A tárolás
+alakja **nem** stílus-kérdés: ettől függ, mit ígérhetünk a felhasználónak.
+
+### A lánc, címekkel
+
+| lépés | cím | mi történik |
+|---|---|---|
+| jelszó megadása/módosítása | `0x005eb910` (903 b) | „Please enter a password to use for this collection", „Please verify your password", „The passwords did not match." |
+| a jelszó feldolgozása | `0x00a4cdd0` | a sztringet és a NUL-ig számolt hosszát adja tovább |
+| **a lenyomat** | **`0x00ab3640`** | **MD5** — mind a négy init-konstans egymás után: `0x67452301`, `0xEFCDAB89`, `0x98BADCFE`, `0x10325476` (`0x00ab3667`–`0x00ab367f`); a tömörítő `0x00ab36f0` / `0x00ab37b0` |
+| hex-be írás | `0x00a4d420` (330 b) | 16 bájt → **32 karakteres kisbetűs hex**; `push 0x21` (33 = 32 + lezáró), ábécé `0x00cd8f5c` = `"0123456789abcdef"` |
+| tárolás | `0x005ebc52` | a kapott sztring a `state` (`0x00c817f0`) / `info` (`0x00c812cc`) kulcs alá kerül |
+
+Az ellenőrző ág külön él: `0x005ec440` és `0x004ab650`
+(„Please enter a password to open this collection", `CAlbumState::passprompt`).
+A rejtett mappák felajánlását a `0x005ee2a0` végzi (`DoNotConfirmHiddenPwd`,
+„Don't Add Password" / „Add Password", és a
+„The »Hidden Folders« collection is not currently password protected." szöveg).
+
+⇒ **A tárolt érték a jelszó hex-kódolt MD5-e.** Nem nyílt szöveg és nem
+elfedés — de **sózatlan**, tehát mai mércével gyenge: azonos jelszó azonos
+lenyomatot ad, és az MD5 gyors, így a nyers erő olcsó.
+
+### Amit ez a védelem NEM ad
+
+A rejtett mappák a lemezen **változatlanul ott vannak**, bármelyik
+fájlkezelővel elérhetők. A jelszó a program felületén belüli
+**megjelenítést** kapuzza, nem a fájlokat. Aki ezt nem mondja ki a
+felhasználónak, valódi adatvédelmet ígér ott, ahol nincs.
+
+### Ami NINCS mérve
+
+- **Hol perzisztálódik** a `state` / `info` érték: a tulajdonos valódi
+  adatbázisában (302 `.pmp`) **nincs** jelszó-oszlop, tehát ez külön keresés.
+- **Milyen kódolással** megy a nem ASCII jelszó az MD5-be: a hossz NUL-ig
+  számolódik (`0x00a4cdd0`), tehát bájtsorozatról van szó, de a kódolás nem
+  igazolt. ASCII jelszónál ez közömbös; ékezetesnél a kompatibilitás nem
+  bizonyított.
+- **Elfelejtett jelszó**: van-e az eredetiben visszaállítás.
+
+*Bizonyítottsági fok: **megerősített** — a négy MD5 init-konstans és a
+hex-ábécé közvetlenül olvasva, a hívási lánc diszasszemblálva. A tárolás
+HELYE és a nem ASCII kódolás: **nem vizsgálva**, ld. fent.*

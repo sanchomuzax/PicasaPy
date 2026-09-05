@@ -1256,10 +1256,30 @@ mentés állapota két, eddig nem rögzített helyen él:
 
 | elem | bizonyíték |
 |---|---|
-| mentés-készletek könyve | **`backup.xml`** a Picasa adatmappájában (`0x00581920`, `0x0066f2b0` — ugyanaz a kezelő, mint a `contacts.xml`) |
-| a mentés-motor | a **`il_BurnPanel`** (0x67xxxx tartomány): meghajtó-felderítés („Drive Type is %s on %s", `CD-R`/`DVD-R`… debug-sztringek, „No recordable drives detected") és a `backup.xml` kezelője (`0x0066f470`, nyolc hívóval) — a klasszikus Picasa-mentés **CD/DVD-re írás** |
+| mentés-készletek könyve | **`backups.xml`** (TÖBBES SZÁM) a `…\Google\Picasa2\**db3**\` mappában — író `0x006759c0` (1723 b), olvasó `0x00676910` (223 b). Ld. `biztonsagi-mentes.md` 1.1 |
+| a mentés-motor | a **`il_BurnPanel`** (0x67xxxx tartomány): meghajtó-felderítés („Drive Type is %s on %s", `CD-R`/`DVD-R`… debug-sztringek, „No recordable drives detected") — a klasszikus Picasa-mentés **CD/DVD-re írás** |
+| a mentés **beállításai** | `0x0066f470` (923 b, **8 hívóval**) — a `Preferences` alatti **16 `option_*` kulcs** (`option_backup`, `option_manifest`, `option_convertnonjpeg`, `option_noautoruninf`, …). Teljes lista: `ajandek-cd-kimenet.md` |
 | képenkénti könyvelés | `backuphash` ini-kulcs: a korpuszban **14 700 sor** (pl. `backuphash=50247`); a `-backuphash` alak a kulcs **levételét** jelzi — a #440-es „újrafuttatható, inkrementális készletek" pontosan ezen a két helyen könyvel |
 | társprogram-promó | `0x0040d160`: `Software\Google\Google Photos Backup\Preferences` (`welcome_seen`, `SkipABPromo`, `LastABPromo`, `ABRepromptDays`) + `https://photos.google.com/apps` — a Picasa 3.9 végén a Google Fotók-Backup alkalmazást kínálta |
+
+> ⛔ **HELYESBÍTÉS (2026-09-04) — ennek a szakasznak két állítása MEGDŐLT.**
+>
+> 1. **A `backup.xml` NEM a mentés-készletek könyve.** A `0x0066f2b0`
+>    (438 b, **egyetlen** hívóval: `0x0066f58c`) a **névjegyzéket** írja:
+>    a sztringjei `contacts.xml` (`0x00c90e74`) és `backup.xml`
+>    (`0x00c90e94`), közte az elválasztó `\` (`0x00c80910`) ⇒ a
+>    `backup.xml` a `contacts.xml` **előző példánya** ugyanabban a
+>    mappában (`…\Google\Picasa2\contacts\backup.xml`, ld. ugyanennek a
+>    lapnak a mentés-fejezetét). A **készletek** a `backups.xml`-ben
+>    vannak, a `db3\` alatt — a `0x006759c0` sztringjei: `backups.xml`,
+>    `replicates.xml`, `Picasa2Backups` (gyökérelem), `setname`,
+>    `diskroot`, `bkallfiles`, `bkonlypics`, `bkonlyexif`.
+> 2. **A `0x0066f470` NEM a `backup.xml` kezelője**, hanem a **beállítás-
+>    tár**: a 16 `option_*` kulcs olvasója/írója. A „nyolc hívó" szám
+>    helyes volt, csak rossz szerephez tartozott.
+>
+> A tévedés forrása a névhasonlóság (`backup.xml` ↔ `backups.xml`) és az,
+> hogy mindkét függvény a `0x0066fxxx` tartományban ül.
 
 Jegy: **#440**. *(A `thumbui/backup` névparancs és a BurnPanel közötti
 azonnali launcher-lépés a sztring-matcher esethatáránál nem
@@ -2041,6 +2061,8 @@ i18n-fájlból. Marad a `0x0085df30` célzott dekompilációja.
 
 #### (d) ⚠️ HIBÁS HIVATALOS SZÖVEG — ne vegyük át
 
+*Forrás: `printoptions.tre:236` (`printoptions/apply`) · `printoptions.tre:242` (`printoptions/ok`).*
+
 | elem | a hivatalos magyar buboréksúgó |
 |---|---|
 | `printoptions/apply` | „A kijelölt beállítások alkalmazása **a Google Fotókra**" |
@@ -2059,7 +2081,6 @@ kibontása a `Picasa3i18n.dll`-ből.
 **A gyakorlati következmény független ettől:** a szolgáltatás megszűnt, tehát
 **ezt a két buboréksúgót nem vesszük át** — nálunk a nyomtatásra kell
 vonatkozniuk. A többi 25 bejegyzés változatlanul átvehető.
-
 ## 40. tétel — a `printpanel`: DPI-ŐR, példányszám és a megjegyzett méret (2026-08-31)
 
 *Második kör az UI-lefedettségi axisról (#1778). Panel: `printpanel` —
@@ -2603,6 +2624,8 @@ buttons…"), ezért nem párosult gépi úton. Felülbírálva.
 
 ### Eredeti / nálunk / teendő
 
+*Forrás: `quicktagconfig.tre:87` (`quicktagconfig/autofill`).*
+
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | gyorscímke-helyek | **10** (`edit_0..9`, `cmp eax, 0xa`) | **10** (`quickTagField0..9`) | ✅ **KÉSZ** (#1788) |
@@ -2610,7 +2633,6 @@ buttons…"), ezért nem párosult gépi úton. Felülbírálva.
 | automatikus kitöltés | `quicktagconfig/autofill` | megvan | — |
 | tárolás | `Preferences\quicktags::tag%d` | QSettings | — |
 | gombok | **OK + Mégse** (elvethető) | **OK + Mégse** (elvethető) | ✅ **KÉSZ** (#1788) |
-
 ### Nyitott kérdések mérlege (43.)
 
 ```
@@ -4167,6 +4189,8 @@ közös mappája, a kilenc állapotszöveg.
 
 ### 59.1 Az eredeti szűrő-készlet: hat gomb
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
 
 | gomb | buboréksúgó | nálunk (**mérve**) |
@@ -4182,7 +4206,6 @@ A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
 
 *(A `starsearch` és a `geotagsearch` felülbírálásai korábbi körből
 származnak — nem ez a kör találta őket.)*
-
 ### 59.2 ⭐ A dátum-szűrő CSÚSZKA, nem dátumválasztó
 
 A `timecontainer_label` mellett a kezelő a
@@ -4216,6 +4239,8 @@ egyébként a **#1398** (másodpéldány-szűrés) témája.
 
 ### Eredeti / nálunk / teendő
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 | | eredeti | nálunk (mérve) | teendő |
 |---|---|---|---|
 | csillag- és geo-szűrő | megvan | **megvan** | — |
@@ -4224,7 +4249,6 @@ egyébként a **#1398** (másodpéldány-szűrés) témája.
 | **dátum-tartomány (csúszka!)** | `timeslider/scaleslider` | **nincs** | ua. |
 | webalbum-szűrő | `webview` | — | **hatókörön kívül** |
 | `searchoptions` csoport | hasonlóság, másodpéldány, gép | nincs | **külön kör** (jelzés, ld. 59.3) |
-
 ### Nyitott kérdések mérlege (59.)
 
 ```
@@ -4594,10 +4618,15 @@ funkciót, tehát a funkció pótlása nem jár adatvesztés-kockázattal.)*
 
 ### 64.4 A maradék kis panelek
 
+*Forrás a `panelroot` sorához: `panelroot.tre` — pl. a
+`panelroot/makemovietab` a `panelroot.tre:75`, a
+`panelroot/capturemovietab` a `panelroot.tre:91`, a `panelroot/globaltabs`
+a `panelroot.tre:95` sorban áll.*
+
 | panel | elem | állapot |
 |---|---|---|
 | `rightdrawerpanel` | `close` · `size_toggle` („Switch between small/large side panel") · `title_text` („Metaadatok") | a fiók **méret-váltója** nálunk nincs — kis eltérés, a #1773-hoz tartozik |
-| `panelroot` | `makemovietab` („Movie Maker") · `capturemovietab` („Rögzítés") · `globaltabs` · `youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
+| `panelroot` | `panelroot/makemovietab` („Movie Maker") · `panelroot/capturemovietab` („Rögzítés") · `panelroot/globaltabs` · `panelroot/youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
 | `instructionpanel` | `close` · `learn_more` („Learn more…") | súgó-hivatkozás ⇒ **hatókörön kívül** |
 | `video_control_bar2` | `1to1` („Show actual movie size (don't stretch)") · `fullscreen` · `scaleslider` · `volumeslider` | a **2.7** szakaszban már feltárva — nem ez a kör találta |
 
@@ -4788,14 +4817,281 @@ konkrét jelentése nincs feltárva.
 `greybalancelabel` és a `filllightlabel` ugyanitt, `m_fxlabel2` stílussal —
 tehát az `m_fxlabel2` **közös felirat-osztály**, nem effekt-specifikus.
 
-### NYITOTT (blokkolt): élő előnézet-e a `fxpreview`?
+### ~~NYITOTT (blokkolt): élő előnézet-e a `fxpreview`?~~ ✅ LEZÁRVA (2026-09-04)
 
-A `.tre` csak a szülő-gyerek viszonyt adja, a tartalmat nem; a `respack.yt`
-**nincs meg** ebben a checkoutban (kerestem, nincs `.yt` fájl); a
-`0x0050e8d0` (133 b) csak a `fxpreview%d` nevet formázza, és **nincs
-rögzített hívója** az xref-táblában. Az olcsó lánc itt kimerült.
+**Igen, élő előnézet — sőt a szerkesztési lánc AKTUÁLIS tetején.** A
+tulajdonos hat képernyőképe (`research/#2061-effekt-latszik/`, három
+független ELŐTTE/UTÁNA pár három effekt-fülön) eldöntötte: a 12 csempe a
+megnyitott fényképet mutatja effektenként, és amikor a képre Fekete-fehér
+kerül, **az összes csempe alapja is szürkévé válik**.
 
-**Amit eldöntene:** egy képernyőkép a windowsos Picasa **Effektusok** füléről.
-Ha a 12 csempe a **megnyitott fényképet** mutatja effektenként, akkor a mi
-statikus SVG-ikonjaink elvi eltérés; ha rajzolt ikonok, akkor a megoldásunk
-helyes. Jegy: **#1869**, `blocked` + `felhasználóra-vár`.
+A teljes levezetés, a csempe-újraépítés kimerítő hívó-leltárával együtt:
+`ui-audit-editor.md`, „Az effekt-csempe ELŐNÉZETÉNEK betöltési lánca".
+Jegyek: **#2061** (lezárva), **#2273** (a megvalósítás), **#1869**.
+
+*(Az itt korábban álló „a `respack.yt` nincs meg ebben a checkoutban"
+megjegyzés a kérdés eldöntéséhez már nem kell; a fenti bizonyíték nem
+erőforrás-alapú.)*
+
+---
+
+## 67. tétel — a mappalista-rendezés HIÁNYZÓ darabjai: a 0. mód, a 4. mód és a negyedik belépési pont (2026-09-04, #2304)
+
+> ⛔ **ÖNHELYESBÍTÉS.** Ennek a tételnek az első változata (ugyanaznap)
+> **négy állítást tartalmazott, ami a 36. tételben MÁR BENNE VOLT**, egyet
+> pedig **tévesen** „NINCS MEG"-nek jelölt. A hiba oka: nem olvastam el a
+> saját lapunk 36. tételét, mielőtt írtam. A helyesbítés:
+>
+> | az első változat állítása | valójában |
+> |---|---|
+> | „a `datesort` mód-szám, nem logikai érték" | **a 36.3 már kimondta** (2026-08-31) |
+> | „a fordítás a komparátoron belül érvényesül" | **a 36.4 már kimondta** |
+> | „a parancsok **két** menüben élnek" | **HIBÁS** — a 36.5 szerint **három**, és ez a kör talált egy **negyediket** |
+> | „a **Méret** mód-száma **NINCS MEG**" | **HIBÁS** — a 36.4 szerint **5**, és a mértékegysége is megvan (64 bites bájtösszeg) |
+>
+> Az emiatt nyitott **#2320** jegy tárgytalan, lezárva.
+> **Ami ténylegesen új, az alább áll.**
+
+### 67.1 ⭐ A NEGYEDIK belépési pont — a könyvtár-nézet két rendezőgombja
+
+A 36.5 három menüt sorolt fel (menüsáv ▸ Nézet · bal hasáb ▾ előugró ·
+album helyi menü ▸ „Sort By"). Van egy **negyedik**, nem menü, hanem két
+**gomb** a könyvtár-nézetben — a kezelőjük `FUN_005d9cc0`:
+
+| elem | cím | átadott mód (`edx`) |
+|---|---|---|
+| `thumbui/datesort` | `0x005db26d` (`xor edx, edx`) | **0** |
+| `thumbui/namesort` | `0x005db207` (`mov edx, 2`) | **2** |
+
+⇒ ez adja a **0. mód** felhasználói jelentését, amit a 36.3 mód-listája
+(`0/1/2/5`) tartalmazott ugyan, de vezérlőhöz nem kötött: **a 0. mód a
+„dátum"**.
+
+### 67.2 ⭐ Van egy NEGYEDIK mód is — `4`
+
+A komparátor (`FUN_004a7890`) `0x004a7e2a`-nál **`cmp edx, 4`**, és a
+`0x004a7e2f` ágban a `0x004502e0([this+0xc4], tétel, &ki)`-t hívja kétszer,
+**double**-ként hasonlítva. A 36.3 mód-listája ezt **nem tartalmazta**.
+
+**A komparátor teljes ágtáblája** (a 36.4 kiegészítése):
+
+| `[this+0xd8]` | ág | kulcs | vezérlő |
+|---|---|---|---|
+| **0** | `0x004a7d95` | a tétel saját **double** kulcsa (`fld qword`) | `thumbui/datesort` |
+| 1 | `0x004a7e89` | `0x00450bd0(…)` → double | `ID_VIEWBYRECENT` (36.) |
+| **4** | `0x004a7e2f` | `0x004502e0(…)` → double | ⚠️ **nincs hozzá ismert vezérlő** |
+| 5 | `0x004a7efe` | `0x004507e0(…)` → 64 bites bájtösszeg (36.4) | `ID_VIEWBYSIZE` (36.) |
+| **minden más** (köztük 2) | `0x004a7f5f` | a tétel **nevének sztringje** (`+0x5c`) | `ID_VIEWBYNAME`, `thumbui/namesort` |
+
+### 67.3 ⭐ A szempontváltás NEM nullázza a fordítást
+
+A beállító `FUN_004b07c0` (75 b) **egyszerre** veszi a módot és a fordítást:
+
+```
+0x004b07c4  cmp [lista+0xd8], edx      ; ugyanaz a mód?
+0x004b07cc  cmp [lista+0x165], cl      ; és ugyanaz a fordítás?
+            -> ha mindkettő, nincs változás (0xF4242)
+0x004b07dc  mov [lista+0x165], cl
+0x004b07e2  mov [lista+0xd8], edx      ; egyébként MINDKETTŐT beállítja
+            -> majd újrarendez (0x006dc4c0)
+```
+
+A két rendezőgomb a **jelenlegi** fordítás-értéket adja tovább
+(`mov cl, byte ptr [eax+0x165]`, `0x005db200` és `0x005db266`) ⇒ **a
+rendezési szempont váltása megtartja a fordított sorrendet.** *(A 36.4 azt
+mondta meg, HOL érvényesül a fordítás; ez azt, hogy szempontváltáskor mi
+történik vele.)*
+
+### 67.4 A mi oldalunk — MÉRVE, és HELYES
+
+`src/picasapy/app/photo_sort.py` + `folder_photo_sort_controller.py`:
+
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a fordítás tárolása | **külön** kulcs (`albumlistflip`) | **külön** beállítás (`view/folderPhotoSortReverse`, `photo_sort.py:27`) | — |
+| szempontváltáskor | a fordítás **megmarad** | `setFolderPhotoSort()` (`folder_photo_sort_controller.py:70`) **nem nyúl** a reverse-hez | — |
+| név-kulcs | sztring | `r.name.casefold()` (`photo_sort.py:75`) | — |
+| dátum-kulcs | **egyetlen** double | `(photo_date(r), r.name.casefold())` — **másodlagos kulcs is** (`:71`) | eldöntendő: az eredetinek nincs másodlagos kulcsa |
+
+⇒ **A fordítás függetlensége nálunk MÁR HELYES** — ez a kör ezt igazolta,
+nem hibát talált.
+
+### 67.5 ⛔ NINCS MEG: a 4. mód vezérlője
+
+A `{0, 1, 2, 5}` mind meg van feleltetve vezérlőnek (36. + 67.1); a **4.**
+módhoz **nem ismert** felhasználói vezérlő. Nem zárható ki, hogy belső
+(programból állított) rendezés. **Megszerzés:** a `FUN_004b07c0` összes
+hívója (`edx = 4`-gyel). Jegy: **#2320**.
+
+---
+
+## 68. tétel — a mappalista-rendezés TELJES mód-készlete, és egy ASCII-only névhasonlítás (2026-09-04, #2320)
+
+> **Bizonyítottság: megerősített** — kimerítő hívó-pásztázás és kiolvasott
+> konstansok. Ez a tétel a **36.** és a **67.** lezárása: a mód-készlet
+> ettől kezdve teljes.
+
+### 68.1 A `+0xd8` mód-mezőnek KÉT írója van, és mindkettő elszámolt
+
+| író | mit ír | hívói |
+|---|---|---|
+| `FUN_004a1560` `0x004a1991` | a **nyers registry-értéket** (`Preferences\datesort`), **validálás nélkül** | indulás |
+| `FUN_004b07c0` (75 b) | `edx`-et | **pontosan 3** hívó |
+
+`FUN_004b07c0` három hívója (kimerítő `e8`-pásztázás a `.text`-en):
+
+| hívó | átadott mód |
+|---|---|
+| `0x005db20c` (`FUN_005d9cc0`) | **2** — `thumbui/namesort` |
+| `0x005db26f` (`FUN_005d9cc0`) | **0** — `thumbui/datesort` |
+| `0x005d3127` (`FUN_005d30f0`) | *öröklött* `edx` — továbbadó |
+
+`FUN_005d30f0` **hat** hívója, mind a `FUN_005cb990` parancs-diszpécserben:
+
+| cím | `edx` | jelentés |
+|---|---|---|
+| `0x005cbbf6` | `xor edx, edx` → **0** | dátum |
+| `0x005cbc2d` | `mov edx, 1` | legutóbbi változtatás |
+| `0x005cbc10` | `mov edx, 2` | név |
+| **`0x005cd5f2`** | **`mov edx, 3`** | ⭐ **ÖTÖDIK mód — a 36.3 listája (`0/1/2/5`) ezt sem tartalmazta** |
+| `0x005cc703` | `mov edx, 5` | méret |
+| `0x005cd61c` | `edx = [obj+0xd8]` **változatlan**, `cl = !cl` (`test cl,cl` + `sete cl`) | **a fordítás kapcsolója** |
+
+⇒ **A felületről elérhető mód-készlet: `{0, 1, 2, 3, 5}`**, plusz a
+fordítás-váltó.
+
+### 68.2 ⛔ A 4. mód a felületről ELÉRHETETLEN — negatív eredmény
+
+A 67.2 talált a komparátorban egy `cmp edx, 4` ágat (`0x004a7e2a`). A fenti
+kimerítő pásztázás szerint **egyetlen hívó sem ad át 4-et**:
+
+- a `+0xd8`-nak két írója van, mindkettő elszámolt (68.1);
+- a `FUN_004b07c0` 3 hívója és a `FUN_005d30f0` 6 hívója **mind** felsorolva.
+
+⇒ A 4. mód **csak akkor lép működésbe, ha a `Preferences\datesort` registry-érték
+literálisan 4** — a betöltő ugyanis **nem validál**. Ez tehát vagy **örökölt
+(korábbi verzióbeli) érték**, vagy fejlesztői kapcsoló. **Nem megépítendő.**
+
+*(A 4. mód kulcsa a `0x004502e0`-ból jön — a `[this+0xc4]` adatforráson, mint
+az 1. és az 5. mód kulcsai.)*
+
+### 68.3 ⭐ A 3. mód a NÉV-ággal azonos viselkedésű
+
+A komparátor (`FUN_004a7890`) csak a `0`, `1`, `4`, `5` értékre ágazik el;
+**minden más — tehát a 2 ÉS a 3 is — a sztring-ágra esik** (`0x004a7f5f`).
+A 3. mód ezek szerint **ugyanazt a rendezést adja, mint a 2.**; a
+megkülönböztetése (ha van) nem ebben a komparátorban van.
+
+### 68.4 ⭐ A névhasonlítás ASCII-ONLY kisbetűsítést végez
+
+A sztring-ág (`0x004a7fd2`–`0x004a7ff5`) **beágyazott**, bájtonkénti
+hasonlítás, és a kisbetűsítése **kizárólag az `A`–`Z` tartományra** hat:
+
+```
+0x004a7fda  cmp cl, 0x41       ; 'A'
+0x004a7fdd  jl  …
+0x004a7fdf  cmp cl, 0x5a       ; 'Z'
+0x004a7fe2  jg  …
+0x004a7fe4  add cl, 0x20       ; -> kisbetű
+```
+
+⇒ **Az ékezetes nagybetűk NEM esnek egybe a kisbetűs párjukkal.** A
+`Á` és az `á` két különböző érték marad, és a rendezésben a bájtértékük
+dönt — az ASCII-tartomány (`a`–`z` = 0x61–0x7A) **mindig megelőzi** őket.
+
+⚠️ **Nálunk ez MÁSKÉPP van** (mérve): `models.py:347` a mappalistában
+`f[0].casefold()`, `photo_sort.py:74` a képeknél `r.name.casefold()` — a
+Python `casefold()` **Unicode-tudatos**, tehát az `Á` és az `á` nálunk
+egybeesik. Magyar mappa- és fájlneveknél ez **eltérő sorrendet ad**.
+
+*(Ez a #2304 „a 3. sortól más a sorrend" tételének egy lehetséges,
+önállóan ellenőrizhető oka — de **ok-okozatilag nincs bizonyítva**: a
+mechanizmus mérve van, a mért eltérésre gyakorolt hatása NINCS mérve.)*
+
+### 68.5 Eredeti / nálunk / teendő
+
+| tétel | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| mód-készlet | `{0,1,2,3,5}` + fordítás-váltó; a **4** elérhetetlen | `("name","size","changed", dátum)` (`models.py:344`) | — |
+| a 3. mód | a névvel azonos viselkedés | nincs külön | **nem kell** megépíteni |
+| a 4. mód | csak kézzel írt registry-értékkel | nincs | **nem kell** megépíteni |
+| névhasonlítás | **ASCII-only** kisbetűsítés (`A`–`Z`) | `casefold()` — **Unicode** | eldöntendő (#2304) |
+
+
+## 69. tétel — a „Mappa rendezésének alapja ▸ Dátum" KULCSA: a `thumbindex` első időbélyege (2026-09-04, #2304)
+
+> **Bizonyítottság: erős.** A választ **mérés** támasztja alá a tulajdonos
+> valódi katalógusán, két független próbával; bit-pontos újrajátszás
+> (a teljes eredeti sorrend) nem készült, ezért nem „megerősített".
+
+A #2304 első kérdése: **melyik mezőt használja az eredeti a mappán belüli
+„Dátum" rendezéshez?** A jegy megfigyelése szerint a Picasa 3 és a
+PicasaPy **első 18 képe azonos**, utána szétválik: az eredeti
+összefésüli a `_<hexa>` és a `DALL·E …` nevű fájlokat, nálunk viszont a
+`DALL·E` fájlok **egy tömbben** jönnek.
+
+### A mérés
+
+Anyag: a tulajdonos 2026-08-22-i `Picasa2` adatmappa-mentése; a szóban
+forgó mappa **88 képe** a `thumbindex.db`-ből, a saját
+`pmpimport.thumbindex` olvasónkkal. A `thumbindex` rekordja **két**
+FILETIME mezőt tárol (`+0x00` és `+0x08`).
+
+**1. próba — a jegyben rögzített első 18 fájlnév sorrendje.** Hány
+egyezik elölről, megszakítás nélkül?
+
+| rendezőkulcs | egyező előtag |
+|---|---:|
+| a rekord **1.** FILETIME-ja | **10 / 18** |
+| a rekord **2.** FILETIME-ja | **10 / 18** |
+| **fájlnév** (kisbetűsen) | **0 / 18** |
+
+⇒ **A név mint kulcs KIZÁRVA.** A tárolt időbélyeg viszont a jegyben
+felsorolt első tíz nevet **pontosan abban a sorrendben** adja vissza.
+*(A 11. elemtől eltér — a mentés 2026-08-22-i, a képernyőkép későbbi.)*
+
+**2. próba — a jegy legbeszédesebb jele: összefésülődnek-e a névcsoportok?**
+A 88 kép három névcsoportba esik (`DALL·E …` 12, `_<hexa>` 23, egyéb 53);
+megszámolva, hányszor VÁLT a csoport a rendezett listában:
+
+| rendezőkulcs | csoportváltás | a `DALL·E` fájlok |
+|---|---:|---|
+| a rekord **1.** FILETIME-ja | **7** | **szétszórva**, a `_<hexa>`-k közé fésülve |
+| a rekord **2.** FILETIME-ja | 6 | **egy tömbben** (12 egymás után) |
+| fájlnév | 4 | egy tömbben |
+
+⇒ Az **1. FILETIME** adja azt a képet, amit a tulajdonos az eredetiben
+lát; a 2. FILETIME és a név ugyanazt a „`DALL·E` egy tömbben" alakot adja,
+mint a mi mai kimenetünk.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk (mérve) |
+|---|---|---|
+| a „Dátum" kulcsa | a `thumbindex` rekord **1. FILETIME**-ja (a Picasa saját, beolvasáskor rögzített fájlideje) | `taken_at` (EXIF), ha van; **egyébként a fájl MAI `mtime`-ja** (`app/photo_sort.py:56–64`) |
+| holtverseny | nem mérve | fájlnév kisbetűsen (`photo_sort.py:71`) |
+
+⇒ **Ez magyarázza a jelenséget.** Az EXIF nélküli (letöltött, generált)
+képeknél mi a mai fájlidőre esünk vissza; ha a fájlok egyszerre kerültek a
+lemezre, az érték **azonos**, és a holtversenyt a NÉV dönti el — innen a
+„`DALL·E` egy tömbben". Az eredeti ezzel szemben egy **beolvasáskor
+rögzített, fájlonként eltérő** időt használ.
+
+✅ **LEZÁRVA (2026-09-05, #2304):** hogy az 1. FILETIME a fájl létrehozási
+vagy módosítási ideje-e a forrásrendszeren, és hogy a Picasa frissíti-e
+újraolvasáskor. **Egyik sem:** a kép **metaadat-dátuma**, a beolvasás
+pillanatában rögzítve (egyetlen író: `0x004eeb10`, egyetlen hívó:
+`0x00427898`), és a pásztázó **soha nem frissíti** — az csak a 2. mezőt
+(a fájl **módosítási** idejét) és a méretet írja felül. A teljes levezetés
+és a mérés: `pmp-database.md` 10. szakasz.
+
+> ⛔ **Helyesbítés az alábbi táblához.** A „nálunk" oszlop azt sugallta,
+> hogy a mi **tartalék-szabályunk** tér el (EXIF hiányában a mai `mtime`).
+> Nem tér el: az eredeti is a fájl módosítási idejére esik vissza, ha a
+> képnek nincs metaadat-dátuma (mérve, `pmp-database.md` 10.4). A valódi
+> különbség a **rögzítettség** — az eredeti a beolvasáskori értéket
+> tárolja, mi minden rendezéskor élőben olvassuk a `mtime`-ot.
+
+*A saját megfelelőnk nem az `mtime` pillanatnyi értéke kell legyen, hanem
+egy **indexeléskor rögzített** időmező — különben a sorrend a fájlok
+másolásakor megváltozik.*

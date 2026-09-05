@@ -55,15 +55,34 @@ def controller(qt_app, library):
     return controller
 
 
-def _wait(signal, qt_app, timeout_ms=15000):
+def _wait(signal, qt_app, inditas, timeout_ms=15000):
+    """Bekot, AZUTAN indit, es megvarja a jelzest.
+
+    #2419: az `inditas` parameter nem kenyelmi kerdes. A muveletet a
+    vezerlo HATTERSZALON vegzi (`_start_background`), a jelzes onnan jon.
+    Ha a hivo eloszor elinditja a muveletet, es CSAK AZUTAN kot be ide,
+    akkor a szal befejezodhet a bekotes elott — a jelzes ilyenkor nem
+    veszik el "neha", hanem VEGLEG elmegy a semmibe, es a varakozas a
+    teljes idokorlatot kiulve bukik el. Merve: a `revertRowsToOriginal`
+    es a bekotes koze tett 0,6 mp-es szunet a bukast DETERMINISZTIKUSSA
+    tette. Terheles alatt a CI ugyanezt az ablakot nyitja ki maganak.
+
+    Ezert az inditas ITT tortenik, a bekotes utan — a versenyhelyzet igy
+    nem "ritkabb" lesz, hanem megszunik.
+    """
     loop = QEventLoop()
     result = {}
     signal.connect(
         lambda *args: (result.update(args=args), loop.quit())
     )
     QTimer.singleShot(timeout_ms, loop.quit)
+    inditas()
     loop.exec()
     qt_app.processEvents()
+    # #2408: idotullepeskor a `result` uresen maradna, es a bukas egy
+    # kesobbi allitason jelentkezne — a muvelet helyett a VARAKOZASRA
+    # mutatva. A segito ezert maga all meg.
+    assert result, f"#2408: a jelzes {timeout_ms} ms alatt nem erkezett meg"
     return result
 
 
@@ -100,8 +119,11 @@ class TestNincsNemaElutasitas:
         reszletek: list = []
         controller.saveFailedDetails.connect(reszletek.append)
 
-        controller.revertRowsToOriginal([0])
-        _wait(controller.revertFinished, qt_app)
+        _wait(
+            controller.revertFinished,
+            qt_app,
+            lambda: controller.revertRowsToOriginal([0]),
+        )
         qt_app.processEvents()
 
         assert reszletek, "a felhasználó semmilyen visszajelzést nem kapott"

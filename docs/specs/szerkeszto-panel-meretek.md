@@ -410,6 +410,8 @@ A Derítőfény-sor `backlight_container`-e **127 × 27** — pontosan egy
 
 ## A színválasztó komponensei
 
+*Forrás: `pickerpanel.tre:33` (`pickerpanel/base`) · `pickerpanel.tre:30` (`pickerpanel/bezels`) · `pickerpanel.tre:12` (`pickerpanel/mru_0`) — és további 1 elem ugyanott.*
+
 | komponens | méret | megjegyzés |
 |---|---|---|
 | `colorpicker` (dokumentum) | **225 × 140** | |

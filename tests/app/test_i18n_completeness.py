@@ -42,6 +42,8 @@ _TS_PATH = _I18N_DIR / "picasapy_hu.ts"
 # nem tudja levezetni a valódi kontextust — ld. a modul docstringjét.
 _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     ("CreateMixin", "No pictures are selected."): "AppController",
+    # #1977: a film célmappájának hibája — ugyanez a mixin-eset
+    ("CreateMixin", "The movie folder could not be created."): "AppController",
     ("CreateMixin", "No target file was chosen."): "AppController",
     ("CreateMixin", "Unknown collage type."): "AppController",
     # #431: a képkeret-választó hibaszövege ugyanebbe a családba tartozik

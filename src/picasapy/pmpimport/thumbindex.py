@@ -6,6 +6,12 @@ Formátum keresztvalidálva (`thumbindex.py` mintaprojekt, ld.
 soronként név + 26 ismeretlen bájt + szülőindex. A leghosszabb PMP-oszlop
 hossza mindig megegyezik a thumbindex bejegyzésszámával — ez adja a
 logikai táblák sor-számát (sparse oszlopoknál a hiányzó indexek üresek).
+
+#2373 — a két időmező NEVE félrevezető volt. A Picasa saját diagnosztikai
+CSV-fejléce („Creation Time", „Access Time") ezen a ponton rossz nevet ad;
+a mért jelentés: az első a kép **metaadat-dátuma** (nem fájlrendszeri
+időbélyeg, és újrapásztázáskor sem frissül), a második a fájl utolsó
+**módosítási** ideje. Mindkettő HELYI időből képzett FILETIME.
 """
 
 from __future__ import annotations
@@ -19,7 +25,12 @@ logger = logging.getLogger(__name__)
 
 _MAGIC = 0x40466666
 _HEADER = struct.Struct("<II")
-_UNKNOWN_BYTES = 26
+#: A név utáni farok: a 26 korábban ISMERETLEN bájt + a szülőindex.
+#: A mezőket a #2195 mérte ki (`docs/specs/pmp-database.md` 8.);
+#: a JELENTÉSÜKET a #2373 helyesbítette: `uint64` metaadat-dátum és
+#: `uint64` utolsó MÓDOSÍTÁSI idő (nem hozzáférési), `uint32` méret,
+#: `uint32` típus, `uint8` piszkos, `uint8` érvényes, `uint32` szülő.
+_FAROK = struct.Struct("<QQIIBBI")
 _NO_PARENT = 0xFFFFFFFF
 _TERMINATORS = (0x00, 0xFF)
 
@@ -28,11 +39,50 @@ class ThumbIndexFormatError(ValueError):
     """Érvénytelen vagy sérült thumbindex fejléc/bejegyzés."""
 
 
+#: Azok a típusok, amelyeknél a `name` MÁR teljes útvonal (#2404, mérve:
+#: `0x004f2804` / `0x004f280d`). A `25` jelentése nincs meg — a halmaz
+#: attól még a bináris halmaza.
+_TELJES_UTVONAL_TIPUSOK = frozenset({1, 5, 25, 1001})
+
+#: Arcsablon-bejegyzés típusa (#2404; `docs/specs/pmp-database.md` 8.1 —
+#: halmaz-azonosság a `facetemplatesV2_index.db` foglalt slotjaival).
+_ARCSABLON_TIPUS = 1001
+
+
 @dataclass(frozen=True)
 class ThumbIndexEntry:
     index: int
     name: str
     parent_index: int
+    #: #2195: a korábban ismeretlen 26 bájt kiolvasva. FILETIME = 100 ns-os
+    #: egységek 1601-01-01 óta.
+    #:
+    #: ⚠️ #2373 — a NEVEK a Picasa saját diagnosztikai CSV-fejlécéből
+    #: származtak (`Name, Creation Time, Access Time, Size, Type, Dirty,
+    #: Valid`), de a jelentésük MÉRVE MÁS. A fejléc ezen a ponton rossz
+    #: nevet ad, és mi azt vettük át.
+    #:
+    #: **Időzóna-konvenció (mindkét mezőre):** a Picasa a
+    #: `TzSpecificLocalTimeToSystemTime`-ot `NULL` zónával hívja, tehát a
+    #: tárolt FILETIME HELYI időből képződik — a visszaalakítása is a
+    #: helyi zónával értelmes, nem UTC-ként.
+
+    #: A kép **metaadat-dátuma**, a beolvasás pillanatában rögzítve.
+    #: **NEM fájlrendszeri időbélyeg**, és a könyvtár-pásztázó **soha nem
+    #: frissíti** — egy újrapásztázás után is a legelső beolvasás értékét
+    #: tartja.
+    creation_filetime: int = 0
+    #: A fájl **utolsó MÓDOSÍTÁSI ideje** (`ftLastWriteTime`) — nem a
+    #: hozzáférési idő, a CSV-fejléc „Access Time" felirata ellenére
+    #: (#2373).
+    modified_filetime: int = 0
+    size: int = 0
+    #: Mérve a tulajdonos katalógusán: 1 és 5 = könyvtár, 2 = fájl;
+    #: emellett 0, 6 és 10 is előfordul. A teljes értékkészlet a #2195
+    #: szerint hatókörön kívül — az importhoz ennyi elég.
+    kind: int = 0
+    dirty: int = 0
+    valid: int = 0
 
     @property
     def is_directory(self) -> bool:
@@ -40,9 +90,41 @@ class ThumbIndexEntry:
         return self.parent_index == _NO_PARENT
 
     @property
+    def is_teljes_utvonal(self) -> bool:
+        """A `name` MÁR a teljes útvonal — nem kell szülőt elé fűzni.
+
+        ⚠️ Az eredeti Picasa **nem a szülőindexből** dönti el ezt, hanem a
+        `valid` bájtból és a TÍPUSMEZŐBŐL (#2404, mérve):
+
+        * `valid == 0` → a nevet önmagában használja (`0x004f27f3`);
+        * `kind ∈ {1, 5, 25, 1001}` → ugyanígy (`0x004f2804` / `0x004f280d`).
+
+        A mi korábbi szabályunk (`parent_index == 0xffffffff`) ettől ELTÉRT.
+        Látható hibát nem okozott — az importőr az üres nevű bejegyzéseket
+        úgyis kihagyja —, de más halmazt jelölt ki, és két beolvasott mezőt
+        (`kind`, `valid`) egyáltalán nem használt.
+
+        A `25` jelentése **nincs meg**; a szabályba mégis beletartozik, mert
+        a bináris a halmaz tagjaként kezeli. A `_TELJES_UTVONAL_TIPUSOK` így
+        MÉRÉS, nem értelmezés — ne „tisztítsuk meg" az ismeretlen elemtől.
+        """
+        return not self.valid or self.kind in _TELJES_UTVONAL_TIPUSOK
+
+    @property
     def is_face_record(self) -> bool:
-        """Üres név + érvényes szülőindex = arc-rekord a szülőképhez."""
-        return self.name == "" and not self.is_directory
+        """Arcsablon-bejegyzés — az eredetiben a TÍPUS dönti el (#2404).
+
+        A mért szabály: `kind == 1001` (`FUN_004e2990`: a szülőlekérdező
+        ennél a típusnál rövidre zár, `-1`-et ad, tehát a `parent_index`
+        mezője ott nem is szülőindex).
+
+        Az „üres név" másodlagos tartalék marad: a mért katalógusban minden
+        `1001`-es bejegyzés neve üres, de a fordítottja nincs igazolva, és a
+        korábbi kódunk EZT a heurisztikát használta elsődlegesen.
+        """
+        return self.kind == _ARCSABLON_TIPUS or (
+            self.name == "" and not self.is_directory
+        )
 
 
 def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
@@ -64,36 +146,179 @@ def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
     for index in range(count):
         terminator = _find_terminator(data, offset, path)
         name = _decode(data[offset:terminator], path)
-        offset = terminator + 1 + _UNKNOWN_BYTES
-        end = offset + 4
+        offset = terminator + 1
+        end = offset + _FAROK.size
         if end > len(data):
             raise ThumbIndexFormatError(f"Csonka bejegyzés (#{index}): {path}")
-        (parent_index,) = struct.unpack_from("<I", data, offset)
+        (
+            creation,
+            modositva,
+            size,
+            kind,
+            dirty,
+            valid,
+            parent_index,
+        ) = _FAROK.unpack_from(data, offset)
         entries.append(
-            ThumbIndexEntry(index=index, name=name, parent_index=parent_index)
+            ThumbIndexEntry(
+                index=index,
+                name=name,
+                parent_index=parent_index,
+                creation_filetime=creation,
+                modified_filetime=modositva,
+                size=size,
+                kind=kind,
+                dirty=dirty,
+                valid=valid,
+            )
         )
         offset = end
     return tuple(entries)
 
 
+#: A `*_index.db` szerkezete (#2202, spec `pmp-database.md` 8.2):
+#:
+#:     float32 verzió (1.6)
+#:     4 × [ uint32 darabszám, darabszám × uint32 ]
+#:
+#: A négy tömb sorrendben: **üres · Checksum · Offset · Size**. A
+#: sorrendet a Picasa SAJÁT CSV-kiírója adja meg (`0x006b5e00`, fejléc
+#: `Size,Offset,Checksum`), az írót a `0x006b7fc0` + `0x0099c1e0` mutatja
+#: (`fwrite(&n,4,1,f)`, majd `fwrite(adat,4,n,f)`).
+#:
+#: ⚠️ A #2195 első változata `20 bájt fejléc + N × 12` alakban olvasta.
+#: Ez MEGDŐLT — és némán: a téves és a helyes modell **bitre ugyanazt a
+#: fájlméretet** adja (`4 + 4 + 4·n + 4 + 4·n + 4 + 4·n` = `20 + 12n`),
+#: ezért a méret-ellenőrzés átment, a verzió is stimmelt, csak az
+#: ÉRTÉKEK voltak szemét. A tanulság a kódban marad: az azonos
+#: összméret nem igazol mezőfelosztást.
+_SLOT_VERZIO_STRUCT = struct.Struct("<f")
+_SLOT_DARAB = struct.Struct("<I")
+#: A mért verzió minden mintában.
+_SLOT_VERZIO = 1.6
+#: A `Size` mező alsó **24 bitje** a valódi méret (`0x006b5eea`:
+#: `and edx, 0xFFFFFF`); az író 16 MB fölötti blobot el is utasít
+#: (`0x006b75f7`).
+_MERET_MASZK = 0xFFFFFF
+
+
+@dataclass(frozen=True)
+class SlotIndexEntry:
+    """Egy slot a `thumbs_index.db` / `previews_index.db` / … fájlból."""
+
+    slot: int
+    #: A teljes útvonalból számolt ellenőrzőösszeg (spec 8.10).
+    checksum: int
+    #: A blob kezdete az `<név>_0.db` adatfájlban.
+    offset: int
+    #: A blob hossza. **0 = ÜRES slot** — nincs mögötte adat.
+    size: int
+
+    @property
+    def ures(self) -> bool:
+        """Üres slot: nincs hozzá blob az adatfájlban."""
+        return self.size == 0
+
+
+def read_slot_index(path: Path) -> tuple[SlotIndexEntry, ...]:
+    """A `*_index.db` slot-táblája.
+
+    A slot sorszáma UGYANAZ a tér, mint a PMP-oszlopok sorindexe és a
+    `thumbindex.db` rekordsorrendje — a bélyegkép tehát a PMP-sorhoz
+    ezen keresztül rendelhető.
+
+    Raises:
+        ThumbIndexFormatError: rossz verzió, csonka tömb, vagy ha a fájl
+            nem fogy el maradék nélkül. Részlegesen NEM olvasunk: az
+            néma féladatot adna.
+    """
+    data = Path(path).read_bytes()
+    if len(data) < _SLOT_VERZIO_STRUCT.size:
+        raise ThumbIndexFormatError(f"A fejléc túl rövid: {path}")
+    (verzio,) = _SLOT_VERZIO_STRUCT.unpack_from(data, 0)
+    if abs(verzio - _SLOT_VERZIO) > 1e-6:
+        raise ThumbIndexFormatError(
+            f"Váratlan verzió ({verzio!r}, várt {_SLOT_VERZIO}): {path}"
+        )
+
+    eltolas = _SLOT_VERZIO_STRUCT.size
+    tombok: list[tuple[int, ...]] = []
+    for sorszam in range(4):
+        if eltolas + _SLOT_DARAB.size > len(data):
+            raise ThumbIndexFormatError(
+                f"Csonka fájl: a(z) {sorszam}. tömb darabszáma sem fér el: {path}"
+            )
+        (darab,) = _SLOT_DARAB.unpack_from(data, eltolas)
+        eltolas += _SLOT_DARAB.size
+        veg = eltolas + darab * 4
+        if veg > len(data):
+            raise ThumbIndexFormatError(
+                f"Csonka {sorszam}. tömb ({darab} elem): {path}"
+            )
+        tombok.append(struct.unpack_from(f"<{darab}I", data, eltolas))
+        eltolas = veg
+
+    if eltolas != len(data):
+        raise ThumbIndexFormatError(
+            f"A fájl nem fogyott el maradék nélkül: {len(data) - eltolas} "
+            f"bájt maradt: {path}"
+        )
+
+    _ures, ellenorzo, eltolasok, meretek = tombok
+    if not (len(ellenorzo) == len(eltolasok) == len(meretek)):
+        raise ThumbIndexFormatError(
+            f"A három tömb hossza eltér "
+            f"({len(ellenorzo)}/{len(eltolasok)}/{len(meretek)}): {path}"
+        )
+    return tuple(
+        SlotIndexEntry(
+            slot=i,
+            checksum=ellenorzo[i],
+            offset=eltolasok[i],
+            size=meretek[i] & _MERET_MASZK,
+        )
+        for i in range(len(ellenorzo))
+    )
+
+
 def resolve_path(entries: tuple[ThumbIndexEntry, ...], entry: ThumbIndexEntry) -> str:
     """A bejegyzés teljes (Windows-formátumú) útvonala.
 
-    Könyvtár-bejegyzésnél a név már a teljes abszolút útvonal; fájl-
-    bejegyzésnél a szülő (könyvtár) neve + a saját (fájl-) név.
+    Ahol a `name` már teljes útvonal (`is_teljes_utvonal`), ott az a válasz;
+    egyébként a szülő (könyvtár) neve + a saját (fájl-) név.
 
-    Raises:
-        ThumbIndexFormatError: Ha a `parent_index` a bejegyzések tömbjén
-            kívülre mutat (sérült db3).
+    ## Sérült szülő-hivatkozásnál NEM dobunk (#2404)
+
+    Az eredeti ilyenkor **tartalék szövegre esik vissza**, nem áll meg. Egy
+    kivétel itt az EGÉSZ importot megállítaná egyetlen sérült bejegyzés
+    miatt — miközben a többi ezer bejegyzés hibátlan. A hiba ettől nem lesz
+    néma: `logger.warning` nevezi meg a bejegyzést.
+
+    Két eset esik ide:
+
+    * a `parent_index` a tömbön kívülre mutat;
+    * a szülő típusa `0` — üres slot, tehát nincs mit elé fűzni.
     """
-    if entry.is_directory:
+    if entry.is_teljes_utvonal:
         return entry.name
     if entry.parent_index >= len(entries):
-        raise ThumbIndexFormatError(
-            f"Érvénytelen szülőindex ({entry.parent_index}) a(z) "
-            f"{entry.index}. bejegyzésnél (csak {len(entries)} bejegyzés van)"
+        logger.warning(
+            "Érvénytelen szülőindex (%d) a(z) %d. thumbindex-bejegyzésnél "
+            "(csak %d bejegyzés van) — a bejegyzés a saját nevével kerül be",
+            entry.parent_index,
+            entry.index,
+            len(entries),
         )
+        return entry.name
     parent = entries[entry.parent_index]
+    if parent.kind == 0:
+        logger.warning(
+            "A(z) %d. thumbindex-bejegyzés szülője (%d.) ÜRES slot "
+            "(kind=0) — a bejegyzés a saját nevével kerül be",
+            entry.index,
+            entry.parent_index,
+        )
+        return entry.name
     if parent.name.endswith(("\\", "/")):
         return parent.name + entry.name
     return parent.name + "\\" + entry.name

@@ -119,9 +119,32 @@ ApplicationWindow {
     // alapértelmezés). A fiók ürítése az `ureseidAFiokot()`.
     function valtsFiokLapot(nev) {
         window.activeDrawerTab = nev
+        if (nev !== "") window.utolsoFiokLap = nev
     }
     function ureseidAFiokot() {
         window.activeDrawerTab = ""
+    }
+
+    //: #2163: a `Ctrl+0` (`thumbui/toggle_right_drawer`, `0x005e6206`) a
+    //: jobb fiókot BILLENTI. Bezárás után újranyitva ugyanaz a lap jöjjön
+    //: vissza — enélkül a billentés fele-útja adatvesztésnek látszik: a
+    //: felhasználó a Címkéket zárta be, és az Emberek nyílna ki.
+    property string utolsoFiokLap: "tags"
+
+    //: #2163: a `Ctrl+F` a fejléc keresőmezőjére viszi a fókuszt. A
+    //: `header` a nézőben nincs jelen (ld. a `MainToolbar` bekötését),
+    //: ezért a null-őr nem formaság.
+    function fokuszAKeresore() {
+        if (toolbar && toolbar.fokuszAKeresore) toolbar.fokuszAKeresore()
+    }
+
+    function billentsdAFiokot() {
+        if (window.activeDrawerTab !== "") {
+            window.utolsoFiokLap = window.activeDrawerTab
+            window.ureseidAFiokot()
+        } else {
+            window.valtsFiokLapot(window.utolsoFiokLap)
+        }
     }
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
@@ -600,6 +623,75 @@ ApplicationWindow {
         }
     }
 
+    // #2054: a súgó billentyűi. Az F1 a MÉRT eredeti gyorsbillentyű (a
+    // `SHORTCUTS.xml`-ben a *Help Contents and Index* `VK_F1`, módosító
+    // nélkül); a Shift+F1 a MIÉNK — az eredeti táblájában nincs, a
+    // súgó maga is új.
+    //: #2163: az eredeti könyvtárnézeti kezelője (`0x005e60d0`) 34
+    //: billentyűt kezel; ez a három a leképezhetők közül való.
+    Shortcut {
+        objectName: "toggleRightDrawerShortcut"
+        sequence: "Ctrl+0"
+        //: `thumbui/toggle_right_drawer` (`0x005e6206`)
+        onActivated: window.billentsdAFiokot()
+    }
+    Shortcut {
+        objectName: "searchShortcut"
+        sequence: "Ctrl+F"
+        //: `searchcontainer/searchbutton` (`0x005e63bb`) — az eredetiben a
+        //: keresőgombot kattintja; nálunk a keresőmező a gomb szerepét is
+        //: viszi, ezért oda megy a fókusz.
+        onActivated: window.fokuszAKeresore()
+    }
+    Shortcut {
+        objectName: "tagsPanelAltShortcut"
+        sequence: "Ctrl+K"
+        //: Az eredetiben UGYANAZ az ág, mint a `Ctrl+T`-é (`0x005e650e`).
+        onActivated: window.valtsFiokLapot("tags")
+    }
+
+    Shortcut {
+        objectName: "helpShortcut"
+        sequence: "F1"
+        onActivated: helpDialog.ensure().nyisdMeg("")
+    }
+    Shortcut {
+        objectName: "helpContextShortcut"
+        sequence: "Shift+F1"
+        //: A mutató alatti elem súgója. A leképezés a `helpTopic`
+        //: tulajdonságon át megy; ha a mutató alatt egyik ős sem
+        //: deklarál ilyet, a FŐOLDAL nyílik — néma kudarc nincs.
+        onActivated: helpDialog.ensure().nyisdMeg(window.helpTopicUnderCursor())
+    }
+
+    //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
+    //: ablakot lefedi, de NEM nyel el eseményt (`acceptedButtons: NoButton`),
+    //: tehát semmilyen meglévő vezérlőt nem zavar.
+    property point helpCursor: Qt.point(-1, -1)
+
+    HoverHandler {
+        objectName: "helpCursorTracker"
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onPointChanged: window.helpCursor = point.position
+    }
+
+    //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
+    //: első olyan ősig, amelyik deklarál `helpTopic`-ot. Így nem kell
+    //: minden gombot felcímkézni: elég a panelekre és a párbeszédekre,
+    //: a többi öröklődik. Ha egyik sem deklarál, ÜRES jön vissza, és a
+    //: néző a főoldalt nyitja — néma kudarc nincs.
+    function helpTopicUnderCursor() {
+        if (window.helpCursor.x < 0) return ""
+        var elem = window.contentItem.childAt(
+            window.helpCursor.x, window.helpCursor.y)
+        while (elem) {
+            if (elem.helpTopic !== undefined && String(elem.helpTopic).length > 0)
+                return String(elem.helpTopic)
+            elem = elem.parent
+        }
+        return ""
+    }
+
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
     Shortcut { sequence: "Ctrl+I"; onActivated: window.invertSelection() }
@@ -868,6 +960,8 @@ ApplicationWindow {
         onFaceScanRequested: faceScanDialog.open()
         // #350: Eszközök → Beállítások…
         onOptionsRequested: optionsDialog.open()
+        //: #2054
+        onHelpRequested: function (topic) { helpDialog.ensure().nyisdMeg(topic) }
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
         // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
@@ -894,7 +988,7 @@ ApplicationWindow {
         // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
         // marad — a leszerelése külön jegy.
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
         // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
@@ -1013,6 +1107,63 @@ ApplicationWindow {
                 "You are about to erase all geographic location information"
                 + " (i.e., latitude and longitude) from the selected photos."
                 + "\n\nOK to proceed?"))
+        }
+        onConfirmed: controller.clearGeotagRows(rows)
+    }
+
+    // #2013: a Helyek PANEL saját két megerősítése. Az eredetiben ez KÉT
+    // KÜLÖN erőforrás a menüparancsétól (`ClearGeoTag::warn`) — más
+    // küszöbbel és más számmal:
+    //
+    //   hely MEGVÁLTOZTATÁSA  > 20 KIJELÖLT elem   (0x00652585, cmp ebx,0x14)
+    //   hely TÖRLÉSE          >  5 GEOCÍMKÉZETT    (0x006527ad, cmp esi,5)
+    //
+    // A küszöb alatt az eredeti NEM kérdez — ezért itt sem kérdezünk.
+    ConfirmDialog {
+        id: setGeotagDialog
+        objectName: "setGeotagConfirm"
+        namePrefix: "setGeotag"
+        title: qsTr("Change Location")
+        property var rows: []
+        property real lat: 0
+        property real lon: 0
+        function futtasd(rowList, latitude, longitude) {
+            if (!rowList || rowList.length === 0) return
+            if (rowList.length <= controller.geoChangeConfirmThreshold) {
+                controller.setGeotagRows(rowList, latitude, longitude)
+                return
+            }
+            rows = rowList; lat = latitude; lon = longitude
+            //: `GeoPanel::geotag_warning_change` — az eredeti szövege
+            ask("setGeotag", qsTr(
+                "You have more than a few items selected."
+                + "\n\nAre you sure you want to change the location of all"
+                + " %1 items?").arg(rowList.length))
+        }
+        onConfirmed: controller.setGeotagRows(rows, lat, lon)
+    }
+
+    ConfirmDialog {
+        id: panelClearGeotagDialog
+        objectName: "panelClearGeotagConfirm"
+        namePrefix: "panelClearGeotag"
+        title: qsTr("Clear Geotags")
+        property var rows: []
+        function futtasd(rowList) {
+            if (!rowList || rowList.length === 0) return
+            //: ⚠️ a küszöb a GEOCÍMKÉZETT elemek száma, nem a kijelölésé:
+            //: 100 kijelöltből 3 geocímkézettnél az eredeti nem kérdez.
+            var geos = controller.geotaggedCount(rowList)
+            if (geos <= controller.geoClearConfirmThreshold) {
+                controller.clearGeotagRows(rowList)
+                return
+            }
+            rows = rowList
+            //: `GeoPanel::geotag_warning_clear` — az eredeti szövege
+            ask("panelClearGeotag", qsTr(
+                "You have more than a few items selected."
+                + "\n\nAre you sure you want to clear the locations for all"
+                + " %1 items?").arg(geos))
         }
         onConfirmed: controller.clearGeotagRows(rows)
     }
@@ -1443,8 +1594,16 @@ ApplicationWindow {
             objectName: "folderPane"
             // #305: null-őr — a controller a leépítéskor átmenetileg null
             SplitView.preferredWidth: controller ? controller.folderPaneWidth : 240
-            SplitView.minimumWidth: 160
-            SplitView.maximumWidth: 600
+            //: #2329: MÉRT korlátok. A legkisebb szélesség ugyanaz a szám,
+            //: mint az alapértelmezés (240) — a hasáb nem húzható alá.
+            SplitView.minimumWidth: 240
+            //: A felső korlát az eredetiben ABLAKFÜGGŐ: a főpanel
+            //: szélessége mínusz 240 (`0x009d9e21`–`0x009d9e50`). A fix 600
+            //: széles ablakon szűkebb volt az eredetinél, keskenyen pedig
+            //: tágabb. A `Math.max` azért kell, hogy nagyon keskeny
+            //: ablakon se csússzon a maximum a minimum ALÁ — a `SplitView`
+            //: ilyenkor kiszámíthatatlanul viselkedne.
+            SplitView.maximumWidth: Math.max(240, mainSplit.width - 240)
 
             // A húzott szélesség mentése — késleltetve, hogy a húzás közbeni
             // pixelenkénti változás ne írja folyamatosan a QSettings-t.
@@ -1858,9 +2017,12 @@ ApplicationWindow {
         // képek helyei térképen, és a kijelölés geocímkézése
         PlacesPanel {
             objectName: "placesPanel"
-            //: #1404: a panel gombja is a MEGERŐSÍTÉSEN át töröl —
-            //: a törlés visszafordíthatatlan.
-            onClearGeotagRequested: (rows) => clearGeotagDialog.openFor(rows)
+            //: #2013: a PANEL a saját, mért küszöbén megy át (5 GEOCÍMKÉZETT
+            //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
+            //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
+            //: kérdez. A menüpont változatlanul azon megy át.
+            onClearGeotagRequested: (rows) => panelClearGeotagDialog.futtasd(rows)
+            onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.futtasd(rows, la, lo)
             visible: window.placesPanelOpen
             SplitView.preferredWidth: 320
             SplitView.minimumWidth: 220
@@ -2255,7 +2417,7 @@ ApplicationWindow {
         // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.openMovie()
+        onMovieRequested: createDialogs.ensure().openMovie()
         //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
         //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
         //: jelzője lekerül, és a projekt lapja lesz az aktív.
@@ -2584,10 +2746,56 @@ ApplicationWindow {
     }
 
     // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
-    CreateDialogs {
+    //: #1612/#2096: halasztva — a Létrehozás-párbeszédek csak a menüből vagy
+    //: a tálcáról nyílnak. A vezérlő jelzéseit a lenti, MINDIG álló
+    //: `Connections` fogadja, nem a komponens belseje (#1743).
+    DeferredDialog {
         id: createDialogs
         objectName: "createDialogs"
-        appWindow: window
+        sourceComponent: Component {
+            CreateDialogs { appWindow: window }
+        }
+    }
+
+    // #2096: a Létrehozás-párbeszédek vezérlő-hallgatói. Azért ITT állnak és
+    // nem a komponensben, mert az halasztott: amíg a felhasználó meg nem
+    // nyitotta, egy belső `Connections` nem létezne, és a kollázs/film
+    // visszajelzése NÉMÁN elmaradna. A kollázs a Kollázs panelről is
+    // indítható, tehát ez nem elméleti eset.
+    Connections {
+        target: controller
+        function onCollagePreviewReady(revision) {
+            // ⚠️ Itt SZÁNDÉKOSAN nincs `ensure()`. Az élő előnézet csak a
+            // NYITOTT kollázs-párbeszédnek szól: ha a párbeszéd nem áll, nincs
+            // mit frissíteni, és felépíteni is fölösleges volna. A többi
+            // jelzés (eredmény, hiba) viszont a felhasználónak szól, ott az
+            // `ensure()` KÖTELEZŐ — különben némán elmaradna a visszajelzés.
+            if (createDialogs.item)
+                createDialogs.item.frissitsdAzElonezetet(revision)
+        }
+        function onCollageFinished(path, used, skipped, missing) {
+            createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
+        }
+        function onCollageFailed(message) {
+            createDialogs.ensure().jelezdAKollazsHibajat(message)
+        }
+        function onMovieProgress(done, total) {
+            createDialogs.ensure().frissitsdAFilmHaladast(done, total)
+        }
+        function onMovieFinished(path, used, skipped, missing) {
+            createDialogs.ensure().jelezdAFilmSikert(path, used, skipped, missing)
+        }
+        function onMovieFailed(message) {
+            createDialogs.ensure().jelezdAFilmHibajat(message)
+        }
+    }
+
+    // #2054: a felhasználói súgó — F1. Halasztott, mint a többi:
+    // induláskor nem épül fel, csak az első megnyitáskor.
+    DeferredDialog {
+        id: helpDialog
+        anchors.fill: parent
+        sourceComponent: Component { HelpDialog { objectName: "helpDialog" } }
     }
 
     DeferredDialog {

@@ -497,6 +497,693 @@ belül a `strength` viselkedése **1 fölött** (a Comicize 1,1-et ad; a mi
 modellünk a súlyt `[0,1]`-re vágja, tehát telít). Ez a Vignette-et és a
 Matte-ot is érinti. Nyitott kérdés: #2076.
 
+
+
+#### A maszképítő (`0x00bcc2e0`) TELJES kiolvasása — és egy HELYESBÍTÉS (#2102)
+
+A #2102 nyitott kérdése: *a `0x00bcc2e0` második fele, és hogy a két
+kiszámolt, 255-re vágott egész MIT vezérel.* Megvan — és közben kiderült,
+hogy az előző kör **rossz paraméterhez** kötötte a lépcsős képletet.
+
+##### A paraméterek és a bemeneti vágásuk
+
+A maszképítő nyolc argumentumot kap; a rajzoló dokumentált sorrendjével
+(`forrás, color, glowalpha, xblur, yblur, strength, quality, cél`) a
+keretbeli helyük:
+
+| arg | hol a keretben | mi | vágás |
+|---|---|---|---|
+| 1 | `[esp+0x70]` → `ebp` | forrás/rect | – |
+| 2 | – | `color` | – |
+| 3 | `[esp+0x80]` | **glowalpha** | **[0, 1]**, majd bájt: `trunc(a × 255)` (`0x00bcc4d9`) |
+| 4 | `[esp+0x84]` | **xblur** | **[0, 253]** |
+| 5 | `[esp+0x88]` | **yblur** | **[0, 253]** |
+| 6 | `[esp+0x8c]` | **strength** | **[0, 255]** |
+| 7 | `[esp+0x90]` | **quality** (egész) | **[1, 15]** |
+| 8 | `[esp+0x20]` (belépéskor) | cél | nem lehet `NULL` (`0x00bcc2f3`) |
+
+A vágásokat a **`0x00bc52c0`** segédfüggvény végzi (két float **[0, 253]**-ra
+— a `0x00cf0b4c` = `253.0f`, a `0x00cf4090` = `253.0`; egy egész
+**[1, 15]**-re, `0x00bc5345`–`0x00bc534f`); a `glowalpha` [0, 1] és a
+`strength` [0, 255] vágása a hívó törzsében van (`0x00bcc34c`–`0x00bcc3b8`,
+a felső korlát a `0x00cf39d0` = `255.0` és a `0x00cf3a00` = `255.0f`).
+
+##### A két egész: a KÉT BLUR-SUGÁR
+
+A `0x00bcc3d5`–`0x00bcc434` és a `0x00bcc438`–`0x00bcc48d` blokk **ugyanaz a
+képlet, két különböző bemenetre**:
+
+```
+r_x = min(255, trunc( ceil((xblur − 1) · 0,5) · quality + 1 ))
+r_y = min(255, trunc( ceil((yblur − 1) · 0,5) · quality + 1 ))
+```
+
+- a `−1,0` a `0x00c7e328`, a `×0,5` a `0x00c72150` (kiolvasva);
+- a `ceilf` a `0x00529e10` (a `_matherr` névtáblája, `0x00c1324c`, a `0x3ec`
+  kódra a `0x00c43bac` = `"ceil"`-t adja);
+- a csonkítás `fldcw | 0x0c00` (nulla felé) + `fistp`;
+- a 255-ös korlát az `esi = 0xff` / `cmp` / `ja` párossal
+  (`0x00bcc42c`, `0x00bcc485`).
+
+**Miért nézett ki egyformának a két blokk:** az elsőt egy `push ecx`
+(`0x00bcc3d4`) előzi meg, ezért az `[esp+0x88]` ott **a bázis `[esp+0x84]`**
+— vagyis az `xblur`; a másodikban a verem már vissza van állítva
+(`add esp, 4`, `0x00bcc403`), tehát az `[esp+0x88]` valóban az `yblur`.
+
+A két egész a bázis `[esp+0x1c]` (r_x) és `[esp+0x18]` (r_y) rekeszbe kerül,
+és a `0x00bcbfb0` hívásba megy (`0x00bcc5de`–`0x00bcc5ef`), onnan a
+`0x00bcc700`-ba (`0x00bcc02a`).
+
+##### ⛔ HELYESBÍTÉS: a lépcsős képlet NEM a `strength`-é
+
+A #2102 első köre azt írta, hogy *„a `strength` a maszképítőben
+`ceil((s−1)/2)` alakban lép be"*, és ebből azt a jóslatot vezette le, hogy a
+`filterdesc.xml` minden Glow-hívására ez a tag **állandó 1**. **Mindkettő
+megdőlt:** a képlet az `xblur`/`yblur`-re megy, a `strength` pedig egészen
+máshol lép be.
+
+##### Ahol a `strength` VALÓJÁBAN belép: 8.8-as fixpontos szorzó
+
+A `0x00bcbfb0` a `strength`-et (`[ebp+0x20]`) és a `color`-t (`[ebp+0x14]`) a
+**`0x00bcbd90`** regiszter-előkészítőnek adja (`0x00bcbfd7`–`0x00bcbfe1`). Az
+onnan kiolvasott mag:
+
+```
+0x00bcbda4  fld dword ptr [ebp+0xc]        ; strength
+0x00bcbda8  fmul qword ptr [0xcf39d8]      ; × 256,0   (kiolvasva)
+0x00bcbdc5  fistp dword ptr [esp+8]        ; csonkítás (fldcw | 0x0c00)
+0x00bcbdc9  mov ax, word ptr [esp+8]       ; az ALSÓ SZÓ
+```
+
+Ez a szó kerül **négyszer** az `mm7`-be (`[esp+0x30]`…`[esp+0x36]`), mellette
+a `0x0100` **nyolcszor** az `xmm7`-be és a `0x0080` **négyszer** az `mm6`-ba
+(`0x00bcbdf4`–`0x00bcbe41`). A `0x0100` = **1,0** és a `0x0080` = **0,5** a
+klasszikus **8.8-as fixpontos** ábrázolásban ⇒
+
+> **A `strength` egy 8.8-as fixpontos szorzó: `trunc(strength × 256)`**,
+> a `color` B/G/R/A bájtjai mellé töltve (`xmm6`, két példányban).
+
+A `[0, 255]`-ös bemeneti vágás miatt a szorzó **1,0 fölé is mehet** (egészen
+255-ig) — tehát a `strength` **erősíthet**, nem csak halványíthat.
+
+##### Nálunk (mérve) — két eltérés
+
+`src/picasapy/render/glimmer_ops.py`:
+
+| | eredeti (mérve) | nálunk ma (mérve) |
+|---|---|---|
+| blur-sugár | **egész**: `min(255, trunc(ceil((b−1)/2)·quality + 1))`, `b` ∈ [0, 253], `quality` ∈ [1, 15] (alap 3) | a nyers `xblur`/`yblur` **közvetlenül szigmaként** az analitikus `erf`-modellbe (`_box_blur_axis`, `:575`) |
+| `strength` | 8.8-as **szorzó**, `trunc(s × 256)`, a bemenet [0, 255] | keverési súly, **[0, 1]-re vágva**: `np.clip((1−covered)·strength, 0, 1)` (`:578`) |
+| `glowalpha` | bájt: `trunc(a × 255)`, a bemenet [0, 1] | `* np.float32(alpha)` (`:578`) — nincs bájtra kvantálás |
+| sugár-korlát | a **bemenet** 253, a **kimenet** 255 | `GLOW_RADIUS_MAX = 255.0` a sugárra (`:495`) |
+
+⚠️ **Megfejtve, de a mért eltérésre gyakorolt hatása NINCS mérve.** Sem a
+Vignette-, sem a Comicize-goldenen nem futott összevetés ezzel a
+modellel — a fenti két eltérés önmagában **nem bizonyítja**, hogy a
+javításuk csökkenti a ΔE-t. Megvalósítás és mérés: **#2159**.
+
+**Bizalmi fok: megerősített** a vágásokra, a két sugár-képletre, a `ceilf`
+azonosítására és a 8.8-as szorzóra (mind közvetlen kiolvasás).
+
+##### A blur ÁTVÁLTÓJA (`0x00bb89b0`) — a gyakorlatban AZONOSSÁG
+
+A hívó (`0x00bb8f70`) a maszképítő előtt mindkét blur-paramétert átengedi a
+`0x00bb89b0(p, d)` függvényen: `p` = a hívó **4. argumentuma** (`xblur`,
+`0x00bb8fa7`), illetve az **5.** (`yblur`, `0x00bb8fdd`); `d` = a kép
+szélessége (`[ebp+8]`), illetve magassága (`[ebp+0xc]`), egésszé-floattá
+alakítva (`0x00bb8f8b`, `0x00bb8fc5`).
+
+A függvény teljes zárt alakja, kiolvasva:
+
+```
+if (p <= 0)  p = 1e-5                       ; 0x00cf3a10
+k = (p < 255) ? 1,0 : 255/p                 ; 0x00cf39d0 = 255,0
+X = ((100 + d) − d·k) / p                   ; 0x00cf3a08 = 100,0
+return (X > 3,0) ? k : k · X / 3,0          ; 0x00c49618 = 3,0f, 0x00cf39f8 = 3,0
+```
+
+**A gyakorlatban ez azonosság.** Reális blur-értékre `p < 255`, tehát
+`k = 1` és `X = 100/p`; a `X > 3` feltétel ekkor `p < 33,33`. A
+`filterdesc.xml` Glow-hívásainak blur-értékei ennél jóval kisebbek ⇒
+**a függvény pontosan `1,0`-t ad vissza, a képmérettől FÜGGETLENÜL.**
+
+| tartomány | visszatérés |
+|---|---|
+| `p < 33,33` | **1,0** ← minden filterdesc-beli Glow ide esik |
+| `33,33 ≤ p < 255` | `100 / (3·p)` |
+| `p ≥ 255` | `k = 255/p`, `X = ((100+d) − d·k)/p`, majd a fenti feltétel |
+
+⇒ A maszképítőbe érkező `b` érték a **hívó saját blur-paraméterével**
+arányos, nem a képmérettel — a méretfüggést tehát **nem itt** kapja meg.
+
+**Bizalmi fok: megerősített** (a függvény mind a 165 bájtja elolvasva, mind
+az öt konstans kiolvasva). ⚠️ Amit ez **nem** mond meg: hogy a
+`0x00bb914d` / `0x00bb9167` második szorzásában szereplő két bemenő
+paraméter a hívási lánc melyik szintjéről jön — az a `0x00bb8f70` hívóinak
+kérdése, nem ezé a lapé.
+
+#### A négy eltérés HATÁSA a mi kimenetünkre — mérve, mind a négy NEGATÍV (#2159)
+
+A fenti kiolvasás megmondja, **mit csinál** az eredeti maszképítő. Az, hogy
+a mi modellünkbe átvezetve **javítana-e**, külön kérdés — és a mérés
+szerint egyik sem javít. A #879 tanulsága szerint a megfejtett mechanizmus
+önmagában nem diagnózis, ezért mind a négyet egyenként vezettük be és
+mértük.
+
+**Mérőszett:** `referencia/vignette/*` (valódi Picasa-export), forráskép
+`referencia/lomo/Lomo no effect/…`, 2560×1702. Metrika: csatornánkénti
+átlagos |Δ| szintben.
+
+| eltérés | `Vignette default` átlag \|Δ\| | verdikt |
+|---|---:|---|
+| — (a mai modell) | **0,892** | viszonyítási alap |
+| egész, lépcsős blur-sugár (`r = min(255, trunc(ceil((b−1)·0,5)·q + 1))`) | **17,69** | **13× romlás** |
+| `xblur/yblur` vágás 253-ra | 0,892 | hatástalan (ld. lent) |
+| `strength` 8.8-as fixpont (`trunc(s·256)/256`) | 0,888 | a zajszint alatt |
+| `glowalpha` bájtra kvantálva (`trunc(a·255)/255`) | 0,892 | azonosság ezen az úton |
+
+**Miért hatástalan a három kicsi — mindegyikre megvan az ok:**
+
+1. **A 253-as vágás nem aktiválódik** az alapesetben: a mi sugarunk
+   `35 · 0,0025 · 2560 = 224`. Ahol viszont aktiválódik (`Vignette size
+   max`, blur=50 → sugár 320), ott **ötszörös romlást** ad (1,224 → 5,983).
+   Ez **kontroll-mérés**: a `glimmer_tone.py` kommentje ugyanezt már
+   rögzítette a 255-ös korlátra (5,79 vs 1,22).
+2. **A 8.8-as fixpont a mérési zaj alatt van.** `strength = 1,4`-nél az
+   eltérés `0,0016`; a csúszka két végpontján (`1,0`, `2,0`) a 8.8-as alak
+   **pontos**, ott az eltérés szigorúan nulla.
+3. **A `glowalpha` a Vignette/Matte úton mindig `1,0`**, és
+   `trunc(1,0·255)/255 = 1,0`. Más Glow-hívásoknál (ahol az alfa nem 1,0) a
+   kvantálás hatása **nincs mérve**.
+
+**Amit a mérés POZITÍVAN mutat:** a `Vignette size min` (blur=0) esetben az
+eltérés **pontosan 0,000**, és az alapesetben a kép középső 2%-ában
+(`r < 0,2`) is nulla. A kép alap-útja (dekódolás, színtér, változatlan
+képpontok) tehát hibátlan — a teljes maradék hiba a vignetta-súly
+ALAKJÁBAN ül.
+
+⇒ **Egyiket sem építettük be.** A mi analitikus (`erf`-alapú) modellünk és
+az eredeti dobozmenetes maszképítője nem ugyanaz a számítás; a bináris
+konstansainak egyenkénti átemelése ezért nem közelít, hanem ront.
+
+#### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
+
+A `0x00c7e5a0` csempe-tábla rekordjai **hármasak** (elsődleges, másodlagos,
+0). A #1869 köre a másodlagost „örökölt id"-nek nevezte; a **feltétele** most
+ki van mérve, és a név is pontosításra szorul.
+
+**A kapcsoló: a SHIFT lenyomott állapota**, a fül felépülésekor lekérdezve:
+
+```
+0x005d7c91  push 0x10                        ; VK_SHIFT
+0x005d7ca3  call dword ptr [0xc406f8]        ; GetAsyncKeyState
+0x005d7cbb  shr  eax, 0xf                    ; a 15. bit = „épp le van nyomva"
+0x005d7cbe  and  al, 1
+0x005d7cc0  mov  byte ptr [ecx+0x33a8], al   ; a panel kapcsolója
+```
+
+Az importnév a betöltési táblából kiolvasva: a `0x00c406f8` rekesz a
+`0x00922efc` név-rekordra mutat, ami **`GetAsyncKeyState`** (hint 256).
+
+**A csempeépítő ezt nézi**, és csak akkor nyúl a második mezőhöz:
+
+```
+0x005d7d2e  mov ecx, [esi+esi + 0xc7e5a0]    ; ELSŐDLEGES szűrőnév
+0x005d7d63  cmp byte ptr [ebx + 0x33a8], 0
+0x005d7d6a  je  0x5d7e07                     ; nincs Shift -> marad az elsődleges
+0x005d7d70  mov esi, [esi + 0xc7e5a4]        ; MÁSODLAGOS szűrőnév
+0x005d7d76  cmp esi, edi (0)
+0x005d7d78  je  0x5d7e07                     ; nincs második -> marad az elsődleges
+```
+
+⇒ **Shift nélkül mindig az elsődleges fut.** A második akkor és csak akkor,
+ha a Shift le van nyomva ÉS az adott csempéhez van második név.
+
+#### A kilenc csempe, amelynek VAN második szűrője
+
+| # | elsődleges | Shift-tel | a második felirata |
+|---|---|---|---|
+| 1 | `unsharp2` | `unsharp` | **Sharpen (Old)** |
+| 5 | `PicnikGrain` | `grain` | **Film Grain (Old)** |
+| 6 | `PicnikTint` | `tint` | **Tint (Old)** |
+| 9 | `glow2` | `glow` | **Glow (Old)** |
+| 12 | `dir_tint` | `radtint` | Radial Tint |
+| 21 | `HeatMap` | `NightVision` | Night Vision |
+| 27 | `Vignette` | `Matte` | Matte |
+| 28 | `Pixelate` | `PicnikFocalPixelate` | Focal Pixelate |
+| 33 | `Border` | `RoundedEdges` | Rounded Edges |
+
+A maradék **27** csempe második mezője `NULL` — azokra a Shift nem hat.
+
+⚠️ **A „örökölt/régi" olvasat csak a felére igaz.** Négy másodlagos felirata
+kimondottan **„(Old)"**, öté viszont **saját, önálló név** (Radial Tint,
+Night Vision, Matte, Focal Pixelate, Rounded Edges) — ott a Shift nem régi
+változatot, hanem **másik effektet** ad. A #1869 köre ezt „örökölt id"-nek
+nevezte; **ez pontatlan volt**, és itt helyesbítjük.
+
+**Bizalmi fok: megerősített.** A kapcsoló, az importnév, a feltétel és a
+kilenc pár közvetlen kiolvasásból; a feliratok a `filterdesc.xml`-ből.
+
+> **Nálunk (mérve):** az effekt-füleken **nincs** Shift-kezelés — a
+> `ShiftModifier` és a `Qt.Shift` egyáltalán nem fordul elő az
+> `EditorEffectsTab*.qml` és a `ToolTile.qml` fájlokban. A funkció tehát
+> hiányzik; jegy: **#2146**.
+
+##### ⛔ HELYESBÍTÉS: a Shift-váltás ÉLŐ, nem a fül felépülésekor (#2164, 2026-09-03)
+
+A fenti szakasz azt írta, hogy a Shift állapota **„a fül felépülésekor
+egyszer"** dől el. **Ez pontatlan volt.** A panel üzenetkezelője
+(`0x005e6710`) a VK-vizsgálat ELŐTT külön ágat futtat:
+
+```
+0x005e6745  cmp dword ptr [ebx+4], 0x102     ; WM_CHAR -> kihagy
+0x005e674e  cmp byte ptr [ebx+8], 0x10       ; VK_SHIFT?
+0x005e6754  push 0x10 ; call [0xc406f8]      ; GetAsyncKeyState(VK_SHIFT)
+0x005e675c  shr eax, 0xf ; and al, 1
+0x005e6761  cmp byte ptr [edi+0x33a8], al    ; a TÁROLT Shift-jelző
+0x005e6767  je  0x5e6776                     ; nem változott -> nincs teendő
+0x005e6769  mov eax, dword ptr [edi+0x3378]
+0x005e6771  call 0x5d7c20                    ; a CSEMPEÉPÍTŐ újrafuttatása
+```
+
+⇒ A `VK_SHIFT` **minden le- és felengedésére** (`WM_KEYDOWN` és
+`WM_KEYUP`; a `WM_CHAR` kizárva) a program **újraépíti a csempéket**, ha a
+`[panel+0x33a8]` jelző értéke megváltozott. A felhasználó tehát a kilenc
+csempét **nyomva tartás közben látja átváltani**, elengedéskor pedig
+visszaváltani — nem kell hozzá fület váltani.
+
+**Bizalmi fok: megerősített** (közvetlen kiolvasás; a `0x005d7c20` és a
+`[panel+0x33a8]` ugyanaz, mint a fenti szakaszban).
+
+**Megvalósítási következmény (#2146):** a Shift-ág nem elég a fül
+felépülésekor egyszer kiértékelni — a billentyű **le- és felengedésére**
+is újra kell építeni a csempéket. A jegy „Kész, ha" listája ezzel bővül.
+
+#### A HÁROM effekt-fül TELJES összevetése a csempe-táblával (#2141)
+
+A #2141 „Kész, ha" listájának pontja — *a fül **összes** csempéje összevetve
+a `0x00c7e5a0` táblával* — itt teljesül, és nem egy, hanem **mind a három**
+fülre. A tábla 36 rekordja pontosan a három eredeti effekt-fül 3×12-es
+rácsa; a mi `EditorEffectsTab1/2/3.qml`-ünk **pozícióról pozícióra** ennek
+felel meg.
+
+**A 2. és a 3. fül mind a 24 csempéje EGYEZIK** (csak a kis/nagybetűs alak
+tér el: `ir`↔`IR`, `heatmap`↔`HeatMap` stb.):
+
+```
+2. fül: IR · Lomo · Holga · HDR · Cinemascope · Orton · Sixties · Invert
+        · HeatMap · CrossProcess · QuantizePalette · TwoTone
+3. fül: Boost · Soften · Vignette · Pixelate · FocalZoom · PencilSketch
+        · Neon · Comicize · Border · DropShadow · MuseumMatte · Polaroid
+```
+
+**Az 1. fülön HÁROM csempe téves — és mind a három ugyanazt a hibát követi
+el:** a felirat az eredeti **elsődleges** szűrőé, a hívás viszont **másik**
+szűrőt indít.
+
+| # | felirat nálunk | eredeti elsődleges | nálunk hívott kulcs | a hívott kulcs SAJÁT felirata (eredeti szövegtár) |
+|---|---|---|---|---|
+| 1 | „Sharpen" / „Élesítés" | **`unsharp2`** | `unsharp` | **Sharpen (Old)** / **Élesítés (régi)** |
+| 5 | „Film Grain" / „Filmszemcse" | **`PicnikGrain`** | `grain2` | Film Grain / Filmszemcse *(azonos felirat, másik szűrő)* |
+| 6 | „Tint" / „Árnyalás" | **`PicnikTint`** | `tint` | **Tint (Old)** / **Árnyalás (régi)** |
+
+Az 1. és a 6. csempénél a hívott kulcs éppen az, amit az eredeti a **Shift**
+alá rejt (ld. az előző szakaszt) — a felhasználó tehát ma az „Élesítés"
+gombbal a „(régi)" változatot kapja, jelzés nélkül. Az 5-nél a `grain2`
+**létező eredeti szűrő** (`filter_grain2_label0` = *Film Grain*), csak épp
+nem az, amelyik a csempén ül.
+
+A többi kilenc csempe (`sepia`, `bw`, `warm`, `sat`, `radblur`, `glow2`,
+`ansel`, `radsat`, `dir_tint`) **egyezik** — köztük a `glow2`, ahol a
+tartalék `glow` lett volna a hasonló hiba.
+
+**Bizalmi fok: megerősített.** A tábla a binárisból (`0x00c7e5a0`, 36×12 b),
+a mi oldalunk az `EditorEffectsTab*.qml` `effectRequested(...)` hívásaiból,
+a feliratok az eredeti szövegtárból (`filter_*_label0`) és a
+`render/registry_data.py`-ból.
+
+##### Amit a Shift-lelet a MI 6. és 7. fülünkről mond
+
+- A **6. fül** (`EditorEffectsTab4.qml`, #422) öt csempéjéből **négy**
+  (`matte`, `nightvision`, `roundededges`, `picnikgrain`) az eredetiben
+  **Shift-másodlagos**, az ötödik (`localcontrast`) egyetlen csempén sincs
+  rajta. Ez nem hiba — a hét fül a tulajdonos rögzített döntése —, de ha a
+  Shift-ág elkészül (**#2146**), ez a négy csempe **két úton** is elérhető
+  lesz; a jegy ezt vegye figyelembe.
+- A **7. (örökölt) fül** bevezető mondata viszont **téves állítást tesz**:
+  *„These filters come from older versions of Picasa. **They are not
+  available in today's Picasa**"* — a lista első eleme, a `radtint`
+  (*Radial Tint* / *Sugaras árnyalás*) **elérhető a Picasa 3.9-ben**: az
+  1. fül 12. csempéjén (`dir_tint`) a Shift hozza elő. Jegy: **#2148**.
+
+#### A `mode` attribútum SZÁMÉRTÉKE — és az effekt-csempe kék jelvénye (#1869)
+
+A `mode` nem csak besorolás: a parser **egésszé fordítja**, és ez az egész
+kapcsolja a csempe jobb alsó sarkában látható kék jelvényt.
+
+**A `mode` → egész leképzés — TELJES, a `0x00900490`-ből kiolvasva:**
+
+| `mode` | érték | a sztring címe |
+|---|---|---|
+| `oneclick` | **1** | `0x00cd182c` |
+| `hard` | 2 | `0x00cd1824` |
+| `effect` | 4 | `0x00cd1814` |
+| `soft` | 5 | `0x00cd181c` |
+| `tool` | 6 | `0x00cd1838` |
+| `history` | 7 | `0x00cd1840` |
+| bármi más | **0** | — |
+
+*(A 3-as érték nincs kiosztva. A `history` ága `neg al; sbb eax,eax; and eax,7`
+— egyezésre 7, egyébként 0.)*
+
+**Hol lesz ebből a `FilterDesc` mezője.** A `filterdesc.xml` parsere
+(`CImageFilterRegistrar::+0x04`, `0x008ff550`) az attribútumnevet a
+`0x00cd1730` = `"mode"` sztringgel veti össze; egyezésre:
+
+```
+0x008ff693  call 0x900490            ; mode → egész
+0x008ff698  mov dword ptr [esp+0x28], eax
+   …
+0x008ff81f  call 0x8f6910            ; FilterDesc konstruktor (+4 := 0)
+0x008ff847  mov dword ptr [eax+4], ecx   ; ★ FilterDesc+4 := a mode egésze
+0x008ff851  mov dword ptr [edx+8], eax   ; FilterDesc+8 := a zerostate egésze
+```
+
+**A jelvény feltétele — a fogyasztó oldaláról.** A csempéket felépítő
+`0x005d7c20` (1614 b) minden csempére:
+
+```
+0x005d7eb9  mov edx, [eax+0x14]      ; CGenericFilter vtable +0x14 = 0x008f6cc0
+0x005d7ebc  call edx                 ;   -> this->desc->[+4]
+0x005d7ec2  cmp eax, 1
+0x005d7eca  sete byte ptr [esp+0x64] ; ★ a jelvény-jelző
+   …
+0x005d80d4  push 0xc96304            ; "editpanel/fx%d_adorn"
+0x005d8108  cmp byte ptr [esp+0x64], 0
+0x005d8111  mov eax, [edx+0x6c]      ; igaz  -> MUTAT
+0x005d8116  mov eax, [edx+0x68]      ; hamis -> REJT
+```
+
+⇒ **A kék jelvény jelentése: `mode="oneclick"`.** Az „1" nem számláló és nem
+erőforrás-index — az `oneclick` mód **enum-értéke**. Ezért nem is látható más
+számjegy: a feltétel szigorúan `== 1`.
+
+**Az effekt-csempék TELJES táblája — `0x00c7e5a0`, 36 rekord × 12 bájt.**
+A rekord első mezője a mai szűrő azonosítója, a második a régi (örökölt)
+azonosító vagy `NULL`. Tizenkét csempe fülenként, tehát **három effekt-fül**:
+
+| # | csempe (mai id) | örökölt id | `mode` | jelvény |
+|---|---|---|---|---|
+| 1 | `unsharp2` | `unsharp` | effect | – |
+| 2 | **`sepia`** | – | **oneclick** | **✔** |
+| 3 | **`bw`** | – | **oneclick** | **✔** |
+| 4 | **`warm`** | – | **oneclick** | **✔** |
+| 5 | `PicnikGrain` | `grain` | effect | – |
+| 6 | `PicnikTint` | `tint` | effect | – |
+| 7 | `sat` | – | effect | – |
+| 8 | `radblur` | – | effect | – |
+| 9 | `glow2` | `glow` | effect | – |
+| 10 | `ansel` | – | effect | – |
+| 11 | `radsat` | – | effect | – |
+| 12 | `dir_tint` | `radtint` | effect | – |
+| 13 | `IR` | – | effect | – |
+| 14 | `Lomo` | – | effect | – |
+| 15 | `Holga` | – | effect | – |
+| 16 | `HDR` | – | effect | – |
+| 17 | `Cinemascope` | – | effect | – |
+| 18 | `Orton` | – | effect | – |
+| 19 | `Sixties` | – | effect | – |
+| 20 | `Invert` | – | effect | – |
+| 21 | `HeatMap` | `NightVision` | effect | – |
+| 22 | `CrossProcess` | – | effect | – |
+| 23 | `QuantizePalette` | – | effect | – |
+| 24 | `TwoTone` | – | effect | – |
+| 25 | `Boost` | – | effect | – |
+| 26 | `Soften` | – | effect | – |
+| 27 | `Vignette` | `Matte` | effect | – |
+| 28 | `Pixelate` | `PicnikFocalPixelate` | effect | – |
+| 29 | `FocalZoom` | – | effect | – |
+| 30 | `PencilSketch` | – | effect | – |
+| 31 | `Neon` | – | effect | – |
+| 32 | `Comicize` | – | effect | – |
+| 33 | `Border` | `RoundedEdges` | effect | – |
+| 34 | `DropShadow` | – | effect | – |
+| 35 | `MuseumMatte` | – | effect | – |
+| 36 | `Polaroid` | – | effect | – |
+
+**Ez oldja fel a #1869 „Filmszemcse nincs megjelölve" rejtvényét:** a
+Filmszemcse csempéje a **`PicnikGrain`**-hez kötődik (`mode="effect"`), nem a
+`grain`/`grain2`-höz — azok `oneclick`-ek ugyan, de **nincs csempéjük**. A 12
+`oneclick` szűrőből csak három van a 36 csempe közt.
+
+**A vizsgált bináris VERZIÓJA — mérve:** `Picasa3.exe` `3.9.141.259`
+(`strings -el`), tehát a `research/copy_Picasa_3_7/` mappanév **félrevezető**;
+a `filterdesc.xml` ugyanabból a telepítésből való. A „más verziót nézünk"
+magyarázat ezzel **kizárva**.
+
+> ⚠️ **Egy megfigyelés NEM illeszkedik**, és ezt nem söpörjük a szőnyeg alá: a
+> tulajdonos **négy** jelvényt látott, a negyediket a **Színinvertálás**
+> csempén (`Invert`, a 2. effekt-fül 8. csempéje). Az `Invert` viszont
+> `mode="effect"` (a `filterdesc.xml` **egyetlen** `id="Invert"` sora, 986.).
+> A fenti lánc szerint ott nem lehetne jelvény. Jegy: **#2125**.
+
+**A lánc TELJES — nincs második út (#2125, mérve az indexen).** A jegy azt
+kérdezte, van-e még egy író a `FilterDesc + 4`-re. Nincs, és a fogyasztói
+oldalon sincs kerülőút. Négy egymástól független mérés:
+
+| kérdés | mérés | eredmény |
+|---|---|---|
+| hol jön létre `FilterDesc`? | hívások a ctorra (`0x008f6910`) | **1** hívó: `0x008ff550`, a `filterdesc.xml` parsere |
+| honnan kaphat nem-nulla értéket? | hívások a `mode`→egészre (`0x00900490`) | **1** hívó: ugyanaz a parser |
+| felülírhatja-e más osztály a jelvény-gettert? | a `0x008f6cc0` mely vtable-ökben szerepel | **1** vtable: `CGenericFilter::vftable`, 5. slot (= +0x14) |
+| van-e leszármazott/testvér, ami mást tesz az 5. slotba? | vtable-ök ≥12 azonos indexű közös slottal | **0** — a `CGenericFilter` vtable rokon nélküli |
+
+Ötödikként a **fogyasztó** oldala: a csempéket felépítő `0x005d7c20`
+összesen hét sztringet hivatkozik (`editpanel/fx%d`, `…_adorn`,
+`editpanel/fxlabel%d`, `editpanel/fxpreview1`, `editpanel/fxthumbs`,
+`_mod%s`, `_tab%d`) — **egyetlen** jelvény-erőforrás, az `fx%d_adorn`. Az
+effekt-csempén tehát más díszítés nem is jelenhet meg.
+
+> **Kontrollok** (a negatívumok önmagukban semmit sem érnének):
+> a testvér-kereső ugyanezzel a küszöbbel az `AMgrDlg::vftable`-hez **9**
+> rokont talál — tehát működik ott, ahol van mit találnia. A hívás-élek
+> rögzítése sem hiányos: az index 78 901 `call`-élt tart 14 130 célfüggvényre.
+> Ami **NEM** bizonyíték: a getter „0 közvetlen hivatkozása" — 300 véletlen
+> vtable-slotból 275-nek szintén 0, mert az index a vtable-adatból induló
+> hivatkozásokat nem rögzíti.
+
+**Bizalmi fok:** a `mode`→egész tábla, a `FilterDesc+4` írása, a jelvény
+feltétele és a 36 elemű csempe-tábla **megerősített** (közvetlen kiolvasás).
+
+⛔ **MEGDŐLT (2026-09-04, #2125): NÉGY jelvény van, nem három.** A tulajdonos
+felvételei (`research/#2061-effekt-latszik/`) fülenként ezt mutatják:
+
+| effekt-fül | jelvényes csempék |
+|---|---|
+| 1. (Élesítés…Színátmenet) | **Szépia**, **Fekete-fehér**, **Melegítés** |
+| 2. (Infravörös film…Kéttónusú) | **Színinvertálás** |
+| 3. (Felpörgetés…Polaroid) | *egy sem* |
+
+A `Színinvertálás` (`Invert`) `mode="effect"`, tehát a `mode`-ból levezetett
+lánc szerint **nem lehetne** jelvénye — a jelvénye viszont **két különböző
+felvételen** is látszik, eltérő szerkesztési állapot mellett.
+
+##### ⛔ A „második író" hipotézis MEGDŐLT — nyolc független ellenőrzés (2026-09-04, #2125)
+
+A #2125 azt kereste, **ki írja még** a `FilterDesc + 4`-et. **Senki.** Az
+olcsó lánc kimerítve; mind a nyolc lépés a `filterdesc.xml`-t és a kódot
+igazolja:
+
+| # | amit ellenőriztem | eredmény |
+|---:|---|---|
+| 1 | a `FilterDesc` **konstruktorának** (`0x008f6910`) hívói, teljes `.text`-pásztázás | **pontosan egy**: `0x008ff81f`, az XML-elemző |
+| 2 | a `+4` értékadás — első kézből olvasva | `0x008ff847` `mov [eax+4], ecx` = a `mode` egésze (a `+8` a `zerostate`, `0x008ff851`) |
+| 3 | a jelvény-jelző **összes** írása a csempeépítőben (`0x005d7c20`, 1614 b) | **egyetlen**: `0x005d7eca` `sete`, a `cmp eax, 1`-ből |
+| 4 | a jelvény-érték forrása | `call [vtbl+0x14]` a szűrőobjektumon |
+| 5 | a `+0x14` getter (`0x008f6cc0` = `this->desc->[+4]`) hány vtáblában szerepel | **egyben**: `CGenericFilter::vftable` (`0x00cd184c`) |
+| 6 | mind a **2856** RTTI-vtábla `+0x14` slotja: van-e konstans `1`-et adó vagy másik kétszeres indirekció | **nulla**, illetve **egy** (maga a `CGenericFilter`) |
+| 7 | a csempe-tábla (`0x00c7e5a0`) mind a 36 rekordja, és minden id `mode`-ja az XML-ből | **három** `oneclick` (`sepia`, `bw`, `warm`), mind az 1. fülön; **nincs** ismételt `id` |
+| 8 | a jelvény-elem a `respack.yt` `.tre`-jében | csempénként **egy** `fx<N>_adorn` (`m_fxadorner`) — más jelvény-réteg nincs |
+
+⇒ **Ebben a `filterdesc.xml`-ben az `Invert` nem kaphat jelvényt**, és a
+kódban nincs másik út. A felvétel viszont mutatja — és a képernyőkép
+erősebb bizonyíték, mint a mi olvasatunk.
+
+**A jelvény azonossága is ellenőrizve:** a `Színinvertálás` és a `Szépia`
+jelvényét képpont-szinten nagyítva **ugyanaz az elem** (kék negyedkorong a
+jobb alsó sarokban, fehér „1"), tehát nem másik rajz. **A csempe azonossága
+is:** a `filter_Invert_label0` szövegtár-kulcs magyar értéke épp
+„Színinvertálás", és a csempe-tábla 20. rekordja (2. fül, 8. hely) az
+`Invert`.
+
+⇒ **A maradék EGYETLEN magyarázat: a futó telepítés
+`runtime\filterdesc.xml`-je ELTÉR a kutatási másolatunkétól**
+(`research/copy_Picasa_3_7/…`). A Picasa `update/` mappával szállít, a
+`filterdesc.xml` pedig futásidejű adatfájl, amit egy frissítés kicserélhet.
+A telepítésben **egyetlen** `filterdesc.xml` van, és az `oneclick` szó is
+csak abban fordul elő — más forrás tehát nincs.
+
+**Amit ez eldönt:** a kérdés **nem a binárisban** van. A #2125 ezért
+`blocked` + `felhasználóra-vár`, egyetlen, gépies kéréssel: a futó
+telepítés `Picasa3\runtime\filterdesc.xml`-jéből az `Invert` sora.
+
+#### A 21 örökölt szűrőből HÁROM ma is elérhető a felületről (#2148)
+
+A 7. („örökölt") szerkesztő-fülünk bevezetője azt állította, hogy ezek a
+szűrők „nem érhetők el a mai Picasában". **Három elemre ez nem igaz** — mind
+a három út a binárisból kimérve:
+
+| örökölt kulcs | hol érhető el a mai Picasában | bizonyíték |
+|---|---|---|
+| `radtint` | 1. effekt-fül, **12. csempe** (`dir_tint`), **Shifttel** | a `0x00c7e5a0` tábla 12. rekordjának másodlagos mezője (ld. fentebb) |
+| `autobacklight` | Alapvető javítások fül, **egykattintásos gomb** | `editpanel/autobacklight` → `push "autobacklight"` + `call 0x6021d0` (`0x005d6848`) |
+| `rainbow` | **Kiegyenesítés** gomb + **ALT** | `editpanel/horizonadjust` ágában `push 0x12` (**VK_MENU**) → `GetAsyncKeyState` → `push "rainbow"` (`0x005d6733`–`0x005d6746`) |
+
+⚠️ A `rainbow` kapcsolója **ALT (`0x12`), nem Shift** — a csempék
+másodlagosát a Shift (`0x10`) hozza elő. A két rejtett út **különböző
+módosítót** használ; ezt ne mossuk össze.
+
+**A `0x6021d0` a felületi „szűrőt alkalmaz" belépési pont**, és az egész
+binárisban **két** hívója van (`xrefs`): a `0x005d59f0` szerkesztő-panel
+(7 hívás) és a `0x005d3290` (1 hívás, futásidejű névvel). A panel hét
+statikus szűrőneve **kimerítően**: `autolight` (Automatikus kontraszt),
+`autocolor` (Automatikus szín), `rainbow`, `tilt` (Kiegyenesítés),
+`enhance` („Jó napom van"), `autobacklight`, és egy dinamikus.
+
+**A maradék 18-ra a mondat IGAZ.** Felületi vezérlőjük nincs; a
+`0x008fc690` név-átfordító csak a **lánc betöltésekor** ismeri fel őket
+(`repe cmpsb` névhasonlítás: `colorfix`, `triple`, `triple2`, `triple3` →
+`finetune` / `finetune2`). Tizenhárom örökölt név egy tömbben ül
+(`0x00cd05d0`–`0x00cd0650`): `contrast`, `gamma`, `dir_sharp`, `dir_brite`,
+`dir_sat`, `linblur`, `autocontrast`, `backlight`, `colortemp`, `whitept`,
+`triple2`, `triple`, **`debug`** — az utolsó fejlesztői eszköz, ezért marad
+ki a fülünkről.
+
+**Ráadás-lelet:** a `focalpixelate` kulcs sztringként **nincs benne** a
+`Picasa3.exe`-ben (a `PicnikFocalPixelate` igen), a `filterdesc.xml`-ben
+viszont **van** — tehát XML-vezérelt bejegyzés, nem beégetett. Ez
+összhangban van a #567 „halott bejegyzés" magyarázatával.
+
+~~**Amit ez NEM mond meg:** hogy a `rainbow` ALT-os ágát őrző globális
+kapcsoló (`cmp byte ptr [0xd67849]`, `0x005d672b`) mikor nem nulla.~~
+**LEZÁRVA (#2224, 2026-09-04):** a kapcsoló azt jelenti, hogy **a Picasa az
+előtérben lévő alkalmazás** — hétköznapi kattintáskor tehát MINDIG 1. A
+`rainbow` elérhetősége ezért **nem feltételes**: az ALT + Kiegyenesítés út
+egy átlagos telepítésen él. A levezetés a lenti „A `rainbow` ALT-os ága"
+szakaszban.
+
+**Bizalmi fok: megerősített** — a három út, a kétféle módosító és a
+`0x00d67849` jelentése egyaránt (közvetlen kiolvasás + diszasszemblálás).
+
+#### A `GlowImageOperation` keverése: KÖZÖNSÉGES source-over (#2102)
+
+A #2076 után nyitva maradt kérdés első fele **eldőlt**: a ragyogás-réteg
+összeillesztése a képre nem tartalmaz semmilyen erősség-tagot.
+
+**A hívási lánc** (mind kiolvasva, nem következtetve):
+
+```
+0x00bb8e10  a vtable-belépés: kiolvassa a nyolc attribútumot
+   └─ 0x00bb8f70  a rajzoló (2579 b)
+        ├─ 0x00bb89b0  a sugár-skálázó (xblur, yblur × lapméret)
+        ├─ 0x00bcc2e0  a ragyogás-maszk építője (855 b) — IDE megy a strength
+        └─ 0x00bb992d → 0x008f59d0  a kompozitáló (549 b)
+                          └─ 0x008f4780  a képpont-mag (137 b)
+```
+
+**A rajzoló argumentumlistája — a BINÁRISBÓL levezetve.** Eddig ez csak a
+Flash-analógiából volt meg (`GlowFilter`); most a `0x00bb8e10` veremépítése
+adja, tehát a sorrend mérve van:
+
+| # | mi | honnan | alapérték |
+|---|---|---|---|
+| 1 | forráskép | `[ebp+8]` | — |
+| 2 | `color` (dword) | `+0x24`, `0x8eea90`-nel számmá | — |
+| 3 | `glowalpha` (float) | `+0x2c` | **1,0** (`fld1`, `0x00bb8e4b`) |
+| 4 | `xblur` (float) | `+0x34` | **1,0** (`0x00bb8e75`) |
+| 5 | `yblur` (float) | `+0x3c` | **1,0** (`0x00bb8e95`) |
+| 6 | **`strength`** (float) | `+0x44` | **0,0** (`fldz`, `0x00bb8eb5`) |
+| 7 | `quality` (int) | `+0x4c` | **3** (`mov ebx, 3`, `0x00bb8ede`) |
+| 8 | célkép | `[ebp+0x10]` | — |
+
+⚠️ Két meglepetés, amit a Flash-analógia **nem** adott volna meg:
+
+- a `strength` natív alapértéke **0,0**, nem 1,0 (a Flash `GlowFilter`-é 1,0);
+- a `color` **alfa-bájtja beégetve `0xFF`** (`mov byte ptr [esp+0x3b], 0xff`,
+  `0x00bb8e5f`) — a ragyogás színe mindig teljesen átlátszatlan, az
+  átlátszóságot nem a szín hordozza.
+
+**A képpont-mag (`0x008f4780`) — TELJES képlet.** SSE2, négy képpont
+egyszerre; az alfa a **forrás** képpont 4. bájtja
+(`pshuflw/pshufhw imm=0xff` = a 4 szóból a 3. indexű):
+
+```
+T   = src·a + dst·(255 − a)            ; 16 bites szorzatok, a = 0..255
+out = (T + (T >> 8) + 1) >> 8          ; a /255 egész osztás gyors alakja
+```
+
+A két SSE-konstans **kiolvasva**: `0xcd0550` = `1` (nyolc `word`),
+`0xcd0560` = `255` (nyolc `word`); a `pandn xmm4, xmm7` adja a `255 − a`-t.
+A `0x008f59d0` mindössze a sor/oszlop-bejárás: a rect `[+8]`/`[+0xc]` mezői
+a sorhatárok, a maradék képpontokra `movd` fut `movupd` helyett.
+
+> **Következmény.** A keverés egy **szabványos source-over**, egyetlen
+> erősség-, mód- vagy súlyparaméter nélkül. Tehát a `strength` **nem** a
+> keverés súlya lehet — ezt a modellcsaládot a mérés **kizárja**. A mi
+> `render/glimmer_ops.py::inner_glow`-unk épp ilyen súlyt vág `[0,1]`-re.
+
+**Hol lép be a `strength`.** A `0x00bb9186` hívás hatodik dword-argumentuma
+(`0x00bb913e  fstp dword ptr [esp+0xc]`, a `0x00bb9107  fld dword ptr [esp+0x218]`
+értéke) — tehát a `0x00bcc2e0`-ban dől el, a maszképítéskor, nem a
+kompozitáláskor.
+
+**A `0x00bcc2e0` első strength-felhasználása — kvantálás.** A
+`0x00bcc3d5`–`0x00bcc434` blokk:
+
+```
+0x00bcc3d5  fld   dword [esp+0x88]      ; strength
+0x00bcc3dc  fsub  qword [0xc7e328]      ; − 1,0     (kiolvasva)
+0x00bcc3e2  fmul  qword [0xc72150]      ; × 0,5     (kiolvasva)
+0x00bcc3f3  call  0x529e10              ; ceilf     (ld. lent)
+0x00bcc3f8  fmul  dword [esp+0x1c]      ; × n  (a struktúrából jövő egész)
+0x00bcc401  fld1 / fadd / fxch          ; + 1,0
+0x00bcc424  fistp qword [esp+0x20]      ; csonkoló kerekítés (or eax,0xc00)
+0x00bcc42c  cmp eax, 0xff / ja          ; felső korlát 255
+```
+
+**A `0x00529e10` = `ceilf` — BIZONYÍTVA, nem feltételezve.** A wrapper a
+`0x00c090f0`-t hívja (exponens-mezőt kicsomagoló, tört bitet nyíró SSE2
+rutin); az hibaágon `0x00c12fd0`-t hívja a **`0x3ec`** kóddal. A `0x00c12fd0`
+ugrótáblája (`0x00c1324c`, 13 bejegyzés, `0x3e8`-tól) a `0x3ec`-re a
+`0x00c131d5` ágat választja, ami a **`0x00c43bac` = `"ceil"`** sztringet
+teszi a névmezőbe. (A tábla többi neve: `log`, `log10`, `exp`, `atan`,
+**`ceil`**, `floor`, `modf`, `sin`, `cos`, `tan` — tehát a hozzárendelés
+egyértelmű.)
+
+**Amit ebből MA állítani lehet — és amit nem.**
+
+*Erős (a veremleképzés két független horgonyon ellenőrizve: `[esp+0x1f8]`
+= 1. argumentum a prológusban, `[esp+0x214]`/`[esp+0x218]` = `xblur`/`yblur`
+a sugár-skálázó hívásánál):*
+
+> A `strength` ebbe a tagba **`ceil((strength − 1) / 2)`** alakban lép be,
+> tehát **lépcsősen**, nem folytonosan.
+
+Ennek azonnali, **ellenőrizhető** következménye: a `filterdesc.xml`
+**minden** Glow-hívására (`1,1` · `1,2` · `1,3` · `1,4` · `1,5` és a
+Vignette/Matte `[1..2]` csúszkája) `ceil((s−1)/2) = 1` — **állandó**. Csak
+a pontosan `s = 1,0` eset ad `0`-t, és a következő lépcső `s > 3,0`-nál jön.
+
+⇒ Ez megmagyarázza, miért illeszkedik a Vignette golden-készletére
+kalibrált modellünk: **abban a tartományban ez a tag nem is változik.**
+
+*NINCS MEG (a következő kör dolga):* a `0x00bcc2e0` további szakasza — a
+`0x00bcc438`-tól induló második, szimmetrikus blokk operandusai, és hogy a
+két kiszámolt, `255`-re vágott egész **mit** vezérel (menetszám? sugár?
+alfa-szorzó?). A veremleképzés ott már nem követhető megbízhatóan kézzel:
+**célzott dekompiláció** kell a `0x00bcc2e0`-ra. Amíg ez nincs meg, a
+Comicize-eltérés oka sem magyarázható.
+
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
 Ezek a képletek a képmérethez skálázódnak, hogy az effekt **arányos**
@@ -521,7 +1208,12 @@ legyen (ugyanúgy nézzen ki kicsiben és nagyban):
 > Gauss-elmosása **zárt formában** (tengelyenként egy `erf`) számolható,
 > sugártól független költséggel.
 
-### 4.5 A művelet-készlet — mind a 31 `imageOperations:` művelet
+### 4.5 A művelet-készlet — a `filterdesc.xml` által HASZNÁLT 31 művelet
+
+> ⚠️ **A „31" a HASZNÁLAT száma, nem a készleté.** A binárisban 35 művelet
+> van **név szerint regisztrálva**, és 37 konkrét osztály létezik az
+> RTTI-ben. A három leltár és a különbségük: ld. a lap végén, „HÁROM
+> leltár" szakasz.
 
 A `<effect>` blokkok **31 különböző** műveletet használnak. A `db` oszlop azt
 mutatja, hányszor fordul elő; az attribútumok a fájlból kigyűjtve.
@@ -1325,3 +2017,1294 @@ rekeszt választja ki; az alapérték a beállítás-olvasóban (`0x009ae560`,
 
 *Bizonyítottsági fok: megerősített* (diszasszemblált if-lánc, minden ághoz
 fájloffset).
+
+## ⭐ HÁROM leltár, és egyik sem teljes önmagában (2026-09-03)
+
+A Glimmer-műveletekről **három különböző** lista készíthető, és a
+számuk eltér. Aki egyet használ közülük „a készletként", téves
+hiánylistát kap.
+
+| leltár | forrás | darab |
+|---|---|---:|
+| **HASZNÁLT** | a `filterdesc.xml` `<effect>` blokkjai | **31** |
+| **REGISZTRÁLT** | `imageOperations:<Név>` sztringek a binárisban | **35** |
+| **LÉTEZŐ** | `glimmer::*ImageOperation` / `*ImageMask` az RTTI-ben | **37** konkrét + 2 ősosztály |
+
+### A különbségek — névvel
+
+**REGISZTRÁLT (35), de a `filterdesc.xml` nem használja (4):**
+`ShaderImageOperation` · `SharpenImageOperation` · `ExposureImageOperation` ·
+`PaletteMapImageOperation` · `EdgeDetectionSobelImageOperation`
+*(a lap 4.6-os táblája ezeket már felsorolta)*
+
+**LÉTEZIK az RTTI-ben, de NINCS `imageOperations:` regisztrációs sztringje (3):**
+
+| osztály | RTTI-cím |
+|---|---|
+| `glimmer::BlendImageOperation` | `0x00c9b0bc` |
+| `glimmer::PaintMaskPlusImageMask` | `0x00cf0750` |
+| `glimmer::ShapeGradientImageMask` | `0x00cf0e50` |
+
+⇒ Ezek **nem hozhatók létre névvel** a `filterdesc.xml`-ből; a motor
+belsőleg példányosítja őket (a `Blend` például a `NestedImageOperation`
+`Dupe → gyerekek → Blend → Pop` fordításában).
+
+**Az anonim névtérben (1):** `_anon_BEC5211C::ResaturateImageOperation`
+(`0x00cf0578`) — ld. `picasa-native-filter-registry.md`, ahol a lap már
+kimondta, hogy **nem önálló algoritmus**.
+
+### Módszertani következmény
+
+Egy „mi hiányzik" listát **nem szabad** egyetlen forrásra alapozni:
+
+- csak a **regisztrációs sztringekre** ⇒ kimarad a fenti három osztály;
+- csak az **RTTI-re** ⇒ bekerül két ősosztály és egy anonim névtér-beli
+  osztály, ami nem felhasználói művelet;
+- csak a **`filterdesc.xml`-re** ⇒ kimarad mind a négy nem használt, de
+  regisztrált művelet.
+
+*Bizonyítottsági fok: **megerősített** — mindhárom leltár lekérdezésből
+származik (a `string_xrefs`, illetve az `rtti` tábla), és a három
+különbséglista névvel, címmel kiírva. A „nincs `imageOperations:` sztringje"
+állítás **mind a 13 bináris-indexen** ellenőrizve (a fő index + 12 kísérő
+bináris), mindenütt nulla találattal.*
+
+
+---
+
+## ⭐ A 34 Glimmer-művelet VTABLE-TÉRKÉPE — cím, attribútum-offszet, közös motor (2026-09-03, #2211)
+
+**Mit old meg:** a #2211 tíz „csak regisztrációs sorral" szereplő művelete
+eddig cím nélkül állt — nem lehetett rájuk kutatást indítani. Ez a szakasz
+mind a **34** `glimmer::*ImageOperation` osztályhoz megadja a **vtable-t**, a
+**belépési függvényeket** és az **attribútum → tagoffszet** táblát. A
+képletek ettől még nincsenek meg, de mostantól **minden művelethez van
+horgony**.
+
+### A vtable-rések JELENTÉSE
+
+Az RTTI-táblából minden osztály vtable-je kiolvasható. A rések szerepe a
+már megfejtett műveletekből horgonyozható le — a `DropShadow` (`0x00bbb720`),
+a `SimpleBorder` (`0x00bbf4a0`) és a `Rotate` (`0x00bb5640`) korábban
+levezetett „alkalmazó" címe **mind a 6. résben** áll.
+
+| rés | szerep | bizonyíték |
+|---|---|---|
+| **1** | **attribútum-beolvasó** — a `<effect>` leíró nevesített attribútumait tagváltozókba tölti | `FUN_008eb160(leíró, név)` keres, `FUN_008eb520` tárol a `[this + offszet]` címre |
+| **3, 4, 5, 7** | közös ősmetódusok (`0x00bc4ae0`, `0x00bc5160`, `0x00bc5180`, `0x00bc51d0`) | minden osztályban azonos cím |
+| **6** | **alkalmazó** — vagy saját, vagy a két közös motor egyike | a három korábban megfejtett művelet alkalmazója itt áll |
+| **8** | **munkavégző** — csak ott van, ahol a 6. rés közös motor | a motor `mov eax,[eax+0x20]; call eax` hívása (`0x20/4 = 8`) |
+
+### A KÉT közös motor — és egy no-op
+
+| motor | mit csinál | kik használják |
+|---|---|---|
+| **`0x00bb7c80`** (435 b) | általános **kép-bejáró**: felépíti a csomópontot, majd a 8. résen át hívja a művelet saját munkavégzőjét | `AdjustCurves` · `AutoFix` · `Exposure` · `GradientMap` · `HSVGradientMap` · `PaletteMap` · `TwoTone` |
+| **`0x00bc16b0`** (428 b) | **színmátrix-alkalmazó** — szintén a 8. résen kéri el a mátrixot | `BW` · `ColorMatrix` · `MultiplyColorMatrix` · `SimpleColorMatrix` |
+| **`0x00bbf920`** (6 b) | **no-op**: `or eax, 0xffffffff; ret 0xc` — nincs saját képpont-menete | `GetVar` · `Nested` · `Tint` |
+
+⇒ A `GetVar`, a `Nested` és a `Tint` **szerkezeti** művelet: a hatásukat a
+csővezeték keverő rétege adja, nem saját képpont-menet. Ez megerősíti a 4.
+szakasz „a csővezeték nem lineáris" megállapítását — **a `Tint` tehát nem
+képpont-szűrő**, hanem egy szín, amit a keverés visz fel.
+
+### ⭐ A `TwoTone` UGYANAZT a munkavégzőt használja, mint a `GradientMap`
+
+Mindkettő 8. rése **`0x00bb87b0`** (493 b). ⇒ A `TwoTone` a motorban **egy
+kétmegállós színátmenet-leképezés**: a `blackColor` és a `whiteColor`
+attribútum a gradiens két végpontja. Ez nem következtetés a névből — a két
+osztály **bitre ugyanazt a kódot** futtatja.
+
+*(A munkavégző első lépése egy `[ebx+4] >> 1` elemszám-számítás és egy
+`< 2` ellenőrzés: kevesebb mint két megállóval nem csinál semmit — ami
+pontosan egy gradienstábla szemantikája.)*
+
+### A teljes tábla
+
+Az attribútum-oszlop alakja `név@tagoffszet`. Az offszet a **művelet-objektum**
+eleje.
+
+| művelet (`…ImageOperation`) | vtable RVA | 1. rés (attribútumok) | 6. rés (alkalmazó) | 8. rés (munkavégző) | attribútum → tagoffszet |
+|---|---|---|---|---|---|
+| `AdjustCurves` | `0x008f01e0` | `0x00bb9b60` | `0x00bb7c80` (435 b) | `0x00bb9d20` (224 b) | ExposureAdjustmentStops@0x50 |
+| `AutoFix` | `0x008f08bc` | `0x00bc2d60` | `0x00bb7c80` (435 b) | `0x00bc2d70` (217 b) | — |
+| `BW` | `0x008f05d0` | `0x00bbdd40` | `0x00bc16b0` (428 b) | `0x00bbdd80` (392 b) | filtercolor@0x28 |
+| `Blend` *(ős)* | `0x008f0b2c` | `0x00bc4900` | `0x00c07709` (42 b) | — | maskWithSourceAlpha@0x34, BlendAlpha@0xc, dynamicParamsCachePriority@0x2c, dynamicAlphaCachePriority@0x2c |
+| `Blur` | `0x008efe98` | `0x00bb4d50` | `0x00bb4de0` (616 b) | — | xblur@0x24, yblur@0x2c, quality@0x34 |
+| `Border` | `0x008f0650` | `0x00bbe090` | `0x00bbe320` (266 b) | — | outercolor@0x24, innercolor@0x2c, cornerradius@0x34, innerthickness@0x3c, outerthickness@0x44, captionheight@0x4c |
+| `ColorMatrix` | `0x008f0798` | `0x00bc1620` | `0x00bc16b0` (428 b) | `0x00bc1860` (245 b) | — *(a `Matrix` tömb más úton)* |
+| `Crop` | `0x008f05a0` | `0x00bbd9a0` | `0x00bbdbd0` (227 b) | — | width@0x34, height@0x3c |
+| `DropShadow` | `0x008f039c` | `0x00bbb350` | `0x00bbb720` (417 b) | — | shadowAlpha@0x24, angle@0x2c, shadowColor@0x34, backgroundColor@0x3c, distance@0x44, inner@0x4c, quality@0x54, strength@0x5c, blurX@0x64, blurY@0x6c |
+| `EdgeDetectionB` | `0x008f04a0` | `0x00bbca60` | `0x00bbcdd0` (124 b) | — | detail@0x2c |
+| `EdgeDetectionSobel` | `0x008efff4` | `0x00bb6590` | `0x00bb6620` (544 b) | — | — |
+| `Exposure` | `0x008f07d4` | `0x00bc1a90` | `0x00bb7c80` (435 b) | `0x00bc1ba0` (210 b) | **exposure@0x40, contrast@0x48, blacks@0x58** |
+| `GetVar` | `0x008f06f0` | `0x00bbf7e0` | `0x00bbf920` (6 b) | — | — |
+| `Glow` | `0x008f0174` | `0x00bb8c40` | `0x00bb8e10` (342 b) | — | color@0x24, glowalpha@0x2c, xblur@0x34, yblur@0x3c, strength@0x44, quality@0x4c, inner@0x54, knockout@0x5c |
+| `GradientMap` | `0x008f0120` | `0x00bb8710` | `0x00bb7c80` (435 b) | `0x00bb87b0` (493 b) | — *(a `gradientArray` más úton)* |
+| `HSVGradientMap` | `0x008f03ec` | `0x00bbc190` | `0x00bb7c80` (435 b) | `0x00bbc260` (1448 b) | hueOffset@0x44 |
+| `IR` | `0x008f0a14` | `0x00bc3d80` | `0x00bc3f50` (395 b) | — | greenglow@0x2c, greenglowalpha@0x34, redweight@0x3c |
+| `ImageOperation` *(ős)* | `0x008f0b0c` | `0x00c07709` | `0x00c07709` (42 b) | — | — |
+| `LocalContrast` | `0x008f0a7c` | `0x00bc41e0` | `0x00bc4730` (220 b) | — | Strength@0x2c, Radius@0x34 |
+| `MultiplyColorMatrix` | `0x008f0024` | `0x00bb7730` | `0x00bc16b0` (428 b) | `0x00bb77a0` (165 b) | multiplier@0x28 |
+| `Nested` | `0x008f0774` | `0x00bc12d0` | `0x00bbf920` (6 b) | — | — |
+| `Noise` | `0x008f06a8` | `0x00bbee70` | `0x00bbefa0` (391 b) | — | randomSeed@0x24, channelOptions@0x3c, grayscale@0x44 |
+| `PaletteMap` | `0x008f00d0` | `0x00bb7900` | `0x00bb7c80` (435 b) | `0x00bb7e40` (1093 b) | — *(a `ColorMaps` tömb más úton)* |
+| `Pixelate` | `0x008f04f4` | `0x00bbd050` | `0x00bbd150` (199 b) | — | pixelWidth@0x24, pixelHeight@0x2c, offsetX@0x34, offsetY@0x3c |
+| `QuantizePalette` | `0x008eff58` | `0x00bb5a30` | `0x00bb5ad0` (139 b) | — | Steps@0x24, Depth@0x2c |
+| `RadialBlur` | `0x008f07fc` | `0x00bc2420` | `0x00bc24e0` (169 b) | — | amount@0x34 |
+| `Resize` | `0x008f0908` | `0x00bc3370` | `0x00bc3650` (407 b) | — | width@0x24, height@0x2c, smoothing@0x34 |
+| `Rotate` | `0x008efefc` | `0x00bb5270` | `0x00bb5640` (239 b) | — | radAngle@0x24, degAngle@0x2c, borderColor@0x34, flipH@0x3c, flipV@0x44, padBorder@0x4c |
+| `Shader` | `0x008eff2c` | `0x00bb5830` | `0x00bb58d0` (202 b) | — | — |
+| `Sharpen` | `0x008f0720` | `0x00bbf990` | `0x00bbf9e0` (550 b) | — | sharpness@0x24 |
+| `SimpleBorder` | `0x008f06cc` | `0x00bbf280` | `0x00bbf4a0` (391 b) | — | right@0x2c, bottom@0x3c, color@0x44 |
+| `SimpleColorMatrix` | `0x008effb4` | `0x00bb62c0` | `0x00bc16b0` (428 b) | `0x00bb6400` (296 b) | saturation@0x28, contrast@0x30, brightness@0x38, ContrastAndBrightnessLinked@0x48 |
+| `Tint` ⚠ | `0x008f0554` | `0x00bbd630` | `0x00bbf920` (6 b) | — | color@0x10 *(a kiolvasás itt nem megbízható)* |
+| `TwoTone` | `0x008f085c` | `0x00bc2760` | `0x00bb7c80` (435 b) | `0x00bb87b0` (493 b) | whiteColor@0x24, blackColor@0x2c |
+
+### A `BlendAlpha` NEM műveletenkénti attribútum
+
+A `QuantizePalette` attribútum-beolvasója a saját két kulcsa után
+**átadja a vezérlést** az ős beolvasójának (`0x00bb5a89 call 0x00bc4900`),
+és ez a `0x00bc4900` a `Blend` 1. rése. ⇒ A `BlendAlpha`, a
+`maskWithSourceAlpha` és a két gyorsítótár-prioritás **minden művelethez
+elérhető**, nem csak azokhoz, amelyeknél a `red.cfg` kiírja őket. Ez
+magyarázza, miért szerepel a `BlendAlpha` a legkülönbözőbb blokkokban a 4.
+szakasz recept-listáiban.
+
+### Amit a bináris TÖBBET tud, mint amit a `red.cfg` használ
+
+A 4. szakasz attribútum-listája a `red.cfg`-ből készült — abból, amit a
+szállított effektek **használnak**. A motor ennél többet ismer:
+
+| művelet | csak a binárisban | mit jelenthet |
+|---|---|---|
+| `Exposure` | **`exposure`, `contrast`, `blacks`** | teljes expozíció-hármas; a `red.cfg` egyetlen effektben sem használja |
+| `AdjustCurves` | **`ExposureAdjustmentStops`** | rekesz-alapú expozíció a görbék mellett |
+| `Rotate` | `radAngle`, `flipH`, `flipV` | tükrözés is van, nem csak forgatás |
+| `Glow` | `inner`, `knockout` | belső ragyogás és kivágás |
+| `LocalContrast` | `Strength` offszete | a `red.cfg` ismeri a nevet, a tagoffszet új |
+
+⇒ **Ez a lista NEM megvalósítási igény.** Azt mutatja meg, hol tudna a
+motor többet, mint amennyit az effektek kihasználnak — a megvalósításnak a
+`red.cfg` a szerződése.
+
+### Ami NINCS mérve (őszintén)
+
+- **Egyetlen képlet sem** ebből a szakaszból. A cél a horgony volt.
+- Négy művelet **tömb-típusú attribútuma** (`ColorMatrix::Matrix`,
+  `GradientMap::gradientArray`, `PaletteMap::ColorMaps`,
+  `AdjustCurves::*Curve`) **más úton** kerül be — a fenti mintával nem
+  olvasható ki.
+- A `Tint`, a `Crop` és a `SimpleBorder` sora **hiányos**: a `red.cfg`
+  több nevet sorol (`x`/`y`, illetve `top`/`left`), mint amennyit a minta
+  megtalált.
+- A `QuantizePalette` **KÓDBELI** alapértékei mérve vannak: `Steps` = 255,
+  `Depth` = 2 (`0x00bb5aed`, `0x00bb5b1d`) — a tényleges kvantálást a
+  `0x00bb5b60` (1510 b) végzi.
+  ⚠️ **De a SZÁLLÍTOTT érték más** (2026-09-05): a `filterdesc.xml` a
+  `Depth`-et **`4`**-re állítja, és a `Steps`-et a csúszkára köti. Ld. a
+  „A szállított `Depth` = 4" szakaszt lentebb.
+
+### Módszer
+
+Helyi diszasszemblálás (capstone), felhős dekompiláció nélkül; a helyi
+`Picasa3.exe` SHA-256-a azonos az indexeltével (`644b7bec…3ddc96`). Az
+attribútum-tábla úgy készült, hogy a szkript **minden** osztály 1. résének
+törzsében párba állította a betöltött névsztringet a `FUN_008eb520` tároló
+hívás előtti tagcímmel — tehát nem mintaillesztés a nevekre, hanem a
+tényleges tárolási hely kiolvasása.
+
+*Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre, a közös
+motorokra és a fenti attribútum-offszetekre; **nincs mérve** minden képlet.*
+
+---
+
+## ⭐ HÉT Glimmer-művelet KIMÉRVE (2026-09-03, #2211)
+
+*`IR` · `MultiplyColorMatrix` · `EdgeDetectionB` · `TwoTone` · `Resize` ·
+`AutoFix` · `AdjustCurves`*
+
+Az előző szakasz horgonyt adott mind a 34 művelethez. Ez a szakasz **hetet
+számszerűen is megold** — és a megoldás módszere maga is eredmény: a
+**saját attribútum-offszet táblánk** dekódolta a gyerekműveleteket.
+
+### 1. `IRImageOperation` — szürkeárnyalatos mátrix + zöld ragyogás
+
+**Három attribútum, mérve az alapértékekkel** (a `0x00bc3f50` alkalmazóban a
+getter elé betöltött konstans az alapérték):
+
+| attribútum | tag | alapérték | cím |
+|---|---|---|---|
+| `greenglow` | `+0x2c` | **5,0** | `0x00bc3f5c` → `0x00cf3a58` |
+| `greenglowalpha` | `+0x34` | **0,25** | `0x00bc3f8a` → `0x00c7c608` |
+| `redweight` | `+0x3c` | **−0,5** | `0x00bc3fae` → `0x00cf3ea0` |
+
+**a) A szürkítő 4×5 mátrix** (`0x00bc402d`–`0x00bc40b9`, dupla pontosságú
+elemek). A `−1,0` (`0x00cf3f58`) és a `2,0` (`0x00c7d9d0`) beolvasott
+konstans:
+
+```
+| r   2,0   −1−r   0   0 |      r = redweight
+| r   2,0   −1−r   0   0 |
+| r   2,0   −1−r   0   0 |
+| 0    0      0    1   0 |
+```
+
+⇒ **Mindhárom kimeneti csatorna ugyanazt kapja — ez szürkeárnyalatos
+átalakítás**, az alfa érintetlen. Alapértékkel a súlyhármas
+**(−0,5 · R + 2,0 · G − 0,5 · B)**: erős zöld-túlsúly, negatív vörös és kék
+— pontosan a hamis-infravörös hatás.
+
+⭐ **A súlyok összege MINDIG 1**: `r + 2 + (−1 − r) = 1`, bármi is a
+`redweight`. A paraméter tehát a vörös↔kék egyensúlyt tolja, a
+világosságot nem — ez a képlet önellenőrzése.
+
+**b) A zöld ragyogás — két GYEREKMŰVELET.** A függvény a saját attribútumait
+két beágyazott művelet tagjaiba tölti (`0x00bc3ff3`, `0x00bc400c`,
+`0x00bc4021`, a `FUN_008ef2b0` beállítón át):
+
+| forrás | cél | mi ez az előző szakasz tábláját használva |
+|---|---|---|
+| `greenglowalpha` | `[this+0x44]` objektum `+0xc` | **`BlendAlpha`** (a `Blend` ős tagja) |
+| `greenglow` | `[this+0x48]` objektum `+0x24` | **`xblur`** (`Blur`) |
+| `greenglow` | `[this+0x48]` objektum `+0x2c` | **`yblur`** (`Blur`) |
+
+⇒ **Az `IR` = szürkítő mátrix + egy izotróp elmosás (`xblur = yblur =
+greenglow`), amit `greenglowalpha` erősséggel visszakeverünk.**
+Alapértékkel: 5 képpontos elmosás, 25%-os keveréssel.
+
+> Ez a leolvasás **az előző szakasz saját táblájával** történt: a `+0x24` /
+> `+0x2c` a `BlurImageOperation`, a `+0xc` a `Blend` ős regisztrált
+> tagoffszete. Két független forrás mutat ugyanoda — a tábla itt
+> **használatban igazolta magát**.
+
+### 2. `MultiplyColorMatrixImageOperation` — TELJES, egy sorban
+
+A `0x00bb77a0` (165 b) egyetlen attribútumot olvas (`multiplier`, tag
+`+0x28`, alapérték **0,0**), és felépít egy **20 elemű** (`mov eax, 0x14`)
+egyszeres pontosságú mátrixot:
+
+```
+| m  0  0  0  0 |      m = multiplier
+| 0  m  0  0  0 |
+| 0  0  m  0  0 |
+| 0  0  0  1  0 |
+```
+
+⇒ **A művelet a három színcsatornát szorozza `multiplier`-rel; az alfa
+változatlan, eltolás sehol nincs.** A `red.cfg` egyetlen attribútuma
+(`Multiplier`) ezzel maradéktalanul megvan magyarázva.
+
+*Levezetés: a `0x00bb77d7` `fst`-je az első elembe teszi `m`-et, a
+`0x00bb7825`/`0x00bb7829` a 6. és a 13. elembe (a `fxch st(1)` után),
+a `fld1` a 19. elembe 1,0-t, a maradék mind nulla.*
+
+### 3. `EdgeDetectionBImageOperation` — a paraméter INVERTÁLVA megy tovább
+
+A `0x00bbcdd0` (124 b) a `detail` attribútumot (tag `+0x2c`, alapérték
+**0,0**) beolvassa, majd
+
+```
+0x00bbce1b  fsubr qword ptr [0x00cf3a08]     ; 0x00cf3a08 = 100,0
+```
+
+⇒ a belső paraméter **`100 − detail`**, és ezt adja tovább a
+`[this+0x34]` gyerekműveletnek. Ha a `+0x34` üres, a művelet **`4`-gyel
+tér vissza** (`0x00bbcde2`) — vagyis nem csinál semmit.
+
+> ✅ **MEGVAN (2026-09-04, #2238).** A `[this+0x34]` gyerek egy
+> **`SimpleColorMatrixImageOperation`** — a beolvasó (`0x00bbca60`) a
+> `0x00bb6150`-nel hozza létre, és az a `0x00ceffb4` vtable-t írja bele,
+> ami a `SimpleColorMatrix` (RVA `0x008effb4`).
+>
+> A `100 − detail` a gyerek **`+0x30`** tagjába megy (`0x00bbce24`
+> `add eax, 0x30`, majd `FUN_008ef2b0` beállító) — a fenti attribútum-tábla
+> szerint az a **`contrast`**.
+>
+> ⇒ **A `detail` csúszka a beágyazott színmátrix KONTRASZTJA, fordított
+> irányban:** `contrast = 100 − detail`.
+>
+> **A művelet egyébként összetett:** ugyanez a beolvasó létrehoz egy
+> `BlurImageOperation`-t (`0x00bb4c40` → `0x00cefe98`), egy
+> `EdgeDetectionSobelImageOperation`-t (`0x00bb6560` → `0x00cefff4`) és egy
+> `AdjustCurvesImageOperation`-t (`0x00bb9990` → `0x00cf01e0`) — az utóbbi
+> kettőt **két külön ágon** is. Csak a színmátrix kapott saját tagoffszetet;
+> a többi a gyereklistába fűződik. **A négy gyerek összekapcsolási sorrendje
+> nincs mérve.**
+
+
+### 4. `TwoToneImageOperation` — bizonyítottan a `GradientMap` két megállóval
+
+Az előző szakasz megállapította, hogy a `TwoTone` és a `GradientMap`
+**ugyanazt a munkavégzőt** futtatja (`0x00bb87b0`). Az attribútum-beolvasó
+megmutatja, miért:
+
+```
+0x00bc289e  call 0x0097c5d0          ; 0x14 bájtos színátmenet-objektum foglalása
+0x00bc28cf  call 0x008e81b0          ; felépítés a két beolvasott színből
+0x00bc2923  mov  dword ptr [edi + 0x40], esi   ; -> a művelet +0x40 tagjába
+0x00bc2949  call 0x00bb8710          ; ÉS ÁTADJA A VEZÉRLÉST a GradientMap beolvasójának
+```
+
+A munkavégző pedig épp ezt a tagot olvassa (`0x00bb87d1
+mov esi, dword ptr [esi + 0x40]`), és **kevesebb mint két megállónál nem
+csinál semmit** (`0x00bb87f4` `shr esi, 1`, `0x00bb87f6` `cmp esi, 2`).
+
+⇒ **A `TwoTone` nem önálló algoritmus:** a `blackColor` és a `whiteColor`
+egy kétmegállós színátmenetté áll össze, onnantól a `GradientMap` fut. Három
+független horgony mondja ugyanezt: a közös munkavégző, a `+0x40` tag
+írása/olvasása, és a `GradientMap` beolvasójának meghívása.
+
+**Ami NINCS kiolvasva:** a két megálló pontos pozíciója (feltehetően 0 és 1,
+de ez nem mérés).
+
+### 5. `ResizeImageOperation` — UGYANAZ a mintavételező, mint a forgatásnál
+
+Az alkalmazó (`0x00bc3650`, 407 b) tengelyenként `forrás / cél` léptéket
+számol (`0x00bc3700`–`0x00bc3731`), majd a végén a **`0x00bcb5e0`**
+segédfüggvénynek adja át a transzformációt és a `smoothing` kapcsolót
+(harmadik argumentum, `0x00bc37d6`).
+
+⭐ **Ez ugyanaz a `0x00bcb5e0`, amit a `RotateImageOperation` hív** a
+`0x00bc8060` transzformáción keresztül. Mérve (`xrefs`): a `0x00bcb5e0`-nak
+négy hívója van, köztük mindkettő.
+
+⇒ A lap `RotateImageOperation` szakaszának 2026-08-17-i helyesbítése **a
+`Resize`-ra is érvényes**: a mintavételező a **`ytResampler`**, a mód
+**explicit** — *lépték = 1 → **0-s (doboz)**, egyébként **3-as
+(Mitchell–Netravali, B = C = 0,4)***. **Nem bilineáris.**
+
+**A `smoothing` attribútum:** tag `+0x34`, **alapértéke `true`**
+(`0x00bc36ac` `mov byte ptr [esp+0x18], 1` a getter előtt, a
+`FUN_00c29990` logikai átalakítóval).
+
+> ✅ **Megvalósítva (#2227, 2026-09-04).** A `resize_image`
+> (`src/picasapy/render/glimmer_ops.py`) mostantól a mért viselkedést
+> követi: tengelyenként dönt a `forrás / cél` léptékből — **lépték = 1 →
+> azonosság** (a 0-s dobozmód ilyenkor pontosan az), egyébként **valódi
+> Mitchell–Netravali mag `B = C = 0,4`-gyel**, szeparábilisan. Nem
+> közelítés: a `mitchell_netravali()` a klasszikus képletet számolja, és a
+> próbák a mag értékeit a képletből ellenőrzik (`x = 0`, `1`, `2`), nem a
+> kimenetből.
+
+**Ami NINCS mérve — két külön nyitott kérdés:**
+
+1. Hogy `smoothing = false` esetén a bináris a `0`-s dobozmódot
+   választja-e, vagy tényleg legközelebbi szomszédot. Nálunk marad az
+   `INTER_NEAREST`, és a docstring kimondja, hogy ez nem mérés.
+2. **Hogy a mag KICSINYÍTÉSKOR a léptékkel nyúlik-e** (élsimítás). A
+   bináris annyit árul el, hogy a mód 3-as; a `ytResampler` belső
+   lépték-kezelése nincs visszafejtve. A mi implementációnk a szokásos
+   nyújtott magot használja — **dokumentált döntés, nem visszafejtett
+   viselkedés**. Aki ezt kiméri, itt írja át.
+
+### 6. ⭐ `AutoFixImageOperation` — TELJES: csatornánkénti min–max szinthúzás, vágás NÉLKÜL
+
+A `red.cfg` **hat** effektje hívja, attribútum nélkül. A munkavégző
+(`0x00bc2d70`, 217 b) három lépést tesz:
+
+1. **Három hisztogram.** Három 256 dwordös puffert nulláz
+   (`0x3fc` bájt `memset` + a 256. rekesz külön), majd a `0x00bc2e50`
+   (231 b) képpontonként számol: `hist_R[bájt0]`, `hist_G[bájt1]`,
+   `hist_B[bájt2]` — **egyszerű darabszám, semmilyen vágás vagy súlyozás
+   nincs benne**.
+2. **Ha a kép nagyobb 1000 képpontnál, KICSINYÍTVE mintavételez**
+   (`0x00bc2ea6` `cmp eax, 0x3e8`): a `0x00bc2f40` a `0x00cf3e10` =
+   **1000,0** és a képpontszám hányadosából számol léptéket. *(A léptéket
+   egy egyargumentumú CRT-függvény adja — a négyzetgyök a kézenfekvő
+   olvasat, de nem azonosítottam.)*
+3. **Csatornánként LUT** a `0x00bc3170` (232 b) függvénnyel, a
+   `0x10` / `0x8` / `0x0` bit-eltolással (B / G / R a csomagolt képpontban).
+
+**A LUT képlete — teljes:**
+
+```
+lo = a legkisebb index, ahol a hisztogram nem nulla
+hi = a legnagyobb index, ahol a hisztogram nem nulla
+
+ha lo == hi:                       LUT[x] = 255            (a csatorna telítve)
+egyébként:  LUT[x] = clamp( trunc( (x − lo) / (hi − lo) · 255 + 0,5 ), 0, 255 )
+```
+
+> ⛔ **Helyesbítés (2026-09-04, #2229): CSONKOLÁS, nem kerekítés.** A lap
+> korábban `round`-ot írt. A float→egész átalakítás a **`0x00c29990`**-en
+> megy, ami **`cvttsd2si`** — trunkál; a `+ 0,5` MAGA a felfelé kerekítés
+> idiómája. A különbség nem részletkérdés: `np.round`-dal (bankár-kerekítés)
+> **256 rekeszből 128-ban** más értéket kapnánk. A negatív oldalt a
+> `test eax,eax; jge` ág vágja 0-ra, a felsőt a `cmp eax,0xff`.
+
+A `255,0` a `0x00cf39d0`, a `0,5` a `0x00c72150` (mindkettő dupla
+pontosságú, kiolvasva); a `+0,5` a `0x00c29990` **csonkoló** egészre
+alakítójával együtt adja a felfelé kerekítést. A `lo` keresése ötösével kibontott ciklus (`0x00bc3180`–
+`0x00bc31a9`), a `hi`-é visszafelé megy 255-től.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól — és NEM elírás.** A mi `autofix`-ünk
+> (`src/picasapy/render/glimmer_ops.py`) az `apply_channel_levels_stretch`-re
+> mutat, ami a **natív „Jó napom van" modellt** használja, **0,30-as
+> vágópont-keveréssel** (#535, #721 — a `0x009db610` kutatása). A Glimmer
+> `AutoFixImageOperation` viszont **másik kódút**, és **vágás nélküli
+> teljes min–max húzás**. A két függvény az eredetiben is különbözik; nálunk
+> ugyanaz. Jegy: **#2229**.
+
+### 7. `AdjustCurvesImageOperation` — a négy görbe tagoffszete
+
+A munkavégző (`0x00bb9d20`, 224 b) sorrendben:
+
+| tag | mi | hogyan |
+|---|---|---|
+| `+0x50` | **`ExposureAdjustmentStops`** | beolvasás (`0x008ef520`), majd `0x00bcd3b0` |
+| `+0x40` | 1. görbe | `0x00bb9e00` (438 b), csak ha nem nulla |
+| `+0x44` | 2. görbe | ugyanaz |
+| `+0x48` | 3. görbe | ugyanaz |
+| `+0x4c` | 4. görbe | ugyanaz |
+
+A `red.cfg` négy görbe-attribútumot ismer (`MasterCurve`, `RedCurve`,
+`GreenCurve`, `BlueCurve`) — és a **sorrendjük is kiolvasva** (2026-09-04,
+#2238): a beolvasó (`0x00bb9b60`) mind a négyet **saját néven** keresi, és
+tárolja:
+
+| attribútum | tag | a tároló utasítás |
+|---|---|---|
+| `MasterCurve` | **`+0x40`** | `0x00bb9bb4` |
+| `RedCurve` | **`+0x44`** | `0x00bb9be4` |
+| `GreenCurve` | **`+0x48`** | `0x00bb9c14` |
+| `BlueCurve` | **`+0x4c`** | `0x00bb9c44` |
+| `ExposureAdjustmentStops` | `+0x50` | `0x00bb9b8b` |
+
+*(A korábbi „a sorrend nincs mérve" megjegyzés ezzel megszűnt.)*
+
+> ⛔ **Ez a bekezdés korábban azt írta, hogy „a sorrendjük nincs mérve, mert
+> a beolvasó a tömb-attribútumokat nem a szokásos mintával veszi át".** A
+> második fele igaz — más a minta —, de a névsorrend attól még kiolvasható,
+> és ki is van olvasva (a fenti tábla).
+
+⭐ Az **`ExposureAdjustmentStops`** ELŐBB fut, mint a görbék, és **nem
+szerepel a `red.cfg`-ben** — a motor tehát rekesz-alapú expozíciót is tud a
+görbék mellett.
+
+#### Az `ExposureAdjustmentStops` SZEREPE — két kész görbe, előjel szerint (2026-09-04)
+
+A `0x00bcd3b0` (253 b) az értéket **nullához hasonlítja**, és három ágra
+megy. Mindkét nem-nulla ág egy **négypontos** görbét épít
+(`mov eax, 4; call 0x008f2b30`) — csupa beolvasott konstansból:
+
+| ág | a négy `(x, y)` pont | hatás |
+|---|---|---|
+| **sötétítő** (`0x00bcd3c7`) | (13, 0) · (116, 74) · (208, 156) · (255, 221) | minden kimenet a bemenet ALATT |
+| **világosító** (`0x00bcd431`) | (0, 17) · (47, 81) · (129, 186) · (221, 255) | minden kimenet a bemenet FÖLÖTT |
+| **nulla** (`0x00bcd48a`) | — | `0x008f2da0` (82 b) hívása, görbeépítés nélkül |
+
+Utána — mindkét ágon — az **abszolút értéket** veszi és továbbadja:
+
+```
+0x00bcd491  fld  dword ptr [esp + 0x2c]   ; az eredeti érték
+0x00bcd499  call 0x0049f5c0               ; fabs
+0x00bcd4a1  call 0x00bcd4b0               ; (103 b) — az erősség felhasználása
+```
+
+⇒ **Az `ExposureAdjustmentStops` ELŐJELE választja a görbét (sötétít vagy
+világosít), az ABSZOLÚT ÉRTÉKE pedig az erősséget adja.** A két görbe
+egymáshoz közel tükrös, de **nem pontosan** az (a sötétítő 13-nál kezd, a
+világosító 17-nél végződik) — külön szerzett táblák, nem egy képlet két
+iránya.
+
+**Ami NINCS mérve:** mit csinál a `0x00bcd4b0` az abszolút értékkel
+(skálázás? több lépcső?), és mit tesz a nullás ág `0x008f2da0`-ja.
+
+
+### Amit ez a három eset MÓDSZERTANILAG mutat
+
+1. **Az alapérték mindig ott van a getter előtt.** A minta:
+   `fld dword [konstans]` → `fstp` a kimenő rekeszbe → `call 0x008ef520`.
+   Ha az attribútum hiányzik a leíróból, a konstans marad. Ez az egész
+   Glimmer-készletre végigfuttatható.
+2. **A gyerekművelet tagoffszete azonosítja a gyerek OSZTÁLYÁT.** Az `IR`
+   ragyogása azért olvasható, mert az előző szakasz tábláját visszafelé
+   használtuk: `+0x24`/`+0x2c` ⇒ `Blur`, `+0xc` ⇒ `Blend`.
+3. **A belső konstans önellenőrzést adhat.** Az `IR` súlyainak összege
+   levezethetően 1 — ha egy megvalósítás mást kap, elrontotta.
+
+*Bizonyítottsági fok: **megerősített** mind a hét leletre (kiolvasott
+utasítások és beolvasott konstansok); az `EdgeDetectionB` gyerekműveletének
+tartalma, a `TwoTone` megálló-pozíciói, a `Resize` `smoothing = false` ága,
+az `AutoFix` lekicsinyítő léptékének CRT-függvénye és az `AdjustCurves` négy
+görbéjének SORRENDJE **nincsenek mérve**.*
+
+---
+
+## ⭐ A `QuantizePalette` OKTREE, és a MASZK-osztályok térképe (2026-09-04, #2211)
+
+### 1. `QuantizePaletteImageOperation` — palettaválasztó, nem lépésközös kvantálás
+
+A művelet két attribútuma és alapértéke (`0x00bb5ad0`, 139 b):
+
+| attribútum | tag | alapérték | cím |
+|---|---|---|---|
+| `Steps` | `+0x24` | **255** | `0x00bb5aed` |
+| `Depth` | `+0x2c` | **2** | `0x00bb5b1d` |
+
+A munkát a `0x00bb5b60` (1510 b) végzi, négy argumentummal
+(`kép`, `Steps`, `Depth`, `cél`). Három lépés olvasható ki belőle:
+
+**a) Végigmegy a kép MINDEN képpontján**, kibontja a csomagolt képpontot
+`(R, G, B)`-re (`shr 0x10` / `shr 8` / `movzx al`), és a `0x00bcb8e0`
+beszúróval egy fába teszi (`0x00bb5d3b`–`0x00bb5d8c`).
+
+**b) A beszúró OKTREE-t épít.** A csomópont **32 bájt**, és a beszúró
+mind a **nyolc** mutatóját nullázza (`0x00bcb8f2` `push 0x20`,
+`0x00bcb8ff`–`0x00bcb913`); a redukáló (`0x00bcb6f0`, 389 b) szintén
+**nyolcasával** járja a gyerekeket (`0x00bcb71e` `lea ecx, [edx + 8]`).
+
+**c) A redukció mérete a `Steps`-ből jön** (`0x00bb5da8`):
+
+```
+Steps == 2  ->  0x00bcb6f0(2)
+egyébként   ->  0x00bcb6f0(Steps − 1)
+```
+
+**d) Tartalék: fix 3-3-2 bites paletta.** A `0x00bb5e02`–`0x00bb5e53` ciklus
+három 256 elemű táblát tölt fel: `r & 0xE0`, `(g >> 3) & 0x1C`, `b >> 6` —
+a klasszikus 8 bites (256 színű) RGB-palettaindex.
+
+⇒ **A `Steps` a PALETTA MÉRETE, nem a csatornánkénti szintszám.** Az
+eredmény a kép saját színeihez igazodik, nem egy fix rácshoz.
+
+> ⚠️ **ELTÉRÉS a mai kódunktól.** Mind a két megvalósításunk
+> (`effects_creative_tone.apply_quantizepalette`,
+> `glimmer_tone.apply_quantizepalette`) **egyenletes lépésközű** kvantálást
+> csinál, és a docstringjük ki is mondja, hogy a pontos algoritmus „NEM
+> ismert", zárójelben megemlítve, hogy „esetleg palettaválasztó". **A
+> zárójeles sejtés igaz volt.** Jegy: **#2231**.
+
+#### A `Depth` az oktree MÉLYSÉG-KERETE (2026-09-04, #2238)
+
+A `Depth` (3. argumentum) a gyűjtő objektum **`+0x10`** mezőjébe kerül
+(`0x00bb5bdc`, a `[esp+0x50]`-en álló objektum `+0x10`-e). Onnan:
+
+```
+; a leszálló lépés (0x00bcb950)
+0x00bcb954  mov eax, [ebx + 0xc]      ; a csomópont SZINTJE
+0x00bcb962  mov ecx, 7
+0x00bcb967  sub ecx, eax              ; a vizsgált BIT: 7 − szint
+...                                   ; gyerekindex = R-bit<<2 | G-bit<<1 | B-bit
+0x00bcb99d  mov edx, [ebx + 0x10]
+0x00bcb9a6  sub edx, 1                ; a gyerek kerete EGGYEL kevesebb
+0x00bcb9bc  mov [eax + 0x10], edx
+
+; a beszúró kapuja (0x00bcb8e0)
+0x00bcb8e6  cmp dword ptr [esi + 0x10], 1
+0x00bcb8ea  jbe <nem megy tovább>
+```
+
+⇒ **A `Depth` azt mondja meg, hány SZINT mélyre mehet az oktree**, azaz
+hány bitet vesz figyelembe csatornánként. Minden szint eggyel csökkenti a
+keretet, és a leszállás megáll, amikor 1-re fogy.
+
+A gyerekindex a klasszikus oktree-képlet, a `7 − szint`-edik bittel:
+
+```
+index = ((R >> k) & 1) << 2 | ((G >> k) & 1) << 1 | ((B >> k) & 1)      k = 7 − szint
+```
+
+**A szétvágás LUSTA:** a csomópont csak akkor bomlik gyerekekre, ha már van
+benne egy szín és érkezik a második (`0x00bcb8ec` `cmp dword ptr [esi+4], 1`).
+
+**Ami NINCS mérve:** mikor lép életbe a 3-3-2-es tartalék paletta, és milyen
+szabály szerint választ a redukáló leveleket.
+
+
+### 2. A MASZK-osztályok — más vtable-elrendezés, és több attribútum, mint a `red.cfg`-ben
+
+A `glimmer::*ImageMask` osztályok **nem** ugyanazt a réskiosztást használják,
+mint a műveletek: náluk az attribútum-beolvasó az **5. rés**, és a 3–4. rés
+közös metódusa is más (`0x004bdeb0`, nem `0x00bc4ae0`). Ezt nem feltevésből
+tudjuk: a `tileWidth` és társai sztring-xrefje **pontosan** az 5. rés
+függvényére mutat.
+
+| maszk | vtable RVA | 5. rés (attribútumok) | 6. rés | attribútum → tagoffszet |
+|---|---|---|---|---|
+| `ImageMask` *(ős)* | `0x008f0d34` | `0x00bcd5c0` | `0x00c07709` (no-op) | width@0x8, height@0x10 |
+| `TiledImageMask` | `0x008f02e8` | `0x00bba2e0` | `0x00bba4d0` (169 b) | tileWidth@0x18, tileHeight@0x20, **scaleWidth@0x28**, **scaleHeight@0x30**, **paddingLeft@0x38**, **paddingTop@0x40**, **paddingRight@0x48**, **paddingBottom@0x50**, offsetX@0x58, offsetY@0x60, alphaMin@0x68, **alphaMax@0x70** |
+| `CircularGradientImageMask` | `0x008f0890` | `0x00bcfc70` | `0x00bcfda0` (100 b) | **aspectRatio@0x18**, innerRadius@0x20, outerRadius@0x28, innerAlpha@0x30, outerAlpha@0x38, xCenter@0x40, yCenter@0x48 |
+| `ShapeGradientImageMask` | `0x008f0e50` | **ugyanaz** (`0x00bcfc70`) | **ugyanaz** (`0x00bcfda0`) | ugyanaz |
+| `PaintMaskPlusImageMask` | `0x008f0750` | `0x00bcd5c0` (az ősé) | `0x005baa00` (5 b) | width@0x8, height@0x10 |
+
+**Két szerkezeti következmény:**
+
+1. ⭐ **A `CircularGradient` és a `ShapeGradient` bitre ugyanazt a beolvasót
+   és ugyanazt az alkalmazót futtatja** — a különbségük nem itt van, hanem a
+   9./10. résben (a `ShapeGradient`-é `0x00c07709`, azaz **no-op**, a
+   `CircularGradient`-é `0x00bc2a30`). Vagyis a `ShapeGradient` a
+   `CircularGradient` egy **lecsupaszított** változata.
+2. A `PaintMaskPlusImageMask` **saját attribútumot nem ismer** — csak az ős
+   `width`/`height`-jét; a festett maszkot máshonnan kapja.
+
+**Amit a `red.cfg` NEM használ, de a motor tud:** a `Tiled` maszk **öt**
+extra attribútuma (`scaleWidth`, `scaleHeight`, a négy `padding*`,
+`alphaMax`) és a gradiens-maszkok `aspectRatio`-ja. A 4. szakasz
+attribútum-táblája a `red.cfg`-ből készült, tehát csak a **használt**
+neveket sorolja.
+
+> Ezzel a **#2211** `Tiled` tétele is horgonyt kapott — a
+> `glimmer::TiledImageMask` **nem `ImageOperation`**, ezért hiányzott a
+> műveleti táblából.
+
+*Bizonyítottsági fok: **megerősített** a címekre, a rés-szerepekre és az
+attribútum-offszetekre; a `QuantizePalette` `Depth`-jelentése, a
+levélválasztó szabály és a maszkok viselkedése **nincs mérve**.*
+
+---
+
+## `HSVGradientMapImageOperation` — a megállók HSV-ben vannak (2026-09-04, #2211)
+
+A `red.cfg` két attribútumot mutat (`gradientObjectArray`, `hueOffset`). A
+munkavégző (`0x00bbc260`, 1448 b) megmutatja, **mi van a tömbben**: minden
+megálló egy `color` és egy `position` mezőből áll, és a **`color` maga is
+objektum, három mezővel**:
+
+| mező | sztring címe | hol olvassa |
+|---|---|---|
+| `h` | `0x00cbf800` | `0x00bbc373` |
+| `s` | `0x00cd6fb4` | `0x00bbc3a6` |
+| `v` | `0x00cb92e8` | `0x00bbc3d9` |
+| *(a burkoló)* `color` | `0x00cbda84` | `0x00bbc328` |
+| `position` | `0x00cf03dc` | `0x00bbc412` |
+
+*(A három egybetűs név nem szerepel a bináris-index sztringtáblájában —
+közvetlenül a fájlból olvastam ki a `mov edi, <cím>` operandusai alapján.)*
+
+⇒ **Ez különbözteti meg a `GradientMap`-tól:** ott a megállók RGB-színek,
+itt **HSV**-ben adottak, tehát az interpoláció is HSV-térben történik. A
+`hueOffset` ezért értelmes: a színezetet forgatja el.
+
+### A HSV-modell mértékegységei — mérve
+
+A leképezést építő `0x00bbbe20` (673 b) beolvasott konstansai:
+
+| konstans | érték | szerep |
+|---|---|---|
+| `0x00cf3d50` (dupla) | **360,0** | `fadd` — a negatív színezet körbefordítása |
+| `0x00cf4098` (egyszeres) | **360,0** | `fsub` — a 360 fölötti körbefordítása |
+| `0x00cf39ec` / `0x00cf3a08` | **100,0** | az `s` és a `v` osztója |
+| `0x00cf39f0` (dupla) | **6,0** | a szektor-szorzó (`h/360 · 6`) |
+| `0x00cf39d0` (dupla) | **255,0** | a kimeneti csatorna skálája |
+
+⇒ **`h` fokban (0–360, körbefordítással), `s` és `v` SZÁZALÉKBAN (0–100)**,
+a szektorválasztás a szokásos hatodolás, a kimenet 0–255.
+
+### Az interpoláció — LINEÁRIS, a színezetben a RÖVIDEBB ÍVEN (2026-09-04, #2238)
+
+A megálló-keresést és a keverést a `0x00bbbcf0` (302 b) és a `0x00bbbbf0`
+(254 b) végzi.
+
+**a) A megálló-keresés.** A `0x00bbbcf0` végigmegy a pozíció-tömbön, és
+megkeresi az utolsó `position ≤ x` (alsó) és az első `position ≥ x` (felső)
+megállót. Ha a kettő egybeesik — vagy a keresett érték bitmintája 8-nál
+közelebb van valamelyik megállóéhoz —, a megálló három mezőjét
+(`h`, `s`, `v`) **változtatás nélkül** másolja ki. A megállók a tömbben
+**hármasával** állnak (`lea ecx, [ecx + ecx*2]`, majd `*4` — három float).
+
+**b) A súly.** `0x00bbbdc0`–`0x00bbbdd7`:
+
+```
+t = (position[felső] − x) / (position[felső] − position[alsó])
+```
+
+⇒ `t` az **alsó** megálló súlya (1, ha `x` az alsón áll; 0, ha a felsőn).
+
+**c) A keverés.** A `0x00bbbbf0`-ben az `s` és a `v` **sima lineáris**
+interpoláció (`a + t · (b − a)`, `0x00bbbc00`–`0x00bbbc22`).
+
+⭐ **A színezet NEM az:**
+
+```
+0x00bbbc36  fsubp             ; Δ = h_alsó − h_felső
+0x00bbbc47  call 0x0049f5c0   ; fabs
+0x00bbbc4c  fcomp dword ptr [0x00cf409c]   ; 180,0
+0x00bbbc5a  jp   <|Δ| ≤ 180: sima lineáris>
+0x00bbbc81  fld  qword ptr [0x00cf3d50]    ; 360,0 — a KISEBBIK végpontot eltolja
+```
+
+⇒ **Ha a két színezet távolsága nagyobb 180 foknál, a motor az egyiket
+±360-nal eltolja, és a RÖVIDEBB ÍVEN interpolál** — a színkörön a közelebbi
+irányba megy körbe. (A `0x0049f5c0` bizonyítottan `fabs`: 26 bájt, egyetlen
+`fabs` utasítással.)
+
+**Ami NINCS mérve:** a `position` tartománya. A keresett érték egészként
+érkezik, és előjel nélküli javítással (`+ 2³²`) válik lebegőpontossá
+(`0x00bbbd0f`–`0x00bbbd1b`) — a pozíciók tehát egész indexhez hasonlítódnak,
+de a felső határt nem olvastam ki.
+
+
+---
+
+## `ExposureImageOperation` — KÉT görbe, mindkettő számszerűen (2026-09-04, #2211)
+
+Ezzel a **#2211** tízes listájának utolsó művelete is horgonyt kapott —
+és két teljes kontrollpont-tábla jött ki belőle.
+
+A munkavégző (`0x00bc1ba0`, 210 b) **négy** tagot olvas be
+(`+0x40`, `+0x48`, `+0x50`, `+0x58`), de a beolvasó (`0x00bc1a90`) csak
+**hármat** nevez meg: `exposure`, `contrast`, `blacks`. A négy értéket
+átadja a `0x00bc1c80`-nak (1758 b), és ott épül a két görbe.
+
+### 1. A FIX, nyolcpontos tábla
+
+Egyszer, indításkor töltődik fel (`0x00d9fda0` az „már megvolt" jelző), a
+`0x00d9fd60`-tól kezdődő 16 float:
+
+| # | x | y |
+|---|---|---|
+| 0 | **14** | **0** |
+| 1 | **27** | **19** |
+| 2 | **41** | **36** |
+| 3 | **81** | **70** |
+| 4 | **128** | **94** |
+| 5 | **193** | **123** |
+| 6 | **220** | **136** |
+| 7 | **255** | **160** |
+
+A görbeépítő hívása egyértelmű: `push 0x00d9fd60; mov eax, 8;
+call 0x008f2b30` — **nyolc pont**.
+
+⇒ **Sötétítő, csúcsokat összenyomó görbe**: a 255 csak 160-ig jut, a 14 alatti
+rész nullára esik.
+
+### 2. Az ÖT pontos, PARAMÉTERES görbe
+
+Közvetlenül utána (`0x00bc1e01`–`0x00bc1e71`, `mov eax, 5`), ahol `s` az
+egyik beolvasott attribútum értéke:
+
+| # | x | y |
+|---|---|---|
+| 0 | 0 | 0 |
+| 1 | 6 | **42 · s + 6** |
+| 2 | 36 | **112 · s + 36** |
+| 3 | 126 | **72 · s + 126** |
+| 4 | 255 | 255 |
+
+Minden szorzó és eltolás kiolvasott konstans (`0x00cf4b00` = 42,
+`0x00cf4af8` = 112, `0x00cf3f90` = 72; az eltolások `6`, `36`, `126`).
+
+⇒ **`s = 0`-nál a görbe azonosság** (a pontok a felezővonalon ülnek), és a
+paraméter nő
+
+- a **sötét részt** emeli a legkevésbé (x = 6 → +42 s),
+- a **mélyárnyékot/középsötétet** a legjobban (x = 36 → +112 s),
+- a **középtónust** mérsékelten (x = 126 → +72 s),
+- a **fehéret egyáltalán nem** (x = 255 rögzített).
+
+Ez a **derítőfény (fill light)** jellegű görbe alakja.
+
+> ✅ **Mindkét kérdés megválaszolva.** Az `s` a **`fill`** attribútum
+> (2/b. pont). A görbék pedig **SORBAN**, nem keverve:
+>
+> ```
+> 0x00bc218c  call 0x008f3290   ; érték = 1. görbe(érték)
+> 0x00bc21a1  call 0x008f3290   ; érték = 2. görbe(érték)
+> 0x00bc21b6  call 0x008f3290   ; érték = 3. görbe(érték)
+> 0x00bc21bf  fldz ... fcom     ; majd alsó vágás nullára
+> ```
+>
+> A `0x008f3290` (280 b) a **görbe kiértékelése egy pontban**: ha a görbe
+> kevesebb mint két pontból áll, **változatlanul visszaadja** a bemenetet
+> (`0x008f32a0`). A `0x008f2c70` (299 b) ennek a párja: **pont hozzáfűzése**
+> a görbéhez (kapacitás-duplázás, `eax*8` ⇒ 8 bájt = egy `(x, y)` pár).
+>
+> ⇒ **A művelet a bemeneti szintet három görbén futtatja át egymás után
+> (kompozíció), majd nullára vágja alul.** Egy külön ág (`0x00bc2125`–
+> `0x00bc2163`) egyetlen görbét értékel ki, hozzáad egy skálázott tagot, és
+> a `0x008f2e00`-t hívja — mikor lép életbe, **nincs mérve**.
+>
+> **Ami szintén nincs mérve:** melyik veremrekesz melyik görbe. A három
+> kiértékelés a `[esp+0x74]`, `[esp+0x1c]` és `[esp+0x34]` címekre megy, de
+> az építési helyükhöz képest a verem közben eltolódik, és a jelen
+> olvasatból nem dönthető el egyértelműen a párosítás. **Találgatás helyett
+> kimondva marad.**
+
+### 2/b. ⛔ HELYESBÍTÉS: az `Exposure` NEGYEDIK attribútuma a `fill` — és épp az hajtja az 5 pontos görbét (2026-09-04, #2238)
+
+Az előző bekezdés azt írta, hogy a munkavégző **négy** tagot olvas, de a
+beolvasó csak **hármat** nevez meg. **A negyedik neve megvan:** `fill`
+(`0x00c87128`, a `+0x50` tagba, `0x00bb…`/`0x00bc1b04`). A kiolvasó szkript
+azért hagyta ki, mert ez a sztring — a `h`/`s`/`v`-hez hasonlóan — **nincs
+benne a bináris-index sztringtáblájában**; közvetlenül a fájlból olvastam ki
+a `mov edi, <cím>` operandusa alapján.
+
+**Az `ExposureImageOperation` NÉGY attribútuma:**
+
+| attribútum | tag | melyik ágat hajtja |
+|---|---|---|
+| `exposure` | `+0x40` | a **8 pontos FIX tábla** ága (`0x00bc1c86`) |
+| `contrast` | `+0x48` | `0x00bc2036` |
+| **`fill`** | `+0x50` | ⭐ **az 5 pontos, paraméteres görbe** (`0x00bc1dbc`) |
+| `blacks` | `+0x58` | `0x00bc1e80` · `0x00bc1eda` · `0x00bc1f1b` |
+
+*(A hozzárendelés a hívási sorrendből: a munkavégző `(exposure, contrast,
+fill, blacks)` sorrendben adja át a négy lebegőpontos értéket
+`0x00bc1c42`–`0x00bc1c64`, a görbeépítő pedig ezeket a veremrekeszeket
+olvassa vissza.)*
+
+⇒ **A 2. pont paraméteres görbéje a DERÍTŐFÉNY (fill light) görbéje** — nem
+találgatás a görbe alakjából, hanem az attribútum neve. A két olvasat
+egybeesik: a görbe a mélyárnyékot emeli a legjobban (x = 36 → +112 · s), a
+fehéret nem mozdítja.
+
+### 3. Egy módszertani apróság: a „közel a nullához" próba BITMINTÁN megy
+
+Mindkét görbe elé ugyanaz a kapu kerül:
+
+```
+mov eax, dword ptr [esp + 0xc]   ; a float BITMINTÁJA egészként
+sub eax, dword ptr [esp + 8]     ; a 0,0 bitmintája
+cdq / xor eax, edx / sub eax, edx ; abszolút érték
+cmp eax, 8
+jb  <kihagyás>
+```
+
+⇒ A program a lebegőpontos értéket **egészként** hasonlítja a nullához, és
+ha a bitminta-különbség **8-nál kisebb**, a görbét egyszerűen **kihagyja**.
+Ez nem hiba, hanem szándékos „elhanyagolható a csúszka" gyorsítás — de aki
+átveszi, ne `abs(x) < eps`-t írjon a helyére: a bitminta-távolság nem
+arányos az értékkel.
+
+*Bizonyítottsági fok: **megerősített** a két táblára, a pontszámokra és a
+kapura (kiolvasott konstansok és utasítások); az attribútum-hozzárendelés és
+a két görbe összekapcsolása **nincs mérve**.*
+
+## ⭐ A `rainbow` ALT-os ága: a `0x00d67849` kapcsoló MEGVAN (#2224, 2026-09-04)
+
+A #2148 nyitott kérdése: *mikor nem nulla a `0x00d67849` bájt, ki írja?*
+A kérdést az tette nyitottá, hogy a **lineáris pásztázás hiányos** —
+a #2224 maga is kimondta, hogy még azt a hivatkozást sem találta meg,
+amiből a kérdés indult.
+
+### A módszer: nyers cím-keresés, nem lineáris diszasszemblálás
+
+A `0x00d67849` **négy bájtos, little-endian** alakjára kerestem rá a
+végrehajtható szekciók teljes tartalmában, majd minden találatot a
+**előtte álló opkód** szerint osztályoztam.
+
+| | darab |
+|---|---:|
+| nyers előfordulás | **139** |
+| ebből **olvasás** (`cmp` / `mov` / `movzx` / `test`) | **137** |
+| ebből **ÍRÁS** | **2** |
+
+*(A #2224 négy hivatkozást és nulla írást talált.)*
+
+### A két írás
+
+| cím | utasítás | tartalmazó függvény | a függvény sztringjei |
+|---|---|---|---|
+| `0x00576419` | `mov byte ptr [0x00d67849], 1` | `0x005760e0` (940 b) | `Preferences`, `mainwinismax`, `mainwinpos` |
+| `0x00a52e66` | `mov byte ptr [0x00d67849], al` | `0x00a52890` | `#32768` (a Windows menü-ablakosztálya) |
+
+A második `al`-t tárol, amit közvetlenül előtte a `mov eax, [ecx+8]` /
+`test eax, eax` állít elő ⇒ **nullázni is tud**.
+
+### A kezdőérték: 0 — mérve
+
+A `0x00d67849` a tartalmazó szekció **inicializálatlan farkába** esik:
+
+| | érték |
+|---|---|
+| szekció virtuális kezdete | `0x00d24000` |
+| virtuális méret | 513 684 |
+| **nyers (fájlbeli) méret** | **155 648** |
+| a cím eltolása a szekcióban | **`0x43849` = 276 041** |
+
+276 041 **> 155 648** ⇒ a bájt a fájlban nem szerepel, betöltéskor a
+rendszer **nullázza**. ⇒ **A folyamat indulásának pillanatában a kapcsoló
+0** — de a főablak megjelenítése (lentebb) rögtön 1-re állítja, tehát ebből
+NEM következik, hogy a `rainbow` ág ne élne.
+
+### Az írást KAPU védi
+
+```
+0x005763d9   xor ebx, ebx
+0x005763db   cmp byte ptr [esp + 0xbc], bl      ; a helyi bájt 0-e?
+0x005763e2   je  0x00576426                     ; ⇐ ha 0, ÁTUGORJA az írást
+…
+0x005763e8   call 0x004019b0                    ; a beállítás-OLVASÓ
+0x005763ed   neg eax / sbb eax, eax / and eax, 2 / add eax, 1   ⇒ 1 vagy 3
+0x00576419   mov byte ptr [0x00d67849], 1
+```
+
+A függvényben **ez az egyetlen** olyan elágazás, amely az írást átugorja
+(a 940 bájt teljes ugrás-leltára: 73 jelölt, ebből öt lépi át az írás
+címét, és három közülük a kép határain kívülre mutat, azaz téves
+dekódolás).
+
+⇒ A kapcsoló akkor és csak akkor lesz 1, ha a főablak-függvény ezen az
+ágon fut le — és ugyanez az ág olvas be egy beállítást a `0x004019b0`-on
+(a `Preferences` olvasója) keresztül.
+
+### A KAPU: a `[esp + 0xbc]` a függvény MÁSODIK PARAMÉTERE (#2224, 2026-09-04)
+
+A korábbi kör „helyi bájtnak" nevezte, és a verem-normalizálás hiányára
+hivatkozva nyitva hagyta. **A verem kiszámolható**, és nem helyi változó:
+
+| lépés | esp elmozdulása |
+|---|---|
+| belépéskor | `[esp]`=visszatérési cím, `[esp+4]`=1. paraméter, `[esp+8]`=2. paraméter |
+| `sub esp, 0xa4` | +0xa4 |
+| `push ebx` · `push ebp` · `push esi` · `push edi` | +0x10 |
+| **összesen** | **+0xb4** |
+
+⇒ `[esp+0xb4]` = visszatérési cím, **`[esp+0xb8]` = 1. paraméter**,
+**`[esp+0xbc]` = 2. paraméter**. Ezt a függvény maga is megerősíti: a
+`0x005761d2` `mov edx, [esp+0xb8]` után rögtön `mov byte ptr [edx+0xdd5],
+al` következik — objektumtagba ír, tehát az `[esp+0xb8]` **objektummutató**,
+nem helyi. A lezárás `ret 8` = **két** paraméter, stdcall.
+
+### A függvény szerepe — kiolvasva
+
+`0x005760e0` a **főablak helyreállítója**: a `Preferences\mainwinpos`
+és `Preferences\mainwinismax` kulcsokból visszaállítja a főablak helyét és
+maximalizált állapotát, ellenőrzi a képernyő-határokat
+(`GetWindowPlacement` / `AdjustWindowRectEx` / `SetWindowPos`), majd — **ha
+a 2. paraméter igaz** — meg is jeleníti:
+
+```
+0x005763db   cmp byte ptr [esp+0xbc], bl   ; 2. paraméter == 0 ?
+0x005763e2   je  0x00576426                ; ha 0 → NEM jeleníti meg
+0x005763e8   call 0x004019b0               ; „maximalizált volt?" beállítás
+0x005763ed   neg/sbb/and 2/add 1           ⇒ 3 (SW_SHOWMAXIMIZED) vagy 1 (SW_SHOWNORMAL)
+0x005763f9   ShowWindow(hwnd, nCmdShow)        [0xc40890]
+0x00576404   SetFocus(...)                     [0xc408a4]
+0x0057640b   BringWindowToTop(...)             [0xc408c8]
+0x00576412   SetForegroundWindow(hwnd)         [0xc40888]
+0x00576419   mov byte ptr [0x00d67849], 1      ⬅️ A KAPCSOLÓ
+0x00576420   UpdateWindow(hwnd)                [0xc40848]
+```
+
+Az import-nevek a betöltési tábla rekeszeiből feloldva (a
+`binaris-regeszet-modszertan.md` 21. szakaszának módszerével).
+
+⇒ **A kapcsoló akkor lesz 1, amikor a főablak ténylegesen megjelenik és
+előtérbe kerül.**
+
+### Az öt hívó — mind kimérve
+
+| hívás helye | 2. paraméter | kapu |
+|---|---|---|
+| `0x0040ce0b` | **1** | — |
+| `0x0040d078` | **1** | — |
+| `0x0040d428` | **1** | `cmp byte [0x00d67666], 0` |
+| `0x0040da02` | **0** | `cmp byte [0x00d67666], 0` |
+| `0x0040dcaa` | **1** | `cmp byte [0x00d67666], 0` |
+
+*(A hívás-helyeket nem lineáris diszasszemblálás adta, hanem a `.text`
+teljes pásztázása az `e8` relatív hívás célcíme szerint — ez a
+0x005760e0-ra **öt** helyet talált, míg az index `xrefs` táblája hármat.)*
+
+Négy hívó igazzal hív ⇒ a kapcsoló a **rendes indulás** része.
+
+### A MÁSODIK írás: a kapcsoló jelentése ZÁRT
+
+A `0x00a52890` ablakeljárás elején `mov edi, [ebp+8]` (üzenet-struktúra),
+`mov esi, [edi+4]` = **üzenetazonosító**, `[edi+8]` = `wParam`. Az ugrótábla
+(`0x00a53900` / index `0x00a53918`) a **`0x1C`** azonosítót — és **csak**
+azt — a `0x00a52e0c` blokkra irányítja, ahol:
+
+```
+0x00a52e55   cmp esi, 0x1c                 ; WM_ACTIVATEAPP
+0x00a52e58   jne 0x00a52edf
+0x00a52e5e   mov ecx, [ebp+8]
+0x00a52e61   mov eax, [ecx+8]              ; wParam = aktiválódik-e
+0x00a52e64   test eax, eax
+0x00a52e66   mov byte ptr [0x00d67849], al ⬅️ A KAPCSOLÓ
+```
+
+⇒ **`0x00d67849` = „a Picasa az ELŐTÉRBEN lévő alkalmazás".** A
+`WM_ACTIVATEAPP` `wParam`-ja írja: aktiválódáskor 1, elvesztéskor 0. A
+másik írás (a főablak megjelenítése) ugyanezt mondja ki induláskor.
+
+> **Helyesbítés a korábbi körhöz:** a második írás címe **`0x00a52e66`**,
+> nem `0x00a52e65` — a nyers cím-keresés a *operandus* kezdetét adta, az
+> `a2` opkód eggyel előrébb van.
+
+### Miért pont ez őrzi az ALT-ot — 81 olvasás ugyanabban a mintában
+
+A 137 olvasásból **81** olyan, hogy **28 bájton belül** utána a
+`GetAsyncKeyState` betöltési rekesze (`0x00c406f8`) hívódik. A minta
+mindenütt azonos — például a nyitóképernyő-függvényben:
+
+```
+0x0040b4a7   cmp byte ptr [0x00d67849], bl
+0x0040b4ad   je  0x0040b4c2                ; nem aktív → NE nézd a billentyűt
+0x0040b4af   push 0x10                     ; VK_SHIFT
+0x0040b4b1   call [0x00c406f8]             ; GetAsyncKeyState
+```
+
+Ez pontosan az, amit a `GetAsyncKeyState` megkövetel: a függvény
+**rendszerszintű**, tehát egy háttérben lévő alkalmazásnak nem szabad
+reagálnia rá. A `0x005d672b` (a Kiegyenesítés ALT-ága) ennek a 81-nek
+**egyike**.
+
+### A gyakorlati válasz
+
+**A `rainbow` ALT-os útja egy átlagos telepítésen ÉL.** A kapcsoló nem
+rejtett beállítás és nem parancssori kapcsoló: hétköznapi kattintáskor a
+Picasa az előtérben van, tehát 1. A korábbi óvatosság („alapból nem él")
+**csak az induló pillanatra** volt igaz, a megjelenített főablakra már nem.
+
+### Nálunk MA — mérve
+
+| | eredeti | nálunk (MÉRVE) | hol |
+|---|---|---|---|
+| `rainbow` mint név | natív szűrő | **ismert**, öt helyen | `render/legacy_effects.py:66`, `render/registry_data.py:159`, `render/chain.py:112`, `ini/filter_registry.py:91` és `:214` |
+| `rainbow` RENDERELÉSE | natív mag | **NINCS** — a `KNOWN_UNRENDERED_OPS` halmazban ül | `render/chain.py:86`+`112` ⇒ a `can_render_filter` hamisat ad rá |
+| előhívás a felületről | ALT + Kiegyenesítés | **az örökölt-fülön** (szándékos többlet, #571); ALT-ág **nincs** | a Kiegyenesítés `toolName: "tilt"` — `app/qml/PicasaPy/EditorTabCommonFixes.qml:100` |
+| `AltModifier` a szerkesztőben | VK_MENU-vizsgálat | **nulla előfordulás** (csak a `CollageSheet.qml`-ben, más célra) | `grep -rn "AltModifier" src/` |
+
+⇒ **Az ALT-ág megépítése ma nem volna őszinte:** a `rainbow`-nak nincs
+renderelő modellje, tehát a gomb aktívnak látszana, de nem hatna — pont
+azt csinálná, amit a `legacy_effects.py` fejléce kizár. A rejtett
+módosítós ágak közös jegye a **#2146**.
+
+> **Negatív eredmény, ami MUNKÁT SPÓROL:** a `0x00d67849`-nek megfelelő
+> „előtérben vagyunk-e" őrt nálunk **nem kell megépíteni**. Az eredetiben
+> azért kell, mert a `GetAsyncKeyState` rendszerszintű; Qtben a
+> billentyű-módosítót az esemény hozza magával (`event.modifiers`), és
+> esemény csak fókuszált ablakhoz érkezik. Aki a Shift-/ALT-ágakat
+> megépíti, ezt az őrt **ne másolja át**.
+
+*Bizonyítottsági fok: **megerősített** — a paraméter-azonosítás
+verem-számolásból, az öt hívó a `.text` teljes pásztázásából, a
+`WM_ACTIVATEAPP` az ugrótáblából és a `wParam`-eltolásból, a 81-es
+minta megszámolva. A „nálunk" oszlop minden sora lemért `grep`.*
+
+## ⭐ `AdjustCurves`: a négy görbe-tag SORRENDJE megvan (#2238/1, 2026-09-04)
+
+A #2238 első kérdése: a `+0x40`…`+0x4c` tagok közül melyik a Master / Red /
+Green / Blue? A választ az **attribútum-olvasó** adja: `0x00bb9b60` (255 b),
+amely mind a négy nevet hivatkozza.
+
+### A megfeleltetés — ZÁRT
+
+| attribútum | tagoffszet | a név betöltése | olvasás | írás |
+|---|---|---|---|---|
+| `MasterCurve` | **`+0x40`** | `0x00bb9b90` | `0x00bb9ba2` | `0x00bb9bb4` |
+| `RedCurve` | **`+0x44`** | `0x00bb9bc0` | `0x00bb9bd2` | `0x00bb9be4` |
+| `GreenCurve` | **`+0x48`** | `0x00bb9bf0` | `0x00bb9c02` | `0x00bb9c14` |
+| `BlueCurve` | **`+0x4c`** | `0x00bb9c20` | `0x00bb9c32` | `0x00bb9c44` |
+
+**A megfeleltetés zárt:** mind a négy név **pontosan egyszer** szerepel,
+mind a négy eltolás **pontosan egyszer**, és a kettő sorrendje azonos
+(növekvő). Minden névhez ugyanaz a háromlépéses minta tartozik: név
+betöltése → `mov ecx, [ebx+eltolás]` (a régi érték) → `mov [ebx+eltolás],
+esi` (az új).
+
+⇒ **A sorrend tehát a természetes: Master, Red, Green, Blue.** Aki
+megvalósítja, ezt a hozzárendelést használja — nem feltevésből.
+
+### Nálunk MA — és a lelet MEGERŐSÍTI a meglévő kódot
+
+| | eredeti | nálunk | hol |
+|---|---|---|---|
+| `adjust_curves()` | négy görbe, `+0x40`…`+0x4c` | **megvan**, `master`/`red`/`green`/`blue` paraméterrel | `src/picasapy/render/glimmer_ops.py:125` |
+| sorrend | `MasterCurve` az **első** beolvasott | **master előbb**, utána a csatornánkénti | ugyanott, a docstringben kimondva |
+
+⇒ A mostani mérés **független úton megerősíti** a meglévő függvényünk
+paramétersorrendjét. ⚠️ Amit **nem** mond meg: hogy a görbe-alkalmazás
+*matematikája* egyezik-e — az attribútum-sorrend nem pixel-matematika.
+
+### Melléklelet: az `AdjustCurves`-nek van `ExposureAdjustmentStops`
+attribútuma is
+
+Ugyanez az olvasó a négy görbe **előtt** beolvassa az
+`ExposureAdjustmentStops` nevű attribútumot is, a `+0x50` tagba
+(`0x00bb9b68` a név, `0x00bb9b88` `lea esi, [ebx + 0x50]`).
+
+⚠️ *Amit ez NEM mond meg:* hogy a művelet mit kezd vele. Csak a beolvasás
+helye mérve.
+
+### ⛔ Amit NEM sikerült megmérni — pontos hatókörrel
+
+**Az alkalmazó (`0x00bb9e00`, 438 b) nem hivatkozik a négy tagra** a
+`mov r32, [reg+disp8]` kódolással — a teljes 438 bájton **nulla** találat
+erre az alakra. ⚠️ Ebből **nem következik**, hogy nem használja: más
+címzési alak (SIB, `disp32`, más bázisregiszter) vagy paraméterátadás is
+lehetséges. A görbék feltehetően a hívótól érkeznek, de ez **NINCS MÉRVE**.
+
+*Bizonyítottsági fok: a **név → tagoffszet megfeleltetés megerősített**
+(bájtszinten kiolvasva, zárt); az alkalmazó hozzáférési módja **NINCS
+MEG**, és a fenti negatívum csak a megnevezett kódolási alakra áll.*
+
+## ✅ A szállított `Depth` = 4 — a leíróból kiolvasva (2026-09-05, #2454)
+
+A lap utolsó nyitott kérdése — **mekkora `Depth`-et szállít a
+`filterdesc.xml`** — megválaszolva, és **nem kellett hozzá a tulajdonos
+gépe**: a kutatási másolatunkban ott a fájl.
+
+```xml
+<filter id="QuantizePalette" mode="effect" zerostate="none" fullres="1" slow="1">
+  <label>Posterize</label>
+  <HSliderFastDrag minimum="2"  maximum="30"  value="8"  id="_sldrSteps"/>
+  <HSliderFastDrag minimum="0"  maximum="100" value="80" id="_sldrSmoothing"/>
+  <HSliderPlus     minimum="0"  maximum="100" value="0"  id="_sldrFade"/>
+  <NestedImageOperation BlendAlpha="{1-(_sldrFade.value/100)}">
+    <BlurImageOperation xblur="{(100-_sldrSmoothing.value)/10 + 0.1}"
+                        yblur="{(100-_sldrSmoothing.value)/10 + 0.1}" quality="3"/>
+    <QuantizePaletteImageOperation Depth="4" Steps="{_sldrSteps.value}"/>
+  </NestedImageOperation>
+</filter>
+```
+
+*(Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml:1244–1258`;
+a `Depth` a 1255. soron.)*
+
+| érték | honnan |
+|---|---|
+| **`Depth = 4`** | a szállított leíró (1255. sor) |
+| a kódbeli alapérték `2` | `0x00bb5b1d` (`mov ebx, 2`) |
+| Steps 2–30, alap **8** | 1249. sor |
+| Smoothing 0–100, alap **80** | 1250. sor |
+| Fade 0–100, alap **0** | 1251. sor |
+| elmosás | `σ = (100 − Smoothing)/10 + 0,1`, `quality=3` (1254. sor) |
+| keverés | `BlendAlpha = 1 − Fade/100` (1252. sor) |
+
+**Amit ez a lap saját szabályával együtt jelent:** a csomópont csak akkor
+hasad, ha a **hátralévő** `Depth` **> 1** (`0x00bcb8e6`), és a gyerek
+`Depth − 1`-et örököl (`0x00bcb9a6`). Ezért `Depth = 4` mellett **három**
+osztási szint fut le (4→3→2 hasad, az 1-es már nem) ⇒ legfeljebb
+**8³ = 512** oktree-levél. A kódbeli alapérték (2) ezzel szemben **egyetlen**
+szintet, **8** levelet adna — a szállított beállítás tehát lényegesen
+finomabb palettát épít.
+
+⚠️ **Nálunk (mérve):** a `render/glimmer_tone.py:286–305` az elmosást és a
+keverést **bitre az eredeti képlettel** végzi, a kvantálást viszont
+**csatornánként egyenletes lépésközzel**, `Steps` szintre. A docstring
+(`:290–292`) azt állítja, hogy ez a `Depth` konstans mellett
+„egyenértékű" — **ez az állítás nincs mérve**, és 512 palettacella mellett
+kétséges. Jegy: **#2454** (mérést kér, nem átírást).
+
+## `QuantizePalette` `Depth` — MEGVAN, és a 3-3-2 tábla NEM tartalék (2026-09-04, #2231)
+
+*(Ez a szakasz **felváltja** a 2026-09-04-i korábbi, „részleges mérés, NYITVA
+marad" változatot. Az akkori negatív keresés — `and al, 0xE0` és társai a
+`0x00bb5b60` törzsén — **helyes volt, de rossz helyen keresett**: a maszkok
+ott vannak, csak `cl`/`dl` regiszterrel (`0x00bb5e04`, `0x00bb5e1c`), és a
+`Depth` egyáltalán nem ebben a függvényben dől el, hanem az oktree
+csomópont-beszúrójában.)*
+
+> **Bizonyítottság: megerősített** — minden állítás mellett cím áll, minden
+> konstans kiolvasva.
+>
+> ⚠️ **Attribúció:** a `Depth` **jelentését** (oktree-mélységkeret) a #2238
+> köre már helyesen mondta ki; ez a szakasz az **ellenőrzése és a pontos
+> szabálya** (a `> 1` kapu, a lefelé számolás, és hogy az alapérték 2
+> **egyetlen** osztási szintet jelent). A 2–6. pont ezen felül **új**.
+
+### 1. `Depth` = az oktree HÁTRALÉVŐ osztási mélysége, és lefelé számol
+
+| cím | utasítás | mit jelent |
+|---|---|---|
+| `0x00bcb8e6` | `cmp dword ptr [esi + 0x10], 1` · `jbe` | a csomópont **csak akkor** hasad, ha a hátralévő mélység **> 1** |
+| `0x00bcb9a6` | `sub edx, 1` | a gyerek `Depth − 1`-et örököl |
+| `0x00bcb9bc` | `mov [eax + 0x10], edx` | …és ezt a `+0x10` résbe kapja |
+| `0x00bcb9a0` | `add ecx, 1` → `[eax + 0x0c]` | a gyerek szintje `szülő + 1` |
+
+⇒ **A `Depth` a megengedett hasítások száma.** A `0x00bb5ad0` alkalmazóban
+mért **alapérték 2** (`0x00bb5b1d`, `mov ebx, 2`) ⇒ a gyökér hasad, a nyolc
+gyereke (`Depth = 1`) **már nem**: egyetlen osztási szint, **8 levél**.
+
+### 2. A csomópont — 32 bájt, mért mezőkiosztás
+
+| eltolás | mező | bizonyíték |
+|---|---|---|
+| `+0x00` | mutató a **8 elemű gyerektömbre** (vagy `NULL`) | `0x00bcb8fd`, `0x00bcb986` |
+| `+0x04` | a belefolyt színek **száma** | `0x00bcb942` |
+| `+0x08` | bájt-jelző, létrehozáskor `1` | `0x00bcb9b8` |
+| `+0x0c` | **szint** (a gyökér 0) | `0x00bcb9a3` |
+| `+0x10` | **hátralévő `Depth`** | `0x00bcb9bc` |
+| `+0x14` · `+0x18` · `+0x1c` | R · G · B **összeg** | `0x00bcb933` · `0x00bcb939` · `0x00bcb93f` |
+
+Mind a csomópont, mind a gyerektömb foglalása **32 bájt**
+(`0x00bcb8f2` és `0x00bcb98c`: `push 0x20`).
+
+### 3. A gyerek-index — klasszikus bit-átlapolás (`0x00bcb962`–`0x00bcb984`)
+
+`cl = 7 − szint`, majd:
+
+```
+eax = ((r << 2) >> cl) & 4      ; az r (7−szint). bitje a 2. helyre
+esi = ((g << 1) >> cl) & 2      ; a g   ugyanaz a bitje az 1. helyre
+edx = ( b        >> cl) & 1     ; a b   ugyanaz a bitje a 0. helyre
+index = eax + esi + edx         ; 0…7
+```
+
+⇒ a `szint` szinten a három csatorna **(7 − szint). bitje** dönt.
+
+### 4. Hasítás csak a MÁSODIK színnél
+
+`0x00bcb8ec`: `cmp dword ptr [esi + 4], 1` · `jne` — a gyerektömb akkor jön
+létre, amikor a számláló **pontosan 1** (tehát a második szín érkezésekor), és
+a `0x00bcb919` a **már felhalmozott** összeget (`[esi+0x14]`) színként
+**lenyomja** a fába. Az összegzés és a számlálás **minden szinten** történik
+(`0x00bcb931`–`0x00bcb942`), tehát minden csomópont a teljes alatta lévő
+halmaz összegét tartja.
+
+### 5. ⛔ HELYESBÍTÉS — a 3-3-2 tábla NEM tartalék út
+
+A korábbi olvasat „tartalék útnak" nevezte. **Megdőlt.** A `Steps == 2`
+vizsgálat két ága (`0x00bb5db6` `jne`) **ugyanoda fut össze**:
+
+```
+0x00bb5daf  cmp eax, 2            ; eax = Steps
+0x00bb5db6  jne 0x00bb5dc4
+0x00bb5db9    call 0x00bcb6f0     ; redukálás(2)
+0x00bb5dc2    jmp 0x00bb5dcd
+0x00bb5dc4  add eax, -1
+0x00bb5dc8  call 0x00bcb6f0       ; redukálás(Steps − 1)
+0x00bb5dcd  <<< MINDKÉT ág ide >>>
+```
+
+⇒ a táblák **minden futásban felépülnek**, a redukálás után.
+
+### 6. Mire valók a táblák — gyorsító, nem paletta
+
+**a) Három 256 elemű `dword` tábla** (`0x00bb5e02`–`0x00bb5e53`), a
+verem-keret `0xb8`, `0x4b8` és `0x8b8` eltolásán (fejenként 1024 bájt):
+
+```
+Rtab[i] =  (i & 0xE0)          <<16 | 0xFF000000     ; 0x00bb5e04
+Gtab[i] = ((i >> 3) & 0x1C)    <<16 | 0xFF000000     ; 0x00bb5e1c
+Btab[i] = ((i >> 6) & 0x03)    <<16 | 0xFF000000     ; 0x00bb5e0d
+```
+
+A három érték **ugyanabba a bájtba** kerül, tehát az `Rtab[r] | Gtab[g] |
+Btab[b]` egyetlen `OR`-ral a klasszikus **3-3-2 csomagolt indexet** adja
+(3 bit R, 3 bit G, 2 bit B → 0…255).
+
+**b) A harmadik táblát egy második, 256 menetes ciklus FELÜLÍRJA**
+(`0x00bb6055`–`0x00bb60e8`): minden 3-3-2 rekeszre megkérdezi az oktree-től a
+**legközelebbi palettaszínt** (`0x00bcb9f0`, 475 b), és az eredményt teszi a
+`0x8b8` táblába (`0x00bb60dd`).
+
+**c) A képpontonkénti alkalmazás** ezt az objektumot kapja meg
+(`0x00bb6110` → `0x00bcb2f0`, 744 b).
+
+⇒ **A paletta-leképezés 256 rekeszre ELŐRE ki van számolva**, nem
+képpontonként fut. Ennek **látható következménye**: két olyan szín, amely
+ugyanabba a 3-3-2 rekeszbe esik, **mindig ugyanazt** a kimeneti színt kapja —
+akkor is, ha az oktree egyébként szétválasztaná őket. A tényleges bemeneti
+felbontás tehát **8 × 8 × 4 = 256 rekesz**.
+
+**d) Ezzel a 4268 bájtos (`0x10AC`) veremkeret is megvan:** a három tábla a
+`0xb8`…`0xCB8` tartományt foglalja (3 × 1024 bájt); a korábbi változat ezt
+„NINCS MEG"-nek jelölte.
+
+### 7. Amit a fentiek NEM döntenek el
+
+⚠️ **BLOKKOLT: a `Depth` TÉNYLEGES értéke a szállított `filterdesc.xml`-ben.**
+A binárisból mért **alapérték 2** (az attribútum hiányában ez lép életbe), a
+mi `glimmer_tone.py:282` docstringünk viszont **`Depth=4`**-et állít. Melyik a
+szállított érték, azt csak a futó Picasa `filterdesc.xml`-je mondja meg — az a
+fájl **már kérve van** a **#2125**-ben. *(A különbség nem elhanyagolható:
+`Depth = 2` egy osztási szint, `Depth = 4` három ⇒ redukálás előtt akár 512
+levél.)*
+
+⇒ A `Depth` **jelentése LEZÁRVA**; a szállított **értéke BLOKKOLT** (#2125).

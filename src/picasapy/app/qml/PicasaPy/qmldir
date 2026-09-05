@@ -47,6 +47,7 @@ ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
 PlacesPanel 1.0 PlacesPanel.qml
 AboutDialog 1.0 AboutDialog.qml
+HelpDialog 1.0 HelpDialog.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 BatchEditProgressPanel 1.0 BatchEditProgressPanel.qml
 SaveProgressPanel 1.0 SaveProgressPanel.qml

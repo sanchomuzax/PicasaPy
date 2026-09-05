@@ -726,3 +726,426 @@ lemez-szintű), a „soha ne törölj" változattal 5 mappa-nézeti teszt.
 *Marad nyitva* (a fentebbi „Amit ez NEM dönt el" szakasz): a `CThumbUI`
 rács-menü `\tDelete`-je és a kép helyi menüje `Ctrl+Delete`-je közti
 pontos felület-határ.
+
+---
+
+## 10. A `D` forrás: a könyvtárnézet SAJÁT billentyűkezelője (#442, 2026-09-03)
+
+> **Ez a szakasz a 7.1 pontot zárja le.** A 7.1 így szólt: *„nem
+> fejtettük vissza, hol áll össze a (billentyű, módosító) → cmd leképezés
+> a menün kívüli billentyűkre. Statikus tömböt kerestünk a 48
+> azonosítóból — nincs a fájlban … tehát kódba írt elágazás."*
+> **A feltevés helyes volt: kódba írt elágazás. Meg is van.**
+
+### 10.1 A kezelő és a két táblája
+
+A könyvtárnézet billentyűkezelője a **`0x005e60d0`**. Nem
+accelerator-táblából dolgozik, hanem fordító által generált ugrótáblás
+`switch`-ből:
+
+```
+0x005e61a8  movsx edi, word ptr [esi+8]            ; a virtuális billentyűkód
+0x005e61de  lea eax, [edi - 0xd]
+0x005e61e1  cmp eax, 0x6b
+0x005e61e4  ja  0x5e65f7                           ; tartományon kívül -> nincs teendő
+0x005e61ea  movzx ecx, byte ptr [eax + 0x5e66a4]   ; INDEXTÁBLA, 108 bájt
+0x005e61f1  jmp dword ptr [ecx*4 + 0x5e6614]       ; UGRÓTÁBLA, 36 bejegyzés
+```
+
+⇒ kezelt tartomány **VK `0x0D`…`0x78`**; indextábla `0x005e66a4`,
+ugrótábla `0x005e6614`. Mindkettő közvetlenül kiolvasható — **ezért nem
+kellett statikus azonosító-tömb.**
+
+### 10.2 A módosítók
+
+A `[esi+0x10]` bájt három bitje a módosítókat hordozza; a kezelő a
+**4-es bitet megköveteli** (`0x005e6178`: `test byte ptr [esi+0x10], 4` /
+`jle` a kihagyó ágra). A `0x005c5f90` egy 16 bájtos szerkezetbe teszi őket:
+
+| mező | forrás | hol vizsgálják |
+|---|---|---|
+| `+0`, `+3` | a **4**-es bit | a belépési kapu |
+| `+1`, `+4` | a **2**-es bit | `[esp+0x11]` az ágakban |
+| `+2`, `+5` | a **8**-as bit | `[esp+0x12]` az ágakban |
+| `+8` | a billentyűkód | – |
+
+**Azonosítás** *(a `Ctrl`-re **megerősített**, ld. 10.9; a `Shift`/`Alt`-ra
+**erős**, két független egyezésből)**:** a `3` ág a
+`thumbui/fullview`-t kattintja, és a lap 3.3 táblája szerint a
+szerkesztési nézet billentyűje `Ctrl+3` ⇒ a **kötelező 4-es bit = `Ctrl`**;
+az `R` ág a 2-es bitre ágazik, és a forgatás `Ctrl+R` / `Ctrl+Shift+R` ⇒ a
+**2-es bit = `Shift`**, a maradék **8-as bit = `Alt`**.
+
+### 10.3 A teljes kiosztás — mind a 34 ág
+
+A „kattint" azt jelenti, hogy az ág a `0x009cd8a0(elemnév)`-et hívja: ez
+feloldja az elemet és meghívja a **vtable `+0x78`** metódusát `(0, 0)`
+argumentumokkal.
+
+| billentyű | ág | mit csinál |
+|---|---|---|
+| `Ctrl+Enter` | `0x005e61f8` | `0x005c8320(panel, 0)` |
+| `Ctrl` + VK `0x12` | `0x005e65dc` | `[panel+0xe78]` őr, `[panel+0xe70]` azonosító |
+| **`Ctrl+0`** | `0x005e6206` | **kattint: `thumbui/toggle_right_drawer`** |
+| `Ctrl+1` | `0x005e6215` | kattint: `thumbui/smallthumbs` |
+| `Ctrl+2` | `0x005e6224` | kattint: `thumbui/largethumbs` |
+| `Ctrl+3` | `0x005e624f` | kattint: `thumbui/fullview` |
+| `Ctrl+4` | `0x005e625e` | `0x005696c0` őr → `(0, panel)` |
+| `Ctrl+5` | `0x005e6279` | ugyanaz az őr → `(1, panel)` |
+| `Ctrl+6` | `0x005e6294` | `0x00530ad0(panel)` |
+| `Ctrl+8` | `0x005e6584` | `0x005e81e0(panel, 2)` |
+| **`Ctrl+9`** | `0x005e629f` | `0x00579330` őr → **kattint: `editpanel/toggle_left_drawer`** |
+| `Ctrl+A` | `0x005e6471` | `0x00579330` őr → `0x005e5070(panel)` |
+| **`Ctrl+Shift+B`** | `0x005e6370` | `0x005fe370(panel, "bw")` |
+| `Ctrl+C` / `Ctrl+X` | `0x005e63f5` | `0x005fe9f0`; a `cmp edi, 0x58` választja szét |
+| `Ctrl+D` | `0x005e6492` | `0x00579330` őr → `0x005e5310` |
+| **`Ctrl+Shift+E`** | `0x005e638b` | `0x005fe370(panel, "enhance")` |
+| **`Ctrl+F`** | `0x005e63bb` | **kattint: `searchcontainer/searchbutton`** |
+| `Ctrl+G` (+Alt/+Shift) | `0x005e6518` | `[esp+0x12]`/`[esp+0x11]` szerint → `0x0057b050` |
+| **`Ctrl+Shift+H`** | `0x005e63d6` | `0x005eef30(panel, 2)` |
+| `Ctrl+I` | `0x005e64f6` | `0x00579330` őr → `0x005e5370(panel)` |
+| **`Ctrl+K`** **és** `Ctrl+T` | `0x005e650e` | **ugyanaz az ág**: `0x0065ab00` |
+| `Ctrl+Shift+L` | `0x005e658e` | `0x004cce10([panel+0x2c4])` |
+| `Ctrl+M` | `0x005e63ca` | `0x005d3010(panel)` |
+| `Ctrl+N` | `0x005e6462` | kattint: `thumbui/newalbum` |
+| `Ctrl+O` (+Shift) | `0x005e6233` | Shifttel `0x005c80e0`, anélkül `0x005feb30` |
+| `Ctrl+P` (+Shift) | `0x005e6428` | `0x005696c0` őr + Shift-ág |
+| `Ctrl+R` (+Shift) | `0x005e633e` | `0x00562bf0` őr + Shift-ág |
+| `Ctrl+S` (+Alt) | `0x005e64b4` | `0x005696c0` őr + `[esp+0x12]` ág |
+| `Ctrl+Shift+U` | `0x005e6557` | `0x0047ca60([panel+0x2bc])` |
+| **`Ctrl+Shift+V`** | `0x005e6408` | `0x005eef30(panel, 1)` |
+| `Ctrl+Shift+Y` | `0x005e6572` | `0x005e5ec0(panel)` |
+| `Ctrl+F6` | `0x005e62bb` | `searchoptions/dupesearch` (feloldás `0x009c2fc0`) |
+| `Ctrl+F7` | `0x005e62e8` | `searchoptions/loadsim`, azonosító `0x15` |
+| `Ctrl+F8` | `0x005e631d` | `searchoptions/clearsim`, azonosító `0x16` |
+| `Ctrl+F9` | `0x005e6329` | billenti a `[panel+0xdc4]` bájtot |
+
+### 10.4 ⭐ Ez zárja le a 7.2 pont tizenkét ⬜ rekeszéből HETET
+
+A 7.2 tizenkét olyan keymap-rekeszt sorolt fel, amihez „nem találtunk
+menü- vagy helyimenü-kötést". Ebből a `D` forrás **hetet** megold:
+
+| rekesz | hol van a kötése |
+|---|---|
+| `Ctrl+K` | `0x005e650e` — **ugyanaz az ág, mint a `Ctrl+T`** |
+| `Ctrl+Shift+B` | `0x005e6370` — a `bw` szűrő |
+| `Ctrl+Shift+E` | `0x005e638b` — az `enhance` szűrő |
+| `Ctrl+F` | `0x005e63bb` — `searchcontainer/searchbutton` |
+| `Ctrl+Shift+H` | `0x005e63d6` — `0x005eef30(panel, 2)` |
+| `Ctrl+Shift+V` | `0x005e6408` — `0x005eef30(panel, 1)` |
+| `Ctrl+W` | **NINCS ág** — negatív eredmény, ld. lent |
+
+A maradék öt (`F11`, `/`, `,`, `.`, 47.) **a kezelő tartományán kívül
+esik**: az `F11` a `0x7A`, az írásjelek a `0xBC`–`0xBF` tartományban
+vannak, a dispatch viszont `0x0D`…`0x78`-ig tart. ⇒ ezek **nem itt**
+kötődnek (a videólejátszóra a 7.3 pont áll).
+
+### 10.5 Negatív eredmény, mérve — amire NINCS ág
+
+Az indextábla ezekre a kihagyó ágra (`0x005e65f7`) mutat:
+**`Ctrl+7`, `Ctrl+J`, `Ctrl+Q`, ~~`Ctrl+W`~~, `Ctrl+Z`, `Ctrl+F1`…`Ctrl+F5`**,
+*(a `Ctrl+W`-t a lánc egy KORÁBBI szeme fogja el — ld. **10.15**)*,
+és a `0x0E`–`0x2F` tartomány minden billentyűje (`Esc`, `Space`, nyilak,
+`Home`/`End`, `PageUp`/`PageDown`, `Insert`, `Delete`) — **egyetlen
+kivétellel: VK `0x12`**.
+
+⇒ **Ezekre a PicasaPy se kössön semmit** a könyvtárnézetben.
+
+### 10.6 Az F12 kivétele
+
+A dispatch előtt áll egy külön ág (`0x005e616a`): ha a billentyű
+**VK `0x7B` (F12)**, a kezelő `[esp+0x24] = 1`-et állít és **átugorja a
+módosító-kaput**. Maga az F12 viszont a dispatch tartományán kívül esik
+(`0x7B − 0x0D = 0x6E > 0x6B`), tehát **ez a függvény nem kezeli** — a
+jelző máshol hasznosul. *(Hol: NINCS MÉRVE.)*
+
+### 10.7 Nálunk (mérve, 2026-09-03)
+
+A `src/picasapy/app/qml/` **27 `Shortcut` eleme**, 24 különböző
+kombinációval: `Ctrl+1`, `Ctrl+2`, `Ctrl+4`, `Ctrl+5`, `Ctrl+A`, `Ctrl+D`,
+`Ctrl+Delete`, `Ctrl+I`, `Ctrl+M`, `Ctrl+N`, `Ctrl+O`, `Ctrl+P`, `Ctrl+R`,
+`Ctrl+Return`, `Ctrl+S`, `Ctrl+Shift+P`, `Ctrl+Shift+R`, `Ctrl+Shift+S`,
+`Ctrl+T`, `Ctrl+X`, `Alt+Return`, `Delete`, `Esc`, `F2`.
+
+A `D` forrás **34 ágából** ezzel **hiányzik**: `Ctrl+0`, `Ctrl+3`,
+`Ctrl+6`, `Ctrl+8`, `Ctrl+9`, `Ctrl+C`, `Ctrl+F`, `Ctrl+G`, `Ctrl+K`,
+`Ctrl+Shift+B`, `Ctrl+Shift+E`, `Ctrl+Shift+H`, `Ctrl+Shift+L`,
+`Ctrl+Shift+U`, `Ctrl+Shift+V`, `Ctrl+Shift+Y`, `Ctrl+F6`, `Ctrl+F7`,
+`Ctrl+F8`, `Ctrl+F9` — **húsz**. Bekötés: **#2163**.
+
+### 10.8 Bizonyítottsági fok
+
+**Megerősített:** a dispatch szerkezete, a két tábla címe és tartalma, a
+34 ág célcíme, a nyolc elemnév, a `0x009cd8a0` kattintás-szemantika és a
+mi oldalunk (mind közvetlen kiolvasás, illetve grep).
+**Erős:** a `Ctrl`/`Shift`/`Alt` bit-azonosítás (két független egyezés a
+lap 3.3 táblájával).
+**Nincs mérve:** a nem-kattintó ágak által hívott függvények *jelentése* —
+csak a címük és az argumentumaik szerepelnek; továbbá az F12-jelző
+felhasználási helye.
+
+### 10.9 ⛔ HELYESBÍTÉS: a `0x005e60d0` a Ctrl-ÁG, nem a teljes kezelő (#2164, 2026-09-03)
+
+A 10.1 a `0x005e60d0`-t „a könyvtárnézet billentyűkezelőjének" nevezte.
+**Pontosabban:** ez a **Ctrl-ág**. A tényleges kezelő a **`0x005e6710`**
+(780 b), és **egyetlen** helyről hívja a `0x005e60d0`-t:
+
+```
+0x005e680f  mov al, byte ptr [ebx+0x10]
+0x005e6812  test al, 4
+0x005e6814  jg  0x5e69cc            ; a 4-es bit BE -> a Ctrl-tábla
+   …
+0x005e69cc  push edi ; mov eax, ebx
+0x005e69cf  call 0x5e60d0
+```
+
+⇒ **A `Ctrl` azonosítása ezzel MÉRT, nem következtetett.** A 10.2 „erős"
+minősítése **megerősítettre** javítva: az az ág megy a Ctrl-táblába,
+amelyik a **4-es bitet** megköveteli, a nélküle futó ág pedig a
+módosító nélküli billentyűket kezeli (lásd lent).
+
+### 10.10 A MÓDOSÍTÓ NÉLKÜLI billentyűk — a `0x005e6710`-ben
+
+A `0x005e6814` `jg`-je alatt, `WM_KEYDOWN`-ra (`cmp [ebx+4], 0x100`,
+`0x005e681d`) a VK-t közvetlen `cmp ax, imm16` láncban vizsgálja
+(`movzx eax, word ptr [ebx+8]`, `0x005e6836`):
+
+| billentyű | cím | mit csinál |
+|---|---|---|
+| **F1** | `0x005e683a` | `0x0057c430(1)` őr → `0x005d0cd0`; egyébként `0x0057c430(2)` őr → **kattint: `editpanel/edithelpbutton`** (`0x00c948c4`) |
+| **F2** | `0x005e68fd` | öt őr után (`0x0056c420`, `0x0056c110`, `0x00562d00`, `0x005f2650`, `0x0057c430(4)`) az átnevezés útja: `[edi+0xeac]` → `0x007166c0`, `0x0057d430`, `0x00532ec0` |
+| **F3** | `0x005e69a4` | **kattint: `searchcontainer/searchbutton`** (`0x00c8f448`) — ugyanaz az elem, mint a `Ctrl+F` |
+| **F4** | `0x005e696c` | `0x009cd110(`**`thumbui/startoggle`**`)` feloldás; ha `[eax+0x20e] == 0`, **kattint** rá (vtable `+0x78`) |
+| **F5** | `0x005e6869` | `[edi+0x2c0]` → `0x004a46e0`, `0x00579480(0,1)`, `[ecx+0x166] = 1`, `0x0065b840` |
+| **F11** | `0x005e68a0` | vtable `+0x24` kétszer, `[eax+0x3e]` billentése, majd `0x00983fc0` |
+| **F12** | `0x005e69c2` | `call 0x005e60d0` — de az F12 a Ctrl-tábla tartományán **kívül** esik (10.6), tehát ott nem történik semmi |
+
+**Bizalmi fok: megerősített** (közvetlen kiolvasás). A hívott függvények
+*jelentése* nincs mérve — csak a címük, az őreik és az elemnevek.
+
+### 10.11 ⛔ NEGATÍV EREDMÉNY: nincs MÁSIK ilyen kezelő (#2164)
+
+A #2164 azt kérdezte, hol van a **szerkesztő**, a **diavetítés** és a
+**videólejátszó** billentyűkezelője. Három, egymástól független mérés:
+
+1. **A módosító-gépezet egyetlen helyen fut.** A billentyű-kombinációt
+   építő `0x005c5f90` és az összevető `0x005c5fc0` **hívóinak száma:
+   1 – 1**, mindkettő a `0x005e60d0`-ban (`0x005e61c2`, `0x005e61d1`).
+   ⇒ **Átképezhető billentyű-kötés csak a Ctrl-táblában van.**
+2. **Ugrótáblás VK-switch csak egy van.** A teljes `.text`-et
+   végigpásztáztam a `jmp dword ptr [ecx*4 + imm32]` alakra: **174**
+   ugrótáblás `switch` van, ebből **indextáblás** 14, és **egyetlen**
+   olyan, amelyik `word ptr [reg+8]`-ból (a VK-ból) indexel: a
+   `0x005e61f1` — a Ctrl-tábla.
+3. **A videó írásjel-billentyűi sehol.** A `cmp ax, 0xBC` / `0xBE` /
+   `0xBF` (`,` `.` `/`) alak — pontosan az, amivel a `0x005e6710` a
+   többi VK-t hasonlítja — a `.text`-ben **nulla** előfordulás.
+   *(Csak ezt az alakot pásztáztam; 8 vagy 32 bites immediate alakot nem.)*
+
+⇒ **A szerkesztő és a könyvtárnézet EGYAZON kezelőt használja** (a
+`0x005e6710` mindkettő állapotát piszkálja: `[edi+0x332f]`, `[edi+0x33a8]`,
+`[edi+0x3378]`). A diavetítés és a videólejátszó billentyűi **nem
+ugrótáblás kezelőben** vannak — ha vannak, `if`-láncban, más
+összehasonlítási alakkal. A 7.3 pont ezzel **szűkül**, de nem zárul le.
+
+### 10.12 ⭐ MELLÉKLELET: a Shift-váltás ÉLŐ, nem a fül felépülésekor (#2141, #2146)
+
+A `0x005e6710` elején egy külön ág fut, **még a VK-vizsgálat előtt**:
+
+```
+0x005e6745  cmp dword ptr [ebx+4], 0x102     ; WM_CHAR -> kihagy
+0x005e674e  cmp byte ptr [ebx+8], 0x10       ; VK_SHIFT?
+0x005e6754  push 0x10 ; call [0xc406f8]      ; GetAsyncKeyState(VK_SHIFT)
+0x005e675c  shr eax, 0xf ; and al, 1
+0x005e6761  cmp byte ptr [edi+0x33a8], al    ; a panel TÁROLT Shift-jelzője
+0x005e6767  je  0x5e6776                     ; ha nem változott -> nincs teendő
+0x005e6769  mov eax, dword ptr [edi+0x3378]
+0x005e6771  call 0x5d7c20                    ; a CSEMPEÉPÍTŐ újrafuttatása
+```
+
+A `0x005d7c20` a csempeépítő, a `[edi+0x33a8]` pedig ugyanaz a Shift-jelző,
+amit a `filterdesc-registry.md` „A csempe MÁSODIK szűrője: a SHIFT
+kapcsolja be (#2141)" szakasza ír le.
+
+⇒ **HELYESBÍTÉS a #2141 köréhez:** az a kör azt írta, hogy a Shift-állapot
+„a fül felépülésekor egyszer" dől el. **Valójában élő:** a
+`VK_SHIFT` minden le- és felengedésére (`WM_KEYDOWN`/`WM_KEYUP`, a
+`WM_CHAR` kizárva) a program **újraépíti a csempéket**, ha az állapot
+megváltozott. A felhasználó tehát **nyomva tartás közben látja átváltani**
+a kilenc csempét, és elengedéskor visszaváltani.
+
+### 10.13 A billentyűkezelés LÁNC, nem nézetenkénti kezelő (#2164, 2026-09-03)
+
+A #2164 azt kereste, hol van a **szerkesztő**, a **diavetítés** és a
+**videólejátszó** külön billentyűkezelője. **Nincs külön kezelő** — a
+`0x005e6710` egy **felelősség-láncot** hív végig, és minden láncszem a
+saját billentyűit fogja el. A lánc sorrendben:
+
+| # | cím | mikor hívja | mit fog el |
+|---|---|---|---|
+| 1 | `0x00760970` | `[panel+0x332f]` igaz | (nem mérve) |
+| 2 | — (helyben) | `VK_SHIFT` le/fel | a Shift-csempeváltás (10.12) |
+| 3 | **`0x005d2290`** | `0x005f95d0` őr után, `0x005e6784` | a **csúszka-léptetés** (lásd 10.14) |
+| 4 | **`0x005b2390`** | `[panel+0xccc]` nem nulla, `0x005e67e5` | a **projektlap-sáv** billentyűi (10.15) |
+| 5 | **`0x00a53b00`** | mindig, `0x005e67f4` | általános vezérlő-/szövegbeviteli billentyűk |
+| 6 | — (helyben) | `Ctrl` nélkül | F1–F5, F11, F12 (10.10) |
+| 7 | `0x005e60d0` | `Ctrl` esetén | a 34 elemes Ctrl-tábla (10.3) |
+
+Minden láncszem `0xf4240`-t (kezelve) vagy `0xf4241`-et (nem kezelve) ad
+vissza; a `0x005e6710` az elsőre azonnal kilép.
+
+### 10.14 A CSÚSZKA-LÉPTETÉS — `+` / `=` / `−` / `_`
+
+`0x005d2290`, **`WM_CHAR`** (`0x102`) üzenetre, tehát karakterre, nem
+VK-ra:
+
+```
+0x005d22ac  cmp eax, 0x2b   ; '+'
+0x005d22b1  cmp eax, 0x3d   ; '='
+0x005d22b6  cmp eax, 0x2d   ; '-'
+0x005d22bb  cmp eax, 0x5f   ; '_'
+0x005d22c7  fld dword ptr [0xcf50d8]   ; +0,02
+0x005d22d8  fld dword ptr [0xcf50d4]   ; -0,02
+0x005d22e2  mov eax, dword ptr [ebp+0x337c]  ; a FÓKUSZBAN LÉVŐ csúszka indexe
+0x005d22e8  add eax, 1
+0x005d22ee  push 0xc87160              ; "editslider%d/editslider"
+```
+
+⇒ **`+` és `=` növeli, `−` és `_` csökkenti a fókuszban lévő csúszkát,
+lépésenként ±0,02** (a tartomány 2%-a). A cél az `editslider<N>/editslider`
+elem, ahol `N = [panel+0x337c] + 1`.
+
+**Bizalmi fok: megerősített** (a két konstans és a formátumsztring
+kiolvasva).
+
+### 10.15 A PROJEKTLAP-SÁV billentyűi — és a `Ctrl+W` MÉGIS létezik
+
+`0x005b2390`, `WM_KEYDOWN`-ra, **`Ctrl` kötelező** (`test cl, 4` / `jle`,
+`0x005b239d` — ugyanaz a bit, mint a 10.9-ben):
+
+| billentyű | cím | mit csinál |
+|---|---|---|
+| **`Ctrl+Left`** | `0x005b23a6` | `0x005b22b0(panel, −1)` — előző lap |
+| **`Ctrl+Right`** | `0x005b23b6` | `0x005b22b0(panel, +1)` — következő lap |
+| **`Ctrl+Tab`** | `0x005b23c8` | `0x005b22b0(panel, +1)`; **`Shift`-tel** (`test cl, 2`) `−1` |
+| **`Ctrl+W`** | `0x005b23dd` | `0x005b31a0(panel, …)` — a `[panel+0x26c]` szerint |
+
+⇒ ⛔ **HELYESBÍTÉS a 10.5-höz.** A 10.5 negatív eredménye azt mondta:
+*„`Ctrl+W` … NINCS ág"*. Ez **a Ctrl-táblára igaz**, de a `Ctrl+W`-t a
+lánc **korábbi** szeme fogja el (`0x005b2390`), tehát **a billentyű
+létezik**. A 10.5 listájából a `Ctrl+W` **törlendő**; a többi (`Ctrl+7`,
+`Ctrl+J`, `Ctrl+Q`, `Ctrl+Z`, `Ctrl+F1`…`F5`) továbbra is áll, mert azokat
+egyik láncszem sem vizsgálja.
+
+*(Ez egyben megmagyarázza a 7.2 pont `Ctrl+W` rekeszét is: a keymapben ott
+van, csak nem menüben és nem a Ctrl-táblában.)*
+
+### 10.16 A VK-láncok TELJES leltára — 20 db a `.text`-ben
+
+A `movsx`/`movzx …, word ptr [reg+8]` (a VK kiolvasása) minden előfordulását
+végigpásztáztam, és megtartottam azokat, amelyeket **legalább két**
+`cmp reg, imm` követ 0xA0 bájton belül. **Húsz ilyen lánc van**, ezek:
+
+| lánc | gazdafüggvény | a vizsgált billentyűk | mi ez |
+|---|---|---|---|
+| `0x0052ecfc` | `0x0052ece0` | `D`,`C`,`P`,`S`,`0xbb`,`0x6b` | nem mérve |
+| `0x005b23a2` | `0x005b2390` | `←`,`→`,`W` | **projektlap-sáv** (10.15) |
+| `0x005d22a8` | `0x005d2290` | `+`,`=`,`−`,`_` | **csúszka-léptetés** (10.14) |
+| `0x005e6836` | `0x005e6710` | `F1`,`F5`,`F11` | **a fő kezelő** (10.10) |
+| `0x005e68f9` | `0x005e6710` | `F2`,`F4` | ugyanaz |
+| `0x006398da` | `0x006398c0` | `Esc`,`Enter` | szövegbeviteli mező (`editcancel`, `editselected`) |
+| `0x007366ae` | `0x00736690` | nyilak | szövegbeviteli mező (`edittab`, `editarrow`) |
+| `0x0077d3a1` | `0x0077d380` | nyilak, `PageUp/Down`, `Enter` | nem mérve |
+| `0x007e13f9` | `0x007e13b0` | nyilak, `Esc` | `buttonmgr/cancel` |
+| `0x00808ade`, `0x00808b7c` | `0x00808ac0` | `↑`,`↓`,`Enter`,`Esc` | nem mérve |
+| `0x0080906c` | `0x00809050` | `↑`,`↓`,`Enter` | nem mérve |
+| `0x00920adf`, `0x00921fe7` | `0x00920a30`, `0x00921de0` | `M`,`m`,`L`,`l` | nem mérve |
+| `0x00a53b63` | `0x00a53b00` | saját index+ugrótábla (`0x00a53bb4`/`0x00a53ba8`), VK `0x08`–`0x70`, plusz `Tab` és `Ctrl+A…Z` | **általános vezérlő** (lánc 5.) |
+| `0x00aa4e18` | `0x00aa4dd0` | `Home`,`End`,`Delete`,`→` | listavezérlő (`listboxup`, `listboxdown`, …) |
+| `0x00ae137c`, `0x00b41267`, `0x00c1609c`, `0x00c160d1` | — | nem billentyű-jellegű | kizárva |
+
+⇒ **A diavetítésnek és a videólejátszónak NINCS saját VK-lánca.** Ez a
+negyedik, egymástól független kizárás a 10.11 három mérése után.
+
+### 10.17 Ami a diavetítésről/videóról ekkor még nem volt tudható
+
+> ⛔ **EZ A SZAKASZ MEGDŐLT — a választ a 10.18–10.20 adja meg.**
+> A `Space`-nyom **hamis volt**: mind a nyolc `cmp ax, 0x20` hely
+> **bitmélység-vizsgálat** (`biBitCount`), nem billentyű (10.20).
+
+- ~~A `Space` billentyű a `.text`-ben **nyolc** helyen szerepel
+  `cmp ax, 0x20` alakban (`0x006d6042`, `0x006d605f`, `0x006d7498`,
+  `0x006d74e2`, `0x006d7ead`, `0x006d8f9b`, `0x009d713d`, `0x009d732e`),
+  de egyik gazdafüggvénynek sincs sztring-hivatkozása.~~
+- A keymap `/`, `,`, `.` rekeszeihez (VK `0xBF`, `0xBC`, `0xBE`) **egyetlen
+  összehasonlítást sem** találtam: sem `cmp ax, imm16` (10.11), sem a
+  húsz lánc egyikében. **Ez az állítás áll.**
+- ~~A következő lépés a `0x006d5e90`, `0x006d7410`, `0x006d7e30`,
+  `0x006d8eb0` azonosítása.~~ — **tárgytalan** (10.20).
+
+### 10.18 A LÁNC ÖTÖDIK SZEME: minden navigációs billentyű EGY továbbítóba megy (#2164, 2026-09-03)
+
+A 10.13 láncának 5. szeme, a **`0x00a53b00`**, saját index- és ugrótáblát
+használ (`0x00a53bb4` / `0x00a53ba8`, VK `0x08`…`0x70`, `edx = vk − 8`,
+`cmp edx, 0x68`). A tábla **három** ágra oszt, és ez a teljes tartalma:
+
+| ág | mely billentyűk | mit tesz |
+|---|---|---|
+| `0x00a53b7d` | **Backspace `0x08`, VK `0x0C`, Enter `0x0D`, Esc `0x1B`, Space `0x20`, PageUp `0x21`, PageDown `0x22`, End `0x23`, Home `0x24`, ←`0x25`, ↑`0x26`, →`0x27`, ↓`0x28`, Insert `0x2D`, Delete `0x2E`, VK `0x2F`, F1 `0x70`** | `push eax; push ecx; call 0x00a582f0` — **továbbítás** |
+| `0x00a53b9d` | **Shift `0x10`, Ctrl `0x11`, Alt `0x12`** | **eldobás** (visszatérés) |
+| `0x00a53b8a` | minden más | ha `Ctrl` és a billentyű `A`…`Z`, akkor szintén `0x00a582f0`; egyébként tovább a láncon |
+
+Ezen felül `WM_CHAR`-ra a **Tab** (`0x00a53b44`) külön ágon megy
+(`0x00a58170`), `Shift`-fel megfordított iránnyal (`test dl, 2`).
+
+**A továbbító (`0x00a582f0`)** nem billentyűt kezel: **eseményobjektumot
+épít** (`0x005c5da0`, `0x009dd770`, `0x005de720`), megkülönbözteti a
+`WM_KEYUP`-ot (`cmp eax, 0x101`, `0x00a58322`), és a **fókuszban lévő
+elemnek** küldi el.
+
+### 10.19 ⛔ EZ A VÁLASZ a #2164-re: a diavetítésnek/videónak NINCS saját kezelője
+
+A navigációs billentyűk **nem nézetenként** vannak lekezelve, hanem
+**eseményként a fókuszált elemnek** továbbítva. Ezért nem találtunk
+diavetítés- vagy videó-specifikus billentyűkezelőt: **nincs is.**
+
+**Öt egymástól független mérés vezetett ide:**
+
+1. az átképezhető kötés gépezete (`0x005c5f90`, `0x005c5fc0`) **1–1
+   hívóval** csak a Ctrl-táblában fut;
+2. a teljes `.text` **174** ugrótáblás `switch`-éből **egyetlen** indexel a
+   VK-ból (`0x005e61f1`);
+3. `cmp ax, 0xBC` / `0xBE` / `0xBF` (`,` `.` `/`): **nulla** előfordulás;
+4. a **húsz** VK-összehasonlító lánc (10.16) egyike sem a diavetítésé;
+5. **⛔ a `Space`-nyom HAMIS volt** — ld. lent.
+
+### 10.20 ⛔ HELYESBÍTÉS: a nyolc `cmp ax, 0x20` NEM a Space billentyű
+
+A 10.17 azt írta, hogy a `Space` a `.text`-ben nyolc helyen szerepel
+`cmp ax, 0x20` alakban, és a következő lépésként a `0x006d5e90`,
+`0x006d7410`, `0x006d7e30`, `0x006d8eb0` azonosítását nevezte meg.
+**Mind a nyolc hely BITMÉLYSÉG-vizsgálat, nem billentyű:**
+
+- a `0x006d6042`/`0x006d605f` melletti ág `cmp eax, 0x32595559`-t végez —
+  ez a **`'YUY2'` FourCC** videóformátum-kód —, és hibával tér vissza:
+  `mov eax, 0x8004022a` = **`VFW_E_TYPE_NOT_ACCEPTED`** (DirectShow);
+- a vizsgált mező mindenütt **`word ptr [reg+0x0e]`**, ami a
+  `BITMAPINFOHEADER` **`biBitCount`** mezője (14. bájt);
+- az összehasonlított értékek `1`, `8`, `0x18`, `0x20` = **1, 8, 24 és 32
+  bit/képpont** (`0x009d7126`–`0x009d7141`, `0x006d7498`, `0x006d7ead`,
+  `0x006d8f9b`).
+
+⇒ A `Space` billentyűre **nincs** külön ág; a 10.17 „következő lépése"
+**tárgytalan**, és a négy megnevezett függvény a **videó-formátum
+egyeztetése**, nem billentyűkezelés.
+
+### 10.21 Ami ezzel HATÓKÖRÖN KÍVÜLRE kerül
+
+„Melyik elem mit csinál a kapott eseménnyel" — ez **nem** a
+billentyűkiosztás kérdése, hanem elemenkénti viselkedés, és a
+**`ui-lefedettseg.md`** amúgy is elemenként tartja nyilván. Ezen a lapon
+ezért nem nyitunk rá kérdést.
+
+**Bizalmi fok: megerősített** (a két tábla teljes kiolvasása, a
+továbbító azonosítása, és a `biBitCount`-helyesbítés közvetlen
+kiolvasásból).

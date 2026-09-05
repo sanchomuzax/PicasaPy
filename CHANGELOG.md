@@ -7,6 +7,634 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- A Mozgófilm-párbeszéd mind a hét eredeti felbontást kínálja
+  (#1977) — eddig csak 720p és 1080p volt. Az öt 4:3-as méret nem
+  torzul: a szélesség mostantól a választott mérethez tartozik, nem
+  16:9-ből számolódik. Az alapértelmezés változatlanul 720p.
+
+- A nyomtatási párbeszéden megjelenik, MILYEN LAPRA fog nyomtatni
+  (#2368) — papírnév, méret milliméterben és tájolás, a kiválasztott
+  nyomtató valódi lapbeállításából. Eddig ez a mező hiányzott,
+  pedig az eredetiben ott van a nyomtató neve mellett.
+
+### Javítva
+
+- **A dőlt és aláhúzott felirat megmarad mentés után** (#2448). Eddig
+  megrajzoltuk a képre, de a beállítás nem került bele a fájlba: a kép
+  újranyitásakor a felirat visszaállt normálra. Mostantól mindkettő
+  megmarad, és a Picasával készített dőlt/aláhúzott feliratokat is helyesen
+  ismerjük fel.
+
+
+- *(Nincs látható változás.)* A **Poszterizálás** effektről eddig azt
+  állítottuk a kódban, hogy a mi egyszerűsített számításunk egyenértékű az
+  eredetivel — de ezt soha nem mértük meg. Most megmértük a valódi
+  Picasa-exporthoz képest, és **igaz**: a hatás 99%-át eltaláljuk. A
+  program viselkedése változatlan, csak már bizonyítékunk is van rá (#2454).
+
+
+- *(Előkészítés, ma még nem látszik.)* Felismerjük a **Picasa 2 korabeli
+  vágás-formátumot** (#2008). Egy olyan gyűjteményben, amit még sosem
+  nyitottak meg Picasa 3-mal, a vágás régi alakban áll — eddig ezen a
+  programunk hibára futott volna, és a vágás elveszik. **Egyelőre semmi nem
+  hívja**, tehát a viselkedés változatlan; a beolvasásba a következő körben
+  kerül be.
+
+
+- **A panel fő gombja most már finoman villog** (#2438) — ahogy az eredeti
+  Picasában. Ez mutatja meg, melyik gombra kell nyomni a művelet
+  befejezéséhez: egyelőre a klipgyűjtő „Vissza" gombja pulzál, amíg rá nem
+  kattintasz. A keret színe váltakozik, a gomb
+  többi része változatlan.
+
+- *(Előkészítés, ma még nem látszik.)* Kiszámoljuk a Picasa
+  bélyegkép-adatbázisának ellenőrzőösszegét (#2435) — ez teszi majd lehetővé,
+  hogy egy **elromlott** adatbázist felismerjünk, ahelyett hogy némán rossz
+  bélyegképeket olvasnánk belőle. A képlet a Picasa 140 755 valódi
+  bejegyzésének 96%-át magyarázza. **Egyelőre semmi nem hívja**, tehát a
+  program viselkedése változatlan.
+
+- **Beállítások ▸ E-mail: megjelent a harmadik levelezőgomb** (#2432) — az
+  eredetiben „A Google Fiók használata" is választható, nálunk csak kettő
+  volt. A gomb **szürkén, kikapcsolva** jelenik meg: a PicasaPy-nak nincs
+  Google-fiók-kapcsolata, és egy működőnek látszó, de semmit nem tevő gomb
+  rosszabb a hiányzónál. A csoport címe is az eredetié lett
+  („Levelezőprogram:").
+
+- **A Picasa-adatbázis importja sérült bejegyzésnél sem áll le** (#2404).
+  Eddig egyetlen hibás sor az egész importot megszakította hibaüzenettel;
+  mostantól az a bejegyzés a saját nevével kerül be, a többi ezer pedig
+  változatlanul. Az útvonalak felismerése is az eredeti Picasa szabályát
+  követi (a bejegyzés típusát nézi), nem a korábbi közelítést.
+
+- **A Szemcse effekt kétszer alkalmazva már tényleg kétszer hat** (#907).
+  Eddig a második szemcse **nyomtalan** volt: ugyanazt a zajmintát rajzolta
+  ugyanoda, tehát a kép bájtra változatlan maradt. Az eredeti Picasa minden
+  alkalmazáshoz új mintát vesz — mostantól mi is.
+
+- **A gombok visszajeleznek, ha föléjük viszed az egeret** (#883) — eddig
+  csak a lenyomás látszott. Az eredeti Picasa négy állapotot rajzol; nálunk
+  kettő volt. Mostantól rámutatáskor a gomb bal-felső éle besötétedik, a
+  bekapcsolt gomb arany keretet kap, a lenyomott árnyalat pedig a helyes
+  irányba tér el (melegebb szürke, nem hidegebb). A zöld gomb — ahogy az
+  eredetiben — szándékosan nem reagál rámutatásra.
+
+- **A vágó méretarány-listája a valódi 13 tételre csökkent** (#876). Hat
+  olyan méret szerepelt benne, ami az eredeti Picasa vágójában nincs: a
+  »Jelenlegi megjelenítés« a kollázs oldalformátumáé, a 4x6 / 5x7 / 8x10 /
+  8,5x11 a nyomtatásé, a »4x4« pedig nem is önálló méret volt, hanem a 4:3
+  magyarázó sora — és pont ugyanazt adta, mint a Négyzet. A négy
+  képernyő-arány felirata mostantól kettősponttal áll (4:3, 16:10, 16:9,
+  5:3), ahogy az eredetiben, az A4 pedig a saját nevén szerepel. Ha korábban
+  a kikerült méretek egyikét használtad, a vágó »Kézi«-re nyílik.
+
+- **A »Frissítés« menüpont most már visszajelez** (#1458). Ha épp futott egy
+  háttérbeli beolvasás, a kattintás után semmi látható nem történt — pedig a
+  kérés nem veszett el, csak sorra várt. Hálózati meghajtón ez fél percig is
+  eltarthatott, és úgy nézett ki, mintha a menüpont nem működne. Mostantól
+  a kattintás pillanatától látszik az alsó folyamatjelző sáv.
+
+- **Mappa felvétele és a »Keresés egyszer« nem ütközik a háttérben futó
+  beolvasással** (#2389). Eddig a két művelet akkor is nekiindult, ha épp
+  futott egy másik indexelés — a két egyidejű író adatbázis-hibát adott, és
+  a beolvasás félbemaradt. Mostantól a kérés sorba áll, és a futó munka
+  után magától lefut. A kézenfekvő megoldás — »ilyenkor egyszerűen ne
+  csináljuk« — szándékosan NEM ez lett: a felvenni kért mappa így némán
+  kimaradt volna a könyvtárból, és a felhasználó ezt csak jóval később
+  vette volna észre.
+
+- A **Mozgófilm létrehozása** és a **Frissítés** menüpont OK gombja némán
+  nem csinált semmit (#1977) — a két vezérlő-metódus nem volt elérhető a
+  kezelőfelületről. Mindkettő újra működik, és őr méri, hogy ne
+  fordulhasson elő újra.
+
+- **Visszavonva:** a menüpont-feliratok behúzásán változtató javítás
+  (#1750) kikerült. Linuxon helyes volt, Windowson viszont túl beljebb
+  tolta ugyanazokat a feliratokat, mint amennyivel korábban kijjebb
+  álltak. A menü megjelenése ezzel a korábbi, ismert állapotára tér
+  vissza; a jegy újranyílt.
+
+- Az alsó állapotsor a csupa EXIF nélküli mappáknál is kiírja a
+  dátumtartományt (#2304) — eddig ott csak a darabszám és a méret
+  látszott, holott az eredeti Picasa dátumot is mutat.
+
+- Belső elnevezés: a szerkesztő vezérlőjének „van mentett
+  vörösszem-javítás" jelzője beszédes nevet kapott (#2393). A
+  viselkedés nem változik.
+
+- Az ötperces automatikus frissítés és a „Frissítés" menüpont többé nem
+  indít második index-írót a már futó szinkron mellé (#1456). Eddig
+  ilyenkor adatbázis-hiba jelenhetett meg.
+
+- További nyolc jelölhető menüpont pipája sem tud már elszakadni a
+  valóságtól (#2377) — köztük a „Rejtett képek", a „Sötét téma" és a
+  fordított rendezés. A hiba eddig nem látszott rajtuk, mert a
+  műveletük mindig átbillentette az állapotot.
+
+- A Picasa bélyegkép-indexének második időmezőjét eddig „hozzáférési
+  időnek" neveztük — mérve a fájl **módosítási** ideje (#2373). Csak
+  belső elnevezés, a viselkedés nem változik.
+
+- A csupa EXIF nélküli mappa (letöltött vagy generált képek) többé nem
+  marad dátum nélkül: ilyenkor a fájlok ideje adja a mappa dátumát
+  (#2304). Eddig a fejlécében nem állt dátum, a bal hasábban pedig az
+  előző év alá csúszott. A rács rendezése eddig is így számolt.
+
+- A Nézet menü fiók-lapjainál (Tulajdonságok · Címkék · Emberek ·
+  Helyek) a pipa többé nem hazudik (#1471). Eddig a MÁR NYITOTT lapra
+  kattintva a panel — helyesen — nyitva maradt, a pipa viszont
+  lekapcsolt.
+
+- A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
+  „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett
+  (#2364). A magyar felirat változatlanul „Indexképek nyomtatása…";
+  a gyorsbillentyű és a funkció sem változott.
+
+- Windowson összeomolhatott a program, ha a felhasználó elsőként
+  exportált: az OpenCV első betöltése az export háttérszálán futott le,
+  a főszál egyidejű szemétgyűjtésével együtt (#2370). Mostantól a
+  betöltés a kezelőfelület szálán, a háttérmunka indítása előtt
+  történik, és a lusta betöltő zárral védett.
+
+- A nyomtatásnál a „kis kép" határa beállítható (#2359). Eddig beégetett
+  150 képpont/hüvelyk volt; az eredetiben ez rejtett beállítás, ugyanezzel
+  az alapértékkel. A `printing/dpiWarning` kulccsal átállítható.
+
+### Javítva
+
+- A mappa dátumát a Picasa által olvasható alakban írjuk a
+  `.picasa.ini`-be (#2353). Eddig ISO-dátumot írtunk, amit a Picasa
+  számként olvas — a `2019-07-04`-ből nála 1905 lett. Aki ugyanazt a
+  mappát mindkét programban nyitja meg, ezentúl ugyanazt a dátumot látja.
+
+### Javítva
+
+- A lebegő értesítő celláján megjelenik a fogantyú (#2133) — eddig csak a
+  forráskód kommentje sorolta fel, kirajzolva nem volt. Az eredetihez
+  hasonlóan **nem** megfogható vezérlő, csak rajz.
+
+### Javítva
+
+- A beolvasás megtalálja a `.webp` képeket (#2344). Eddig némán kimaradtak:
+  a szűrőnkből hiányzott a kiterjesztés, pedig a Picasa alapból indexeli
+  őket — a tulajdonos katalógusában is van ilyen fájl.
+
+### Javítva
+
+- A Picasa-adatbázis importja átveszi a kulcsszavakat és a helyadatot
+  (#2336). Eddig mindkettő némán elveszett: a tulajdonos adatbázisában ez
+  342 kép kulcsszavait és 219 kép földrajzi helyét érinti. A geotag nélküli
+  képek nem kapnak hamis 0,0 koordinátát.
+
+### Javítva
+
+- A Picasa-adatbázis importja átveszi a csillagozást (#2335). Eddig minden
+  kép csillagozatlanként jött be: a csillagokat a Picasa nem
+  adatbázis-oszlopban tárolja, hanem a `db3/starlist.txt` listában, amit
+  az import nem olvasott. A tulajdonos adatbázisában ez 50 csillagozott
+  képet érint.
+
+### Javítva
+
+- A bal hasáb osztósávja az eredeti korlátait követi (#2329): legkisebb
+  szélessége 240 (eddig 160-ig lehetett húzni, 80 képponttal keskenyebbre,
+  mint amit az eredeti valaha megenged), a legnagyobb pedig az ablakhoz
+  kötött — széles ablakon a korábbi fix 600-nál tovább húzható. A mentett,
+  240-nél keskenyebb érték induláskor felemelkedik.
+
+### Javítva
+
+- A bal hasábban az azonos nevű mappák megkülönböztethetők: a sorra
+  mutatva megjelenik a teljes elérési út (#2162). Eddig súgó csak a nem
+  elérhető mappákon volt — épp ott hiányzott, ahol a névütközés zavar (a
+  duplikátum-kereső minden forrásmappában „Duplikátumok" alkönyvtárat hoz
+  létre). A látható felirat változatlan.
+
+### Javítva
+
+- A hat Glimmer-effekt (Holga, Éjjellátó, Ceruzarajz, 60-as évek,
+  Kinemaszkóp, HDR-szerű) belső automatikus javítása mostantól az eredeti
+  modellt követi (#2229): teljes min–max szinthúzás, vágópont nélkül.
+  Eddig a „Jó napom van" vágópontos modelljét kapták, ami más — egyetlen
+  kiugró szélső képpont ott eltűnik, itt viszont meghatározza a
+  tartományt.
+
+### Javítva
+
+- A `respack.yt` kicsomagoló kiolvassa a rétegek átlátszóságát (#2178).
+  Eddig a fejléc 8–9. bájtját eldobtuk, és minden réteget
+  átlátszatlanként adtunk vissza — pedig 140 réteg részben vagy teljesen
+  átlátszó (árnyékok, fátylak, a képtálca kék pirulája). A PNG-kiírás
+  mostantól beszámítja; a nyers képpontfolyam érintetlen marad, így az
+  RLE-visszakódolás továbbra is bájtra egyezik (1365/1365).
+
+- Az export-hibaágak tesztfájlja valódi megjelenítő nélkül is lefut
+  (#2176). Eddig `QGuiApplication`-t próbált nyitni, és ha nem volt
+  használható megjelenítő, a Qt nem kivételt dobott, hanem abortálta a
+  részfutást — a már lefutott próbák eredményével együtt. Új őr követeli
+  meg minden Qt-alkalmazást példányosító tesztmodultól a fejnélküli
+  alapértelmezést.
+
+- A Visszavonás/Újra gomb feliratai a szerkesztő-panelen az eredeti Picasa
+  szövegtárát követik (#2240). Tizenhárom felirat változott; a legfontosabb,
+  hogy a régi effekt-változatok végre megkülönböztethetők: „Élesítés (régi)"
+  vs „Élesítés", „Ragyogás (régi)" vs „Ragyogás", „Régi filmszemcse" vs
+  „Filmszemcse", „Árnyalás (régi)" vs „Árnyalás". Megszűnt a „Lágy fókusz"
+  ütközés is (a `soften` mostantól „Lágyítás"), és a Fókuszos FF csempe
+  végre azt ígéri, amit csinál.
+
+## [0.8.286] – 2026-09-05
+
+### Hozzáadva
+- A szerkesztő effekt-csempéin a **Shift** lenyomva tartása kilenc csempén
+  másik szűrőt ad — ahogy az eredeti Picasában —, és a csempe felirata is
+  megmondja, mit kapsz („Film Grain (Old)", „Radial Tint" és így tovább).
+  A többi csempére a Shift nem hat (#2146).
+
+## [0.8.285] – 2026-09-04
+
+### Javítva
+- A duplikátum-kereső az Eszközök menü **Kísérleti** almenüjébe került, oda,
+  ahol az eredeti Picasában is áll, és a hivatalos magyar nevét kapta
+  („Fájlok másodpéldányainak megjelenítése"). Az „Adatbázis helyének
+  kiválasztása…" tétel felirata szintén az eredetié (#2142).
+
+## [0.8.284] – 2026-09-04
+
+### Hozzáadva
+- A menüsor tételein megjelentek az **aláhúzott betűk** (mnemonikok): eddig
+  144 tételből 11-en volt, most 103-on. A magyar betűk az eredeti Picasa
+  saját honosításából valók — nem az angolból származtatva —, tehát az
+  `Alt`-os billentyűs navigáció ugyanúgy működik, mint ott (#2152).
+
+## [0.8.283] – 2026-09-04
+
+### Hozzáadva
+- Négy billentyűparancs a projektlapokhoz: **Ctrl+W** bezárja az aktuális
+  lapot, a **Ctrl+Tab** (és Ctrl+Shift+Tab), valamint a **Ctrl+←/→** körbelépteti
+  őket. A szerkesztő csúszkáit a **+ / =** és a **− / _** billentyű lépteti
+  (#2170).
+
+## [0.8.282] – 2026-09-04
+
+### Javítva
+- Belső: az adatbázis-áthelyezés ellenőrző próbája Windowson elbukott, mert
+  a lassabb fájlrendszeren nem várta ki a művelet végét. A termék működése
+  nem változott (#2313).
+
+## [0.8.281] – 2026-09-04
+
+### Javítva
+- A szerkesztő nagyítás-sávján az „illesztés" és az „1:1" gomb **rajzolt
+  ikont** kapott a korábbi szöveges jelek helyett, az eredeti Picasa méretében
+  és összeragasztott gombpárként; a gombok lenyomásra sülnek el, és a
+  csúszka a mért szélességű lett. A két buborék-súgó a Picasa hivatalos
+  magyar szövegére cserélve (#2311).
+
+## [0.8.280] – 2026-09-04
+
+### Javítva
+- Az alsó sáv négy panelkapcsolója (Emberek · Helyek · Címkék ·
+  Tulajdonságok) az eredeti Picasa szerint **ikon-gomb** lett: a beszorult,
+  levágott feliratok helyett a szöveg a buborék-súgóba került. A négy gomb
+  a **nagyítás-csúszka után** áll, ahogy az eredetiben (#2305).
+
+## [0.8.279] – 2026-09-04
+
+### Javítva
+- A Picasa által beállított **mappa-dátumot** eddig nem vettük át: a Picasa
+  más számformátumban írja, mint amit vártunk, ezért a program némán
+  eldobta, és a mappa a legrégebbi kép idejét kapta. Mostantól mindkét alakot
+  értjük (#2304).
+
+## [0.8.278] – 2026-09-04
+
+### Hozzáadva
+- A nyomtatás ablakában megjelent a **„Nyomtató telepítése"** gomb: innen
+  érhetők el a nyomtató saját beállításai (papírméret, tálca, kétoldalas),
+  és a nyomtatás a megadott lapbeállítást használja. PDF-célnál a gomb
+  inaktív (#2103).
+
+## [0.8.277] – 2026-09-04
+
+### Javítva
+- A jobb alsó sarokban felbukkanó értesítők az eredeti Picasa módján
+  **becsúsznak** oldalról, és elbocsátáskor visszacsúsznak — a korábbi
+  halványítás helyett. Ha több értesítés van egymás alatt, és egy eltűnik,
+  a többi odacsúszik az új helyére, nem ugrik (#2157).
+
+## [0.8.276] – 2026-09-04
+
+### Javítva
+- A mappa- és albumcím a rács fejlécében az eredeti Picasa meleg sötétbarna
+  színét kapta a majdnem fekete helyett; sötét témán ugyanennek a barnának a
+  világosított párja (#2043).
+
+## [0.8.275] – 2026-09-04
+
+### Javítva
+- A kép átméretezése az eredeti Picasa mintavételezőjét használja
+  (Mitchell–Netravali), nem az eddigi lágyabb bilineárist — az érintett
+  effektek kimenete így élesebb és hívebb (#2227).
+
+## [0.8.274] – 2026-09-04
+
+### Javítva
+- Ha egy „Másolat mentése" kimenetét kitörlik, és a helyére ugyanazzal a
+  névvel új kép kerül, az új kép többé nem örökli a törölt fájl származását
+  (#2099).
+
+## [0.8.273] – 2026-09-04
+
+### Hozzáadva
+- A képtálca kimeneti gombsora megkapta a hiányzó „További lehetőségek…"
+  gombot: ha az ablak túl szűk, a ki nem férő gombok nem tűnnek el és nem
+  nyomódnak össze, hanem egy felugró listába kerülnek mögé — az eredeti
+  Picasa megoldása szerint (#2191).
+
+## [0.8.272] – 2026-09-04
+
+### Javítva
+- A szöveg-eszköz betűmérete az eredeti Picasa 16 értékét kínálja (8-tól
+  96-ig), és a választott méret végre bekerül a mentett fájlba is. Eddig
+  százalékot kellett állítani, és a méret sosem mentődött (#2287).
+
+## [0.8.271] – 2026-09-04
+
+### Javítva
+- A képtálca „Kijelölés" felirata mindig látszik, és a bélyegképek eltakarják
+  — ahogy az eredeti Picasában. Eddig csak üres tálcánál jelent meg, és a
+  képek fölé rajzolódott (#2179).
+
+## [0.8.270] – 2026-09-04
+
+### Javítva
+- Az effekt-csempék előnézete a kép **mostani** állapotát mutatja: ha a
+  képre például Fekete-fehér került, a csempék alapja is szürke lesz — ahogy
+  az eredeti Picasában. Eddig mindig a nyers fotóból indultak (#2273).
+
+## [0.8.269] – 2026-09-04
+
+### Javítva
+- A szöveg-eszköz körvonala végre megmarad mentés után, és a feliratok nem
+  mennek ki mind félkövérként. A körvonal-csúszka az eredeti Picasa
+  mértékegységét követi, és a 0,5 alatti értékek sem tűnnek el (#2271).
+
+## [0.8.268] – 2026-09-04
+
+### Javítva
+- A „Régi effektek" fül öt felirata az eredeti Picasa szövegét követi
+  (Elhomályosítás, Irányított élesítés, Gammakorrekció, Árnyék és kiemelés,
+  Fehérpont). Hat felirat szándékosan megtartja a megkülönböztető toldatát,
+  mert enélkül azonos nevű sorok állnának egymás alatt (#2270).
+
+## [0.8.267] – 2026-09-04
+
+### Javítva
+- Az effekt-csúszkák hét ponton az eredeti Picasa értékeit követik: a
+  Telítettség végre **negatív** irányba is húzható (a program ezt eddig is
+  tudta, csak a csúszka nem engedte), és több effekt alapértéke a mértre
+  javult (#2236).
+
+## [0.8.266] – 2026-09-04
+
+### Javítva
+- A tesztfuttató a bukás mellé kiírja, milyen környezetben futott (Python,
+  PySide6, OpenCV, architektúra) — eddig egy CI-hiba elemzése vaktában
+  indult, mert a CI és a fejlesztői gép nagyverzióban eltér (#2264).
+
+## [0.8.265] – 2026-09-04
+
+### Javítva
+
+- A tesztkészlet lebontása megvárja a `threading.Thread`-es háttérmunkákat
+  is, nem csak a `QThreadPool`-t (#2262). Enélkül egy már véget ért teszt
+  háttérszála a megsemmisült foglaltság-nyilvántartóra emitált, amitől a CI
+  `exit -6`-tal (`terminate called without an active exception`) omlott
+  össze — a beépített újrapróba is.
+
+## [0.8.265] – 2026-09-04
+
+### Új
+- Három gyorsbillentyű a könyvtárnézetben: **Ctrl+0** a jobb panel
+  ki-/bekapcsolása, **Ctrl+F** a keresés, **Ctrl+K** a Címkék panel
+  (a Ctrl+T párja, ahogy az eredetiben is) (#2163).
+
+## [0.8.264] – 2026-09-04
+
+### Javítva
+- Az első e-mail-küldéskor a program megkérdezi, melyik levelezőprogrammal
+  küldjön — eddig a választó párbeszéd friss telepítésen soha nem jelent
+  meg magától (#2184).
+
+## [0.8.263] – 2026-09-04
+
+### Javítva
+- A bal hasáb három nézet-kapcsolója (fanézet, egyszerűsített fanézet,
+  indexképek a könyvtárban) megmarad a következő indításig — eddig minden
+  induláskor alapállapotba esett (#2154).
+
+## [0.8.262] – 2026-09-04
+
+### Új
+- A súgóban van **Vissza** és **Tartalom** gomb: a keresőből megnyitott
+  lapról vissza lehet lépni, és a tartalomjegyzék egy kattintással elérhető
+  keresés közben is (#2213).
+
+## [0.8.261] – 2026-09-04
+
+### Javítva
+- Az Effektek fül Élesítés, Filmszemcse és Árnyalás csempéje az eredeti
+  Picasa szerinti szűrőt indítja (eddig a régi, „(régi)" jelzésű változatot).
+  A Filmszemcséről eltűnik a kék jelvény, és — az eredetihez hűen —
+  csúszkás panelt nyit (#2141).
+
+## [0.8.260] – 2026-09-03
+
+### Javítva
+- A súgó keresője fejezetenként egy sort ad, a találat részletével és — ha a
+  lapon többször szerepel a keresett szó — a darabszámmal. Eddig ugyanaz a
+  cím ismétlődött a listában (#2214).
+
+## [0.8.259] – 2026-09-03
+
+### Javítva
+- Bekapcsolt „Indexképek megjelenítése a könyvtárban" mellett a bal hasáb
+  sorai nem maradnak üresen: ahol nincs fotó-kupac, ott a mappaikon látszik,
+  és a kupac helye a tényleges arányához igazodik (#2215).
+
+## [0.8.258] – 2026-09-03
+
+### Javítva
+- A súgó kék hivatkozásaira kattintva végre megnyílik a fejezet: a nyitólap
+  tartalomjegyzéke eddig működésképtelen volt (#2212).
+
+## [0.8.257] – 2026-09-03
+
+### Javítva
+- A szerkesztő 7. („örökölt effektek") fülének bevezetője nem állítja többé,
+  hogy egyik régi szűrő sem érhető el a mai Picasában: a huszonegyből három
+  ma is elérhető (Sugaras árnyalás, Derítőfény, Szivárvány), a többi
+  tizennyolcra a mondat igaz (#2148).
+
+## [0.8.256] – 2026-09-03
+
+### Javítva
+- A projekt-mappák (Kollázsok, Filmek) többé nem jelennek meg kétszer a bal
+  hasábban: a „Projektek" csomópont alatt maradnak, a „Mappák" listából
+  kimaradnak (#2031). A kizárás pontosan a `P2category=Projects (internal)`
+  mappákra vonatkozik; az „Exportált képek" és a rejtett mappák viselkedése
+  változatlan, és a mappa az indexben, a keresésben és a darabszámokban
+  érintetlen marad.
+
+## [0.8.255] – 2026-09-03
+
+### Javítva
+- A Picasa bélyegkép-nyilvántartásának olvasása **hibás volt**: rossz
+  szerkezetet feltételezett, és néma szemetet adott vissza — a fájl
+  mérete véletlenül stimmelt, ezért nem derült ki. Most a valódi
+  szerkezetet olvassa, és a mérés is igazolja: a legutolsó bélyegkép
+  vége pontosan az adatfájl mérete, mind a három vizsgált táron.
+  (A hiba a v0.8.252-ben került be, felhasználói funkciót nem érintett.)
+
+## [0.8.254] – 2026-09-03
+
+### Javítva
+- A **Nézet ▸ Mappanézet** almenüben az „Egyszerűsített fanézet" a lista
+  legaljára került, az „Indexképek megjelenítése a könyvtárban" után —
+  ahogy az eredeti Picasában áll.
+
+## [0.8.253] – 2026-09-03
+
+### Hozzáadva
+- A **Helyek panel** mostantól rákérdez a nagy műveletekre, ahogy az
+  eredeti Picasa: **20-nál több** kijelölt képnél a hely megadása előtt,
+  és **5-nél több** geocímkézett képnél a helyek törlése előtt. A két
+  küszöb szándékosan más — a törlés visszafordíthatatlanabb —, és a
+  törlésnél a kérdésben az szerepel, ahány képnek **tényleg van** helye,
+  nem a kijelölés mérete.
+
+## [0.8.252] – 2026-09-03
+
+### Hozzáadva
+- A Picasából való átvétel egy lépéssel közelebb: a program mostantól
+  olvassa a Picasa katalógusának útvonal-nyilvántartását teljes egészében
+  (létrehozás és hozzáférés ideje, méret, fajta), és a bélyegkép-táblák
+  slot-nyilvántartását is. Ez a régi Picasa-adatok importjához kell.
+
+
+## [0.8.251] – 2026-09-03
+
+### Hozzáadva
+- **Megnyílik a súgó a programból.** Az **F1** (vagy a Súgó menü „Súgó -
+  tartalom és tárgymutató" tétele) előhozza a teljes, magyar nyelvű
+  kézikönyvet — 28 fejezet, kereséssel. **Internet nem kell hozzá:** a
+  súgó a programmal együtt települ. A **Shift+F1** a mutató alatti
+  panelhez tartozó fejezetet nyitja meg; ha nincs ilyen, a főoldalt.
+  Eddig a menüpont helye megvolt, de nem történt semmi tőle.
+
+## [0.8.250] – 2026-09-03
+
+### Javítva
+- A **Mozgófilm létrehozása** már nem kér célfájlt: ha nem adsz meg egyet,
+  a film a Képek/Picasa/Filmek mappába kerül, a forrásmappa nevével —
+  ütközésnél sorszámozva, ahogy az eredeti Picasa is teszi. A mappa
+  ilyenkor **projektként is megjelölődik**, tehát a bal hasáb Projektek
+  gyűjteményében megtalálod. Ha a mappa nem hozható létre, a film a
+  rendszer Videók mappájába megy, hibaüzenet helyett. A „Mentés
+  másként" fájlválasztó továbbra is használható.
+
+## [0.8.249] – 2026-09-03
+
+### Javítva
+- Az alsó sávban a kék információs csík és a képtálca doboza közti térköz
+  egy képponttal pontosabb lett (5 helyett 6), az eredeti Picasa
+  elrendezéséből kimérve. A tálca doboza így pontosan ott ül, ahol az
+  eredetiben.
+
+## [0.8.248] – 2026-09-03
+
+### Javítva
+- A képre írt felirat **félkövér gombjának állása** végre számít: eddig
+  minden felirat félkövérként került a `.picasa.ini`-be, akkor is, ha a
+  gomb ki volt kapcsolva — és az eredeti Picasa is így látta.
+- A feliratnál **választott betűtípus** is bekerül a fájlba; eddig mindig
+  „Arial" íródott, bármit is választottál.
+
+## [0.8.247] – 2026-09-03
+
+### Javítva
+- A fényképekhez mentett **hely** (`geotag`) mostantól pontosan úgy kerül a
+  `.picasa.ini`-be, ahogy az eredeti Picasa írja: mindig hat tizedesjeggyel.
+  Eddig levágtuk a záró nullákat, ezért ugyanarra a koordinátára más szöveget
+  írtunk, mint a Picasa — a tulajdonos 84 valós helyadatából 19 tért el. A
+  korábbi, rövidebb alakot továbbra is beolvassuk.
+
+## [0.8.246] – 2026-09-03
+
+### Hozzáadva
+- A bal hasáb mappasorain mostantól **a mappa fotóiból összeállított kis
+  képkupac** állhat a sárga mappaikon helyett — úgy, ahogy az eredeti
+  Picasa mutatja. Bekapcsolni a **Nézet ▸ Mappanézet ▸ „Indexképek
+  megjelenítése a könyvtárban"** tétellel lehet; alapból ki van
+  kapcsolva, ahogy az eredetiben is. Kép nélküli mappán marad a
+  mappaikon.
+
+## [0.8.245] – 2026-09-03
+
+### Hozzáadva
+- A képtálcán mostantól **ki lehet jelölni képeket**: kattintás jelöl,
+  `Ctrl`-lal hozzáadható vagy elvehető egy kép, `Shift`-tel tartomány
+  jelölhető ki. A kijelölt képet ugyanolyan kék keret jelzi, mint a
+  rácsban. Eddig a tálca képeire egyáltalán nem lehetett kattintani.
+
+### Javítva
+- A tálca helyi menüjének „Kijelölés eltávolítása" parancsa mostantól a
+  **tálcán** kijelölt képeket veszi le a tálcáról. Korábban a rács
+  kijelöléséből dolgozott — olyan képekből, amiket a tálcán ki sem
+  lehetett jelölni.
+
+## [0.8.244] – 2026-09-03
+
+### Javítva
+- **A szerkesztő effekt-csempéin a kis kék jel rossz dolgot mutatott
+  (#2126).** Eddig azt jelezte, hogy az adott effektet már alkalmaztad a
+  képre. Az eredeti Picasában viszont ez a jel azt jelenti, hogy az effekt
+  **egy kattintással, beállítások nélkül** működik — ezért látszik ott is,
+  ahol semmi nincs alkalmazva. Mostantól a Szépia, a Fekete-fehér és a
+  Melegítés csempéjén áll, a lánctól függetlenül, és a szám mindig „1",
+  ahogy az eredetiben.
+
+- A `test_busy_integration.py` két esete a **pillanatnyi** `isWorking`-ot
+  figyelte a művelet indítása után; ez versenyhelyzet volt, és a windowsos
+  CI-lábon pirosra vitte a main-t. A busy-nyilvántartás szándékos
+  viselkedése („rövid munkánál ne villanjon a csík") miatt a jelző gyors
+  gépen soha nem lesz igaz. A tesztek mostantól azt állítják, ami a #505
+  tényleges ígérete és időzítéstől független: a művelet **bejelentkezik** a
+  nyilvántartásba és ugyanannyiszor **ki is jelentkezik**, a végén pedig az
+  `isWorking` hamis. (#2137)
+
+## [0.8.243] – 2026-09-03
+
+### Javítva
+- **Egy belső ellenőrzés két írásmódot átengedett (#2132).** Az az őr, amely
+  azt védi, hogy a később megnyíló ablakok ne veszítsék el a program
+  üzeneteit, csak a legegyszerűbb írásmódot ismerte fel — két, a kódban élő
+  változatot némán átengedett. Kijavítva; a program működését ez nem
+  érintette, de a következő fejlesztésnél valódi hibát rejtett volna el.
+
+## [0.8.242] – 2026-09-03
+
+### Javítva
+- **Valamivel gyorsabban indul a program (#2096, #1612).** A Létrehozás
+  ablakai (kollázs, film) mostantól csak akkor épülnek fel, amikor tényleg
+  megnyitod őket — induláskor 303 objektummal kevesebb készül el. A kollázs
+  és a film elkészültéről szóló visszajelzés változatlanul megjelenik akkor
+  is, ha a Kollázs panelről indítottad, és sosem nyitottad meg ezeket az
+  ablakokat.
+
 ## [0.8.241] – 2026-09-03
 
 ### Javítva

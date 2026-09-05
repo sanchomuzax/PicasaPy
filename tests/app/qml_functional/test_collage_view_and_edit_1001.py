@@ -140,7 +140,7 @@ def _duplan_kattints(window, item: QQuickItem, qt_app, amig=None) -> None:
         # maradjon így — a hívóhelyre illő feltételt kell megadni.
         QTest.qWait(30)
     else:
-        _var(qt_app, amig)
+        assert _var(qt_app, amig), "#2408: a vart allapot nem allt be idoben"
     qt_app.processEvents()
 
 

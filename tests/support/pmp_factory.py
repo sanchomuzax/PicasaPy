@@ -42,19 +42,44 @@ def build_pmp_column(field_type: int, values) -> bytes:
     return header + body
 
 
+#: A bejegyzés farkának ELSŐ ÖT mezője: `creation`, `modified` (FILETIME),
+#: `size`, `kind`, `dirty` — a `thumbindex._FAROK` (`<QQIIBBI`) eleje. A
+#: `valid` (1 bájt) és a `parent_index` (4 bájt) külön megy alább, hogy a
+#: hívó a `valid`-ot közvetlenül állíthassa.
+_FAROK_FEJ = struct.Struct("<QQIIB")
+
+
 def build_thumb_index(entries) -> bytes:
     """A `read_thumb_index`-szel olvasható bájtsorozat.
 
-    `entries`: (név, szülőindex) párok; szülőindex None = könyvtár
-    (0xffffffff). A 26 ismeretlen bájtot nullákkal töltjük."""
+    `entries`: (név, szülőindex) párok, vagy (név, szülőindex, kind, valid)
+    négyesek. A szülőindex `None` = könyvtár (0xffffffff).
+
+    ⚠️ **A `kind`/`valid` alapértéke NEM nulla** (#2404). Korábban a gyár 26
+    nullát írt, tehát minden szintetikus bejegyzés `valid=0` és `kind=0`
+    lett — ami a MÉRT szabály szerint azt jelenti, hogy „a név már teljes
+    útvonal". A tesztek így olyan adaton futottak, ami a valóságban nem
+    fordul elő, és a szülő-összefűzést egyáltalán nem gyakorolták volna.
+
+    Az alapértékek ezért valósághűek: `valid = 1`, a `kind` pedig könyvtárnál
+    `1`, fájlnál `2` (mérve a tulajdonos katalógusán). Aki a
+    típus-viselkedést vizsgálja, a négyes alakkal írja felül.
+    """
     entries = list(entries)
     blob = struct.pack("<II", THUMB_INDEX_MAGIC, len(entries))
-    for name, parent in entries:
+    for entry in entries:
+        if len(entry) == 2:
+            name, parent = entry
+            kind = 1 if parent is None else 2
+            valid = 1
+        else:
+            name, parent, kind, valid = entry
         parent_index = _NO_PARENT if parent is None else parent
         blob += (
             name.encode("utf-8")
             + b"\x00"
-            + b"\x00" * 26
+            + _FAROK_FEJ.pack(0, 0, 0, kind, 0)
+            + bytes([valid])
             + struct.pack("<I", parent_index)
         )
     return blob

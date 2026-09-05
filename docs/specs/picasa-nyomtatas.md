@@ -102,7 +102,21 @@ sorolta. Ehhez tartozik a figyelmeztetés:
 > hivatalos magyar feliratokkal dolgozik; a lap maradt le.
 
 A párbeszéd **26 honosított szövege**, teljes listával (forrás:
-`referencia/i18n-hu/printoptionstext.xml`):
+`referencia/i18n-hu/printoptionstext.xml`).
+
+**Szerkezeti horgony** — hol vannak deklarálva: az elemek a
+`printoptions.tre`-ben (`printoptions.tre:45` = `border_color_label`,
+`printoptions.tre:95` = `caption_label`, `printoptions.tre:115` =
+`useexif_label`, `printoptions.tre:197` = `wrap_checkbox_label`), a
+feliratok pedig a `printoptionstext.tre`-ben
+(`printoptionstext.tre:33` = `border_color_label`,
+`printoptionstext.tre:36` = `caption_label`).
+
+*(A horgony nem díszítés: a lefedettségi mérő CSAK olyan szakaszt fogad el
+bizonyítékként, amiben van `0x…` cím vagy `fájl:sor` — a
+`binaris-regeszet-modszertan.md` 22.4 pontja írja elő. A `.xml`-hivatkozás
+sorszám nélkül nem elég, és emiatt e tábla **tizenkét** eleme évekig
+„feltáratlannak" látszott. Ld. a 22.5 pontot.)*
 
 | elem (teljes név) | típus | **hivatalos magyar** |
 |---|---|---|
@@ -182,6 +196,28 @@ A `ClosePrinter` külön függvényben (`0x008612e0`, 205 b, hívás
 ⇒ **Ez nem Picasa-párbeszéd, hanem az illesztőprogramé.** Linuxon a
 megfelelője a Qt/CUPS nyomtató-tulajdonságok — a felirat („Nyomtató
 telepítése") megtartható, a tartalom a rendszeré.
+
+✅ **Megvalósítva (#2103, 2026-09-04).** A nyomtatóválasztó mellett ott a
+gomb (`printPrinterSetupButton`), a mért feliratokkal:
+
+| | angol (`ui-leltar.csv`) | magyar (`tooltips.xml`) |
+|---|---|---|
+| felirat | `Printer Setup` | **Nyomtató telepítése** |
+| buboréksúgó | `Open printer setup controls for the selected printer` | **Nyomtató beállításvezérlőinek megnyitása a kijelölt nyomtatóhoz** |
+
+A gomb a `QPageSetupDialog`-ot nyitja a kiválasztott nyomtatóra, és az
+**elfogadott oldalelrendezést a következő nyomtatás használja**
+(`PrintController._oldalelrendezes`). PDF-célnál **inaktív** — ott nincs
+illesztőprogram, tehát nincs mit beállítani.
+
+⚠️ A tartalom továbbra sem másolható: a `DocumentProperties` a Windows
+illesztőprogramé. Ami átvehető, az a **belépési pont** — a gomb helye és
+felirata.
+
+Őr: `tests/app/qml_functional/test_nyomtato_telepites_2103.py`. Külön
+próba méri, hogy a nyomtatás tényleg a beállítóban elfogadott elrendezéssel
+indul — enélkül a párbeszéd díszlet lenne (ezt a hiányt magvetés fedte fel:
+a bekötés törlésére előbb egyetlen próba sem bukott el).
 
 ### `printpanel/captionoptionsbutton` + `printpanel/captionoptionslabel`
 
@@ -272,3 +308,270 @@ teljesebb** készlet is van, saját névtérrel — és **ez** tartalmazza az
 > `referencia/stringres-en-hu.tsv` 2286–2295. és a
 > `referencia/i18n-hu/printoptionstext.xml` soraiból, minden cím a
 > binárisból kiolvasva.
+
+---
+
+## A „kis kép" KÜSZÖBE: `Preferences\DPIWarning`, alapérték **150** (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris).
+
+A `printing/dpi.py` modulunk fejléce eddig ezt mondta: *„a küszöb a
+hívóláncban van… a **mechanizmust** vesszük át, a **küszöböt** magunk
+választjuk"* — és 150-et választott. **Most kimérve: az eredeti
+alapértéke is pontosan 150**, és ráadásul **állítható**.
+
+### A számoló: `0x0085c060` (378 b)
+
+| cím | mit tesz |
+|---|---|
+| `0x0085c076`–`0x0085c07b` | a `Preferences` (`0x00c7eafc`) / **`DPIWarning`** (`0x00cc3368`) kulcs |
+| **`0x0085c08b`** | **`mov dword ptr [esp+0x1c], 0x96`** — az **alapérték 150**, ezt kapja a beállításolvasó (`0x00407a20`) |
+| `0x0085c098` | `fld dword ptr [0x00cf4900]` = **`1000000.0`** — a minimum-keresés „+végtelen" magva |
+| `0x0085c0b2`–`0x0085c120` | a képeken végigmenő ciklus; `0x0085c0cd` `fcom st(1)` tartja a **legkisebb** DPI-t |
+
+⇒ **A küszöb rejtett beállítás**, nem beégetett szám: aki átírja a
+`DPIWarning` értéket, más határnál kap figyelmeztetést.
+
+### A panel döntése DARABSZÁM-alapú, nem DPI-alapú
+
+Az állapotsor (`0x00745980`) már **kész számokat** kap:
+
+| cím | mit tesz |
+|---|---|
+| `0x00745cee` | `call 0x0085c060` — a fenti számoló |
+| `0x00745cf3`–`0x00745d0d` | a legkisebb DPI `float`-ból egészre kerekítve (`fistp`) |
+| **`0x00745d15`** | **`cmp esi, 0xf4240`** (= 1 000 000) — ha egyenlő, **kimarad** a „Legkisebb kép: …" sor (nem mértünk képet) |
+| `0x00745d5c` | ha a kis képek **száma nulla** → **`ThumbUIPrint::ReadyPrompt`** |
+| `0x00745d5e` | `cmp edi, 1` — egyes/többes szám (`::picture` / `::pictures`) |
+| `0x00745da4` | különben **`ThumbUIPrint::ReviewPrompt`** a darabszámmal |
+
+⇒ A „Készen áll a nyomtatásra" / „Nézze át nyomtatás előtt" váltás
+**egyetlen feltétel**: van-e legalább egy küszöb alatti kép. Ezért van a
+`.tre`-ben **két gombpár** (`printpanel/pnowbutton` + `pnowbutton2`,
+`printpanel/reviewnowbutton` + `reviewnowbutton2`): a panel a két állapot
+között cserél.
+
+### ⛔ ÖNHELYESBÍTÉS (2026-09-04): ez a két „melléklelet" DUPLIKÁTUM volt
+
+Itt eddig két állítás állt a `phelpbutton`-ról és a `froogle`-ról. **Mindkettőt
+a lap KORÁBBI, pontosabb szakasza már tartalmazta** (2026-09-03, „A panel ALSÓ
+AKCIÓGOMBJAI"), és a `phelpbutton`-é ráadásul **pontatlan** volt:
+
+- azt írtam, hogy a gomb „letiltott vezérlő", mert a makrói ki vannak
+  kommentezve. A helyes olvasat: **maga az elem NEM** kikommentezett — csak az
+  ikonja, a felirata, a színe és a horgonya; a `respack.yt` szerint
+  **`vbutton`** (rajz nélküli találati terület). Ld. a „`printpanel/phelpbutton`
+  — a gomb ÉL" szakaszt fent, amely ezt már 2026-09-03-án helyesbítette.
+- a `froogle`-ról írt „NINCS mérve, hova navigál" ugyanígy elavult: a
+  megnyitott cím a lapon **már szerepelt**.
+
+**A tanulság a következő köröknek:** ugyanannak a panelnek a kutatása előtt a
+**meglévő spec-szakaszt kell végigolvasni**, nem csak a saját kódunkat
+grepelni. Két kör (2026-09-04) ezt kihagyta, és részben újra levezette azt,
+ami már le volt írva.
+
+---
+
+## A `printpanel/froogle` KATTINTÁS-ÚTJA (2026-09-04, kiegészítés)
+
+> A gomb **mit csinál**-ja és a **hatókörön kívül** döntés a fenti
+> „`printpanel/froogle` — Tartozékok keresése a Froogle-en" szakaszban áll
+> (2026-09-03). Ez a szakasz **csak azt teszi hozzá**, amit az nem tartalmazott:
+> a kattintás pontos útját és egy önhelyesbítést.
+
+**A kattintás-út:** `0x00743980` (a panel gomb-elosztója) a
+`0x0074444e`/`0x00744460`-nál veti össze a kattintott elem nevét a
+`printpanel/froogle` literállal (19 bájt, `0x13`), és egyezésnél
+`0x007444a4`-nél hívja a **`0x00744750`**-t (326 b):
+
+| cím | mit tesz |
+|---|---|
+| `0x00744750`–`0x0074475d` | a nyomtató-objektum (`[eax+0xec4]`); ha nincs → `-1` |
+| `0x0074475f`–`0x00744774` | nyomtatólista (`[eax+4]`, elemszám `[eax+8]>>1`, index `[eax+0x10]`) ⇒ a kiválasztott nyomtató neve |
+| `0x007447e1` | `ThumbUIPrint::FrooglePrompt` |
+| `0x00744828` | `call 0x009bac20` — igen/nem; nemre kilép |
+| `0x00744848` | `https://uploader.picasa.com/froogle.php?q=%s` |
+| `0x0074486b` | `call 0x00981860` — megnyitás |
+
+⛔ **Önhelyesbítés:** a `0x00744a00` **NEM** a gomb kezelője (egy korábbi
+mondat annak nevezte). Az a panel **megnyitási/nyomtató-ellenőrző** ága
+(`IDS_MUST_INSTALL_PRINTER`), és a froogle-elemre ott csak egy **általános
+elem-metódus** fut (`0x00744aaf`: `mov eax,[edx+0x68]; call eax`) — ez a rés a
+binárisban **181 helyen, 90 függvényben** fordul elő.
+
+## Két REJTETT nyomtatási beállítás: `PrinterQuality` és `PrinterUseTiles` (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris; az import IAT-résen át azonosítva).
+
+A panelen van egy eddig dokumentálatlan **minőség-kapcsoló**
+(`printpanel/optimizebutton` ↔ `printpanel/normalbutton` /
+`printpanel/standardbutton`). Mögötte két `Preferences`-kulcs áll.
+
+### Az állapot eldöntése — `0x00745f80` (212 b)
+
+| cím | mit tesz |
+|---|---|
+| `0x00745f85`–`0x00745f9a` | **`PrinterQuality`** (`0x00ca9a18`), **alapérték `2`** |
+| `0x00745fa7`–`0x00745fbe` | **`PrinterUseTiles`** (`0x00cb0cb4`), **alapérték `0`** |
+| `0x00745fd0` | `cmp eax, 0x3e9` (**1001**) — egyezésnél **hamis** |
+| `0x00745fe0` | `test eax, eax` — nullánál **hamis** |
+| `0x00746014` | különben **igaz** (`mov al, 1`) |
+
+⇒ **„Optimalizált" állapot csak akkor, ha `PrinterQuality ≠ 1001` ÉS
+`PrinterUseTiles ≠ 0`.** Mivel a `PrinterUseTiles` alapértéke **0**, a
+panel **alapból a „normál" gombot** mutatja.
+
+### A kapcsoló írója — `0x00746060` (270 b)
+
+`0x0074609e` és `0x007460bc`: **mindkét kulcsot** kiírja, majd
+`0x0074612e`: `call 0x008613b0` — vagyis a változást **azonnal
+érvényesíti** a nyomtatási motorban.
+
+### Hova jut el a `PrinterQuality` — a nyomtató KÉPESSÉG-lekérdezésébe
+
+`0x008614a0` (390 b) beolvassa a `PrinterQuality`-t (`0x008614aa`,
+alapérték szintén **2**: `0x008613e9`), majd `0x00861536`-nál
+`mov edi, dword ptr [0x00c40108]` — ez az IAT-rés, amely a mérés szerint a
+**`GetDeviceCaps`**-re mutat *(a „GetDeviceCaps” hint/name RVA `0x009234c4`
+épp ebben a résben áll)*. Az `edi`-n át átadott indexek sorban:
+
+| index | a Windows dokumentált jelentése |
+|---:|---|
+| `0x0a` = **10** | `VERTRES` |
+| `0x58` = **88** | `LOGPIXELSX` |
+| `0x5a` = **90** | `LOGPIXELSY` |
+| `0x6e` = **110** | `PHYSICALWIDTH` |
+| `0x6f` = **111** | `PHYSICALHEIGHT` |
+| `0x70` = **112** | `PHYSICALOFFSETX` |
+| `0x71` = **113** | `PHYSICALOFFSETY` |
+
+⇒ A `PrinterQuality` a **nyomtatható terület és a felbontás**
+kiszámításában vesz részt — tehát azt befolyásolja, **milyen felbontáson
+rajzolódik a lap**.
+
+### ⛔ KIMERÍTŐ NEGATÍV: a `PrinterUseTiles` nem jut el a rajzolásig
+
+A `PrinterUseTiles` kulcsnak a binárisban **pontosan két** hivatkozója van:
+`0x00745f80` (a panel állapota) és `0x00746060` (az író). **Egyik sem a
+nyomtatási motor.** A neve ellenére tehát ebben a kiadásban a
+csempézett rajzolást **nem** kapcsolja — csak a panel gombállapotát.
+
+*(Összevetésül: a `PrinterQuality`-nak nyolc hivatkozója van, köztük három
+a motorban: `0x00861190`, `0x008613b0`, `0x008614a0`.)*
+
+### Nálunk (mérve, 2026-09-04)
+
+`app/print_controller.py:531`, `:816` — a `QPrinter.resolution()` és a
+`pageRect(DevicePixel)` adja a lapméretet; **minőség-kapcsoló nincs**, és a
+`PrintDialog.qml` `quality` tulajdonsága a **DPI-figyelmeztetésé**, nem
+ezé a beállításé.
+
+---
+
+## Az INDEXKÉP (Contact Sheet) — három belépési pont és a hivatalos feliratok (2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris + `stringres-en-hu.tsv`).
+
+Az indexkép nem egy funkció, hanem **három külön belépési pont** ugyanarra a
+fogalomra. A `printpanel/photoindexbutton` eddig sehol nem szerepelt a
+lapon és a lefedettségi leltárban sem.
+
+### 1. Nyomtatási MÉRET a panelen
+
+`ytPrintSizes::eContact` (`0x00775ce0`) a többi méret mellett; a súgója
+`ytPrintTip::eContact` (`0x00775f30`): *„Print pictures as a Contact
+Sheet"*. A panel gombja: **`printpanel/photoindexbutton`** (a
+`0x00743980` gomb-elosztójában).
+
+### 2. KOLLÁZS-típus
+
+`0x0082e8b0` (2165 b) hat kollázstípust regisztrál — `picturepile`,
+`picturegrid`, `regulargrid`, `multiexp`, **`contactsheet`**, `framegrid` —
+ikonnal és leírással: `collagepanel/#contact_sheet_icon`,
+`collage::csheet_desc`.
+
+### 3. MENÜPARANCS
+
+`eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET` — a menüépítőben
+(`0x00559150`) **`&Print Contact Sheet...`**.
+
+### ⛳ A hivatalos MAGYAR feliratok (a `stringres-en-hu.tsv`-ből)
+
+| erőforráskulcs | angol | **hivatalos magyar** |
+|---|---|---|
+| `eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET` | `&Print Contact Sheet...` | **`&Indexképek nyomtatása...`** |
+| `ytPrintSizes::eContact` | Contact Sheet | **Indexképek** |
+| `CollageType::eContactSheet` | Contact Sheet | **Indexképek** |
+| `collage::csheet_desc` | Contact Sheet:  Thumbnails with an informative header | **Indexkép: Miniatűr tájékoztató jellegű fejléccel** |
+| `buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24}` | Contact Sheet | **Indexképek** |
+| `buttontooltip:{BB850B65-…}` | Print a contact sheet | **Indexkép nyomtatása** |
+| `IDS_CONFIRM_CONTACTSHEET` | This will create a contact sheet of all the images in the album as a new image.\r\nDo you want to continue? | **Ezzel a művelettel az összes képből egy indexképet hoz létre az albumban új képként.\r\nFolytatja?** |
+
+⚠️ **A magyar szó mindenütt „indexkép", soha nem „bélyegkép".**
+
+### Egy kuriózum: a `ginormous.jpg` út
+
+`0x0057b050` (1225 b, egyetlen hívóval: `0x005e652c`) képet állít elő,
+**`ginormous.jpg`** néven kiírja (`0x0057b3f6`), majd
+`0x0057b471`–`0x0057b477`: `"open"` + `ShellExecute` (`0x00c405e0`) —
+megnyitja. A folyamatjelző szövege *„Making The Ginormous Contact
+Sheet!"*, és a **kulcs-névtere `UNUSED!`** (`0x0057b1ce`) — vagyis a
+szövegtár maga jelöli használaton kívülinek.
+
+*(Hogy a `0x9c94` menüparancs melyik ághoz tartozik, NINCS mérve: a
+parancsazonosító a `0x0056e1c0` elosztóban áll, a `ginormous`-út hívója
+viszont a `0x005e60d0`-ban — két külön elosztó.)*
+
+---
+
+## A panel INFORMÁCIÓS mezői — mit ír ki és miből (`0x00745980`, 2026-09-04)
+
+**Bizalmi fok: megerősített** (bináris). Ezt a szakaszt a lap eddig **nem
+tartalmazta**: a `numberprints`, `previewnumber`, `printername`, `paperinfo`
+és `statustext` elemekről sehol nem volt szó.
+
+A panel állapotfrissítője (`0x00745980`, 1484 b) **egyetlen menetben**
+állítja be a következőket:
+
+| cím | elem / erőforrás | segédfüggvény |
+|---|---|---|
+| `0x00745aa4` | `printpanel/croptoggle` | `0x009cd9a0` |
+| `0x00745ac4` | **`IDS_COPIES`** (erőforrás-azonosító **`0x3b` = 59**), az érték a `[ecx+0x20]`-ból | — |
+| `0x00745af5` | **`printpanel/numberprints`** | `0x009cd080` |
+| `0x00745b7c` | **`ThumbUIPrint::PrintCount`** = **`%d of %d`** | — |
+| `0x00745bba` | **`printpanel/previewnumber`** | `0x009cd870` |
+| `0x00745bcc` | **`printpanel/printername`** | `0x009cd870` |
+| `0x00745bde` | **`printpanel/paperinfo`** | `0x009cd870` |
+| `0x00745c05` | `printpanel/nextbutton` | `0x009cd7e0` |
+| `0x00745c29` | `printpanel/prevbutton` | `0x009cd7e0` |
+| `0x00745e01` + `0x00745e10` | **`printpanel/statustext`** | `0x009cd760`, majd `0x009cd870` |
+| `0x00745e1d`–`0x00745e46` | `pnowbutton`, `pnowbutton2`, `reviewnowbutton`, `reviewnowbutton2` | `0x009cd110` |
+
+**A segédfüggvények csoportosítanak** (ez maga is bizonyíték): a
+`printername`, `paperinfo`, `previewnumber` és `statustext` **ugyanazt a
+`0x009cd870`-et** kapja ⇒ ez a **szövegbeállító**; a négy akciógomb
+mind a `0x009cd110`-et ⇒ az a **gomb-állapot**; a két lapozógomb a
+`0x009cd7e0`-et.
+
+### A lapszámlálás és a lapozó KORLÁTOZÁSA
+
+`0x00745b52`–`0x00745b76`:
+
+- a lapok száma **`[esi+0x18] >> 1`** (csomagolt elemszám, `edi`);
+- ha **nulla**, a program meghívja a `0x007774b0(objektum, 1)`-et — vagyis
+  előállít egy lapot;
+- az **aktuális lapindex** (`[ebp+0xec8]`) **a lapszám−1-re korlátozódik**
+  (`0x00745b73`: `lea eax, [edi-1]`), ha kifutna a tartományból.
+
+⇒ A `%d of %d` tehát **aktuális lap + 1 / összes lap**, és a panel a
+lapszám csökkenésekor **magától visszaigazítja** a lapozót.
+
+### Nálunk (mérve, 2026-09-04)
+
+| mező | eredeti | nálunk (`PrintDialog.qml`) |
+|---|---|---|
+| példányszám | `IDS_COPIES` + `numberprints` | megvan (`:373`, #1819) |
+| lapszám | `%d of %d` → `previewnumber` | megvan (`:466`, `%1 / %2`, magyar cserével) |
+| nyomtató neve | `printername` | megvan (`printerName`, `:72`) |
+| **papíradatok** | **`paperinfo`** | **NINCS** — a `PrintDialog.qml`-ben nincs papírméret-kijelző (a `print_controller.py:314` `pageLayout()`-ja megvan, de nem jelenik meg) |
+| állapotsor | `statustext` | megvan (a minőség-üzenet) |

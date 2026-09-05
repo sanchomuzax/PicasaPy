@@ -59,7 +59,7 @@ ColumnLayout {
         objectName: "legacyEffectsIntro"
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("These filters come from older versions of Picasa. They are not available in today's Picasa, but your old edits may contain them.")
+        text: qsTr("These filters come from older versions of Picasa. Most of them have no control of their own in today's Picasa — it only recognises them inside your old edits.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }

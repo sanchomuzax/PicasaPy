@@ -81,15 +81,43 @@ class TestNevKatalogus:
         [
             ("crop64", "crop"),
             ("finetune2", "finetune"),
-            ("unsharp2", "unsharp"),
-            ("glow", "glow2"),
-            ("grain", "grain2"),
         ],
     )
     def test_verzios_alakok_ugyanazt_a_nevet_adjak(self, key, alias_of):
-        """A Picasa több szűrőt verziózott (`glow`/`glow2`). A felhasználó
-        ugyanazt az eszközt ismeri mindkettő mögött — a felirat is az."""
+        """Két alak, amely az EREDETI szövegtárban is azonos feliratot kap.
+
+        A `crop64` a `.picasa.ini` vágás-kulcsa, nem külön eszköz; a
+        `finetune`/`finetune2` pedig az egyetlen verziós pár, amelynek az
+        eredeti `filter_*_label0` bejegyzése is ugyanaz („Tuning").
+        """
         assert action_label(key) == action_label(alias_of)
+
+    @pytest.mark.parametrize(
+        ("regi_kulcs", "uj_kulcs", "regi_felirat", "uj_felirat"),
+        [
+            ("unsharp", "unsharp2", "Sharpen (Old)", "Sharpen"),
+            ("glow", "glow2", "Glow (Old)", "Glow"),
+            ("grain", "grain2", "Film Grain (Old)", "Film Grain"),
+            ("tint", "picniktint", "Tint (Old)", "Tint"),
+        ],
+    )
+    def test_a_regi_valtozat_kulon_Old_feliratot_kap(
+        self, regi_kulcs, uj_kulcs, regi_felirat, uj_felirat
+    ):
+        """#2240: a négy verziós párnál az eredeti MEGKÜLÖNBÖZTET.
+
+        Korábban mindkét alak ugyanazt a nevet kapta, és a felhasználó a
+        Visszavonás gombon nem látta, hogy régi effektet von vissza. Az
+        eredeti szövegtár (`filter_*_label0`) a régi változatra „(Old)"
+        toldatot tesz — magyarul „(régi)", a `grain`-nél „Régi
+        filmszemcse".
+
+        Ez a próba SZÁNDÉKOSAN az angol feliratot nézi (`ACTION_LABELS`),
+        nem a lefordítottat: a fordítás meglétét külön őr méri.
+        """
+        assert ACTION_LABELS[regi_kulcs][0] == regi_felirat
+        assert ACTION_LABELS[uj_kulcs][0] == uj_felirat
+        assert action_label(regi_kulcs) != action_label(uj_kulcs)
 
     def test_a_renderelo_minden_kulcsat_vagy_megnevezzuk_vagy_kimondjuk(self):
         """A renderelő által ismert szűrők (tehát ami egy valódi Picasa-
@@ -209,4 +237,6 @@ class TestMagyarFelirat:
         assert undo_label("crossprocess") == "Visszavonás: Áttűnés"
         assert undo_label("museummatte") == "Visszavonás: Múzeumi matt"
         assert undo_label("nightvision") == "Visszavonás: Éjjellátó"
-        assert undo_label("picnikgrain") == "Visszavonás: Filmszemcse (finom)"
+        # #2240: a „(finom)" toldat a MI találmányunk volt — az eredeti
+        # szövegtárban a `picnikgrain` felirata sima „Film Grain".
+        assert undo_label("picnikgrain") == "Visszavonás: Filmszemcse"

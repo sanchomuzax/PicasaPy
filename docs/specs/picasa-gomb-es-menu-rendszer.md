@@ -208,6 +208,85 @@ egy betű-makró.
 | `toggle_icon_left` | 2 | — | — |
 | `button_header_option` | 1 | `b2_decrect` | `m_buttonfontC` |
 
+### ⭐ A „throb" (villogó) stílus — MELYIK 13 elem villog, és MIÉRT (2026-09-05)
+
+A táblázat két `_throb` sora (7 + 6 előfordulás) eddig csak **szám** volt.
+A `runtime/respack.yt` teljes `superbutton(<stílus>, …)` kötéslistájából a
+**13 elem név szerint** megvan — ez a **teljes** lista, nem minta
+(171 `superbutton`-kötésből 13):
+
+| panel | stílus | elem |
+|---|---|---|
+| `acquirepanel` | `button_text_LC_throb` | `anowbutton` *(Importálás)* |
+| `printpanel` | `button_text_LC_throb` | `pnowbutton` *(Nyomtatás)* |
+| `publish` | `button_text_LC_throb` | `backup_go` *(Burn Disc — biztonsági mentés)* |
+| `publish` | `button_text_LC_throb` | `replicate_go` *(go)* |
+| `publish` | `button_text_LC_throb` | `presentcd_go` *(Burn Disc — Ajándék CD)* |
+| `publish` | `button_text_LC_throb` | `webpublish_go` *(Web Publish)* |
+| `collab` | `button_text_center_throb` | `ok` *(Upload)* |
+| `collagepanel` | `button_text_center_throb` | `sharebutton` |
+| `compose_share` | `button_text_center_throb` | `send` *(Send)* |
+| `makemoviepanel` | `button_text_center_throb` | `render` *(make_movie)* |
+| `printoptions` | `button_text_center_throb` | `ok` |
+| `thumbui` | `button_text_center_throb` | **`single_action_return`** |
+| `upload` | `button_text_center_throb` | `ok` *(Upload)* |
+
+**A minta egy mondatban:** minden panelen **a fő cselekvés gombja** villog —
+Importálás, Nyomtatás, Lemezírás, Feltöltés, Küldés, Film készítése, OK,
+Megosztás —, a többi gomb nem.
+
+#### A villogás FELTÉTELE — mérve, dekompiláció nélkül
+
+A `ytPopupListNodeCreator` (`FUN_00608da0`) a csomópont építésekor
+**négy 40 bájtos képobjektumot** másol az elemből, egymás után, ugyanazzal a
+másoló operátorral (`0x009a8ca0`, `rep movsd` `ecx=0xa` ⇒ pontosan 40 bájt):
+
+| forrás | állapot |
+|---|---|
+| `elem + 0x264` | `_n` (nyugalmi) |
+| `elem + 0x28c` | `_p` (lenyomott) |
+| `elem + 0x2b4` | `_h` (rámutatott) |
+| `elem + 0x2dc` | **`_t` (throb)** |
+
+majd — **mindkét hívóhelyen azonos alakban** (`0x00609248` és `0x006095fc`) —
+megnézi a **negyedik** kép egyik mezőjét, és ha nem nulla, bekapcsolja a
+villogást:
+
+```
+lea  <r>, [elem + 0x2dc]      ; a negyedik állapotkép
+push <r>
+lea  eax, [esp + N]
+call 0x009a8ca0               ; másolás
+cmp  dword ptr [esp + N + 4], ebx   ; ebx = 0
+je   tovább
+mov  byte ptr [elem + 0x35b], 1     ; THROB BE
+```
+
+**A vizsgált mező a kép SZÉLESSÉGE.** A képosztály 40 bájtos kiosztása a
+konstruktoraiból olvasva: `+4` és `+8` = szélesség, `+0xc` = magasság
+(`0x009a8a80`: `mov [esi+4],ecx` / `mov [esi+8],ecx` / `mov [esi+0xc],ecx2`;
+`0x009a8b60` téglalapból: `+4 = jobb − bal`, `+0xc = alsó − felső`;
+`0x009a8bc0` a felszabadításnál `imul [esi+0xc]` az `[esi+8]`-cal ⇒
+szélesség × magasság).
+
+⇒ **Egy elem akkor és csak akkor villog, ha a stílusa ad neki negyedik
+(`_t`) állapotképet.** Nincs futásidejű vagy felhasználói feltétel: a
+villogás a csomópont megépítésekor indul, és az **`eThrobOff`** parancs
+kapcsolja ki (`0x00601eb0`).
+
+**Kimerítő ellenőrzés a stílusokon:** a 141 `.tre` erőforrásból **pontosan
+kettő** deklarál `button_state_decrect_t`-t —
+`button_text_center_throb.tre` és `button_text_LC_throb.tre`. A közönséges
+párjuk (`button_text_LC.tre`) csak a `_n`/`_p`/`_h` hármast adja.
+
+⚠️ **Szerkezeti megjegyzés, ami két kört félrevitt:** a stílus↔elem kötés
+**nincs benne a `.tre` szövegekben**. A 141 fájlból 89-et soha semmi nem
+`#include`-ol, és a stílusnevekre (`button_text_LC`, `buttcon_LS_text_RC`, …)
+**nulla** hivatkozás van a `.tre` halmazban. *(Kontroll: a panel-fájlok
+nevére VAN hivatkozás — a nulla tehát nem a keresés hibája.)* A kötés a
+`respack.yt` `layer:<panel>/superbutton(<stílus>, <arg>): <név>` rekordjaiban
+él, és **csak onnan** olvasható ki.
+
 **Két nem nyilvánvaló részlet:**
 
 1. A **zöld gomb** (`button_text_center_green`) **mindhárom állapotában
@@ -310,6 +389,8 @@ A **fiók-fül** (`drawertab/{n,h,p}`) 56 × 25.
 
 ## 8. Panelen belüli legördülők (`popuplist`)
 
+*Forrás: `collagepanel.tre:343` (`collagepanel/format_menu`) · `editpanel.tre:784` (`editpanel/crop_aspect_menu`) · `makemoviepanel.tre:287` (`makemoviepanel/fontfamily`) — és további 3 elem ugyanott.*
+
 A vezérlő maga **21 px magas** (a 43 `popuplist` rétegből 30 pontosan 21;
 a többi 19, 22 vagy 23).
 
@@ -335,7 +416,6 @@ a többi 19, 22 vagy 23).
 | `collagepanel/format_menu`, `thumbui/addtobuttcon` | **0** (= korlátlan) |
 
 ---
-
 ## 8/b A LETILTOTT állapot: alfa / 4 (2026-08-17, #893)
 
 Nincs `_d` réteg, mert nem kell — a csomópont-rajzoló (`0x009e2a60`) az

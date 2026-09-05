@@ -112,10 +112,17 @@ a kiírás előtt a Picasa **negálja** (`0x00868947`).
 - **Automatikus mentés + helyreállítás:** `CAutosaveCollageThread`,
   `autosave.cxf`, és a `collage::recoveredautosave` / `lastautosave`
   üzenetek — a Picasa összeomlás után felajánlotta a visszaállítást.
-- A kimeneti mappa mellé **`.picasa.ini` készül** `[encoding] utf8=1` és
-  `[Picasa] name=…` szekciókkal (az `.exe`-ben közvetlenül az `autosave.cxf`
-  után állnak ezek a format-sztringek) — vagyis a projekt-albumok is a
-  normál ini-modellt használják.
+- A kimeneti mappa mellé **`.picasa.ini` készül**. ⛔ **HELYESBÍTVE
+  (2026-09-05):** a lap korábban azt állította, hogy `[encoding] utf8=1` és
+  `[Picasa] name=…` szekciókkal — **az állítás SZTRING-SZOMSZÉDSÁGBÓL
+  következett** („az `.exe`-ben közvetlenül az `autosave.cxf` után állnak
+  ezek a format-sztringek"), és **téves**. Ezeket a formátumsztringeket a
+  `FUN_0068ac80` használja, amelynek a hívási lánca RTTI-vel feloldva a
+  **`PrepareCollection`** / **`AlignedImageCollection`** osztályokhoz vezet
+  — az **export/előkészítés** ága, nem a kollázs-mentés. A valódi kimenet a
+  felhasználó gyűjteményében `[Picasa]` + `P2category=Projects (internal)`,
+  és a korpuszban **egyetlen** `[encoding]` szekció sincs (#1050). Részletek:
+  [`picasa-ini-format.md`](picasa-ini-format.md), „a `[encoding]` fejléc".
 
 ### 1.6 A `.cxf` formátum — MEGFEJTVE valódi mintából (2026-08-07)
 
@@ -490,6 +497,41 @@ A teljes `.text`-et végigpásztáztuk a `+0x2c`-be író utasításokra
 ⇒ **A `scale` végleges értékét mutatós alakban író függvény adja**, és az a
 37 közül való. Indexelt, SSE- és disp32-alakú író **nincs** — ezt nem kell
 újra megnézni.
+
+#### ✅ A MEZŐ AZONOSSÁGA az ÍRÓ oldaláról is megerősítve (2026-09-05)
+
+A lap eddig a `+0x2c`-t a **layout** oldaláról azonosította a `scale`-lel
+(mindkét téma `1,0`-t ír bele). Most a **`.cxf`-író** oldaláról is megvan,
+tehát a mezőazonosság **két független forrásból** áll:
+
+```
+0x00835096  push 0x00cbf80c          ; az attribútum neve: "scale"
+0x008350ab  mov  ecx, [ebx + 0x48]   ; a csomópont bájt-eltolása
+0x008350ae  mov  edx, [esp + 0x24]   ; a csomópont-tömb bázisa
+0x008350b2  fld  dword ptr [edx + ecx + 0x2c]   ; ← AZ ÉRTÉK: float a +0x2c-en
+0x008350bd  fstp qword ptr [esp]
+0x008350c0  push 0x00c817c0          ; a formátum: "%f"
+0x008350c9  call 0x0040eab0
+```
+
+Az író `FUN_008347b0` (3023 b) — ugyanaz, amelyik az `albumTitle`,
+`albumDate`, `orientation`, `shadows`, `theta` attribútumokat is kiírja.
+
+⛳ **Kontroll a valódi fájlon:** a formátum `%f` ⇒ **hat tizedes**, és a
+mintáink pontosan így néznek ki (`scale="337.000000"`, `scale="1.000000"`).
+Ez zárja ki, hogy egy másik függvény írná az attribútumot.
+
+⇒ **Az érték semmilyen átalakításon nem megy át íráskor**: a fájlban álló
+`313` **pontosan** az, ami a csomópont `+0x2c` mezőjében van a mentés
+pillanatában. A kérdés tehát változatlanul az, **ki írja felül** a layout
+`1,0`-ját — nem az, hogy az író számol-e valamit.
+
+⚠️ **Ez a kör NEM vezette le a 313-at.** A `+0x2c` íróinak pásztázását
+újrafuttatva a 2026-09-02-i eredmény **reprodukálódott** (indexelt, SSE- és
+disp32-alakú író nincs; a mutatós alakúak közül a kollázs-sávban a
+`0x0087b895`–`0x0087b898` csak **másol** két csomópont közt:
+`fld [edi+0x2c]` → `fstp [esi+0x2c]`). A lenti „következő lépés" tehát
+érvényben marad.
 
 #### A KÖVETKEZŐ lépés (konkrétan)
 
@@ -1837,6 +1879,8 @@ A két panel neve `makemoviepanel/text_picker_panel` és
 
 #### E) A fül feliratai — a hivatalos magyar fordítással
 
+*Forrás: `makemoviepanel.tre:369` (`makemoviepanel/back_color_label`) · `makemoviepanel.tre:282` (`makemoviepanel/font_label`) · `makemoviepanel.tre:292` (`makemoviepanel/size_label`) — és további 3 elem ugyanott.*
+
 | elem | magyar |
 |---|---|
 | `makemoviepanel/templatetext` | **„Sablon:"** |
@@ -1852,7 +1896,6 @@ A két panel neve `makemoviepanel/text_picker_panel` és
 
 A fül ikonjai a respackben: `bold_icon`, `italic_icon`, `outline_icon`,
 `inserticon`, `removeicon`.
-
 #### F) NEGATÍV EREDMÉNY — a `titleoption_listbox` ága HALOTT
 
 A `0x006223b0` kezel egy `makemoviepanel/titleoption_listbox` nevű listát
@@ -2583,6 +2626,8 @@ A `.tre`-t és a kezelőket összevetve:*
 
 #### A felület (`video_control_bar2.tre`)
 
+*Forrás: `video_control_bar2.tre:79` (`video_control_bar2/1to1`) · `video_control_bar2.tre:82` (`video_control_bar2/controlbar`) · `video_control_bar2.tre:70` (`video_control_bar2/fullscreen`) — és további 5 elem ugyanott.*
+
 | elem | típus / horgony | szerep |
 |---|---|---|
 | `video_control_bar2/controlbar` | `root`, `m_scaleX m_offsetT` | a sáv maga |
@@ -2593,7 +2638,6 @@ A `.tre`-t és a kezelőket összevetve:*
 | `video_control_bar2/moviecontrolsclip` | `m_offsetLT` | a play/pause clip |
 | `video_control_bar2/1to1` | `m_offsetRT` | a **valódi méret** gomb; Tooltip: „Show actual movie size (don't stretch)" |
 | `video_control_bar2/fullscreen` | `m_offsetRT` | a **teljes képernyő** gomb; Tooltip: „Play full screen" |
-
 #### A kezelők (a `MoviePreviewHandler` `0x006248e0` és a hozzá tartozó magok)
 
 | függvény | méret | szerep |
@@ -3124,17 +3168,19 @@ szöveges diákat** — az a figyelmeztetés ehhez a funkcióhoz tartozik.*
 
 #### A párbeszéd vezérlői (elemleltár, `titledialog`)
 
-| elem | felirat |
-|---|---|
-| `previewtext` · `previewimage` | a dia **élő előnézete** (szöveg + háttér) |
-| `stylelist` | a dia **stílusa** |
-| `sizelist` | a **betűméret** |
-| `captionchk` | jelölőnégyzet — a **képfelirat** átemelése |
-| `add` · `cancel` | „Add" / „Cancel" |
+*Forrás: `titledialog.tre` — a sorszámok a felületleíró saját sorai.*
+
+| elem | felirat | `titledialog.tre` |
+|---|---|---|
+| `titledialog/previewimage` · `titledialog/previewtext` | a dia **élő előnézete** (szöveg + háttér) | `titledialog.tre:20` |
+| `titledialog/stylelist` | a dia **stílusa** | `titledialog.tre:14` |
+| `titledialog/sizelist` | a **betűméret** | `titledialog.tre:37` |
+| `titledialog/captionchk` | jelölőnégyzet — a **képfelirat** átemelése | `titledialog.tre:40` |
+| `titledialog/add` · `titledialog/cancel` | „Add" / „Cancel" | — |
 
 ⇒ A szöveges dia **nem puszta szövegmező**: stílus- és
 méretválasztóval, élő előnézettel, és azzal a lehetőséggel, hogy a
-szöveg a kép **feliratából** jöjjön (`captionchk`).
+szöveg a kép **feliratából** jöjjön (`titledialog/captionchk`).
 
 #### Az infósor a filmkészítőben
 
