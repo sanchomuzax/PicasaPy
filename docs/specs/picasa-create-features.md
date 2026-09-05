@@ -494,9 +494,23 @@ A teljes `.text`-et végigpásztáztuk a `+0x2c`-be író utasításokra
 | disp32-alak (`mod=10`, eltolás `0x2c`) | **0** | 0 |
 | `fstp`/`mov` **mutatós** alak (`[reg+0x2c]`) | — | 37 függvény, ebből **34** a `+0x28`-at is írja |
 
-⇒ **A `scale` végleges értékét mutatós alakban író függvény adja**, és az a
-37 közül való. Indexelt, SSE- és disp32-alakú író **nincs** — ezt nem kell
-újra megnézni.
+⛔ **MEGDŐLT (2026-09-06, #1412) — ez a tábla és a belőle vont
+következtetés is hibás.** A `+0x2c` eltolású írások túlnyomó többsége
+**`[esp + 0x2c]` lokális változó**, nem struktúramező; a fenti pásztázás ezt
+hol beszámolta, hol nem. Helyes szűrővel (SIB-nél `base != 100b`, mutatós
+alaknál `rm ∉ {100b, 101b}`) a kollázs-sávban **47** valódi `+0x2c`-író van,
+és **float**-ot csak **hat** ír: `0x00822230` és `0x00823620` (egy általános
+geometria-segéd, nem a csomópont), `0x008341b0` (a csomópont `operator=`),
+`0x0087b830` (másolás), valamint a két elrendező — `0x00885060`
+(`regulargrid`) és `0x00888210` (`contactsheet`) —, **mindkettő állandó 1,0**.
+Rajtuk kívül a **beolvasó** (`0x00832830`) ír `scale`-t, közvetlenül a
+csomópontba: `0x008332b7  fstp dword ptr [ebx + 0x68]` (a `theta` a
+`0x00833240`-en, `+0x64`; a burkolóban a csomópont a `+0x3c`-nél kezdődik).
+
+⇒ **A kollázs-sávban a `scale`-t senki nem SZÁMOLJA** — a két elrendező
+állandót ír, a beolvasó a fájl értékét hozza vissza, a többi másol.
+A részletek, a pozitív kontroll (`multiexp` = 1,0 végig) és a következő
+lépés: `kollazs-eletciklus.md` **17.7–17.10**.
 
 #### ✅ A MEZŐ AZONOSSÁGA az ÍRÓ oldaláról is megerősítve (2026-09-05)
 
@@ -533,14 +547,19 @@ disp32-alakú író nincs; a mutatós alakúak közül a kollázs-sávban a
 `fld [edi+0x2c]` → `fstp [esi+0x2c]`). A lenti „következő lépés" tehát
 érvényben marad.
 
-#### A KÖVETKEZŐ lépés (konkrétan)
+#### A KÖVETKEZŐ lépés (2026-09-06-ban átírva)
 
-1. A 37 mutatós író közül azokat kell megnézni, amelyek a
-   **`CCollageUI`/`CollageNodeHandler` szerkesztési útjából** hívódnak (a
-   `0x0088e4e0` 13, a `0x00839200` 8 hívóval a legvalószínűbb belépők).
-2. Ha ez sem dönt: **futó Picasán adatfigyelő** a csomópont `+0x2c`-jén,
-   Indexkép-téma választása közben — ez már drága lépés, de a statikus
-   olcsó lánc itt kimerült.
+⛔ Az itt korábban álló két pont a megdőlt 37-es listára épült; a
+`0x0088e4e0` ráadásul **nem is a csomópontot** másolja (más 56 bájtos
+osztály: float a `+0x20`/`+0x24`/`+0x30`/`+0x34`-en, dword a `+0x28`/`+0x2c`-n).
+
+1. **A kollázs-sávon KÍVÜL** kell keresni az írót, a helyes szűrővel, a
+   csomópont-alakra (egy függvényben `+0x28` ÉS `+0x2c` float-írás).
+2. **Vagy mutatón át ír:** a sávban **10** `lea r, [r+0x2c]` hely van
+   (`0x00823c21`, `0x008300dc`, `0x0083198a`, `0x00834af3`, `0x00860032`,
+   `0x00879909`, `0x00879b7b`, `0x00879d18`, `0x0087e0cd`, `0x008831c8`,
+   `0x0088ab66`) — az eltolás-alapú pásztázás ezeket nem látja.
+3. Csak ha ez sem dönt: futó Picasán adatfigyelő a csomópont `+0x2c`-jén.
 
 #### A MÉRÉSI oldal máshol van — és ez a lap elavult hozzá képest
 
