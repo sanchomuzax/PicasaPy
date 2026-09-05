@@ -227,6 +227,9 @@ class AppController(
         # szinkron végén be kell hozni a lemaradást (ld. a
         # `_on_folders_dirty` és a `_flush_pending_dirty` docstringjét)
         self._pending_dirty: set[str] = set()
+        #: #1458: hány FELHASZNÁLÓI kérés vár a `_pending_dirty`-ben nyitott
+        #: foglaltság-bejegyzéssel. A `_flush_pending_dirty` ennyit zár.
+        self._pending_busy: int = 0
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""

@@ -853,7 +853,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
     # -- háttér-szinkron -----------------------------------------------------
 
     @Slot(list)
-    def _on_folders_dirty(self, folders) -> None:
+    def _on_folders_dirty(self, folders, *, felhasznaloi: bool = False) -> None:
         """A watcher által jelzett (esetleg több) mappa célzott, nem-
         rekurzív szinkronja EGY háttérszálon (#143).
 
@@ -887,6 +887,22 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # alatt érkező jelzéseket is. Halmaz, tehát egyetlen mappa sem
             # veszhet el akkor sem, ha közben több jelzés fut be.
             self._pending_dirty.update(paths)
+            # #1458: a FELHASZNÁLÓ kérése látszódjon is. A kérés nem vész el
+            # (a halmaz megőrzi), de a felhasználó ebből semmit nem lát:
+            # rákattint a „Frissítés"-re, és lassú hálózati köteten fél
+            # percig nem történik semmi látható. A `_start_background`
+            # bejelentkezne a foglaltság-nyilvántartóba, csakhogy ezen az
+            # ágon nem indul szál — ezért itt jelentkezünk be, és a
+            # `_flush_pending_dirty` zárja a bejegyzést.
+            #
+            # ⚠️ Az AUTOMATIKUS (figyelőből jövő) jelzés SZÁNDÉKOSAN nem
+            # jelentkezik be: ott nincs kattintás, amire válaszolni kellene,
+            # és a folyamatosan pörgő sáv zavaró lenne. A watcher a
+            # `watcherDirty` kapcsolaton át hív, argumentum nélkül — tehát
+            # az alapértelmezés a helyes viselkedése.
+            if felhasznaloi:
+                get_app_busy_registry().begin()
+                self._pending_busy += 1
             return
 
         def worker():
@@ -1204,6 +1220,13 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             return
         folders = sorted(self._pending_dirty)
         self._pending_dirty = set()
+        # #1458: a várakozás közben nyitott foglaltság-bejegyzések záródnak.
+        # A `_on_folders_dirty` alább ÚJ bejegyzést nyithat (ha megint nem
+        # tud indulni), ezért a lezárás ELŐBB történik — különben a két
+        # bejegyzés egymásra torlódna, és a sáv sosem állna meg.
+        varakozo, self._pending_busy = self._pending_busy, 0
+        for _ in range(varakozo):
+            get_app_busy_registry().end()
         try:
             self._on_folders_dirty(folders)
         except BaseException:
@@ -1257,7 +1280,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         blokkolja a UI-szálat; a végén a syncFinished frissíti a nézetet."""
         if not folder_path:
             return
-        self._on_folders_dirty([folder_path])
+        # #1458: ez a felhasználó KATTINTÁSA (Frissítés menüpont, néző
+        # bezárása) — futó író mellett a kérés várólistára kerül, és a
+        # visszajelzés nélkül úgy néz ki, mintha semmi nem történt volna.
+        self._on_folders_dirty([folder_path], felhasznaloi=True)
 
     # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `wire_fileops` PYTHON-oldali
     # kötése (`folderMoved` → itt), a QML soha nem hívja. Slotként a
