@@ -1663,7 +1663,7 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
 | **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **TELJESEN LEZÁRVA** — a **6.** az, és a **leképezés is megvan**: a csúszka nyers értéke, alulról **0,1**-re vágva (`0x0062f449`–`0x0062f488`). *(A sor 2026-09-05-ig „a leképezés nyitva marad" jelöléssel állt, holott az alábbi „A 6. mező (átlátszatlanság)" szakasz már megválaszolta — elavult jelölés volt.)* |
-| **mi a 8. mező HÁROM része** | **NYITOTT (2026-09-04)** — az olvasó bitekre vágja (ld. fentebb); két rész 0/1/2 értékkészletű és függetlenül mozog, a harmadik (felső 16 bit) minden mintán 0. **Megszerzés:** kontrollált minta, ami a KÉT hármas enumot választja szét. |
+| **mi a 8. mező HÁROM része** | ✅ **A KÉT ALSÓ RÉSZ LEZÁRVA (2026-09-05, #2108)** — **bit 8–15 = vízszintes igazítás** (0 = bal, 1 = közép, 2 = jobb), **bit 0–7 = kitöltés/körvonal mód** (0 = csak kitöltés, 1 = nincs kitöltés, 2 = kitöltés + körvonal), mindkettő a binárisból, ld. lentebb. Kontrollált minta **nem kellett**. ⚠️ A **felső 16 bit** (`+0x14`) **NYITOTT** — a szűkítés is lentebb. |
 | **mi a `<b>` (9. mező)** | ✅ **LEZÁRVA (2026-09-05)** — **bit 0 = aláhúzott**, **bit 3 = dőlt**, a binárisból (ld. lentebb). A `0xC000`/`0xC001`/`0xC008` hármas ezzel maradéktalanul megmagyarázva. Bit 14 jelentése **nincs megállapítva**, bit 15 forrása **NINCS MEG**. ⛔ A félkövér **nem** ebben a mezőben van. |
 
 #### ⭐ A 9. mező BITJEI — dőlt és aláhúzott, a binárisból (2026-09-05, #2448)
@@ -1823,6 +1823,120 @@ jelentése **nincs megmérve**; ránézésre méret, illetve szín, de ezt nem
 **helyes** a beolvasott sorokra. Az ÚJ sorok írásához viszont most már
 megvan a súly, a körvonalvastagság és az igazítás — ld. a **#1994**-et.
 
+#### ⭐ A 8. MEZŐ MINDHÁROM RÉSZE — igazítás, kitöltés/körvonal mód, és a felső 16 bit (2026-09-05, #2108)
+
+Az előző kör kimutatta, hogy az olvasó a 8. mezőt **három** külön beállítóhoz
+vágja szét, de nem tudta megmondani, melyik mit jelent („az offszet nem
+szemantika"). A választ nem kontrollált minta adta meg, hanem a
+**`edittextpanel` kezelőfüggvénye** — az elemnév → beállító út végigolvasva.
+
+##### ✅ Bit 8–15 (`+0x2c`, `[vtbl+0x2c]`) = a VÍZSZINTES IGAZÍTÁS
+
+A kattintáskezelő (`0x0062e8f0`) három elemnévre ágazik el
+(`edittextpanel/leftalign` `0x00c9e8f4` · `centeralign` `0x00c9e90c` ·
+`rightalign` `0x00c9e928`). Mindhárom ág ugyanazt teszi: bepipálja a sajátját
+és leveszi a másik kettőt (`0x009cd8f0`), a panel `+0x2e4` tagjába teszi az
+értéket, majd **minden kijelölt felirat-objektumra** meghívja a
+`[vtbl+0x2c]` beállítót — azt, amelyik a `text=` 8. mezőjének **8–15. bitjét**
+kapja.
+
+| gomb | az érték | a beírás címe | a beállító hívása |
+|---|---:|---|---|
+| `leftalign` | **0** | `0x0062efbf` (`mov [ebx+0x2e4], ebp`, `ebp = 0`) | `0x0062efe8`–`0x0062efee` |
+| `centeralign` | **1** | `0x0062f085` (`mov ebp, 1`) → `0x0062f0c4` | `0x0062f0ec`–`0x0062f0f2` |
+| `rightalign` | **2** | `0x0062f1a6` (`mov eax, 2`) → `0x0062f1be` | `0x0062f1e8`–`0x0062f1ee` |
+
+⇒ **0 = bal, 1 = közép, 2 = jobb.** Ez **kimerítő**: a három gomb a panel
+teljes igazítás-készlete, és a `0x0062f300` (a gombok visszajelzése) ugyanezt
+a három értéket olvassa vissza.
+
+⛳ Ezzel **lezárul** a korábbi „amit a minta NEM fed le" pont: a **bal**
+igazítás (`0x00`) egyetlen mintában sem fordul elő, de a bináris megadja.
+
+##### ✅ Bit 0–7 (`+0x28`, `[vtbl+0x30]`) = a KITÖLTÉS/KÖRVONAL MÓD — és SZÁMÍTOTT, nem tárolt
+
+A panel maga is **`ytTextSettings`-leszármazott**: a konstruktora
+(`0x0062d3a0`) a `+0x28c`-re a saját, felülírt vtáblát teszi
+(`0x00c9ea94`, `0x0062d3e3`–`0x0062d3ed`). A `.text` teljes pásztázása
+szerint a `0x00c943d4`-es alap-vtábla kísérőit (`0x005ba7a0`, `0x005ba7f0`,
+`0x005ba810`) **pontosan egy** vtábla tartalmazza ⇒ **ez az EGYETLEN
+leszármazott az egész binárisban**.
+
+A leszármazott a `[vtbl+0x40]` gettert (az alsó bájtét) **felülírja**
+(`0x00630450`), és az **minden hívásnál ÚJRASZÁMOLJA** az értéket:
+
+```
+0x0063045a  mov eax, [ebx+0x1c]        ; = panel+0x2a8 = az „edittextpanel/no_fill" négyzet
+0x00630461  cmp byte ptr [eax+0x359],0 ; be van pipálva?
+0x0063046a  mov dword ptr [ebx+0x44],1 ;   IGEN -> 1
+0x00630478  mov esi, [ebx+0x24]        ; = panel+0x2b0 = az „outlineweightslider/scaleslider"
+0x00630484  call 0x009ddd00            ; a csúszka értéke
+0x00630490  fcomp dword ptr [esp+8]    ; == 0.0 ?
+0x0063049b  mov dword ptr [ebx+0x44],0 ;   IGEN -> 0
+0x006304a9  mov dword ptr [ebx+0x44],2 ;   különben -> 2
+```
+
+A `+0x44` tehát **gyorsítótár**, az igazság a jelölőnégyzet és a csúszka.
+A beállító-felülírás (`0x006303d0`) ugyanezt tartja karban visszafelé: a
+kapott értéket szétosztja a kijelölt feliratokra (`[vtbl+0x30]`,
+`0x00630402`–`0x00630406`), a `no_fill` négyzetet `érték == 1`-re pipálja
+(`0x00630416`–`0x00630420`), és `érték == 0` esetén **a csúszkát 0,0-ra
+állítja** (`0x00630425`–`0x0063043a`).
+
+| érték | jelentés | mi állítja elő |
+|---:|---|---|
+| **0** | csak kitöltés, nincs körvonal | a körvonalvastagság-csúszka pontosan 0,0 |
+| **1** | **nincs kitöltés** (csak körvonal) | a `no_fill` négyzet be van pipálva (ez ELŐBBRE való) |
+| **2** | kitöltés **és** körvonal | a csúszka > 0 és a `no_fill` nincs bepipálva |
+
+Az elemnév→tag kötés a panel indulásából: a `no_fill` keresése
+`0x0062e292` (`0x00c9e84c`), a tárolása `0x0062e2be` (`panel+0x2a8`); a
+körvonal-csúszkáé `0x0062e2e3` (`0x00c9e884`) → `0x0062e2f9`
+(`panel+0x2b0`).
+
+##### ⛳ A szabály a KORPUSZON: 5/5
+
+A #1994 öt valódi export-blokkja **kivétel nélkül** követi a fenti számítást
+— és mindkét irányban van pozitív esete, tehát nem üres egyezés:
+
+| # | 5. mező (körvonal) | 8. mező alsó bájt | a szabály jóslata | a képen mérve |
+|---|---:|---:|---|---|
+| 1 | 0,000 | 0 | 0 (csúszka nulla) | — |
+| 2 | 0,000 | 0 | 0 | — |
+| 3 | 0,000 | 0 | 0 | — |
+| 4 | **0,250** | **2** | 2 (csúszka > 0, van kitöltés) | kitöltés **és** körvonal |
+| 5 | **0,500** | **1** | 1 (`no_fill` bepipálva — ELŐBBRE való a csúszkánál) | **csak körvonal** |
+
+Az 5. sor a döntő: ott a csúszka **nem** nulla, mégis `1` a mód — pontosan
+azért, mert a `no_fill` ága előbb fut. A felső bájtra ugyanígy: a 3. és a 4.
+blokk `2`-es felső bájtja mellé a spec korábban **mérten** jobbra igazított
+szélt talált.
+
+##### ⚠️ A felső 16 bit (`+0x14`) — NYITOTT, de erősen szűkítve
+
+Amit a kör HOZZÁTETT, mind a binárisból:
+
+- a konstruktor alapértéke **1** (`0x005ba5d0`, `mov byte ptr [esi+0x14], 1`);
+- a panel — az **egyetlen** leszármazott — a **beállítót üres csonkkal**
+  írja felül (`[vtbl+0x38]` → `0x004bdea0` = `ret 4`), a **gettert pedig
+  konstans nullával** (`[vtbl+0x48]` → `0x004bdeb0` = `xor al,al; ret`)
+  ⇒ **amit a panel ad ki, az mindig 0**;
+- a `text=` írója (`0x00a4e3b0`) a szerializálandó objektumot
+  **paraméterként** kapja (`[esp+0x3c]`), és a hívója (`0x00a4db30`) is
+  továbbadja (`0x00a4db86 push ecx`) ⇒ az objektum kiléte innen nem dől el.
+
+**A megmaradt kérdés ezzel egyetlen mondat:** a `text=` írása a panel
+`ytTextSettings`-bázisát szerializálja-e (akkor a felső 16 bit **fogalmilag**
+mindig 0), vagy feliratonkénti objektumot (akkor a konstruktor 1-esének
+látszania kellene, és valami nullázza). **Amit hiába próbáltam:** a
+`[vtbl+0x38]` hívási helyeinek pásztázása — a `mov r32,[r32+0x38]` +
+közeli `call r32` mintára a teljes fájlban **195** jelölt van, tehát a
+slot-szám nem szelektív (ugyanaz a csapda, mint a tagoffszet-söprésnél).
+**A járható út:** a `0x00a4db30` hívóláncának (`0x005bb630`,
+`0x009089a0`, `0x00a4e6f0`) végigvitele, vagy egy olyan `.picasa.ini`,
+amelynek 8. mezője nem nulla felső 16 bittel, újramentve a Picasával — ha
+nullára változik, a panel a forrás.
+
 #### ⭐ A MÉRTÉKEGYSÉG-LEKÉPEZÉS — mind a kilenc mező forrása, és a két csúszka útja (2026-09-04, #2271)
 
 Az előző kör a **beolvasó** (`0x00a4dd50`) négy setter-hívásából négy mezőt
@@ -1888,8 +2002,16 @@ Ugyanennek a kezelőnek a másik ága (`outlineweightslider/scaleslider`,
 
 ⇒ **Nem nulla érték: egy az egyben a tagba.** **Pontosan nulla: a program
 nem a mezőt írja nullára, hanem a „nincs körvonal" ágra ugrik**
-(`0x0062f581`), ami a 8. mező alsó bájtját (kitöltés/körvonal mód) állítja.
+(`0x0062f581`).
 Ez megmagyarázza, miért `0.000000` az 5. mező az alapértelmezett sorokban.
+
+> ⛔ **Helyesbítés (2026-09-05, #2108):** ez a szakasz korábban azt írta, hogy
+> a `0x0062f581`-es ág „a 8. mező alsó bájtját állítja". **Nem azt teszi.**
+> Az ág az `edittextpanel/no_fill` **jelölőnégyzet** (`panel+0x2a8`)
+> bejelölését veszi le (`0x0062f589` a `[ebx+0x359]` bájtot vizsgálja,
+> `0x0062f598` nullázza). A 8. mező alsó bájtja **nem tárolt érték**, hanem
+> a jelölőnégyzetből és a csúszkából **SZÁMÍTOTT** — ld. a következő
+> szakaszt.
 
 ##### ✅ A BETŰMÉRET: a lista 16 egész értéke, és `tárolt = érték ÷ 360` (2026-09-04, #2287)
 
@@ -3010,10 +3132,12 @@ A **felső bájt egybevág a `0x0062f300`-nál mért igazítás-értékkészlett
 igazítottak. Az alsó bájt a kitöltés/körvonal mód: **0** = csak kitöltés,
 **1** = csak körvonal (`no_fill`), **2** = mindkettő.
 
-⚠️ **Amit a minta NEM fed le:** a `0x00`-s felső bájt (BAL igazítás)
-egyszer sem fordul elő — a `0x01`-es blokkok mind egysorosak, tehát a
-„közép" olvasat a `0x0062f300`-as mérésből következik, nem a képből. Egy
-többsoros, balra igazított felirat zárná le.
+> ✅ **LEZÁRVA (2026-09-05, #2108) — nem kellett hozzá minta.** A bal
+> igazítás (`0x00`) valóban egyetlen blokkban sem fordul elő, de a
+> kattintáskezelő mindhárom értéket kiadja: `leftalign` → 0
+> (`0x0062efbf`), `centeralign` → 1 (`0x0062f085`), `rightalign` → 2
+> (`0x0062f1a6`). A mód-bájt szabálya ugyanott. Ld. „A 8. MEZŐ MINDHÁROM
+> RÉSZE" szakaszt.
 
 #### A 9. mező — a jelzőszó bitjei
 
@@ -3024,9 +3148,13 @@ többsoros, balra igazított felirat zárná le.
 | 49160 | `0xC008` | **dőlt**, nem aláhúzott (2 blokk) |
 
 A `0xC000` az alapérték (egyezik a `+0x2f0` konstruktor-alapértékével).
-A `0x01` bit az aláhúzáshoz, a `0x08` a dőlthöz **rendelhető**, de a
-kettő **soha nem szerepel együtt** ebben a mintában, tehát ez egyezés,
-nem szétválasztó eset. **NYITOTT.**
+A `0x01` bit az aláhúzáshoz, a `0x08` a dőlthöz **rendelhető** — ez a
+mintából csak egyezés volt, nem szétválasztó eset.
+
+> ✅ **LEZÁRVA (2026-09-05, #2448) — a binárisból**, nem a mintából:
+> **bit 0 = aláhúzott**, **bit 3 = dőlt**. Ld. „A 9. mező BITJEI"
+> szakaszt fentebb. (A jelölés 2026-09-05-ig „NYITOTT" volt, holott a
+> kérdést ugyanezen a lapon már megválaszoltuk.)
 
 #### ✅ A geometria: a forgatás RADIÁN, az `x` a SZÉLESSÉGHEZ, az `y` és a méret a MAGASSÁGHOZ normált
 
