@@ -220,6 +220,9 @@ Item {
     PicasaButton {
         objectName: "collageShareButton"
         x: 147; y: 415; width: 133; height: 28
+        // #2438: az eredeti `collagepanel/sharebutton`-jának megfelelője —
+        // a panel FŐ cselekvése, tehát pulzál.
+        throbbing: true
         text: qsTr("Create Collage")
         //: Buboréksúgó a „Kollázs létrehozása" gombon.
         ToolTip.text: qsTr("Save as a JPG in the Collages album (in the Projects "
