@@ -1,7 +1,8 @@
 # Duplikátumok keresése
 
-Az **Eszközök ▸ Duplikátum-kereső…** megkeresi az azonos és a hasonló
-képeket, hogy helyet szabadíts fel.
+Az **Eszközök ▸ Kísérleti ▸ Fájlok másodpéldányainak megjelenítése**
+megkeresi az azonos és a hasonló képeket, hogy helyet szabadíts fel.
+(Az eredeti Picasában is a Kísérleti almenüben volt a helye.)
 
 ## A keresés
 

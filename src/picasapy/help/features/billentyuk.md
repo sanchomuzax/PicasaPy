@@ -42,7 +42,38 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+2 | Normál indexképek |
 | Ctrl+4 | Diavetítés |
 | Ctrl+T | Címkék panel nyitása/zárása |
+| Ctrl+K | Címkék panel (ugyanaz, mint a Ctrl+T) |
+| Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
+| Ctrl+F | A kereső mezőre ugrik |
 | Alt+Enter | Tulajdonságok panel |
+
+A **Ctrl+0** azt a panelt zárja be, amelyik éppen nyitva van a jobb
+oldalon (Címkék, Helyek, Tulajdonságok vagy Emberek), és újranyitáskor
+ugyanazt hozza vissza — nem esik vissza más panelre.
+
+## Lapok
+
+A könyvtár és a nyitott projektek (kollázs, film) fülekként állnak az
+ablak tetején. Ezek között billentyűvel is válthatsz:
+
+| billentyű | mit csinál |
+|---|---|
+| Ctrl+Tab | A következő lap |
+| Ctrl+Shift+Tab | Az előző lap |
+| Ctrl+→ | A következő lap |
+| Ctrl+← | Az előző lap |
+| Ctrl+W | Az aktuális projektlap bezárása |
+| Esc | Az aktuális projektlap bezárása (ha projektlap az aktív) |
+
+A léptetés **körbejár**: az utolsó lap után újra a könyvtár füle jön. A
+könyvtár füle nem zárható be. Ha a lapon mentetlen módosítás van, a
+bezárás előtt rákérdez a program.
+
+## Csúszkák
+
+Ha egy csúszkára ráálltál (rákattintottál, vagy a Tab odavitte), a
+**+** és az **=** növeli, a **−** és a **_** csökkenti az értékét. Egy
+lépés a csúszka teljes tartományának 2%-a.
 
 ## A nézőben
 
@@ -77,6 +108,13 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 |---|---|
 | F1 | A súgó megnyitása |
 | Shift+F1 | A súgó megnyitása (ma ugyanoda visz, mint az F1 — lásd [A beépített súgó](sugo.md)) |
+
+## A menük betűjelei
+
+A menüsor tételeinek nagy részén **aláhúzott betű** van, ugyanaz, mint az
+eredeti magyar Picasában. Az **Alt** és az aláhúzott betű együtt nyitja a
+menüt (**Alt+F** a Fájl, **Alt+N** a Nézet, **Alt+Z** a Szerkesztés), a
+nyitott menüben pedig már a puszta betű választ tételt.
 
 > A **Súgó ▸ Billentyűkódok** menüpont még nem működik — a billentyűk
 > listája ez a lap.

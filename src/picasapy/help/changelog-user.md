@@ -4,6 +4,69 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-05
+
+**Nyomtatás**
+
+- Új **Nyomtató telepítése** gomb: a kiválasztott nyomtató saját
+  lapbeállító ablakát nyitja meg (papírméret, tájolás, margók), és amit
+  ott elfogadsz, azt a következő nyomtatás használja. PDF-be
+  nyomtatásnál a gomb szürke.
+- A nyomtató neve alatt egy sor kiírja, **milyen lapra** fogsz
+  nyomtatni: a papír neve, mérete milliméterben és a tájolása.
+
+**Szöveg a képen**
+
+- A **betűméret** mostantól az eredeti Picasa tizenhat méretéből
+  választható (8-tól 96-ig), a korábbi százalékos beállítás helyett. A
+  méret a kép magasságához igazodik.
+- **Két hiba javult a mentésnél:** eddig a program minden feliratot
+  félkövérként mentett, a körvonal vastagsága pedig mindig elveszett.
+  Mostantól mindkettő úgy kerül a fájl mellé, ahogy beállítottad. A
+  **Körvonal vastagsága** csúszka folyamatosan állítható.
+
+**Szerkesztő**
+
+- Az effekt-csempék előnézete a kép **mostani állapotára** épül: ha már
+  fekete-fehérré tetted a képet, a csempék alapja is az. Eddig minden
+  csempe a nyers fotót mutatta.
+- Hét effekt-csúszka tartománya és alapértéke az eredeti Picasáéhoz
+  igazodott. Néhányuk mostantól **negatív irányba is húzható** — az
+  ellenkező hatásig —, ami eddig a felületről elérhetetlen volt.
+
+**Billentyűk**
+
+- **Ctrl+0** a jobb oldali panelt kapcsolja be és ki, és megjegyzi,
+  melyik lap volt nyitva. **Ctrl+F** a keresőmezőre ugrik, **Ctrl+K** a
+  Címkék panelt nyitja.
+- A lapok között **Ctrl+Tab**, **Ctrl+Shift+Tab**, **Ctrl+←** és
+  **Ctrl+→** léptet (körbe), a **Ctrl+W** bezárja az aktuális
+  projektlapot.
+- Csúszkán a **+** / **=** növel, a **−** / **_** csökkent.
+- A menütételek nagy részén megjelent az **aláhúzott betű**, az eredeti
+  magyar Picasa szerint: **Alt**-tal együtt nyitja a menüt.
+
+**Menük**
+
+- A duplikátum-kereső az **Eszközök ▸ Kísérleti** almenübe került, az
+  eredeti nevén: **Fájlok másodpéldányainak megjelenítése**. Az
+  adatbázis-áthelyezés felirata **Adatbázis helyének kiválasztása…**
+  lett.
+- A jelölőnégyzetes menütételek pipája nem hazudik többé: eddig
+  előfordult, hogy a pipa lekapcsolt, miközben a panel nyitva maradt.
+
+**Könyvtár**
+
+- A **WebP**-képeket a program mostantól észreveszi és indexeli.
+- A mappasorra rámutatva buborékban megjelenik a mappa **teljes
+  útvonala** — így megkülönböztethető két azonos nevű mappa.
+- A felvételi idő nélküli képeket tartalmazó mappák is **kapnak
+  dátumot** (a fájl idejéből), így nem maradnak dátum nélkül a rácsban.
+- A bal hasáb nem húzható az eredeti Picasáéhoz igazított alsó
+  határnál keskenyebbre.
+- Ha a kimeneti gombsor nem fér ki, a végén **További lehetőségek…**
+  gomb jelenik meg, alatta a kimaradt gombokkal.
+
 ## 2026-09-04
 
 **A súgó megnyílik a programból**

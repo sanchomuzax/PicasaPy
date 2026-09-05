@@ -10,6 +10,12 @@ A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
 **egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
 képre.
 
+A csempék kis előnézete a képed **mostani állapotát** mutatja: ha már
+tettél rá effektet — mondjuk fekete-fehérré alakítottad —, akkor minden
+csempe alapja is az, és a csempe csak a saját hatását teszi rá. Így
+látod előre, mi lesz az eredmény, nem pedig azt, hogy hogyan hatna az
+effekt a nyers fotóra.
+
 ## Effektek (3. fül)
 
 | effekt | mit csinál |

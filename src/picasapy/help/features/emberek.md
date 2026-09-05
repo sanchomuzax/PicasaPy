@@ -53,14 +53,15 @@ A nézőben az **Arcok megjelenítése** gomb (vagy az `F` billentyű) mutatja
 az arckereteket. Az **Arcok szerkesztése** (Shift+`F`) módban a keretekhez
 nevet írhatsz.
 
-Ha egy kép arcadatai összekuszálódtak, a kép helyi menüjének **Arcok
-alaphelyzetbe állítása** parancsa törli őket, és a következő keresés
-újra megtalálja az arcokat.
+> Az **Arcok alaphelyzetbe állítása** menüpont **még nem működik**: a
+> helye megvan, de az arcadatok törlése mögötte még nincs bekötve.
 
 ## Emberek albumok
 
-Egy embert ábrázoló képet a helyi menü **Beállítás az Emberek album
-indexképeként** paranccsal teheted az adott ember albumának borítójává.
-A **Áthelyezés új személyhez…** paranccsal egy rosszul besorolt arcot új
-névhez rendelhetsz, az **Eltávolítás az Emberek albumból** pedig kiveszi
-onnan.
+Az **Áthelyezés új személyhez…** paranccsal egy rosszul besorolt arcot új
+névhez rendelhetsz, az **Eltávolítás az Emberek albumból** (Ctrl+Delete)
+pedig kiveszi onnan.
+
+> A helyi menü **Beállítás az Emberek album indexképeként** és
+> **Hozzáadás az Emberek albumhoz** tétele **még nem működik** — az
+> emberalbumok saját borítóképét ma nem lehet megválasztani.

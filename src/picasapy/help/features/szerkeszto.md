@@ -86,19 +86,34 @@ kattintva tünteted el a hibát. A panel kiírja, hány foltot javítottál.
 
 Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Beállítható:
 
-- **Betűtípus**, valamint **félkövér**, **dőlt** és **aláhúzott** stílus,
+- **Betűtípus** és **betűméret**, valamint **félkövér**, **dőlt** és
+  **aláhúzott** stílus,
 - **igazítás** balra, középre, jobbra,
 - **Szöveg színe** és **Körvonal színe**, **Körvonal vastagsága**,
 - **Átlátszatlanság**,
 - kapcsoló, amivel csak a körvonal látszik, kitöltés nélkül.
 
-A **Felirat átvétele** gomb a kép meglévő képfeliratát írja be szövegnek.
-Az **Minden meglévő szöveg törlése** letörli a képre írt szövegeket.
+A **betűméret** az eredeti Picasa tizenhat méretéből választható:
+8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96 —
+alapértelmezésben 12. A méret a **kép magasságához** igazodik, nem a
+képernyőhöz: ugyanaz a felirat egy nagyobb képen is ugyanolyan arányú
+marad. Ha a feliratot a fogantyújával méretezed át, a választó a
+legközelebbi listaértéket mutatja.
 
-A választott **betűtípus** és a **félkövér** állás a többi beállítással
-együtt a `.picasa.ini`-be kerül, tehát a felirat legközelebb is úgy néz
-ki, ahogy beállítottad — és a windowsos Picasa is így látja. (A
-körvonalvastagság és a betűméret még nem így tárolódik.)
+A **Körvonal vastagsága** csúszka a legvékonyabb és a legvastagabb
+körvonal között folyamatosan állítható; nullára húzva nincs körvonal.
+
+A **Felirat átvétele** gomb a kép meglévő képfeliratát írja be szövegnek.
+A **Minden meglévő szöveg törlése** letörli a képre írt szövegeket.
+
+A beállítások a `.picasa.ini`-be kerülnek — a **betűtípus**, a
+**betűméret**, a **félkövér** állás, a **körvonal vastagsága** és a
+színek is —, tehát a felirat legközelebb is úgy néz ki, ahogy
+beállítottad, és a windowsos Picasa is így látja.
+
+> Korábban a program minden feliratot félkövérként mentett, a körvonal
+> vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
+> mentett feliratokat érdemes egyszer ellenőrizni.
 
 ## Finomhangolás
 

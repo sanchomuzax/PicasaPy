@@ -25,7 +25,8 @@ A 2. és 3. pont a rendszer szokásos adat- és gyorstár-mappájába kerül.
 ## Az adatbázis áthelyezése
 
 Ha kevés a hely a rendszerlemezen, az adatbázist és a gyorstárat át
-tudod tenni máshova: **Eszközök ▸ Kísérleti ▸ Adatbázis áthelyezése…**
+tudod tenni máshova: **Eszközök ▸ Kísérleti ▸ Adatbázis helyének
+kiválasztása…**
 
 A párbeszéd kiírja **az adatbázis jelenlegi helyét**, és a
 **Tallózás…** gombbal választhatod ki az újat. Az **Alapértelmezett**

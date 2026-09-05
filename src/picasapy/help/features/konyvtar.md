@@ -27,6 +27,18 @@ válthatsz. A hasáb üres részére jobbgombbal kattintva az
 
 **Mindhárom beállítás megmarad a következő indításig.**
 
+A hasáb szélessége az elválasztó vonal húzásával állítható, de egy alsó
+határnál keskenyebbre nem húzható; ez a határ az eredeti Picasáéval
+egyezik.
+
+### Melyik mappa melyik?
+
+Egy mappasor csak a mappa **nevét** mutatja, ezért két azonos nevű mappa
+egyformán néz ki. Ha rámutatsz egy sorra, buborékban megjelenik a mappa
+**teljes útvonala** — ebből látod, melyikről van szó. (Ilyen helyzet
+gyakran adódik: a duplikátum-kereső minden forrásmappában saját
+`Duplikátumok` alkönyvtárat hoz létre.)
+
 ### Fotó-kupac a mappaikon helyett
 
 A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
@@ -38,6 +50,15 @@ megmarad.
 > A hasáb helyi menüjében is szerepel egy **Indexképek megjelenítése a
 > könyvtárban** tétel, de az **még nem működik** — a menüsorból viszont
 > igen.
+
+### A mappa dátuma
+
+A rácsban a mappa fejlécében ott áll a mappa dátuma. Ezt a benne lévő
+legkorábbi fénykép adja: elsősorban a felvétel ideje a fénykép
+EXIF-adatából, és ha az hiányzik — például képgenerátorból származó
+képeknél —, akkor a fájl utolsó módosításának ideje. Így felvételi idő
+nélküli képeknél sem marad üresen a fejléc, és a dátum szerinti
+rendezés is a helyére teszi az ilyen mappákat.
 
 ### A mappák sorrendje
 
@@ -53,8 +74,8 @@ A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjéb
 ### Egy mappán belül a képek sorrendje
 
 A mappára jobbgombbal kattintva a **Mappa rendezése** almenüben: dátum,
-név vagy méret szerint, fordított sorrend kapcsolóval. Ugyanez a
-**Mappa** menüben is megvan.
+név vagy méret szerint, a **Fordított sorrend** kapcsolóval párosítva.
+Ugyanez a **Mappa** menüben is megvan.
 
 ## Albumok
 
@@ -134,6 +155,11 @@ paranccsal is rögzíthetsz.
 A tálca jobb szélén van a **Nagyító** is: rákattintva, majd a képek fölé
 húzva nagyítva látod a részleteket.
 
+A tálca kimeneti gombsora (**Nyomtatás**, **E-mail**, **Exportálás**,
+**Kollázs**, **Film**) keskeny ablakban nem fér ki egészen. Ilyenkor
+a sor végén megjelenik a **További lehetőségek…** gomb, és a ki nem
+férő gombok alatta, listában érhetők el.
+
 ## Rejtett képek
 
 Egy képet a **kép helyi menüjének Elrejtés** parancsával tüntethetsz el
@@ -144,6 +170,18 @@ menünek a tétele **Megjelenítés**-re vált, és azzal hozod vissza a képet.
 > A **Kép** menü **Megjelenítés** tétele és a mappák helyi menüjének
 > **Elrejtés** / **Megjelenítés** párja még **nem működik** — a
 > kép-elrejtés a kép helyi menüjéből megy.
+
+## Milyen fájlokat lát a program
+
+A figyelt mappákban a PicasaPy háromféle fájlt vesz észre:
+
+- **Fényképek** — JPEG, PNG, TIFF, BMP, GIF, PSD, TGA és **WebP**.
+- **Nyers (RAW) felvételek** — a szokásos gyártói kiterjesztések, például
+  CR2, NEF, ARW, DNG, ORF, RAF, RW2.
+- **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, 3GP.
+
+Minden más fájl (dokumentum, hangfelvétel) láthatatlan marad: a program
+nem indexeli és nem is bántja.
 
 ## Ha egy mappa nem érhető el
 

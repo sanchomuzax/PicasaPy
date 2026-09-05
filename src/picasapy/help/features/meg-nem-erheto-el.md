@@ -19,6 +19,7 @@ fölöslegesen.
 
 - Beillesztés (Ctrl+V)
 - Szöveg másolása, Szöveg beillesztése
+- Szövegmezők helyi menüjében: Automatikus kitöltés
 
 **Nézet**
 
@@ -43,8 +44,7 @@ fölöslegesen.
 - Megjelenítés és szerkesztés (Ctrl+3)
 - Szöveg megjelenítése, Szöveg elrejtése
 - Megjelenítés
-- Arcok alaphelyzetbe állítása (a menüben; a kép helyi menüjéből
-  **működik**)
+- Arcok alaphelyzetbe állítása
 
 **Létrehozás**
 
@@ -74,12 +74,16 @@ már **működik**: ezt a súgót nyitja meg — lásd
 **Helyi menükben**
 
 - Hozzáadás az Emberek albumhoz
+- Beállítás az Emberek album indexképeként
 - Mappa felosztása itt…
 - Társítás
 - Névcímkék hozzáadása
 - Album törlése, Albumleírás szerkesztése…, Album rendezésének alapja
 - Jelszó megadása/módosítása…
 - Az Emberek album törlése, Az Emberek album szerkesztése…
+- Feltöltés tiltása — a Picasa Webalbumok megszűnt szolgáltatás
+- A **Mappa ▸ Mappa rendezése** almenüben a **Legutóbbi változtatások**
+  szerinti rendezés (a bal hasáb helyi menüjéből viszont **működik**)
 
 **Beállítások**
 
