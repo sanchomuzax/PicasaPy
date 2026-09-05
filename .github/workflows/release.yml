@@ -87,6 +87,25 @@ jobs:
             exit 0
           fi
 
+          # ⚠️ #1348: KAPU a versenyhelyzetre. A #1319 zára a FUTÁSOKAT
+          # állítja sorba, a döntést nem: a második futás a saját, korábbi
+          # commitját nézi (ott még a régi verzió áll), és ugyanarra a
+          # számra nyit egy MÁSODIK verzióemelő PR-t. Mérve: 0.8.49,
+          # 0.8.70 (kétszer), 0.8.74, 0.8.95, 0.8.129 — a duplikátum
+          # `CONFLICTING`, tehát beolvaszthatatlan, és kézzel kellett
+          # lezárni.
+          #
+          # A kapu a MÓDOSÍTÁS ELŐTT dönt: így nem marad utána sem commit,
+          # sem árva `chore/auto-bump-*` ág. A tájékozódás bukására ENGED
+          # (ld. a szkript fejlécét) — az elmaradt kiadás a drágább hiba.
+          cel="$(python3 -c "import sys;sys.path.insert(0,'scripts');import auto_bump;print(auto_bump.kovetkezo_verzio('$verzio'))")"
+          kapu="$(python3 scripts/bump_kapu.py --repo "$GITHUB_REPOSITORY" --cel "$cel")"
+          echo "$kapu"
+          if [ "$(printf '%s' "$kapu" | head -n1)" != "igen" ]; then
+            echo "::notice title=Nincs verzióemelés::A(z) $cel emelés kapuja nem engedett — ld. a lépés naplóját (#1348)."
+            exit 0
+          fi
+
           python3 scripts/auto_bump.py --datum "$(date -u +%Y-%m-%d)"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -158,6 +177,14 @@ jobs:
               } >> "$GITHUB_STEP_SUMMARY"
             else
               echo "::warning::A verzióemelő PR nyitása nem sikerült — a kiadás ettől még megy."
+              # ⚠️ #1348: PR nélkül az ág csak szemét — és a következő futás
+              # kapuja sem látja (a kapu NYITOTT PR-t néz), tehát nem is véd
+              # tőle. Mérve 2026-09-05: nyolc ilyen árva `chore/auto-bump-*`
+              # ág hevert a távolban, mert a `gh pr create` a repó beállítása
+              # miatt bukott („GitHub Actions is not permitted to create or
+              # approve pull requests").
+              git push origin --delete "$ag" \
+                || echo "::warning::Az árva $ag ág eltakarítása sem sikerült."
             fi
           else
             echo "::warning::Az ág feltolása nem sikerült — a kiadás ettől még megy."
