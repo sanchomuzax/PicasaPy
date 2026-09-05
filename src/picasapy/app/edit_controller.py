@@ -551,7 +551,22 @@ class EditController(QObject, BackgroundWorkerMixin):
         return counts
 
     @Property(bool, notify=toolsChanged)
-    def redeyeActive(self) -> bool:
+    def hasSavedRedeye(self) -> bool:
+        """Van-e a képen **MENTETT** vörösszem-javítás.
+
+        ⚠️ #2393: ez **NEM** a nyitott eszköz jelzője. A neve korábban
+        `redeyeActive` volt, ami ütközött az `EditorPanel.qml:132`
+        azonos nevű, de ELLENTÉTES jelentésű mód-kapcsolójával (ott a
+        csempe „benyomva" állapota, vagyis hogy az eszköz NYITVA van).
+
+        A névazonosság már félrevitt egy jegyet: a #1485 duplikált
+        állapotnak nézte a kettőt, és a panel összekötését írta elő. Az a
+        javítás hibás lett volna — egy mentett javítású képnél a csempe
+        állandóan benyomva látszana.
+
+        Ugyanez a megkülönböztetés áll a `hasRetouch`-nál is, közvetlenül
+        alább (#116).
+        """
         return self._session.has("redeye")
 
     # -- retusálás (#148) ---------------------------------------------------

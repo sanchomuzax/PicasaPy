@@ -320,10 +320,12 @@ Rectangle {
         editorPanel.straightenActive = editController.tiltParam !== 0
     }
     function syncPanelFromController() {
-        // #445: a `redeyeActive` a Vágás/Retusálás mintájára ESZKÖZ-nyitást
-        // jelent (nem a `redeye` réteg meglétét) — ezért NEM a
-        // controller.redeyeActive tükre; azt onnan felülírni becsukná/
-        // kinyitná a panelt a mentett lánc alapján.
+        // #445: a panel `redeyeActive`-ja a Vágás/Retusálás mintájára
+        // ESZKÖZ-nyitást jelent (nem a `redeye` réteg meglétét) — ezért NEM
+        // a vezérlő `hasSavedRedeye`-jének tükre; azt onnan felülírni
+        // becsukná/kinyitná a panelt a mentett lánc alapján.
+        // #2393: a vezérlő tagja korábban szintén `redeyeActive` volt — a
+        // névazonosság félrevitte a #1485-öt, ezért kapott beszédes nevet.
         // #448: a tilt-szűrő a láncban változhatott (pl. a felhasználó
         // épp most alkalmazta a Kiegyenesítést) — a figyelmeztetés kövesse
         editorPanel.straightenActive = editController.tiltParam !== 0

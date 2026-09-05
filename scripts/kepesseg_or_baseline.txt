@@ -98,7 +98,7 @@ controller.locationOfRow MÉRVE — a sor helyadata bekötetlen
 controller.faceDetectionEnabledFor MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198)
 controller.setExportMovieFull MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ
 editController.revision MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma
-editController.redeyeActive MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart
+editController.hasSavedRedeye MÉRVE — MENTETT javítást jelez; az EditorPanel.qml:132 SAJÁT, MÁS jelentésű `redeyeActive`-ot tart (nyitott eszköz) — #2393
 editController.hasRetouch MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116)
 editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
 editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
