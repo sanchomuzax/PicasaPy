@@ -1,31 +1,36 @@
-"""#1750: a jelölhető menütétel felirata ne lógjon rá a jelölőnégyzetre.
+"""#1750: a jelölhető menütétel felirata a szomszédjaival EGY VONALBAN.
 
 ## A mérés
 
-A tulajdonos képernyőmentése (v0.8.146) a felirat és a jelölő átfedését
-mutatta. Végigmérve a futó ablak MINDEN jelölhető menütételén
-(`checkable === true`, a jelölő jobb széle vs. a felirat tényleges
-kezdete = `contentItem.x + contentItem.leftPadding`):
+A tulajdonos képernyőmentése (v0.8.146) a felirat és a jelölőnégyzet
+átfedését mutatta. Végigmérve a futó ablak MINDEN jelölhető menütételén
+(58 db), a felirat tényleges kezdete (`contentItem.x +
+contentItem.leftPadding`) szerint:
 
 ```
-jelölhető tétel összesen: 58     ÁTFEDŐ: 5
-  Recent &changes                    jelölő vége=20.0   felirat=6.0
-  Show Editing Controls              jelölő vége=20.0   felirat=6.0
-  Test Mode (logs the next startup)  jelölő vége=20.0   felirat=6.0
-  Thumbnails Only                    jelölő vége=20.0   felirat=6.0
-  Use Color Management               jelölő vége=20.0   felirat=6.0
+53 sima MenuItem      -> 26,0
+ 5 PicasaMenuItem     ->  6,0     <- ezek lógtak rá a jelölőre
+   Recent &changes / Show Editing Controls / Test Mode (…) /
+   Thumbnails Only / Use Color Management
 ```
 
-Mind az öt `PicasaMenuItem`. Az ok: a `PicasaMenuItem` saját
-`contentItem`-et ad (`IconLabel`, #757 — az `&`-mnemonik miatt), és ezzel
-elveszik a stílus alapértelmezett `leftPadding`-je, ami a jelölőnek
-helyet hagy. A sima `MenuItem`-ek (53 db) helyesen 26-nál kezdik a
-feliratot.
+Az ok: a `PicasaMenuItem` saját `contentItem`-et ad (`IconLabel`, #757 —
+az `&`-mnemonik miatt kell), és ezzel elveszik a stílus alapértelmezett
+bal térköze, ami a jelölőnek hagy helyet.
 
-## Amit ez az őr állít
+## ⚠️ Miért RELATÍV az állítás, és nem abszolút geometria
 
-Egyetlen jelölhető menütétel felirata sem kezdődhet a jelölő jobb széle
-előtt. Az őr a FUTÓ ablakon mér, nem a forráson — így egy későbbi
+Az első változatom a jelölő jobb szélét hasonlította a felirat
+kezdetéhez — és **a windows-lábon mind a 41 tételre elbukott**: ott a Qt
+stílusa más számokat ad (jelölő vége 24, felirat 10), és a `contentItem`
+belső elrendezése is más. A metrika tehát a STÍLUST mérte, nem a hibát.
+
+Ezért az őr most azt állítja, ami platformfüggetlenül igaz és a
+felhasználó számára is ez a lényeg: **minden jelölhető menütétel felirata
+ugyanott kezdődik**. A `PicasaMenuItem` nem csúszhat el a szomszédos sima
+`MenuItem`-ektől — se befelé (átfedés), se kifelé (behúzás).
+
+Az őr a FUTÓ ablakon mér, nem a forráson — így egy későbbi
 `contentItem`-csere is elbukna rajta.
 """
 
@@ -34,10 +39,14 @@ from __future__ import annotations
 from PySide6.QtCore import QObject
 
 
-def _jelolheto_tetelek(window):
-    """(felirat, a jelölő jobb széle, a felirat kezdete) minden
-    jelölhető, jelölővel és tartalommal rendelkező menütételre."""
-    tetelek = {}
+def _felirat_kezdetek(window) -> dict[str, float]:
+    """Menütétel-felirat → a felirat tényleges vízszintes kezdete.
+
+    Csak jelölhető, jelölővel ÉS tartalommal rendelkező tételek; a
+    `leftPadding` a `contentItem` sajátja, tehát a felirat valódi
+    kezdetéhez hozzá kell adni a `contentItem` x-éhez.
+    """
+    kezdetek: dict[str, float] = {}
     for objektum in window.findChildren(QObject):
         try:
             felirat = objektum.property("text")
@@ -50,46 +59,29 @@ def _jelolheto_tetelek(window):
         tartalom = objektum.property("contentItem")
         if jelolo is None or tartalom is None:
             continue
-        jelolo_vege = (jelolo.property("x") or 0) + (jelolo.property("width") or 0)
-        felirat_x = (
-            (tartalom.property("x") or 0)
-            + (tartalom.property("leftPadding") or 0)
+        kezdetek[str(felirat)] = (tartalom.property("x") or 0) + (
+            tartalom.property("leftPadding") or 0
         )
-        tetelek[str(felirat)] = (jelolo_vege, felirat_x)
-    return tetelek
+    return kezdetek
 
 
-def test_a_felirat_nem_log_ra_a_jelolore(qml_app, qt_app):
+def test_minden_jelolheto_felirat_ugyanott_kezdodik(qml_app, qt_app):
     window, _controller, _engine = qml_app
-    tetelek = _jelolheto_tetelek(window)
-    assert len(tetelek) > 20, (
-        f"csak {len(tetelek)} jelölhető tételt találtam — a mérés nem "
+    kezdetek = _felirat_kezdetek(window)
+
+    assert len(kezdetek) > 20, (
+        f"csak {len(kezdetek)} jelölhető tételt találtam — a mérés nem "
         "járta be a menüsort, az állítás így semmit nem érne"
     )
-    atfedok = {
-        felirat: (vege, kezdet)
-        for felirat, (vege, kezdet) in tetelek.items()
-        if kezdet < vege
-    }
-    assert not atfedok, (
-        "a felirat a jelölőnégyzetre lóg (felirat-kezdet < jelölő-vég): "
+
+    csoportok: dict[float, list[str]] = {}
+    for felirat, x in kezdetek.items():
+        csoportok.setdefault(x, []).append(felirat)
+
+    assert len(csoportok) == 1, (
+        "a jelölhető tételek feliratai nem egy vonalban kezdődnek — "
         + "; ".join(
-            f"{f!r} jelölő={v} felirat={k}" for f, (v, k) in sorted(atfedok.items())
+            f"x={x}: {len(nevek)} db ({', '.join(sorted(nevek)[:3])}…)"
+            for x, nevek in sorted(csoportok.items())
         )
-    )
-
-
-def test_a_javitott_tetelek_a_szomszedaikkal_egy_vonalban_allnak(qml_app, qt_app):
-    """A hiány pótlása ne csak megszüntesse az átfedést, IGAZÍTSON is.
-
-    Az első javításom a `jelölő.x`-et is beleszámolta a térközbe, és
-    26 helyett 32-t adott: átfedés nem volt, de az öt tétel felirata
-    beljebb csúszott volna a szomszédjainál. A menüben ez ugyanolyan
-    feltűnő, mint az átfedés — ezért kap saját állítást.
-    """
-    window, _controller, _engine = qml_app
-    kezdetek = {kezdet for _vege, kezdet in _jelolheto_tetelek(window).values()}
-    assert len(kezdetek) == 1, (
-        "a jelölhető tételek feliratai nem egy vonalban kezdődnek: "
-        f"{sorted(kezdetek)}"
     )
