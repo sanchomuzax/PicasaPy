@@ -2232,6 +2232,74 @@ katalógusban:
 ⇒ Egy átnevezett/rosszul elnevezett fájlt a Picasa a valódi formátuma
 szerint jegyez be. A saját olvasónk **ne a kiterjesztésből** következtessen.
 
+#### ⭐ A `típus` FORRÁSA: a fájltípus-tábla 30 ágú kapcsolója (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a kapcsolótáblára és az
+> ágakhoz tartozó kiterjesztésekre (mind kiolvasott sztring); **erős** a
+> tárolt `típus` = ágindex **+ 2** megfeleltetésre (tíz független pont).
+
+A `típus` mező nem a bélyegkép-rétegé: a **fájltípus-táblából** jön, amit a
+`Support*` kapcsolók építenek (`konyvtar-ablak-meretek.md`, #2344 lánca:
+`0x00402f90` → `0x004183c0` → `0x004e04a0` → **`0x004fadb0`** →
+`0x004fa590`). A `0x004fadb0` egy **30 ágú ugrótáblás kapcsoló**:
+
+```asm
+0x004fadba  jmp dword ptr [eax*4 + 0x004fb948]
+```
+
+A tábla minden ága **kiterjesztés-sztringeket** regisztrál a modul
+`+0x3dc` tömbjébe (8 bájtos bejegyzések: `char* kiterjesztés`, `uint32
+típusérték` — `0x004fa5b6` / `0x004fa5de`).
+
+| ág | a regisztrált kiterjesztések | tárolt `típus` (ág + 2) |
+|---:|---|---:|
+| 0 | `.jpg` · `.jpeg` · **`.jpe`** | **2** ✔ mérve |
+| 1 | `.gif` | **3** ✔ |
+| 4 | `.bmp` | **6** ✔ |
+| 5 | `.psd` | 7 |
+| 6 | `.avi` · `.divx` | **8** ✔ |
+| 7 | `.mov` · `.mp4` | **10** ✔ |
+| 8 | `.mpg` · **`.mpeg`** · **`.ty`** | 10 |
+| 9 | `.wmv` | **11** ✔ |
+| 10 | `.asf` | 12 |
+| 11 | `.tif` · `.tiff` | **13** ✔ |
+| 12 | `.png` | **14** ✔ |
+| 13 | `.mp3` | 15 |
+| 14 | `.wav` | 16 |
+| 15 | `.wma` | 17 |
+| 16 | **dinamikus lista** (`call 0x00a4c720` tölti fel, nem literál) | 18 |
+| 17 | `.pal` | 19 |
+| 19 | `.url` | 21 |
+| 20 | `.tga` | **22** ✔ |
+| 25 | `.txt` | 27 |
+| 26 | `.cpp` · `.h` · `.cc` | 28 |
+| 27 | `.ogg` | 29 |
+| 29 | `.webp` | **31** ✔ |
+| 2 · 3 · 18 · 21 · **23** · 22 · 24 · 28 | **közös alapeset** (`0x004fb93f`) — **nem regisztrál kiterjesztést** | 4 · 5 · 20 · 23 · **25** · 24 · 26 · 30 |
+
+**A „+2" megfeleltetés bizonyítéka:** a 8.1 típus-táblája a tulajdonos két
+katalógusán MÉRTE a tárolt értékeket. Tíz formátumnál az ágindex és a mért
+tárolt érték különbsége **mindig pontosan 2** (a ✔-es sorok:
+jpg 0→2 · gif 1→3 · bmp 4→6 · avi 6→8 · mp4 7→10 · wmv 9→11 · tif 11→13 ·
+png 12→14 · tga 20→22 · webp 29→31). Tíz független egyezés véletlenül
+kizárt. *(A kapcsoló feje maga nem mutat eltolást — az `eax`-et a hívó adja,
+`0x004e04a0`.)*
+
+⇒ **Kiterjesztés nélküli fájl vagy ismeretlen kiterjesztés esetén a
+besoroló `0x3e8 = 1000`-et ad** (`0x004e2c40`, ld. `konyvtar-ablak-meretek.md`).
+
+#### ⭐ Ezzel a `típus = 25` kérdése is eldőlt — NEGATÍV válasz
+
+A `picasa-mappakezelo.md` 16.2/b BLOKKOLT tétele („mit jelent a `Type` 25?")
+így **megválaszolható, negatívan**: a 25-ös tárolt érték a **23. ághoz**
+tartozik, az pedig a **közös alapeset** — **nem regisztrál egyetlen
+kiterjesztést sem**. ⇒ A 25 **nem fájlformátum-típus**. Ez egybevág azzal,
+ahol a bejáró használja: a `{1, 5, 25, 1001}` „a név már teljes út" halmaz
+és a `{1, 25, 26}` frissítés-mentes család **mind szerkezeti** típus
+(könyvtár · hibás könyvtár · arcsablon). ⇒ A 25 is **szerkezeti**, nem
+formátum — a pontos szerepe továbbra sincs megnevezve, de a
+formátum-irány **kizárva**.
+
 #### `típus = 0` — üres rekord
 
 Mind az 5 325 (illetve 16) ilyen bejegyzésen: a **név üres**, a méret `0`,
