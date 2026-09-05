@@ -182,11 +182,17 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool):
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl.start()
-    _var(qt_app, lambda: not ctl._sync_running)
+    assert _var(qt_app, lambda: not ctl._sync_running), (
+        "#2408: a szinkron nem állt le időben — a teszt hiányos "
+        "állapoton menne tovább, és a bukás egy KÉSŐBBI állításon "
+        "jelentkezne"
+    )
     if not watcher and ctl._watcher is not None:
         ctl._watcher.stop()
         ctl._watcher = None
-    _var(qt_app, lambda: not ctl._sync_running)
+    assert _var(qt_app, lambda: not ctl._sync_running), (
+        "#2408: a szinkron nem állt le időben"
+    )
     return ctl
 
 
@@ -520,7 +526,9 @@ class TestAFajlkezelovelAthelyezettGyoker:
         ctl = _vezerlot_epit(qt_app, tmp_path, library, watcher=watcher)
         try:
             ctl.selectFolder(str(library / "album"))
-            _var(qt_app, lambda: not ctl._sync_running)
+            assert _var(qt_app, lambda: not ctl._sync_running), (
+                "#2408: a szinkron nem állt le időben"
+            )
             elotte = _index_allapot(tmp_path / "index.db")
             assert elotte == (
                 (
@@ -534,7 +542,9 @@ class TestAFajlkezelovelAthelyezettGyoker:
             # a felhasználó FÁJLKEZELŐVEL helyezi át — nincs `folderMoved`
             shutil.move(str(library), str(tmp_path / "mashol" / "kepek"))
             _pumpal(qt_app, 15.0)
-            _var(qt_app, lambda: not ctl._dirty_running, 10.0)
+            assert _var(qt_app, lambda: not ctl._dirty_running, 10.0), (
+                "#2408: a célzott szinkron nem állt le 10 s alatt"
+            )
 
             return ctl, library, _index_allapot(tmp_path / "index.db")
         finally:
