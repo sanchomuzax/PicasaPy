@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.288] – 2026-09-05
+
+### Javítva
+
+- **Három fájlkiterjesztés végre látszik a könyvtárban** (#2415): a
+  `.jpe` fénykép, valamint a `.mpeg` és a `.ty` mozgókép. Eddig a
+  beolvasó némán átugrotta őket, mert a szűrőnk a Picasa súgójának
+  formátumlistájából készült — a bináris fájltípus-táblájából viszont
+  kiderült, hogy az eredeti mindhármat regisztrálja. Aki ilyen fájlt
+  tartott a mappáiban, annak eddig hiányzott a rácsból.
+
 ## [0.8.287] – 2026-09-05
 
 ### Hozzáadva
