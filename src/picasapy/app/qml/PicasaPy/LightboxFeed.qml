@@ -837,13 +837,13 @@ ListView {
                 preventStealing: true
                 hoverEnabled: false
 
-                //: A nagyítás mértéke. ⚠️ SAJÁT DÖNTÉS, nem mért érték: az
-                //: eredeti nagyító arányait a bináris nem árulja el (a
-                //: `0x0077be10` a két csomópontnévnél többet nem hivatkoz).
-                //: Két és félszeres nagyítás annyi, hogy az élesség és a
-                //: csukott szem eldönthető legyen, de a lencse még ne
-                //: takarja el a fél rácsot.
-                readonly property real nagyitas: 2.5
+                //: #2399: NINCS nagyítási arány. Az eredeti a teljes
+                //: méretű képet 1:1-ben rajzolja (a célterület `W` × `H`,
+                //: `0x0077bcf5`–`0x0077bd19`), csak eltolva, hogy a
+                //: kurzor alatti képpont a felület közepére essen — a
+                //: látszólagos nagyítás ebből adódik. A korábbi arány-
+                //: tulajdonság (2.5) a projekt egészében EGYSZER fordult
+                //: elő, a saját deklarációjában: holt volt, ezért törölve.
 
                 property int aktivSor: -1
                 property real kurzorX: 0
@@ -939,6 +939,7 @@ ListView {
                         radius: width / 2
                     }
                     Image {
+                        id: feedLoupeImage
                         objectName: "feedLoupeImage"
                         anchors.fill: parent
                         //: a gyűrű vastagsága: a 103-as vászon és a mért
@@ -953,18 +954,63 @@ ListView {
                         //: ki. A margó csökkentése ezt elrontaná: 73 fölötti
                         //: képméretnél a sarkok kibújnának a körből.
                         anchors.margins: (loupe.vaszon - 65) / 2
-                        fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        //: A nagyított kép NAGYOBB felbontással kérődik le,
-                        //: különben a bélyegkép képpontjait nagyítanánk fel
-                        //: (a nagyító épp az élesség eldöntésére való).
-                        sourceSize.width: Math.round(loupe.width)
-                        sourceSize.height: Math.round(loupe.height)
+
+                        //: #2399: a lencse a TELJES felbontású képből vág
+                        //: ki egy 65 × 65-es darabot, 1:1-ben — nem a
+                        //: bélyegképet zsugorítja. A `sourceClipRect` a
+                        //: DEKÓDOLT képből vág, átméretezés nélkül; ez adja
+                        //: az eredeti 1:1 arányát.
+                        readonly property int kivagatMeret: 65
+
+                        //: a kurzor alatti KÉPPONT a teljes kép
+                        //: koordinátáiban — a cellán belüli arányos helyet
+                        //: vetítjük a valódi felbontásra
+                        readonly property var kepAdat: {
+                            if (!grid.ctl || loupeArea.aktivSor < 0)
+                                return null
+                            return (grid.ctl.photos.revision,
+                                    grid.ctl.photos.itemAt(loupeArea.aktivSor))
+                        }
+                        readonly property size kepMeret: {
+                            var e = feedLoupeImage.kepAdat
+                            if (!e || !e.resolution)
+                                return Qt.size(0, 0)
+                            var reszek = String(e.resolution).split("x")
+                            if (reszek.length !== 2)
+                                return Qt.size(0, 0)
+                            return Qt.size(parseInt(reszek[0], 10),
+                                           parseInt(reszek[1], 10))
+                        }
+
                         source: {
-                            if (!grid.ctl || loupeArea.aktivSor < 0) return ""
-                            var elem = (grid.ctl.photos.revision,
-                                        grid.ctl.photos.itemAt(loupeArea.aktivSor))
-                            return elem && elem.thumbUrl ? elem.thumbUrl : ""
+                            var e = feedLoupeImage.kepAdat
+                            return e && e.fileUrl ? e.fileUrl : ""
+                        }
+
+                        //: ⚠️ Ha a kép mérete ismeretlen (nincs `resolution`
+                        //: az indexben), NEM vágunk: üres téglalappal a Qt a
+                        //: teljes képet mutatná, ami rosszabb, mint a régi
+                        //: viselkedés. Ilyenkor a bélyegkép-szerű illesztés
+                        //: marad, csak a teljes képből.
+                        sourceClipRect: {
+                            var m = feedLoupeImage.kepMeret
+                            if (m.width <= 0 || m.height <= 0)
+                                return Qt.rect(0, 0, 0, 0)
+                            var cella = grid.cellWidth > 0 ? grid.cellWidth : 1
+                            var cellaM = grid.cellHeight > 0 ? grid.cellHeight : 1
+                            //: a kurzor helye a CELLÁN belül, 0…1
+                            var ax = (loupeArea.kurzorX % cella) / cella
+                            var ay = (loupeArea.kurzorY % cellaM) / cellaM
+                            var felM = feedLoupeImage.kivagatMeret / 2
+                            var kx = Math.max(0, Math.min(
+                                m.width - feedLoupeImage.kivagatMeret,
+                                Math.round(ax * m.width) - felM))
+                            var ky = Math.max(0, Math.min(
+                                m.height - feedLoupeImage.kivagatMeret,
+                                Math.round(ay * m.height) - felM))
+                            return Qt.rect(kx, ky, feedLoupeImage.kivagatMeret,
+                                           feedLoupeImage.kivagatMeret)
                         }
                     }
                 }
