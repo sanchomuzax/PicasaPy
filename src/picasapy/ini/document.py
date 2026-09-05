@@ -13,6 +13,11 @@ from dataclasses import dataclass, field, replace
 from picasapy.ini.filter_guard import guard_chain_write
 
 _SPECIAL_NAMES = frozenset({"Picasa", "Contacts", "Contacts2", "encoding", "photoid"})
+
+#: ÚJ (még nem létező) `.picasa.ini` sorvégjele — #2491. Az eredeti Picasa
+#: kizárólag CRLF-fel ír; meglévő fájl sorvégjelét ez SOHA nem írja felül
+#: (ld. `IniDocument.newline`).
+DEFAULT_NEWLINE = "\r\n"
 ALBUM_SECTION_PREFIX = ".album:"
 
 
@@ -103,11 +108,30 @@ class IniDocument:
 
     @property
     def newline(self) -> str:
-        """A dokumentum domináns sorvégjele (új sorok ezt öröklik)."""
+        """A dokumentum domináns sorvégjele (új sorok ezt öröklik).
+
+        A MEGLÉVŐ fájl sorvégjele mindig erősebb: amit nem mi hoztunk létre,
+        ahhoz stílus-okból nem nyúlunk (round-trip elv). Dönteni csak akkor
+        kell, ha a dokumentumban egyetlen lezárt sor sincs — azaz ÚJ
+        `.picasa.ini`-t hozunk létre.
+
+        #2491: ilyenkor **CRLF** a helyes alapértelmezés. Az eredeti Picasa
+        kizárólag CRLF sorvéggel ír (a `research/` alatti, tisztán
+        Picasa-írta 75 mintában egyetlen kivétel sincs; a LF-es és a vegyes
+        sorvégű minták mind olyanok, amelyeknek a MI kimenetünk volt az
+        alapja). A korábbi `"\n"` alapértelmezés miatt egy Picasa által még
+        nem érintett mappában — pontosan a #2491 helyzete — a mi kezünktől
+        LF-es fájl keletkezett, ami bájtra eltér az eredeti kimenetétől.
+
+        ⚠️ Ez EGYEZÉS, nem mért gyógyír: a
+        `research/testdata/golden-kit-result/` mutatja, hogy a Picasa a mi
+        LF-es fájljainkat is BEOLVASTA (a saját, CRLF-es `backuphash=`
+        sorait fűzte melléjük).
+        """
         for line in self._all_lines():
             if line.ending:
                 return line.ending
-        return "\n"
+        return DEFAULT_NEWLINE
 
     def _all_lines(self) -> tuple[Line, ...]:
         lines = list(self.preamble)
