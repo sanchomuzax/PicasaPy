@@ -39,6 +39,16 @@ class ThumbIndexFormatError(ValueError):
     """Érvénytelen vagy sérült thumbindex fejléc/bejegyzés."""
 
 
+#: Azok a típusok, amelyeknél a `name` MÁR teljes útvonal (#2404, mérve:
+#: `0x004f2804` / `0x004f280d`). A `25` jelentése nincs meg — a halmaz
+#: attól még a bináris halmaza.
+_TELJES_UTVONAL_TIPUSOK = frozenset({1, 5, 25, 1001})
+
+#: Arcsablon-bejegyzés típusa (#2404; `docs/specs/pmp-database.md` 8.1 —
+#: halmaz-azonosság a `facetemplatesV2_index.db` foglalt slotjaival).
+_ARCSABLON_TIPUS = 1001
+
+
 @dataclass(frozen=True)
 class ThumbIndexEntry:
     index: int
@@ -80,9 +90,41 @@ class ThumbIndexEntry:
         return self.parent_index == _NO_PARENT
 
     @property
+    def is_teljes_utvonal(self) -> bool:
+        """A `name` MÁR a teljes útvonal — nem kell szülőt elé fűzni.
+
+        ⚠️ Az eredeti Picasa **nem a szülőindexből** dönti el ezt, hanem a
+        `valid` bájtból és a TÍPUSMEZŐBŐL (#2404, mérve):
+
+        * `valid == 0` → a nevet önmagában használja (`0x004f27f3`);
+        * `kind ∈ {1, 5, 25, 1001}` → ugyanígy (`0x004f2804` / `0x004f280d`).
+
+        A mi korábbi szabályunk (`parent_index == 0xffffffff`) ettől ELTÉRT.
+        Látható hibát nem okozott — az importőr az üres nevű bejegyzéseket
+        úgyis kihagyja —, de más halmazt jelölt ki, és két beolvasott mezőt
+        (`kind`, `valid`) egyáltalán nem használt.
+
+        A `25` jelentése **nincs meg**; a szabályba mégis beletartozik, mert
+        a bináris a halmaz tagjaként kezeli. A `_TELJES_UTVONAL_TIPUSOK` így
+        MÉRÉS, nem értelmezés — ne „tisztítsuk meg" az ismeretlen elemtől.
+        """
+        return not self.valid or self.kind in _TELJES_UTVONAL_TIPUSOK
+
+    @property
     def is_face_record(self) -> bool:
-        """Üres név + érvényes szülőindex = arc-rekord a szülőképhez."""
-        return self.name == "" and not self.is_directory
+        """Arcsablon-bejegyzés — az eredetiben a TÍPUS dönti el (#2404).
+
+        A mért szabály: `kind == 1001` (`FUN_004e2990`: a szülőlekérdező
+        ennél a típusnál rövidre zár, `-1`-et ad, tehát a `parent_index`
+        mezője ott nem is szülőindex).
+
+        Az „üres név" másodlagos tartalék marad: a mért katalógusban minden
+        `1001`-es bejegyzés neve üres, de a fordítottja nincs igazolva, és a
+        korábbi kódunk EZT a heurisztikát használta elsődlegesen.
+        """
+        return self.kind == _ARCSABLON_TIPUS or (
+            self.name == "" and not self.is_directory
+        )
 
 
 def read_thumb_index(path: Path) -> tuple[ThumbIndexEntry, ...]:
@@ -242,21 +284,41 @@ def read_slot_index(path: Path) -> tuple[SlotIndexEntry, ...]:
 def resolve_path(entries: tuple[ThumbIndexEntry, ...], entry: ThumbIndexEntry) -> str:
     """A bejegyzés teljes (Windows-formátumú) útvonala.
 
-    Könyvtár-bejegyzésnél a név már a teljes abszolút útvonal; fájl-
-    bejegyzésnél a szülő (könyvtár) neve + a saját (fájl-) név.
+    Ahol a `name` már teljes útvonal (`is_teljes_utvonal`), ott az a válasz;
+    egyébként a szülő (könyvtár) neve + a saját (fájl-) név.
 
-    Raises:
-        ThumbIndexFormatError: Ha a `parent_index` a bejegyzések tömbjén
-            kívülre mutat (sérült db3).
+    ## Sérült szülő-hivatkozásnál NEM dobunk (#2404)
+
+    Az eredeti ilyenkor **tartalék szövegre esik vissza**, nem áll meg. Egy
+    kivétel itt az EGÉSZ importot megállítaná egyetlen sérült bejegyzés
+    miatt — miközben a többi ezer bejegyzés hibátlan. A hiba ettől nem lesz
+    néma: `logger.warning` nevezi meg a bejegyzést.
+
+    Két eset esik ide:
+
+    * a `parent_index` a tömbön kívülre mutat;
+    * a szülő típusa `0` — üres slot, tehát nincs mit elé fűzni.
     """
-    if entry.is_directory:
+    if entry.is_teljes_utvonal:
         return entry.name
     if entry.parent_index >= len(entries):
-        raise ThumbIndexFormatError(
-            f"Érvénytelen szülőindex ({entry.parent_index}) a(z) "
-            f"{entry.index}. bejegyzésnél (csak {len(entries)} bejegyzés van)"
+        logger.warning(
+            "Érvénytelen szülőindex (%d) a(z) %d. thumbindex-bejegyzésnél "
+            "(csak %d bejegyzés van) — a bejegyzés a saját nevével kerül be",
+            entry.parent_index,
+            entry.index,
+            len(entries),
         )
+        return entry.name
     parent = entries[entry.parent_index]
+    if parent.kind == 0:
+        logger.warning(
+            "A(z) %d. thumbindex-bejegyzés szülője (%d.) ÜRES slot "
+            "(kind=0) — a bejegyzés a saját nevével kerül be",
+            entry.index,
+            entry.parent_index,
+        )
+        return entry.name
     if parent.name.endswith(("\\", "/")):
         return parent.name + entry.name
     return parent.name + "\\" + entry.name

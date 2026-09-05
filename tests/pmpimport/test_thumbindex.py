@@ -1,5 +1,6 @@
 """read_thumb_index / resolve_path: thumbindex.db olvasása (#1)."""
 
+import logging
 import struct
 
 import pytest
@@ -84,14 +85,98 @@ class TestResolvePath:
 
 
 class TestResolvePathBounds:
-    def test_out_of_range_parent_index_raises(self, tmp_path):
-        # sérült db3-nál a szülőindex kimutathat a bejegyzések tömbjéből —
-        # nyers IndexError helyett dokumentált ThumbIndexFormatError kell
+    """#2404: sérült szülő-hivatkozásnál NEM dobunk — az eredeti sem.
+
+    Korábban `ThumbIndexFormatError`-t adtunk. Egy kivétel viszont az EGÉSZ
+    importot megállítaná egyetlen sérült bejegyzés miatt, miközben a többi
+    ezer hibátlan. Az eredeti tartalék szövegre esik vissza; mi a bejegyzés
+    saját nevét adjuk, és naplózunk — a hiba tehát nem lesz néma.
+    """
+
+    def test_a_tartomanyon_kivuli_szulo_NEM_dob(self, tmp_path, caplog):
         path = tmp_path / "thumbindex.db"
         path.write_bytes(build_thumb_index([("C:\\kepek\\", None), ("a.jpg", 99)]))
         entries = read_thumb_index(path)
-        with pytest.raises(ThumbIndexFormatError):
-            resolve_path(entries, entries[1])
+
+        with caplog.at_level(logging.WARNING):
+            eredmeny = resolve_path(entries, entries[1])
+
+        assert eredmeny == "a.jpg"
+        assert any("99" in r.getMessage() for r in caplog.records), (
+            "a sérült szülőindexet naplózni KELL — némán elnyelni rosszabb, "
+            "mint a régi kivétel"
+        )
+
+    def test_az_URES_slot_szulo_sem_dob(self, tmp_path, caplog):
+        """`kind == 0` = üres slot: nincs mit a név elé fűzni."""
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index([("", None, 0, 1), ("a.jpg", 0, 2, 1)])
+        )
+        entries = read_thumb_index(path)
+
+        with caplog.at_level(logging.WARNING):
+            eredmeny = resolve_path(entries, entries[1])
+
+        assert eredmeny == "a.jpg"
+        assert any("ÜRES" in r.getMessage() for r in caplog.records)
+
+
+class TestATipusmezoDont2404:
+    """A mért szabály: a `valid` bájt és a TÍPUS dönt, nem a szülőindex."""
+
+    @pytest.mark.parametrize("tipus", [1, 5, 25, 1001])
+    def test_a_teljes_utvonal_tipusoknal_a_nev_all(self, tmp_path, tipus):
+        """A `25` jelentése NINCS MEG — a halmaz attól még a binárisé."""
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index(
+                [("C:\\kepek\\", None), ("mar_teljes.jpg", 0, tipus, 1)]
+            )
+        )
+        entries = read_thumb_index(path)
+        assert resolve_path(entries, entries[1]) == "mar_teljes.jpg"
+
+    def test_a_valid_nulla_eseten_is_a_nev_all(self, tmp_path):
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index([("C:\\kepek\\", None), ("a.jpg", 0, 2, 0)])
+        )
+        entries = read_thumb_index(path)
+        assert resolve_path(entries, entries[1]) == "a.jpg"
+
+    def test_a_RENDES_eset_valtozatlan(self, tmp_path):
+        """Ami eddig is működött, annak működnie kell: `valid=1`, `kind=2`."""
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index([("C:\\kepek\\", None), ("a.jpg", 0, 2, 1)])
+        )
+        entries = read_thumb_index(path)
+        assert resolve_path(entries, entries[1]) == "C:\\kepek\\a.jpg"
+
+    def test_az_arcsablon_a_TIPUSROL_ismerheto_fel(self, tmp_path):
+        """`kind == 1001` — a szülőlekérdező ennél rövidre zár (FUN_004e2990),
+        tehát a `parent_index` mezője ott nem is szülőindex."""
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index(
+                [("C:\\kepek\\", None), ("van_neve", 0, 1001, 1)]
+            )
+        )
+        entries = read_thumb_index(path)
+
+        assert entries[1].is_face_record is True, (
+            "a típus akkor is arcsablont jelent, ha a névmező NEM üres — "
+            "a régi heurisztika (üres név) ezt nem fogta meg"
+        )
+
+    def test_az_ures_nev_masodlagos_tartalek_marad(self, tmp_path):
+        path = tmp_path / "thumbindex.db"
+        path.write_bytes(
+            build_thumb_index([("C:\\kepek\\", None), ("", 0, 2, 1)])
+        )
+        entries = read_thumb_index(path)
+        assert entries[1].is_face_record is True
 
 
 class TestNonUtf8Names:
