@@ -2521,3 +2521,98 @@ a jegy ezt kifejezetten kizárta a hatóköréből. Aki kiméri, itt írja át.
 Az ikonok **saját rajzok**: a projekt egyetlen kicsomagolt Picasa-képet sem
 szállít, csak a MÉRETÜK az eredetiből mért. Őr:
 `tests/app/qml_functional/test_nagyitas_sav_2311.py`.
+
+
+## A szerkesztő HATODIK, rejtett füle: a VIDEÓ-fül (`movietab`) — 2026-09-05
+
+A `docs/specs/ui-lefedettseg.md` az `editpanel` panelen hat elemet
+*bizonytalan*-ként tartott nyilván. Ez a szakasz mind a hatot lezárja; a
+legfontosabb közülük a `movietab`.
+
+### Nem hatodik fül, hanem MODÁLIS ÁLLAPOT
+
+`referencia/tre-eroforrasok/editpanel.tre:476`:
+
+```
+editpanel/movietab: editpanel/tabs
+m_offsetLT
+Property showtarget editpanel/movietabpanel
+Property hidetarget editpanel/filter_name
+Property hidetarget editpanel/tabs        ← a TELJES fülsáv
+Property hidetarget editpanel/fxthumbs    ← az effekt-csempék
+m_hidden
+
+editpanel/movietabpanel: editpanel/editcontrols
+m_offsetLT
+m_hidden
+```
+
+Egy **közönséges** fül (pl. `editpanel/tab5`, `:461`) csak ennyit rejt el:
+`hidetarget editpanel/filter_name`. A `movietab` ezen felül **magát a
+fülsávot** (`editpanel/tabs`) és az effekt-csempéket (`fxthumbs`) is.
+
+⇒ **A videó-fül bekapcsolva ELTÜNTETI a fülsávot.** Nem hatodik fül a
+sorban, hanem a szerkesztő másik üzemmódja. *(Az eredetiben egyébként
+**öt** fül van: `tab1`…`tab5`, `:125`, `:250`, `:284`, `:443`, `:461`.)*
+
+### Mi kapcsolja be, és mi kapcsol vissza
+
+| irány | cím | mit tesz |
+|---|---|---|
+| **be** | `0x00593dcf`–`0x00593dd4` | `mov edx, 0xc91f04` (`"editpanel/movietab"`), majd `call 0x9cd8a0` — a fülváltó hívás |
+| **vissza** | `0x005f81da`–`0x005f81df` | ugyanaz a hívás `0xc94b8c`-cal (`"editpanel/tab1"`) |
+
+A visszaváltó (`0x005f8160`, 158 b) a média típusára ágazik
+(`call 0x50ccd0` → típuskód; 1 → `0x5d7780`, 2 → `0x5d77d0`, 3–5 →
+`0x5d78d0`), és **csak akkor** vált `tab1`-re, ha a `movietab` elem nem
+aktív (`cmp byte ptr [eax+0x359], 0`, `0x005f81ca`).
+
+*(Az `editpanel/movietab` sztringre az EGÉSZ binárisban pontosan ez a két
+függvény hivatkozik — `0x00593880` és `0x005f8160`.)*
+
+### Mi van a panelon — a vezérlők a `0x00593880`-ból
+
+A `.tre` a `movietabpanel`-nek **nem ad gyereket**; a tartalmát a
+videó-vezérlő építi. Annak teljes sztringkészlete:
+
+| csoport | elemek |
+|---|---|
+| `video_control_bar/` | `controlbar`, `trimslider`, `lefttrim`, `righttrim`, `setin`, `setout`, `startthumb`, `endthumb`, `scaleslider`, `volumeslider`, `time` |
+| `moviecontrols/` | `play`, `pause`, `moviecontrols` |
+| `movieeditpanel/` | `reset_trim`, `capture_frame`, `export_movie`, `export_youtube` |
+| `editpanel/` | `movieparent`, `movietab`, `render_now`, `in_progress_label` |
+| beállítás | `AutoPlayMovies` (a `Preferences` kulcs alatt) |
+
+A vezérlősáv láthatósága feltételes: a `0x00593dd9`–`0x00593e16` a
+`[ebx+0xe64] != −1 && [ebx+0xe6c] != 0` feltételt számolja `bl`-be, és azt
+írja a `video_control_bar/controlbar` `+0x20e` bájtjába (elpiszkolva:
+`or [eax+8], 2`).
+
+⇒ A trimmelés és a képkockamentés vezérlői ehhez a fülhöz tartoznak —
+**jegy: #1838**.
+
+### A másik négy *bizonytalan* elem — mind lezárva a `.tre`-ből
+
+| elem | horgony | mi ez |
+|---|---|---|
+| `editpanel/modaldialogblur` | `editpanel.tre:1362` | a `root` gyereke, `m_scaleXY` (teljes vászon), `m_hidden` — **elhomályosító réteg a modális párbeszédek mögött** |
+| `editpanel/picnikapply` | `editpanel.tre:1430` | az `editpanel/picnikbase` rejtett gyereke — a **Kreatív készlet „Alkalmaz"** gombja; a szolgáltatás megszűnt |
+| `editpanel/preview2` | `editpanel.tre:1066` | a **kettős nézet** második előnézete: az `editpanel/previewclip2` (`editpanel.tre:1075`, rejtett, `m_scaleXY`) gyereke, 5 px behúzással minden oldalon, alul −25 (a felirat helye) |
+| `editpanel` (a panel gyökere) | `editpanel.tre:1362` (ugyanaz a fájl) | konténer, nem vezérlő; nálunk `EditorPanel.qml` (`objectName: "editorPanel"`) |
+
+A `preview2` ugyanabba a csoportba tartozik, mint az `aa_2up_toggle`,
+`ab_2up_toggle`, `only_1up_toggle`, `swap_2up_focus`, `swap_2up_layout`,
+`previewimage2` és `selection_label_zoom` — ez a **kettős nézet**.
+
+### Nálunk (mérve, 2026-09-05)
+
+| | eredeti | nálunk |
+|---|---|---|
+| videó-fül a szerkesztőben | van, a fülsávot elrejti | **nincs**; a `VideoPlayerView.qml` lejátszó (csak `audio.volume`, `:114`) |
+| fülök száma | 5 + a rejtett videó-fül | 7 (`EditorTabBar.qml`, eldöntött UI-döntés) |
+| modális elhomályosítás | `modaldialogblur` | **nincs** a szerkesztőben (egyedül a `CollageSheet.qml` homályosít) |
+| kettős nézet | `preview2` + 5 kapcsoló | **nincs** |
+
+**Bizonyítottsági fok: megerősített** — a `.tre`-sorok és a
+sztring-hivatkozások közvetlen kiolvasás; a be-/visszakapcsoló két címe
+diszasszemblált.
