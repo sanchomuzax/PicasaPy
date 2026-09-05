@@ -165,9 +165,107 @@ A „nálunk" oszlop **mérés** (`eb42628d`).
 | egérmutató | **nem változik** (2. szakasz) | nem változik | — (egyezik) |
 | nagyítás mértéke | **NINCS MÉRVE** | **2,5** — a forrás kimondja, hogy SAJÁT DÖNTÉS (`:799–805`) | marad, amíg nincs mérés |
 
+## 5/b ✅ A NAGYÍTÁS MÉRTÉKE — LEZÁRVA: nincs nagyítási arány, a lencse 1:1-ben mutat (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A célrajz mérete és az 1:1 arány
+> **a kód szerkezetéből** következik (a célterület szélessége azonos a kép
+> szélességével), nem illesztésből. Ghidra nem kellett.
+
+A 6. mérleg ezt a tételt „célzott dekompilációra vár" indoklással tartotta
+blokkolva. **A rajzoló ág (`FUN_0077bb10`, 758 b) elolvasva megvan.**
+
+### 5/b.1 Miért nem találta öt függvény: NINCS nagyítási arány
+
+A korábbi kör hét függvényt nézett végig arányt keresve. Nincs, mert a
+Picasa **nem méretez**: a lencse a **teljes méretű képet natív
+képpontmérettel** rajzolja ki, csak **eltolva**, hogy a kurzor alatti
+képpont a rajzterület közepére essen.
+
+### 5/b.2 A rajzterület: **161 × 161**
+
+```
+0x0077c445  mov edx, 0xa1        ; 161
+0x0077c44b  mov ecx, edx         ; 161
+0x0077c44d  call 0x009a9c90      ; (161, 161)
+```
+
+⇒ A `FUN_0077c440` **161 × 161**-es célrajzot készít. A `loupe/docbounds`
+103 × 103-as üveglencséje (4. szakasz) ennek a felületnek a **látható
+kivágása**.
+
+### 5/b.3 Az eltolás képlete — utasításról utasításra
+
+`FUN_0077bb10`, `0x0077bc0f`–`0x0077bcad`. Bemenet: a bélyegkép
+képernyő-téglalapja (`esi`: bal/felső/jobb/alsó), a kurzor pontja
+(`[esp+0xb4]`, két `float`), és a **teljes kép** mérete
+(`[obj+0x388]` = W, `[obj+0x38c]` = H, **előjel nélkül** olvasva — a
+negatív ágon `fadd 4294967296.0`, `0x0077bc52` és `0x0077bca7`).
+
+```
+eltolásX = kerekít( (kurzorX − tgl.bal)  / (tgl.jobb − tgl.bal) × W ) − 80
+eltolásY = kerekít( (kurzorY − tgl.felső)/ (tgl.alsó − tgl.felső) × H ) − 80
+```
+
+*(A `80.0` a `0x00cf4c30`-ból, `fld qword`; a **teljes binárisban egyetlen
+hivatkozása** van, `0x0077bc5c` — tehát a nagyító saját konstansa. Mindkét
+tengelyen ugyanaz a példány: az X-ág `fsub st(1),st(0)`-ja után az érték a
+veremben marad, és az Y-ág `fsubrp`-je használja el.)*
+
+⭐ **A 80 pontosan a 161 × 161 közepe** (0…160 ⇒ közép = 80). A kurzor
+alatti képpont tehát **a rajzterület közepére** kerül.
+
+### 5/b.4 A célterület: bizonyíték az 1:1-re
+
+```
+0x0077bcd1  [obj+0x1c] = −eltolásY
+0x0077bcd8  [obj+0x18] = −eltolásX
+0x0077bcf5… a célterület felépítése:
+    bal   = −eltolásX
+    felső = −eltolásY
+    jobb  = W − eltolásX
+    alsó  = H − eltolásY
+```
+
+⇒ **A célterület szélessége `(W − eltolásX) − (−eltolásX) = W`, magassága
+`H`** — pontosan a kép saját mérete. **Nincs skálázás; az arány 1:1.**
+Ez nem illesztés, hanem a kifejezés algebrai következménye.
+
+### 5/b.5 Amit ez KIMOND
+
+- **Nincs „nagyítási arány" konstans** az eredetiben — ezért nem találta
+  meg a korábbi kör.
+- A lencse a **teljes méretű kép** 161 × 161 képpontos ablakát mutatja,
+  natív felbontásban, a kurzor alatti képpontra középezve.
+- A **látszólagos** nagyítás tehát nem rögzített szám:
+  `eredeti képpontméret ÷ a bélyegkép képernyőmérete` — vagyis annál
+  nagyobb, minél kisebbre van állítva a rács. Ez éppen a funkció célja
+  (élesség/csukott szem eldöntése).
+
+### 5/b.6 Két konstans, ami NEM a nagyítás — kizárva
+
+| konstans | hol | mi valójában |
+|---|---|---|
+| `2276,5556640625` | `0x00d35808`, `fld` a `0x0077bbac`-on | **megosztott globális**: a `.text`-ben **15** hivatkozása van (`0x568e4a`…`0xc2e2d3`), mind **olvasás**, író egy sincs; itt `fistp qword`-del **64 bites egésszé** alakul ⇒ idő/ütem jellegű, nem nagyítás |
+| `0,5` | `0x00c72150`, `0x0077c489` | a kép **közepét** számolja (`W × 0,5`, `H × 0,5`) — a #1951 már így hivatkozza |
+
+### 5/b.7 MIT AD MA — nálunk (mérve)
+
+`src/picasapy/app/qml/PicasaPy/LightboxFeed.qml`:
+
+| | eredeti (mért) | nálunk (mért) |
+|---|---|---|
+| mit mutat a lencse | a **teljes méretű kép** 161 × 161-es kivágata, **1:1** | a **bélyegkép EGÉSZÉT** (`source: elem.thumbUrl`, :963–:968), `PreserveAspectCrop`, 65 × 65-ös területen |
+| nagyítás | nincs arány (1:1 natív képpont) | `readonly property real nagyitas: 2.5` (:846) — **saját döntés**, és **sehol nincs felhasználva** (a projekt egészében 1 előfordulás) |
+| `sourceSize` | — | `Math.round(loupe.width)` = 103 (:961–:962) |
+
+⛔ **Ebből következik: a mi nagyítónk NEM nagyít, hanem kicsinyít** — az
+egész bélyegképet zsugorítja a lencsébe. Az élesség eldöntésére, amire a
+funkció való, így alkalmatlan. A `nagyitas` **néma beállítás**
+(`picasa-menu-parancsok-viselkedes.md` 48. tétel osztálya). Jegy: **#2399**.
+
 ## 6. Nyitott kérdések mérlege
 
-`0 nyílt · 6 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 7 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -177,7 +275,7 @@ A „nálunk" oszlop **mérés** (`eb42628d`).
 | követi-e az egeret (51.3) | **LEZÁRVA** — a kurzor közepére ül (3.3) |
 | azonnal jelenik-e meg | **LEZÁRVA** — áttűnéssel, 0,4 / 1,2 (3.1–3.2) |
 | a lencse alakja és mérete | **LEZÁRVA** — kör, 103 × 103, belső 65 (4.) |
-| **a nagyítás MÉRTÉKE** | **BLOKKOLT** — nincs a bejárt kódban. Amit végignéztem: `0x0077be10` (a kezelő, teljes diszasszemblátum), `0x0077b4b0` (konstruktor, 0x3d8 bájtos objektum), `0x0077b6e0`, `0x0077b780`, `0x0077b860`, `0x0077b8e0`, `0x0077ba60` — egyikben sem áll nagyítási arány. **Megszerzés:** a rajzoló ág, `0x0077bb10` (a `80.0` és a `2276,5556` konstansokkal) célzott dekompilációja. |
+| **a nagyítás MÉRTÉKE** | ✅ **LEZÁRVA (2026-09-05)** — **nincs nagyítási arány**: a lencse a teljes méretű képet **1:1**-ben rajzolja egy **161 × 161**-es felületre (`0x0077c445`), a kurzor alatti képpontot a **közepére** (a `80.0` a `0x00cf4c30`-ból, egyetlen hivatkozással) eltolva. A célterület szélessége algebrailag `W`, magassága `H` ⇒ skálázás nincs. Ezért nem találta öt függvény: nincs mit találni. 5/b |
 
 ## 7. Amit KIZÁRTAM
 
