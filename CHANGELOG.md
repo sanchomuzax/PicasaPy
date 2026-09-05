@@ -16,6 +16,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Visszavonva:** a menüpont-feliratok behúzásán változtató javítás
+  (#1750) kikerült. Linuxon helyes volt, Windowson viszont túl beljebb
+  tolta ugyanazokat a feliratokat, mint amennyivel korábban kijjebb
+  álltak. A menü megjelenése ezzel a korábbi, ismert állapotára tér
+  vissza; a jegy újranyílt.
+
 - Belső elnevezés: a szerkesztő vezérlőjének „van mentett
   vörösszem-javítás" jelzője beszédes nevet kapott (#2393). A
   viselkedés nem változik.
@@ -42,10 +48,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Helyek) a pipa többé nem hazudik (#1471). Eddig a MÁR NYITOTT lapra
   kattintva a panel — helyesen — nyitva maradt, a pipa viszont
   lekapcsolt.
-
-- Öt menüpont felirata rálógott a jelölőnégyzetére (#1750) — köztük a
-  „Show Editing Controls" és a „Use Color Management". Mostantól a
-  feliratok a szomszédjaikkal egy vonalban kezdődnek.
 
 - A Mappa menü indexkép-tétele az eredeti erőforrás szövegét kapta:
   „Print Contact Sheet…" a korábbi „Print Thumbnails…" helyett

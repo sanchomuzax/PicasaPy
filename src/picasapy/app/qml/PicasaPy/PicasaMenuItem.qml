@@ -85,20 +85,6 @@ MenuItem {
             ? Theme.textGray
             : (control.sajat ? Theme.linkBlue : Theme.ink)
         alignment: Qt.AlignLeft | Qt.AlignVCenter
-        // #1750: a saját `contentItem` elveszíti a stílus alapértelmezett
-        // bal térközét, ami a jelölőnégyzetnek hagy helyet — jelölhető
-        // tételnél a felirat ezért a jelölőre lógott (mérve: a felirat
-        // 6-nál kezdődött, a jelölő 20-ig ért).
-        //
-        // A térköz a jelölő SZÉLESSÉGE + a vezérlő `spacing`-je — az
-        // `indicator.x`-et NEM adjuk hozzá: ez a `contentItem` SAJÁT
-        // térköze, és a `contentItem` maga is ugyanattól az x-től indul,
-        // mint a jelölő. (Mérve: azzal együtt 32 jött ki, a szomszédos
-        // sima `MenuItem`-ek 26-ja helyett — vagyis nem lógott rá, de
-        // beljebb csúszott volna náluk.)
-        leftPadding: control.checkable && control.indicator
-            ? control.indicator.width + control.spacing
-            : 0
         // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást
         rightPadding: control.placeholder ? placeholderDot.width + 8 : 0
     }
