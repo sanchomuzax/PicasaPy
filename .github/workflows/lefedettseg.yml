@@ -1,0 +1,115 @@
+# Lefedettség-mérés — KÜLÖN körben, nem a PR-ek útjában (#1156).
+#
+# ## Miért nem a rendes CI-ben
+#
+# A #1127 négy darabra osztotta a készletet, és ezzel a `--cov` kikerült:
+# egy darab csak a SAJÁT részét látja, tehát a száma nem a teljes
+# lefedettség. Egy részleges számot totálként mutatni rosszabb, mint nem
+# mutatni semmit — ezért került ki, és ezért nem elég visszatenni.
+#
+# Két út volt: (a) minden PR-en mérni és összefésülni, vagy (b) külön,
+# ritkább kör. A (b) lett, mert a `--cov` minden részfutást
+# `coverage run -p` alá tesz — ez a teljes készleten érezhető lassulás,
+# és a szám mögött NINCS `fail-under` kapu, tehát egyetlen PR-t sem
+# blokkolna. Ami nem blokkol, az ne is lassítson.
+#
+# ## Mit ad
+#
+# A négy ubuntu-darab `--cov`-val fut, mindegyik feltölti a saját
+# `.coverage`-ét, a záró job pedig `coverage combine`-nal fésüli össze —
+# EZ a teljes szám. A jelentés a futás összegző lapjára megy, hogy ne
+# kelljen a naplóban keresni.
+#
+# ## Mikor fut
+#
+# Hetente egyszer, és kézzel bármikor (`workflow_dispatch`). A követelmény
+# (80%+) változatlan; helyben a `python scripts/run_tests.py --cov` ugyanezt
+# adja.
+name: Lefedettség
+
+on:
+  schedule:
+    # vasárnap hajnali 3:17 UTC — nem kerek perc, hogy a GitHub
+    # ütemezési csúcsával ne torlódjon
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  darabok:
+    name: Mért futás
+    uses: ./.github/workflows/teszt-darabok.yml
+    with:
+      os: ubuntu-latest
+      cov: true
+
+  osszesites:
+    name: Összesített lefedettség
+    needs: darabok
+    # a darabok bukása NEM akadálya az összesítésnek: egy bukó teszt is
+    # mért kódsorokat hagy maga után, és a részleges kép is több a semminél
+    # — de a jelentés KIMONDJA, hogy a mérés bukott futásból származik
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install coverage
+        run: python -m pip install --upgrade pip coverage
+
+      - name: Lefedettségi adatfájlok letöltése
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lefedettseg-*
+          path: lefedettsegi-adatok
+
+      - name: Összefésülés és jelentés
+        # ⚠️ A `coverage combine` a `.coverage.*` ALAKÚ neveket keresi, a
+        # darabok viszont mind `.coverage`-t töltöttek fel (külön mappákba).
+        # Az átnevezés ezért nem kozmetika: enélkül a combine NEM TALÁL
+        # semmit, és 0%-ot jelentene — ami hamis, nem hiányzó adat.
+        run: |
+          set -euo pipefail
+          n=0
+          for f in lefedettsegi-adatok/lefedettseg-*/.coverage; do
+            [ -f "$f" ] || continue
+            n=$((n + 1))
+            cp "$f" ".coverage.$n"
+          done
+          echo "összefésülendő adatfájl: $n"
+          if [ "$n" -eq 0 ]; then
+            echo "::error title=Nincs lefedettségi adat::A darabok egyetlen \`.coverage\` fájlt sem töltöttek fel — a mérés elmaradt, nem 0%-os."
+            exit 1
+          fi
+          if [ "$n" -ne 4 ]; then
+            echo "::warning title=Hiányos mérés::$n darab adata jött meg a négyből — a szám ennyiből származik."
+          fi
+          python -m coverage combine
+          python -m coverage report --precision=1 | tee lefedettseg.txt
+
+      - name: Jelentés az összegző lapra
+        if: always()
+        run: |
+          {
+            echo "## Lefedettség (összesített)"
+            echo
+            if [ "${{ needs.darabok.result }}" != "success" ]; then
+              echo "> ⚠️ A tesztfutás **nem volt zöld** (\`${{ needs.darabok.result }}\`) —"
+              echo "> a szám bukott futásból származik, tájékoztató jellegű."
+              echo
+            fi
+            echo '```'
+            tail -n 25 lefedettseg.txt 2>/dev/null || echo "(nincs jelentés)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

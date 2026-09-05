@@ -15,6 +15,15 @@ on:
         description: A futtató platformja (ubuntu-latest / windows-latest)
         required: true
         type: string
+      cov:
+        # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
+        # A `--cov` minden részfutást `coverage run -p` alá tesz, ami a
+        # teljes készleten érezhető lassulás — a PR-ek körét nem terhelheti.
+        # A `lefedettseg.yml` kapcsolja be, saját, ritkább körben.
+        description: Mérje-e a lefedettséget (`--cov` + melléktermék)
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   darab:
@@ -116,7 +125,34 @@ jobs:
         # lefedettség volna — egy részleges számot totálként mutatni
         # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
         # jegyre került; a `--cov` helyben változatlanul működik.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
+        #
+        # #1156: a `--cov` visszatért, de CSAK a külön körben (`cov` input).
+        # A darab a SAJÁT `.coverage`-ét írja; az összefésülés a hívó
+        # munkafolyamat záró jobjáé — egy darab száma önmagában nem
+        # lefedettség, és totálként mutatni rosszabb, mint nem mutatni.
+        #
+        # ⚠️ A kapcsoló GitHub-KIFEJEZÉS, nem shell-elágazás. Az első
+        # változatom bash `if`-et írt ide — a windows-runner viszont
+        # PowerShellt futtat (ennek a lépésnek nincs `shell: bash`-e), és
+        # MIND A NÉGY windows-darab elhasalt rajta. A `shell: bash`
+        # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
+        # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
+        # állítja össze, a shellhez nem nyúl.
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4 ${{ inputs.cov && '--cov' || '' }}
+
+      - name: Lefedettségi adatfájl feltöltése
+        # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
+        # `if-no-files-found: error` szándékos: ha a mérés némán elmaradna,
+        # a záró job hiányos számot adna ki teljesként — épp az a hiba,
+        # ami miatt a #1127 kivette a `--cov`-ot.
+        if: inputs.cov && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lefedettseg-${{ matrix.shard }}
+          path: .coverage
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
 
       # #1864: a windows-láb NEM blokkol (kísérleti), és épp ezért a
       # bukása hetekig észrevétlen maradt: négy export-hibaág minden
