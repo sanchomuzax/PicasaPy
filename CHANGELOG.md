@@ -21,6 +21,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A Szemcse effekt kétszer alkalmazva már tényleg kétszer hat** (#907).
+  Eddig a második szemcse **nyomtalan** volt: ugyanazt a zajmintát rajzolta
+  ugyanoda, tehát a kép bájtra változatlan maradt. Az eredeti Picasa minden
+  alkalmazáshoz új mintát vesz — mostantól mi is.
+
 - **A gombok visszajeleznek, ha föléjük viszed az egeret** (#883) — eddig
   csak a lenyomás látszott. Az eredeti Picasa négy állapotot rajzol; nálunk
   kettő volt. Mostantól rámutatáskor a gomb bal-felső éle besötétedik, a

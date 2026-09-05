@@ -9,6 +9,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import random
+
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
     alpha_blend,
@@ -75,20 +77,60 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0):
     return to_uint8(alpha_blend(to_float(image), to_float(pixelated), fade_alpha(fade)))
 
 
-def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False):
+def _grain_seed(seed: int | None) -> int:
+    """A szemcse magja: a hívóé, vagy — alapból — friss véletlen.
+
+    A `secrets`-et SZÁNDÉKOSAN nem használjuk: nem biztonsági kérdés, és a
+    `random.randrange` elég. A `np.random.default_rng` viszont `None`-ra is
+    saját entrópiát venne — de akkor a `noise_layer` docstringjének
+    determinizmus-ígérete válna hamissá, ezért a magot ITT állítjuk elő, és
+    a réteg továbbra is „adott mag → adott zaj" marad.
+    """
+    if seed is not None:
+        return seed
+    return random.randrange(2**32)
+
+
+def apply_picnik_grain(
+    image, grain: float = 10.0, lighten: bool = False, *, seed: int | None = None
+):
     """`PicnikGrain=1,Grain,Lighten` — szürke zaj, `Lighten` esetén
     `[0, 2,55·Grain]` tartományon `lighten` móddal, egyébként
     `[255−2,55·Grain, 255]` tartományon `darken` móddal (a `BlendMode`
     csúszka `7`/`5` indexeit a `Lighten` jelölő NEVE alapján a `lighten`/
     `darken` blend-módra képezzük — a `filterdesc.xml` konkrét mód-index
     → névtáblát nem közli). Nincs Fade.
+
+    ## A zaj MAGJA alapból VÁLTOZIK (#907)
+
+    Az eredeti szemcséje **nem determinisztikus**: két egymás utáni
+    alkalmazás FÜGGETLEN zajmintát ad. Ez a #685 mérőszettjéből számszerűen
+    kijött — `grain=1;` ΔE 1,804, `grain=1;grain=1;` ΔE **2,671**. Azonos
+    mintánál az amplitúdó duplázódna (~3,6 várható), függetlennél a szórás
+    √2-szeres (~2,55); a mért érték egyértelműen az utóbbi.
+
+    Fix maggal kétszer alkalmazva **kétszer akkora** hatást adnánk, mint az
+    eredeti — ezért a `seed` alapértéke `None`, és olyankor minden hívás
+    saját, véletlen magot kap.
+
+    ⚠️ A `seed` megadása **teszteléshez** való: attól a kimenet
+    reprodukálható lesz, de eltér az eredeti viselkedésétől, ha ugyanazt a
+    magot használják kétszer egymás után.
     """
     validate_image(image)
     if lighten:
         low, high, mode = 0.0, 2.55 * grain, "lighten"
     else:
         low, high, mode = 255.0 - 2.55 * grain, 255.0, "darken"
-    return apply_noise(image, seed=1, low=low, high=high, grayscale=True, blend_alpha=1.0, blend_mode=mode)
+    return apply_noise(
+        image,
+        seed=_grain_seed(seed),
+        low=low,
+        high=high,
+        grayscale=True,
+        blend_alpha=1.0,
+        blend_mode=mode,
+    )
 
 
 __all__ = ["apply_boost", "apply_soften", "apply_pixelate", "apply_picnik_grain"]
