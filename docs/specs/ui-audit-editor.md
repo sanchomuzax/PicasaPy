@@ -2476,6 +2476,51 @@ kisebbre nem lehet állítani** (a `v = 0` a csúszka alsó vége).
 > kiolvasva (`0x00c7dafc` = 0.5f, `0x00c72150` = 0.5 double,
 > `0x00cf3d30` = 4.0 double, `0x00cf3a48` = 2.0f), a `pow` azonosítva.
 
+#### ⭐ A csúszka BEAKAD a 0,5-nél — lépés közbeni „detent" (2026-09-06, #2492)
+
+A `FUN_005d1300` (355 b) a **léptető** út: kap egy delta-t, hozzáadja a
+csúszka aktuális értékéhez, és a `FUN_005ee590`-nel állítja be az újat.
+Két dolgot tesz, amit a fenti szakaszok nem írtak le:
+
+1. **Vágás `[0, 1]`-re.** `0x005d13a9` `fldz` + `0x005d13c6` `fld1`, mindkettő
+   összehasonlítással és cserével (`0x005d13b8`, `0x005d13d1`) ⇒ a normalizált
+   érték **soha nem megy 0 alá vagy 1 fölé**. Ez független megerősítése annak,
+   hogy a `[0, 1]` a teljes értékkészlet.
+2. **0,5-ös beakadás.** A függvény a `0x005d137b`-en betölti a
+   `0x00c7dafc` = **0,5**-öt, és ha a hívó a `bl`-lel kéri, a lépés
+   eredményét a 0,5-höz méri (`0x005d13e3`–`0x005d1429`). A két kimenet közül
+   az egyik (`0x005d142d`–`0x005d143c`) a **0,5-tel** hívja a beállítót, a
+   másik (`0x005d144e`–`0x005d1457`) a léptetett értékkel.
+   ⇒ **A 0,5-öt átlépő görgetés/lépés pontosan a 100 %-on áll meg.**
+   *(Ha az aktuális érték már pontosan 0,5, a függvény a `0x005d1383`-nál
+   visszatér — nem mozdul el a detentről ugyanabban a lépésben.)*
+3. **A léptető út NEM animál:** mindkét kimenet `push 0`-t ad harmadik
+   argumentumként, míg a `fit`/`1to1` gombok `push 1`-et (#2305).
+
+> **Bizonyítottság:** **megerősített** a `[0, 1]` vágásra és arra, hogy a
+> 0,5 a léptetőben összehasonlítási pont; **erős** arra, hogy a beakadás a
+> 0,5-re állít (az ág FPU-veremrendje kiolvasva, de futásidejű
+> ellenőrzés nélkül).
+
+#### ⛳ A tulajdonosi képernyőmentés MEGERŐSÍTI az elhelyezést (2026-09-06, #2492)
+
+A `#2492` képernyőmentése (1920 × 1200, két ablak egymás mellett) a
+**szerkesztő** nézetet mutatja mindkét oldalon. A jobb oldali, eredeti
+Picasa 3 alsó eszközsávjában — balról jobbra — a csillag, a két forgatás,
+majd **közvetlenül utánuk** a nagyítás-hármas (`fit` ikon, `1:1` gomb),
+utána a nagyító + csúszka, végül az emberek/helyek/címkék ikonok.
+
+Ez pontosan egybevág a mért horgonyzással: a `zoombuttcontainer` és a
+`zoomsliderclip` az `editbase` **jobb alsó** sarkához kötött
+(`m_offsetRB`), a vászon-koordinátákból számolva **440 képpont a jobb
+széltől** és **50 képponttal a talp fölött** — azaz az alsó eszközsáv
+bal-közép része, a forgatás-gombok után.
+
+⛔ **Nálunk (MÉRVE, `PhotoViewer.qml`):** a `zoomBar` (`:1610`–`:1624`) a
+**kép alatti külön sávban**, a képterület jobb alsó sarkában ül, nem az alsó
+eszközsávban; a `zoomFitButton`/`zoomActualButton` mérete és ikonja viszont
+már a mért (37 × 22, 14 × 12, 17 × 12).
+
 ### Eredeti / nálunk / teendő
 
 A „nálunk" oszlop **mérés** (`src/picasapy/app/qml/PicasaPy/PhotoViewer.qml`,
