@@ -19,6 +19,10 @@ adható):
     pip install $(python scripts/print_dependencies.py --all)
     sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
+A `--apt` a MINDEN telepítésnek kötelező rendszercsomagokat adja — ezt
+futtatja a CI. Aki a PySide6-ot a disztribúció csomagjából telepíti, a
+`--apt-teljes` kapcsolóval a csak-oda-való tételeket is megkapja (#1491).
+
 Szándékosan NEM telepíti a projektet magát (`pip install -e .`): az
 `*.egg-info`-t hagyna a munkafában, amit a `git status` nem is mutat, a
 csomag-ellenőrzők viszont újrahasznosítanak belőle — pontosan ez a #655-ben
@@ -50,9 +54,32 @@ def _python_csomagok(dev: bool, futasideju: bool) -> list[str]:
     return csomagok
 
 
-def _apt_csomagok() -> list[str]:
-    sorok = _APT_LISTA.read_text(encoding="utf-8").splitlines()
-    return [s.strip() for s in sorok if s.strip() and not s.strip().startswith("#")]
+#: #1491 — a rendszercsomag-lista szakaszhatárolója. Az alatta álló tételek
+#: CSAK annak kellenek, aki a PySide6-ot a disztribúció csomagjából telepíti;
+#: a CI-nek NEM. A megkülönböztetés hiánya éles kárt okozott: a
+#: `python3-pyside6.qtprintsupport` eltörte a CI `apt-get install`-ját, és
+#: vele a `libegl1` sem került fel (#1472, a 32938928311 futás).
+CSAK_DISZTRIBUCIOS_JELOLO = "[csak-disztribucios]"
+
+
+def _apt_csomagok(*, disztribucios: bool = False) -> list[str]:
+    """A Qt rendszercsomagjai; a csak-disztribúciósak külön kérésre.
+
+    A fájl EGY marad („nincs második lista" doktrína) — a kétféle tételt
+    szakaszhatároló választja el.
+    """
+    kotelezo: list[str] = []
+    csak_diszt: list[str] = []
+    cel = kotelezo
+    for nyers in _APT_LISTA.read_text(encoding="utf-8").splitlines():
+        sor = nyers.strip()
+        if not sor or sor.startswith("#"):
+            continue
+        if sor == CSAK_DISZTRIBUCIOS_JELOLO:
+            cel = csak_diszt
+            continue
+        cel.append(sor)
+    return kotelezo + csak_diszt if disztribucios else kotelezo
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,12 +100,20 @@ def main(argv: list[str] | None = None) -> int:
     csoport.add_argument(
         "--apt",
         action="store_true",
-        help="a Qt-hez kellő Linux rendszercsomagok",
+        help="a Qt-hez kellő, MINDEN telepítésnek kötelező rendszercsomagok",
+    )
+    csoport.add_argument(
+        "--apt-teljes",
+        action="store_true",
+        help=(
+            "a kötelezők ÉS a csak-disztribúciós csomagok (annak, aki a "
+            "PySide6-ot a disztribúció csomagjából telepíti)"
+        ),
     )
     opciok = ertelmezo.parse_args(argv)
 
-    if opciok.apt:
-        csomagok = _apt_csomagok()
+    if opciok.apt or opciok.apt_teljes:
+        csomagok = _apt_csomagok(disztribucios=opciok.apt_teljes)
     else:
         csomagok = _python_csomagok(
             dev=opciok.dev or opciok.all,

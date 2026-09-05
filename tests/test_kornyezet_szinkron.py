@@ -92,9 +92,27 @@ def _deklaralt_python_csomagok() -> list[str]:
     return [re.split(r"[<>=!~\[ ]", cs, maxsplit=1)[0].strip() for cs in csomagok]
 
 
-def _deklaralt_apt_csomagok() -> list[str]:
-    sorok = _APT_LISTA.read_text(encoding="utf-8").splitlines()
-    return [s.strip() for s in sorok if s.strip() and not s.strip().startswith("#")]
+#: #1491 — a lista szakaszhatárolója; alatta a CSAK-DISZTRIBÚCIÓS tételek.
+_CSAK_DISZT_JELOLO = "[csak-disztribucios]"
+
+
+def _deklaralt_apt_csomagok(*, disztribucios: bool = False) -> list[str]:
+    """A deklarált rendszercsomagok — alapból csak a KÖTELEZŐK (#1491).
+
+    A szakaszhatárolót magát sosem adjuk vissza: az nem csomagnév.
+    """
+    kotelezo: list[str] = []
+    csak_diszt: list[str] = []
+    cel = kotelezo
+    for nyers in _APT_LISTA.read_text(encoding="utf-8").splitlines():
+        sor = nyers.strip()
+        if not sor or sor.startswith("#"):
+            continue
+        if sor == _CSAK_DISZT_JELOLO:
+            cel = csak_diszt
+            continue
+        cel.append(sor)
+    return kotelezo + csak_diszt if disztribucios else kotelezo
 
 
 def _futtat(*argumentumok: str) -> list[str]:
@@ -140,6 +158,10 @@ def test_a_szkript_a_deklaraciot_adja_vissza() -> None:
 
     assert _futtat("--all") == futasideju + dev
     assert _futtat("--apt") == _deklaralt_apt_csomagok()
+    # #1491: a bővebb alak a csak-disztribúciós szakaszt is hozza
+    assert _futtat("--apt-teljes") == _deklaralt_apt_csomagok(
+        disztribucios=True
+    )
 
 
 def test_nincs_masodik_csomaglista() -> None:
