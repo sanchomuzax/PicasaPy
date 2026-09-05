@@ -21,6 +21,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Mappa felvétele és a »Keresés egyszer« nem ütközik a háttérben futó
+  beolvasással** (#2389). Eddig a két művelet akkor is nekiindult, ha épp
+  futott egy másik indexelés — a két egyidejű író adatbázis-hibát adott, és
+  a beolvasás félbemaradt. Mostantól a kérés sorba áll, és a futó munka
+  után magától lefut. A kézenfekvő megoldás — »ilyenkor egyszerűen ne
+  csináljuk« — szándékosan NEM ez lett: a felvenni kért mappa így némán
+  kimaradt volna a könyvtárból, és a felhasználó ezt csak jóval később
+  vette volna észre.
+
 - A **Mozgófilm létrehozása** és a **Frissítés** menüpont OK gombja némán
   nem csinált semmit (#1977) — a két vezérlő-metódus nem volt elérhető a
   kezelőfelületről. Mindkettő újra működik, és őr méri, hogy ne
