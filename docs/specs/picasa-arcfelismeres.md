@@ -1295,3 +1295,101 @@ számításnak.
 | ki írja | **LEZÁRVA** — egyetlen hely: `0x0048f79d` a `FUN_0048ef20`-ban (14.4.2) |
 | mikor ír | **LEZÁRVA** — csak változás esetén (`0x0048f7fe`) |
 | **mi a KÉPLET** | **NYÍLT (örökölt, 2026-08-22 óta)** — de a keresési tér a teljes binárisról két függvényre szűkült (14.4.4) |
+
+## 14.5 Az `albumpeoplechecksum` — KÉT jelölt kiesett, és megvan, HOL áll meg az olcsó ág (2026-09-05, #2391)
+
+> **Bizalmi fok: megerősített** a két kizárásra és a megállási pont okára;
+> **a képlet továbbra sincs meg.**
+
+A 14.4 két jelöltet nevezett meg a számításra. **Mindkettő kiesett.**
+
+### 14.5.1 ⛔ `FUN_0048af60` NEM a számoló — sztring/vektor-másoló
+
+| megfigyelés | cím |
+|---|---|
+| **egyetlen** hívója van (`0x0048f68b`), tehát nem általános segéd | kimerítő `e8`-pásztázás |
+| a törzse először a **`FUN_00448fb0`**-at hívja | `0x0048af7a` |
+| a `FUN_00448fb0` a **generikus oszlopolvasó** (21 hívó), és az `albumcontactids` oszlopot (`+0x2748`) éri el | `0x00448fbc` |
+| ha a kiolvasott 64 bites érték **nulla**, `9`-cel tér vissza | `0x0048af83`–`0x0048af98` |
+| a maradék törzs **csomagolt hosszú sztring/vektor másolása** (`shr len,1`, `and [edi+4],1`, felszabadítás `0x0097caf0`-val) | `0x0048afa2`–`0x0048b113` |
+
+⇒ Ez a függvény **beolvassa az album `albumcontactids` értékét és átmásolja**
+— nem számol ellenőrzőösszeget.
+
+### 14.5.2 ⛔ `FUN_0048bd80` NEM a számoló — felszabadító/átméretező ág
+
+A `0x0048be5d` előtti utasítások a **vektort ürítik** (`0x0048be4a`
+felszabadítás, `0x0048be52` a csomagolt hossz nullázása, `0x0048be56`
+`[ebx+0x48] = 0`), és csak utána zárolja az oszlopot. Számítás nincs benne.
+
+### 14.5.3 ⛔ ITT áll meg az olcsó ág — és pontosan miért
+
+Az írás a `0x0048f7f8`-on lévő **veremrekeszből** veszi az értéket. A
+`FUN_0048ef20` teljes törzsében a **nyers `[esp + 0x30]` alakra**
+mindössze hét hivatkozás van:
+
+| cím | mi |
+|---|---|
+| `0x0048f5b8`, `0x0048f7f8`, `0x0048f9b6` | **olvasás** (a checksum-ág) |
+| `0x004900c9`, `0x00490281` | **írás** — de egy **16 bites tömbön** futó ciklusban (`0x0049026e`: `mov word ptr [edx+ecx*2], ax`), és a `0x00490272`/`0x0049027a`/`0x0049027f` szerint **ciklusszámláló**, nem checksum |
+| `0x004900dc`, `0x00490272` | ua. ciklus olvasásai |
+
+⇒ **A checksum-ág olvasásaihoz tartozó ÍRÁS nincs ugyanezen a nyers
+eltoláson** — vagyis a két hely **eltérő `esp`-állapotban** van (élő
+hívás-argumentum push-ok miatt). A veremrekesz azonosításához
+**bázisblokkonkénti `esp`-követés** kell; a lineáris követés egy 5 143
+bájtos, elágazásokkal teli törzsön nem megbízható.
+
+> **Ez az a pont, ahol a drága ág (célzott dekompiláció) INDOKOLT** — és
+> most **pontos kérdéssel**: *mi tölti fel a `0x0048f7f8`-on olvasott
+> lokális rekeszt?* A dekompilátor a veremrekeszeket nevesíti, tehát ez neki
+> egyetlen ránézés.
+
+### 14.5.4 A contactid-hipotézis MÁSODSZOR is megdőlt — független adaton
+
+A 14.2 kizárta, hogy a checksum az `albumcontactids`-ből képződne (alsó 32,
+felső 32, XOR). Most a két oszlop **egymás mellé mérve**
+(`research/testdata/Picasa2-arcok/Picasa2/db3/`, saját `pmpimport`
+olvasónkkal, `albumcontactids` mezőtípus `0x4` = `uint64`,
+`albumpeoplechecksum` `0x1` = `uint32`):
+
+| album | tagok | `albumpeoplechecksum` |
+|---:|---:|---|
+| 109 | 32 | `0x8DAB10B8` |
+| 110 | 42 | `0xDC7A570C` |
+| 111 | 19 | `0x5CCEB284` |
+| **112** | **1** | **`0x00000000`** |
+| 113 | 2 | `0x00060B93` |
+| 114 | 4 | `0x030331FE` |
+| 115 | 7 | `0x98B4584D` |
+| 116 | 2 | `0x00063CE2` |
+| 117 | 6 | `0x9204CA91` |
+
+A **112-es albumnak van** `albumcontactids` értéke (nem nulla, egyedi), a
+checksumja mégis **0** ⇒ a checksum **nem függvénye a contactidnek**.
+Ez a 14.2 kizárásának **független megerősítése**, más úton.
+
+*(Adatvédelem: a contactid-értékek személyazonosítók, ezért nem kerülnek ki
+erre a lapra — csak az album-index és a checksum.)*
+
+### 14.5.5 ⚠️ CSAPDA a következő körnek: az „1 tag → 0" NEM törvény
+
+Kézenfekvő a „egy tagnál nulla ⇒ a képlet párokból/különbségekből épül"
+olvasat. **Ne építs rá.** Ugyanilyen jól magyarázza az adatot, hogy az
+oszlop **még nincs kiszámolva** ezen az albumon: a 14.4.3 szerint az író
+**csak változás esetén** ír (`0x0048f7fe`), tehát a `0` jelentheti azt is,
+hogy „még sosem írták".
+
+**A két olvasat közt az adat nem dönt** — ezért egyik sem használható
+kiindulásnak. Aki a képletet illeszti, **hagyja ki a 112-es albumot**, vagy
+mondja ki, melyik olvasattal dolgozik.
+
+### 14.5.6 Mérleg (14.5)
+
+`1 nyílt (ÖRÖKÖLT: a képlet) · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+| kérdés | állapot |
+|---|---|
+| a `FUN_0048af60` a számoló-e | **LEZÁRVA — nem** (14.5.1) |
+| a `FUN_0048bd80` a számoló-e | **LEZÁRVA — nem** (14.5.2) |
+| **mi a KÉPLET** | **NYÍLT (örökölt)** — a következő lépés a `FUN_0048ef20` **célzott dekompilációja** azzal az egy kérdéssel, hogy mi tölti a `0x0048f7f8`-on olvasott rekeszt (14.5.3). Jegy: **#2391** |
