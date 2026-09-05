@@ -16,6 +16,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- Belső elnevezés: a szerkesztő vezérlőjének „van mentett
+  vörösszem-javítás" jelzője beszédes nevet kapott (#2393). A
+  viselkedés nem változik.
+
 - Az ötperces automatikus frissítés és a „Frissítés" menüpont többé nem
   indít második index-írót a már futó szinkron mellé (#1456). Eddig
   ilyenkor adatbázis-hiba jelenhetett meg.

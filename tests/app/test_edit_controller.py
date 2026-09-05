@@ -37,7 +37,7 @@ def photo(tmp_path):
 class TestBeginEdit:
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
         assert "enhance" not in controller.effectChainCounts
         assert controller.revision == 1
         assert controller.previewSource == "image://editpreview/1?rev=1"
@@ -121,7 +121,7 @@ class TestToggleTool:
         controller.toggleTool("redeye")
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=" not in ini_text
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
     def test_preserves_unrelated_keys(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
@@ -1793,7 +1793,7 @@ class TestRedeyeTool:
         controller.applyRedeye()
         text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert text.startswith("[IMG_0001.jpg]\nfilters=redeye=1,")
-        assert controller.redeyeActive is True
+        assert controller.hasSavedRedeye is True  # #2393: átnevezve
         assert controller.redeyeRegionCount == 0
 
     def test_apply_without_regions_writes_plain_picasa_entry(self, controller, photo):
@@ -1818,7 +1818,7 @@ class TestRedeyeTool:
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.applyRedeye()
         controller.undo()
-        assert controller.redeyeActive is False
+        assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
     def test_auto_reports_found_spots(self, controller, tmp_path):
         """A sikerüzenet a TÉNYLEGESEN talált foltokból jön."""
