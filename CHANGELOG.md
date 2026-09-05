@@ -16,6 +16,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Visszavonva:** a menüpont-feliratok behúzásán változtató javítás
+  (#1750) kikerült. Linuxon helyes volt, Windowson viszont túl beljebb
+  tolta ugyanazokat a feliratokat, mint amennyivel korábban kijjebb
+  álltak. A menü megjelenése ezzel a korábbi, ismert állapotára tér
+  vissza; a jegy újranyílt.
+
 - Belső elnevezés: a szerkesztő vezérlőjének „van mentett
   vörösszem-javítás" jelzője beszédes nevet kapott (#2393). A
   viselkedés nem változik.
