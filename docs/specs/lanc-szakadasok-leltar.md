@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 36.**
+**Felületről el nem ért vezérlő-tag: 35.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -111,7 +111,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py` | MÉRVE — a mentett kollázs útja bekötetlen |
 | `controller` | `folderDateText` | Property | `app/controller.py` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
 | `controller` | `folderDescription` | Property | `app/controller.py` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
-| `controller` | `setShowHidden` | Slot | `app/controller.py` | FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml) |
 | `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
 | `controller` | `collageSeed` | Property | `app/create_controller.py` | MÉRVE — a véletlen elrendezés magja bekötetlen |

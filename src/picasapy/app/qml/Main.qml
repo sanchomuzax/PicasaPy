@@ -915,6 +915,11 @@ ApplicationWindow {
         createActionsEnabled: !window.viewerOpen
                               && (window.selectedIndexes.length > 0
                                   || window.trayHasPictures)
+        // #1637: a rejtettek jelszó-kapuja. A menüsor csak JELEZ; a
+        // párbeszédet a gazda nyitja, és a gazda írja vissza a vezérlőt —
+        // így a párbeszéd önálló, újrahasznosítható komponens marad.
+        onHiddenUnlockRequested: hiddenPasswordDialog.ensure().openUnlock()
+        onHiddenPasswordRequested: hiddenPasswordDialog.ensure().openSet()
         onRescanRequested: controller.rescan()
         // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
         // így egy fájlkezelőbe közvetlenül beilleszthetők
@@ -2603,6 +2608,55 @@ ApplicationWindow {
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
     // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
+    // #1637: a »Rejtett mappák« jelszava — HALASZTVA (#1719/#1720). A
+    // legtöbb munkamenetben soha nem nyílik meg; a hívók az `ensure()`-ön
+    // át érik el. A jelzéseket a `Component` belsejében kötjük, mert a
+    // burkoló nem továbbítja őket (#1743).
+    DeferredDialog {
+        id: hiddenPasswordDialog
+        anchors.fill: parent
+        sourceComponent: Component {
+            HiddenPasswordDialog {
+                // #1637: a törlés csak akkor kínálható fel, ha VAN mit törölni
+                jelszoLetezik: controller
+                               ? controller.hiddenPasswordSet === true : false
+                onTorlesKert: if (controller) controller.clearHiddenPassword()
+                onAccepted: {
+                    if (!controller) return
+                    if (mode === "set") {
+                        controller.setHiddenPassword(
+                            enteredPassword, modernRequested)
+                    } else if (controller.unlockHidden(enteredPassword)) {
+                        controller.setShowHidden(true)
+                    } else {
+                        hiddenPasswordRosszUzenet.ensure().open()
+                    }
+                }
+            }
+        }
+    }
+
+    // #1637: a rossz jelszó üzenete — HALASZTVA, két okból. (1) A legtöbb
+    // munkamenetben soha nem kell. (2) A `ConfirmDialog` belsejében a
+    // felirat `objectName`-je (`confirmMessageLabel`) MINDEN példányban
+    // ugyanaz, és a tesztek `findChild`-dal keresik: egy induláskor felépülő
+    // ÚJ példány elé kerülne a fa bejárásában a fájlművelet-párbeszédeknek,
+    // és azok állításai a MI szövegünket kapták volna vissza (éles próbán
+    // hat teszt bukott el ezen). Halasztva a példány addig nem is létezik.
+    DeferredDialog {
+        id: hiddenPasswordRosszUzenet
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "hiddenPasswordWrongDialog"
+                //: rossz jelszó a rejtett mappákhoz (#1637)
+                title: qsTr("Wrong password")
+                message: qsTr("The password does not match. The hidden folders stay hidden.")
+                onAccepted: hiddenPasswordDialog.ensure().openUnlock()
+            }
+        }
+    }
+
     CollageDraftDialog {
         id: collageDraftDialog
         onRestored: documentTabStrip.activateTab(window.collageTabId)

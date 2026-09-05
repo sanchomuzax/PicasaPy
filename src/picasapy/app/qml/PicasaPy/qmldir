@@ -100,6 +100,7 @@ EditorTextPanel 1.0 EditorTextPanel.qml
 EditorRetouchPanel 1.0 EditorRetouchPanel.qml
 EditorRedeyePanel 1.0 EditorRedeyePanel.qml
 TextFieldContextMenu 1.0 TextFieldContextMenu.qml
+HiddenPasswordDialog 1.0 HiddenPasswordDialog.qml
 NameInputDialog 1.0 NameInputDialog.qml
 TextFieldContextArea 1.0 TextFieldContextArea.qml
 EditorFinetunePanel 1.0 EditorFinetunePanel.qml
