@@ -48,9 +48,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QEvent, QMetaObject, QObject, Qt
 from PySide6.QtGui import QKeyEvent
+from support.qml_halasztott import epitsd_fel_ha_fileops
 
 
 def _gyerek(window, nev):
+    epitsd_fel_ha_fileops(window, nev)  # #1612: halasztott párbeszédek
     elem = window.findChild(QObject, nev)
     assert elem is not None, f"a(z) {nev} nem található"
     return elem

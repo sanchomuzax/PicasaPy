@@ -31,6 +31,7 @@ közben történt, a szinkron végén be kell hoznia a lemaradást.
 from pathlib import Path
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from support.qml_halasztott import epitsd_fel_ha_fileops
 
 
 def _varj(controller, qt_app, korok=100):
@@ -43,6 +44,7 @@ def _varj(controller, qt_app, korok=100):
 
 def _torolj(window, controller, qt_app, ut):
     """Törlés a VALÓDI úton: a megerősítő párbeszéd `confirmed` jelzésén át."""
+    epitsd_fel_ha_fileops(window, "deleteConfirmDialog")  # #1612
     dialogus = window.findChild(QObject, "deleteConfirmDialog")
     assert dialogus is not None, "deleteConfirmDialog nem található"
     QMetaObject.invokeMethod(

@@ -71,6 +71,13 @@ def _elem(window, nev):
     return obj
 
 
+def _nem_nyilt_meg(window, nev="newAlbumDialog") -> bool:
+    """#1612: a `FileOpsDialogs` halasztott — a nyitás ELŐTT a párbeszéd
+    létre sem jön. A hiánya erősebb állítás, mint a `visible is False`."""
+    par = window.findChild(QObject, nev)
+    return par is None or par.property("visible") is False
+
+
 def _select_row(window, qt_app, row):
     window.setProperty("selectedIndexes", [row])
     window.setProperty("selectedIndex", row)
@@ -119,8 +126,7 @@ class TestUjAlbumMenupontEsCtrlN:
     def test_a_menupontra_kattintva_megnyilik_a_dialog(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _select_row(window, qt_app, 0)
-        dialog = _elem(window, "newAlbumDialog")
-        assert dialog.property("visible") is False
+        assert _nem_nyilt_meg(window)
 
         tetel = _elem(window, "menuFileNewAlbum")
         QMetaObject.invokeMethod(
@@ -128,7 +134,7 @@ class TestUjAlbumMenupontEsCtrlN:
         )
         qt_app.processEvents()
 
-        assert dialog.property("visible") is True, (
+        assert _elem(window, "newAlbumDialog").property("visible") is True, (
             "a Fájl ▸ Új album… nem nyitotta meg a dialógust"
         )
 
@@ -137,25 +143,23 @@ class TestUjAlbumMenupontEsCtrlN:
     ):
         window, _controller, _engine = qml_app
         _select_row(window, qt_app, 0)
-        dialog = _elem(window, "newAlbumDialog")
-        assert dialog.property("visible") is False
+        assert _nem_nyilt_meg(window)
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert dialog.property("visible") is True, (
+        assert _elem(window, "newAlbumDialog").property("visible") is True, (
             "a Ctrl+N nem nyitotta meg az Új album… dialógust"
         )
 
     def test_kijeloles_nelkul_a_ctrl_n_nem_csinal_semmit(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _clear_selection(window, qt_app)
-        dialog = _elem(window, "newAlbumDialog")
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert dialog.property("visible") is False, (
+        assert _nem_nyilt_meg(window), (
             "a Ctrl+N kijelölés nélkül is megnyitotta a dialógust"
         )
 
@@ -202,7 +206,7 @@ class TestUjAlbumMenupontEsCtrlN:
         qt_app.processEvents()
 
         assert str(mezo.property("text")) == "n"
-        assert _elem(window, "newAlbumDialog").property("visible") is False
+        assert _nem_nyilt_meg(window)
 
     def test_a_menupont_nem_placeholder_a_forrasban(self):
         # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma —
@@ -220,12 +224,23 @@ class TestUjAlbumMenupontEsCtrlN:
         )
         assert "newAlbumRequested()" in blokk
 
-    @pytest.mark.parametrize(
-        "nev", ["menuFileNewAlbum", "shortcutNewAlbum", "newAlbumDialog"]
-    )
+    @pytest.mark.parametrize("nev", ["menuFileNewAlbum", "shortcutNewAlbum"])
     def test_a_lanc_minden_szeme_megvan(self, qml_app, nev):
         window, _controller, _engine = qml_app
         assert window.findChild(QObject, nev) is not None, nev
+
+    def test_a_lanc_utolso_szeme_a_NYITAS_utan_van_meg(self, qml_app, qt_app):
+        """#1612: a `newAlbumDialog` halasztott — a láncnak a nyitás
+        pillanatában kell összeérnie, nem induláskor."""
+        window, _controller, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        QMetaObject.invokeMethod(
+            _elem(window, "menuFileNewAlbum"),
+            "triggered",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert window.findChild(QObject, "newAlbumDialog") is not None
 
 
 class TestNemaCimkekLekerultBillentyuvel:

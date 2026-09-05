@@ -58,6 +58,7 @@ from PySide6.QtCore import Q_ARG, QEvent, QMetaObject, QObject, Qt
 from PySide6.QtGui import QKeyEvent
 
 from picasapy.index import open_index, sync_tree
+from support.qml_halasztott import epitsd_fel_ha_fileops
 
 _TOKEN = "604c294a68b0de9cc9222c4714f289d5"
 _ROY_ID = "b8e4117cf1d6615b"
@@ -66,6 +67,7 @@ _RECT = "3f840000c3509f84"
 
 
 def _gyerek(window, nev):
+    epitsd_fel_ha_fileops(window, nev)  # #1612: halasztott párbeszédek
     elem = window.findChild(QObject, nev)
     assert elem is not None, f"a(z) {nev} nem található"
     return elem
