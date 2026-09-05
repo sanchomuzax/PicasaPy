@@ -2207,7 +2207,7 @@ bejegyzések halmaza (ld. lentebb) — azok nem fájlok.
 | 1 | könyvtár | 2 338 | 115 |
 | 2 | JPEG | 121 593 | 2 424 |
 | 3 | GIF | 394 | — |
-| 5 | könyvtár (2. fajta) | 6 | 19 |
+| 5 | **hibás könyvtár** (a bejáró nem tudta feldolgozni) — *erős, 2026-09-05* | 6 | 19 |
 | 6 | BMP | 707 | 206 |
 | 8 | AVI | 37 | — |
 | 10 | MP4 / MPG / MTS | 2 645 | 17 |
@@ -2216,7 +2216,7 @@ bejegyzések halmaza (ld. lentebb) — azok nem fájlok.
 | 14 | PNG | 7 693 | 125 |
 | 22 | TGA | 1 | — |
 | 31 | WebP | 6 | 1 |
-| 1001 | **arcsablon-bejegyzés** | — | 412 |
+| 1001 | **arcsablon-bejegyzés** (a `+26` mezője NEM szülőindex) | — | 412 |
 
 **A besorolás a TARTALOM alapján történik, nem a kiterjesztésből.** A nagy
 katalógusban:
@@ -2242,6 +2242,38 @@ megegyezik** a `facetemplatesV2_index.db` foglalt slotjainak halmazával —
 **412 = 412, metszet 412**, azaz halmaz-azonosság, nem csak darabszám.
 ⇒ Ezek nem lemezes fájlok, hanem az arcfelismerés sablon-bejegyzései,
 amelyek ugyanabban az azonosítótérben ülnek, mint a képek.
+
+#### ⭐ A `típus` a NÉVFELOLDÁST is vezérli (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített** a szabályra és a szülőlekérdezőre;
+> **erős** a `típus = 5` = „hibás könyvtár" olvasatra. Forrás: a
+> könyvtárbejáró névfeloldó ága, `picasa-mappakezelo.md` 16.2/b.
+
+Az eredeti **nem** a `+26` szentinelből dönti el, hogy a név teljes út-e,
+hanem a `típus`ból (`0x004f27f3`–`0x004f2825`):
+
+```
+ha  valid (+25) == 0                      → a NÉV önmagában a teljes út
+ha  típus ∈ {1, 5, 25, 1001}              → a NÉV önmagában a teljes út
+különben                                   → szülő_neve + név
+```
+
+A szülőág is feltételes: ha a `+26` a rekordszámon kívülre mutat, vagy a
+**szülő** típusa `0`, a Picasa egy tartalék sztringre esik vissza —
+**kivételt nem dob**.
+
+⭐ **Ez magyarázza a fenti 412-es anomáliát.** A szülőlekérdező
+**`FUN_004e2990`** (66 b) a `típus == 1001` esetet **a `+26` beolvasása
+ELŐTT** −1-gyel zárja rövidre (`0x004e29bb`). Egy arcsablon-bejegyzés `+26`
+mezője tehát **nem szülőindex**, és az eredeti soha nem olvassa annak — a
+mért „412 esetben nem mutat mappára" nem adathiba, hanem a formátum
+szabálya.
+
+⛔ **Nálunk (mérve):** a `pmpimport/thumbindex.py` `is_directory`-ja a
+`+26 == 0xFFFFFFFF` szentinelt nézi (`:57`), a `resolve_path` pedig hibás
+szülőindexnél **kivételt dob** (`:231`) — mindkettő eltér az eredeti
+szabályától; a beolvasott `kind` mezőt (`:50`) a `src/` **sehol nem
+használja**. Jegy: **#2404**.
 
 #### `+26 == 0xFFFFFFFF` — pontos szabály
 
