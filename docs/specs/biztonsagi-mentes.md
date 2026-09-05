@@ -201,7 +201,10 @@ A „nálunk" oszlop **mérés** (`cf48cf39`).
 
 ## 7. Nyitott kérdések mérlege
 
-`0 nyílt · 10 lezárva · 1 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 11 lezárva · 0 blokkolt · 2 hatókörön kívül · 0 csak-nyitva`
+
+*(2026-09-05: az utolsó blokkolt tétel — „a `BKTag` a `.picasa.ini`-be is
+kikerül-e" — LEZÁRULT; a válasz IGEN, kulcs-előtagként, ld. 9.2.)*
 
 *(A 2026-09-03 előtti sor `1 hatókörön kívül`-t írt, miközben a tábla kettőt
 sorolt fel — elszámolási hiba, javítva.)*
@@ -214,20 +217,31 @@ sorolt fel — elszámolási hiba, javítva.)*
 | mi a célmappa alapértéke | **LEZÁRVA** — honosított `\Picasa biztonsági másolat\` (4.) |
 | mit ír a célmappába | **LEZÁRVA** — `files.txt` (3.) |
 | **melyik könyvtárban van a `backups.xml`** | **LEZÁRVA (2026-09-02)** — a `#db3\` token (`0x00c7eeb8`), átadva írásnál `0x00670ca8`, olvasásnál `0x00670aa8`. **A korábbi „`Picasa2Backups` mappa" olvasat MEGDŐLT** — az a fájl XML-gyökéreleme (1.1). |
-| **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-02)** — adatbázis-címke, `BKTag ` + a készlet neve (9.) |
+| **hogyan tudja, mi van már mentve** | **LEZÁRVA (2026-09-05-én PONTOSÍTVA)** — készletenkénti IDŐBÉLYEG a képen: `BKTag <készletnév>-backuphash`, a `.picasa.ini`-ben ÉS az adatbázisban (9.2). A 2026-09-02-i „adatbázis-CÍMKE” megfogalmazás pontatlan volt: a `BKTag <név>` a készlet BELSŐ NEVE (a `backups.xml` `setname` mezője), nem a képre tett címke. |
 | hogyan nyitja a fájlt | **LEZÁRVA (2026-09-02)** — `"wb"`, előtte leveszi a csak-olvasható jelzőt (1.1/b) |
 | **a `files.txt` ÍRÁSÁNAK MENETE** | **LEZÁRVA (2026-09-03)** — nem sorformázás, hanem **bájtra fűzés**: két megnyitás, két teljes beolvasás, `SetFilePointer` a fájl elejére, majd a régi és az új tartalom kiírása (11.1/b). A blokk **csak akkor fut**, ha a másolandó elem célja maga a `files.txt` (11.1/a). |
 | **mi a `files.txt` TARTALMA** | **LEZÁRVA (2026-09-04)** — teljes nyelvtan a 13.3-ban: `#`-es fejléc (`# Created on %s by %s` · `# version: %s` · `# platform: %s %s`), majd tételenként **útvonal / felirat / `ft,<c_lo>,<c_hi>,<m_lo>,<m_hi>`**, a rejtett tételeknél `hf,1`. Író: `0x008447b0`, `"w"` módban. A mentés-ág **feliratot ír, `ft,` sort nem** (hívási hely `0x00693bfc`: `push 1` / `push 0`). A beolvasót a `PicasaRestore.exe` `FUN_00412550` + `FUN_0040f7d0` adja. Anyag: a tulajdonos 2026-09-03-i mentőlemeze. |
-| **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **BLOKKOLT** — a címke létezése mérve (9.), a TÁROLÓJA nem. ⚠️ **A korpusz nem tudja eldönteni:** a `BKTag`-re nulla találat, de a `keywords=` sorra **is** nulla — a korpusz kulcsszavakat egyáltalán nem tartalmaz, tehát a hiány nem bizonyíték. **Megszerzés:** ⛔ **a `0x00670b25` utáni felhasználó útja MÉRVE ZSÁKUTCA (2026-09-04):** az ottani hívott a `0x00408760` (sztring-összefűzés), az eredményt pedig a `0x005c2100` (**63 bájt**) veszi át — az egy tagváltozó-értékadó, nem író. A másik ág ugyanígy: a `0x00679ca0` a `BKTag %s`-t `sprintf`-fel állítja elő (`0x0067ad6e`), és a `0x006774d0`-nak (223 b, sztring-másoló, `call ebp` futásidejű mutatóval) adja tovább. **Egyik úton sincs `.picasa.ini`-írás.** ⇒ marad: egy `.picasa.ini` olyan gépről, ahol futott a mentés. |
+| **a `BKTag` címke a `.picasa.ini`-be is kikerül-e** | **LEZÁRVA (2026-09-05)** — **IGEN, de nem címkeként:** a készlet belső neve a per-kép ini-KULCS ELŐTAGJA — `BKTag <készletnév>-backuphash=<érték>` (9.2). Élő minta a tulajdonos 2026-09-03-i mentése után: 20/20 szakasz, mind `40037`. Bináris oldalról: az összefűzés `0x00429d1c`–`0x00429d25`, az ini-írás `0x00429d86` → `0x00454770`. ⛔ **A „kulcsszó lesz belőle” olvasat MEGDŐLT** (8.). |
 | **a webre töltés (`replicate`) ága** | **HATÓKÖRÖN KÍVÜL** — a Picasa Web Albums / Google Fotók szolgáltatás megszűnt; a szövegek és a kulcsok a 10. szakaszban a teljesség kedvéért állnak. *(Ez a lap rögzíti a döntést; a `publish` sáv mentés- és CD-ága ettől függetlenül ÉLŐ.)* |
 | **mit csinál a Wine-ág másképp** | **HATÓKÖRÖN KÍVÜL** — a `0x00678be0` Wine alatt más célmappát épít (`wine_get_unix_file_name`), de mi **natív Linuxon** futunk, nem Wine alatt; a mi célmappánk a rendszer saját konvenciója szerint áll elő. |
 
 ## 8. Amit KIZÁRTAM
 
-- **„a `backuphash` ini-kulcs mondja meg, mi van már mentve"** — nem: a
+- **„a mentés KULCSSZÓT (`keywords=`) tesz a képekre”** — MEGDŐLT
+  (2026-09-05). A `"BKTag "` (`0x00ca4698`) és a `"BKTag %s"` (`0x00ca614c`)
+  literálra a teljes `Picasa3.exe`-ben **pontosan egy-egy** kódhivatkozás van
+  (`0x00670b04`, `0x0067ad63`; kimerítő négybájtos pásztázás az egész
+  fájlon), és mindkettő a mentés-készlet rekordjának **`setname`** mezőjét
+  építi. A `.picasa.ini` kulcsszóíróját (`keywords=%s`, `0x0068b8bd`) egyik
+  út sem éri el. A képre tett bélyeg **külön ini-kulcs**, nem kulcsszó (9.2).
+
+- **„a SIMA `backuphash` ini-kulcs mondja meg, mi van már mentve"** — nem: a
   `backuphash` az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték
-  ([`picasa-ini-format.md`](picasa-ini-format.md), #643), nem tartalom-hash
-  és nem mentés-nyilvántartás.
+  ([`picasa-ini-format.md`](picasa-ini-format.md), #643), nem tartalom-hash.
+  ⚠️ **2026-09-05-i pontosítás:** a mentés-nyilvántartást viszont a
+  **készletenkénti testvérkulcs** adja — `BKTag <készletnév>-backuphash` —,
+  ugyanazzal a képlettel; a kettő ÖSSZEHASONLÍTÁSA a döntés (9.2). A
+  kizárás tehát csak az ELŐTAG NÉLKÜLI kulcsra áll.
 - **„a »biztonsági másolat« szöveg a mentés-készletekhez tartozik"** — az
   5. szakasz névcsapdája: a `CThumbUI::FileSave::messagetagX` a
   szerkesztés-mentés párbeszédé.
@@ -262,13 +276,58 @@ a készlet neve.**
 | átnevezéskor `"BKTag %s"` formátummal áll elő | `0x00679ca0` (`0x00ca614c`) |
 | hiba esetén: **„A mentési készletet nem lehet átnevezni"** (`il_NewBkDlgRenameError`) | `0x00679ca0` |
 
-⇒ **A „mi van már mentve" kérdést nem egy külön nyilvántartás dönti el,
-hanem a képekre tett címke.** A nálunk erre használható megfelelő a
-`.picasa.ini` `keywords=` / a címke-index — a fejlesztésnek NEM kell külön
-mentés-adatbázist építenie.
+⇒ **A `BKTag <készletnév>` a készlet BELSŐ NEVE**, amit a `0x006759c0` a
+`backups.xml` **`setname`** attribútumába ír (a megjelenített név külön, a
+`name` attribútumban áll). 2026-09-05-én **két helyről** igazolva: a
+`0x00679ca0` átnevezés-ága ugyanezt a `BKTag %s` alakot hasonlítja a rekord
+`+0x04` mezőjéhez (`0x0067ad84`–`0x0067ad94`), a `0x006759c0` pedig ugyanezt
+a `+0x04`-et írja ki `setname` néven (`0x00675c14`).
 
-⚠️ **Amit ez NEM mond meg:** hogy a címke a `.picasa.ini`-be vagy csak az
-SQLite-indexbe kerül-e. Lásd a 7. szakasz mérlegét.
+⛔ **HELYESBÍTÉS (2026-09-05):** a szakasz első kiadása azt írta, hogy a
+készletnév „a képekre tett CÍMKE”, és hogy nálunk a `keywords=` a
+megfelelője. **Ez téves volt.** A képre tett bélyeg a 9.2 szerinti KÜLÖN
+ini-kulcs, és kulcsszó sehol nem keletkezik.
+
+### 9.2 A KÉPRE tett bélyeg: `BKTag <készletnév>-backuphash` (2026-09-05)
+
+**A kép szakaszába külön kulcs kerül**, aminek a NEVE hordozza a készletet,
+az ÉRTÉKE pedig ugyanaz a 16 bites időbélyeg-lenyomat, mint a sima
+`backuphash`-é:
+
+```ini
+[photo01__bw.jpg]
+filters=bw=1;
+backuphash=40037
+BKTag Saját mentési készlet-backuphash=40037
+```
+
+| lépés | bizonyíték |
+|---|---|
+| a `-backuphash` utótag literálja | `0x00c81450` |
+| kulcsnév = `<készlet belső neve>` + utótag | `0x00429d1c`–`0x00429d25` (`0x00985af0`) |
+| átnevezéskor a RÉGI és az ÚJ kulcsnév is felépül | `0x00473fd5` / `0x0047402f` (hívó: `0x0067ae70`) |
+| az adatbázisbeli érték kiolvasása ezen a néven | `0x00429d3b` → `0x006a5790` |
+| ha **0**, új bélyeg az aktuális időből | `0x00429d4d` → `0x0098b6e0`; XOR-hajtás `0x00429d5c`–`0x00429d6c` |
+| kiírás a `.picasa.ini`-be | `0x00429d86` → `0x00454710` → `0x00454770` (`.picasa.ini` = `0x00454846`, `backuphash` = `0x00454904`, `%d` = `0x004548d8`) |
+| kiírás az adatbázisba | `0x00429d9f` → `0x006a5a60` |
+
+⛳ **ÉLŐ MINTA:** a tulajdonos 2026-09-03-i mentése után egy valódi
+`.picasa.ini`-ben **20/20 szakasz** hordozza a kulcsot, mind `40037`
+értékkel; ugyanott a sima `backuphash` is `40037`. A korpusz további öt,
+`backuphash`-t tartalmazó fájljában készletenkénti kulcs **nincs**, és ott a
+sima érték képenként különböző (13/13 · 11/11 · 8/8 · 1/1 · 1/1). Ez az
+időbélyeg-olvasatot erősíti: egy mappa ini-je egyszerre íródik, tehát egy
+mentési menet minden szakasza ugyanazt a bélyeget kapja.
+
+⇒ **Az inkrementalitás ÖSSZEHASONLÍTÁSSAL dönthető el:** ha
+`<készlet>-backuphash == backuphash`, a kép naprakész abban a készletben; ha
+eltér vagy hiányzik, mentendő. *(A képlet és a mezőleírás:
+[`picasa-ini-format.md`](picasa-ini-format.md), „A `<készletnév>-backuphash`".)*
+
+⚠️ **Nálunk (MÉRVE, 2026-09-05):** az `ini/document.py` a szóközös, ékezetes
+kulcsot helyesen olvassa (`Section.get`) és bitre azonosan írja vissza, és
+`with_value`-szerkesztés után is megmarad — **javítanivaló nincs**, őr-teszt
+viszont nincs rá: **#2462**.
 
 ### 9.1 Az utoljára használt készlet és az alapértelmezett név
 
