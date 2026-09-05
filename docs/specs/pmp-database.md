@@ -2463,7 +2463,8 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 | hány ellenőrzőösszeg-mód van | ✅ **LEZÁRVA (2026-09-05)** — **kettő**; a 2. útvonal és méret nélküli, másodperc-felbontású (8.10) | — |
 | **mikor jut a 2. mód** | ✅ **LEZÁRVA (2026-09-05)** — három feltétel bármelyikére: a hívó 0-t ad · `Type = 0` · nincs szülő (`0x004e3bc2`/`0x004e3bcb`/`0x004e3bd7`) | — |
 | mit hasheli az 1. mód | ✅ **LEZÁRVA** — **két** sztringet: a szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátorba (`0x004e3bdd`–`0x004e3c0e`) | — |
-| **melyik hívó ad KIFEJEZETTEN 0-t** | **BLOKKOLT** — a kapcsoló a `CThumbDB` **34. rését** hívó kódból jön. **Megnézve:** a `call dword ptr [reg+0x88]` alakra 0 találat; a `mov reg,[reg+0x88]` 286 találatából **93** olyan, amit `call reg` követ — ezek túlnyomó része más osztály azonos eltolása | a 93 jelölt szűrése arra, melyik fogadó `CThumbDB`-példány másodlagos felülete (`this+0x54`), vagy a 11. szakasz felület-térképe |
+| **melyik hívó ad KIFEJEZETTEN 0-t** | ✅ **LEZÁRVA (2026-09-05)** — a `ret 0x18` (hat argumentum) szerint szűrve a 93 jelöltből **29** marad; ezekből **10 ad literál `0`-t**, 5 literál `1`-et, 14 futásidejűt. Két 0-s hívó (`FUN_0042f6a0`, `FUN_00793720`) teljesen elolvasva: `CThumbDB` másodlagos felület, **üres második sztringgel** | — |
+| mind a 29 jelölt `CThumbDB`-e? | **feltételes** — kettő megerősítve; a többinél a hívási minta azonos (`…, m, 1, 1, m, …`), de nincs külön igazolva | a fogadó típusának ellenőrzése hívóhelyenként |
 | **a nem egyező 615 sor oka** | **BLOKKOLT, de olcsóbb** | `Checksum₂` újraszámolása ugyanazon a katalóguson |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
@@ -2755,15 +2756,65 @@ külön összefűzés nélkül: a hurok (`0x006b9a12`–`0x006b9a9e`) a két
 sztringet egymás után hajtja bele ugyanabba az akkumulátorba. Aki
 kompatibilis gyorsítótárat ír, ezt a **sorrendet** kell eltalálnia.
 
+#### ⭐ KI kéri a 2. módot — legalább két hívó, ÜRES második sztringgel (2026-09-05, 121. kör)
+
+> **Bizonyítottsági fok: megerősített** a két teljesen elolvasott hívóra és
+> a számbavételre; **feltételes** arra, hogy a 29 jelöltből mind a
+> `CThumbDB` 34. rése.
+
+**A szűrés.** A `CThumbDB` 34. rését hívó kód `call dword ptr [reg+0x88]`
+alakban **nem** látszik (0 találat); regiszterbe töltve hív. A
+`mov reg,[reg+0x88]` **286** találatából **93**-at követ `call reg`. A
+metódus `ret 0x18` (`0x0042a844`) ⇒ **hat verem-argumentum**; a mód a
+**2.** (`[ebp+0xc]`), tehát a hívás előtti **5. push**. A 93-ból **29**
+gyűjt legalább hat pusht:
+
+| a 2. argumentum (a mód) | darab | néhány cím |
+|---|---:|---|
+| literál **`0`** | **10** | `0x004245eb` · `0x0042f6c0` · `0x0042f710` · `0x0043bc8e` · `0x0045a966` · `0x00481993` · `0x0064bea8` · `0x006a969f` · `0x006ac079` · `0x00793740` |
+| literál **`1`** | 5 | `0x0043bcfe` · `0x004aa47f` · `0x0065b180` · `0x0065b323` · `0x0065b3c3` |
+| regiszter (futásidejű) | 14 | `0x00424cd6` · `0x00425297` · … |
+
+**Két hívó teljesen elolvasva** — mindkettő `CThumbDB`, mindkettő 0-t ad:
+
+```asm
+; FUN_0042f6a0 (74 b)
+0x0042f6a3  push 0x00c7f979          ; ⇒ ÜRES sztring ("")
+0x0042f6b8  call 0x00985ff0          ; std::string felépítése belőle
+0x0042f6bd  mov  eax, [esi-4]        ; a MÁSODLAGOS felület vtáblája
+0x0042f6c0  mov  eax, [eax+0x88]     ; 34. rés
+0x0042f6c8  push edx                 ; arg6 = az ÜRES sztring
+0x0042f6cd  push 0                   ; arg5
+0x0042f6cf  push 1                   ; arg4
+0x0042f6d1  push 1                   ; arg3
+0x0042f6d3  lea  ecx, [esi-4]        ; this = a másodlagos felület
+0x0042f6d6  push 0                   ; arg2 = a MÓD  → 2. MÓD
+0x0042f6d8  push edx                 ; arg1
+0x0042f6d9  call eax
+```
+
+A `FUN_00793720` (70 b) **ugyanez a minta**, ugyanazzal az üres sztringgel
+(`0x00c7f979`) és ugyanazzal a `0`-val.
+
+⇒ **A 2. mód akkor jár, ha a hívónak nincs második sztringje.** Az 1. mód
+két sztringet hajt a hash-be (ld. lentebb); ha a második üres, a hashelés
+értelmetlen volna — a Picasa ilyenkor az **idő-alapú** összeget használja.
+A `0x00c7f979` **üres sztring** (a bájt a helyén `0x00`; a szomszédja a
+`"full"` literál), tehát ez nem következtetés, hanem kiolvasott érték.
+
 **Amit ez a lenti „nem egyező sorok" tételre jelent:** a 615 sor nem
 feltétlenül **elavult** — lehet, hogy **a 2. módban** íródott. ⚠️ **2026-09-05-i SZŰKÍTÉS:** a
 fenti szabály szerint a 2. mód automatikusan csak `Type = 0` vagy
 szülő nélküli bejegyzésre jut, a 615 sor viszont **mind fájl-típusú**
 (jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), tehát VAN szülőjük.
 ⇒ Náluk a 2. mód **csak úgy** jöhetett szóba, ha a hívó **kifejezetten
-0-t adott**. A versengő magyarázat tehát **nem dőlt meg, de szűkült**: nem
-elég a `Checksum₂`-t kiszámolni — azt is meg kell tudni, hogy melyik hívó
-ad 0-t. **Megszerzés:** (a) a `Checksum₂` újraszámolása a 615 sorra —
+0-t adott**. ⭐ **2026-09-05, 121. kör — ez a feltétel TELJESÜL:** a
+számbavétel szerint **tíz** hívóhely ad literál `0`-t, és a kettő közülük,
+amit teljesen elolvastam, **üres második sztringgel** hívja a 34. rést. ⇒ A
+2. mód **nem korlátozódik a szülő nélküli bejegyzésekre** — bármely
+bejegyzés kaphatja, ha a hívója így kéri. A magyarázat tehát **újra
+kiszélesedett**, és a döntő lépés megint a legolcsóbb: számold ki a
+`Checksum₂`-t a 615 sorra. **Megszerzés:** (a) a `Checksum₂` újraszámolása a 615 sorra —
 ha egyezik, kész; ha nem, a „elavult" magyarázat erősödik; (b) a
 `CThumbDB` 34. rés hívóinak azonosítása.
 
