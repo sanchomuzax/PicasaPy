@@ -164,6 +164,18 @@
         <translation>Nincs kiválasztva nyomtató.</translation>
     </message>
     <message>
+        <source>%1 — %2 × %3 mm, %4</source>
+        <translation>%1 — %2 × %3 mm, %4</translation>
+    </message>
+    <message>
+        <source>portrait</source>
+        <translation>álló</translation>
+    </message>
+    <message>
+        <source>landscape</source>
+        <translation>fekvő</translation>
+    </message>
+    <message>
         <source>No pictures to print.</source>
         <translation>Nincs nyomtatható kép.</translation>
     </message>

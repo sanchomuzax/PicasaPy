@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- A nyomtatási párbeszéden megjelenik, MILYEN LAPRA fog nyomtatni
+  (#2368) — papírnév, méret milliméterben és tájolás, a kiválasztott
+  nyomtató valódi lapbeállításából. Eddig ez a mező hiányzott,
+  pedig az eredetiben ott van a nyomtató neve mellett.
+
 ### Javítva
 
 - További nyolc jelölhető menüpont pipája sem tud már elszakadni a
