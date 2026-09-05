@@ -689,7 +689,7 @@ javításuk csökkenti a ΔE-t. Megvalósítás és mérés: **#2159**.
 **Bizalmi fok: megerősített** a vágásokra, a két sugár-képletre, a `ceilf`
 azonosítására és a 8.8-as szorzóra (mind közvetlen kiolvasás).
 
-##### A blur ÁTVÁLTÓJA (`0x00bb89b0`) — a gyakorlatban AZONOSSÁG
+##### A blur ÁTVÁLTÓJA (`0x00bb89b0`) — ÁTMÉRETEZÉSI ARÁNY (⛔ 2026-09-05: az „azonosság" HELYESBÍTVE, #2159)
 
 A hívó (`0x00bb8f70`) a maszképítő előtt mindkét blur-paramétert átengedi a
 `0x00bb89b0(p, d)` függvényen: `p` = a hívó **4. argumentuma** (`xblur`,
@@ -706,25 +706,56 @@ X = ((100 + d) − d·k) / p                   ; 0x00cf3a08 = 100,0
 return (X > 3,0) ? k : k · X / 3,0          ; 0x00c49618 = 3,0f, 0x00cf39f8 = 3,0
 ```
 
-**A gyakorlatban ez azonosság.** Reális blur-értékre `p < 255`, tehát
-`k = 1` és `X = 100/p`; a `X > 3` feltétel ekkor `p < 33,33`. A
-`filterdesc.xml` Glow-hívásainak blur-értékei ennél jóval kisebbek ⇒
-**a függvény pontosan `1,0`-t ad vissza, a képmérettől FÜGGETLENÜL.**
+⛔ **HELYESBÍTÉS (2026-09-05, #2159): NEM azonosság, és a `Vignette`/`Matte`
+épp a legfelső ágra esik.** A korábbi szöveg azt írta, hogy „a
+`filterdesc.xml` Glow-hívásainak blur-értékei jóval kisebbek 33,33-nál ⇒ a
+függvény pontosan 1,0-t ad". A `filterdesc.xml:1394` (`Vignette`) és `:1066` (`Matte`) szerint viszont
+`xblur = _sldrBlur.value · 0,02 · max(W,H) / 4` — a 2560×1702-es
+referenciaképen `Blur = 35` mellett ez **448,0**, `Blur = 50` mellett
+**640,0**. Nem kisebb 33,33-nál: **13–19-szer nagyobb 255-nél.** A helyes
+sor tehát mindkét effektre a táblázat **alsó** ága.
 
-| tartomány | visszatérés |
+Egy hiba a képletben is: az `X` nevezője **nem `p`, hanem `min(p, 255)`** —
+a `p ≥ 255` ágon a `0x00cf3a00` (**255,0f**) írja felül a paraméter-rekeszt
+(`0x00bb89fe`–`0x00bb8a08`), a `p < 255` ág pedig a `0x00bb8a4e`-en ugorva
+érintetlenül hagyja. Egységesen:
+
+```
+p'  = min(p, 255)                            ; 0x00cf3a00 = 255,0f
+k   = p' / p                                 ; 0x00cf39d0 = 255,0
+X   = ((100 + d) − d·k) / p'                 ; 0x00cf3a08 = 100,0
+f   = (X > 3) ? k : k·X/3                    ; 0x00c49618 = 3,0f, 0x00cf39f8 = 3,0
+```
+
+| tartomány | `f` |
 |---|---|
-| `p < 33,33` | **1,0** ← minden filterdesc-beli Glow ide esik |
+| `p < 33,33` | **1,0** (az egyetlen valódi azonosság) |
 | `33,33 ≤ p < 255` | `100 / (3·p)` |
-| `p ≥ 255` | `k = 255/p`, `X = ((100+d) − d·k)/p`, majd a fenti feltétel |
+| `p ≥ 255` | `255/p`, ha `X > 3` — a `Vignette`/`Matte` mindig ide esik |
 
-⇒ A maszképítőbe érkező `b` érték a **hívó saját blur-paraméterével**
-arányos, nem a képmérettel — a méretfüggést tehát **nem itt** kapja meg.
+##### Amire a visszatérés VALÓ: átméretezés, nem elmosás
 
-**Bizalmi fok: megerősített** (a függvény mind a 165 bájtja elolvasva, mind
-az öt konstans kiolvasva). ⚠️ Amit ez **nem** mond meg: hogy a
-`0x00bb914d` / `0x00bb9167` második szorzásában szereplő két bemenő
-paraméter a hívási lánc melyik szintjéről jön — az a `0x00bb8f70` hívóinak
-kérdése, nem ezé a lapé.
+Az `f` **nem** a blur szorzója, hanem a **munkapuffer léptéke**. Az egyetlen
+hívó (`0x00bb8f70`, `call_count = 2`) így használja:
+
+- `0x00bb8ff3`–`0x00bb9013` — **gyorsút**: csak akkor, ha **mindkét**
+  visszatérés pontosan `1,0` (`fld1`, majd két `fcom`);
+- különben `0x00bb91d3`: `fmul dword ptr [esp+0x24]` — az arányt megszorozza
+  a kép **float szélességével** (`0x00bb8f8b`-ben előállítva), majd
+  `fldcw | 0x0c00` + `fistp` (`0x00bb921a`) **csonkít egésszé**, és ez lesz a
+  munkapuffer mérete (`[esp+0xcc]`, `[esp+0xd0]`).
+
+⇒ **Nagy blurnál a Glow lekicsinyített képen dolgozik**, és a maszképítő
+`[0, 253]`-as vágása meg a 255-ös sugárkorlát **a lekicsinyített térben**
+érvényes. Teljes felbontásra visszaszámolva a korlát így épp visszaadja az
+eredeti nagyságrendet: `p ≥ 255`-re `p·f = 255` pontosan, tehát a
+lekicsinyített térbeli `255` a teljes felbontásban `255/f = p`.
+
+**Bizalmi fok: megerősített** az átváltó képletére és arra, hogy a
+visszatérés a puffer-méretet szorozza (mind a 165 + a hívó vonatkozó bájtjai
+elolvasva). ⚠️ **Feltételes** — és NEM olvastuk vissza —, hogy a
+maszképítőbe a **lekicsinyített térbeli** blur (`b = p·f`) érkezik; ezt csak
+a lenti három-pontos egyezés és a ΔE-mérés támasztja alá.
 
 #### A négy eltérés HATÁSA a mi kimenetünkre — mérve, mind a négy NEGATÍV (#2159)
 
@@ -769,6 +800,71 @@ ALAKJÁBAN ül.
 ⇒ **Egyiket sem építettük be.** A mi analitikus (`erf`-alapú) modellünk és
 az eredeti dobozmenetes maszképítője nem ugyanaz a számítás; a bináris
 konstansainak egyenkénti átemelése ezért nem közelít, hanem ront.
+
+##### ⛔ A „13× romlás" oka: a korlát a LEKICSINYÍTETT térben él (2026-09-05, #2159)
+
+A fenti tábla első sora (egész, lépcsős sugár → **13× romlás**) helyes
+mérés, de **rossz térben** végzett bevezetést mér. A korlátot teljes
+felbontásban alkalmazva a `Vignette` minden `Blur > 13,2` állása ugyanazt a
+sugarat kapja:
+
+| `Blur` | `xblur = Blur·0,02·2560/4` | 253-ra vágva | `r = min(255, ⌈(b−1)/2⌉·3+1)` |
+|---:|---:|---:|---:|
+| 10 | 128,0 | 128,0 | 193 |
+| 13 | 166,4 | 166,4 | 250 |
+| **14** | 179,2 | 179,2 | **255** ← innentől mind |
+| 20 | 256,0 | 253,0 | 255 |
+| 35 | 448,0 | 253,0 | 255 |
+| 50 | 640,0 | 253,0 | 255 |
+
+⇒ Teljes felbontásban a `Blur = 35` és a `Blur = 50` **azonos** kimenetet
+adna. **A golden ezt megcáfolja:** a két valódi Picasa-export egymáshoz
+képest **ΔE 10,233** (`Vignette default` vs `Vignette size max`,
+CIE76-átlag; a `Blur = 0` exporttól mérve 20,928, illetve 30,971). A mi
+mai modellünk hibája ugyanezeken **1,277** és **1,667** — a teljes
+felbontású bevezetés tehát 6–8-szoros visszalépés lenne.
+
+##### ⭐ A levezetett sugár — a `/8` konstans MÁR NEM szabad paraméter
+
+A lekicsinyítéssel a lánc végigszámolható, illesztés nélkül
+(`f` = az átváltó visszatérése, `b_red = p·f`, `rp = ⌈(min(b_red,253)−1)/2⌉`):
+
+| `Blur` | `xblur = p` | `f` | lekicsinyített szélesség | `b_red` | `rp` | `rp/f` (teljes felb.) | a mi sugarunk (`p/2`) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 10 | 128,0 | 0,26042 | 666 | 33,33 | 17 | 65,3 | 64,0 |
+| 35 | 448,0 | 0,56920 | 1457 | 255,0 → 253 | 126 | 221,4 | 224,0 |
+| 50 | 640,0 | 0,39844 | 1020 | 255,0 → 253 | 126 | 316,2 | 320,0 |
+
+Három **független** Blur-álláson 1–2%-os egyezés a mi eddig **illesztett**
+`VIGNETTE_RADIUS_FACTOR = 0,02/8` konstansunkkal. Az egyezés nem véletlen:
+`p/2 = ⌈(p−1)/2⌉` egész `p`-re, vagyis a mi „sugarunk" pontosan az eredeti
+**menetenkénti dobozsugara**. És mert `quality = 3` dobozmenet szórása
+`σ = √(r(r+1)) ≈ r`, a mi `erf`-modellünk `σ = r`-rel épp ezt a hármas
+dobozláncot közelíti — ezért illeszkedett a mérés a `/8`-ra, és ezért NEM
+a `filterdesc` `/4`-ére.
+
+⇒ **A `/8` levezetett érték, nem illesztett.** A `glimmer_tone.py:78`
+kommentje eddig „valódi Picasa-exportokon mért illesztésre" hivatkozott;
+ez a levezetés váltja ki.
+
+**Amit a levezetett sugár MÉR** (ugyanaz a szett, CIE76-átlag ΔE):
+
+| eset | mai `r` | levezetett `r` | ΔE ma | ΔE levezetett |
+|---|---:|---:|---:|---:|
+| `Vignette default` | 224,0 | 221,4 | 1,277 | **1,225** |
+| `Vignette size max` | 320,0 | 316,2 | 1,667 | **1,552** |
+| `Vignette strenght max` | 224,0 | 221,4 | 1,315 | **1,309** |
+| `Vignette strenght min` | 224,0 | 221,4 | 1,109 | 1,116 |
+
+Négyből háromban javít, egyben 0,007-tel ront; átlag **1,342 → 1,301**. A
+nyereség kicsi — az érték a levezetettségben van, nem a 3%-ban.
+
+**Alapmérés (a #2159 első „Kész, ha" pontja), a mai modell, CIE76-átlag ΔE
+a valódi exporthoz:** `default` 1,277 · `size max` 1,667 · `size min` 0,000 ·
+`strenght max` 1,315 · `strenght min` 1,109 · `fade max` 0,000 ·
+`strenght mid` 1,304 (a csúszka-állás FELTEVÉS: 1,5) · `fade mid` 1,301
+(FELTEVÉS: 50). Forrás: `referencia/lomo/Lomo no effect/…` — a `size min` és
+a `fade max` export bájtra ezzel azonos, ami a forrásválasztást is igazolja.
 
 #### A csempe MÁSODIK szűrője: a SHIFT kapcsolja be (#2141)
 
