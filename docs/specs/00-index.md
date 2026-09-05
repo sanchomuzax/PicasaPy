@@ -505,7 +505,7 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 5 BLOKKOLT tétel (a `text=` stílusblokk, a `rotate(0)` és a legacy `crop=`)
+### [picasa-ini-format.md](picasa-ini-format.md) — 3 BLOKKOLT tétel (a `text=` stílusblokk és a `rotate(0)`; a legacy `crop=` 2026-09-05-én LEZÁRULT)
 
 ⛔ **2026-09-02 — SAJÁT HELYESBÍTÉS a `geotag` írásán:** a lap írási-sorrend
 táblája azt állította, hogy a kulcsnak „két ága" van (`%lf %lf` **vagy**
@@ -524,13 +524,28 @@ a korpusz **761/761** `crop=` sora már `rect64` ⇒ a tulajdonos gyűjteménye
 teljesen migrált. Nálunk a régi alak `ValueError`-t adna
 (`ini/rect64.py:28`) → **#2008** (P4, megelőző).
 
-1. **Melyik szám melyik koordináta a régi alakban?** A `sscanf` kimeneti
-   címeinek veremre pakolása ezen a szinten nem fejthető ki.
-   **Megszerzés:** a `0x004221b0` dekompilációja, **vagy** egyetlen régi
-   `.picasa.ini` ismert vágású képpel. **A #2008 addig nem indítható.**
-2. **Mi lesz a `crop=` sorral a migráció után** (átírja / törli /
-   meghagyja)? A korpusz csak a végállapotot mutatja. **Megszerzés:**
-   ugyanaz a régi minta, migráció előtti és utáni fájllal.
+⭐ **2026-09-05 — MINDKÉT tétel LEZÁRVA, dekompiláció NÉLKÜL** (helyi
+diszasszemblátum + verem-eltolás visszaszámolása):
+
+1. ✅ **A mezőfelosztás:** `crop=<ELDOBOTT>,<bal>,<felső>,<jobb>,<alsó>;`
+   **képpontban**, az eredeti kép `W × H` méretéhez viszonyítva. Három
+   független bizonyíték: az alapérték-blokk (`0x004222e8`: `0,0,0,-1,-1`),
+   a metszés `max/max/min/min` iránya (`0x00422491` → `FUN_009b4960`), és
+   a tartomány-ellenőrzés (`0x004224b0`–`0x00422500`: `bal<jobb`,
+   `felső<alsó`, `bal≥0`, `felső≥0`, `jobb≤W`, `alsó≤H`). Kontroll: a
+   csomagolás `bal<<48|felső<<32|jobb<<16|alsó` — a `rect64` sorrendje.
+   ⇒ **a #2008 megvalósíthatóvá vált** (a `blocked` címke levéve).
+2. ✅ **Az ELSŐ számot a Picasa 3 ELDOBJA** — az `E+0x50` rekeszbe olvassa,
+   `0`-ra állítja, és a 2547 bájtos törzsben **egyetlen utasítás sem
+   olvassa vissza** (kimerítő eltolás-ellenőrzés a lapon).
+3. ✅ **A `crop=` sor kiírása:** a Picasa 3 **csak** `crop=rect64(%s)`
+   alakot ír (`0x00ca786c`), és **0 értéknél a sort elhagyja**
+   (`0x0068b610`: `or eax,esi ; je`). Nálunk ez **egyezik** (mérve:
+   `app/edit_controller.py:2032` `with_removed(..., "crop")`). Hogy egy
+   legacy-migráció után a sor eltűnik-e, **erős következtetés** — a
+   falszifikáláshoz migráció előtti/utáni fájlpár kell.
+
+Lap: `picasa-ini-format.md`, „A LEGACY `crop=` alak" szakasz; jegy **#2008**.
 
 
 ⭐ **2026-09-02 (2. kör) — az ini ÍRÓJA két függvény, és van egy
