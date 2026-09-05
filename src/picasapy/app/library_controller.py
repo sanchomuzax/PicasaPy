@@ -1087,6 +1087,11 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             )
             return ()
 
+    #: #1977: a `@Slot()` NÉLKÜL a QML `controller.rescan()` hívása
+    #: `TypeError: … is not a function`-nel elszáll — a „Frissítés"
+    #: menüpont némán nem csinál semmit. A dekorátor a #150-es
+    #: mixin-felbontáskor még megvolt (`8de1358e`), azóta kiesett.
+    @Slot()
     def rescan(self) -> None:
         """Teljes újrapásztázás — az ötperces időzítő és a „Frissítés" menü.
 

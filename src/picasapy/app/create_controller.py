@@ -348,7 +348,6 @@ class CreateMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-collage")
 
-    @Slot(list, str, int, float)
     def _alapertelmezett_film_cel(self, sources) -> Path:
         """A film célfájlja, ha a felhasználó nem adott meg egyet (#1977).
 
@@ -371,6 +370,15 @@ class CreateMixin(BackgroundWorkerMixin):
         cim = next(iter(szulok)).name if len(szulok) == 1 else ""
         return movie_output.output_path(mappa, cim)
 
+    #: #1977 REGRESSZIÓ (#2185): ez a dekorátor korábban ITT állt, de a
+    #: `_alapertelmezett_film_cel` beszúrása ALÁJA került, és így a
+    #: PRIVÁT segítő kapta meg a slotot — az `exportMovie` pedig
+    #: kiesett a meta-objektumból, tehát a QML `controller.exportMovie(…)`
+    #: hívása nem érte el. A Mozgófilm-párbeszéd OK gombja így
+    #: NÉMÁN nem csinált semmit. Mérve: `staticMetaObject`-ben
+    #: `_alapertelmezett_film_cel(QVariantList,QString,int,double)`
+    #: szerepelt, `exportMovie` nem.
+    @Slot(list, str, int, float)
     def exportMovie(
         self, rows, target_url: str, height: int, seconds_per_photo: float
     ) -> None:

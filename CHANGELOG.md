@@ -16,6 +16,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- A **Mozgófilm létrehozása** és a **Frissítés** menüpont OK gombja némán
+  nem csinált semmit (#1977) — a két vezérlő-metódus nem volt elérhető a
+  kezelőfelületről. Mindkettő újra működik, és őr méri, hogy ne
+  fordulhasson elő újra.
+
 - **Visszavonva:** a menüpont-feliratok behúzásán változtató javítás
   (#1750) kikerült. Linuxon helyes volt, Windowson viszont túl beljebb
   tolta ugyanazokat a feliratokat, mint amennyivel korábban kijjebb
