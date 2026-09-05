@@ -204,31 +204,51 @@ mond. A helyes cél a **`FUN_00608da0`**.
 `thumbui/webcambutton`-t.** A `single_action_return` gombra sem
 `Property throb 1` a `.tre`-ben, sem névvel megcímzett parancs nincs.
 
-**✅ LEZÁRVA (2026-09-05, 125. kör) — a visszatérő gomb NEM villog.**
-A két név nélküli bekapcsoló (`0x00609251`, `0x00609605`) ugyanabban a
-`FUN_00608da0`-ban ül, és az **nem** egy meglévő felületi elemre hat:
+⛔ **MEGDŐLT (2026-09-05, 129. kör) — a visszatérő gomb IGENIS villog.**
 
-| lépés | bizonyíték |
-|---|---|
-| a függvény **új objektumot gyárt** | `0x00608db1`: `push 0x420` (1056 bájt) → `call 0x0097c5d0` (foglalás), majd `0x00608dca`: `call 0x00608700` (konstruktor) |
-| kié a függvény | a `0x00608da0` mutatója a `.rdata`-ban **egyszer** áll: `0x00c80594` ⇒ vtábla-fej `0x00c8058c`, **2. rés** |
-| melyik osztályé | a vtábla −4 helyén a COL `0x00cf853c`, `offset = 0` ⇒ **`ytPopupListNodeCreator`** |
+A 125. kör azt zárta le, hogy a `single_action_return` nem villog, és hogy a
+negyedik (`_t`) bőr rajta „használatlan". **Mindkettő téves.** A
+`runtime/respack.yt` kötése szó szerint:
 
-⇒ A két bekapcsolás a **frissen létrehozott felugró-lista tételre** hat,
-nem a `thumbui` sávjában álló, `.tre`-ből származó gombra. A
-`single_action_return` **nem lehet** a célpontjuk.
+```
+layer:thumbui/superbutton(button_text_center_throb, single_action_return): single_action_return
+```
 
-**Ezzel a teljes bizonyítás:** a gombra (a) a `.tre` nem ír
-`Property throb 1`-et, (b) nincs rá névvel megcímzett `eThrobOff`/throb
-parancs (a binárisban egyetlen elemnév van, a `thumbui/webcambutton`), és
-(c) a két név nélküli bekapcsoló más objektumfajtára hat. ⇒ **A visszatérő
-gomb villogása kizárva.** A negyedik (`_t`) bőr rajta **használatlan**.
+⇒ a gomb stílusa **`button_text_center_throb`**, tehát VAN negyedik
+állapotképe, és a `ytPopupListNodeCreator` feltétele (lásd alább) épp ettől
+kapcsol villogást.
 
-⚠️ **Amit ez NEM mond meg** (mérve nincs, és NEM is ennek a lapnak a
-kérdése): **melyik** felugró-lista tétel villog és **mikor** — a feltétel
-(`[esp+0x168]`, illetve `[esp+0xb8]`) a `FUN_00608da0` helyi rekesze,
-amelyet egy korábbi hívás tölt fel. A `ytPopupListNodeCreator`
-viselkedése külön téma.
+**Miért tévedett a 125. kör — a mechanizmus, nem a figyelmetlenség.** A
+stílus↔elem kötés **nincs benne a `.tre` szövegekben**: a 141 `.tre`
+erőforrásból 89-et semmi nem `#include`-ol, és a stílusnevekre
+(`button_text_LC`, `buttcon_LS_text_RC`, …) **nulla** hivatkozás van a `.tre`
+halmazban. *(Kontroll: a panel-fájlok nevére VAN hivatkozás — a nulla tehát
+nem a keresés hibája.)* A kötés csak a `respack.yt`-ben él. A 125. kör három
+forrást járt végig (`.tre` `Property throb 1`, névvel megcímzett parancs, a
+két név nélküli bekapcsoló célja) — mindhárom helyesen adott nemet, de
+**egyik sem az a hely, ahol a kötés van**.
+
+**A helyes válasz — a feltétel kimérve.** A `ytPopupListNodeCreator`
+(`FUN_00608da0`) a csomópont építésekor négy 40 bájtos állapotképet másol az
+elemből (`elem+0x264` `_n`, `+0x28c` `_p`, `+0x2b4` `_h`, `+0x2dc` **`_t`**),
+majd mindkét hívóhelyén (`0x00609248`, `0x006095fc`) megnézi a **negyedik**
+kép szélesség-mezőjét, és nem nulla értéknél
+`mov byte ptr [elem+0x35b], 1`-et ír (`0x00609251`, `0x00609605`).
+
+⇒ **Egy elem akkor és csak akkor villog, ha a stílusa ad neki `_t`
+állapotképet.** A `single_action_return` ilyen. A 125. kör „új objektumot
+gyárt" megfigyelése igaz volt, de nem zárja ki a `.tre`-ből származó
+elemeket: a felugró-lista csomópontja ugyanígy hordozza a négy állapotképet.
+
+A teljes levezetés, a 13 villogó elem név szerinti listájával és a
+mezőazonosítás bizonyítékaival:
+[`picasa-gomb-es-menu-rendszer.md`](picasa-gomb-es-menu-rendszer.md),
+„A »throb« (villogó) stílus" szakasz. Jegy: **#2438**.
+
+*(Ami a 125. körből ÁLL: a jelző az `elem+0x35b`; az `eThrobOff` csak törli
+(`0x00601eb0`); a binárisban egyetlen elemnév szerepel throb-parancsban
+(`thumbui/webcambutton`); és a `FUN_00608da0` a `ytPopupListNodeCreator`
+2. rése (`0x00c80594` → vtábla `0x00c8058c`, COL `0x00cf853c`).)*
 
 
 
@@ -260,7 +280,7 @@ A „nálunk" oszlop **mérés** a `9a4f98ac` main-en.
 | mit tesz a ✕ | **LEZÁRVA** — csak elrejti a sávot (`hidetarget`), 2.3 |
 | hol van a sáv | **LEZÁRVA** — az alsó sávban, a kimeneti gombok fölött, 2.4/3.1 |
 | a sáv mérete | **LEZÁRVA** — a tároló kényszer-vezérelt, a tartalma fix, 3.1–3.2 |
-| villog-e a visszatérő gomb | ✅ **LEZÁRVA (2026-09-05), NEGATÍVAN** — a két név nélküli throb-bekapcsoló a `ytPopupListNodeCreator` **2. rése** (`0x00c80594` → vtábla `0x00c8058c`, COL `0x00cf853c`), és **frissen gyártott felugró-lista tételre** hat (`push 0x420` + konstruktor), nem `.tre`-elemre ⇒ a `single_action_return`-t nem érintheti. Korábbi állapot: — a throb jelző az `elem+0x35b`; a `.tre` állítja be, az `eThrobOff` parancs **csak törli** (`0x00601eb0`); futásidőben három hely kapcsolja be, ebből **egy névvel** — és az a `thumbui/webcambutton`. A binárisban `eThrobOn` **nincs**, és a visszatérő gombot **semmi nem nevezi meg**. ⛔ A korábban javasolt `0x00601090` **zsákutca** (az a parancs-diszpécser, csak töröl). **Új út:** a `FUN_00608da0` (virtuális metódus, 0 közvetlen hívó) vtábla-résének felderítése. 3.3 |
+| villog-e a visszatérő gomb | ✅ **LEZÁRVA (2026-09-05, 129. kör), IGENLŐEN** — a `respack.yt` kötése `layer:thumbui/superbutton(button_text_center_throb, single_action_return)` ⇒ VAN `_t` állapotképe, és a `ytPopupListNodeCreator` épp ettől kapcsol villogást (`0x00609248`/`0x006095fc`: a negyedik kép szélesség-mezője ≠ 0 ⇒ `elem+0x35b := 1`). ⛔ **A 125. kör NEGATÍV lezárása megdőlt**; az ok: a stílus↔elem kötés nincs a `.tre` szövegekben, csak a respackben. Teljes levezetés + a 13 villogó elem: `picasa-gomb-es-menu-rendszer.md`. Jegy **#2438**. 3.3 |
 
 ## 6. Amit KIZÁRTAM
 
@@ -275,7 +295,7 @@ A „nálunk" oszlop **mérés** a `9a4f98ac` main-en.
 *Bizonyítottsági fok: **megerősített** a belépési pontokra, a három
 változatra, a feliratokra és a ✕ viselkedésére (mind deklaratív vagy
 szövegtári forrásból); **erős** a kijelölés → tálca útra (a felirat + a
-tálca már mért szerződése); a throb **mechanizmusa 2026-09-05 óta mérve** (a jelző `elem+0x35b`, a be/ki kapcsolók címmel); a *visszatérő gombra* vonatkozó bekapcsolás **továbbra sincs mérve**.*
+tálca már mért szerződése); a throb **mechanizmusa 2026-09-05 óta mérve** (a jelző `elem+0x35b`, a be/ki kapcsolók címmel); a *visszatérő gombra* vonatkozó bekapcsolás **2026-09-05 óta mérve**: a gomb stílusa `button_text_center_throb` (respack-kötés), ezért **VILLOG** — a 125. kör negatív lezárása megdőlt (3.3).*
 
 ---
 
