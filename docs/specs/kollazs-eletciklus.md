@@ -1048,6 +1048,57 @@ a `+0x48 = 0`-t és a `+0x54`/`+0x58`/`+0x5c`/`+0x60` nullákat.
 **A következő lépés (konkrétan):** a `+0x64`/`+0x68` **olvasói** — azok
 adják át a tömbnek. Ugyanaz a szűrő, mint fent, csak `fld` iránnyal.
 
+### 17.13 ⭐ A LÁNC ÖSSZEÁLLT — és ezzel a `scale` KÉT lehetséges forrása marad
+
+Az előző szakasz „hiányzó láncszemét" ugyanez a kör megtalálta. A
+`+0x64`/`+0x68` **olvasói**: az egész binárisban a `fld dword [reg+0x68]`
+alakra **két** függvény van, a `+0x64`-re **öt**; a kollázs-sávban
+**mindkettőre pontosan egy és ugyanaz**: **`FUN_00833920`** (911 b) —
+`0x008339aa` (`fld [ebx+0x64]` → `[esp+0x40]`) és `0x008339b7`
+(`fld [ebx+0x68]` → `[esp+0x44]`).
+
+**Ez a csomópont-tömb `push_back`-je:**
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| kapacitás-növelés | `0x00833a92` (`mul 0x38`) → `0x00833aad` (`operator new`) | **56 bájtos** elemek |
+| a régi elemek átmásolása | `0x00833af0`–`0x00833b09` (`call 0x008341b0`, lépés `add edi, 0x38`) | a csomópont `operator=`-ével |
+| **az új elem feltöltése** | `0x00833b3c`–`0x00833b54`: `[ebx+4] >> 1` = darabszám, `lea eax,[edx + ecx*8]` (= `adat + darab × 56`), majd `call 0x008341b0` egy **helyi** csomópontból | a `+0x64`/`+0x68`-ból staged `theta`/`scale`-lel |
+
+⇒ **A teljes lánc:** `.cxf` szöveg → a beolvasó a gyűjtemény-objektum
+**staging-mezőibe** ír (`+0x64` = `theta`, `+0x68` = `scale`) → a
+`push_back` (`FUN_00833920`) ezekből épít egy helyi csomópontot, és a tömb
+végére másolja (`+0x28`/`+0x2c`) → innen olvassa a `.cxf`-író.
+
+### 17.14 ⛔ Amit ez KIMOND — és mi nem áll össze
+
+A pásztázások együtt (17.7, 17.8, 17.10, 17.13) ezt adják: a `Picasa3.exe`-ben
+a csomópont `scale`-je **csak két helyről** kaphat értéket —
+
+1. a **téma-elrendezőktől**, és ott **állandó `1,0`**
+   (`0x0088522d`, `0x008885bc`, mindkettő `fld1`);
+2. a **beolvasótól**, azaz a **fájl saját értékéből** (a staging-mezőn át).
+
+**Számoló írót egyik pásztázás sem talált.**
+
+⚠️ **És itt egy ELLENTMONDÁS marad, amit ki kell mondani:** a mintáinkban
+`313` és `330` áll, nem `1,0`. Vagyis vagy
+
+- **(a)** a `.cxf`-jeink értéke egy korábbi fájlból származik, és a
+  szerkesztő csak visszaírta *(ekkor egy FRISSEN létrehozott kollázs
+  `scale`-je `1.000000` volna)*, vagy
+- **(b)** van egy író, amit az eltolás-alapú pásztázás **nem lát** — például
+  **mutatón** át (`lea r,[r+0x2c]`, 10 hely a sávban, 17.10/2.), vagy egy
+  olyan tömb-báziscímen, amit nem ismerünk fel.
+
+**A döntő, OLCSÓ mérés: egy ÚJONNAN létrehozott kollázs `.cxf`-je.** Ha ott
+`scale="1.000000"` áll, az **(a)** igazolt, és a 313 kérdése átfordul arra,
+hogy melyik korábbi program írta. Ha nem 1,0, akkor **(b)**, és a mutatós
+utat kell végigvinni.
+
+> **Bizonyítottság:** **megerősített** a lánc minden lépése (címekkel) és a
+> két forrás; **kimondottan nyitott** az ellentmondás feloldása.
+
 **Mi döntené el (kiegészítve 2026-09-05):** elsősorban a 17.10 két gépi
 lépése; a **fekvő** tájolású `contactsheet`-minta (a meglévő AI6 álló)
 független megerősítés maradna. → **#1412** (`ready` + `bináris-kutatható`).
