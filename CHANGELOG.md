@@ -23,8 +23,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - **A panel fő gombja most már finoman villog** (#2438) — ahogy az eredeti
   Picasában. Ez mutatja meg, melyik gombra kell nyomni a művelet
-  befejezéséhez: a kollázs „Kollázs létrehozása" és a klipgyűjtő „Vissza"
-  gombja pulzál, amíg rá nem kattintasz. A keret színe váltakozik, a gomb
+  befejezéséhez: egyelőre a klipgyűjtő „Vissza" gombja pulzál, amíg rá nem
+  kattintasz. A keret színe váltakozik, a gomb
   többi része változatlan.
 
 - *(Előkészítés, ma még nem látszik.)* Kiszámoljuk a Picasa
