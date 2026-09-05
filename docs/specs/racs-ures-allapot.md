@@ -175,7 +175,59 @@ elemét is megtalálja; az őr-teszt:
 | ki állítja a szöveget | **LEZÁRVA** — `0x00676b10`, indexszel (2.1) |
 | miért két „nem távolítható el" szöveg | **LEZÁRVA** — `LastUserESState` (`0x00431290`) váltja a márkanevet (2.1) |
 | hol és milyen betűvel jelenik meg | **LEZÁRVA** — a rács közepén, `m_displayfont18_Reg` (3.) |
-| **melyik kontextus melyik indexet adja** | **BLOKKOLT** — a két közvetlen hívóból egy immediate (`push 3`), a másik **számított** (`0x0067b285`, `push edx`). Az olcsó lánc kimerült: a `.tre` nem mondja meg, a szövegtár sem, a sztring-xref a négy függvényt adja, és mind a négyet elolvastam. **Megszerzés:** a `0x00679ca0` (6960 b) közzététel-panel célzott dekompilációja. **A megvalósítást nem blokkolja:** a „nincs találat" ág az index **0**, az immediate-tel igazolt ág az index 3. |
+| **melyik kontextus melyik indexet adja** | ✅ **LEZÁRVA (2026-09-05)** — a számított ágat **háromágú névösszevetés** állítja: `publish/rpoptionbox1` → mód 1 → index **3**; `rpoptionbox2` → mód 2 → index **4**; `rpoptionbox3` → mód 3 → index **5** (`0x0067b171` · `0x0067b1dc` · `0x0067b237`). Dekompiláció nem kellett. Ld. 5/b. |
+| a 0 · 1 · 2 index hívója | **feltételes** — a 0 az immediate-tel igazolt alapeset; az 1 a mentés-, a 2 a CD-ághoz tartozik a szövegük szerint, de ez **következtetés**. A megvalósítást nem érinti (mindkét ág a mi hatókörünkön kívül van, ill. még nem épült meg). |
+
+## 5/b ✅ MELYIK KONTEXTUS MELYIK INDEXET ADJA — LEZÁRVA (2026-09-05)
+
+> **Bizonyítottsági fok: megerősített.** A számított hívóhely
+> (`0x0067b285`, `push edx`) elé vezető **három** összehasonlítás
+> utasításról utasításra elolvasva. Dekompiláció nem kellett.
+
+A `push edx` értékét egy **háromágú névösszevetés** állítja be: a
+közzététel-panel megnézi, **melyik rádiógomb van kiválasztva**, és abból
+következik a panel üzemmódja (`[objektum+0xd4]`) **és** az üres rács
+szövegindexe. Mindhárom összevetés 21 bájtos (`mov ecx, 0x15` + `repe cmpsb`,
+majd `cmp` a sztringcímre):
+
+```asm
+0x0067b171  cmp ecx, 0x00ca4554   ; "publish/rpoptionbox2"
+0x0067b17e  mov dword ptr [ebx+0xd4], 2
+0x0067b188  mov edx, 4
+
+0x0067b1dc  cmp ecx, 0x00ca456c   ; "publish/rpoptionbox1"
+0x0067b1e9  mov dword ptr [ebx+0xd4], 1
+0x0067b1f3  mov edx, 3
+
+0x0067b237  cmp eax, 0x00ca4584   ; "publish/rpoptionbox3"
+0x0067b243  mov dword ptr [ebx+0xd4], 3
+0x0067b24d  mov edx, 5
+
+0x0067b27e  push edx
+0x0067b285  call 0x00676b10       ; a szövegválasztó
+```
+
+| kiválasztott rádiógomb | panel-mód (`+0xd4`) | szövegindex | a szöveg (2.) |
+|---|---:|---:|---|
+| `publish/rpoptionbox1` | 1 | **3** | *All photos have been uploaded* |
+| `publish/rpoptionbox2` | 2 | **4** | *All photos currently online have these settings* |
+| `publish/rpoptionbox3` | 3 | **5** | *No photos can be removed from Picasa Web Albums* |
+
+*(Az **5** és a **6** ugyanaz a mondat, márkanévben eltérve — a `0x00676b10`
+a `LastUserESState`-től függően cserél, ld. 2.1. A minta:
+**szövegindex = panel-mód + 2**.)*
+
+**Független megerősítés egy MÁSIK lapról.** A `biztonsagi-mentes.md` 14.
+szakasza kimondja, hogy a `respack.yt` zárójeles rétegneve helyőrző, és a
+**harmadik** `label_rpoptionbox` valódi funkciója **az online elemek
+eltávolítása**. Ez pontosan a most kimért **5-ös** szöveg
+(*„No photos can be removed…"*) — két, egymástól független úton ugyanaz.
+
+**Ami ebből NEM következik:** a maradék három szöveg (0, 1, 2) hívóját ez
+nem adja meg. A **0** (*No photos found*) az immediate-tel igazolt
+alapeset; az **1** (*All Files are backed up in this set*) a mentés-ághoz,
+a **2** (*No photos found for cd*) a CD-ághoz tartozik a szövegük szerint —
+**ez az egy lépés következtetés**, nem mérés.
 
 ## 6. Amit KIZÁRTAM
 

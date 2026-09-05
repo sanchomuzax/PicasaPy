@@ -683,7 +683,7 @@ blokkolt részkérdéséből **három lezárva**. Helyesbítés: az 51.3
 „nálunk nincs" állítása **elavult** (a #1808 azóta megépítette, a #1911
 vette ki a gombot). Jegy-komment: **#1911**, **#460**.
 
-### [racs-ures-allapot.md](racs-ures-allapot.md) — 1 BLOKKOLT tétel (ÚJ, 2026-09-02)
+### [racs-ures-allapot.md](racs-ures-allapot.md) — nincs BLOKKOLT tétel (2026-09-05-én lezárult)
 
 ⭐ **2026-09-02:** a `thumbui` `lightbox_esolo_*` párja **HALOTT** az
 eredetiben (nyers bájtkeresés: 0 találat; pozitív kontroll a testvér
@@ -692,11 +692,18 @@ eredetiben (nyers bájtkeresés: 0 találat; pozitív kontroll a testvér
 `picasa-menu-parancsok-viselkedes.md` 51.4 „kis jegy értéke lehet" sora.
 Jegy: **#1945**.
 
-1. **Melyik kontextus melyik szöveg-indexet adja?** A két közvetlen hívóból
-   egy immediate (`push 3` = „All photos have been uploaded"), a másik
-   **számított** (`0x0067b285`). **Megszerzés:** a `0x00679ca0` (6960 b)
-   közzététel-panel célzott dekompilációja. Lap: `racs-ures-allapot.md` 5.;
-   jegy **#1945**.
+⭐ **2026-09-05 — a számított ág LEZÁRVA, dekompiláció nélkül.** A
+`push edx` értékét **háromágú névösszevetés** állítja be (21 bájtos
+`repe cmpsb`): `publish/rpoptionbox1` → panel-mód 1 → szövegindex **3**
+(*All photos have been uploaded*) · `rpoptionbox2` → mód 2 → **4**
+(*All photos currently online have these settings*) · `rpoptionbox3` →
+mód 3 → **5** (*No photos can be removed from…*). Címek: `0x0067b171`,
+`0x0067b1dc`, `0x0067b237`; a hívás `0x0067b285`. A minta:
+**szövegindex = panel-mód + 2**. ⭐ **Független megerősítés a
+`biztonsagi-mentes.md` 14. szakaszából:** a harmadik `label_rpoptionbox`
+valódi funkciója az **online elemek eltávolítása** — pontosan az 5-ös
+szöveg. ⚠️ A 0 · 1 · 2 index hívója **feltételes** marad (a 0 az
+immediate-tel igazolt alapeset). Jegy-komment: **#1945**.
 
 ### [biztonsagi-mentes.md](biztonsagi-mentes.md) — 1 BLOKKOLT tétel
 
