@@ -1794,6 +1794,10 @@ Column {
                 anchors.right: traySingleActionClose.left
                 anchors.rightMargin: 3
                 accent: Theme.picasaGreen
+                // #2438: az eredetiben ez a `thumbui/single_action_return`, a
+                // 13 pulzáló elem egyike — a klip-gyűjtő módban EZ a fő
+                // cselekvés, tehát ez mutatja meg, hol lehet visszalépni.
+                throbbing: true
                 text: qsTr("Back to Collage")
                 ToolTip.text: qsTr("Go back to what you were editing")
                 ToolTip.visible: hovered

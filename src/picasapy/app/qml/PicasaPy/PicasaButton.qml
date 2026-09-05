@@ -93,9 +93,63 @@ Button {
     //: nincs lenyomva, és nem az akcentusos (zöld) változat
     readonly property bool showingHoverShade:
         control.hovered && !control.down && !control.accented
-    readonly property color borderColor: control.accented
+    readonly property color nyugalmiKeret: control.accented
         ? Qt.darker(control.accent, 1.3)
         : (control.checked ? Theme.buttonToggledBorder : Theme.buttonBorder)
+
+    // --- #2438: a panel FŐ gombja PULZÁL -------------------------------
+    //
+    // Az eredetiben minden panel fő cselekvésének gombja lassan villog
+    // („throb" állapot, a `respack.yt` `superbutton` kötéslistájának 13
+    // eleme). Ez NEM díszítés: ez mondja meg a felhasználónak, melyik
+    // gombra kell nyomnia a művelet befejezéséhez.
+    //
+    // A pulzálás a KERETET mozgatja, a kitöltést nem — az eredeti `_t`
+    // állapotképe is csak a keretben tér el a nyugalmitól.
+    //
+    // ⚠️ AZ ÜTEM NINCS MÉRVE. A `_t` kép a végállapotot adja meg, a
+    // periódust és a görbét nem. A választott 1600 ms oda-vissza,
+    // `Easing.InOutSine` — visszafogott és egyenletes; ha egyszer valaki
+    // lemér egy képernyőfelvételt, EZT a két számot kell cserélni.
+    property bool throbbing: false
+
+    //: Kattintás után a pulzálás leáll: a gomb elvégezte a dolgát.
+    //: Ha a hívó újra `throbbing: true`-t állít, újraindul.
+    property bool _throbMegnyomva: false
+    onThrobbingChanged: control._throbMegnyomva = false
+    // ⚠️ NEM `onClicked:` a komponensben! A használati hely saját
+    // `onClicked`-je FELÜLÍRNÁ, és a legtöbb gombnak van sajátja — a
+    // pulzálás így épp azokon nem állna le, ahova szántuk. A `Connections`
+    // a jelzésre köt, nem a kezelő-résre, tehát nem ütközik.
+    Connections {
+        target: control
+        function onClicked() { control._throbMegnyomva = true }
+    }
+
+    readonly property bool throbFut:
+        control.throbbing && control.enabled && !control.down
+        && !control._throbMegnyomva
+
+    property color _throbSzin: control.nyugalmiKeret
+
+    SequentialAnimation on _throbSzin {
+        running: control.throbFut
+        loops: Animation.Infinite
+        alwaysRunToEnd: true
+        ColorAnimation {
+            to: "#629BC3"
+            duration: 800
+            easing.type: Easing.InOutSine
+        }
+        ColorAnimation {
+            to: control.nyugalmiKeret
+            duration: 800
+            easing.type: Easing.InOutSine
+        }
+    }
+
+    readonly property color borderColor:
+        control.throbFut ? control._throbSzin : control.nyugalmiKeret
     // #893: a letiltott gomb felirata NEM kap külön szürkítést. Az
     // eredetiben a felirat a gomb gyerekcsomópontja, tehát ugyanazt a
     // negyedelt alfát örökli — a szín maga változatlan marad.

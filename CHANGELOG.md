@@ -21,6 +21,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A panel fő gombja most már finoman villog** (#2438) — ahogy az eredeti
+  Picasában. Ez mutatja meg, melyik gombra kell nyomni a művelet
+  befejezéséhez: egyelőre a klipgyűjtő „Vissza" gombja pulzál, amíg rá nem
+  kattintasz. A keret színe váltakozik, a gomb
+  többi része változatlan.
+
 - *(Előkészítés, ma még nem látszik.)* Kiszámoljuk a Picasa
   bélyegkép-adatbázisának ellenőrzőösszegét (#2435) — ez teszi majd lehetővé,
   hogy egy **elromlott** adatbázist felismerjünk, ahelyett hogy némán rossz
