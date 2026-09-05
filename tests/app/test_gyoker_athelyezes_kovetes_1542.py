@@ -134,7 +134,15 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool, lekerdezes: bool
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl.start()
-    _var(qt_app, lambda: not ctl._sync_running)
+    # #1457: a nem kért figyelőt/időzítőt AZONNAL leállítjuk, még az első
+    # várakozás ELŐTT. Korábban a sorrend fordított volt, és a CI-n
+    # háromszor omlott össze itt a folyamat (`exit -11`) — a
+    # `faulthandler`-verem szerint épp ebben a `_var`-ciklusban, miközben
+    # KÉT `watchdog`-szál (`dispatch_events`, `queue_events`) futott. A
+    # figyelő tehát eseményeket küldött a Qt-objektumgráfba, amíg a
+    # `processEvents` pörgött. A teszt amúgy sem kéri a figyelőt
+    # (`watcher=False`): ez csak azt a néhány tized másodpercet szünteti
+    # meg, amíg fölöslegesen élt.
     if not watcher and ctl._watcher is not None:
         ctl._watcher.stop()
         ctl._watcher = None
