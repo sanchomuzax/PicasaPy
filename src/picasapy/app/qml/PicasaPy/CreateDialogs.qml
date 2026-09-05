@@ -195,7 +195,17 @@ Item {
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetFile: ""
         // a felbontás-lista indexei → videó-magasság
-        readonly property var heightOptions: [720, 1080]
+        //: #1977 (7. pont): az eredeti HÉT mérete
+        //: (`docs/specs/picasa-create-features.md` 2.6/c). Öt közülük
+        //: 4:3-as, ezért a SZÉLESSÉG is kell — a korábbi 16:9-es
+        //: származtatás azokat torzította volna (1024-es magasságból
+        //: 1820 jött volna ki 768 helyett).
+        readonly property var sizeOptions: [
+            [320, 240], [640, 480], [800, 600], [1024, 768],
+            [1600, 1200], [1280, 720], [1920, 1080],
+        ]
+        //: az alapértelmezés a 720p — a lista hatodik eleme
+        readonly property int defaultSizeIndex: 5
         function openForSelection() {
             // #455: tartott képekkel a tálca a forrás — ilyenkor a
             // rácsban nem is kell kijelölésnek lennie
@@ -212,10 +222,10 @@ Item {
             movieProgressDialog.done = 0
             movieProgressDialog.total = dialogs.appWindow.selectedIndexes.length
             movieProgressDialog.open()
+            var meret = movieDialog.sizeOptions[movieHeightBox.currentIndex]
             controller.exportMovie(
                 dialogs.appWindow.selectedIndexes, movieDialog.targetFile,
-                movieDialog.heightOptions[movieHeightBox.currentIndex],
-                movieSeconds.value / 10.0)
+                meret[1], movieSeconds.value / 10.0, meret[0])
         }
         ColumnLayout {
             spacing: 10
@@ -237,7 +247,11 @@ Item {
                     id: movieHeightBox
                     objectName: "movieHeightBox"
                     Layout.preferredWidth: 160
-                    model: ["720p", "1080p"]
+                    model: [
+                        "320 × 240", "640 × 480", "800 × 600", "1024 × 768",
+                        "1600 × 1200", "1280 × 720 (720p)", "1920 × 1080 (1080p)",
+                    ]
+                    currentIndex: movieDialog.defaultSizeIndex
                 }
             }
             RowLayout {
