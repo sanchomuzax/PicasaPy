@@ -10,8 +10,13 @@
 # munkamenet más környezetben futtatta a tesztkészletet, mint amiben a CI
 # zöldre váltott.
 #
-# Lekérdezés: `python scripts/print_dependencies.py --apt`
+# Lekérdezés:
+#   `python scripts/print_dependencies.py --apt`        — csak a KÖTELEZŐK
+#   `python scripts/print_dependencies.py --apt-teljes` — a disztribúciósakkal
+#
 # Formátum: soronként egy csomagnév; `#`-kezdetű és üres sor kimarad.
+# A `[csak-disztribucios]` sor alatti tételek CSAK annak kellenek, aki a
+# PySide6-ot a disztribúció csomagjából telepíti — a CI-nek NEM (#1491).
 
 # EGL/OpenGL — enélkül a PySide6 be sem töltődik (`libEGL.so.1: cannot open
 # shared object file`), még offscreen platformon sem.
@@ -26,19 +31,17 @@ libxkbcommon0
 # fut, mint a CI-ben.
 libpulse0
 
-# Qt nyomtatás-támogatás (#1472) — SZÁNDÉKOSAN NINCS ITT.
+[csak-disztribucios]
+
+# Qt nyomtatás-támogatás (#1472).
 #
-# A pip-es PySide6 wheel a QtPrintSupport modult MAGA hozza; ez a lista
-# viszont a CI-ben `apt-get install`-lal fut, és ott a
-# `python3-pyside6.qtprintsupport` **eltörte a telepítést** — a lépés
-# elhasalt, és vele a `libEGL1` sem került fel, tehát MINDEN teszt
-# elbukott `ImportError: libEGL.so.1`-gyel. (Mérve: #1472, a 32938928311
-# futás.)
+# A pip-es PySide6 wheel a QtPrintSupport modult MAGA hozza; ez a tétel CSAK
+# annak kell, aki a PySide6-ot a disztribúció csomagjából telepíti (ott a Qt
+# modulokra van bontva).
 #
-# A csomag CSAK azoknak kell, akik a PySide6-ot a disztribúció
-# csomagjából telepítik (ott a Qt modulokra van bontva). Ezt a felhasználó
-# a hiányzó modul üzenetében kapja meg, a pontos `apt install` paranccsal
-# — nem ebben a listában, ami minden telepítésre kötelező.
-#
-# A megkülönböztetés hiánya (kötelező vs. csak-disztribúciós függőség)
-# önálló hiányosság: külön jegy.
+# Miért nem a kötelezők között: a CI a KÖTELEZŐ listát futtatja `apt-get
+# install`-lal, és ott ez a csomag **eltörte a telepítést** — a lépés
+# elhasalt, és vele a `libegl1` sem került fel, tehát MINDEN teszt elbukott
+# egy félrevezető `ImportError: libEGL.so.1`-gyel. (Mérve: #1472, a
+# 32938928311 futás.) Az őr: `tests/test_fuggoseg_jeloles_1491.py`.
+python3-pyside6.qtprintsupport
