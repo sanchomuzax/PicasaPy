@@ -33,32 +33,36 @@ def _list_property(obj, name):
 
 
 class TestAspectPresetKeys:
-    """A #448 kulcskészlete. A `Picasa3i18n.dll` teljes listája (a jegy
-    2026-08-10-i kommentje) feloldotta a korábban kihagyott kulcsokat is:
-    `Widescreen` = 16:10, `WideFrame` = 5:3, `CurrentDisplay` = a KÉPERNYŐ
-    aránya — így ezek már nem találgatások. A `8.5x11` (Letter méretű papír)
-    ugyanabból a forrásból került be."""
+    """A VÁGÓ kulcskészlete — a #876 mérése szerint PONTOSAN 13 tétel.
+
+    ⚠️ Ez az osztály korábban 19 kulcsot állított. Az a lista NEM tévedésből
+    hízott meg: a #448 a `Picasa3i18n.dll` szövegtáblájából dolgozott, és a
+    LEÍRÁS-sorok kulcsneveit külön tételnek olvasta. A #876 az erőforrás
+    kulcs↔felirat tábláját (`Picasa3.exe`, 9143180–9144420. fájloffszet) vetette
+    össze a `stringres-en-hu.tsv`-vel, és ebből derült ki, hogy hat tétel
+    máshova tartozik:
+
+    * `CurrentDisplay` — a KOLLÁZS „Oldalformátum" menüjéé;
+    * `4x4` — a `Desktop4x3` leírás-kulcsa, ráadásul 1:1 (a `Square` mása);
+    * `4x6`, `5x7`, `8x10`, `8.5x11` — a NYOMTATÁS méretlistájáé.
+
+    A `20x25` viszont MARAD: azt három független forrás igazolja.
+    """
 
     _EXPECTED_KEYS = [
         "Manual",
         "CurrentRatio",
-        "CurrentDisplay",
-        "4x4",
-        "Desktop4x3",
-        "4x6",
-        "5x7",
-        "8x10",
-        "8.5x11",
-        "5x3",
-        "9x13",
-        "10x15",
-        "13x18",
-        "20x25",
-        "5x8",
-        "16x10",
-        "HDTV16x9",
+        "5x8m",
+        "9x13m",
+        "10x15m",
+        "Crop13x18m",
+        "::Crop20x25m",
+        "::A4",
         "Square",
-        "FullPage",
+        "Desktop4x3",
+        "Widescreen",
+        "HDTV16x9",
+        "WideFrame",
     ]
 
     def test_builtin_preset_keys_match_the_corrected_list(self, qml_app, qt_app):
@@ -70,34 +74,90 @@ class TestAspectPresetKeys:
         keys = [item["key"] for item in presets]
         assert keys == self._EXPECTED_KEYS
 
-    def test_the_resolved_keys_carry_the_documented_ratio(self, qml_app, qt_app):
-        """A `Picasa3i18n.dll` feloldotta a korábban kihagyott kulcsokat:
-        a `Widescreen` a 16:10, a `WideFrame` az 5:3 felirata — ezért ezek
-        NEM külön tételek, hanem a meglévő arányok magyarázó alcímei."""
+    def test_pontosan_tizenharom_tetel_es_a_hetedik_a_20x25(
+        self, qml_app, qt_app
+    ):
+        """A darabszám és a SORREND is mérve — a 7. hely a `20x25`-é."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        presets = _list_property(panel, "aspectPresets")
+
+        assert len(presets) == 13, [item["key"] for item in presets]
+        assert presets[6]["key"] == "::Crop20x25m"
+        assert presets[6]["label"] == "20x25"
+
+    def test_a_20x25_aranya(self, qml_app, qt_app):
         window, _, _ = qml_app
         _open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
         presets = {
             item["key"]: item for item in _list_property(panel, "aspectPresets")
         }
-        assert presets["16x10"]["note"] == "Widescreen monitor"
-        assert presets["5x3"]["note"] == "Widescreen Photo Frame"
+        assert presets["::Crop20x25m"]["ratio"] == 25 / 20 == 1.25
+
+    def test_a_kepernyo_aranyok_felirata_KETTOSPONTOS(self, qml_app, qt_app):
+        """A hivatalos magyar oszlop szerint a négy képernyő-arány
+        kettősponttal áll, a nyomat-méretek `x`-szel — nálunk mind `x` volt."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        presets = {
+            item["key"]: item for item in _list_property(panel, "aspectPresets")
+        }
+        assert presets["Desktop4x3"]["label"] == "4:3"
+        assert presets["Widescreen"]["label"] == "16:10"
+        assert presets["HDTV16x9"]["label"] == "16:9"
+        assert presets["WideFrame"]["label"] == "5:3"
+        # a nyomat-méretek viszont maradnak `x`-esek
+        assert presets["9x13m"]["label"] == "9x13"
+        assert presets["::Crop20x25m"]["label"] == "20x25"
+
+    def test_az_A4_felirata_es_leirasa(self, qml_app, qt_app):
+        """Nálunk „Full page (A4)" volt — az eredetiben a FELIRAT `A4`, és
+        a „Teljes oldal" a LEÍRÁS-sor."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        presets = {
+            item["key"]: item for item in _list_property(panel, "aspectPresets")
+        }
+        assert presets["::A4"]["label"] == "A4"
+        assert presets["::A4"]["note"] == "Full page"
+        assert presets["::A4"]["ratio"] == 297 / 210
+
+    def test_a_hat_torolt_tetel_NINCS_a_vagoban(self, qml_app, qt_app):
+        """Negatív állítás, névvel — hogy a visszacsúszás is kiderüljön."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        kulcsok = {
+            item["key"] for item in _list_property(panel, "aspectPresets")
+        }
+        for torolt in ("CurrentDisplay", "4x4", "4x6", "5x7", "8x10",
+                       "8.5x11", "FullPage"):
+            assert torolt not in kulcsok, (
+                f"a(z) {torolt!r} visszakerült a vágó listájába — "
+                "az a nyomtatásé vagy a kollázsé, nem a vágóé"
+            )
+
+    def test_the_resolved_keys_carry_the_documented_ratio(self, qml_app, qt_app):
+        """A leírás-sorok a HELYES tételekhez tartoznak (#876): a
+        `16x10`/`5x3`/`16x9`/`4x4` kulcsnevek a `Widescreen`, `WideFrame`,
+        `HDTV16x9`, `Desktop4x3` LEÍRÁSAI — nem külön tételek."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        presets = {
+            item["key"]: item for item in _list_property(panel, "aspectPresets")
+        }
+        assert presets["Widescreen"]["note"] == "Widescreen monitor"
+        assert presets["WideFrame"]["note"] == "Widescreen Photo Frame"
         assert presets["Square"]["note"] == "CD Cover"
-        assert presets["8.5x11"]["note"] == "Letter paper"
+        assert presets["Desktop4x3"]["note"] == "Standard screen"
         # az `Other` továbbra sem tétel: nálunk az egyéni arány felvétele
         # tölti be ezt a szerepet (AddCustomAspectRatio)
         assert "Other" not in presets
-
-    def test_the_display_ratio_is_dynamic(self, qml_app, qt_app):
-        """A „Jelenlegi megjelenítés" a képernyő arányát veszi át — a
-        listában külön jelzés (-2) áll, nem bebetonozott szám."""
-        window, _, _ = qml_app
-        _open_viewer(window, qt_app)
-        panel = window.findChild(QObject, "viewerEditorPanel")
-        presets = {
-            item["key"]: item for item in _list_property(panel, "aspectPresets")
-        }
-        assert presets["CurrentDisplay"]["ratio"] == -2
 
     def test_full_list_starts_with_the_builtin_presets(self, qml_app, qt_app):
         window, _, _ = qml_app
@@ -181,6 +241,50 @@ class TestCustomAspectRatioDelete:
         qt_app.processEvents()
 
         assert controller.customAspectRatios == []
+
+
+class TestElmentettToroltKulcs:
+    """#876: a hat kikerült tétel valamelyikét MÁR ELMENTETTE valaki.
+
+    A beállítás a QSettingsben marad, tehát a visszatöltés ismeretlen
+    kulccsal fut le. A korábbi kód ilyenkor csak visszatért — az
+    `aspectIndex` az ELŐZŐ képen használt értéken maradt, és a vágó egy
+    néma, a listában nem látszó aránnyal nyílt volna.
+    """
+
+    def _open_crop(self, window, qt_app):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        return window.findChild(QObject, "viewerEditorPanel")
+
+    def test_a_torolt_kulcs_Kezire_all_vissza(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        panel = self._open_crop(window, qt_app)
+        panel.setProperty("aspectIndex", 5)  # bármi más, mint a Kézi
+
+        controller.setLastCropRatio("4x6")  # a hat kikerült egyike
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+
+        assert panel.property("aspectIndex") == 0, (
+            "elmentett, azóta törölt kulcs után a vágónak »Kézi«-re kell "
+            "állnia — nem az előző kép arányán maradnia"
+        )
+
+    def test_az_ervenyes_kulcs_valtozatlanul_visszaall(self, qml_app, qt_app):
+        """A tartalék nem nyelheti el a MŰKÖDŐ visszatöltést."""
+        window, controller, _ = qml_app
+        panel = self._open_crop(window, qt_app)
+
+        controller.setLastCropRatio("::Crop20x25m")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+
+        presets = _list_property(panel, "aspectPresets")
+        vart = [i["key"] for i in presets].index("::Crop20x25m")
+        assert panel.property("aspectIndex") == vart
 
 
 class TestCropSuggestionButtons:

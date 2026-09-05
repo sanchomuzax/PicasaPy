@@ -593,51 +593,56 @@ Rectangle {
     // vissza (lastCropRatio)
     onCropActiveChanged: if (panel.cropActive) panel.restoreLastCropRatio()
 
-    // Arány-lista (#448 — a Picasa BINÁRISÁBAN élő kulcskészlet szerint,
-    // ld. a #448 jegy 2026-08-07-es javító kommentjét: "ha egyszer
-    // implementáljuk, a KULCSNEVEKET használjuk, ne a magyarázatokat").
-    // `key` = a bináris tényleges kulcsneve (perzisztenciához, lastCropRatio-
-    // hoz); `label` = megjelenő felirat, a kulcsnevet követve (pl. "4x6"),
-    // KIVÉVE ahol a kulcs maga nem arány-pár (Manual/CurrentRatio/Square/
-    // FullPage) — ott a korábbi, leíró feliratot tartottuk meg.
+    // Arány-lista — a VÁGÓ-eszközé, a #876 mérése szerint PONTOSAN 13 tétel.
     //
-    // #448: a listaelemek MAGYARÁZÓ ALCÍMET is kapnak — a `Picasa3i18n.dll`
-    // szerint a legördülőben nem csak a szám állt, hanem a felismerést
-    // segítő leírás is („Kisméretű nyomat", „CD-borító", „Letter méretű
-    // papír"). A korábban kihagyott kulcsok arányát ugyanez a forrás
-    // oldotta fel: `Widescreen` = 16:10, `WideFrame` = 5:3,
-    // `CurrentDisplay` = a KÉPERNYŐ aktuális aránya.
+    // #448 vezette be, de a lista 19 tételre hízott: hat olyan tétel került
+    // bele, ami az eredeti VÁGÓ-listájában nincs. A #876 a `Picasa3.exe`
+    // erőforrás-tábláját (9143180–9144420. fájloffszet) és a
+    // `stringres-en-hu.tsv`-t vetette össze a mienkkel.
+    //
+    // ⚠️ A törölt hat NEM tévedés volt, hanem MÁS lista tételei vagy
+    // félreolvasott kulcsok:
+    //   * `CurrentDisplay` — a KOLLÁZS „Oldalformátum" menüjéé, nem a vágóé;
+    //   * `4x4` — nem tétel: a `Desktop4x3` LEÍRÁS-kulcsa
+    //     (`AspectRatioList:4x4:Description`), ráadásul 1:1, tehát a
+    //     `Square` duplikátuma lett volna;
+    //   * `4x6`, `5x7`, `8x10`, `8.5x11` (`FullPage`) — a nyomtatás
+    //     méretlistájában vannak, a vágóéban nincsenek.
+    //
+    // ⚠️ A leírás-sorok kulcsneve FÉLREVEZETŐ: az `AspectRatioList:16x10`,
+    // `:5x3`, `:16x9`, `:4x4` sorok a `Widescreen`, `WideFrame`,
+    // `HDTV16x9`, `Desktop4x3` tételek leírásai. Aki a kulcsnévből
+    // következtet, külön tételnek hiszi őket — nálunk pont ez történt.
+    //
+    // A négy képernyő-arány felirata KETTŐSPONTOS az eredetiben (`4:3`,
+    // `16:10`, `16:9`, `5:3`), a nyomat-méreteké `x`-es (`9x13`) — a
+    // hivatalos magyar oszlop szerint.
+    //
+    // ⚠️ A KOLLÁZS Oldalformátum-menüje ugyanebből az erőforrásból válogat,
+    // de MÁS részhalmazt (ott van a `CurrentDisplay` és az `A4PageCollage`).
+    // Amikor az sorra kerül (#431), SAJÁT definíciót kapjon — ne ezt.
     //
     // ratio = szélesség/magasság fekvő tájolásban; 0 = kézi (szabad),
-    // -1 = a kép jelenlegi aránya, -2 = a képernyő aktuális aránya.
+    // -1 = a kép jelenlegi aránya.
     readonly property var aspectPresets: [
         { key: "Manual", label: qsTr("Manual"), note: "", ratio: 0 },
         { key: "CurrentRatio", label: qsTr("Current ratio"), note: "", ratio: -1 },
-        { key: "CurrentDisplay", label: qsTr("Current display"), note: "",
-          ratio: -2 },
-        { key: "4x4", label: "4x4", note: "", ratio: 1 },
-        { key: "Desktop4x3", label: "4x3", note: qsTr("Standard screen"),
-          ratio: 4 / 3 },
-        { key: "4x6", label: "4x6", note: qsTr("Small print"), ratio: 6 / 4 },
-        { key: "5x7", label: "5x7", note: qsTr("Large print"), ratio: 7 / 5 },
-        { key: "8x10", label: "8x10", note: "", ratio: 10 / 8 },
-        { key: "8.5x11", label: "8.5x11", note: qsTr("Letter paper"),
-          ratio: 11 / 8.5 },
-        { key: "5x3", label: "5x3", note: qsTr("Widescreen Photo Frame"),
-          ratio: 5 / 3 },
-        { key: "9x13", label: "9x13", note: qsTr("Small print"), ratio: 13 / 9 },
-        { key: "10x15", label: "10x15", note: qsTr("Large print"),
+        { key: "5x8m", label: "5x8", note: "", ratio: 8 / 5 },
+        { key: "9x13m", label: "9x13", note: qsTr("Small print"), ratio: 13 / 9 },
+        { key: "10x15m", label: "10x15", note: qsTr("Large print"),
           ratio: 15 / 10 },
-        { key: "13x18", label: "13x18", note: "", ratio: 18 / 13 },
-        { key: "20x25", label: "20x25", note: "", ratio: 25 / 20 },
-        { key: "5x8", label: "5x8", note: "", ratio: 8 / 5 },
-        { key: "16x10", label: "16x10", note: qsTr("Widescreen monitor"),
-          ratio: 16 / 10 },
-        { key: "HDTV16x9", label: "16x9", note: "HDTV", ratio: 16 / 9 },
+        { key: "Crop13x18m", label: "13x18", note: "", ratio: 18 / 13 },
+        { key: "::Crop20x25m", label: "20x25", note: "", ratio: 25 / 20 },
+        { key: "::A4", label: "A4", note: qsTr("Full page"), ratio: 297 / 210 },
         { key: "Square", label: qsTr("Square"), note: qsTr("CD Cover"),
           ratio: 1 },
-        { key: "FullPage", label: qsTr("Full page (A4)"), note: qsTr("Full page"),
-          ratio: 297 / 210 }
+        { key: "Desktop4x3", label: "4:3", note: qsTr("Standard screen"),
+          ratio: 4 / 3 },
+        { key: "Widescreen", label: "16:10", note: qsTr("Widescreen monitor"),
+          ratio: 16 / 10 },
+        { key: "HDTV16x9", label: "16:9", note: "HDTV", ratio: 16 / 9 },
+        { key: "WideFrame", label: "5:3", note: qsTr("Widescreen Photo Frame"),
+          ratio: 5 / 3 }
     ]
 
     // #448: a beépített lista + a felhasználó egyéni arányai (QSettings-en
@@ -696,6 +701,13 @@ Rectangle {
                 return
             }
         }
+        // #876: ISMERETLEN kulcs → „Kézi". Ez nem elméleti eset: a lista
+        // hat tétele (`CurrentDisplay`, `4x4`, `4x6`, `5x7`, `8x10`,
+        // `8.5x11`) kikerült, és aki korábban ilyet választott, annak a
+        // beállítása MOST is ott van a QSettingsben. A korábbi kód ilyenkor
+        // csak visszatért, tehát az `aspectIndex` az ELŐZŐ képen használt
+        // értéken maradt — a vágó néma, láthatatlan aránnyal nyílt volna.
+        panel.aspectIndex = 0
     }
     function selectAspect(index) {
         panel.aspectIndex = index

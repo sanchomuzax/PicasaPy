@@ -21,6 +21,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A vágó méretarány-listája a valódi 13 tételre csökkent** (#876). Hat
+  olyan méret szerepelt benne, ami az eredeti Picasa vágójában nincs: a
+  »Jelenlegi megjelenítés« a kollázs oldalformátumáé, a 4x6 / 5x7 / 8x10 /
+  8,5x11 a nyomtatásé, a »4x4« pedig nem is önálló méret volt, hanem a 4:3
+  magyarázó sora — és pont ugyanazt adta, mint a Négyzet. A négy
+  képernyő-arány felirata mostantól kettősponttal áll (4:3, 16:10, 16:9,
+  5:3), ahogy az eredetiben, az A4 pedig a saját nevén szerepel. Ha korábban
+  a kikerült méretek egyikét használtad, a vágó »Kézi«-re nyílik.
+
 - **A »Frissítés« menüpont most már visszajelez** (#1458). Ha épp futott egy
   háttérbeli beolvasás, a kattintás után semmi látható nem történt — pedig a
   kérés nem veszett el, csak sorra várt. Hálózati meghajtón ez fél percig is
