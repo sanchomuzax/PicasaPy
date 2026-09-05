@@ -651,10 +651,26 @@ visszatérő felirat (`collagepanel::back_to_collage` · `CMakeMoviePanel::back_
 · `thumbui::back_to_previous_tab`), a ✕ **csak elrejt**. Helyesbítés: a
 `konyvtar-ablak-meretek.md` 5.8 „haladásjelzés" elnevezése téves volt. → **#1939**.
 
-1. **Villog-e a visszatérő gomb?** A gomb makrója hozza a negyedik
-   („throb") bőrt — mért különbség: a keret `#BBBBBB` → **`#629BC3`** —, de a
-   `.tre` nem ír rá `Property throb 1`-et, tehát ha bekapcsolódik, azt kód
-   teszi. **Megszerzés:** célzott Ghidra-kör a `0x00601090`-re (`eThrobOff`).
+⭐ **2026-09-05 — a throb MECHANIZMUSA kimérve, és a javasolt út HELYESBÍTVE.**
+A jelző az **`elem + 0x35b`** (egy bájt). Beállítja a `.tre`
+`Property throb 1` (`0x009c7891`, elemzési időben); **törli** az
+`eThrobOff` parancs (`0x00601eb0`). Futásidőben **három** hely kapcsolja
+be: `0x0062c3ac` — **névvel**, a `thumbui/webcambutton`-ra —, valamint
+`0x00609251` és `0x00609605` a `FUN_00608da0`-ban, ahol az elem
+verem-rekeszből jön, nem literálból. **Kimerítő sztring-leltár** (nyers
+`[Tt]hrob` bájtkeresés): **három** találat, `eThrobOn` **nincs**; a
+binárisban throb-bal kapcsolatban **egyetlen** elem van megnevezve, a
+webkamera-gomb. ⛔ **A korábban javasolt `0x00601090` ZSÁKUTCA:** az a
+parancs-diszpécser, és az `eThrobOff` ága a jelzőt **csak törli** — a
+bekapcsolásról semmit nem mond.
+
+1. **Villog-e a visszatérő gomb?** Nincs rá `Property throb 1` a `.tre`-ben,
+   és névvel megcímzett parancs sem — de a `FUN_00608da0` két
+   bekapcsolása **bármely** elemre eshet, ezért a nemleges válasz
+   **alátámasztott, nem bizonyított**. **Megszerzés (ÚJ, éles):** a
+   `FUN_00608da0` **vtábla-résének** felderítése (közvetlen hívója nincs:
+   `e8 rel32` pásztázás → 0 találat), és a `[esp+0x168]` feltétel
+   feltárása.
    Lap: `getmore-klipgyujto-mod.md` 3.3; jegy **#1939**.
 
 ### [racs-nagyito.md](racs-nagyito.md) — nincs nyitott kérdés (2026-09-05)
