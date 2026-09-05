@@ -1088,7 +1088,20 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             return ()
 
     def rescan(self) -> None:
-        if self._sync_running:
+        """Teljes újrapásztázás — az ötperces időzítő és a „Frissítés" menü.
+
+        #1456: a `_dirty_running`-ot IS nézi. Enélkül a célzott szinkron
+        (`_on_folders_dirty`, #1440) mellé indult egy második index-író, és
+        a felhasználó `sqlite3.OperationalError` → `syncFailed` hibát
+        látott — ugyanaz a hibaosztály, mint a #1440-ben, csak másik
+        belépési ponton.
+
+        **Kihagy, nem várólistáz.** A #1440 `_pending_dirty` várólistája ott
+        azért kell, mert egy KONKRÉT mappa jelzése veszne el; itt nincs
+        ilyen: a rescan az egészet nézi, az időzítő öt perc múlva újra
+        próbál, és a futó szinkron végén amúgy is frissül a nézet.
+        """
+        if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
