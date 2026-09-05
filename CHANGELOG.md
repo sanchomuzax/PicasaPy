@@ -21,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- *(Előkészítés, ma még nem látszik.)* Kiszámoljuk a Picasa
+  bélyegkép-adatbázisának ellenőrzőösszegét (#2435) — ez teszi majd lehetővé,
+  hogy egy **elromlott** adatbázist felismerjünk, ahelyett hogy némán rossz
+  bélyegképeket olvasnánk belőle. A képlet a Picasa 140 755 valódi
+  bejegyzésének 96%-át magyarázza. **Egyelőre semmi nem hívja**, tehát a
+  program viselkedése változatlan.
+
 - **Beállítások ▸ E-mail: megjelent a harmadik levelezőgomb** (#2432) — az
   eredetiben „A Google Fiók használata" is választható, nálunk csak kettő
   volt. A gomb **szürkén, kikapcsolva** jelenik meg: a PicasaPy-nak nincs
