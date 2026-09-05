@@ -154,10 +154,10 @@ gyorstárazás. **Elvetve, méréssel**: mindhárom téves jelölt a 3. pontban.
 | Melyik oszlop tárolja? | **LEZÁRVA** — `imagedata_originfast` (u64) |
 | Az `onlinechecksum` a párja? | **LEZÁRVA — NEM** (3.) |
 | Az `originhash` a párja? | **LEZÁRVA — NEM**, 0/32 (3.) |
-| **Mi az `imagedata_originslow`?** | **ÚJ JEGY** — külön, u64 oszlop, más algoritmus (öt MD5-változat 0/4); a nevéből ítélve teljes tartalom vagy dekódolt képpont alapú |
+| **Mi az `imagedata_originslow`?** | **LEZÁRVA (2026-09-05, #1482)** — `MD5(teljes fájl)[0:8]` kis-endián, **18/18** valódi fájlon; a korábbi „0/4"/„0/8" olyan sorokon mért, ahol a fájl azóta megváltozott (kontroll: ott az `originfast` sem egyezik). Szerepe: a gyors kulcs **ütközésfeloldója** — 28,5× dúsulás. |
 
 ```
-Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 ---
@@ -356,3 +356,86 @@ az út bizonyítottan üres.
 
 *(Az `originslow` és `originfast` sztringre is egyetlen hivatkozás van az
 egész binárisban: ugyanez a regisztráló. Néven sem érhetők el.)*
+
+## ✅ Az `originslow` MEGFEJTVE ÉS MEGMÉRVE — 18/18 (2026-09-05, #1482)
+
+**A képlet:** `originslow = MD5(a TELJES fájl) első 8 bájtja, kis-endián.**
+Nincs méret-előtag (ellentétben az `originfast`-tal), és 64 KB-os darabokban
+streamel. A hasher: `0x00a4ce40` (421 b, `.\yt\ytIO.cpp`) — `CreateFileA`
+`0x00a4ceb4`, 64 KB-os puffer `0x00a4cf0a`, `ReadFile`-ciklus `0x00a4cf49`,
+`MD5Update` `0x00a4cf75`, `MD5Final` `0x00a4cfa8`.
+
+**Bizonyítottsági fok: megerősített** — a kód kiolvasva ÉS **18 valódi
+fényképen 18/18** reprodukálva a `db3` tárolt értékeivel szemben.
+
+### ⛔ Miért mondta három korábbi kör, hogy „0/4" és „0/8"
+
+Mert a mérés olyan sorokon futott, ahol **a fájl azóta megváltozott** — és
+ezt senki nem ellenőrizte kontrollal. A kontroll a **saját `originfast`
+mezőjük**: ha az sem egyezik, a fájl nem az, amit a Picasa indexelt.
+
+| minta | `originfast` egyezik | `originslow` egyezik |
+|---|---:|---:|
+| **véletlen sorok** (bármilyen, `n = 25`) | **24/25 = 96%** | — (üres oszlop) |
+| **`originslow`-os sorok** (véletlen, `n = 70`) | 1/70 | 1/70 |
+| ugyanezen 70 sor **kereszttáblája** | `fast` OK & `slow` ELTÉR: **0** · `fast` ELTÉR & `slow` OK: **0** | |
+| **`originslow`-os sorok, VÁLTOZATLAN fájllal** (`n = 18`, 900 sor átnézéséből) | 18/18 (szűrési feltétel) | **18/18** |
+
+⇒ **Egyetlen ellenpélda sincs:** valahányszor a fájl változatlan, a
+`MD5[0:8]` egyezik. A korábbi negatívumok a minta hibái voltak, nem a
+képletéi. *(A `slow`-os soroknak mindössze **2 %-a** — 18 a 900-ból — mutat
+változatlan fájlt; ezért volt olyan könnyű véletlenül csupa elavult sort
+fogni.)*
+
+**Módszertani tanulság:** egy „a képlet nem reprodukál" verdikt csak akkor
+ér valamit, ha **ugyanazon a soron** egy már igazolt másik mennyiség
+(itt: az `originfast`) egyezik. Enélkül nem a képletet mértük, hanem azt,
+hogy a fájl azóta megváltozott-e.
+
+### Ki állítja elő — a TELJES hívási lánc, kimerítően
+
+| lépés | cím | megjegyzés |
+|---|---|---|
+| lassú hasher | `0x00a4ce40` | **egyetlen** hívója: a diszpécser |
+| diszpécser | `0x00a4cd00` (113 b) | `eax` = a GYORS kulcs kimenő mutatója, **`edi` = a LASSÚ kulcsé**, `[esp+0x1c]` = az útvonal |
+| a feltétel | `0x00a4cd3d` `test edi, edi` / `0x00a4cd44` `je` | **a lassú kulcs csak akkor számolódik, ha a hívó ad neki célt** |
+| 1. hívó | `0x0070e080` | `0x0070e594` **`xor edi, edi`** ⇒ itt SOHA nem számolódik |
+| 2. hívó | **`0x004353a0`** (2920 b) | `0x00435986` `mov edi, [esp+0x24]` — nem nulla ⇒ **ez az EGYETLEN előállító** |
+
+A `0x004353a0`-nak **tíz** hívója van, és mind a tíz `lea ecx, [esp+N]`
+alakkal, azaz **valódi verempuffert** ad át (`0x00438691`, `0x004563db`,
+`0x0045cbdc`, `0x00464f05`, `0x00478336`, `0x0054114a`, `0x006bf6a7`,
+`0x006ec3d1`, `0x007e4aac`, `0x0087f3d4`).
+
+⛔ **Zsákutca, hogy ne járja újra senki:** a `0x00513730` **nem** ide
+tartozik — az a **gyors** hashert (`0x00a4d210`) hívja közvetlenül, tehát
+`originslow`-t nem tud előállítani. A jegy korábbi „a `0x00513730` hívói
+felől" tanácsa ezért hibás irány volt.
+
+### Mire jó — MÉRVE, nem következtetve
+
+A `db3` (140 661 közös sor) alapján:
+
+| a sor `originfast`-ja | `originslow` ki van töltve | üres | arány |
+|---|---:|---:|---:|
+| **osztott** (más sor is viseli) | **2 236** | 2 540 | **46,8 %** |
+| egyedi | 2 116 | 126 510 | **1,65 %** |
+
+⇒ **28,5-szeres dúsulás** az ütköző sorokon. A 2 316 duplikátum-csoportból
+842-ben **minden** tag kap `originslow`-t, 446-ban csak egy részük, 1 028-ban
+egy sem. A 4 352 nemnulla `originslow` **3 407 különböző** értéket vesz fel
+(849 érték ismétlődik) — vagyis ott, ahol jelen van, **tovább is bont**.
+
+**Az `originslow` tehát a gyors kulcs ütközésfeloldója.** Ez összecseng a
+`#1648` mérésével: a másolat **örökli** a forrás `originfast`-ját, tehát a
+másolatok szükségszerűen ütköznek — és épp őket kell egy valódi
+tartalom-hash-sel megkülönböztetni. `originslow` sosem fordul elő
+`originfast` nélkül (0 ilyen sor).
+
+### Nálunk (mérve)
+
+`src/picasapy/dedup/exact.py:35` — **SHA-256 a teljes fájlon**; a Picasa
+`originslow`-jának megfelelő mennyiséget nem számoljuk, a `pmpimport` csak
+olvassa az oszlopot. Ez **nem hiba**: a `.picasa.ini`/PMP round-triphez az
+olvasás elég, írni nem írunk PMP-t.
+
