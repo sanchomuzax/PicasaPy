@@ -16,6 +16,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- Az ötperces automatikus frissítés és a „Frissítés" menüpont többé nem
+  indít második index-írót a már futó szinkron mellé (#1456). Eddig
+  ilyenkor adatbázis-hiba jelenhetett meg.
+
 - További nyolc jelölhető menüpont pipája sem tud már elszakadni a
   valóságtól (#2377) — köztük a „Rejtett képek", a „Sötét téma" és a
   fordított rendezés. A hiba eddig nem látszott rajtuk, mert a
