@@ -708,20 +708,50 @@ adhatta ki. A tényleges képlet a **8.10** szakaszban áll:
 (nem széles karakteres); a négy egybájtos kódolás azonos eredménye ezt
 mutatja.
 
-⚠️ **Új, MÉRT megfigyelés — 615 sor egyik idővel sem egyezik.** Nem
-formátumfüggő (jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), és a
-615-ből 393-nál a két FILETIME azonos. A legvalószínűbb magyarázat, hogy
-ezeknél a **tárolt ellenőrzőösszeg elavult** a bejegyzés mai
-attribútumaihoz képest (a fájl megváltozott, a bélyegkép nem épült újra) —
-**de ez NINCS bizonyítva**. ⛔ **BLOKKOLT — de 2026-09-05 óta OLCSÓBBAN
-feloldható.** A 8.10 új szakasza szerint a számoló függvénynek **két módja**
-van, és a másodikban **nincs útvonal**: `rol(q_lo,13) ^ rol(q_hi,17)`, ahol
-`q` a FILETIME egész másodpercre kerekítve. ⇒ **Versengő magyarázat:** a
-615 sor nem elavult, hanem **a 2. módban** íródott. **Megszerzés (új, olcsó):**
-ugyanazon a katalóguson, a 615 nem egyező sorra újra kell számolni a
-`Checksum₂`-t — **új adatgyűjtés nem kell**. A korábbi két út (frissen épült
-katalógus, illetve az ÍRÓ ág kimérése) megmarad tartaléknak.
+✅ **LEZÁRVA (2026-09-05): a 615 sor oka az ELŐJELES BÁJT volt.**
 
+A korábbi mérés 2776 sorból 2161-et talált egyezőnek, és a maradék **615**
+sorra két magyarázat versengett (elavult gyorsítótár, illetve a 2. mód).
+**Egyik sem igaz.** A hasholó ciklus (`0x006b9a3f`, `0x006b9a47`) a bájtot
+**`movsx`-szel, előjelesen** tölti be; a mi képlet-leírásunk előjel nélkül
+adta meg. ASCII néven a kettő azonos, nem-ASCII néven nem.
+
+**A szétválás tökéletes volt, kivétel nélkül:**
+
+| útvonal | egyezett (előjel nélkül) | nem egyezett |
+|---|---:|---:|
+| csak ASCII | **2161** | 0 |
+| tartalmaz nem-ASCII bájtot | 0 | **615** |
+
+Az előjeles bájttal, **UTF-8** kódolású útvonalon a szétválás megszűnik.
+Három katalóguson újramérve (`research/testdata/`, saját olvasónkkal;
+könyvtár-bejegyzések és nulla ellenőrzőösszegű sorok nélkül):
+
+| katalógus | vizsgált | előjel NÉLKÜL | **ELŐJELESEN** |
+|---|---:|---:|---:|
+| „arcok" | 2 776 | 2 161 | **2 776 (100 %)** |
+| nagy | 133 089 | 48 605 | **129 047 (96,96 %)** |
+| „másolat" | 2 354 | 1 932 | **2 354 (100 %)** |
+
+A bal oszlop pontosan reprodukálja a korábbi mérés számait (2161 · 48 605 ·
+1932), tehát a két mérés ugyanazt a halmazt nézi.
+
+⛔ **A 2. mód magyarázata ELVETVE — mérve.** A 615 sorra a
+`rol(q_lo,13) ^ rol(q_hi,17)` képlet **egyetlen** egyezést sem ad, sem a
+módosítási, sem a metaadat-idővel (0 / 615). Ugyanez a nagy katalógus
+maradékára is: **0 / 4042**.
+
+**A nagy katalógus maradék 4042 sora** (a 3,04 %) — amit tudunk róla:
+`cs ^ (idő- és mérettagok)` **4041 esetben kisebb, mint 1 000 231**, vagyis
+a modulus tartományába esik ⇒ **az időbélyeg és a méret a rekordban HELYES,
+csak az útvonal-hash tér el.** Ez a fájl **átnevezésére/áthelyezésére**
+mutat (a bejegyzés útvonala megváltozott, az ellenőrzőösszeg nem íródott
+újra). Bizalmi fok: **erős**, nem megerősített — a maradék sorok
+kiterjesztés szerint jpg 3622 · jpeg 265 · png 122 · mp4 25 · gif 6 ·
+webp 2, és 3979 közülük tiszta ASCII útvonalú, tehát az előjel-hibával már
+nem magyarázhatók.
+
+*(A `valid` mező nem magyarázza: a nagy katalógus MINDEN sora `valid=1`.)*
 
 ##### A „csak nőnek, nem zsugorodnak" következtetés MÉRVE (2026-09-02)
 
@@ -2533,7 +2563,7 @@ hash különössége volt, hanem annak bizonyítéka, hogy a mező **nem hash**.
 | mit hasheli az 1. mód | ✅ **LEZÁRVA** — **két** sztringet: a szülő nevét és a sajátot, összefűzés nélkül, ugyanabba az akkumulátorba (`0x004e3bdd`–`0x004e3c0e`) | — |
 | **melyik hívó ad KIFEJEZETTEN 0-t** | ✅ **LEZÁRVA (2026-09-05)** — a `ret 0x18` (hat argumentum) szerint szűrve a 93 jelöltből **29** marad; ezekből **10 ad literál `0`-t**, 5 literál `1`-et, 14 futásidejűt. Két 0-s hívó (`FUN_0042f6a0`, `FUN_00793720`) teljesen elolvasva: `CThumbDB` másodlagos felület, **üres második sztringgel** | — |
 | mind a 29 jelölt `CThumbDB`-e? | **feltételes** — kettő megerősítve; a többinél a hívási minta azonos (`…, m, 1, 1, m, …`), de nincs külön igazolva | a fogadó típusának ellenőrzése hívóhelyenként |
-| **a nem egyező 615 sor oka** | **BLOKKOLT, de olcsóbb** | `Checksum₂` újraszámolása ugyanazon a katalóguson |
+| **a nem egyező 615 sor oka** | ✅ **LEZÁRVA (2026-09-05)** — az **előjeles bájt** (`movsx`) hiányzott a képlet-leírásunkból; előjelesen, UTF-8 úton **2776/2776**. A 2. mód magyarázata **mérve elvetve** (0/615). Ld. a 8.4 „LEZÁRVA" blokkját. | — |
 
 **A kulcs NEM szükséges** ahhoz, hogy a PicasaPy kiolvassa az eredeti
 Picasa bélyegkép-gyorsítótárát (8.3–8.4) — csak ahhoz kell, hogy olyan
@@ -2563,9 +2593,16 @@ PMP-oszlop olvasásához kellhet.
 h = 0x12345678
 minden bájtra:
     ha 'A' <= c <= 'Z':  c += 0x20        # csak az ASCII nagybetűk
-    h ^= ((h << 5) + c + (h >> 2))        # 32 biten
+    ha c >= 0x80:        c -= 256         # ⚠️ ELŐJELES bájt (movsx)
+    h ^= ((h << 5) + c + (h >> 2))        # 32 biten, előjeles összeadás
 h_út = h mod 1000231                      # 0xF4327
 ```
+
+⚠️ **Az előjeles bájt NEM részletkérdés** (2026-09-05 helyesbítés): a
+`0x006b98da` és a `0x006b98e2` egyaránt **`movsx eax, al`**, tehát a
+0x80-nál nagyobb bájtok **negatív** számként adódnak hozzá. ASCII néven ez
+nem látszik; nem-ASCII néven a hash teljesen eltér. A 8.10 mérése ezen
+bukott 615 soron — ld. **8.10.6**.
 
 | cím | mit ad |
 |---|---|
@@ -2682,8 +2719,13 @@ ahol a `JS_hash` ugyanaz, mint a 8.8-ban:
 ```
 h = 0x12345678
 minden bájtra:  ha 'A' <= c <= 'Z': c += 0x20
+                ha c >= 0x80:       c -= 256         # ⚠️ ELŐJELES (movsx)
                 h ^= ((h << 5) + c + (h >> 2))       # 32 biten
 ```
+
+⚠️ **Az útvonal bájtjai UTF-8-ban, ELŐJELESEN** — a `0x006b9a3f` /
+`0x006b9a47` mindkét ága `movsx ecx, cl`. Enélkül minden nem-ASCII nevű
+bejegyzés hibás értéket ad (8.10.6).
 
 és `idő` a `thumbindex.db` rekordjának **MÁSODIK** FILETIME mezője (`+8`).
 
@@ -2870,21 +2912,11 @@ két sztringet hajt a hash-be (ld. lentebb); ha a második üres, a hashelés
 A `0x00c7f979` **üres sztring** (a bájt a helyén `0x00`; a szomszédja a
 `"full"` literál), tehát ez nem következtetés, hanem kiolvasott érték.
 
-**Amit ez a lenti „nem egyező sorok" tételre jelent:** a 615 sor nem
-feltétlenül **elavult** — lehet, hogy **a 2. módban** íródott. ⚠️ **2026-09-05-i SZŰKÍTÉS:** a
-fenti szabály szerint a 2. mód automatikusan csak `Type = 0` vagy
-szülő nélküli bejegyzésre jut, a 615 sor viszont **mind fájl-típusú**
-(jpg 306 · bmp 206 · png 87 · mp4 10 · tif 3 · jpeg 2), tehát VAN szülőjük.
-⇒ Náluk a 2. mód **csak úgy** jöhetett szóba, ha a hívó **kifejezetten
-0-t adott**. ⭐ **2026-09-05, 121. kör — ez a feltétel TELJESÜL:** a
-számbavétel szerint **tíz** hívóhely ad literál `0`-t, és a kettő közülük,
-amit teljesen elolvastam, **üres második sztringgel** hívja a 34. rést. ⇒ A
-2. mód **nem korlátozódik a szülő nélküli bejegyzésekre** — bármely
-bejegyzés kaphatja, ha a hívója így kéri. A magyarázat tehát **újra
-kiszélesedett**, és a döntő lépés megint a legolcsóbb: számold ki a
-`Checksum₂`-t a 615 sorra. **Megszerzés:** (a) a `Checksum₂` újraszámolása a 615 sorra —
-ha egyezik, kész; ha nem, a „elavult" magyarázat erősödik; (b) a
-`CThumbDB` 34. rés hívóinak azonosítása.
+✅ **HELYESBÍTVE (2026-09-05): a „versengő magyarázat" MEGDŐLT.** Az itt
+felvetett gondolat — hogy a nem egyező sorok a 2. módban íródtak — **mérve
+elvetve**: a 615 sorra a 2. mód képlete **nulla** egyezést ad (a nagy
+katalógus 4042-es maradékára szintén nulla). A valódi ok az **előjeles
+bájt** volt a sztring-hashben; a részletek a 8.4 „LEZÁRVA" blokkjában.
 
 #### Miért nem egyezik MINDEN bejegyzés — és miért nem hiba ez
 
