@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.293] – 2026-09-05
+
+### Javítva
+
+- **A Képregény (Comicize) effekt közelebb került az eredetihez** (#1606).
+  Két hiba volt: a nyomdai raszter az eredeti képre került, nem az
+  elmosott-sötétített változatra, és a küszöbgörbe egy egyenessel volt
+  helyettesítve az eredeti ötpontos görbe helyett. Az eredeti Picasa 15
+  kimenetéhez mérve a hasonlóság **14 ponton javult, egyen romlott**, a
+  raszter alakja mind a 15-ön.
+
+  A jegy további három eltérést is felsorolt a bináris leírófájlból; ezeket
+  **lemértük, és mindhárom rontott**, ezért NEM építettük be. A mérés és
+  az indoklás: `docs/specs/filters-decoded.md`.
+
 ## [0.8.292] – 2026-09-05
 
 ### Változott

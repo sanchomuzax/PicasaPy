@@ -4779,12 +4779,63 @@ kigyűjtöttem, és összevetettem a `src/picasapy/render/` megvalósításokkal
 | `Orton` | overlay | overlay (`glimmer_creative.py:92`) | ✅ |
 | `PencilSketch` | add + overlay | add + overlay (`effects_artistic.py:141`) | ✅ |
 | `LocalContrast` | subtract ×3 + add | *más alakban* — ld. lentebb | ✅ (levezetve) |
-| `Comicize` | darken, **multiply**, add ×2, darken | darken ×3, **multiply hiányzik** | ⚠️ ld. lentebb |
+| `Comicize` | darken, **multiply**, add ×2, darken | darken ×3, **multiply szándékosan hiányzik** | ⚠️ MÉRVE, ld. lentebb (#1606) |
 | `ReanimatedEyeColor` | lighten + **screen** | multiply | ❌ **#1605** |
 
 Három effekt módja **futásidőben változó**, ezért nem hasonlítható így:
 `PicnikGrain` (`{_radioLighten.selected?7:5}`), `Pixelate`
 (`{_sldrBlendMode.value}`), `PicnikTint` (`{_cbBlendMode.liveValue}`).
+
+#### `Comicize`: a `multiply` és a két hiányzó lépés MÉRVE kimaradt (#1606)
+
+A `filterdesc.xml` négy eltérést mond ki a mi `apply_comicize()`-unkhoz
+képest. A `research/comicize-sweep/` **15 eredeti Picasa-exportján**
+(három csúszka × öt állás, 1600×1200) mindegyiket EGYENKÉNT lemértük,
+beépítés előtt (#879). Az eredmény szétvált:
+
+| a `filterdesc.xml` lépése | átlag ΔE | SSIM | raszter-amplitúdó | dönt |
+|---|---|---|---|---|
+| *(kiindulás: a raszter alapja az ELMOSOTT kép)* | 3,761 → **3,076** | 0,636 → **0,723** | 5,74 → 5,62 | ✅ **beépítve** |
+| ötpontos `MasterCurve` spline a lineáris skálázás helyett | 3,076 → 3,116 | 0,723 → 0,720 | 5,62 → 5,70 | ✅ **beépítve**, ld. lentebb |
+| a raszter felvitele `multiply` (nálunk `darken`) | 3,076 → 3,104 | 0,723 → 0,719 | 5,62 → 6,20 | ❌ ront |
+| nyitó fekete `Glow` (`glowalpha=1`, `σ = 35·0,02·max(W,H)/2`) | 3,076 → 5,150 | 0,723 → 0,625 | 5,62 → 9,56 | ❌ ront |
+| ágankénti küszöb `[{0,0},{150,0},{160,255},{255,255}]` + `add` | 3,076 → 3,163 | 0,723 → 0,811 | 5,62 → **0,32** | ❌ elnyeli a rasztert |
+
+*(A referencia raszter-amplitúdója az alapállásban **3,77**; a
+„raszter-amplitúdó" a luminancia csempén belüli fázisprofiljának szórása —
+ez az egyetlen mérőszám, amelyik magát a rasztert LÁTJA.)*
+
+⚠️ **A globális ΔE-átlag erre az effektre önmagában NEM dönt.** Kontroll:
+az effekt nélküli, NYERS bemenet ΔE-je a referenciához **3,29** — jobb,
+mint a mi bármelyik renderünké. Bármilyen féltónusos pont rontja a
+képpontonkénti átlagot, ezért a ΔE-t itt csak a raszter-amplitúdóval
+együtt szabad olvasni; az ágankénti küszöb „jó" SSIM-je (0,811) éppen
+azért jött ki, mert a rasztert teljesen eltüntette.
+
+**Miért került be mégis a spline, ha a sorának mindhárom oszlopa romlik?**
+Mert a táblázat az ALAPÁLLÁSRA mér, a spline viszont épp a
+`DotContrast`-VÁLASZGÖRBÉT javítja — azt, amiért a csúszka létezik. A
+globális ΔE 13/15 csúszkaálláson romlik (a sor átlaga 3,076 → 3,116), a
+raszter-amplitúdó HIBÁJA viszont a 15 álláson átlagolva **2,424 → 2,251**
+javul: a `DotContrast` felső felében húz közelebb a referenciához —
+`DotContrast = 75`-nél az amplitúdó **5,62 → 4,54**, `100`-nál
+**7,55 → 5,88** (a referencia 3,77). Az alapállásra kiszámolt 5,70
+ugyanennek a görbeváltásnak a másik, kedvezőtlen vége — ezért NINCS
+kiemelve a táblázatban: az a szám nem javulás. A spline mellett szól az is,
+hogy nem illesztett konstans, hanem a `filterdesc.xml`-ből SZÓ SZERINT
+olvasott öt töréspont — a `DotContrast` fenti, mérhető javulása pedig
+pontosan az, amit egy helyes válaszgörbétől várni kell.
+
+**Ami ebből a beépített változat:** ΔE 3,761 → 3,116, SSIM 0,636 → 0,720,
+raszter-amplitúdó hibája 2,53 → 2,25 — 14/15 csúszkaálláson jobb ΔE-n és
+SSIM-en, **15/15-ön** a raszter alakján. Az egyetlen ΔE-romlás a
+`BlurXY = 0` állás (2,59 → 3,03), ld. a nyitott kérdést a #1606-on.
+
+**Ami nyitva marad:** a raszterünk ~1,5-szer erősebb a kelleténél
+(amplitúdó 5,70 vs 3,77), és a `DotContrast` válaszgörbéje meredekebb
+(0,58…10,91 a referencia 1,66…5,04-e helyett). Ezt a fenti három elvetett
+lépés önmagában nem javítja — a natív pontmaszk antialiasingja (#569
+nyitott részlete) a következő gyanúsított.
 
 > ⚠️ **Módszertani figyelmeztetés a következő körnek.** Az első,
 > automatizált összevetésem **mind a 11 effektre „nálunk nincs ilyen mód"-ot
