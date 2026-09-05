@@ -2593,12 +2593,12 @@ A vezérlősáv láthatósága feltételes: a `0x00593dd9`–`0x00593e16` a
 
 ### A másik négy *bizonytalan* elem — mind lezárva a `.tre`-ből
 
-| elem | sor | mi ez |
+| elem | horgony | mi ez |
 |---|---|---|
-| `editpanel/modaldialogblur` | `:1362` | a `root` gyereke, `m_scaleXY` (teljes vászon), `m_hidden` — **elhomályosító réteg a modális párbeszédek mögött** |
-| `editpanel/picnikapply` | `:1430` | az `editpanel/picnikbase` rejtett gyereke — a **Kreatív készlet „Alkalmaz"** gombja; a szolgáltatás megszűnt |
-| `editpanel/preview2` | `:1066` | a **kettős nézet** második előnézete: az `editpanel/previewclip2` (`:1075`, rejtett, `m_scaleXY`) gyereke, 5 px behúzással minden oldalon, alul −25 (a felirat helye) |
-| `editpanel` (a panel gyökere) | — | konténer, nem vezérlő; nálunk `EditorPanel.qml` (`objectName: "editorPanel"`) |
+| `editpanel/modaldialogblur` | `editpanel.tre:1362` | a `root` gyereke, `m_scaleXY` (teljes vászon), `m_hidden` — **elhomályosító réteg a modális párbeszédek mögött** |
+| `editpanel/picnikapply` | `editpanel.tre:1430` | az `editpanel/picnikbase` rejtett gyereke — a **Kreatív készlet „Alkalmaz"** gombja; a szolgáltatás megszűnt |
+| `editpanel/preview2` | `editpanel.tre:1066` | a **kettős nézet** második előnézete: az `editpanel/previewclip2` (`editpanel.tre:1075`, rejtett, `m_scaleXY`) gyereke, 5 px behúzással minden oldalon, alul −25 (a felirat helye) |
+| `editpanel` (a panel gyökere) | `editpanel.tre:1362` (ugyanaz a fájl) | konténer, nem vezérlő; nálunk `EditorPanel.qml` (`objectName: "editorPanel"`) |
 
 A `preview2` ugyanabba a csoportba tartozik, mint az `aa_2up_toggle`,
 `ab_2up_toggle`, `only_1up_toggle`, `swap_2up_focus`, `swap_2up_layout`,
