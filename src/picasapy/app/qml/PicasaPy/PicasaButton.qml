@@ -117,7 +117,14 @@ Button {
     //: Ha a hívó újra `throbbing: true`-t állít, újraindul.
     property bool _throbMegnyomva: false
     onThrobbingChanged: control._throbMegnyomva = false
-    onClicked: control._throbMegnyomva = true
+    // ⚠️ NEM `onClicked:` a komponensben! A használati hely saját
+    // `onClicked`-je FELÜLÍRNÁ, és a legtöbb gombnak van sajátja — a
+    // pulzálás így épp azokon nem állna le, ahova szántuk. A `Connections`
+    // a jelzésre köt, nem a kezelő-résre, tehát nem ütközik.
+    Connections {
+        target: control
+        function onClicked() { control._throbMegnyomva = true }
+    }
 
     readonly property bool throbFut:
         control.throbbing && control.enabled && !control.down
