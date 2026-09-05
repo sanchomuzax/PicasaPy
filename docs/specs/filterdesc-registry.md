@@ -2198,9 +2198,12 @@ motor többet, mint amennyit az effektek kihasználnak — a megvalósításnak 
 - A `Tint`, a `Crop` és a `SimpleBorder` sora **hiányos**: a `red.cfg`
   több nevet sorol (`x`/`y`, illetve `top`/`left`), mint amennyit a minta
   megtalált.
-- A `QuantizePalette` alapértékei viszont **mérve vannak**: `Steps` = 255,
+- A `QuantizePalette` **KÓDBELI** alapértékei mérve vannak: `Steps` = 255,
   `Depth` = 2 (`0x00bb5aed`, `0x00bb5b1d`) — a tényleges kvantálást a
-  `0x00bb5b60` (1510 b) végzi, az még feltáratlan.
+  `0x00bb5b60` (1510 b) végzi.
+  ⚠️ **De a SZÁLLÍTOTT érték más** (2026-09-05): a `filterdesc.xml` a
+  `Depth`-et **`4`**-re állítja, és a `Steps`-et a csúszkára köti. Ld. a
+  „A szállított `Depth` = 4" szakaszt lentebb.
 
 ### Módszer
 
@@ -3129,6 +3132,54 @@ lehetséges. A görbék feltehetően a hívótól érkeznek, de ez **NINCS MÉRV
 *Bizonyítottsági fok: a **név → tagoffszet megfeleltetés megerősített**
 (bájtszinten kiolvasva, zárt); az alkalmazó hozzáférési módja **NINCS
 MEG**, és a fenti negatívum csak a megnevezett kódolási alakra áll.*
+
+## ✅ A szállított `Depth` = 4 — a leíróból kiolvasva (2026-09-05, #2454)
+
+A lap utolsó nyitott kérdése — **mekkora `Depth`-et szállít a
+`filterdesc.xml`** — megválaszolva, és **nem kellett hozzá a tulajdonos
+gépe**: a kutatási másolatunkban ott a fájl.
+
+```xml
+<filter id="QuantizePalette" mode="effect" zerostate="none" fullres="1" slow="1">
+  <label>Posterize</label>
+  <HSliderFastDrag minimum="2"  maximum="30"  value="8"  id="_sldrSteps"/>
+  <HSliderFastDrag minimum="0"  maximum="100" value="80" id="_sldrSmoothing"/>
+  <HSliderPlus     minimum="0"  maximum="100" value="0"  id="_sldrFade"/>
+  <NestedImageOperation BlendAlpha="{1-(_sldrFade.value/100)}">
+    <BlurImageOperation xblur="{(100-_sldrSmoothing.value)/10 + 0.1}"
+                        yblur="{(100-_sldrSmoothing.value)/10 + 0.1}" quality="3"/>
+    <QuantizePaletteImageOperation Depth="4" Steps="{_sldrSteps.value}"/>
+  </NestedImageOperation>
+</filter>
+```
+
+*(Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml:1244–1258`;
+a `Depth` a 1255. soron.)*
+
+| érték | honnan |
+|---|---|
+| **`Depth = 4`** | a szállított leíró (1255. sor) |
+| a kódbeli alapérték `2` | `0x00bb5b1d` (`mov ebx, 2`) |
+| Steps 2–30, alap **8** | 1249. sor |
+| Smoothing 0–100, alap **80** | 1250. sor |
+| Fade 0–100, alap **0** | 1251. sor |
+| elmosás | `σ = (100 − Smoothing)/10 + 0,1`, `quality=3` (1254. sor) |
+| keverés | `BlendAlpha = 1 − Fade/100` (1252. sor) |
+
+**Amit ez a lap saját szabályával együtt jelent:** a csomópont csak akkor
+hasad, ha a **hátralévő** `Depth` **> 1** (`0x00bcb8e6`), és a gyerek
+`Depth − 1`-et örököl (`0x00bcb9a6`). Ezért `Depth = 4` mellett **három**
+osztási szint fut le (4→3→2 hasad, az 1-es már nem) ⇒ legfeljebb
+**8³ = 512** oktree-levél. A kódbeli alapérték (2) ezzel szemben **egyetlen**
+szintet, **8** levelet adna — a szállított beállítás tehát lényegesen
+finomabb palettát épít.
+
+⚠️ **Nálunk (mérve):** a `render/glimmer_tone.py:286–305` az elmosást és a
+keverést **bitre az eredeti képlettel** végzi, a kvantálást viszont
+**csatornánként egyenletes lépésközzel**, `Steps` szintre. A docstring
+(`:290–292`) azt állítja, hogy ez a `Depth` konstans mellett
+„egyenértékű" — **ez az állítás nincs mérve**, és 512 palettacella mellett
+kétséges. Jegy: **#2454** (mérést kér, nem átírást).
 
 ## `QuantizePalette` `Depth` — MEGVAN, és a 3-3-2 tábla NEM tartalék (2026-09-04, #2231)
 
