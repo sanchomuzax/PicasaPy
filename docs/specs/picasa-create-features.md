@@ -498,6 +498,41 @@ A teljes `.text`-et végigpásztáztuk a `+0x2c`-be író utasításokra
 37 közül való. Indexelt, SSE- és disp32-alakú író **nincs** — ezt nem kell
 újra megnézni.
 
+#### ✅ A MEZŐ AZONOSSÁGA az ÍRÓ oldaláról is megerősítve (2026-09-05)
+
+A lap eddig a `+0x2c`-t a **layout** oldaláról azonosította a `scale`-lel
+(mindkét téma `1,0`-t ír bele). Most a **`.cxf`-író** oldaláról is megvan,
+tehát a mezőazonosság **két független forrásból** áll:
+
+```
+0x00835096  push 0x00cbf80c          ; az attribútum neve: "scale"
+0x008350ab  mov  ecx, [ebx + 0x48]   ; a csomópont bájt-eltolása
+0x008350ae  mov  edx, [esp + 0x24]   ; a csomópont-tömb bázisa
+0x008350b2  fld  dword ptr [edx + ecx + 0x2c]   ; ← AZ ÉRTÉK: float a +0x2c-en
+0x008350bd  fstp qword ptr [esp]
+0x008350c0  push 0x00c817c0          ; a formátum: "%f"
+0x008350c9  call 0x0040eab0
+```
+
+Az író `FUN_008347b0` (3023 b) — ugyanaz, amelyik az `albumTitle`,
+`albumDate`, `orientation`, `shadows`, `theta` attribútumokat is kiírja.
+
+⛳ **Kontroll a valódi fájlon:** a formátum `%f` ⇒ **hat tizedes**, és a
+mintáink pontosan így néznek ki (`scale="337.000000"`, `scale="1.000000"`).
+Ez zárja ki, hogy egy másik függvény írná az attribútumot.
+
+⇒ **Az érték semmilyen átalakításon nem megy át íráskor**: a fájlban álló
+`313` **pontosan** az, ami a csomópont `+0x2c` mezőjében van a mentés
+pillanatában. A kérdés tehát változatlanul az, **ki írja felül** a layout
+`1,0`-ját — nem az, hogy az író számol-e valamit.
+
+⚠️ **Ez a kör NEM vezette le a 313-at.** A `+0x2c` íróinak pásztázását
+újrafuttatva a 2026-09-02-i eredmény **reprodukálódott** (indexelt, SSE- és
+disp32-alakú író nincs; a mutatós alakúak közül a kollázs-sávban a
+`0x0087b895`–`0x0087b898` csak **másol** két csomópont közt:
+`fld [edi+0x2c]` → `fstp [esi+0x2c]`). A lenti „következő lépés" tehát
+érvényben marad.
+
 #### A KÖVETKEZŐ lépés (konkrétan)
 
 1. A 37 mutatós író közül azokat kell megnézni, amelyek a

@@ -21,6 +21,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A dőlt és aláhúzott felirat megmarad mentés után** (#2448). Eddig
+  megrajzoltuk a képre, de a beállítás nem került bele a fájlba: a kép
+  újranyitásakor a felirat visszaállt normálra. Mostantól mindkettő
+  megmarad, és a Picasával készített dőlt/aláhúzott feliratokat is helyesen
+  ismerjük fel.
+
+
+- *(Nincs látható változás.)* A **Poszterizálás** effektről eddig azt
+  állítottuk a kódban, hogy a mi egyszerűsített számításunk egyenértékű az
+  eredetivel — de ezt soha nem mértük meg. Most megmértük a valódi
+  Picasa-exporthoz képest, és **igaz**: a hatás 99%-át eltaláljuk. A
+  program viselkedése változatlan, csak már bizonyítékunk is van rá (#2454).
+
+
 - *(Előkészítés, ma még nem látszik.)* Felismerjük a **Picasa 2 korabeli
   vágás-formátumot** (#2008). Egy olyan gyűjteményben, amit még sosem
   nyitottak meg Picasa 3-mal, a vágás régi alakban áll — eddig ezen a

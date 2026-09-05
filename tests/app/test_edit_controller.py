@@ -1326,6 +1326,51 @@ class TestTextTool:
         assert controller.textDraft == "Cím"
 
 
+class TestSzovegStilusbitek2448:
+    """#2448: a dőlt/aláhúzott a `text=` 9. mezőjének 0. és 3. bitje.
+
+    Eddig megrajzoltuk, de a mező fixen `0xC000` ment ki — a felirat
+    újranyitáskor elvesztette a dőltségét és az aláhúzását. A bit-szintű
+    állítások a `tests/ini/test_felirat_dolt_alahuzott_2448.py`-ban vannak;
+    itt a TELJES út mérjük: kapcsoló → Alkalmaz → a kiírt sor.
+    """
+
+    @staticmethod
+    def _trailer(ini_szoveg: str) -> int:
+        sorok = [s for s in ini_szoveg.splitlines() if s.startswith("text=")]
+        assert sorok, f"nincs text= sor:\n{ini_szoveg}"
+        return int(sorok[0].rstrip(";").split(",")[-1])
+
+    def _alkalmaz(self, controller, photo, *, dolt=False, alahuzott=False):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Próba")
+        controller.setTextItalic(dolt)
+        controller.setTextUnderline(alahuzott)
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        return self._trailer(
+            (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        )
+
+    def test_a_DOLT_es_ALAHUZOTT_bit_kimegy(self, controller, photo):
+        trailer = self._alkalmaz(controller, photo, dolt=True, alahuzott=True)
+        assert trailer & 0x0008, f"a DŐLT bit nem ment ki: {trailer:#06x}"
+        assert trailer & 0x0001, f"az ALÁHÚZOTT bit nem ment ki: {trailer:#06x}"
+
+    def test_a_KIKAPCSOLT_allapot_sem_hazudik(self, controller, photo):
+        trailer = self._alkalmaz(controller, photo)
+        assert not trailer & 0x0008
+        assert not trailer & 0x0001
+
+    def test_a_FEL_NEM_TART_bitek_megmaradnak(self, controller, photo):
+        """A `0xC000` a korpusz alapja — a mentés nem tüntetheti el."""
+        trailer = self._alkalmaz(controller, photo, dolt=True)
+        assert trailer & 0xC000 == 0xC000, (
+            f"a fel nem tárt bitek elvesztek: {trailer:#06x}"
+        )
+
+
 class TestTextStyle:
     """#450: kitöltés+körvonal szín, körvonal-vastagság, kitöltés ki/be,
     átlátszóság. #371 óta a KÉT SZÍN mentődik (a `text=` stílus-mezőjének
