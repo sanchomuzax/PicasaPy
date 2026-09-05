@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.290] – 2026-09-05
+
+### Hozzáadva
+
+- **A rejtett mappák jelszóval védhetők** (#1637), ahogy az eredeti
+  Picasában. A „Rejtett mappák megjelenítése" mostantól jelszót kér, ha
+  a felhasználó beállított egyet; a jelszó nem a fájlokat titkosítja,
+  hanem — az eredetihez hasonlóan — a megjelenítést kapuzza. A
+  jelszókérés ágán a menü pipája nem billen át, amíg a helyes jelszó meg
+  nem érkezik (#2377), tehát a pipa nem hazudik.
+
 ## [0.8.289] – 2026-09-05
 
 ### Változott
