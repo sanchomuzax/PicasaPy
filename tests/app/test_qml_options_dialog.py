@@ -382,6 +382,69 @@ class TestEmailTabLiveSettings:
         engine.deleteLater()
         qt_app.processEvents()
 
+    def test_a_HARMADIK_levelezogomb_letezik_es_TILTOTT_2432(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        """#2432: az eredetiben HÁROM gomb van, nálunk kettő volt.
+
+        A harmadik — „A Google Fiók használata" (`options/radio42.title`) —
+        tiltott helyőrző: a PicasaPy-nak nincs Google-fiók-integrációja, egy
+        engedélyezett, de semmit nem tevő gomb pedig rosszabb a hiányzónál
+        (#1895). A fül szerkezete így hű marad, és a tiltás kimondja, hogy
+        nem működik.
+        """
+        window, _engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        gomb = _child(window, "optionsMailGoogleRadio")
+
+        assert gomb is not None, "a harmadik levelezőgomb hiányzik"
+        assert gomb.property("enabled") is False, (
+            "a gomb nem működik — engedélyezve nem létező funkciót ígérne"
+        )
+
+    def test_a_harom_gomb_KIZARJA_egymast_2432(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        """A csoporttagságot a VISELKEDÉSÉN mérjük, nem a tulajdonságán.
+
+        ⚠️ A `ButtonGroup.group` csatolt tulajdonság Pythonból nem olvasható
+        — sem `QObject.property`, sem `QQmlProperty.read` nem adja vissza
+        (mindhárom gombra `None`). Az arra épülő állítás ÜRESEN ZÖLD lett
+        volna: `len({id(None)}) == 1` mindig igaz. Ezt menet közben mértem
+        ki, és ezért cseréltem le.
+
+        Amit a csoporttagság valójában garantál, az a KIZÁRÓLAGOSSÁG: ha az
+        egyik gomb bejelölődik, a többi kijelölése megszűnik. Ez a harmadik,
+        TILTOTT gombra is igaz — a tiltás a kattintást akadályozza, a
+        tulajdonság-írást nem.
+        """
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        gombok = {
+            nev: _child(window, nev)
+            for nev in (
+                "optionsMailDefaultRadio",
+                "optionsMailChooseRadio",
+                "optionsMailGoogleRadio",
+            )
+        }
+
+        gombok["optionsMailGoogleRadio"].setProperty("checked", True)
+        qt_app.processEvents()
+
+        assert gombok["optionsMailGoogleRadio"].property("checked") is True
+        for nev in ("optionsMailDefaultRadio", "optionsMailChooseRadio"):
+            assert gombok[nev].property("checked") is False, (
+                f"a(z) {nev} bejelölve maradt — a három gomb nem zárja ki "
+                "egymást, tehát nem egy ButtonGroupban vannak"
+            )
+
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
     def test_a_csuszka_a_MERT_fokozatra_all(
         self, qt_app, fake_controller, fake_confirm_settings
     ):
