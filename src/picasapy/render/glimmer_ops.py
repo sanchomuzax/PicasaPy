@@ -639,6 +639,14 @@ def noise_layer(
     """`Noise`: egyenletes eloszlású zajréteg float32 [0,255], `seed`-del
     determinisztikus (a Picasa saját PRNG-je nem publikus — a determinisztikus
     reprodukálhatóság a lényeg, nem a bitre azonos zajminta).
+
+    ⚠️ **A RÖGZÍTETT mag csak tesztelési célra való** (#907). Az eredeti
+    szemcséje nem determinisztikus: két egymás utáni alkalmazás FÜGGETLEN
+    zajmintát ad (a #685 mérőszettjén ΔE 1,804 → 2,671, ami a √2-es
+    szórásnövekedés, nem a kétszeres amplitúdó). Aki termelő úton hívja ezt,
+    **minden alkalmazáshoz új magot adjon** — különben kétszer alkalmazva
+    kétszer akkora hatást kap, mint az eredetiben. A `glimmer_artistic.
+    apply_picnik_grain` ezt a `seed=None` alapértékkel oldja meg.
     """
     rng = np.random.default_rng(seed)
     if grayscale:
