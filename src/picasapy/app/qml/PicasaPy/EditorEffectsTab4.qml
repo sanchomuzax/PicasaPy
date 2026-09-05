@@ -103,7 +103,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picnikgrain")
-            badge: panel.hasBadge("picnikgrain")
+            badge: panel.hasBadge(szuro)
         }
     }
 

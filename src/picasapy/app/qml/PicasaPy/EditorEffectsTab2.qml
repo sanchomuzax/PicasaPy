@@ -118,7 +118,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("heatmap")
-            badge: panel.hasBadge("heatmap")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectCrossProcess"

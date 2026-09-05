@@ -69,7 +69,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("unsharp2")
-            badge: panel.hasBadge("unsharp2")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSepia"
@@ -112,7 +112,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picnikgrain")
-            badge: panel.hasBadge("picnikgrain")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectTint"
@@ -133,7 +133,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("picniktint")
-            badge: panel.hasBadge("picniktint")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectSat"
@@ -166,7 +166,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("glow2")
-            badge: panel.hasBadge("glow2")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectAnsel"
@@ -199,7 +199,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("dir_tint")
-            badge: panel.hasBadge("dir_tint")
+            badge: panel.hasBadge(szuro)
         }
     }
 }

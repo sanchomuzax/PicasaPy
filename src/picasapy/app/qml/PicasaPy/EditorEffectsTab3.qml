@@ -85,16 +85,17 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("vignette")
-            badge: panel.hasBadge("vignette")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectPixelate"
-            label: panel.shiftMasodlagos
-                   ? qsTr("Focal Pixelate") : qsTr("Pixelate")
-            //: #2146: Shifttel a MÁSODLAGOS szűrő (picnikfocalpixelate) —
-            //: az eredeti csempe-táblája (pixelate -> picnikfocalpixelate)
-            readonly property string szuro: panel.shiftMasodlagos
-                                            ? "picnikfocalpixelate" : "pixelate"
+            label: qsTr("Pixelate")
+            //: ⚠️ #2146: a MÉRT Shift-pár `pixelate` -> `picnikfocalpixelate`
+            //: lenne, de a `render/chain.py` `_HANDLERS` táblájában
+            //: NINCS kezelője — alkalmazni sem tudnánk, a kattintás
+            //: `ValueError`-t adna. A Shift-ág ezért NEM épült meg
+            //: ezen a csempén; a többi nyolcon igen.
+            readonly property string szuro: "pixelate"
             onButtonClicked: if (!panel.tryOpenParamPanel(szuro, label)) panel.effectRequested(szuro)
             //: ⚠️ A BÉLYEGKÉP az ELSŐDLEGES effekté marad. Hogy az
             //: eredeti Shifttel a másodlagos előnézetét mutatja-e,
@@ -151,7 +152,7 @@ ColumnLayout {
             //: csempét adna. A render-láncban mind a kilenc
             //: megvan, a HÍVÁS tehát működik.
             thumbSource: panel.effectThumbSource("border")
-            badge: panel.hasBadge("border")
+            badge: panel.hasBadge(szuro)
         }
         PanelButton {
             objectName: "effectDropShadow"

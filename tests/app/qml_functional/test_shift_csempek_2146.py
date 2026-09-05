@@ -44,7 +44,12 @@ _FULEK = {
 }
 _PANEL = (_QML_DIR / "EditorPanel.qml").read_text(encoding="utf-8")
 
-#: A MÉRT kilenc pár: elsődleges -> (másodlagos, a másodlagos felirata)
+#: A MÉRT kilencből NYOLC pár épült meg: elsődleges -> (másodlagos, felirat).
+#:
+#: ⚠️ A kilencedik — `pixelate` -> `picnikfocalpixelate` — KIMARADT: a
+#: `render/chain.py` `_HANDLERS` táblájában nincs kezelője, tehát a
+#: Shifttel megnyomott csempe `ValueError`-t adna. A mérés érvényes, a
+#: megvalósítás vár a `picnikfocalpixelate` render-oldalára.
 PAROK = {
     "unsharp2": ("unsharp", "Sharpen (Old)"),
     "picnikgrain": ("grain", "Film Grain (Old)"),
@@ -53,11 +58,12 @@ PAROK = {
     "dir_tint": ("radtint", "Radial Tint"),
     "heatmap": ("nightvision", "Night Vision"),
     "vignette": ("matte", "Matte"),
-    "pixelate": ("picnikfocalpixelate", "Focal Pixelate"),
     "border": ("roundededges", "Rounded Edges"),
 }
 
 #: Két csempe, amire a Shift NEM hat — a változatlanság is állítás.
+#: (A `pixelate` NEM ide tartozik: ott a Shift-pár MÉRVE van, csak a
+#: render-oldal hiányzik — azt a `TestAKilencedikPar` méri.)
 SHIFT_MENTES = ("sepia", "bw")
 
 
@@ -190,4 +196,24 @@ class TestAFrissitesBEKOTESE:
             "csak ezt a metódust nem ismeri — a hívás `TypeError`-t dobna, "
             "az pedig megszakítaná a fülváltás-kezelő hátralévő részét "
             "(a paraméter-panel bezárását). A CI ezt el is kapta."
+        )
+
+
+class TestAKilencedikPar:
+    """⚠️ A `pixelate` -> `picnikfocalpixelate` pár MÉRVE van, de nem épült
+    meg: a `render/chain.py` `_HANDLERS` táblájában nincs kezelő, tehát a
+    Shifttel megnyomott csempe `ValueError`-t adna. Ez a próba akkor bukik
+    el, ha a render-oldal megkészül — és akkor épp azt jelenti, hogy a
+    Shift-ág megépíthető."""
+
+    def test_amig_nincs_render_kezeloje_addig_nem_kotjuk_be(self):
+        from picasapy.render.chain import _HANDLERS
+
+        van_kezelo = "picnikfocalpixelate" in _HANDLERS
+        be_van_kotve = '? "picnikfocalpixelate"' in _osszes_ful()
+        assert van_kezelo == be_van_kotve, (
+            "a `picnikfocalpixelate` render-kezelője "
+            f"{'MEGVAN' if van_kezelo else 'HIÁNYZIK'}, a Shift-ág viszont "
+            f"{'be van kötve' if be_van_kotve else 'nincs bekötve'} — "
+            "a kettőnek együtt kell mozognia"
         )

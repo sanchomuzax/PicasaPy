@@ -113,12 +113,23 @@ _LEGACY_EFFECT_NAMES = tuple(
 )
 _EFFECT_NAMES = (
     # #2141: az 1. effekt-fül első hat csempéje az EREDETI elsődlegesét
-    # hívja (a `0x00c7e5a0` csempe-tábla szerint). Az `unsharp`, `grain2`
-    # és `tint` a SHIFTes másodlagos — az eredetiben sem alkalmazható
-    # Shift nélkül, ezért nem marad felületi belépési pontjuk (a Shift-ág
-    # megépítése a #2146). A RENDERELÉSÜK változatlan: régi láncból
-    # továbbra is visszajátszhatók, a `_APPLICABLE_EFFECTS` csak az
-    # ÍRÁS kapuja.
+    # hívja (a `0x00c7e5a0` csempe-tábla szerint). Az `unsharp`, `grain`
+    # és `tint` a SHIFTes másodlagos — a #2141 idején nem volt felületi
+    # belépési pontjuk, ezért kimaradtak innen.
+    #
+    # #2146: a Shift-ág MEGÉPÜLT, tehát a másodlagosok visszakerülnek —
+    # enélkül a Shifttel megnyomott csempe `ValueError`-t adna (a
+    # `test_effect_names.py` őre pontosan ezt fogta meg).
+    #
+    # ⚠️ A `picnikfocalpixelate` KIMARAD: a `render/chain.py` `_HANDLERS`
+    # táblájában NINCS kezelője, tehát alkalmazni sem tudnánk. A
+    # `pixelate` csempe Shift-ága emiatt nem épült meg — külön jegy, ld.
+    # a #2146 lezárását.
+    "unsharp",
+    "grain",
+    "tint",
+    "glow",
+    "radtint",
     "unsharp2",
     "sepia",
     "bw",
