@@ -131,6 +131,11 @@ class TextGeometry:
     rotation: float = 0.0
 
 
+#: A 9. mező ismert bitjei (#2448). A többi bit jelentése NINCS feltárva.
+_ALAHUZOTT_BIT = 0x0001
+_DOLT_BIT = 0x0008
+
+
 @dataclass(frozen=True)
 class TextStyle:
     """A felirat színei és súlya.
@@ -167,8 +172,47 @@ class TextStyle:
     constant_1a: float = 1.0
     #: A korpuszban állandó `1.000000` (az `unknown_a` után).
     constant_1b: float = 1.0
-    #: A korpuszban állandó `49152` (`0xC000`).
+    #: A `text=` blokk 9. mezője — **bitmező**, nem állandó (#2448).
+    #:
+    #: A korpuszban `49152` (`0xC000`) a leggyakoribb, de két bit jelentése
+    #: a binárisból kiolvasva:
+    #:
+    #: | bit | maszk | jelentés | cím |
+    #: |---:|---:|---|---|
+    #: | 0 | `0x0001` | **aláhúzott** | `0x0062ebb3`–`0x0062ebb9` |
+    #: | 3 | `0x0008` | **dőlt** | `0x005ba7b0` + `0x0062ea5c` |
+    #:
+    #: ⚠️ A többi bit (köztük a `0x4000` és a `0x8000`) jelentése **NINCS
+    #: feltárva**. A szerializálás ezért a mezőt NEM építi újra a két
+    #: ismert bitből, hanem a beolvasottat őrzi meg, és csak a két ismert
+    #: bitet állítja — különben egy meg nem értett bit némán elveszne.
     trailer: int = 49152
+
+    @property
+    def underline(self) -> bool:
+        """Aláhúzott felirat (a 9. mező **0. bitje**)."""
+        return bool(self.trailer & _ALAHUZOTT_BIT)
+
+    @property
+    def italic(self) -> bool:
+        """Dőlt felirat (a 9. mező **3. bitje**)."""
+        return bool(self.trailer & _DOLT_BIT)
+
+    def with_style_flags(self, *, italic: bool, underline: bool) -> TextStyle:
+        """Új stílus a két ismert bit átállításával.
+
+        ⚠️ A **többi bit változatlan marad.** Ez nem óvatoskodás: a `0x4000`
+        és a `0x8000` jelentése nincs feltárva, és egy újraépített mező
+        némán elvinné őket — a felhasználó `.picasa.ini`-jéből olyan
+        információt, amit nem is értünk.
+        """
+        maradek = self.trailer & ~(_DOLT_BIT | _ALAHUZOTT_BIT)
+        uj = maradek
+        if italic:
+            uj |= _DOLT_BIT
+        if underline:
+            uj |= _ALAHUZOTT_BIT
+        return replace(self, trailer=uj)
 
 
 @dataclass(frozen=True)
