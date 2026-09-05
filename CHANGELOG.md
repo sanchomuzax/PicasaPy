@@ -21,6 +21,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Beállítások ▸ E-mail: megjelent a harmadik levelezőgomb** (#2432) — az
+  eredetiben „A Google Fiók használata" is választható, nálunk csak kettő
+  volt. A gomb **szürkén, kikapcsolva** jelenik meg: a PicasaPy-nak nincs
+  Google-fiók-kapcsolata, és egy működőnek látszó, de semmit nem tevő gomb
+  rosszabb a hiányzónál. A csoport címe is az eredetié lett
+  („Levelezőprogram:").
+
 - **A Picasa-adatbázis importja sérült bejegyzésnél sem áll le** (#2404).
   Eddig egyetlen hibás sor az egész importot megszakította hibaüzenettel;
   mostantól az a bejegyzés a saját nevével kerül be, a többi ezer pedig

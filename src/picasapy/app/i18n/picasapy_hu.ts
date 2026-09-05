@@ -624,8 +624,12 @@
         <translation>Beágyazott képek és képfeliratok küldése (csak Outlook)</translation>
     </message>
     <message>
-        <source>Choose your mail client:</source>
-        <translation>Válassza ki a levelezőprogramot:</translation>
+        <source>Mail program:</source>
+        <translation>Levelezőprogram:</translation>
+    </message>
+    <message>
+        <source>Use my Google Account</source>
+        <translation>A Google Fiók használata</translation>
     </message>
 </context>
 <context>

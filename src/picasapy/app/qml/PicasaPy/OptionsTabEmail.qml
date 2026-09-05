@@ -24,7 +24,10 @@ ColumnLayout {
         ? emailController : null
 
     Text {
-        text: qsTr("Choose your mail client:")
+        // #2432: az eredeti felirata „Levelezőprogram:”
+        // (`options/labelgroup38.title`) — a korábbi „Choose your mail
+        // client:” a mi fogalmazásunk volt.
+        text: qsTr("Mail program:")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }
@@ -45,6 +48,24 @@ ColumnLayout {
         ButtonGroup.group: mailGroup
         checked: root.mailCtl ? !root.mailCtl.useDefaultClient : false
         onToggled: if (root.mailCtl && checked) root.mailCtl.setUseDefaultClient(false)
+    }
+    // #2432: az eredetiben HÁROM gomb van (`options/radio42.title` = „A
+    // Google Fiók használata”). A PicasaPy-nak nincs Google-fiók-
+    // integrációja, ezért TILTOTT HELYŐRZŐ — ugyanaz a bevett alak, mint a
+    // „Send movies as” két gombjánál és az Outlook-jelölőnél lent.
+    //
+    // ⚠️ Miért helyőrző, és nem elhagyás: a fül szerkezete így hű marad, és
+    // a tiltás kimondja, hogy nem működik. Egy engedélyezett, de kattintásra
+    // semmit nem tevő gomb volna a rossz megoldás (#1895).
+    //
+    // ⚠️ A SORRENDRŐL a jegy nem állít semmit: az `options` panel
+    // respack-geometriája nincs meg, tehát a képernyőn hol áll a három gomb,
+    // az NINCS MÉRVE. A harmadik helye itt a mienk, nem az eredetié.
+    RadioButton {
+        objectName: "optionsMailGoogleRadio"
+        text: qsTr("Use my Google Account")
+        ButtonGroup.group: mailGroup
+        enabled: false
     }
 
     // #2020: EGY méret-csúszka, NYOLC MÉRT fokozattal, mellette a
