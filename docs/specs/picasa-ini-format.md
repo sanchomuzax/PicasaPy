@@ -1663,7 +1663,7 @@ körvonal nélküli blokkon mindkettő 0), tehát a körvonalhoz kapcsolódhat
 | mi az `<a>` | **LEZÁRVA** — a körvonal vastagsága |
 | mi az igazítás értékkészlete | **LEZÁRVA** — 0/1/2 = bal/közép/jobb (`0x0062f300`) |
 | **melyik float az átlátszatlanság (4. vagy 6.)** | ✅ **TELJESEN LEZÁRVA** — a **6.** az, és a **leképezés is megvan**: a csúszka nyers értéke, alulról **0,1**-re vágva (`0x0062f449`–`0x0062f488`). *(A sor 2026-09-05-ig „a leképezés nyitva marad" jelöléssel állt, holott az alábbi „A 6. mező (átlátszatlanság)" szakasz már megválaszolta — elavult jelölés volt.)* |
-| **mi a 8. mező HÁROM része** | ✅ **A KÉT ALSÓ RÉSZ LEZÁRVA (2026-09-05, #2108)** — **bit 8–15 = vízszintes igazítás** (0 = bal, 1 = közép, 2 = jobb), **bit 0–7 = kitöltés/körvonal mód** (0 = csak kitöltés, 1 = nincs kitöltés, 2 = kitöltés + körvonal), mindkettő a binárisból, ld. lentebb. Kontrollált minta **nem kellett**. ⚠️ A **felső 16 bit** (`+0x14`) **NYITOTT** — a szűkítés is lentebb. |
+| **mi a 8. mező HÁROM része** | ✅ **MIND A HÁROM LEZÁRVA (2026-09-05, #2108)** — **bit 8–15 = vízszintes igazítás** (0 = bal, 1 = közép, 2 = jobb), **bit 0–7 = kitöltés/körvonal mód** (0 = csak kitöltés, 1 = nincs kitöltés, 2 = kitöltés + körvonal), mindkettő számítva/kiolvasva a binárisból; a **felső 16 bitet** a panel **minden szerkesztéskor nullázza** (a másoló `0x00a4e9e0` + a konstans nulla getter `0x004bdeb0`), és a felirat-funkción belül nincs fogyasztója. Kontrollált minta **nem kellett**. |
 | **mi a `<b>` (9. mező)** | ✅ **LEZÁRVA (2026-09-05)** — **bit 0 = aláhúzott**, **bit 3 = dőlt**, a binárisból (ld. lentebb). A `0xC000`/`0xC001`/`0xC008` hármas ezzel maradéktalanul megmagyarázva. Bit 14 jelentése **nincs megállapítva**, bit 15 forrása **NINCS MEG**. ⛔ A félkövér **nem** ebben a mezőben van. |
 
 #### ⭐ A 9. mező BITJEI — dőlt és aláhúzott, a binárisból (2026-09-05, #2448)
@@ -1912,30 +1912,71 @@ azért, mert a `no_fill` ága előbb fut. A felső bájtra ugyanígy: a 3. és a
 blokk `2`-es felső bájtja mellé a spec korábban **mérten** jobbra igazított
 szélt talált.
 
-##### ⚠️ A felső 16 bit (`+0x14`) — NYITOTT, de erősen szűkítve
+##### ✅ A felső 16 bit (`+0x14`) — LEZÁRVA: a panel MINDEN szerkesztéskor NULLÁZZA
 
-Amit a kör HOZZÁTETT, mind a binárisból:
+A korábbi kérdés így szólt: „a `text=` írása a panel `ytTextSettings`-bázisát
+szerializálja-e, vagy feliratonkénti objektumot". **A válasz: feliratonkéntit
+— de a panel a saját, konstans nulláját belemásolja.**
 
-- a konstruktor alapértéke **1** (`0x005ba5d0`, `mov byte ptr [esi+0x14], 1`);
-- a panel — az **egyetlen** leszármazott — a **beállítót üres csonkkal**
-  írja felül (`[vtbl+0x38]` → `0x004bdea0` = `ret 4`), a **gettert pedig
-  konstans nullával** (`[vtbl+0x48]` → `0x004bdeb0` = `xor al,al; ret`)
-  ⇒ **amit a panel ad ki, az mindig 0**;
-- a `text=` írója (`0x00a4e3b0`) a szerializálandó objektumot
-  **paraméterként** kapja (`[esp+0x3c]`), és a hívója (`0x00a4db30`) is
-  továbbadja (`0x00a4db86 push ecx`) ⇒ az objektum kiléte innen nem dől el.
+**1. Az objektumok kizárólag MÁSOLÁSSAL kapják az értéküket.** A
+`ytTextSettings` konstruktorát (`0x005ba5d0`) a teljes `Picasa3.exe`-ben
+**pontosan két** hely hívja (kimerítő `E8`-relatívcím-pásztázás):
+`0x005bb758` és `0x00a4da07` — és mindkettőt közvetlenül egy másoló hívás
+követi.
 
-**A megmaradt kérdés ezzel egyetlen mondat:** a `text=` írása a panel
-`ytTextSettings`-bázisát szerializálja-e (akkor a felső 16 bit **fogalmilag**
-mindig 0), vagy feliratonkénti objektumot (akkor a konstruktor 1-esének
-látszania kellene, és valami nullázza). **Amit hiába próbáltam:** a
-`[vtbl+0x38]` hívási helyeinek pásztázása — a `mov r32,[r32+0x38]` +
-közeli `call r32` mintára a teljes fájlban **195** jelölt van, tehát a
-slot-szám nem szelektív (ugyanaz a csapda, mint a tagoffszet-söprésnél).
-**A járható út:** a `0x00a4db30` hívóláncának (`0x005bb630`,
-`0x009089a0`, `0x00a4e6f0`) végigvitele, vagy egy olyan `.picasa.ini`,
-amelynek 8. mezője nem nulla felső 16 bittel, újramentve a Picasával — ha
-nullára változik, a panel a forrás.
+**2. A másoló `0x00a4e9e0` — getter→setter párokkal, tulajdonságonként.**
+`ebx` = forrás (1. argumentum, `0x00a4e9e4`), `esi` = cél. A 8. mező három
+része három párral megy át:
+
+| rész | forrás getter | cél setter | cím |
+|---|---|---|---|
+| bit 0–7 | `[src+0x40]` | `[dst+0x30]` | `0x00a4ea75` → `0x00a4ea7f` |
+| **bit 16–31** | **`[src+0x48]`** | **`[dst+0x38]`** | `0x00a4ea88` → `0x00a4ea91` |
+| bit 8–15 | `[src+0x3c]` | `[dst+0x2c]` | `0x00a4eaed` → `0x00a4eaf7` |
+
+**3. A panel a saját bázisát másolja MINDEN kijelölt feliratba.** A
+`0x00630c70` (a panel `0x0062d750`-es kezelőjéből, `0x0062e4ac`):
+
+```
+0x00630c8b  lea ebx, [ebp + 0x28c]      ; FORRÁS = a panel ytTextSettings-bázisa
+0x00630c91  mov eax, [ebp + 0x308]      ; a kijelölt feliratok tömbje
+0x00630c97  mov esi, [eax + edi*4]      ; CÉL = az i-edik felirat
+0x00630c9f  push ebx
+0x00630ca0  call 0x00a4e9e0             ; Copy(dst = esi, src = ebx)
+```
+
+**4. És a panel gettere konstans nulla.** A panel az egyetlen leszármazott, és
+a `[vtbl+0x48]` slotját a `0x004bdeb0` = `xor al, al; ret` csonkkal írja
+felül, a `[vtbl+0x38]` beállítót pedig a `0x004bdea0` = `ret 4` üres csonkkal.
+
+⇒ **Minden felirat, amit a szerkesztő megérint, 0-t kap a felső 16 bitre** —
+felülírva a konstruktor 1-esét. Ez magyarázza, hogy a korpusz **7/7**
+blokkjában 0 áll, és egyben kimondja: ez **nem érintetlen mező**, hanem
+aktívan nullázott.
+
+##### ⛔ A mező JELENTÉSE: a felirat-funkción belül nincs — negatív lelet
+
+- **Az osztály maga sosem olvassa.** A `0x00c943d4`-es vtábla mind a **40** metódusát
+  végigolvasva (a `+0x9c` az utolsó függvény-slot; a `+0xa0` már adat) a `+0x14`-re **pontosan két** hivatkozás van: a
+  beállító (`0x005ba7d4`) és a getter (`0x005ba810`). Semmi más.
+- **A panelnek nincs rá vezérlője**: se beállító, se getter — mindkettő csonk.
+- **A teljes `edittextpanel`-tartományban** (52 függvény, `0x0062d000`–
+  `0x00631500`) **egyetlen** `[vtbl+0x48]` slot-hívás sincs; a három `+0x48`
+  találat más struktúrák mezője.
+- Marad tehát három út, és mindhárom **átvivő**, nem fogyasztó: fájl → objektum
+  (`0x00a4e06b`), objektum → objektum (`0x00a4ea88`), objektum → fájl (a
+  `+0x48` getter az íróban).
+
+⚠️ **A hatókör kimondva:** ez azt bizonyítja, hogy a **felirat-szerkesztőnek**
+nincs köze a mezőhöz. Egy azon kívüli fogyasztót nem lehetett kizárni: a
+`[vtbl+0x48]` alakú hívásra a teljes fájlban 279 függvény jelölt, tehát a
+slot-szám **nem szelektív** (ugyanaz a csapda, mint a tagoffszet-söprésnél).
+
+⛳ **Ami ebből a fejlesztésre következik:** az írásunk **őrizze meg
+változatlanul** a beolvasott felső 16 bitet (a mai viselkedés helyes), és
+**ne** próbálja meg előállítani. Ha egyszer a szerkesztőnk is átveszi a
+Picasa viselkedését, az a nullázás lesz — de ezt csak akkor szabad megtenni,
+ha a felirat tényleg átment a szerkesztőn.
 
 #### ⭐ A MÉRTÉKEGYSÉG-LEKÉPEZÉS — mind a kilenc mező forrása, és a két csúszka útja (2026-09-04, #2271)
 
