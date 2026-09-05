@@ -414,7 +414,15 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     if not records:
         return tr("0 pictures")
     total_mb = sum(r.size for r in records) / (1024 * 1024)
-    dates = sorted(r.taken_at for r in records if r.taken_at)
+    # #2304: EXIF-felvételi idő híján a FÁJL ideje a tartalék. Enélkül egy
+    # csupa EXIF-nélküli mappánál (letöltött vagy generált képek) a
+    # dátumtartomány egyszerűen kimaradt az állapotsorból, holott az
+    # eredeti Picasa ott is ír dátumot. A tartalék nem új: a rács
+    # rendezőkulcsa (`photo_sort.photo_date`) és — ugyancsak a #2304 óta —
+    # a mappa dátuma is pontosan erre esik vissza.
+    from .photo_sort import photo_date
+
+    dates = sorted(photo_date(r) for r in records)
     date_part = ""
     if dates:
         first = long_date(dates[0], locale)
