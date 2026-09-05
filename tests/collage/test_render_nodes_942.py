@@ -215,12 +215,26 @@ def _regi_render_pile(canvas, images, settings):
 def _regi_make_picasa_collage(sources, settings):
     """A #942 ELŐTTI `make_picasa_collage`, befagyasztva. Csak a képet adja."""
     paths = [Path(s) for s in sources]
-    decoded = [
-        cv2.imdecode(np.fromfile(str(ut), dtype=np.uint8), cv2.IMREAD_COLOR)
-        for ut in paths
-        if ut.exists()
-    ]
-    decoded = [kep for kep in decoded if kep is not None]
+    # #1043: a dekódolási hiba NEM maradhat néma. A régi kód a `None`-okat
+    # szó nélkül kiszűrte — és épp ez tette az őrt terhelés alatt
+    # megfejthetetlenné: ha egy kép dekódolása AZ EGYIK renderelés közben
+    # elbukik (memórianyomás), az az oldal kevesebb képpel dolgozik, a
+    # `regular_grid_shape` pedig a DARABSZÁMBÓL számol rácsot — egyetlen
+    # kiesett kép így a vászon 60–73%-át átrendezi. A tünet ezért nézett ki
+    # „a rajzoló elromlott"-nak, holott a bemenet tért el.
+    decoded = []
+    for ut in paths:
+        if not ut.exists():
+            continue
+        kep = cv2.imdecode(np.fromfile(str(ut), dtype=np.uint8), cv2.IMREAD_COLOR)
+        if kep is None:
+            raise AssertionError(
+                f"#1043: a(z) {ut.name} dekódolása elbukott az ORÁKULUM ágán "
+                "(cv2.imdecode → None). Ez NEM a rajzoló hibája: a két oldal "
+                "így különböző képhalmazzal dolgozna, és a rács alakja is "
+                "megváltozna. Jellemzően memórianyomás alatt fordul elő."
+            )
+        decoded.append(kep)
 
     canvas = np.empty((settings.height, settings.width, 3), dtype=np.uint8)
     canvas[:, :] = settings.background
@@ -353,7 +367,16 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
         # hogy az ELRENDEZÉS és a csempe-rajz változatlan
         shadow=False,
     )
-    most = make_picasa_collage(forrasok, beallitas).image
+    jelentes = make_picasa_collage(forrasok, beallitas)
+    # #1043: az ÉLŐ oldal se hallgasson. A `skipped` a kihagyott képeket
+    # sorolja; ha bármi kimaradt, a két oldal különböző KÉPHALMAZZAL
+    # dolgozott, és a bájtazonossági állítás értelmét veszti — a bukás
+    # ilyenkor nem a rajzolóé.
+    assert not jelentes.skipped, (
+        "#1043: az élő rajzoló képet hagyott ki — a bájtazonossági "
+        f"összevetés így nem érvényes. Kihagyva: {jelentes.skipped}"
+    )
+    most = jelentes.image
     regen = _regi_make_picasa_collage(forrasok, beallitas)
     eltero = int(np.count_nonzero(np.any(most != regen, axis=2)))
     if tema == CONTACTSHEET:
