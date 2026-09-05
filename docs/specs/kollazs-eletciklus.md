@@ -968,16 +968,85 @@ Az `AI7.cxf` (`multiexp`) `scale="1.000000"` — **pontosan az elrendező
 mezőazonosság sem kérdéses. A többi témánál viszont valami **felülírja** —
 és az a valami a mérés szerint **nincs a kollázs-sávban**.
 
-### 17.10 A KÖVETKEZŐ lépés (a korábbi helyett)
+### 17.10 ⭐ A SÁVON KÍVÜLI keresés LEFUTOTT — negatív (2026-09-06)
 
-1. **A sávon KÍVÜL kell keresni** az írót — a fenti szűrővel, az egész
-   `.text`-en, a csomópont-alakra (`+0x28` és `+0x2c` float egy függvényben).
-2. **Vagy mutatón át ír**: a sávban **10** `lea r, [r+0x2c]` hely van
-   (`0x00823c21`, `0x008300dc`, `0x0083198a`, `0x00834af3`, `0x00860032`,
-   `0x00879909`, `0x00879b7b`, `0x00879d18`, `0x0087e0cd`, `0x008831c8`,
-   `0x0088ab66`) — eltolás-alapú pásztázás ezeket **nem látja**.
-3. A fekvő `contactsheet`-minta továbbra is **független** ellenőrzés lenne,
-   de a kérdést már nem ez dönti el elsőként.
+Az előző kör két utat nevezett meg. Mindkettő megjárva:
+
+**a) Csomópont-alakú float-írók az EGÉSZ binárisban.** A szűrő: egy
+függvény, amely a `+0x2c`-t float-tal írja, **és** a `+0x28`-at is, **és**
+legalább három mezőt a `+0x18`…`+0x2c` sávból (esp/ebp-relatív alakok
+kizárva). **16 találat**, ebből 6 a kollázs-sávban, **10 a sávon kívül**:
+`0x0050bd70`, `0x0050be50`, `0x0050cdb0`, `0x0050d560`, `0x005c2350`,
+`0x007e68f0`, `0x007e6930`, `0x007e69b0`, `0x00819f50`, `0x009d7a60`.
+
+A tízből **egyet olvastam végig utasításonként** — a `0x00819f50`-et, mert
+egyedül ezt hívja a kollázs-sávból egy függvény (`0x00873cb0`), tehát ez volt
+az egyetlen valódi jelölt. Ez **nem a csomópont**, hanem **három (x, y) pont**:
+
+```
+0x00819f75  fld [eax+0x18] ; fmul [ecx]     ; ×sx
+0x00819f7d  fld [eax+0x1c] ; fmul [ecx+4]   ; ×sy
+0x00819f86  fld [eax+0x20] ; fmul [ecx]     ; ×sx
+0x00819f8e  fld [eax+0x24] ; fmul [ecx+4]   ; ×sy
+0x00819f97  fld [eax+0x28] ; fmul [ecx]     ; ×sx
+0x00819f9f  fld [eax+0x2c] ; fmul [ecx+4]   ; ×sy
+```
+
+⇒ **három (x, y) pont**, nem `theta`+`scale`: a `+0x18`/`+0x20`/`+0x28`
+`sx`-szel, a `+0x1c`/`+0x24`/`+0x2c` `sy`-nal szorzódik. A csomópontnál a
+`+0x28` **szög**, amit `sy`-nal szorozni értelmetlen. Ugyanez az alak a
+kollázs-sávbeli `0x00822230`-on is (`0x008222c0`–`0x008223ca`).
+
+⚠️ **A hatókör kimondva:** a maradék kilenc sávon kívüli találatot
+**nem** olvastam végig; egyiket sem hívja a kollázs-sáv **közvetlenül** (`xrefs`), ezért
+kerültek ki a jelöltek közül — ez **kizárás hívási úton**, nem tartalmi.
+Háromnak (`0x0050be50`, `0x0050cdb0`, `0x0050d560`) **egyáltalán nincs**
+közvetlen hívója, tehát csak virtuális úton érhetők el: rájuk a kizárás
+**gyengébb**.
+
+**b) A burkoló `+0x68`-as rése az EGÉSZ binárisban.** Float-írás a
+`+0x68`-ra (mutatós alak, esp/ebp nélkül): **öt** függvény az egész
+programban — `0x004147d0`, `0x0066f470`, `0x007fb9f0`, `0x0082fab0`,
+`0x00832830`. A kollázs-sávban **csak a beolvasó** (`0x00832830`); a
+`0x0082fab0` **bájtminta-találat utasításhatáron belül** (a `0x0082fb72`
+egy `push ebx` + `push 0x9dd5` közepe), tehát nem író.
+
+⇒ **A sávon kívül sincs a `scale`-nek számoló írója.**
+
+### 17.11 ⛔ HELYESBÍTÉS: az író csomópont-tömbje a MÁSODIK argumentum
+
+A lap eddig úgy hivatkozott a `.cxf`-író olvasására, hogy `edx` a
+csomópont-tömb bázisa — de nem mondta ki, **melyik** argumentumból. A
+veremeltolás kiszámolva:
+
+- `FUN_008347b0` bemenete: `sub esp, 0xc` · `push ebx` ⇒ `ebx = [esp+0x14]`
+  = **1. argumentum**; `push ebp` ⇒ `ebp = [esp+0x1c]` = **2. argumentum**.
+- A `0x00835096`-os `push` utáni `call 0x00985ff0` **`ret 4`**-gyel zár
+  (`0x0098601d`), tehát a **hívott takarít** ⇒ a `0x008350ae`-nél
+  `[esp+0x24]` = **2. argumentum** (`ebp`), nem az első.
+
+⇒ `scale = tömb[ csomópont_bájteltolás + 0x2c ]`, ahol a **tömb a 2.
+argumentum**, a bájteltolás pedig `[ebx+0x48]` — amit az író **tízszer
+olvas és egyszer sem ír** (`0x00834c2d`, `0x00834d1f`, `0x00834e02`,
+`0x00834ee5`, `0x00834fc8`, `0x008350ab`, `0x00835192`, `0x008351f5`,
+`0x0083521e`, `0x00835296`): **a hívó állítja csomópontonként**
+(`0x00834777`: `push ecx` · `push edx` · `call`).
+
+### 17.12 ⭐ A BEOLVASÓ OBJEKTUMA NEM TÖMBELEM — itt a hiányzó láncszem
+
+A beolvasó a `theta`-t `[ebx+0x64]`-be, a `scale`-t `[ebx+0x68]`-ba teszi;
+a tömbelemben viszont ugyanez a `+0x28` és a `+0x2c`. A kettő **nem
+ugyanaz az objektum** — a beolvasó egy **burkolóba** ír, és onnan valami
+átviszi a tömbbe.
+
+**Ez az átvitel az egyetlen hely, ahol a `scale` a modellbe kerülhet, és
+még nincs azonosítva.** A dokumentum-objektum konstruktora
+`FUN_00832500` (103 b, a `CCollageParser::vftable` = `0x00cbf878`
+beírásával, `0x00832524`); ez adja a `+0x3c = 2`-t (a `version="2"`),
+a `+0x48 = 0`-t és a `+0x54`/`+0x58`/`+0x5c`/`+0x60` nullákat.
+
+**A következő lépés (konkrétan):** a `+0x64`/`+0x68` **olvasói** — azok
+adják át a tömbnek. Ugyanaz a szűrő, mint fent, csak `fld` iránnyal.
 
 **Mi döntené el (kiegészítve 2026-09-05):** elsősorban a 17.10 két gépi
 lépése; a **fekvő** tájolású `contactsheet`-minta (a meglévő AI6 álló)
