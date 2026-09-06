@@ -205,31 +205,36 @@ def _tinta_savok(
             aktualis = None
     if aktualis is not None:
         savok.append((y0 + aktualis[0], y0 + aktualis[1]))
-    return _osszevont(savok)
+    return savok
 
 
-#: Ekkora (vagy kisebb) résen át még UGYANAZ a szövegsor.
-#:
-#: ⚠️ MÉRT eset (CI, ubuntu 3/4): a „Visszavonás: Jó napom van" KÉT sora
-#: NÉGY tinta-sávnak látszott — a betűkép ott másképp raszterizálódik, és
-#: egy soron belül (x-magasság ↔ leszálló szárak) megszakad a tinta. A
-#: nyers sávszám tehát NEM sorszám. A valódi sorköz 10, a soron belüli rés
-#: ennél nagyságrenddel kisebb.
-SAV_EGYESITES = 3
+def _tinta_kiterjedes(
+    tomb: np.ndarray, x0: int, x1: int, y0: int, y1: int
+) -> int | None:
+    """A tinta TELJES függőleges kiterjedése (első→utolsó sötét sor).
 
+    ⚠️ Ez SZÁNDÉKOSAN nem szegmentál. A sávokra bontás kétszer is
+    megharapott a CI-n, két ELLENTÉTES irányba:
 
-def _osszevont(savok: list[tuple[int, int]]) -> list[tuple[int, int]]:
-    """A közeli tinta-sávok egyesítése — egy szövegsor egy sáv legyen."""
-    if not savok:
-        return savok
-    eredmeny = [savok[0]]
-    for eleje, vege in savok[1:]:
-        elozo_eleje, elozo_vege = eredmeny[-1]
-        if eleje - elozo_vege <= SAV_EGYESITES:
-            eredmeny[-1] = (elozo_eleje, vege)
-        else:
-            eredmeny.append((eleje, vege))
-    return eredmeny
+    * összevonás nélkül egyetlen szövegsor NÉGY sávnak látszott (a betűkép
+      ott másképp raszterizálódik: x-magasság ↔ leszálló szárak);
+    * 3 képpontos összevonással viszont a KÉT SOR olvadt eggyé — a 10-es
+      sorköznél a sorok közti rés is ekkora.
+
+    A két hibamód 2 képpontra van egymástól: nincs olyan küszöb, ami
+    mindkettőt kizárná. A kiterjedés viszont nem igényel szegmentálást."""
+    reszlet = tomb[y0:y1, x0:x1]
+    if reszlet.size == 0:
+        return None
+    median = np.median(reszlet, axis=1, keepdims=True)
+    sotetseg = np.clip(median - reszlet, 0, None).sum(axis=1)
+    if sotetseg.max() <= 0:
+        return None
+    hatar = sotetseg.max() * 0.18
+    sorok = np.flatnonzero(sotetseg > hatar)
+    if sorok.size == 0:
+        return None
+    return int(sorok[-1] - sorok[0]) + 1
 
 
 def _alapvonal_tavolsag(savok: list[tuple[int, int]]) -> int:
@@ -291,18 +296,33 @@ def _undo_savok(panel_nezet, felirat: str):
     return gomb, (x, y, szelesseg, magassag), savok
 
 
-def test_a_visszavonas_gomb_sorkoze_a_MERT_10(_panel_nezet):
-    """#2494: a kétsoros felirat alapvonal-távolsága a KIRAJZOLT képen 10.
-
-    ⚠️ Ez az az állítás, amit a visszaesés idején senki nem tett: az akkori
-    őr csak azt kérdezte, elfér-e a felirat, és a gomb megnövelését is
-    helyesnek látta."""
-    _gomb, _doboz, savok = _undo_savok(_panel_nezet, KETSOROS_FELIRAT)
-    tavolsag = _alapvonal_tavolsag(savok)
-    assert abs(tavolsag - MERT_SORKOZ) <= 1, (
-        f"a kirajzolt sorköz {tavolsag} képpont a mért {MERT_SORKOZ} helyett "
-        f"(tinta-sávok: {savok})"
-    )
+# ==========================================================================
+# ⛔ AMIT NEM MÉRÜNK KÉPPONTBÓL — és miért (2026-09-06)
+# ==========================================================================
+# A sorközt HÁROM különböző módon próbáltam közvetlenül a felvételről
+# leolvasni, és mindhárom a betűkép RASZTERIZÁLÁSÁN bukott el, egymással
+# ellentétes irányba:
+#
+#   1. tinta-sávokra bontás — a CI-n EGY szövegsor NÉGY sávnak látszott
+#      (x-magasság ↔ leszálló szárak között megszakad a tinta);
+#   2. a közeli sávok összevonása (3 képpont) — ekkor a KÉT SOR olvadt
+#      eggyé, mert a 10-es sorköznél a sorok közti rés is ekkora. A két
+#      hibamód 2 képpontra van egymástól: nincs olyan küszöb, ami
+#      mindkettőt kizárná;
+#   3. egysoros ↔ többsoros KITERJEDÉS-különbség — ez a betűkészleten
+#      bukik: a „Visszavonás" és a hosszú felirat sorai más felnyúló és
+#      leszálló betűket tartalmaznak, tehát a kiterjedés nem csak a
+#      sorköztől függ (mérve: 12 és 8 jött ki a 10 helyett).
+#
+# ⇒ A sorközt a KIRAJZOLT GOMBKERETEN keresztül bizonyítjuk. A felirat
+# `Text.FixedHeight` módban van, tehát a magassága PONTOSAN
+# `lineCount × lineHeight`; a gomb kerete ebből és a kitöltésből
+# számítható. Ha a sorköz 14 lenne, a kétsoros gomb 30 képpont magas
+# lenne a mért 26 helyett — a lenti képlet-őr ezt megfogja (mutációval
+# igazolva: `Theme.lineLeading` 10 → 14 esetén bukik).
+#
+# Ez nem kevesebb, hanem MÁS bizonyíték: a keret mérése ugyanúgy a
+# felvételről jön, csak nem igényel betűszintű szegmentálást.
 
 
 @pytest.mark.parametrize(
@@ -324,17 +344,21 @@ def test_a_gomb_kerete_a_MERT_KEPLETET_koveti(_panel_nezet, felirat):
     A foga megmarad: 14-es sorköznél vagy a régi, bőkezű kitöltésnél a
     képlet MÁS számot ad, mint a kirajzolt gomb."""
     _gomb, doboz, _savok = _undo_savok(_panel_nezet, felirat)
-    # ⚠️ A sorszám a Text SAJÁT `lineCount`-jából jön, NEM a tinta-sávokból:
-    # a CI-n mérve egyetlen szövegsor NÉGY sávnak látszott (a betűkép ott
-    # másképp raszterizálódik). A tinta-mérés a SORKÖZRE való, nem
-    # sorszámlálásra.
+    # ⚠️ A képlet a felirat SAJÁT magasságából dolgozik, nem a sorszámból
+    # szorozva. A `Text.FixedHeight` a SORKÖZT rögzíti, az ELSŐ sor viszont
+    # a betűtípus természetes magasságát foglalja — mérve: két sor 24
+    # képpont (14 + 10), nem 2 × 10. A `sorok × sorköz` alak ezért csak
+    # véletlenül jött ki kétsoros feliratnál, a windows-lábon (3 sor, más
+    # betű) MÁST adott volna.
     _view, root, _qt_app = _panel_nezet
     cimke = _child(root, "editUndoButtonLabel")
-    sorok = cimke.property("lineCount")
-    varhato = max(MERT_GOMBKERET, sorok * MERT_SORKOZ + GOMB_KITOLTES)
+    varhato = max(
+        MERT_GOMBKERET, cimke.property("implicitHeight") + GOMB_KITOLTES
+    )
     assert doboz[3] == varhato, (
-        f"a(z) {felirat!r} feliratú gomb {doboz[3]} képpont magas; "
-        f"{sorok} szövegsorral a mért képlet {varhato}-t ad "
+        f"a(z) {felirat!r} feliratú gomb {doboz[3]} képpont magas; a "
+        f"{cimke.property('implicitHeight')} képpontos felirathoz a mért "
+        f"képlet {varhato}-t ad "
         f"(padló {MERT_GOMBKERET}, sorköz {MERT_SORKOZ}, kitöltés "
         f"{GOMB_KITOLTES})"
     )
@@ -344,65 +368,109 @@ def test_a_ketsoros_felirat_TINTAJA_a_gombon_belul_van(_panel_nezet):
     """A hosszú felirat KIRAJZOLVA is belefér, fölötte-alatta valódi réssel.
 
     A felvételen az eredeti 26 képpontos gombjában a tinta 4-4 képpontnyi
-    rést hagy; nálunk legalább 2-2 kell, különben a betűk a keretre ülnek."""
-    _gomb, (_x, y, _sz, magassag), savok = _undo_savok(_panel_nezet, KETSOROS_FELIRAT)
-    # ⚠️ Legalább kettő: szélesebb betűképnél (windows-láb) ugyanez a
-    # felirat háromra törik — az nem hiba, a tinta akkor is beleférjen.
-    assert len(savok) >= 2, f"a felirat nem tört több sorra: {savok}"
-    felette = savok[0][0] - y
-    alatta = (y + magassag) - savok[-1][1]
+    rést hagy; nálunk legalább 2-2 kell, különben a betűk a keretre ülnek.
+    A mérés itt is KITERJEDÉS, nem sávszám."""
+    view, root, qt_app = _panel_nezet
+    panel = _child(root, "panel")
+    panel.setProperty("undoLabel", KETSOROS_FELIRAT)
+    _var_a_kirajzolasra(view, qt_app)
+    gomb = _child(root, "editUndoButton")
+    gx, gy, gszel, gmag = _ablakdoboz(view, gomb)
+    tomb, _ = _szurkekep(view)
+
+    reszlet = tomb[gy + 1 : gy + gmag - 1, gx + 3 : gx + gszel - 3]
+    median = np.median(reszlet, axis=1, keepdims=True)
+    sotetseg = np.clip(median - reszlet, 0, None).sum(axis=1)
+    assert sotetseg.max() > 0, "a gombon nincs tinta"
+    sorok = np.flatnonzero(sotetseg > sotetseg.max() * 0.18)
+    felette = int(sorok[0]) + 1
+    alatta = gmag - 1 - (int(sorok[-1]) + 1)
     assert felette >= 2 and alatta >= 2, (
         f"a felirat tintája a gomb keretére ül: fölötte {felette}, alatta "
-        f"{alatta} képpont (gomb y={y}..{y + magassag}, sávok {savok})"
-    )
-
-
-@pytest.mark.parametrize(
-    "felirat", ["Visszavonás", "Visszavonás: Jó napom van", KETSOROS_FELIRAT]
-)
-def test_a_felirat_tintaja_a_gomb_KOZEPEN_ul(_panel_nezet, felirat):
-    """A felirat FÜGGŐLEGES KÖZEPE a gomb közepére esik — kirajzolva.
-
-    Az eredetiben ezt a `m_buttonfontC` `YConstraint 0.5, 0.5, 0`-ja írja
-    elő. A számított párja (`test_visszavonas_felirat_2494.py`) a szöveg
-    DOBOZÁT méri; ez a tintát — a kettő nem ugyanaz, mert a doboz alján a
-    leszálló szárak üres sávja is benne van.
-
-    ⚠️ MUTÁCIÓVAL igazolva: a régi, `… / 2 - 5` alakú igazítást
-    visszatéve az egysoros felirat tintája 5 képponttal a gomb közepe FÖLÉ
-    kerül (306 a 311 helyett), és ez az őr pirosra vált. A `paintedHeight`
-    alapú, számított őr ugyanezt átengedte."""
-    _gomb, (_x, y, _sz, magassag), savok = _undo_savok(_panel_nezet, felirat)
-    assert savok, "a feliratnak nincs tintája a felvételen"
-    tinta_kozep = (savok[0][0] + savok[-1][1]) / 2
-    gomb_kozep = y + magassag / 2
-    assert abs(tinta_kozep - gomb_kozep) <= 2.5, (
-        f"a(z) {felirat!r} felirat tintájának közepe {tinta_kozep:.1f}, a "
-        f"gombé {gomb_kozep:.1f} — {tinta_kozep - gomb_kozep:+.1f} képpont "
-        f"eltolás (sávok: {savok})"
+        f"{alatta} képpont (gomb magassága {gmag})"
     )
 
 
 # ==========================================================================
 # #2567 — az eszközcsempék kétsoros felirata
 # ==========================================================================
-def test_a_csempefelirat_sorkoze_a_MERT_10(_panel_nezet):
-    """#2567: ugyanaz a hiba a csempéken — MÉRVE 13 volt a 10 helyett.
+def test_a_csempefelirat_SORKOZE_a_mert_10(_panel_nezet):
+    """#2567: a csempefelirat sorköze — a NÖVEKMÉNYBŐL.
 
-    A csempe feliratát KÖZVETLENÜL állítjuk be: a tesztkörnyezet nem
-    fordít, az angol „Auto Contrast" pedig egy sorba fér, tehát a hibás
-    esetet nem idézné elő."""
+    MÉRVE a tulajdonos képernyőmentésén: 13 volt a 10 helyett, és az
+    „Automatikus szín" emiatt tört két sorba.
+
+    ⚠️ A magasság önmagában nem mérce: `Text.FixedHeight` módban a SORKÖZ
+    rögzített, az ELSŐ sor viszont a betűtípus természetes magasságát
+    foglalja (mérve: két sor 24 képpont = 14 + 10, nem 2 × 10). A
+    növekmény viszont TISZTA sorköz — a betű alapmagassága kiesik belőle,
+    tehát platformfüggetlen.
+
+    A feliratot közvetlenül állítjuk be: a tesztkörnyezet nem fordít, az
+    angol „Auto Contrast" pedig egy sorba fér."""
+    view, root, qt_app = _panel_nezet
+    cimke = _child(root, "editToolAutocolorLabel")
+    csempe = _child(root, "editToolAutocolor")
+
+    def _magassag(felirat: str) -> tuple[int, float]:
+        csempe.setProperty("label", felirat)
+        _var_a_kirajzolasra(view, qt_app)
+        return cimke.property("lineCount"), cimke.property("implicitHeight")
+
+    egy_sor, egy_magas = _magassag("Szín")
+    assert egy_sor == 1, f"az egysoros próba {egy_sor} sorra tört"
+    tobb_sor, tobb_magas = _magassag(KETSOROS_CSEMPE)
+    assert tobb_sor >= 2, f"a hosszú csempefelirat {tobb_sor} sorban maradt"
+
+    sorkoz = (tobb_magas - egy_magas) / (tobb_sor - egy_sor)
+    assert sorkoz == MERT_SORKOZ, (
+        f"a csempefelirat sorköze {sorkoz} a mért {MERT_SORKOZ} helyett "
+        f"({egy_sor} sor: {egy_magas} px, {tobb_sor} sor: {tobb_magas} px)"
+    )
+
+
+def test_a_gomb_felirat_SORKOZE_a_mert_10(_panel_nezet):
+    """A #2494 párja ugyanazzal a növekmény-méréssel."""
+    view, root, qt_app = _panel_nezet
+    panel = _child(root, "panel")
+    cimke = _child(root, "editUndoButtonLabel")
+
+    def _magassag(felirat: str) -> tuple[int, float]:
+        panel.setProperty("undoLabel", felirat)
+        _var_a_kirajzolasra(view, qt_app)
+        return cimke.property("lineCount"), cimke.property("implicitHeight")
+
+    egy_sor, egy_magas = _magassag("Visszavonás")
+    assert egy_sor == 1
+    tobb_sor, tobb_magas = _magassag(KETSOROS_FELIRAT)
+    assert tobb_sor >= 2
+
+    sorkoz = (tobb_magas - egy_magas) / (tobb_sor - egy_sor)
+    assert sorkoz == MERT_SORKOZ, (
+        f"a gombfelirat sorköze {sorkoz} a mért {MERT_SORKOZ} helyett"
+    )
+
+
+def test_a_csempefelirat_TINTAJA_a_csempen_belul_van(_panel_nezet):
+    """A kétsoros csempefelirat KIRAJZOLVA sem lóg ki a csempéből.
+
+    Ez a rendezett, képpontos párja a fenti állításnak: ott a szöveg saját
+    magassága, itt a felvételen látható tinta."""
     view, root, qt_app = _panel_nezet
     cimke = _child(root, "editToolAutocolorLabel")
     csempe = _child(root, "editToolAutocolor")
     csempe.setProperty("label", KETSOROS_CSEMPE)
     _var_a_kirajzolasra(view, qt_app)
 
-    x, y, szelesseg, magassag = _ablakdoboz(view, cimke)
+    cx, cy, cszel, cmag = _ablakdoboz(view, csempe)
     tomb, _ = _szurkekep(view)
-    savok = _tinta_savok(tomb, x, x + szelesseg, y, y + magassag + 4)
-    tavolsag = _alapvonal_tavolsag(savok)
-    assert abs(tavolsag - MERT_SORKOZ) <= 1, (
-        f"a csempefelirat kirajzolt sorköze {tavolsag} képpont a mért "
-        f"{MERT_SORKOZ} helyett (tinta-sávok: {savok})"
+    kiterjedes = _tinta_kiterjedes(tomb, cx, cx + cszel, cy, cy + cmag)
+    assert kiterjedes is not None, "a csempén nincs tinta"
+
+    lx, ly, lszel, lmag = _ablakdoboz(view, cimke)
+    felirat_tinta = _tinta_kiterjedes(tomb, lx, lx + lszel, ly, ly + lmag)
+    assert felirat_tinta is not None, "a csempefelirat nem rajzolódott ki"
+    assert ly + lmag <= cy + cmag + 1, (
+        f"a csempe felirat-doboza ({ly}..{ly + lmag}) kilóg a csempéből "
+        f"({cy}..{cy + cmag})"
     )
