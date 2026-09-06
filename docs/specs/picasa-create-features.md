@@ -3198,8 +3198,33 @@ az első helyre. Ez a szakasz **megméri**, mennyi ebből valódi hiány.
 | **kezdetben rejtett** (`m_hidden`) | 4 | `backcolor`, `movieparent`, `previewimage`, (+ a `tabpanel1`/`tabpanel3` a fülváltás miatt) | **feltételes** |
 | **VALÓDI, eddig nem dokumentált** | **3** | **`albumname`**, **`indicator`**, **`audiostrip`** | **igen** |
 
-⇒ **A panelre a tényleges hiány három elem, nem 49.** A rangsor száma a
-szerkezeti elemeket is beszámolja.
+⇒ **A panelre a tényleges hiány három elem, nem 49.**
+
+#### ⛔ HELYESBÍTÉS (2026-09-06, 6. kör): a rangsor száma NEM a szerkezeti elemektől nagy
+
+Ez a szakasz eredetileg így zárult: *„a rangsor száma a szerkezeti elemeket
+is beszámolja."* **Ez az állítás HAMIS**, és az egész összevetés
+alma-körte volt.
+
+**Mi dönti el:** a `ui-lefedettseg.md` fogalmi szakasza. A rangsor száma
+`feltáratlan + lekutatva + bizonytalan`, és **kizárólag az „értékelhető"
+elemekre**; a `rajzoló` osztály (`nem-ertekelheto`) — a teljes leltár
+**1284** eleme — **eleve ki van hagyva** belőle. A `makemoviepanel` sora
+(`ui-lefedettseg.md:76`): 111 elem, ebből **55 értékelhető**, **56 rajzoló**;
+a 49 = **0 feltáratlan + 43 lekutatva + 6 bizonytalan**.
+
+**Tehát a két szám nem ugyanazt méri:**
+
+| | ez a szakasz (2.11) | a lefedettségi rangsor |
+|---|---|---|
+| mit számol | **említi-e a `docs/specs/`** teljes néven | **megépítettük-e** QML-ben |
+| a 42 / 49 jelentése | nincs dokumentálva | nincs megvalósítva |
+| a `rajzoló` elemek | benne vannak | **kihagyva** |
+
+A `makemoviepanel` **feltáratlan** száma a mérés szerint **0** — a 49 mind
+**`lekutatva`**, azaz **fejlesztői**, nem kutatói munka. Az itteni leltár
+attól még érvényes lelet (a három elem valóban hiányzott a specekből), de
+**nem cáfolja és nem javítja a rangsort.**
 
 #### A három valódi elem — MŰKÖDÉS
 
