@@ -218,6 +218,20 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after()
         self.photoOpFinished.emit()
 
+    def jelentsdAzIrasiHibat(self, error: BaseException | str) -> None:
+        """Ini-írási hiba a LÁTHATÓ csatornán (#2506).
+
+        ⚠️ A `photoOpFailed` önmagában NEM elég: a `syncFailed`-re (és így a
+        `Main.qml` `errorBanner`-ére, #459) csak az
+        `_ensure_photo_ops_wired()` köti rá, azt viszont eddig kizárólag a
+        FOTÓ-írás útja hívta (`_run_photo_write`). Ha a felhasználó első
+        művelete egy mappa-leírás, egy mappa-dátum vagy egy címke volt, a
+        jelzés bekötetlen csatornára ment: a hiba jelezve volt, és mégsem
+        látszott semmi. Ezért köt be ez a segéd, mielőtt emittál.
+        """
+        self._ensure_photo_ops_wired()
+        self.photoOpFailed.emit(str(error))
+
     @Slot(str)
     def _on_photo_write_failed(self, message: str) -> None:
         # meglévő hibajelzési minta (#86/#150): ugyanaz a csatorna, mint a

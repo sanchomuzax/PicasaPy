@@ -14,6 +14,8 @@ from picasapy.ini import update_document
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
+from .photo_ops_controller import _WRITE_ERRORS
+
 # Gyorscímkék (#193) — a Címkék-panel alján gombrács, a Picasa 3 mintájára.
 #
 # #1788: 8 → 10. Az eredetiben TÍZ hely van, két független forrásból: a
@@ -155,7 +157,18 @@ class KeywordsMixin:
                         )
                     return document
 
-                update_document(ini_path, mutate, backup=True)
+                # #2506: az írás bukása NEM lehet néma. Írásvédett mappán a
+                # kivétel eddig a QML-slotból szökött ki, a címke-panel
+                # pedig már az ÚJ címkéket mutatta — a felhasználó azt
+                # hitte, mentett, és a párhuzamosan futó Picasa sem látta
+                # volna. A csatorna a meglévő (#459: `photoOpFailed` →
+                # `syncFailed` → `errorBanner`); a `break` a további
+                # mappákat is leállítja, ahogy a #2497-ben.
+                try:
+                    update_document(ini_path, mutate, backup=True)
+                except _WRITE_ERRORS as error:
+                    self.jelentsdAzIrasiHibat(error)
+                    break
             with open_index(self._db_path) as conn:
                 self._sync_tree(conn, folder)
         self._refresh_view()
