@@ -36,7 +36,7 @@ pedig nem látszik. Ez tudatos eltérés a mért 26 képponttól, nem tévedés.
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QEventLoop, QObject, QTimer
 
 #: A leghosszabb VALÓDI magyar felirat, nem kitalált szöveg: a
 #: `Visszavonás` + a leghosszabb lefordított effektnév
@@ -62,8 +62,21 @@ def _panel(qt_app, *, gombszelesseg: float | None = None):
         # a sor két egyenlő gombot és 5 px hézagot tartalmaz, a panel
         # pedig 4-4 px oldalmargót ad
         panel.setWidth(2 * gombszelesseg + 5 + 8)
-        qt_app.processEvents()
+        _leul(qt_app)
     return panel
+
+
+def _leul(qt_app, korok: int = 3) -> None:
+    """⚠️ A felirat magassága a KAPOTT szélességtől függ, a gomb magassága
+    pedig a felirattól — ez az elrendezésnek két menet. Egyetlen
+    `processEvents()` után a mérés még a köztes állapotot látja (mérve: a
+    „belefér" és a „középen ül" próba UGYANARRA a beállításra más
+    eredményt adott). Ezért várunk rendes eseményhurok-fordulókat."""
+    for _ in range(korok):
+        qt_app.processEvents()
+        szunet = QEventLoop()
+        QTimer.singleShot(10, szunet.quit)
+        szunet.exec()
 
 
 def _gomb_es_felirat(panel) -> tuple[QObject, QObject]:
@@ -90,7 +103,7 @@ def test_a_felirat_belefer_a_gombba(qt_app, felirat, szelesseg):
     mindenhol."""
     panel = _panel(qt_app, gombszelesseg=szelesseg)
     panel.setProperty("undoLabel", felirat)
-    qt_app.processEvents()
+    _leul(qt_app)
 
     gomb, cimke = _gomb_es_felirat(panel)
     teteje = cimke.mapToItem(gomb, 0, 0).y()
@@ -107,7 +120,7 @@ def test_a_felirat_a_gomb_TETEJEROL_sem_log_ki(qt_app):
     """A középre igazítás nem tolhatja a feliratot a gomb fölé."""
     panel = _panel(qt_app, gombszelesseg=MERT_GOMBSZELESSEG)
     panel.setProperty("undoLabel", LEGHOSSZABB_FELIRAT)
-    qt_app.processEvents()
+    _leul(qt_app)
 
     gomb, cimke = _gomb_es_felirat(panel)
     assert cimke.mapToItem(gomb, 0, 0).y() >= -0.5
@@ -128,7 +141,7 @@ def test_a_felirat_FUGGOLEGESEN_KOZEPEN_ul(qt_app, felirat):
     """
     panel = _panel(qt_app, gombszelesseg=MERT_GOMBSZELESSEG)
     panel.setProperty("undoLabel", felirat)
-    qt_app.processEvents()
+    _leul(qt_app)
 
     gomb, cimke = _gomb_es_felirat(panel)
     felette = cimke.mapToItem(gomb, 0, 0).y()
@@ -146,7 +159,7 @@ def test_egysoros_feliratnal_marad_a_MERT_28(qt_app):
     el. Az alapeset geometriája nem változhat."""
     panel = _panel(qt_app)
     panel.setProperty("undoLabel", "Visszavonás")
-    qt_app.processEvents()
+    _leul(qt_app)
 
     gomb, _cimke = _gomb_es_felirat(panel)
     assert abs(gomb.property("height") - 28) <= 1, (
@@ -162,7 +175,7 @@ def test_a_ket_gomb_egyforma_magas(qt_app):
 
     panel = _panel(qt_app, gombszelesseg=MERT_GOMBSZELESSEG)
     panel.setProperty("undoLabel", LEGHOSSZABB_FELIRAT)
-    qt_app.processEvents()
+    _leul(qt_app)
 
     undo = _child(panel, "editUndoButton")
     redo = _child(panel, "editRedoButton")

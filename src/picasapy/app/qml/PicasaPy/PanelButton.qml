@@ -67,9 +67,16 @@ Rectangle {
         id: pbtnLabelMetrics
         font: pbtnLabel.font
     }
-    Layout.preferredHeight: pbtn.thumbSource !== ""
+    //: #2494: a felirathoz szükséges magasság KIOLVASHATÓAN is — a hívó
+    //: (pl. a Visszavonás/Újra pár) így egyeztetni tudja a sor magasságát,
+    //: anélkül hogy a Layout viselkedésére hagyatkozna. A `fillHeight`
+    //: erre nem jó: Qt-verziófüggő, hogy a sor magasságát a preferált
+    //: érték vagy a másik elem szabja-e meg — a CI-n (Qt 6.8) a gomb 28
+    //: maradt, miközben helyben (6.11) megnőtt.
+    readonly property real kertMagassag: pbtn.thumbSource !== ""
         ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
         : Math.max(24, pbtnLabel.implicitHeight + 10)
+    Layout.preferredHeight: pbtn.kertMagassag
     radius: 3
     border.width: 1
     border.color: Theme.chromeBorder
