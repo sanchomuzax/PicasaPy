@@ -71,6 +71,34 @@ from support.jpeg_factory import make_jpeg
 _REGI_ELTOLAS_S = 3600
 
 
+#: #2555: a MÉRŐEGYSÉG POSIX-specifikus, ezért a fájl Windowson kimarad.
+#:
+#: A korlát egységét futásidőben kalibráljuk: megmérjük, hány
+#: fájlrendszer-hívásba kerül EGY `Path.resolve()`. A számláló az
+#: `os.lstat` / `stat` / `scandir` / `readlink` függvényeket csomagolja be
+#: — POSIX-on a `resolve()` ezeken megy, komponensenként egy `lstat`.
+#: Windowson viszont az `nt._getfinalpathname` natív hívást használja,
+#: amit ez a számláló NEM lát: a kalibráció 0-t mérne.
+#:
+#: ⚠️ A kihagyás indoka NEM az, hogy „Windowson nem működik", hanem hogy
+#: ott a fájl mind a négy állítása ÜRESEN teljesülne — a számláló egyetlen
+#: feloldást sem lát, tehát „a fán kívülre nem esik hívás" magától igaz
+#: lenne. Az üresen zöld őr rosszabb a pirosnál: hamis biztonság.
+#:
+#: A #2483 gyorsítása ettől függetlenül Windowson is hat; a mérése ott
+#: külön munka (a számlálónak az `nt._getfinalpathname`-et is be kellene
+#: csomagolnia) — ld. a #2555 zárószakaszát.
+pytestmark = pytest.mark.skipif(
+    os.name == "nt",
+    reason=(
+        "a korlát egységét egy `Path.resolve()` hívásszáma adja, a "
+        "`resolve()` viszont Windowson az `nt._getfinalpathname`-en megy, "
+        "amit ez a számláló nem lát — ott mind a négy állítás ÜRESEN "
+        "teljesülne (#2555)"
+    ),
+)
+
+
 class _Hivasszamlalo:
     """A fájlrendszer-hívások számlálója, útvonal szerint bontva.
 
