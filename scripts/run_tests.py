@@ -272,36 +272,31 @@ _HELYEK_GYOKER = _TEMP_GYOKER / "picasapy-teszt-helyek"
 #: A CI-ben nincs korlát; ezt kapja vissza a várakozó — nincs mit elengedni.
 _NINCS_KORLAT = Path("/nincs-korlat")
 
-#: Ennyi ideig NEM tekintünk elhagyottnak egy hely-könyvtárat, amiben még
-#: nincs PID: a foglaló épp az `mkdir` és a PID kiírása között jár.
-_HELY_TURELEM_S = 60.0
-
-
-def _el_a_folyamat(pid: int) -> bool:
-    """Él-e a folyamat. Jogosultsági hiba = LÉTEZIK, csak nem a miénk."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except OSError:
-        return True
-    return True
-
-
 def _elhagyott_hely(hely: Path) -> bool:
-    """Elhagyott-e a hely: a gazdája már nem él (vagy sosem írta be magát).
+    """Elhagyott-e a hely: a gazdája már nem él.
 
     Enélkül egy megszakított kör (kill, áramszünet, megtelt lemez) ÖRÖKRE
     kizárná a többit — pont az a néma elakadás, ami ellen a kapu készült.
+
+    ⚠️ Az életjelet a MEGLÉVŐ `_el_e_a_futas()` adja, és ez nem stílus
+    kérdése: Windowson az `os.kill(pid, 0)` NEM kérdés, hanem `CTRL_C_EVENT`
+    (a `0` épp az), tehát Ctrl+C-t küld a folyamatcsoportnak. 2026-09-06-án
+    a saját, duplikált változatom pont ezt tette: a windows-lábon a tesztek
+    lefutottak (6115 zöld), majd a futtatót `KeyboardInterrupt` ölte meg —
+    a főág pirosra váltott. A `_el_e_a_futas` ezt már tudta (#1358).
+
+    Amit NEM tudunk (Windows, vagy még hiányzó PID), az FOGLALTNAK számít;
+    ott a kor dönt, a takarítás régi szabálya szerint.
     """
+    el = _el_e_a_futas(hely)
+    if el is False:
+        return True
+    if el is True:
+        return False
     try:
-        pid = int((hely / _PID_FAJL).read_text(encoding="utf-8").strip())
-    except (OSError, ValueError):
-        try:
-            return (time.time() - hely.stat().st_mtime) > _HELY_TURELEM_S
-        except OSError:
-            return True
-    return not _el_a_folyamat(pid)
+        return (time.time() - hely.stat().st_mtime) > _MARADEK_KOR_S
+    except OSError:
+        return True
 
 
 def _foglalj_helyet(korlat: int) -> Path | None:
