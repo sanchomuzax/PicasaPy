@@ -231,8 +231,21 @@ class TestPanelButtonLabelWrapping:
         label = root.findChild(QObject, "btnLabel")
         assert label.property("lineCount") > 1
         assert label.property("truncated") is False
-        # a fix 24px helyett a tördelt szöveghez igazodó, annál magasabb gomb
-        assert button.property("height") > 24
+        # ⚠️ #2494: KORÁBBAN `height > 24` állt itt — az a régi, bőkezű
+        # kitöltést (`implicitHeight + 10`) rögzítette, nem a jegy (#318)
+        # követelményét. A mért sorközzel (10 képpont) két sor 20-at foglal,
+        # tehát a 24-es padlóba BELEFÉR: a gombnak nem KELL megnőnie, csak
+        # a feliratot nem vághatja el. A CI-n épp 24-re jött ki (más betű,
+        # más metrika), és a régi állítás emiatt bukott — a követelmény
+        # viszont teljesült.
+        #
+        # Az állítás mostantól AZT mondja, amit a jegy kér: a rajzolt
+        # felirat maradéktalanul a gombon belül van.
+        teteje = label.mapToItem(button, 0, 0).y()
+        assert teteje >= -0.5, "a felirat a gomb TETEJE fölé lóg"
+        assert teteje + label.property("paintedHeight") <= (
+            button.property("height") + 0.5
+        ), "a tördelt felirat lelóg a gombról"
 
     def test_button_label_never_truncates_regardless_of_width(
         self, qml_engine, qt_app

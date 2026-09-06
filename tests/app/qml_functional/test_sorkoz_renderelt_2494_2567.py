@@ -73,6 +73,11 @@ MERT_SORKOZ = 10
 #: `Rectangle`-je MAGA a rajzolt keret, tehát a látható 26 az irányadó.
 MERT_GOMBKERET = 26
 
+#: A gomb kitöltése a felirat fölött-alatt ÖSSZESEN (`PanelButton.qml`
+#: `kertMagassag`). A magasság a MÉRT sorközből vezethető le:
+#: `max(MERT_GOMBKERET, sorok × MERT_SORKOZ + GOMB_KITOLTES)`.
+GOMB_KITOLTES = 2
+
 #: A leghosszabb VALÓDI magyar Visszavonás-felirat. A tesztkörnyezet betűje
 #: keskenyebb a tulajdonos gépén futóénál, ezért a rövidebb („Visszavonás:
 #: Jó napom van") itt még EGY sorba fér — a kétsoros esetet ezzel idézzük elő
@@ -208,9 +213,15 @@ def _alapvonal_tavolsag(savok: list[tuple[int, int]]) -> int:
 
     Miért az alja és nem a teteje: a felső sor tartalmazhat felnyúló betűt
     (V, J, ékezet), az alsó nem feltétlenül — a tetők távolsága ezért
-    betűfüggő. Az alja (leszálló szárak nélkül) mindkét soron az alapvonal."""
-    assert len(savok) == 2, f"két szövegsort vártam, {len(savok)} sávot mértem"
-    return savok[1][1] - savok[0][1]
+    betűfüggő. Az alja (leszálló szárak nélkül) mindkét soron az alapvonal.
+
+    ⚠️ Az UTOLSÓ KÉT sávot mérjük, nem ragaszkodunk pontosan kettőhöz: a
+    betűkép szélessége platformonként más (a mienk ~5%-kal szélesebb az
+    eredetinél, és a CI betűje megint más), ezért ugyanaz a felirat MÁS
+    SORSZÁMRA törhet. A sorköz viszont ettől független — épp ezt méri ez
+    a függvény."""
+    assert len(savok) >= 2, f"legalább két szövegsort vártam, {len(savok)} sávot mértem"
+    return savok[-1][1] - savok[-2][1]
 
 
 # ==========================================================================
@@ -273,15 +284,28 @@ def test_a_visszavonas_gomb_sorkoze_a_MERT_10(_panel_nezet):
 @pytest.mark.parametrize(
     "felirat", ["Visszavonás", "Visszavonás: Jó napom van", KETSOROS_FELIRAT]
 )
-def test_a_gomb_kerete_a_MERT_26_marad(_panel_nezet, felirat):
-    """#2494 VISSZAESÉS: a kétsoros felirat nem NÖVELHETI meg a gombot.
+def test_a_gomb_kerete_a_MERT_KEPLETET_koveti(_panel_nezet, felirat):
+    """#2494 VISSZAESÉS: a felirat nem NÖVELHETI a gombot fölöslegesen.
 
-    A visszaesés pontosan ez volt: 26 helyett 38. Egysoros feliratnál sem
-    változhat — a 26 nem „legalább", hanem a mért keret."""
-    _gomb, doboz, _savok = _undo_savok(_panel_nezet, felirat)
-    assert doboz[3] == MERT_GOMBKERET, (
-        f"a(z) {felirat!r} feliratú gomb {doboz[3]} képpont magas a mért "
-        f"{MERT_GOMBKERET} helyett"
+    A visszaesés pontosan ez volt: a kétsoros felirat 26 helyett 38-ra
+    növelte a gombot, mert a sorköz 14 volt a mért 10 helyett.
+
+    ⚠️ A magasságot NEM fix 26-hoz kötjük, hanem a MÉRT SORKÖZBŐL vezetjük
+    le: `max(26, sorok × 10 + 2)`. A betűkép szélessége platformonként más
+    (a CI-n a windows-láb ugyanezt a feliratot HÁROM sorra törte, és a
+    gomb jogosan lett 32) — a sorszám tehát nem szerződés, a SORKÖZ és a
+    kitöltés az. A régi, fix 26-os állítás emiatt bukott a windows-lábon,
+    miközben a javítás helyes volt.
+
+    A foga megmarad: 14-es sorköznél vagy a régi, bőkezű kitöltésnél a
+    képlet MÁS számot ad, mint a kirajzolt gomb."""
+    _gomb, doboz, savok = _undo_savok(_panel_nezet, felirat)
+    varhato = max(MERT_GOMBKERET, len(savok) * MERT_SORKOZ + GOMB_KITOLTES)
+    assert doboz[3] == varhato, (
+        f"a(z) {felirat!r} feliratú gomb {doboz[3]} képpont magas; "
+        f"{len(savok)} kirajzolt sorral a mért képlet {varhato}-t ad "
+        f"(padló {MERT_GOMBKERET}, sorköz {MERT_SORKOZ}, kitöltés "
+        f"{GOMB_KITOLTES})"
     )
 
 
@@ -291,7 +315,9 @@ def test_a_ketsoros_felirat_TINTAJA_a_gombon_belul_van(_panel_nezet):
     A felvételen az eredeti 26 képpontos gombjában a tinta 4-4 képpontnyi
     rést hagy; nálunk legalább 2-2 kell, különben a betűk a keretre ülnek."""
     _gomb, (_x, y, _sz, magassag), savok = _undo_savok(_panel_nezet, KETSOROS_FELIRAT)
-    assert len(savok) == 2, f"a felirat nem tört két sorra: {savok}"
+    # ⚠️ Legalább kettő: szélesebb betűképnél (windows-láb) ugyanez a
+    # felirat háromra törik — az nem hiba, a tinta akkor is beleférjen.
+    assert len(savok) >= 2, f"a felirat nem tört több sorra: {savok}"
     felette = savok[0][0] - y
     alatta = (y + magassag) - savok[-1][1]
     assert felette >= 2 and alatta >= 2, (
