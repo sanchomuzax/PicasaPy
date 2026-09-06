@@ -418,14 +418,58 @@ mappákat tartalmazza.
 `.picasa.ini` van, ezek közül **0** tartalmaz `[encoding]` szekciót, és
 `Picasa.ini` (nagy kezdőbetűs) fájl **egy sincs**.
 
-⛔ **BLOKKOLT részkérdés (SAJÁT, ebben a körben):** ír-e a friss export
-ténylegesen `[encoding]` fejlécet? A `research/#2007-rotate-ini/` minta
-**exportált** mappa (`P2category=Exported Pictures`), és **nincs** benne —
-de azt a fájlt az importálás és a négyszeri forgatás **újraírta**, tehát
-nem dönt. **Megszerzés:** egy friss export a valódi Picasából, amelyet
-utána **nem** importálunk vissza és nem szerkesztünk; ha annak a
-`.picasa.ini`-je `[encoding]`-gal kezdődik, az állítás megerősítve. Jegy:
-**#2452**.
+#### A részkérdés BINÁRISBÓL szűkítve (#2452, 2026-09-07)
+
+A korábbi „blokkolt, windowsos exportot kér" jelölés **túl korán került
+ki**: a kérdés nagy része a binárisból eldönthető volt, és el is dőlt.
+
+**1. A fejléc és a `[Picasa]` EGYETLEN literál.** A `0x00ca77f0` címen egy
+**27 bájtos, ASCII** konstans áll:
+
+    [encoding]\nutf8=1\n[Picasa]\n
+
+A `FUN_0068ac80` törzsében **nincs önálló `[Picasa]` literál** (a
+függvény nyolc sztringje: `.picasa.ini`, `%s=%s\n`, a fenti blokk,
+`name=%s\n`, `description=%s\n`, `location=%s\n`, `category=%s\n`,
+`date=%f\n`). ⇒ **Ha ez az író egyáltalán kiírja az album-fejlécet, az
+`[encoding]` VELE MEGY** — nincs olyan ága, amelyik `[Picasa]`-t írna
+`[encoding]` nélkül. Ez megfordítva is használható: egy `[Picasa]`-val
+KEZDŐDŐ `.picasa.ini` bizonyíthatóan **nem ettől az írótól** származik.
+
+**2. Az író gazdája az EXPORT gépezete — a teljes vtábla-készleten
+ellenőrizve.** A `0x00692210` és a `0x006980a0` (a két hívólánc gyökere)
+az `rtti.csv` **összes** vtáblája közül pontosan **kettőben** szerepel:
+`PrepareCollection` és `AlignedImageCollection` (45-45 slot, ugyanaz a
+metóduslista). A család szókincse ugyanebben a címtartományban:
+
+| cím | mit árul el |
+|---|---|
+| `0x0068eea0` | **16 `option_*` kulcs**: `option_imagesizelimit`, `option_jpegquality`, `option_thumbsize`, `option_useorig`, `option_backup`, `option_createhtml`, `option_estimate`, **`option_inifile`**, `option_manifest`, `option_manifestcaptions`, `option_manifestfiletimes`, `option_convertnonjpeg`, `option_preservemovies`, `option_noautoruninf`, `option_isupload`, `option_copysrctotempdest` |
+| `0x0069a400` | `IDS_DEFAULT_EXPORT`, `Picasa Export` |
+| `0x00691d10` | `CDPrep` |
+| `0x006919b0` | az `autorun.inf` írása (`[autorun]open=%s icon=%s,0`) |
+
+⇒ az `[encoding]`-író **az export / Ajándék-CD-előkészítés** ágán ül. Ez
+megerősíti a fenti RTTI-levezetést, és megmagyarázza, miért nincs a
+korpuszban.
+
+**3. Van felhasználói KAPCSOLÓ az ini írására.** A `FUN_0068eea0` egy
+név→mező szétosztó: az `option_inifile` a `[this + 0x47c]` mezőbe kerül
+(`0x0068efb1`…`0x0068efc7`), és ezt a mezőt a `FUN_006952e0` a
+`0x00695580`-nál vizsgálja — nullánál átugorja a `FUN_0068c5c0` hívását.
+Tehát az export „írjon-e `.picasa.ini`-t" beállítása **létezik**.
+
+⛔ **Ami NEM dőlt el:** melyik ág gátolja pontosan a `FUN_0068ac80`
+hívását, és mi a beállítás ALAPÉRTELMEZÉSE. A hívás (`0x00696d31`) két
+feltétel mögött áll: `[ebx+0x100] != 0` ÉS `[ebx+0x54] == 0`
+(`0x00695714`…`0x0069573e`) — a `+0x54` és a `+0x100` mező jelentése
+kimérendő. Ez **bináris munka**, nem igényel windowsos exportot; a jegy
+ezért maradt nyitva, `bináris-kutatható` munkafajtával.
+
+⚠️ A korábbi „szerezz be egy érintetlen exportot" kérés **visszavonva**:
+a fenti 1. pont miatt egyetlen exportált fájl önmagában is csak akkor
+döntene, ha `[encoding]`-gal KEZDŐDIK — ha nem, az csak azt mondaná, hogy
+azt a fájlt nem ez az író írta (pl. mert a beállítás ki volt kapcsolva).
 
 **A legvalószínűbb magyarázat** (a korpusz `date=40452` = 2010-es
 sorszámdátumai alapján), hogy ezek a fájlok **korábbi Picasa-változattól**
