@@ -157,7 +157,7 @@ a `width=%d,height=%d,crop=%s,fr=%s` minta is.
 
 ## ⛔ Ki ÍRJA a `facerect`-et — NYITVA, és pontosan tudjuk, MIÉRT
 
-A kérdés (`picasa-arcfelismeres.md` 3.3, **#1238**): mi dönti el, hogy az
+A kérdés (`picasa-arcfelismeres.md` 3.3, **#2515**): mi dönti el, hogy az
 oszlopba valódi `rect64` kerül-e vagy `1`. Ez a kör **nem** válaszolta meg,
 és az alábbi felsorolás azért van itt, hogy a következő kör ne járja újra:
 
@@ -193,8 +193,8 @@ oszlopba valódi `rect64` kerül-e vagy `1`. Ez a kör **nem** válaszolta meg,
 ⇒ **A bájtszintű pásztázás lehetőségei kimerültek**: a gyűjtemény bázisa
 regiszterben/változóban él, az eltolások összevonva, tehát csak
 **dekompilálás** (Ghidra, `picasa-x86-research`) tudja megmondani, melyik
-függvény ír az oszlopba. A kérdés ezért **örökölt nyitott kérdés** marad a
-**#1238**-on, immár a fenti öt kizárt úttal.
+függvény ír az oszlopba. A kérdés ezért **örökölt nyitott kérdés** marad — a **#2515**-ön, immár a fenti öt kizárt
+úttal. (A #1238 LEZÁRVA; zárt jegyre írt folytatás nem ér oda.)
 
 ## A `filters=` lánc sorosítója — `0x00463fd0`
 

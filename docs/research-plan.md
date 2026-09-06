@@ -100,7 +100,7 @@ Picasa ott nem futna).
   `frexcludefolders.txt` élesben **kisbetűs** fájlnevű → kis-nagybetű-független
   keresés kell. Formátumuk igazolt: soronként abszolút Windows-útvonal, több
   meghajtóról is (`C:\`, `L:\`).
-- ~~**NYITVA (kis kockázat):** `facerect=0x1` szentinel jelentése.~~ ✅ **LEZÁRVA (2026-08-22, a jelölés 2026-09-06-ig elavultan állt itt.)** Két helyesbítés: (a) a `facerect` **nem `.picasa.ini`-kulcs**, hanem a belső `imagedata` rekord oszlopa (`pmp-database.md`, `picasa-imagedata-rekord.md`); (b) nem „szentinel", hanem **vegyes u64 oszlop** — megerősített régiónál valódi `rect64`, detektálás után `1` (`picasa-arcfelismeres.md` 3.3). Ami még nyitva: az oszlop **írási helye** a binárisban (#1238).
+- ~~**NYITVA (kis kockázat):** `facerect=0x1` szentinel jelentése.~~ ✅ **LEZÁRVA (2026-08-22, a jelölés 2026-09-06-ig elavultan állt itt.)** Két helyesbítés: (a) a `facerect` **nem `.picasa.ini`-kulcs**, hanem a belső `imagedata` rekord oszlopa (`pmp-database.md`, `picasa-imagedata-rekord.md`); (b) nem „szentinel", hanem **vegyes u64 oszlop** — megerősített régiónál valódi `rect64`, detektálás után `1` (`picasa-arcfelismeres.md` 3.3). Ami még nyitva: az oszlop **írási helye** a binárisban (#2515).
 
 ## 6. Referencia-repók klónozása és audit — KÉSZ (2026-07-15)
 
