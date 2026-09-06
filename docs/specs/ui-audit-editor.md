@@ -358,6 +358,8 @@ Kiegészítő forrás: `~/picasapy-agent/referencia/tre-eroforrasok/editpanel.tr
 
 ### 3.1 Van-e szekció-fejléc a rács fölött? — **NINCS** (megerősített)
 
+*Forrás: `editpanel.tre:428` (`editpanel/fxthumbs`) · `editpanel.tre:284` (`editpanel/tab3`) · `editpanel.tre:433` (`editpanel/tabpanel3`).*
+
 ▶**KÉP.** A `…20 56 45.png` bal paneljén függőlegesen mérve (x = 40 oszlop):
 
 | Sáv | y-tartomány | Tartalom |
@@ -384,6 +386,8 @@ lehetőségek", `tab4` → „További hasznos képszerkesztési lehetőségek",
 `tab5` → „Még további hasznos képszerkesztési lehetőségek".
 
 ### 3.2 A rács geometriája (megerősített)
+
+*Forrás: `editpanel.tre:96` (`editpanel/filter_undo`).*
 
 Mérés a `…20 56 45.png`-n, oszlop- és sorátmenetek keresésével:
 
@@ -550,6 +554,8 @@ alpanelre is.
 
 ### 4.1 A panel címe — honnan jön a szöveg (megerősített)
 
+*Forrás: `editpanel.tre:754` (`editpanel/crop_label`) · `editpanel.tre:1225` (`editpanel/edittabbase`) · `editpanel.tre:585` (`editpanel/filter_name`).*
+
 A cím elemének neve ▶ERŐFORRÁS `editpanel.tre` 585–588. sor:
 
 ```
@@ -642,6 +648,8 @@ tehát a lenti geometria közvetlen mérésből származik. *(erős)*
 | Fogantyú (thumb) | **16 × 26 px**, **álló, lekerekített kapszula** (ovális) — x 44–59, y 155–180, függőlegesen a sávra központozva |
 
 ### 4.4 A paraméter-felirat igazítása — **a csúszka FÖLÖTT, KÖZÉPEN** (megerősített)
+
+*Forrás: `editpanel.tre:531` (`editpanel/editlabel1`).*
 
 ▶**KÉP.** Mért felirat-középpontok a 2. fülön (a betűk befoglaló doboza
 alapján), szemben a sáv középvonalával (x = 137):
@@ -977,6 +985,8 @@ Forrás: a tulajdonos képernyőképe (angol felület), `editpanel.tre`,
 `editpaneltext.tre` és a `stringres-en-hu.tsv` magyar fordításai.
 
 ### Elrendezés
+
+*Forrás: `editpanel.tre:747` (`editpanel/redeye_well`).*
 
 A panel a **1. fül** (Gyakori javítások) alpanelje, gyökere
 `editpanel/redeye_well`. Elemei:
@@ -1329,6 +1339,8 @@ mi az a `picnik_fx` gomb a rács alján. **Mindkettőre megvan a válasz.**
 
 #### A gomb definíciója (`editpanel.tre` 412–426)
 
+*Forrás: `editpanel.tre:428` (`editpanel/fxthumbs`) · `editpanel.tre:422` (`editpanel/picnik_fx`) · `editpanel.tre:418` (`editpanel/picnik_fx_icon`) · `editpanel.tre:413` (`editpanel/picnik_fx_label`).*
+
 ```
 #--Picnik fx button
 editpanel/picnik_fx_label: editpanel/picnik_fx
@@ -1352,6 +1364,8 @@ Vízszintesen **középre igazított**, színes típusú gomb, bal oldalt ikonna
 
 #### A felirata megmondja, mi ez
 
+*Forrás: `editpanel.tre:1430` (`editpanel/picnikapply`) · `editpanel.tre:1426` (`editpanel/picnikcancel`) · `editpanel.tre:1447` (`editpanel/picnikwin`).*
+
 ```
 filter_picnik_label0   Creative Kit   Kreatív készlet
 ```
@@ -1367,6 +1381,8 @@ kiszolgáló-oldali maradványaival: `picnikurl`,
 > A **Picnik 2012-ben megszűnt.** A gomb tehát halott funkció maradványa.
 
 #### Egy árulkodó nyom: a szabály KI VAN KOMMENTEZVE
+
+*Forrás: `editpanel.tre:422` (`editpanel/picnik_fx`).*
 
 Az `editpanel.tre` 290. sora:
 
@@ -1620,6 +1636,8 @@ egérmutatós képernyőkép tenné.
 
 ### Az 1. fül `picnik` gombja: „Kreatív készlet" — halott online funkció (2026-08-16)
 
+*Forrás: `editpanel.tre:165` (`editpanel/picnik`).*
+
 Az `editpanel/picnik` a **szerkesztő 1. fülén** ül (`tabpanel1`), nem a
 rács alatt (az a `picnik_fx`, lásd fentebb). Ez zárja le az utolsó
 nyitott pontot az effekt-panelen.
@@ -1700,6 +1718,8 @@ erőforrás-bejegyzés a hivatalos magyar fordítással).
 adja meg a sorrendet.
 
 ### Miért nem a `.tre` dönt
+
+*Forrás: `editpanel.tre:240` (`editpanel/tabpanel1`).*
 
 Az `editpanel.tre`-ben **mind a tíz** tab-1 gomb ugyanazt kapja:
 
@@ -1950,6 +1970,8 @@ Mindhárom az `editpanel/layout_2up_group`-ban ül
 `panel-feliratok-hu.tsv` 4938–4940.)*
 
 #### ⭐ A kölcsönös kizárás mechanizmusa: `Property uptarget`
+
+*Forrás: `editpanel.tre:1178` (`editpanel/aa_2up_toggle`) · `editpanel.tre:1186` (`editpanel/ab_2up_toggle`) · `editpanel.tre:1201` (`editpanel/layout_2up_group`) · `editpanel.tre:1194` (`editpanel/only_1up_toggle`).*
 
 Mindhárom kapcsoló **név szerint felsorolja a másik kettőt**:
 

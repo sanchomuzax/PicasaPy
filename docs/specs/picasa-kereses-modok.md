@@ -241,6 +241,8 @@ mind közvetlen kiolvasásból; a mi oldalunk grepből.
 
 ## ⭐ Az idő-csúszka: NEM tartomány, hanem KOR-szűrő — a teljes képlet (#1830, 2026-09-03)
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 A keresősáv `timeslider/scaleslider` vezérlője **egyfogantyús**, és a felirata
 („Filter by date range" / „Szűrés dátumtartomány szerint") **félrevezet**.
 A mért viselkedés: a csúszka egyetlen értéke egy **maximális KORT** ad meg —
@@ -367,6 +369,8 @@ nézet-/keresés-frissítőt, amit a keresési módok is használnak. A kezelő
 `0xf4240`-nel tér vissza („lekezeltem").
 
 ### ⛔ NEGATÍV: a `timecontainer` és a `timecontainer_label` a kódból SOHA nem hivatkozott
+
+*Forrás: `searchcontainer.tre:92` (`searchcontainer/timecontainer`) · `searchcontainer.tre:89` (`searchcontainer/timecontainer_label`) · `thumbui.tre:550` (`timeslider/scaleslider`).*
 
 A `string_xrefs` táblában **egyetlen** találat sincs sem a
 `searchcontainer/timecontainer`, sem a `searchcontainer/timecontainer_label`

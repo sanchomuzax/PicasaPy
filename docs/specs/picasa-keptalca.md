@@ -47,6 +47,8 @@ említ. Ezek **nem gombfeliratok**, hanem a `Tray` **helyi menü** két
 parancsának feliratai (ld. 3.).
 ### 2.1 Geometria — kényszerekből, nem respackből
 
+*Forrás: `thumbui.tre:702` (`thumbui/basecontrolset`) · `thumbui.tre:307` (`thumbui/scratch`) · `thumbui.tre:344` (`thumbui/scratchback`) · `thumbui.tre:326` (`thumbui/scratchclear`) · `thumbui.tre:317` (`thumbui/scratchhold`) · `thumbui.tre:300` (`thumbui/scratchlabel`) · `thumbui.tre:304` (`thumbui/scratchpadbase`).*
+
 A tálca dobozát a `.tre` kényszerei adják (a respackben csak az **ikonok**
 vannak: `scratchhold_icon` 468 b, `scratchclear_icon` 593 b,
 `addto_arrow` 53 b, `#holdadorner` 438 b):
@@ -606,6 +608,8 @@ Jegy: **#1916**.
 
 ## 16. LEZÁRVA: a `scratch` a `scratchlabel` FÖLÖTT van (2026-09-01)
 
+*Forrás: `thumbui.tre:307` (`thumbui/scratch`) · `thumbui.tre:300` (`thumbui/scratchlabel`).*
+
 A `thumbui.tre` szülő-gyerek viszonya: `thumbui/scratchlabel` a
 `scratchpadbase` gyereke; a `scratchpadbase` és a `thumbui/scratch` a
 `scratchback` testvérei, és a `scratchpadbase` van **előbb** deklarálva.
@@ -625,6 +629,8 @@ erről. A javítás jegye: **#2179**.)*
 ---
 
 ## 17. A tálca összecsukott MAPPA-TOKENT is tud tartani (2026-09-01)
+
+*Forrás: `scratch.tre:36` (`scratch/album`) · `scratch.tre:10` (`scratch/albumcover`) · `scratch.tre:31` (`scratch/albumlabel`) · `scratch.tre:14` (`scratch/albumsize`) · `scratch.tre:20` (`scratch/highlight`).*
 
 A `…214629.jpg` felvételen a tálca nem bélyegképeket mutat, hanem **egyetlen
 tokent**: kép-köteg ikont, rajta kék hátterű felirattal **„Kiválasztott mappa –
@@ -894,6 +900,8 @@ helyen (`0x00537fb0`, `[esi+0xeac]` → `call 0x004461a0` a `0x00537fdc`-n):
 egymástól független felhasználási hely adja ugyanazt a jelentést.
 
 ### 20.4 ⛔ A token KIZÁRJA a bélyegkép-rácsot — a #1919 „Kész, ha” listája TÉVED
+
+*Forrás: `scratch.tre:36` (`scratch/album`) · `thumbui.tre:307` (`thumbui/scratch`).*
 
 A #1919 kéri, hogy „a tálca **vegyesen** is tudjon képet és tokent
 tartani”. **Ilyen állapot az eredetiben nincs.** Három független

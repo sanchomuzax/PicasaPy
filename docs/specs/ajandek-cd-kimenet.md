@@ -851,6 +851,8 @@ tehát **lépésekre osztott**, és az üzemmód a keretek tartalmát cseréli.
 
 ### 13.4 ⛔ A `web_group` a `.tre`-ben REJTETT — és online funkció
 
+*Forrás: `publish.tre:520` (`publish/web_group`).*
+
 A `publish/web_group` sora `m_hidden`, és a benne lévő hét elem mind a
 **webre publikáláshoz** tartozik (Google-fiók, tárhely, láthatóság). A
 projekt hatóköri szabálya szerint az online szolgáltatások kívül esnek a

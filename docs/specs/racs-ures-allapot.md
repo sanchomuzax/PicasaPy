@@ -1,5 +1,7 @@
 # A rács ÜRES ÁLLAPOTA (`thumbui/lightbox_bgtext`)
 
+*Forrás: `thumbui.tre:190` (`thumbui/lightbox_bgtext`).*
+
 **Mi ez:** amikor a könyvtár rácsában nincs mit mutatni, a Picasa a rács
 közepére **egyetlen sor szöveget** ír. Nem egy szöveg: **hét változat** van,
 és a kód választ közülük — sőt az egyik változatnak **két megfogalmazása**

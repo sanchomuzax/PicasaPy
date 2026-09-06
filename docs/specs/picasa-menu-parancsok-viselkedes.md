@@ -923,6 +923,8 @@ jne  <alkalmaz(grain)>
 
 ### 33.4 Az AUTO_REDEYE külön útja — nem a `0x5fe370`-es batch
 
+*Forrás: `editpanel.tre:1059` (`editpanel/preview`).*
+
 Az `Auto Red Eye Correction` kezelője (`0x5ccb36`) nem a közös batch-tel
 megy:
 
@@ -4208,6 +4210,8 @@ A `searchcontainer` kezelője hat szűrőt sorol fel egy helyen:
 származnak — nem ez a kör találta őket.)*
 ### 59.2 ⭐ A dátum-szűrő CSÚSZKA, nem dátumválasztó
 
+*Forrás: `thumbui.tre:550` (`timeslider/scaleslider`).*
+
 A `timecontainer_label` mellett a kezelő a
 **`timeslider/scaleslider`**-t is hivatkozza — ugyanabban a
 `…/scaleslider` alakban, mint a filmkészítő négy csúszkája (2.9).
@@ -4718,6 +4722,8 @@ kapcsoló-beállítás mintájára. Bekapcsolva a párbeszéd elmarad, és a
 
 ### A vezérlőcsalád HAT tagú (nem három, és nem is öt)
 
+*Forrás: `editpanel.tre:1201` (`editpanel/layout_2up_group`).*
+
 | elem | buboréksúgó | mit csinál |
 |---|---|---|
 | `only_1up_toggle` | „View only one image" | vissza egyképes nézetbe |
@@ -4768,6 +4774,8 @@ célzott dekompiláció kellene; a jegyben rögzítve.
 **BLOKKOLT** arra, hogy az előnézet a felhasználó képét mutatja-e.
 
 ### A csempe HÁROM rétegből áll, nálunk kettőből
+
+*Forrás: `editpanel.tre:299` (`editpanel/fx1`) · `editpanel.tre:295` (`editpanel/fx1_adorn`) · `editpanel.tre:297` (`editpanel/fxlabel1`) · `editpanel.tre:293` (`editpanel/fxpreview1`) · `editpanel.tre:428` (`editpanel/fxthumbs`).*
 
 Az `editpanel.tre` mind a 12 csempét azonos szerkezettel írja le
 (293–299. sor, `#--FX1`-től `#--FX12`-ig):

@@ -250,6 +250,8 @@ konfigurálása"**.
 
 #### A két viselkedési szabály
 
+*Forrás: `quicktagconfig.tre:7` (`quicktagconfig/instructions`).*
+
 `quicktagconfig/instructions` (angolul az erőforrásban):
 
 > „You can use Quick Tags to apply a tag with a single click. Type in tags

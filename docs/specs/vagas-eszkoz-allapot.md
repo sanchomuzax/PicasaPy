@@ -155,6 +155,8 @@ javaslatok a **választott képarányban** születnek.
 
 ### A HIÁNYZÓ darab: előnézeti bélyegkép a javaslat-gombokon
 
+*Forrás: `editpanel.tre:772` (`editpanel/cropsug1`) · `editpanel.tre:776` (`editpanel/cropsug2`) · `editpanel.tre:780` (`editpanel/cropsug3`).*
+
 A jegy bináris bizonyítéka **három javaslat-gombot ÉS három előnézetet** ad:
 
 ```

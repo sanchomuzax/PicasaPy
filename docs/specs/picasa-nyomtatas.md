@@ -353,6 +353,8 @@ között cserél.
 
 ### ⛔ ÖNHELYESBÍTÉS (2026-09-04): ez a két „melléklelet" DUPLIKÁTUM volt
 
+*Forrás: `printpanel.tre:239` (`printpanel/phelpbutton`).*
+
 Itt eddig két állítás állt a `phelpbutton`-ról és a `froogle`-ról. **Mindkettőt
 a lap KORÁBBI, pontosabb szakasza már tartalmazta** (2026-09-03, „A panel ALSÓ
 AKCIÓGOMBJAI"), és a `phelpbutton`-é ráadásul **pontatlan** volt:

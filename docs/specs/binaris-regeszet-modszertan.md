@@ -1143,6 +1143,8 @@ azokat a kódnak sosem kell néven szólítania.
 
 ### Ami a szűrők után MEGMARAD — és mikor mondható ki mégis
 
+*Forrás: `wait_dialog.tre:8` (`wait_dialog/frame1`).*
+
 A szűkítés `m_hidden`-re (a kezdetben **rejtett** csomópont csak akkor
 jelenhet meg, ha kód mutatja meg): **282** rejtett elemből **83** olyan, amit a
 bináris sehol nem nevez meg. Ez a lista viszont **még mindig** tartalmazza a
@@ -1416,6 +1418,8 @@ szövege — „nem tudjuk, mit csinál" — rájuk **nem igaz**.
 
 ### 22.2 A három mechanizmus, ami elrejti a bizonyítékot
 
+*Forrás: `makemoviepanel.tre:473` (`makemoviepanel/recompute`) · `makemoviepanel.tre:297` (`makemoviepanel/sizelist`).*
+
 1. **Nincs horgony a szakaszban.** A lap teljes néven leírja az elemet, de a
    szakaszban nincs `0x00…` cím és nincs `fájl.kiterjesztés:sor`. Példa: a
    `biztonsagi-mentes.md` 10.3 **tizenkét** `publish/…` feliratot sorol fel
@@ -1444,6 +1448,8 @@ szövege — „nem tudjuk, mit csinál" — rájuk **nem igaz**.
    említi — a generátor `felulbiralas_ervenyes()`-ének publikus párja.)*
 
 ### 22.3 Egy ELVETETT aggály: a részsztring-egyezés
+
+*Forrás: `outputlayout.tre:99` (`outputlayout/blogger`) · `outputlayout.tre:95` (`outputlayout/blogger_icon`).*
 
 A detektor `elem in szakasz` alakban keres, ami **részsztringre** illeszt:
 `outputlayout/blogger` így egyezett egy `outputlayout/blogger_icon`
@@ -1523,6 +1529,8 @@ arányt mért, és az kizárólag azért jött ki, mert a puszta elemnévre
 keresett, és a „megvan másutt" szakaszt is beszippantotta. A helyes szám
 **12/100**.
 #### 22.5/b MÁSNAP MEGISMÉTLŐDÖTT — ugyanaz a kör, aki leírta (2026-09-03)
+
+*Forrás: `faceheaderpanel.tre:181` (`faceheaderpanel/confirmsug`).*
 
 A 22.5 megírása után **néhány órával** a következő kutatói kör új
 szakaszt adott a `picasa-arcfelismeres.md`-hez (15.), és **kétszer is**
@@ -1638,3 +1646,108 @@ tárni, ami már fel van tárva. Erre őr kell — jegy: **#2182**.
 > *Bizonyítottsági fok: **megerősített*** — a 18/18-as ok-hozzárendelés a
 > mérő saját `_szakaszok()` + `CIM_MINTA` függvényeivel futtatva, az
 > előtte/utána szám pedig a generátor két futásából.
+
+### 22.7 A 85 horgonytalan szakasz FELSZÁMOLVA — és két MÉRŐ-hiba is kiderült (2026-09-06, #2536)
+
+*Forrás: `editpanel.tre:422` (`editpanel/picnik_fx`) · `thumbui.tre:307` (`thumbui/scratch`) · `collagepanel.tre:242` (`collagepanel/previewclip`) — és további 121 elem ugyanígy, a 76 beszúrt „Forrás:" sorban.*
+
+A 22.4 szabályának adóssága (**85 szakasz / 128 elem**) ebben a körben
+végig lett járva, szakaszonként elolvasva. Az eredmény **nem** az volt,
+amit a jegy feltételezett: a szakaszok döntő többsége **nem** volt
+forrás nélkül — a **horgony ALAKJA** hiányzott.
+
+#### Az okok, megoszlásban — mind a 85 szakasz besorolva
+
+| ok | szakasz | mit kellett tenni |
+|---|---:|---|
+| a szakasz **`.tre`-blokkot idéz**, de sorszám nélkül | 27 | a kanonikus `fájl.tre:NN` alak beszúrása |
+| a szakaszban **semmilyen** forrás-hivatkozás nincs | 41 | ugyanaz |
+| a forrás **prózában** áll („az `editpanel.tre` 585–588. sora") | 6 | ugyanaz — a `FAJL_SOR_MINTA` a `fájl:NN` alakot ismeri |
+| a cím **rövid alakban** áll (`0x5ccb36`, nem `0x005ccb36`) | 1 | ugyanaz; a lapot a kanonikus alakra is érdemes hozni |
+| a szakaszban lévő hexa **ARGB szín** (`0xFF7D8397`), nem cím | 1 | **semmit** — a `CIM_MINTA` szándékosan nem fogadja el (ld. fentebb) |
+| **álszakasz** — a mérő hibája, ld. lentebb | 5 | a mérő javítása |
+
+*(A négy szándékosan horgony nélkül hagyott „Amit KIZÁRTAM" szakasz nincs
+a táblában; azokról lentebb külön szakasz szól. 27 + 41 + 6 + 1 + 1 = 76
+a beszúrt sorok száma, + 5 álszakasz + 4 szándékos = 85 — a jegy
+kiinduló száma.)*
+
+⇒ **76 szakasz kapott `*Forrás: …*` sort**, elemenként a `.tre`
+deklarációjával. A horgony **gépileg ellenőrzött**: mind a 157
+(szakasz, elem) párnál a hivatkozott sor tényleg az adott elem
+deklarációja (`^elem:` alak).
+
+#### MÉRŐ-HIBA 1: a ```-kerítésen belüli `#` sor szakaszt nyitott
+
+A lapjaink `.tre`-blokkokat idéznek, és a `.tre`-ben a `#` a
+**megjegyzés** jele: `#--Picnik fx button`, `#define m_centerXY`,
+`#Property setautorepeat 5`, `#Show/Hide Histogram & Camera Information`,
+`#Property hidetarget editpanel/picnik_fx`. A `_szakaszok()` ezeket
+markdown-címsornak vette, **kettévágta** az őket körülvevő szakaszt, és
+a második fél elveszítette a fölötte álló horgonyt.
+
+**Mérve: a 84 horgonytalan szakaszból öt volt ilyen álszakasz** (10 elem).
+Javítva (`ui_lefedettseg.py`, őr: `tests/test_lefedettseg_kerites_2536.py`)
+⇒ **84 → 80 szakasz, 128 → 124 elem**, egyetlen sornyi doc-változtatás
+nélkül.
+
+#### MÉRŐ-HIBA 2: a TARTALOMJEGYZÉK bizonyítékként számított
+
+A `00-index.md` körönként egy ⭐ bekezdésben összefoglalja a **másik**
+lapok leletét — címekkel és elemnevekkel együtt. Ezek a bekezdések
+egyetlen `###` alá gyűlnek, tehát a mérő szemében **egy szakaszt**
+alkotnak: 2026-09-06-án **55 257 karaktert**, és minden körrel nő.
+
+Következmény:
+
+1. **Bármely benne szereplő elemnevet „igazol" egy oda nem tartozó cím.**
+   A `geopanel/search_label` bizonyítéka így a feltöltő gombok
+   `0x00567a00`-ja lett — a kettőnek semmi köze egymáshoz.
+2. **Elnyelte a valódi forrást.** A lapok ábécésorrendben futnak, a
+   `00-index.md` az első, tehát a saját lapján álló, pontos horgony
+   (`jobb-fiok-meretek.md: geopanel.tre:61`) helyett a tartalomjegyzék
+   került a lefedettségi lapra.
+
+⇒ A tartalomjegyzék **mutató, nem bizonyíték** — ugyanaz az elv, mint a
+generált lapok körkörösség-védelménél. A `NEM_BIZONYITEK` halmaz
+kizárja.
+
+#### Ami SZÁNDÉKOSAN horgony nélkül marad — 4 szakasz
+
+Négy „Amit KIZÁRTAM" szakasz megnevez egy elemet, de **nem állít róla
+semmit**: a megdőlt hipotézist írja le, a bizonyíték a hivatkozott
+szakaszban van. Horgonyt tenni beléjük **hamis `lekutatva`-t** adna.
+
+| lap | szakasz | elem | hol van a valódi bizonyíték |
+|---|---|---|---|
+| `picasa-mappanezet.md` | 9. Amit KIZÁRTAM | `thumbui/soloview` | sehol — a szakasz maga mondja ki: „a szerepe nem következik a mért kódból" |
+| `picasa-menu-parancsok-viselkedes.md` | Amit KIZÁRTAM | `thumbui/backup` | 35.6 (`il_BurnPanel`) |
+| `picasa-menu-parancsok-viselkedes.md` | Amit KIZÁRTAM | `editoneup/captionbutton`, `oneup/captionbutton` | 54.4 |
+| `picasa-menu-parancsok-viselkedes.md` | Amit KIZÁRTAM | `timeslider/scaleslider` | 59.2 |
+
+**Ez nem adósság**: mind az öt elem `feltáratlan`-on kívüli besorolást
+kap a saját lapjáról. A mérő figyelmeztetése tehát **jelölt, nem hiba** —
+a maradék négy szakasz indokolt.
+
+#### Az eredmény, mérve (a mérő újrafuttatásából)
+
+| | előtte | utána |
+|---|---:|---:|
+| horgony nélküli szakasz | **84** | **4** (mind a négy indokolt) |
+| az érintett elemek | 128 | 5 |
+| `lekutatva` | 294 | **297** |
+| `bizonytalan` | 47 | **44** |
+| `feltáratlan` | **0** | **0** |
+| elem, amelynek a bizonyítéka a TARTALOMJEGYZÉK volt | **24** | **0** |
+| levélnév-figyelmeztetés (#2504) | 177 | 178 |
+
+⚠️ **A `feltáratlan` mindkét oldalon 0** — a kör tehát **nem** a
+kutatói munkalistát rövidítette, hanem a **bizonyítás minőségét**
+javította: eddig 24 elem besorolását egy oda nem tartozó cím tartotta,
+és 128 elemé egyáltalán nem a saját szakasza. A levélnév-figyelmeztetés
+egy tétellel nőtt, mert egy elem teljes neve eddig a tartalomjegyzékben
+állt; ez a **#2504** hatóköre, nem ezé a köré.
+
+> *Bizonyítottsági fok: **megerősített*** — a szakaszszámok és az
+> elemszámok a mérő újrafuttatásából, a 157 horgony gépi ellenőrzésből,
+> az 55 257 karakter a `_szakaszok()` kimenetéből.

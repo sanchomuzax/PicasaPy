@@ -249,6 +249,8 @@ Ebből következik:
   feljebb kezdődik** — enyhén rálóg.
 ### 6.2 Tipográfia
 
+*Forrás: `nerdview.tre:10` (`nerdview/nvhead`).*
+
 | platform | erőforrás | betű |
 |---|---|---|
 | **Windows** | `nerdviewdetail_win.tre` | **nincs betű-makró** → a rendszer alapértelmezett betűje |
@@ -401,6 +403,8 @@ program programozottan jelenít meg — a panel maga viszont **nincs
 alapból elrejtve** (`#m_hidden` a `nerdview`-n ki van kommentezva).
 
 ### 7.3 A fejléc szövege
+
+*Forrás: `nerdview.tre:10` (`nerdview/nvhead`).*
 
 `editpaneltext.tre`:
 

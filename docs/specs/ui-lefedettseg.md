@@ -44,13 +44,13 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | párosítva | 271 |
 | másutt megvan (nem ezen a felületen) | 33 |
 | hiányzik — **feltáratlan** (kutatói kör kell) | 0 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 294 |
-| bizonytalan | 47 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 297 |
+| bizonytalan | 44 |
 | nem értékelhető (rajzoló elem) | 1284 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 91 |
 | **lefedettség az értékelhető elemeken** | **42.1%** |
 
-> ⚠️ **A 42.1% ALSÓ BECSLÉS, nem pontos érték.** 47 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.5%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 42.1% ALSÓ BECSLÉS, nem pontos érték.** 44 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.0%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -85,7 +85,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `edittextpanel` | 45 | 19 | 9 | 0 | 0 | 10 | 0 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 0 | 10 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `acquirepanel` | 67 | 20 | 12 | 0 | 0 | 3 | 5 | 43 | 4 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
-| `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
+| `collagepanel` | 108 | 55 | 48 | 0 | 0 | 1 | 6 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 0 | 7 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 0 | 6 | 0 | 18 | 0 | `VideoPlayerView.qml` |
 | `keywords` | 18 | 7 | 1 | 0 | 0 | 5 | 1 | 11 | 0 | `TagsPanel.qml` |
@@ -93,7 +93,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `searchcontainer` | 25 | 11 | 6 | 0 | 0 | 5 | 0 | 14 | 0 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `geopanel` | 14 | 5 | 0 | 0 | 0 | 1 | 4 | 9 | 0 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `printpanel` | 73 | 33 | 29 | 0 | 0 | 4 | 0 | 40 | 0 | `PrintDialog.qml` |
-| `initialscan` | 18 | 4 | 0 | 0 | 0 | 0 | 4 | 14 | 0 | `InitialScanDialog.qml` |
+| `initialscan` | 18 | 4 | 0 | 0 | 0 | 1 | 3 | 14 | 0 | `InitialScanDialog.qml` |
 | `video_control_bar2` | 18 | 4 | 0 | 0 | 0 | 4 | 0 | 14 | 0 | `VideoPlayerView.qml` |
 | `panelroot` | 14 | 7 | 2 | 1 | 0 | 4 | 0 | 7 | 0 | `Main.qml`, `MainToolbar.qml` |
 | `throttle` | 10 | 4 | 1 | 0 | 0 | 3 | 1 | 5 | 0 | `PicasaScrollBar.qml` |
@@ -117,7 +117,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `brushslider` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
 | `burstslider` | 2 | 1 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | `PicasaSlider.qml` |
 | `durationslider` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
-| `editslider1` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
+| `editslider1` | 2 | 1 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | `PicasaSlider.qml` |
 | `editslider2` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
 | `editslider3` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
 | `editslider4` | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `PicasaSlider.qml` |
@@ -186,8 +186,8 @@ Csak a filmkészítő párbeszéd van meg; interaktív filmkészítő panel ninc
 - `remove_audio` „Clear” (magyarul: „Törlés”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x0061e48c)
 - `remove_low_res_faces_label` „Remove Low Resolution Faces” (magyarul: „Kis felbontású arcok eltávolítása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
 - `remove_slide` buboréksúgó: „Remove the selected slide” — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x006223b0)
-- `render` „Create Movie” (magyarul: „Mozgófilm létrehozása”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00609248)
-- `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
+- `render` „Create Movie” (magyarul: „Mozgófilm létrehozása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00400000)
+- `rewind` „Back to selected slide” (magyarul: „Vissza a kijelölt diához”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x0061681e)
 - `size_label` „Size:” (magyarul: „Méret:”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-create-features.md)
 - `sizelist` — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-create-features.md)
 - `smart_order_label` „Best Transitions” (magyarul: „A legjobb átmenetek”) — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: 0x00613b50)
@@ -213,12 +213,12 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `addmore` „Add More...” (magyarul: „Továbbiak hozzáadása...”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
 - `backup_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
 - `backup_eject` „Eject” (magyarul: „Kiadás”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
-- `backup_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00609248)
+- `backup_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
 - `backup_help` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `backupcdheader2` „Choose folders & albums to back up” (magyarul: „Mappák és albumok kijelölése biztonsági másolat készítéséhez”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `backuptext2` „Picasa is now showing the files you have not previously backed up.” (magyarul: „A Picasa most azokat a fájlokat jeleníti meg, amelyekről korábban nem készült biztonsági másolat.”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00670b03)
 - `backuptext3` „Check the folders you want to back up, or choose 'Select All' to choose everything.” (magyarul: „Jelölje ki azokat a mappákat, amelyekről biztonsági másolatot szeretne készíteni, vagy "Az összes kijelölése" gombra kattintva az összes elemet jelölje ki.”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
-- `deletebackupset` „Delete Set” (magyarul: „Készlet törlése”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x006708b1)
+- `deletebackupset` „Delete Set” (magyarul: „Készlet törlése”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x0066fe24)
 - `editbackupset` „Edit Set” (magyarul: „Készlet szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x00678e80)
 - `giftcdtext` „The items selected with a checkmark above will be included on your Gift CD.   To add more items click the "Add More" button below.” (magyarul: „A program a fent pipával kijelölt elemeket másolja az ajándék CD-re. További elemek felvételéhez kattintson az alábbi "Továbbiak hozzáadása" gombra.”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `label_rpoptionbox1` „Upload” (magyarul: „Feltöltés”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
@@ -228,7 +228,7 @@ Biztonsági mentés / Ajándék-CD / webre töltés — nincs nálunk
 - `picsizemenu` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x005ba010)
 - `presentcd_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
 - `presentcd_eject` „Eject” (magyarul: „Kiadás”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0066bf90)
-- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00861750)
+- `presentcd_go` „Burn Disc” (magyarul: „Lemezre írás”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0068eea0)
 - `presentcd_help` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `replicate_button_group` — 🔧 **lekutatva**, csak nem megépítve (kézi: biztonsagi-mentes.md)
 - `replicate_cancel` „Cancel” (magyarul: „Mégse”) — 🔧 **lekutatva**, csak nem megépítve (biztonsagi-mentes.md: 0x00679ca0)
@@ -247,8 +247,8 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 
 - `aa_2up_toggle` buboréksúgó: „View the same image twice” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `ab_2up_toggle` buboréksúgó: „View two different images” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
-- `edithelpbutton` buboréksúgó: „Help” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00a53b00)
-- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x005d5ccc)
+- `edithelpbutton` buboréksúgó: „Help” — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: macros.tre:7)
+- `editslideshow` „Edit Movie” (magyarul: „Mozgófilm szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x00567a00)
 - `edittextghost` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: editpanel.tre:941)
 - `eraserbutton` — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:621)
 - `modaldialogblur` — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
@@ -264,12 +264,12 @@ A szerkesztő teljes bal oldali panelje minden fülével — ÉS a gazdája, a P
 - `quickupload` buboréksúgó: „Upload to your Web Albums Drop Box” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x00518b40)
 - `selection_label` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
 - `selection_label_zoom` „Selected” (magyarul: „Kijelölve”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: editpanel.tre:964)
-- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x005d5ccc)
+- `showtextcheckbox` buboréksúgó: „Toggle to show or hide text on a photo” — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005f6410)
 - `swap_2up_focus` buboréksúgó: „Switch which image has focus” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
 - `swap_2up_layout` buboréksúgó: „Switch between horizontal and vertical layout” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-editor.md)
-- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00a53b00)
+- `toggle_left_drawer` buboréksúgó: „Show/Hide Edit Controls” — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
 - `uploadchanges` buboréksúgó: „Update online copy with this version” — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-felso-sav.md: 0x00cae564)
-- `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x005d5ccc)
+- `weblink` buboréksúgó: „Go to the website associated with this Photo” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x00518b40)
 
 ### `printoptions` — 22 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -287,7 +287,7 @@ Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „
 - `disabled_label` „Sorry, but these options cannot be used when printing contact sheets.” (magyarul: „Ezek a beállítások indexképek nyomtatásakor nem használhatók.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `evenwidth_checkbox` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085f7a0)
 - `evenwidth_checkbox_label` „Even width border” (magyarul: „Egyenletes szélességű szegély”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
-- `ok` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00609248)
+- `ok` „OK” (magyarul: „OK”) — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085e800)
 - `sizelist` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `text_picker_panel` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 - `textbelowimage_label` „Below image” (magyarul: „A kép alatt”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: printoptions.tre:45)
@@ -303,7 +303,7 @@ Nyomtatási keret/felirat beállítások — nincs nálunk (a Beállítások „
 A fő könyvtárnézet egésze
 
 - `acquirebutton` — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-fo-ablak-elrendezes.md)
-- `backup` „Backup” (magyarul: „Biztonsági mentés”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0077c445)
+- `backup` „Backup” (magyarul: „Biztonsági mentés”) — 🔧 **lekutatva**, csak nem megépítve (ajandek-cd-kimenet.md: 0x0067be30)
 - `buttonbarsets` — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: thumbui.tre:406)
 - `buttongroup1` — *bizonytalan*
 - `cdmode` „Gift CD” (magyarul: „Ajándék CD”) — 🔧 **lekutatva**, csak nem megépítve (kézi: ajandek-cd-kimenet.md)
@@ -315,14 +315,14 @@ A fő könyvtárnézet egésze
 - `hviewtoggle` — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-fo-ablak-elrendezes.md)
 - `listdecrect` — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: thumbui.tre:516)
 - `listdetail` — *bizonytalan*
-- `loupehit` buboréksúgó: „Click and drag over photos to magnify them” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x007d3f90)
+- `loupehit` buboréksúgó: „Click and drag over photos to magnify them” — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: printoptions.tre:119)
 - `next` buboréksúgó: „View the next Photo” — 🔧 **lekutatva**, csak nem megépítve (konyvtar-ablak-meretek.md: respack.yt:3280882)
 - `prev` buboréksúgó: „View the previous Photo” — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: thumbui.tre:43)
 - `searchgroup` — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: thumbui.tre:441)
-- `single_action_message` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” (magyarul: „Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a "Vissza" gombra kattintva térjen vissza a projekthez”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
-- `toggle_right_drawer` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00a53b00)
+- `single_action_message` „Select items to add to your project's clips tray, then press the "Back" button to return to your project” (magyarul: „Jelölje ki azokat az elemeket, amelyeket a projekt kliptálcájára fel szeretne venni, majd a "Vissza" gombra kattintva térjen vissza a projekthez”) — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: thumbui.tre:660)
+- `toggle_right_drawer` — 🔧 **lekutatva**, csak nem megépítve (jobb-fiok-meretek.md: 0x00632060)
 - `visitweb` „Web View” (magyarul: „Internetes nézet”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-fo-ablak-elrendezes.md)
-- `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device” — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x009c7891)
+- `webcambutton` buboréksúgó: „Capture photos or video from a webcam or other video device” — 🔧 **lekutatva**, csak nem megépítve (getmore-klipgyujto-mod.md: 0x009ca5e0)
 
 ### `buttonmgr` — 13 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -380,7 +380,7 @@ Webkamerás videofelvétel — nincs nálunk
 
 Névvel ellátott arc-album fejléce
 
-- `confirmsug` „Confirm all” (magyarul: „Az összes jóváhagyása”) — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: 0x0074ad40)
+- `confirmsug` „Confirm all” (magyarul: „Az összes jóváhagyása”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: faceheaderpanel.tre:181)
 - `create_face_movie` buboréksúgó: „Create Face Movie” — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: faceheaderpaneltext.tre:44)
 - `create_movie` buboréksúgó: „Create Movie Presentation” — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: faceheaderpaneltext.tre:44)
 - `face_zoom` buboréksúgó: „View zoomed in to the face” — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: faceheaderpaneltext.tre:44)
@@ -440,7 +440,7 @@ Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali 
 A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte.
 
 - `picker_panel` — *bizonytalan*
-- `previewinset` — *bizonytalan*
+- `previewinset` — 🔧 **lekutatva**, csak nem megépítve (kollazs-panel-ui-spec.md: collagepanel.tre:242)
 - `previewroot` — *bizonytalan*
 - `tabpanel1` — *bizonytalan*
 - `tabpanel2` — *bizonytalan*
@@ -485,7 +485,7 @@ Címkeszerkesztő
 
 Keresési eredmény fejléce
 
-- `dupesearch` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00cf4c08)
+- `dupesearch` — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
 - `facesearch` — 🔧 **lekutatva**, csak nem megépítve (picasa-kereses-modok.md: searchoptions.tre:97)
 - `label_searchresult` „Search Result:” (magyarul: „Keresési eredmény:”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-kereses-modok.md)
 - `searchcenter` — 🔧 **lekutatva**, csak nem megépítve (picasa-kereses-modok.md: searchoptions.tre:97)
@@ -498,7 +498,7 @@ Keresősáv és szűrőgombjai
 
 - `search` — 🔧 **lekutatva**, csak nem megépítve (ui-audit-mainwindow.md: searchcontainer.tre:31)
 - `searchautocomplete` — 🔧 **lekutatva**, csak nem megépítve (ui-audit-mainwindow.md: searchcontainer.tre:31)
-- `searchbutton` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00cf4c08)
+- `searchbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: 0x0040bf70)
 - `timecontainer_label` buboréksúgó: „Filter by date range” — 🔧 **lekutatva**, csak nem megépítve (kézi: ui-audit-mainwindow.md)
 - `webview` buboréksúgó: „Show uploads to web albums only” — 🔧 **lekutatva**, csak nem megépítve (picasa-kereses-modok.md: 0x00660c80)
 
@@ -518,14 +518,14 @@ Nyomtatási panel és előnézet — nálunk párbeszédablak (PrintDialog.qml, 
 
 - `captionoptionsbutton` buboréksúgó: „Configure borders and text for Photos to be printed” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: acquirepanel.tre:210)
 - `captionoptionslabel` „Border and Text Options” (magyarul: „Szegély- és szövegopciók”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
-- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0085c08b)
-- `phelpbutton` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x005d5ccc)
+- `froogle` „Search Froogle for Supplies” (magyarul: „Tartozékok keresése a Froogle-en”) — 🔧 **lekutatva**, csak nem megépítve (picasa-nyomtatas.md: 0x00743980)
+- `phelpbutton` „Help” (magyarul: „Súgó”) — 🔧 **lekutatva**, csak nem megépítve (picasa-fo-ablak-elrendezes.md: macros.tre:7)
 
 ### `initialscan` — 4 hiány · panel-megfeleltetés: `parositva`
 
 Első indítás — mit vizsgáljunk át
 
-- `cancel` — *bizonytalan*
+- `cancel` — 🔧 **lekutatva**, csak nem megépítve (picasa-elso-inditas.md: initialscan.tre:113)
 - `radio_complete` — *bizonytalan*
 - `radio_limited` — *bizonytalan*
 - `radiogroup` — *bizonytalan*
@@ -563,7 +563,7 @@ Videovágó panel
 
 - `capture_frame` „Take Snapshot” (magyarul: „Pillanatfelvétel készítése”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005952d0)
 - `export_movie` „Export Clip” (magyarul: „Klip exportálása”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005952d0)
-- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
+- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (picasa-feltolteskezelo.md: movieeditpanel.tre:20)
 - `reset_trim` „Reset Start and End” (magyarul: „Kezdés és befejezés alaphelyzetbe állítása”) — 🔧 **lekutatva**, csak nem megépítve (ui-audit-editor.md: 0x005952d0)
 
 ### `editoneup` — 3 hiány · panel-megfeleltetés: `parositva`
@@ -578,7 +578,7 @@ Egyképes nézet szerkesztés közben
 
 Egyképes nézet a könyvtárban
 
-- `captionbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0040bf70)
+- `captionbutton` — 🔧 **lekutatva**, csak nem megépítve (picasa-create-features.md: oneup.tre:112)
 - `next` — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: acquirepanel.tre:210)
 - `prev` — 🔧 **lekutatva**, csak nem megépítve (picasa-bezaras-es-kilepes.md: editoneup.tre:40)
 
@@ -586,7 +586,7 @@ Egyképes nézet a könyvtárban
 
 A tálca alatti kimeneti gombsáv
 
-- `blogger` „Blogger” (magyarul: „Blogger”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
+- `blogger` „Blogger” (magyarul: „Blogger”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: outputlayout.tre:99)
 - `orderbutton` „Shop” (magyarul: „Vásárlás”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-program-resources.md)
 - `sharewith` „Hello” (magyarul: „Hello”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-program-resources.md)
 
@@ -654,7 +654,7 @@ Betanító buborék („Learn more…”) — nincs nálunk
 
 Töltésjelző pörgettyű a rácson — nálunk nincs külön elem
 
-- `activitybutton` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
+- `activitybutton` — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: 0x007d3f90)
 
 ### `nav` — 1 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -702,7 +702,7 @@ Közös csúszka-komponens
 
 Közös csúszka-komponens
 
-- `editslider` — *bizonytalan*
+- `editslider` — 🔧 **lekutatva**, csak nem megépítve (kollazs-eletciklus.md: 0x00819f50)
 
 ### `editslider2` — 1 hiány · panel-megfeleltetés: `parositva`
 
@@ -744,7 +744,7 @@ Közös csúszka-komponens
 
 Közös csúszka-komponens
 
-- `scaleslider` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x0085c08b)
+- `scaleslider` — 🔧 **lekutatva**, csak nem megépítve (picasa-menu-parancsok-viselkedes.md: 0x0085d550)
 
 ### `scaleslider` — 1 hiány · panel-megfeleltetés: `parositva`
 
@@ -768,7 +768,7 @@ Közös csúszka-komponens
 
 Közös csúszka-komponens
 
-- `scaleslider` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00cf4c08)
+- `scaleslider` — 🔧 **lekutatva**, csak nem megépítve (picasa-kereses-modok.md: thumbui.tre:550)
 
 ### `toolslider` — 1 hiány · panel-megfeleltetés: `parositva`
 
@@ -1572,8 +1572,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ## Figyelmeztetések a generáláskor
 
-- 177 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
--     acquirepanel/acancelbutton :: picasa-importalas.md: 0x0051f070
+- 178 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
 -     acquirepanel/delete_label :: picasa-importalas.md: 0x0051f070
 -     acquirepanel/excludedupes_label :: picasa-importalas.md: 0x0051f070
 -     acquirepanel/excludetoggle :: picasa-importalas.md: 0x0051f070
@@ -1586,26 +1585,15 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 -     acquirepanel/import_to_label :: picasa-importalas.md: 0x0051f070
 -     acquirepanel/rotate1button :: picasa-importalas.md: 0x0051f070
 -     acquirepanel/rotate2button :: picasa-importalas.md: 0x0051f070
--     acquirepanel/selected_groups_label :: 00-index.md: 0x00567a00
+-     acquirepanel/selected_groups_label :: picasa-feltolteskezelo.md: 0x00518840
 -     acquirepanel/share_container :: picasa-feltolteskezelo.md: 0x00518840
--     … és még 162 elem
-- 84 szakasz elemet ír le, de HORGONY NÉLKÜL — a mérés átugorja, tehát az ott leírt elemek »feltáratlan«-ként jelennek meg (22.4, #38):
--     picasa-eger-es-kijeloles.md :: ## 8. Az Esc-billentyű — 11 gomb (7 elem)
--     picasa-fo-ablak-elrendezes.md :: ### A képtálcán belül (7 elem)
--     picasa-keptalca.md :: ### 2.1 Geometria — kényszerekből, nem respackből (7 elem)
--     picasa-hu-terminology.md :: ### A MÁSIK erőforrás: a felirat- és tipp-tábla (2026-08-07) (5 elem)
--     picasa-keptalca.md :: ## 17. A tálca összecsukott MAPPA-TOKENT is tud tartani (2026-09-01) (5 elem)
--     picasa-menu-parancsok-viselkedes.md :: ### A csempe HÁROM rétegből áll, nálunk kettőből (5 elem)
--     kollazs-panel-ui-spec.md :: ### 2.2 A törvény, egy mondatban (4 elem)
--     picasa-create-features.md :: ### ⚠️ A feliratmód KÉTÁLLÁSÚ, nem hármas (4 elem)
--     picasa-respack-format.md :: ### 5.2 Miért fontos (4 elem)
--     ui-audit-editor.md :: #--Picnik fx button (4 elem)
--     ui-audit-editor.md :: #### ⭐ A kölcsönös kizárás mechanizmusa: `Property uptarget` (4 elem)
--     konyvtar-ablak-meretek.md :: #Property setautorepeat 5 (3 elem)
--     picasa-kereses-modok.md :: ### ⛔ NEGATÍV: a `timecontainer` és a `timecontainer_label` a kódból S (3 elem)
--     picasa-mappakezelo.md :: ### 1.1 A csomópontfa (`tre:foldermgr`, szó szerint) (3 elem)
--     picasa-nerdview-panel.md :: ## 3. Elhelyezés a szerkesztőben (3 elem)
--     … és még 69 szakasz
+-     acquirepanel/share_with_label :: picasa-feltolteskezelo.md: 0x00518840
+-     … és még 163 elem
+- 4 szakasz elemet ír le, de HORGONY NÉLKÜL — a mérés átugorja, tehát az ott leírt elemek »feltáratlan«-ként jelennek meg (22.4, #38):
+-     picasa-menu-parancsok-viselkedes.md :: ### Amit KIZÁRTAM (2 elem)
+-     picasa-mappanezet.md :: ## 9. Amit KIZÁRTAM (1 elem)
+-     picasa-menu-parancsok-viselkedes.md :: ### Amit KIZÁRTAM (1 elem)
+-     picasa-menu-parancsok-viselkedes.md :: ### Amit KIZÁRTAM (1 elem)
 - ELAVULT ELEM-FELÜLBÍRÁLÁS: 'printpanel/photoindexbutton' nincs a leltárban
 - GYANÚS »nem cél«: 'acquirepanel/add_groups_button' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'acquirepanel/selected_groups_label' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
@@ -1617,5 +1605,5 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - GYANÚS »nem cél«: 'uploadmgr/pause' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/resume' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/throttlechk' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
-- ÁTSOROLVA (#1970): 75 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
+- ÁTSOROLVA (#1970): 79 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
 

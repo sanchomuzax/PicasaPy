@@ -30,6 +30,8 @@ A dialógus **nem `.fen`**, hanem a yt-keretrendszer respack-ablaka: a
 
 ### 1.1 A csomópontfa (`tre:foldermgr`, szó szerint)
 
+*Forrás: `foldermgr.tre:115` (`foldermgr/base`) · `foldermgr.tre:65` (`foldermgr/nofr_off`) · `foldermgr.tre:70` (`foldermgr/nofr_on`).*
+
 ```
 root
 ├── foldermgr/base            m_offsetB · m_scaleX

@@ -52,6 +52,8 @@ Picasa magyar UI szinte minden szava ékezetes).
 
 ### JAVÍTOTT kinyerési módszer (2026-08-06) — a korlát megszűnt
 
+*Forrás: `oneup.tre:50` (`oneup/tllabel`).*
+
 A fenti heurisztika (ékezetkeresés) **nem szükséges**: a
 `Picasa3i18n.dll`-ben a string-táblák **önálló, jól formált XML
 dokumentumokként** vannak beágyazva, mindegyik a következő fejléccel
@@ -92,6 +94,8 @@ elrendezés és a grafika gépileg összeköthető. Ld.
 [`picasa-respack-format.md`](picasa-respack-format.md) 6. pontját.
 
 ### A MÁSIK erőforrás: a felirat- és tipp-tábla (2026-08-07)
+
+*Forrás: `editoneup.tre:156` (`editoneup/tpslabel`) · `editpanel.tre:1124` (`editpanel/sbutton`) · `editpanel.tre:1160` (`editpanel/weblink`) · `oneup.tre:149` (`oneup/tpslabel`) · `thumbui.tre:190` (`thumbui/lightbox_bgtext`).*
 
 A DLL **kétféle** beágyazott XML-t tartalmaz, és eddig csak az egyiket dolgoztuk fel:
 

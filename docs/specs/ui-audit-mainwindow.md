@@ -211,6 +211,8 @@ képernyőkép).
 
 ### A sormagasság és a behúzás — NEGATÍV eredmény (2026-08-15)
 
+*Forrás: `scratch.tre:36` (`scratch/album`) · `thumbui.tre:724` (`thumbui/headerproto`).*
+
 A `respack.yt` rétegtéglalapjai a felület nagy részére képpontra megadják a
 geometriát (`binaris-regeszet-modszertan.md` 14/c). **A mappafa sorára
 NEM.** Végignézve a csomagot:
@@ -1029,6 +1031,8 @@ videó vezérlősávjánál (`video_control_bar.tre`).
 
 ### A másodpéldány-keresés NEM ezek egyike
 
+*Forrás: `searchoptions.tre:97` (`searchoptions/dupesearch`) · `thumbui.tre:554` (`thumbui/searchgroupcontainer`).*
+
 A `searchoptions/dupesearch` a **keresési beállítások** felugró paneljében
 él (`thumbui/searchgroupcontainer`, amit a `searchbutton` nyit meg), nem a
 szűrő-ikonok között. A menütétele: `eMenuTools::ID_DUPES` → **„Fájlok
@@ -1083,6 +1087,8 @@ A teljes magasság a tervezővásznon **369**, a szélesség **16**
 > navigálni.
 
 ### A lapozó félterek
+
+*Forrás: `throttle.tre:9` (`throttle/pagedown`) · `throttle.tre:3` (`throttle/pageup`).*
 
 ```
 throttle/pageup:  YConstraint 1, 0.5, 0      # a sín tetejétől a KÖZEPÉIG

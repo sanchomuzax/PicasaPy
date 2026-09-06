@@ -85,6 +85,8 @@ vászonból negatív origóval; előjel nélkül olvasva ezek méretei
 
 ### 3.0 ⛔ HELYESBÍTÉS: a 8–9. bájt átlátszóság (2026-09-03, #2178)
 
+*Forrás: `capturemoviepanelpopup.tre:26` (`capturemoviepanelpopup/filmcontainer_overlayL`).*
+
 **Ez a lap korábban két külön mezőt írt ide, és mindkettőt tévesen:**
 
 | bájt | a korábbi állítás | valójában |
@@ -227,6 +229,8 @@ volt ismert: a `cdautorun/cdgo.tre`.)
 
 ### 5.1 Nyelvi elemek
 
+*Forrás: `editpanel.tre:1052` (`editpanel/tool_container`) · `editpanel.tre:23` (`editpanel/tool_ok`).*
+
 ```
 #includeonce macros.tre        # előfeldolgozó: include / includeonce
 #includesystem fontmacros      # platformfüggő (win/mac) makrókészlet
@@ -258,6 +262,8 @@ Handler varbutton publishbottom -105 -212      # eseménykezelő
 
 ### 5.2 Miért fontos
 
+*Forrás: `editpanel.tre:1022` (`editpanel/nerdview`) · `editpanel.tre:125` (`editpanel/tab1`) · `rightdrawerpanel.tre:28` (`rightdrawerpanel/propertiespanel`) · `thumbui.tre:91` (`thumbui/histogram`).*
+
 - A `showtarget`/`hidetarget` párokból **kiolvasható a teljes
   panel-navigáció** (melyik gomb melyik panelt hozza elő) — a szerkesztő
   öt füle (`editpanel/tab1…tab5` → `tabpanel1…5`), a jobb oldali fiók
@@ -272,6 +278,8 @@ Handler varbutton publishbottom -105 -212      # eseménykezelő
   mit kapcsoltak ki a végleges buildben.
 
 ## 6. Kapcsolat a lokalizációval
+
+*Forrás: `oneup.tre:50` (`oneup/tllabel`).*
 
 A `Picasa3i18n.dll` string-táblájának azonosítói ugyanezt a névteret
 használják: `<stringres id="oneup/tllabel.title">`. Így áll össze a

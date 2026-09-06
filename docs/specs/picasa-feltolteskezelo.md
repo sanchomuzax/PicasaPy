@@ -1,5 +1,7 @@
 # A Feltöltéskezelő és a megszűnt online felületelemek
 
+*Forrás: `movieeditpanel.tre:20` (`movieeditpanel/export_youtube`).*
+
 *2026-09-06. A #2529 első köre. A UI-lefedettségi mérés 31 „feltáratlan"
 eleméből ez a lap **15-öt** zár le: **14-et** `nem-cel`-re (mind a
 **megszűnt Picasa Web Albums** szolgáltatáshoz tartozik), egyet pedig
@@ -130,6 +132,8 @@ a Google 2016-ban leállított.
 parancs-elosztójában (`0x0051f070`) ül, a `sync_options_button` mellett.
 
 ### A tizenötödik: `movieeditpanel/export_youtube` — feltárva, de a DÖNTÉS nyitva
+
+*Forrás: `movieeditpanel.tre:20` (`movieeditpanel/export_youtube`).*
 
 ⛔ **NEM tettem `nem-cel`-re** a `movieeditpanel/export_youtube`-ot: a
 felirata „Upload to YouTube" / **„Feltöltés a YouTube webhelyre"**

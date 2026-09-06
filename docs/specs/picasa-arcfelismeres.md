@@ -495,6 +495,8 @@ A **nevesített** személyek albuma külön token: **`]facealbum:<id>`**.
 
 ## 9. AZ EMBEREK PANEL — állapotok és feliratok
 
+*Forrás: `editpanel.tre:935` (`editpanel/addfaceselection`) · `rightdrawerpanel.tre:48` (`rightdrawerpanel/peoplepanel`).*
+
 *(Ez a szakasz szándékosan a működés UTÁN áll.)*
 
 A panel `rightdrawerpanel/peoplepanel`, a csoport-rács `faceclusterpanel`,
