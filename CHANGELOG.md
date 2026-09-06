@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.314] – 2026-09-06
+
+### Javítva
+
+- **A mappa-leírás, a mappa-dátum és a címkék mentése többé nem bukik el
+  némán** (#2506). Írásvédett mappán vagy tele lemezen a program eddig
+  úgy viselkedett, mintha mentett volna: a felület már az új szöveget
+  mutatta, a `.picasa.ini`-be viszont nem került ki semmi — és a
+  párhuzamosan futó Picasa sem látta. Mostantól a hiba megjelenik a
+  program hibasávjában, és a felület sem mutat olyan állapotot, ami nem
+  ment ki a lemezre.
+
 ## [0.8.313] – 2026-09-06
 
 ### Javítva

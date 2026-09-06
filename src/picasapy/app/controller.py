@@ -68,7 +68,7 @@ from .people_controller import PeopleMixin
 from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
-from .photo_ops_controller import PhotoOpsMixin
+from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .side_pane_controller import SidePaneMixin
@@ -931,7 +931,18 @@ class AppController(
                 return document.with_value("Picasa", "description", text)
             return document.with_removed("Picasa", "description")
 
-        update_document(ini_path, mutate, backup=True)
+        # #2506: az írás bukása NEM lehet néma. Írásvédett mappán vagy tele
+        # lemezen a kivétel eddig a QML-slotból szökött ki, a feed-fejléc
+        # pedig már az ÚJ leírást mutatta — a felhasználó azt hitte,
+        # mentett. A projekt meglévő hibacsatornája ez (#459: a
+        # `photoOpFailed` a `syncFailed`-en át a `Main.qml` `errorBanner`-be
+        # fut be); a gyorstárat és a jelzéseket csak SIKERES írás után
+        # frissítjük, hogy a felület se hazudjon (#2497 tanulsága).
+        try:
+            update_document(ini_path, mutate, backup=True)
+        except _WRITE_ERRORS as error:
+            self.jelentsdAzIrasiHibat(error)
+            return
         self._descriptions[folder_path] = text
         if folder_path == self._current_folder:
             self._folder_description = text

@@ -27,6 +27,8 @@ from picasapy.ini import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
+from .photo_ops_controller import _WRITE_ERRORS
+
 
 class FolderDateMixin:
     """Mappa-dátum lekérdezése/felülírása a `.picasa.ini`-n át."""
@@ -53,7 +55,8 @@ class FolderDateMixin:
         def mutate(document):
             return with_folder_date_override(document, stripped)
 
-        update_document(ini_path, mutate, backup=True)
+        if not self._ini_iras(ini_path, mutate):
+            return
         self._after_folder_date_write(folder_path)
 
     @Slot(str)
@@ -63,8 +66,27 @@ class FolderDateMixin:
         if not folder_path:
             return
         ini_path = Path(folder_path) / PICASA_INI_NAME
-        update_document(ini_path, without_folder_date_override, backup=True)
+        if not self._ini_iras(ini_path, without_folder_date_override):
+            return
         self._after_folder_date_write(folder_path)
+
+    def _ini_iras(self, ini_path: Path, mutate) -> bool:
+        """Az ini-írás védve — `True`, ha tényleg kiment (#2506).
+
+        Írásvédett mappán vagy tele lemezen a kivétel eddig a QML-slotból
+        szökött ki, a bal hasáb pedig már az ÚJ dátumot mutatta volna: a
+        felhasználó azt hitte, mentett. A projekt meglévő hibacsatornája ez
+        (#459: `photoOpFailed` → `syncFailed` → `Main.qml` `errorBanner`).
+
+        A `False` ágon SZÁNDÉKOSAN nem hívjuk az újraszinkront: a lemezen a
+        RÉGI érték maradt, tehát a nézetnek sincs mit követnie.
+        """
+        try:
+            update_document(ini_path, mutate, backup=True)
+        except _WRITE_ERRORS as error:
+            self.jelentsdAzIrasiHibat(error)
+            return False
+        return True
 
     def _after_folder_date_write(self, folder_path: str) -> None:
         # A bal hasáb év-szakaszolása az indexbeli `folders.date`-ből él —
