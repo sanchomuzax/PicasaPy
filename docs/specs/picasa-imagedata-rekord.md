@@ -155,46 +155,126 @@ szomszédjaikat mind kiírja. A párbeszéd sztringjei között ott a
 `FaceInstanceID`, az `FRTemplateSize`, a `recpeoplealbumid`, a `recvalue` és
 a `width=%d,height=%d,crop=%s,fr=%s` minta is.
 
-## ⛔ Ki ÍRJA a `facerect`-et — NYITVA, és pontosan tudjuk, MIÉRT
+## ✅ A `facerect` ÍRÓJA és a `0`/`1`/`rect64` háromfelé ágazás (2026-09-06, #2515)
 
-A kérdés (`picasa-arcfelismeres.md` 3.3, **#2515**): mi dönti el, hogy az
-oszlopba valódi `rect64` kerül-e vagy `1`. Ez a kör **nem** válaszolta meg,
-és az alábbi felsorolás azért van itt, hogy a következő kör ne járja újra:
+⛔ **HELYESBÍTÉS az előző körre.** Ez a szakasz korábban azt írta, hogy „a
+bájtszintű pásztázás lehetőségei kimerültek", és hogy az **összevont
+eltolásra** (`0xf20 + 0xdc0 = 0x1ce0`) kapott 17 találat **hamis pozitív**.
+**Mindkét állítás téves volt.** A `0x1ce0` az igazi cím: a gyűjtemény a
+gazdaobjektum **`+0xf20`** eltolásán ül — ezt a gyűjtemény konstruktorának
+egyetlen hívója mondja ki:
 
-**Amit kipróbáltam, és mit adott:**
+```
+0x00415a9f  lea esi, [ebp + 0xf20]        ; ide épül az imagedata-gyűjtemény
+0x00415aa6  call 0x4127c0                 ; a gyűjtemény konstruktora
+```
 
-1. **Sztring-xref a névre** — a `facerect` név az EGÉSZ binárisban
-   **egyetlen** helyen fordul elő: a regisztrációban (`0x00412d25`, a
-   sztring `0x00c80bb8`). Névre keresés tehát nincs a kódban.
-2. **Eltolás-pásztázás (`[reg+0xdc0]`, ModRM `mod=10`, SIB és `ebp` kizárva)**
-   — a `0xdc0` dword az egész `.text`-ben **9**-szer fordul elő; ebből az
-   `imagedata`-gyűjteményre kettő vonatkozik: a konstruktor (`0x00412d3e`) és
-   a destruktor (`0x0041309a`). A maradék hét más objektumon bájtműveletet
-   végez (`0x0057c556`, `0x005df0bb`, `0x005dfa4d` `mov byte`/`cmp byte`),
-   illetve idegen könyvtárban áll (`0x00b113d6`).
-3. ⛔ **A 2. pont MÓDSZERE ÉRVÉNYTELEN — kontrollal mérve.** Ugyanezt a
-   pásztázást lefuttattam olyan oszlopokra, amelyeket a Picasa 3.9 biztosan
-   ír (`edited`, `revertable`, `edit_width`, `edit_height`, `textactive`):
-   **mind az öt NULLA találatot adott.** Az ok a `0x007e3903`-nál olvasható:
-   a bázis `[obj+0xc0] + 0xf20`, tehát a fordító a két konstanst
-   **összevonhatja** — a mezőeltolás önmagában nem is jelenik meg a kódban.
-   ⇒ *A „nincs eltolás-találat" ebben a rekordban NEM bizonyítja, hogy a
-   mezőt senki nem írja.*
-4. **Összevont eltolás (`0xf20 + 0xdc0 = 0x1ce0`)** — 17 találat, de
-   **hamis pozitívak**: a `0x0047c247` és a `0x0047c323` helyen a
-   `[edi+0x1ce0]` egy MÁSIK osztály zárja, a védett adat `[edi+0x2b20]` /
-   `[edi+0x2b24]`. Az összevont keresés tehát nem szűr.
-5. **A bázisképző idióma pásztázása** (`add r32, 0xf20` + rákövetkező
-   `lea r,[r+eltolás]`) — az egész binárisban **47** `add r32,0xf20` hely
-   van, és ebből mindössze **10** párosul oszlop-eltolással: nyolc a
-   `CPropertiesDlg`-ben, egy a `filters`-re (`0x00846a88`), egy a
-   `tagdate`-re (`0x0084ae7a`). A `facerect`-re **egy sem**.
+⇒ a `facerect` oszlop a gazdához képest **`+0x1ce0`**, és a 17 találat
+**mind valódi**. A két „hamis pozitívnak" mondott hely (`0x0047c247`,
+`0x0047c323`) is a `facerect` oszlopot **zárolja** — csak utána a gazda egy
+MÁSIK tagját (`+0x2b20`/`+0x2b24`) módosítja.
 
-⇒ **A bájtszintű pásztázás lehetőségei kimerültek**: a gyűjtemény bázisa
-regiszterben/változóban él, az eltolások összevonva, tehát csak
-**dekompilálás** (Ghidra, `picasa-x86-research`) tudja megmondani, melyik
-függvény ír az oszlopba. A kérdés ezért **örökölt nyitott kérdés** marad — a **#2515**-ön, immár a fenti öt kizárt
-úttal. (A #1238 LEZÁRVA; zárt jegyre írt folytatás nem ér oda.)
+### A `CColumn` adattárolása — kiolvasva
+
+| eltolás | mi | bizonyíték |
+|---:|---|---|
+| `+0x58` | az **adattömb-objektum** (üres oszlopnál `NULL`) | `0x00446257` |
+| `+0x58 → +0x4c` | a sorok száma **kétszerese** (`shr 1` kell) | `0x00446265` |
+| `+0x58 → +0x48` | maga az elemtömb | `0x0044626b` |
+| elem-lépésköz | **8 bájt** u64-nél (`lea eax,[edx+ebp*8]`), **4** u32-nél (`lea eax,[eax+ecx*4]`) | `0x0044626e`, `0x004468c4` |
+| `+0x60` (u64) / `+0x5c` (u32) | a beágyazott **alapérték**, ha nincs sor | `0x00446273`, `0x004468c9` |
+
+### A `rect64` becsomagolása — `FUN_009b9150`, utasításonként
+
+A csomagoló négy 16 bites mezőt fűz össze egyetlen 64 bites értékbe
+(`edx:eax`), a bemenet egy négy `dword`-ös téglalap `ecx`-en:
+
+```
+u64 = (m0 << 48) | (m1 << 32) | (m2 << 16) | m3
+      m0 = [ecx+0x00]  m1 = [ecx+0x04]  m2 = [ecx+0x08]  m3 = [ecx+0x0c]   (mind & 0xffff)
+```
+
+(`0x009b915a` `shld`, `0x009b9160` `shl 16`, `0x009b916f`, `0x009b917c`.)
+
+A **kicsomagolás** a `0x004467b2`-nél betű szerint ennek az inverze:
+`[ebp+0]=felső>>16`, `[ebp+4]=felső&0xffff`, `[ebp+8]=alsó>>16`,
+`[ebp+12]=alsó&0xffff`. ⇒ **az oda-vissza út bitre zár.**
+
+### ⭐ A HÁROM ÁG — mit jelent a `0`, az `1` és minden más
+
+A `FUN_00446610` (a „kérd le a sor arc-téglalapját" függvény) a beolvasott
+u64-et **háromfelé** ágaztatja:
+
+| érték | ág | mit tesz | bizonyíték |
+|---|---|---|---|
+| **pontosan `1`** (alsó=1, felső=0) | `0x004466c0` | a kimeneti téglalapot **nullázza**, és a **`0xF4240` = 1 000 000** kódot adja vissza | `0x004466b4` `cmp eax,1`, `0x004466bc` `test ecx,ecx`, `0x004466eb` `mov eax,0xf4240` |
+| **`0`** | `0x0044673a` | tartalék útra megy: `FUN_00448270` (négy argumentum) | `0x00446736` `or edx,ecx` + `jne` |
+| **minden más** | `0x004467b2` | kicsomagolja a `rect64`-et, majd a **`width`** (`+0x13b0`) és a **`height`** (`+0x1410`) oszlopot is zárolja, és a `FUN_009b93f0`-nel képpontra váltja | `0x004467bf` `add esi,0x13b0`, `0x00446859` `add esi,0x1410`, `0x004468dd` |
+
+⇒ **A `0` és az `1` NEM geometria, hanem két KÜLÖNBÖZŐ jelző** — a `0`
+tartalék-útra küld, az `1` viszont üres téglalapot ad **saját
+visszatérési kóddal**. A `picasa-arcfelismeres.md` 3.3 mérése („vegyes
+oszlop") ezzel a binárisból is igazolt.
+
+**Harmadik, független megerősítés ugyanerre a küszöbre:** a `FUN_00446370`
+soronként **logikai tömböt** épít, és a feltétele szó szerint
+„`facerect > 1`":
+
+```
+0x0044657c  cmp dword ptr [eax + 4], 0    ; felső 32 bit
+0x00446580  ja  0x446587                  ; > 0  → 1-et ír
+0x00446582  cmp dword ptr [eax], 1        ; alsó 32 bit
+0x00446585  jbe 0x44659b                  ; ≤ 1  → 0-t ír
+0x00446589  mov dword ptr [ecx + edx*4], 1
+0x00446594  mov dword ptr [eax + edx*4], 0
+```
+
+### ⭐ AZ ÍRÓ: `FUN_00480040`
+
+A tényleges tárolás **két utasítás**:
+
+```
+0x00481093  mov ecx, [ebp + 0x48]         ; az oszlop elemtömbje
+0x00481096  mov edx, [ecx + edi*8]        ; a sor jelenlegi értéke
+0x00481099  lea eax, [ecx + edi*8]        ; a sor CÍME
+0x004810a3  cmp edx, ecx                  ; egyezik az új alsó fele?
+0x004810aa  cmp edx, [esp + 0xbc]         ; …és a felső?
+0x004810b1  je  0x4810ce                  ; ha ugyanaz → NEM ír
+0x004810b3  mov dword ptr [eax], ecx      ; ⇐ ALSÓ 32 BIT
+0x004810bc  mov dword ptr [eax + 4], ecx  ; ⇐ FELSŐ 32 BIT
+0x004810c9  call 0x6a2a60                 ; változás-értesítés a gyűjteménynek
+```
+
+Az érték útja: a négy `dword`-ös téglalap (`[esp+0x70…0x7c]`) →
+`FUN_009b9290` (`0x00480e33`) → **`FUN_009b9150`** (`0x00480e3f`, a fenti
+csomagoló) → `[esp+0xb8]`/`[esp+0xbc]` → a fenti két `mov`.
+
+⛳ **A belépési feltétel — és ez a lényeg:** az író **csak akkor** ír, ha a
+sor jelenlegi `facerect` értéke **NULLA**:
+
+```
+0x00480dcf  mov edi, [eax + ecx*8]        ; alsó
+0x00480dd2  mov ebx, [eax + ecx*8 + 4]    ; felső
+0x00480de7  test edi, edi
+0x00480de9  jne 0x481386                  ; ha nem nulla → KIHAGYJA
+0x00480def  test ebx, ebx
+0x00480df1  jne 0x481386
+```
+
+⇒ **A már beírt téglalapot és az `1`-es jelzőt a program NEM írja felül.**
+Ez magyarázza a mért megoszlást (`picasa-arcfelismeres.md` 3.3): a `0` a
+„még nem dolgoztuk fel", az `1` a „feldolgoztuk, nincs használható
+téglalap" — és egyik sem íródik újra.
+
+### Ami NYITVA marad ebből (#2515)
+
+**Hol íródik konkrétan az `1`?** A csomagoló (`FUN_009b9150`) nulla
+téglalapból **nullát** ad, nem egyet, és bájtmintás keresés a
+`mov dword ptr [reg],1` + `mov dword ptr [reg+4],0` párra a `.text`-ben
+**nulla** találatot adott ⇒ az `1` regiszterből érkezik, egy másik íróból.
+A tizenhét `+0x1ce0` hely közül még hét nincs végigolvasva
+(`0x0046bda5`, `0x0047077a`, `0x0047b59a`, `0x0047d8be`, `0x0047f6b3`,
+`0x00482a1e`, `0x0074866b`).
 
 ## A `filters=` lánc sorosítója — `0x00463fd0`
 
