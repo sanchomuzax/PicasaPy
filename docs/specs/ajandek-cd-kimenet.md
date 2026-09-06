@@ -758,9 +758,16 @@ leképezés ellenőrzött.
 
 ## 13. A `publish` panel ELEMLELTÁRA — a három üzemmód vezérlői (2026-09-06)
 
-A UI-lefedettségi rangsor a `publish`-t **30 feltáratlan elemmel** hozza a
-második helyre. Ez a szakasz **megméri**, mennyi ebből valódi — a
+A UI-lefedettségi rangsor a `publish`-t **30 hiánnyal** hozza a második
+helyre. Ez a szakasz **megméri**, mennyi ebből valódi — a
 `makemoviepanel`-nél alkalmazott módszerrel (2.11, `picasa-create-features.md`).
+
+> ⛔ **HELYESBÍTÉS (2026-09-06, 6. kör):** ez a bekezdés eredetileg
+> „**30 feltáratlan** elemet" írt. **Hamis.** A `ui-lefedettseg.md:77` sora
+> szerint a `publish` 30-a **mind `lekutatva`** (feltáratlan: **0**), tehát a
+> rangsorbeli hiánya **fejlesztői**, nem kutatói munka; a 95 `rajzoló` elem
+> pedig a rangsor számából **eleve ki van hagyva**. Az alábbi leltár attól
+> még érvényes — de a rangsor számát nem cáfolja.
 
 **A mérés:** a `publish.tre` **106** elemnevet deklarál; a `docs/specs/*.md`
 **47**-et említ teljes néven, **59**-et nem. Az 59-ből a `.tre`
