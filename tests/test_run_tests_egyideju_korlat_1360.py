@@ -1,11 +1,16 @@
-"""Helyben legfeljebb EGY egyidejű tesztfutás (#1360, szigorítva: #2532).
+"""Helyben legfeljebb KETTŐ egyidejű tesztfutás (#1360, #2532).
 
-## A lelet — a tulajdonos jelentette
+## A tulajdonos szava
 
-    2026-09-06: „Tilos egynél több helyi CI tesztet futtatni az RPi-n."
+    2026-09-06 reggel: „Tilos egynél több helyi CI tesztet futtatni az RPi-n."
+    2026-09-06 este:   „Addig kérlek, állítsd be a 2-t az 1 helyett."
 
-    (korábban, #1360: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat.
+    (eredetileg, #1360: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat.
      Ezt mindig elfelejti a developer agent.")
+
+A szigorítás azért maradhatott el, mert közben a foglaló megbízhatóvá vált:
+CSAK a dolgozó futás foglal, a várakozó nem (korábban két várakozó üres gépen
+is kizárta egymást).
 
 A gép négymagos, és a futtató maga is párhuzamosít. Két egyidejű teljes kör
 CPU-éhezést okoz, amitől a fájlonkénti időkorlátba **valódi hiba nélkül** is
@@ -192,11 +197,14 @@ class TestCIVedelem:
         monkeypatch.setenv("CI", "true")
         assert run_tests._egyideju_korlat() == 0
 
-    def test_helyben_EGY_az_alapertelmezes(self, monkeypatch) -> None:
-        """#2532: a tulajdonos szabálya — egynél több helyi futás tilos."""
+    def test_helyben_KETTO_az_alapertelmezes(self, monkeypatch) -> None:
+        """A tulajdonos döntése 2026-09-06 estéjén: kettő.
+
+        Aznap reggel egyre szigorítottuk; miután a foglaló megbízhatóvá vált
+        (csak a DOLGOZÓ futás foglal), a korlát visszaállt kettőre."""
         monkeypatch.delenv("CI", raising=False)
         monkeypatch.delenv("PICASAPY_TESZT_EGYIDEJU", raising=False)
-        assert run_tests._egyideju_korlat() == 1
+        assert run_tests._egyideju_korlat() == 2
 
 
 class TestKilepes:
