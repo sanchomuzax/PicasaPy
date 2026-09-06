@@ -182,12 +182,11 @@ elfogadható kimenet. A jelzés eltakarása súlyosabb hiba, mint maga a hiba.
 - Adattárolás: `.picasa.ini` (igazságforrás, round-trip) + SQLite index.
 - Teszt: `python scripts/run_tests.py` (a sima `pytest` az egész készletre
   Qt/GIL-deadlockba futhat). Lint: `ruff check src/ tests/ scripts/`.
-  **Helyben legfeljebb EGY teljes tesztfutás mehet egyszerre** (tulajdonosi
-  szabály, 2026-09-06 — #2532; korábban kettő volt). A gép négymagos, a
-  futtató maga is párhuzamosít, és a túlterhelésből valódi hiba nélküli
-  bukások lesznek (#914). Ezt a `run_tests.py` betartatja: a MÁSODIK futás
-  vár a szabad helyre, és ha nem kap, `75`-tel lép ki — az NEM tesztbukás
-  (#1360). A korlát **gépszintű**: az alügynökök futásai is beleszámítanak.
+  **Helyben legfeljebb KETTŐ teljes tesztfutás mehet egyszerre** (tulajdonosi
+  döntés, 2026-09-06 este — #2532). A gép négymagos, a futtató maga is
+  párhuzamosít, és a túlterhelésből valódi hiba nélküli bukások lesznek
+  (#914). Ezt a `run_tests.py` betartatja: a HARMADIK futás vár a szabad
+  helyre, és ha nem kap, `75`-tel lép ki — az NEM tesztbukás (#1360). A korlát **gépszintű**: az alügynökök futásai is beleszámítanak.
   Ha a gép egyszer elbírna kettőt, **egyetlen szám** átírása elég
   (`_EGYIDEJU_ALAP`, futásidőben `PICASAPY_TESZT_EGYIDEJU`) — a kapu
   tetszőleges N helyet kezel.

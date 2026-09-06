@@ -132,17 +132,20 @@ def _masik_futas_pidjei() -> list[int]:
     return talalatok
 
 
-#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360, szigorítva
-#: #2532-ben). A tulajdonos szava 2026-09-06-án: „Tilos egynél több helyi CI
-#: tesztet futtatni az RPi-n." (Korábban kettő volt: „Lokális (RPi-n futó)
-#: teszt egyszerre max 2 futhat. Ezt mindig elfelejti a developer agent.")
+#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360, #2532).
+#:
+#: A tulajdonos döntése 2026-09-06-án, a nap végén: **KETTŐ**. Aznap reggel
+#: egyre szigorítottuk („Tilos egynél több helyi CI tesztet futtatni az
+#: RPi-n."), majd — miután a foglaló megbízhatóvá vált (csak a DOLGOZÓ futás
+#: foglal, a várakozó nem) — visszaállt kettőre. A szám ITT állítható,
+#: kódot írni hozzá nem kell: a foglaló tetszőleges N helyet kezel.
 #:
 #: Miért EGY: a futtató maga is párhuzamosít (fájlonkénti részfutások), a gép
 #: pedig négymagos — két teljes kör már CPU-éhezést okoz, amitől a fájlonkénti
 #: időkorlátba VALÓDI HIBA NÉLKÜL is bele lehet futni (#914). A felismerés
 #: eddig is megvolt (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session
 #: indíthatott kört. Egy szabály, amit be kell tartatni, nem szabály: kapu.
-_EGYIDEJU_ALAP = 1
+_EGYIDEJU_ALAP = 2
 
 #: Meddig várunk szabad helyre, mielőtt feladjuk.
 _VARAKOZAS_S = 45 * 60
