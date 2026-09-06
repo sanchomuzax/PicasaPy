@@ -172,6 +172,24 @@ QtObject {
     readonly property int headlineLargeSize: 28
 
     readonly property int fontSize: 12              // felület: 11–13 px
+    //: A TÖBBSOROS feliratok sorköze, képpontban — az eredeti Picasa
+    //: `fontleading` tulajdonsága (#2494/#2567). Nem becslés és nem a Qt
+    //: betűtípus-metrikája: a `fontmacros_win.tre` MINDKÉT ide tartozó
+    //: makrója ugyanezt a 10-et írja elő —
+    //:   `m_buttonfontC`  (a Visszavonás/Újra és minden sima gombfelirat):
+    //:       fontsize 12, textwrap 1, **fontleading 10**
+    //:   `m_fxlabel`      (a csempefelirat, `ui-audit-editor.md` 3.3):
+    //:       fontsize 11, fontweight 700, **fontleading 10**
+    //: A tulajdonos képernyőmentésén (`141421.jpg`, 1920 × 1200, 1:1) az
+    //: alapvonal-távolság mindkét helyen MÉRVE is 10 képpont — két
+    //: független módszer, azonos érték.
+    //:
+    //: ⚠️ Ezért FIX képpont (`Text.FixedHeight`), nem arány: az arány a
+    //: platform betűtípusának sormagasságát szorozná, tehát Windowson és
+    //: Linuxon MÁS képpontszámot adna — épp azt veszítenénk el, amit
+    //: átveszünk. A `Theme.fontSize` állandó (12), a felirat-fokozat
+    //: (`fontSize - 2` = 10) tehát nem mozdul ki alóla.
+    readonly property int lineLeading: 10
     readonly property int folderTitleSize: 16         // csoport-fejléc / 600
     readonly property string monoFamily: "IBM Plex Mono, monospace"
 

@@ -1154,17 +1154,28 @@ Rectangle {
         //: #2494/#405: a pár EGYFORMA magas, és a magasságot MI számoljuk,
         //: nem a Layout `fillHeight`-je — az Qt-verziófüggően viselkedik
         //: (a CI-n a gomb 28 maradt a kétsoros felirat alatt is, helyben
-        //: megnőtt). A 28 a #741 MÉRT gombmagassága: alsó korlát.
+        //: megnőtt).
+        //:
+        //: ⚠️ 28 → **26**, és ez NEM mond ellent a #741-nek. A respack
+        //: `filter_undo`/`filter_redo` téglalapja (132 × 28) a HELY, amit a
+        //: gomb az elrendezésben elfoglal; a KIRAJZOLT gombkeret ennél
+        //: minden oldalon 1 képponttal kisebb. Mindkettő MÉRVE a tulajdonos
+        //: 1:1 felvételén (`141421.jpg`): a két gomb bal keretének
+        //: osztásköze 137 = 132 + 5 hézag (a respack pontosan ennyit mond),
+        //: a rajzolt keret viszont 130 × 26. Nálunk ez a `Rectangle` MAGA a
+        //: rajzolt keret — nincs külön hely és külön kép —, tehát a
+        //: látható értéket kell felvennie: 26.
         readonly property real gombMagassag: Math.max(
-            28, editUndoBtn.kertMagassag, editRedoBtn.kertMagassag)
+            26, editUndoBtn.kertMagassag, editRedoBtn.kertMagassag)
 
         PanelButton {
             id: editUndoBtn
             objectName: "editUndoButton"
             label: panel.undoLabel
             buttonEnabled: panel.undoAvailable
-            //: #741: a mért gombmagasság (`filter_undo`, 132 × 28).
-            //: #2494: ALSÓ korlát, nem felső — a felirat itt az effekt
+            //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack
+            //: 132 × 28-as téglalapja a HELY, ld. a `gombMagassag`-nál).
+            //: ALSÓ korlát, nem felső — a felirat itt az effekt
             //: nevét is tartalmazza („Visszavonás: Jó napom van"), ami két
             //: sorra tör, és a rögzített 28 nem engedett neki helyet: a
             //: második sor a gomb alsó keretén kezdődött és 5 képponttal
@@ -1183,8 +1194,8 @@ Rectangle {
             label: panel.redoLabel
             buttonEnabled: panel.redoAvailable
             // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
-            //: #741: a mért gombmagasság (`filter_redo`, 132 × 28) —
-            //: #2494 szerint ALSÓ korlát, a párja miatt is: a két gomb
+            //: #741/#2494: a mért, KIRAJZOLT gombmagasság 26 (a respack
+            //: 132 × 28-as téglalapja a HELY) — ALSÓ korlát, a párja miatt is: a két gomb
             //: egy sorban ül, a magasabbik szabja meg a sor magasságát.
             Layout.preferredHeight: globalUndoRow.gombMagassag
             //: a `minimumHeight` KÖTELEZŐ a Layoutnak — a preferált érték

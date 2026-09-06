@@ -348,7 +348,20 @@ class TestADeritofenySor:
 # 5. A Visszavonás/Újra sor (spec 1. szakasz)
 # ==========================================================================
 class TestAVisszavonasUjraSor:
-    def test_a_ket_gomb_132x28(self, qt_app) -> None:
+    def test_a_ket_gomb_132_szeles_es_26_magas(self, qt_app) -> None:
+        """A szélesség a respack HELYE (132), a magasság a RAJZOLT keret (26).
+
+        ⚠️ Itt korábban 28 állt, a respack `filter_undo` téglalapjából. A
+        #2494 mérése (`141421.jpg`, 1:1) kimutatta, hogy a téglalap a
+        gomb HELYE, a rajzolt gombkép viszont minden oldalon 1 képponttal
+        beljebb kezdődik: **130 × 26**. A helyet a felvétel megerősíti — a
+        két gomb bal keretének osztásköze 137 = 132 + 5 hézag —, tehát a
+        respack nem téved; más dolgot ír le.
+
+        Nálunk a `PanelButton` `Rectangle`-je MAGA a rajzolt keret, ezért a
+        magasság a látható 26. A szélesség marad 132: a két gomb a panel
+        szélességét tölti ki, ott a HELY a mérce (ezt őrzi az 5 képpontos
+        hézag próbája is, közvetlenül alább)."""
         panel = _render(qt_app, tab=0)
 
         for nev in ("editUndoButton", "editRedoButton"):
@@ -356,8 +369,9 @@ class TestAVisszavonasUjraSor:
             assert abs(szelesseg - 132) <= 1, (
                 f"{nev} {szelesseg:.0f} px széles a 132 helyett (spec 1.)"
             )
-            assert abs(magassag - 28) <= 1, (
-                f"{nev} {magassag:.0f} px magas a 28 helyett (spec 1.)"
+            assert abs(magassag - 26) <= 1, (
+                f"{nev} {magassag:.0f} px magas a rajzolt keret 26-ja helyett "
+                "(spec 1., #2494)"
             )
 
     def test_a_ket_gomb_kozott_5_kepont_hezag(self, qt_app) -> None:
