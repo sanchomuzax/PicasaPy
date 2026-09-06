@@ -33,6 +33,8 @@ gombunk 26.0, mint az eredeti). Ez a szám **csak csökkenhet**:
 
 from __future__ import annotations
 
+import os
+
 from tests.app.qml_functional.test_visszavonas_felirat_2494 import (
     JELENTETT_FELIRAT,
     MERT_GOMBSZELESSEG,
@@ -44,13 +46,28 @@ from tests.app.qml_functional.test_visszavonas_felirat_2494 import (
 #: A tulajdonos képernyőmentésén MÉRT eredeti gombmagasság (Picasa 3).
 EREDETI_GOMBMAGASSAG = 26.0
 
-#: A MA mért eltérés képpontban. CSAK CSÖKKENHET.
+#: A MA mért eltérés képpontban, PLATFORMONKÉNT. CSAK CSÖKKENHET.
 #:
-#: 2026-09-06, a friss `main`-en mérve: **0.0** — a gombunk pontosan 26.0 px,
-#: tehát EGYEZIK az eredetivel. (Ugyanaznap korábban 38.0 volt; a #2494
-#: javítása közben beolvadt.) Innentől ez az őr PARITÁS-ZÁR: bármilyen
-#: elmozdulás az eredetitől visszaesés.
-MAI_ELTERES = 0.0
+#: ⚠️ A gomb magassága BETŰMETRIKA-FÜGGŐ (a `PicasaButton` a `lineHeight`-ből
+#: és a `Theme.lineLeading`-ből számol), és a két platform betűje más.
+#: Egyetlen szám ezért nem állhat mindkettőn — a FŐÁG CI-je 2026-09-06-án
+#: emiatt lett piros: Linuxon 26.0 px (eltérés 0), Windowson 32.0 px
+#: (eltérés 6). Az őr Linuxon kalibrált `0.0`-ja a windows-lábon
+#: visszaesésnek látszott, holott a kód nem változott.
+#:
+#: A megoldás NEM a kihagyás (az üresen zöld őr rosszabb a pirosnál,
+#: ld. #2555): mindkét platformon ÉL a racsni, csak a saját mai állásához.
+#:
+#: | platform | ma mért gomb | eltérés a mért eredetitől |
+#: |---|---|---|
+#: | POSIX (a fejlesztői gép) | 26.0 px | **0.0** — paritás |
+#: | Windows | 32.0 px | **6.0** |
+#:
+#: A windowsos 6 px VALÓDI hűség-eltérés, nem mérési műtermék: a
+#: referencia-képernyőmentés is windowsos Picasáról készült. Ezt külön jegy
+#: viszi (#2596) — itt a racsni annyit garantál, hogy NE NŐJÖN.
+_ELTERESEK = {"nt": 6.0, "posix": 0.0}
+MAI_ELTERES = _ELTERESEK.get(os.name, 0.0)
 
 #: Fél képpont játék a lebegőpontos összehasonlításnak.
 TURES = 0.5
@@ -67,13 +84,13 @@ def test_a_gomb_nem_ter_el_JOBBAN_az_eredetitol(qt_app) -> None:
 
     assert elteres <= MAI_ELTERES + TURES, (
         f"NŐTT az eltérés az eredetitől: a gomb {mienk:.1f} px, az eredeti "
-        f"{EREDETI_GOMBMAGASSAG:.0f} px, az eltérés {elteres:.1f} px — a rács "
-        f"{MAI_ELTERES:.0f} px. Ez visszaesés: a tulajdonos ezt a képernyőn "
-        f"látja meg."
+        f"{EREDETI_GOMBMAGASSAG:.0f} px, az eltérés {elteres:.1f} px — a "
+        f"{os.name} rács {MAI_ELTERES:.0f} px. Ez visszaesés: a tulajdonos "
+        f"ezt a képernyőn látja meg."
     )
     assert elteres >= MAI_ELTERES - TURES, (
-        f"JAVULT az eltérés ({elteres:.1f} px a rács {MAI_ELTERES:.0f} px "
-        f"helyett) — szorítsd meg a rácsot: írd át a MAI_ELTERES értékét "
-        f"{elteres:.1f}-re UGYANEBBEN a PR-ben, különben a következő kör "
-        f"visszaengedheti a régi állapotot."
+        f"JAVULT az eltérés ({elteres:.1f} px a {os.name} rács "
+        f"{MAI_ELTERES:.0f} px helyett) — szorítsd meg a rácsot: írd át az "
+        f"`_ELTERESEK` megfelelő platform-értékét {elteres:.1f}-re UGYANEBBEN "
+        f"a PR-ben, különben a következő kör visszaengedheti a régit."
     )
