@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.310] – 2026-09-06
+
+### Javítva
+
+- **Az Emberek, Helyek és Címkék fiók a szerkesztőben is megnyílik**
+  (#2566). Eddig a négy kis gomb a nagyítás mellett benyomódott, de nem
+  történt semmi: a paneleket tartalmazó hasáb a képnézetben rejtve volt.
+  A Tulajdonságok panel már korábban is működött ott — most a másik három
+  is. A panelek a nézőben az ÉPPEN NÉZETT képre vonatkoznak, és a kép nem
+  csúszik alájuk.
+
 ## [0.8.309] – 2026-09-06
 
 ### Javítva

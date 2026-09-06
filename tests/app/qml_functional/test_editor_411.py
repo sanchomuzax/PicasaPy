@@ -96,9 +96,22 @@ class TestPanelFixedWidth:
 
     def test_no_leftover_scaled_190_width_in_source(self):
         """Regresszió-őr: a #405-ös hibás, ablakarányosan leskálázott
-        190px-es érték egyik fájlban se maradjon."""
+        190px-es érték egyik fájlban se maradjon.
+
+        ⚠️ #2566: az őr eredetileg a TELJES `PhotoViewer.qml`-ben tiltotta
+        a 190-et. Ez addig volt jó proxy, amíg a fájlban csak a BAL
+        eszközpanel adott szélességet — azóta a jobb fiók Címkék-lapja is
+        ide került, és annak MÉRT szélessége éppen 190 (ugyanaz a szám,
+        mint a könyvtárban, `Main.qml`). A tiltás így a HELYES értéket
+        büntette volna. Az állítás ezért oda szűkül, ahova a #405 hibája
+        tartozott: a BAL eszközpanel dobozára."""
         assert "implicitWidth: 190" not in _QML_SOURCE
-        assert "Layout.preferredWidth: 190" not in _VIEWER_QML_SOURCE
+        kezd = _VIEWER_QML_SOURCE.index('objectName: "viewerLeftDrawer"')
+        bal_panel_blokk = _VIEWER_QML_SOURCE[kezd : kezd + 2000]
+        assert "Layout.preferredWidth: 280" in bal_panel_blokk, (
+            "az őr elcsúszott: a bal panel blokkjában a 280 sincs meg"
+        )
+        assert "Layout.preferredWidth: 190" not in bal_panel_blokk
 
 
 class TestCommonFixesTabUsesOwnIcons:

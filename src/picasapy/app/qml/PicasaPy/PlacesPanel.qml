@@ -17,6 +17,14 @@ Rectangle {
     // a főablak (a kijelölt sorok forrása)
     required property var appWindow
 
+    //: #2566: MELY SOROKRA hat a panel. Az alapértelmezés a főablak
+    //: kijelölése, tehát a könyvtár-nézet használata képpontra
+    //: változatlan. A nézőben viszont a rács kijelölése elavult — a néző
+    //: léptetése csak a `selectedIndex`-et írja, a `selectedIndexes`-t nem
+    //: —, ezért ott a NÉZETT kép sorát kapja.
+    property var targetRows:
+        panel.appWindow ? panel.appWindow.selectedIndexes : []
+
     readonly property var markers: controller ? controller.geoMarkers : []
     readonly property bool mapAvailable: mapLoader.status === Loader.Ready
 
@@ -109,10 +117,9 @@ Rectangle {
             PicasaButton {
                 objectName: "placesClearButton"
                 text: qsTr("Clear %1 Geotag(s)")
-                          .arg(panel.appWindow.selectedIndexes.length)
-                enabled: panel.appWindow.selectedIndexes.length > 0
-                onClicked: panel.clearGeotagRequested(
-                    panel.appWindow.selectedIndexes)
+                          .arg(panel.targetRows.length)
+                enabled: panel.targetRows.length > 0
+                onClicked: panel.clearGeotagRequested(panel.targetRows)
             }
         }
     }
@@ -120,8 +127,7 @@ Rectangle {
     // a térképen kiválasztott hely a KIJELÖLÉSRE kerül (Picasa-viselkedés:
     // a művelet mindig a kijelölt képekre hat)
     function placeSelection(latitude, longitude) {
-        if (appWindow.selectedIndexes.length === 0) return
-        panel.setGeotagRequested(
-            appWindow.selectedIndexes, latitude, longitude)
+        if (panel.targetRows.length === 0) return
+        panel.setGeotagRequested(panel.targetRows, latitude, longitude)
     }
 }

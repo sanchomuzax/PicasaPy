@@ -161,6 +161,17 @@ Rectangle {
     signal revertRequested(int row)
     signal undoAllEditsRequested(int row)
     signal resetFacesRequested()
+    //: #2566: a Helyek-panel két művelete a nézőből is a GAZDA
+    //: megerősítésén megy át — ugyanazok a párbeszédek, mint a
+    //: könyvtár-nézetben (`panelClearGeotagDialog`, `setGeotagDialog`).
+    signal clearGeotagRequested(var rows)
+    signal setGeotagRequested(var rows, real latitude, real longitude)
+    //: #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár tartalmát
+    //: cseréli le (keresés, illetve személy-album), amit a néző eltakarna —
+    //: ezért nem a néző hajtja végre, hanem a gazda: az zárja a nézőt, és
+    //: utána vált nézetet.
+    signal findTaggedRequested(string keyword)
+    signal personChosen(string name)
 
     // #192: a Tulajdonságok-panel a nézőben is — a könyvtár-nézet közös
     // kapcsolóját (Main.qml: window.propertiesPanelOpen) követi. A fő
@@ -170,6 +181,34 @@ Rectangle {
     readonly property var appWindow: Window.window
     readonly property bool propertiesOpen: appWindow
         && appWindow.propertiesPanelOpen === true
+
+    //: #2566: a jobb fiók MÁSIK HÁROM lapja — a #192 mintája szerint. A
+    //: négy kapcsolót a képtálca gombjai és a Nézet menü írják, de eddig
+    //: csak a Tulajdonságok panelnek volt párja a nézőben; a másik három a
+    //: könyvtár `SplitView`-jében ült, amit a néző elrejt, tehát a gomb
+    //: benyomódott és nem történt semmi.
+    //:
+    //: MÉRVE (`thumbui.tre:526`, `:533`): a `right_drawer` a
+    //: `mainuipanel` gyereke, és a szerkesztő-módot leíró
+    //: `macros.tre:204` (`m_albumtoggle`) TÉTELESEN sorolja fel, mit rejt
+    //: el — a `right_drawer` és a `mainuipanel` NINCS köztük. Az
+    //: eredetiben tehát a jobb fiók a szerkesztőben is elérhető.
+    //:
+    //: ⚠️ TERNÁRIUS, nem `&&`: a JS `&&` a HAMIS operandust adja vissza
+    //: (itt `null`-t), amit a Qt nem tud bool-ra kötni.
+    readonly property bool tagsOpen: viewer.appWindow
+        ? viewer.appWindow.tagsPanelOpen === true : false
+    readonly property bool placesOpen: viewer.appWindow
+        ? viewer.appWindow.placesPanelOpen === true : false
+    readonly property bool peopleOpen: viewer.appWindow
+        ? viewer.appWindow.peoplePanelOpen === true : false
+
+    //: #2566: a fiók A NÉZETT KÉPRE hat, nem a rács kijelölésére. A néző
+    //: léptetése csak a `selectedIndex`-et írja, a `selectedIndexes`-t nem
+    //: (Main.qml `onCurrentIndexChanged`), ezért a rács kijelölésére kötött
+    //: panel a nézőben elavult képet mutatna.
+    readonly property var drawerRows:
+        viewer.currentIndex >= 0 ? [viewer.currentIndex] : []
 
     // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
     // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
@@ -1997,17 +2036,138 @@ Rectangle {
                     ? (viewer.photosModel.revision,
                        controller.propertiesOf(viewer.currentIndex))
                     : []
-                onCloseRequested: {
-                    // #1773: a négy fiók-jelző SZÁRMAZTATOTT, közvetlenül
-                    // nem írható — a fiókot az ablak függvénye üríti. A
-                    // `!== undefined` a #1572-őr mintája: a próbák
-                    // stub-ablakán nincs rajta a függvény.
-                    if (viewer.appWindow
-                        && viewer.appWindow.ureseidAFiokot !== undefined)
-                        viewer.appWindow.ureseidAFiokot()
+                onCloseRequested: viewer.zarjaAFiokot()
+            }
+
+            //: #2566: a másik három lap CSAK AKKOR létezik, ha a NÉZŐ
+            //: LÁTSZIK, és épp az a lap aktív.
+            //:
+            //: ⚠️ Ez nem takarékosság, hanem HELYESSÉG. A három komponens a
+            //: SAJÁT gyerekeire éget objectName-et (`placesClearButton`,
+            //: `peoplePanelClose`, `tagInput` …), amit a példányosítás
+            //: helyén nem lehet felülírni. Mohó példányosítással a
+            //: `findChild` a nézőbeli MÁSODPÉLDÁNYT találná meg a
+            //: könyvtárbeli helyett — a `test_qml_places.py` két őre
+            //: azonnal el is bukott rá, mielőtt `Loader`-be került.
+            //: Csukott néző mellett így egyetlen példány van, a könyvtáré.
+            //:
+            //: ⚠️ A `viewer.visible` NEM elhagyható: a fiók lapját a
+            //: KÖNYVTÁRBAN is át lehet kapcsolni, és a `tagsOpen` akkor is
+            //: igaz — a néző példánya enélkül a könyvtár-nézetben is
+            //: felépülne.
+            Loader {
+                objectName: "viewerTagsPanelLoader"
+                active: viewer.tagsOpen && viewer.visible
+                visible: viewer.tagsOpen
+                Layout.preferredWidth: 190
+                Layout.minimumWidth: 150
+                Layout.fillHeight: true
+                //: Ugyanaz a buta komponens, mint a könyvtárban; a
+                //: különbség csak az, hogy MIRE hat: ott a rács
+                //: kijelölésére, itt a nézett képre (`drawerRows`).
+                sourceComponent: TagsPanel {
+                    objectName: "viewerTagsPanel"
+                    hasSelection: viewer.currentIndex >= 0
+                    //: a photos.revision-nel együtt kötve: címke-írás után
+                    //: azonnal frissül (a könyvtári párja ugyanígy)
+                    tags: (viewer.photosModel && viewer.controllerReady
+                           && viewer.currentIndex >= 0)
+                        ? (viewer.photosModel.revision,
+                           controller.keywordsOfRows(viewer.drawerRows))
+                        : []
+                    onAddRequested: function(keyword) {
+                        if (viewer.controllerReady)
+                            controller.addKeywordToRows(
+                                viewer.drawerRows, keyword)
+                    }
+                    onRemoveRequested: function(keyword) {
+                        if (viewer.controllerReady)
+                            controller.removeKeywordFromRows(
+                                viewer.drawerRows, keyword)
+                    }
+                    //: a helyi menü „rátétel a kijelölésre" tétele: a
+                    //: nézőben a kijelölés EGY kép, tehát ugyanoda fut,
+                    //: mint a hozzáadás
+                    onAddToSelectionRequested: function(keyword) {
+                        if (viewer.controllerReady)
+                            controller.addKeywordToRows(
+                                viewer.drawerRows, keyword)
+                    }
+                    //: a találatok a KÖNYVTÁR rácsán jelennek meg, amit a
+                    //: néző eltakarna — ezért a gazda zárja a nézőt, és
+                    //: ő keres
+                    onFindTaggedRequested: function(keyword) {
+                        viewer.findTaggedRequested(keyword)
+                    }
+                    onCloseRequested: viewer.zarjaAFiokot()
+                }
+            }
+
+            Loader {
+                objectName: "viewerPlacesPanelLoader"
+                active: viewer.placesOpen && viewer.visible
+                visible: viewer.placesOpen
+                Layout.preferredWidth: 320
+                Layout.minimumWidth: 220
+                Layout.fillHeight: true
+                sourceComponent: PlacesPanel {
+                    objectName: "viewerPlacesPanel"
+                    appWindow: viewer.appWindow
+                    //: a geocímkézés a NÉZETT képre hat, nem a rács
+                    //: kijelölésére (ld. `drawerRows`)
+                    targetRows: viewer.drawerRows
+                    //: a térkép-jelölőre kattintva a néző lép oda — a
+                    //: könyvtárban ugyanez a jel a rács kijelölését mozgatja
+                    onPhotoActivated: function(row) { viewer.show(row) }
+                    onClearGeotagRequested: function(rows) {
+                        viewer.clearGeotagRequested(rows)
+                    }
+                    onSetGeotagRequested: function(rows, la, lo) {
+                        viewer.setGeotagRequested(rows, la, lo)
+                    }
+                    onCloseRequested: viewer.zarjaAFiokot()
+                }
+            }
+
+            Loader {
+                objectName: "viewerPeoplePanelLoader"
+                active: viewer.peopleOpen && viewer.visible
+                visible: viewer.peopleOpen
+                Layout.preferredWidth: 200
+                Layout.minimumWidth: 160
+                Layout.fillHeight: true
+                //: A nézett kép nevesített emberei, és akikkel a vizsgált
+                //: személy együtt szerepel.
+                sourceComponent: PeoplePanel {
+                    objectName: "viewerPeoplePanel"
+                    selectionCount: viewer.drawerRows.length
+                    currentPerson: viewer.controllerReady
+                        ? controller.currentPersonName : ""
+                    peopleHere: (viewer.photosModel && viewer.controllerReady)
+                        ? (viewer.photosModel.revision,
+                           controller.peopleOfRows(viewer.drawerRows))
+                        : []
+                    peopleWith: (viewer.photosModel && viewer.controllerReady
+                                 && controller.currentPersonName.length > 0)
+                        ? (viewer.photosModel.revision,
+                           controller.peopleWith(controller.currentPersonName))
+                        : []
+                    //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
+                    //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
+                    onPersonChosen: function(name) { viewer.personChosen(name) }
+                    onCloseRequested: viewer.zarjaAFiokot()
                 }
             }
         }
+    }
+
+    //: #2566: a fiók ürítésének EGYETLEN útja a nézőből. A négy fiók-jelző
+    //: SZÁRMAZTATOTT (#1773), közvetlenül nem írható — az ablak függvénye
+    //: üríti. A `!== undefined` a #1572-őr mintája: a próbák stub-ablakán
+    //: nincs rajta a függvény.
+    function zarjaAFiokot() {
+        if (viewer.appWindow && viewer.appWindow.ureseidAFiokot !== undefined)
+            viewer.appWindow.ureseidAFiokot()
     }
 
     // -- #422: jobbklikk-menü a nagy képen ---------------------------------
