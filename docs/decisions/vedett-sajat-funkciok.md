@@ -141,6 +141,16 @@ kódtól).
   `.picasa.ini`-szöveget tartalmaz, és `Originals/` alatt egyetlen ini
   sincs, mert az a név rajta van a Picasa saját kizárási listáján. Ha
   később mérés születik rá, ez a tétel eltűnik.
+- `src/picasapy/edit/save.py` (#2512) — a **mentésenkénti pillanatképek
+  külön alkönyvtára** (`.picasaoriginals/.picasapy-snapshots/`). A névminta
+  (`%s.%d.jpg`) a binárisból mért, eredeti (#444); a HELY viszont a mi
+  döntésünk. Az eredeti Picasa a sorszámozott másolatait a „szent" eredeti
+  MELLÉ, a `.picasaoriginals`-ba írja — ott azonban a két dolog neve
+  egybeeshet (`a.jpg` második pillanatképe és egy önálló `a.2.jpg` kép
+  eredetije azonos), és a tévedés ára egy IDEGEN fénykép bájtjainak
+  visszaírása volt. Amit a Picasa írt, azt továbbra is olvassuk mindkét
+  helyről, tehát a kompatibilitás nem sérül. Indoklás: ADR-010,
+  `docs/decisions/pillanatkep-nevter.md`.
 
 ## Tervezett, még nem implementált saját funkciók
 

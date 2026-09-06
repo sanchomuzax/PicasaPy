@@ -24,6 +24,26 @@ Mindkettőt MINDKÉT ismert mappanév alatt keressük (`.picasaoriginals` és a
 de a keresés itt szándékosan szimmetrikus: egy ott mégis fellelhető
 pillanatkép elhagyása ugyanolyan visszafordíthatatlan veszteség lenne.
 
+## A pillanatképeknek KÉT helyük van (#2512)
+
+A `<név>.<N><kiterjesztés>` név egy önálló kép „szent" eredetijétől
+megkülönböztethetetlen volt, ezért az ÚJ pillanatképeink az eredeti-mappán
+belüli `.picasapy-snapshots` alkönyvtárba mennek
+(`docs/decisions/pillanatkep-nevter.md`). A régi, KÖZÖS helyen álló
+példányokat továbbra is megtaláljuk és visszük a képpel — köztük azokat is,
+amelyeket a windowsos Picasa írt.
+
+A két hely két SZABÁLYT is jelent. A régin áll a #1449 óvatossága (ha a
+képmappában azonos nevű önálló kép van, békén hagyjuk a példányt); az újon
+NEM, mert oda rajtunk kívül senki nem ír. A gazda-szűrés odaát csak a saját
+pillanatképeinket hagyná hátra a kép költözésekor — pont az a kár, amit ez a
+modul megelőzni hivatott.
+
+Költözéskor a pillanatkép a SAJÁT szintjén marad: a `.picasapy-snapshots`-ból
+induló oda érkezik, a közös helyről induló oda. Ugyanaz a gondolat, mint a
+mappanévnél (lent): a régi helyen álló példány a párhuzamosan futó Picasáé is
+lehet, azt nem rántjuk be a mi névterünkbe.
+
 ## A mappanév a költözéskor NEM változik
 
 Egy `Originals`-ból induló eredeti a célmappában is `Originals` alá kerül,
@@ -270,6 +290,14 @@ def _originals_dir_names() -> tuple[str, ...]:
     return ORIGINALS_DIR_NAMES
 
 
+def _snapshot_dir_name() -> str:
+    """A MI pillanatképeink alkönyvtárának neve (#2512), ugyanazzal a
+    késleltetett importtal, mint az `_originals_dir_names`."""
+    from picasapy.edit.save import SNAPSHOT_DIR_NAME
+
+    return SNAPSHOT_DIR_NAME
+
+
 def snapshot_numbers(
     directory: Path, photo: Path
 ) -> Iterator[tuple[int, str, Path]]:
@@ -295,15 +323,46 @@ def snapshot_numbers(
     pillanatképek száma és sorszáma előre nem ismert, és a költöztetés
     ritka, a felhasználó által kezdeményezett művelet — nem megjelenítési
     útvonal. A KÖTEGELT úton a `listing_cache()` mappánként egyetlen
-    listázásra fogja össze (#1452).
+    listázásra fogja össze (#1452). A #2512 óta ez eredeti-mappánként KÉT
+    listázás (az alkönyvtár is), de ugyanabban a hatókörben, ugyanazzal a
+    gyorstárral — és ugyanazokon a ritka, felhasználó által kezdeményezett
+    útvonalakon.
+
+    **#2512: két hely.** Az ÚJ pillanatképek a `directory` alatti
+    `.picasapy-snapshots` alkönyvtárba kerülnek, ahol a névminta NEM
+    kétértelmű — oda rajtunk kívül senki nem ír, tehát ott a gazda-szűrés
+    nem alkalmazandó. Ha ott is szűrnénk, egy véletlenül azonos nevű
+    önálló kép puszta létezése elnémítaná a SAJÁT visszavonásunkat, és a
+    kép mozgatásakor hátrahagyná a saját pillanatképeinket.
+
+    Args:
+        directory: az eredeti-mappa (`.picasaoriginals` vagy `Originals`) —
+            az alkönyvtárat ez a függvény nézi meg magától.
+        photo: a kép a SAJÁT mappájában (a gazda-szűréshez kell).
 
     Yields:
         `(sorszám, a sorszám SZÖVEGE, útvonal)` hármasok, rendezetlenül.
     """
+    # Az ÚJ hely: kétértelműség nincs, gazda-szűrés sem kell.
+    yield from _snapshot_candidates(directory / _snapshot_dir_name(), photo)
+    # A RÉGI, a „szent" eredetivel KÖZÖS hely: itt áll a #1449 szabálya.
     for szam, szoveg, path in _snapshot_candidates(directory, photo):
         if (photo.parent / path.name).exists():
             continue  # egy önálló kép eredetije, nem a mi pillanatképünk
         yield szam, szoveg, path
+
+
+def _placement_candidates(
+    directory: Path, photo: Path
+) -> Iterator[tuple[int, str, Path]]:
+    """A pillanatkép-nevekre illő fájlok MINDKÉT helyen, gazda-szűrés nélkül.
+
+    Az `originals_slot_free` „el tudom-e HELYEZNI ide?" ágának halmaza (ld.
+    ott): a foglaltság kérdésénél a gazdás példány is foglal, mert a
+    `_reject_unsafe_targets` fizikailag létező fájlra dob.
+    """
+    yield from _snapshot_candidates(directory / _snapshot_dir_name(), photo)
+    yield from _snapshot_candidates(directory, photo)
 
 
 def _snapshot_candidates(
@@ -312,14 +371,22 @@ def _snapshot_candidates(
     """A `<név>.<N><kiterjesztés>` NÉVMINTÁRA illő fájlok — gazda-szűrés nélkül.
 
     A névminta kétértelmű: egy találat lehet a mi pillanatképünk, de lehet
-    egy azonos nevű, ÖNÁLLÓ kép megőrzött eredetije is. A két fogyasztó
-    ezért különbözőképp szűr rá:
+    egy azonos nevű, ÖNÁLLÓ kép megőrzött eredetije is.
+
+    Ez a függvény EGYETLEN könyvtárat néz meg; hogy melyik kettőt (az ÚJ
+    `.picasapy-snapshots` alkönyvtárat és a régi, közös helyet), azt a két
+    hívója rakja össze — `snapshot_numbers` és `_placement_candidates`
+    (#2512).
+
+    A kétértelműség csak a RÉGI, közös helyen áll fenn, és a két fogyasztó
+    ott különbözőképp szűr rá:
 
     * a `snapshot_numbers` (amivel dolgozunk: mozgatjuk, töröljük,
       visszaállítjuk) a gazdás találatot KIHAGYJA — idegen kép visszaútját
       nem rángatjuk el (#1449);
-    * az `originals_slot_free` (ami csak azt kérdezi, SZABAD-E a hely) a
-      gazdás találatot is foglaltnak mondja — ott ugyanis fizikailag áll egy
+    * a `_placement_candidates`, azaz az `originals_slot_free` „el tudom-e
+      HELYEZNI ide?" ága (ami csak azt kérdezi, SZABAD-E a hely) a gazdás
+      találatot is foglaltnak mondja — ott ugyanis fizikailag áll egy
       fájl, amire a `_reject_unsafe_targets` dobna (#1450 átnézés, 4. lelet).
 
     Yields:
@@ -412,7 +479,7 @@ def originals_slot_free(
         if (directory / name).exists():
             return False
         jeloltek = (
-            _snapshot_candidates(directory, photo)
+            _placement_candidates(directory, photo)
             if moving_companions
             else snapshot_numbers(directory, photo)
         )
@@ -479,8 +546,26 @@ def plan_original_moves(
             # az `a.1.jpg`-t és az `a.01.jpg`-t ugyanarra a célnévre, és a
             # `shutil.move` POSIX-on NÉMÁN felülírja a másikat.
             new_name = f"{target_photo.stem}.{sorszam}{target_photo.suffix}"
-            moves.append(OriginalMove(snapshot, target_dir / new_name))
+            # #2512: a pillanatkép a SAJÁT helyén marad — ami a
+            # `.picasapy-snapshots`-ból indul, oda érkezik; ami a régi,
+            # közös helyről, az oda. Ugyanaz a gondolat, mint a mappanévnél
+            # (ld. a modul „A mappanév a költözéskor NEM változik"
+            # szakaszát): a régi helyen álló példány a párhuzamosan futó
+            # windowsos Picasáé is lehet, azt nem rántjuk be a mi
+            # névterünkbe.
+            moves.append(
+                OriginalMove(
+                    snapshot, _target_dir_for(snapshot, target_dir) / new_name
+                )
+            )
     return tuple(moves)
+
+
+def _target_dir_for(snapshot: Path, target_dir: Path) -> Path:
+    """Egy pillanatkép célkönyvtára: a forrásáéval AZONOS szintű (#2512)."""
+    if snapshot.parent.name == _snapshot_dir_name():
+        return target_dir / _snapshot_dir_name()
+    return target_dir
 
 
 def _reject_unsafe_targets(moves: Sequence[OriginalMove]) -> None:
@@ -524,14 +609,28 @@ def _occupied_message(move: OriginalMove) -> str:
     tudja megváltoztatni. A kötegelt áthelyezés az „átnevezés" házirenddel
     pótnevet keres helyette (ld. a modul docstringjét); ott ez az üzenet
     csak akkor szólal meg, ha a hely a pótnév-keresés ÓTA lett foglalt."""
-    kep_mappa = move.target.parent.parent
-    gazda = kep_mappa / move.target.name
     fej = (
         f"A képhez megőrzött eredeti változatot nem lehet a helyére tenni, mert "
         f"ott "
         f"már van egy azonos nevű fájl: {move.target}. Semmi nem változott: "
         f"a kép és a megőrzött változatai is a régi helyükön maradtak. "
     )
+    # #2512: a `.picasapy-snapshots` alkönyvtárba rajtunk kívül SENKI nem ír,
+    # tehát az útban lévő fájl ott nem lehet egy másik kép „szent"
+    # eredetije — csak egy korábbi költöztetés árva pillanatképe. A
+    # gazda-ág tanácsa („ez a(z) X képhez tartozik, NE törölje") itt
+    # félrevezető lenne: a szomszédos, azonos nevű kép ehhez a fájlhoz
+    # semmilyen viszonyban nincs.
+    if move.target.parent.name == _snapshot_dir_name():
+        return fej + (
+            f"Ez egy korábbi költöztetés árván maradt pillanatképe: a(z) "
+            f"„{move.target.parent.name}” mappa kizárólag a PicasaPy saját, "
+            f"mentésenkénti másolatait tartalmazza, más kép megőrzött "
+            f"eredetije nem kerülhet bele. Ha nincs rá szüksége, törölje "
+            f"vagy nevezze át, és próbálja újra."
+        )
+    kep_mappa = move.target.parent.parent
+    gazda = kep_mappa / move.target.name
     if gazda.exists():
         return fej + (
             f"Ez a fájl a(z) {gazda.name} nevű képhez tartozik, annak az "
@@ -833,7 +932,15 @@ def _remove_if_empty(directory: Path) -> None:
     gyártott ini már nincs ott, és a mappa valóban üres.
 
     Ami marad, az a felhasználó adata: azt a `_ini_stranded_warning`
-    mondja ki, nem törli."""
+    mondja ki, nem törli.
+
+    #2512: ha a most eltakarított mappa a `.picasapy-snapshots`
+    alkönyvtár volt, a SZÜLŐ eredeti-mappát is megkíséreljük — különben egy
+    visszagörgetett költözés után egy üres `.picasaoriginals` (a legacy
+    ágon a LÁTHATÓ `Originals`) maradna a felhasználó célmappájában,
+    miközben az üzenete azt mondja, semmi nem változott."""
+    snapshot_dir = directory.name == _snapshot_dir_name()
+    parent = directory.parent
     try:
         directory.rmdir()
     except OSError:
@@ -844,6 +951,8 @@ def _remove_if_empty(directory: Path) -> None:
     # feltevés arról, mi volt még bent (a `.picasa.ini` például nem a mi
     # könyvelésünk).
     _cache_unknown(directory)
+    if snapshot_dir:
+        _remove_if_empty(parent)
 
 
 def _reassurance() -> str:

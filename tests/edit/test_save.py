@@ -408,16 +408,29 @@ class TestNumberedSnapshotsAndUndoSave:
         return path
 
     def test_every_save_leaves_a_numbered_snapshot(self, tmp_path):
+        """#2512: a pillanatképek a `.picasapy-snapshots` alkönyvtárban.
+
+        A „szent" eredeti helye VÁLTOZATLAN (`.picasaoriginals/<fájlnév>`) —
+        azt a windowsos Picasa is oda írja és onnan olvassa. A mi
+        sorszámozott pillanatképeink viszont külön névtérbe kerültek,
+        különben az `a.2.jpg` nevű példány egy önálló `a.2.jpg` kép
+        eredetijétől megkülönböztethetetlen (ADR-010).
+        """
         from picasapy.edit.save import ORIGINALS_DIR_NAME as originals
+        from picasapy.edit.save import SNAPSHOT_DIR_NAME as snapshots
 
         path = self._photo(tmp_path)
         session = EditSession().append_effect("bw", ("1",))
         save_edited(path, _solid_image((1, 2, 3)), session)
         save_edited(path, _solid_image((4, 5, 6)), session)
 
-        names = sorted(p.name for p in (tmp_path / originals).iterdir())
-        # a „szent" eredeti + két, mentésenkénti sorszámozott pillanatkép
-        assert names == ["kep.1.png", "kep.2.png", "kep.png"]
+        eredeti_mappa = tmp_path / originals
+        assert sorted(
+            p.name for p in eredeti_mappa.iterdir() if p.is_file()
+        ) == ["kep.png"]
+        assert sorted(
+            p.name for p in (eredeti_mappa / snapshots).iterdir()
+        ) == ["kep.1.png", "kep.2.png"]
 
     def test_undo_save_restores_the_pixels_and_keeps_the_edits(self, tmp_path):
         from picasapy.edit.save import undo_save
