@@ -161,12 +161,19 @@ class TestSorszamKiosztas:
         """A kihagyott sorszám nem szabad hely: ott állhat idegen eredeti.
 
         `a.jpg` mentése az `a.1.jpg` pillanatkép-nevet kérné, de azon a
-        néven a MÁSIK, önálló `a.1.jpg` kép megőrzött eredetije áll — a
-        felülírás annak a képnek a visszaútját semmisítené meg.
+        néven a MÁSIK, önálló `a.1.jpg` kép megőrzött eredetije áll.
+
+        #2512 óta a felülírás fizikailag kizárt (a pillanatkép külön
+        alkönyvtárba megy), a sorszám-átlépés viszont MEGMARADT: ugyanaz a
+        sorszám nem létezhet kétszer, két különböző helyen, mert az
+        `undo_save` a legnagyobb sorszámot veszi, és egyenlőségnél nem
+        tudná eldönteni, melyik a frissebb. Ezért lesz a pillanatkép
+        sorszáma 2, nem 1.
         """
         import numpy as np
 
         from picasapy.edit import EditSession, save_edited
+        from picasapy.edit.save import SNAPSHOT_DIR_NAME
 
         kep = _kep(tmp_path, "a.jpg", b"mentendo")
         _kep(tmp_path, "a.1.jpg", b"masik-kep")
@@ -175,7 +182,8 @@ class TestSorszamKiosztas:
         save_edited(kep, np.zeros((4, 4, 3), dtype=np.uint8), EditSession())
 
         assert idegen.read_bytes() == b"masik-kep-eredetije"
-        assert (tmp_path / ORIGINALS_DIR_NAME / "a.2.jpg").read_bytes() == b"mentendo"
+        sajat = tmp_path / ORIGINALS_DIR_NAME / SNAPSHOT_DIR_NAME / "a.2.jpg"
+        assert sajat.read_bytes() == b"mentendo"
 
 
 class TestKetertelmuNevUzenete:

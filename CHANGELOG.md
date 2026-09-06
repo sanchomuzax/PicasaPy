@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.316] – 2026-09-06
+
+### Javítva
+
+- **A „Vissza az eredetihez" nem adhat többé IDEGEN fényképet** (#2512). Ha
+  egy kép mentése után később egy olyan nevű önálló kép került a mappába,
+  amilyet a mentés melléktermékei használnak (`a.jpg` mentése után egy
+  önálló `a.2.jpg`), a program a másik kép egy régi állapotát hitte az ő
+  eredetijének — és vissza is írta volna a helyére, visszafordíthatatlanul.
+  A mentésenkénti másolataink mostantól saját, elkülönített helyre kerülnek,
+  így a két dolog nem keveredhet. A régi helyen álló másolatokat — köztük
+  azokat, amiket a windowsos Picasa írt — továbbra is megtaláljuk és
+  visszük a képpel. A javítás a MÁR meglévő régi másolatokra nem
+  visszamenőleges; egyetlen újramentés a helyére teszi az újakat.
+
 ## [0.8.315] – 2026-09-06
 
 ### Javítva

@@ -88,9 +88,45 @@ bájtokat írná a `.picasaoriginals`-ba, és (ha valaha megfordulna a
 sorrend) a valódi eredeti elérhetetlenné válna.
 
 **A sorszámozott pillanatképek (`undo_save`) KIZÁRÓLAG a
-`.picasaoriginals`-ban élnek.** Ezek a MI mentéseink melléktermékei, és a
+`.picasaoriginals` alatt élnek.** Ezek a MI mentéseink melléktermékei, és a
 `undo_save` a felhasznált pillanatképet TÖRLI — a látható, Picasa-korabeli
 `Originals` mappában fájlt törölni nem szabad.
+
+## A pillanatképek KÜLÖN NÉVTERE (#2512)
+
+A `<tő>.<N><kiterjesztés>` névminta (#444) kétértelmű: az `a.jpg` második
+mentésének pillanatképe (`.picasaoriginals/a.2.jpg`) bitre ugyanúgy néz ki,
+mint egy ÖNÁLLÓ `a.2.jpg` kép „szent" eredetije. A `find_original_backup`
+a kettőt nem tudta megkülönböztetni, és az önálló `a.2.jpg` „Vissza az
+eredetihez" parancsa egy IDEGEN fénykép bájtjait tette a helyére.
+
+A #1449 sorszám-átlépése ezt nem oldotta meg: az csak a MÁR OTT ÁLLÓ fájl
+felülírását akadályozta. A fordított irány — előbb `a.jpg`-t mentjük, és az
+önálló `a.2.jpg` csak KÉSŐBB kerül szerkesztésre — nyitva maradt.
+
+**SAJÁT FUNKCIÓ (#2512):** a `.picasapy-snapshots` alkönyvtár a MI
+hozzáadásunk — az eredeti Picasa a sorszámozott másolatait a
+`.picasaoriginals`-ba, a „szent" eredeti MELLÉ írja. A névminta (`%s.%d.jpg`)
+mért és eredeti, a HELY nem: azt azért választottuk szét, mert a közös
+mappában a két dolog megkülönböztethetetlen, és a tévedés ára egy idegen
+fénykép bájtjainak visszaírása. Az eredetit olvasni ettől függetlenül
+tudjuk, tehát a Picasa-kompatibilitás nem sérül.
+
+Ezért a két dolog két külön helyre került:
+
+| mi | hova | ki írja |
+|---|---|---|
+| a „szent" eredeti | `.picasaoriginals/<fájlnév>` | a Picasa ÉS mi |
+| a mentésenkénti pillanatkép | `.picasaoriginals/.picasapy-snapshots/<tő>.<N><kit>` | csak mi |
+
+Az OLVASÁS mindkét helyre kiterjed: a régi helyen álló példányokat — a
+sajátjainkat és a Picasa írtakat egyaránt — továbbra is megtaláljuk, a
+#1449 óvatossági szabályával együtt (ha a képmappában azonos nevű ÖNÁLLÓ
+kép áll, békén hagyjuk). Az ÚJ helyen ez a szabály nem alkalmazandó: oda
+rajtunk kívül senki nem ír, tehát ott a névminta nem kétértelmű — a
+gazda-szűrés ott csak a saját visszavonásunkat némítaná el.
+
+Az indoklás és a mérlegelt alternatívák: `docs/decisions/pillanatkep-nevter.md`.
 
 ## `.picasaoriginals` accent-path-tolerancia
 
@@ -130,6 +166,16 @@ ORIGINALS_DIR_NAME = ".picasaoriginals"
 #: A 2009 ELŐTTI Picasa-verziók LÁTHATÓ mappaneve ugyanerre a célra (#1425).
 #: Csak OLVASSUK — a tulajdonos gyűjteményében élesben előfordul.
 LEGACY_ORIGINALS_DIR_NAME = "Originals"
+
+#: A MI mentésenkénti pillanatképeink alkönyvtára a `.picasaoriginals`-on
+#: BELÜL (#2512). Külön névtér: a `find_original_backup` útja
+#: (`.picasaoriginals/<fájlnév>`) így SOHA nem eshet egybe egy
+#: pillanatképével. Az indoklás: `docs/decisions/pillanatkep-nevter.md`.
+#:
+#: A régi helyen (`.picasaoriginals/<tő>.<N><kit>`) álló példányokat
+#: továbbra is OLVASSUK — a sajátjainkat és a Picasa írtakat egyaránt —,
+#: csak ÍRNI nem írunk többé oda.
+SNAPSHOT_DIR_NAME = ".picasapy-snapshots"
 
 #: A megőrzött eredeti KERESÉSI SORRENDJE — az első találat nyer.
 #: A régi, `Originals` áll elöl; az indoklás a modul „Két mappanév”
@@ -257,12 +303,22 @@ def save_edited(
     # függetlenül megmarad a Visszaállításhoz.
     snapshots = _existing_snapshots(image_path)
     next_number = (snapshots[-1][0] + 1) if snapshots else 1
-    # #1449: a `<név>.<N>` alak kétértelmű — a kihagyott sorszám nem
-    # feltétlenül SZABAD hely: ott állhat egy MÁSIK, önálló kép megőrzött
-    # eredetije (`a.jpg` pillanatképe és `a.1.jpg` eredetije azonos nevű).
-    # A `write_atomic` némán felülírná, és annak a képnek a visszaútja
-    # véglegesen elveszne — ezért a foglalt sorszámokat átlépjük.
-    while _snapshot_path(image_path, next_number).exists():
+    # A foglalt sorszámokat átlépjük — MINDKÉT helyen nézve.
+    #
+    # #1449 (a régi hely): a `<név>.<N>` alak kétértelmű, ott állhat egy
+    # MÁSIK, önálló kép megőrzött eredetije (`a.jpg` pillanatképe és
+    # `a.1.jpg` eredetije azonos nevű). #2512 óta ODA MÁR NEM ÍRUNK, tehát
+    # felülírni nem tudnánk; a régi hely mégis számít, mert ugyanaz a
+    # sorszám nem létezhet kétszer, két különböző helyen — az `undo_save` a
+    # legnagyobb sorszámot veszi, és egyenlőségnél nem tudná eldönteni,
+    # melyik a frissebb (`_legacy_snapshot_path`).
+    #
+    # Az ÚJ helyen a vizsgálat egy korábbi mentés árváját fogja meg (pl. ha
+    # a kép azóta más nevet kapott és vissza).
+    while (
+        _snapshot_path(image_path, next_number).exists()
+        or _legacy_snapshot_path(image_path, next_number).exists()
+    ):
         next_number += 1
     write_atomic(
         _snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
@@ -511,13 +567,33 @@ def _backup_path_for(image_path: Path) -> Path:
 
 
 def _snapshot_path(image_path: Path, number: int) -> Path:
-    """A `<név>.<N><kiterjesztés>` alakú, MENTÉSENKÉNTI pillanatkép útja.
+    """Ahová egy ÚJ pillanatkép kerül: a `.picasapy-snapshots` alkönyvtárba.
 
     #444: a Picasa binárisában a `.picasaoriginals` névmintája `%s.%d.jpg`
     (`.mov`, `.wmv`) — vagyis a „szent" eredeti MELLETT mentésenként külön,
     SORSZÁMOZOTT másolat is készül. Ez teszi lehetővé az „Utolsó mentés
     visszavonása" parancsot (`undo_save`): az utolsó mentés visszavonható
     úgy, hogy a SZERKESZTÉSEK MEGMARADNAK.
+
+    #2512: a NÉVMINTÁT megtartjuk, a HELYET nem. A Picasáéval közös
+    mappában ez a név egy önálló kép „szent" eredetijétől
+    megkülönböztethetetlen volt (ld. a modul „A pillanatképek KÜLÖN
+    NÉVTERE" szakaszát), és a `find_original_backup` emiatt idegen
+    bájtokat adott vissza.
+    """
+    directory = image_path.parent / ORIGINALS_DIR_NAME / SNAPSHOT_DIR_NAME
+    return directory / f"{image_path.stem}.{number}{image_path.suffix}"
+
+
+def _legacy_snapshot_path(image_path: Path, number: int) -> Path:
+    """A pillanatkép RÉGI, a `.picasaoriginals`-szal közös helye (#444).
+
+    Ide már nem írunk (#2512), de a sorszám-kiosztásnál számít: ha a régi
+    helyen áll ezen a néven fájl, a sorszámot átlépjük. Nem a felülírás
+    ellen — az új hely miatt az kizárt —, hanem hogy ugyanaz a sorszám ne
+    létezzen KÉTSZER, két különböző helyen: az `undo_save` a legnagyobb
+    sorszámú példányt veszi, és egyenlőségnél nem tudná eldönteni, melyik
+    a frissebb.
     """
     directory = image_path.parent / ORIGINALS_DIR_NAME
     return directory / f"{image_path.stem}.{number}{image_path.suffix}"
@@ -545,6 +621,13 @@ def _existing_snapshots(image_path: Path) -> list[tuple[int, Path]]:
     nincs: a két eset a lemezen bitre azonosan néz ki, a tévedés iránya
     pedig itt egy MÁSIK kép visszaútjának a megsemmisítése lenne. Amit
     megtehetünk, az a kimondás — ld. `_nincs_visszavonhato_mentes`.
+
+    **Két hely, egy lista** (#2512): az ÚJ pillanatképeink a
+    `.picasapy-snapshots` alkönyvtárban vannak, a korábbi verzióink (és a
+    Picasa) példányai a `.picasaoriginals`-ban közvetlenül. A
+    `snapshot_numbers` mindkettőt végignézi; a fenti óvatossági szabály
+    csak a RÉGI helyre vonatkozik, mert az ÚJ alkönyvtárba rajtunk kívül
+    senki nem ír.
 
     A késleltetett import szándékos: a `fileops` csomag maga is (lustán) ide
     nyúl a mappanevekért, a modulszintű import körbeérne."""
