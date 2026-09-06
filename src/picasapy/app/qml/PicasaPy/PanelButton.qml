@@ -67,9 +67,16 @@ Rectangle {
         id: pbtnLabelMetrics
         font: pbtnLabel.font
     }
-    Layout.preferredHeight: pbtn.thumbSource !== ""
+    //: #2494: a felirathoz szükséges magasság KIOLVASHATÓAN is — a hívó
+    //: (pl. a Visszavonás/Újra pár) így egyeztetni tudja a sor magasságát,
+    //: anélkül hogy a Layout viselkedésére hagyatkozna. A `fillHeight`
+    //: erre nem jó: Qt-verziófüggő, hogy a sor magasságát a preferált
+    //: érték vagy a másik elem szabja-e meg — a CI-n (Qt 6.8) a gomb 28
+    //: maradt, miközben helyben (6.11) megnőtt.
+    readonly property real kertMagassag: pbtn.thumbSource !== ""
         ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
         : Math.max(24, pbtnLabel.implicitHeight + 10)
+    Layout.preferredHeight: pbtn.kertMagassag
     radius: 3
     border.width: 1
     border.color: Theme.chromeBorder
@@ -204,7 +211,23 @@ Rectangle {
         // (sima gombnál csak néhány px-szel tér el a régi centerIn-től,
         // ami a szűk, tömören méretezett gombokon nem látszik).
         anchors.top: pbtnThumbBox.bottom
-        anchors.topMargin: pbtn.thumbSource !== "" ? 4 : 3
+        // #2494: bélyegkép nélküli gombon a felirat KÖZÉPEN ül, nem a
+        // tetőhöz tapadva. A `pbtnThumbBox` ilyenkor 0 magas, de a
+        // `parent.top`-hoz kötött 5 képpontos margója így is elveszett a
+        // tetején — a felirat 11 képponttal lejjebb kezdődött, mint az
+        // eredetiben (MÉRVE, `235707.jpg`: nálunk 11, ott 4). A kétsoros
+        // „Visszavonás: <effektnév>" ettől lelógott a gombról.
+        //
+        // ⚠️ NEM feltételes anchor `undefined`-ra (azt a #305/#338 tiltja):
+        // a margó SZÁMÍTOTT, és mindig érvényes értéket ad.
+        // ⚠️ A `pbtnThumbBox` maga is 5 képponttal a gomb teteje alatt
+        // kezdődik (`anchors.topMargin: 5`), és bélyegkép nélkül 0 magas —
+        // ezt a 5-öt LE KELL VONNI, különben a „középre" 5-tel lejjebb
+        // sikerül. (Az első változatom pont ezt hibázta el: a felirat
+        // fölött 12, alatta 2 képpont maradt — az őr fogta meg.)
+        anchors.topMargin: pbtn.thumbSource !== ""
+            ? 4
+            : Math.max(0, (pbtn.height - pbtnLabel.paintedHeight) / 2 - 5)
         anchors.horizontalCenter: parent.horizontalCenter
         text: pbtn.label
         // #422 (felhasználói visszajelzés): az effekt-csempék felirata

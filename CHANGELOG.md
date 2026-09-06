@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.304] – 2026-09-06
+
+### Javítva
+
+- **A szerkesztő »Visszavonás: …« gombjáról nem lóg le a felirat**
+  (#2494). Ha az effekt neve hosszú volt („Visszavonás: Jó napom van"),
+  a felirat két sorra tört, és a második sor a gomb alatt kezdődött. A
+  gomb mostantól megnő, ha kell, és a felirat középen ül. A mérés
+  szerint nem a betűméret volt nagy: ugyanaz a szöveg nálunk 106, az
+  eredeti Picasában 103 képpont széles — a felirat felső igazítása és a
+  rögzített gombmagasság okozta a bajt.
+
 ## [0.8.303] – 2026-09-06
 
 ### Javítva
