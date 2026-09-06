@@ -1107,3 +1107,84 @@ független megerősítés maradna. → **#1412** (`ready` + `bináris-kutatható
 `scale` = rajzolt méret értelmezés és az 1024-es egységrendszer;
 **feltételes** a felirat-magyarázat; **elvetve** a „beégetett konstans"
 hipotézis.*
+
+### 17.15 ⭐ A DRÁGA ÚT VÉGIGJÁRVA — a gépi keresés KIMERÜLT (2026-09-06, #1412)
+
+*A jegy maga nevezte meg ezt az utat: „marad a mutatós írási utak
+egyenkénti végigolvasása (tíz hely), ami sokkal drágább." Végigolvasva —
+és közben egy **rés is kiderült a korábbi szűrőben**, azt is bezártuk.*
+
+#### a) A kilenc sávon kívüli jelölt — mind ELOLVASVA, mind NEGATÍV
+
+A 17.10/a tíz sávon kívüli találatából egyet olvasott végig az előző kör
+(`0x00819f50`). A maradék **kilencet** most utasításonként:
+
+| cím | méret | mit csinál | számol `scale`-t? |
+|---|---:|---|---|
+| `0x0050bd70` | 146 b | konstans **0,333** (`0xcf4030`) a `+0x1c`/`+0x20`/`+0x24`-be, **0** a `+0x28`/`+0x2c`/`+0x30`-ba | **nem** — inicializáló |
+| `0x0050be50` | 31 b | ugyanaz, rövidebb alak | **nem** — inicializáló |
+| `0x0050cdb0` | 147 b | **másoló**: `[esi+X] → [eax+X]` a `+0x1c`…`+0x30` mezőkre | **nem** — másolás |
+| `0x0050d560` | 468 b | egész osztása **255,0**-val (`0xcf39d0`) a `+0x1c`/`+0x20`/`+0x24`-be, majd összehasonlítások; sztringje **`editslider1/editslider`** | **nem** — a szerkesztő csúszkája |
+| `0x005c2350` | 72 b | `fld1` a `+0x14`-be, **0** a `+0x18`…`+0x34`-be | **nem** — egységmátrix-init |
+| `0x007e68f0` | 64 b | **0** a `+0xc`…`+0x2c`-be | **nem** |
+| `0x007e6930` | 70 b | ua. | **nem** |
+| `0x007e69b0` | 99 b | **0**, és `fld1` a `+0x1c`-be | **nem** |
+| `0x009d7a60` | 129 b | konstans **−1,0** (`0xcf3ed0`) a `+0x10`…`+0x2c`-be, 0 a `+0x30`/`+0x34`-be | **nem** |
+
+⇒ **egyik sem számol**: mind konstans-inicializáló, másoló, vagy másik
+alrendszeré. A 17.10 „kizárás hívási úton" megszorítása ezzel
+**tartalmi kizárássá** erősödött — a három gyengébben kizárt tétel
+(`0x0050be50`, `0x0050cdb0`, `0x0050d560`) is benne van.
+
+#### b) ⛔ A KORÁBBI SZŰRŐ RÉSE — és a bezárása
+
+A 17.10/a szűrője **megkövetelte a `+0x28` írását is** (a csomópont-alak
+`theta`+`scale` párja). Ha viszont a valódi író **csak a `scale`-t** írja,
+a `theta`-t nem, akkor **kiesett volna a mintából**. Ez a rés eddig
+kimondatlan volt.
+
+**Bezárva.** Új, `+0x28`-tól független pásztázás a `.text` teljes
+szakaszán (fájloffset `4096`, `8646656` bájt): `fst`/`fstp dword ptr
+[reg + 0x2c]` **mutatós** alakban (`mod=01`, SIB és `ebp`-lokálisok
+kizárva) — **63 írási hely, 50 különböző függvényben**.
+
+Ezek közül a **kollázs-sávban** lévők, amelyeket a korábbi körök még nem
+soroltak be, mind elolvasva:
+
+| cím | mit csinál |
+|---|---|
+| `0x00829770` (95 b) | **0** a `+0x28`…`+0x3c`-be — inicializáló |
+| `0x00860f60` (178 b) | **0** a `+0x20`…`+0x30`-ba; sztringjei `Picasa`, `Arial` — **nyomtatás** |
+| `0x00861190` (292 b) | **0** a `+0x1c`…`+0x2c`-be; sztringje `Preferences` / **`PrinterQuality`** — nyomtatás |
+| `0x0088e7e0` (71 b) | konstans **−1,0** a `+0x20`…`+0x2c`-be — inicializáló |
+| `0x008910b0` (86 b) | ua. |
+
+⇒ **a `+0x28` követelménye nem rejtett el semmit**: a `+0x2c`-t mutatón
+át író 50 függvény között sincs olyan, amelyik a kollázs-csomópont
+`scale`-jét **számolná**.
+
+⚠️ **A pásztázás hatóköre kimondva:** a **SIB**-alakú írások
+(`[reg + reg*8 + 0x2c]`) ebből a mintából kimaradnak — épp így ír a két
+téma-elrendező (`0x00885060` `regulargrid`, `0x00888210` `contactsheet`),
+amelyeket a 17.13 már kimért: **mindkettő `fld1`, tehát állandó 1,0**.
+A két minta uniója fedi le a csomópont-írás mindkét címzési alakját.
+
+#### Ami ezzel eldőlt — és ami NEM
+
+**Eldőlt:** a `Picasa3.exe`-ben **nincs olyan kód, amely a kollázs-csomópont
+`scale`-jét kiszámolná**. Bizonyítottsági fok: **megerősített**, kimerítő
+negatív pásztázással, tartománnyal és mintával megnevezve (17.7, 17.8,
+17.10, 17.13 és ez a szakasz együtt).
+
+**NEM dőlt el:** honnan van akkor a 313 az `AI6.cxf`-ben. Két lehetőség
+maradt, és **gépi úton egyik sem dönthető el**:
+
+1. a fájl egy **korábbi mentésből** hozza (a beolvasó `0x00832830`
+   közvetlenül a csomópontba írja, `0x008332b7`);
+2. egy olyan írási út, amit **egyik pásztázás mintája sem fed** (pl.
+   `memcpy`-vel másolt csomópont-blokk).
+
+⇒ **A döntéshez EGY ÚJ, még sosem mentett kollázs `.cxf`-je kell.** Ha
+abban minden csomópont `scale="1.000000"`, az **(1)**-et igazolja. Ez a
+tulajdonos gépén készül; a jegy `felhasználóra-vár`, a
+`bináris-kutatható` **levéve** — a gépi munka itt tényleg elfogyott.
