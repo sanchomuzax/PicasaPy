@@ -347,8 +347,12 @@ Column {
         readonly property int rightMargin: 10
         //: `outputs`: `XConstraint 0, .365, 140` — a zöld gomb helye után
         readonly property int outputsOffset: 140
-        //: #1345: egy kimeneti gomb cellája (`outputlayout/docbounds`)
-        readonly property int actionCellWidth: 59
+        //: #1345/#1504: egy kimeneti gomb OSZTÁSKÖZE. A `docbounds`
+        //: cella-grafika 59 × 40, de a lépés a gomb saját doboza: **55** —
+        //: az eredeti elrendezője a gyerek elrendezés utáni befoglalójából
+        //: számol (`0x0059883e`–`0x00598863`), és a #1420 a kirajzolt
+        //: képernyőképen is 55-öt mért. Ezért nincs hézag a gombok között.
+        readonly property int actionCellWidth: 55
         //: a MEGLÉVŐ hat kimeneti gomb (nyomtatás, e-mail, exportálás,
         //: megosztás, kollázs, film) — a hiányzó `shop`/`blog`/`morebutton`
         //: nélkül (`docs/specs/ui-lefedettseg.md`)
@@ -1575,7 +1579,8 @@ Column {
                         - (trayMainBar.separatorsVisible
                            ? 2 * trayMainBar.actionCellWidth
                            : 0))
-                //: egy cella teljes szélessége (a mért 59; a gomb 55 + 2-2)
+                //: egy cella teljes szélessége — a MÉRT osztásköz, 55
+                //: (#1504; a `docbounds` 59-e csak a cella-grafika)
                 readonly property int cellaSzelesseg:
                     trayMainBar.actionCellWidth
                 //: a kimeneti gombok felirata, a respack deklarációs

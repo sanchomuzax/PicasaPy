@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.319] – 2026-09-07
+
+### Javítva
+
+- **A képtálca kimeneti gombjai (Nyomtatás, E-mail, Exportálás…) szorosan
+  egymás mellé kerültek** (#1504). Eddig gombonként 4 képponttal
+  szellősebb volt a sorunk az eredetinél — kilenc gombra körülbelül 20
+  képponttal. Az eredetiben a gombok érintkeznek; a korábbi 59 képpontos
+  osztásköz a gomb köré rajzolt keret mérete volt, nem a lépésé.
+
 ## [0.8.318] – 2026-09-07
 
 ### Javítva
