@@ -1155,8 +1155,19 @@ Rectangle {
             objectName: "editUndoButton"
             label: panel.undoLabel
             buttonEnabled: panel.undoAvailable
-            //: #741: a mért gombmagasság (`filter_undo`, 132 × 28)
-            Layout.preferredHeight: 28
+            //: #741: a mért gombmagasság (`filter_undo`, 132 × 28).
+            //: #2494: ALSÓ korlát, nem felső — a felirat itt az effekt
+            //: nevét is tartalmazza („Visszavonás: Jó napom van"), ami két
+            //: sorra tör, és a rögzített 28 nem engedett neki helyet: a
+            //: második sor a gomb alsó keretén kezdődött és 5 képponttal
+            //: lelógott (MÉRVE, `235707.jpg`). Egysoros feliratnál a
+            //: mért 28 marad, mert a `PanelButton` magától kisebbet adna.
+            Layout.minimumHeight: 28
+            //: #2494/#405: a pár EGYFORMA magas. A sor magasságát a
+            //: nagyobbik szabja meg, és mindkét gomb kitölti — különben a
+            //: kétsoros Visszavonás mellett az Újra alacsonyabb maradna,
+            //: és a sor szemre elcsúszna.
+            Layout.fillHeight: true
             onButtonClicked: panel.undoRequested()
         }
         PanelButton {
@@ -1164,8 +1175,11 @@ Rectangle {
             label: panel.redoLabel
             buttonEnabled: panel.redoAvailable
             // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
-            //: #741: a mért gombmagasság (`filter_redo`, 132 × 28)
-            Layout.preferredHeight: 28
+            //: #741: a mért gombmagasság (`filter_redo`, 132 × 28) —
+            //: #2494 szerint ALSÓ korlát, a párja miatt is: a két gomb
+            //: egy sorban ül, a magasabbik szabja meg a sor magasságát.
+            Layout.minimumHeight: 28
+            Layout.fillHeight: true
             onButtonClicked: panel.redoRequested()
         }
     }
