@@ -2,7 +2,12 @@
 
 A `respack.yt` rétegfejlécei (`docs/specs/picasa-keptalca.md` 11.) az
 eredeti kimeneti sávjának MINDEN gombjára ugyanazt adják: a gomb
-**55 × 36**, a cellája **59 × 40**, azaz 2-2 képpont margó körben. Az
+**55 × 36**, a `docbounds` cella-grafikája **59 × 40**. ⚠️ #1504: az 59 a
+GRAFIKA mérete, **nem az osztásköz** — a lépés a gomb saját doboza, **55**
+(az eredeti elrendezője a gyerek elrendezés utáni befoglalójából számol,
+`0x0059883e`–`0x00598863`, és a #1420 a kirajzolt képernyőképen is 55-öt
+mért). Ezért a cellánk vízszintesen 55, függőlegesen 40: a 2-2 képpontos
+margó CSAK függőlegesen marad. Az
 elválasztó a cellán belül **2 × 27**, vízszintesen középen, felülről 8
 képpont behúzással.
 
@@ -77,7 +82,8 @@ class FakeAppWindow(QObject):
 #: üzenetéből is látsszon, mihez képest mérünk.
 GOMB_SZELESSEG = 55
 GOMB_MAGASSAG = 36
-CELLA_SZELESSEG = 59
+#: #1504: az OSZTÁSKÖZ, nem a `docbounds` grafika 59-e
+CELLA_SZELESSEG = 55
 CELLA_MAGASSAG = 40
 ELVALASZTO_SZELESSEG = 2
 ELVALASZTO_MAGASSAG = 27
@@ -219,11 +225,15 @@ class TestMindenMuveletgomb55x36:
             )
 
 
-class TestA59x40esCella:
-    """Minden gomb 59 × 40-es cellában ül, 2-2 képpont margóval."""
+class TestACella:
+    """Minden gomb 55 × 40-es cellában ül (#1504).
+
+    A vízszintes margó 0 — az osztásköz a gomb saját szélessége —, a
+    függőleges marad 2-2 (40 − 36).
+    """
 
     @pytest.mark.parametrize("respack_nev,object_name", MUVELETGOMBOK)
-    def test_a_cella_59x40_es_a_gomb_kozepen_all(
+    def test_a_cella_55x40_es_a_gomb_kozepen_all(
         self, qt_app, respack_nev, object_name
     ):
         root = _tray(qt_app, 1280)
@@ -239,11 +249,14 @@ class TestA59x40esCella:
             f"— a mért érték {CELLA_SZELESSEG}×{CELLA_MAGASSAG}"
         )
 
+        # #1504: a margó IRÁNYONKÉNT más. Vízszintesen 0 — az osztásköz a
+        # gomb saját szélessége (55), tehát a gombok ÉRINTKEZNEK, ahogy az
+        # eredetin; függőlegesen marad a mért 2 (40 − 36) / 2.
         bal_felso = gomb.mapToItem(cella, 0, 0)
-        assert (round(bal_felso.x()), round(bal_felso.y())) == (2, 2), (
+        assert (round(bal_felso.x()), round(bal_felso.y())) == (0, 2), (
             f"{respack_nev} gombja a cellán belül "
             f"({bal_felso.x():.0f}, {bal_felso.y():.0f})-nál kezdődik — "
-            "a mért érték (2, 2)"
+            "a mért érték (0, 2)"
         )
 
 
