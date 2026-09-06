@@ -360,6 +360,58 @@ class TestDeleteOthers:
 
         assert failures[0][0] == str(missing)
 
+    def test_a_mar_torolt_kep_akkor_is_eltunik_a_listabol(
+        self, controller, tmp_path, monkeypatch
+    ):
+        """#1451 2. átnézés, 4. lelet: a kép elment, a kísérője nem.
+
+        A rendszer-lomtaras (windowsos) ágon a KÉP megy előbb, és ha utána
+        egy kísérő törlése bukik, a hiba a MÁR MEGTÖRTÉNT törlés után jön.
+        A vezérlő ezt eddig „nem történt semmi"-ként kezelte: a sor a
+        duplikátum-listában maradt, holott a fájl már nem létezett.
+        """
+        from pathlib import Path as _Path
+
+        from picasapy.fileops import photo_delete
+
+        lib = tmp_path / "kepek"
+        lib.mkdir()
+        keep = make_jpeg(lib / "keep.jpg", size=(40, 20))
+        other = lib / "masolat.jpg"
+        other.write_bytes(keep.read_bytes())
+        originals = lib / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "masolat.jpg").write_bytes(b"eredeti")
+
+        lomtar = tmp_path / "lomtar"
+        lomtar.mkdir()
+
+        monkeypatch.setattr(photo_delete, "uses_system_trash", lambda _: True)
+
+        def _lomtarba(target, trash_dir=None):
+            target = _Path(target)
+            if target.parent.name == ".picasaoriginals":
+                raise OSError("a kísérőt nem sikerült a lomtárba tenni")
+            uj = lomtar / target.name
+            target.rename(uj)
+            return uj
+
+        monkeypatch.setattr(photo_delete, "delete_to_trash", _lomtarba)
+
+        resolved, failures = [], []
+        controller.itemResolved.connect(resolved.append)
+        controller.operationFailed.connect(
+            lambda path, msg: failures.append((path, msg))
+        )
+        controller.deleteOthers([str(keep), str(other)], str(keep))
+
+        assert not other.exists(), "a kép elment — ez a kiindulás"
+        assert resolved == [str(other)], (
+            "a sor a duplikátum-listában maradt egy már nem létező képhez"
+        )
+        assert failures, "a kísérő ott maradását ki kell mondani"
+        assert "megőrzött" in failures[0][1]
+
 
 class TestBackgroundThreadTeardown:
     """#438 (a #430 SIGSEGV-osztály maradéka): a keresés háttérszála

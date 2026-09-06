@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.299] – 2026-09-06
+
+### Javítva
+
+- **A megőrzött eredeti (a szerkesztés előtti kép) végre együtt mozog a
+  képpel** (#1448, #1450, #1451, #1449). Négy hiba egyszerre, mind
+  csendben rontott:
+
+  - **áthelyezéskor** a `.picasa.ini`-beli beállításai a régi mappában
+    maradtak;
+  - **másoláskor** a másolat egyáltalán nem kapta meg az eredetit, tehát
+    a szerkesztés rajta visszavonhatatlanná vált;
+  - **törléskor** az eredeti árván maradt, és láthatatlanul gyűlt;
+  - a keresésük **elrontotta a szögletes zárójeles fájlneveket** — ez
+    mind a három fenti utat rossz halmazon dolgoztatta.
+
+  A műveletek mostantól **mindent vagy semmit** végeznek: ha a mozgatás,
+  másolás vagy törlés félbeszakad, a program visszaállítja a kiindulást,
+  és megmondja, mi maradt hol.
+
 ## [0.8.298] – 2026-09-06
 
 ### Javítva

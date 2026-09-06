@@ -51,7 +51,11 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.dedup import find_duplicates
 from picasapy.dedup.phash import compute_dhash
-from picasapy.fileops import delete_to_trash, move_photo
+from picasapy.fileops import (
+    CompanionLeftBehindError,
+    delete_photo_to_trash,
+    move_photo,
+)
 from picasapy.index import (
     IndexFastKeySource,
     PhotoRecord,
@@ -445,7 +449,15 @@ class DedupController(BackgroundWorkerMixin, QObject):
             if path == keep_path:
                 continue
             try:
-                delete_to_trash(Path(path))
+                # #1451: a megőrzött eredeti is megy a képpel.
+                delete_photo_to_trash(Path(path))
+            except CompanionLeftBehindError as error:
+                # A KÉP már elment, csak a kísérője maradt: a sor akkor is
+                # feloldottnak számít, különben a listában ott marad egy már
+                # nem létező fájl (#1451 átnézés, 4. lelet).
+                self.itemResolved.emit(path)
+                self.operationFailed.emit(path, str(error))
+                continue
             except OSError as error:
                 self.operationFailed.emit(path, str(error))
                 continue

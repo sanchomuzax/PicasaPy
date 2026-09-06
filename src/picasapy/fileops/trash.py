@@ -102,6 +102,17 @@ def _windows_lomtarba(path: Path) -> None:
         )
 
 
+def uses_system_trash(trash_dir: Path | None = None) -> bool:
+    """Igaz, ha a `delete_to_trash` a RENDSZER Lomtárát használja (#1182).
+
+    A hívónak ez nem kozmetikai különbség: ezen az ágon a visszatérési érték
+    a BEMENETI út (a fájl a rendszer Lomtárában van, azt az utat nem ismerjük
+    meg), tehát a lomtárazott fájl NEM tehető vissza programból. Aki
+    több fájlt visz el együtt, ezért ezen az ágon más sorrendben dolgozik —
+    ld. `photo_delete.delete_photo_to_trash` (#1451 átnézés, 2. lelet)."""
+    return trash_dir is None and _platform() == "win32"
+
+
 def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
     """A `path` fájl áthelyezése a lomtárba.
 
@@ -128,7 +139,7 @@ def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
     # ⚠️ #1182: Windowson a RENDSZER Lomtára a cél, nem a freedesktop-mappa.
     # A `trash_dir` felülírás (teszt) továbbra is erősebb — azzal a
     # freedesktop-ág mérhető marad minden platformon.
-    if trash_dir is None and _platform() == "win32":
+    if uses_system_trash(trash_dir):
         _windows_lomtarba(path)
         return path
 

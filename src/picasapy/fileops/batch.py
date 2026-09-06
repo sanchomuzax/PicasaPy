@@ -133,6 +133,14 @@ def _free_name(path: Path, dest_folder: Path) -> str:
     mappában. Az eredeti a képpel együtt költözik, tehát egy korábbi
     költöztetés árván maradt eredetije foglalttá teszi a pótnevet — ha ezt
     nem néznénk, a köteg egy elkerülhető hibával állna meg ennél a fájlnál.
+
+    #1448 2. átnézés, 1. lelet: az `originals_slot_free` azt is foglaltnak
+    mondja, ami egy MÁSIK, ÉLŐ kép megőrzött eredetije. Ezen a ponton ez
+    helyes: a felhasználó az „átnevezés" házirendet választotta, tehát a
+    pótnév a kívánt válasz — az idegen fájlhoz nem nyúlunk, a kép és a
+    kísérői a szabad néven költöznek. A „mi van útban" magyarázó üzenet
+    (`originals._occupied_message`) azoké az utaké marad, ahol a nevet a
+    felhasználó adta meg (F2, másolás, egyfájlos mozgatás).
     """
     counter = 1
     while True:

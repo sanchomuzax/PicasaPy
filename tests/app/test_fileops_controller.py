@@ -378,6 +378,11 @@ class TestMegorzottEredeti1430:
     felhasználói üzenetét ezért a KÖTEGELT úton kell mérni (lent), és a
     végső megjelenést a
     `tests/app/qml_functional/test_koteg_hibaok_1430.py` őrzi.
+
+    A KÖTEGELT út méréseit ld. a `TestKotegeltAthelyezesUtkozes1430`
+    osztályban: a foglalt eredeti-hely ott pótnevet kap (a felhasználó épp
+    az „átnevezés" házirendet választotta), a fel nem oldható bukás oka
+    viszont továbbra is kimegy a `batchFinished` összegzésében.
     """
 
     def test_atnevezes_viszi_az_eredetit(self, controller, tmp_path):
@@ -442,12 +447,99 @@ class TestMegorzottEredeti1430:
         assert "Semmi nem változott" in message
         assert photo.exists()
 
-    def test_kotegelt_mozgatasnal_az_ok_a_batch_osszegzesbe_megy(
-        self, controller, tmp_path
+
+class TestTorlesUtaniFrissites1451:
+    """#1451 2. átnézés, 4. lelet: ha a KÉP elment, a felület tudjon róla.
+
+    A `delete_photo_permanently` (és a lomtár windowsos ága) SZÁNDÉKOSAN
+    dob hibát azután, hogy a kép már törlődött — a kísérőfájl ott maradását
+    ki kell mondani. A vezérlő viszont minden `OSError`-t „nem történt
+    semmi"-ként kezelt: `operationFailed` ment ki, `photoDeleted` nem. A
+    rácsban ott maradt egy már nem létező kép bélyegképe, az index nem
+    frissült.
+    """
+
+    @staticmethod
+    def _kep_kiseroval(tmp_path):
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        originals = tmp_path / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "a.jpg").write_bytes(b"eredeti")
+        return photo, originals / "a.jpg"
+
+    @staticmethod
+    def _kisero_torlese_bukik(monkeypatch, photo):
+        """A KÉP törlése sikerül, a kísérőé nem."""
+        from picasapy.fileops import photo_delete
+
+        valodi = photo_delete.delete_permanently
+
+        def _burkolo(target, *args, **kwargs):
+            if Path(target) != photo:
+                raise OSError("a kísérőt nem sikerült törölni")
+            return valodi(target, *args, **kwargs)
+
+        monkeypatch.setattr(photo_delete, "delete_permanently", _burkolo)
+
+    def test_a_vegleges_torles_utan_kimegy_a_photo_deleted(
+        self, controller, tmp_path, monkeypatch
     ):
-        """#1430 kódszemle, 1. blokkoló: a kötegelt út eddig csak a
-        DARABSZÁMOT jelentette, az okot eldobta — így az áthelyezés
-        magyarázó üzenete sosem jutott el a felhasználóhoz."""
+        photo, _ = self._kep_kiseroval(tmp_path)
+        self._kisero_torlese_bukik(monkeypatch, photo)
+
+        deleted, failures = [], []
+        controller.photoDeleted.connect(deleted.append)
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.deletePhotoPermanently(str(photo))
+
+        assert not photo.exists(), "a kép törlődött — ez a kiindulás"
+        assert deleted == [str(photo)], (
+            "a rácsban ott maradna egy már nem létező kép bélyegképe"
+        )
+        assert failures, "a kísérő ott maradását ki kell mondani"
+        assert failures[0][0] == "delete"
+        assert "megőrzött" in failures[0][1]
+
+    def test_a_kep_megmaradasakor_NEM_megy_ki_a_photo_deleted(
+        self, controller, tmp_path, monkeypatch
+    ):
+        """A másik irány foga: ha a kép a helyén van, a rács se törölje."""
+        from picasapy.fileops import photo_delete
+
+        photo, _ = self._kep_kiseroval(tmp_path)
+
+        def _bukik(*args, **kwargs):
+            raise OSError("semmit nem sikerült törölni")
+
+        monkeypatch.setattr(photo_delete, "delete_permanently", _bukik)
+
+        deleted, failures = [], []
+        controller.photoDeleted.connect(deleted.append)
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.deletePhotoPermanently(str(photo))
+
+        assert photo.exists()
+        assert deleted == []
+        assert failures
+
+
+class TestKotegeltAthelyezesUtkozes1430:
+    """#1448 2. átnézés, 1. lelet: a kötegelt út ÜTKÖZÉS-FELOLDÁSSAL megy.
+
+    A felhasználó a köteg indításakor kifejezetten az „átnevezés"
+    házirendet választotta, ezért a foglalt eredeti-hely NEM megállítja a
+    műveletet: szabad pótnevet kap, és a célban álló idegen fájlhoz nem
+    nyúlunk. A magyarázó hibaüzenet az F2-es átnevezés útján marad
+    (`test_atnevezesnel_az_ok_az_operation_failedre_megy`), ahol nincs mit
+    feloldani.
+    """
+
+    def test_a_foglalt_eredeti_hely_potnevet_kap(self, controller, tmp_path):
         src = tmp_path / "forras"
         dest = tmp_path / "cel"
         src.mkdir()
@@ -467,10 +559,47 @@ class TestMegorzottEredeti1430:
 
         assert summary, "a köteg nem jelentett semmit"
         operation, done, skipped, failed, reason = summary[0]
+        assert (operation, done, failed) == ("move", 1, 0), reason
+        assert not photo.exists(), "a képnek el kellett költöznie"
+        assert (dest / "a-1.jpg").read_bytes() == b"szerkesztett"
+        assert (dest / ".picasaoriginals" / "a-1.1.jpg").read_bytes() == b"pillanatkep"
+        # a célban álló IDEGEN kép és az eredetije érintetlen
+        assert (dest / "a.1.jpg").read_bytes() == b"masik-elo-kep"
+        assert (
+            dest / ".picasaoriginals" / "a.1.jpg"
+        ).read_bytes() == b"masik-kep-eredetije"
+
+    def test_a_bukas_oka_tovabbra_is_kimegy_a_kotegelt_uton(
+        self, controller, tmp_path, monkeypatch
+    ):
+        """#1430 eredeti követelménye: az OK eljut a felhasználóig.
+
+        Amit a pótnév nem tud feloldani (itt: fájlrendszer-hiba a megőrzött
+        eredeti mozgatásakor), annak az üzenete a `batchFinished`
+        összegzésébe kerül — nem a darabszám mögé.
+        """
+        from picasapy.fileops import originals as originals_module
+
+        src = tmp_path / "forras"
+        dest = tmp_path / "cel"
+        src.mkdir()
+        dest.mkdir()
+        photo = src / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        (src / ".picasaoriginals").mkdir()
+        (src / ".picasaoriginals" / "a.jpg").write_bytes(b"eredeti")
+
+        def _bukik(source, target):
+            raise OSError("a fájlrendszer nem engedte")
+
+        monkeypatch.setattr(originals_module, "_move", _bukik)
+
+        summary = []
+        controller.batchFinished.connect(lambda *args: summary.append(tuple(args)))
+        controller.movePhotos([str(photo)], str(dest), "rename")
+
+        operation, done, skipped, failed, reason = summary[0]
         assert (operation, done, failed) == ("move", 0, 1)
         assert reason.startswith("a.jpg: "), "a bukott fájl neve hiányzik"
-        assert "eredeti" in reason.lower(), "a bukás OKA nem megy ki"
-        assert "NE törölje" in reason, (
-            "a másik kép eredetijének törlését nem szabad tanácsolni"
-        )
-        assert photo.exists()
+        assert "megőrzött eredeti" in reason, "a bukás OKA nem megy ki"
+        assert photo.exists(), "a kép nem mozdulhatott el"

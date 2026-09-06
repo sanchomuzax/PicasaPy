@@ -1,5 +1,9 @@
 """Fotó másolása másik mappába — a .picasa.ini szekció is átmásolódik (#23).
 
+A #1450 óta a **megőrzött eredeti** és a sorszámozott pillanatképek is a
+másolattal mennek (`fileops/originals.py`), különben a példány az új helyen
+elveszítette a visszaútját.
+
 A `move_photo`-val (#15) ellentétben a FORRÁS érintetlen marad — ez az
 Import forrásból (#23) nem-destruktív alapértelmezése (kártyáról/forrás-
 mappából a könyvtárba). Ütközésnél (már van azonos nevű fájl a célban) a
@@ -14,6 +18,11 @@ import shutil
 from dataclasses import replace
 from pathlib import Path
 
+from picasapy.fileops.originals import (
+    companions_of,
+    copy_preserved_originals,
+    originals_slot_free,
+)
 from picasapy.ini import Section, load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -41,8 +50,31 @@ def copy_photo(path: Path, dest_folder: Path) -> Path:
     if not dest_folder.is_dir():
         raise NotADirectoryError(f"A cél nem könyvtár: {dest_folder}")
 
-    target = _unique_target(dest_folder, path.stem, path.suffix)
+    # #1450: ha a képnek VAN megőrzött eredetije, a célnév akkor jó, ha az
+    # eredeti-mappában is szabad a helye. Enélkül egy korábbi költöztetés
+    # árván maradt fájlja miatt a másolás elbukna — pedig csak másik
+    # sorszámot kellett választani.
+    target = _unique_target(
+        dest_folder,
+        path.stem,
+        path.suffix,
+        needs_originals_slot=bool(companions_of(path)),
+    )
     shutil.copy2(str(path), str(target))  # copy2: mtime is átkerül (WYSIWYG dátum)
+
+    # #1450: a megőrzött eredeti (és a sorszámozott pillanatképek) a
+    # másolattal MENNEK. Enélkül a példány az új helyen nem tudott
+    # visszaállni: a „Vissza az eredetihez" nem talált semmit, a szerkesztés
+    # véglegesnek látszott — az „After copying: delete" import-módban pedig
+    # ez valódi adatvesztés volt, mert ott a forrás is törlődik.
+    #
+    # Ha ez elbukik, a MÁR ELKÉSZÜLT képmásolatot is visszavonjuk: fél
+    # másolat (kép igen, eredeti nem) ne maradjon a felhasználó mappájában.
+    try:
+        copy_preserved_originals(path, target)
+    except OSError:
+        target.unlink(missing_ok=True)
+        raise
 
     source_ini = path.parent / PICASA_INI_NAME
     source_section = (
@@ -87,12 +119,24 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
     update_document(dest_ini, _mutate, backup=True)
 
 
-def _unique_target(dest_folder: Path, stem: str, suffix: str) -> Path:
+def _unique_target(
+    dest_folder: Path, stem: str, suffix: str, *, needs_originals_slot: bool = False
+) -> Path:
     """Ütközésmentes célnév: `név.jpg`, `név-1.jpg`, `név-2.jpg`, ... — az
-    export-mag azonos nevű helperének (`export/exporter.py`) mintája."""
-    candidate = dest_folder / f"{stem}{suffix}"
-    counter = 1
-    while candidate.exists():
-        candidate = dest_folder / f"{stem}-{counter}{suffix}"
+    export-mag azonos nevű helperének (`export/exporter.py`) mintája.
+
+    Args:
+        needs_originals_slot: Ha `True`, a név csak akkor jó, ha a megőrzött
+            eredeti (és a pillanatképei) helye is szabad a célmappa
+            eredeti-mappáiban (#1450).
+    """
+    counter = 0
+    while True:
+        name = f"{stem}{suffix}" if counter == 0 else f"{stem}-{counter}{suffix}"
+        candidate = dest_folder / name
+        szabad = not candidate.exists() and (
+            not needs_originals_slot or originals_slot_free(dest_folder, name)
+        )
+        if szabad:
+            return candidate
         counter += 1
-    return candidate
