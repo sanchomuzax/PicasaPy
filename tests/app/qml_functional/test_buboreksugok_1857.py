@@ -45,6 +45,20 @@ KILENC_GOMB = (
     "zoomActualButton",
 )
 
+#: #2564: a kilencből KETTŐ már nem a nézőben él. A nagyítás-hármas az
+#: ALSÓ ESZKÖZSÁVBA került (mérve: az eredetiben is a könyvtári nagyító és
+#: bélyegkép-csúszka helyén ül), ezért a forrásfájlt gombonként kell
+#: megmondani — a súgó-követelmény maga VÁLTOZATLAN.
+_TALCA = (_QML / "TrayBar.qml").read_text(encoding="utf-8")
+GOMB_FORRASA = {
+    "zoomFitButton": _TALCA,
+    "zoomActualButton": _TALCA,
+}
+
+
+def _gomb_blokkja(gomb: str) -> str:
+    return _blokk(GOMB_FORRASA.get(gomb, _NEZO), gomb)
+
 #: A hét szerkesztő-fül és a LEÍRÁSA. Az első öt az eredeti Picasa kimért
 #: `editpanel/tabN` szövege; a 6.–7. a mi többletünk, saját szöveggel.
 HET_FUL = {
@@ -95,12 +109,12 @@ def _blokk(forras: str, object_name: str) -> str:
 class TestANezoKilencGombja:
     @pytest.mark.parametrize("gomb", KILENC_GOMB)
     def test_van_buboreksugoja(self, gomb):
-        blokk = _blokk(_NEZO, gomb)
+        blokk = _gomb_blokkja(gomb)
         assert "ToolTip.text:" in blokk, f"{gomb}: nincs buboréksúgója"
 
     @pytest.mark.parametrize("gomb", KILENC_GOMB)
     def test_a_sugo_szovege_NEM_ures(self, gomb):
-        blokk = _blokk(_NEZO, gomb)
+        blokk = _gomb_blokkja(gomb)
         talalat = re.search(r'ToolTip\.text: qsTr\("([^"]*)"\)', blokk)
         assert talalat, f"{gomb}: a súgó nem `qsTr`-rel fordítható"
         assert talalat.group(1).strip(), f"{gomb}: üres súgószöveg"
@@ -111,13 +125,13 @@ class TestANezoKilencGombja:
 
         (A jegy 400-at írt; a fájlban MINDEN kiírt késleltetés 500, tehát
         a mért testvéreket követjük, nem a jegy becslését.)"""
-        blokk = _blokk(_NEZO, gomb)
+        blokk = _gomb_blokkja(gomb)
         assert "ToolTip.visible: hovered" in blokk
         assert "ToolTip.delay: 500" in blokk
 
     @pytest.mark.parametrize("gomb", KILENC_GOMB)
     def test_a_sugo_le_van_forditva(self, gomb):
-        blokk = _blokk(_NEZO, gomb)
+        blokk = _gomb_blokkja(gomb)
         angol = re.search(r'ToolTip\.text: qsTr\("([^"]*)"\)', blokk).group(1)
         assert f"<source>{angol}</source>" in _TS, f"{gomb}: nincs a .ts-ben"
 

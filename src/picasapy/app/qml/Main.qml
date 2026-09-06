@@ -2413,6 +2413,15 @@ ApplicationWindow {
         visible: window.libraryFrameVisible
         appWindow: window
         viewerIndex: photoViewer.currentIndex
+        // #2564: a szerkesztő nagyítás-hármasa az ALSÓ SÁVBAN ül (mérve),
+        // de a nagyítás állapota a nézőé — az állapot ide jön, a művelet
+        // jelzésként megy vissza. Enélkül a tálcának ismernie kellene a
+        // néző belsejét.
+        viewerZoomValue: photoViewer.zoomValue
+        viewerZoomAvailable: window.viewerOpen && photoViewer.photoOverlaysUsable
+        onZoomFitRequested: photoViewer.zoomFit()
+        onZoomActualRequested: photoViewer.zoomActual()
+        onZoomValueRequested: (ertek) => photoViewer.setZoomValue(ertek)
         onExportRequested: exportDialogs.ensure().openForSelection()
         // #1917: a tálca helyi menüjének öt ÖRÖKÖLT tétele. Ugyanazokra a
         // vezérlőkre megy, mint a rács helyi menüjének párja — a tálca
