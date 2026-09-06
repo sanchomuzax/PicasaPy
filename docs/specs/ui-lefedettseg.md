@@ -40,17 +40,17 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 |---|---:|
 | eredeti UI-elem összesen | 2020 |
 | panel összesen | 74 |
-| ebből értékelhető elem (`feliratos` + `vezerlo`) | 657 |
+| ebből értékelhető elem (`feliratos` + `vezerlo`) | 643 |
 | párosítva | 271 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 31 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 273 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 16 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 274 |
 | bizonytalan | 51 |
 | nem értékelhető (rajzoló elem) | 1284 |
-| **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 77 |
-| **lefedettség az értékelhető elemeken** | **41.2%** |
+| **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 91 |
+| **lefedettség az értékelhető elemeken** | **42.1%** |
 
-> ⚠️ **A 41.2% ALSÓ BECSLÉS, nem pontos érték.** 51 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.0%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 42.1% ALSÓ BECSLÉS, nem pontos érték.** 51 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **50.1%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -65,9 +65,9 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | 5 | `thumbui` | 21 | A fő könyvtárnézet egésze |
 | 6 | `buttonmgr` | 13 | Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | 7 | `choose_mail` | 13 | Levelezőprogram-választó párbeszéd — nincs nálunk |
-| 8 | `acquirepanel` | 12 | Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel |
-| 9 | `capturemoviepanelpopup` | 11 | Webkamerás videofelvétel — nincs nálunk |
-| 10 | `faceheaderpanel` | 11 | Névvel ellátott arc-album fejléce |
+| 8 | `capturemoviepanelpopup` | 11 | Webkamerás videofelvétel — nincs nálunk |
+| 9 | `faceheaderpanel` | 11 | Névvel ellátott arc-album fejléce |
+| 10 | `edittextpanel` | 10 | Szöveg-eszköz panelje |
 
 ## Panelenkénti lefedettség
 
@@ -80,17 +80,15 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `thumbui` | 140 | 44 | 20 | 3 | 0 | 18 | 3 | 93 | 3 | `MainToolbar.qml`, `LightboxFeed.qml`, `ThumbDelegate.qml`, `TrayBar.qml`, `TimelineView.qml`, `PicasaScrollBar.qml`, `FolderPane.qml`, `FolderTreeItem.qml`, `FolderStateBadge.qml`, `SlideshowView.qml`, `Main.qml` |
 | `buttonmgr` | 29 | 13 | 0 | 0 | 0 | 13 | 0 | 16 | 0 | **nincs-megfeleltetes** — Gombsáv-testreszabó párbeszéd — nincs nálunk |
 | `choose_mail` | 24 | 13 | 0 | 0 | 0 | 13 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
-| `acquirepanel` | 67 | 24 | 12 | 0 | 6 | 1 | 5 | 43 | 0 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
 | `faceheaderpanel` | 39 | 13 | 1 | 1 | 0 | 11 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
 | `edittextpanel` | 45 | 19 | 9 | 0 | 5 | 3 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 0 | 10 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
+| `acquirepanel` | 67 | 20 | 12 | 0 | 2 | 1 | 5 | 43 | 4 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
-| `headerpanel` | 30 | 11 | 4 | 0 | 4 | 3 | 0 | 19 | 0 | `LightboxHeader.qml` |
 | `titledialog` | 18 | 7 | 0 | 0 | 0 | 7 | 0 | 11 | 0 | **nincs-megfeleltetes** — Filmes címdia-szerkesztő párbeszéd — nincs nálunk |
 | `video_control_bar` | 24 | 6 | 0 | 0 | 0 | 6 | 0 | 18 | 0 | `VideoPlayerView.qml` |
 | `keywords` | 18 | 7 | 1 | 0 | 0 | 5 | 1 | 11 | 0 | `TagsPanel.qml` |
-| `uploadmgr` | 17 | 7 | 0 | 1 | 6 | 0 | 0 | 10 | 0 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
 | `searchoptions` | 9 | 6 | 0 | 0 | 0 | 6 | 0 | 3 | 0 | `SearchGroupHeader.qml`, `MainToolbar.qml` |
 | `searchcontainer` | 25 | 11 | 6 | 0 | 0 | 5 | 0 | 14 | 0 | `MainToolbar.qml`, `SearchSuggestions.qml` |
 | `geopanel` | 14 | 5 | 0 | 0 | 1 | 0 | 4 | 9 | 0 | `PlacesPanel.qml`, `PlacesMap.qml` |
@@ -99,10 +97,11 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `video_control_bar2` | 18 | 4 | 0 | 0 | 0 | 4 | 0 | 14 | 0 | `VideoPlayerView.qml` |
 | `panelroot` | 14 | 7 | 2 | 1 | 0 | 4 | 0 | 7 | 0 | `Main.qml`, `MainToolbar.qml` |
 | `throttle` | 10 | 4 | 1 | 0 | 0 | 3 | 1 | 5 | 0 | `PicasaScrollBar.qml` |
-| `movieeditpanel` | 7 | 4 | 0 | 0 | 4 | 0 | 0 | 3 | 0 | `VideoPlayerView.qml` |
+| `movieeditpanel` | 7 | 4 | 0 | 0 | 3 | 1 | 0 | 3 | 0 | `VideoPlayerView.qml` |
 | `editoneup` | 34 | 5 | 0 | 2 | 0 | 3 | 0 | 29 | 0 | `PhotoViewer.qml` |
 | `oneup` | 33 | 5 | 0 | 2 | 0 | 3 | 0 | 28 | 0 | `PhotoViewer.qml` |
 | `outputlayout` | 31 | 9 | 5 | 1 | 0 | 3 | 0 | 22 | 0 | `TrayBar.qml` |
+| `headerpanel` | 30 | 7 | 4 | 0 | 0 | 3 | 0 | 19 | 4 | `LightboxHeader.qml` |
 | `peoplepanel` | 14 | 6 | 1 | 2 | 1 | 1 | 1 | 8 | 0 | `PeoplePanel.qml`, `PeoplePanelRow.qml` |
 | `gedialog` | 13 | 5 | 1 | 1 | 1 | 0 | 2 | 8 | 0 | `PlacesPanel.qml`, `PlacesMap.qml` |
 | `rightdrawerpanel` | 9 | 3 | 0 | 0 | 2 | 1 | 0 | 6 | 0 | `PropertiesPanel.qml` |
@@ -139,6 +138,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `canoncapturemoviepanelpopup` | 45 | 0 | 0 | 0 | 0 | 0 | 0 | 40 | 5 | **nem-cel** — Canon SDK-s kamerafelvétel — nem cél |
 | `quicktagconfig` | 33 | 15 | 16 | 0 | 0 | 0 | 0 | 17 | 0 | `QuickTagsConfigDialog.qml` |
 | `collab` | 23 | 0 | 0 | 0 | 0 | 0 | 0 | 13 | 10 | **nem-cel** — Picasa Web Albums közös album — a szolgáltatás megszűnt, nem cél |
+| `uploadmgr` | 17 | 1 | 0 | 1 | 0 | 0 | 0 | 10 | 6 | **nincs-megfeleltetes** — Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk |
 | `wait_dialog` | 13 | 1 | 1 | 0 | 0 | 0 | 0 | 12 | 0 | `BatchEditProgressPanel.qml`, `ConfirmDialog.qml` |
 | `pickerpanel` | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 9 | 0 | `TextColorSwatches.qml` |
 | `modalprogress` | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 7 | 0 | `ImportProgressPanel.qml`, `BatchEditProgressPanel.qml` |
@@ -360,23 +360,6 @@ Levelezőprogram-választó párbeszéd — nincs nálunk
 - `remember` „Remember this setting, don't display this dialog again.” (magyarul: „Jegyezze meg ezt a beállítást, ne jelenítse meg a párbeszédpanelt újra.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
 - `selecttext` „Select how you want to e-mail your photos.” (magyarul: „Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: 0x006e1100)
 
-### `acquirepanel` — 12 hiány · panel-megfeleltetés: `parositva`
-
-Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel
-
-- `add_groups_button` buboréksúgó: „Add people to share albums with”
-- `buttons` — *bizonytalan*
-- `import_folder_menu` — *bizonytalan*
-- `import_from_menu` — *bizonytalan*
-- `nextbutton` buboréksúgó: „View the next Photo”
-- `previousbutton` buboréksúgó: „View the previous Photo”
-- `selected_groups_label` „Nobody” (magyarul: „Senki”)
-- `share_with_label` „Share with:” (magyarul: „Megosztás a következővel:”)
-- `sync_options_button` „Options” (magyarul: „Opciók”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
-- `togglegroup` — *bizonytalan*
-- `upload_checkbox` — *bizonytalan*
-- `upload_label` „Upload” (magyarul: „Feltöltés”)
-
 ### `capturemoviepanelpopup` — 11 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
 Webkamerás videofelvétel — nincs nálunk
@@ -439,6 +422,19 @@ Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület n�
 - `to_text` „To:” (magyarul: „Címzett:”) — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
 - `topentry` — 🔧 **lekutatva**, csak nem megépítve (picasa-email-kuldes.md: compose_mail.tre:68)
 
+### `acquirepanel` — 8 hiány · panel-megfeleltetés: `parositva`
+
+Importáló panel — nálunk párbeszédablak, nem teljes értékű bal oldali panel
+
+- `buttons` — *bizonytalan*
+- `import_folder_menu` — *bizonytalan*
+- `import_from_menu` — *bizonytalan*
+- `nextbutton` buboréksúgó: „View the next Photo”
+- `previousbutton` buboréksúgó: „View the previous Photo”
+- `sync_options_button` „Options” (magyarul: „Opciók”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
+- `togglegroup` — *bizonytalan*
+- `upload_checkbox` — *bizonytalan*
+
 ### `collagepanel` — 7 hiány · panel-megfeleltetés: `parositva`
 
 A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A korábbi sor egyetlen fájlra mutatott és azt írta, hogy nincs interaktív szerkesztő — ez ELAVULT volt, és a panel mind a 36 elemét hiánynak jelezte.
@@ -450,18 +446,6 @@ A kollázs-szerkesztő panel MEGVAN (2026-08-31 mérés): 23 Collage*.qml. A kor
 - `tabpanel2` — *bizonytalan*
 - `tabs` — *bizonytalan*
 - `view_and_edit` — *bizonytalan*
-
-### `headerpanel` — 7 hiány · panel-megfeleltetés: `parositva`
-
-Album- és mappafejléc a rács fölött
-
-- `create_movie` buboréksúgó: „Create Movie Presentation” — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: faceheaderpaneltext.tre:44)
-- `play` buboréksúgó: „Play Fullscreen Slideshow” — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
-- `sync_label` „Sync to Web” (magyarul: „Szinkronizálás az internettel”)
-- `sync_options` buboréksúgó: „Online options”
-- `view_online` „View on Web” (magyarul: „Megtekintés az interneten”)
-- `websync0` buboréksúgó: „Upload and sync future changes to the web” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x00518b40)
-- `websync1` buboréksúgó: „Stop syncing changes to the web”
 
 ### `titledialog` — 7 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -496,17 +480,6 @@ Címkeszerkesztő
 - `keywordlist` — *bizonytalan*
 - `readonly_label` „Tags cannot be modified because one or more items are read-only.” (magyarul: „A címkéket nem lehet módosítani, mert egy vagy több elem írásvédett.”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-beviteli-mezok.md)
 - `removebutton` „Remove” (magyarul: „Eltávolítás”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-beviteli-mezok.md)
-
-### `uploadmgr` — 6 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
-
-Feltöltés-kezelő (szüneteltetés/folytatás) — nincs nálunk
-
-- `cleanup` „Clear Completed” (magyarul: „A feltöltöttek törlése a listából”)
-- `itemlist`
-- `minibutton`
-- `pause` „Pause” (magyarul: „Felfüggesztés”)
-- `resume` „Resume” (magyarul: „Folytatás”)
-- `throttlechk`
 
 ### `searchoptions` — 6 hiány · panel-megfeleltetés: `parositva`
 
@@ -590,7 +563,7 @@ Videovágó panel
 
 - `capture_frame` „Take Snapshot” (magyarul: „Pillanatfelvétel készítése”)
 - `export_movie` „Export Clip” (magyarul: „Klip exportálása”)
-- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”)
+- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (picasa-feltolteskezelo.md: 0x00518840)
 - `reset_trim` „Reset Start and End” (magyarul: „Kezdés és befejezés alaphelyzetbe állítása”)
 
 ### `editoneup` — 3 hiány · panel-megfeleltetés: `parositva`
@@ -616,6 +589,14 @@ A tálca alatti kimeneti gombsáv
 - `blogger` „Blogger” (magyarul: „Blogger”) — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
 - `orderbutton` „Shop” (magyarul: „Vásárlás”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-program-resources.md)
 - `sharewith` „Hello” (magyarul: „Hello”) — 🔧 **lekutatva**, csak nem megépítve (kézi: picasa-program-resources.md)
+
+### `headerpanel` — 3 hiány · panel-megfeleltetés: `parositva`
+
+Album- és mappafejléc a rács fölött
+
+- `create_movie` buboréksúgó: „Create Movie Presentation” — 🔧 **lekutatva**, csak nem megépítve (picasa-arcfelismeres.md: faceheaderpaneltext.tre:44)
+- `play` buboréksúgó: „Play Fullscreen Slideshow” — 🔧 **lekutatva**, csak nem megépítve (binaris-regeszet-modszertan.md: acquirepanel.tre:210)
+- `websync0` buboréksúgó: „Upload and sync future changes to the web” — 🔧 **lekutatva**, csak nem megépítve (picasa-eger-es-kijeloles.md: 0x00518b40)
 
 ### `peoplepanel` — 3 hiány · panel-megfeleltetés: `parositva`
 
@@ -849,10 +830,6 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 - `confirmsel` — „Confirm” itt: PicasaPy/CollageDialogs.qml, PicasaPy/DocumentTabStrip.qml
 
-### `uploadmgr` — 1
-
-- `hide` — „Hide” itt: PicasaPy/PhotoContextMenu.qml, PicasaPy/PicasaMenuBar.qml, PicasaPy/ViewerContextMenu.qml
-
 ### `panelroot` — 1
 
 - `picasatab` — „Library” itt: PicasaPy/DocumentTabStrip.qml
@@ -887,6 +864,10 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 - `status_label` — „For the current folder:” itt: PicasaPy/FolderStatePanel.qml
 - `watch_label` — „Scan Always” itt: PicasaPy/FolderStatePanel.qml
 - `watched_label` — „Watched Folders” itt: PicasaPy/FolderStatePanel.qml
+
+### `uploadmgr` — 1
+
+- `hide` — „Hide” itt: PicasaPy/PhotoContextMenu.qml, PicasaPy/PicasaMenuBar.qml, PicasaPy/ViewerContextMenu.qml
 
 ## A mi többletünk — nálunk van, az eredetiben nincs ilyen szöveg
 
@@ -1591,9 +1572,14 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ## Figyelmeztetések a generáláskor
 
-- 160 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
+- 162 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
+-     acquirepanel/groups_container :: picasa-feltolteskezelo.md: 0x00518840
 -     acquirepanel/import_folder_menu :: picasa-eger-es-kijeloles.md: 0x005ba010
 -     acquirepanel/import_from_menu :: picasa-eger-es-kijeloles.md: 0x005ba010
+-     acquirepanel/selected_groups_label :: picasa-feltolteskezelo.md: 0x00518840
+-     acquirepanel/share_container :: picasa-feltolteskezelo.md: 0x00518840
+-     acquirepanel/share_with_label :: picasa-feltolteskezelo.md: 0x00518840
+-     acquirepanel/upload_checkbox :: picasa-feltolteskezelo.md: 0x00518840
 -     capturemoviepanelpopup/capture_bgtext :: picasa-menu-parancsok-viselkedes.md: 0x006274f0
 -     collagepanel/background_container :: picasa-kollazs-felulet.md: 0x008364a0
 -     collagepanel/background_types :: picasa-kollazs-felulet.md: 0x008364a0
@@ -1602,12 +1588,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 -     collagepanel/borders_group :: picasa-kollazs-felulet.md: 0x00829000
 -     collagepanel/caption_checkbox :: picasa-kollazs-felulet.md: 0x0082d570
 -     collagepanel/collageprog_base :: kollazs-eletciklus.md: 0x00887390
--     collagepanel/collageprog_clip :: kollazs-eletciklus.md: 0x00887390
--     collagepanel/collageprog_status :: kollazs-eletciklus.md: 0x00887390
--     collagepanel/collageprog_title :: kollazs-eletciklus.md: 0x00887390
--     collagepanel/color_bg :: picasa-kollazs-felulet.md: 0x0082d570
--     collagepanel/colorpick_container :: picasa-kollazs-felulet.md: 0x008364a0
--     … és még 145 elem
+-     … és még 147 elem
 - 83 szakasz elemet ír le, de HORGONY NÉLKÜL — a mérés átugorja, tehát az ott leírt elemek »feltáratlan«-ként jelennek meg (22.4, #38):
 -     picasa-eger-es-kijeloles.md :: ## 8. Az Esc-billentyű — 11 gomb (7 elem)
 -     picasa-fo-ablak-elrendezes.md :: ### A képtálcán belül (7 elem)
@@ -1626,5 +1607,15 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 -     picasa-nerdview-panel.md :: ## 3. Elhelyezés a szerkesztőben (3 elem)
 -     … és még 68 szakasz
 - ELAVULT ELEM-FELÜLBÍRÁLÁS: 'printpanel/photoindexbutton' nincs a leltárban
+- GYANÚS »nem cél«: 'acquirepanel/add_groups_button' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'acquirepanel/selected_groups_label' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'acquirepanel/share_with_label' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'acquirepanel/upload_label' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/cleanup' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/itemlist' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/minibutton' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/pause' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/resume' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
+- GYANÚS »nem cél«: 'uploadmgr/throttlechk' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - ÁTSOROLVA (#1970): 71 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
 
