@@ -37,6 +37,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from picasapy.paths import normalize_path
+
 from .filetypes import media_kind_of
 from .name_filters import NameFilters, default_name_filters
 
@@ -158,12 +160,23 @@ def scan_tree(
     root_path = Path(root)
     if not root_path.is_dir():
         raise FileNotFoundError(f"A szkennelendő gyökér nem létezik: {root_path}")
+    # #2543: a gyökeret EGYSZER oldjuk fel, és onnantól a bejárás
+    # kanonikus útvonalakkal dolgozik — a kizárás-egyeztetésnek nem kell
+    # mappánként újra feloldania. Mérve (50 mappás fa, 101 könyvtár): a
+    # bejárás 1921 fájlrendszer-hívásából 1718 (89 %) volt puszta
+    # `resolve()`, mind a `NameFilters._normalised_path_parts`-ból.
+    #
+    # ⚠️ A kanonikusság nem öröklődik vakon: a `_walk` symlinkeket KÖVET
+    # (#303), és egy symlink-bejegyzésen át elért mappa útvonala a LINKÉ,
+    # nem a célé. Ezért a leszálláskor a jelző symlinknél `False`-ra vált —
+    # ott a feloldás visszakapcsol.
+    root_path = Path(normalize_path(root_path))
     exclude_paths = tuple(Path(item).resolve() for item in exclude)
     filters = name_filters if name_filters is not None else default_name_filters()
     folders: list[FolderScan] = []
     _walk(
         root_path, exclude_paths, skip, filters, folders, set(),
-        excluded_names, hibas_bejegyzesek,
+        excluded_names, hibas_bejegyzesek, kanonikus=True,
     )
     return tuple(sorted(folders, key=lambda f: f.path))
 
@@ -218,6 +231,7 @@ def _walk(
     visited_dirs: set[tuple[int, int]],
     excluded_names: list[Path] | None = None,
     hibas: list[HibasBejegyzes] | None = None,
+    kanonikus: bool = False,
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
     (élő NAS-on a mappa el is tűnhet menet közben).
@@ -227,9 +241,9 @@ def _walk(
     a már bejárt mappák `(st_dev, st_ino)` azonosítóját. Ismétlődésnél
     (symlink-kör, önmagára mutató symlink) a mappa kihagyásra kerül,
     figyelmeztetéssel."""
-    if _is_under_any(current, exclude_paths):
+    if _is_under_any(current, exclude_paths, kanonikus):
         return
-    if name_filters.is_path_excluded(current):
+    if name_filters.is_path_excluded(current, kanonikus):
         return
     try:
         stat = os.stat(current)
@@ -278,8 +292,12 @@ def _walk(
             if excluded_names is not None:
                 excluded_names.append(current / entry.name)
             continue
-        if name_filters.is_path_excluded(current / entry.name):
-            continue
+        # #2543: az ÚTVONAL-előtagos kizárást itt NEM vizsgáljuk. A hívott
+        # `_walk` az első két sorában pontosan ugyanezt teszi ugyanarra az
+        # útvonalra — a kettő közül az egyik merő ismétlés volt, és mivel a
+        # vizsgálat `resolve()`-ot hív, útvonal-komponensenként egy `lstat`
+        # árán. (A NÉV-alapú kizárás fent marad: az `excluded_names`
+        # jelzéshez a SZÜLŐ mappa neve kell, ld. #358.)
         _walk(
             current / entry.name,
             exclude_paths,
@@ -289,7 +307,23 @@ def _walk(
             visited_dirs,
             excluded_names,
             hibas,
+            # a kanonikusság csak NEM-symlink bejegyzésen öröklődik
+            kanonikus=kanonikus and not _entry_is_symlink(entry),
         )
+
+
+def _entry_is_symlink(entry: os.DirEntry) -> bool:
+    """Symlink-e a bejegyzés (#2543) — a `scandir` jellemzően a `dirent`
+    típusából válaszol, tehát nem kerül újabb fájlrendszer-hívásba.
+
+    Ez a kanonikusság-jelző kapuja: symlinken át elért mappa útvonala a
+    LINKÉ, nem a célé, tehát ott a kizárás-egyeztetésnek FEL KELL oldania.
+    Hibára óvatosan `True`-t adunk: a rövidzár elmarad, a viselkedés a
+    #2543 előtti."""
+    try:
+        return entry.is_symlink()
+    except OSError:
+        return True
 
 
 def _entry_is_dir(entry: os.DirEntry) -> bool:
@@ -374,8 +408,15 @@ def _ini_mtime(by_name: dict[str, os.DirEntry]) -> int | None:
         return None
 
 
-def _is_under_any(path: Path, roots: tuple[Path, ...]) -> bool:
+def _is_under_any(
+    path: Path, roots: tuple[Path, ...], kanonikus: bool = False
+) -> bool:
+    """A `path` a `roots` valamelyike alatt van-e (#145).
+
+    `kanonikus=True`: a hívó ÁLLÍTJA, hogy `path` már feloldott abszolút
+    útvonal, tehát a feloldás kimarad (#2543). A `roots` mindig feloldott
+    (a `scan_tree` egyszer feloldja őket)."""
     if not roots:
         return False
-    resolved = path.resolve()
+    resolved = path if kanonikus else path.resolve()
     return any(resolved == root or root in resolved.parents for root in roots)
