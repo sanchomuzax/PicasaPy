@@ -67,6 +67,12 @@ inkább a képnek másik nevet" — épp az, amit a pótnév automatikusan megte
 — azoké az utaké, ahol nincs mit feloldani, mert a nevet a felhasználó adta
 meg.
 
+Mindez arra a képre vonatkozik, amelyiknek VAN megőrzött eredetije: kísérő
+nélkül nincs mit elhelyezni, ott a kötegelt út csak az ÖRÖKBEFOGADÁS ellen
+őriz (`originals_slot_free(..., moving_companions=False)`, #2510) — a
+foglaltnak látszó, de valójában gazdás pillanatkép-hely miatt korábban
+fölösleges ütközés-párbeszéd és néma átnevezés lett belőle.
+
 ## A megnyugtatás feltételes
 
 Ha a visszagörgetés IS elbukik, a „minden a helyén maradt" mondat HAMIS
@@ -87,9 +93,11 @@ kötegelt úton is eljut a felhasználóig.
 
 from __future__ import annotations
 
+import os
 import shutil
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -109,6 +117,131 @@ _move = shutil.move
 #: `copy2`, nem `copy`: a megőrzött eredeti mtime-ja a WYSIWYG dátum
 #: forrása, és a Picasa a rekord érvényességét is a `moddate`-hez méri.
 _copy = shutil.copy2
+
+#: A kísérő-mappák neveinek gyorstára EGY kötegelt művelet idejére (#1452).
+#:
+#: `None`, amíg senki nem nyitott `listing_cache()` hatókört — ilyenkor
+#: minden olvasás friss listázás, pontosan úgy, mint korábban. A
+#: `ContextVar` (és nem modulszintű dict) azért kell, mert a felület a
+#: kötegelt műveleteket munkaszálon is futtathatja: minden szál SAJÁT,
+#: üres kontextussal indul, tehát nem örökli meg egy másik szál félkész
+#: gyorstárát.
+_LISTINGS: ContextVar[dict[str, list[str]] | None] = ContextVar(
+    "picasapy_originals_listings", default=None
+)
+
+
+@contextmanager
+def listing_cache() -> Iterator[None]:
+    """A kísérő-mappákat MAPPÁNKÉNT EGYSZER listázza a hatókörön belül (#1452).
+
+    Mit old meg: a kötegelt áthelyezés képenként KÉT teljes
+    könyvtárlistázást végzett — egyet a célmappa eredeti-mappáira
+    (`originals_slot_free`), egyet a forráséira (`plan_original_moves`).
+    500 képnél ez 999 listázás volt. A gyűjtemény NAS-on van, mért
+    napló-korláttal (#1146), ahol egy listázás drága.
+
+    Hogyan marad PONTOS: a gyorstár nem „elévül", hanem KÖNYVELT. Ez a
+    modul minden saját mozgatását/másolását/törlését azonnal átvezeti a
+    tárolt névlistán (`_moved`, `_copied`, `_discarded`,
+    `_remove_if_empty`), tehát a hatókörön belül a listák együtt mozognak
+    a lemezzel. Amit a modul NEM ír — a `.picasa.ini` és a `.bak` párja —,
+    az a keresésben sem vesz részt: a pillanatkép-minta a kép
+    törzsnevével kezdődik (`<név>.<N><kiterjesztés>`), a foglaltság-
+    vizsgálat pedig a konkrét névre `exists()`-tel kérdez, nem a listából.
+
+    Egy PÁRHUZAMOS író (a futó Picasa) közbeírását a hatókörön belül nem
+    látjuk — de a művelet enélkül is versenyzik vele, és a tényleges
+    ütközést a `_reject_unsafe_targets` közvetlenül a mozgatás előtt
+    ellenőrzi, friss `exists()`-tel.
+
+    A hatókört a kötegelt út nyitja (`fileops/batch.py`); az egyfájlos
+    utak nélküle futnak, ott nincs mit megtakarítani.
+    """
+    token = _LISTINGS.set({})
+    try:
+        yield
+    finally:
+        _LISTINGS.reset(token)
+
+
+def _read_names(directory: Path) -> list[str]:
+    """A könyvtár bejegyzéseinek NEVE; üres lista, ha nem olvasható.
+
+    `os.scandir`, nem `iterdir()`: ugyanaz a rendszerhívás, de nem
+    gyártunk `Path`-t minden bejegyzéshez — a 250 000 fájlos gyűjteményben
+    ez a kötegelt úton mérhető."""
+    try:
+        with os.scandir(directory) as entries:
+            return [entry.name for entry in entries]
+    except OSError:
+        return []
+
+
+def _entry_names(directory: Path) -> tuple[str, ...]:
+    """A könyvtár bejegyzés-nevei, a `listing_cache()` hatókörén belül
+    mappánként EGYETLEN listázásból (#1452)."""
+    cache = _LISTINGS.get()
+    if cache is None:
+        return tuple(_read_names(directory))
+    key = str(directory)
+    names = cache.get(key)
+    if names is None:
+        names = _read_names(directory)
+        cache[key] = names
+    return tuple(names)
+
+
+def _cache_added(directory: Path, name: str) -> None:
+    """Új név a mappában — a gyorstár együtt mozog a lemezzel."""
+    cache = _LISTINGS.get()
+    if cache is None:
+        return
+    names = cache.get(str(directory))
+    if names is not None and name not in names:
+        names.append(name)
+
+
+def _cache_removed(directory: Path, name: str) -> None:
+    """Eltűnt név a mappában."""
+    cache = _LISTINGS.get()
+    if cache is None:
+        return
+    names = cache.get(str(directory))
+    if names is not None and name in names:
+        names.remove(name)
+
+
+def _cache_unknown(directory: Path) -> None:
+    """A mappa tartalma bizonytalanná vált (félbemaradt írás) — a következő
+    kérdésre ismét listázzunk. Az elfelejtés SOSEM ad rossz választ, csak
+    egy listázásba kerül."""
+    cache = _LISTINGS.get()
+    if cache is not None:
+        cache.pop(str(directory), None)
+
+
+def _moved(source: Path, target: Path) -> None:
+    """A kísérőfájl mozgatása + a gyorstár könyvelése (#1452)."""
+    try:
+        _move(str(source), str(target))
+    except BaseException:
+        # Nem tudjuk, meddig jutott — a két mappa tartalma bizonytalan.
+        _cache_unknown(source.parent)
+        _cache_unknown(target.parent)
+        raise
+    _cache_removed(source.parent, source.name)
+    _cache_added(target.parent, target.name)
+
+
+def _copied(source: Path, target: Path) -> None:
+    """A kísérőfájl másolása + a gyorstár könyvelése (#1452)."""
+    try:
+        _copy(str(source), str(target))
+    except BaseException:
+        _cache_unknown(target.parent)
+        raise
+    _cache_added(target.parent, target.name)
 
 
 @dataclass(frozen=True)
@@ -154,15 +287,15 @@ def snapshot_numbers(
     fájl, a példányt békén hagyjuk — inkább maradjon a helyén, mint hogy egy
     másik kép visszaútját rángassuk el.
 
-    A mappát `iterdir()`-rel járjuk be, nem `glob()`-bal: a fájlnévben lévő
-    `[`, `*` vagy `?` a mintában joker lenne, és némán rossz találatokat
-    adna.
+    A mappát LISTÁZZUK, nem `glob()`-bal keresünk: a fájlnévben lévő `[`,
+    `*` vagy `?` a mintában joker lenne, és némán rossz találatokat adna.
 
     A könyvtárlistázás hálózati megosztáson drága (#1146), ezért a
     `find_original_backup` szándékosan kerüli. Itt viszont vállaljuk: a
     pillanatképek száma és sorszáma előre nem ismert, és a költöztetés
     ritka, a felhasználó által kezdeményezett művelet — nem megjelenítési
-    útvonal.
+    útvonal. A KÖTEGELT úton a `listing_cache()` mappánként egyetlen
+    listázásra fogja össze (#1452).
 
     Yields:
         `(sorszám, a sorszám SZÖVEGE, útvonal)` hármasok, rendezetlenül.
@@ -194,14 +327,12 @@ def _snapshot_candidates(
         sorszám SZÖVEGE is kell, nem csak a számértéke: a célnévben szó
         szerint megtartjuk (ld. `plan_original_moves`).
     """
-    if not directory.is_dir():
-        return
     stem, suffix = photo.stem, photo.suffix
     prefix = f"{stem}."
-    for path in directory.iterdir():
-        name = path.name
+    for name in _entry_names(directory):
         if not name.startswith(prefix) or not name.endswith(suffix):
             continue
+        path = directory / name
         middle = (
             name[len(prefix) : len(name) - len(suffix)] if suffix else name[len(prefix) :]
         )
@@ -237,28 +368,41 @@ def ambiguous_snapshot_names(directory: Path, photo: Path) -> tuple[str, ...]:
     )
 
 
-def originals_slot_free(folder: str | Path, name: str) -> bool:
+def originals_slot_free(
+    folder: str | Path, name: str, *, moving_companions: bool = True
+) -> bool:
     """Szabad-e a `name` fájlnév helye a `folder` ÖSSZES eredeti-mappájában.
 
     „Szabad" az, ahol sem a megőrzött eredeti, sem EGYETLEN sorszámozott
-    pillanatkép helye nincs elfoglalva — a kettő együtt költözik, tehát a
-    kettő közül bármelyik ütközése megbuktatná a műveletet.
+    pillanatkép helye nincs elfoglalva.
 
-    A kötegelt áthelyezés ütközés-feloldása (`fileops/batch.py`) ezzel kerüli
-    el, hogy egy korábbi költöztetés árván maradt fájlja miatt válasszon
-    olyan pótnevet, amivel a művelet aztán elbukna.
+    A hívók KÉT KÜLÖNBÖZŐ kérdést tesznek fel ezzel, és a válasz nem
+    ugyanaz — ezt mondja ki a `moving_companions` (#2510):
 
-    Szándékosan óvatos: ha a mappában van a névhez illő pillanatkép-hely, a
-    nevet akkor is foglaltnak mondjuk, ha a költöző képnek éppen nincs
-    pillanatképe. A tévedés iránya így egy másik pótnév — nem egy bukott
-    művelet.
+    * `True` (alapértelmezés) — „el tudom-e HELYEZNI ide a kép kísérőit?".
+      Ilyenkor a `_snapshot_candidates` halmaza számít: minden névre illő
+      fájl foglal, még az is, amelyiknek a képmappában GAZDÁJA van. Az
+      utóbbi kihagyása azt jelentené, hogy „szabadnak" mondunk egy helyet,
+      amire a `_reject_unsafe_targets` aztán `FileExistsError`-t dob — a
+      másolás elbukott ahelyett, hogy a `_unique_target` másik nevet
+      választott volna (#1450 átnézés, 4. lelet). A tévedés iránya így egy
+      másik pótnév, nem egy bukott művelet.
 
-    Ezért néz a `_snapshot_candidates`-re és NEM a `snapshot_numbers`-re: az
-    utóbbi kihagyja azt a példányt, amelyiknek a képmappában van gazdája,
-    így „szabadnak" mondta volna a helyet, amire a `_reject_unsafe_targets`
-    aztán `FileExistsError`-t dobott — a másolás elbukott ahelyett, hogy a
-    `_unique_target` másik nevet választott volna (#1450 átnézés, 4. lelet).
-    A két őrnek UGYANAZT a halmazt kell néznie."""
+    * `False` — „ÖRÖKÖLNE-E a képem itt idegen adatot?". A kísérő nélküli
+      kép nem helyez el semmit, tehát a placement-ütközés nem érdekli; az
+      viszont igen, hogy a célnéven áll-e olyan fájl, amit a
+      `find_original_backup` (vagy a pillanatkép-kereső) MÁR AZ Ő
+      eredetijének látna. A gazdás példány itt nem számít: annak a
+      `snapshot_numbers` szerint van gazdája, tehát a mi képünk nem
+      örökölné (#1449).
+
+    A kettő közti különbség NEM elméleti. A kötegelt áthelyezés a bővebb
+    halmazt kérdezte kísérő nélküli képnél is, és ezért fölösleges
+    ütközést jelentett, majd némán átnevezett (#2510 reprodukció). A
+    szűkebb halmaz elhagyása viszont adatvesztés lenne: a kép NÉMÁN
+    ÖRÖKBE FOGADNÁ az ott heverő árva eredetit, és a „Vissza az
+    eredetihez" egy vadidegen kép bájtjait tenné a helyére.
+    """
     folder = Path(folder)
     photo = folder / name
     for dir_name in _originals_dir_names():
@@ -267,7 +411,12 @@ def originals_slot_free(folder: str | Path, name: str) -> bool:
             continue
         if (directory / name).exists():
             return False
-        if next(_snapshot_candidates(directory, photo), None) is not None:
+        jeloltek = (
+            _snapshot_candidates(directory, photo)
+            if moving_companions
+            else snapshot_numbers(directory, photo)
+        )
+        if next(iter(jeloltek), None) is not None:
             return False
     return True
 
@@ -445,7 +594,7 @@ def _move_preserved_originals(
     for move in moves:
         try:
             move.target.parent.mkdir(parents=True, exist_ok=True)
-            _move(str(move.source), str(move.target))
+            _moved(move.source, move.target)
         except OSError as error:
             # Az ini-fázis el sem indult, tehát nincs szekció-lépés, amit
             # vissza kellene venni.
@@ -574,7 +723,7 @@ def copy_preserved_originals(
     for move in moves:
         try:
             move.target.parent.mkdir(parents=True, exist_ok=True)
-            _copy(str(move.source), str(move.target))
+            _copied(move.source, move.target)
         except OSError as error:
             _discard_copies(done)
             _remove_if_empty(move.target.parent)
@@ -614,7 +763,9 @@ def _discard_copies(moves: Sequence[OriginalMove]) -> None:
         try:
             move.target.unlink(missing_ok=True)
         except OSError:
+            _cache_unknown(move.target.parent)
             continue
+        _cache_removed(move.target.parent, move.target.name)
         _remove_if_empty(move.target.parent)
 
 
@@ -654,7 +805,7 @@ def undo_original_moves(
     for move in reversed(list(moves)):
         try:
             move.source.parent.mkdir(parents=True, exist_ok=True)
-            _move(str(move.target), str(move.source))
+            _moved(move.target, move.source)
         except OSError:
             stranded.append(move)
             continue
@@ -667,11 +818,32 @@ def undo_original_moves(
 
 def _remove_if_empty(directory: Path) -> None:
     """Üres eredeti-mappa eltakarítása. Az `rmdir` csak ÜRES könyvtárat
-    töröl, tehát semmit nem vihet magával."""
+    töröl, tehát semmit nem vihet magával.
+
+    A CSAK `.picasa.ini`-t tartalmazó mappát SZÁNDÉKOSAN nem takarítja el
+    (#2511): innen nem látszik, hogy azt az ini-t mi hoztuk-e létre, vagy a
+    felhasználóé (esetleg a párhuzamosan futó Picasáé) volt már a művelet
+    előtt. A törléshez szükséges tudás egy réteggel feljebb van, és ott is
+    marad: a `original_ini._remove_if_contentless` KIZÁRÓLAG azt az ini-t
+    törli, amelyik a művelet előtt nem létezett (`target_ini_existed`) és
+    üresre is fogyott — a `.bak` párjával együtt. Mivel a hívási sorrend
+    mindenhol „előbb az ini-fázis visszavétele, utána a fájloké"
+    (`originals_follow`, `_move_preserved_originals`, `_discard_copies`
+    előtt az `undo_copied_ini_sections`), mire ide érünk, az általunk
+    gyártott ini már nincs ott, és a mappa valóban üres.
+
+    Ami marad, az a felhasználó adata: azt a `_ini_stranded_warning`
+    mondja ki, nem törli."""
     try:
         directory.rmdir()
     except OSError:
-        pass
+        return
+    # A mappa megszűnt: a róla tárolt lista már semmit nem jelent. Nem
+    # „üresre" javítjuk, hanem ELFELEJTJÜK — az elfelejtés sosem ad rossz
+    # választ, legfeljebb egy listázásba kerül, és nem kell hozzá
+    # feltevés arról, mi volt még bent (a `.picasa.ini` például nem a mi
+    # könyvelésünk).
+    _cache_unknown(directory)
 
 
 def _reassurance() -> str:
@@ -769,6 +941,7 @@ __all__ = [
     "ambiguous_snapshot_names",
     "companions_of",
     "copy_preserved_originals",
+    "listing_cache",
     "move_preserved_originals",
     "originals_follow",
     "originals_slot_free",

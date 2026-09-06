@@ -7,6 +7,28 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.306] – 2026-09-06
+
+### Javítva
+
+- **A megszakadt áthelyezés visszavonása nem törli a célmappa régi
+  adatait** (#2511). Ha egy áthelyezés félúton elakadt, a visszaállítás
+  eddig nyomtalanul eltüntetett egy régebbi, ott árván maradt bejegyzést
+  a cél `.picasa.ini`-jéből. A másolás ága ezt már megőrizte; mostantól a
+  mozgatásé is.
+- **Kísérő nélküli képnél nincs fölösleges átnevezés** (#2510). A
+  kötegelt áthelyezés akkor is „névütközést" jelentett és némán
+  átnevezett, ha a képhez nem tartozott megőrzött eredeti. Az idegen
+  eredeti elleni védelem megmarad.
+
+### Gyorsítás
+
+- **A kötegelt áthelyezés mappánként egyszer listáz, nem képenként
+  kétszer** (#1452). Mérve, 500 képnél: **999 → 3** könyvtárlistázás
+  (célmappában is álló eredetivel 1500 → 4). Hálózati meghajtón ez a
+  művelet idejének nagy részét viszi. A gyorstár nem évül el: minden
+  saját mozgatás, másolás és törlés azonnal átvezetődik benne.
+
 ## [0.8.305] – 2026-09-06
 
 ### Javítva
