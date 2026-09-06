@@ -132,13 +132,17 @@ def _masik_futas_pidjei() -> list[int]:
     return talalatok
 
 
-#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360). A
-#: tulajdonos szava: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat. Ezt
-#: mindig elfelejti a developer agent." A felismerés eddig is megvolt
-#: (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session indíthatott kört,
-#: mindegyik szabályosan sorosra váltott, és a négymagos gép mégis térdre
-#: ment. Egy szabály, amit be kell tartatni, nem szabály: kapu.
-_EGYIDEJU_ALAP = 2
+#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360, szigorítva
+#: #2532-ben). A tulajdonos szava 2026-09-06-án: „Tilos egynél több helyi CI
+#: tesztet futtatni az RPi-n." (Korábban kettő volt: „Lokális (RPi-n futó)
+#: teszt egyszerre max 2 futhat. Ezt mindig elfelejti a developer agent.")
+#:
+#: Miért EGY: a futtató maga is párhuzamosít (fájlonkénti részfutások), a gép
+#: pedig négymagos — két teljes kör már CPU-éhezést okoz, amitől a fájlonkénti
+#: időkorlátba VALÓDI HIBA NÉLKÜL is bele lehet futni (#914). A felismerés
+#: eddig is megvolt (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session
+#: indíthatott kört. Egy szabály, amit be kell tartatni, nem szabály: kapu.
+_EGYIDEJU_ALAP = 1
 
 #: Meddig várunk szabad helyre, mielőtt feladjuk.
 _VARAKOZAS_S = 45 * 60
@@ -169,36 +173,41 @@ def _varj_szabad_helyre(
     *,
     korlat: int,
     varakozas_s: float,
-    pidek: Callable[[], list[int]] | None = None,
-    alvo: Callable[[float], None] = time.sleep,
-) -> bool:
-    """Vár, amíg felszabadul egy hely; `False`, ha lejárt a türelmi idő.
+    foglalo=None,
+    alvo=time.sleep,
+) -> Path | None:
+    """Vár, amíg KAP egy helyet; `None`, ha lejárt a türelmi idő.
+
+    A visszatérési érték maga a lefoglalt hely — a hívónak el kell engednie
+    (`_engedd_el_a_helyet`), különben a következő futás hiába vár.
 
     A várakozás LÁTHATÓ: kiírja, kire vár. Néma fagyásból a következő
     munkamenet nem tudja megmondani, mi történik — és pont a némaság az,
     amiből a projektben eddig is a legtöbb félreértés lett."""
     if korlat <= 0:
-        return True
-    kerdez = pidek or _masik_futas_pidjei
+        return _NINCS_KORLAT
+    kerj = foglalo or (lambda: _foglalj_helyet(korlat))
     eltelt = 0.0
     jelentve = False
     while True:
-        masok = kerdez()
-        if len(masok) < korlat:
+        hely = kerj()
+        if hely is not None:
             if jelentve:
                 print("Felszabadult egy hely — indulok.", flush=True)
-            return True
+            return hely
         if not jelentve:
+            gazdak = _hely_gazdai()
+            kik = ", ".join(str(p) for p in gazdak) if gazdak else "ismeretlen"
             print(
-                f"MÁR {len(masok)} tesztfutás dolgozik ezen a gépen "
-                f"(PID: {', '.join(str(p) for p in masok)}), a korlát {korlat}. "
+                f"MÁR {max(len(gazdak), korlat)} tesztfutás dolgozik ezen a gépen "
+                f"(PID: {kik}), a korlát {korlat}. "
                 f"Várok szabad helyre — a gép négymagos, és a túlterhelésből "
-                f"VALÓDI HIBA NÉLKÜLI bukások lesznek (#914, #1360).",
+                f"VALÓDI HIBA NÉLKÜLI bukások lesznek (#914, #1360, #2532).",
                 flush=True,
             )
             jelentve = True
         if eltelt >= varakozas_s:
-            return False
+            return None
         alvo(_VARAKOZAS_LEPES_S)
         eltelt += _VARAKOZAS_LEPES_S
 
@@ -253,6 +262,99 @@ _MARADEK_KOR_S = 3 * 3600
 #: `/tmp`-en, mindegyik fiatalabb a küszöbnél, miközben a folyamatuk rég
 #: halott volt. A tulajdonosnak kellett szólnia.
 _PID_FAJL = ".futas.pid"
+
+
+#: A helyek gyökere. A foglalás ATOMI könyvtár-létrehozás: az `mkdir` vagy
+#: sikerül, vagy `FileExistsError` — versenyhelyzet nincs, akkor sem, ha két
+#: munkamenet (vagy két alügynök) ezredmásodpercre indul egyszerre.
+_HELYEK_GYOKER = _TEMP_GYOKER / "picasapy-teszt-helyek"
+
+#: A CI-ben nincs korlát; ezt kapja vissza a várakozó — nincs mit elengedni.
+_NINCS_KORLAT = Path("/nincs-korlat")
+
+#: Ennyi ideig NEM tekintünk elhagyottnak egy hely-könyvtárat, amiben még
+#: nincs PID: a foglaló épp az `mkdir` és a PID kiírása között jár.
+_HELY_TURELEM_S = 60.0
+
+
+def _el_a_folyamat(pid: int) -> bool:
+    """Él-e a folyamat. Jogosultsági hiba = LÉTEZIK, csak nem a miénk."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
+def _elhagyott_hely(hely: Path) -> bool:
+    """Elhagyott-e a hely: a gazdája már nem él (vagy sosem írta be magát).
+
+    Enélkül egy megszakított kör (kill, áramszünet, megtelt lemez) ÖRÖKRE
+    kizárná a többit — pont az a néma elakadás, ami ellen a kapu készült.
+    """
+    try:
+        pid = int((hely / _PID_FAJL).read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        try:
+            return (time.time() - hely.stat().st_mtime) > _HELY_TURELEM_S
+        except OSError:
+            return True
+    return not _el_a_folyamat(pid)
+
+
+def _foglalj_helyet(korlat: int) -> Path | None:
+    """Foglalj egy helyet, ha van szabad; `None`, ha mind foglalt.
+
+    ⚠️ CSAK a ténylegesen DOLGOZÓ futás foglal — a VÁRAKOZÓ nem. Ez a #2532
+    lényege: a korábbi kapu a `/proc` parancssorát nézte, tehát a várakozót
+    is foglalónak számolta. Mérve 2026-09-06-án: két várakozó ÜRES gépen is
+    kizárta egymást, és mindkettő 75-tel lépett ki.
+
+    A helyek száma = `korlat`, tehát a szabály EGY szám átírásával állítható
+    (`_EGYIDEJU_ALAP`, vagy futásidőben a `PICASAPY_TESZT_EGYIDEJU`): a
+    foglaló tetszőleges N-nel működik, nem kell hozzá kódot írni.
+    """
+    if korlat <= 0:
+        return _NINCS_KORLAT
+    for i in range(korlat):
+        hely = _HELYEK_GYOKER / f"hely-{i}"
+        for _ in range(2):  # egy újrapróba az elhagyott hely takarítása után
+            try:
+                hely.mkdir(parents=True)
+            except FileExistsError:
+                if _elhagyott_hely(hely):
+                    shutil.rmtree(hely, ignore_errors=True)
+                    continue
+                break
+            except OSError:
+                break
+            _jelold_a_futast(hely)
+            return hely
+    return None
+
+
+def _engedd_el_a_helyet(hely: Path | None) -> None:
+    """A hely felszabadítása. SOHA nem foghatja meg a futást."""
+    if hely is None or not str(hely).startswith(str(_HELYEK_GYOKER)):
+        return
+    shutil.rmtree(hely, ignore_errors=True)
+
+
+def _hely_gazdai() -> list[int]:
+    """A helyeket birtokló folyamatok PID-je — a várakozás ezt írja ki."""
+    gazdak: list[int] = []
+    try:
+        helyek = sorted(_HELYEK_GYOKER.glob("hely-*"))
+    except OSError:
+        return gazdak
+    for hely in helyek:
+        try:
+            gazdak.append(int((hely / _PID_FAJL).read_text(encoding="utf-8").strip()))
+        except (OSError, ValueError):
+            continue
+    return gazdak
 
 
 #: A csendes (párhuzamos) részfutások összegyűjtött kimenete; kulcs a pytest
@@ -671,13 +773,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
     # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.
-    if not _varj_szabad_helyre(
+    hely = _varj_szabad_helyre(
         korlat=_egyideju_korlat(), varakozas_s=_VARAKOZAS_S
-    ):
+    )
+    if hely is None:
         print(
             "\nNEM INDULOK EL: nem szabadult fel hely a türelmi idő alatt.\n"
             "⚠️ Ez NEM a tesztek bukása — nincs mit javítani rajtuk. Várd meg,\n"
-            "amíg a másik két futás befejeződik, és indítsd újra.",
+            "amíg a másik futás befejeződik, és indítsd újra.",
             flush=True,
         )
         return _NINCS_HELY_KOD
@@ -690,6 +793,7 @@ def main(argv: list[str] | None = None) -> int:
         # a takarítás nem függhet attól, zöld volt-e a futás, és attól sem,
         # hogy megszakították-e (#677)
         shutil.rmtree(basetemp, ignore_errors=True)
+        _engedd_el_a_helyet(hely)
 
 
 #: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
