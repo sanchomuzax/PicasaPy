@@ -132,13 +132,17 @@ def _masik_futas_pidjei() -> list[int]:
     return talalatok
 
 
-#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360). A
-#: tulajdonos szava: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat. Ezt
-#: mindig elfelejti a developer agent." A felismerés eddig is megvolt
-#: (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session indíthatott kört,
-#: mindegyik szabályosan sorosra váltott, és a négymagos gép mégis térdre
-#: ment. Egy szabály, amit be kell tartatni, nem szabály: kapu.
-_EGYIDEJU_ALAP = 2
+#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360, szigorítva
+#: #2532-ben). A tulajdonos szava 2026-09-06-án: „Tilos egynél több helyi CI
+#: tesztet futtatni az RPi-n." (Korábban kettő volt: „Lokális (RPi-n futó)
+#: teszt egyszerre max 2 futhat. Ezt mindig elfelejti a developer agent.")
+#:
+#: Miért EGY: a futtató maga is párhuzamosít (fájlonkénti részfutások), a gép
+#: pedig négymagos — két teljes kör már CPU-éhezést okoz, amitől a fájlonkénti
+#: időkorlátba VALÓDI HIBA NÉLKÜL is bele lehet futni (#914). A felismerés
+#: eddig is megvolt (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session
+#: indíthatott kört. Egy szabály, amit be kell tartatni, nem szabály: kapu.
+_EGYIDEJU_ALAP = 1
 
 #: Meddig várunk szabad helyre, mielőtt feladjuk.
 _VARAKOZAS_S = 45 * 60
@@ -677,7 +681,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "\nNEM INDULOK EL: nem szabadult fel hely a türelmi idő alatt.\n"
             "⚠️ Ez NEM a tesztek bukása — nincs mit javítani rajtuk. Várd meg,\n"
-            "amíg a másik két futás befejeződik, és indítsd újra.",
+            "amíg a másik futás befejeződik, és indítsd újra.",
             flush=True,
         )
         return _NINCS_HELY_KOD

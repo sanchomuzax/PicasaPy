@@ -1,9 +1,11 @@
-"""Helyben legfeljebb KÉT egyidejű tesztfutás (#1360).
+"""Helyben legfeljebb EGY egyidejű tesztfutás (#1360, szigorítva: #2532).
 
 ## A lelet — a tulajdonos jelentette
 
-    „Lokális (RPi-n futó) teszt egyszerre max 2 futhat.
-     Ezt mindig elfelejti a developer agent."
+    2026-09-06: „Tilos egynél több helyi CI tesztet futtatni az RPi-n."
+
+    (korábban, #1360: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat.
+     Ezt mindig elfelejti a developer agent.")
 
 A gép négymagos. Három-négy egyidejű teljes kör CPU-éhezést okoz, amitől a
 fájlonkénti időkorlátba **valódi hiba nélkül** is bele lehet futni — a bukás
@@ -29,17 +31,33 @@ import run_tests  # noqa: E402
 
 class TestSzabadHely:
     def test_korlat_alatt_azonnal_indul(self) -> None:
+        """Üres gépen (nincs másik futás) azonnal indul."""
         alvasok: list[float] = []
         assert run_tests._varj_szabad_helyre(
-            korlat=2,
+            korlat=1,
             varakozas_s=600,
-            pidek=lambda: [1234],
+            pidek=lambda: [],
             alvo=alvasok.append,
         )
         assert alvasok == [], "fölöslegesen várt"
 
+    def test_EGY_futas_mellett_a_masodik_MAR_var(self) -> None:
+        """#2532: egyetlen dolgozó futás mellett a második nem indulhat.
+
+        Ez az őr foga: a korábbi korlát (2) mellett ez a hívás AZONNAL
+        elindult volna — a szám csökkentése nélkül a teszt megbukik."""
+        alvasok: list[float] = []
+        allapotok = iter([[11], [11], []])
+        assert run_tests._varj_szabad_helyre(
+            korlat=run_tests._EGYIDEJU_ALAP,
+            varakozas_s=600,
+            pidek=lambda: next(allapotok),
+            alvo=alvasok.append,
+        )
+        assert len(alvasok) == 2, "nem várta ki a helyet a másik futás mellett"
+
     def test_korlaton_VAR_amig_fel_nem_szabadul(self) -> None:
-        """A harmadik futás nem indulhat el — de nem is bukhat el azonnal."""
+        """A korlát fölötti futás nem indulhat el — de nem is bukhat el azonnal."""
         allapotok = iter([[11, 22], [11, 22], [11]])
         alvasok: list[float] = []
         assert run_tests._varj_szabad_helyre(
@@ -85,10 +103,11 @@ class TestCIVedelem:
         monkeypatch.setenv("CI", "true")
         assert run_tests._egyideju_korlat() == 0
 
-    def test_helyben_ketto_az_alapertelmezes(self, monkeypatch) -> None:
+    def test_helyben_EGY_az_alapertelmezes(self, monkeypatch) -> None:
+        """#2532: a tulajdonos szabálya — egynél több helyi futás tilos."""
         monkeypatch.delenv("CI", raising=False)
         monkeypatch.delenv("PICASAPY_TESZT_EGYIDEJU", raising=False)
-        assert run_tests._egyideju_korlat() == 2
+        assert run_tests._egyideju_korlat() == 1
 
     def test_kornyezeti_valtozoval_felulirhato(self, monkeypatch) -> None:
         monkeypatch.delenv("CI", raising=False)
