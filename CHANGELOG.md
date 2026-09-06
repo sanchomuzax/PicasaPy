@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.318] – 2026-09-07
+
+### Javítva
+
+- **Egyetlen romlott dátumú kép nem viheti ki a rács rendezését** (#2496).
+  Ha az indexben egy kép fájlideje értelmezhetetlen, a dátum szerinti
+  rendezés eddig hibára futott, és vele a nézet felépítése is. Mostantól
+  az ilyen kép a lista végére kerül — **nem tűnik el**, csak nem tudjuk
+  hova sorolni. (A mappa fejléce ugyanezt a képet szándékosan kihagyja: ott
+  egy szélsőértéket keresünk, itt viszont minden képnek helyet kell kapnia.)
+
 ## [0.8.317] – 2026-09-06
 
 ### Javítva
