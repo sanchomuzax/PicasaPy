@@ -1,8 +1,16 @@
 # Az `imagedata` rekord — a Picasa belső kép-nyilvántartása
 
-A `0x004127c0` függvényből. ⛔ **HELYESBÍTVE (2026-09-06):** ez a lap
-eddig azt írta, hogy a `0x004127c0` a `facerect`/`facerectdata` **írója**, és
-hogy a rekord **38** mezőből áll. **Mindkettő téves.** A függvény a gyűjtemény
+A `0x004127c0` függvényből. ⛔ **KÉTSZER HELYESBÍTVE (2026-09-06):** a lap
+eredetileg azt írta, hogy a `0x004127c0` a `facerect`/`facerectdata` **írója**,
+és hogy a rekord **38** mezős; egy köztes változat **37**-et írt. **Mindhárom
+téves.** A helyes szám **44** — a 37-es mérés hét mezőt kihagyott, mert a
+kiolvasó minta csak a `lea eax` alakot ismerte, miközben hét regisztráló blokk
+`lea ecx`/`lea edx`/`lea edi`-t használ. A hét kimaradt mező: **`name`,
+`size`, `crop64`, `text`, `tags`, `lat`, `long`** — és ezek nevét a
+`string_xrefs` sem adta vissza, mert a sztringjük a `.rdata` másik szakaszán
+áll; **közvetlen `.rdata`-olvasással** kerültek elő (`0x00c7fa20`,
+`0x00c80a9c`, `0x00c80adc`, `0x00c80b0c`, `0x00c80b20`, `0x00c80b6c`,
+`0x00c80b70`). A függvény a gyűjtemény
 **konstruktora**: mezőnként egy `CColumn<…>` objektumot épít a névvel és a
 típussal, és a gyűjtemény-objektum rögzített eltolására teszi (a párja a
 **destruktor**, `0x00413020`, ami ugyanezeket az eltolásokat járja végig
@@ -23,7 +31,7 @@ personalbumrecs2 · personalbumrecvalues2 · peoplealbumchecksum
 tagdate · fdbhash · backuphash
 ```
 
-**37 mező.** Ebből a `.picasa.ini`-ből ismert: `rotate`, `caption`,
+**44 mező.** Ebből a `.picasa.ini`-ből ismert: `rotate`, `caption`,
 `filters`, `backuphash`, `facerect`, `facerectdata`. A többi a **belső
 adatbázisban** él.
 
@@ -51,38 +59,48 @@ megmagyarázza a felület viselkedését (#26): a program **elkülöníti** a
 megtalált, de még nem azonosított arcot, a javasolt nevet és a megerősített
 nevet.
 
-## Az eltolás-tábla — melyik mező hol ül a gyűjtemény-objektumban
+## Az eltolás-tábla — mind a 44 mező
 
 Minden sor egy regisztráló blokk a `0x004127c0`-ban: `push <névsztring>` →
-`lea eax, [esi + <eltolás>]` → a típusnak megfelelő `CColumn` konstruktor.
+`lea <reg>, [esi + <eltolás>]` → a típusnak megfelelő `CColumn` konstruktor.
+⚠️ A regiszter **nem** mindig `eax` — a hét kimaradt mező épp ezen bukott el.
 
 | eltolás | mező | | eltolás | mező |
 |---:|---|---|---:|---|
-| `0x016c` | `parent` | | `0xca0` | `personalbumid` |
-| `0x022c` | `filetype` | | `0xd00` | `suggestionpersonalbumid` |
-| `0x028c` | `fileflags` | | `0xd60` | `facequality` |
-| `0x0358` | `creation` | | **`0xdc0`** | **`facerect`** |
-| `0x03c0` | `modified` | | `0xe28` | `deferredface` |
-| `0x0428` | `updated` | | `0xe88` | `deferredregion` |
-| `0x0490` | `width` | | `0xee8` | `facerectdata` |
-| `0x04f0` | `height` | | `0xf48` | `personalbumrecs` |
-| `0x0550` | `rotate` | | `0xfa8` | `personalbumrecvalues` |
+| `0x016c` | `parent` | | `0x0b70` | **`lat`** |
+| `0x01cc` | **`name`** | | `0x0bd8` | **`long`** |
+| `0x022c` | `filetype` | | `0x0c40` | `colorspace` |
+| `0x028c` | `fileflags` | | `0x0ca0` | `personalbumid` |
+| `0x02f0` | **`size`** | | `0x0d00` | `suggestionpersonalbumid` |
+| `0x0358` | `creation` | | `0x0d60` | `facequality` |
+| `0x03c0` | `modified` | | **`0x0dc0`** | **`facerect`** |
+| `0x0428` | `updated` | | `0x0e28` | `deferredface` |
+| `0x0490` | `width` | | `0x0e88` | `deferredregion` |
+| `0x04f0` | `height` | | `0x0ee8` | `facerectdata` |
+| `0x0550` | `rotate` | | `0x0f48` | `personalbumrecs` |
+| `0x05b0` | **`crop64`** | | `0x0fa8` | `personalbumrecvalues` |
 | `0x0618` | `flipped` | | `0x1008` | `personalbumrecs2` |
 | `0x0678` | `edit_width` | | `0x1068` | `personalbumrecvalues2` |
 | `0x06d8` | `edit_height` | | `0x10c8` | `peoplealbumchecksum` |
 | `0x0738` | `caption` | | `0x1128` | `tagdate` |
 | `0x0798` | `filters` | | `0x1190` | `fdbhash` |
-| `0x0858` | `textactive` | | `0x11f0` | `backuphash` |
+| `0x07f8` | **`text`** | | `0x11f0` | `backuphash` |
+| `0x0858` | `textactive` | | | |
+| `0x08b8` | **`tags`** | | | |
 | `0x0918` | `edited` | | | |
 | `0x0978` | `revertable` | | | |
 | `0x09d8` | `originslow` | | | |
 | `0x0a40` | `originfast` | | | |
 | `0x0aa8` | `uid64` | | | |
 | `0x0b10` | `aliasparents` | | | |
-| `0x0c40` | `colorspace` | | | |
 
 ⛳ **Egybevág a `pmp-database.md`-vel:** ott a `width` `+0x490`, a `facerect`
 `+0xdc0`, a `facerectdata` `+0xee8` — mindhárom **betű szerint** egyezik.
+
+⭐ **A hét újonnan előkerült mező nem mellékes:** a `crop64`, a `text`, a
+`tags`, a `lat` és a `long` mind **`.picasa.ini`-kulcs is** — vagyis az
+`imagedata` rekord a szerkesztési és a címke-adatot is tartja, nem csak az
+arc- és fájl-metaadatot.
 
 ## A mező TÍPUSÁT az RTTI mondja meg — és igazolja a PMP-típuskódokat
 
@@ -266,15 +284,67 @@ Ez magyarázza a mért megoszlást (`picasa-arcfelismeres.md` 3.3): a `0` a
 „még nem dolgoztuk fel", az `1` a „feldolgoztuk, nincs használható
 téglalap" — és egyik sem íródik újra.
 
-### Ami NYITVA marad ebből (#2515)
+### ✅ AZ `1` ÍRÓJA IS MEGVAN — és a felhasználói kiváltó okkal együtt (2026-09-06)
 
-**Hol íródik konkrétan az `1`?** A csomagoló (`FUN_009b9150`) nulla
-téglalapból **nullát** ad, nem egyet, és bájtmintás keresés a
-`mov dword ptr [reg],1` + `mov dword ptr [reg+4],0` párra a `.text`-ben
-**nulla** találatot adott ⇒ az `1` regiszterből érkezik, egy másik íróból.
-A tizenhét `+0x1ce0` hely közül még hét nincs végigolvasva
-(`0x0046bda5`, `0x0047077a`, `0x0047b59a`, `0x0047d8be`, `0x0047f6b3`,
-`0x00482a1e`, `0x0074866b`).
+Az `1` **nem** a téglalap-csomagolóból jön (az nulla téglalapból nullát ad),
+hanem egy külön **tömeges beállítóból**:
+
+```
+FUN_00446960(gazda, sorlista, BÁJT érték, jelző)
+0x0044696b  lea ebx, [edi + 0xf20]        ; a gyűjtemény
+0x004469b3  lea esi, [ebx + 0xdc0]        ; ⇒ a facerect oszlop
+0x00447387  call 0x97c810                 ; a tömb újrafoglalása (realloc)
+0x004473f1  movsx eax, byte ptr [esp+0x48]; a BÁJT argumentum, előjelesen
+0x004473fc  mov ecx, [edi + 0x48]         ; az oszlop elemtömbje
+0x004473ff  mov esi, [esi + ebp*4]        ; a sorindex a listából
+0x00447402  cdq                           ; előjel-kiterjesztés → felső 32 bit
+0x00447403  mov dword ptr [ecx + esi*8], eax        ; ⇐ ALSÓ 32 bit
+0x0044740a  mov dword ptr [ecx + esi*8 + 4], edx    ; ⇐ FELSŐ 32 bit
+```
+
+⇒ **`érték = 1` esetén a tárolt u64 pontosan `1` lesz** — ez a hiányzó
+láncszem.
+
+**A hívó kimondja mindkét értéket, egymás után:**
+
+```
+0x0049161d  push 1
+0x0049161f  push 1          ; ⇐ az ÉRTÉK: 1
+0x00491621  lea ecx, [esp + 0x24]
+0x00491625  push ecx        ; sorlista „A"
+0x00491626  push esi        ; a gazdaobjektum
+0x00491627  call 0x446960   ; ⇒ facerect := 1
+0x0049162c  push 0
+0x0049162e  push 0          ; ⇐ az ÉRTÉK: 0
+0x00491630  lea edx, [esp + 0x1c]
+0x00491634  push edx        ; sorlista „B"
+0x00491635  push esi
+0x00491636  call 0x446960   ; ⇒ facerect := 0
+```
+
+### ⭐ Mi váltja ki — a hívási lánc a FELHASZNÁLÓIG
+
+| szint | cím | mi ez |
+|---|---|---|
+| 4 | `FUN_00446960` | a tömeges beállító (fent) |
+| 3 | `FUN_00491210` | `0x00491627`-nél `1`-gyel, `0x00491636`-nál `0`-val hívja |
+| 2 | `FUN_005cef20` | egyetlen hívó |
+| 1 | `FUN_007c4df0` | **`CFolderMgrDialog`** — a függvény sztringjei: `"Are you sure you want to remove all faces and name tags from excluded folders?"` és `CFolderMgrDialog::confirmfrexclude` |
+
+⇒ **Az `1`-es jelző a Mappakezelőből származik:** amikor a felhasználó egy
+mappát kizár az arcfelismerésből, és a program megkérdezi, hogy
+*„Biztosan eltávolítja az összes arcot és névcímkét a kizárt mappákból?"*,
+az igenre az érintett sorok `facerect` mezője **`1`** lesz — a
+„feldolgozva, szándékosan nincs téglalap" jelző —, egy másik sorlistáé pedig
+**`0`**.
+
+⛳ **Ez összeáll a `FUN_00480040` viselkedésével:** az író **csak nulla
+értékre** ír, tehát az `1` **megvédi a képet az újra-detektálástól**. Pontosan
+ezért kell külön jelző a `0` mellé.
+
+**Bizalmi fok: megerősített** — minden lépés utasításonként olvasva. Amit
+**NEM** mértem: hogy a `FUN_00491210` melyik sorlistát tölti fel melyik
+szabály szerint (melyik kép kerül az „A", melyik a „B" listába).
 
 ## A `filters=` lánc sorosítója — `0x00463fd0`
 
