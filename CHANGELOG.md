@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.308] – 2026-09-06
+
+### Javítva
+
+- **Az „1:1" a kép valódi méretét mutatja** (#2492). Eddig többszörösen
+  nagyított: a nagyítás arányát egy beégetett 2560-as felső korlátból
+  számolta, nem a kép tényleges képpontszámából — így egy 896 képpont
+  széles képnél háromszoros nagyítást adott. A forgatott képeket sem
+  vette figyelembe. A csúszka leképezése a v0.8.305 óta helyes volt, ez a
+  hiányzó másik fele.
+
 ## [0.8.307] – 2026-09-06
 
 ### Javítva

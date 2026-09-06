@@ -675,6 +675,34 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
 
+    @Slot(int, result=int)
+    def pixelWidthAt(self, row: int) -> int:
+        """A kép VALÓDI képpont-szélessége (0, ha ismeretlen) — #2492.
+
+        ⚠️ A néző eddig a `Image.sourceSize.width`-ből számolta az „1:1"
+        arányát, csakhogy a Qt olvasáskor a BEÁLLÍTOTT `sourceSize`-t adja
+        vissza (a `PhotoViewer.qml` 2560-as plafonját), nem a betöltött
+        kép méretét — így a valódi mérettől függetlenül mindig 2560-cal
+        számolt, és többszörösen nagyított.
+
+        Az adat az indexben már megvan; a `resolution` szerep csak
+        FORMÁZOTT sztringként adta ki (`"896x1344"`), amit QML-ben
+        szétszedni törékeny lenne."""
+        if not 0 <= row < len(self._photos):
+            return 0
+        return int(self._photos[row].width or 0)
+
+    @Slot(int, result=int)
+    def pixelHeightAt(self, row: int) -> int:
+        """A kép VALÓDI képpont-magassága (0, ha ismeretlen) — #2492.
+
+        A szélesség párja: forgatott képnél (`rotate_steps` páratlan) a
+        rajzolt szélesség a fájl MAGASSÁGÁNAK felel meg, tehát az arány
+        csak a kettővel együtt számolható."""
+        if not 0 <= row < len(self._photos):
+            return 0
+        return int(self._photos[row].height or 0)
+
     @Slot(int, result=str)
     def idAt(self, row: int) -> str:
         """A sor fotó-azonosítója — az EditController/editpreview kulcsa."""
