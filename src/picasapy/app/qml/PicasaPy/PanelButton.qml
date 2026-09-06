@@ -73,9 +73,19 @@ Rectangle {
     //: erre nem jó: Qt-verziófüggő, hogy a sor magasságát a preferált
     //: érték vagy a másik elem szabja-e meg — a CI-n (Qt 6.8) a gomb 28
     //: maradt, miközben helyben (6.11) megnőtt.
+    //: #2494 (VISSZAESÉS-javítás): a bélyegkép NÉLKÜLI ág kitöltése 10-ről
+    //: 2-re. A 10 abból a korból való, amikor a sorköz a betűtípus saját
+    //: 13,64 képpontos sormagassága volt: a kétsoros felirat 28 képpontot
+    //: kért, a gomb 38-ra nőtt — a tulajdonos ezt jelentette. Most a
+    //: `paintedHeight` maga hordozza a sor körüli üres sávot (két sorra 24,
+    //: amiből a TINTA 18), tehát a mért 26 képpontos gombban pontosan a
+    //: felvételen látható 4-4 képpontos rés marad fölötte-alatta.
+    //:
+    //: Az EGYSOROS eset alsó korlátja (24) SZÁNDÉKOSAN változatlan: azon a
+    //: vágás- és paraméterpanel gombjai állnak, azokat ez a jegy nem méri.
     readonly property real kertMagassag: pbtn.thumbSource !== ""
         ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
-        : Math.max(24, pbtnLabel.implicitHeight + 10)
+        : Math.max(24, pbtnLabel.implicitHeight + 2)
     Layout.preferredHeight: pbtn.kertMagassag
     radius: 3
     border.width: 1
@@ -105,7 +115,12 @@ Rectangle {
         id: pbtnThumbBox
         visible: pbtn.thumbSource !== ""
         anchors.top: parent.top
-        anchors.topMargin: 5
+        //: #2494: bélyegkép nélkül a doboz 0 magas ÉS 0 margós — így a
+        //: felirat középre igazítása (lent) nem kényszerül arra, hogy ezt
+        //: az 5-öt kivonja magából. Korábban kivonta, és a kivonás
+        //: `Math.max(0, …)`-nál elakadt egy szűk (26 px-es) gombon: a
+        //: felirat 5 képponttal lejjebb került, és alul kilógott.
+        anchors.topMargin: pbtn.thumbSource !== "" ? 5 : 0
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - 10
         // #704: az eredetin MÉRT bélyegkép 78 × 48 px egy 86 × 69 px-es
@@ -220,14 +235,15 @@ Rectangle {
         //
         // ⚠️ NEM feltételes anchor `undefined`-ra (azt a #305/#338 tiltja):
         // a margó SZÁMÍTOTT, és mindig érvényes értéket ad.
-        // ⚠️ A `pbtnThumbBox` maga is 5 képponttal a gomb teteje alatt
-        // kezdődik (`anchors.topMargin: 5`), és bélyegkép nélkül 0 magas —
-        // ezt a 5-öt LE KELL VONNI, különben a „középre" 5-tel lejjebb
-        // sikerül. (Az első változatom pont ezt hibázta el: a felirat
-        // fölött 12, alatta 2 képpont maradt — az őr fogta meg.)
+        //
+        // #2494 (VISSZAESÉS-javítás): itt korábban `… / 2 - 5` állt, mert a
+        // `pbtnThumbBox` bélyegkép nélkül is 5 képponttal a gomb teteje
+        // alatt kezdődött. A kivonás egy szűk gombon a `Math.max(0, …)`
+        // padlójába ütközött, és a felirat 5 képponttal lejjebb csúszott.
+        // A doboz margója most bélyegkép nélkül 0, tehát a képlet tiszta.
         anchors.topMargin: pbtn.thumbSource !== ""
             ? 4
-            : Math.max(0, (pbtn.height - pbtnLabel.paintedHeight) / 2 - 5)
+            : Math.max(0, (pbtn.height - pbtnLabel.paintedHeight) / 2)
         anchors.horizontalCenter: parent.horizontalCenter
         text: pbtn.label
         // #422 (felhasználói visszajelzés): az effekt-csempék felirata
@@ -244,6 +260,24 @@ Rectangle {
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
         // határon tör, hosszú, tördelhetetlen szónál karakterhatáron.
         wrapMode: Text.WordWrap
+        //: #2494: a sorköz. A `Text` alapértelmezése a betűtípus SAJÁT
+        //: sormagassága (Nunito Sans 10 px-en 13,64) — a kétsoros
+        //: „Visszavonás: <effektnév>" ettől 14 képpontos sorközzel rajzolódott
+        //: a mért 10 helyett, és a gombot kellett megnövelni, hogy elférjen.
+        //:
+        //: ⚠️ HELYESBÍTÉS. A #2494 első köre azzal hagyta békén a sorközt,
+        //: hogy „a #422-ben a Windows CI ugyanazt a szöveget HÁROM sorra
+        //: törte, mert a sormagasság platformonként más". Ez TÉVES
+        //: hivatkozás volt: a #422 a gombmagasság `fontSize * 1.35`-ös
+        //: BECSLÉSÉRŐL szólt, a sorra törést pedig a betűk SZÉLESSÉGE dönti
+        //: el, amire a sorköznek semmi hatása. A sorköz szorítása nem
+        //: hozhat vissza egy harmadik sort.
+        //:
+        //: Az érték az EREDETI erőforrásból való (`m_buttonfontC`:
+        //: `fontsize 12`, `textwrap 1`, `fontleading 10`), és a tulajdonos
+        //: felvételén (`141421.jpg`) mérve is 10 képpont. Ld. `Theme.lineLeading`.
+        lineHeightMode: Text.FixedHeight
+        lineHeight: Theme.lineLeading
         width: parent.width - 8
         horizontalAlignment: Text.AlignHCenter
         // #422: a bélyegképes csempénél a felirat LEGFELJEBB két sor lehet
@@ -252,6 +286,9 @@ Rectangle {
         // ugyanaz a szöveg HÁROM sorra tört) kilógna a gombból. A sima
         // (bélyegkép nélküli) gombokon nincs korlát: ott a #318 elve marad,
         // a felirat sosem vágódik.
+        //
+        // ⚠️ Ez a SZÉLESSÉG-eset (hány szó fér egy sorba), nem a sorközé:
+        // a #2494 sorköz-javítása ezen semmit nem változtat.
         maximumLineCount: pbtn.thumbSource !== "" ? 2 : 2147483647
         elide: pbtn.thumbSource !== "" ? Text.ElideRight : Text.ElideNone
     }

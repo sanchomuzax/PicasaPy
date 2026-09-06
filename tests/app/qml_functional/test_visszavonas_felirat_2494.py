@@ -5,32 +5,61 @@
 > „A »Visszavonás: Jó napom van« felirat betűmérete túl nagy, emiatt
 > lelóg a gombról."
 
-## MÉRVE a képernyőmentésen (`235707.jpg`, 1920 × 1200)
+## MÉRVE a képernyőmentéseken
 
-| | eredeti (Picasa 3) | nálunk |
+Az első kör a `235707.jpg`-t (v0.8.293) mérte; az alábbi számok a
+tulajdonos ÚJABB, 1:1-es felvételéről valók (`141421.jpg`, 1920 × 1200,
+bal fél Picasa 3, jobb fél PicasaPy v0.8.302):
+
+| | eredeti (Picasa 3) | nálunk (v0.8.302) |
 |---|---|---|
-| a gomb kerete (y) | 380 … 405 → **26 px** | 403 … 430 → **28 px** |
-| 1. szövegsor | 384 … 393 | 414 … 424 |
-| 2. szövegsor | 396 … 405 | **430 … 435** ⚠️ |
-| sorköz | **12 px** | **16 px** |
-| a szöveg kezdete a keret tetejétől | **4 px** | **11 px** |
-| „Visszavonás: Jó napom" szélessége | 103 px | 106 px |
+| a gomb rajzolt kerete (y) | 380 … 405 → **26 px** | 403 … 440 → **38 px** |
+| alapvonal-távolság (sorköz) | **10 px** | **14 px** |
+| „Visszavonás: Jó napom" szélessége | 103 px | 109 px |
 
-⇒ **NEM a betűméret a hibás**: ugyanaz a szöveg 106 kontra 103 képpont
-széles, azaz a betűk gyakorlatilag azonos méretűek. A kilógást két másik
-eltérés okozza: a felirat FELÜLRE volt igazítva (11 px veszteség a
-tetején), és a gomb magassága rögzített 28 volt, ami két sornak kevés.
+⇒ **NEM a betűméret a hibás**: ugyanaz a szöveg 109 kontra 103 képpont
+széles, azaz a betűk gyakorlatilag azonos méretűek.
 
-## A javítás hatóköre — és amit SZÁNDÉKOSAN nem tettünk
+## ⚠️ HELYESBÍTÉS — az első kör indoklása TÉVES volt
 
-A gomb mostantól **megnő**, ha a felirat két sorra tör (a 28 alsó korlát
-lett, nem felső), és a felirat középen ül.
+Az első kör a **gombot növelte meg** (26 → 38), és a sorközt szándékosan
+békén hagyta, ezzel az indokkal: „a #422-ben a Windows CI ugyanazt a
+szöveget HÁROM sorra törte, mert a sormagasság platformonként más".
 
-A **sorközt** nem szorítottuk 12 képpontra. Rögzített képpontos
-sormagasság már megharapott minket: a #422-ben a Windows CI ugyanazt a
-szöveget HÁROM sorra törte, mert a sormagasság platformonként más. A
-gomb növekedése platformfüggetlenül old, a 4 képpontos sorköz-eltérés
-pedig nem látszik. Ez tudatos eltérés a mért 26 képponttól, nem tévedés.
+**Ez téves hivatkozás volt.** A #422 a gombmagasság `fontSize * 1.35`-ös
+BECSLÉSÉRŐL szólt; azt pedig, hogy egy szöveg hány sorra törik, a betűk
+SZÉLESSÉGE dönti el, amire a sorköznek semmi hatása nincs. A sorköz
+szorítása nem hozhat vissza egy harmadik sort.
+
+A tulajdonos ezt visszaesésként jelentette: a gomb 38 képpont magas lett a
+mért 26 helyett. A valódi ok a **hiányzó sorköz-beállítás** volt — a
+`PanelButton` felirat-`Text`-je a betűtípus saját, 13,64 képpontos
+sormagasságával rajzolt, miközben az eredeti erőforrás (`m_buttonfontC`:
+`fontsize 12`, `textwrap 1`, **`fontleading 10`**) 10-et ír elő. A javítás
+azóta `Theme.lineLeading` (fix 10 képpont), és a gomb visszatért 26-ra.
+
+## 26 vagy 28? — a #741 spec és a felvétel ELLENTMONDÁSA feloldva
+
+A #741 a respack `filter_undo` téglalapjából **132 × 28**-at mond, a
+felvételen viszont **26** mérhető. Mindkettő igaz, mert nem ugyanazt
+mérik:
+
+* a **132 × 28** a HELY, amit a gomb az elrendezésben elfoglal — ezt a
+  felvétel megerősíti: a két gomb bal keretének osztásköze **137** =
+  132 + 5 hézag, pontosan a respack értéke;
+* a **130 × 26** a KIRAJZOLT gombkeret: a gombkép minden oldalon 1
+  képponttal beljebb kezdődik a helyénél (a szélességen ugyanez a −2
+  látszik: 130 a 132-ből).
+
+Nálunk a `PanelButton` `Rectangle`-je MAGA a rajzolt keret — nincs külön
+hely és külön kép —, tehát a látható 26-ot kell felvennie.
+
+## Ez a fájl SZÁMÍTOTT geometriát mér
+
+A képpontos párja a `test_sorkoz_renderelt_2494_2567.py`: az rajzoltatja
+ki a panelt, és a FELVÉTELEN méri a sorközt és a keretet. A visszaesést
+azért nem fogta meg semmi, mert csak ez a számított oldal létezett — a
+kettő együtt az őr.
 """
 
 from __future__ import annotations
@@ -47,10 +76,11 @@ LEGHOSSZABB_FELIRAT = "Visszavonás: Automatikus kontraszt"
 JELENTETT_FELIRAT = "Visszavonás: Jó napom van"
 
 
-#: A tulajdonos képernyőmentésén MÉRT gombszélesség. A spec 132-t mond
-#: (#741), a felvételen viszont 109 — ezen a szélességen tör két sorra a
-#: jelentett felirat. A próba a MÉRT állapotot idézi elő, nem a spec
-#: szerintit: a hiba ott jelentkezett.
+#: Szűk gomb: ezen a szélességen a jelentett felirat BIZTOSAN két sorra
+#: tör, bármelyik platform betűtípusával. (A tulajdonos gépén a 132 széles
+#: gombon is tört — az ottani betűkép ~5%-kal szélesebb a tesztkörnyezet
+#: Nunito Sansánál —, a tördelés tehát nem hordozható próba. Ez a szám NEM
+#: a gomb mért szélessége: a felvételen a KIRAJZOLT keret 130, a helye 132.)
 MERT_GOMBSZELESSEG = 109
 
 
@@ -153,18 +183,18 @@ def test_a_felirat_FUGGOLEGESEN_KOZEPEN_ul(qt_app, felirat):
     )
 
 
-def test_egysoros_feliratnal_marad_a_MERT_28(qt_app):
-    """⚠️ A 28 a #741 MÉRT gombmagasága (`filter_undo` 132 × 28) — a
-    javítás csak akkor engedheti nagyobbra, ha a felirat tényleg nem fér
-    el. Az alapeset geometriája nem változhat."""
+def test_egysoros_feliratnal_marad_a_MERT_26(qt_app):
+    """⚠️ A 26 a felvételen MÉRT, KIRAJZOLT gombkeret (a respack 132 × 28-as
+    téglalapja a HELY — ld. a modul fejét). A javítás csak akkor engedheti
+    nagyobbra, ha a felirat tényleg nem fér el."""
     panel = _panel(qt_app)
     panel.setProperty("undoLabel", "Visszavonás")
     _leul(qt_app)
 
     gomb, _cimke = _gomb_es_felirat(panel)
-    assert abs(gomb.property("height") - 28) <= 1, (
-        f"az egysoros gomb {gomb.property('height'):.0f} px magas a mért 28 "
-        "helyett (#741 spec 1.)"
+    assert abs(gomb.property("height") - 26) <= 1, (
+        f"az egysoros gomb {gomb.property('height'):.0f} px magas a mért 26 "
+        "helyett (#741/#2494)"
     )
 
 

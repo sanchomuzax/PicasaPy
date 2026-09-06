@@ -315,7 +315,7 @@ nem a forrásból olvasottak.
 | 7 | csempe-oszlopköz | **81** | 88 | **81** (cella 80 + 1 térköz) | `EditorTabCommonFixes.qml` |
 | 8 | Derítőfény kis képe | **44 × 30**, x 37 | 54 × 36, a rácstól elcsúszva | **44 × 30**, a rács 1. oszlopával egy vonalban | `EditorTabCommonFixes.qml` |
 | 9 | Derítőfény-csúszka | **127 × 27** | 200 × 14 | **127 × 27** | `EditorTabCommonFixes.qml` |
-| 10 | Visszavonás / Újra | **132 × 28**, 5 px hézag | 127 × 24, 6 px | **132 × 28**, 5 px | `EditorPanel.qml` |
+| 10 | Visszavonás / Újra | **132 × 28** HELY, 5 px hézag; a rajzolt keret **130 × 26** | 127 × 24, 6 px | szélesség kitöltő, magasság **26** (a rajzolt keret) | `EditorPanel.qml` |
 | 11 | Finomhangolás csúszkái | **191 × 27**, ~53 osztásköz | 230–260 × 14, 42 | **191 × 27**, ~55 | `EditorFinetunePanel.qml` |
 | 12 | párban álló gombok | **98 × 28** | 127–151 × 24 | **98 × 28** | crop · redeye · szöveg panel |
 | 13 | retusálás gombjai | **118 × 28** | 82–127 × 24 | **118 × 28** | `EditorRetouchPanel.qml` |
@@ -335,6 +335,59 @@ képpontos osztásközzel** álljon.
 > ⚠️ **A 15. sor NYITVA marad.** A felső sáv elrejtése a `Main.qml`-t
 > érinti, ami a #741 munkájából ki volt zárva — külön körben kell
 > elvégezni.
+
+#### A gomb HELYE és a gomb RAJZA nem ugyanaz — 132 × 28 kontra 130 × 26
+
+*(#2494, 2026-09-06 — a tulajdonos `141421.jpg` felvételén mérve, 1920 × 1200,
+1:1; bal fél Picasa 3.)*
+
+A respack `filter_undo` / `filter_redo` téglalapja **132 × 28**. A felvételen
+a gomb **rajzolt kerete** ennél kisebb: **130 × 26**. A kettő nem mond ellent
+egymásnak, mert nem ugyanazt írja le:
+
+* a **respack-téglalap a HELY**, amit a gomb az elrendezésben elfoglal. A
+  felvétel ezt betűre megerősíti: a két gomb bal keretének **osztásköze
+  137** = 132 + 5 hézag — pontosan a respack két értéke;
+* a **rajzolt keret** ennél minden oldalon 1 képponttal beljebb kezdődik
+  (`130 × 26`); a gombkép tehát a helyén belül ül.
+
+Ellenőrző mérés ugyanazon a felvételen: az `editpanel/albumview` („Vissza a
+könyvtárhoz") rajzolt kerete **122 × 22**, azaz PONTOSAN a respack-téglalapja
+— a behúzás nem általános szabály, hanem az adott gombkép sajátja. Ez
+egyben azt is igazolja, hogy a felvétel 1:1 méretarányú.
+
+**Nálunk** a `PanelButton` `Rectangle`-je MAGA a rajzolt keret (nincs külön
+hely és külön kilencrészes gombkép), ezért a látható **26** az irányadó
+magasság (`EditorPanel.qml`, `globalUndoRow.gombMagassag`). A vízszintes
+irányban a kérdés nem merül fel: a két gomb a panel szélességét tölti ki.
+
+#### A többsoros felirat sorköze: `fontleading 10` — MEGERŐSÍTVE
+
+*(#2494 és #2567.)*
+
+Az erőforrás mindkét ide tartozó betűmakrója **10 képpontos sorközt** ír elő:
+
+* `m_buttonfontC` (Visszavonás/Újra és minden sima gombfelirat):
+  `fontsize 12`, `textwrap 1`, **`fontleading 10`**;
+* `m_fxlabel` (csempefelirat): `fontsize 11`, `fontweight 700`,
+  **`fontleading 10`**.
+
+A `141421.jpg`-n mért alapvonal-távolság mindkét helyen szintén **10**
+képpont — két független módszer, azonos érték.
+
+> ⚠️ **HELYESBÍTÉS.** A #2494 első köre ezt a sorközt NEM vette át, ezzel az
+> indokkal: „a #422-ben a Windows CI ugyanazt a szöveget HÁROM sorra törte,
+> mert a sormagasság platformonként más". **Ez téves hivatkozás.** A #422 a
+> gombmagasság `fontSize * 1.35`-ös BECSLÉSÉRŐL szólt; azt pedig, hogy egy
+> szöveg hány sorra törik, a betűk SZÉLESSÉGE dönti el, amire a sorköznek
+> semmi hatása nincs. A sorköz szorítása nem hozhat vissza egy harmadik sort.
+>
+> A hiányzó sorköz miatt a kétsoros „Visszavonás: <effektnév>" 14 képpontos
+> sorközzel rajzolódott, és a gombot kellett 26-ról 38-ra növelni, hogy
+> elférjen — a tulajdonos ezt visszaesésként jelentette. A 10 most
+> `Theme.lineLeading` néven, **fix képpontban** (`Text.FixedHeight`) él:
+> arányos sorköz a PLATFORM betűtípusának sormagasságát szorozná, tehát
+> gépenként más képpontszámot adna, és épp az átvett értéket veszítenénk el.
 
 #### A Visszavonás/Újra sor függőleges helye — TUDATOS eltérés
 
@@ -1466,6 +1519,7 @@ félkövér, középre zárt szöveg**, oldalanként 4 px behúzással.
 | sorok száma | **1** (nincs `textwrap`) | **2** (`wrapMode: WordWrap`, `maximumLineCount: 2`) |
 | betűméret | **11** | `Theme.fontSize − 2` |
 | vastagság | **700** (félkövér) | `font.bold` |
+| sorköz | **`fontleading 10`** | **10** (`Theme.lineLeading`, `Text.FixedHeight`) — #2494 óta átvéve |
 | betűköz | **−1** | nincs beállítva |
 | oldalbehúzás | **4 px** | nincs beállítva |
 | egér-alatti szövegszín | **fehér** (a hármas modell szerint) | nincs állapotváltás |

@@ -98,7 +98,15 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         maximumLineCount: 2
-        lineHeight: 0.9
+        //: #2567: a KÉTSOROS csempefelirat („Automatikus szín",
+        //: „Automatikus kontraszt") sorköze. A korábbi `lineHeight: 0.9`
+        //: ARÁNY volt: a Qt betűtípus-metrikájának 13,64 képpontos
+        //: sormagasságát szorozta, tehát 12–13 képpontot adott — a
+        //: tulajdonos képernyőmentésén MÉRVE 13, az eredetiben 10.
+        //: A 10 nem becslés: a `m_fxlabel` erőforrás-makró
+        //: `fontleading 10`-et ír elő (`ui-audit-editor.md` 3.3).
+        lineHeightMode: Text.FixedHeight
+        lineHeight: Theme.lineLeading
         text: tile.label
         font.pixelSize: Theme.fontSize - 2
         color: Theme.textDark

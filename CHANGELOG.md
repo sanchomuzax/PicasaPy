@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.307] – 2026-09-06
+
+### Javítva
+
+- **A szerkesztő kétsoros feliratai nem lógnak szét** (#2494, #2567). A
+  sorköz az eredeti Picasáéra állt vissza (10 képpont) — eddig 13-14 volt,
+  és emiatt a „Visszavonás: Jó napom van" gomb 38 képpontosra nőtt, hogy a
+  ritka sorok elférjenek. A gomb visszakapta a mért 26 képpontos
+  magasságát, az eszközcsempék felirata („Automatikus kontraszt") pedig
+  ismét elfér a helyén.
+
 ## [0.8.306] – 2026-09-06
 
 ### Javítva
