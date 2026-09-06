@@ -70,14 +70,22 @@ rightdrawerpanel/base_decrect            276 széles
 A `size_toggle` létezése azt is elárulja, hogy a fióknak **két szélessége**
 van (kicsi/nagy) — ez nálunk nincs meg.
 
-> ⭐ **2026-09-06 (#2529): a kezelője megvan, a két szélesség NEM.** A
-> `size_toggle` és a `close` **ugyanabban a kezelőben** ül
-> (`0x00632060`, 377 b; a nevekre **puszta** alakban hasonlít, ezért a
-> minősített névre keresés nem találja meg). ⛔ **NINCS MÉRVE**, hogy a
-> váltás melyik két képpont-szélesség közt vált — a megszerzés útja: a
-> `0x00632060` `size_toggle`-ágából induló hívás, és a fiók szélességét
-> tartó tagváltozó írói. A fiók 280 képpontos nyitott szélessége a lap
-> végén (`thumbui.tre:696`) már megvan; ez a MÁSIK, kisebb méret hiányzik.
+> ⭐ **2026-09-06 (#2529): a KÉT SZÉLESSÉG KIMÉRVE.** A `size_toggle` és a
+> `close` ugyanabban a kezelőben ül (`0x00632060`, 377 b; a nevekre
+> **puszta** alakban hasonlít, ezért a minősített névre keresés nem találja
+> meg). A `size_toggle`-ág a gomb lenyomott állapotát (`[elem+0x359]`,
+> `0x006321ad`) adja át a **`0x005d95d0`** szélesség-váltónak
+> (`thumbui/toggle_right_drawer`):
+>
+> | állapot | a fiók szélessége | bizonyíték |
+> |---|---|---|
+> | **kikapcsolva (alap)** | **280 px** | `0x005d9635` `fld dword ptr [0xcf4e3c]` = **−280,0** (előjel: eltolás balra) |
+> | **bekapcsolva (nagy)** | **min(az ablak szélességének 30 %-a, 392 px)** | `0x005d9604` `fmul qword ptr [0xcf3ae0]` = **0,3**; `0x005d960a` `fld qword ptr [0xcf4e40]` = **392,0**; a `fcom` + `jp` páros a **kisebbiket** választja (`0x005d9610`–`0x005d9633`) |
+>
+> ⇒ a „nagy" fiók **nem fix méret**: az ablak 30 %-a, de **legfeljebb
+> 392 px**. Keskeny ablakon tehát a két állapot egybeeshet (280 px alatt a
+> 30 % kisebb is lehet a 280-nál). Bizalmi fok: **megerősített** — mindkét
+> konstans a binárisból olvasva.
 
 ---
 
