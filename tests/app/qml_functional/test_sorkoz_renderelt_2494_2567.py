@@ -205,7 +205,31 @@ def _tinta_savok(
             aktualis = None
     if aktualis is not None:
         savok.append((y0 + aktualis[0], y0 + aktualis[1]))
-    return savok
+    return _osszevont(savok)
+
+
+#: Ekkora (vagy kisebb) résen át még UGYANAZ a szövegsor.
+#:
+#: ⚠️ MÉRT eset (CI, ubuntu 3/4): a „Visszavonás: Jó napom van" KÉT sora
+#: NÉGY tinta-sávnak látszott — a betűkép ott másképp raszterizálódik, és
+#: egy soron belül (x-magasság ↔ leszálló szárak) megszakad a tinta. A
+#: nyers sávszám tehát NEM sorszám. A valódi sorköz 10, a soron belüli rés
+#: ennél nagyságrenddel kisebb.
+SAV_EGYESITES = 3
+
+
+def _osszevont(savok: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """A közeli tinta-sávok egyesítése — egy szövegsor egy sáv legyen."""
+    if not savok:
+        return savok
+    eredmeny = [savok[0]]
+    for eleje, vege in savok[1:]:
+        elozo_eleje, elozo_vege = eredmeny[-1]
+        if eleje - elozo_vege <= SAV_EGYESITES:
+            eredmeny[-1] = (elozo_eleje, vege)
+        else:
+            eredmeny.append((eleje, vege))
+    return eredmeny
 
 
 def _alapvonal_tavolsag(savok: list[tuple[int, int]]) -> int:
@@ -299,11 +323,18 @@ def test_a_gomb_kerete_a_MERT_KEPLETET_koveti(_panel_nezet, felirat):
 
     A foga megmarad: 14-es sorköznél vagy a régi, bőkezű kitöltésnél a
     képlet MÁS számot ad, mint a kirajzolt gomb."""
-    _gomb, doboz, savok = _undo_savok(_panel_nezet, felirat)
-    varhato = max(MERT_GOMBKERET, len(savok) * MERT_SORKOZ + GOMB_KITOLTES)
+    _gomb, doboz, _savok = _undo_savok(_panel_nezet, felirat)
+    # ⚠️ A sorszám a Text SAJÁT `lineCount`-jából jön, NEM a tinta-sávokból:
+    # a CI-n mérve egyetlen szövegsor NÉGY sávnak látszott (a betűkép ott
+    # másképp raszterizálódik). A tinta-mérés a SORKÖZRE való, nem
+    # sorszámlálásra.
+    _view, root, _qt_app = _panel_nezet
+    cimke = _child(root, "editUndoButtonLabel")
+    sorok = cimke.property("lineCount")
+    varhato = max(MERT_GOMBKERET, sorok * MERT_SORKOZ + GOMB_KITOLTES)
     assert doboz[3] == varhato, (
         f"a(z) {felirat!r} feliratú gomb {doboz[3]} képpont magas; "
-        f"{len(savok)} kirajzolt sorral a mért képlet {varhato}-t ad "
+        f"{sorok} szövegsorral a mért képlet {varhato}-t ad "
         f"(padló {MERT_GOMBKERET}, sorköz {MERT_SORKOZ}, kitöltés "
         f"{GOMB_KITOLTES})"
     )
