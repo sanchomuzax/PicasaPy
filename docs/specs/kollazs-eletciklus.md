@@ -1634,6 +1634,11 @@ lényeges: a sor `mérés (9 minta)`-ról `bináris (0x0082ca29…)`-ra vált.*
 
 ### 20.1 ⭐ A képlet és a helye
 
+⛔ **HELYESBÍTVE a 21.1-ben (171. kör):** a képlet és a konstansok
+helyesek, de a **per-csomópont létrát nem ez a hely állítja elő** —
+az a kupac-elrendező (`FUN_0087bcb0`), és ott a szorzó a **lap
+szélessége**, nem a beégetett 1024,0. Olvasd a 21.1-et is.
+
 *Forrás: `FUN_0082c9a0` (`0x0082c9a0`, 426 bájt), helyi diszasszemblálás.*
 
 ```
@@ -1778,3 +1783,118 @@ A 18.1, a 18.5 és a 20.1 együtt egyetlen mondattá áll össze:
 mai kódunk 0…2 egységre eltalálja (18.8), de zárt alak nincs. A keresés
 helye innentől: a `CContactSheetTheme` **saját** csempeméret-írása, a
 `0x0082cad0` (`[téma+0x3c]`) analógiájára.
+
+## 21. A `scale` MÉRTÉKEGYSÉGE bizonyítva, és a 20.1 mechanizmus-helyesbítése (2026-09-06, #1412)
+
+*171. kutatói kör. A meglévő kollázs-dekompilátumból (`referencia/dekompilalt-kollazs/`),
+új Ghidra-futás nélkül.*
+
+### 21.1 ⛔ ÖNHELYESBÍTÉS: a létrát a KUPAC-ELRENDEZŐ állítja elő, nem a `0x0082c9a0`
+
+A 20.1 a `picturepile` létráját a `FUN_0082c9a0` (`0x0082c9a0`) helyre tette,
+és a `[téma+0x3c]` írást nevezte meg. **A képlet és a három konstans helyes,
+a mérés (55/57) áll — a HELY és a SZORZÓ viszont téves volt.**
+
+A per-csomópont létrát a **kupac-elrendező** állítja elő:
+**`FUN_0087bcb0`** (`0x0087bcb0`, 520 bájt; a `CPileTheme slot0`
+`FUN_0087b4a0` hívja):
+
+```c
+local_1c = clamp₁( 1 / sqrt( sqrt(n) − 1 ) );          // n = a KÉPEK SZÁMA → a SZÓRÁSI SÁV
+local_8  = (param_6 − param_4) * 0.33000001311302185;  // = LAPSZÉLESSÉG × 0,33
+local_14 = 1;
+do {
+    f = 1.0;
+    if (1 < local_14)                                   // ← a CSOMÓPONT INDEXE
+        f = clamp₁( 1 / sqrt( sqrt(local_14) − 1 ) );
+    meret = ROUND( f * local_8 );
+    FUN_0087c470(panel, csomópont, &out, local_1c, meret);
+    local_14 = local_14 + 1;
+} while (...);
+```
+
+**Mi változik ezzel:**
+
+| | 20.1 (téves) | 21.1 (helyes) |
+|---|---|---|
+| a létra helye | `FUN_0082c9a0` | **`FUN_0087bcb0`** |
+| a szorzó | beégetett `1024,0` (`0x00cf4218`) | **a lap szélessége** (`param_6 − param_4`) |
+| a bemenet | — | az elrendező **ciklusváltozója** = a csomópont 1-alapú indexe |
+| a `[téma+0x3c]` | „ide megy `S`" | **más mennyiség**: a `0x0082c9a0` ugyanezt a kifejezést a **darabszámmal** számolja ki a panel beállítás-objektumába |
+
+⚠️ **Miért egyezett mégis a szám?** Mert a `.cxf` lapszélessége épp
+**1024 egység** (18.3) — a `lapszélesség × 0,33` és az `1024 × 0,33`
+ugyanazt adja. A 20. kör ebből ugrott arra, hogy a `0x0082c9a0` a forrás.
+**Ez pontosan a „a megfejtett mechanizmus nem diagnosztizált ok" csapdája**,
+egy körrel azután, hogy a 19.2 hatóköre helyesen ki lett mondva.
+
+⛳ **A per-INDEX olvasat viszont most már KÓDBÓL is igazolt**, nem csak a
+mintákból: a `local_14` a ciklus számlálója. A 20.2 mérése (55/57, négy
+különböző képszámon) ezzel **kétszeresen** áll.
+
+### 21.2 ⭐ A `scale` MÉRTÉKEGYSÉGE — a fogyasztó oldaláról bizonyítva
+
+*`FUN_0087c470` (`0x0087c470`, 932 bájt) = a kupac elem-létrehozója.*
+
+```c
+meret = csomópont[+0x2c];                      // a tárolt scale
+if (meret == 0.0) meret = (float)param_5;      // TARTALÉK: az elrendező számolta méret
+...
+local_14 = (float)(lapJobb − lapBal) * 0.0009765625;   //  = LAPSZÉLESSÉG / 1024
+FUN_009debd0( lapszélesség × csomópont[+0x18],
+              csomópont[+0x1c] × lapmagasság );        // pozíció
+FUN_009dec60( csomópont[+0x28] × 57,29578 );           // theta, radián → fok
+meret = local_14 * meret;
+FUN_009deca0( meret );                                  // az ELEM nagyítása
+```
+
+⭐ **`0,0009765625` = 1/1024 pontosan.** Az elemre alkalmazott nagyítás:
+
+> **elem-nagyítás = `scale` × (lapszélesség / 1024)**
+
+⇒ **A `scale` hossz, a lap szélességének 1024-ed részeiben.** A 20.5
+egységes olvasata ezzel az **író** oldaláról (mért egyezések) és a
+**fogyasztó** oldaláról (bináris konstans) is alá van támasztva.
+
+⭐ **Melléklelet:** a tárolt `scale` **elsőbbséget élvez** — az elrendező
+számolta méret csak akkor lép be, ha a csomópont `scale`-je **nulla**. Ez
+magyarázza a 17.5 megfigyelését is: a kézzel átméretezett csomópont
+(`AI2`) megtartja a saját, nem egész értékét.
+
+### 21.3 ⭐ ASZIMMETRIA: az Indexkép eleme NEM használja a `scale`-t
+
+A két elem-létrehozó összevetése:
+
+| | `picturepile` — `FUN_0087c470` | `contactsheet` — `FUN_00888b40` |
+|---|---|---|
+| pozíció (`FUN_009debd0`) | ✅ | ✅ |
+| forgatás (`FUN_009dec60`) | ✅ (`+0x28 × 57,29578`) | **NINCS** |
+| nagyítás (`FUN_009deca0`) | ✅ (`+0x2c × lapszél/1024`) | **NINCS** |
+
+Az Indexkép elem-létrehozója **kizárólag a pozíciót** állítja be; a méretet
+a `FUN_00888210` által számolt `w`/`h` képpontérték hordozza
+(`FUN_00888b40(csomópont, &out, w_px, h_px)`, 18.2).
+
+⇒ **Az Indexképnél a `scale` a rajzolásba egyáltalán nem megy bele** — tisztán
+**elrendezési** mennyiség, pontosan úgy, ahogy a 18.5 mérte (a függőleges
+igazítás magassága). Ez megmagyarázza, miért nem lehetett a rajzolt dobozból
+levezetni.
+
+### 21.4 Amit a kör KIZÁRT
+
+- **A `FUN_0087cb70`** (`0x0087cb70`, 2183 b, a kupac szórás-lezárója) **nem ír**
+  a csomópont `+0x2c`-jébe (a dekompilátum teljes törzsében nulla ilyen írás).
+- **A `FUN_0087c470` sem ír** — csak **olvas** és tartalékol.
+
+⇒ **A kupac-fában sincs `+0x2c`-író.** ⚠️ Ez a 20. kör egy kimondatlan
+következtetését is helyesbíti: abból, hogy a fájl `S(i)`-t tartalmaz, **nem**
+következik, hogy a kupac-elrendező odaírta volna. **Ki írja a `+0x2c`-t —
+mindkét témára — továbbra is nyitott.**
+
+### 21.5 Melléklelet: a polaroid felirat MÁS egységet használ
+
+`FUN_0087c820` (`0x0087c820`, 701 b; a `polaroid` csomópont-témára hívódik a
+`FUN_0087c470`-ből) a saját egységét **`max(lapszélesség, lapmagasság) / 1024`**
+alapon számolja (`0x0087c8…`, a `0,0009765625` második előfordulása) — nem a
+szélességből, mint a csempeméret. Aki a polaroid feliratot építi meg, ezt vegye
+figyelembe.
