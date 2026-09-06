@@ -19,11 +19,11 @@ Három eltérés, három állítás ebben a fájlban:
 2. **címkék** — `Címkék: AI image`. Az előtag MÉRT szöveg:
    `CThumbUI::GetTagInfo::format` (`referencia/stringres-en-hu.tsv:691`),
    `Tags: ` → `Címkék: `.
-3. **számláló** — ebben a nézetben az eredetiben NINCS. A #1960 mérése (a
-   magyar sorrend `(összes / aktuális)`) érvényben marad — a bizonyítéka egy
-   ötképes mappa KIJELÖLÉSÉRŐL szólt, nem a szerkesztőről —, ezért a
-   `szamlalo_szoveg` formázó és a fordítása megmarad, csak a szerkesztő
-   sávjából kerül ki.
+3. **számláló** — ⚠️ HELYESBÍTVE a #2587-ben: MÉGIS ott van, a fájlméret
+   UTÁN és a címkék ELŐTT. Ez a fájl eredetileg az ellenkezőjét állította,
+   mert a `141421.jpg` FÉL SZÉLESSÉGŰ Picasa-ablakot mutatott, ahol a sáv
+   szövege le volt vágva — a levágást olvastuk hiánynak. A teljes
+   szélességű felvétel (`research/felirat-ki-bekapcsolva/`) megcáfolta.
 
 ⚠️ A fájlnév alakját (mappa-előtag nélkül, középen rövidítve) ez a kör
 SZÁNDÉKOSAN nem bántja: a rövidítés szabálya egyetlen mintából nem
@@ -128,8 +128,37 @@ class TestACimkek:
         assert "<translation>Címkék: %1</translation>" in ts
 
 
-class TestASzamlaloNemIdeVALO:
-    def test_a_szerkesztő_savjaban_nincs_szamlalo(self):
+class TestASzamlaloAMERTHelyen:
+    """#2587 — a #2565 itt TÉVEDETT, és a tévedés kiment a felhasználóhoz.
+
+    Az akkori bizonyíték (`141421.jpg`) FÉL SZÉLESSÉGŰ Picasa-ablakot
+    mutatott: a kék sáv szövege le volt vágva, és a levágást olvastuk
+    hiánynak. A teljes szélességű felvétel
+    (`research/felirat-ki-bekapcsolva/picasa3-felirat-bekapcsolva. 223224.jpg`)
+    megcáfolta::
+
+        … 896x1344 képpont   807 KB   (82 / 3)   Címkék: AI image
+
+    A számláló tehát OTT VAN, a fájlméret UTÁN és a címkék ELŐTT.
+    """
+
+    def test_a_szamlalo_a_MERET_es_a_CIMKEK_kozott_all(self):
+        foto = _Foto(keywords="AI image", first_seen_mtime_ns=_MINTA_NS)
+        szoveg = formatting.photo_info_text(
+            foto, QLocale("hu_HU"), lambda s: s, "(82 / 3)"
+        )
+        meret = szoveg.index("807") if "807" in szoveg else szoveg.index("KB")
+        assert szoveg.index("(82 / 3)") > meret
+        assert szoveg.index("(82 / 3)") < szoveg.index("Tags:")
+
+    def test_szamlalo_nelkul_nem_marad_ures_hely(self):
+        szoveg = formatting.photo_info_text(
+            _Foto(first_seen_mtime_ns=_MINTA_NS), QLocale("hu_HU"), lambda s: s
+        )
+        assert "(" not in szoveg
+        assert "    " not in szoveg  # nincs dupla elválasztó
+
+    def test_a_nezo_savja_TARTALMAZZA_a_szamlalot(self):
         from picasapy.app.controller import AppController
 
         forras = __import__("inspect").getsource(AppController.viewerInfo)
@@ -137,9 +166,9 @@ class TestASzamlaloNemIdeVALO:
             sor for sor in forras.splitlines()
             if not sor.lstrip().startswith("#")
         )
-        assert "szamlalo_szoveg" not in kod, (
-            "a szerkesztő kék sávja számlálót fűz a szöveghez — az A/B "
-            "felvételen (141421.jpg) az eredetiben nincs ott"
+        assert "szamlalo_szoveg" in kod, (
+            "a néző kék sávjából hiányzik a lapszámláló — az eredetiben "
+            "(teljes szélességű felvétel) ott van"
         )
 
     def test_a_FORMAZO_es_a_forditasa_MEGMARAD(self):

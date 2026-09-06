@@ -1011,22 +1011,25 @@ class AppController(
 
     @Slot(int, result=str)
     def viewerInfo(self, row: int) -> str:
-        """A néző infó-sávja: `mappa > név   dátum   felbontás   méret   címkék`."""
+        """A néző sávja: `mappa > név   dátum   felbontás   méret   (N / i)   címkék`."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return ""
         photo = photos[row]
         folder = formatting.PATH_TAIL.split(photo.folder_path)[-1]
-        # #2565: a SZÁMLÁLÓ kikerült innen. Az A/B összehasonlító felvételen
-        # (`141421.jpg`, bal: Picasa 3 szerkesztő, jobb: mi, UGYANAZON a
-        # képen) az eredeti sávja `név · dátum · felbontás · méret · címkék`
-        # — számláló nélkül. A #1960 mérése (a magyar `(összes / aktuális)`
-        # sorrend) érvényben marad, és a `szamlalo_szoveg` is: annak a
-        # bizonyítéka egy ötképes mappa KIJELÖLÉSÉRŐL szólt, nem a
-        # szerkesztőről. Hogy pontosan melyik nézet mutatja, külön jegy.
-        return self.photoInfo(row).replace(
-            photo.name, f"{folder} > {photo.name}", 1
+        # #2587: a SZÁMLÁLÓ visszakerült a MÉRT helyére — a fájlméret UTÁN
+        # és a címkék ELŐTT (`picasa3-felirat-bekapcsolva. 223224.jpg`,
+        # teljes szélességű ablak: `… 807 KB   (82 / 3)   Címkék: AI image`).
+        # A #2565 körében tévesen kivettük: az akkori felvételen a Picasa
+        # FÉL SZÉLESSÉGŰ ablakban állt, a sáv szövege le volt vágva, és a
+        # levágást olvastuk hiánynak.
+        alap = formatting.photo_info_text(
+            photo,
+            QLocale(),
+            self.tr,
+            self.szamlalo_szoveg(row + 1, len(photos)),
         )
+        return alap.replace(photo.name, f"{folder} > {photo.name}", 1)
 
     @staticmethod
     def szamlalo_szoveg(aktualis: int, osszes: int) -> str:

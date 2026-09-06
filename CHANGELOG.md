@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.315] – 2026-09-06
+
+### Javítva
+
+- **A képaláírás kikapcsolva sem tűnik el nyomtalanul, és a sáv a program
+  színeit viszi** (#2587). Eddig kikapcsolt feliratnál a kép alatt nem
+  maradt semmi, amivel vissza lehetett volna kapcsolni; mostantól — ahogy
+  az eredeti Picasában — a kis kapcsoló ott marad a kép bal alsó sarkában.
+  A sáv színe is javult: világos módban világosszürke csík sötét felirattal,
+  nem a korábbi fekete sáv.
+- **Visszakerült a kék sávba a lapszámláló** (#2587). A `(82 / 3)` a
+  fájlméret után és a címkék előtt áll — ahogy az eredetiben. Az előző
+  kiadásban tévedésből kivettük.
+- **A nagyítás gombjai világos módban is látszanak** (#2588). Az alsó sávba
+  költözés után a rajzuk világos maradt, ezért a világos sávon szinte
+  eltűntek.
+
 ## [0.8.314] – 2026-09-06
 
 ### Javítva

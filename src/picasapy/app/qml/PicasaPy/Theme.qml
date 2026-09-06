@@ -83,6 +83,21 @@ QtObject {
     readonly property color trayPanelBg: dark ? "#303030" : "#ffffff"
     readonly property color viewerBg: dark ? "#1a1a1a" : "#808080"
 
+    // #2587: a képaláírás-sáv színei. MÉRVE a tulajdonos felvételén
+    // (`research/felirat-ki-bekapcsolva/picasa3-felirat-bekapcsolva. 223224.jpg`,
+    // a csík sora y 906…926): a sáv `#c6c6c6` — a KRÓM világosszürkéje, NEM
+    // a fotó-terület szürkéje (`viewerBg`, ott 108) és nem sötét. A #2565
+    // sötét csíkot adott, ami világos módban idegen testként ült a világos
+    // króm alatt; a tulajdonos ezt jelentette.
+    //
+    // A sötét pár a saját krómunké: a `trayBg` sötét értékénél egy fokkal
+    // világosabb, hogy a sáv a fotó alatt ELVÁLJON, ahogy világosban is.
+    readonly property color captionBar: dark ? "#333333" : "#c6c6c6"
+    readonly property color captionBarText: dark ? "#e8e8e8" : "#1a1a1a"
+    //: a felirat-kapcsoló kis doboza — a felvételen FEHÉR, sötét kerettel
+    readonly property color captionToggleBg: dark ? "#d8d8d8" : "#ffffff"
+    readonly property color captionToggleBorder: dark ? "#555555" : "#5a5a5a"
+
     // #900: a kijelölésen KÍVÜLI terület elsötétítése a szerkesztő
     // eszközeiben (vágás, vörösszem, arc hozzáadása). Az eredeti `.tre`
     // öt elemen adja meg ugyanezt: `Property negativemode 8f2f2f2f` —

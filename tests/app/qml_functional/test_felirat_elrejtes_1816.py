@@ -108,14 +108,27 @@ class TestALathatosagTartos:
 
     def test_rejtve_is_van_UT_a_visszahozashoz(self, qml_app, qt_app):
         """Az elrejtés ne legyen egyirányú: a felhasználó ne a
-        beállítások közt keresse a visszakapcsolót."""
+        beállítások közt keresse a visszakapcsolót.
+
+        #2587: a KÖVETELMÉNY változatlan, a HORDOZÓJA más. A külön
+        `captionRevealButton` (a fotó JOBB alsó sarkában, `opacity: 0.4`)
+        megszűnt — helyette maga a `captionToggleButton` marad a helyén a
+        kép BAL alsó sarkában, ahogy az eredetiben is (a `.tre` szerint a
+        `captionbutton` `hidetarget`-je csak a `caption` és a
+        `captiontrash`; a tulajdonos felvételén kikapcsolt feliratnál is ott
+        áll a kis világos doboz).
+        """
         window, controller, _engine = qml_app
         _nyisd_a_nezot(window, qt_app)
-        vissza = _gyerek(window, "captionRevealButton")
+        vissza = _gyerek(window, "captionToggleButton")
         try:
             controller.setCaptionVisible(False)
             qt_app.processEvents()
             assert vissza.property("visible") is True
+            assert vissza.property("opacity") > 0.9, (
+                "a visszakapcsoló látszik ugyan, de olyan halványan, hogy a "
+                "felhasználó nem veszi észre (ez volt a #2587 bejelentése)"
+            )
         finally:
             controller.setCaptionVisible(True)
 
