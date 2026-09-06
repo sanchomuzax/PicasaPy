@@ -24,6 +24,7 @@ from pathlib import Path
 import picasapy.app
 import pytest
 from support.jpeg_factory import make_jpeg
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _NOTIFIER = (
     Path(picasapy.app.__file__).parent
@@ -168,8 +169,9 @@ class TestAFelulet:
         """A vezérlő ugyan csak pozitív számmal emitál, de a felület se
         villantson fel semmit nullára — a #1168 őre ugyanezt méri az
         üres útvonalra."""
-        kezd = _NOTIFIER.index("function onRotationTypeFailed(")
-        assert "if (skipped <= 0)" in _NOTIFIER[kezd : kezd + 260]
+        assert "if (skipped <= 0)" in blokk_horgony_utan(
+            _NOTIFIER, "function onRotationTypeFailed("
+        )
 
 
 class TestAFeliratok:

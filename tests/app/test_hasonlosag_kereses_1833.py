@@ -20,6 +20,7 @@ from PySide6.QtCore import QSettings
 
 from picasapy.app.similarity_controller import HASONLOSAG_KUSZOB
 from support.jpeg_factory import make_jpeg
+from tests.support.py_blokk import fuggveny_torzs
 
 _SIM = (
     Path(picasapy.app.__file__).parent / "similarity_controller.py"
@@ -111,15 +112,13 @@ class TestAJelzes:
 
     def test_a_jelzes_finally_ban_all(self):
         """A jegy külön kiköti: kivételnél se ragadjon be."""
-        kezd = _SIM.index("def worker()")
-        blokk = _SIM[kezd : kezd + 700]
+        blokk = fuggveny_torzs(_SIM, "def worker()")
         assert "finally:" in blokk
         assert "self._set_similarity_updating(False)" in blokk
 
     def test_a_jelzes_CSAK_akkor_megy_ki_ha_van_mit_epiteni(self):
         """Minden kereséskor felvillanó »épül« hazug állapot lenne."""
-        kezd = _SIM.index("hianyzo = [")
-        blokk = _SIM[kezd : kezd + 420]
+        blokk = fuggveny_torzs(_SIM, "hianyzo = [")
         assert "if hianyzo:" in blokk
         assert "self._set_similarity_updating(True)" in blokk
 

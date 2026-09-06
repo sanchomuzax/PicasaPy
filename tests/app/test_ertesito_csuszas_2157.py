@@ -25,6 +25,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app.application as app_module
+from tests.support.qml_blokk import blokk_horgony_utan
 
 #: `notifier/docbounds` — a cella mért mérete.
 CELLA_SZELESSEG = 247
@@ -84,8 +85,7 @@ class TestAFuggolegesAtrendezodes:
         )
 
     def test_a_fuggoleges_animacio_is_a_MERT_idozitest_hasznalja(self):
-        kezd = _SAV.index("move:")
-        blokk = _SAV[kezd:kezd + 600]
+        blokk = blokk_horgony_utan(_SAV, "move:")
         assert str(BE_MS) in blokk
         assert "Easing.OutExpo" in blokk
 

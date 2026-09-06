@@ -30,6 +30,7 @@ from PySide6.QtCore import QSettings, QUrl
 from PySide6.QtGui import QGuiApplication, QImage
 
 from support.jpeg_factory import make_jpeg
+from tests.support.qml_blokk import blokk_horgonyra, hivas_argumentumai
 
 try:
     from picasapy.app.print_controller import PrintController
@@ -218,35 +219,42 @@ class TestAFelulet:
         assert 'objectName: "printCopiesMinusButton"' in _DIALOG
 
     def test_a_minusz_egy_ALATT_tiltott(self):
-        kezd = _DIALOG.index('objectName: "printCopiesMinusButton"')
-        assert "enabled: printWindow.copies > 1" in _DIALOG[kezd : kezd + 420]
+        assert "enabled: printWindow.copies > 1" in blokk_horgonyra(
+            _DIALOG, 'objectName: "printCopiesMinusButton"'
+        )
 
     def test_a_peldanyszam_ELJUT_a_nyomtatasig(self):
         """A #1153 osztálya: a gomb állít egy számot, amit senki nem visz
         tovább."""
         assert "printWindow.orientation, printWindow.copies)" in _DIALOG
-        kezd = _DIALOG.index("renderPrintPreviewPdf(")
-        assert "printWindow.copies" in _DIALOG[kezd : kezd + 260]
+        # ⚠️ #2540: a határ a hívás ZÁRÓJELPÁRJA. Rögzített ablakkal a
+        # SZOMSZÉD hívás (`renderContactSheetPdf`) argumentumai is
+        # belelógtak — egy oda átadott érték is „bizonyította" volna.
+        assert "printWindow.copies" in hivas_argumentumai(
+            _DIALOG, "renderPrintPreviewPdf"
+        )
 
     def test_a_lapszam_a_mert_alakot_koveti(self):
         """#1960: a mért alak `%d / %d`, de a SORREND nyelvfüggő — az
         angol erőforrás `%1$d of %2$d`, a magyar `%2$d / %1$d`. Ezért
         összefűzés helyett pozíció-argumentumos, FORDÍTHATÓ sablonra
         állítunk: a sorrendet a `.ts` adja, nem a kód."""
-        kezd = _DIALOG.index('objectName: "printPreviewPageText"')
-        blokk = _DIALOG[kezd : kezd + 900]
+        blokk = blokk_horgonyra(_DIALOG, 'objectName: "printPreviewPageText"')
         assert 'qsTr("%1 / %2")' in blokk
         assert ".arg(printWindow.previewPage + 1)" in blokk
         assert ".arg(printWindow.previewPageCount)" in blokk
 
     def test_a_lapozas_nem_lep_ki_a_tartomanybol(self):
-        elozo = _DIALOG.index('objectName: "printPreviewPrevButton"')
-        assert "enabled: printWindow.previewPage > 0" in _DIALOG[elozo : elozo + 420]
-        kovetkezo = _DIALOG.index('objectName: "printPreviewNextButton"')
-        assert "previewPageCount - 1" in _DIALOG[kovetkezo : kovetkezo + 460]
+        assert "enabled: printWindow.previewPage > 0" in blokk_horgonyra(
+            _DIALOG, 'objectName: "printPreviewPrevButton"'
+        )
+        assert "previewPageCount - 1" in blokk_horgonyra(
+            _DIALOG, 'objectName: "printPreviewNextButton"'
+        )
 
     def test_az_elonezet_gyorstara_KI_van_kapcsolva(self):
         """Ugyanaz a fájlnév kap új tartalmat minden lapozáskor — a Qt
         URL szerint gyorstáraz (a #1186 hibaosztálya)."""
-        kezd = _DIALOG.index('objectName: "printPreviewImage"')
-        assert "cache: false" in _DIALOG[kezd : kezd + 620]
+        assert "cache: false" in blokk_horgonyra(
+            _DIALOG, 'objectName: "printPreviewImage"'
+        )

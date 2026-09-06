@@ -35,6 +35,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TOOLBAR = (
     Path(picasapy.app.__file__).parent
@@ -73,8 +74,9 @@ class TestAMenutetel:
         assert 'text: qsTr("Timeline") + "\\tCtrl+5"' in _MENU
 
     def test_a_tetel_INAKTIV(self):
-        kezd = _MENU.index('objectName: "menuViewTimeline"')
-        assert "enabled: false" in _MENU[kezd : kezd + 300]
+        assert "enabled: false" in blokk_horgonyra(
+            _MENU, 'objectName: "menuViewTimeline"'
+        )
 
 
 class TestABillentyu:
@@ -82,8 +84,9 @@ class TestABillentyu:
         """A billentyű nem kerülheti meg a szürke menüpontot — a #1686
         fordított esete: ott a billentyű MŰKÖDÖTT, miközben a tétel
         helyfoglaló volt."""
-        kezd = _MAIN.index('sequence: "Ctrl+5"')
-        assert "enabled: false" in _MAIN[kezd : kezd + 200]
+        assert "enabled: false" in blokk_horgonyra(
+            _MAIN, 'sequence: "Ctrl+5"'
+        )
 
 
 class TestAKirajzoltFelulet:

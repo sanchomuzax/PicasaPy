@@ -14,6 +14,7 @@ from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PrintDialog.qml"
@@ -82,8 +83,11 @@ def test_a_ket_frissitesi_ut_be_van_kotve() -> None:
     assert "onPrinterNameChanged: printWindow.frissitsdAPapiradatot()" in egysoros, (
         "nyomtatóváltáskor nem frissül a papíradat"
     )
-    kezd = egysoros.index('objectName: "printPrinterSetupButton"')
-    blokk = egysoros[kezd:kezd + 1200]
+    # ⚠️ Előbb VÁGUNK, csak utána laposítunk: a laposított forrásban az
+    # első `//` a fájl végéig nyelne el mindent (ld. #2540).
+    blokk = " ".join(
+        blokk_horgonyra(_QML, 'objectName: "printPrinterSetupButton"').split()
+    )
     assert "frissitsdAPapiradatot()" in blokk, (
         "az oldalbeállító bezárása után nem frissül a papíradat — pedig épp "
         "az ott elfogadott elrendezés a mező FORRÁSA"

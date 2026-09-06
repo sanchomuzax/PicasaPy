@@ -31,6 +31,7 @@ from picasapy.app.keywords_controller import (
     _KEY_QUICK_LABELS,
     _QUICK_TAG_SLOTS,
 )
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _DIALOG = (
     Path(picasapy.app.__file__).parent
@@ -130,16 +131,14 @@ class TestAGombdontes:
     def test_a_Megse_VISSZAALLIT(self):
         """Nem elég a gomb: a mezők már írtak, tehát vissza kell írni."""
         assert "onRejected:" in _DIALOG
-        kezd = _DIALOG.index("onRejected:")
-        blokk = _DIALOG[kezd : kezd + 420]
+        blokk = blokk_horgony_utan(_DIALOG, "onRejected:")
         assert "setQuickTagLabel" in blokk
         assert "setQuickTagsReserveRecent" in blokk
         assert "setQuickTagsAutoFillFrequent" in blokk
 
     def test_a_megnyitas_PILLANATFELVETELT_vesz(self):
         """Visszaállítani csak abból lehet, amit megnyitáskor eltettünk."""
-        kezd = _DIALOG.index("onOpened:")
-        blokk = _DIALOG[kezd : kezd + 420]
+        blokk = blokk_horgony_utan(_DIALOG, "onOpened:")
         assert "kiindulasiCimkek" in blokk
         assert "kiindulasiReserve" in blokk
         assert "kiindulasiAutoFill" in blokk

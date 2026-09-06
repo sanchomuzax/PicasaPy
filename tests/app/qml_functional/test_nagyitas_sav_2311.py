@@ -34,6 +34,7 @@ from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PhotoViewer.qml"
@@ -131,8 +132,7 @@ class TestLenyomasraSul:
     def test_mindketto_mousedown(self):
         """`Property mousedown 1` mindkettőn — a felengedés késői."""
         for nev in ("zoomFitButton", "zoomActualButton"):
-            kezd = _QML.index(f'objectName: "{nev}"')
-            blokk = _QML[kezd:kezd + 700]
+            blokk = blokk_horgonyra(_QML, f'objectName: "{nev}"')
             assert "onPressed:" in blokk, (
                 f"a(z) {nev} felengedésre sül el, nem lenyomásra"
             )

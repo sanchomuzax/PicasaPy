@@ -38,6 +38,8 @@ import pytest
 from PySide6.QtCore import QSettings
 
 from picasapy.scanner.discovery import discover_installations
+from tests.support.py_blokk import fuggveny_torzs
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
@@ -191,8 +193,9 @@ class TestABekotes:
 
     def test_talalat_NELKUL_semmi_nem_jelenik_meg(self):
         """A jegy záró pontja: nincs találat ⇒ semmi nem történik."""
-        kezd = _DIALOG.index("function onStartupDiscoveryFinished(")
-        blokk = _DIALOG[kezd : kezd + 700]
+        blokk = blokk_horgony_utan(
+            _DIALOG, "function onStartupDiscoveryFinished("
+        )
         assert "if (installationsFound <= 0)" in blokk
         assert "return" in blokk
         # a `return` a megnyitás ELŐTT áll
@@ -203,6 +206,6 @@ class TestABekotes:
         ctl = (
             Path(picasapy.app.__file__).parent / "discovery_controller.py"
         ).read_text(encoding="utf-8")
-        kezd = ctl.index("def _felderites(")
-        assert "discover_installations()" in ctl[kezd : kezd + 700]
-        assert "propose_watched_folders(" in ctl[kezd : kezd + 700]
+        blokk = fuggveny_torzs(ctl, "def _felderites(")
+        assert "discover_installations()" in blokk
+        assert "propose_watched_folders(" in blokk

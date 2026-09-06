@@ -30,6 +30,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app as app_csomag
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
@@ -96,9 +97,16 @@ class TestALepteto:
 
     def test_KORBE_lep(self):
         """A négy billentyű körbejár: az utolsó után a könyvtár jön."""
-        kezd = _QML.index("function lepjAKovetkezoLapra(")
-        blokk = _QML[kezd : kezd + 900]
-        assert "%" in blokk, (
+        # ⚠️ #2540: a függvény TÖRZSE a határ. A kommentek is kimennek —
+        # enélkül a `% sor.length`-t EMLÍTŐ komment elégítette volna ki az
+        # állítást, a valódi maradékos osztás nélkül is.
+        blokk = blokk_horgony_utan(_QML, "function lepjAKovetkezoLapra(")
+        # ⚠️ #2540: a korábbi `assert "%" in blokk` NEM mért semmit — a
+        # rögzített ablakban ott volt a `% sor.length`-t EMLÍTŐ komment is,
+        # tehát a maradékos osztás törlésére az őr zölden maradt. A
+        # kivágó most kiveszi a kommenteket, az állítás pedig a tényleges
+        # kifejezést nevezi meg.
+        assert "% sor.length" in blokk, (
             "a léptető nem körbe lép — a maradékos osztás hiányzik"
         )
 

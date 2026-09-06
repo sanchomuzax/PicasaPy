@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import Property, QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from tests.support.qml_blokk import blokk_horgonyra
 
 _KEEPALIVE = []
 
@@ -106,8 +107,13 @@ class TestPanelFixedWidth:
         büntette volna. Az állítás ezért oda szűkül, ahova a #405 hibája
         tartozott: a BAL eszközpanel dobozára."""
         assert "implicitWidth: 190" not in _QML_SOURCE
-        kezd = _VIEWER_QML_SOURCE.index('objectName: "viewerLeftDrawer"')
-        bal_panel_blokk = _VIEWER_QML_SOURCE[kezd : kezd + 2000]
+        # ⚠️ #2540: a fiók VALÓDI blokkja, nem 2000 karakter. A tagadó
+        # állításnál a rögzített ablak KÉT irányban is hazudik: kilóghat a
+        # SZOMSZÉD fiókba (hamis bukás a helyes 190-re), és a panel
+        # növekedésekor kicsúszhat alóla a valódi regresszió.
+        bal_panel_blokk = blokk_horgonyra(
+            _VIEWER_QML_SOURCE, 'objectName: "viewerLeftDrawer"'
+        )
         assert "Layout.preferredWidth: 280" in bal_panel_blokk, (
             "az őr elcsúszott: a bal panel blokkjában a 280 sincs meg"
         )

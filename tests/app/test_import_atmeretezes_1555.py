@@ -37,6 +37,7 @@ from picasapy.importsource import (
     atmeretezendo,
 )
 from support.jpeg_factory import make_jpeg
+from tests.support.py_blokk import fuggveny_torzs
 
 _CTL = (
     Path(picasapy.app.__file__).parent / "import_source_controller.py"
@@ -193,8 +194,7 @@ class TestABeallitas:
 class TestABekotes:
     def test_a_masolasi_hurok_HASZNALJA(self):
         """A #1798 osztálya: a beállítás ne legyen néma."""
-        kezd = _CTL.index("target = copy_photo(candidate.path, subdir)")
-        blokk = _CTL[kezd : kezd + 700]
+        blokk = fuggveny_torzs(_CTL, "target = copy_photo(candidate.path, subdir)")
         assert "atmeretez_masolatot(target, resize_limit)" in blokk
 
     def test_a_hatart_a_szal_INDULASAKOR_olvassuk(self):

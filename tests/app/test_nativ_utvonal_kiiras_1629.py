@@ -28,6 +28,7 @@ import picasapy.app
 import pytest
 
 from picasapy.app import formatting
+from tests.support.py_blokk import fuggveny_torzs
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _EXPORT = (_QML / "ExportDialogs.qml").read_text(encoding="utf-8")
@@ -93,8 +94,12 @@ class TestASlot:
 
     def test_a_slot_a_KOZOS_fuggvenyt_hivja(self):
         """A jegy kiköti: az átalakítás EGYETLEN helyen éljen, ne másolva."""
-        kezd = _FILEOPS.index("def toLocalPath(")
-        blokk = _FILEOPS[kezd : kezd + 1400]
+        # ⚠️ #2540: a blokk határa a FÜGGVÉNY törzse, nem egy karakterszám.
+        # A tagadó állítás rögzített ablakkal értelmetlen volt: az 1400
+        # karakter belelógott a SZOMSZÉD metódusokba, tehát az ő kódjuktól
+        # is bukhatott — és fordítva, egy hosszabb indoklás kiszorította
+        # volna a mért sort.
+        blokk = fuggveny_torzs(_FILEOPS, "def toLocalPath(")
         assert "return to_local_path(path_or_url)" in blokk
         # Saját, kézi levágás NEM lehet benne — az lenne a másolás.
         assert "replace(" not in blokk

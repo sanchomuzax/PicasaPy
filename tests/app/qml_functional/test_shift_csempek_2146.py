@@ -36,6 +36,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app as app_csomag
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
 _FULEK = {
@@ -154,8 +155,12 @@ class TestAFrissitesBEKOTESE:
     hamis maradna — a kilenc csempe soha nem váltana."""
 
     def test_a_fulvaltas_UJRAOLVASSA(self):
-        kezd = _PANEL.index("onActiveTabChanged")
-        blokk = _PANEL[kezd : kezd + 900]
+        # ⚠️ #2540: a horgony EDDIG egy KOMMENT-EMLÍTÉSRE esett (a fájl
+        # 295. sora nevesíti a kezelőt), és a 900 karakteres ablak egy
+        # egészen más sort (`Component.onCompleted: …`) tartalmazott — a
+        # próba a valódi kezelőt SOHA nem nézte meg. A kivágó a
+        # kommenteket előbb kiveszi, tehát most a tényleges kezelőt méri.
+        blokk = blokk_horgony_utan(_PANEL, "onActiveTabChanged")
         assert "frissitsdAShiftAllapotot()" in blokk, (
             "fülváltáskor nem olvassuk újra a Shift állapotát — az eredeti "
             "a fül FELÉPÜLÉSEKOR teszi"
@@ -170,19 +175,8 @@ class TestAFrissitesBEKOTESE:
         # ⚠️ A függvény TELJES törzse kell, kapcsos zárójel szerint vágva:
         # rögzített karakterablakkal egy jogos komment-bővítés kivágná a
         # keresett sort, és a próba hamisan bukna (ez meg is történt).
-        kezd = _PANEL.index("function frissitsdAShiftAllapotot")
-        nyito = _PANEL.index("{", kezd)
-        melyseg = 0
-        vege = nyito
-        for i in range(nyito, len(_PANEL)):
-            if _PANEL[i] == "{":
-                melyseg += 1
-            elif _PANEL[i] == "}":
-                melyseg -= 1
-                if melyseg == 0:
-                    vege = i + 1
-                    break
-        blokk = _PANEL[kezd:vege]
+        # #2540: a kézzel írt párosítás helyett a KÖZÖS mérő.
+        blokk = blokk_horgony_utan(_PANEL, "function frissitsdAShiftAllapotot")
         assert "editController.shiftLenyomva()" in blokk, (
             "a frissítő nem a vezérlőt kérdezi — a QML-ből nincs más mód a "
             "pillanatnyi Shift-állapot megismerésére"
