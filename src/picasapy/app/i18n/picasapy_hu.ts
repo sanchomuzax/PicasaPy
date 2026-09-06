@@ -1456,6 +1456,11 @@
         <translation>%1 MB</translation>
     </message>
     <message>
+        <location filename="../formatting.py"/>
+        <source>Tags: %1</source>
+        <translation>Címkék: %1</translation>
+    </message>
+    <message>
         <location filename="../formatting.py" line="67"/>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
@@ -1601,6 +1606,11 @@
 </context>
 <context>
     <name>AppController</name>
+    <message>
+        <location filename="../controller.py"/>
+        <source>Tags: %1</source>
+        <translation>Címkék: %1</translation>
+    </message>
     <message>
         <source>({current} / {total})</source>
         <translation>({total} / {current})</translation>

@@ -1,5 +1,6 @@
 """AppController: mappa-választás, keresés, státusz, provider-regisztráció."""
 
+import re
 import threading
 import time
 
@@ -129,12 +130,21 @@ class TestController:
         assert controller.photoInfo(-1) == ""
         assert controller.photoInfo(999) == ""
 
-    def test_viewer_info_breadcrumb_and_counter(self, controller, library):
-        # Picasa: "mappa > név   dátum   SZxM képpont   méret   (i / N)"
+    def test_viewer_info_breadcrumb_and_date(self, controller, library):
+        """#2565: „mappa > név   dátum   SZxM képpont   méret   címkék".
+
+        A SZÁMLÁLÓ kikerült: az A/B összehasonlító felvételen
+        (`141421.jpg`, bal: Picasa 3 szerkesztő, jobb: mi, ugyanazon a
+        képen) az eredeti sávjában nincs ott. A #1960 mérése (a magyar
+        `(összes / aktuális)` sorrend) érvényben marad — a bizonyítéka egy
+        ötképes mappa KIJELÖLÉSÉRŐL szólt, nem a szerkesztőről.
+        """
         controller.selectFolder(str(library / "nyaralas"))
         info = controller.viewerInfo(0)
         assert info.startswith("nyaralas > IMG_0001.jpg")
-        assert "(1 / 2)" in info
+        assert "(1 / 2)" not in info
+        # a dátum EXIF nélkül is ott van (a befagyasztott fájlidőből, #2486)
+        assert re.search(r"\d{4}", info), f"nincs dátum a sávban: {info!r}"
 
     def test_viewer_info_invalid_index_empty(self, controller):
         assert controller.viewerInfo(-1) == ""

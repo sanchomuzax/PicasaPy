@@ -1750,8 +1750,14 @@ Rectangle {
                     //: vágás közben pedig a fotó fölötti réteg tiszta.
                     visible: viewer.photoOverlaysUsable
                     anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 4
+                    anchors.rightMargin: 4
+                    //: #2565: a felirat-sáv FÖLÉ, nem rá. A sáv a fotó
+                    //: alján végigfut (mérve), és a lebegő doboz eddig
+                    //: eltakarta a sáv jobb szélén ülő kukát — a kirajzolt
+                    //: képen látszott, számolásból nem derült volna ki.
+                    anchors.bottom: captionBar.visible
+                                    ? captionBar.top : parent.bottom
+                    anchors.bottomMargin: 4
                     width: facesRow.width + 12
                     height: 26
                     radius: 4
@@ -1806,20 +1812,150 @@ Rectangle {
                 // ez az EGY sáv mindkét állapotot kiszolgálja — mérve, nem
                 // feltételezve: a sáv `visible`-je csak a vágásra és a
                 // videóra érzékeny, a szerkesztő nyitottságára nem.
-                Row {
+                // #2565: a KÉPALÁÍRÁS-SÁV a mért elrendezést kapta. Az
+                // összehasonlító felvételen (`141421.jpg`, bal: Picasa 3,
+                // jobb: mi, UGYANAZON a képen) a fotó alatt világosszürke
+                // csík fut végig: bal szélén a felirat-kapcsoló, középen a
+                // félkövér felirat, jobb szélén a kuka. Nálunk eddig ez a
+                // három elem középre zárva LEBEGETT a fotón, a kuka pedig a
+                // felirat BAL oldalán állt.
+                //
+                // A `.tre` kényszerei (`editpanel.tre:1238–1266`):
+                //   `captionbutton`  `XConstraint 0, 0, 3`   `Y 1, 1, -3`
+                //   `caption`        `X 0, 0, 25` … `1, 1, -24`
+                //   `captiontrash`   `XConstraint 1, 1, -3`  `Y 1, 1, -3`
+                //   `captionbase` / `captionbasetop`: a sáv HÁTTERE
+                //     (`predraw 1`), `X 0,0,-2000` … `1,1,2000` — teljes
+                //     szélességben.
+                Item {
+                    id: captionBar
                     objectName: "captionBar"
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 8
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 6
+                    height: 26
                     visible: viewer.captionVisible
+
+                    //: `captionbase` + `captionbasetop` — a sáv saját
+                    //: háttere. Az eredetin világos csík, nem a fotó
+                    //: látszik át rajta; a felső 1 képpont világosabb
+                    //: (`captionbasetop` külön réteg).
+                    Rectangle {
+                        id: captionBarBackground
+                        objectName: "captionBarBackground"
+                        anchors.fill: parent
+                        color: "#d2000000"
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            height: 1
+                            color: "#33ffffff"
+                        }
+                    }
+
+                    // #1816: a felirat-sáv KÉT vezérlője. Az eredetiben a
+                    // `captionbutton` („Show/Hide Caption") és a
+                    // `captiontrash` („Delete this caption") — a
+                    // `0x0057bb50` kezelő a `captionbutton` · `caption` ·
+                    // `captiontrash` hármast EGYÜTT kezeli.
+                    //
+                    // ⚠️ A #1816 KÉT belépési pontot ír elő (`editpanel/` és
+                    // `editoneup/captionbutton`). Nálunk a szerkesztő panel
+                    // a NÉZŐN BELÜL él, tehát ez az EGY sáv mindkét
+                    // állapotot kiszolgálja — mérve, nem feltételezve: a sáv
+                    // `visible`-je csak a vágásra és a videóra érzékeny, a
+                    // szerkesztő nyitottságára nem.
+                    ToolButton {
+                        objectName: "captionToggleButton"
+                        anchors.left: parent.left
+                        anchors.leftMargin: 3
+                        anchors.verticalCenter: parent.verticalCenter
+                        flat: true
+                        implicitWidth: 22
+                        implicitHeight: 22
+                        text: "≡"
+                        //: `captionbutton` — az eredeti buboréksúgója
+                        ToolTip.text: qsTr("Show/Hide Caption")
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#ffffff"
+                            opacity: parent.hovered ? 1 : 0.6
+                            font.pixelSize: Theme.fontSize
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Item {}
+                        onClicked: viewer.billentsdAFeliratot()
+                    }
+
+                    TextInput {
+                        id: captionField
+                        objectName: "captionField"
+                        //: `caption`: a két gomb KÖZÖTT, a sáv teljes
+                        //: maradékán — az eredetin a felirat a sáv
+                        //: közepén áll, félkövéren.
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 25
+                        anchors.rightMargin: 24
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: TextInput.AlignHCenter
+                        color: "#ffffff"
+                        font.pixelSize: Theme.fontSize
+                        font.bold: true
+                        selectByMouse: true
+                        text: viewer.photosModel
+                            ? (viewer.photosModel.revision,
+                               viewer.photosModel.captionAt(viewer.currentIndex))
+                            : ""
+
+                        function rebind() {
+                            text = Qt.binding(function () {
+                                return viewer.photosModel
+                                    ? (viewer.photosModel.revision,
+                                       viewer.photosModel.captionAt(viewer.currentIndex))
+                                    : ""
+                            })
+                        }
+
+                        onAccepted: {
+                            controller.setCaption(viewer.currentIndex, text)
+                            rebind()
+                            viewer.forceActiveFocus()
+                        }
+                        Keys.onEscapePressed: (event) => {
+                            rebind()
+                            viewer.forceActiveFocus()
+                            event.accepted = true
+                        }
+                    }
+
+                    //: A felszólítás a SÁVBAN áll, a felirat helyén — az
+                    //: eredetin („Készítsen képaláírást!") ugyanott, ahol a
+                    //: kész felirat lenne (a `235707.jpg` felvételen
+                    //: közvetlenül összevethető).
+                    Text {
+                        objectName: "captionPlaceholder"
+                        anchors.centerIn: parent
+                        text: qsTr("Make a caption!")
+                        color: "#e8e8e8"
+                        font.pixelSize: Theme.fontSize
+                        visible: captionField.text.length === 0
+                                 && !captionField.activeFocus
+                    }
 
                     ToolButton {
                         objectName: "captionTrashButton"
+                        anchors.right: parent.right
+                        anchors.rightMargin: 3
+                        anchors.verticalCenter: parent.verticalCenter
                         flat: true
-                        implicitWidth: 26
-                        implicitHeight: 26
-                        text: "\u2715"
+                        implicitWidth: 22
+                        implicitHeight: 22
+                        text: "✕"
                         //: `captiontrash` — az eredeti buboréksúgója
                         ToolTip.text: qsTr("Delete this caption")
                         ToolTip.visible: hovered
@@ -1837,83 +1973,16 @@ Rectangle {
                         background: Item {}
                         // #1816 DÖNTÉS: NINCS megerősítés. Az eredetiben ez
                         // szemetes-ikon közvetlen hatással, és a művelet nem
-                        // lemezromboló: a felirat egyetlen mező, újragépelhető.
-                        // A projekt #459-es elve a megerősítést a lemezt
-                        // érintő, visszafordíthatatlan műveletekre tartja fenn.
-                        // (Az eredetiről ez NINCS mérve — saját döntés.)
+                        // lemezromboló: a felirat egyetlen mező,
+                        // újragépelhető. A projekt #459-es elve a
+                        // megerősítést a lemezt érintő, visszafordíthatatlan
+                        // műveletekre tartja fenn. (Az eredetiről ez NINCS
+                        // mérve — saját döntés.)
                         onClicked: {
                             controller.setCaption(viewer.currentIndex, "")
                             captionField.rebind()
                         }
                     }
-
-                    TextInput {
-                        id: captionField
-                        objectName: "captionField"
-                        width: Math.min(400, photoArea.width - 80)
-                    horizontalAlignment: TextInput.AlignHCenter
-                    color: "#ffffff"
-                    font.pixelSize: Theme.fontSize
-                    selectByMouse: true
-                    text: viewer.photosModel
-                        ? (viewer.photosModel.revision,
-                           viewer.photosModel.captionAt(viewer.currentIndex))
-                        : ""
-
-                    function rebind() {
-                        text = Qt.binding(function () {
-                            return viewer.photosModel
-                                ? (viewer.photosModel.revision,
-                                   viewer.photosModel.captionAt(viewer.currentIndex))
-                                : ""
-                        })
-                    }
-
-                    onAccepted: {
-                        controller.setCaption(viewer.currentIndex, text)
-                        rebind()
-                        viewer.forceActiveFocus()
-                    }
-                        Keys.onEscapePressed: (event) => {
-                            rebind()
-                            viewer.forceActiveFocus()
-                            event.accepted = true
-                        }
-                    }
-
-                    ToolButton {
-                        objectName: "captionToggleButton"
-                        flat: true
-                        implicitWidth: 26
-                        implicitHeight: 26
-                        text: "\u2261"
-                        //: `captionbutton` — az eredeti buboréksúgója
-                        ToolTip.text: qsTr("Show/Hide Caption")
-                        ToolTip.visible: hovered
-                        ToolTip.delay: 500
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#ffffff"
-                            opacity: parent.hovered ? 1 : 0.6
-                            font.pixelSize: Theme.fontSize
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Item {}
-                        onClicked: viewer.billentsdAFeliratot()
-                    }
-                }
-
-                Text {
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 8
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTr("Make a caption!")
-                    color: "#e8e8e8"
-                    font.pixelSize: Theme.fontSize
-                    visible: viewer.captionVisible
-                             && captionField.text.length === 0
-                             && !captionField.activeFocus
                 }
 
                 // #1816: ha a sáv REJTVE van, kell egy út a visszahozásához —
