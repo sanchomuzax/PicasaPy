@@ -400,6 +400,13 @@ class TestArrowMinimalScroll:
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
             _invoke(qt_app, grid, "moveSelection", "down")
+            # #2497-es körben mérve: EZ az egyetlen görgetés-teszt a
+            # fájlban, ahol a `moveSelection` után hiányzott a
+            # `_wait_for_scroll_settled` (a szomszédai mind hívják). A CI-n
+            # emiatt bukott: a `contentY` még 6,0 volt, a cél-sor alja
+            # 1185,0 — vagyis a görgetés még el sem indult, amikor mértünk.
+            # Helyben 6/6 zöld volt, tehát csak a lassabb futón látszik.
+            _wait_for_scroll_settled(qt_app, grid)
             target = window.property("selectedIndex")
             assert target > 0
             b = _wait_for_row_bounds(qt_app, grid, target)
