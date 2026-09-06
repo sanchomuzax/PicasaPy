@@ -4,9 +4,16 @@ bontva adja a `TimelineView.qml`-nek.
 
 Dátum-forrás (rögzített döntés, #24): elsődlegesen az EXIF `taken_at`
 (a sync már kiolvasta, ld. `picasapy.index.sync`), ennek hiányában
-(RAW/videó, vagy olvashatatlan EXIF) a fájl `mtime_ns`-e — ld.
+(RAW/videó, vagy olvashatatlan EXIF) a fájl ideje — ld.
 `picasapy.timeline.resolve_date`. Ez a bevett fallback-elv, nem
 projekt-specifikus kompromisszum: a séma `mtime_ns`-e mindig kitöltött.
+
+#2486: a fájlidő itt is a BEFAGYASZTOTT, első látáskori érték
+(`PhotoRecord.sort_mtime_ns`), nem az élő `mtime`. Enélkül ugyanaz az
+EXIF nélküli kép MÁS korszakba került volna az Időrendben, mint amilyen
+dátummal a rácsban és a mappa fejlécében szerepel — a két nézet
+ugyanarról a képről mondott volna mást. A döntés lapja:
+`docs/decisions/befagyasztott-fajlido.md`.
 """
 
 from __future__ import annotations
@@ -16,7 +23,12 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.index import PhotoRecord, all_photos, open_index
-from picasapy.timeline import TimelinePeriod, TimelinePhoto, build_periods, resolve_date
+from picasapy.timeline import (
+    TimelinePeriod,
+    TimelinePhoto,
+    build_periods,
+    record_date,
+)
 
 from .models import _has_edits, _thumb_url
 
@@ -64,7 +76,7 @@ class TimelineController(QObject):
         timeline_photos = tuple(
             TimelinePhoto(
                 photo_id=record.id,
-                date=resolve_date(record.taken_at, record.mtime_ns),
+                date=record_date(record),
             )
             for record in records
         )

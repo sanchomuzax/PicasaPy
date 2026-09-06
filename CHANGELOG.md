@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.311] – 2026-09-06
+
+### Javítva
+
+- **A képek nem ugrálnak a rácsban attól, hogy hozzájuk nyúltunk**
+  (#2486). Ha egy képben nincs felvételi idő (szkennelt lap, letöltött
+  rajz, videó), a dátuma a fájl idejéből jött — az viszont minden
+  mentésnél, szinkronnál, sőt a saját `.picasa.ini`-írásunknál is
+  átíródott, és a kép a rács végére ugrott. Mostantól a fájlidőt az ELSŐ
+  beolvasáskor rögzítjük, és a rendezés, a mappa fejléc-dátuma és az
+  Időrend is azt használja — pontosan úgy, ahogy az eredeti Picasa is a
+  saját katalógusába fagyasztja. A javítás **nem visszamenőleges**: a már
+  elmozdult dátumokat nem állítja vissza, csak megállítja a további
+  romlást.
+
 ## [0.8.310] – 2026-09-06
 
 ### Javítva

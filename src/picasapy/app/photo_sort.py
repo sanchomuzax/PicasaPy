@@ -53,16 +53,32 @@ def coerce_reverse_flag(value) -> bool:
 
 def photo_date(record) -> str:
     """A kép dátuma a rendezéshez: EXIF-felvételi dátum, ha van, egyébként a
-    FÁJL ideje.
+    fájl BEFAGYASZTOTT (első látáskori) ideje.
 
     A Picasa is így datálja a képet: a felvételi dátum az elsődleges, és
     csak annak hiányában esik vissza a fájlidőre — így az EXIF nélküli
     képek (szkennelt lapok, letöltött rajzok) sem csúsznak egy kupacba a
     lista végére. Mindkét ág ISO-alakot ad, ezért összehasonlíthatók.
+
+    **#2486 — a fájlidő nem az élő `mtime`.** A tartalék a
+    `record.sort_mtime_ns`, vagyis az az idő, amit a mappa ELSŐ
+    beolvasásakor láttunk, és amit az index azóta őriz. Az élő `mtime`-ot
+    bármi átírhatja — mentés, szinkron, másolás, és a #2491 óta a saját
+    ini-írásunk `photo_touch`-a is —, és a rács ettől átrendeződött. Az
+    eredeti Picasa ugyanezt a dátumot a katalógusába fagyasztja a
+    beolvasáskor, és a pásztázó soha nem frissíti
+    (`docs/specs/pmp-database.md` 10.1/10.3–10.4); a döntés lapja:
+    `docs/decisions/befagyasztott-fajlido.md`.
+
+    A befagyasztott érték hiányában (v17 előtti index, kézzel épített
+    rekord) a `sort_mtime_ns` az élő `mtime`-ot adja — a viselkedés
+    ilyenkor a #2486 ELŐTTI, tehát az index eldobása nem ronthat el semmit.
     """
     if record.taken_at:
         return record.taken_at
-    return datetime.fromtimestamp(record.mtime_ns / 1_000_000_000).isoformat()
+    return datetime.fromtimestamp(
+        record.sort_mtime_ns / 1_000_000_000
+    ).isoformat()
 
 
 def _sort_key(sort_mode: str):

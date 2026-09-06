@@ -26,6 +26,18 @@ class _Photo:
     size: int = 0
     mtime_ns: int = 0
 
+    #: #2486: a BEFAGYASZTOTT, első látáskori fájlidő — a valódi
+    #: `PhotoRecord` mintájára. A `sort_mtime_ns` a dátum-szemantikájú
+    #: olvasók (`photo_date`, `photo_dates`) belépési pontja; a `None`
+    #: alapérték az élő `mtime`-ra esik vissza, mint az indexben.
+    first_seen_mtime_ns: int | None = None
+
+    @property
+    def sort_mtime_ns(self) -> int:
+        if self.first_seen_mtime_ns is None:
+            return self.mtime_ns
+        return self.first_seen_mtime_ns
+
 
 def _names(records) -> list[str]:
     return [r.name for r in records]

@@ -11,10 +11,11 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v16: a Picasa-gyorskulcs oszlopa (#1494) — `photo_hashes.
-        # originfast`, és ezzel együtt a `dhash` NOT NULL feloldása
-        # (v15: az „olvasatlan" mappajelölő, #1644 — `folders.unread`)
-        assert SCHEMA_VERSION == 16
+        # v17: a befagyasztott, első látáskori fájlidő (#2486) —
+        # `photos.first_seen_mtime_ns`
+        # (v16: a Picasa-gyorskulcs oszlopa, #1494 — `photo_hashes.
+        # originfast`, és ezzel együtt a `dhash` NOT NULL feloldása)
+        assert SCHEMA_VERSION == 17
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -47,6 +48,10 @@ class TestSchema:
             conn.execute("ALTER TABLE folders DROP COLUMN hidden")
             # #1644: az unread oszlop a v15-ben érkezik
             conn.execute("ALTER TABLE folders DROP COLUMN unread")
+            # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
+            conn.execute(
+                "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns"
+            )
             conn.commit()
         with open_index(db) as conn:
             assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

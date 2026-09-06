@@ -59,6 +59,8 @@ class TestMigracio:
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
         raw.executescript(
+            # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
+            "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
             "DROP TABLE photo_hashes;\n"
             "CREATE TABLE photo_hashes ("
             " path TEXT PRIMARY KEY,"

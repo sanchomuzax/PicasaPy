@@ -19,7 +19,7 @@ SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
        p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height,
-       p.geotag_ini, p.exif_lat, p.exif_lon,
+       p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
        -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
        -- képen, és hány vár még névadásra. A `face` tábla származtatott
        -- adat (index/faces_detected.py); LEFT JOIN, hogy az arc-szkennelés
@@ -62,6 +62,31 @@ class PhotoRecord:
     # `unnamed_face_count` a még névre váró (jóváhagyandó) arcoké.
     face_count: int = 0
     unnamed_face_count: int = 0
+    # #2486: a fájl BEFAGYASZTOTT ideje — az az `mtime`, amit a mappa első
+    # beolvasásakor láttunk. NEM ugyanaz, mint az `mtime_ns`: az élőben
+    # követi a fájlt (változás-detektálás, bélyegkép-gyorstár kulcsa,
+    # „legutóbbi változtatás" rendezés), ez pedig áll. `None` a v17 előtt
+    # indexelt, azóta nem látott sorokon — a `sort_mtime_ns` kezeli.
+    first_seen_mtime_ns: int | None = None
+
+    @property
+    def sort_mtime_ns(self) -> int:
+        """A fotó DATÁLÁSÁHOZ használandó fájlidő (#2486).
+
+        A befagyasztott, első látáskori érték; hiányában az élő `mtime`.
+        A hiány két, egyaránt jogos esetből jön: a v17 előtti index még
+        fel nem töltött sora, illetve a kézzel összeállított `PhotoRecord`
+        (tesztek, webexport). Mindkettőben a visszaesés a #2486 ELŐTTI
+        viselkedés — az index eldobható, a `.picasa.ini` az igazságforrás,
+        tehát a befagyasztott érték elvesztése nem ronthat el semmit.
+
+        ⚠️ Aki a fájl MOSTANI idejét kérdezi (gyorstár-kulcs, „legutóbbi
+        változtatás"), az továbbra is az `mtime_ns`-t olvassa — ez a mező
+        kizárólag a dátum-szemantikáé.
+        """
+        if self.first_seen_mtime_ns is None:
+            return self.mtime_ns
+        return self.first_seen_mtime_ns
 
     @property
     def location(self):
@@ -414,6 +439,12 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             exif_lon=row["exif_lon"],
             face_count=_optional_count(row, "face_count"),
             unnamed_face_count=_optional_count(row, "unnamed_face_count"),
+            # #2486: SZÁNDÉKOSAN szigorú olvasás — nem `_optional_count`
+            # mintájú, hallgatag visszaesés. Egy hiányzó oszlop itt némán
+            # visszakapcsolná az élő `mtime`-os datálást, vagyis pontosan
+            # azt a hibát, amit ez a mező megszüntet; jobb, ha egy szűkebb
+            # oszloplistával érkező jövőbeli hívó hangosan elhasal.
+            first_seen_mtime_ns=row["first_seen_mtime_ns"],
         )
         for row in rows
     )
