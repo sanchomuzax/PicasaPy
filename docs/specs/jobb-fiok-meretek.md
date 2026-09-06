@@ -61,13 +61,23 @@ rightdrawerpanel/base_decrect            276 széles
 > `PropertiesPanel` **210**, `PeoplePanel` **200**. Se közös fejléc, se
 > fülsáv, se egységes szélesség. **Ez a fő szerkezeti eltérés.**
 
-| gomb | méret | súgó |
-|---|---:|---|
-| `size_toggle` | **14 × 14** | „Váltás a kis és a nagy oldalpanel közt" |
-| `close` | **14 × 14** | „Oldalpanel bezárása" |
+| gomb | méret | súgó | horgony |
+|---|---:|---|---|
+| `rightdrawerpanel/size_toggle` | **14 × 14** | „Váltás a kis és a nagy oldalpanel közt" | `rightdrawerpanel.tre:21` |
+| `rightdrawerpanel/close` | **14 × 14** | „Oldalpanel bezárása" | `rightdrawerpanel.tre:18` |
+| `rightdrawerpanel/title_text` | **218 × 19**, KÖZÉPRE | „Metaadatok" (`rightdrawerpanel_text.tre:1`) | `rightdrawerpanel.tre:8` |
 
 A `size_toggle` létezése azt is elárulja, hogy a fióknak **két szélessége**
 van (kicsi/nagy) — ez nálunk nincs meg.
+
+> ⭐ **2026-09-06 (#2529): a kezelője megvan, a két szélesség NEM.** A
+> `size_toggle` és a `close` **ugyanabban a kezelőben** ül
+> (`0x00632060`, 377 b; a nevekre **puszta** alakban hasonlít, ezért a
+> minősített névre keresés nem találja meg). ⛔ **NINCS MÉRVE**, hogy a
+> váltás melyik két képpont-szélesség közt vált — a megszerzés útja: a
+> `0x00632060` `size_toggle`-ágából induló hívás, és a fiók szélességét
+> tartó tagváltozó írói. A fiók 280 képpontos nyitott szélessége a lap
+> végén (`thumbui.tre:696`) már megvan; ez a MÁSIK, kisebb méret hiányzik.
 
 ---
 
@@ -75,7 +85,7 @@ van (kicsi/nagy) — ez nálunk nincs meg.
 
 | elem | méret | pozíció |
 |---|---:|---|
-| `status_label` | **213 × 14** | x 10, y 6 |
+| `peoplepanel/status_label` (`peoplepanel.tre:8`) — „Válasszon ki egy mappát az arcok megjelenítéséhez" | **213 × 14** | x 10, y 6 |
 | `addname` (Név hozzáadása) | **163 × 20** | x 0, y 0 |
 | `ignore` (Mellőzés) | **163 × 17** | x 0, y 26 |
 | `suggestion_yes` | **27 × 22** | x **68** |
@@ -136,7 +146,7 @@ sorokéi 85 px (2 px hézag). A `quicktag_group` **266 × 98**.
 | `loading_base` | 264 × 284 | ugyanott |
 | `loading_title` | 213 × 25 | y 117 |
 | `loading_icon` | 64 × 52 | y 153 |
-| `search_label` | **213 × 14** | y 314 |
+| `geopanel/search_label` (`geopanel.tre:61`) — „Cím keresése:" | **213 × 14** | y 314 |
 | `search_group` | **258 × 28** | x 10..268, y 328 |
 | `searchinput` | **212 × 17** | x 19..231 |
 | `search` (gomb) | **28 × 28** | x 237..265 |
