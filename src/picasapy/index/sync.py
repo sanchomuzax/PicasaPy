@@ -262,20 +262,43 @@ def sync_folder(
     if should_stop is not None and should_stop():
         return  # megszakítva még a scan előtt — az index érintetlen
     root_path = Path(normalize_path(root))
-    folder_path = Path(normalize_path(folder))
+    # #2483: az indulási önjavító ág a gyökeret és a mappát AZONOS értékkel
+    # adja át (`sync_folder(conn, mappa, mappa)`), a feloldás viszont
+    # mélységnyi `lstat`-ot jelent útvonalanként. Ugyanaz a nyers szöveg
+    # ugyanarra az útra vezet — a kihagyás tehát a végeredményt nem
+    # változtatja, csak a felesleges rendszerhívást takarítja meg (a #1706
+    # `_resolved_protected_roots` érvelése, egy hívásra szűkítve).
+    folder_path = (
+        root_path if str(folder) == str(root) else Path(normalize_path(folder))
+    )
     if not folder_path.is_relative_to(root_path):
         raise ValueError(
             f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}"
         )
     _ensure_scan_state(conn)
     # #1249: a sírkövek itt is kizárnak (a watcher-ág is ide fut)
-    exclude = tuple(exclude) + removed_folder_paths(conn)
-    exclude_paths = tuple(Path(normalize_path(item)) for item in exclude)
+    #
+    # #2483: a sírkövek útvonala MÁR kanonikus — az `add_removed_folder`
+    # `normalize_path`-szal ír, az áthelyezés-migráció (`_PATH_TABLES`) is
+    # kanonikus alakot tesz vissza. Az újrafeloldásuk tehát tiszta
+    # veszteség, és a szorzó rossz: hívásonként (tehát exportcélonként)
+    # futott le MINDEN sírkőre. MÉRVE: 20 sírkő × 10 exportcél = +800
+    # `lstat` egyetlen induláson.
+    exclude_paths = tuple(
+        Path(normalize_path(item)) for item in exclude
+    ) + tuple(Path(item) for item in removed_folder_paths(conn))
     excluded = any(
         folder_path == item or item in folder_path.parents for item in exclude_paths
     )
     skip = _make_skip(conn) if incremental else None
-    scan = None if excluded else scan_folder(folder_path, skip=skip)
+    # #2483: a `folder_path` EBBEN a függvényben lett feloldva — a
+    # kizárólista ne oldja fel még egyszer (útvonal-komponensenként egy
+    # `lstat`)
+    scan = (
+        None
+        if excluded
+        else scan_folder(folder_path, skip=skip, mar_feloldva=True)
+    )
     gyoker_baja = "" if excluded or scan is not None else _gyoker_baja(root_path)
     if gyoker_baja:
         # #1560: a takarítás bizonyítéka a GYÖKÉR. Ha az nem tudja

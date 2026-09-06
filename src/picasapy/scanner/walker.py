@@ -173,17 +173,22 @@ def scan_folder(
     name_filters: NameFilters | None = None,
     skip: SkipPredicate | None = None,
     hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
+    mar_feloldva: bool = False,
 ) -> FolderScan | None:
     """Egyetlen mappa nem-rekurzív scanje (watcher-ág, #143).
 
     None, ha a mappa nem létezik / nem mappa / rejtett / a neve gyári
     kizárólistán van (#349) / nincs benne média — a hívó ilyenkor az
-    indexből is eltávolíthatja."""
+    indexből is eltávolíthatja.
+
+    `mar_feloldva=True`: a hívó állítja, hogy `folder` már feloldott
+    abszolút útvonal, tehát a kizárólista-egyeztetés ne oldja fel újra
+    (#2483) — ld. `NameFilters.is_path_excluded`."""
     path = Path(folder)
     if path.name.startswith("."):
         return None
     filters = name_filters if name_filters is not None else default_name_filters()
-    if filters.is_path_excluded(path):
+    if filters.is_path_excluded(path, mar_feloldva):
         return None
     if filters.is_directory_excluded(path.name):
         return None
