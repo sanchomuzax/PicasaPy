@@ -59,48 +59,116 @@ megmagyarázza a felület viselkedését (#26): a program **elkülöníti** a
 megtalált, de még nem azonosított arcot, a javasolt nevet és a megerősített
 nevet.
 
-## Az eltolás-tábla — mind a 44 mező
+## Az eltolás- és TÍPUS-tábla — mind a 44 mező (2026-09-06)
 
-Minden sor egy regisztráló blokk a `0x004127c0`-ban: `push <névsztring>` →
-`lea <reg>, [esi + <eltolás>]` → a típusnak megfelelő `CColumn` konstruktor.
-⚠️ A regiszter **nem** mindig `eax` — a hét kimaradt mező épp ezen bukott el.
+Minden sor egy regisztráló blokk a `0x004127c0`-ban:
+`push <névsztring>` → `lea <reg>, [esi + <eltolás>]` → **a típusnak megfelelő
+`CColumn` konstruktor**. A típus tehát nem következtetés: a hívott konstruktor
+címe adja meg. ⚠️ A `lea` regisztere **nem** mindig `eax`.
 
-| eltolás | mező | | eltolás | mező |
-|---:|---|---|---:|---|
-| `0x016c` | `parent` | | `0x0b70` | **`lat`** |
-| `0x01cc` | **`name`** | | `0x0bd8` | **`long`** |
-| `0x022c` | `filetype` | | `0x0c40` | `colorspace` |
-| `0x028c` | `fileflags` | | `0x0ca0` | `personalbumid` |
-| `0x02f0` | **`size`** | | `0x0d00` | `suggestionpersonalbumid` |
-| `0x0358` | `creation` | | `0x0d60` | `facequality` |
-| `0x03c0` | `modified` | | **`0x0dc0`** | **`facerect`** |
-| `0x0428` | `updated` | | `0x0e28` | `deferredface` |
-| `0x0490` | `width` | | `0x0e88` | `deferredregion` |
-| `0x04f0` | `height` | | `0x0ee8` | `facerectdata` |
-| `0x0550` | `rotate` | | `0x0f48` | `personalbumrecs` |
-| `0x05b0` | **`crop64`** | | `0x0fa8` | `personalbumrecvalues` |
-| `0x0618` | `flipped` | | `0x1008` | `personalbumrecs2` |
-| `0x0678` | `edit_width` | | `0x1068` | `personalbumrecvalues2` |
-| `0x06d8` | `edit_height` | | `0x10c8` | `peoplealbumchecksum` |
-| `0x0738` | `caption` | | `0x1128` | `tagdate` |
-| `0x0798` | `filters` | | `0x1190` | `fdbhash` |
-| `0x07f8` | **`text`** | | `0x11f0` | `backuphash` |
-| `0x0858` | `textactive` | | | |
-| `0x08b8` | **`tags`** | | | |
-| `0x0918` | `edited` | | | |
-| `0x0978` | `revertable` | | | |
-| `0x09d8` | `originslow` | | | |
-| `0x0a40` | `originfast` | | | |
-| `0x0aa8` | `uid64` | | | |
-| `0x0b10` | `aliasparents` | | | |
+| # | eltolás | mező | típuskód | C++ típus | importáljuk? |
+|---:|---:|---|---:|---|---|
+| 1 | `0x16c` | `parent` | **0x01** | `unsigned long` (u32) | — |
+| 2 | `0x1cc` | `name` | **0x00** | `ytString` (sztring) | — |
+| 3 | `0x22c` | `filetype` | **0x01** | `unsigned long` (u32) | — |
+| 4 | `0x28c` | `fileflags` | **0x01** | `unsigned long` (u32) | — |
+| 5 | `0x2f0` | `size` | **0x04** | `unsigned __int64` (u64) | — |
+| 6 | `0x358` | `creation` | **0x02** | `double` (double) | — |
+| 7 | `0x3c0` | `modified` | **0x02** | `double` (double) | — |
+| 8 | `0x428` | `updated` | **0x02** | `double` (double) | — |
+| 9 | `0x490` | `width` | **0x01** | `unsigned long` (u32) | — |
+| 10 | `0x4f0` | `height` | **0x01** | `unsigned long` (u32) | — |
+| 11 | `0x550` | `rotate` | **0x00** | `ytString` (sztring) | ✅ |
+| 12 | `0x5b0` | `crop64` | **0x04** | `unsigned __int64` (u64) | ✅ |
+| 13 | `0x618` | `flipped` | **0x00** | `ytString` (sztring) | — |
+| 14 | `0x678` | `edit_width` | **0x07** | `int` (**előjeles** i32) | — |
+| 15 | `0x6d8` | `edit_height` | **0x07** | `int` (**előjeles** i32) | — |
+| 16 | `0x738` | `caption` | **0x00** | `ytString` (sztring) | ✅ |
+| 17 | `0x798` | `filters` | **0x00** | `ytString` (sztring) | ✅ |
+| 18 | `0x7f8` | `text` | **0x00** | `ytString` (sztring) | — |
+| 19 | `0x858` | `textactive` | **0x03** | `signed char` (**előjeles** i8) | — |
+| 20 | `0x8b8` | `tags` | **0x06** | `char const*` (sztring-mutató) | ✅ |
+| 21 | `0x918` | `edited` | **0x03** | `signed char` (**előjeles** i8) | — |
+| 22 | `0x978` | `revertable` | **0x03** | `signed char` (**előjeles** i8) | — |
+| 23 | `0x9d8` | `originslow` | **0x04** | `unsigned __int64` (u64) | — |
+| 24 | `0xa40` | `originfast` | **0x04** | `unsigned __int64` (u64) | — |
+| 25 | `0xaa8` | `uid64` | **0x04** | `unsigned __int64` (u64) | — |
+| 26 | `0xb10` | `aliasparents` | **0x01** | `unsigned long` (u32) | — |
+| 27 | `0xb70` | `lat` | **0x02** | `double` (double) | ✅ |
+| 28 | `0xbd8` | `long` | **0x02** | `double` (double) | ✅ |
+| 29 | `0xc40` | `colorspace` | **0x03** | `signed char` (**előjeles** i8) | — |
+| 30 | `0xca0` | `personalbumid` | **0x01** | `unsigned long` (u32) | — |
+| 31 | `0xd00` | `suggestionpersonalbumid` | **0x01** | `unsigned long` (u32) | — |
+| 32 | `0xd60` | `facequality` | **0x01** | `unsigned long` (u32) | — |
+| 33 | `0xdc0` | `facerect` | **0x04** | `unsigned __int64` (u64) | — |
+| 34 | `0xe28` | `deferredface` | **0x00** | `ytString` (sztring) | — |
+| 35 | `0xe88` | `deferredregion` | **0x00** | `ytString` (sztring) | ✅ |
+| 36 | `0xee8` | `facerectdata` | **0x00** | `ytString` (sztring) | — |
+| 37 | `0xf48` | `personalbumrecs` | **0x01** | `unsigned long` (u32) | — |
+| 38 | `0xfa8` | `personalbumrecvalues` | **0x01** | `unsigned long` (u32) | — |
+| 39 | `0x1008` | `personalbumrecs2` | **0x01** | `unsigned long` (u32) | — |
+| 40 | `0x1068` | `personalbumrecvalues2` | **0x01** | `unsigned long` (u32) | — |
+| 41 | `0x10c8` | `peoplealbumchecksum` | **0x05** | `unsigned short` (u16) | — |
+| 42 | `0x1128` | `tagdate` | **0x02** | `double` (double) | — |
+| 43 | `0x1190` | `fdbhash` | **0x01** | `unsigned long` (u32) | — |
+| 44 | `0x11f0` | `backuphash` | **0x05** | `unsigned short` (u16) | — |
+
+**Az „importáljuk?" oszlop a MI kódunk mérése** (`pmpimport/importer.py:26`):
+a 44-ből **kilencet** olvasunk (`caption`, `rotate`, `star`, `filters`,
+`crop64`, `deferredregion`, `tags`, `lat`, `long`) — a `star` kivételével mind
+szerepel a fenti listában.
 
 ⛳ **Egybevág a `pmp-database.md`-vel:** ott a `width` `+0x490`, a `facerect`
 `+0xdc0`, a `facerectdata` `+0xee8` — mindhárom **betű szerint** egyezik.
 
-⭐ **A hét újonnan előkerült mező nem mellékes:** a `crop64`, a `text`, a
-`tags`, a `lat` és a `long` mind **`.picasa.ini`-kulcs is** — vagyis az
-`imagedata` rekord a szerkesztési és a címke-adatot is tartja, nem csak az
-arc- és fájl-metaadatot.
+### A nyolc konstruktor — innen jön a típus
+
+| konstruktor | RTTI-osztály | 3. sablonparaméter | típuskód |
+|---|---|---:|---:|
+| `0x004941f0` | `CColumn<ytString,0,322043904>` | `0x13320000` | **0x00** |
+| `0x00494c50` | `CColumn<unsigned_long,1,322043905>` | `0x13320001` | **0x01** |
+| `0x00495d30` | `CColumn<double,1,322043906>` | `0x13320002` | **0x02** |
+| `0x00496020` | `CColumn<signed_char,1,322043907>` | `0x13320003` | **0x03** |
+| `0x00495360` | `CColumn<unsigned___int64,1,322043908>` | `0x13320004` | **0x04** |
+| `0x004961b0` | `CColumn<unsigned_short,1,322043909>` | `0x13320005` | **0x05** |
+| `0x00493ce0` | `CColumn<char_const*,1,322043910>` | `0x13320006` | **0x06** |
+| `0x00495ec0` | `CColumn<int,1,322043911>` | `0x13320007` | **0x07** |
+
+⇒ Mind a nyolc PMP-típuskód **C++ típusnévvel** azonosítva. Ez a
+`pmp-database.md` típustáblájának (#2105) és az előjelesség-javításnak
+(#2106) **teljes, független megerősítése** — most már nem csak három típusra,
+hanem mind a nyolcra.
+
+### Amit a típusok elárulnak
+
+- **`rotate`, `flipped`, `caption`, `filters`, `text`, `deferredface`,
+  `deferredregion`, `facerectdata`, `name` — mind SZTRING** (`ytString`),
+  nem szám. A `rotate` tehát az adatbázisban is a `.picasa.ini`-beli
+  `rotate(N)` alakot tartja, nem egy egészet.
+- **`creation`, `modified`, `updated`, `tagdate`, `lat`, `long` — `double`.**
+  Az első négy időbélyeg lebegőpontos, a `lat`/`long` pedig **fokban tárolt
+  földrajzi koordináta**.
+- **`edit_width` / `edit_height` — `int`, azaz ELŐJELES** (`0x07`). Pontosan
+  az a két oszlop, amelyen a #2106 előjeles-olvasási hibája kiderült.
+- **`textactive`, `edited`, `revertable`, `colorspace` — `signed char`**
+  (`0x03`): logikai/kis egész jelzők.
+- **`tags` az EGYETLEN `char const*` oszlop** (`0x06`) az egész rekordban.
+- **`crop64` és `facerect` ugyanaz a típus** (u64) — és a `crop64` írója
+  (`FUN_0047e930`) ugyanazt a `FUN_009b9150` csomagolót használja, tehát a
+  **vágási téglalap bitszerkezete azonos az arc-téglalapéval**.
+
+### ⛔ NEGATÍV: a `star` NEM regisztrált `imagedata` oszlop
+
+A 44 regisztrált mező között **nincs `star`** — pedig a valódi
+adatmappákban ott az `imagedata_star.pmp`. A Picasa 3.9 a csillagozást
+**`starlist.txt`**-ből olvassa: a sztring (`0x00c81ad4`) az adatbázis-perzisztáló
+két függvényében szerepel (`0x0041ba40`, `0x004a82d0`), a `saverlist.txt`
+mellett.
+
+⇒ **Az `imagedata_star.pmp` örökölt oszlop**: régebbi adatbázisokban ott van,
+de a 3.9 nem regisztrálja. A `pmpimport/importer.py` **kétforrású** megoldása
+(`starlist.txt` ÉS a `star` oszlop, `_read_starlist`) ezzel **igazolt** — nem
+felesleges óvatosság.
 
 ## A mező TÍPUSÁT az RTTI mondja meg — és igazolja a PMP-típuskódokat
 

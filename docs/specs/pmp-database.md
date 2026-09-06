@@ -151,11 +151,39 @@ viszont azt mondja meg, mit ISMER a program.
 (egymás után, `+0x358`/`+0x3c0`/`+0x428`) és `tagdate` (`+0x1128`).
 
 **A lépésköz árulkodó.** A szomszédos oszlopok többnyire `0x60` vagy `0x68`
-bájtra vannak egymástól — ez az oszlop-szerkezet mérete. Ahol a lépés `0xc0`
-vagy nagyobb (`parent`→`filetype`, `rotate`→`flipped`,
-`filters`→`textactive`, `textactive`→`edited`, `aliasparents`→`colorspace`),
-ott **regisztrálatlan slot** marad ki: olyan tagok, amelyeket ez a függvény
-nem köt névhez. Hogy azok mik, nincs mérve.
+bájtra vannak egymástól — ez az oszlop-szerkezet mérete.
+
+### ✅ A „regisztrálatlan slotok" MEGVANNAK — hét további oszlop (2026-09-06)
+
+Ez a szakasz korábban azt írta, hogy a `0xc0`-nál nagyobb lépésköznél
+„**regisztrálatlan slot** marad ki… Hogy azok mik, nincs mérve." ⛔ **Ez
+téves volt: mind regisztrált oszlop.** A fenti tábla azért hagyta ki őket,
+mert a kiolvasó minta csak a `lea eax` alakot ismerte — ez a hét blokk
+`lea ecx`/`edx`/`edi`-t használ. A nevüket a `string_xrefs` sem adta vissza
+(a sztringjük a `.rdata` másik szakaszán áll); **közvetlen `.rdata`-olvasás**
+hozta elő őket.
+
+| a „rés" | mérete | ami ott ül | eltolás | sztringcím |
+|---|---:|---|---|---|
+| `parent` → `filetype` | `0xc0` | **`name`** | `+0x1cc` | `0x00c7fa20` |
+| `fileflags` → `creation` | `0xcc` | **`size`** | `+0x2f0` | `0x00c80a9c` |
+| `rotate` → `flipped` | `0xc8` | **`crop64`** | `+0x5b0` | `0x00c80adc` |
+| `filters` → `textactive` | `0xc0` | **`text`** | `+0x7f8` | `0x00c80b0c` |
+| `textactive` → `edited` | `0xc0` | **`tags`** | `+0x8b8` | `0x00c80b20` |
+| `aliasparents` → `colorspace` | `0x130` | **`lat`** és **`long`** | `+0xb70`, `+0xbd8` | `0x00c80b6c`, `0x00c80b70` |
+
+⇒ **Mind a hat rés magyarázva, mind a hét oszlop elhelyezve** — a rekord
+tehát **44** oszlopos, nem 37. Ezzel a lépésköz teljesen egyenletes lesz
+(`0x60`/`0x68`), és a „regisztrálatlan slot" fogalmára nincs szükség.
+
+⛳ **Hogy melyik oszlop MILYEN típusú**, azt a regisztráló hívás célcíme adja
+meg — mind a nyolc konstruktor és a teljes 44-soros típustábla:
+`picasa-imagedata-rekord.md`.
+
+⛔ **NEGATÍV: a `star` NEM regisztrált oszlop.** A 44 között nincs — a 3.9 a
+csillagozást a **`starlist.txt`**-ből olvassa (`0x00c81ad4`, a perzisztáló
+`0x0041ba40` és `0x004a82d0`). Az `imagedata_star.pmp` tehát **örökölt**
+oszlop.
 
 > ⛔ **NE keverd össze a rendezés forrásával.** A rendező-hasonlító
 > (`FUN_004a7890`) egy MÁSIK objektum oszlopait olvassa: ott a név-oszlop
