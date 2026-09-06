@@ -19,6 +19,7 @@ segédfüggvényt: ha valaha visszakerülne a `glob()`, ezek a próbák buknak.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -48,6 +49,28 @@ def _pillanatkep(mappa: Path, nev: str, tartalom: bytes) -> Path:
     return path
 
 
+#: #2541: a `*` és a `?` a Windows TILTOTT fájlnév-karakterei
+#: (`* ? " < > | : \ /`), ezért az ilyen nevű fájl létrehozása már az
+#: íráson elhasal (`OSError: [Errno 22] Invalid argument`) — a main
+#: windows-lába emiatt lett piros a `76ad6e89`-en.
+#:
+#: ⚠️ A kihagyás indoka NEM az, hogy „Windowson nem működik", hanem hogy a
+#: vizsgált HELYZET ott elő sem fordulhat: joker-karakteres nevű kép csak
+#: POSIX-on létezik. A linuxos fedezet változatlan — ott mindkét próba fut.
+#:
+#: A szögletes zárójeles próba SZÁNDÉKOSAN nincs kihagyva: a `[` és a `]`
+#: Windowson megengedett karakter, és a `glob()`-nak ugyanúgy jokere volt,
+#: tehát ott is valódi fedezet.
+_WINDOWSON_NEM_LETEZHET = pytest.mark.skipif(
+    os.name == "nt",
+    reason=(
+        "a `*` és a `?` tiltott a Windows fájlneveiben, ezért joker-"
+        "karakteres nevű kép ott elő sem fordulhat — a próba tárgya "
+        "platformfüggő, nem a kód (#2541)"
+    ),
+)
+
+
 class TestJokerKarakter:
     def test_szogletes_zarojeles_nev_pillanatkepe_megtalalhato(self, tmp_path):
         """`IMG[1].jpg`: a `[`/`]` a régi `glob()`-mintában joker volt."""
@@ -61,6 +84,7 @@ class TestJokerKarakter:
         assert kep.read_bytes() == b"mentes-elotti"
         assert eredmeny.restored_from.name == "IMG[1].1.jpg"
 
+    @_WINDOWSON_NEM_LETEZHET
     def test_csillagos_nev_nem_szed_ossze_idegen_pillanatkepeket(self, tmp_path):
         """A `*` a mintában MINDENT elfogadott volna: `b.1.jpg`-t is."""
         kep = _kep(tmp_path, "a*.jpg", b"mentett")
@@ -71,6 +95,7 @@ class TestJokerKarakter:
 
         assert talalatok == ["a*.1.jpg"]
 
+    @_WINDOWSON_NEM_LETEZHET
     def test_kerdojeles_nev(self, tmp_path):
         kep = _kep(tmp_path, "a?.jpg", b"mentett")
         _pillanatkep(tmp_path, "a?.1.jpg", b"sajat")
