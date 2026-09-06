@@ -33,8 +33,6 @@ gombunk 26.0, mint az eredeti). Ez a szám **csak csökkenhet**:
 
 from __future__ import annotations
 
-import pytest
-
 from tests.app.qml_functional.test_visszavonas_felirat_2494 import (
     JELENTETT_FELIRAT,
     MERT_GOMBSZELESSEG,
