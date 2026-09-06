@@ -1260,3 +1260,242 @@ hívóláncának végigolvasása. A négy mérési pont (4→500, 6→256, 9→3
 
 ⛔ **ÚJ MINTÁT KÉRNI TILOS ugyanerre** — a tulajdonos kifejezett
 utasítása (`#1412`, 2026-09-06). A négy pont elég a hitelesítéshez.
+
+
+---
+
+## 18. Az Indexkép (`contactsheet`) elrendezése — TELJESEN KIMÉRVE (2026-09-06, #1412)
+
+*168. kutatói kör. Négy minta: `AI6` (9 kép), `AI27` (4), `AI28` (6),
+`AI29` (12) — összesen **31 csomópont**. A 17. szakasz „a `scale`
+levezetése ismeretlen" állítását ez a szakasz **részben lezárja**: a
+`scale` SZEREPE megvan és pontosan igazolt (18.5), az ÉRTÉKÉNEK képlete
+nyitva marad (18.6).*
+
+### 18.1 ⭐ ÖNHELYESBÍTÉS: a `scale` öt témában a befoglaló doboz HOSSZABB OLDALA
+
+A 17.1 tábla „arány" oszlopa (`scale / (w × 1024)`) félrevezetett: az ott
+látott 1,25000 · 1,20020 · 1,78431 értékek **nem témakonstansok**, hanem
+egyszerűen **1 / képarány**. A helyes, egyszerű azonosság:
+
+> **`scale` = max(w, h)** — a csomópont befoglaló dobozának hosszabb
+> oldala, a `.cxf` vízszintes 1024-es egységrendszerében.
+
+**Mérve** — `scale / max(w, h)` minden csomópontra (119 csomópont, 15 fájl):
+
+| téma | minták | csomópont | `scale / max(w,h)` |
+|---|---|---|---|
+| `picturepile` | AI · AI1 · AI2 · AI8 · AI9 · AI10 · lake-allo-piszkozat | 57 | **0,9998 – 1,0000** |
+| `regulargrid` | AI5 | 9 | **1,0000** (9/9) |
+| `multiexp` | AI7 | 4 | 0,0010 — `scale=1`, **jelző**, nem méret |
+| `picturegrid` | AI3 | 9 | 0,52 – 0,75 — **nem** ez |
+| `framegrid` | AI4 | 9 | 0,66 – 0,89 — **nem** ez |
+| `contactsheet` | AI6 · AI27 · AI28 · AI29 | 31 | 1,03 – 1,21 — **nem** ez (ld. 18.5) |
+
+Ez visszamenőleg megmagyarázza a 17.2 rejtélyét is: az `AI1` álló képének
+`scale/w` aránya **1,78431**, a forráskép `816 × 1456` ⇒
+`1456/816 = 1,78431` — a hányados **maga a fordított képarány**, nem
+külön jelenség. Ugyanígy a `polaroid` keretes csomópontok 1,20020-ja a
+polaroid keret 0,83320-as arányának reciproka.
+
+*Bizonyítottsági fok: **megerősített** — puszta számolás 119 csomóponton.*
+
+### 18.2 ⭐ Az Indexkép elrendezője: `FUN_00888210` @ `0x00888210`
+
+*Forrás: `referencia/dekompilalt-kollazs/script-DecompileCollage.log`
+[177] — a `collage/contactsheet/title` és `…/subtitle` erőforrásnevek
+ebben a törzsben állnak (`0x00888210`, 2337 bájt). A konstansok helyi
+diszasszemblálásból: `eszkozok/pe_dis.py`.*
+
+```
+W = param_5 - param_3                       ; a lap szélessége képpontban
+H = param_6 - param_4                       ; a lap magassága képpontban
+[param_1+0x1c] = W / H
+
+balMargó   = CSONK(W * 0.06)                ; 0x0088827c  fmul qword [0x00cf46d0]
+felsőMargó = CSONK(H * 0.15)                ; 0x00888296  fld  qword [0x00cf3fd0]
+rés        = CSONK([param_1+0x18] * 0.08)   ; 0x008882d4  fmul qword [0x00cf4df0]
+cellaSzél  = CSONK(0.88 * W / [param_1+0x14])  ; 0x00888305 fld dword [0x00d3a140]
+cellaMag   = CSONK(0.79 * H / [param_1+0x10])  ;           fld dword [0x00d3a144]
+```
+
+**Az öt konstans a binárisból kiolvasva**, nem illesztés (a `0,88` és a
+`0,79` **nem új** — egy korábbi kör már kiolvasta őket, ld. 18.8):
+
+| konstans | VA | nyers bájtok | érték |
+|---|---|---|---|
+| oldalmargó-tényező | `0x00cf46d0` | `000000e051b8ae3f` (double) | **0,06** |
+| felsőmargó-tényező | `0x00cf3fd0` | `000000403333c33f` (double) | **0,15** |
+| rés-tényező | `0x00cf4df0` | `00000040e17ab43f` (double) | **0,08** |
+| cellaszélesség-tényező | `0x00d3a140` | `ae47613f` (float) | **0,88** |
+| cellamagasság-tényező | `0x00d3a144` | `713d4a3f` (float) | **0,79** |
+
+⚠️ **CSONK, nem kerekítés.** A dekompilátum `ROUND(...)`-ot mutat, de a
+kód minden `fistp` elé beállítja az FPU vezérlőszavát:
+`or eax, 0xc00` (`0x00888258`, `0x008882a7`, `0x008882e6`, `0x00888323`)
+— a `0xC00` a kerekítési mezőben **nulla felé csonkolás**. A mérés ezt
+igazolja: kerekítéssel a cellaszélesség 451 volna, csonkolással **450**,
+és a minták 450-et adnak.
+
+A struktúra egész mezői: `[param_1+0x10]` = **sorok száma**,
+`[param_1+0x14]` = **oszlopok száma**, `[param_1+0x18]` = harmadik
+rácsparaméter (18.6). A csomópont-tömb lépésköze `0x38` (56 bájt) —
+ugyanaz a tömb, amelyből a `.cxf`-író (`FUN_008347b0`, 17.4) dolgozik.
+Az elrendező ide ír: `+0x18` = `x`, `+0x1c` = `y`, `+0x20` = `w`,
+`+0x24` = `h`.
+
+### 18.3 A lap egységrendszere: 1024 × CSONK(1024 · H/W)
+
+A 17.3-at (vízszintesen 1024 egység) a `h` mezőkkel kiegészítve: a
+függőleges törtek nevezője a lap magassága **ugyanabban az egységben**,
+egész számra csonkolva.
+
+| minta | `format` | 1024·H/W | lapmagasság | ellenőrzés |
+|---|---|---|---|---|
+| AI6 | 4:3 álló | 1365,33 | **1365** | max\|h·P − w/képarány\| = **0,001** egység (9/9) |
+| AI27 | 297:210 álló | 1448,23 | **1448** | ugyanaz, **0,001** (4/4) |
+| AI28 | 4:3 fekvő | 768,00 | **768** | ugyanaz, **0,001** (6/6) |
+| AI29 | 13:9 fekvő | 708,92 | **708** | *(csak `polaroid` csomópontjai vannak — így nem ellenőrizhető; az elrendezés-egyezés igazolja, 18.5)* |
+
+Ebből egyben az is látszik, hogy a kirajzolt doboz **magassága nincs
+külön tárolva**: `h = w / képarány`, ahol a `w` **egész** a vízszintes
+egységben — az eltérés a forráskép arányától 10⁻³ egység alatt marad.
+
+### 18.4 ⭐ A KÉT ELRENDEZÉSI KÉPLET — 31/31 · 31/31 csomóponton PONTOS
+
+```
+x = oszlopIndex × cellaSzél + (cellaSzél − w)     // 2 + balMargó
+y = sorIndex    × cellaMag  + (cellaMag  − scale) // 2 + felsőMargó
+```
+
+egész osztással, a lap 1024 × P egységrendszerében:
+
+| minta | oszlop × sor | balMargó | felsőMargó | cellaSzél | cellaMag | `scale` | x | y |
+|---|---|---|---|---|---|---|---|---|
+| AI6 | 3 × 3 | 61 | 204 | 300 | 359 | 313 | **9/9** | **9/9** |
+| AI27 | 2 × 2 | 61 | 217 | 450 | 571 | 500 | **4/4** | **4/4** |
+| AI28 | 3 × 2 | 61 | 115 | 300 | 303 | 256 | **6/6** | **6/6** |
+| AI29 | 4 × 3 | 61 | 106 | 225 | 186 | 158 | **12/12** | **12/12** |
+
+**Nulla eltérés mind a 62 jóslaton.** Ez azonosítja `FUN_00888210`-et
+mint a mintáinkat előállító elrendezőt — nem hasonlóság, hanem egyezés.
+
+*Bizonyítottsági fok: **megerősített**.*
+
+### 18.5 ⭐ Mire VALÓ a `scale` az Indexképnél: a függőleges középre igazítás
+
+Az Indexképnél a `scale` **nem** a doboz hosszabb oldala (18.1): a doboz
+`w × h` a **kirajzolt kép**. A `scale` ehelyett a **lap-szintű
+csomópontmagasság**, amellyel az elrendező a sorban középre igazít —
+ezt a 18.4 `y`-képlete méri, 31/31 pontossággal.
+
+**Két független megerősítés, hogy tényleg ez:**
+
+1. **Az `y` a soron belül minden csomópontra AZONOS**, pedig a `h`-juk
+   különbözik (`AI27` első sora: `h` = 446,08 és 449,75, `y` = 0,174033
+   mindkettőnek). Ha az igazítás a saját `h`-val menne, eltérnének. ⇒ a
+   használt magasság **lap-szintű** — és pontosan ezért lap-szintű
+   állandó maga a `scale` is. **Ez a #1412 eredeti rejtélyének
+   magyarázata.**
+2. **A kirajzolt kép mindig belefér:** `max(w, h) ≤ scale` mind a 31
+   Indexkép-csomópontra, és a legnagyobb 96,7 %-ig tölti ki.
+
+### 18.6 Ami NYITVA marad: mi állítja be a `scale` ÉRTÉKÉT
+
+Két külön kérdés, mindkettő nyitott:
+
+**(a) Ki írja a `+0x2c`-t?** `FUN_00888210` a csomópontba
+**`0x3f800000` = 1,0** értéket ír (`*(node + 0x2c) = 0x3f800000`) ⇒ az
+Indexkép-elrendező **nem** a forrás. A mentett fájlban mégis
+313 / 500 / 256 / 158 áll ⇒ **egy későbbi menet írja felül**. Ez a 17.14
+„blokk-másoló / közvetett írási út" ágának **pontosított** alakja: nem
+akárhol a kollázs-sávban kell keresni, hanem **a témalayout UTÁN futó
+menetben**.
+
+**(b) Mi a képlete?** A négy mérési pont a cellamérettel:
+
+| minta | oszlop × sor | cellaSzél × cellaMag | `scale` | `scale` / cellaMag |
+|---|---|---|---|---|
+| AI6 | 3 × 3 | 300 × 359 | 313 | 0,872 |
+| AI27 | 2 × 2 | 450 × 571 | 500 | 0,876 |
+| AI28 | 3 × 2 | 300 × 303 | 256 | 0,845 |
+| AI29 | 4 × 3 | 225 × 186 | 158 | 0,849 |
+
+⚠️ **Nem illesztek konstanst** a négy pontra: a két álló lap 0,87 körül,
+a két fekvő 0,85 körül van, de négy pont mellett ez **nem bizonyíték**
+(szabad paraméter elnyeli a hibát).
+
+**A konkrét következő lépés** (gépi, új mintát NEM igényel): a
+`[param_1+0x18]` mező azonosítása. Ez a harmadik rácsparaméter, a `rés`
+alapja (`CSONK(0,08 × [param_1+0x18])`), és a `scale` nagyságrendjében
+mozog. Ha `[param_1+0x18]` maga a `scale`, a kérdés arra fordul át, hogy
+**ki tölti ki a téma-struktúra `+0x18` mezőjét** — a `CContactSheetTheme`
+konstruktora, illetve a `0x00887bd0` / `0x00887e50` testvérfüggvények.
+
+⛔ **Új mintát kérni TILOS ugyanerre** (17.15).
+
+### 18.7 Amit a kör KIZÁRT (hogy ne járják újra)
+
+- **A `scale` nem a cella hosszabb oldala** és nem a cellaosztás: mind a
+  négy mintán más az arány (18.6 tábla).
+- **A kép nem egységes cellába illesztett**: `AI27` három különböző
+  képarányú képe három **különböző** magasságot kap (446,08 · 449,75 ·
+  432,00), miközben egy közös dobozba illesztésnél (contain vagy cover)
+  legalább az egyik méretüknek meg kellene egyeznie. A `FUN_009b4aa0`
+  (`0x009b4aa0`) arány-tartó illesztő tehát **nem a cellát** kapja
+  célként.
+- **A `.tre`/`respack` nem játszik**: az elrendezés végig a fenti öt
+  numerikus konstansból jön.
+
+### 18.8 ⭐ A MI kódunk MÁR MAJDNEM kiszámolja a `scale`-t — 0…2 egység a négyből
+
+*Ez a szakasz a „MIT AD MA" mérés, és **megcáfol** egy évek óta álló
+állítást a saját kódunkról.*
+
+A `draft.scale_for_theme()` docstringje szerint a `contactsheet` ágon
+„*nincs levezetve — marad a négyzetoldal*". A **tényleges elrendezőnk**
+viszont (`collage/picasa_render.py`, `_contact_sheet_nodes`) már ma is a
+bináris receptjét futtatja: `0,06` / `0,15` margó, `0,88` × `0,79`
+hasznos terület (`collage/shadow.py`, `CONTACT_USABLE_WIDTH/HEIGHT` —
+a `0x00d3a140` / `0x00d3a144` **már ki volt olvasva** egy korábbi körben),
+és a `0,08 · k` belső ráhagyás.
+
+**Mérve** — a saját elrendezőnket a négy arany minta lapméretével és
+forráskép-arányaival futtatva (`layout_nodes_for_aspects`, `contactsheet`):
+
+| minta | lap | kép | a mi csomópont-**magasságunk** | a fájl `scale`-je | eltérés |
+|---|---|---|---|---|---|
+| AI6 | 1024 × 1365 | 9 | **311** | 313 | −2 |
+| AI27 | 1024 × 1448 | 4 | **500** | 500 | **0** |
+| AI28 | 1024 × 768 | 6 | **255** | 256 | −1 |
+| AI29 | 1024 × 708 | 12 | **156** | 158 | −2 |
+
+⇒ **A `scale` értéke NEM idegen szám**: az Indexkép-csomópont
+**magassága**, amit a cellába illesztés és a `0,08 · k` ráhagyás után
+kapunk. A maradék 0–2 egység a kerekítési módokon és a `k` /
+oszlopszám levezetésén múlik.
+
+**Amit ez NEM jelent:** a képlet nincs lezárva. A
+`cellaMag − 2 · CSONK(0,08 · k)` alak a négy mintából **egyikre sem ad
+egyszerre** pontos találatot: az `AI6` és az `AI28` ugyanazt a `k = 300`
+cellaélt kapja, mégis 23, illetve 24 egységnyi ráhagyás kellene hozzájuk.
+Tehát vagy a `k` levezetése tér el az eredetitől, vagy a ráhagyás nem
+a `k`-ból jön.
+
+**A mi elrendezőnk mért eltérései az `AI27`-en** (lapegységben):
+
+| | eredeti | nálunk | eltérés |
+|---|---|---|---|
+| `x` | 161 · 607 · 178 · 611 | 162 · 610 · 179,5 · 613 | +1 … +3 |
+| `y` | 252 · 252 · 823 · 823 | 253 · 253 · 825 · 825 | +1 … +2 |
+| `w` | 250 · 257 · 216 · 250 | 249 · 255 · 214 · 249 | −1 … −2 |
+| `h` | 446,08 · 449,75 · 432,00 · 446,08 | **500** mind | ez a `scale`, nem a rajzolt kép |
+
+⛳ **Két külön teendő látszik**, és mindkettő a fejlesztésé (#2583):
+
+1. **kerekítés helyett csonkolás** a margó- és cellaszámításban
+   (`picasa_round` → `math.trunc`) — a bináris `or eax, 0xc00`-t állít
+   (18.2), és a mintákon a 450 nyer a 451-gyel szemben;
+2. **a csomópont `h`-ja nem a cella magassága**: a `.cxf`-be a **kirajzolt
+   kép** doboza megy (`h = w / képarány`), a cellamagasság pedig a
+   `scale` mezőbe — ez a mai kódunkban össze van csúsztatva.
