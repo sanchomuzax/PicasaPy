@@ -283,12 +283,16 @@ class TestAVisszajelzesEsATartalek:
             in _tetel(window, "errorBannerText").property("text")
         )
 
-    def test_az_elerhetetlen_megosztas_uzenete_is_latszik(self, qml_app, qt_app):
+    def test_a_mentes_kerese_a_savban_is_latszik(self, qml_app, qt_app):
+        """#2553: a jelzés három adatot visz — üzenet, kiinduló mappa,
+        javasolt fájlnév. A sávban az üzenetnek kell megjelennie."""
         window, controller, _engine = qml_app
-        controller.tesztuzemMentesMaskentKert.emit("A közös mappa nem érhető el.")
+        controller.tesztuzemMentesKert.emit(
+            "Válaszd ki, hova mentsük az indulási naplót.", "", ""
+        )
         qt_app.processEvents()
         assert (
-            "nem érhető el"
+            "hova mentsük"
             in _tetel(window, "errorBannerText").property("text")
         )
 

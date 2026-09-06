@@ -32,7 +32,6 @@ from picasapy.perf.tesztuzem import (
     legutobbi_indulasi_naplo,
     megosztas_elerheto,
     megosztas_gyokere,
-    naplo_atadasa,
     naplo_celmappa,
     naplo_fajlneve,
     naplo_szovege,
@@ -272,34 +271,6 @@ class TestMegosztas:
         assert (
             megosztas_elerheto(tmp_path, ismount=lambda _p: False, unc=True) is True
         )
-
-
-class TestNaploAtadasa:
-    """Egykattintásos átadás — fájlmásolás, semmi hálózati feltöltés."""
-
-    def test_a_naplo_a_celmappaba_kerul(self, tmp_path):
-        forras = tmp_path / "indulas-1.txt"
-        forras.write_text("idővonal", encoding="utf-8")
-        cel = tmp_path / "nas" / NAPLO_ALMAPPA
-
-        eredmeny = naplo_atadasa(
-            forras=forras, celmappa=cel, most=datetime(2026, 8, 27, 20, 41, 5)
-        )
-
-        assert eredmeny == cel / "picasapy-indulas-20260827-204105.txt"
-        assert eredmeny.read_text(encoding="utf-8") == "idővonal"
-
-    def test_elerhetetlen_cel_OSError_t_dob(self, tmp_path):
-        """A hívó (vezérlő) EBBŐL tudja, hogy a „Mentés másként…" tartalék
-        kell — a néma sikertelenség a legrosszabb kimenet."""
-        akadaly = tmp_path / "akadaly"
-        akadaly.write_text("nem mappa", encoding="utf-8")
-        with pytest.raises(OSError):
-            naplo_atadasa(
-                forras=tmp_path / "nincs.txt",
-                celmappa=akadaly / NAPLO_ALMAPPA,
-                most=datetime(2026, 8, 27, 20, 41, 5),
-            )
 
 
 class TestLegutobbiNaplo:

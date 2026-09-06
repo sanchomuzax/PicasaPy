@@ -17,6 +17,7 @@ from picasapy.app import tesztuzem_controller as modul
 from picasapy.app.tesztuzem_controller import TesztuzemMixin
 from picasapy.perf.tesztuzem import (
     NAPLO_ALMAPPA,
+    NAPLO_MAPPA_BEALLITAS_KULCS,
     TESZTUZEM_BEALLITAS_KULCS,
 )
 
@@ -136,93 +137,199 @@ def _keszits_naplot(mappa: Path, nev: str = "indulas-20260827-204105.txt") -> Pa
 
 
 class TestNaploAtadasa:
-    """Egykattintásos átadás a NAS közös mappájába — semmi feltöltés."""
+    """#2553: az átadás MINDIG a felhasználó választásával megy.
+
+    A #1654 egy beégetett mappába másolt, és a párbeszéd csak tartalék
+    volt. Az a hely egyetlen gépre volt szabva, és MÉRVE (2026-09-06) a
+    fejlesztői gépről nem is látszott: a napló kiment, de senki nem érte
+    el — a tulajdonosnak kézzel kellett átküldenie.
+    """
 
     @pytest.fixture
     def kornyezet(self, controller, tmp_path, monkeypatch):
         naplok = tmp_path / "cache" / "perf"
         _keszits_naplot(naplok)
         megosztas = tmp_path / "nas"
-        megosztas.mkdir()
+        (megosztas / NAPLO_ALMAPPA).mkdir(parents=True)
         vagolap: list[str] = []
+        dok = tmp_path / "dokumentumok"
+        dok.mkdir()
         monkeypatch.setattr(modul, "_naplo_mappa", lambda: naplok)
         monkeypatch.setattr(modul, "_megosztas_gyokere", lambda: megosztas)
         monkeypatch.setattr(modul, "_vagolapra", vagolap.append)
+        monkeypatch.setattr(modul, "_dokumentumok", lambda: dok)
         monkeypatch.setattr(
             modul, "_most", lambda: datetime(2026, 8, 27, 21, 0, 0)
         )
-        return controller, megosztas, vagolap
+        return controller, megosztas, vagolap, dok
 
-    def test_a_naplo_a_rogzitett_almappaba_kerul(self, kornyezet, qt_app):
-        controller, megosztas, _vagolap = kornyezet
-        eredmeny = controller.tesztuzemNaploAtadasa()
-        cel = megosztas / NAPLO_ALMAPPA / "picasapy-indulas-20260827-210000.txt"
-        assert eredmeny == str(cel)
-        assert cel.exists()
+    @staticmethod
+    def _keresek(controller):
+        kerések: list[tuple[str, str, str]] = []
+        controller.tesztuzemMentesKert.connect(
+            lambda uzenet, mappa, nev: kerések.append((uzenet, mappa, nev))
+        )
+        return kerések
 
-    def test_az_utvonal_a_vagolapra_kerul(self, kornyezet, qt_app):
-        controller, megosztas, vagolap = kornyezet
+    def test_a_parbeszedet_keri_akkor_is_ha_a_megosztas_ELERHETO(
+        self, kornyezet, qt_app
+    ):
+        """⚠️ Ez a jegy lényege: a párbeszéd nem tartalék, hanem AZ út."""
+        controller, _megosztas, _vagolap, _dok = kornyezet
+        kerések = self._keresek(controller)
+        assert controller.tesztuzemNaploAtadasa() is True
+        assert kerések, "elérhető megosztásnál elmaradt a kérdés"
+
+    def test_MAGATOL_semmit_nem_ir_ki(self, kornyezet, qt_app):
+        """A napló csak oda kerül, ahova a felhasználó mutat."""
+        controller, megosztas, _vagolap, _dok = kornyezet
         controller.tesztuzemNaploAtadasa()
-        assert vagolap == [
-            str(megosztas / NAPLO_ALMAPPA / "picasapy-indulas-20260827-210000.txt")
-        ]
+        assert list((megosztas / NAPLO_ALMAPPA).iterdir()) == []
 
-    def test_sikernel_magyarul_visszajelez(self, kornyezet, qt_app):
-        controller, _megosztas, _vagolap = kornyezet
-        uzenetek = []
-        controller.tesztuzemUzenet.connect(uzenetek.append)
+    def test_a_javasolt_fajlnev_idobelyeges(self, kornyezet, qt_app):
+        controller, _megosztas, _vagolap, _dok = kornyezet
+        kerések = self._keresek(controller)
         controller.tesztuzemNaploAtadasa()
-        assert uzenetek and "vágólap" in uzenetek[0].casefold()
+        assert kerések[0][2] == "picasapy-indulas-20260827-210000.txt"
 
-    def test_nincs_naplo_eseten_ERTHETO_uzenet(
+    def test_elso_alkalommal_a_megosztas_a_kiindulo_hely(self, kornyezet, qt_app):
+        controller, megosztas, _vagolap, _dok = kornyezet
+        kerések = self._keresek(controller)
+        controller.tesztuzemNaploAtadasa()
+        assert kerések[0][1].endswith(NAPLO_ALMAPPA)
+
+    def test_elerhetetlen_megosztasnal_IS_felugrik(
+        self, kornyezet, monkeypatch, qt_app
+    ):
+        """A #1654-ben ilyenkor a felhasználó hibaüzenetet kapott, és a
+        párbeszéd csak emiatt nyílt. Most a párbeszéd a normál menet — a
+        megosztás hiánya csak a kiinduló helyet változtatja."""
+        controller, _megosztas, _vagolap, dok = kornyezet
+        monkeypatch.setattr(modul, "_megosztas_gyokere", lambda: None)
+        kerések = self._keresek(controller)
+        assert controller.tesztuzemNaploAtadasa() is True
+        assert kerések and kerések[0][1].endswith(dok.name)
+
+    def test_nincs_naplo_eseten_ERTHETO_uzenet_es_NINCS_parbeszed(
         self, controller, tmp_path, monkeypatch, qt_app
     ):
         monkeypatch.setattr(modul, "_naplo_mappa", lambda: tmp_path / "ures")
-        uzenetek = []
+        uzenetek: list[str] = []
+        kerések = self._keresek(controller)
         controller.tesztuzemUzenet.connect(uzenetek.append)
-        assert controller.tesztuzemNaploAtadasa() == ""
+        assert controller.tesztuzemNaploAtadasa() is False
         assert uzenetek and "napló" in uzenetek[0].casefold()
+        assert not kerések, "nincs mit menteni, mégis kérdezett"
 
 
-class TestMentesMaskentTartalek:
-    """„Ha a megosztás nem érhető el, érthető magyar üzenet + Mentés
-    másként…" — a néma sikertelenség a legrosszabb kimenet."""
+class TestAValasztasMegmarad:
+    """#2553: a második átadás is egy mozdulat legyen."""
 
     @pytest.fixture
-    def elerhetetlen(self, controller, tmp_path, monkeypatch):
+    def kornyezet(self, controller, tmp_path, monkeypatch):
         naplok = tmp_path / "cache" / "perf"
         _keszits_naplot(naplok)
+        megosztas = tmp_path / "nas"
+        (megosztas / NAPLO_ALMAPPA).mkdir(parents=True)
+        vagolap: list[str] = []
+        dok = tmp_path / "dokumentumok"
+        dok.mkdir()
         monkeypatch.setattr(modul, "_naplo_mappa", lambda: naplok)
-        monkeypatch.setattr(modul, "_megosztas_gyokere", lambda: None)
-        monkeypatch.setattr(modul, "_vagolapra", lambda _szoveg: None)
-        return controller
+        monkeypatch.setattr(modul, "_megosztas_gyokere", lambda: megosztas)
+        monkeypatch.setattr(modul, "_vagolapra", vagolap.append)
+        monkeypatch.setattr(modul, "_dokumentumok", lambda: dok)
+        monkeypatch.setattr(
+            modul, "_most", lambda: datetime(2026, 8, 27, 21, 0, 0)
+        )
+        return controller, tmp_path, vagolap
 
-    def test_a_mentes_maskentet_keri(self, elerhetetlen, qt_app):
-        kerések = []
-        elerhetetlen.tesztuzemMentesMaskentKert.connect(kerések.append)
-        assert elerhetetlen.tesztuzemNaploAtadasa() == ""
-        assert kerések, "a megosztás hiányát némán elnyelte"
-        assert "nem érhető el" in kerések[0].casefold()
-
-    def test_a_tartalek_mentes_kiirja_a_naplot(self, elerhetetlen, tmp_path, qt_app):
-        elerhetetlen.tesztuzemNaploAtadasa()
+    def test_a_mentes_kiirja_a_naplot(self, kornyezet, tmp_path, qt_app):
+        controller, _tmp, _vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
         cel = tmp_path / "asztal" / "naplo.txt"
         cel.parent.mkdir()
-
-        assert elerhetetlen.tesztuzemNaploMentese(cel.as_uri()) is True
-
+        assert controller.tesztuzemNaploMentese(cel.as_uri()) is True
         assert cel.read_text(encoding="utf-8").startswith("PicasaPy")
 
-    def test_a_tartalek_sima_utvonalat_is_elfogad(
-        self, elerhetetlen, tmp_path, qt_app
-    ):
-        elerhetetlen.tesztuzemNaploAtadasa()
+    def test_sima_utvonalat_is_elfogad(self, kornyezet, tmp_path, qt_app):
+        controller, _tmp, _vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
         cel = tmp_path / "naplo.txt"
-        assert elerhetetlen.tesztuzemNaploMentese(str(cel)) is True
+        assert controller.tesztuzemNaploMentese(str(cel)) is True
         assert cel.exists()
 
-    def test_ures_celnal_hamis(self, elerhetetlen, qt_app):
-        assert elerhetetlen.tesztuzemNaploMentese("") is False
+    def test_ures_celnal_hamis(self, kornyezet, qt_app):
+        controller, _tmp, _vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
+        assert controller.tesztuzemNaploMentese("") is False
+
+    def test_az_utvonal_a_vagolapra_kerul(self, kornyezet, tmp_path, qt_app):
+        controller, _tmp, vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
+        cel = tmp_path / "naplo.txt"
+        controller.tesztuzemNaploMentese(str(cel))
+        assert vagolap == [str(cel)]
+
+    def test_a_valasztott_mappa_eltarolodik(self, kornyezet, tmp_path, ini, qt_app):
+        controller, _tmp, _vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
+        cel = tmp_path / "valasztott" / "naplo.txt"
+        cel.parent.mkdir()
+        controller.tesztuzemNaploMentese(str(cel))
+
+        friss = QSettings(str(ini), QSettings.Format.IniFormat)
+        assert friss.value(NAPLO_MAPPA_BEALLITAS_KULCS) == str(cel.parent)
+
+    def test_a_tarolas_KI_IS_IRODIK_lemezre(self, kornyezet, tmp_path, qt_app):
+        """⚠️ `sync()` nélkül a választás csak a Qt belső pufferében élne,
+        és egy váratlan kilépés elnyelné.
+
+        Ezt az előző teszt NEM fogja meg: a Qt ugyanarra a fájlra ugyanazt
+        a belső gyorstárat adja vissza a processzen belül, tehát a friss
+        `QSettings` a ki nem írt értéket is látja (mérve: a `sync()`
+        törlésére az a próba ZÖLD maradt). A kiírást ezért a HÍVÁSON
+        mérjük, nem a következményén."""
+        controller, _tmp, _vagolap = kornyezet
+        naplo: list[str] = []
+        valodi = controller._settings
+
+        class _Figyelo:
+            def value(self, *a, **kw):
+                return valodi.value(*a, **kw)
+
+            def setValue(self, kulcs, ertek):
+                naplo.append(f"setValue:{kulcs}")
+                valodi.setValue(kulcs, ertek)
+
+            def sync(self):
+                naplo.append("sync")
+                valodi.sync()
+
+        controller._settings = _Figyelo()
+        controller.tesztuzemNaploAtadasa()
+        cel = tmp_path / "valasztott2" / "naplo.txt"
+        cel.parent.mkdir()
+        controller.tesztuzemNaploMentese(str(cel))
+
+        assert naplo and naplo[-1] == "sync", (
+            f"a mappa tárolása sync() nélkül maradt: {naplo}"
+        )
+
+    def test_masodszorra_a_MEGJEGYZETT_mappa_a_kiindulo_hely(
+        self, kornyezet, tmp_path, qt_app
+    ):
+        controller, _tmp, _vagolap = kornyezet
+        controller.tesztuzemNaploAtadasa()
+        cel = tmp_path / "valasztott" / "naplo.txt"
+        cel.parent.mkdir()
+        controller.tesztuzemNaploMentese(str(cel))
+
+        kerések: list[str] = []
+        controller.tesztuzemMentesKert.connect(
+            lambda _u, mappa, _n: kerések.append(mappa)
+        )
+        controller.tesztuzemNaploAtadasa()
+        assert kerések and kerések[0].endswith("valasztott")
 
 
 class TestNemIrElesbe:

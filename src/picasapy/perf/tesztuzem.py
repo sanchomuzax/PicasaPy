@@ -58,6 +58,15 @@ TESZTUZEM_KAPCSOLO = "--tesztuzem"
 #: A közös mappa rögzített almappája — a fejlesztés innen olvassa ki.
 NAPLO_ALMAPPA = "picasapy-naplo"
 
+#: A LEGUTÓBB VÁLASZTOTT célmappa `QSettings`-kulcsa (#2553).
+#:
+#: A #1654 egyetlen, beégetett helyre másolt. Az a hely a tulajdonos
+#: gépére volt szabva, és MÉRVE (2026-09-06) a fejlesztői gépről nem is
+#: érhető el: onnan a megosztásnak csak egy MÁSIK almappája van csatolva,
+#: tehát a napló kiment, de senki nem tudta elolvasni. Mostantól a
+#: felhasználó választ, és a választása megmarad.
+NAPLO_MAPPA_BEALLITAS_KULCS = "diagnostics/tesztuzem_naplo_mappa"
+
 #: A NAS közös mappája az RPi5-ön (csatolási pont).
 MEGOSZTAS_LINUX = "/mnt/nas"
 
@@ -412,23 +421,39 @@ def naplo_celmappa(gyoker: Path) -> Path:
     return Path(gyoker) / NAPLO_ALMAPPA
 
 
+def kiindulo_naplo_mappa(
+    *,
+    megjegyzett: str | None,
+    megosztas: Path | None,
+    dokumentumok: Path,
+) -> Path:
+    """Hol nyíljon a mentés-párbeszéd (#2553).
+
+    Tiszta függvény: se fájlrendszer, se `QSettings` — a döntésre így
+    lehet állítást írni. A hívó adja meg, mit talált.
+
+    A sorrend szándékos:
+
+    1. **a legutóbb választott mappa**, ha van és létezik — a második
+       átadás is egy mozdulat legyen;
+    2. a **közös mappa** naplós almappája, ha a hívó elérhetőnek találta —
+       ez a #1654 kényelme, csak már nem kötelezően;
+    3. a **Dokumentumok**. ⚠️ Ez az ág SOSEM maradhat el: a párbeszédnek
+       akkor is fel kell jönnie, ha a megosztás nem érhető el. A #1654-ben
+       ilyenkor a felhasználó hibaüzenetet kapott a napló helyett.
+    """
+    if megjegyzett:
+        jelolt = Path(megjegyzett)
+        if jelolt.is_dir():
+            return jelolt
+    if megosztas is not None:
+        return naplo_celmappa(megosztas)
+    return dokumentumok
+
+
 def naplo_fajlneve(most: datetime) -> str:
     """Időbélyeges fájlnév a közös mappában."""
     return f"{ATADOTT_NAPLO_ELOTAG}{most.strftime('%Y%m%d-%H%M%S')}.txt"
-
-
-def naplo_atadasa(*, forras: Path, celmappa: Path, most: datetime) -> Path:
-    """A napló átmásolása a közös mappába; a cél útvonalát adja vissza.
-
-    Fájlmásolás — se hálózati feltöltés, se külső szolgáltatás, se
-    hitelesítés. Hibát (`OSError`) SZÁNDÉKOSAN feldob: ebből tudja a hívó,
-    hogy a „Mentés másként…" tartalékot kell felajánlania. A néma
-    sikertelenség itt a legrosszabb kimenet."""
-    celmappa = Path(celmappa)
-    celmappa.mkdir(parents=True, exist_ok=True)
-    cel = celmappa / naplo_fajlneve(most)
-    cel.write_text(Path(forras).read_text(encoding="utf-8"), encoding="utf-8")
-    return cel
 
 
 def legutobbi_indulasi_naplo(mappa: Path) -> Path | None:
@@ -470,6 +495,7 @@ __all__ = [
     "MEGOSZTAS_LINUX",
     "MEGOSZTAS_WINDOWS",
     "NAPLO_ALMAPPA",
+    "NAPLO_MAPPA_BEALLITAS_KULCS",
     "TESZTUZEM_BEALLITAS_KULCS",
     "TESZTUZEM_KAPCSOLO",
     "UTVONAL_HELYETT",
@@ -482,7 +508,7 @@ __all__ = [
     "legutobbi_indulasi_naplo",
     "megosztas_elerheto",
     "megosztas_gyokere",
-    "naplo_atadasa",
+    "kiindulo_naplo_mappa",
     "naplo_celmappa",
     "naplo_fajlneve",
     "naplo_szovege",

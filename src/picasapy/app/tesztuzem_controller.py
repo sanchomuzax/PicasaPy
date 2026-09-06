@@ -11,22 +11,26 @@ eléri a menüt, az indulás rég lezajlott. A tesztüzem ezzel szemben
 **tartós**: `QSettings`-ben él, túléli a kilépést, és a **következő**
 indulás mér, az első ezredmásodperctől (ld. `application._indulasi_idovonal`).
 
-## Átadás — egy kattintás, semmi hálózat
+## Átadás — a FELHASZNÁLÓ választja meg a helyét (#2553)
 
-`Súgó ▸ Napló elküldése` a legutóbbi indulási naplót a NAS közös mappájába
-másolja (`/mnt/nas`, Windowson `//DS215j/lemez`), a rögzített
-`picasapy-naplo/` almappába, időbélyeges néven, és az útvonalat a
-vágólapra is felteszi. **Semmilyen hálózati feltöltés, külső szolgáltatás
-vagy hitelesítés nincs benne** — fájlmásolás egy csatolt megosztásra.
+`Súgó ▸ Napló elküldése` megnyitja a mentés-párbeszédet, időbélyeges
+fájlnév-javaslattal, és a mentett útvonalat a vágólapra is felteszi. A
+választott mappát megjegyezzük: a következő átadás már ott nyílik.
+**Semmilyen hálózati feltöltés, külső szolgáltatás vagy hitelesítés nincs
+benne** — sima fájlírás oda, ahova a felhasználó mutat.
 
-Ha a megosztás nem érhető el, a felhasználó érthető magyar üzenetet kap, és
-a felület felajánlja a „Mentés másként…" tartalékot.
+⚠️ A #1654 még egy BEÉGETETT helyre másolt (`/mnt/nas`, Windowson
+`//DS215j/lemez`), és a párbeszéd csak akkor jött elő, ha az nem volt
+elérhető. Az a hely egyetlen gépre volt szabva, és MÉRVE (2026-09-06) a
+fejlesztői gépről nem is látszott: onnan a megosztásnak csak egy MÁSIK
+almappája van csatolva. A napló kiment — és senki nem érte el. A
+kiinduló hely ma is lehet a megosztás, de már csak JAVASLATKÉNT.
 
 ## ⚠️ A fogantyúk (seam)
 
-A közös mappa útvonala, a vágólap, az óra és a naplómappa MODULSZINTŰ
-függvények — a teszt EZEKET cseréli. A `/mnt/nas` éles családi adat: a
-tesztkészlet soha nem írhat oda.
+A közös mappa útvonala, a vágólap, az óra, a naplómappa és a Dokumentumok
+mappa MODULSZINTŰ függvények — a teszt EZEKET cseréli. A `/mnt/nas` éles
+családi adat: a tesztkészlet soha nem írhat oda.
 """
 
 from __future__ import annotations
@@ -41,12 +45,13 @@ from PySide6.QtCore import Property, QUrl, Signal, Slot
 
 from picasapy.perf.logwriter import default_log_dir
 from picasapy.perf.tesztuzem import (
+    NAPLO_MAPPA_BEALLITAS_KULCS,
     TESZTUZEM_BEALLITAS_KULCS,
+    kiindulo_naplo_mappa,
     legutobbi_indulasi_naplo,
     megosztas_elerheto,
     megosztas_gyokere,
-    naplo_atadasa,
-    naplo_celmappa,
+    naplo_fajlneve,
     tesztuzem_bekapcsolva,
 )
 
@@ -67,6 +72,10 @@ UZENET_NINCS_NAPLO = (
     "Még nincs indulási napló. A tesztüzem a KÖVETKEZŐ indítást naplózza: "
     "lépj ki a PicasaPy-ból, indítsd el újra, és utána küldd el a naplót."
 )
+
+#: #2553: a mentés-párbeszéd megnyitását kísérő sáv-üzenet. Nem hiba, hanem
+#: a normál menet — a felhasználó választja meg, hova kerüljön a napló.
+UZENET_VALASSZ_HELYET = "Válaszd ki, hova mentsük az indulási naplót."
 
 
 def _argv() -> list[str]:
@@ -107,6 +116,20 @@ def _megosztas_gyokere(
     return gyoker if megosztas_elerheto(gyoker, ismount=ismount) else None
 
 
+def _dokumentumok() -> Path:
+    """A rendszer Dokumentumok mappája — a mentés-párbeszéd VÉGSŐ
+    kiinduló helye (#2553).
+
+    Fogantyú (seam): a teszt ezt cseréli, hogy a valódi felhasználói
+    mappára soha ne mutasson."""
+    from PySide6.QtCore import QStandardPaths
+
+    hely = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.DocumentsLocation
+    )
+    return Path(hely) if hely else Path.home()
+
+
 def _vagolapra(szoveg: str) -> None:
     """Az útvonal a vágólapra — így a felhasználónak nem kell begépelnie.
 
@@ -138,8 +161,14 @@ class TesztuzemMixin:
     tesztuzemChanged = Signal()
     #: Tájékoztatás a felhasználónak (a Main.qml borostyán sávja mutatja).
     tesztuzemUzenet = Signal(str)
-    #: A közös mappa nem érhető el — a felület „Mentés másként…"-et nyit.
-    tesztuzemMentesMaskentKert = Signal(str)
+    #: #2553: a felület nyissa meg a mentés-párbeszédet. Három adat megy
+    #: vele: a sávban mutatandó üzenet, a kiinduló MAPPA (`file://…`
+    #: URL-ként, ahogy a `FileDialog` várja) és a javasolt FÁJLNÉV.
+    #:
+    #: ⚠️ Ez MINDEN átadásnál elhangzik, nem csak hibánál — a #1654-ben a
+    #: párbeszéd tartalék volt, és a beégetett cél miatt a napló olyan
+    #: helyre ment, amit a fejlesztés nem ért el.
+    tesztuzemMentesKert = Signal(str, str, str)
 
     def _init_tesztuzem(self) -> None:
         """Az AppController.__init__ hívja (a mixinek nem definiálnak saját
@@ -191,49 +220,48 @@ class TesztuzemMixin:
 
     # -- egykattintásos átadás ------------------------------------------------
 
-    @Slot(result=str)
-    def tesztuzemNaploAtadasa(self) -> str:
-        """A legutóbbi indulási napló a közös mappába; a cél útvonala.
+    @Slot(result=bool)
+    def tesztuzemNaploAtadasa(self) -> bool:
+        """A napló átadása: MINDIG a felhasználó választja meg a helyét.
 
-        Sikertelenségnél üres sztring, és MINDIG szól: vagy a hiányzó
-        naplóról, vagy a „Mentés másként…" tartalékról. Néma bukás itt a
+        `True`, ha a párbeszéd megnyitását kértük; `False`, ha nincs mit
+        átadni. A #1654-ben ez egy beégetett mappába másolt, és a
+        párbeszéd csak TARTALÉK volt — a beégetett hely viszont egyetlen
+        gépre volt szabva, és mérve (2026-09-06) a fejlesztői gépről nem
+        is látszott: a napló kiment, de senki nem érte el.
+
+        A hiányzó naplóról továbbra is HANGOSAN szólunk: néma bukás itt a
         legrosszabb kimenet — a felhasználó azt hinné, átadta."""
         forras = legutobbi_indulasi_naplo(_naplo_mappa())
         if forras is None:
             self.tesztuzemUzenet.emit(UZENET_NINCS_NAPLO)
-            return ""
+            return False
 
-        gyoker = _megosztas_gyokere()
-        if gyoker is None:
-            self._tesztuzem_elteszi(forras)
-            self.tesztuzemMentesMaskentKert.emit(
-                "A közös mappa most nem érhető el (nincs csatlakoztatva a "
-                "hálózati meghajtó). Válaszd ki, hova mentsük a naplót."
-            )
-            return ""
-
-        try:
-            cel = naplo_atadasa(
-                forras=forras, celmappa=naplo_celmappa(gyoker), most=_most()
-            )
-        except OSError as hiba:
-            self._tesztuzem_elteszi(forras)
-            self.tesztuzemMentesMaskentKert.emit(
-                "A közös mappa nem érhető el, a napló nem másolható oda "
-                f"({hiba.strerror or hiba}). Válaszd ki, hova mentsük."
-            )
-            return ""
-
-        _vagolapra(str(cel))
-        self.tesztuzemUzenet.emit(
-            f"A napló a közös mappába került: {cel} — az útvonalat a "
-            "vágólapra is másoltuk."
+        self._tesztuzem_elteszi(forras)
+        mappa = kiindulo_naplo_mappa(
+            megjegyzett=self._tesztuzem_megjegyzett_mappa(),
+            megosztas=_megosztas_gyokere(),
+            dokumentumok=_dokumentumok(),
         )
-        return str(cel)
+        self.tesztuzemMentesKert.emit(
+            UZENET_VALASSZ_HELYET,
+            QUrl.fromLocalFile(str(mappa)).toString(),
+            naplo_fajlneve(_most()),
+        )
+        return True
+
+    def _tesztuzem_megjegyzett_mappa(self) -> str | None:
+        """A legutóbb választott célmappa, ha van (#2553)."""
+        ertek = self._get_settings().value(NAPLO_MAPPA_BEALLITAS_KULCS)
+        return str(ertek) if ertek else None
 
     @Slot(str, result=bool)
     def tesztuzemNaploMentese(self, cel: str) -> bool:
-        """A „Mentés másként…" tartalék: a napló a megadott fájlba."""
+        """A napló a felhasználó által választott fájlba (#2553).
+
+        Siker esetén a MAPPÁT megjegyezzük: a következő átadás már ott
+        nyílik, tehát a második alkalom is egy mozdulat. Az útvonal a
+        vágólapra is felkerül — a #1654 kényelme megmarad."""
         utvonal = _url_utvonala(cel)
         if utvonal is None or not self._tesztuzem_fuggo_szoveg:
             return False
@@ -245,8 +273,23 @@ class TesztuzemMixin:
                 f"A napló mentése nem sikerült: {hiba.strerror or hiba}"
             )
             return False
-        self.tesztuzemUzenet.emit(f"A napló ide került: {utvonal}")
+        self._tesztuzem_megjegyez_mappat(utvonal.parent)
+        _vagolapra(str(utvonal))
+        self.tesztuzemUzenet.emit(
+            f"A napló ide került: {utvonal} — az útvonalat a vágólapra is "
+            "másoltuk."
+        )
         return True
+
+    def _tesztuzem_megjegyez_mappat(self, mappa: Path) -> None:
+        """A választott célmappa eltárolása (#2553).
+
+        A `sync()` itt sem elhagyható: enélkül a választás csak a Qt belső
+        pufferében élne, és egy váratlan kilépés elnyelné — a felhasználó
+        pedig a következő átadásnál megint a beégetett helyen kötne ki."""
+        settings = self._get_settings()
+        settings.setValue(NAPLO_MAPPA_BEALLITAS_KULCS, str(mappa))
+        settings.sync()
 
     def _tesztuzem_elteszi(self, forras: Path) -> None:
         """A napló SZÖVEGÉT tesszük el, nem a fájl útvonalát: a tartalék

@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.303] – 2026-09-06
+
+### Javítva
+
+- **A napló elküldésekor mostantól Te választod meg, hova kerüljön**
+  (#2553). Eddig egy beégetett hálózati mappába másolta, és csak akkor
+  kérdezett, ha az nem volt elérhető. Az a mappa egyetlen géphez volt
+  kötve — másutt értelmetlen, és a fejlesztői gép sem érte el, úgyhogy a
+  napló kiment ugyan, de senki nem tudta elolvasni. A `Súgó ▸ Napló
+  elküldése` mostantól mindig megnyitja a mentés-ablakot, időbélyeges
+  fájlnév-javaslattal, és a választott mappát megjegyzi: legközelebb ott
+  nyílik.
+
 ## [0.8.302] – 2026-09-06
 
 ### Javítva
