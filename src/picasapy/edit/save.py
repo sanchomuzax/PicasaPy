@@ -257,6 +257,13 @@ def save_edited(
     # függetlenül megmarad a Visszaállításhoz.
     snapshots = _existing_snapshots(image_path)
     next_number = (snapshots[-1][0] + 1) if snapshots else 1
+    # #1449: a `<név>.<N>` alak kétértelmű — a kihagyott sorszám nem
+    # feltétlenül SZABAD hely: ott állhat egy MÁSIK, önálló kép megőrzött
+    # eredetije (`a.jpg` pillanatképe és `a.1.jpg` eredetije azonos nevű).
+    # A `write_atomic` némán felülírná, és annak a képnek a visszaútja
+    # véglegesen elveszne — ezért a foglalt sorszámokat átlépjük.
+    while _snapshot_path(image_path, next_number).exists():
+        next_number += 1
     write_atomic(
         _snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
     )
@@ -332,10 +339,7 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     image_path = Path(image_path)
     snapshots = _existing_snapshots(image_path)
     if not snapshots:
-        raise SaveError(
-            f"Nincs visszavonható mentés: {image_path.name} "
-            f"({ORIGINALS_DIR_NAME} üres vagy hiányzik)"
-        )
+        raise SaveError(_nincs_visszavonhato_mentes(image_path))
     number, snapshot = snapshots[-1]
     del number
 
@@ -521,16 +525,68 @@ def _snapshot_path(image_path: Path, number: int) -> Path:
 
 def _existing_snapshots(image_path: Path) -> list[tuple[int, Path]]:
     """A meglévő sorszámozott pillanatképek `(N, útvonal)` párjai, növekvő
-    sorrendben. Hibás (nem szám) sorszámú fájlt figyelmen kívül hagy."""
+    sorrendben.
+
+    A keresés a `fileops.originals.snapshot_numbers` KÖZÖS szabálya (#1449) —
+    itt korábban `glob()` állt, két néma hibával:
+
+    * a fájlnévben lévő `[`, `*` vagy `?` a mintában jokerként viselkedett
+      (egy `IMG[1].jpg` képnél rossz vagy nulla találat),
+    * és nem nézte, hogy a `<név>.<N><kiterjesztés>` alak egy ÖNÁLLÓ kép
+      megőrzött eredetije is lehet — az `undo_save` pedig a felhasznált
+      pillanatképet TÖRLI, tehát egy másik kép visszaútját semmisítette
+      volna meg.
+
+    **Az óvatosságnak ára van** (#1449 átnézés, 3. lelet): ha a képmappában
+    van azonos nevű önálló kép, a példány kimarad, és az `undo_save`
+    elveszíti a visszavonást egy LÉTEZŐ pillanatképhez. Adat nem vész el, de
+    a sorszám-átlépés (`save_edited`) miatt minden további mentés újabb
+    teljes méretű JPEG-et halmoz, amit semmi nem takarít. Tisztább megoldás
+    nincs: a két eset a lemezen bitre azonosan néz ki, a tévedés iránya
+    pedig itt egy MÁSIK kép visszaútjának a megsemmisítése lenne. Amit
+    megtehetünk, az a kimondás — ld. `_nincs_visszavonhato_mentes`.
+
+    A késleltetett import szándékos: a `fileops` csomag maga is (lustán) ide
+    nyúl a mappanevekért, a modulszintű import körbeérne."""
+    from picasapy.fileops.originals import snapshot_numbers
+
     directory = image_path.parent / ORIGINALS_DIR_NAME
-    if not directory.is_dir():
-        return []
-    found: list[tuple[int, Path]] = []
-    for path in directory.glob(f"{image_path.stem}.*{image_path.suffix}"):
-        middle = path.name[len(image_path.stem) + 1 : -len(image_path.suffix)]
-        if middle.isdigit():
-            found.append((int(middle), path))
-    return sorted(found)
+    return sorted(
+        (szam, path) for szam, _, path in snapshot_numbers(directory, image_path)
+    )
+
+
+def _nincs_visszavonhato_mentes(image_path: Path) -> str:
+    """A „nincs mit visszavonni" üzenet — a KÉT eset másképp szól.
+
+    Az `_existing_snapshots` üres eredménye nem mindig azt jelenti, hogy a
+    mappa üres: kimarad belőle az a példány is, aminek a KÉPMAPPÁBAN van
+    azonos nevű gazdája (`a.jpg` mentése `a.1.jpg` pillanatképet ír, de
+    `a.1.jpg` lehet egy önálló kép is). Az óvatosság indokolt — az
+    `undo_save` a felhasznált pillanatképet TÖRLI —, de az „üres vagy
+    hiányzik" ilyenkor egyszerűen nem igaz, és a felhasználó nem tudja meg,
+    mit tehetne (#1449 átnézés, 3. lelet)."""
+    from picasapy.fileops.originals import ambiguous_snapshot_names
+
+    directory = image_path.parent / ORIGINALS_DIR_NAME
+    ketertelmuek = ambiguous_snapshot_names(directory, image_path)
+    if not ketertelmuek:
+        return (
+            f"Nincs visszavonható mentés: {image_path.name} "
+            f"({ORIGINALS_DIR_NAME} üres vagy hiányzik)"
+        )
+    nevek = ", ".join(ketertelmuek)
+    return (
+        f"A legutóbbi mentést nem tudjuk visszavonni ennél a képnél: "
+        f"{image_path.name}. A(z) „{ORIGINALS_DIR_NAME}” mappában van hozzá "
+        f"illő fájl ({nevek}), de a képmappában UGYANEZEN a néven önálló kép "
+        f"is áll — így nem dönthető el, hogy az a kép mentés előtti "
+        f"állapota-e, vagy a másik kép megőrzött eredetije. Biztonságból "
+        f"békén hagyjuk: a visszavonás azt a fájlt törölné, és ha a másik "
+        f"képhez tartozik, annak a visszaútja veszne el. Ha vissza szeretné "
+        f"kapni a visszavonás lehetőségét, adjon a(z) {nevek} nevű képnek "
+        f"másik nevet."
+    )
 
 
 def _section_name(image_path: Path) -> str:

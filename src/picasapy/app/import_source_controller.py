@@ -48,7 +48,13 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
+from picasapy.fileops import (
+    companions_of,
+    copy_photo,
+    has_enough_free_space,
+    required_bytes_for,
+)
+from picasapy.fileops.original_ini import remove_original_ini_sections
 from picasapy.importsource import (
     ATMERETEZES_EREDETI,
     ATMERETEZES_OPCIOK,
@@ -734,8 +740,27 @@ def _remove_source_file(path: Path) -> None:
     """Egy forrásfájl eltávolítása (#441 "After Copying:" törléssel járó két
     állapota): a fájl törlése, majd — ha volt — az ini-szekció eltávolítása
     a forrás `.picasa.ini`-jéből. A cél a saját (ütközés esetén átnevezett)
-    másolatát már megkapta a `copy_photo`-tól, mielőtt ez lefut."""
+    másolatát már megkapta a `copy_photo`-tól, mielőtt ez lefut.
+
+    #1450/#1451: a megőrzött eredeti és a pillanatképek is mennek. Ez az út
+    (`copy_photo` + forrástörlés) TÉNYLEGES mozgatás, tehát ha a kísérők itt
+    maradnának, a forrásmappában árván gyűlnének, és a következő, azonos
+    nevű kép egy IDEGEN fénykép eredetijét örökölné. A célban a példányuk
+    már ott van (`copy_photo`), tehát a visszaút nem vész el."""
+    kiserok = companions_of(path)
     path.unlink(missing_ok=True)
+    for kisero in kiserok:
+        kisero.unlink(missing_ok=True)
+    if kiserok:
+        try:
+            remove_original_ini_sections(kiserok)
+        except Exception:  # noqa: BLE001 — az ini-réteg többféle hibát dob
+            pass
+        for directory in {kisero.parent for kisero in kiserok}:
+            try:
+                directory.rmdir()  # csak ÜRES mappát töröl
+            except OSError:
+                pass
     source_ini = path.parent / PICASA_INI_NAME
     if not source_ini.exists():
         return

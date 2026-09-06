@@ -23,7 +23,8 @@ from picasapy.fileops import (
     conflicting_names,
     copy_photos,
     create_folder_for_move,
-    delete_permanently,
+    delete_photo_permanently,
+    delete_photo_to_trash,
     delete_to_trash,
     move_folder,
     move_photo,
@@ -292,9 +293,13 @@ class FileOpsController(QObject):
 
     @Slot(str)
     def deletePhoto(self, path: str) -> None:
-        """Törlés a lomtárba (freedesktop.org Trash-specifikáció)."""
+        """Törlés a lomtárba (freedesktop.org Trash-specifikáció).
+
+        #1451: a megőrzött eredeti és a sorszámozott pillanatképek is mennek
+        — enélkül láthatatlanul gyűltek, és a következő, azonos nevű kép egy
+        IDEGEN fénykép eredetijét örökölte."""
         try:
-            delete_to_trash(Path(path))
+            delete_photo_to_trash(Path(path))
         except OSError as error:
             self.operationFailed.emit("delete", str(error))
             return
@@ -305,9 +310,12 @@ class FileOpsController(QObject):
         """Végleges, azonnali törlés — akkor hívandó, ha a `path`-hoz nincs
         elérhető lomtár (#457: hálózati meghajtó/NAS), és a felhasználó a
         `deleteConfirmDialog` erre figyelmeztető, külön szövegű ágán mégis
-        megerősítette a törlést."""
+        megerősítette a törlést.
+
+        #1451: a megőrzött eredeti és a pillanatképek is törlődnek — árva
+        fájl nem maradhat."""
         try:
-            delete_permanently(Path(path))
+            delete_photo_permanently(Path(path))
         except OSError as error:
             self.operationFailed.emit("delete", str(error))
             return
