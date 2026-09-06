@@ -1673,7 +1673,19 @@ Column {
                         anchors.fill: parent
                         //: `outputlayout_text` — angolul „More...”
                         text: qsTr("More...")
-                        iconSource: "icons/export.svg"
+                        // #2493: NINCS ikonja. A hiányzó `icons/export.svg`-re
+                        // mutató hivatkozás minden induláskor
+                        // `QQuickImage: Cannot open` hibát írt a konzolra, és a
+                        // gombon üres helyőrző látszott.
+                        //
+                        // Az eredetiben a gomb ikonja az
+                        // `outputlayout/export7_icon` (a `.tre` szerint a
+                        // `morebutton` gyereke), MÉRT mérete **13 × 7** —
+                        // vagyis egy lapos, széles jel, nem a mi 16 × 16-os
+                        // export-piktogramunk. A rajzot NEM találjuk ki:
+                        // amíg a `respack.yt` rétegképe nincs kimérve, a gomb
+                        // a feliratával áll (a felirat a `.tre`-ből mért
+                        // „További lehetőségek…"). Kutatási jegy: #2537.
                         iconObjectName: "trayMoreIcon"
                         labelObjectName: "trayMoreLabel"
                         enabled: true

@@ -20,12 +20,15 @@ teljes körűen maradjon.
 
 from __future__ import annotations
 
+import re
 import xml.dom.minidom as minidom
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 from PySide6.QtGui import QImageReader
+
+from tests.support.qml_blokk import kommentek_nelkul
 
 #: #664: tud-e a Qt egyáltalán SVG-t RAJZOLNI ezen a gépen.
 #:
@@ -109,7 +112,11 @@ _EDITOR_TOOL_ICONS = (
     "retusalas.svg",
     "szoveg.svg",
     "deritofeny.svg",
-    "kreativ-kit.svg",
+    # #2493: a „kreativ-kit.svg" ITT NEM SZEREPEL. A #464 felvette az
+    # ikont egy „Kreatív Kit" csempéhez, de az `EditorTabCommonFixes.qml`
+    # kódkommentje szerint a mért képen ilyen csempe NINCS — a csempe
+    # kimaradt, a fájl viszont bent maradt: egyetlen QML sem
+    # hivatkozott rá. A hivatkozás-vezérelt őr találta meg.
 )
 
 # a Kollázs-panel „Beállítások" lapjának ikonjai (#946, a #920 5/8 lépcsője)
@@ -270,6 +277,82 @@ class TestIconFilesExist:
         actual = {p.name for p in _ICONS_DIR.glob("*")}
         assert actual == set(_ALL_ICONS)
 
+
+
+class TestIkonHivatkozasokFeloldhatok:
+    """#2493: HIVATKOZÁS-vezérelt ikon-őr — a kézzel írt leltár párja.
+
+    A `_ALL_ICONS` lista azt védi, amit valaki beleírt: „ezek a fájlok
+    legyenek meg". Azt viszont NEM nézte semmi, hogy a QML-ben álló
+    `icons/…` hivatkozásokhoz LÉTEZIK-e fájl. Emiatt a `TrayBar.qml`
+    „További lehetőségek…" gombja hónapokig egy nem létező
+    `icons/export.svg`-re mutatott: a felhasználó konzolján
+    `QQuickImage: Cannot open` hiba jelent meg, a tesztek pedig zöldek
+    voltak. (Egyforrású leltár, amiből hiánylistát vezetünk — visszatérő
+    hibaosztály.)
+
+    Ez az őr a MÁSIK irányból mér: a forrásból gyűjti a hivatkozásokat.
+    Három alakot ismer, mert a kódbázis mind a hármat használja:
+
+    1. teljes út, szó szerint — `iconSource: "icons/print.svg"`;
+    2. `iconFile: "vagas"` — a `ToolTile.qml:84` és az
+       `EditorFinetunePanel.qml:91` `"icons/" + iconFile + ".svg"`-vé
+       fűzi össze;
+    3. csupasz fájlnév egy modellben — `ikon: "panel-emberek.svg"`, amit
+       a `TrayBar.qml:1181` `"icons/" + modelData.ikon`-ként old fel.
+
+    A dinamikus összefűzés (`"icons/" + … + ".svg"`) miatt a szó szerinti
+    keresés önmagában kevés lenne: a 2. és 3. alak nélkül tíz létező
+    ikonunk „kóbor fájlnak" látszana, holott használatban van.
+    """
+
+    #: minden QML a csomagban — a hivatkozások forrása
+    _QML_GYOKER = _ICONS_DIR.parent
+
+    @staticmethod
+    def _hivatkozasok() -> dict[str, set[str]]:
+        """ikonfájl-név -> a rá hivatkozó QML-fájlok neve."""
+        talalt: dict[str, set[str]] = {}
+        for qml in sorted(TestIkonHivatkozasokFeloldhatok._QML_GYOKER.rglob("*.qml")):
+            # ⚠️ a kommenteket KIVÁGJUK: a `TrayBar.qml` indoklása
+            # megnevezi a hiányzó `icons/export.svg`-t, hogy
+            # elmagyarázza, miért nincs a gombnak ikonja — egy
+            # kommentben említett fájlnév nem hivatkozás.
+            szoveg = kommentek_nelkul(qml.read_text(encoding="utf-8"))
+            nevek = set(re.findall(r"icons/([A-Za-z0-9._-]+\.svg)", szoveg))
+            nevek |= {
+                f"{alap}.svg"
+                for alap in re.findall(r'iconFile:\s*"([A-Za-z0-9._-]+)"', szoveg)
+            }
+            nevek |= set(re.findall(r'"([A-Za-z0-9._-]+\.svg)"', szoveg))
+            for nev in nevek:
+                talalt.setdefault(nev, set()).add(qml.name)
+        return talalt
+
+    def test_minden_hivatkozashoz_van_fajl(self):
+        """Nincs olyan `icons/…` hivatkozás a QML-ben, aminek nincs fájlja."""
+        hianyzo = {
+            nev: sorted(hol)
+            for nev, hol in self._hivatkozasok().items()
+            if not (_ICONS_DIR / nev).is_file()
+        }
+        assert not hianyzo, (
+            "nem létező ikonra mutató hivatkozás(ok): "
+            + "; ".join(f"{nev} ({', '.join(hol)})" for nev, hol in sorted(hianyzo.items()))
+        )
+
+    def test_nincs_hivatkozatlan_ikonfajl(self):
+        """A másik irány: nincs kóbor fájl, amire semmi nem hivatkozik."""
+        hivatkozott = set(self._hivatkozasok())
+        kobor = sorted(
+            p.name for p in _ICONS_DIR.glob("*.svg") if p.name not in hivatkozott
+        )
+        assert not kobor, f"egyetlen QML sem hivatkozik rájuk: {kobor}"
+
+    def test_a_ket_leltar_egyezik(self):
+        """A kézzel írt `_ALL_ICONS` és a forrásból mért hivatkozás-halmaz
+        UGYANAZT a készletet adja — így a lista elavulása is kiderül."""
+        assert set(self._hivatkozasok()) == set(_ALL_ICONS)
 
 class TestTrayBarIconWiring:
     def test_email_icon_loads_without_error(self, qml_app, qt_app):
