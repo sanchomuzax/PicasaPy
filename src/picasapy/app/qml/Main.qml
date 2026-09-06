@@ -2322,12 +2322,12 @@ ApplicationWindow {
             errorBanner.notice = true
             errorBannerText.text = uzenet
         }
-        // A közös mappa nem érhető el — a felhasználó nem maradhat üres
-        // kézzel: az üzenet mellé azonnal nyílik a „Mentés másként…".
-        function onTesztuzemMentesMaskentKert(uzenet) {
+        // #2553: a napló átadása MINDIG a felhasználó választásával megy.
+        // A vezérlő adja a kiinduló mappát és a javasolt fájlnevet.
+        function onTesztuzemMentesKert(uzenet, mappaUrl, javasoltNev) {
             errorBanner.notice = true
             errorBannerText.text = uzenet
-            tesztuzemNaploDialog.open()
+            tesztuzemNaploDialog.nyisdMeg(mappaUrl, javasoltNev)
         }
         function onFolderUnavailable(path) {
             errorBanner.notice = true

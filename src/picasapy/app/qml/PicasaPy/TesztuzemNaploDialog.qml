@@ -1,15 +1,15 @@
 import QtQuick
 import QtQuick.Dialogs
 
-// #1654: a tesztüzem naplójának „Mentés másként…" TARTALÉKA.
+// #1654/#2553: a tesztüzem naplójának mentés-párbeszéde.
 //
-// Az alapeset az egykattintásos átadás: a `Súgó ▸ Napló elküldése` a
-// naplót a NAS közös mappájába (`/mnt/nas`, Windowson
-// `//DS215j/lemez`) másolja, a rögzített `picasapy-naplo/`
-// almappába. Ha a megosztás nincs csatlakoztatva, a felhasználó nem
-// maradhat üres kézzel: a vezérlő `tesztuzemMentesMaskentKert` jelzése
-// nyitja ezt a párbeszédet, és a napló oda kerül, ahova a felhasználó
-// mutat.
+// ⚠️ #2553: ez már NEM tartalék, hanem AZ út. A #1654 egy beégetett
+// mappába másolt (`/mnt/nas`, Windowson `//DS215j/lemez`), és a párbeszéd
+// csak akkor jött elő, ha az nem volt elérhető. Az a hely egyetlen gépre
+// volt szabva, és mérve (2026-09-06) a fejlesztői gépről nem is látszott:
+// a napló kiment, de senki nem érte el. Mostantól a `Súgó ▸ Napló
+// elküldése` MINDIG ezt nyitja, a felhasználó választ, és a választása
+// megmarad a következő alkalomra.
 //
 // ⚠️ Semmilyen hálózati feltöltés, külső szolgáltatás és hitelesítés nincs
 // az úton — a napló mindkét ágon egyszerű fájlírás.
@@ -29,5 +29,17 @@ FileDialog {
     // (#1633): offscreen platformon a rendszerválasztó nem szimulálható.
     function mentsdIde(fajlUrl) {
         return controller.tesztuzemNaploMentese(fajlUrl)
+    }
+
+    // #2553: a vezérlő adja meg, hol nyíljon és mi legyen a javasolt név.
+    // Külön függvény, ugyanazon az okon, mint a `mentsdIde`: a natív
+    // párbeszéd offscreen platformon nem szimulálható, a bekötést viszont
+    // így az őr-teszt közvetlenül hívhatja.
+    function nyisdMeg(mappaUrl, javasoltNev) {
+        if (mappaUrl)
+            tesztuzemNaploDialog.currentFolder = mappaUrl
+        if (javasoltNev)
+            tesztuzemNaploDialog.selectedFile = mappaUrl + "/" + javasoltNev
+        tesztuzemNaploDialog.open()
     }
 }
