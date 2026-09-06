@@ -1,9 +1,12 @@
 """#2510 — kísérő NÉLKÜLI képnél a köteg ne jelentsen ütközést, és ne nevezzen át.
 
-A `copy.py` helyesen KAPUZZA a szélesebb, eredeti-mappára is kiterjedő
-foglaltság-vizsgálatot: `needs_originals_slot=bool(companions_of(path))` —
-csak akkor nézi az eredeti-mappa helyét, ha a képnek VAN megőrzött
-eredetije. A `batch.py` (`_conflicts`, `_free_name`) nem kapuzta.
+A `batch.py` (`_conflicts`, `_free_name`) a szélesebb, eredeti-mappára is
+kiterjedő foglaltság-vizsgálatot kísérő NÉLKÜLI képnél is elvégezte.
+
+⚠️ A fejléc korábbi változata a `copy.py`-t hozta helyes mintának. Ez
+TÉVES volt: ott a vizsgálat kísérő nélkül teljesen elmaradt, és a másolat
+örökbe fogadta a célban heverő árva eredetit (#2569). A két út azóta
+ugyanazt a kaput használja (`moving_companions`).
 
 MÉRVE (2026-09-06), `forras/x.jpg`-nek NINCS megőrzött eredetije, a célban
 önálló `x.1.jpg` áll a saját eredetijével::

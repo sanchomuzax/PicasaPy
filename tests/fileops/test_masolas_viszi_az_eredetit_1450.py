@@ -197,8 +197,22 @@ class TestArvaFajlACelban:
         # Az árva fájlhoz NEM nyúltunk: lehet, hogy egy élő kép eredetije.
         assert (cel / ORIGINALS_DIR_NAME / "a.jpg").read_bytes() == b"arva-idegen"
 
-    def test_eredeti_nelkuli_kep_nevet_nem_tolja_el_egy_arva(self, tmp_path):
-        """Ha nincs mit megőrizni, a `.picasaoriginals` tartalma nem számít."""
+    def test_eredeti_nelkuli_kep_sem_ULHET_az_arvara(self, tmp_path):
+        """⚠️ #2569 — EZ A PRÓBA KORÁBBAN A HIBÁT RÖGZÍTETTE.
+
+        A régi állítása („ha nincs mit megőrizni, a `.picasaoriginals`
+        tartalma nem számít") azt szentesítette, hogy a kísérő nélküli kép
+        ráülhet egy idegen árva eredetire. MÉRVE (2026-09-06): a másolatra
+        hívott `find_original_backup` ilyenkor az IDEGEN árva bájtjait
+        adta vissza — a felhasználó a saját képén egy vadidegen kép régi
+        változatát kapta „megőrzött eredetiként", és a „Vissza az
+        eredetihez" azt töltötte volna vissza.
+
+        A helyes viselkedés: a másolat pótnevet kap, és az árvához nem
+        nyúlunk. A „nem tolja el" kényelme nem éri meg az adatvesztést.
+
+        (A gazdás — tehát NEM árva — példány továbbra sem foglal: azt a
+        `TestGazdasFoglaltsag` és a #2510 őre méri.)"""
         forras = tmp_path / "forras"
         cel = tmp_path / "cel"
         cel.mkdir()
@@ -207,7 +221,10 @@ class TestArvaFajlACelban:
 
         target = copy_photo(photo, cel)
 
-        assert target.name == "a.jpg"
+        assert target.name == "a-1.jpg"
+        eredeti = find_original_backup(target)
+        assert eredeti is None or eredeti.read_bytes() != b"arva-idegen"
+        assert (cel / ORIGINALS_DIR_NAME / "a.jpg").read_bytes() == b"arva-idegen"
 
 
 class TestGazdasFoglaltsag:
