@@ -170,10 +170,15 @@ class TestPan:
 
 
 class TestZoomBarAndPlaceholders:
+    """#2564: a hármas az ALSÓ ESZKÖZSÁVBAN ül (`trayViewerZoomRow`), a
+    fotó fölött már csak a MI két arc-gombunk lebeg (`viewerFacesBar`).
+    A LÁTHATÓSÁGI SZABÁLY változatlan: videón és vágás közben nincs
+    nagyítás — csak a hordozója más."""
+
     def test_zoom_bar_present_with_controls(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _open_viewer(window, qt_app)
-        assert _child(window, "viewerZoomBar").property("visible") is True
+        assert _child(window, "trayViewerZoomRow").property("visible") is True
         for name in ("zoomFitButton", "zoomActualButton", "zoomSlider"):
             _child(window, name)
 
@@ -184,7 +189,8 @@ class TestZoomBarAndPlaceholders:
         panel = _child(window, "viewerEditorPanel")
         panel.setProperty("cropActive", True)
         qt_app.processEvents()
-        assert _child(window, "viewerZoomBar").property("visible") is False
+        assert _child(window, "trayViewerZoomRow").property("visible") is False
+        assert _child(window, "viewerFacesBar").property("visible") is False
         assert viewer.property("zoomFactor") == 1.0
         panel.setProperty("cropActive", False)
         qt_app.processEvents()

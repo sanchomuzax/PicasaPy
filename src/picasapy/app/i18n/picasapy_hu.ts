@@ -5599,6 +5599,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <name>TrayBar</name>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Fit Photo inside viewing area</source>
+        <translation>Beillesztheti a fotót a megjelenítési területbe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Display Photo at actual size</source>
+        <translation>Fotó megjelenítése tényleges méretben</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
         <source>More...</source>
         <translation>További lehetőségek...</translation>
     </message>

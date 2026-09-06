@@ -36,7 +36,14 @@ import picasapy.app as app_csomag
 from PySide6.QtCore import QObject
 from tests.support.qml_blokk import blokk_horgonyra
 
+#: #2564 óta a nagyítás-hármas az ALSÓ ESZKÖZSÁVBAN él, nem a nézőben —
+#: mérve: az eredetiben is a könyvtári nagyító és bélyegkép-csúszka
+#: helyét foglalja el (`editpanel/zoomup_icon` 368…392 ≡ `thumbui/loupehit`
+#: 366…391). A #2311 állításai VÁLTOZATLANOK, csak a forrásfájl más.
 _QML = (
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+).read_text(encoding="utf-8")
+_NEZO = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PhotoViewer.qml"
 ).read_text(encoding="utf-8")
 _TS = (
@@ -161,5 +168,10 @@ class TestAHivatalosMagyarSugo:
 
 class TestAmiNEMkeszul:
     def test_nincs_inbetweenzoom_vezerlo(self):
-        """Az eredetiben `m_hidden` — nem építünk hozzá gombot."""
+        """Az eredetiben `m_hidden` — nem építünk hozzá gombot.
+
+        MINDKÉT fájlra: a hármas a tálcáé (#2564), de a néző sem hozhatja
+        vissza egy harmadik állapotként.
+        """
         assert "inbetweenzoom" not in _QML.lower()
+        assert "inbetweenzoom" not in _NEZO.lower()

@@ -85,8 +85,18 @@ class TestMinimalisAblakszelesseg:
         window.setProperty("width", sav.property("requiredWidth"))
         for _ in range(4):
             qt_app.processEvents()
-        assert sav.property("compact") is True, (
-            "a mért minimumon kompakt módot vártunk"
+        # #2564: a minimumot MOSTANTÓL a FELSŐ SOR is megszabhatja. A
+        # nagyítás-rés a szerkesztő szélesebb hármasát is elbírja (a rés
+        # rögzített szélességű, hogy a módváltás ne rendezzen át semmit),
+        # ezért a felső sor igénye a műveletsoré fölé nőtt. A két
+        # költségvetés FÜGGETLEN, tehát azt már nem állíthatjuk, hogy a
+        # minimum egyben kompakt is — azt viszont igen, hogy a minimum a
+        # kettő közül a NAGYOBB, és hogy ott semmi nem lóg ki (alább).
+        assert sav.property("requiredWidth") >= sav.property("felsoSorIgenye")
+        assert sav.property("requiredWidth") >= sav.property(
+            "separatorThreshold"
+        ) or sav.property("compact") is True, (
+            "a minimumon sem a kompakt, sem a bő elrendezés nem fér el"
         )
 
         jobb_szel = _jobb_szel(sor)

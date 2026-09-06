@@ -66,6 +66,24 @@ Column {
     signal printRequested()
     signal emailRequested()
 
+    // #2564: a SZERKESZTŐ nagyítás-hármasa ebben a sávban él, a könyvtár
+    // bélyegkép-csúszkájának a helyén — mérve (`editpanel.tre:1288–1324` +
+    // `respack.yt`): az eredetiben az `editpanel/zoomup_icon` x 368…392 és
+    // az `editpanel/zoomslider_container` x 399…526 PONTOSAN a `thumbui`
+    // `loupehit` 366…391 / `scalecontainer` 398…525 rését foglalja el.
+    // Egy sáv, módonként cserélt tartalom — nem két külön hely.
+    //
+    // A vezérlők maguk a nézőé (`PhotoViewer.qml`), ezért az állapot
+    // ideérkezik, a művelet pedig jelzésként megy vissza. A `Main.qml`
+    // köti össze a kettőt.
+    //: a néző nagyítás-értéke (normalizált 0…1, #2492)
+    property real viewerZoomValue: 0
+    //: látszik-e egyáltalán a hármas: nyitott néző, nem videó, nem vágás
+    property bool viewerZoomAvailable: false
+    signal zoomFitRequested()
+    signal zoomActualRequested()
+    signal zoomValueRequested(real ertek)
+
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
 
@@ -1191,7 +1209,22 @@ Column {
                 // `scale_group` — nagyítás-csúszka − / + jelekkel
                 // (kézikönyv 06), a sáv jobb felső sarkához zárva
                 // (`m_offsetRT` a `basecontrolset`-en)
-                Row {
+                // #2564: ÁLLANDÓ SZÉLESSÉGŰ rés, két egymást váltó
+                // tartalommal — szándékosan `Item`, nem `Row`.
+                //
+                // ⚠️ Ez nem stílusdöntés. `Row`-ként a néző megnyitásakor a
+                // tartalomcsere ÁTRENDEZTE a felső sort, és az átrendeződés
+                // alatt érkező EGYETLEN kattintás elveszett: a #2566 őre
+                // élesben fogta meg, hogy a fiók bal szélső gombja
+                // („Emberek") a néző megnyitása után az első kattintásra
+                // nem nyílt ki. Rögzített szélességgel a váltás nem mozgat
+                // semmit.
+                //
+                // A rögzített szélesség a MÉRÉSSEL is egybevág: a két mód
+                // sávja UGYANOTT ÉR VÉGET (`thumbui/scalecontainer` 525,
+                // `editpanel/zoomslider_container` 526), csak balra nyúlik
+                // különbözőt — ezért mindkét sor a JOBB SZÉLHEZ zár.
+                Item {
                     id: trayZoomGroup
                     objectName: "trayZoomGroup"
                     //: #2305: a négy panelkapcsoló ELŐTT (ld. ott a mért
@@ -1199,92 +1232,217 @@ Column {
                     anchors.right: trayMetadataGroup.left
                     anchors.rightMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 6
+                    width: Math.max(trayLibraryZoomRow.width,
+                                    trayViewerZoomRow.width)
+                    height: Math.max(trayLibraryZoomRow.height,
+                                     trayViewerZoomRow.height)
 
-                    // #1911: a rács-nagyító KAPCSOLÓJA. A #1808 megépítette
-                    // a nagyítót, de a gombja a v0.8.198-ban kikerült az
-                    // eszköztárból, és a funkció ezzel elérhetetlenné vált —
-                    // a tulajdonos élesben jelentette, hogy „semmit nem
-                    // csinál". A lánc működik, csak nem volt mit megnyomni.
-                    //
-                    // Az ALSÓ SÁVBA kerül vissza, nem az eszköztárba: mérve
-                    // (`docs/specs/racs-nagyito.md` 1. és 5.) az eredeti
-                    // belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
-                    // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT
-                    // (`loupehit` x 366…391, `scalecontainer` x 398…525).
-                    PicasaButton {
-                        id: trayLoupeButton
-                        objectName: "trayLoupeButton"
-                        //: MÉRT méret (`thumbui/loupehit`)
-                        width: 25
-                        height: 19
+                    // #2564: KÖNYVTÁR-módú tartalom. Ugyanez a rés a
+                    // nézőben a nagyítás-hármast hordozza (lásd alább) —
+                    // az eredetiben is egyetlen sáv, cserélt tartalommal.
+                    Row {
+                        id: trayLibraryZoomRow
+                        objectName: "trayLibraryZoomRow"
+                        visible: !tray.viewerZoomAvailable
+                        spacing: 6
+                        anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        //: ⚠️ NEM `checkable` + kötött `checked` — az a
-                        //: projekt ismert rádió-csapdája (#1773): a gomb
-                        //: kattintáskor MAGA is átírja a `checked`-et, és
-                        //: ezzel eltöri a kötést, amiből olvassuk. A
-                        //: bekapcsolt állapotot ezért — a panelkapcsolók
-                        //: mintájára — az `accent` jelzi, a `loupeActive`
-                        //: pedig az EGYETLEN igazságforrás.
-                        //:
-                        //: A saját tesztje ezt élesben fogta meg: a
-                        //: kikapcsolás nem jutott el a rács rétegéhez.
-                        readonly property bool aktiv: tray.appWindow
-                            ? tray.appWindow.loupeActive === true : false
-                        accent: aktiv ? Theme.selectionBlue : "transparent"
-                        //: ⚠️ A felfedezhetőség a MI döntésünk: az eredeti
-                        //: nem ad rá támpontot — mérve (spec 2. szakasz)
-                        //: külön egérmutatót SEM használ. A #1911 viszont
-                        //: kiköti, hogy kipróbálás nélkül is kiderüljön:
-                        //: nyomva HÚZNI kell. A legkisebb ilyen jelzés a
-                        //: buboréksúgó — nem foglal helyet, és nem talál ki
-                        //: új viselkedést.
-                        ToolTip.text: qsTr("Loupe — drag over the photos")
-                        ToolTip.visible: hovered
-                        ToolTip.delay: 500
-                        onClicked: {
-                            if (!tray.appWindow) return
-                            tray.appWindow.loupeActive =
-                                !tray.appWindow.loupeActive
+
+                        // #1911: a rács-nagyító KAPCSOLÓJA. A #1808 megépítette
+                        // a nagyítót, de a gombja a v0.8.198-ban kikerült az
+                        // eszköztárból, és a funkció ezzel elérhetetlenné vált —
+                        // a tulajdonos élesben jelentette, hogy „semmit nem
+                        // csinál". A lánc működik, csak nem volt mit megnyomni.
+                        //
+                        // Az ALSÓ SÁVBA kerül vissza, nem az eszköztárba: mérve
+                        // (`docs/specs/racs-nagyito.md` 1. és 5.) az eredeti
+                        // belépési pontja a `thumbui/loupehit`, egy 25 × 19-es
+                        // gomb a `scale_group`-ban, a nagyítás-csúszka ELŐTT
+                        // (`loupehit` x 366…391, `scalecontainer` x 398…525).
+                        PicasaButton {
+                            id: trayLoupeButton
+                            objectName: "trayLoupeButton"
+                            //: MÉRT méret (`thumbui/loupehit`)
+                            width: 25
+                            height: 19
+                            anchors.verticalCenter: parent.verticalCenter
+                            //: ⚠️ NEM `checkable` + kötött `checked` — az a
+                            //: projekt ismert rádió-csapdája (#1773): a gomb
+                            //: kattintáskor MAGA is átírja a `checked`-et, és
+                            //: ezzel eltöri a kötést, amiből olvassuk. A
+                            //: bekapcsolt állapotot ezért — a panelkapcsolók
+                            //: mintájára — az `accent` jelzi, a `loupeActive`
+                            //: pedig az EGYETLEN igazságforrás.
+                            //:
+                            //: A saját tesztje ezt élesben fogta meg: a
+                            //: kikapcsolás nem jutott el a rács rétegéhez.
+                            readonly property bool aktiv: tray.appWindow
+                                ? tray.appWindow.loupeActive === true : false
+                            accent: aktiv ? Theme.selectionBlue : "transparent"
+                            //: ⚠️ A felfedezhetőség a MI döntésünk: az eredeti
+                            //: nem ad rá támpontot — mérve (spec 2. szakasz)
+                            //: külön egérmutatót SEM használ. A #1911 viszont
+                            //: kiköti, hogy kipróbálás nélkül is kiderüljön:
+                            //: nyomva HÚZNI kell. A legkisebb ilyen jelzés a
+                            //: buboréksúgó — nem foglal helyet, és nem talál ki
+                            //: új viselkedést.
+                            ToolTip.text: qsTr("Loupe — drag over the photos")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
+                            onClicked: {
+                                if (!tray.appWindow) return
+                                tray.appWindow.loupeActive =
+                                    !tray.appWindow.loupeActive
+                            }
+                            contentItem: Image {
+                                objectName: "trayLoupeIcon"
+                                source: "icons/loupe.svg"
+                                //: `thumbui/loupe` — MÉRT 23 × 16 a 25 × 19-es
+                                //: gombon belül
+                                width: 23; height: 16
+                                sourceSize.width: 23; sourceSize.height: 16
+                                fillMode: Image.PreserveAspectFit
+                                anchors.centerIn: parent
+                                //: a kikapcsolt állapot halványabb — a bekapcsolt
+                                //: állapotot a gomb saját `checked` háttere jelzi
+                                opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
+                            }
                         }
-                        contentItem: Image {
-                            objectName: "trayLoupeIcon"
+                        Text {
+                            text: "−"
+                            color: Theme.textGray
+                            font.pixelSize: 13
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        PicasaSlider {
+                            id: sizeSlider
+                            objectName: "traySizeSlider"
+                            // #718: null-őr — appWindow hiányában egy
+                            // tetszőleges, a [from, to] tartományba eső érték.
+                            from: 72; to: 256
+                            value: tray.appWindow ? tray.appWindow.thumbSize : 128
+                            //: `thumbui/scalecontainer` — FIX 127 képpont
+                            width: 127
+                            anchors.verticalCenter: parent.verticalCenter
+                            onMoved: tray.appWindow
+                                     && (tray.appWindow.thumbSize = value)
+                        }
+                        Text {
+                            text: "+"
+                            color: Theme.textGray
+                            font.pixelSize: 13
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    // #2564: NÉZŐ-módú tartalom — a szerkesztő
+                    // nagyítás-hármasa. Mérve (`respack.yt` +
+                    // `editpanel.tre`): `fit` x 286…323, `1to1` x 323…360,
+                    // `zoomup_icon` x 368…392, `zoomslider_container`
+                    // x 399…526 — vagyis a fenti könyvtári nagyító és
+                    // csúszka helyén, ugyanabban a sávban, a négy
+                    // panelkapcsoló ELŐTT.
+                    Row {
+                        id: trayViewerZoomRow
+                        objectName: "trayViewerZoomRow"
+                        visible: tray.viewerZoomAvailable
+                        spacing: 6
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        // #2311: a `fit` és az `1to1` ÖSSZERAGASZTOTT
+                        // szegmenspár — mérve `editpanel/fit` x 286…323 és
+                        // `editpanel/1to1` x 323…360 (nincs rés köztük), a
+                        // sminkjük `globalbuttons/b38l_*` / `b38r_*`, azaz
+                        // bal és jobb szegmens. Ezért van saját `Row`
+                        // nulla térközzel: a külső sor 6 képpontos rése a
+                        // párt is szétvágná.
+                        Row {
+                            id: zoomSegmentPair
+                            objectName: "zoomSegmentPair"
+                            spacing: 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            PicasaButton {
+                                objectName: "zoomFitButton"
+                                //: MÉRT méret (`editpanel/fit`)
+                                width: 37; height: 22
+                                //: Az eredeti kimért felirata.
+                                ToolTip.text: qsTr("Fit Photo inside viewing area")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 500
+                                //: `Property mousedown 1` — LENYOMÁSRA sül
+                                //: el, nem felengedésre.
+                                onPressed: tray.zoomFitRequested()
+                                contentItem: Item {
+                                    Image {
+                                        //: MÉRT ikonméret (`fit_icon` 14 × 12)
+                                        source: "icons/zoom-fit.svg"
+                                        width: 14; height: 12
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+                            PicasaButton {
+                                objectName: "zoomActualButton"
+                                //: MÉRT méret (`editpanel/1to1`)
+                                width: 37; height: 22
+                                //: Az eredeti kimért felirata.
+                                ToolTip.text: qsTr("Display Photo at actual size")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 500
+                                onPressed: tray.zoomActualRequested()
+                                contentItem: Item {
+                                    Image {
+                                        //: MÉRT ikonméret (`1to1_icon` 17 × 12)
+                                        source: "icons/zoom-actual.svg"
+                                        width: 17; height: 12
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+                        }
+                        // `editpanel/zoomup_icon` — a csúszka melletti
+                        // nagyító. A `.tre` (`:1288`) a `zoomsliderrect`
+                        // GYEREKEKÉNT, `m_offsetLB`-vel horgonyozza, és
+                        // NEM ad neki `Property mousedown`-t (a `fit` és az
+                        // `1to1` kapott) — tehát DÍSZÍTŐ IKON, nem vezérlő.
+                        //
+                        // ⛔ NINCS MEG: a MAGASSÁGA. A mérés csak a
+                        // 24 képpontos szélességet adja (x 368…392); a
+                        // 16 képpontos magasság a könyvtári nagyítónkéval
+                        // egyezik, hogy a két mód ne ugráljon. Ha egyszer
+                        // kiderül, hogy vezérlő, az külön jegy.
+                        Image {
+                            objectName: "viewerZoomUpIcon"
                             source: "icons/loupe.svg"
-                            //: `thumbui/loupe` — MÉRT 23 × 16 a 25 × 19-es
-                            //: gombon belül
-                            width: 23; height: 16
-                            sourceSize.width: 23; sourceSize.height: 16
+                            width: 24; height: 16
+                            sourceSize.width: 24; sourceSize.height: 16
                             fillMode: Image.PreserveAspectFit
-                            anchors.centerIn: parent
-                            //: a kikapcsolt állapot halványabb — a bekapcsolt
-                            //: állapotot a gomb saját `checked` háttere jelzi
-                            opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
+                            anchors.verticalCenter: parent.verticalCenter
+                            opacity: 0.65
                         }
-                    }
-                    Text {
-                        text: "−"
-                        color: Theme.textGray
-                        font.pixelSize: 13
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    PicasaSlider {
-                        id: sizeSlider
-                        objectName: "traySizeSlider"
-                        // #718: null-őr — appWindow hiányában egy
-                        // tetszőleges, a [from, to] tartományba eső érték.
-                        from: 72; to: 256
-                        value: tray.appWindow ? tray.appWindow.thumbSize : 128
-                        //: `thumbui/scalecontainer` — FIX 127 képpont
-                        width: 127
-                        anchors.verticalCenter: parent.verticalCenter
-                        onMoved: tray.appWindow
-                                 && (tray.appWindow.thumbSize = value)
-                    }
-                    Text {
-                        text: "+"
-                        color: Theme.textGray
-                        font.pixelSize: 13
-                        anchors.verticalCenter: parent.verticalCenter
+                        PicasaSlider {
+                            id: zoomSlider
+                            objectName: "zoomSlider"
+                            //: MÉRT szélesség (`editpanel/zoomslider_container`
+                            //: x 399…526).
+                            //:
+                            //: #2492: az ÉRTÉKKÉSZLET is a mért:
+                            //: **normalizált [0, 1]**, ahol 0 = illesztés és
+                            //: 0,5 = valódi méret. A köztes leképezést a
+                            //: néző `skalaErtekbol()`-ja végzi.
+                            width: 127; height: 20
+                            anchors.verticalCenter: parent.verticalCenter
+                            from: 0; to: 1
+                            onMoved: tray.zoomValueRequested(value)
+                            // húzás közben a kéz vezet; egyébként az állapot
+                            Binding on value {
+                                when: !zoomSlider.pressed
+                                value: tray.viewerZoomValue
+                            }
+                        }
                     }
                 }
             }

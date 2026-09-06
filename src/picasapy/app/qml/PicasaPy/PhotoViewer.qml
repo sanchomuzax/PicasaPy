@@ -256,6 +256,16 @@ Rectangle {
     property real panX: 0
     property real panY: 0
 
+    //: #2564: „a fotón értelmezett vezérlők használhatók-e" — EGY helyen
+    //: kimondva. Eddig a lebegő `zoomBar` `visible`-je hordozta ezt a
+    //: szabályt; a nagyítás-hármas azóta az ALSÓ ESZKÖZSÁVBAN ül
+    //: (`TrayBar.qml`), az arc-gombok pedig itt maradtak — a feltételt
+    //: ezért a néző GYÖKERÉRŐL kell kiadni, hogy ne íródjon meg kétszer
+    //: (#1486 osztálya). A két ág változatlan: videón nincs mit nagyítani
+    //: és nincs arc-keret, vágás közben pedig a kép 1:1-re áll vissza.
+    readonly property bool photoOverlaysUsable:
+        !viewer.isCurrentVideo && !editorPanel.cropActive
+
     //: #2492: a csúszka BEAKAD a valódi méretnél. `FUN_005d1300`: a
     //: léptetés eredményét a 0,5-höz méri, és az azt átlépő lépés
     //: pontosan ott áll meg.
@@ -1720,76 +1730,36 @@ Rectangle {
                         viewer.currentFilePath)
                 }
 
-                // #6: alsó zoom-sáv (design-guide hiánylista 4.):
-                // illesztés / 1:1 / csúszka — jobb alsó sarok
+                // #2564: a nagyítás-hármas (illesztés · 1:1 · csúszka) ELKERÜLT
+                // innen az ALSÓ ESZKÖZSÁVBA (`TrayBar.qml`,
+                // `trayViewerZoomRow`) — mérve az `editpanel.tre:1288–1324`
+                // horgonyai és a `respack.yt` x-tartományai szerint az
+                // eredetiben a könyvtár nagyító + bélyegkép-csúszka
+                // párjának a HELYÉN ül, nem a fotó fölött lebegve.
+                //
+                // Ez a doboz a MI KÉT arc-gombunké maradt (`☺` és `✎`):
+                // ezek nincsenek az eredetiben (saját döntés, #147/#26), és
+                // a #2564 kifejezetten hatókörön kívül hagyta őket. A
+                // lebegő forma nekik marad, mert a fotón értelmezett
+                // állapotot kapcsolnak.
                 Rectangle {
-                    id: zoomBar
-                    objectName: "viewerZoomBar"
-                    visible: !viewer.isCurrentVideo && !editorPanel.cropActive
+                    id: facesBar
+                    objectName: "viewerFacesBar"
+                    //: VÁLTOZATLAN feltétel: ugyanaz, ami a korábbi
+                    //: `zoomBar`-t vezérelte — videón nincs arc-keret,
+                    //: vágás közben pedig a fotó fölötti réteg tiszta.
+                    visible: viewer.photoOverlaysUsable
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     anchors.margins: 4
-                    width: zoomRow.width + 12
+                    width: facesRow.width + 12
                     height: 26
                     radius: 4
                     color: "#00000059"
                     Row {
-                        id: zoomRow
+                        id: facesRow
                         anchors.centerIn: parent
                         spacing: 4
-                        // #2311: a `fit` és az `1to1` ÖSSZERAGASZTOTT
-                        // szegmenspár — mérve `editpanel/fit` x 286…323 és
-                        // `editpanel/1to1` x 323…360 (nincs rés köztük), a
-                        // sminkjük `globalbuttons/b38l_*` / `b38r_*`, azaz
-                        // bal és jobb szegmens. Ezért van saját `Row`
-                        // nulla térközzel: a külső sor 4 képpontos rése a
-                        // párt is szétvágná.
-                        Row {
-                            id: zoomSegmentPair
-                            objectName: "zoomSegmentPair"
-                            spacing: 0
-                            anchors.verticalCenter: parent.verticalCenter
-                            PicasaButton {
-                                objectName: "zoomFitButton"
-                                //: MÉRT méret (`editpanel/fit`)
-                                width: 37; height: 22
-                                //: Az eredeti kimért felirata.
-                                ToolTip.text: qsTr("Fit Photo inside viewing area")
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 500
-                                //: `Property mousedown 1` — LENYOMÁSRA sül
-                                //: el, nem felengedésre.
-                                onPressed: viewer.zoomFit()
-                                contentItem: Item {
-                                    Image {
-                                        //: MÉRT ikonméret (`fit_icon` 14 × 12)
-                                        source: "icons/zoom-fit.svg"
-                                        width: 14; height: 12
-                                        fillMode: Image.PreserveAspectFit
-                                        anchors.centerIn: parent
-                                    }
-                                }
-                            }
-                            PicasaButton {
-                                objectName: "zoomActualButton"
-                                //: MÉRT méret (`editpanel/1to1`)
-                                width: 37; height: 22
-                                //: Az eredeti kimért felirata.
-                                ToolTip.text: qsTr("Display Photo at actual size")
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 500
-                                onPressed: viewer.zoomActual()
-                                contentItem: Item {
-                                    Image {
-                                        //: MÉRT ikonméret (`1to1_icon` 17 × 12)
-                                        source: "icons/zoom-actual.svg"
-                                        width: 17; height: 12
-                                        fillMode: Image.PreserveAspectFit
-                                        anchors.centerIn: parent
-                                    }
-                                }
-                            }
-                        }
                         // #147: arc-keretek be/ki (F billentyűvel egyenértékű)
                         PicasaButton {
                             objectName: "facesToggleButton"
@@ -1814,28 +1784,6 @@ Rectangle {
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Edit Faces")
                             onClicked: viewer.toggleFacesEdit()
-                        }
-                        PicasaSlider {
-                            id: zoomSlider
-                            objectName: "zoomSlider"
-                            //: MÉRT szélesség (`editpanel/zoomslider_container`
-                            //: x 399…526).
-                            //:
-                            //: #2492: az ÉRTÉKKÉSZLET is a mért:
-                            //: **normalizált [0, 1]**, ahol 0 = illesztés és
-                            //: 0,5 = valódi méret. A köztes leképezést a
-                            //: `skalaErtekbol()` végzi. Korábban a csúszka a
-                            //: SZORZÓT tárolta lineárisan (0,25…8), ezért az
-                            //: „1:1" nem a felezőpontra esett.
-                            width: 127; height: 20
-                            anchors.verticalCenter: parent.verticalCenter
-                            from: 0; to: 1
-                            onMoved: viewer.setZoomValue(value)
-                            // húzás közben a kéz vezet; egyébként az állapot
-                            Binding on value {
-                                when: !zoomSlider.pressed
-                                value: viewer.zoomValue
-                            }
                         }
                     }
                 }

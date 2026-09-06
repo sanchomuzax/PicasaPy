@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.312] – 2026-09-06
+
+### Javítva
+
+- **A nagyítás gombjai az alsó eszközsávba kerültek** (#2564). Eddig egy
+  lebegő, sötét dobozban ültek a fénykép jobb alsó sarkában, és eltakarták
+  a képet. Az eredeti Picasában a helyük az alsó sávban van, a csillag és
+  a két forgatás-gomb után — pontosan ott, ahol a könyvtárban a
+  bélyegkép-méret csúszkája: egy sáv, a nézetnek megfelelő tartalommal.
+  Mostantól nálunk is így van. A gombok mérete, a csúszka viselkedése és
+  a súgószövegek változatlanok; az arc-keret és arc-szerkesztő gomb (ezek
+  nálunk vannak, az eredetiben nincsenek) marad a fotó sarkában.
+
 ## [0.8.311] – 2026-09-06
 
 ### Javítva
