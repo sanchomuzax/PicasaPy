@@ -50,6 +50,11 @@ from picasapy.ini import update_document
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.scanner import PICASA_INI_NAME
 
+# #2497: ugyanaz a hibakészlet, mint a többi ini-írónál — a
+# `photo_ops_controller` a gazdája (a `batch_effect_controller` is
+# onnan veszi), hogy a mentési hibaosztály EGY helyen legyen kimondva.
+from .photo_ops_controller import _WRITE_ERRORS
+
 
 class EffectsClipboardMixin:
     """„Vágólap"-pillanatkép egy kép effektláncáról + beillesztés, undóval."""
@@ -153,7 +158,18 @@ class EffectsClipboardMixin:
                     entries[:] = fresh
                     return document
 
-                update_document(ini_path, mutate, backup=True)
+                try:
+                    update_document(ini_path, mutate, backup=True)
+                except _WRITE_ERRORS as error:
+                    # #2497: az írás bukása NEM lehet néma. A rács közben
+                    # már az új láncot mutatná, az ini viszont a régit
+                    # tartalmazza — a felhasználó azt hinné, elmentette.
+                    # A projekt meglévő hibacsatornája ez (#459: a
+                    # `photoOpFailed` a `syncFailed`-en át a Main.qml
+                    # `errorBanner`-ébe fut be); a `break` a további
+                    # mappákat is leállítja, ahogy a kötegelt effektnél.
+                    self.photoOpFailed.emit(str(error))
+                    break
                 undo_batch.extend(entries)
                 # #750: a beillesztett lánc a TARTÓS naplóba is — mappánként
                 # egyetlen naplóírással, hogy a köteget ne lassítsa. A lánc
@@ -166,7 +182,10 @@ class EffectsClipboardMixin:
                     ]
                 )
                 self._sync_tree(conn, folder)
-        self._effects_undo_stack.append(undo_batch)
+        # #2497: üres kötegre NEM teszünk visszavonási lépést — különben a
+        # „Beillesztés visszavonása" egy meg sem történt írást vonna vissza.
+        if undo_batch:
+            self._effects_undo_stack.append(undo_batch)
         self.effectsClipboardChanged.emit()
         self._refresh_view()
 
@@ -203,7 +222,17 @@ class EffectsClipboardMixin:
                         )
                     return document
 
-                update_document(ini_path, mutate, backup=True)  # #137
+                try:
+                    update_document(ini_path, mutate, backup=True)  # #137
+                except _WRITE_ERRORS as error:
+                    # #2497: a visszavonás írási hibája sem lehet néma. A
+                    # köteget VISSZATESSZÜK a veremre, hogy a felhasználó az
+                    # ok elhárítása után újra megkísérelhesse — a már
+                    # visszaírt mappák újbóli visszaírása azonos eredményt ad.
+                    self.photoOpFailed.emit(str(error))
+                    self._effects_undo_stack.append(batch)
+                    self.effectsClipboardChanged.emit()
+                    return
                 # #750: a visszavonás is a MI írásunk — a napló a beillesztés
                 # ELŐTTI láncot védi tovább (üresnél törlődik a bejegyzés).
                 self.recordSavedChains(

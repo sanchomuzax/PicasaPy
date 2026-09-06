@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.298] – 2026-09-06
+
+### Javítva
+
+- **A „Minden effekt beillesztése" hibája már nem tűnik el némán**
+  (#2497). Ha a `.picasa.ini` írása nem sikerül — írásvédett mappa, tele
+  lemez —, eddig a hiba kiszökött a felület alól: a rács már az új
+  effektláncot mutatta, a fájlba viszont nem került ki semmi, és
+  figyelmeztetés sem jelent meg. Mostantól a hibasávban látszik, és a
+  visszavonási lépés sem kerül a verembe olyan műveletről, ami meg sem
+  történt.
+
 ## [0.8.297] – 2026-09-06
 
 ### Javítva
