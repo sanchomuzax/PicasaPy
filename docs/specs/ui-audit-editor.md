@@ -2636,6 +2636,93 @@ A vezérlősáv láthatósága feltételes: a `0x00593dd9`–`0x00593e16` a
 ⇒ A trimmelés és a képkockamentés vezérlői ehhez a fülhöz tartoznak —
 **jegy: #1838**.
 
+### ⭐ MIT CSINÁL a négy `movieeditpanel` gomb (2026-09-06, #2529)
+
+A fenti tábla eddig csak **felsorolta** őket. A parancs-elosztó a
+**`0x005952d0`** (1680 b); kilenc ága van, mindegyik `repe cmpsb`
+névhasonlítással:
+
+| # | elem | cím | mit tesz |
+|---|---|---|---|
+| 1 | `moviecontrols/play` | `0x0059530b` | lejátszás |
+| 2 | `moviecontrols/pause` | `0x0059544f` | szüneteltetés |
+| 3 | `video_control_bar/moviemode1` | `0x005954f1` | üzemmódváltás (`0x005944f0`) |
+| 4 | `video_control_bar/setin` | `0x0059555d` | a **`moviestart`** token írása (`0x00c813e4` → `0x004602d0`) |
+| 5 | `video_control_bar/setout` | `0x0059560b` | a **`movieend`** token írása |
+| 6 | **`movieeditpanel/reset_trim`** | `0x005956de` | ld. lent — **nem csak a vágáspontokat** |
+| 7 | **`movieeditpanel/capture_frame`** | `0x0059578f` | képkocka mentése a pillanatnyi pozícióról |
+| 8 | **`movieeditpanel/export_movie`** | `0x0059589a` | klip-export (`0x0053a460`) |
+| 9 | `movieeditpanel/export_youtube` | `0x00595908` | YouTube-feltöltés |
+
+#### ⛔ A `reset_trim` felirata FÉLREVEZET
+
+A gomb felirata „Reset Start and End" / **„Kezdés és befejezés alaphelyzetbe
+állítása"**, a művelet viszont **az ÖSSZES film-szerkesztést eltávolítja**:
+
+```
+0x00595744  call 0x005ef3e0        ; CThumbUI::UndomovieEdits
+0x0059574c  call 0x00596980        ; állapotfrissítés
+```
+
+A `0x005ef3e0` sztringkészlete kimondja, mit kérdez:
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `CThumbUI::UndomovieEdits` | **„Remove all movie edits?"** | — |
+| `IDS_CONFIRMREVERT` | „This will remove all edits you have made to the current picture. Do you want to continue?" | — |
+| `IDS_CONFIRMREVERT_YES_BUTTON` | **„Remove Edits"** | — |
+
+⇒ **megerősítő párbeszéd**, és a szövege a általános visszavonás-szöveg
+(`IDS_CONFIRMREVERT`), nem vágáspont-specifikus. Bizalmi fok: **erős** —
+a hívás és a sztringkészlet együtt; hogy pontosan mely `filters=` tokeneket
+törli, **NINCS MÉRVE**.
+
+#### A `capture_frame` a PILLANATNYI pozícióból dolgozik
+
+```
+0x005957f3  mov  eax, [ebp+0xe64]      ; a lejátszó pozíciója
+0x0059581b  fild qword ptr [esp+0x10]
+0x0059581f  fdiv qword ptr [0xcf3e88]  ; = 10 000 000,0
+```
+
+⇒ a pozíció **100 ns-os** egységben áll (ugyanaz a konstans, mint a
+`makemoviepanel/rewind`-nél, `picasa-create-features.md` 2.12), és a
+mentés **másodpercben** kapja meg. A képkocka a **„Captured Videos" /
+„Rögzített videoklipek"** mappába kerül (`CCaptureFrame::CaptureFolder`,
+`picasa-create-features.md` 58.5).
+
+#### Az `export_movie` célmappája és a LINUX-kapu
+
+A `0x0053a460` (805 b) három dolgot mond ki:
+
+| | mérve |
+|---|---|
+| háttérszál | `CFileSaveThread` |
+| célmappa | `CThumbUI::MovieClipFolder` = „Exported Videos" / **„Exportált videoklipek"** |
+| **platform-kapu** | `LinuxNomovie` = „This feature is not supported for Linux" / **„A program ezt a funkciót Linux rendszeren nem támogatja"** |
+
+*(A célmappa és a Linux-kapu a `picasa-linux-mod.md` 1. szakaszában is
+szerepel — ez a szakasz köti őket a KONKRÉT panelelemhez.)*
+
+#### Az állapotfrissítő: `0x00596980`
+
+Ugyanaz a függvény fut a `setin`/`setout`/`reset_trim` után. A
+sztringkészlete megadja, mit frissít: **`moviestart`**, **`movieend`**,
+`video_control_bar/startthumb`, `video_control_bar/endthumb`,
+`video_control_bar/scaleslider`, **`movieeditpanel/reset_trim`**,
+**`movieeditpanel/export_movie`** — tehát a két vágás-fogantyút, a
+csúszkát, és **a két gomb engedélyezettségét** is ő állítja.
+
+#### ⛔ Nálunk (MÉRVE)
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| `moviestart` / `movieend` token | a `filters=` láncban, a `setin`/`setout` írja | **megőrizzük**, de beállítani nem tudjuk (`ini/filter_registry.py:148–149`, `render/registry_data.py:512–513`) | a vágás-felület a #1838-on |
+| `movieeditpanel/reset_trim` | „összes film-szerkesztés törlése", megerősítéssel | **nincs** | #1838 |
+| `movieeditpanel/capture_frame` | képkocka a „Rögzített videoklipek" mappába | **nincs** | #1838 |
+| `movieeditpanel/export_movie` | klip-export az „Exportált videoklipek" mappába, háttérszálon | **nincs** | #1838 |
+
+
 ### A másik négy *bizonytalan* elem — mind lezárva a `.tre`-ből
 
 | elem | horgony | mi ez |

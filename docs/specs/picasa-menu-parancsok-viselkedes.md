@@ -4536,9 +4536,19 @@ párbeszéd halott, a benne lévő művelet nem.)*
 
 ### 63.3 A maradék `gedialog`-elemek
 
-`done` · `next` · `prev` · `filmstrip` — a Google Earth-párbeszéd saját
-navigációja. **Hatókörön kívül** a párbeszéddel együtt; a mi
+**`gedialog/done`** (`gedialog.tre:50`) · **`gedialog/next`** ·
+**`gedialog/prev`** · **`gedialog/filmstrip`** — a Google Earth-párbeszéd
+saját navigációja. **Hatókörön kívül** a párbeszéddel együtt; a mi
 térkép-panelünk a kijelölésen dolgozik, nem képenként lapozva.
+
+> ⭐ **2026-09-06 (#2529): a `done` kezelője kimérve, hogy a besorolás ne
+> feltevés legyen.** Mind a négy elem a párbeszéd parancs-elosztójában ül
+> (**`0x00853990`**, 694 b); a `done` saját kezelője a **`0x00854080`**
+> (94 b): előbb egy időzítő-kapun megy át (`GetTickCount` vs. `[this+0x264]`,
+> `0x00854095`), majd a `0x00853f90`-t hívja, végül — ha a `0x006ff6d0`
+> igazat ad — **magát a `gedialog/done` elemet aktiválja** (`0x009cd8a0`,
+> `0x008540bd`). ⇒ a párbeszéd lezárása, adatot nem ír. A besorolás
+> (hatókörön kívül) változatlan, de most mérésen nyugszik.
 
 ### Eredeti / nálunk / teendő
 
@@ -4625,9 +4635,9 @@ a `panelroot.tre:95` sorban áll.*
 
 | panel | elem | állapot |
 |---|---|---|
-| `rightdrawerpanel` | `close` · `size_toggle` („Switch between small/large side panel") · `title_text` („Metaadatok") | a fiók **méret-váltója** nálunk nincs — kis eltérés, a #1773-hoz tartozik |
+| `rightdrawerpanel` | `rightdrawerpanel/close` · `rightdrawerpanel/size_toggle` („Switch between small/large side panel", `rightdrawerpanel.tre:21`) · `rightdrawerpanel/title_text` („Metaadatok", `rightdrawerpanel.tre:8`) | a fiók **méret-váltója** nálunk nincs — kis eltérés, a #1773-hoz tartozik |
 | `panelroot` | `panelroot/makemovietab` („Movie Maker") · `panelroot/capturemovietab` („Rögzítés") · `panelroot/globaltabs` · `panelroot/youtab` | a **felső lapok**; a filmkészítő és a rögzítés a #432 / #853 alatt |
-| `instructionpanel` | `close` · `learn_more` („Learn more…") | súgó-hivatkozás ⇒ **hatókörön kívül** |
+| `instructionpanel` | `instructionpanel/close` · **`instructionpanel/learn_more`** („Learn more…" / „További információ…", `instructionpanel.tre:29`) | ⭐ **2026-09-06 (#2529): a cél KIMÉRVE** — a kezelő a `0x0074c760`, és a `http://picasa.google.com/support/bin/answer.py?hl=%s&answer=156272` címet nyitja meg (`%s` = a nyelv kódja). A Picasa súgószolgáltatása megszűnt ⇒ **hatókörön kívül**. A kezelő a **puszta** nevet hasonlítja, ezért a minősített névre keresés nem találja. |
 | `video_control_bar2` | `1to1` („Show actual movie size (don't stretch)") · `fullscreen` · `scaleslider` · `volumeslider` | a **2.7** szakaszban már feltárva — nem ez a kör találta |
 
 ### Eredeti / nálunk / teendő

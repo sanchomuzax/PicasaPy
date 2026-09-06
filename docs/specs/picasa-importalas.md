@@ -6,6 +6,19 @@ bejegyzés — **hivatalos magyar fordítással** léteznek.
 
 ## A panel felépítése
 
+> ⭐ **2026-09-06 (#2529): a két lapozógomb feltárva.** Mindkettő a
+> `acquirepanel/contbuttonscontainer` gyereke, és a panel
+> **parancs-elosztójában** (`0x0051f070`, 1415 b) ül — az elosztó a
+> **puszta** nevet hasonlítja (`nextbutton`, `previousbutton`), ezért a
+> minősített névre keresés nem találja meg. A művelet az **importálási
+> előnézet** léptetése; adatot nem ír.
+>
+> ⛔ **Ez a lap egyetlen horgonyt sem tartalmazott** (se `0x00……`, se
+> `fájl.tre:sor`), ezért a lefedettségi mérő az EGÉSZ táblát átugorja, és a
+> benne leírt elemek „feltáratlan"-ként állnak. A fenti sor most javítva;
+> a többi sor a **#2536** hatálya alá esik.
+
+
 | terület | elem | felirat |
 |---|---|---|
 | forrás | `import_from_label` | **Import from:** |
@@ -18,7 +31,7 @@ bejegyzés — **hivatalos magyar fordítással** léteznek.
 | tálca | `importtraylabel` | **Import Tray** |
 | üres állapot | `nothing` | **No photos available** |
 | forgatás | `rotate1button` / `rotate2button` | *Rotate the Photo clockwise / counter-clockwise* |
-| lapozás | `previousbutton` / `nextbutton` | *View the previous / next Photo* |
+| lapozás | **`acquirepanel/previousbutton`** (`acquirepanel.tre:86`) / **`acquirepanel/nextbutton`** (`acquirepanel.tre:82`) | *View the previous / next Photo* |
 | csillag | `startoggle` | *Add/Remove Star* |
 | kizárás | `excludetoggle` | *Exclude/Include* |
 | **másolás után** | `delete_label` | **After Copying:** |
