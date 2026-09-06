@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.301] – 2026-09-06
+
+### Javítva
+
+- **A verzióemelés némán elmaradó hibája többé nem tűnik el** (#2487).
+  Ha a kiadás utáni automatikus verzióemelés elakad, eddig egy halvány
+  figyelmeztetés került a naplóba, a futás pedig zölden fejeződött be —
+  emiatt nyolc napon át egyetlen automatikus verzióemelés sem történt meg
+  úgy, hogy bárminek feltűnt volna. Mostantól a kiadás UTÁN a futás
+  pirosra vált, tehát látszik. A szabályos „nincs mit emelni" eset
+  továbbra is zöld.
+- **A verzióemelés nem a saját futása eredményéből dönt** (#2488). A
+  döntés eddig azt kérdezte, van-e már kiadás a jelenlegi verzióhoz — de
+  ezt ugyanannak a futásnak a kiadó lépése ELŐTT kérdezte meg. Egyszer
+  tíz másodpercen múlt, hogy egy javítás kiadatlanul maradt a főágon.
+  Mostantól az előzményből dolgozik: melyik változtatás állította be a
+  jelenlegi verziót, és gyűlt-e azóta kiadandó munka.
+
 ## [0.8.300] – 2026-09-06
 
 ### Javítva
