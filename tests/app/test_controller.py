@@ -130,19 +130,23 @@ class TestController:
         assert controller.photoInfo(-1) == ""
         assert controller.photoInfo(999) == ""
 
-    def test_viewer_info_breadcrumb_and_date(self, controller, library):
-        """#2565: „mappa > név   dátum   SZxM képpont   méret   címkék".
+    def test_viewer_info_breadcrumb_date_and_counter(self, controller, library):
+        """#2587: „mappa > név   dátum   SZxM képpont   méret   (N / i)   címkék".
 
-        A SZÁMLÁLÓ kikerült: az A/B összehasonlító felvételen
-        (`141421.jpg`, bal: Picasa 3 szerkesztő, jobb: mi, ugyanazon a
-        képen) az eredeti sávjában nincs ott. A #1960 mérése (a magyar
-        `(összes / aktuális)` sorrend) érvényben marad — a bizonyítéka egy
-        ötképes mappa KIJELÖLÉSÉRŐL szólt, nem a szerkesztőről.
+        ⚠️ A #2565 köre a SZÁMLÁLÓT tévesen kivette innen: az akkori
+        felvételen (`141421.jpg`) a Picasa FÉL SZÉLESSÉGŰ ablakban állt, a
+        kék sáv szövege le volt vágva, és a levágást olvastuk hiánynak. A
+        teljes szélességű felvétel
+        (`research/felirat-ki-bekapcsolva/picasa3-felirat-bekapcsolva. 223224.jpg`)
+        megcáfolta: `… 807 KB   (82 / 3)   Címkék: AI image`.
         """
         controller.selectFolder(str(library / "nyaralas"))
         info = controller.viewerInfo(0)
         assert info.startswith("nyaralas > IMG_0001.jpg")
-        assert "(1 / 2)" not in info
+        # angol felületen `(aktuális / összes)` — a magyar sorrend a `.ts`-é (#1960)
+        assert "(1 / 2)" in info, (
+            f"hiányzik a lapszámláló a néző sávjából: {info!r}"
+        )
         # a dátum EXIF nélkül is ott van (a befagyasztott fájlidőből, #2486)
         assert re.search(r"\d{4}", info), f"nincs dátum a sávban: {info!r}"
 

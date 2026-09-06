@@ -1,3 +1,9 @@
+<!-- #2588: a rajz szine #6f6f6f, nem feher. Az ikonok a
+     #2564 elott a foto folott lebego SOTET dobozra keszultek;
+     azota az ALSO SAV vilagos kromjan ulnek, ahol a feher rajz
+     lathatatlan volt (merve: picasapy-felirat-bekapcsolva. 223242.jpg).
+     A #6f6f6f a szomszedos panelkapcsolok (panel-emberek.svg)
+     mert konvencioja: mindket temaban olvashato. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 12" width="14" height="12">
   <!-- PicasaPy sajat rajz (#2311): "a foto beillesztese a megjelenitesi
        teruletbe". A MERT meret az eredeti `editpanel/fit_icon`-e: 14 x 12
@@ -6,7 +12,7 @@
 
        A jelentes: egy keret, es benne egy kisebb kep, amit negy befele
        mutato sarok illeszt a helyere. -->
-  <g fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="square">
+  <g fill="none" stroke="#6f6f6f" stroke-width="1" stroke-linecap="square">
     <rect x="0.5" y="0.5" width="13" height="11"/>
     <!-- a negy befele mutato sarok -->
     <path d="M3 3.5h2.5M3.5 3v2.5"/>

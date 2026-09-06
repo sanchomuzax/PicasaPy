@@ -1,10 +1,16 @@
+<!-- #2588: a rajz szine #6f6f6f, nem feher. Az ikonok a
+     #2564 elott a foto folott lebego SOTET dobozra keszultek;
+     azota az ALSO SAV vilagos kromjan ulnek, ahol a feher rajz
+     lathatatlan volt (merve: picasapy-felirat-bekapcsolva. 223242.jpg).
+     A #6f6f6f a szomszedos panelkapcsolok (panel-emberek.svg)
+     mert konvencioja: mindket temaban olvashato. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 12" width="17" height="12">
   <!-- PicasaPy sajat rajz (#2311): "foto megjelenitese tenyleges meretben".
        A MERT meret az eredeti `editpanel/1to1_icon`-e: 17 x 12
        (respack.yt, x 332...349). A rajz a MIENK.
 
        A jelentes: 1:1 aranyparos - ket fuggoleges vonas kozott ket pont. -->
-  <g fill="#ffffff">
+  <g fill="#6f6f6f">
     <rect x="1" y="1" width="1.5" height="10"/>
     <rect x="4" y="1" width="1.5" height="10"/>
     <circle cx="8.5" cy="4" r="0.9"/>
