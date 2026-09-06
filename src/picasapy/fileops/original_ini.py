@@ -64,6 +64,22 @@ class IniSectionsFailed(Exception):
         self.cause = cause
 
 
+class _HalfApplied(Exception):
+    """A szekció-költözés KÖZEPÉN buktunk el: a célba írás megtörtént, a
+    forrásból törlés nem (#1448 2. átnézés, 3. lelet).
+
+    Ez a lépés se nem történt meg, se nem maradt el — és épp ezért TARTOZIK
+    a `done`-ba: ha kimarad belőle, a visszagörgetés nem tud róla, és a
+    célban FRISSEN ÜLTETETT árva szekció marad, amit a következő, azonos
+    nevű eredeti örökölne. Pontosan az a hibaosztály, amit ez a jegy
+    megszüntet.
+    """
+
+    def __init__(self, cause: BaseException) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
+
+
 @dataclass(frozen=True)
 class IniSectionMove:
     """Egy megtörtént ini-szekció-költözés — a visszagörgetés adata.
@@ -80,6 +96,11 @@ class IniSectionMove:
     target_ini: Path
     source_name: str
     target_name: str
+    #: Létezett-e a cél ini-je MÁR a költözés előtt. Ha nem, akkor a
+    #: visszagörgetés takaríthatja is (`_remove_if_contentless`) — a
+    #: mentésbiztonsági `.bak` párjával együtt, mert mindkettő MOST
+    #: keletkezett a felhasználó célmappájában.
+    target_ini_existed: bool = True
 
     def reversed(self) -> IniSectionMove:
         """A visszafelé mutató párja (a visszagörgetéshez)."""
@@ -88,6 +109,9 @@ class IniSectionMove:
             target_ini=self.source_ini,
             source_name=self.target_name,
             target_name=self.source_name,
+            # A visszafelé mutató lépés célja a FORRÁS inije: az a
+            # felhasználó eredeti fájlja, azt sosem takarítjuk el.
+            target_ini_existed=True,
         )
 
 
@@ -151,14 +175,20 @@ def move_original_ini_sections(
     """
     done: list[IniSectionMove] = []
     for source, target in pairs:
+        target_ini = ini_path_for(target)
         move = IniSectionMove(
             source_ini=ini_path_for(source),
-            target_ini=ini_path_for(target),
+            target_ini=target_ini,
             source_name=source.name,
             target_name=target.name,
+            target_ini_existed=target_ini.exists(),
         )
         try:
             elment = _apply(move)
+        except _HalfApplied as felig:
+            # A célba írás MEGTÖRTÉNT — a lépés a `done`-ba tartozik, hogy a
+            # visszagörgetés eltakarítsa a frissen ültetett szekciót.
+            raise IniSectionsFailed((*done, move), felig.cause) from felig.cause
         except Exception as error:  # noqa: BLE001 — az ini-réteg többfélét dob
             raise IniSectionsFailed(done, error) from error
         if elment:
@@ -183,7 +213,33 @@ def undo_original_ini_sections(
             _apply(move.reversed())
         except Exception:  # noqa: BLE001 — az ini-réteg többféle hibát dob
             stranded.append(move)
+            continue
+        if not move.target_ini_existed:
+            _remove_if_contentless(move.target_ini)
     return tuple(stranded)
+
+
+def _remove_if_contentless(ini: Path) -> None:
+    """A visszagörgetés után ÜRESRE fogyott ini eltakarítása.
+
+    KIZÁRÓLAG olyan fájlra hívható, ami a művelet ELŐTT nem létezett
+    (`target_ini_existed`), és akkor is csak akkor törlünk, ha a szekció
+    kivétele után SEMMI nem maradt benne — se másik szekció, se komment.
+    A mentésbiztonsági `.bak` párja is megy: az is MOST keletkezett, és
+    egyedül maradva ugyanúgy életben tartaná az eredeti-mappát.
+
+    Enélkül a célmappában egy magára maradt `.picasa.ini` tartaná életben
+    az eredeti-mappát (a `rmdir` csak ÜRES könyvtárat töröl), miközben a
+    felhasználónak azt mondjuk: semmi nem változott."""
+    if not ini.is_file():
+        return
+    try:
+        if load_or_empty(ini).serialize().strip():
+            return
+        ini.unlink()
+        ini.with_name(ini.name + ".bak").unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def copy_original_ini_sections(
@@ -333,11 +389,17 @@ def _apply(move: IniSectionMove) -> bool:
         lambda document: _placed(document, section, move.target_name),
         backup=True,
     )
-    update_document(
-        move.source_ini,
-        lambda document: document.without_section(move.source_name),
-        backup=True,
-    )
+    try:
+        update_document(
+            move.source_ini,
+            lambda document: document.without_section(move.source_name),
+            backup=True,
+        )
+    except Exception as error:  # noqa: BLE001 — az ini-réteg többfélét dob
+        # A két fázis közt buktunk: a szekció MOST mindkét ini-ben ott van.
+        # A hívónak tudnia kell róla, különben a célban frissen ültetett
+        # árva marad (#1448 2. átnézés, 3. lelet).
+        raise _HalfApplied(error) from error
     return True
 
 

@@ -56,6 +56,21 @@ from picasapy.fileops.trash import (
 _move = shutil.move
 
 
+class CompanionLeftBehindError(OSError):
+    """A KÉP MÁR TÖRLŐDÖTT, csak a kísérője maradt ott (#1451 2. átnézés, 4.).
+
+    Külön osztály, mert a hívó felől nézve ez NEM ugyanaz, mint egy bukott
+    törlés: a kép eltűnt, tehát a rácsnak, az indexnek és a
+    duplikátum-listának FRISSÜLNIE kell — a hibaüzenet mellett, nem
+    helyette. Amíg minden `OSError` „nem történt semmi"-t jelentett, a
+    felületen ott maradt egy már nem létező kép bélyegképe.
+
+    A sima `OSError`-ből származik, hogy a kivételosztály szerint szűrő
+    hívók (`_OPERATION_ERRORS`) továbbra is elkapják — a mulasztás iránya
+    így egy fölösleges hibaüzenet, nem egy némán kicsúszó kivétel.
+    """
+
+
 def delete_photo_to_trash(path: str | Path, *, trash_dir: Path | None = None) -> Path:
     """A kép a lomtárba — a megőrzött eredetijével és a pillanatképeivel.
 
@@ -73,6 +88,9 @@ def delete_photo_to_trash(path: str | Path, *, trash_dir: Path | None = None) ->
             visszatesszük a helyükre. Ha a VISSZATÉTEL is bukik, a hiba
             üzenete megmondja, hol keresse a felhasználó a fájljait — némán
             fél törlés nem mehet ki (#1451 átnézés, 2. lelet).
+        CompanionLeftBehindError: a rendszer-lomtáras (windowsos) ágon, ha a
+            KÉP már a lomtárba került, de egy kísérője nem — a felületnek
+            ilyenkor a törlést IS könyvelnie kell (#1451 átnézés, 4. lelet).
     """
     path = Path(path)
     companions = companions_of(path)
@@ -116,7 +134,9 @@ def _rendszer_lomtaraba(
     törlés.
 
     Fordítva a rossz kimenet enyhébb és KIMONDOTT: ha a kép már elment és
-    egy kísérő nem, azt a `delete_photo_permanently` mintájára megnevezzük.
+    egy kísérő nem, azt a `delete_photo_permanently` mintájára megnevezzük —
+    `CompanionLeftBehindError`-ral, hogy a hívó felület a KÉP eltűnését is
+    könyvelje, ne csak a hibát mutassa (#1451 átnézés, 4. lelet).
     """
     eredmeny = delete_to_trash(path, trash_dir=trash_dir)
 
@@ -131,7 +151,7 @@ def _rendszer_lomtaraba(
     _ures_mappak_takaritasa(companions)
 
     if maradtak:
-        raise OSError(_ott_maradt_uzenet(maradtak))
+        raise CompanionLeftBehindError(_ott_maradt_uzenet(maradtak))
     return eredmeny
 
 
@@ -144,7 +164,9 @@ def delete_photo_permanently(path: str | Path) -> None:
 
     Raises:
         FileNotFoundError: ha a kép nem létezik.
-        OSError: ha valamelyik kísérőfájl nem törölhető.
+        CompanionLeftBehindError: ha a KÉP már törlődött, de valamelyik
+            kísérőfájl nem — a hívó felületnek ilyenkor a törlést IS
+            könyvelnie kell (`photoDeleted`), nem csak a hibát mutatnia.
     """
     path = Path(path)
     companions = companions_of(path)
@@ -161,7 +183,7 @@ def delete_photo_permanently(path: str | Path) -> None:
     _ures_mappak_takaritasa(companions)
 
     if maradtak:
-        raise OSError(_ott_maradt_uzenet(maradtak))
+        raise CompanionLeftBehindError(_ott_maradt_uzenet(maradtak))
 
 
 def _visszatesz(

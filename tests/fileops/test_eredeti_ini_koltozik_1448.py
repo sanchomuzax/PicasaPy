@@ -267,3 +267,182 @@ class TestVisszagorgetes:
         assert _szekcio(forras_dir, "a.jpg") is None
         # És a cél árva szekcióját sem loptuk el.
         assert _szekcio(cel_dir, "b.jpg") is not None
+
+
+def _update_document_bukik_a(hivas_sorszamok: set[int], monkeypatch):
+    """A `original_ini.update_document` MEGADOTT SORSZÁMÚ hívásait buktatja.
+
+    A szekció-költözés fájlok KÖZÖTT kétfázisú (előbb a cél ini-je, utána a
+    forrásé), és a két fázis közti bukás a #1448 saját hibaosztálya: a
+    célban FRISSEN ÜLTETETT árva marad. A hívás sorszámára kell tudni
+    célozni, mert épp az a kérdés, MELYIK fázisban buktunk el.
+    """
+    from picasapy.fileops import original_ini
+
+    valodi = original_ini.update_document
+    szamlalo = {"n": 0}
+
+    def _burkolo(*args, **kwargs):
+        szamlalo["n"] += 1
+        if szamlalo["n"] in hivas_sorszamok:
+            raise OSError(f"az ini nem írható ({szamlalo['n']}. hívás)")
+        return valodi(*args, **kwargs)
+
+    monkeypatch.setattr(original_ini, "update_document", _burkolo)
+    return szamlalo
+
+
+class TestFelbemaradtSzekcioKoltozes:
+    """#1448 2. átnézés, 3. lelet: a KÉTFÁZISÚ lépés is a `done`-ba tartozik.
+
+    A fájlok közti szekció-költözés két `update_document`-ből áll: előbb a
+    CÉL inijébe írunk, utána a forráséból törlünk. Ha a második bukik el, a
+    lépés se nem történt meg, se nem maradt el — de a `done`-ból kimaradt,
+    így a visszagörgetés nem tudott róla, és a célban FRISSEN ÜLTETETT árva
+    szekció maradt. Pontosan az az öröklés, amit ez a jegy megszüntet.
+    """
+
+    def test_a_felig_megtett_lepes_bekerul_a_done_ba(self, tmp_path, monkeypatch):
+        from picasapy.fileops.original_ini import (
+            IniSectionsFailed,
+            move_original_ini_sections,
+        )
+
+        forras_dir = tmp_path / "A" / ORIGINALS_DIR_NAME
+        cel_dir = tmp_path / "B" / ORIGINALS_DIR_NAME
+        forras_dir.mkdir(parents=True)
+        cel_dir.mkdir(parents=True)
+        (forras_dir / "a.jpg").write_bytes(b"erintetlen")
+        (forras_dir / PICASA_INI_NAME).write_text(
+            _SZEKCIO.format(nev="a.jpg"), encoding="utf-8"
+        )
+        _update_document_bukik_a({2}, monkeypatch)  # a forrásból törlés bukik
+
+        with pytest.raises(IniSectionsFailed) as elkapva:
+            move_original_ini_sections(
+                ((forras_dir / "a.jpg", cel_dir / "a.jpg"),)
+            )
+
+        assert elkapva.value.done, (
+            "a célba írás MEGTÖRTÉNT, tehát a visszagörgetésnek tudnia kell róla"
+        )
+
+    def test_a_celban_nem_marad_frissen_ultetett_arva(self, tmp_path, monkeypatch):
+        """A teljes mozgatási úton mérve: a megnyugtató mondat IGAZ legyen."""
+        from picasapy.fileops import move_preserved_originals
+
+        forras = tmp_path / "A"
+        cel = tmp_path / "B"
+        cel.mkdir()
+        _kep(forras, "a.jpg")
+        _eredeti(forras, ORIGINALS_DIR_NAME, "a.jpg")
+        _update_document_bukik_a({2}, monkeypatch)
+
+        with pytest.raises(OSError) as elkapva:
+            move_preserved_originals(forras / "a.jpg", cel / "a.jpg")
+
+        assert _szekcio(cel / ORIGINALS_DIR_NAME, "a.jpg") is None, (
+            "a célban árva szekció maradt — ezt örökölné a következő eredeti"
+        )
+        assert _szekcio(forras / ORIGINALS_DIR_NAME, "a.jpg") is not None
+        assert (forras / ORIGINALS_DIR_NAME / "a.jpg").exists()
+        assert not (cel / ORIGINALS_DIR_NAME).exists(), (
+            "üres eredeti-mappa maradt a célban, miközben „semmi nem változott”"
+        )
+        assert "A kép nem mozdult el" in str(elkapva.value)
+
+    def test_ha_a_visszagorgetes_is_bukik_azt_kimondjuk(self, tmp_path, monkeypatch):
+        """A `_undo_ini_sections` eredménye NEM eshet a padlóra.
+
+        Ha a szekciót nem sikerül visszatenni, a „minden a helyén maradt”
+        mondat hazugság: a beállítások a célban ragadtak.
+        """
+        from picasapy.fileops import move_preserved_originals
+
+        forras = tmp_path / "A"
+        cel = tmp_path / "B"
+        cel.mkdir()
+        _kep(forras, "a.jpg")
+        _eredeti(forras, ORIGINALS_DIR_NAME, "a.jpg")
+        # 2.: a forrásból törlés bukik → félig megtett lépés;
+        # 3.: a visszagörgetés első fázisa is bukik → a szekció ott ragad.
+        _update_document_bukik_a({2, 3}, monkeypatch)
+
+        with pytest.raises(OSError) as elkapva:
+            move_preserved_originals(forras / "a.jpg", cel / "a.jpg")
+
+        uzenet = str(elkapva.value)
+        assert "A kép nem mozdult el" not in uzenet, (
+            "a megnyugtatás HAMIS, amíg a beállítások a célban ragadtak"
+        )
+        assert "beállítás" in uzenet.lower()
+        assert str(cel / ORIGINALS_DIR_NAME / PICASA_INI_NAME) in uzenet
+
+
+class TestTobbKiseroVisszagorgetese:
+    """#1448 2. átnézés, 6. lelet: a KRITIKUS javítás mozgatási ágának foga.
+
+    Az `originals.py` a kivétel `done` mezőjéből görgeti vissza a MÁR
+    átvitt szekciókat. Erre eddig nem volt próba: az `error.done` helyére
+    üres sorozatot írva 440 teszt maradt zöld.
+    """
+
+    def test_az_elso_kisero_szekcioja_visszakerul(self, tmp_path, monkeypatch):
+        from picasapy.fileops import move_preserved_originals
+
+        forras = tmp_path / "A"
+        cel = tmp_path / "B"
+        cel.mkdir()
+        _kep(forras, "a.jpg")
+        directory = forras / ORIGINALS_DIR_NAME
+        directory.mkdir(parents=True)
+        (directory / "a.jpg").write_bytes(b"erintetlen")
+        (directory / "a.1.jpg").write_bytes(b"pillanatkep")
+        (directory / PICASA_INI_NAME).write_text(
+            _SZEKCIO.format(nev="a.jpg") + "\n" + _SZEKCIO.format(nev="a.1.jpg"),
+            encoding="utf-8",
+        )
+        # 1–2.: az ELSŐ kísérő szekciója rendben átmegy;
+        # 3.: a másodiké a cél inijébe íráskor bukik.
+        _update_document_bukik_a({3}, monkeypatch)
+
+        with pytest.raises(OSError):
+            move_preserved_originals(forras / "a.jpg", cel / "a.jpg")
+
+        assert _szekcio(directory, "a.jpg") is not None, (
+            "a már átvitt szekciót nem hoztuk vissza a forrásba"
+        )
+        assert _szekcio(directory, "a.1.jpg") is not None
+        assert _szekcio(cel / ORIGINALS_DIR_NAME, "a.jpg") is None, (
+            "a már átvitt szekció a célban maradt — árva lett"
+        )
+
+    def test_a_kep_bukasakor_is_kimondjuk_a_bennragadt_szekciot(
+        self, tmp_path, monkeypatch
+    ):
+        """Ugyanez az `originals_follow` úton: a KÉP mozgatása bukik el.
+
+        A kísérők és a szekcióik már átmentek; a visszagörgetés a fájlokkal
+        elkészül, a szekcióval nem. A felhasználó a KÉP hibaüzenetét kapja —
+        abban kell megjelennie annak is, hogy a beállítás a célban ragadt.
+        """
+        from picasapy.fileops import originals_follow
+
+        forras = tmp_path / "A"
+        cel = tmp_path / "B"
+        cel.mkdir()
+        photo = _kep(forras, "a.jpg")
+        _eredeti(forras, ORIGINALS_DIR_NAME, "a.jpg")
+        # 1–2.: a szekció rendben átmegy; 3.: a visszavitele bukik.
+        _update_document_bukik_a({3}, monkeypatch)
+
+        with pytest.raises(OSError) as elkapva:
+            with originals_follow(photo, cel / "a.jpg"):
+                raise OSError("a képet nem sikerült átmozgatni")
+
+        uzenet = str(elkapva.value)
+        assert "a képet nem sikerült átmozgatni" in uzenet
+        assert str(cel / ORIGINALS_DIR_NAME / PICASA_INI_NAME) in uzenet, (
+            "a célban ragadt beállításról a felhasználó nem tud"
+        )
+        assert (forras / ORIGINALS_DIR_NAME / "a.jpg").exists()

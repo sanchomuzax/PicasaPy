@@ -46,12 +46,26 @@ történt semmi, és a Visszaállítás a régi helyen működik tovább. Ha a K
 mozgatása bukik el (verseny egy párhuzamos íróval, tele lemez), az
 `originals_follow` visszagörgeti a már elmozdított kísérőket.
 
+## Ütközés: a kötegelt úton FELOLDJUK, egyébként MEGMAGYARÁZZUK
+
 Felülírni sosem írunk felül: ha a célhelyen már van azonos nevű fájl (pl.
 egy korábbi költözés árvája), a művelet EL SEM INDUL, és a hiba üzenete
 megmondja, mi van útban — a néma elutasítás a projekt visszatérő
 hibaosztálya (#1003, #1207, #1213). A tanács attól függ, KIÉ az útban lévő
 fájl: ha egy másik, ÉLŐ kép eredetije, a törlését tanácsolni pont azt a kárt
 okozná, amit ez a modul megelőzni hivatott (`_occupied_message`).
+
+A KÖTEGELT áthelyezés (`fileops/batch.py`) viszont ide el sem jut, és ez
+TUDATOS döntés (#1448 2. átnézés, 1. lelet): ott a felhasználó a művelet
+indításakor KIMONDOTTAN az „átnevezés" házirendet választotta, ezért a
+foglalt eredeti-hely nem megállítja a képet, hanem pótnevet ad neki
+(`originals_slot_free` → `batch._free_name`). A hibaüzenet tanácsa — „adjon
+inkább a képnek másik nevet" — épp az, amit a pótnév automatikusan megtesz,
+és közben a célban álló idegen fájlhoz nem nyúlunk: a másik kép eredetije
+és a mi pillanatképünk is a saját, ütközésmentes nevén marad. A magyarázó
+üzenet így az F2-es átnevezésé, a másolásé és az egyfájlos mozgatásé marad
+— azoké az utaké, ahol nincs mit feloldani, mert a nevet a felhasználó adta
+meg.
 
 ## A megnyugtatás feltételes
 
@@ -66,7 +80,9 @@ szólalhat meg).
 
 A hibaüzenetek a KÖTEGELT úton is kimennek: a felületen az áthelyezés mindig
 a `movePhotos`-t hívja, ezért a `FileOpsController` a `batchFinished`-del az
-első bukás okát is átadja (#1430).
+első bukás okát is átadja (#1430). Amit a pótnév nem old fel
+(fájlrendszer-hiba, verseny egy párhuzamos íróval), annak az oka így a
+kötegelt úton is eljut a felhasználóig.
 """
 
 from __future__ import annotations
@@ -352,7 +368,13 @@ def _occupied_message(move: OriginalMove) -> str:
     eredetije (a `<név>.<N>` névminta kétértelműsége miatt ez valódi eset).
     Annak a törlését tanácsolni pont azt a kárt okozná, amit ez a modul
     megelőzni hivatott — ezért előbb megnézzük, van-e a képmappában ilyen
-    nevű, élő kép."""
+    nevű, élő kép.
+
+    MELYIK ÚTON hangzik el: az F2-es átnevezésén, a másolásén és az
+    egyfájlos mozgatásén — ahol a nevet a felhasználó adta meg, tehát ő is
+    tudja megváltoztatni. A kötegelt áthelyezés az „átnevezés" házirenddel
+    pótnevet keres helyette (ld. a modul docstringjét); ott ez az üzenet
+    csak akkor szólal meg, ha a hely a pótnév-keresés ÓTA lett foglalt."""
     kep_mappa = move.target.parent.parent
     gazda = kep_mappa / move.target.name
     fej = (
@@ -453,14 +475,16 @@ def _move_preserved_originals(
     except Exception as error:  # noqa: BLE001 — az ini-réteg többféle hibát dob
         # A MÁR átvitt szekciókat a kivétel hozza magával — a fájlállapotból
         # kikövetkeztetni őket NEM lehet (#1448 átnézés, 1. lelet).
-        _undo_ini_sections(
+        ini_stranded = _undo_ini_sections(
             error.done if isinstance(error, IniSectionsFailed) else ()
         )
         stranded = undo_original_moves(tuple(done))
         raise OSError(
             f"A képhez megőrzött eredeti beállításait nem sikerült átvinni "
             f"({error})."
-            f"{_stranded_warning(stranded) or _reassurance()}"
+            f"{_stranded_warning(stranded)}"
+            f"{_ini_stranded_warning(ini_stranded)}"
+            f"{_reassurance() if not stranded and not ini_stranded else ''}"
         ) from error
     return tuple(done), ini_done
 
@@ -486,7 +510,9 @@ def _move_ini_sections(
     )
 
 
-def _undo_ini_sections(moves: Sequence["IniSectionMove"]) -> None:
+def _undo_ini_sections(
+    moves: Sequence["IniSectionMove"],
+) -> tuple["IniSectionMove", ...]:
     """A MEGTETT ini-szekció-költözések visszavitele (#1448).
 
     Kizárólag a `_move_ini_sections` által visszaadott listából dolgozik.
@@ -497,12 +523,18 @@ def _undo_ini_sections(moves: Sequence["IniSectionMove"]) -> None:
 
     Legjobb szándék szerint dolgozik: a visszatétel bukása nem akadályozhatja
     meg a FÁJLOK visszagörgetését — az a fontosabb, azon múlik a kép
-    visszaútja."""
+    visszaútja.
+
+    Returns:
+        Amit NEM sikerült visszatenni. Ez az érték korábban a padlóra esett,
+        és a felhasználó a „minden a helyén maradt" mondatot kapta, miközben
+        a beállításai a célmappában ragadtak (#1448 2. átnézés, 3. lelet).
+    """
     if not moves:
-        return
+        return ()
     from picasapy.fileops.original_ini import undo_original_ini_sections
 
-    undo_original_ini_sections(tuple(moves))
+    return undo_original_ini_sections(tuple(moves))
 
 
 def copy_preserved_originals(
@@ -676,6 +708,29 @@ def _stranded_warning(stranded: Sequence[OriginalMove]) -> str:
     )
 
 
+def _ini_stranded_warning(stranded: Sequence["IniSectionMove"]) -> str:
+    """A figyelmeztetés, ha a MEGŐRZÖTT EREDETI BEÁLLÍTÁSAIT nem sikerült
+    visszatenni a régi helyükre. Üres sztring, ha minden visszakerült.
+
+    A fájlokénál enyhébb kár, de ki kell mondani: a beállítások (`filters`,
+    `crop`, `rotate`, `moddate`) a célmappa inijében ragadtak, ahol egy
+    későbbi, azonos nevű eredeti örökölné őket — és a párhuzamosan futó
+    windowsos Picasa is onnan olvasná. A megnyugtató mondat ilyenkor
+    HAZUGSÁG lenne (#1448 2. átnézés, 3. lelet)."""
+    if not stranded:
+        return ""
+    helyek = ", ".join(
+        f"{move.target_ini} [{move.target_name}]" for move in stranded
+    )
+    return (
+        f" FIGYELEM: a megőrzött eredeti beállításait nem sikerült a régi "
+        f"helyükre visszatenni, itt maradtak: {helyek}. A képhez tartozó "
+        f"fájlok a helyükön vannak, de ezt a bejegyzést érdemes kézzel "
+        f"eltávolítani, mert egy későbbi, azonos nevű megőrzött eredeti "
+        f"örökölné a beállításait."
+    )
+
+
 @contextmanager
 def originals_follow(
     source_photo: str | Path, target_photo: str | Path
@@ -698,9 +753,9 @@ def originals_follow(
     except OSError as error:
         # Előbb a szekciók, csak utána a fájlok: fordítva a szekció-
         # visszavitel egy már megszűnt célmappa inijéből olvasna.
-        _undo_ini_sections(ini_moved)
+        ini_stranded = _undo_ini_sections(ini_moved)
         stranded = undo_original_moves(moved)
-        warning = _stranded_warning(stranded)
+        warning = _stranded_warning(stranded) + _ini_stranded_warning(ini_stranded)
         if warning:
             # A típus megőrzése kötelező: a hívók (FileOpsController,
             # PhotoOpsController) kivételosztály szerint szűrnek, egy új

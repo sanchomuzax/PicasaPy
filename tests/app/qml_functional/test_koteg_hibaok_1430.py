@@ -12,6 +12,13 @@ Emiatt a megőrzött eredeti ütközéséről szóló, magyarázó üzenet (#143
 
 Ez a fájl a VALÓDI kötést méri: a vezérlő `batchFinished` jelzését a
 `FileOpsDialogs.qml` fogadja, és a `batchSummaryDialog.message`-be teszi.
+
+**Mi bukik el itt.** A foglalt eredeti-hely a kötegelt úton MÁR NEM bukás:
+az „átnevezés" házirenddel pótnevet kap (#1448 2. átnézés, 1. lelet — a
+döntés indoklása az `originals.py` fejlécében). Ezért a próba olyan hibát
+állít elő, amit a pótnév nem tud feloldani: a megőrzött eredeti mozgatása
+fájlrendszer-hibába fut. A mérendő állítás változatlan — az OK jusson el a
+felhasználóig, ne csak a darabszám.
 """
 
 from __future__ import annotations
@@ -34,7 +41,11 @@ def _eredeti(mappa, nev: str, tartalom: bytes) -> None:
     (konyvtar / nev).write_bytes(tartalom)
 
 
-def test_a_koteg_hibaoka_megjelenik_az_osszegzo_parbeszeden(qml_app, tmp_path):
+def test_a_koteg_hibaoka_megjelenik_az_osszegzo_parbeszeden(
+    qml_app, tmp_path, monkeypatch
+):
+    from picasapy.fileops import originals as originals_module
+
     window, _controller, engine = qml_app
     fileops = engine.rootContext().contextProperty("fileOpsController")
     assert fileops is not None
@@ -43,11 +54,12 @@ def test_a_koteg_hibaoka_megjelenik_az_osszegzo_parbeszeden(qml_app, tmp_path):
     cel = tmp_path / "cel-1430"
     cel.mkdir(parents=True, exist_ok=True)
     kep = _kep(forras, "a.jpg")
-    # a képnek van pillanatképe, a célban viszont ugyanaz a hely foglalt egy
-    # ÉLŐ kép eredetijével — a köteg ezen bukik el
-    _eredeti(forras, "a.1.jpg", b"pillanatkep")
-    _kep(cel, "a.1.jpg", b"masik-elo-kep")
-    _eredeti(cel, "a.1.jpg", b"masik-kep-eredetije")
+    _eredeti(forras, "a.jpg", b"erintetlen")
+
+    def _bukik(source, target):
+        raise OSError("a fájlrendszer nem engedte")
+
+    monkeypatch.setattr(originals_module, "_move", _bukik)
 
     fileops.movePhotos([str(kep)], str(cel), "rename")
 

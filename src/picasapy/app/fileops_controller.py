@@ -18,6 +18,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.edit.save import find_original_backup
 from picasapy.fileops import (
+    CompanionLeftBehindError,
     RENAME,
     InvalidFolderNameError,
     conflicting_names,
@@ -297,9 +298,16 @@ class FileOpsController(QObject):
 
         #1451: a megőrzött eredeti és a sorszámozott pillanatképek is mennek
         — enélkül láthatatlanul gyűltek, és a következő, azonos nevű kép egy
-        IDEGEN fénykép eredetijét örökölte."""
+        IDEGEN fénykép eredetijét örökölte.
+
+        A windowsos (rendszer-lomtáras) ágon a KÉP megy előbb, ezért ott a
+        hiba a már megtörtént törlés UTÁN jöhet — ilyenkor a `photoDeleted`
+        is kimegy, a hibaüzenet mellett (ld. `_torles_utan_hibaval`)."""
         try:
             delete_photo_to_trash(Path(path))
+        except CompanionLeftBehindError as error:
+            self._torles_utan_hibaval(path, error)
+            return
         except OSError as error:
             self.operationFailed.emit("delete", str(error))
             return
@@ -313,13 +321,29 @@ class FileOpsController(QObject):
         megerősítette a törlést.
 
         #1451: a megőrzött eredeti és a pillanatképek is törlődnek — árva
-        fájl nem maradhat."""
+        fájl nem maradhat. A KÉP megy előbb (az a felhasználó kimondott
+        szándéka), ezért egy kísérő bukása a már megtörtént törlés UTÁN
+        jön — a felületnek mindkettőről tudnia kell."""
         try:
             delete_photo_permanently(Path(path))
+        except CompanionLeftBehindError as error:
+            self._torles_utan_hibaval(path, error)
+            return
         except OSError as error:
             self.operationFailed.emit("delete", str(error))
             return
         self.photoDeleted.emit(path)
+
+    def _torles_utan_hibaval(self, path: str, error: OSError) -> None:
+        """A kép MÁR NINCS MEG, de a kísérője ott maradt (#1451 átnézés, 4.).
+
+        A `photoDeleted` megy ELŐBB: a rács, az index és a duplikátum-lista
+        a valóságot kövesse, mielőtt a hibaablak megjelenik. Enélkül a
+        felületen ott maradt egy már nem létező kép bélyegképe, és a
+        felhasználó egy olyan hibaüzenetet olvasott, ami épp azt mondja, a
+        kép törlődött."""
+        self.photoDeleted.emit(path)
+        self.operationFailed.emit("delete", str(error))
 
     @Slot(list, result=bool)
     def trashAvailableFor(self, paths: list) -> bool:

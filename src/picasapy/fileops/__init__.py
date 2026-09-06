@@ -13,7 +13,11 @@ from .batch import (
     move_photos,
 )
 from .copy import copy_photo
-from .photo_delete import delete_photo_permanently, delete_photo_to_trash
+from .photo_delete import (
+    CompanionLeftBehindError,
+    delete_photo_permanently,
+    delete_photo_to_trash,
+)
 from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
 from .move_folder import FolderMoveError, move_folder
@@ -56,6 +60,7 @@ __all__ = [
     "copy_photos",
     "create_folder_for_move",
     "delete_permanently",
+    "CompanionLeftBehindError",
     "delete_photo_permanently",
     "delete_photo_to_trash",
     "delete_to_trash",
