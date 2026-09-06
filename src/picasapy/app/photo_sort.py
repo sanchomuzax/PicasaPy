@@ -81,10 +81,40 @@ def photo_date(record) -> str:
     ).isoformat()
 
 
+#: #2496: a romlott fájlidejű rekord rendezési helye — a lista VÉGE.
+#: Bármely valódi ISO-dátumnál nagyobb sztring; a `~` a nyomtatható
+#: ASCII vége, tehát számjeggyel kezdődő dátum SOHA nem előzi meg.
+_ROMLOTT_KULCS = "~"
+
+
+def _datum_kulcs(record) -> str:
+    """A dátum-rendezés kulcsa, a romlott fájlidőt is TÚLÉLVE (#2496).
+
+    A `photo_date()` EXIF nélkül a fájl idejéből számol, és ez DOBHAT: a
+    `datetime.fromtimestamp` egy romlott indexsorra kivételt ad (mérve:
+    `mtime_ns = 10**26` → `OSError: [Errno 75] Value too large for defined
+    data type`). Nyersen hívva egyetlen ilyen sor a rács rendezését — és
+    vele a nézet felépítését — kivitte volna.
+
+    **A romlott sor a lista VÉGÉRE kerül, NEM marad ki.** Ez SZÁNDÉKOSAN
+    más, mint a fejléc útja (`formatting.photo_dates`), ami a rossz sort
+    KIHAGYJA: ott egy szélsőértéket keresünk, és egyetlen romlott sor
+    évekkel elhúzná a mappa dátumát. Itt viszont minden képnek helyet kell
+    kapnia — a kihagyás ELTÜNTETNÉ a képet a rácsból, ami sokkal nagyobb
+    kár, mint egy rossz helyre került sor. A másodlagos kulcs (fájlnév) a
+    romlott sorokra is érvényes, tehát egymás közt sem futásfüggő a
+    sorrendjük.
+    """
+    try:
+        return photo_date(record)
+    except (OSError, ValueError, OverflowError):
+        return _ROMLOTT_KULCS
+
+
 def _sort_key(sort_mode: str):
     """Rendezőkulcs egy mappa-blokkon belül."""
     if sort_mode == "date":
-        return lambda r: (photo_date(r), r.name.casefold())
+        return lambda r: (_datum_kulcs(r), r.name.casefold())
     if sort_mode == "size":
         return lambda r: (r.size, r.name.casefold())
     return lambda r: r.name.casefold()
