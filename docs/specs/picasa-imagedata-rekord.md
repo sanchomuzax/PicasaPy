@@ -293,9 +293,16 @@ u64-et **háromfelé** ágaztatja:
 
 | érték | ág | mit tesz | bizonyíték |
 |---|---|---|---|
-| **pontosan `1`** (alsó=1, felső=0) | `0x004466c0` | a kimeneti téglalapot **nullázza**, és a **`0xF4240` = 1 000 000** kódot adja vissza | `0x004466b4` `cmp eax,1`, `0x004466bc` `test ecx,ecx`, `0x004466eb` `mov eax,0xf4240` |
+| **pontosan `1`** (alsó=1, felső=0) | `0x004466c0` | a kimeneti téglalapot **nullázza**, és a **`0xF4240`** kóddal tér vissza | `0x004466b4` `cmp eax,1`, `0x004466bc` `test ecx,ecx`, `0x004466eb` `mov eax,0xf4240` |
 | **`0`** | `0x0044673a` | tartalék útra megy: `FUN_00448270` (négy argumentum) | `0x00446736` `or edx,ecx` + `jne` |
 | **minden más** | `0x004467b2` | kicsomagolja a `rect64`-et, majd a **`width`** (`+0x13b0`) és a **`height`** (`+0x1410`) oszlopot is zárolja, és a `FUN_009b93f0`-nel képpontra váltja | `0x004467bf` `add esi,0x13b0`, `0x00446859` `add esi,0x1410`, `0x004468dd` |
+
+> ⛔ **HELYESBÍTÉS (2026-09-06, késobbi kör):** ez a szakasz eredetileg úgy
+> fogalmazott, hogy az `1` ág „**saját** visszatérési kóddal" tér vissza.
+> **A `0xF4240` nem az ág sajátja:** a `mov eax, 0xF4240` a `.text`-ben
+> **809** helyen szerepel (pl. a `makemoviepanel` `rewind` ága is,
+> `0x0061e45a`) — ez a program **általános „kezeltem / rendben" kódja**.
+> Az ág megkülönböztető jegye tehát **a nullázott téglalap**, nem a kód.
 
 ⇒ **A `0` és az `1` NEM geometria, hanem két KÜLÖNBÖZŐ jelző** — a `0`
 tartalék-útra küld, az `1` viszont üres téglalapot ad **saját
