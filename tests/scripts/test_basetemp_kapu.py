@@ -36,7 +36,13 @@ ATENGEDENDO = [
     "python scripts/run_tests.py",
     "python3 scripts/run_tests.py --gyors",
     # explicit közös basetemp
-    "python3 -m pytest tests/app --basetemp=/tmp/bt",
+    #
+    # ⚠️ #2558: a `tests/app` MAPPA itt SZÁNDÉKOSAN nem szerepel többé. A
+    # #1649-es kapu csak a basetempet nézte, ezért az az alak átment — és
+    # 2026-09-06-án épp az döntötte el a gépet (3,18 GiB egyetlen
+    # processzben, betelt swap, kényszerű újraindítás). A helyére a
+    # FÁJLONKÉNTI alak került, ami a `run_tests.py` szabálya is.
+    "python3 -m pytest tests/app/test_tray_controller.py --basetemp=/tmp/bt",
     "python3 -m pytest tests --basetemp /tmp/bt -q",
     "pytest tests/ini --basetemp=$SCRATCH/bt",
     # tmpdir-t nem hozó alakok
@@ -86,3 +92,72 @@ def test_szabalyos_parancsra_0(monkeypatch):
         io.StringIO(json.dumps({"tool_input": {"command": "python scripts/run_tests.py"}})),
     )
     assert kapu.main() == 0
+
+
+# ==========================================================================
+# #2558: a `tests/app` alatti MAPPÁRA indított pytest — a gépet döntötte el
+# ==========================================================================
+#: MÉRVE (2026-09-06): a `pytest tests/app/qml_functional -q` egyetlen
+#: processze négy perc alatt 446 MiB-ról 3,18 GiB-ra hízott, a 2 GiB swap
+#: betelt, a terhelés 5-ről 105-re ment, és a tulajdonosnak újra kellett
+#: indítania a gépet. A közös `--basetemp` MEGVOLT — a #1649-es kapu ezt az
+#: alakot nem fogta meg, mert csak a basetempet nézte.
+APP_MAPPA_BLOKKOLANDO = [
+    "python3 -m pytest tests/app/qml_functional -q --basetemp=/tmp/bt",
+    "python3 -m pytest tests/app -q --basetemp=/tmp/bt",
+    "python3 -m pytest tests/app/qml_functional/ -q --basetemp=/tmp/bt",
+    "pytest tests/app/qml_functional --basetemp=/tmp/bt",
+    "timeout 900 python3 -m pytest tests/app/qml_functional -q --basetemp=/tmp/bt",
+    # több cél között ELREJTVE is meg kell fogni
+    "python3 -m pytest tests/perf tests/app/qml_functional --basetemp=/tmp/bt",
+]
+
+#: A FÁJLONKÉNTI futtatás továbbra is szabályos — épp azt írja elő a
+#: `run_tests.py` is. Ha ezeket is blokkolnánk, a kapu ellehetetlenítené a
+#: helyes munkát, és megkerülnék.
+APP_FAJL_ATENGEDENDO = [
+    "python3 -m pytest tests/app/test_tray_controller.py -q --basetemp=/tmp/bt",
+    "python3 -m pytest tests/app/qml_functional/test_icon_assets.py -q --basetemp=/tmp/bt",
+    "python3 -m pytest tests/app/qml_functional/test_x.py::TestA::test_b -q --basetemp=/tmp/bt",
+    # más csomagok mappái NEM esnek a tilalom alá: ott nincs QML-motor
+    "python3 -m pytest tests/perf tests/index -q --basetemp=/tmp/bt",
+    "python3 -m pytest tests/scanner -q --basetemp=/tmp/bt",
+    # a listázó alak nem indít motort
+    "python3 -m pytest tests/app --collect-only",
+    # a parancs SZÖVEGÉBEN előforduló említés nem hívás
+    'grep -rn "pytest tests/app/qml_functional" docs/',
+]
+
+
+@pytest.mark.parametrize("cmd", APP_MAPPA_BLOKKOLANDO)
+def test_az_app_mappa_blokkolt(cmd):
+    indok = kapu.blokkolando(cmd)
+    assert indok is not None, cmd
+    assert "MAPPA" in indok, f"a basetemp-ágra esett, nem a mappa-ágra: {indok}"
+
+
+@pytest.mark.parametrize("cmd", APP_FAJL_ATENGEDENDO)
+def test_a_fajlonkenti_futtatas_atmegy(cmd):
+    assert kapu.blokkolando(cmd) is None, cmd
+
+
+def test_a_mappa_uzenete_megnevezi_a_MERT_karot(monkeypatch, capsys):
+    """A kapu mondja meg, MIÉRT tilos — különben a következő kör
+    megkerüli, ahogy a #1649-es szöveges szabályt is megkerültük."""
+    monkeypatch.setattr(
+        "sys.stdin",
+        io.StringIO(
+            json.dumps(
+                {
+                    "tool_input": {
+                        "command": "pytest tests/app/qml_functional --basetemp=/tmp/bt"
+                    }
+                }
+            )
+        ),
+    )
+    assert kapu.main() == 2
+    hiba = capsys.readouterr().err
+    assert "3,18 GiB" in hiba or "3.18 GiB" in hiba
+    assert "ÚJRA KELL" in hiba.upper()
+    assert "fájlonként" in hiba.lower()

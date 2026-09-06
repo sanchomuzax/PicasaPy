@@ -24,6 +24,19 @@ itt előre kivédünk:**
 2. a listázó/segítség-alakok nem hoznak létre tmpdir-t (`--help`, `--version`,
    `--collect-only`), tehát átmennek.
 
+**A második hibaosztály — MAPPÁRA indított `tests/app` (#2558).** A
+`run_tests.py` az `app`-teszteket SZÁNDÉKOSAN fájlonként, külön processzben
+futtatja: „mindegyik KÜLÖN processzben, hogy egy fájlon belüli sok
+engine-életciklus se torlódjon egyetlen processzbe". Egy mappára indított
+csupasz `pytest tests/app/...` ezt megkerüli: az összes QML-motor egyetlen
+processzben halmozódik.
+
+MÉRVE (2026-09-06, ez a gép): `pytest tests/app/qml_functional -q` egyetlen
+processze 12:28-kor 446 MiB-ról 12:32-re **3,18 GiB**-ra hízott, a 2 GiB
+swap teljesen betelt, a terhelés 5-ről **105**-re ment, és a tulajdonosnak
+**újra kellett indítania a gépet**. A közös `--basetemp` megvolt — az a
+kapu ezt az alakot nem fogta meg.
+
 Minden hibaágon **fail-open**: egy elromlott kapu nem foghatja meg a
 párhuzamos munkameneteket — épp azokat védené.
 """
@@ -51,6 +64,13 @@ _PYTHON = re.compile(r"^(.*/)?python[0-9.]*$")
 
 #: Ezek az alakok nem hoznak létre ideiglenes könyvtárat.
 _ARTALMATLAN_KAPCSOLO = {"-h", "--help", "--version", "--collect-only", "--co"}
+
+#: #2558: az `app`-tesztek gyökere. Az ez alatti MAPPÁKAT csak a
+#: `run_tests.py` indíthatja, mert az fájlonként, külön processzben futtat.
+_APP_GYOKER = "tests/app"
+
+#: Fájlnak számít, aminek `.py` a vége (a `::teszt` szűrő is ide tartozik).
+_FAJL = re.compile(r"\.py(::|$)")
 
 
 def _szakaszok(cmd: str) -> list[list[str]]:
@@ -89,6 +109,23 @@ def _pytest_hivas(tokenek: list[str]) -> bool:
     return bool(_PYTHON.match(fej)) and t[1:3] == ["-m", "pytest"]
 
 
+def _app_mappa_cel(tokenek: list[str]) -> str | None:
+    """A `tests/app` alatti MAPPÁRA mutató cél, ha van (#2558).
+
+    Fájlra (`.py`, `.py::teszt`) mutató cél rendben van: az egy processz,
+    egy fájl. A mappa viszont az egész készletet egy processzbe húzza."""
+    for t in tokenek:
+        if t.startswith("-"):
+            continue
+        cel = t.rstrip("/")
+        if cel != _APP_GYOKER and not cel.startswith(_APP_GYOKER + "/"):
+            continue
+        if _FAJL.search(cel):
+            continue
+        return cel
+    return None
+
+
 def blokkolando(cmd: str) -> str | None:
     """Az indok, ha a parancsot blokkolni kell — különben None."""
     for tokenek in _szakaszok(cmd):
@@ -96,6 +133,9 @@ def blokkolando(cmd: str) -> str | None:
             continue
         if any(k in _ARTALMATLAN_KAPCSOLO for k in tokenek):
             continue
+        mappa = _app_mappa_cel(tokenek)
+        if mappa is not None:
+            return f"a `{mappa}` MAPPA egyetlen pytest-processzben"
         if any(k == "--basetemp" or k.startswith("--basetemp=") for k in tokenek):
             continue
         return "pytest-hívás közös `--basetemp` nélkül"
@@ -120,15 +160,23 @@ def main() -> int:
         "Használd a projekt futtatóját:\n"
         "    python scripts/run_tests.py\n"
         "\n"
-        "Vagy ha tényleg fájlonként futtatsz, adj KÖZÖS basetempet:\n"
+        "Vagy futtass FÁJLONKÉNT, közös basetemppel:\n"
         "    BT=\"$SCRATCH/bt\"; mkdir -p \"$BT\"\n"
-        "    python3 -m pytest <fájl> -q --basetemp=\"$BT\"\n"
+        "    python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
         "\n"
-        "Miért: a pytest a „tartsd meg az utolsó hármat\" takarítást\n"
-        "basetemp-enként végzi. Külön basetemppel minden részfutás hagy egy\n"
-        "könyvtárat. 2026-08-15-én öt párhuzamos kör így 5,8 GB-ot hagyott a\n"
-        "tmpfs-en. A kár NEM nálad jelentkezik, hanem a párhuzamosan futó\n"
-        "munkameneteknél, némán — ezért kapu ez, és nem ajánlás.\n"
+        "Miért a MAPPA tilos (#2558): a `run_tests.py` az app-teszteket\n"
+        "szándékosan fájlonként, KÜLÖN processzben futtatja, hogy a sok\n"
+        "QML-motor életciklusa ne torlódjon egyetlen processzbe. Mappára\n"
+        "indítva 2026-09-06-án egyetlen pytest-processz négy perc alatt\n"
+        "446 MiB-ról 3,18 GiB-ra hízott, a swap betelt, a terhelés 105-re\n"
+        "ment, és a gépet ÚJRA KELLETT INDÍTANI.\n"
+        "\n"
+        "Miért a közös basetemp (#1649): a pytest a „tartsd meg az utolsó\n"
+        "hármat\" takarítást basetemp-enként végzi. 2026-08-15-én öt\n"
+        "párhuzamos kör így 5,8 GB-ot hagyott a tmpfs-en.\n"
+        "\n"
+        "A kár egyik esetben sem NÁLAD jelentkezik, hanem a gépen és a\n"
+        "párhuzamos munkameneteknél — ezért kapu ez, és nem ajánlás.\n"
     )
     return 2
 
