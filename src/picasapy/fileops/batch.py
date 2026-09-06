@@ -29,7 +29,11 @@ from pathlib import Path
 from picasapy.fileops.copy import copy_photo
 from picasapy.ini import IniConflictError, IniSaveError
 from picasapy.fileops.move import move_photo
-from picasapy.fileops.originals import originals_slot_free
+from picasapy.fileops.originals import (
+    companions_of,
+    listing_cache,
+    originals_slot_free,
+)
 from picasapy.fileops.rename import rename_photo
 
 #: A két házirend, ahogy az eredeti két gombja adta.
@@ -52,8 +56,8 @@ class BatchResult:
     failed: tuple[tuple[Path, str], ...] = ()
 
 
-def _conflicts(name: str, dest: Path) -> bool:
-    """Ütközik-e a `name` nevű kép a célmappával.
+def _conflicts(path: Path, dest: Path) -> bool:
+    """Ütközik-e a `path` kép a célmappával.
 
     #1430: a kép neve mellett a MEGŐRZÖTT EREDETI (és a pillanatképek) helyét
     is nézzük, mert azok a képpel együtt költöznek. Két külön kár ellen véd:
@@ -62,8 +66,27 @@ def _conflicts(name: str, dest: Path) -> bool:
       szabad, az eredeti helye viszont foglalt.
     * MÁSOLÁSNÁL a másolat NÉMÁN ÖRÖKBE FOGADNÁ az ott heverő árva eredetit:
       a „Vissza az eredetihez” egy vadidegen kép bájtjait tenné a helyére.
+
+    #2510: a kérdés attól függ, VAN-E a képnek megőrzött eredetije. Ha
+    van, azt el is kell HELYEZNI, tehát minden névre illő fájl foglal
+    (`moving_companions=True`). Ha nincs, csak az számít, ÖRÖKÖLNE-E a
+    képünk idegen adatot a célban — a gazdás pillanatkép-példány tehát
+    nem foglal. Kapu nélkül a kísérő NÉLKÜLI kép is „ütközést" jelentett
+    egy másik, ÉLŐ kép eredetije miatt: a felhasználó fölösleges
+    ütközés-párbeszédet kapott, a képe pedig `x-1.jpg`-ként landolt.
+
+    ⚠️ A kapu NEM a `copy.py` `needs_originals_slot`-jának szó szerinti
+    mása. Ott a vizsgálat kísérő nélkül TELJESEN elmarad, és emiatt a
+    másolat örökbe fogadja a célban heverő árva eredetit (mérve
+    2026-09-06: a `find_original_backup` a másolat mellett az idegen árvát
+    adta vissza). Ugyanezt a kötegelt úton nem vezetjük be — az
+    adatvesztés súlyosabb, mint a fölösleges kérdés.
     """
-    return (dest / name).exists() or not originals_slot_free(dest, name)
+    if (dest / path.name).exists():
+        return True
+    return not originals_slot_free(
+        dest, path.name, moving_companions=bool(companions_of(path))
+    )
 
 
 def conflicting_names(paths: Iterable[Path], dest_folder: Path) -> tuple[Path, ...]:
@@ -73,7 +96,9 @@ def conflicting_names(paths: Iterable[Path], dest_folder: Path) -> tuple[Path, .
     kérdezett fölöslegesen.
     """
     dest = Path(dest_folder)
-    return tuple(Path(path) for path in paths if _conflicts(Path(path).name, dest))
+    # #1452: a kísérő-mappákat mappánként EGYSZER listázzuk, nem képenként.
+    with listing_cache():
+        return tuple(Path(path) for path in paths if _conflicts(Path(path), dest))
 
 
 def copy_photos(
@@ -117,7 +142,7 @@ def _move_with_rename(path: Path, dest_folder: Path) -> Path:
     `rename_photo`-val nevezi át — így a `.picasa.ini` szekció is vele
     fordul —, és csak utána mozgat.
     """
-    if not _conflicts(path.name, dest_folder):
+    if not _conflicts(path, dest_folder):
         return move_photo(path, dest_folder)
     free_name = _free_name(path, dest_folder)
     return move_photo(rename_photo(path, free_name), dest_folder)
@@ -134,22 +159,34 @@ def _free_name(path: Path, dest_folder: Path) -> str:
     költöztetés árván maradt eredetije foglalttá teszi a pótnevet — ha ezt
     nem néznénk, a köteg egy elkerülhető hibával állna meg ennél a fájlnál.
 
-    #1448 2. átnézés, 1. lelet: az `originals_slot_free` azt is foglaltnak
-    mondja, ami egy MÁSIK, ÉLŐ kép megőrzött eredetije. Ezen a ponton ez
-    helyes: a felhasználó az „átnevezés" házirendet választotta, tehát a
-    pótnév a kívánt válasz — az idegen fájlhoz nem nyúlunk, a kép és a
-    kísérői a szabad néven költöznek. A „mi van útban" magyarázó üzenet
+    #1448 2. átnézés, 1. lelet: KÍSÉRŐS képnél az `originals_slot_free`
+    azt is foglaltnak mondja, ami egy MÁSIK, ÉLŐ kép megőrzött eredetije.
+    Ezen a ponton ez helyes: a felhasználó az „átnevezés" házirendet
+    választotta, tehát a pótnév a kívánt válasz — az idegen fájlhoz nem
+    nyúlunk, a kép és a kísérői a szabad néven költöznek. A „mi van útban" magyarázó üzenet
     (`originals._occupied_message`) azoké az utaké marad, ahol a nevet a
     felhasználó adta meg (F2, másolás, egyfájlos mozgatás).
+
+    #2510: az eredeti-hely vizsgálata itt is a `_conflicts` kapuját
+    követi — kísérő nélküli képnél a gazdás (tehát nem örökölhető)
+    pillanatkép-példány nem tehet foglalttá egy egyébként szabad pótnevet.
+    A KÖZVETLEN névre illő eredeti viszont mindkét esetben foglal:
+    a pótnév nem vezethet oda, hogy a képünk örökbe fogadjon egy árvát —
+    sem a célban, sem a forrásban, ahol az átnevezés történik.
     """
+    kiseros = bool(companions_of(path))
     counter = 1
     while True:
         candidate = f"{path.stem}-{counter}{path.suffix}"
         if (
             not (dest_folder / candidate).exists()
             and not (path.parent / candidate).exists()
-            and originals_slot_free(dest_folder, candidate)
-            and originals_slot_free(path.parent, candidate)
+            and originals_slot_free(
+                dest_folder, candidate, moving_companions=kiseros
+            )
+            and originals_slot_free(
+                path.parent, candidate, moving_companions=kiseros
+            )
         ):
             return candidate
         counter += 1
@@ -164,20 +201,32 @@ def _run(paths, dest_folder, policy, operation, progress=None) -> BatchResult:
     failed: list[tuple[Path, str]] = []
     items = [Path(raw) for raw in paths]
     total = len(items)
-    for index, path in enumerate(items, start=1):
-        if policy == SKIP and _conflicts(path.name, dest):
-            skipped.append(path)
-        else:
-            try:
-                done.append((path, operation(path, dest)))
-            except (OSError, ValueError, IniSaveError, IniConflictError) as error:
-                # #301/#459: egy hibás fájl nem állíthatja meg a köteget — a
-                # hívó a végén EGY összegzést mutat, nem fájlonkénti ablakot
-                failed.append((path, str(error)))
-        # a kihagyott és a hibás fájl is HALAD: a felhasználó a számlálóból
-        # azt akarja tudni, hol tart a művelet, nem azt, hány sikerült
-        if progress is not None:
-            progress(index, total)
+    # #1452: a kísérő-mappák listáját a köteg EGÉSZÉRE megjegyezzük, és a
+    # saját mozgatásainkat/másolásainkat átvezetjük rajta. Ez a hurok 500
+    # képnél így 999 helyett 2 listázást végez (a `conflicting_names`
+    # saját hatóköre még egyet) — a gyűjtemény NAS-on van (#1146).
+    with listing_cache():
+        for index, path in enumerate(items, start=1):
+            if policy == SKIP and _conflicts(path, dest):
+                skipped.append(path)
+            else:
+                try:
+                    done.append((path, operation(path, dest)))
+                except (
+                    OSError,
+                    ValueError,
+                    IniSaveError,
+                    IniConflictError,
+                ) as error:
+                    # #301/#459: egy hibás fájl nem állíthatja meg a köteget
+                    # — a hívó a végén EGY összegzést mutat, nem fájlonkénti
+                    # ablakot
+                    failed.append((path, str(error)))
+            # a kihagyott és a hibás fájl is HALAD: a felhasználó a
+            # számlálóból azt akarja tudni, hol tart a művelet, nem azt,
+            # hány sikerült
+            if progress is not None:
+                progress(index, total)
     return BatchResult(tuple(done), tuple(skipped), tuple(failed))
 
 
