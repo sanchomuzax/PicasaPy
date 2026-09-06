@@ -258,7 +258,10 @@ sorolt fel — elszámolási hiba, javítva.)*
 *Bizonyítottsági fok: **megerősített** a fájlnevekre, a négy mezőre, a három
 tartalom-módra, a folyamatszövegekre és a honosított mappanévre (a
 sztringek és a rájuk mutató utasítások olvasva); **feltételes** a
-`Picasa2Backups` szülőkönyvtárára; a `files.txt` **tartalma** nincs mérve.*
+`Picasa2Backups` szülőkönyvtárára. ⛔ **A mondat vége — „a `files.txt`
+**tartalma** nincs mérve" — 2026-09-06-ig ELAVULTAN állt itt:** a tartalom
+2026-09-03-án (11.1) és 2026-09-04-én (13.3) is le lett mérve, a #2090 pedig
+lezárult. A jelölés eltávolítva.*
 
 ## 9. AZ INKREMENTALITÁS MECHANIZMUSA — `BKTag <készletnév>` (2026-09-02)
 
@@ -503,6 +506,45 @@ A puffer-leíró alakja is mérve (`0x0099df60`): **`[+0]` = hossz,
 
 > **Bizonyítottsági fok: megerősített** — minden szám kiolvasott
 > `push`-konstans vagy feloldott import-név.
+
+#### d) A MÁSIK ág: a SZOKÁSOS másolás leveszi az írásvédettséget (2026-09-06)
+
+A 11.1/a kapu `je 0x00677f63` ága — tehát amikor a másolandó elem célja
+**nem** a `files.txt` — a saját cél-megnyitása előtt egy külön
+attribútum-lépést tesz:
+
+```
+0x00677f6d  call [0xd69518]              ; GetFileAttributesEx → [esp+0xd4]
+…
+0x00678334  test byte ptr [esp+0xd4], 1  ; FILE_ATTRIBUTE_READONLY
+0x00678340  je   0x678372                ;   ha nincs beállítva → átugorja
+0x0067834e  call [0xd694bc]              ; GetFileAttributes(<útvonal>)
+0x00678354  cmp  eax, -1                 ;   sikertelen → átugorja
+0x00678359  test al, 1                   ; írásvédett?
+0x0067835d  and  eax, 0xfffffffe         ;   a READONLY bit TÖRLÉSE
+0x00678362  call [0xd69514]              ; SetFileAttributes(<útvonal>, új)
+…
+0x0067839a  call [0xd69520]              ; CreateFile(…, GENERIC_READ|WRITE,
+                                          ;   FILE_SHARE_READ|WRITE, NULL,
+                                          ;   OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL)
+```
+
+⇒ **Ha a cél írásvédett, a Picasa NEM hibázik, hanem leveszi a jelzőt, és
+felülírja.** A `push`-konstansok ugyanazok, mint a 11.1/b 1. sorában
+(`0xc0000000` · `3` · `4` · `0x80`).
+
+**Miért fontos a MEGVALÓSÍTÁSNAK (#440):** egy naiv másoló írásvédett
+célfájlon `PermissionError`-ral áll meg. Az eredeti viselkedése: **törli az
+írásvédettséget, és folytatja**.
+
+> **Bizonyítottsági fok: a hívássorozat és az API-azonosítás MEGERŐSÍTETT**
+> (a `0xd69518`/`0xd69520` a 11.1 fejlécében már fel van oldva; a `0xd694bc`
+> és a `0xd69514` a `GetFileAttributes`/`SetFileAttributes` argumentum- és
+> visszatérési alakjából). ⛔ **FELTÉTELES**, hogy a `[esp+0x1c]` ezen a
+> ponton pontosan melyik útvonalat tartja: a rekeszt a függvény a
+> `0x00677c17`-nél újraírja, tehát nem ugyanaz a CString, mint a 11.1/a-beli
+> `[esp+0x18]`. A **következő lépés**, ha ez számít: a `0x00677c17` forrásának
+> visszakövetése.
 
 #### d) Ami NYITVA marad, és pontosan mi
 

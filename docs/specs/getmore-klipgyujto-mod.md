@@ -143,10 +143,17 @@ Ezeknek nincs méret-kényszerük, tehát a tárolt téglalap érvényes:
 
 | elem | méret | kötés (`thumbui.tre`) |
 |---|---:|---|
-| `single_action_group` | **481 × 30** | `m_centerXY` a tárolóban |
-| `single_action_message` | **335 × 26** | `m_offsetL`, `m_displayfont14`, **`Property textalign right`** |
-| `single_action_return` | **109 × 43** | `m_offsetR`, `YConstraint 0.5, 0.5, 1` |
-| `single_action_close` | **18 × 18** | `m_centerY`, `m_offsetR` |
+| `thumbui/single_action_group` | **481 × 30** | `m_centerXY` a tárolóban (`thumbui.tre:660`) |
+| `thumbui/single_action_message` | **335 × 26** | `m_offsetL`, `m_displayfont14`, **`Property textalign right`** (`thumbui.tre:655`) |
+| `thumbui/single_action_return` | **109 × 43** | `m_offsetR`, `YConstraint 0.5, 0.5, 1` (`thumbui.tre:650`) |
+| `thumbui/single_action_close` | **18 × 18** | `m_centerY`, `m_offsetR` (`thumbui.tre:661`) |
+
+> ⛳ **Miért TELJES néven és horgonnyal (2026-09-06):** a lefedettségi mérő a
+> **teljes** elemnevet keresi (`thumbui/single_action_message`) egy olyan
+> szakaszban, amelyben **horgony** is áll. Ez a tábla eddig a **levélnevet**
+> írta, ezért a `single_action_message` a 2026-09-04-i mérésben
+> **„feltáratlan"**-ként állt — holott ez a lap teljes egészében róla szól.
+> A javítás egyben példa: **elemtáblába mindig a teljes név kerüljön.**
 
 A `109 × 43`-as gomb **magasabb**, mint a 30 képpontos csoport: a
 tervezővásznon a csoport `y 485…515`, a gomb `y 478…521` — fölé és alá is

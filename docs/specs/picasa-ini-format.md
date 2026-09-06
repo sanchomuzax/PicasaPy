@@ -68,6 +68,29 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 - `person_id`: 64 bites hex. Még nem megerősített / azonosítatlan arc: `ffffffffffffffff`.
 - A nevek elsődleges forrása a központi `contacts.xml` (ld. pmp-database.md).
 
+⭐ **A három mező NEVE és a hármas szabály kimérve (2026-09-06, #2524).**
+A `;`-vel elválasztott érték nem „név + két ismeretlen": a mezők
+**`full_name` ; `email` ; `gaia_id`**, és a beolvasó **pontosan hármat
+követel meg**.
+
+| | mérve | cím |
+|---|---|---|
+| szekciónév | `Contacts2` | `0x00c9105c` |
+| kulcs | a névjegy 64 bites azonosítója, `%I64x` | `0x00c82fcc` |
+| érték | `%s;%s;%s`, elválasztó `;` | `0x00c91104`, `0x00c81320` |
+| token-szám | **pontosan 3** | `0x00587203` `and eax, 0xfffffffe` → `0x00587206` `cmp eax, 6` a (token×2) alakon |
+| ha nem 3 | a bejegyzés **eldobódik** | *„Cannot restore .ini entry for contact, %llx, unexpected number of tokens in string."* (`0x00587110`) |
+| író / olvasó | `0x00586e20` / `0x00587110`; az olvasó hívója `0x0045a9d0`, egyetlen sztringje `.picasa.ini` | — |
+
+⇒ A `Roy Avery;;` alak tehát **kitöltetlen `email` és `gaia_id`** — nem
+elhagyható tölteléknek szánt pontosvesszők. A mezőnevek levezetése és a
+felhasználásuk (e-mail-cím automatikus kiegészítés) a
+`picasa-menu-parancsok-viselkedes.md` **24.5** szakaszában.
+
+⛔ **Nálunk (MÉRVE):** az `ini/contacts.py` írója helyes (`Név;;`), az
+olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
+`extra`-ként tartja. Jegy: **#2526**.
+
 ### `[<fájlnév.ext>]` — képbejegyzések
 | Kulcs | Példa | Jelentés |
 |---|---|---|

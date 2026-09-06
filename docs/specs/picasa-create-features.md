@@ -3178,6 +3178,166 @@ időzítése.
 gombokat nem; a „Továbbiak…" belépési pontja külön lapon van
 ([`getmore-klipgyujto-mod.md`](getmore-klipgyujto-mod.md) 1.1).
 
+### 2.11 ⭐ A `makemoviepanel` TELJES ELEMLELTÁRA — és a VALÓDI hiánylista (2026-09-06)
+
+A UI-lefedettségi rangsor a `makemoviepanel`-t **49 feltáratlan elemmel** hozza
+az első helyre. Ez a szakasz **megméri**, mennyi ebből valódi hiány.
+
+**A mérés:** a `makemoviepanel.tre` **102** elemnevet deklarál
+(`^makemoviepanel/<név>:` sorok, egyedi). Ezek közül a `docs/specs/*.md`
+**60**-at említ **teljes néven**; **42**-t nem.
+
+#### A 42 nem említett elem — osztályozva a `.tre` szülőviszonyából
+
+| csoport | darab | elemek | építendő? |
+|---|---:|---|---|
+| **ikon-gyerek** (egy már dokumentált gomb ikonja/felirata) | 12 | `add_icon` (`addtomovie`), `back_icon` (`addclips`), `bold_icon` (`bold`), `delete_icon` (`deleteclips`), `export_youtube_icon` (`export_youtube`), `inserticon` (`insert_slide`), `italic_icon` (`italic`), `outline_icon` (`outline`), `removeicon` (`remove_slide`), `bgcolorpicker_bevel` (`backcolor`), `txcolorpicker_bevel`, `show_captions_label` (`show_captions`) | **nem** — a gazdájuk része |
+| **konténer / vágókeret / alaplap** | 15 | `basepanel` (root), `insetleft`, `filmbase`, `filmclip`, `filmcontainer`, `filmoverlaycontainer`, `infotext_clip`, `previewpanel`, `moviebk`, `movieparent_tracker`, `video_control_container`, `audioclip`, `tabs`, `tabpanel1`, `tabpanel3` | **nem** — szerkezet |
+| **csúszka-tok** (a csúszka maga dokumentált) | 4 | `burstslider_container`, `durationslider_container`, `lengthslider_container`, `transitionslider_container` | **nem** |
+| **elválasztó / osztóvonal** | 4 | `sepA`, `sepB`, `vdiv1`, `vdiv2` | **nem** — dísz |
+| **kezdetben rejtett** (`m_hidden`) | 4 | `backcolor`, `movieparent`, `previewimage`, (+ a `tabpanel1`/`tabpanel3` a fülváltás miatt) | **feltételes** |
+| **VALÓDI, eddig nem dokumentált** | **3** | **`albumname`**, **`indicator`**, **`audiostrip`** | **igen** |
+
+⇒ **A panelre a tényleges hiány három elem, nem 49.**
+
+#### ⛔ HELYESBÍTÉS (2026-09-06, 6. kör): a rangsor száma NEM a szerkezeti elemektől nagy
+
+Ez a szakasz eredetileg így zárult: *„a rangsor száma a szerkezeti elemeket
+is beszámolja."* **Ez az állítás HAMIS**, és az egész összevetés
+alma-körte volt.
+
+**Mi dönti el:** a `ui-lefedettseg.md` fogalmi szakasza. A rangsor száma
+`feltáratlan + lekutatva + bizonytalan`, és **kizárólag az „értékelhető"
+elemekre**; a `rajzoló` osztály (`nem-ertekelheto`) — a teljes leltár
+**1284** eleme — **eleve ki van hagyva** belőle. A `makemoviepanel` sora
+(`ui-lefedettseg.md:76`): 111 elem, ebből **55 értékelhető**, **56 rajzoló**;
+a 49 = **0 feltáratlan + 43 lekutatva + 6 bizonytalan**.
+
+**Tehát a két szám nem ugyanazt méri:**
+
+| | ez a szakasz (2.11) | a lefedettségi rangsor |
+|---|---|---|
+| mit számol | **említi-e a `docs/specs/`** teljes néven | **megépítettük-e** QML-ben |
+| a 42 / 49 jelentése | nincs dokumentálva | nincs megvalósítva |
+| a `rajzoló` elemek | benne vannak | **kihagyva** |
+
+A `makemoviepanel` **feltáratlan** száma a mérés szerint **0** — a 49 mind
+**`lekutatva`**, azaz **fejlesztői**, nem kutatói munka. Az itteni leltár
+attól még érvényes lelet (a három elem valóban hiányzott a specekből), de
+**nem cáfolja és nem javítja a rangsort.**
+
+#### A három valódi elem — MŰKÖDÉS
+
+| elem | mit tudunk | bizonyíték |
+|---|---|---|
+| **`albumname`** | felirat a **1. fülön** (`m_displayfont12`, `XConstraint 0, 0, 35`, `Property textwrap 0`); a szövegét **két** függvény állítja | sztring `0x00c9c9e8`; hivatkozók `0x0061a6c0` (429 b), `0x0061bbd0` (614 b) |
+| **`indicator`** | a **filmszalag lejátszásjelzője**: a `filmstrip` gyereke, vízszintesen középre kényszerítve (`m_centerX`, `YConstraint 0, 0, 0`); a húzás-/találatkezelő kiszámolja a **téglalapja közepét** (`(x0+x1)/2`, `(y0+y1)/2`) | sztring `0x00c9c52c`; a panelépítő `0x00613b50` és a kezelő **`FUN_006214e0`** (2020 b): elemkeresés `0x0062166b`, középpont `0x00621684`–`0x006216c1` |
+| **`audiostrip`** | a filmszalaggal párhuzamos **hangsáv-csík** (`audioclip` → `filmcontainer`, `m_scaleXY`) | csak a `.tre` |
+
+#### ⛔ NEGATÍV LELET: az `audiostrip` és az `audioclip` nevére NINCS kódhivatkozás
+
+A `string_xrefs` szerint a `makemoviepanel/audiostrip` és a
+`makemoviepanel/audioclip` **egyetlen** függvényből sem kerül elő névvel —
+szemben a `filmstrip`-pel (`0x00613b50`), az `indicator`-ral
+(`0x00613b50`, `0x006214e0`), a `previewimage`-dzsel (`0x00618050`,
+`0x0061ca80`), a `backcolor`-ral (`0x00621240`) és a `show_captions`-szel
+(`0x00618050`, `0x0061df10`).
+
+⇒ **A hangsáv-csíkot a kód sosem kéri le a nevén.** Vagy a szülőjén
+keresztül vezérli, vagy **maradvány** a fájlban. Ez nem azt jelenti, hogy a
+felületen nincs ott — csak azt, hogy **nevesített kezelője nincs**.
+
+> **Bizonyítottság:** **megerősített** a 102-es elemszám, a 60/42-es
+> megoszlás, az osztályozás (a `.tre` szülőviszonyából) és a sztring-xref
+> jelenléte/hiánya; **erős** az `indicator` „lejátszásjelző" olvasata (a
+> geometriai kényszer + a középpontszámítás együtt, futásidejű
+> megerősítés nélkül).
+
+### 2.12 ⭐ A `makemoviepanel` PARANCS-ELOSZTÓJA — mind a 34 parancs, és a `rewind` MŰKÖDÉSE (2026-09-06)
+
+⛔ **Egy korábbi kör lezárása MEGDŐLT.** A `00-index.md` 2026-09-05-i
+bejegyzése azt írta a `makemoviepanel/rewind` gombról, hogy **„NINCS MÉRVE,
+mit csinál a gomb kattintásra (az olcsó lánc kimerült)"**. A lánc **nem**
+merült ki: a kör a **minősített** nevet (`makemoviepanel/rewind`) kereste, az
+elosztó viszont a **puszta** nevet hasonlítja (`rewind`, `0x00c9d3dc`) —
+és az egyetlen hivatkozója a **`FUN_0061df10`** (12 420 b), a panel
+**parancs-elosztója**.
+
+#### A 34 parancs, az elosztó sorrendjében
+
+Minden tétel egy `mov esi, <névsztring>` + `repe cmpsb` összehasonlítás:
+
+| # | cím | parancs | | # | cím | parancs |
+|---:|---|---|---|---:|---|---|
+| 1 | `0x0061df56` | `recompute` | | 18 | `0x0061f0a6` | `1to1` |
+| 2 | `0x0061e17f` | `render` | | 19 | `0x0061f12c` | `show_captions` |
+| 3 | `0x0061e1e0` | `cancel` | | 20 | `0x0061f20a` | `crop_to_fit` |
+| 4 | `0x0061e241` | `export_youtube` | | 21 | `0x0061f335` | `remove_low_res_faces` |
+| 5 | `0x0061e2a2` | `play` | | 22 | `0x0061f396` | `smart_order_radio` |
+| 6 | `0x0061e303` | `pause` | | 23 | `0x0061f3f7` | `album_order_radio` |
+| 7 | **`0x0061e364`** | **`rewind`** | | 24 | `0x0061f458` | `chronological_order_radio` |
+| 8 | `0x0061e48c` | `add_audio` | | 25 | `0x0061f4b9` | `tab1` |
+| 9 | `0x0061e8b7` | `.mp3` (kiterjesztés-ág) | | 26 | `0x0061f51a` | `tab2` |
+| 10 | `0x0061ea4e` | `remove_audio` | | 27 | `0x0061f57b` | `tab3` |
+| 11 | `0x0061eaff` | `next` | | 28 | `0x0061f5dc` | `addclips` |
+| 12 | `0x0061eb60` | `prev` | | 29 | `0x0061f6d4` | `addtomovie` |
+| 13 | `0x0061ebc1` | `insert_slide` | | 30 | `0x0061f972` | `deleteclips` |
+| 14 | `0x0061ed77` | `remove_slide` | | 31 | `0x0061fae4` | `bold` |
+| 15 | `0x0061edfc` | `viewedit` | | 32 | `0x0061fb8c` | `italic` |
+| 16 | `0x0061ef90` | `fullscreen` | | 33 | `0x0061fc2c` | `outline` |
+| 17 | `0x0061f012` | `aspectratiochk` | | 34 | `0x006206be` | `autoplay` |
+
+⇒ **Ez a panel teljes vezérlő-készlete a MŰKÖDÉS oldaláról** — a `.tre`
+elemlistája (2.11) mellé most a parancslista is megvan.
+
+#### A `rewind` — utasításonként (`0x0061e3b7`–`0x0061e45a`)
+
+```
+0x0061e3bb  mov edx, 0xc9bea4              ; "video_control_bar2/moviecontrols/pause"
+0x0061e3c0  mov byte [esi+0x498], 1        ; „programozott változtatás" jelző BE
+0x0061e3c7  call 0x9cd8a0                  ; ⇒ a PAUSE elem AKTIVÁLÁSA
+0x0061e3cc  mov edx, [esi+0x494]           ; a KIJELÖLT dia indexe
+0x0061e3da  mov eax, [esi+0x4bc]; add eax,0x48
+0x0061e3e3  call 0x611320                  ; a klip-lista zárolt lekérdezése
+0x0061e3e8  cmp dword [esi+0x4a0], 0       ; van-e lejátszó?
+0x0061e3ee  je  0x61e42e                   ;   ha nincs, kihagyja
+0x0061e407  call 0x80ff20                  ; a dia KEZDŐ IDŐPONTJA (float, mp)
+0x0061e410  fmul qword [0xcf3e88]          ; × 10 000 000 ⇒ 100 ns-os egység
+0x0061e420  call 0xc299c6                  ; float → 64 bites egész
+0x0061e42c  call [edi+0x5c]                ; a lejátszó POZÍCIÓ-BEÁLLÍTÁSA
+0x0061e432  mov eax, [edi+0x494]
+0x0061e439  mov [edi+0x388], eax           ; az AKTUÁLIS dia := a KIJELÖLT dia
+0x0061e43f  mov byte [edi+0x498], 0        ; a jelző KI
+0x0061e445  call 0x619ac0                  ; felület-frissítés
+0x0061e44c  call 0x61ca30
+```
+
+**Emberi nyelven:** a gomb (1) **megállítja a lejátszást** — nem közvetlenül,
+hanem a `video_control_bar2/moviecontrols/pause` elem **aktiválásával**
+(`FUN_009cd8a0` névre keres a felületi fában, majd a `[vtbl+0x78]`
+metódust hívja rajta); (2) kiszámolja a **kijelölt dia kezdő időpontját**;
+(3) a lejátszót oda **tekeri**; (4) az „aktuális dia" mezőt a kijelöltre
+állítja; (5) frissíti a felületet. A `+0x498` jelző a menet idejére be van
+kapcsolva — ez akadályozza meg, hogy a saját pozíció-változtatás
+visszahasson a kijelölésre.
+
+**Az időegység:** `0x00cf3e88` = **10 000 000,0** — a lejátszó tehát
+**100 nanoszekundumos** egységben kapja a pozíciót (a Windows-os
+médiaidő szokásos egysége).
+
+#### ⛔ HELYESBÍTÉS: a `0xF4240` visszatérési kód NEM jelent semmit
+
+Egy 2026-09-06-i korábbi kör (`picasa-imagedata-rekord.md`) úgy írta le a
+`facerect == 1` ágat, hogy az „**saját** visszatérési kóddal" (`0xF4240` =
+1 000 000) tér vissza — mintha ez az ág megkülönböztető jegye volna.
+**Nem az.** A `mov eax, 0xF4240` a `.text`-ben **809** helyen szerepel — a
+`rewind` ág is ezzel zár (`0x0061e45a`) —, tehát ez a program **általános
+„kezeltem / rendben" kódja**, nem az adott ág sajátja.
+
+**Bizalmi fok: megerősített** — minden lépés utasításonként olvasva.
+⛔ **Amit NEM mértem:** a `FUN_0080ff20` belső képlete (hogyan számol
+kezdő időpontot a klip-listából), és a `[vtbl+0x78]` metódus neve.
+
 ### 2.10 A `titledialog` — a szöveges dia szerkesztője (2026-09-01)
 
 *A 2.9 megtalálta az `insert_slide` névparancsot („Add a new text

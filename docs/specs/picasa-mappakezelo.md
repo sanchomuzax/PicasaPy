@@ -641,6 +641,42 @@ szakasza a dialógus `[+0x280]` / `[+0x288]` deltáiból frissül.**
 | **Keresés egyszer** | `[dlg+0x288]` (`0x007c375c`) | → `0x004f6a20` → **`scanlist.txt`** |
 | **arcfelismerés-kapcsoló** | `[dlg+0x290]` / `[dlg+0x298]` | → `0x00491210` → `frexcludefolders.txt` |
 
+#### ⭐ Az arcfelismerés-kapcsoló az ADATBÁZIST is átírja (2026-09-06, #2515)
+
+A `0x00491210` **nem csak** a `frexcludefolders.txt`-et írja: ugyanabban a
+menetben **átállítja az érintett képek `imagedata_facerect` oszlopát** is —
+kétszer, két külön sorlistára, két külön értékkel:
+
+```
+0x0049161d  push 1
+0x0049161f  push 1          ; ⇐ az ÉRTÉK: 1
+0x00491625  push ecx        ; sorlista „A"
+0x00491626  push esi        ; a gazdaobjektum
+0x00491627  call 0x446960   ; ⇒ facerect := 1
+0x0049162c  push 0
+0x0049162e  push 0          ; ⇐ az ÉRTÉK: 0
+0x00491634  push edx        ; sorlista „B"
+0x00491635  push esi
+0x00491636  call 0x446960   ; ⇒ facerect := 0
+```
+
+A `FUN_00446960(gazda, sorlista, bájt, jelző)` a `facerect` oszlopba
+(`gazda + 0xf20 + 0xdc0`) írja a bájtot **előjelesen 64 bitre kiterjesztve**
+(`0x004473f1` `movsx`, `0x00447402` `cdq`, `0x00447403` és `0x0044740a` a két
+`mov`), a tömböt szükség szerint újrafoglalva (`0x00447387`).
+
+**Miért fontos ez a felhasználónak:** a `facerect = 1` a
+„**feldolgozva, szándékosan nincs arc-téglalap**" jelző, és a téglalap írója
+(`FUN_00480040`) **csak nulla értékre ír** (`0x00480de7`–`0x00480df1`) ⇒
+az `1` **megvédi a képet az újra-detektálástól**. A megerősítő kérdés
+(`"Are you sure you want to remove all faces and name tags from excluded
+folders?"`, `CFolderMgrDialog::confirmfrexclude`, `FUN_007c4df0`) tehát nem
+csak a névcímkéket törli, hanem **véglegesen megjelöli** ezeket a képeket.
+
+Részletek és a `facerect` háromfelé ágazása:
+`picasa-imagedata-rekord.md`. ⛔ **Amit NEM mértem:** melyik kép kerül az „A",
+melyik a „B" listába — a `FUN_00491210` sorlistáit nem olvastam végig.
+
 > **EGY részlet marad a láncból:** hogy a `0x004f6a20` a 3. paramétert
 > (`[dlg+0x280]`) teszi-e a **`+`**, és a 4-et (`[dlg+0x288]`) a **`−`**
 > szakaszba, vagy fordítva. A függvény a két listát **paraméterként**

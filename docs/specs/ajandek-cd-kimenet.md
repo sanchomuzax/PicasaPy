@@ -755,3 +755,109 @@ bináris-index `file_offset` mezője ennél a PE-nél megegyezik az RVA-val, és
 a helyi `Picasa3.exe` SHA-256-a bitre azonos az indexeltével
 (`644b7bec…3ddc96`, `meta.binary_sha256`), tehát a cím → fájloffszet
 leképezés ellenőrzött.
+
+## 13. A `publish` panel ELEMLELTÁRA — a három üzemmód vezérlői (2026-09-06)
+
+A UI-lefedettségi rangsor a `publish`-t **30 hiánnyal** hozza a második
+helyre. Ez a szakasz **megméri**, mennyi ebből valódi — a
+`makemoviepanel`-nél alkalmazott módszerrel (2.11, `picasa-create-features.md`).
+
+> ⛔ **HELYESBÍTÉS (2026-09-06, 6. kör):** ez a bekezdés eredetileg
+> „**30 feltáratlan** elemet" írt. **Hamis.** A `ui-lefedettseg.md:77` sora
+> szerint a `publish` 30-a **mind `lekutatva`** (feltáratlan: **0**), tehát a
+> rangsorbeli hiánya **fejlesztői**, nem kutatói munka; a 95 `rajzoló` elem
+> pedig a rangsor számából **eleve ki van hagyva**. Az alábbi leltár attól
+> még érvényes — de a rangsor számát nem cáfolja.
+
+**A mérés:** a `publish.tre` **106** elemnevet deklarál; a `docs/specs/*.md`
+**47**-et említ teljes néven, **59**-et nem. Az 59-ből a `.tre`
+szülőviszonya szerint **31 szerkezeti** (ikon-gyerek, keret, vágókeret,
+alaplap, csoport, cím) — marad **28 valódi jelölt**.
+
+### 13.1 A négy alcsoport
+
+A panel a 12. szakaszban leírt három üzemmódot négy `.tre`-csoportban
+tartja; a `web_group` a `.tre`-ben **`m_hidden`**.
+
+| csoport | üzemmód | a benne lévő, eddig nem dokumentált elemek |
+|---|---|---|
+| `presentation_group` | Ajándék-CD | `pubstep1`, `pubstep2`, `selectiontext`, `picsizetext`, `label_cdname`, `cdname`, `cdnametext`, `namelimitext`, `originfo`, `label_optionbox2`, `label_optionbox3` |
+| `backup_group` | biztonsági mentés | `backupinfo`, `backuprect2`, `label_backupname` |
+| `replication_group` | feltöltés (Upload All) | `rpoptions`, `uploadallaccess`, `uploadallsize`, `uploadaccess3`, `uploadsize3`, `uploadsync3`, `storage_fill` |
+| `web_group` (**`m_hidden`**) | webre publikálás | `accountspaceusage`, `addmoreweb`, `manageweb`, `uploadaccount`, `label_uploadaccount`, `selectioninfo`, `webpublish_go` |
+
+### 13.2 A feliratok — angol (`publish_text.tre`) és hivatalos magyar
+
+Forrás: `publish_text.tre` (`Label`/`Text` sorok) és
+`panel-feliratok-hu.tsv` (`tooltips` szakasz).
+
+| elem | angol (`publish_text.tre`) | hivatalos magyar (`panel-feliratok-hu.tsv`) |
+|---|---|---|
+| `publish/selectiontext` | Selection and Settings — `publish_text.tre:41` | **Kijelölés és beállítások** — `panel-feliratok-hu.tsv:5073` |
+| `publish/picsizetext` | Photo Size — `publish_text.tre:44` | **Fotóméret** — `panel-feliratok-hu.tsv:5074` |
+| `publish/cdnametext` | Name the Gift CD — `publish_text.tre:47` | **Az ajándék CD elnevezése** — `panel-feliratok-hu.tsv:5075` |
+| `publish/label_cdname` | CD Name — `publish_text.tre:8` | **CD neve** — `panel-feliratok-hu.tsv:5062` |
+| `publish/namelimitext` | Limit 16 Characters — `publish_text.tre:11` | **Legfeljebb 16 karakter** — `panel-feliratok-hu.tsv:5063` |
+| `publish/label_optionbox2` | Erase Media — `publish_text.tre:17` | **Adathordozó törlése** — `panel-feliratok-hu.tsv:5065` |
+| `publish/label_optionbox3` | Include Picasa — `publish_text.tre:20` | **A Picasával együtt** — `panel-feliratok-hu.tsv:5066` |
+| `publish/label_backupname` | Backup Set — `publish_text.tre:93` | **Mentési készlet** — `panel-feliratok-hu.tsv:5089` |
+| `publish/uploadaccess3` | Visibility: — `publish_text.tre:184` | **Láthatóság:** — `panel-feliratok-hu.tsv:5118` |
+| `publish/uploadsize3` | Size: — `publish_text.tre:175` | **Méret:** — `panel-feliratok-hu.tsv:5115` |
+| `publish/uploadsync3` | Sync: — `publish_text.tre:193` | **Szinkronizálás:** — `panel-feliratok-hu.tsv:5121` |
+
+⚠️ A maradék 17 jelöltnek **nincs saját felirata** a `publish_text.tre`-ben:
+gomb (`addmoreweb`, `manageweb`, `webpublish_go`), beviteli mező (`cdname`,
+`uploadaccount`), legördülő (`uploadallaccess`, `uploadallsize`), állapotsor
+(`backupinfo`, `originfo`, `selectioninfo`, `accountspaceusage`), illetve
+lépés-keret (`pubstep1`, `pubstep2`, `backuprect2`, `rpoptions`,
+`storage_fill`, `label_uploadaccount`).
+
+### 13.3 Geometria — a `respack.yt` rétegfejléceiből (vászon **1024 × 212**)
+
+| elem | x0,y0 – x1,y1 | méret | smink / típus |
+|---|---|---:|---|
+| `pubstep1` | 15,37 – 326,203 | 311×166 | `decrect(publishdecrect/step1)` |
+| `pubstep2` | 337,37 – 648,203 | 311×166 | `decrect(publishdecrect/step2)` |
+| `backuprect2` | 448,37 – 772,203 | 324×166 | `decrect(publishdecrect/step2)` |
+| `selectiontext` | 55,43 – 306,61 | 251×18 | felirat |
+| `picsizetext` | 35,169 – 172,187 | 137×18 | felirat |
+| `cdnametext` | 377,43 – 628,61 | 251×18 | felirat |
+| `label_cdname` | 357,81 – 450,95 | 93×14 | felirat |
+| `cdname` | 458,83 – 625,97 | 167×14 | **beviteli mező** (`window`) |
+| `namelimitext` | 455,101 – 628,115 | 173×14 | felirat |
+| `label_optionbox3` | 390,140 – 617,156 | 227×16 | felirat |
+| `label_optionbox2` | 390,172 – 617,188 | 227×16 | felirat |
+| `originfo` | 307,2 – 504,27 | 197×25 | állapotsor (`calculating`) |
+| `backupinfo` | 420,2 – 617,27 | 197×25 | állapotsor (`active backup set info`) |
+| `label_backupname` | 148,134 – 256,150 | 108×16 | felirat |
+| `rpoptions` | 36,93 – 235,192 | 199×99 | `buttcontainer` |
+| `uploadallsize` | 431,106 – 570,127 | 139×21 | **legördülő** (`popuplist(size)`) |
+| `uploadallaccess` | 431,138 – 570,159 | 139×21 | **legördülő** (`popuplist(access)`) |
+| `uploadsize3` | 330,107 – 424,123 | 94×16 | felirat |
+| `uploadaccess3` | 330,139 – 424,155 | 94×16 | felirat |
+| `uploadsync3` | 330,170 – 424,186 | 94×16 | felirat |
+| `storage_fill` | 636,122 – 889,133 | 253×11 | **tárhely-csík kitöltése** |
+| `label_uploadaccount` | 10,40 – 72,56 | 62×16 | `static(Upload to)` |
+| `uploadaccount` | 77,39 – 268,58 | 191×19 | **beviteli mező** (`window`) |
+| `selectioninfo` | 282,49 – 479,74 | 197×25 | `static(calculating)` |
+| `addmoreweb` | 491,42 – 579,70 | 88×28 | gomb (`b88_*`, „Add More…") |
+| `manageweb` | 268,113 – 356,141 | 88×28 | gomb (`b88_*`, „Manage…") |
+| `webpublish_go` | 682,45 – 770,73 | 88×28 | `superbutton(button_text_LC_throb, Web Publish)` |
+| `accountspaceusage` | 24,98 – 245,140 | 221×42 | tárhely-kijelző |
+
+⭐ **A két lépés-keret azonos méretű** (311×166), és a `backuprect2` a
+mentés-üzemmódban **ugyanarra a helyre, szélesebben** (324) kerül — a panel
+tehát **lépésekre osztott**, és az üzemmód a keretek tartalmát cseréli.
+
+### 13.4 ⛔ A `web_group` a `.tre`-ben REJTETT — és online funkció
+
+A `publish/web_group` sora `m_hidden`, és a benne lévő hét elem mind a
+**webre publikáláshoz** tartozik (Google-fiók, tárhely, láthatóság). A
+projekt hatóköri szabálya szerint az online szolgáltatások kívül esnek a
+megvalósításon, ezért **ez a hét elem nem építendő** — a leltárban azért van
+benne, hogy a lefedettségi mérő ne számolja hiánynak.
+
+> **Bizonyítottság:** **megerősített** a 106-os elemszám, a 47/59-es
+> megoszlás, a `.tre`-szülők, a `m_hidden` jelölések, a feliratok
+> (angol + hivatalos magyar) és a geometria (`respack.yt`
+> rétegfejlécek); a `13.3` tábla **28/28** eleme mérve.

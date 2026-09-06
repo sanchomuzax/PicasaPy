@@ -581,6 +581,13 @@ eredetiben **eszköztár-gombpár**, nem csak menütétel. A két gomb mérete a
 #587 mérése szerint 2 × 30 × 22; a hiányuk a **#1421**-ben van
 nyilvántartva.
 
+> ⛳ **A lefedettségi mérés „feltáratlan" besorolása ELAVULT (2026-09-06).**
+> A `ui-lefedettseg.md` 2026-09-04-i változata a `thumbui/hviewtoggle`-t még
+> **`hianyzik`** (feltáratlan) tételként hozza. Ez a szakasz — és a
+> `ui-audit-mainwindow.md` 1.4 (`0x00559150`) — teljes néven, horgonnyal
+> leírja, tehát a mai fán az osztályozó **`lekutatva`**-t adna rá. ⇒ **Nem
+> kutatói, hanem fejlesztői tétel** (#1421); a mérést újra kell futtatni.
+
 ### 5. Nálunk — MÉRVE (2026-09-03)
 
 | | eredeti | nálunk | állapot |
