@@ -1898,3 +1898,112 @@ mindkét témára — továbbra is nyitott.**
 alapon számolja (`0x0087c8…`, a `0,0009765625` második előfordulása) — nem a
 szélességből, mint a csempeméret. Aki a polaroid feliratot építi meg, ezt vegye
 figyelembe.
+
+## 22. K1 — ki írja a csomópont `+0x2c`-jét? A `lea`-út KIMERÜLT, és a keresés iránya megfordult (2026-09-07, #1412)
+
+*172. kutatói kör. A munkasor **K1** tétele. Helyi pásztázás + a meglévő
+dekompilátum; új Ghidra-futás nélkül.*
+
+### 22.1 ⭐ A `lea`-alakú közvetett írás — KIMERÜLT, pozitív kontrollal
+
+A 19.2 kimondta, hogy a hatóköre **nem fedi** azt az esetet, amikor a
+fordító a `+0x2c`-t **beleolvasztja a regiszterbe**
+(`lea reg,[node+0x2c]`, majd tárolás `[reg]`-be). A 21. kör talált egy
+ilyet, tehát az alak bizonyítottan használt. Ez a kör végigpásztázta.
+
+**Pásztázás** (bájtminta a teljes `.text`-en, minden találat
+capstone-nal ellenőrizve; `esp`/`ebp` bázis kizárva):
+
+| lépés | találat |
+|---|---|
+| `lea reg, [… + 0x2c]` címképzés | **207** |
+| …ebből 24 bájton belül **tárolás a kapott mutatóra** (`fstp`/`fst`/`mov`/`movss`) | **62** |
+| …ebből a **kollázs-sávban** (`0x00820000`–`0x008fffff`) | **3** |
+
+A három:
+
+| cím | mi | értékelés |
+|---|---|---|
+| `0x0083468a` → `0x00834696` `fstp [eax]` | a **betöltési szorzás** (20.4) | ⛳ **POZITÍV KONTROLL** — a pásztázás megtalálta a már ismert példányt |
+| `0x008300dc` → `0x008300e4` `mov [edi], 0` | hivatkozásszámlált **sztring** törlése (a következő sor `lea edi,[esi+0x28]`, ugyanaz az idióma) | nem csomópont |
+| `0x00860032` → `0x0086003e` `mov [edi], ebp` | hivatkozásszámlált **sztring** értékadás (`cmp [esi+0x2c],ebp` → `call 0x401000` felszabadítás → tárolás → `movzx [ebp]`, `cmp 0x80` hivatkozásszám) | nem csomópont |
+
+⇒ **A `lea`-út a kollázs-sávban nem ad új `scale`-írót.** A pozitív kontroll
+miatt ez **érvényes negatív**, nem a minta hibája.
+
+### 22.2 ⭐ Mindkét elrendező FELTÉTEL NÉLKÜL `1,0`-t ír — utasításszinten
+
+A 17.10 ezt dekompilátumból állította. Most utasításszinten is megvan, és
+az is, hogy **függvényenként pontosan EGY** csomópont-tömb `+0x2c` tárolás
+létezik (a többi `[esp+0x2c]` lokális változó):
+
+| elrendező | a tárolás | a betöltött érték |
+|---|---|---|
+| `contactsheet` `FUN_00888210` | `0x008885bc` `fstp dword ptr [ebx + eax + 0x2c]` | `0x008885ac` **`fld1`** |
+| `regulargrid` `FUN_00885060` | `0x0088522d` `fstp dword ptr [eax + esi + 0x2c]` | `0x0088520d` **`fld1`** |
+
+**Elágazás nincs** — mindkettőnél a `fld1` közvetlenül a tárolás előtt áll,
+ugyanabban az alapblokkban.
+
+### 22.3 A mentés-szervező nem alakít át
+
+`FUN_00834700` (`0x00834700`, 174 bájt) csak puffert épít
+(`0x009bfde0`, `0x00985ff0`, `0x009bfe70`), meghívja az XML-írót
+(`0x008347b0`) és a fájlba írót (`0x009c15a0`). **Nulla `scale`-érintés** —
+a 17.4 („az író nem alakít át") a szervező szintjén is áll.
+
+### 22.4 ⭐ A hozzáadó VIRTUÁLIS metódus — és csak a BEOLVASÓ hívja
+
+A 17.13 a `FUN_00833920`-at azonosította a csomópont-tömb `push_back`-jeként
+(a staging `+0x64`/`+0x68` egyetlen olvasója). A hívóit kerestem:
+
+```
+közvetlen `call 0x00833920`:            0
+a cím mint 32 bites ADAT a fájlban:     1 hely — VA 0x00cbf898
+```
+
+A `0x00cbf898` a **`CCollageParser` vtáblájában** van
+(`0x00cbf878`, 17.12) — a **8. slot** (`0x00cbf898 − 0x00cbf878 = 0x20`).
+
+⇒ **A `push_back` a `CCollageParser` virtuális metódusa, és kizárólag a
+vtáblán át hívódik.** Ez egybevág a 17.11-gyel („a `+0x68`-ba a
+kollázs-sávban csak a beolvasó ír"): **a staging → `push_back` út a
+FÁJLBEOLVASÁSÉ**, nem az interaktív képhozzáadásé.
+
+### 22.5 A keresés iránya ezzel MEGFORDUL
+
+A 19.3 szerint a téma-elrendezők **ideiglenes** csomópont-vektorba
+dolgoznak, amit a `FUN_00887ad0` a végén elpusztít. Ha ez így van — és a
+22.2 szerint az elrendezők amúgy is csak `1,0`-t írnak —, akkor a
+**dokumentum** csomópontjainak `scale`-jét sem a téma-elrendező, sem a
+beolvasó nem adja egy ÚJ kollázsnál.
+
+⇒ **A keresés helye: hogyan jön létre egy csomópont, amikor a felhasználó
+képet ad a kollázshoz** (nem betöltéskor). Ez a `collagepanel/`
+hozzáadási út, nem a téma- és nem a parser-kód.
+
+*Bizonyítottsági fok: **erős** — a 22.4 megerősített (bináris), a 19.3
+szerkezeti olvasata viszont két lépésből áll (ideiglenes vektor + az író
+tömbje), és a kettő azonosságát a kör nem mérte ki.*
+
+### 22.6 A `+0x2c`-írás KIZÁRT alakjai — a teljes lista
+
+| alak | hol | kör |
+|---|---|---|
+| x87 `fst`/`fstp [reg+0x2c]` (mutatós) | teljes `.text` | 17.10, 17.15 |
+| x87 `fst`/`fstp [bázis+index+0x2c]` (SIB) | teljes `.text` | 17.10 (a két elrendező, `fld1`) · 22.2 (utasításszinten) |
+| SSE és disp32-alak | teljes `.text` | korábbi kör (00-index, 2026-09-01) |
+| egész `mov [reg+0x2c]` (mutatós és SIB) | teljes `.text` | 19.2 |
+| **`lea`-materializált mutató + tárolás** | teljes `.text`, **pozitív kontrollal** | **22.1** |
+| a kupac-fa (`FUN_0087c470`, `FUN_0087cb70`) | olvasás igen, írás nem | 21.4 |
+| a mentés-szervező | nem érinti | 22.3 |
+
+**Ami MARADT** (egyik sincs kipróbálva):
+
+1. **Futásidőben számolt eltolás:** `fstp [reg + reg]` / `mov [reg+reg], …`,
+   ahol a `0x2c` **regiszterben** van (tulajdonság-beállító, „reflection"
+   stílus). Minden eddigi pásztázásunk a **literál** `0x2c` eltolást
+   követelte meg.
+2. **Blokk-másolás** egész csomópontra (`memcpy` / `rep movsd`) olyan
+   forrásból, amelyben az érték már benne van.
+3. A kollázs-sávon **KÍVÜLI** kód.
