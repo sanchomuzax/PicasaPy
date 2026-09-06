@@ -43,14 +43,14 @@ Elem-státuszok: `parositva`, `masutt-megvan` (a felirat nem a panelhez rendelt 
 | ebből értékelhető elem (`feliratos` + `vezerlo`) | 643 |
 | párosítva | 271 |
 | másutt megvan (nem ezen a felületen) | 33 |
-| hiányzik — **feltáratlan** (kutatói kör kell) | 16 |
-| hiányzik — **lekutatva** (fejlesztői kör kell) | 274 |
-| bizonytalan | 51 |
+| hiányzik — **feltáratlan** (kutatói kör kell) | 11 |
+| hiányzik — **lekutatva** (fejlesztői kör kell) | 281 |
+| bizonytalan | 49 |
 | nem értékelhető (rajzoló elem) | 1284 |
 | **nem cél** (megszűnt szolgáltatás) — a nevezőből KIMARAD | 91 |
 | **lefedettség az értékelhető elemeken** | **42.1%** |
 
-> ⚠️ **A 42.1% ALSÓ BECSLÉS, nem pontos érték.** 51 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **50.1%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
+> ⚠️ **A 42.1% ALSÓ BECSLÉS, nem pontos érték.** 49 elem `bizonytalan` — felirat nélküli vezérlő, amit a szkript gépi úton **nem tud eldönteni**; ezeket a nem-lefedett oldalon számoltuk. Ha mind megvolna, a lefedettség **49.8%** lenne. A valódi érték a kettő között van, és csak a bizonytalan elemek egyenkénti kimérésével szűkíthető.
 
 ## Rangsor — a tíz legnagyobb fehér folt
 
@@ -82,7 +82,7 @@ Jegynyitáshoz ez a sorrend: a hiányzó és a bizonytalan elemek száma panelen
 | `choose_mail` | 24 | 13 | 0 | 0 | 0 | 13 | 0 | 11 | 0 | **nincs-megfeleltetes** — Levelezőprogram-választó párbeszéd — nincs nálunk |
 | `capturemoviepanelpopup` | 45 | 12 | 0 | 1 | 0 | 11 | 0 | 33 | 0 | **nincs-megfeleltetes** — Webkamerás videofelvétel — nincs nálunk |
 | `faceheaderpanel` | 39 | 13 | 1 | 1 | 0 | 11 | 0 | 26 | 0 | `LightboxHeader.qml`, `UnnamedFacesView.qml`, `FacesOverlay.qml`, `PeopleAlbumContextMenu.qml` |
-| `edittextpanel` | 45 | 19 | 9 | 0 | 5 | 3 | 2 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
+| `edittextpanel` | 45 | 19 | 9 | 0 | 0 | 10 | 0 | 26 | 0 | `EditorTextPanel.qml`, `TextColorSwatches.qml` |
 | `compose_mail` | 41 | 10 | 0 | 0 | 0 | 10 | 0 | 31 | 0 | **nincs-megfeleltetes** — Levélszerkesztő panel — nálunk a küldés Python-oldali, saját felület nélkül |
 | `acquirepanel` | 67 | 20 | 12 | 0 | 2 | 1 | 5 | 43 | 4 | `PicasaImportDialog.qml`, `ImportSourceDialog.qml`, `ImportProgressPanel.qml`, `ImportDropArea.qml` |
 | `collagepanel` | 108 | 55 | 48 | 0 | 0 | 0 | 7 | 53 | 0 | `CreateDialogs.qml`, `CollagePanel.qml`, `CollagePanelTabBar.qml`, `CollagePanelTabButton.qml`, `CollageSettingsTab.qml`, `CollageClipsTab.qml`, `CollageActionRow.qml`, `CollageZOrderColumn.qml`, `CollageSnapColumn.qml`, `CollageRandomRow.qml`, `CollageContextMenus.qml`, `CollageCanvas.qml`, `CollageFormatMenu.qml`, `CollageThemePopup.qml`, `CollageBorderPicker.qml`, `CollageBackgroundBox.qml`, `CollageNode.qml`, `CollageGroupNode.qml`, `CollageSheet.qml`, `CollageRing.qml`, `CollageProgressOverlay.qml`, `CollageDialogs.qml`, `CollageDraftDialog.qml`, `CollageDoneNotice.qml` |
@@ -396,16 +396,16 @@ Névvel ellátott arc-album fejléce
 
 Szöveg-eszköz panelje
 
-- `align_label` „Alignment:” (magyarul: „Igazítás:”)
+- `align_label` „Alignment:” (magyarul: „Igazítás:”) — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
 - `centeralign` buboréksúgó: „Center justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
-- `colorpicker_bevel` — *bizonytalan*
-- `edittext_label` „Edit Text” (magyarul: „Szöveg szerkesztése”)
+- `colorpicker_bevel` — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
+- `edittext_label` „Edit Text” (magyarul: „Szöveg szerkesztése”) — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
 - `leftalign` buboréksúgó: „Left justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
 - `rightalign` buboréksúgó: „Right justify text” — 🔧 **lekutatva**, csak nem megépítve (picasa-ini-format.md: 0x0062d3b0)
-- `size_label` „Size:” (magyarul: „Méret:”)
-- `sizelist` — *bizonytalan*
-- `style_label` „Style:” (magyarul: „Stílus:”)
-- `transparency_label` „Transparency” (magyarul: „Átlátszóság”)
+- `size_label` „Size:” (magyarul: „Méret:”) — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
+- `sizelist` — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
+- `style_label` „Style:” (magyarul: „Stílus:”) — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
+- `transparency_label` „Transparency” (magyarul: „Átlátszóság”) — 🔧 **lekutatva**, csak nem megépítve (szerkeszto-panel-meretek.md: edittextpanel.tre:7)
 
 ### `compose_mail` — 10 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -563,7 +563,7 @@ Videovágó panel
 
 - `capture_frame` „Take Snapshot” (magyarul: „Pillanatfelvétel készítése”)
 - `export_movie` „Export Clip” (magyarul: „Klip exportálása”)
-- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (picasa-feltolteskezelo.md: 0x00518840)
+- `export_youtube` „Upload to YouTube” (magyarul: „Feltöltés a YouTube webhelyre”) — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 - `reset_trim` „Reset Start and End” (magyarul: „Kezdés és befejezés alaphelyzetbe állítása”)
 
 ### `editoneup` — 3 hiány · panel-megfeleltetés: `parositva`
@@ -654,7 +654,7 @@ Betanító buborék („Learn more…”) — nincs nálunk
 
 Töltésjelző pörgettyű a rácson — nálunk nincs külön elem
 
-- `activitybutton` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x007d3f90)
+- `activitybutton` — 🔧 **lekutatva**, csak nem megépítve (00-index.md: 0x00567a00)
 
 ### `nav` — 1 hiány · panel-megfeleltetés: `nincs-megfeleltetes`
 
@@ -1572,13 +1572,13 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 
 ## Figyelmeztetések a generáláskor
 
-- 162 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
+- 161 elem LEVÉLNEVE megvan horgonyzott szakaszban, a TELJES neve viszont nem — a mérés ezért »feltáratlan«-nak látja (#2504). Írd ki a teljes nevet:
 -     acquirepanel/groups_container :: picasa-feltolteskezelo.md: 0x00518840
 -     acquirepanel/import_folder_menu :: picasa-eger-es-kijeloles.md: 0x005ba010
 -     acquirepanel/import_from_menu :: picasa-eger-es-kijeloles.md: 0x005ba010
--     acquirepanel/selected_groups_label :: picasa-feltolteskezelo.md: 0x00518840
+-     acquirepanel/selected_groups_label :: 00-index.md: 0x00567a00
 -     acquirepanel/share_container :: picasa-feltolteskezelo.md: 0x00518840
--     acquirepanel/share_with_label :: picasa-feltolteskezelo.md: 0x00518840
+-     acquirepanel/share_with_label :: 00-index.md: 0x00567a00
 -     acquirepanel/upload_checkbox :: picasa-feltolteskezelo.md: 0x00518840
 -     capturemoviepanelpopup/capture_bgtext :: picasa-menu-parancsok-viselkedes.md: 0x006274f0
 -     collagepanel/background_container :: picasa-kollazs-felulet.md: 0x008364a0
@@ -1588,8 +1588,8 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 -     collagepanel/borders_group :: picasa-kollazs-felulet.md: 0x00829000
 -     collagepanel/caption_checkbox :: picasa-kollazs-felulet.md: 0x0082d570
 -     collagepanel/collageprog_base :: kollazs-eletciklus.md: 0x00887390
--     … és még 147 elem
-- 83 szakasz elemet ír le, de HORGONY NÉLKÜL — a mérés átugorja, tehát az ott leírt elemek »feltáratlan«-ként jelennek meg (22.4, #38):
+-     … és még 146 elem
+- 85 szakasz elemet ír le, de HORGONY NÉLKÜL — a mérés átugorja, tehát az ott leírt elemek »feltáratlan«-ként jelennek meg (22.4, #38):
 -     picasa-eger-es-kijeloles.md :: ## 8. Az Esc-billentyű — 11 gomb (7 elem)
 -     picasa-fo-ablak-elrendezes.md :: ### A képtálcán belül (7 elem)
 -     picasa-keptalca.md :: ### 2.1 Geometria — kényszerekből, nem respackből (7 elem)
@@ -1605,7 +1605,7 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 -     picasa-kereses-modok.md :: ### ⛔ NEGATÍV: a `timecontainer` és a `timecontainer_label` a kódból S (3 elem)
 -     picasa-mappakezelo.md :: ### 1.1 A csomópontfa (`tre:foldermgr`, szó szerint) (3 elem)
 -     picasa-nerdview-panel.md :: ## 3. Elhelyezés a szerkesztőben (3 elem)
--     … és még 68 szakasz
+-     … és még 70 szakasz
 - ELAVULT ELEM-FELÜLBÍRÁLÁS: 'printpanel/photoindexbutton' nincs a leltárban
 - GYANÚS »nem cél«: 'acquirepanel/add_groups_button' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'acquirepanel/selected_groups_label' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
@@ -1617,5 +1617,5 @@ A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, se
 - GYANÚS »nem cél«: 'uploadmgr/pause' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/resume' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
 - GYANÚS »nem cél«: 'uploadmgr/throttlechk' neve SZEREPEL a binárisban — a kód ismeri, tehát nem kivett funkció maradványa. A »nem cél« itt elnémítás; ellenőrizd az indokot.
-- ÁTSOROLVA (#1970): 71 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
+- ÁTSOROLVA (#1970): 73 elem a `bizonytalan`-ból `lekutatva`-ra — a specek CÍMMEL megnevezik őket, tehát a kézi döntés megszületett.
 

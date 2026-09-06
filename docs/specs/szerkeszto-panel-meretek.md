@@ -289,32 +289,73 @@ A retusálás gombjai **118 px** szélesek (nem 98!), 25 px hézaggal.
 
 ### 6.4 Szöveg (`edittextpanel`, 276 × 321)
 
-| elem | méret | x | y |
-|---|---:|---|---|
-| `text_icon` | 54 × 36 | 5..59 | 8 |
-| `edittext_label` | 207 × 16 | 59..266 | 15 |
-| `font_label` · `size_label` | 66 × 15 | 0..66 | 57 / 87 |
-| **`fontfamily`** (betűtípus-legördülő) | **202 × 21** | 70..272 | 55 |
-| **`sizelist`** (méret-legördülő) | **48 × 21** | 70..118 | 85 |
-| `style_label` | 46 × 15 | 121..167 | 86 |
-| **`bold` · `italic` · `underline`** | **27 × 27** | **172 / 202 / 232** | 81 |
-| `outline` | 29 × 23 | 258..287 | 83 |
-| `align_label` | 94 × 15 | 72..166 | 117 |
-| **`leftalign` · `centeralign` · `rightalign`** | **27 × 27** | **172 / 202 / 232** | 112 |
-| `separatorA` · `separatorB` | **250 × 2** | 13..263 | 145 / 193 |
-| `colorcircle` · `bgcolorcircle` | 19 × 19 | 31 / 115 | 159 |
-| `colorpicker_bevel` · `bgcolorpicker_bevel` | 21 × 21 | 30 / 114 | 158 |
-| `no_fill` | 29 × 22 | 55..84 | 158 |
-| `outlineweightslider_container` | **127 × 27** | 137..264 | 158 |
-| `transparency_label` | 127 × 15 | 79..206 | 202 |
-| `textopacityslider_container` | **127 × 27** | 79..206 | 217 |
-| `usecaption` · `clearall` | **98 × 29** | 38 / 141 | 250 |
-| `edittextapply` · `edittextcancel` | **98 × 29** | 38 / 141 | 284 |
+> ⛳ **2026-09-06 (#2529): a tábla TELJES elemnevekre és HORGONYRA javítva.**
+> Ez a szakasz eddig **levélneveket** használt (`align_label`) és **egyetlen
+> horgonyt sem** tartalmazott — a lefedettségi mérő ezért az EGÉSZ táblát
+> átugrotta, és a panel öt feliratát „**feltáratlan**"-ként tartotta nyilván,
+> holott a geometriájuk itt évek óta le van írva. Ugyanaz a néma hibafajta,
+> mint a #2182-ben és a #2504-ben. A `.tre`-sorok most horgonyként is
+> szolgálnak.
+
+| elem | méret | x | y | horgony |
+|---|---:|---|---|---|
+| `edittextpanel/text_icon` | 54 × 36 | 5..59 | 8 | `edittextpanel.tre:7` |
+| `edittextpanel/edittext_label` | 207 × 16 | 59..266 | 15 | `edittextpanel.tre:10` |
+| `edittextpanel/font_label` | 66 × 15 | 0..66 | 57 | `edittextpanel.tre:14` |
+| **`edittextpanel/fontfamily`** (betűtípus-legördülő) | **202 × 21** | 70..272 | 55 | `edittextpanel.tre:19` |
+| `edittextpanel/size_label` | 66 × 15 | 0..66 | 87 | `edittextpanel.tre:24` |
+| **`edittextpanel/sizelist`** (méret-legördülő) | **48 × 21** | 70..118 | 85 | `edittextpanel.tre:29` |
+| `edittextpanel/style_label` | 46 × 15 | 121..167 | 86 | `edittextpanel.tre:37` |
+| **`edittextpanel/bold` · `edittextpanel/italic` · `edittextpanel/underline`** | **27 × 27** | **172 / 202 / 232** | 81 | `edittextpanel.tre:45` · `:53` · `:61` |
+| `edittextpanel/no_fill` | 29 × 22 | 55..84 | 158 | `edittextpanel.tre:181` |
+| `edittextpanel/align_label` | 94 × 15 | 72..166 | 117 | `edittextpanel.tre:70` |
+| **`edittextpanel/leftalign` · `edittextpanel/centeralign` · `edittextpanel/rightalign`** | **27 × 27** | **172 / 202 / 232** | 112 | `edittextpanel.tre:78` · `:86` · `:94` |
+| `edittextpanel/separatorA` · `edittextpanel/separatorB` | **250 × 2** | 13..263 | 145 / 193 | `respack.yt` rétegfejléc |
+| `edittextpanel/colorcircle` · `edittextpanel/bgcolorcircle` | 19 × 19 | 31 / 115 | 159 | `edittextpanel.tre:189` · `:206` |
+| `edittextpanel/colorpicker_bevel` · `edittextpanel/bgcolorpicker_bevel` | 21 × 21 | 30 / 114 | 158 | `edittextpanel.tre:192` · `:209` |
+| `edittextpanel/outlineweightslider_container` | **127 × 27** | 137..264 | 158 | `edittextpanel.tre:135` |
+| `edittextpanel/transparency_label` | 127 × 15 | 79..206 | 202 | `edittextpanel.tre:118` |
+| `edittextpanel/textopacityslider_container` | **127 × 27** | 79..206 | 217 | `edittextpanel.tre:128` |
+| `edittextpanel/usecaption` · `edittextpanel/clearall` | **98 × 29** | 38 / 141 | 250 | `edittextpanel.tre:105` · `:111` |
+| `edittextpanel/edittextapply` · `edittextpanel/edittextcancel` | **98 × 29** | 38 / 141 | 284 | `edittextpanel.tre:146` · `:158` |
 
 A stílus- és igazítás-gombok **azonos rácson** ülnek: 27 × 27, x = 172 / 202 /
 232, tehát **30 px osztásköz**.
 
----
+#### A hat FELIRAT — szöveg, betűméret, igazítás (2026-09-06, #2529)
+
+A panel feliratai nem díszek: **címkeoszlopot** alkotnak a vezérlők bal
+oldalán. A `.tre` mindegyiknél kimondja a betűmakrót és az igazítást.
+
+| elem | EN | hivatalos HU | betűmakró | igazítás | mit címkéz | horgony |
+|---|---|---|---|---|---|---|
+| `edittextpanel/edittext_label` | „Edit Text" | **„Szöveg szerkesztése"** | `m_displayfont18_Reg` | — (alap: balra) | a panel FEJLÉCE, a `text_icon` mellett | `edittextpanel.tre:10` |
+| `edittextpanel/font_label` | „Font:" | **„Betűtípus:"** | `m_displayfont12` | **jobbra** | `edittextpanel/fontfamily` | `edittextpanel.tre:14` |
+| `edittextpanel/size_label` | „Size:" | **„Méret:"** | `m_displayfont12` | **jobbra** | `edittextpanel/sizelist` | `edittextpanel.tre:24` |
+| `edittextpanel/style_label` | „Style:" | **„Stílus:"** | `m_displayfont12` | **jobbra** | a `bold`/`italic`/`underline` hármas | `edittextpanel.tre:37` |
+| `edittextpanel/align_label` | „Alignment:" | **„Igazítás:"** | `m_displayfont12` | **jobbra** | a `leftalign`/`centeralign`/`rightalign` hármas | `edittextpanel.tre:70` |
+| `edittextpanel/transparency_label` | „Transparency" | **„Átlátszóság"** | `m_displayfont12` | ⚠️ **középre** | a `textopacityslider_container` — **FÖLÖTTE**, nem mellette | `edittextpanel.tre:118` |
+
+⚠️ **A `transparency_label` KIVÉTEL, és ez látszik is:** egyedül nála
+`Property textalign center`, és a geometria is ezt mondja — a felirat
+(`127 × 15`, x 79..206, y 202) **pontosan a csúszka fölött** ül
+(`127 × 27`, x 79..206, y 217), azonos szélességgel. A másik négy felirat a
+vezérlőjétől **balra**, jobbra igazítva.
+
+⛔ **Nálunk (MÉRVE, `app/qml/PicasaPy/EditorTextPanel.qml`):**
+
+| eredeti felirat | nálunk | eltérés |
+|---|---|---|
+| „Szöveg szerkesztése" (18 pt) | `qsTr("Text")`, `Theme.fontSize + 3` (`:31`) | **más szöveg** |
+| „Betűtípus:" (jobbra) | `qsTr("Font")` **szakaszcímként a sor FÖLÖTT** (`:79`) | más szöveg, más elhelyezés |
+| „Méret:" | **nincs** | hiányzik |
+| „Stílus:" | **nincs** (csak B/I/U buboréksúgó) | hiányzik |
+| „Igazítás:" | **nincs** (csak három buboréksúgó) | hiányzik |
+| „Átlátszóság" (középre, a csúszka fölött) | `qsTr("Opacity")` (`:234`) | **más szöveg** |
+
+⇒ **A mi panelünk szakaszcímeket használ a vezérlők FÖLÖTT; az eredeti
+címkeoszlopot a vezérlők BAL oldalán.** Ez elrendezési eltérés, nem csak
+szóhasználat. Jegy: **#2535**.
 
 ## 7. Visszatérő méretek — ezeket tartsd egységesen
 
