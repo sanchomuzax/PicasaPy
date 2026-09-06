@@ -197,38 +197,80 @@ Rectangle {
         : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(currentIndex)))
 
-    // -- zoom-állapotgép (#6): fit / 1:1 / tetszőleges -------------------
-    // zoomFactor: 1.0 = illesztés (fit); a skála az illesztett mérethez
-    // képest értendő. A pásztázás (pan) csak nagyításnál él.
-    property real zoomFactor: 1.0
-    property string zoomMode: "fit"      // "fit" | "actual" | "custom"
+    // -- zoom-állapotgép (#6, #2492): fit / 1:1 / tetszőleges ------------
+    //
+    // ⚠️ #2492: az igazságforrás a NORMALIZÁLT csúszka-érték (`zoomValue`,
+    // [0, 1]), nem a szorzó. Ez az eredeti Picasa mért működése
+    // (`docs/specs/ui-audit-editor.md`, „A szerkesztő NAGYÍTÁS-HÁRMASA"):
+    // a `FUN_005d1c70` a csúszka értékéből választja ki, melyik gomb az
+    // aktív, `0.0` = illesztés és `0.5` = valódi méret. Korábban nálunk a
+    // csúszka a SZORZÓT tárolta lineárisan (0,25…8), ezért az „1:1" nem
+    // a felezőpontra esett — a tulajdonos ezt jelentette (v0.8.293).
+    //
+    // zoomValue: 0 = illesztés, 0,5 = valódi méret (100 %), 1 = 400 %.
+    property real zoomValue: 0
+    //: a MÉRT leképezés szerint számolt szorzó az ILLESZTETT mérethez képest
+    readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
+    readonly property string zoomMode:
+        viewer.zoomValue === 0 ? "fit"
+        : viewer.zoomValue === 0.5 ? "actual" : "custom"
     property real panX: 0
     property real panY: 0
 
+    //: #2492: a csúszka BEAKAD a valódi méretnél. `FUN_005d1300`: a
+    //: léptetés eredményét a 0,5-höz méri, és az azt átlépő lépés
+    //: pontosan ott áll meg.
+    readonly property real zoomDetent: 0.5
+
     function actualZoomFactor() {
         // 1:1 — a kép saját pixelei ↔ logikai pixelek (a betöltött,
-        // sourceSize-plafonolt méret alapján)
+        // sourceSize-plafonolt méret alapján). Ez a MÉRT képlet `r`-je:
+        // a valódi és az illesztett méret aránya.
         return photo.paintedWidth > 0
             ? photo.sourceSize.width / photo.paintedWidth : 1
     }
-    function zoomFit() {
-        zoomFactor = 1; zoomMode = "fit"; panX = 0; panY = 0
+
+    //: A MÉRT leképezés (`0x00a601cf`–`0x00a60221`), két folytonos ágon:
+    //:
+    //:   0 ≤ v < 0,5 :  1 + (2^(2v) − 1) · (r − 1)
+    //:   0,5 ≤ v ≤ 1 :  r · 2^(4·(v − 0,5))
+    //:
+    //: Rögzített pontok: v=0 → 1 (illesztés), v=0,5 → r (100 %),
+    //: v=1 → 4r (400 %). A felső fél negyedenként pontosan duplázódik.
+    function skalaErtekbol(v) {
+        var r = viewer.actualZoomFactor()
+        var t = Math.max(0, Math.min(1, v))
+        return t < 0.5
+            ? 1 + (Math.pow(2, 2 * t) - 1) * (r - 1)
+            : r * Math.pow(2, 4 * (t - 0.5))
     }
-    function zoomActual() {
-        zoomFactor = Math.min(8, Math.max(0.25, actualZoomFactor()))
-        zoomMode = "actual"
+
+    function setZoomValue(v) {
+        // ⚠️ MÉRT vágás [0, 1]-re (`0x005d13a9` fldz / `0x005d13c6` fld1):
+        // az illesztettnél kisebbre és a 400 %-nál nagyobbra nem lehet
+        // állítani.
+        viewer.zoomValue = Math.max(0, Math.min(1, v))
+        if (viewer.zoomValue === 0) { panX = 0; panY = 0 }
         clampPan()
     }
-    function setZoom(factor) {
-        var f = Math.min(8, Math.max(0.25, factor))
-        zoomFactor = f
-        if (Math.abs(f - 1) < 0.01) { zoomMode = "fit"; panX = 0; panY = 0 }
-        else zoomMode = "custom"
-        clampPan()
+    function zoomFit() { setZoomValue(0); panX = 0; panY = 0 }
+    function zoomActual() { setZoomValue(viewer.zoomDetent) }
+
+    //: #2492: a léptető út a 0,5-ös beakadással. Ha az érték MÁR pontosan
+    //: a detenten áll, a lépés elmozdítja (`0x005d1383` — ugyanabban a
+    //: lépésben nem mozdul el, tehát a következő lépés viszi tovább).
+    function lepjZoom(delta) {
+        var regi = viewer.zoomValue
+        var uj = Math.max(0, Math.min(1, regi + delta))
+        if (regi !== viewer.zoomDetent
+                && (regi - viewer.zoomDetent) * (uj - viewer.zoomDetent) < 0)
+            uj = viewer.zoomDetent
+        setZoomValue(uj)
     }
-    function wheelZoom(delta) {
-        setZoom(zoomFactor * Math.pow(1.2, delta / 120))
-    }
+
+    //: az egérgörgő egy „kattanása" (120 egység) a csúszka 1/20-a — a
+    //: lépésköz a MI választásunk, a beakadás és a vágás a mért.
+    function wheelZoom(delta) { lepjZoom((delta / 120) * 0.05) }
     // a kép széle ne szakadjon el a látótértől pásztázáskor
     function clampPan() {
         var w = (photo.iniSteps % 2 ? photo.paintedHeight
@@ -1706,18 +1748,22 @@ Rectangle {
                             id: zoomSlider
                             objectName: "zoomSlider"
                             //: MÉRT szélesség (`editpanel/zoomslider_container`
-                            //: x 399…526). ⚠️ Az ÉRTÉKKÉSZLET nem változott:
-                            //: az eredeti normalizált (0 = illesztés,
-                            //: 0,5 = 100 %), a köztes leképezés viszont
-                            //: nincs kimérve — külön kutatói jegy.
+                            //: x 399…526).
+                            //:
+                            //: #2492: az ÉRTÉKKÉSZLET is a mért:
+                            //: **normalizált [0, 1]**, ahol 0 = illesztés és
+                            //: 0,5 = valódi méret. A köztes leképezést a
+                            //: `skalaErtekbol()` végzi. Korábban a csúszka a
+                            //: SZORZÓT tárolta lineárisan (0,25…8), ezért az
+                            //: „1:1" nem a felezőpontra esett.
                             width: 127; height: 20
                             anchors.verticalCenter: parent.verticalCenter
-                            from: 0.25; to: 8
-                            onMoved: viewer.setZoom(value)
+                            from: 0; to: 1
+                            onMoved: viewer.setZoomValue(value)
                             // húzás közben a kéz vezet; egyébként az állapot
                             Binding on value {
                                 when: !zoomSlider.pressed
-                                value: viewer.zoomFactor
+                                value: viewer.zoomValue
                             }
                         }
                     }
