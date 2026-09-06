@@ -47,6 +47,25 @@ def _utak(eredmeny) -> set[str]:
     return {str(f.path) for f in eredmeny}
 
 
+def _kizart_burokkal(feloldo):
+    """`NameFilters.is_path_excluded` a BECSOMAGOLT feloldóval.
+
+    A metódus a modulszintű `_normalised_path_parts`-ot a saját moduljának
+    globálisából olvassa ki hívásonként — a `monkeypatch` a modulon ezt
+    eltalálja —, de a biztonság kedvéért a metódust is a burokra kötjük,
+    hogy a mérés akkor is helyes maradjon, ha a hívás egyszer beágyazódik.
+    """
+
+    def is_path_excluded(self, path, mar_feloldva: bool = False) -> bool:
+        reszek = feloldo(path, mar_feloldva)
+        return any(
+            len(reszek) >= len(elotag) and reszek[: len(elotag)] == elotag
+            for elotag in self._normalised_path_prefixes
+        )
+
+    return is_path_excluded
+
+
 class TestAzItéletVáltozatlan:
     """A rövidzár nem írhatja felül, MIT zárunk ki."""
 
@@ -141,7 +160,17 @@ class TestKanonikusIndexsor:
 class TestAFeloldasSzamaCSOKKENT:
     """A jegy fő állítása, mérve — nem becsülve."""
 
-    def test_mappankent_legfeljebb_egy_feloldas(self, tmp_path, monkeypatch):
+    def test_a_bejaras_nem_old_fel_mappankent(self, tmp_path, monkeypatch):
+        """A FELOLDÁSOK számát mérjük, nem a nyers `os.lstat`-ot.
+
+        ⚠️ A globális `os.lstat` kicserélése tilos (#1375: minden más
+        modulra átszivárog, amíg a teszt fut, és a pytest saját takarítását
+        is eltérítheti — a `test_platform_seam_1217.py` őre ezt a CI-n el is
+        kapta). A saját modulunk fogantyúját cseréljük: a
+        `name_filters._normalised_path_parts` az EGYETLEN hely, ahonnan a
+        kizárás-egyeztetés feloldást indít (mérve: a javítás előtt a bejárás
+        1718 `lstat`-jából mind a 1718 innen jött).
+        """
         gyoker = tmp_path / "fa"
         _fa(gyoker, mappak=8)
         for i in range(8):
@@ -149,22 +178,29 @@ class TestAFeloldasSzamaCSOKKENT:
             also.mkdir()
             (also / "k.jpg").write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 64)
 
-        szamlalo = {"lstat": 0}
-        eredeti = os.lstat
+        from picasapy.scanner import name_filters as nf
 
-        def burok(*a, **k):
-            szamlalo["lstat"] += 1
-            return eredeti(*a, **k)
+        szamlalo = {"feloldas": 0}
+        eredeti = nf._normalised_path_parts
 
-        monkeypatch.setattr(os, "lstat", burok)
+        def burok(path, mar_feloldva=False):
+            if not mar_feloldva:
+                szamlalo["feloldas"] += 1
+            return eredeti(path, mar_feloldva)
+
+        monkeypatch.setattr(nf, "_normalised_path_parts", burok)
+        monkeypatch.setattr(
+            nf.NameFilters, "is_path_excluded", _kizart_burokkal(burok)
+        )
         eredmeny = scan_tree(gyoker)
         monkeypatch.undo()
 
         mappak = len(eredmeny)
         assert mappak == 16, f"a próba fája nem 16 mappás: {mappak}"
-        # a javítás előtt ez ~270 volt (mappánként két teljes feloldás);
-        # a bejárás maga egyetlen `lstat`-ot sem igényel
-        assert szamlalo["lstat"] < 2 * mappak, (
-            f"{szamlalo['lstat']} `lstat` hívás {mappak} mappára — a bejárás "
-            "továbbra is mappánként old fel útvonalat"
+        # a javítás előtt mappánként KÉT teljes feloldás futott (a szülő
+        # leszálló hurkában és a hívott `_walk` elején); most a gyökér
+        # egyetlen vizsgálatán kívül egy sem
+        assert szamlalo["feloldas"] <= 1, (
+            f"{szamlalo['feloldas']} útvonal-feloldás {mappak} mappára — a "
+            "bejárás továbbra is mappánként old fel"
         )
