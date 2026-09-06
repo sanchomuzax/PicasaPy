@@ -3253,6 +3253,91 @@ felületen nincs ott — csak azt, hogy **nevesített kezelője nincs**.
 > geometriai kényszer + a középpontszámítás együtt, futásidejű
 > megerősítés nélkül).
 
+### 2.12 ⭐ A `makemoviepanel` PARANCS-ELOSZTÓJA — mind a 34 parancs, és a `rewind` MŰKÖDÉSE (2026-09-06)
+
+⛔ **Egy korábbi kör lezárása MEGDŐLT.** A `00-index.md` 2026-09-05-i
+bejegyzése azt írta a `makemoviepanel/rewind` gombról, hogy **„NINCS MÉRVE,
+mit csinál a gomb kattintásra (az olcsó lánc kimerült)"**. A lánc **nem**
+merült ki: a kör a **minősített** nevet (`makemoviepanel/rewind`) kereste, az
+elosztó viszont a **puszta** nevet hasonlítja (`rewind`, `0x00c9d3dc`) —
+és az egyetlen hivatkozója a **`FUN_0061df10`** (12 420 b), a panel
+**parancs-elosztója**.
+
+#### A 34 parancs, az elosztó sorrendjében
+
+Minden tétel egy `mov esi, <névsztring>` + `repe cmpsb` összehasonlítás:
+
+| # | cím | parancs | | # | cím | parancs |
+|---:|---|---|---|---:|---|---|
+| 1 | `0x0061df56` | `recompute` | | 18 | `0x0061f0a6` | `1to1` |
+| 2 | `0x0061e17f` | `render` | | 19 | `0x0061f12c` | `show_captions` |
+| 3 | `0x0061e1e0` | `cancel` | | 20 | `0x0061f20a` | `crop_to_fit` |
+| 4 | `0x0061e241` | `export_youtube` | | 21 | `0x0061f335` | `remove_low_res_faces` |
+| 5 | `0x0061e2a2` | `play` | | 22 | `0x0061f396` | `smart_order_radio` |
+| 6 | `0x0061e303` | `pause` | | 23 | `0x0061f3f7` | `album_order_radio` |
+| 7 | **`0x0061e364`** | **`rewind`** | | 24 | `0x0061f458` | `chronological_order_radio` |
+| 8 | `0x0061e48c` | `add_audio` | | 25 | `0x0061f4b9` | `tab1` |
+| 9 | `0x0061e8b7` | `.mp3` (kiterjesztés-ág) | | 26 | `0x0061f51a` | `tab2` |
+| 10 | `0x0061ea4e` | `remove_audio` | | 27 | `0x0061f57b` | `tab3` |
+| 11 | `0x0061eaff` | `next` | | 28 | `0x0061f5dc` | `addclips` |
+| 12 | `0x0061eb60` | `prev` | | 29 | `0x0061f6d4` | `addtomovie` |
+| 13 | `0x0061ebc1` | `insert_slide` | | 30 | `0x0061f972` | `deleteclips` |
+| 14 | `0x0061ed77` | `remove_slide` | | 31 | `0x0061fae4` | `bold` |
+| 15 | `0x0061edfc` | `viewedit` | | 32 | `0x0061fb8c` | `italic` |
+| 16 | `0x0061ef90` | `fullscreen` | | 33 | `0x0061fc2c` | `outline` |
+| 17 | `0x0061f012` | `aspectratiochk` | | 34 | `0x006206be` | `autoplay` |
+
+⇒ **Ez a panel teljes vezérlő-készlete a MŰKÖDÉS oldaláról** — a `.tre`
+elemlistája (2.11) mellé most a parancslista is megvan.
+
+#### A `rewind` — utasításonként (`0x0061e3b7`–`0x0061e45a`)
+
+```
+0x0061e3bb  mov edx, 0xc9bea4              ; "video_control_bar2/moviecontrols/pause"
+0x0061e3c0  mov byte [esi+0x498], 1        ; „programozott változtatás" jelző BE
+0x0061e3c7  call 0x9cd8a0                  ; ⇒ a PAUSE elem AKTIVÁLÁSA
+0x0061e3cc  mov edx, [esi+0x494]           ; a KIJELÖLT dia indexe
+0x0061e3da  mov eax, [esi+0x4bc]; add eax,0x48
+0x0061e3e3  call 0x611320                  ; a klip-lista zárolt lekérdezése
+0x0061e3e8  cmp dword [esi+0x4a0], 0       ; van-e lejátszó?
+0x0061e3ee  je  0x61e42e                   ;   ha nincs, kihagyja
+0x0061e407  call 0x80ff20                  ; a dia KEZDŐ IDŐPONTJA (float, mp)
+0x0061e410  fmul qword [0xcf3e88]          ; × 10 000 000 ⇒ 100 ns-os egység
+0x0061e420  call 0xc299c6                  ; float → 64 bites egész
+0x0061e42c  call [edi+0x5c]                ; a lejátszó POZÍCIÓ-BEÁLLÍTÁSA
+0x0061e432  mov eax, [edi+0x494]
+0x0061e439  mov [edi+0x388], eax           ; az AKTUÁLIS dia := a KIJELÖLT dia
+0x0061e43f  mov byte [edi+0x498], 0        ; a jelző KI
+0x0061e445  call 0x619ac0                  ; felület-frissítés
+0x0061e44c  call 0x61ca30
+```
+
+**Emberi nyelven:** a gomb (1) **megállítja a lejátszást** — nem közvetlenül,
+hanem a `video_control_bar2/moviecontrols/pause` elem **aktiválásával**
+(`FUN_009cd8a0` névre keres a felületi fában, majd a `[vtbl+0x78]`
+metódust hívja rajta); (2) kiszámolja a **kijelölt dia kezdő időpontját**;
+(3) a lejátszót oda **tekeri**; (4) az „aktuális dia" mezőt a kijelöltre
+állítja; (5) frissíti a felületet. A `+0x498` jelző a menet idejére be van
+kapcsolva — ez akadályozza meg, hogy a saját pozíció-változtatás
+visszahasson a kijelölésre.
+
+**Az időegység:** `0x00cf3e88` = **10 000 000,0** — a lejátszó tehát
+**100 nanoszekundumos** egységben kapja a pozíciót (a Windows-os
+médiaidő szokásos egysége).
+
+#### ⛔ HELYESBÍTÉS: a `0xF4240` visszatérési kód NEM jelent semmit
+
+Egy 2026-09-06-i korábbi kör (`picasa-imagedata-rekord.md`) úgy írta le a
+`facerect == 1` ágat, hogy az „**saját** visszatérési kóddal" (`0xF4240` =
+1 000 000) tér vissza — mintha ez az ág megkülönböztető jegye volna.
+**Nem az.** A `mov eax, 0xF4240` a `.text`-ben **809** helyen szerepel — a
+`rewind` ág is ezzel zár (`0x0061e45a`) —, tehát ez a program **általános
+„kezeltem / rendben" kódja**, nem az adott ág sajátja.
+
+**Bizalmi fok: megerősített** — minden lépés utasításonként olvasva.
+⛔ **Amit NEM mértem:** a `FUN_0080ff20` belső képlete (hogyan számol
+kezdő időpontot a klip-listából), és a `[vtbl+0x78]` metódus neve.
+
 ### 2.10 A `titledialog` — a szöveges dia szerkesztője (2026-09-01)
 
 *A 2.9 megtalálta az `insert_slide` névparancsot („Add a new text
