@@ -1108,7 +1108,7 @@ független megerősítés maradna. → **#1412** (`ready` + `bináris-kutatható
 **feltételes** a felirat-magyarázat; **elvetve** a „beégetett konstans"
 hipotézis.*
 
-### 17.15 ⭐ A DRÁGA ÚT VÉGIGJÁRVA — a gépi keresés KIMERÜLT (2026-09-06, #1412)
+### 17.15 ⛔ A DRÁGA ÚT VÉGIGJÁRVA — és a belőle vont NEGATÍV MEGDŐLT (2026-09-06, #1412)
 
 *A jegy maga nevezte meg ezt az utat: „marad a mutatós írási utak
 egyenkénti végigolvasása (tíz hely), ami sokkal drágább." Végigolvasva —
@@ -1169,22 +1169,94 @@ téma-elrendező (`0x00885060` `regulargrid`, `0x00888210` `contactsheet`),
 amelyeket a 17.13 már kimért: **mindkettő `fld1`, tehát állandó 1,0**.
 A két minta uniója fedi le a csomópont-írás mindkét címzési alakját.
 
+#### ⛔ ÖNHELYESBÍTÉS (2026-09-06, ugyanaznap): a NEGATÍV MEGDŐLT
+
+**Ez a szakasz eredetileg azt állította, hogy „a `Picasa3.exe`-ben nincs
+olyan kód, amely a kollázs-csomópont `scale`-jét kiszámolná",
+`megerősített` bizonyítottsági fokkal. Ez az állítás TÉVES.**
+
+A szakasz a saját cáfolatának feltételét is leírta: *„Ha egy új, sosem
+mentett kollázs `.cxf`-jében minden csomópont `scale="1.000000"`, az az
+öröklődés ágát igazolja."* A tulajdonos **ugyanaznap** megmérte, és a
+feltétel **nem teljesült**.
+
+**A mérés** (a tulajdonos gépe, 2026-09-05-i, korábban soha nem mentett
+kollázsok — `#1412` komment, 2026-09-06 12:57 CEST):
+
+| minta | első szám | `scale` |
+|---|---:|---:|
+| AI27 | 4 | **500** |
+| AI28 | 6 | **256** |
+| `AI6` (a jegy eredeti mintája) | 9 | **313** |
+| AI29 | 12 | **158** |
+
+⚠️ **Mit jelent az első szám?** A tulajdonos a párokat jelölés nélkül
+adta meg (`4→500, 6→256, 9→313, 12→158`). A **9 → 313** esetén ez a
+SAJÁT mérésünkből azonosítható: az `AI6.cxf`-nek **pontosan kilenc**
+csomópontja van, mindegyik `scale="313"` (17.6). A másik három esetében
+az olvasat abból következik, hogy a jegy kifejezetten **„más
+képszámmal"** kért mintát — tehát erős, de **nem külön mérve**. A
+képlet illesztése előtt a három `.cxf`-ben **meg kell számolni a
+csomópontokat**.
+
+⇒ **Van írási út, amely SZÁMOL.** A fenti két lehetőség közül tehát a
+**(2)** áll: egy olyan írási út, amit **egyik pásztázásunk mintája sem
+fedett** — a `memcpy`-vel másolt csomópont-blokk, vagy a mentés-szervező
+(`0x00834700`) hívóláncának egy még el nem olvasott ága.
+
+**Amit a négy pont önmagában kizár** (számítás, nem feltevés): a `scale`
+**nem monoton csökkenő** az első számban — 6 → 256, de 9 → **313**.
+Egy egyszerű, monoton `f(n)` alak ezzel megdőlt; a képlet legalább egy
+további bemenettől függ. A legkézenfekvőbb jelöltek a **rács oszlop-/
+sorszáma**, a **lapméret** és a **képarány** — mindhárom **NINCS MÉRVE**,
+és képletet illeszteni négy pontra addig **tilos**, amíg a bemenetek
+nincsenek kiolvasva a három `.cxf`-ből.
+
+**Mi maradt érvényben ebből a szakaszból:** a kilenc jelölt olvasata
+(a)-ban és a `+0x28`-tól független pásztázás (c)-ben **tényként áll** —
+azok a függvények tényleg nem számolnak, és a 63 írási hely tényleg
+azok, amiket a minta megtalált. **A hiba a KÖVETKEZTETÉSBEN volt:** a
+minták uniójából „a programban nincs ilyen kód"-ra ugrottam, holott a
+két minta csak a **közvetlen `fst`/`fstp` írásokat** fedi. A blokk-másolás
+(`memcpy`, `rep movsd`) és a többi közvetett út **kívül esett a
+hatókörön, és ezt nem mondtam ki**.
+
+> ⛳ **A tanulság, kimondva:** a „kimerítő negatív pásztázás" akkor ér
+> valamit, ha a hatóköre a MEZŐ minden írási módjára kiterjed, nem csak
+> arra az utasításfajtára, amit kerestem. A negatívot ki szabad mondani —
+> de a hatókört a *mezőre* kell szabni, nem a mintára. (Vö. a
+> `binaris-regeszet-modszertan.md` negatív-pásztázási szakasza.)
+
+#### Ami ezzel eldőlt — és ami NEM (a helyesbítés UTÁN)
+
 #### Ami ezzel eldőlt — és ami NEM
 
-**Eldőlt:** a `Picasa3.exe`-ben **nincs olyan kód, amely a kollázs-csomópont
-`scale`-jét kiszámolná**. Bizonyítottsági fok: **megerősített**, kimerítő
-negatív pásztázással, tartománnyal és mintával megnevezve (17.7, 17.8,
-17.10, 17.13 és ez a szakasz együtt).
+~~**Eldőlt:** a `Picasa3.exe`-ben **nincs olyan kód, amely a kollázs-csomópont
+`scale`-jét kiszámolná**.~~ **MEGDŐLT** — ld. az önhelyesbítést fentebb.
 
-**NEM dőlt el:** honnan van akkor a 313 az `AI6.cxf`-ben. Két lehetőség
-maradt, és **gépi úton egyik sem dönthető el**:
+**Ami ténylegesen eldőlt:** a `scale`-t **nem a közvetlen `fst`/`fstp
+dword ptr [reg+0x2c]` alakok** (sem mutatós, sem SIB) írják számított
+értékkel — a 63 írási hely mindegyike konstans, másolás vagy nyomtatás
+(17.7, 17.8, 17.10, 17.13 és ez a szakasz együtt). Bizonyítottsági fok:
+**megerősített** — de **kizárólag erre a két címzési alakra**.
+
+**NEM dőlt el:** melyik írási út számol, és mi a képlet. A két korábbi
+lehetőség közül a (2) maradt (az (1)-et a tulajdonos mérése kizárta):
 
 1. a fájl egy **korábbi mentésből** hozza (a beolvasó `0x00832830`
    közvetlenül a csomópontba írja, `0x008332b7`);
 2. egy olyan írási út, amit **egyik pásztázás mintája sem fed** (pl.
    `memcpy`-vel másolt csomópont-blokk).
 
-⇒ **A döntéshez EGY ÚJ, még sosem mentett kollázs `.cxf`-je kell.** Ha
-abban minden csomópont `scale="1.000000"`, az **(1)**-et igazolja. Ez a
-tulajdonos gépén készül; a jegy `felhasználóra-vár`, a
-`bináris-kutatható` **levéve** — a gépi munka itt tényleg elfogyott.
+~~⇒ A döntéshez EGY ÚJ, még sosem mentett kollázs `.cxf`-je kell.~~
+**MEGKAPTUK** (AI27/AI28/AI29), és a válasz: **(2)**.
+
+⇒ **A jegy visszakerült GÉPI munkába** (`ready`, a `felhasználóra-vár`-t
+a tulajdonos vette le 2026-09-06 12:57-kor). A következő lépés a
+**blokk-másoló és a közvetett írási utak** felderítése: `memcpy` /
+`rep movsd` a csomópont-blokkra, és a mentés-szervező (`0x00834700`)
+hívóláncának végigolvasása. A négy mérési pont (4→500, 6→256, 9→313,
+12→158) **ellenőrző készlet** a megtalált képlethez.
+
+⛔ **ÚJ MINTÁT KÉRNI TILOS ugyanerre** — a tulajdonos kifejezett
+utasítása (`#1412`, 2026-09-06). A négy pont elég a hitelesítéshez.
