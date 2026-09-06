@@ -229,7 +229,8 @@ class TestValodiGittel:
     @staticmethod
     def _git(mappa: Path, *args: str) -> None:
         eredmeny = subprocess.run(
-            ["git", "-C", str(mappa), *args], capture_output=True, text=True, check=False
+            ["git", "-C", str(mappa), *args], capture_output=True, text=True, check=False,
+            encoding="utf-8", errors="replace",
         )
         assert eredmeny.returncode == 0, eredmeny.stderr
 
@@ -253,6 +254,7 @@ class TestValodiGittel:
         emeles = subprocess.run(
             ["git", "-C", str(tmp_path), "rev-parse", "HEAD"],
             capture_output=True, text=True, check=False,
+            encoding="utf-8", errors="replace",
         ).stdout.strip()
 
         (tmp_path / "src" / "a.py").write_text("x = 2\n", encoding="utf-8")
@@ -262,6 +264,7 @@ class TestValodiGittel:
             return subprocess.run(
                 ["git", "-C", str(tmp_path), *args[1:]],
                 capture_output=True, text=True, check=False,
+            encoding="utf-8", errors="replace",
             )
 
         alap = bump_alap.alap_commit("HEAD", futtato=futtato)
@@ -286,11 +289,13 @@ class TestValodiGittel:
             return subprocess.run(
                 ["git", "-C", str(tmp_path), *args[1:]],
                 capture_output=True, text=True, check=False,
+            encoding="utf-8", errors="replace",
             )
 
         fej = subprocess.run(
             ["git", "-C", str(tmp_path), "rev-parse", "HEAD"],
             capture_output=True, text=True, check=False,
+            encoding="utf-8", errors="replace",
         ).stdout.strip()
         alap = bump_alap.alap_commit("HEAD", futtato=futtato)
         assert alap == fej
