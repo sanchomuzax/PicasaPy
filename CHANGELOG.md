@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.313] – 2026-09-06
+
+### Javítva
+
+- **Visszatért a kép alatti képaláírás-sáv, és a kék sávban ott a dátum és
+  a címkék** (#2565). A felirat eddig középre zárva lebegett a fényképen, a
+  kuka pedig a szöveg bal oldalán állt. Most — ahogy az eredeti Picasában —
+  a kép alatt végigfut egy sáv: bal szélén a felirat-kapcsoló, középen
+  félkövéren a kép felirata (felirat nélküli képnél a „Készítsen
+  képfeliratot!" felszólítás), jobb szélén a kuka. A kék információs sávba
+  bekerült a **dátum** — fényképezési idő híján a kép első beolvasásakor
+  rögzített fájlidő (#2486) — és a **címkék**; a `(427 / 82)` számláló
+  viszont kikerült, mert az eredeti ebben a nézetben nem írja ki.
+
 ## [0.8.312] – 2026-09-06
 
 ### Javítva

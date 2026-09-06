@@ -222,16 +222,76 @@ def _dimensions_text(photo, tr) -> str:
     )
 
 
+#: #2565: a kék sáv IDŐZÓNA-JELÖLŐJE. A `timeFormat(LongFormat)` a
+#: másodpercet is kiírja (`H:mm:ss tttt`), de a zónanevet is — az
+#: összehasonlító felvételen (`141421.jpg`) viszont `2023. 05. 10. 16:30:05`
+#: áll, zóna nélkül. A záró zóna-tokent ezért vágjuk le; a formátum maga
+#: marad a NYELVTERÜLETÉ, nem égetünk be magyar alakot.
+_ZONA_TOKEN = re.compile(r"[\s,]*t+\Z")
+
+
+def _info_datum(photo, locale: QLocale) -> str:
+    """A kék sáv dátuma: EXIF felvételi idő, ennek híján a BEFAGYASZTOTT
+    fájlidő (#2486).
+
+    A #2565 nyitott kérdése az volt, honnan ír dátumot az eredeti egy EXIF
+    nélküli PNG-hez. A válasz a `docs/specs/pmp-database.md` 10.1/10.3–10.4:
+    a Picasa a BEOLVASÁSKORI fájlidőt tartja a saját katalógusában, és a
+    pásztázó nem frissíti. Nálunk ez a `PhotoRecord.sort_mtime_ns` — az
+    ÉLŐ `mtime`-ot szándékosan NEM használjuk, mert azt minden mentés
+    elmozdítja (ez volt a #2486 hibája).
+
+    A formátum a felvételről: rövid dátum + MÁSODPERCES idő, zóna nélkül.
+    """
+    if photo.taken_at:
+        stamp = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
+    else:
+        nanos = getattr(photo, "sort_mtime_ns", 0) or 0
+        if nanos <= 0:
+            return ""
+        stamp = QDateTime.fromMSecsSinceEpoch(nanos // 1_000_000)
+    if not stamp.isValid():
+        return ""
+    alak = (
+        locale.dateFormat(QLocale.FormatType.ShortFormat)
+        + " "
+        + _ZONA_TOKEN.sub("", locale.timeFormat(QLocale.FormatType.LongFormat))
+    )
+    return locale.toString(stamp, alak)
+
+
+def _info_cimkek(photo, tr) -> str:
+    """`Címkék: …` a sáv végén (#2565).
+
+    Az előtag MÉRT szöveg: `CThumbUI::GetTagInfo::format`
+    (`referencia/stringres-en-hu.tsv:691`) — `Tags: ` → `Címkék: `. A
+    `keywords` az indexben VESSZŐVEL tagolt sztring, nem lista.
+    """
+    nyers = photo.keywords or ""
+    cimkek = [k.strip() for k in nyers.split(",") if k.strip()]
+    if not cimkek:
+        return ""
+    return tr("Tags: %1").replace("%1", ", ".join(cimkek))
+
+
 def photo_info_text(photo, locale: QLocale, tr) -> str:
     """A kék infó-sáv kijelöléskori tartalma, Picasa-stílusban:
-    `név   dátum   SZxM képpont   méret`."""
+    `név   dátum   SZxM képpont   méret   Címkék: …`.
+
+    A sorrend és a tételek az összehasonlító felvételről valók (#2565,
+    `141421.jpg`, A/B ugyanarról a nézetről): név · dátum · felbontás ·
+    fájlméret · címkék.
+    """
     parts = [photo.name]
-    if photo.taken_at:
-        taken = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
-        parts.append(locale.toString(taken, QLocale.FormatType.ShortFormat))
+    datum = _info_datum(photo, locale)
+    if datum:
+        parts.append(datum)
     if photo.width and photo.height:
         parts.append(_dimensions_text(photo, tr))
     parts.append(format_size(photo.size, locale, tr))
+    cimkek = _info_cimkek(photo, tr)
+    if cimkek:
+        parts.append(cimkek)
     return "   ".join(parts)
 
 
