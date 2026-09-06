@@ -1499,3 +1499,126 @@ a `k`-ból jön.
 2. **a csomópont `h`-ja nem a cella magassága**: a `.cxf`-be a **kirajzolt
    kép** doboza megy (`h = w / képarány`), a cellamagasság pedig a
    `scale` mezőbe — ez a mai kódunkban össze van csúsztatva.
+
+## 19. Az Indexkép RÁCSA: a `[this+0x18]` LEZÁRVA, és a `scale` írója tovább szűkítve (2026-09-06, #1412)
+
+*169. kutatói kör. A 18.6 két örökölt kérdését viszi: (a) mi a
+`CContactSheetTheme` `[this+0x18]` mezője, (b) ki írja a csomópont `+0x2c`-t
+a témalayout UTÁN.*
+
+### 19.1 ⭐ (a) LEZÁRVA — a `[this+0x18]` a CELLAÉL (`k`), nem a `scale`
+
+*Forrás: `FUN_00887e50` @ `0x00887e50` (`script-DecompileCollage.log` [176]),
+és helyi diszasszemblálás.*
+
+A téma slot0 gyökere (`FUN_00887ad0` @ `0x00887ad0`) először ezt hívja, és csak
+utána az elrendezőt. A függvény összegyűjti a látható képeket egy **ideiglenes**
+csomópont-vektorba, majd kiszámolja a rácsot:
+
+```
+W' = CSONK(lapszélesség × 0,88)        ; 0x00d3a140
+H' = CSONK(lapmagasság  × 0,79)        ; 0x00d3a144
+k  = CSONK( sqrt( (W' × H') / n ) )    ; EGÉSZ osztás n-nel a gyök ELŐTT
+                                       ; sqrt: FUN_0049fe60 (0x00888134)
+oszlop = W' / k                        ; egész osztás
+sor    = H' / k
+amíg (sor × oszlop < n):  k--, oszlop és sor újraszámol
+[this+0x10] = sor · [this+0x14] = oszlop · [this+0x18] = k
+```
+
+Érvényességi kapu (`0x008881ca` és `0x008881f1`): `lapszélesség / oszlop ≥ 8`
+**és** `lapmagasság / sor ≥ 8`, különben a függvény `-1`-gyel tér vissza és az
+Indexkép nem jön létre.
+
+⚠️ **CSONKOLÁS itt is:** a gyök eredményét a `0x00888144` `or eax, 0xc00`
+utáni `fistp` (`0x00888156`) nulla felé csonkolja.
+
+**Mérés — mind a négy mintán, 4/4:**
+
+| minta | lap | kép | `k` | oszlop × sor (számolt) | oszlop × sor (MÉRT a `.cxf`-ből) |
+|---|---|---|---|---|---|
+| AI6 | 1024 × 1365 | 9 | **300** | 3 × 3 | 3 × 3 ✅ |
+| AI27 | 1024 × 1448 | 4 | **450** | 2 × 2 | 2 × 2 ✅ |
+| AI28 | 1024 × 768 | 6 | **300** | 3 × 2 | 3 × 2 ✅ |
+| AI29 | 1024 × 708 | 12 | **186** | 4 × 3 | 4 × 3 ✅ |
+
+⇒ **A `[this+0x18]` a cellaél `k`**, amiből az elrendező a rést számolja
+(`CSONK(0,08 · k)`). **NEM a `scale`** — a 18.6 (b) pontjának első
+feltevése ezzel **megdőlt**.
+
+Ez egyben a 18.4 cellaosztásának forrását is megadja: az `oszlop` és a `sor`
+nem külön szabály, hanem ennek a ciklusnak a kimenete.
+
+*Bizonyítottsági fok: **megerősített** — bináris + 4/4 mérés.*
+
+### 19.2 (b) A `scale` írója: ÚJ, MOV-alakú pásztázás — NEGATÍV
+
+A 17.7–17.15 pásztázásai **x87-tárolást** kerestek (`fst`/`fstp`), egy
+korábbi kör pedig az SSE- és disp32-alakot zárta ki. **Kimaradt az egész
+alakú `mov`** — pedig float bitminta `mov`-val is írható (a dekompilátum
+`= 0x3f800000` alakja épp ilyet sugall). Ezt a kör bezárta.
+
+**Pásztázás** (bájtminta a teljes `.text`-en, fájloffset 4096, 8 646 656
+bájt, minden találat capstone-nal ellenőrizve):
+
+| alak | találat összesen | ebből a kollázs-sávban (`0x00820000`–`0x008fffff`) |
+|---|---|---|
+| `mov [bázis + index + 0x2c], …` (SIB — a csomópont-tömb alakja) | **5** | **0** |
+| `mov [reg + 0x2c], …` (disp8, `esp`/`ebp` kizárva) | **608** | **96** |
+
+A 96-ból **26** csomópont-alakú (ugyanaz a bázisregiszter ±0x140 bájton
+belül a `+0x20`-ba **és** a `+0x24`-be is ír — a csomópont `w` és `h`
+mezője), és ebből **5** áll a 0x38-as lépésköz közelében. Mind az öt
+elolvasva: **konstruktor / nullázás**, nem csomópont. Példa a
+`0x00829d60`: `+0x1c`…`+0x4c` mind `ecx`-szel (= 0) nullázva, a `[eax]`-ba
+vtábla (`0xcbf6a0`) kerül — ez nem csomópont (a csomópont `+0` és `+4`
+mezője hivatkozásszámlált sztring).
+
+⇒ **A `scale` értékét EGYETLEN közvetlen tárolás sem írja.** A négy alak —
+x87 mutatós, x87 SIB, SSE/disp32 (korábbi kör) és most az egész `mov`
+(disp8, SIB és nem-SIB) — együtt lefedi a közvetlen írás minden szokásos
+alakját.
+
+⚠️ **A hatókör kimondva** (a 166. kör tanulsága szerint a MEZŐRE kell
+szabni, nem a mintára). **NEM fedi:** a disp32-alakú `mov` (`mod=10`), és
+az az eset, amikor a fordító a `+0x2c`-t **beleolvasztja a regiszterbe**
+(`lea reg,[node+0x2c]`, majd `mov [reg], …`).
+
+### 19.3 ⭐ A SZERKEZETI lelet, ami megmondja, hol keressük tovább
+
+Az elrendezés **ideiglenes** vektorba megy:
+
+- `FUN_00887ad0` (`0x00887ad0`) két **lokálist** használ (`local_10`,
+  `local_c` — a `{mutató, méret}` pár), ezt adja át a rácsszámolónak és az
+  elrendezőnek, és a végén **elpusztítja** (`FUN_0062d010`).
+- `FUN_00888210` ebbe a lokális vektorba írja az `x`/`y`/`w`/`h`-t és a
+  `+0x2c = 1,0`-t, majd minden csomóponthoz **képernyő-elemet** hoz létre
+  (`FUN_0040eab0("collagepanel/cnode_")`, `FUN_00888b40`).
+
+**Mégis:** a mentett `.cxf` `x`/`y` értékei a 18.4 képleteivel **31/31
+csomóponton pontosan** egyeznek ⇒ a mentett csomópontok geometriája
+**ebből** a menetből származik.
+
+⇒ **Kell lennie egy visszamásolásnak** a panel/ideiglenes csomópontokból a
+dokumentum csomópontjaiba, és **ott** kapja a `scale` az értékét. A
+csomópont értékadó operátora (`FUN_008341b0` @ `0x008341b0`) a `+0x2c`-t
+**másolja** (a 14 dwordből a 11. index), tehát az érték egy másik
+csomópont-objektumból jön.
+
+**A következő lépés (gépi, új mintát nem igényel):** a
+`collagepanel/cnode_` elemek **visszaolvasása** — ki olvassa ki az elemek
+geometriáját a dokumentum csomópontjaiba, és mit tesz a `+0x2c`-be. Ez már
+nem a téma-, hanem a **panel-kód**.
+
+### 19.4 A mi `cell_edge()`-ünk — egy mért eltérés
+
+A `collage/shadow.py` `cell_edge()` a fenti képletet valósítja meg, és mind
+a négy mintán **ugyanazt a `k`-t** adja (300 · 450 · 300 · 186). Egy
+eltérés viszont mérhető:
+
+| | eredeti (bináris) | nálunk (mérve) |
+|---|---|---|
+| a gyök alatti osztás | **egész** osztás: `(W' × H') / n` egész eredménnyel, utána `sqrt` | `math.sqrt(hasznos_w * hasznos_h / count)` — **lebegőpontos** osztás |
+
+A négy mintán ez nem változtat a `k`-n, de matematikailag eltérhet egy
+egységgel. Átadva: **#2583**.
