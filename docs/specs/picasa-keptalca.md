@@ -1033,6 +1033,67 @@ konténerfajta, ami a ki nem férő gyerekeket egy gomb mögé rejti; a
 `morebutton` ennek a gombja (típusa `buttcon`, saját ikonja az
 `export7_icon`, 13 × 7).
 
+#### ⭐ 21.3 Az `export7_icon` RAJZA kimérve (2026-09-06, #2537)
+
+A rétegkép a `respack.yt`-ből kicsomagolva
+(`tools/picasa/respack.py png … export7`, réteg-eltolás **2 173 134**,
+83 bájt). A kép **13 × 7**, és **egyetlen tömör alakzat**:
+
+```
+      #          ← 0. sor:  1 képpont, x = 6
+     ###         ← 1. sor:  3 képpont, x = 5..7
+    #####        ← 2. sor:  5 képpont, x = 4..8
+   #######       ← 3. sor:  7 képpont, x = 3..9
+  #########      ← 4. sor:  9 képpont, x = 2..10
+ ###########     ← 5. sor: 11 képpont, x = 1..11
+#############    ← 6. sor: 13 képpont, x = 0..12
+```
+
+⇒ **tömör, FELFELÉ mutató egyenlő szárú háromszög (▲)**: a csúcs a
+kép tetején, az alap a teljes szélességben az alján. Soronként pontosan
++2 képpont. **49 látható képpont**, mind ugyanaz a szín.
+
+| | mérve |
+|---|---|
+| méret | **13 × 7** |
+| alak | tömör ▲, soronkénti szélesség **1, 3, 5, 7, 9, 11, 13** |
+| szín | **`#69729B`** (RGB 105, 114, 155), teljesen átlátszatlan |
+| élsimítás | **NINCS** — az ikon az egyetlen a sávban, amiben csak **1** szín van |
+
+⛳ **A tájolás nem feltevés.** A kicsomagoló sorrendjét két, egyértelmű
+tájolású testvér-ikonnal ellenőriztem: a `folderbutton_icon` (17 × 13)
+**füle a bal FELSŐ** sarokban van, a `pbutton_icon` (15 × 12) papírja
+**felül**, a kiadó tálcája alul. A sorok tehát **nincsenek tükrözve**,
+és a háromszög valóban fölfelé mutat — ami a funkcióval is egybevág: a
+képtálca az ablak **alján** ül, a túlcsordulás-lista **fölfelé** nyílik.
+
+##### A sáv EGYETLEN tintaszíne
+
+Mind a tizenegy `outputlayout` ikon **fő színe azonos**: `#69729B`. A
+képek a `respack.yt`-ből kicsomagolva; a szerkezeti horgony minden
+sorban a `.tre` deklarációja.
+
+| ikon | méret | különböző színek | a fő szín képpontjai | horgony |
+|---|---:|---:|---:|---|
+| `outputlayout/export7_icon` | 13 × 7 | **1** | 49 | `outputlayout.tre:132` |
+| `outputlayout/collage_icon` | 16 × 15 | 3 | 136 | `outputlayout.tre:107` |
+| `outputlayout/pbutton_icon` | 15 × 12 | 3 | 97 | `outputlayout.tre:34` |
+| `outputlayout/blogger_icon` | 17 × 19 | 5 | 134 | `outputlayout.tre:95` |
+| `outputlayout/folderbutton_icon` | 17 × 13 | 6 | 159 | `outputlayout.tre:59` |
+| `outputlayout/orderbutton_icon` | 13 × 11 | 6 | 57 | `outputlayout.tre:71` |
+| `outputlayout/default_icon` | 16 × 15 | 8 | 175 | `respack.yt` rétegfejléc |
+| `outputlayout/movie_icon` | 17 × 15 | 9 | 198 | `outputlayout.tre:120` |
+| `outputlayout/ebutton_icon` | 16 × 11 | 11 | 45 | `outputlayout.tre:47` |
+| `outputlayout/earth_icon` | 17 × 17 | 15 | 99 | `respack.yt` rétegfejléc |
+| `outputlayout/sharewith_icon` | 40 × 21 | 279 | *(fotó jellegű, nem piktogram)* | `outputlayout.tre:83` |
+
+⇒ a többi ikon a `#69729B`-t **élsimítással** hígítja; a `sharewith_icon`
+a kivétel: 279 szín, tehát nem vonalas piktogram.
+
+⛔ **A projekt egyetlen kicsomagolt Picasa-képet sem szállít** — a fenti
+leírás elég ahhoz, hogy a saját rajzunk (`icons/tray-more.svg`) **mérés
+alapján**, ne szemre készüljön. Fejlesztői jegy: **#2537**.
+
 ⇒ **A gombsor szélesség-érzékeny**: ha a 424 × 29-es sávba nem fér ki
 minden 55 × 36-os cella, a maradék a „További lehetőségek…" mögé kerül.
 
