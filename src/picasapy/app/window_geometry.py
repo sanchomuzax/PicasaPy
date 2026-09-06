@@ -29,21 +29,55 @@ _KEY_MAXIMIZED = "window/maximized"
 
 
 def sanitize_geometry(
-    x: int, y: int, width: int, height: int, virtual_rect: tuple
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    virtual_rect: tuple,
+    min_size: tuple[int, int] | None = None,
 ) -> tuple[int, int, int, int] | None:
     """A mentett geometria észszerűsítése a virtuális asztalhoz.
 
     `virtual_rect`: (x, y, szélesség, magasság). None az eredmény, ha az
     adat értelmezhetetlen (törpe méret, üres asztal); egyébként úgy
     igazított geometria, hogy az ablak fogható része látsszon.
+
+    `min_size`: az ablak BEJELENTETT minimuma (#2586). Enélkül a mentett
+    méret a platform minimuma alá eshet, és az ablakkezelő felülbírálja —
+    Windowson ez látható figyelmeztetéssel jár:
+
+        QWindowsWindow::setGeometry: Unable to set geometry 958x1120…
+        Resulting geometry: 993x1120… minimum size: 993x419
+
+    Az eset nem egyszeri: a minimum a QML-ből jön, és MÉRT, VÁLTOZÓ érték
+    (`Main.qml` `minimumWidth: trayBar.requiredWidth`, #1367;
+    `minimumHeight: photoViewer.requiredHeight`, #641) — valahányszor a sáv
+    igénye változik, a korábban mentett geometria elavul.
+
+    ⚠️ A SORREND: **minimumra emelés → asztalra vágás → pozíció-korrekció**.
+    Ha az asztal keskenyebb, mint a minimum, a **minimum nyer**: a platform
+    úgyis azt adja, a `min(width, vw)` pedig épp a figyelmeztetést hozná
+    vissza. A pozíció-korrekció ezért a MÁR FELEMELT mérettel számol,
+    különben a jobb szélre mentett ablak lecsúszna.
     """
     vx, vy, vw, vh = virtual_rect
     if vw <= 0 or vh <= 0:
         return None
+    # a `_MIN_SIZE` szentinel MARAD, ami: az „értelmetlen mentés" szűrője,
+    # nem méret-politika (#2586) — a minimumra emelés nem írhatja felül
     if width < _MIN_SIZE or height < _MIN_SIZE:
         return None
-    width = min(width, vw)
-    height = min(height, vh)
+    if min_size is not None:
+        min_w, min_h = min_size
+        # EGY kifejezés, három szabállyal: vágj az asztalra, de a minimum
+        # alá SOHA. (A külön „emeld a minimumra" lépés fölösleges volt — a
+        # mutációs próba mutatta meg, hogy egyetlen teszt sem különbözteti
+        # meg: ez a `max(min(...), min_w)` már tartalmazza.)
+        width = max(min(width, vw), min_w)
+        height = max(min(height, vh), min_h)
+    else:
+        width = min(width, vw)
+        height = min(height, vh)
     # vízszintesen legalább _VISIBLE_MARGIN-nyi ablak maradjon az asztalon
     x = max(vx + _VISIBLE_MARGIN - width, min(x, vx + vw - _VISIBLE_MARGIN))
     # a címsor nem kerülhet az asztal fölé, és alul is maradjon fogható sáv
@@ -104,7 +138,19 @@ def restore_window_geometry(window, settings, virtual_rect: tuple) -> bool:
     height = _read_int(settings, _KEY_HEIGHT)
     restored = False
     if None not in (x, y, width, height):
-        geometry = sanitize_geometry(x, y, width, height, virtual_rect)
+        # #2586: az ablak BEJELENTETT minimuma is számít. A `wire_window_
+        # geometry` a QML-fa felépülése UTÁN fut (`application.py`), tehát
+        # a `minimumWidth`/`minimumHeight` ekkor már a mért értéket adja.
+        # Csonk-ablakon (a próbákéin) a `getattr` 0-t ad, és a viselkedés a
+        # #2586 ELŐTTI marad.
+        min_size = (
+            int(getattr(window, "minimumWidth", lambda: 0)() or 0),
+            int(getattr(window, "minimumHeight", lambda: 0)() or 0),
+        )
+        geometry = sanitize_geometry(
+            x, y, width, height, virtual_rect,
+            min_size=min_size if any(min_size) else None,
+        )
         if geometry is not None:
             window.setGeometry(*geometry)
             restored = True
