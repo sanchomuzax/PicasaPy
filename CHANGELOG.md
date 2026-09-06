@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.302] – 2026-09-06
+
+### Javítva
+
+- **Gyorsabb indulás: az exportcélok visszavétele nem old fel útvonalat
+  újra és újra** (#2483). Induláskor a program végignézi a korábban
+  exportált mappákat, és eddig mindegyiknél újra kiszámolta ugyanazokat a
+  szűrőket és útvonalakat — a törölt mappák „sírkövei" pedig szorozták a
+  munkát. Mérve, tíz exportcéllal: 320 → **90** fájlrendszer-hívás; húsz
+  sírkővel 1120 → **90**. A viselkedés nem változik: külön őrök mérik,
+  hogy pontosan ugyanazok a mappák maradnak ki a bejárásból.
+
 ## [0.8.301] – 2026-09-06
 
 ### Javítva

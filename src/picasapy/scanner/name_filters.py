@@ -48,6 +48,7 @@ függetlenül is álljon, ha valaki a rejtett-mappa szabályt megkerülné
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
 # Az eredeti Picasa `runtime/filters.txt` DirectoryFilters szekciója.
@@ -114,15 +115,23 @@ class NameFilters:
         `file_includes` nem írja felül."""
         return _matches(name, self.file_filters) and not _matches(name, self.file_includes)
 
-    def is_path_excluded(self, path: str | Path) -> bool:
+    def is_path_excluded(
+        self, path: str | Path, mar_feloldva: bool = False
+    ) -> bool:
         """Igaz, ha a teljes `path` valamely útvonal-előtag alatt van.
 
         Ez külön művelet a könyvtárnév-egyezéstől: például a `~/.cache`
         alatti fákat kizárja, egy máshol lévő `Cache` nevű fotómappát nem.
         A komponenshatáros összehasonlítás megakadályozza, hogy `/usr` a
         `/usrbin` vagy `/usr-local` útvonalra is tévesen illeszkedjen.
-        """
-        path_parts = _normalised_path_parts(path)
+
+        `mar_feloldva=True`: a hívó ÁLLÍTJA, hogy `path` már abszolút és
+        feloldott (`normalize_path` / `Path.resolve()` eredménye). Ilyenkor
+        a feloldás kimarad. A `sync_folder` (#2483) épp egy sorral fentebb
+        oldotta fel ugyanezt az útvonalat — a megismételt feloldás
+        útvonal-komponensenként egy `lstat`, ami a tulajdonos tárolóján
+        ~47 ms-onként fizetendő (#1706)."""
+        path_parts = _normalised_path_parts(path, mar_feloldva)
         return any(
             len(path_parts) >= len(prefix_parts)
             and path_parts[: len(prefix_parts)] == prefix_parts
@@ -130,12 +139,39 @@ class NameFilters:
         )
 
 
-def default_name_filters() -> NameFilters:
-    """A Picasa gyári `filters.txt`-jének megfelelő alapértelmezett
-    kizárólista — üres Includes/FileFilters és BundleFilters szekciókkal."""
+@lru_cache(maxsize=4)
+def _gyari_szurok(elotagok: tuple[str, ...]) -> NameFilters:
+    """A gyári kizárólista EGY példánya, `~`-feloldott előtagokra kulcsolva.
+
+    A `NameFilters.__post_init__` minden példánynál feloldja
+    (`Path.resolve()`) az összes útvonal-előtagot. Ez öt konstansra
+    munkamenetenként EGYSZER jogos költség — mappánként megismételve
+    viszont a #2483 mért leletének nagyobbik fele volt."""
     return NameFilters(
         directory_filters=DEFAULT_DIRECTORY_FILTERS,
-        path_prefix_filters=DEFAULT_PATH_PREFIX_FILTERS,
+        path_prefix_filters=elotagok,
+    )
+
+
+def default_name_filters() -> NameFilters:
+    """A Picasa gyári `filters.txt`-jének megfelelő alapértelmezett
+    kizárólista — üres Includes/FileFilters és BundleFilters szekciókkal.
+
+    #2483: az eredmény **gyorstárazott**. A `scan_folder` minden mappára
+    meghívja ezt, és a példányosítás mind az öt gyári útvonal-előtagot
+    feloldotta — MÉRVE mappánként 22 `lstat`, a szakasz hívásainak 63%-a.
+    A gyári előtagok konstansok, tehát a feloldásuk munkamenetenként
+    egyszer elég.
+
+    A gyorstár KULCSA a `~` feloldása utáni alak, nem maga a konstans: így
+    egy megváltozott `HOME` (tesztek, felhasználóváltás) új példányt kap,
+    nem egy elavultat. Az `expanduser()` maga nem nyúl a lemezhez — csak a
+    `resolve()` drága, és épp azt kerüljük el."""
+    return _gyari_szurok(
+        tuple(
+            str(Path(elotag).expanduser())
+            for elotag in DEFAULT_PATH_PREFIX_FILTERS
+        )
     )
 
 
@@ -144,6 +180,14 @@ def _matches(name: str, candidates: tuple[str, ...]) -> bool:
     return any(lowered == candidate.casefold() for candidate in candidates)
 
 
-def _normalised_path_parts(path: str | Path) -> tuple[str, ...]:
-    resolved = Path(path).expanduser().resolve()
+def _normalised_path_parts(
+    path: str | Path, mar_feloldva: bool = False
+) -> tuple[str, ...]:
+    """Az útvonal komponensei kis-nagybetű-függetlenül, feloldott alakon.
+
+    `mar_feloldva=True` esetén a feloldás KIMARAD — a hívó állítja, hogy
+    az útvonal már abszolút és feloldott. A `resolve()` idempotens, tehát
+    ilyenkor a kihagyás a végeredményt nem változtatja, csak a
+    komponensenkénti `lstat`-ot takarítja meg (#2483)."""
+    resolved = Path(path) if mar_feloldva else Path(path).expanduser().resolve()
     return tuple(part.casefold() for part in resolved.parts)
