@@ -5095,3 +5095,149 @@ pillanatában rögzítve (egyetlen író: `0x004eeb10`, egyetlen hívó:
 *A saját megfelelőnk nem az `mtime` pillanatnyi értéke kell legyen, hanem
 egy **indexeléskor rögzített** időmező — különben a sorrend a fájlok
 másolásakor megváltozik.*
+
+## 23. adag (2026-09-06) — az `Address::ID_AUTOCOMPLETE` VISELKEDÉSE, végig
+
+*A 19. adag megnevezte a hét tételes szövegmező-helyimenüt, és az
+`ID_AUTOCOMPLETE`-ről annyit mondott: „kikapcsolható automatikus kitöltés".
+Hogy **mit** kapcsol, **hova** menti, és **mi az alapértéke**, nem volt
+mérve. Ez a szakasz azt pótolja. Jegy: **#1526**.*
+
+### 23.1 A három függvény
+
+| cím | méret | szerep |
+|---|---|---|
+| `0x007331e0` | 662 b | a menüt **építi** (a hét `Address::ID_*` erőforrás-kulcs feloldása) |
+| `0x008518e0` | 622 b | a menüt **kiteszi és kiértékeli** (tiltás · pipa · `TrackPopupMenu` · parancs-szétosztás) |
+| `0x00851b50` | 120 b | az `ID_AUTOCOMPLETE` **kapcsolója** |
+
+A hívási lánc: `0x00850770` → `0x008518e0` → `0x007331e0`.
+
+### 23.2 A hét tétel parancsazonosítója és a végrehajtott üzenet
+
+Mind a hét a szerkesztőmező (`[this+0x324]`) ablakkezelőjének küld egy
+Windows-üzenetet, `SendMessageA`-val (`0x00c40884`):
+
+| # | erőforrás-kulcs | parancsazonosító | üzenet | cím |
+|---|---|---|---|---|
+| 1 | `Address::ID_UNDO` (`0x00cae700`) | `0x9d7f` | `WM_UNDO` (`0xc7`) | `0x00851a6c` |
+| 2 | `Address::ID_CUT` (`0x00cae6e8`) | `0x9d39` | `WM_CUT` (`0x300`) | `0x00851a8f` |
+| 3 | `Address::ID_COPY` (`0x00cae6cc`) | `0x9d3b` | `WM_COPY` (`0x301`) | `0x00851ab2` |
+| 4 | `Address::ID_PASTE` (`0x00cae6b8`) | `0x9d3c` | `WM_PASTE` (`0x302`) | `0x00851ad2` |
+| 5 | `Address::ID_DELETE` (`0x00cae69c`) | `0x9c56` | `WM_CLEAR` (`0x303`) | `0x00851af2` |
+| 6 | `Address::ID_SELECTALL` (`0x00cae678`) | `0x9d7e` | `EM_SETSEL` (`0xb1`), `wParam=0`, `lParam=-1` | `0x00851b12` |
+| 7 | `Address::ID_AUTOCOMPLETE` (`0x00cae64c`) | `0x9d82` | **nem üzenet** — `call 0x00851b50` | `0x00851b28` |
+
+⚠️ **Hatókör.** Ezek az `Address::` névtér azonosítói. A `0x9d39` ugyanaz a
+szám, mint a **Szerkesztés** menü Kivágás-parancsa (`picasa-menusor-csoportok.md`),
+a `0x9d7f` / `0x9d7e` / `0x9d82` viszont **csak itt** fordul elő. A
+`picasa-gyorsbillentyuk.md` `Ctrl+X`/`Ctrl+C`/`Ctrl+V` sorainak
+„mikor tiltott" cellája az `eMenuEdit` névtérre vonatkozik — azt ez a
+mérés **nem** dönti el, ezért ott marad a „nincs mérve".
+
+### 23.3 Mikor TILTOTT — mind a négy feltétel kimérve
+
+A menü kitétele előtt (`0x008518ed`–`0x008519cd`) négy vizsgálat fut, és
+mindegyik `EnableMenuItem`-mel (`0x00c40818`) szürkít, `MF_GRAYED` (`1`)
+jelzővel:
+
+| tétel(ek) | a vizsgálat | cím | tiltás, ha |
+|---|---|---|---|
+| Visszavonás | `EM_CANUNDO` (`0xc6`) | `0x00851902` | a visszaadott érték **0** |
+| **Kivágás + Másolás + Törlés** (mind a három EGYÜTT) | `EM_GETSEL` (`0xb0`) | `0x0085193c` | a kezdő- és a végpozíció **egyenlő** (nincs kijelölés) |
+| Beillesztés | `OpenClipboard(NULL)` → `GetClipboardData(1)` → `CloseClipboard` | `0x0085196e`–`0x0085197e` | a vágólapon **nincs `CF_TEXT`** |
+| Az összes kijelölése | `WM_GETTEXTLENGTH` (`0xe`) | `0x0085199f` | a mező **üres** |
+
+Az **Automatikus kitöltés soha nem tiltott** — nála a `CheckMenuItem`
+(`0x00c40810`) fut, `MF_CHECKED` (`8`) vagy `MF_UNCHECKED` (`0`) jelzővel,
+a `[this+0x5b8]` bájt szerint:
+
+```
+0x008519b3  cmp byte ptr [esi + 0x5b8], 0
+0x008519ba  je  0x8519c0
+0x008519bc  push 8                       ; MF_CHECKED
+0x008519be  jmp 0x8519c2
+0x008519c0  push 0                       ; MF_UNCHECKED
+0x008519c2  push 0x9d82
+0x008519c7  push ebx
+0x008519c8  call dword ptr [0xc40810]    ; CheckMenuItem
+```
+
+⇒ **pipás menütétel**, nem gomb. A menü `TrackPopupMenu`-val (`0x00c407c4`,
+`0x00851a45`) jön fel, `TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_RIGHTBUTTON`
+(`0x10a`) jelzőkkel — tehát a parancsazonosítót a hívás **visszaadja**, és a
+szétosztás a fenti `cmp`-lánccal helyben történik.
+
+### 23.4 MIT csinál a kapcsoló — a tároló, a kulcs, az alapérték
+
+A `0x00851b50` teljes törzse:
+
+```
+0x00851b53  cmp  byte ptr [esi + 0x5b8], 0
+0x00851b5b  sete al                          ; INVERTÁL
+0x00851b5e  mov  byte ptr [esi + 0x5b8], al
+0x00851b67  push 0xcc2640                    ; "EmailAutocomplete"
+0x00851b6c  push 0xc7eafc                    ; "Preferences"
+0x00851b80  call 0x00407a20                  ; beállítás-objektum
+0x00851b98  call 0x00401900                  ; ÍRÁS
+0x00851b9d  mov  al, byte ptr [esi + 0x5b8]
+0x00851ba7  mov  byte ptr [esi + 0x3e0], al  ; másodpéldány
+```
+
+| | mérve |
+|---|---|
+| tároló | `HKEY_CURRENT_USER\SOFTWARE\Google\Picasa\Picasa2\Preferences\EmailAutocomplete` (a kulcsnév `0x00cc2640`, a szekció `0x00c7eafc`; az útvonal összeszerelése: 6.1 szakasz, `picasa-email-kuldes.md`) |
+| mikor íródik | **azonnal**, a menütétel megnyomásakor — nincs OK-gomb, nincs kilépéskori mentés |
+| memóriabeli állapot | `[this+0x5b8]` bájt, és vele azonos értékkel `[this+0x3e0]` |
+| **alapérték** | **1 (bekapcsolva)** — az építőben `mov byte ptr [edi+0x5b8], 1` (`0x0084fe43`), és a registry-olvasás alapértéke is `1` (`edi = 1`, `0x0085021a`; átadás: `mov dword ptr [esp+0x20], edi`, `0x008503e6`) |
+| honnan jön INDULÁSKOR | `0x008503d1`–`0x00850405`: ugyanaz a kulcs, `0x00407a20` + `0x004019b0` (olvasás), majd `mov [ebp+0x5b8], al` és `mov [ebp+0x3e0], al` |
+
+⇒ **A kulcs neve `EmailAutocomplete`** — vagyis az `Address` névtér az
+**e-mail-címmező**, és az automatikus kitöltés a korábban használt
+címeket ajánlja. Ez összeér a `picasa-email-kuldes.md` beállítás-készletével
+(`EmailPrepType`, `DoNotPromptForEmailPref`, `EmailExportSize`).
+
+### 23.5 Az írók és olvasók TELJES készlete (kimerítő pásztázás)
+
+A `.text` teljes szakaszán (fájloffset `4096`, `8646656` bájt) végigfutó,
+indextől független bájt-hozzáférés-keresés a `+0x5b8` és a `+0x3e0`
+eltolásra (`mov`/`cmp`/`movzx`/`movsx`, `mod=10`, SIB és `ebp`-lokálisok
+kizárva):
+
+| eltolás | találat | cím | mi |
+|---|---|---|---|
+| `+0x5b8` | 1 | `0x0084fe43` | ÍRÓ — az építő alapértéke (`= 1`) |
+| `+0x5b8` | 2 | `0x008503ff` | ÍRÓ — a registryből olvasott érték |
+| `+0x5b8` | 3 | `0x008519b3` | OLVASÓ — a pipa kirakása |
+| `+0x5b8` | 4 | `0x00851b53` | OLVASÓ — a kapcsoló invertálása |
+| `+0x5b8` | 5 | `0x00851b5e` | ÍRÓ — a kapcsoló |
+| `+0x5b8` | 6 | `0x00851b9d` | OLVASÓ — a másodpéldány feltöltése |
+| `+0x3e0` | 1 | `0x00850405` | ÍRÓ — indulás |
+| `+0x3e0` | 2 | `0x00851ba7` | ÍRÓ — a kapcsoló |
+
+⚠️ **NYITOTT, és nevén nevezve:** a `+0x3e0` mezőnek **egyetlen bájt-szintű
+olvasója sincs** ebben a pásztázásban — csak a két írója. Ez **nem** jelenti,
+hogy halott: a fordító a `bázis + tag` konstanst összevonhatja (ezt a
+`facerect`-körben már mértük), ezért az olvasó egy másik bázisregiszterrel,
+más eltolással is állhat. **A tényleges kitöltő-logika (mit ajánl fel a mező,
+honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
+`+0x3e0`-t tartalmazó objektum azonosítása RTTI-ből, majd az azt olvasó
+`WM_CHAR`/`EN_CHANGE`-kezelő. Külön jegy: **#2524**.
+
+### 23.6 MIT ADUNK MA — mérve
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| a hét tétel megléte és sorrendje | `0x007331e0` | **megvan**, azonos sorrendben (`app/qml/PicasaPy/TextFieldContextMenu.qml`) | — |
+| Automatikus kitöltés | **pipás** tétel, állapota a `+0x5b8` | `PicasaMenuItem` **helyfoglaló**, `checkable` nincs, `onTriggered` nincs | pipás tétellé kell tenni |
+| az állapot tárolása | registry `Preferences\EmailAutocomplete`, azonnal | **nincs** | `QSettings`-kulcs, azonnali mentés |
+| alapérték | **1 (be)** | — | `true` |
+| Kivágás tiltása | kijelölés nélkül szürke | `menu.editable && menu.hasSelection` — **egyezik** | — |
+| Másolás tiltása | kijelölés nélkül szürke | `menu.hasSelection` — **egyezik** | — |
+| Törlés tiltása | kijelölés nélkül szürke | `menu.editable && menu.hasSelection` — **egyezik** | — |
+| Beillesztés tiltása | `CF_TEXT` hiányában szürke | `menu.target.canPaste` — **egyezik** (a Qt is a vágólap szövegét nézi) | — |
+| Az összes kijelölése tiltása | **üres mezőnél** szürke | `menu.target.length > 0` — **egyezik** | — |
+| Visszavonás tiltása | `EM_CANUNDO` = 0 | `menu.target.canUndo` — **egyezik** | — |
+
+⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
+mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
