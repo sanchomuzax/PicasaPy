@@ -3493,7 +3493,7 @@ az 1. mező 60,7 % / 96,9 %, a 2. mező 16,9 % / 20,2 %.
 | | eredeti (mérve) | nálunk (**mérve**) | teendő |
 |---|---|---|---|
 | a „Dátum" rendezés kulcsa | metaadat-dátum, ennek hiányában a fájl módosítási ideje | `app/photo_sort.py:66–68`: `taken_at`, ennek hiányában `mtime` — **a SZABÁLY azonos** | — |
-| a kulcs **rögzítettsége** | a beolvasáskor **befagy** a DB-be; a pásztázó csak a 2. mezőt frissíti | a rendezéskor **élőben** olvassuk a `mtime`-ot | #2304 |
+| a kulcs **rögzítettsége** | a beolvasáskor **befagy** a DB-be; a pásztázó csak a 2. mezőt frissíti | `photos.first_seen_mtime_ns` (v17): az ELSŐ beolvasáskori `mtime` befagyasztva; a rendezés, a mappa-dátum és az Időrend azt használja | ✅ #2486 (döntés: `docs/decisions/befagyasztott-fajlido.md`) |
 | a 2. mező neve az olvasónkban | a fájl **módosítási** ideje | `pmpimport/thumbindex.py`: **`modified_filetime`** — átnevezve | ✅ #2373 |
 | időzóna | helyi idő → UTC a gép zónájával | az olvasónk nyers `uint64`-et ad; az értelmezés a mezők docstringjében ki van mondva | ✅ #2373 |
 
@@ -3502,7 +3502,10 @@ az 1. mező 60,7 % / 96,9 %, a 2. mező 16,9 % / 20,2 %.
 > EXIF-hiány esetén a mai `mtime`"). A 10.3–10.4 szerint a szabály
 > **ugyanaz**; a mért különbség a **rögzítettség**: az eredeti a
 > beolvasáskori értéket tárolja és nem frissíti, mi minden rendezéskor a
-> pillanatnyi `mtime`-ot olvassuk.
+> pillanatnyi `mtime`-ot olvastuk. **A #2486 óta a rögzítettségben sincs
+> különbség**: az első látáskori fájlidő az indexben befagy. Ami eltérés
+> MARAD: a `taken_at`-et minden szinkron újraolvassuk, az eredeti azt is
+> befagyasztja (tudatos, szűkebb hatókör — ld. az ADR-009-et).
 
 *Bizonyítottsági fok: **megerősített** a pásztázó négy mezőjére és a
 kimerítő negatívra (10.1), a 2. mező jelentésére (10.2), a beállító

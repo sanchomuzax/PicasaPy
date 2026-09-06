@@ -19,7 +19,9 @@
 > átíródik. Ezt tudatosan vállaljuk, mert a tulajdonos a két programot
 > EGYSZERRE használja, és enélkül az együttélés — a projekt alapígérete —
 > nem működik. A mi oldalunkon jelentkező mellékhatást (a fájlidőre eső
-> dátum és rendezés elmozdulása EXIF nélkül) a **#2486** oldja meg.
+> dátum és rendezés elmozdulása EXIF nélkül) a **#2486** oldotta meg: a
+> fájlidő az első beolvasáskor BEFAGY, és a rendezés azt használja —
+> `docs/decisions/befagyasztott-fajlido.md` (ADR-009).
 
 Dátum: 2026-08-24 · Státusz: ELFOGADVA · jegy: #1320 (a #643 örökségéből)
 

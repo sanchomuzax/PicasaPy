@@ -9,10 +9,13 @@ immutábilis, csökkenő időrendbe (legújabb elöl) rendezett korszak-tuple
 Dátum-forrás (döntés, #24): a hívó dönti el fotónként, mi a "dátum" —
 ehhez a `resolve_date` segédfüggvényt adjuk, ami az EXIF `taken_at`-ot
 részesíti előnyben, és ennek hiányában (RAW/videó, vagy olvashatatlan
-EXIF — ld. `picasapy.index.sync`) a fájl `mtime_ns`-ére esik vissza. Ez
+EXIF — ld. `picasapy.index.sync`) a fájl idejére esik vissza. Ez
 józan alapértelmezés: az index sémájában `mtime_ns` mindig kitöltött,
 `taken_at` viszont csak fényképeknél (és csak sikeres EXIF-olvasás
 esetén) van jelen.
+
+Index-rekordhoz a `record_date` a belépési pont: az a BEFAGYASZTOTT
+fájlidőt adja a `resolve_date`-nek (#2486), nem az élőt.
 """
 
 from __future__ import annotations
@@ -68,6 +71,23 @@ def resolve_date(taken_at: str | None, mtime_ns: int) -> date | None:
         except (OSError, OverflowError, ValueError):
             return None
     return None
+
+
+def record_date(record) -> date | None:
+    """Egy INDEX-REKORD (`picasapy.index.PhotoRecord`) időrendi dátuma.
+
+    #2486: a fájlidő-tartalék a BEFAGYASZTOTT, első látáskori érték
+    (`PhotoRecord.sort_mtime_ns`), nem az élő `mtime`. Enélkül ugyanaz az
+    EXIF nélküli kép az Időrendben más korszakba kerülne, mint amilyen
+    dátummal a rácsban (`app/photo_sort.photo_date`) és a mappa
+    fejlécében (`app/formatting.photo_dates`) szerepel — ugyanarról a
+    képről mondana mást két nézet.
+
+    SZÁNDÉKOSAN itt, a Qt-mentes rétegben él, nem a controllerben: így a
+    döntés őrizhető QML-motor nélkül is (a hívó
+    `app/timeline_controller.py` csak ezt hívja).
+    """
+    return resolve_date(record.taken_at, record.sort_mtime_ns)
 
 
 def build_periods(photos) -> tuple[TimelinePeriod, ...]:

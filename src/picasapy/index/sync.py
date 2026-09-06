@@ -925,10 +925,16 @@ def _sync_folder_date(
     eddig is pontosan erre esett vissza, és a `mtime_ns` a `photos`
     táblában is megvan.
 
-    A `taken_at` ISO-alakú helyi idő, ezért a `mtime_ns`-t is helyi időre
+    A `taken_at` ISO-alakú helyi idő, ezért a fájlidőt is helyi időre
     alakítjuk (`'localtime'`) — különben a két ág nem lenne
     összehasonlítható, és a `MIN` a nyári időszámítás körül rossz sorrendet
-    adna."""
+    adna.
+
+    #2486: a tartalék a BEFAGYASZTOTT fájlidő (`first_seen_mtime_ns`),
+    nem az élő `mtime`. A mappa dátuma így nem ugrik el attól, hogy egy
+    mentés vagy a saját `photo_touch`-unk átírta a képek idejét; a
+    `COALESCE` a második tagja csak a v17 előtti, még fel nem töltött
+    sorokra kell (ott a viselkedés a #2486 előtti marad)."""
     override = read_folder_date_override(document) if document else None
     if override is not None:
         conn.execute(
@@ -939,7 +945,8 @@ def _sync_folder_date(
         "UPDATE folders SET date = ("
         " SELECT MIN(COALESCE("
         "  p.taken_at,"
-        "  strftime('%Y-%m-%dT%H:%M:%S', p.mtime_ns / 1000000000,"
+        "  strftime('%Y-%m-%dT%H:%M:%S',"
+        "           COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,"
         "           'unixepoch', 'localtime')"
         " )) FROM photos p WHERE p.folder_id = ?"
         ") WHERE id = ?",
@@ -964,9 +971,18 @@ def _upsert_photo(
         "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
         " keywords_ini, rotate_steps, filters, geotag_ini, taken_at,"
         " orientation, width, height, caption_file, keywords_file,"
-        " exif_lat, exif_lon)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        " exif_lat, exif_lon, first_seen_mtime_ns)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+        " ?) "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
+        # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
+        # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
+        # változtatás" rendezésé —, a `first_seen_mtime_ns` viszont az
+        # ELSŐ látáskori, és az ütközési ágon SOHA nem íródik felül. A
+        # `COALESCE` csak a még üres (v17 elé indexelt, majd újra
+        # feltűnő) sort tölti fel.
+        "first_seen_mtime_ns = COALESCE(photos.first_seen_mtime_ns,"
+        " excluded.first_seen_mtime_ns), "
         "kind = excluded.kind, size = excluded.size, "
         "mtime_ns = excluded.mtime_ns, star = excluded.star, "
         "hidden = excluded.hidden, "
@@ -995,6 +1011,7 @@ def _upsert_photo(
             ",".join(meta.keywords) or None,
             meta.latitude,
             meta.longitude,
+            media.mtime_ns,
         ),
     )
 

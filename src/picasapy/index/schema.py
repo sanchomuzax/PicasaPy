@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -305,6 +305,36 @@ CREATE TABLE IF NOT EXISTS resolved_root_cache (
 """
 
 
+# #2486 — a fotó BEFAGYASZTOTT fájlideje: `photos.first_seen_mtime_ns`.
+#
+# A rendezés dátum-kulcsa EXIF felvételi idő hiányában a fájl idejére esik
+# vissza (`app/photo_sort.photo_date`). Eddig ez az ÉLŐ `mtime` volt, tehát
+# bármely külső írás — mentés, szinkron, másolás, és a #2491 óta a SAJÁT
+# ini-írásunk `photo_touch`-a is — átrendezte a rácsot. Az eredeti Picasa
+# ezt a dátumot a katalógusába FAGYASZTJA a beolvasáskor, és a pásztázó
+# soha nem frissíti (`docs/specs/pmp-database.md` 10.1/10.3–10.4).
+#
+# Az oszlop NULL-ozható, és ez KÉT dolgot jelent egyszerre:
+#
+# 1. *migrációs* NULL nincs — a v16→v17 lépés MINDEN meglévő sort feltölt a
+#    mai `mtime`-mal (ld. `_FIRST_SEEN_MTIME_MIGRATION`), különben a
+#    változatlan fájlok sora sosem töltődne fel: a mappa-szinkron a
+#    változatlan fotón `_upsert_photo`-t NEM futtat, tehát a befagyasztás
+#    épp akkor történne meg, amikor a fájl ideje MÁR elromlott;
+# 2. *visszaesési* NULL viszont van — a `PhotoRecord.sort_mtime_ns` a
+#    hiányzó értéknél az élő `mtime`-ot adja. A `.picasa.ini` az
+#    igazságforrás, az index bármikor eldobható: ha a befagyasztott érték
+#    elvész, a viselkedés a #2486 ELŐTTI, nem romlik el.
+#
+# Az érték a fotó sorával él és hal: az `_upsert_photo` az ütközési ágon
+# `COALESCE`-szal ŐRZI (ez maga a befagyasztás), a `_prune_photos` törlésével
+# pedig eltűnik — az újra megtalált fájl új „első látása" jogos.
+_FIRST_SEEN_MTIME_MIGRATION = """
+ALTER TABLE photos ADD COLUMN first_seen_mtime_ns INTEGER;
+UPDATE photos SET first_seen_mtime_ns = mtime_ns;
+"""
+
+
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
@@ -344,6 +374,7 @@ CREATE TABLE IF NOT EXISTS photos (
     geotag_ini TEXT,
     exif_lat REAL,
     exif_lon REAL,
+    first_seen_mtime_ns INTEGER,
     UNIQUE (folder_id, name)
 );
 
@@ -456,4 +487,13 @@ ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
     # dHash-sorok átmásolódnak, a kulcs-oszlopuk NULL-lal indul: nincs
     # újraszámolás, a következő duplikátum-keresés/importálás tölti fel.
     15: _PHOTO_HASHES_FASTKEY_MIGRATION,
+    # #2486: a befagyasztott fájlidő oszlopa. A meglévő sorok a MAI
+    # `mtime`-mal töltődnek fel — nem NULL-lal. Ez tudatos: a NULL-os
+    # változat a változatlan fájlokat sosem érné el (a szinkron nem futtat
+    # rájuk UPSERT-et), tehát az érték épp a fájl KÖVETKEZŐ átírásakor
+    # fagyna be, vagyis már a romlott időre. Amelyik fájl `mtime`-ja MA már
+    # át van írva, annál a befagyasztott érték is az átírt idő lesz — ez
+    # nem javít visszamenőleg, de nem is ront: pontosan azt rögzíti, amit a
+    # felhasználó ma is lát, és onnantól stabilan tartja.
+    16: _FIRST_SEEN_MTIME_MIGRATION,
 }

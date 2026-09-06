@@ -34,6 +34,18 @@ class _Rekord:
     mtime_ns: int
     taken_at: str | None = None
 
+    #: #2486: a BEFAGYASZTOTT, első látáskori fájlidő — a valódi
+    #: `PhotoRecord` mintájára. A `sort_mtime_ns` a dátum-szemantikájú
+    #: olvasók (`photo_date`, `photo_dates`) belépési pontja; a `None`
+    #: alapérték az élő `mtime`-ra esik vissza, mint az indexben.
+    first_seen_mtime_ns: int | None = None
+
+    @property
+    def sort_mtime_ns(self) -> int:
+        if self.first_seen_mtime_ns is None:
+            return self.mtime_ns
+        return self.first_seen_mtime_ns
+
 
 def _ido(ev: int, ho: int, nap: int) -> int:
     return int(time.mktime((ev, ho, nap, 12, 0, 0, 0, 0, -1)) * 1_000_000_000)
