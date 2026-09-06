@@ -1622,3 +1622,159 @@ eltérés viszont mérhető:
 
 A négy mintán ez nem változtat a `k`-n, de matematikailag eltérhet egy
 egységgel. Átadva: **#2583**.
+
+## 20. A `picturepile` `scale` képlete a BINÁRISBÓL — a #1059 mintaszabálya megerősítve (2026-09-06, #1412)
+
+*170. kutatói kör. ⚠️ **Ez NEM új szabály a mi kódunkban:** a
+`collage/pile.py` `pile_size()` 2026 óta pontosan ezt számolja, a #1059
+óta csonkolással. Ami ÚJ: a képlet és mind a három konstansa **a bináris
+kódból van kiolvasva, címmel** — eddig kilenc mintára illesztett szabály
+volt. A projekt „nincs becsült érték" szabálya szerint ez a különbség
+lényeges: a sor `mérés (9 minta)`-ról `bináris (0x0082ca29…)`-ra vált.*
+
+### 20.1 ⭐ A képlet és a helye
+
+*Forrás: `FUN_0082c9a0` (`0x0082c9a0`, 426 bájt), helyi diszasszemblálás.*
+
+```
+n  = a képek száma
+ha n <= 1:  f = 1,0
+különben:   f = 1 / sqrt( sqrt(n) − 1 )        ; 0x0082ca29 sqrt
+                                               ; 0x0082ca2e fsub 1,0
+                                               ; 0x0082ca3f sqrt
+                                               ; 0x0082ca4b  1/x
+            ha NEM (f < 1,0):  f = 1,0         ; 0x0082ca57 fcom + jnp
+S  = CSONK( f × 1024,0 × 0,33 )                ; 0x0082caa6 ×1024
+                                               ; 0x0082cab5 ×0,33
+                                               ; 0x0082cac4 fldcw 0xc00 (CSONKOLÁS)
+                                               ; 0x0082cac8 fistp  → EGÉSZ
+[téma + 0x3c] = S                              ; 0x0082cad0
+```
+
+| konstans | VA | nyers bájtok | érték |
+|---|---|---|---|
+| a kivont egység | `0x00c7e328` | `000000000000f03f` | **1,0** |
+| lapegység-szorzó | `0x00cf4218` | `0000000000009040` | **1024,0** |
+| alaparány | `0x00cf46c0` | `00000060b81ed53f` | **0,33** |
+| négyzetgyök | `FUN_0049fe60` | — | — |
+
+⭐ **Itt jön a csonkolás, amit a #1059 a mintákból vezetett le:** a
+`0x0082cac4` `fldcw` a `0xc00` (nulla felé csonkoló) FPU-módot állítja be
+a `fistp` elé, és az eredmény **egész számként** kerül a téma `+0x3c`
+mezőjébe. A #1059 „9/9 `floor`-ral, 1/9 kerekítéssel" mérése ezzel
+**bináris megerősítést kapott**.
+
+### 20.2 A mérés: 55/57 — és a két kivétel a KÉZI átméretezés
+
+`S(1…12)` = 337 · 337 · 337 · 337 · 303 · 280 · 263 · 249 · 238 · 229 · 222 · 215
+
+A tizenkét arany `.cxf` `picturepile` csomópontjai, **csomópont-sorrendben**:
+
+| minta | n | fájl | jósolt `S(1…n)` | |
+|---|---|---|---|---|
+| AI | 9 | 337·337·337·337·303·280·263·249·238 | ugyanaz | **9/9** ✅ |
+| AI1 | 9 | ugyanaz | ugyanaz | **9/9** ✅ |
+| AI8 | 9 | ugyanaz | ugyanaz | **9/9** ✅ |
+| AI9 | 8 | 337·337·337·337·303·280·263·249 | ugyanaz | **8/8** ✅ |
+| lake-allo-piszkozat | 8 | ugyanaz | ugyanaz | **8/8** ✅ |
+| AI10 | **5** | 337·337·337·337·303 | ugyanaz | **5/5** ✅ |
+| AI2 | 9 | **295,392**·337·337·337·303·280·263·**267,608**·238 | — | **7/9** ⚠️ |
+
+**Összesen 55/57.** A két eltérés az `AI2` két **kézzel átméretezett**
+csomópontja — pontosan az a kettő, amelyet a 17.5 már azonosított („a kézi
+átméretezés megkerüli a létrát"). ⇒ a két mérés **kölcsönösen igazolja
+egymást**.
+
+⭐ **A létra INDEX szerinti, nem darabszám szerinti:** az `AI10` öt
+csomópontja `337·337·337·337·303` — ha a képlet a darabszámmal menne, mind
+az öt `S(5) = 303` volna. Az `i`-edik csomópont `S(i)`-t kap.
+
+*Bizonyítottsági fok: **megerősített** — bináris képlet + 55/57 mérés, a
+két kivétel megmagyarázva.*
+
+### 20.3 ⚠️ Amit a `Scale: %d%%` NEM jelent
+
+A kollázspanelnek van `collagepanel/scaletext` és `collagepanel/angletext`
+kijelzője, `#ring` / `#target_chicklet2` / `#angle_placemark`
+fogantyúkkal (`0x007e6bf0` és `0x00868570`). A kijelzés formátuma
+**`Scale: %d%%`** (`0x00cc4384`, kulcs `collage::scale_format`), és a
+kiírt szám:
+
+```
+0x00868e03  fld dword ptr [esp+0x1c]        ; a nyers érték
+0x00868e07  fmul qword ptr [0xcf3a08]       ; × 100,0
+0x00868e0d  call 0xc29990                   ; float → int
+0x00868e18  call 0x40eab0                   ; sprintf
+```
+
+⛔ **Ez NEM a csomópont `+0x2c` mezője.** A húzás kezdetén a kód
+**beégetett `100`-at** ír ki (`0x00868992` `push 0x64`), tehát a kijelző a
+**húzás-relatív** nagyítást mutatja (100 % = a húzás kezdete). A
+`0x008685ca` `mov [edx+0x2c], eax` írás sem csomópontot ír: az `edx` ott a
+**fogantyú-kezelő** állapotobjektuma (a `[edx+0x30]`-on át `+0x288`-ig
+indexel, ami csomópontnál hivatkozásszámlált sztring volna).
+
+⇒ **A `.cxf` `scale` NEM százalék.** Ha az volna, a 337 „33 700 %"-ot
+jelentene. A mértékegysége **lapegység** (a lap szélessége / 1024) — ld. 20.5.
+
+### 20.4 A `picturepile`-specifikus BETÖLTÉSI szorzás — ÚJ, és nem látszik a mintákon
+
+*`FUN_00834520` (`0x00834520`, 472 bájt) = „`.cxf` betöltése kollázs-dokumentumba".
+Hívói mind **betöltési** utak: `0x0062c680` (kollázs-fül), `0x0082a670`
+(kollázspanel), `0x008419e0` (automatikus mentés / „Recovered Autosave"),
+`0x0087ed80` (`CCollageManager`, `*.cxf`).*
+
+A függvény tartalmaz egy **`picturepile`-ra szűkített** ágat (sztring-
+összehasonlítás a `"picturepile"`-lal, `0x00cbea2c`), amely ugyanazt az
+`f`-et számolja ki (`0x00834622`–`0x0083465f`), megszorozza `1024,0`-val
+és `0,33`-dal (`0x0083466b`, `0x00834671`) — **csonkolás nélkül** —, majd
+egy 56 bájtos lépésközű ciklusban **minden csomópont `+0x2c` mezőjét
+megszorozza** vele:
+
+```
+0x00834683  mov eax, [ebx+0x48]              ; a csomópont-tömb bázisa
+0x00834686  fld dword ptr [edx+eax+0x2c]     ; csomópont.scale
+0x0083468a  lea eax, [edx+eax+0x2c]
+0x0083468e  fmul st(1)                       ; × F
+0x00834693  add edx, 0x38                    ; 56 bájtos lépésköz
+0x00834696  fstp dword ptr [eax]
+```
+
+⛳ **Ez pontosan az az írási alak, amit a 19.2 hatóköre kimondottan NEM
+fedett** („amikor a fordító a `+0x2c`-t beleolvasztja a regiszterbe:
+`lea reg,[node+0x2c]`, majd tárolás `[reg]`-be"). A kimondott hatókör-
+korlát tehát nem formalitás volt: pontosan ott volt a kimaradt eset.
+
+⚠️ **De a mintáinkon NEM látszik.** Ha egy betöltés után a mentés
+visszaírná a szorzott értéket, az `AI1` 337-e a következő mentésben
+`337 × 238,95 ≈ 80 500` volna. A tizenkét arany fájl **egyikében sincs**
+ilyen érték — köztük az `AI2`-ben sem, amely bizonyítottan **kézzel
+szerkesztett**, és a `lake-allo-piszkozat`-ban sem, amely automatikus
+mentés. A `.cxf`-író (17.4) pedig **nem alakít át semmit**.
+
+⇒ **A körre nézve LEZÁRVA-NEGATÍV:** a betöltési szorzás a mentett
+`scale` értékét a mintáinkban nem befolyásolja, tehát **a mi írónkra
+nincs következménye**. A „mit ír a valódi Picasa egy betöltés UTÁNI
+mentéskor" kérdés külön jegyet kapott (**#2593**) — annak eldöntéséhez
+olyan minta kellene, amit ez a kör **szándékosan nem kért**.
+
+### 20.5 ⭐ A `scale` egységes olvasata — mind a hat témára
+
+A 18.1, a 18.5 és a 20.1 együtt egyetlen mondattá áll össze:
+
+> **A `scale` a csomópont CSEMPEMÉRETE lapegységben** (a lap szélessége /
+> 1024) — az a hossz, amit a téma az adott csomópontnak szán.
+
+| téma | a csempeméret forrása | mérés |
+|---|---|---|
+| `picturepile` | `S(i)` = `CSONK(clamp₁(1/sqrt(sqrt(i)−1)) × 1024 × 0,33)` | **55/57** (20.2) |
+| `regulargrid` | a cella szélessége = `max(w, h)` | 9/9 (18.1) |
+| `contactsheet` | a lap-szintű csomópontmagasság (a függőleges igazításé) | 31/31 (18.5) |
+| `multiexp` | **1,0** — jelző, nincs csempézés | 4/4 (17.10) |
+| `picturegrid`, `framegrid` | a cella szélessége (keret nélkül) | 17.1, nem mérve újra |
+
+⛔ **Ami ebből még NINCS meg:** a `contactsheet` csempeméretének
+**képlete**. A 19.1 kizárta a `[this+0x18]`-at (az a cellaél `k`), és a
+mai kódunk 0…2 egységre eltalálja (18.8), de zárt alak nincs. A keresés
+helye innentől: a `CContactSheetTheme` **saját** csempeméret-írása, a
+`0x0082cad0` (`[téma+0x3c]`) analógiájára.
