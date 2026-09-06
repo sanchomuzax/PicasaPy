@@ -2007,3 +2007,112 @@ tömbje), és a kettő azonosságát a kör nem mérte ki.*
 2. **Blokk-másolás** egész csomópontra (`memcpy` / `rep movsd`) olyan
    forrásból, amelyben az érték már benne van.
 3. A kollázs-sávon **KÍVÜLI** kód.
+
+## 23. K1 — az OLCSÓ lánc KIMERÜLT, és egy sáv-definíciós hiba a saját méréseinkben (2026-09-07, #1412)
+
+*173. kutatói kör. A munkasor **K1** tétele, a 172. kör megfordult
+irányával (képhozzáadási út).*
+
+### 23.1 ⛔ ÖNHELYESBÍTÉS: a „kollázs-sáv" definíciója TÚL TÁG volt
+
+A 169. és a 172. kör a `0x00820000`–`0x008fffff` tartományt nevezte
+„kollázs-sávnak" — **ellenőrzés nélkül**. A `string_xrefs` szerint az alja
+**nem kollázs**:
+
+```sql
+SELECT DISTINCT string FROM string_xrefs
+WHERE function_address BETWEEN '0x00820000' AND '0x00826000';
+→  Preferences · Tahoma
+   conf(%f),pan(%f),leye(%f,%f),reye(%f,%f),mouth(%f,%f)
+   SmartMultiPersonTrans
+```
+
+⇒ a `0x00820000`–`0x00826000` **arcfelismerés**. A valódi kollázs-kód
+`0x00829…`-tól kezdődik (a `0x00829d40` a `contactsheet` téma-azonosítója,
+20.x; a `0x0082a670` a kollázspanel).
+
+**Mit jelent ez a korábbi eredményekre?** A negatívokat **nem gyengíti**,
+hanem erősíti: egy túl tág sávban több jelöltet néztünk át, mint kellett
+volna. A **SZÁMOK** viszont felfújtak voltak (pl. a 19.2 „96 a
+kollázs-sávban" értéke idegen kódot is tartalmazott). A jövőbeli
+pásztázások a `0x00829000`–`0x00895000` tartományt használják.
+
+### 23.2 A `FUN_0087c470` NEM ír vissza — utasításszinten
+
+A 21.2 dekompilátumból mondta ki; most a gépi kód:
+
+```
+0x0087c510  fld   dword ptr [ebx + 0x2c]     ; a csomópont scale-je
+0x0087c513  fstp  dword ptr [esp + 0x38]     ; LOKÁLISBA
+0x0087c517  fldz
+0x0087c519  fcomp dword ptr [esp + 0x38]     ; == 0 ?
+0x0087c522  jp    0x87c53a
+0x0087c524  mov   ecx, [esp + 0x44]          ; param_5 = a számolt méret
+0x0087c528  fild  dword ptr [esp + 0x44]
+0x0087c536  fstp  dword ptr [esp + 0x38]     ; a LOKÁLIS lecserélése
+```
+
+**A tartalék csak a lokálisba megy** — a csomópont `+0x2c`-je érintetlen
+marad. ⇒ a „visszaírja a tartalékot" feltevés **megdőlt**.
+
+### 23.3 Futásidőben számolt eltolású FLOAT tárolás — 8 a tartományban, egyik sem csomópont-`scale`
+
+`fstp dword ptr [bázis + index]` **nulla eltolással** (a `0x2c` regiszterben):
+
+| | találat |
+|---|---|
+| teljes `.text` | **66** |
+| a valódi kollázs-tartományban | **8** |
+
+A nyolcból **öt** `*4`-es skálázású (`[reg + reg*4]`) — az **float tömb**
+indexelés, nem struktúramező. A maradék három elolvasva:
+
+- `0x008734bd` — `eax += eax; eax += eax` ⇒ `index*4`, szintén tömb;
+- `0x0088cc70` és `0x0088cc95` — **polárkoordináta-átváltás** ugyanabban a
+  törzsben (`FUN_0088c480`): `fild` → `sqrt` (`0x0049fe60`) → tárolás, majd
+  `fild`,`fild` → `0x00c29cca` (arkusz tangens) → tárolás; az eltolás egy
+  **mutató-dereferálásból** jön (`mov eax,[esp+0x28]; mov ecx,[eax]`).
+
+⇒ **Egyik sem a csomópont `scale`-jének írása.** *(A `0x0088c480`
+polárkonverziója önmagában érdekes — sugár és szög egy közös bázisra —, de
+nem a hozzáadási úton van, és a törzs sztring nélküli.)*
+
+### 23.4 Blokk-másolás — a kollázsban nincs
+
+| minta | teljes `.text` | a valódi kollázs-tartományban |
+|---|---|---|
+| `mov ecx, 0xe` + `rep movsd` (56 bájt = 14 dword) | **15** | **0** — mind a 15 az **arcfelismerésben** (`0x00820…`–`0x00825…`) |
+| `push 0x38` + `call` 16 bájton belül | 211 | a kollázs-kódban a `0x00833ac3` — a **már ismert** `push_back` foglalása (`FUN_00833920`, `mul 0x38` a `0x00833a92`-n) |
+
+⇒ **Nincs 56 bájtos blokk-másolás a kollázs-csomópontokra**, a `push_back`
+saját foglalásán kívül.
+
+### 23.5 A K1 olcsó lánca KIMERÜLT — mi van hátra
+
+**Kizárva** (a teljes lista; a 22.6 kiegészítve ezzel a körrel):
+
+| alak / út | kör |
+|---|---|
+| x87 `fst`/`fstp [reg+0x2c]` (mutatós) és SIB | 17.10, 22.2 |
+| SSE és disp32-alak | 2026-09-01 |
+| egész `mov [reg+0x2c]` (mutatós és SIB) | 19.2 |
+| `lea`-materializált mutató + tárolás (pozitív kontrollal) | 22.1 |
+| **futásidőben számolt eltolású float tárolás** | **23.3** |
+| **56 bájtos blokk-másolás** | **23.4** |
+| a kupac-fa (`FUN_0087c470` olvas, nem ír — utasításszinten) | 21.4, **23.2** |
+| a mentés-szervező (`FUN_00834700`) | 22.3 |
+| a staging → `push_back` út (a `CCollageParser` vtáblájáé) | 22.4 |
+
+⇒ **Az olcsó bizonyítéklánc (index → sztring/xref → helyi pásztázás →
+meglévő dekompilátum) ezzel KIMERÜLT.**
+
+**A következő lépés a DRÁGA út**, és pontosan megnevezhető: **célzott
+Ghidra-dekompiláció a kollázspanel képhozzáadási ágára** — a `0x0082a670`
+(a kollázspanel, `collagepanel/remove_node`, `rand_placement`,
+`rand_order`, `picker_panel`, `filmstrip` sztringekkel) hívási fája, két
+szint mélyen, azzal a konkrét kérdéssel: **hol kapja a frissen felvett
+csomópont a `+0x2c` mezőjét**.
+
+*Bizonyítottsági fok a kizárásokra: **megerősített** (bájtmintás pásztázás
+capstone-ellenőrzéssel, a 22.1-ben pozitív kontrollal). A „hol van akkor"
+kérdésre: **NINCS MEG**.*
