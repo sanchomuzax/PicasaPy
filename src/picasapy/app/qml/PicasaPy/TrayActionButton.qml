@@ -40,12 +40,16 @@ PicasaButton {
             Image {
                 objectName: actionButton.iconObjectName
                 anchors.horizontalCenter: parent.horizontalCenter
+                // #2493: ikon nélküli gomb (pl. a „További lehetőségek…")
+                // esetén az üres Image ne foglaljon helyet — különben a
+                // felirat lecsúszna a 36 képpontos dobozban.
+                visible: actionButton.iconSource != ""
                 // #1188: a `Control` a contentItem geometriáját maga állítja
                 // be, a `fillMode` alapja pedig `Image.Stretch` — a négyzetes
                 // SVG enélkül a tartalom-dobozra feszülne.
                 fillMode: Image.PreserveAspectFit
-                width: actionButton.iconSize
-                height: actionButton.iconSize
+                width: visible ? actionButton.iconSize : 0
+                height: visible ? actionButton.iconSize : 0
                 sourceSize: Qt.size(actionButton.iconSize * 2,
                                     actionButton.iconSize * 2)
                 source: actionButton.iconSource

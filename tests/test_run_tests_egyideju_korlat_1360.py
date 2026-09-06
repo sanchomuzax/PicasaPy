@@ -117,14 +117,14 @@ class TestHelyFoglalas:
         """Megszakított kör (kill, áramszünet) nem zárhat ki örökre másokat."""
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
         run_tests._foglalj_helyet(1)
-        monkeypatch.setattr(run_tests, "_el_a_folyamat", lambda pid: False)
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda hely: False)
         assert run_tests._foglalj_helyet(1) is not None, "a halott hely blokkolt"
 
     def test_az_ELO_futas_helye_blokkol(self, tmp_path, monkeypatch) -> None:
         """Az ellenpróba: élő gazdával a hely NEM vehető el."""
         monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
         run_tests._foglalj_helyet(1)
-        monkeypatch.setattr(run_tests, "_el_a_folyamat", lambda pid: True)
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda hely: True)
         assert run_tests._foglalj_helyet(1) is None, "elvette az élő futás helyét"
 
     def test_a_varakozo_NEM_foglal_helyet(self, tmp_path, monkeypatch) -> None:
@@ -144,6 +144,30 @@ class TestHelyFoglalas:
             alvo=alvo,
         )
         assert hely is not None, "a felszabadulás után sem indult el"
+
+
+class TestWindowsNemKerdezPidet:
+    """#2543: Windowson az `os.kill(pid, 0)` **Ctrl+C-t küld**, nem kérdez.
+
+    A `0` ott a `CTRL_C_EVENT`. 2026-09-06-án a foglaló saját, duplikált
+    életjel-függvénye emiatt ölte meg a windows-lábat: a tesztek lefutottak
+    (6115 zöld), majd a futtatót `KeyboardInterrupt` állította le, és a főág
+    pirosra váltott. Ez az őr LINUXON is fut — nem környezetfüggő kihagyás.
+    """
+
+    def test_windowson_nem_hivunk_os_kill_t(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", tmp_path / "helyek")
+        monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
+
+        def tilos(*a, **k):
+            raise AssertionError("os.kill hívás Windowson — ez Ctrl+C-t küldene")
+
+        monkeypatch.setattr(run_tests, "_kill", tilos)
+        hely = run_tests._foglalj_helyet(1)
+        assert hely is not None
+        # a második kérő ugyanezen az ágon megy végig — nem szabad kérdeznie
+        assert run_tests._foglalj_helyet(1) is None
+        assert run_tests._elhagyott_hely(hely) is False, "frisset elhagyottnak vette"
 
 
 class TestKettoreAllithato:

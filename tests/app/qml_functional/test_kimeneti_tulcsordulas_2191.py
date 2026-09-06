@@ -107,10 +107,14 @@ class TestATulcsordulasGomb:
 
         import picasapy.app as app_csomag
 
+        from tests.support.qml_blokk import blokk_horgonyra
+
         qml = (Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
                / "TrayBar.qml").read_text(encoding="utf-8")
-        kezd = qml.index('objectName: "trayMoreButton"')
-        blokk = qml[kezd:kezd + 900]
+        # ⚠️ #2493: a blokk határa a `{ … }` párosítás, NEM egy karakterszám.
+        # A korábbi `qml[kezd:kezd + 900]` alak elbukott a helyes kódon,
+        # amint a gomb magyarázó kommentet kapott (ld. `qml_blokk.py`).
+        blokk = blokk_horgonyra(qml, 'objectName: "trayMoreButton"')
         for sor in ('ToolTip.text: qsTr("Click here for more options")',
                     "ToolTip.visible:", "ToolTip.delay:"):
             assert sor in blokk, f"a túlcsordulás-gombról hiányzik: {sor}"
