@@ -222,12 +222,44 @@ Rectangle {
     //: pontosan ott áll meg.
     readonly property real zoomDetent: 0.5
 
+    //: #2492: a kép VALÓDI képpont-mérete a modellből — a `revision`
+    //: referencia miatt képváltáskor és mentés után is újraértékelődik.
+    readonly property int valodiSzelesseg: viewer.photosModel
+        ? (viewer.photosModel.revision,
+           viewer.photosModel.pixelWidthAt(viewer.currentIndex)) : 0
+    readonly property int valodiMagassag: viewer.photosModel
+        ? (viewer.photosModel.revision,
+           viewer.photosModel.pixelHeightAt(viewer.currentIndex)) : 0
+
     function actualZoomFactor() {
-        // 1:1 — a kép saját pixelei ↔ logikai pixelek (a betöltött,
-        // sourceSize-plafonolt méret alapján). Ez a MÉRT képlet `r`-je:
-        // a valódi és az illesztett méret aránya.
-        return photo.paintedWidth > 0
-            ? photo.sourceSize.width / photo.paintedWidth : 1
+        // Ez a MÉRT képlet `r`-je: a VALÓDI és az ILLESZTETT méret
+        // aránya (`docs/specs/ui-audit-editor.md`, „A szerkesztő
+        // NAGYÍTÁS-HÁRMASA"). Az eredeti `1to1` buboréksúgója is ezt
+        // mondja: „Display Photo at actual size".
+        //
+        // ⚠️ #2492: KORÁBBAN `photo.sourceSize.width / photo.paintedWidth`
+        // állt itt — HIBÁSAN. A Qt olvasáskor a BEÁLLÍTOTT `sourceSize`-t
+        // adja vissza, ez az elem pedig 2560-as plafont kap
+        // (`sourceSize.width: 2560` lent). Így a képlet a valódi mérettől
+        // FÜGGETLENÜL 2560-cal számolt: egy 896 képpont széles képnél
+        // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
+        // képernyőmentésén 3–4-szeres túlnagyítás.
+        //
+        // ⚠️ A FORGATÁS számít: `iniSteps % 2` esetén a rajzolt szélesség
+        // a fájl MAGASSÁGÁNAK felel meg.
+        if (photo.paintedWidth <= 0)
+            return 1
+        var forgatott = photo.iniSteps % 2 !== 0
+        var vSzel = forgatott ? viewer.valodiMagassag : viewer.valodiSzelesseg
+        if (vSzel > 0)
+            return vSzel / photo.paintedWidth
+        // Tartalék, ha az index nem tud méretet adni (frissen felvett kép,
+        // vagy olvashatatlan fejléc): a BETÖLTÖTT raszter mérete. Ez a
+        // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál —
+        // tehát a nagyítás legrosszabb esetben kevesebb, sosem több.
+        // NEM a `sourceSize`: az a beállított plafont adná vissza.
+        return photo.implicitWidth > 0
+            ? photo.implicitWidth / photo.paintedWidth : 1
     }
 
     //: A MÉRT leképezés (`0x00a601cf`–`0x00a60221`), két folytonos ágon:

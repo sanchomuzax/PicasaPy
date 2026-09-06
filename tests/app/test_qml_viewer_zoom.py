@@ -79,17 +79,28 @@ class TestZoomStateMachine:
         assert viewer.property("zoomMode") == "fit"
         assert viewer.property("zoomFactor") == 1.0
 
-    def test_zoom_actual_uses_source_pixels(self, qml_app, qt_app):
-        window, _controller, _lib, _engine = qml_app
+    def test_zoom_actual_uses_the_FILE_pixels(self, qml_app, qt_app):
+        """⚠️ #2492: KORÁBBAN ez a teszt a `sourceSize.width`-hez
+        hasonlított — vagyis a HIBÁT rögzítette szerződésként.
+
+        A `sourceSize` a `PhotoViewer.qml`-ben BEÁLLÍTOTT 2560-as plafon
+        (a Qt olvasáskor a beállított értéket adja vissza), nem a kép
+        mérete. Az „1:1" ezért a valódi mérettől függetlenül 2560-cal
+        számolt, és többszörösen nagyított — a tulajdonos ezt jelentette.
+
+        Az eredeti `1to1` buboréksúgója: „Display Photo at actual size" —
+        tehát a FÁJL képpontjai a mérce."""
+        window, controller, _lib, _engine = qml_app
         viewer = _open_viewer(window, qt_app)
         image = _wait_photo_loaded(window, qt_app)
         _invoke(qt_app, viewer, "zoomActual")
         assert viewer.property("zoomMode") == "actual"
-        expected = image.property("sourceSize").width() / image.property(
+
+        model = controller.property("photos")
+        varhato = model.pixelWidthAt(viewer.property("currentIndex")) / image.property(
             "paintedWidth"
         )
-        expected = min(8.0, max(0.25, expected))
-        assert abs(viewer.property("zoomFactor") - expected) < 0.01
+        assert abs(viewer.property("zoomFactor") - varhato) < 0.01
 
     def test_wheel_zoom_scales(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -134,11 +145,27 @@ class TestPan:
         assert viewer.property("panY") == 0
 
     def test_pan_area_only_active_when_zoomed(self, qml_app, qt_app):
+        """⚠️ #2492: a próba a csúszka JOBB VÉGÉRE megy, nem a 0,75-re.
+
+        A pásztázás akkor él, ha a kép nagyobb a látótérnél
+        (`zoomFactor > 1.01`). A fixtúra képei (320 × 160, 100 × 100)
+        KISEBBEK a nézetnél, tehát a valódi méretük (`r`) 1 ALATT van — a
+        0,75-ös csúszkaállás náluk még mindig kicsinyít. A csúszka jobb
+        vége a MÉRT `4·r`, ami már nagyít.
+
+        Korábban a `sourceSize`-alapú, hibás `r` (2560-ból) minden képnél
+        nagynak látszott, ezért ment át a 0,75 — a próba a HIBÁRA
+        támaszkodott."""
         window, _controller, _lib, _engine = qml_app
         viewer = _open_viewer(window, qt_app)
+        _wait_photo_loaded(window, qt_app)
         pan_area = _child(window, "viewerPanArea")
         assert pan_area.property("enabled") is False
-        _invoke(qt_app, viewer, "setZoomValue", 0.75)
+        _invoke(qt_app, viewer, "setZoomValue", 1.0)
+        assert viewer.property("zoomFactor") > 1.01, (
+            "a próba előfeltétele nem teljesült: a csúszka jobb vége sem "
+            f"nagyít ({viewer.property('zoomFactor'):.2f})"
+        )
         assert pan_area.property("enabled") is True
 
 
