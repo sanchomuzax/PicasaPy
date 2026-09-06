@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.317] – 2026-09-06
+
+### Javítva
+
+- **A mappák átvizsgálása jóval kevesebbet dolgozik a lemezen** (#2543).
+  Egy ötvenmappás próbán a bejárás fájlrendszer-hívásainak száma **1921-ről
+  221-re** csökkent: a régi kód minden mappára kétszer is újra feloldotta a
+  teljes útvonalat, holott a bejárás a gyökértől lefelé amúgy is tiszta
+  útvonalakon halad. Ez az induláskori és minden újraszkennelést érint. A
+  kihagyás/felvétel döntése változatlan — külön őr méri, a `..`-os és a
+  szimbolikus linkes hívásra is.
+
 ## [0.8.316] – 2026-09-06
 
 ### Javítva
