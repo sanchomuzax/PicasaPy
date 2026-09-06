@@ -7,6 +7,27 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.300] – 2026-09-06
+
+### Javítva
+
+- **Eltűnt az indulási hibaüzenet a képtálcáról** (#2493). A „További
+  lehetőségek…" gomb egy sosem létezett ikonfájlra mutatott, ezért a
+  program minden indításkor `Cannot open … icons/export.svg` hibát írt a
+  naplóba, a gombon pedig üres helyőrző látszott. A gomb mostantól a
+  feliratával áll; az eredeti Picasa ikonjának rajza még nincs kimérve
+  (#2537).
+
+### Karbantartás
+
+- **Az ikon-őr mostantól a hivatkozásokat méri, nem egy kézzel írt
+  listát** (#2493). Eddig azt ellenőrizte, hogy a listába beírt fájlok
+  megvannak-e; azt nem, hogy a felület minden ikon-hivatkozásához van-e
+  fájl. Így csúszhatott át egy nem létező ikonra mutató hivatkozás. Az új
+  őr mindkét irányban mér, és rögtön talált egy második hibát is: a
+  `kreativ-kit.svg` évek óta ott feküdt a mappában úgy, hogy semmi nem
+  hivatkozott rá — törölve.
+
 ## [0.8.299] – 2026-09-06
 
 ### Javítva
