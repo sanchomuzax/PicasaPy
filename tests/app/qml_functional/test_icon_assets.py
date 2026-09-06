@@ -28,6 +28,8 @@ import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 from PySide6.QtGui import QImageReader
 
+from tests.support.qml_blokk import kommentek_nelkul
+
 #: #664: tud-e a Qt egyáltalán SVG-t RAJZOLNI ezen a gépen.
 #:
 #: Az SVG nem beépített képformátum: külön Qt-bővítmény (`libqsvg.so` az
@@ -308,63 +310,15 @@ class TestIkonHivatkozasokFeloldhatok:
     _QML_GYOKER = _ICONS_DIR.parent
 
     @staticmethod
-    def _kommentek_nelkul(szoveg: str) -> str:
-        """A QML-kommenteket kivágja — a hivatkozás a KÓDBAN számít.
-
-        Enélkül az őr magára a saját indoklására is „hivatkozásként"
-        nézne: a `TrayBar.qml` kódkommentje például **megnevezi** a
-        hiányzó `icons/export.svg`-t, hogy elmagyarázza, miért nincs a
-        gombnak ikonja. Egy kommentben említett fájlnév nem hivatkozás.
-
-        A `//`-t csak akkor tekintjük komment-kezdetnek, ha NEM
-        idézőjelen belül áll (`"https://…"` nem komment).
-        """
-        # blokk-kommentek
-        darabok: list[str] = []
-        i = 0
-        while True:
-            nyit = szoveg.find("/*", i)
-            if nyit < 0:
-                darabok.append(szoveg[i:])
-                break
-            darabok.append(szoveg[i:nyit])
-            zar = szoveg.find("*/", nyit + 2)
-            if zar < 0:
-                break
-            i = zar + 2
-        szoveg = "".join(darabok)
-
-        # sor-kommentek, az idézőjeleket figyelve
-        sorok: list[str] = []
-        for sor in szoveg.splitlines():
-            idezet = ""
-            vag = len(sor)
-            j = 0
-            while j < len(sor):
-                jel = sor[j]
-                if idezet:
-                    if jel == "\\":
-                        j += 2
-                        continue
-                    if jel == idezet:
-                        idezet = ""
-                elif jel in "\"'":
-                    idezet = jel
-                elif jel == "/" and sor[j + 1:j + 2] == "/":
-                    vag = j
-                    break
-                j += 1
-            sorok.append(sor[:vag])
-        return "\n".join(sorok)
-
-    @staticmethod
     def _hivatkozasok() -> dict[str, set[str]]:
         """ikonfájl-név -> a rá hivatkozó QML-fájlok neve."""
         talalt: dict[str, set[str]] = {}
         for qml in sorted(TestIkonHivatkozasokFeloldhatok._QML_GYOKER.rglob("*.qml")):
-            szoveg = TestIkonHivatkozasokFeloldhatok._kommentek_nelkul(
-                qml.read_text(encoding="utf-8")
-            )
+            # ⚠️ a kommenteket KIVÁGJUK: a `TrayBar.qml` indoklása
+            # megnevezi a hiányzó `icons/export.svg`-t, hogy
+            # elmagyarázza, miért nincs a gombnak ikonja — egy
+            # kommentben említett fájlnév nem hivatkozás.
+            szoveg = kommentek_nelkul(qml.read_text(encoding="utf-8"))
             nevek = set(re.findall(r"icons/([A-Za-z0-9._-]+\.svg)", szoveg))
             nevek |= {
                 f"{alap}.svg"

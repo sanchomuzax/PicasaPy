@@ -126,8 +126,11 @@ class TestAMorebuttonMarBent:
     def test_a_MERT_forrasszoveget_hasznalja(self):
         """A szövegtárból: `More...` és `Click here for more options` —
         szabadon fordított alak itt nem elfogadható."""
+        from tests.support.qml_blokk import blokk_horgonyra
+
         forras = _TRAY.read_text(encoding="utf-8")
-        kezd = forras.index('objectName: "trayMoreButton"')
-        blokk = forras[kezd:kezd + 900]
+        # ⚠️ #2493: MÉRT blokkhatár egy karakterszám helyett — a rögzített
+        # ablak a gomb magyarázó kommentjétől kicsúszott a mért sorok alól.
+        blokk = blokk_horgonyra(forras, 'objectName: "trayMoreButton"')
         assert 'text: qsTr("More...")' in blokk
         assert 'qsTr("Click here for more options")' in blokk
