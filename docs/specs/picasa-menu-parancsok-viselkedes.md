@@ -5241,3 +5241,114 @@ honnan veszi a korábbi címeket) tehát NINCS MEG** — a megszerzés útja: a
 
 ⇒ **A tiltási feltételek mind a hat tiltható tételnél egyeznek** — ezt eddig senki nem
 mérte, most igazolt. Egyedül az **Automatikus kitöltés** üres nálunk.
+
+## 24. adag (2026-09-06) — az automatikus kiegészítés FORRÁSA, és a kapcsoló, amit SENKI NEM OLVAS
+
+*A 23. adag kimérte, mit **kapcsol** az `ID_AUTOCOMPLETE` és hova menti; nyitva
+maradt, hogy a `+0x3e0` mezőt ki olvassa, és honnan jönnek a felajánlott címek.
+Ez a szakasz mindkettőt lezárja. Jegy: **#2524**.*
+
+### 24.1 A mező gazdája: `CEmailAutoComplete`
+
+| | cím | bizonyíték |
+|---|---|---|
+| a `ComposeDialog` `+0x26c` tagja | `0x0084fd3a` `lea eax, [edi + 0x26c]` → `0x0084fd5e` `call 0x00858480` | az építő |
+| az osztály | **`CEmailAutoComplete`** | RTTI-vtábla `0x00cc2f90` (és `0x00cc2fbc`), az építő `0x00858480` írja: `0x008584a8`, `0x008584ae` |
+| második bázis | **`INotifyContactsDownload`** a `+0x15c`-en | `0x0085849c` `mov [esi+0x15c], 0xcad758` → `0x008584e6` `mov [esi+0x15c], 0xcc3070` |
+
+⇒ **`ComposeDialog + 0x3e0` = `CEmailAutoComplete + 0x174`** (`0x3e0 − 0x26c = 0x174`),
+és a mezőnek **saját alapértéke is 1**: `0x0085850e` `mov byte ptr [esi + 0x174], 1`
+— az építő tagkezdő blokkjában, a `+0x160`…`+0x17c` mezők között.
+
+### 24.2 ⛔ NEGATÍV, KIMERÍTŐ: a kapcsolónak nincs OLVASÓJA
+
+Három, egymástól független pásztázás, mindegyik a `.text` teljes szakaszán
+(fájloffset `4096`, `8646656` bájt), indextől függetlenül:
+
+| pásztázás | mit keresett | találat |
+|---|---|---|
+| a | `disp32 = 0x174` MINDEN utasításalakban (a közvetlen operandusúakat is beleértve) | 24 — egy sem olvasó ebben az osztályban; a `0x0085850e` az egyetlen, ami ide tartozik, és ÍRÓ |
+| b | `disp32 = 0x3e0` | 45 — a tartományban csak `0x00850405` és `0x00851ba7`, **mindkettő ÍRÓ** |
+| c | `disp32 = 0x128` (a `+0x15c` második bázisra vetített alak: `0x174 − 0x15c + 0x110`… illetve a `this2+0x18` eltolás) | 6 — egy sem az osztályban |
+
+Ezen felül a **teljes osztály-törzs** (`0x00857d00`–`0x0085a2d0`, ~8,7 KB)
+utasításonként átnézve: bájt-hozzáférés csak a `+0x4`, `+0x8`, `+0xc`, `+0xd`,
+`+0x68` eltolásokra van — `+0x174`-re és a rövidített `+0x18` alakra **egy sem**.
+
+⇒ **Az „Automatikus kitöltés" menütételnek HÁROM írója és NULLA olvasója van**
+(a `ComposeDialog+0x5b8` párját is beleértve, aminek egyetlen olvasója a pipa
+kirakása és a kapcsoló saját invertálása). A Picasa 3.9.141.259-ben a kapcsoló
+**eltárolja a beállítást és átállítja a pipát — de a javaslómotor soha nem
+kérdezi meg.** Bizalmi fok: **megerősített** (kimerítő negatív pásztázás,
+tartománnyal és mintával megnevezve).
+
+### 24.3 A javaslatlista a memóriában
+
+| mező | szerep | bizonyíték |
+|---|---|---|
+| `+0x160` | a javaslattömb adatmutatója | `0x00858d00` `mov ecx, [ecx + 0x160]` |
+| `+0x164` | **elemszám × 2** | `0x00858cc0` `mov edx, [ecx+0x164]` → `0x00858cca` `shr edx, 1` |
+| elem-lépésköz | **24 bájt** | `0x00858d06` `lea eax, [eax + eax*2]` → `0x00858d0d` `lea ecx, [ecx + eax*8]` |
+| `+0x168` / `+0x16c` | a **letöltött** névjegyek tömbje (adat / méret\|birtoklás-bit) | a `0x00857d00` ezekbe másol |
+
+A `0x00858cb0` az `i`. javaslat szövegét adja vissza; tartományon kívüli
+indexre üres sztringet (`0x00c7f979`) és `−1`-et (`0x00858cb9`).
+
+### 24.4 HONNAN jönnek a címek — két forrás, mindkettő mérve
+
+**(1) Online — a Google Contacts adatfolyam.** A letöltést az
+`INotifyContactsDownload` egyetlen metódusa veszi át: **`0x00857d00`**
+(a `0x00cc3070` vtábla egyetlen rekesze), és a thunk a
+`0x00857d0d` `lea esi, [ebx - 0x15c]` sorral igazítja vissza a `this`-t.
+A lekérdezés címe:
+
+```
+%sm8/feeds/contacts/%s/full?max-results=10000     (0x0078fe50)
+```
+
+⇒ GData `m8` névjegy-adatfolyam, **egy menetben legfeljebb 10 000** névjegy.
+A névjegykezelő felülete: `/c/ui/ContactManager` (`0x0085a1a0`), a felirata
+`Google Contacts` / `ContactManagerDlg::GoogleContacts` (`0x0085a120`).
+
+**(2) Helyben — a `.picasa.ini` `[Contacts2]` szakasza.** Az író `0x00586e20`,
+az olvasó `0x00587110`; az utóbbi hívója a `0x0045a9d0`, aminek egyetlen
+sztringje `.picasa.ini`.
+
+### 24.5 A `[Contacts2]` érték PONTOS formátuma
+
+| | mérve |
+|---|---|
+| szekció | `Contacts2` (`0x00c9105c`) |
+| kulcs | a névjegy 64 bites azonosítója, `%I64x` (`0x00c82fcc`) |
+| érték | `%s;%s;%s` (`0x00c91104`), az elválasztó `;` (`0x00c81320`) |
+| a három mező | **`full_name` ; `email` ; `gaia_id`** |
+| **kötelezően három token** | `0x00587203` `and eax, 0xfffffffe` → `0x00587206` `cmp eax, 6` a (token×2) alakon ⇒ token = **3** |
+| ha nem három | a bejegyzés **eldobódik**: *„Cannot restore .ini entry for contact, %llx, unexpected number of tokens in string."* (`0x00587110`) |
+
+A mezőnevek és a sorrend nem a naplószövegből következtetés: az író
+(`0x00586e20`) a `%s;%s;%s`-t a `0x0058705d`–`0x00587060` sorokon
+`push edi; push esi; push eax` sorrendben tölti fel, és ugyanezek a
+regiszterek mennek a `Persisting contact to INI: %s, contact ID="%llx",
+Full Name="%s", email="%s", gaia_id="%s"` naplóformátumba (`0x00c910a8`,
+a hívás `0x00586f9d`–`0x00586fb1`) `FullName = eax-forrás`,
+`email = esi`, `gaia_id = edi` megfeleltetéssel — ugyanabból a két
+kiolvasó blokkból (`[esp+0x34]`, illetve `[esp+0x1c]`).
+
+### 24.6 MIT ADUNK MA — mérve
+
+| | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|
+| `[Contacts2]` írása | `full_name;email;gaia_id` | `f"{name};;"` — **három token, egyezik** (`src/picasapy/ini/contacts.py:53`) | — |
+| a két extra mező jelentése | `email`, `gaia_id` | névtelen `extra: tuple[str, ...]` (`contacts.py:20`) | nevesíteni |
+| token-szám ellenőrzése | **pontosan 3, különben eldobja** | `name, *extra = value.split(";")` — **bármennyit elfogad** (`contacts.py:28`) | a hármas szabályt átvenni |
+| a nyers mezők megőrzése | — | `extra` nyersen megmarad ⇒ round-trip biztonságos | — |
+| online névjegy-letöltés | GData `m8` adatfolyam | **nincs** (online funkció, hatókörön kívül) | — |
+| az „Automatikus kitöltés" kapcsoló hatása | **semmi** — nincs olvasója | halott helyfoglaló | a kapcsoló épüljön meg (#1526), de **ne kapuzzon semmit** |
+
+⇒ **A #1526-hoz tartozó fontos negatívum:** ne írjunk olyan megvalósítást,
+amelyben a kapcsoló kikapcsolása letiltja a javaslatokat vagy a gyűjtést — az
+eredetiben nem tesz semmi ilyet. A hűséges megfelelő: pipás menütétel, ami a
+beállítást tárolja, alapból bekapcsolva.
+
+Jegyek: **#2524** (ez a szakasz), **#1526** (a kapcsoló megépítése),
+**#2526** (a `[Contacts2]` mezőnevek és a hármas token-szabály nálunk).
