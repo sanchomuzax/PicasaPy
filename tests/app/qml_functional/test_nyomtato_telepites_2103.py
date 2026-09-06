@@ -23,13 +23,13 @@ from pathlib import Path
 
 import picasapy.app as app_csomag
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PrintDialog.qml"
 ).read_text(encoding="utf-8")
 #: A forrás-őrökhöz: a QML a hosszú szövegeket tördelheti, a keresett minta
 #: viszont egy sor. A sortörés nem tartalmi különbség.
-_QML_EGYSOROS = " ".join(_QML.split())
 _TS = (
     Path(app_csomag.__file__).parent / "i18n" / "picasapy_hu.ts"
 ).read_text(encoding="utf-8")
@@ -85,15 +85,19 @@ class TestAGombLETEZIK:
         )
 
     def test_a_MERT_angol_feliratot_hasznalja(self):
-        kezd = _QML.index(f'objectName: "{GOMB}"')
-        blokk = _QML[kezd:kezd + 900]
+        blokk = blokk_horgonyra(_QML, f'objectName: "{GOMB}"')
         assert 'qsTr("Printer Setup")' in blokk, (
             "a felirat nem a mért `printpanel/setuplabel` szövege"
         )
 
     def test_a_buboreksugo_is_a_MERT_szoveg(self):
-        kezd = _QML_EGYSOROS.index(f'objectName: "{GOMB}"')
-        blokk = _QML_EGYSOROS[kezd:kezd + 900]
+        # ⚠️ A sorrend KÖTÖTT: előbb a blokkot vágjuk ki (a kivágó ilyenkor
+        # még látja a sorvégeket, tehát a `//`-kommenteket helyesen veszi
+        # ki), és CSAK AZUTÁN laposítjuk egy sorba. Fordítva a laposított
+        # forrásban az első `//` a fájl VÉGÉIG nyelne el mindent.
+        blokk = " ".join(
+            blokk_horgonyra(_QML, f'objectName: "{GOMB}"').split()
+        )
         assert (
             'qsTr( "Open printer setup controls for the selected printer")'
             in blokk

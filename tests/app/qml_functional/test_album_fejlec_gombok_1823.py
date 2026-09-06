@@ -27,6 +27,7 @@ import picasapy.app.application as app_module
 import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _KEEP_ALIVE: list = []
 
@@ -153,8 +154,10 @@ class TestABekotes:
 
     def test_a_mentes_a_MEGLEVO_parbeszedet_nyitja(self):
         """Nem új mentés-út: a #444 párbeszéde, biztonsági mentéssel."""
-        kezd = _MAIN.index("function saveSelectedEdits()")
-        assert "saveDialogs.ensure().openSave(" in _MAIN[kezd : kezd + 220]
+        # ⚠️ #2540: a függvény TÖRZSE a határ, nem 220 karakter.
+        assert "saveDialogs.ensure().openSave(" in blokk_horgony_utan(
+            _MAIN, "function saveSelectedEdits()"
+        )
 
 
 class TestAFeliratok:

@@ -32,6 +32,7 @@ from picasapy.app.import_source_controller import (
     RECENT_DESTINATIONS_SETTINGS_KEY,
     ImportSourceController,
 )
+from tests.support.qml_blokk import blokk_horgonyra
 
 _DIALOG = (
     Path(picasapy.app.__file__).parent
@@ -158,13 +159,15 @@ class TestAFelulet:
 
     def test_az_alapertelmezett_nem_ISMETLODIK(self):
         """Ha már a korábbiak közt van, ne kerüljön ki kétszer."""
-        kezd = _DIALOG.index('objectName: "importSourceRecentDestBox"')
-        blokk = _DIALOG[kezd : kezd + 1400]
+        blokk = blokk_horgonyra(
+            _DIALOG, 'objectName: "importSourceRecentDestBox"'
+        )
         assert "indexOf(" in blokk
 
     def test_a_valasztas_ATALLITJA_a_celt(self):
-        kezd = _DIALOG.index('objectName: "importSourceRecentDestBox"')
-        blokk = _DIALOG[kezd : kezd + 1400]
+        blokk = blokk_horgonyra(
+            _DIALOG, 'objectName: "importSourceRecentDestBox"'
+        )
         assert "onActivated: importSourceWindow.destFolder" in blokk
 
     def test_a_Tallozas_gomb_MEGMARAD(self):

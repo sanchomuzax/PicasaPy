@@ -28,6 +28,7 @@ import re
 from pathlib import Path
 
 import picasapy.app as app_csomag
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
@@ -38,19 +39,12 @@ _TS = (
 
 
 def _kiserleti_blokk() -> str:
-    """A Kísérleti almenü teljes blokkja, kapcsos zárójel szerint vágva."""
-    jel = 'title: qsTr("Experimental")'
-    assert jel in _QML, "nincs Kísérleti almenü"
-    kezd = _QML.rindex("PicasaMenu {", 0, _QML.index(jel))
-    melyseg = 0
-    for i in range(_QML.index("{", kezd), len(_QML)):
-        if _QML[i] == "{":
-            melyseg += 1
-        elif _QML[i] == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return _QML[kezd : i + 1]
-    raise AssertionError("nem záródik a Kísérleti blokk")
+    """A Kísérleti almenü teljes blokkja, kapcsos zárójel szerint vágva.
+
+    #2540: a kézzel írt párosítás helyett a KÖZÖS mérő
+    (`tests/support/qml_blokk.py`), amelynek saját őrei vannak.
+    """
+    return blokk_horgonyra(_QML, 'title: qsTr("Experimental")')
 
 
 class TestADuplikatumKereso:
@@ -61,9 +55,10 @@ class TestADuplikatumKereso:
         )
 
     def test_a_MERT_feliratot_viseli(self):
-        blokk = _kiserleti_blokk()
-        kezd = blokk.index('objectName: "menuToolsDedup"')
-        assert 'qsTr("Show Duplicate Files")' in blokk[kezd : kezd + 300], (
+        tetel = blokk_horgonyra(
+            _kiserleti_blokk(), 'objectName: "menuToolsDedup"'
+        )
+        assert 'qsTr("Show Duplicate Files")' in tetel, (
             "nem a mért felirat (`eMenuTools::ID_DUPES`)"
         )
 
@@ -85,9 +80,10 @@ class TestADuplikatumKereso:
 
 class TestAzAdatbazisHelye:
     def test_a_MERT_feliratot_viseli(self):
-        blokk = _kiserleti_blokk()
-        kezd = blokk.index('objectName: "menuToolsMoveDatabase"')
-        assert 'qsTr("Choose database location...")' in blokk[kezd : kezd + 300], (
+        tetel = blokk_horgonyra(
+            _kiserleti_blokk(), 'objectName: "menuToolsMoveDatabase"'
+        )
+        assert 'qsTr("Choose database location...")' in tetel, (
             "a felirat még mindig `Move Database...` — az eredetié "
             "`Choose database location...`"
         )

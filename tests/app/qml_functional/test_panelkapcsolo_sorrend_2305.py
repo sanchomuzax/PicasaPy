@@ -34,6 +34,7 @@ from pathlib import Path
 import picasapy.app as app_csomag
 from PySide6.QtCore import QPointF
 from PySide6.QtQuick import QQuickItem
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -48,19 +49,11 @@ def _kuldott_blokk() -> str:
     ⚠️ Rögzített karakterablakkal (`[kezd:kezd+2000]`) nem szabad: a blokk
     hossza a kommentektől függ, és egy jogos bővítés némán kivágná a
     keresett sort — a próba ilyenkor hamisan zöld vagy hamisan piros lenne.
+
+    #2540: a kézzel írt párosítás helyett a KÖZÖS mérő
+    (`tests/support/qml_blokk.py`), amelynek saját őrei vannak.
     """
-    kezd = _QML.index('objectName: "trayPanelToggle_"')
-    # vissza a küldött nyitó kapcsos zárójeléig
-    nyito = _QML.rindex("{", 0, kezd)
-    melyseg = 0
-    for i in range(nyito, len(_QML)):
-        if _QML[i] == "{":
-            melyseg += 1
-        elif _QML[i] == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return _QML[nyito : i + 1]
-    raise AssertionError("nem záródik a küldött blokkja")
+    return blokk_horgonyra(_QML, 'objectName: "trayPanelToggle_"')
 
 
 def _walk(item: QQuickItem):

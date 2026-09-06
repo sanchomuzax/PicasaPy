@@ -110,3 +110,67 @@ def blokk_horgonyra(forras: str, horgony: str) -> str:
             if melyseg == 0:
                 return tiszta[nyito:i + 1]
     raise AssertionError(f"a blokk nem záródik: {horgony!r}")
+
+
+def blokk_horgony_utan(forras: str, horgony: str) -> str:
+    """A `horgony` UTÁN nyíló első `{ … }` blokk teljes szövege.
+
+    Ez a fejlécre horgonyzott eset: `function f() { … }`, `Shortcut { … }`,
+    `onValamiChanged: { … }`, `move: Transition { … }`. Ilyenkor a horgony a
+    nyitó kapcsos zárójel ELŐTT áll, tehát a `blokk_horgonyra` a BEFOGLALÓ
+    blokkot adná vissza — az sokkal tágabb, és az állítás elszürkülne.
+
+    A kommenteket itt is előbb kivágjuk (#2540): enélkül a horgony egy
+    kommentbe írt EMLÍTÉSRE illeszkedne, és az őr egy egészen más blokkot
+    mérne. (Mérve: a `test_shift_csempek_2146.py` `onActiveTabChanged`
+    horgonya egy kommentre esett, és a próba a valódi kezelőt SOSEM nézte.)
+
+    :raises AssertionError: ha a horgony nincs meg, nem követi `{`, vagy a
+        blokk nem záródik.
+    """
+    tiszta = kommentek_nelkul(forras)
+    hely = tiszta.find(horgony)
+    assert hely >= 0, f"a horgony nincs meg a forrásban: {horgony!r}"
+
+    nyito = tiszta.find("{", hely + len(horgony))
+    assert nyito >= 0, f"a horgony után nincs nyitó kapcsos zárójel: {horgony!r}"
+
+    melyseg = 0
+    for i in range(nyito, len(tiszta)):
+        if tiszta[i] == "{":
+            melyseg += 1
+        elif tiszta[i] == "}":
+            melyseg -= 1
+            if melyseg == 0:
+                return tiszta[nyito:i + 1]
+    raise AssertionError(f"a blokk nem záródik: {horgony!r}")
+
+
+def hivas_argumentumai(forras: str, hivas: str) -> str:
+    """A `hivas` UTÁNI zárójelpár tartalma — a hívás argumentumlistája.
+
+    Az „eljut-e az érték a hívásig?" fajta állításnak nem `{ … }`, hanem
+    `( … )` a valódi határa. Rögzített karakterablakkal ez az állítás két
+    irányban is hamis: a többsoros argumentumlista kilóg belőle, a
+    SZOMSZÉD hívás argumentumai pedig belelógnak — így egy másik hívásnak
+    átadott érték is „bizonyítaná" a bekötést.
+
+    :raises AssertionError: ha a hívás nincs meg, vagy a zárójel nem
+        záródik.
+    """
+    tiszta = kommentek_nelkul(forras)
+    hely = tiszta.find(hivas)
+    assert hely >= 0, f"a hívás nincs meg a forrásban: {hivas!r}"
+
+    nyito = tiszta.find("(", hely)
+    assert nyito >= 0, f"a hívás után nincs nyitó zárójel: {hivas!r}"
+
+    melyseg = 0
+    for i in range(nyito, len(tiszta)):
+        if tiszta[i] == "(":
+            melyseg += 1
+        elif tiszta[i] == ")":
+            melyseg -= 1
+            if melyseg == 0:
+                return tiszta[nyito + 1:i]
+    raise AssertionError(f"a hívás zárójele nem záródik: {hivas!r}")
