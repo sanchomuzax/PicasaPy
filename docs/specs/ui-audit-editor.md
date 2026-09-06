@@ -2579,11 +2579,20 @@ fordítás tért el.)*
 | csúszka szélessége 127 | ✅ |
 | a két magyar buboréksúgó | ✅ a hivatalos szövegre cserélve |
 | `inbetweenzoom` vezérlő | ⛔ szándékosan **nem** készült (az eredetiben `m_hidden`) — őr is tiltja |
-| **a csúszka értékkészlete** | ❌ **változatlan** (`0,25…8` közvetlen szorzó) |
+| **a csúszka értékkészlete** | ✅ **#2492 (2026-09-06)**: normalizált `[0, 1]`, a MÉRT kétágú képlettel |
+| a `[0, 1]` vágás | ✅ #2492 |
+| a 0,5-ös **beakadás** a léptetésben | ✅ #2492 |
 
-⚠️ **Az értékkészlet marad, amíg a köztes leképezés nincs kimérve.** A két
-rögzített pont ismert (`fit` → 0, `1to1` → 0,5), a közte lévő görbe nem —
-a jegy ezt kifejezetten kizárta a hatóköréből. Aki kiméri, itt írja át.
+⭐ **Az értékkészletet a #2492 átvezette.** A köztes leképezés időközben
+kimérve (lásd fent, „A TELJES LEKÉPEZÉS"), így a csúszka a normalizált
+`[0, 1]` értéket tárolja, a szorzót pedig a kétágú képlet adja
+(`PhotoViewer.qml`, `skalaErtekbol()`); a `fit` a 0-t, az `1:1` a 0,5-öt
+állítja be, a görgő pedig a 0,5-nél beakad. Őr:
+`tests/app/qml_functional/test_nagyitas_lekepezes_2492.py` (21 állítás).
+
+⚠️ Ami NEM ez a jegy: a hármas **elhelyezése**. Az eredetiben az alsó
+eszközsávban ül (`m_offsetRB` az `editbase`-en), nálunk a fotó jobb alsó
+sarkában lebeg — ez változatlan.
 
 Az ikonok **saját rajzok**: a projekt egyetlen kicsomagolt Picasa-képet sem
 szállít, csak a MÉRETÜK az eredetiből mért. Őr:

@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.305] – 2026-09-06
+
+### Javítva
+
+- **A nagyítás-csúszka úgy működik, mint az eredeti Picasában** (#2492).
+  Eddig a csúszka közvetlenül a nagyítási szorzót állította, ezért az
+  „1:1" nem a csúszka közepére esett, a bal szélső állás pedig nem az
+  illesztett méret volt, hanem annak a negyede. Mostantól a bal vég az
+  **illesztés**, a **közép a valódi méret (100 %)**, a jobb vég a
+  **400 %** — és a felső fél negyedenként pontosan duplázódik, ahogy az
+  eredetiben. A görgetés a 100 %-nál megáll egy pillanatra, hogy a valódi
+  méret könnyen eltalálható legyen.
+
 ## [0.8.304] – 2026-09-06
 
 ### Javítva
