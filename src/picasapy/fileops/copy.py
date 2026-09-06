@@ -54,11 +54,21 @@ def copy_photo(path: Path, dest_folder: Path) -> Path:
     # eredeti-mappában is szabad a helye. Enélkül egy korábbi költöztetés
     # árván maradt fájlja miatt a másolás elbukna — pedig csak másik
     # sorszámot kellett választani.
+    # ⚠️ #2569: a helyfoglaltságot MINDIG megkérdezzük, csak MÁS kérdéssel.
+    # Korábban kísérő nélküli képnél a vizsgálat teljesen elmaradt, és a
+    # másolat NÉMÁN ÖRÖKBE FOGADTA a célmappában heverő árva eredetit:
+    # a `find_original_backup(másolat)` egy vadidegen kép bájtjait adta
+    # vissza, és a „Vissza az eredetihez" azt tette volna a helyére.
+    #
+    # A `moving_companions` a #2510 óta választja szét a két kérdést:
+    # van kísérőnk → „el tudom-e helyezni?", nincs → „örökölnék-e idegen
+    # adatot?". Mindkét válasz pótnevet ad, ha kell — az árva eredetihez
+    # egyik ágon sem nyúlunk.
     target = _unique_target(
         dest_folder,
         path.stem,
         path.suffix,
-        needs_originals_slot=bool(companions_of(path)),
+        moving_companions=bool(companions_of(path)),
     )
     shutil.copy2(str(path), str(target))  # copy2: mtime is átkerül (WYSIWYG dátum)
 
@@ -120,22 +130,28 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
 
 
 def _unique_target(
-    dest_folder: Path, stem: str, suffix: str, *, needs_originals_slot: bool = False
+    dest_folder: Path, stem: str, suffix: str, *, moving_companions: bool = True
 ) -> Path:
     """Ütközésmentes célnév: `név.jpg`, `név-1.jpg`, `név-2.jpg`, ... — az
     export-mag azonos nevű helperének (`export/exporter.py`) mintája.
 
-    Args:
-        needs_originals_slot: Ha `True`, a név csak akkor jó, ha a megőrzött
-            eredeti (és a pillanatképei) helye is szabad a célmappa
-            eredeti-mappáiban (#1450).
+    A megőrzött eredetik helyét MINDIG megnézzük, csak más kérdéssel
+    (#2569). A `moving_companions` értelmét az `originals_slot_free`
+    docstringje mondja ki:
+
+    * `True` — a képnek VAN kísérője: „el tudom-e helyezni ide?" (#1450);
+    * `False` — nincs kísérője: „örökölne-e itt idegen adatot?" (#2569).
+
+    ⚠️ A `False` ág nem hagyható el. Kísérő nélküli képnél a vizsgálat
+    korábban TELJESEN elmaradt, és a másolat némán örökbe fogadta a
+    célmappában heverő árva eredetit.
     """
     counter = 0
     while True:
         name = f"{stem}{suffix}" if counter == 0 else f"{stem}-{counter}{suffix}"
         candidate = dest_folder / name
-        szabad = not candidate.exists() and (
-            not needs_originals_slot or originals_slot_free(dest_folder, name)
+        szabad = not candidate.exists() and originals_slot_free(
+            dest_folder, name, moving_companions=moving_companions
         )
         if szabad:
             return candidate

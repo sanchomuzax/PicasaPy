@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.309] – 2026-09-06
+
+### Javítva
+
+- **A másolat nem kapja meg egy másik kép régi változatát** (#2569). Ha a
+  célmappában árván maradt egy megőrzött eredeti, és oda pont ugyanolyan
+  nevű képet másoltál, a másolat némán „örökölte" azt: a „Vissza az
+  eredetihez" egy vadidegen kép bájtjait töltötte volna vissza. Mostantól
+  a másolat pótnevet kap, az árva fájlhoz pedig nem nyúlunk.
+
 ## [0.8.308] – 2026-09-06
 
 ### Javítva

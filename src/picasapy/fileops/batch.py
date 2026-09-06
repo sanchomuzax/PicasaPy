@@ -75,12 +75,11 @@ def _conflicts(path: Path, dest: Path) -> bool:
     egy másik, ÉLŐ kép eredetije miatt: a felhasználó fölösleges
     ütközés-párbeszédet kapott, a képe pedig `x-1.jpg`-ként landolt.
 
-    ⚠️ A kapu NEM a `copy.py` `needs_originals_slot`-jának szó szerinti
-    mása. Ott a vizsgálat kísérő nélkül TELJESEN elmarad, és emiatt a
-    másolat örökbe fogadja a célban heverő árva eredetit (mérve
-    2026-09-06: a `find_original_backup` a másolat mellett az idegen árvát
-    adta vissza). Ugyanezt a kötegelt úton nem vezetjük be — az
-    adatvesztés súlyosabb, mint a fölösleges kérdés.
+    ⚠️ A `copy.py` ugyanezt a kaput használja (#2569). Korábban ott a
+    vizsgálat kísérő nélkül TELJESEN elmaradt, és a másolat örökbe
+    fogadta a célban heverő árva eredetit (mérve 2026-09-06: a
+    `find_original_backup` a másolat mellett az idegen árvát adta
+    vissza). A két út mostantól ugyanazt kérdezi.
     """
     if (dest / path.name).exists():
         return True
