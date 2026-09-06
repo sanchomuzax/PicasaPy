@@ -66,8 +66,12 @@ def test_a_futas_osszefoglaloja_megkapja_a_PR_szamat(bump_lepes):
     )
 
 
-def test_a_nema_echo_helyett_warning_all_a_bukasi_agakon(bump_lepes):
-    """A korábbi ágak sima `echo`-val jeleztek — az elveszik a naplóban."""
-    for reszlet in ("A verzióemelő PR nyitása nem sikerült", "Az ág feltolása nem sikerült"):
+def test_a_nema_echo_helyett_HIBA_all_a_bukasi_agakon(bump_lepes):
+    """A korábbi ágak sima `echo`-val jeleztek — az elveszik a naplóban.
+
+    #2487 óta ez a két ág `::error`: a `::warning`-tól a futás ZÖLDEN
+    végződött, és emiatt maradt el egy hétig minden automatikus
+    verzióemelés úgy, hogy senki nem tudott róla."""
+    for reszlet in ("A verzióemelő PR nyitása nem sikerült", "ág feltolása nem sikerült"):
         sor = next(s for s in bump_lepes.splitlines() if reszlet in s)
-        assert "::warning" in sor, f"néma marad: {reszlet}"
+        assert "::error" in sor, f"néma vagy csak figyelmeztető marad: {reszlet}"

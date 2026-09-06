@@ -56,31 +56,53 @@ jobs:
       # CI-kört vigyen. Eddig minden javítás kettőt fogyasztott: egyet a jegy
       # PR-jén, egyet a külön verzióemelő PR-en.
       #
-      # A logika: ha a jelenlegi verzióhoz MÁR van kiadás, akkor a most
-      # beolvadt munka kiadatlan — emelünk. Ha még nincs, akkor ez a push
-      # maga a verzióemelés, és a következő lépés kiadja.
+      # A logika (#2488 óta): megkeressük azt a commitot, amelyik a jelenlegi
+      # verziószámot beállította. Ha AZÓTA a programot érintő munka érkezett,
+      # az kiadatlan — emelünk. Ha a verziót épp ez a push állította be,
+      # nincs mit emelni, és a következő lépés kiadja.
       #
-      # ⚠️ A rekurzió KORLÁTOS: az emelés utáni push újra elindítja ezt a
-      # workflow-t, de akkor az ÚJ verzióhoz nincs kiadás, tehát nem emel
-      # többet — pontosan két körben megáll.
-      - name: Verzióemelés, ha a jelenlegi már ki van adva
+      # ⚠️ A rekurzió KORLÁTOS: az emelés utáni beolvasztás újra elindítja ezt
+      # a workflow-t, de akkor a verziót beállító commit MAGA a fej, tehát
+      # azóta nincs semmi — pontosan két körben megáll.
+      - name: Verzióemelés, ha a verzió beállítása óta gyűlt kiadatlan munka
         id: bump
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           verzio="$(python3 -c "import sys;sys.path.insert(0,'scripts');import ensure_release;print(ensure_release.olvasott_verzio())")"
-          if ! gh release view "v$verzio" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "A v$verzio még nincs kiadva — nincs mit emelni."
-            exit 0
+
+          # ⚠️ #2488: a döntés ALAPJA nem lehet a saját futásunk későbbi
+          # mellékhatása. Eddig a `gh release view v$verzio` volt a kapu, az
+          # pedig UGYANENNEK a futásnak a kiadó lépése ELŐTT fut. Mérve
+          # (2026-08-23): a lekérdezés tíz másodperccel azelőtt mondta, hogy
+          # „még nincs kiadás", hogy ugyanez a futás létrehozta volna a
+          # v0.8.58-at — a lépés „nincs mit emelni" döntéssel továbbment, és a
+          # #1274 javítása kiadatlan maradt.
+          #
+          # Helyette az ELŐZMÉNYBŐL dolgozunk: melyik commit állította be a
+          # jelenlegi verziót? Ami azóta jött, az kiadatlan. Ez a kérdés a
+          # futás mellékhatásaitól független, tehát determinisztikus.
+          alap="$(python3 scripts/bump_alap.py --head HEAD || true)"
+          if [ -z "$alap" ]; then
+            # ⚠️ A tájékozódás bukására a KORÁBBI útra esünk vissza, nem
+            # emelünk vakon: egy olvashatatlan előzmény különben végtelen
+            # emelési kört indítana (a fej minden körben új verziót kapna).
+            echo "::warning::Nem állapítható meg, melyik commit állította be a v$verzio verziót — visszaesünk a kiadás létére (#2488)."
+            if ! gh release view "v$verzio" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "A v$verzio még nincs kiadva — nincs mit emelni."
+              exit 0
+            fi
+            alap="v$verzio"
           fi
+          echo "A verzióemelés alapja: $alap"
 
           # ⚠️ #1319: NEM minden merge indokol kiadást. A #1318-as verzióemelő
           # PR-t egy olyan beolvasztás szülte, ami két `docs/specs/` fájlt
           # módosított — kiadni nem volt mit, a PR mégis ott ült nyitva.
           # A döntés szkriptben van, mert a YAML-be írt logikára nem lehet
           # állítást írni (ld. `tests/scripts/test_kiadas_szukseges_1319.py`).
-          dontes="$(python3 scripts/kiadas_szukseges.py --base "v$verzio" --head HEAD)"
+          dontes="$(python3 scripts/kiadas_szukseges.py --base "$alap" --head HEAD)"
           echo "$dontes"
           if [ "$(printf '%s' "$dontes" | head -n1)" != "igen" ]; then
             echo "::notice title=Nincs kiadandó változás::A v$verzio óta csak dokumentáció/teszt/munkafolyamat változott — nincs verzióemelés."
@@ -176,7 +198,15 @@ jobs:
                 echo '`gh run list --json databaseId,conclusion --jq ".[]|select(.conclusion==\"action_required\")"`'
               } >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "::warning::A verzióemelő PR nyitása nem sikerült — a kiadás ettől még megy."
+              # ⚠️ #2487: NÉMA MEGHIBÁSODÁS TILALMA. Ez a bukás eddig
+              # `##[warning]` volt, a futás pedig ZÖLDEN fejeződött be — így
+              # maradt el 2026-08-28 és 09-05 között MINDEN automatikus
+              # verzióemelés úgy, hogy senki nem tudott róla. A kiadás
+              # továbbmegy (a következő lépés kiadatlanul nem hagy semmit),
+              # de a futás VÉGÉN a job elbukik: ezt a futáslista és az
+              # értesítés is mutatja.
+              echo "::error title=A verzióemelő PR nyitása nem sikerült::A biztonsági háló (#1127) nem működik — a kiadás megtörtént, de a verzióemelés nem. Ld. #2487."
+              echo "pr_hiba=igen" >> "$GITHUB_OUTPUT"
               # ⚠️ #1348: PR nélkül az ág csak szemét — és a következő futás
               # kapuja sem látja (a kapu NYITOTT PR-t néz), tehát nem is véd
               # tőle. Mérve 2026-09-05: nyolc ilyen árva `chore/auto-bump-*`
@@ -187,7 +217,10 @@ jobs:
                 || echo "::warning::Az árva $ag ág eltakarítása sem sikerült."
             fi
           else
-            echo "::warning::Az ág feltolása nem sikerült — a kiadás ettől még megy."
+            # ⚠️ #2487: ugyanaz a néma bukás, egy lépéssel korábbról — a
+            # verzióemelés PR nélkül maradt, tehát nem ért célba.
+            echo "::error title=A verzióemelő ág feltolása nem sikerült::A biztonsági háló (#1127) nem működik — a kiadás megtörtént, de a verzióemelés nem. Ld. #2487."
+            echo "pr_hiba=igen" >> "$GITHUB_OUTPUT"
           fi
           git reset --hard HEAD~1
 
@@ -199,14 +232,48 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$(git rev-parse HEAD)"
 
+      # ⚠️ #2487: a néma meghibásodás tilalma. A verzióemelő lépés
+      # SZÁNDÉKOSAN `continue-on-error` — a kiadásnak akkor is le kell
+      # futnia, ha az emelés bukik —, de ettől a futás zölden végződött, és
+      # 2026-08-28 óta EGYETLEN automatikus verzióemelő PR sem született
+      # anélkül, hogy bárminek feltűnt volna.
+      #
+      # Ez a lépés a kiadás UTÁN áll: mire idejut, a Releases hasáb már
+      # naprakész, tehát a piros futás nem tart vissza semmit — csak
+      # LÁTHATÓVÁ teszi, hogy a biztonsági háló elszakadt.
+      #
+      # ⚠️ Csak akkor bukik, ha a lépés tényleg PRÓBÁLT emelni és elbukott.
+      # A „nincs mit emelni" utak (nincs kiadandó változás, a kapu nem
+      # engedett, a jelenlegi verzió még nincs kiadva) `exit 0`-val zárnak és
+      # a jelzőt nem állítják be — ez a NAPI útvonal (a fejlesztői körök
+      # szabálya szerint minden kód-PR maga emel verziót, tehát a
+      # „nincs mit emelni" a szabályos alapeset), és annak zöldnek kell
+      # maradnia.
+      #
+      # ⚠️ KÉT kiváltó ok, mert a néma bukásnak két alakja van:
+      #
+      # 1. `outputs.pr_hiba` — a lépés eljutott a push/PR-nyitásig, és AZ
+      #    bukott (ez a mért #2487-es eset, `gh pr create`);
+      # 2. `outcome == 'failure'` — a lépés MAGA szállt el (a
+      #    `kiadas_szukseges.py`, az `auto_bump.py`, a `git commit` vagy a
+      #    `gh pr list` nem nulla kilépőkóddal). A `continue-on-error: true`
+      #    ilyenkor a `conclusion`-t zöldre írja, de az `outcome` megőrzi a
+      #    valóságot — enélkül a bukásnak épp az a fajtája maradna néma,
+      #    amelyikről még csak naplósor sem szól.
+      - name: A verzióemelés néma bukása ne végződjön zölden
+        if: steps.bump.outputs.pr_hiba == 'igen' || steps.bump.outcome == 'failure'
+        run: |
+          echo "::error title=Az automatikus verzióemelés elbukott::A kiadás kiment, de a verzióemelés nem ért célba — a következő beolvadt munka kiadatlanul maradhat (#2487)."
+          exit 1
+
       # ⚠️ #1319: a rendrakás nem maradhat egy figyelmes műszakon. Ugyanaz a
       # szkript fut itt, mint a negyedórás `kiadasi-or.yml`-ben: elindítja a
       # bot-PR-en elmaradó ellenőrzést (`gh workflow run` — így ment be a
       # v0.8.69), lezárja az elavult automatikus PR-eket, és újraélesíti a
       # leesett auto-merge-öt.
       #
-      # A CI-indítás SZÁNDÉKOSAN csak itt van, az előző lépésben nem: két
-      # indítás két teljes mátrixot vinne el ugyanarra az ágra.
+      # A CI-indítás SZÁNDÉKOSAN csak itt van, a verzióemelő lépésben nem:
+      # két indítás két teljes mátrixot vinne el ugyanarra az ágra.
       - name: Kiadási őr — a félbemaradt automatika elrendezése
         if: always()
         continue-on-error: true
