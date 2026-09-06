@@ -1461,6 +1461,27 @@ ApplicationWindow {
                 batchEffectController.clearAllEffectsMany([row])
         }
         onResetFacesRequested: resetFacesConfirm.open()
+        // #2566: a jobb fiók a nézőben is nyílik (a panelek a nézőn belül
+        // élnek, ld. PhotoViewer.qml). A Helyek-panel két írási művelete
+        // UGYANAZON a megerősítésen megy át, mint a könyvtár-nézetben —
+        // egy parancs, egy út.
+        onClearGeotagRequested: (rows) => panelClearGeotagDialog.futtasd(rows)
+        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.futtasd(rows, la, lo)
+        // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
+        // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
+        // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
+        // most beállított nézetet írná felül.
+        onFindTaggedRequested: function(keyword) {
+            window.viewerOpen = false
+            if (controller) controller.search(keyword)
+        }
+        onPersonChosen: function(name) {
+            if (!controller) return
+            window.viewerOpen = false
+            window.clearSelection()
+            window.unnamedFacesOpen = false
+            controller.showPerson(name)
+        }
         onPlayRequested: window.startSlideshow(currentIndex)
         // #1002: a néző csak JELEZ — a panel feltöltése és a lapváltás
         // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
