@@ -78,6 +78,8 @@ tehát a panelváltás nem érinti őket.
 
 ## Az alsó sáv — `basecontrolset` (2026-08-15, #455)
 
+*Forrás: `thumbui.tre:702` (`thumbui/basecontrolset`).*
+
 Az `ui-audit-mainwindow.md` 5. fejezete ezt a sávot **képernyőképből** írta
 le, és ott is kimondja, hogy a kép **1030 px-nél levágva**, tehát a tálca alsó
 pereme nem mérhető. A forrás ezt kiváltja: a `thumbui.tre` a teljes sávot
@@ -107,6 +109,8 @@ Nyomtatás/E-mail/Exportálás sor.
 
 ### A képtálcán belül
 
+*Forrás: `thumbui.tre:337` (`thumbui/addtobuttcon`) · `thumbui.tre:307` (`thumbui/scratch`) · `thumbui.tre:344` (`thumbui/scratchback`) · `thumbui.tre:326` (`thumbui/scratchclear`) · `thumbui.tre:317` (`thumbui/scratchhold`) · `thumbui.tre:300` (`thumbui/scratchlabel`) · `thumbui.tre:304` (`thumbui/scratchpadbase`).*
+
 ```
 thumbui/scratchback                     a tálca kerete
 ├── thumbui/scratch                     a bélyegképsor
@@ -127,6 +131,8 @@ ez a képernyőképen látott „3-gombos oszlop", és a forrás megadja a
 szélességét is.
 
 ### A három gomb — IKON, felirat nélkül
+
+*Forrás: `thumbui.tre:317` (`thumbui/scratchhold`).*
 
 A `thumbui_text.tre`-ben mindhárom gomb `Label` sora **ki van kommentelve**
 (`#Label thumbui/scratchhold` / `#Hold`), csak a `Tooltip` él. A gombok tehát
@@ -666,6 +672,8 @@ olvasásra; most ki van mondva.
 
 ### ⛔ NEGATÍV 1 — a négy kapcsolónak NINCS felirata
 
+*Forrás: `thumbui.tre:476` (`thumbui/timelinebutton`).*
+
 A `thumbui_text.tre` 55–65. sorában mind a négy elemnek **kizárólag `Tooltip`
 sora van**, `Label` sora egyiknek sincs. *(Kontroll: közvetlenül alatta
 `Label thumbui/timelinebutton` áll, tehát a fájl ismeri a `Label` kulcsszót;
@@ -706,6 +714,8 @@ sincs hely** további gombnak, és a `respack.yt` listájában a `scale_group` �
 a kikommentelt `#addkeywords` áll — nagyítás/kicsinyítés gomb nincs.
 
 ### ⛔ NEGATÍV 3 — a két nagyítás-gomb NEM ebbe a sávba való
+
+*Forrás: `editpanel.tre:1320` (`editpanel/1to1`) · `editpanel.tre:1313` (`editpanel/fit`).*
 
 A „Beillesztheti a fotót a megjelenítési területbe" és a „Fotó megjelenítése
 tényleges méretben" buboréksúgójú gombok elemneve **`editpanel/fit`** és
@@ -1063,6 +1073,8 @@ Erre a legjobb bizonyíték a **nagyítás-hármas**: a látható gombok az
 miközben a `thumbui/fit` és `thumbui/1to1` a `−9999`-en áll.
 
 ### 3. Következmény a saját lefedettségi mérésünkre
+
+*Forrás: `thumbui.tre:32` (`thumbui/acquirebutton`).*
 
 A `docs/specs/ui-lefedettseg-elemek.csv` és a belőle számolt „fehér
 foltok" ezt a 20 elemet **hiányzó felületi elemként** kezelhetik, pedig

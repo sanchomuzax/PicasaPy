@@ -1,5 +1,7 @@
 # A „Hisztogram és fényképezőgép-adatok" panel (`nerdview`) — MÉRT geometria
 
+*Forrás: `nerdview.tre:10` (`nerdview/nvhead`).*
+
 *Kutatói kör: 2026-08-24, a tulajdonos egymás melletti képernyőképe nyomán.*
 
 A néző bal alsó doboza. Belső neve **`nerdview`**, a felirata a
@@ -36,6 +38,8 @@ A `respack.yt` rétegfejléceiből (13 bájt, `int16 x0,y0,x1,y1`), a
   tehát a 3.9-ben **nem látszik**.
 ## 2. A felirat betűje
 
+*Forrás: `nerdview.tre:10` (`nerdview/nvhead`).*
+
 `nerdview.tre`:
 
 ```
@@ -60,6 +64,8 @@ Histogram & Camera Information
 magyarul: **„Hisztogram és fényképezőgép-adatok"**.
 
 ## 3. Elhelyezés a szerkesztőben
+
+*Forrás: `editpanel.tre:1026` (`editpanel/nerdview_container`) · `editpanel.tre:1035` (`nerdview/histo`) · `nerdview.tre:8` (`nerdview/histoback`).*
 
 `editpanel.tre`:
 

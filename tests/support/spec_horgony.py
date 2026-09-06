@@ -64,14 +64,24 @@ def panelnevek(ut: Path | None = None) -> frozenset[str]:
 def szakaszok(szoveg: str) -> list[str]:
     """Markdown-címsorok mentén szakaszol — a mérővel AZONOS módon.
 
-    A `#`-kezdetű sor akkor is új szakaszt nyit, ha kódblokkban áll. Ez a
-    mérő viselkedése, és itt épp ezért helyes: az őr azt jelzi előre, hol
-    fog a mérő szakaszhatárt látni.
+    ⚠️ **A ```-kerítésen BELÜLI `#` sor NEM címsor** (#2536). A lapjaink
+    `.tre`-blokkokat idéznek, és a `.tre` forrásnyelvben a `#` a megjegyzés
+    jele (`#--Picnik fx button`, `#define m_centerXY`,
+    `#Property setautorepeat 5`). Ezek korábban itt is, a mérőben is önálló
+    szakaszt nyitottak, és kettévágták az őket körülvevő, HORGONYZOTT
+    szakaszt — a kerítésen belülre eső elemnevek így horgony nélkül
+    maradtak. Mérve: a 84 horgony nélküli szakaszból **öt** volt ilyen.
+
+    A mérő (`ui_lefedettseg.py` `_szakaszok()`) 2026-09-06 óta ugyanígy
+    hagyja ki a kerítést; a két függvénynek együtt kell mozognia.
     """
     darabok: list[str] = []
     aktualis: list[str] = []
+    keritesben = False
     for sor in szoveg.splitlines():
-        if sor.startswith("#"):
+        if sor.startswith("```"):
+            keritesben = not keritesben
+        if sor.startswith("#") and not keritesben:
             if aktualis:
                 darabok.append("\n".join(aktualis))
             aktualis = [sor]

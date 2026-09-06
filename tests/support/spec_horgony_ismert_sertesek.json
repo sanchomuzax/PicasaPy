@@ -1,6 +1,6 @@
 {
-  "_megjegyzes": "A #2193 kiürítette a listát: 58-ból 54 szakasz megkapta a valódi `.tre`-horgonyát (a definíciós sort a `referencia/tre-eroforrasok/` adja). A maradék NÉGY nem dokumentációs hiány, hanem az őr elemminta-illesztésének műterméke: mind a négy név HELYŐRZŐ vagy paraméteres alak (`outputlayout/button(collage)`, `outputlayout/docbounds`, `editpanel/fxN`, `editpanel/editsliderN_container`), és EGYIK SEM szerepel a 2020 elemű leltárban — tehát `feltáratlan`-ként sem jelenhetnek meg, a mérésből semmit nem vesznek el. Horgonyt hozzájuk találgatni nem lehet: nincs mihez.",
-  "_jegy": "#2193",
+  "_megjegyzes": "A #2193 kiürítette a listát: 58-ból 54 szakasz megkapta a valódi `.tre`-horgonyát (a definíciós sort a `referencia/tre-eroforrasok/` adja). A maradék NÉGY nem dokumentációs hiány, hanem az őr elemminta-illesztésének műterméke: mind a négy név HELYŐRZŐ vagy paraméteres alak (`outputlayout/button(collage)`, `outputlayout/docbounds`, `editpanel/fxN`, `editpanel/editsliderN_container`), és EGYIK SEM szerepel a 2020 elemű leltárban — tehát `feltáratlan`-ként sem jelenhetnek meg, a mérésből semmit nem vesznek el. Horgonyt hozzájuk találgatni nem lehet: nincs mihez. ⭐ 2026-09-06 (#2536): a `ui-audit-editor.md` 3.2 megkapta a horgonyát, kikerült. Bejött viszont EGY új, tartós tétel: a 22.7 META-szakasza, amely a szándékosan horgony nélkül hagyott szakaszokat sorolja fel — oda horgony nem való, az indoklás a tétel `megjegyzes` mezőjében.",
+  "_jegy": "#2193 · #2536",
   "_felvetel_datuma": "2026-09-04 (a #2193 utáni maradék)",
   "sertesek": [
     {
@@ -23,21 +23,25 @@
     },
     {
       "lap": "ui-audit-editor.md",
-      "cim": "### 3.2 A rács geometriája (megerősített)",
-      "elemek": [
-        "editpanel/fxN"
-      ],
-      "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
-      "elem_db": 1
-    },
-    {
-      "lap": "ui-audit-editor.md",
       "cim": "### 4.3 A csúszka geometriája (mérés a 2. fül felvételén)",
       "elemek": [
         "editpanel/editsliderN_container"
       ],
       "megjegyzes": "helyőrző/paraméteres név, nem szerepel a 2020 elemű leltárban — nincs `.tre`-definíciós sora, és a mérésben sem jelenik meg (#2193)",
       "elem_db": 1
+    },
+    {
+      "lap": "binaris-regeszet-modszertan.md",
+      "cim": "#### Ami SZÁNDÉKOSAN horgony nélkül marad — 4 szakasz",
+      "elemek": [
+        "editoneup/captionbutton",
+        "oneup/captionbutton",
+        "thumbui/backup",
+        "thumbui/soloview",
+        "timeslider/scaleslider"
+      ],
+      "megjegyzes": "META-szakasz: azt SOROLJA FEL, mely szakaszok maradnak szándékosan horgony nélkül (22.7, #2536). Horgonyt tenni bele ÁRTALMAS volna: a lapok ábécésorrendben futnak, ez a lap korán jön, tehát a módszertani lap lenne az öt elem »bizonyítéka« a saját lapjuk pontos horgonya helyett. Mind az öt elem MA is `feltáratlan`-on kívüli besorolást kap a saját lapjáról (mérve: feltáratlan = 0).",
+      "elem_db": 5
     }
   ]
 }

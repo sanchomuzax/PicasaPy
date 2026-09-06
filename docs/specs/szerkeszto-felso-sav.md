@@ -1,5 +1,7 @@
 # A szerkesztő FELSŐ SÁVJA (`editpanel/oneup_controls`)
 
+*Forrás: `editpanel.tre:1205` (`editpanel/oneup_controls`).*
+
 **Ez a lap normatív.** A szerkesztő fejléce **pontosan** így nézzen ki
 (`../decisions/szerkeszto-bal-panel.md`: *„a felület PONTOSAN úgy nézzen ki,
 mint az eredeti Picasa"*). Testvérlap a bal hasábról:
@@ -94,6 +96,8 @@ mért helye 1733…1848, az `oneup_controls` jobb éle 1839: a hármas
 (−107 … +9). **A tervezővászon eltolása érvényes futásidőben is.**
 
 ### A „Vissza a könyvtárhoz" gomb NEM a sáv gyereke
+
+*Forrás: `editpanel.tre:1332` (`editpanel/albumview`) · `thumbui.tre:141` (`thumbui/albumview`) · `thumbui.tre:468` (`thumbui/sbutton`).*
 
 `editpanel/albumview: root` — az ABLAKHOZ horgonyzott, nem a sávhoz:
 **122 × 22, `x = root.bal + 10`, `y = 9…31`**, ikonja (`albumview_icon`)
@@ -303,6 +307,8 @@ A „nálunk" oszlop **mérés** a mai `main`-en
 | hisztogram-doboz | alsó éle **`root.alsó − 95`** (`nerdview_container`, `editpanel.tre:1028`) | `anchors.bottom: parent.bottom`, `bottomMargin: 95` — de a **bal fiók** aljához (:1043) | az ABLAK aljához |
 
 ### A hisztogram-doboz (#1905/3) — mért bizonyíték
+
+*Forrás: `nerdview.tre:8` (`nerdview/histoback`).*
 
 A felvételen az eredeti doboz fejléc-felirata `y 779…792`, a
 hisztogram-rajz `y 798…857` (**59 magas** = a `nerdview/histoback`

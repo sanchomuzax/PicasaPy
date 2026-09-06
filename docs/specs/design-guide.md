@@ -235,6 +235,8 @@ gombjai **29×22 px**.
 
 ## A néző és a diavetítés — két KÜLÖN modul (pontosítás, 2026-08-07)
 
+*Forrás: `editpanel.tre:1133` (`editpanel/filmstrip`).*
+
 Forrás-ellenőrzés után egyértelmű, hogy a Picasa két külön felületet használt,
 és ezt korábban összemostuk:
 

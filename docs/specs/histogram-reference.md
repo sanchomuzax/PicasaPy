@@ -91,6 +91,8 @@ A panel belső neve **`nerdview`** („nerd nézet") — a fejlesztők maguk hí
 
 ## H.1 A legfontosabb: MIBŐL számol a Picasa hisztogramot
 
+*Forrás: `editpanel.tre:1005` (`editpanel/previewimage`).*
+
 A réteg típusa és paramétere önmagában megválaszolja a kérdést:
 
 ```

@@ -1,5 +1,7 @@
 # A rács-nagyító (`thumbui/loupehit`, `loupe`)
 
+*Forrás: `thumbui.tre:287` (`thumbui/loupehit`).*
+
 **Mi ez:** a Picasa 3 könyvtárnézetében egy **nagyító**, amit a bélyegkép-rács
 fölött **nyomva húzva** a képek nagyítva jelennek meg. Bekapcsolója az alsó
 sávban, a nagyítás-csúszka mellett ül.
@@ -61,6 +63,8 @@ kezeli, nem a felületleíró.
 kapcsolva**.
 
 ## 2. ⛔ NINCS külön egérmutató — mért NEGATÍV eredmény
+
+*Forrás: `thumbui.tre:113` (`thumbui/circlecursor`).*
 
 A #1911 felveti, hogy a bekapcsolt állapotot az **egérmutató alakja**
 jelezhetné. **Az eredetiben nem az jelzi.** Két, egymástól független

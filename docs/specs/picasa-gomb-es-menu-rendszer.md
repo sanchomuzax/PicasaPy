@@ -442,6 +442,8 @@ minden csomópontra fut, a zöld gombra is.
 
 ## 8/c A legördülő PANEL és a görgetősáv (2026-08-17, #894)
 
+*Forrás: `scratch.tre:20` (`scratch/highlight`).*
+
 **`listdecrect/listdecrect`** (17 × 17, nyújtható):
 
 | sor | szín | mi ez |

@@ -585,6 +585,8 @@ megadja a képletet. **Jegy: #1412** (`blocked` + `felhasználóra-vár`).
 
 ### 1.10 A kollázs-panel TELJES felülete — 156 elem (2026-08-16)
 
+*Forrás: `panelroot.tre:35` (`panelroot/collagepanel`).*
+
 A `respack.yt` `collagepanel/*` bejegyzései a **tervezővászon tényleges
 koordinátáit** adják. A panel a főablak tartalomterületét tölti ki:
 `panelroot/collagepanel` **(0, 29) 800 × 505**, a fül a fülsávban
@@ -2758,6 +2760,8 @@ a **méretek** authoroltak, az abszolút pozíciókat a `.tre` felülírhatja).
 
 ### A sáv maga
 
+*Forrás: `oneup.tre:168` (`oneup/caption`) · `oneup.tre:164` (`oneup/stripback`).*
+
 ```
 oneup/stripback: root
 YConstraint 1, 1, -20      # az ablak aljától 20 képponttal feljebb
@@ -2768,6 +2772,8 @@ Mérete a csomagban **797 × 50** képpont; a fölötte lebegő felirat
 (`oneup/caption`) **550 × 10**, `YConstraint 1, 1, -100`.
 
 ### A tíz vezérlő, balról jobbra
+
+*Forrás: `oneup.tre:156` (`oneup/centergroup`).*
 
 | elem | méret | típus / szerep | felirat |
 |---|---|---|---|
@@ -2796,6 +2802,8 @@ a sáv közepére vannak igazítva**, a többi elem tőlük balra/jobbra rendez�
 | `plusone` | **14 × 13** | +1 mp, szintén auto-ismétlő |
 
 ### ⚠️ A feliratmód KÉTÁLLÁSÚ, nem hármas
+
+*Forrás: `oneup.tre:112` (`oneup/caption_icon`) · `oneup.tre:116` (`oneup/caption_yesicon`) · `oneup.tre:121` (`oneup/captionbutton`) · `oneup.tre:164` (`oneup/stripback`).*
 
 A jegy 3. pontja azt feltételezte, hogy a feliratmód **három**állású
 (felirat / fájlnév / nincs), a nyomtatás-opciókkal azonos módon. **A forrás
@@ -2954,6 +2962,8 @@ A zene forrása a **`MP3SlideshowPath`** kulcs (`0x005e8a70`, `0x006e1100`,
 
 ### A kezelőfelület: egy lebegő sáv a képernyő alján
 
+*Forrás: `slideshowctrls.tre:15` (`slideshowctrls/stripback`) · `slideshowctrls.tre:7` (`slideshowctrls/transtype`).*
+
 `slideshowctrls.tre` — mindössze két elem:
 
 ```
@@ -3063,6 +3073,8 @@ elemmel** a `respack.yt`-ban.
 | 14 | `plusone` (+ ikon 5 × 6) | **774** | **14 × 13** | diaidő **+** |
 
 ### A feliratmód: KÉT ikon, egy gomb
+
+*Forrás: `oneup.tre:112` (`oneup/caption_icon`) · `oneup.tre:116` (`oneup/caption_yesicon`).*
 
 ```
 oneup/caption_icon      (677, 49)  17x19   ← felirat KI

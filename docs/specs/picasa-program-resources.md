@@ -379,6 +379,8 @@ bundle-viselkedés, ezért egyelőre nem befolyásolják a bejárást.
 
 ### 3.2 `fliprtl.txt` — RTL-tükrözési lista
 
+*Forrás: `compose_mail.tre:143` (`compose_mail/rtl_icon`).*
+
 Sima szöveges lista, soronként egy ikon-azonosító (pl. `arrows/right`,
 `globalbuttons/left_p`, `compose_mail/rtl_icon`). Ezek azok a `respack.yt`-beli
 ikon-nevek, amelyeket a UI **jobbról-balra (RTL) nyelvi módban** (arab, héber
@@ -634,6 +636,8 @@ Az erőforrás-leltár szerint **3084 `XMLF` erőforrás** van, 483 névtípusba
 ebből **75 a magyar** (`Rsrc_XMLF_<PANEL>_HU.XML_409`).
 
 ### ⚠️ A buktató: a fájlok NÉGY, egymással nem kompatibilis alakot használnak
+
+*Forrás: `foldermgr.tre:5` (`foldermgr/folder_list_label`) · `printoptions.tre:236` (`printoptions/apply`).*
 
 Ez a szakasz azért van itt, mert **egy csak az egyik alakot ismerő feldolgozó
 némán a szöveg ~15%-át találja meg** — hibaüzenet nélkül, látszólag sikeresen.

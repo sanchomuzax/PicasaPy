@@ -610,6 +610,8 @@ a `showtextcheckbox`, a `keywords/closebutton`, és három
 ---
 ## 8. Az Esc-billentyű — 11 gomb
 
+*Forrás: `acquirepanel.tre:256` (`acquirepanel/acancelbutton`) · `collagepanel.tre:490` (`collagepanel/cancelbutton`) · `editpanel.tre:30` (`editpanel/tool_cancel`) · `edittextpanel.tre:158` (`edittextpanel/edittextcancel`) · `makemoviepanel.tre:544` (`makemoviepanel/cancel`) · `peoplepanel.tre:38` (`peoplepanel/manual_cancel`) · `printpanel.tre:199` (`printpanel/pcancelbutton`).*
+
 `Property escapekey 1`: `acquirepanel/acancelbutton` ·
 `collagepanel/cancelbutton` · `editpanel/tool_cancel`, `cancel`,
 `redeyecancel`, `cropcancel`, `retouchcancel` ·

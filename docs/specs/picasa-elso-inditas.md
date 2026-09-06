@@ -53,6 +53,8 @@ választ:
 
 ## 2. Geometria (tervezővászon: **640 × 463**)
 
+*Forrás: `initialscan.tre:113` (`initialscan/cancel`).*
+
 | elem | x0 | y0 | x1 | y1 | méret |
 |---|---:|---:|---:|---:|---|
 | `docbounds` / `baseclip` | 0 | 0 | **640** | **463** | a panel mérete |

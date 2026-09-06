@@ -707,6 +707,8 @@ A golden-pár innentől **validáció**, nem felfedezés.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
+*Forrás: `editpanel.tre:640` (`editpanel/colorwheel0`).*
+
 A `research/copy_Picasa_3_7/Picasa3/runtime/**filterdesc.xml**` a Picasa
 gépi olvasásra szánt szűrő-regisztere: mind a 84 szűrő azonosítója, UI-neve,
 üzemmódja, **csúszkánként a név / tartomány / eltolás / alapérték**, és a 33

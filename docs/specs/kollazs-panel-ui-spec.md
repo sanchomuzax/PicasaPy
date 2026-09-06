@@ -84,6 +84,8 @@ A használt makrók:
 
 ### 2.2 A törvény, egy mondatban
 
+*Forrás: `collagepanel.tre:514` (`collagepanel/base`) · `collagepanel.tre:490` (`collagepanel/cancelbutton`) · `collagepanel.tre:506` (`collagepanel/rightcontainer`) · `collagepanel.tre:509` (`collagepanel/tabbase`).*
+
 > **A bal hasáb FIX MÉRETŰ, a vászon-oldal NYÚLIK.**
 
 A hivatkozott sorok:
@@ -107,6 +109,8 @@ széles ablakban a négy alsó gomb ugyanott van, ahol 800 px-esben
 bal hasábban. Ha a hasáb nyúlna, a gombok az ablak aljára ülnének.
 
 ### 2.3 A vászon-oldal láncolata
+
+*Forrás: `collagepanel.tre:242` (`collagepanel/previewclip`) · `collagepanel.tre:164` (`collagepanel/previewinset`).*
 
 ```
 rightcontainer  = base − (bal 289, fent 20, jobb 10, lent 10)    ; nyúlik
@@ -219,6 +223,8 @@ ablakarányosan skálázni.)*
 ## 3. A panel helye az alkalmazásban
 
 ### 3.1 Dokumentum-fülsáv (`collagetab`)
+
+*Forrás: `panelroot.tre:83` (`panelroot/collagetab`).*
 
 Az eredetiben a kollázs **saját lap** a fülsávban: `panelroot/collagetab`
 (390, 8) 125 × 21, felirata „Kollázs", jobb szélén **✕ bezárógomb**.
