@@ -2502,3 +2502,124 @@ a képlet mostantól **dekompilátumból** igazolt, nem mintából illesztett.
 
 *Bizonyítottsági fok: **megerősített** (a kód olvasva, a konstansok a
 binárisból kiolvasva).*
+
+## 27. ⛔ ÖNHELYESBÍTÉS: a 26.4 negatívja TÚL ERŐS volt — a pásztázó VAK volt az index-alakra (2026-09-07, #1412)
+
+*Ugyanaz a bináris és eszközkészlet, mint a 26.-ban (Ghidra 12.1.2,
+`Picasa3.exe` SHA-256 `644b7bec…dc96`).*
+
+### 27.1 Mi dőlt meg, és MI döntötte el
+
+A 26.4 azt állította, hogy a kollázs-sáv **878 függvényéből egyik sem** ír
+float-ot a csomópont `+0x2c` mezőjébe. **Ez nem áll.** A csomópont értékadó
+operátora, `FUN_008341b0` (`0x008341b0`, 252 bájt) — a sávon **belül** —
+pontosan ezt teszi:
+
+```asm
+0x00834258  fld  dword ptr [esi + 0x28]
+0x0083425b  fstp dword ptr [ebx + 0x28]      ; theta
+0x00834261  fld  dword ptr [esi + 0x2c]
+0x00834264  fstp dword ptr [ebx + 0x2c]      ; scale
+```
+
+A 26.4 listája ezt **nem tartalmazza**, és nem is dekompilációs hiba miatt:
+a `collage-band.txt`-ben a `008341b0` **nulla** alkalommal fordul elő, a
+sikertelen dekompilációk száma pedig **0**.
+
+**A mechanizmus:** a pásztázó szövegmintája csak a **bájteltolásos** alakot
+ismerte (`+ 0x2c)`, `+ 0x2c +`, `0x2c + `). A Ghidra ezt a másolást
+**index-alakban** írja ki — `0x2c / 4 = 11` —, szó szerint így:
+
+```c
+param_1[0xb] = unaff_ESI[0xb];
+```
+
+⛔ **A hiba gyökere módszertani, nem szövegtani:** a pásztázást **nem
+ellenőriztem ismert pozitívval**, pedig a 19. kör óta tudjuk, hogy épp ez a
+függvény másolja a `+0x2c`-t. A saját szabályunk („üres pásztázást ismert
+pozitívval ellenőrizz") pontosan erre való, és kimaradt.
+
+### 27.2 A JAVÍTOTT pásztázás — és most már ÉRVÉNYES
+
+A detektor három írásalakot ismer: **BAJT** (`+ 0x2c`), **INDEX**
+(`[0xb]` / `[11]`) és **MEZO** (`field_0x2c`). A futás csak akkor érvényes,
+ha a kimenetben ott a `FUN_008341b0` — ez a **kötelező pozitív kontroll**.
+
+| | 26.4 (régi) | **27. (javított)** |
+|---|---:|---:|
+| megnézett függvény | 878 | **878** |
+| dekompilációs hiba | 0 | **0** |
+| `+0x2c`-írás, BAJT-alak | (24 függvény) | **37 írás** |
+| `+0x2c`-írás, INDEX-alak | **0 — VAK FOLT** | **37 írás** |
+| `field_0x2c`-alak | nem nézte | **0** |
+| pozitív kontroll | **nem volt** | **MEGVAN, a futás érvényes** |
+
+⇒ **a keresés fele hiányzott.** A 26.4 negatívját ezért **visszavonom**; ami
+belőle áll, az annyi, hogy a **bájteltolásos** alakban nincs számolt
+`scale`-írás a sávban.
+
+### 27.3 ⚠️ Az INDEX-alak NEM automatikusan `+0x2c` — a bázist ellenőrizni kell
+
+A `[0xb]` csak akkor jelent `+0x2c`-t, ha a mutató a **tárgy bázisa**. A
+`FUN_008921a0` (`0x008921a0`) ellenpélda: ott
+`puVar17 = (undefined4 *)(iStack_84 + 0x10)`, tehát a `puVar17[0xb]`
+valójában **`+0x3c`**. A 37 INDEX-találat tehát **jelölt, nem bizonyíték**;
+mindegyiknél külön kell megnézni, mi a bázis.
+
+### 27.4 ⛔ AMIT KIZÁRTAM — a `+0xf8 → +0x2c` másolás NEM a csomóponté
+
+A javított lista legígéretesebb tétele a `FUN_008378c0` (`0x008378c0`,
+1397 bájt) volt, mert **pont a keresett alakot** mutatta — egy számolt mező
+átmásolása a `+0x2c`-be, „piszkos" jelzővel:
+
+```c
+param_2[0x16] = param_3[0x3f];          // +0x58 := +0xfc
+if (param_2[0xb] != param_3[0x3e]) {    // +0x2c != +0xf8
+  *(undefined1 *)(param_2 + 0x17) = 1;  // „megváltozott" jelző
+  param_2[0xb] = param_3[0x3e];         // +0x2c := +0xf8
+}
+…
+param_2[9]  = param_3[0x3b];            // +0x24 := +0xec
+param_2[10] = param_3[0x3c];            // +0x28 := +0xf0
+```
+
+A mezősorrend (`+0x24`, `+0x28`, `+0x2c`) csábítóan egyezik a csomópontéval
+(`h`, `theta`, `scale`) — **de a forrás nem geometria.** A `param_3`
+osztályának `+0xf8` mezőjét a `FUN_00836510` (`0x00836510`, 424 bájt) tölti,
+és az egy **gyorsítótár-kulcs hash**:
+
+```c
+uVar5 = 0x12345678;                       // a hash magja
+while (cVar2 != '\0') { uVar5 = uVar5 ^ uVar5 * 0x20 + (uVar5 >> 2) + cVar2; … }
+uVar4 = uVar4 ^ uVar5;
+param_2[0x3e] = uVar4;                    // +0xf8 := a hash
+```
+
+ugyanabban a függvényben egy `"%d:%d:%d:%d"` kulcs-sztringgel
+(`param_2[0x13]`, `[0x12]`, `[0x3b]`, `[0x3c]`). Mindkét objektum ugyanazt a
+zárolási idiómát viseli (`[8]` = szálazonosító, `[9]` = rekurziószám,
+`+0x28` = `CRITICAL_SECTION`) ⇒ a **bélyegkép-gyorsítótár** osztálya
+(az RTTI-ban `CCollageBitmapProvider`), **nem** a kollázs-csomópont.
+
+⇒ **elvetve**; a `+0x2c` ott egy gyorsítótárazott hash mezője, a
+mezőegyezés véletlen.
+
+### 27.5 Hol tart a K1, és mi a KÖVETKEZŐ lépés
+
+**Ami áll:** a `.cxf` `scale`-jét a mentési ág csak **olvassa** (26.1), a két
+elrendező feltétel nélkül `1,0`-t ír (22.), és a bájteltolásos alakban nincs
+számolt író a sávban (26.4, szűkített hatókörrel).
+
+**Ami MEGDŐLT:** hogy a sávban egyáltalán nincs `+0x2c`-író — 37 INDEX-alakú
+írás van, amit a régi minta nem látott.
+
+**A következő lépés, megnevezve:** a 37 INDEX-találat **bázisának**
+egyenkénti tisztázása (27.3), és azok kiszűrése, amelyek nem 56 bájtos
+csomópontra mutatnak. A `FUN_008341b0` (értékadó operátor), a
+`FUN_00835520`, a `FUN_00838d10` és a `FUN_0084c7b0` **másol** — ezek a
+láncot viszik tovább, nem az értéket állítják elő; a forrás felé kell menni.
+
+*Bizonyítottsági fok: a 27.1 önhelyesbítés **megerősített** (a
+diszasszembly és a régi kimenet együtt); a 27.2 javított számok
+**megerősítettek** (pozitív kontrollal); a 27.4 kizárás **erős** (a hash
+képlete és a közös zárolási idióma).*
