@@ -3140,3 +3140,145 @@ a FORRÁS-csomópontot.** A sávban két másoló van (`0x008341b0` értékadó,
 **Eszközök** (privát `picasapy-agent`): a konjunkció-pásztázó
 `eszkozok/binaris/mezo_konjunkcio.py`, a középre-igazítás mérője
 `eszkozok/binaris/kozepre_igazitas.py`.
+
+## 31. K1 — a `scale` KÉPLETE a bináris saját aritmetikájával, és három lezárt kizárás (2026-09-07, #1412)
+
+*183. kutatói kör. A 30.6 megnevezett lépését viszi (a másoló konstruktor
+hívói), és közben három olyan kizárást zár le, amit eddig senki nem
+ellenőrzött.*
+
+### 31.1 ⭐ Az elrendezés-konstansoknak PONTOSAN két hivatkozója van
+
+Ha egy KÉSŐBBI menet **újraszámolná** a doboz-magasságot, ugyanezekre a
+konstansokra kellene hivatkoznia. Bájtmintás keresés a teljes `.text`-en
+(fájloffszet `4096`, `8 646 656` bájt), minden találat capstone-nal
+ellenőrizve, hogy valódi operandus-e:
+
+| konstans | VA | valódi hivatkozás | hol |
+|---|---|---:|---|
+| **0,88** | `0x00d3a140` | **2** | `0x008880a0` (`FUN_00887e50`) · `0x00888305` (`FUN_00888210`) |
+| **0,79** | `0x00d3a144` | **2** | `0x008880ef` (`FUN_00887e50`) · `0x00888347` (`FUN_00888210`) |
+| **0,08** (rés) | `0x00cf4df0` | **1** | `0x008882d4` (`FUN_00888210`) |
+| 0,15 | `0x00cf3fd0` | 8 | ebből egy a `FUN_00888210` |
+| 0,06 | `0x00cf46d0` | 2 | `FUN_00888210` és `FUN_00b148e0` |
+
+⇒ **A cellaméretet és a rést a programban csak a rácsszámoló és az
+elrendező állítja elő.** Ha a `scale` egyenlő a doboz-magassággal
+(30.2), akkor azt **nem lehet máshol újraszámolni** — az értéket
+**vinni** kell.
+
+*Bizonyítottsági fok: **megerősített** (teljes `.text`, utasításszintű
+ellenőrzéssel).*
+
+### 31.2 A `FUN_00888210` MINDEN vermen kívüli írása — a teljes lista
+
+| cím | írás |
+|---|---|
+| `0x00888556` · `0x00888568` | csomópont `+0x18` (`x`) · `+0x1c` (`y`) |
+| `0x008885ae` · `0x008885b6` | csomópont `+0x20` (`w`) · `+0x24` (`h`) |
+| `0x008885bc` | csomópont `+0x2c` ← **`fld1`** (1,0) |
+| `0x0088883b`–`0x0088885b`, `0x0088897b`–`0x00888989` | két 4-dwordös téglalap (`[ecx]`…`[ecx+0xc]`) — cím/alcím |
+| `0x0088894f`, `0x00888ac3` | `byte [esi+0x33d] = 1` — jelzőbit |
+
+⇒ **A doboz-magasság a függvényből csak a `+0x24` és a `+0x1c` mezőn át
+juthat ki.** Más kimenete nincs.
+
+### 31.3 A „`+0x24`-et olvas ÉS `+0x2c`-t ír" pásztázás — NEGATÍV
+
+A 30.3 alakja konstans nélkül is megvalósítható: a menet a csomópont
+**saját `+0x24`**-éből (ami akkor még a doboz-magasság) veszi a `scale`-t.
+Pásztázás a 20 608 `.text`-függvényen erre a konjunkcióra (olvas `+0x24`,
+ír `+0x2c`, és írja a `+0x20`/`+0x24`-et is): **42 jelölt**, jelenléti
+próbával (a másoló konstruktor `FUN_0087b830` szerepel ✅). Ebből **9 a
+kollázs-sávban**, és mind besorolt:
+
+- **lebegőpontos `+0x2c`-írás a sávban összesen NÉGY függvényben van:**
+  a két téma-elrendező (`0x00885060`, `0x00888210` — konstans 1,0) és a
+  két másoló (`0x008341b0` értékadó, `0x0087b830` másoló konstruktor).
+  A többi sávbeli találat (`0x0088e4e0`, `0x008906e0`, `0x00891060`,
+  `0x008921a0`, `0x0083d730`, `0x0084c7b0`) a `+0x2c`-be **egészet** ír.
+- **Az egyetlen új sávbeli jelölt, `FUN_00839200` (282 b), elolvasva és
+  KIZÁRVA:** egy nagyobb objektum másoló konstruktora (`+0`…`+0x45`, majd
+  a `+0x48`-as vektor másolása a `0x0083dfa0`-val); a `+0x2c` ott
+  **hivatkozásszámlált sztring** — a `0x00839298`-on ref-count hívás megy rá.
+
+### 31.4 ⭐ A „talán másik modulban van" kifogás LEZÁRVA
+
+Eddig kimondatlanul feltettük, hogy a kollázs kódja a `Picasa3.exe`-ben
+van. A tulajdonos telepítési mappájának mentése (NAS, 2026-09-05) szerint
+a teljes futtatható készlet:
+
+| fájl | méret | mi |
+|---|---:|---|
+| `Picasa3.exe` | 10 160 456 | a program (a 26. szakasz SHA-jával egyező méret) |
+| `Picasa3i18n.dll` | 26 904 904 | honosítási **erőforrás**-DLL |
+| `PicasaPhotoViewer.exe` | 4 806 984 | külön képnézegető |
+| `MovieThumb.exe` | 715 080 | videó-bélyegkép |
+| `uninstall.exe` | 212 240 | eltávolító |
+| `qtsupport.dll` | 100 680 | QuickTime-támogatás |
+| `npPicasa3.dll` | 59 720 | böngésző-bővítmény |
+| `plugins/Red.dll` | — | vörösszem-bővítmény |
+
+⇒ **Nincs olyan modul, amelybe a kollázs-elrendezés kiszervezhető volna.**
+A keresés hatóköre helyes; a negatívokat nem magyarázza el egy DLL.
+
+### 31.5 ⭐ A `scale` A BINÁRIS SAJÁT ARITMETIKÁJÁVAL — 0…2 egység, és a maradék NEM a mi hibánk
+
+A 26.2 illesztő-képletét **egyszeres pontosságú** (float32) aritmetikával,
+a **valódi forrásképek** méretével kiszámolva, a 30.1 rés-levonásával:
+
+| minta | cella | rés | illesztett magasság | doboz = illesztett − 2·rés | fájl `scale` | eltérés |
+|---|---|---:|---:|---:|---:|---:|
+| AI6 | 300 × 359 | 24 | 359 (9/9 csomóponton) | **311** | 313 | −2 |
+| AI27 | 450 × 571 | 36 | 571 (4/4) | **499** | 500 | −1 |
+| AI28 | 300 × 303 | 24 | 303 (6/6) | **255** | 256 | −1 |
+| AI29 | 225 × 186 | 14 | 186 | **158** | 158 | **0** |
+
+**Két dolog derül ki ebből, és mindkettő új:**
+
+1. ⭐ **A doboz-magasság csomópont-FÜGGETLEN — és most már tudjuk, MIÉRT.**
+   A 19 kimért csomópont forrásképe hat különböző méretű
+   (`960×1200`, `816×1456`, `832×1456`, `768×1536`, `896×1344`), és az
+   illesztett magasság **mindegyiknél ugyanaz**. Az ok: mind **álló**, tehát
+   az illesztés **magasság-korlátos**, és ilyenkor `z·forrMag = cellaMag +
+   0,499` — a forrásképtől függetlenül. Ez magyarázza a 18.5 „lap-szintű
+   magasság" megfigyelését, és **előrejelzés is:** egy **fekvő** képet is
+   tartalmazó Indexképnél a `scale` csomópontonként ELTÉRNE.
+   *(Mind a 31 mintacsomópontunk álló — az előrejelzést a meglévő anyag nem
+   dönti el.)*
+2. ⛔ **A 0…2 egységes maradék NEM a mi megvalósításunk hibája.** A 18.8 még
+   nyitva hagyta, hogy „a kerekítési módokon és a `k`/oszlopszám levezetésén
+   múlik" — a 18.8 a MI kódunkat futtatta. Ez a kör a **bináris saját
+   képletét** számolta ki, és **ugyanazt a 0…2 egységet** kapta. ⇒ a hiba a
+   `k`/rés levezetésében vagy egy még nem azonosított ±1-ben van, **nem a
+   PicasaPy oldalán**. A #2583-nak ez a különbség a tényleges mércéje.
+
+*Bizonyítottsági fok: **megerősített** a csomópont-függetlenség (19
+csomópont, hat forrásméret) és a maradék nagysága; **NINCS MEG** a maradék
+oka.*
+
+### 31.6 Hol tart a K1, és mi a KÖVETKEZŐ lépés
+
+**Három állítás áll, és együtt nem fér meg:**
+
+| # | állítás | honnan |
+|---|---|---|
+| (a) | a `scale` = az elrendező doboz-magassága | 30.2 (10/10) + 31.5 (0…2 egység) |
+| (b) | a doboz-magasságot csak a `FUN_00888210` állítja elő | **31.1** |
+| (c) | a `FUN_00888210` a `+0x2c`-be feltétel nélkül 1,0-t ír | 22.2 + **31.2** |
+
+A mentett fájlban mégsem 1,0 áll. A leggyengébb láncszem **nem** (a), (b)
+vagy (c) — hanem a kimondatlan negyedik: **hogy a mentett csomópont
+ugyanaz az objektum, amelybe az elrendező ír.** A 28. szakasz már kimondta,
+hogy az elrendező IDEIGLENES vektorba dolgozik.
+
+⇒ **A következő lépés:** a `0x00888210` **hívójának** (a téma slot0
+gyökere, `FUN_00887ad0`, 19.1) végigolvasása — mit csinál az elrendező
+kimenetével, és **melyik függvény másolja át a dokumentum-tömbbe**. Ez már
+nem pásztázás, hanem egy megnevezett hívási lánc kiolvasása.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+**Eszközök** (privát `picasapy-agent`): `eszkozok/binaris/konst_xref.py`
+(konstans-hivatkozás kereső), `eszkozok/binaris/h_to_scale.py`,
+`eszkozok/binaris/scale_keplet.py`.
