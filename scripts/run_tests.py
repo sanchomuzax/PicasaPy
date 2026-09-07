@@ -78,7 +78,29 @@ for _folyam in (sys.stdout, sys.stderr):
         _folyam.reconfigure(encoding="utf-8", errors="replace")
 
 _ROOT = Path(__file__).resolve().parents[1]
-_NON_APP_TIMEOUT_S = 300
+
+#: A NEM-app készlet vészféke. #2632: **600**, nem 300.
+#:
+#: A vészfék dolga a BEFAGYÁS elkapása, nem a teljesítmény mérése. A 300
+#: mp a windows-lábon a MÉRT futásidő 1,20-szerese volt, tehát nem tudta
+#: megkülönböztetni a lassú futót a beragadástól:
+#:
+#:   2026-09-07 04:12  `6808 passed, 63 skipped … in 245.76s`
+#:   2026-09-07 04:28  `6808 passed, 63 skipped … in 248.58s`
+#:
+#: 50–55 mp volt a teljes tartalék, és a 2026-09-06 21:20 óta indult 69
+#: CI-futás 14 pirosából **négy** pontosan ezen a részfutáson lépett túl
+#: (`exit 124`) — ugyanaz a részfutás, ugyanaz a láb, mindig ugyanaz az ok.
+#:
+#: A 600 a mért 249 mp **2,4-szerese**: egy valódi befagyás továbbra is
+#: beszédesen elbukik (`TIMEOUT (600s): …`), egy 2× lassabb futó viszont
+#: már nem ad hamis pirosat. Ha a készlet érdemben nőne, ezt a számot a
+#: MÉRT futásidőhöz kell újrahangolni — a `tests/tools/test_run_tests_
+#: idokorlat_2632.py` őrzi az arányt.
+_NON_APP_TIMEOUT_S = 600
+#: A mért windows-futásidő, amihez a fenti korlát kalibrálva van (mp).
+#: Az őr ehhez köti a korlátot — enélkül csak egy szám lenne.
+_NON_APP_MERT_FUTASIDO_S = 249
 _APP_FILE_TIMEOUT_S = 180
 
 #: Hány `tests/app`-fájl fusson EGYSZERRE (#1030). A fájlok külön processzben
