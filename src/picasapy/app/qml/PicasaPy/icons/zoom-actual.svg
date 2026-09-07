@@ -1,21 +1,52 @@
-<!-- #2588: a rajz szine #6f6f6f, nem feher. Az ikonok a
-     #2564 elott a foto folott lebego SOTET dobozra keszultek;
-     azota az ALSO SAV vilagos kromjan ulnek, ahol a feher rajz
-     lathatatlan volt (merve: picasapy-felirat-bekapcsolva. 223242.jpg).
-     A #6f6f6f a szomszedos panelkapcsolok (panel-emberek.svg)
-     mert konvencioja: mindket temaban olvashato. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 12" width="17" height="12">
-  <!-- PicasaPy sajat rajz (#2311): "foto megjelenitese tenyleges meretben".
-       A MERT meret az eredeti `editpanel/1to1_icon`-e: 17 x 12
-       (respack.yt, x 332...349). A rajz a MIENK.
+<!-- #2609: a RAJZ mostantol az eredetie, kepponton merve.
+     Forras: `research/copy_Picasa_3_7/Picasa3/runtime/respack.yt`
+     -> `layer:editpanel/1to1_icon`, 17 x 12, teljesen atlatszatlan.
+     A kicsomagolt kepponterkep (`+` = vilagos kek keret,
+     `#` = sotet kek tinta, `.` = a csempe sajat hattere):
 
-       A jelentes: 1:1 aranyparos - ket fuggoleges vonas kozott ket pont. -->
-  <g fill="#6f6f6f">
-    <rect x="1" y="1" width="1.5" height="10"/>
-    <rect x="4" y="1" width="1.5" height="10"/>
-    <circle cx="8.5" cy="4" r="0.9"/>
-    <circle cx="8.5" cy="8" r="0.9"/>
-    <rect x="11.5" y="1" width="1.5" height="10"/>
-    <rect x="14.5" y="1" width="1.5" height="10"/>
+       +++++++++++++++++
+       +...............+
+       +...-.......-...+
+       +..##......##...+     ket "1" szamjegy es kozottuk ketpont
+       +...#..##...#...+
+       +...#.......#...+
+       +...#.......#...+
+       +...#..##...#...+
+       +..###.....###..+
+       +...............+
+       +...............+
+       +++++++++++++++++
+
+     ⇒ a felirat `1:1`, keretben. A #2609 elott nalunk fuggoleges
+     vonalpar-csoport allt (`||:||`), ami nem olvashato `1:1`-kent.
+
+     A szinek merve: keret RGB(132,146,189) = #8492bd, a szamjegyek
+     RGB(103,114,148) = #677294.
+
+     ⚠️ A csempe sajat hattere (RGB(225,227,234)) SZANDEKOSAN kimarad:
+     az eredetiben a gomb hattere adja, nalunk az also sav kromja.
+
+     A jegy (#2609) a tulajdonos A/B felvetelebol indult
+     (`research/felirat-ki-bekapcsolva/`, 2026-09-06 22:32): ott latszott
+     eloszor olvashatoan az eredeti ikon. A pontos szamokat viszont a
+     respack adja, nem a JPEG.
+
+     A rajz a mert geometriat koveti, nem a Google kepfajlja. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 12" width="17" height="12"
+     shape-rendering="crispEdges">
+  <rect x="0.5" y="0.5" width="16" height="11" fill="none"
+        stroke="#8492bd" stroke-width="1"/>
+  <g fill="#677294">
+    <!-- bal "1": ferde szarkezdet, szar, talp -->
+    <rect x="3" y="3" width="2" height="1"/>
+    <rect x="4" y="4" width="1" height="4"/>
+    <rect x="3" y="8" width="3" height="1"/>
+    <!-- ketpont -->
+    <rect x="7" y="4" width="2" height="1"/>
+    <rect x="7" y="7" width="2" height="1"/>
+    <!-- jobb "1" -->
+    <rect x="11" y="3" width="2" height="1"/>
+    <rect x="12" y="4" width="1" height="4"/>
+    <rect x="11" y="8" width="3" height="1"/>
   </g>
 </svg>

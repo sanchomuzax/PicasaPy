@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.328] – 2026-09-07
+
+### Javítva
+
+- **A nagyítás melletti két gomb rajza az eredetié** (#2609). Eddig a saját
+  rajzunk ült rajtuk, mert nem volt mihez igazítani: az „illeszd a képet"
+  gombon tömör keret, az „eredeti méret" gombon függőleges vonalpárok,
+  amiket nem lehetett `1:1`-ként olvasni. Most a Picasa saját
+  erőforrás-csomagjából olvastuk ki a két ikont képpontról képpontra: az
+  első **szaggatott** kerete egy tömör belső képet fog közre, a másodikon
+  valóban `1:1` felirat áll, keretben. A szín is a mért kékre vált
+  (szürke helyett), és a láthatóságát mostantól kirajzolt őr méri — eddig
+  ehhez nem tartozott teszt.
+
 ## [0.8.327] – 2026-09-07
 
 ### Javítva
