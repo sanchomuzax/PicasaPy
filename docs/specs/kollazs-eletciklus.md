@@ -3500,3 +3500,102 @@ együttállást** (`+0x20`/`+0x24`/`+0x2c`) kell keresni, és a 26.4 nem erre
 szűrt.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 34. K1 — a HÁRMAS kulcs a maradék három hívási fán, és egy megdőlt ötlet (2026-09-07, #1412)
+
+*186. kutatói kör. A 33.6 lépését viszi (mentési oldal), és mellé a 26.5
+két olcsóbb vágását — most már a **hármas együttállásra** szűrve, amit a
+26.4 még nem használt. Módszer: a `xrefs` tábla `call` éleiből épített
+hívási fa, metszve a 30.4 pásztázásának 212 találatával.*
+
+### 34.1 A MENTÉSI ág — a metszet ÜRES
+
+`FUN_00834700` hívási fája 3 szint mélyen: **63** függvény.
+**Pozitív kontroll:** a `.cxf`-író (`FUN_008347b0`) az 1. szinten benne van ✅.
+
+A fa 1. szintje: `0x00401000` · **`0x008347b0`** · `0x00985ff0` ·
+`0x009bfcc0` · `0x009bfde0` · `0x009bfe70` · `0x009c15a0` — a 2. szint
+19 tétele pedig szinte kivétel nélkül futásidejű könyvtár
+(`0x0040eab0` = `sprintf`, `0x00c07a30`, `0x00bf37c0`, …).
+
+**Metszet a hármas konjunkcióval: 0.**
+
+⇒ **A mentési ág nem építi a csomópontokat — csak sorosít.** A dokumentum
+`[+0x48]` tömbje a mentés pillanatában már kész.
+
+### 34.2 A kollázspanel fája (`0x0082a670`, 3 szint) — negatív
+
+**317** függvény, a metszet **12** — de közülük a `+0x2c`-t
+**lebegőpontosan** csak három írja, és mind a három besorolt:
+
+| függvény | ítélet |
+|---|---|
+| `0x00829770` | nullázó inicializáló (17.15) |
+| `0x008341b0` | a csomópont **értékadó operátora** (másoló) |
+| `0x009dd800` | **76 bájtos** lépésközű konstruktor (30.4-ben kizárva) |
+
+A maradék kilenc a `+0x2c`-be **egészet** ír. ⇒ negatív — és ez a 26.4
+azonos hatókörű negatívjának megerősítése **a hármas kulccsal**, amit a
+26.4 nem használt.
+
+### 34.3 A parancs-elosztó fája (`0x0082d570`, 3 szint) — negatív
+
+**282** függvény, a metszet **5**, ebből lebegőpontos `+0x2c`-író
+ugyanaz a három. ⇒ **a 26.5 (1) vágása LEZÁRVA, negatívval.**
+
+### 34.4 ⛔ MEGDŐLT ÖTLET: „egy második megvalósítás a MARGÓKBÓL számol"
+
+A kör felvetette, hogy a `0,88` és a `0,79` **levezethető** a margókból
+(`0,88 = 1 − 2·0,06`, `0,79 = 1 − 0,15 − 0,06`), tehát egy második
+megvalósítás a `0,06`/`0,15` konstansokra hivatkozna — és a 31.1 szerint a
+`0,06`-nak **két** hivatkozója van, a második a `FUN_00b148e0`.
+
+**Elolvasva (213 b) — az ötlet MEGDŐLT.** A függvény a
+`0x00b14957`–`0x00b149a9` szakaszon nyolc `double`-t tesz a veremre egy
+hívás argumentumaként:
+
+| érték | mi ez |
+|---|---|
+| `0,3127` · `0,3290` | a **D65 fehérpont** (`0x00cf46a8`, `0x00cf46b0`) |
+| `0,64` · `0,33` | az sRGB **vörös** primer (`0x00cf46b8`, `0x00cf46c0`) |
+| `0,30` · `0,60` | az sRGB **zöld** primer (`0x00cf4228`, `0x00cf46c8`) |
+| **`0,15`** · **`0,06`** | az sRGB **kék** primer (`0x00cf3fd0`, `0x00cf46d0`) |
+| `0,45455` | **1/2,2** — a gamma (`0x00cf46d8`) |
+
+⇒ **színprofil-beállítás, nem elrendezés.** A `0,06`/`0,15` együttes
+előfordulása az sRGB kék primerének koordinátája — puszta egybeesés.
+
+**Amit ez visszamenőleg jelent:** a 31.1 táblájában a `0,06` „2
+hivatkozó" sora **elrendezési szempontból 1** (csak a `FUN_00888210`), a
+`0,15` nyolc hivatkozójából pedig szintén csak egy az elrendezőé.
+A 31.1 következtetése — „a doboz-magasságot nem lehet újraszámolni" —
+ezzel **erősebb** lett, nem gyengébb.
+
+### 34.5 Hol tart a K1 — és a maradék EGYETLEN szerkezeti tölcsér
+
+Ami eddig kizárva: az elrendezési út teljesen (33.6), a mentési ág (34.1),
+a kollázspanel és a parancs-elosztó fája (34.2, 34.3), a témák és a
+headless felület (33.4, 33.5), a sávon kívüli mező-írók (29.1, 30.4,
+31.3), és a „második megvalósítás" ötlete (34.4).
+
+**Ami marad, és most már tényleg egyetlen tétel:** a csomópont
+**értékadó operátora**, a `FUN_008341b0` — ez mindhárom fában benne van, és
+ez az egyetlen olyan besorolt függvény, amely a `+0x2c`-t
+lebegőpontosan írja **és** a láncot viszi. A kérdés innentől nem az, hogy
+*hol írják*, hanem hogy **honnan MÁSOLJÁK**:
+
+> A `FUN_008341b0` **tizenkét** hívója (17.13 listája) közül melyik ad
+> olyan FORRÁS-csomópontot, amelynek a `+0x2c`-je nem 1,0 — és az a
+> forrás hol kapta?
+
+Ez zárt, megszámolható feladat: tizenkét megnevezett cím
+(`0x00833920` · `0x00833cf0` · `0x008342b0` · `0x0083dfa0` · `0x0083e280` ·
+`0x0083e560` · `0x0087b4a0` · `0x0087dcd0` · `0x0087e960` · `0x00880580` ·
+`0x00884a90` · `0x00887e50`), és a 30.5 óta a **másoló konstruktor**
+(`FUN_0087b830`) három hívója is ide tartozik.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+**Eszköz:** `eszkozok/binaris/fa_metszet.py` — hívási fa adott gyökértől
+adott mélységig, metszve a hármas konjunkció találataival, pozitív
+kontrollal.
