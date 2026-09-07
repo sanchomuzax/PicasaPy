@@ -179,21 +179,21 @@ _NON_APP_MERT_FUTASIDO_S = 249
 _APP_FILE_TIMEOUT_S = 180
 
 #: Fájlok, amelyeket a futtató KIHAGY, mert a mért futásidejük meghaladja a
-#: fenti korlátot: minden körben elégetik a 180 másodpercet, aztán `exit
-#: 124`-gyel elbuknak. Ez tiszta veszteség — CPU-t visz a négymagos gépről,
-#: és semmit nem mér.
-#:
-#: MÉRVE 2026-09-07, TISZTA gépen (terhelés 0,4), memóriaplafon alatt:
-#:   test_collage_panel_wiring_985.py → 640 s, 34 teszt zöld
-#: A fájl tehát NEM hibás és NEM fagy be — csak 3,5-szer lassabb, mint az
-#: engedély. A helyes javítás a fájl szétbontása vagy a lassú rész
-#: gyorsítása; addig a kihagyás olcsóbb, mint a körönkénti 180 mp.
+#: fenti korlátot: minden körben elégetnék a 180 másodpercet, aztán `exit
+#: 124`-gyel elbuknának. Ez tiszta veszteség — CPU-t visz a négymagos
+#: gépről, és semmit nem mér.
 #:
 #: ⚠️ Ez NEM néma: a futtató kiírja, mit hagyott ki, és melyik jegy tartja
-#: nyilván (#2653). Néma kihagyásból hamis biztonság lesz (#664).
-_KIHAGYOTT_APP_FAJLOK = {
-    "tests/app/qml_functional/test_collage_panel_wiring_985.py": "#2653",
-}
+#: nyilván. Néma kihagyásból hamis biztonság lesz (#664).
+#:
+#: #2653 (2026-09-07): a lista KIÜRÜLT. Az egyetlen tétele a #985
+#: kollázs-bekötési fájlja volt; a mérés szerint nem az idő volt a gond,
+#: hanem a MEMÓRIA — 34 tesztenkénti `qml_app` **2233 MiB** csúcsot ért el
+#: a fenti 2400 MiB-os plafon alatt (93%), és a plafonhoz érve a kernel
+#: visszanyerésbe fordul. A fájl kettébontása (állapotmentes őrök egy közös
+#: appon + állapotot író tesztek tesztenkénti appal) a csúcsot levitte, és
+#: mindkét darab bőven a korlát alatt fut.
+_KIHAGYOTT_APP_FAJLOK: dict[str, str] = {}
 
 #: Hány `tests/app`-fájl fusson EGYSZERRE (#1030). A fájlok külön processzben
 #: futnak (#53), a párhuzamosítás tehát nem gyengíti az izolációt — csak

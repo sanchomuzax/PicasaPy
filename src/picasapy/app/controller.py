@@ -153,7 +153,8 @@ class AppController(
     # örökli a `CollageSaveMixin`-t (`class CollageMixin(CollageSaveMixin)`,
     # a #949 vágta ketté a 1122 sorossá hízott fájlt), ezért itt EGY bázist
     # sorolunk fel, nem kettőt — a mentés-szelet vele együtt érkezik, és a
-    # `test_collage_panel_wiring_985.py` mindkét `isinstance`-t állítja.
+    # `test_collage_panel_wiring_985_allapotmentes.py` mindkét
+    # `isinstance`-t állítja (a #2653 vitte át oda a #985 fájljából).
     # A szelet a saját állapotát lustán hozza létre (`_ensure_collage_panel`),
     # tehát az `__init__`-hez — ehhez a FORRÓ fájlhoz — nem kell nyúlni.
     CollageMixin,

@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A kollázs-bekötés tesztfájlja megint fut** (#2653): a #985 mind a 34
+  őre egyetlen folyamatban épített 34 teljes alkalmazást, és **2233 MiB**
+  csúcsot ért el a tesztfuttató 2400 MiB-os memóriaplafonja alatt (93%).
+  A plafon közelében a rendszer a munka helyett memóriát szabadít fel,
+  ezért futott a fájl az engedélyezett 180 másodperc sokszorosáig — a
+  futtató emiatt átmenetileg kihagyta. A 15 állapotmentes őr mostantól
+  egyetlen közös alkalmazáson fut (4,8 mp, 393 MiB), a 19 állapotot író
+  teszt külön fájlban maradt (41,2 mp, 1128 MiB). Mind a 34 eset megvan,
+  és a kihagyás megszűnt.
+
 ## [0.8.332] – 2026-09-07
 
 ### Javítva
