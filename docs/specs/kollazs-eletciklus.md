@@ -3893,3 +3893,96 @@ Ha a válasz „igen", akkor a `scale` forrása megvan, és a `[edi+0x168]`
 tagváltozó kiolvasása adja a szorzót.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 38. K1 — a verem-keret NORMALIZÁLVA, és a válasz: ezen az úton a `scale` = 1,0 (2026-09-08, #1412)
+
+*190. kutatói kör. A 37.5 lépését viszi. A verem-mélység lineáris követése
+**nem** vezetett célra (a saját mérőnk 20 ütközést jelzett elágazásoknál) —
+helyette **MEZŐMINTA-ILLESZTÉS** döntötte el a kérdést, ami nem függ a
+veremmélységtől.*
+
+### 38.1 ⭐ A módszer: mezőminta-illesztés, nem mélységszámolás
+
+A kollázs-csomópont 56 bájtos alakja ismert (26.1 + 30.5): `+0`, `+4`,
+`+0x30` **hivatkozásszámlált sztring**, `+8` és `+0x34` mutató, `+0x18` …
+`+0x2c` **hat float** (`x`, `y`, `w`, `h`, `theta`, `scale`).
+
+A `FUN_0087dcd0` első blokkjában (`0x0087e1b0`–`0x0087e239`) tizenkét
+rekesz íródik, és **mind a tizenkettő illeszkedik** erre az alakra, ha a
+csomópont bázisa `[esp+0x28]`:
+
+| rekesz | node-mező | mit kap | cím |
+|---|---|---|---|
+| `[esp+0x28]` | `+0` sztring | **0** | `0x0087e1cb` |
+| `[esp+0x2c]` | `+4` sztring | **0** | `0x0087e1d3` |
+| `[esp+0x30]` | `+8` mutató | `eax` | `0x0087e1db` |
+| `[esp+0x40]` … `[esp+0x4c]` | `+0x18`…`+0x24` = `x,y,w,h` | **0,0** (`fldz`) | `0x0087e1bb`–`0x0087e1cf` |
+| `[esp+0x50]` | `+0x28` = `theta` | **0,0** (`fldz`) | `0x0087e225` |
+| **`[esp+0x54]`** | **`+0x2c` = `scale`** | **1,0** (`fld1`) | **`0x0087e229` → `0x0087e22f`** |
+| `[esp+0x58]` | `+0x30` sztring | **0** | `0x0087e1d7` |
+| `[esp+0x5c]` | `+0x34` mutató | `ecx` | `0x0087e233` |
+
+A **második** blokk (`0x0087e4b0`–) ugyanezt a három sztring-rekeszt
+nullázza (`0x0087e4c1` `[esp+0x28]`, `0x0087e4c5` `[esp+0x2c]`,
+`0x0087e4c9` `[esp+0x58]`) ⇒ **ugyanaz a helyi csomópont, ugyanaz a
+keret.**
+
+*Bizonyítottsági fok: **megerősített** — tizenkét egymást követő rekesz
+egyidejű illeszkedése egy ismert, tizenkét mezős alakra; a keret
+mélységétől független.*
+
+### 38.2 ⭐ A VÁLASZ: ezen az úton a `scale` = **1,0**
+
+- Az első blokk `fld1`-gyel **1,0**-t ír a `+0x2c`-be (`0x0087e229` →
+  `0x0087e22f`).
+- A második blokk **soha nem írja** a `[esp+0x54]`-et: a
+  `0x0087e4b0`–`0x0087e830` tartomány teljes átvizsgálása szerint a
+  `[esp+0x50]`, `[esp+0x58]`, `[esp+0x5c]` íródik, a `[esp+0x54]` **nem**
+  (egyetlen olvasás sincs rá) ⇒ **örökli az 1,0-t.**
+
+⇒ **Mindkét hozzáfűzési út `scale = 1,0`-val teszi a csomópontot a
+dokumentumba.**
+
+### 38.3 A `MIN(sz, m) × [edi+0x168]` NEM a `scale`-be megy
+
+A 37.3 számítása a `0x0087e55a`-n `fstp [esp+0x58]`-cal zárul, és ott
+**egy `push` él** (`0x0087e559`), tehát a belépési kerethez képest
+`[esp+0x5c]` = a csomópont **`+0x34`** mezője — az a mutató-rekesz,
+amit az első blokk `ecx`-szel tölt. A `.cxf` ezt a mezőt **nem hordozza**
+(26.1: hat float `+0x18`…`+0x2c`).
+
+⚠️ **Ez a besorolás `erős`, nem megerősített:** a `0x0087e4fe`-en egy
+**virtuális** hívás áll (`call edx`), amelynek a takarítási
+megállapodását nem olvastuk ki. Ha az nem `stdcall`, a rekesz eggyel
+tovább csúszik — de a `+0x2c`-t akkor **sem** érinti, mert az
+`[esp+0x54]`-hez ±4-nél nagyobb csúszás kellene.
+
+### 38.4 Melléklelet: a `theta` forrása
+
+`0x0087e4e1` `fld [edi+0x15c]` → `0x0087e4e9` `fstp [esp+0x50]` =
+csomópont **`+0x28` = `theta`**, egy float tagváltozóból. (Ez az első
+hely, ahol a `theta` nem nulla lehet.)
+
+### 38.5 ⛳ Amit ez KIMOND — és a KÖVETKEZŐ lépés
+
+Az eddig megtalált **összes** nem-beolvasó út `1,0`-t ír a `scale`-be:
+a két téma-elrendező (22.2), a `.cxf`-beolvasó alapértéke (17.16), és
+most a panel dokumentum-építője is (38.2). A mintáink viszont
+**313 / 500 / 256 / 158**-at hordoznak.
+
+⇒ **Marad egyetlen út, amelyről EMPIRIKUSAN tudjuk, hogy megváltoztatja a
+`scale`-t: a KÉZI ÁTMÉRETEZÉS.** A 17.5 mérése szerint a tizenkét arany
+`.cxf` 97 `scale`-értékéből 95 egész, és a **két tört kivétel** épp abban
+az `AI2`-ben van, amelyben a tulajdonos csomópontot húzott át.
+
+**A következő lépés:** a `CollageNodeHandler` (`rtti` `0x00cc3bcc`)
+fogantyú-ága. A 20.3 a `0x008685ca` (`mov [edx+0x2c], eax`) írást a
+fogantyú-kezelő állapotobjektumára tette — **ezt az ítéletet a 38.1
+mezőminta-módszerével újra kell ellenőrizni**, mert a korábbi olvasat a
+`[edx+0x30]`-on át indexelésre támaszkodott, nem a tizenkét mezős alakra.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+**Eszköz:** `eszkozok/binaris/verem.py` — `[esp+N]` hivatkozások
+normalizálása a belépési kerethez, a hívott függvények `ret N`-je alapján;
+**az elágazásoknál keletkező ütközéseket hangosan jelzi**, nem hallgatja el.
