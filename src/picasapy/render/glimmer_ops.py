@@ -445,7 +445,9 @@ def _box1d_trunc(a: np.ndarray, width: int, axis: int) -> np.ndarray:
 
     A csonkítás nem részletkérdés, hanem ennek a modellnek a lényege:
     minden menet átlagosan fél szinttel LEJJEBB viszi az eredményt, mint a
-    valódi átlag (`//` a nulla felé csonkít). Ld. `local_contrast`.
+    valódi átlag. Az összeg itt mindig NEMNEGATÍV (képpontértékek futó
+    összegének különbsége), ezért a `//` padlózása és a natív `idiv`
+    csonkítása egybeesik — a `//` itt hű. Ld. `local_contrast` és a #926-ot.
     """
     pad = width // 2
     kitoltes = [(pad, pad) if i == axis else (0, 0) for i in range(a.ndim)]

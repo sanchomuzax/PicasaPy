@@ -17,7 +17,7 @@ tábla[i] = round( (3 − 2u)·u²·255 ),  ahol
 
 képpontonként:
     idx = (dx² + dy²) >> shift
-    ki  = perem + (közép − perem) · tábla[idx] / 256      (ha idx < 1024)
+    ki  = perem + ⌊(közép − perem) · tábla[idx] / 256⌋    (ha idx < 1024)
     ki  = perem                                           (különben)
 ```
 
@@ -138,6 +138,18 @@ def apply_radial_mask(
     index = _squared_distance(width, height, x, y, shift)
     weight = table[np.clip(index, 0, RADIAL_TABLE_SIZE - 1)][..., np.newaxis]
     base = edge.astype(np.int64)
+    # A `//` (PADLÓ) itt SZÁNDÉKOS, nem elnézés — a #926 ezt a natívból
+    # döntötte el. A `0x0090b050` képpont-blokkja (`0x0090b2bc`…`0x0090b30a`)
+    # nem `idiv`-vel és nem is `sar`-ral dolgozik: a piros és a kék csatornát
+    # EGY dwordbe csomagolva (`and ebp, 0xff00ff`) vonja ki, szorozza a
+    # súllyal (`imul ebp, edx`), és `shr ebp, 8`-cal — LOGIKAI eltolással —
+    # osztja. A zöld ugyanígy, saját regiszterben (`and ecx, 0xff00` …
+    # `shr ecx, 8`). A csomagolt kivonás kettes komplemensben viszi át a
+    # negatív különbséget, és a `shr` utáni `add ebp, eax` visszaadja az
+    # alapot: csatornánként PONTOSAN `alap + ⌊Δ·súly / 256⌋` jön ki.
+    # Bitpontos szimulációval mérve 113 246 208 eseten 0 az eltérés a padló-
+    # modelltől, és 71 551 056 (63%) a csonkolótól — ld. a
+    # `tests/render/test_radial_mask_926.py` őrét.
     blended = base + (center.astype(np.int64) - base) * weight // _BLEND_DIVISOR
     inside = (index < RADIAL_TABLE_SIZE)[..., np.newaxis]
     return np.clip(np.where(inside, blended, base), 0, 255).astype(np.uint8)
