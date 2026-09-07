@@ -4083,3 +4083,91 @@ fogantyú-kezelő viszont **nem írja** (39.3). ⇒ az átméretezés
    gazdájaként, de a saját írásait nem mértük ki.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 40. K1 — az átméretezés PARANCSA megvan (`collage_adapt`), és benne az 1/1024 átváltás (2026-09-08, #1412)
+
+*192. kutatói kör. A 39.5 (1) lépését viszi: a húzás-vége ág és az ott
+kiadott parancs.*
+
+### 40.1 ⭐ A húzás VÉGE egy NEVESÍTETT üzenetet ad ki
+
+`FUN_00868570` (a fogantyú-kezelő) záró ága:
+
+```
+0x00868a88  mov edx, 0xcb9d60   ; collagepanel/angletext  — a kijelzés elrejtése
+0x00868a9a  mov edx, 0xcb9d84   ; collagepanel/scaletext  — ua.
+0x00868aa4  push 0xcbeeb0       ; "collage_adapt"
+0x00868aa9  mov eax, 0xd        ; = 13 = a sztring hossza
+0x00868aba  call 0x00985ff0     ; sztring-objektum építése
+0x00868ac2  push ebx            ; a panel  ([ebp+8])
+0x00868ace  call 0x00591560     ; üzenet-objektum építése
+0x00868ad8  mov eax,[ebx] · mov edx,[eax+0x70] · call edx   ; VIRTUÁLIS hívás a panelen
+```
+
+⇒ a húzás végén a kezelő a **panel `vtable + 0x70`** bejegyzését hívja egy
+`"collage_adapt"` nevű üzenettel. A `CollagePanel::vftable`
+(`rtti`, `0x00c9e664`) **28. bejegyzése** (offset `0x70`) =
+**`FUN_0062cda0`**.
+
+### 40.2 ⭐ A kezelő-lánc — a sztring HÁROM hivatkozója
+
+| függvény | szerep |
+|---|---|
+| `0x00868570` (2326 b) | a **küldő** (fogantyú-kezelő) |
+| **`0x0082cb50`** (2581 b) | **`CCollageUI::vftable[4]`** — az üzenet-elosztó |
+| `0x008860e0` (642 b) | `CollagePreviewHandler::vftable[3]` |
+
+Az elosztóban a `collage_adapt` ága azonosítható: `0x0082d40b`
+`mov esi, 0xcbeeb0` · `0x0082d410` `mov ecx, 0xe` (14 bájt) ·
+`0x0082d417` `repe cmpsb`, és egyezés esetén
+
+```
+0x0082d43c  mov ecx,[esp+0x10] · push ecx
+0x0082d441  call 0x0083d730          ; ← a PARANCS VÉGREHAJTÓJA
+```
+
+### 40.3 ⭐ A végrehajtó megépíti az 1024-es EGYSÉGET
+
+`FUN_0083d730` (1215 b), `0x0083d788`–`0x0083d7b8`:
+
+```
+call eax                        ; → egy RECT mutatója
+fld  [eax+8]  ·  fsub [eax]     ; = a téglalap SZÉLESSÉGE
+fstp [esp+0x14]  ·  fld [esp+0x14]
+fmul qword [0x00cf3f68]         ; = 0,0009765625  =  1/1024
+fstp [esp+0x4c]                 ; → egy LAPEGYSÉG mérete képpontban
+```
+
+⇒ **Ez az első hely az egész vizsgálatban, ahol a `.cxf` 1024-es
+egységrendszere a KÓDBAN ÉPÜL FEL**, nem a fájlokból következtetve
+(a 17.3 méréssel állapította meg). A konstans a `0x00cf3f68`-on áll.
+
+*Bizonyítottsági fok: **megerősített** — a konstans kiolvasva, a művelet
+utasításonként.*
+
+### 40.4 A 26.4 ítélete a `FUN_0083d730`-ról ÁLL — most pozitív okkal
+
+A 26.4 a függvény „`+0x2c := +0x40`" másolását a panel állapot-mentésének
+minősítette. Ez **áll**, és most meg is nevezhető, miért: a függvény **két
+párhuzamos, hatelemű mezőcsoportot** ír, egymástól `0x14` eltolással —
+
+| csoport | mezők | cím |
+|---|---|---|
+| A | `+0x2c` · `+0x30` · `+0x34` · `+0x35` · `+0x36` · `+0x3c` | `0x0083dbc6`–`0x0083dbe5` |
+| B | `+0x40` · `+0x44` · `+0x48` · `+0x49` · `+0x4a` · `+0x4c` | `0x0083d74d`–`0x0083d76a` |
+
+Ez **mentés/visszaállítás pár**, nem az 56 bájtos csomópont (amelyben a
+`+0x34`/`+0x35`/`+0x36` nem külön bájtmezők).
+
+### 40.5 A KÖVETKEZŐ lépés, megnevezve
+
+**A `[esp+0x4c]` (a lapegység képpontban) útjának végigkövetése** a
+`FUN_0083d730` ciklusán, amely a `[[esi+0xe8]+0x19c] >> 1` gyerekeken megy
+végig (`0x0083d792`–`0x0083d7d7`): hol szorozzák/osztják vele, és eljut-e
+az eredmény egy csomópont `+0x2c` mezőjéig.
+
+Ez az első olyan nyom, amely **egyszerre** kapcsolódik (a) az
+átméretezéshez, amelyről empirikusan tudjuk, hogy változtat (39.4), és
+(b) a `.cxf` egységrendszeréhez.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
