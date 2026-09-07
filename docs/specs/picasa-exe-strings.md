@@ -143,7 +143,7 @@ belső PMP-mezők — ez a bináriból önmagában nem dönthető el biztosan):
 | `albumlist` | az `albums` mellett, de attól eltérő névvel — tisztázandó, hogy ez ini-kulcs-e, vagy csak belső cache-mező |
 | `flipped` | `rotate`/`crop64` mellett — a specben csak `rotate(N)` szerepel, `flipped` külön kulcsként/formátumként (`flipped(%d)` format-string is megvan) hiányzik |
 | `edit_width`, `edit_height` | a `width`/`height` mellett — feltehetően a szerkesztett (crop utáni) méret cache-elése |
-| `originslow`, `originfast` | `originhash` szomszédságában — kapcsolódhat a szerkesztési-lánc integritás-hasheléshez, de nem azonos az `originhash`-sal |
+| `originslow`, `originfast` | ⛔ **HELYESBÍTVE (2026-09-07, #791): DE, azonos vele.** Az ini `originhash` értéke épp e kettő szöveges összefűzése (`fmt16(originfast) + fmt16(originslow)`), 16/16 valódi fájlon mérve. A „szerkesztési-lánc integritás-hash” olvasat téves volt: a bemenet a FÁJL bájtjai. Ld. [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md) |
 | `uid64` | webes egyedi azonosító, `IIDLIST_`-hez hasonló szerepű, de külön mező |
 | `aliasparents` | tisztázatlan — talán duplikátum-/alias-kezelés |
 | `colorspace` | RAW/színtér infó cache-elése |

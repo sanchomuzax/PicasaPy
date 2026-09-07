@@ -88,9 +88,10 @@ class TestAMeglevoTartalom:
 
         adat = ut.read_bytes()
         assert b"\xef\xbf\xbd" not in adat, "U+FFFD: a felirat elveszett"
-        assert "Ny\xe1ri \xfcdv\xf6zlet" in adat.decode("utf-8", "replace") or (
-            "Ny\xe1ri \xfcdv\xf6zlet" in adat.decode("latin-1")
-        )
+        # A betöltő latin-1-re esik vissza, tehát a vissza-írás bájtőrző:
+        # az eredeti bájtsor a fájlban marad, csak a megjelölés kerül bele.
+        assert b"caption=Ny\xe1ri \xfcdv\xf6zlet\r\n" in adat
+        assert f"P2category={PROJECTS_CATEGORY}".encode("latin-1") in adat
 
     def test_bom_os_fajl_nem_kap_masodik_picasa_szekciot(self, tmp_path):
         ut = _ini(

@@ -54,13 +54,25 @@ tulajdonos 859 valódi `.picasa.ini`-jében **1 787** `originhash=` sor áll, é
 sem, 1 022 különböző érték). A `_compute_originhash` SHA-256-ot ad, ami **64
 karakter** — vagyis olyan alakot írunk, amilyet az eredeti Picasa SOHA.
 
-A hossz két MÉRT szám, tehát ez nem következtetés. Az algoritmus cseréje
-viszont NEM végezhető el ebből: a hash bemenete (mit hashel az eredeti)
-továbbra sem dőlt el, és egy 32 karakterre vágott vagy MD5-re cserélt érték
-ugyanúgy találgatás volna — csak jobban álcázva. Az sincs megmérve, hogy az
-eredeti Picasa mit tesz egy idegen alakú `originhash`-sel (elfogadja,
-felülírja, vagy elutasítja a bejegyzést) — amíg ez a kettő nem dőlt el, a
-csere vár.
+A hossz két MÉRT szám, tehát ez nem következtetés. És az eltérés nem csak
+az alakban van: **a képlet is megfejtődött ugyanebben a körben** —
+
+    originhash = "%016x" % originfast + "%016x" % originslow
+
+ahol az `originfast` a fej+farok gyors kulcs (`picasapy.dedup.fastkey.
+picasa_fast_key`, #1481), az `originslow` pedig a TELJES fájl MD5-jének
+első 8 bájtja kis-endiánként (#1482). Vagyis az eredeti a **fájl bájtjait**
+hasheli, nem a `redo=` láncot. Bizonyíték és mérés (60 valódi fájlból 16
+bitpontos egyezés, 0 részleges): `docs/specs/picasa-tartalomkulcs.md`,
+„Az `originhash` — a két kulcs SZÖVEGES PÁRJA".
+
+⛔ **A cserét MÉGSEM most végezzük el**, mert egy dolog nem dőlt el:
+**MELYIK fájl bájtjait** kell hashelni a mentés pillanatában — a most
+kiírt (szerkesztett) képét, vagy a szerkesztés előtti eredetiét. A kulcsnév
+(„origin") és az `origloc`-párja az utóbbit sugallja, de ez nincs
+bizonyítva, és a kettő szerkesztett képnél MINDIG különbözik: rossz
+választással bizonyítottan hibás értéket írnánk — ami rosszabb, mint a mai,
+láthatóan idegen alak. A javítás önálló jegyet érdemel.
 
 ## Két mappanév: `.picasaoriginals` és `Originals` (#1425)
 

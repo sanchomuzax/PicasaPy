@@ -108,7 +108,7 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
 | `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
-| `originhash` | `033f1132c874...` | **128 bites ujjlenyomat, a jelentése NYITOTT** (#791). Mérve a korpuszon: 1 787 sor, **mind a 1 787 pontosan 32 kisbetűs hexa karakter**. Az író a fotó-metaadat-függvény (`0x007d5e74`), közvetlenül az `origloc` mellett — ld. „`originhash` és `origloc` — PÁR”. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk átvétele volt (`edit/save.py`), nem mérés — ld. „A mi `originhash`-ünk ALAKJA sem egyezik” |
+| `originhash` | `033f1132c874...` | ✅ **MEGFEJTVE (2026-09-07, #791): KÉT tartalomkulcs szöveges összefűzése** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Nem egy digest, ezért bukott korábban mind a nyolc egy-digestes jelölt. A teljes bizonyíték és a 16/16-os mérés: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md), „Az `originhash` — a két kulcs SZÖVEGES PÁRJA”. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk (#21) átvétele volt, nem mérés |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID; fiókfüggő, ezért a kulcsnév maga is adat. A korpusz **második leggyakoribb** kulcsa (6 045). A kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
 | `screensaver` | `yes` | képernyővédőben szerepel |
 | `text`,`textactive` | ld. Buchinger-doksi | szövegfelirat-overlay paraméterei |
@@ -2799,6 +2799,14 @@ volna vissza, azaz **a fájl tartalma elveszett volna**.
 azt a `save_document(..., in_place=True)` kapcsoló viszi, hogy a windowsos
 rejtett jelző se vesszen el. Őr: `tests/app/test_album_ini_megorzes_791.py`.
 
+**A javítás ELLENŐRZÉSE mind a 859 valós fájlon.** Nem elég, hogy a
+kitalált minta zöld: a javított írót ráengedtük a teljes korpuszra
+(ideiglenes másolatokon, a NAS érintése nélkül), és soronkénti
+összehasonlítást futtattunk. **859 / 859 fájlban a művelet CSAK BESZÚRÁS
+volt** (legfeljebb két sor) — törlés és sor-módosítás egy sem. A 859-ből
+615 fájl változatlan maradt (már volt `P2category`-ja), 244 kapott egy új
+sort, és az a sor a meglévő `[Picasa]` szekcióba került, nem a fájl végére.
+
 **A tanulság a sáv-invariánsra:** a „`.picasa.ini`-t kizárólag az `ini/`
 API-n át" szabály nem stílus. A megkerülő ág **három** különböző módon
 rontotta a fájlt, és mindhármat csak a bájtszintű összevetés mutatta meg —
@@ -2842,10 +2850,17 @@ Az `origloc` a **korpuszban 0-szor** fordul elő (859 fájl) — vagyis csak
 akkor íródik, ha az eredeti máshol van. Az `originhash` viszont **1 787-szer**
 (32 hexa karakter, tehát 128 bites — MD5-alkatú).
 
-⚠️ **A „tartalom-ujjlenyomat" olvasat a kulcsnév és a szomszédság alapján
-készült — nem mérés.** Amit ténylegesen mértünk (2026-09-07, #791): a 1 787
-érték **mind pontosan 32 kisbetűs hexa karakter** (nagybetűs egy sem), és
-**1 022 különböző** érték áll a 1 787 soron. A hash BEMENETE nyitott kérdés.
+✅ **A „tartalom-ujjlenyomat" olvasat MEGERŐSÍTVE, és pontosítva
+(2026-09-07, #791).** Az érték **két** tartalomkulcs szöveges összefűzése:
+`fmt16(originfast) + fmt16(originslow)` — az első fél a fej+farok gyors
+kulcs (#1481), a második a teljes fájl MD5-jének első 8 bájtja (#1482).
+Mérve: a korpusz 1 787 értéke **mind pontosan 32 kisbetűs hexa karakter**
+(1 022 különböző), és 60 elérhető valódi fájlból **16 bitpontosan egyezik,
+részleges egyezés nélkül**. Bizonyíték és képlet:
+[`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md).
+
+⛔ **Ami nyitva marad:** *melyik* fájl bájtjait rögzíti a mentés
+pillanatában (a lemezen lévő aktuálisét vagy az eredetiét).
 
 ### ⛔ A mi `originhash`-ünk ALAKJA sem egyezik (2026-09-07, #791)
 
@@ -2857,9 +2872,17 @@ soha, és fordítva.
 Ez nem következtetés: a hossz két mért szám. A 2026-07-23-i döntés
 (`edit/save.py` modul-docstring, #21) maga írta elő, hogy valódi
 Picasa-mintán ellenőrizni kell — **az ellenőrzés most megtörtént, és
-eltérést mutat**. A kulcs jelentése viszont továbbra sem dőlt el, ezért az
-algoritmus cseréje NEM ennek a körnek a dolga: egy 32 karakterre vágott
-vagy MD5-re cserélt érték ugyanúgy találgatás volna, csak jobban álcázva.
+eltérést mutat**: se a hossz, se a bemenet nem egyezik (az eredeti a FÁJL
+bájtjait hasheli, nem a `redo=` láncot).
+
+**A képlet ugyanebben a körben megfejtődött**, és az alkatrészek nálunk már
+megvannak (`picasapy.dedup.fastkey.picasa_fast_key` + a teljes fájl MD5-je)
+— a csere mégsem ennek a körnek a dolga, mert **egy dolog nem dőlt el:
+melyik fájl bájtjait kell hashelni a mentés pillanatában** (a most kiírt
+képét vagy a szerkesztés előtti eredetiét). Ez nem részletkérdés: a kettő a
+szerkesztett képeknél mindig különbözik, tehát rossz választással
+bizonyítottan hibás értéket írnánk — ami rosszabb, mint a mai, láthatóan
+idegen alak.
 
 ### Az arcírás útvonala — a naplósztringek szó szerint
 

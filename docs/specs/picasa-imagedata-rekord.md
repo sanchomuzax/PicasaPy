@@ -42,7 +42,7 @@ adatbázisban** él.
 | `edit_width` / `edit_height` | a **szerkesztett** méret külön tárolva a fájl méretétől — a vágás/forgatás utáni állapot |
 | `textactive` | a szöveg-eszköz aktív állapota külön jelző |
 | `revertable` | van-e mihez visszatérni (a `.picasaoriginals` megléte) |
-| `originslow` / `originfast` | **két különböző eredeti-hivatkozás** — feltehetően a teljes és a gyors (bélyegkép) forrás |
+| `originslow` / `originfast` | ✅ **MEGFEJTVE** — két tartalomkulcs ugyanarra a fájlra: `originfast` = fej+farok MD5 (#1481), `originslow` = a TELJES fájl MD5-jének első 8 bájtja (#1482). A „bélyegkép-forrás” olvasat téves volt. A `.picasa.ini` `originhash` kulcsa épp e kettő szöveges összefűzése (#791) |
 | `uid64` | 64 bites egyedi képazonosító |
 | `aliasparents` | ugyanaz a kép több mappában (hivatkozás-szülők) |
 | `colorspace` | a kép színtere külön mezőben (ld. az lcms-integrációt) |
