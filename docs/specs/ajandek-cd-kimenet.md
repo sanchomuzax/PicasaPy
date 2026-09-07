@@ -385,6 +385,18 @@ A `0x0068eea0` végigolvasva, minden ág kiolvasva:
 | `option_preservemovies` | `+0x474` |
 | `option_estimate` | `+0x478` |
 | `option_inifile` | `+0x47c` |
+
+> ⭐ **MIT ÍR KI ez a kapcsoló? (2026-09-07, #2452)** Az `option_inifile`
+> a célmappába tett **album-leíró `.picasa.ini`**-t kapcsolja, és ez az
+> EGYETLEN hely a Picasában, ahol a `[encoding]` / `utf8=1` fejléc
+> keletkezik. Két írót vezérel ugyanabban a törzsben (`FUN_006952e0`):
+> a tételenkéntit (`0x0068c5c0`, kapu `0x00695580`) és az album-fejlécest
+> (`0x0068ac80`, hívás `0x00696d31`), utóbbit **exportonként pontosan
+> egyszer** (a `[esp+0x1b]` jelző háromállapotú: 0 / 1 = most / 2 = megvolt).
+> A kiírt tartalom: `[encoding]` + `utf8=1` + `[Picasa]`, majd `name=`,
+> `description=`, `location=`, `category=`, `date=%f`, `_lh` és általános
+> `%s=%s` sorok. A teljes levezetés:
+> [`picasa-ini-format.md`](picasa-ini-format.md) → „A `[encoding]` fejléc".
 | `option_manifest` | `+0x480` |
 | `option_manifestcaptions` | `+0x484` |
 | `option_manifestfiletimes` | `+0x488` |

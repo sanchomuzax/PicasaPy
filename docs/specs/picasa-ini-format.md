@@ -459,12 +459,79 @@ név→mező szétosztó: az `option_inifile` a `[this + 0x47c]` mezőbe kerül
 `0x00695580`-nál vizsgálja — nullánál átugorja a `FUN_0068c5c0` hívását.
 Tehát az export „írjon-e `.picasa.ini`-t" beállítása **létezik**.
 
-⛔ **Ami NEM dőlt el:** melyik ág gátolja pontosan a `FUN_0068ac80`
-hívását, és mi a beállítás ALAPÉRTELMEZÉSE. A hívás (`0x00696d31`) két
-feltétel mögött áll: `[ebx+0x100] != 0` ÉS `[ebx+0x54] == 0`
-(`0x00695714`…`0x0069573e`) — a `+0x54` és a `+0x100` mező jelentése
-kimérendő. Ez **bináris munka**, nem igényel windowsos exportot; a jegy
-ezért maradt nyitva, `bináris-kutatható` munkafajtával.
+**4. A KAPCSOLÓ NEM A MAPPA-EXPORTÉ — a LEMEZRE ÍRÁSÉ (2026-09-07, #2452).**
+
+⚠️ A választ **nem itt kellett kimérni**: a testvérlap
+[`ajandek-cd-kimenet.md`](ajandek-cd-kimenet.md) az `option_inifile`-t
+már 2026-09-03 óta végigmérte (#2095). Innen kellett volna indulni; a
+kikeresés helyett a felfedezés fölöslegesen ment újra
+(→ `memory/tanulsagok.md`). Amit az a lap kimond:
+
+* az `option_inifile` az **`il_BurnPanel`** (lemezre írás) tizenhat
+  egymás utáni `option_*` mezőjének egyike, `+0x47c` (10.2 szakasz);
+* az értékét egyetlen helyen kapja: `0x0066f572` → **`1`** (10.3);
+* és **csak a „biztonsági mentés (lemez)" üzemmódban**, a másik két
+  üzemmódban (Ajándék-CD, replikáció) **nem** (12.4).
+
+Az ág feltételei, kiolvasva:
+
+    0x0066f546  test edi, edi                   ; a mentés-ág paramétere
+    0x0066f548  je   0x0066f64b                 ; kép-ág → át az egészen
+    0x0066f54e  cmp  dword ptr [ebp+0xf8], 0    ; van képhalmaz is?
+    0x0066f555  je   0x0066f574                 ; nincs → nem állítja be
+    0x0066f557  cmp  byte ptr [ebp+0x13f], 0    ; replikáció?
+    0x0066f55e  jne  0x0066f5e6                 ; az → nem állítja be
+    0x0066f56b  push "option_inifile" ; push 1  → beállítja
+
+Az `edi` a mentés-ág választója: nála a panel a `il_BurnPanel::bkfolder`
+kulcsot és a `Backup` mappanevet használja (`0x0066f4c9`, `0x0066f4ce`),
+a másik ágon a `picfolder` / `Pictures` párt (`0x0066f502`, `0x0066f507`).
+A `+0x13f` mód-bájt jelentése az `ajandek-cd-kimenet.md` 12.1–12.3
+szakaszában áll (`1` = replikáció).
+
+**⭐ Ami ITT új: az `option_inifile` és a `[encoding]`-író összekötése.**
+Ezt eddig egyik lap sem mondta ki. Az `option_inifile` mezőt
+(`[ebp+0x47c]`) a `FUN_006952e0` **ugyanabban a törzsben, 400 bájttal a
+`FUN_0068ac80` kapuja előtt** vizsgálja, és a kapu ALAKJA azonos:
+
+    ; a tételenkénti ini-író kapuja
+    0x00695580  cmp dword ptr [ebp+0x47c], 0    ; option_inifile
+    0x00695586  je  0x0069559e
+    0x00695588  mov eax, [esp+0x1c]
+    0x0069558c  cmp byte ptr [eax+0x54], 0
+    0x00695590  jne 0x0069559e
+    0x00695599  call 0x0068c5c0                 ; per-tétel ini-író
+
+    ; az album-fejléc kapuja (a FUN_0068ac80-é)
+    0x00695714  cmp dword ptr [ebx+0x100], 0
+    0x00695731  je  0x0069573e                  ; -> jelző = 0
+    0x00695733  cmp byte ptr [ebx+0x54], 0
+    0x0069573c  je  0x00695743                  ; -> jelző = 1
+
+A két kapu **ugyanazt a `+0x54` bájtot** nézi ugyanazon az objektumon: a
+`0x00695588` `[esp+0x1c]`-je és a `0x00695608` első argumentuma
+(`0x006956d0`-ban ebből lesz `ebx`) ugyanaz a helyi változó.
+
+**A hívás legfeljebb EGYSZER fut exportonként.** A `[esp+0x1b]` jelző
+háromállapotú: `0` = soha, `1` = most írja (első tétel), `2` = már megvolt
+(`0x00696d36` állítja be közvetlenül a hívás után). Az író a célmappába
+teszi az album-leírót — `<célmappa>\.picasa.ini`, a nevet a `0x0068acba`
+fűzi a 4. argumentumként kapott mappához.
+
+⛔ **Ami továbbra sincs bizonyítva:** hogy a `[ebx+0x100]` maga az
+`option_inifile` átmásolt értéke. A kapu alakja és a közös `+0x54` bájt
+erős jelölt, de a `.text`-ben **nincs** olyan írás, amely ezt az
+objektumot töltené (kimerítő pásztázás a `mov [reg+0x100], r32/imm32`
+alakokra: 26 találat, egyik sem a `0x0066`–`0x006b` tartományban). Azt
+bizonyítaná, ha megtalálnánk az `[X+0x47c]` → `[Y+0x100]` másolást vagy az
+objektum konstruktorát. Amíg nincs meg: **jelölt, nem lelet.**
+
+**Amit a megvalósításunkra jelent:** a hétköznapi mappa-export **nem** ír
+`[encoding]` fejlécet — helyesen, és ez most már nem feltevés. A kérdés
+nem „elérhetetlen ág" volt, hanem **rossz ág**: a `0x0068ae31` a
+**lemezre mentés** előkészítéséé. Ha megépítjük a lemezre írást (#2074),
+az `option_inifile` kapcsolóval EZT a fejlécet kell kiírnia — és csak a
+mentés üzemmódban.
 
 ⚠️ A korábbi „szerezz be egy érintetlen exportot" kérés **visszavonva**:
 a fenti 1. pont miatt egyetlen exportált fájl önmagában is csak akkor
