@@ -591,6 +591,18 @@ natív regisztráció (#567).
 > Amit a helyesbítés NEM érint: hogy a tag **elvágja-e** mögötte a láncot
 > (#1140) — a szettben egyik esetben sem áll mögötte másik tag.
 >
+> ⭐ **LEZÁRVA (2026-09-07, #2636): az effekt leírása INLINE van.** A 84
+> `<filter>` közül **32** hoz magával `<effect>` blokkot a
+> `filterdesc.xml`-ben — pontosan a 32 Glimmer-effekt —, és **mind a három
+> `Picnik*` köztük van, a `PicnikFocalPixelate` is**. A
+> `picnik_effects\<név>Effect.mxml` fájl tehát nem forrás, hanem
+> FELÜLÍRÁS; a szállított telepítésben nincs, így mind a 32 effekt az
+> inline leírásból fut. A végrehajtó natívan bent van: 31
+> `glimmer::…ImageOperation` osztály és 13 utasítás, RTTI-vel azonosítva.
+> ⇒ ezen az úton **semmi nem különbözteti meg** a `PicnikFocalPixelate`-et
+> a mérten lefutó testvéreitől, tehát a tétlensége nem a betöltési útból
+> ered. Részletek: `filterdesc-registry.md` → 4.1/e.
+>
 > 🔎 **Kimerítve (2026-09-07, #2599): az `.mxml`-út NEM ad tartalék-ágat.**
 > A `<filter>`-olvasó `0x008ff550` a `runtime\picnik_effects\<név a Picnik
 > nélkül>Effect.mxml` fájlt a `yt` I/O-val (`0x00991490`, `CreateFile`)
