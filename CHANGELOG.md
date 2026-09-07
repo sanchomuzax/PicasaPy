@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.334] – 2026-09-07
+
 ### Javítva
 
 - **A kollázs- és filmmentés többé nem írja át a mappa Picasa-adatait**
