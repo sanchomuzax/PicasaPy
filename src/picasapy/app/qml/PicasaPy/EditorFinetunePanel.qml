@@ -59,7 +59,14 @@ ColumnLayout {
         Layout.leftMargin: finetunePanel.csuszkaEltolas
         horizontalAlignment: Text.AlignHCenter
         font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
+        // #2626: a csúszka-felirat a NORMÁL TINTA színét viszi, nem a
+        // másodlagos szürkét. Mérve a tulajdonos 2026-09-06 22:32-i A/B
+        // felvételén (`research/felirat-ki-bekapcsolva/`, a „Derítőfény"
+        // feliratra, azonos háttéren): az eredeti legsötétebb betű-képpontja
+        // 47 a 231-es háttéren (kontraszt 184), a miénk 122 a 225-ösön
+        // (kontraszt 103) — a `Theme.textGray` világos témán `#7a776f`,
+        // luminancia ~120, tehát pontosan ez a 122.
+        color: Theme.ink
     }
 
     // kis, négyzetes ikonos gomb (varázspálca / pipetta) — az eredetin

@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.326] – 2026-09-07
+
+### Javítva
+
+- **A szerkesztő csúszka-feliratai olvashatóbbak** (#2626). A „Derítőfény",
+  „Fények", „Árnyékok" és társaik halvány szürkével voltak írva; az eredeti
+  Picasában ugyanezek sötét betűvel állnak. A tulajdonos összehasonlító
+  felvételén mérve: az eredeti felirat kontrasztja 184, a miénk 103 volt
+  ugyanazon a háttéren.
+
 ## [0.8.325] – 2026-09-07
 
 ### Javítva
