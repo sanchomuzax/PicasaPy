@@ -3,7 +3,8 @@
 A `tint` tesztjei a binárisból megerősített hatlépéses receptet rögzítik
 (#872): szinthúzás, egész telítetlenítés, gamma-LUT és `mx`-normalizált
 szorzás. Az `ansel` semleges (R=G=B) kimenetet ad mért tónusgörbével; a
-`dir_tint` térbeli modellje továbbra is közelítés (nincs mért maszk).
+A `dir_tint` a saját moduljában él (#874), a tesztjei a
+`test_dir_tint_874.py`-ban — itt csak az újraexport útvonala őrzött.
 """
 
 from __future__ import annotations
@@ -230,26 +231,41 @@ class TestApplyAnsel:
 
 
 class TestApplyDirTint:
+    """#874: a `dir_tint` a `render.dir_tint` modulba került; itt csak az,
+    hogy a RÉGI importútvonal ugyanazt a natív modellt adja."""
+
+    def test_a_regi_import_ut_ugyanazt_adja(self) -> None:
+        from picasapy.render.dir_tint import apply_dir_tint as native
+
+        image = _uniform_image(100, height=40, width=20)
+        hivas = dict(
+            x=0.5, y=0.5, gradient=0.25, shade=0.5, color=(0xFF, 0xFF, 0xFF)
+        )
+        np.testing.assert_array_equal(
+            apply_dir_tint(image, **hivas), native(image, **hivas)
+        )
+
     def test_also_fel_valtozatlan(self) -> None:
-        # a színátmenet a megadott y alatt kifut → az alsó szél érintetlen
+        # a rámpa a középpont alatt kifut → az alsó szél érintetlen
         image = _uniform_image(100, height=40, width=20)
         result = apply_dir_tint(
             image, x=0.5, y=0.5, gradient=0.25, shade=0.5, color=(0xFF, 0xFF, 0xFF)
         )
         np.testing.assert_array_equal(result[-1], image[-1])
 
-    def test_felso_sav_a_szin_fele_kevert(self) -> None:
+    def test_a_felso_sav_SOTETEDIK_nem_vilagosodik(self) -> None:
+        # #874: a natív a tónusgörbével SÖTÉTÍT és a színnel SZOROZ —
+        # a régi közelítés itt a fehér felé világosított (100 → 178)
         image = _uniform_image(100, height=40, width=20)
         result = apply_dir_tint(
             image, x=0.5, y=0.5, gradient=0.25, shade=0.5, color=(0xFF, 0xFF, 0xFF)
         )
-        # a felső szélen a keverés teljes súlyú: 100 + 0,5·(255−100) = 177,5
-        assert abs(int(result[0, 0, 0]) - 178) <= 1
+        assert int(result[0, 0, 0]) < 100
 
     def test_nulla_shade_identitas(self) -> None:
         image = _uniform_image((80, 120, 160), height=20, width=10)
         result = apply_dir_tint(
-            image, x=0.5, y=0.5, gradient=0.25, shade=0.0, color=(0x00, 0x00, 0xFF)
+            image, x=0.5, y=0.5, gradient=0.25, shade=0.0, color=(0xFF, 0xFF, 0xFF)
         )
         np.testing.assert_array_equal(result, image)
 
@@ -259,9 +275,8 @@ class TestApplyDirTint:
             image, x=0.5, y=0.5, gradient=0.5, shade=1.0, color=(0xFF, 0xFF, 0xFF)
         )
         column = result[:, 5, 0].astype(int)
-        # szomszédos-pár (pairwise) összehasonlítás — szándékosan eggyel
-        # rövidebb a második sorozat.
-        assert all(a >= b for a, b in zip(column, column[1:], strict=False))
+        # felül a legerősebb a sötétítés, lefelé fut ki → monoton NŐ
+        assert all(a <= b for a, b in zip(column, column[1:], strict=False))
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _uniform_image(60, height=16, width=8)
