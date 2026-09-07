@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.331] – 2026-09-07
+
+### Javítva
+
+- **A hisztogram rajzterülete a doboz színét viszi** (#2625). Eddig tiszta
+  fehér mező ült a szürke dobozon, és a világos (piros/zöld/kék) csúcsok
+  elmosódtak rajta. Az eredeti Picasában a rajzterületnek nincs külön
+  háttere — ezt két független forrás mondja: a Picasa saját
+  erőforrás-csomagjában a háttérréteg **teljesen átlátszó**, a tulajdonos
+  összehasonlító felvételén pedig a rajzterület és a doboz **azonos**
+  árnyalatú.
+
 ## [0.8.330] – 2026-09-07
 
 ### Javítva

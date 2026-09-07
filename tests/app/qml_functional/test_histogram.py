@@ -185,17 +185,35 @@ class TestHistogramBoxWiring:
         assert theme is not None
         assert box.property("color") == theme.property("chromeBg")
 
-    def test_plot_area_background_is_distinct_from_panel(self, qml_app, qt_app):
-        """#512: a rajzterület (`histoback`/`histo` réteg) az eredeti
-        képernyőkép szerint elkülönül, világosabb a panel hátterétől —
-        a `Theme.contentPanel` tokent használja, ami eltér a panel
-        `Theme.chromeBg` hátterétől."""
+    def test_a_rajzterulet_a_DOBOZ_szinet_viszi(self, qml_app, qt_app):
+        """#2625 — a rajzterületnek NINCS saját háttere.
+
+        ⛔ Ez a próba a #512-es állítás HELYESBÍTÉSE. Az akkori indoklás
+        („a `histoback`/`histo` réteg elkülönül, világosabb a panelnél")
+        két független mérésen bukott meg:
+
+        * `respack.yt` → `nerdview/rect: histoback`, tömör kitöltés
+          **BGRA(0,0,0,0)** — teljesen átlátszó. (A `histo` réteg fehérje
+          HELYŐRZŐ, mint a `floater` kékesszürkéje.)
+        * a tulajdonos A/B felvétele: a rajzterület üres részén
+          RGB(232,232,232) — pontosan annyi, mint a panelen.
+
+        A #512 a `histo` réteg tömör fehérjét olvasta háttérnek. Nálunk
+        emiatt tiszta fehér mező ült a szürke dobozon, 29 fokozat
+        eltéréssel, és a világos hisztogram-csúcsok elmosódtak rajta.
+
+        ⚠️ A próba NEM beégetett számot néz: a téma változhat, az állítás
+        az, hogy a KETTŐ EGYEZIK.
+        """
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
-        box = window.findChild(QObject, "viewerHistogramBox")
         background = window.findChild(QObject, "histogramPlotBackground")
         assert background is not None, "histogramPlotBackground nem található"
-        assert background.property("color") != box.property("color")
+        szin = QColor(background.property("color"))
+        assert szin.alpha() == 0, (
+            "a rajzterületnek nem lehet saját kitöltése — a doboz színének "
+            f"kell átlátszania (kapott: {szin.name(QColor.NameFormat.HexArgb)})"
+        )
 
     def test_plot_area_never_overlaps_long_multiline_exif_text(self, qml_app, qt_app):
         """#512 regresszió: hosszú, TÖBB SOROS (pl. magyar fordítású) EXIF-
