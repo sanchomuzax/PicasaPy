@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 import PicasaPy.Gpu
+import "aranykenyszer.js" as AranyKenyszer
 
 // Egyképes néző — a Picasa 3.9 "Megjelenítés és szerkesztés" képernyője
 // alapján (#808080 háttér, felső filmszalag nyilakkal, bal eszközpanel;
@@ -1598,14 +1599,10 @@ Rectangle {
                             objectName: "redeyeSelectionDim"
                             active: redeyeDragArea.dragging
                                     && !editorPanel.redeyeHideOutlines
-                            selX: Math.min(redeyeDragArea.startX,
-                                           redeyeDragArea.lastX)
-                            selY: Math.min(redeyeDragArea.startY,
-                                           redeyeDragArea.lastY)
-                            selW: Math.abs(redeyeDragArea.lastX
-                                           - redeyeDragArea.startX)
-                            selH: Math.abs(redeyeDragArea.lastY
-                                           - redeyeDragArea.startY)
+                            selX: redeyeDragArea.selX
+                            selY: redeyeDragArea.selY
+                            selW: redeyeDragArea.selW
+                            selH: redeyeDragArea.selH
                         }
 
                         // az ÉPP húzott téglalap (még nincs a pufferben)
@@ -1613,15 +1610,22 @@ Rectangle {
                             objectName: "redeyeDragRect"
                             visible: redeyeDragArea.dragging
                                      && !editorPanel.redeyeHideOutlines
-                            x: Math.min(redeyeDragArea.startX, redeyeDragArea.lastX)
-                            y: Math.min(redeyeDragArea.startY, redeyeDragArea.lastY)
-                            width: Math.abs(redeyeDragArea.lastX - redeyeDragArea.startX)
-                            height: Math.abs(redeyeDragArea.lastY - redeyeDragArea.startY)
+                            x: redeyeDragArea.selX
+                            y: redeyeDragArea.selY
+                            width: redeyeDragArea.selW
+                            height: redeyeDragArea.selH
                             color: "transparent"
                             border.width: 1
                             border.color: Theme.selectionBlue
                         }
 
+                        // #891: a húzás közben lenyomott módosító a KÉP
+                        // saját arányára (Shift), annak 4/3-ára (Ctrl) vagy
+                        // 3/2-ére (Alt) kényszeríti a téglalapot — Alt üt
+                        // Ctrl-t, Ctrl üt Shiftet. A `selX/selY/selW/selH` a
+                        // MÁR KÉNYSZERÍTETT téglalap, ezt rajzoljuk és ezt
+                        // adjuk át felengedéskor. Minden lépés újraszámol,
+                        // ezért a billentyű felengedése azonnal felszabadít.
                         MouseArea {
                             id: redeyeDragArea
                             objectName: "redeyeDragArea"
@@ -1631,27 +1635,39 @@ Rectangle {
                             property bool dragging: false
                             property real startX: 0
                             property real startY: 0
-                            property real lastX: 0
-                            property real lastY: 0
+                            property real selX: 0
+                            property real selY: 0
+                            property real selW: 0
+                            property real selH: 0
+                            function frissit(mouse) {
+                                var r = AranyKenyszer.huzottTeglalap(
+                                    startX, startY, mouse.x, mouse.y,
+                                    width, height,
+                                    mouse.modifiers & Qt.ShiftModifier,
+                                    mouse.modifiers & Qt.ControlModifier,
+                                    mouse.modifiers & Qt.AltModifier)
+                                selX = r.x; selY = r.y
+                                selW = r.width; selH = r.height
+                            }
                             onPressed: function(mouse) {
                                 dragging = true
                                 startX = mouse.x; startY = mouse.y
-                                lastX = mouse.x; lastY = mouse.y
+                                selX = mouse.x; selY = mouse.y
+                                selW = 0; selH = 0
                             }
                             onPositionChanged: function(mouse) {
                                 if (!dragging) return
-                                lastX = mouse.x; lastY = mouse.y
+                                frissit(mouse)
                             }
                             onReleased: function(mouse) {
                                 dragging = false
                                 if (width <= 0 || height <= 0) return
+                                frissit(mouse)
                                 // a puszta kattintás (nulla méretű téglalap)
                                 // a kontrollerben néma no-op
                                 editController.addRedeyeRegion(
-                                    Math.min(startX, mouse.x) / width,
-                                    Math.min(startY, mouse.y) / height,
-                                    Math.abs(mouse.x - startX) / width,
-                                    Math.abs(mouse.y - startY) / height)
+                                    selX / width, selY / height,
+                                    selW / width, selH / height)
                             }
                         }
                     }

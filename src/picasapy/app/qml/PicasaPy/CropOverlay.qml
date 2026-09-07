@@ -1,4 +1,5 @@
 import QtQuick
+import "aranykenyszer.js" as AranyKenyszer
 
 // Vágó-overlay a kép fölé (#51, Picasa-hű): NINCS előre kijelölt terület —
 // a kijelölést a felhasználó egérrel húzva hozza létre, utána mozgatható
@@ -15,6 +16,15 @@ Item {
     property bool hasSelection: false
     // 0 = szabad arány; egyébként szélesség/magasság rögzített hányados
     property real aspectRatio: 0
+    // #891: a húzás közben lenyomott módosítóból számolt PILLANATNYI
+    // arány-kényszer (0 = nincs). Szándékosan NEM az `aspectRatio`-t írja
+    // át: az eredetiben is külön mező, amit a felengedés nulláz
+    // (`0x00a6fae6`) — a panelen beállított arány érintetlen marad.
+    property real modifierAspect: 0
+    // a húzás közben ténylegesen érvényes arány — a módosító üti a panelét
+    readonly property real effectiveAspect: overlay.modifierAspect > 0
+                                            ? overlay.modifierAspect
+                                            : overlay.aspectRatio
     // Előnézet-gomb tartása: a külső terület teljesen takart
     property bool previewHold: false
     readonly property int handleSize: 10
@@ -50,6 +60,16 @@ Item {
         }
     }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
+
+    // #891: a lenyomott módosítókból frissíti a pillanatnyi kényszert.
+    // Minden húzás-lépés újraszámolja, ezért a billentyű felengedése
+    // AZONNAL felszabadítja az arányt — nem ragadós mód.
+    function updateModifierAspect(mods) {
+        overlay.modifierAspect = AranyKenyszer.celAranyModositokbol(
+            overlay.width, overlay.height,
+            mods & Qt.ShiftModifier, mods & Qt.ControlModifier,
+            mods & Qt.AltModifier)
+    }
 
     // A meglévő kijelölés átformálása új arányra (#59): a középpont és a
     // terület megmarad, az oldalarány az új értéket veszi fel.
@@ -116,14 +136,17 @@ Item {
         onPressed: function(event) {
             startX = event.x; startY = event.y
             creating = true
+            overlay.updateModifierAspect(event.modifiers)
         }
         onPositionChanged: function(event) {
             if (!creating) return
+            overlay.updateModifierAspect(event.modifiers)
             overlay.updateCreation(startX, startY, event.x, event.y)
         }
         onReleased: function(event) {
             if (!creating) return
             creating = false
+            overlay.modifierAspect = 0
             // túl kicsi (kattintásnyi) kijelölés: nem jön létre
             if (overlay.selW < overlay.minSelectionPx
                 || overlay.selH < overlay.minSelectionPx)
@@ -131,25 +154,15 @@ Item {
         }
     }
 
-    // húzás közbeni téglalap-számítás, rögzített aránnyal is
+    // húzás közbeni téglalap-számítás, rögzített (vagy #891: módosítóval
+    // kényszerített) aránnyal is
     function updateCreation(x1, y1, x2, y2) {
-        var left = Math.min(x1, x2), top = Math.min(y1, y2)
-        var w = Math.abs(x2 - x1), h = Math.abs(y2 - y1)
-        if (overlay.aspectRatio > 0) {
-            h = w / overlay.aspectRatio
-            if (y2 < y1) top = y1 - h
-        }
-        left = overlay.clamp(left, 0, overlay.width)
-        top = overlay.clamp(top, 0, overlay.height)
-        w = Math.min(w, overlay.width - left)
-        h = Math.min(h, overlay.height - top)
-        if (overlay.aspectRatio > 0) {
-            // a levágott oldal után az arányt újra érvényesítjük
-            w = Math.min(w, h * overlay.aspectRatio)
-            h = w / overlay.aspectRatio
-        }
+        var arany = overlay.effectiveAspect
+        var r = AranyKenyszer.dobozbaZar(
+            AranyKenyszer.aranyraIgazit(x1, y1, x2, y2, arany),
+            arany, overlay.width, overlay.height)
         overlay.hasSelection = true
-        overlay.commitFromPixels(left, top, w, h)
+        overlay.commitFromPixels(r.x, r.y, r.width, r.height)
     }
 
     // A kijelölésen kívüli terület sötétítése (#900): `Theme.selectionDim`
@@ -238,6 +251,12 @@ Item {
             x: overlay.handlePixelX(modelData) - width / 2
             y: overlay.handlePixelY(modelData) - height / 2
 
+            // ⚠️ #891: a FOGANTYÚS átméretezésre szándékosan NEM tesszük rá
+            // a módosítós arány-kényszert. A jegy nyitva hagyta, melyik
+            // sarok/él marad rögzítve az igazításkor (`0x00a6ef7c` négy
+            // összehasonlítása) — létrehozásnál a horgony nyilvánvalóan a
+            // lenyomás pontja, egy él húzásánál viszont nem. Amíg ez nincs
+            // lemérve, itt inkább nincs kényszer, mint rossz horgonyú.
             MouseArea {
                 anchors.fill: parent
                 drag.target: handle

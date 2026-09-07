@@ -20,6 +20,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   bejegyzés (webalbum-azonosítók, hely, eredeti-ujjlenyomat, mentési bélyeg)
   változatlanul megmarad egy mentés után is.
 
+### Hozzáadva
+
+- **A kijelölő-téglalap húzása közben a Shift, a Ctrl és az Alt arányt tart**
+  (#891) — a vágásnál, a vörösszem-javításnál és az arc hozzáadásánál
+  egyaránt, ahogy az eredeti Picasában. Shifttel a kijelölés a fénykép saját
+  oldalarányát veszi fel, Ctrl-lal annak a 4:3-szorosát, Alttal a
+  3:2-szeresét; ha többet tart lenyomva, az Alt erősebb a Ctrl-nál, a Ctrl a
+  Shiftnél. A billentyűt elengedve a téglalap azonnal újra szabadon húzható.
+
 ## [0.8.333] – 2026-09-07
 
 ### Gyorsabb
