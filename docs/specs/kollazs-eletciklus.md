@@ -2623,3 +2623,104 @@ láncot viszik tovább, nem az értéket állítják elő; a forrás felé kell 
 diszasszembly és a régi kimenet együtt); a 27.2 javított számok
 **megerősítettek** (pozitív kontrollal); a 27.4 kizárás **erős** (a hash
 képlete és a közös zárolási idióma).*
+
+## 28. A LÁTSZÓLAGOS ELLENTMONDÁS FELOLDVA: az elrendező IDEIGLENES vektorba ír (2026-09-07, #1412)
+
+*Ez a szakasz **Codespace nélkül** készült: helyi capstone-pásztázás a
+bináris-index függvényhatárain, `eszkozok/pe_dis.py`. A pásztázások
+pozitív kontrollja külön ki van mondva.*
+
+### 28.1 A kérdés, ami a 22. kör óta nyitva állt
+
+A `contactsheet` elrendező **feltétel nélkül `1,0`-t** ír a csomópont
+`+0x2c`-jébe (22.: `0x008885ac fld1` → `0x008885bc fstp [ebx+eax+0x2c]`), a
+mentett `.cxf`-ben mégis `313` / `500` / `256` / `158` áll (17.15). Öt kör
+kereste, ki írja felül — és a 26./27. kör kimutatta, hogy a sávban csak
+**másolók** vannak.
+
+**A feloldás: a kettő nem ugyanaz a tömb.**
+
+### 28.2 A bizonyíték — utasításszinten
+
+A `.cxf`-író (`FUN_008347b0`) a **dokumentum** `+0x48` mezőjéből veszi a
+csomópont-tömb bázisát, és `bázis + csomópont-eltolás + mező` alakban olvas
+(a 26.1 mezőtérképe így **címzés-szinten is** igazolt):
+
+```asm
+0x00834c2d  mov edx, dword ptr [ebx + 0x48]     ; ebx = a dokumentum
+0x00834c3f  fld dword ptr [eax + edx + 0x18]    ; x
+0x00834d26  fld dword ptr [edx + ecx + 0x1c]    ; y
+0x00834e09  fld dword ptr [edx + ecx + 0x20]    ; w
+0x00834eec  fld dword ptr [edx + ecx + 0x24]    ; h
+```
+
+⇒ **nincs eltolás-delta**: a `+0x2c` tényleg a `scale`.
+
+Az elrendező hívója viszont **veremlokálist** ad át neki, és a hívás után
+**el is pusztítja**:
+
+```asm
+0x00887b93  lea  ecx, [esp + 0x18]      ; a LOKÁLIS vektor
+0x00887b97  push ecx                    ; -> FUN_00888210 param_2
+0x00887b98  push esi                    ; -> param_1 (a téma-objektum)
+0x00887b99  call 0x888210               ; a contactsheet-elrendező
+0x00887b9e  lea  esi, [esp + 8]
+0x00887ba4  call 0x62d010               ; a vektor PUSZTÍTÓJA
+```
+
+ugyanez a korábbi ágon is (`0x00887b48` `lea esi,[esp+8]` →
+`0x00887b4c call 0x62d010`).
+
+⇒ **az elrendező `1,0`-ja egy ideiglenes vektorba megy, és a függvényből
+kilépve megsemmisül.** A mentés a dokumentum `[+0x48]` tömbjét írja ki —
+**egy másik tömböt**.
+
+*Bizonyítottsági fok: **megerősített** (mindkét idézet utasításszintű).*
+
+### 28.3 Amit ez ÉRVÉNYTELENÍT, és amit MEGHAGY
+
+| állítás | mi lett vele |
+|---|---|
+| „az elrendező `1,0`-t ír, a fájlban mégis `313` van ⇒ valami FELÜLÍRJA" | ⛔ **a következtetés hibás** — nem felülírás, hanem **két külön tömb** |
+| a 22. `fld1` megfigyelés | ✅ **áll**, csak az ideiglenes vektorra vonatkozik |
+| a 26.1 mezőtérkép (`+0x18` x … `+0x2c` scale) | ✅ **megerősítve**, most már címzés-szinten is |
+| a 26.4/27. „nincs számolt `scale`-író a sávban" | ✅ **áll** (a 27. hatókör-javításával) — és most már **érthető is**: a keresés a rossz tömbre irányult |
+
+⇒ **A 19. kör szerkezeti sejtése (»van egy visszamásolás«) IGAZOLT.**
+
+### 28.4 A pásztázások és a kontrolljuk
+
+| pásztázás | mit keresett | eredmény | pozitív kontroll |
+|---|---|---:|---|
+| `+0x48` **olvasói** a sávban (`esp`/`ebp` bázis kizárva) | a dokumentum-mező olvasói | **106** függvény | **`FUN_008347b0` MEGVAN** ⇒ a pásztázó helyes |
+| `+0x48` **írói** | ki tölti a tömb-bázist | **47** függvény | (a kontroll itt helyesen HIÁNYZIK: az író nem olvasó) |
+| `+0x48` ÉS `+0x38`/`+0x3c`/`+0x40` együtt | **dokumentum-alakú** tárgyra írók | **16** függvény | — |
+
+A 16-ból a `+0x48`-at **dword**-ként írók (a `.cxf`-író így olvassa):
+`0x00829d60`, `0x00829dc0`, `0x0082a250`, `0x00832500`, `0x00838ef0`,
+`0x0084bb30`, `0x0085ff90`, `0x00865890`, `0x008833b0`, `0x0088b0a0`.
+A `byte`-ként írók (`0x0083d730`, `0x0087b4a0`, `0x0088ac30`, `0x0088db10`,
+`0x0088e4e0`, `0x008906e0`) **más osztályhoz** tartoznak.
+
+### 28.5 A KÖVETKEZŐ lépés, megnevezve
+
+A kérdés innentől **pontosabb**, mint eddig bármikor:
+
+> **Ki tölti fel a dokumentum `[+0x48]` csomópont-tömbjét, és a `+0x2c`-t
+> ott honnan veszi?**
+
+A sorrend:
+
+1. a 28.4 tíz `dword`-írójából azonosítani a **kollázs-dokumentum**
+   konstruktorát/feltöltőjét (a `0x00832500` kiemelt jelölt: `+0x3c`-be
+   nem nullát, hanem `2`-t ír, tehát verzió/típus mező);
+2. onnan a **`collagepanel/cnode_` elemek visszaolvasása** — a 19. kör
+   szerint ez a hiányzó láncszem, és a `FUN_00888b40` (az elemkészítő)
+   maga is ír `[esi+0x48]`-at (`0x00888ce2`);
+3. a csomópont értékadó operátorának (`FUN_008341b0`) **tizenkét hívója**
+   közül az, amelyik a dokumentum tömbjébe másol — a lista:
+   `0x00833920` · `0x00833cf0` · `0x008342b0` · `0x0083dfa0` · `0x0083e280` ·
+   `0x0083e560` · `0x0087b4a0` · `0x0087dcd0` · `0x0087e960` · `0x00880580` ·
+   `0x00884a90` · `0x00887e50`.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
