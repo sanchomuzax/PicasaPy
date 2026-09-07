@@ -128,101 +128,48 @@ jobs:
             exit 0
           fi
 
-          python3 scripts/auto_bump.py --datum "$(date -u +%Y-%m-%d)"
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml CHANGELOG.md
-          git commit -m "chore: verzióemelés a beolvadt munkához (#1127)"
-          # ⚠️ A `main` VÉDETT: közvetlen push nem megy, mert a kötelező
-          # ellenőrzés egy push-hoz nem tud lefutni („Required status check
-          # is expected"). Ezért ÁGRA tolunk és PR-t nyitunk — a kör így
-          # nem tűnik el teljesen, de EMBERI lépést nem igényel, és a
-          # kiadás nem marad el.
+          # ⚠️ #58 (2026-09-07): ITT KORÁBBAN PR NYÍLT — és soha nem
+          # olvadt be. A lánc szerkezetileg működésképtelen volt:
           #
-          # ⚠️ A hiba nem lehet FATÁLIS: ha a PR-nyitás elbukik, a kiadási
-          # lépésnek akkor is le kell futnia a jelenlegi verzióra.
-          ag="chore/auto-bump-$(python3 -c 'import sys;sys.path.insert(0,"scripts");import ensure_release;print(ensure_release.olvasott_verzio())')"
-          # ⚠️ `--force`: az ág egy KORÁBBI, félbemaradt futásból már
-          # létezhet (pontosan ez történt 2026-08-21-én), és akkor a sima
-          # push nem gyors-előre. Eldobható automatika-ág, nyugodtan
-          # felülírható.
-          if git push --force origin "HEAD:$ag" 2>/dev/null; then
-            if gh pr create --base main --head "$ag" \
-              --title "chore: verzióemelés a beolvadt munkához" \
-              --body "Automatikus verzióemelés (#1127). A CHANGELOG „Nem kiadott” szakasza lezárva."; then
-              szam="$(gh pr list --head "$ag" --json number --jq '.[0].number')"
-              # ⚠️ #1204: a PR NÉMÁN ült ott jóváhagyásra várva, és a
-              # TULAJDONOS vette észre („ezt ne hagyd parlagon, valaki
-              # elhagyta"). A GitHub a `GITHUB_TOKEN`-nel nyitott PR-en
-              # szándékosan nem indít workflow-t (#1190) — ez nem
-              # kapcsolható ki —, tehát a jelzés a minimum.
-              #
-              # Két dolgot teszünk, hogy EMBERI lépés nélkül is haladjon:
-              #
-              # 1. auto-merge élesítése — így a jóváhagyás után magától
-              #    beolvad, nem kell rá visszatérni;
-              # 2. `::warning::` + a futás ÖSSZEFOGLALÓJA — a warning a
-              #    futáslistában is látszik, nem csak a naplóban.
-              gh pr merge "$szam" --auto --squash --delete-branch \
-                || echo "Az auto-merge élesítése nem sikerült."
-              # ⚠️ #1338: a beolvasztás UTÁN a kiadó nem indul el magától —
-              # az integrációs token pushjára a GitHub szándékosan nem
-              # indít workflow-t. Mérve (2026-08-24): a `release.yml`
-              # negyven futásából egyetlen `push` sem verzióemelő PR
-              # beolvadásából jött, és a nap tizennégy kiadását a
-              # tulajdonos indította kézzel.
-              #
-              # Ezért itt, ahol MÁR TUDJUK, hogy hamarosan kiadás fog
-              # kelleni, elindítjuk az utókövetőt: az figyeli az
-              # `origin/main` verzióját, és a beolvadás pillanatában
-              # dispatch-eli a kiadót. A `workflow_dispatch` a
-              # rekurzióvédelem dokumentált kivétele — a kiadási őr
-              # ugyanígy indít CI-t és kiadást.
-              #
-              # ⚠️ Külön munkafolyamat, SAJÁT konkurenciacsoporttal: a
-              # `release-…` zárat egy negyven percig figyelő futás nem
-              # foglalhatja el (#1319).
-              #
-              # ⚠️ A hiba itt sem lehet FATÁLIS: ha az utókövető nem indul,
-              # a kiadás akkor is megy, és a negyedórás kiadási őr pótol.
-              gh workflow run kiadas-utokoveto.yml --repo "$GITHUB_REPOSITORY" --ref main \
-                || echo "::warning::A kiadás-utókövető indítása nem sikerült — a negyedórás kiadási őr pótol (#1338)."
-              echo "::warning title=Verzióemelő PR jóváhagyásra vár::A #$szam CI-futása jóváhagyásra vár (a bot-PR-ek szándékos GitHub-viselkedése, #1190). Auto-merge élesítve: jóváhagyás után magától beolvad."
-              {
-                echo "### ⚠️ Verzióemelő PR nyitva: #$szam"
-                echo
-                echo "A CI-futása **jóváhagyásra vár** (bot-PR, #1190) — a jóváhagyás után"
-                echo "magától beolvad, mert az auto-merge élesítve van."
-                echo
-                echo "Jóváhagyás: a PR *Checks* fülén, vagy"
-                echo '`gh run list --json databaseId,conclusion --jq ".[]|select(.conclusion==\"action_required\")"`'
-              } >> "$GITHUB_STEP_SUMMARY"
-            else
-              # ⚠️ #2487: NÉMA MEGHIBÁSODÁS TILALMA. Ez a bukás eddig
-              # `##[warning]` volt, a futás pedig ZÖLDEN fejeződött be — így
-              # maradt el 2026-08-28 és 09-05 között MINDEN automatikus
-              # verzióemelés úgy, hogy senki nem tudott róla. A kiadás
-              # továbbmegy (a következő lépés kiadatlanul nem hagy semmit),
-              # de a futás VÉGÉN a job elbukik: ezt a futáslista és az
-              # értesítés is mutatja.
-              echo "::error title=A verzióemelő PR nyitása nem sikerült::A biztonsági háló (#1127) nem működik — a kiadás megtörtént, de a verzióemelés nem. Ld. #2487."
-              echo "pr_hiba=igen" >> "$GITHUB_OUTPUT"
-              # ⚠️ #1348: PR nélkül az ág csak szemét — és a következő futás
-              # kapuja sem látja (a kapu NYITOTT PR-t néz), tehát nem is véd
-              # tőle. Mérve 2026-09-05: nyolc ilyen árva `chore/auto-bump-*`
-              # ág hevert a távolban, mert a `gh pr create` a repó beállítása
-              # miatt bukott („GitHub Actions is not permitted to create or
-              # approve pull requests").
-              git push origin --delete "$ag" \
-                || echo "::warning::Az árva $ag ág eltakarítása sem sikerült."
-            fi
-          else
-            # ⚠️ #2487: ugyanaz a néma bukás, egy lépéssel korábbról — a
-            # verzióemelés PR nélkül maradt, tehát nem ért célba.
-            echo "::error title=A verzióemelő ág feltolása nem sikerült::A biztonsági háló (#1127) nem működik — a kiadás megtörtént, de a verzióemelés nem. Ld. #2487."
-            echo "pr_hiba=igen" >> "$GITHUB_OUTPUT"
-          fi
-          git reset --hard HEAD~1
+          #   a `main` védett ⇒ közvetlen push nem megy
+          #     ⇒ ágra tolunk és PR-t nyitunk
+          #       ⇒ a `GITHUB_TOKEN`-nel nyitott PR-en a GitHub SZÁNDÉKOSAN
+          #          nem indít ellenőrzést (#1190), és ez nem kapcsolható ki
+          #         ⇒ az élesített auto-merge olyan kötelező ellenőrzésre
+          #            vár, ami SOHA nem fut le
+          #           ⇒ a PR elavul, és a kiadási őr lezárja.
+          #
+          # Mérve: `chore/auto-bump-*` előtaggal HÁROM PR született (#2616,
+          # #2621, #2657), és MIND A HÁRMAT a kiadási őr zárta le azzal, hogy
+          # „a kiadás már megvan". Egy sem olvadt be. A kézi út — a
+          # fejlesztői kör a saját PR-jében emel verziót — mindháromszor
+          # megelőzte.
+          #
+          # A két alternatíva (ág-védelmi kivétel, vagy App-tokennel nyitni a
+          # PR-t) a tulajdonos beállítás-módosítását kívánta volna, és
+          # cserébe egy eddig egyszer sem nyerő utat élesztett volna fel.
+          #
+          # ⚠️ AMIÉRT EZ MOST BIZTONSÁGOS: a tartalék-út egyetlen valódi
+          # haszna az lett volna, hogy elkapja, ha beolvadt munka kiadatlanul
+          # marad. 2026-09-07 óta ezt MÉRJÜK: a manager-kör
+          # `kiadas_lemaradas()` mérője 6 óra után figyelmeztet, 24 óra után
+          # P0-t ad (privát #59). Előbb lett meg a mérő, és csak utána
+          # hagytuk el a nem működő tartalékot.
+          echo "::warning title=A beolvadt munka verzióemelés nélkül maradt::A(z) $cel emelés indokolt lenne, de az automatikus verzióemelő PR-utat elhagytuk (#58): a bot-PR-en a GitHub szándékosan nem indít ellenőrzést, ezért az soha nem olvadt be. A verziót a következő fejlesztői PR emeli; a lemaradást a manager-kör méri (privát #59)."
+          {
+            echo "### A beolvadt munka verzióemelés nélkül maradt"
+            echo
+            echo "Indokolt emelés: **$verzio → $cel**."
+            echo
+            echo "Ez NEM hiba: az automatikus verzióemelő PR-utat a #58 nyomán"
+            echo "elhagytuk, mert a bot-PR-en a GitHub szándékosan nem indít"
+            echo "ellenőrzést, így az auto-merge sosem lefutó ellenőrzésre várt."
+            echo "Háromból három ilyen PR elavulva zárult le."
+            echo
+            echo "A verziót a következő fejlesztői PR emeli. Ha ez elmarad, a"
+            echo "manager-kör kiadás-lemaradás mérője jelez (6 óra: figyelem,"
+            echo "24 óra: P0)."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: GitHub Release létrehozása, ha a verzióhoz még nincs
         env:
@@ -250,13 +197,14 @@ jobs:
       # „nincs mit emelni" a szabályos alapeset), és annak zöldnek kell
       # maradnia.
       #
-      # ⚠️ KÉT kiváltó ok, mert a néma bukásnak két alakja van:
+      # ⚠️ #58 (2026-09-07): a `pr_hiba` ág MEGSZŰNT a PR-úttal együtt — a
+      # feltétel csak azért maradt bent, hogy egy régebbi futás kimenete se
+      # essen ki a szűrőn. Az élő kiváltó ok innentől EGY:
       #
-      # 1. `outputs.pr_hiba` — a lépés eljutott a push/PR-nyitásig, és AZ
-      #    bukott (ez a mért #2487-es eset, `gh pr create`);
+      # 1. `outputs.pr_hiba` — TÖRTÉNETI; a mai kód nem állítja be;
       # 2. `outcome == 'failure'` — a lépés MAGA szállt el (a
-      #    `kiadas_szukseges.py`, az `auto_bump.py`, a `git commit` vagy a
-      #    `gh pr list` nem nulla kilépőkóddal). A `continue-on-error: true`
+      #    `kiadas_szukseges.py` vagy a `bump_kapu.py` nem nulla
+      #    kilépőkóddal). A `continue-on-error: true`
       #    ilyenkor a `conclusion`-t zöldre írja, de az `outcome` megőrzi a
       #    valóságot — enélkül a bukásnak épp az a fajtája maradna néma,
       #    amelyikről még csak naplósor sem szól.

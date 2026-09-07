@@ -9,6 +9,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Az automatikus verzióemelő beadvány többé nem születik meg** (#58):
+  a program kiadási gépezete eddig minden befejezett munka után nyitott egy
+  „verzióemelés" beadványt tartalék gyanánt — az viszont **soha nem ment át**.
+  A GitHub szándékosan nem indít ellenőrzést a gép által nyitott
+  beadványokon, így az mindig olyasmire várt, ami sosem futott le, majd
+  elavult, és a rendszer magától lezárta. Háromból három így végezte.
+  Mostantól a gépezet ehelyett **hangosan kiírja**, ha egy befejezett munka
+  verziószám-emelés nélkül maradt. A verziót továbbra is a fejlesztői körök
+  emelik a saját beadványukban, és ha az elmaradna, azt külön mérés jelzi.
+  A felhasználó számára ez nem változtat semmit: a kiadások ugyanúgy
+  jelennek meg.
+
 - **A kollázs- és filmmentés többé nem írja át a mappa Picasa-adatait**
   (#791): amikor a program a kimeneti mappát „projekt" jelzéssel látta el,
   a mappa `.picasa.ini` fájlját teljes egészében újraírta. Ettől a valódi

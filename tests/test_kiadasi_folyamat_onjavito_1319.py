@@ -61,11 +61,6 @@ class TestFeltetelesVerzioemeles:
             "a döntés kimenetére nincs kilépő ág — az emelés attól még megtörténne"
         )
 
-    def test_az_auto_bump_a_dontes_UTAN_fut(self, release: dict) -> None:
-        bump = _lepes(release, "release", "bump")
-        assert bump.index("kiadas_szukseges.py") < bump.index("auto_bump.py")
-
-
 class TestKonkurenciazar:
     def test_a_kiadas_nem_futhat_ketszer_egyszerre(self, release: dict) -> None:
         """Két gyors merge két verzióemelő PR-t szülne ugyanarra."""
@@ -116,3 +111,26 @@ class TestKiadasiOr:
             if str(lepes.get("uses", "")).startswith("actions/checkout")
         )
         assert checkout.get("with", {}).get("fetch-depth") == 0
+
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_az_auto_bump_a_dontes_UTAN_fut`
+# ────────────────────────────────────────────────────────────────────────

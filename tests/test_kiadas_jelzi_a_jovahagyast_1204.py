@@ -46,32 +46,30 @@ def bump_lepes() -> str:
     raise AssertionError("nincs `bump` azonosítójú lépés a release.yml-ben")
 
 
-def test_a_PR_nyitasa_utan_auto_merge_elesedik(bump_lepes):
-    """Enélkül a jóváhagyás után is kézzel kellene beolvasztani."""
-    assert "pr merge" in bump_lepes and "--auto" in bump_lepes, (
-        "a verzióemelő PR-en nem élesedik auto-merge"
-    )
-
-
-def test_a_jovahagyas_igenye_WARNINGKENT_is_megjelenik(bump_lepes):
-    """A napló mélyén elrejtett sor nem jelzés — a warning a futáslistában
-    is látszik."""
-    assert "::warning" in bump_lepes, "nincs figyelmeztetés a jóváhagyás igényéről"
-    assert "jóváhagyásra vár" in bump_lepes
-
-
 def test_a_futas_osszefoglaloja_megkapja_a_PR_szamat(bump_lepes):
     assert "GITHUB_STEP_SUMMARY" in bump_lepes, (
         "a futás összefoglalójába nem kerül bele a PR"
     )
 
-
-def test_a_nema_echo_helyett_HIBA_all_a_bukasi_agakon(bump_lepes):
-    """A korábbi ágak sima `echo`-val jeleztek — az elveszik a naplóban.
-
-    #2487 óta ez a két ág `::error`: a `::warning`-tól a futás ZÖLDEN
-    végződött, és emiatt maradt el egy hétig minden automatikus
-    verzióemelés úgy, hogy senki nem tudott róla."""
-    for reszlet in ("A verzióemelő PR nyitása nem sikerült", "ág feltolása nem sikerült"):
-        sor = next(s for s in bump_lepes.splitlines() if reszlet in s)
-        assert "::error" in sor, f"néma vagy csak figyelmeztető marad: {reszlet}"
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_a_PR_nyitasa_utan_auto_merge_elesedik`, `test_a_jovahagyas_igenye_WARNINGKENT_is_megjelenik`, `test_a_nema_echo_helyett_HIBA_all_a_bukasi_agakon`
+# ────────────────────────────────────────────────────────────────────────

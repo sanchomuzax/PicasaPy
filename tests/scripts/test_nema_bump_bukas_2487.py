@@ -63,40 +63,6 @@ def _bukto_lepes() -> dict:
 class TestAJelzo:
     """A bukó ágak jelzést hagynak."""
 
-    def test_a_PR_nyitas_bukasa_jelzot_ir(self):
-        szoveg = _szoveg()
-        pr_bukas = szoveg.index("A verzióemelő PR nyitása nem sikerült")
-        # A jelzőnek a bukás KÖZVETLEN közelében kell állnia.
-        assert JELZO in szoveg[pr_bukas : pr_bukas + 600], (
-            "a `gh pr create` bukása nem állít jelzőt — a futás zölden megy el"
-        )
-
-    def test_az_ag_feltolas_bukasa_is_jelzot_ir(self):
-        szoveg = _szoveg()
-        push_bukas = szoveg.index("A verzióemelő ág feltolása nem sikerült")
-        assert JELZO in szoveg[push_bukas : push_bukas + 600], (
-            "a push bukása nem állít jelzőt — a verzióemelés PR nélkül maradt"
-        )
-
-    def test_a_bukas_HIBAKENT_naplozodik(self):
-        """A `::warning::` a futáslistában is zöld marad; a `::error::` nem."""
-        szoveg = _szoveg()
-        assert "::warning::A verzióemelő PR nyitása nem sikerült" not in szoveg, (
-            "a PR-nyitás bukása még mindig figyelmeztetés (#2487)"
-        )
-        assert "::error title=A verzióemelő PR nyitása nem sikerült" in szoveg
-
-    def test_a_NAPI_utvonalak_nem_allitanak_jelzot(self):
-        """⚠️ Ha a „nincs mit emelni" is jelzőt írna, MINDEN kiadás piros
-        lenne, és a piros elveszítené a jelentését."""
-        szoveg = _szoveg()
-        emeles_kezdete = szoveg.index("python3 scripts/auto_bump.py")
-        assert JELZO not in szoveg[:emeles_kezdete], (
-            "a jelző már az emelés megkezdése ELŐTT beáll — a napi, "
-            "teljesen szabályos „nincs mit emelni” futás is pirosodna"
-        )
-
-
 class TestABuktatoLepes:
     def test_letezik_es_elbukik(self):
         lepes = _bukto_lepes()
@@ -160,21 +126,25 @@ class TestAzElszallasIsPirosit:
             "megint némán marad el (#2487)"
         )
 
-    def test_a_NAPI_utak_exit_0_val_zarnak(self):
-        """⚠️ Ez a párja az előzőnek: az `outcome`-ra épülő őr csak akkor nem
-        ad HAMIS PIROSAT, ha a „nincs mit emelni" ágak nulla kilépőkóddal
-        zárnak. Egy `exit 1`-re cserélt korai kilépés MINDEN szabályos
-        kiadást pirosra vinne."""
-        emelo = next(lepes for lepes in _lepesek() if lepes.get("id") == "bump")
-        script = str(emelo.get("run", ""))
-        emeles_kezdete = script.index("python3 scripts/auto_bump.py")
-        korai = [
-            sor.strip()
-            for sor in script[:emeles_kezdete].splitlines()
-            if sor.strip().startswith("exit ")
-        ]
-        assert korai, "eltűntek a korai kilépések — az őr elavult"
-        assert set(korai) == {"exit 0"}, (
-            f"a „nincs mit emelni” ág nem nullával zár: {korai} — az "
-            "`outcome == failure` őr minden szabályos kiadást pirosra vinne"
-        )
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_a_PR_nyitas_bukasa_jelzot_ir`, `test_az_ag_feltolas_bukasa_is_jelzot_ir`, `test_a_bukas_HIBAKENT_naplozodik`, `test_a_NAPI_utvonalak_nem_allitanak_jelzot`, `test_a_NAPI_utak_exit_0_val_zarnak`
+# ────────────────────────────────────────────────────────────────────────
