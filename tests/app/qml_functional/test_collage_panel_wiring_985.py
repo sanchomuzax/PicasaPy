@@ -670,10 +670,39 @@ class TestAMentettKepAzAmitLatott:
         ), "a keretváltás nem ért el a vezérlőig"
 
         # --- 3. megfogás és elhúzás ----------------------------------------
+        #
+        # ⚠️ #1466: ez a lépés korábban VAKON teljesült. A kép TESTÉN
+        # indított vonszolás a spec szerint CSERE-gesztus
+        # (`CollageNode` → `CollageSheet.beginSwap`), és üres helyre engedve
+        # nyom nélkül elhal — mérve: a csomópont középpontja a gesztus előtt
+        # és után képpontra azonos volt. Az alatta álló állítás
+        # (`0,05 < u < 0,95`) ezért az EREDETI helyre is teljesült.
+        #
+        # A szabad mozgatás a KIJELÖLÉS-GYŰRŰ belsejéből indul
+        # (`CollageRing` `zone()`: `dist < innerRadius` → `beginMove`), a
+        # gyűrű viszont csak KIJELÖLT csomóponton látszik — kijelölés
+        # nélkül a nyomás a kép testére esik, és `beginSwap` lesz belőle.
+        #
+        # ⚠️ A dolgozó rész tehát a KIJELÖLŐ KATTINTÁS, nem a nyomás helye:
+        # a gyűrű a csomópontra van középezve, így a gyűrű közepe és a kép
+        # közepe UGYANAZ a pont — a gyűrű MouseArea-ja fogja el elsőként.
+        # Mutációval mérve: a kijelölő kattintást kivéve a kép ugyanoda
+        # kerül vissza (0,248 / 0,532 → 0,248 / 0,532), és az elmozdulás-
+        # állítás bukik; a nyomás helyét a kép közepére cserélve viszont a
+        # próba ZÖLD marad, mert a gyűrű ott is elfogja.
         lap = _lap(window)
         csomopont = _elem(window, "collageNode0")
         assert _var(qt_app, lambda: csomopont.width() > 0)
-        honnan_x, honnan_y = _kozeppont(csomopont)
+
+        _kattints(window, csomopont, qt_app)
+        gyuru_kijelolt = _elem(window, "collageRing0")
+        assert _var(qt_app, gyuru_kijelolt.isVisible), (
+            "a kattintás nem jelölte ki a csomópontot — gyűrű nélkül a "
+            "húzás megint CSERE-gesztus lenne (#1466)"
+        )
+
+        elotte_u, elotte_v = _lap_arany(csomopont, lap)
+        honnan_x, honnan_y = _kozeppont(gyuru_kijelolt)
         lap_x, lap_y, lap_w, lap_h = _ablakban(lap)
         # cél: a lap bal felső negyedének közepe — biztosan a lapon belül
         cel = QPoint(round(lap_x + lap_w * 0.28), round(lap_y + lap_h * 0.30))
@@ -685,25 +714,24 @@ class TestAMentettKepAzAmitLatott:
         qt_app.processEvents()
         # #1463: itt korábban fix `QTest.qWait(30)` állt — a teszt arra
         # fogadott, hogy 30 ms alatt lefut a gesztus következménye; terhelt,
-        # négymagos gépen ez hamis pirosat ad. A következő sor a csomópont
-        # HELYÉT méri, tehát a valódi feltétel az, hogy a gesztus-állapotgép
-        # elengedte a vásznat: a `dragMode` visszaállt üresre.
-        #
-        # ⚠️ #1463-as LELET (itt SZÁNDÉKOSAN nincs javítva): ez a „húzás"
-        # valójában NEM mozdítja el a képet. A kép TESTÉN indított vonszolás
-        # a spec szerint CSERE-gesztus (`CollageSheet.beginSwap`, küszöb 10
-        # képpont), és üres helyre engedve nyom nélkül elhal — a szabad
-        # mozgatás a gyűrű BELSEJÉN indul (`beginMove`). Mérve: a csomópont
-        # középpontja a gesztus előtt és után képpontra azonos
-        # (565,66 / 456,82). Az alatta álló állítás (0,05 < u < 0,95) ezért
-        # vakon teljesül: a kép ott van, ahol volt. A javítás — a gesztust a
-        # gyűrű belsejére vinni, és az elmozdulást is állítani — külön jegy,
-        # mert megváltoztatja, mit MÉR ez a teszt.
+        # négymagos gépen ez hamis pirosat ad. A valódi feltétel az, hogy a
+        # gesztus-állapotgép elengedte a vásznat: a `dragMode` visszaállt
+        # üresre.
         assert _var(qt_app, lambda: _lap(window).property("dragMode") == ""), (
             "a gesztus-állapotgép a felengedés után is húzásban maradt"
         )
 
         u_huzas, v_huzas = _lap_arany(csomopont, lap)
+        # #1466: a KIMENETET mérjük — a kép TÉNYLEG elmozdult-e. A 0,02-es
+        # küszöb a lap arányában ~8 képpont a 400-as vásznon; a mért
+        # elmozdulás ennél nagyságrenddel nagyobb, a küszöb csak a
+        # kerekítési zajt zárja ki.
+        elmozdulas = abs(u_huzas - elotte_u) + abs(v_huzas - elotte_v)
+        assert elmozdulas > 0.02, (
+            f"a kép NEM mozdult el a húzástól ({elotte_u:.3f}, "
+            f"{elotte_v:.3f}) -> ({u_huzas:.3f}, {v_huzas:.3f}) — pontosan "
+            "ez volt a #1466 vak lépése"
+        )
         assert 0.05 < u_huzas < 0.95 and 0.05 < v_huzas < 0.95, (
             f"a húzás után a kép a lapon kívülre került ({u_huzas}, {v_huzas})"
         )
