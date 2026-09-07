@@ -3385,3 +3385,118 @@ pásztázás. Az (1) a legolcsóbb: a `[esi+8]` objektum vtáblájának
 azonosítása az RTTI-táblából, majd a `+0x28`-as bejegyzés kiolvasása.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 33. K1 — az RTTI feloldja a virtuális hívást, és a 32.5 MINDHÁROM lehetősége kizárva (2026-09-07, #1412)
+
+*185. kutatói kör. A 32.6 megnevezett lépését viszi, és a 32.5-ben
+felsorolt három maradék lehetőséget végigméri. Új eszköz nem kellett: a
+bináris-index `rtti` táblája a vtáblák TELJES bejegyzés-listáját tartja.*
+
+### 33.1 ⭐ A virtuális hívás FELOLDVA: `CCollageUI::vftable[10]` = `FUN_0082c9a0`
+
+A 32.1-ben megnevezett hívás (`0x00887b6a`: `[[esi+8]] + 0x28`, argumentum a
+csomópontszám) az `rtti` tábla alapján egyértelmű:
+
+```
+CCollageUI::vftable @ 0x00cbf450
+  [0] 0x00750cb0   [1] 0x005baa00   [2] 0x0082a670 (a kollázspanel)
+  [3] 0x0082c360   [4] 0x0082cb50   [5] 0x0082d570 (parancs-elosztó)
+  [6] 0x00830a00   [7] 0x00831750   [8] 0x00831b50   [9] 0x0087dc00
+  [10] → +0x28 →  0x0082c9a0
+```
+
+**És a `FUN_0082c9a0` viselkedése MÁR KI VAN MÉRVE** (21.1): a
+`clamp(1/sqrt(sqrt(n)−1)) × lapszélesség × 0,33` kifejezést számolja ki a
+**darabszámmal** a panel beállítás-objektumába. A teljes, vermen kívüli
+írás-listája ezt igazolja:
+
+| cím | írás |
+|---|---|
+| `0x0082ca7b` | `[eax+0x30]` |
+| `0x0082cad0` · `0x0082cadf` | `[edx+0x3c]` · `[eax+0x3c] = 0` |
+| `0x0082cb1a` | `byte [ecx+0x36] = 1` |
+
+⇒ **csomópont-mezőt nem ír.** A 32.5 (1) lehetősége **KIZÁRVA**.
+
+### 33.2 A `FUN_00887e50` (gyűjtés + rács) — a TELJES írás-listája
+
+| cím | írás | mi |
+|---|---|---|
+| `0x00887f6b` · `0x00887fd5` · `0x0088800c` | `[eax]` · `[edi]` · `[edi+4]` | a vektor két mutatója |
+| `0x0088819b` · `0x0088819e` · `0x008881a1` | `[eax+0x10]` · `[+0x14]` · `[+0x18]` | **sor · oszlop · k** (19.1) |
+
+⇒ **csomópont-mezőt nem ír.** A 32.5 (2) lehetősége **KIZÁRVA**, és a 19.1
+mérése harmadszor is megerősítve.
+
+### 33.3 A `FUN_008342b0` — csak mutató-rekeszek
+
+`0x008342ce` · `0x008342f7` · `0x0083434a` · `0x0083444d` · `0x008344f2` ·
+`0x008344fc` · `0x00834508` — mind `[edi]` vagy `[eax]`, eltolás nélkül
+(tároló-könyvelés). ⇒ **csomópont-mezőt nem ír.** A 32.5 (3) lehetősége
+**KIZÁRVA**.
+
+### 33.4 ⭐ Az RTTI-tábla mint FÜGGETLEN bizonyíték a 32.1/32.2-re
+
+```
+CContactSheetTheme::vftable @ 0x00cbf670
+  [0] 0x00887ad0   ← a 32.1 „próba-út"
+  [2] 0x00887bd0   ← a 32.2 „valódi menet"
+```
+
+A két szerep tehát nem a hívási mintából következtetett, hanem a
+vtábla-sorrendből is látszik. A teljes témacsalád, egy helyen:
+
+| osztály | vtábla | slot0 |
+|---|---|---|
+| `CContactSheetTheme` | `0x00cbf670` | `0x00887ad0` |
+| `CPileTheme` | `0x00cbf5ac` | `0x0087b4a0` |
+| `CRegularGridTheme` | `0x00cbf610` | `0x00884040` |
+| `CGridTheme` | `0x00cbf5dc` | `0x00880e30` |
+| `CFrameGridTheme` | `0x00cbf6a0` | `0x00880e30` |
+| `CMultiExposureTheme` | `0x00cbf640` | `0x00887110` |
+
+és a **csempe**-osztályok: `NoBorderTheme` (`0x00cbf934`),
+`WhiteBorderTheme` (`0x00cbf928`), `PolaroidBitmapTheme` (`0x00cbf91c`),
+`DimmedBitmapTheme` (`0x00cbf940`) — mindegyik kétbejegyzéses.
+
+### 33.5 ⭐ ÚJ, eddig nem nevesített osztály: `CHeadlessCollageUI` — és a kizárása
+
+Az `rtti` tábla szerint a kollázs-felületnek **két** megvalósítása van:
+`CCollageUI` (`0x00cbf450`) és **`CHeadlessCollageUI`** (`0x00cc4eec`) —
+az utóbbi a spec eddigi szakaszaiban egyszer sem szerepelt. Kézenfekvő
+gyanú volt, hogy a mentés/renderelés ezen fut, és a csomópontokat ez írja.
+
+**Megmérve — nem.** A vtábla mind a kilenc saját bejegyzését átnézve
+(csomópont-mező `+0x18`…`+0x2c` írása, `esp`/`ebp` bázis nélkül):
+
+| függvény | találat | ítélet |
+|---|---|---|
+| `0x0088a430` (1400 b) | `+0x20`, `+0x24` | **kritikus szakasz**: `[+0x20]` = birtokló szál (`GetCurrentThreadId`, `[0xc40284]`), `[+0x24]` = rekurziószám, `[+0x28]` = a `CRITICAL_SECTION` (`EnterCriticalSection`, `[0xc4055c]`) |
+| `0x0088ac30` (500 b) | `+0x2c` | a panel `[ebx+0x270]` beállítás-objektuma: `+0x40 → +0x2c`, `+0x44 → +0x30`, `+0x48…+0x4a → +0x34…+0x36` — **állapot-visszaállítás** (a 26.4 ítélete, most utasításszinten újra igazolva) |
+| a többi hét | — | nincs |
+
+⇒ **a headless felület sem ír csomópont-mezőt.**
+
+### 33.6 Hol tart a K1 — a lánc MINDEN eleme kizárva
+
+A 32.5 három állítása áll, és a hozzájuk tartozó három lehetőség
+mostanra mind kizárva. Az elrendezési út **egyetlen** függvénye sem ír a
+dokumentum csomópontjaiba: az elrendező a helyi vektorba (32.1–32.3), a
+rácsszámoló a saját rács-mezőibe (33.2), a virtuális hívás a panel
+beállításaiba (33.1), az előkészítő a tárolójába (33.3), a headless
+felület sehova (33.5).
+
+⇒ **A `.cxf`-be kerülő geometria NEM a téma-elrendezési úton keletkezik.**
+Ez erős, mert nem egy pásztázás negatívja, hanem az út **összes**
+függvényének tételes írás-listája.
+
+**A KÖVETKEZŐ lépés, megnevezve:** a keresést át kell vinni a **mentési**
+oldalra. A `.cxf`-írót (`FUN_008347b0`) a mentés-szervező
+(`FUN_00834700`, 22.3) hívja; annak a hívási fájában kell megkeresni, ki
+tölti fel a dokumentum `[+0x48]` tömbjét **közvetlenül a kiírás előtt**.
+A 26.4 ezt az ágat 3 szint mélyen már pásztázta `+0x2c`-írásra
+(0 író, 1 olvasó) — de a 30.3 óta tudjuk, hogy **a hármas
+együttállást** (`+0x20`/`+0x24`/`+0x2c`) kell keresni, és a 26.4 nem erre
+szűrt.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
