@@ -592,6 +592,13 @@ Column {
                               ? tray.ctl.heldThumbUrlAt(index)
                               : tray.ctl.photos.thumbUrlAt(
                                     Number(tray.appWindow.selectedIndexes[index]))
+                        // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
+                        // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a
+                        // Qt „Mipmap settings changed” figyelmeztetést ad, és
+                        // VISSZAESIK a korábbi szűrésre — a kép nem azzal a szűréssel
+                        // jelenik meg, amit kértünk (Windowson hatszor egy futásban).
+                        smooth: true
+                        mipmap: true
                         //: `PreserveAspectCrop` = a rövidebbik oldalra
                         //: illeszt, a hosszabbikat levágja — a `clip`
                         //: nélkül a levágott rész kilógna a cellából.

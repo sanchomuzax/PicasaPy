@@ -242,6 +242,16 @@ Item {
                     source: clip.missing
                             || clip.modelData.thumbUrl === undefined
                             ? "" : clip.modelData.thumbUrl
+                    // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
+                    // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a
+                    // Qt „Mipmap settings changed” figyelmeztetést ad, és
+                    // VISSZAESIK a korábbi szűrésre — a kép nem azzal a szűréssel
+                    // jelenik meg, amit kértünk (Windowson hatszor egy futásban).
+                    // A `sourceSize: 128` MÁSIK gyorsítótár-kulcs, tehát ez a textúra
+                    // nem közös a rácséval — de a beállítás egységessége itt is szabály:
+                    // a 128-as kép ~48 képpontra kicsinyítve mipmap nélkül lépcsőzne.
+                    smooth: true
+                    mipmap: true
                     // A miniatűr KICSI: egy 350 képes kollázs listája
                     // teljes felbontású dekódolással megfojtaná a felületet.
                     sourceSize.width: 128
