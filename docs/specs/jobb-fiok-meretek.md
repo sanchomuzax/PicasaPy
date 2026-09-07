@@ -96,13 +96,13 @@ van (kicsi/nagy) — ez nálunk nincs meg.
 | `peoplepanel/status_label` (`peoplepanel.tre:8`) — „Válasszon ki egy mappát az arcok megjelenítéséhez" | **213 × 14** | x 10, y 6 |
 | `addname` (Név hozzáadása) | **163 × 20** | x 0, y 0 |
 | `ignore` (Mellőzés) | **163 × 17** | x 0, y 26 |
-| `suggestion_yes` | **27 × 22** | x **68** |
-| `suggestion_no` | **27 × 22** | x **100** — osztásköz **32 px** |
-| `peoplelist` | **260 × 322** | x 8..268 |
+| `peoplepanel/suggestion_yes` | **27 × 22** | x **68** |
+| `peoplepanel/suggestion_no` | **27 × 22** | x **100** — osztásköz **32 px** |
+| `peoplepanel/peoplelist` | **260 × 322** | x 8..268 |
 | `manual_frame` | **239 × 145** | x 18..257, y 105 |
-| `manual_instructions` | 221 × 86 | x 27..248 |
+| `peoplepanel/manual_instructions` | 221 × 86 | x 27..248 |
 | `manual_cancel` | **98 × 28** | x 89..187, y 210 |
-| `manual_add` | **259 × 21** | x 8..267, y 331 |
+| `peoplepanel/manual_add` | **259 × 21** | x 8..267, y 331 |
 
 A javaslat-elfogadó/elutasító pár **27 × 22**, egymás mellett 32 px
 osztásközzel — nem szöveges gombok.
@@ -146,17 +146,17 @@ sorokéi 85 px (2 px hézag). A `quicktag_group` **266 × 98**.
 | elem | méret | pozíció |
 |---|---:|---|
 | `places_icon` | 14 × 21 | x 4, y 7 |
-| `geo_info` | **243 × 14** | x 18..261 |
+| `geopanel/geo_info` | **243 × 14** | x 18..261 |
 | `map_menu` (`popuplist`) | **104 × 19** | x 169..273, y 5 |
 | `geolist` | **260 × 60** | x 8..268, y 28..88 |
 | `geolist_group` (kerettel) | 260 × 66 | y 25..91 |
 | **`mapnode`** (maga a térkép) | **264 × 284** | x 6..270, y 28..312 |
-| `loading_base` | 264 × 284 | ugyanott |
-| `loading_title` | 213 × 25 | y 117 |
-| `loading_icon` | 64 × 52 | y 153 |
+| `geopanel/loading_base` | 264 × 284 | ugyanott |
+| `geopanel/loading_title` | 213 × 25 | y 117 |
+| `geopanel/loading_icon` | 64 × 52 | y 153 |
 | `geopanel/search_label` (`geopanel.tre:61`) — „Cím keresése:" | **213 × 14** | y 314 |
-| `search_group` | **258 × 28** | x 10..268, y 328 |
-| `searchinput` | **212 × 17** | x 19..231 |
+| `geopanel/search_group` | **258 × 28** | x 10..268, y 328 |
+| `geopanel/searchinput` | **212 × 17** | x 19..231 |
 | `search` (gomb) | **28 × 28** | x 237..265 |
 | `search_icon` | 17 × 17 | |
 
@@ -242,6 +242,8 @@ A `#` az erőforrásnyelvben a kikommentezés jelölése — ugyanaz, mint a
 
 ### Ami a kiadott változatban TÉNYLEG ott van
 
+⚓ **Horgony (#2628):** az elem a `rightdrawerpanel.tre:38` sorában áll — a #2182 óta minden elemtáblához kell forrás, különben a lefedettségi mérő NÉMÁN átugorja a szakaszt.
+
 | elem | pozíció | méret | mi ez |
 |---|---|---|---|
 | `rect: base` / `docbounds` | (0, 0) | **276 × 388** | a fiók |
@@ -251,7 +253,7 @@ A `#` az erőforrásnyelvben a kikommentezés jelölése — ugyanaz, mint a
 | `text: title_text` | (**29**, 5) | **218 × 19** | a **cím** |
 | `close` | (**255**, 10) | **14 × 14** | bezárás |
 | `propertiespanel` | (0, **31**) | **276 × 357** | Tulajdonságok |
-| `tagpanel` | (0, **31**) | **276 × 357** | Címkék |
+| `rightdrawerpanel/tagpanel` | (0, **31**) | **276 × 357** | Címkék |
 | `peoplepanel` | (0, **31**) | **276 × 357** | Emberek |
 | `geopanel` | (0, **31**) | **276 × 357** | Helyek |
 

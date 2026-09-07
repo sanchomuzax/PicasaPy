@@ -2180,11 +2180,11 @@ készlet ennél bővebb:
 | elem | felirat | buboréksúgó |
 |---|---|---|
 | `3x5button` | 3.5 x 5 | Print photos as a standard 3.5x5 size |
-| `4x6button` | 4 x 6 | Print photos as a standard 4x6 size |
-| `5x7button` | 5 x 7 | Print photos as a standard 5x7 size |
-| `8x10button` | 8 x 10 | Print photos as a standard 8x10 size |
+| `printpanel/4x6button` | 4 x 6 | Print photos as a standard 4x6 size |
+| `printpanel/5x7button` | 5 x 7 | Print photos as a standard 5x7 size |
+| `printpanel/8x10button` | 8 x 10 | Print photos as a standard 8x10 size |
 | **`walletbutton`** | **Wallet** | **Print wallet-sized photos** |
-| `fullbutton` | Full Page | Print photos the same size as paper |
+| `printpanel/fullbutton` | Full Page | Print photos the same size as paper |
 | **`photoindexbutton`** | *(a leltárban felirat nélkül)* | — |
 
 És egy **minőség-pár**, ugyanabban a függvényben, mint a `PrintLastSize`
@@ -3316,7 +3316,7 @@ eszköztárgomb, nálunk menütétel vagy helyi menü. Mindegyik felvéve a
 | `rotateleft` / `rotateright` | Kép menü + fotó helyi menü |
 | `scratchhold` / `scratchclear` | képtálca `trayHold` / `trayClear` (`TrayBar.qml`) |
 | `newalbum` | bal hasáb (`FolderPane.qml`, `AlbumsSection.qml`) |
-| `newfolder` | Fájl menü „Áthelyezés új mappába…" |
+| `thumbui/newfolder` | Fájl menü „Áthelyezés új mappába…" |
 
 Hatás a táblán: párosítva 135 → **143**, hiányzik 396 → **388**.
 
@@ -3512,15 +3512,15 @@ csak más néven vagy más megfogalmazásban. Mind felvéve a
 
 | eredeti | nálunk (`EditorCropPanel.qml`) |
 |---|---|
-| `croptext` | „Choose a size below, then drag on the picture to…" (56. sor) |
+| `editpanel/croptext` | „Choose a size below, then drag on the picture to…" (56. sor) |
 | `crop_aspect_menu` | `cropAspectCombo` (81.) + `cropAspectList` (109.) |
-| `crop_delete_custom` | `cropAspectDelete<i>` (164.), **megerősítéssel** („Delete this custom aspect ratio?", 186.) |
+| `editpanel/crop_delete_custom` | `cropAspectDelete<i>` (164.), **megerősítéssel** („Delete this custom aspect ratio?", 186.) |
 | `cropsug_preview1/2/3` | `cropSuggestion0/1/2` (270–272.), a „Suggested crops" sorban (237.) |
 
 | eredeti | nálunk (retus / vörösszem) |
 |---|---|
 | `retouch_label` · `retouchtext` | `EditorRetouchPanel.qml:47` · `:56` |
-| `redeye_label` · `redeyetext` | `EditorRedeyePanel.qml:55` · `:64` |
+| `editpanel/redeye_label` · `redeyetext` | `EditorRedeyePanel.qml:55` · `:64` |
 
 Hatás a táblán: párosítva 143 → **153**, hiányzik 388 → **382**,
 bizonytalan 158 → **154**.
@@ -3709,7 +3709,7 @@ ugyanaz a tartalom, más megfogalmazás, ezért nem párosult gépi úton.
 |---|---|---|
 | `filllight_icon` | „Fill Light" + `finetuneFillSlider` | `EditorFinetunePanel.qml:105`, `:108` |
 | `droppertoggle` | `finetuneNeutralPicker` | `:208`, `:211` |
-| `faces_button` | `facesToggleButton` + `facesVisible` | `PhotoViewer.qml:1490`, `:165–166` |
+| `editpanel/faces_button` | `facesToggleButton` + `facesVisible` | `PhotoViewer.qml:1490`, `:165–166` |
 | `filter_name` | `effectParamTitle` (az aktív effekt neve) | `EditorParamPanel.qml:191` |
 
 Tábla: párosítva 153 → **157**, hiányzik 382 → **380**, bizonytalan

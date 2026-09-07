@@ -178,6 +178,8 @@ tartozó **alapértelmezett margók számértéke viszont nem szerepel a
 
 ## Eltérés a PicasaPy-tól
 
+⚓ **Horgony (#2628):** az elem a `thumbui.tre:20` sorában áll — a #2182 óta minden elemtáblához kell forrás, különben a lefedettségi mérő NÉMÁN átugorja a szakaszt.
+
 A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
 1280/1600/1920 px-es ablakban — a mérő őr:
 `tests/app/qml_functional/test_fo_ablak_elrendezes_587.py`):
@@ -188,7 +190,7 @@ A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
 | a bal panel viselkedése átméretezéskor | **nem skálázódik** | nem skálázódik (mérve: 230 mindhárom ablakszélességen) | ✅ |
 | felső sáv | 35 px | **35 px** (#587 előtt 34) | ✅ |
 | `importbutton` | 111 × 22 | **111 × 22** (#587 előtt 100 × 24) | ✅ |
-| `searchcontainer` | 388 × 30 | **388 × 30** (#587 előtt 300 × 24) | ✅ |
+| `thumbui/searchcontainer` | 388 × 30 | **388 × 30** (#587 előtt 300 × 24) | ✅ |
 | alsó sáv | 105 px | 20 + 85 = **105 px** | ✅ (#1420) — a magassággal EGYÜTT a tálca-tartalom is átépült: 36,5 %-os osztópont, 81 px-es képtálca, 141 × 35-ös zöld gomb |
 | a sáv belső osztása | 36,5 % | **36,5 %** | ✅ (#1420) — képtálca \| zöld gomb \| műveletsor |
 

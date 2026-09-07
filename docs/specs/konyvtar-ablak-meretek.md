@@ -300,10 +300,12 @@ hézag nélkül:
 
 ### 5.7 A zöld feltöltés-gomb és a műveletsor
 
+⚓ **Horgony (#2628):** az elem a `thumbui.tre:634` sorában áll — a #2182 óta minden elemtáblához kell forrás, különben a lefedettségi mérő NÉMÁN átugorja a szakaszt.
+
 | elem | méret |
 |---|---:|
 | `webupload_rect` | **147 × 44** (a hely) |
-| `webupload` (maga a gomb) | **141 × 35** |
+| `thumbui/webupload` (maga a gomb) | **141 × 35** |
 | `webupload_icon` | 18 × 14 |
 | `outputs` (Nyomtatás / E-mail / Exportálás sor) | **424 × 29** |
 | `separator` | **497 × 2** |

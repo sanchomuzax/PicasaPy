@@ -261,7 +261,7 @@ konfigurálása"**.
 
 | vezérlő | felirat | jelentés |
 |---|---|---|
-| `recent_checkbox` | Reserve top two buttons for recently used tags | **alapból BE** — a felső két gomb a legutóbb használt címkéket követi |
+| `quicktagconfig/recent_checkbox` | Reserve top two buttons for recently used tags | **alapból BE** — a felső két gomb a legutóbb használt címkéket követi |
 | `autofill` | Autofill empty boxes above with commonly used tags | az üres mezők feltöltése a gyakori címkékkel |
 
 > **A felső kettő tehát alapból automatikus**, és csak a jelölő
