@@ -320,3 +320,106 @@ lejjebb kezdődik.
 *Bizonyítottsági fok: **megerősített** — a számok a `respack.yt`
 rétegfejléceinek `int16 x0, y0, x1, y1` mezőiből valók
 ([`picasa-respack-format.md`](picasa-respack-format.md) 3.).*
+
+## 9. A FÁJLNÉV a sávban: kétlépcsős leépülés, KÉPPONT alapján (2026-09-07, #2581)
+
+*A #2581 három kérdést tett fel: karakterre vagy képpontra vág az eredeti;
+mi a vágás aránya; és melyik nézet írja ki a mappa-előtagot. Az első és a
+harmadik LEZÁRULT, a második két jelölt közül egyet zár ki.*
+
+### 9.1 A két minta — UGYANAZ a nézet, más ABLAKSZÉLESSÉG
+
+| felvétel | ablak | a sáv első tétele | a név mezője |
+|---|---|---|---|
+| `picasa3-felirat-bekapcsolva. 223224.jpg` (1920 × 1080, teljes képernyő) | **1920** | `AI > JonasBen_he_sits_on_a_ladder_above_the_clouds_with_a_fishing-ro_0291672e-b6c3-4582-8195-fdadc0a71328.png` | x 493…1036 = **544 px** |
+| `141421.jpg` (1920 × 1200, A/B — a bal fél a Picasa) | **≈960** | `JonasBen_he_sits_...0a71328.png` | x 213…361 = **149 px** |
+
+**Ugyanaz a fájl, ugyanaz a nézet, ugyanaz a betű.** Hogy a betű azonos, a
+SZOMSZÉD mezők bizonyítják: a dátum **98**, a `896x1344 képpont` **85**, a
+`807 KB` **31** képpont — mindhárom pontosan ugyanannyi a két felvételen.
+
+### 9.2 Karakter vagy képpont? — **KÉPPONT**
+
+Ha karakterszámra vágna, ugyanaz a név ugyanúgy csonkulna mindkét
+felvételen. Nem így van: a szélesebb ablakban **teljes egészében** kiírja
+(544 px), a keskenyebben 149 képpontra vágja. ⇒ **a szabály képpont-alapú.**
+
+A binárisban is ez áll: a `"..."` literál (`0x00cb3ee4`) — a **kimerítő
+pásztázás szerint a program EGYETLEN hivatkozott hárompontja** — a
+`FUN_00826310`-ben van, és az a függvény
+`GetTextExtentExPointA`-val (`0xc40100`) kérdezi meg, **hány karakter fér
+el N képpontban**.
+
+### 9.3 A leépülés KÉTLÉPCSŐS
+
+A keskeny ablakban nemcsak a név rövidül, hanem a **`AI > ` mappa-előtag is
+eltűnik** — pedig a széles ablakban ott van. A vágott alak
+(`JonasBen_he_sits_...`) **nem** az előtaggal kezdődik, tehát nem egyszerű
+középső elhagyásról van szó:
+
+1. elfér minden → `mappa > név   dátum   felbontás   méret   (N / i)   címkék`
+2. nem fér el → **elmarad a `mappa > ` előtag**
+3. még mindig nem fér el → **a név KÖZEPÉN vág**, `...`-tal
+
+⚠️ Ez ugyanaz a csapda, amibe a #2565 belefutott a SZÁMLÁLÓVAL: ott is a
+fél szélességű ablak levágását olvastuk hiánynak
+(`controller.py`, `viewerInfo` kommentje). A tanulság most másodszor jött
+elő: **ablakszélesség nélkül a sáv egyetlen hiányzó eleméből sem szabad
+következtetni.**
+
+### 9.4 A vágás aránya — a mérés két jelöltet KIZÁR
+
+A 149 képpontos mezőben (`141421.jpg`, x 213…361):
+
+| rész | tartalom | szélesség |
+|---|---|---|
+| fej | `JonasBen_he_sits_` (17 karakter) | **84 px** |
+| jel | `...` (három ASCII pont, nem `…`) | ≈ **7 px** |
+| far | `0a71328.png` (11 karakter) | **58 px** |
+
+A fej/far arány a jel nélkül **84 / 142 = 59,2 %**. Ebből:
+
+* **50/50 KIZÁRVA** — az 71/71 képpontot adna, a mért fej 84;
+* **2/3 – 1/3 KIZÁRVA** — az 94,7/47,3-at adna;
+* **60/40 megfelel**: 85,2/56,8 — a mérttől kevesebb, mint egy
+  karakterszélességnyi (≈5 px) eltérés.
+
+⇒ A 60/40 az egyetlen kerek arány, ami a mérésbe belefér — de **egyetlen
+csonkolt mintából ez nem szerződés**. Amit eldöntene: még egy felvétel
+ugyanabban a nézetben, MÁS hosszúságú névvel (vagy ugyanez a név más
+ablakszélességnél). Addig a 60/40 **jelölt**, nem lelet.
+
+### 9.5 Amit a binárisban KIMERÍTŐEN kizártunk
+
+Hogy a középső vágást ne keresse újra senki egy nem létező Win32-hívásban:
+
+| jelölt | eredmény |
+|---|---|
+| `PathCompactPathExA/W` (shlwapi) | **nincs importálva** |
+| `DrawTextW` `DT_PATH_ELLIPSIS` / `DT_END_ELLIPSIS` | az EGYETLEN `DrawTextW` hívás (`0x008d90a1`) `0xc10` jelzőkkel megy = `DT_WORDBREAK│DT_CALCRECT│DT_NOPREFIX` — **mérés, nem rajzolás**, ellipszis-jelző nincs |
+| `…` (U+2026) literál | **nincs**: az egyetlen előfordulás (`0x00cf24fc`) egy CP1252 → UTF-8 átalakító TÁBLÁBAN áll, a `‹ Š ‰ ˆ ‡ † …` sorozat közepén |
+| széles (`UTF-16`) `"..."` | **nincs** |
+| `%s...%s` alakú formátumsztring | **nincs** (a 122 `"..."`-ra végződő cím közül egyetlenegyre — `0x00cb3ee4` — van hivatkozás) |
+
+⇒ A hárompontot **a program maga fűzi hozzá**, a `FUN_00826310`-ben.
+
+### 9.6 A `FUN_00826310` — amit tud, és amit nem
+
+`(hdc, sztring, maxSzélesség, ki_fej, ki_far, hárompont_kell, ki_szélesség)`
+
+1. `GetTextExtentExPointA`-val megkérdezi, hány karakter fér el;
+2. ha minden elfér → fej = a teljes szöveg, far = üres;
+3. különben **visszafelé keres egy SZÓKÖZT** (`0x00986310`, a
+   `fitCount − 3` pozíciótól, ha a hárompont kell) — tehát **szóhatáron
+   vág, ha van**;
+4. fej = a vágásig, és ha a hívó kérte, a végére `"..."`;
+5. far = a maradék — ez a **következő sor**, nem a név vége.
+
+⇒ Ez önmagában **sorTÖRŐ + VÉG-ellipszis**, nem középső. A középső alakot a
+HÍVÓ állítja elő: a fejhez a saját farkát fűzi. A hívó megkeresése nyitott
+(a függvényre nincs közvetlen `e8` hívás — vtáblán át hívódik); a 9.4
+aránya ezért is marad jelölt.
+
+*Bizonyítottsági fok: **megerősített** a 9.2 és a 9.3 (két felvétel,
+képpontra mérve, azonos betűvel igazolva) és a 9.5 (kimerítő pásztázás);
+**jelölt** a 9.4 aránya.*
