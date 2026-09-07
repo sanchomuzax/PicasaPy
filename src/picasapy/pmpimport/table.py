@@ -57,7 +57,10 @@ def read_table(db3_dir: Path, table_name: str) -> PmpTable:
     raw_columns: dict[str, PmpColumn] = {}
     for path in sorted(db3_dir.glob(f"{prefix}*.pmp")):
         column_name = path.stem[len(prefix) :]
-        raw_columns[column_name] = read_pmp_column(path)
+        # #2521: az oszlop NEVÉT is átadjuk, hogy a beolvasó a fejléc
+        # típuskódját a MÉRT elváráshoz mérhesse — enélkül a tábla ott
+        # volna, de senki nem nézné meg.
+        raw_columns[column_name] = read_pmp_column(path, oszlop=column_name)
     if not raw_columns:
         raise FileNotFoundError(
             f"Nincs egyetlen {prefix}*.pmp oszlopfájl sem itt: {db3_dir}"

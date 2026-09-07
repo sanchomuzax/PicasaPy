@@ -44,7 +44,12 @@ class PhotoRecord:
     windows_path: str
     row: int
     caption: str | None
-    rotate: int | None
+    #: #2521: a `rotate` a valódi adatbázisban SZTRING (`0x00`, `ytString`) —
+    #: a `.picasa.ini`-beli `rotate(N)` alakot tartja, nem egész számot
+    #: (`docs/specs/picasa-imagedata-rekord.md`). A korábbi `int | None`
+    #: annotáció a szintetikus tesztfixtúrát írta le, nem a valóságot; ma
+    #: ezt a mezőt semmi nem olvassa a forrásfában.
+    rotate: str | None
     star: bool
     filters: str | None
     crop64: int | None
