@@ -1617,7 +1617,7 @@ mérő nem látja (22.4–22.5).
 
 | tétel | verdikt |
 |---|---|
-| `activity/activitybutton` + `uploadmgr/{itemlist, minibutton, pause, resume, cleanup, throttlechk}` (**7**) | **HATÓKÖRÖN KÍVÜL** — ugyanaz a funkció: az `activitybutton` a **Feltöltéskezelőt** nyitja (`0x007d3f90`: „Upload Manager", `uploadmgr::title`, `%.2f KBps`, „Paused"), ami Picasa Web Albums-gépezet |
+| `activity/activitybutton` + `uploadmgr/itemlist`, `uploadmgr/minibutton`, `uploadmgr/pause`, `uploadmgr/resume`, `uploadmgr/cleanup`, `uploadmgr/throttlechk` (**7**) | **HATÓKÖRÖN KÍVÜL** — ugyanaz a funkció: az `activitybutton` a **Feltöltéskezelőt** nyitja (`0x007d3f90`: „Upload Manager", `uploadmgr::title`, `%.2f KBps`, „Paused"), ami Picasa Web Albums-gépezet |
 | `uploadallinstructionpanel/close` | a testvér `instructionpanel/close` **már mérve** (14 × 14, „Oldalpanel bezárása") — ugyanaz a vezérlő a másik panelen |
 | **`outputlayout/morebutton`** | ✅ **EZ A KÖR FELTÁRTA** — a kimeneti gombsor túlcsordulás-gombja; `picasa-keptalca.md` 21., jegy **#2191** |
 

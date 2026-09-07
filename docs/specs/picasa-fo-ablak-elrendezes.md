@@ -987,7 +987,7 @@ láncolat, hanem erőforrás-adat.
 |---|---|---|---|
 | `m_enable_albummode` (`macros.tre:196`) | `acquirepanel/anowbutton` (`acquirepanel.tre:264`) | `mainuipanel`, `infowell`, `secretcoinclip` | `acquirepanel`, `printpanel`, `editpanel`, `fullview` |
 | `m_albumtoggle` (`macros.tre:205`) | `thumbui/viewswitch` (`thumbui.tre:36`) | `editpanel`, `1to1`, `fit` | `albumsback`, `throttlegroup`, `listdecrect`, `listbutton`, `hlistsizer`, `searchgroup`, `searchcontainer` |
-| `m_basecontrolset_enable` (`macros.tre:224`) | `thumbui/publishswitcher` (`thumbui.tre:81`) | `basecontrolset`, `importbutton`, `buttongroup1`, `activitycontainer` | — |
+| `m_basecontrolset_enable` (`macros.tre:224`) | `thumbui/publishswitcher` (`thumbui.tre:81`) | `basecontrolset`, `importbutton`, `thumbui/buttongroup1`, `activitycontainer` | — |
 | `m_cdcontrolset_enable` (`macros.tre:233`) | `thumbui/cdmode` (`thumbui.tre:484`) | `controlsettop`, `publishcontrolsets`, `publish/presentation_group`, `cd_label` | `searchcontainer`, `bottombevel_base`, `logo` |
 | `m_backupcontrolset_enable` (`macros.tre:245`) | `thumbui/backup` (`thumbui.tre:96`) | `controlsettop`, `publishcontrolsets`, `publish/backup_group`, `backup_label` | `searchcontainer`, `bottombevel_base`, `logo` |
 | `m_replicatecontrolset_enable` (`macros.tre:257`) | `thumbui/replicate` (`thumbui.tre:76`) | `controlsettop`, `publishcontrolsets`, `publish/replication_group`, `replication_label` | `searchcontainer`, `bottombevel_base`, `logo` |

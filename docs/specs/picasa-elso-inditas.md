@@ -55,6 +55,10 @@ választ:
 
 *Forrás: `initialscan.tre:113` (`initialscan/cancel`).*
 
+A tábla **levélneveket** sorol; mindegyik teljes neve `initialscan/<név>` —
+a két rádiógomb tehát `initialscan/radio_limited` és
+`initialscan/radio_complete`, a csoportjuk `initialscan/radiogroup` (#2530).
+
 | elem | x0 | y0 | x1 | y1 | méret |
 |---|---:|---:|---:|---:|---|
 | `docbounds` / `baseclip` | 0 | 0 | **640** | **463** | a panel mérete |

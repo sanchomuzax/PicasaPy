@@ -22,7 +22,9 @@ Bizonyítottsági fok szakaszonként jelölve; cím nélküli állítás nincs.
 
 A `collagepanel` minden vezérlőjét **egyetlen** kezelő szolgálja ki:
 `0x0082d570` (4721 bájt). Név szerinti összehasonlítás-lánc; a
-teljes tábla, ahogy a binárisban áll:
+teljes tábla, ahogy a binárisban áll. A `vezérlő` oszlop a
+**levélneveket** sorolja: mindegyik teljes neve `collagepanel/<név>`
+(#2530).
 
 | vezérlő | mit hív | mit csinál |
 |---|---|---|
@@ -48,7 +50,7 @@ teljes tábla, ahogy a binárisban áll:
 | `snap_12/3/6/9` | `0x0083b900(szög)` | forgatás-igazítás (ld. 5.4) |
 | `rand_order` | `0x0083aab0` | Képek összekeverése (sorrend) |
 | `rand_placement` | `0x0083aaf0` | Véletlenszerű kollázs (elhelyezés) |
-| `view_and_edit` | `0x0083de20` | a kijelölt kép megnyitása a könyvtárban |
+| `collagepanel/view_and_edit` | `0x0083de20` | a kijelölt kép megnyitása a könyvtárban |
 | `addclips` | `0x0083b180` | a kijelölt klipek felvétele |
 | `deleteclips` | `0x0083b590` | klipek törlése |
 | `getmoreclips` | (ld. 8.) | vissza a könyvtárba „Vissza a kollázshoz" gombbal |
@@ -554,7 +556,8 @@ A `.tre` szerint a **`color_bg` az alapértelmezés** (`Property setpressed 1`),
 
 A színválasztó két részből áll: a `colorcircle` (153, 241) 37×37 kör
 (`Property round 3`) és a `dropper_icon` (193, 253) 24×14 **pipetta**. A
-kattintásra megnyíló paletta a `picker_panel` (61, 64) 218×178, ami a
+kattintásra megnyíló paletta a `collagepanel/picker_panel` (61, 64)
+218×178, ami a
 `.tre`-ben `m_hidden`, `Property palette 1`, és fókuszt ad a
 `bkgcolorpick/base`-nek.
 
