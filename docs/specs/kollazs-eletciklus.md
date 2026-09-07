@@ -3709,3 +3709,92 @@ Két megnevezett, még nem olvasott hely:
 
 **Eszköz:** `eszkozok/binaris/atadok.py` — egy függvény hívási HELYEIT
 (utasításcím) és a hívás előtti hat utasítást listázza.
+
+## 36. K1 — a kollázspanel KÉT dokumentumot tart, és az autosave csak sorosít (2026-09-07, #1412)
+
+*188. kutatói kör. A 35.6 két megnevezett helyét viszi: a `FUN_00833cf0`
+hét hívóját és a `CAutosaveCollageThread`-et.*
+
+### 36.1 ⭐ A dokumentum-másoló hívási megállapodása — a KÓDBÓL
+
+`FUN_00833cf0` (1192 b) feje:
+
+```
+0x00833cf9  mov ebp, [esp+0x10]   ; három belső push után → az 1. argumentum
+0x00833cfe  mov esi, [esp+0x18]   ; négy belső push után → a 2. argumentum
+0x00833d02  mov al, [esi]  →  0x00833d05  mov [ebp], al
+```
+
+⇒ **az 1. argumentum (az utoljára tolt) a CÉL, a 2. a FORRÁS.**
+A 35.1 tanulsága szerint ezt ki kell olvasni, mert a hívási helyek
+olvasata enélkül megfordítható.
+
+### 36.2 ⭐ A kollázspanel KÉT kollázs-dokumentumot tart: `[+0x138]` és `[+0x1b0]`
+
+A hét hívási hely a fenti megállapodással:
+
+| hely | hívó | CÉL | FORRÁS | irány |
+|---|---|---|---|---|
+| `0x0082bffb` | `FUN_0082a670` (kollázspanel) | `[ebx+0x1b0]` | `[ebx+0x138]` | **+0x138 → +0x1b0** |
+| `0x00831ab0` | `FUN_00831750` (vezérlő-kezelő) | `[ebx+0x1b0]` | `[ebx+0x138]` | **+0x138 → +0x1b0** |
+| `0x0083d0a7` | `FUN_0083d090` | `[esi+0x138]` | `[esi+0x1b0]` | **+0x1b0 → +0x138** |
+| `0x008315b8` | `FUN_00831420` | `[ebp+0x138]` | **verem-helyi** | kívülről → `+0x138` |
+| `0x00838f67` | `FUN_00838ef0` (autosave-ktor) | a beágyazott dok. | verem-helyi (érték szerinti argumentum) | kívülről |
+| `0x0088b139` | `FUN_0088b0a0` | `esi` | verem-helyi | kívülről |
+| `0x00889e54` | `FUN_00889e00` | (a hívás előtti mező-nullázás után) | — | — |
+
+⇒ **A panel két dokumentumot tart, és MINDKÉT irányban másol közöttük** —
+ez a klasszikus „munkapéldány + rögzített példány" (vagy visszavonás)
+pár. Ez a szerkezet eddig nem szerepelt a specben, és megmagyarázza,
+miért nem találtuk a csomópont-írót egyetlen úton sem: **a dokumentumok
+kívülről, kész állapotban érkeznek a panelbe.**
+
+### 36.3 ⭐ A belépési pont: `FUN_00831420`
+
+A `0x008315b8` a panel `[+0x138]`-as dokumentumába másol egy
+**verem-helyi** dokumentumot — vagyis itt lép be egy kész, feltöltött
+dokumentum a panelbe. A `FUN_00831750` (vezérlő-kezelő) közvetlenül
+ez után rögzíti a másolatot (`0x00831a9d call 0x831420`, majd
+`0x00831ab0` a `+0x138 → +0x1b0` másolás).
+
+### 36.4 A `CAutosaveCollageThread` — LEZÁRVA, csak sorosít
+
+*`rtti`: `vftable 0x00cbfed0`; a névsztring a `FUN_00839320`-ban.*
+
+- **konstruktor `FUN_00838ef0`** (148 b): egy ≥ `0x14d0` bájtos objektumot
+  épít, amelyben `[+0xc]`-nél egy kollázs-dokumentum ül; azt a
+  `0x008342b0`-nal inicializálja, majd a `0x00838f67`-en a
+  `FUN_00833cf0`-nal **beléje másolja** a kapott dokumentumot.
+  A `ret 0x54` mutatja, hogy a dokumentum **érték szerint** érkezik.
+- **futtató metódus `FUN_00839330`** (267 b): útvonalat épít
+  (`0x00839369`, formátum `0xc81a34`), majd a `0x008393aa`-n meghívja a
+  **mentés-szervezőt** (`FUN_00834700`) az `[esi+0x48]` dokumentummal.
+
+⇒ **az autosave csak SOROSÍT egy kész dokumentum-másolatot** — csomópontot
+nem épít. A 35.6 (2) lehetősége **KIZÁRVA**.
+
+### 36.5 ⛔ BLOKKOLT részkérdés: mit tartalmaz a PISZKOZAT `.cxf`-je?
+
+A 35.6 döntő mérése az volna, hogy egy **még soha nem mentett** kollázs
+piszkozat-`.cxf`-jében áll-e már a `scale`. **Helyi anyagból nem
+eldönthető:**
+
+- a repóban nincs `.cxf` (`find . -iname '*.cxf'` → 0);
+- a tulajdonos `Picasa2` mappájának mentése (NAS, 2026-08-22, **124
+  fájl**) sem tartalmaz `.cxf`-et — a kiterjesztés-eloszlás: 65 `.pmp`,
+  15 `.ytf`, 14 `.db`, 7 `.txt`, 3 `.ioq`, 3 `.dat`, 2 `.log`, 1 `.zip`,
+  1 `.xml`.
+
+**Új mintát ezért sem kérünk** (17.15): a kérdésnek van gépi útja
+(36.6), és a tulajdonosi mérés a legdrágább erőforrás. Ha a gépi út
+kimerül, ez a kérés lesz a következő — akkor a jegy törzsébe kerül, a
+kötelező szakasszal.
+
+### 36.6 A KÖVETKEZŐ lépés, megnevezve
+
+**`FUN_00831420`** (534 b) — honnan való a `0x008315b8`-on `[esp+0x10]`-en
+álló, verem-helyi dokumentum? Ez az egyetlen olyan hely, ahol egy
+**feltöltött** dokumentum kívülről lép a panelbe, és a 36.2 táblája
+szerint innen terjed tovább a `+0x1b0`-as példányba is.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
