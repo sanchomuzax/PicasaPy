@@ -2116,3 +2116,111 @@ csomópont a `+0x2c` mezőjét**.
 *Bizonyítottsági fok a kizárásokra: **megerősített** (bájtmintás pásztázás
 capstone-ellenőrzéssel, a 22.1-ben pozitív kontrollal). A „hol van akkor"
 kérdésre: **NINCS MEG**.*
+
+## 24. K2 — a cellaél és a cellaosztás viszonya, és az Indexkép-illesztés KÉTÉRTELMŰSÉGE (2026-09-07, #1412)
+
+*174. kutatói kör. A munkasor **K2** tétele: a `contactsheet` csempeméret
+(a `.cxf` `scale`) zárt képlete.*
+
+⛔ **A kör NEM illeszt számot a négy pontra.** A korábbi próbálkozások ezt
+tették, és a projekt szabálya tiltja; a képletnek a kódból kell jönnie.
+
+### 24.1 ⭐ `k = min(cellaSzél, cellaMag)` — 4/4 a mintákon
+
+A 19.1 a cellaélt (`k`) a gyök-ciklusból vezette le, a 18.4 pedig a
+cellaosztást külön mérte. A két szám viszonya:
+
+| minta | cellaSzél | cellaMag | `min` | `k` (19.1) | |
+|---|---|---|---|---|---|
+| AI6 | 300 | 359 | 300 | **300** | ✅ |
+| AI27 | 450 | 571 | 450 | **450** | ✅ |
+| AI28 | 300 | 303 | 300 | **300** | ✅ |
+| AI29 | 225 | 186 | 186 | **186** | ✅ |
+
+**Miért nem véletlen:** a rácsképletben `oszlop = ⌊W'/k⌋` és
+`sor = ⌊H'/k⌋` (19.1), a cellaosztás pedig `cellaSzél = CSONK(0,88·W/oszlop)`
+és `cellaMag = CSONK(0,79·P/sor)` (18.2). Az egészosztásból következik, hogy
+**mindkét cella legalább `k`** — az egyenlőség akkor áll, ha az adott irány
+a szűk keresztmetszet.
+
+⚠️ **Amit ez NEM mond:** hogy az egyenlőség **mindig** fennáll. Négy mintán
+igaz; általános bizonyítás nincs. Aki erre épít, ellenőrizze.
+
+*Bizonyítottsági fok: **erős** — 4/4 mérés + szerkezeti indoklás, de nem
+általános levezetés.*
+
+### 24.2 Az Indexkép-illesztés elágazása — utasításszinten
+
+A `FUN_00888210` csomópont-ciklusának magja (`0x008883cd`–`0x0088846f`):
+
+```
+0x008883cd  mov ecx, [ebx + eax + 8]        ; csomópont+8 (a kép azonosítója)
+0x008883d1  lea esi, [esp + 0x98]
+0x008883dc  call 0x00835380                 ; kulcs-objektum feltöltése
+0x008883ef  mov [esp+0x98], 0
+0x008883e8  mov [esp+0x9c], edx             ; = csomópont+8
+0x008883fa  mov ecx, [eax + 0x270]          ; eax = param_1 (a panel)
+0x00888407  call [[ecx]]                    ; VIRTUÁLIS hívás a kulccsal
+0x00888409  test eax, eax
+0x0088840b  je  0x00888423                  ; ha 0 → a beállítás KIMARAD
+0x0088840d  mov eax, [esp + 0x2c]           ;  \  csak ha != 0:
+0x00888411  mov ecx, [esp + 0x44]           ;   > a doboz W/H-ja
+0x00888415  mov [esp+0xf8], eax             ;  /
+0x0088841c  mov [esp+0xfc], ecx
+0x00888423  …                               ; közös ág
+0x00888438  lea eax, [esp + 0x88]           ; az egyik rect
+0x0088843f  lea esi, [esp + 0x78]           ; a másik rect
+0x00888443  lea ecx, [esp + 0x60]           ; a KIMENET
+0x0088844e  call 0x009b4aa0                 ; arány-tartó illesztés
+0x00888463  sub eax, edi  ; W  -= rés       ; a kimenet BESZŰKÍTÉSE
+0x00888465  add edx, edi  ; x0 += rés
+0x0088846d  add esi, edi  ; y0 += rés
+0x0088846f  sub ecx, edi  ; H  -= rés
+```
+
+⇒ **A tárolt `w`/`h` = az illesztett doboz mínusz 2 × rés** — ez most
+utasításszinten is megvan (eddig csak a dekompilátumból).
+
+### 24.3 ⛔ A KÉTÉRTELMŰSÉG, amit NEM szabad megtippelni
+
+A `FUN_009b4aa0` (`0x009b4aa0`) két rectet kap: az **`EAX`** a méretezendő
+(a kimenet ennek az arányát tartja), az **`ESI`** a célkeret. A hívás előtt:
+
+- `lea eax, [esp + 0x88]` — ebbe a rectbe megy a `[esp+0x2c]` / `[esp+0x44]` pár;
+- `lea esi, [esp + 0x78]` — ennek az eredete a törzs korábbi részéből jön.
+
+**Két, egymásnak ellentmondó olvasat:**
+
+| | ha `EAX` = a CELLA | ha `EAX` = a KÉP |
+|---|---|---|
+| a kimenet aránya | a celláé | a **képé** |
+| a mérés (18.3) szerint a tárolt doboz aránya | — | **a forráskép aránya, 10⁻³ egység alatt** |
+| az álló képek `h`-ja | mind `cellaMag − 2·rés` (lap-szintű állandó) | képenként eltérő |
+| a mérés (`AI27`) | `h` = 446,08 · 449,75 · 432,00 — **ELTÉRNEK** | ✔ |
+
+⇒ A **mérés** a „`EAX` = a kép" olvasatot támogatja, a **regiszter-hozzárendelés**
+viszont a `[esp+0x2c]`/`[esp+0x44]` (számított egész) párt teszi az `EAX`-rectbe —
+és azok a törzs korábbi `fistp`-jeiből jönnek, ami cellaméretre utal.
+
+⛔ **Ezt a kör NEM dönti el.** A feloldáshoz a 2337 bájtos törzs
+**verem-nyilvántartását** kell végigvinni (`[esp+0x2c]`, `[esp+0x44]`,
+`[esp+0x78]`, `[esp+0x88]` eredete) — ez már **dekompilátor-munka**, nem
+kézi diszasszemblálás.
+
+### 24.4 A K2 olcsó lánca is a DRÁGA úthoz ér — a K1-gyel EGY menetben
+
+A K2 megválaszolásához ugyanaz kell, mint a K1-hez (23.5): **célzott
+Ghidra-dekompiláció**. A két kérdés ugyanabban a modulban van, tehát
+**egyetlen futás mindkettőt fedi**:
+
+| kérdés | mit kell dekompilálni |
+|---|---|
+| **K1** — ki írja a csomópont `+0x2c`-t | `0x0082a670` (kollázspanel) hívási fája, 2 szint |
+| **K2** — az Indexkép csempeméretének képlete | `0x00888210` (`FUN_00888210`) teljes törzse, verem-nyilvántartással |
+
+**Egy Ghidra-menet, két gyökér.** A `picasa-x86-research` skill szerint a
+teljes autoanalízis ~450 mp; a két gyökér dekompilációja ehhez képest
+elhanyagolható.
+
+*Bizonyítottsági fok: a 24.1 **erős**, a 24.2 **megerősített**, a
+csempeméret képletére **NINCS MEG**.*
