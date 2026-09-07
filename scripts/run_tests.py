@@ -64,6 +64,17 @@ from pathlib import Path
 _run = subprocess.run
 _kill = os.kill
 _rmtree = shutil.rmtree
+_which = shutil.which
+
+
+def _platform() -> str:
+    """A platform MODULSZINTŰ fogantyúja (#1217).
+
+    A teszt ezt cseréli (`monkeypatch.setattr(run_tests, "_platform",
+    lambda: "win32")`), nem a globális `sys.platform`-ot — az átszivárogna
+    minden más modulra, ami ugyanabban a tesztben fut.
+    """
+    return sys.platform
 
 #: Memóriaplafon egy teszt-részfutásra (#2646). A `systemd-run --user --scope`
 #: cgroupba teszi a részfutást, tehát a túllépő folyamat **egyedül** hal meg,
@@ -88,10 +99,15 @@ _MEMORIA_INDULAS_MIB = int(os.environ.get("PICASAPY_TESZT_SZABAD_MIB", "2500"))
 _NINCS_MEMORIA_KORLAT = os.environ.get("PICASAPY_TESZT_NINCS_MEMORIA") == "1"
 
 
+#: A `MemAvailable` forrása — MODULSZINTŰ fogantyú, hogy a teszt hamis
+#: `meminfo`-t adhasson a globális `Path` átírása nélkül (#1217, #1375).
+_MEMINFO = Path("/proc/meminfo")
+
+
 def _szabad_memoria_mib() -> int | None:
     """`MemAvailable` MiB-ban — `None`, ha nem olvasható (nem Linux)."""
     try:
-        for sor in Path("/proc/meminfo").read_text().splitlines():
+        for sor in _MEMINFO.read_text().splitlines():
             if sor.startswith("MemAvailable:"):
                 return int(sor.split()[1]) // 1024
     except (OSError, ValueError, IndexError):
@@ -106,9 +122,9 @@ def _memoria_burok() -> list[str]:
     hiány pontosan úgy nézne ki, mint a nyugalom — ez a hibaosztály vitte el
     a gépet 09-07-én.
     """
-    if _NINCS_MEMORIA_KORLAT or not sys.platform.startswith("linux"):
+    if _NINCS_MEMORIA_KORLAT or not _platform().startswith("linux"):
         return []
-    if shutil.which("systemd-run") is None:
+    if _which("systemd-run") is None:
         return []
     return ["systemd-run", "--user", "--scope", "-q",
             "-p", f"MemoryMax={_MEMORIA_PLAFON}",

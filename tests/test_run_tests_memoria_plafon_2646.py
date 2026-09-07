@@ -20,6 +20,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 _GYOKER = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location(
     "run_tests_2646", _GYOKER / "scripts" / "run_tests.py")
@@ -30,8 +32,8 @@ _spec.loader.exec_module(rt)
 class TestMemoriaBurok:
     def test_a_burok_plafont_es_swaptiltast_ad(self, monkeypatch):
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
-        monkeypatch.setattr(rt.shutil, "which", lambda _: "/usr/bin/systemd-run")
-        monkeypatch.setattr(rt.sys, "platform", "linux")
+        monkeypatch.setattr(rt, "_which", lambda _: "/usr/bin/systemd-run")
+        monkeypatch.setattr(rt, "_platform", lambda: "linux")
         b = rt._memoria_burok()
         assert b[0] == "systemd-run"
         assert any(t.startswith("MemoryMax=") for t in b), "nincs plafon"
@@ -42,12 +44,13 @@ class TestMemoriaBurok:
     def test_systemd_run_nelkul_ures(self, monkeypatch):
         """Fail-open: hiányzó eszköz nem akaszthatja meg a munkát."""
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
-        monkeypatch.setattr(rt.shutil, "which", lambda _: None)
+        monkeypatch.setattr(rt, "_which", lambda _: None)
+        monkeypatch.setattr(rt, "_platform", lambda: "linux")
         assert rt._memoria_burok() == []
 
     def test_veszkijarat(self, monkeypatch):
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", True)
-        monkeypatch.setattr(rt.shutil, "which", lambda _: "/usr/bin/systemd-run")
+        monkeypatch.setattr(rt, "_which", lambda _: "/usr/bin/systemd-run")
         assert rt._memoria_burok() == []
 
 
@@ -55,18 +58,30 @@ class TestSzabadMemoria:
     def test_a_meminfobol_olvas(self, tmp_path, monkeypatch):
         falso = tmp_path / "meminfo"
         falso.write_text("MemTotal: 8000000 kB\nMemAvailable: 2560000 kB\n")
-        monkeypatch.setattr(rt, "Path", lambda p: falso if "meminfo" in str(p) else Path(p))
+        monkeypatch.setattr(rt, "_MEMINFO", falso)
         assert rt._szabad_memoria_mib() == 2500
 
     def test_olvashatatlan_meminfo_None(self, tmp_path, monkeypatch):
         """Nem Linuxon nincs `/proc/meminfo` — a gát ilyenkor ne tiltson."""
-        monkeypatch.setattr(rt, "Path", lambda p: tmp_path / "nincs")
+        monkeypatch.setattr(rt, "_MEMINFO", tmp_path / "nincs")
         assert rt._szabad_memoria_mib() is None
 
 
 class TestIndulasiGat:
     """A hely önmagában kevés: az egyedi ~1 GiB ártalmatlan, a csúcsot a
     PÁRHUZAMOSSÁG csinálja."""
+
+    @pytest.fixture(autouse=True)
+    def _gat_bekapcsolva(self, monkeypatch):
+        """A gát állapota KÖRNYEZETI VÁLTOZÓBÓL jön, importáláskor.
+
+        Enélkül a készlet zöldje attól függ, hogy a futtató környezetében
+        épp be van-e állítva a vészkijárat — a teszt némán semmit sem
+        mérne. (Élesben megtörtént: egy mérőfutás
+        `PICASAPY_TESZT_NINCS_MEMORIA=1`-gyel indult, és ez a három teszt
+        emiatt bukott.)
+        """
+        monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
 
     def test_kevés_memorianal_nem_indul(self):
         eredmeny = rt._varj_szabad_helyre(
