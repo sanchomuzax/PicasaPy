@@ -37,6 +37,21 @@ swap teljesen betelt, a terhelés 5-ről **105**-re ment, és a tulajdonosnak
 **újra kellett indítania a gépet**. A közös `--basetemp` megvolt — az a
 kapu ezt az alakot nem fogta meg.
 
+**A harmadik hibaosztály — MEMÓRIAPLAFON nélküli app-teszt (#2646).** A
+fenti kettő a LEMEZT és a mappa-alakot védi; a RAM-ot semmi. 2026-09-07
+08:48-kor az `earlyoom` a Claude Desktop rendererét lőtte ki (VmRSS 3579 MiB)
+egy 1031 MiB-os QML-teszt helyett — az earlyoom a LEGNAGYOBB RSS-t öli, tehát
+**az áldozat strukturálisan sosem a tettes**. A kiváltó egyetlen, önmagában
+LEGITIM fájl volt (`tests/app/qml_functional/test_keptalca_455.py`), amely 30
+másodperc alatt 898 → 1401 MiB-ra nőtt; három párhuzamos munkamenet vitte el
+a gépet. Sem ez a kapu, sem a foglalási korlát (#2532) nem foghatta meg: az
+egyik a mappa-alakot nézi, a másik csak a `run_tests.py` teljes futásait.
+
+A javítás a jelentés szava szerint **plafon a forrásnál, nem utólagos
+kilövés**: a `systemd-run --user --scope -p MemoryMax=…` cgroupba teszi a
+futást, így a túllépő **egyedül** hal meg, determinisztikusan (mérve ezen a
+gépen: 300 MiB-os plafonnál exit 137).
+
 Minden hibaágon **fail-open**: egy elromlott kapu nem foghatja meg a
 párhuzamos munkameneteket — épp azokat védené.
 """
@@ -72,6 +87,11 @@ _APP_GYOKER = "tests/app"
 #: Fájlnak számít, aminek `.py` a vége (a `::teszt` szűrő is ide tartozik).
 _FAJL = re.compile(r"\.py(::|$)")
 
+#: #2646: a memóriaplafon burkolója. Enélkül a `tests/app` alatti pytest —
+#: akár EGYETLEN fájlra — a gépet viheti el, nem csak magát.
+_PLAFON_JELE = "systemd-run"
+_PLAFON_KAPCSOLO = "MemoryMax="
+
 
 def _szakaszok(cmd: str) -> list[list[str]]:
     """A parancs szakaszai tokenekre bontva, idézetek nélkül."""
@@ -92,6 +112,16 @@ def _fej(tokenek: list[str]) -> list[str]:
             # a timeout első argumentuma az időkorlát (pl. `timeout 60 …`)
             if i < len(tokenek) and re.fullmatch(r"[0-9]+[smhd]?", tokenek[i]):
                 i += 1
+            continue
+        if t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE):
+            # #2646: a plafon-burkoló saját kapcsolói után `--` jelzi a
+            # VALÓDI parancsot. Enélkül a kapu a `systemd-run`-t látná
+            # fejnek, nem ismerné fel a pytestet, és a `--basetemp`
+            # ellenőrzés NÉMÁN kiesne — épp a plafont használó, jó
+            # szándékú hívásokon.
+            while i < len(tokenek) and tokenek[i] != "--":
+                i += 1
+            i += 1  # magát a `--`-t is átlépjük
             continue
         break
     return tokenek[i:]
@@ -126,6 +156,21 @@ def _app_mappa_cel(tokenek: list[str]) -> str | None:
     return None
 
 
+def _app_cel(tokenek: list[str]) -> bool:
+    """Igaz, ha a hívás a `tests/app` alá céloz (fájlra vagy mappára)."""
+    return any(not t.startswith("-")
+               and (t.rstrip("/") == _APP_GYOKER
+                    or t.rstrip("/").startswith(_APP_GYOKER + "/"))
+               for t in tokenek)
+
+
+def _van_plafon(tokenek: list[str]) -> bool:
+    """Igaz, ha a szakasz memóriaplafon alatt indítja a pytestet."""
+    return (any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
+                for t in tokenek)
+            and any(_PLAFON_KAPCSOLO in t for t in tokenek))
+
+
 def blokkolando(cmd: str) -> str | None:
     """Az indok, ha a parancsot blokkolni kell — különben None."""
     for tokenek in _szakaszok(cmd):
@@ -136,9 +181,10 @@ def blokkolando(cmd: str) -> str | None:
         mappa = _app_mappa_cel(tokenek)
         if mappa is not None:
             return f"a `{mappa}` MAPPA egyetlen pytest-processzben"
-        if any(k == "--basetemp" or k.startswith("--basetemp=") for k in tokenek):
-            continue
-        return "pytest-hívás közös `--basetemp` nélkül"
+        if not any(k == "--basetemp" or k.startswith("--basetemp=") for k in tokenek):
+            return "pytest-hívás közös `--basetemp` nélkül"
+        if _app_cel(tokenek) and not _van_plafon(tokenek):
+            return "`tests/app` alatti pytest MEMÓRIAPLAFON nélkül"
     return None
 
 
@@ -174,6 +220,17 @@ def main() -> int:
         "Miért a közös basetemp (#1649): a pytest a „tartsd meg az utolsó\n"
         "hármat\" takarítást basetemp-enként végzi. 2026-08-15-én öt\n"
         "párhuzamos kör így 5,8 GB-ot hagyott a tmpfs-en.\n"
+        "\n"
+        "Miért a MEMÓRIAPLAFON (#2646): 2026-09-07 08:48-kor az earlyoom a\n"
+        "Claude Desktop rendererét lőtte ki (3579 MiB) egy 1031 MiB-os\n"
+        "QML-teszt HELYETT — az earlyoom a legnagyobb RSS-t öli, tehát az\n"
+        "áldozat sosem a tettes. A kiváltó EGYETLEN fájl volt, ami 30\n"
+        "másodperc alatt 898-ról 1401 MiB-ra nőtt.\n"
+        "\n"
+        "Plafon alatt így indítsd (a túllépő EGYEDÜL hal meg, exit 137):\n"
+        "    systemd-run --user --scope -q \\\n"
+        "        -p MemoryMax=1800M -p MemorySwapMax=0 -- \\\n"
+        "        python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
         "\n"
         "A kár egyik esetben sem NÁLAD jelentkezik, hanem a gépen és a\n"
         "párhuzamos munkameneteknél — ezért kapu ez, és nem ajánlás.\n"

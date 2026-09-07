@@ -22,6 +22,10 @@ kapu = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kapu)
 
 
+_PLAFON_ELOTAG = (
+    "systemd-run --user --scope -q -p MemoryMax=1800M -p MemorySwapMax=0 -- "
+)
+
 BLOKKOLANDO = [
     "pytest tests/app",
     "python -m pytest tests/ini",
@@ -42,7 +46,7 @@ ATENGEDENDO = [
     # 2026-09-06-án épp az döntötte el a gépet (3,18 GiB egyetlen
     # processzben, betelt swap, kényszerű újraindítás). A helyére a
     # FÁJLONKÉNTI alak került, ami a `run_tests.py` szabálya is.
-    "python3 -m pytest tests/app/test_tray_controller.py --basetemp=/tmp/bt",
+    _PLAFON_ELOTAG + "python3 -m pytest tests/app/test_tray_controller.py --basetemp=/tmp/bt",
     "python3 -m pytest tests --basetemp /tmp/bt -q",
     "pytest tests/ini --basetemp=$SCRATCH/bt",
     # tmpdir-t nem hozó alakok
@@ -115,10 +119,16 @@ APP_MAPPA_BLOKKOLANDO = [
 #: A FÁJLONKÉNTI futtatás továbbra is szabályos — épp azt írja elő a
 #: `run_tests.py` is. Ha ezeket is blokkolnánk, a kapu ellehetetlenítené a
 #: helyes munkát, és megkerülnék.
+# ⚠️ #2646 (2026-09-07): a `tests/app` alatti FÁJL-alak azóta CSAK
+# memóriaplafon alatt megy át. A régi, plafon nélküli alakok szándékosan
+# kerültek át a blokkolandók közé — nem a teszt romlott el, a szabály
+# szigorodott: egyetlen ilyen fájl 30 mp alatt 898 → 1401 MiB-ra nőtt, és
+# három párhuzamos munkamenet elvitte a gépet (az earlyoom a Claude
+# Desktopot lőtte ki helyette).
 APP_FAJL_ATENGEDENDO = [
-    "python3 -m pytest tests/app/test_tray_controller.py -q --basetemp=/tmp/bt",
-    "python3 -m pytest tests/app/qml_functional/test_icon_assets.py -q --basetemp=/tmp/bt",
-    "python3 -m pytest tests/app/qml_functional/test_x.py::TestA::test_b -q --basetemp=/tmp/bt",
+    _PLAFON_ELOTAG + "python3 -m pytest tests/app/test_tray_controller.py -q --basetemp=/tmp/bt",
+    _PLAFON_ELOTAG + "python3 -m pytest tests/app/qml_functional/test_icon_assets.py -q --basetemp=/tmp/bt",
+    _PLAFON_ELOTAG + "python3 -m pytest tests/app/qml_functional/test_x.py::TestA::test_b -q --basetemp=/tmp/bt",
     # más csomagok mappái NEM esnek a tilalom alá: ott nincs QML-motor
     "python3 -m pytest tests/perf tests/index -q --basetemp=/tmp/bt",
     "python3 -m pytest tests/scanner -q --basetemp=/tmp/bt",
@@ -161,3 +171,60 @@ def test_a_mappa_uzenete_megnevezi_a_MERT_karot(monkeypatch, capsys):
     assert "3,18 GiB" in hiba or "3.18 GiB" in hiba
     assert "ÚJRA KELL" in hiba.upper()
     assert "fájlonként" in hiba.lower()
+
+
+# --- #2646: memóriaplafon a `tests/app` alatti pytesthez ------------------
+#
+# 2026-09-07 08:48: az earlyoom a Claude Desktop rendererét lőtte ki
+# (VmRSS 3579 MiB) egy 1031 MiB-os QML-teszt HELYETT — az earlyoom a
+# legnagyobb RSS-t öli, tehát az áldozat strukturálisan sosem a tettes. A
+# kiváltó EGYETLEN, önmagában legitim fájl volt, ami 30 másodperc alatt
+# 898 → 1401 MiB-ra nőtt. Sem ez a kapu (mappa-alakot néz), sem a foglalási
+# korlát (#2532, csak teljes futásokra) nem foghatta meg.
+
+_PLAFON = ("systemd-run --user --scope -q "
+           "-p MemoryMax=1800M -p MemorySwapMax=0 -- ")
+
+
+def test_egyetlen_app_fajl_plafon_nelkul_blokkol():
+    """Ez az az alak, ami 09-07-én elvitte a gépet."""
+    cmd = "python3 -m pytest tests/app/qml_functional/test_keptalca_455.py -q --basetemp=/tmp/bt"
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(cmd) or "")
+
+
+def test_plafonnal_atmegy():
+    cmd = _PLAFON + "python3 -m pytest tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+    assert kapu.blokkolando(cmd) is None
+
+
+def test_a_plafon_NEM_nyeli_el_a_basetemp_ellenorzest():
+    """A burkoló mögött is látni kell a pytestet.
+
+    Ellenpróba: ha a `_fej` nem lépné át a `systemd-run` kapcsolóit, a kapu
+    a burkolót látná fejnek, nem ismerné fel a pytestet, és a `--basetemp`
+    hiánya NÉMÁN átmenne — épp a jó szándékú, plafont használó hívásokon.
+    """
+    cmd = _PLAFON + "python3 -m pytest tests/app/qml_functional/test_x.py -q"
+    assert "basetemp" in (kapu.blokkolando(cmd) or "")
+
+
+def test_a_plafon_nem_kell_az_app_on_KIVUL():
+    """A memóriaéhség a QML-motoré — ne büntessük a többi tesztet."""
+    cmd = "python3 -m pytest tests/ini/test_roundtrip.py -q --basetemp=/tmp/bt"
+    assert kapu.blokkolando(cmd) is None
+
+
+def test_a_felemas_plafon_nem_szamit_plafonnak():
+    """`systemd-run` MemoryMax nélkül nem korlátoz semmit."""
+    cmd = ("systemd-run --user --scope -q -- python3 -m pytest "
+           "tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt")
+    assert "MEMÓRIAPLAFON" in (kapu.blokkolando(cmd) or "")
+
+
+def test_az_uzenet_megnevezi_a_mert_karot(monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_input": {
+        "command": "pytest tests/app/qml_functional/test_x.py --basetemp=/tmp/bt"}})))
+    assert kapu.main() == 2
+    hiba = capsys.readouterr().err
+    assert "earlyoom" in hiba
+    assert "MemoryMax" in hiba, "a kapu nem mondja meg, HOGYAN indítsa helyesen"

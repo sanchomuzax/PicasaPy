@@ -65,6 +65,55 @@ _run = subprocess.run
 _kill = os.kill
 _rmtree = shutil.rmtree
 
+#: Memóriaplafon egy teszt-részfutásra (#2646). A `systemd-run --user --scope`
+#: cgroupba teszi a részfutást, tehát a túllépő folyamat **egyedül** hal meg,
+#: determinisztikusan, a SAJÁT hibájával — nem a szomszéd.
+#:
+#: Miért kell: 2026-09-07 08:48-kor az `earlyoom` a Claude Desktop rendererét
+#: lőtte ki (3579 MiB) egy 1031 MiB-os QML-teszt helyett. Az earlyoom a
+#: LEGNAGYOBB RSS-t öli, tehát az áldozat strukturálisan sosem a tettes. A
+#: mérés szerint egyetlen `tests/app/qml_functional` FÁJL 30 másodperc alatt
+#: 898 → 1401 MiB-ra nőtt; három párhuzamos munkamenet vitte el a gépet.
+#:
+#: A `MemorySwapMax=0` azért kell, mert swapba lógva a folyamat nem hal meg,
+#: csak a gépet fojtja meg (a 2 GiB zram aznap ~100%-on állt).
+_MEMORIA_PLAFON = os.environ.get("PICASAPY_TESZT_MEMORIA", "1800M")
+
+#: Ennyi szabad memória alatt QML-teszt ne INDULJON (#2646). Az abszolút
+#: RSS-küszöb önmagában félrevezet: az egyedi ~1 GiB ártalmatlan, a csúcsot a
+#: párhuzamosság csinálja. A plafon a saját futást fogja meg, ez a gépet.
+_MEMORIA_INDULAS_MIB = int(os.environ.get("PICASAPY_TESZT_SZABAD_MIB", "2500"))
+
+#: `1` esetén se plafon, se indulási gát — vészkijárat, ha a cgroup elromlik.
+_NINCS_MEMORIA_KORLAT = os.environ.get("PICASAPY_TESZT_NINCS_MEMORIA") == "1"
+
+
+def _szabad_memoria_mib() -> int | None:
+    """`MemAvailable` MiB-ban — `None`, ha nem olvasható (nem Linux)."""
+    try:
+        for sor in Path("/proc/meminfo").read_text().splitlines():
+            if sor.startswith("MemAvailable:"):
+                return int(sor.split()[1]) // 1024
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
+
+
+def _memoria_burok() -> list[str]:
+    """A részfutás elé fűzendő plafon-burkoló — üres lista, ha nem elérhető.
+
+    Fail-open, DE nem némán: ha a burkoló hiányzik, a hívó kiírja. A néma
+    hiány pontosan úgy nézne ki, mint a nyugalom — ez a hibaosztály vitte el
+    a gépet 09-07-én.
+    """
+    if _NINCS_MEMORIA_KORLAT or not sys.platform.startswith("linux"):
+        return []
+    if shutil.which("systemd-run") is None:
+        return []
+    return ["systemd-run", "--user", "--scope", "-q",
+            "-p", f"MemoryMax={_MEMORIA_PLAFON}",
+            "-p", "MemorySwapMax=0", "--"]
+
 # ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
 # magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
 # elhasal, és a JOB azonnal elbukik, még mielőtt egyetlen teszt elindulna.
@@ -200,6 +249,7 @@ def _varj_szabad_helyre(
     varakozas_s: float,
     foglalo=None,
     alvo=time.sleep,
+    szabad_mem=None,
 ) -> Path | None:
     """Vár, amíg KAP egy helyet; `None`, ha lejárt a türelmi idő.
 
@@ -212,9 +262,34 @@ def _varj_szabad_helyre(
     if korlat <= 0:
         return _NINCS_KORLAT
     kerj = foglalo or (lambda: _foglalj_helyet(korlat))
+    merd = szabad_mem or _szabad_memoria_mib
     eltelt = 0.0
     jelentve = False
+    mem_jelentve = False
     while True:
+        # #2646: a hely önmagában kevés — a gépen ELÉG SZABAD MEMÓRIA is
+        # kell. Az egyedi ~1 GiB ártalmatlan, a csúcsot a párhuzamosság
+        # csinálja: 09-07-én három munkamenet vitte 1477 MiB-ra a szabad
+        # memóriát, és az earlyoom a Claude Desktopot lőtte ki.
+        szabad = None if _NINCS_MEMORIA_KORLAT else merd()
+        if szabad is not None and szabad < _MEMORIA_INDULAS_MIB:
+            if not mem_jelentve:
+                print(
+                    f"KEVÉS A SZABAD MEMÓRIA: {szabad} MiB, a küszöb "
+                    f"{_MEMORIA_INDULAS_MIB} MiB. Várok — QML-teszt indítása "
+                    f"most a GÉPET vinné el, nem csak ezt a futást (#2646).",
+                    flush=True,
+                )
+                mem_jelentve = True
+            if eltelt >= varakozas_s:
+                return None
+            alvo(_VARAKOZAS_LEPES_S)
+            eltelt += _VARAKOZAS_LEPES_S
+            continue
+        if mem_jelentve:
+            print(f"Felszabadult a memória ({szabad} MiB) — megyek tovább.",
+                  flush=True)
+            mem_jelentve = False
         hely = kerj()
         if hely is not None:
             if jelentve:
@@ -478,6 +553,7 @@ def _run_pytest(
         command = [sys.executable, "-m", "coverage", "run", "-p", *pytest_args]
     else:
         command = [sys.executable, *pytest_args]
+    command = _memoria_burok() + command
     if not csendben:
         print(f"$ {' '.join(command)}", flush=True)
     try:

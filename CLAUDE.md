@@ -190,6 +190,15 @@ elfogadható kimenet. A jelzés eltakarása súlyosabb hiba, mint maga a hiba.
   Ha a gép egyszer elbírna kettőt, **egyetlen szám** átírása elég
   (`_EGYIDEJU_ALAP`, futásidőben `PICASAPY_TESZT_EGYIDEJU`) — a kapu
   tetszőleges N helyet kezel.
+- **A `tests/app` alatti pytest MEMÓRIAPLAFON alatt fut** (#2646). A
+  `run_tests.py` magától így indítja a részfutásait; csupasz, fájlonkénti
+  hívásnál neked kell:
+  `systemd-run --user --scope -q -p MemoryMax=1800M -p MemorySwapMax=0 -- python3 -m pytest <fájl> -q --basetemp="$BT"`
+  Ezt a `basetemp_kapu.py` betartatja. Miért: 2026-09-07-én az `earlyoom` a
+  Claude Desktopot lőtte ki (3579 MiB) egy 1031 MiB-os QML-teszt HELYETT — a
+  legnagyobb RSS-t öli, tehát **az áldozat sosem a tettes**. Egyetlen,
+  önmagában legitim fájl 30 mp alatt 898 → 1401 MiB-ra nőtt. A futtató
+  ezenfelül **nem indul**, ha 2,5 GiB-nál kevesebb a szabad memória.
 - Környezet: a csomaglisták egyetlen helyen élnek (`pyproject.toml`,
   `packaging/qt-runtime-deps.txt`); a CI és a session-hook egyaránt a
   `scripts/print_dependencies.py`-n át telepít — tételes listát sehova ne írj.
