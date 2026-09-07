@@ -590,6 +590,16 @@ natív regisztráció (#567).
 >
 > Amit a helyesbítés NEM érint: hogy a tag **elvágja-e** mögötte a láncot
 > (#1140) — a szettben egyik esetben sem áll mögötte másik tag.
+>
+> 🔎 **Kimerítve (2026-09-07, #2599): az `.mxml`-út NEM ad tartalék-ágat.**
+> A `<filter>`-olvasó `0x008ff550` a `runtime\picnik_effects\<név a Picnik
+> nélkül>Effect.mxml` fájlt a `yt` I/O-val (`0x00991490`, `CreateFile`)
+> nyitja meg, és a `glimmer::EffectParserHandler` feldolgozót (vtábla
+> `0x00cefc14`) **csak SIKERES nyitás után** építi fel — a `0x00991490`
+> hibakódot ad vissza, nem mutatót (0 = siker). Vagyis a hiányzó könyvtár
+> mellett ezen az úton semmi nem fut, és a `PicnikFocalPixelate`
+> lefutásához ez az ág **nem** ad magyarázatot. A teljes levezetés,
+> címekkel és RTTI-vel: `filterdesc-registry.md` → 4.1/d.
 
 **Nyitott:** a pontos perem-/interpolációs szabály a mintavételezésnél —
 golden-összevetéssel rögzíthető (#317).
