@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "aranykenyszer.js" as AranyKenyszer
 
 // #147: a mentett faces= régiók megjelenítése a nézőben. #26 (2. kör):
 // SZERKESZTŐ mód — új arc-téglalap húzása egérrel, név hozzárendelése
@@ -143,11 +144,17 @@ Item {
         }
         onPositionChanged: function(event) {
             if (!creating) return
-            var left = Math.min(startX, event.x)
-            var top = Math.min(startY, event.y)
-            var w = Math.abs(event.x - startX)
-            var h = Math.abs(event.y - startY)
-            overlay.draftRect = Qt.rect(left, top, w, h)
+            // #891: a lenyomott módosító a KÉP saját arányára (Shift), annak
+            // 4/3-ára (Ctrl) vagy 3/2-ére (Alt) kényszeríti a téglalapot —
+            // Alt üt Ctrl-t, Ctrl üt Shiftet. Minden lépés újraszámol,
+            // ezért a billentyű felengedése azonnal felszabadít.
+            var r = AranyKenyszer.huzottTeglalap(
+                startX, startY, event.x, event.y,
+                overlay.width, overlay.height,
+                event.modifiers & Qt.ShiftModifier,
+                event.modifiers & Qt.ControlModifier,
+                event.modifiers & Qt.AltModifier)
+            overlay.draftRect = Qt.rect(r.x, r.y, r.width, r.height)
         }
         onReleased: function(event) {
             if (!creating) return
@@ -179,6 +186,7 @@ Item {
     }
 
     Rectangle {
+        objectName: "faceDraftRect"
         visible: overlay.editMode
                  && overlay.draftRect.width > 0 && overlay.draftRect.height > 0
         x: overlay.draftRect.x; y: overlay.draftRect.y
