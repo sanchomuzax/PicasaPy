@@ -1371,6 +1371,106 @@ class TestSzovegStilusbitek2448:
         )
 
 
+class TestIgazitasEsKitoltesMod2108:
+    """#2108: a `text=` 8. mezője HÁROM rész — és mind eljut a fájlig.
+
+    Eddig a rajzolónk TUDTA az igazítást és a kitöltés/körvonal módot, de
+    egyik sem ment ki a fájlba: a mező „megfejtetlen" volt. A #2108
+    kutatása lezárult (`docs/specs/picasa-ini-format.md` → „A 8. MEZŐ
+    MINDHÁROM RÉSZE"), a bit-szintű állítások a
+    `tests/ini/test_text_igazitas_mod_2108.py`-ban vannak; itt a TELJES
+    utat mérjük: beállítás → Alkalmaz → a kiírt sor → újranyitás.
+    """
+
+    @staticmethod
+    def _elrendezes(ini_szoveg: str) -> int:
+        sorok = [s for s in ini_szoveg.splitlines() if s.startswith("text=")]
+        assert sorok, f"nincs text= sor:\n{ini_szoveg}"
+        return int(sorok[0].rstrip(";").split(",")[-2])
+
+    def _alkalmaz(
+        self,
+        controller,
+        photo,
+        *,
+        igazitas="left",
+        kitoltes=True,
+        korvonal=0.0,
+    ):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Próba")
+        controller.setTextAlign(igazitas)
+        controller.setTextFillEnabled(kitoltes)
+        controller.setTextOutlineThickness(korvonal)
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        return self._elrendezes(
+            (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        )
+
+    @pytest.mark.parametrize(
+        ("nev", "kod"), [("left", 0), ("center", 1), ("right", 2)]
+    )
+    def test_az_igazitas_KIMEGY_a_fajlba(self, controller, photo, nev, kod):
+        mezo = self._alkalmaz(controller, photo, igazitas=nev)
+        assert (mezo >> 8) & 0xFF == kod, f"{nev}: {mezo:#06x}"
+
+    def test_csak_kitoltes_eseten_a_mod_0(self, controller, photo):
+        mezo = self._alkalmaz(controller, photo, kitoltes=True, korvonal=0.0)
+        assert mezo & 0xFF == 0
+
+    def test_no_fill_eseten_a_mod_1(self, controller, photo):
+        mezo = self._alkalmaz(controller, photo, kitoltes=False, korvonal=0.0)
+        assert mezo & 0xFF == 1
+
+    def test_kitoltes_es_korvonal_eseten_a_mod_2(self, controller, photo):
+        mezo = self._alkalmaz(controller, photo, kitoltes=True, korvonal=0.5)
+        assert mezo & 0xFF == 2
+
+    def test_a_no_fill_VASTAG_korvonal_mellett_is_1(self, controller, photo):
+        """A sorrend kötött (`0x0063046a`): a `no_fill` ága van elöl."""
+        mezo = self._alkalmaz(controller, photo, kitoltes=False, korvonal=0.9)
+        assert mezo & 0xFF == 1
+
+    def test_a_mentett_igazitas_VISSZATOLTODIK(self, controller, photo):
+        """A foga: eddig minden újranyitás `left`-re esett vissza."""
+        self._alkalmaz(controller, photo, igazitas="right")
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.textAlign == "right"
+
+    def test_a_mentett_KITOLTES_is_visszatoltodik(self, controller, photo):
+        self._alkalmaz(controller, photo, kitoltes=False)
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.textFillEnabled is False
+
+
+class TestAzIgazitasEljutARAJZOLOIG2108:
+    """A #2108 második »Kész, ha« pontja: a FÁJLBÓL betöltött igazítás a
+    rajzolóig jusson, ne csak a mezőig."""
+
+    def test_a_mentett_igazitas_a_rajzolo_parametere_lesz(
+        self, controller, photo
+    ):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Próba")
+        controller.setTextAlign("right")
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        controller.endEdit()
+
+        controller.beginEdit("1", str(photo))
+        spec = controller._current_text_spec()
+        assert spec is not None, "a mentett felirat nem kerül az előnézetbe"
+        assert spec.align == "right", (
+            "a fájlból betöltött igazítás nem jut el a rajzolóig: "
+            f"{spec.align!r}"
+        )
+
+
 class TestTextStyle:
     """#450: kitöltés+körvonal szín, körvonal-vastagság, kitöltés ki/be,
     átlátszóság. #371 óta a KÉT SZÍN mentődik (a `text=` stílus-mezőjének
@@ -1417,7 +1517,12 @@ class TestTextStyle:
         with pytest.raises(ValueError):
             controller.setTextOpacity(1.5)
 
-    def test_csak_a_ket_szin_kerul_iniba(self, controller, photo):
+    def test_ami_a_fajlba_megy_es_ami_MUNKAMENET_marad(self, controller, photo):
+        """⚠️ A teszt neve korábban „csak a két szín kerül ini-ba" volt —
+        az állítás a #2271 (vastagság) és a #2108 (igazítás, kitöltés/
+        körvonal mód) óta NEM igaz. A `textFillEnabled` mostantól
+        visszatölt, ezért itt az elvárás is fordult.
+        """
         """#371 + #2271: a `text=` stílus-mezőjéből a két szín ÉS a
         körvonalvastagság mentődik.
 
@@ -1450,7 +1555,9 @@ class TestTextStyle:
         controller.beginEdit("1", str(photo))
         assert controller.textOutlineThickness == 0
         assert controller.textOpacity == 1.0
-        assert controller.textFillEnabled is True
+        # #2108: a kitöltés ki/be a 8. mező módjából VISSZATÖLT — a
+        # `no_fill` állapotot a fájl hordozza (mód = 1).
+        assert controller.textFillEnabled is False
 
     def test_style_change_affects_live_preview(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
