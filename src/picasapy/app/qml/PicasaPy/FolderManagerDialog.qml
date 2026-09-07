@@ -198,6 +198,23 @@ Window {
     // jobb oldali kapcsolóhoz is kell, ezért itt, a közös helyen él (a
     // `FolderStatePanel` innen hívja). Az ős-mappákra is kiterjedő
     // egyezés a Python `faceDetectionEnabledFor` tükre.
+    //
+    // ⚠️ #1486: MIÉRT nem hívjuk egyszerűen a vezérlőt? Mert a Python
+    // szabály (`scanner/exclude.py::is_excluded`) minden hívásnál
+    // `Path(...).resolve()`-t futtat — a vizsgált útvonalra ÉS minden
+    // kizárt gyökérre —, ez pedig FÁJLRENDSZER-művelet. Ez a függvény a
+    // mappafa jelvényéből SORONKÉNT hívódik, minden újrarajzoláskor:
+    // `sorok × gyökerek` `resolve()` egyetlen görgetésre, a tulajdonos
+    // gyűjteményénél ráadásul HÁLÓZATI megosztáson.
+    //
+    // A másolat tehát szándékos — és NEM őrizetlen: a
+    // `tests/app/test_arc_kizaras_egy_szabaly_1486.py` ezt a
+    // FÜGGVÉNYSZÖVEGET veszi ki a fájlból, `QJSEngine`-nel lefuttatja, és
+    // egy korpuszon összeveti a Python szabállyal. Ha a kettő szétcsúszik,
+    // az őr bukik.
+    //
+    // Amit a QML SZÁNDÉKOSAN tud többet: a még el nem mentett
+    // (`pendingFaces`) változtatásokat — azokról a Python nem tudhat.
     function facesExcludedFor(path) {
         if (!path || typeof controller === "undefined" || !controller) return false
         var pending = ""
