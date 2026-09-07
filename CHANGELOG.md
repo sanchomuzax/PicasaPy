@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.327] – 2026-09-07
+
+### Javítva
+
+- **A szerkesztő csúszkái az eredeti alakjukat viselik** (#2627). Eddig
+  vékony sínen kerek fogantyú ült; az eredeti Picasában vastagabb sáv és
+  álló, lekerekített fogantyú van. A méreteket a Picasa saját
+  erőforrás-csomagjából olvastuk ki — nem szemre becsültük —, és
+  csúszkánként a hozzá tartozó eredeti alkatrészből: a finomhangoló négy
+  csúszkája és a Gyakori javítások Derítőfénye két KÜLÖNBÖZŐ családba
+  tartozik az eredetiben, más fogantyúmagassággal.
+
 ## [0.8.326] – 2026-09-07
 
 ### Javítva

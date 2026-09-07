@@ -210,6 +210,20 @@ ColumnLayout {
             PicasaSlider {
                 id: fixesFillSlider
                 objectName: "fixesFillSlider"
+                // #2627: a BELSŐ geometria a `respack.yt` `scaleslider`
+                // családjából — a Gyakori javítások Derítőfénye az
+                // eredetiben `editpanel/clip(scaleslider,flightslider1):
+                // backlight_container`, tehát NEM az `editslider` család:
+                //
+                //   scaleslider/sliderbase  121 × 9   -> a sáv 9 képpont
+                //   scaleslider/thumb       16 × 22   -> a fogantyú álló
+                //
+                // (A finomhangoló négy csúszkája `editslider`, ott a
+                // fogantyú 16 × 26 — ld. `EditorFinetunePanel.qml`.)
+                grooveThickness: 9
+                handleWidth: 16
+                handleHeight: 22
+                handleRadius: 3
                 Layout.fillWidth: true
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0
