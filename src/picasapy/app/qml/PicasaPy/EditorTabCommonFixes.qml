@@ -203,7 +203,9 @@ ColumnLayout {
                 horizontalAlignment: Text.AlignHCenter
                 text: qsTr("Fill Light")
                 font.pixelSize: Theme.fontSize - 1
-                color: Theme.textGray
+                // #2626: normál tinta, nem a másodlagos szürke — a mérés a
+                // `EditorFinetunePanel.qml` `SliderCaption`-jénél áll.
+                color: Theme.ink
             }
             PicasaSlider {
                 id: fixesFillSlider
