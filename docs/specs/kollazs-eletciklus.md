@@ -2895,3 +2895,87 @@ A sorrend:
    `0x00884a90` · `0x00887e50`.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 29. K1 — a staging `+0x68` SIB-alakú írása is kizárva, és egy ÖNHELYESBÍTÉS a kör módszeréről (2026-09-07, #1412)
+
+*181. kutatói kör. A kör a munkasor K1 tételét vette elő. **A leletek
+zöme NEM új** — ezt a szakasz elején ki kell mondani, mert a kör
+módszertani hibát követett el (29.3).*
+
+### 29.1 ⭐ A `+0x68` (staging `scale`) írásának SIB-alakja — 1 találat, KIZÁRVA
+
+A 17.10/b pásztázása a burkoló `+0x68` mezőjének **mutatós** alakját
+mérte ki (`[reg + 0x68]`, `esp`/`ebp` nélkül), és a hatókörét ki is
+mondta. A **SIB-alak** (`[reg + reg + 0x68]`) abból a mintából kimaradt —
+ugyanaz a rés, amit a `+0x2c`-nél a 17.15 zárt be.
+
+**Most bezárva.** Utasításszintű pásztázás (capstone, a bináris-index
+20 608 `.text`-függvénye, ~28 mp), `fst`/`fstp dword ptr` bármely
+`+0x64`/`+0x68` memóriaoperandusra, `esp`/`ebp` bázis kizárva:
+
+| cím | függvény | alak | ítélet |
+|---|---|---|---|
+| `0x00832fc2` | `FUN_0082fab0`-tartomány | `fstp [ebx+0x68]` | az **alapérték** 1,0 (17.16) |
+| `0x008332b7` | a `.cxf`-beolvasó | `fstp [ebx+0x68]` | **pozitív kontroll** ✅ |
+| `0x0088de20` | `FUN_0088dde0` (177 b) | **`fst [edx+eax+0x68]`** | **KIZÁRVA**, ld. lent |
+| `0x00414821` · `0x007fba19` | — | mutatós | sávon kívül (17.10/b) |
+
+**A `0x0088de20` kizárása tartalmi, nem hívási úton.** A `FUN_0088dde0`
+egy `fldz`-vel kezdődő, négyszeresen kigöngyölt nullázó ciklus: a
+lépésköz `0x50` (**80 bájt**, `0x0088de2b add edx, 0x140` = 4 × 0x50),
+és minden menetben a `+0x18` / `+0x1c` / `+0x20` / `+0x24` mezőket írja
+nullára. A `+0x68` ott a **következő elem `+0x18`-a**
+(`0x50 + 0x18 = 0x68`). A kollázs-csomópont lépésköze **56 bájt**
+(`0x38`, 26.1) ⇒ **más tömb, más osztály**.
+
+⇒ A 17.10/b negatívja ezzel a SIB-alakra is áll: **a `scale` staging
+mezőjének sincs számoló írója.**
+
+*Bizonyítottsági fok: **megerősített** (utasításszintű pásztázás pozitív
+kontrollal + a jelölt teljes törzsének elolvasása).*
+
+### 29.2 A friss `.cxf`-minták csomópontszáma FÁJLBÓL ellenőrizve
+
+A 17.15 figyelmeztetése — *„a képlet illesztése előtt a három `.cxf`-ben
+meg kell számolni a csomópontokat"* — teljesítve. A NAS közös mappájából
+(`1412-kollazs-index-kepek/`, 2026-09-05) beolvasva:
+
+| minta | `format` / tájolás | csempe | csomópont | `scale` |
+|---|---|---|---|---|
+| `AI27.cxf` | `297:210` álló | `noborder` | **4** | 500 |
+| `AI28.cxf` | `4:3` fekvő | `whiteborder` | **6** | 256 |
+| `AI29.cxf` | `13:9` fekvő | `polaroid` | **12** | 158 |
+| `AI6.cxf` | `4:3` álló | `whiteborder` | **9** | 313 |
+
+A 18.4/18.6 táblái ezekkel egyeznek — a tulajdonos jelöletlen
+`4→500, 6→256, 9→313, 12→158` párosítása **helyes volt**. A minták
+mellett a rendereltek is megvannak (`AI27.jpg` 3621 × 5120,
+`AI28.jpg` 5120 × 3840, `AI29.jpg` 5120 × 3544) — a hosszabb oldal
+mindháromnál **5120 = 5 × 1024** képpont.
+
+### 29.3 ⛔ ÖNHELYESBÍTÉS — a kör a MEGLÉVŐ ANYAGOT nem nézte meg elsőnek
+
+A kör a `.cxf`-mintákból önállóan levezette a rácsképletet
+(0,06 / 0,15 margó, 0,88 / 0,79 cella), a `scale` szerepét (a cellába
+való függőleges középre igazítás magassága) és a lapmagasság
+`CSONK(1024·H/W)` egységét — **mind a három már benne állt a 18.2 · 18.4 ·
+18.5 szakaszban**, ugyanezen a négy mintán, ugyanezekkel a címekkel.
+
+**A hiba helye pontosan megnevezhető:** a kör a 2. szakasz lépéssorát
+(„meglévő anyag → index → dekompiláció") nem a `docs/specs/` **aznapi**
+állapotán kezdte, hanem a munkasor és a `HOL-TARTUNK.md` összefoglalóján —
+azok viszont a 17. szakasz állapotát tükrözik, a 18–28. szakaszét nem.
+Egy `grep -n "^## " docs/specs/kollazs-eletciklus.md` másodpercekbe telt
+volna.
+
+**Amit ez a jövőre nézve előír:** ha a munkasor egy tétele egy
+spec-lapra mutat, a kör **a lap tartalomjegyzékét olvassa el elsőnek**, ne
+az összefoglalót. Az összefoglaló elavulhat; a lap nem.
+
+### 29.4 A K1 állapota változatlan — a következő lépés a DRÁGA út
+
+A 23.5 kizárás-táblája a 29.1-gyel egészül ki (SIB-alakú `+0x68`-írás).
+Az olcsó lánc **kimerült**; a megnevezett következő lépés
+(`HOL-TARTUNK.md` / 28.5) továbbra is a **dekompilátoros kör**:
+a `FUN_008347b0` veremkerete (a 17.11 ↔ `0x00834c2d` ellentmondás), majd
+a `0x0082a670` kollázspanel képhozzáadási ága.
