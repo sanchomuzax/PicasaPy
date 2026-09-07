@@ -312,3 +312,38 @@ class TestCsakTakaritas:
         assert run_tests.main(["--csak-takaritas"]) == 0
         assert friss.exists(), "életjel-kérdés nélkül a friss maradék marad"
         assert not regi.exists()
+
+
+class ElhagyottHelyekTeszt:
+    """A takarító a FOGLALÁSI helyeket is vigye (2026-09-07).
+
+    A #2532 foglalási rétege `/tmp/picasapy-teszt-helyek/hely-N` könyvtárakat
+    hoz létre, a takarító viszont csak a `picasapy-tests-*` maradékot ismerte.
+    Mérve 2026-09-07 06:54-kor: egy `hely-0` ott állt HALOTT gazdával (PID
+    1197098) az éjszaka óta — magától csak akkor tűnt volna el, ha valaki
+    helyet igényel. A tulajdonos szava: „Azt akarom, hogy ne kelljen erről
+    egyeztetnünk, hogy elmaradt."
+    """
+
+    def test_a_halott_gazdaju_hely_eltunik(self, monkeypatch, tmp_path):
+        helyek = tmp_path / "helyek"
+        (helyek / "hely-0").mkdir(parents=True)
+        (helyek / "hely-0" / run_tests._PID_FAJL).write_text("999999")
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: False)
+
+        run_tests._takarits_regi_maradekot()
+
+        assert not (helyek / "hely-0").exists(), "a halott gazdájú hely megmaradt"
+
+    def test_az_ELO_futas_helyehez_NEM_nyul(self, monkeypatch, tmp_path):
+        """Élő futás helyét elvinni rosszabb, mint helyet pazarolni."""
+        helyek = tmp_path / "helyek"
+        (helyek / "hely-0").mkdir(parents=True)
+        (helyek / "hely-0" / run_tests._PID_FAJL).write_text("1")
+        monkeypatch.setattr(run_tests, "_HELYEK_GYOKER", helyek)
+        monkeypatch.setattr(run_tests, "_el_e_a_futas", lambda k: True)
+
+        run_tests._takarits_regi_maradekot()
+
+        assert (helyek / "hely-0").exists(), "elvitte egy ÉLŐ futás helyét"

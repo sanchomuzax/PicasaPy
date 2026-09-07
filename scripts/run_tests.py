@@ -594,6 +594,32 @@ def _takarits_regi_maradekot(
         except OSError:
             # más munkamenet épp törli, vagy nincs jogunk — nem baj
             continue
+    _takarits_elhagyott_helyeket(alvo=alvo)
+
+
+def _takarits_elhagyott_helyeket(
+    *, alvo: Callable[[float], None] = time.sleep
+) -> None:
+    """Elhagyott FOGLALÁSI helyek (#2532) — halott gazdával.
+
+    A foglalási réteg `hely-N` könyvtárakat hoz létre; ezeket eddig csak a
+    következő IGÉNYLŐ vitte el (aki halott gazdát látott). Ha senki nem
+    igényelt helyet, a könyvtár ott állt a végtelenségig. Mérve 2026-09-07-én:
+    egy `hely-0` az éjszaka óta, halott PID-del.
+
+    Élő futás helyéhez SOHA nem nyúlunk — azt elvinni rosszabb, mint helyet
+    pazarolni."""
+    try:
+        helyek = sorted(_HELYEK_GYOKER.glob("hely-*"))
+    except OSError:
+        return
+    for hely in helyek:
+        try:
+            if not hely.is_dir() or _el_e_a_futas(hely) is not False:
+                continue
+            _takarits_egy_konyvtarat(hely, alvo=alvo)
+        except OSError:
+            continue
 
 
 def _report_coverage() -> None:
