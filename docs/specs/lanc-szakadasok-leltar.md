@@ -123,7 +123,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
-| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
+| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal. |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `hasSavedRedeye` | Property | `app/edit_controller.py` | MÉRVE — MENTETT javítást jelez; az EditorPanel.qml:132 SAJÁT, MÁS jelentésű `redeyeActive`-ot tart (nyitott eszköz) — #2393 |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
