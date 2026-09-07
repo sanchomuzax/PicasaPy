@@ -2224,3 +2224,96 @@ elhanyagolható.
 
 *Bizonyítottsági fok: a 24.1 **erős**, a 24.2 **megerősített**, a
 csempeméret képletére **NINCS MEG**.*
+
+## 25. A célkeret AZONOSÍTVA, a forrásrect NEM — és a drága út JOGOSULTSÁGON akadt el (2026-09-07, #1412)
+
+*175. kutatói kör. A 174. kör egy Ghidra-menetre utalta a K1-et és a K2-t.*
+
+### 25.1 ⛔ A felhős Ghidra-kör NEM INDÍTHATÓ — mérve, nem feltételezve
+
+```
+$ python3 scripts/codespace_re.py doctor
+  ✓ Logged in to github.com account sanchomuzax
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+error getting codespaces: HTTP 403: Must have admin rights to Repository.
+This API operation needs the "codespace" scope.
+```
+
+- A munkamenet GitHub-tokenjéből hiányzik a **`codespace`** jogosultság.
+- A bot-token (`picasapy-claude-agent[bot]`) sem alkalmas rá.
+- **Helyi Ghidra nincs** (`which ghidra ghidraRun analyzeHeadless` → semmi).
+- **A költségkeret NEM akadály:** `GO | session 25% | weekly 60% | burn 0,64x`.
+
+⇒ **Az akadály jogosultság, nem tudás és nem keret.** Üzemeltetési jegy:
+`picasapy-agent` **#53**.
+
+### 25.2 ⭐ A CÉLKERET azonosítva: a CELLA
+
+A `FUN_00888210` teljes törzsének verem-rekesz-nyilvántartása (capstone,
+minden `[esp+X]` írás) a `FUN_009b4aa0`-hívás (`0x0088844e`) két rectjére:
+
+| rect | mező | az írás | mit kap |
+|---|---|---|---|
+| **`ESI`** (`lea esi,[esp+0x78]`) | [0] | `0x0088836a` `mov [esp+0x78], ebx` | 0 |
+| | [1] | `0x0088836e` `mov [esp+0x7c], ebx` | 0 |
+| | [2] | `0x0088835c` `mov [esp+0x80], ecx` | **= `[esp+0x2c]`** (`0x0088833f`) |
+| | [3] | `0x0088839f` `mov [esp+0x84], eax` | **= `[esp+0x44]`** (`0x0088839b`) |
+| **`EAX`** (`lea eax,[esp+0x88]`) | [0] | `0x008883b0` | 0 |
+| | [1] | `0x008883b7` | 0 |
+| | [2] | `0x00888447` `mov [esp+0x90], edx` | `[esp+0xf8]` |
+| | [3] | `0x00888431` `mov [esp+0x94], eax` | `[esp+0xfc]` |
+
+A `[esp+0x2c]` és a `[esp+0x44]` a **cellaSzél / cellaMag** — a 18.2
+`fistp`-jeinek eredménye (`0x00888393` → `0x0088839b` → `0x0088839f`).
+
+⇒ **Az `ESI`-rect = (0, 0, cellaSzél, cellaMag) = a CELLA**, és a
+`FUN_009b4aa0`-ban az `ESI` a **célkeret**. A 24.3 kétértelműségének
+**egyik fele eldőlt**.
+
+*Bizonyítottsági fok: **megerősített** — az érintett írások mind a
+push-ok utáni, azonos veremállapotban vannak.*
+
+### 25.3 ⚠️ A FORRÁSRECT nem dőlt el — és a helyi módszer KORLÁTJA
+
+Az `EAX`-rect mérete a `[esp+0xf8]` / `[esp+0xfc]` rekeszekből jön. A
+pásztázás szerint ezeket **csak** a `0x00888415` / `0x0088841c` írja — a
+virtuális hívás **nem nulla** ágán, és ott **ugyanazt a cellaSzél/cellaMag
+párt** kapják. A nulla ágon tehát írás nélkül maradnának.
+
+⛔ **De ez a következtetés NEM megbízható, és ki kell mondani, miért:** a
+pásztázásom **nyers `esp`-eltolásra** illeszt, és **nem követi az `esp`
+mozgását**. A törzs a belépéskor `sub esp, 0x124`, majd négy `push`
+(`0x00888247`–`0x0088826a`) — onnantól ugyanaz a rekesz **más
+eltolással** címezhető (`[esp+0xf8]` ↔ `[esp+0x108]`). Egy másik
+veremállapotban írt érték a mintámból **kimarad**.
+
+⇒ **A 174. kör ítélete áll: ez dekompilátor-munka.** A verem
+normalizálása (esp-nyilvántartás minden ágon) pontosan az, amit egy
+dekompilátor elvégez, és amit kézzel nem szabad megjátszani.
+
+### 25.4 A mérés és a kódolvasat ELLENTMOND — kimondva
+
+A 25.2 szerint a célkeret a cella. Ha a forrásrect a kép természetes
+mérete volna, akkor egy álló kép a cellába illesztve **`cellaMag`
+magasságot** kapna, és a tárolt `h` **lap-szintű állandó** lenne. A mérés
+viszont (18.3, `AI27`) **három különböző** magasságot ad: 446,08 · 449,75
+· 432,00.
+
+**Számpélda** (`AI27`, cella 450 × 571, kép 816 × 1456):
+`zx = (450+0,499)/816 = 0,55208`, `zy = (571+0,499)/1456 = 0,39251`,
+`min = zy` ⇒ kimenet `(320, 571)`, rés levonva `(248, 499)`.
+**Mért:** `(250, 446,08)`. ⇒ **nem egyezik.**
+
+⛔ **Az ellentmondás áll**, és a kör nem oldja fel. A két lehetőség:
+
+1. a forrásrect **nem** a kép természetes mérete (hanem valami, amit a
+   `0x00835380` vagy a virtuális hívás tölt egy általam nem követett
+   veremállapotban);
+2. a tárolt `w`/`h` **nem** ennek az illesztésnek a kimenete (a 24.2
+   olvasata hibás).
+
+**Mindkettőt ugyanaz dönti el:** a `FUN_00888210` dekompilációja
+verem-normalizálással.
+
+*Bizonyítottsági fok: az ellentmondás **megerősített** (a számpélda
+ellenőrizhető), a feloldás **NINCS MEG**.*
