@@ -84,40 +84,37 @@ class TestIndulasiGat:
         monkeypatch.setattr(rt, "_NINCS_MEMORIA_KORLAT", False)
 
     def test_kevés_memorianal_nem_indul(self):
-        eredmeny = rt._varj_szabad_helyre(
-            korlat=2, varakozas_s=0.0,
-            foglalo=lambda: Path("/tmp/hely-0"),   # LENNE szabad hely
-            alvo=lambda _: None,
+        assert rt._varj_eleg_memoriara(
+            varakozas_s=0.0, alvo=lambda _: None,
             szabad_mem=lambda: 1477,               # a 09-07-i mért érték
-        )
-        assert eredmeny is None, "kevés memóriánál is elindult volna"
+        ) is False, "kevés memóriánál is elindult volna"
 
     def test_eleg_memorianal_indul(self):
-        eredmeny = rt._varj_szabad_helyre(
-            korlat=2, varakozas_s=0.0,
-            foglalo=lambda: Path("/tmp/hely-0"),
-            alvo=lambda _: None,
-            szabad_mem=lambda: 4602,
-        )
-        assert eredmeny == Path("/tmp/hely-0")
+        assert rt._varj_eleg_memoriara(
+            varakozas_s=0.0, alvo=lambda _: None, szabad_mem=lambda: 4602)
 
     def test_a_memoria_felszabadulasa_utan_bejut(self):
         """Ellenpróba: a gát VÁR, nem véglegesen tilt."""
         ertekek = iter([1200, 1300, 5000, 5000])
-        eredmeny = rt._varj_szabad_helyre(
-            korlat=2, varakozas_s=999.0,
-            foglalo=lambda: Path("/tmp/hely-0"),
-            alvo=lambda _: None,
-            szabad_mem=lambda: next(ertekek),
-        )
-        assert eredmeny == Path("/tmp/hely-0")
+        assert rt._varj_eleg_memoriara(
+            varakozas_s=999.0, alvo=lambda _: None,
+            szabad_mem=lambda: next(ertekek))
+
+    def test_a_hely_tesztjei_NEM_fuggnek_a_memoriatol(self):
+        """Ellenpróba: a hely-várakoztató ne kérdezze a memóriát.
+
+        Ha a két dolog egy függvényben lenne, a #1360 foglalási tesztjei az
+        ÉLŐ gépállapottól függenének. Élesben megtörtént: a teljes készleten
+        két foglalási teszt bukott el emiatt, mert a mérés közben 2,5 GiB alá
+        ment a szabad memória.
+        """
+        import inspect
+        forras = inspect.getsource(rt._varj_szabad_helyre)
+        assert "memoria" not in forras.lower(), (
+            "a hely-várakoztató memóriát mér — ettől a foglalási tesztek "
+            "élő gépállapottól függenek")
 
     def test_nem_merheto_memoria_nem_tilt(self):
         """`None` (nem Linux) esetén a gát nem szólhat bele."""
-        eredmeny = rt._varj_szabad_helyre(
-            korlat=2, varakozas_s=0.0,
-            foglalo=lambda: Path("/tmp/hely-0"),
-            alvo=lambda _: None,
-            szabad_mem=lambda: None,
-        )
-        assert eredmeny == Path("/tmp/hely-0")
+        assert rt._varj_eleg_memoriara(
+            varakozas_s=0.0, alvo=lambda _: None, szabad_mem=lambda: None)

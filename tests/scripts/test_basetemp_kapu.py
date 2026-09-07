@@ -23,7 +23,7 @@ _spec.loader.exec_module(kapu)
 
 
 _PLAFON_ELOTAG = (
-    "systemd-run --user --scope -q -p MemoryMax=1800M -p MemorySwapMax=0 -- "
+    "systemd-run --user --scope -q -p MemoryMax=2400M -p MemorySwapMax=0 -- "
 )
 
 BLOKKOLANDO = [
@@ -183,7 +183,7 @@ def test_a_mappa_uzenete_megnevezi_a_MERT_karot(monkeypatch, capsys):
 # korlát (#2532, csak teljes futásokra) nem foghatta meg.
 
 _PLAFON = ("systemd-run --user --scope -q "
-           "-p MemoryMax=1800M -p MemorySwapMax=0 -- ")
+           "-p MemoryMax=2400M -p MemorySwapMax=0 -- ")
 
 
 def test_egyetlen_app_fajl_plafon_nelkul_blokkol():

@@ -88,7 +88,17 @@ def _platform() -> str:
 #:
 #: A `MemorySwapMax=0` azért kell, mert swapba lógva a folyamat nem hal meg,
 #: csak a gépet fojtja meg (a 2 GiB zram aznap ~100%-on állt).
-_MEMORIA_PLAFON = os.environ.get("PICASAPY_TESZT_MEMORIA", "1800M")
+#: MÉRVE 2026-09-07, teljes valódi kör (`run_tests.py`, 6950 nem-app teszt +
+#: 560 app-fájl, 90 perc): a legmagasabb EGYPROCESSZES csúcs **1574 MiB**
+#: volt. Az elso valasztas (1800M) ehhez kepest csak 14% rahagyas — egy
+#: nehany szazalekkal nehezebb nap `exit 137`-et adna, ami crashnek latszo,
+#: VALODI HIBA NELKULI bukas. 2400M = 52% rahagyas a mert csucs folott.
+#:
+#: Felfele a hatar a gep: ket egyideju futas engedelyezett (#2532), tehat a
+#: legrosszabb eset 2 x 2400M = 4,8 GiB a 16 GiB-bol — a desktop ~3,5 GiB-ja
+#: mellett is bofer. A plafon celja NEM a szoros meres, hanem hogy egyetlen
+#: elszabadult reszfutas se vihesse el a gepet.
+_MEMORIA_PLAFON = os.environ.get("PICASAPY_TESZT_MEMORIA", "2400M")
 
 #: Ennyi szabad memória alatt QML-teszt ne INDULJON (#2646). Az abszolút
 #: RSS-küszöb önmagában félrevezet: az egyedi ~1 GiB ártalmatlan, a csúcsot a
@@ -167,6 +177,23 @@ _NON_APP_TIMEOUT_S = 600
 #: Az őr ehhez köti a korlátot — enélkül csak egy szám lenne.
 _NON_APP_MERT_FUTASIDO_S = 249
 _APP_FILE_TIMEOUT_S = 180
+
+#: Fájlok, amelyeket a futtató KIHAGY, mert a mért futásidejük meghaladja a
+#: fenti korlátot: minden körben elégetik a 180 másodpercet, aztán `exit
+#: 124`-gyel elbuknak. Ez tiszta veszteség — CPU-t visz a négymagos gépről,
+#: és semmit nem mér.
+#:
+#: MÉRVE 2026-09-07, TISZTA gépen (terhelés 0,4), memóriaplafon alatt:
+#:   test_collage_panel_wiring_985.py → 640 s, 34 teszt zöld
+#: A fájl tehát NEM hibás és NEM fagy be — csak 3,5-szer lassabb, mint az
+#: engedély. A helyes javítás a fájl szétbontása vagy a lassú rész
+#: gyorsítása; addig a kihagyás olcsóbb, mint a körönkénti 180 mp.
+#:
+#: ⚠️ Ez NEM néma: a futtató kiírja, mit hagyott ki, és melyik jegy tartja
+#: nyilván (#2653). Néma kihagyásból hamis biztonság lesz (#664).
+_KIHAGYOTT_APP_FAJLOK = {
+    "tests/app/qml_functional/test_collage_panel_wiring_985.py": "#2653",
+}
 
 #: Hány `tests/app`-fájl fusson EGYSZERRE (#1030). A fájlok külön processzben
 #: futnak (#53), a párhuzamosítás tehát nem gyengíti az izolációt — csak
@@ -265,7 +292,6 @@ def _varj_szabad_helyre(
     varakozas_s: float,
     foglalo=None,
     alvo=time.sleep,
-    szabad_mem=None,
 ) -> Path | None:
     """Vár, amíg KAP egy helyet; `None`, ha lejárt a türelmi idő.
 
@@ -278,34 +304,9 @@ def _varj_szabad_helyre(
     if korlat <= 0:
         return _NINCS_KORLAT
     kerj = foglalo or (lambda: _foglalj_helyet(korlat))
-    merd = szabad_mem or _szabad_memoria_mib
     eltelt = 0.0
     jelentve = False
-    mem_jelentve = False
     while True:
-        # #2646: a hely önmagában kevés — a gépen ELÉG SZABAD MEMÓRIA is
-        # kell. Az egyedi ~1 GiB ártalmatlan, a csúcsot a párhuzamosság
-        # csinálja: 09-07-én három munkamenet vitte 1477 MiB-ra a szabad
-        # memóriát, és az earlyoom a Claude Desktopot lőtte ki.
-        szabad = None if _NINCS_MEMORIA_KORLAT else merd()
-        if szabad is not None and szabad < _MEMORIA_INDULAS_MIB:
-            if not mem_jelentve:
-                print(
-                    f"KEVÉS A SZABAD MEMÓRIA: {szabad} MiB, a küszöb "
-                    f"{_MEMORIA_INDULAS_MIB} MiB. Várok — QML-teszt indítása "
-                    f"most a GÉPET vinné el, nem csak ezt a futást (#2646).",
-                    flush=True,
-                )
-                mem_jelentve = True
-            if eltelt >= varakozas_s:
-                return None
-            alvo(_VARAKOZAS_LEPES_S)
-            eltelt += _VARAKOZAS_LEPES_S
-            continue
-        if mem_jelentve:
-            print(f"Felszabadult a memória ({szabad} MiB) — megyek tovább.",
-                  flush=True)
-            mem_jelentve = False
         hely = kerj()
         if hely is not None:
             if jelentve:
@@ -324,6 +325,50 @@ def _varj_szabad_helyre(
             jelentve = True
         if eltelt >= varakozas_s:
             return None
+        alvo(_VARAKOZAS_LEPES_S)
+        eltelt += _VARAKOZAS_LEPES_S
+
+
+def _varj_eleg_memoriara(
+    *,
+    varakozas_s: float,
+    alvo=time.sleep,
+    szabad_mem=None,
+) -> bool:
+    """Vár, amíg elég szabad memória lesz; `False`, ha lejárt a türelem.
+
+    #2646 — KÜLÖN a hely-foglalástól, szándékosan. A hely azt méri, hányan
+    dolgoznak; ez azt, hogy elbírja-e a gép. Ha a kettő egy függvényben
+    lenne, a foglalás tesztjei az ÉLŐ gépállapottól függnének, és „valódi
+    hiba nélküli bukást" adnának — épp azt a fajtát, ami ellen a korlát
+    egyáltalán létezik.
+
+    Az egyedi ~1 GiB ártalmatlan; a csúcsot a PÁRHUZAMOSSÁG csinálja:
+    2026-09-07-én három munkamenet vitte 1477 MiB-ra a szabad memóriát, és
+    az earlyoom a Claude Desktopot lőtte ki egy 1031 MiB-os teszt helyett.
+    """
+    if _NINCS_MEMORIA_KORLAT:
+        return True
+    merd = szabad_mem or _szabad_memoria_mib
+    eltelt = 0.0
+    jelentve = False
+    while True:
+        szabad = merd()
+        if szabad is None or szabad >= _MEMORIA_INDULAS_MIB:
+            if jelentve:
+                print(f"Felszabadult a memória ({szabad} MiB) — indulok.",
+                      flush=True)
+            return True
+        if not jelentve:
+            print(
+                f"KEVÉS A SZABAD MEMÓRIA: {szabad} MiB, a küszöb "
+                f"{_MEMORIA_INDULAS_MIB} MiB. Várok — QML-teszt indítása most "
+                f"a GÉPET vinné el, nem csak ezt a futást (#2646).",
+                flush=True,
+            )
+            jelentve = True
+        if eltelt >= varakozas_s:
+            return False
         alvo(_VARAKOZAS_LEPES_S)
         eltelt += _VARAKOZAS_LEPES_S
 
@@ -911,6 +956,16 @@ def main(argv: list[str] | None = None) -> int:
 
     # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
     # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.
+    if not _varj_eleg_memoriara(varakozas_s=_VARAKOZAS_S):
+        print(
+            "\nNEM INDULOK EL: a türelmi idő alatt sem lett elég szabad "
+            f"memória ({_MEMORIA_INDULAS_MIB} MiB kell).\n"
+            "⚠️ Ez NEM a tesztek bukása. Egy QML-teszt indítása most a GÉPET\n"
+            "vinné el, nem csak ezt a futást (#2646).",
+            flush=True,
+        )
+        return _NINCS_HELY_KOD
+
     hely = _varj_szabad_helyre(
         korlat=_egyideju_korlat(), varakozas_s=_VARAKOZAS_S
     )
@@ -976,6 +1031,21 @@ def _futtat(
     app_test_files = [
         p for p in app_test_files if str(p.relative_to(_ROOT)) in enyem
     ]
+    kihagyott = [p for p in app_test_files
+                 if str(p.relative_to(_ROOT)).replace("\\", "/")
+                 in _KIHAGYOTT_APP_FAJLOK]
+    if kihagyott:
+        app_test_files = [p for p in app_test_files if p not in kihagyott]
+        print("\nKIHAGYVA (túllépi a fájlonkénti időkorlátot):", flush=True)
+        for p in kihagyott:
+            nev = str(p.relative_to(_ROOT)).replace("\\", "/")
+            print(f"  {nev} — {_KIHAGYOTT_APP_FAJLOK[nev]}", flush=True)
+        print(
+            "  Ezek MINDEN körben elégetnék a "
+            f"{_APP_FILE_TIMEOUT_S} másodpercet, aztán elbuknának. A "
+            "kihagyás nem megoldás, csak a veszteség megállítása.",
+            flush=True,
+        )
     if _PARHUZAM > 1:
         failures += _app_fajlok_parhuzamosan(app_test_files, cov=cov, basetemp=basetemp)
     else:

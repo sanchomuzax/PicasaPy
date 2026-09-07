@@ -193,7 +193,7 @@ elfogadható kimenet. A jelzés eltakarása súlyosabb hiba, mint maga a hiba.
 - **A `tests/app` alatti pytest MEMÓRIAPLAFON alatt fut** (#2646). A
   `run_tests.py` magától így indítja a részfutásait; csupasz, fájlonkénti
   hívásnál neked kell:
-  `systemd-run --user --scope -q -p MemoryMax=1800M -p MemorySwapMax=0 -- python3 -m pytest <fájl> -q --basetemp="$BT"`
+  `systemd-run --user --scope -q -p MemoryMax=2400M -p MemorySwapMax=0 -- python3 -m pytest <fájl> -q --basetemp="$BT"`
   Ezt a `basetemp_kapu.py` betartatja. Miért: 2026-09-07-én az `earlyoom` a
   Claude Desktopot lőtte ki (3579 MiB) egy 1031 MiB-os QML-teszt HELYETT — a
   legnagyobb RSS-t öli, tehát **az áldozat sosem a tettes**. Egyetlen,

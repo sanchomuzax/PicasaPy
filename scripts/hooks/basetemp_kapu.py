@@ -229,7 +229,7 @@ def main() -> int:
         "\n"
         "Plafon alatt így indítsd (a túllépő EGYEDÜL hal meg, exit 137):\n"
         "    systemd-run --user --scope -q \\\n"
-        "        -p MemoryMax=1800M -p MemorySwapMax=0 -- \\\n"
+        "        -p MemoryMax=2400M -p MemorySwapMax=0 -- \\\n"
         "        python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
         "\n"
         "A kár egyik esetben sem NÁLAD jelentkezik, hanem a gépen és a\n"
