@@ -24,6 +24,8 @@ from pathlib import Path
 import picasapy.app
 import pytest
 
+from tests.support.qml_blokk import blokk_horgonyra
+
 _MENU = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
@@ -36,9 +38,15 @@ _MAIN = (
 KET_BELEPES = ("menuFileAddFolder", "menuToolsFolderManager")
 
 
-def _blokk(nev: str, hossz: int = 700) -> str:
-    kezd = _MENU.index(f'objectName: "{nev}"')
-    return _MENU[kezd : kezd + hossz]
+def _blokk(nev: str) -> str:
+    """A menütétel VALÓDI blokkja.
+
+    #2575: itt korábban rögzített, 700 karakteres ablak volt — a #2540 és a
+    #2575 leltára sem fogta meg, mert a hossz VÁLTOZÓBAN állt
+    (`kezd + hossz`), nem literálként. Ugyanaz a hibaosztály: egy hosszabb
+    indoklás kitolja a mért sort, és az őr a HELYES kódon bukik.
+    """
+    return blokk_horgonyra(_MENU, f'objectName: "{nev}"')
 
 
 class TestAKapu:
