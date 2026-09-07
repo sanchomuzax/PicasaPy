@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.330] – 2026-09-07
+
+### Javítva
+
+- **A kék sáv fájlneve már nem fut bele a saját szélébe** (#2581). Eddig a
+  hosszú fájlnév egyszerűen le volt vágva ott, ahol a sáv véget ért. Az
+  eredeti Picasa két lépésben szűkít: előbb elhagyja a mappa nevét a
+  fájlnév elől, és csak ha még mindig nem fér ki, akkor rövidíti a nevet a
+  KÖZEPÉN, három ponttal — így a kiterjesztés (`.png`) mindig látszik. Ezt
+  a szabályt két Picasa-felvétel képpontjaiból mértük ki: ugyanaz a fájl,
+  ugyanaz a nézet, más ablakszélesség.
+
 ## [0.8.329] – 2026-09-07
 
 ### Javítva
