@@ -912,6 +912,13 @@ az elosztó a levélnevet nézi, nem a panelt.
 | 24 | `set_thumbnail` | `0x00603660` | `0x005e180c` |
 | 25 | `folderbutton` | `0x004adfe0` | `0x005e185b` |
 
+**A táblában LEVÉLNÉV áll**, mert az elosztó is a levélnevet hasonlítja
+(`repe cmpsb`), és ugyanaz a parancs a három fejléc-változat
+(`headerpanel` · `faceheaderpanel` · `unknownfaceheaderpanel`) bármelyikéből
+jöhet. A leltárban TELJES néven szereplő elemek, amelyeket ez a tábla leír:
+`headerpanel/websync0`, `headerpanel/websync1`, `headerpanel/sync_options`,
+`headerpanel/view_online`, `faceheaderpanel/moresug`.
+
 ### 15.3 MIT CSINÁLNAK — a három adat-válasz
 
 #### a) „További javaslatok keresése" LEJJEBB VISZI A KÜSZÖBÖT

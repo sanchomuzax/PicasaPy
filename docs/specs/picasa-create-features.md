@@ -1896,7 +1896,8 @@ A `0x00621d40` (242 b) **előtag szerint** dönt:
 A két panel neve `makemoviepanel/text_picker_panel` és
 `makemoviepanel/bkg_picker_panel`; a keretük a respackben
 `makemoviepanel/txcolorpicker_bevel` és
-`makemoviepanel/bgcolorpicker_bevel`, a közös tartó `colorpickerpanel`.
+`makemoviepanel/bgcolorpicker_bevel`, a közös tartó
+`colorpickerpanel` (ez a respack rétegneve, a leltárban nincs ilyen elem).
 
 #### E) A fül feliratai — a hivatalos magyar fordítással
 

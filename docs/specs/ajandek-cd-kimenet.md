@@ -777,14 +777,14 @@ alaplap, csoport, cím) — marad **28 valódi jelölt**.
 ### 13.1 A négy alcsoport
 
 A panel a 12. szakaszban leírt három üzemmódot négy `.tre`-csoportban
-tartja; a `web_group` a `.tre`-ben **`m_hidden`**.
+tartja; a `publish/web_group` a `.tre`-ben **`m_hidden`**.
 
 | csoport | üzemmód | a benne lévő, eddig nem dokumentált elemek |
 |---|---|---|
-| `presentation_group` | Ajándék-CD | `pubstep1`, `pubstep2`, `selectiontext`, `picsizetext`, `label_cdname`, `cdname`, `cdnametext`, `namelimitext`, `originfo`, `label_optionbox2`, `label_optionbox3` |
-| `backup_group` | biztonsági mentés | `backupinfo`, `backuprect2`, `label_backupname` |
-| `replication_group` | feltöltés (Upload All) | `rpoptions`, `uploadallaccess`, `uploadallsize`, `uploadaccess3`, `uploadsize3`, `uploadsync3`, `storage_fill` |
-| `web_group` (**`m_hidden`**) | webre publikálás | `accountspaceusage`, `addmoreweb`, `manageweb`, `uploadaccount`, `label_uploadaccount`, `selectioninfo`, `webpublish_go` |
+| `publish/presentation_group` | Ajándék-CD | `publish/pubstep1`, `publish/pubstep2`, `publish/selectiontext`, `publish/picsizetext`, `publish/label_cdname`, `publish/cdname`, `publish/cdnametext`, `publish/namelimitext`, `publish/originfo`, `publish/label_optionbox2`, `publish/label_optionbox3` |
+| `publish/backup_group` | biztonsági mentés | `publish/backupinfo`, `publish/backuprect2`, `publish/label_backupname` |
+| `publish/replication_group` | feltöltés (Upload All) | `publish/rpoptions`, `publish/uploadallaccess`, `publish/uploadallsize`, `publish/uploadaccess3`, `publish/uploadsize3`, `publish/uploadsync3`, `publish/storage_fill` |
+| `publish/web_group` (**`m_hidden`**) | webre publikálás | `publish/accountspaceusage`, `publish/addmoreweb`, `publish/manageweb`, `publish/uploadaccount`, `publish/label_uploadaccount`, `publish/selectioninfo`, `publish/webpublish_go` |
 
 ### 13.2 A feliratok — angol (`publish_text.tre`) és hivatalos magyar
 
@@ -806,46 +806,46 @@ Forrás: `publish_text.tre` (`Label`/`Text` sorok) és
 | `publish/uploadsync3` | Sync: — `publish_text.tre:193` | **Szinkronizálás:** — `panel-feliratok-hu.tsv:5121` |
 
 ⚠️ A maradék 17 jelöltnek **nincs saját felirata** a `publish_text.tre`-ben:
-gomb (`addmoreweb`, `manageweb`, `webpublish_go`), beviteli mező (`cdname`,
-`uploadaccount`), legördülő (`uploadallaccess`, `uploadallsize`), állapotsor
-(`backupinfo`, `originfo`, `selectioninfo`, `accountspaceusage`), illetve
-lépés-keret (`pubstep1`, `pubstep2`, `backuprect2`, `rpoptions`,
-`storage_fill`, `label_uploadaccount`).
+gomb (`publish/addmoreweb`, `publish/manageweb`, `publish/webpublish_go`), beviteli mező (`publish/cdname`,
+`publish/uploadaccount`), legördülő (`publish/uploadallaccess`, `publish/uploadallsize`), állapotsor
+(`publish/backupinfo`, `publish/originfo`, `publish/selectioninfo`, `publish/accountspaceusage`), illetve
+lépés-keret (`publish/pubstep1`, `publish/pubstep2`, `publish/backuprect2`, `publish/rpoptions`,
+`publish/storage_fill`, `publish/label_uploadaccount`).
 
 ### 13.3 Geometria — a `respack.yt` rétegfejléceiből (vászon **1024 × 212**)
 
 | elem | x0,y0 – x1,y1 | méret | smink / típus |
 |---|---|---:|---|
-| `pubstep1` | 15,37 – 326,203 | 311×166 | `decrect(publishdecrect/step1)` |
-| `pubstep2` | 337,37 – 648,203 | 311×166 | `decrect(publishdecrect/step2)` |
-| `backuprect2` | 448,37 – 772,203 | 324×166 | `decrect(publishdecrect/step2)` |
-| `selectiontext` | 55,43 – 306,61 | 251×18 | felirat |
-| `picsizetext` | 35,169 – 172,187 | 137×18 | felirat |
-| `cdnametext` | 377,43 – 628,61 | 251×18 | felirat |
-| `label_cdname` | 357,81 – 450,95 | 93×14 | felirat |
-| `cdname` | 458,83 – 625,97 | 167×14 | **beviteli mező** (`window`) |
-| `namelimitext` | 455,101 – 628,115 | 173×14 | felirat |
-| `label_optionbox3` | 390,140 – 617,156 | 227×16 | felirat |
-| `label_optionbox2` | 390,172 – 617,188 | 227×16 | felirat |
-| `originfo` | 307,2 – 504,27 | 197×25 | állapotsor (`calculating`) |
-| `backupinfo` | 420,2 – 617,27 | 197×25 | állapotsor (`active backup set info`) |
-| `label_backupname` | 148,134 – 256,150 | 108×16 | felirat |
-| `rpoptions` | 36,93 – 235,192 | 199×99 | `buttcontainer` |
-| `uploadallsize` | 431,106 – 570,127 | 139×21 | **legördülő** (`popuplist(size)`) |
-| `uploadallaccess` | 431,138 – 570,159 | 139×21 | **legördülő** (`popuplist(access)`) |
-| `uploadsize3` | 330,107 – 424,123 | 94×16 | felirat |
-| `uploadaccess3` | 330,139 – 424,155 | 94×16 | felirat |
-| `uploadsync3` | 330,170 – 424,186 | 94×16 | felirat |
-| `storage_fill` | 636,122 – 889,133 | 253×11 | **tárhely-csík kitöltése** |
-| `label_uploadaccount` | 10,40 – 72,56 | 62×16 | `static(Upload to)` |
-| `uploadaccount` | 77,39 – 268,58 | 191×19 | **beviteli mező** (`window`) |
-| `selectioninfo` | 282,49 – 479,74 | 197×25 | `static(calculating)` |
-| `addmoreweb` | 491,42 – 579,70 | 88×28 | gomb (`b88_*`, „Add More…") |
-| `manageweb` | 268,113 – 356,141 | 88×28 | gomb (`b88_*`, „Manage…") |
-| `webpublish_go` | 682,45 – 770,73 | 88×28 | `superbutton(button_text_LC_throb, Web Publish)` |
-| `accountspaceusage` | 24,98 – 245,140 | 221×42 | tárhely-kijelző |
+| `publish/pubstep1` | 15,37 – 326,203 | 311×166 | `decrect(publishdecrect/step1)` |
+| `publish/pubstep2` | 337,37 – 648,203 | 311×166 | `decrect(publishdecrect/step2)` |
+| `publish/backuprect2` | 448,37 – 772,203 | 324×166 | `decrect(publishdecrect/step2)` |
+| `publish/selectiontext` | 55,43 – 306,61 | 251×18 | felirat |
+| `publish/picsizetext` | 35,169 – 172,187 | 137×18 | felirat |
+| `publish/cdnametext` | 377,43 – 628,61 | 251×18 | felirat |
+| `publish/label_cdname` | 357,81 – 450,95 | 93×14 | felirat |
+| `publish/cdname` | 458,83 – 625,97 | 167×14 | **beviteli mező** (`window`) |
+| `publish/namelimitext` | 455,101 – 628,115 | 173×14 | felirat |
+| `publish/label_optionbox3` | 390,140 – 617,156 | 227×16 | felirat |
+| `publish/label_optionbox2` | 390,172 – 617,188 | 227×16 | felirat |
+| `publish/originfo` | 307,2 – 504,27 | 197×25 | állapotsor (`calculating`) |
+| `publish/backupinfo` | 420,2 – 617,27 | 197×25 | állapotsor (`active backup set info`) |
+| `publish/label_backupname` | 148,134 – 256,150 | 108×16 | felirat |
+| `publish/rpoptions` | 36,93 – 235,192 | 199×99 | `buttcontainer` |
+| `publish/uploadallsize` | 431,106 – 570,127 | 139×21 | **legördülő** (`popuplist(size)`) |
+| `publish/uploadallaccess` | 431,138 – 570,159 | 139×21 | **legördülő** (`popuplist(access)`) |
+| `publish/uploadsize3` | 330,107 – 424,123 | 94×16 | felirat |
+| `publish/uploadaccess3` | 330,139 – 424,155 | 94×16 | felirat |
+| `publish/uploadsync3` | 330,170 – 424,186 | 94×16 | felirat |
+| `publish/storage_fill` | 636,122 – 889,133 | 253×11 | **tárhely-csík kitöltése** |
+| `publish/label_uploadaccount` | 10,40 – 72,56 | 62×16 | `static(Upload to)` |
+| `publish/uploadaccount` | 77,39 – 268,58 | 191×19 | **beviteli mező** (`window`) |
+| `publish/selectioninfo` | 282,49 – 479,74 | 197×25 | `static(calculating)` |
+| `publish/addmoreweb` | 491,42 – 579,70 | 88×28 | gomb (`b88_*`, „Add More…") |
+| `publish/manageweb` | 268,113 – 356,141 | 88×28 | gomb (`b88_*`, „Manage…") |
+| `publish/webpublish_go` | 682,45 – 770,73 | 88×28 | `superbutton(button_text_LC_throb, Web Publish)` |
+| `publish/accountspaceusage` | 24,98 – 245,140 | 221×42 | tárhely-kijelző |
 
-⭐ **A két lépés-keret azonos méretű** (311×166), és a `backuprect2` a
+⭐ **A két lépés-keret azonos méretű** (311×166), és a `publish/backuprect2` a
 mentés-üzemmódban **ugyanarra a helyre, szélesebben** (324) kerül — a panel
 tehát **lépésekre osztott**, és az üzemmód a keretek tartalmát cseréli.
 
