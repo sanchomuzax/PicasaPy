@@ -3836,6 +3836,50 @@ B-splinera és a legközelebbi szomszédra (mind utasításszinten kiolvasva) ·
 összeillesztése nincs végigvezetve) és az `unsharp` súlyaira (a
 `[this+0x30]` szemantikája levezetett, golden-párral nem mérve).
 
+### A kicsinyítés MÉRVE — golden a Picasa saját bélyegkép-tárából (2026-09-07, #871)
+
+A 6-os mód addig **kód-olvasat** volt: golden-pár nem tartozott hozzá.
+Ez a kör talált hozzá mércét — **a Picasa saját `bigthumbs` tárát**
+(288 px, JPEG-blobok, `docs/specs/pmp-database.md` 8.3). A tulajdonos
+2025-12-24-i adatbázisából **119** olyan fotó jött össze, amelynek a
+forrása helyben megvan és a `.picasa.ini` szerint **szerkesztetlen**; a
+mérce a Picasa által készített bélyegkép, a próba a forrás lekicsinyítése
+ugyanarra a méretre.
+
+| jelölt | átl. ΔE (Lab) | átl. SSIM | átl. RMSE | idő (119 kép) |
+|---|---:|---:|---:|---:|
+| `cv2.INTER_AREA` (a PicasaPy addigi útja) | 2,8247 | 0,95484 | 6,7592 | 4,6 s |
+| **`cv2.INTER_LANCZOS4`** | **5,0842** | **0,81196** | **18,3541** | 0,8 s |
+| skálázott magú Lanczos-4, elő-szűrés nélkül | 2,6539 | 0,96734 | 5,4218 | 317,7 s |
+| piramis (**csonkoló** felezés) + Lanczos-4 | 2,7626 | 0,95708 | 6,7298 | 29,3 s |
+| piramis eggyel kevesebb felezéssel + Lanczos-4 | 2,6048 | 0,96721 | 5,4029 | 47,3 s |
+| **területi elő-szűrés a célméret 2×-ére + Lanczos-4** | 2,6245 | **0,96765** | **5,3889** | 17,6 s |
+
+**Három lelet, mindegyik mérésből:**
+
+1. ⚠️ **A `cv2.INTER_LANCZOS4` NEM a Picasa Lanczos-4-e.** Az OpenCV magja
+   rögzített, 8 csapos, és kicsinyítéskor **nem tágul**; a Picasáé a
+   `sugár / lépték` képlet (`0x00a3f745`) szerint igen. A különbség nem
+   elméleti: a naiv csere **mind a 119 képen ROSSZABB** lett a területi
+   átlagolásnál is (ΔE 5,08 vs 2,82). Egy 8× kicsinyítésnél az OpenCV
+   magja egy magányos világos forrássort **nyomtalanul elnyel**.
+2. **A csonkítás jobb, mint a kerekítés.** Ugyanaz a piramis kerekítő
+   felezéssel ΔE 2,7577, csonkolóval **2,6665** (a 40 képes elő-körben) —
+   ez független megerősítése a `shr`-olvasatnak (`0x00a4332d`).
+3. **A teljes piramis ebben a mérésben ROSSZABB, mint egy pontos arányú
+   doboz-elő-szűrés.** A szerkezet (doboz-elő-szűrés + Lanczos-4 a
+   maradékra) igazolódik, a *lépcsős* felezés-lánc nem. Hogy ez a
+   bélyegkép-út sajátja-e, vagy az elő-szűrés arányáé, **nyitva marad** —
+   eldöntéséhez olyan eredeti export kellene, ahol a kicsinyítés aránya
+   ismert és nem 2 hatványa.
+
+*Bizonyítottsági fok:* **megerősített** arra, hogy a `cv2.INTER_LANCZOS4`
+nem használható a mód megvalósítására (119/119 kép) · **erős** arra, hogy
+a Lanczos-4 mag közelebb van a Picasához, mint a területi átlagolás
+(103/119 ΔE-ben, 117/119 SSIM-ben) · a mérce **JPEG-be tömörített**
+bélyegkép, tehát a bájtra egyezés elvileg sem érhető el — a sorrend a
+lelet, nem az abszolút szám.
+
 ## A sáv-jelzőknek nincs fogyasztója (2026-08-16)
 
 A „Nyitva 10" pont a `filterdesc.xml` három jelzőjének beépítését kérte.

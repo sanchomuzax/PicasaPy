@@ -246,11 +246,20 @@ class TestEditedThumbnail:
         # utólagos vágása+felnagyítása: a nagyfrekvenciás minta (sakktábla)
         # a kész kis thumbnailban már elmosódott, a nagy bázison még nem —
         # a részletesség (szórás) így magasabb marad.
+        #
+        # #871: a mintát 4 képpontos mezőkről 8 képpontosra vittük. A
+        # 4 képpontos sakktábla a MAI (Lanczos-4) kicsinyítés után MINDKÉT
+        # úton egyenletes szürke lesz — helyesen, mert az a frekvencia
+        # 6,25× kicsinyítésnél elvileg sem ábrázolható. A korábbi
+        # `INTER_AREA` maradék moiréja tette az esetet mérhetővé, nem a
+        # megőrzött részlet. A 8 képpontos mező a nagy bázison ÁTMEGY
+        # (szórás 84), a kész kis bélyegképen nem (0,5) — az állítás így
+        # azt méri, amit mondani akar.
         import cv2
         import numpy as np
         from PIL import Image
 
-        tile = np.indices((800, 800)).sum(axis=0) // 4 % 2
+        tile = np.indices((800, 800)).sum(axis=0) // 8 % 2
         board = (tile * 255).astype(np.uint8)
         Image.fromarray(np.stack([board] * 3, axis=-1), "RGB").save(
             tmp_path / "reszletes.jpg", "JPEG", quality=95

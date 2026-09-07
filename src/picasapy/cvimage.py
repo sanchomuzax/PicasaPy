@@ -20,6 +20,8 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
+from picasapy.resample import picasa_kicsinyites
+
 # Nagy forráskép redukált (fél/negyed/nyolcad méretű) JPEG-dekódolása kíméli
 # a memóriát és nagyságrendet gyorsít; a legerősebb redukcióval kezdünk, és
 # az első olyat választjuk, amely még elég pixelt hagy a célmérethez.
@@ -36,8 +38,8 @@ def _reduced_color_flags() -> tuple[tuple[int, int], ...]:
     )
 
 # Mintavételi tartalék: a dekódolt kép leghosszabb oldala legalább ennyiszer
-# akkora legyen, mint a célméret — így az utána következő INTER_AREA
-# kicsinyítésnek marad miből átlagolnia (nem lépcsőzik).
+# akkora legyen, mint a célméret — így az utána következő kicsinyítésnek
+# marad miből átlagolnia (nem lépcsőzik).
 _SAMPLING_HEADROOM = 2
 
 
@@ -78,7 +80,13 @@ def read_image_bytes(source: Path) -> np.ndarray | None:
 
 
 def scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:
-    """A leghosszabb oldal korlátozása INTER_AREA-val; felskálázás soha.
+    """A leghosszabb oldal korlátozása a Picasa magjával; felskálázás soha.
+
+    #871: a kicsinyítés **Lanczos-4** (`picasapy.resample`), nem pusztán
+    területi átlagolás — az eredeti Picasa minden átméretezése ezt a
+    magot használja (`ResampleFilter2`, alapérték 6). A területi
+    átlagolás elő-szűrésként megmaradt a célméret kétszereséig; ez az
+    eredeti piramisának a szerepe.
 
     `max_dimension=None` vagy már elég kicsi kép esetén a bemenet
     változatlanul (azonos objektumként) tér vissza."""
@@ -89,5 +97,6 @@ def scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:
     if longest <= max_dimension:
         return image
     scale = max_dimension / longest
-    new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
-    return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+    return picasa_kicsinyites(
+        image, max(1, round(width * scale)), max(1, round(height * scale))
+    )
