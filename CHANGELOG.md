@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.333] – 2026-09-07
+
 ### Javítva
 
 - **A kollázs-bekötés tesztfájlja megint fut** (#2653): a #985 mind a 34
