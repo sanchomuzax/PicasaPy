@@ -3798,3 +3798,98 @@ kötelező szakasszal.
 szerint innen terjed tovább a `+0x1b0`-as példányba is.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 37. K1 — az ELSŐ nem-beolvasó csomópont-építő, és benne egy `scale`-alakú SZÁMÍTÁS (2026-09-08, #1412)
+
+*189. kutatói kör. A 36.6 lépését viszi: honnan való a `FUN_00831420`
+verem-helyi dokumentuma. A válasz egy olyan függvényhez vezet, amelyet
+minden eddigi pásztázás átengedett — mert a `+0x2c`-t nem eltolással írja.*
+
+### 37.1 `FUN_00831420` (534 b) = „a panel `[+0x138]` dokumentumának ÚJRAÉPÍTÉSE"
+
+```
+[ebp] = a panel;  kapu:  ha [ebp+0x130] == 0  →  nem csinál semmit   ; 0x0083142b
+verem-helyi dokumentum:  mezők nullázása  →  call 0x008342b0          ; 0x00831472
+call 0x0087dcd0(panel, &helyi, 0, 0)                                  ; 0x0083147f
+a panel négy sztringmezőjének átvétele: [ebp+0x13c] · [ebp+0x168] ·
+   [ebp+0x170] · [ebp+0x174]                                          ; 0x00831484–0x00831566
+call 0x00833cf0(&[ebp+0x138], &helyi)   ; a helyi → a panel dokumentuma; 0x008315b8
+```
+
+⇒ a dokumentum **tartalmát a `FUN_0087dcd0` adja**.
+
+### 37.2 ⭐ `FUN_0087dcd0` (3206 b) — az ELSŐ nem-beolvasó csomópont-építő
+
+A függvény sztringkészlete a téma-beállításoké (`collage::theme`,
+`collage::shadows`, `collage::showcaptions`, `collage::orientation`,
+`collage::bgcolor`, `noborder`, `picturepile`, `multiexp`, `avgcolor`).
+**Négy** helyen hívja a csomópont értékadó operátorát:
+
+| cím | forrás | cél |
+|---|---|---|
+| `0x0087e390` · `0x0087e7a0` | `[[esp+0x174]+0x48] + eltolás` (másik dokumentum tömbeleme) | `[edi+ebp]` |
+| **`0x0087e3f2`** · **`0x0087e802`** | **verem-helyi csomópont** | `[[ebx+0x48] + n × 56]` — **hozzáfűzés** |
+
+A hozzáfűzés a **56 bájtos elem-idióma**: `0x0087e3e1` `lea ecx,[eax*8]` →
+`0x0087e3e8` `sub ecx,eax` (= 7·n) → `0x0087e3ea` `lea eax,[edx+ecx*8]`
+(= 56·n). Ugyanez a `0x0087e7f1`–`0x0087e7fa`-n.
+
+⇒ **Ez az első olyan út, amelyen csomópont a BEOLVASÓN KÍVÜL kerül egy
+dokumentum `[+0x48]` tömbjébe.** A 22.4 megállapítása („a hozzáadó
+virtuális metódust csak a beolvasó hívja") **a virtuális metódusra** áll —
+ez a függvény **közvetlenül** fűz hozzá, az értékadó operátorral.
+
+**Miért engedte át minden eddigi pásztázás:** a `+0x2c`-t nem
+`[reg+0x2c]` alakban írja, hanem a **verem-helyi csomópont** egyik
+rekeszébe — a hármas konjunkció (30.4) és minden eltolás-alapú minta
+`esp`/`ebp` bázissal kizárta.
+
+### 37.3 ⭐ Egy `scale`-ALAKÚ SZÁMÍTÁS a második blokkban
+
+`0x0087e500`–`0x0087e55a`:
+
+```
+fld  [edi+0x168]        →  fstp [esp+0x100]      ; egy float tagváltozó
+eax = [esp+0x8c] − [esp+0x84]                    ; téglalap SZÉLESSÉG
+ecx = [esp+0x88] − [esp+0x80]                    ; téglalap MAGASSÁG
+[esp+0x14] = MIN(szélesség, magasság)            ; 0x0087e52d–0x0087e531
+fild [esp+0x14]  ·  fmul [esp+0x100]             ; MIN × [edi+0x168]
+fstp [esp+0x58]                                  ; → a helyi csomópont egyik float mezője
+```
+
+**`MIN(szélesség, magasság) × egy float tagváltozó`** — pontosan olyan
+alakú mennyiség, amilyen a `scale` (a 24.1 szerint `k = min(cellaSzél,
+cellaMag)`). Az első blokkban ugyanennek a hatféle float rekesznek egyikébe
+`fld1` megy (`0x0087e229` → `0x0087e22f`).
+
+### 37.4 ⛔ Amit NEM mondok ki: MELYIK mezőbe megy
+
+A két blokk írásai `[esp+0x40]`…`[esp+0x5c]` rekeszekbe mennek, a
+csomópont hat float mezője (`+0x18` … `+0x2c`, 26.1) pedig hat egymást
+követő rekesz — **de a hozzárendelés a veremmélységtől függ**, és a két
+blokk között `push`-ok vannak (`0x0087e4fb`, `0x0087e559`), amelyeket a
+közbeeső `call`-ok fogyasztanak el.
+
+**Horgony van:** a hozzáfűzésnél `0x0087e3ee` és `0x0087e7fe`
+`lea esi,[esp+0x2c]` **közvetlenül egy `push eax` után** — ebből a
+csomópont bázisa a push előtti kereten `[esp+0x30]`. Az írások kerete
+viszont ettől eltérhet.
+
+⇒ **A mező-hozzárendelést a kör NEM tippeli meg.** Ez pontosan az a
+verem-normalizálási feladat, amit a 17.11 és a 25.4 is dekompilátorhoz
+kötött.
+
+### 37.5 A KÖVETKEZŐ lépés, megnevezve
+
+**A `FUN_0087dcd0` verem-keretének normalizálása** — utána mind a két blokk
+minden float írása egyértelműen a csomópont egy mezőjéhez rendelhető, és
+azonnal eldől, hogy a `MIN(sz, m) × [edi+0x168]` a `scale`-be megy-e.
+
+Két út: (a) célzott Ghidra-dekompiláció erre az egy függvényre (a 25.1
+jogosultsági akadálya a 26. szakasz szerint elhárult); (b) helyi
+push-mélység-követés a függvény teljes vezérlési gráfján.
+
+Ha a válasz „igen", akkor a `scale` forrása megvan, és a `[edi+0x168]`
+tagváltozó kiolvasása adja a szorzót.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
