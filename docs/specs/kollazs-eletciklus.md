@@ -2317,3 +2317,188 @@ verem-normalizálással.
 
 *Bizonyítottsági fok: az ellentmondás **megerősített** (a számpélda
 ellenőrizhető), a feloldás **NINCS MEG**.*
+
+## 26. K2 LEZÁRVA, K1 pedig KIMERÍTŐ NEGATÍVOT kapott — a felhős dekompiláció (2026-09-07, #1412)
+
+*A 175. körben megnevezett jogosultsági akadály (`picasapy-agent` #53)
+elhárult; ez a szakasz az EBBŐL következő Ghidra-menet eredménye. Bináris:
+`Picasa3.exe`, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`,
+10 160 456 bájt; Ghidra **12.1.2**, image base `0x00400000`.*
+
+### 26.1 A `.cxf` MEZŐTÉRKÉP most már a KIÍRÓ oldaláról is bizonyított
+
+Eddig a csomópont-mezők jelentése a **fájl** elrendezéséből jött. A `.cxf`
+XML-írója (`FUN_008347b0`, `0x008347b0`) a hat lebegőpontos attribútumot
+**ebben a sorrendben** olvassa ki, mindig ugyanazzal a formázóval
+(`FUN_0040eab0(&DAT_00c817c0, (double)…)`):
+
+| a kiírás sorrendje | a kiolvasott mező | a `.cxf` attribútuma |
+|---:|---|---|
+| 1. | `csomópont + 0x18` | `x` |
+| 2. | `csomópont + 0x1c` | `y` |
+| 3. | `csomópont + 0x20` | `w` |
+| 4. | `csomópont + 0x24` | `h` |
+| 5. | `csomópont + 0x28` | `theta` |
+| 6. | **`csomópont + 0x2c`** | **`scale`** |
+
+A címzés mindenhol `param_2 + <eltolás> + *(int *)(param_1 + 0x48)` — a
+`[param_1+0x48]` a csomópont-tömb bázisa, a `param_2` a csomópont eltolása.
+A függvény sztringkészlete (`string_xrefs`) tartalmazza a `theta` és a
+`scale` attribútumnevet, továbbá az `image`, `version`, `collage`, `theme`,
+`shadows`, `captions`, `albumUID`, `background`, `spacing`, `albumTitle`,
+`albumDate`, `orientation`, `portrait`, `landscape`, `solid` neveket.
+
+*Bizonyítottsági fok: **megerősített**.* Ez az első alkalom, hogy a
+mezőtérkép nem a fájlból visszafejtve, hanem a **kiíró kódjából** áll.
+
+### 26.2 K2 — LEZÁRVA: az `EAX`-rect a MÉRETEZENDŐ, és a képlet KEREKÍT
+
+A `FUN_009b4aa0` (`0x009b4aa0`, 184 bájt) teljes dekompilátuma:
+
+```c
+undefined4 * __fastcall FUN_009b4aa0(undefined4 *param_1)   // ECX = kimenet
+{
+  int *in_EAX;        // a MÉRETEZENDŐ (forrás) rect
+  int *unaff_ESI;     // a CÉLKERET
+  if ((in_EAX[2] - *in_EAX != 0) && (in_EAX[3] - in_EAX[1] != 0)) {
+    fVar2 = (float)(in_EAX[2] - *in_EAX);                             // srcW
+    fVar3 = ((float)(unaff_ESI[2] - *unaff_ESI) + 0.499) / fVar2;     // zx
+    fVar4 = (float)(in_EAX[3] - in_EAX[1]);                           // srcH
+    fVar1 = ((float)(unaff_ESI[3] - unaff_ESI[1]) + 0.499) / fVar4;   // zy
+    if (fVar1 < fVar3) { fVar3 = fVar1; }                             // z = min
+    *param_1 = 0;  param_1[1] = 0;
+    param_1[2] = (int)ROUND(fVar3 * fVar2 + 1e-05);
+    param_1[3] = (int)ROUND(fVar4 * fVar3 + 1e-05);
+    return param_1;
+  }
+  *param_1 = 0; param_1[1] = 0; param_1[3] = 0; param_1[2] = 0;
+  return param_1;
+}
+```
+
+A két konstans a binárisból, **most kiolvasva** (mindkettő `double`):
+
+| cím | fájloffszet | érték |
+|---|---|---|
+| `0x00cf4160` | `0x8f4160` | **0,499** |
+| `0x00cf41e0` | `0x8f41e0` | **1e-05** |
+
+⇒ **`z = min((célSzél + 0,499)/forrSzél ; (célMag + 0,499)/forrMag)`**, és a
+kimenet `(0, 0, KEREK(z·forrSzél + 1e-5), KEREK(z·forrMag + 1e-5))` —
+**kerekítés, nem csonkolás**. (A cellaméret-számítás ettől függetlenül
+csonkol, 18.2.)
+
+**A regiszter-szerepek a hívás helyén** (`0x00888438`–`0x0088844e`):
+
+```asm
+0x00888438  lea eax, [esp + 0x88]   ; EAX = a MÉRETEZENDŐ rect
+0x0088843f  lea esi, [esp + 0x78]   ; ESI = a CÉLKERET
+0x00888443  lea ecx, [esp + 0x60]   ; ECX = a kimenet (param_1)
+0x0088844e  call 0x9b4aa0
+```
+
+⇒ a 175. kör ítélete (`ESI` = a cella = célkeret) **áll**, és az `EAX`
+a méretezendő. Az `EAX`-rect szélessége/magassága a `[esp+0x90]`/`[esp+0x94]`
+rekesz, amit közvetlenül a hívás előtt a `[esp+0xf8]`/`[esp+0xfc]`-ből
+töltenek (`0x00888423`–`0x00888447`).
+
+### 26.3 ⛔ ÖNHELYESBÍTÉS: a 24.2 olvasata FORDÍTOTT volt
+
+A 174. kör így írta: *„**csak ha az nem nulla**, tölti a doboz W/H-ját."*
+A dekompilátum és a diszasszembly szerint ez **fordítva** van:
+
+```asm
+0x00888404  mov eax, esi            ; ESI = &[esp+0x98] — a lekérdező szerkezet
+0x00888406  push eax
+0x00888407  call edx                ; virtuális hívás a panel [+0x270] objektumán
+0x00888409  test eax, eax
+0x0088840b  je  0x888423            ; ha NULLA -> a másolás KIMARAD
+0x0088840d  mov eax, dword ptr [esp + 0x2c]   ; cellaSzél
+0x00888411  mov ecx, dword ptr [esp + 0x44]   ; cellaMag
+0x00888415  mov dword ptr [esp + 0xf8], eax
+0x0088841c  mov dword ptr [esp + 0xfc], ecx
+```
+
+Vagyis a **cellaméret a TARTALÉK ág** (a virtuális hívás nem nulla
+visszatérése = hiba), és a rendes úton a `[esp+0xf8]`/`[esp+0xfc]` azt
+tartja, amit a virtuális hívás írt bele. A hívás a `&[esp+0x98]` mutatót
+kapja, és **`0x98 + 0x60 = 0xf8`** — a két rekesz a kapott szerkezet
+`+0x60`/`+0x64` mezője.
+
+⇒ **az `EAX`-rect a FORRÁSKÉP mérete**, és ezzel a 25.4-ben kimondott
+ellentmondás a **mérés** javára dől el (18.3: a tárolt doboz a forráskép
+arányát viszi). A cellaméret-olvasat elvetve.
+
+*Bizonyítottsági fok: a regiszter-szerepek és a tartalék-ág **megerősített**
+(utasításszinten); az, hogy a virtuális hívott a KÉP méretét írja a
+`+0x60`/`+0x64`-be, **erős** — az eltolás-egyezés és a kizárás támasztja alá
+(a függvényben más nem írja ezt a két rekeszt), de a hívott függvényt nem
+olvastuk el.*
+
+### 26.4 K1 — KIMERÍTŐ NEGATÍV a kollázs-sávra, DEKOMPILÁTOR-szinten
+
+Három, egymástól független pásztázás futott, mind a Ghidra
+dekompilátumán (nem bájtmintán), a `+0x2c` bájteltolás **írására**:
+
+| pásztázás | gyökér / tartomány | függvény | eredmény |
+|---|---|---:|---|
+| interaktív **képhozzáadás** | `0x0082a670`, 2 szint | **214** | **nulla** valódi `+0x2c`-írás (a 10 találat mind `+0x2c8`/`+0x2cd`/tömbindex/sztring-idióma) |
+| **mentési** ág | `0x00834700`, 3 szint | **69** | **0 ÍRÓ · 1 OLVASÓ** — az egyetlen érintés a `FUN_008347b0` kiírása (26.1) |
+| a **teljes kollázs-sáv** | `0x00829000`–`0x00895000` | **878** | 24 függvény ír `+0x2c`-re, és **egyik sem** csomópont-`scale`: két literál `0x3f800000` (= 1,0f) — `FUN_00885060` (`regulargrid`) és `FUN_00888210` (`contactsheet`) —, a többi egész, mutató vagy jelzőbit |
+
+**A három „`+0x2c := +0x40`" másolás** (`FUN_0083d730:192`,
+`FUN_0087b4a0:139`, `FUN_0088ac30:59`) **nem** csomópontra megy: mindhárom a
+panel `[+0x270]` objektumán végez **állapot-mentést/visszaállítást**
+(`+0x2c..+0x3c` ↔ `+0x40..+0x4c`), ld. `FUN_0087b4a0` a `FUN_0087bcb0`
+hívása körül. A csomópont a fájlban 56 bájt (`0x38`) lépésközű, tehát
+`+0x40` eleve kívül esne rajta.
+
+⇒ **A kollázs-sávban EGYETLEN függvény sem ír számolt `scale`-t a
+csomópont `+0x2c` mezőjébe.** Ez lényegesen erősebb, mint a 19./22./23. kör
+bájtmintás negatívjai: ott a minta hibája is okozhatta a nullát (ezért
+kellett pozitív kontroll), itt a dekompilátum szemantikai szintjén nézzük.
+
+*Bizonyítottsági fok: **megerősített** a megnevezett hatókörre
+(`0x00829000`–`0x00895000`, 878 függvény, Ghidra 12.1.2 dekompilátum).*
+
+### 26.5 Ami ebből következik — és a KÖVETKEZŐ lépés, megnevezve
+
+A három negatív együtt azt mondja, hogy **a `scale` írója a kollázs-sávon
+KÍVÜL van**. A hatókör-számok:
+
+- a program **20 608** függvényből áll (`binary-index`, `functions`);
+- a sávban **878** van, azaz a program **4,3%-a** van kizárva;
+- a sáv dekompilálása ≈ 20 perc ⇒ a teljes program ≈ **8 óra** — egy körbe
+  nem fér bele.
+
+**A következő, olcsóbb vágás** (ebben a sorrendben):
+
+1. a **kollázspanel parancs-elosztójának** (`0x0082d570`) hívási fája 3
+   szint mélyen — ide tartozik minden vezérlő kezelője, köztük a kézi
+   átméretezés (17.5), ami a mintáinkban bizonyítottan `scale`-t módosít;
+2. a **téma-objektumok** metódusai — az RTTI-tábla szerint
+   `CContactSheetTheme`, `CPileTheme`, `CGridTheme`, `CFrameGridTheme`,
+   `CMultiExposureTheme` (és a `CCollageUI` / `CHeadlessCollageUI`) —
+   a `0x0082cad0`-analógia mentén;
+3. csak ha ez sem hoz találatot: a teljes program pásztázása, több körre
+   bontva (címtartományonként).
+
+*Ez ÖRÖKÖLT nyitott kérdés (a 22. kör óta), a munkasorban marad.*
+
+### 26.6 Nálunk (MÉRVE) — az illesztő BITRE egyezik
+
+A `src/picasapy/collage/fitting.py:60–67` `fit_inside()`-ja pontosan a 26.2
+képletét számolja, ugyanazokkal a konstansokkal (`_FIT_SLACK = 0.499`,
+`_FIT_EPSILON = 1e-5`) és `picasa_round()`-dal (`floor(x + 0.5)`).
+
+| | eredeti (`0x009b4aa0`) | nálunk (`fitting.py`) | teendő |
+|---|---|---|---|
+| nagyítás | `min((dstW+0,499)/srcW ; (dstH+0,499)/srcH)` | ugyanez | — |
+| kimenet | `KEREK(z·srcW + 1e-5)` | `picasa_round(scale*src_width + 1e-5)` | — |
+| kerekítés | `floor(x+0,5)` | `math.floor(value + 0.5)` | — |
+
+⇒ **nincs teendő ezen a ponton.** A 26.2 értéke nem javítás, hanem az, hogy
+a képlet mostantól **dekompilátumból** igazolt, nem mintából illesztett.
+
+*Bizonyítottsági fok: **megerősített** (a kód olvasva, a konstansok a
+binárisból kiolvasva).*
