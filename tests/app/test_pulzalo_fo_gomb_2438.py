@@ -25,6 +25,8 @@ tulajdonság a hívóé; amint lesz élő beállítás, egyetlen kötés bekapcs
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtGui import QColor
 
@@ -110,4 +112,61 @@ class TestAKitoltesERINTETLEN:
         )
         assert QColor(pulzalo.property("surfaceBottom")) == QColor(
             nyugodt.property("surfaceBottom")
+        )
+
+
+class TestMelyikGOMBUNKPulzal2450:
+    """Nem elég, hogy a `PicasaButton` TUD pulzálni — a mért elemeken
+    BE is kell kapcsolni (#2450).
+
+    A 13 mért villogó elemből ma **kettőnek** van megfelelője a felületen;
+    a többi panel (Importálás, Nyomtatás, Lemezírás, Feltöltés,
+    Filmkészítő) még nincs megépítve. Amint megépül, a fő gombja ide
+    kerül — a lista a `docs/specs/00-index.md` 129. körének mérése.
+    """
+
+    #: (QML-fájl, elemnév, az EREDETI neve a respack `superbutton`-listából)
+    PULZALOK = (
+        ("CollagePanel.qml", "collageShareButton", "collagepanel/sharebutton"),
+        ("TrayBar.qml", "traySingleActionReturn", "thumbui/single_action_return"),
+    )
+
+    @pytest.mark.parametrize(
+        ("fajl", "elem", "eredeti"), PULZALOK, ids=[p[1] for p in PULZALOK]
+    )
+    def test_a_mert_gomb_PULZAL(self, app_module, fajl, elem, eredeti):
+        from tests.support.qml_blokk import blokk_horgonyra
+
+        forras = (
+            app_module._APP_DIR / "qml" / "PicasaPy" / fajl
+        ).read_text(encoding="utf-8")
+        blokk = blokk_horgonyra(forras, f'objectName: "{elem}"')
+        assert "throbbing: true" in blokk, (
+            f"a(z) `{eredeti}` megfelelője ({elem}) nem pulzál — pedig a "
+            "respack `superbutton` kötéslistája szerint a 13 villogó elem "
+            "egyike (#2438, #2450)"
+        )
+
+    def test_a_kollazs_gombja_a_VASZON_ORET_nem_buktatja(self):
+        """#2450: a `throbbing` korábban azért maradt le a kollázs-gombról,
+        mert elbuktatta a vászon-árnyék őrét. Az ok az ŐR hatóköre volt: a
+        `test_a_kikapcsolas_ELTUNTETI` a TELJES ABLAKOT vetette össze,
+        pedig az állítása a lapról szól. Ha valaki visszaveszi a szűkítést,
+        ez a próba mondja meg, miért nem szabad."""
+        import picasapy.app as app_csomag
+
+        or_forras = (
+            Path(app_csomag.__file__).parents[2].parent
+            / "tests" / "app" / "qml_functional"
+            / "test_collage_shadow_canvas_1021.py"
+        )
+        if not or_forras.is_file():  # pragma: no cover - fejlesztői elrendezés
+            or_forras = (
+                Path(__file__).resolve().parents[1]
+                / "qml_functional" / "test_collage_shadow_canvas_1021.py"
+            )
+        szoveg = or_forras.read_text(encoding="utf-8")
+        assert "elso = _lapon(panel, _keppontok(view))" in szoveg, (
+            "a vászon-árnyék őre újra a TELJES ablakot veti össze — egy "
+            "pulzáló gomb bárhol a panelen megbuktatja (#2450)"
         )

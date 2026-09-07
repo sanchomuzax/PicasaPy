@@ -165,12 +165,17 @@ class TestLatszikEAVasznon:
         _var()
         controller.setCollageShadows(False)
         _var()
-        elso = _keppontok(view)
+        # #2450: a LAPRA szűkítve — az állítás is a lapról szól. A teljes
+        # ablak összevetése azt is megkövetelte volna, hogy a panelen SEMMI
+        # ne mozogjon két mérés között; egy pulzáló gomb (`throbbing`, a
+        # `collageShareButton` a 13 mért pulzáló elem egyike) így az őr
+        # hatókörén BUKTATOTT el, nem az árnyékon. A tűrés VÁLTOZATLAN 2,0.
+        elso = _lapon(panel, _keppontok(view))
         controller.setCollageShadows(True)
         _var()
         controller.setCollageShadows(False)
         _var()
-        masodik = _keppontok(view)
+        masodik = _lapon(panel, _keppontok(view))
         assert np.abs(elso - masodik).max() <= 2.0, (
             "az árnyék kikapcsolása nem állította vissza a lapot"
         )

@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.324] – 2026-09-07
+
+### Javítva
+
+- **A „Kollázs létrehozása" gomb végre pulzál** (#2450). Az eredeti Picasa
+  minden panelen finoman villogtatja a fő cselekvés gombját — ez mondja meg,
+  melyikre kell nyomni a művelet befejezéséhez. A kollázs-panelen ez a
+  gombunk kimaradt: egy tesztünk buktatta el, ami a teljes ablakot vetette
+  össze, pedig csak a vászonról szólt. A teszt hatóköre javítva, a gomb
+  pulzál.
+
 ## [0.8.323] – 2026-09-07
 
 ### Javítva

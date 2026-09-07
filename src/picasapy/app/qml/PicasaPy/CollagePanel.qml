@@ -220,17 +220,17 @@ Item {
     PicasaButton {
         objectName: "collageShareButton"
         x: 147; y: 415; width: 133; height: 28
-        // ⚠️ #2438: ez az eredeti `collagepanel/sharebutton`-jának
-        // megfelelője, tehát PULZÁLNIA kellene — de KIMÉRVE nem tehetjük
-        // ide: a `throbbing: true` elbuktatja a vászon-árnyék bájtazonossági
-        // őrét (`test_collage_shadow_canvas_1021`, 32,0 eltérés a 2,0-s
-        // tűrésnél). Kontroll-méréssel: pulzálással 1 bukás, nélküle 11
-        // zöld — tehát nem ingadozás, hanem következmény.
+        // #2438/#2450: ez az eredeti `collagepanel/sharebutton`-jának
+        // megfelelője — a 13 pulzáló elem egyike, tehát PULZÁL.
         //
-        // Ok: a panelen folyamatosan futó animáció elmozdítja a vászon
-        // rajzolásának időzítését, és a teszt grabje más képkockát kap. A
-        // döntés (a gomb pulzáljon-e, és ha igen, hogyan legyen az őr
-        // időzítés-tűrő) külön jegy: #2450.
+        // A #2438 körében ez még kimaradt, mert elbuktatta a vászon-árnyék
+        // őrét (`test_collage_shadow_canvas_1021`, 32,0 eltérés a 2,0-s
+        // tűrésnél). A #2450 kimérte, hogy nem a gomb volt a hibás: a
+        // `test_a_kikapcsolas_ELTUNTETI` a TELJES ABLAKOT vetette össze,
+        // pedig az állítása a LAPRÓL szól („nem állította vissza a
+        // lapot"). Egy folyamatosan animált gomb bárhol az ablakban
+        // megbuktatta volna — ez az őr hatóköre volt téves, nem a gomb.
+        throbbing: true
         text: qsTr("Create Collage")
         //: Buboréksúgó a „Kollázs létrehozása" gombon.
         ToolTip.text: qsTr("Save as a JPG in the Collages album (in the Projects "
