@@ -52,6 +52,27 @@ ColumnLayout {
     readonly property int csuszkaMagassag: 27
     readonly property int csuszkaEltolas: 17
 
+    // #2627: a csúszka BELSŐ geometriája — a `respack.yt` `editslider`
+    // családjából kimérve (`tools/picasa/respack.py`, a 13 bájtos
+    // rétegfejléc + a képpontok):
+    //
+    //   editslider/sliderbase  191 × 27, a SÁV a 8…16. sor  -> 9 képpont
+    //     a 8. sor a felső szegély RGB(154,162,174), a belseje kékesfehér
+    //     (239…249, a kék 6-10 fokozattal a piros fölött)
+    //   editslider/thumb       16 × 26 (ebből 22 tömör + 3 lágy árnyék)
+    //
+    // A négy finomhangoló csúszka az eredetiben `editslider1…4`
+    // (`editpanel/clip(editslider,editsliderN)`), tehát PONTOSAN ez a
+    // család — a szám nem átvitel, hanem a saját mérésük.
+    //
+    // ⚠️ A SZÍN nem itt dől el: a `PicasaSlider` sávja ma semleges
+    // (`Theme.chromeBg`), az eredetié kékes. Az a #2627 másik fele, és
+    // az egész alkalmazás csúszkáit érinti — külön lépés.
+    readonly property int savVastagsag: 9
+    readonly property int fogantyuSzeles: 16
+    readonly property int fogantyuMagas: 26
+    readonly property int fogantyuSugar: 3
+
     // középre igazított csúszka-felirat (az eredetin is középen áll)
     component SliderCaption: Label {
         Layout.fillWidth: false
@@ -117,6 +138,10 @@ ColumnLayout {
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
         Layout.leftMargin: finetunePanel.csuszkaEltolas
+        grooveThickness: finetunePanel.savVastagsag
+        handleWidth: finetunePanel.fogantyuSzeles
+        handleHeight: finetunePanel.fogantyuMagas
+        handleRadius: finetunePanel.fogantyuSugar
         from: 0; to: 1; value: 0
         // #337: a Gyakori javítások fülön lévő párjával közös állapot
         onValueChanged: panel.fillLightMoved(value)
@@ -140,6 +165,10 @@ ColumnLayout {
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
                 Layout.leftMargin: finetunePanel.csuszkaEltolas
+        grooveThickness: finetunePanel.savVastagsag
+        handleWidth: finetunePanel.fogantyuSzeles
+        handleHeight: finetunePanel.fogantyuMagas
+        handleRadius: finetunePanel.fogantyuSugar
                 // #551: a `filterdesc.xml` szerinti nyers paraméter-
                 // tartomány [0..0.48] — a mérés is pontosan ezt igazolta (a
                 // felső állásban a FEHÉRPONT 0,48-cal mozdul). A csúszka
@@ -159,6 +188,10 @@ ColumnLayout {
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
                 Layout.leftMargin: finetunePanel.csuszkaEltolas
+        grooveThickness: finetunePanel.savVastagsag
+        handleWidth: finetunePanel.fogantyuSzeles
+        handleHeight: finetunePanel.fogantyuMagas
+        handleRadius: finetunePanel.fogantyuSugar
                 // #551: ld. a Kiemelések megjegyzését — itt a FEKETEPONT
                 // mozdul ugyanennyivel.
                 from: 0; to: 0.48; value: 0
@@ -187,6 +220,10 @@ ColumnLayout {
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
         Layout.leftMargin: finetunePanel.csuszkaEltolas
+        grooveThickness: finetunePanel.savVastagsag
+        handleWidth: finetunePanel.fogantyuSzeles
+        handleHeight: finetunePanel.fogantyuMagas
+        handleRadius: finetunePanel.fogantyuSugar
         from: -1; to: 1; value: 0
         onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
         onPressedChanged: if (!pressed) panel.emitFinetuneCommit()
