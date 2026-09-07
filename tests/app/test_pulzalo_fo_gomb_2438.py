@@ -153,18 +153,15 @@ class TestMelyikGOMBUNKPulzal2450:
         `test_a_kikapcsolas_ELTUNTETI` a TELJES ABLAKOT vetette össze,
         pedig az állítása a lapról szól. Ha valaki visszaveszi a szűkítést,
         ez a próba mondja meg, miért nem szabad."""
-        import picasapy.app as app_csomag
-
+        # ⚠️ A címzett a SAJÁT tesztfa szomszédja, nem a telepített csomag
+        # mellett keresendő: a CI-n a `picasapy` a site-packages-ből jön,
+        # ott nincs `tests/`. (Mérve: az első változat emiatt bukott a
+        # `darabok-ubuntu 1/4` lábon.)
         or_forras = (
-            Path(app_csomag.__file__).parents[2].parent
-            / "tests" / "app" / "qml_functional"
-            / "test_collage_shadow_canvas_1021.py"
+            Path(__file__).resolve().parent
+            / "qml_functional" / "test_collage_shadow_canvas_1021.py"
         )
-        if not or_forras.is_file():  # pragma: no cover - fejlesztői elrendezés
-            or_forras = (
-                Path(__file__).resolve().parents[1]
-                / "qml_functional" / "test_collage_shadow_canvas_1021.py"
-            )
+        assert or_forras.is_file(), f"nincs meg a vászon-őr: {or_forras}"
         szoveg = or_forras.read_text(encoding="utf-8")
         assert "elso = _lapon(panel, _keppontok(view))" in szoveg, (
             "a vászon-árnyék őre újra a TELJES ablakot veti össze — egy "
