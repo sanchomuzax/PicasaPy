@@ -307,6 +307,116 @@ def test_a_rajzterulet_URES_resze_a_DOBOZ_szine(qt_app):
     )
 
 
+def test_az_EXIF_szoveg_tintaja_NEM_ut_at_a_rajzteruletre(qt_app):
+    """#2625/#2648 — a 2 képpontos átfedés nem engedhet át idegen tintát.
+
+    A #1344 mérése szerint az EXIF-terület teteje (82) 2 képponttal a
+    hisztogram alja (84) fölé ér, és a döntés az, hogy **a plot rajzolódik
+    a szöveg fölött**. Amikor a #2625 első változata a rajzterületet
+    `"transparent"`-re vitte, ez a takarás megszűnt, és a windows-lábon az
+    EXIF-szöveg tintája átütött:
+
+        (24, 57): várt #a04ba0, kapott #5e095d
+        (159, 57): várt #4ba0a0, kapott #095e5d
+
+    A kapott értékek pontosan a `_kevert` képlet ~27-es (sötét betű)
+    háttérrel — vagyis nem rajzolási hiba volt, hanem a HÁTTÉR cserélődött
+    ki egyetlen képpontra.
+
+    Ez a próba magas, ékezetes nagybetűkkel tölti fel az EXIF-sávot (a
+    legmagasabb tinta, ami a felső 2 képpontba érhet), és a rajzterület
+    ALSÓ két sorát méri: minden képpontnak a hisztogram képletét kell
+    követnie, idegen tinta nélkül.
+
+    ⚠️ **Ez a próba a WINDOWS-láb őre.** Linuxon MÉRTEN nem reprodukálja a
+    hibát: az alapbetű tintája ott nem ér fel a 2 képpontos sávba, ezért
+    `"transparent"` mellett is zöld marad (kipróbálva). Egy őr, ami csak az
+    egyik platformon fog, önmagában kevés — ezért áll mellette a
+    `test_a_rajzterulet_hattere_ATLATSZATLAN`, ami a takarás FELTÉTELÉT
+    méri, platformfüggetlenül.
+    """
+    magas = "ÁÉÍÓŐÚŰ\tÁÉÍÓŐÚŰ\nÁÉÍÓŐÚŰ\tÁÉÍÓŐÚŰ"
+    view = QQuickView()
+    import picasapy.app.application as app_module
+
+    view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
+    component = QQmlComponent(
+        view.engine(),
+        QUrl.fromLocalFile(
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "HistogramBox.qml")
+        ),
+    )
+    assert [hiba.toString() for hiba in component.errors()] == []
+    root = component.createWithInitialProperties(
+        {
+            "histogramData": {
+                "r": [60 / 70] * 256,
+                "g": [40 / 70] * 256,
+                "b": [20 / 70] * 256,
+            },
+            "cameraSummary": magas,
+        }
+    )
+    assert root is not None
+    root.setWidth(238)
+    root.setHeight(144)
+    root.setParentItem(view.contentItem())
+    view.resize(238, 144)
+    view.show()
+    assert QTest.qWaitForWindowExposed(view)
+    _var_a_kirajzolasra(view, qt_app)
+    _KEEPALIVE.extend((view, root, component))
+
+    plot = root.findChild(QObject, "histogramPlot")
+    assert isinstance(plot, QQuickItem)
+    image = view.grabWindow()
+    hatter = _doboz_hattere(image, root)
+    origin = plot.mapToScene(QPointF(0, 0))
+
+    # az alsó két sor: ott mind a három csatorna aktív (a görbék alulról nőnek)
+    vart = _kevert((True, True, True), hatter)
+    idegen: list[str] = []
+    for y in (57, 58):
+        for x in range(213):
+            szin = image.pixelColor(round(origin.x() + x), round(origin.y() + y))
+            if max(
+                abs(szin.red() - vart.red()),
+                abs(szin.green() - vart.green()),
+                abs(szin.blue() - vart.blue()),
+            ) > 1:
+                idegen.append(f"({x}, {y}): {szin.name()} != {vart.name()}")
+    assert not idegen, (
+        "idegen tinta a rajzterület alsó soraiban — az EXIF-szöveg átüt "
+        "a rajzterületen:\n" + "\n".join(idegen[:10])
+    )
+
+
+def test_a_rajzterulet_hattere_ATLATSZATLAN(qt_app):
+    """#2648 — a takarás FELTÉTELE, platformfüggetlenül.
+
+    A #1344 döntése: „a plot a szöveg FÖLÖTT rajzolódik; a 2 képpontos
+    átfedés megmarad, csak a takarás iránya rögzített." Takarni viszont
+    csak ÁTLÁTSZATLAN kitöltéssel lehet — a `"transparent"` (alfa 0)
+    átengedi az EXIF-szöveg tintáját, és a windows-lábon meg is tette
+    (#2648: `(24, 57)` és `(159, 57)`).
+
+    Ugyanakkor a #2625 mérése szerint a rajzterületnek **a doboz színét**
+    kell mutatnia. A kettő együtt: átlátszatlan, és a doboz színe.
+    """
+    _view, root = _histogram_box(qt_app)
+    hatter = root.findChild(QObject, "histogramPlotBackground")
+    doboz_szine = QColor(root.property("color"))
+    plot_szine = QColor(hatter.property("color"))
+    assert plot_szine.alpha() == 255, (
+        "a rajzterület háttere nem átlátszatlan — így nem takarja el az "
+        f"alatta futó EXIF-szöveget (alfa {plot_szine.alpha()})"
+    )
+    assert plot_szine == doboz_szine, (
+        f"a rajzterület nem a doboz színét viszi ({plot_szine.name()} vs "
+        f"{doboz_szine.name()})"
+    )
+
+
 def test_a_feher_hatteru_eset_valtozatlan():
     """#2625 — a háttér paraméterré tétele nem mozdítja a #864 orákulumát.
 
