@@ -1,23 +1,46 @@
-<!-- #2588: a rajz szine #6f6f6f, nem feher. Az ikonok a
-     #2564 elott a foto folott lebego SOTET dobozra keszultek;
-     azota az ALSO SAV vilagos kromjan ulnek, ahol a feher rajz
-     lathatatlan volt (merve: picasapy-felirat-bekapcsolva. 223242.jpg).
-     A #6f6f6f a szomszedos panelkapcsolok (panel-emberek.svg)
-     mert konvencioja: mindket temaban olvashato. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 12" width="14" height="12">
-  <!-- PicasaPy sajat rajz (#2311): "a foto beillesztese a megjelenitesi
-       teruletbe". A MERT meret az eredeti `editpanel/fit_icon`-e: 14 x 12
-       (respack.yt, x 298...312). A rajz maga a MIENK - a projekt egyetlen
-       kicsomagolt Picasa-kepet sem szallit.
+<!-- #2609: a RAJZ mostantol az eredetie, kepponton merve.
+     Forras: `research/copy_Picasa_3_7/Picasa3/runtime/respack.yt`
+     -> `layer:editpanel/fit_icon`, 14 x 12, teljesen atlatszatlan.
+     A kicsomagolt keppontterkep (`.` = a csempe sajat hattere,
+     `+` = vilagos kek, `#` = sotet kek, `:` = halvany kitoltes):
 
-       A jelentes: egy keret, es benne egy kisebb kep, amit negy befele
-       mutato sarok illeszt a helyere. -->
-  <g fill="none" stroke="#6f6f6f" stroke-width="1" stroke-linecap="square">
-    <rect x="0.5" y="0.5" width="13" height="11"/>
-    <!-- a negy befele mutato sarok -->
-    <path d="M3 3.5h2.5M3.5 3v2.5"/>
-    <path d="M11 3.5H8.5M10.5 3v2.5"/>
-    <path d="M3 8.5h2.5M3.5 9v-2.5"/>
-    <path d="M11 8.5H8.5M10.5 9v-2.5"/>
-  </g>
+       ++.++.++.++.++      keret: 2 be / 1 ki, korbe
+       ..............
+       +.##########.+      belso teglalap: x 2..11, y 2..9
+       +.#::::::::#.+
+       ..#::::::::#..
+       +.#::::::::#.+
+       +.#::::::::#.+
+       ..#::::::::#..
+       +.#::::::::#.+
+       +.##########.+
+       ..............
+       ++.++.++.++.++
+
+     A HAROM szin is merve: vilagos kek RGB(132,146,189) = #8492bd,
+     sotet kek RGB(103,114,148) = #677294, kitoltes RGB(195,199,213)
+     = #c3c7d5. A #2609 elott a rajz a MIENK volt (#2311, #2588) es
+     `#6f6f6f`-fel ment, mert nem volt referencia — most van.
+
+     ⚠️ Amit SZANDEKOSAN nem veszunk at: a csempe sajat hattere
+     (RGB(209,212,222)). Az eredetiben a gomb hattere adja; nalunk az
+     also sav kromja all alatta, ezert az atlatszo hatter a helyes.
+     A tinta kontrasztja a 248-as kromon igy is 126 (a #2588 merce
+     100), ezt a `test_nagyitas_ikon_rajz_2609.py` kirajzolt ore meri.
+
+     A jegy (#2609) a tulajdonos A/B felvetelebol indult
+     (`research/felirat-ki-bekapcsolva/`, 2026-09-06 22:32): ott latszott
+     eloszor olvashatoan az eredeti ikon. A pontos szamokat viszont a
+     respack adja, nem a JPEG.
+
+     A rajz a mert geometriat koveti, nem a Google kepfajlja: a
+     projekt egyetlen kicsomagolt Picasa-kepet sem szallit. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 12" width="14" height="12"
+     shape-rendering="crispEdges">
+  <!-- pontozott kulso keret -->
+  <rect x="0.5" y="0.5" width="13" height="11" fill="none"
+        stroke="#8492bd" stroke-width="1" stroke-dasharray="2 1"/>
+  <!-- a "kep": tomor belso teglalap halvany kitoltessel -->
+  <rect x="2.5" y="2.5" width="9" height="7" fill="#c3c7d5"
+        stroke="#677294" stroke-width="1"/>
 </svg>
