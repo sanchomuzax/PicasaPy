@@ -4,6 +4,89 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-07
+
+**Néző: nagyítás**
+
+- A nagyítás három vezérlője (**illesztés**, **tényleges méret**,
+  **csúszka**) az **alsó eszközsávba** került, a panelkapcsolók elé.
+- A **tényleges méret** mostantól a kép **valódi képpontjait** használja.
+  Eddig egy belső korlát miatt három-négyszeresére is nagyíthatott.
+- A csúszka **közepe pontosan a 100 %**, és meg is akad ott, hogy el
+  lehessen találni; a jobb széle a négyszeres nagyítás.
+
+**Néző: feliratsáv és információs csík**
+
+- A **feliratsáv** a kép alján végigfut, a felirat középen, a törlő gomb
+  a jobb szélén.
+- A **be-kikapcsoló** a kép bal alsó sarkában akkor is látszik, ha a sáv
+  ki van kapcsolva — eddig gyakorlatilag nem lehetett visszahozni.
+- A kék információs csíkban megjelent a **dátum** és a **Címkék**
+  felsorolás, és visszakerült a **hányadik kép** számláló.
+
+**Szerkesztés közben is elérhető a jobb oldali fiók**
+
+- A **Címkék**, **Emberek** és **Helyek** panel a szerkesztőben is
+  megnyílik. Eddig a gombjuk benyomódott, de nem történt semmi.
+
+**Szerkesztő**
+
+- Kilenc effekt-csempe **másik effektet ad, ha a Shiftet lenyomva tartod
+  a fülre váltáskor** — a felirat is átvált, tehát látod, mit kapsz.
+  Ilyen pár például az Élesítés → Élesítés (régi) és a Vignetta → Matt.
+  A teljes lista: [Effektek](features/effektek.md).
+- A vágás **képarány-listája** az eredeti Picasáéhoz igazodott: a
+  papírképek méretei centiméterben (5×8, 9×13, 10×15, 13×18, 20×25),
+  **A4**, és a képernyő-arányok **4:3**, **16:10**, **16:9**, **5:3**.
+- A **Képregény** effekt rajza közelebb került az eredeti Picasáéhoz.
+
+**Könyvtár**
+
+- A rács **nagyítója** mostantól a teljes felbontású képből mutat egy
+  darabot 1:1-ben — eddig a kicsinyített indexképet nagyította vissza.
+- A program felismeri a `.jpe` fényképeket és az `.mpeg` videókat is.
+- A **fájl idejét** a program az első beolvasáskor jegyzi fel, és utána
+  nem frissíti. Így a felvételi idő nélküli képek nem ugrálnak a rácsban
+  minden mentés vagy másolás után.
+
+**Fájlok és mentés**
+
+- A mentéskor készült **biztonsági másolat együtt mozog a képpel**:
+  átnevezés, áthelyezés és másolás után is működik a
+  **Visszaállítás**.
+- A másolat többé **nem ül rá** egy másik kép ottfelejtett biztonsági
+  másolatára — eddig előfordulhatott, hogy egy frissen másolt képhez egy
+  idegen kép régi változata tartozott „eredetiként".
+- Az egymás utáni mentések pillanatképei külön helyre kerülnek, így egy
+  önálló, `…2.jpg`-féle nevű képet nem lehet többé véletlenül egy másik
+  kép régi változatával felülírni.
+
+**Hibák, amik eddig némán elvesztek**
+
+- Ha a mappa írásvédett vagy tele a lemez, a program **kiírja a hibát**,
+  ahelyett hogy a képernyőn már a mentett állapotot mutatná. Ez a mappa
+  leírásánál, a mappa dátumánál, a kulcsszavaknál és a **Minden effekt
+  beillesztése** parancsnál egyaránt így van.
+- A régi Picasa-adatfájlok beolvasásakor a sérült vagy összekevert
+  oszlopokat a program felismeri, és megnevezi a hibát, ahelyett hogy
+  rossz értéket hozna be.
+
+**Tesztüzem**
+
+- A **Súgó ▸ Napló elküldése…** mostantól **mindig megkérdezi, hova
+  mentse** a naplót, megjegyzi a választott mappát, és a fájl útvonalát
+  a vágólapra másolja. Eddig egy beégetett hálózati mappába került, amit
+  a legtöbb gépről nem is lehetett elérni.
+
+**Apróságok**
+
+- A jelölőnégyzetes menüpontok felirata nem lóg rá a négyzetre.
+- A képtálca **További lehetőségek…** gombja megkapta a hiányzó ikonját.
+- Az ablak visszaállított mérete betartja az ablak legkisebb méretét,
+  így Windowson nem jön elő minden induláskor egy figyelmeztetés.
+- A **Beállítások ▸ E-mail** fülön a felirat az eredeti Picasa szava
+  lett: **Levelezőprogram**.
+
 ## 2026-09-05
 
 **Nyomtatás**

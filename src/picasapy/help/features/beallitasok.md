@@ -83,8 +83,17 @@ fájlba írható, ha hibát jelentesz.
 program a következő induláskor részletes naplót ír arról, mi mennyi ideig
 tartott. Ez akkor hasznos, ha lassú indulást jelentesz. Amíg fut, a
 menüsorban „TESZTÜZEM — az indulás naplózása folyik" felirat
-figyelmeztet rá. A **Napló elküldése…** paranccsal adhatod tovább a
-naplót.
+figyelmeztet rá.
+
+A **Súgó ▸ Napló elküldése…** paranccsal adod tovább a naplót — ez a
+menüpont csak akkor látszik, amíg a tesztüzem be van kapcsolva. Mindig
+megnyit egy mentés-ablakot, ahol **te választod meg, hova kerüljön** a
+fájl; a felkínált név időbélyeges. A program megjegyzi a választott
+mappát, tehát legközelebb már ott nyílik, és a kész fájl útvonalát a
+vágólapra is másolja, hogy be tudd illeszteni egy üzenetbe.
+
+> Korábban a napló egy előre beégetett hálózati mappába került, amit a
+> legtöbb gépről nem is lehetett elérni.
 
 A tesztüzem a `--tesztuzem` kapcsolóval is bekapcsolható indításkor, csak
 arra az egy futásra:

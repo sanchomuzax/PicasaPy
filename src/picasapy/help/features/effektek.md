@@ -74,7 +74,7 @@ nem volt hozzájuk gomb:
 
 | effekt | mit csinál |
 |---|---|
-| Filmszemcse (finom) | finomabb szemcsézettség |
+| Filmszemcse | ugyanaz, mint az Effektek fülön (kétszer szerepel) |
 | Helyi kontraszt | a részletek helyi kiemelése |
 | Matt | matt, tompított felület |
 | Éjjellátó | zöldes, éjjellátó-szerű kép |
@@ -92,6 +92,34 @@ többi effektet. A maradék **öt szürkén**, de láthatóan marad: a
 képpontonkénti működésük még nincs visszafejtve, ezért nem
 alkalmazhatók. Azért látszanak mégis, mert egy régi képeden ott lehet a
 szerkesztésben, és tudnod kell róla.
+
+## Rejtett párok: a Shift billentyű
+
+Kilenc csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,
+amikor átváltasz az adott fülre**. A felirat is átvált, tehát látod, mit
+kapsz. Ezt az eredeti Picasa is így csinálta.
+
+| fül | a csempe alapból | Shifttel |
+|---|---|---|
+| Effektek | Élesítés | Élesítés (régi) |
+| Effektek | Filmszemcse | Régi filmszemcse |
+| Effektek | Árnyalás | Árnyalás (régi) |
+| Effektek | Ragyogás | Ragyogás (régi) |
+| Effektek | Színátmenet | Sugaras árnyalás |
+| Kreatív | Hőtérkép | Éjjellátó |
+| Művészi | Vignetta | Matt |
+| Művészi | Szegély | Lekerekített sarkok |
+| További effektek | Filmszemcse | Régi filmszemcse |
+
+Két dolgot érdemes tudni:
+
+- a program **a fülre váltáskor egyszer** nézi meg, le van-e nyomva a
+  Shift; ha utólag nyomod le, a csempék nem váltanak át — válts fült
+  újra, lenyomva tartott Shifttel;
+- a csempe **kis előnézete az alap effekté marad**, csak a felirat és a
+  hatás vált.
+
+A többi csempén a Shiftnek nincs hatása.
 
 ## Csoportos alkalmazás
 

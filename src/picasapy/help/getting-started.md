@@ -14,12 +14,18 @@ Rendszercsomagokból a legegyszerűbb:
 sudo apt install \
   python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml \
   python3-pyside6.qtquick python3-pyside6.qtquickcontrols2 python3-pyside6.qtwidgets \
-  python3-pyside6.qtmultimedia \
+  python3-pyside6.qtmultimedia python3-pyside6.qtprintsupport \
   python3-opencv python3-pil python3-piexif python3-watchdog \
   qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window \
-  qml6-module-qtmultimedia
+  qml6-module-qtmultimedia \
+  libegl1 libgl1 libxkbcommon0 libpulse0
 ```
+
+A `python3-pyside6.qtprintsupport` csomag a **nyomtatáshoz** kell, és
+csak akkor, ha a Qt-t a rendszer csomagjaiból telepíted (a `pip`-es
+változat magával hozza). A négy `lib…` csomag a grafikus megjelenítéshez
+és a hanghoz kell; asztali rendszeren általában már fent van.
 
 ### Windows
 
@@ -87,8 +93,9 @@ kijelölöd, duplán kattintva megnyitod a nézőben.
 
 **Alsó sáv (képtálca)** — kék információs csík a kijelölésről, alatta a
 tálca a kijelölt képekkel, és a műveletgombok: csillag, forgatás,
-nagyítás, **Kollázs**, **Mozgófilm**, **Exportálás**, **Nyomtatás**,
-**E-mail**.
+nagyító, indexkép-méret, **Kollázs**, **Mozgófilm**, **Exportálás**,
+**Nyomtatás**, **E-mail**. A nézőben ugyanebben a sávban van a
+nagyítás három vezérlője.
 
 **Jobb oldali fiók** — a Címkék, Emberek, Helyek és Tulajdonságok panel.
 A Nézet menüből vagy a tálca gombjaival nyitható.

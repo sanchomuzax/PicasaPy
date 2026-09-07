@@ -32,9 +32,10 @@ kapcsoló, mint a Beállítások E-mail fülén — bármikor visszaállíthatod
 
 Az **Eszközök ▸ Beállítások… ▸ E-mail** fülön:
 
-- **Válassza ki a levelezőprogramot** — vagy a számítógép
-  alapértelmezett levelezőjével küld a program, vagy minden küldéskor
-  megkérdezi. Ez a két lehetőség ma **működik**.
+- **Levelezőprogram** — vagy a számítógép alapértelmezett levelezőjével
+  küld a program, vagy minden küldéskor megkérdezi. Ez a két lehetőség ma
+  **működik**. A harmadik, **A Google Fiók használata** szürke: a
+  PicasaPy-nak nincs Google-fiók-kapcsolata.
 - **Több kép mérete** — csúszka: ekkora hosszabbik oldalra kicsinyíti a
   képeket küldés előtt. A csúszka mellett a pillanatnyi érték látszik
   képpontban.

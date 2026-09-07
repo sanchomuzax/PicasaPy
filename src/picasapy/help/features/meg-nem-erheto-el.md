@@ -126,3 +126,10 @@ Google Fiókkal" felirat sem — az csak az eredeti elrendezés része.
   venni, lásd [Importálás](importalas.md).
 - **Névjegyzék írása** — a régi Picasa névjegyzékét olvassuk, de írni még
   nem tudjuk.
+- **A rejtett mappák jelszava** — a jelszó-kapu megvan a programban (a
+  **Nézet ▸ Rejtett képek** bekapcsolása jelszót kérne, ha volna
+  beállítva), de **jelszót ma nem lehet megadni a felületről**: a
+  **Jelszó megadása/módosítása…** menüpont még nincs bekötve. Amíg ez
+  így van, a rejtett képek jelszó nélkül előhozhatók. A rejtés
+  egyébként sem védi a fájlokat: azok a lemezen változatlanul ott
+  vannak, csak a PicasaPy nézeteiből tűnnek el.

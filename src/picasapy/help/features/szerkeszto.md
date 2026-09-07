@@ -28,6 +28,17 @@ jelöli — lásd [Effektek](effektek.md).
 
 Az effektek részletes listája: [Effektek](effektek.md).
 
+## A jobb oldali fiók szerkesztés közben
+
+A **Címkék**, **Emberek**, **Helyek** és **Tulajdonságok** panel a
+szerkesztőben is megnyílik: a képtálca négy panelkapcsolójával, a
+**Nézet** menüből, vagy a **Ctrl+0** billentyűvel. Így a szerkesztésből
+kilépés nélkül tudsz címkézni, nevet adni egy arcnak vagy megnézni a
+kép adatait.
+
+> Korábban a négy gomb közül három csak benyomódott, de nem hozott elő
+> semmit a nézőben — ez megjavult.
+
 ## Gyakori javítások
 
 Kilenc gomb:
@@ -48,11 +59,13 @@ Kilenc gomb:
 A **Vágás** gomb átfedő vágókeretet nyit a képre. A keret sarkainál és
 oldalainál fogva méretezhető, belül húzva mozgatható.
 
-- **Képarány**: kézi vágás, négyzet, és egy csomó kész arány
-  (10×15, levélpapír, A4, CD-borító, szabvány képernyő, széles vászon,
-  digitális képkeret és társai). A **Egyéni méretarány hozzáadása…**
-  paranccsal saját arányt vehetsz fel névvel, szélességgel és
-  magassággal; a saját arányt később törölni is tudod.
+- **Képarány**: kézi vágás, a kép jelenlegi aránya, négyzet
+  (CD-borító), a papírképek méretei centiméterben (5×8, 9×13, 10×15,
+  13×18, 20×25), **A4** teljes oldal, valamint a képernyő-arányok:
+  **4:3** (szabvány képernyő), **16:10** (széles monitor), **16:9**
+  (HDTV) és **5:3** (széles digitális képkeret). Az **Egyéni méretarány
+  hozzáadása…** paranccsal saját arányt vehetsz fel névvel,
+  szélességgel és magassággal; a saját arányt később törölni is tudod.
 - **Álló** / **Fekvő** — a keret elforgatása.
 - **Forgatás** gomb — a képarány oldalainak cseréje.
 - **Javasolt vágások** — a program kínál néhány kivágást: a részletre, a

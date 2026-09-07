@@ -25,6 +25,10 @@ Ha a célmappában már van azonos nevű fájl, választhatsz: **Másodpéldány
 átnevezése** (a bevitt fájlok új nevet kapnak) vagy **Másodpéldányok
 kihagyása**.
 
+A képpel együtt költözik a **mentéskor készült biztonsági másolata** is,
+tehát a **Visszaállítás** az új helyen is működik — lásd
+[Mentés, visszaállítás](mentes.md).
+
 ## Másolás és kivágás
 
 **Szerkesztés ▸ Másolás** (Ctrl+C) és **Kivágás** (Ctrl+X) a

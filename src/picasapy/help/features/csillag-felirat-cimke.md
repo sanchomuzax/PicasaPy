@@ -19,10 +19,18 @@ A **Szerkesztés ▸ Csillagozottak kijelölése** egy lépésben kijelöli az
 
 ## Képfelirat
 
-A felirat a kép alá írt rövid szöveg. A nézőben a kép alatti sávba
-kattintva írhatod be — ha még nincs felirat, a „Készítsen képfeliratot!"
-hívogat. A **Felirat megjelenítése/elrejtése** gombbal kapcsolod a sávot,
-a szemetes ikonnal pedig törlöd a feliratot.
+A felirat a kép alá írt rövid szöveg. A nézőben a kép alján
+végigfutó sávba kattintva írhatod be — ha még nincs felirat, a
+„Készítsen képfeliratot!" hívogat a sáv közepén. Enterrel mented, Esc-cel
+eldobod, amit beírtál.
+
+A sáv két végén egy-egy kis gomb áll:
+
+- **balra** a **Felirat megjelenítése/elrejtése** kapcsoló — egy
+  világos négyzet, benne két vonal, ha a sáv látszik, és üres, ha nem.
+  Kikapcsolt sávnál is a helyén marad, tehát ezzel hozod vissza;
+- **jobbra** a **Felirat törlése** gomb, ami rákérdezés nélkül üríti a
+  feliratot. Üres felirat mellett szürke.
 
 A rácsban a **Nézet ▸ Indexkép felirata ▸ Képfelirat** beállítással
 hozhatod elő az indexképek alá.

@@ -123,6 +123,18 @@ Az arcfelismerés modellje hiányzik vagy sérült. Nyisd meg újra az
 **Eszközök ▸ Arcok keresése…** párbeszédet, és töltsd le a modellt a
 **Modell letöltése** gombbal.
 
+### A mappa írásvédett, vagy tele a lemez
+
+Ha a képek melletti `.picasa.ini` fájlba nem sikerül írni — mert a mappa
+csak olvasható, vagy nincs több hely a lemezen —, a program **kiírja a
+hibát**, és megnevezi az okát. Ez a mappa leírásánál, a mappa dátumánál,
+a kulcsszavaknál és a **Minden effekt beillesztése** parancsnál is így
+van.
+
+Ha ilyen üzenetet kapsz, a változtatás **nem került ki a lemezre**:
+oldd fel a mappa írásvédettségét vagy szabadíts fel helyet, és próbáld
+újra.
+
 ### „Nincs elérhető EXIF-adat."
 
 A képfájl nem tartalmaz fényképezőgép-adatokat. Ez nem hiba — sok

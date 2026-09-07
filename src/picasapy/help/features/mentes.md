@@ -11,8 +11,15 @@ akarod égetni a változtatásokat — mert máshol nyitod meg, vagy elküldöd
 kiírja a lemezre.
 
 A program **biztonsági másolatot készít** a fájlokról, és ezt a
-megerősítő ablakban ki is írja. A másolat az eredeti mappában marad, így
-később még visszaléphetsz.
+megerősítő ablakban ki is írja. A másolat az eredeti mappában marad, egy
+külön almappában, így később még visszaléphetsz.
+
+Ez a megőrzött eredeti **együtt mozog a képpel**: ha átnevezed,
+áthelyezed vagy lemásolod a fotót, a másolata is odakerül, és a
+**Visszaállítás** az új helyen is működik. Ha a célhelyen valami útban
+van, a művelet inkább el sem indul, és az üzenet megmondja, mi
+akadályozza — a program soha nem ír felül egy másik kép megőrzött
+eredetijét.
 
 Ha valamelyik képen olyan szerkesztés van, amit a program még nem tud
 megjeleníteni (például egy régi Picasa-változat effektje), a mentés előtt

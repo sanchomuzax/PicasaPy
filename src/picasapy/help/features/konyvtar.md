@@ -56,9 +56,15 @@ megmarad.
 A rácsban a mappa fejlécében ott áll a mappa dátuma. Ezt a benne lévő
 legkorábbi fénykép adja: elsősorban a felvétel ideje a fénykép
 EXIF-adatából, és ha az hiányzik — például képgenerátorból származó
-képeknél —, akkor a fájl utolsó módosításának ideje. Így felvételi idő
-nélküli képeknél sem marad üresen a fejléc, és a dátum szerinti
-rendezés is a helyére teszi az ilyen mappákat.
+képeknél —, akkor a fájl ideje. Így felvételi idő nélküli képeknél sem
+marad üresen a fejléc, és a dátum szerinti rendezés is a helyére teszi
+az ilyen mappákat.
+
+A fájl idejét a program **az első beolvasáskor jegyzi fel, és utána nem
+frissíti**. Ez szándékos: a fájl módosítási idejét sok minden átírja
+(mentés, másolás, egy másik program), és enélkül ugyanaz a kép hol a
+rács elejére, hol a végére ugrott volna, a mappa fejléc-dátuma pedig
+elmozdult volna. Aminek van EXIF-felvételi ideje, arra ez nem hat.
 
 ### A mappák sorrendje
 
@@ -127,6 +133,15 @@ kikerülnek a listából.
   alatt: **Egyik sem**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
   **Felbontás**.
 
+### Nagyító a rácson
+
+A képtálca nagyítás-csúszkája mellett balra van egy kis **nagyító**
+gomb (buboréksúgója: „Nagyító — húzd a képek fölött"). Bekapcsolva a
+gomb kék hátteret kap, és onnantól a rácson **nyomva tartva húzva** egy
+kis ablak jelenik meg a kurzor alatt: benne a kép a teljes felbontásból,
+1:1-ben, tehát részletesebben, mint maga az indexkép. Puszta kattintásra
+nem történik semmi — húzni kell. Ugyanezzel a gombbal kapcsolod ki.
+
 ## A képtálca
 
 Az ablak alján lévő tálca mindig a jelenlegi kijelölést mutatja. A kék
@@ -175,10 +190,11 @@ menünek a tétele **Megjelenítés**-re vált, és azzal hozod vissza a képet.
 
 A figyelt mappákban a PicasaPy háromféle fájlt vesz észre:
 
-- **Fényképek** — JPEG, PNG, TIFF, BMP, GIF, PSD, TGA és **WebP**.
+- **Fényképek** — JPEG (a `.jpg`, `.jpeg` és `.jpe` név is), PNG, TIFF,
+  BMP, GIF, PSD, TGA és **WebP**.
 - **Nyers (RAW) felvételek** — a szokásos gyártói kiterjesztések, például
   CR2, NEF, ARW, DNG, ORF, RAF, RW2.
-- **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, 3GP.
+- **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP.
 
 Minden más fájl (dokumentum, hangfelvétel) láthatatlan marad: a program
 nem indexeli és nem is bántja.
