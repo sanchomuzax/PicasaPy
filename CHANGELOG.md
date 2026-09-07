@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.333] – 2026-09-07
+
 ### Gyorsabb
 
 - **A Képregény effekt gyorsabb lett** (#2477): egy 1600×1200-as fényképen
