@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.322] – 2026-09-07
+
+### Javítva
+
+- **A felirat igazítása és a „nincs kitöltés" beállítás végre megmarad**
+  (#2108). Ha egy képfeliratot középre vagy jobbra igazítottunk, vagy
+  kikapcsoltuk rajta a kitöltést, ezek a beállítások mentéskor **elvesztek**:
+  a program megrajzolta őket a képernyőn, de nem írta bele a fájlba, így a
+  kép újranyitásakor minden felirat balra igazítva, kitöltéssel jött vissza.
+  Mostantól mindkettő kimegy a `.picasa.ini`-be, ugyanabba a mezőbe és
+  ugyanazzal a szabállyal, ahogy az eredeti Picasa írja — a mezőt a Picasa
+  3.9 programjából fejtettük vissza.
+
 ## [0.8.321] – 2026-09-07
 
 ### Javítva

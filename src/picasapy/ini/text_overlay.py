@@ -136,6 +136,53 @@ _ALAHUZOTT_BIT = 0x0001
 _DOLT_BIT = 0x0008
 
 
+#: #2108: a 8. mező részei. Az igazítás a 8–15., a kitöltés/körvonal mód a
+#: 0–7. biten; a felső 16 bit a panelé (nullázza), de MEGŐRIZZÜK.
+_IGAZITAS_ELTOLAS = 8
+_IGAZITAS_MASZK = 0xFF
+_MOD_MASZK = 0xFF
+_ALSO_16_BIT = 0xFFFF
+
+#: Az igazítás kódjai a `edittextpanel` három gombjából (`0x0062e8f0`):
+#: `leftalign` = 0, `centeralign` = 1, `rightalign` = 2. A rajzolónk
+#: (`render/text_overlay.py`) NEVEKET vár — a kettő közti leképezés a
+#: formátum része, ezért él itt.
+IGAZITAS_NEVEK: tuple[str, ...] = ("left", "center", "right")
+
+
+def alignment_name(kod: int) -> str:
+    """Az igazítás kódjából a rajzoló neve.
+
+    Ismeretlen kódra **bal**: egy sérült vagy jövőbeli érték ne dobjon
+    kivételt a szerkesztő megnyitásakor (részleges betöltés elve).
+    """
+    if 0 <= kod < len(IGAZITAS_NEVEK):
+        return IGAZITAS_NEVEK[kod]
+    return IGAZITAS_NEVEK[0]
+
+
+def alignment_code(nev: str) -> int:
+    """A rajzoló nevéből az igazítás kódja; ismeretlen névre **bal**."""
+    try:
+        return IGAZITAS_NEVEK.index(nev)
+    except ValueError:
+        return 0
+
+
+def fill_mode_from(*, no_fill: bool, outline_width: float) -> int:
+    """A kitöltés/körvonal mód LEVEZETÉSE — nem szabad érték.
+
+    A panel minden hívásnál újraszámolja (`0x0063045a`–`0x006304a9`), a
+    `+0x44` csak gyorsítótár. A sorrend KÖTÖTT: a `no_fill` ága van
+    elöl, tehát vastag körvonal mellett is lehet a mód **1**.
+    """
+    if no_fill:
+        return 1
+    if outline_width == 0.0:
+        return 0
+    return 2
+
+
 @dataclass(frozen=True)
 class TextStyle:
     """A felirat színei és súlya.
@@ -162,8 +209,27 @@ class TextStyle:
     #: átlátszatlanságé —, tehát az érték ÁTSZÁMÍTÁS NÉLKÜL kerül ide.
     #: A korpuszban `0.000000` és `0.500000`; a 0,0 a »nincs körvonal«.
     unknown_a: float = 0.0
-    #: A korpuszban `0` és `258` (`0x102`).
-    unknown_b: int = 0
+    #: A `text=` blokk 8. mezője — **HÁROM rész egy számban** (#2108).
+    #:
+    #: Az olvasó (`0x00a4dd50`) három külön beállítóhoz vágja szét
+    #: (`0x00a4e05c`–`0x00a4e08b`), és az `edittextpanel` kezelője
+    #: megmondja, melyik mit jelent:
+    #:
+    #: | bit | jelentés | értékkészlet |
+    #: |---|---|---|
+    #: | 8–15 | vízszintes igazítás | 0 = bal · 1 = közép · 2 = jobb |
+    #: | 0–7 | kitöltés/körvonal mód | 0 = csak kitöltés · 1 = nincs kitöltés · 2 = mindkettő |
+    #: | 16–31 | a panel NULLÁZZA (`[vtbl+0x48]` konstans 0) |
+    #:
+    #: ⚠️ A felső 16 bit a KONSTRUKTORBAN 1 (`0x005ba5d0`), a fájlokban
+    #: mégis mindenhol 0 — tehát nem „érintetlen mező", hanem aktívan
+    #: nullázott. Az írásunk ezért NEM építi újra a mezőt: a beolvasott
+    #: felső biteket változatlanul viszi tovább (`with_text_layout`),
+    #: ugyanúgy, ahogy a 9. mezőnél (#2448).
+    #:
+    #: Forrás: `docs/specs/picasa-ini-format.md` → „A 8. MEZŐ MINDHÁROM
+    #: RÉSZE". A korpuszban `0` és `258` (`0x102`).
+    layout_field: int = 0
     #: A korpuszban mindenhol `v1`.
     version: str = "v1"
     #: A korpuszban állandó `128.000000`.
@@ -187,6 +253,30 @@ class TextStyle:
     #: ismert bitből, hanem a beolvasottat őrzi meg, és csak a két ismert
     #: bitet állítja — különben egy meg nem értett bit némán elveszne.
     trailer: int = 49152
+
+    @property
+    def alignment(self) -> int:
+        """Vízszintes igazítás (a 8. mező **8–15. bitje**): 0/1/2."""
+        return (self.layout_field >> _IGAZITAS_ELTOLAS) & _IGAZITAS_MASZK
+
+    @property
+    def fill_mode(self) -> int:
+        """Kitöltés/körvonal mód (a 8. mező **0–7. bitje**): 0/1/2."""
+        return self.layout_field & _MOD_MASZK
+
+    def with_text_layout(self, *, alignment: int, fill_mode: int) -> TextStyle:
+        """Új stílus az igazítással és a móddal — a FELSŐ 16 bit marad.
+
+        ⚠️ Nem építjük újra a mezőt. A felső 16 bit minden ismert mintában
+        0, de a konstruktor alapértéke 1 (`0x005ba5d0`): ha egy fájlban
+        mégis áll ott valami, az a felhasználó adata, nem a mi
+        találgatásunk terepe (ugyanez az elv, mint a 9. mezőnél, #2448).
+        """
+        felso = self.layout_field & ~_ALSO_16_BIT
+        also = (
+            (alignment & _IGAZITAS_MASZK) << _IGAZITAS_ELTOLAS
+        ) | (fill_mode & _MOD_MASZK)
+        return replace(self, layout_field=felso | also)
 
     @property
     def underline(self) -> bool:
@@ -334,7 +424,7 @@ def _parse_style(field: str) -> TextStyle:
             unknown_a=float(parts[5]),
             constant_1b=float(parts[6]),
             weight=int(parts[7]),
-            unknown_b=int(parts[8]),
+            layout_field=int(parts[8]),
             trailer=int(parts[9]),
         )
     except ValueError as error:
@@ -352,7 +442,7 @@ def _serialize_style(style: TextStyle) -> str:
             format(style.unknown_a, _FLOAT_FORMAT),
             format(style.constant_1b, _FLOAT_FORMAT),
             str(style.weight),
-            str(style.unknown_b),
+            str(style.layout_field),
             str(style.trailer),
         )
     )

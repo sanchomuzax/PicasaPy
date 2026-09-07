@@ -8,7 +8,7 @@ Két, a felhasználó által látott hiba:
   `0.000000`, ami a valódi Picasában »nincs körvonal«.
 
 A mezők számozása ELLENŐRZÖTT (a jegy táblája, egy valódi korpusz-sorból):
-`v1, fill, outline, 128.0, 1.0, KÖRVONAL, 1.0, SÚLY, unknown_b, 49152`.
+`v1, fill, outline, 128.0, 1.0, KÖRVONAL, 1.0, SÚLY, ELRENDEZÉS, 49152`.
 
 ⚠️ A **4., 6., 8. és 9.** mezőhöz nem nyúlunk — azok jelentése nyitva van
 (#371, #2108). A valódi Picasa-sorok round-tripjének bájtra változatlannak
@@ -58,7 +58,7 @@ class TestAmihezNEM_nyulunk:
         assert s.constant_128 == 128.0
         assert s.constant_1a == 1.0
         assert s.constant_1b == 1.0
-        assert s.unknown_b == 0
+        assert s.layout_field == 0
         assert s.trailer == 49152
         assert s.version == "v1"
 

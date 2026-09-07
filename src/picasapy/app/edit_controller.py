@@ -44,6 +44,9 @@ from picasapy.ini.text_overlay import (
     TextGeometry,
     TextOverlay,
     TextStyle,
+    alignment_code,
+    alignment_name,
+    fill_mode_from,
     parse_text,
     parse_text_active,
     serialize_text,
@@ -266,14 +269,20 @@ _DEFAULT_TEXT_ALIGN = "left"
 # 0.8.88-ig írt, PicasaPy-saját egész-kódolást az
 # `picasapy.ini.text_overlay` olvasó oldala migrálja.
 
-#: A szöveg-eszköz stílus-beállításai (#450). A `text=` stílus-mezőjének
-#: (#371-ben megfejtett) alakja KÉT színt hordoz — a kitöltést és a
-#: körvonalat —, ezért ez a kettő mentődik és töltődik vissza. A TÖBBI
-#: beállítás (körvonal-vastagság, kitöltés ki/be, átlátszóság) továbbra is
-#: KIZÁRÓLAG a folyamatban lévő szerkesztési munkamenet állapota, mert a
-#: Picasa-formátumban nincs nekik megfelelő mező, és a megfejtetlen
-#: számmezőkbe (`unknown_a`/`unknown_b`) tippelni rosszabb lenne, mint
-#: elhagyni őket — beginEdit/endEdit alapértékre állítja őket.
+#: A szöveg-eszköz stílus-beállításai (#450). A `text=` stílusblokkjából ma
+#: NÉGY beállítás megy oda-vissza: a kitöltés és a körvonal színe (#371), a
+#: vízszintes igazítás és a kitöltés/körvonal mód (#2108, a 8. mező 8–15.
+#: illetve 0–7. bitje).
+#:
+#: ⚠️ A mód SZÁMÍTOTT, nem tárolt: `no_fill` → 1; különben a vastagság
+#: pontosan 0,0 → 0; egyébként → 2 (`fill_mode_from`). Visszatöltéskor
+#: ezért a mód csak a kitöltés ki/be állapotát adja vissza — a
+#: körvonalvastagság pontos értéke az 5. mezőben él, azt a #2271 írja ki.
+#:
+#: Ami MARAD munkamenet-állapot: az átlátszóság — annak a
+#: Picasa-formátumban nincs megfelelő mezője.
+#: #2108: a kitöltés/körvonal mód »nincs kitöltés« értéke.
+_MOD_NINCS_KITOLTES = 1
 _DEFAULT_TEXT_FILL_COLOR = (255, 255, 255)
 _DEFAULT_TEXT_OUTLINE_COLOR = (0, 0, 0)
 _DEFAULT_TEXT_OUTLINE_THICKNESS = 0
@@ -1014,14 +1023,25 @@ class EditController(QObject, BackgroundWorkerMixin):
             else _DEFAULT_TEXT_OUTLINE_COLOR
         )
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
-        self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
+        # #2108: a mód 1-es értéke azt jelenti, hogy NINCS kitöltés.
+        self._text_fill_enabled = (
+            loaded.style.fill_mode != _MOD_NINCS_KITOLTES
+            if loaded
+            else _DEFAULT_TEXT_FILL_ENABLED
+        )
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = _DEFAULT_TEXT_FAMILY
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_bold = _DEFAULT_TEXT_BOLD
         self._text_italic = _DEFAULT_TEXT_ITALIC
         self._text_underline = _DEFAULT_TEXT_UNDERLINE
-        self._text_align = _DEFAULT_TEXT_ALIGN
+        # #2108: a mentett igazítás visszatölt — eddig minden újranyitás
+        # `left`-re esett vissza, akkor is, ha a fájlban `right` állt.
+        self._text_align = (
+            alignment_name(loaded.style.alignment)
+            if loaded
+            else _DEFAULT_TEXT_ALIGN
+        )
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -1660,13 +1680,26 @@ class EditController(QObject, BackgroundWorkerMixin):
         korabbi = previous.primary.style if previous.primary else None
         stilus = block.style
         if korabbi is not None:
-            # a korábbi mező bitjeit visszük tovább (köztük a fel nem
-            # tártakat); a két ismertet alább állítjuk
-            stilus = replace(stilus, trailer=korabbi.trailer)
+            # a korábbi mezők bitjeit visszük tovább (köztük a fel nem
+            # tártakat); az ismerteket alább állítjuk
+            stilus = replace(
+                stilus,
+                trailer=korabbi.trailer,
+                layout_field=korabbi.layout_field,
+            )
         block = replace(
             block,
             style=stilus.with_style_flags(
                 italic=self._text_italic, underline=self._text_underline
+            # #2108: a 8. mező két alsó bájtja. A mód nem szabad érték: a
+            # panel minden alkalommal ÚJRASZÁMOLJA a `no_fill` négyzetből
+            # és a körvonal-csúszkából, ebben a sorrendben.
+            ).with_text_layout(
+                alignment=alignment_code(self._text_align),
+                fill_mode=fill_mode_from(
+                    no_fill=not self._text_fill_enabled,
+                    outline_width=float(self._text_outline_thickness),
+                ),
             ),
         )
         self._text_overlay = previous.with_primary(block)
