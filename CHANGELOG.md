@@ -9,6 +9,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A személybejegyzések három mezője nevesítve** (#2526): a `.picasa.ini`
+  `[Contacts2]` sorainak értéke az eredetiben pontosan három részből áll —
+  teljes név, e-mail cím és Google-fiókazonosító. Nálunk eddig csak a név
+  volt megnevezve, a másik kettő névtelen maradékként utazott. Mostantól
+  mindhárom mezőnek neve van, és a programunk — az eredetihez hasonlóan —
+  kihagyja azt a bejegyzést, amelyik nem pontosan három részes. A valós,
+  859 fájlos gyűjteményünkben mind a 658 személysor háromrészes, tehát ez
+  a szigorítás egyetlen valódi nevet sem veszít el; a hibás alakú sorok
+  a fájlban maradnak, csak nem kerülnek be a névlistába.
 - **A kollázs-bekötés tesztfájlja megint fut** (#2653): a #985 mind a 34
   őre egyetlen folyamatban épített 34 teljes alkalmazást, és **2233 MiB**
   csúcsot ért el a tesztfuttató 2400 MiB-os memóriaplafonja alatt (93%).

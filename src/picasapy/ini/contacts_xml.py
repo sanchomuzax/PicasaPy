@@ -88,7 +88,7 @@ def apply_contacts_xml(
 ) -> IniDocument:
     """A `[Contacts2]` nevek egyeztetése a contacts.xml (elsődleges forrás,
     ld. `pmp-database.md`) alapján: a MEGLÉVŐ bejegyzések neve frissül, ha
-    eltér — az `extra` mezők (pl. e-mail) és a kulcs eredeti írásmódja
+    eltér — a másik két mező (`email`, `gaia_id`) és a kulcs eredeti írásmódja
     (kis/nagybetű) megmarad. Új személyt NEM hoz létre (ld. teszt-docstring:
     az árva kontaktok felhalmozódását kerüli — új személy a
     faces_helper arc-hozzárendelésén keresztül jön létre)."""
@@ -100,6 +100,7 @@ def apply_contacts_xml(
         fresh_name = by_id.get(contact.person_id.casefold())
         if fresh_name is None or fresh_name == contact.name:
             continue
-        value = ";".join((fresh_name, *contact.extra))
+        # #2526: az érték HÁROM mezős; a másik kettőt változatlanul visszük
+        value = ";".join((fresh_name, contact.email, contact.gaia_id))
         document = document.with_value(_SECTION_NAME, contact.person_id, value)
     return document
