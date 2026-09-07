@@ -4590,10 +4590,10 @@ vezérlő**; a csoportosztás nincs mérve.)*
 
 | elem | buboréksúgó |
 |---|---|
-| **`setin`** | **„Create a new starting point"** |
-| **`setout`** | **„Create a new ending point"** |
-| `trimslider` | a vágás-csúszka |
-| `moviemode1` | „Play full screen" |
+| **`video_control_bar/setin`** | **„Create a new starting point"** |
+| **`video_control_bar/setout`** | **„Create a new ending point"** |
+| `video_control_bar/trimslider` | a vágás-csúszka |
+| `video_control_bar/moviemode1` | „Play full screen" |
 
 A kezelő (`0x005952d0`) a **`moviestart`** és **`movieend`** neveket
 hivatkozza ⇒ **a vágáspontok a `.picasa.ini` `filters=` láncába
@@ -4601,13 +4601,13 @@ kerülnek**, ugyanoda, ahová a képszerkesztés tokenjei.
 
 ### 64.2 A `movieeditpanel` további három művelete
 
-Ugyanaz a kezelő:
+Ugyanaz a kezelő (`0x005952d0`):
 
 | elem | mit csinál |
 |---|---|
-| **`reset_trim`** | a vágás **visszaállítása** |
-| **`capture_frame`** | ⭐ **állókép mentése a videóból** |
-| `export_movie` · `export_youtube` | export (a YouTube-ág **hatókörön kívül**) |
+| **`movieeditpanel/reset_trim`** | a vágás **visszaállítása** |
+| **`movieeditpanel/capture_frame`** | ⭐ **állókép mentése a videóból** |
+| `movieeditpanel/export_movie` · `movieeditpanel/export_youtube` | export (a YouTube-ág **hatókörön kívül**) |
 
 ⇒ A videó nem csak lejátszható: **vágható**, és **képkocka menthető
 belőle**.

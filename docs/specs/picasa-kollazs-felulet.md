@@ -28,25 +28,25 @@ teljes tábla, ahogy a binárisban áll. A `vezérlő` oszlop a
 
 | vezérlő | mit hív | mit csinál |
 |---|---|---|
-| `theme_popup` | `0x00830530` | témaváltás + `Preferences\collage::theme` írása |
+| `collagepanel/theme_popup` | `0x00830530` | témaváltás + `Preferences\collage::theme` írása |
 | `border0/1/2` | `border%d` ág | képkeret-választás (`noborder`/`whiteborder`/`polaroid`) |
-| `shadow_checkbox` | `0x0083d3a0` | `collage::shadows` |
-| `caption_checkbox` | `0x0083d460` | `collage::showcaptions` |
+| `collagepanel/shadow_checkbox` | `0x0083d3a0` | `collage::shadows` |
+| `collagepanel/caption_checkbox` | `0x0083d460` | `collage::showcaptions` |
 | `portrait` / `landscape` | `0x0083a1a0` | tájolás + `collage::orientation` |
 | `format_menu` | (lista, ld. 7.) | oldalformátum |
-| `delete_custom_aspect` | `0x0083df40` → `0x007cb7b0` | egyéni oldalarány törlése a `Preferences\AspectRatios`-ból |
-| `color_bg` | rádiógomb | egyszínű háttér → a színválasztó látszik |
-| `bitmap_bg` | `0x009cd8a0` | képháttér → a háttérkép-doboz látszik |
-| `bkg_from_selection` | — | a kijelölt kép legyen a háttér |
-| `set_background` | — | ugyanez a vászon feletti gombról |
-| `set_frame_center` | `0x0083d520` | a kijelölt kép a Képkockamozaik közepére |
-| `select_all` | `0x0083a490(…, 1)` | az összes kijelölése |
-| `select_none` | `0x0083a490(…, 0)` | kijelölés megszüntetése |
+| `collagepanel/delete_custom_aspect` | `0x0083df40` → `0x007cb7b0` | egyéni oldalarány törlése a `Preferences\AspectRatios`-ból |
+| `collagepanel/color_bg` | rádiógomb | egyszínű háttér → a színválasztó látszik |
+| `collagepanel/bitmap_bg` | `0x009cd8a0` | képháttér → a háttérkép-doboz látszik |
+| `collagepanel/bkg_from_selection` | — | a kijelölt kép legyen a háttér |
+| `collagepanel/set_background` | — | ugyanez a vászon feletti gombról |
+| `collagepanel/set_frame_center` | `0x0083d520` | a kijelölt kép a Képkockamozaik közepére |
+| `collagepanel/select_all` | `0x0083a490(…, 1)` | az összes kijelölése |
+| `collagepanel/select_none` | `0x0083a490(…, 0)` | kijelölés megszüntetése |
 | `remove_node` | `0x0083abe0` | kijelölt képek eltávolítása |
-| `move_top` | `0x008419b0`+`0x00841920` → `0x0083ab30` | legfelülre |
+| `collagepanel/move_top` | `0x008419b0`+`0x00841920` → `0x0083ab30` | legfelülre |
 | `move_up` | `0x0083ab30(-1)` | egy réteggel feljebb |
-| `move_down` | `0x0083ab30(+1)` | egy réteggel lejjebb |
-| `move_bottom` | `0x008419b0`+`0x00841920` → `0x0083ab30` | legalulra |
+| `collagepanel/move_down` | `0x0083ab30(+1)` | egy réteggel lejjebb |
+| `collagepanel/move_bottom` | `0x008419b0`+`0x00841920` → `0x0083ab30` | legalulra |
 | `snap_12/3/6/9` | `0x0083b900(szög)` | forgatás-igazítás (ld. 5.4) |
 | `rand_order` | `0x0083aab0` | Képek összekeverése (sorrend) |
 | `rand_placement` | `0x0083aaf0` | Véletlenszerű kollázs (elhelyezés) |
@@ -554,10 +554,10 @@ A `.tre` szerint a **`color_bg` az alapértelmezés** (`Property setpressed 1`),
 `color_bg → colorpick_container`, `bitmap_bg → background_container` **és**
 `background_bitmap`.
 
-A színválasztó két részből áll: a `colorcircle` (153, 241) 37×37 kör
-(`Property round 3`) és a `dropper_icon` (193, 253) 24×14 **pipetta**. A
-kattintásra megnyíló paletta a `collagepanel/picker_panel` (61, 64)
-218×178, ami a
+A színválasztó két részből áll: a `collagepanel/colorcircle` (153, 241) 37×37
+kör (`Property round 3`) és a `collagepanel/dropper_icon` (193, 253) 24×14
+**pipetta**. A
+kattintásra megnyíló paletta a `collagepanel/picker_panel` (61, 64) 218×178, ami a
 `.tre`-ben `m_hidden`, `Property palette 1`, és fókuszt ad a
 `bkgcolorpick/base`-nek.
 

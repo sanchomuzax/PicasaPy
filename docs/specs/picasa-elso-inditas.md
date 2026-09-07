@@ -79,6 +79,15 @@ a két rádiógomb tehát `initialscan/radio_limited` és
 | **`ok`** („Continue") | **522** | 423 | 620 | 452 | 98×29 |
 | `cancel` („No") | 414 | 423 | 512 | 452 | 98×29 — **`m_hidden`** |
 
+A tábla **levélneveket** ír, mert mind a panel saját eleme; a leltárbeli
+TELJES nevük: `initialscan/base`, `initialscan/baseclip`,
+`initialscan/title`, `initialscan/text1`, `initialscan/text2`,
+`initialscan/text2a`, `initialscan/radiogroup`,
+`initialscan/radio_limited`, `initialscan/text3`, `initialscan/text3a`,
+`initialscan/radio_complete`, `initialscan/text4`, `initialscan/text4a`,
+`initialscan/connector`, `initialscan/text5`, `initialscan/ok`,
+`initialscan/cancel`.
+
 **Négy dolog, amit ez kimond:**
 
 1. **A rádiók 100 képpont osztásban** vannak (136 → 236), 30×30-asak, és a
@@ -161,8 +170,8 @@ Az eredményt a hívó által adott **egész-rekeszbe** írja
 | érték | jelentés | ki állítja |
 |---:|---|---|
 | **−1** | **megszakítva** | az indulás-rutin `0x0040d56d`-nél nézi, és `0xF4242`-vel kilép |
-| **1** | a **szűkített** választás (`radio_limited`) | `0x005b7f3a` |
-| **2** | a **teljes gép** (`radio_complete`) | `0x005b7f3a` |
+| **1** | a **szűkített** választás (`initialscan/radio_limited`) | `0x005b7f3a` |
+| **2** | a **teljes gép** (`initialscan/radio_complete`) | `0x005b7f3a` |
 
 > **Vagyis a panel maga NEM ír `scanlist.txt`-et.** Egy 1/2 kódot ad
 > vissza, és a **beolvasási lista összeállítása a hívó dolga** — az

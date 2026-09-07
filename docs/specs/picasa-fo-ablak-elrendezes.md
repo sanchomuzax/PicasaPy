@@ -987,12 +987,17 @@ láncolat, hanem erőforrás-adat.
 |---|---|---|---|
 | `m_enable_albummode` (`macros.tre:196`) | `acquirepanel/anowbutton` (`acquirepanel.tre:264`) | `mainuipanel`, `infowell`, `secretcoinclip` | `acquirepanel`, `printpanel`, `editpanel`, `fullview` |
 | `m_albumtoggle` (`macros.tre:205`) | `thumbui/viewswitch` (`thumbui.tre:36`) | `editpanel`, `1to1`, `fit` | `albumsback`, `throttlegroup`, `listdecrect`, `listbutton`, `hlistsizer`, `searchgroup`, `searchcontainer` |
-| `m_basecontrolset_enable` (`macros.tre:224`) | `thumbui/publishswitcher` (`thumbui.tre:81`) | `basecontrolset`, `importbutton`, `thumbui/buttongroup1`, `activitycontainer` | — |
+| `m_basecontrolset_enable` (`macros.tre:224`) | `thumbui/publishswitcher` (`thumbui.tre:81`) | `thumbui/basecontrolset`, `thumbui/importbutton`, `thumbui/buttongroup1`, `activitycontainer` | — |
 | `m_cdcontrolset_enable` (`macros.tre:233`) | `thumbui/cdmode` (`thumbui.tre:484`) | `controlsettop`, `publishcontrolsets`, `publish/presentation_group`, `cd_label` | `searchcontainer`, `bottombevel_base`, `logo` |
 | `m_backupcontrolset_enable` (`macros.tre:245`) | `thumbui/backup` (`thumbui.tre:96`) | `controlsettop`, `publishcontrolsets`, `publish/backup_group`, `backup_label` | `searchcontainer`, `bottombevel_base`, `logo` |
 | `m_replicatecontrolset_enable` (`macros.tre:257`) | `thumbui/replicate` (`thumbui.tre:76`) | `controlsettop`, `publishcontrolsets`, `publish/replication_group`, `replication_label` | `searchcontainer`, `bottombevel_base`, `logo` |
 | `m_acquire_enable` (`macros.tre:281`) | `thumbui/importbutton` (`thumbui.tre:452`), `thumbui/acquirebutton` (`thumbui.tre:32`) | `panelroot/acquiretab` (+ `downtarget`) | — |
 | `m_print_enable` (`macros.tre:285`) | `outputlayout/pbutton` (`outputlayout.tre:38`) | `thumbui/printpanel` | `acquirepanel`, `editpanel`, `mainuipanel`, `infowell`, `secretcoinclip` |
+
+*A `.tre` a cél-elemeket **puszta** néven írja; a fenti táblában ott
+minősítettük őket, ahol a leltárban a név egyértelmű. Az
+`activitycontainer` NEM az: `thumbui/`, `editpanel/` és
+`capturemoviepanelpopup/` alatt is van ilyen elem.*
 
 ### 1/b A Biztonsági mentés gombja a KIADOTT felületen nem látszik
 

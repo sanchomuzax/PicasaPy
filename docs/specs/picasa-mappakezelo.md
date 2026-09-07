@@ -60,6 +60,18 @@ root
 └── help    m_offsetRB
 ```
 
+A fa **szó szerinti**, ezért a csomópontok a `.tre` saját, puszta nevükön
+állnak. A leltárbeli TELJES nevük: `foldermgr/left_side`,
+`foldermgr/folder_list_label`, `foldermgr/foldertree`,
+`foldermgr/right_side`, `foldermgr/instructions_text`,
+`foldermgr/status_decrect`, `foldermgr/status_label`,
+`foldermgr/status_group`, `foldermgr/scan_once`,
+`foldermgr/scan_once_label`, `foldermgr/remove`,
+`foldermgr/remove_label`, `foldermgr/watch`, `foldermgr/watch_label`,
+`foldermgr/frexclude`, `foldermgr/frexclude_label`,
+`foldermgr/watched_label`, `foldermgr/watched_folders`,
+`foldermgr/ok`, `foldermgr/cancel`, `foldermgr/help`.
+
 A három rádiógomb és a `frexclude` `m_hit_childlabel`-t visel: **a
 feliratra kattintva is elsülnek**.
 
@@ -74,7 +86,7 @@ keretrendszer **magától** cseréli a két ikont, kód nélkül.
 | **`docbounds` / `rect: base`** | 0 | 0 | **550** | **450** | **550×450 — a KIINDULÓ ablakméret** |
 | `clip: left_side` | 10 | 10 | 285 | 396 | 275×386 |
 | `clip: right_side` | 285 | 10 | 545 | 396 | 260×386 |
-| `folder_list_label` | 18 | 10 | 236 | 24 | 218×14 |
+| `foldermgr/folder_list_label` | 18 | 10 | 236 | 24 | 218×14 |
 | `listbox: foldertree` | 10 | 35 | 285 | 396 | 275×361 |
 | `text(instructions_text)` | 302 | 10 | 534 | 83 | 232×73 |
 | `decrect: status_decrect` | 303 | 97 | 534 | 269 | **231×172** |
@@ -126,14 +138,14 @@ volna (mérve 2026-09-07: ez a szakasz a „HORGONY NÉLKÜL" listán állt).
 
 | elem | angol | magyar (a képernyőképről is) |
 |---|---|---|
-| `folder_list_label` | Folder List | **Mappalista** |
+| `foldermgr/folder_list_label` | Folder List | **Mappalista** |
 | `foldermgr/instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
-| `status_label` | For the current folder: | **Az aktuális mappa esetében:** |
-| `scan_once_label` | Scan Once | **Keresés egyszer** |
-| `remove_label` | Remove from Picasa | **Eltávolítás a Picasából** |
-| `watch_label` | Scan Always | **Keresés mindig** |
-| `frexclude_label` | Face Detection **On** / **Off** (`CFolderMgrDialog::hasfr` / `::nofr`) | **Arcfelismerés bekapcsolva / kikapcsolva** |
-| `watched_label` | Watched Folders | **Figyelt mappák** |
+| `foldermgr/status_label` | For the current folder: | **Az aktuális mappa esetében:** |
+| `foldermgr/scan_once_label` | Scan Once | **Keresés egyszer** |
+| `foldermgr/remove_label` | Remove from Picasa | **Eltávolítás a Picasából** |
+| `foldermgr/watch_label` | Scan Always | **Keresés mindig** |
+| `foldermgr/frexclude_label` | Face Detection **On** / **Off** (`CFolderMgrDialog::hasfr` / `::nofr`) | **Arcfelismerés bekapcsolva / kikapcsolva** |
+| `foldermgr/watched_label` | Watched Folders | **Figyelt mappák** |
 | `ok` / `cancel` / `help` | OK / Cancel / Help | **OK / Mégse / Súgó** |
 | ablakcím | `foldermgr::title` (`0x005ce590`) | **Mappakezelő** |
 

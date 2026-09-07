@@ -9,7 +9,7 @@ bejegyzés — **hivatalos magyar fordítással** léteznek.
 > ⭐ **2026-09-06 (#2529): a két lapozógomb feltárva.** Mindkettő a
 > `acquirepanel/contbuttonscontainer` gyereke, és a panel
 > **parancs-elosztójában** (`0x0051f070`, 1415 b) ül — az elosztó a
-> **puszta** nevet hasonlítja (`nextbutton`, `previousbutton`), ezért a
+> **puszta** nevet hasonlítja (`acquirepanel/nextbutton`, `acquirepanel/previousbutton`), ezért a
 > minősített névre keresés nem találja meg. A művelet az **importálási
 > előnézet** léptetése; adatot nem ír.
 >
@@ -21,23 +21,29 @@ bejegyzés — **hivatalos magyar fordítással** léteznek.
 
 | terület | elem | felirat |
 |---|---|---|
-| forrás | `import_from_label` | **Import from:** |
-| cél | `import_to_label` | **Import to:** |
-| — | `import_delimiter_label` | `/` |
-| mappanév | `subfolder_label` | **Folder title:** |
-| másodpéldányok | `excludedupesbutton` | súgó: *Exclude photos that are already imported into Picasa* |
-| — | `excludedupes_label` | **Exclude Duplicates** |
+| forrás | `acquirepanel/import_from_label` | **Import from:** |
+| cél | `acquirepanel/import_to_label` | **Import to:** |
+| — | `acquirepanel/import_delimiter_label` | `/` |
+| mappanév | `acquirepanel/subfolder_label` | **Folder title:** |
+| másodpéldányok | `acquirepanel/excludedupesbutton` | súgó: *Exclude photos that are already imported into Picasa* |
+| — | `acquirepanel/excludedupes_label` | **Exclude Duplicates** |
 | előnézet | `previewlabel` | **Preview** |
 | tálca | `importtraylabel` | **Import Tray** |
-| üres állapot | `nothing` | **No photos available** |
-| forgatás | `rotate1button` / `rotate2button` | *Rotate the Photo clockwise / counter-clockwise* |
+| üres állapot | `acquirepanel/nothing` | **No photos available** |
+| forgatás | `acquirepanel/rotate1button` / `acquirepanel/rotate2button` | *Rotate the Photo clockwise / counter-clockwise* |
 | lapozás | **`acquirepanel/previousbutton`** (`acquirepanel.tre:86`) / **`acquirepanel/nextbutton`** (`acquirepanel.tre:82`) | *View the previous / next Photo* |
-| csillag | `startoggle` | *Add/Remove Star* |
-| kizárás | `excludetoggle` | *Exclude/Include* |
-| **másolás után** | `delete_label` | **After Copying:** |
-| megosztás | `share_with_label` · `selected_groups_label` (**Nobody**) · `add_groups_button` · `upload_label` | *Add people to share albums with* |
-| online | `sync_options_button` | felirat **Options**, súgó *Online options* |
-| gombok | `anowbutton` (**Import All**) · `import_selected` (**Import Selected**) · `acancelbutton` (**Cancel**) | |
+| csillag | `acquirepanel/startoggle` | *Add/Remove Star* |
+| kizárás | `acquirepanel/excludetoggle` | *Exclude/Include* |
+| **másolás után** | `acquirepanel/delete_label` | **After Copying:** |
+| megosztás | `acquirepanel/share_with_label` · `acquirepanel/selected_groups_label` (**Nobody**) · `acquirepanel/add_groups_button` · `acquirepanel/upload_label` | *Add people to share albums with* |
+| online | `acquirepanel/sync_options_button` | felirat **Options**, súgó *Online options* |
+| gombok | `acquirepanel/anowbutton` (**Import All**) · `acquirepanel/import_selected` (**Import Selected**) · `acquirepanel/acancelbutton` (**Cancel**) | |
+
+⚠️ **Két név a táblában NEM leltárbeli elem:** a `previewlabel` és az
+`importtraylabel` a `acquirepanel_text.tre` felirata, és a leltárban nincs
+`acquirepanel/` alatt ilyen elem (`previewlabel` csak `printpanel/` alatt
+van — az a NYOMTATÁS panel „Preview" felirata, nem ez). Ezért maradtak
+minősítés nélkül.
 
 ## A tipp-sor NÉGY állapota
 
