@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A kollázs- és filmmentés többé nem írja át a mappa Picasa-adatait**
+  (#791): amikor a program a kimeneti mappát „projekt" jelzéssel látta el,
+  a mappa `.picasa.ini` fájlját teljes egészében újraírta. Ettől a valódi
+  Picasával közösen használt mappákban minden sor megváltozott (a sorvégek
+  átalakultak), a régi, nem Unicode fájlokban pedig az ékezetes feliratok
+  visszafordíthatatlanul kérdőjelekké romlottak. Mostantól a program csak
+  a hiányzó jelzést fűzi hozzá, minden más bájt érintetlen marad. Ellenőrizve
+  a 859 fájlos valódi gyűjteményünkön: a képekhez tartozó minden ismeretlen
+  bejegyzés (webalbum-azonosítók, hely, eredeti-ujjlenyomat, mentési bélyeg)
+  változatlanul megmarad egy mentés után is.
+
 ## [0.8.333] – 2026-09-07
 
 ### Gyorsabb
@@ -49,16 +62,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   export 14 másodpercről 70-re nőne. A mag gyorsítása külön feladat (#2669);
   amíg nincs meg, a gyorsaságot választjuk ott, ahol a különbség a kész
   képen alig látszik.
-- **A kollázs- és filmmentés többé nem írja át a mappa Picasa-adatait**
-  (#791): amikor a program a kimeneti mappát „projekt" jelzéssel látta el,
-  a mappa `.picasa.ini` fájlját teljes egészében újraírta. Ettől a valódi
-  Picasával közösen használt mappákban minden sor megváltozott (a sorvégek
-  átalakultak), a régi, nem Unicode fájlokban pedig az ékezetes feliratok
-  visszafordíthatatlanul kérdőjelekké romlottak. Mostantól a program csak
-  a hiányzó jelzést fűzi hozzá, minden más bájt érintetlen marad. Ellenőrizve
-  a 859 fájlos valódi gyűjteményünkön: a képekhez tartozó minden ismeretlen
-  bejegyzés (webalbum-azonosítók, hely, eredeti-ujjlenyomat, mentési bélyeg)
-  változatlanul megmarad egy mentés után is.
 - **A csúszka fogantyúján megjelent a vésett középvonal** (#2641): az
   eredeti Picasa fogantyújának közepén egy sötét és egy világos, egy-egy
   képpont széles vonal fut — nálunk eddig nem volt. A helye és a színe a
