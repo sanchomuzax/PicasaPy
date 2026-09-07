@@ -404,10 +404,81 @@ hosszát és `0x00986120`-szal levágja a sztring elejéről. Tehát a keresett
 fájl `runtime\picnik_effects\<név a Picnik nélkül>Effect.mxml` —
 `PicnikGrain` → `GrainEffect.mxml`.
 
-⚠️ **Ami emiatt NYITVA marad:** ha ezen az úton `.mxml` nélkül semmi nem
-fut, akkor a `PicnikGrain`/`PicnikTint` mért lefutása (4.1) **másik
-végrehajtási úton** megy. Ennek felderítése külön jegy — ide nem írunk
-találgatást.
+#### 4.1/e A MÁSIK út: az `<effect>` blokk a `filterdesc.xml`-ben (#2636)
+
+A #2599 nyitva hagyta, hogy `.mxml` nélkül MI futtatja a `PicnikGrain`-t és
+a `PicnikTint`-et. A válasz a lehető legegyszerűbb: **nincs másik
+mechanizmus — az effekt leírása MAGÁBAN a `filterdesc.xml`-ben áll,
+inline.**
+
+Számolva a szállított
+`research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml`-en:
+
+| tétel | darab |
+|---|---|
+| `<filter>` összesen | **84** |
+| ebből inline `<effect>` blokkal | **32** |
+| `Picnik` előtagú, `<effect>` blokk NÉLKÜL | **0** |
+
+⇒ pontosan a 32 Glimmer-effekt kapja az `<effect>`-et, és **mind a három
+`Picnik*` szűrő köztük van** — a `PicnikFocalPixelate` is.
+
+A `PicnikGrain` teljes leírása például (a fájlból, változatlanul):
+
+```xml
+<effect>
+  <cnt:EffectCanvas>
+    <Variable id="grain.val" val="{_radioLighten.selected?2.55*_sldrGrain.value:255-2.55*_sldrGrain.value}"/>
+    <HSliderPlus minimum="0" maximum="50" value="10" id="_sldrGrain"/>
+    <mx:CheckBox id="_radioLighten" groupName="_rGroup"/>
+    <imageOperations:NestedImageOperation id="_op" BlendAlpha="1" BlendMode="{...}" maskWithSourceAlpha="true">
+      <imageOperations:children>
+        <imageOperations:NoiseImageOperation randomSeed="1" low="{...}" high="{...}" channelOptions="7" grayScale="true"/>
+      </imageOperations:children>
+    </imageOperations:NestedImageOperation>
+  </cnt:EffectCanvas>
+</effect>
+```
+
+⇒ **A `runtime\picnik_effects\<név>Effect.mxml` fájl nem forrás, hanem
+FELÜLÍRÁS.** A `<filter>`-olvasó (#2599) előbb megpróbálja megnyitni; ha
+megvan, azt dolgozza fel, ha nincs, marad az inline blokk. A szállított
+telepítésben a könyvtár nem létezik, tehát **mind a 32 effekt az inline
+leírásból fut**.
+
+**A végrehajtó natívan bent van.** Az `.mxml` nyelvjárás minden eleméhez
+tartozik RTTI-vel azonosított C++ osztály a `Picasa3.exe`-ben — nem
+értelmezett szkript, hanem osztály-gyár:
+
+* **31 műveleti osztály**, `glimmer::…ImageOperation` alakban: `Blend`,
+  `Blur`, `Rotate`, `Shader`, `QuantizePalette`, `ColorMatrix`,
+  `SimpleColorMatrix`, `MultiplyColorMatrix`, `EdgeDetectionSobel`,
+  `EdgeDetectionB`, `PaletteMap`, `GradientMap`, `HSVGradientMap`, `Glow`,
+  `AdjustCurves`, `DropShadow`, `Nested`, `Pixelate`, `Tint`, `Crop`, `BW`,
+  `Border`, `SimpleBorder`, `Noise`, `GetVar`, `Sharpen`, `Exposure`,
+  `RadialBlur`, `TwoTone`, `AutoFix`, `Resize`, `IR`, `LocalContrast`
+  (`0x00d4866c`…`0x00d48e18`);
+* **13 utasítás**: `Op`, `NamedVar`, `ReExecuting`, `ClearVar`, `GetVar`,
+  `Dupe`, `SetVar`, `Blend`, `Apply`, `PartialMask`, `MaskWithSourceAlpha`,
+  `Mask`, `Pop` (`0x00d44ac0`…`0x00d48fc8`);
+* maszkok és vezérlők: `ImageMask`, `TiledImageMask`,
+  `ShapeGradientImageMask`, `CircularGradientImageMask`,
+  `PaintMaskPlusImageMask`, `Slider`, `StaticRangeSlider`,
+  `DynamicRangeSlider`, `BrushSizeSlider`, `Button`, `RadioButton`,
+  `EraserButton`, `ColorPicker`, `Control`, `Parameter`, `Brush`,
+  `CircularBrush`.
+
+### Amit ez a #1142 / #2456 kérdésére mond
+
+**Az út GENERIKUS**, és ezen az úton **semmi nem különbözteti meg** a
+`PicnikFocalPixelate`-et: neki is van inline `<effect>`-je
+(`filterdesc.xml`, a `CircularOverlayEffectCanvas`-szal és a
+`CircularGradientImageMask` + kétlépcsős `Resize` gráffal), ugyanúgy, mint
+a mérten LEFUTÓ `PicnikGrain`-nek és `PicnikTint`-nek.
+
+⇒ A tétlensége **nem a betöltési útból** ered. A #1142
+`MEASURED_NOT_RUNNING` verdiktje ezzel se nem igazolódik, se nem dől meg;
+a #2456 helyesbítése (a hetes alakkal még nem mértünk) érvényben marad.
 
 ### 4.2 Vezérlők effektenként (min–max–alap)
 
