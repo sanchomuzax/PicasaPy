@@ -344,14 +344,70 @@ legerősebb jelöltje annak, hogy a lánc-úton miért maradhatna tétlen — de
 `0x0053fe30`) és a `%s%sEffect.mxml` formátumsztringre (`0x00cd1788`) — mindkettőt a
 `<filter>`-olvasó `0x008ff550` használja, a `Picnik` sztringgel (`0x00cd1780`)
 egy kódblokkban: `0x008ff8c1` (`Picnik`) és `0x008ff907` (a formátumsztring)
-70 bájtra egymástól. *(Hogy a `0x9870d0` hívás valóban előtagot vág-e le, itt
-nincs bizonyítva; a névalak-szabályt a `picasa-effekt-feliratok.md` rögzíti,
-`erős` bizalmi fokkal.)* — **a szállított telepítésben ez a könyvtár nem
+70 bájtra egymástól — **a szállított telepítésben ez a könyvtár nem
 létezik**
 (`research/copy_Picasa_3_7/Picasa3/runtime/`: csak `geotag/` és `slingshot/`).
 A `PicnikGrain` és a `PicnikTint` viszont MÉRTEN lefut ⇒ a hiányzó
 `picnik_effects/` **nem** magyarázza a tétlenséget, és a `Picnik` előtagú
 nevet a lánc felismeri.
+
+#### 4.1/d Az `.mxml`-ág teljesen kimérve (#2599) — **tartalék-ág NINCS**
+
+A `0x008ff8bf`–`0x008ff9d9` blokk pontos működése, utasításról utasításra
+(`eszkozok/pe_dis.py`; a `Picasa3.exe` 3.9.141.259):
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| előtag levágása | `0x008ff8c1` → `0x009870d0` | a szűrőnévről lehúzza a `Picnik` előtagot |
+| név összeállítása | `0x008ff907` → `0x0040eab0` | `"%s%sEffect.mxml" % (könyvtár, csonkolt név)` |
+| fájlnyitás | `0x008ff927` → `0x00991490` | a `yt` I/O megnyitja a fájlt |
+| elágazás | `0x008ff92f` `test eax,eax` / `jne 0x008ff9d9` | **hibakód ≠ 0 → takarít és kilép** |
+| feldolgozó | `0x008ff937`–`0x008ff989` | 0x2c bájtos objektum + `0x00cefc14` vtábla |
+
+**A `0x00991490` VISSZATÉRÉSI ÉRTÉKE HIBAKÓD, nem mutató — 0 a siker.**
+Bizonyítékok, egymástól függetlenül:
+
+1. hibaágon `GetLastError()` (`0x00c4025c`) → `0x0099cd30`, ami egy
+   **ugrótáblával** kis egészre képezi le a Win32 hibakódot
+   (`2`, `0x0a`…`0x0e`) — nem foglal, nem ad vissza mutatót;
+2. `0x0099cde0(kód, útvonal, ".\yt\ytIO.cpp", 417)` a naplózó: csak akkor
+   ír, ha `kód != 0 && kód != 0x0a` — a nullát kifejezetten sikerként kezeli;
+3. a `0x00991490` **mind a négy hívója** ugyanígy olvassa: `0x006376dd`
+   (`jne` → átugorja a munkát), `0x00971698` (átadja tovább), és a
+   `0x0099166e`, amely `jne` után **felszabadítja az erőforrást és
+   visszaadja a kódot** — ez a klasszikus státusz-propagálás.
+
+⇒ **A `0x00cefc14`-es objektum az `.mxml` SIKERES megnyitásakor épül fel,
+nem a hiányakor.** A jegy (#2599) eredeti olvasata — „ha a keresés nem
+talál, van tartalék-ág" — **fordítva olvasta az elágazást**. Ezen az úton
+`.mxml` nélkül **semmi nem fut**.
+
+**A `0x00991490` maga is kimérve:** a `0x00d69520` rekeszen át hív, ami egy
+NT/9x kapcsoló (`0x00c331c0`): `GetVersion` (`0x00c40450`) < `0x80000000` →
+`0x009afe60` (UTF-8 → UTF-16 `MultiByteToWideChar` CP 65001, majd
+`CreateFileW`), különben a `KERNEL32!CreateFileA` IAT-rekesz (`0x00c40424`).
+A paraméterek: `GENERIC_READ` · `FILE_SHARE_READ` · `OPEN_EXISTING` ·
+`FILE_ATTRIBUTE_NORMAL`. ⇒ **valódi fájlrendszer-nyitás**, nem
+erőforrás-tábla és nem regisztrált gyár.
+
+**A `0x00cefc14` osztálya (RTTI-vel feloldva):** teljes objektum-lokátor
+`0x00d1b6e4`, típusleíró `0x00d485e8` =
+`.?AVEffectParserHandler@glimmer@@` → **`glimmer::EffectParserHandler`**,
+két ősosztállyal: önmaga és `.?AVHandler@EffectParser@glimmer@@`
+(`glimmer::EffectParser::Handler`). Vagyis az `.mxml` **SAX-stílusú
+feldolgozójának eseménykezelője** — pontosan az, amire egy megnyitott
+XML-fájlhoz szükség van.
+
+**Az előtag-levágás mostantól MÉRT, nem „erős":** a `0x009870d0` előbb
+`0x00987030`-cal ellenőrzi az előtagot, majd `strlen`-nel kiszámolja a
+hosszát és `0x00986120`-szal levágja a sztring elejéről. Tehát a keresett
+fájl `runtime\picnik_effects\<név a Picnik nélkül>Effect.mxml` —
+`PicnikGrain` → `GrainEffect.mxml`.
+
+⚠️ **Ami emiatt NYITVA marad:** ha ezen az úton `.mxml` nélkül semmi nem
+fut, akkor a `PicnikGrain`/`PicnikTint` mért lefutása (4.1) **másik
+végrehajtási úton** megy. Ennek felderítése külön jegy — ide nem írunk
+találgatást.
 
 ### 4.2 Vezérlők effektenként (min–max–alap)
 
