@@ -20,6 +20,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   bejegyzés (webalbum-azonosítók, hely, eredeti-ujjlenyomat, mentési bélyeg)
   változatlanul megmarad egy mentés után is.
 
+- **A „Fokozatos árnyalás" (Graduated Tint) effekt most már úgy néz ki, mint
+  az eredeti Picasában** (#874). Eddig az átmenet mindig felülről lefelé
+  futott, és a képet a választott szín FELÉ világosította; valójában
+  megbillenthető (a fogantyú vízszintes helyzete ±15 fokkal dönti meg), és
+  a színnel nem világosít, hanem árnyékol. Az eltérés az eredeti Picasa
+  exportjától a három próbabeállításon **22,3 → 0,62** és **124,2 → 0,47**
+  (a harmadikon a szűrő tétlen); ez már a JPEG-tömörítés saját zaja alatt
+  van, vagyis a kép gyakorlatilag képpontra egyezik az eredetivel.
+
 ## [0.8.333] – 2026-09-07
 
 ### Gyorsabb
