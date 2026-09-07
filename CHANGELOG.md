@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.320] – 2026-09-07
+
+### Javítva
+
+- **Az ablak a mentett méretére áll vissza induláskor** (#2586). Ha a
+  korábban elmentett ablakméret kisebb volt annál, amit a program legalább
+  igényel, a rendszer felülbírálta — az ablak más méretben nyílt, és
+  Windowson figyelmeztetés is ment a konzolra minden indításkor. Ez nem
+  egyszeri eset volt: a legkisebb méret a program felületéből adódik, és
+  változik (ma éjjel épp csökkent a #1504-gyel).
+
 ## [0.8.319] – 2026-09-07
 
 ### Javítva
