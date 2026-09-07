@@ -1108,6 +1108,177 @@ független megerősítés maradna. → **#1412** (`ready` + `bináris-kutatható
 **feltételes** a felirat-magyarázat; **elvetve** a „beégetett konstans"
 hipotézis.*
 
+### 17.15 ⭐ A (b) ág NAGY RÉSZE LEZÁRVA — a pásztázóink VAKFOLTJA mérve (2026-09-07)
+
+A 17.14 két lehetőséget hagyott: **(a)** a `scale` a fájlból öröklődik,
+**(b)** van egy író, amit az eddigi szűrők nem látnak. Ez a kör a **(b)**
+ág egy konkrét, addig ki nem mondott vakfoltját mérte ki és zárta le.
+
+#### A vakfolt: float ÉRTÉK `mov`-val is tárolható
+
+A 17.7 szűrője **csak `fstp`/`fst`** utasításra nézett, és ebből vonta le,
+hogy „float-ot csak ez a hat ír". Ez a szűrő **hiányos**: az MSVC a
+float-ot rendszeresen egész regiszteren át teszi a helyére —
+
+```
+0x00885205  fstp dword ptr [esp+0x38]      ; float a verembe
+0x00885209  mov  ecx, dword ptr [esp+0x38] ; egész regiszterbe
+0x0088520f  mov  dword ptr [eax+esi+0x18], ecx   ; ÍRÁS mov-val
+```
+
+⚠️ **A bizonyíték magában a 17.7 által idézett `FUN_00885060`-ban van:**
+ez a függvény az `x`/`y`/`w`/`h`-t végig **`mov`**-val írja, és csak a
+`scale`-t `fstp`-vel. Egy `fstp`-re szűrő pásztázó tehát ugyanennek a
+függvénynek a négy mezőjét sem látta volna.
+
+#### Pásztázás 1 — TÖMB-alakú (`bázis+index+0x2c`) írás, TELJES bináris
+
+Minden alakot beleértve (`mov` és `fstp`), `esp`/`ebp` bázis kizárva.
+**Pozitív kontroll:** a `FUN_00885060` `mov [eax+esi+0x18], ecx` írása
+(`0x0088520f`) a találatok közt — megvan.
+
+**Az egész programban 8 ilyen írás van:**
+
+| cím | függvény | alak | mi ez |
+|---|---|---|---|
+| `0x0088522d` | `FUN_00885060` | `fstp` | **`regulargrid` elrendező — `fld1` ⇒ 1,0** |
+| `0x008885bc` | `FUN_00888210` | `fstp` | **`contactsheet` elrendező — `fld1` ⇒ 1,0** |
+| `0x009007e6` | `FUN_00900540` | `fstp` | ⛔ szűrő-csúszka felülete (`filter_%s_label%d`, `_sldrRadius`) |
+| `0x006f464c` | `FUN_006f4210` | `mov` | ⛔ bázisa `[ebx+0xa8]`, nincs 56-os lépés |
+| `0x00aab81e` | `FUN_00aab710` | `mov` | ⛔ állandó `0x2cc`-t ír, foglaló-rekesz |
+| `0x00afcc23` | `FUN_00afcbc0` | `mov` | ⛔ lépésköz **0x30** (`add eax, 0x30`), nem 56 |
+| `0x00afce3e` | `FUN_00afcd50` | `mov` | ⛔ `call 0xafc570`-en átvezetett érték, bázis `[ebx+8]` |
+| `0x00c125e2` | `FUN_00c12477` | `mov` | ⛔ 56-os lépés (`imul esi,esi,0x38`), de a szomszédja (`+0x28`) egy `call 0xc165e0` fogantyúja — futásidejű tábla, nem csomópont |
+
+⇒ **Tömb-alakban a csomópont `scale`-jét a két téma-elrendezőn kívül
+senki nem írja az egész programban** — és mindkettő `fld1`.
+
+#### Pásztázás 2 — MUTATÓS `mov [reg+0x2c], <float>` írás, TELJES `.text`
+
+Az „float egész regiszteren át" idióma nyomon követve (`fstp [esp+N]` →
+`mov r,[esp+N]` → `mov [obj+0x2c], r`). **Pozitív kontroll:** ugyanaz a
+`0x0088520f` — megvan. **Kilenc találat, ebből négy a kollázs-sávban:**
+
+| cím | eredmény |
+|---|---|
+| `0x00881b9a` (`FUN_00881900`) | ⛔ `[esi+0x2c]` **heap-mutató**: `test` → `push` → `call 0xc07738` (felszabadítás) → új mutató |
+| `0x008824a0` (`FUN_00882100`) | ⛔ ugyanaz az idióma |
+| `0x00889351`, `0x00889490` (`FUN_00888ec0`) | ⛔ ugyanaz az idióma, kétszer |
+| `0x00892a58` (`FUN_008921a0`) | ⛔ `+0x10`-zel eltolt bázis (a 178. kör kikötése) ⇒ valójában `+0x3c` |
+
+⇒ **A `mov`-os úton sincs float-író a csomópont `+0x2c`-jére.** A négy
+kollázs-sávbeli találat mind ugyanaz a `free`-és-újraköt idióma, ahol a
+`+0x2c` egy **tárolómutató**, nem méretarány.
+
+#### Pásztázás 3 — a 313,0 mint LEBEGŐPONTOS literál, a TELJES fájlban
+
+A 17.4 a **`313` egész immediate** négy alakját nézte a `.text`-ben. Ez a
+kör a **lebegőpontos bitmintát** kereste a **teljes fájlban**:
+
+| alak | bitminta | találat |
+|---|---|---|
+| `float32` 313,0 | `00 80 9c 43` | **0** |
+| `double` 313,0 | `00 00 00 00 00 90 73 40` | **0** |
+
+⇒ **A 313 semmilyen alakban nincs beégetve** — sem egészként (17.4), sem
+lebegőpontosként (itt). A „konstans-tábla" hipotézis ezzel véglegesen
+elvetve.
+
+#### Pásztázás 4 — a `"scale"` sztring hivatkozói
+
+A `string_xrefs` szerint a `0x00cbf80c` (`"scale"`) sztringre az **egész
+programban pontosan két** függvény hivatkozik: a **beolvasó**
+(`0x00832830`) és a **kiíró** (`0x008347b0`). Harmadik hely, amely ezt a
+mezőt névvel kezelné, **nincs**.
+
+#### Amit ez a négy pásztázás EGYÜTT jelent
+
+A 17.14 **(b)** ága — „van egy nem látott író" — a **tömb-alakú** és a
+**mutatós `mov`-os** utakon **lezárva, negatívval**. Ami a (b)-ből
+megmarad: a 17.10/2. pontban megnevezett **`lea r,[r+0x2c]`** út (10 hely
+a sávban), ahol a mutató máshova kerül és ott írják.
+
+⇒ Az **(a)** ág — *a `scale` a fájlból öröklődik* — most az egyetlen olyan
+magyarázat, amelyet a bináris nem cáfol. **A döntő mérés változatlanul
+egy FRISSEN létrehozott kollázs `.cxf`-je** (#1412 kérése a tulajdonoshoz).
+
+*Bizonyítottsági fok: **megerősített** mind a négy pásztázás (mindegyik
+pozitív kontrollal, a kizárások tételesen, címmel); **nyitva** a
+`lea`-alapú út.*
+
+### 17.16 ⭐ A `.cxf` BEOLVASÓ TELJES mezőtérképe és ALAPÉRTELMEZÉSEI
+
+A 17.8 a beolvasóból csak a `theta`-t és a `scale`-t nevezte meg. Az
+elemző (`FUN_00832830`, 3555 b, `0x00832830`–`0x00833613`) teljes
+attribútum→mező leképezése, utasításszinten kiolvasva:
+
+**Dokumentum-szint**
+
+| attribútum | tárolás | cím |
+|---|---|---|
+| `version` | `[edi]` (int) | `0x00832949` |
+| `format` | négy egymást követő int (`+0`, `+4`, `+8`, `+0xc`) — a lap téglalapja | `0x00832a26`–`0x00832a2e` |
+| `orientation="portrait"` | `[+0x20] = 1` | `0x00832af2` |
+| `orientation="landscape"` | `[+0x20] = 0` | `0x00832b3f`, `0x00832b5b` |
+| `albumID` | `[+0x30]` | `0x00832eb2` |
+| `background type="image"` | `[+0x24] = 1` | `0x0083341b`, `0x0083342e` |
+| `background color` | `[+0x28]`, **alapérték `0xFF000000`** | `0x008334bd` |
+| `spacing value` | `[+0x40]` (float) | `0x008335f4` |
+
+Névvel felismert, de itt nem tárolt attribútumok: `collage`, `theme`,
+`shadows`, `captions`, `albumUID`, `node`, `type`, `color`, `value`.
+
+**Csomópont-szint (a staging-burkolóban, `ebx`)**
+
+| attribútum | mező | cím |
+|---|---|---|
+| `x` | `[ebx+0x54]` | `0x00833068`, `0x0083307b` |
+| `y` | `[ebx+0x58]` | `0x008330de`, `0x008330f1` |
+| `w` | `[ebx+0x5c]` | `0x00833154`, `0x00833167` |
+| `h` | `[ebx+0x60]` | `0x008331ca`, `0x008331dd` |
+| `theta` | `[ebx+0x64]` | `0x00833240`, `0x00833250` |
+| `scale` | `[ebx+0x68]` | `0x008332b7` |
+
+**⭐ Az ALAPÉRTELMEZÉSEK — a `0x00832f88`–`0x00832fc8` blokk**, amely
+minden `<node>` elején lefut, MIELŐTT az attribútumokat feldolgozná:
+
+| mező | alapérték | bizonyíték |
+|---|---|---|
+| `x`, `y`, `w`, `h` | a `0x00c7dafc`-en álló `float` | `0x00832f88 fld dword ptr [0xc7dafc]` |
+| `theta` | **0,0** | `0x00832fa2 fldz` → `0x00832fba fstp [ebx+0x64]` |
+| **`scale`** | **1,0** | `0x00832fbd `**`fld1`** → `0x00832fc2 fstp [ebx+0x68]` |
+
+Ezt követi a `[ebx+0x40]`, `[ebx+0x44]`, `[ebx+0x48]` **nullázása**
+(`0x00832fd0`, `0x00832fde`, `0x00832ff1`) — három mutató, azaz egy
+tárolókonténer a burkolón belül.
+
+⇒ **Ha egy `<node>`-ból hiányzik a `scale`, az érték `1,0`** — nem 0 és
+nem öröklődik az előző csomópontból. Ugyanígy a `theta` alapértéke `0,0`.
+Ez a PicasaPy `.cxf`-olvasójára **közvetlenül átvehető szabály**.
+
+#### A csomópont-rekord mérete: **56 bájt (0x38)** — a kiíró oldaláról mérve
+
+A `.cxf`-író az elem-eltolást így számolja (`0x00834c30`–`0x00834c3f`):
+`lea eax,[ecx*8]` → `sub eax,ecx` (=7·ecx) → háromszor `add eax,eax`
+(=56·ecx). Ugyanez `imul`-lal a `push_back`-ben (`0x00833a92`, `mul 0x38`
+— 17.13). **Két független hely, ugyanaz a szám.**
+
+#### ⚠️ Egy BELSŐ ELLENTMONDÁS a lapon, feloldatlanul
+
+A **17.11** azt mondja, hogy a `[ebx+0x48]` a csomópont **bájteltolása**,
+a tömb bázisa pedig a 2. argumentum. A `0x00834c2d`–`0x00834c3f` blokk
+viszont egyetlen alapblokkon belül úgy néz ki, hogy `edx = [ebx+0x48]` a
+**bázis** és `eax = i·56` az index (más bázistag nincs az utasításban).
+
+**Nem döntöttem el**, mert a hozzá szükséges verem-egyenleg
+(`0x00834c56` → `0x008350ae`) **elágazásokon át** vezet, és a lineáris
+`esp`-összegzés ilyenkor **érvénytelen** (nálam −116-ot adott, ami
+nyilvánvalóan rossz). **Amit el kell dönteni és mivel:** a `FUN_008347b0`
+veremkerete egy **dekompilátoros** körrel (`picasa-x86-research`) —
+a Ghidra útvonalérzékenyen adja meg, melyik lokális melyik.
+Ez a K1 következő konkrét lépése a munkasorban.
+
+
 ### 17.15 ⛔ A DRÁGA ÚT VÉGIGJÁRVA — és a belőle vont NEGATÍV MEGDŐLT (2026-09-06, #1412)
 
 *A jegy maga nevezte meg ezt az utat: „marad a mutatós írási utak
