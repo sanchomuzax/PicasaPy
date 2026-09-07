@@ -3282,3 +3282,106 @@ nem pásztázás, hanem egy megnevezett hívási lánc kiolvasása.
 **Eszközök** (privát `picasapy-agent`): `eszkozok/binaris/konst_xref.py`
 (konstans-hivatkozás kereső), `eszkozok/binaris/h_to_scale.py`,
 `eszkozok/binaris/scale_keplet.py`.
+
+## 32. K1 — az Indexkép-elrendezés kimenetét MINDKÉT hívó ELDOBJA (2026-09-07, #1412)
+
+*184. kutatói kör. A 31.6 megnevezett lépését viszi: a `FUN_00888210`
+hívójának végigolvasása. A 28. szakasz EGY hívási helyre mutatta ki, hogy
+az elrendező ideiglenes vektorba ír — ez a kör **mindkét** hívóra kimutatja,
+és az elem-méretet a PUSZTÍTÓBÓL is igazolja.*
+
+### 32.1 A téma slot0 gyökere (`FUN_00887ad0`, 242 b) — PRÓBA-út
+
+```
+[esi+4] = param1 (a panel) · [esi+8] = param2 (a dokumentum) · [esi+0xc] = jelzőbájt
+[esi+0x20] = szövegszín: ha ([param2+0x160] & 0xffffff) < 0x7f7f7f  →  0xffffffff,
+             különben 0xff4a4a4a          ; 0x00887b0b–0x00887b23
+&vec = &[esp+…], két dwordje NULLÁZVA     ; 0x00887b2d / 0x00887b35
+call 0x887e50 (gyűjtés + rács)            ; 0x00887b3d
+  ha nem nulla  →  vec pusztítása, hibakód vissza
+  ha nulla:
+     darab = vec.méret >> 1               ; 0x00887b67
+     a DOKUMENTUM virtuális metódusa:  [[esi+8]] + 0x28, argumentum: darab
+                                          ; 0x00887b62–0x00887b6a
+     a lap téglalapja: [param1+0x188..0x194] a veremre   ; 0x00887b6f–0x00887b90
+     call 0x888210 (elrendezés)           ; 0x00887b99
+     call 0x62d010 (a vec PUSZTÍTÁSA)     ; 0x00887ba4
+```
+
+⇒ **A geometria itt nem hagyja el a függvényt.** A visszatérési érték
+csak a siker/hiba kód.
+
+### 32.2 A MÁSIK hívó (`FUN_00887bd0`, 639 b) — és a menete
+
+A `FUN_00888210`-nek az egész binárisban **pontosan két** hivatkozója van
+(`xrefs`): a `0x00887ad0` és a `0x00887bd0`. A második menete:
+
+| cím | hívás | mit tesz |
+|---|---|---|
+| `0x00887d5a` | `0x008342b0` (620 b) | egy nagy, előre nullázott szerkezet felépítése |
+| `0x00887d6c` | `0x0087dcd0` (3206 b) | a téma-beállítások beolvasása (`collage::theme`, `noborder`, `picturepile`, `collage::shadows`, `collage::showcaptions`) |
+| `0x00887d80` | `0x00880580` (1889 b) | `avgcolor` / `noborder` — a paraméterblokk kiegészítése |
+| `0x00887d89` | `0x00831bc0` (295 b) | a panel gyerekeinek osztályozása (`dynamic_cast` + jelzőbájtok) — **nem** csomópont-író |
+| `0x00887da1` | `0x00887e50` | gyűjtés + rács a **helyi** vektorba (`&[esp+0x18]`) |
+| `0x00887dfa` | **`0x00888210`** | elrendezés **ugyanabba a helyi vektorba** (`sub esp,0x10` után `[esp+0x28]` = ugyanaz) |
+| `0x00887e0b` | **`0x0062d010`** | **a vektor PUSZTÍTÁSA** |
+| `0x00887e3f` | `0x00888dd0` (136 b) | újrarajzolás-jelzés |
+
+### 32.3 ⭐ A PUSZTÍTÓ igazolja az elem-méretet: 56 bájt
+
+`FUN_0062d010` (46 b) — a `[esi]`-ben álló tömböt bontja le:
+
+```
+0x0062d016  mov eax,[ecx-4]          ; elemszám a fejlécből
+0x0062d01d  push 0x40e980            ; ELEM-pusztító
+0x0062d022  push 0x38                ; ELEM-MÉRET = 56 bájt
+0x0062d024  call 0x401110            ; tömb-lebontó
+0x0062d02a  call 0xc07738            ; free
+0x0062d037  mov dword ptr [esi], 0
+```
+
+⇒ **a helyi vektor a kollázs-csomópontokat ÉRTÉK szerint tartja** (56 bájt,
+26.1), és a kör végén **felszabadul**. A 28. szakasz megállapítása ezzel
+**mindkét** hívási helyre igazolt, és nem a hívási minta, hanem a
+**pusztító paraméterei** bizonyítják.
+
+### 32.4 A `FUN_00888dd0` (136 b) — újrarajzolás, nem író
+
+Végigolvasva: a `[param+4]` objektum `[+0x198]` gyerektömbjén iterál
+(`darab = [+0x19c] >> 1`), `dynamic_cast`-tal szűr (`0xc07db2`,
+`0xd3c9c0` típusleíró), és a találatokra `or dword ptr [edi+8], 7`
+(piszkos-bitek), illetve `byte [eax+0x20] = 0`. **Csomópont-mezőt nem ír.**
+
+### 32.5 ⛔ AZ ELLENTMONDÁS ÉLESEBB LETT — és most már számszerű
+
+| állítás | honnan |
+|---|---|
+| a `.cxf` geometriája a `FUN_00888210` aritmetikájából jön | 18.4: **62/62** jóslat nulla eltéréssel |
+| a `FUN_00888210` kimenetét MINDKÉT hívója eldobja | **32.1–32.3** |
+| ugyanezt az aritmetikát a programban más nem tudja elvégezni | 31.1: a `0,88`/`0,79` konstansnak 2-2, a `0,08`-nak 1 hivatkozója van |
+
+A három együtt nem állhat fenn. **A leggyengébb láncszem nem nevezhető
+meg találgatás nélkül**, ezért a kör nem is nevezi meg — de a
+maradék lehetőségek listája most már rövid, és mindegyik gépi úton
+eldönthető:
+
+1. **a dokumentum virtuális metódusa** (`[vtábla+0x28]`, `0x00887b6a`),
+   amit a darabszámmal hívnak az elrendezés ELŐTT — ha ez nem
+   „méret beállítása", hanem maga építi a csomópontokat, akkor a
+   geometria útja máshol fut;
+2. **a `FUN_00887e50` írásai a dokumentumba** — a 19.1 csak a
+   `[this+0x10]`/`[+0x14]`/`[+0x18]` rács-mezőket mérte ki;
+3. **a `FUN_008342b0`** (620 b) — a menet első hívása, a csomópont
+   értékadó operátorának egyik hívója (17.13 listája).
+
+*Bizonyítottsági fok: **megerősített** a 32.1–32.4 minden állítása
+(utasításszinten, címekkel); az ellentmondás **kimondva**, a feloldása
+**NINCS MEG**.*
+
+### 32.6 A KÖVETKEZŐ lépés, megnevezve
+
+A 32.5 három tétele, ebben a sorrendben — mindhárom olvasás, nem
+pásztázás. Az (1) a legolcsóbb: a `[esi+8]` objektum vtáblájának
+azonosítása az RTTI-táblából, majd a `+0x28`-as bejegyzés kiolvasása.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
