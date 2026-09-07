@@ -12,6 +12,18 @@ SAMPLE = (
     "star=yes\n"
 )
 
+#: #2526: az eredeti PONTOSAN három tokent fogad el; a kettes és a négyes
+#: alakot eldobja (*„Cannot restore .ini entry for contact, %llx,
+#: unexpected number of tokens in string."*, `0x00587110`). A spec
+#: levezetése: `docs/specs/picasa-menu-parancsok-viselkedes.md` 24.5.
+ROSSZ_TOKENSZAM = (
+    "[Contacts2]\n"
+    "1111111111111111=Csak Nev\n"
+    "2222222222222222=Ket Token;csak@example.com\n"
+    "3333333333333333=Negy Token;a@example.com;gaia;plusz\n"
+    "4444444444444444=Jo Harom;jo@example.com;gaia-1\n"
+)
+
 
 class TestContactsOf:
     def test_parses_entries(self):
@@ -20,10 +32,16 @@ class TestContactsOf:
         assert contacts[0].person_id == "b8e4117cf1d6615b"
         assert contacts[0].name == "Roy Avery"
 
-    def test_extra_fields_preserved(self):
+    def test_a_masodik_es_harmadik_mezo_NEVESITVE_van(self):
+        """#2526: a három mező `full_name`, `email`, `gaia_id`."""
         contacts = contacts_of(parse_document(SAMPLE))
         assert contacts[1].name == "Kis Éva"
-        assert contacts[1].extra == ("eva@example.com", "")
+        assert contacts[1].email == "eva@example.com"
+        assert contacts[1].gaia_id == ""
+
+    def test_ures_mezok_ures_sztringek(self):
+        contacts = contacts_of(parse_document(SAMPLE))
+        assert (contacts[0].email, contacts[0].gaia_id) == ("", "")
 
     def test_lookup_by_person_id(self):
         contacts = contacts_of(parse_document(SAMPLE))
@@ -35,6 +53,45 @@ class TestContactsOf:
 
     def test_empty_contacts_section(self):
         assert contacts_of(parse_document("[Contacts2]\n")) == ()
+
+
+class TestAHarmasTokenSzabaly:
+    """#2526: az eredeti a nem pontosan hármas bejegyzést ELDOBJA."""
+
+    def test_csak_a_HAROM_tokenes_bejegyzes_marad(self):
+        contacts = contacts_of(parse_document(ROSSZ_TOKENSZAM))
+        assert [c.person_id for c in contacts] == ["4444444444444444"]
+
+    @pytest.mark.parametrize(
+        ("sor", "alak"),
+        [
+            ("1111111111111111=Csak Nev", "egy tokenes"),
+            ("2222222222222222=Ket Token;csak@example.com", "két tokenes"),
+            ("3333333333333333=Negy;a@e.hu;gaia;plusz", "négy tokenes"),
+        ],
+    )
+    def test_a_rossz_tokenszam_eldobodik(self, sor, alak):
+        document = parse_document(f"[Contacts2]\n{sor}\n")
+        assert contacts_of(document) == (), (
+            f"a(z) {alak} bejegyzés bent maradt — az eredeti eldobja"
+        )
+
+    def test_a_HAROM_tokenes_bejegyzes_megmarad(self):
+        document = parse_document(
+            "[Contacts2]\n5555555555555555=Har Om;h@example.com;gaia-9\n"
+        )
+        (contact,) = contacts_of(document)
+        assert (contact.name, contact.email, contact.gaia_id) == (
+            "Har Om", "h@example.com", "gaia-9",
+        )
+
+    def test_az_eldobott_bejegyzes_a_DOKUMENTUMBAN_marad(self):
+        """A hármas szabály OLVASÁSI szűrő — a fájlt nem írja át.
+
+        Enélkül a round-trip elveszítené a hibás sort, és a felhasználó
+        `.picasa.ini`-je némán csonkulna."""
+        document = parse_document(ROSSZ_TOKENSZAM)
+        assert "1111111111111111=Csak Nev" in document.serialize()
 
 
 class TestImmutability:

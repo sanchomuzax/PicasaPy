@@ -1,7 +1,16 @@
-"""[Contacts2] személybejegyzések: `<person_id>=Név;;`.
+"""[Contacts2] személybejegyzések: `<person_id>=full_name;email;gaia_id`.
 
-A név utáni, `;`-vel elválasztott mezőket nyersen megőrizzük (`extra`) —
-a nevek elsődleges forrása egyébként a központi contacts.xml.
+#2526: az érték három, `;`-vel elválasztott mezője **nevesítve** van, és
+az eredeti **pontosan hármat** követel meg. A levezetés (író-regiszterek
++ naplóformátum egyeztetése, címekkel) a
+`docs/specs/picasa-menu-parancsok-viselkedes.md` 24.5 szakaszában áll:
+
+    érték            `%s;%s;%s`            0x00c91104
+    a három mező     full_name ; email ; gaia_id
+    token-szám       pontosan 3            0x00587203 / 0x00587206
+    ha nem 3         a bejegyzés ELDOBÓDIK 0x00587110 (naplóüzenet)
+
+A nevek elsődleges forrása egyébként a központi contacts.xml.
 """
 
 from __future__ import annotations
@@ -13,21 +22,39 @@ from .document import IniDocument
 _SECTION_NAME = "Contacts2"
 
 
+#: Az érték kötelező token-száma (#2526). A kettes és a négyes alakot az
+#: eredeti eldobja — nem javítja, nem tölti fel üressel.
+_TOKEN_SZAM = 3
+
+
 @dataclass(frozen=True)
 class Contact:
     person_id: str
     name: str
-    extra: tuple[str, ...]
+    email: str
+    gaia_id: str
 
 
 def contacts_of(document: IniDocument) -> tuple[Contact, ...]:
+    """A `[Contacts2]` bejegyzések — a nem HÁRMAS alakúak nélkül.
+
+    ⚠️ Ez OLVASÁSI szűrő: a hibás sort a dokumentumban hagyja, csak nem
+    adja vissza. Így a round-trip nem csonkítja a felhasználó fájlját —
+    az eredeti is csak a betöltésnél dobja el a bejegyzést."""
     section = document.section(_SECTION_NAME)
     if section is None:
         return ()
     contacts = []
     for person_id, value in section.items():
-        name, *extra = value.split(";")
-        contacts.append(Contact(person_id=person_id, name=name, extra=tuple(extra)))
+        mezok = value.split(";")
+        if len(mezok) != _TOKEN_SZAM:
+            continue
+        name, email, gaia_id = mezok
+        contacts.append(
+            Contact(
+                person_id=person_id, name=name, email=email, gaia_id=gaia_id
+            )
+        )
     return tuple(contacts)
 
 

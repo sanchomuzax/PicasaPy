@@ -101,7 +101,7 @@ class TestApplyContactsXml:
         contacts = {c.person_id: c for c in contacts_of(updated)}
         assert contacts["b8e4117cf1d6615b"].name == "Roy Avery"
 
-    def test_preserves_extra_fields_on_name_update(self):
+    def test_preserves_email_and_gaia_id_on_name_update(self):
         document = parse_document(
             "[Contacts2]\nb8e4117cf1d6615b=Régi;email@example.com;\n"
         )
@@ -113,7 +113,9 @@ class TestApplyContactsXml:
 
         contacts = {c.person_id: c for c in contacts_of(updated)}
         assert contacts["b8e4117cf1d6615b"].name == "Új Név"
-        assert contacts["b8e4117cf1d6615b"].extra == ("email@example.com", "")
+        # #2526: a másik két mező NEVESÍTVE marad meg, nem nyers `extra`-ként
+        assert contacts["b8e4117cf1d6615b"].email == "email@example.com"
+        assert contacts["b8e4117cf1d6615b"].gaia_id == ""
 
     def test_matching_name_is_a_no_op(self):
         document = parse_document("[Contacts2]\nb8e4117cf1d6615b=Roy Avery;;\n")
