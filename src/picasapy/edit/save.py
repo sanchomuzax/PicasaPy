@@ -72,7 +72,8 @@ kiírt (szerkesztett) képét, vagy a szerkesztés előtti eredetiét. A kulcsn�
 („origin") és az `origloc`-párja az utóbbit sugallja, de ez nincs
 bizonyítva, és a kettő szerkesztett képnél MINDIG különbözik: rossz
 választással bizonyítottan hibás értéket írnánk — ami rosszabb, mint a mai,
-láthatóan idegen alak. A javítás önálló jegyet érdemel.
+láthatóan idegen alak. A javítás önálló jegye: **#2675** (ott áll a
+kontrollált minta is, amivel a kérdés eldönthető).
 
 ## Két mappanév: `.picasaoriginals` és `Originals` (#1425)
 
