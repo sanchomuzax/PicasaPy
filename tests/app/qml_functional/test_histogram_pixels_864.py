@@ -3,6 +3,30 @@
 Nem belső property-t vagy a rajzolás elindulását ellenőrizzük: valódi
 ``QQuickView`` képernyőképéből olvassuk vissza azt a négy képpontszínt,
 amelyet a visszafejtett ``+85`` RGBA-keverés előír.
+
+## A HÁTTÉR a képlet BEMENETE (#2625)
+
+Az orákulum eredetileg **fehér** hátteret égetett bele, és a négy
+konstansa (``#555555``, ``#aaaa55``, ``#ffaaaa``, ``#ffffff``) ennek az
+egy esetnek felelt meg. A #2625 kimérte, hogy az eredeti Picasa
+rajzterületének **nincs saját háttere** (a `respack.yt`
+``nerdview/rect: histoback`` tömör kitöltése BGRA(0,0,0,0), és a
+tulajdonos felvételén a rajzterület üres része 232 — pontosan annyi, mint
+a panelé). Amikor a `HistogramBox` háttere átlátszóvá vált, ez a fájl
+elbukott — és a bukás értéke (``#a1a14c``) **pontosan az volt, amit a
+képlet előír**:
+
+    eredmény = 85 · aktív + háttér · (1 − 85 · aktívDarab / 255)
+
+228-as háttérrel, két aktív csatornával: 85 + 228/3 = **161 = 0xa1**, a
+harmadik csatorna 76 = **0x4c**. ⇒ **nem ellentmondás volt, hanem
+hiányzó paraméter.**
+
+⚠️ Amit ez NEM tesz: nem hangolja hozzá az őrt a képernyőképhez. A
+binárisból visszafejtett rész — a csatornánkénti **+85** járulék és a
+premultiplied összegzés — VÁLTOZATLAN; csak a háttér lett paraméter. A
+``test_a_feher_hatteru_eset_valtozatlan`` ezt őrzi: 255-tel behelyettesítve
+a képlet ma is a négy eredeti konstansot adja.
 """
 
 from __future__ import annotations
@@ -159,6 +183,43 @@ def _assert_rgb(actual: QColor, expected: str) -> None:
     ) <= 1, f"várt {target.name()}, kapott {actual.name()}"
 
 
+#: A csatornánkénti járulék — ez a BINÁRISBÓL visszafejtett rész (#864).
+JARULEK = 85
+
+#: A `HistogramBitmap` önálló próbája fehér vászonra rajzol (`setColor`).
+FEHER_HATTER = 255
+
+
+def _kevert(active, hatter: int) -> QColor:
+    """A `+85`-ös premultiplied keverés `hatter` színű alapon.
+
+    A puffer a nulláról indul, és minden aktív csatorna `JARULEK`-et ad
+    hozzá — ezzel együtt `JARULEK` alfát is. A maradék alfán a HÁTTÉR
+    látszik át:
+
+        eredmény = JARULEK · aktív + háttér · (1 − JARULEK · darab / 255)
+
+    `hatter = 255` mellett ez pontosan a #864 eredeti négy konstansa.
+    """
+    darab = sum(active)
+    marad = hatter * (1.0 - JARULEK * darab / 255.0)
+    return QColor(*(round(JARULEK * int(e) + marad) for e in active))
+
+
+def _doboz_hattere(image, root) -> int:
+    """A DOBOZ háttere a kirajzolt képen — a rajzterület fölötti sávból.
+
+    Nem beégetett szám: a téma változhat, és a #2625 épp azt állítja, hogy
+    a rajzterület EZT a színt viszi. A mintát a doboz bal szélén vesszük,
+    a rajzterület fölött — ott sem szöveg, sem görbe nincs.
+    """
+    szin = image.pixelColor(4, 12)
+    assert szin.red() == szin.green() == szin.blue(), (
+        f"a doboz háttere nem semleges szürke: {szin.name()}"
+    )
+    return szin.red()
+
+
 def _valtozo_binek() -> tuple[dict[str, list[float]], dict[str, list[int]]]:
     """Minden binben eltérő, egész belső magasságú tesztmintát ad."""
     heights = {
@@ -176,7 +237,7 @@ def _valtozo_binek() -> tuple[dict[str, list[float]], dict[str, list[int]]]:
 
 
 def _vart_kijelzo_szin(
-    heights: dict[str, list[int]], x: int, y: int
+    heights: dict[str, list[int]], x: int, y: int, hatter: int = FEHER_HATTER
 ) -> QColor:
     """Független orákulum a 256 × 70 → 213 × 59 legközelebbi mintához."""
     # A legközelebbi texel középpontos leképezése; pontos félúton a kisebb
@@ -185,10 +246,7 @@ def _vart_kijelzo_szin(
     source_y = min(69, math.ceil((y + 0.5) * 70 / 59) - 1)
     bottom_y = 69 - source_y
     active = tuple(heights[channel][source_x] > bottom_y for channel in "rgb")
-    count = sum(active)
-    # A bináris +85 premultiplied-alfa pufferét fehér háttérre kompozitáljuk.
-    background = 255 - 85 * count
-    return QColor(*(background + 85 * int(enabled) for enabled in active))
+    return _kevert(active, hatter)
 
 
 def test_additive_rgba_mix_is_visible_in_rendered_pixels(qt_app):
@@ -198,16 +256,75 @@ def test_additive_rgba_mix_is_visible_in_rendered_pixels(qt_app):
     assert isinstance(plot, QQuickItem)
     image = view.grabWindow()
 
-    # A színek a nulláról induló premultiplied ARGB-puffer fehér háttérre
-    # kompozitált értékei: 3 csatorna #555, 2 csatorna #aaaa55,
-    # 1 csatorna #ffaaaa, majd az érintetlen fehér háttér.
-    for fraction, expected in (
-        (10 / 70, "#555555"),
-        (30 / 70, "#aaaa55"),
-        (50 / 70, "#ffaaaa"),
-        (65 / 70, "#ffffff"),
-    ):
-        _assert_rgb(_pixel_at_fraction_from_bottom(image, plot, fraction), expected)
+    # #2625: a háttér MÉRT, nem beégetett — a rajzterületnek nincs saját
+    # kitöltése, a doboz színe látszik át. A négy tartomány színe ebből és
+    # a bináris `+85` járulékból SZÁMÍTOTT.
+    hatter = _doboz_hattere(image, root)
+    esetek = (
+        (10 / 70, (True, True, True)),
+        (30 / 70, (True, True, False)),
+        (50 / 70, (True, False, False)),
+        (65 / 70, (False, False, False)),
+    )
+    vartak = [_kevert(aktiv, hatter) for _, aktiv in esetek]
+    assert len({szin.name() for szin in vartak}) == 4, (
+        f"a négy tartomány nem különbözik ({[s.name() for s in vartak]}) — "
+        "az állítás vákuumban menne át"
+    )
+    for (fraction, _aktiv), vart in zip(esetek, vartak, strict=True):
+        _assert_rgb(
+            _pixel_at_fraction_from_bottom(image, plot, fraction), vart.name()
+        )
+
+
+def test_a_rajzterulet_URES_resze_a_DOBOZ_szine(qt_app):
+    """#2625 — KIRAJZOLT képpontokon: a rajzterületnek nincs saját háttere.
+
+    A testvérfájl (`test_histogram.py`) a `color` tulajdonságot nézi; az
+    viszont nem mondja meg, mi látszik a KÉPERNYŐN (egy fölé rajzolt réteg
+    vagy egy opacity-kötés némán felülírhatná). Ez a próba a doboz
+    hátterét és a rajzterület ÜRES részét ugyanabból a felvételből olvassa
+    ki, és azt állítja, hogy a kettő EGYEZIK.
+
+    A mérés forrása: `respack.yt` → `nerdview/rect: histoback` tömör
+    kitöltése BGRA(0,0,0,0), és a tulajdonos A/B felvétele (232 == 232).
+    """
+    view, root = _histogram_box(qt_app)
+    plot = root.findChild(QObject, "histogramPlot")
+    assert isinstance(plot, QQuickItem)
+    image = view.grabWindow()
+
+    hatter = _doboz_hattere(image, root)
+    # a görbék alulról nőnek; a felső sáv (65/70) mindenütt üres
+    ures = _pixel_at_fraction_from_bottom(image, plot, 65 / 70)
+    assert max(
+        abs(ures.red() - hatter),
+        abs(ures.green() - hatter),
+        abs(ures.blue() - hatter),
+    ) <= 1, (
+        f"a rajzterület üres része {ures.name()}, a doboz háttere "
+        f"RGB({hatter},{hatter},{hatter}) — a kettőnek egyeznie kell"
+    )
+
+
+def test_a_feher_hatteru_eset_valtozatlan():
+    """#2625 — a háttér paraméterré tétele nem mozdítja a #864 orákulumát.
+
+    Ez a próba a KÉPLETET méri, nem a képernyőt: 255-ös háttérrel a
+    `_kevert` ma is pontosan azt a négy konstansot adja, amit a #864
+    visszafejtett. Ha valaki a `JARULEK`-hez vagy az összegzéshez nyúl, ez
+    bukik — akkor is, ha közben a képernyő „szépen néz ki".
+    """
+    vart = {
+        (True, True, True): "#555555",
+        (True, True, False): "#aaaa55",
+        (True, False, False): "#ffaaaa",
+        (False, False, False): "#ffffff",
+    }
+    for aktiv, szin in vart.items():
+        assert _kevert(aktiv, FEHER_HATTER).name() == szin, (
+            f"{aktiv}: {_kevert(aktiv, FEHER_HATTER).name()} != {szin}"
+        )
 
 
 def test_internal_bitmap_matches_binary_spec_pixel_for_pixel(qt_app):
@@ -248,12 +365,14 @@ def test_final_213x59_output_scales_every_varying_bin(qt_app):
     assert isinstance(plot, QQuickItem)
     image = view.grabWindow()
     origin = plot.mapToScene(QPointF(0, 0))
+    # #2625: a háttér MÉRT — a rajzterületnek nincs saját kitöltése.
+    hatter = _doboz_hattere(image, root)
 
     mismatches: list[str] = []
     for y in range(59):
         for x in range(213):
             actual = image.pixelColor(round(origin.x() + x), round(origin.y() + y))
-            expected = _vart_kijelzo_szin(heights, x, y)
+            expected = _vart_kijelzo_szin(heights, x, y, hatter)
             if max(
                 abs(actual.red() - expected.red()),
                 abs(actual.green() - expected.green()),

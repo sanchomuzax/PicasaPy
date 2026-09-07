@@ -127,16 +127,36 @@ Rectangle {
         height: 59
         clip: true
 
-        // #512: a rajzterület (`histoback`/`histo` réteg) elkülönül a
-        // panel hátterétől — a `Theme.contentPanel` a projekt szokásos
-        // „elkülönülő világos tartalom" tokene (ld. pl. EditorPanel
-        // fültartalma), világos témán fehér, sötét témán sötétszürke
-        // kártyaháttér.
+        // ⛔ #2625: a rajzterületnek NINCS saját háttere — a doboz színe
+        // látszik át. A korábbi #512-es indoklás („a `histoback`/`histo`
+        // réteg elkülönül a panel hátterétől") MÉRTEN TÉVES volt, két
+        // független forrás szerint:
+        //
+        //   * `respack.yt` → `nerdview/rect: histoback`, tömör kitöltés
+        //     **BGRA(0,0,0,0)** — teljesen átlátszó. (A `histo` réteg
+        //     fehérje HELYŐRZŐ, mint a `floater` kékesszürkéje: dinamikusan
+        //     rajzolt elemnél a tömör szín nem a végleges kinézet.)
+        //   * a tulajdonos A/B felvétele: a rajzterület üres részén
+        //     RGB(232,232,232) áll — pontosan annyi, mint a panelen.
+        //
+        // Nálunk a `Theme.contentPanel` világos témán tiszta fehér volt,
+        // 29 fokozattal elválva a doboztól; a világos hisztogram-csúcsok
+        // fehér mezőn elmosódtak.
+        //
+        // ⚠️ A #864 képpont-orákuluma emiatt NEM dől meg. Az ő négy
+        // konstansa (`#555555`, `#aaaa55`, `#ffaaaa`, `#ffffff`) a
+        // `+85`-ös keverés FEHÉR HÁTTERŰ esete; a binárisból levezetett
+        // rész a csatornánkénti +85 járulék, a háttér a képlet BEMENETE:
+        //
+        //     eredmény = 85 · aktív + háttér · (1 − 85 · aktívDarab / 255)
+        //
+        // Ez az átlátszó háttérrel is igaz — az őr azóta a MÉRT hátteret
+        // helyettesíti be (`test_histogram_pixels_864.py`).
         Rectangle {
             id: plotBackground
             objectName: "histogramPlotBackground"
             anchors.fill: parent
-            color: Theme.contentPanel
+            color: "transparent"
         }
 
         Item {
