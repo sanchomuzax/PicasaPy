@@ -36,6 +36,7 @@ import re
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
@@ -62,18 +63,9 @@ def _almenu() -> str:
     ami ott volt. A zárójel-számlálás ezt kizárja, és közben NEM lesz
     engedékenyebb: a valóban hiányzó tételt továbbra is megfogja.
     """
-    kezdet = _QML.index('objectName: "menuViewFolderView"')
-    # visszalépünk a `PicasaMenu {` nyitó zárójeléig, onnan számolunk
-    nyito = _QML.rindex("{", 0, kezdet)
-    melyseg = 0
-    for i in range(nyito, len(_QML)):
-        if _QML[i] == "{":
-            melyseg += 1
-        elif _QML[i] == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return _QML[nyito : i + 1]
-    raise AssertionError("a Mappanézet almenü zárójele nem záródik be")
+    # #2575: a saját zárójel-számláló helyett a KÖZÖS mérő — ugyanaz a
+    # határ, de egy helyen javítható, és a kommenteket is kivágja.
+    return blokk_horgonyra(_QML, 'objectName: "menuViewFolderView"')
 
 
 class TestAzOtTetelOttVan:
@@ -86,8 +78,9 @@ class TestAzOtTetelOttVan:
         """`eMenuView::ID_VIEWBY*` — NEM a Mappa menü rövid négyese."""
         blokk = _almenu()
         for nev, felirat in OTOS:
-            kezdet = blokk.index(f'objectName: "{nev}"')
-            assert f'qsTr("{felirat}")' in blokk[kezdet : kezdet + 400], (
+            assert f'qsTr("{felirat}")' in blokk_horgonyra(
+                blokk, f'objectName: "{nev}"'
+            ), (
                 f"{nev}: nem az eredeti hosszú feliratot kapta"
             )
 
@@ -113,14 +106,16 @@ class TestABekotes:
         menü pipája így EGYÜTT mozog."""
         blokk = _almenu()
         for nev, _ in OTOS[:4]:
-            kezdet = blokk.index(f'objectName: "{nev}"')
-            assert "setPaneSort(" in blokk[kezdet : kezdet + 500], (
+            assert "setPaneSort(" in blokk_horgonyra(
+                blokk, f'objectName: "{nev}"'
+            ), (
                 f"{nev} nem a közös vezérlő-utat hívja"
             )
 
     def test_a_megforditas_onallo_kapcsolo(self):
-        kezdet = _almenu().index('objectName: "menuViewSortReverse"')
-        assert "togglePaneSortReverse(" in _almenu()[kezdet : kezdet + 400]
+        assert "togglePaneSortReverse(" in blokk_horgonyra(
+            _almenu(), 'objectName: "menuViewSortReverse"'
+        )
 
     def test_RADIO_csapda_ellen_visszakotes(self):
         """#1464/#1468: a valódi kattintás IMPERATÍVAN átbillenti a
@@ -131,8 +126,7 @@ class TestABekotes:
         A foga: a `Qt.binding` visszakötést kivéve ez bukik."""
         blokk = _almenu()
         for nev, _ in OTOS[:4]:
-            kezdet = blokk.index(f'objectName: "{nev}"')
-            reszlet = blokk[kezdet : kezdet + 600]
+            reszlet = blokk_horgonyra(blokk, f'objectName: "{nev}"')
             assert "Qt.binding(" in reszlet, f"{nev}: nincs visszakötés"
 
     def test_a_pipa_a_VEZERLO_allapotara_kot(self):
@@ -150,8 +144,9 @@ class TestABekotes:
             "a megfordítás pipája nem a vezérlő állapotára köt"
         )
         for nev, _ in OTOS[:4]:
-            kezdet = blokk.index(f'objectName: "{nev}"')
-            assert "folderViewMenu.rendezes ===" in blokk[kezdet : kezdet + 600], (
+            assert "folderViewMenu.rendezes ===" in blokk_horgonyra(
+                blokk, f'objectName: "{nev}"'
+            ), (
                 f"{nev}: a pipa nem a menü rendezés-állapotára köt"
             )
 
@@ -161,8 +156,7 @@ class TestAmitNEM_rontunk_el:
         """#1595: a Mappa menü `ID_*SORT` készlete RÖVID feliratú és
         négyes. Ha valaki a hosszú ötöst másolná oda (vagy fordítva), ez
         bukik."""
-        kezdet = _QML.index('objectName: "menuFolderSortBy"')
-        blokk = _QML[kezdet : kezdet + 3000]
+        blokk = blokk_horgonyra(_QML, 'objectName: "menuFolderSortBy"')
         for rovid in ('qsTr("&Date")', 'qsTr("&Name")', 'qsTr("&Size")'):
             assert rovid in blokk, f"a Mappa menü rövid felirata eltűnt: {rovid}"
         assert 'qsTr("Sort by &Creation Date")' not in blokk, (

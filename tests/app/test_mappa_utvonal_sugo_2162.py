@@ -18,10 +18,11 @@ rámutatáskor jelenik meg.
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import pytest
+
+from tests.support.qml_blokk import tulajdonsag_erteke
 
 _QML = (
     Path(__file__).resolve().parents[2]
@@ -35,9 +36,13 @@ def forras() -> str:
 
 
 def _tooltip_sor(forras: str, mezo: str) -> str:
-    m = re.search(rf"^\s*ToolTip\.{mezo}:(.*)$", forras, re.MULTILINE)
-    assert m, f"nem találom a ToolTip.{mezo} kötést a FolderPane.qml-ben"
-    return m.group(1)
+    """A `ToolTip.<mezo>` kötésének TELJES szövege.
+
+    #2575: korábban egyetlen SOR volt (`^\\s*ToolTip.text:(.*)$`), és a
+    többsoros ternáriust levágta — ezért kellett mellé egy 400 karakteres
+    ablak. A `tulajdonsag_erteke` a kötés valódi határáig olvas.
+    """
+    return tulajdonsag_erteke(forras, f"ToolTip.{mezo}")
 
 
 def test_a_sugo_MINDEN_mappasoron_megjelenik(forras: str) -> None:
@@ -55,10 +60,7 @@ def test_a_sugo_MINDEN_mappasoron_megjelenik(forras: str) -> None:
 
 def test_a_sugo_szovege_az_UTVONALAT_tartalmazza(forras: str) -> None:
     szoveg = _tooltip_sor(forras, "text")
-    # a kifejezés több sorra nyúlik (ternárius) — a következő két sort is
-    # hozzávesszük, hogy a teljes kötés látszódjon
-    kezdet = forras.index("ToolTip.text:")
-    blokk = forras[kezdet : kezdet + 400]
+    blokk = szoveg
     assert "path" in blokk, (
         "a súgó szövege nem hivatkozik az útvonalra: " + szoveg.strip()
     )

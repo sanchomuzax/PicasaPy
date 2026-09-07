@@ -39,6 +39,7 @@ import re
 from pathlib import Path
 
 import picasapy.app as app_csomag
+from tests.support.qml_blokk import blokk_horgonyra
 
 _FEED = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
@@ -47,18 +48,11 @@ _FEED = (
 
 def _lencse_blokk() -> str:
     """A lencse `Image` elemének teljes blokkja, kapcsos zárójel szerint."""
-    jel = 'objectName: "feedLoupeImage"'
-    assert jel in _FEED, "nincs lencse-kép a rácsban"
-    kezd = _FEED.rindex("Image {", 0, _FEED.index(jel))
-    melyseg = 0
-    for i in range(_FEED.index("{", kezd), len(_FEED)):
-        if _FEED[i] == "{":
-            melyseg += 1
-        elif _FEED[i] == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return _FEED[kezd : i + 1]
-    raise AssertionError("nem záródik a lencse blokkja")
+    # #2575: a kézzel írt zárójel-számláló helyett a KÖZÖS mérő. Ugyanaz a
+    # határ, de egy helyen javítható, a kommenteket kivágja, és a
+    # sztringbeli kapcsos zárójelet is átugorja (amit ez a saját változat
+    # nem tett).
+    return blokk_horgonyra(_FEED, 'objectName: "feedLoupeImage"')
 
 
 class TestATartalom:

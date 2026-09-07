@@ -31,6 +31,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.support.qml_blokk import blokk_horgonyra
 
 _VIEWER_QML = (
     Path(__file__).resolve().parents[3]
@@ -140,8 +141,7 @@ class TestAKetBelepesiPont:
         nem feltételezni: a sáv `visible`-je nem hivatkozhat a szerkesztő
         nyitottságára."""
         forras = _VIEWER_QML.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "captionBar"')
-        blokk = forras[kezdet : kezdet + 400]
+        blokk = blokk_horgonyra(forras, 'objectName: "captionBar"')
         assert "visible: viewer.captionVisible" in blokk, (
             "a felirat-sáv láthatósága nem csak a beállításon múlik"
         )

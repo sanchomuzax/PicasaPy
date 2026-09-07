@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TOOLBAR = (
     Path(__file__).resolve().parents[3]
@@ -36,8 +37,7 @@ class TestAGombMegvan:
 class TestAzAllapotTukrozese:
     def test_a_gomb_a_viewModeName_bol_dolgozik(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "movieFilter"')
-        blokk = forras[kezdet : kezdet + 900]
+        blokk = blokk_horgonyra(forras, 'objectName: "movieFilter"')
         assert "viewModeName" in blokk, (
             "a film-gomb a `filterActive`-ból dolgozik — akkor a csillag-"
             "szűrő bekapcsolásakor is aktívnak látszana (#1830)"

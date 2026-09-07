@@ -31,6 +31,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _PANEL = (
     Path(picasapy.app.__file__).parent
@@ -39,8 +40,7 @@ _PANEL = (
 
 
 def _blokk() -> str:
-    kezdet = _PANEL.index('objectName: "collageMakeDesktopButton"')
-    return _PANEL[kezdet : kezdet + 700]
+    return blokk_horgonyra(_PANEL, 'objectName: "collageMakeDesktopButton"')
 
 
 class TestAGombNemIger:

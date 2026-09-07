@@ -17,6 +17,7 @@ objektumokat és mentett munkamenetet** használ — csonk nélkül.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ from PySide6.QtCore import QSettings
 from picasapy.index import open_index, sync_tree
 from picasapy.index.queries import photos_in_folder
 from support.jpeg_factory import make_jpeg
+from tests.support.py_blokk import fuggveny_torzs
 
 
 @pytest.fixture
@@ -136,7 +138,21 @@ def test_a_naplo_utvonalszabalya_egyetlen_helyen_el():
         / "src/picasapy/app/edit_journal_controller.py"
     ).read_text(encoding="utf-8")
     assert "full_path(" in forras, "a közös útvonal-képzést kell használni"
-    assert ".path)" not in forras.split("def _check_external_overwrites")[1][:400]
+    torzs = fuggveny_torzs(forras, "def _check_external_overwrites")
+    # #2575: az állítás korábban `".path)" not in forras[…][:400]` volt, és
+    # VÁKUUMBAN állt. A 400 karakteres ablak a `current = {…}` sor után
+    # véget ért, tehát a törzs alsó fele — ahol `entry.path` TÖBBSZÖR is
+    # szerepel — soha nem került a mérés alá. A valódi törzsön a régi alak
+    # AZONNAL bukik, pedig a kód helyes: az `entry` egy `LostEdit`, aminek
+    # jogosan VAN `path` mezője; a tilalom a REKORDRA szól, aminek nincs.
+    assert "naplo_kulcs(full_path(r))" in torzs, (
+        "a napló kulcsa nem a közös `full_path()`-ból képződik"
+    )
+    assert not re.search(r"\br\.path\b", torzs), (
+        "saját útvonal-képzés került a rekordra (`r.path`) — a "
+        "`PhotoRecord`-nak nincs ilyen mezője, és ez a harmadik "
+        "útvonal-szabály, amit a #699 tilt"
+    )
 
 
 def test_a_naplo_kulcsa_platformfuggetlenul_egyezik():

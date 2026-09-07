@@ -16,6 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "MainToolbar.qml"
@@ -23,8 +24,7 @@ _QML = (
 
 
 def _blokk() -> str:
-    kezdet = _QML.index('objectName: "faceFilter"')
-    return _QML[kezdet : kezdet + 2600]
+    return blokk_horgonyra(_QML, 'objectName: "faceFilter"')
 
 
 class TestAGombOttVan:

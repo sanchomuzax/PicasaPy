@@ -203,3 +203,127 @@ class TestASorrendKotott:
         )
         assert 'ToolTip.text: qsTr( "x")' in blokk
         assert "y: 1" not in blokk
+
+
+class TestIdezojelesKapcsosZarojel2575:
+    """A sztringben álló `{` NEM zárójel — enélkül a mérő elcsúszik.
+
+    Mérve a #2575-ben: a `blokk_horgonyra` egy `text: "{ jel"` kötésű
+    elemre „a blokk nem záródik" hibát adott, pedig a forrás helyes. A
+    másik irány a veszélyesebb: kiegyensúlyozott ál-zárójelekkel némán
+    RÖVIDEBB blokkot vágott volna — és a rá épülő őrök egy meglévő sort
+    láttak volna hiányzónak.
+    """
+
+    _FORRAS = """
+Item {
+    objectName: "cel"
+    text: "nyito { jel"
+    width: 10
+}
+Item {
+    objectName: "masik"
+    width: 20
+}
+"""
+
+    def test_a_sztringbeli_nyito_zarojel_nem_szamit(self):
+        from tests.support.qml_blokk import blokk_horgonyra
+
+        blokk = blokk_horgonyra(self._FORRAS, 'objectName: "cel"')
+        assert "width: 10" in blokk
+        assert "masik" not in blokk
+
+    def test_a_sztringbeli_zaro_zarojel_sem(self):
+        from tests.support.qml_blokk import blokk_horgonyra
+
+        forras = self._FORRAS.replace('"nyito { jel"', '"zaro } jel"')
+        blokk = blokk_horgonyra(forras, 'objectName: "cel"')
+        assert "width: 10" in blokk
+        assert "masik" not in blokk
+
+    def test_a_hivas_argumentumai_is_atugorja(self):
+        from tests.support.qml_blokk import hivas_argumentumai
+
+        forras = 'onClicked: ment(")", elem.path)\nmas: 1'
+        assert "elem.path" in hivas_argumentumai(forras, "ment")
+
+
+class TestElemTipusa2575:
+    _FORRAS = """
+PicasaMenuItem {
+    objectName: "elso"
+}
+Rectangle {
+    objectName: "masodik"
+}
+"""
+
+    def test_a_tipusnevet_adja(self):
+        from tests.support.qml_blokk import elem_tipusa
+
+        assert elem_tipusa(self._FORRAS, 'objectName: "elso"') == "PicasaMenuItem"
+        assert elem_tipusa(self._FORRAS, 'objectName: "masodik"') == "Rectangle"
+
+    def test_a_SZOMSZED_tipusa_nem_szamit(self):
+        """A régi alak (`forras[:kezdet][-200:]`) a szomszéd nevét is
+        elfogadta — ez a próba pont azt zárja ki."""
+        from tests.support.qml_blokk import elem_tipusa
+
+        assert elem_tipusa(self._FORRAS, 'objectName: "masodik"') != "PicasaMenuItem"
+
+
+class TestTulajdonsagErteke2575:
+    _FORRAS = """
+Item {
+    ToolTip.text: offline
+        ? path + qsTr("nem elérhető")
+        : path
+    ToolTip.visible: hovered
+    width: 10
+}
+"""
+
+    def test_a_tobbsoros_kotest_egyben_adja(self):
+        from tests.support.qml_blokk import tulajdonsag_erteke
+
+        ertek = tulajdonsag_erteke(self._FORRAS, "ToolTip.text")
+        assert "offline" in ertek and "nem elérhető" in ertek
+
+    def test_a_KOVETKEZO_tulajdonsagot_mar_nem(self):
+        """Ha beleérne, az őr a szomszéd kötésével „bizonyítana"."""
+        from tests.support.qml_blokk import tulajdonsag_erteke
+
+        ertek = tulajdonsag_erteke(self._FORRAS, "ToolTip.text")
+        assert "hovered" not in ertek
+        assert "width" not in ertek
+
+
+class TestElozoKomment2575:
+    _FORRAS = """
+// elso indoklas
+Item {
+    objectName: "elso"
+}
+
+// masodik indoklas
+// ket soros
+Item {
+    objectName: "masodik"
+}
+"""
+
+    def test_az_ELEM_folotti_tombot_adja(self):
+        from tests.support.qml_blokk import elozo_komment
+
+        szoveg = elozo_komment(self._FORRAS, 'objectName: "masodik"')
+        assert "masodik indoklas" in szoveg and "ket soros" in szoveg
+
+    def test_a_SZOMSZED_indoklasa_nem_szamit(self):
+        """A régi alak (`forras[hely - 1400:][:2200]`) a fentebbi elem
+        indoklását is elfogadta volna."""
+        from tests.support.qml_blokk import elozo_komment
+
+        assert "elso indoklas" not in elozo_komment(
+            self._FORRAS, 'objectName: "masodik"'
+        )

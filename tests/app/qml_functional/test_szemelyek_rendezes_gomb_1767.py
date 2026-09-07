@@ -17,6 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _MENU = (
     Path(__file__).resolve().parents[3]
@@ -38,8 +39,7 @@ class TestATetelekELOK:
     def test_egyik_sem_helyfoglalo(self):
         forras = _MENU.read_text(encoding="utf-8")
         for nev in _TETELEK:
-            kezdet = forras.index(f'objectName: "{nev}"')
-            blokk = forras[kezdet : kezdet + 400]
+            blokk = blokk_horgonyra(forras, f'objectName: "{nev}"')
             assert "placeholder: true" not in blokk, (
                 f"{nev} még mindig néma helyfoglaló (#1767)"
             )
@@ -53,8 +53,7 @@ class TestATetelekELOK:
         tételen sem állna pipa."""
         forras = _MENU.read_text(encoding="utf-8")
         for nev in _TETELEK:
-            kezdet = forras.index(f'objectName: "{nev}"')
-            blokk = forras[kezdet : kezdet + 400]
+            blokk = blokk_horgonyra(forras, f'objectName: "{nev}"')
             assert "Qt.binding(" in blokk, (
                 f"{nev}: a `checked` nincs visszakötve a jelzés után"
             )

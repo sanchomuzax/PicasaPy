@@ -37,6 +37,7 @@ from picasapy.app.print_controller import PrintController
 from picasapy.printing.dpi import KICSI_KUSZOB_DPI
 
 from support.jpeg_factory import make_jpeg
+from tests.support.qml_blokk import blokk_horgonyra
 
 
 class _FakePhoto:
@@ -132,8 +133,7 @@ class TestAGombAQMLben:
 
     def test_az_EREDETI_feliratot_es_sugot_hasznalja(self):
         forras = self._dialogus()
-        kezdet = forras.index('objectName: "printReviewButton"')
-        blokk = forras[kezdet : kezdet + 900]
+        blokk = blokk_horgonyra(forras, 'objectName: "printReviewButton"')
         assert 'qsTr("Review")' in blokk
         assert "Make sure your photos are ready to print" in blokk
 
@@ -141,15 +141,13 @@ class TestAGombAQMLben:
         """Az eredetiben a „You are ready to print." ágon nincs mit
         ellenőrizni."""
         forras = self._dialogus()
-        kezdet = forras.index('objectName: "printReviewButton"')
-        blokk = forras[kezdet : kezdet + 900]
+        blokk = blokk_horgonyra(forras, 'objectName: "printReviewButton"')
         assert "quality.small > 0" in blokk
 
     def test_a_gomb_NEM_nema(self):
         """A #1798 osztálya: a gomb ne csak létezzen — hívja is a listát."""
         forras = self._dialogus()
-        kezdet = forras.index('objectName: "printReviewButton"')
-        blokk = forras[kezdet : kezdet + 900]
+        blokk = blokk_horgonyra(forras, 'objectName: "printReviewButton"')
         assert "smallPictures" in blokk
 
 

@@ -42,6 +42,7 @@ from PySide6.QtQuick import QQuickItem
 
 import picasapy.app
 from support.jpeg_factory import make_jpeg
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TRAYBAR = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -170,8 +171,7 @@ class TestNegyzetesCella:
         """A `PreserveAspectFit` illeszt (üres sávot hagy), a
         `PreserveAspectCrop` vág — a mérés az utóbbit adja."""
         forras = _TRAYBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "trayPreviewThumb"')
-        blokk = forras[kezdet : kezdet + 1400]
+        blokk = blokk_horgonyra(forras, 'objectName: "trayPreviewThumb"')
         assert "fillMode: Image.PreserveAspectCrop" in blokk
         assert "PreserveAspectFit" not in blokk
 
