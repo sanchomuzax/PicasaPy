@@ -45,28 +45,11 @@ def _lepes(adat: dict, job: str, azonosito: str) -> str:
     raise AssertionError(f"nincs `{azonosito}` azonosítójú lépés")
 
 
-class TestAtadasAKiadonak:
-    def test_a_bump_lepes_elinditja_az_utokovetot(self, release: dict) -> None:
-        """A verzióemelő PR nyitása és az utókövetés indítása EGY döntés:
-        aki PR-t nyit, az tudja, hogy kiadás fog kelleni."""
-        bump = _lepes(release, "release", "bump")
-        assert "kiadas-utokoveto.yml" in bump
-
-    def test_az_utokoveto_a_PR_nyitasa_UTAN_indul(self, release: dict) -> None:
-        bump = _lepes(release, "release", "bump")
-        assert bump.index("gh pr create") < bump.index("kiadas-utokoveto.yml")
-
-    def test_az_utokoveto_indulasa_nem_lehet_fatalis(self, release: dict) -> None:
-        """Ha az utókövető nem indul, a kiadó lépésnek akkor is le kell
-        futnia — ugyanaz a szabály, mint a PR-nyitásnál."""
-        bump = _lepes(release, "release", "bump")
-        sor = next(s for s in bump.splitlines() if "kiadas-utokoveto.yml" in s)
-        kovetkezo = bump[bump.index(sor) :]
-        assert "||" in sor or kovetkezo.splitlines()[1].strip().startswith("||"), (
-            "az utókövető indítása bukáskor megállítaná a kiadást"
-        )
-
-
+#: A `TestAtadasAKiadonak` osztály KIÜRÜLT a #58-cal: mind a három
+#: állítása a bump-PR-ről szólt (ld. a fájl végén az indoklást). A
+#: munkafolyamat MAGA megmarad — a negyedórás kiadási őr és a kézi
+#: `workflow_dispatch` továbbra is használja —, csak a kiadó lépés nem
+#: indítja többé, mert nincs mit megvárni.
 class TestUtokovetoMunkafolyamat:
     def test_letezik(self) -> None:
         assert UTOKOVETO.exists(), "nincs utókövető munkafolyamat"
@@ -137,3 +120,26 @@ class TestAMeglevoVedelemMegmarad:
         )
         percek = orjarat[True]["schedule"][0]["cron"].split()[0]
         assert int(percek.removeprefix("*/")) <= 15
+
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_a_bump_lepes_elinditja_az_utokovetot`, `test_az_utokoveto_a_PR_nyitasa_UTAN_indul`, `test_az_utokoveto_indulasa_nem_lehet_fatalis`
+# ────────────────────────────────────────────────────────────────────────

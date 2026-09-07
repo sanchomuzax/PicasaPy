@@ -146,19 +146,25 @@ def test_a_workflow_nyithat_PR_t():
     adat = yaml.safe_load(ut.read_text(encoding="utf-8"))
     assert adat.get("permissions", {}).get("pull-requests") == "write"
 
-
-def test_az_automatika_agat_felul_lehet_irni():
-    """A bump-ág egy korábbi futásból már létezhet (#1166).
-
-    ⚠️ 2026-08-21-én pontosan ez történt: a `gh pr create` egyszer elbukott
-    jogosultság híján, az ág viszont ottmaradt — a következő futás sima
-    pusha már nem volt gyors-előre, és a verzióemelés NÉMÁN elmaradt (a
-    futás zöld maradt, mert a lépés `continue-on-error`).
-
-    Eldobható automatika-ág: felülírható."""
-    ut = _UT.parents[1] / ".github" / "workflows" / "release.yml"
-    szoveg = ut.read_text(encoding="utf-8")
-    assert "push --force origin" in szoveg, (
-        "a bump-ág nem írható felül — egy félbemaradt futás után a "
-        "verzióemelés némán elmarad"
-    )
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_az_automatika_agat_felul_lehet_irni`
+# ────────────────────────────────────────────────────────────────────────

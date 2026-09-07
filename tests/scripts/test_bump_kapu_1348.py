@@ -179,35 +179,11 @@ class TestWorkflowBekotes:
             "újra duplikált verzióemelő PR-t nyit (#1348)"
         )
 
-    def test_a_kapu_a_MODOSITAS_ELOTT_dont(self):
-        """⚠️ Utólag futtatva marad egy commit és egy árva `chore/auto-bump-*`
-        ág — 2026-09-05-én nyolc ilyen ág hevert a távolban."""
-        szoveg = self._szoveg()
-        kapu = szoveg.index("scripts/bump_kapu.py")
-        assert kapu < szoveg.index("python3 scripts/auto_bump.py"), (
-            "a kapu az auto_bump UTÁN fut — a fölösleges commit már megvan"
-        )
-        assert kapu < szoveg.index("git push --force origin"), (
-            "a kapu az ág feltolása UTÁN fut — az árva ág már ottmarad"
-        )
-
     def test_a_kapu_valasza_szamit(self):
         """A kimenet olvasása nélkül a hívás díszlet volna."""
         szoveg = self._szoveg()
         assert '"$kapu"' in szoveg and 'head -n1' in szoveg, (
             "a kapu válaszát nem olvassa senki"
-        )
-
-    def test_a_bukott_PR_nyitas_utan_nem_marad_arva_ag(self):
-        """⚠️ A kapu NYITOTT PR-t néz — egy PR nélküli ág nem látszik neki.
-
-        Mérve 2026-09-05: nyolc `chore/auto-bump-*` ág hevert a távolban PR
-        nélkül, mert a `gh pr create` a repó beállítása miatt bukott
-        („GitHub Actions is not permitted to create or approve pull
-        requests"). Az ilyen ág se nem véd, se nem hasznos."""
-        szoveg = self._szoveg()
-        assert 'git push origin --delete "$ag"' in szoveg, (
-            "a PR nélkül maradt verzióemelő ágat senki nem takarítja el"
         )
 
     def test_a_kapu_a_lepesen_BELUL_marad(self):
@@ -222,3 +198,26 @@ class TestWorkflowBekotes:
         )
         assert "scripts/bump_kapu.py" in bump["run"]
         assert bump.get("continue-on-error") is True
+
+# ────────────────────────────────────────────────────────────────────────
+# VISSZAVONT ŐRÖK — #58 (2026-09-07)
+#
+# Az alábbi állítások a `chore/auto-bump-*` PR-útról szóltak, amit ezzel a
+# változtatással ELHAGYTUNK. Nem „elrontottuk" őket, hanem a mechanizmus
+# szűnt meg, amit mértek — ezért a helyes lépés a visszavonás, nem az
+# átírás valami másra.
+#
+# Miért szűnt meg: a `main` védett, ezért a verzióemelés ágra + PR-re ment;
+# a `GITHUB_TOKEN`-nel nyitott PR-en viszont a GitHub SZÁNDÉKOSAN nem indít
+# ellenőrzést (#1190), és ez nem kapcsolható ki — az élesített auto-merge
+# tehát sosem lefutó kötelező ellenőrzésre várt. Mérve: `chore/auto-bump-*`
+# előtaggal HÁROM PR született (#2616, #2621, #2657), MIND A HÁRMAT a
+# kiadási őr zárta le, egy sem olvadt be soha.
+#
+# Amit a visszavont őrök védtek, azt most a manager-kör
+# `kiadas_lemaradas()` mérője adja (privát #59): 6 óra után figyelmeztet,
+# 24 óra után P0. Előbb lett meg a mérő, és csak utána hagytuk el a
+# tartalékot.
+#
+# VISSZAVONVA EBBŐL A FÁJLBÓL: `test_a_kapu_a_MODOSITAS_ELOTT_dont`, `test_a_bukott_PR_nyitas_utan_nem_marad_arva_ag`
+# ────────────────────────────────────────────────────────────────────────
