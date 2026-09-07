@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.325] – 2026-09-07
+
+### Javítva
+
+- **A hisztogram fejléce a hivatalos magyar feliratot viseli** (#2624).
+  Eddig „Hisztogram és fényképadatok" állt ott; az eredeti Picasa magyar
+  változatában „Hisztogram és **fényképezőgép-adatok**" — és ez nem
+  szőrszálhasogatás: a doboz a FÉNYKÉPEZŐGÉP adatait mutatja (expozíció,
+  rekesz, ISO), nem a képét. A hivatalos szöveg a Picasa saját
+  erőforrásából jött, nem fordítottuk újra.
+
 ## [0.8.324] – 2026-09-07
 
 ### Javítva
