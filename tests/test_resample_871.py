@@ -169,25 +169,63 @@ class TestTullendules:
 
 
 class TestBekotes:
-    """A `cvimage.scale_down` ezen a magon megy — és CSAK az."""
+    """A Picasa magja a BÉLYEGKÉP-úton megy — és CSAK ott.
 
-    def test_scale_down_a_picasa_utat_hasznalja(self):
-        from picasapy.cvimage import scale_down
+    A hatókört a MÉRÉS szabja meg, nem az elv: a #871 mércéje a Picasa
+    `bigthumbs` tára (119 kép, 288 képpont), ahol a mag mindhárom
+    metrikán javít ÉS gyorsabb (23 ms vs 56 ms). Nagy kimenetnél viszont
+    az ára 16× (4000 × 3000 → 1600: 300 ms vs 18 ms), ezért az általános
+    út — amit az export és az importálás hív — a mag gyorsításáig
+    (#2669) `INTER_AREA` marad.
+    """
+
+    def test_a_BELYEGKEP_ut_a_picasa_magjat_hasznalja(self):
+        from picasapy.cvimage import scale_down_picasa_mag
         from picasapy.resample import picasa_kicsinyites
 
         rng = np.random.default_rng(871)
         kep = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
-        assert np.array_equal(scale_down(kep, 100), picasa_kicsinyites(kep, 100, 75))
+        assert np.array_equal(
+            scale_down_picasa_mag(kep, 100), picasa_kicsinyites(kep, 100, 75)
+        )
 
-    def test_scale_down_mar_nem_puszta_inter_area(self):
+    def test_a_belyegkep_ut_mar_nem_puszta_inter_area(self):
         """Az őr foga: ha valaki visszaállítaná az `INTER_AREA`-t, ez bukik."""
+        cv2 = pytest.importorskip("cv2")
+        from picasapy.cvimage import scale_down_picasa_mag
+
+        rng = np.random.default_rng(3)
+        kep = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
+        area = cv2.resize(kep, (100, 75), interpolation=cv2.INTER_AREA)
+        assert not np.array_equal(scale_down_picasa_mag(kep, 100), area)
+
+    def test_az_ALTALANOS_ut_INTER_AREA_marad(self):
+        """A másik irány őre: ha valaki a `scale_down`-t is átkötné, az
+        exportot 16×-ra lassítaná — mérés nélkül. Amíg a #2669 nem
+        gyorsítja a magot, ez a próba tartja a határt."""
         cv2 = pytest.importorskip("cv2")
         from picasapy.cvimage import scale_down
 
         rng = np.random.default_rng(3)
         kep = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
-        area = cv2.resize(kep, (100, 75), interpolation=cv2.INTER_AREA)
-        assert not np.array_equal(scale_down(kep, 100), area)
+        assert np.array_equal(
+            scale_down(kep, 100),
+            cv2.resize(kep, (100, 75), interpolation=cv2.INTER_AREA),
+        )
+
+    def test_a_belyegkep_gyorsitotar_a_MAG_utat_hivja(self):
+        """Forrás-szintű kapu: a bekötés két híváshelye ne csússzon vissza."""
+        from pathlib import Path
+
+        szoveg = (
+            Path(__file__).resolve().parents[1]
+            / "src" / "picasapy" / "thumbs" / "cache.py"
+        ).read_text(encoding="utf-8")
+        assert szoveg.count("scale_down_picasa_mag(") == 2, (
+            "a bélyegkép-gyorsítótárban nem a várt KÉT híváshely hívja a "
+            "Picasa magját (a szűretlen és a szerkesztett bélyegkép)"
+        )
+        assert "scale_down_picasa_mag,\n" in szoveg, "hiányzik az import"
 
     def test_a_muveszi_szurok_kicsinyitese_valtozatlan(self):
         """A jegy szűk hatóköre: a pixelezéshez használt doboz-átlagolás
@@ -231,16 +269,26 @@ class TestGyorsFelezes:
         altalanos = lanczos4_kicsinyites(elo, cel_sz, cel_ma)
         assert np.abs(gyors.astype(int) - altalanos.astype(int)).max() <= 1
 
-    def test_enyhe_kicsinyites_az_altalanos_uton_megy(self):
-        """2× alatti kicsinyítésnél nincs mit elő-szűrni: ilyenkor a
-        `picasa_kicsinyites` a tiszta Lanczos-4 lépést adja."""
+    def test_enyhe_kicsinyitesnel_a_MAG_nem_fut(self):
+        """2× alatti kicsinyítésnél a Picasa magja SZÁNDÉKOSAN nem fut.
+
+        Az első változat itt a tiszta Lanczos-4 lépést adta. Mérve: a
+        `bigthumbs` mérce egyetlen párja sem esik ebbe a sávba (mind
+        legalább 2×), tehát nem tudjuk, melyik a hűbb — az ára viszont
+        ismert: 2048 × 1536 → 1536 esetén 887 ms a 8,9 ms helyett.
+        Bizonyíték nélküli, 99×-es lassítás nem mehet ki. Részletesen a
+        `picasa_kicsinyites` docstringjében és a `TestAKetszeresAlattiSav`
+        osztályban."""
+        cv2 = pytest.importorskip("cv2")
         from picasapy.resample import lanczos4_kicsinyites, picasa_kicsinyites
 
         rng = np.random.default_rng(4)
         kep = rng.integers(0, 256, (200, 200, 3), dtype=np.uint8)
+        kapott = picasa_kicsinyites(kep, 150, 150)
         assert np.array_equal(
-            picasa_kicsinyites(kep, 150, 150), lanczos4_kicsinyites(kep, 150, 150)
+            kapott, cv2.resize(kep, (150, 150), interpolation=cv2.INTER_AREA)
         )
+        assert not np.array_equal(kapott, lanczos4_kicsinyites(kep, 150, 150))
 
     def test_egyenletes_kep_a_gyors_uton_sem_sodrodik(self):
         kep = np.full((800, 800, 3), 42, dtype=np.uint8)
@@ -248,4 +296,60 @@ class TestGyorsFelezes:
 
         assert np.array_equal(
             picasa_kicsinyites(kep, 100, 100), np.full((100, 100, 3), 42, dtype=np.uint8)
+        )
+
+
+class TestAKetszeresAlattiSav:
+    """#871: a 2× alatti kicsinyítés SZÁNDÉKOSAN a régi úton marad.
+
+    A jegy mércéje a Picasa `bigthumbs` tára (119 kép, 288 képpont) — abban
+    minden pár legalább 2×-es kicsinyítés, tehát az enyhe sávra **nincs
+    bizonyítékunk**, melyik a hűbb. Az ára viszont mérve van: ott nincs mit
+    elő-szűrni, ezért a csapónként számoló általános út futna, 2048 × 1536
+    → 1536 esetén 887 ms az `INTER_AREA` 8,9 ms-a helyett (**99×**).
+
+    Ez az őr azt tartja, hogy a határ ne csússzon el némán: sem lefelé
+    (a lassú út ne szivárogjon be az enyhe sávba), sem fölfelé (a mért,
+    2× fölötti sáv ne essen vissza a régi útra).
+    """
+
+    def test_a_ketszeres_ALATT_az_INTER_AREA_fut(self):
+        """Bitre azonos az `INTER_AREA`-val — tehát tényleg az fut."""
+        cv2 = pytest.importorskip("cv2")
+        from picasapy.resample import picasa_kicsinyites
+
+        rng = np.random.default_rng(871)
+        kep = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
+        # 400 → 300 = 1,33× — a kétszeres alatt
+        kapott = picasa_kicsinyites(kep, 300, 225)
+        vart = cv2.resize(kep, (300, 225), interpolation=cv2.INTER_AREA)
+        assert np.array_equal(kapott, vart), (
+            "a 2× alatti sáv nem az INTER_AREA-t hívja — a jegy mérése "
+            "erre a sávra nem terjed ki, a lassú út pedig 99× drágább"
+        )
+
+    def test_a_ketszeres_FOLOTT_NEM_az_INTER_AREA_fut(self):
+        """A mért sáv a Picasa magján megy — ha ez is `INTER_AREA` lenne,
+        a jegy egész munkája elveszne, és a próba fentebb mégis zöld
+        maradna."""
+        cv2 = pytest.importorskip("cv2")
+        from picasapy.resample import picasa_kicsinyites
+
+        rng = np.random.default_rng(1871)
+        kep = rng.integers(0, 256, (400, 600, 3), dtype=np.uint8)
+        # 600 → 300 = pontosan 2× — a mért sáv alja
+        kapott = picasa_kicsinyites(kep, 300, 200)
+        vart = cv2.resize(kep, (300, 200), interpolation=cv2.INTER_AREA)
+        assert not np.array_equal(kapott, vart), (
+            "a 2× fölötti sáv is az INTER_AREA-ra esett vissza — a Picasa "
+            "magja nem fut sehol"
+        )
+
+    def test_a_hatar_PONTOSAN_a_ketszeres(self):
+        """A `ELO_SZURES_SZORZO` a határ; ha valaki átírja, ez szól."""
+        from picasapy.resample import ELO_SZURES_SZORZO
+
+        assert ELO_SZURES_SZORZO == 2, (
+            "a 2× határhoz mérés tartozik (a bigthumbs-mérce minden párja "
+            "legalább 2×); más érték új mérést igényel"
         )

@@ -192,8 +192,23 @@ def picasa_kicsinyites(
     a záró Lanczos-4 pedig a maradék **pontosan 2 : 1** arányt méretezi —
     és épp ezen a rögzített arányon lesz a mag egyfázisú, tehát gyors.
 
-    Ha a forrás nincs meg a célméret kétszeresében (enyhe, 2× alatti
-    kicsinyítés), elő-szűrés nélkül, az általános — lassabb — úton megy.
+    ## A 2× ALATTI sáv szándékosan a régi úton marad
+
+    Ha a forrás nincs meg a célméret kétszeresében (enyhe kicsinyítés),
+    ez a függvény `cv2.INTER_AREA`-t hív — **nem** a Picasa magját. Két
+    mért oka van, és mindkettő kell hozzá:
+
+    1. **Nincs rá bizonyítékunk.** A #871 mércéje a Picasa saját
+       `bigthumbs` bélyegkép-tára (119 kép, 288 képpont): abban minden
+       pár **legalább 2×-es** kicsinyítés. A 2× alatti sávra tehát nem
+       tudjuk, melyik a hűbb — a golden-készletünk nem mond róla semmit.
+    2. **Az ára mérve elfogadhatatlan.** Ott nincs mit elő-szűrni, ezért
+       az általános, csapónként számoló út futna: 2048 × 1536 → 1536 a
+       gépen **887 ms**, az `INTER_AREA` 8,9 ms-a helyett — **99×**.
+
+    Bizonyíték nélküli, százszoros lassítás nem mehet a felhasználóhoz. Ha
+    egyszer lesz eredeti Picasa-export enyhe kicsinyítéssel, ez a határ
+    újratárgyalható — addig a `tests/test_resample_871.py` őrzi.
 
     Args:
         kep: `uint8` kép (2D vagy csatornás).
@@ -204,7 +219,11 @@ def picasa_kicsinyites(
     elo_szelesseg = cel_szelesseg * ELO_SZURES_SZORZO
     elo_magassag = cel_magassag * ELO_SZURES_SZORZO
     if szelesseg < elo_szelesseg or magassag < elo_magassag:
-        return lanczos4_kicsinyites(kep, cel_szelesseg, cel_magassag)
+        return cv2.resize(
+            kep,
+            (cel_szelesseg, cel_magassag),
+            interpolation=cv2.INTER_AREA,
+        )
     if (szelesseg, magassag) != (elo_szelesseg, elo_magassag):
         kep = cv2.resize(
             kep, (elo_szelesseg, elo_magassag), interpolation=cv2.INTER_AREA

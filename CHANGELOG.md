@@ -21,14 +21,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
-- **A kicsinyítés az eredeti Picasa szűrőmagjával készül** (#871): a
-  bélyegképek, az export és az importáláskori leskálázás eddig területi
-  átlagolással kicsinyített, ami puhábbra sikerült az eredetinél. Mostantól
-  a Picasa saját Lanczos-4 magja dolgozik — ugyanaz, amit a program az
-  összes átméretezéséhez használ. A tulajdonos 2025-12-24-i Picasa-
-  adatbázisából kiemelt 119 valódi bélyegképhez mérve a kimenetünk 117
-  képen lett hasonlóbb az eredetihez, és a nagy kicsinyítések (bélyegkép)
-  ráadásul gyorsabbak is lettek.
+- **A bélyegképek az eredeti Picasa szűrőmagjával készülnek** (#871): a
+  bélyegképek eddig területi átlagolással kicsinyítettek, ami puhábbra
+  sikerült az eredetinél. Mostantól a Picasa saját Lanczos-4 magja
+  dolgozik — ugyanaz, amit a program az összes átméretezéséhez használ. A
+  2025-12-24-i Picasa-adatbázisból kiemelt 119 valódi bélyegképhez mérve a
+  kimenetünk 117 képen lett hasonlóbb az eredetihez, és a bélyegkép-készítés
+  ráadásul **gyorsabb** is lett (egy 12 megapixeles fotón 56 helyett 23
+  ezredmásodperc).
+
+  Az **exportálás** és az **importáláskori leskálázás** egyelőre a régi úton
+  marad: ott a pontosabb mag ezen a gépen 16-szor lassabb (egy 1600 képpontos
+  exportnál 18 helyett 300 ezredmásodperc képenként), és egy 200 képes
+  export 14 másodpercről 70-re nőne. A mag gyorsítása külön feladat (#2669);
+  amíg nincs meg, a gyorsaságot választjuk ott, ahol a különbség a kész
+  képen alig látszik.
 - **A csúszka fogantyúján megjelent a vésett középvonal** (#2641): az
   eredeti Picasa fogantyújának közepén egy sötét és egy világos, egy-egy
   képpont széles vonal fut — nálunk eddig nem volt. A helye és a színe a
