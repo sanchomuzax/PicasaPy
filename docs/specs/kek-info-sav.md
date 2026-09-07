@@ -423,3 +423,23 @@ aránya ezért is marad jelölt.
 *Bizonyítottsági fok: **megerősített** a 9.2 és a 9.3 (két felvétel,
 képpontra mérve, azonos betűvel igazolva) és a 9.5 (kimerítő pásztázás);
 **jelölt** a 9.4 aránya.*
+
+### 9.7 Nálunk: `infosav.js` (#2581, v0.8.330)
+
+A szabály a `src/picasapy/app/qml/PicasaPy/infosav.js`-ben él, tiszta
+függvényként — a szélesség-mérőt a hívó adja be, ezért a betűtől
+függetlenül próbálható (`tests/app/test_infosav_leepules_2581.py`,
+`QJSEngine`, szintetikus betűvel).
+
+| lépcső | mit tesz |
+|---|---|
+| 0. | elfér → változatlan |
+| 1. | `elotagNelkul` — csak az ELSŐ mezőből vágja a `mappa > `-t (a `>` szerepelhet dátumban vagy címkében is) |
+| 2. | `nevKozepenVagva` — a névre maradó helyet `FEJ_ARANY = 0.6` szerint osztja fej és far közt, a far a név VÉGE (a kiterjesztés megmarad) |
+| határeset | ha egy karakter sem fér el, a név a puszta `...` — a többi mezőhöz nem nyúlunk, ott a sáv clipje vág (6.) |
+
+A `TrayBar.qml` `trayInfoText`-je egy `TextMetrics`-szel mér a saját
+betűjével. A `clip: true` vészféknek megmarad.
+
+⚠️ A `FEJ_ARANY` a 9.4 **jelöltje**. Ha egyszer előkerül egy második
+csonkolt minta, EZT az egy számot kell átírni — a szerkezet nem függ tőle.

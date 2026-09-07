@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "infosav.js" as InfoSav
 
 // Alsó sáv (#150-ben kiemelve a Main.qml-ből): kék infó-sáv (busy-
 // animációval, #70) + kijelölés-tálca a művelet-gombokkal (Picasa).
@@ -229,6 +230,7 @@ Column {
             }
         }
         Text {
+            id: trayInfoLabel
             objectName: "trayInfoText"
             // #1934 (spec `kek-info-sav.md` 6.): a szövegnek SAJÁT clipje
             // van — `thumbui/clip: infotext_clip`, kényszere
@@ -244,9 +246,16 @@ Column {
             // szerzői értéke; ahol az elem kényszert kap, az elrendező
             // felülírja.
             //
-            // `clip`, nem `elide`: az eredeti elem CLIP, a levágás helye
-            // mért, a „…" hárompont viszont a MI döntésünk lenne — arra
-            // nincs bizonyítékunk, ezért nem vezetjük be.
+            // #2581: a levágás helye mért, ÉS a hárompont is az. A
+            // `clip` megmarad vészféknek, de a szöveg már NEM fut bele: a
+            // MÉRT kétlépcsős leépülés (`infosav.js`) előbb a `mappa > `
+            // előtagot hagyja el, aztán a név KÖZEPÉN vág három ASCII
+            // ponttal. A mérés a `docs/specs/kek-info-sav.md` 9.
+            // szakaszában áll, két felvétel képpontjaiból.
+            //
+            // (A #1934 kori „a hárompont a MI döntésünk lenne" kifogás
+            // ezzel megszűnt: az eredeti is ezt teszi, csak akkor, ha nem
+            // fér ki.)
             x: 20
             width: Math.max(0, parent.width - 40)
             anchors.verticalCenter: parent.verticalCenter
@@ -270,7 +279,14 @@ Column {
             // kijelölés tükre, plusz a máshonnan MEGTARTOTT képek, amiket a
             // rács sorindexei nem is tudnak leírni. Üres tálcánál minden
             // marad a mai ágakon (a `trayInfoText` ilyenkor üres).
-            text: (!tray.ctl || !tray.appWindow) ? ""
+            //: a MÉRT leépülés: előtag el, majd a név közepén vágás
+            text: InfoSav.lecsokkentve(
+                      trayInfoLabel.nyersSzoveg, trayInfoLabel.width,
+                      trayInfoLabel.szelessege)
+
+            /** A sáv szövege LEÉPÜLÉS NÉLKÜL — ebből dolgozik az InfoSav. */
+            readonly property string nyersSzoveg:
+                  (!tray.ctl || !tray.appWindow) ? ""
                   : (tray.ctl.collageRendering === true ? tray.collageWaitText
                   : (tray.appWindow.viewerOpen
                   ? tray.ctl.viewerInfo(tray.viewerIndex)
@@ -284,6 +300,19 @@ Column {
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true
+
+            // #2581: a leépülés KÉPPONT-alapú, tehát a saját betűnkkel
+            // kell mérni — a karakterszám nem elég (a mérés ezt zárta ki).
+            TextMetrics {
+                id: infoMetrika
+                font: trayInfoLabel.font
+            }
+
+            /** Egy sztring szélessége EBBEN a betűben, képpontban. */
+            function szelessege(szoveg) {
+                infoMetrika.text = szoveg
+                return infoMetrika.width
+            }
         }
     }
 
