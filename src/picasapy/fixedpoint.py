@@ -39,9 +39,14 @@ teljes szűrőláncot re-exportálja: onnan importálva a `color/classify.py`
 egy 60 soros aritmetikai segédért az egész render-csomagot behúzná.
 Mérve: `import picasapy.color.classify` **3 → 62** betöltött
 `picasapy`-modul, **0,083 → 0,131 mp**. Ez a modul ezért csomagsemleges,
-a `cvimage.py` / `ioutil.py` / `paths.py` mintájára. A natív oldalon ilyenkor a diszasszemblátumból kell
-eldönteni, `idiv` (csonkol) vagy `sar`/`shr` (padlóz) áll-e ott — a
-módszer a `docs/specs/binaris-regeszet-modszertan.md`-ben.
+a `cvimage.py` / `ioutil.py` / `paths.py` mintájára.
+
+## Hogyan dönthető el egy konkrét portolt osztásról, kell-e ez
+
+A natív oldalon a diszasszemblátumból kell eldönteni, `idiv` (csonkol)
+vagy `sar`/`shr` (padlóz) áll-e ott. A recept — a csomagolt (SWAR)
+számolás buktatójával együtt, amibe a #926 is beleszaladt — a
+`docs/specs/binaris-regeszet-modszertan.md` 23. szakaszában van.
 """
 
 from __future__ import annotations
