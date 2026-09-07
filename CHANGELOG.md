@@ -7,8 +7,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.333] – 2026-09-07
-
 ### Javítva
 
 - **A csúszka fogantyúján megjelent a vésett középvonal** (#2641): az
