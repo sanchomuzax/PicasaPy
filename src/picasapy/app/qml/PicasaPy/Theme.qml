@@ -124,6 +124,27 @@ QtObject {
     readonly property color sliderGrooveBorder: dark ? "#5b6573" : "#9aa2ae"
     readonly property color sliderGrooveTick: dark ? "#79838f" : "#f3f5f9"
 
+    // #2641: a FOGANTYÚ közepére VÉSETT vonal két oszlopa — szintén a
+    // `respack.yt`-ből, képpontról képpontra. A `scaleslider/thumb`
+    // (16 × 22) és az `editslider/thumb` (16 × 26) UGYANAZT adja:
+    //
+    //   sötét oldal   199 → #c7c7c7   (a vésés árnyéka, a bal oszlop)
+    //   világos oldal 244 → #f4f4f4   (a fény alulról, a jobb oszlop)
+    //
+    // A környező fogantyú-képpontok 232…240 között vannak, tehát a sötét
+    // oszlop ~35 értékkel alattuk, a világos ~10-zel felettük áll — a
+    // vésés a kettő KÜLÖNBSÉGÉBŐL látszik, nem az abszolút értékből.
+    //
+    // ⚠️ EZ A KÉT SZÍN SZÁNDÉKOSAN NEM TÉMAFÜGGŐ. A fogantyú átmenete
+    // (`PicasaSlider.qml`) beégetetten világos (`#fdfdfd` → `#e4e4e4`),
+    // sötét témában sem vált — tehát egy sötét témára hangolt vésés
+    // (#2f2f2f / #6b6b6b) a VILÁGOS fogantyún jelenne meg, 193 illetve
+    // 133 értékkel a szomszédja alatt: nem vésés, hanem fekete perjel.
+    // Amikor a fogantyú maga is témafüggővé válik (#2663), ide vissza kell
+    // hozni a `dark ? … : …` ágat — de csak EGYÜTT a fogantyúval.
+    readonly property color sliderHandleGrooveDark: "#c7c7c7"
+    readonly property color sliderHandleGrooveLight: "#f4f4f4"
+
     readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"
     readonly property color textGray: dark ? "#a29e96" : "#7a776f"

@@ -12,9 +12,8 @@ import QtQuick.Controls
 // eredetivel egybevág: a `scaleslider/thumb` képpontjai is semleges
 // szürkék (162…247), egyetlen kékes csatorna sincs bennük.
 //
-// ⚠️ Amit a #2627 még NEM épített meg: a fogantyú közepére vésett
-// függőleges vonal (a mérésben `scaleslider/thumb` x = 6, y 5…13, egy
-// sötét és egy világos oszlop). Külön jegy — a geometriát nem érinti.
+// #2641: a fogantyú közepén ott a VÉSETT vonal — egy sötét és egy
+// világos, egy-egy képpont széles oszlop. A geometriát nem érinti.
 //
 // Csak a vezérlő maga; a bekötés (pl. a nagyítás-csúszka a Main.qml
 // tálcájában) az integrátoré — #3 issue.
@@ -159,5 +158,56 @@ Slider {
             }
         }
         opacity: control.enabled ? 1.0 : 0.55
+
+        // #2641: a KÖZÉPRE VÉSETT vonal. A `respack.yt` mindkét fogantyú-
+        // rétege ugyanazt adja (`scaleslider/thumb` 16 × 22 és
+        // `editslider/thumb` 16 × 26): a rajz 14 képpont széles, és a
+        // vésés az x = 6 (érték 199, sötét) meg az x = 7 (érték 244,
+        // világos) oszlopban áll — vagyis a rajz vízszintes közepén, a
+        // sötét oldal BALRA. Ez a klasszikus vésett él: a fény BAL FELÜLRŐL
+        // esik, ezért árnyékos a bal és csillanó a jobb oldal.
+        // Függőlegesen mindkét rétegen pontosan 5-5 képpont marad ki felül
+        // és alul (a 19 tömör sorból a 6…14., a 23-ból a 6…18.).
+        //
+        // ⚠️ EGY kimondott eltérés az eredetitől: a mi fogantyúnk doboza
+        // a RÉTEG magasságát viszi (22 ill. 26 — így mérte a #2627/#2631),
+        // az eredeti lágy árnyéka viszont ott van a réteg alján, és mi azt
+        // nem rajzoljuk. Ezért a szimmetrikus 5-5 képpontos behúzást
+        // tartjuk meg: az árnyékhoz igazított 5/8-as behúzás egy árnyék
+        // NÉLKÜLI fogantyún szemre elcsúszottnak látszana. A geometriai
+        // eltérés maga külön jegy: **#2664**.
+        readonly property real vesesBehuzas: 5
+        readonly property real vesesHossz: (control.isHorizontal
+            ? height : width) - 2 * vesesBehuzas
+
+        Repeater {
+            model: 2
+            Rectangle {
+                // 0 = a vésés sötét oldala, 1 = a világos
+                color: index === 0
+                       ? Theme.sliderHandleGrooveDark
+                       : Theme.sliderHandleGrooveLight
+                // a fogantyú közepére eső KÉT képpont: vízszintes
+                // csúszkán a sötét van balra és a világos tőle jobbra,
+                // függőlegesen a sötét felül és a világos alatta — mindkettő
+                // ugyanazt a bal-felüli fényirányt adja
+                width: control.isHorizontal ? 1 : parent.vesesHossz
+                height: control.isHorizontal ? parent.vesesHossz : 1
+                x: control.isHorizontal
+                   ? Math.round(parent.width / 2) - 1 + index
+                   : parent.vesesBehuzas
+                y: control.isHorizontal
+                   ? parent.vesesBehuzas
+                   : Math.round(parent.height / 2) - 1 + index
+                // A rögzített 5-5 képpontos behúzás miatt a vonal sosem
+                // érhet a fogantyú két végéig — a küszöb arról szól, hogy
+                // 12 képpontnál rövidebb fogantyún a vésés 1 képpontra
+                // vagy semmire zsugorodna. Egy képpontnyi pötty nem vésés,
+                // hanem szennyeződésnek látszik, ezért inkább nem rajzoljuk.
+                // (Vízszintes csúszkán a fogantyú MAGASSÁGA a mérvadó,
+                // függőlegesen a SZÉLESSÉGE — a `vesesHossz` ezt kezeli.)
+                visible: parent.vesesHossz >= 2
+            }
+        }
     }
 }
