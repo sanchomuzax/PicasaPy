@@ -94,7 +94,7 @@ controller.setCollageSavedPath MÉRVE — a mentett kollázs útja bekötetlen
 controller.collageSeed MÉRVE — a véletlen elrendezés magja bekötetlen
 controller.folderDateText MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban)
 controller.locationOfRow MÉRVE — a sor helyadata bekötetlen
-controller.faceDetectionEnabledFor MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198)
+controller.faceDetectionEnabledFor FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal.
 controller.setExportMovieFull MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ
 editController.revision MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma
 editController.hasSavedRedeye MÉRVE — MENTETT javítást jelez; az EditorPanel.qml:132 SAJÁT, MÁS jelentésű `redeyeActive`-ot tart (nyitott eszköz) — #2393

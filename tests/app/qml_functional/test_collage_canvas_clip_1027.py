@@ -110,20 +110,48 @@ def _keppontok(view) -> np.ndarray:
     )
 
 
-def _stabil_kep(view, hatarido=8.0) -> np.ndarray:
+def _stabil_kep(view, panel=None, hatarido=8.0) -> np.ndarray:
     """Kirajzolt kép, ami két egymás utáni méréskor MÁR NEM változik.
 
     Fejnélküli módban az elrendezés és a miniatűrök késve érkeznek
     (#985/#987): beégetett várakozás helyett HATÁRIDŐS figyelés kell,
-    különben a mérés a még be nem állt képet hasonlítaná össze."""
+    különben a mérés a még be nem állt képet hasonlítaná össze.
+
+    ⚠️ #2450: a panel FŐ gombja (`collageShareButton`) az eredetihez híven
+    PULZÁL — folyamatosan futó animáció. Egy „az EGÉSZ ablak álljon be"
+    figyelés ettől SOSEM tudna sikerülni, pedig a gomb egyik próbának sem
+    tárgya. A `panel` átadásakor ezért a gomb téglalapját kihagyjuk az
+    összevetésből: nem a mérés lazítása, hanem a HATÓKÖRE — ugyanaz a
+    javítás, mint a vászon-árnyék őrénél (`test_collage_shadow_canvas_1021`).
+    """
+    kihagy = None
+    if panel is not None:
+        gomb = _child(panel, "collageShareButton")
+        if gomb is not None:
+            kihagy = _egesz_doboz(gomb)
+
+    def _osszevetheto(kep: np.ndarray) -> np.ndarray:
+        if kihagy is None:
+            return kep
+        x0, y0, x1, y1 = kihagy
+        masolat = kep.copy()
+        masolat[max(0, y0):max(0, y1), max(0, x0):max(0, x1)] = 0.0
+        return masolat
+
     kezdet = time.monotonic()
     elozo = None
     while time.monotonic() - kezdet < hatarido:
         _var()
         mostani = _keppontok(view)
-        if elozo is not None and np.array_equal(elozo, mostani):
-            return mostani
-        elozo = mostani
+        vagott = _osszevetheto(mostani)
+        # A KIMASZKOLT képet adjuk vissza: a hívók két képkockát vetnek
+        # össze, és a pulzáló gomb különbsége ott is hamis leletet adna
+        # (mérve: a „vászonkereten kívül nem rajzol" próbán 318 képpont).
+        # Mindkét képkockán ugyanaz a téglalap nullázódik, tehát az
+        # összevetés a gombra érzéketlen, minden másra változatlan.
+        if elozo is not None and np.array_equal(elozo, vagott):
+            return vagott
+        elozo = vagott
     raise AssertionError("a kirajzolt kép nem állt be a határidőn belül")
 
 
@@ -249,7 +277,7 @@ def test_a_bal_oldali_oszlop_a_kereten_kivuli_savja_is_kirajzolodik(controller):
     view = panel.property("_view")
     controller.selectNoNodes()
     _var()
-    kijeloles_nelkul = _stabil_kep(view)
+    kijeloles_nelkul = _stabil_kep(view, panel)
 
     vaszon_x0 = _egesz_doboz(_child(panel, "collageCanvas"))[0]
     o_x0, o_y0, _, o_y1 = _egesz_doboz(_child(panel, "collageSnapColumn"))
@@ -260,7 +288,7 @@ def test_a_bal_oldali_oszlop_a_kereten_kivuli_savja_is_kirajzolodik(controller):
 
     controller.setCollageSelection([0])
     _var()
-    kijelolessel = _stabil_kep(view)
+    kijelolessel = _stabil_kep(view, panel)
 
     sav = (o_x0, o_y0, vaszon_x0, o_y1)
     assert _belul_valtozott(kijeloles_nelkul, kijelolessel, sav) > 0, (
@@ -284,7 +312,7 @@ def test_a_lapon_kivulre_tolt_csomopont_nem_rajzol_a_vaszonkereten_kivul(control
     panel = _panel(controller, 1280, 800)
     view = panel.property("_view")
     _var()
-    alap = _stabil_kep(view)
+    alap = _stabil_kep(view, panel)
 
     vaszon = _egesz_doboz(_child(panel, "collageCanvas"))
     # A célpont a BAL HASÁB közepe: az ablakon belül van (különben a mérés
@@ -296,7 +324,7 @@ def test_a_lapon_kivulre_tolt_csomopont_nem_rajzol_a_vaszonkereten_kivul(control
     for i in range(controller.collageClipCount):
         controller.moveNode(i, *_lapegysegben(panel, cel_x, cel_y))
     _var()
-    kitolva = _stabil_kep(view)
+    kitolva = _stabil_kep(view, panel)
 
     # Az őrnek FOGA van: ha a tolás semmit nem mozdítana, a teszt akkor is
     # zöld lenne — ezért előbb kimondjuk, hogy a kép TÉNYLEG megváltozott.
