@@ -173,6 +173,32 @@ def _idezetek_nelkul(tiszta: str) -> str:
     return "".join(ki)
 
 
+def blokkok_tipusra(forras: str, tipus: str) -> list[tuple[int, str]]:
+    """Az ÖSSZES `tipus { … }` blokk, `(sorszám, blokk)` párokként.
+
+    A „minden ilyen elem megfelel-e?" fajta állításnak nem egy horgony a
+    kiindulója, hanem egy TÍPUS. Ezt eddig öt teszt oldotta meg saját
+    zárójel-számlálóval (#2613) — öt másolat ugyanabból a logikából, és a
+    #2575 mérése szerint mind az öt hiányos volt (nem ugrották át a
+    sztringbeli kapcsos zárójelet).
+
+    A sorszám az EREDETI (kommentekkel együtt olvasott) forrásra vonatkozik,
+    hogy a lelet helye visszakereshető legyen.
+
+    Egymásba ágyazott blokkot is felsorol: a külsőt és a belsőt is.
+    """
+    tiszta = kommentek_nelkul(forras)
+    vak = _idezetek_nelkul(tiszta)
+    minta = re.compile(r"\b" + re.escape(tipus) + r"\s*\{")
+    ki: list[tuple[int, str]] = []
+    for talalat in minta.finditer(vak):
+        nyito = vak.index("{", talalat.start())
+        vege = _zaro(tiszta, nyito, tipus)
+        sorszam = tiszta[:talalat.start()].count("\n") + 1
+        ki.append((sorszam, tiszta[nyito:vege + 1]))
+    return ki
+
+
 def elozo_komment(forras: str, horgony: str) -> str:
     """A `horgony`-t tartalmazó ELEM deklarációja fölötti komment-tömb.
 

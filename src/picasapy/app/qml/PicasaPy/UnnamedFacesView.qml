@@ -206,6 +206,13 @@ ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 3
                         source: faceTile.modelData.thumbUrl
+                        // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
+                        // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a Qt
+                        // „Mipmap settings changed" figyelmeztetést ad, és VISSZAESIK a
+                        // korábbi szűrésre — a kép nem azzal a szűréssel jelenik meg,
+                        // amit kértünk (a tulajdonos Windowson hatszor látta).
+                        smooth: true
+                        mipmap: true
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                     }

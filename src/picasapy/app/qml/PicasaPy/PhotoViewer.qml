@@ -835,6 +835,13 @@ Rectangle {
                             source: viewer.photosModel
                                 ? viewer.photosModel.thumbUrlAt(parent.racsSor)
                                 : ""
+                            // #1600: a bélyegkép-textúra a Qt gyorsítótárában KÖZÖS a
+                            // ráccsal, ami mipmapot kér (#83). Eltérő beállítás mellett a
+                            // Qt „Mipmap settings changed” figyelmeztetést ad, és
+                            // VISSZAESIK a korábbi szűrésre — a kép nem azzal a szűréssel
+                            // jelenik meg, amit kértünk (Windowson hatszor egy futásban).
+                            smooth: true
+                            mipmap: true
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                         }

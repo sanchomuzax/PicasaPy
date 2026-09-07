@@ -327,3 +327,69 @@ Item {
         assert "elso indoklas" not in elozo_komment(
             self._FORRAS, 'objectName: "masodik"'
         )
+
+
+class TestBlokkokTipusra2613:
+    """A felsoroló mérő (#2613) — öt teszt saját párosítóját váltja ki.
+
+    A #1600 mérése mutatta meg, miért nem elég a sor-alapú keresés: a
+    `TrayBar` és a `PhotoViewer` `source:` kötése NÉGY soros ternárius, és
+    a sor-alapú első változat épp azt a hármat nem találta meg, ami a
+    tulajdonos képernyőjén a rács mellett látszik.
+    """
+
+    _FORRAS = """
+Item {
+    Image {
+        objectName: "elso"
+        source: "a.png"
+    }
+    Rectangle {
+        Image {
+            objectName: "masodik"
+            text: "{ nem zarojel"
+        }
+    }
+}
+Image { objectName: "harmadik" }
+"""
+
+    def test_mindet_felsorolja(self):
+        from tests.support.qml_blokk import blokkok_tipusra
+
+        blokkok = blokkok_tipusra(self._FORRAS, "Image")
+        assert len(blokkok) == 3
+        nevek = [b for _, b in blokkok]
+        assert any('"elso"' in b for b in nevek)
+        assert any('"masodik"' in b for b in nevek)
+        assert any('"harmadik"' in b for b in nevek)
+
+    def test_a_BEAGYAZOTT_blokkot_sem_hagyja_ki(self):
+        """A `masodik` egy `Rectangle`-ben ül — a naiv, felső szintre
+        korlátozott felsorolás kihagyná."""
+        from tests.support.qml_blokk import blokkok_tipusra
+
+        assert any('"masodik"' in b
+                   for _, b in blokkok_tipusra(self._FORRAS, "Image"))
+
+    def test_a_sztringbeli_zarojel_nem_csusztat(self):
+        from tests.support.qml_blokk import blokkok_tipusra
+
+        masodik = next(b for _, b in blokkok_tipusra(self._FORRAS, "Image")
+                       if '"masodik"' in b)
+        assert masodik.rstrip().endswith("}")
+        assert "harmadik" not in masodik
+
+    def test_a_sorszam_visszakereshetove_teszi(self):
+        from tests.support.qml_blokk import blokkok_tipusra
+
+        sorszamok = [n for n, _ in blokkok_tipusra(self._FORRAS, "Image")]
+        assert sorszamok == sorted(sorszamok)
+        assert all(n > 0 for n in sorszamok)
+
+    def test_MAS_tipusra_nem_illeszkedik(self):
+        """A `PicasaImage` nem `Image` — a szóhatár őrzi."""
+        from tests.support.qml_blokk import blokkok_tipusra
+
+        forras = 'PicasaImage {\n    objectName: "nem ez"\n}\n'
+        assert blokkok_tipusra(forras, "Image") == []

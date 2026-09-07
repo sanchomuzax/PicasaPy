@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.323] – 2026-09-07
+
+### Javítva
+
+- **A bélyegképek végre azzal a szűréssel jelennek meg, amivel kérjük őket**
+  (#1600). A program több helyen ugyanazt a bélyegképet mutatja (rács,
+  idővonal, tálca, duplikátum-kereső, importálás, arcok, kollázs-klipek), és
+  ezek a képek a háttérben **egyetlen közös** példányon osztoztak — de nem
+  ugyanazt a simítást kérték rá. A rendszer ilyenkor figyelmeztetést írt a
+  naplóba, és **visszaesett a korábbi beállításra**: a kicsinyített kép ott
+  maradt szemcsés, ahol simának kellett volna lennie. Mostantól mind a nyolc
+  hely ugyanazt kéri.
+
 ## [0.8.322] – 2026-09-07
 
 ### Javítva
