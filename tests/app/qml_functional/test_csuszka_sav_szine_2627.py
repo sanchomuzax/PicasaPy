@@ -123,16 +123,21 @@ def _kep(qt_app):
     assert hibak == [], hibak
     root = component.create()
     assert root is not None
-    csuszka = root.findChild(object, "proba")
-    assert csuszka is not None
-    fogantyu = csuszka.property("handle")
-    assert fogantyu is not None
-    _FOGANTYU["bal"] = fogantyu.mapToScene(QPointF(0.0, 0.0)).x()
     root.setParentItem(view.contentItem())
     view.resize(_SZELES, _MAGAS)
     view.show()
     assert QTest.qWaitForWindowExposed(view)
     _var_a_kirajzolasra(view, qt_app)
+    # ⚠️ A fogantyú helyét CSAK a megjelenítés után szabad kiolvasni: a
+    # `mapToScene` a `setParentItem` előtt a jelenetbe még be nem kötött
+    # elem koordinátáit adja. Ma véletlenül jó volt (a gyökér a (0,0)-ban
+    # áll), de egy eltolt gyökérnél némán hazudna.
+    csuszka = root.findChild(object, "proba")
+    assert csuszka is not None
+    fogantyu = csuszka.property("handle")
+    assert fogantyu is not None
+    _FOGANTYU["bal"] = fogantyu.mapToScene(QPointF(0.0, 0.0)).x()
+    _FOGANTYU["jobb"] = _FOGANTYU["bal"] + fogantyu.width()
     kep = view.grabWindow()
     _KEEPALIVE.extend((view, root, component))
     return kep
@@ -269,4 +274,108 @@ class TestAJelolok:
             f"respack ott kettőt ad (bal vég + közép): {vilagos}. A "
             f"harmadik, jobb szélső jelölő a fogantyú alatt van "
             f"(a mért helyek aránya: {MERT_JELOLOK})"
+        )
+
+
+#: MÁSODIK állás a jelölők teljes leltárához. A `value: 100` mellett a
+#: fogantyú ráül a jobb szélső jelölőre, ezért a fenti próba csak kettőt
+#: tud mérni — és a #2641 code review joggal jegyezte meg, hogy így a
+#: harmadik jelölő kikerülne MINDEN mérés alól. `value: 30`-nál a fogantyú
+#: a bal harmadban áll, és mind a három jelölő szabadon látszik.
+_QML_HARMADAN = """
+import QtQuick
+import PicasaPy 1.0
+Rectangle {
+    width: %d; height: %d
+    color: "#ffffff"
+    PicasaSlider {
+        objectName: "proba"
+        anchors.centerIn: parent
+        width: parent.width
+        grooveThickness: 9
+        handleWidth: 16
+        handleHeight: 22
+        handleRadius: 3
+        from: 0; to: 100; value: 30
+    }
+}
+""" % (_SZELES, _MAGAS)
+
+#: A `value: 30`-as állás fogantyúja — a `_kep_harmadan()` tölti ki.
+_FOGANTYU_HARMADAN: dict[str, float] = {}
+
+
+def _kep_harmadan(qt_app):
+    import picasapy.app.application as app_module
+
+    view = QQuickView()
+    view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
+    component = QQmlComponent(view.engine())
+    component.setData(_QML_HARMADAN.encode("utf-8"), QUrl())
+    hibak = [hiba.toString() for hiba in component.errors()]
+    assert hibak == [], hibak
+    root = component.create()
+    assert root is not None
+    root.setParentItem(view.contentItem())
+    view.resize(_SZELES, _MAGAS)
+    view.show()
+    assert QTest.qWaitForWindowExposed(view)
+    _var_a_kirajzolasra(view, qt_app)
+    csuszka = root.findChild(object, "proba")
+    assert csuszka is not None
+    fogantyu = csuszka.property("handle")
+    assert fogantyu is not None
+    _FOGANTYU_HARMADAN["bal"] = fogantyu.mapToScene(QPointF(0.0, 0.0)).x()
+    _FOGANTYU_HARMADAN["jobb"] = (
+        _FOGANTYU_HARMADAN["bal"] + fogantyu.width()
+    )
+    kep = view.grabWindow()
+    _KEEPALIVE.extend((view, root, component))
+    return kep
+
+
+@pytest.fixture(scope="module")
+def _rajz_harmadan(qt_app):
+    return _kep_harmadan(qt_app)
+
+
+class TestMindHaromJelolo:
+    """A respack MINDHÁROM jelölője megvan — a fogantyú takarása nélkül.
+
+    A fenti `test_a_KET_LATHATO_jelolo_ott_van` a `value: 100` állásban
+    csak kettőt lát. Ha egyedül az maradna, a jobb szélső jelölő
+    elveszítése (pl. `model: 3` → `model: 2`) NÉMÁN átmenne. Ez a próba
+    ezért a fogantyút félreállítja, és a teljes soron számol.
+    """
+
+    def test_a_harom_jelolo_mind_ott_van(self, _rajz_harmadan):
+        sorok = _sav_sorai(_rajz_harmadan, _SZELES // 4)
+        y = (min(sorok) + max(sorok)) // 2
+        kitoltes = sum(
+            _rajz_harmadan.pixelColor(_SZELES // 4, y).getRgb()[:3]
+        ) / 3
+        bal = int(_FOGANTYU_HARMADAN["bal"])
+        jobb = int(_FOGANTYU_HARMADAN["jobb"]) + 1
+        assert bal > 20 and jobb < _SZELES - 20, (
+            f"a fogantyú {bal}…{jobb} között áll — ebben az állásban "
+            "takarja valamelyik szélső jelölőt, a próba nem mérne teljeset"
+        )
+        vilagos = [
+            x
+            for x in range(_SZELES)
+            if not (bal <= x < jobb)  # a fogantyú alatt nem a sávot látjuk
+            and _rajz_harmadan.pixelColor(x, y) != QColor(255, 255, 255)
+            and sum(_rajz_harmadan.pixelColor(x, y).getRgb()[:3]) / 3
+            > kitoltes + 10
+        ]
+        csoportok = 0
+        elozo = -5
+        for x in vilagos:
+            if x != elozo + 1:
+                csoportok += 1
+            elozo = x
+        assert csoportok == len(MERT_JELOLOK), (
+            f"{csoportok} jelölő-csoportot mértem a fogantyún kívül, a "
+            f"respack {len(MERT_JELOLOK)}-at ad "
+            f"(a mért helyek aránya: {MERT_JELOLOK}): {vilagos}"
         )

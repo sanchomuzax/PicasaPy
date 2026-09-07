@@ -135,10 +135,15 @@ QtObject {
     // oszlop ~35 értékkel alattuk, a világos ~10-zel felettük áll — a
     // vésés a kettő KÜLÖNBSÉGÉBŐL látszik, nem az abszolút értékből.
     //
-    // A sötét pár saját döntés (az eredetiben nincs sötét mód): ugyanaz a
-    // két lépés a sötét fogantyú alapszínéhez képest.
-    readonly property color sliderHandleGrooveDark: dark ? "#2f2f2f" : "#c7c7c7"
-    readonly property color sliderHandleGrooveLight: dark ? "#6b6b6b" : "#f4f4f4"
+    // ⚠️ EZ A KÉT SZÍN SZÁNDÉKOSAN NEM TÉMAFÜGGŐ. A fogantyú átmenete
+    // (`PicasaSlider.qml`) beégetetten világos (`#fdfdfd` → `#e4e4e4`),
+    // sötét témában sem vált — tehát egy sötét témára hangolt vésés
+    // (#2f2f2f / #6b6b6b) a VILÁGOS fogantyún jelenne meg, 193 illetve
+    // 133 értékkel a szomszédja alatt: nem vésés, hanem fekete perjel.
+    // Amikor a fogantyú maga is témafüggővé válik (#2663), ide vissza kell
+    // hozni a `dark ? … : …` ágat — de csak EGYÜTT a fogantyúval.
+    readonly property color sliderHandleGrooveDark: "#c7c7c7"
+    readonly property color sliderHandleGrooveLight: "#f4f4f4"
 
     readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"
