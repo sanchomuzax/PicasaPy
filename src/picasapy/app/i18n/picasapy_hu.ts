@@ -5781,6 +5781,45 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
 </context>
 <context>
+    <name>TrayAlbumToken</name>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>Album Selected</source>
+        <comment>CThumbUI::UpdateAlbumAlbum</comment>
+        <translation>Kiválasztott album</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>Folder Selected</source>
+        <comment>CThumbUI::UpdateAlbumFolder</comment>
+        <translation>Kiválasztott mappa</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>photo</source>
+        <comment>CThumbUI::UpdateAlbumphoto</comment>
+        <translation>fotó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>photos</source>
+        <comment>CThumbUI::UpdateAlbumCoverphotos</comment>
+        <translation>fotó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>No selection</source>
+        <comment>CThumbUI::UpdateAlbumCoverNoSel</comment>
+        <translation>Nincs kijelölés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayAlbumToken.qml"/>
+        <source>%1 - %2 %3</source>
+        <comment>CThumbUI::UpdateAlbumCover</comment>
+        <translation>%1 - %2 %3</translation>
+    </message>
+</context>
+<context>
     <name>VideoPlayerView</name>
     <message>
         <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58"/>

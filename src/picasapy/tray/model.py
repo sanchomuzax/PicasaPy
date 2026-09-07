@@ -55,11 +55,85 @@ class TrayItem:
 
 
 @dataclass(frozen=True, slots=True)
+class TrayAlbumToken:
+    """ÖSSZECSUKOTT mappa-/album-token — a tálca MÁSIK elemtípusa (#1919).
+
+    Az eredeti tálca egy egész mappát vagy albumot egyetlen elemként is
+    tud tartani: bélyegkép-rács helyett egy borítókép, rajta középre
+    igazított felirattal („Kiválasztott mappa - 82 fotó"). A rétegkészlet
+    a `referencia/tre-eroforrasok/scratch.tre` `scratch/album` családja.
+
+    Amiben ez NEM fotó: nincs `photos.id`-ja, tehát a `photo_ids`, a
+    `held_ids`, a `used_ids` és az `unused_ids` nem adja vissza — azok
+    kifejezetten fotó-azonosítókat ígérnek. A tokent az `album_tokens`
+    kérdezi le.
+
+    A `held` és a `used` viszont UGYANAZT jelenti, mint a képnél: a token
+    is tálca-elem, tehát a következő kijelölés elsöpri, ha nincs
+    megtartva, és a „Kijelölés megtartása" rá is vonatkozik.
+    """
+
+    #: a token KULCSA — a mappa útvonala vagy az album azonosítója. Ez
+    #: teszi felismerhetővé (ugyanaz a mappa nem kerülhet be kétszer);
+    #: a felirat szándékosan NINCS benne, mert az a nyelvtől függ.
+    key: str
+    #: hány fotót képvisel — ez kerül a feliratba
+    photo_count: int
+    #: a borítókép `photos.id`-ja (`scratch/albumcover`), ha van. Üres
+    #: mappánál nincs miből venni — az nem hiba.
+    cover_photo_id: int | None = None
+    #: album (`CThumbUI::UpdateAlbumAlbum` — „Kiválasztott album") vagy
+    #: mappa (`CThumbUI::UpdateAlbumFolder` — „Kiválasztott mappa")
+    is_album: bool = False
+    #: „Kijelölés megtartása" — a következő kijelölés NEM söpri el
+    held: bool = False
+    #: felhasznált — ugyanaz a jelölő, mint a képnél
+    used: bool = False
+
+    def __post_init__(self) -> None:
+        """Bemenet-ellenőrzés: ami nem érvényes token, az kimondva
+        bukjon el, ne némán rajzolódjon ki üresen."""
+        if not isinstance(self.key, str) or not self.key:
+            raise ValueError(
+                f"a token kulcsa nem üres sztring legyen: {self.key!r}"
+            )
+        if isinstance(self.photo_count, bool) or not isinstance(
+            self.photo_count, int
+        ):
+            raise TypeError(
+                f"a darabszám egész szám legyen: {self.photo_count!r}"
+            )
+        if self.photo_count < 0:
+            raise ValueError(
+                f"a darabszám nem lehet negatív: {self.photo_count!r}"
+            )
+        if self.cover_photo_id is not None and (
+            isinstance(self.cover_photo_id, bool)
+            or not isinstance(self.cover_photo_id, int)
+            or self.cover_photo_id <= 0
+        ):
+            raise ValueError(
+                "a borító azonosítója pozitív egész legyen: "
+                f"{self.cover_photo_id!r}"
+            )
+
+
+#: A tálca egy eleme: egyedi kép VAGY összecsukott mappa-/album-token.
+TrayEntry = TrayItem | TrayAlbumToken
+
+
+def _is_photo(entry: TrayEntry) -> bool:
+    """Fotó-elem-e (szemben az összecsukott tokennel)."""
+    return isinstance(entry, TrayItem)
+
+
+@dataclass(frozen=True, slots=True)
 class TrayState:
     """A tálca teljes állapota."""
 
-    #: az elemek BESZÚRÁSI sorrendben — ez a műveletek sorrendje is
-    items: tuple[TrayItem, ...] = ()
+    #: az elemek BESZÚRÁSI sorrendben — ez a műveletek sorrendje is.
+    #: KÉTFÉLE elem lehet benne (#1919): kép és mappa-/album-token.
+    items: tuple[TrayEntry, ...] = ()
     #: a legutóbb megjegyzett elemszám: az `il_ClearFromTray` felkínált
     #: takarítás küszöbe (a bináris `+0x3194` mezője, spec 13.)
     remembered_count: int = 0
@@ -95,35 +169,61 @@ def _ids(values: Iterable[int]) -> tuple[int, ...]:
 
 
 def photo_ids(state: TrayState) -> tuple[int, ...]:
-    """A tálca MINDEN eleme, beszúrási sorrendben."""
-    return tuple(item.photo_id for item in state.items)
+    """A tálca minden KÉP-eleme, beszúrási sorrendben.
+
+    Az összecsukott mappa-/album-tokent (#1919) szándékosan nem adja
+    vissza: annak nincs `photos.id`-ja. Azt az `album_tokens` kérdezi.
+    """
+    return tuple(item.photo_id for item in state.items if _is_photo(item))
+
+
+def album_tokens(state: TrayState) -> tuple[TrayAlbumToken, ...]:
+    """Az ÖSSZECSUKOTT mappa-/album-tokenek, beszúrási sorrendben (#1919)."""
+    return tuple(
+        item for item in state.items if isinstance(item, TrayAlbumToken)
+    )
 
 
 def held_ids(state: TrayState) -> tuple[int, ...]:
-    """A RÖGZÍTETT elemek — a rácsban ezek kapnak jelvényt (`holdadorner`)."""
-    return tuple(item.photo_id for item in state.items if item.held)
+    """A RÖGZÍTETT képek — a rácsban ezek kapnak jelvényt (`holdadorner`)."""
+    return tuple(
+        item.photo_id
+        for item in state.items
+        if _is_photo(item) and item.held
+    )
 
 
 def used_ids(state: TrayState) -> tuple[int, ...]:
-    """A FELHASZNÁLT elemek (a kollázsra már feltett képek)."""
-    return tuple(item.photo_id for item in state.items if item.used)
+    """A FELHASZNÁLT képek (a kollázsra már feltettek)."""
+    return tuple(
+        item.photo_id
+        for item in state.items
+        if _is_photo(item) and item.used
+    )
 
 
 def unused_ids(state: TrayState) -> tuple[int, ...]:
-    """A FEL NEM HASZNÁLT elemek — a Klipek fül `Unused Pictures` listája,
+    """A FEL NEM HASZNÁLT képek — a Klipek fül `Unused Pictures` listája,
     és a „Klipek (N)" fülfelirat száma."""
-    return tuple(item.photo_id for item in state.items if not item.used)
+    return tuple(
+        item.photo_id
+        for item in state.items
+        if _is_photo(item) and not item.used
+    )
 
 
 def contains(state: TrayState, photo_id: int) -> bool:
     """A fotó a tálcán van-e."""
-    return any(item.photo_id == photo_id for item in state.items)
+    return any(
+        _is_photo(item) and item.photo_id == photo_id for item in state.items
+    )
 
 
 def is_held(state: TrayState, photo_id: int) -> bool:
     """A fotó RÖGZÍTETT-e (jelvény a rácsban)."""
     return any(
-        item.photo_id == photo_id and item.held for item in state.items
+        _is_photo(item) and item.photo_id == photo_id and item.held
+        for item in state.items
     )
 
 
@@ -147,7 +247,7 @@ def with_selection(state: TrayState, selection: Iterable[int]) -> TrayState:
     megmarado = tuple(
         item for item in state.items if item.held or item.used
     )
-    meglevo = {item.photo_id for item in megmarado}
+    meglevo = {item.photo_id for item in megmarado if _is_photo(item)}
     return replace(
         state,
         items=megmarado
@@ -175,11 +275,13 @@ def with_hold(
         )
     kertek = _ids(selection)
     kert_halmaz = set(kertek)
-    meglevo = {item.photo_id for item in state.items}
+    meglevo = {item.photo_id for item in state.items if _is_photo(item)}
     return replace(
         state,
         items=tuple(
-            replace(item, held=True) if item.photo_id in kert_halmaz else item
+            replace(item, held=True)
+            if _is_photo(item) and item.photo_id in kert_halmaz
+            else item
             for item in state.items
         )
         + tuple(
@@ -192,12 +294,78 @@ def with_hold(
 
 def without(state: TrayState, selection: Iterable[int]) -> TrayState:
     """„Kijelölés eltávolítása" (`Tray::ID_REMOVE_SELECTION`), és a Klipek
-    lap „–" gombja (*Remove selected clips from the tray*)."""
+    lap „–" gombja (*Remove selected clips from the tray*).
+
+    FOTÓ-azonosítókkal dolgozik; az összecsukott token (#1919) marad — azt
+    a `without_album_token` viszi el a kulcsával.
+    """
     torlendo = set(_ids(selection))
     return replace(
         state,
         items=tuple(
-            item for item in state.items if item.photo_id not in torlendo
+            item
+            for item in state.items
+            if not (_is_photo(item) and item.photo_id in torlendo)
+        ),
+    )
+
+
+def with_album_token(
+    state: TrayState, token: TrayAlbumToken
+) -> TrayState:
+    """Összecsukott mappa-/album-token a tálcára (#1919).
+
+    Ugyanarra a KULCSRA a második hívás felülírja az elsőt, és a token a
+    HELYÉN marad: a darabszám frissülése (a mappába új kép került) nem
+    művelet, tehát nem is rendezheti át a tálcát.
+
+    ## Mikor mutatja meg ezt az EREDETI (KIMÉRVE, #1919)
+
+    Nem parancs és nem gesztus: **minden képfrissítéskor újraértékelt
+    szabály**. A `scratch/album` réteg egy állapot-küldöttet kap
+    (a bekötés `0x00572ba4`), és a küldött `0x00563530` függvénye dönt —
+    `4` = mutasd, `8` = rejtsd:
+
+    - van album-/mappa-kijelölés (`CThumbUI+0xEAC` nem NULL), ÉS
+    - annak a tömbje nem üres, ÉS
+    - a KÉP-kijelölés (`CThumbUI+0xEA4`) üres.
+
+    Vagyis amint a felhasználó egyetlen képet is kijelöl, a token eltűnik,
+    és a bélyegképek veszik át a helyét.
+
+    ⚠️ Ezt a szabályt a PicasaPy még NEM futtatja magától: a mi
+    „mappa-kijelölésünk" a megnyitott mappa, ami nem pontosan ugyanaz, mint
+    az eredeti `CAlbumSelectionNode`-ja, és az automatikus megjelenítés a
+    tálca MINDENNAPI kinézetét írná át. Amíg ez nincs a tulajdonos szeme
+    előtt ellenőrizve, a token kifejezett hívásra kerül ki — a szabály
+    viszont itt áll, hogy a bekötés ne kezdődjön újra a kutatással.
+    """
+    if not isinstance(token, TrayAlbumToken):
+        raise TypeError(f"mappa-/album-token kellene, nem {type(token)!r}")
+    csere = False
+    ujak: list[TrayEntry] = []
+    for item in state.items:
+        if isinstance(item, TrayAlbumToken) and item.key == token.key:
+            ujak.append(token)
+            csere = True
+        else:
+            ujak.append(item)
+    if not csere:
+        ujak.append(token)
+    return replace(state, items=tuple(ujak))
+
+
+def without_album_token(state: TrayState, key: str) -> TrayState:
+    """Az adott kulcsú összecsukott token eltávolítása (#1919).
+
+    A nem létező kulcs nem hiba — ugyanaz az elv, mint a `without`-nál.
+    """
+    return replace(
+        state,
+        items=tuple(
+            item
+            for item in state.items
+            if not (isinstance(item, TrayAlbumToken) and item.key == key)
         ),
     )
 
@@ -221,7 +389,9 @@ def with_used(
     return replace(
         state,
         items=tuple(
-            replace(item, used=used) if item.photo_id in jelolendo else item
+            replace(item, used=used)
+            if _is_photo(item) and item.photo_id in jelolendo
+            else item
             for item in state.items
         ),
     )
