@@ -40,6 +40,11 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from tests.support.qml_blokk import (
+    blokk_horgony_utan,
+    blokk_horgonyra,
+    elozo_komment,
+)
 
 _HEADER = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxHeader.qml"
@@ -98,8 +103,9 @@ class TestAGombOttVan:
         assert (gomb.width(), gomb.height()) == (29.0, 27.0)
 
     def test_van_buboreksugoja(self):
-        reszlet = _HEADER[_HEADER.find("headerCollageButton"):][:900]
-        assert "ToolTip.text" in reszlet
+        assert "ToolTip.text" in blokk_horgonyra(
+            _HEADER, "headerCollageButton"
+        )
 
 
 class TestABekotes:
@@ -115,8 +121,7 @@ class TestABekotes:
         tálca más halmaz. Az eredeti is a panelhez tartozó képekkel
         dolgozik.
         """
-        kezdet = _FEED.find("onCollageRequested")
-        blokk = _FEED[kezdet:kezdet + 700]
+        blokk = blokk_horgony_utan(_FEED, "onCollageRequested")
         assert "modelData.start" in blokk and "modelData.count" in blokk, (
             "a gomb nem a csoport sorait adja át"
         )
@@ -138,8 +143,11 @@ class TestAmitKIMONDUNK:
     def test_a_forras_kimondja_hogy_EGY_fejlec_van(self):
         """Hogy egy későbbi kör ne építsen külön arc-fejlécet, ami nálunk
         nem létezik."""
-        reszlet = _HEADER[_HEADER.find("headerCollageButton") - 1400:]
-        reszlet = reszlet[:2200]
+        # #2575: SZÁNDÉKOS környezet-nézés — itt épp az a mérce, hogy a
+        # forrás KIMONDJA az indoklást. A határ viszont nem karakterszám
+        # (a régi `[-1400:][:2200]` egy szomszéd indoklását is elfogadta
+        # volna), hanem a gomb fölötti összefüggő komment-tömb.
+        reszlet = elozo_komment(_HEADER, "headerCollageButton")
         assert "arc" in reszlet.lower(), (
             "a forrás nem mondja ki, hogy ez a fejléc az arc-nézetet is "
             "kiszolgálja"

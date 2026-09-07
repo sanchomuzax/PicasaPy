@@ -44,18 +44,11 @@ def _billentyu_blokk(sorozat: str) -> str:
     ⚠️ Nem rögzített karakterablak: a blokk hossza a kommentektől függ, és
     egy jogos bővítés némán kivágná a keresett sort.
     """
+    # #2575: a kézzel írt zárójel-számláló helyett a KÖZÖS mérő
+    # (`tests/support/qml_blokk.py`), aminek saját őrei vannak.
     jel = f'sequence: "{sorozat}"'
     assert jel in _QML, f"nincs `Shortcut` erre: {sorozat}"
-    kezd = _QML.rindex("Shortcut {", 0, _QML.index(jel))
-    melyseg = 0
-    for i in range(_QML.index("{", kezd), len(_QML)):
-        if _QML[i] == "{":
-            melyseg += 1
-        elif _QML[i] == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return _QML[kezd : i + 1]
-    raise AssertionError(f"nem záródik a blokk: {sorozat}")
+    return blokk_horgonyra(_QML, jel)
 
 
 class TestANegyBillentyuLETEZIK:
@@ -132,6 +125,8 @@ class TestAmiNEMromolhatEl:
 import pytest  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
+
+from tests.support.qml_blokk import blokk_horgonyra  # noqa: E402
 
 from app.qml_functional.test_document_tab_strip_944 import (  # noqa: E402
     _child,

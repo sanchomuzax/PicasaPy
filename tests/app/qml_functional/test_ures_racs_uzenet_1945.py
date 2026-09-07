@@ -39,6 +39,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtQuick import QQuickItem
 
 from support.jpeg_factory import make_jpeg
+from tests.support.qml_blokk import blokk_horgonyra
 
 #: `m_displayfont18_Reg` — a mért betűméret
 MERT_BETUMERET = 18
@@ -145,8 +146,7 @@ class TestAzUzenetAKKOR_LATSZIK_AMIKOR_KELL:
             Path(__import__("picasapy.app", fromlist=["app"]).__file__).parent
             / "qml" / "PicasaPy" / "LightboxFeed.qml"
         ).read_text(encoding="utf-8")
-        kezdet = forras.index("gridEmptyText")
-        blokk = forras[kezdet : kezdet + 900]
+        blokk = blokk_horgonyra(forras, "gridEmptyText")
         assert "isWorking" in blokk, (
             "az üzenet nem nézi, hogy fut-e még munka — a betöltés alatt "
             "azt állítaná, hogy nincs kép"

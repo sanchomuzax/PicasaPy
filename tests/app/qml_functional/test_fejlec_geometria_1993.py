@@ -30,6 +30,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject
 from PySide6.QtQuick import QQuickItem
+from tests.support.qml_blokk import blokk_horgonyra
 
 #: `globalbuttons/lfs_n` / `rfs_n`
 LEPTETO_MERET = (30.0, 31.0)
@@ -92,7 +93,7 @@ class TestALeptetoNyilak:
     def test_a_szoveges_glifek_ELTUNTEK(self):
         forras = _forras()
         for nev in ('objectName: "viewerPrevButton"', 'objectName: "viewerNextButton"'):
-            blokk = forras[forras.index(nev):][:600]
+            blokk = blokk_horgonyra(forras, nev)
             assert 'text: "◀"' not in blokk and 'text: "▶"' not in blokk, (
                 f"{nev} még szöveges nyilat rajzol"
             )

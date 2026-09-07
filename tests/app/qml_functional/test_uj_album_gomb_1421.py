@@ -26,6 +26,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TOOLBAR = (
     Path(__file__).resolve().parents[3]
@@ -46,16 +47,14 @@ class TestAGombLETEZIK:
         a magyar „Új album" 15,1 × 24,5 a 19 × 22-es helyen — 2,5 px
         túllógás. A MÉRT méret maga mondta meg, hogy ikonnak kell lennie."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        blokk = forras[kezdet : kezdet + 1200]
+        blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
         assert 'text: qsTr("New Album")' not in blokk, "feliratos gomb — nem fér el"
         assert 'text: "＋"' in blokk
 
     def test_a_MERT_meretet_hasznalja(self):
         """29 × 22 — `konyvtar-ablak-meretek.md` 2. szakasz."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        blokk = forras[kezdet : kezdet + 1200]
+        blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
         assert "Layout.preferredWidth: 29" in blokk
         assert "Layout.preferredHeight: 22" in blokk
 
@@ -63,8 +62,9 @@ class TestAGombLETEZIK:
         """Az eredeti `newalbum` súgója — a gomb ikon-méretű, felirat nélkül
         nem lenne kitalálható."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        assert "ToolTip.text" in forras[kezdet : kezdet + 1200]
+        assert "ToolTip.text" in blokk_horgonyra(
+            forras, 'objectName: "toolbarNewAlbumButton"'
+        )
 
 
 class TestUGYANAZ_az_ut:
@@ -82,8 +82,7 @@ class TestAszukAblak:
 
     def test_szuk_ablaknal_elrejtozik(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        blokk = forras[kezdet : kezdet + 1200]
+        blokk = blokk_horgonyra(forras, 'objectName: "toolbarNewAlbumButton"')
         assert "visible: !toolbar.toolbarCompact" in blokk
 
     def test_nem_novel_nem_zsugorodo_alapot(self):
@@ -92,8 +91,9 @@ class TestAszukAblak:
         Fix `minimumWidth`-szel a sáv szűk ablaknál kilógna, és a #423
         egész zsugorodás-tervét elrontaná."""
         forras = _TOOLBAR.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "toolbarNewAlbumButton"')
-        assert "Layout.minimumWidth: 0" in forras[kezdet : kezdet + 1200]
+        assert "Layout.minimumWidth: 0" in blokk_horgonyra(
+            forras, 'objectName: "toolbarNewAlbumButton"'
+        )
 
 
 class TestIdorendGomb:

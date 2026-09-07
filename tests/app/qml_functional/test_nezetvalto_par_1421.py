@@ -21,6 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TOOLBAR = (
     Path(__file__).resolve().parents[3]
@@ -31,8 +32,7 @@ _MAIN = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/Main.qml"
 
 def _blokk(nev: str) -> str:
     forras = _TOOLBAR.read_text(encoding="utf-8")
-    kezdet = forras.index(f'objectName: "{nev}"')
-    return forras[kezdet : kezdet + 900]
+    return blokk_horgonyra(forras, f'objectName: "{nev}"')
 
 
 class TestAKetGomb:

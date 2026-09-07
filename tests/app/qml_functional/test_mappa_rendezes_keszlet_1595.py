@@ -29,6 +29,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra, elem_tipusa
 
 _MENU = (
     Path(__file__).resolve().parents[3]
@@ -105,10 +106,11 @@ class TestASajatTobblet:
     def test_es_SAJAT_FUNKCIOKENT_van_jelolve(self):
         """Enélkül úgy nézne ki, mintha az eredetiben is lenne."""
         szakasz = _mappa_menu_szakasz()
-        kezdet = szakasz.index('objectName: "menuFolderSortByChanged"')
-        blokk = szakasz[kezdet : kezdet + 400]
-        assert "sajat: true" in blokk
-        assert "PicasaMenuItem" in szakasz[:kezdet][-200:]
+        horgony = 'objectName: "menuFolderSortByChanged"'
+        assert "sajat: true" in blokk_horgonyra(szakasz, horgony)
+        # #2575: a TÍPUSNEVET kérdezzük, nem a horgony előtti 200 karaktert
+        # — az egy szomszéd elem nevét is elfogadta volna.
+        assert elem_tipusa(szakasz, horgony) == "PicasaMenuItem"
 
 
 class TestAKetHelyEGYEZIK:

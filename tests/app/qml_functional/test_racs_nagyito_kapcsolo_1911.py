@@ -26,6 +26,7 @@ van-e a fájlban.
 from __future__ import annotations
 
 import time
+import re
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, Qt
@@ -33,6 +34,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _TRAYBAR = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
@@ -193,7 +195,10 @@ class TestAFelfedezhetoseg:
         fordítás hiánya ugyanolyan hiba lenne: a felhasználó magyarul
         használja a programot.
         """
-        reszlet = _TRAYBAR[_TRAYBAR.find("trayLoupeButton"):][:3000]
+        # #2575: a gomb VALÓDI blokkja, nem 3000 karakter — az ablak vége
+        # a szomszéd vezérlőbe lógott, és egy hosszabb indoklás ki is
+        # szorította volna a mért sort.
+        reszlet = blokk_horgonyra(_TRAYBAR, "trayLoupeButton")
         assert "drag" in reszlet, (
             "a nagyító súgója nem mondja ki, hogy húzni kell"
         )
@@ -203,9 +208,19 @@ class TestAFelfedezhetoseg:
         assert "Loupe — drag over the photos" in ts, (
             "a súgó nincs lefordítva magyarra"
         )
-        kezdet = ts.find("Loupe — drag over the photos")
-        assert "úz" in ts[kezdet : kezdet + 300], (
-            "a magyar súgó sem mondja ki, hogy húzni kell"
+        # #2575: a fordítás határa a `<message>` elem, nem 300 karakter.
+        # A rögzített ablak a KÖVETKEZŐ üzenet fordításából is „bizonyított"
+        # volna, és egy hosszabb forrásszöveg ki is lökte volna a sajátját.
+        parositas = re.search(
+            r"<source>Loupe — drag over the photos</source>\s*"
+            r"<translation[^>]*>(.*?)</translation>",
+            ts,
+            re.DOTALL,
+        )
+        assert parositas, "nincs `<translation>` a nagyító súgójához"
+        assert "úz" in parositas.group(1), (
+            "a magyar súgó sem mondja ki, hogy húzni kell: "
+            + parositas.group(1)
         )
 
 

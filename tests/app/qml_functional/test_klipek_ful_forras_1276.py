@@ -30,6 +30,7 @@ geometriáját a `test_collage_clips_tab_949.py` fedi.
 from __future__ import annotations
 
 from pathlib import Path
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _TAB = (
     Path(__file__).resolve().parents[3]
@@ -57,8 +58,9 @@ class TestAForras:
     def test_csak_a_FEL_NEM_HASZNALTAK(self):
         """`used === false` — a felhasznált kép kiesik a választhatókból."""
         forras = _TAB.read_text(encoding="utf-8")
-        kezdet = forras.index("readonly property var unusedClips")
-        assert "if (!elemek[i].used)" in forras[kezdet : kezdet + 500]
+        assert "if (!elemek[i].used)" in blokk_horgony_utan(
+            forras, "readonly property var unusedClips"
+        )
 
     def test_a_fulfelirat_szama_a_FEL_NEM_HASZNALTAKAT_szamolja(self):
         """A felirat a lap TARTALMÁT nevezi meg — a tulajdonos képernyőképén

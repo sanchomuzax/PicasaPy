@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.qml_blokk import blokk_horgonyra
 
 _MENU = (
     Path(__file__).resolve().parents[3]
@@ -27,8 +28,7 @@ _PANE = (
 class TestATetelELO:
     def test_mar_NEM_helyfoglalo(self):
         forras = _MENU.read_text(encoding="utf-8")
-        kezdet = forras.index('objectName: "folderMenuHideFolder"')
-        blokk = forras[kezdet : kezdet + 420]
+        blokk = blokk_horgonyra(forras, 'objectName: "folderMenuHideFolder"')
         assert "placeholder: true" not in blokk, (
             "a „Mappa elrejtése” még mindig néma helyfoglaló (#1637)"
         )

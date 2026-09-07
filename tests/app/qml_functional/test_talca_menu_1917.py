@@ -39,6 +39,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
 _MENU = (
     Path(picasapy.app.__file__).parent
@@ -83,8 +84,7 @@ class TestATeljesMenu:
         for nev, felirat in _TETELEK:
             if felirat is None:
                 continue
-            kezdet = _MENU.index(f'objectName: "{nev}"')
-            blokk = _MENU[kezdet : kezdet + 400]
+            blokk = blokk_horgonyra(_MENU, f'objectName: "{nev}"')
             assert f'qsTr("{felirat}")' in blokk, f"{nev}: nem {felirat!r}"
 
     def test_van_ELVALASZTO(self):
