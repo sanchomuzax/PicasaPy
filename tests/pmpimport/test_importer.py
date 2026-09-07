@@ -52,16 +52,23 @@ def _write_db3(tmp_path, *, index_name="thumbindex.db"):
     )
     count = 6
     (tmp_path / "imagedata_caption.pmp").write_bytes(
-        build_pmp_column(0x6, ["", "Tópart", "", "", "", ""])
+        build_pmp_column(0x0, ["", "Tópart", "", "", "", ""])
     )
+    # #2521: a `rotate` a VALÓDI adatbázisban SZTRING (`0x00`, `ytString`),
+    # nem szám — a `.picasa.ini`-beli `rotate(N)` alakot tartja
+    # (`docs/specs/picasa-imagedata-rekord.md` 11. sor és „Amit a típusok
+    # elárulnak"). A korábbi fixtúra `0x01`-es u32-t írt: olyan bemenetet
+    # gyártott, amit a Picasa soha nem ír.
     (tmp_path / "imagedata_rotate.pmp").write_bytes(
-        build_pmp_column(0x1, [0, 1, 0, 0, 0, 0])
+        build_pmp_column(
+            0x0, ["", "rotate(1)", "", "", "", ""]
+        )
     )
     (tmp_path / "imagedata_star.pmp").write_bytes(
         build_pmp_column(0x3, [0, 1, 0, 0, 0, 0])
     )
     (tmp_path / "imagedata_filters.pmp").write_bytes(
-        build_pmp_column(0x6, ["", "enhance=1;", "", "", "", ""])
+        build_pmp_column(0x0, ["", "enhance=1;", "", "", "", ""])
     )
     # sparse: csak az első 2 sorig ér
     (tmp_path / "imagedata_crop64.pmp").write_bytes(
@@ -69,7 +76,7 @@ def _write_db3(tmp_path, *, index_name="thumbindex.db"):
     )
     (tmp_path / "imagedata_deferredregion.pmp").write_bytes(
         build_pmp_column(
-            0x6, ["", "rect64(1234567890abcdef),Kiss Anna;", "", "", "", ""]
+            0x0, ["", "rect64(1234567890abcdef),Kiss Anna;", "", "", "", ""]
         )
     )
     return count
@@ -94,7 +101,7 @@ class TestIterPhotoRecords:
         first, second = iter_photo_records(tmp_path, remapper)
         assert first.row == 1
         assert first.caption == "Tópart"
-        assert first.rotate == 1
+        assert first.rotate == "rotate(1)"
         assert first.star is True
         assert first.filters == "enhance=1;"
         assert first.crop64 == 0x1999333366668000
@@ -120,7 +127,7 @@ class TestIterPhotoRecords:
 
     def test_missing_index_raises(self, tmp_path, remapper):
         (tmp_path / "imagedata_caption.pmp").write_bytes(
-            build_pmp_column(0x6, ["a"])
+            build_pmp_column(0x0, ["a"])
         )
         with pytest.raises(FileNotFoundError):
             iter_photo_records(tmp_path, remapper)
@@ -159,7 +166,7 @@ class TestIterPhotoRecords:
     def test_broken_deferredregion_does_not_break_import(self, tmp_path, remapper):
         _write_db3(tmp_path)
         (tmp_path / "imagedata_deferredregion.pmp").write_bytes(
-            build_pmp_column(0x6, ["", "hibás-bejegyzés,Név;", "", "", "", ""])
+            build_pmp_column(0x0, ["", "hibás-bejegyzés,Név;", "", "", "", ""])
         )
         first, _second = iter_photo_records(tmp_path, remapper)
         assert first.faces == ()

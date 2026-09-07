@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.321] – 2026-09-07
+
+### Javítva
+
+- **A Picasa-adatbázis behozatala észreveszi, ha egy oszlopfájl nem az,
+  aminek látszik** (#2521). Eddig a program elhitte a fájl saját fejlécének,
+  hogy milyen adatot tartalmaz — egy sérült vagy összekevert oszlopból így
+  **némán** rossz értékek jöttek volna be (egyszer már megtörtént: egy
+  méretadat −86 helyett 4 milliárdnak látszott). Mostantól minden behozott
+  oszlopnál összevetjük a fájl fejlécét azzal, hogy az adott oszlopnak
+  valójában milyen adatot kell tartalmaznia — ezt a Picasa 3.9 programjából
+  fejtettük vissza, mind a 44 oszlopra —, és eltérésnél beszédes hibaüzenet
+  jön, ami megnevezi az oszlopot, az elvárt és a talált típust.
+
 ## [0.8.320] – 2026-09-07
 
 ### Javítva

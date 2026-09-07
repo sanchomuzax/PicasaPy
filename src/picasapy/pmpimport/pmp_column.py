@@ -5,6 +5,12 @@ Formátum keresztvalidálva (Java `PMPDB.java` ↔ Python `pmpinfo.py`,
 ld. `docs/reference-repos-audit.md`): 20 bájtos little-endian fejléc, utána
 a nyers rekordok egymás után, szeparátor nélkül. Csak olvasás — a PicasaPy
 a PMP-adatbázist sosem írja.
+
+A fejléc típuskódja a FÁJLÉ; hogy az adott OSZLOPNAK mi a helyes típusa, azt
+a `docs/specs/picasa-imagedata-rekord.md` 44 soros táblája mondja meg (a
+Picasa 3.9 regisztráló hívásaiból, PR #2520). Az innen fontos kilenc oszlop
+az `OSZLOP_TIPUSOK`-ban áll; a `read_pmp_column(..., oszlop=…)` ezt kéri
+számon (#2521).
 """
 
 from __future__ import annotations
@@ -40,6 +46,35 @@ TYPE_UINT64 = frozenset({0x4})
 TYPE_UINT16 = frozenset({0x5})
 
 
+#: #2521 — az OSZLOP elvárt típuskódja, a Picasa 3.9 binárisából.
+#:
+#: A fejléc típusmezője a FÁJLÉ; azt eddig semmi nem vetette össze azzal,
+#: hogy az adott oszlopnak MI a helyes típusa. Egy sérült vagy összekevert
+#: `.pmp` így némán rossz értéket adott — a #2106 pontosan ilyen volt.
+#:
+#: A forrás nem az adat, hanem a REGISZTRÁLÓ hívás célcíme: a nyolc
+#: `CColumn<…>` konstruktor RTTI-vel azonosítva, a sablon harmadik
+#: paramétere `0x13320000 + típuskód`. Mind a 44 `imagedata`-oszlop
+#: táblája: `docs/specs/picasa-imagedata-rekord.md` (PR #2520).
+#:
+#: ⚠️ A `star` értéke SZÁNDÉKOSAN `None`: a 3.9 ezt az oszlopot **nem
+#: regisztrálja**, a csillagozást a `starlist.txt`-ből olvassa (#2335).
+#: Nálunk az olvasása megmarad a régebbi adatbázisok miatt — de nincs
+#: mihez mérni, tehát típus-elvárást sem támasztunk rá. Egy örökölt,
+#: jogos fájlt elutasítani rosszabb volna, mint nem ellenőrizni.
+OSZLOP_TIPUSOK: dict[str, int | None] = {
+    "caption": 0x00,
+    "rotate": 0x00,
+    "filters": 0x00,
+    "deferredregion": 0x00,
+    "tags": 0x06,
+    "crop64": 0x04,
+    "lat": 0x02,
+    "long": 0x02,
+    "star": None,  # örökölt, ld. fent
+}
+
+
 class PmpFormatError(ValueError):
     """Érvénytelen vagy sérült `.pmp` fejléc/rekord."""
 
@@ -55,12 +90,19 @@ class PmpColumn:
         return len(self.values)
 
 
-def read_pmp_column(path: Path) -> PmpColumn:
+def read_pmp_column(path: Path, oszlop: str | None = None) -> PmpColumn:
     """Egy `.pmp` fájl teljes beolvasása.
 
+    `oszlop`: az oszlop NEVE (pl. `"lat"`). Megadva a fejléc típuskódját
+    összevetjük az `OSZLOP_TIPUSOK` mért elvárásával (#2521), és eltérésnél
+    beszédes hibát adunk. Enélkül — és a táblában nem szereplő névre — a
+    viselkedés a korábbi: nincs miről mért állításunk, tehát nem utasítunk
+    el semmit.
+
     Raises:
-        PmpFormatError: Érvénytelen magic/konstans/mezőtípus-eltérés, vagy
-            a rekordadatok csonkák/hiányosak a fejlécben jelzett
+        PmpFormatError: Érvénytelen magic/konstans/mezőtípus-eltérés, az
+            oszlop elvárt típusától való eltérés (#2521), vagy a
+            rekordadatok csonkák/hiányosak a fejlécben jelzett
             rekordszámhoz képest.
     """
     data = Path(path).read_bytes()
@@ -81,8 +123,32 @@ def read_pmp_column(path: Path) -> PmpColumn:
     if const2 != _CONST_2:
         raise PmpFormatError(f"Váratlan konstans a fejlécben: {path}")
 
+    _ellenorizd_az_oszlop_tipusat(oszlop, type1, path)
+
     values = _read_records(data, _HEADER.size, type1, count, path)
     return PmpColumn(field_type=type1, values=tuple(values))
+
+
+def _ellenorizd_az_oszlop_tipusat(
+    oszlop: str | None, talalt: int, path: Path
+) -> None:
+    """A fejléc típuskódja egyezzen az OSZLOP mért típusával (#2521).
+
+    Hallgat, ha nincs oszlopnév, ha az oszlop nem szerepel a táblában, vagy
+    ha a bejegyzése `None` (örökölt oszlop — ld. `OSZLOP_TIPUSOK`).
+    """
+    if oszlop is None:
+        return
+    elvart = OSZLOP_TIPUSOK.get(oszlop)
+    if elvart is None or elvart == talalt:
+        return
+    raise PmpFormatError(
+        f"A(z) „{oszlop}” oszlop típusa nem a mért: elvárt "
+        f"{elvart:#04x}, "
+        f"a fájl fejlécében {talalt:#04x} áll ({path}). A hiteles típust a "
+        f"Picasa 3.9 regisztráló hívása adja "
+        f"(docs/specs/picasa-imagedata-rekord.md)."
+    )
 
 
 def _read_records(
