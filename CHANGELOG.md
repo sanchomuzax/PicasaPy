@@ -21,6 +21,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **A csúszka fogantyúján megjelent a vésett középvonal** (#2641): az
+  eredeti Picasa fogantyújának közepén egy sötét és egy világos, egy-egy
+  képpont széles vonal fut — nálunk eddig nem volt. A helye és a színe a
+  program saját erőforrásaiból mérve (a fogantyú közepe, felül-alul 5-5
+  képpont kihagyással). Kirajzolt őr méri, hogy tényleg ott van.
 - **A személybejegyzések három mezője nevesítve** (#2526): a `.picasa.ini`
   `[Contacts2]` sorainak értéke az eredetiben pontosan három részből áll —
   teljes név, e-mail cím és Google-fiókazonosító. Nálunk eddig csak a név
