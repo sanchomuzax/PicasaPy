@@ -3986,3 +3986,100 @@ mezőminta-módszerével újra kell ellenőrizni**, mert a korábbi olvasat a
 **Eszköz:** `eszkozok/binaris/verem.py` — `[esp+N]` hivatkozások
 normalizálása a belépési kerethez, a hívott függvények `ret N`-je alapján;
 **az elágazásoknál keletkező ütközéseket hangosan jelzi**, nem hallgatja el.
+
+## 39. K1 — a FOGANTYÚ-ág átvizsgálva: a 20.3 ítélete áll, de az egyik ÉRVE megdőlt (2026-09-08, #1412)
+
+*191. kutatói kör. A 38.5 lépését viszi: a kézi átméretezés útja — az
+egyetlen, amelyről EMPIRIKUSAN tudjuk, hogy megváltoztatja a `scale`-t
+(17.5).*
+
+### 39.1 ⭐ A `[edx+0x28]`/`[edx+0x2c]` pár POZITÍVAN azonosítva: egy (x, y) PONT
+
+`FUN_00868570` (2326 b) a fogantyú-kezelő; sztringkészlete
+`pan_hand_normal`, `pan_hand_drag`, `collagepanel/angletext`,
+`collagepanel/scaletext`, `collage_adapt`, `Angle: %d`,
+`collage::angle_format`, `Scale: %d%%`, `collage::scale_format`.
+
+A 20.3 által kizárt írás:
+
+```
+0x008685c1  mov eax,[esi+0x54]  →  0x008685c4  mov [edx+0x28], eax
+0x008685c7  mov eax,[esi+0x58]  →  0x008685ca  mov [edx+0x2c], eax
+```
+
+**Ugyanaz a két mező VISSZAOLVASVA, lebegőpontosan, és téglalapra
+illesztve:**
+
+```
+0x008686c8  fld  [edx+0x28]  ·  fild [ecx]      ·  fcompp   ; bal
+0x008686de  fld  [eax+0x28]  ·  fild [ecx+8]    ·  fcompp   ; jobb
+0x008686f1  fld  [edx+0x2c]  ·  fild [ecx+4]    ·  fcompp   ; felső
+0x00868702  fld  [eax+0x2c]  ·  fild [ecx+0xc]  ·  fcompp   ; alsó
+```
+
+⇒ a `+0x28` a téglalap **bal/jobb**, a `+0x2c` a **felső/alsó** határához
+mérődik ⇒ **a pár egy `(x, y)` PONT, találat-vizsgálathoz** — nem a
+csomópont `theta`/`scale` párja. **A 20.3 ítélete áll**, és ez az érv
+lényegesen erősebb: a `fcompp` négyese pozitívan megnevezi a mezőket.
+
+### 39.2 ⛔ ÖNHELYESBÍTÉS: a 20.3 MÁSIK érve nem áll
+
+A 20.3 azzal is érvelt, hogy „a `[edx+0x30]`-on át `+0x288`-ig indexel,
+ami csomópontnál hivatkozásszámlált sztring volna", és a
+`mov edx,[edx+0x20]`-ra hivatkozott. **A második hivatkozás téves:**
+a `0x008685f6`-on az `edx`-et **ÚJRATÖLTIK** (`mov edx,[ecx]` = a
+vtábla-mutató), tehát a `0x008685f8` `mov edx,[edx+0x20]` egy
+**virtuális metódus kikeresése**, nem csomópont-mező. A következtetés
+nem változik — az érv viszont nem használható.
+
+### 39.3 A fogantyú-kezelő aritmetikája SZÖG, nem `scale`
+
+| konstans | cím(ek) | mi |
+|---|---|---|
+| **57,29578** (= 180/π) | `0x008685de`, `0x008688b6`, `0x00868b8a`, `0x00868c68`, `0x00868d62` | radián → fok |
+| −57,29578 | `0x008688e1` | ellenkező irány |
+| 3,0 · 15,0 · 7,0 · 45,0 | `0x00868c0f`–`0x00868c2d` | szög-besnappelés |
+| 0,25 · 0,8 | `0x00868697`, `0x00868b1d` | küszöb, illetve arány |
+| 100,0 | `0x00868e07` | a `Scale: %d%%` kijelzés (20.3) |
+
+A két kollázs-sávbeli segédfüggvénye (`FUN_00867ff0` 256 b,
+`FUN_00867f70` 124 b) **egyetlen csomópont-float mezőt sem ír** (az
+utóbbiban egy `mov +0x18` egész írás van).
+
+⇒ **A fogantyú-kezelő nem írja a csomópont `scale`-jét.**
+
+### 39.4 Mérés az `AI2`-n — a két tört érték, és ami hiányzik
+
+| # | `w` (lapegység) | `scale` |
+|---:|---:|---:|
+| 0 | 246,12 | **295,392395** |
+| 1–3 | 280,8 | 337 |
+| 4 | 252,46 | 303 |
+| 5 | 233,30 | 280 |
+| 6 | 219,13 | 263 |
+| 7 | 222,97 | **267,607788** |
+| 8 | 198,30 | 238 |
+
+A hat elemű létrából (17.5: 238 · 249 · 263 · 280 · 303 · 337) a **249
+hiányzik** a fájlból — összhangban a 17.5 olvasatával, hogy a kézi
+átméretezés **létra-értéket vált ki**.
+
+⚠️ **Képletet a két pontra NEM illesztünk.** (A két érték összege
+`563,000183`; ez érdekes, de két számból semmi nem következik, és a
+„szabad paraméter elnyeli a hibát" csapdája ide is érvényes.)
+
+### 39.5 Hol tart a K1, és a KÖVETKEZŐ lépés
+
+A kézi átméretezés **bizonyítottan** megváltoztatja a `scale`-t (39.4), a
+fogantyú-kezelő viszont **nem írja** (39.3). ⇒ az átméretezés
+**parancson/visszavonáson át** érvényesül, nem közvetlen mezőírással.
+
+**Következő, megnevezve:**
+
+1. a `FUN_00868570` **húzás-VÉGE** ága — hol állítja vissza a
+   `pan_hand_normal` kurzort, és **milyen parancsot ad ki** ott;
+2. a `CollageNodeHandler::vftable` (`rtti` `0x00cc3bcc`) tizenkettedik
+   bejegyzése, `0x007e6bf0` — a 20.3 ezt nevezte meg a fogantyúk
+   gazdájaként, de a saját írásait nem mértük ki.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
