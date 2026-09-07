@@ -776,6 +776,11 @@ alaplap, csoport, cím) — marad **28 valódi jelölt**.
 
 ### 13.1 A négy alcsoport
 
+*Forrás — a négy csoport deklarációja: `publish.tre:515`
+(`publish/presentation_group`) · `publish.tre:525`
+(`publish/backup_group`) · `publish.tre:530`
+(`publish/replication_group`) · `publish.tre:520` (`publish/web_group`).*
+
 A panel a 12. szakaszban leírt három üzemmódot négy `.tre`-csoportban
 tartja; a `publish/web_group` a `.tre`-ben **`m_hidden`**.
 
@@ -813,6 +818,12 @@ lépés-keret (`publish/pubstep1`, `publish/pubstep2`, `publish/backuprect2`, `p
 `publish/storage_fill`, `publish/label_uploadaccount`).
 
 ### 13.3 Geometria — a `respack.yt` rétegfejléceiből (vászon **1024 × 212**)
+
+*A koordináták forrása a `respack.yt` rétegfejléce; az elemek
+deklarációja a `publish.tre`-ben — pl. `publish.tre:30`
+(`publish/pubstep1`) · `publish.tre:355` (`publish/storage_fill`) ·
+`publish.tre:474` (`publish/accountspaceusage`) · `publish.tre:496`
+(`publish/webpublish_go`).*
 
 | elem | x0,y0 – x1,y1 | méret | smink / típus |
 |---|---|---:|---|
