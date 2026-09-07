@@ -44,6 +44,8 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from picasapy.fixedpoint import c_int_div
+
 # A hét hue-vödör tokenje, a mért névtábla (`0x00424c20`) sorrendjében:
 # 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=pink.
 HUE_BUCKET_TOKENS: tuple[str, ...] = (
@@ -152,13 +154,6 @@ def _channels(image: np.ndarray, order: str) -> tuple[np.ndarray, ...]:
     return (third, second, first) if order == "bgr" else (first, second, third)
 
 
-def _truncating_divide(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
-    """A C `idiv`-je: NULLÁHOZ csonkoló egészosztás (a Python `//`-ja
-    lefelé kerekít, ami a negatív hue-számlálónál mást adna)."""
-    quotient = np.abs(numerator) // denominator
-    return np.where(numerator < 0, -quotient, quotient)
-
-
 def _saturation(
     red: np.ndarray, green: np.ndarray, blue: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -195,7 +190,7 @@ def _hue(
         (blue_is_max, red, green, 1020),
     ):
         hue1530[mask] = (
-            _truncating_divide((first[mask] - second[mask]) * 255, delta[mask]) + offset
+            c_int_div((first[mask] - second[mask]) * 255, delta[mask]) + offset
         )
     np.add(hue1530, _HUE_CIRCLE, out=hue1530, where=hue1530 < 0)
     return hue1530 // 6

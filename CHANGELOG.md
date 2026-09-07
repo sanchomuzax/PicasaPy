@@ -9,6 +9,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
+- **Az effektek egész-osztása egy helyen, C-szemantikával** (#926): a
+  natív kódból átvett osztásoknál a Python 1-gyel mást ad negatív
+  számoknál, mint az eredeti Picasa — ez korábban az `autocolor`
+  maradék hibájának több mint felét okozta. A javítás mostantól egy
+  közös helyen él, három szétszórt (és egy hiányos) másolat helyett. A
+  „Lágy fókusz" és a „Fókuszos FF" maszkjáról az eredeti program
+  gépi kódjából derült ki, hogy a mi számításunk eddig is pontos volt:
+  ott nem kellett változtatni.
+
 - **A kollázs-bekötés tesztfájlja megint fut** (#2653): a #985 mind a 34
   őre egyetlen folyamatban épített 34 teljes alkalmazást, és **2233 MiB**
   csúcsot ért el a tesztfuttató 2400 MiB-os memóriaplafonja alatt (93%).
