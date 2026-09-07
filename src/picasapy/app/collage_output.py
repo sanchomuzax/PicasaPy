@@ -47,10 +47,12 @@ from picasapy.collage import write_collage
 from picasapy.collage.cxf import dumps
 from picasapy.collage.draft import project_from_nodes
 from picasapy.ini.folder_category import (
+    CATEGORY_KEY,
+    FOLDER_SECTION,
     is_projects_category,
     read_folder_category,
 )
-from picasapy.ini.io import load_document
+from picasapy.ini.io import load_document, load_or_empty, save_document
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.collage.nodes import CollageNode
 from picasapy.collage.picasa_render import (
@@ -64,15 +66,6 @@ from picasapy.collage.themes import (
     PICTUREGRID,
     REGULARGRID,
 )
-
-#: A beépített `open` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
-#:
-#: A `monkeypatch.setattr(builtins, "open", …)` alak a folyamat MINDEN
-#: fájlmegnyitását a figyelőbe tereli — a pytest-ét, a naplózóét, a Qt-ét is
-#: —, tehát a „milyen módon nyitottuk az ini-t" állítás nem is csak erről a
-#: modulról szólna. A `_ini_kiiras` az egyetlen hely, ahol ez a modul
-#: közvetlenül nyit fájlt.
-_open = open
 
 logger = logging.getLogger(__name__)
 
@@ -463,61 +456,46 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
 
     A meglévő kulcsokat **megőrizzük** — a mappában korábbi Picasa-adat is
     lehet, azt felülírni adatvesztés volna.
+
+    ⚠️ **#791 — a megőrzés eddig csak a KULCSOKRA állt, a bájtokra nem.**
+    A korábbi változat `splitlines()`-szal olvasott és `"\\n"`-nel fűzött
+    vissza, `errors="replace"` dekódolással. A #1088 óta ez a VALÓDI
+    Picasa-mappa `.picasa.ini`-je, tehát benne a felhasználó teljes
+    Picasa-adata áll. Három mért kár egyetlen íráson:
+
+    * **minden CRLF LF-re váltott** — az eredeti Picasa kizárólag CRLF-fel
+      ír (#2491), tehát a fájl MINDEN sora megváltozott;
+    * **régi, nem UTF-8 fájlban a felirat elveszett**: `Nyári üdvözlet` →
+      `Ny<?>ri <?>dv<?>zlet` (U+FFFD), visszafordíthatatlanul;
+    * **BOM-os fájl MÁSODIK `[Picasa]` szekciót kapott**, mert a
+      `\\ufeff[Picasa]` első sorra nem illeszkedett a szekció-kereső.
+
+    Ezért megy a kiírás mostantól az `ini/` csomag API-ján (sáv-invariáns,
+    `CLAUDE.md`): az `IniDocument` őrzi a sorvégjelet, a kódolást és a
+    BOM-ot. A helyben írás (#1097) megmarad — azt a `save_document`
+    `in_place` kapcsolója viszi.
     """
     mappa = Path(folder)
     mappa.mkdir(parents=True, exist_ok=True)
-    ut = mappa / ".picasa.ini"
+    ut = mappa / PICASA_INI_NAME
 
-    # A `.picasa.ini` NEM szabványos INI (ismétlődő szekciók, BOM nélküli
-    # UTF-8), ezért nem a configparserrel írjuk: soralapon egészítjük ki, és
-    # csak azt, ami hiányzik.
-    sorok: list[str] = []
-    if ut.exists():
-        try:
-            sorok = ut.read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
-            sorok = []
-
-    def _van(kulcs: str) -> bool:
-        elotag = kulcs.lower() + "="
-        return any(sor.strip().lower().startswith(elotag) for sor in sorok)
-
-    if not sorok:
-        sorok = ["[Picasa]"]
-    elif "[picasa]" not in [sor.strip().lower() for sor in sorok]:
-        sorok += ["", "[Picasa]"]
+    try:
+        document = load_or_empty(ut)
+    except OSError:
+        # Olvashatatlan ini: inkább hagyjuk érintetlenül, mint hogy egy
+        # üres dokumentummal FELÜLÍRJUK a felhasználó adatát. (A korábbi
+        # változat itt `sorok = []`-re esett, és a fájl tartalma elveszett.)
+        return ut
 
     # Csak a projekt-besorolás — `name=` és `[encoding]` NEM, mert az
-    # eredeti sem ír ilyet (ld. a docstringet).
-    if not _van("P2category"):
-        sorok += [f"P2category={PROJECTS_CATEGORY}"]
-
-    _ini_kiiras(ut, "\n".join(sorok) + "\n")
+    # eredeti sem ír ilyet (ld. a docstringet). A meglévő értéket sem
+    # írjuk felül: a besorolást a kulcs ÉRTÉKE dönti el (#1029).
+    if read_folder_category(document) is None:
+        document = document.with_value(
+            FOLDER_SECTION, CATEGORY_KEY, PROJECTS_CATEGORY
+        )
+        save_document(document, ut, in_place=True)
     return ut
-
-
-def _ini_kiiras(ut: Path, szoveg: str) -> None:
-    """A `.picasa.ini` kiírása úgy, hogy a REJTETT jelző se akadály, se kár.
-
-    ⚠️ #1097: a `write_text()` windowson `CREATE_ALWAYS`-szel nyit, és az egy
-    létező, REJTETT fájlon `ERROR_ACCESS_DENIED`-del bukik. A #1088 óta a
-    VALÓDI Picasa-mappába írunk, ahol a `.picasa.ini`-t a Picasa hozta létre
-    — rejtettként (`Picasa3.exe` importálja a `SetFileAttributesW`-t). A
-    tulajdonos ezért nem tudott egyetlen kollázst sem menteni.
-
-    Létező fájlt ezért `r+`-szal nyitunk (`OPEN_EXISTING`): ott a rejtett
-    jelző nem számít.
-
-    ⚠️ Ideiglenes fájl + átnevezés itt NEM jó, pedig a `_write_pair` azt
-    használja: az új fájl nem rejtett, tehát a `.picasa.ini` a felhasználó
-    Intézőjében LÁTHATÓVÁ válna. A helyben írás megőrzi az attribútumokat."""
-    adat = szoveg.encode("utf-8")
-    if ut.exists():
-        with _open(ut, "r+b") as fajl:
-            fajl.write(adat)
-            fajl.truncate()
-        return
-    ut.write_bytes(adat)
 
 
 def render_collage(

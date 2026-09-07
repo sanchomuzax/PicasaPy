@@ -27,8 +27,11 @@ from __future__ import annotations
 
 from .document import IniDocument
 
-_CATEGORY_KEY = "P2category"
-_FOLDER_SECTION = "Picasa"
+#: A besorolást hordozó kulcs és a mappaszintű szekció neve. Nyilvános:
+#: az írók (kollázs-/film-kimenet) is EZT használják, hogy a kulcsnév
+#: egyetlen helyen éljen.
+CATEGORY_KEY = "P2category"
+FOLDER_SECTION = "Picasa"
 
 #: A Picasa saját projekt-mappáinak (Kollázsok, Filmek, Rögzített
 #: videoklipek, …) `P2category` értéke — bájtra ez áll a valódi ini-kben.
@@ -40,10 +43,10 @@ def read_folder_category(document: IniDocument) -> str | None:
 
     NEM szűr és nem értelmez: a hívó dönti el, melyik gyűjteménybe sorolja.
     Hiányzó szekció, hiányzó kulcs és üres érték egyaránt `None`."""
-    section = document.section(_FOLDER_SECTION)
+    section = document.section(FOLDER_SECTION)
     if section is None:
         return None
-    value = section.get(_CATEGORY_KEY)
+    value = section.get(CATEGORY_KEY)
     if value is None:
         return None
     stripped = value.strip()

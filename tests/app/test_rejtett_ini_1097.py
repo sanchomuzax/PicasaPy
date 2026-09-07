@@ -30,6 +30,7 @@ import builtins
 
 
 from picasapy.app import collage_output
+from picasapy.ini import io as ini_io
 
 
 def test_letezo_ini_t_NEM_csonkolva_nyitunk(tmp_path, monkeypatch):
@@ -55,7 +56,12 @@ def test_letezo_ini_t_NEM_csonkolva_nyitunk(tmp_path, monkeypatch):
     # fut. A csere így csak azt látja, amit EZ a modul nyit; ha valaki
     # visszaesne a `write_text()`-re (a #1097 gyökere), a `_open` meg sem
     # hívódna, és az alábbi „meg sem nyitottuk" állítás bukna el.
-    monkeypatch.setattr(collage_output, "_open", figyelo)
+    #
+    # ⚠️ #791: a helyben írás átkerült az `ini/` csomagba (`save_document(
+    # in_place=True)`) — az `.picasa.ini` írásának egyetlen kapuja a
+    # sáv-invariáns szerint az `ini/` API. A fogantyú tehát MOST ott él; a
+    # #1097 állítása (létező fájl → nem csonkoló megnyitás) változatlan.
+    monkeypatch.setattr(ini_io, "_open", figyelo)
     collage_output.write_album_ini(mappa, "Kollázsok")
 
     assert modok, (

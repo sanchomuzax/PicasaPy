@@ -48,6 +48,20 @@ specifikáció szövegének ("szerkesztési verem integritás-hash").
 összevetésével) — ha eltérés derül ki a tényleges Picasa-algoritmustól, az
 egyetlen érintett függvény a `_compute_originhash`.
 
+⛔ **AZ ELLENŐRZÉS MEGTÖRTÉNT, ÉS ELTÉRÉST MUTAT (2026-09-07, #791).** A
+tulajdonos 859 valódi `.picasa.ini`-jében **1 787** `originhash=` sor áll, és
+**mind a 1 787 pontosan 32 kisbetűs hexa karakter** (128 bit; nagybetűs egy
+sem, 1 022 különböző érték). A `_compute_originhash` SHA-256-ot ad, ami **64
+karakter** — vagyis olyan alakot írunk, amilyet az eredeti Picasa SOHA.
+
+A hossz két MÉRT szám, tehát ez nem következtetés. Az algoritmus cseréje
+viszont NEM végezhető el ebből: a hash bemenete (mit hashel az eredeti)
+továbbra sem dőlt el, és egy 32 karakterre vágott vagy MD5-re cserélt érték
+ugyanúgy találgatás volna — csak jobban álcázva. Az sincs megmérve, hogy az
+eredeti Picasa mit tesz egy idegen alakú `originhash`-sel (elfogadja,
+felülírja, vagy elutasítja a bejegyzést) — amíg ez a kettő nem dőlt el, a
+csere vár.
+
 ## Két mappanév: `.picasaoriginals` és `Originals` (#1425)
 
 A Picasa a szerkesztés előtti eredetit **két, időben elváló néven** tárolta

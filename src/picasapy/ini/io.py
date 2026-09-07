@@ -31,6 +31,11 @@ from .photo_touch import notify_picasa_after_ini_write
 
 _BOM = b"\xef\xbb\xbf"
 
+#: A HELYBEN írás fájlmegnyitó fogantyúja (`save_document(in_place=True)`).
+#: #1375 tanulsága szerint MODULSZINTŰ, hogy a teszt EZT cserélhesse — a
+#: `builtins.open` cseréje a folyamat összes fájlmegnyitására hatna.
+_open = open
+
 
 class IniSaveError(RuntimeError):
     """A dokumentum egyik támogatott kódolással sem írható ki bájtra.
@@ -107,8 +112,25 @@ def load_or_empty(path: str | Path) -> IniDocument:
 
 
 def save_document(
-    document: IniDocument, path: str | Path, *, backup: bool = False
+    document: IniDocument,
+    path: str | Path,
+    *,
+    backup: bool = False,
+    in_place: bool = False,
 ) -> None:
+    """A dokumentum kiírása bájtra pontosan (kódolás + BOM megőrzésével).
+
+    Args:
+        backup: mentés előtti másolat a célfájlról.
+        in_place: HELYBEN írás (`r+b` + csonkolás) az atomikus temp+rename
+            helyett. ⚠️ Csak ott, ahol a fájl AZONOSSÁGA számít: windowson a
+            `.picasa.ini`-t a Picasa **rejtettként** hozza létre, és a
+            rename utáni új fájl már nem rejtett — a felhasználó
+            Intézőjében láthatóvá válna, a `CREATE_ALWAYS`-es megnyitás
+            pedig `Permission denied`-del bukna (#1097). Cserébe ez az út
+            NEM atomikus: megszakadó írás után csonka fájl maradhat, ezért
+            a szerkesztés-mentés útvonalai maradnak az atomikuson.
+    """
     target = Path(path)
     text = document.serialize()
     try:
@@ -138,7 +160,25 @@ def save_document(
         payload = _BOM + payload
     if backup and target.exists():
         _write_backup(target)
+    if in_place:
+        _write_in_place(target, payload)
+        return
     write_atomic(target, payload)
+
+
+def _write_in_place(target: Path, payload: bytes) -> None:
+    """Írás a MEGLÉVŐ fájlba, a fájl azonosságát (attribútumait) megtartva.
+
+    Létező fájlt `r+b`-vel nyitunk (`OPEN_EXISTING`) — a csonkoló `w` mód
+    windowson egy rejtett fájlon `ERROR_ACCESS_DENIED`-del bukna (#1097).
+    A `truncate()` kötelező: nélküle a rövidebb új tartalom után a régi
+    bájtok a fájl végén maradnának."""
+    if target.exists():
+        with _open(target, "r+b") as fajl:
+            fajl.write(payload)
+            fajl.truncate()
+        return
+    target.write_bytes(payload)
 
 
 def update_document(

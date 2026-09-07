@@ -48,7 +48,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 | Kulcs | Példa | Jelentés |
 |---|---|---|
 | `name` | `Foo Bar birthday` | album neve |
-| `category` | `Folders on Disk` | lokális album kategória |
+| `category` | `Folders on Disk` | lokális album kategória — **Picasa 2-örökség**, a `P2category` elődje. A korpuszban **179** sor; a kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
 | `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) |
 | `<user>_lh` | `joedoe_lh=5620038667642797505` | feltöltött album web-azonosítója |
 | `contactsversion` | — | globális verziószám (kontakt-adatbázis); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
@@ -108,8 +108,8 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
 | `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
-| `originhash` | `033f1132c874...` | szerkesztési verem integritás-hash |
-| `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
+| `originhash` | `033f1132c874...` | **128 bites ujjlenyomat, a jelentése NYITOTT** (#791). Mérve a korpuszon: 1 787 sor, **mind a 1 787 pontosan 32 kisbetűs hexa karakter**. Az író a fotó-metaadat-függvény (`0x007d5e74`), közvetlenül az `origloc` mellett — ld. „`originhash` és `origloc` — PÁR”. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk átvétele volt (`edit/save.py`), nem mérés — ld. „A mi `originhash`-ünk ALAKJA sem egyezik” |
+| `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID; fiókfüggő, ezért a kulcsnév maga is adat. A korpusz **második leggyakoribb** kulcsa (6 045). A kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
 | `screensaver` | `yes` | képernyővédőben szerepel |
 | `text`,`textactive` | ld. Buchinger-doksi | szövegfelirat-overlay paraméterei |
 | `hidden` | `hidden=yes` (feltételezett) | elrejtett kép — exe-ből azonosított (Picasa3.exe string-tábla), élő ini-ben még nem validált |
@@ -2697,12 +2697,12 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | kulcs | db | ismerjük? |
 |---|---:|---|
 | **`backuphash`** | **14 700** | specben ✅, a kódunk **nem írja** (megőrzi) |
-| `IIDLIST_<fiók>_lh` | 6 045 | specben említve, kódban nincs |
+| `IIDLIST_<fiók>_lh` | 6 045 | specben ✅, kódban nem nevesített — **megőrizve** (#791, mérve) |
 | `filters` | 5 658 | ✅ teljesen |
 | `faces` | 4 973 | ✅ (írás: #26) |
 | `star` | 3 095 | ✅ |
 | `rotate` | 2 426 | ✅ |
-| **`originhash`** | **1 787** | specben **csak említve**, kódban nincs |
+| **`originhash`** | **1 787** | specben ✅ (alak mérve), a **jelentése nyitott**; a kódunk **ír egy saját alakú értéket** (`edit/save.py`) — ld. lentebb |
 | `crop` | 761 | ✅ (`rect64`) |
 | `name` | 713 | ✅ (`[contacts2]`) |
 | `albums` | 620 | ✅ |
@@ -2711,7 +2711,7 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | `onlinechecksum` | 380 | ✅ |
 | `caption` | 208 | ✅ |
 | `moddate` | 181 | ✅ |
-| `category` | 179 | Picasa 2-örökség |
+| `category` | 179 | Picasa 2-örökség; kódban nem nevesített — **megőrizve** (#791, mérve) |
 | `textactive` | 173 | ✅ |
 | `width` / `height` | 172 / 172 | ✅ |
 | `geotag` | 84 | ✅ (#30 óta olvassuk ÉS írjuk — `app/geo_controller.py`) |
@@ -2750,6 +2750,62 @@ A „ismeretlen kulcs = hiba" megközelítés itt elvileg sem működne.
 
 *Bizonyítottsági fok: megerősített* (859 fájl, gépi leltár).
 
+### ⭐ Az öt sűrű kulcs bájtra megőrzése — MÉRVE (2026-09-07, #791)
+
+A leltár öt olyan kulcsot emelt ki, amit a kódunk **nem nevesít**, mégis
+sűrűn előfordul. A #791 azt kérdezte, túléli-e mind az ötöt a round-trip.
+**Megmérve mind a 859 valós fájlon:**
+
+| mérés | eredmény |
+|---|---|
+| `parse_document` → `serialize` bájtazonosság | **0 eltérés / 859 fájl** |
+| egy közbeiktatott írás (`with_value`) után a célkulcsok | **8 710 példányból 0 elveszett, 0 elváltozott** |
+
+Kulcsonként (a példányszám a korpuszból):
+`IIDLIST_<fiók>_lh` 6 045 · `originhash` 1 787 · `P2category` 615 ·
+`category` 179 · `geotag` 84.
+
+Ez az elv működéséből következik: a parszer **kulcs-agnosztikus**, tehát a
+kulcs ismeretlensége nem járhat veszteséggel. Az őr, ami ezt kimondja:
+`tests/ini/test_ini_kulcsok_791.py`.
+
+Amit a kódunk EZEN FELÜL tud: a `geotag`-et **olvassa és írja** (#30,
+`app/geo_controller.py`, `index.geotagged_photos`, Helyek-panel), a
+`P2category`-t **olvassa** és a projekt-mappáinkba **írja**
+(`ini/folder_category.py`, #1029). A `category` és az `IIDLIST_*` csak
+megőrzött.
+
+### ⛔ Amit a mérés MEGCÁFOLT: a projekt-megjelölés átírta a fájlt (#791)
+
+A round-trip a `.picasa.ini` írásának egyetlen kapuján (`ini/` csomag)
+hibátlan volt — de **egy hívó megkerülte a kaput**. A kollázs/film kimeneti
+mappájának megjelölése (`app/collage_output.py`, `write_album_ini`)
+soralapon olvasott és írt vissza. Mivel a #1088 óta ez a **valódi
+Picasa-mappa**, a fájlban a felhasználó teljes Picasa-adata áll.
+
+Három mért kár **egyetlen** ilyen íráson:
+
+| kár | mérés |
+|---|---|
+| **CRLF → LF** | 11 sorvégjelből 11 átíródott. Az eredeti kizárólag CRLF-fel ír (#2491) ⇒ a fájl **minden sora** megváltozott |
+| **kódolás-rontás** | régi, nem UTF-8 fájlban `caption=Nyári üdvözlet` → `Ny<?>ri <?>dv<?>zlet` (U+FFFD) — **visszafordíthatatlan** |
+| **BOM-os fájl** | a `﻿[Picasa]` első sorra nem illeszkedett a szekció-kereső ⇒ **második `[Picasa]` szekció** került a fájl végére |
+
+Ezen felül olvasási hiba (`OSError`) esetén a régi ág üres tartalommal írt
+volna vissza, azaz **a fájl tartalma elveszett volna**.
+
+**A javítás:** a megjelölés is az `ini/` API-n megy (`load_or_empty` →
+`with_value` → `save_document`). A #1097 miatti **helyben írás** megmaradt —
+azt a `save_document(..., in_place=True)` kapcsoló viszi, hogy a windowsos
+rejtett jelző se vesszen el. Őr: `tests/app/test_album_ini_megorzes_791.py`.
+
+**A tanulság a sáv-invariánsra:** a „`.picasa.ini`-t kizárólag az `ini/`
+API-n át" szabály nem stílus. A megkerülő ág **három** különböző módon
+rontotta a fájlt, és mindhármat csak a bájtszintű összevetés mutatta meg —
+kulcsra nézve ugyanis minden kulcs a helyén maradt.
+
+*Bizonyítottsági fok: megerősített* (859 fájl + reprodukált, kitalált minta).
+
 ## A metaadat-ÍRÓ függvény: `0x007d55f0` (2026-08-16)
 
 A `originhash` kulcs nyomán megtalált **egyetlen függvény, ami a fotó-szintű
@@ -2785,6 +2841,25 @@ az **eredeti fájl** helyét (`origloc`) és tartalom-ujjlenyomatát
 Az `origloc` a **korpuszban 0-szor** fordul elő (859 fájl) — vagyis csak
 akkor íródik, ha az eredeti máshol van. Az `originhash` viszont **1 787-szer**
 (32 hexa karakter, tehát 128 bites — MD5-alkatú).
+
+⚠️ **A „tartalom-ujjlenyomat" olvasat a kulcsnév és a szomszédság alapján
+készült — nem mérés.** Amit ténylegesen mértünk (2026-09-07, #791): a 1 787
+érték **mind pontosan 32 kisbetűs hexa karakter** (nagybetűs egy sem), és
+**1 022 különböző** érték áll a 1 787 soron. A hash BEMENETE nyitott kérdés.
+
+### ⛔ A mi `originhash`-ünk ALAKJA sem egyezik (2026-09-07, #791)
+
+Az `edit/save.py` `_compute_originhash`-e a `redo=` érték **SHA-256**
+hexdigestjét írja ki — az **64 hexa karakter**. Az eredeti Picasa a
+korpuszban **1 787 / 1 787 esetben 32-t** ír, tehát olyan alakot, amilyet mi
+soha, és fordítva.
+
+Ez nem következtetés: a hossz két mért szám. A 2026-07-23-i döntés
+(`edit/save.py` modul-docstring, #21) maga írta elő, hogy valódi
+Picasa-mintán ellenőrizni kell — **az ellenőrzés most megtörtént, és
+eltérést mutat**. A kulcs jelentése viszont továbbra sem dőlt el, ezért az
+algoritmus cseréje NEM ennek a körnek a dolga: egy 32 karakterre vágott
+vagy MD5-re cserélt érték ugyanúgy találgatás volna, csak jobban álcázva.
 
 ### Az arcírás útvonala — a naplósztringek szó szerint
 
