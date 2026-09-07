@@ -513,14 +513,14 @@ A binárisból kiszedve, a **birtokló függvénnyel** együtt:
 | `collagenode_context_group` | `0x0082cb50` | kollázs: **több** kép |
 | `collagenode_context_document` | `0x0082cb50` | kollázs: a **vászon** |
 | `collagenode_context` | `0x0062cda0` | a kollázs-menük gyökere |
-| `acquirepanel/delete_menu` · `import_from_menu` | `0x005154f0` | importálás |
-| `acquirepanel/subfolder_menu` · `import_folder_menu` | `0x00517f90` | importálás |
+| `acquirepanel/delete_menu` · `acquirepanel/import_from_menu` | `0x005154f0` | importálás |
+| `acquirepanel/subfolder_menu` · `acquirepanel/import_folder_menu` | `0x00517f90` | importálás |
 | `editpanel/crop_aspect_menu` | `0x005d3290` | a vágó arány-választója |
 | `publish/backup_set_menu` | `0x005d3290` | biztonsági mentés |
 | `publish/picsizemenu` | `0x0040bf70` | közzététel |
 | `uploadsize_menu` | `0x007a0830` | feltöltés |
 | `webalbums_menu` | `0x007aa080` | webalbumok |
-| `map_menu` | `0x0064e900` | térkép |
+| `geopanel/map_menu` | `0x0064e900` | térkép |
 
 **Két tanulság a listából:**
 

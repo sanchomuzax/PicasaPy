@@ -875,8 +875,14 @@ panel-építő (`0x0074ad40`, 3938 b) három változat közül választ:
 ### 15.2 A TELJES parancskészlet — a fejlécsáv elosztójából
 
 A `0x005e0f70` (3930 b) `repe cmpsb`-vel veti össze a megnyomott elem
-levélnevét, és **25 parancsot** ismer. A javaslat-munkafolyamathoz
-tartozók vastagon:
+**levélnevét**, és **25 parancsot** ismer. A javaslat-munkafolyamathoz
+tartozók vastagon.
+
+A tábla ezért levélneveket sorol; a teljes név a fejlécsáv paneljéé —
+`headerpanel/websync1`, `headerpanel/sync_options`,
+`headerpanel/view_online` és így tovább (#2530). Ugyanez a három parancs a
+`faceheaderpanel` és az `unknownfaceheaderpanel` változatban is így hívódik:
+az elosztó a levélnevet nézi, nem a panelt.
 
 | # | parancs | kezelő | cím az elosztóban |
 |---:|---|---|---|

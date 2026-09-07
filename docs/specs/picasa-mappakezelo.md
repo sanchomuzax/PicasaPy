@@ -105,6 +105,16 @@ keretrendszer **magától** cseréli a két ikont, kód nélkül.
 24×24, és a felirat a gomb jobb szélétől **+29** képponttal kezdődik
 (310+24 = 334 → 363).
 
+A tábla a **levélneveket** sorolja (a `típus: név` alakban a `típus` a
+`.tre` csomóponttípusa); a teljes nevük a `foldermgr/` panelé — a három
+rádiófelirat tehát `foldermgr/scan_once_label` (`foldermgr.tre:31`),
+`foldermgr/watch_label` (`foldermgr.tre:57`) és `foldermgr/watched_label`
+(`foldermgr.tre:94`) (#2530).
+
+⚠️ A `.tre`-horgonyok nem díszek: a lefedettségi mérő **horgony nélküli
+szakaszt átugorja**, és e nélkül a fenti három teljes név nem számított
+volna (mérve 2026-09-07: ez a szakasz a „HORGONY NÉLKÜL" listán állt).
+
 > ⚠️ A vászonrajz a `left_side` jobb szélét 285-nél (51,8 %) mutatja, de
 > **futásidőben az `XConstraint 1, .5, 0` érvényes: pontosan 50 %.** A
 > `picasa-respack-format.md` figyelmeztetése (a vászon-koordináták és a
