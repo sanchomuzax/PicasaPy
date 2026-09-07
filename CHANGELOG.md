@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A kollázs- és filmmentés többé nem írja át a mappa Picasa-adatait**
+  (#791): amikor a program a kimeneti mappát „projekt" jelzéssel látta el,
+  a mappa `.picasa.ini` fájlját teljes egészében újraírta. Ettől a valódi
+  Picasával közösen használt mappákban minden sor megváltozott (a sorvégek
+  átalakultak), a régi, nem Unicode fájlokban pedig az ékezetes feliratok
+  visszafordíthatatlanul kérdőjelekké romlottak. Mostantól a program csak
+  a hiányzó jelzést fűzi hozzá, minden más bájt érintetlen marad. Ellenőrizve
+  a 859 fájlos valódi gyűjteményünkön: a képekhez tartozó minden ismeretlen
+  bejegyzés (webalbum-azonosítók, hely, eredeti-ujjlenyomat, mentési bélyeg)
+  változatlanul megmarad egy mentés után is.
+
 ## [0.8.333] – 2026-09-07
 
 ### Gyorsabb

@@ -100,7 +100,7 @@ menet tizenkét elérhető fájlon **12/12** bitpontos egyezést adott, a
 | jelölt | miért nem |
 |---|---|
 | **`onlinechecksum`** | a korpuszban mind a **380** érték pontosan **8 hexa jegy**; a PMP-ben a típusa **`0x01` (u32)**. Egy 64 bites kulcsnál a felső dword 380-ból 380-szor nulla lenne — kizárt. **Ez 32 bites, más mennyiség.** |
-| **`originhash`** (ini-kulcs) | 32 hexa jegy = teljes MD5, de **nyolc bemenet-változatot** próbáltam négy valódi fájlon (teljes fájl · fej+farok · méret32/64 elöl/hátul · nagy-endián · csak fej) — **0/32 találat**. Nem ez a függvény írja. |
+| **`originhash`** (ini-kulcs) | 32 hexa jegy = teljes MD5, de **nyolc bemenet-változatot** próbáltam négy valódi fájlon (teljes fájl · fej+farok · méret32/64 elöl/hátul · nagy-endián · csak fej) — **0/32 találat**. Nem ez a függvény írja. ⭐ **2026-09-07 (#791) — a negatívum MAGYARÁZATA megvan: az `originhash` NEM egy 32 jegyű digest, hanem KÉT 16 jegyű szám összefűzése** — az első fele épp az `originfast`, a második az `originslow`. Ezért bukott mind a nyolc egy-digestes jelölt. Ld. „Az `originhash` — a két kulcs SZÖVEGES PÁRJA” lentebb. |
 | **`imagedata_backuphash`** | PMP típus **`0x05` (u16)** — 16 bit, nem lehet tartalom-kulcs. |
 
 ---
@@ -153,12 +153,91 @@ gyorstárazás. **Elvetve, méréssel**: mindhárom téves jelölt a 3. pontban.
 | Mi a másodpéldány-kulcs algoritmusa? | **LEZÁRVA** — 1–2. szakasz, 10/10 |
 | Melyik oszlop tárolja? | **LEZÁRVA** — `imagedata_originfast` (u64) |
 | Az `onlinechecksum` a párja? | **LEZÁRVA — NEM** (3.) |
-| Az `originhash` a párja? | **LEZÁRVA — NEM**, 0/32 (3.) |
+| Az `originhash` a párja? | **LEZÁRVA — NEM egy digest**, 0/32 (3.) — de ⭐ **2026-09-07 (#791): az `originhash` a két kulcs SZÖVEGES ÖSSZEFŰZÉSE** (`fmt16(originfast) + fmt16(originslow)`), 16/16 valódi fájlon, 0 részleges egyezéssel |
 | **Mi az `imagedata_originslow`?** | **LEZÁRVA (2026-09-05, #1482)** — `MD5(teljes fájl)[0:8]` kis-endián, **18/18** valódi fájlon; a korábbi „0/4"/„0/8" olyan sorokon mért, ahol a fájl azóta megváltozott (kontroll: ott az `originfast` sem egyezik). Szerepe: a gyors kulcs **ütközésfeloldója** — 28,5× dúsulás. |
 
+| **Mi az ini `originhash` kulcs?** | **LEZÁRVA (2026-09-07, #791)** — `fmt16(originfast) + fmt16(originslow)`, ld. lentebb |
+| Melyik fájl bájtjait rögzíti az `originhash` a mentés pillanatában? | **NYITVA** — a lemezen lévő aktuálisét vagy az eredetiét/importforrásét; a 60-as mintában 44 sor nem egyezett a MAI fájllal, és ezt sem az mtime, sem szerkesztési kulcs jelenléte nem magyarázta |
+
 ```
-Nyitott kérdések: 0 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 1 nyílt · 6 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
+
+---
+
+## Az `originhash` — a két kulcs SZÖVEGES PÁRJA (2026-09-07, #791)
+
+A `.picasa.ini` `originhash` kulcsa **nem** önálló algoritmus: az
+`originfast` és az `originslow` **szöveggé alakított, összefűzött**
+alakja. Ezért bukott korábban mind a nyolc egy-digestes jelölt (fentebb,
+`0/32`) — a 32 jegy nem egy hash, hanem **kétszer tizenhat**.
+
+```
+originhash = "%016I64x" % originfast  ‖  "%016I64x" % originslow
+
+originfast = u64_le( MD5(uint32_le(méret) ‖ fájl[:16834] ‖ fájl[-16834:])[:8] )
+originslow = u64_le( MD5(teljes fájl)[:8] )
+```
+
+Kisbetűs hexa, előtag nélkül, mindkét fél nulla-feltöltéssel pontosan 16
+jegy.
+
+### Bizonyíték a binárisból
+
+| lépés | cím | mit mond |
+|---|---|---|
+| kiírás | `0x007d5e74` | `push 0xcb9254` (= `"originhash"`); az érték a rekord `+0x90` mezője, és csak nem üres sztringre íródik ki (`0x007d5e2a`–`0x007d5e40`) |
+| **szétszedő** | `0x00414b40` | `cmp eax, 0x20` — **pontosan 32 karaktert vár**; az első 16-ot és a `[eax+0x10]`-től a második 16-ot külön sztringbe másolja (`0x00414bab`, `0x00414bce`), majd mindkettőt `sscanf(s, "%I64x")`-szel olvassa (`0x0049fb50`, formátum `0xc82fcc`) |
+| **összerakó** | `0x00414c50` | `sprintf(out, "%016I64x", v1)` + hozzáfűzés `"%016I64x", v2` — a formátum `0xc80ce4`, **kisbetűs**; a digest→hexa segéd (`0x00a4d420`) a `0xcd8f5c` = `"0123456789abcdef"` táblát használja |
+| a két hasher | `0x00a4cd00` diszpécser → `0xa4d210` (fej+farok, #1481) és `0xa4ce40` (teljes fájl, #1482) | a bemenet a **fájl bájtjai** |
+
+**Melyik fél melyik — három független jel:**
+
+1. `0x0070e58b`: ha az **első** fél nulla, a kód újraszámoltatja — de a
+   diszpécsert úgy hívja, hogy a lassú célt kinullázza (`0x0070e594`
+   `xor edi, edi`), vagyis csak a *gyors* ágat futtatja ⇒ az első fél az
+   `originfast`;
+2. `0x005b0b0e`: az összerakót `push 0; push 0`-val hívja a **második**
+   értékpárra ⇒ a második fél az elhagyható ⇒ `originslow`;
+3. `0x004386b6`: közvetlenül a `0x004353a0` (az `originslow` egyetlen
+   előállítója, #1482) után áll, és az 1. értékpár az a rekesz, amelynek
+   címét a `0x4353a0` a *gyors* célnak adja.
+
+### Mérés valódi fájlokon (2026-09-07)
+
+A korpusz 1 787 `originhash=` sorából 60 véletlen, ma is elérhető fájl:
+
+| eredmény | db |
+|---|---:|
+| **teljes (32/32) egyezés** | **16** |
+| ebből az első fél (`originfast`) egyezett | 16 |
+| ebből a második fél (`originslow`) egyezett | 16 |
+| **részleges egyezés (csak az egyik fél)** | **0** |
+
+A **nulla részleges egyezés** a döntő jel: ha a felosztás vagy a képlet
+téves volna, a két fél egymástól függetlenül tévedne, tehát akadna olyan
+sor, ahol az egyik egyezik, a másik nem. Egy sem akadt. A 44
+nem-egyező sor ugyanaz a jelenség, amit a #1482 „mintahibaként"
+dokumentált: a fájl tartalma az ini írása óta megváltozott — ott
+**egyik** fél sem egyezik.
+
+### ⛔ Ami NYITVA marad
+
+**Melyik fájl bájtjait rögzíti a mentés pillanatában?** A kulcsnév
+(„origin") és az `origloc` szomszédsága az *eredetit* sugallja, de ez
+nincs bizonyítva, és a 44 nem-egyező sort sem a fájl módosítási ideje,
+sem szerkesztési kulcs (`filters=`/`redo=`/`crop=`) jelenléte nem
+magyarázta. Amíg ez nem dől el, **az `originhash` írása nálunk nem
+javítható** — ld. `picasa-ini-format.md`, „A mi `originhash`-ünk ALAKJA
+sem egyezik".
+
+**Negatív lelet:** az `"originhash"` sztring a 8,6 MB-os binárisban
+**pontosan egyszer** fordul elő (`0xcb9254`), és csak a kiírás hivatkozik
+rá (`0x7d5e75`) — a Picasa 3.7 tehát a `.picasa.ini`-ből **név szerint
+nem olvassa vissza** ezt a kulcsot.
+
+*Bizonyítottsági fok: megerősített* (diszasszemblátum + 16/16 mért
+egyezés, 0 részleges).
 
 ---
 
