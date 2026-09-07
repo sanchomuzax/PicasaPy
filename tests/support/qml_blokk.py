@@ -53,6 +53,10 @@ def kommentek_nelkul(szoveg: str) -> str:
         zar = szoveg.find("*/", nyit + 2)
         if zar < 0:
             break
+        # A blokk helyén megtartjuk a SORTÖRÉSEKET: enélkül a kivágás
+        # elcsúsztatja a sorszámokat, és a lelet nem visszakereshető
+        # (#2613 — a `blokkok_tipusra` sorszáma az eredeti forrásra hivatkozik).
+        darabok.append("\n" * szoveg.count("\n", nyit, zar + 2))
         i = zar + 2
     szoveg = "".join(darabok)
 
@@ -173,6 +177,34 @@ def _idezetek_nelkul(tiszta: str) -> str:
     return "".join(ki)
 
 
+def blokk_tartomanyok(forras: str, tipus: str) -> list[tuple[int, int]]:
+    """Az ÖSSZES `tipus { … }` blokk (kezdet, vég) ELTOLÁSA.
+
+    A `blokkok_tipusra` a blokkok SZÖVEGÉT adja; van viszont olyan állítás,
+    amelynek nem a szöveg kell, hanem a HELY: „ez a másik találat egy ilyen
+    blokkon BELÜL van-e?" (#1719: közvetlenül példányosított párbeszédek
+    keresése a halasztottakon kívül). Ehhez eltolás kell, szöveg nem.
+
+    A `kezdet` a típusnév első karaktere, a `vég` a blokk záró `}`-ának
+    helye — mindkettő a **komment nélküli** forrásra (`kommentek_nelkul`)
+    vonatkozik. A hívó ugyanazon a tisztított szövegen keressen, különben
+    az eltolások nem illenek egymásra.
+
+    ⚠️ Miért nem elég a visszatekintés: az #1719 első változata 400
+    karakterrel nézett vissza, és MUTÁCIÓS PRÓBÁN MEGBUKOTT — egy szomszédos
+    blokk `sourceComponent`-je a látókörbe esett, ezért egy közvetlenül
+    példányosított párbeszéd is halasztottnak látszott.
+    """
+    tiszta = kommentek_nelkul(forras)
+    vak = _idezetek_nelkul(tiszta)
+    minta = re.compile(r"\b" + re.escape(tipus) + r"\s*\{")
+    ki: list[tuple[int, int]] = []
+    for talalat in minta.finditer(vak):
+        nyito = vak.index("{", talalat.start())
+        ki.append((talalat.start(), _zaro(tiszta, nyito, tipus)))
+    return ki
+
+
 def blokkok_tipusra(forras: str, tipus: str) -> list[tuple[int, str]]:
     """Az ÖSSZES `tipus { … }` blokk, `(sorszám, blokk)` párokként.
 
@@ -188,14 +220,10 @@ def blokkok_tipusra(forras: str, tipus: str) -> list[tuple[int, str]]:
     Egymásba ágyazott blokkot is felsorol: a külsőt és a belsőt is.
     """
     tiszta = kommentek_nelkul(forras)
-    vak = _idezetek_nelkul(tiszta)
-    minta = re.compile(r"\b" + re.escape(tipus) + r"\s*\{")
     ki: list[tuple[int, str]] = []
-    for talalat in minta.finditer(vak):
-        nyito = vak.index("{", talalat.start())
-        vege = _zaro(tiszta, nyito, tipus)
-        sorszam = tiszta[:talalat.start()].count("\n") + 1
-        ki.append((sorszam, tiszta[nyito:vege + 1]))
+    for kezdet, vege in blokk_tartomanyok(forras, tipus):
+        nyito = tiszta.index("{", kezdet)
+        ki.append((tiszta[:kezdet].count("\n") + 1, tiszta[nyito:vege + 1]))
     return ki
 
 
