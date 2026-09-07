@@ -124,6 +124,22 @@ QtObject {
     readonly property color sliderGrooveBorder: dark ? "#5b6573" : "#9aa2ae"
     readonly property color sliderGrooveTick: dark ? "#79838f" : "#f3f5f9"
 
+    // #2641: a FOGANTYÚ közepére VÉSETT vonal két oszlopa — szintén a
+    // `respack.yt`-ből, képpontról képpontra. A `scaleslider/thumb`
+    // (16 × 22) és az `editslider/thumb` (16 × 26) UGYANAZT adja:
+    //
+    //   sötét oldal   199 → #c7c7c7   (a vésés árnyéka, a bal oszlop)
+    //   világos oldal 244 → #f4f4f4   (a fény alulról, a jobb oszlop)
+    //
+    // A környező fogantyú-képpontok 232…240 között vannak, tehát a sötét
+    // oszlop ~35 értékkel alattuk, a világos ~10-zel felettük áll — a
+    // vésés a kettő KÜLÖNBSÉGÉBŐL látszik, nem az abszolút értékből.
+    //
+    // A sötét pár saját döntés (az eredetiben nincs sötét mód): ugyanaz a
+    // két lépés a sötét fogantyú alapszínéhez képest.
+    readonly property color sliderHandleGrooveDark: dark ? "#2f2f2f" : "#c7c7c7"
+    readonly property color sliderHandleGrooveLight: dark ? "#6b6b6b" : "#f4f4f4"
+
     readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"
     readonly property color textGray: dark ? "#a29e96" : "#7a776f"

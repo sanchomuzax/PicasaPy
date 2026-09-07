@@ -39,7 +39,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QPointF, QUrl
 from PySide6.QtGui import QColor
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickView
@@ -64,6 +64,11 @@ _SZELES = 121
 _MAGAS = 40
 
 _KEEPALIVE: list[object] = []
+
+#: A FOGANTYÚ bal széle az ablak koordinátáiban — a `_kep()` tölti ki.
+#: #2641: a jelölőket számoló próbának tudnia kell, meddig mérhet: a
+#: `value: 100` állásban a fogantyú RÁÜL a jobb szélső jelölőre.
+_FOGANTYU: dict[str, float] = {}
 
 #: ⚠️ A `grooveThickness` itt SZÁNDÉKOSAN beírt 9, nem a `MERT_SAV`
 #: konstansból jön. Ha ugyanaz a szám adná a kérést és a mércét is, az
@@ -118,6 +123,11 @@ def _kep(qt_app):
     assert hibak == [], hibak
     root = component.create()
     assert root is not None
+    csuszka = root.findChild(object, "proba")
+    assert csuszka is not None
+    fogantyu = csuszka.property("handle")
+    assert fogantyu is not None
+    _FOGANTYU["bal"] = fogantyu.mapToScene(QPointF(0.0, 0.0)).x()
     root.setParentItem(view.contentItem())
     view.resize(_SZELES, _MAGAS)
     view.show()
@@ -222,13 +232,29 @@ class TestAJelolok:
             f"(közép {kozep.getRgb()[:3]}, sáv {hatter.getRgb()[:3]})"
         )
 
-    def test_HAROM_jelolo_van(self, _rajz):
+    def test_a_KET_LATHATO_jelolo_ott_van(self, _rajz):
+        """A fogantyú ALATTI részt nem mérjük — ott nem a sávot látjuk.
+
+        ⚠️ #2641: ez a próba korábban a TELJES sort pásztázta, és három
+        csoportot várt. A harmadik csoport azonban NEM a jobb szélső
+        jelölő volt, hanem maga a fogantyú (a `value: 100` állásban ráül a
+        jobb végre, és világosabb a sávnál) — a valódi harmadik jelölő
+        eddig sem látszott. Az egyezés véletlen volt: amint a fogantyú
+        közepébe vésett vonal kettévágta a fogantyú fényes foltját, négy
+        csoport lett belőle. Mostantól csak a fogantyútól BALRA mérünk, és
+        ott a mért kettőt (bal vég + közép) állítjuk.
+        """
         sorok = _sav_sorai(_rajz, _SZELES // 4)
         y = (min(sorok) + max(sorok)) // 2
         kitoltes = sum(_rajz.pixelColor(_SZELES // 4, y).getRgb()[:3]) / 3
+        hatar = int(_FOGANTYU["bal"])
+        assert hatar > _SZELES // 2, (
+            f"a fogantyú bal széle {hatar} — a jelölők nagy része alatta "
+            "van, így ez a próba nem mérne semmit"
+        )
         vilagos = [
             x
-            for x in range(_SZELES)
+            for x in range(hatar)
             if _rajz.pixelColor(x, y) != QColor(255, 255, 255)
             and sum(_rajz.pixelColor(x, y).getRgb()[:3]) / 3 > kitoltes + 10
         ]
@@ -238,7 +264,9 @@ class TestAJelolok:
             if x != elozo + 1:
                 csoportok += 1
             elozo = x
-        assert csoportok == len(MERT_JELOLOK), (
-            f"{csoportok} jelölő-csoportot mértem, a respack "
-            f"{len(MERT_JELOLOK)}-at ad (a két vég és a közép): {vilagos}"
+        assert csoportok == 2, (
+            f"{csoportok} jelölő-csoportot mértem a fogantyú előtt, a "
+            f"respack ott kettőt ad (bal vég + közép): {vilagos}. A "
+            f"harmadik, jobb szélső jelölő a fogantyú alatt van "
+            f"(a mért helyek aránya: {MERT_JELOLOK})"
         )

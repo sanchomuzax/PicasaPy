@@ -7,8 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.333] – 2026-09-07
+
 ### Javítva
 
+- **A csúszka fogantyúján megjelent a vésett középvonal** (#2641): az
+  eredeti Picasa fogantyújának közepén egy sötét és egy világos, egy-egy
+  képpont széles vonal fut — nálunk eddig nem volt. A helye és a színe a
+  program saját erőforrásaiból mérve (a fogantyú közepe, felül-alul 5-5
+  képpont kihagyással). Kirajzolt őr méri, hogy tényleg ott van.
 - **A kollázs-bekötés tesztfájlja megint fut** (#2653): a #985 mind a 34
   őre egyetlen folyamatban épített 34 teljes alkalmazást, és **2233 MiB**
   csúcsot ért el a tesztfuttató 2400 MiB-os memóriaplafonja alatt (93%).
