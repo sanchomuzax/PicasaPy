@@ -3599,3 +3599,113 @@ Ez zárt, megszámolható feladat: tizenkét megnevezett cím
 **Eszköz:** `eszkozok/binaris/fa_metszet.py` — hívási fa adott gyökértől
 adott mélységig, metszve a hármas konjunkció találataival, pozitív
 kontrollal.
+
+## 35. K1 — a MÁSOLÁS IRÁNYA kiolvasva, és ebből: a csomópontok az elrendezés ELŐTT már megvannak (2026-09-07, #1412)
+
+*187. kutatói kör. A 34.5 megnevezett lépését viszi: a csomópont
+értékadó operátorának tizenkét hívója. A lelet nem az, amit a kör keresett
+— hanem ennél lényegesebb.*
+
+### 35.1 ⭐ A két másoló hívási megállapodása — a KÓDBÓL
+
+**`FUN_008341b0` (értékadó operátor):**
+
+```
+0x008341b2  mov ebx, [esp+0xc]     ; a VEREMRE TOLT argumentum = CÉL
+0x008341b6  mov eax, [ebx]
+0x008341b8  cmp eax, [esi]         ; ESI = FORRÁS
+0x008341cb  mov eax, [esi]  →  0x008341cf  mov [ebx], eax
+```
+
+⇒ **`ESI` = forrás, a tolt argumentum = cél.** (A 30.5 másoló
+konstruktoránál fordítva: `EDI` = forrás, `ESI` = cél.)
+
+Ez a megállapodás eddig sehol nem volt kimondva, és nélküle a hívási
+helyek olvasata **megfordítható** — épp az a fajta hiba, amit a 26.3 már
+egyszer helyesbített.
+
+### 35.2 A tizenöt hívási hely — a FORRÁS mindig TÖMBELEM
+
+A tizenkét hívó tizenöt helyen hívja az operátort. A minta **kivétel
+nélkül** ugyanaz:
+
+```
+mov esi, [<objektum> + 0x48]   (vagy  mov esi, [edi])   ; a tömb bázisa
+add esi, <eltolás>                                      ; → FORRÁS elem
+lea ecx, [<másik bázis> + <eltolás>]                    ; → CÉL elem
+push ecx
+call 0x8341b0
+```
+
+Példák: `0x00833fa9`, `0x00834109`, `0x0083417f` (`FUN_00833cf0`),
+`0x0083447c` (`FUN_008342b0`), `0x0083e098` · `0x0083e1f8` · `0x0083e266`
+(`FUN_0083dfa0`), `0x0083e368` · `0x0083e4c8` (`FUN_0083e280`),
+`0x0083e648` · `0x0083e749` (`FUN_0083e560`), `0x00833afc` · `0x00833b54`
+(`FUN_00833920`).
+
+⇒ **Egyetlen hívási hely sem ad frissen ÉPÍTETT csomópontot forrásként** —
+mind a tizenöt tömbelem→tömbelem másolás. A `scale` értéke tehát ezeken
+az utakon **nem keletkezik, csak vándorol.**
+
+### 35.3 ⭐ A másoló konstruktor HÁROM helye: a forrás a DOKUMENTUM tömbje
+
+```
+0x0087b54e  (FUN_0087b4a0)  mov edi,[edi+0x48] · add edi,esi · lea esi,[esp+0x30]
+0x00884ae8  (FUN_00884a90)  mov edi,[ebp+0x48] · add edi,esi · lea esi,[esp+0x30]
+0x00887ea6  (FUN_00887e50)  mov edi,[ebp+0x48] · add edi,esi · lea esi,[esp+0x28]
+```
+
+`EDI` = forrás (35.1) ⇒ mindhárom helyen a forrás a **dokumentum `[+0x48]`
+csomópont-tömbjének egy eleme**, a cél pedig egy **verem-helyi** csomópont.
+
+**A `FUN_00887e50` a téma gyűjtés+rács függvénye** (19.1) — tehát az
+ideiglenes vektort, amelybe később az elrendező ír, **a dokumentum MÁR
+MEGLÉVŐ csomópontjainak MÁSOLATAI** töltik fel.
+
+### 35.4 ⛳ Amit a 32. szakasszal EGYÜTT kimond
+
+| lépés | forrás |
+|---|---|
+| a téma másolatot készít a dokumentum csomópontjairól | **35.3** |
+| az elrendező a másolatokba ír | 30.1 |
+| a másolatokat a hívó elpusztítja | 32.1–32.3 |
+
+⇒ **A dokumentum csomópontjai az elrendezés ELŐTT megvannak, és az
+elrendezés NEM módosítja őket.** A `.cxf`-be tehát a dokumentum saját
+értékei kerülnek — azok, amelyek a téma futása előtt már ott álltak.
+
+### 35.5 ⭐ Hogyan kerülnek be a csomópontok? Csak a BEOLVASÓN át
+
+- A `push_back` (`FUN_00833920`, 17.13) hivatkozóinak száma az `xrefs`
+  szerint **nulla** — csak virtuálisan hívható.
+- A 22.4 már kimérte: **a hozzáadó virtuális metódust csak a BEOLVASÓ
+  hívja.**
+- A `FUN_00833cf0` (1192 b) viszont **dokumentum → dokumentum** másolás:
+  a `0x0083417f`-en `mov ecx,[ebp+0x48]` (cél) és `mov esi,[eax+0x48]`
+  (forrás) — **két külön dokumentum tömbje**. Hét hívója van, köztük a
+  kollázspanel (`0x0082a670`) és a panel vezérlő-kezelője (`0x00831750`).
+
+### 35.6 A KÖVETKEZŐ lépés, megnevezve
+
+A kép ezzel megfordul: nem azt kell keresni, ki **írja** a `+0x2c`-t az
+elrendezés után, hanem azt, **honnan való az a dokumentum, amelyből a
+panel másol** (`FUN_00833cf0`), illetve **melyik `.cxf` beolvasása tölti
+fel** a csomópontokat egy ÚJONNAN létrehozott kollázsnál.
+
+A 3.2 szerint a piszkozat mentésekor `.cxf` kerül a lemezre. Ha egy új
+kollázs is beolvasáson át kapja a csomópontjait, akkor a `scale` a
+**piszkozat írásakor** keletkezik — és ott kell keresni.
+
+Két megnevezett, még nem olvasott hely:
+
+1. a `FUN_00833cf0` **hét hívója** (`0x0082a670` · `0x00831420` ·
+   `0x00831750` · `0x00838ef0` · `0x0083d090` · `0x00889e00` ·
+   `0x0088b0a0`) — melyikük épít fel egy forrás-dokumentumot;
+2. az `rtti` szerinti **`CAutosaveCollageThread`** (`vftable`
+   `0x00cbfed0`, slot0 `0x00839440`) — a spec eddig nem használta; ez
+   írja a piszkozatot.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+**Eszköz:** `eszkozok/binaris/atadok.py` — egy függvény hívási HELYEIT
+(utasításcím) és a hívás előtti hat utasítást listázza.
