@@ -33,6 +33,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.support.qml_blokk import blokkok_tipusra
+
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
 _QML_ROOT = (
@@ -62,21 +64,24 @@ def _qml_fajlok() -> list[Path]:
 
 
 def _menuitem_blokkok(text: str):
-    """A `MenuItem` / `PicasaMenuItem` blokkok — kiegyensúlyozott zárójelig.
+    """A `MenuItem` / `PicasaMenuItem` blokkok — a KÖZÖS mérővel (#2613).
 
-    Sor-alapú regexszel nem lehetne: a tétel törzse maga is tartalmaz
-    kapcsos zárójelet (`onTriggered: { … }`).
+    ⚠️ Eddig saját zárójel-számláló állt itt. Kettő baja volt, és egyik sem
+    látszott a zöld teszten: nem ugrotta át az idézőjeles részeket (egy
+    `text: "{"` kötés elcsúsztatja a mélységet — a #2575-ben MÉRVE), és nem
+    vágta ki a kommenteket (egy kikommentelt tétel is felsorolódott). A
+    `blokkok_tipusra` mindkettőt tudja, és egy helyen javítható.
+
+    A két típusnevet KÜLÖN kérdezzük: a közös mérő szóhatárt használ, ezért
+    a `MenuItem` nem illeszkedik a `PicasaMenuItem`-re — a hatókör csak így
+    marad ugyanaz, mint a régi alternációs mintáé.
     """
-    for m in re.finditer(r"\b(MenuItem|PicasaMenuItem)\s*\{", text):
-        melyseg = 0
-        for j in range(m.end() - 1, len(text)):
-            if text[j] == "{":
-                melyseg += 1
-            elif text[j] == "}":
-                melyseg -= 1
-                if melyseg == 0:
-                    yield text[: m.start()].count("\n") + 1, text[m.start() : j + 1]
-                    break
+    talalatok = [
+        par
+        for tipus in ("MenuItem", "PicasaMenuItem")
+        for par in blokkok_tipusra(text, tipus)
+    ]
+    yield from sorted(talalatok)
 
 
 def _checked_kifejezes(body: str) -> str | None:

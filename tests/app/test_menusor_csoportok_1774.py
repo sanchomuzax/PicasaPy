@@ -32,6 +32,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.support.qml_blokk import kommentek_nelkul
+
 _MENU_QML = (
     Path(__file__).resolve().parents[2]
     / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
@@ -269,8 +271,21 @@ ELTERESEK = {
 
 
 def _alak() -> dict[str, list[str]]:
-    """A `PicasaMenuBar.qml` felső szintű menüi és tételeik, sorrendben."""
-    forras = re.sub(r"//[^\n]*", "", _MENU_QML.read_text(encoding="utf-8"))
+    """A `PicasaMenuBar.qml` felső szintű menüi és tételeik, sorrendben.
+
+    ⛳ **#2613 — ez az elemző SZÁNDÉKOSAN saját marad.** A közös mérő
+    (`tests/support/qml_blokk.py`) blokkokat VÁG: egy horgonyból vagy egy
+    típusnévből határt számol. Itt nem határ kell, hanem **szerkezet**: a
+    menük egymásba ágyazottsága, a tételek SORRENDJE és az elválasztók
+    HELYE a soron belül — a veremmel követett bejárás pontosan ezt adja, és
+    a közös mérő egyetlen függvénye sem helyettesíti (a `blokkok_tipusra`
+    felsorolna minden `PicasaMenuItem`-et, de a fáját nem tudná).
+
+    Amit viszont a közös mérőtől ÁTVESZ: a komment-kivágást. A saját
+    `re.sub(r"//…")` nem ismerte a blokk-kommentet, és a sortöréseket sem
+    tartotta meg — a `kommentek_nelkul` mindkettőt kezeli.
+    """
+    forras = kommentek_nelkul(_MENU_QML.read_text(encoding="utf-8"))
     melyseg = 0
     verem: list[int] = []
     menuk: list[tuple[str, list[str]]] = []

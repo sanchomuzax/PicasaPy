@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import pytest
 
-from tests.support.qml_blokk import blokk_horgonyra, kommentek_nelkul
+from tests.support.qml_blokk import (
+    blokk_horgonyra,
+    blokk_tartomanyok,
+    blokkok_tipusra,
+    kommentek_nelkul,
+)
 
 
 class TestKommentekNelkul:
@@ -393,3 +398,105 @@ Image { objectName: "harmadik" }
 
         forras = 'PicasaImage {\n    objectName: "nem ez"\n}\n'
         assert blokkok_tipusra(forras, "Image") == []
+
+
+class TestBlokkTartomanyok:
+    """#2613 — a felsoroló ELTOLÁS-alakja: „ezen a blokkon BELÜL van?"
+
+    A `blokkok_tipusra` a szöveget adja vissza; az #1719 állításának
+    viszont a HELY kell: egy másik találat egy `DeferredDialog { … }`
+    tartományba esik-e. Az #1719 első változata 400 karakterrel nézett
+    vissza, és mutációs próbán megbukott — a szomszéd blokk
+    `sourceComponent`-je a látókörbe esett.
+    """
+
+    _FORRAS = """
+Item {
+    // ez a komment ELTOLNA, ha nem vágnánk ki
+    Doboz {
+        objectName: "elso"
+        text: "{ nem zarojel"
+        Belso { objectName: "beagyazott" }
+    }
+    Masik { objectName: "kivul" }
+    Doboz { objectName: "masodik" }
+}
+"""
+
+    def _tiszta(self) -> str:
+        return kommentek_nelkul(self._FORRAS)
+
+    def test_a_tartomanyok_a_TISZTITOTT_forrasra_illenek(self):
+        """A hívó ugyanazon a szövegen keres, amin a tartományok készültek."""
+        tiszta = self._tiszta()
+        for kezdet, vege in blokk_tartomanyok(self._FORRAS, "Doboz"):
+            assert tiszta[kezdet:].startswith("Doboz")
+            assert tiszta[vege] == "}"
+
+    def test_a_BELUL_levo_talalatot_belulnek_mondja(self):
+        tiszta = self._tiszta()
+        tartomanyok = blokk_tartomanyok(self._FORRAS, "Doboz")
+        hely = tiszta.index('"beagyazott"')
+        assert any(k < hely < v for k, v in tartomanyok)
+
+    def test_a_KIVUL_levo_talalatot_nem_mondja_belulnek(self):
+        """Ez a mutációs próba lényege: a szomszéd blokk nem szívhatja be."""
+        tiszta = self._tiszta()
+        tartomanyok = blokk_tartomanyok(self._FORRAS, "Doboz")
+        hely = tiszta.index('"kivul"')
+        assert not any(k < hely < v for k, v in tartomanyok)
+
+    def test_a_sztringbeli_zarojel_nem_csusztat(self):
+        """A `text: "{ nem zarojel"` nem nyithat új mélységet."""
+        tiszta = self._tiszta()
+        elso = next(iter(blokk_tartomanyok(self._FORRAS, "Doboz")))
+        assert '"kivul"' not in tiszta[elso[0]:elso[1]]
+
+    def test_mindet_megtalalja(self):
+        assert len(blokk_tartomanyok(self._FORRAS, "Doboz")) == 2
+
+    def test_ugyanazt_hatarolja_mint_a_szoveges_alak(self):
+        """A két alak nem csúszhat szét — a `blokkok_tipusra` erre épül."""
+        tiszta = self._tiszta()
+        szoveges = [b for _, b in blokkok_tipusra(self._FORRAS, "Doboz")]
+        eltolasos = [
+            tiszta[tiszta.index("{", k):v + 1]
+            for k, v in blokk_tartomanyok(self._FORRAS, "Doboz")
+        ]
+        assert szoveges == eltolasos
+
+
+class TestSorszamHuseg:
+    """#2613 — a felsorolás sorszáma az EREDETI forrásra hivatkozzon.
+
+    A `kommentek_nelkul` a `/* … */` blokkot korábban NYOMTALANUL vágta ki,
+    a sortöréseivel együtt. Ettől minden utána következő blokk sorszáma
+    elcsúszott, és a lelet („`Main.qml:412` névtelen tétel") rossz sorra
+    mutatott. A sorszám nem díszítés: az őr üzenetében ez az egyetlen
+    fogódzó, amivel a fejlesztő megtalálja a hibás elemet.
+    """
+
+    _FORRAS = """Item {
+    /* egy
+       harom
+       soros
+       blokk-komment */
+    Doboz { objectName: "utana" }
+}
+"""
+
+    def test_a_blokk_komment_nem_csusztatja_a_sorszamot(self):
+        eredeti_sor = next(
+            i + 1
+            for i, sor in enumerate(self._FORRAS.splitlines())
+            if '"utana"' in sor
+        )
+        (sorszam, _blokk), = blokkok_tipusra(self._FORRAS, "Doboz")
+        assert sorszam == eredeti_sor, (
+            f"a sorszám {sorszam}, az eredeti forrásban {eredeti_sor} — a "
+            "blokk-komment kivágása elcsúsztatta"
+        )
+
+    def test_a_komment_tartalma_tovabbra_sem_szamit(self):
+        """A sortörések megtartása nem hozhatja vissza a komment SZÖVEGÉT."""
+        assert "harom" not in kommentek_nelkul(self._FORRAS)

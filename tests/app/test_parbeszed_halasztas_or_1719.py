@@ -63,6 +63,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.support.qml_blokk import blokk_tartomanyok, kommentek_nelkul
+
 _MAIN = (
     Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/Main.qml"
 )
@@ -115,32 +117,28 @@ _PARBESZED = re.compile(r"(\w*Dialogs?)\s*\{")
 def _forras() -> str:
     """A `Main.qml` kommentek nélkül — a kommentben szereplő példa ne
     számítson példányosításnak (a projekt visszatérő csapdája)."""
-    return re.sub(r"//[^\n]*", "", _MAIN.read_text(encoding="utf-8"))
+    return kommentek_nelkul(_MAIN.read_text(encoding="utf-8"))
 
 
 def _deferred_tartomanyok(szoveg: str) -> list[tuple[int, int]]:
-    """A `DeferredDialog { … }` blokkok (kezdet, vég) párjai, ZÁRÓJEL-
-    PÁROSÍTÁSSAL.
+    """A `DeferredDialog { … }` blokkok (kezdet, vég) párjai — a KÖZÖS
+    mérővel (#2613).
 
     ⚠️ Az első változat egy 400 karakteres visszatekintéssel döntött, és
     MUTÁCIÓS PRÓBÁN MEGBUKOTT: egy szomszédos `DeferredDialog`
     `sourceComponent`-je a látókörbe esett, ezért a közvetlenül
     példányosított párbeszéd is halasztottnak látszott. A zöld teszt
-    ilyenkor nem bizonyíték — a párosítás az egyetlen megbízható alak."""
-    tartomanyok: list[tuple[int, int]] = []
-    for talalat in re.finditer(r"DeferredDialog\s*\{", szoveg):
-        melyseg = 0
-        i = talalat.end() - 1
-        while i < len(szoveg):
-            if szoveg[i] == "{":
-                melyseg += 1
-            elif szoveg[i] == "}":
-                melyseg -= 1
-                if melyseg == 0:
-                    tartomanyok.append((talalat.start(), i))
-                    break
-            i += 1
-    return tartomanyok
+    ilyenkor nem bizonyíték — a párosítás az egyetlen megbízható alak.
+
+    A második változat már párosított, de SAJÁT számlálóval, ami nem
+    ugrotta át az idézőjeles részeket: egy `text: "{"` kötés elcsúsztatta
+    volna (a #2575-ben a közös mérőn MÉRVE). A `blokk_tartomanyok`
+    ugyanezt adja, idézőjel-tudatosan, egyetlen helyen javíthatóan.
+
+    ⚠️ Az eltolások a KOMMENT NÉLKÜLI forrásra vonatkoznak — ezért ad a
+    `_forras()` is `kommentek_nelkul`-t. A kettő nem keverhető.
+    """
+    return blokk_tartomanyok(szoveg, "DeferredDialog")
 
 
 def _kozvetlenul_epulok() -> set[str]:

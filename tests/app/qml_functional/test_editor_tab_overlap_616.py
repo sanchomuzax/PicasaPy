@@ -30,6 +30,8 @@ import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
+from tests.support.qml_blokk import blokk_horgony_utan
+
 _KEEPALIVE = []
 
 #: a fülek indexe a `EditorTabBar` sorrendjében (7 fül: 5 eredeti + #422 + #571)
@@ -81,23 +83,13 @@ def _also(item) -> float:
     return item.property("y") + item.property("height")
 
 
-def _qml_blokk(forras: str, fejlec: str) -> str:
-    """Egy QML-elem törzse, ZÁRÓJEL-SZÁMLÁLÁSSAL.
-
-    Regexszel a blokk vége nem határozható meg megbízhatóan (egy `.*?` a
-    behúzásra hagyatkozva túlfut a következő testvér-elemre, és távoli
-    sorokat hoz be a vizsgálatba). A számlálás nem tud túlfutni.
-    """
-    kezdet = forras.index(fejlec)
-    melyseg = 0
-    for vege, karakter in enumerate(forras[kezdet:], start=kezdet):
-        if karakter == "{":
-            melyseg += 1
-        elif karakter == "}":
-            melyseg -= 1
-            if melyseg == 0:
-                return forras[kezdet : vege + 1]
-    raise AssertionError(f"nem záródik a blokk: {fejlec!r}")
+# ⛳ #2613: a saját zárójel-számláló ELTŰNT innen. A vizsgálat egyetlen
+# helye (`EditorPanel {` a `PhotoViewer.qml`-ben) pontosan a közös mérő
+# `blokk_horgony_utan` esete: a horgony a nyitó kapcsos zárójel ELŐTT áll.
+# A közös alak két dolgot tud, amit a saját nem tudott: kivágja a
+# kommenteket (egy kikommentelt `anchors.bottom` nem elégítheti ki az őrt)
+# és átugorja az idézőjeles részeket (egy `text: "{"` kötés elcsúsztatta
+# volna a mélységet — a #2575-ben MÉRVE).
 
 
 class TestNincsGorgetesAzEffektFuleken:
@@ -142,7 +134,7 @@ class TestNincsBeegetettPanelmagassag:
         forras = (_QML_DIR / "PicasaPy" / "PhotoViewer.qml").read_text(
             encoding="utf-8"
         )
-        blokk = _qml_blokk(forras, "EditorPanel {")
+        blokk = blokk_horgony_utan(forras, "EditorPanel")
         assert not re.search(r"^\s*height:\s*\d+\s*$", blokk, re.M), (
             "a panelnek nem lehet beégetett magassága — az ablakét kell kapnia"
         )
