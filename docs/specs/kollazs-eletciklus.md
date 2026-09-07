@@ -2979,3 +2979,164 @@ Az olcsó lánc **kimerült**; a megnevezett következő lépés
 (`HOL-TARTUNK.md` / 28.5) továbbra is a **dekompilátoros kör**:
 a `FUN_008347b0` veremkerete (a 17.11 ↔ `0x00834c2d` ellentmondás), majd
 a `0x0082a670` kollázspanel képhozzáadási ága.
+
+## 30. K1 — a 18.4 képlete UTASÍTÁSSZINTEN megvan, és ebből ÚJ, éles ellentmondás lett (2026-09-07, #1412)
+
+*182. kutatói kör. A 18.4 két elrendezési képlete eddig **mérésből** jött
+(31/31 csomópont); ez a szakasz a `FUN_00888210` csomópont-ciklusát olvassa
+végig utasításonként, és a képletet a **kódból** adja meg. A melléktermék
+fontosabb, mint a fő eredmény: kiderül, hogy a kód ugyanazzal a mennyiséggel
+igazít középre, amit `h`-ként el is tárol — a mintáink viszont **nem**
+ezzel igazítanak.*
+
+### 30.1 ⭐ A csomópont-ciklus, utasításonként (`0x008883c0`–`0x008885c0`)
+
+Bemenetek a cikluson kívülről: `[esp+0x2c]` = cellaSzél, `[esp+0x44]` =
+cellaMag, `[esp+0x40]` = balMargó, `[esp+0x3c]` = felsőMargó,
+`[esp+0x18]` = **rés** (`CSONK(0,08 · k)`, 18.2), `[esp+0x48]` = W,
+`[esp+0x4c]` = H.
+
+```
+edi = rés                                   ; 0x008883c0
+call 0x9b4aa0                               ; 0x0088844e — arány-tartó illesztés
+                                            ; kimenet: [esp+0x60..0x6c] = (0, 0, wf, hf)
+[esp+0x60] += rés ; [esp+0x64] += rés       ; 0x00888465 / 0x0088846d
+[esp+0x68] -= rés ; [esp+0x6c] -= rés       ; 0x00888463 / 0x0088846f
+w_kép = wf − 2·rés                          ; 0x0088846b  sub eax, edx
+h_kép = hf − 2·rés                          ; 0x00888484  sub ecx, esi
+ecx = (cellaSzél − w_kép) >> 1              ; 0x008884a1  sar ecx, 1
+esi = (cellaMag  − h_kép) >> 1              ; 0x008884a9  sar esi, 1
+sor, oszlop = div( csomópontIndex, oszlopszám )   ; 0x008884bc
+x_px = oszlop·cellaSzél + ecx + balMargó    ; 0x008884c7–0x008884ce
+y_px = sor·cellaMag    + esi + felsőMargó   ; 0x00888512–0x0088851d
+csomópont+0x18 = x_px / W                   ; 0x00888556
+csomópont+0x1c = y_px / H                   ; 0x00888568
+csomópont+0x20 = w_kép / W                  ; 0x008885ae
+csomópont+0x24 = h_kép / H                  ; 0x008885b6
+csomópont+0x2c = 1,0  (fld1)                ; 0x008885ac → 0x008885bc
+```
+
+⇒ **A 18.4 két képlete ezzel kódra van vezetve.** A `(cellaMag − X) / 2`
+tag szó szerint a `sar esi, 1` a `0x008884a9`-en; az egészosztás nem
+feltevés, hanem aritmetikai jobbra tolás. Ugyanígy a vízszintes tag a
+`sar ecx, 1` a `0x008884a1`-en.
+
+*Bizonyítottsági fok: **megerősített** — helyi diszasszemblálás
+(`eszkozok/pe_dis.py` + capstone), minden lépés címmel.*
+
+### 30.2 ⛔ AZ ÚJ ELLENTMONDÁS: a kód ugyanazzal igazít, amit tárol — a fájl NEM
+
+A ciklusban **egyetlen** `h_kép` van, és **kétszer** használódik: egyszer a
+függőleges középre igazításhoz (`esi`), egyszer a csomópont `h` mezőjéhez.
+Ha a mintáink ebből a menetből származnának, akkor a `.cxf` `y`-ját a
+tárolt `h`-val vissza lehetne számolni.
+
+**Nem lehet.** A `scale`-lel viszont igen — 10/10 sorra, kivétel nélkül:
+
+| minta | sor | cellaMag | felsőMargó | y a `scale`-lel | y a tárolt `h`-val | MÉRT y |
+|---|---:|---:|---:|---:|---:|---:|
+| AI6 | 0 · 1 · 2 | 359 | 204 | **227 · 586 · 945** | 232 · 591 · 950 | 227 · 586 · 945 |
+| AI27 | 0 · 1 | 571 | 217 | **252 · 823** | 279 · 850 | 252 · 823 |
+| AI28 | 0 · 1 | 303 | 115 | **138 · 441** | 156 · 459 | 138 · 441 |
+| AI29 | 0 · 1 · 2 | 186 | 106 | **120 · 306 · 492** | 123 · 309 · 495 | 120 · 306 · 492 |
+
+Az eltérés a `h`-s ágon **3–27 lapegység** — nagyságrendekkel a kerekítési
+zaj fölött. *(Mérőszkript: a kör `kozepre_igazitas.py`-ja; a bemenet a négy
+arany `.cxf`, a képletek a 18.2/18.3 csonkolásaival.)*
+
+**Független második jel, ugyanerre:** a rés-levonás **elrontja a
+képarányt** (`(wf−2r)/(hf−2r) ≠ wf/hf`), a tárolt dobozok viszont a
+forráskép arányát **0,001 lapegység** pontossággal viszik (18.3). Tehát a
+tárolt `w`/`h` nem lehet a rés-levont téglalap.
+
+### 30.3 ⭐ Amit ez KIMOND — és az ÚJ keresési kulcs
+
+A két jel együtt csak egyféleképpen áll össze:
+
+> **Az elrendezés UTÁN egy másik menet ÁTÍRJA a csomópont `w`/`h` mezőjét**
+> (a rés nélküli, arány-tartó dobozra), **az elrendező saját
+> doboz-magassága pedig a `+0x2c`-be kerül** — ezt látjuk `scale`-ként.
+> Az `y` közben változatlan marad, ezért őrzi az EREDETI magasságot.
+
+Ez megmagyarázza a 18.5 „lap-szintű magasság" megfigyelését is: a
+`scale` azért csomópont-független, mert az elrendező **cellánként azonos**
+doboz-magassággal dolgozik, a kép viszont csomópontonként más.
+
+⇒ **ÚJ KERESÉSI KULCS a hiányzó íróhoz.** Minden eddigi pásztázás a
+`+0x2c`-t **magában** kereste (17.7, 17.10, 19.2, 22.1, 23.3, 26.4, 27.2,
+29.1). A keresett menet viszont **együtt** írja a `+0x20`-at, a `+0x24`-et
+és a `+0x2c`-t ugyanazon az 56 bájtos elemen. Ez a **konjunkció** eddig
+egyetlen pásztázásban sem szerepelt — sem bájtmintásban, sem a
+dekompilátumon (26.4 a `+0x2c`-írókat listázta, nem a hármas együttállást).
+
+*Bizonyítottsági fok: a 30.2 két jele **megerősített** (számolás a
+mintákon, illetve a 18.3 mérése); a 30.3 következtetése **erős** — a két
+jelet egyszerre más magyarázat nem fedi, de az átíró menetet még nem
+azonosítottuk.*
+
+### 30.4 ⭐ A HÁRMAS KONJUNKCIÓ PÁSZTÁZÁSA LEFUTOTT — és NEGATÍV
+
+*A 30.3 új kulcsát ugyanez a kör le is futtatta, nem hagyta következő
+körre.* Pásztázás a bináris-index **20 608** `.text`-függvényén (capstone,
+~30 mp): olyan függvény, amely `+0x20`, `+0x24` **és** `+0x2c` mind a
+hármat írja 4 bájtos memóriaoperandusra, `esp`/`ebp` bázis nélkül.
+**Pozitív kontroll: a `FUN_00888210` szerepel a találatok közt** ✅
+(`0x008885ae` · `0x008885b6` · `0x008885bc`).
+
+| szűrő | darab |
+|---|---:|
+| hármas konjunkció, bármilyen írásmóddal | **212** |
+| ebből a `+0x2c` **lebegőpontos** (`fst`/`fstp`/`movss`) | **36** |
+| ebből a kollázs-sávban (`0x00829000`–`0x00895000`) | **9** |
+| ebből a sávon kívül, de a **sávból hívva** (`xrefs`) | **1** |
+
+**A kilenc sávbeli mind besorolt** (egyik sem számol `scale`-t): a két
+téma-elrendező (`0x00885060`, `0x00888210` — `fld1`), két **másoló**
+(`0x008341b0` értékadó, és lásd lent), a nyomtatás két függvénye
+(`0x00860f60`, `0x00861190` — 17.15), valamint három nullázó/−1,0
+inicializáló (`0x00829770`, `0x0088e7e0`, `0x008910b0` — 17.15).
+
+**A 27 sávon kívüliből `xrefs` szerint EGYETLENT hív a sáv:**
+`FUN_009dd800` (926 b; hívói `0x0085fd60`, `0x0087c820`, `0x0088ae30`).
+**Elolvasva, tartalmilag KIZÁRVA:** konstruktor, amely a `[esi]`-be a
+`0xcda8cc` vtáblát írja, és két ciklusban nulláz — a lépésköz
+`0x4c` (**76 bájt**, `0x009dd859` / `0x009dd8a8` `add …, 0x4c`), tehát a
+`+0x2c` ott a 76 bájtos elem saját mezője. A kollázs-csomópont **56**
+bájtos (26.1) ⇒ más osztály.
+
+⇒ **A hármas kulcs sem hoz számoló írót.** Ez a 26.4 dekompilátoros
+negatívjától független megerősítés, és a sávon kívülre is kiterjed
+(hívási úton).
+
+### 30.5 ⭐ Melléklelet: `FUN_0087b830` = a csomópont MÁSOLÓ KONSTRUKTORA
+
+A pásztázás egy eddig be nem sorolt sávbeli függvényt is felszínre hozott.
+Végigolvasva (141 b, `0x0087b830`–`0x0087b8bc`): mezőről mezőre másol a
+`[edi]`-ből a `[esi]`-be — `+0` · `+4` · `+8` · `+0x10` · `+0x14` ·
+`+0x18` · `+0x1c` · `+0x20` · `+0x24`, majd `fld`/`fstp` a `+0x28` és a
+`+0x2c` párra, végül `+0x30` és `+0x34`. A `+0`, `+4` és `+0x30`
+mezőkre **hivatkozásszám-növelés** fut (`movzx`/`cmp 0x80`/`call [0xc40560]`)
+⇒ ezek **hivatkozásszámlált sztringek**.
+
+⇒ Ez a **csomópont másoló konstruktora**, és harmadik oldalról igazolja a
+26.1 mezőtérképét: az elem `0x38` (56) bájtos, a `+0x28`/`+0x2c`
+lebegőpontos (`theta`/`scale`), a `+0`/`+4`/`+0x30` sztring.
+**Nem számol** — a láncot viszi, mint a `FUN_008341b0`.
+
+### 30.6 A KÖVETKEZŐ lépés, megnevezve
+
+A 30.4 negatívja után a keresés iránya: **nem a mezőt kell keresni, hanem
+a FORRÁS-csomópontot.** A sávban két másoló van (`0x008341b0` értékadó,
+`0x0087b830` másoló konstruktor); ha a `scale` a modellbe kerül, valamelyik
+**forrás-oldalán** kell megjelennie.
+
+1. A `0x0087b830` **hívóinak** végigolvasása (`xrefs`) — melyikük épít
+   olyan ideiglenes csomópontot, amelynek a `+0x2c`-je nem 1,0;
+2. utána a 26.5 két vágása (`0x0082d570` parancs-elosztó három szinten,
+   illetve a téma-objektumok metódusai).
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+**Eszközök** (privát `picasapy-agent`): a konjunkció-pásztázó
+`eszkozok/binaris/mezo_konjunkcio.py`, a középre-igazítás mérője
+`eszkozok/binaris/kozepre_igazitas.py`.
