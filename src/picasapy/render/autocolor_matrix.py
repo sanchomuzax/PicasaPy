@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from picasapy.fixedpoint import c_int_div
 from picasapy.render.curves import validate_image
 
 #: A natív `0x0090eda0` kilenc konstansa, SORFOLYTONOSAN. `float32` —
@@ -98,19 +99,10 @@ _BINS = 64
 _CENTER = 32
 
 
-def c_divide(numerator, denominator):
-    """Előjeles egész-osztás **nulla felé csonkolva** — a C `/` (x86 `idiv`).
-
-    A Python `//` PADLÓZ: `-7 // 2 == -4`, miközben a C `-7 / 2 == -3`.
-    A becslő két osztásánál ez 1-es eltérést okoz minden negatív
-    számlálónál, és a 12 páron mért hiba több mint felét ez adta
-    (1,370 → 0,614).
-    """
-    numerator = np.asarray(numerator)
-    denominator = np.asarray(denominator)
-    quotient = np.abs(numerator) // np.abs(denominator)
-    negative = (numerator < 0) != (denominator < 0)
-    return np.where(negative, -quotient, quotient)
+#: A becslő két osztása C-szemantikájú (`idiv`, nulla felé csonkol). A
+#: megvalósítás a közös `picasapy/fixedpoint.py`-ban él (#926); ez a név a
+#: modul régi, kifelé is használt alakja.
+c_divide = c_int_div
 
 
 def estimate_illuminant(image: np.ndarray) -> tuple[int, int]:

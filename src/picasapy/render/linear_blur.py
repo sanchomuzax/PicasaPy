@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from picasapy.fixedpoint import c_int_div
 from picasapy.render.curves import validate_image
 from picasapy.render.iir_blur import apply_picasa_blur
 
@@ -106,16 +107,6 @@ def linblur_blur_radius(width: int, amount: float) -> float:
     return width * _RADIUS_WIDTH_FRACTION * (max(amount, 0.0) + 1.0) + _RADIUS_EPSILON
 
 
-def _c_int_div(numerator: int, denominator: int) -> int:
-    """Egész osztás NULLA FELÉ csonkolva — a C `/` szemantikája.
-
-    A numpy/Python `//` a padló felé kerekít, ami negatív `d.x`-nél más
-    `kx`-et adna, mint a natív kód.
-    """
-    quotient = abs(numerator) // abs(denominator)
-    return -quotient if (numerator < 0) != (denominator < 0) else quotient
-
-
 def _projection(
     height: int, width: int, near: tuple[int, int], far: tuple[int, int]
 ) -> np.ndarray:
@@ -123,8 +114,8 @@ def _projection(
     delta_x = near[0] - far[0]
     delta_y = near[1] - far[1]
     squared = delta_x * delta_x + delta_y * delta_y
-    slope_x = _c_int_div(delta_x << 16, squared)
-    slope_y = _c_int_div(delta_y << 16, squared)
+    slope_x = c_int_div(delta_x << 16, squared)
+    slope_y = c_int_div(delta_y << 16, squared)
     offset = -((far[1] + near[1]) * slope_y + (far[0] + near[0]) * slope_x)
     columns = np.arange(width, dtype=np.int64) * (2 * slope_x)
     rows = np.arange(height, dtype=np.int64) * (2 * slope_y)

@@ -1751,3 +1751,93 @@ egy tétellel nőtt, mert egy elem teljes neve eddig a tartalomjegyzékben
 > *Bizonyítottsági fok: **megerősített*** — a szakaszszámok és az
 > elemszámok a mérő újrafuttatásából, a 157 horgony gépi ellenőrzésből,
 > az 55 257 karakter a `_szakaszok()` kimenetéből.
+
+## 23. Az OSZTÁS a portolás legnémább csapdája — `//` vs. `idiv` (2026-09-07)
+
+Portoláskor a legdrágább hibák nem azok, amiktől a kép elromlik, hanem
+amiktől **majdnem jó** lesz. Ilyen az egész-osztás:
+
+| | mit csinál | példa |
+|---|---|---|
+| C `/`, x86 `idiv` | **nulla felé csonkol** | `-7 / 2 == -3` |
+| Python / numpy `//` | **a padló felé kerekít** | `-7 // 2 == -4` |
+| x86 `sar`, `shr` | padlóz (mint a `//`) | `-7 >> 1 == -4` |
+
+Negatív számlálónál a két szemantika **pontosan 1-gyel** tér el. Egyetlen
+képpontnál ez láthatatlan; egy szűrőn végigfutva viszont a mért hiba
+felét is adhatja.
+
+**Mérve (#759, `autocolor`, 2026-08-18):** a becslő két osztását `//`-ról
+csonkolóra cserélve a 12 golden-páron az átlagos csatorna-eltérés
+**1,370 → 0,614** lett. Egy kép (`Empty Space`) ettől lett pontosan
+olyan, mint az eredeti. **Két sor.**
+
+### A recept
+
+1. **Csak az osztás gyanús, és csak negatív számlálónál.** Ahol a
+   számláló bizonyíthatóan nemnegatív (képpontértékek összege, futó
+   összeg különbsége, `x + 255` alakú eltolás), ott a `//` hű — de ezt
+   **írd is oda**, különben a következő kör újra végigméri.
+2. **Az eltolás mindig hű.** A `>>` Pythonban is padlóz, ugyanúgy, mint
+   a `sar`. Ha a natívban eltolás áll, a `//` a helyes fordítás.
+3. **A binárisból döntsd el, ne a józan észből.** Keresd meg a művelet
+   lezáró utasítását: `idiv` ⇒ csonkol, `sar`/`shr` ⇒ padlóz. Helyben,
+   másodpercek alatt megy (`eszkozok/pe_dis.py`, ld. a 14/d szakaszt).
+4. **A csomagolt (SWAR) blokk megtévesztő.** A Picasa a képpontot gyakran
+   **egyetlen regiszterben**, csatornánként csomagolva számolja
+   (`and ebp, 0xff00ff`) — ott nincs is „csatornánkénti osztás", csak egy
+   `shr` az egész dwordre. A csatorna-szemantikát ilyenkor **bitpontos
+   szimulációval** kell visszanyerni, nem szemre.
+
+### A `radial_mask` esete — így néz ki a 3. és a 4. pont a gyakorlatban
+
+A #926 nyitott kérdése az volt, hogy a sugaras maszk `//`-ja helyes-e. A
+keverő (`0x0090b050`) képpont-blokkja, `0x0090b2bc`…`0x0090b30a`:
+
+```
+and    ebp, 0xff00ff     ; közép PIROS+KÉK egyetlen regiszterben
+and    ecx, 0xff00       ; közép ZÖLD
+and    eax, 0xff00ff     ; perem piros+kék
+sub    ebp, eax          ; Δ — negatív is lehet, kettes komplemensben
+imul   ebp, edx          ; · súly (a tábla bájtja, 0…255)
+shr    ebp, 8            ; ← ELTOLÁS, nem idiv
+add    ebp, eax          ; + alap
+```
+
+`idiv` nincs a blokkban. A csomagolás miatt viszont ez **nem bizonyítja
+magától**, hogy csatornánként is padlózás jön ki — a kivonás átvihet a
+kék sávból a pirosba. Ezért a blokkot bitpontosan újrajátszottuk:
+**113 246 208 eseten** (minden Δkék × Δpiros × súly hármas, nyolc
+perem-értékre) **0 eltérés** a padló-modelltől, és **71 551 056** (63%)
+a csonkolótól.
+
+⇒ A mai `//` **helyes**; a `radial_mask`-on nem volt mit javítani. A
+negatív eredmény is eredmény (ld. a 14. szakaszt) — és a szimuláció
+azóta őrként fut: `tests/render/test_radial_mask_926.py`.
+
+### A fába vezetve
+
+A csonkoló osztásból a #926 **három** független másolatot talált
+(`render/linear_blur.py`, `render/autocolor_matrix.py`,
+`color/classify.py`), és a harmadik az **osztó** előjelét nem is kezelte.
+Egyetlen megvalósítás maradt — `src/picasapy/fixedpoint.py`,
+`c_int_div()` —, és AST-kapu méri, hogy ne szülessen negyedik
+(`tests/test_fixedpoint_926.py::TestNincsTobbMasolat`).
+
+A hely **nem** a `render/` csomagon belül van, pedig a jegy azt vetette
+fel. Ok: a `render/__init__.py` a teljes szűrőláncot re-exportálja, így a
+`color/classify.py` egy 60 soros aritmetikai segédért az egész
+render-csomagot behúzta volna. Mérve: `import picasapy.color.classify`
+**3 → 62** betöltött `picasapy`-modul, **0,083 → 0,131 mp**. A modul
+ezért a `cvimage.py`/`ioutil.py`/`paths.py` mintájára csomagsemleges.
+
+A `render/` és a `color/` összes `//`-ját végignéztük: a `radial_mask`-on
+kívül **egyetlen** natívból portolt osztásnak sincs negatív számlálója
+(a többi kivágás-középre-igazítás vagy nemnegatív összeg). Ahol a komment
+mást állított — `glimmer_ops._box1d_trunc`, „a `//` a nulla felé
+csonkít" —, ott a komment lett javítva, nem a kód.
+
+> *Bizonyítottsági fok: **megerősített*** — az `idiv`/`shr` a
+> diszasszemblátumból (`0x0090b2bc`…`0x0090b30a`), az 1,370 → 0,614 a
+> #759 méréséből, a 113 246 208 / 0 / 71 551 056 a bitpontos
+> szimulációból.
