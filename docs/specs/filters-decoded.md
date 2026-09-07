@@ -4283,8 +4283,43 @@ diszasszemblátumból, a mátrixok a bináris tábláját behelyettesítve a
 
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
-**Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a
-`dir_tint` ROSSZ verdiktjének (9,45 alap / **49,41 max**) a fő oka.
+**Az átmenet FORGATHATÓ** — nem függőleges. Ez volt a `dir_tint` rossz
+verdiktjének a fő oka.
+
+> ⚠️ **HELYESBÍTÉS (2026-09-07, a megvalósítás körében).** Az alábbi
+> paraméter-térkép két pontja **fordítva** szerepelt az eredeti
+> leletben. A veremre pakolás lépésenkénti kiolvasása szerint:
+>
+> * **`[szűrő+0xc4]` NEM fok, hanem egész negyedválasztó.** A
+>   munkafüggvény kizárólag `& 1`-gyel (`0x0090f503`) és `& 3`-mal
+>   (`0x0090f5d4`) használja — 90°-os alaplépés, nem szög.
+> * **A `(puck − 0,5) × 30` NEM a középpont skálája, hanem a SZÖG,
+>   fokban** (±15°). Ez a hívás **3. argumentuma** (`0x008f9983` →
+>   `[esp+8]` → `[esp+0x3e4]`), és épp ezt szorozza a munkafüggvény
+>   `π/180`-nal (`0x0090f543`).
+> * **A középpont mindig a TELJES puck:** `(W·x, H·y)`, egészre
+>   csonkítva (`0x008f98a0`–`0x008f98ce`). Az irány paritása azt dönti
+>   el, melyik puck-koordináta adja a **szöget** (páros → `x`, páratlan
+>   → `y`) és melyik kép-oldal a normálást (páros → magasság, páratlan
+>   → szélesség).
+> * A **`Feather` a hívás 1. argumentuma** (`[esp+0x3dc]`), és a
+>   `dimenzió × Feather` szorzat adja a lépésvektor osztóját
+>   (`0x0090f51e`).
+>
+> **Ugyanezt mondta már a #317-es, egy nappal korábbi olvasat** is (ld.
+> „`dir_tint` (irányított színezés) — TELJES (2026-08-15, #317)" szakasz:
+> `szog_fok = (poz − 0,5) × 30`, `irany = 0…3`). A két lelet közül a #317-é
+> a helyes; a 2026-08-16-i térkép ezen a két soron elcsúszott.
+>
+> A hat argumentum a callback verempakolása szerint, sorrendben:
+> `(forráskép, Feather, 1 − Shade, szög_fok, szín, negyed)` — plusz két
+> regiszter-argumentum: `ecx` = célkép, `edx` = a középpont
+> `(cx, cy)` egészpárja.
+>
+> **Az EXIF-tájolás (`[ebp+0x10]+0x1c`) csak akkor számít, ha az irány
+> NEM `-1`** (`0x008f9933  cmp eax, -1`). A `.picasa.ini` `dir_tint=`
+> alakja irányt nem hordoz, tehát az ini-ből renderelt képen a tájolás
+> **kimarad** a számításból.
 
 ### A callback (`0x008f9880`, 306 b) paraméter-térképe
 
@@ -4293,15 +4328,16 @@ diszasszemblátumból, a mátrixok a bináris tábláját behelyettesítve a
 | `[szűrő+0x28]` | **Feather** (0. csúszka), **minimum 0,001** | `0x008f990b`–`0x008f9929` (küszöb `0xcf3db0` = 0,001, pótérték `0xc7999c` = 0,001) |
 | `[szűrő+0x2c]` | **Shade** (1. csúszka) | `0x008f9958` |
 | `[szűrő+0x50]` | a szín (csomagolt dword) | `0x008f98dd` |
-| `[szűrő+0xc4]` | **az irány, FOKBAN**; `-1` → 0 | `0x008f992d`–`0x008f9938` |
-| `[ebp+0x10]+0x1c` | a kép **tájolása** — az irány ehhez képest relatív | `0x008f993f` |
+| `[szűrő+0xc4]` | **az irány: egész NEGYEDVÁLASZTÓ** (0…3); `-1` → 0 | `0x008f992d`–`0x008f9938` |
+| `[ebp+0x10]+0x1c` | a kép **tájolása** — csak akkor vonódik ki, ha az irány ≠ `-1` | `0x008f993f` |
+| `[ebp+0xc]+8`, `+0xc` | a kép szélessége / magassága → a **középpont** `(W·x, H·y)`, csonkítva | `0x008f98a0`–`0x008f98ce` |
 
 ```asm
-0x008f9942  test al, 1                 ; az irány PARITÁSA választ:
-0x008f9946  fld  dword ptr [esp+0x18]  ;   páratlan → az y a középpont
-0x008f994c  fld  dword ptr [esp+0x14]  ;   páros    → az x
+0x008f9942  test al, 1                 ; a negyed PARITÁSA választ:
+0x008f9946  fld  dword ptr [esp+0x18]  ;   páratlan → a puck y adja a SZÖGET
+0x008f994c  fld  dword ptr [esp+0x14]  ;   páros    → a puck x
 0x008f9968  fsub qword ptr [0xc72150]  ; − 0,5
-0x008f9975  fmul qword ptr [0xcf3ed8]  ; × 30,0
+0x008f9975  fmul qword ptr [0xcf3ed8]  ; × 30,0   → a szög FOKBAN, ±15°
 0x008f998b  fld1 / fsubrp              ; a magba 1 − Shade megy
 0x008f99a3  call 0x90f470              ; a munkafüggvény
 ```
@@ -4309,7 +4345,8 @@ diszasszemblátumból, a mátrixok a bináris tábláját behelyettesítve a
 ### A munkafüggvény (`0x0090f470`, 1151 b)
 
 ```asm
-0x0090f543  fmul qword ptr [0xcf48d0]  ; szög × π/180  → az irány FOKBAN
+0x0090f51e  fmul dword ptr [esp+0x3dc] ; a lépés osztója: dimenzió × Feather
+0x0090f543  fmul qword ptr [0xcf48d0]  ; a PUCK-szög × π/180 — tehát FOK
 0x0090f557  call 0xc285f0              ; sin
 0x0090f56f  call 0xc29d20              ; cos
 0x0090f5a5  fld  qword ptr [0xcf3cb0]  ; 65536,0 → 16.16 fixpontos lépésvektor
@@ -4385,11 +4422,44 @@ azaz **azonosság** (nincs tónusformálás); Shade → 1-nél `p → 100`, azaz
 maximálisan torzított átmenet. A `0,01`-es padló az, ami a `p`-t 100-nál
 megfogja.
 
-*Bizonyítottsági fok: megerősített* a paraméter-térképre, a fokos szögre, a
-`Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
-középpont-skálára, a LUT felépítésére, a szorzó színezésre **és
-(2026-08-18) a görbe alakjára** · **erős** a negyed-kezelés pontos
-szemantikájára.
+### A térbeli rámpa (`0x0090f62b`–`0x0090f752`) — 384 bájt
+
+A helyfüggő súly **nem** a tónusgörbéből jön, hanem egy külön, 384 bájtos
+táblából. A tábla `t = i/256` helyeken egy szakaszonként köbös S-görbét
+mintavételez (támasz `[−1,5 ; 1,5]`, `S(0) = 0,5`, páratlan szimmetria a
+`(0 ; 0,5)` pontra), és `trunc((1 − 2·S(t)) × 255,99989)`-et tárol
+(`0xcf48c8` = 255,99989). A négy ág konstansai `1,125` · `0,25` · `3,0` ·
+`1/6`, az eltolások `0,5625` / `0,5` / `0,4375`.
+
+A képpont-ciklus egy **egész akkumulátort** görget (soronként `2·lépés_y`,
+képpontonként `2·lépés_x`, a középponthoz képest nullázva), abból
+`idx = −(akkumulátor >> 8)`, a táblát páratlan szimmetriával olvassa
+(`0x0090f7c8`: negatív indexre `−tábla[|idx|]`), a tartományon kívül
+`±255`-re vág (`0x0090f7a6`, `0x0090f7b5`), végül a keverési súly
+`(256 + rámpa) >> 1`, azaz `0…255`.
+
+### A MÉRT eredmény (2026-09-07)
+
+A `PicasaPy meroszett` Picasa-exportjához (`export-202608151229`)
+hasonlítva, átlagos csatornaeltérésben:
+
+| beállítás | régi közelítés | a natív modell | érintetlen kép |
+|---|---:|---:|---:|
+| alap (Feather 0,25 · Shade 0,25) | 22,285 | **0,624** | 6,635 |
+| max (Feather 1,0 · Shade 1,0) | 124,171 | **0,470** | 61,591 |
+| min (Feather 0 · Shade 0) | 0,615 | **0,615** | 0,615 |
+
+A `min` beállításnál a szűrő igazoltan tétlen, tehát az ott mért **0,615
+a JPEG-újrakódolás zajszintje**. Az `alap` és a `max` maradéka ez alatt
+van — a modell képpont-hű.
+
+*Bizonyítottsági fok: **megerősített*** a paraméter-térképre (a helyesbített
+olvasattal), a szög forrására és a `π/180`-ra, a `Feather` 0,001-es
+padlójára, az `1 − Shade`-re, a középpont `(W·x, H·y)` alakjára, a LUT
+felépítésére, a rámpa négy ágára, a szorzó színezésre és a görbe alakjára
+— **a három beállításon MÉRVE is**. A negyed-kezelés szemantikája
+(csere + előjelváltás) **erős**: a `.picasa.ini` nem hordoz irányt, ezért
+a 0-tól különböző negyedeket mérés nem fedi.
 
 ## A három „automatikus" szűrő HÁROM külön algoritmus (2026-08-17)
 

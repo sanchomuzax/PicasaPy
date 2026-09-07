@@ -55,13 +55,13 @@ from picasapy.render.directional import (
     apply_dir_sat,
     apply_dir_sharp,
 )
+from picasapy.render.dir_tint import apply_dir_tint
 from picasapy.render.linear_blur import apply_linblur
 from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
     apply_ansel,
-    apply_dir_tint,
     apply_radtint,
     apply_tint,
     parse_rgb_hex,
