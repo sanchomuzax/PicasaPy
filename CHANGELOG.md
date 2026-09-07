@@ -22,11 +22,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   képen legfeljebb egyetlen szintnyi az eltérés, a képpontok 0,23%-án.
 ### Hozzáadva
 
-- **A képtálca egy egész mappát egyetlen ikonként is tud mutatni**
-  (#1919): borítókép, rajta kék, lekerekített hátterű felirattal —
-  „Kiválasztott mappa - 82 fotó" —, ahogy az eredeti Picasában. A tálca
-  mostantól kétféle elemet ismer: egyedi képet és összecsukott
-  mappát/albumot.
+- **Előkészítve: a képtálca egész mappát is tud majd egyetlen ikonként
+  mutatni** (#1919). Borítókép, rajta kék, lekerekített hátterű felirattal
+  — „Kiválasztott mappa - 82 fotó" —, ahogy az eredeti Picasában.
+  ⚠️ **Ez a képesség még nem látszik a felületen:** elkészült hozzá minden
+  (a tálca kétféle elemet ismer, a rajz és a felirat is megvan), de az még
+  hiányzik, ami *magától bekapcsolná*. Az eredetiben ezt egy folyamatosan
+  figyelt szabály dönti el, és a mi mappa-kijelölésünk nem pontosan
+  ugyanaz — ezért a bekapcsolás előtt meg kell nézni, hogyan hat a tálca
+  megszokott kinézetére. Addig a tálca változatlanul működik.
 
 ### Javítva
 
