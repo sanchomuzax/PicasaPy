@@ -273,11 +273,13 @@ Mind a nyolc eszközgomb **44 × 30 képpont**:
 
 ### A Derítőfény-sor
 
+⚓ **Horgony (#2628):** az elem a `editpanel.tre:193` sorában áll — a #2182 óta minden elemtáblához kell forrás, különben a lefedettségi mérő NÉMÁN átugorja a szakaszt.
+
 | elem | téglalap | méret |
 |---|---|---|
 | `filllight_icon` | x 37..81, y **290..320** | 44 × 30 |
 | `filllightlabel` | x 94..235, y **283..297** | 141 × 14 |
-| `backlight_container` (a csúszka) | x 101..228, y **294..321** | **127** × 27 |
+| `editpanel/backlight_container` (a csúszka) | x 101..228, y **294..321** | **127** × 27 |
 
 A kis kép **ugyanakkora, mint egy eszközcsempe** (44 × 30), és a
 csempe-rács első oszlopával **azonos x-en** áll (37). A felirat és a csúszka
@@ -1046,10 +1048,10 @@ A panel a **1. fül** (Gyakori javítások) alpanelje, gyökere
 
 | elem | szerep |
 |---|---|
-| `redeye_icon2` + `redeye_label` | szem-ikon + cím: **„Redeye Repair"** |
+| `editpanel/redeye_icon2` + `redeye_label` | szem-ikon + cím: **„Redeye Repair"** |
 | `redeyetext` | állapotfüggő magyarázó szöveg (ld. lent) |
-| `redeyeauto` | **Auto** — „Reapply auto redeye corrections" |
-| `redeyepreview` | **Preview** — „Preview changes without square outlines" |
+| `editpanel/redeyeauto` | **Auto** — „Reapply auto redeye corrections" |
+| `editpanel/redeyepreview` | **Preview** — „Preview changes without square outlines" |
 | `redeyediscard` | **Reset** — „Undo Red-Eye changes" |
 | `redeyeapply` | **Apply** (zöld pipa) — „Apply effect and exit Red-Eye repair" |
 | `redeyecancel` | **Cancel** (piros X) — „Exit Red-Eye repair without applying effect" |

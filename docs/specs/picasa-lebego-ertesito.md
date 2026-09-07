@@ -195,6 +195,8 @@ párosítatlan fájl).
 
 ## Geometria — MÉRVE A BINÁRISBÓL (2026-08-20)
 
+⚓ **Horgony (#2628):** az elem a `modalprogress.tre:3` sorában áll — a #2182 óta minden elemtáblához kell forrás, különben a lefedettségi mérő NÉMÁN átugorja a szakaszt.
+
 ⚠️ **Helyesbítés:** e lap első változata azt állította, hogy a `respack.yt`
 „nincs meg a kutatási anyagban". **Ez hamis volt** — a fájl megvan
 (`research/copy_Picasa_3_7/Picasa3/runtime/respack.yt`, 3,8 MB, Picasa
@@ -215,7 +217,7 @@ mezőiből (fájloffsetek a `respack.yt`-ben):
 | `gripper` | 233 | 19 | 240 | 26 | 7 × 7 | fogantyú (mozgatás) — jobb KÖZÉP |
 | `chat` | 9 | 12 | 29 | 33 | 20 × 21 | ikonhely (üzenet) |
 | `globe` | 10 | 14 | 24 | 28 | 14 × 14 | ikonhely (online) |
-| `progressbase` | 40 | 10 | 170 | 21 | **130 × 11** | **folyamatjelző sín** |
+| `modalprogress/progressbase` | 40 | 10 | 170 | 21 | **130 × 11** | **folyamatjelző sín** |
 | `progressfill` | 42 | 12 | 167 | 18 | **125 × 6** | **folyamatjelző kitöltés** |
 
 Az ikonkészlet külön modulban: `tab_notifier_icons/import32` (**32 × 32**) és
