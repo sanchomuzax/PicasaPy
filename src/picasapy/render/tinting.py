@@ -11,10 +11,10 @@ Mért és binárisból megerősített alapok (`docs/specs/filters-decoded.md`):
   csatornák súlyát adja a szürkévé alakításban, a kimenet mindig semleges
   (R=G=B). A tónusgörbe a `referencia/filteredbw/` fehér szűrős exportjából
   MÉRT (#317), nem gamma-közelítés. Ld. `apply_ansel` docstringjét.
-- **dir_tint** — nincs mért kimeneti adat; a modell (függőleges színátmenet
-  az y középpont körül, `gradiens` szélességű átmenettel, `árnyék` erősségű
-  keveréssel a szín felé; az x és az irány szerepe méretlen) dokumentált
-  KÖZELÍTÉS — a #115 golden-harness pontosítja majd.
+- **dir_tint** (Graduated Tint) — a natív modell visszafejtve és a
+  Picasa-referenciához MÉRVE (#874): elforgatható átmenet, tónusgörbés
+  szorzó színezés. A megvalósítás a `picasapy.render.dir_tint` modulban
+  él, innen csak újraexportáljuk; a részletek és a mért eltérések ott.
 
 #510: a `color` paraméterek (mind a három függvénynél) **RGB**
 csatornasorrendűek — ugyanaz, mint a hívó `render/chain.py`/`glimmer_*`
@@ -30,6 +30,7 @@ import re
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.dir_tint import apply_dir_tint
 from picasapy.render.effects import _radius_grid
 from picasapy.render.ops import apply_channel_levels_stretch
 
@@ -197,35 +198,6 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     return np.stack([gray, gray, gray], axis=-1)
 
 
-def apply_dir_tint(
-    image: np.ndarray,
-    x: float,
-    y: float,
-    gradient: float,
-    shade: float,
-    color: tuple[int, int, int],
-) -> np.ndarray:
-    """Irányított (átmenetes) színezés — dokumentált KÖZELÍTÉS.
-
-    Függőleges színátmenet: az `y` normált magasság körüli, `gradient`
-    szélességű sávban a súly 1-ről 0-ra fut le; felette a kép `shade`
-    erősséggel a szín felé keveredik, alatta változatlan. Az `x` paraméter
-    és az átmenet iránya méretlen — itt nem használt.
-    """
-    validate_image(image)
-    height = image.shape[0]
-    rows = (np.arange(height, dtype=np.float32) + 0.5) / np.float32(height)
-    span = max(gradient, 1e-6)
-    weight = np.clip(0.5 - (rows - np.float32(y)) / np.float32(span), 0.0, 1.0)
-    strength = float(np.clip(shade, 0.0, 1.0))
-    if strength == 0.0:
-        return image.copy()
-    image_f = image.astype(np.float32)
-    target = np.array(color, dtype=np.float32)
-    blend = weight[:, np.newaxis, np.newaxis] * np.float32(strength)
-    return _to_uint8(image_f + blend * (target - image_f))
-
-
 #: A `radtint` maszk-LUT mérete a natív kódban (`0x90aeb0`, #565). A méret
 #: önmagában nem befolyásolja a képet (a smoothstep folytonos), de a
 #: visszafejtett szerkezettel való egyezés kedvéért itt is 1024 elem.
@@ -306,3 +278,15 @@ def apply_radtint(
     tinted = image_f * tint
     blend = weight[..., np.newaxis]
     return _to_uint8(image_f + blend * (tinted - image_f))
+
+
+#: A `dir_tint` a saját moduljában él (#874) — a régi importútvonal
+#: (`picasapy.render.tinting.apply_dir_tint`) újraexportként marad meg.
+__all__ = [
+    "apply_ansel",
+    "apply_dir_tint",
+    "apply_radtint",
+    "apply_tint",
+    "parse_rgb_hex",
+    "radtint_lut",
+]

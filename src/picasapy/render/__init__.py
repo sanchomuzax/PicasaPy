@@ -83,9 +83,9 @@ from picasapy.render.native_tone import (
 )
 from picasapy.render.shadow_highlight import apply_shadow_highlight
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
+from picasapy.render.dir_tint import apply_dir_tint
 from picasapy.render.tinting import (
     apply_ansel,
-    apply_dir_tint,
     apply_radtint,
     apply_tint,
     parse_rgb_hex,
