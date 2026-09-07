@@ -106,6 +106,24 @@ QtObject {
     // viszont MEGTARTJA a kontúrokat, tehát a levágandó rész halványan,
     // de olvashatóan látszik. (A parszer alapértelmezése `0x7F000000`
     // volna — fekete, 50% —, de mind az öt elem felülírja.)
+    // #2627: a CSÚSZKA SÁVJA — a `respack.yt`-ből képpontról képpontra.
+    // A `scaleslider/sliderbase` (121 × 9) és az `editslider/sliderbase`
+    // (191 × 27, a sáv a 8…16. sor) UGYANAZT a három színt adja:
+    //
+    //   belső kitöltés   RGB(202,213,229) = #cad5e5   (kékesszürke)
+    //   felső szegély    RGB(154,162,174) = #9aa2ae
+    //   jelölő-vonalak   RGB(243,245,249) = #f3f5f9   (két vég + a KÖZÉP)
+    //
+    // A sáv nálunk eddig `chromeBg`/`chromeBorder` volt — semleges szürke.
+    // A kék nem díszítés: a csúszka így válik el a panel krómjától.
+    //
+    // A sötét pár a mért világos színek sötét megfelelője, AZONOS
+    // színezettel (a kékes árnyalat megmarad, csak a világosság fordul) —
+    // saját döntés, az eredetiben nincs sötét mód.
+    readonly property color sliderGroove: dark ? "#3b4553" : "#cad5e5"
+    readonly property color sliderGrooveBorder: dark ? "#5b6573" : "#9aa2ae"
+    readonly property color sliderGrooveTick: dark ? "#79838f" : "#f3f5f9"
+
     readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"
     readonly property color textGray: dark ? "#a29e96" : "#7a776f"

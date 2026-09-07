@@ -210,12 +210,20 @@ class TestWidgetChromeUsesThemeTokens:
         assert "Theme.chromeBg" in source
 
     def test_slider_source_references_theme_tokens(self):
+        """#2627: a csúszka sávja a SAJÁT tokenjeit használja.
+
+        Az állítás lényege változatlan — a szín a Theme-ből jön, nem
+        beégetve. A token viszont már nem a króm semleges szürkéje: a
+        `respack.yt` mérése szerint a sáv kékesszürke, ezért kapott saját
+        hármast (`sliderGroove`, `sliderGrooveBorder`, `sliderGrooveTick`).
+        """
         import picasapy.app.application as app_module
 
         qml_path = app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaSlider.qml"
         source = qml_path.read_text(encoding="utf-8")
-        assert "Theme.chromeBg" in source
-        assert "Theme.chromeBorder" in source
+        assert "Theme.sliderGroove" in source
+        assert "Theme.sliderGrooveBorder" in source
+        assert "Theme.sliderGrooveTick" in source
 
     def test_theme_qml_untouched_by_this_task(self):
         # a Theme.qml forró fájl — ez a teszt nem a tartalmát ellenőrzi,
