@@ -38,7 +38,7 @@ from __future__ import annotations
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-from picasapy.render.curves import curve_lut, lut_ramp, validate_image
+from picasapy.render.curves import curve_lut, validate_image
 from picasapy.render.halftone import dot_size_for, halftone_branch
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
@@ -334,9 +334,24 @@ def apply_comicize(
     blurred = cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma, sigmaY=sigma)
     darkened = np.minimum(image_f, blurred)
 
-    # 3. küszöbgörbe — ÖTPONTOS spline, a mozgó pontot a DotContrast tolja
+    # 3. küszöbgörbe — ÖTPONTOS spline, a mozgó pontot a DotContrast tolja.
+    #
+    # A LUT-ot INDEXELJÜK, nem interpoláljuk (#2477): a natív művelet 8 bites
+    # pufferbe ír, tehát ott is egész szintre kerekített kikeresés történik
+    # (ld. `curves.apply_lut`). Az `np.interp` ezzel szemben a teljes
+    # (H, W, 3) tömböt float64-be emelte — 1600×1200-on 0,234 s / hívás a
+    # LUT-indexelés 0,063 s-a helyett, és 46 MB köztes tömb.
+    #
+    # A kimenet nem bájtazonos (a 3. lépésen max 1,04 / átlag 0,19 szint, a
+    # kész képen max 1 szint a képpontok 0,23%-án), ezért MÉRVE lett a
+    # `research/comicize-sweep/` 15 eredeti Picasa-exportján, a #1606
+    # kontroll-módszerével: átlag ΔE 3,1155 → 3,1154, SSIM 0,72040 →
+    # 0,72041, a raszter-amplitúdó hibája 2,2508 → 2,2503. Egyik tengely
+    # egyik állásán sem romlik érdemben — a ΔE 14/15 álláson javul, egyen
+    # változatlan.
     curve = comicize_master_curve(min(dot_contrast, 100.0))
-    curved = np.interp(darkened, lut_ramp(), curve).astype(np.float32)
+    curved = curve[np.clip(np.rint(darkened), 0.0, 255.0).astype(np.uint8)]
+    curved = curved.astype(np.float32)
 
     # 4-5. KÉT fázis, mindkettő SAJÁT pixelesítéssel (#1351).
     #

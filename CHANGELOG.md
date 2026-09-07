@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Gyorsabb
+
+- **A Képregény effekt gyorsabb lett** (#2477): egy 1600×1200-as fényképen
+  0,836 másodperc helyett 0,665 alatt készül el (1,26×), mert a tónusgörbét
+  a program most kikeresi ahelyett, hogy minden képpontra külön kiszámolná —
+  ez a lépés magában 0,234 mp-ről 0,063-ra rövidült, és 46 MB-tal kevesebb
+  átmeneti memóriát kér. A kép gyakorlatilag ugyanaz marad: az eredeti
+  Picasa 15 referenciaexportjához mérve a színeltérés (átlag ΔE 3,1155 →
+  3,1154), a szerkezeti hasonlóság (SSIM 0,72040 → 0,72041) és a raszter
+  erőssége (hiba 2,2508 → 2,2503) egyetlen csúszkaálláson sem romlik; a kész
+  képen legfeljebb egyetlen szintnyi az eltérés, a képpontok 0,23%-án.
+
 ### Javítva
 
 - **A személybejegyzések három mezője nevesítve** (#2526): a `.picasa.ini`
