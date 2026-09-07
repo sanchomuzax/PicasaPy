@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.332] – 2026-09-07
+
+### Javítva
+
+- **Hibajavítás az előző kiadáshoz** (#2625): a hisztogram rajzterülete
+  most már a doboz színét *festi*, nem egyszerűen átlátszó. Átlátszóan a
+  fényképadatok szövegének teteje — ami két képponttal a rajzterület alá
+  ér — átütött a görbékre. A képernyőn semmi nem változik, csak a takarás
+  lett újra biztos.
+
 ## [0.8.331] – 2026-09-07
 
 ### Javítva

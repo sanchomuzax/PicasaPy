@@ -152,11 +152,25 @@ Rectangle {
         //
         // Ez az átlátszó háttérrel is igaz — az őr azóta a MÉRT hátteret
         // helyettesíti be (`test_histogram_pixels_864.py`).
+        //
+        // ⚠️ **A DOBOZ SZÍNÉT festjük, nem `"transparent"`-et.** Ez látszatra
+        // ugyanaz — a doboz van alatta —, de a `transparent` egy VALÓDI
+        // regressziót engedett át: a #1344 óta mért 2 képpontos átfedésben
+        // (az EXIF-terület teteje 82, a hisztogram alja 84) az EXIF-szöveg
+        // TINTÁJA átütött a rajzterületre. Windowson mérve, a #2648 lábán:
+        //
+        //     (24, 57): várt #a04ba0, kapott #5e095d
+        //     (159, 57): várt #4ba0a0, kapott #095e5d
+        //
+        // — a kapott értékek pontosan a fenti képlet ~27-es (sötét betű)
+        // hátterrel. A #1344 kimondott döntése az, hogy „a plot a szöveg
+        // FÖLÖTT rajzolódik; a 2 képpontos átfedés megmarad, csak a takarás
+        // iránya rögzített" — ehhez a plotnak FESTENIE kell, nem átengedni.
         Rectangle {
             id: plotBackground
             objectName: "histogramPlotBackground"
             anchors.fill: parent
-            color: "transparent"
+            color: box.color
         }
 
         Item {

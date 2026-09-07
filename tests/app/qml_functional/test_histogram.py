@@ -204,15 +204,23 @@ class TestHistogramBoxWiring:
 
         ⚠️ A próba NEM beégetett számot néz: a téma változhat, az állítás
         az, hogy a KETTŐ EGYEZIK.
+
+        ⚠️ És nem `"transparent"`-et követel: az látszatra ugyanaz, de a
+        #1344 mért 2 képpontos átfedésében átengedte az EXIF-szöveg
+        tintáját a rajzterületre (windowson mérve, #2648). A doboz
+        színének FESTÉSE ugyanazt mutatja, és takar is.
         """
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         background = window.findChild(QObject, "histogramPlotBackground")
         assert background is not None, "histogramPlotBackground nem található"
-        szin = QColor(background.property("color"))
-        assert szin.alpha() == 0, (
-            "a rajzterületnek nem lehet saját kitöltése — a doboz színének "
-            f"kell átlátszania (kapott: {szin.name(QColor.NameFormat.HexArgb)})"
+        box = window.findChild(QObject, "viewerHistogramBox")
+        assert QColor(background.property("color")) == QColor(
+            box.property("color")
+        ), (
+            "a rajzterület nem a doboz színét viszi "
+            f"({QColor(background.property('color')).name()} vs "
+            f"{QColor(box.property('color')).name()})"
         )
 
     def test_plot_area_never_overlaps_long_multiline_exif_text(self, qml_app, qt_app):
