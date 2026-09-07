@@ -1,11 +1,20 @@
 import QtQuick
 import QtQuick.Controls
 
-// Picasa-stílusú csúszka: lapos sín + kerek, semleges szürke fogantyú
-// — kézikönyv 06. fejezet, „Nagyítás csúszka − + / az indexképek
-// méretét szabályozza; semleges szürke fogantyú." A fogantyú színátmenete
-// szándékosan megegyezik a PicasaButton nem-akcentusos állapotával, hogy
-// a „Vezérlők" család egységes maradjon (ld. docs/specs/design-guide.md).
+// Picasa-stílusú csúszka. A SÁV színe a #2627 óta MÉRT: a `respack.yt`
+// `scaleslider/sliderbase` és `editslider/sliderbase` rétege kékesszürke
+// (`Theme.sliderGroove`), nem a króm semleges szürkéje — a tokenek mellett
+// a Theme.qml-ben ott a képpont-mérés is.
+//
+// A FOGANTYÚ színátmenete továbbra is a PicasaButton nem-akcentusos
+// állapotát követi (a kézikönyv 06. fejezete: „Nagyítás csúszka − + / az
+// indexképek méretét szabályozza; semleges szürke fogantyú"), és a mért
+// eredetivel egybevág: a `scaleslider/thumb` képpontjai is semleges
+// szürkék (162…247), egyetlen kékes csatorna sincs bennük.
+//
+// ⚠️ Amit a #2627 még NEM épített meg: a fogantyú közepére vésett
+// függőleges vonal (a mérésben `scaleslider/thumb` x = 6, y 5…13, egy
+// sötét és egy világos oszlop). Külön jegy — a geometriát nem érinti.
 //
 // Csak a vezérlő maga; a bekötés (pl. a nagyítás-csúszka a Main.qml
 // tálcájában) az integrátoré — #3 issue.
@@ -91,21 +100,39 @@ Slider {
         width: control.isHorizontal ? control.availableWidth : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveThickness / 2
-        color: Theme.chromeBg
-        border.width: 1
-        border.color: Theme.chromeBorder
 
-        // bejárt szakasz — a fogantyúig, ugyanazzal a semleges szürkével
-        // kicsit sötétítve, hogy tapintható legyen az érték
-        Rectangle {
-            radius: parent.radius
-            color: Theme.chromeBorder
-            anchors.left: control.isHorizontal ? parent.left : undefined
-            anchors.bottom: control.isHorizontal ? undefined : parent.bottom
-            width: control.isHorizontal
-                   ? control.visualPosition * parent.width : parent.width
-            height: control.isHorizontal
-                    ? parent.height : control.visualPosition * parent.height
+        // #2627: a sáv színe a `respack.yt`-ből, nem szemre. A
+        // `scaleslider/sliderbase` és az `editslider/sliderbase` ugyanazt
+        // adja: kitöltés `#cad5e5`, felső szegély `#9aa2ae` — kékesszürke,
+        // nem a króm semleges szürkéje. A tokenek a Theme.qml-ben állnak,
+        // ott a mérés is.
+        color: Theme.sliderGroove
+        border.width: 1
+        border.color: Theme.sliderGrooveBorder
+
+        // #2627: HÁROM jelölő-vonal — a két vég és a KÖZÉP. A mérés
+        // (`scaleslider/sliderbase`, 121 képpont széles) a világos
+        // oszlopokat x = 5, 60, 115-nél adja, tehát a két végtől 5
+        // képpontra és pontosan középen; az `editslider/sliderbase`
+        // (191 széles) ugyanezt x = 8, 95, 182-nél. A közép a
+        // NEUTRÁLIS állás jelzése — a finomhangoló csúszkák nullája.
+        //
+        // ⚠️ Ez váltotta le a korábbi „bejárt szakasz" kitöltést. Az nem
+        // az eredetiből jött: a respack sávja VÉGIG egyszínű, nincs benne
+        // kitöltött és üres rész. A közép-jelölő az, amit az eredeti
+        // tényleg mutat.
+        Repeater {
+            model: 3
+            Rectangle {
+                readonly property real arany: index / 2
+                color: Theme.sliderGrooveTick
+                width: control.isHorizontal ? 1 : parent.width - 2
+                height: control.isHorizontal ? parent.height - 2 : 1
+                x: control.isHorizontal
+                   ? Math.round(1 + arany * (parent.width - 3)) : 1
+                y: control.isHorizontal
+                   ? 1 : Math.round(1 + arany * (parent.height - 3))
+            }
         }
     }
 

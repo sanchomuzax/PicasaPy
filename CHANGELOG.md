@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.329] – 2026-09-07
+
+### Javítva
+
+- **A csúszkák sávja kékesszürke, mint az eredetiben** (#2627). Eddig a
+  panel semleges szürkéjével ment, ezért a csúszka beleolvadt a
+  környezetébe. A színt nem szemre vettük: a Picasa saját
+  erőforrás-csomagjából olvastuk ki képpontról képpontra — a kitöltés,
+  a felső szegély és a **három jelölő-vonal** (a két vég és a pontos
+  közép) is onnan jön. A közép jelzi a semleges állást, például a
+  finomhangoló csúszkák nulláját.
+- A sáv korábbi „bejárt szakasz" kitöltése megszűnt: az eredeti sávja
+  végig egyszínű, nincs benne kitöltött és üres rész.
+
 ## [0.8.328] – 2026-09-07
 
 ### Javítva
