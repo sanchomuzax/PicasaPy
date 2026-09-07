@@ -81,6 +81,24 @@ QtObject {
     // #f8f8f8, ezért a dobozt egy fokkal világosabbra tesszük: a KÜLÖNBSÉG
     // iránya (a doboz világosabb a sávnál) marad az eredetié.
     readonly property color trayPanelBg: dark ? "#303030" : "#ffffff"
+    // #1919: az összecsukott mappa-/album-token feliratának pirulája
+    // (`scratch/highlight`). MÉRVE a `…214629.jpg` felvételen: a fehér
+    // tálcaháttér fölött RGB(107, 153, 186), és ÁTTETSZŐ — a borítókép
+    // fölött sötétebb. Négy, függőlegesen sima képoszlopban mérve
+    // `1 − α ≈ 0,34`, amiből az alapszín ≈ RGB(34, 104, 154) = #22689a,
+    // az átlátszatlanság 0xa8 ≈ 0,66. A levezetés a `TrayAlbumToken.qml`
+    // fejlécében áll.
+    //
+    // A respack a réteget `rect:`-ként adja (nincs bitképe), a
+    // `constants.ui` pedig nem nevez hozzá színt — tehát a felvétel az
+    // EGYETLEN forrás. Az eredetiben nincs sötét mód: a sötét pár saját
+    // döntés (világosabb alapszín, hogy a fehér felirat a sötét
+    // bélyegképen is olvasson).
+    readonly property color trayTokenHighlight:
+        dark ? "#a83f83b6" : "#a822689a"
+    //: `alabel_lighttext = #FFFFFF` — a felirat mindkét témán fehér, mert
+    //: a pirula mindkettőn sötétkék
+    readonly property color trayTokenHighlightText: "#ffffff"
     readonly property color viewerBg: dark ? "#1a1a1a" : "#808080"
 
     // #2587: a képaláírás-sáv színei. MÉRVE a tulajdonos felvételén

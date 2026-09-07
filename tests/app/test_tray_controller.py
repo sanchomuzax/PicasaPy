@@ -147,3 +147,90 @@ class TestHeldChangedSignal:
         controller.heldChanged.connect(lambda: seen.append(True))
         controller.holdRows(_rows_by_name(controller, "x.jpg"))  # már bent van
         assert seen == []
+
+
+class TestOsszecsukottMappaToken:
+    """#1919 — egy egész mappa a tálcán, EGYETLEN tokenként.
+
+    A vezérlő itt csak fordít: mappa-útvonalból darabszám és borítókép, a
+    nézetnek pedig `trayAlbumTokens`. Hogy MELYIK gesztus indítja ezt, az
+    a jegy nyitott kérdése — menüpont ezért nem tartozik hozzá.
+    """
+
+    def test_a_mappa_osszecsukva_egy_tokent_ad(
+        self, controller, two_folder_library
+    ):
+        _root, folder_a, _folder_b = two_folder_library
+        assert controller.collapseFolderIntoTray(str(folder_a)) is True
+        tokenek = controller.trayAlbumTokens
+        assert len(tokenek) == 1
+        assert tokenek[0]["key"] == str(folder_a)
+        assert tokenek[0]["photoCount"] == 2
+        assert tokenek[0]["isAlbum"] is False
+
+    def test_a_token_BORITOKEPET_is_kap(self, controller, two_folder_library):
+        _root, folder_a, _folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_a))
+        assert controller.trayAlbumTokens[0]["coverThumbUrl"], (
+            "a token borítókép nélkül üres dobozként jelenne meg"
+        )
+
+    def test_a_token_NEM_szamit_bele_a_belyegkep_sorba(
+        self, controller, two_folder_library
+    ):
+        """A `heldCount`-ból számol a bélyegkép-sor; a tokennek saját
+        rajza van, tehát nem növelheti a rács elemszámát."""
+        _root, folder_a, _folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_a))
+        assert controller.heldCount == 0
+
+    def test_a_talca_VEGYESEN_is_tarthat_kepet_es_tokent(
+        self, controller, two_folder_library
+    ):
+        _root, folder_a, folder_b = two_folder_library
+        controller.selectFolder(str(folder_a))
+        controller.holdRows(_rows_by_name(controller, "x.jpg"))
+        controller.collapseFolderIntoTray(str(folder_b))
+        assert controller.heldCount == 1
+        assert len(controller.trayAlbumTokens) == 1
+
+    def test_a_MEGTARTOTT_tokent_a_kovetkezo_kijeloles_nem_sopri_el(
+        self, controller, two_folder_library
+    ):
+        """Egy egész mappa összecsukása szándékos gyűjtés — a token ezért
+        `held`, ugyanúgy, mint a „Kijelölés megtartása" képei."""
+        _root, folder_a, folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_b))
+        controller.selectFolder(str(folder_a))
+        controller.syncSelection(_rows_by_name(controller, "y.jpg"))
+        assert len(controller.trayAlbumTokens) == 1
+
+    def test_az_ismetelt_osszecsukas_nem_duplaz(
+        self, controller, two_folder_library
+    ):
+        _root, folder_a, _folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_a))
+        controller.collapseFolderIntoTray(str(folder_a))
+        assert len(controller.trayAlbumTokens) == 1
+
+    def test_az_ismeretlen_mappa_nem_ad_tokent(self, controller, tmp_path):
+        assert controller.collapseFolderIntoTray(str(tmp_path / "nincs")) is False
+        assert controller.trayAlbumTokens == []
+
+    def test_az_ures_utvonal_nem_ad_tokent(self, controller):
+        assert controller.collapseFolderIntoTray("") is False
+
+    def test_a_token_kibontasa_eltavolitja(self, controller, two_folder_library):
+        _root, folder_a, _folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_a))
+        assert controller.expandFolderInTray(str(folder_a)) is True
+        assert controller.trayAlbumTokens == []
+
+    def test_a_nem_letezo_token_kibontasa_FALSE(self, controller):
+        assert controller.expandFolderInTray("/nincs/ilyen") is False
+
+    def test_az_urites_a_tokent_is_elviszi(self, controller, two_folder_library):
+        _root, folder_a, _folder_b = two_folder_library
+        controller.collapseFolderIntoTray(str(folder_a))
+        controller.clearHeld()
+        assert controller.trayAlbumTokens == []

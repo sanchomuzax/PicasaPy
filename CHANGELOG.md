@@ -18,6 +18,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   3,1154), a szerkezeti hasonlóság (SSIM 0,72040 → 0,72041) és a raszter
   erőssége (hiba 2,2508 → 2,2503) egyetlen csúszkaálláson sem romlik; a kész
   képen legfeljebb egyetlen szintnyi az eltérés, a képpontok 0,23%-án.
+### Hozzáadva
+
+- **A képtálca egy egész mappát egyetlen ikonként is tud mutatni**
+  (#1919): borítókép, rajta kék, lekerekített hátterű felirattal —
+  „Kiválasztott mappa - 82 fotó" —, ahogy az eredeti Picasában. A tálca
+  mostantól kétféle elemet ismer: egyedi képet és összecsukott
+  mappát/albumot.
 
 ### Javítva
 

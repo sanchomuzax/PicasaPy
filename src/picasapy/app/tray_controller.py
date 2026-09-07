@@ -43,7 +43,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy import tray
-from picasapy.index import open_index, photo_by_id
+from picasapy.index import open_index, photo_by_id, photos_in_folder
 from picasapy.ini.albums import with_album
 from picasapy.app import formatting
 from picasapy.app.models import _thumb_url
@@ -187,9 +187,60 @@ class TrayMixin:
 
     @Property(int, notify=heldChanged)
     def heldCount(self) -> int:
-        """A tálca elemszáma (a rögzített ÉS a kijelölésből tükrözött)."""
+        """A tálca KÉP-elemeinek száma (a rögzített ÉS a kijelölésből
+        tükrözött).
+
+        #1919 óta a tálca összecsukott mappa-/album-tokent is tarthat; azt
+        ez a szám NEM tartalmazza, mert a bélyegkép-sor ebből számol, a
+        tokennek pedig saját rajza van (`trayAlbumTokens`).
+        """
         self._ensure_tray_wired()
-        return len(self._tray.items)
+        return len(tray.photo_ids(self._tray))
+
+    @Property("QVariant", notify=heldChanged)
+    def trayAlbumTokens(self):
+        """Az ÖSSZECSUKOTT mappa-/album-tokenek a nézetnek (#1919).
+
+        Minden elem: `key`, `photoCount`, `isAlbum`, `coverThumbUrl`,
+        `held`, `used`. A FELIRAT szándékosan nincs benne: azt a QML
+        rakja össze `qsTr()`-rel (`TrayAlbumToken.qml`), mert a
+        `CThumbUI::UpdateAlbumCover` formátum három honosított darabból
+        áll össze.
+        """
+        self._ensure_tray_wired()
+        return [
+            {
+                "key": token.key,
+                "photoCount": token.photo_count,
+                "isAlbum": token.is_album,
+                "coverThumbUrl": self._tray_cover_url(token.cover_photo_id),
+                "held": token.held,
+                "used": token.used,
+            }
+            for token in tray.album_tokens(self._tray)
+        ]
+
+    def _tray_cover_url(self, photo_id: int | None) -> str:
+        """A token borítóképének thumb-URL-je — üres sztring, ha nincs.
+
+        Előbb a MEMÓRIÁBAN lévő rács-modellből (nulla adatbázis-hívás),
+        aztán a más mappából tartott elemek gyorstárából, és csak
+        legvégül az indexből; a megtalált rekord ugyanabba a gyorstárba
+        kerül, mint a máshonnan tartott képeké.
+        """
+        if not photo_id:
+            return ""
+        for record in self._photos.photos:
+            if record.id == photo_id:
+                return _thumb_url(record)
+        record = self._tray_foreign.get(photo_id)
+        if record is None:
+            with open_index(self._db_path) as conn:
+                record = photo_by_id(conn, photo_id)
+            if record is None:
+                return ""
+            self._tray_foreign[photo_id] = record
+        return _thumb_url(record)
 
     @Property(int, notify=heldChanged)
     def trayUnusedCount(self) -> int:
@@ -447,6 +498,77 @@ class TrayMixin:
         — a megerősítés a `TrayBar.qml`-ben él, nem itt."""
         self._ensure_tray_wired()
         self._tray_apply(tray.cleared(self._tray))
+
+    # -- összecsukott mappa-/album-token (#1919) ---------------------------
+    #
+    # Az eredetiben ez nem parancs: a `scratch/album` réteg állapot-
+    # küldöttet kap (`0x00572ba4`), és annak `0x00563530` függvénye MINDEN
+    # frissítéskor újraértékeli — a token akkor látszik, ha van
+    # album-/mappa-kijelölés, annak van eleme, ÉS a kép-kijelölés üres.
+    # A levezetés a `tray.with_album_token` docstringjében áll.
+    #
+    # ⚠️ Ezt a POLLING-szabályt itt NEM kötjük be. Két oka van: a mi
+    # „mappa-kijelölésünk" a megnyitott mappa, ami nem ugyanaz, mint az
+    # eredeti `CAlbumSelectionNode`-ja, és az automatikus megjelenítés a
+    # tálca mindennapi kinézetét írná át — működő felületet ellenőrizetlenül
+    # átírni tilos. A vezérlő ezért kifejezett belépőt ad; a bekötés külön
+    # kör, saját vizuális ellenőrzéssel.
+
+    @Slot(str, result=bool)
+    def collapseFolderIntoTray(self, folder_path: str) -> bool:
+        """Egy egész mappát ÖSSZECSUKVA tesz a tálcára, egyetlen tokenként.
+
+        A token a mappa fotóinak SZÁMÁT hordozza és az első fotóját
+        borítóként (`scratch/albumcover`) — a felirat ebből épül fel a
+        nézetben („Kiválasztott mappa - 82 fotó").
+
+        A token MEGTARTOTT (`held=True`): egy egész mappa összecsukása
+        szándékos gyűjtés, amit a következő kijelölés ne söpörjön el —
+        ugyanaz az elv, mint a „Kijelölés megtartása" gombnál.
+
+        `False`, ha a mappa nem szerepel az indexben vagy üres: üres
+        tokent nem teszünk ki, mert az a felületen üres dobozként jelenne
+        meg, és semmit nem mondana.
+        """
+        self._ensure_tray_wired()
+        if not folder_path:
+            return False
+        try:
+            with open_index(self._db_path) as conn:
+                rekordok = photos_in_folder(conn, folder_path)
+        except OSError as hiba:
+            raise RuntimeError(
+                f"a mappa fotói nem olvashatók az indexből: {folder_path}"
+            ) from hiba
+        if not rekordok:
+            return False
+        self._tray_apply(
+            tray.with_album_token(
+                self._tray,
+                tray.TrayAlbumToken(
+                    key=str(folder_path),
+                    photo_count=len(rekordok),
+                    cover_photo_id=int(rekordok[0].id),
+                    held=True,
+                ),
+            )
+        )
+        return True
+
+    @Slot(str, result=bool)
+    def expandFolderInTray(self, key: str) -> bool:
+        """Az összecsukott token eltávolítása a tálcáról, kulcs szerint.
+
+        `True`, ha tényleg volt ilyen token — így a hívó meg tudja
+        különböztetni a „nem volt mit kivenni" esetet.
+        """
+        self._ensure_tray_wired()
+        volt = any(
+            token.key == key for token in tray.album_tokens(self._tray)
+        )
+        if volt:
+            self._tray_apply(tray.without_album_token(self._tray, key))
+        return volt
 
     def _set_tray_used_ids(self, photo_ids, used: bool = True) -> None:
         """A tálca-elemek FELHASZNÁLTSÁGA, fotó-azonosítók szerint.

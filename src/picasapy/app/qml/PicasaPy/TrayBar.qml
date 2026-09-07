@@ -497,6 +497,14 @@ Column {
             //: helyen olvassuk a vezérlőt, hogy a null-őr se duplázódjon)
             readonly property int heldCount: tray.trayCount
 
+            //: #1919: az ÖSSZECSUKOTT mappa-/album-tokenek. Defenzív
+            //: kötés: a QML-próbák stub-vezérlőjén nincs rajta ez a
+            //: tulajdonság (`!== undefined` a #1572 mintája szerint).
+            readonly property var albumTokens:
+                (tray.ctl && tray.ctl.trayAlbumTokens !== undefined)
+                    ? tray.ctl.trayAlbumTokens : []
+            readonly property int albumTokenCount: albumTokens.length
+
             // a bélyegképsor (`thumbui/scratch`): 5 képpont belső margó,
             // JOBBRÓL 50 képpont marad szabadon a három gombnak
             // #1904: a doboz magassága FIX, a bélyegképek ZSUGORODNAK és
@@ -542,6 +550,10 @@ Column {
             Flow {
                 id: trayScratchStrip
                 objectName: "trayScratchStrip"
+                //: #1919: összecsukott token mellett a bélyegkép-sor nem
+                //: rajzolódik ki — a `scratch/album` a sáv HELYÉT foglalja
+                //: el (a `.tre` `m_scaleXY`-ja, és a mért felvétel).
+                visible: trayScratchBack.albumTokenCount === 0
                 x: 5
                 y: 5
                 width: Math.max(0, parent.width - 5 - 50)
@@ -733,6 +745,47 @@ Column {
                             anchors.bottom: parent.bottom
                             anchors.margins: 2
                         }
+                    }
+                }
+            }
+
+            // #1919: az ÖSSZECSUKOTT mappa-/album-tokenek sávja.
+            //
+            // A `scratch.tre`-ben a `scratch/album` `m_scaleXY`-jal ül a
+            // `thumbui/clip(scratch): scratch` SÁVON — vagyis a token a
+            // bélyegkép-sor HELYÉT foglalja el, nem egy cellát benne. A
+            // `…214629.jpg` felvételen pontosan ez látszik: EGY token a
+            // doboz közepén, bélyegkép-rács nélkül, miközben a kék
+            // infó-csík 82 képet ír. Ezért a token megjelenésekor a
+            // bélyegkép-sor nem rajzolódik ki.
+            //
+            // ⛔ A `.tre` NEM ad rétegkészletet arra, hogy kép és token
+            // EGYSZERRE látsszon: az eredetiben ilyen elrendezés nincs
+            // kimérve. A vegyes eset ezért a MODELLBEN él (a tálca
+            // egyszerre tarthat képet és tokent, `tests/tray/`), a
+            // nézetben pedig a mért, teljes sávot elfoglaló token nyer.
+            // Több token esetén a sávot egyenlően osztjuk el köztük —
+            // EGY tokennél ez pont a mért elrendezést adja.
+            Row {
+                id: trayAlbumTokenRow
+                objectName: "trayAlbumTokenRow"
+                x: trayScratchStrip.x
+                y: trayScratchStrip.y
+                width: trayScratchStrip.width
+                height: trayScratchStrip.height
+                visible: trayScratchBack.albumTokenCount > 0
+
+                Repeater {
+                    objectName: "trayAlbumTokenRepeater"
+                    model: trayScratchBack.albumTokens
+                    delegate: TrayAlbumToken {
+                        required property var modelData
+                        width: trayAlbumTokenRow.width
+                               / Math.max(1, trayScratchBack.albumTokenCount)
+                        height: trayAlbumTokenRow.height
+                        photoCount: modelData.photoCount
+                        isAlbum: modelData.isAlbum
+                        coverSource: modelData.coverThumbUrl
                     }
                 }
             }

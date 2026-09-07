@@ -194,3 +194,129 @@ class TestBemenetErvenyesites:
     def test_a_nem_bejarhato_bemenet_hibat_dob(self):
         with pytest.raises(TypeError):
             tray.with_selection(tray.EMPTY, 5)
+
+
+class TestOsszecsukottMappaToken:
+    """#1919 — a tálca MÁSIK elemtípusa: az összecsukott mappa-/album-token.
+
+    Az eredeti tálca egy egész mappát egyetlen elemként is tud tartani:
+    a `scratch/album` rétegcsalád (`referencia/tre-eroforrasok/scratch.tre`)
+    egy borítóképet és egy középre igazított feliratot rajzol
+    („Kiválasztott mappa - 82 fotó"). A modellben ez ÚJ elemtípus, nem
+    fotó-azonosító: nincs `photos.id`-ja, viszont van darabszáma.
+    """
+
+    def _token(self, **cserek):
+        alap = {
+            "key": "/kepek/nyaralas",
+            "photo_count": 82,
+            "cover_photo_id": 7,
+        }
+        alap.update(cserek)
+        return tray.TrayAlbumToken(**alap)
+
+    def test_a_token_bekerul_es_NEM_fotokent_latszik(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        assert tray.album_tokens(allapot) == (self._token(),)
+        assert tray.photo_ids(allapot) == ()
+
+    def test_a_talca_VEGYESEN_tart_kepet_es_tokent(self):
+        allapot = tray.with_hold(tray.with_selection(tray.EMPTY, [1, 2]))
+        allapot = tray.with_album_token(allapot, self._token())
+        assert tray.photo_ids(allapot) == (1, 2)
+        assert len(tray.album_tokens(allapot)) == 1
+        assert len(allapot.items) == 3
+
+    def test_a_token_a_darabszamot_hordozza(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        assert tray.album_tokens(allapot)[0].photo_count == 82
+
+    def test_ugyanarra_a_kulcsra_a_MASODIK_token_felulirja_az_elsot(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        allapot = tray.with_album_token(allapot, self._token(photo_count=91))
+        assert len(tray.album_tokens(allapot)) == 1
+        assert tray.album_tokens(allapot)[0].photo_count == 91
+
+    def test_a_felulirt_token_a_HELYEN_marad(self):
+        """A csere nem sorrendváltás: a tálca sorrendje a műveletek
+        sorrendje, és a darabszám frissülése nem művelet."""
+        allapot = tray.with_album_token(tray.EMPTY, self._token(held=True))
+        allapot = tray.with_hold(tray.with_selection(allapot, [5]))
+        allapot = tray.with_album_token(
+            allapot, self._token(held=True, photo_count=91))
+        assert [type(elem) for elem in allapot.items] == [
+            tray.TrayAlbumToken, tray.TrayItem
+        ]
+
+    def test_a_token_eltavolithato_a_kulcsaval(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        allapot = tray.without_album_token(allapot, "/kepek/nyaralas")
+        assert tray.album_tokens(allapot) == ()
+
+    def test_a_nem_letezo_kulcs_eltavolitasa_nem_hiba(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        allapot = tray.without_album_token(allapot, "/nincs/ilyen")
+        assert len(tray.album_tokens(allapot)) == 1
+
+    def test_az_urites_a_tokent_is_elviszi(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        assert tray.album_tokens(tray.cleared(allapot)) == ()
+
+    def test_a_kepek_torlese_a_tokenhez_NEM_nyul(self):
+        """A `without` fotó-azonosítókkal dolgozik; a tokennek nincs
+        ilyenje, tehát nem is eshet ki véletlenül."""
+        allapot = tray.with_hold(tray.with_selection(tray.EMPTY, [1, 2]))
+        allapot = tray.with_album_token(allapot, self._token())
+        allapot = tray.without(allapot, [1, 2])
+        assert tray.photo_ids(allapot) == ()
+        assert len(tray.album_tokens(allapot)) == 1
+
+    def test_a_ROGZITETT_tokent_a_kovetkezo_kijeloles_nem_sopri_el(self):
+        allapot = tray.with_album_token(
+            tray.EMPTY, self._token(held=True))
+        allapot = tray.with_selection(allapot, [9])
+        assert len(tray.album_tokens(allapot)) == 1
+        assert tray.photo_ids(allapot) == (9,)
+
+    def test_a_nem_rogzitett_tokent_a_kovetkezo_kijeloles_ELSOPRI(self):
+        """A token ugyanolyan tálca-elem, mint a kép: a kijelölés
+        elsöpri, ha nincs megtartva."""
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        assert tray.album_tokens(tray.with_selection(allapot, [9])) == ()
+
+    def test_a_teljes_rogzites_a_tokenre_is_all(self):
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        allapot = tray.with_hold(allapot)
+        assert tray.album_tokens(allapot)[0].held is True
+
+    def test_a_darabszam_kuszob_a_tokent_NEM_szamolja(self):
+        """A `needs_old_items_prompt` FOTÓKAT számol (`unused_ids`); a
+        token nem fotó, tehát nem billenti át a küszöböt."""
+        allapot = tray.with_album_token(tray.EMPTY, self._token())
+        assert tray.needs_old_items_prompt(allapot) is False
+
+    def test_az_allapot_a_tokennel_is_valtozhatatlan(self):
+        token = self._token()
+        allapot = tray.with_album_token(tray.EMPTY, token)
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            token.photo_count = 1  # type: ignore[misc]
+        assert tray.album_tokens(allapot)[0].photo_count == 82
+
+
+class TestATokenErvenyesitese:
+    def test_az_ures_kulcs_hibat_dob(self):
+        with pytest.raises(ValueError):
+            tray.TrayAlbumToken(key="", photo_count=1)
+
+    def test_a_negativ_darabszam_hibat_dob(self):
+        with pytest.raises(ValueError):
+            tray.TrayAlbumToken(key="/a", photo_count=-1)
+
+    def test_a_nem_pozitiv_boritoazonosito_hibat_dob(self):
+        with pytest.raises(ValueError):
+            tray.TrayAlbumToken(key="/a", photo_count=1, cover_photo_id=0)
+
+    def test_a_borito_nelkuli_token_ERVENYES(self):
+        """Üres mappánál nincs miből borítót venni — ez nem hiba."""
+        token = tray.TrayAlbumToken(key="/a", photo_count=0)
+        assert token.cover_photo_id is None

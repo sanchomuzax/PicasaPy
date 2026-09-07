@@ -39,6 +39,7 @@ TrayBar 1.0 TrayBar.qml
 TrayActionCell 1.0 TrayActionCell.qml
 TrayActionButton 1.0 TrayActionButton.qml
 TrayActionSeparator 1.0 TrayActionSeparator.qml
+TrayAlbumToken 1.0 TrayAlbumToken.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 EmailChoiceDialog 1.0 EmailChoiceDialog.qml
 SaveDialogs 1.0 SaveDialogs.qml
