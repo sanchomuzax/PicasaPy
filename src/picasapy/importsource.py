@@ -125,9 +125,9 @@ def atmeretez_masolatot(target: Path, hatar: int) -> bool:
 
     A leskálázás matematikáját SZÁNDÉKOSAN nem írjuk le újra: a
     `cvimage.scale_down` a projekt egyetlen „hosszabbik oldal korlátozása,
-    felskálázás soha" megvalósítása (INTER_AREA-val), és a kiírás is a
-    bevált, bájt-alapú úton megy — a `cv2.imwrite` Windowson ékezetes
-    útvonalon némán nem ír (#190).
+    felskálázás soha" megvalósítása (a Picasa Lanczos-4 magjával, #871),
+    és a kiírás is a bevált, bájt-alapú úton megy — a `cv2.imwrite`
+    Windowson ékezetes útvonalon némán nem ír (#190).
 
     A CÉLPÉLDÁNYT írja át, sosem a forrást: az importálás a kártyán lévő
     eredetihez nem nyúlhat. Nem dekódolható fájlra (videó, RAW, sérült)

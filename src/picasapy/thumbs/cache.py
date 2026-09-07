@@ -18,7 +18,12 @@ from pathlib import Path
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down
+from picasapy.cvimage import (
+    read_image_bytes,
+    reduced_color_flag,
+    scale_down,
+    scale_down_picasa_mag,
+)
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
@@ -171,7 +176,9 @@ class ThumbnailCache:
         image = self._decode_source(source)
         if image is None:
             return None
-        thumb = scale_down(image, self._size)
+        # #871: a bélyegkép a Picasa magjával készül — ott mértük
+        # (bigthumbs, 119 kép), és ott gyorsabb is az INTER_AREA-nál.
+        thumb = scale_down_picasa_mag(image, self._size)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
         )
@@ -216,7 +223,7 @@ class ThumbnailCache:
         # hagyja ki (kivétel nem szökik ki innen) — a lánc többi tagja lefut,
         # a #73-elv (szűretlen kép a placeholder helyett) így is teljesül.
         rendered, _skipped = apply_filters(rgb, ops)
-        thumb = cv2.cvtColor(scale_down(rendered, self._size),
+        thumb = cv2.cvtColor(scale_down_picasa_mag(rendered, self._size),
                              cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
