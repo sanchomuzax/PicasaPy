@@ -4267,6 +4267,78 @@ a lánc-diszpécser.
 A nyers `read(0x008eff58, …)` értelmetlen bájtokat ad — az a tábla „második"
 címe, nem a VA; a helyes VA a `0x00ceff58`.)*
 
+### 7. Hol NINCS a rács, és mi a keresési kulcs pontosan (2026-09-08, 223. kör, #2746)
+
+A 222. kör után a kérdés átfordult: nem „melyik út fut", hanem **„a futó út hol
+számol rácsot"**. A mért kimenet `round(i·255/(Steps−1))` alakú, tehát valahol
+kell lennie egy `255`-tel szorzásnak vagy `Steps−1`-gyel osztásnak.
+
+#### 7.1 ⛔ A munkavégző törzsében NINCS ilyen skálázás
+
+A `0x00bb5b60` **teljes** törzsét (1510 bájt) átnézve **egyetlen** lebegőpontos
+osztás van, és a konstansa kiolvasva:
+
+```
+0x00bb5bd0  fild dword ptr [ebp + 8]        ; egész → FPU
+0x00bb5bf6  fadd dword ptr [0xcf39e4]       ; csak a negatív ágon
+0x00bb5bfc  fdiv qword ptr [0xcf3bd8]       ; ← a konstans: 50.0
+0x00bb5c11  fstp dword ptr [esp + 0x10]
+```
+
+**`[0x00cf3bd8] = 50,0`** — ez a **mintaméret** (50 × 50, ld. a lap 2. pontját,
+`0x00bb5c44 mov eax, 0x32`), nem a rács. `255`-tel szorzás és `Steps−1`-gyel
+osztás a törzsben **nem szerepel**.
+
+⇒ A 221. kör kizárta a képponti alkalmazót (`0x00bcb2f0`), ez a kör a
+munkavégzőt: **a rács egyik helyen sem keletkezik.**
+
+#### 7.2 A keresési kulcs képlete — SZÁMMAL, nem maszkokként
+
+A lap eddig csak a maszkokat adta meg. A `0x00bb6055`–`0x00bb6082` kód
+átszámolva:
+
+```
+c = (r3 << 5) | (g3 << 2) | b2
+eax = ((((c & 0xE0) << 5) + (c & 0x1C)) << 5) + (c & 3)) << 6
+R = (eax >> 16) & 0xFF ;  G = (eax >> 8) & 0xFF ;  B = eax & 0xFF
+```
+
+⇒ **`R = r3·32`, `G = g3·32`, `B = b2·64`** (ellenőrizve mind a 8, illetve 4
+értékre):
+
+| | szintek | tartomány |
+|---|---|---|
+| a keresési kulcs R/G | 8 × `i·32` | 0 … **224** |
+| a keresési kulcs B | 4 × `i·64` | 0 … **192** |
+| a **mért** Picasa-kimenet (`Steps=8`) | 8 × `i·36,43` | 0 … **255** |
+
+A kulcs rácsa tehát **más léptékű ÉS más végpontú** (224/192 vs 255). Ez nem
+cáfolja az oktree-utat (a kulcsra a fa válaszol, és a válasza bármi lehet), de
+rögzíti, hogy a lap „3-3-2 tábla" szakaszát ezentúl SZÁMOKKAL is olvasni kell.
+
+#### 7.3 ⚠️ ÖNHELYESBÍTÉS a lap 5.1 szakaszához: a „képfüggetlen" NINCS mérve
+
+Az 5.1 így zárul: *„A leképezés ráadásul **képfüggetlen**: ugyanaz a bemeneti
+szín ugyanazt a kimenetet adja más színeloszlású képben is."*
+
+**Ehhez nincs mérés.** Az 5.1 táblázatának három sora (`alap`, `min`, `max`) a
+**szűrő három BEÁLLÍTÁSA** (`Steps` 8 / 2 / 30, más `Smoothing` és `Fade`) —
+nem három különböző színeloszlású forráskép. A mérés tehát **egy** forrásképen
+készült, három exporttal.
+
+Ez fontos, mert a képfüggetlenség lett volna a **legerősebb** érv az oktree
+ellen: egy oktree-paletta definíció szerint képfüggő.
+
+⛳ **Amit ez NEM dönt meg:** a rács-hipotézist. A `min` eset (`Steps = 2`) a
+kimenet **98,4 %**-át a két végpontra (`0` és `255`) teszi — egy 2 színű
+oktree-paletta a mérőkép saját színeiből (szürke sáv + színes mezők) nem adna
+tiszta 0/255-öt. A rács-olvasat tehát áll; csak a „képfüggetlen" mondatot kell
+**mérésre visszavezetni vagy törölni**.
+
+**A megszerzés útja:** egy MÁSODIK, eltérő színeloszlású kép exportja
+ugyanazzal a `Steps = 8` beállítással (a tulajdonos windowsos Picasájából). Ez
+a mérés a rács-hipotézist megerősíti vagy megdönti — ma egyik sincs.
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
