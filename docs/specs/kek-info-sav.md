@@ -443,3 +443,116 @@ betűjével. A `clip: true` vészféknek megmarad.
 
 ⚠️ A `FEJ_ARANY` a 9.4 **jelöltje**. Ha egyszer előkerül egy második
 csonkolt minta, EZT az egy számot kell átírni — a szerkezet nem függ tőle.
+
+## 10. A `::4`/`::5` VÁLASZTÁS és a CÍMKE-rész bekötése — utasításszinten (2026-09-08, #1913)
+
+*205. kutatói kör.* A #1913 utolsó két nyitott pontja: **melyik hívási
+hely** állítja össze a sáv szövegét és van-e benne címke-ág, illetve
+**mi választ** a `MB/lemez` (`::5`) és a `MB a lemezen` (`::4`) alak
+között. A 2.1 a szabályt már kimondta („eltérő dátum" / „azonos dátum"),
+de a **feltételt** nem olvastuk vissza a binárisból — ez a kör azt teszi.
+
+### 10.1 A sáv szövegét EGY függvény állítja össze
+
+`FUN_0056fbc0` (2317 b, `0x0056fbc0`–`0x005704cd`) — mind az öt
+`il_GetSelectionInfo::N` kulcsot ő hivatkozza (2.). Index-független
+`E8 rel32` pásztázás szerint **egyetlen hívója van**: `0x005707cf`.
+
+### 10.2 ⭐ A választás: a két FORMÁZOTT DÁTUM sztring-egyenlősége
+
+A darabszám (`::3`) kiírása után a függvény két időbélyeget dolgoz fel:
+
+```
+0x00570080  lea eax,[esp+0x18] ; call 0x0098b650   ; az 1. időbélyeg → double
+0x00570099  lea eax,[esp+0x28] ; call 0x0098b650   ; a 2. időbélyeg → double
+0x005700b7  call 0x0098c670                        ; az 1. → SZTRING
+0x005700c5  call 0x0098c670                        ; a 2. → SZTRING
+0x005700e6  push 0x00c82fd8                        ; "%ld" — a darabszám
+0x005700fb  cmp edi, 0x3e8 ; jl 0x0057010e         ; ≥ 1000 → ezres tagolás
+```
+
+majd a **két formázott sztringet karakterenként hasonlítja össze**
+(`0x00570170`–`0x0057018a`), és ez dönt:
+
+```
+0x00570266  sete al          ; al = (a két sztring EGYENLŐ)
+0x00570269  cmp  al, bl      ; bl = 0
+0x0057026b  jne  0x005701bd  ; EGYENLŐ  → push 0x00c8f558 = il_GetSelectionInfo::5
+0x00570271  push 0x00c8f528  ; KÜLÖNBÖZŐ →              il_GetSelectionInfo::4
+```
+
+A két kulcs mellé tolt angol alapértékek a `.rdata`-ból kiolvasva:
+`0x00c8f540` = `     %s      %s on disk` (`::5`, **egy** dátum),
+`0x00c8f508` = `     %s to %s     %s on disk` (`::4`, **két** dátum) —
+a formátumok maguk is igazolják a szemantikát.
+
+### 10.3 ⚠️ Amit ez a 2.1-hez képest PONTOSÍT
+
+A 2.1 azt írja: „több kép, **eltérő dátum**" ↔ `::4`, „több kép, **azonos
+dátum**" ↔ `::5`. A kód viszont **nem időbélyeget hasonlít**, hanem a
+**megformázott sztringeket**. A kettő csak azért esik egybe, mert a
+többes kijelölésnél használt dátumalak **napra pontos, időpont nélküli**
+(mérve: 2.2, `2026. január 2., péntek`).
+
+Ennek két gyakorlati következménye van:
+
+1. **Nem időablak.** Ugyanaznap 00:01-kor és 23:59-kor készült két kép
+   `::5`-öt ad — nincs „N órán belül" szabály.
+2. **A granularitást a DÁTUMFORMÁTUM adja, nem a feltétel.** Ha egy
+   területi beállításban a formátum időpontot is tartalmazna, ugyanaz a
+   kód `::4`-et adna azonos napon is. Nálunk az átvételkor tehát a
+   **formázott szöveget** kell egyeztetni, nem a naptári napot — így a
+   viselkedés akkor is helyes marad, ha a formátum változik.
+
+*Bizalmi fok: **megerősített** a feltétel (utasításszinten, a két
+elágazás-célponttal); **mérés** a napra pontos dátumalak (2.2).*
+
+### 10.4 ⭐ A CÍMKE-rész bekötése — ugyanez a függvény, öt szóközzel
+
+A `FUN_0056fbc0` a szöveg végén meghívja a címke-előállítót:
+
+```
+0x0057040e  lea eax,[esp+0x18] ; push eax    ; a kimenő sztring
+0x0057041b  call 0x0056f920                  ; CThumbUI::GetTagInfo (7.)
+0x00570424  cmp eax, ebx        ; je 0x00570452   ; NULL      → kihagyás
+0x0057042e  test dword [eax], 0xffffff00 ; je …   ; nulla hossz → kihagyás
+0x00570430  cmp byte [eax+4], bl ; je 0x00570452  ; üres sztring → kihagyás
+0x00570438  push 0x00c88efc                  ; az ELVÁLASZTÓ
+0x00570442  call 0x00985af0                  ; hozzáfűzés
+0x0057044d  call 0x00985af0                  ; és a címke-szöveg hozzáfűzése
+```
+
+A `0x00c88efc` tartalma bájtonként kiolvasva: **öt szóköz** (`'     '`) —
+ugyanaz az elválasztó, mint a `::2`/`::4`/`::5` alakokon belül (2.).
+
+⇒ **A címke-rész nem külön elem, hanem a sáv szövegének utolsó,
+feltételes darabja:** `<darabszám …>` + `"     "` + `Címkék: <név> (<db>)`,
+és **ha nincs címke, az elválasztó sem kerül ki.**
+
+A `FUN_0056f920` a programban két helyről hívódik (`0x00567234` és az
+itteni `0x0057041b`) — index-független pásztázás.
+
+### 10.5 Kontroll: a 7. szakasz három címe visszaolvasva
+
+| cím | tartalom |
+|---|---|
+| `0x00c8f468` | `Tags: ` |
+| `0x00c8f470` | `CThumbUI::GetTagInfo::format` |
+| `0x00c8f494` | `%s (%d)` |
+
+Mindhárom a `.rdata`-ból, ebben a körben újraolvasva — a 7. szakasz
+állítása áll.
+
+### 10.6 ⛳ A #1913 elszámolása
+
+| pont | kutatás | megvalósítás |
+|---|---|---|
+| 1. függőleges térköz (6 px) | ✅ mérve (#2173, kontroll #2255) | ✅ kész |
+| 2. címke-szám a sávon | ✅ **a bekötés is megvan** (10.4) | ❌ hiányzik (`app/formatting.py` `status_text`) |
+| 3. a méret-felirat két alakja | ✅ **a FELTÉTEL is megvan** (10.2) | ❌ hiányzik (egyetlen alak: `%1 MB on disk`) |
+
+⇒ **A jegyben nincs több mérendő.** A 2026-09-07-i `ready`-söprés
+kommentje azt írta, hogy a 2. és a 3. pont „ugyanazon áll: nincs meg a
+forrásminta" — ez **elavult** volt: a forrás a 7. szakaszban (2026-09-04
+óta), a hiányzó feltétel pedig most került meg. A `bináris-kutatható`
+címke levehető; a jegy fejlesztői körre vár.
