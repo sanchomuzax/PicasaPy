@@ -215,13 +215,16 @@ def _regi_render_pile(canvas, images, settings):
 def _regi_make_picasa_collage(sources, settings):
     """A #942 ELŐTTI `make_picasa_collage`, befagyasztva. Csak a képet adja."""
     paths = [Path(s) for s in sources]
-    # #1043: a dekódolási hiba NEM maradhat néma. A régi kód a `None`-okat
-    # szó nélkül kiszűrte — és épp ez tette az őrt terhelés alatt
-    # megfejthetetlenné: ha egy kép dekódolása AZ EGYIK renderelés közben
-    # elbukik (memórianyomás), az az oldal kevesebb képpel dolgozik, a
-    # `regular_grid_shape` pedig a DARABSZÁMBÓL számol rácsot — egyetlen
-    # kiesett kép így a vászon 60–73%-át átrendezi. A tünet ezért nézett ki
-    # „a rajzoló elromlott"-nak, holott a bemenet tért el.
+    # #1043 / #2406: a dekódolási hiba NEM maradhat néma. A régi kód a
+    # `None`-okat szó nélkül kiszűrte; ha egy kép dekódolása CSAK AZ EGYIK
+    # renderelés közben bukna el, az az oldal kevesebb képpel dolgozna, és a
+    # kevesebb kép más elrendezést ad — az őr pedig a rajzolót gyanúsítaná a
+    # bemenet helyett. Ezért áll meg itt kimondott üzenettel.
+    #
+    # ⚠️ **Ez védelem, nem a #1043 oka.** A jegy eredeti hipotézise a néma
+    # dekódolási hiba volt; a 2026-09-08-i mérés MEGDÖNTÖTTE: 7560 dekódolás
+    # (terheléssel és anélkül) közül NULLA adott `None`-t. A valódi ok az
+    # időkorlátos pakoló órája volt — ld. `tests/collage/conftest.py`.
     decoded = []
     for ut in paths:
         if not ut.exists():
@@ -300,40 +303,11 @@ def _regi_make_picasa_collage(sources, settings):
     return canvas
 
 
-@pytest.fixture(autouse=True)
-def determinisztikus_pakolas(monkeypatch):
-    """⚠️ #1018: a Mozaik pakolója IDŐKORLÁTOS keresés — az órát rögzítjük.
-
-    A `packing.pack` addig sorsol új sorrendeket, amíg a `PACK_TIME_LIMIT`
-    le nem jár. **Hány** jelöltet néz meg, az a gép pillanatnyi
-    terheltségétől függ; a talált elrendezés ezért terhelés alatt MÁS lehet.
-
-    Ez a bájtazonossági őrt megbízhatatlanná tette: a produkciós és a
-    referencia-ág külön-külön futtatja a keresést, két különböző
-    pillanatban, tehát terhelés alatt más-más elrendezést talál — és az őr
-    „megváltozott a rajz" néven jelentett egy olyan eltérést, ami valójában
-    csak a gép terheltsége volt. A #1018 pontosan ezt írta le
-    („újrafuttatásra zöld"), és a 2026-08-20-i CI-n a `framegrid`
-    mindkét kerettel elbukott, párhuzamos futások mellett.
-
-    A csere egy LÉPKEDŐ számláló: minden órakérdés fix lépéssel halad, tehát
-    a ciklus mindig UGYANANNYI jelöltet néz meg — a mérés így a rajzot méri,
-    nem a gépet. A produkciós viselkedés változatlan: a valódi órát csak a
-    teszt cseréli le."""
-    from picasapy.collage import packing
-
-    allapot = {"t": 0.0}
-
-    def _lepkedo() -> float:
-        allapot["t"] += packing.PACK_TIME_LIMIT / _PAKOLASI_LEPESEK
-        return allapot["t"]
-
-    monkeypatch.setattr(packing, "_perf_counter", _lepkedo)
-
-
-#: Hány jelöltet nézzen meg a pakoló a mérés alatt. Elég nagy ahhoz, hogy a
-#: keresés érdemi legyen, és elég kicsi, hogy a 36 eset gyorsan lefusson.
-_PAKOLASI_LEPESEK = 400
+# ⚠️ A pakoló órájának rögzítése a KÖZÖS `conftest.py`-ba költözött (#1043):
+# a terhelésfüggés nem ezé az egy lapé, hanem minden kollázs-teszté, amelyik
+# rácsos témát rajzol. Az ottani `determinisztikus_pakolas` fixture autouse,
+# tehát itt is fut; ez a lap név szerint is elkéri, hogy ÁLLÍTHASSA: a csere
+# tényleg hatott.
 
 
 #: A mérés rácsa: mind a hat téma × mindhárom keret × két térköz-állás.
@@ -346,7 +320,7 @@ BAJTAZONOSSAG_ESETEI = [
 
 
 @pytest.mark.parametrize("kulcs", BAJTAZONOSSAG_ESETEI)
-def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
+def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs, determinisztikus_pakolas):
     """A `make_picasa_collage` kimenete BÁJTAZONOS a refaktor előttivel.
 
     Az összevetés UGYANABBAN a processzben, ugyanazon az OpenCV-n fut, ezért
@@ -378,6 +352,20 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
     )
     most = jelentes.image
     regen = _regi_make_picasa_collage(forrasok, beallitas)
+    if tema in (PICTUREGRID, FRAMEGRID):
+        # #1043 KAPUJA. A két rácsos téma az időkorlátos pakolón megy át, és
+        # a két oldal KÜLÖN futtatja a keresést. Ha az óra rögzítése bármikor
+        # hatástalanná válik (átnevezett `packing._perf_counter`, saját
+        # `clock=` a hívónál, elveszett fixture), az őr NÉMÁN visszaesne a gép
+        # terheltségének mérésére — mérve: valódi órával, load ≈ 8 mellett 108
+        # mérésből 5 bukott, a vászon 61,8–72,9%-án. Ezért itt kimondjuk.
+        assert determinisztikus_pakolas["orakerdes"] > 0, (
+            "#1043: a pakoló órájának rögzítése nem hatott — a keresés a "
+            "VALÓDI órán futott, tehát ez a mérés a gép terheltségét méri, "
+            "nem a rajzot. Ellenőrizd a `tests/collage/conftest.py` "
+            "`determinisztikus_pakolas` fixture-jét és a "
+            "`packing._perf_counter` nevet."
+        )
     eltero = int(np.count_nonzero(np.any(most != regen, axis=2)))
     if tema == CONTACTSHEET:
         # #1273: az Indexkép régi „orákuluma" maga a hiba: 8%-os fejléc,
