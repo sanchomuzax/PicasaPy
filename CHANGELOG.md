@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.349] – 2026-09-08
+
+### Javítva
+
+- **A csúszkák fogantyúja árnyékot kapott, és ettől pontosan akkora lett,
+  mint az eredetiben** (#2664). Eddig a fogantyú kitöltötte a teljes helyét,
+  vagyis 2 képponttal szélesebb és 3-mal magasabb tömör foltot rajzolt a
+  Picasáénál — az eredetiben ez a néhány képpont a lágy árnyéké. A fogantyú
+  helye (és így a körülötte lévő elrendezés) nem változott, csak a rajz
+  húzódott beljebb; a közepébe vésett vonal is a rajz közepére került.
+
 ## [0.8.348] – 2026-09-08
 
 ### Javítva

@@ -160,12 +160,44 @@ Slider {
         implicitHeight: control.handleHeight
         opacity: control.enabled ? 1.0 : 0.55
 
+        //: #2664: a RÉTEG és a RAJZ nem ugyanaz. A `respack.yt` mindkét
+        //: fogantyú-rétege 2 képponttal szélesebb és 3-mal magasabb, mint a
+        //: benne álló TÖMÖR rajz (`scaleslider/thumb` 16 × 22 → 14 × 19,
+        //: `editslider/thumb` 16 × 26 → 14 × 23) — a különbség a lágy
+        //: ÁRNYÉK, jobbra és lefelé. A doboz (a Layout helye) marad a réteg
+        //: mérete, csak a rajz húzódik be; így a környező elrendezés mért
+        //: állandói (#1345/#1367) érintetlenek.
+        //:
+        //: ⚠️ MÉRT az árnyék KITERJEDÉSE (2 és 3 képpont); a lágyulás
+        //: profilja NINCS mérve — az alábbi három, egyre halványabb réteg a
+        //: MI rajzunk, nem az eredetiből olvasott érték.
+        readonly property real arnyekJobb: 2
+        readonly property real arnyekAlul: 3
+
+        Repeater {
+            model: 3
+            Rectangle {
+                x: index + 1 > fogantyu.arnyekJobb ? fogantyu.arnyekJobb : index + 1
+                y: index + 1 > fogantyu.arnyekAlul ? fogantyu.arnyekAlul : index + 1
+                width: rajz.width
+                height: rajz.height
+                radius: control.handleRadius
+                color: Qt.rgba(0, 0, 0, 0.10 - index * 0.03)
+            }
+        }
+
+        //: #2664: a TÖMÖR rajz — a réteg dobozánál 2 × 3 képponttal kisebb.
+        Item {
+            id: rajz
+            width: Math.max(1, fogantyu.width - fogantyu.arnyekJobb)
+            height: Math.max(1, fogantyu.height - fogantyu.arnyekAlul)
+
         // #2656: a BAL fél — a mért bal oszlop (245 → 225 világosban),
         // felülről lefelé fut. Csak a KÜLSŐ (bal) sarka kerekített, hogy a
         // jobb féllel varrat nélkül illeszkedjen.
         Rectangle {
-            width: Math.round(fogantyu.width / 2)
-            height: fogantyu.height
+            width: Math.round(rajz.width / 2)
+            height: rajz.height
             topLeftRadius: control.handleRadius
             bottomLeftRadius: control.handleRadius
             gradient: Gradient {
@@ -185,9 +217,9 @@ Slider {
         // A bal félnél MINDIG sötétebb (fentről lefelé is, a tetején is),
         // ez adja ki az átlós, balról jobbra is sötétedő átmenetet.
         Rectangle {
-            x: Math.round(fogantyu.width / 2)
-            width: fogantyu.width - x
-            height: fogantyu.height
+            x: Math.round(rajz.width / 2)
+            width: rajz.width - x
+            height: rajz.height
             topRightRadius: control.handleRadius
             bottomRightRadius: control.handleRadius
             gradient: Gradient {
@@ -263,6 +295,7 @@ Slider {
                 // függőlegesen a SZÉLESSÉGE — a `vesesHossz` ezt kezeli.)
                 visible: parent.vesesHossz >= 2
             }
+        }
         }
     }
 }
