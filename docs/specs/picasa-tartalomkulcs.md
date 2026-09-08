@@ -539,7 +539,7 @@ A metaadat-író `FUN_007d55f0` (2681 b) **név szerint pontosan két
 kulcsot** ír (a többi `push 0x00cb…` a benne lévő naplósorok szövege):
 
 ```
-0x007d5e23  mov ecx, [esp + 0xadc]        ; a KÉP-REKORD (3. argumentum)
+0x007d5e23  mov ecx, [esp + 0xadc]        ; a KÉP-REKORD (2. argumentum)
 0x007d5e2a  mov eax, [ecx + 0x90]         ; ← az originhash SZTRING
 0x007d5e32  je  0x007d5e8c                ; NULL        → a kulcs KIMARAD
 0x007d5e3a  je  0x007d5e8c                ; nulla hossz → KIMARAD
@@ -552,7 +552,7 @@ kulcsot** ír (a többi `push 0x00cb…` a benne lévő naplósorok szövege):
 és közvetlenül utána:
 
 ```
-0x007d5f8a  cmp byte ptr [ebx + 0xf9], 0  ; kapu a 2. argumentum objektumán
+0x007d5f8a  cmp byte ptr [ebx + 0xf9], 0  ; kapu az 1. argumentum objektumán
 0x007d5f91  je  0x007d604b                ; ha 0 → az origloc KIMARAD
 0x007d5f9e  mov eax, [ecx + 4]            ; ← az origloc SZTRING (rekord +4)
 0x007d5fde  push 0x00cb9260               ; "origloc"
@@ -649,3 +649,135 @@ megy a 3. argumentumba.
 *Bizonyítottsági fok: **megerősített** az 1–4. pont minden állítása
 (utasításszinten, a pásztázások index-független `E8 rel32` alapon);
 **nyitott** a `[rekord+0x90]` írója.*
+
+## A rekord `+0x90`-e: az `originhash`-t a Picasa FOGYASZTJA, nem termeli (2026-09-08, #2675)
+
+*207. kutatói kör.* Az előző kör megnevezett lépését viszi: **ki írja a
+`[rekord+0x90]`-et?** A válasz felé vezető úton kiderült, hogy a mező
+mindkét ismert érintője **olvasó** — és ez önmagában megválaszolja a
+#2675 gyakorlati kérdését.
+
+### 1. A rekord **304 bájtos** (`0x130`) tömbelem — és a mezőtérkép
+
+A `.picasa.ini`-író hívója (`FUN_007d94c0`, 3602 b) a rekordot
+`[ebx] + eltolás` alakban adja át (`0x007d9ba6 add ecx, ebp`), és a
+ciklus lépésköze **`0x007d9f00 add ebp, 0x130`**. Ugyanez a lépésköz
+`imul`-lal a `FUN_007d6db0`-ban (`0x007d6e3a imul eax, eax, 0x130`) —
+**két független hely, ugyanaz a szám.**
+
+Amit a rekordból eddig ismerünk:
+
+| eltolás | mi | bizonyíték |
+|---|---|---|
+| `+0x04` | `origloc` (sztring) | `0x007d5f9e` → `push 0x00cb9260` |
+| `+0x50`/`+0x54` | 64 bites szám, `%I64u`-val formázva | `0x007db9e0`–`0x007db9e8` (`0x00c82fbc`) |
+| `+0x90` | **`originhash`** (sztring) | `0x007d5e2a` → `push 0x00cb9254` |
+
+### 2. ⭐ A `+0x90`-et mindkét úton ugyanaz a metódus dolgozza fel — és SZÉTSZEDI
+
+`FUN_007d8cf0` (291 b), `this` = **a mező CÍME** (`&rekord.originhash`):
+
+```
+0x007d8cf0  mov eax, [ecx]                 ; a sztring
+0x007d8cfd  je  0x007d8df6                 ; NULL      → kilép
+0x007d8d09  je  0x007d8df6                 ; nulla hossz → kilép
+0x007d8d12  je  0x007d8df6                 ; üres      → kilép
+0x007d8d33  call 0x00414b40                ; ← a SZÉTSZEDŐ (16+16 sscanf "%I64x")
+0x007d8d45  or  eax, edx ; je 0x007d8df6   ; ha a pár 0, kilép
+```
+
+A `0x00414b40` pontosan az a függvény, amelyet a lap fentebb az
+`originhash` **szétszedőjeként** azonosít (`cmp eax, 0x20`, majd 16+16
+jegy külön `sscanf`-fal).
+
+**Két hívási helye van**, mindkettő a `.picasa.ini`-modulban:
+
+| cím | hol | mikor |
+|---|---|---|
+| `0x007d91e9` | `FUN_007d9160` (273 b, `image`) | rekordonkénti pász a betöltés után (`0x007d9225 add esi, 0x130`) |
+| `0x007d9d13` | `FUN_007d94c0` (a kiíró vezérlője) | a kiírás előtt |
+
+### 3. ⭐ …és a kapott párral KERES
+
+A szétszedés után:
+
+```
+0x007d8d6f  call 0x004365b0        ; keresés a két kulccsal → lista
+0x007d8d82  shr edi, 1 ; je …      ; a lista elemszáma
+0x007d8db3  mov eax, [ebp + esi*4] ; végigmegy a találatokon
+```
+
+⇒ a mező tartalma **bemenet egy kereséshez** — az `origloc` szomszédsága
+mellett ez azt a szerepet erősíti, hogy a pár az **eredeti fájl
+azonosítója**, amit a program **visszakeres**, nem pedig frissen számol.
+
+### 4. ⛔ ÖNHELYESBÍTÉS az előző körhöz — argumentum-számozás
+
+Az előző szakasz („Az `originhash` ÍRÁSI LÁNCA…") a `FUN_007d55f0`
+argumentumait elszámolta. A veremkeret: `0x007d55f0 sub esp, 0xac4`,
+majd **négy** `push` ⇒ az argumentumok bázisa `0xac4 + 0x10 + 4 = 0xad8`.
+Ebből:
+
+| hely | argumentum | mi |
+|---|---|---|
+| `[esp+0xad8]` | **1.** | az az objektum, amelynek `byte +0xf9`-e az `origloc` kapuja (`0x007d5f8a`) |
+| `[esp+0xadc]` | **2.** | a **kép-rekord** (`0x007d5e23`) |
+| `[esp+0xaec]` | **6.** | az ini-író objektum (`0x007d5e7f call [edx+8]`) |
+
+*(Az előző szakasz a rekordot 3., a kaput 2. argumentumnak írta. A
+címek és a következtetések változatlanok — csak a sorszámozás volt
+rossz.)*
+
+### 5. ⛳ Amit ez a #2675-re nézve KIMOND
+
+A kép teljes, ha a két kört együtt nézzük:
+
+| lépés | mit csinál a `+0x90`-nel | cím |
+|---|---|---|
+| betöltés utáni pász | **olvassa**, szétszedi, keres | `0x007d91e9` |
+| kiírás előtt | **olvassa**, szétszedi, keres | `0x007d9d13` |
+| kiírás | **változatlanul kimásolja**, üresre kihagyja a kulcsot | `0x007d5e2a` |
+
+⇒ **A mentési úton a Picasa nem számol és nem is számol újra
+`originhash`-t.** Amit a rekord hordoz, azt írja ki; ha a rekord mezője
+üres, a kulcs egyszerűen elmarad.
+
+**Amit ez a mi megvalósításunkra nézve jelent** (a #2675 2. pontja):
+a mentéskor **nem szabad újraszámolni** — a meglévő értéket kell
+megőrizni (round-trip), és a képletet csak ott alkalmazni, ahol a
+Picasa is előállítja (a lap „Ki állítja elő" szakasza szerint a
+`FUN_004353a0` hívói közt).
+
+Ez egyben **megmagyarázza a #791 mérésének 44 nem egyező sorát**: azok
+az értékek egy korábbi Picasa-futásból származnak, és azóta
+**érintetlenül öröklődnek** — nincs a mentésben olyan lépés, amely
+hozzáigazítaná őket a mai fájlhoz. *(erős: a mechanizmus mérve, a
+44 sor eredetét külön nem mértük)*
+
+### 6. Ami NYITVA marad — és a következő lépés
+
+**A `+0x90` ÍRÓJÁT továbbra sem találtuk meg.** A hatókör kimondva:
+
+- pásztázás 1 — sztring-értékadó idióma (`lea r,[obj+0x90]` + `call`
+  `0x005c2100`/`0x00401000`/`0x0040eab0`/`0x0040ea90` nyolc utasításon
+  belül), **teljes `.text`**: 7 találat, egyik sem ebben a modulban;
+- pásztázás 2 — `mov [reg+0x90], reg` (`esp`/`ebp` bázis kizárva),
+  **teljes `.text`**: 121 találat, nagyrészt más osztályoké;
+- pásztázás 3 — **`0x130`-as lépésköz ÉS `+0x90` érintés ugyanabban a
+  függvényben**, teljes `.text`: **16 függvény**, ebből a
+  `.picasa.ini`-modulban három (`FUN_007d6db0`, `FUN_007d9160`,
+  `FUN_007d94c0`) — és mindhárom **olvasó**.
+
+> **A KÖVETKEZŐ KÉRDÉS:** a rekord `+0x90`-ét nem közvetlen mezőírás
+> tölti, hanem a **generikus kulcs→mező betöltő**. A menet: a
+> `FUN_007d6db0` (4829 b) az egyetlen olyan `0x130`-lépésközű függvény,
+> amely a `.picasa.ini` kulcsait **táblából** dolgozza fel — ki kell
+> olvasni ezt a táblát (kulcsnév → rekord-eltolás), és megnézni, hogy a
+> `+0x90` szerepel-e benne. Ez egyben eldöntené a lap korábbi negatív
+> állítását is („a Picasa 3.7 az `originhash`-t **név szerint** nem
+> olvassa vissza") — a `name szerint` kitétel ugyanis táblás
+> feldolgozásnál nem zárja ki a visszaolvasást.
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten, a
+lépésköz két független helyről); **erős** az 5. pont
+(a mechanizmus mérve, a 44 sor eredete nem); **nyitott** a `+0x90` írója.*
