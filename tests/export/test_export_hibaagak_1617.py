@@ -80,6 +80,17 @@ _jogosultsag_kihagy = pytest.mark.skipif(
 #: Régi név, hogy a fájlon belüli hivatkozások egy helyen dőljenek el.
 _root_kihagy = _jogosultsag_kihagy
 
+#: A windows-natív kiváltókhoz (#1864). Az itteni próbák a MÁSIK platformon
+#: nem is állítanak elő hibát: POSIX-on a nyitva tartott fájl törölhető, tehát
+#: a `delete`/`remove` ág nem sülne el, és a próba nem azt mérné, amit állít.
+_csak_windows = pytest.mark.skipif(
+    os.name != "nt",
+    reason=(
+        "#1864: a nyitott leíró csak Windowson akadályozza a törlést "
+        "(nincs FILE_SHARE_DELETE); POSIX-on az unlink sikerül"
+    ),
+)
+
 
 def _kep(ut: Path) -> Path:
     """Valódi, beolvasható JPEG — a hibaágnak a MÁSIK okból kell jönnie."""
@@ -254,3 +265,84 @@ class TestAzUzenetLancVegig:
 
     def test_ismeretlen_fajtara_ures(self, uzenetek):
         assert uzenetek._export_error_text("nincs-ilyen") == ""
+
+
+class TestWindowsNativKivaltok:
+    """#1864: a `chmod` Windowson nem hoz létre hibahelyzetet — ott a
+    **nyitott fájlleíró** a natív kiváltó.
+
+    A Python a fájlt `FILE_SHARE_DELETE` NÉLKÜL nyitja meg, ezért a Windows
+    a nyitva tartott fájl törlését `PermissionError`-ral utasítja el
+    (`[WinError 32]`). POSIX-on ugyanez sikerül, ezért ezek a próbák ott
+    kimaradnak — a POSIX-oldali párjuk a fenti, `chmod`-os négy.
+
+    ⚠️ **Kimondva: ez környezetfüggő kihagyás**, tehát az ubuntu-lábon nem
+    mér semmit. Attól ér valamit, hogy a windows-láb LEFUT és a bukása
+    LÁTHATÓ (a `teszt-darabok.yml` összegző-lapos lépése, ugyanez a jegy).
+    """
+
+    @_csak_windows
+    def test_delete_ha_a_torlendo_fajl_NYITVA_van(self, tmp_path: Path):
+        cel = tmp_path / "ki"
+        cel.mkdir()
+        regi = cel / "regi.jpg"
+        regi.write_bytes(b"x")
+        with regi.open("rb"):
+            jelentes = export_photos(
+                [ExportItem(source=_kep(tmp_path / "src/a.jpg"))],
+                cel,
+                purge_existing=True,
+            )
+        assert jelentes.error_kind == "delete", (
+            "a nyitva tartott fájl nem a törlés-hibaágra futott, hanem: "
+            f"{jelentes.error_kind!r}"
+        )
+        assert jelentes.exported == ()
+
+    @_csak_windows
+    def test_remove_ha_a_MAPPABAN_nyitott_fajl_van(self, tmp_path: Path):
+        cel = tmp_path / "ki"
+        (cel / "regi_mappa").mkdir(parents=True)
+        bent = cel / "regi_mappa" / "b.jpg"
+        bent.write_bytes(b"x")
+        with bent.open("rb"):
+            jelentes = export_photos(
+                [ExportItem(source=_kep(tmp_path / "src/a.jpg"))],
+                cel,
+                purge_existing=True,
+            )
+        assert jelentes.error_kind == "remove", (
+            "a nyitott fájlt tartalmazó mappa nem a mappatörlés-hibaágra "
+            f"futott, hanem: {jelentes.error_kind!r}"
+        )
+
+    def test_destdir_ha_a_SZULO_egy_fajl(self, tmp_path: Path):
+        """Platformfüggetlen `destdir`-kiváltó: fájl alá nem lehet mappát
+        csinálni sehol (`NotADirectoryError`/`FileExistsError`).
+
+        Ez az egyetlen a négy ág közül, amelyhez **nem kell** platform-
+        specifikus trükk — és épp ezért itt van: a windows-lábon így a
+        `destdir` ág is mérve van, nem csak a POSIX-oldali `chmod`-os párja.
+        """
+        szulo_fajl = tmp_path / "ez_egy_fajl"
+        szulo_fajl.write_bytes(b"nem mappa")
+        jelentes = export_photos(
+            [ExportItem(source=_kep(tmp_path / "src/a.jpg"))],
+            szulo_fajl / "uj",
+        )
+        assert jelentes.error_kind == "destdir"
+        assert jelentes.exported == ()
+
+
+#: ⛔ A `scan` ághoz NINCS windows-natív kiváltónk (#1864, kimondva).
+#:
+#: A `scan` ág akkor sül el, ha a célmappa LETAPOGATÁSA (`iterdir`) bukik.
+#: Windowson egy létező mappát csak **ACL-lel** lehet listázhatatlanná tenni
+#: (`icacls /deny …:(RD)`), ami külső eszközt hívna a tesztből, a runner
+#: jogosultságától függene, és hiba esetén takarítatlan ACL-t hagyna. A
+#: nyitott leíró itt nem segít: a mappa listázását nem akadályozza.
+#:
+#: A négy ág windowsos lefedettsége tehát: `destdir` ✅ (platformfüggetlen),
+#: `delete` ✅ · `remove` ✅ (nyitott leíró), `scan` ❌ — ez utóbbi csak
+#: POSIX-on van mérve.
+_SCAN_AG_WINDOWSON_NINCS_MERVE = True
