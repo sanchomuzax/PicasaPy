@@ -1399,3 +1399,150 @@ kontroll értelmezhető volt:
 *Bizonyítottsági fok: **megerősített** a 2. és a 3. pont (mindkettő
 benépesített mintával); az 1. pont **kimondottan nem lelet**, hanem a
 szerszám korlátjának mérése.*
+
+---
+
+## ÖNHELYESBÍTÉS: az olcsó lánc MÉGSEM merült ki — két alak hiányzott (2026-09-08, 214. kör, #2675)
+
+A 213. kör azzal zárta a tételt, hogy *„az olcsó bizonyítéklánc kimerült"*.
+**Ez elhamarkodott volt.** Két címzési alak maradt megmérve: az
+**összevont (kétlépéses) címképzés** és a **cím ÁTADÁSA hívásnak** — és
+egyik sem drága. Mindkettőt lefuttattam, mindkettőhöz **működő pozitív
+kontrollal**. (A 213. kör mérése azért mondott csődöt, mert a blokkon
+belüli konstans-követést próbálta bizonyítani; ez a két alak viszont az
+utasításban hordja a konstanst, tehát követhető.)
+
+Az eredmény a 213. kör KÖVETKEZTETÉSÉT nem dönti meg — de mostantól
+olyan mérések tartják, amelyek pozitív kontrollja **átmegy**.
+
+### 1. Összevont eltolás: `lea R,[B+K]` … `mov [R+D], x`, ahol `K+D = 0x90`
+
+Minden korábbi pásztázás (206–213) azt kereste, hogy a `0x90` **egyetlen
+utasításban** megjelenik-e — akár `mov [reg+0x90]`, akár `lea`/`add`
+alakban. Ha a fordító **kétfelé bontja** a címet (előbb egy közeli
+mezőre mutató segédmutatót képez, aztán onnan tolja el), a mező írása
+egyik korábbi mintára sem illeszkedik.
+
+**Mérés** (`.text` = `0x00401000`–`0x00c3f160`, 8 642 912 bájt):
+újraszinkronizáló lineáris pásztázás — a capstone az első
+értelmezhetetlen bájtnál megáll, ezért ott egy bájttal tovább kell
+lépni, különben a sweep **a szekció töredékén elhal** (az első futásom
+361 538 utasítás után megállt; javítva **2 884 879**).
+
+| mérőszám | érték |
+|---|---|
+| fedett bájt | 8 642 371 / 8 642 912 = **100,0 %** |
+| utasítás | 2 884 879 |
+| bázisképzés (`lea`/`add`/`sub` immediate) | 50 127 |
+| memóriaírás | 345 143 |
+| **találat a `+0x90`-en** | **29** (28 különböző függvényben) |
+| ebből egylépéses (`K=0x90, D=0`) | 13 |
+| ebből **valóban összevont** (`K≠0x90`) | **16** |
+
+✅ **Pozitív kontroll MEGVAN:** az `operator=` ismert írója,
+`0x005a532a mov dword ptr [edi], eax` (bázis `ebp`, `K=0x90`, `D=0`)
+megjelenik a találatok közt, ahogy a destruktoré is
+(`0x00432327`, bázis `ebx`).
+
+A 16 összevont találat eltolás-párjai (mind **más** osztály mezője):
+
+| `K` + `D` | hely |
+|---|---|
+| `0x80`+`0x10` | `0x004014c9`, `0x007bd5ef` |
+| `0x88`+`0x08` | `0x005998dd`, `0x007e2fdb` |
+| `0x7c`+`0x14` | `0x00668180`, `0x00668252`, `0x0076e5d3` |
+| `0x78`+`0x18` | `0x006d4a4c`, `0x007147b7`, `0x0076190d` |
+| `0x8c`+`0x04` | `0x00774a46`, `0x008e3d25` |
+| `0x48`+`0x48` | `0x006a8d9c`, `0x0087900a` |
+| `0x64`+`0x2c` | `0x0088b0e1` |
+| `0x74`+`0x1c` | `0x00b17294` |
+
+### 2. Melyik találat ír egyáltalán SZTRINGET?
+
+A rekord `+0x90`-je **hivatkozásszámlált sztring**: a beírás előtt el
+kell engedni a régit (`call 0x00401000`). Ez önmagában szűrő, és a
+pozitív kontrollja is adott — a két bizonyítottan osztálybeli írónak át
+kell mennie rajta.
+
+A 29 találat ±8 utasításnyi környezetében:
+
+- **sztringkezelés van: 7** — `0x00432327` (dtor, ismert),
+  `0x005a532a` (`operator=`, ismert), `0x004a974d`, `0x006e84f4`,
+  `0x00735e75`, `0x00754bf0`, `0x00755422`;
+- **sztringkezelés nincs: 22** — köztük **mind a 16 összevont** találat.
+
+⇒ **Az összevont alak létezik a binárisban, de egyetlen helyen sem
+sztringmezőt ír.** A rekord `+0x90`-je tehát ezen az úton nem íródhat.
+
+### 3. Az öt sztringíró egyike sem a rekord osztálya
+
+Osztály-ujjlenyomat (a rekord farka, a `ktor`/`dtor`/`operator=` által
+bizonyítottan érintett ritka együttállás): **`0x110` ÉS (`0xf0` vagy
+`0xf4`) ÉS `0x9c`**.
+
+| kontroll | várt | mért |
+|---|---|---|
+| `FUN_00432270` (dtor) | átmegy | ✅ átmegy |
+| `FUN_005a4f10` (`operator=`) | átmegy | ✅ átmegy |
+| `FUN_00755190` (parancsleíró: `version`/`action`/`buttons`) | elbukik | ✅ elbukik |
+| `FUN_00735e30` (másik osztály dtora) | elbukik | ✅ elbukik |
+
+Az öt jelölt legnagyobb megérintett tagoffszete: `FUN_004a9730` → `0x94`,
+`FUN_00754bc0` → `0x98`, `FUN_00755190` → `0x98`, `FUN_00735e30` → `0x9c`,
+`FUN_006e81f0` → `0x400`. **Egyik sem** hordja az ujjlenyomatot.
+
+A `FUN_00735e30` tartalmi olvasása (108 bájt) egyértelmű: két vtábla-írás
+(`0x00735e3a mov [esi], 0x00caf3bc` és `0x00735e7f mov [esi], 0x00cd87fc`),
+három sztring-elengedés (`+0x9c`, `+0x90`, `+0x68`), majd
+`0x00735e85 call 0x00983270` az alaposztály destruktorára — ez **másik
+osztály destruktora**, amelynek a `+0x68`-a sztring (a rekordé `-1`
+egész, a ktorból).
+
+### 4. A cím ÁTADÁSA hívásnak — a kétszintű alak
+
+Ha a mezőt nem a függvény írja, hanem a **címét adja át** egy hívottnak,
+a korábbi „ki írja" pásztázások vakok rá. Ezt is indextől függetlenül
+mértem: minden hívásnál számba vettem, mely regiszterek tartják épp
+`bázis+0x90`-et. (Ez fontos: az első futásom csak `push R`-t és
+`mov ecx,R`-t nézett, és **a pozitív kontroll megbukott** — a Picasa
+MSVC-buildje `edi`-ben is ad át `this`-t, pontosan így kapja az
+elengedő `0x00401000`. Javítva a kontroll átmegy.)
+
+| mérőszám | érték |
+|---|---|
+| hívási hely | **125** (130 regiszter-előfordulás) |
+| különböző hívott | 55 |
+| gazdafüggvény | 51 |
+| **ujjlenyomatos gazdafüggvény** | **2** |
+
+A kettő: `FUN_00432270` (`0x00432322` → elengedés) és `FUN_005a4f10`
+(`0x005a531d`, `0x005a533a`, `0x005a534e`, `0x005a5361`). **Új író
+nincs.** A már ismert fogyasztók (`FUN_007d9160` → `0x007d91e9` és
+`FUN_007d94c0` → `0x007d9d13`, mindkettő a szétvágó `FUN_007d8cf0`-t
+hívja) itt is előjönnek, de azok **olvasók**, és nem hordják az
+ujjlenyomatot, mert nem a rekordot kapják `this`-ként.
+
+### 5. Mérleg — a KÖZVETLEN író kérdése ezzel LEZÁRVA
+
+| kör | alak | pozitív kontroll | eredmény |
+|---|---|---|---|
+| 206–212 | `mov [reg+0x90]`, immediate, `lea`, `add`, blokk-másolás | átment | csak `ktor`/`dtor`/`operator=` |
+| **213** | futásidőben számolt index | ⛔ **megbukott** | **nem lelet** |
+| **214** | **összevont eltolás** (`K+D`) | ✅ átment | 16 új hely, **egyik sem sztring, egyik sem a rekord** |
+| **214** | **cím átadva hívásnak** | ✅ átment | 125 hely, **2 gazdafüggvény: a már ismert kettő** |
+
+⇒ **A rekord `+0x90`-jét pontosan három függvény érinti:** a konstruktor
+(`FUN_00413740`, nullázás `0x004137b5`), a destruktor (`FUN_00432270`,
+elengedés `0x00432322`) és az `operator=` (`FUN_005a4f10`, másolás
+`0x005a5322`–`0x005a532a`). **Írni egyedül az `operator=` ír bele** — és
+azt is csak **másolja** a forrás rekordból.
+
+⚠️ **Ami ebből NEM következik:** hogy a mező sosem kap tartalmat. A
+kérdés áttolódik oda, hogy a **forrás** rekord honnan kapta — és ez már
+tényleg adatfolyam-kérdés. A `docs/specs/`-ben mostantól ez a nyitott
+tétel, a 213. kör címlistájával.
+
+*Bizonyítottsági fok: **megerősített** — mind a négy mérés indextől
+független, 100 %-os kódfedéssel, és mindegyik pozitív kontrollja
+átmegy. A 213. kör „kimerült a lánc" állítása ezzel **helyesbítve**: két
+olcsó alak hiányzott belőle.*
