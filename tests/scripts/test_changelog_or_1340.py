@@ -235,3 +235,107 @@ class TestAMeresBukasa:
             return subprocess.CompletedProcess(args, 0, "", "")
 
         assert cor.main(["--base", "a", "--head", "b"], runner=futtat) == 0
+
+
+class TestBokezuKontextus2749:
+    """A fájlonkénti mérés BŐKEZŰ diff-kontextust kér (#2749).
+
+    A #2708 docstring-felismerése csak akkor tud dönteni, ha a hunk LÁTJA a
+    hármas-idézőjelet. A `git diff` alapértelmezett három sora egy hosszú
+    docstring KÖZEPÉN történt változásnál egyet sem mutat — az őr ilyenkor
+    (helyesen, szigorúan) kódnak veszi, és CHANGELOG-bejegyzést követel.
+    Élesben megtörtént: a #2744 (tisztán docstring-átírás két `render/`
+    modulban) ubuntu-lába emiatt lett piros.
+
+    A próba a KÉT kontextust adja vissza aszerint, hogy az őr kérte-e a
+    bőkezű alakot — így a fix nélküli kód is mérhető: az szűk diffet kap,
+    és elbukik.
+    """
+
+    #: szűk (3 soros) kontextus: egyetlen `"""` sem látszik
+    SZUK_DIFF = (
+        "--- a/src/picasapy/render/vivid.py\n"
+        "+++ b/src/picasapy/render/vivid.py\n"
+        "@@ -40,7 +40,7 @@\n"
+        "     A mért levezetés a spec 5.7-ben áll.\n"
+        "     \n"
+        "-    A pontos algoritmus NEM ismert.\n"
+        "+    A pontos algoritmus MÉRVE (#2231): rácsos.\n"
+        "     \n"
+        "     Ld. a testvérfüggvényt.\n"
+    )
+
+    #: bőkezű kontextus: a modul-docstring nyitása és zárása is látszik
+    BO_DIFF = (
+        "--- a/src/picasapy/render/vivid.py\n"
+        "+++ b/src/picasapy/render/vivid.py\n"
+        "@@ -1,10 +1,10 @@\n"
+        " def kvantal(kep):\n"
+        '     """Kvantálás.\n'
+        " \n"
+        "     A mért levezetés a spec 5.7-ben áll.\n"
+        " \n"
+        "-    A pontos algoritmus NEM ismert.\n"
+        "+    A pontos algoritmus MÉRVE (#2231): rácsos.\n"
+        " \n"
+        "     Ld. a testvérfüggvényt.\n"
+        '     """\n'
+        "     return kep\n"
+    )
+
+    def _futtato(self):
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egyben = " ".join(args)
+            if "--name-only" in egyben:
+                return subprocess.CompletedProcess(
+                    args, 0, "src/picasapy/render/vivid.py\n", ""
+                )
+            if "-- src/picasapy/render/vivid.py" in egyben:
+                # EZ a próba lényege: a bőkezű kontextust kérő őr látja a
+                # docstring határait, a mai (szűk) alak nem
+                # `getattr`, hogy a próba a JAVÍTÁS NÉLKÜLI kódon is
+                # lefusson: ott a szűk diffet kapja, és az őr elbukik —
+                # így a RED-ág a VISELKEDÉST méri, nem egy hiányzó nevet
+                zaszlo = getattr(cor, "DIFF_KONTEXTUS", "-U100000")
+                kimenet = self.BO_DIFF if zaszlo in args else self.SZUK_DIFF
+                return subprocess.CompletedProcess(args, 0, kimenet, "")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        return futtat
+
+    def test_a_hosszu_docstring_KOZEPEN_torteno_valtozas_atmegy(self, tmp_path: Path):
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato(),
+        )
+
+        assert kod == 0, (
+            "az őr CHANGELOG-bejegyzést követelt egy tisztán docstring-"
+            "változásra — a fájlonkénti diffet szűk kontextussal kérte, így a "
+            "docstring határai nem látszottak (#2749)"
+        )
+
+    def test_a_docstring_MELLETT_torteno_kodsor_tovabbra_is_BUKIK(self, tmp_path: Path):
+        """A bőkezű kontextus nem enged fel semmit."""
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+        kodsoros = self.BO_DIFF.replace(
+            "     return kep\n", "-    return kep\n+    return kep * 2\n"
+        )
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egyben = " ".join(args)
+            if "--name-only" in egyben:
+                return subprocess.CompletedProcess(
+                    args, 0, "src/picasapy/render/vivid.py\n", ""
+                )
+            if "-- src/picasapy/render/vivid.py" in egyben:
+                return subprocess.CompletedProcess(args, 0, kodsoros, "")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        assert cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)], runner=futtat
+        ) == 1

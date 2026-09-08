@@ -97,6 +97,20 @@ _KOMMENT_JEL: dict[str, str] = {".qml": "//", ".js": "//", ".mjs": "//"}
 #: nem-komment sor már a `startswith` próbán elbukik.
 _BIZONYTALAN = ("/*", "*/")
 
+#: #2749: BŐKEZŰ diff-kontextus a fájlonkénti méréshez. A `git diff`
+#: alapértelmezett három sora egy HOSSZÚ docstring közepén történt
+#: változásnál egyetlen `"""`-t sem mutat — a docstring-felismerés
+#: (#2708) ilyenkor (helyesen, szigorúan) nem tud dönteni, és az őr
+#: CHANGELOG-bejegyzést követel egy tisztán dokumentációs változásra is.
+#: Élesben megtörtént: a #2744 ubuntu-lába emiatt lett piros.
+#:
+#: A nagy szám gyakorlatilag a TELJES fájlt kontextusba teszi, tehát a
+#: felismerő a modul elejétől látja a hármas-idézőjeleket. Ez nem enged
+#: fel semmit: a bizonytalan eset ugyanúgy szigorú marad, csak KEVESEBB
+#: eset lesz bizonytalan.
+DIFF_KONTEXTUS = "-U100000"
+
+
 #: A Python hármas-idézőjelek — a docstring-felismerés (#2708) csak ezt a
 #: két alakot ismeri. A projekt magyar docstringjei szinte kizárólag
 #: `"""`-t használnak, de a `'''` is érvényes Python, tehát mindkettőt
@@ -410,7 +424,13 @@ def main(
         f
         for f in erdemi
         if csak_komment_valtozas(
-            (runner(["git", "diff", f"{beallitas.base}...{beallitas.head}", "--", f]).stdout or ""),
+            (
+                runner([
+                    "git", "diff", DIFF_KONTEXTUS,
+                    f"{beallitas.base}...{beallitas.head}", "--", f,
+                ]).stdout
+                or ""
+            ),
             f,
         )
     ]
