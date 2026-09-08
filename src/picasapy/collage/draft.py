@@ -56,10 +56,11 @@ from collections.abc import Mapping, Sequence
 
 from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
-from .picasa_render import PicasaCollageSettings
+from .picasa_render import PicasaCollageSettings, contact_sheet_cell_scale
 from .page_formats import format_text, is_known_format
 from .themes import (
     BORDER_THEMES,
+    CONTACTSHEET,
     FRAMEGRID,
     MULTIEXP,
     NOBORDER,
@@ -212,7 +213,17 @@ def scale_for_theme(width: float, height: float, theme: str) -> float:
     | `picturepile` | a doboz **befoglaló négyzetének** oldala | AI, AI1, AI2, AI8, AI9, AI10 — 49/49 csomópont, `|Δ| ≤ 0,09` |
     | `picturegrid`, `framegrid`, `regulargrid` | a cella **szélessége** | AI3, AI4, AI5 — 27/27 |
     | `multiexp` | **1,0** | AI7 (#1248) |
-    | `contactsheet` | *nincs levezetve* — marad a négyzetoldal | AI6: mind a 9 csomóponton 313, a doboztól függetlenül |
+    | `contactsheet` | a lap-szintű **cellamagasság** (18.5, #2583) | AI6/AI27/AI28/AI29: 0–2 egység a mérttől |
+
+    ⚠️ **A `contactsheet` sora itt csak TARTALÉK.** A `scale` SZEREPE
+    (a cellamagasság, amellyel a rajzoló FÜGGŐLEGESEN igazít) igazolt
+    (kollazs-eletciklus.md 18.5, #2583) — ez a függvény azonban a
+    csomópont SAJÁT dobozából (`width`/`height`) számol, ami az Indexkép
+    KIRAJZOLT KÉPÉNEK mérete, nem a cella. A helyes lap-szintű értéket
+    `project_from_nodes` a `contact_sheet_cell_scale`-ből veszi, MIELŐTT
+    idejutna — ez a függvény a `contactsheet` ágon csak akkor fut le, ha
+    valaki közvetlenül hívja (pl. teszt), és ilyenkor a régi
+    „négyzetoldal" heurisztikát adja vissza, tudva, hogy pontatlan.
 
     ## Miért nem lehet egyetlen közös szabály
 
@@ -244,13 +255,37 @@ def scale_for_theme(width: float, height: float, theme: str) -> float:
     return max(width, height)
 
 
-def _tema_scale(node: CxfNode, theme: str, *, page_ratio: float) -> CxfNode:
+def _tema_scale(
+    node: CxfNode,
+    theme: str,
+    *,
+    page_ratio: float,
+    contact_scale: float | None = None,
+) -> CxfNode:
     """A már normalizált csomópont `scale`-jének témánkénti helyesbítése.
 
     A `cxf_node_of` a Képkupac szabályát (befoglaló négyzet) írja be
     alapértelmezésnek, mert a leképezés maga nem ismeri a témát. A doboz
     lapegységben visszaszámolható a normalizált mezőkből, tehát ez a lépés
-    nem veszít pontosságot — és egy helyen tartja a témafüggést."""
+    nem veszít pontosságot — és egy helyen tartja a témafüggést.
+
+    A `contactsheet` KÜLÖN utat kap (#2583): a `scale` itt NEM a csomópont
+    saját doboza (18.5), hanem egy LAP-SZINTŰ állandó — ezt `project_from_nodes`
+    számolja ki egyszer, `contact_sheet_cell_scale`-lel, és ide adja be
+    `contact_scale`-ként."""
+    if theme == CONTACTSHEET and contact_scale is not None:
+        # #2583: a `scale` LAP-SZINTŰ — és az `y` is ebből jön, nem a
+        # csomópont saját magasságából. A csomópont KÖZEPE a cella közepe
+        # (`picasa_render._contact_sheet_nodes`), a `.cxf` viszont a
+        # `scale`-lel igazított doboz TETEJÉT írja: ezért az eltérés
+        # feleannyi, amennyivel a rajzolt kép a `scale`-nél alacsonyabb.
+        # Mérve az AI27-en: 502,5 − 250 = 252 (a fájlban 252), miközben a
+        # rajzolt 446 magas kép teteje 279,5.
+        lap_magassag = SHEET_UNITS * page_ratio
+        eltolas = (node.h * lap_magassag - contact_scale) / 2.0
+        return replace(
+            node, scale=contact_scale, y=node.y + eltolas / lap_magassag
+        )
     szelesseg = node.w * SHEET_UNITS
     magassag = node.h * SHEET_UNITS * page_ratio
     return replace(node, scale=scale_for_theme(szelesseg, magassag, theme))
@@ -311,9 +346,18 @@ def project_from_nodes(
 
     ⚠️ A `node_uids` a MEGNYITOTT projekt `src → uid` párjai (#1092). Ami
     benne van, az változatlanul megy vissza; a többi csomópont a `src`-ből
-    származtatott azonosítót kapja (`uids.node_uid_for`)."""
+    származtatott azonosítót kapja (`uids.node_uid_for`).
+
+    ⚠️ Az Indexkép (`contactsheet`) `scale`-je LAP-SZINTŰ állandó, nem
+    csomópontonkénti (18.5, #2583) — ezért itt, EGYSZER számoljuk ki
+    (`contact_sheet_cell_scale`), és minden csomópontnak ugyanazt adjuk."""
     uids = dict(node_uids or {})
     page_ratio = settings.height / settings.width
+    contact_scale = (
+        contact_sheet_cell_scale(settings.width, settings.height, len(nodes))
+        if settings.theme == CONTACTSHEET and nodes
+        else None
+    )
     return CxfProject(
         aspect_ratio=_format_szoveg(format_key, settings.width, settings.height),
         orientation=orientation_of(settings.width, settings.height),
@@ -344,6 +388,7 @@ def project_from_nodes(
                     ),
                     settings.theme,
                     page_ratio=page_ratio,
+                    contact_scale=contact_scale,
                 ),
                 uids,
             )

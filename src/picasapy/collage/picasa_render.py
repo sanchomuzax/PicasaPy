@@ -50,6 +50,7 @@ Bemenet/kimenet: OpenCV **BGR** `uint8` képek (a `render.py` konvenciója).
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -611,6 +612,85 @@ def _unicode_font(size: int):
     return ImageFont.load_default(size=max(1, size))
 
 
+@dataclass(frozen=True)
+class _ContactSheetGeometry:
+    """Az Indexkép rácsa: margók, cellaméret, oszlop-/sorszám (18.2/18.4).
+
+    Minden mező a lap ``1024 × P`` egységrendszerében (P = ``settings``
+    magassága ugyanabban a léptékben, `_contact_sheet_band`-tól függetlenül).
+    """
+
+    bal: int
+    fent: int
+    cella_w: int
+    cella_h: int
+    belso: int
+    oszlopok: int
+    sorok: int
+
+
+def _contact_sheet_geometry(
+    width: int, height: int, count: int
+) -> _ContactSheetGeometry:
+    """Az Indexkép öt konstansa a binárisból, CSONKOLVA (kollazs-eletciklus.md 18.2).
+
+    ⚠️ **CSONK, nem kerekítés.** A dekompilátum ``ROUND(...)``-ot mutat, de a
+    bináris minden ``fistp`` elé beállítja az FPU vezérlőszavát
+    (``or eax, 0xc00`` — ``0x00888258``, ``0x008882a7``, ``0x008882e6``,
+    ``0x00888323``), ami a kerekítési mezőben **nulla felé csonkolást**
+    jelent. A `picasa_round` (= ``floor(x+0,5)``) itt **rossz**: két
+    oszlopnál a cellaszélesség kerekítéssel 451, csonkolással 450 — és a
+    mért minták 450-et adnak (#2583)."""
+    k = cell_edge(width, height, count)
+    hasznos_w = int(width * CONTACT_USABLE_WIDTH)
+    hasznos_h = int(height * CONTACT_USABLE_HEIGHT)
+    oszlopok = max(1, hasznos_w // k)
+    sorok = max(1, hasznos_h // k)
+    return _ContactSheetGeometry(
+        bal=math.trunc(width * 0.06),
+        fent=math.trunc(height * 0.15),
+        cella_w=math.trunc(width * CONTACT_USABLE_WIDTH / oszlopok),
+        cella_h=math.trunc(height * CONTACT_USABLE_HEIGHT / sorok),
+        belso=math.trunc(k * 0.08),
+        oszlopok=oszlopok,
+        sorok=sorok,
+    )
+
+
+def contact_sheet_cell_scale(width: int, height: int, count: int) -> float:
+    """Az Indexkép LAP-SZINTŰ csomópontmagassága, LAPEGYSÉGBEN (18.5/18.6, #2583).
+
+    Ez kerül a `.cxf` `scale` mezőjébe (`draft._tema_scale`) — NEM a
+    csomópont saját (kirajzolt kép) doboza, mert az Indexképnél a `scale`
+    a cellamagasság, amellyel a rajzoló FÜGGŐLEGESEN igazít (18.5: az
+    `AI27` első sorában két, eltérő magasságú kép `y`-ja azonos).
+
+    A `width`/`height` a lap TELJES képpontmérete (ugyanaz, amit
+    `layout_nodes_for_aspects` kap `PicasaCollageSettings`-ben), a `count`
+    a csomópontok száma.
+
+    ⚠️ A PONTOS képlet nyitott (18.6, #1412) — ez a legjobb ismert
+    közelítés (`cella_h − 2·belső ráhagyás`), a négy mért mintán
+    legfeljebb 2 lapegység eltéréssel (18.8; a 183. kutatói kör
+    megerősítette, hogy ez a maradék a bináris SAJÁT aritmetikájával is
+    megvan — nem a mi hibánk)."""
+    if count < 1:
+        raise ValueError(f"Érvénytelen csomópontszám: {count}")
+    geometria = _contact_sheet_geometry(width, height, count)
+    cella_scale_px = max(1, geometria.cella_h - 2 * geometria.belso)
+    return pixels_to_sheet(cella_scale_px, width)
+
+
+def _contact_sheet_position(margo: int, cella: int, index: int, kulso: float) -> int:
+    """Egy csomópont `x`-e vagy `y`-ja a sorában/oszlopában (18.4).
+
+    ``margo + index·cella + CSONK((cella − kulso) / 2)`` — a fél-cellás
+    középre igazítás OSZTÁSA is csonkol, nem csak a `cella` maga: az
+    ``AI28`` második csempéjén ``(300−127)/2 = 86,5`` kerekítve 87, de a
+    mért `x` csak 86-tal egyezik (#2583)."""
+    return margo + index * cella + math.trunc((cella - kulso) / 2.0)
+
+
 def _contact_sheet_nodes(
     aspects: Sequence[float],
     paths: Sequence[Path],
@@ -622,20 +702,36 @@ def _contact_sheet_nodes(
     15% felső margó, 88% × 79% hasznos terület és a ``k`` cellaél 8%-os
     belső ráhagyása. A régi megoldás ehelyett egy 8%-os fejléc alatt a teljes
     maradék lapot hézagmentes ``regular_grid``-del töltötte ki.
+
+    **A csomópont `h`-ja a KIRAJZOLT KÉP magassága, nem a cellamagasság**
+    (18.5/18.8, #2583): az eredeti a `.cxf`-be a ``w / képarány`` dobozt
+    írja, a `scale` mezőbe pedig egy LAP-SZINTŰ, minden csomópontra közös
+    értéket. A régi kódunk a kettőt összemosta, ezért egy sorban a
+    különböző arányú képek `h`-ja (helytelenül) mind a cellamagasságra
+    ugrott.
+
+    ⚠️ **A RAJZ ettől függetlenül a cella KÖZEPÉRE kerül** — ezt a
+    tulajdonos `AI27.jpg` exportján mértük ki: a `.cxf` `y`-ra rajzolt
+    változat 26…35 lapegységgel feljebb tette a képeket az eredetinél,
+    a cella-közepes 1 lapegységen belül egyezik. A kettő ugyanannak a
+    KÖZÉPNEK a két leolvasása: a `.cxf` `y` = közép − `scale`/2 (ezt a
+    `draft._tema_scale` számolja), a rajzolt tető = közép − `h`/2.
+
+    ⚠️ A `scale` PONTOS képlete nyitott (18.6, #1412 kutatói jegy) — a lenti
+    ``cella_scale`` a legjobb ismert közelítés (``cella_h − 2·belső
+    ráhagyás``), a négy mért mintán legfeljebb 2 lapegység eltéréssel. A
+    183. kutatói kör megerősítette, hogy ez a maradék a bináris SAJÁT
+    aritmetikájával is megvan — nem a mi hibánk, csak nem tudjuk pontosan
+    reprodukálni a `scale` levezetését.
     """
     if not aspects:
         return [], _contact_sheet_band(settings), settings
     sav = _contact_sheet_band(settings)
-    k = cell_edge(settings.width, settings.height, len(aspects))
-    hasznos_w = int(settings.width * CONTACT_USABLE_WIDTH)
-    hasznos_h = int(settings.height * CONTACT_USABLE_HEIGHT)
-    oszlopok = max(1, hasznos_w // k)
-    sorok = max(1, hasznos_h // k)
-    cella_w = picasa_round(settings.width * CONTACT_USABLE_WIDTH / oszlopok)
-    cella_h = picasa_round(settings.height * CONTACT_USABLE_HEIGHT / sorok)
-    belso = picasa_round(k * 0.08)
-    bal = picasa_round(settings.width * 0.06)
-    fent = picasa_round(settings.height * 0.15)
+    geometria = _contact_sheet_geometry(settings.width, settings.height, len(aspects))
+    bal, fent = geometria.bal, geometria.fent
+    cella_w, cella_h = geometria.cella_w, geometria.cella_h
+    belso, oszlopok = geometria.belso, geometria.oszlopok
+    cella_scale = max(1, cella_h - 2 * belso)
     keret = settings.effective_border
     nodes: list[CollageNode] = []
     for index, (aspect, path) in enumerate(zip(aspects, paths, strict=False)):
@@ -644,18 +740,31 @@ def _contact_sheet_nodes(
         # a TELJES cellába (`FUN_009b4aa0`), aztán mind a négy él beljebb
         # lép `0,08·k`-val (`0x008884b4`–`0x008884da`). Ha előbb a cellát
         # szűkítjük, az AI6 csempéi körülbelül 4%-kal túl szélesek lesznek.
-        kulso_w, kulso_h = _framed_size_inside(
-            aspect, cella_w, cella_h, keret
-        )
+        kulso_w, _ = _framed_size_inside(aspect, cella_w, cella_h, keret)
         kulso_w = max(1, kulso_w - 2 * belso)
-        kulso_h = max(1, kulso_h - 2 * belso)
-        x = bal + oszlop * cella_w + (cella_w - kulso_w) / 2.0
-        y = fent + sor * cella_h + (cella_h - kulso_h) / 2.0
+        # A kirajzolt kép magassága a SAJÁT szélességéből és arányából jön —
+        # nem a cellából (18.8: a régi kód itt tévedésből a cellamagasságot
+        # adta vissza minden csomópontra).
+        kulso_h = max(1, picasa_round(kulso_w / aspect))
+        x = _contact_sheet_position(bal, cella_w, oszlop, kulso_w)
+        y = _contact_sheet_position(fent, cella_h, sor, cella_scale)
+        # ⚠️ #2583 (a szem-teszt lelete): a csomópont KÖZEPE a cella közepe,
+        # tehát a RAJZ a saját magasságával középre kerül — a `.cxf`-be írt
+        # `y` viszont a LAP-SZINTŰ `scale`-lel középre igazított doboz teteje
+        # (`draft._tema_scale`). A kettő ugyanannak a KÖZÉPNEK a két
+        # leolvasása, és az eredeti mindkettőt így adja:
+        #
+        #   AI27, 1. sor: cella 217…788, scale 500 ⇒ `.cxf` y = 502,5 − 250 = 252 ✓
+        #                 a rajzolt 459 magas kép teteje = 502,5 − 229,5 = 273 ✓
+        #
+        # MÉRVE a tulajdonos `AI27.jpg` exportján: a mi kimenetünk a
+        # javítás előtt 26…35 lapegységgel FELJEBB rajzolt (a `scale`-lel
+        # igazított tetőre), utána a négy kép eltérése dx ≤ 1, dy ≤ 1.
         nodes.append(
             CollageNode(
                 path=path,
                 center_x=pixels_to_sheet(x + kulso_w / 2.0, settings.width),
-                center_y=pixels_to_sheet(y + kulso_h / 2.0, settings.width),
+                center_y=pixels_to_sheet(y + cella_scale / 2.0, settings.width),
                 width=pixels_to_sheet(kulso_w, settings.width),
                 height=pixels_to_sheet(kulso_h, settings.width),
                 border=keret,
@@ -942,6 +1051,7 @@ __all__ = [
     "CollageNode",
     "PicasaCollageSettings",
     "border_growth",
+    "contact_sheet_cell_scale",
     "layout_nodes",
     "layout_nodes_for_aspects",
     "make_picasa_collage",

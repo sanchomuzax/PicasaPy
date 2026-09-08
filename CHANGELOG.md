@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.344] – 2026-09-08
+
+### Javítva
+
+- **Az Indexkép elrendezése képpontra követi az eredeti Picasáét** (#2583).
+  A képek helye eddig 1–3 képponttal elcsúszott (a program kerekített ott,
+  ahol a Picasa lefelé csonkol), és a mentett kollázsfájlba minden képhez a
+  cella magassága került a kép SAJÁT magassága helyett. Mindkettő javítva.
+  Az összevetés a te kollázsodról készült eredeti Picasa-kimenettel: a négy
+  fénykép helye és mérete **legfeljebb 1–2 képponttal** tér el, korábban a
+  függőleges eltérés 26–35 képpont lett volna.
+
 ## [0.8.343] – 2026-09-08
 
 ### Javítva

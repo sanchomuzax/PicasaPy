@@ -42,10 +42,16 @@ ASPEKTUSOK = (0.8,) * 6
 UTAK = tuple(Path(f"{i}.png") for i in range(6))
 
 #: keret -> az ELSŐ csomópont mért szélessége/magassága lapegységben.
+#:
+#: #2583 óta a magasság `w / képarány` (a KIRAJZOLT kép doboza), nem a
+#: cellamagasság — ezért a három keret-állás magassága is SZÉTVÁLIK (a
+#: szélességgel arányosan), nem csak a szélessége. A számok újramérve a
+#: javítás UTÁN; a docstring alján lévő 90. sor körüli megjegyzés a
+#: RÉGI (hibás) viselkedést írta le.
 MERT = {
-    NOBORDER: (194.56, 254.72),
-    WHITEBORDER: (198.40, 254.72),
-    POLAROID: (153.60, 253.44),
+    NOBORDER: (197.12, 247.04),
+    WHITEBORDER: (200.96, 250.88),
+    POLAROID: (156.16, 195.84),
 }
 
 
@@ -71,9 +77,11 @@ def test_a_keret_merheto_geometriat_ad(border, vart) -> None:
 def test_a_harom_keret_SZELESSEGE_kulonbozik() -> None:
     """A foga: EZ bukik el, ha a keretrajz visszaáll keret nélkülire.
 
-    A magasság önmagában nem elég — a `noborder` és a `whiteborder`
-    magassága AZONOS ebben a lapméretben (a cella magassága a korlát),
-    tehát a különbség csak a szélességen látszik.
+    #2583 előtt a magasság önmagában nem lett volna elég — a `noborder`
+    és a `whiteborder` magassága AZONOS volt (a cella magassága volt a
+    korlát), tehát a különbség csak a szélességen látszott. A #2583 óta a
+    magasság is szétválik (`h = w / képarány`, ld. lent), de a szélesség
+    marad a legegyszerűbb, közvetlen mérték a keret hatására.
     """
     szelessegek = {b: _elso_csomopont(b).width for b in MERT}
     assert len({round(v, 2) for v in szelessegek.values()}) == 3, (
@@ -87,10 +95,19 @@ def test_a_harom_keret_SZELESSEGE_kulonbozik() -> None:
     )
 
 
-def test_a_magassag_a_noborder_es_whiteborder_kozt_AZONOS() -> None:
-    """Kimondva, hogy ne tűnjön hiánynak: ebben a lapméretben a cella
-    magassága a korlát, ezért a magasságból nem derül ki a keret. Ha ez
-    egyszer megváltozna, ez a próba szól — és akkor a fenti őr bővíthető."""
-    a = _elso_csomopont(NOBORDER).height
-    b = _elso_csomopont(WHITEBORDER).height
-    assert a == pytest.approx(b, abs=0.01)
+def test_a_magassag_a_szelesseggel_aranyosan_ter_el_kerettol_fuggoen() -> None:
+    """#2583 óta a `h` a `w / képarány` — NEM a cellamagasság korlátozza.
+
+    Régebben (a jegy előtt) ez a próba az ELLENKEZŐJÉT állította: a
+    `noborder` és a `whiteborder` magassága AZONOS volt, mert mindkettő a
+    cella magasságára volt levágva, és a kép saját aránya nem jutott
+    érvényre a `h` mezőben. A #2583 pontosan ezt a hibát javítja
+    (kollazs-eletciklus.md 18.5/18.8): a keret a SZÉLESSÉGET módosítja, a
+    magasságnak ennek megfelelően, a KÉP ARÁNYÁVAL kell követnie — tehát a
+    magasságnak is szét kell válnia a keret-állások közt."""
+    a = _elso_csomopont(NOBORDER)
+    b = _elso_csomopont(WHITEBORDER)
+    assert a.height != pytest.approx(b.height, abs=0.01)
+    # mindkettő ugyanazt az oldalarányt (0,8) követi a saját szélességéből
+    assert a.height / a.width == pytest.approx(1.0 / 0.8, abs=0.01)
+    assert b.height / b.width == pytest.approx(1.0 / 0.8, abs=0.01)
