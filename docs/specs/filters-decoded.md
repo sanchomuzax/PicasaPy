@@ -1468,7 +1468,7 @@ mag, `0x009dd0d0`). Mind a négy elérhető a `filters=` láncból, és a
 | `dir_sat` | `dir_sat=1,balról-jobbra,felülről-lefelé` | a burkolók (`0x008f8fb0`, `0x008f9050`, `0x008f9090`) a két csúszkát KÖZVETLENÜL adják tovább; a korong csak beállítja őket (közös `0x008f9bc0` visszahívás) |
 | `dir_brite` | `dir_brite=1,balról-jobbra,felülről-lefelé` | ” |
 | `dir_sharp` | `dir_sharp=1,balról-jobbra,felülről-lefelé` | ” |
-| `linblur` | `linblur=1,korong-x,korong-y,Mennyiség` | itt a korong VALÓDI pozíció (`0x008f9bf0`), ezért a puck-os szűrők általános sorrendje érvényes (`filterdesc-registry.md` 3. pont) — valódi ini-mintánk nincs rá |
+| `linblur` | `linblur=1,korong-x,korong-y,Mennyiség` | ⚠️ **2026-09-08 (#2702) HELYESBÍTÉS:** a korong a `filters=`-ben **normált**, de a `linblur` FELDOLGOZÓ visszahívása (`0x008f99c0`) `[-1, +1]`-ként olvassa (`0,5·W·(1+p)`) — a `0x008f9bf0` a HÚZÁS-ág, az `[0, 1]`-be ír. Ld. „A korong-koordináta ÁTVÁLTÁSA” szakaszt. Valódi ini-mintánk továbbra sincs rá |
 
 **A közös elmosó mag (`0x009dd0d0`)** most kapott először megvalósítást:
 kétmenetes, elsőrendű IIR, 9.7 fixpontos állapottal, a 4.2.5-ben MÉRT
@@ -1579,15 +1579,23 @@ lánc korongja viszont `[0, 1]`-ben áll (valódi minta:
 közép), a húzás-visszahívás (`0x008f9bf0`, `0x008f9c21`–`0x008f9c3a`) pedig
 `pont/méret`-tel normál, majd a `0x008f6da0` átváltás nélkül írja a
 `+0x34`/`+0x38` mezőbe. A két alak csak a `p = 2x − 1` átváltással esik
-egybe (`0,5·W·(1+2x−1) = W·x`) — magát az átváltást nem olvastuk vissza.
-Amíg ez nyitott, a #880 mérése (az eredeti a `linblur=1,0.5,0.5,2.0` láncra
-ΔE 5,42-t változtatott, tehát NEM adott azonosságot) sem magyarázható meg.
+egybe (`0,5·W·(1+2x−1) = W·x`).
+
+⛳ **2026-09-08 (#2702) — LEZÁRVA: ilyen átváltás NINCS.** A `filters=`
+beolvasó `atof`-ja közvetlenül a mezőbe ír (`0x008fb6bf`, `0x008fb6ea`), a
+sorosító változatlanul írja vissza (`0x008fae2b`), a mező mind az öt
+sávbeli írója átalakítás-mentes, és az objektum két affin mátrixa
+(`+0x6c`, `+0x94`) a konstruktorból **identitás**. A `linblur` feldolgozó
+visszahívása egyszerűen MÁS konvenciót használ, mint a hozzá regisztrált
+húzás — ez a Picasán belüli aszimmetria. Ezzel a #880 mérése (ΔE 5,42)
+**összefér**: a `0.5,0.5` a `linblur`-nél nem a középpont. Részletek és
+címek: „A korong-koordináta ÁTVÁLTÁSA — a keretrendszerben NINCS ilyen”.
 A paritás-kérdés ettől függetlenül eldőlt: **mindkét olvasat középpontja
 `csonk(méret/2) == méret>>1`.**
 
 *Bizonyítottsági fok: **megerősített** a rövidzár létére, a helyére és a
-csonkolásra (szó szerinti diszasszemblátum, címekkel). **Nyitott** a
-`[0,1]` ↔ `[-1,+1]` átváltás helye.*
+csonkolásra (szó szerinti diszasszemblátum, címekkel); az átváltás
+HIÁNYA 2026-09-08-án szintén **megerősített** (#2702).*
 
 ## A `glow`/`glow2` és a `radblur` a natív magon — VÉGIGMÉRVE (#668)
 
@@ -5195,3 +5203,209 @@ mechanizmus önmagában nem diagnózis.)
 
 ⚠️ **A mérés korlátja:** a mérőkép lapos csempéi csak a **64–159** közti
 forrás-tónust fedik le; világos és sötét végen nincs adat.
+
+## A korong-koordináta ÁTVÁLTÁSA — a keretrendszerben NINCS ilyen (2026-09-08, #2702)
+
+*204. kutatói kör.* A #2702 azt kérdezte, **hol** váltódik át a korong
+`[0, 1]`-es ini-értéke a `linblur` burkolójának `[-1, +1]`-es alakjára. A
+válasz: **sehol.** Az átváltás nem a keretrendszerben van, hanem — ahol
+egyáltalán van — az **effekt saját visszahívásában**, és a `linblur`-é
+másképp értelmezi a mezőt, mint a testvérei.
+
+### A korong a `CGenericFilter` `+0x34`/`+0x38` mezőjében áll
+
+Az objektum osztálya az RTTI szerint **`CGenericFilter`**
+(`vftable = 0x00cd184c`), a konstruktora `FUN_008f6ad0` (235 b,
+`0x008f6af1`-en írja a vtábla-mutatót).
+
+### 1. Az ini-érték útja a mezőig — `atof`, átalakítás NÉLKÜL
+
+A `filters=` lánc értelmezője a `CGenericFilter` vtábla **42.** rekesze
+(`0x00cd18f4` → `FUN_008fb120`, 3257 b):
+
+```
+0x008fb697  cmp byte ptr [edx + 0xa0], 0   ; „van korongja?" a LEÍRÓBAN
+0x008fb69e  je  0x008fb6f0                 ; ha nincs, a korong-ág kimarad
+0x008fb6b3  call 0x00c080d7                ; atof  (a 2. token)
+0x008fb6bf  fstp dword ptr [esi + 0x34]    ; ← KÖZVETLENÜL a mezőbe
+0x008fb6c2  cmp dword ptr [esp + 0x14], 2  ; van-e 3. token?
+0x008fb6e5  call 0x00c080d7                ; atof
+0x008fb6ea  fstp dword ptr [esi + 0x38]    ; ← KÖZVETLENÜL
+```
+
+⇒ **az `atof` eredménye és a mező között nincs egyetlen utasítás sem.**
+
+### 2. A visszaút (sorosítás) — ugyanaz, `,%f`-fel
+
+A vtábla **14.** rekesze (`0x00cd1884` → `FUN_008fac40`):
+
+```
+0x008fae22  cmp byte ptr [edx + 0xa0], 0   ; ugyanaz a jelző
+0x008fae2b  fld  dword ptr [edi + 0x34]
+0x008fae31  fstp qword ptr [esp]
+0x008fae34  push 0x00cd0970                ; a formátum: ",%f"
+0x008fae3b  call 0x0040ea90
+0x008fae40  fld  dword ptr [edi + 0x38]    ; ua. a második koordinátára
+```
+
+A `.rdata`-ból kiolvasva: `0x00cd096c` = `,%d`, `0x00cd0970` = `,%f`.
+
+⇒ **a körbejárás átalakítás-mentes**: ami az ini-ben áll, az áll a mezőben,
+és az megy vissza az ini-be.
+
+### 3. A `+0x34`/`+0x38` TELJES írólistája
+
+Pásztázás: `fst`/`fstp` **és** a „float egész regiszteren át" idióma
+(`fstp [esp+N]` → `mov r,[esp+N]` → `mov [obj+0x34], r`), `esp`/`ebp`
+bázis kizárva, függvényenként diszasszemblálva, **a teljes `.text`-en**.
+**Pozitív kontroll:** a jegyben megnevezett `FUN_008f6da0` — **MEGVAN**.
+
+Eredmény: **28 függvény** írja a párt az egész programban, ebből **öt** a
+szűrő-sávban (`0x008e0000`–`0x00915000`); mind az öt elolvasva:
+
+| cím | szerep | mit tesz a koronggal |
+|---|---|---|
+| `FUN_008f6bf0` (vtábla[10]) | alapértékek a LEÍRÓBÓL | `[leíró+0xb0]`/`[+0xb4]` → `+0x34`/`+0x38`, **változatlanul** |
+| `FUN_008f6da0` | affin beállító | a `+0x6c`-es mátrixot alkalmazza (ld. 4.) |
+| `FUN_008fa8d0` (vtábla[3]) | másoló értékadás | mezőnként másol, **változatlanul** |
+| `FUN_008fb120` (vtábla[42]) | `filters=` **beolvasó** | `atof` → mező, **változatlanul** (1.) |
+| `FUN_008fc120` (vtábla[8]) | alaphelyzet | `(0,5; 0,5)` a `FUN_008f6da0`-n át |
+
+A maradék 23 a sávon kívül van, más osztályokon.
+
+⇒ **Számoló, tartományt váltó író egyik sincs.**
+
+### 4. KÉT affin mátrix az objektumban — és mindkettő IDENTITÁS
+
+A `CGenericFilter` két 3×3 mátrixot hordoz:
+
+| mátrix | mikor hat | ki alkalmazza |
+|---|---|---|
+| `+0x6c`…`+0x8c` | a korong **beírásakor** | `FUN_008f6da0` (`0x008f6df3`–`0x008f6e1e`) |
+| `+0x94`…`+0xb4` | a korong **kiolvasásakor** | `FUN_00750e20` (`0x00750e7f`–`0x00750eba`) |
+
+Mindkét alkalmazó előbb a `FUN_0049fbe0`-nal **identitásra hasonlít**
+(±8 ULP tűrés), és **egyezés esetén kihagyja** az átalakítást
+(`0x008f6df1`, `0x00750e7d`).
+
+A konstruktor mindkettőt **identitásra** állítja:
+`0x008f6ad3 fld1` → `0x008f6b19 fst [esi+0x6c]`, `+0x70`/`+0x74`/`+0x78` = 0,
+`0x008f6b45 fst [esi+0x7c]` = 1, `+0x80`…`+0x88` = 0, `+0x8c` = 1; és
+ugyanígy `0x008f6b4e fst [esi+0x94]` = 1, `+0x98`…`+0xa0` = 0,
+`0x008f6b5a fst [esi+0xa4]` = 1, `+0xa8`…`+0xb0` = 0,
+`0x008f6b62 fstp [esi+0xb4]` = 1.
+
+**A szűrő-sávban rajta kívül senki nem írja őket.** A pásztázás
+(`+0x6c`, ill. `+0x94`/`+0x98`/`+0x9c`) négy másik függvényt hozott
+(`FUN_008f6910`, `FUN_00902650`, `FUN_00913890`, `FUN_00914460`) — mind a
+négy **más osztály konstruktora**, saját vtábla-mutatóval
+(`FilterDesc::vftable` = `0x00cd18fc`, `0x00cd1944`, `0x00c9b0b0`,
+`0x00c9b0e0`).
+
+⇒ **a mátrix-út létezik, de a gyakorlatban identitás** — nem ez az
+átváltás helye.
+
+### 5. ⭐ Az átváltás a HÍVÁS oldalán van, és effektenként MÁS
+
+A `.rdata`-ban egy **név → visszahívás** regiszter áll
+(`0x00cd08c8`-tól, rekordonként 4 dword: név, 1. visszahívás, húzás,
+3. visszahívás). A nevek a `.rdata`-ból kiolvasva:
+
+| rekord | név | 1. visszahívás (feldolgozás) | húzás |
+|---|---|---|---|
+| `0x00cd08c8` | `autocontrast` | `0x008f89d0` | — |
+| `0x00cd08d8` | `radblur` | `0x008f8520` | `0x008f9bf0` |
+| `0x00cd08e8` | `radsat` | `0x008f8680` | `0x008f9bf0` |
+| **`0x00cd08f8`** | **`linblur`** | **`0x008f99c0`** | `0x008f9bf0` |
+| `0x00cd0908` | `dir_sat` | `0x008f8fb0` | `0x008f9bc0` |
+
+**A húzás mindenhol `[0, 1]`-be normál.** `FUN_008f9bf0`:
+
+```
+0x008f9bff  sub ecx, [eax]          ; W = jobb − bal   (RECT)
+0x008f9c15  sub ecx, [eax+4]        ; H = alsó − felső
+0x008f9c21  fild dword ptr [eax]    ; a pont x-e
+0x008f9c2b  fidiv dword ptr [esp+0x10]   ; ← x / W
+0x008f9c36  fidiv dword ptr [esp+0x18]   ; ← y / H
+0x008f9c3e  call 0x008f6da0               ; → +0x34/+0x38 (identitáson át)
+```
+
+Ugyanez a testvérben (`0x008f9c80`, `0x008f9cbb`/`0x008f9cc6`).
+
+**A feldolgozó visszahívás viszont effektenként MÁS konvenciót használ:**
+
+| effekt | a visszahívás aritmetikája | cím | a korong olvasata |
+|---|---|---|---|
+| `dir_tint` | `(p − 0,5) · 30,0` | `0x008f9968` (`fsub` 0,5), `0x008f9975` (`fmul` 30,0) | **`[0, 1]`, középre tolva** |
+| **`linblur`** | **`ftol(0,5 · W · (1 + p))`** | `0x008f99fc`–`0x008f9a10` | **`[-1, +1]`** |
+| `radblur` | a `0,5·(1+p)` idióma **nincs** benne | `FUN_008f8520` (351 b, végigolvasva) | `[0, 1]` |
+| `radsat` | ua. nincs | `FUN_008f8680` (171 b) | `[0, 1]` |
+
+A `0,5` konstans a `0x00c72150`-en álló **double**, kiolvasva: `0.5`.
+
+### 6. ⛳ Amit ez KIMOND
+
+1. **A #2702 első kérdésére a válasz: NINCS átváltás.** Az ini-érték
+   változatlanul kerül a mezőbe (1.), változatlanul jön vissza (2.), a
+   teljes írólista sem alakítja (3.), és a két affin mátrix identitás (4.).
+2. **A `linblur` feldolgozó visszahívása a kivétel:** ő az egyetlen, amely
+   a mezőt `[-1, +1]`-ben olvassa, miközben a hozzá **regisztrált húzás**
+   `[0, 1]`-be ír (5.). Ez a Picasán belüli **aszimmetria**, nem a mi
+   félreolvasásunk.
+3. **A gyakorlati következmény:** a `linblur` korongja a képnek csak a
+   jobb/alsó felére eshet (`0,5·W·(1+p)`, `p ∈ [0, 1]` ⇒ `[W/2, W]`), és a
+   leíró alapértéke (`0,5`) a **szélesség 3/4-ére**, nem középre.
+4. **A #880 mérése ezzel ÖSSZEFÉR:** a `linblur=1,0.5,0.5,2.0` lánc a
+   natív oldalon **nem** a középpontot jelenti, tehát a mag belépő
+   rövidzára (`korong == közép`, #953) **nem** sül el, és az effekt
+   megváltoztatja a képet. A mért ΔE 5,42 tehát nem ellentmondás.
+
+   ⚠️ **De ez MEGFEJTETT MECHANIZMUS, nem diagnosztizált ok:** azt, hogy a
+   `0,5·W·(1+p)` képlet a #880 ΔE-jét ténylegesen **megmagyarázza-e**
+   (nem csak összefér vele), **nem mértük** — ahhoz a `linblur` teljes
+   kimenetét kellene a referenciához illeszteni. Valódi `linblur=`
+   ini-mintánk **nincs**.
+
+5. **A mi kódunk ma MÁST csinál.** A
+   `src/picasapy/render/linear_blur.py` `_puck_pixel()`-je
+   `int(size * p)` — azaz `W·p` —, a bináris viszont
+   `ftol(0,5 · W · (1 + p))`. **A kettő csak `p = 1`-nél esik egybe.**
+   Ez önállóan megvalósítható javítás → külön jegy.
+
+### 7. A `coords="pixel"` attribútum — a leíró vezérli, de NEM skáláz
+
+A `filterdesc.xml` értelmezője (`FUN_008ff550`) a `coords` attribútumot
+kezeli, de csak **jelzőt** állít:
+
+```
+0x008ffaaa  mov edi, 0x00cd17a8      ; "coords"
+0x008ffabe  mov edi, 0x00cd17b0      ; "pixel"
+0x008ffad5  mov byte ptr [ecx + 0x1c], 1
+```
+
+és az alaphelyzet ezt nézi:
+
+```
+0x008fc162  mov eax, [esi + 8]           ; a leíró
+0x008fc165  cmp byte ptr [eax + 0x1c], bl
+0x008fc168  jne 0x008fc182               ; ha „pixel", NINCS 0,5-ös alapérték
+0x008fc16a  fld dword ptr [0x00c7dafc]   ; = 0,5   (kiolvasva)
+0x008fc17d  call 0x008f6da0              ; → +0x34/+0x38 = (0,5; 0,5)
+```
+
+⇒ a leíró megmondja, **milyen rendszerben** áll a korong, de a
+keretrendszer **soha nem számolja át** — a jelentést az effekt
+visszahívása adja meg.
+
+### 8. Ami NYITVA marad
+
+- **A `linblur` `filterdesc.xml`-beli `coords` értéke.** A telepítés
+  `filterdesc.xml`-je nálunk nincs meg (**#2125** kéri a tulajdonostól). A
+  `0,5·W·(1+p)` alak viszont csak **normált** korongra értelmes, tehát a
+  `pixel` mód a `linblur`-nél gyakorlatilag kizárt. *(feltételes)*
+- **Valódi `linblur=` ini-minta** továbbra sincs (a lap 1471. sora óta
+  változatlanul).
+
+*Bizonyítottsági fok: **megerősített** az 1–5. pont minden állítása
+(mind utasításszinten, a pásztázások pozitív kontrollal); **erős** a
+6.4 (a #880-nal való összeférés); **feltételes** a 8. pont első tétele.*
