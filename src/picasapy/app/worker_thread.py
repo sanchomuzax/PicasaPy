@@ -107,15 +107,39 @@ def wait_for_all_background_workers(timeout_s: float = 30.0) -> bool:
     ezt hívja, **amíg a controllerek még élnek** (#430/#438) — így a
     bevárandók listája nem csúszhat el a valósághoz képest.
 
-    `True`, ha a keretidőn belül minden leállt."""
+    `True`, ha a keretidőn belül minden leállt.
+
+    ⚠️ #999: a szálak bevárása CIKLUSBAN megy, nem egyetlen pillanatképről.
+    A régi változat egyszer vette a `_ALL_WORKERS` másolatát, és azt járta
+    végig — a bevárás ALATT bejelentkező szálat tehát soha nem várta be, és
+    mégis `True`-t adott. Ez nem elméleti út: az `IndexWriterQueue.submit()`
+    bármely szálról hívható, és ő indítja a futtató szálat
+    (`index_writer_queue.py`), tehát egy háttérmunka menet közben szülhet
+    újabbat. Mérve (`test_a_bevaras_alatt_indult_szalat_is_bevarja`): a régi
+    alakkal a bevárás `True`-t mondott, miközben a második szál még futott.
+    """
     deadline = time.monotonic() + timeout_s
     mind_leallt = True
-    with _ALL_WORKERS_LOCK:
-        workers = tuple(_ALL_WORKERS)
-    for worker in workers:
-        worker.join(max(0.0, deadline - time.monotonic()))
-        if worker.is_alive():
-            mind_leallt = False
+    bevart: set[threading.Thread] = set()
+    while True:
+        with _ALL_WORKERS_LOCK:
+            varando = [
+                w for w in _ALL_WORKERS if w not in bevart and w.is_alive()
+            ]
+        if not varando:
+            break
+        for worker in varando:
+            bevart.add(worker)
+            worker.join(max(0.0, deadline - time.monotonic()))
+            if worker.is_alive():
+                mind_leallt = False
+        if time.monotonic() >= deadline:
+            # a keretidő lejárt: ami még fut, azt a hívó a
+            # `running_background_workers()`-ből tudja megnevezni
+            with _ALL_WORKERS_LOCK:
+                if any(w.is_alive() for w in _ALL_WORKERS):
+                    mind_leallt = False
+            break
     for owner in tuple(_POOL_OWNERS):
         remaining_ms = int(max(0.0, deadline - time.monotonic()) * 1000)
         if not owner.wait_for_done(remaining_ms):
@@ -191,11 +215,31 @@ class BackgroundWorkerMixin:
             try:
                 target(*args, **(kwargs or {}))
             finally:
-                workers.discard(thread)
-                # #988/#999: a folyamat-szintű nyilvántartásból is
-                with _ALL_WORKERS_LOCK:
-                    _ALL_WORKERS.discard(thread)
-                registry.end()
+                # ⚠️ #999 — A SORREND ITT SZÁMÍT, ÉS KORÁBBAN FORDÍTVA VOLT.
+                #
+                # A `registry.end()` Qt-JELZÉST emitál (`_endRequested`,
+                # `busy_registry.py`). A régi alak előbb vette ki a szálat a
+                # nyilvántartásból, és csak azután emitált — vagyis a
+                # `wait_for_all_background_workers()` már NEM látta a szálat,
+                # miközben az még Qt-kódot futtatott. A bevárás tehát
+                # „minden leállt"-ot mondhatott egy még emitáló szál mellett;
+                # pontosan azt a garanciát vesztve el, amiért a #430/#438
+                # nyilvántartás egyáltalán létezik.
+                #
+                # Mérve (`test_a_nyilvantartasbol_csak_az_utolso_qt_hivas_utan`):
+                # a régi sorrenddel a bevárás 0,000 mp alatt `True`-t adott,
+                # miközben a szál bent állt a jelzés kibocsátásában.
+                #
+                # A javítás NEM változtat időzítést — se várakozás, se új
+                # esemény nem kerül bele —, csak két könyvelési sort tesz a
+                # szál UTOLSÓ Qt-hívása mögé.
+                try:
+                    registry.end()
+                finally:
+                    workers.discard(thread)
+                    # #988/#999: a folyamat-szintű nyilvántartásból is
+                    with _ALL_WORKERS_LOCK:
+                        _ALL_WORKERS.discard(thread)
 
         thread = _Thread(target=_run, name=name, daemon=True)
         workers.add(thread)
@@ -228,12 +272,28 @@ class BackgroundWorkerMixin:
         őket: ha a processz úgy ér véget, hogy egy szál még Qt-jelzést
         emitál egy közben felszámolt objektumnak, a futás SIGSEGV-vel
         omlik össze (#430). Aki a controller élettartamát zárja (teszt-
-        fixture, alkalmazás-kilépés), ezt hívja."""
+        fixture, alkalmazás-kilépés), ezt hívja.
+
+        #999: ugyanaz a ciklus, mint a folyamat-szintű bevárásnál — egyetlen
+        pillanatkép itt is átengedné a bevárás ALATT indult szálat."""
         deadline = time.monotonic() + timeout_s
         all_joined = True
-        for worker in tuple(self._bg_worker_set()):
-            remaining = max(0.0, deadline - time.monotonic())
-            worker.join(remaining)
-            if worker.is_alive():
-                all_joined = False
+        bevart: set[threading.Thread] = set()
+        while True:
+            varando = [
+                w
+                for w in tuple(self._bg_worker_set())
+                if w not in bevart and w.is_alive()
+            ]
+            if not varando:
+                break
+            for worker in varando:
+                bevart.add(worker)
+                worker.join(max(0.0, deadline - time.monotonic()))
+                if worker.is_alive():
+                    all_joined = False
+            if time.monotonic() >= deadline:
+                if any(w.is_alive() for w in tuple(self._bg_worker_set())):
+                    all_joined = False
+                break
         return all_joined
