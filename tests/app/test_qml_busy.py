@@ -18,6 +18,7 @@ from PySide6.QtCore import QObject
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
+from support.qt_wait import hangos_hurok
 
 # Tesztbeli küszöb/min-láthatóság — kicsi, de nem nulla, hogy a "rövid
 # munka nem gyújt" eset (SHOW_DELAY_MS) is tesztelhető maradjon ÉBER
@@ -117,14 +118,11 @@ class TestBusySweep:
         assert sweep.property("visible") is False
 
     def test_sync_job_shows_sweep(self, qml_app, qt_app):
-        from PySide6.QtCore import QEventLoop, QTimer
 
         window, controller, _lib, _engine = qml_app
         sweep = _child(window, "busySweep")
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         # a szinkron véget ért — a küszöb+min-láthatóság lejárta után a
         # csík mindenképp visszaáll láthatatlanra (a teszt-könyvtár

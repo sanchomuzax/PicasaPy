@@ -32,11 +32,158 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from PySide6.QtCore import QCoreApplication, QEventLoop, QTimer
+
 # A régi 2 másodperc a fejlesztői gépre volt szabva. A CI-runner (különösen
 # a windows-láb, coverage alatt) lényegesen lassabb — a bő időkorlát nem
 # lassítja a zöld futást (a jelzés érkezésekor azonnal továbblép), csak a
 # hamis bukást előzi meg.
 DEFAULT_TIMEOUT_MS = 15000
+
+
+def jelzes_neve(jelzes) -> str:
+    """A Qt-jelzés neve emberi olvasásra — a bukás-üzenethez.
+
+    A PySide a `SignalInstance` reprjében kiírja a jelzés nevét
+    (`<PySide6.QtCore.SignalInstance scanFinished() at 0x...>`); ha ez a
+    formátum egyszer megváltozna, a segéd nem dobhat — a hangosítás
+    értéke akkor sem vész el, csak a név lesz általánosabb.
+    """
+    try:
+        szoveg = repr(jelzes)
+        nev = szoveg.split("SignalInstance ", 1)[1].split(" at ", 1)[0]
+        return f"a(z) {nev} jelzésre váró művelet" if nev else "a háttérművelet"
+    except (IndexError, TypeError):
+        return "a háttérművelet"
+
+
+class HangosHurok(QEventLoop):
+    """Jelzésre záruló eseményhurok, amelynek a vészféke **HANGOS** (#1467).
+
+    ## A baj, amit megszüntet
+
+    A készletben tucatnyi helyen élt ez a minta:
+
+    ```python
+    loop = QEventLoop()
+    signal.connect(loop.quit)
+    action()
+    QTimer.singleShot(5000, loop.quit)   # néma vészfék
+    loop.exec()
+    assert valami_az_eredmenyrol
+    ```
+
+    A vészfék **csendben** engedte tovább a tesztet: ha az 5 másodperc
+    alatt nem jött meg a jelzés (terhelt CI-futó!), a hurok pontosan
+    ugyanúgy lépett ki, mint sikeres jelzésnél. A teszt ezután egy
+    látszólag független állításon bukott — vagy, rosszabb esetben,
+    **véletlenül zöld maradt**. A #1463 mérte ki, hogy ez nem elméleti: a
+    `test_tray_export.py` néma vészféke egy VALÓDI versenyt nyelt el, és a
+    teszt zöld volt; amint a vészfék hangos lett, azonnal pirosra váltott.
+
+    ## Mit csinál helyette
+
+    A hurok maga tartja nyilván, hogy a jelzés megérkezett-e. Ha az
+    `exec()` úgy tér vissza, hogy nem a jelzés zárta a hurkot, **ott
+    helyben** dob beszédes `AssertionError`-t — nem hagyja, hogy a bukás
+    egy későbbi, félrevezető állításon jelentkezzen.
+
+    ## A szinkron ág fogása (#2423)
+
+    A `QEventLoop.quit()` az `exec()` ELŐTT kiadva **elvész** — a hurok
+    utána is kiüli a teljes időzítőt. Ha tehát a jelzés már a művelet
+    indítása közben megjött, az `exec()` **be sem lép** a hurokba, hanem
+    azonnal visszatér. Enélkül minden szinkron úton jelző teszt a teljes
+    időkorlátot elpazarolná — és a hangosítás után hamis időtúllépést is
+    jelentene.
+    """
+
+    def __init__(
+        self, jelzes, *, leiras: str | None = None, timeout_ms: int = DEFAULT_TIMEOUT_MS
+    ):
+        super().__init__()
+        self._leiras = leiras or jelzes_neve(jelzes)
+        self._timeout_ms = timeout_ms
+        #: publikus: a hívó is megnézheti, a jelzés zárta-e a hurkot
+        self.jelzes_megjott = False
+        jelzes.connect(self._jelzesre)
+
+    def _jelzesre(self, *_args) -> None:
+        """A jelzés megjött — a hurkot azonban NEM azonnal zárjuk.
+
+        ⚠️ MÉRVE (#1467): az azonnali `quit()` **levágja ugyanannak a
+        kibocsátásnak a nálunk KÉSŐBB bekötött szlotjait.** Szálak közti
+        (sorba állított) kapcsolatnál a Qt kapcsolatonként külön eseményt
+        posztol; az elsőként bekötött slotunk `quit()`-je után a hurok
+        kilép, és a hívó saját, eredményt gyűjtő szlotja SOSEM fut le.
+        A `test_broken_photo_and_diskspace_459.py` importos őre így bukott
+        el a futások harmadában: `finished == []`, holott a jelzés
+        megérkezett — a lambda a hurok kilépése UTÁN futott volna.
+
+        A halasztott (0 ms-os) zárás megvárja a már posztolt kézbesítéseket,
+        tehát a bekötési sorrend nem dönthet arról, lefut-e a hívó saját
+        szlotja. Ez a segéd SZERZŐDÉSE: a hívó bármikor köthet rá további
+        szlotot.
+
+        (A záró szlot bekötési lista végére mozgatását is kipróbáltuk;
+        MÉRVE nem hozott semmit a halasztott zárás mellett, ezért nincs
+        benne — igazolatlan mechanizmus nem marad a kódban.)"""
+        self.jelzes_megjott = True
+        QTimer.singleShot(0, self.quit)
+
+    def exec(self, *args, **kwargs) -> int:
+        """Lefuttatja a hurkot, és ELBUKIK, ha nem a jelzés zárta le."""
+        if self.jelzes_megjott:
+            # #2423: a jelzés a hurok indítása ELŐTT megjött — a quit()
+            # ilyenkor elveszne, és a teljes időzítőt kiülnénk
+            return 0
+        # a vészfék-timer a hurok GYERMEKE: a hurokkal együtt megsemmisül,
+        # így nem marad árva, később elsülő timer a processzben (#430)
+        veszfek = QTimer(self)
+        veszfek.setSingleShot(True)
+        veszfek.timeout.connect(self.quit)
+        veszfek.start(self._timeout_ms)
+        try:
+            eredmeny = super().exec(*args, **kwargs)
+        finally:
+            veszfek.stop()
+        if not self.jelzes_megjott:
+            # A hurokból kiléphetett egy MÁSIK szlot `quit()`-je is,
+            # mielőtt a miénk sorra került volna (a hívó saját kezelője a
+            # bekötési listán ELŐTTÜNK áll). Ilyenkor a jelzés MEGVOLT, csak
+            # mi nem tudunk róla — HAMIS időtúllépést jelentenénk. Egy
+            # kézbesítési kör ezt eldönti. (Mérve #1467: a
+            # `test_create_controller.py` őrei buktak így el.)
+            QCoreApplication.processEvents()
+        if not self.jelzes_megjott:
+            raise AssertionError(
+                f"#1467: {self._leiras} — a várt jelzés "
+                f"{self._timeout_ms / 1000:g} másodperc alatt nem érkezett "
+                f"meg. Ez NEM tartalmi hiba: a háttérmunka lassabb volt az "
+                f"időkorlátnál, beragadt, vagy a jelzés nincs bekötve. A "
+                f"bukás SZÁNDÉKOSAN itt jelentkezik, nem egy későbbi, "
+                f"félrevezető állításon."
+            )
+        return eredmeny
+
+
+def hangos_hurok(
+    jelzes, *, leiras: str | None = None, timeout_ms: int = DEFAULT_TIMEOUT_MS
+):
+    """`HangosHurok` a `jelzes`-re — a néma `QEventLoop` + `singleShot`
+    vészfék páros helyett (#1467).
+
+    Használat a korábbi minta helyén::
+
+        loop = hangos_hurok(controller.syncFinished, leiras="a mappa-szinkron")
+        controller.rescan()
+        loop.exec()          # itt bukik, ha a jelzés nem jött meg
+
+    `leiras`: emberi nyelvű megnevezés, ez kerül a bukás üzenetébe. Ha
+    elmarad, a jelzés SAJÁT neve kerül bele (`jelzes_neve`), tehát a bukás
+    akkor is megnevezi, mire vártunk.
+    """
+    return HangosHurok(jelzes, leiras=leiras, timeout_ms=timeout_ms)
 
 
 def wait_for_signal(
@@ -140,6 +287,10 @@ def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):
     egy tetszőleges pillanatban takarított. Ezért elég — és ezért helyes —
     itt kezelni.
 
+    **A vészfék HANGOS (#1467).** Ha a jelzés nem jön meg, a segéd maga
+    dob beszédes `AssertionError`-t — a visszaadott `megjott` eldobása sem
+    nyelheti el az időtúllépést.
+
     Returns:
         `(megjott, args)` — a jelzés megérkezett-e, és a paraméterei.
     """
@@ -164,4 +315,12 @@ def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):
     finally:
         gc.enable()
         signal.disconnect(_on)
+    # #1467: a vészfék itt sem lehet néma. A MAI hívók mind ellenőrzik a
+    # visszaadott `megjott`-at (mérve), de a jelző eldobása némán elnyelné
+    # az időtúllépést — ezért a segéd MAGA is megáll.
+    assert "args" in received, (
+        f"#1467: a kollázs-jelzés {timeout_ms / 1000:g} másodperc alatt nem "
+        f"érkezett meg. Ez NEM tartalmi hiba: a háttérmunka lassabb volt az "
+        f"időkorlátnál vagy beragadt."
+    )
     return ("args" in received, received.get("args", ()))

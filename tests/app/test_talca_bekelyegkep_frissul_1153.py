@@ -34,6 +34,7 @@ from __future__ import annotations
 import pytest
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -85,13 +86,10 @@ def _felulir(controller, ut) -> None:
     a folyamat átugraná. Az alkalmazásban a szerkesztés-mentés is a célzott
     `resyncFolder`-t hívja (`wire_fileops`), ezért a teszt is azt.
     """
-    from PySide6.QtCore import QEventLoop, QTimer
 
     make_jpeg(ut, size=(300, 200))
-    loop = QEventLoop()
-    controller.syncFinished.connect(loop.quit)
+    loop = hangos_hurok(controller.syncFinished, timeout_ms=10000)
     controller.resyncFolder(str(ut.parent))
-    QTimer.singleShot(10000, loop.quit)
     loop.exec()
 
 

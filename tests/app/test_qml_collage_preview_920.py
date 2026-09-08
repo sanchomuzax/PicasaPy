@@ -15,6 +15,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 
+from support.qt_wait import hangos_hurok
 from tests.support.qml_halasztott import epitsd_fel
 
 
@@ -27,13 +28,14 @@ def _settle(qt_app, rounds=6):
 
 
 def _var(controller, jelzes, hivas, ms=8000):
-    loop = QEventLoop()
-    erkezett = {"ok": False}
-    jelzes.connect(lambda *_: (erkezett.update(ok=True), loop.quit()))
-    QTimer.singleShot(ms, loop.quit)
+    """A `jelzes` bevárása a `hivas` után — HANGOS vészfékkel (#1467).
+
+    A hívók eddig is `assert _var(...)`-t írtak, de a bukás-üzenet üres
+    volt; a közös segéd megnevezi, MELYIK jelzés maradt el."""
+    loop = hangos_hurok(jelzes, timeout_ms=ms)
     hivas()
     loop.exec()
-    return erkezett["ok"]
+    return loop.jelzes_megjott
 
 
 

@@ -18,11 +18,12 @@ Ez a „fog nélküli őr" mintája: zöld készlet egy használhatatlan funkci�
 fölött. Ezért ez a fájl **kizárólag valódi `QMouseEvent`-tel** dolgozik.
 """
 
-from PySide6.QtCore import QEvent, QPointF, Qt, QTimer, QEventLoop, QMetaObject
+from PySide6.QtCore import QEvent, QPointF, Qt, QMetaObject
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtCore import QObject
 from support.halasztott_parbeszed import nyisd_meg
+from support.qt_wait import hangos_hurok
 
 
 def _dialog_window(window):
@@ -49,10 +50,13 @@ def _by_name(window, name):
 
 
 def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
+
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _tree_controller(engine):

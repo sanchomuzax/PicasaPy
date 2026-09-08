@@ -15,15 +15,14 @@ import pytest
 from PySide6.QtCore import (
     Q_ARG,
     Q_RETURN_ARG,
-    QEventLoop,
     QMetaObject,
     QObject,
     Qt,
-    QTimer,
 )
 
 from support.halasztott_parbeszed import nyisd_meg
 from support.qml_halasztott import epitsd_fel_ha_fileops
+from support.qt_wait import hangos_hurok
 
 
 # a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
@@ -104,15 +103,13 @@ class TestRenameDialog:
         field = _child(window, "renameField")
         assert field.property("text") == "a.jpg"
         field.setProperty("text", "atnevezve.jpg")
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
         # a fájl azonnal átnevezve; a rács-frissítés (#86 óta) háttérszálas
         # resyncből érkezik — arra a syncFinished-del várunk
         assert (lib / "atnevezve.jpg").exists()
         assert not (lib / "a.jpg").exists()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         qt_app.processEvents()
         model_names = {photo.name for photo in controller.photos.photos}
@@ -217,10 +214,8 @@ class TestRenameManyDialog:
         qt_app.processEvents()
         field = _child(window, "renameManyField")
         field.setProperty("text", "nyaralas")
-        loop = QEventLoop()
-        controller.photoOpFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.photoOpFinished)
         QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         qt_app.processEvents()
         assert (lib / "nyaralas.jpg").exists()
@@ -409,13 +404,11 @@ class TestExportDialog:
         assert dialog.property("visible") is True
         dialog.setProperty("targetFolder", target.as_uri())
         results = []
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.exportFinished)
         controller.exportFinished.connect(
             lambda done, failed: results.append((done, failed))
         )
-        controller.exportFinished.connect(loop.quit)
         QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         qt_app.processEvents()
         assert results == [(1, 0)]
@@ -495,9 +488,7 @@ class TestCopyPasteEffectsMenu:
             "[a.jpg]\nfilters=BRIT=1,e50,0.20;\n", encoding="utf-8"
         )
         controller.resyncFolder(str(lib))
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
-        QTimer.singleShot(5000, loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         loop.exec()
         qt_app.processEvents()
 
@@ -549,9 +540,7 @@ class TestCopyPasteEffectsMenu:
             encoding="utf-8",
         )
         controller.resyncFolder(str(lib))
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
-        QTimer.singleShot(5000, loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         loop.exec()
         qt_app.processEvents()
 

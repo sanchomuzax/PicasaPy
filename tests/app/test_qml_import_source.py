@@ -11,16 +11,15 @@ ezért ez a fájl szándékosan funkció-szintű `qml_app` fixture-t használ.""
 from datetime import date
 
 from PySide6.QtCore import (
-    QEventLoop,
     QMetaObject,
     QObject,
     Qt,
-    QTimer,
 )
 from PySide6.QtQuick import QQuickWindow
 from support.halasztott_parbeszed import nyisd_meg
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 def _child(window, name):
@@ -42,10 +41,13 @@ def _dialog_window(window):
 
 
 def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
+
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _import_source_controller(engine):
@@ -54,10 +56,22 @@ def _import_source_controller(engine):
     return controller
 
 
-def _scan(dialog, source_folder, engine, qt_app):
+def _scan(dialog, source_folder, engine, qt_app, *, hibat_var: bool = False):
+    """A forrás beolvasása és a záró jelzés BEVÁRÁSA.
+
+    ⚠️ #1467: a HIBAÚT másik jelzést küld. Nem létező (vagy olvashatatlan)
+    forrásra a vezérlő `sourceScanFailed`-et bocsát ki, és
+    `sourceScanFinished` SOHA nem jön — a korábbi néma vészfék ezt elnyelte:
+    a `test_missing_source_shows_error` végigült 5 másodpercet, semmit nem
+    szinkronizált, és csak azért volt zöld, mert a hibaszöveg addigra
+    amúgy is megjelent. A hangos vészfék azonnal kimutatta. A hibautat
+    váró hívó ezért a `hibat_var=True`-val a HELYES jelzésre vár."""
     dialog.setProperty("visible", True)
     dialog.setProperty("sourceFolder", str(source_folder))
-    loop = _quit_on(_import_source_controller(engine).sourceScanFinished)
+    controller = _import_source_controller(engine)
+    loop = _quit_on(
+        controller.sourceScanFailed if hibat_var else controller.sourceScanFinished
+    )
     QMetaObject.invokeMethod(
         dialog, "scanCurrentSource", Qt.ConnectionType.DirectConnection
     )
@@ -170,7 +184,7 @@ class TestSourcePreview:
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
 
-        _scan(dialog, tmp_path / "nincs-ilyen", engine, qt_app)
+        _scan(dialog, tmp_path / "nincs-ilyen", engine, qt_app, hibat_var=True)
 
         error_text = _child(window, "importSourceErrorText")
         assert error_text.property("visible") is True

@@ -13,9 +13,9 @@ lenne, ha a menütétel tiltott vagy takart. A menüpontról indított, lemezre
 import configparser
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -342,12 +342,11 @@ class TestPasteAllEffectsWriteFailure:
         def failing_update_document(path, mutate, backup=True):
             raise IniSaveError("szimulált írási hiba")
 
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.photoOpFailed)
         received = {}
 
         def _on_failed(message):
             received["message"] = message
-            loop.quit()
 
         # ELŐBB a feliratkozás, csak UTÁNA a hívás — a hibaút szinkron.
         controller.photoOpFailed.connect(_on_failed)
@@ -355,9 +354,9 @@ class TestPasteAllEffectsWriteFailure:
             photo_ops_mod, "update_document", failing_update_document
         )
         controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
-        if "message" not in received:
-            QTimer.singleShot(2000, loop.quit)
-            loop.exec()
+        # #1467: a vészfék HANGOS — ha a hibajelzés nem jön meg, itt bukunk,
+        # nem az alábbi (félrevezető) tartalmi állításon
+        loop.exec()
 
         assert received.get("message") == "szimulált írási hiba"
 
@@ -384,20 +383,19 @@ class TestGuardRejectionIsHandled:
         def failing_update_document(path, mutate, backup=True):
             raise FilterWriteError("A szerkesztés nem menthető: teszt.")
 
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.photoOpFailed)
         received = {}
 
         def _on_failed(message):
             received["message"] = message
-            loop.quit()
 
         controller.photoOpFailed.connect(_on_failed)
         monkeypatch.setattr(
             photo_ops_mod, "update_document", failing_update_document
         )
         controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
-        if "message" not in received:
-            QTimer.singleShot(2000, loop.quit)
-            loop.exec()
+        # #1467: a vészfék HANGOS — ha a hibajelzés nem jön meg, itt bukunk,
+        # nem az alábbi (félrevezető) tartalmi állításon
+        loop.exec()
 
         assert received.get("message") == "A szerkesztés nem menthető: teszt."
