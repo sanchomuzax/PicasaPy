@@ -403,15 +403,12 @@ class TestExportDialog:
         qt_app.processEvents()
         assert dialog.property("visible") is True
         dialog.setProperty("targetFolder", target.as_uri())
-        results = []
+        # #2757: a hurok saját argumentum-mezője, nem külön szlot
         loop = hangos_hurok(controller.exportFinished)
-        controller.exportFinished.connect(
-            lambda done, failed: results.append((done, failed))
-        )
         QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
         loop.exec()
         qt_app.processEvents()
-        assert results == [(1, 0)]
+        assert loop.jelzes_argumentumai == (1, 0)
         # #1166: az eredetiben a végleges útvonal `<hely>\<név>\` — a
         # névmező alapértéke a FORRÁSMAPPA neve (spec 12.1, `0x0073b500`),
         # ezért a kép a hely alatti, azonos nevű almappába kerül. Korábban

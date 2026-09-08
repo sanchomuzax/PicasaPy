@@ -66,27 +66,25 @@ def _run(signal, action, timeout_ms=10000):
 
     A sorrend lényeges: a hibautak (üres kijelölés, hiányzó célfájl) még a
     hívó szálon, azonnal jeleznek — utólagos feliratkozás lemaradna róluk.
-    Visszatérés: (megjött-e, argumentumok)."""
+    A `hangos_hurok` a létrehozásakor iratkozik fel, tehát ez teljesül.
+    Visszatérés: (megjött-e, argumentumok).
+
+    ⚠️ #2757: itt NINCS második szlot. Korábban a segéd maga kötött egy
+    `_on(*args)` gyűjtőt ugyanerre a jelzésre — szálak közti (sorba
+    állított) kapcsolatnál a Qt kapcsolatonként külön eseményt posztol, és a
+    hurok kilépése elnyelhette a gyűjtőt: `megjott=True`, argumentumok
+    üresen (mérve #2754, 60 futásból 2-3). Az argumentumokat ezért a hurok
+    saját `jelzes_argumentumai` mezője adja.
+    """
     loop = hangos_hurok(signal, timeout_ms=timeout_ms)
-    received = {}
-
-    def _on(*args):
-        # ⚠️ #1467: itt NEM szabad `loop.quit()`-et hívni. A hurkot a
-        # `hangos_hurok` SAJÁT szlotja zárja; ha a hívó szlotja zárná le
-        # előbb, a hurok kilépne, mielőtt a segéd nyilvántartásba veszi a
-        # jelzést — és a hangos vészfék HAMIS időtúllépést jelentene.
-        # (Mérve: a `test_create_controller.py` négy őre bukott így el.)
-        received["args"] = args
-
-    signal.connect(_on)
     action()
-    loop.exec()
     # #1467: a hívók egy része ELDOBJA a visszaadott `arrived` jelzőt
     # (`_run(ctl.scanFinished, ctl.scanForFaces)` önmagában), ilyenkor az
     # időtúllépés némán ment tovább, és a bukás egy későbbi, látszólag
     # független állításon jelentkezett. Az `exec()` most ott helyben bukik;
     # a visszatérési érték a régi hívók kedvéért marad.
-    return ("args" in received, received.get("args", ()))
+    loop.exec()
+    return (loop.jelzes_megjott, loop.jelzes_argumentumai)
 
 
 def _skip_without_codec(target):

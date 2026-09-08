@@ -342,14 +342,10 @@ class TestPasteAllEffectsWriteFailure:
         def failing_update_document(path, mutate, backup=True):
             raise IniSaveError("szimulált írási hiba")
 
+        # #2757: nincs MÁSODIK szlot ugyanarra a jelzésre — a hurok maga
+        # iratkozik fel (a létrehozásakor, tehát a szinkron hibaút ELŐTT),
+        # és az üzenetet a `jelzes_argumentumai` adja vissza.
         loop = hangos_hurok(controller.photoOpFailed)
-        received = {}
-
-        def _on_failed(message):
-            received["message"] = message
-
-        # ELŐBB a feliratkozás, csak UTÁNA a hívás — a hibaút szinkron.
-        controller.photoOpFailed.connect(_on_failed)
         monkeypatch.setattr(
             photo_ops_mod, "update_document", failing_update_document
         )
@@ -358,7 +354,7 @@ class TestPasteAllEffectsWriteFailure:
         # nem az alábbi (félrevezető) tartalmi állításon
         loop.exec()
 
-        assert received.get("message") == "szimulált írási hiba"
+        assert loop.jelzes_argumentumai[0] == "szimulált írási hiba"
 
 
 class TestGuardRejectionIsHandled:
@@ -383,13 +379,10 @@ class TestGuardRejectionIsHandled:
         def failing_update_document(path, mutate, backup=True):
             raise FilterWriteError("A szerkesztés nem menthető: teszt.")
 
+        # #2757: nincs MÁSODIK szlot ugyanarra a jelzésre — a hurok maga
+        # iratkozik fel (a létrehozásakor, tehát a szinkron hibaút ELŐTT),
+        # és az üzenetet a `jelzes_argumentumai` adja vissza.
         loop = hangos_hurok(controller.photoOpFailed)
-        received = {}
-
-        def _on_failed(message):
-            received["message"] = message
-
-        controller.photoOpFailed.connect(_on_failed)
         monkeypatch.setattr(
             photo_ops_mod, "update_document", failing_update_document
         )
@@ -398,4 +391,4 @@ class TestGuardRejectionIsHandled:
         # nem az alábbi (félrevezető) tartalmi állításon
         loop.exec()
 
-        assert received.get("message") == "A szerkesztés nem menthető: teszt."
+        assert loop.jelzes_argumentumai[0] == "A szerkesztés nem menthető: teszt."

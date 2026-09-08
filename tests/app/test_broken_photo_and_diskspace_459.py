@@ -93,15 +93,14 @@ class TestHidePhotosByIds:
 class TestExportDiskSpaceCheck:
     @staticmethod
     def _run_export(controller, qt_app, rows, target):
-        results = []
+        # #2757: a hurok SAJÁT argumentum-mezőjét olvassuk. Külön szlotot
+        # kötni ugyanarra a jelzésre versenyt szül: szálak közti
+        # kapcsolatnál a kilépés elnyelheti a hívó szlotját.
         loop = hangos_hurok(controller.exportFinished)
-        controller.exportFinished.connect(
-            lambda done, failed: results.append((done, failed))
-        )
         controller.exportRows(rows, target, 0, 85)
-        if not results:
-            loop.exec()
-        return results
+        loop.exec()
+        done, failed = loop.jelzes_argumentumai
+        return [(done, failed)]
 
     def test_insufficient_space_blocks_export_and_reports(
         self, controller, library, tmp_path, qt_app, monkeypatch
@@ -154,23 +153,19 @@ class TestImportDiskSpaceCheck:
         )
         monkeypatch.setattr(mod, "has_enough_free_space", lambda *a, **k: False)
 
-        scan_results = []
         scan_loop = hangos_hurok(ctl.sourceScanFinished)
-        ctl.sourceScanFinished.connect(lambda items, count: scan_results.append(count))
         ctl.scanSource(str(source))
-        if not scan_results:
-            scan_loop.exec()
-        assert scan_results == [1]
+        scan_loop.exec()
+        _items, count = scan_loop.jelzes_argumentumai
+        assert count == 1
 
-        finished = []
         details = []
         loop = hangos_hurok(ctl.importFinished)
-        ctl.importFinished.connect(lambda done, failed: finished.append((done, failed)))
+        # a `importFailedDetails` MÁS jelzés, arra kell a saját szlot
         ctl.importFailedDetails.connect(details.append)
         ctl.runImport(str(dest), "manual", "importalt", "leave")
-        if not finished:
-            loop.exec()
-        assert finished == [(0, 1)]
+        loop.exec()
+        assert loop.jelzes_argumentumai == (0, 1)
         assert details and "disk space" in details[0][0]
         assert list(dest.glob("*.jpg")) == []
         assert ctl.waitForBackgroundWorkers(30.0)
