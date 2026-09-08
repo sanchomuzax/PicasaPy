@@ -26,8 +26,16 @@ látható része a valódi méreténél kisebb.
 | `picturegrid` | a **kirajzolt cella szélessége** (térköz UTÁN) | AI3 |
 | `framegrid` | ugyanaz | AI4 |
 | `regulargrid` | ugyanaz | AI5 |
-| `contactsheet` | **nem levezetett** — mind a 9 csomóponton 313 | AI6 |
+| `contactsheet` | a lap-szintű **cellamagasság** — mind a 9 csomóponton 313 | AI6 |
 | `multiexp` | 1,0 (#1248) | AI7 |
+
+⚠️ A `contactsheet` SZEREPE azóta igazolt (kollazs-eletciklus.md 18.5,
+#2583: a `scale` a cellamagasság, amellyel a rajzoló FÜGGŐLEGESEN igazít)
+— de az ÉRTÉKÉNEK zárt képlete továbbra is nyitott (18.6, #1412). A
+`.cxf`-be író út (`draft.project_from_nodes`) a
+`picasa_render.contact_sheet_cell_scale`-lel számolja, LAP-SZINTŰ
+állandóként; az alant tesztelt `scale_for_theme` a régi „négyzetoldal"
+tartalék, ami csak akkor fut, ha valaki KÖZVETLENÜL hívja.
 
 A rácsos témáknál a golden `w` mezője a térköz ELŐTTI pakolási téglalap, a
 `scale` viszont a térköz UTÁNI cellából jön — ezért ez a fájl a rácsos
@@ -220,14 +228,18 @@ class TestMasKetTema:
         assert scale_for_theme(1024.0, 768.0, MULTIEXP) == 1.0
 
     def test_indexkep_a_befoglalo_negyzeten_marad(self) -> None:
-        """Az Indexkép `scale`-je MÉRVE 313, de LEVEZETVE nincs.
+        """A `scale_for_theme` FÜGGVÉNY (nem a teljes út) itt marad a
+        „négyzetoldal" tartalékon.
 
         Az `AI6.cxf` mind a kilenc csomópontján 313 áll — a csomópont
         dobozától (242 × 302,6 és 155 × 276,6 lapegység) függetlenül, tehát
-        ez lap-szintű állandó, nem csomópont-méret. Se a `k` cellaél (300),
-        se a cella magassága (359) nem adja ki; egyetlen mintánk van rá.
-        Amíg nincs levezetés, a régi szabály marad — de KIMONDVA, hogy
-        tudjuk, mit nem tudunk."""
+        ez lap-szintű állandó, nem csomópont-méret (SZEREPÉBEN azóta
+        igazolt: a cellamagasság, kollazs-eletciklus.md 18.5, #2583). Ez a
+        `scale_for_theme` függvény azonban a csomópont saját dobozából
+        számol — a `.cxf`-be író út (`project_from_nodes`) a
+        `contact_sheet_cell_scale`-t hívja HELYETTE (#2583); ez a teszt
+        csak azt állítja, hogy a `scale_for_theme` KÖZVETLEN hívása
+        (amikor nincs lap-szintű érték kéznél) a régi tartalékot adja."""
         assert scale_for_theme(242.0, 302.574, CONTACTSHEET) == pytest.approx(302.574)
 
 
