@@ -286,9 +286,19 @@ class TrayMixin:
         Minden elem: `photoId`, `path`, `thumbUrl`, `name`, `used`, `held`.
         A Klipek lap a `used === false` elemeket rajzolja ki („Unused
         Pictures"), a főablak tálcája mindet.
+
+        Csak a KÉP-elemek jelzőit gyűjti: a #1919 összecsukott
+        mappa-/album-tokenje nem fotó, nincs `photos.id`-ja, azt a
+        `trayAlbumTokens` kérdezi le. A szűrés nem óvatosság — nélküle a
+        szótár-építés `AttributeError`-t dobott, amint token került a
+        tálcára, és a Klipek lap QML-kötése futásidőben elhasalt rajta.
         """
         self._ensure_tray_wired()
-        allapotok = {item.photo_id: item for item in self._tray.items}
+        allapotok = {
+            item.photo_id: item
+            for item in self._tray.items
+            if isinstance(item, tray.TrayItem)
+        }
         elemek = []
         for record in self._tray_records():
             item = allapotok.get(record.id)
