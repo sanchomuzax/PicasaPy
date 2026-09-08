@@ -923,3 +923,100 @@ kilistázható.
 *Bizonyítottsági fok: **megerősített** az 1–5. pont (utasításszinten, a
 három kezelő bájtszomszédos mintájával); **nyitott** a `0x68` →
 `[rekord+0x90]` materializálás.*
+
+## A rekord-osztály HORGONYA: elem-ktor `0x00413740`, elem-dtor `0x00432270` (2026-09-08, #2675)
+
+*209. kutatói kör.* Az előző kör horgonyt kért a `+0x90` írójának
+kereséséhez. A horgony megvan — és közben egy saját kétértelműséget is
+fel kell oldani.
+
+### 1. ⛔ FELOLDÁS: két KÜLÖNBÖZŐ `0x130` van, ne keverjük
+
+Az előző szakasz 5. pontja így idézte a `Picasa`-szakasz olvasóját:
+
+```
+0x005afb72  add ecx, 0x130           ; a tár az objektum +0x130-ánál
+```
+
+Ez a `0x130` **nem** a rekord mérete. A függvény fejéből:
+
+```
+0x005af67f  mov edi, ecx             ; edi = a THIS
+0x005af689  mov dword ptr [esp+0x20], edi
+…
+0x005afb6b  mov ecx, dword ptr [esp+0x20]   ; ecx = a THIS
+0x005afb72  add ecx, 0x130                  ; a THIS +0x130-as TAGJA
+```
+
+⇒ a tulajdonságtár a `FUN_005af660` **saját objektumának egy tagja**, és
+semmi köze a 304 bájtos rekordhoz. A számegyezés véletlen. *(A lap
+„azonos méret ≠ azonos szerkezet" tanulságának egy újabb esete —
+ezúttal ugyanazon a lapon belül.)*
+
+### 2. ⚠️ És a `0x68` sem egy dolog
+
+| hol | mi |
+|---|---|
+| `push 0x68` a `FUN_0049c640` előtt | a tulajdonságtár **kulcsa** |
+| a rekord `+0x68` mezője | egy **egész**, amit az elem-ktor `-1`-re állít (`0x00413790` `or edx,0xffffffff` → `0x00413793`) |
+
+A kettő között nincs kapcsolat; a szám-egybeesés itt is véletlen.
+
+### 3. ⭐ A HORGONY: a vektor-segédek kiadják az elem ktorát és dtorát
+
+A `0x130`-as elemméretű tömb kezelői a `0x005a3000`–`0x005a5000`
+modulban ülnek, és a **méret mellé a függvénymutatót is tolják**:
+
+```
+0x005a3404  push 0x00413740      ; az elem KONSTRUKTORA
+0x005a340b  push 0x130           ; az elem MÉRETE
+0x005a3414  call 0x004010e0      ; tömb-konstruálás
+
+0x005a345d  push 0x00432270      ; az elem DESZTRUKTORA
+0x005a3462  push 0x130
+0x005a3467  call 0x00401110      ; tömb-lebontás
+```
+
+⇒ **az osztály azonosítva**: `sizeof = 0x130` (304), ktor
+`FUN_00413740` (316 b), dtor `FUN_00432270` (402 b).
+
+### 4. ⭐ És ezzel a `+0x90` MEZŐ-mivolta is bizonyított
+
+- **A ktor nullázza:** `0x004137b5 mov dword ptr [eax + 0x90], ecx`
+  (`ecx = 0`) — a mező NULL-ként születik, ami pontosan az a
+  „nincs kulcs" állapot, amit a `.picasa.ini`-író üresre kihagy.
+- **A dtor elengedi:** `0x00432316 lea …[+0x90]` → sztring-elengedés.
+  ⚠️ Ez a függvény **már ott volt** a 206. kör hét találatos
+  sztring-idióma-pásztázásában — akkor nem ismertük fel, mert nem volt
+  meg a horgony.
+
+⇒ **a `+0x90` a rekord-osztály hivatkozásszámlált SZTRING-tagja**,
+konstrukciókor üres.
+
+A ktor további, most kiolvasott alapértékei: `+0x20` és `+0x28`
+**949998,0** (`double`, `0x00c7ccf8`), `+0x68` = **−1**, `+0x70` = **2**,
+`+0x00`…`+0x64` és `+0x78`…`+0xa0` nullák.
+
+### 5. ⛔ Amit NEM állítok — a hatókör kimondva
+
+- A tulajdonságtár **lekérdező** oldalát **nem** azonosítottam. A
+  `push 0x68` leltár (hét hely) **kizárólag** a beszúró (`FUN_0049c640`)
+  ága. Egy `mov <reg>, 0x68` pásztázás 30-nál több találatot ad, de a
+  `0x68` **gyakori kis konstans** (méret, index, eltolás), ezért abból
+  **sem pozitív, sem negatív** következtetést nem vonok le.
+- Tehát **nem** mondom ki, hogy „nincs lekérdező" — csak azt, hogy ezzel
+  a két pásztázással nem található meg.
+
+### 6. A KÖVETKEZŐ lépés, megnevezve
+
+> **Melyik használó tölti fel a `+0x90`-et?**
+
+Most már van szűrő: a `0x00413740` (ktor) és a `0x00432270` (dtor)
+**index-független** `E8 rel32` hivatkozói adják az osztály használóinak
+listáját. A menet: ezt a listát metszeni a 206. kör 121 találatos
+`mov [reg+0x90], reg` leltárával — a metszet a valódi jelöltek halmaza,
+és az már kézzel végigolvasható.
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten);
+**kimondottan nyitott** az 5. pont szerinti lekérdező oldal és a `+0x90`
+feltöltője.*
