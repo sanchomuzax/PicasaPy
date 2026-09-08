@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.340] – 2026-09-08
+
+### Javítva
+
+- **A képtálca összeomlott volna, ha egy mappa-token kerül bele** (#1919). A
+  tálca nemrég megtanulta, hogy egyetlen elemként egy egész mappát is
+  tarthat („Kiválasztott mappa – 82 fotó"), de a Klipek lap kódja minden
+  tálca-elemtől fénykép-azonosítót kért — a mappa-tokennek pedig nincs
+  ilyen. A program így hibára futott volna abban a pillanatban, amikor a
+  token megjelenik. A hiba eddig azért nem derült ki, mert a meglévő teszt
+  csak az elemek számát nézte, nem azt a listát, amelyik eltört; most már
+  mindkettőt méri egy új őr.
+
 ## [0.8.339] – 2026-09-08
 
 ### Javítva
