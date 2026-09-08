@@ -1226,3 +1226,91 @@ helye van; a most megnézett kettőn (`0x005a343d` — belső vektor-másolás,
 *Bizonyítottsági fok: **megerősített** az 1–6. pont (utasításszinten, a
 mezőtérkép a teljes törzs átfésüléséből); **nyitott** a nem üres `+0x90`
 forrása.*
+
+## ÖT címzési alak kimerítve — a `+0x90` egyetlen írója az `operator=` (2026-09-08, #2675)
+
+*212. kutatói kör.* Az előző körök három alakot pásztáztak; ez a kör
+kettő **eddig meg nem nézettet** tesz hozzá, és egy harmadik fogyasztót
+is talál.
+
+### 1. ⭐ ÚJ alak: `add <reg>, 0x90` — a mező CÍMÉNEK képzése `lea` nélkül
+
+Ezt egyik korábbi pásztázás sem nézte (mind `lea`-ra szűrt). Az egész
+`.text`-en **18 hely**; a `.picasa.ini`-modulbeli találat egy **harmadik
+fogyasztó**:
+
+`FUN_007d83e0` (1633 b, sztringje: `photoid`):
+
+```
+0x007d854f  mov eax, [ecx + 0x90]        ; a mező értéke
+0x007d8555  add ecx, 0x90                ; a mező CÍME (lea nélkül!)
+0x007d855b/63/6f  je 0x007d8a26          ; NULL / nulla hossz / üres → kilép
+0x007d8583  push ecx
+0x007d8594  call 0x00414b40              ; ← ugyanaz a SZÉTSZEDŐ
+```
+
+⇒ a `+0x90`-nek **három** ismert fogyasztója van: `FUN_007d8cf0`
+(betöltés utáni pász és a kiírás előtt, 207.), a `.picasa.ini`-író
+(206.), és most a `photoid`-feloldó `FUN_007d83e0`.
+
+### 2. ⭐ ÚJ alak: `mov [reg+0x90], IMMEDIATE`
+
+Szintén nem volt pásztázva (a 210. kör szűrője **regiszter**-forrást
+követelt). Az egész `.text`-en **22 hely**, és **egyik sem** a rekordé —
+a beírt értékek `0`, `1`, `3`, `7`, `0xffffffff`, `0xfff0f0f0`, tehát
+jelzők és színek más osztályokon (`FUN_004d5620`, `FUN_00502bc0`,
+`FUN_009237f0`, `FUN_009bbf40`, …).
+
+### 3. ⭐ ÚJ vizsgálat: BLOKK-másolás — nincs
+
+Ha a rekordot egészben másolnák, azt egyetlen eltolás-alapú pásztázás
+sem látná. Megnézve:
+
+| minta | találat |
+|---|---|
+| `rep movs*` a `mov ecx, 0x4c` (= `0x130`/4) vagy `0x130` után | **0** |
+| `push 0x130` → `call 0x00bf37c0` | 2 — de a `0x00bf37c0` **memset** (`(cél, érték, hossz)`, `0x00bf37c0`–`0x00bf37d2`), és mindkét hely **más osztály** friss foglalásának nullázása (`FUN_0060e290`, `FUN_006dec40` — nem a `0x00413740`-es ktort használják) |
+
+⇒ **blokk-másolás nincs.**
+
+### 4. ⛳ Az ÖT alak együtt
+
+| # | alak | találat | a rekordra nézve |
+|---|---|---:|---|
+| 1 | `mov [reg(+reg)+0x90], reg` | 104 fv | a rekord-osztály használóival metszve **érdemben üres** (210.) |
+| 2 | `mov [reg+0x90], immediate` | 22 | **egyik sem** a rekordé (ez a kör) |
+| 3 | `lea r,[obj+0x90]` + hívás | 59 | egyik sem osztály-használóban (210.) |
+| 4 | `add <reg>, 0x90` | 18 | az ini-modulbeli **olvasó** (ez a kör) |
+| 5 | blokk-másolás (`rep movs`, memcpy) | 0 | **nincs** (ez a kör) |
+
+⇒ **A rekord `+0x90`-ének egyetlen ismert írója a saját `operator=`-a**
+(`FUN_005a4f10`, 211.).
+
+### 5. ⚠️ Amit ez logikailag jelent — és az EGYETLEN maradék alak
+
+Ha az `operator=` az egyetlen író, akkor az érték csak **másik
+rekordból** származhat — a lánc a rekordok között köröz, és az
+*eredeti* forrás olyan helyről kellett kapja, amit ez az öt alak sem
+lát. **Egyetlen ilyen alak maradt:**
+
+> a `+0x90` címzése **futásidőben számolt eltolással** — pl.
+> `mov [eax + ecx], edx`, ahol az `ecx` a blokkban kapja meg a `0x90`-et,
+> vagy a mező címe korábban eltárolt mutatóból jön.
+
+*(Ez nem elméleti: a `kollazs-eletciklus.md` 23.3 szakasza már kezelt
+ilyen „futásidőben számolt eltolású" tárolást.)*
+
+### 6. A KÖVETKEZŐ lépés, megnevezve
+
+> **Futásidőben számolt eltolású írás a `+0x90`-re.**
+
+A menet: `mov [r1 + r2], r3` alakú írások, ahol az `r2` az adott
+alapblokkban `0x90`-et kap (egyszerű blokkon belüli adatfolyam-követés).
+⚠️ **Pozitív kontroll kötelező** — a pásztázó lássa meg a
+`FUN_005a4f10` valamelyik ismert `+0x90`-es utasítását, különben a
+nulla találat a minta hibája is lehet (a lap „üres pásztázást ismert
+pozitívval" tanulsága).
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten, a
+`0x00bf37c0` = memset a törzséből kiolvasva); az 5. pont **logikai
+következtetés** a négy kimerített alakból, nem közvetlen mérés.*
