@@ -13,6 +13,7 @@ a saját találattal") a terv KÉSŐBBI lépcsője."""
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -398,16 +399,36 @@ OK_DETEKTALVA = "detektalva"
 OK_KIZARVA = "kizarva"
 
 #: A mappa ÉS az alfái — a kizárás az egész fára vonatkozik (`#449`: „a
-#: mappára és az alfáira"). A `/` a `folders.path` elválasztója; a
-#: `LIKE`-minta ESCAPE-elve megy, mert egy valódi mappanévben is állhat
-#: `%` vagy `_` (mindkettő joker a `LIKE`-ban).
+#: mappára és az alfáira"). A `LIKE`-minta ESCAPE-elve megy, mert egy valódi
+#: mappanévben is állhat `%` vagy `_` (mindkettő joker a `LIKE`-ban).
 _MAPPAFA_FELTETEL = "(f.path = ? OR f.path LIKE ? ESCAPE '\\')"
 
+#: #2761: az elválasztó a PLATFORMÉ, nem fixen `/`. Az index natív alakot
+#: tárol (`index/paths.py`: `str(Path(...).resolve())`), tehát Windowson a
+#: `C:\kepek\alfa` sosem illeszkedett a korábbi, fixen `/`-t fűző mintára —
+#: a kizárt mappa ALFÁI nem kapták meg a jelölést. Modul-szintű konstans,
+#: hogy a teszt MINDKÉT alakot mérni tudja a fejlesztői gépen is.
+_ELVALASZTO = os.sep
 
-def _mappafa_parameterek(folder_path: str) -> tuple[str, str]:
-    """A `_MAPPAFA_FELTETEL` két paramétere: a pontos út és az alfa-minta."""
-    vedett = folder_path.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return (folder_path, vedett.rstrip("/") + "/%")
+
+def _like_vedett(szoveg: str) -> str:
+    """A `LIKE`-minta escape-elése (`ESCAPE '\'`): a backslash ÖNMAGÁT is
+    escape-eli, a `%` és a `_` pedig joker."""
+    return szoveg.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _mappafa_parameterek(
+    folder_path: str, *, elvalaszto: str | None = None
+) -> tuple[str, str]:
+    """A `_MAPPAFA_FELTETEL` két paramétere: a pontos út és az alfa-minta.
+
+    Az `elvalaszto` alapértéke a platformé; a teszt adja meg kifejezetten,
+    hogy MINDKÉT alak mérhető legyen ott is, ahol csak az egyik natív."""
+    sep = _ELVALASZTO if elvalaszto is None else elvalaszto
+    # a záró elválasztót le kell vágni — MINDKÉT alakot, mert a `folders.path`
+    # jöhet másik platformról is (átvett adatbázis, `.picasa.ini`-korpusz)
+    torzs = folder_path.rstrip("/\\")
+    return (folder_path, _like_vedett(torzs) + _like_vedett(sep) + "%")
 
 
 def mark_face_scan(
