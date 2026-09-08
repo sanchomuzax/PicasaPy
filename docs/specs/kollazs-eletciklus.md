@@ -4592,3 +4592,73 @@ A függvény kicsi és a `[esp+0x18]`-at csak **két** helyen érinti
 mezőminta-módszerével vagy a hívási helyek összevetésével feloldható.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 47. K1 — a mentett dokumentum az INTERAKTÍV PANEL munkapéldánya, és a bezárás előbb ÚJRAÉPÍTHETI (2026-09-08, #1412)
+
+*199. kutatói kör. A 46.4 lépését viszi: a `FUN_0082c0a0` kerete.*
+
+### 47.1 ⭐ A keret feloldva — nem mélységszámolással, hanem a HÍVÁS-TAKARÍTÁSBÓL
+
+A saját verem-normalizálónk ezen a függvényen **öt ütközést** jelzett,
+tehát a lineáris követés **nem** megbízható (a mérő ezt ki is írja). A
+kérdés mégis eldönthető, két horgonyból:
+
+1. **A függvény vége:** `0x0082c30d`–`0x0082c321`
+   (`pop edi` · `pop esi` · `pop ebx` … `ret 8`) ⇒ a `0x0082c2f2`-nél a
+   verem a **prológus-mélységen** áll (a `0x0082c2f8`-as hívás két tolt
+   argumentumát a hívott takarítja).
+2. **A prológus:** a `0x0082c0c0` `push 0xcbecf8`-at a `0x0082c0da`
+   `call 0x00985ff0` (sztring-konstruktor) **elfogyasztja** ⇒ a
+   `0x0082c0ce`-nél a mélység prológus **+4**, tehát az ottani
+   `[esp+0x1c]` **ugyanaz a rekesz**, mint a `0x0082c2f2`-nél a
+   `[esp+0x18]`.
+
+⇒ **a mentési út 1. argumentuma = a `FUN_0082c0a0` saját 1. argumentuma**
+(`[ebp+8]`, amit a `0x0082c0bb` tesz `ebx`-be).
+
+*Bizonyítottsági fok: **megerősített** — mindkét horgony utasításszinten.*
+
+### 47.2 ⭐ És a `[ebp+8]` a kollázs-PANEL
+
+Ugyanez az `ebx` megy a `0x0082c109`-en a **`FUN_00831420`**-ba
+(`0x0082c106 push 0` · `0x0082c108 push ebx`) — abba a függvénybe, amely a
+**panel `[+0x138]` dokumentumát építi újra** a panel `[+0x130]`,
+`[+0x13c]`, `[+0x168]`, `[+0x170]`, `[+0x174]` mezőiből (37.1).
+
+⇒ **a mentett dokumentum az INTERAKTÍV panel (`CCollageUI`) `[+0x138]`
+munkapéldánya** (43.1) — nem egy headless felületé (45.4).
+
+### 47.3 ⭐ A bezárás ELŐBB újraépítheti a munkapéldányt
+
+```
+0x0082c0fc  cmp byte ptr [ebp+0xc], 0     ; a 2. argumentum (jelző)
+0x0082c104  jne 0x0082c10e                ; ha NEM nulla → kihagyja
+0x0082c106  push 0  ·  0x0082c108  push ebx
+0x0082c109  call 0x00831420               ; a munkapéldány ÚJRAÉPÍTÉSE
+…
+0x0082c2ef  mov eax,[ebp+0xc]             ; ugyanez a jelző megy tovább
+0x0082c2f8  call 0x0083c5b0               ; …a mentési út 2. argumentumaként
+```
+
+⇒ **ha a 2. argumentum nulla, a bezárás a mentés ELŐTT újraépíti a
+munkapéldányt** — és a 38.2 szerint az újraépítés minden csomópontnak
+`scale = 1,0`-t ad.
+
+### 47.4 ⛳ Amit ez KIMOND, és amit NEM
+
+**Kimondja:** a `.cxf` a bezárás ágán, az interaktív panel
+munkapéldányából íródik, és ezen az ágon van egy **feltételes
+újraépítés**, amely a `scale`-t `1,0`-ra állítaná.
+
+**Nem mondja ki**, hogy az újraépítés a valóságban lefut-e: a
+`FUN_00831420`-nak **saját kapuja** van (`0x0083142b`
+`cmp [ebp+0x130], 0` → ha nulla, nem csinál semmit, 37.1), és ezt a
+mezőt még nem olvastuk ki. A mintáink `313 / 500 / 256 / 158` értékei
+azt mutatják, hogy legalább az ő esetükben **nem** futott le.
+
+**A KÖVETKEZŐ lépés:** a panel `[+0x130]` mezőjének azonosítása — ki
+állítja, mikor, és mit jelent. Ez a kapu dönti el, hogy a bezárás
+regenerál-e; és ha a mintáinkban nem regenerált, akkor a `scale` értéke
+egy **korábbi** állapotból való, amit a K1-nek meg kell találnia.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
