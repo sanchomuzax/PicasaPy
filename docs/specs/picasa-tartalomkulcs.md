@@ -1314,3 +1314,88 @@ pozitívval" tanulsága).
 *Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten, a
 `0x00bf37c0` = memset a törzséből kiolvasva); az 5. pont **logikai
 következtetés** a négy kimerített alakból, nem közvetlen mérés.*
+
+## Az OLCSÓ lánc kimerült a `+0x90`-en — és egy megbukott pozitív kontroll (2026-09-08, #2675)
+
+*213. kutatói kör.* Az előző kör az utolsó megnevezett alakot hagyta
+hátra: a **futásidőben számolt eltolású** írást. A kör lemérte — és a
+mérés **saját magát minősítette alkalmatlannak**.
+
+### 1. ⛔ A pozitív kontroll MEGBUKOTT — a nulla találat itt NEM lelet
+
+A minta: `mov dword ptr [rA + rB], rC`, ahol az `rB` az adott
+alapblokkban konstanst kapott (a konstans-térkép minden elágazásnál és
+hívásnál ürül).
+
+| mérés | eredmény |
+|---|---|
+| a minta által **bizonyított** index-konstansos írás az egész `.text`-en | **1** (eltolás `0x8`) |
+| ebből `0x90`-es | **0** |
+| ugyanakkor `mov [rA + rB], rC` alakú írás **összesen** | **2234** |
+
+⇒ a forma **nagyon gyakori**, de a blokkon belüli konstans-követés
+2234-ből **egyetlen** esetben tudta bizonyítani az index értékét.
+**A nulla találat tehát a SZERSZÁM korlátja, nem a program tulajdonsága**
+— a lap „üres pásztázást ismert pozitívval ellenőrizd" szabálya szerint
+ebből **semmilyen negatívot nem vezetek le.**
+
+### 2. ⭐ A bázis+index+ELTOLÁS részalak viszont MÉRHETŐ — és ott nulla
+
+| minta | találat |
+|---|---|
+| `mov [rA + rB(+skála) + disp], rC` az egész `.text`-en | **424**, **85 különböző** eltolással |
+| ebből `disp == 0x90` | **0** |
+
+A leggyakoribb eltolások: `0xc` (122), `0x14` (24), `0x10` (20),
+`0x24` (18), `0x1c` (14)… ⇒ **jól benépesített minta, valódi nullával** a
+`0x90`-en, összhangban a 210. kör eredményével.
+
+### 3. ⭐ ORTOGONÁLIS PRÓBA: a szomszédos `+0x94` sztringmező
+
+Ha a `+0x90` valamiért „különleges" volna, a **szomszédja** más képet
+adna. Nem ad:
+
+| mező | `mov`-író | `lea` | `add` | ebből az OSZTÁLYHOZ tartozó |
+|---|---:|---:|---:|---|
+| `+0x90` | 118 fv | 46 | 12 | **4** |
+| `+0x94` | 119 fv | 71 | 22 | **4** |
+
+és mindkét esetben ugyanaz a négy: a **ktor** (`FUN_00413740`), a
+**dtor** (`FUN_00432270`), az **`operator=`** (`FUN_005a4f10`), plusz a
+210. körben már kimért **két hamis pozitív** (`FUN_0092f6d0`,
+`FUN_009316c0` — a saját elemző-objektumukra írnak).
+
+⇒ **nem a `+0x90` a kivétel: a rekord sztringmezőit általában véve csak
+a másolás tölti.** Ez lényegesen erősebb, mint az egy mezőre vett
+negatív.
+
+### 4. ⛳ Ezzel az OLCSÓ bizonyítéklánc a K4-en KIMERÜLT
+
+Nyolc kör (206–213) alatt lefutott, mind pozitív kontrollal, ahol a
+kontroll értelmezhető volt:
+
+| kör | mit zárt le |
+|---|---|
+| 206 | a `.picasa.ini`-író nem hashel — mezőt másol |
+| 207 | a `+0x90` mindkét érintője olvasó; mentéskor nincs újraszámolás |
+| 208 | a tartalomkulcs a `0x68`-as tulajdonságba megy; `imageuniqueid` (a `.picasa.ini`-ben 0 előfordulás) |
+| 209 | a rekord-osztály horgonya: ktor `0x00413740`, dtor `0x00432270`, `sizeof 0x130` |
+| 210 | a használó∩író metszet érdemben üres; a „7 találat" helyesbítve 59-re |
+| 211 | az `operator=` (`FUN_005a4f10`) megvan, és **ő írja** a `+0x90`-et |
+| 212 | öt címzési alak (mov-reg, mov-imm, lea, add, blokk-másolás) — más író nincs |
+| **213** | a hatodik alak **nem mérhető** blokkon belüli követéssel; a szomszéd `+0x94` ugyanazt adja |
+
+> **A következő lépés már a DRÁGA szint:** célzott dekompiláció
+> (`picasa-x86-research`) a `FUN_005a4f10` **húsz hívási helyének
+> forrás-oldalára** — az `operator=` forrásának eredetét mintaillesztéssel
+> nem lehet követni, csak valódi adatfolyam-elemzéssel.
+>
+> Konkrétan: a `0x0043219c`, `0x006df6c8`, `0x006f835e`, `0x006f83c8`,
+> `0x0092f254`, `0x0093031a`, `0x00930372`, `0x0093045d`, `0x00931875`,
+> `0x009318cc`, `0x0093219e`, `0x005a3591`, `0x005a3605`, `0x005a4489`,
+> `0x005a45e0`, `0x005a472f`, `0x005a4829`, `0x007d550a` helyeken a
+> **forrás rekord** honnan kapta a `+0x90`-et.
+
+*Bizonyítottsági fok: **megerősített** a 2. és a 3. pont (mindkettő
+benépesített mintával); az 1. pont **kimondottan nem lelet**, hanem a
+szerszám korlátjának mérése.*
