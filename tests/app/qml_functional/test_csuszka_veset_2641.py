@@ -33,6 +33,8 @@ megváltoztatására viszont NEM (a jegy ezt a kétirányú mutációt kérte).
 
 from __future__ import annotations
 
+import math as _math
+
 import time
 
 import pytest
@@ -186,17 +188,38 @@ def _rajz_sotet_tema(qt_app):
     return _rajzol(qt_app, FOGANTYU_SZELES, FOGANTYU_MAGAS, dark=True)
 
 
+#: #2664: a fogantyú DOBOZA (a réteg) 2 képponttal szélesebb és 3-mal
+#: magasabb, mint a benne álló TÖMÖR RAJZ — a különbség a lágy árnyék, jobbra
+#: és lefelé (`scaleslider/thumb` 16 × 22 → 14 × 19, `editslider/thumb`
+#: 16 × 26 → 14 × 23, mérve a `respack.yt`-ből). A vésés a RAJZ közepén áll
+#: (a #2641 mérése: x = 6 és 7 a 14 széles rajzban), nem a dobozén.
+ARNYEK_JOBB = 2
+ARNYEK_ALUL = 3
+
+
+def _js_kerekites(ertek: float) -> int:
+    """A QML (JavaScript) `Math.round`-ja: fél értéknél FELFELÉ kerekít.
+
+    ⚠️ A Python `round()` bankári kerekítést használ (`round(6.5) == 6`), a
+    JS `Math.round(6.5)` viszont 7. A vésés helye épp fél értékre esik a
+    páratlan magasságú rajznál (13/2), tehát a próba egy képponttal mellé
+    mérne — mérve: a függőleges csúszka sötét sora y = 18, a bankári
+    kerekítés 17-et adott."""
+    return int(_math.floor(ertek + 0.5))
+
+
 def _veses_oszlopai(doboz: tuple[int, int, int, int]) -> tuple[int, int]:
-    """A vésés két oszlopa: a fogantyú közepétől balra, illetve rajta."""
+    """A vésés két oszlopa: a RAJZ közepétől balra, illetve rajta."""
     x, _y, szeles, _magas = doboz
-    kozep = int(x) + round(szeles / 2)
+    kozep = int(x) + _js_kerekites((szeles - ARNYEK_JOBB) / 2)
     return (kozep - 1, kozep)
 
 
 def _veses_sorai(doboz: tuple[int, int, int, int]) -> tuple[int, int]:
-    """A vésés [tól, ig) sorai: 5-5 képpont behúzással."""
+    """A vésés [tól, ig) sorai: 5-5 képpont behúzás a RAJZ két végétől."""
     _x, y, _szeles, magas = doboz
-    return (int(y) + MERT_BEHUZAS, int(y) + magas - MERT_BEHUZAS)
+    rajz_magas = magas - ARNYEK_ALUL
+    return (int(y) + MERT_BEHUZAS, int(y) + rajz_magas - MERT_BEHUZAS)
 
 
 class TestAFogantyuKirajzolodik:
@@ -222,7 +245,8 @@ class TestAFogantyuKirajzolodik:
         kep, doboz = _rajz
         x, y, _szeles, magas = doboz
         atlag = _oszlop_atlaga(
-            kep, int(x) + 2, int(y) + MERT_BEHUZAS, int(y) + magas - MERT_BEHUZAS
+            kep, int(x) + 2, int(y) + MERT_BEHUZAS,
+            int(y) + magas - ARNYEK_ALUL - MERT_BEHUZAS
         )
         assert atlag > 180, (
             f"a fogantyú bal széle {atlag:.0f} világosságú — a mért "
@@ -282,7 +306,11 @@ class TestAVeset:
         kep, doboz = _rajz
         sotet_x, _ = _veses_oszlopai(doboz)
         _x, y, _szeles, magas = doboz
-        for sor, hol in ((int(y) + 1, "tetején"), (int(y) + magas - 2, "alján")):
+        for sor, hol in (
+            (int(y) + 1, "tetején"),
+            # #2664: a doboz alján már az ÁRNYÉK van, a rajz 3-mal feljebb ér véget
+            (int(y) + magas - ARNYEK_ALUL - 2, "alján"),
+        ):
             veses = _vilagossag(kep, sotet_x, sor)
             szomszed = _vilagossag(kep, sotet_x - 2, sor)
             assert abs(veses - szomszed) < MIN_SOTET_KULONBSEG, (
@@ -306,9 +334,11 @@ class TestAVeset:
             >= MIN_SOTET_KULONBSEG
         ]
         assert sorok, "egyetlen vésett sor sincs — a vonal hiányzik"
-        assert len(sorok) == magas - 2 * MERT_BEHUZAS, (
-            f"{len(sorok)} vésett sor van a fogantyú {magas} sorából, "
-            f"a mért behúzás mellett {magas - 2 * MERT_BEHUZAS} lenne"
+        rajz_magas = magas - ARNYEK_ALUL
+        assert len(sorok) == rajz_magas - 2 * MERT_BEHUZAS, (
+            f"{len(sorok)} vésett sor van a RAJZ {rajz_magas} sorából "
+            f"(a doboz {magas}, az árnyék {ARNYEK_ALUL}), a mért behúzás "
+            f"mellett {rajz_magas - 2 * MERT_BEHUZAS} lenne"
         )
         assert min(sorok) - int(y) == MERT_BEHUZAS, (
             f"a vésés a fogantyú tetejétől {min(sorok) - int(y)} képponttal "
@@ -427,12 +457,14 @@ class TestFuggolegesCsuszkan:
 
     def _sorai(self, doboz) -> tuple[int, int]:
         _x, y, _szeles, magas = doboz
-        kozep = int(y) + round(magas / 2)
+        # #2664: a rajz az árnyék miatt 3 képponttal alacsonyabb a doboznál
+        kozep = int(y) + _js_kerekites((magas - ARNYEK_ALUL) / 2)
         return (kozep - 1, kozep)
 
     def _oszlopai(self, doboz) -> tuple[int, int]:
         x, _y, szeles, _magas = doboz
-        return (int(x) + MERT_BEHUZAS, int(x) + szeles - MERT_BEHUZAS)
+        # #2664: a jobb szélen már az ÁRNYÉK van, a rajz 2-vel beljebb ér véget
+        return (int(x) + MERT_BEHUZAS, int(x) + szeles - ARNYEK_JOBB - MERT_BEHUZAS)
 
     def _sor_atlaga(self, kep, sor: int, x0: int, x1: int) -> float:
         return sum(_vilagossag(kep, x, sor) for x in range(x0, x1)) / (x1 - x0)

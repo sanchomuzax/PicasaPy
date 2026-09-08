@@ -445,6 +445,28 @@ Két megfigyelés:
 2. A `scaleslider` és a `timeslider` **vékony sávot** rajzol (9, illetve
    7 képpont), a `bigslider`/`editslider`/`toolslider` **teljes magasságú
    hátteret**.
+3. ⭐ **A RÉTEG és a RAJZ nem ugyanaz** (2026-09-08, #2664). A fenti
+   fogantyú-méretek a RÉTEG dobozai; a bennük álló **tömör rajz 2 képponttal
+   keskenyebb és 3-mal alacsonyabb**:
+
+   | réteg | a réteg | a tömör rajz |
+   |---|---|---|
+   | `scaleslider/thumb` | 16 × 22 | **14 × 19** |
+   | `editslider/thumb` | 16 × 26 | **14 × 23** |
+
+   A különbség a lágy **árnyék**, jobbra és lefelé.
+
+   **Nálunk (megvalósítva, #2664):** a doboz marad a réteg mérete — a
+   Layout helye, tehát a környező elrendezés mért állandói (#1345/#1367)
+   érintetlenek —, és a RAJZ húzódik be. Ezért a #2641 vésése is a RAJZ
+   közepén áll (x = 6 és 7 a 14 széles rajzban), nem a dobozén, és a
+   függőleges 5-5 képpontos behúzás is a rajz két végétől számít.
+
+   ⛔ **MÉRT az árnyék KITERJEDÉSE** (2 és 3 képpont); a lágyulás profilja
+   **nincs mérve** — a mi rajzunk három, egyre halványabb rétege saját
+   döntés. Az őr (`test_fogantyu_arnyek_2664.py`) ezért csak annyit köt
+   meg, hogy az árnyék sötétebb a háttérnél, világosabb a keretnél, és
+   kifelé halványul.
 
 A Derítőfény-sor `backlight_container`-e **127 × 27** — pontosan egy
 `scaleslider`.
