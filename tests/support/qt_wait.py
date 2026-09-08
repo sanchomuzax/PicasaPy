@@ -106,6 +106,14 @@ class HangosHurok(QEventLoop):
         self._timeout_ms = timeout_ms
         #: publikus: a hívó is megnézheti, a jelzés zárta-e a hurkot
         self.jelzes_megjott = False
+        #: #2743 (folytatás): a jelzés ARGUMENTUMAI — a hurok saját, ELSŐNEK
+        #: bekötött szlotja rögzíti. A hívónak így nem kell MÁSODIK szlotot
+        #: kötnie ugyanarra a jelzésre, és nem függ attól, hogy annak a
+        #: kézbesítése a hurok kilépése előtt sorra kerül-e. MÉRVE: a
+        #: `test_face_scan_controller.py` esetei 60 futásból 2-3-ban úgy
+        #: buktak, hogy `jelzes_megjott=True`, de a hívó gyűjtője üres
+        #: maradt (CI: 34248206013, 34254846732).
+        self.jelzes_argumentumai: tuple = ()
         jelzes.connect(self._jelzesre)
 
     def _jelzesre(self, *_args) -> None:
@@ -129,6 +137,7 @@ class HangosHurok(QEventLoop):
         MÉRVE nem hozott semmit a halasztott zárás mellett, ezért nincs
         benne — igazolatlan mechanizmus nem marad a kódban.)"""
         self.jelzes_megjott = True
+        self.jelzes_argumentumai = tuple(_args)
         QTimer.singleShot(0, self.quit)
 
     def exec(self, *args, **kwargs) -> int:
@@ -157,6 +166,15 @@ class HangosHurok(QEventLoop):
             eredmeny = super().exec(*args, **kwargs)
         finally:
             veszfek.stop()
+        # ⚠️ MÉRVE (2026-09-08): egy kézbesítési kör AKKOR IS kell, ha a
+        # jelzés megjött. A hurok saját szlotja és a hívóé KÜLÖN posztolt
+        # esemény (szálak közti kapcsolatnál kapcsolatonként egy), és a
+        # halasztott `quit()` sem garantálja, hogy a hívóé még a kilépés
+        # ELŐTT sorra kerül. Reprodukálva: 60 futásból 3-ban
+        # `jelzes_megjott=True`, miközben a hívó gyűjtője ÜRES maradt — a
+        # `test_face_scan_controller.py` gyors, véletlenszerű
+        # `arrived is False` bukásai (CI: 34248206013, 34254846732).
+        QCoreApplication.processEvents()
         if not self.jelzes_megjott:
             # A hurokból kiléphetett egy MÁSIK szlot `quit()`-je is,
             # mielőtt a miénk sorra került volna (a hívó saját kezelője a
