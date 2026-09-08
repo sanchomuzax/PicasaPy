@@ -97,15 +97,173 @@ _KOMMENT_JEL: dict[str, str] = {".qml": "//", ".js": "//", ".mjs": "//"}
 #: nem-komment sor már a `startswith` próbán elbukik.
 _BIZONYTALAN = ("/*", "*/")
 
+#: A Python hármas-idézőjelek — a docstring-felismerés (#2708) csak ezt a
+#: két alakot ismeri. A projekt magyar docstringjei szinte kizárólag
+#: `"""`-t használnak, de a `'''` is érvényes Python, tehát mindkettőt
+#: figyeljük.
+_HARMAS_IDEZOJEL = ("'''", '"""')
+
+
+def _harmas_idezojel_szama(tartalom: str) -> int:
+    """A sorban előforduló hármas-idézőjelek összesített száma."""
+    return sum(tartalom.count(h) for h in _HARMAS_IDEZOJEL)
+
+
+def _hatarjel_szerepe(tartalom: str) -> str | None:
+    """Egy PÁRATLAN számú hármas-idézőjelet tartalmazó sor NYITja vagy
+    ZÁRja a docstringet — a döntés a jel körüli szöveg helyzetéből jön.
+
+    A projekt stílusa szerint a nyitó sor a jel UTÁN hordoz szöveget
+    (`\"\"\"Rövid leírás…`), a záró sor a jel ELŐTT (`…vissza.\"\"\"`).
+    Ha a sor MINDKÉT oldalán van tartalom, vagy SEMELYIKEN (önálló záró
+    sor, csak a jellel), a szerep nem dönthető el biztonságosan — ilyenkor
+    `None`, és a hívó a szigorú ágra vált."""
+    for jel in _HARMAS_IDEZOJEL:
+        if jel in tartalom:
+            elotte, _, utana = tartalom.partition(jel)
+            van_elotte = bool(elotte.strip())
+            van_utana = bool(utana.strip())
+            if van_utana and not van_elotte:
+                return "NYIT"
+            if van_elotte and not van_utana:
+                return "ZAR"
+            return None
+    return None
+
+
+def _docstring_allapotok(sorok: list[str]) -> list[bool | None]:
+    """Soronként: a sor docstring-tartalom-e (`True`), biztosan kód
+    (`False`), vagy nem dönthető el (`None`)? (#2708)
+
+    `sorok` egy ÖSSZEFÜGGŐ fájlrészlet sorai (kontextus + a diff EGYIK
+    oldala — csak törölt VAGY csak hozzáadott —, sorrendben). A döntés
+    KIZÁRÓLAG a látható hármas-idézőjelekre épül: az első ilyen sor
+    szerepét (`_hatarjel_szerepe`) kell megfejteni — a hozzá tartozó
+    „előtte" sorok ebből következnek (ZÁR ⇒ előtte BENT voltunk, NYIT ⇒
+    előtte KÍVÜL) —, minden KÉSŐBBI határjel már csak VÁLTOGATJA az
+    állapotot, nem kell újra kitalálni a szerepét.
+
+    Ha a szelet sosem mutat hármas-idézőjelet, minden sor `None` marad —
+    nincs bizonyíték sem docstringre, sem kódra, a hívó ezt szigorúan
+    kezeli (a #1875 elve: bizonytalanság ⇒ NEM komment)."""
+    eredmeny: list[bool | None] = [None] * len(sorok)
+    allapot: bool | None = None
+    fuggo: list[int] = []
+    for i, tartalom in enumerate(sorok):
+        szam = _harmas_idezojel_szama(tartalom)
+        if szam == 0:
+            if allapot is None:
+                fuggo.append(i)
+            else:
+                eredmeny[i] = allapot
+            continue
+        if szam % 2 == 0:
+            # Önálló, egysoros docstring (`"""Egy sor."""`) — a sor MAGA
+            # docstring-tartalom, de a KÖRNYEZET állapotát nem módosítja
+            # (páros szám ⇒ nettó nulla váltás).
+            #
+            # ⚠️ Csak akkor, ha a sor a jellel KEZDŐDIK. Egy KÓDSOR is
+            # tartalmazhat beágyazott hármas-idézőjeles sztringet
+            # (`re.sub('\"\"\"', …)`), és azt kódnak kell látni —
+            # különben az őr valódi kódváltozást engedne át
+            # dokumentációként.
+            if not tartalom.strip().startswith(_HARMAS_IDEZOJEL):
+                return eredmeny  # kódsor: a maradék `None` marad — szigor
+            eredmeny[i] = True
+            if allapot is None:
+                for p in fuggo:
+                    eredmeny[p] = False
+                fuggo = []
+                allapot = False
+            continue
+        # Páratlan szám — valódi határ (nyit VAGY zár).
+        if allapot is None:
+            szerep = _hatarjel_szerepe(tartalom)
+            if szerep is None:
+                return eredmeny  # a maradék `None` marad — szigor
+            elotte_bent = szerep == "ZAR"
+            for p in fuggo:
+                eredmeny[p] = elotte_bent
+            fuggo = []
+            eredmeny[i] = True
+            allapot = not elotte_bent
+        else:
+            eredmeny[i] = allapot
+            allapot = not allapot
+    return eredmeny
+
+
+def _hunkokra_bontva(diff: str) -> list[list[tuple[str, str]]]:
+    """A diffet `@@ … @@` hunk-határok szerint darabolja.
+
+    Minden elem egy hunk `(jel, tartalom)` páros listája — a fájl-fejléc
+    (`---`/`+++`) és a hunk-fejléc (`@@`) sorok kimaradnak. A `\\ No
+    newline…` jelzés (backslash) sem `" +-"` jelű, tehát szintén kimarad."""
+    hunkok: list[list[tuple[str, str]]] = []
+    jelen: list[tuple[str, str]] | None = None
+    for sor in diff.splitlines():
+        if sor.startswith("@@"):
+            jelen = []
+            hunkok.append(jelen)
+            continue
+        if jelen is None or sor.startswith(("+++", "---")) or not sor:
+            continue
+        if sor[0] in " +-":
+            jelen.append((sor[0], sor[1:]))
+    return hunkok
+
+
+def _docstring_biztonsagos_hunk(hunk: list[tuple[str, str]]) -> bool:
+    """Egy hunk TELJES egészében egy docstringen belüli, biztonságosan
+    felismerhető változás-e? (#2708)
+
+    Két fájlrészletet épít a hunkból — a RÉGIT (kontextus + törölt sorok)
+    és az ÚJAT (kontextus + hozzáadott sorok) —, és mindkettőre lefuttatja
+    a `_docstring_allapotok` felismerést. Két feltételnek EGYSZERRE kell
+    teljesülnie:
+
+    1. minden ÉRINTETT (törölt/hozzáadott) sor a saját oldalán docstring-
+       tartalomnak (`True`) bizonyul;
+    2. minden VÁLTOZATLAN (kontextus) sor a két oldalon UGYANAZT az
+       állapotot kapja — különben a docstring határa egy változatlan
+       kódsor FÖLÖTT mozdult el (kód „szippantódna be" a docstringbe,
+       vagy fordítva), ami valódi viselkedésváltozás, nem dokumentáció.
+
+    Bármelyik feltétel sérülése — vagy egyetlen `None` (bizonytalan) az
+    érintett soroknál — a szigorú (nem-docstring) döntést hozza."""
+    regi = [tartalom for jel, tartalom in hunk if jel in " -"]
+    uj = [tartalom for jel, tartalom in hunk if jel in " +"]
+    regi_allapot = _docstring_allapotok(regi)
+    uj_allapot = _docstring_allapotok(uj)
+
+    kontextus_regi: list[bool | None] = []
+    kontextus_uj: list[bool | None] = []
+    ri = ui = 0
+    for jel, _tartalom in hunk:
+        if jel == " ":
+            kontextus_regi.append(regi_allapot[ri])
+            kontextus_uj.append(uj_allapot[ui])
+            ri += 1
+            ui += 1
+        elif jel == "-":
+            if regi_allapot[ri] is not True:
+                return False
+            ri += 1
+        elif jel == "+":
+            if uj_allapot[ui] is not True:
+                return False
+            ui += 1
+
+    return kontextus_regi == kontextus_uj
+
 
 def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
     """Csak `#`-megjegyzés (és üres) sorok változtak a fájlban? (#1875)
 
     ⚠️ **A szabály SZÁNDÉKOSAN szűk.** Nem tud kódváltozást elrejteni:
     bármely érdemi sor a diffben azonnal kiüti, mert az nem `#`-kezdetű.
-    A Python-DOCSTRING-et NEM kezeli (az nem `#`-sor) — ott a szigor
-    marad. A téves riasztás bosszantó, a téves ÁTENGEDÉS néma, ezért a
-    kétes eset a szigorú oldalra dől.
+    A téves riasztás bosszantó, a téves ÁTENGEDÉS néma, ezért a kétes eset
+    a szigorú oldalra dől.
 
     **#2042 — a `//`-nyelvek.** A `.qml`/`.js` fájloknál a `#` NEM
     megjegyzés (szín-literál kezdete lehet), a `//` viszont az. A `fajl`
@@ -114,6 +272,16 @@ def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
     bukkan fel, a szigorú ág nyer: az előbbi kettő több sorra nyúló blokk,
     az utóbbi sablonsztring, és mindkettőben egy `//`-kezdetű sor lehet
     NEM megjegyzés. Élesben a #2036 bukott el egyetlen QML-kommenten.
+
+    **#2708 — a Python-DOCSTRING.** A docstring sora nem `#`-kezdetű,
+    ezért a fenti szabály önmagában NEM ismeri fel — de a #2707 élesben
+    megmutatta, hogy egy mért „miért" a docstring VÉGÉBE írva ugyanúgy
+    nem-felhasználói változás, mint egy `#:`-komment. A felismerést csak
+    `.py` fájlnévvel és csak a BIZTONSÁGOS esetre szorítjuk
+    (`_docstring_biztonsagos_hunk`): a diff-blokk igazoltan TELJES
+    egészében egy docstringen belül van. Fájlnév nélkül, vagy más
+    kiterjesztésnél, vagy bármely bizonytalanságnál a szigorú régi
+    viselkedés marad — egy elnéző őr rosszabb, mint egy szigorú.
 
     Üres diff = „nem tudjuk" ⇒ NEM mondjuk kommentnek.
 
@@ -128,6 +296,7 @@ def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
         jel = _KOMMENT_JEL.get(Path(fajl).suffix.lower(), "#")
 
     latott = False
+    csak_jelolt_komment = True
     for sor in diff.splitlines():
         if not sor or sor[0] not in "+-" or sor.startswith(("+++", "---")):
             continue
@@ -136,8 +305,19 @@ def csak_komment_valtozas(diff: str, fajl: str | None = None) -> bool:
         if jel == "//" and any(x in tartalom for x in _BIZONYTALAN):
             return False
         if tartalom and not tartalom.startswith(jel):
-            return False
-    return latott
+            csak_jelolt_komment = False
+
+    if not latott:
+        return False
+    if csak_jelolt_komment:
+        return True
+
+    if fajl is not None and Path(fajl).suffix.lower() == ".py":
+        hunkok = _hunkokra_bontva(diff)
+        if hunkok and all(_docstring_biztonsagos_hunk(h) for h in hunkok):
+            return True
+
+    return False
 
 
 def kell_bejegyzes(fajlok: Iterable[str]) -> bool:

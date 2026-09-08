@@ -23,7 +23,14 @@ kiadási jegyzeten (v0.8.71–73). Ezért:
 
 A készlet súlypontja ezért a NEM-eken van: mindegyik azt méri, hogy a
 lazítás **nem lyukadt ki**.
-"""
+
+## #2708 — a docstring bővítése
+
+A fenti „a docstring NEM tartozik ide" mondat **csak fájlnév nélkül** igaz
+(visszafelé kompatibilitás — ld. `test_fajlnev_nelkul_a_regi_viselkedes`).
+`.py` fájlnévvel az őr immár felismeri a **biztonságos** docstring-only
+esetet is (`TestPythonDocstring` osztály lent) — az élő #2707 diffjén
+bizonyítva."""
 
 from __future__ import annotations
 
@@ -223,3 +230,149 @@ class TestQmlKomment:
     def test_fajlnev_nelkul_a_regi_viselkedes(self) -> None:
         """Visszafelé kompatibilitás: fájlnév nélkül a `#`-szabály él."""
         assert csak_komment_valtozas(KOMMENT_DIFF)
+
+
+# #2707 valódi diffje (git diff 73b082aa 2f33c067, ubuntu-lábon pirosat
+# kapott a régi őrön) — a `#2708` biztonságos docstring-felismerésének
+# közvetlen bizonyítéka. A `"""` a diff SAJÁT tartalma, ezért a Python-
+# sztringet hármas EGYES idézőjellel kell nyitni, nem hármas dupla-val.
+_CVIMAGE_2707_DIFF = '''--- a/src/picasapy/cvimage.py
++++ b/src/picasapy/cvimage.py
+@@ -98,6 +98,14 @@ def scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:
+     felhasználó munkáját nem szabad, ezért az export-út a mag
+     GYORSÍTÁSÁIG marad az `INTER_AREA`-n — #2669.
+ 
++    **A gyorsítást a #2669 köre megpróbálta, és nem sikerült** (mérve
++    2026-09-08, RPi5): nyolc irányból a legjobb 2,0×-t hozott a magon, így
++    a teljes út 16,1× helyett 7,9× — a 3×-os küszöb több mint kétszerese.
++    Már az elő-szűrés önmagában 1,6–1,9×, tehát a magra ~1,2× jutna. A mért
++    ok az, hogy a Pythonból hívható `cv2.sepFilter2D` nem decimál és egy
++    szálon fut; a gyors, decimáló OpenCV-utak magja rögzített. A teljes
++    tábla: `docs/benchmarks/2026-09-08-2669-mag-gyorsitas.md`.
++
+     `max_dimension=None` vagy már elég kicsi kép esetén a bemenet
+     változatlanul (azonos objektumként) tér vissza."""
+     if max_dimension is None:
+'''
+
+_RESAMPLE_2707_DIFF = '''--- a/src/picasapy/resample.py
++++ b/src/picasapy/resample.py
+@@ -168,7 +168,19 @@ _FELEZO_HORGONY = 7
+ 
+ 
+ def _gyors_felezes(kep: np.ndarray) -> np.ndarray:
+-    """Pontosan 2 : 1 kicsinyítés a rögzített maggal, OpenCV-vel."""
++    """Pontosan 2 : 1 kicsinyítés a rögzített maggal, OpenCV-vel.
++
++    ⚠️ **Ez a Picasa-út legdrágább fele, és a #2669 köre lemérte, hogy
++    Pythonból nem gyorsítható eleget.** Nyolc irányt próbáltunk (polifázis
++    decimálás, négyfázisú 2D bontás, fixpontos `CV_16S`/`CV_8U`,
++    csatornánkénti szűrés, sávos feldolgozás, kézi szálasítás és ezek
++    kombinációi); a legjobb **2,0×**-t hozott, a küszöbhöz ~10× kellett
++    volna. Az ok mérve: a `cv2.sepFilter2D` nem decimál és egy szálon fut
++    (~3 GMAC/s), a decimáló, fixpontos, szálas OpenCV-utaknak (`resize`,
++    `pyrDown`; 9–12 GMAC/s) viszont be van égetve a magjuk. A teljes tábla
++    és az, mi vinné át a küszöbön:
++    `docs/benchmarks/2026-09-08-2669-mag-gyorsitas.md`.
++    """
+     mag = felezo_mag().reshape(-1, 1)
+     szurt = cv2.sepFilter2D(
+         kep,
+'''
+
+
+class TestPythonDocstring:
+    """#2708: a `.py` docstring biztonságos esete is komment-értékű.
+
+    A négy alosztály a jegy „Kész, ha" listáját fedi: docstring-only ÁTMEGY,
+    docstring MELLETT valódi kódsor NEM megy át, a #2707 valódi diffje
+    átmenne, és a „határeltolás" (kód beszippantása a docstringbe) szigorú
+    marad.
+    """
+
+    def test_docstring_only_tobbsoros_beszuras_atmegy(self) -> None:
+        """A valódi #2707-mintázat: meglévő docstring VÉGÉBE szúrt új
+        bekezdés, a záró `\"\"\"` változatlan kontextusként látszik."""
+        assert csak_komment_valtozas(_CVIMAGE_2707_DIFF, "src/picasapy/cvimage.py")
+
+    def test_docstring_only_egysoros_docstring_atalakitasa_atmegy(self) -> None:
+        """A másik valódi #2707-mintázat: egysoros docstring lesz
+        többsorossá — a nyitó `\"\"\"` a hozzáadott sorban NYIT, a záró
+        önálló sorban ZÁR, közte minden hozzáadott sor a döntés alapja."""
+        assert csak_komment_valtozas(_RESAMPLE_2707_DIFF, "src/picasapy/resample.py")
+
+    def test_a_2707_MINDKET_fajlja_atmegy_a_teljes_orön(self) -> None:
+        """Bizonyíték a jegy 3. Kész-ha pontjához: a #2707 EREDETI diffje
+        (a workaround ELŐTT, `git diff 73b082aa 2f33c067`) mindkét érintett
+        fájlon átmenne az új őrön — tehát nem lett volna szükség a
+        docstring→komment átalakításra."""
+        assert csak_komment_valtozas(_CVIMAGE_2707_DIFF, "src/picasapy/cvimage.py")
+        assert csak_komment_valtozas(_RESAMPLE_2707_DIFF, "src/picasapy/resample.py")
+
+    def test_docstring_MELLETT_valodi_kodsor_tovabbra_is_BUKIK(self) -> None:
+        """A jegy 2. Kész-ha pontja: docstring-változás MELLETT egy valódi
+        kódsor ne csússzon át."""
+        diff = '''--- a/x.py
++++ b/x.py
+@@ -1,4 +1,5 @@
+ def f():
+-    """régi docstring."""
++    """új docstring."""
++    return 3
+'''
+        assert not csak_komment_valtozas(diff, "x.py")
+
+    def test_docstring_only_egysoros_csere_atmegy(self) -> None:
+        """A legegyszerűbb biztonságos eset: egysoros docstring cseréje —
+        a nyitó ÉS záró jel is látszik, ugyanazon a (törölt/hozzáadott)
+        soron, nincs mit kitalálni."""
+        diff = '''--- a/x.py
++++ b/x.py
+@@ -1,3 +1,3 @@
+ def f():
+-    """régi docstring."""
++    """új docstring."""
+     return 3
+'''
+        assert csak_komment_valtozas(diff, "x.py")
+
+    def test_docstring_hatar_athelyezese_kodot_nyel_BUKIK(self) -> None:
+        """Biztonsági határeset: a záró `\"\"\"` ELTŰNIK, és egy korábban
+        VÁLTOZATLANNAK látszó kódsor emiatt a docstringbe kerülne — ez a
+        `render()` sor a régi fájlban KÍVÜL, az újban BELÜL lenne. Az őr ezt
+        a kontextus-sorok ütköző állapotával fogja meg, és szigorú marad."""
+        diff = '''--- a/x.py
++++ b/x.py
+@@ -1,4 +1,3 @@
+ def f():
+-    """régi docstring."""
+-    render()
++    """régi docstring.
+     return 3
+'''
+        assert not csak_komment_valtozas(diff, "x.py")
+
+    def test_nem_py_fajlon_a_docstring_felismeres_nem_fut(self) -> None:
+        """A hármas idézőjel Pythonon kívül nem docstring — más
+        kiterjesztésnél a felismerés ki sem próbálja (szigor marad)."""
+        diff = '''--- a/x.toml
++++ b/x.toml
+@@ -1,2 +1,2 @@
+-leiras = """régi"""
++leiras = """új"""
+'''
+        assert not csak_komment_valtozas(diff, "x.toml")
+
+    def test_fajlnev_nelkul_a_docstring_meg_szigoru_marad(self) -> None:
+        """Fájlnév nélkül a döntés nem tudja, hogy `.py`-ról van szó —
+        a régi, szigorú viselkedés él tovább (ld. modul-docstring #2708
+        szakasza)."""
+        diff = '''--- a/x.py
++++ b/x.py
+@@ -1,3 +1,3 @@
+ def f():
+-    """régi docstring."""
++    """új docstring."""
+     return 3
+'''
+        assert not csak_komment_valtozas(diff)
