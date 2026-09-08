@@ -37,6 +37,8 @@ import stat as stat_module
 
 import pytest
 
+from support.platform_marks import csak_posix_jogosultsag
+
 from picasapy.index import sync as sync_module
 from picasapy.index.sync import folder_looks_offline
 
@@ -60,8 +62,17 @@ class TestAKiuritettMappa:
 
 
 class TestAmiTOVABBRA_IS_offline:
+    @csak_posix_jogosultsag
     def test_az_olvashatatlan_mappa_offline(self, tmp_path):
-        """Elvett jog: `scandir` OSError — a levált mount egyik képe."""
+        """Elvett jog: `scandir` OSError — a levált mount egyik képe.
+
+        ⚠️ #1864: a jelölés KIMONDOTT. Nélküle a próba Windowson némán
+        kimaradt — a `chmod(0)` ott a mappára hatástalan, tehát az
+        `os.access` átengedett, és a futásidejű `pytest.skip` „a futtató
+        átlát a jogosultságon (root?)" indokot írt ki. A szám (egy kihagyás)
+        ugyanaz volt, az OKA hamis: nem root, hanem platform. Az őr, ami ezt
+        megfogja: `tests/test_chmod_platform_kapu_1864.py`.
+        """
         zart = tmp_path / "zart"
         zart.mkdir()
         os.chmod(zart, 0o000)
