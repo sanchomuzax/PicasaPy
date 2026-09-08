@@ -1106,3 +1106,123 @@ az nem a `949998,0` lehet (5. pont). Használható jelöltek a ktorból:
 *Bizonyítottsági fok: **megerősített** az 1–3. és az 5. pont
 (utasításszinten, a hamis pozitívok elolvasva); a 4. pont a módszer
 kimondott korlátja, ezért a negatívot **nem** általánosítom.*
+
+## MEGVAN a rekord `operator=`-a — és igenis írja a `+0x90`-et (2026-09-08, #2675)
+
+*211. kutatói kör.* Az előző kör **kimondta**, hogy a „hivatkozik-e a
+ktorra/dtorra" szűrő elvileg sem láthat egy `operator=`-t. Ez a kör
+megkereste — és a hipotézis **pozitív találattal** igazolódott.
+
+### 1. ⭐ A megtalálás útja: a vektor MÁSOLÓ ciklusa
+
+A `0x130`-as elemméretű tömb kezelőjében (`FUN_005a3360`) a
+tömb-növelés után egy elemenkénti ciklus áll:
+
+```
+0x005a3434  mov ecx, [esi]        ; a RÉGI tömb
+0x005a3436  add ecx, edi
+0x005a3438  push ecx              ; forrás
+0x005a3439  lea edx, [edi + ebx]  ; cél (az ÚJ tömbben)
+0x005a343c  push edx
+0x005a343d  call 0x005a4f10       ; ← az elem MÁSOLÁSA
+0x005a3442  add edi, 0x130        ; a lépésköz
+```
+
+⇒ **`FUN_005a4f10` (1452 b) a rekord `operator=`-a**, `dst` = 2. tolt
+argumentum (`ebp`), `src` = 1. (`ebx`).
+
+*(A segédfüggvények szerepe is kiolvasva: a `FUN_004010e0`
+`eax` = darabszám, `ecx` = bázis, majd elemenként `call fn` előrefelé —
+tömb-konstruálás; a `FUN_00401110` ugyanez visszafelé — tömb-lebontás.
+Másoló segéd **nincs** köztük, a másolást ez a kézi ciklus végzi.)*
+
+### 2. ⭐ És a `+0x90`-et a szokásos sztring-idiómával MÁSOLJA
+
+```
+0x005a5309  mov ecx, [ebp + 0x90]     ; a CÉL jelenlegi sztringje
+0x005a530f  cmp ecx, [ebx + 0x90]     ; egyezik a FORRÁSÉVAL?
+0x005a5315  lea edi, [ebp + 0x90]
+0x005a531b  je  0x005a5353            ; ha igen, nincs teendő
+0x005a531d  call 0x00401000           ; a régi elengedése
+0x005a5322  mov eax, [ebx + 0x90]     ; ← a FORRÁS értéke
+0x005a532a  mov [edi], eax            ; átkötés
+0x005a534e  call 0x00985a60           ; hivatkozásszám növelése
+```
+
+⇒ **a rekord `+0x90`-ét a `operator=` írja** — és mivel az `operator=`
+nem hivatkozik a ktorra/dtorra, a 210. kör szűrője **elvileg sem**
+láthatta. A kimondott korlát ezzel **igazolt**, nem csak feltételezett.
+
+### 3. ⭐ A rekord MEZŐTÉRKÉPE az `operator=`-ból
+
+Az érintett eltolások teljes leltára (a 1452 bájt átfésülve):
+
+```
++0x0c +0x10 +0x14 +0x18 +0x20 +0x24 +0x28 +0x2c +0x30 +0x34 +0x3c
++0x40 +0x44 +0x48 +0x4c +0x50 +0x54 +0x58 +0x5c +0x60 +0x64 +0x68
++0x70 +0x90 +0x94 +0x9c +0xa0 +0xa4 +0xa8 +0xb0 +0xf0 +0xf4 +0x110
+```
+
+A `+0x68`-at és a `+0x70`-et **egészként** másolja
+(`0x005a52f7`/`0x005a5301`), a `+0x90`-et és a `+0x94`-et
+**sztringként** (`0x005a5309`, `0x005a5353`).
+
+### 4. ⭐ A vektor `push_back`-je: `FUN_007d53e0`
+
+```
+0x007d54c1  call 0x0097c5d0        ; operator new
+0x007d54d0  push 0x00413740        ; elem-ktor
+0x007d54d7  push 0x130
+0x007d54e0  call 0x004010e0        ; az ÚJ tömb megkonstruálása
+0x007d550a  call 0x005a4f10        ; a régi elemek átmásolása (lépés 0x130)
+0x007d552b  push 0x00432270 ; 0x130 → 0x00401110   ; a régi tömb lebontása
+0x007d555f  call 0x005a4f10        ; ← az ÚJ elem a végére, operator=-szal
+0x007d5574  mov [ebp+4], ecx       ; a csomagolt darabszám +2-vel
+```
+
+### 5. ⭐ …és a `push_back` EGYETLEN hívója a Google Photos-letöltés
+
+Index-független pásztázás: `0x006fa388` és `0x006fa78c`, mindkettő a
+**`FUN_006f9cc0`** (6829 b) — sztringjei: `Download from Google Photos`,
+`Picasa2RSS`, `CLighthouseConfirm::only_videos`, `photo`, `photos`.
+
+⇒ **ez a rekord-vektor a web-album fotólistája**, és a `.picasa.ini`
+metaadat-írója (`FUN_007d55f0`) ugyanennek az osztálynak a rekordjait
+írja ki.
+
+### 6. ⛔ DE ezen az úton a `+0x90` ÉRINTETLEN MARAD
+
+A `0x006fa388`-as híváskor a forrás egy **verem-rekord**:
+
+```
+0x006fa371  lea ecx, [esp + 0x80]   ; a rekord
+0x006fa378  push ecx
+0x006fa388  call 0x007d53e0
+```
+
+Ha a rekord a `esp+0x80`-on ül, akkor a `+0x90` mezője az
+`[esp+0x110]` — és erre a függvény **6829 bájtjában egyetlen
+hivatkozás sincs**. *(A függvényben látható `[esp+0x90]`-ek a rekord
+`+0x10`-ének felelnének meg, tehát nem a keresett mező.)*
+
+⇒ **ezen az úton az `originhash` üres marad**, és a kiíró — a 206. kör
+szerint — ilyenkor **ki is hagyja a kulcsot**. A letöltési ág tehát
+**nem** az `originhash` forrása.
+
+### 7. A KÖVETKEZŐ lépés, megnevezve
+
+> **Az `operator=` MELYIK hívója hoz nem üres `+0x90`-et?**
+
+Az `operator=`-nak (index-független pásztázás) **húsznál több** hívási
+helye van; a most megnézett kettőn (`0x005a343d` — belső vektor-másolás,
+`0x007d555f` — a letöltési `push_back`) kívül a jelöltek:
+`0x0043219c`, `0x006df6c8`, `0x006f835e`, `0x006f83c8`, `0x0092f254`,
+`0x0093031a`, `0x00930372`, `0x0093045d`, `0x00931875`, `0x009318cc`,
+`0x0093219e`, `0x005a3591`, `0x005a3605`, `0x005a4489`, `0x005a45e0`,
+`0x005a472f`, `0x005a4829`, `0x007d550a`. A menet: mindegyiknél a
+**forrás** rekord eredetét kell megnézni — az elsőt, amelyiknél a
+`+0x90` nem üresen születik.
+
+*Bizonyítottsági fok: **megerősített** az 1–6. pont (utasításszinten, a
+mezőtérkép a teljes törzs átfésüléséből); **nyitott** a nem üres `+0x90`
+forrása.*
