@@ -1608,7 +1608,7 @@ megvizsgálva:
 A 60 tétel gazdalapja minden esetben a panel **saját** lapja — pl. mind a
 tíz `compose_mail` és mind a kilenc `choose_mail` a
 `picasa-email-kuldes.md`-en, mind a hét `titledialog` a
-`picasa-create-features.md`-en, mind az öt `edittextpanel` a
+`picasa-create-features.md`-en, mind az öt `editpanel/edittextpanel` a
 `szerkeszto-panel-meretek.md`-en. Nem szórvány-találatok: a panel
 dokumentációja megvan, csak **levélnéven és horgony nélkül**, ezért a
 mérő nem látja (22.4–22.5).

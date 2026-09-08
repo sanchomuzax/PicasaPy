@@ -347,8 +347,8 @@ Az állapotsor (`0x00745980`) már **kész számokat** kap:
 
 ⇒ A „Készen áll a nyomtatásra" / „Nézze át nyomtatás előtt" váltás
 **egyetlen feltétel**: van-e legalább egy küszöb alatti kép. Ezért van a
-`.tre`-ben **két gombpár** (`printpanel/pnowbutton` + `pnowbutton2`,
-`printpanel/reviewnowbutton` + `reviewnowbutton2`): a panel a két állapot
+`.tre`-ben **két gombpár** (`printpanel/pnowbutton` + `printpanel/pnowbutton2`,
+`printpanel/reviewnowbutton` + `printpanel/reviewnowbutton2`): a panel a két állapot
 között cserél.
 
 ### ⛔ ÖNHELYESBÍTÉS (2026-09-04): ez a két „melléklelet" DUPLIKÁTUM volt

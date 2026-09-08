@@ -151,7 +151,7 @@ osztásköz megbízható, az abszolút y nem.
 **Az osztásköz egyenletesen 15 px** (14 px gomb + 1 px hézag); a 13.→14.
 között 30 px, tehát ott **csoporthatár** van.
 
-`throttlegroup` (a jobb szélen futó sáv): **16 px** széles.
+`thumbui/throttlegroup` (a jobb szélen futó sáv): **16 px** széles.
 
 ### 4.1 `thumbui/prev` és `thumbui/next` — NINCS nyomva-tartásra ismétlés
 
@@ -304,9 +304,9 @@ hézag nélkül:
 
 | elem | méret |
 |---|---:|
-| `webupload_rect` | **147 × 44** (a hely) |
+| `thumbui/webupload_rect` | **147 × 44** (a hely) |
 | `thumbui/webupload` (maga a gomb) | **141 × 35** |
-| `webupload_icon` | 18 × 14 |
+| `thumbui/webupload_icon` | 18 × 14 |
 | `outputs` (Nyomtatás / E-mail / Exportálás sor) | **424 × 29** |
 | `separator` | **497 × 2** |
 

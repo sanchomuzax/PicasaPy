@@ -161,7 +161,7 @@ lenyomás után elhúzva a kattintás visszavonható). A Picasában a következ�
 | **jobb oldali fiók kapcsolói** | `thumbui/properties_toggle`, `tags_toggle`, `places_toggle`, `people_toggle` |
 | **fejlécsáv** | `headerpanel/play`, `create_movie`, `create_collage`, `select_star`, `sync_options` |
 | **szövegformázás** | `edittextpanel/bold`, `italic`, `underline`, `leftalign`, `centeralign`, `rightalign`; `makemoviepanel/bold`, `italic`, `outline` |
-| **egyéb** | `thumbui/albumview`, `thumbui/folderviewpopup`, `acquirepanel/sync_options_button`, `add_groups_button`, `compose_mail/ltr`, `rtl`, `compose_share/ltr`, `rtl`, `add_groups_button`, `printpanel/captionoptionsbutton`, `selectprinterbutton` |
+| **egyéb** | `thumbui/albumview`, `thumbui/folderviewpopup`, `acquirepanel/sync_options_button`, `add_groups_button`, `compose_mail/ltr`, `rtl`, `compose_share/ltr`, `rtl`, `add_groups_button`, `printpanel/captionoptionsbutton`, `printpanel/selectprinterbutton` |
 
 **A minta:** ami **nézetet vált vagy menüt nyit**, az lenyomásra hat; ami
 **műveletet hajt végre** (Mentés, Mégse, Kollázs létrehozása), az a
@@ -193,7 +193,7 @@ panelt építik, nem a kattintást kezelik):
 | `acquirepanel/sync_options_button` | `0x00518b40` (929 b) | ugyanez a függvény kezeli az `acquirepanel/sync_starred` elemet is ⇒ az „Opciók" a **feltöltési** beállításokat nyitja, köztük a „csak csillagozottak" kapcsolót |
 | `editpanel/weblink` | `0x00567a00` (1035 b) | egy csoportban van az `editpanel/quickupload`, `uploadchanges`, `editcollage`, `editslideshow` elemekkel ⇒ a szerkesztő **környezeti műveletsorának** tagja |
 | `peoplepanel/manual_cancel` | `0x005d23d0` (1009 b) | az `editpanel/cropselection`, `retouchoverlay`, `edittextoverlay` társaságában ⇒ **átfedés-kezelő** ág; a „Mégse" a kézi arcfelvitelt zárja le |
-| `printpanel/captionoptionsbutton` | `0x00743980` (3533 b) | a teljes nyomtatási gombkészlettel együtt (`walletbutton`, `3x5button`, …, `PrintLastSize`) ⇒ a nyomtatási panel saját beállítás-ága — a megvalósítási jegye a **#1780** |
+| `printpanel/captionoptionsbutton` | `0x00743980` (3533 b) | a teljes nyomtatási gombkészlettel együtt (`printpanel/walletbutton`, `printpanel/3x5button`, …, `PrintLastSize`) ⇒ a nyomtatási panel saját beállítás-ága — a megvalósítási jegye a **#1780** |
 
 > ⚠️ **Amit ez NEM ad meg:** egyik gomb **kattintás-kezelőjét** sem
 > olvastuk ki. A fenti sorok a *felhasználónak látszó* jelentést rögzítik
@@ -614,7 +614,7 @@ a `showtextcheckbox`, a `keywords/closebutton`, és három
 
 `Property escapekey 1`: `acquirepanel/acancelbutton` ·
 `collagepanel/cancelbutton` · `editpanel/tool_cancel`, `cancel`,
-`redeyecancel`, `cropcancel`, `retouchcancel` ·
+`editpanel/redeyecancel`, `cropcancel`, `editpanel/retouchcancel` ·
 `edittextpanel/edittextcancel` · `makemoviepanel/cancel` ·
 `peoplepanel/manual_cancel` · `printpanel/pcancelbutton`.
 

@@ -172,7 +172,7 @@ Ez a lap egyetlen **új, felhasználót érintő** lelete.
 „Alaphelyzet"-je a MENTETT vágást szünteti-e meg, vagy csak a kijelölést.
 A `docs/specs/vagas-eszkoz-allapot.md` 190. sora csak felsorolja a
 gombot, a szemantikáját nem írja le. A testvér-vezérlő viszont mellette
-szól: a vörösszem-panel `redeyediscard` gombja az `ui-audit-editor.md`
+szól: a vörösszem-panel `editpanel/redeyediscard` gombja az `ui-audit-editor.md`
 975. sora szerint „**Reset** — Undo Red-Eye changes", tehát ott a Reset a
 ténylegesen alkalmazott korrekciót veszi le.
 

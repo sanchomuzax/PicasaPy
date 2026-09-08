@@ -106,7 +106,10 @@ m_offsetLB                         ; a fix tabbase ALJÁHOZ kötve → szintén 
 Ezt a felhasználó képernyőképe **számszerűen igazolja**: egy ~1352 px
 széles ablakban a négy alsó gomb ugyanott van, ahol 800 px-esben
 (a panel tetejétől 415 / 448 px-re), és alattuk **nagy üres sáv** marad a
-bal hasábban. Ha a hasáb nyúlna, a gombok az ablak aljára ülnének.
+bal hasábban. Ha a hasáb nyúlna, a gombok az ablak aljára ülnének. *(A
+négy gomb teljes néven: `collagepanel/cancelbutton`,
+`collagepanel/resetbutton`, `collagepanel/makedesktop`,
+`collagepanel/sharebutton`.)*
 
 ### 2.3 A vászon-oldal láncolata
 
@@ -120,6 +123,9 @@ previewinset    = previewclip − (bal 12, fent 35, jobb 12, lent 35)
 previewshadow   = A LAP (az oldalformátum arányára illesztve, középen)
 previewroot     = ugyanott — ebben ülnek a kép-csomópontok
 ```
+
+*(Teljes néven: `collagepanel/previewcontainer`, `collagepanel/previewshadow`,
+`collagepanel/previewroot`.)*
 
 ```
 collagepanel/previewinset: collagepanel/previewclip

@@ -1137,9 +1137,9 @@ a #440 megvalósítási listája ezzel a két nyelvtannal most már hiánytalan.
 | elem | `respack.yt` | x (szélesség) | y (magasság) | szülő (`publish.tre`) |
 |---|---|---|---|---|
 | `publish/backuptext3` | `respack.yt:3035621` | 470…741 (271) | 108…143 (35) | `backup_group` (`publish.tre:254`) |
-| `publish/backupcdheader2` | `respack.yt:3035689` | 490…740 (250) | 43…56 (13) | `backupcdheader2_base` (`publish.tre:238`) |
+| `publish/backupcdheader2` | `respack.yt:3035689` | 490…740 (250) | 43…56 (13) | `publish/backupcdheader2_base` (`publish.tre:238`) |
 | `publish/backup_help` | `respack.yt:3035706` | 777…875 (98) | 175…203 (28) | `backup_group` (`publish.tre:296`) |
-| `publish/replicate_button_group` | `respack.yt:3038903` | 925…1013 (88) | 35…177 (142) | `uploadallback` (`publish.tre:448`) |
+| `publish/replicate_button_group` | `respack.yt:3038903` | 925…1013 (88) | 35…177 (142) | `publish/uploadallback` (`publish.tre:448`) |
 | `publish/rpoptionbox1` | `respack.yt:3046464` | 42…71 (29) | 101…130 (29) | `rpoptions` (`publish.tre:312`) |
 | `publish/label_rpoptionbox1` | `respack.yt:3046847` | 76…159 (83) | 107…123 (16) | `rpoptionbox1` (`publish.tre:309`) |
 | `publish/rpoptionbox2` | `respack.yt:3046864` | 42…71 (29) | 132…161 (29) | `rpoptions` (`publish.tre:320`) |

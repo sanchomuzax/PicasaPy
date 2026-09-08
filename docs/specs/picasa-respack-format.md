@@ -129,7 +129,7 @@ nyíltan megdől.
 „Finomítás…” fátyla (70%), `scratch/rect: highlight` — a képtálca
 mappa-tokenjének kék pirulája (70%), `editpanel/rect: captionbase` (80%),
 `tooldecrect/tooldecrect` (90%), `searchcontainer/listbox: searchautocomplete`
-(95%).
+(95%). *(Teljes néven: `editpanel/refining`, `editpanel/captionbase`.)*
 
 **Fizikai ellenőrzés.** A `scratch/rect: highlight` tömör színe
 RGB(46,114,161), átlátszósága 179/256 = 69,9%. Fehér fölött ebből
