@@ -1522,6 +1522,73 @@ változatlanul nyitott, mérés dönti el.*
 Mindhármat a **#317** (effekt-kalibráció) írhatja felül; a hatás JELLEGE
 (hol erős, milyen irányú, milyen az átmenet) ettől függetlenül egzakt.
 
+#### A `linblur` belépő feltétele — VISSZAOLVASVA A BINÁRISBÓL (#953)
+
+A #953 azt a kérdést tette fel, van-e az eredetiben „a korong a közepén →
+azonosság" rövidzár, és ha igen, milyen tűréssel dönt. A helyi
+diszasszemblátum (`eszkozok/pe_dis.py`, capstone) **eldöntötte: van**, és
+egész egyenlőséggel dönt.
+
+**A mag (`0x0090de10`) belépő feltétele — a két pont összevetése:**
+
+```
+0x0090de88  mov ecx, [ebp]      ; korong.x   (ebp = &korong, a 4. veremargumentum)
+0x0090de8b  cmp ecx, [esi]      ; közép.x    (esi = ecx-argumentum = &közép)
+0x0090de8d  jne 0x0090de9b      ; eltér → megy tovább az elmosásra
+0x0090de8f  mov edx, [ebp+4]    ; korong.y
+0x0090de92  cmp edx, [esi+4]    ; közép.y
+0x0090de95  je  0x0090e1e5      ; ← EGYEZIK: kilép
+```
+
+A `0x0090e1e5` **puszta epilógus** — `mov ecx,[esp+0x1cc]`, négy `pop`,
+veremőr-ellenőrzés (`xor ecx,esp` + `0x00bef10a`), `xor eax,eax`,
+`add esp,0x1c0`, `ret`. A képhez **hozzá sem nyúl**. A rövidzár tehát nem a
+mi kitalációnk: a natív mag is azonosságot ad ezen a ponton.
+
+**A két pontot a burkoló (`0x008f99c0`) állítja elő** — és itt dől el a
+tűrés kérdése:
+
+| érték | hogyan | cím |
+|---|---|---|
+| közép.x | `[esi+8] >> 1` (`shr eax,1`) | `0x008f99d3` |
+| közép.y | `[esi+0xc] >> 1` (`shr ecx,1`) | `0x008f99dd` |
+| korong.x | `__ftol(0,5 · W · (1 + p.x))` | `0x008f99ec`–`0x008f9a10` |
+| korong.y | `__ftol(0,5 · H · (1 + p.y))` | `0x008f9a15`–`0x008f9a33` |
+
+A `0,5` a `0x00c72150`-en álló `double` (a `0x00cf3ac0` a `4294967296,0`,
+az előjeltelen `fild`-korrekció). A normált korongot a `0x00750e20` olvassa
+ki a szűrőobjektum `+0x34`/`+0x38` mezőjéből, az affin mátrixon (`+0x94`)
+átvezetve.
+
+**A `__ftol` (`0x00c29990`) CSONKOL, nem kerekít:** az SSE-ág egyetlen
+`cvttsd2si`-t hajt végre (`0x00c299a5`), a x87-tartalék pedig a klasszikus
+`fistp`+utókorrekciós csonkolás. Emiatt a natív belépő feltétel
+**paritás-független**: `csonk(méret/2) == méret>>1` minden nemnegatív
+méretre — a `63,5` csonkolva `63`, ami épp a `127>>1`.
+
+**Amit ez nálunk javított:** a `render/linear_blur.py` `int(round(...))`-dal
+számolt, ami félérték-esetben a páros felé kerekít (`round(63,5) = 64`),
+ezért páratlan méreten kilépett az egyenlőségből, és a `linblur` teljes
+elmosást adott ott, ahol az eredeti azonosságot. A javítás a csonkolás
+(`_puck_pixel`).
+
+**⚠️ Ami NEM dőlt el — külön kutatás tárgya.** A burkoló képlete
+(`0,5 · méret · (1 + p)`) belső `p ∈ [-1, +1]`-et feltételez, a `filters=`
+lánc korongja viszont `[0, 1]`-ben áll (valódi minta:
+`radblur=1,0.411585,0.611111,0,0`, és a `filterdesc` alapértéke `0.5,0.5` =
+közép), a húzás-visszahívás (`0x008f9bf0`, `0x008f9c21`–`0x008f9c3a`) pedig
+`pont/méret`-tel normál, majd a `0x008f6da0` átváltás nélkül írja a
+`+0x34`/`+0x38` mezőbe. A két alak csak a `p = 2x − 1` átváltással esik
+egybe (`0,5·W·(1+2x−1) = W·x`) — magát az átváltást nem olvastuk vissza.
+Amíg ez nyitott, a #880 mérése (az eredeti a `linblur=1,0.5,0.5,2.0` láncra
+ΔE 5,42-t változtatott, tehát NEM adott azonosságot) sem magyarázható meg.
+A paritás-kérdés ettől függetlenül eldőlt: **mindkét olvasat középpontja
+`csonk(méret/2) == méret>>1`.**
+
+*Bizonyítottsági fok: **megerősített** a rövidzár létére, a helyére és a
+csonkolásra (szó szerinti diszasszemblátum, címekkel). **Nyitott** a
+`[0,1]` ↔ `[-1,+1]` átváltás helye.*
+
 ## A `glow`/`glow2` és a `radblur` a natív magon — VÉGIGMÉRVE (#668)
 
 A #623 bevitte a közös elmosó magot, de a `glow`-t és a `radblur`-t

@@ -122,18 +122,59 @@ def _projection(
     return columns[np.newaxis, :] + rows[:, np.newaxis] + offset
 
 
+def _puck_pixel(size: int, normalized: float) -> int:
+    """A normált korong-koordináta EGÉSZ képpontja — a natív `__ftol` szerint.
+
+    A burkoló (`0x008f99c0`) a korongot `__ftol`-lal (`0x00c29990`, az
+    SSE-ágon `cvttsd2si`) alakítja egésszé, ami a **nulla felé csonkol**.
+    Ez nem részletkérdés: a mag belépő feltétele (ld. `apply_linblur`) egész
+    egyenlőség, és csak a csonkolás mellett paritás-független, mert
+    `csonk(méret/2) == méret>>1` minden nemnegatív méretre. Kerekítéssel
+    páratlan méreten `round(63,5) = 64 != 63` — ezt mérte a #953.
+    """
+    return int(size * float(normalized))
+
+
 def apply_linblur(
     image: np.ndarray, x: float, y: float, amount: float
 ) -> np.ndarray:
     """Átmenetes életlenítés: a korong felőli oldal éles, a közép felőli nem.
 
     Az `x`, `y` a korong NORMÁLT helye (`0…1`), az `amount` a „Mennyiség"
-    csúszka. Ha a korong a kép közepére esik, a natív mag ki sem lép a
-    belépő feltételéből — a kép változatlan.
+    csúszka. Ha a korong ugyanarra a KÉPPONTRA esik, mint a kép közepe, a
+    natív mag ki sem lép a belépő feltételéből — a kép változatlan.
+
+    **A belépő feltétel a binárisból** (#953, `pe_dis.py`-diszasszemblátum):
+
+    ```
+    0x0090de88  mov ecx, [ebp]      ; korong.x        (a burkoló számolta)
+    0x0090de8b  cmp ecx, [esi]      ; közép.x = W>>1
+    0x0090de8d  jne 0x0090de9b      ; nem egyezik → fut az elmosás
+    0x0090de8f  mov edx, [ebp+4]    ; korong.y
+    0x0090de92  cmp edx, [esi+4]    ; közép.y = H>>1
+    0x0090de95  je  0x0090e1e5      ; ← EGYEZIK: a 0x0090e1e5 epilógusra ugrik
+    ```
+
+    A `0x0090e1e5` puszta epilógus (`pop`-ok, veremőr, `xor eax,eax`, `ret`):
+    az eredeti a képhez **hozzá sem nyúl**. A rövidzár tehát a binárisban is
+    ott van, és ott is EGÉSZ egyenlőség — csak a korong egészét a burkoló
+    (`0x008f99c0`) `__ftol`-lal állítja elő, ami CSONKOL (ld.
+    `_puck_pixel`), nem kerekít.
+
+    ⚠️ **Ami ezzel sem dőlt el:** a burkoló a korongot
+    `__ftol(0,5 · méret · (1 + p))` alakban számolja, tehát a belső `p`
+    a `[-1, +1]` tartományban áll. A `filters=` láncban viszont a korong
+    `[0, 1]`-ben van (valódi minta: `radblur=1,0.411585,0.611111,0,0`), és
+    a húzás-visszahívás (`0x008f9bf0`) is `pont/méret`-tel normál. A két
+    alak a `p = 2x − 1` átváltással egybeesik (`0,5·W·(1+2x−1) = W·x`), de
+    magát az átváltást nem olvastuk vissza — emiatt a #880 mérése (az
+    eredeti a `linblur=1,0.5,0.5,2.0` láncra ΔE 5,42-t változtatott) még
+    nyitott kérdés. A paritás-függés ettől FÜGGETLENÜL szűnik meg: mindkét
+    olvasat középpontja `csonk(méret/2) == méret>>1`.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    puck = (int(round(width * float(x))), int(round(height * float(y))))
+    puck = (_puck_pixel(width, x), _puck_pixel(height, y))
     center = (width >> 1, height >> 1)
     if puck == center:
         return image.copy()

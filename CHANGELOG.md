@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A „Lineáris homályosítás" effekt ugyanúgy viselkedik minden képméreten**
+  (#953). Eddig a fogantyú képközépi állásában a szűrő a képek egy részén
+  nem csinált semmit (helyesen), másokon viszont teljes elmosást adott —
+  a kép szélességétől és magasságától függően. Emiatt ugyanaz a szerkesztés
+  máshogy nézett ki az előnézeten és a mentett képen. A javítás az eredeti
+  Picasa gépi kódjából olvasott számítást követi.
+
 ## [0.8.334] – 2026-09-07
 
 ### Javítva

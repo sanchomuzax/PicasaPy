@@ -151,3 +151,66 @@ class TestApplyLinblur:
     def test_ervenytelen_bemenet(self) -> None:
         with pytest.raises(ValueError):
             apply_linblur(np.zeros((4, 4), dtype=np.uint8), 0.75, 0.5, 2.0)
+
+
+#: A #953 paritás-próbájának méretei: páros és páratlan szélesség/magasság
+#: minden kombinációban. A `linblur` normált korong-koordinátát kap, tehát
+#: UGYANAZ a lánc fut mindegyiken — a hatás meglétének azonosnak kell lennie.
+_PARITAS_MERETEK = (
+    (128, 96),  # (magasság, szélesség) — páros × páros
+    (127, 97),  # páratlan × páratlan
+    (129, 96),  # páratlan × páros
+    (128, 97),  # páros × páratlan
+    (96, 128),
+    (97, 129),
+)
+
+
+def _elteres(height: int, width: int, x: float, y: float, amount: float) -> float:
+    """Átlagos abszolút csatorna-eltérés az alapképhez képest."""
+    image = _zajos(height=height, width=width)
+    result = apply_linblur(image, x, y, amount)
+    return float(np.abs(result.astype(np.int64) - image.astype(np.int64)).mean())
+
+
+class TestFelbontasfuggetlenseg953:
+    """#953: a „korong a közepén → azonosság" nem függhet a kép paritásától.
+
+    A natív mag (`0x0090de10`) `0x0090de88`-nál KÉT egész koordinátát vet
+    össze, és egyezés esetén a `0x0090e1e5` epilógusra ugrik (a képhez hozzá
+    sem nyúl). A korong egészét viszont a burkoló (`0x008f99c0`) `__ftol`-lal
+    állítja elő (`0x00c29990` → `cvttsd2si`), ami a nulla felé **csonkol** —
+    és `csonk(méret/2) == méret>>1` MINDEN méretre. A feltétel tehát a
+    binárisban paritás-független; nálunk a `round()` tette azzá.
+    """
+
+    def test_a_kozepre_tett_korong_minden_meretben_azonossag(self) -> None:
+        eltero = {
+            f"{w}x{h}": _elteres(h, w, 0.5, 0.5, 2.0)
+            for (h, w) in _PARITAS_MERETEK
+            if _elteres(h, w, 0.5, 0.5, 2.0) != 0.0
+        }
+        assert not eltero, f"a középre tett korong nem azonosság: {eltero}"
+
+    def test_az_eltolt_korong_minden_meretben_hat(self) -> None:
+        hatastalan = {
+            f"{w}x{h}": _elteres(h, w, 0.2, 0.5, 2.0)
+            for (h, w) in _PARITAS_MERETEK
+            if _elteres(h, w, 0.2, 0.5, 2.0) == 0.0
+        }
+        assert not hatastalan, f"az eltolt korong nem hatott: {hatastalan}"
+
+    def test_a_hatas_merteke_nem_ugral_a_paritassal(self) -> None:
+        """A mérték maradjon egy nagyságrendben: ne 0 az egyiken, teljes a másikon."""
+        mertekek = [_elteres(h, w, 0.2, 0.5, 2.0) for (h, w) in _PARITAS_MERETEK]
+        assert min(mertekek) > 0.5 * max(mertekek)
+
+    def test_a_korong_egesze_csonkolassal_all_elo(self) -> None:
+        """`__ftol` = `cvttsd2si` → a nulla felé csonkol, nem kerekít.
+
+        Páratlan méretnél `round(63,5) = 64`, `csonk(63,5) = 63` — és a
+        natív középpont `127>>1 = 63`. A kerekítés emiatt kapcsolta be az
+        effektet ott, ahol a bináris kilép.
+        """
+        for meret in (96, 97, 127, 128, 129):
+            assert int(meret * 0.5) == meret >> 1
