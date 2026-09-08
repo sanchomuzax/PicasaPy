@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.337] – 2026-09-08
+
+### Hozzáadva
+
+- **A program ki tudja számolni a Picasa származás-ujjlenyomatát** (#2733).
+  A Picasa minden fényképhez két rövid „ujjlenyomatot" tartott — az egyiket a
+  fájl elejéből és végéből, a másikat a teljes tartalomból —, és a kettőt
+  egymás után írta a fényképek melletti adatfájlba. Eddig ezt az értéket csak
+  változatlanul megőriztük, mert nem tudtuk, mit jelent; most már ki is
+  tudjuk számolni ugyanúgy, ahogy a Picasa tette. A tulajdonos valódi
+  fényképein hatvanból ötvenöt esetben karakterre egyezik a Picasa által
+  annak idején beírt értékkel; a fennmaradó öt fájl tartalma azóta
+  megváltozott (ott az ujjlenyomat MINDKÉT fele eltér, ami épp ezt mutatja).
+  Ez a másodpéldány-keresés és az importálás alapja lesz; **a saját
+  adatfájljainkba egyelőre nem írjuk ki**, mert még nem tudjuk, hogy szerkesztés
+  után a Picasa a friss vagy az eredeti kép ujjlenyomatát rögzítette-e.
+
 ## [0.8.336] – 2026-09-08
 
 ### Javítva
