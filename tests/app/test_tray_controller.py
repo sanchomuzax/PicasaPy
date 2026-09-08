@@ -217,6 +217,54 @@ class TestOsszecsukottMappaToken:
         assert controller.collapseFolderIntoTray(str(tmp_path / "nincs")) is False
         assert controller.trayAlbumTokens == []
 
+    # -- a token mellett a KÉP-oldali lekérdezések is működnek -------------
+    #
+    # A `trayItems` a Klipek lap (`CollageClipsTab.qml`) bemenete, és a
+    # tálca MINDEN elemén végigmegy. A #1919 óta a listában TOKEN is lehet,
+    # aminek nincs `photo_id`-ja — a szótár-építés ezen elhasalt, és a
+    # QML-kötés futásidőben `AttributeError`-t dobott. A fenti „vegyesen is
+    # tarthat" próba ezt NEM fogta meg, mert csak a `heldCount`-ot és a
+    # `trayAlbumTokens`-t olvasta, a `trayItems`-t nem.
+
+    def test_a_trayItems_TOKEN_mellett_is_olvashato(
+        self, controller, two_folder_library
+    ):
+        """A token nem törheti el a KÉP-elemeket ígérő lekérdezést."""
+        _root, folder_a, folder_b = two_folder_library
+        controller.selectFolder(str(folder_a))
+        controller.holdRows(_rows_by_name(controller, "x.jpg"))
+        controller.collapseFolderIntoTray(str(folder_b))
+        elemek = controller.trayItems
+        assert [elem["name"] for elem in elemek] == ["x.jpg"], (
+            "a `trayItems` nem a tálca EGYETLEN képét adja vissza "
+            f"({elemek!r}) — vagy elhasalt a tokenen"
+        )
+
+    def test_a_trayItems_a_kep_HELD_jelzojet_megtartja(
+        self, controller, two_folder_library
+    ):
+        """A token jelenléte nem mosdathatja el a kép saját jelzőit."""
+        _root, folder_a, folder_b = two_folder_library
+        controller.selectFolder(str(folder_a))
+        controller.holdRows(_rows_by_name(controller, "x.jpg"))
+        controller.collapseFolderIntoTray(str(folder_b))
+        (elem,) = controller.trayItems
+        assert elem["held"] is True
+        assert elem["used"] is False
+
+    def test_a_heldPaths_TOKEN_mellett_is_csak_kepeket_ad(
+        self, controller, two_folder_library
+    ):
+        """A tálca alatti műveletsor (nyomtatás, e-mail, kollázs) ezen
+        dolgozik — a tokennek nincs fájl-útvonala, nem kerülhet bele."""
+        _root, folder_a, folder_b = two_folder_library
+        controller.selectFolder(str(folder_a))
+        controller.holdRows(_rows_by_name(controller, "x.jpg"))
+        controller.collapseFolderIntoTray(str(folder_b))
+        utvonalak = controller.heldPaths
+        assert len(utvonalak) == 1
+        assert utvonalak[0].endswith("x.jpg")
+
     def test_az_ures_utvonal_nem_ad_tokent(self, controller):
         assert controller.collapseFolderIntoTray("") is False
 
