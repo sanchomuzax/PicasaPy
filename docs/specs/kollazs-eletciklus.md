@@ -4445,3 +4445,87 @@ dokumentuma a csomópontjait, és mi kerül ott a `+0x2c`-be?
    `[+0x64]` is lehet.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 45. K1 — a dokumentum-másoló KILENC helye besorolva, és a headless felület `[+0x138]`-a (2026-09-08, #1412)
+
+*197. kutatói kör. A 44.3 ZÁRT halmazát viszi végig: a `FUN_00839200`
+hívóit és a `FUN_00833cf0` két be nem sorolt célpontját.*
+
+### 45.1 A dokumentum-másoló konstruktor iránya — a KÓDBÓL
+
+`FUN_00839200` feje: `0x00839201` `mov ebx,[esp+8]` (a **tolt**
+argumentum), `0x00839205` `mov al,[ebx]` → `0x00839207` `mov [esi],al`.
+
+⇒ **a tolt argumentum a FORRÁS, az `ESI` a CÉL.** (A 35.1 és a 36.1
+tanulsága szerint ezt minden másolónál külön ki kell olvasni.)
+
+### 45.2 A kilenc hívási hely
+
+| cím | hívó | FORRÁS | CÉL |
+|---|---|---|---|
+| `0x0083914a` | `FUN_008390e0` | **`[ebp+0x64]`** (a kezelő doksija, 44.1) | verem (érték szerinti argumentum) |
+| `0x0083c17d` | `FUN_0083ba60` | `[esp+0x60]` | `[esp+0xc4]` |
+| `0x0083c43f` | `FUN_0083ba60` | `[esp+0xb0]` | verem |
+| **`0x0083cb13`** | **`FUN_0083c5b0`** (mentés: `Collages`, `autosave`, `indexonly`) | **`[esp+0x20] + 0x138`** | `[esp+0x54]` |
+| `0x0083dd7f` | `FUN_0083dbf0` | `[esp+0x18]` | **`[edi+0x48]`** |
+| `0x008420db` | `FUN_008419e0` (`Recovered Autosave`) | `[esp+0xb8]` | verem |
+| `0x0088407e` | `FUN_00884040` (`CRegularGridTheme` slot0) | **`eax + 0x138`** | `[esp+0x24]` |
+| `0x0088497b` | `FUN_008844d0` (`CRegularGridTheme` slot2) | **`[edi+8] + 0x138`** | `[esp+0x24]` |
+| `0x0088a07d` | `FUN_0088a020` (`collage::done`) | `[ebp+0xc]` | verem |
+
+⇒ **három hely másol egy objektum `+0x138`-asából** — a mentési út és a
+`regulargrid` téma két slotja.
+
+### 45.3 ⭐ Az autosave-szál dokumentuma a `[+0x48]`-ra kerül — a kör bezárul
+
+`FUN_0083dbf0` (546 b, sztringjei `CCollageManager::CollagesFolder`,
+`CollageAutosave`):
+
+```
+0x0083dd76  lea esi, [edi + 0x48]          ; CÉL
+0x0083dd79  mov dword ptr [edi], 0xcbfed0  ; CAutosaveCollageThread::vftable (rtti)
+0x0083dd7f  call 0x00839200                ; a dokumentum bemásolása
+```
+
+⇒ pontosan az a mező, amit a szál futtató metódusa ment
+(`0x008393a6 lea edx,[esi+0x48]` → a mentés-szervező, 36.4). **A lánc
+zárt.**
+
+### 45.4 ⭐ `FUN_00889e00` = a `CHeadlessCollageUI` KONSTRUKTORA — és neki is van `[+0x138]`-a
+
+```
+0x00889e10  [edi]   = 0x00cc4eec     ; CHeadlessCollageUI::vftable   (33.5)
+0x00889e16  [edi+4] = 0x00cc4f2c     ; ua. (második altábla)
+0x00889e1d  [edi+8] = 0x00cc4f34     ; ua. (harmadik)
+0x00889e2f  lea edx, [edi + 0x138]   ; CÉL
+0x00889e54  call 0x00833cf0          ; FORRÁS: [esp+0x18] — érték szerinti argumentum
+```
+
+⇒ **a headless felület ugyanazt a `+0x138` elrendezést használja, mint az
+interaktív panel** (43.1), és a dokumentumát **kívülről, érték szerint**
+kapja a konstrukciókor.
+
+A `FUN_0088b0a0` (207 b) ugyanilyen alakú: beágyazott dokumentumot
+inicializál (`0x0088b0f4 call 0x008342b0`), majd a `0x0088b139`-en
+belemásol egy érték szerint kapott dokumentumot.
+
+⇒ **a 44.3 zárt halmaza ezzel KIMERÜLT** — mindkét addig be nem sorolt
+`FUN_00833cf0`-célpont konstruktor.
+
+### 45.5 A KÖVETKEZŐ lépés, megnevezve
+
+A mentési út (`FUN_0083c5b0`, `0x0083cb13`) egy objektum **`+0x138`**-asából
+másol — és a `+0x138` **mindkét** felületnek a munkapéldánya (az
+interaktívnak 43.1, a headlessnek 45.4). ⇒ a következő kérdés:
+
+> **melyik objektum áll a `FUN_0083c5b0`-ban a `[esp+0x20]`-on** — az
+> interaktív panel, vagy egy headless felület?
+
+Ez zárt kérdés: a `FUN_0083c5b0` (2260 b) elejétől követni kell, mi kerül
+a `[esp+0x20]`-ra.
+
+⚠️ **Amit ez már most kimond:** a mentett dokumentum **nem** feltétlenül
+a kezelő `[+0x64]`-e (44.1) — az az **autosave** útja. A **kifejezett
+mentés** egy felület **munkapéldányából** dolgozik.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
