@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.341] – 2026-09-08
+
+### Javítva
+
+- **A „Visszavonás" gomb felirata Windowson nem folyhat ki a gombból**
+  (#2597). Az előző javítás a gomb magasságát rögzítette a lemért 26
+  képpontra; a windowsos gépeken viszont a rendszer betűje olyan magas
+  sorokat rajzol, hogy két sor a legkisebb megengedett betűméretnél sem fér
+  el. Ilyenkor a felirat mostantól a gomb szélén elvágódik, nem folyik rá a
+  szomszéd gombra. A tartós megoldás a betűtípus kimérése (#526) — a gomb
+  megnövelése nem az, azt korábban külön hibaként jelezted.
+
 ## [0.8.340] – 2026-09-08
 
 ### Javítva
