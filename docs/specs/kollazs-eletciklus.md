@@ -4529,3 +4529,66 @@ a kezelő `[+0x64]`-e (44.1) — az az **autosave** útja. A **kifejezett
 mentés** egy felület **munkapéldányából** dolgozik.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 46. K1 — a mentési utat a BEZÁRÁS-MEGERŐSÍTÉS hívja, és a mentett doksi az 1. argumentum `+0x138`-asa (2026-09-08, #1412)
+
+*198. kutatói kör. A 45.5 lépését viszi: melyik objektum áll a
+`FUN_0083c5b0`-ban a `[esp+0x20]`-on.*
+
+### 46.1 ⭐ A mentési útnak EGYETLEN hívója van — a bezárás-megerősítés
+
+`FUN_0083c5b0` (2260 b) hivatkozóinak száma az `xrefs` szerint **1**:
+**`FUN_0082c0a0`** (699 b), amelynek sztringkészlete
+
+`Cancel` · `il_CancelButton` · **`Discard Changes`** · `autosave` ·
+**`Please Confirm...`** · **`CCollageUI::ConfirmCloseTitle`**
+
+⇒ **a `.cxf` a BEZÁRÁS-MEGERŐSÍTÉS ágán íródik** — pontosan az a
+párbeszéd, amit a 3.1 szakasz ír le („Bezárás" — a piszkozat ága). Ez az
+első hely, ahol az életciklus 3. szakasza és a mentési lánc **összeér**.
+
+### 46.2 ⭐ A mentett dokumentum: az 1. argumentum `+0x138`-asa
+
+**A hívás** (`FUN_0082c0a0`):
+
+```
+0x0082c2ef  mov eax,[ebp+0xc]     ; a 2. argumentum lesz
+0x0082c2f2  mov ecx,[esp+0x18]    ; az 1. argumentum lesz
+0x0082c2f6  push eax  ·  0x0082c2f7  push ecx   ; az UTOLJÁRA tolt az 1.
+0x0082c2f8  call 0x0083c5b0
+```
+
+**A hívottban** (`FUN_0083c5b0`):
+
+```
+0x0083c5c9  mov ebx,[esp+0x3d94]  ; = az 1. argumentum
+0x0083c5d3  mov [esp+0x20], ebx   ; eltéve
+…
+0x0083cb05  mov eax,[esp+0x20]  ·  0x0083cb09  add eax, 0x138
+0x0083cb0e  push eax  ·  0x0083cb13  call 0x00839200   ; FORRÁS (45.1)
+```
+
+⇒ **a mentésre kerülő dokumentum az 1. argumentumként kapott objektum
+`+0x138` MUNKAPÉLDÁNYA** (43.1 / 45.4).
+
+*Bizonyítottsági fok: **megerősített** — a hívás és a hívott oldala is
+utasításonként, a 45.1 megállapodásával.*
+
+### 46.3 ⚠️ Amit a kör NEM mond ki
+
+Hogy a `FUN_0082c0a0`-beli `[esp+0x18]` **azonos-e** a függvény saját
+1. argumentumával (`[ebp+8]`, amit a `0x0082c0ce` tesz el egy
+`push 0xcbecf8` UTÁN). A két hivatkozás **eltérő veremmélységen** áll, és
+a 38.1 tanulsága szerint az ilyet **nem szabad megtippelni**.
+
+### 46.4 A KÖVETKEZŐ lépés, megnevezve
+
+A `FUN_0082c0a0` (699 b) saját keretének feloldása a `[esp+0x18]`-ra —
+onnan derül ki, **melyik felület** (az interaktív `CCollageUI` vagy egy
+`CHeadlessCollageUI`, 45.4) munkapéldánya kerül a fájlba.
+
+A függvény kicsi és a `[esp+0x18]`-at csak **két** helyen érinti
+(`0x0082c2f2` és `0x0082c32e`), tehát a keret a 38.1
+mezőminta-módszerével vagy a hívási helyek összevetésével feloldható.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
