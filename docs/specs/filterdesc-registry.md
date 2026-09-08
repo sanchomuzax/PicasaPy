@@ -4339,6 +4339,81 @@ tiszta 0/255-öt. A rács-olvasat tehát áll; csak a „képfüggetlen" mondato
 ugyanazzal a `Steps = 8` beállítással (a tulajdonos windowsos Picasájából). Ez
 a mérés a rács-hipotézist megerősíti vagy megdönti — ma egyik sincs.
 
+### 8. ⭐ A PALETTA KISEBB, mint a mért kimenet színkészlete (2026-09-09, 224. kör, #2746)
+
+Négy kör keresett vezérlési magyarázatot. Ez a kör egy **számolást** végzett el,
+ami eddig kimaradt — és ez a legerősebb érv eddig, új export nélkül.
+
+#### 8.1 A `Steps − 1` redukció — most SAJÁT szemmel igazolva
+
+A lap eddig állította; a 224. kör kiolvasta:
+
+```
+0x00bb5da8  mov eax, [esp + 0x10c4]   ; a 2. paraméter = Steps
+0x00bb5daf  cmp eax, 2
+0x00bb5db6  jne 0x00bb5dc4
+0x00bb5db8  push eax                  ; Steps == 2  ⇒  2 szín
+0x00bb5db9  call 0x00bcb6f0
+…
+0x00bb5dc4  add eax, -1               ; egyébként  Steps − 1
+0x00bb5dc7  push eax
+0x00bb5dc8  call 0x00bcb6f0           ; ugyanaz a redukáló
+```
+
+(A veremeltolás a 221. kör számításával egyezik: `[esp+0x10c0]` = 1. par,
+`[esp+0x10c4]` = 2. par = `Steps`.)
+
+⇒ **`Steps = 8` ⇒ a paletta 7 színű.**
+
+#### 8.2 A mért kimenet ennél TÖBB színt tartalmaz
+
+A `tests/render/test_quantizepalette_racs_2231.py` docstringjében rögzített,
+a Picasa exportjából a **mezők közepén** kiolvasott értékek:
+
+| mit | egyedi értékek | darab |
+|---|---|---|
+| a szürke sáv 12 mezője | 0, 36, 73, 109, 146, 182, 219, 255 | **8** |
+| + a három színes mező | (182,36,36), (36,182,73), (36,72,182) | +3 |
+| **összesen a mért pontokon** | | **11** |
+
+⇒ **Már a szürke sávon belül 8 > 7**, és összesen 11 > 7.
+
+**Egy 7 színű palettából ez nem állítható elő.** A palettaválasztás
+definíció szerint a paletta elemeire képez le; ha a paletta 7 színű, a kimenet
+legfeljebb 7 különböző színt tartalmazhat.
+
+#### 8.3 A bizonyítottsági fok — és a fenntartás kimondva
+
+**Erős, de nem bitre menő.** A referencia egy `.jpg`, tehát a tömörítés
+színeket kever. Ezt két dolog tartja kordában:
+
+1. az értékek a mezők **közepéről** vannak olvasva, ahol a JPEG nagy homogén
+   területen nagyon pontos;
+2. a nyolc szürke érték **egyenletes, 36 lépésenkénti lépcsőt** ad
+   (`round(i·255/7)`) — a JPEG egy 7 színű képből nem hoz létre ilyen
+   szabályos, nyolcfokú lépcsőt.
+
+⚠️ Amit ez **nem** ad: bitre menő cáfolatot. Egy veszteségmentes (PNG)
+referencia adná, de a Picasa exportja JPEG.
+
+#### 8.4 Mit jelent ez a fő kérdésre
+
+A 221–223. kör kizárta a képponti alkalmazót, a név szerinti megkerülő utat, a
+`4`-es kódot és a munkavégzőt. Ez a kör hozzáteszi, hogy **a palettaválasztó út
+a mért kimenetet elvben sem tudja előállítani** — nem azért, mert nem fut,
+hanem mert **túl kevés színt ad**.
+
+⇒ A `.picasa.ini`-vezérelt, teljes felbontású render **nem** a
+`QuantizePaletteImageOperation` palettaválasztásának eredményét írja a képre.
+Hogy akkor MI írja, továbbra is nyitott — de a kérdés innentől nem az, hogy
+„melyik ág fut a művelet belsejében", hanem hogy **fut-e egyáltalán ez a
+művelet abban az útban**.
+
+**A következő kör ezt kérdezze:** mi bizonyítja, hogy a `filterdesc.xml`
+`QuantizePalette` szűrője egyáltalán részt vesz a `.picasa.ini`-ből
+visszaállított, teljes felbontású renderben? A `fullres="1" slow="1"` jelzők
+(1247. sor) épp arra utalnak, hogy ott **külön út** van.
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
