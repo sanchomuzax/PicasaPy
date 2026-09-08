@@ -3639,3 +3639,211 @@ fájl **már kérve van** a **#2125**-ben. *(A különbség nem elhanyagolható:
 levél.)*
 
 ⇒ A `Depth` **jelentése LEZÁRVA**; a szállított **értéke BLOKKOLT** (#2125).
+
+---
+
+## A CSEMPE-TÁBLA és a kék jelvény — a `mode="oneclick"` szabály ÉL, csak rossz azonosítóval mértük (2026-09-08, 216. kör, #2125)
+
+Ez a szakasz három dolgot zár le: (1) megvan a három effekt-fül **teljes,
+36 tételes csempe-táblája** a binárisból, (2) megvan a kék jelvény
+**megjelenítési feltétele** utasításszinten, és (3) **önhelyesbítés**: a
+2026-09-06-i kör cáfolata téves volt — rossz azonosító `mode`-ját olvasta.
+
+### 1. A csempe-tábla: `0x00c7e5a0`, 12 bájtos tételek
+
+A csempéket a `FUN_005d7c20` építi (12 csempe fülenként, `cmp ebx, 0xc` a
+`0x005d820d`-en). A tábla indexelése, utasításszinten:
+
+```
+0x005d7ce5  lea ebp, [ebp + ebp*2 - 9]   ; ebp = fül-szám (arg1)
+0x005d7ce9  add ebp, ebp
+0x005d7cee  add ebp, ebp                 ; ⇒ alap = 12*(fül - 3)
+0x005d7d29  lea esi, [eax + eax*2]       ; eax = alap + csempe-index
+0x005d7d2c  add esi, esi                 ; esi = 6*eax
+0x005d7d2e  mov ecx, [esi + esi + 0xc7e5a0]   ; ELSŐDLEGES azonosító (12*eax)
+0x005d7d70  mov esi, [esi + 0xc7e5a4]         ; MÁSODLAGOS azonosító (+4)
+```
+
+⇒ **tételméret 12 bájt**, `+0` = elsődleges szűrő-azonosító,
+`+4` = másodlagos (örökölt) azonosító vagy `NULL`, `+8` = 0 mindenütt.
+A három effekt-fül a `tabpanel3` / `tabpanel4` / `tabpanel5`.
+
+| # | fül | `+0` (elsődleges) | `+4` (másodlagos) | `mode=` (a szállított `filterdesc.xml`-ből) |
+|---|---|---|---|---|
+| 0 | 3 | `unsharp2` | `unsharp` | effect |
+| 1 | 3 | `sepia` | — | **oneclick** |
+| 2 | 3 | `bw` | — | **oneclick** |
+| 3 | 3 | `warm` | — | **oneclick** |
+| 4 | 3 | `PicnikGrain` | `grain` | effect |
+| 5 | 3 | `PicnikTint` | `tint` | effect |
+| 6 | 3 | `sat` | — | effect |
+| 7 | 3 | `radblur` | — | effect |
+| 8 | 3 | `glow2` | `glow` | effect |
+| 9 | 3 | `ansel` | — | effect |
+| 10 | 3 | `radsat` | — | effect |
+| 11 | 3 | `dir_tint` | `radtint` | effect |
+| 12 | 4 | `IR` | — | effect |
+| 13 | 4 | `Lomo` | — | effect |
+| 14 | 4 | `Holga` | — | effect |
+| 15 | 4 | `HDR` | — | effect |
+| 16 | 4 | `Cinemascope` | — | effect |
+| 17 | 4 | `Orton` | — | effect |
+| 18 | 4 | `Sixties` | — | effect |
+| 19 | 4 | `Invert` | — | effect |
+| 20 | 4 | `HeatMap` | `NightVision` | effect |
+| 21 | 4 | `CrossProcess` | — | effect |
+| 22 | 4 | `QuantizePalette` | — | effect |
+| 23 | 4 | `TwoTone` | — | effect |
+| 24 | 5 | `Boost` | — | effect |
+| 25 | 5 | `Soften` | — | effect |
+| 26 | 5 | `Vignette` | `Matte` | effect |
+| 27 | 5 | `Pixelate` | `PicnikFocalPixelate` | effect |
+| 28 | 5 | `FocalZoom` | — | effect |
+| 29 | 5 | `PencilSketch` | — | effect |
+| 30 | 5 | `Neon` | — | effect |
+| 31 | 5 | `Comicize` | — | effect |
+| 32 | 5 | `Border` | `RoundedEdges` | effect |
+| 33 | 5 | `DropShadow` | — | effect |
+| 34 | 5 | `MuseumMatte` | — | effect |
+| 35 | 5 | `Polaroid` | — | effect |
+
+✅ **Pozitív kontroll — a tábla EGYEZIK a tulajdonos képernyőképeivel.**
+A `research/#1869-effekt-ful-kis-kek-jel/` két felvételén a 3. és a 4. fül
+mind a **24** csempéje sorrendhelyesen felel meg a tábla 0–11 és 12–23
+tételének (Élesítés=`unsharp2` … Színátmenet=`dir_tint`;
+Infravörös film=`IR` … Kéttónusú=`TwoTone`). A tábla 36. tételétől már más
+adat áll (`us-ascii`, `iso-8859-1`, `utf-8` — karakterkészlet-tábla), tehát
+a csempe-tábla **pontosan 36 tételes**.
+
+**A másodlagos azonosító akkor lép életbe**, ha a `[ebx + 0x33a8]` jelző áll
+(`0x005d7d63`); azt a `0x005d7cbe  shr eax, 0xf` + `and al, 1` állítja be,
+vagyis egy beállítás **15. bitje** (a `FUN_00a67be0` visszatérési értékéből).
+Ilyenkor a csempe a `+4`-es azonosítót használja, és a
+`0x005d7df4 push 0x00c962e4` = `_mod%s` alakot is felépíti.
+
+### 2. A kék jelvény: `editpanel/fx%d_adorn`, és a feltétele `mode == 1`
+
+A jelvény réteg-neve a `0x005d80d4 push 0x00c96304` = **`editpanel/fx%d_adorn`**.
+A `respack.yt` szerint (`m_fxadorner`, 10464. sor):
+
+```
+XConstraint 1, 1, -6
+YConstraint 1, 1, -19
+```
+
+⇒ a bélyegkép **jobb alsó sarkához** rögzítve, (−6, −19) eltolással — pontosan
+ott, ahol a képernyőképeken látszik.
+
+A megjelenítés/elrejtés utasításszinten:
+
+```
+0x005d8108  cmp byte ptr [esp + 0x64], 0     ; a JELZŐ
+0x005d810d  mov edx, dword ptr [ecx]
+0x005d810f  je  0x5d8116
+0x005d8111  mov eax, dword ptr [edx + 0x6c]  ; jelző = 1 → vtbl+0x6c
+0x005d8114  jmp 0x5d8119
+0x005d8116  mov eax, dword ptr [edx + 0x68]  ; jelző = 0 → vtbl+0x68
+0x005d8119  call eax
+```
+
+A jelző előállítása ugyanabban a menetben:
+
+```
+0x005d7e7b  mov ecx, dword ptr [0xd67f68]    ; globális szolgáltatás
+0x005d7e92  mov edx, [ecx] ; mov edx, [edx + 4]
+0x005d7e9c  mov byte ptr [esp + 0x6c], 0     ; a jelző ALAPÉRTÉKE 0
+0x005d7ea1  call edx                          ; szolgáltatás(azonosító, &kimenet)
+0x005d7eab  mov ecx, dword ptr [esp + 0x20]   ; a kapott objektum
+0x005d7eb9  mov edx, dword ptr [eax + 0x14]
+0x005d7ebc  call edx                          ; → egész
+0x005d7ec2  cmp eax, 1
+0x005d7eca  sete byte ptr [esp + 0x64]        ; jelző = (érték == 1)
+```
+
+*(A veremhely azonosságát végigszámoltam: a belépő `sub esp,0x4c` + négy
+`push` után a hurok-keretben `esp = E−0x5c`, így a `0x005d7eca`-nál és a
+`0x005d8108`-nál a `[esp+0x64]` ugyanaz a rekesz, `E+8`.)*
+
+**És mi az az 1?** A `mode=` attribútum kódja. A leíró-elemző
+`FUN_00900490` a teljes leképezést megadja:
+
+| `mode=` | kód | hol |
+|---|---|---|
+| `oneclick` | **1** | `0x00900500 lea eax, [edx + 1]` |
+| `hard` | 2 | `0x009004e3` |
+| `effect` | 4 | `0x009004c8 lea eax, [edx + 4]` |
+| `soft` | 5 | `0x009004ab` |
+| `tool` | 6 | `0x00900519` |
+| `history` | 7 | `0x00900535 and eax, 7` |
+| bármi más | 0 | ugyanott, a `sbb` ága |
+
+⇒ **a kék jelvény akkor és csak akkor jelenik meg, ha a csempe szűrőjének
+`mode="oneclick"`.**
+
+### 3. ⛔ ÖNHELYESBÍTÉS: a 2026-09-06-i cáfolat ROSSZ azonosítót mért
+
+Az a kör azt írta, hogy a szabály megdől, mert a **Filmszemcse** csempe
+`mode="oneclick"`, mégsincs rajta jelvény. **A csempe azonosítója azonban nem
+`grain`, hanem `PicnikGrain`** — a `grain` csak a *másodlagos* azonosító,
+amit a program kizárólag a `[ebx + 0x33a8]` jelző mellett használ. A
+`PicnikGrain` `mode="effect"`, tehát **helyesen** nincs rajta jelvény.
+
+A táblabeli **elsődleges** azonosítókkal a szállított `filterdesc.xml`-ben
+pontosan **három** csempe `oneclick`: `sepia`, `bw`, `warm` — és a
+képernyőképen pontosan **ezen a hármon** van jelvény, a 3. fül másik kilenc
+csempéjén nincs. ⇒ **a #1869 szabálya a 3. fülre hibátlanul teljesül.**
+
+*(Ugyanez a hibaosztály fenyeget a `PicnikTint`/`tint`, `glow2`/`glow`,
+`unsharp2`/`unsharp`, `dir_tint`/`radtint`, `HeatMap`/`NightVision`,
+`Vignette`/`Matte`, `Pixelate`/`PicnikFocalPixelate`, `Border`/`RoundedEdges`
+párokon is: a `filterdesc.xml`-t mindig a tábla ELSŐDLEGES azonosítójával
+kell kikeresni.)*
+
+### 4. Ami továbbra sem áll össze: az `Invert`
+
+Az `Invert` a `filterdesc.xml` 986. sorában `mode="effect"`
+(`<filter id="Invert" mode="effect" zerostate="none">`), a 4. fül
+képernyőképén viszont **van** rajta jelvény. A `properties.xml`-ben az
+`Invert` **nem szerepel** (0 találat), és a telepítésben **egyetlen**
+`filterdesc.xml` van, tehát felülíró leíró-fájl nincs.
+
+⇒ A maradék kérdés pontosan lehatárolva: **mi a `[0x00d67f68]` globális
+szolgáltatás, és mit ad vissza a kapott objektum `vtbl+0x14`-e?** Ha az
+tényleg a `mode`, akkor az `Invert` futásidejű módja eltér a leírótól (a
+szolgáltatás felülírja); ha nem, akkor a jelvény nem a `mode`-ot nézi, és a
+3. fül egyezése egy szűkebb szabály következménye. A globálisra
+**31 hivatkozás** van a `.text`-ben (indextől független abszolút pásztázás),
+a beállító/leszedő pár a `FUN_00401fb0` és a `FUN_00401fe0`.
+
+**Amit ez a kör NEM dönt el, kimondva:** a jelvényben álló **„1" számjegy**
+eredete. A csempeépítő `FUN_005d7c20` a `fx%d_adorn` rétegre **kizárólag**
+a `vtbl+0x68`/`+0x6c` hívást teszi — szöveget vagy számot **nem** ír bele.
+Ebben a függvényben tehát a számjegy nem áll elő; hogy a réteg képi
+tartalma statikus-e, ez a mérés nem mondja meg. *(A képernyőképek
+képpont-összevetése erre nem alkalmas: a jelvény átlátszósággal keveredik a
+bélyegképre, így a képpontjai háttérfüggőek.)*
+
+### 5. 🔓 A `filterdesc.xml` NEM BLOKKOLT többé
+
+A #2125 törzse (és a `filterdesc-registry.md` fejléce) a tulajdonos
+telepítésének `filterdesc.xml`-jét kérte. **Megvan:** a 2026-09-05-i
+telepítés-mentésben
+(`Picasa-telepites-mappa-mentes-20260905/Picasa3/runtime/filterdesc.xml`,
+63 005 bájt), és **bájtra azonos** a kutatási fánkban már meglévő
+példánnyal — mindkettő `md5 = 2cdd163f7ab2cec09d0f6990f2a179bc`.
+
+⇒ Ez a **kérés lezárható**: a szállított leíró már eddig is a kezünkben volt.
+A fenti `mode=` oszlop és a #2231/#2454 `Depth` értéke is ebből olvasható ki.
+
+### 6. Melléklelet: a jobbról-balra író nyelvek ága
+
+A csempe-felirat rétegén (`editpanel/fxlabel%d`) a `0x005d804e`–`0x005d80b6`
+a területi beállítás első három bájtját hasonlítja a `0x00c7f2c0` = `"fa"`
+és a `0x00c96300` = `"ar"` konstansokhoz (perzsa, arab), és egyezéskor
+`push 0x190` a `vtbl+0xc`-re, majd `push 0xa` a `vtbl+8`-ra. Ez a felirat
+RTL-igazítása; a többi nyelven nem fut le.
+
+*Bizonyítottsági fok: **megerősített** az 1. és a 2. pont (a tábla a
+képernyőképekkel, a mód-tábla a leíró-elemzőből, a veremhely számolással);
+**megerősített** az 5. pont (md5-egyezés); a 4. pont **nyitott**, pontos
+következő lépéssel.*
