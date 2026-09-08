@@ -73,11 +73,12 @@ class TestWeightTable:
 
 
 class TestBlurRadius:
-    def test_a_kepszelessegbol_szamol(self) -> None:
-        """A testvér `radblur` burkolójának mintája:
-        `sugár = szélesség/100 · (Mennyiség + 1) + 0,001` — KÖZELÍTÉS."""
-        assert linblur_blur_radius(800, 2.0) == pytest.approx(24.001)
-        assert linblur_blur_radius(1600, 0.0) == pytest.approx(16.001)
+    def test_a_sugar_MERVE_allando(self) -> None:
+        """#2736: a sugár se a szélességtől, se a „Mennyiség"-től nem függ —
+        a mérés a `tests/render/test_linblur_sugar_2736.py` fejlécében áll
+        (három bitre azonos referencia-export, három különböző lánccal)."""
+        assert linblur_blur_radius(800, 2.0) == pytest.approx(1.5)
+        assert linblur_blur_radius(1600, 0.0) == pytest.approx(1.5)
 
 
 class TestApplyLinblur:
