@@ -17,19 +17,16 @@ from support.qt_wait import hangos_hurok
 
 
 def _run(signal, action, timeout_ms=10000):
-    """A `test_create_controller.py` mintája: feliratkozás ELŐBB, hívás UTÁNA."""
+    """A `test_create_controller.py` mintája: feliratkozás ELŐBB, hívás UTÁNA.
+
+    ⚠️ #2743 (folytatás): az argumentumokat a HUROK adja vissza
+    (`jelzes_argumentumai`), nem egy saját, MÁSODIK szlot. A második szlot
+    kézbesítése ugyanis nem garantáltan fut le a hurok kilépése előtt:
+    mérve 60 futásból 2-3-ban `jelzes_megjott=True` mellett is ÜRES maradt
+    a gyűjtő, és ebből lettek a gyors, véletlenszerű `arrived is False`
+    bukások (CI: 34248206013, 34254846732). A hurok saját szlotja ELSŐNEK
+    van bekötve, tehát ez a verseny nem áll fenn."""
     loop = hangos_hurok(signal, timeout_ms=timeout_ms)
-    received = {}
-
-    def _on(*args):
-        # ⚠️ #1467: itt NEM szabad `loop.quit()`-et hívni. A hurkot a
-        # `hangos_hurok` SAJÁT szlotja zárja; ha a hívó szlotja zárná le
-        # előbb, a hurok kilépne, mielőtt a segéd nyilvántartásba veszi a
-        # jelzést — és a hangos vészfék HAMIS időtúllépést jelentene.
-        # (Mérve: a `test_create_controller.py` négy őre bukott így el.)
-        received["args"] = args
-
-    signal.connect(_on)
     action()
     loop.exec()
     # #1467: a hívók egy része ELDOBJA a visszaadott `arrived` jelzőt
@@ -37,7 +34,7 @@ def _run(signal, action, timeout_ms=10000):
     # időtúllépés némán ment tovább, és a bukás egy későbbi, látszólag
     # független állításon jelentkezett. Az `exec()` most ott helyben bukik;
     # a visszatérési érték a régi hívók kedvéért marad.
-    return ("args" in received, received.get("args", ()))
+    return (loop.jelzes_megjott, loop.jelzes_argumentumai)
 
 
 class _FakeEmbedder:
