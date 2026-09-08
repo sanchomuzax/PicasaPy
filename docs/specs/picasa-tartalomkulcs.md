@@ -1546,3 +1546,112 @@ tétel, a 213. kör címlistájával.
 független, 100 %-os kódfedéssel, és mindegyik pozitív kontrollja
 átmegy. A 213. kör „kimerült a lánc" állítása ezzel **helyesbítve**: két
 olcsó alak hiányzott belőle.*
+
+---
+
+## A TERMELŐ oldal is zárva — és az `originhash` a programnak CSAK ÍRÁSRA létezik (2026-09-08, 215. kör, #2675)
+
+A 206–214. körök a **mező** felől kérdezték, ki írja a rekord `+0x90`-jét.
+Ez a kör a **másik végéről** nézte ugyanazt: hova teszi az eredményt az,
+aki a kulcsot **előállítja** — és mit kezd a program magával a
+kulcsnévvel. Mindkettő olcsó, és mindkettő eldőlt.
+
+### 1. A hasher mind a tíz hívási helyen VEREM-IDEIGLENESBE ír
+
+`FUN_004353a0` (a hasher) hívási helyei, **indextől független `E8 rel32`
+pásztázással** (a függvényindex lyukas): **10**.
+
+| hívási hely | gazdafüggvény | a cél (az `ecx`-ben átadott sztringobjektum) |
+|---|---|---|
+| `0x00438691` | `FUN_00437cf0` (`caption`) | ideiglenes, `esp+0x6c` |
+| `0x004563db` | `FUN_00455ff0` (`keywords`) | ideiglenes, `esp+0x64` |
+| `0x0045cbdc` | `FUN_0045c870` | ideiglenes, `esp+0x24` |
+| `0x00464f05` | `FUN_00464990` | ideiglenes, `esp+0x2c` |
+| `0x00478336` | `FUN_00477ff0` (`geotag`) | ideiglenes, `esp+0x9c` |
+| `0x0054114a` | `FUN_0053fe30` | ideiglenes, `esp+0x54` |
+| `0x006bf6a7` | `FUN_006befa0` | ideiglenes, `esp+0x44` |
+| `0x006ec3d1` | `FUN_006ec280` | ideiglenes, `esp+0x34` |
+| `0x007e4aac` | `FUN_007e3210` | ideiglenes, `esp+0x34` |
+| `0x0087f3d4` | `FUN_0087f220` | ideiglenes, `esp+0x64` |
+
+**10/10 verem-ideiglenes, egy sem tagváltozó.**
+
+✅ **Pozitív kontroll — az osztályozó LÁTJA a tagváltozós alakot.** A
+`lea ecx, […]` → `call` párost az egész `.text`-en megszámolva (100 %-os
+lineáris fedés): **14 292 verem-alapú** és **3 430 regiszter-alapú**
+(tagváltozós) hely. Példák: `0x004017a2 lea ecx,[esi + 0x4c]`,
+`0x0040390d lea ecx,[edi + 0x8c]`. A 10/10 tehát **valódi lelet**, nem a
+minta vaksága.
+
+Három hívási hely a kulcs **szöveges alakját** is megformázza: a
+`0x0045cbdc`, a `0x007e4aac` és a `0x0087f3d4` után a
+`0x00c80ce4` = **`%016I64x`** formátumsztring következik — ez a
+16 hexa jegyes, 64 bites alak, pontosan az, ami a `.picasa.ini`-be kerül.
+
+A kulcspár-burkoló `FUN_00a4cd00`-nak ugyanígy **2** hívási helye van:
+`0x0043598d` (magában a hasherben) és `0x0070e59a` (korábbról ismert).
+
+### 2. A termelő soha nem kapja meg a `rekord+0x90` címét
+
+A 214. kör 125 „cím átadva hívásnak" helyének **55 különböző célfüggvénye**
+között **sem a `0x004353a0`, sem a `0x00a4cd00` nem szerepel**. Vagyis
+nincs olyan pont, ahol a hasher közvetlenül a rekord mezőjébe írna.
+
+### 3. A kulcsnév a TELJES fájlban EGYETLEN helyen hivatkozott
+
+A `"originhash"` literál a `0x00cb9254` adatcímen áll, és a bájtsorozat
+**egyetlen példányban** létezik a fájlban. Ennek az adatcímnek a
+4 bájtos abszolút hivatkozását mind a négy szekcióban megkerestem
+(kód 8 642 912 bájt + adat, összesen a teljes PE):
+
+| kulcs | adatcím | hivatkozás a TELJES fájlban | hol |
+|---|---|---|---|
+| `originhash` | `0x00cb9254` | **1** | `0x007d5e75`, az ini-**író** `FUN_007d55f0` törzsében |
+| `originslow` *(kontroll)* | `0x00c80b3c` | **1** | `0x00412b87`, `FUN_004127c0` — a korábban dokumentált helyén |
+
+✅ A kontroll a **saját, független úton ismert** helyre mutat, tehát a
+pásztázás működik.
+
+⇒ **Nincs kulcsnév-tábla, és nincs olvasó összehasonlítás.** A Picasa
+soha nem keresi ki a `.picasa.ini`-ből az `originhash=` sort **név
+szerint**: a kulcs a program szempontjából **csak írásra létezik**.
+
+### 4. Mit jelent ez együtt
+
+| kérdés | válasz | bizonyíték |
+|---|---|---|
+| ki írja a rekord `+0x90`-jét? | **egyedül az `operator=`**, másolással | 206–214. kör, öt+kettő címzési alak, működő kontrollal |
+| a hasher írja-e közvetlenül? | **nem** — 10/10 verem-ideiglenes | 1. szakasz, 3 430-as pozitív kontrollal |
+| megkapja-e a hasher a mező címét? | **nem** — az 55 cél közt nincs | 2. szakasz |
+| olvassa-e vissza a program a kulcsot névvel? | **nem** — 1 hivatkozás, az író | 3. szakasz |
+
+⇒ **Az `originhash` a rekordban kizárólag TERJED.** Nem a hasherből
+kerül bele közvetlenül, és nem az ini-ből név szerint — csak
+másolással, egyik rekordból a másikba. Ez pontosan egybevág a lap
+korábbi, **mérésen** alapuló szakaszával („A MÁSOLAT ÖRÖKLI a forrás
+`originfast`-ját"), és megmagyarázza, miért nem talált a nyolc kör
+közvetlen írót: **nincs ilyen a rekordosztályban.**
+
+### 5. Terméki következmény (a fejlesztői körnek)
+
+- A `.picasa.ini` round-tripben az `originhash=` sort **meg kell
+  őrizni**, de **nem szabad rá viselkedést építeni** olvasáskor: az
+  eredeti sem elemzi vissza.
+- A helyes modell a **másolás-öröklés** — ez nálunk a
+  [#1648](https://github.com/sanchomuzax/PicasaPy/issues/1648) nyomán már
+  megvan.
+- Az ini-író a kulcsot kihagyja, ha a mező NULL vagy üres
+  (`FUN_007d55f0`, `0x007d5e2a`) — tehát a sor hiánya **normális
+  állapot**, nem adatvesztés.
+
+### 6. Ami NYITVA marad (örökölt)
+
+Honnan kap egy rekord `+0x90`-je **először** értéket. A most mért három
+tény ezt leszűkíti: **nem** a hasherből közvetlenül, **nem** az ini-ből
+név szerint, és **nem** a rekordosztály valamelyik tagfüggvényéből.
+Marad, hogy egy **másik objektumból** másolódik át — vagyis a kérdés
+véglegesen a `FUN_005a4f10` **forrás-oldala**, a 213. körben felsorolt
+húsz hívási hellyel. Ez a drága szint.
+
+*Bizonyítottsági fok: **megerősített** mind a három mérés — indextől
+független, teljes fedéssel, és mindegyiknek átmegy a pozitív kontrollja.*
