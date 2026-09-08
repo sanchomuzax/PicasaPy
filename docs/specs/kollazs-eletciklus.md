@@ -4309,3 +4309,71 @@ oldala. A hívóláncát kell kiolvasni: ki és mikor rögzít, illetve állít
 vissza, és hol keletkezik a rögzítendő ÚJ állapot.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 43. K1 — a kollázspanel KÉT dokumentumának állapotgépe: alap és munkapéldány (2026-09-08, #1412)
+
+*195. kutatói kör. A 42.4 lépését viszi: a `FUN_0083d090` hívólánca.*
+
+### 43.1 ⭐ A visszaállítót a **RESET gomb** hívja
+
+A `FUN_0083d090`-nek **egyetlen** hivatkozója van: a parancs-elosztó
+`FUN_0082d570` (4721 b). A hívás előtti sztring-összehasonlítás:
+
+```
+0x0082e2a8  mov esi, 0xcbefac      ; "collagepanel/resetbutton"
+0x0082e2ad  mov ecx, 0x19          ; 25 bájt (24 karakter + lezáró)
+0x0082e2b4  repe cmpsb
+0x0082e2d1  cmp eax, 0xcbefac      ; a rövidebb ág: azonosság-összevetés
+0x0082e2e1  call 0x0083d090
+```
+
+és a `FUN_0083d090` első érdemi művelete:
+
+```
+0x0083d099  lea ecx,[esi+0x1b0]   ·  0x0083d09f  lea eax,[esi+0x138]
+0x0083d0a5  push ecx  ·  0x0083d0a6  push eax   ; 1. arg = CÉL (36.1)
+0x0083d0a7  call 0x00833cf0                     ;  +0x1b0  →  +0x138
+```
+
+⇒ **`[+0x1b0]` az ALAPÁLLAPOT, `[+0x138]` a MUNKAPÉLDÁNY**, és a
+`collagepanel/resetbutton` az alapot másolja vissza a munkapéldányba.
+
+### 43.2 A másik irány: RÖGZÍTÉS, és mi váltja ki
+
+| hely | hívó | irány | közvetlenül előtte |
+|---|---|---|---|
+| `0x00831ab0` | `FUN_00831750` (vezérlő-kezelő) | `+0x138 → +0x1b0` | **`0x00831a9d call 0x00831420`** — a munkapéldány ÚJRAÉPÍTÉSE a panel beállításaiból (37.1) |
+| `0x0082bffb` | `FUN_0082a670` (kollázspanel) | `+0x138 → +0x1b0` | `[ebx+0xc] = 1`, `[ebx+0x18] = 0` jelzők |
+
+⇒ a menet: **beállítás változik → a munkapéldány újraépül a
+beállításokból → rögzítés az alapba.**
+
+### 43.3 ⭐ Amit ez MEGMAGYARÁZ: a 38.2 `scale = 1,0`-ja nem ellentmondás
+
+A 38.2 kimérte, hogy az újraépítő (`FUN_0087dcd0`) minden csomópontot
+`scale = 1,0`-val fűz hozzá. A 43.2 fényében ez **nem** ellentmondás,
+hanem a **regenerálás** szemantikája: egy beállítás megváltoztatása a
+kollázst **nulláról** építi újra, és ilyenkor minden csomópont
+alaphelyzetből indul.
+
+⇒ **A mintáinkban álló 313 / 500 / 256 / 158 tehát olyan állapotból
+való, amelyet a beállítás-változás UTÁN már nem regeneráltak.**
+
+*Bizonyítottsági fok: **megerősített** a két irány és a kiváltó
+(címekkel); **erős** a „regenerálás" olvasat — a `FUN_00831420` kapuja
+(`[ebp+0x130]`) mögötti feltételt nem olvastuk ki.*
+
+### 43.4 A KÖVETKEZŐ lépés, megnevezve
+
+**Melyik dokumentumot MENTI a program?** A mentés-szervezőt
+(`FUN_00834700`) a 36.4 szerint az autosave-szál a **saját másolatával**
+hívja, amit a konstruktora érték szerint kapott. A kérdés tehát:
+
+> a panel melyik mezőjéből (`[+0x138]` munkapéldány vagy `[+0x1b0]` alap)
+> készül az a másolat, amely a mentőhöz eljut?
+
+Ez zárt kérdés: a `FUN_00838ef0` (az autosave-ktor, `ret 0x54`) hívóit
+kell kiolvasni — ki tolja fel a dokumentumot érték szerint, és melyik
+mezőből.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
