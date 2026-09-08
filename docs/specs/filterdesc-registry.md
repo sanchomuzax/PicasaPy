@@ -4092,6 +4092,106 @@ Amit ez a kör NEM tudott eldönteni, és amivel folytatható:
    táblahasználatot a fenti kétmenetes olvasat magyarázza, de a függvény
    maga nincs végigolvasva.
 
+### 5. A 221. kör: KÉT irány kizárva, a korai ág pontosítva (2026-09-08, #2746)
+
+A fenti három folytatási irány közül kettő lezárult — mindkettő **negatív**
+eredménnyel, ami itt önmagában lelet: a következő kör ne járja újra.
+
+#### 5.1 ⛔ KIZÁRVA: a rács NEM a képponti alkalmazóban keletkezik
+
+A `0x00bcb2f0` (744 bájt) teljes törzsét végigpásztázva **egyetlen osztás
+és egyetlen lebegőpontos utasítás sincs benne**. A négy szorzás mind
+címszámítás:
+
+| cím | utasítás | mit csinál |
+|---|---|---|
+| `0x00bcb368` | `imul edx, [ebx + 0x14]` | sor-eltolás (stride) |
+| `0x00bcb37a` | `imul edx, eax` | sor-eltolás |
+| `0x00bcb50b` | `imul eax, [ebx + 0x14]` | sor-eltolás |
+| `0x00bcb528` | `imul ecx, [ebp + 0x1c]` | sor-eltolás |
+
+A mért kimenet `round(i·255/(Steps−1))` alakú, ami **osztást kíván**
+`Steps−1`-gyel. Ilyen művelet itt nincs ⇒ a rács nem itt áll elő. A
+függvény tényleg csak a LUT-ot alkalmazza, ahogy a kétmenetes olvasat
+mondta.
+
+*(Módszer: `pe_dis.cdis(0x00bcb2f0, 744)`, majd szűrés a
+`div|idiv|mul|imul|fdiv|fmul|fld|fstp|cvt` mintára. A negatívum HATÓKÖRE: ez
+az egy függvény, a hívottjai nem.)*
+
+#### 5.2 ⛔ KIZÁRVA: a binárisban NINCS név szerinti megkerülő út
+
+A #2231 köre a `runtime/` alatt grepelt (2 találat, mindkettő a
+`filterdesc.xml`-ben). **A binárisbeli sztring-hivatkozásokat viszont nem
+nézte meg.** Most igen, az indexből:
+
+```sql
+SELECT string, function_address FROM string_xrefs WHERE string LIKE '%uantize%';
+```
+
+⇒ **pontosan egy találat**: `imageOperations:QuantizePaletteImageOperation`,
+hivatkozó `0x00bb31f0` (a művelet-gyár regisztrálója). A `Posterize`
+(a felhasználói felirat) sztringre **nulla** hivatkozás.
+
+⇒ A `.picasa.ini` `filters=QuantizePalette=…` sora **nem tud** egy
+alternatív, névre kereső natív feldolgozóhoz jutni: ilyen nincs. A
+megkerülő út — ha van — nem a szűrő NEVÉN keresztül megy.
+
+#### 5.3 A korai kilépő ág — pontosítva, és a kódkészlet kimérve
+
+A feltétel a lap eddigi „`[cél+0x10] == 0`" alakjánál pontosabban:
+
+```
+0x00bb5ba4  xor ebx, ebx                 ; ebx = 0 — IGAZOLVA
+…
+0x00bb5ec3  mov edi, [esp + 0x10cc]      ; a munkavégző 4. paramétere
+0x00bb5edd  mov eax, [edi + 0x10]
+0x00bb5ee0  cmp eax, ebx                 ; == 0 ?
+0x00bb5ee6  jne 0x00bb5f1a               ; nem 0 → a FŐ ÚT
+0x00bb5f02  mov eax, 4                   ; 0 → korai kilépés
+```
+
+A veremeltolás kiszámolva: a `0x10ac` bájtos foglalás után négy `push`
+(`ebx, ebp, esi, edi`) ⇒ `[esp+0x10c0]` = 1., `[esp+0x10c4]` = 2.,
+`[esp+0x10c8]` = 3., **`[esp+0x10cc]` = 4. paraméter**. A hívó
+(`0x00bb5ad0`) push-sorrendjéből a 4. paraméter az **alkalmazó 3.
+paramétere** (`[ebp+0x10]`), a 2. és 3. pedig a `Steps` és a `Depth`.
+
+**A visszatérési kódkészlet — mind a négy kilépési pont kimérve:**
+
+| cím | érték | |
+|---|---|---|
+| `0x00bb6143` | `xor eax, eax` ⇒ **0** | a fő út vége — siker |
+| `0x00bb6019` | `or eax, 0xffffffff` ⇒ **−1** | hiba |
+| `0x00bb5f11` | **4** | a korai ág |
+| `0x00bb5d22` | `mov eax, edi` | egy továbbadott kód |
+
+⭐ **Ebből következik, hogy a `4` NEM hibakód** — a hibának saját értéke van
+(−1). A `4` külön állapot, amit a hívó valamiként értelmez.
+
+#### 5.4 Egy mellékes, de fontos részlet: a `Steps` kódbeli alapértéke 255
+
+```
+0x00bb5aed  mov dword ptr [esp + 0x3c], 0xff   ; Steps := 255
+0x00bb5af5  call 0x008ef520                    ; a {_sldrSteps.value} kiértékelése
+0x00bb5afc  jne 0x00bb5b14                     ; ha NEM 0-t adott → a 255 MARAD
+```
+
+Tehát ha a kifejezés-kiértékelés nem jár sikerrel, a művelet **255 lépéssel**
+fut — ami a 256 színű mintán gyakorlatilag azonosság. Ez NEM magyarázza a
+mért rácsot (az `Steps = 8`-ra illeszkedik), de a következő körnek tudnia
+kell róla: a `Steps` útja a kifejezés-kiértékelőn át megy, nem konstansként.
+
+#### 5.5 Ami ezek után NYITVA marad — egyetlen irány
+
+**Mit csinál a hívó a `4`-es visszatérési értékkel?** A művelet vtáblája
+`0x008eff58`, az alkalmazó a 7. rés; a hívás tehát `call [reg + 0x18]`
+alakú, közvetlen xref nincs rá. A következő kör ezt keresse — és azt, hogy
+`[3. paraméter + 0x10]` mikor 0.
+
+*(Amit ez a kör NEM próbált: a `0x00bb5d22` ág `edi`-jének eredete, és a
+hívó oldali `cmp eax, 4` minta pásztázása. Egyik sem drága.)*
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
