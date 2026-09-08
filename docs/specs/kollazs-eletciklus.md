@@ -4239,3 +4239,73 @@ a `pan_hand_drag` (`0xc7ed28`) beállítása körül (`0x008687ae`): mit ír a
 kezelő minden egérmozgásra, és eljut-e valami a csomópont `+0x2c`-jéig.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 42. K1 — a fogantyú-kezelő TELJES írás-listája, és egy bizonyítottsági fok helyesbítése (2026-09-08, #1412)
+
+*194. kutatói kör. A 41.4 lépését viszi: a húzás-KÖZBENI ág.*
+
+### 42.1 A `FUN_00868570` MINDEN vermen kívüli írása — egyik sem csomópont
+
+| cím | írás | mi |
+|---|---|---|
+| `0x008685c4` · `0x008685ca` | `[edx+0x28]` · `[edx+0x2c]` | a húzási **pont** (x, y) — 39.1 |
+| `0x00868750` · `0x0086875c` | `fstp **qword** [esi+0x10]` · `[edx+0x20]` | **`double`**-ök — a csomópont mezői 4 bájtos `float`-ok (26.1) ⇒ nem csomópont |
+| `0x008687bb` | `[eax]` | mutató |
+| `0x00868826` · `0x008689f8` · `0x00868a8d` · `0x00868a91` · `0x00868b30` | bájtjelzők (`+8`, `+9`) | kijelzés-állapot |
+| `0x008688b3` · `0x008688bc` · `0x008688de` · `0x008688e7` · `0x00868912` | `[edi+0x18]` · `[+0x14]` · `[+0x10]` · `[+0xc]` · `[+0x1c]` | **öt egymást követő float** `+0xc`-től `+0x1c`-ig |
+| `0x00868e65` · `0x00868e6c` | `[eax+0x196]` · `[eax+0x194]` | kurzor-jelzők |
+
+Az `[edi+0xc … +0x1c]` ötös **nem** a csomópont: annak hat float mezője
+`+0x18`-tól `+0x2c`-ig tart (26.1), a `+0xc`/`+0x10`/`+0x14` pedig ott
+**mutató/egész** (37.2 mezőtérképe). ⇒ **a fogantyú-kezelő sem húzás
+közben, sem a végén nem ír kollázs-csomópontot.**
+
+*Bizonyítottsági fok: **megerősített** — a függvény teljes írás-listája,
+nem minta.*
+
+### 42.2 A CollagePreviewHandler sem — és egy új sztring
+
+A `CollagePreviewHandler::vftable` (`rtti` `0x00cbf554`) tizenhárom saját
+bejegyzése és a `CollageDeselectHandler` (`0x00cbf598`) átvizsgálva:
+**egyik sem ír csomópont-mezőt** (`+0x18`…`+0x2c`).
+
+⭐ Melléklelet: a `FUN_008860e0` (642 b) sztringkészlete **`collage_adapt`
+ÉS `collage_autosave`** — az utóbbi a specben eddig nem szerepelt; ez a
+piszkozat-mentés kiváltó üzenete.
+
+### 42.3 ⛔ HELYESBÍTÉS: a 17.5 ok-tulajdonítása `erős`, nem `megerősített`
+
+A 17.5 két állítást tesz:
+
+1. **a `scale` 95/97 esetben egész, és a `picturepile` hat értéke hat
+   független kollázsban betű szerint azonos** — ez **számolás**, tehát
+   **megerősített**;
+2. **a két tört érték az `AI2`-ben a KÉZI ÁTMÉRETEZÉSTŐL van** — ez
+   **következtetés** („ez az egyetlen minta, amelyben a tulajdonos
+   csomópontot húzott át"), nem mérés.
+
+A 39.–42. kör a húzási utat végig kimérte, és **egyetlen kódút sem írja a
+csomópont `scale`-jét**. Ezért a 2. állítás bizonyítottsági foka
+**`erős`**, nem `megerősített`.
+
+**Egy versenyző magyarázat KIZÁRVA, méréssel:** a betöltéskori szorzás
+(20.4, `#2593`) **egységes** tényezővel hatna, tehát mind a kilenc értéket
+mozdítaná. A mérés (39.4) szerint **hét érték pontos létra-egész**, és a
+két tört értéknek nincs közös aránya egyetlen létra-értékhez sem
+(`295,392395 / 337 = 0,876535` vs `267,607788 / 249 = 1,074730`).
+⇒ a változás **csomópontonkénti**, nem lapszintű.
+
+### 42.4 A KÖVETKEZŐ lépés, megnevezve
+
+A panel **két** dokumentumot tart (36.2: `[+0x138]` munkapéldány,
+`[+0x1b0]` rögzített példány), és mindkét irányban másol közöttük — ez
+**visszavonás-pár**. Ha a csomópontonkénti változás nem a rajzoló
+kezelőkön át megy, akkor a **parancs/visszavonás** nyilvántartásban kell
+lennie.
+
+**Konkrétan:** a `FUN_0083d090` (534 b) — az egyetlen hívási hely, amely a
+**`+0x1b0` → `+0x138`** irányban másol (36.2), tehát a *visszaállítás*
+oldala. A hívóláncát kell kiolvasni: ki és mikor rögzít, illetve állít
+vissza, és hol keletkezik a rögzítendő ÚJ állapot.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
