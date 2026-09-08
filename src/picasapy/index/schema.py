@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 17
+SCHEMA_VERSION = 18
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -334,6 +334,38 @@ ALTER TABLE photos ADD COLUMN first_seen_mtime_ns INTEGER;
 UPDATE photos SET first_seen_mtime_ns = mtime_ns;
 """
 
+# #2519: „az arc-detektálás LEFUTOTT" nyom. A `face` tábla csak a MEGTALÁLT
+# arcokat tárolja, ezért egy arc nélküli fotó megkülönböztethetetlen a még
+# sosem vizsgálttól — a detektálás minden szkennelésnél újrafutott rajtuk.
+#
+# Az eredeti Picasa ugyanezt EGY oszlopon oldja meg (`imagedata.facerect`:
+# 0 = még nem dolgoztuk fel, 1 = feldolgozva, szándékosan nincs téglalap,
+# egyéb = valódi rect64 — `docs/specs/picasa-imagedata-rekord.md`, #2515). A
+# téglalap írója csak NULLA értékre ír (`0x00480de7`), tehát az 1 megvédi a
+# képet az újra-detektálástól.
+#
+# Nálunk KÜLÖN tábla (a `photo_hashes`/`face` mintája), mert a `photos` sor a
+# fájl adata, ez pedig származtatott feldolgozási nyom:
+#
+#   * `mtime_ns` + `size`: a jelölés a fájl AZONOSSÁGÁHOZ kötött — a
+#     megváltozott képet újra meg kell nézni (ugyanaz az elv, mint a
+#     `photo_hashes`-nél);
+#   * `ok`: `'detektalva'` (lefutott a detektálás) vagy `'kizarva'` (a
+#     Mappakezelő arcfelismerés-kizárása tette ki). A `kizarva` ERŐSEBB: azt
+#     a fájl változása sem oldja fel — ez az eredeti 1-es jelzőjének
+#     megfelelője. Feloldani csak a felhasználó szándékos visszaengedése
+#     tudja (`forget_face_scan`), a megerősítő kérdés után.
+_FACE_SCAN_DDL = """
+CREATE TABLE IF NOT EXISTS face_scan (
+    photo_id INTEGER PRIMARY KEY REFERENCES photos(id) ON DELETE CASCADE,
+    mtime_ns INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    ok TEXT NOT NULL DEFAULT 'detektalva'
+);
+
+CREATE INDEX IF NOT EXISTS idx_face_scan_ok ON face_scan(ok);
+"""
+
 
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
@@ -388,6 +420,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 
 {_FACE_EMBEDDING_DDL}
 {_FACE_NAME_DDL}
+
+{_FACE_SCAN_DDL}
 
 {_RESOLVED_ROOT_DDL}
 
@@ -496,4 +530,6 @@ ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
     # nem javít visszamenőleg, de nem is ront: pontosan azt rögzíti, amit a
     # felhasználó ma is lát, és onnantól stabilan tartja.
     16: _FIRST_SEEN_MTIME_MIGRATION,
+    # #2519: az „arc-detektálás lefutott" nyom táblája (ld. a DDL-nél).
+    17: _FACE_SCAN_DDL,
 }

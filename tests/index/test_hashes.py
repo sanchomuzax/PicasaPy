@@ -11,11 +11,11 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v17: a befagyasztott, első látáskori fájlidő (#2486) —
-        # `photos.first_seen_mtime_ns`
-        # (v16: a Picasa-gyorskulcs oszlopa, #1494 — `photo_hashes.
-        # originfast`, és ezzel együtt a `dhash` NOT NULL feloldása)
-        assert SCHEMA_VERSION == 17
+        # v18: az „arc-detektálás lefutott" nyom (#2519) — `face_scan`
+        # (v17: a befagyasztott, első látáskori fájlidő, #2486 —
+        # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
+        # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
+        assert SCHEMA_VERSION == 18
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:

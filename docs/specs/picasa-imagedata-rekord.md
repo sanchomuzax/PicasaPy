@@ -421,6 +421,29 @@ ezért kell külön jelző a `0` mellé.
 **NEM** mértem: hogy a `FUN_00491210` melyik sorlistát tölti fel melyik
 szabály szerint (melyik kép kerül az „A", melyik a „B" listába).
 
+### ⇒ Nálunk (MEGVALÓSÍTVA, 2026-09-08, #2519)
+
+Az `1`-es jelző megfelelője a **`face_scan` tábla**
+(`src/picasapy/index/faces_detected.py`, sémaverzió 18) — külön tábla, mert
+nálunk a `photos` sor a fájl adata, ez pedig származtatott feldolgozási nyom:
+
+| eredeti | nálunk |
+|---|---|
+| `facerect = 0` (még nem dolgoztuk fel) | nincs `face_scan` sor |
+| `facerect = 1` (feldolgozva, nincs téglalap) | `face_scan.ok = 'kizarva'` |
+| „lefutott a detektálás" (az eredetiben nincs külön értéke) | `face_scan.ok = 'detektalva'` a fájl `mtime_ns`/`size` azonosságával |
+| az író csak nullára ír ⇒ az `1` véd | a `kizarva` jelölést a fájl változása SEM oldja fel |
+
+Két eltérés, szándékosan:
+
+1. **A `detektalva` jelölés a fájl AZONOSSÁGÁHOZ kötött** — a megváltozott
+   képet újra megnézzük (az eredeti a `mtime`-ot itt nem használja). A
+   `kizarva` viszont az eredetihez hasonlóan ragad.
+2. **A `.picasa.ini` `faces=` / `[Contacts2]` sorait NEM töröljük**, pedig a
+   megerősítő kérdés a névcímkékről is szól. Az a felhasználó saját,
+   Picasában felvett adata; a mi származtatott találatainkat (`face` tábla)
+   viszont a kizárás törli.
+
 ## A `filters=` lánc sorosítója — `0x00463fd0`
 
 Ugyanez a kódterület kezeli a lánc szöveges alakját. A dekompilált kódban

@@ -60,6 +60,8 @@ from picasapy.index import (
     unignore_faces,
     mark_faces_named,
     open_index,
+    face_scan_done,
+    mark_face_scan,
     replace_faces,
     reset_all_faces,
     store_embedding,
@@ -697,8 +699,20 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
                         self._report_scan(done, total)
                         continue
+                    # #2519: már lefutott ezen a fájlállapoton — a `face`
+                    # tábla ürességéből ez nem látszana (arc nélküli fotó =
+                    # nulla sor), ezért kell a külön nyom. A `kizarva`
+                    # jelölést a fájl változása sem oldja fel.
+                    if face_scan_done(
+                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                    ):
+                        self._report_scan(done, total)
+                        continue
                     faces = self._detect(photo_path)
                     replace_faces(conn, photo.id, faces)
+                    mark_face_scan(
+                        conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
+                    )
                     found += len(faces)
                     scanned += 1
                     if scanned % _COMMIT_BATCH_SIZE == 0:
