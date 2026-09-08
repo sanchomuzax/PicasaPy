@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.350] – 2026-09-09
+
+### Javítva
+
+- **Mentéskor többé nem kerül a fotók mellé egy olyan bejegyzés, amilyet az
+  eredeti Picasa nem ír** (#2675). A program eddig minden mentésnél beírt egy
+  `originhash` nevű sort a `.picasa.ini` fájlba — kiderült, hogy az eredeti
+  Picasa ezt nem a mentéshez, hanem a webalbumból letöltött képekhez írja: a
+  tulajdonos 859 valódi fájljában 1787 ilyen sor közül **egy sem** áll mentési
+  bejegyzés mellett. Mostantól nem írjuk, és a Visszaállítás sem törli — ha egy
+  letöltött képnél már ott volt, érintetlen marad. Így a fájlok a valódi
+  Picasával teljesen kompatibilisek maradnak.
+
 ## [0.8.349] – 2026-09-08
 
 ### Javítva
