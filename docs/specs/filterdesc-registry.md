@@ -4192,6 +4192,81 @@ alakú, közvetlen xref nincs rá. A következő kör ezt keresse — és azt, h
 *(Amit ez a kör NEM próbált: a `0x00bb5d22` ág `edi`-jének eredete, és a
 hívó oldali `cmp eax, 4` minta pásztázása. Egyik sem drága.)*
 
+### 6. ⛔ ÖNHELYESBÍTÉS: a `4`-es kódot SENKI nem vizsgálja (2026-09-08, 222. kör, #2746)
+
+Az 5.3 szakasz azzal zárult, hogy a `4` „külön állapot, amit a hívó
+valamiként értelmez", és hogy „épp ez teszi érdemessé a folytatást".
+**Ez az állítás megdőlt — a sajátom, egy körrel később.**
+
+#### 6.1 Módszertani lelet ELŐBB: a slot-hívás alakja
+
+A vtábla-slot hívása **két alakban** áll a binárisban, és a gyakoribb nem az,
+amire az 5. szakasz mintája épült:
+
+| alak | előfordulás a `.text`-ben |
+|---|---|
+| `call dword ptr [reg + 0x18]` (közvetlen) | **9** |
+| `mov reg, [reg + 0x18]` … `call reg` (közvetett) | **2 806** |
+
+⇒ Aki csak a közvetlen alakra keres, a hívóhelyek **99,7 %-át nem látja**, és
+hamis negatívot kap. (A teljes binárisban 208 143 `call` van, ebből
+mindössze 115 bármilyen `call dword ptr [reg(+N)]` alakú — ez maga volt a
+jel, hogy a minta rossz.)
+
+#### 6.2 A mérés — és három hamis pozitív, elolvasva
+
+A **közvetett** alakra pásztázva 2 806 slot-6 hívás van. Ezek közül 10
+utasításon belül `cmp/sub eax, 4` **három** helyen áll — és mindhárom
+**hamis pozitív**, mert az `eax` a hívás után felülíródik:
+
+| hívás | a `cmp eax, 4` | miért nem a visszatérési érték |
+|---|---|---|
+| `0x00918f05` | `0x00918f15` | `0x00918f11 mov eax, [esp+0x1c]` — verem-változó; a `cmp` egy **switch-tábla** határa (`0x00918f1e jmp [eax*4 + 0x9190e4]`) |
+| `0x0061122f` | `0x0061124e` | `0x00611243 mov eax, [ebp+0x134]` — **tagváltozó** állapota (a `cmp eax, 3` a párja) |
+| `0x0066854e` | `0x00668567` | `0x00668564 mov eax, [esi+0x70]` — **tagváltozó** állapota |
+
+**Kontrollok, hogy a negatívum ne a minta hibája legyen:**
+
+1. a `4`-es minta érzékel: ugyanaz a futás **4 890** `mov reg, 4`-et talált,
+   és **benne a `0x00bb5f02`-t** — épp azt, amit keresünk;
+2. a hívás-minta érzékel: 2 806 találat (ld. 6.1);
+3. mindhárom találatot **elolvastam**, nem a számot jelentem.
+
+⇒ **A `4`-es visszatérési értéket egyetlen hívó sem vizsgálja.** A `4` tehát
+nem „csináld te" jelzés: aki a slot 6-ot hívja, eldobja az eredményt.
+
+#### 6.3 Amit ez a kérdésről mond
+
+Ha a korai ág (`[3. paraméter + 0x10] == 0`) lefutna, a művelet egyszerűen
+**nem módosítaná a képet** — a `NestedImageOperation` láncában a `Blur`
+eredménye mennne tovább kvantálás nélkül. A mért kimenet viszont
+**kvantált** (csatornánként egyenletes rács), tehát:
+
+⇒ **a korai ág élesben nem fut le**, és a fő út (az oktree-építés) FUT.
+
+Ez a kérdést nem oldja meg, de **átfordítja**: nem a vezérlésben van az
+ellentmondás, hanem a fő út **kimenetének értelmezésében**. A következő kör
+ne vezérlési utat keressen, hanem azt mérje meg, mit ad a fő út a
+3-3-2 LUT-tal együtt — a lap 2. pontja szerint a LUT-építő a rekesz színét
+`r = c & 0xE0`, `g = (c & 0x1C) << 3`, `b = (c & 3) << 6` alakban
+**visszafejti**, és ERRE kérdezi a fát; a keresés pedig „nem valódi
+legközelebbi-szomszéd", hanem bit-alapú leszállás, ami a csomópont
+**átlagát** adja. Egy 50×50-es minta fölött ez elvben közel egyenletes
+rácsot is adhat — de ezt **mérni kell, nem feltételezni**.
+
+#### 6.4 Mellékesen: a `NestedImageOperation` slot 6-ja STUB
+
+`0x00bbf920` (6 bájt): `or eax, 0xffffffff; ret 0xc` — mindig `−1`. A
+`Nested` tehát **nem** a slot 6-on végzi a munkát. A két vtábla
+(`0x00ceff58` QuantizePalette, `0x00cf0774` Nested) a **3., 4. és 5. slotot
+megosztja** (`0x00bc4ae0`, `0x00bc5160`, `0x00bc5180`); a `0x00bc4ae0`
+(1660 bájt) viszont **egyetlen virtuális hívást sem tartalmaz**, tehát nem ő
+a lánc-diszpécser.
+
+*(A vtáblát az INDEXBŐL kell olvasni: a `rtti` tábla `slotok` mezője adja.
+A nyers `read(0x008eff58, …)` értelmetlen bájtokat ad — az a tábla „második"
+címe, nem a VA; a helyes VA a `0x00ceff58`.)*
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
