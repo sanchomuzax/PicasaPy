@@ -456,6 +456,10 @@ Két megfigyelés:
 
    A különbség a lágy **árnyék**, jobbra és lefelé.
 
+   *Forrás: `scaleslider.tre:1` (`scaleslider/thumb`) — a réteg
+   téglalapjai a `respack.yt`-ból; a tömör rajz a kibontott rétegkép
+   nem-átlátszó befoglalója.*
+
    **Nálunk (megvalósítva, #2664):** a doboz marad a réteg mérete — a
    Layout helye, tehát a környező elrendezés mért állandói (#1345/#1367)
    érintetlenek —, és a RAJZ húzódik be. Ezért a #2641 vésése is a RAJZ
