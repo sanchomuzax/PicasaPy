@@ -158,9 +158,22 @@ def apply_quantizepalette(image: np.ndarray, levels: int = 4) -> np.ndarray:
 
     Modell: csatornánként egyenletes lépésközű kvantálás
     (`levels` szint 0..255 között), a klasszikus poszterizáló szűrők
-    szokásos definíciója. A Picasa `QuantizePalette` pontos (esetleg
-    palettaválasztó, nem egyenletes) algoritmusa NEM ismert — ez a
-    legegyszerűbb, jellegre illő közelítés.
+    szokásos definíciója.
+
+    ## Az eredeti algoritmus — MÉRVE (#2231, 2026-09-08)
+
+    A korábbi „a pontos algoritmusa NEM ismert" mondat elavult. A
+    binárisban álló `glimmer::QuantizePaletteImageOperation`
+    (`0x00bb5ad0` → `0x00bb5b60`) **oktree-alapú palettaválasztó**; a
+    szállított szűrő MÉRT kimenete viszont csatornánként egyenletes
+    rácsra ugrik (a Picasa saját exportján 97,6%-ban a
+    `round(i·255/(Steps−1))` rácson), és a csatornák egymástól
+    függetlenül. A két lelet ellentmond egymásnak; a látható viselkedést
+    a rácsos modell írja le, ezért marad ez.
+
+    A teljes levezetés, a címek és a mérés a testvérfüggvény
+    docstringjében (`glimmer_tone.apply_quantizepalette`) és a
+    `docs/specs/filterdesc-registry.md`-ben áll.
     """
     validate_image(image)
     if not isinstance(levels, int) or levels < 2:

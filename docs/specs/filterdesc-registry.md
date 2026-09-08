@@ -2940,8 +2940,14 @@ index = ((R >> k) & 1) << 2 | ((G >> k) & 1) << 1 | ((B >> k) & 1)      k = 7 �
 **A szétvágás LUSTA:** a csomópont csak akkor bomlik gyerekekre, ha már van
 benne egy szín és érkezik a második (`0x00bcb8ec` `cmp dword ptr [esi+4], 1`).
 
-**Ami NINCS mérve:** mikor lép életbe a 3-3-2-es tartalék paletta, és milyen
-szabály szerint választ a redukáló leveleket.
+~~**Ami NINCS mérve:** mikor lép életbe a 3-3-2-es tartalék paletta, és milyen
+szabály szerint választ a redukáló leveleket.~~ — **mindkettő MEGVAN**: a
+3-3-2 tábla nem tartalék, hanem minden futásban felépülő gyorsító (ld. az
+alábbi #2231-szakasz 5–6. pontját), a redukáló pedig `floor(N / hátralévő)`
+kvótával oszt, rögzített gyerekbejárási sorrendben. Hogy az így kapott
+kimenet mégsem egyezik a szállított szűrő MÉRT kimenetével, arról a lap
+végi „A `QuantizePalette` OKTREE-útja NEM az, ami a képre kerül" szakasz
+szól.
 
 
 ### 2. A MASZK-osztályok — más vtable-elrendezés, és több attribútum, mint a `red.cfg`-ben
@@ -3509,8 +3515,12 @@ finomabb palettát épít.
 keverést **bitre az eredeti képlettel** végzi, a kvantálást viszont
 **csatornánként egyenletes lépésközzel**, `Steps` szintre. A docstring
 (`:290–292`) azt állítja, hogy ez a `Depth` konstans mellett
-„egyenértékű" — **ez az állítás nincs mérve**, és 512 palettacella mellett
-kétséges. Jegy: **#2454** (mérést kér, nem átírást).
+„egyenértékű" — ~~**ez az állítás nincs mérve**, és 512 palettacella mellett
+kétséges~~. **MOST MÉRVE (#2231):** a szállított szűrő kimenete
+csatornánként EGYENLETES rácson ül, tehát a lineáris modell nem közelítés,
+hanem a mért viselkedés; a hű oktree-újraépítés 100-szor nagyobb ΔE-t ad.
+Ld. a lap végi „A `QuantizePalette` OKTREE-útja NEM az, ami a képre kerül"
+szakaszt. Jegy: **#2454** (mérést kért, nem átírást).
 
 ## `QuantizePalette` `Depth` — MEGVAN, és a 3-3-2 tábla NEM tartalék (2026-09-04, #2231)
 
@@ -3638,7 +3648,10 @@ fájl **már kérve van** a **#2125**-ben. *(A különbség nem elhanyagolható:
 `Depth = 2` egy osztási szint, `Depth = 4` három ⇒ redukálás előtt akár 512
 levél.)*
 
-⇒ A `Depth` **jelentése LEZÁRVA**; a szállított **értéke BLOKKOLT** (#2125).
+⇒ A `Depth` **jelentése LEZÁRVA**; a szállított ~~**értéke BLOKKOLT**
+(#2125)~~ **értéke is LEZÁRVA: `Depth = 4`** — a kutatási másolatunkban ott
+a fájl (`filterdesc.xml:1255`), ld. a fenti „A szállított `Depth` = 4"
+szakaszt (#2454). Ehhez a tulajdonos gépe nem kellett.
 
 ---
 
@@ -3966,3 +3979,119 @@ megerősített; a megfigyelés viszont ellentmond neki, és ezt már csak **fris
 *Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszintű lánc,
 egyszeres hivatkozás működő kontrollal, a leíróból számolt megoszlás);
 az 5. pont **nyitott**, és a gépi úton nem eldönthető része nevesítve.*
+
+---
+
+## ⛔ A `QuantizePalette` OKTREE-útja NEM az, ami a képre kerül (2026-09-08, #2231)
+
+Ez a szakasz **nem cáfolja** a fenti két oktree-szakaszt — a binárisbeli
+olvasat megerősítve marad, sőt bővül —, hanem **szembeállítja egy
+viselkedés-méréssel**, amely az ellenkezőjét mondja. Mindkettő mérés; a
+kettő nem áll össze, és ezt kimondani helyesebb, mint választani.
+
+### 1. A MÉRÉS: a szállított szűrő kimenete csatornánként egyenletes rács
+
+Bemenet a NAS-mérőszett három `quantizepalette__*` képe, referencia a
+Picasa saját exportja (`PicasaPy meroszett/export-202608202231/`).
+ΔE = CIE Lab, átlagos képpont-távolság.
+
+| eset | Steps | Smoothing | Fade | ΔE mi (rácsos) | ΔE hű oktree | ΔE forrás |
+|---|---|---|---|---|---|---|
+| alap | 8 | 80 | 0 | **0,268** | 28,552 | 19,009 |
+| min | 2 | 0 | 0 | **0,687** | 93,301 | 73,485 |
+| max | 30 | 100 | 100 | 0,136 | 0,136 | 0,136 |
+
+*(A `max` `Fade = 100` miatt kontroll, nem bizonyíték. Az oktree-oszlop a
+lenti 2. pont szerinti hű újraépítés, `Depth = 4` és `Depth = 2` mellett
+egyaránt ugyanezt adta.)*
+
+**Kontroll — a metrika diszkriminál.** Ugyanaz a rácsos modell más
+`Steps`-szel az `alap` képre: `Steps=6` → 17,26 · `7` → 16,66 ·
+**`8` → 0,268** · `9` → 11,74 · `10` → 11,02. A 0,268 tehát nem
+véletlen egybeesés.
+
+**Kontroll — a kimenet tényleg a rácson ül.** A Picasa kimeneti
+csatornaértékeinek **97,62%-a** (`alap`, `Steps=8`) illetve **98,36%-a**
+(`min`, `Steps=2`) ±2-n belül van a `round(i·255/(Steps−1))` rács egy
+pontjától. A rács `Steps = 8`-ra: `0, 36, 73, 109, 146, 182, 219, 255`.
+
+**A döntő lelet — a csatornák FÜGGETLENEK.** A mérőkép mezőinek
+közepén (a `Steps = 8` exportban) minden csatorna külön ugrik a hozzá
+legközelebbi rácspontra:
+
+```
+forrás           Picasa kimenete
+(200, 40,  40) → (182, 36,  36)
+( 40, 179, 60) → ( 36, 182, 73)
+( 41, 60, 199) → ( 36,  72, 182)      ← ez a szín NINCS a forrásképben
+(235,235, 235) → (219, 219, 219)
+szürke sáv:  10→0 · 31→36 · 53→36 · 74→73 · 95→109 · 116→109 ·
+             138→146 · 159→146 · 180→182 · 202→219 · 223→219 · 244→255
+```
+
+⇒ **Palettaválasztás ezt nem tudja előállítani.** Egy oktree-paletta a
+kép SAJÁT színeinek átlagaiból áll; a `(36, 73, 182)` egyik forrásszín
+átlagaként sem jön ki. A leképezés ráadásul **képfüggetlen**: ugyanaz a
+bemeneti szín ugyanazt a kimenetet adja más színeloszlású képben is.
+
+Őr: `tests/render/test_quantizepalette_racs_2231.py` (28 állítás; a hű
+oktree-modellel 27 bukik).
+
+### 2. A binárisbeli olvasat — megerősítve és BŐVÍTVE
+
+A fenti #2211/#2238/#2231 szakaszok minden állítását ellenőriztem
+utasításszinten. Az attribútum-nevek is kiolvasva: a `0x00bb5a30`
+beolvasó a **`Steps`** nevet a `0x00ceff4c`, a **`Depth`**-et a
+`0x00c85524` sztringből veszi, és a `+0x24` illetve `+0x2c` tagba írja —
+tehát a névhozzárendelés zárt. Ami ehhez képest ÚJ:
+
+| lelet | cím | mit mond |
+|---|---|---|
+| a paletta **50×50-es mintából** épül | `0x00bb5c44` `mov eax, 0x32`, majd `0x00bb5ce5` hívás 256-tal | nem a teljes képet gyűjti be, hanem egy legfeljebb 50×50-es, 256 színű kicsinyítést |
+| a redukáló **gyerekbejárási sorrendje** rögzített tábla | `0x00cf0c28` = `[3, 1, 2, 5, 4, 6, 0, 7]` | nem 0…7 sorrendben oszt |
+| a kvótaosztás **`floor`** | `0x00c0b1e0` (a `0…1` ág `fldz`-t ad ⇒ floor, nem ceil) | `kvóta = floor(N / hátralévő_gyerekszám)`; `kvóta == 0` ⇒ a gyerek a szülőbe olvad, `N` nem csökken |
+| a `Steps == 2` ág **kikapcsolja a gyökér `+0x8` jelzőjét** | `0x00bb5dbe` `mov byte [esp+0x58], bl` | ettől a keresés hiányzó gyerek esetén **helyettesítő testvért** keres a `0x00cf0c48` táblából (8 sor × 7) |
+| a keresés **nem valódi legközelebbi-szomszéd** | `0x00bcb9f0` | bit-alapú leszállás; ha nincs gyerek és a `+0x8` jelző áll, ott megáll, és a csomópont ÁTLAGÁT adja (`floor(összeg/darab)`) |
+| a 3-3-2 tábla **két menetben** működik | `0x00bb5fe9` és `0x00bb6110` (mindkettő `0x00bcb2f0`), közte `0x00bb601c`/`0x00bb6032` `memset(…, 0, 0x400)` | 1. menet: `Rtab[r] \| Gtab[g] \| Btab[b]` ⇒ a 3-3-2 index az `R` bájtba; a másik két tábla kinullázása után a 2. menet ugyanezzel az OR-ral már `LUT[index]`-et ad |
+| a LUT-építő **visszafejti** a rekesz színét | `0x00bb6055`–`0x00bb6072` | `r = c & 0xE0`, `g = (c & 0x1C) << 3`, `b = (c & 3) << 6`, és ERRE kérdezi a fát |
+
+Ezzel a fenti „a 3-3-2 tábla gyorsító, nem tartalék" olvasat is
+**megerősítve**: a kétmenetes szerkezet és a köztes nullázás csak így áll
+össze.
+
+### 3. Amit ez a `Kész, ha` lista két nyitott pontjáról jelent
+
+- **`Depth` (alapérték 2)** — LEZÁRVA (a #2238/#2231 szakaszok, itt
+  újraellenőrizve): az oktree megengedett hasítási mélysége, lefelé
+  számol, a csomópont csak `> 1` esetén hasad. A szállított érték
+  `Depth = 4` (`filterdesc.xml:1255`), tehát három osztási szint —
+  a fenti #2454-es szakasz ezt már feloldotta, a #2231 szakasz
+  „BLOKKOLT (#2125)" megjegyzése tehát **elavult**.
+- **A 3-3-2 paletta szerepe** — LEZÁRVA: nem tartalék út, hanem a
+  képpontonkénti leképezés **előre kiszámolt gyorsítója**, ami minden
+  futásban felépül. Következménye, hogy az oktree-út tényleges bemeneti
+  felbontása 8 × 8 × 4 = 256 rekesz.
+
+### 4. ⚠️ A NYITOTT kérdés
+
+**Miért nem az oktree-út eredménye kerül a képre?** Egyetlen
+`QuantizePaletteImageOperation` osztály van (RTTI, vtábla `0x008eff58`,
+az alkalmazó a 7. rés = `0x00bb5ad0`), és a `filterdesc.xml` egyetlen
+`QuantizePalette` szűrője pontosan ezt köti be. A `runtime/` alatt
+nincs másik leíró (`grep -ri quantizepalette` ⇒ 2 találat, mindkettő a
+`filterdesc.xml`-ben), és a `glimmer::*ImageOperation` RTTI-listában
+nincs második kvantáló osztály.
+
+Amit ez a kör NEM tudott eldönteni, és amivel folytatható:
+
+1. van-e a `.picasa.ini` `filters=` sztringhez tartozó, a leírót
+   MEGKERÜLŐ teljes felbontású renderút (a szűrő `fullres="1" slow="1"`);
+2. az alkalmazó `return 4` korai ága (`0x00bb5ee6`: `[cél+0x10] == 0`)
+   mikor lép életbe, és mi fut helyette;
+3. a `0x00bcb2f0` (744 b) képponti alkalmazó teljes dekódolása — a
+   táblahasználatot a fenti kétmenetes olvasat magyarázza, de a függvény
+   maga nincs végigolvasva.
+
+*Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
+két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
+mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
