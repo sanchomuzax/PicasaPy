@@ -371,13 +371,12 @@ class TestToggleStar:
             settings=settings,
         )
         errors = []
-        finished = []
+        # #2757: a `syncFinished` megérkezését a hurok maga tartja nyilván
         ctl.syncFailed.connect(errors.append)
-        ctl.syncFinished.connect(lambda: finished.append(True))
         loop = hangos_hurok(ctl.syncFinished)
         ctl.rescan()
         loop.exec()
-        assert finished
+        assert loop.jelzes_megjott
         assert errors and "Pictures" in errors[0]
 
     def test_rescan_not_reentrant(self, controller, monkeypatch):
@@ -1648,15 +1647,13 @@ class TestExportRows:
     def _run_export(controller, qt_app, rows, target, max_dim=0, quality=85):
         """exportRows hívása + várakozás az exportFinished-re (max 5 mp)."""
 
-        results = []
+        # #2757: a hurok saját argumentum-mezője — külön szlot ugyanarra a
+        # jelzésre versenyt szül (a kilépés elnyelheti a hívó szlotját).
         loop = hangos_hurok(controller.exportFinished)
-        controller.exportFinished.connect(
-            lambda done, failed: results.append((done, failed))
-        )
         controller.exportRows(rows, target, max_dim, quality)
-        if not results:  # háttérszálas út: a jel az eseményhurokban érkezik
-            loop.exec()
-        return results
+        loop.exec()
+        done, failed = loop.jelzes_argumentumai
+        return [(done, failed)]
 
     def test_exports_selected_rows(self, controller, library, tmp_path, qt_app):
         controller.selectFolder(str(library / "nyaralas"))
@@ -1742,16 +1739,13 @@ class TestExportRows:
         monkeypatch.setattr(ec, "export_photos", boom)
         controller.selectFolder(str(library / "nyaralas"))
         details = []
-        results = []
 
         loop = hangos_hurok(controller.exportFinished)
+        # az `exportFailedDetails` MÁS jelzés — arra kell a saját szlot
         controller.exportFailedDetails.connect(details.append)
-        controller.exportFinished.connect(
-            lambda done, failed: results.append((done, failed))
-        )
         controller.exportRows([0], str(tmp_path / "export-hiba"), 0, 85)
         loop.exec()
-        assert results == [(0, 1)]
+        assert loop.jelzes_argumentumai == (0, 1)
         assert details and "rossz.jpg" in details[0][0]
         assert "sérült fájl" in details[0][0]
 

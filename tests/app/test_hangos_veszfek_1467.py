@@ -299,3 +299,110 @@ class TestHivoiQuitNemAdHamisIdotullepest:
         hurok.exec()  # nem dobhat: a jelzés MEGVOLT
 
         assert hurok.jelzes_megjott is True
+
+
+#: A MÁSODIK SZLOT ismert, indokolt kivételei (#2757). Ide csak olyan hely
+#: kerülhet, ahol a saját szlot NEM ugyanarra a jelzésre vár, mint a hurok,
+#: vagy ahol a szlot maga a mérés tárgya. A lista SZÁNDÉKOSAN zárt.
+_ISMERT_MASODIK_SZLOTOK: set[tuple[str, str]] = {
+    # A segéd SAJÁT őrei: ezekben a MÁSODIK szlot maga az állítás tárgya —
+    # a `hangos_hurok` SZERZŐDÉSE, hogy a hívó bármikor köthet rá továbbit
+    # (#1467/#2743). Ha ezek kikerülnének a listáról, a szerződést nem
+    # mérné senki.
+    (
+        "tests/app/test_hangos_veszfek_1467.py",
+        "test_a_kesobb_bekotott_sorba_allitott_szlot_is_lefut",
+    ),
+    (
+        "tests/app/test_hangos_veszfek_1467.py",
+        "test_a_rovidzar_elott_erkezo_jelzes_utan_is_lefut_a_kesobbi_szlot",
+    ),
+    (
+        "tests/app/test_hangos_veszfek_1467.py",
+        "test_a_hivo_quitje_utan_sem_bukik_ha_a_jelzes_megvolt",
+    ),
+}
+
+
+class TestMasodikSzlotKapu:
+    """Forrás-szintű kapu: ne kössön a hívó MÁSODIK szlotot ugyanarra a
+    jelzésre, amire a `hangos_hurok` vár (#2757).
+
+    ## Miért kapu ez, és nem stílusdöntés
+
+    Szálak közti (sorba állított) kapcsolatnál a Qt **kapcsolatonként külön
+    eseményt** posztol. A hurok saját, ELSŐNEK bekötött szlotja lefut és
+    (halasztva) zárja a hurkot; a hívó másodikként bekötött szlotja viszont
+    még a sorban állhat, és a kilépés elnyelheti. MÉRVE (#2754): 60 futásból
+    2-3-ban a hívó gyűjtője ÜRES maradt, miközben `jelzes_megjott=True` volt
+    (CI: 34248206013, 34254846732). A jelenség VÁNDOROL, ezért „flaky teszt"
+    címkével nem található meg.
+
+    A helyes alak a hurok saját argumentum-mezője:
+
+    ```python
+    loop = hangos_hurok(ctl.exportFinished)
+    ctl.exportRows(...)
+    loop.exec()
+    done, failed = loop.jelzes_argumentumai
+    ```
+
+    ⚠️ A kapu FORRÁST néz: azt méri, hogy a minta nem kerül vissza. Azt nem
+    méri, hogy egy adott helyen a verseny tényleg bekövetkezik-e.
+    """
+
+    @staticmethod
+    def _leletek() -> list[str]:
+        import ast
+        import re
+        import warnings
+        from pathlib import Path
+
+        gyoker = Path(__file__).resolve().parents[2]
+        talalatok: list[str] = []
+        for ut in sorted((gyoker / "tests").rglob("*.py")):
+            forras = ut.read_text(encoding="utf-8")
+            if "hangos_hurok(" not in forras:
+                continue
+            sorok = forras.splitlines()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                fa = ast.parse(forras)
+            for csomopont in ast.walk(fa):
+                if not isinstance(csomopont, ast.FunctionDef):
+                    continue
+                torzs = "\n".join(sorok[csomopont.lineno - 1 : csomopont.end_lineno])
+                for m in re.finditer(r"hangos_hurok\(\s*([\w.]+)", torzs):
+                    jelzes = m.group(1)
+                    if not re.search(rf"{re.escape(jelzes)}\.connect\(", torzs):
+                        continue
+                    kulcs = (ut.relative_to(gyoker).as_posix(), csomopont.name)
+                    if kulcs not in _ISMERT_MASODIK_SZLOTOK:
+                        talalatok.append(
+                            f"{kulcs[0]}:{csomopont.lineno} {kulcs[1]} ({jelzes})"
+                        )
+        return talalatok
+
+    def test_nincs_uj_masodik_szlot_a_keszletben(self):
+        leletek = self._leletek()
+        assert not leletek, (
+            "#2757: a hívó MÁSODIK szlotot köt arra a jelzésre, amire a "
+            "`hangos_hurok` vár — szálak közti kapcsolatnál a kilépés "
+            "elnyelheti. Olvasd a hurok `jelzes_argumentumai` mezőjét "
+            "helyette:\n  " + "\n  ".join(leletek)
+        )
+
+    def test_a_kivetel_lista_nem_avul_el(self):
+        """Megszűnt kivétel ne maradjon a listán — attól a kapu csendben tágul."""
+        from pathlib import Path
+
+        gyoker = Path(__file__).resolve().parents[2]
+        hianyzo = [
+            f"{f}::{fn}"
+            for f, fn in _ISMERT_MASODIK_SZLOTOK
+            if f"def {fn}(" not in (gyoker / f).read_text(encoding="utf-8")
+        ]
+        assert not hianyzo, (
+            "a kivétel-listán olyan függvény szerepel, ami már nem létezik: "
+            + ", ".join(hianyzo)
+        )
