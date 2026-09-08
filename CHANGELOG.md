@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.339] – 2026-09-08
+
+### Javítva
+
+- **A „Visszavonás" gomb Windowson magasabb volt, mint az eredeti Picasában**
+  (#2597). A gomb magasságát eddig a felirat betűje szabta meg, a betűk
+  sormagassága viszont rendszerenként más — Windowson ezért 32 képpontos gomb
+  jött ki a lemért eredeti 26 helyett, hosszabb effektneveknél pedig Linuxon
+  is 36-ra nőtt. Mostantól fordítva működik, ahogy az eredeti Picasában: a
+  gomb tartja a lemért 26 képpontot, és a felirat igazodik hozzá — ha a
+  rendszer betűje magasabb sorokat rajzolna, a felirat lesz arányosan kisebb.
+  Ahol eddig is elfért (a fejlesztői gépen), ott semmi nem változik.
+
 ## [0.8.338] – 2026-09-08
 
 ### Javítva
