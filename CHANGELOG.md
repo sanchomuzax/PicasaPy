@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.335] – 2026-09-08
+
 ### Javítva
 
 - **A „Lineáris homályosítás" effekt ugyanúgy viselkedik minden képméreten**
