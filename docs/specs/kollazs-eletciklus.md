@@ -4662,3 +4662,67 @@ regenerál-e; és ha a mintáinkban nem regenerált, akkor a `scale` értéke
 egy **korábbi** állapotból való, amit a K1-nek meg kell találnia.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 48. K1 — a bezárási kapu (`[panel+0x130]`) egy ALOBJEKTUM-MUTATÓ, nem jelzőbit (2026-09-08, #1412)
+
+*200. kutatói kör. A 47.4 lépését viszi: mi a panel `[+0x130]` mezője.*
+
+### 48.1 ⭐ Nem jelző: birtokolt MUTATÓ, amit felszabadítanak
+
+A kollázs-sávban a `+0x130`-at **60-nál több** hely érinti, és a
+túlnyomó többség `mov ecx,[X+0x130]` **közvetlenül egy virtuális hívás
+előtt** — tehát objektum-mutató. A birtoklást a
+`FUN_0082c360` (`collagepanel/addclips`, `collagepanel/addallclips`)
+mutatja meg:
+
+```
+0x0082c3f7  mov ecx,[esi+0x130]
+0x0082c408  mov eax,[esi+0x130]  ·  0x0082c40e  push eax
+0x0082c40f  call 0x0097caf0  ·  0x0082c414  add esp, 4      ; cdecl felszabadítás
+0x0082c417  mov dword ptr [esi+0x130], ebx                  ; kinullázás
+```
+
+⇒ **`[+0x130]` egy birtokolt alobjektum mutatója**, nem „piszkos" jelző.
+
+### 48.2 ⭐ Egyszerű `mov`-val SENKI nem ad neki nem-nulla értéket
+
+Pásztázás az **egész** `.text`-en `mov dword ptr [reg+0x130], reg`
+alakra (`esp`/`ebp` bázis kizárva): **24** találat az egész programban, és
+ebből **kettő** érint kollázs-objektumot — **mindkettő `ebx`-et
+(nullát) ír**:
+
+| cím | hol | mit |
+|---|---|---|
+| `0x0082a352` | `FUN_0082a250` (a közös alap-konstruktor, a `+0x128`…`+0x134` mezőkkel együtt) | **inicializálás nullára** |
+| `0x0082c417` | `FUN_0082c360` | **kinullázás a felszabadítás után** |
+
+⇒ az értékadás **`lea`-materializált** mutatón át megy. A sávban két ilyen
+hely van: `0x00830645` (`FUN_00830530` — a téma/beállítás-vezérlők
+kezelője: `collagepanel/theme_popup`, `collagepanel/shadow_checkbox`,
+`collage::theme`) és `0x0088ab2e` (`FUN_0088aae0`, headless ág).
+
+### 48.3 ⛳ Amit ez a 47.4-re nézve KIMOND
+
+A `FUN_00831420` kapuja (`0x0083142b` `cmp [panel+0x130], 0` → ha nulla,
+nem csinál semmit) tehát azt kérdezi, hogy **létezik-e ez az alobjektum** —
+vagyis hogy a panel **fel van-e építve**. Ez **nem** „változott-e a
+beállítás" jellegű kapu.
+
+⇒ egy normál bezárásnál a kapu **nyitva** van, tehát az újraépítés
+lefutna — a mintáink viszont **nem** `1,0`-t hordoznak.
+
+### 48.4 A KÖVETKEZŐ lépés, megnevezve
+
+A 47.3 szerint az újraépítés **másik** feltételtől is függ: a bezárás-kezelő
+**2. argumentumától** (`0x0082c0fc` `cmp byte [ebp+0xc], 0` → ha **nem
+nulla**, a `FUN_00831420` hívása **kimarad**).
+
+> **Ki hívja a `FUN_0082c0a0`-t, és mit ad át 2. argumentumként?**
+
+Ez zárt kérdés (a függvény `ret 8`, tehát pontosan két argumentuma van), és
+**ez dönti el**, hogy a valós bezárási úton regenerálódik-e a
+munkapéldány. Ha a jelző nem nulla, akkor nincs regenerálás, és a `scale`
+a bezárás előtti állapotból megy a fájlba — ezzel a 38.2 `1,0`-ja és a
+mintáink `313 / 500 / 256 / 158`-a **összefér**.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
