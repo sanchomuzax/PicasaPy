@@ -4805,3 +4805,140 @@ példány tehát csak egymásból és az újraépítésből táplálkozik** — 
 > szerint** kapja a dokumentumot); az interaktívra ez még nincs kimérve.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 50. K1 — az interaktív felület ktora ÜRES dokumentumot épít, ezzel a 49.4 zárt halmaza kimerült (2026-09-08, #1412)
+
+*202. kutatói kör. A 49.4 megnevezett lépését viszi: tölti-e fel a
+`CCollageUI` konstrukciója a `+0x138`-at, és ha igen, honnan.*
+
+### 50.1 ⭐ Az interaktív `CCollageUI` LUSTÁN jön létre — és a ktor nem kap dokumentumot
+
+A `[ytPanel+0x288]` objektum (47.2, 49.1) egyetlen helyen születik:
+
+```
+0x0062c9f6  cmp dword ptr [ebx + 0x288], 0   ; van már?
+0x0062c9fd  jne 0x0062ca3a                   ; ha igen, kész
+0x0062c9ff  push 0x278                       ; 632 bájt
+0x0062ca04  call 0x0097c5d0                  ; operator new
+0x0062ca0c  test eax, eax
+0x0062ca0e  je  0x0062ca19
+0x0062ca10  mov edi, eax
+0x0062ca12  call 0x0082a250                  ; a konstruktor — SEMMILYEN tolt argumentummal
+0x0062ca1d  mov dword ptr [ebx + 0x288], eax
+```
+
+Két mért tény:
+
+- **az objektum mérete `0x278` = 632 bájt** (`0x0062c9ff`), tehát a
+  `+0x138` és a `+0x1b0` dokumentum (43.1) beleér;
+- a `0x0062ca12` hívás előtt **egyetlen `push` sincs** — a ktor csak a
+  `this`-t kapja (`edi`). ⇒ **az interaktív felület konstrukciója
+  kívülről NEM kap dokumentumot.**
+
+*Bizalmi fok: megerősített* (a hívási hely utasításonként kiolvasva).
+
+### 50.2 ⭐ A ktor a `+0x138`-at NULLÁZZA, majd `Untitled` dokumentumot épít rá
+
+`FUN_0082a250` (651 b) érintett szakasza — `ebx = 0` végig:
+
+```
+0x0082a34c  lea eax, [edi + 0x138]      ; eax = a munkapéldány
+0x0082a35e  mov [eax+4],  ebx           ; …és további tizenkét mező
+   …        mov [eax+0x08 … +0x4c], ebx ; (+8 +0xc +0x10 +0x14 +0x18 +0x1c
+                                        ;  +0x2c +0x34 +0x38 +0x3c +0x48 +0x4c)
+0x0082a37f  push eax
+0x0082a386  call 0x008342b0             ; a dokumentum-KONSTRUKTOR
+```
+
+és ugyanez a `+0x1b0` alapállapotra: `0x0082a3bd lea eax,[edi+0x1b0]` →
+`0x0082a3eb call 0x008342b0`.
+
+**A `FUN_008342b0` egyargumentumú, és nincs forrása:**
+
+```
+0x008342b2  mov ebp, [esp+0xc]          ; az EGYETLEN argumentum: a doksi
+0x008342bb  mov byte ptr [ebp], 0
+0x008342c4  push 0xcbf854               ; "CollageSpec::Untitled"  (erőforráskulcs)
+0x008342c9  mov  eax, 0xcbf848          ; "Untitled"               (tartalék felirat)
+0x008342ce  mov dword ptr [edi], 0      ; [ebp+4] = üres
+0x008342d4  call 0x009ae560             ; honosított szöveg lekérése
+```
+
+A két sztring a `.rdata`-ból kiolvasva:
+`0x00cbf848` = `Untitled`, `0x00cbf854` = `CollageSpec::Untitled`.
+
+⇒ **a frissen konstruált dokumentum ÜRES és névtelen** („Untitled”).
+Csomópontot nem tartalmaz, tehát `scale` mezője sincs.
+
+*Bizalmi fok: megerősített.*
+
+### 50.3 ⛔ Pontosítás: a `FUN_0082a500` a DESZTRUKTOR, nem második konstruktor
+
+A `CCollageUI` három vtábla-mutatóját (`0xcbf450` / `0xcbf480` /
+`0xcbf488`) **két** függvény írja: `FUN_0082a250` (`0x0082a26e`…) és
+`FUN_0082a500` (`0x0082a507`…). A második **nem** konstruktor:
+
+```
+0x0082a51b  call 0x0082c360             ; a leszármazott-rész lebontása
+0x0082a53f  call 0x0097caf0             ; free()
+0x0082a57c  lea esi, [ebx + 0x1b0]
+0x0082a588  call 0x0062c900             ; a dokumentum DESZTRUKTORA
+0x0082a598  lea esi, [ebx + 0x138]
+0x0082a59e  call 0x0062c900             ; ua. a munkapéldányra
+```
+
+A `0x0062c900` ugyanaz a függvény, amit a headless ktor a saját
+ideiglenes dokumentumára hív (45.4, `0x00889e6d`) — tehát a
+dokumentum-desztruktor. ⇒ **a `CCollageUI`-nak EGYETLEN konstruktora van**
+(`FUN_0082a250`), és az az 50.1 szerint argumentum nélküli.
+
+### 50.4 ⛳ A VÁLASZ a 49.4-re: NEM — és amit ez a K1-re nézve kimond
+
+| kérdés (49.4) | válasz |
+|---|---|
+| tölti-e fel az interaktív ktor a `+0x138`-at? | **NEM** — nullázza, majd üres `Untitled` doksit épít rá (50.2) |
+| a headless ktor? | **IGEN**, érték szerint (45.4) — de az egy MÁSIK osztály (`0x00889e00`) |
+
+Ezzel a `+0x138` munkapéldány **teljes** táplálási listája
+(index-független `E8 rel32` pásztázással ellenőrizve — a `FUN_00833cf0`
+mind a hét hívási helye besorolva, 43.1 / 45.4 / ez a kör):
+
+| honnan | hol | mit ad |
+|---|---|---|
+| konstrukció | `0x0082a386` | **üres** doksi, nulla csomópont |
+| újraépítés (verem-helyi doksi) | `0x008315b8` | `scale = 1,0` (38.2) |
+| `+0x1b0` alapállapot (Reset) | `0x0083d0a7` | ami korábban a `+0x138` volt |
+| — és a `+0x1b0` csak a `+0x138`-ból | `0x0082bffb`, `0x00831ab0` | ua. |
+
+⇒ **A mintáinkban mért `scale` = 313 / 500 / 256 / 158 EGYETLEN
+dokumentum-szintű értékadással sem magyarázható.** A `+0x138`-ba
+*egészben* csak üres doksi, `1,0`-s újraépítés, vagy önmaga másolata
+kerül.
+
+**Amiből következik — ez a kör legfontosabb állítása:** a nem-`1,0`
+érték **nem dokumentum-cserével**, hanem a már élő dokumentum egy
+csomópontjának **helyben történő módosításával** kerül be. A K1 keresési
+tere ezzel átbillen: nem azt kell keresni, *ki adja értékül a
+dokumentumot*, hanem *ki ír bele egy meglévő csomópont `+0x2c`-jébe*.
+
+*Bizalmi fok: erős.* (A dokumentum-szintű lista mérve és kimerítő; a
+„helyben módosítás" a maradék — logikai, nem közvetlenül mért állítás.)
+
+⚠️ **Amit ez NEM mond ki:** azt sem, hogy a `.cxf` **beolvasása** hova
+tölt. A 37.2 a `FUN_0087dcd0`-t kifejezetten „az ELSŐ **nem-beolvasó**
+csomópont-építőnek" nevezi — a beolvasó ág tehát létezik, és mivel a
+fenti listában nincs benne, csakis helyben tölthet. Ez a következő kör
+első jelöltje.
+
+### 50.5 A KÖVETKEZŐ lépés, megnevezve
+
+> **A KÖVETKEZŐ KÉRDÉS:** ki írja a `.cxf`-BEOLVASÓ ágon a csomópont
+> `+0x2c` mezőjét, és honnan veszi az értéket?
+
+Zárt kérdés, mert a horgony megvan: a csomópont 56 bájtos (`0x38`,
+32.2), a `+0x2c` a hatodik lebegőpontos mező, és a beolvasót a
+`FUN_0087dcd0` „nem-beolvasó" minősítése (37.2) **negatív úton**
+azonosítja. A menet: a 56 bájtos elemű vektor `push 0x38`-as
+foglalói közül azok, amelyek **XML-/attribútum-sztringet** is érintenek.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
