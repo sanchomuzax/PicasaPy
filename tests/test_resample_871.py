@@ -175,8 +175,12 @@ class TestBekotes:
     `bigthumbs` tára (119 kép, 288 képpont), ahol a mag mindhárom
     metrikán javít ÉS gyorsabb (23 ms vs 56 ms). Nagy kimenetnél viszont
     az ára 16× (4000 × 3000 → 1600: 300 ms vs 18 ms), ezért az általános
-    út — amit az export és az importálás hív — a mag gyorsításáig
-    (#2669) `INTER_AREA` marad.
+    út — amit az export és az importálás hív — `INTER_AREA` marad.
+
+    A #2669 köre megpróbálta a magot a 3×-os küszöb alá vinni, és **nem
+    sikerült**: nyolc mért irányból a legjobb 2,0×-t hozott, a teljes út
+    így is 7,9×. Az őr tehát nem „ideiglenes", hanem mért határ —
+    `docs/benchmarks/2026-09-08-2669-mag-gyorsitas.md`.
     """
 
     def test_a_BELYEGKEP_ut_a_picasa_magjat_hasznalja(self):
@@ -201,8 +205,8 @@ class TestBekotes:
 
     def test_az_ALTALANOS_ut_INTER_AREA_marad(self):
         """A másik irány őre: ha valaki a `scale_down`-t is átkötné, az
-        exportot 16×-ra lassítaná — mérés nélkül. Amíg a #2669 nem
-        gyorsítja a magot, ez a próba tartja a határt."""
+        exportot 16×-ra lassítaná. A #2669 gyorsítási köre után is 7,9×
+        maradna, ezért ez a próba tartja a határt."""
         cv2 = pytest.importorskip("cv2")
         from picasapy.cvimage import scale_down
 

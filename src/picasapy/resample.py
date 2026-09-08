@@ -168,7 +168,19 @@ _FELEZO_HORGONY = 7
 
 
 def _gyors_felezes(kep: np.ndarray) -> np.ndarray:
-    """Pontosan 2 : 1 kicsinyítés a rögzített maggal, OpenCV-vel."""
+    """Pontosan 2 : 1 kicsinyítés a rögzített maggal, OpenCV-vel.
+
+    ⚠️ **Ez a Picasa-út legdrágább fele, és a #2669 köre lemérte, hogy
+    Pythonból nem gyorsítható eleget.** Nyolc irányt próbáltunk (polifázis
+    decimálás, négyfázisú 2D bontás, fixpontos `CV_16S`/`CV_8U`,
+    csatornánkénti szűrés, sávos feldolgozás, kézi szálasítás és ezek
+    kombinációi); a legjobb **2,0×**-t hozott, a küszöbhöz ~10× kellett
+    volna. Az ok mérve: a `cv2.sepFilter2D` nem decimál és egy szálon fut
+    (~3 GMAC/s), a decimáló, fixpontos, szálas OpenCV-utaknak (`resize`,
+    `pyrDown`; 9–12 GMAC/s) viszont be van égetve a magjuk. A teljes tábla
+    és az, mi vinné át a küszöbön:
+    `docs/benchmarks/2026-09-08-2669-mag-gyorsitas.md`.
+    """
     mag = felezo_mag().reshape(-1, 1)
     szurt = cv2.sepFilter2D(
         kep,
