@@ -74,13 +74,23 @@ class TestParameterSorrend:
         )
         np.testing.assert_array_equal(report.image, apply_linblur(sample, 0.75, 0.25, 3.0))
 
-    @pytest.mark.parametrize("key", _KULCSOK)
+    @pytest.mark.parametrize("key", ("dir_sat", "dir_brite", "dir_sharp"))
     def test_parameter_nelkul_is_lefut(self, key: str, sample) -> None:
-        """Alapállás: a `dir_*` csúszkái 0-n, a `linblur` korongja középen —
-        mindkettő azonosság, de NEM kihagyott bejegyzés."""
+        """Alapállás: a `dir_*` csúszkái 0-n — azonosság, de NEM kihagyott
+        bejegyzés."""
         report = apply_filters(sample, parse_filters(f"{key}=1;"))
         assert report.skipped == ()
         np.testing.assert_array_equal(report.image, sample)
+
+    def test_linblur_parameter_nelkul_is_lefut_de_NEM_azonossag(self, sample) -> None:
+        """A `linblur` alapállása a `filterdesc.xml` `0,5`-öse — ez a natív
+        képlettel (`0,5·méret·(1+p)`) NEM a középpontra teszi a korongot
+        (#2710: a középpont `p = 0`-nál van), tehát a lánc NEM azonosság.
+        Ezt a #880 mérése is megerősíti (ΔE 5,42 a Picasa valódi
+        exportjában, a `linblur=1,0.5,0.5,2.0` alap láncra)."""
+        report = apply_filters(sample, parse_filters("linblur=1;"))
+        assert report.skipped == ()
+        assert not np.array_equal(report.image, sample)
 
 
 class TestPublikusApi:

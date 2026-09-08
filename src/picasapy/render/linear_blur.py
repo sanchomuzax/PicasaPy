@@ -37,8 +37,13 @@ puffer), `idx >= +384` esetén a **nyers éles forrást** írja.
    vágunk. Egy referencia-export ezt eldöntheti (#317).
 3. **A korong pozíciója.** A `filters=` láncban a korong normált `x, y`
    koordinátaként áll elöl, a puck-os szűrők általános sorrendje szerint
-   (`docs/specs/filterdesc-registry.md` 3. pont) — valódi `linblur=`
-   ini-mintánk nincs.
+   (`docs/specs/filterdesc-registry.md` 3. pont). Az átváltás kérdése
+   LEZÁRULT (#2702, `docs/specs/filters-decoded.md`): a `filters=` érték
+   átalakítás nélkül kerül a `CGenericFilter` mezőjébe és onnan vissza, a
+   `linblur` feldolgozó visszahívása pedig a mezőt `[-1, +1]`-ben olvassa
+   — nem `[0, 1]`-ben, mint a többi puck-os szűrő (ez a Picasán belüli
+   aszimmetria, nem a mi félreolvasásunk). Valódi `linblur=` ini-mintánk
+   továbbra sincs.
 
 Ld. `docs/specs/picasa-native-filter-workers.md` 3.3 és 4.2.1.
 """
@@ -123,16 +128,28 @@ def _projection(
 
 
 def _puck_pixel(size: int, normalized: float) -> int:
-    """A normált korong-koordináta EGÉSZ képpontja — a natív `__ftol` szerint.
+    """A normált korong-koordináta EGÉSZ képpontja — a natív burkoló szerint.
 
-    A burkoló (`0x008f99c0`) a korongot `__ftol`-lal (`0x00c29990`, az
-    SSE-ágon `cvttsd2si`) alakítja egésszé, ami a **nulla felé csonkol**.
-    Ez nem részletkérdés: a mag belépő feltétele (ld. `apply_linblur`) egész
-    egyenlőség, és csak a csonkolás mellett paritás-független, mert
-    `csonk(méret/2) == méret>>1` minden nemnegatív méretre. Kerekítéssel
-    páratlan méreten `round(63,5) = 64 != 63` — ezt mérte a #953.
+    A burkoló (`0x008f99c0`, utasításról utasításra: `0x008f99ec`–
+    `0x008f9a10`) a korong képpontját
+
+    ```
+    __ftol(0,5 · méret · (1 + p))
+    ```
+
+    alakban számolja (a `0,5` a `0x00c72150`-en álló `double`) — NEM
+    `méret · p`-t, mint korábban itt állt. A kettő csak `p = 1`-nél esik
+    egybe; a leíró `0,5`-ös alapértéke a natív oldalon a `méret` 3/4-ét
+    adja, nem a felét (#2710, ld. a modul fejlécének 3. pontját).
+
+    Az `__ftol` (`0x00c29990`, az SSE-ágon `cvttsd2si`) a nulla felé
+    **csonkol**. Ez nem részletkérdés: a mag belépő feltétele (ld.
+    `apply_linblur`) egész egyenlőség, és csak a csonkolás mellett
+    paritás-független, mert `csonk(méret/2) == méret>>1` minden nemnegatív
+    méretre. Kerekítéssel páratlan méreten `round(63,5) = 64 != 63` — ezt
+    mérte a #953.
     """
-    return int(size * float(normalized))
+    return int(0.5 * size * (1.0 + float(normalized)))
 
 
 def apply_linblur(
@@ -140,9 +157,12 @@ def apply_linblur(
 ) -> np.ndarray:
     """Átmenetes életlenítés: a korong felőli oldal éles, a közép felőli nem.
 
-    Az `x`, `y` a korong NORMÁLT helye (`0…1`), az `amount` a „Mennyiség"
-    csúszka. Ha a korong ugyanarra a KÉPPONTRA esik, mint a kép közepe, a
-    natív mag ki sem lép a belépő feltételéből — a kép változatlan.
+    Az `x`, `y` a korong `filters=`-ből olvasott, ÁTALAKÍTÁS NÉLKÜL továbbadott
+    értéke — a `linblur` feldolgozó visszahívása ezt `[-1, +1]`-ben olvassa
+    (#2702, ld. a modul fejlécének 3. pontját), NEM `[0, 1]`-ben, mint a
+    puck-os szűrők általános konvenciója. Az `amount` a „Mennyiség" csúszka.
+    Ha a korong ugyanarra a KÉPPONTRA esik, mint a kép közepe, a natív mag
+    ki sem lép a belépő feltételéből — a kép változatlan.
 
     **A belépő feltétel a binárisból** (#953, `pe_dis.py`-diszasszemblátum):
 
@@ -161,16 +181,37 @@ def apply_linblur(
     (`0x008f99c0`) `__ftol`-lal állítja elő, ami CSONKOL (ld.
     `_puck_pixel`), nem kerekít.
 
-    ⚠️ **Ami ezzel sem dőlt el:** a burkoló a korongot
-    `__ftol(0,5 · méret · (1 + p))` alakban számolja, tehát a belső `p`
-    a `[-1, +1]` tartományban áll. A `filters=` láncban viszont a korong
-    `[0, 1]`-ben van (valódi minta: `radblur=1,0.411585,0.611111,0,0`), és
-    a húzás-visszahívás (`0x008f9bf0`) is `pont/méret`-tel normál. A két
-    alak a `p = 2x − 1` átváltással egybeesik (`0,5·W·(1+2x−1) = W·x`), de
-    magát az átváltást nem olvastuk vissza — emiatt a #880 mérése (az
-    eredeti a `linblur=1,0.5,0.5,2.0` láncra ΔE 5,42-t változtatott) még
-    nyitott kérdés. A paritás-függés ettől FÜGGETLENÜL szűnik meg: mindkét
-    olvasat középpontja `csonk(méret/2) == méret>>1`.
+    A `filters=` átalakítás-mentes útjáról és a `linblur` `[-1, +1]`
+    konvenciójáról ld. a modul fejlécének 3. pontját — ez a kérdés #2702
+    óta LEZÁRULT.
+
+    **A #880 mérése ÚJRAFUTOTT a javítással (#2710), és KÉT DOLGOT mond:**
+
+    1. A színbeli ΔE a valódi Picasa-exporttól **5,42-ről 13,06-ra NŐTT**
+       (`max` / `min`: 17,37 / 6,82). Ez elsőre visszaesésnek látszik.
+    2. ⭐ De az **5,42 a „nem történik semmi" pontszáma volt**: a korong a
+       régi képlettel a kép KÖZEPÉRE esett, tehát a mag belépő rövidzára
+       (#953) elsült, és a kimenet a NYERS forrás volt. Mérve: a régi
+       kimenet élesség-megtartása a kép minden oszlopában **1,000**.
+
+    ⭐ **A HELYET a javítás eltalálja.** Az élesség-megtartás oszloponkénti
+    profilja (Sobel-energia a forráshoz mérve) a valódi Picasa-exporttal:
+
+    | | korreláció a Picasa profiljával | legjobban megtartott oszlop |
+    |---|---|---|
+    | régi (`méret · p` ⇒ 0,50 W) | **0,095** | 0,52 W |
+    | új (`0,5·méret·(1+p)` ⇒ 0,75 W) | **0,988** | 0,98 W |
+    | Picasa-export | — | 0,98 W |
+
+    Vagyis az effekt mostantól a jó oldalon élesít (bal oldal elmosva, jobb
+    oldal éles, az átmenet 0,7–0,85 W között), pontosan mint az eredeti; a
+    megmaradó ΔE az elmosás ERŐSSÉGÉBŐL jön, nem a helyéből. A
+    „Mennyiség → sugár" leképezés és a súlytábla-csonkolás a modul 1–2.
+    pontja szerint KALIBRÁLATLAN közelítés — annak kimérése külön jegy
+    (#2736), és a ΔE-t csak az mozdíthatja.
+
+    A paritás-függés ettől FÜGGETLENÜL szűnik meg: mindkét olvasat
+    középpontja `csonk(méret/2) == méret>>1`.
     """
     validate_image(image)
     height, width = image.shape[:2]

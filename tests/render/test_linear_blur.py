@@ -21,6 +21,7 @@ import pytest
 from picasapy.render.iir_blur import apply_picasa_blur
 from picasapy.render.linear_blur import (
     LINBLUR_TABLE_SIZE,
+    _puck_pixel,
     apply_linblur,
     linblur_blur_radius,
     linblur_weight_table,
@@ -81,20 +82,29 @@ class TestBlurRadius:
 
 class TestApplyLinblur:
     def test_a_kozepre_tett_korong_azonossag(self) -> None:
-        """A natív mag maga zárja ki: `if (p1 != p0)` — a csúszka
-        alapállásában (0,5; 0,5) a kép VÁLTOZATLAN."""
+        """A natív mag maga zárja ki: `if (p1 != p0)`.
+
+        `p = 0` a natív képlettel (`0,5·méret·(1+p)`) esik a középpontra —
+        NEM `p = 0,5`, ld. #2710. A `filterdesc.xml` `0,5`-ös alapértéke
+        (amit a leíró-szintű dokumentáció középre tettnek feltételezett)
+        a natív oldalon TÉNYLEGESEN nem a középpont; ezt a #880 mérése
+        (ΔE 5,42 a `linblur=1,0.5,0.5,2.0` alap láncra) is megerősíti.
+        """
         image = _zajos()
-        assert np.array_equal(apply_linblur(image, 0.5, 0.5, 2.0), image)
+        assert np.array_equal(apply_linblur(image, 0.0, 0.0, 2.0), image)
 
     def test_a_bemenetet_nem_modositja(self) -> None:
         image = _zajos()
         eredeti = image.copy()
-        apply_linblur(image, 0.75, 0.5, 2.0)
+        apply_linblur(image, 0.5, 0.0, 2.0)
         assert np.array_equal(image, eredeti)
 
     def test_a_korong_feloli_oldal_eles_a_kozep_feloli_homalyos(self) -> None:
+        """`x = 0,5` az új képlettel (`0,5·W·(1+p)`) ugyanarra a `0,75·W`
+        képpontra esik, mint a régi tesztben `x = 0,75` az elavult
+        `W·p` alakkal — a lenti oszlopindexek ezért nem változtak (#2710)."""
         image = _zajos()
-        result = apply_linblur(image, 0.75, 0.5, 2.0).astype(float)
+        result = apply_linblur(image, 0.5, 0.0, 2.0).astype(float)
         original = image.astype(float)
         # helyi szórás: az éles oldalon marad, a homályos oldalon eltűnik
         eles_oldal = result[:, 140:].std()
@@ -105,12 +115,12 @@ class TestApplyLinblur:
     def test_a_szakaszon_TUL_teljesen_eles(self) -> None:
         """`idx >= +384` → a mag a NYERS forrást írja (`*puVar9 = *local_1a8`).
 
-        A korong (0,75·W) és a közép (0,5·W) felezőpontja 0,625·W, a
-        fél-szakasz 0,125·W; az éles tartomány ezen 1,5-szeresével kezdődik,
-        tehát `x >= 0,8125·W`.
+        A korong (`x = 0,5` → `0,75·W` képpont) és a közép (`0,5·W`)
+        felezőpontja `0,625·W`, a fél-szakasz `0,125·W`; az éles tartomány
+        ezen 1,5-szeresével kezdődik, tehát `x >= 0,8125·W`.
         """
         image = _zajos()
-        result = apply_linblur(image, 0.75, 0.5, 2.0)
+        result = apply_linblur(image, 0.5, 0.0, 2.0)
         assert np.array_equal(result[:, 131:], image[:, 131:])
 
     def test_a_szakasz_ELOTT_teljesen_homalyos(self) -> None:
@@ -124,14 +134,14 @@ class TestApplyLinblur:
         homalyos = apply_picasa_blur(
             apply_picasa_blur(image, radius, radius), radius, radius
         )
-        result = apply_linblur(image, 0.75, 0.5, 2.0)
+        result = apply_linblur(image, 0.5, 0.0, 2.0)
         assert np.array_equal(result[:, :70], homalyos[:, :70])
 
     def test_az_atmenet_monoton(self) -> None:
         """A két végpont között a köbös B-spline súly monoton nő, tehát a
         képpontok egyre közelebb kerülnek az élesekhez."""
         image = _zajos()
-        result = apply_linblur(image, 0.75, 0.5, 2.0).astype(float)
+        result = apply_linblur(image, 0.5, 0.0, 2.0).astype(float)
         radius = linblur_blur_radius(image.shape[1], 2.0)
         homalyos = apply_picasa_blur(
             apply_picasa_blur(image, radius, radius), radius, radius
@@ -145,7 +155,7 @@ class TestApplyLinblur:
         """A fókuszvonal a korong és a közép ÖSSZEKÖTŐ egyenesére merőleges:
         függőlegesen eltolt koronggal a felső és az alsó sáv válik szét."""
         image = _zajos(height=160, width=60)
-        result = apply_linblur(image, 0.5, 0.75, 2.0).astype(float)
+        result = apply_linblur(image, 0.0, 0.5, 2.0).astype(float)
         assert result[140:, :].std() > 3.0 * result[:20, :].std()
 
     def test_ervenytelen_bemenet(self) -> None:
@@ -185,24 +195,26 @@ class TestFelbontasfuggetlenseg953:
     """
 
     def test_a_kozepre_tett_korong_minden_meretben_azonossag(self) -> None:
+        """`p = 0` a natív képlettel (`0,5·méret·(1+p)`) esik a középpontra
+        — NEM `p = 0,5`, ld. #2710."""
         eltero = {
-            f"{w}x{h}": _elteres(h, w, 0.5, 0.5, 2.0)
+            f"{w}x{h}": _elteres(h, w, 0.0, 0.0, 2.0)
             for (h, w) in _PARITAS_MERETEK
-            if _elteres(h, w, 0.5, 0.5, 2.0) != 0.0
+            if _elteres(h, w, 0.0, 0.0, 2.0) != 0.0
         }
         assert not eltero, f"a középre tett korong nem azonosság: {eltero}"
 
     def test_az_eltolt_korong_minden_meretben_hat(self) -> None:
         hatastalan = {
-            f"{w}x{h}": _elteres(h, w, 0.2, 0.5, 2.0)
+            f"{w}x{h}": _elteres(h, w, -0.6, 0.0, 2.0)
             for (h, w) in _PARITAS_MERETEK
-            if _elteres(h, w, 0.2, 0.5, 2.0) == 0.0
+            if _elteres(h, w, -0.6, 0.0, 2.0) == 0.0
         }
         assert not hatastalan, f"az eltolt korong nem hatott: {hatastalan}"
 
     def test_a_hatas_merteke_nem_ugral_a_paritassal(self) -> None:
         """A mérték maradjon egy nagyságrendben: ne 0 az egyiken, teljes a másikon."""
-        mertekek = [_elteres(h, w, 0.2, 0.5, 2.0) for (h, w) in _PARITAS_MERETEK]
+        mertekek = [_elteres(h, w, -0.6, 0.0, 2.0) for (h, w) in _PARITAS_MERETEK]
         assert min(mertekek) > 0.5 * max(mertekek)
 
     def test_a_korong_egesze_csonkolassal_all_elo(self) -> None:
@@ -214,3 +226,27 @@ class TestFelbontasfuggetlenseg953:
         """
         for meret in (96, 97, 127, 128, 129):
             assert int(meret * 0.5) == meret >> 1
+
+
+class TestPuckPixel2710:
+    """#2710: a burkoló (`0x008f99c0`, `0x008f99ec`–`0x008f9a10`) a korong
+    képpontját `__ftol(0,5 · méret · (1 + p))` alakban számolja — NEM
+    `méret · p`-t (a mai, hibás alak), a kettő csak `p = 1`-nél esik egybe.
+    A `0,5` literál a `0x00c72150`-en álló `double`.
+    """
+
+    def test_a_jegy_tablazatanak_harom_erteke(self) -> None:
+        """`W = 800`: `p = 0` → 400, `p = 0,5` (a leíró alapértéke) → 600,
+        `p = 1` → 800 — a jegy táblázata szó szerint. A régi `int(méret·p)`
+        alakkal ezek 0, 400, 800 lettek volna."""
+        assert _puck_pixel(800, 0.0) == 400
+        assert _puck_pixel(800, 0.5) == 600
+        assert _puck_pixel(800, 1.0) == 800
+
+    def test_a_tartomany_also_vege_meret_fele_csonkolva(self) -> None:
+        """A helyes tartomány `[méret/2, méret]` — a régi, hibás alak
+        `[0, méret]` volt (a jegy táblázatának negyedik sora). Páratlan
+        méreten a csonkolás (#953) is látszik: `0,5 · 801 = 400,5`, a
+        nulla felé csonkolva `400`, nem `401`."""
+        assert _puck_pixel(801, 0.0) == 400
+        assert _puck_pixel(800, -1.0) == 0
