@@ -136,6 +136,49 @@ class TestKesobbBekotottSzlot:
         )
 
 
+class TestRovidzarKesobbiSzlot:
+    """A RÖVIDZÁR-ág (#2423) sem nyelheti el a hívó szlotját (#2743).
+
+    ⚠️ Ez a testvére a fenti #1467-es esetnek, más ágon. Ha a jelzés már az
+    `exec()` ELŐTT megérkezik, a hurok a #2423 óta azonnal visszatér (a
+    `quit()` ilyenkor elveszne, és a teljes időzítőt kiülnénk). Csakhogy
+    szálak közti (sorba állított) kapcsolatnál a Qt **kapcsolatonként külön
+    eseményt posztol**: a hurok saját, közvetlen szlotja már lefutott, a
+    hívóé viszont még a sorban áll — és az azonnali visszatérés miatt SOSEM
+    kézbesítődik.
+
+    Élesben: a `tests/app/test_face_scan_controller.py` esetei
+    véletlenszerűen, GYORSAN (0,88 mp alatt) buktak `assert arrived is True`
+    -val — nem időtúllépéssel (CI-futás `34248206013`, 2026-09-08). A
+    `_jelzesre` docstringje kimondja a szerződést: „a hívó bármikor köthet rá
+    további szlotot" — ennek a rövidzár-ágra is állnia kell.
+    """
+
+    def test_a_rovidzar_elott_erkezo_jelzes_utan_is_lefut_a_kesobbi_szlot(self, qt_app):
+        jelzo = _Jelzo()
+        hurok = hangos_hurok(jelzo.kesz, timeout_ms=5000)
+        gyujto = _Gyujto()
+        # a hurok saját szlotja UTÁN, sorba állítva — mint a valódi hívóknál
+        jelzo.kesz.connect(gyujto.fogad, Qt.ConnectionType.QueuedConnection)
+
+        # a jelzés az `exec()` ELŐTT jön meg: a hurok szlotja (közvetlen)
+        # lefut, a gyűjtőé (sorba állított) a sorban marad
+        jelzo.kesz.emit()
+        assert hurok.jelzes_megjott is True, "a próba előfeltétele nem áll fenn"
+        assert gyujto.kapott == [], (
+            "a próba előfeltétele nem áll fenn: a sorba állított szlot már "
+            "lefutott, tehát nem a rövidzár-ágat mérnénk"
+        )
+
+        hurok.exec()
+
+        assert gyujto.kapott == [True], (
+            "a rövidzár-ág elnyelte a hívó szlotját: az `exec()` visszatért, "
+            "mielőtt az ugyanahhoz a kibocsátáshoz tartozó, sorba állított "
+            "kézbesítés lefutott volna"
+        )
+
+
 #: A néma vészfék-alak ISMERT, indokolt kivételei: ezek a segédek maguk
 #: mondják ki az időtúllépést (saját `assert`-tel, a jelzés megérkezését
 #: külön nyilvántartva), ezért nem kell rájuk a közös hurok. A lista
