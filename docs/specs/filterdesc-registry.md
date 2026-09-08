@@ -3847,3 +3847,122 @@ RTL-igazítása; a többi nyelven nem fut le.
 képernyőképekkel, a mód-tábla a leíró-elemzőből, a veremhely számolással);
 **megerősített** az 5. pont (md5-egyezés); a 4. pont **nyitott**, pontos
 következő lépéssel.*
+
+---
+
+## A jelvény LÁNCA végig kimérve — `[0x00d67f68]` = a `filterdesc.xml` regisztere (2026-09-08, 217. kör, #2125)
+
+A 216. kör eljutott odáig, hogy a jelvény akkor látszik, ha egy szolgáltatástól
+kapott objektum `vtbl+0x14`-e **1**-et ad. Ez a kör a lánc **mindkét
+maradék szemét** kimérte: mi az a szolgáltatás, és mi az a `vtbl+0x14`.
+
+### 1. `[0x00d67f68]` = a szűrő-regiszter, a `runtime\filterdesc.xml`-ből
+
+A globálist egyetlen hely tölti fel — `FUN_004051b0` (indextől független
+`E8`-pásztázás: a beállító `FUN_00401fb0`-nak **1**, a leszedő
+`FUN_00401fe0`-nak **1** hívási helye van, mindkettő itt):
+
+```
+0x00405615  mov eax, 0x00c7f150        ; "runtime\filterdesc.xml"
+0x0040563c  mov eax, 0x00c7f168        ; "runtime\picnik_effects\"
+0x0040566c  push 0x146c
+0x00405671  call 0x0097c5d0            ; operator new(0x146c)
+0x0040568c  call 0x004021a0            ; ctor(útvonalak) — vtable 0x00c7f724
+0x00405697  call 0x00401fb0            ; ⇒ [0x00d67f68] = a regiszter
+```
+
+⇒ a szolgáltatás **a `filterdesc.xml` beolvasott regisztere**.
+*(A második útvonal, a `runtime\picnik_effects\` mappa, **nincs meg** sem a
+kutatási fánk telepítésében, sem a tulajdonos 2026-09-05-i
+telepítés-mentésében — tehát ebben a telepítésben nincs második forrás.)*
+
+A regiszter `vtbl+4`-e a kereső (`FUN_0050e460`): egy különleges azonosítót
+(`0x00c86f24` = **`desat`**) saját osztállyal szolgál ki, minden mást a
+`FUN_008f9fe0`-nek ad tovább. Az XML-ből regisztrált leírót a `vtbl+8`
+(`FUN_008fa400`) keresi ki a `[regiszter+0x1454]` térképből az azonosító
+sztringgel; találat esetén `operator new(0xcc)` + `FUN_008f6ad0` — ez a
+**`CGenericFilter`** konstruktora (ugyanaz, amit a `filters-decoded.md`
+használ), és a **leíró mutatója a `this+8`-ba** kerül
+(`0x008f6ad0 mov [esi + 8], ecx`).
+
+### 2. `vtbl+0x14` = `GetMode()` — hét utasítás
+
+A `CGenericFilter` vtáblája `0x00cd184c`, és az `+0x14`-es rés a
+`FUN_008f6cc0`, teljes egészében:
+
+```
+0x008f6cc0  mov eax, dword ptr [ecx + 8]   ; this->leíró
+0x008f6cc3  mov eax, dword ptr [eax + 4]   ; leíró->[+4]
+0x008f6cc6  ret
+```
+
+A leíró `+4`-e pedig pontosan az a mező, amit az XML-elemző ír a
+`mode=` attribútumból:
+
+```
+0x008ff80a  push 0xec ; call 0x0097c5d0     ; a leíró: operator new(0xec)
+0x008ff81f  call 0x008f6910                 ; ctor — [+4] = 0, [+8] = 1, vtable 0x00cd18fc
+0x008ff847  mov dword ptr [eax + 4], ecx    ; [+4] = a mode KÓDJA
+```
+
+⇒ **`vtbl+0x14` = a szűrő `mode=` kódja**, és a `FUN_00900490` táblája
+szerint az **1 = `oneclick`**.
+
+### 3. A teljes lánc, egy sorban
+
+```
+csempe-tábla (0x00c7e5a0) → azonosító
+  → regiszter [0x00d67f68] (filterdesc.xml) → CGenericFilter
+    → GetMode() = leíró[+4] = a mode kódja
+      → == 1 (oneclick) ? editpanel/fx%d_adorn MEGJELENIK : elrejtve
+```
+
+✅ **A jelvényt egyetlen hely vezérli.** Az `editpanel/fx%d_adorn`
+sztring (`0x00c96304`) abszolút hivatkozása a `.text`-ben **1**, a
+`FUN_005d7c20`-ban; a bájtsorozat a teljes fájlban **egyszer** fordul elő.
+Kontroll: a `_tab%d` (`0x00c962dc`) és az `editpanel/fx%d` (`0x00c9631c`)
+ugyanígy 1-1 hivatkozás, ugyanabban a függvényben — a pásztázás tehát működik.
+Nincs második író, nincs második megjelenítő.
+
+### 4. A `mode=` megoszlása a szállított leíróban
+
+A `mode=` attribútum **kizárólag** `<filter>` elemeken áll (beágyazott
+elemen egy sincs), és a 84 szűrő megoszlása:
+
+| `mode=` | darab |
+|---|---|
+| `effect` | 56 |
+| `oneclick` | 12 |
+| `soft` | 7 |
+| `history` | 7 |
+| `tool` | 2 |
+
+A 36 csempe **elsődleges** azonosítói közül pontosan három esik az
+`oneclick`-be: `sepia`, `bw`, `warm`.
+
+### 5. ⚠️ Az `Invert` ellentmondása — a GÉPI oldal ezzel KIMERÜLT
+
+Az `Invert` a leíró 986. sorában `mode="effect"`
+(`<filter id="Invert" mode="effect" zerostate="none">`), a benne álló
+`<effect>` blokk egyetlen művelete egy `AdjustCurvesImageOperation`; sem
+ott, sem máshol nincs második `mode=`. A tulajdonos 2026-09-02-i
+felvételén viszont **van** rajta a kék „1".
+
+Amit a bináris és a szállított fájl együtt kizárnak:
+
+| lehetőség | mi zárta ki |
+|---|---|
+| más `mode` a leíróban | `mode="effect"`, és a `mode=` csak `<filter>`-en áll |
+| felülíró leíró-fájl | egyetlen `filterdesc.xml`; a `properties.xml`-ben `Invert`-re 0 találat |
+| a `picnik_effects` mappa második forrása | a mappa **nem létezik** a telepítésben |
+| a másodlagos azonosító lép életbe | az `Invert` `+4`-e NULL; és ha a `[ebx+0x33a8]` jelző állna, a Filmszemcse a `grain`-t (`oneclick`) használná, tehát **azon is** lenne jelvény — nincs |
+| a jelvényt más kód is megjeleníti | a réteg-név hivatkozása a teljes fájlban **1** |
+| a beépített (nem XML-es) tábla útja | ott a `this+8` a **regiszter**, amelynek a `+4`-e egy sztring-objektum (`0x00401ac1 lea eax,[esi+4]` + sztring-ktor), nem 1 |
+
+⇒ **A gépi bizonyítéklánc ezen a kérdésen kimerült.** A mechanizmus zárt és
+megerősített; a megfigyelés viszont ellentmond neki, és ezt már csak **friss,
+élő megfigyelés** döntheti el a tulajdonos gépén — nem a bináris.
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszintű lánc,
+egyszeres hivatkozás működő kontrollal, a leíróból számolt megoszlás);
+az 5. pont **nyitott**, és a gépi úton nem eldönthető része nevesítve.*
