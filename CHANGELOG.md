@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.345] – 2026-09-08
+
+### Javítva
+
+- **A képtálca „További lehetőségek…" gombja megkapta az ikonját** (#2537).
+  A gomb 2026 nyara óta ikon nélkül állt, mert a korábbi hivatkozás egy soha
+  nem létezett képre mutatott. Az eredeti Picasa ikonját a program saját
+  erőforrás-csomagjából mértük ki — egy tömör, felfelé mutató háromszög
+  (13 × 7 képpont, egyetlen színnel) —, és a rajz most ezt követi. A felfelé
+  mutató csúcs a jelentése is: a lista fölfelé nyílik, mert a tálca a
+  képernyő alján ül.
+
 ## [0.8.344] – 2026-09-08
 
 ### Javítva

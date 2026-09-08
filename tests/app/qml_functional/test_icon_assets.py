@@ -73,6 +73,9 @@ _EXPECTED_ICONS = (
     "faces-badge.svg",
     "face-suggestion-badge.svg",
     "tray-clear.svg",
+    # #2537: a „További lehetőségek…" gomb ikonja
+    # (`outputlayout/export7_icon`, MÉRVE 13 × 7)
+    "tray-more.svg",
     # #1420: a képtálca harmadik gombja („Albumhoz adás") ikon-only lett,
     # ahogy az eredetiben (`thumbui/addtobuttcon`: `dropup_icon` + `addto_arrow`)
     "tray-addto.svg",
@@ -224,6 +227,12 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     # mérés nyer: a rajz a miénk, az arány az eredetié.
     "zoom-fit.svg",
     "zoom-actual.svg",
+    # #2537: a képtálca „További lehetőségek…" gombjának ikonja. A
+    # `respack.yt` rétegképéből MÉRVE 13 × 7 (arány 1,86) — ez a sáv
+    # tizenegy ikonja közül az EGYETLEN, amiben csak egy szín van, és
+    # a lapos, széles alak épp a jelentése: a túlcsordulás-lista
+    # FÖLFELE nyílik. A mérés nyer a 3:2/négyzetes szabály ellenében.
+    "tray-more.svg",
     # #1927: a négy panelkapcsoló ikonjának méretarányát a `respack.yt`
     # rétegfejlécei adják meg (19×17 · 14×19 · 19×15 · 17×18) — ezek MÉRT
     # arányok, nem a 3:2/négyzetes eszköz-ikon szabály alá tartoznak.

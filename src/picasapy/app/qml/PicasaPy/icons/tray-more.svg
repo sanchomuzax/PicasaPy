@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13 7" width="13" height="7">
+  <!-- PicasaPy sajat rajza az `outputlayout/export7_icon` MERT alakjarol
+       (#2537). A meres a `respack.yt` retegkepebol jon
+       (`tools/picasa/respack.py png ... export7`, reteg-eltolas 2 173 134,
+       83 bajt), a levezetes: `docs/specs/picasa-keptalca.md` 21.3.
+
+       Kep: 13 x 7, EGYETLEN tomor alakzat, soronkent 1, 3, 5, 7, 9, 11, 13
+       keppont — tehat tomor, FELFELE mutato egyenlo szaru haromszog; 49
+       lathato keppont, mind ugyanaz a szin.
+
+       Szin: #69729B (RGB 105, 114, 155) — a sav mind a tizenegy ikonjanak
+       fo szine ugyanez, es ez az EGYETLEN, amiben csak 1 szin van
+       (elsimitas NINCS).
+
+       A tajolas nem feltevés: ket, egyertelmu tajolasu testverikonnal
+       (folderbutton_icon fule bal FELUL, pbutton_icon papirja FELUL)
+       ellenorizve, hogy a sorok nincsenek tukrozve — es a funkcioval is
+       egybevag: a keptalca az ablak aljan ul, a tulcsordulas-lista
+       FOLFELE nyilik. -->
+  <path d="M6.5 0 L13 7 L0 7 Z" fill="#69729B" shape-rendering="crispEdges"/>
+</svg>
