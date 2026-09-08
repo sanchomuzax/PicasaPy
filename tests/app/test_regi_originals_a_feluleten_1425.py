@@ -69,15 +69,23 @@ def _wait(signal, qt_app, inditas, timeout_ms=15000):
 
     Ezert az inditas ITT tortenik, a bekotes utan — a versenyhelyzet igy
     nem "ritkabb" lesz, hanem megszunik.
+
+    #2423: a SZINKRON agra kulon fogas kell. A `QEventLoop.quit()` a
+    `exec()` ELOTT kiadva ELVESZIK (merve: az igy "leallitott" hurok utana
+    is kiulte a teljes idozitot). Ha tehat a jelzes mar az `inditas()`
+    alatt megjon, a hurokba be sem szabad lepni — kulonben az eredmeny
+    ugyan megvan, de a teszt a teljes idokorlatot elpazarolja. Merve: az
+    itteni ket or 7,28 mp helyett igy 0,1 mp alatt fut le.
     """
     loop = QEventLoop()
     result = {}
     signal.connect(
         lambda *args: (result.update(args=args), loop.quit())
     )
-    QTimer.singleShot(timeout_ms, loop.quit)
     inditas()
-    loop.exec()
+    if not result:  # csak a hatterszalas uton kell esemenyhurok
+        QTimer.singleShot(timeout_ms, loop.quit)
+        loop.exec()
     qt_app.processEvents()
     # #2408: idotullepeskor a `result` uresen maradna, es a bukas egy
     # kesobbi allitason jelentkezne — a muvelet helyett a VARAKOZASRA

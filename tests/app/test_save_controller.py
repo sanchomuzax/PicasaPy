@@ -51,14 +51,39 @@ def controller(qt_app, library):
     return controller
 
 
-def _wait(signal, qt_app, timeout_ms=15000):
+def _wait(signal, qt_app, inditas, timeout_ms=15000):
+    """Beköt, AZUTÁN indít, és megvárja a jelzést.
+
+    #2423 (a #2419 folytatása): az `inditas` paraméter nem kényelmi kérdés.
+    A mentés/visszaállítás a `SaveController`-ben HÁTTÉRSZÁLON fut
+    (`_start_background`), a `saveFinished` / `revertFinished` /
+    `undoSaveFinished` onnan érkezik. Ha a hívó előbb elindítja a
+    műveletet, és CSAK AZUTÁN köt be ide, a szál befejeződhet a bekötés
+    előtt — a jelzés ilyenkor nem „néha" vész el, hanem VÉGLEG, és a
+    várakozás a teljes időkorlátot kiülve bukik el.
+
+    Mérve ezen a gépen: a kiváltás és a bekötés közé tett 0,6 mp-es szünet
+    mind az öt híváshelyet DETERMINISZTIKUSAN megbuktatta, és a fájl
+    futásideje 2,74 mp-ről 77,65 mp-re nőtt (5 bukás, egyenként a 15 mp-es
+    időkorlátot kiülve). Terhelés alatt a CI ugyanezt az ablakot nyitja ki
+    magának — innen a szeszélyesség.
+
+    A SZINKRON ág külön védelmet igényel: a `QEventLoop.quit()` az `exec()`
+    ELŐTT kiadva ELVESZIK (mérve: a hurok ilyenkor is kiülte a teljes
+    időzítőt). Ha tehát a jelzés már az `inditas()` alatt megjön — például
+    üres kijelölés, amire a vezérlő azonnal jelez —, el sem szabad
+    indulni. A `test_controller._run_export` és a
+    `test_qml_slideshow._invoke_photo_op` ugyanezt a fogást használja.
+    """
     loop = QEventLoop()
     result = {}
     signal.connect(
         lambda done, failed: (result.update(done=done, failed=failed), loop.quit())
     )
-    QTimer.singleShot(timeout_ms, loop.quit)
-    loop.exec()
+    inditas()
+    if not result:  # csak a háttérszálas úton kell eseményhurok
+        QTimer.singleShot(timeout_ms, loop.quit)
+        loop.exec()
     qt_app.processEvents()
     # #2408: időtúllépéskor a `result` ÜRESEN maradna, és a hívó egy
     # `result["done"]`-on kapna KeyError-t vagy `None`-t — a bukás a
@@ -116,8 +141,9 @@ class TestSaveToDisk:
         _set_filters(controller, qt_app, library, "bw=1;")
         before = cv2.imread(str(folder / "IMG_0001.jpg"))
 
-        controller.saveRowsToDisk([0])
-        result = _wait(controller.saveFinished, qt_app)
+        result = _wait(
+            controller.saveFinished, qt_app, lambda: controller.saveRowsToDisk([0])
+        )
 
         assert result.get("done") == 1
         after = cv2.imread(str(folder / "IMG_0001.jpg"))
@@ -129,8 +155,9 @@ class TestSaveToDisk:
         _, folder, _db = library
         _set_filters(controller, qt_app, library, "bw=1;")
 
-        controller.saveRowsToDisk([0])
-        _wait(controller.saveFinished, qt_app)
+        _wait(
+            controller.saveFinished, qt_app, lambda: controller.saveRowsToDisk([0])
+        )
 
         originals = folder / ORIGINALS_DIR_NAME
         assert originals.is_dir()
@@ -151,16 +178,20 @@ class TestSaveToDisk:
 class TestRevertAndUndoSave:
     def _save_once(self, controller, qt_app, library):
         _set_filters(controller, qt_app, library, "bw=1;")
-        controller.saveRowsToDisk([0])
-        _wait(controller.saveFinished, qt_app)
+        _wait(
+            controller.saveFinished, qt_app, lambda: controller.saveRowsToDisk([0])
+        )
 
     def test_revert_brings_the_original_back(self, controller, qt_app, library):
         _, folder, _db = library
         original = cv2.imread(str(folder / "IMG_0001.jpg"))
         self._save_once(controller, qt_app, library)
 
-        controller.revertRowsToOriginal([0])
-        result = _wait(controller.revertFinished, qt_app)
+        result = _wait(
+            controller.revertFinished,
+            qt_app,
+            lambda: controller.revertRowsToOriginal([0]),
+        )
 
         assert result.get("done") == 1
         assert np.array_equal(cv2.imread(str(folder / "IMG_0001.jpg")), original)
@@ -170,8 +201,11 @@ class TestRevertAndUndoSave:
         original = cv2.imread(str(folder / "IMG_0001.jpg"))
         self._save_once(controller, qt_app, library)
 
-        controller.undoLastSave([0])
-        result = _wait(controller.undoSaveFinished, qt_app)
+        result = _wait(
+            controller.undoSaveFinished,
+            qt_app,
+            lambda: controller.undoLastSave([0]),
+        )
 
         assert result.get("done") == 1
         # a FÁJL visszaáll…
