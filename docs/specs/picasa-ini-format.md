@@ -108,7 +108,7 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
 | `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
-| `originhash` | `033f1132c874...` | ✅ **MEGFEJTVE (2026-09-07, #791): KÉT tartalomkulcs szöveges összefűzése** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Nem egy digest, ezért bukott korábban mind a nyolc egy-digestes jelölt. A teljes bizonyíték és a mérés: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md), „Az `originhash` — a két kulcs SZÖVEGES PÁRJA” és „⭐⭐ MEGVAN… 55/60 valós fájlon”. **Nálunk KISZÁMÍTHATÓ (2026-09-08, #2733):** `picasapy.dedup.originhash.origin_hash(útvonal)` — `hex16(originfast) ‖ hex16(originslow)`, mindkét fél `%016I64x` alakban; a szétszedő `originhash_szetszed()`. Mérve **55/60 = 91,7 %** a tulajdonos valós fájljain, és minden eltérés MINDKÉT félen bukik (⇒ a fájl változott, nem a képlet). ⛔ Írni egyelőre NEM írjuk ki ezen a képleten: nyitva van, hogy a mentés MELYIK fájl bájtjait rögzíti (ld. `edit/save.py` és #2675). ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk (#21) átvétele volt, nem mérés |
+| `originhash` | `033f1132c874...` | ✅ **MEGFEJTVE (2026-09-07, #791): KÉT tartalomkulcs szöveges összefűzése** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Nem egy digest, ezért bukott korábban mind a nyolc egy-digestes jelölt. A teljes bizonyíték és a mérés: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md), „Az `originhash` — a két kulcs SZÖVEGES PÁRJA” és „⭐⭐ MEGVAN… 55/60 valós fájlon”. **Nálunk KISZÁMÍTHATÓ (2026-09-08, #2733):** `picasapy.dedup.originhash.origin_hash(útvonal)` — `hex16(originfast) ‖ hex16(originslow)`, mindkét fél `%016I64x` alakban; a szétszedő `originhash_szetszed()`. Mérve **55/60 = 91,7 %** a tulajdonos valós fájljain, és minden eltérés MINDKÉT félen bukik (⇒ a fájl változott, nem a képlet). ⛔ **Írni NEM írjuk — mérve nem mentéskori kulcs (2026-09-09, #2675).** A korpuszban `originhash` és `redo=` **egyetlen szakaszban sem** áll együtt (igen+igen → **0**; igen+nem → 1 787; nem+igen → 34), a társkulcsai pedig a letöltési utat mutatják (`IIDLIST_<név>_lh` 877, `backuphash` 760, `onlinechecksum` 380). Binárisan is: a kiírt rekord `+0x90`-ét az `operator=` másolja, és a rekord-vektor `push_back`-jének egyetlen hívója a *Download from Google Photos* (`FUN_006f9cc0`). ⇒ a mentés nem ír ilyen kulcsot, és a Visszaállítás sem törli; a #2675 eredeti kérdése — a mentett vagy az eredeti fájl bájtjai — ezzel tárgytalan. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk (#21) átvétele volt, nem mérés |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID; fiókfüggő, ezért a kulcsnév maga is adat. A korpusz **második leggyakoribb** kulcsa (6 045). A kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
 | `screensaver` | `yes` | képernyővédőben szerepel |
 | `text`,`textactive` | ld. Buchinger-doksi | szövegfelirat-overlay paraméterei |
@@ -1263,7 +1263,7 @@ csoportonként egyetlen mozgatott változóval.
 2. Nem értelmezett kulcsok/szekciók bitre pontos megőrzése.
 3. JPEG-nél caption/keywords az IPTC-be, NEM az ini-be (a Picasa is így tesz);
    RAW és egyéb formátumnál az ini-be.
-4. `redo=` és `originhash` érintetlenül hagyása, ha a szerkesztési lánc nem változott.
+4. `redo=` érintetlenül hagyása, ha a szerkesztési lánc nem változott (az `originhash`-hoz sosem nyúlunk — #2675).
 5. Fájl-lock / ütközésdetektálás arra az esetre, ha az eredeti Picasa is fut.
 6. **A `filters=` lánc szűrőneve kizárólag a KANONIKUS alakban mehet ki**
    (#695) — soha nem a belső kulcsunk kisbetűs formájában. A kanonikus
@@ -2702,7 +2702,7 @@ szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
 | `faces` | 4 973 | ✅ (írás: #26) |
 | `star` | 3 095 | ✅ |
 | `rotate` | 2 426 | ✅ |
-| **`originhash`** | **1 787** | specben ✅ (alak mérve), a **jelentése nyitott**; a kódunk **ír egy saját alakú értéket** (`edit/save.py`) — ld. lentebb |
+| **`originhash`** | **1 787** | specben ✅ (alak és képlet mérve, #791/#2733); **a letöltési út provenienciája** (#2675) — a kódunk **nem írja és nem törli** |
 | `crop` | 761 | ✅ (`rect64`) |
 | `name` | 713 | ✅ (`[contacts2]`) |
 | `albums` | 620 | ✅ |

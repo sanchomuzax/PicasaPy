@@ -1107,6 +1107,67 @@ az nem a `949998,0` lehet (5. pont). Használható jelöltek a ktorból:
 (utasításszinten, a hamis pozitívok elolvasva); a 4. pont a módszer
 kimondott korlátja, ezért a negatívot **nem** általánosítom.*
 
+## ⭐⭐ LEZÁRVA: az `originhash` NEM mentéskori kulcs (2026-09-09, #2675)
+
+*A #2675 nyitott kérdése — „a mentés a most kiírt (szerkesztett) vagy a
+szerkesztés előtti (eredeti) fájl bájtjait hasheli?" — **tárgytalan**: a
+mentés egyáltalán nem ír ilyen kulcsot.*
+
+### 1. A korpusz-mérés: `originhash` és `redo=` kizárja egymást
+
+A tulajdonos 859 valódi `.picasa.ini`-je (`referencia/ini-korpusz`),
+szakaszonként számolva:
+
+| `originhash` | `redo=` | szakasz |
+|---|---|---:|
+| van | van | **0** |
+| van | nincs | 1 787 |
+| nincs | van | 34 |
+
+A `redo=` a mentés kimondott nyoma (a beégetett szerkesztési lánc). Ha az
+`originhash`-t a mentés írná, a két kulcs a szerkesztett képeknél
+együtt állna — **egyetlen esetben sem áll**.
+
+### 2. A társkulcsok a letöltési utat mutatják
+
+Az `originhash`-es szakaszok kulcs-gyakorisága: `rotate` 1 632 ·
+`faces` 1 000 · **`IIDLIST_<fiók>_lh` 877** · **`backuphash` 760** ·
+**`onlinechecksum` 380** · `geotag` 84 · `filters` 30 · `crop` 8 ·
+`caption` 5. Az `IIDLIST_*_lh` és az `onlinechecksum` web-album-kulcsok.
+
+A 17 érintett ini közül 7 a `Downloaded Albums` alatt van; a maradék 10 a
+tulajdonos év-fáiban, de a mappanevük is átvett anyagra utal
+(„(ovis fotók)", „(Krisztuka fotói)").
+
+### 3. Kontroll: a `.picasaoriginals`-párok NEM mondanak ellent
+
+A korpuszban 52 mappának van `.picasaoriginals` alkönyvtára — vagyis ott a
+Picasa MENTETT (a szülőmappában a szerkesztett fájl áll, alatta az
+eredeti). **Ezek közül egyetlen szülő-ini sem tartalmaz `originhash`-t**,
+tehát a mentés-párok halmaza és az `originhash`-halmaz **diszjunkt**. Ez a
+mérés volt az, amelyik a jegy eredeti kérdését eldöntötte volna — és épp az
+üressége a válasz.
+
+### 4. A binárisban ugyanez
+
+A kiírandó rekord `+0x90` mezőjét az `operator=` (`FUN_005a4f10`) másolja, a
+rekord-vektor `push_back`-jének (`FUN_007d53e0`) **egyetlen hívója** pedig a
+`FUN_006f9cc0` — sztringjei: `Download from Google Photos`, `Picasa2RSS`.
+Ld. a „MEGVAN a rekord `operator=`-a" szakaszt fentebb.
+
+### 5. Amit ez a kódban jelent
+
+A `edit/save.py` a #21 óta egy saját alakú (SHA-256, 64 karakteres) értéket
+írt, és a `revert`/`undo_save` törölte. Mindkettő megszűnt: **nem írjuk és
+nem töröljük** — az `originhash` idegen (letöltési) kulcs, amelyet a
+round-trip szabály szerint érintetlenül hagyunk. Őr:
+`tests/edit/test_originhash_nem_mentesi_kulcs_2675.py`.
+
+⚠️ **A negatív állítás HATÓKÖRE:** a mérés a tulajdonos 859 ini-jére és a
+fenti bináris útra vonatkozik. Azt mondja ki, hogy **mentéskor** nem
+keletkezik `originhash`; azt nem, hogy a Picasa semmilyen más úton
+(pl. import) ne írna ilyet — épp ellenkezőleg, a letöltési út írja.
+
 ## MEGVAN a rekord `operator=`-a — és igenis írja a `+0x90`-et (2026-09-08, #2675)
 
 *211. kutatói kör.* Az előző kör **kimondta**, hogy a „hivatkozik-e a

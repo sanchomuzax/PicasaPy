@@ -6,7 +6,6 @@ Specifikáció: docs/specs/picasa-ini-format.md (`redo=`, `originhash`,
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 
 import cv2
@@ -93,7 +92,9 @@ class TestSaveEditedFirstTime:
         assert decoded is not None
         assert tuple(int(c) for c in decoded[0, 0]) == (99, 88, 77)
 
-    def test_ini_redo_and_originhash_written(self, photo):
+    def test_ini_redo_written_originhash_nem(self, photo):
+        """#2675: a `redo=` íródik, `originhash` viszont NEM — mérve nem
+        mentéskori kulcs (őr: `test_originhash_nem_mentesi_kulcs_2675.py`)."""
         image_path, _original_bytes = photo
         rendered = _solid_image((1, 2, 3))
         session = EditSession.from_value("enhance=1;crop64=1,3f845bcb59418507;")
@@ -106,9 +107,7 @@ class TestSaveEditedFirstTime:
         expected_redo = "enhance=1;crop64=1,3f845bcb59418507;"
         assert section.get("redo") == expected_redo
         assert result.redo_value == expected_redo
-        expected_hash = hashlib.sha256(expected_redo.encode("utf-8")).hexdigest()
-        assert section.get("originhash") == expected_hash
-        assert result.originhash == expected_hash
+        assert section.get("originhash") is None
         # filters= törlődik: a lánc már be van égetve a pixelekbe.
         assert section.get("filters") is None
 

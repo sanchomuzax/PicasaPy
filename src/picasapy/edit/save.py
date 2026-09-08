@@ -19,7 +19,7 @@ a felhasználó sosem lát verziókáoszt, és nincs kötelező export-lépés. 
    megőrzendő!"), a `filters=` kulcsot pedig TÖRÖLJÜK: a lánc már be van
    égetve a pixelekbe, ha `filters=` bent maradna, a következő megnyitáskor
    a renderelő KÉTSZER alkalmazná (dupla-szerkesztés hiba). Az `originhash`
-   frissül (ld. lent); a `backuphash` és minden más, nem ismert kulcs
+   NEM íródik (ld. lent, #2675); a `backuphash` és minden más, nem ismert kulcs
    ÉRINTETLEN marad — kizárólag a round-trip réteg (`update_document`/
    `with_value`/`with_removed`) útján írunk, ahogy a spec 2., 4. írási
    szabálya előírja.
@@ -32,48 +32,43 @@ renderelő MÁSODSZOR is ráfuttatná a láncot. Ugyanez a védelem a `revert`-n
 fordított irányban: ott a kulcsok törlésének bukásakor a szerkesztett kép
 íródik vissza.
 
-## `originhash` — dokumentált, józan döntés (2026-07-23, #21)
+## `originhash` — MÉRVE: nem mentéskori kulcs, ezért NEM írjuk (#2675)
 
-A specifikáció (`docs/specs/picasa-ini-format.md`, `[<fájlnév.ext>]` tábla)
-az `originhash`-t „szerkesztési verem integritás-hash"-ként írja le, KONKRÉT
-ALGORITMUS NÉLKÜL — ez nem publikus, a valódi Picasa binárisából nem lett
-visszafejtve (ld. `docs/research-plan.md` nyitott kérdései). PicasaPy-döntés:
-az `originhash` a MOST mentett `redo=` érték SHA-256 hexdigestje
-(`sha256(redo_érték UTF-8 bájtjai)`) — azaz magának a megőrzött szerkesztési
-veremnek az integritását fedezi, ami a legszorosabban megfelel a
-specifikáció szövegének ("szerkesztési verem integritás-hash").
+A specifikáció (`docs/specs/picasa-ini-format.md`) az `originhash`-t
+„szerkesztési verem integritás-hash"-ként írta le, algoritmus nélkül, és a
+#21 ezért egy józan alapértelmezést választott: a `redo=` érték SHA-256
+hexdigestjét. **Ez a döntés megdőlt, két független mérésen.**
 
-**FONTOS:** ezt a felhasználónak egy valódi Picasa 3.x által írt
-`.picasa.ini`-mintán ellenőriznie kell (pl. Wine alatt lefuttatott mentés
-összevetésével) — ha eltérés derül ki a tényleges Picasa-algoritmustól, az
-egyetlen érintett függvény a `_compute_originhash`.
+**1. Alak és képlet (#791/#2733).** A tulajdonos 859 valódi
+`.picasa.ini`-jében 1 787 `originhash=` sor áll, mind pontosan **32**
+kisbetűs hexa karakter — a SHA-256 64-et ad. A képlet is megvan:
+`hex16(originfast) ‖ hex16(originslow)`, tehát a **fájl bájtjaiból**
+számol, nem a `redo=` láncból (`picasapy.dedup.originhash`).
 
-⛔ **AZ ELLENŐRZÉS MEGTÖRTÉNT, ÉS ELTÉRÉST MUTAT (2026-09-07, #791).** A
-tulajdonos 859 valódi `.picasa.ini`-jében **1 787** `originhash=` sor áll, és
-**mind a 1 787 pontosan 32 kisbetűs hexa karakter** (128 bit; nagybetűs egy
-sem, 1 022 különböző érték). A `_compute_originhash` SHA-256-ot ad, ami **64
-karakter** — vagyis olyan alakot írunk, amilyet az eredeti Picasa SOHA.
+**2. A kulcs nem a mentéshez tartozik (#2675).** Ugyanabban a korpuszban az
+`originhash` és a `redo=` **egyetlen szakaszban sem áll együtt**:
+`(originhash, redo)` = (igen, igen) → **0**, (igen, nem) → 1 787,
+(nem, igen) → 34. A `redo=` a mentés kimondott nyoma, tehát a kettő kizárja
+egymást. A társkulcsok is a letöltési utat mutatják: `IIDLIST_<név>_lh`
+877, `backuphash` 760, `onlinechecksum` 380 — és a 10 érintett, nem
+`Downloaded Albums` alatti mappa neve is átvett anyagra utal („(ovis
+fotók)", „(Krisztuka fotói)").
 
-A hossz két MÉRT szám, tehát ez nem következtetés. És az eltérés nem csak
-az alakban van: **a képlet is megfejtődött ugyanebben a körben** —
+A binárisban ugyanez: a kiírt rekord `+0x90` mezőjét az `operator=`
+másolja, és a rekord-vektor `push_back`-jének (`FUN_007d53e0`) EGYETLEN
+hívója a `FUN_006f9cc0` = *Download from Google Photos*
+(`docs/specs/picasa-tartalomkulcs.md`, 211. kör).
 
-    originhash = "%016x" % originfast + "%016x" % originslow
+⇒ **A mentés nem ír `originhash`-t**, és a `revert` nem is törli: a
+szerkesztés könyvelése a `filters=` és a `redo=`; az `originhash` idegen
+(letöltési) kulcs, amelyet a round-trip szabály szerint érintetlenül
+hagyunk. A #2675 eredeti kérdése („a most kiírt vagy a szerkesztés előtti
+fájl bájtjai?") ezzel **tárgytalan** — a válasz: egyik sem, mert az eredeti
+ekkor nem ír ilyen kulcsot.
 
-ahol az `originfast` a fej+farok gyors kulcs (`picasapy.dedup.fastkey.
-picasa_fast_key`, #1481), az `originslow` pedig a TELJES fájl MD5-jének
-első 8 bájtja kis-endiánként (#1482). Vagyis az eredeti a **fájl bájtjait**
-hasheli, nem a `redo=` láncot. Bizonyíték és mérés (60 valódi fájlból 16
-bitpontos egyezés, 0 részleges): `docs/specs/picasa-tartalomkulcs.md`,
-„Az `originhash` — a két kulcs SZÖVEGES PÁRJA".
-
-⛔ **A cserét MÉGSEM most végezzük el**, mert egy dolog nem dőlt el:
-**MELYIK fájl bájtjait** kell hashelni a mentés pillanatában — a most
-kiírt (szerkesztett) képét, vagy a szerkesztés előtti eredetiét. A kulcsnév
-(„origin") és az `origloc`-párja az utóbbit sugallja, de ez nincs
-bizonyítva, és a kettő szerkesztett képnél MINDIG különbözik: rossz
-választással bizonyítottan hibás értéket írnánk — ami rosszabb, mint a mai,
-láthatóan idegen alak. A javítás önálló jegye: **#2675** (ott áll a
-kontrollált minta is, amivel a kérdés eldönthető).
+Ugyanez a fordulat történt a másolat-mentésnél (#1643): ott is egy kitalált
+`redo=` + `originhash` könyvelést kellett visszavonni, amikor mérés került
+a feltevés helyére. Az őr: `tests/edit/test_originhash_nem_mentesi_kulcs_2675.py`.
 
 ## Két mappanév: `.picasaoriginals` és `Originals` (#1425)
 
@@ -168,7 +163,6 @@ NEM fájlútvonal-paraméteres) + `write_atomic` — pontosan az
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -209,13 +203,13 @@ SNAPSHOT_DIR_NAME = ".picasapy-snapshots"
 #: szakaszában.
 ORIGINALS_DIR_NAMES = (LEGACY_ORIGINALS_DIR_NAME, ORIGINALS_DIR_NAME)
 
-# A mentéskor/visszaállításkor érintett ini-kulcsok — a redo verem és a
-# hozzá tartozó integritás-hash a szerkesztési lánc állapotát tükrözi; a
-# `filters=` a pixelekbe égetés után törlendő (ld. modul docstring).
+# A mentéskor/visszaállításkor érintett ini-kulcsok. ⚠️ #2675: az
+# `originhash` SZÁNDÉKOSAN nincs köztük — mérve nem mentéskori kulcs (a
+# korpuszban 1787 előfordulásból 0 áll `redo=` mellett), hanem a web-album
+# letöltés provenienciája. Sem nem írjuk, sem nem töröljük.
 _FILTERS_KEY = "filters"
 _REDO_KEY = "redo"
-_ORIGINHASH_KEY = "originhash"
-_EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY, _ORIGINHASH_KEY)
+_EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY)
 
 _INI_FILENAME = ".picasa.ini"
 
@@ -256,14 +250,16 @@ class SaveResult:
             eredeti-mentés); False, ha egy korábbi mentésből származó
             eredeti már megvolt (és ezért nem íródott felül).
         redo_value: A `.picasa.ini`-be írt `redo=` érték.
-        originhash: A `.picasa.ini`-be írt `originhash` érték.
+
+    ⚠️ #2675: NINCS `originhash` mező — a mentés ezt a kulcsot nem írja
+    (mint a `SaveCopyResult`-nál a #1643 után), tehát nem is lenne mit
+    visszaadnia.
     """
 
     image_path: Path
     original_backup_path: Path
     backup_created_now: bool
     redo_value: str
-    originhash: str
 
 
 @dataclass(frozen=True)
@@ -355,9 +351,9 @@ def save_edited(
     payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
     write_atomic(image_path, payload)
 
-    # (c) `.picasa.ini`: redo/originhash frissítése, filters törlése.
+    # (c) `.picasa.ini`: a `redo=` frissítése, a `filters=` törlése.
+    # #2675: `originhash` NEM íródik — nem mentéskori kulcs.
     redo_value = filters.to_value()
-    originhash = _compute_originhash(redo_value)
     try:
         _update_ini_document(
             image_path,
@@ -368,7 +364,6 @@ def save_edited(
                 .with_value(
                     _section_name(image_path), _REDO_KEY, redo_value, carried=True
                 )
-                .with_value(_section_name(image_path), _ORIGINHASH_KEY, originhash)
             ),
         )
     except _INI_WRITE_ERRORS as error:
@@ -384,7 +379,6 @@ def save_edited(
         original_backup_path=backup_path,
         backup_created_now=backup_created_now,
         redo_value=redo_value,
-        originhash=originhash,
     )
 
 
@@ -442,8 +436,8 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
                 if restored_filters
                 else doc.with_removed(section, _FILTERS_KEY)
             )
-            .with_removed(section, _REDO_KEY)
-            .with_removed(section, _ORIGINHASH_KEY),
+            # #2675: az `originhash`-t nem törli — nem a mentés írta
+            .with_removed(section, _REDO_KEY),
         )
     except _INI_WRITE_ERRORS as error:
         # #297 mintája: ha a könyvelés elbukik, a képfájl is álljon vissza —
@@ -467,11 +461,12 @@ def revert(image_path: str | Path) -> RevertResult:
     a 2009 előtti `Originals` — ld. a modul „Két mappanév" szakaszát), és a
     `RevertResult.restored_from` megmondja, melyikből dolgozott (#1425).
 
-    A korábbi szerkesztés-könyvelést (`filters=`, `redo=`, `originhash`) az
+    A korábbi szerkesztés-könyvelést (`filters=`, `redo=`) az
     ini-ből törli — a fájl a szerkesztés ELŐTTI állapotba kerül vissza,
     a nem-technikai felhasználó elvárása szerint: "vissza az eredetihez".
     Minden más ini-kulcs (csillag, felirat, arcok, albumok, `backuphash`,
-    ismeretlen mezők) érintetlen marad.
+    `originhash` — #2675: az a letöltés provenienciája, nem a szerkesztés
+    könyvelése —, ismeretlen mezők) érintetlen marad.
 
     Args:
         image_path: A kép jelenlegi, fizikai elérési útja a mappában.
@@ -713,15 +708,6 @@ def _update_ini_document(image_path: Path, mutate) -> None:
     megmaradjanak (spec 2. írási szabálya)."""
     ini_path = image_path.parent / _INI_FILENAME
     update_document(ini_path, mutate, backup=True)
-
-
-def _compute_originhash(redo_value: str) -> str:
-    """A szerkesztési verem (`redo=`) integritás-hash-e.
-
-    Ld. a modul docstring "originhash" szakaszát a döntés indoklásához — a
-    spec az algoritmust nem rögzíti, ez egy dokumentált, ellenőrzendő
-    józan döntés."""
-    return hashlib.sha256(redo_value.encode("utf-8")).hexdigest()
 
 
 def _encode_image(suffix: str, image: np.ndarray, jpeg_quality: int) -> bytes:
