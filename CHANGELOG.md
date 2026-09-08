@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.343] – 2026-09-08
+
+### Javítva
+
+- **Az arckeresés minden átvizsgálásnál újra végigment azokon a
+  fényképeken is, amelyeken nincs arc** (#2519). A program eddig csak a
+  MEGTALÁLT arcokat jegyezte fel, ezért egy arc nélküli kép
+  megkülönböztethetetlen volt attól, amit még soha nem néztünk meg — így a
+  keresés minden alkalommal elölről kezdte rajtuk. Mostantól a program
+  feljegyzi, hogy egy képet már megvizsgált, és csak akkor néz rá újra, ha a
+  fájl megváltozott. A Mappakezelőben arcfelismerésből kizárt mappák képei
+  tartós jelölést kapnak: onnantól a keresés kihagyja őket, és a mappa
+  visszaengedése sem indít magától új vizsgálatot. A kizárás megerősítő
+  kérdése az eredeti Picasa magyar szövegét kapta.
+
 ## [0.8.342] – 2026-09-08
 
 ### Javítva

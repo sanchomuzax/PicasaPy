@@ -29,6 +29,8 @@ from pathlib import Path
 from PySide6.QtCore import Property, Qt, Signal, Slot
 
 from picasapy.index import (
+    delete_faces_in_folder,
+    mark_folder_excluded,
     clear_removed_folders_under,
     folder_paths_under,
     folder_scan_stamps,
@@ -803,12 +805,25 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         Picasa-kompatibilis formátumban íródik (`write_exclude_folders`,
         a `write_watched_folders` mintájára).
 
-        ŐSZINTESÉG: ez a metódus MA nem töröl semmilyen tényleges arc-
-        adatot vagy név-címkét (arcfelismerés-motor még nincs a
-        projektben) — kizárólag a kizárási szándékot rögzíti. A
-        felhasználó felé megjelenő megerősítő kérdés (eredeti Picasa-
-        szöveg) a `FolderStatePanel.qml`-ben él, ezt a metódust csak a
-        megerősítés UTÁN hívja a QML."""
+        A felhasználó felé megjelenő megerősítő kérdés (eredeti
+        Picasa-szöveg) a `FolderManagerDialog.qml`-ben él, ezt a metódust
+        csak a megerősítés UTÁN hívja a QML.
+
+        **Kikapcsoláskor (#2519) a mappa ÉS az alfái fotói jelölést kapnak**
+        (`face_scan.ok = 'kizarva'`), a saját, származtatott arc-találataink
+        pedig törlődnek. A jelölés az eredeti `facerect = 1`-ének
+        megfelelője: a Picasában a téglalap írója csak nulla értékre ír
+        (`0x00480de7`), tehát a jelző megvédi a képet az
+        újra-detektálástól. Nálunk ugyanígy: a jelölést a **visszaengedés
+        sem** oldja fel — enélkül a következő szkennelés kérdés nélkül
+        újra végigfutna a képeken.
+
+        ⛔ A `.picasa.ini` `faces=` / `[Contacts2]` sorait NEM töröljük,
+        pedig az eredeti megerősítő kérdés a névcímkékről is szól. Az a
+        felhasználó SAJÁT, a Picasában felvett adata („a Picasa döntései
+        szentek"), és egy visszavonhatatlan törlés nem fér bele egy
+        kapcsolóba. A származtatott (`face` tábla) találatok viszont
+        bármikor újraszámolhatók, azokat töröljük."""
         path = str(path)
         if not path:
             return
@@ -821,6 +836,8 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                 roots.append(path)
         if roots == self._face_excluded_roots:
             return
+        if not enabled:
+            self._jeloljuk_kizartnak(path)
         self._face_excluded_roots = roots
         # #1334: OK-fázisban a fájl a mentési út 3. lépésében íródik, és
         # csak akkor, ha a két lista bármelyike nem üres (a KAPU) — a
@@ -831,6 +848,22 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         elif self._exclude_file is not None:
             write_exclude_folders(self._exclude_file, tuple(roots))
         self.statusChanged.emit()
+
+    def _jeloljuk_kizartnak(self, path: str) -> None:
+        """A kizárt mappa (és alfái) fotóinak megjelölése + a saját
+        találataink törlése (#2519, ld. `setFaceDetectionEnabled`).
+
+        Index-hiba nem akaszthatja meg a kapcsolót: a kizárási szándék a
+        `FRExcludeFolders.txt`-ben akkor is rögzül."""
+        try:
+            with open_index(self._db_path) as conn:
+                delete_faces_in_folder(conn, path)
+                mark_folder_excluded(conn, path)
+                conn.commit()
+        except sqlite3.Error:
+            logger.exception(
+                "az arcfelismerés-kizárás jelölése nem sikerült: %s", path
+            )
 
     def _persist_roots(self) -> None:
         # #1334: OK-fázisban a figyelt mappák fájlja a mentési út 1.

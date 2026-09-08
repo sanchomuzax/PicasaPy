@@ -168,6 +168,14 @@ class TestScanForFaces:
         assert found == 1
 
     def test_second_scan_replaces_instead_of_duplicating(self, qt_app, tmp_path):
+        """A második menet nem hoz létre második sort ugyanarra az arcra.
+
+        ⚠️ #2519 óta a második menet a változatlan fotót MEG SEM NÉZI (a
+        `face_scan` nyom miatt), tehát a `scanFinished` 0 találatot jelent —
+        ez nem a duplikáció hiányát mutatja. A duplikáció-mentességet ezért
+        az INDEXBŐL olvassuk ki, nem a jelzés paramétereiből. (Korábban itt
+        `found == 1` állt: az a MÁSODIK detektálás eredménye volt, vagyis
+        épp a fölösleges újrafutásé.)"""
         root = tmp_path / "kepek"
         root.mkdir()
         make_jpeg(root / "a.jpg")
@@ -176,9 +184,15 @@ class TestScanForFaces:
         assert ctl.waitForBackgroundWorkers(5.0)
         arrived, args = _run(ctl.scanFinished, ctl.scanForFaces)
         assert arrived is True
-        found, scanned = args
-        assert found == 1  # nem duplázódott
+        _found, scanned = args
+        assert scanned == 0, "a változatlan fotót a második menet újra megvizsgálta"
         assert ctl.waitForBackgroundWorkers(5.0)
+
+        from picasapy.index import open_index
+
+        with open_index(tmp_path / "index.db") as conn:
+            arcok = conn.execute("SELECT COUNT(*) FROM face").fetchone()[0]
+        assert arcok == 1, "az arc duplikálódott az indexben"
 
 
 class TestComputeEmbeddings:

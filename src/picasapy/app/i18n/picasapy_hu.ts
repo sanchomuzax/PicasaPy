@@ -3460,7 +3460,7 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <message>
         <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
         <source>Are you sure you want to remove all faces and name tags from excluded folders?</source>
-        <translation>Biztosan eltávolítod az összes arcot és névcímkét a kizárt mappákból?</translation>
+        <translation>Biztosan eltávolítja az összes arcot és névcímkét a kihagyott mappákból?</translation>
     </message>
 </context>
 <context>
