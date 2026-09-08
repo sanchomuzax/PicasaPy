@@ -75,6 +75,20 @@ Ha egy csúszkára ráálltál (rákattintottál, vagy a Tab odavitte), a
 **+** és az **=** növeli, a **−** és a **_** csökkenti az értékét. Egy
 lépés a csúszka teljes tartományának 2%-a.
 
+## Kijelölő keret húzása közben
+
+Vágásnál, vörösszem-jelölésnél és arc felvételénél a lenyomva tartott
+billentyű megköti a húzott keret oldalarányát:
+
+| billentyű | milyen arányt ad |
+|---|---|
+| Shift | a fénykép saját aránya (nem négyzet!) |
+| Ctrl | ennél egyharmaddal szélesebb |
+| Alt | ennél felével szélesebb |
+
+Az Alt üt mindent, a Ctrl a Shiftet. A billentyű felengedése azonnal
+felszabadítja az arányt.
+
 ## A nézőben
 
 | billentyű | mit csinál |

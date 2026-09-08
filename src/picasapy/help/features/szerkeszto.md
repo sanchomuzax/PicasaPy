@@ -75,15 +75,43 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
 - **Alkalmaz** véglegesíti (nem-destruktívan), **Mégse** elveti,
   **Alaphelyzet** eldobja a már alkalmazott vágást.
 
+### Arány kényszerítése húzás közben
+
+Miközben **új keretet húzol**, a lenyomva tartott billentyű megköti a
+keret oldalarányát:
+
+| billentyű | milyen arányt ad |
+|---|---|
+| Shift | a fénykép saját aránya |
+| Ctrl | ennél egyharmaddal szélesebb |
+| Alt | ennél felével szélesebb |
+
+Amit érdemes tudni:
+
+- A **Shift nem négyzetet ad**, hanem a kép saját arányát — négyzetet
+  csak négyzetes fényképen. Ezt az eredeti Picasa is így csinálta.
+- Ha többet tartasz lenyomva, az **Alt üt mindent**, a **Ctrl** pedig a
+  Shiftet.
+- A kényszer **pillanatnyi**: amint felengeded a billentyűt, a keret
+  húzás közben is azonnal szabaddá válik. Nem marad bekapcsolva.
+- A vágónál a lenyomott billentyű a **Képarány** listából választott
+  arányt is felülírja, amíg húzol. A kész keret utólagos méretezésekor
+  viszont már nincs hatása — ott a listából választott arány szabályoz.
+
+Ugyanez a három billentyű működik a **vörösszem** és az **arc-hozzáadás**
+keretének húzásakor is.
+
 ## Vörösszem
 
 Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha nem talál
 semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
 azt is jelzi.
 
-Kézzel is jelölhetsz: húzz keretet a szem köré. A panel számolja, hány
-területet jelöltél ki. A **Visszavonás** az utolsó jelölést veszi vissza,
-az **Alaphelyzet** mindet.
+Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
+**Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát (lásd
+[Arány kényszerítése húzás közben](#arány-kényszerítése-húzás-közben)).
+A panel számolja, hány területet jelöltél ki. A **Visszavonás** az utolsó
+jelölést veszi vissza, az **Alaphelyzet** mindet.
 
 Van egy kapcsoló, amivel a négyzetes körvonalak nélkül nézheted meg az
 eredményt.

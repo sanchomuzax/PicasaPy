@@ -53,6 +53,14 @@ A nézőben az **Arcok megjelenítése** gomb (vagy az `F` billentyű) mutatja
 az arckereteket. Az **Arcok szerkesztése** (Shift+`F`) módban a keretekhez
 nevet írhatsz.
 
+Ebben a módban **új arcot is felvehetsz**: húzz keretet az arc köré, majd
+kattints a keret alatt megjelenő **Név hozzáadása** feliratra. A keret a
+húzás után megmarad, tehát előbb pontosan ráigazíthatod az arcra.
+
+Húzás közben a **Shift**, a **Ctrl** és az **Alt** megköti a keret
+oldalarányát, ugyanúgy, mint a vágónál — a részletek a
+[Szerkesztő](szerkeszto.md) fejezetben.
+
 > Az **Arcok alaphelyzetbe állítása** menüpont **még nem működik**: a
 > helye megvan, de az arcadatok törlése mögötte még nincs bekötve.
 

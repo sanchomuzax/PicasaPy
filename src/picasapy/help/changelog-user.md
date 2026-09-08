@@ -4,6 +4,49 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-08
+
+**Vágás, vörösszem, arc felvétele: arány a billentyűvel**
+
+- Miközben új keretet húzol, a lenyomott **Shift** a fénykép saját
+  arányára köti a keretet, a **Ctrl** egy ennél egyharmaddal, az **Alt**
+  egy ennél felével szélesebb arányra. Az Alt üt mindent, a Ctrl a
+  Shiftet, és a billentyű felengedése azonnal felszabadítja az arányt.
+- A Shift **nem négyzetet ad**, hanem a kép saját arányát — ezt az
+  eredeti Picasa is így csinálta.
+- Ugyanez a három billentyű működik a vörösszem-keretnél és az arcok
+  kézi felvételénél is.
+
+**Néző: a kék információs sáv**
+
+- Ha a szöveg nem fér ki, mostantól **rövidül**, nem vágódik el a sáv
+  szélén: előbb elmarad a fájlnév elől a mappanév, utána a fájlnév
+  közepébe kerül három pont. A név vége — és vele a kiterjesztés —
+  megmarad.
+
+**Effektek és képminőség**
+
+- A **Színátmenet** effekt rajza az eredeti Picasáéhoz igazodott. Eddig
+  erősebb beállításokon látványosan mást adott.
+- Az **indexképek** a Picasa saját kicsinyítő eljárásával készülnek: a
+  nagy kicsinyítések kevésbé recések, a részletek tisztábbak. A már
+  elkészült indexképek viszont a régiek maradnak: az új eljárás azokon
+  csak akkor látszik, ha maga a fénykép megváltozik.
+- A **Képregény** effekt számottevően gyorsabb lett; a rajza
+  gyakorlatilag változatlan.
+- Windowson néha nem azzal a simítással jelentek meg a bélyegképek az
+  importálás, a duplikátum-kereső és a névtelen arcok ablakában, mint a
+  rácsban. Ez megszűnt.
+
+**Kollázs és film**
+
+- A kollázs vagy film mentése **nem írja át többé a mappa
+  Picasa-adatait**. Eddig egy mentés a mappa `.picasa.ini` fájljának
+  minden sorát átírhatta: a régebbi, nem Unicode fájlokban az ékezetes
+  feliratok kérdőjelekre romlottak, és a Picasa-adatok fejléce
+  megkettőződhetett a fájlban. A meglévő sorok mostantól változatlanul
+  maradnak.
+
 ## 2026-09-07
 
 **Néző: nagyítás**

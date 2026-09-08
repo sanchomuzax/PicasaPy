@@ -8,3 +8,4 @@
 2026-09-05T03:26:15+02:00 kezi utojatek: a "lezar" push-a non-fast-forward miatt elbukott (kozben mas session pusholt); rebase utan a 00fbeb6e felment, majd a lezar masodszorra lefutott — az "a session nem valtoztatott a sugon" sor emiatt FELREVEZETO, a sugo valojaban frissult
 2026-09-07T03:09:36+02:00 elokeszitve (8aebf33b6fe27e3ce8c147d9c1009795740de181 -> 9a13548): 101 erintett fajl a src/ alatt
 2026-09-07T03:31:15+02:00 kezi utojatek: a "lezar" push-a MEGINT non-fast-forward miatt bukott (kozben harom commit ment a main-re); rebase utan a de62803a felment. A sugo VALOJABAN frissult — 15 fajl.
+2026-09-08T03:08:55+02:00 elokeszitve (9a1354860281b5e2191e2a3169e6df7df3bf06af -> 9fd777f): 66 erintett fajl a src/ alatt

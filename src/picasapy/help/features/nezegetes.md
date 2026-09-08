@@ -53,6 +53,15 @@ Az alsó sáv kék csíkja a könyvtárban a kijelölésről ír; **a nézőben 
 kép dátuma, a felbontás képpontban, a fájl mérete, a **hányadik kép** a
 mappában, végül a **Címkék:** felsorolás.
 
+Ha a szöveg nem fér ki — kisebb ablakban vagy hosszú fájlnévnél —, két
+lépésben rövidül:
+
+1. elmarad a fájlnév elől a **mappanév**;
+2. ha még mindig hosszú, a **fájlnév közepébe** kerül három pont. Az
+   eleje és a vége megmarad, tehát a kiterjesztés is látszik.
+
+A többi adat nem rövidül.
+
 ## Diavetítés
 
 Indítás: **Nézet ▸ Diavetítés**, a **Mappa ▸ Diavetítés megtekintése**,
