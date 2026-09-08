@@ -4726,3 +4726,82 @@ a bezárás előtti állapotból megy a fájlba — ezzel a 38.2 `1,0`-ja és a
 mintáink `313 / 500 / 256 / 158`-a **összefér**.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 49. K1 — a bezárás 2. argumentuma egy PANEL-ÁLLAPOTJELZŐ, és ezzel a 38.2 ellentmondása feloldódik (2026-09-08, #1412)
+
+*201. kutatói kör. A 48.4 lépését viszi: ki hívja a bezárás-kezelőt, és
+mit ad át 2. argumentumként.*
+
+### 49.1 ⭐ A hívó egy 36 bájtos thunk — és megmondja MINDKÉT argumentumot
+
+`FUN_0062c650` (36 b), a bezárás-kezelő **egyetlen** hivatkozója:
+
+```
+0x0062c651  mov eax,[ecx+0x288]      ; ← az 1. argumentum lesz
+0x0062c657  test eax, eax  ·  je 0x62c670   ; ha NINCS, a bezárás NO-OP (0-t ad vissza)
+0x0062c65b  mov cl, byte ptr [ecx+0x20c]    ; ← a 2. argumentum lesz (BÁJT)
+0x0062c667  push edx  ·  0x0062c668  push eax
+0x0062c669  call 0x0082c0a0
+```
+
+⇒ két dolog egyszerre:
+
+1. **az 1. argumentum a `[ytPanel + 0x288]`** — vagyis a `CCollageUI`
+   objektum. Ez **második oldalról igazolja a 47.2-t** (ott a
+   `FUN_00831420`-hívásból következtettünk rá);
+2. **a 2. argumentum a `byte [ytPanel + 0x20c]`** — egy **panel-állapot
+   jelzőbájt**.
+
+### 49.2 A jelzőbájt írói — kilenc az egész programban
+
+Pásztázás `mov byte ptr [reg+0x20c], …` alakra (`esp`/`ebp` nélkül):
+**9 találat**, és a lényegesek apró, sztring nélküli 1/0 párok:
+
+| cím | függvény | mit ír |
+|---|---|---|
+| `0x009e397d` · `0x009e399d` | `FUN_009e3970` · `FUN_009e3990` (21-21 b) | **1**, illetve **0** |
+| `0x00a68b26` · `0x00a68bf6` | `FUN_00a68b10` · `FUN_00a68be0` (31-31 b) | **1**, illetve **0** |
+| `0x00a692d0` | **`FUN_00a69250`** (137 b) = **`CollagePanel::vftable[26]`** (`rtti`) | **1** |
+
+⇒ **állapot-jelző**, amit egy vtábla-metódus és két apró
+beállító/törlő pár kapcsol.
+
+*Bizonyítottsági fok: **megerősített** az írók listája és a vtábla-index;
+**NINCS MEG** a jelző pontos jelentése (a beállítók sztring nélküliek).*
+
+### 49.3 ⛳ És ezzel a 38.2 „ellentmondása" FELOLDÓDIK
+
+A 47.3 szerint a bezárás-kezelő a `FUN_00831420` (újraépítés) hívását
+**kihagyja**, ha a 2. argumentum **nem nulla**
+(`0x0082c0fc` `cmp byte [ebp+0xc], 0` · `0x0082c104` `jne`).
+
+⇒ **ha a panel a jelzett állapotban van, a bezárás NEM regenerál** — a
+munkapéldány úgy megy a fájlba, ahogy áll.
+
+Ezzel a 38.2 mérése (`scale = 1,0` az újraépítőben) és a mintáink
+`313 / 500 / 256 / 158`-a **összefér**: az újraépítés egyszerűen **nem fut
+le** azon az úton, amelyen a mintáink készültek. A 43.3 „regenerálás"
+olvasata így pontosabb alakot kap: **a regenerálás feltételes, és a
+bezárási úton kihagyható.**
+
+### 49.4 Ami MARAD, és a KÖVETKEZŐ lépés
+
+Ha a bezárás nem regenerál, akkor a `+0x138` munkapéldány tartalma
+**korábbról** való. A 36.2 szerint a munkapéldányba **két** helyről kerül
+adat:
+
+| hova | honnan | hol |
+|---|---|---|
+| `+0x138` | verem-helyi, újraépített (`scale = 1,0`) | `0x008315b8` |
+| `+0x138` | a `+0x1b0` **alapállapotból** | `0x0083d0a7` (Reset) |
+
+és a `+0x1b0`-ba csak a `+0x138`-ból (`0x0082bffb`, `0x00831ab0`). **A két
+példány tehát csak egymásból és az újraépítésből táplálkozik** — kivéve a
+**konstrukciót**.
+
+> **A KÖVETKEZŐ KÉRDÉS:** a `CCollageUI` (a `[ytPanel+0x288]` objektum)
+> **konstrukciója** tölti-e fel a `+0x138`-at, és ha igen, honnan?
+> A headless felületnél ez bizonyítottan így van (45.4: a ktor **érték
+> szerint** kapja a dokumentumot); az interaktívra ez még nincs kimérve.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
