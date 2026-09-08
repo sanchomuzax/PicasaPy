@@ -781,3 +781,129 @@ hozzáigazítaná őket a mai fájlhoz. *(erős: a mechanizmus mérve, a
 *Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten, a
 lépésköz két független helyről); **erős** az 5. pont
 (a mechanizmus mérve, a 44 sor eredete nem); **nyitott** a `+0x90` írója.*
+
+## A tartalomkulcs egy TULAJDONSÁG (`0x68`), nem közvetlen mezőírás (2026-09-08, #2675)
+
+*208. kutatói kör.* Az előző kör azt kérdezte, **ki írja a
+`[rekord+0x90]`-et**, és a `FUN_007d6db0` kulcs→mező táblájának
+kiolvasását nevezte meg útként. Az első lépés **megcáfolta a saját
+tervét** — és közben előkerült a valódi mechanizmus.
+
+### 1. ⛔ ÖNHELYESBÍTÉS: a `FUN_007d6db0` NEM név-vezérelt táblát futtat
+
+A függvény (4829 b) **egyetlen** nyomtatható sztringre mutató
+immediate operandust sem tartalmaz (a teljes törzs átfésülve). Nincs
+benne kulcsnév, tehát nem lehet kulcs→mező tábla. Az előző kör
+megnevezett lépése ezzel **tárgytalan**.
+
+### 2. ⛔ A `0x130`-as lépésköz ÖNMAGÁBAN nem azonosít rekordot
+
+A lépésköz az egész programban **40 függvényben** fordul elő. Hogy ez
+mennyire nem bizonyíték, arra kimért ellenpélda van: a `FUN_0092f6d0`
+(3341 b, a Web Albums Atom/RSS-elemzője — `gphoto:user`, `gphoto:id`,
+`picasa:dbid`, `pubDate`) **szintén** ír egy `+0x90`-et
+(`0x0092fa09`), de
+
+```
+0x0092f9d0  mov esi, 0x00cd3cdc      ; "gphoto:access"
+0x0092fa06  mov edx, [ebx + 0x24]    ; MÁSIK objektum
+0x0092fa09  mov [edx + 0x90], eax
+```
+
+⇒ **más rekord, más jelentés.** *(A lap „azonos méret ≠ azonos
+szerkezet" tanulsága szerint a méret-egyezést külön mezőegyezéssel kell
+alátámasztani.)*
+
+### 3. ⭐ Ugyanaz a mező MÁSIK kulcsnéven is kimegy: `imageuniqueid`
+
+A `FUN_007d61a0` (931 b) a `Picasa` szakasz kulcsait írja — `width`,
+`height`, `imgdl=1`, `sizeparam`, `maxparam`, `imgmax`, `imagelink`,
+`origlink`, `thumblink`, `InternetShortcut` —, és köztük:
+
+```
+0x007d641b  mov eax, [ebx + 0x90]
+0x007d6421/2b/31  je 0x007d6452       ; NULL / nulla hossz / üres → kimarad
+0x007d643f  push 0x00c937b0            ; "imageuniqueid"
+```
+
+Az ürességi próba **karakterről karakterre ugyanaz**, mint a
+`.picasa.ini`-íróé az `originhash`-nél. ⇒ **a rekord `+0x90`-e a kép
+tartalom-azonosítója**, amit a program két néven ír ki:
+`originhash` (a `.picasa.ini`-be) és `imageuniqueid` (a `Picasa` /
+`InternetShortcut` szakaszba).
+
+### 4. ⭐ A VALÓDI mechanizmus: TULAJDONSÁG-TÁRBA megy, nem mezőbe
+
+Ezért volt **minden** közvetlen mezőírás-pásztázás negatív (206.: 7 és
+121 találat; 207.: 16 függvény — mind olvasó). Az érték egy **egész
+kulcsú tulajdonságtárba** kerül:
+
+```
+0x0049c640  FUN_0049c640 (690 b)   ; hasítótáblás BESZÚRÁS
+   0x0049c64f  add ebx, 0xc
+   0x0049c660  div dword ptr [ebx + 4]      ; vödörszám
+   0x0049c670  cmp dword ptr [esi + 8], edi ; láncbejárás a KULCSRA
+```
+
+és a kulcs a tartalomkulcsnál mindig **`0x68`**. A minta három
+egymástól független kezelőben **bájtszomszédos**:
+
+| kezelő | a kulcspár | a 32 jegyű alak | a beszúrás |
+|---|---|---|---|
+| `caption` (`FUN_00437cf0`) | `0x00438691` | `0x004386b6` | `0x004386c3 push 0x68` → `0x004386cd` |
+| `keywords` (`FUN_00455ff0`) | `0x004563db` | `0x00456406` | `0x00456413 push 0x68` → `0x0045641d` |
+| `geotag` (`FUN_00477ff0`) | `0x00478336` | `0x00478361` | `0x0047836e push 0x68` → `0x00478375` |
+
+*(a `0x004353a0` a tartalomkulcs-szolgáltatás, a `0x00414c50` a
+`%016I64x` ×2 összerakó — mindkettő a lap korábbi szakaszaiból)*
+
+⇒ **A tartalomkulcs-sztringet a `.picasa.ini` szakaszkezelői állítják
+elő fájlonként, és a `0x68` tulajdonságba teszik.**
+
+### 5. ⭐ …és a `Picasa` szakasz OLVASÓJA ugyanide tölt vissza
+
+`FUN_005af660` (4201 b) — ugyanaz a kulcskészlet, olvasói oldalról
+(`width`, `height`, `videolink`, `imagelink`, `origlink`, `thumblink`,
+**`imageuniqueid`**, `InternetShortcut`):
+
+```
+0x005afb28  mov esi, 0x00c937b0      ; "imageuniqueid"
+0x005afb34  repe cmpsb               ; kulcsnév-egyezés
+0x005afb6f  push edx                 ; az ÉRTÉK
+0x005afb70  push 0x68                ; ← ugyanaz a tulajdonság
+0x005afb72  add ecx, 0x130           ; a tár az objektum +0x130-ánál
+0x005afb79  call 0x0049c640
+```
+
+⇒ **oda-vissza ugyanaz a rekesz**: amit `imageuniqueid` néven olvas,
+azt a `0x68` tulajdonságba teszi; amit a `0x68`-ból vesz, azt
+`originhash`/`imageuniqueid` néven írja ki.
+
+### 6. ⛳ Amit ez a #2675-re nézve hozzátesz
+
+- A 207. kör állítása (**mentéskor nincs újraszámolás**) **áll**, sőt
+  most a másik oldalról is alátámasztott: az érték egy tulajdonságtárban
+  utazik, amit a szakaszkezelők töltenek fel — nem a mentés.
+- **Új, önállóan hasznos lelet:** ugyanaz az érték `imageuniqueid` néven
+  is megjelenik. A mi `.picasa.ini`-olvasónk/írónk szempontjából ez azt
+  jelenti, hogy a két kulcs **ugyanazt a mennyiséget** hordozza, tehát
+  a round-tripnek mindkettőt ugyanúgy kell kezelnie.
+- ⚠️ **Amit ez NEM mond ki:** hogy a `0x68` tulajdonság *hogyan* kerül
+  a `[rekord+0x90]`-be. A tár egy `map<int, sztring>`; a materializálás
+  helye nincs megmérve.
+
+### 7. A KÖVETKEZŐ lépés, megnevezve
+
+> **Hol OLVASSÁK ki a `0x68` tulajdonságot, és ki teszi a rekord
+> `+0x90`-ébe?**
+
+Menet: a `FUN_0049c640` (beszúrás) **párja**, a kulcs szerinti
+lekérdezés — ugyanabban a hasítótábla-osztályban —, és annak `0x68`-cal
+hívó helyei. A `push 0x68` teljes leltára már megvan (a beszúró ágon
+hét hely: `0x004386c3`, `0x00456413`, `0x0047836e`, `0x005afb70`,
+`0x005b018d`, `0x005b0b1b`, `0x006bf6e1`); a lekérdező ág ugyanígy
+kilistázható.
+
+*Bizonyítottsági fok: **megerősített** az 1–5. pont (utasításszinten, a
+három kezelő bájtszomszédos mintájával); **nyitott** a `0x68` →
+`[rekord+0x90]` materializálás.*
