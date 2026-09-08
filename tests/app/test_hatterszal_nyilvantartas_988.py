@@ -157,3 +157,116 @@ class TestATeardownAKozosBevarotHivja:
                 f"{ut}: a QML-motor megsemmisítése futó háttérmunka mellett "
                 "hozzáférési hibát okozhat"
             )
+
+
+class TestABevarasVerdiktjeIgaz:
+    """#999: a bevárás ne mondhasson „minden leállt"-ot futó szál mellett.
+
+    A #430/#438 óta a lebontás egyetlen garanciára támaszkodik: ha a
+    `wait_for_all_background_workers()` `True`-t ad, akkor egyetlen
+    háttérszál sem nyúl többé Qt-objektumhoz. A #999 körében **két olyan
+    utat mértünk ki, amelyen ez a verdikt HAMIS lehetett** — mindkettő a
+    bevárón belül, nem a hívóknál. Az alábbi két őr ezeket zárja le.
+
+    ⚠️ Amit ezek az őrök NEM állítanak: hogy a #999 szegmentálási hibája
+    ezzel megszűnt. A hibát a mai `main`-en nem sikerült reprodukálni; ami
+    itt bizonyított, az a bevárás verdiktjének helyessége, nem a
+    SIGSEGV eltűnése.
+    """
+
+    def test_a_szal_a_nyilvantartasban_marad_az_utolso_qt_hivasaig(
+        self, monkeypatch
+    ):
+        """A `registry.end()` Qt-jelzést emitál — a szál addig látszódjon.
+
+        A `_start_background` `finally`-ága korábban ELŐBB vette ki a szálat
+        a nyilvántartásból, és csak AZUTÁN hívta a `registry.end()`-et
+        (`busy_registry.AppBusyRegistry.end` → `_endRequested.emit()`). A
+        bevárás így egy még emitáló szálat sem látott.
+
+        Mérve a javítás előtt: a `wait_for_all_background_workers()` 0,000
+        mp alatt `True`-t adott, miközben a szál bent állt az `end()`-ben.
+        """
+        from picasapy.app import busy_registry
+
+        benne_van = threading.Event()
+        elengedheto = threading.Event()
+        eredeti_end = busy_registry.AppBusyRegistry.end
+
+        def lassu_end(maga):
+            benne_van.set()
+            elengedheto.wait(10.0)
+            return eredeti_end(maga)
+
+        monkeypatch.setattr(busy_registry.AppBusyRegistry, "end", lassu_end)
+
+        pelda = _Pelda()
+        szal = pelda._start_background(lambda: None, name="utolso-qt-hivas-999")
+        try:
+            assert benne_van.wait(10.0), "a szál nem ért el a registry.end()-ig"
+
+            # EBBEN A PILLANATBAN a szál ÉL, és épp Qt-jelzést emitál.
+            assert szal.is_alive()
+            assert "utolso-qt-hivas-999" in running_background_workers(), (
+                "a szál kikerült a nyilvántartásból, MIELŐTT az utolsó "
+                "Qt-hívása lefutott volna — a bevárás így nem várja be (#999)"
+            )
+        finally:
+            elengedheto.set()
+
+        assert wait_for_all_background_workers(10.0)
+        assert running_background_workers() == ()
+
+    def test_a_bevaras_alatt_indult_szalat_is_bevarja(self, monkeypatch):
+        """Nem egyetlen pillanatkép: a menet közben induló szál is számít.
+
+        A bevárás korábban EGYSZER másolta le a `_ALL_WORKERS` halmazt, és
+        azt a listát járta végig. Egy háttérmunka viszont indíthat újabbat:
+        az `IndexWriterQueue.submit()` bármely szálról hívható, és ő indítja
+        a futtató szálat (`index_writer_queue.py`).
+
+        Az őr ÓRA NÉLKÜL determinisztikus: a `_Thread` cserélhető
+        fogantyúján át figyeljük, mikor kezdi a bevárás az első szál
+        `join()`-ját — a második szál PONTOSAN ekkor indul, és csak akkor
+        ér véget, amikor a bevárás őt is bevárja. Ha a bevárás nem nyúl
+        érte, a neve nem kerül a `bevart_nevek` listába, és az őr elbukik.
+        """
+        from picasapy.app import worker_thread
+
+        elso_joinolva = threading.Event()
+        masodik_joinolva = threading.Event()
+        bevart_nevek: list[str] = []
+
+        class _JoinKapu(threading.Thread):
+            """Naplózza, melyik szálat várta be a bevárás — és kapuzza is."""
+
+            def join(self, timeout=None):
+                bevart_nevek.append(self.name)
+                if self.name == "masodik-999":
+                    masodik_joinolva.set()
+                else:
+                    elso_joinolva.set()
+                return super().join(timeout)
+
+        monkeypatch.setattr(worker_thread, "_Thread", _JoinKapu)
+
+        pelda = _Pelda()
+
+        def masodik() -> None:
+            # csak a bevárás engedheti el: ha nem vár be, itt lejár az idő,
+            # és a főszál állítása buktatja meg az őrt
+            masodik_joinolva.wait(3.0)
+
+        def elso() -> None:
+            # a második szál PONTOSAN a bevárás alatt indul
+            assert elso_joinolva.wait(10.0)
+            pelda._start_background(masodik, name="masodik-999")
+
+        pelda._start_background(elso, name="elso-999")
+
+        assert wait_for_all_background_workers(20.0)
+        assert "masodik-999" in bevart_nevek, (
+            "a bevárás ALATT indult szálat a bevárás nem várta be — "
+            "egyetlen pillanatképről dolgozott (#999)"
+        )
+        assert running_background_workers() == ()

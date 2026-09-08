@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A program bezárásakor egy háttérmunka még dolgozhatott, miközben a
+  kilépés már késznek hitte magát** (#999). A leállítás megvárja a
+  háttérben futó munkákat, hogy azok ne szóljanak vissza egy közben
+  felszámolt programrésznek — ez véd a látszólag ok nélküli összeomlás
+  ellen. A várakozás viszont két esetben tévesen jelentette, hogy
+  „mindennel megvagyunk": az egyik munka az utolsó lépését még azután
+  futtatta, hogy kijelentkezett a nyilvántartásból, a másik pedig épp a
+  várakozás közben indult el. Mindkettő javítva.
+  ⚠️ Ez **nem** magyarázza meg a #999-ben leírt tesztösszeomlást — azt a
+  mai kódon nem sikerült reprodukálni.
+
 ## [0.8.335] – 2026-09-08
 
 ### Javítva
