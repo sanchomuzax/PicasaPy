@@ -108,8 +108,8 @@ semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
 azt is jelzi.
 
 Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
-**Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát (lásd
-[Arány kényszerítése húzás közben](#arány-kényszerítése-húzás-közben)).
+**Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát — ahogy
+a vágásnál, a fentebbi „Arány kényszerítése húzás közben" szakasz szerint.
 A panel számolja, hány területet jelöltél ki. A **Visszavonás** az utolsó
 jelölést veszi vissza, az **Alaphelyzet** mindet.
 
