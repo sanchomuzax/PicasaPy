@@ -1655,3 +1655,126 @@ húsz hívási hellyel. Ez a drága szint.
 
 *Bizonyítottsági fok: **megerősített** mind a három mérés — indextől
 független, teljes fedéssel, és mindegyiknek átmegy a pozitív kontrollja.*
+
+---
+
+## Az ini-író rekordja UGYANAZ az osztály — és a saját ujjlenyomat-próbám HATÓKÖRE (2026-09-08, 218. kör, #2675)
+
+Nyolc kör azon dolgozott, hogy ki írja a rekord `+0x90`-jét. Ez a kör azt
+ellenőrizte, ami mindvégig **feltevés** volt: hogy az ini-író rekordja
+egyáltalán **ugyanaz az osztály**, mint amelyiknek az `operator=`-át
+megtaláltuk. A válasz **igen** — de az odavezető úton kiderült, hogy a
+214. körben bevezetett osztály-ujjlenyomat próbámat rossz helyen használni
+**hamis negatívot** ad, és ezt ki kell mondani.
+
+### 1. ⛔ A HATÓKÖR: az ujjlenyomat ELÉGSÉGES jel, nem SZÜKSÉGES
+
+A 214. kör bevezette az „osztály-ujjlenyomatot": egy függvény akkor
+tartozik a rekordhoz, ha a `0x110` ÉS a (`0xf0` vagy `0xf4`) ÉS a `0x9c`
+tagoffszetet is érinti. Ez **működik** arra, amire készült — a ktor, a dtor
+és az `operator=` átmegy, két ismert idegen osztály elbukik —, de **csak
+akkor**, ha a vizsgált függvény a rekord *egészét* kezeli.
+
+Egy **fogyasztó** viszont csak néhány mezőt olvas. Az ini-író arg2-jére
+alkalmazva a próba `NINCS`-et ad, és ez **nem lelet**: a próba ilyenkor a
+saját hatókörén kívül van.
+
+Ugyanez a kör egy **második** módszertani hibát is elkövetett és javított:
+az első futás egyszerre három argumentum-rekeszt (`[esp+0xad8]`,
+`[esp+0xadc]`, `[esp+0xae0]`) vett magnak, és a három objektum mezőit
+összekeverte — így került a listába a `0xf9`, ami valójában az **1.**
+argumentumé (a kapu-bájt). Rekeszenként külön mérve:
+
+| argumentum | érintett tagoffszetek |
+|---|---|
+| **arg1** (kapu-objektum) | `0x94`, `0xe0`, `0xe8`, `0xec`, **`0xf9`** |
+| **arg2** (a kép-rekord) | `0x4`, `0x18`, `0x50`, `0x54`, `0x90`, `0x9c`, `0xa8`, `0xf4`, `0xf8`, `0xfc`, `0x100`, `0x104`, `0x108` |
+| arg3 | — (a függvény nem tagoffszettel éri el) |
+
+### 2. ✅ A HELYES azonosítás: a hívási gráf, nem a mezőkészlet
+
+Az ini-írónak (`FUN_007d55f0`) **három** hívási helye van (indextől
+független `E8`-pásztázás): `0x007d9bb4` és `0x007d9dc0` a
+`FUN_007d94c0`-ban, `0x007dba1e` a `FUN_007db8d0`-ban.
+
+A `FUN_007d94c0`-ban a rekord **vektorelemként** áll elő, és ugyanabban a
+ciklus-lépésben megy a szétvágóhoz és az íróhoz:
+
+```
+0x007d9d01  mov eax, dword ptr [ebx]     ; a tömb bázisa
+0x007d9d0a  add eax, ebp                 ; + az elem bájt-eltolása
+0x007d9d0d  lea ecx, [eax + 0x90]
+0x007d9d13  call 0x007d8cf0              ; a +0x90 SZÉTVÁGÓJA
+...
+0x007d9da9  mov eax, dword ptr [ebx]
+0x007d9db8  add eax, ebp                 ; UGYANAZ az elem
+0x007d9dba  push eax                     ; ← az ini-író 2. argumentuma
+0x007d9dbb  push ebx
+0x007d9dc0  call 0x007d55f0
+```
+
+és a ciklus lépésköze:
+
+```
+0x007d9f00  add ebp, 0x130               ; = a rekord sizeof-ja
+```
+
+A másik fogyasztó, a `FUN_007d9160` ugyanígy lépked (`0x007d9225
+add esi, 0x130`).
+
+⇒ **Az ini-író rekordja ugyanannak a 0x130 bájtos vektornak az eleme**,
+amelynek a `push_back`-je az `operator=`-t hívja (`0x007d555f`, 213. kör),
+és amelynek a `+0x90`-jét a szétvágó fogyasztja. **Az osztály-azonosság
+tehát nem feltevés többé** — a hívási gráf igazolja.
+
+### 3. ⭐ A rekordnak NINCS vtáblája — az RTTI-út zárva
+
+A ktor (`FUN_00413740`) első utasításai:
+
+```
+0x00413740  mov eax, ecx
+0x00413742  fld qword ptr [0xc7ccf8]
+0x00413748  xor ecx, ecx
+0x0041374a  mov dword ptr [eax], ecx     ; [this] = 0  ← NEM vtable-mutató
+0x0041374c  fst qword ptr [eax + 0x20]
+0x00413752  fst qword ptr [eax + 0x28]
+```
+
+A `+0`-ba **nulla** kerül, nem vtable-cím ⇒ az osztály **nem polimorf**,
+és **nincs RTTI-neve**. Aki a nevét keresi az `rtti` táblában (2856 sor),
+az nem fogja megtalálni — nem hiányos az index, hanem nincs mit találni.
+Az osztályt csak a hívási gráf és a mezőtérkép azonosítja.
+
+### 4. ⭐ ÖT mezőt az `operator=` NEM másol
+
+Az `operator=` (`FUN_005a4f10`) a rekord **36** tagoffszetét érinti
+(mindkét oldalon ugyanazt a 36-ot — cél `ebp`, forrás `ebx`):
+
+```
+0x0 0x4 0x8 0xc 0x10 0x14 0x18 0x20 0x24 0x28 0x2c 0x30 0x34 0x3c 0x40
+0x44 0x48 0x4c 0x50 0x54 0x58 0x5c 0x60 0x64 0x68 0x70 0x90 0x94 0x9c
+0xa0 0xa4 0xa8 0xb0 0xf0 0xf4 0x110
+```
+
+Az ini-író arg2-je viszont **öt olyan mezőt is olvas, amely ebben nincs
+benne**: **`0xf8`, `0xfc`, `0x100`, `0x104`, `0x108`** (mind a `sizeof
+0x130`-on belül).
+
+⇒ **Egy másolt rekord ezt az öt mezőt NEM örökli.** Ez mért tény, és
+ellentétes irányú a lap korábbi, szintén mért szakaszával („A MÁSOLAT
+ÖRÖKLI a forrás `originfast`-ját"): a `+0x90` öröklődik, ez az öt nem.
+Hogy melyik ini-kulcsot táplálják, ez a kör **nem** mérte ki — kimondva.
+
+### 5. Mérleg
+
+| kérdés | állapot |
+|---|---|
+| az ini-író rekordja ugyanaz az osztály? | **IGEN**, hívási gráffal igazolva |
+| van-e RTTI-neve? | **nincs** — az osztály nem polimorf |
+| az ujjlenyomat-próba fogyasztóra alkalmazható? | **nem** — elégséges jel, nem szükséges (hatókör kimondva) |
+| melyik öt mezőt nem másolja az `operator=`? | `0xf8`, `0xfc`, `0x100`, `0x104`, `0x108` |
+| honnan kap a `+0x90` ELŐSZÖR értéket? | **nyitva** (örökölt) — a `FUN_005a4f10` forrás-oldala |
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszintű
+idézetekkel, rekeszenként külön mért argumentumokkal); az 5. sor utolsó
+tétele változatlanul nyitott.*
