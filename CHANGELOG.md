@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.338] – 2026-09-08
+
+### Javítva
+
+- **A „Lineáris elmosás" effektus eddig a legtöbb beállításnál egyáltalán
+  nem hatott — most a jó helyen élesít** (#2710). Az effektus a kép egyik
+  oldalát élesen hagyja, a másikat elmossa; azt, hogy hol van a határ, egy
+  szám adja meg a fénykép adatai között. Ezt a számot rosszul váltottuk át
+  képpontra: a határ a kép közepére esett, ahol a Picasa magja szándékosan
+  kihagyja a munkát — a fénykép tehát változatlan maradt. A helyes átváltás
+  a Picasa programkódjából van kiolvasva, és a hatás mérve is illeszkedik:
+  az élesség képen belüli lefutása a valódi Picasa kimenetével most 0,99-es
+  egyezést ad (korábban 0,10-et). Az elmosás ERŐSSÉGE még nem egyezik az
+  eredetivel — annak kimérése külön munka (#2736).
+
 ## [0.8.337] – 2026-09-08
 
 ### Hozzáadva
