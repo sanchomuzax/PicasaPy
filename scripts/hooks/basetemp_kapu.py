@@ -52,6 +52,26 @@ kilövés**: a `systemd-run --user --scope -p MemoryMax=…` cgroupba teszi a
 futást, így a túllépő **egyedül** hal meg, determinisztikusan (mérve ezen a
 gépen: 300 MiB-os plafonnál exit 137).
 
+**A negyedik hibaosztály — AD-HOC szkript plafon nélkül (#2752).** A fenti
+három a `pytest`-et védi. 2026-09-08 15:38-kor viszont egy **kutatói kör
+saját scratchpad-szkriptje** vitte el a gépet: `timeout 1800 … python
+/tmp/…/kulcs68.py`. Plafon nem volt rajta, mert a plafon csak a
+teszt-futtatóba került be (#2646).
+
+⚠️ **Az `earlyoom` végig futott, és nem lőtt** — és ez nem az ő hibája: a
+küszöbe `mem avail ≤ 12% ÉS swap free ≤ 20%`. A swap 0%-on állt, de az
+`availMiB` a 13 perces haldoklás alatt **soha nem ment 12% (1767 MiB) alá**;
+a mélypont 2250 MiB = 15,3% volt, 171,5-ös terhelés mellett. A gép nem
+memóriahiánytól halt meg, hanem **swap-thrashingtől**, amit az earlyoom
+szerkezetileg nem mér. Ezért nem az earlyoom küszöbeit hangoljuk (az a
+tulajdonos MINDEN alkalmazására hatna), hanem a saját futásainkat fogjuk be:
+a `MemorySwapMax=0` mellett nincs mit thrashingelni.
+
+**Amit ez a szabály NEM lát** (kimondva, mert a hiánya csendes): a `python -`
+heredoc-alakot csak akkor, ha nehéz modult importál (`capstone`, `cv2`,
+`numpy`, `torch`, `PIL`) — a lista nem teljes, és nem is lehet az. Egy rövid,
+szem előtt lévő heredoc olcsóbb átengedni, mint a kaput zajossá tenni.
+
 Minden hibaágon **fail-open**: egy elromlott kapu nem foghatja meg a
 párhuzamos munkameneteket — épp azokat védené.
 """
@@ -89,6 +109,15 @@ _FAJL = re.compile(r"\.py(::|$)")
 
 #: #2646: a memóriaplafon burkolója. Enélkül a `tests/app` alatti pytest —
 #: akár EGYETLEN fájlra — a gépet viheti el, nem csak magát.
+#: #2752: ad-hoc szkript — a repón KÍVÜLI, eldobható útvonalról indított
+#: `.py`. Ezt semmilyen futtató nem védi, és pont ez ölte meg a gépet.
+_ADHOC_UT = re.compile(r"(^|/)(tmp|scratchpad)(/|$)")
+
+#: #2752: heredoc/stdin alak (`python - <<PY`). Csak nehéz importtal fogjuk.
+_NEHEZ_IMPORT = re.compile(
+    r"\bimport\s+(capstone|cv2|numpy|torch|PIL)\b"
+    r"|\bfrom\s+(capstone|cv2|numpy|torch|PIL)\b")
+
 _PLAFON_JELE = "systemd-run"
 _PLAFON_KAPCSOLO = "MemoryMax="
 
@@ -171,9 +200,33 @@ def _van_plafon(tokenek: list[str]) -> bool:
             and any(_PLAFON_KAPCSOLO in t for t in tokenek))
 
 
+def _adhoc_szkript(tokenek: list[str]) -> str | None:
+    """A repón kívüli, eldobható útvonalról indított `.py`, ha van (#2752).
+
+    A `-c` egysoros és a repóbeli futtató (`scripts/run_tests.py`) NEM ilyen:
+    az előbbi rövid és szem előtt van, az utóbbi maga tesz plafont.
+    """
+    t = _fej(tokenek)
+    if not t or not _PYTHON.match(t[0]):
+        return None
+    for arg in t[1:]:
+        if arg == "-c":
+            return None            # egysoros: nem ad-hoc FÁJL
+        if arg.startswith("-"):
+            continue
+        if arg.endswith(".py") and _ADHOC_UT.search(arg):
+            return arg
+        break                      # az első nem-kapcsoló argumentum dönt
+    return None
+
+
 def blokkolando(cmd: str) -> str | None:
     """Az indok, ha a parancsot blokkolni kell — különben None."""
     for tokenek in _szakaszok(cmd):
+        # #2752: ad-hoc szkript plafon nélkül — pytesttől függetlenül
+        szkript = _adhoc_szkript(tokenek)
+        if szkript is not None and not _van_plafon(tokenek):
+            return f"ad-hoc szkript (`{szkript}`) MEMÓRIAPLAFON nélkül"
         if not _pytest_hivas(tokenek):
             continue
         if any(k in _ARTALMATLAN_KAPCSOLO for k in tokenek):
@@ -185,6 +238,12 @@ def blokkolando(cmd: str) -> str | None:
             return "pytest-hívás közös `--basetemp` nélkül"
         if _app_cel(tokenek) and not _van_plafon(tokenek):
             return "`tests/app` alatti pytest MEMÓRIAPLAFON nélkül"
+    # #2752: heredoc/stdin alak — csak nehéz importtal, és csak plafon nélkül
+    if _NEHEZ_IMPORT.search(cmd):
+        for tokenek in _szakaszok(cmd):
+            t = _fej(tokenek)
+            if t and _PYTHON.match(t[0]) and "-" in t[1:] and not _van_plafon(tokenek):
+                return "nehéz modult importáló szkript MEMÓRIAPLAFON nélkül"
     return None
 
 
@@ -231,6 +290,15 @@ def main() -> int:
         "    systemd-run --user --scope -q \\\n"
         "        -p MemoryMax=2400M -p MemorySwapMax=0 -- \\\n"
         "        python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
+        "\n"
+        "Miért az AD-HOC szkript is (#2752): 2026-09-08 15:38-kor egy\n"
+        "kutatói kör scratchpad-szkriptje 5,69 GiB-ra hízott, a swap\n"
+        "betelt, a terhelés 171,5 lett, és a gépet ÚJRA KELLETT INDÍTANI.\n"
+        "Az earlyoom végig futott és NEM lőtt: az `availMiB` sosem ment a\n"
+        "12%-os küszöb (1767 MiB) alá — a mélypont 2250 MiB volt. A gépet\n"
+        "nem memóriahiány vitte el, hanem swap-thrashing, amit az earlyoom\n"
+        "nem mér. A `MemorySwapMax=0` viszont igen: swap nélkül a folyamat\n"
+        "azonnal meghal, a gép él.\n"
         "\n"
         "A kár egyik esetben sem NÁLAD jelentkezik, hanem a gépen és a\n"
         "párhuzamos munkameneteknél — ezért kapu ez, és nem ajánlás.\n"

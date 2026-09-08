@@ -228,3 +228,70 @@ def test_az_uzenet_megnevezi_a_mert_karot(monkeypatch, capsys):
     hiba = capsys.readouterr().err
     assert "earlyoom" in hiba
     assert "MemoryMax" in hiba, "a kapu nem mondja meg, HOGYAN indítsa helyesen"
+
+
+# --- #2752: ad-hoc szkript plafon nélkül --------------------------------
+
+#: A 2026-09-08-i géphalál VALÓDI parancsa, a sessionnaplóból (5922. sor).
+#: Ha ezt a kapu nem fogja meg, az egész szabály díszlet.
+_A_GEPHALAL_PARANCSA = (
+    "timeout 1800 ~/picasapy-agent/venv/bin/python "
+    "/tmp/claude-1000/-home-sancho-Documents-PicasaPy/"
+    "4f34f7ba-7516-42d6-9880-2a9211c81458/scratchpad/kulcs68.py"
+)
+
+
+def test_a_gephalal_valodi_parancsat_elkapja():
+    """Magvetés: pontosan az a parancs, ami 2026-09-08-án elvitte a gépet."""
+    indok = kapu.blokkolando(_A_GEPHALAL_PARANCSA) or ""
+    assert "MEMÓRIAPLAFON" in indok, indok
+    assert "kulcs68.py" in indok, "a kapu nem nevezi meg, MELYIK szkript a baj"
+
+
+def test_ugyanaz_plafon_alatt_atmegy():
+    assert kapu.blokkolando(_PLAFON + _A_GEPHALAL_PARANCSA) is None
+
+
+def test_a_timeout_nem_rejti_el_a_szkriptet():
+    """A `timeout` IDŐT korlátoz, memóriát nem — mögé kell látni.
+
+    Ez a hibaosztály lényege: a 09-08-i parancson OTT VOLT a `timeout 1800`,
+    és pontosan semmit nem ért, mert swap-spirálban a folyamat „él”.
+    """
+    assert kapu.blokkolando("timeout 60 python3 /tmp/x/scratchpad/a.py") is not None
+
+
+@pytest.mark.parametrize("cmd", [
+    'python3 -c "import capstone; print(1)"',      # egysoros, szem előtt
+    "python scripts/run_tests.py",                 # a futtató maga tesz plafont
+    "cd ~/picasapy-agent && python3 eszkozok/egy_lap.py",   # repóbeli eszköz
+    "python3 - <<'PY'\nfrom pathlib import Path\nPY",       # könnyű heredoc
+    "grep -n 'scratchpad/x.py' README.md",         # csak EMLÍTI a parancs
+])
+def test_nincs_hamis_riasztas(cmd):
+    """A kapu ára a hamis riasztás — ezek mind legitim, mért hívások.
+
+    Zajos kaput a következő kör kikapcsol, és akkor semmi nem véd.
+    """
+    assert kapu.blokkolando(cmd) is None, cmd
+
+
+def test_a_nehez_import_heredocot_elkapja():
+    """A fájl nélküli alak is megölheti a gépet, ha nehéz modult húz be."""
+    cmd = "python3 - <<'PY'\nimport capstone\nmd = capstone.Cs(1, 2)\nPY"
+    assert kapu.blokkolando(cmd) is not None
+
+
+def test_az_uzenet_megnevezi_az_earlyoom_lyukat(monkeypatch, capsys):
+    """A mérés az üzenetben legyen, ne csak a jegyben.
+
+    Az earlyoom NEM hibás: a küszöbe `avail ≤ 12% ÉS swap free ≤ 20%`, és az
+    `availMiB` sosem ment 1767 MiB alá (mélypont 2250). Aki a kapuba ütközik,
+    lássa, miért nem elég a rendszer saját védelme.
+    """
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({
+        "tool_input": {"command": _A_GEPHALAL_PARANCSA}})))
+    assert kapu.main() == 2
+    hiba = capsys.readouterr().err
+    assert "MemorySwapMax=0" in hiba, "nem mondja meg a swap-tiltást"
+    assert "2250" in hiba, "nem hozza a mért mélypontot"
