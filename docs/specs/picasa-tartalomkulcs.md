@@ -223,6 +223,12 @@ dokumentált: a fájl tartalma az ini írása óta megváltozott — ott
 
 ### ⛔ Ami NYITVA marad
 
+> ⛳ **2026-09-08 (#2675) — A KÉRDÉS ÁTFOGALMAZVA.** A `.picasa.ini`-író
+> **nem hashel**: a `[rekord+0x90]` mezőt másolja ki (`0x007d5e2a`).
+> A helyes kérdés tehát: ki és mikor tölti fel azt a mezőt. Részletek és
+> a hashelő lánc teljes kimérése: „Az `originhash` ÍRÁSI LÁNCA — a kiíró
+> NEM hashel" szakasz a lap végén.
+
 **Melyik fájl bájtjait rögzíti a mentés pillanatában?** A kulcsnév
 („origin") és az `origloc` szomszédsága az *eredetit* sugallja, de ez
 nincs bizonyítva, és a 44 nem-egyező sort sem a fájl módosítási ideje,
@@ -518,3 +524,128 @@ tartalom-hash-sel megkülönböztetni. `originslow` sosem fordul elő
 olvassa az oszlopot. Ez **nem hiba**: a `.picasa.ini`/PMP round-triphez az
 olvasás elég, írni nem írunk PMP-t.
 
+
+## Az `originhash` ÍRÁSI LÁNCA — a kiíró NEM hashel (2026-09-08, #2675)
+
+*206. kutatói kör.* A #2675 (és a lap „⛔ Ami NYITVA marad" szakasza) azt
+kérdezi: **melyik fájl bájtjait rögzíti az `originhash` a mentés
+pillanatában** — a most kiírt szerkesztett képét, vagy a szerkesztés
+előtti eredetiét? A kör ezt a kérdést **átfogalmazza**, mert a
+diszasszemblátum szerint rosszul volt feltéve.
+
+### 1. ⭐ A `.picasa.ini`-író nem számol semmit — egy MEZŐT másol ki
+
+A metaadat-író `FUN_007d55f0` (2681 b) **név szerint pontosan két
+kulcsot** ír (a többi `push 0x00cb…` a benne lévő naplósorok szövege):
+
+```
+0x007d5e23  mov ecx, [esp + 0xadc]        ; a KÉP-REKORD (3. argumentum)
+0x007d5e2a  mov eax, [ecx + 0x90]         ; ← az originhash SZTRING
+0x007d5e32  je  0x007d5e8c                ; NULL        → a kulcs KIMARAD
+0x007d5e3a  je  0x007d5e8c                ; nulla hossz → KIMARAD
+0x007d5e40  je  0x007d5e8c                ; üres        → KIMARAD
+0x007d5e46  lea ebp, [eax + 4]            ; a szöveg
+0x007d5e74  push 0x00cb9254               ; "originhash"
+0x007d5e7f  call [edx+8]                  ; az ini-író virtuális metódusa
+```
+
+és közvetlenül utána:
+
+```
+0x007d5f8a  cmp byte ptr [ebx + 0xf9], 0  ; kapu a 2. argumentum objektumán
+0x007d5f91  je  0x007d604b                ; ha 0 → az origloc KIMARAD
+0x007d5f9e  mov eax, [ecx + 4]            ; ← az origloc SZTRING (rekord +4)
+0x007d5fde  push 0x00cb9260               ; "origloc"
+```
+
+⇒ **A kiírás pillanatában semmilyen hashelés nem történik.** A `+0x90`
+mező tartalma korábban keletkezett; a kérdés tehát nem az, hogy a kiíró
+mit hashel, hanem hogy **mikor és milyen útvonalból töltődik a
+`[rekord+0x90]`**.
+
+*A `FUN_007d55f0`-nak három hívója van (index-független `E8 rel32`
+pásztázás): `0x007d9bb4`, `0x007d9dc0`, `0x007dba1e`.*
+
+### 2. ⭐ A két kulcsot EGYETLEN burkoló állítja elő — és a lassú fél OPCIONÁLIS
+
+`FUN_00a4cd00` (113 b):
+
+```
+eax  = a GYORS kulcs kimenete      (fej+farok, FUN_00a4d210, 0x00a4cd21)
+[esp+0x18] = az ÚTVONAL
+edi  = a LASSÚ kulcs kimenete      (teljes fájl, FUN_00a4ce40, 0x00a4cd4b)
+
+0x00a4cd44  je 0x00a4cd68     ; ha edi == 0, a LASSÚ kulcs KI SEM SZÁMOLÓDIK
+```
+
+⇒ ez az egyetlen hely, ahol a **pár** (gyors + lassú) egyszerre
+keletkezhet — márpedig az `originhash` pontosan ez a pár.
+
+### 3. ⭐ A burkolónak KÉT hívója van, és az egyik csak a GYORS kulcsot kéri
+
+Index-független `E8 rel32` pásztázás az egész `.text`-en:
+
+| hívás | hol | `edi` (a lassú kimenet) |
+|---|---|---|
+| `0x0070e59a` | `FUN_0070e080` | **`0x0070e594 xor edi, edi`** ⇒ **csak a gyors kulcs** |
+| `0x0043598d` | `FUN_004353a0` | argumentumból (`[esp+0x24]`) ⇒ lehet mindkettő |
+
+⇒ **Az `originhash` párja KIZÁRÓLAG a `FUN_004353a0`-n át keletkezhet.**
+*(A `0x0070e59a` a másodpéldány-/index-ág, ahol elég a gyors kulcs — ez
+egyben megmagyarázza, miért látszik a gyors kulcs sokkal több helyen.)*
+
+### 4. A `FUN_004353a0` ÁLTALÁNOS szolgáltatás — azt hasheli, amit kap
+
+A hasholt útvonal a **saját argumentuma** (`0x004358f1
+mov eax, [esp + 0xa58]`), nem a rekordból jön. Tíz hívója van
+(index-független pásztázás), mindegyik azonosítva a sztringjeiről:
+
+| hívás | függvény | miről ismerszik meg |
+|---|---|---|
+| `0x00438691` | `FUN_00437cf0` | `caption` |
+| `0x004563db` | `FUN_00455ff0` | `keywords` |
+| `0x0045cbdc` | `FUN_0045c870` | `Picasa`, `%016I64x` |
+| `0x00464f05` | `FUN_00464990` | `filters`, `.\yt\ytIO.cpp` |
+| `0x00478336` | `FUN_00477ff0` | `geotag`, `%lf,%lf` |
+| `0x0054114a` | `FUN_0053fe30` | `runtime\filterdesc.xml` |
+| `0x006bf6a7` | `FUN_006befa0` | `Preferences`, `ShowUnixPaths` |
+| `0x006ec3d1` | `FUN_006ec280` | `%016I64x`, `%I64x` |
+| `0x007e4aac` | `FUN_007e3210` | **`CPropertiesDlg::*`** — a Tulajdonságok párbeszéd |
+| `0x0087f3d4` | `FUN_0087f220` | `runtime\missing.jpg` |
+
+⇒ **A hashelő láncban semmi nem dönti el az „eredeti vagy szerkesztett"
+kérdést** — azt kizárólag a **hívó által átadott útvonal** dönti el.
+
+⚠️ Egy jelöltet ez ki is zár: a `0x007e4aac` (a `FUN_007e3210`-ben) a
+**Tulajdonságok párbeszédé** — ott a `%016I64x`-es összefűzés
+(`0x007e4acf`) a képernyőre megy, nem a `.picasa.ini`-be.
+
+### 5. ⛳ Amit ez a #2675-re nézve KIMOND
+
+1. A jegy 1. pontjának megfogalmazása — „melyik fájl bájtjait kell
+   hashelni **a mentés pillanatában**" — **félrevezető**: a mentés
+   pillanatában nem hashel senki. A helyes kérdés: **ki és mikor tölti
+   fel a `[rekord+0x90]` mezőt, és milyen útvonallal.**
+2. A hashelő oldal ettől függetlenül **teljesen kimérve**: egy burkoló,
+   két hívó, ebből egy bizonyítottan csak a gyors kulcsot kéri.
+3. **A tulajdonos kontrollált mintája EGYELŐRE NEM KELL.** A jegy 1.
+   pontja `felhasználóra-vár`-t helyezett kilátásba; ez a kör
+   **megnevezett gépi utat** hagy maga után (ld. 6.), tehát a kérés
+   előrehozása korai lenne.
+
+### 6. A KÖVETKEZŐ lépés, megnevezve
+
+> **Ki írja a `[rekord+0x90]`-et?**
+
+A pásztázás előkészítve, de **horgony kell hozzá**: a `+0x90`-re az
+egész `.text`-ben **121** egész-értékadás megy (`mov [reg+0x90], reg`,
+`esp`/`ebp` bázis kizárva), és sztring-értékadó idiómával
+(`lea r,[obj+0x90]` + `call 0x005c2100`/`0x00401000` nyolc utasításon
+belül) **7**. Ezek nagy része más osztályé, ezért a szűrés feltétele a
+**rekord osztályának azonosítása** — a `FUN_007d55f0` három hívójából
+(`0x007d9bb4`, `0x007d9dc0`, `0x007dba1e`) kiolvasva, melyik objektum
+megy a 3. argumentumba.
+
+*Bizonyítottsági fok: **megerősített** az 1–4. pont minden állítása
+(utasításszinten, a pásztázások index-független `E8 rel32` alapon);
+**nyitott** a `[rekord+0x90]` írója.*
