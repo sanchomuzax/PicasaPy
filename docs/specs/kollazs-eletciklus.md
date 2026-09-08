@@ -4377,3 +4377,71 @@ kell kiolvasni — ki tolja fel a dokumentumot érték szerint, és melyik
 mezőből.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 44. K1 — a mentett dokumentum egy HARMADIK példány: a kezelő `[+0x64]`-e (2026-09-08, #1412)
+
+*196. kutatói kör. A 43.4 lépését viszi: melyik dokumentumot menti a
+program.*
+
+### 44.1 ⭐ Az autosave-lánc, és amit ÉRTÉK SZERINT visz
+
+`FUN_008390e0` (283 b) — az autosave-szál létrehozója:
+
+```
+0x008390e9  call 0x0097c5d0(0x28)          ; 40 bájtos objektum
+0x008390f7  [eax] = 0x00c81db4             ; ytProgress::vftable  (rtti)
+0x00839122  [ebp+0xbc] = eax               ; eltárolva a gazdában
+0x00839133  call 0x00c0769f(0x14d4)        ; az autosave-szál objektuma
+0x00839141  sub esp, 0x50                  ; hely a dokumentum ÉRTÉK SZERINTI másolatának
+0x00839144  lea eax, [ebp+0x64]            ; ← a FORRÁS
+0x0083914a  call 0x00839200                ; a dokumentum másoló konstruktora
+0x0083915b  push [ebp+0xb4]  ·  0x0083915c  call 0x00838ef0   ; az autosave-ktor (36.4)
+```
+
+⇒ **a mentésre kerülő dokumentum a gazda `[+0x64]` mezője** — nem a panel
+`[+0x138]` munkapéldánya és nem a `[+0x1b0]` alapja (43.1).
+
+### 44.2 ⭐ Ki a gazda: a kollázs-KEZELŐ / feladat
+
+A `FUN_008390e0` **két** hivatkozója:
+
+| hívó | sztringjei |
+|---|---|
+| `FUN_0083ba60` (2887 b) | `Picasa` · `locate` · `Cancel` · `il_CancelButton` · `collage` · `indexonlyreadonly` |
+| `FUN_008419e0` (1974 b) | `autosave` · **`Recovered Autosave`** · `collage::autosave` · `collage::recoveredautosave` |
+
+és a dokumentum-másoló konstruktor (`FUN_00839200`) hívóinak családja:
+
+| hívó | sztringjei |
+|---|---|
+| `FUN_0083dbf0` (546 b) | `Picasa` · `autosave` · `Collages` · **`CCollageManager::CollagesFolder`** · `CollageAutosave` |
+| `FUN_0083c5b0` (2260 b) | `Picasa` · `collage` · `indexonly` · `autosave` · `Collages` |
+| `FUN_0088a020` (740 b) | **`Collage Finished! (click to view)`** · `collage::done` |
+| `FUN_00884040` · `FUN_008844d0` | (a `CRegularGridTheme` slot0/slot2) |
+
+⇒ **Létezik egy HARMADIK kollázs-dokumentum**: a **kezelő/feladat**
+objektumának `[+0x64]` mezője, és a mentés/autosave **ezt** sorosítja.
+
+*Bizonyítottsági fok: **megerősített** a lánc (címekkel) és a
+`ytProgress` vtábla; **erős** a „kezelő" megnevezés — a `[+0x64]`-et
+tartó osztályt az `rtti` nem nevezi meg közvetlenül, a sztringkészlet
+azonosítja (`CCollageManager::CollagesFolder`).*
+
+### 44.3 ⛳ Amit ez a K1-re nézve KIMOND
+
+A 38.2 (`scale = 1,0` a panel dokumentum-építőjében) és a 43.3
+(regenerálás) **a panel dokumentumaira** vonatkozik. A `.cxf`-be viszont a
+**kezelő `[+0x64]`-e** kerül.
+
+⇒ **A K1 kérdését erre a példányra kell feltenni:** hogyan kapja a kezelő
+dokumentuma a csomópontjait, és mi kerül ott a `+0x2c`-be?
+
+**A KÖVETKEZŐ lépés, zárt halmazon:**
+
+1. a `FUN_00839200` (dokumentum-másoló ktor) **nyolc** hívója közül
+   azonosítani, melyik tölti fel a kezelő `[+0x64]`-ét, és **honnan**;
+2. a `FUN_00833cf0` (dokumentum-értékadás) két még be nem sorolt
+   célpontja: `0x0088b139` (`esi`) és `0x00889e54` — ezek valamelyike a
+   `[+0x64]` is lehet.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
