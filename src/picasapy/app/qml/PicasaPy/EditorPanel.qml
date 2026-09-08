@@ -1165,11 +1165,20 @@ Rectangle {
         //: a rajzolt keret viszont 130 × 26. Nálunk ez a `Rectangle` MAGA a
         //: rajzolt keret — nincs külön hely és külön kép —, tehát a
         //: látható értéket kell felvennie: 26.
-        readonly property real gombMagassag: Math.max(
-            26, editUndoBtn.kertMagassag, editRedoBtn.kertMagassag)
+        //: #2597: a MÉRT magasság, rögzítve. Korábban `Math.max(26, …a két
+        //: gomb kért magassága…)` állt itt, és a kért magasság a PLATFORM
+        //: betűmetrikáját hordozta: a CI windows-lába 32 képpontot mért (a
+        //: mért eredeti 26 helyett), a hosszabb effektneveknél pedig itt is
+        //: 36-ra nőtt. Az eredeti a feliratot szorítja a gombhoz, nem
+        //: fordítva — ezt a `PanelButton.rogzitettMagassag` végzi.
+        readonly property real gombMagassag: 26
 
         PanelButton {
             id: editUndoBtn
+            //: #2597: a gomb a mért 26 képpontot veszi fel, és a felirat
+            //: igazodik hozzá (betűillesztés + legfeljebb két sor) — a
+            //: magasság így nem függ a platform betűjétől.
+            rogzitettMagassag: globalUndoRow.gombMagassag
             objectName: "editUndoButton"
             label: panel.undoLabel
             buttonEnabled: panel.undoAvailable
@@ -1190,6 +1199,10 @@ Rectangle {
         }
         PanelButton {
             id: editRedoBtn
+            //: #2597: a gomb a mért 26 képpontot veszi fel, és a felirat
+            //: igazodik hozzá (betűillesztés + legfeljebb két sor) — a
+            //: magasság így nem függ a platform betűjétől.
+            rogzitettMagassag: globalUndoRow.gombMagassag
             objectName: "editRedoButton"
             label: panel.redoLabel
             buttonEnabled: panel.redoAvailable
