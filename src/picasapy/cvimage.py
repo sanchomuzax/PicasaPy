@@ -100,6 +100,14 @@ def scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:
 
     `max_dimension=None` vagy már elég kicsi kép esetén a bemenet
     változatlanul (azonos objektumként) tér vissza."""
+    # A gyorsítást a #2669 köre megpróbálta, és NEM sikerült (mérve
+    # 2026-09-08, RPi5): nyolc irányból a legjobb 2,0×-t hozott a magon,
+    # így a teljes út 16,1× helyett 7,9× — a 3×-os küszöb több mint
+    # kétszerese. Már az elő-szűrés önmagában 1,6–1,9×, tehát a magra
+    # ~1,2× jutna. A mért ok: a Pythonból hívható `cv2.sepFilter2D` nem
+    # decimál és egy szálon fut; a gyors, decimáló OpenCV-utak magja
+    # rögzített. Teljes tábla:
+    # `docs/benchmarks/2026-09-08-2669-mag-gyorsitas.md`.
     if max_dimension is None:
         return image
     height, width = image.shape[:2]
