@@ -4942,3 +4942,161 @@ azonosítja. A menet: a 56 bájtos elemű vektor `push 0x38`-as
 foglalói közül azok, amelyek **XML-/attribútum-sztringet** is érintenek.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 51. K1 — az UTOLSÓ nyitott út (`lea`) is negatív; a gépi keresés KIMERÜLT (2026-09-08, #1412)
+
+*203. kutatói kör. A 17.15 által nyitva hagyott egyetlen utat viszi végig —
+a `lea r,[r+0x2c]` mutatós ágat —, és tartalmi alapra helyezi a 17.10
+kilenc, addig csak hívási úton kizárt találatát.*
+
+⚠️ **A kör NEM az 50.5-öt vitte.** Az 50.5 a `.cxf`-beolvasó ágat nevezte
+meg következő lépésnek — a lap **17.8** / **17.12** / **17.13** / **17.16**
+szakaszai viszont ezt már teljesen kimérték (a beolvasó a `+0x68` staging-
+mezőbe ír, a `push_back` onnan viszi a csomópont `+0x2c`-jébe). Az 50.5
+kérdése tehát **már meg volt válaszolva**, csak az előző kör az összefoglaló
+felől nézte. A kör ezért a lap szerinti *valódi* maradékra állt át.
+
+### 51.1 A pásztázás és a POZITÍV KONTROLL
+
+Szűrő: `lea <reg>, [<reg> + 0x2c]` a kollázs-sávban
+(`0x00829000`–`0x00895000`, a 23.1 szerinti javított tartomány),
+**függvényenként** diszasszemblálva (nem bájtmintával), a `functions`
+indexből.
+
+- lefedettség: **879 függvény · 434 786 / 442 368 bájt (98,3 %)**;
+  index-hézag 829 darab, összesen **10 218 bájt** — ezekre a pásztázás
+  **nem** nyilatkozik;
+- **pozitív kontroll:** ugyanez a pásztázó `0x138` eltolással a
+  `0x0082a000`–`0x0082b000` szakaszon megtalálja a `0x0082a34c`
+  `lea eax,[edi+0x138]`-at (az 50.2-ben utasításonként elolvasott hely) —
+  **MEGVAN**, tehát az illesztés és az igazítás jó.
+
+Találat: **130 hely**, ebből `esp`-bázisú (verem-lokális) **119** ⇒ a
+vizsgálandó halmaz **11 hely**.
+
+### 51.2 A tizenegy hely, tételesen — mind SZTRING vagy MUTATÓ
+
+A `FUN_00401000` a **hivatkozásszámlált sztring elengedése**
+(`mov esi,[edi]` → első bájt < 0x80 vizsgálat → `[0xc40558]`), a
+`FUN_005c2100` pedig a sztring **értékadása** (`mov eax,[edi]` /
+`cmp eax,[esi]` → átkötés). Ez a két idióma azonosítja a `+0x2c` mezők
+valódi típusát:
+
+| cím | függvény | mi történik a `+0x2c`-vel | ítélet |
+|---|---|---|---|
+| `0x008300dc` | `FUN_008300c0` | `call 0x401000` → `mov [edi],0` | ⛔ sztring elengedése |
+| `0x0083198a` | `FUN_00831750` | `test dword [eax],0xffffff00` · `cmp byte [eax+4],0` | ⛔ sztring-tartalom vizsgálat |
+| `0x00833de6` | `FUN_00833cf0` | egész `cmp`, majd `mov [edi],eax` | ⛔ sztring átkötése (a dokumentum neve) |
+| `0x00834af3` | `FUN_008347b0` | `mov ecx,esi` → `call 0x999170` → `push 0xcb1fb8` | ⛔ sztring/adatfolyam-metódus |
+| `0x00860032` | `FUN_0085ff90` | `mov [edi],ebp` → `movzx edx,byte [ebp]` | ⛔ sztring átkötése |
+| `0x00879909` | `FUN_008798d0` | `push esi` → `call 0x9732b0` | ⛔ sztring betétele konténerbe |
+| `0x00879b7b` | `FUN_008798d0` | `shr edx,1` · `lea esi,[eax+edx*8]` · `call 0x9732b0` | ⛔ **8 bájt** lépésközű vektor `push_back`-je (a csomóponté 56) |
+| `0x00879d18` | `FUN_00879d10` | `lea edi,[esi+4]` · két `call 0x401000` | ⛔ két szomszédos sztring lebontása |
+| `0x0087e0cd` | `FUN_0087dcd0` | `lea esi,[esp+0x28]` · `call 0x5c2100` | ⛔ sztring **értékadás** (a forrást egy virtuális név-lekérés töltötte) |
+| `0x008831c8` | `FUN_00882f20` | `mov eax,[ebx]` · `call 0xc07738` | ⛔ heap-mutató felszabadítása |
+| `0x0088ab66` | `FUN_0088aae0` | `test dword [eax],0xffffff00` · `cmp byte [eax+4],0` | ⛔ sztring-tartalom vizsgálat |
+
+⇒ **A mutatós (`lea`) úton a csomópont `+0x2c`-jére a kollázs-sávban
+NINCS lebegőpontos írás.** A tizenegyből egyik sem csomópont: mindegyik
+sztring vagy heap-mutató.
+
+*Bizalmi fok: megerősített* (mind a tizenegy hely utasításonként
+elolvasva; a hatókör a fenti 98,3 %-os lefedettség).
+
+### 51.3 ⭐ A 17.10 kilenc találata is kizárva — most TARTALMI alapon
+
+A 17.10 kimondta, hogy a tíz sávon kívüli csomópont-alakú float-íróból
+csak egyet olvasott végig, a többit **hívási úton** zárta ki, és hogy
+háromra (`0x0050be50`, `0x0050cdb0`, `0x0050d560`) ez a kizárás
+**gyengébb**. Ez a kör mind a kilencet elolvasta:
+
+| cím | mi ez (RTTI / sztring) | miért nem csomópont |
+|---|---|---|
+| `0x0050bd70` | **`CDesaturateFilter` ktora** (`Filtered B&W`, `desat`, `CDesaturateFilter::name`) | `+0x1c/+0x20/+0x24 = 0,333` (fénysúlyok), `+0x28…+0x30 = 0` — **eltolt** elrendezés, hét float |
+| `0x0050be50` | ugyanez beágyazva (31 b) | ua. |
+| `0x0050cdb0` | ugyanennek a **klónozója** (`+0x1c`…`+0x30` + a `+0x14` bájt átmásolása) | ua. |
+| `0x0050d560` | `editslider1/editslider` | szerkesztő-csúszka, nem csomópont |
+| `0x005c2350` | **`TextCursorHandler`** ktora (`0x00c94b2c`) | `+0x14 = 1,0`, `+0x18`…`+0x34` nullák, `+0x44`…`+0x50` egészek |
+| `0x007e68f0` | **`GroupRingMoveHandler`** ktora (`0x00cb9e2c`) | `+0xc`…`+0x2c` nullák, `+0x20` **`qword`** (double) |
+| `0x007e6930` | **`GroupRingMoveEdgeHandler`** ktora (`0x00cb9e44`) | ua. |
+| `0x007e69b0` | **`GroupRingKnobHandler`** ktora (`0x00cb9e5c`) | `+0xc`…`+0x18` nullák, `+0x1c` = **1,0**, `+0x20` **`qword`**, `+0x28/+0x2c` nullák |
+| `0x009d7a60` | **`ytSelectionDragHandler`** ktora (`0x00cda768`) | `+0x10`…`+0x2c` = **−1,0**, `+0x30`…`+0x48` = 0, `+0x4c` = 0,9 |
+
+⇒ Mindegyik **konstruktor**, mindegyik **állandót** ír, és egyiknek sincs
+meg a csomópont hat-float / 56 bájt lépésközű alakja. **A 17.10 gyengébb
+kizárása ezzel tartalmi kizárássá erősödött.**
+
+### 51.4 ⭐ A beolvasó NEM alakítja át az értéket — és egy finomítás a 17.16-hoz
+
+A `scale` attribútum ága, utasításonként:
+
+```
+0x008332a0  mov eax, [edx + 4]        ; az attribútum ÉRTÉKE
+0x008332a5  je  0x8332ac              ; ha nincs érték…
+0x008332a7  add eax, 4
+0x008332ac  mov eax, 0xc7f979         ; …akkor az ÜRES sztring
+0x008332b1  push eax
+0x008332b2  call 0xc080d7             ; atof
+0x008332b7  fstp dword ptr [ebx + 0x68]
+```
+
+⇒ az `atof` eredménye **változatlanul**, szorzás és eltolás nélkül kerül a
+staging-mezőbe. **A beolvasó nem szoroz** — ez a `.cxf` csomópont-`scale`-re
+nézve kizárja a „betöltéskori átszámítás" magyarázatot. *(A `0x00c7f979`
+tartalma kiolvasva: üres sztring.)*
+
+**Finomítás a 17.16-hoz.** A 17.16 helyesen írja, hogy a `<node>` eleji
+alapérték-blokk `fld1`-gyel **1,0**-t tesz a `+0x68`-ba. Az itt kiolvasott
+ág viszont azt mutatja, hogy **jelen lévő, de érték nélküli** `scale`
+attribútum esetén az `atof("")` = **0,0** ezt felülírja. A két eset tehát
+különbözik:
+
+| a `.cxf`-ben | a staging `+0x68` értéke |
+|---|---|
+| `scale` attribútum **nincs** | **1,0** (`0x00832fbd fld1`) |
+| `scale=""` (jelen, üres) | **0,0** (`atof("")`) |
+| `scale="…"` | a szám, **változatlanul** |
+
+### 51.5 ⛳ A (b) ág LEZÁRVA — és egy ÖNHELYESBÍTÉS az 50.4-hez
+
+A 17.14 két magyarázatot hagyott: **(a)** a `scale` a fájlból öröklődik,
+**(b)** van egy nem látott író. A (b) ág **minden** alakja megjárva:
+
+| alak | hol zárult le | eredmény |
+|---|---|---|
+| tömb-alakú (`bázis+index+0x2c`), `mov` és `fstp` | 17.15/1. pásztázás | negatív (8 találat, egyik sem csomópont) |
+| mutatós `mov [reg+0x2c], <float>` | 17.15/2. pásztázás | negatív (9 találat) |
+| **mutatós `lea r,[r+0x2c]`** | **51.2 (ez a kör)** | **negatív (11 hely)** |
+| sávon kívüli csomópont-alakú írók | 17.10 + **51.3** | negatív, most tartalmi alapon |
+| `313,0` beégetett literál (egész és float) | 17.15/3. | negatív |
+| a `"scale"` sztring hivatkozói | 17.15/4. | csak a beolvasó és a kiíró |
+
+⇒ **A (b) ág teljes egészében lezárva, negatívval.**
+
+⛔ **ÖNHELYESBÍTÉS.** Az 50.4 abból, hogy a `+0x138` dokumentum *egészben*
+csak üres/`1,0`-s/önmagából kaphat értéket, azt vezette le, hogy a
+nem-`1,0` érték **„helyben, egy élő csomópont módosításával"** kerül be.
+Ez az olvasat **megdőlt**: helyben módosító sem létezik — a mostani kör
+zárta le az utolsó ilyen utat. A helyes következtetés ezzel:
+
+> a `scale` **egyetlen** nem-`1,0` forrása a **beolvasó**, azaz **maga a
+> fájl** ⇒ a 17.14 **(a)** ága az egyetlen, amit a bináris nem cáfol.
+
+*(Az 50.4 többi állítása — a `+0x138` táplálási listája és a
+konstrukció kizárása — áll; csak a belőle levont „helyben" olvasat esik.)*
+
+### 51.6 ⛳ A GÉPI ÚT KIMERÜLT — a jegy állapota
+
+A K1 gépi eszközökkel **nem vihető tovább**: minden író-alak,
+minden hatókör és a beolvasó átalakítás-mentessége is mérve van. Ami az
+(a) ág igazolásához kell, az **egy mérés a tulajdonos gépén** — egy
+**frissen létrehozott** kollázs `.cxf`-je: ha ott `scale="1.000000"` áll,
+az (a) igazolt, és a `313` kérdése átfordul arra, hogy melyik **korábbi**
+program írta a mintáink értékeit.
+
+⚠️ Ez a kérés **már ott áll a #1412 törzsében** („📋 Neked szóló kérés”),
+tehát **nem kérjük újra** — a jegy állapota változik: `bináris-kutatható`
+**le**, `felhasználóra-vár` **fel**.
+
+*Állapot: **BLOKKOLT** (a tulajdonos gépe kell). Ez a K1 harmadik
+megengedett végállapota — nem „csak nyitva".*
