@@ -153,15 +153,62 @@ QtObject {
     // oszlop ~35 értékkel alattuk, a világos ~10-zel felettük áll — a
     // vésés a kettő KÜLÖNBSÉGÉBŐL látszik, nem az abszolút értékből.
     //
-    // ⚠️ EZ A KÉT SZÍN SZÁNDÉKOSAN NEM TÉMAFÜGGŐ. A fogantyú átmenete
-    // (`PicasaSlider.qml`) beégetetten világos (`#fdfdfd` → `#e4e4e4`),
-    // sötét témában sem vált — tehát egy sötét témára hangolt vésés
-    // (#2f2f2f / #6b6b6b) a VILÁGOS fogantyún jelenne meg, 193 illetve
-    // 133 értékkel a szomszédja alatt: nem vésés, hanem fekete perjel.
-    // Amikor a fogantyú maga is témafüggővé válik (#2663), ide vissza kell
-    // hozni a `dark ? … : …` ágat — de csak EGYÜTT a fogantyúval.
-    readonly property color sliderHandleGrooveDark: "#c7c7c7"
-    readonly property color sliderHandleGrooveLight: "#f4f4f4"
+    // #2663: a fogantyú EGYÜTT lett témafüggővé ezzel a két színnel (a
+    // #2641 code review pontosan ezt kérte). A világos ág VÁLTOZATLAN — az
+    // eredeti mérés. A sötét ág SAJÁT DÖNTÉS (nincs sötét mód az
+    // eredetiben): a #2663-mal bevezetett sötét fogantyú-kitöltés
+    // (`sliderHandleTopLeft` … `sliderHandleBottomRight`, lent) a vésés
+    // helyén, KIRAJZOLVA mérve, ~112 világosságú (`test_csuszka_veset_2641`
+    // dark-témás próbája) — a sötét oldalt ehhez képest ~30-cal
+    // sötétebbre, a világosat ~12-vel világosabbra hangoltuk, hogy a
+    // különbség a #2641 review kritikáját (193/133 — „nem vésés, hanem
+    // fekete perjel") elkerülje, ÉS a jegy kért ~40-es felső korlátjától
+    // is biztos távolságot tartson.
+    readonly property color sliderHandleGrooveDark: dark ? "#525252" : "#c7c7c7"
+    readonly property color sliderHandleGrooveLight: dark ? "#7c7c7c" : "#f4f4f4"
+
+    // #2656/#2663: a FOGANTYÚ kitöltése — négy sarok, mert az eredeti
+    // átmenet ÁTLÓS (lefelé ÉS balról jobbra sötétedik), nem tisztán
+    // függőleges. A `PicasaSlider.qml` ezért KÉT, egymás mellé állított,
+    // fél szélességű, önállóan lekerekített Rectangle-lal rajzolja: a bal
+    // fél a BAL oszlop színeivel fut felülről lefelé, a jobb fél a JOBB
+    // oszlopéval — a látvány a kettő határán adja ki az átlós sötétedést.
+    //
+    // A világos ág a #2656 MÉRÉSE (`respack.yt`, `scaleslider/thumb` és
+    // `editslider/thumb`, a tömör rajz 4…15. sorában, x = 4 a bal és x = 9
+    // a jobb oldalon):
+    //
+    //   bal, teteje    245 → #f5f5f5      jobb, teteje    234 → #eaeaea
+    //   bal, alja      225 → #e1e1e1      jobb, alja      211 → #d3d3d3
+    //
+    // A lenyomott állapot a korábbi kóddal azonos ELVET követi (a nyomott
+    // fogantyú EGYSÉGESEN sötétebb) — a négy értéket fejenként 20-szal
+    // toltuk lejjebb.
+    //
+    // A sötét ág SAJÁT DÖNTÉS: nincs mért eredeti. Az arányokat (bal
+    // oszlop kevésbé, jobb oszlop jobban sötétedik lefelé; a jobb oldal
+    // felül is sötétebb, mint a bal) a világos ágéból vettük át, a
+    // `sliderGroove` sötét kitöltésénél (`#3b4553`, világosság ~70)
+    // MINDIG világosabb szinten tartva — a fogantyú így akkor is elválik
+    // a sávtól, ha a legsötétebb sarkán áll.
+    readonly property color sliderHandleTopLeft: dark ? "#7d828a" : "#f5f5f5"
+    readonly property color sliderHandleBottomLeft: dark ? "#646972" : "#e1e1e1"
+    readonly property color sliderHandleTopRight: dark ? "#71767f" : "#eaeaea"
+    readonly property color sliderHandleBottomRight: dark ? "#555a64" : "#d3d3d3"
+    readonly property color sliderHandleTopLeftPressed: dark ? "#696e76" : "#e1e1e1"
+    readonly property color sliderHandleBottomLeftPressed: dark ? "#50555e" : "#cdcdcd"
+    readonly property color sliderHandleTopRightPressed: dark ? "#5d626b" : "#d6d6d6"
+    readonly property color sliderHandleBottomRightPressed: dark ? "#414650" : "#bfbfbf"
+
+    // A fogantyú KERETE — eddig fixen világos volt, a #2663 ezt is
+    // témafüggővé teszi. A világos ág VÁLTOZATLAN. A sötét ág a
+    // legsötétebb kitöltési saroknál (`sliderHandleBottomRight`,
+    // világosság ~92) is sötétebb, hogy a szegély a kitöltéstől
+    // MINDENHOL elváljon — ugyanaz a viszony, mint világos témában
+    // (`#b5b5b5` = 181, a kitöltés legsötétebb sarka `#d3d3d3` = 211 —
+    // a keret ~30-cal a kitöltés alatt van).
+    readonly property color sliderHandleBorder: dark ? "#373c44" : "#b5b5b5"
+    readonly property color sliderHandleBorderPressed: dark ? "#282c32" : "#8f8f8f"
 
     readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"

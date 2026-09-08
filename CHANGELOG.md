@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.342] – 2026-09-08
+
+### Javítva
+
+- **A csúszkák fogantyúja sötét témában is világos szürke volt, és az
+  árnyalása sem az eredetit követte** (#2656, #2663). Az eredeti Picasa
+  fogantyúja nem csak fentről lefelé, hanem balról jobbra is sötétedik — ez
+  nálunk eddig hiányzott, és a fogantyú egészében világosabb is volt a
+  lemértnél. Mostantól a négy sarok árnyalata a Picasából mért értékek
+  közelében van, és a fogantyú (a keretével együtt) sötét témában is
+  sötétedik, a közepébe vésett vonallal együtt — így az sötét háttéren is
+  vésésnek látszik, nem fekete csíknak.
+
 ## [0.8.341] – 2026-09-08
 
 ### Javítva
