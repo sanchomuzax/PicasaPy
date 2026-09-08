@@ -81,10 +81,11 @@ _TABLE_STEP = 1.0 / 256.0
 #: A natív skálázó szorzó a súlytábla építésénél.
 _TABLE_SCALE = 255.9999
 
-#: A MÉRT elmosási sugár a mi `iir_blur`-paraméterezésünkben (#2736). A
-#: referencia-exporttól mért ΔE ehhez az egy értékhez tartozik (0,279); a
-#: hatókör a modul-doc 1. pontjában áll kimondva.
-LINBLUR_MERT_SUGAR = 1.5
+#: A MÉRT elmosási sugár (#2736, újrakalibrálva #2773). Az 1,5 a RÉGI,
+#: illesztett együttható-alakhoz tartozott; a binárisból kiolvasott natív
+#: alakkal (#2773) a referencia-minimum 0,5-nél van — épp annál az értéknél,
+#: amit a burkoló a magnak átad. Ld. `linblur_blur_radius`.
+LINBLUR_MERT_SUGAR = 0.5
 
 
 def _spline_tail(t: float) -> float:
@@ -121,15 +122,31 @@ _WEIGHT_TABLE.setflags(write=False)
 
 
 def linblur_blur_radius(width: int, amount: float) -> float:
-    """A `linblur` elmosási sugara — MÉRVE állandó (#2736).
+    """A `linblur` elmosási sugara — MÉRT állandó (#2736, újrakalibrálva #2773).
 
-    A `width` és az `amount` SZÁNDÉKOSAN nem szól bele: a mérés szerint a
-    „Mennyiség" nem hat (három bitre azonos referencia-export három
-    különböző lánccal), és a szélesség-skálázásra sincs bizonyíték. A két
-    paraméter az API stabilitása miatt marad — a hívók (`chain`, a
-    regisztráció) aláírása nem változik.
+    A `width` és az `amount` SZÁNDÉKOSAN nem szól bele: mérve a „Mennyiség"
+    nem hat (három bitre azonos referencia-export három különböző lánccal),
+    és a szélesség-skálázásra sincs bizonyíték.
 
-    Ld. a modul-doc 1. pontját: ott áll a mérés és a hatóköre.
+    ⭐ **A #2773 újrakalibrálta.** Amíg az együttható-alak illesztett volt
+    (`exp(−1/R)`, 65536), a referenciát 1,5 adta vissza; a binárisból
+    kiolvasott natív alakkal (`trunc((1 − 0,1^(1/R))·32767)`) a minimum
+    **0,5**-nél van, és ott a ΔE **0,2407** (1,5-tel: 1,148). A minimum
+    éles: 0,45 → 0,2611; 0,55 → 0,2628.
+
+    ⭐ **És a 0,5 nem illesztett szám:** a burkoló (`0x008f99c0`) épp a
+    `filters=` lánc ELSŐ normált értékét adja át a magnak
+    (`fstp dword [esp]` a `call 0x0090de10` előtt), az pedig továbbadja az
+    elmosónak mindkét tengelyre (`0x0090dec6`, `0x0090def6`) — és a mi
+    egyetlen referencia-láncunkban ez az érték **pontosan 0,5**. A két
+    megfejtés tehát egymást igazolja.
+
+    ⛔ **Amit ez MÉGSEM jelent:** hogy a sugár egyenlő a korong `x`-ével.
+    Egyetlen korong-állásunk van (`0,5; 0,5`), amelyen az összes jelölt
+    (`|x|`, `0,5` állandó, `(1+x)/3`, …) ugyanazt adja. Az `|x|`-es alak
+    ráadásul azt állítaná, hogy `x = 0`-nál (csak függőlegesen eltolt
+    korong) az effekt NEM MOS — ezt bizonyíték nélkül nem vezetjük be.
+    Ezért állandó, és a döntést a második referencia-pont hozza meg: #2772.
     """
     del width, amount  # mérve nem hatnak — ld. a docstringet
     return LINBLUR_MERT_SUGAR

@@ -74,11 +74,10 @@ class TestWeightTable:
 
 class TestBlurRadius:
     def test_a_sugar_MERVE_allando(self) -> None:
-        """#2736: a sugár se a szélességtől, se a „Mennyiség"-től nem függ —
-        a mérés a `tests/render/test_linblur_sugar_2736.py` fejlécében áll
-        (három bitre azonos referencia-export, három különböző lánccal)."""
-        assert linblur_blur_radius(800, 2.0) == pytest.approx(1.5)
-        assert linblur_blur_radius(1600, 0.0) == pytest.approx(1.5)
+        """#2736 + #2773: se a szélesség, se a „Mennyiség" nem szól bele; az
+        érték a natív együttható-alakhoz újrakalibrálva 0,5."""
+        assert linblur_blur_radius(800, 2.0) == pytest.approx(0.5)
+        assert linblur_blur_radius(1600, 0.0) == pytest.approx(0.5)
 
 
 class TestApplyLinblur:
