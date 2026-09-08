@@ -1925,19 +1925,22 @@ Column {
                         anchors.fill: parent
                         //: `outputlayout_text` — angolul „More...”
                         text: qsTr("More...")
-                        // #2493: NINCS ikonja. A hiányzó `icons/export.svg`-re
-                        // mutató hivatkozás minden induláskor
-                        // `QQuickImage: Cannot open` hibát írt a konzolra, és a
-                        // gombon üres helyőrző látszott.
+                        // #2537: az ikon a MÉRT rajzot követi. Az eredetiben
+                        // ez az `outputlayout/export7_icon` (a `.tre` szerint
+                        // a `morebutton` gyereke): **13 × 7**, egyetlen tömör,
+                        // FELFELE mutató háromszög (soronként 1, 3, 5, 7, 9,
+                        // 11, 13 képpont), egyetlen színnel — `#69729B`,
+                        // élsimítás nélkül. A `respack.yt` rétegképéből
+                        // kicsomagolva mérve; levezetés:
+                        // `docs/specs/picasa-keptalca.md` 21.3.
                         //
-                        // Az eredetiben a gomb ikonja az
-                        // `outputlayout/export7_icon` (a `.tre` szerint a
-                        // `morebutton` gyereke), MÉRT mérete **13 × 7** —
-                        // vagyis egy lapos, széles jel, nem a mi 16 × 16-os
-                        // export-piktogramunk. A rajzot NEM találjuk ki:
-                        // amíg a `respack.yt` rétegképe nincs kimérve, a gomb
-                        // a feliratával áll (a felirat a `.tre`-ből mért
-                        // „További lehetőségek…"). Kutatási jegy: #2537.
+                        // ⚠️ A #2493 óta a gomb ikon NÉLKÜL állt: az akkori
+                        // hivatkozás egy SOSEM LÉTEZETT `icons/export.svg`-re
+                        // mutatott (a `export7_icon` név félrevezet — a
+                        // Picasa sorszámozott gombjaira utal, nem
+                        // exportálásra), és minden induláskor
+                        // `QQuickImage: Cannot open` hibát írt a konzolra.
+                        iconSource: "icons/tray-more.svg"
                         iconObjectName: "trayMoreIcon"
                         labelObjectName: "trayMoreLabel"
                         enabled: true
