@@ -135,7 +135,17 @@ class HangosHurok(QEventLoop):
         """Lefuttatja a hurkot, és ELBUKIK, ha nem a jelzés zárta le."""
         if self.jelzes_megjott:
             # #2423: a jelzés a hurok indítása ELŐTT megjött — a quit()
-            # ilyenkor elveszne, és a teljes időzítőt kiülnénk
+            # ilyenkor elveszne, és a teljes időzítőt kiülnénk.
+            #
+            # ⚠️ #2743: DE egy kézbesítési kört itt is tartani kell. Szálak
+            # közti (sorba állított) kapcsolatnál a Qt KAPCSOLATONKÉNT külön
+            # eseményt posztol: a hurok saját (közvetlen) szlotja már
+            # lefutott, a hívóé viszont még a sorban áll — az azonnali
+            # visszatérés azt elnyelné. Ez a segéd SZERZŐDÉSE, ld. a
+            # `_jelzesre` docstringjét: „a hívó bármikor köthet rá további
+            # szlotot". Élesben a `test_face_scan_controller.py` esetei
+            # buktak így, GYORSAN (0,88 mp) és véletlenszerűen.
+            QCoreApplication.processEvents()
             return 0
         # a vészfék-timer a hurok GYERMEKE: a hurokkal együtt megsemmisül,
         # így nem marad árva, később elsülő timer a processzben (#430)
