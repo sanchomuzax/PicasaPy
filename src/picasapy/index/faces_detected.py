@@ -13,7 +13,6 @@ a saját találattal") a terv KÉSŐBBI lépcsője."""
 
 from __future__ import annotations
 
-import os
 import sqlite3
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -401,14 +400,16 @@ OK_KIZARVA = "kizarva"
 #: A mappa ÉS az alfái — a kizárás az egész fára vonatkozik (`#449`: „a
 #: mappára és az alfáira"). A `LIKE`-minta ESCAPE-elve megy, mert egy valódi
 #: mappanévben is állhat `%` vagy `_` (mindkettő joker a `LIKE`-ban).
-_MAPPAFA_FELTETEL = "(f.path = ? OR f.path LIKE ? ESCAPE '\\')"
-
-#: #2761: az elválasztó a PLATFORMÉ, nem fixen `/`. Az index natív alakot
-#: tárol (`index/paths.py`: `str(Path(...).resolve())`), tehát Windowson a
-#: `C:\kepek\alfa` sosem illeszkedett a korábbi, fixen `/`-t fűző mintára —
-#: a kizárt mappa ALFÁI nem kapták meg a jelölést. Modul-szintű konstans,
-#: hogy a teszt MINDKÉT alakot mérni tudja a fejlesztői gépen is.
-_ELVALASZTO = os.sep
+#:
+#: ⚠️ #2765: MINDKÉT elválasztóra illeszkedünk, nem csak a platforméra. A
+#: #2761 a fixen `/`-t fűző mintát a platformére (`os.sep`) cserélte — és
+#: ezzel átcsapott a másik oldalra: a POSIX-alakban tárolt utak (átvett
+#: adatbázis, másik gépről hozott `.picasa.ini`-korpusz, régebbi indexünk)
+#: Windowson estek ki. A `folders.path` tehát nem feltétlenül natív alakú —
+#: ezt a `rstrip("/\\")` már eddig is kimondta, csak a minta nem követte.
+_MAPPAFA_FELTETEL = (
+    "(f.path = ? OR f.path LIKE ? ESCAPE '\\' OR f.path LIKE ? ESCAPE '\\')"
+)
 
 
 def _like_vedett(szoveg: str) -> str:
@@ -417,18 +418,16 @@ def _like_vedett(szoveg: str) -> str:
     return szoveg.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def _mappafa_parameterek(
-    folder_path: str, *, elvalaszto: str | None = None
-) -> tuple[str, str]:
-    """A `_MAPPAFA_FELTETEL` két paramétere: a pontos út és az alfa-minta.
+def _mappafa_parameterek(folder_path: str) -> tuple[str, str, str]:
+    """A `_MAPPAFA_FELTETEL` három paramétere: a pontos út, majd az alfa-minta
+    MINDKÉT elválasztóval (perjel és fordított perjel).
 
-    Az `elvalaszto` alapértéke a platformé; a teszt adja meg kifejezetten,
-    hogy MINDKÉT alak mérhető legyen ott is, ahol csak az egyik natív."""
-    sep = _ELVALASZTO if elvalaszto is None else elvalaszto
-    # a záró elválasztót le kell vágni — MINDKÉT alakot, mert a `folders.path`
-    # jöhet másik platformról is (átvett adatbázis, `.picasa.ini`-korpusz)
-    torzs = folder_path.rstrip("/\\")
-    return (folder_path, _like_vedett(torzs) + _like_vedett(sep) + "%")
+    Nincs platform-elágazás: a tárolt út alakja nem a futó gépé, hanem azé,
+    ahol az index készült. Két mintát adunk, és a `LIKE` dönt."""
+    # a záró elválasztót MINDKÉT alakban levágjuk (a `C:\kepek\` és a
+    # `/kepek/` ugyanazt a fát jelenti, mint a lezáró jel nélküli alak)
+    torzs = _like_vedett(folder_path.rstrip("/\\"))
+    return (folder_path, torzs + "/%", torzs + "\\\\%")
 
 
 def mark_face_scan(

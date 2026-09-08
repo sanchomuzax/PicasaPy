@@ -41,34 +41,36 @@ from picasapy.index.faces_detected import (
 
 
 class TestMinta:
-    def test_posix_elvalaszto(self):
-        pontos, minta = _mappafa_parameterek("/kepek", elvalaszto="/")
+    """#2765: MINDKÉT elválasztóra illeszkedünk — nincs platform-elágazás."""
+
+    def test_mindket_minta_megjon(self):
+        pontos, perjel, fordított = _mappafa_parameterek("/kepek")
         assert pontos == "/kepek"
-        assert minta == "/kepek/%"
+        assert perjel == "/kepek/%"
+        # a `\` a mintában DUPLÁZÓDIK: a `LIKE` `ESCAPE '\'`-t használ,
+        # tehát ott a backslash önmagát is escape-eli
+        assert fordított == "/kepek\\\\%"
 
-    def test_windows_elvalaszto(self):
-        """A `\\` a mintában DUPLÁZÓDIK: a `LIKE` `ESCAPE '\\'`-t használ,
-        tehát ott a backslash önmagát is escape-eli."""
-        pontos, minta = _mappafa_parameterek(r"C:\kepek", elvalaszto="\\")
+    def test_windows_alaku_ut(self):
+        pontos, perjel, fordított = _mappafa_parameterek(r"C:\kepek")
         assert pontos == r"C:\kepek"
-        assert minta == "C:\\\\kepek\\\\%"
+        assert perjel == "C:\\\\kepek/%"
+        assert fordított == "C:\\\\kepek\\\\%"
 
-    @pytest.mark.parametrize("elvalaszto", ["/", "\\"])
-    def test_a_zaro_elvalasztot_levagja(self, elvalaszto):
-        """A záró elválasztó nem duplázódhat a mintában — a régi kód a `\\`-t
-        nem vágta le (`rstrip("/")`), tehát Windowson `…\\\\\\\\%` jött ki."""
-        ut = f"/kepek{elvalaszto}" if elvalaszto == "/" else f"C:\\kepek{elvalaszto}"
-        _pontos, minta = _mappafa_parameterek(ut, elvalaszto=elvalaszto)
-        vart_veg = "/%" if elvalaszto == "/" else "\\\\%"
-        assert minta.endswith(vart_veg), minta
-        assert not minta.endswith(vart_veg * 2), f"dupla elválasztó a mintában: {minta}"
+    @pytest.mark.parametrize("zaro", ["/", "\\"])
+    def test_a_zaro_elvalasztot_levagja(self, zaro):
+        """A záró elválasztó nem duplázódhat a mintában — MINDKÉT alakot le
+        kell vágni (a perjelre szűkített vágás a fordított perjelet
+        bent hagyta)."""
+        _pontos, perjel, fordított = _mappafa_parameterek(f"C:\\kepek{zaro}")
+        assert perjel == "C:\\\\kepek/%", perjel
+        assert fordított == "C:\\\\kepek\\\\%", fordított
 
-    @pytest.mark.parametrize("elvalaszto", ["/", "\\"])
-    def test_a_LIKE_jokereket_escape_eli(self, elvalaszto):
+    def test_a_LIKE_jokereket_escape_eli(self):
         """Egy valódi mappanévben is állhat `%` vagy `_` — mindkettő joker."""
-        ut = f"/a_b{elvalaszto}c%d" if elvalaszto == "/" else f"C:\\a_b{elvalaszto}c%d"
-        _pontos, minta = _mappafa_parameterek(ut, elvalaszto=elvalaszto)
-        assert "\\_" in minta and "\\%" in minta, minta
+        _pontos, perjel, fordított = _mappafa_parameterek("/a_b/c%d")
+        for minta in (perjel, fordított):
+            assert "\\_" in minta and "\\%" in minta, minta
 
 
 class TestAdatbazis:
@@ -77,11 +79,8 @@ class TestAdatbazis:
 
     @pytest.mark.parametrize("elvalaszto", ["/", "\\"])
     def test_az_alfa_fotoja_is_jelolest_kap(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, elvalaszto: str
+        self, tmp_path: Path, elvalaszto: str
     ) -> None:
-        from picasapy.index import faces_detected
-
-        monkeypatch.setattr(faces_detected, "_ELVALASZTO", elvalaszto)
         gyoker = "/lib" if elvalaszto == "/" else r"C:\lib"
         alfa = f"{gyoker}{elvalaszto}alfa"
         masik = "/masik" if elvalaszto == "/" else r"C:\masik"
@@ -112,13 +111,8 @@ class TestAdatbazis:
             okok = {sor[0] for sor in conn.execute("SELECT ok FROM face_scan")}
             assert okok == {OK_KIZARVA}
 
-    def test_a_hasonlo_nevu_TESTVER_mappa_nem_erintett(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_a_hasonlo_nevu_TESTVER_mappa_nem_erintett(self, tmp_path: Path) -> None:
         """`C:\\lib` kizárása nem érintheti a `C:\\lib-masolat`-ot."""
-        from picasapy.index import faces_detected
-
-        monkeypatch.setattr(faces_detected, "_ELVALASZTO", "\\")
         path = tmp_path / "index.db"
         with open_index(path) as conn:
             for azonosito, mappa in enumerate((r"C:\lib", r"C:\lib-masolat"), start=1):
@@ -145,11 +139,42 @@ def test_a_sqlite_LIKE_tenyleg_igy_escape_el(tmp_path: Path) -> None:
         "INSERT INTO t VALUES (?)",
         [(r"C:\lib",), (r"C:\lib\alfa",), (r"C:\lib-masolat",), (r"C:\libX\a",)],
     )
-    _pontos, minta = _mappafa_parameterek(r"C:\lib", elvalaszto="\\")
+    _pontos, _perjel, fordított = _mappafa_parameterek(r"C:\lib")
     sorok = [
         sor[0]
         for sor in conn.execute(
-            "SELECT p FROM t WHERE p LIKE ? ESCAPE '\\' ORDER BY p", (minta,)
+            "SELECT p FROM t WHERE p LIKE ? ESCAPE '\\' ORDER BY p", (fordított,)
         )
     ]
     assert sorok == [r"C:\lib\alfa"], sorok
+
+
+def test_VEGYES_utak_ugyanabban_az_indexben(tmp_path: Path) -> None:
+    """#2765: a két alak KIZÁRTA egymást, amíg egyetlen elválasztóra szűrtünk.
+
+    A `folders.path` alakja nem a futó gépé, hanem azé, ahol az index
+    készült — egy átvett adatbázisban (vagy másik gépről hozott
+    `.picasa.ini`-korpuszban) POSIX-alak is állhat egy windowsos gépen. Ez a
+    próba ezért EGY indexbe teszi mindkettőt.
+    """
+    path = tmp_path / "index.db"
+    with open_index(path) as conn:
+        mappak = ["/lib", "/lib/alfa", r"C:\lib", r"C:\lib\alfa"]
+        for azonosito, mappa in enumerate(mappak, start=1):
+            conn.execute(
+                "INSERT INTO folders(id, path, has_ini) VALUES (?, ?, 0)",
+                (azonosito, mappa),
+            )
+            conn.execute(
+                "INSERT INTO photos(id, folder_id, name, kind, size, mtime_ns)"
+                " VALUES (?, ?, 'a.jpg', 'photo', 10, 5)",
+                (azonosito, azonosito),
+            )
+        conn.commit()
+
+        assert mark_folder_excluded(conn, "/lib") == 2, "a POSIX-fa két fotója"
+        assert face_scan_done(conn, 2, mtime_ns=99, size=99), "a POSIX alfa"
+        assert not face_scan_done(conn, 3, mtime_ns=5, size=10), "a windowsos ág"
+
+        assert mark_folder_excluded(conn, r"C:\lib") == 2, "a windowsos fa két fotója"
+        assert face_scan_done(conn, 4, mtime_ns=99, size=99), "a windowsos alfa"
