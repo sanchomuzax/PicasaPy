@@ -1020,3 +1020,89 @@ listáját. A menet: ezt a listát metszeni a 206. kör 121 találatos
 *Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszinten);
 **kimondottan nyitott** az 5. pont szerinti lekérdező oldal és a `+0x90`
 feltöltője.*
+
+## A metszet lefutott — érdemben ÜRES, és egy saját szám helyesbítése (2026-09-08, #2675)
+
+*210. kutatói kör.* Az előző kör lépését viszi: az osztály **használói**
+(a ktor `0x00413740` / dtor `0x00432270` hivatkozói) metszve a `+0x90`
+**íróival**.
+
+### 1. A metszet: két találat — és mindkettő HAMIS POZITÍV
+
+| pásztázás | találat |
+|---|---|
+| osztály-használó (`0x413740`/`0x432270` operandusként) | **29** függvény |
+| `mov [reg(+reg)+0x90], reg` (`esp`/`ebp` bázis kizárva) | **104** függvény |
+| **metszet** | **2** |
+
+A kettő: `FUN_0092f6d0` (3341 b) és `FUN_009316c0` (622 b) — mindkettő a
+**Web Albums Atom/RSS** modulból. Elolvasva **egyik sem** a rekordra ír:
+
+`FUN_0092f6d0` **valóban** használja az osztályt — `0x009302db push 0x413740`,
+`0x00930337 push 0x432270`, és a vektort is kezeli
+(`0x00930268 imul ecx, ecx, 0x130`) —, de a két `+0x90`-írása a **saját**
+elemző-objektumára megy:
+
+```
+0x0092fa06  mov edx, [ebx + 0x24]        ; MÁSIK objektum (gphoto:access ág)
+0x0092fa09  mov [edx + 0x90], eax
+
+0x00930232  mov edx, [ecx + 4]
+0x00930235  shr edx, 1                   ; egy HOSSZ
+0x0093023a  mov [ebx + 0x90], edx        ; a saját +0x90-e, EGÉSZ
+```
+
+⇒ **a metszet érdemben üres**: a rekord `+0x90`-ét egyszerű
+mezőértékadással **senki** nem írja.
+
+### 2. ⛔ ÖNHELYESBÍTÉS: a 206. kör „7 találat"-a a SZŰRŐ műterméke volt
+
+A 206. kör így írta le a másik pásztázást: *„sztring-értékadó idiómával
+(`lea r,[obj+0x90]` + `call 0x005c2100`/`0x00401000` nyolc utasításon
+belül): **7**"*. A pásztázó azonban a következő nyolc utasításból az
+**engedélyezett listára illeszkedő ELSŐ** hívást vette, nem a
+**közvetlenül következőt** — így például a `0x007d91e3`-at
+`call 0x00401000`-ként könyvelte, holott ott valójában
+`0x007d91e9 call 0x007d8cf0` áll (a 207. kör szétszedője).
+
+**A javított, szűretlen pásztázás** (a `lea` után a **közvetlenül**
+következő hívás, előírt cél nélkül): **59 hely** az egész `.text`-en.
+**Ez a helyes szám**; a 7 nem az.
+
+### 3. ⭐ És az 59-ből egy sincs osztály-használóban
+
+A javított listát a 29 osztály-használóval metszve: **nulla**.
+
+### 4. ⚠️ A MÓDSZER KORLÁTJA — ezért nem mondom ki, hogy „senki nem írja"
+
+Egy C++ osztály **`operator=`-a és másoló konstruktora nem hivatkozik**
+a ktorára/dtorára. A „hivatkozik-e a ktorra/dtorra" szűrő tehát
+**elvileg sem láthatja** a mezőnkénti másolót — pontosan azt, ami a
+`+0x90`-be értéket vihet. Ez a kör negatívja ezért **szűk hatókörű**:
+
+> a rekord `+0x90`-ét **közvetlen mezőírás** és **a mező címén át hívott
+> sztring-metódus** sem tölti fel — a **másoló/értékadó** út nyitva marad.
+
+### 5. ⛔ Negatív melléklelet: a `949998,0` NEM ujjlenyomat
+
+A 209. kör a ktorból kiolvasta, hogy a `+0x20`/`+0x28` alapértéke
+**949998,0** (`0x00c7ccf8`). Kézenfekvő lett volna ezzel horgonyozni a
+rekordot — de nem lehet: a konstansra az egész programban **több tucat**
+függvény hivatkozik (`FUN_0040d160`, `FUN_0040eef0`, `FUN_00425f60`,
+`FUN_00441ed0`, `FUN_0045cfa0`, `FUN_00464990`, … ). Ez egy általános
+**„nincs érték" őrszem**, nem osztály-jellemző.
+
+### 6. A KÖVETKEZŐ lépés, megnevezve
+
+> **A rekord MÁSOLÓ/ÉRTÉKADÓ metódusa** — az a függvény, amely
+> `[forrás+0x90]`-et olvas **és** `[cél+0x90]`-be ír.
+
+A pásztázás lefutott, a jelöltlista megvan (olvasás ÉS írás ugyanabban a
+függvényben), de a **rekordhoz kötéshez második mező-horgony kell**, és
+az nem a `949998,0` lehet (5. pont). Használható jelöltek a ktorból:
+`+0x68 = −1` (`0x00413790`–`0x00413793`) és `+0x70 = 2` (`0x00413796`)
+**együtt** — két szomszédos, szokatlan alapérték.
+
+*Bizonyítottsági fok: **megerősített** az 1–3. és az 5. pont
+(utasításszinten, a hamis pozitívok elolvasva); a 4. pont a módszer
+kimondott korlátja, ezért a negatívot **nem** általánosítom.*
