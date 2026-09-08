@@ -127,7 +127,8 @@ a Google 2016-ban leállított.
 | `acquirepanel` | `upload_label` | „Upload" / „Feltöltés" |
 
 **Az `acquirepanel` négyese** az importáló panel megosztás-blokkja
-(`share_container`, `groups_container`, `upload_checkbox` —
+(`acquirepanel/share_container`, `acquirepanel/groups_container`,
+`acquirepanel/upload_checkbox` —
 `0x00518840`, `0x005154f0`); az `add_groups_button` az importáló
 parancs-elosztójában (`0x0051f070`) ül, a `sync_options_button` mellett.
 

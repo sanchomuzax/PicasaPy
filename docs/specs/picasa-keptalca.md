@@ -50,7 +50,7 @@ parancsának feliratai (ld. 3.).
 *Forrás: `thumbui.tre:702` (`thumbui/basecontrolset`) · `thumbui.tre:307` (`thumbui/scratch`) · `thumbui.tre:344` (`thumbui/scratchback`) · `thumbui.tre:326` (`thumbui/scratchclear`) · `thumbui.tre:317` (`thumbui/scratchhold`) · `thumbui.tre:300` (`thumbui/scratchlabel`) · `thumbui.tre:304` (`thumbui/scratchpadbase`).*
 
 A tálca dobozát a `.tre` kényszerei adják (a respackben csak az **ikonok**
-vannak: `scratchhold_icon` 468 b, `scratchclear_icon` 593 b,
+vannak: `thumbui/scratchhold_icon` 468 b, `thumbui/scratchclear_icon` 593 b,
 `addto_arrow` 53 b, `#holdadorner` 438 b):
 
 ```

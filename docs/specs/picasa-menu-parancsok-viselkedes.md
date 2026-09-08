@@ -2123,8 +2123,8 @@ nyomatméret két indítás közt is megmarad.**
 
 ### 40.3 A példányszám és a nyomtató-őr
 
-- **Példányszám fotónként** (`copieslabel`): `addprintsbutton` /
-  `subprintsbutton` gombpár — buboréksúgójuk *„Add another copy of each
+- **Példányszám fotónként** (`printpanel/copieslabel`): `printpanel/addprintsbutton` /
+  `printpanel/subprintsbutton` gombpár — buboréksúgójuk *„Add another copy of each
   Photo to be printed"* / *„Subtract a copy…"*. ⇒ **képenkénti**
   példányszám, nem összesített.
 - **Nyomtató-őr** (`0x00744a00`): `IDS_MUST_INSTALL_PRINTER` —
@@ -2137,7 +2137,7 @@ nyomatméret két indítás közt is megmarad.**
 
 ### 40.5 ⭐ A vágás/kicsinyítés PÁR — és hogy MELYIK az alapértelmezett (2026-09-02)
 
-A `printpanel.tre` 152–175. sora szerint a `croptoggle` és a `fittoggle`
+A `printpanel.tre` 152–175. sora szerint a `croptoggle` és a `printpanel/fittoggle`
 ugyanannak a `cropcontainer`-nek a gyereke — **két állapotú választás**,
 és a `croptoggle`-ön ott áll:
 
@@ -3515,12 +3515,12 @@ csak más néven vagy más megfogalmazásban. Mind felvéve a
 | `editpanel/croptext` | „Choose a size below, then drag on the picture to…" (56. sor) |
 | `crop_aspect_menu` | `cropAspectCombo` (81.) + `cropAspectList` (109.) |
 | `editpanel/crop_delete_custom` | `cropAspectDelete<i>` (164.), **megerősítéssel** („Delete this custom aspect ratio?", 186.) |
-| `cropsug_preview1/2/3` | `cropSuggestion0/1/2` (270–272.), a „Suggested crops" sorban (237.) |
+| `editpanel/cropsug_preview1/2/3` | `cropSuggestion0/1/2` (270–272.), a „Suggested crops" sorban (237.) |
 
 | eredeti | nálunk (retus / vörösszem) |
 |---|---|
-| `retouch_label` · `retouchtext` | `EditorRetouchPanel.qml:47` · `:56` |
-| `editpanel/redeye_label` · `redeyetext` | `EditorRedeyePanel.qml:55` · `:64` |
+| `retouch_label` · `editpanel/retouchtext` | `EditorRetouchPanel.qml:47` · `:56` |
+| `editpanel/redeye_label` · `editpanel/redeyetext` | `EditorRedeyePanel.qml:55` · `:64` |
 
 Hatás a táblán: párosítva 143 → **153**, hiányzik 388 → **382**,
 bizonytalan 158 → **154**.
@@ -3715,7 +3715,7 @@ ugyanaz a tartalom, más megfogalmazás, ezért nem párosult gépi úton.
 Tábla: párosítva 153 → **157**, hiányzik 382 → **380**, bizonytalan
 154 → **152**.
 
-*(Az `editcircle1`, `editcircle1_well`, `editcontrol_well`,
+*(Az `editpanel/editcircle1`, `editpanel/editcircle1_well`, `editcontrol_well`,
 `editcheckbox1/2` **felirat nélküli szerkezeti tartók** — a 45.1 szerint
 a mérés ezeket nem tudja értékelni, és önmagukban nem jelentenek
 funkcióhiányt.)*
@@ -3967,8 +3967,8 @@ külön Alkalmaz/Mégse gombbal. A leltár `audio_label` („Hang") és
 
 ### 58.3 A felvett klip VISSZAJÁTSZHATÓ a panelen
 
-`capturevbar/moviecontrols/play` · `…/playicon` · `…/pause` ·
-`…/pauseicon` (`0x00626640`), mellettük `/next` · `/prev` és a
+`capturevbar/moviecontrols/play` · `moviecontrols/playicon` · `…/pause` ·
+`moviecontrols/pauseicon` (`0x00626640`), mellettük `/next` · `/prev` és a
 `/movieparent` konténer.
 
 ⇒ A rögzítés után **a panelen belül** meg lehet nézni a klipet, és
@@ -4156,7 +4156,8 @@ Panel-szintű nevek ugyanitt: `capturemoviepanelpopup/basepanel`,
 `capturemoviepanelpopup/settingspanel`,
 `capturemoviepanelpopup/filmstrip`, valamint a névparancsok
 `snapshot`, `pause`, `/stop`, `/videosrc`, `/audiosrc`, `/outputsize`,
-`/activitycontainer`, `/capture_bgtext`, `/movieparent`.
+`/activitycontainer`, `/capture_bgtext` (teljes néven
+`capturemoviepanelpopup/capture_bgtext`), `/movieparent`.
 
 #### Bizonyítottsági fok (58.5–58.6)
 

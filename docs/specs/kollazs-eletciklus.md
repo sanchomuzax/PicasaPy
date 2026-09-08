@@ -130,9 +130,10 @@ layer:collagepanel/#collageprog_spinner_orig      (1 243 B)
 layer:collagepanel/collageprog_spinner            (1 748 B)
 ```
 
-A hozzájuk tartozó vezérlők: `collageprog_clip`, `collageprog_status`,
-`collageprog_title`, `collageprog_spinner` (`0x00887390`, `0x00887580`,
-`0x00887920`).
+A hozzájuk tartozó vezérlők (teljes néven `collagepanel/collageprog_base`,
+`collagepanel/collageprog_clip`, `collagepanel/collageprog_status`,
+`collagepanel/collageprog_title`, `collagepanel/collageprog_spinner`)
+(`0x00887390`, `0x00887580`, `0x00887920`).
 
 ⇒ Az „animáció" egy **pörgő** (`spinner`) egy `overlaydecrect` alapon —
 ugyanaz a minta, mint az `activity/spinner` és az `activitycapture/spinner`
@@ -2280,8 +2281,9 @@ meglévő dekompilátum) ezzel KIMERÜLT.**
 **A következő lépés a DRÁGA út**, és pontosan megnevezhető: **célzott
 Ghidra-dekompiláció a kollázspanel képhozzáadási ágára** — a `0x0082a670`
 (a kollázspanel, `collagepanel/remove_node`, `rand_placement`,
-`rand_order`, `picker_panel`, `filmstrip` sztringekkel) hívási fája, két
-szint mélyen, azzal a konkrét kérdéssel: **hol kapja a frissen felvett
+`rand_order`, `picker_panel`, `filmstrip` **puszta** sztringekkel — teljes
+néven `collagepanel/rand_placement`, `collagepanel/rand_order`) hívási
+fája, két szint mélyen, azzal a konkrét kérdéssel: **hol kapja a frissen felvett
 csomópont a `+0x2c` mezőjét**.
 
 *Bizonyítottsági fok a kizárásokra: **megerősített** (bájtmintás pásztázás

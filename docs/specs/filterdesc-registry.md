@@ -3666,7 +3666,7 @@ A csempéket a `FUN_005d7c20` építi (12 csempe fülenként, `cmp ebx, 0xc` a
 
 ⇒ **tételméret 12 bájt**, `+0` = elsődleges szűrő-azonosító,
 `+4` = másodlagos (örökölt) azonosító vagy `NULL`, `+8` = 0 mindenütt.
-A három effekt-fül a `tabpanel3` / `tabpanel4` / `tabpanel5`.
+A három effekt-fül a `tabpanel3` / `editpanel/tabpanel4` / `editpanel/tabpanel5`.
 
 | # | fül | `+0` (elsődleges) | `+4` (másodlagos) | `mode=` (a szállított `filterdesc.xml`-ből) |
 |---|---|---|---|---|

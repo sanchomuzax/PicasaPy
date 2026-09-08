@@ -476,7 +476,7 @@ a 4. fül 1. sorának 3. csempéjén **„Holga-szerű"** olvasható, és a
 
 A rács alatt, a 4. sor alatt közvetlenül a **„Visszavonás" / „Újra"**
 gombpár fut végig (y ≈ 418–440); mindkettő **letiltott** ezen a felvételen
-(▶ERŐFORRÁS `editpanel/filter_undo` / `filter_redo`).
+(▶ERŐFORRÁS `editpanel/filter_undo` / `editpanel/filter_redo`).
 
 ### 3.3 Az „alkalmazva" jelvény (`fx%d_adorn`)
 
@@ -674,7 +674,7 @@ A készlet **teljes leltára** (ez egyben a paraméter-alpanel felső korlátja)
 |---|---|---|
 | Csúszka + fölötte felirat | **4** | `editslider1..4` + `editpanel/editslider1..4_container`, `editpanel/editlabel1..4` |
 | Jelölőnégyzet + felirat | **2** | `editpanel/editcheckbox1..2`, `editpanel/editlabel5..6` |
-| Színkorong + felirat + körcsúszka | **2** | `editpanel/colorwheel0..1`, `colorwheel_label0..1`, `slidercircle0..1` |
+| Színkorong + felirat + körcsúszka | **2** | `editpanel/colorwheel0..1`, `editpanel/colorwheel_label0..1`, `editpanel/slidercircle0..1` |
 | Színpipetta-kapcsoló | 1 | `editpanel/droppertoggle` |
 | Radír (maszkoláshoz) | 1 | `editpanel/eraserbutton` |
 | Alkalmaz / Mégse | 1+1 | `editpanel/ok`, `editpanel/cancel` |
@@ -1600,8 +1600,8 @@ amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
 
 | elem | ikon | buboréksúgó |
 |---|---|---|
-| `video_control_bar/setin` | `setin_icon` (X: közép **−2**) | „Create a new starting point" |
-| `video_control_bar/setout` | `setout_icon` (X: közép **+2**) | „Create a new ending point" |
+| `video_control_bar/setin` | `video_control_bar/setin_icon` (X: közép **−2**) | „Create a new starting point" |
+| `video_control_bar/setout` | `video_control_bar/setout_icon` (X: közép **+2**) | „Create a new ending point" |
 | `video_control_bar/moviemode1` | `fullscreen_icon` (középre) | „Play full screen" |
 
 **Alap**
@@ -2073,7 +2073,7 @@ a fotóhoz társított webhelyre"**).
 | `editpanel/selection_label` | `text(Selected)` | **„Kijelölve"** |
 | `editpanel/selection_label_zoom` | — | **„Kijelölve"** |
 
-Mindkettőnek **kétrészes háttere** van (`selection_label_bg_left` +
+Mindkettőnek **kétrészes háttere** van (`editpanel/selection_label_bg_left` +
 `_bg_right`, `editpanel.tre:964`–`:994`), a `_zoom` változat pedig az
 `editpanel/editback`-hez kötődik, míg az alap az `editpanel/overlay_group`-hoz.
 

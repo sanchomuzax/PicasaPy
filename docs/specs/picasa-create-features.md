@@ -1916,8 +1916,8 @@ A két panel neve `makemoviepanel/text_picker_panel` és
 `size_label`, `style_label` NEM a `.tre`-ből jön — a `respack.yt`
 `layer:makemoviepanel/text(...)` rétegei hordozzák.)*
 
-A fül ikonjai a respackben: `bold_icon`, `italic_icon`, `outline_icon`,
-`inserticon`, `removeicon`.
+A fül ikonjai a respackben: `bold_icon`, `italic_icon`, `makemoviepanel/outline_icon`,
+`makemoviepanel/inserticon`, `makemoviepanel/removeicon`.
 #### F) NEGATÍV EREDMÉNY — a `titleoption_listbox` ága HALOTT
 
 A `0x006223b0` kezel egy `makemoviepanel/titleoption_listbox` nevű listát
@@ -3243,7 +3243,7 @@ attól még érvényes lelet (a három elem valóban hiányzott a specekből), d
 
 | elem | mit tudunk | bizonyíték |
 |---|---|---|
-| **`albumname`** | felirat a **1. fülön** (`m_displayfont12`, `XConstraint 0, 0, 35`, `Property textwrap 0`); a szövegét **két** függvény állítja | sztring `0x00c9c9e8`; hivatkozók `0x0061a6c0` (429 b), `0x0061bbd0` (614 b) |
+| **`makemoviepanel/albumname`** | felirat a **1. fülön** (`m_displayfont12`, `XConstraint 0, 0, 35`, `Property textwrap 0`); a szövegét **két** függvény állítja | sztring `0x00c9c9e8`; hivatkozók `0x0061a6c0` (429 b), `0x0061bbd0` (614 b) |
 | **`indicator`** | a **filmszalag lejátszásjelzője**: a `filmstrip` gyereke, vízszintesen középre kényszerítve (`m_centerX`, `YConstraint 0, 0, 0`); a húzás-/találatkezelő kiszámolja a **téglalapja közepét** (`(x0+x1)/2`, `(y0+y1)/2`) | sztring `0x00c9c52c`; a panelépítő `0x00613b50` és a kezelő **`FUN_006214e0`** (2020 b): elemkeresés `0x0062166b`, középpont `0x00621684`–`0x006216c1` |
 | **`audiostrip`** | a filmszalaggal párhuzamos **hangsáv-csík** (`audioclip` → `filmcontainer`, `m_scaleXY`) | csak a `.tre` |
 
@@ -3253,7 +3253,7 @@ A `string_xrefs` szerint a `makemoviepanel/audiostrip` és a
 `makemoviepanel/audioclip` **egyetlen** függvényből sem kerül elő névvel —
 szemben a `filmstrip`-pel (`0x00613b50`), az `indicator`-ral
 (`0x00613b50`, `0x006214e0`), a `previewimage`-dzsel (`0x00618050`,
-`0x0061ca80`), a `backcolor`-ral (`0x00621240`) és a `show_captions`-szel
+`0x0061ca80`), a `makemoviepanel/backcolor`-ral (`0x00621240`) és a `show_captions`-szel
 (`0x00618050`, `0x0061df10`).
 
 ⇒ **A hangsáv-csíkot a kód sosem kéri le a nevén.** Vagy a szülőjén

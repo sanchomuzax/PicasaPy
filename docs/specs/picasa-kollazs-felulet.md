@@ -208,8 +208,8 @@ A megfejtett bitek *(a 2026-08-18-i kör tizenegyre bővítette az eredeti
 | 5 (`0x20`) | a képek **szabadon elhelyezhetők** — a `ringnode` létrejön, és a `collage::shadows` beállítás a modellbe kerül (`spec+0x28c`) | `0x008307ef`, `0x0083a512` |
 | 7 (`0x80`) | a csomópont `+0x168` lebegőpontos mezője (elforgatás) él | `0x0083ad5f` |
 | 8 (`0x100`) | a **darabszámfüggő alapméret** kiszámolódik (ld. 9.0) | `0x0082ca95`, `0x00831a6a` |
-| 9 (`0x200`) | a **három képkeret-gomb** (`borders_group`) látszik; és `spec+0x37` = 1 | `0x008317f5`, `0x0082cb3a` |
-| 10 (`0x400`) | a **térköz-csúszka** (`spacing_group`) látszik | `0x00831860` |
+| 9 (`0x200`) | a **három képkeret-gomb** (`collagepanel/borders_group`) látszik; és `spec+0x37` = 1 | `0x008317f5`, `0x0082cb3a` |
+| 10 (`0x400`) | a **térköz-csúszka** (`collagepanel/spacing_group`) látszik | `0x00831860` |
 | 11 (`0x800`) | az **árnyék-jelölő engedélyezett** | `0x00831818` |
 
 Ebből a hat témára:
@@ -524,13 +524,13 @@ erőforrás.
 
 ## 3. A háttér — három mód, nem kettő
 
-A `background_types` rádiócsoport két gombot mutat (`color_bg`,
+A `collagepanel/background_types` rádiócsoport két gombot mutat (`color_bg`,
 `bitmap_bg`), de a modell **három** hátteret ismer:
 
 | mód | kulcs | mit ír a `.cxf`-be |
 |---|---|---|
 | egyszínű | `solid` | a választott ARGB |
-| kép | (a `background_container` képe) | a háttérkép hivatkozása |
+| kép | (a `collagepanel/background_container` képe) | a háttérkép hivatkozása |
 | a képek **átlagszíne** | `collage::avgcolor` | `solid`-ként, a kiszámolt színnel |
 
 A módot a specifikáció **`+0x2c`** mezője tartja, és a beállító
@@ -551,7 +551,7 @@ neki háttér-beállítása a panelen (0. bit).
 
 A `.tre` szerint a **`color_bg` az alapértelmezés** (`Property setpressed 1`),
 és mindegyik gomb `showtarget`-tel kapcsolja a saját dobozát:
-`color_bg → colorpick_container`, `bitmap_bg → background_container` **és**
+`color_bg → collagepanel/colorpick_container`, `bitmap_bg → collagepanel/background_container` **és**
 `background_bitmap`.
 
 A színválasztó két részből áll: a `collagepanel/colorcircle` (153, 241) 37×37

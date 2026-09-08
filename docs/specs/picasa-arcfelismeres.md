@@ -1052,7 +1052,9 @@ váltakozó gomb: kijelölés nélkül „Az összes jóváhagyása", kijelölé
 `#butlink(view_online): view_online`, `#superbutton(…selectsug): selectsug`,
 `#text(Description): album_description`, `#title_fade0/1` — a
 `picasa-respack-format.md` 2. pontja szerint **rétegtípus-jelölés**, nem
-holt kód.)*
+holt kód; a `#sug_filter_icon` teljes néven `faceheaderpanel/sug_filter_icon`
+— a másik öt maradvány-név a `headerpanel.tre`-ből származik, nem ebből a
+panelból.)*
 
 ### 15.6 Az „Ismeretlen emberek" TESTVÉRPANEL
 
