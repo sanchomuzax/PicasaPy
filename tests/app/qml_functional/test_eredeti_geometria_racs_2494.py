@@ -61,12 +61,17 @@ EREDETI_GOMBMAGASSAG = 26.0
 #: | platform | ma mért gomb | eltérés a mért eredetitől |
 #: |---|---|---|
 #: | POSIX (a fejlesztői gép) | 26.0 px | **0.0** — paritás |
-#: | Windows | 32.0 px | **6.0** |
+#: | Windows | 32.0 px → **26.0** (#2597) | 6.0 → **0.0** |
 #:
-#: A windowsos 6 px VALÓDI hűség-eltérés, nem mérési műtermék: a
-#: referencia-képernyőmentés is windowsos Picasáról készült. Ezt külön jegy
-#: viszi (#2596) — itt a racsni annyit garantál, hogy NE NŐJÖN.
-_ELTERESEK = {"nt": 6.0, "posix": 0.0}
+#: ⭐ **A windowsos 6 px MEGSZŰNT (2026-09-08, #2597).** A gomb magassága
+#: azóta nem betűmetrika-függő: a `PanelButton.rogzitettMagassag` a MÉRT 26
+#: képpontot veszi fel, a felirat pedig igazodik hozzá (fokozat-illesztés,
+#: legfeljebb két sor) — ahogy az eredeti is a feliratot szorítja a gombhoz.
+#: Ezért mindkét platform rácsa **0,0**. A jelenséget külön őr zárja ki:
+#: `test_gombmagassag_platformfuggetlen_2597.py` (ott a próba nem
+#: platform-elágazás, hanem magas betűs platform utánzása, tehát helyben is
+#: fut).
+_ELTERESEK = {"nt": 0.0, "posix": 0.0}
 MAI_ELTERES = _ELTERESEK.get(os.name, 0.0)
 
 #: Fél képpont játék a lebegőpontos összehasonlításnak.

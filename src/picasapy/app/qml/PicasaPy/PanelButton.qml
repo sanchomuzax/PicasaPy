@@ -11,6 +11,69 @@ Rectangle {
     id: pbtn
     property string label: ""
     property bool buttonEnabled: true
+    //: #2597: OPCIONÁLIS rögzített gombmagasság. 0 = kikapcsolva (minden
+    //: eddigi hívó ezt kapja: a gomb a felirathoz igazodik).
+    //:
+    //: Aki megadja, azt kéri, hogy a gomb MÉRT magassága legyen a mérce, a
+    //: felirat pedig igazodjon hozzá — ez az eredeti Picasa viselkedése: a
+    //: rajzolt keretet az erőforrás adja meg (`m_buttonfontC`: `textwrap 1`),
+    //: nem a szöveg. Enélkül a gombmagasság a PLATFORM betűmetrikáját
+    //: hordozza: a fix sorköz (`Theme.lineLeading`) csak a MÁSODIK sortól
+    //: érvényesül, az elsőt a betű natúr sormagassága adja. Ezen a gépen ez
+    //: 14, a CI windows-lábán nagyobb — a Visszavonás-gomb ezért volt ott
+    //: 32 képpont a mért eredeti 26 helyett (#2597), és ezért nőtt 36-ra a
+    //: hosszabb effektnevek alatt itt is.
+    property real rogzitettMagassag: 0
+    readonly property bool rogzitett: pbtn.rogzitettMagassag > 0
+    //: #2597: a betűillesztés padlója rögzített magasságnál — a
+    //: `PicasaButton` `minimumLabelPixelSize`-ének mintája. A felirat
+    //: legfeljebb ennyire zsugorodhat: olvashatatlanul kicsi szöveg helyett
+    //: inkább vágunk (az eredeti `*_clip` konténereinek módja).
+    property int minimumLabelPixelSize: Math.max(7, Theme.fontSize - 5)
+    //: #422: a felirat alap-fokozata (a `ToolTile`-lel azonos szint).
+    property int labelAlapFokozat: Theme.fontSize - 2
+    //: #2597: a mért eredeti KÉT sorban mutatja a „Visszavonás: <effektnév>"
+    //: feliratot a 26 képpontos gombban.
+    readonly property int rogzitettSorok: 2
+    //: #2597: mennyi hely van az ELSŐ sor natúr betűdobozának: a gomb
+    //: magasságából a keret és a további sorok fix sorköze marad ki. A
+    //: `Text.FixedHeight` sorköz ugyanis csak a MÁSODIK sortól érvényesül —
+    //: az elsőt a betű saját sormagassága adja (mérve: ezen a gépen 2 sor =
+    //: 14 + 10 = 24 képpont).
+    readonly property real elerhetoSorbox: Math.max(
+        1,
+        pbtn.rogzitettMagassag - 2 * pbtn.border.width
+            - (pbtn.rogzitettSorok - 1) * Theme.lineLeading)
+    //: #2597: a felirat TÉNYLEGES fokozata. Rögzített magasságnál a platform
+    //: betűjéhez igazodik: ha a natúr sormagassága nem fér a fenti helybe, a
+    //: fokozat arányosan kisebb lesz (padló: `minimumLabelPixelSize`). Ahol
+    //: elfér — ezen a gépen —, ott az alap-fokozat marad, tehát a helyi
+    //: kinézet NEM változik.
+    //:
+    //: ⚠️ Miért nem `Text.Fit`: MÉRVE (2026-09-08), a Qt betűillesztése
+    //: `lineHeightMode: Text.FixedHeight` mellett NEM zsugorít — 20
+    //: képpontos betűvel a rajzolt szöveg 38 képpont maradt egy 24 képpontos
+    //: elemben. A fix sorköz viszont mért követelmény (#2494), tehát nem
+    //: adhatjuk fel érte; a fokozatot ezért magunk számoljuk.
+    readonly property int labelFokozat: pbtn.rogzitett
+        ? Math.max(
+            pbtn.minimumLabelPixelSize,
+            Math.min(
+                pbtn.labelAlapFokozat,
+                Math.floor(pbtn.labelAlapFokozat * pbtn.elerhetoSorbox
+                           / Math.max(1, pbtnAlapMetrika.height))))
+        : pbtn.labelAlapFokozat
+
+    //: #2597: a felirat betűjének metrikája az ALAP fokozaton — ebből derül
+    //: ki, hogy a platform sormagassága belefér-e a gombba. Külön elem, nem
+    //: a `pbtnLabelMetrics`: az a felirat TÉNYLEGES betűjét méri, tehát a
+    //: `labelFokozat`-tal körkötést adna.
+    FontMetrics {
+        id: pbtnAlapMetrika
+        font.family: pbtnLabel.font.family
+        font.bold: pbtnLabel.font.bold
+        font.pixelSize: pbtn.labelAlapFokozat
+    }
     // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
     property string thumbSource: ""
     // #448: a bélyegképnek megjelenítendő RÉSZE, relatív [0..1] téglalapként.
@@ -83,7 +146,11 @@ Rectangle {
     //:
     //: Az EGYSOROS eset alsó korlátja (24) SZÁNDÉKOSAN változatlan: azon a
     //: vágás- és paraméterpanel gombjai állnak, azokat ez a jegy nem méri.
-    readonly property real kertMagassag: pbtn.thumbSource !== ""
+    //: #2597: rögzített magasságnál a kért érték maga a mért szám — semmi
+    //: betűmetrika nincs benne, tehát platformfüggetlen.
+    readonly property real kertMagassag: pbtn.rogzitett
+        ? pbtn.rogzitettMagassag
+        : pbtn.thumbSource !== ""
         ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
         : Math.max(24, pbtnLabel.implicitHeight + 2)
     Layout.preferredHeight: pbtn.kertMagassag
@@ -249,7 +316,7 @@ Rectangle {
         // #422 (felhasználói visszajelzés): az effekt-csempék felirata
         // NAGYOBB volt, mint az 1. fül eszköz-csempéié — a kisebb a helyes,
         // ezért a `ToolTile`-lel azonos fokozatra állítva.
-        font.pixelSize: Theme.fontSize - 2
+        font.pixelSize: pbtn.labelFokozat
         // #704: az eredeti csempe-felirat FÉLKÖVÉR (`fontmacros_win.tre`
         // `#define m_fxlabel` → `fontweight 700`), középre zárva. A színe
         // ott #333333; nálunk a témafüggő `Theme.textDark` marad, hogy
@@ -260,6 +327,13 @@ Rectangle {
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
         // határon tör, hosszú, tördelhetetlen szónál karakterhatáron.
         wrapMode: Text.WordWrap
+        //: #2597: rögzített magasságnál a felirat a GOMBHOZ igazodik — a
+        //: BETŰFOKOZATÁN keresztül (`pbtn.labelFokozat`, ld. ott, miért nem
+        //: `Text.Fit`). Az elem magassága szándékosan a szöveghez simul
+        //: (nincs saját `height`/`verticalAlignment`): a középre igazítást a
+        //: lenti `anchors.topMargin` végzi, és a #2494 őre a felirat
+        //: ELEMÉNEK helyzetét méri — egy gomb-magas, magában középező elem
+        //: azt a mérést vakká tenné.
         //: #2494: a sorköz. A `Text` alapértelmezése a betűtípus SAJÁT
         //: sormagassága (Nunito Sans 10 px-en 13,64) — a kétsoros
         //: „Visszavonás: <effektnév>" ettől 14 képpontos sorközzel rajzolódott
@@ -289,7 +363,12 @@ Rectangle {
         //
         // ⚠️ Ez a SZÉLESSÉG-eset (hány szó fér egy sorba), nem a sorközé:
         // a #2494 sorköz-javítása ezen semmit nem változtat.
-        maximumLineCount: pbtn.thumbSource !== "" ? 2 : 2147483647
+        //: #2597: rögzített magasságnál is KETTŐ a felső korlát — a mért
+        //: eredeti (`235707.jpg`) két sorban mutatja a „Visszavonás:
+        //: <effektnév>" feliratot, és 26 képpontba a 10-es sorközzel
+        //: pontosan ennyi fér. Enélkül a betűillesztés HÁROM apró sorra
+        //: zsugorítaná a szöveget, ami rosszabb, mint két olvasható sor.
+        maximumLineCount: pbtn.thumbSource !== "" || pbtn.rogzitett ? 2 : 2147483647
         elide: pbtn.thumbSource !== "" ? Text.ElideRight : Text.ElideNone
     }
     // #704: „alkalmazva" jelvény — a BÉLYEGKÉP jobb alsó sarkában.
