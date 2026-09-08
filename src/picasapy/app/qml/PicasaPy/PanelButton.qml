@@ -55,13 +55,80 @@ Rectangle {
     //: képpontos betűvel a rajzolt szöveg 38 képpont maradt egy 24 képpontos
     //: elemben. A fix sorköz viszont mért követelmény (#2494), tehát nem
     //: adhatjuk fel érte; a fokozatot ezért magunk számoljuk.
+    //: #2759: a SZÉLESSÉG is korlát, nem csak a magasság. A CI windows-lábán
+    //: a rendszerbetű SZÉLESEBB (a natúr sormagassága viszont ugyanaz), ezért
+    //: a magasság-alapú fék nem lépett működésbe, a „Visszavonás: Automatikus
+    //: kontraszt" pedig HÁROM sorra tört a mért 130 képpontos gombon — a
+    //: harmadik sor a `maximumLineCount` miatt némán elmaradt.
+    readonly property real elerhetoSorSzelesseg: Math.max(
+        1, pbtn.width - 8 - 2 * pbtn.border.width)
+
+    //: #2759: az a legnagyobb fokozat, amellyel a felirat MÉG BEFÉR
+    //: `rogzitettSorok` sorba — a Qt mohó sortörését utánozva, szavanként.
+    //:
+    //: ⚠️ Miért nem egy arányos becslés (össz-szélesség / sorok): mérve nem
+    //: elég. A „Visszavonás: Automatikus kontraszt" össz-szélessége 160,6
+    //: képpont egy 119 képpontos sorban, tehát ARÁNYOSAN elférne két sorban —
+    //: a HÁROM hosszú szó viszont nem pakolható be kettőbe („Visszavonás:
+    //: Automatikus" magában 124 képpont). A csomagolást tehát végig kell
+    //: játszani, nem megbecsülni; a tartalék-konstans épp azért nem
+    //: megbízható, mert a szóhatárok döntenek, nem az átlag.
+    //:
+    //: A szélességek a BÁZIS fokozat metrikájából, lineárisan skálázva
+    //: jönnek (a betűk előretolása jó közelítéssel arányos a mérettel) —
+    //: körkötés nélkül, mert a `pbtnAlapMetrika` a fix alap-fokozaton áll.
+    function fokozatSzelessegre() {
+        var szelesseg = pbtn.elerhetoSorSzelesseg
+        var szavak = String(pbtn.label).split(/\s+/).filter(function (sz) {
+            return sz.length > 0
+        })
+        if (szavak.length === 0)
+            return pbtn.labelAlapFokozat
+        var szokoz = pbtnAlapMetrika.advanceWidth(" ")
+        for (var meret = pbtn.labelAlapFokozat; meret > pbtn.minimumLabelPixelSize; meret--) {
+            var arany = meret / pbtn.labelAlapFokozat
+            var sorok = 1
+            var jelen = 0
+            var belefer = true
+            for (var i = 0; i < szavak.length; i++) {
+                var szo = pbtnAlapMetrika.advanceWidth(szavak[i]) * arany
+                if (szo > szelesseg) {       // egyetlen szó sem fér ki
+                    belefer = false
+                    break
+                }
+                var ujHossz = jelen === 0 ? szo : jelen + szokoz * arany + szo
+                if (ujHossz <= szelesseg) {
+                    jelen = ujHossz
+                } else {
+                    sorok++
+                    jelen = szo
+                }
+            }
+            if (belefer && sorok <= pbtn.rogzitettSorok)
+                return meret
+        }
+        return pbtn.minimumLabelPixelSize
+    }
+
+    //: #2597 + #2759: a felirat TÉNYLEGES fokozata. Rögzített magasságnál a
+    //: platform betűjéhez igazodik KÉT irányban: a natúr sormagasság férjen a
+    //: gombba, ÉS a szöveg férjen `rogzitettSorok` sorba (padló:
+    //: `minimumLabelPixelSize`). Ahol elfér — ezen a gépen —, ott az
+    //: alap-fokozat marad, tehát a helyi kinézet NEM változik.
+    //:
+    //: ⚠️ Miért nem `Text.Fit`: MÉRVE (2026-09-08), a Qt betűillesztése
+    //: `lineHeightMode: Text.FixedHeight` mellett NEM zsugorít — 20 képpontos
+    //: betűvel a rajzolt szöveg 38 képpont maradt egy 24 képpontos elemben. A
+    //: fix sorköz viszont mért követelmény (#2494), tehát nem adhatjuk fel
+    //: érte; a fokozatot ezért magunk számoljuk.
     readonly property int labelFokozat: pbtn.rogzitett
         ? Math.max(
             pbtn.minimumLabelPixelSize,
             Math.min(
                 pbtn.labelAlapFokozat,
                 Math.floor(pbtn.labelAlapFokozat * pbtn.elerhetoSorbox
-                           / Math.max(1, pbtnAlapMetrika.height))))
+                           / Math.max(1, pbtnAlapMetrika.height)),
+                pbtn.fokozatSzelessegre()))
         : pbtn.labelAlapFokozat
 
     //: #2597: a felirat betűjének metrikája az ALAP fokozaton — ebből derül

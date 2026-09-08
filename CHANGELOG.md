@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.346] – 2026-09-08
+
+### Javítva
+
+- **Windowson elmaradhatott a „Visszavonás" gomb feliratának egy sora**
+  (#2759). A gomb magassága a lemért 26 képpont, és a felirat betűje eddig
+  csak akkor lett kisebb, ha a rendszer betűje MAGASABB sorokat rajzolt. A
+  windowsos betű viszont nem magasabb, hanem SZÉLESEBB: a hosszabb
+  effektnevek („Visszavonás: Automatikus kontraszt") harmadik sora így némán
+  elmaradt. Mostantól a program végigjátssza a sortörést, és annyival
+  kisebbre veszi a feliratot, amennyivel az még két sorba fér — a gomb mérete
+  változatlan marad.
+
 ## [0.8.345] – 2026-09-08
 
 ### Javítva

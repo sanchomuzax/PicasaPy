@@ -156,9 +156,16 @@ def test_a_felirat_a_szoritott_gombban_sem_log_ki(qt_app, felirat, betufokozat) 
     gomb, cimke = _gomb(qt_app, felirat, betufokozat=betufokozat)
     teteje = cimke.mapToItem(gomb, 0, 0).y()
     magassag = float(gomb.property("height"))
+    festett = float(cimke.property("paintedHeight"))
     assert teteje >= -TURES, f"a felirat {-teteje:.1f} képponttal a gomb TETEJE fölé lóg"
-    assert teteje + float(cimke.property("height")) <= magassag + TURES, (
-        f"a(z) {felirat!r} felirat ELEME kilóg a gombból (gomb {magassag:.0f} px)"
+    # ⚠️ #2759: a RAJZOT mérjük (`paintedHeight`), nem az ELEM dobozát. A
+    # `Text` eleme magasabb lehet a tintánál (a betű sorköze/alsó nyúlványa
+    # akkor is benne van, ha nem rajzol oda semmit) — a CI windows-lábán
+    # mérve az elem 24, a rajz 20 képpont ugyanabban a 26 képpontos gombban.
+    # Az elem túllógása így nem hiba; a rajzé az lenne.
+    assert teteje + festett <= magassag + TURES, (
+        f"a(z) {felirat!r} felirat RAJZA {teteje + festett - magassag:.1f} "
+        f"képponttal lelóg a gombról (gomb {magassag:.0f} px)"
     )
     assert cimke.property("clip") is True, (
         "a felirat nincs vágva — egy magas betűs platformon a rajz a szomszéd "
