@@ -6,11 +6,24 @@ import QtQuick.Controls
 // (`Theme.sliderGroove`), nem a króm semleges szürkéje — a tokenek mellett
 // a Theme.qml-ben ott a képpont-mérés is.
 //
-// A FOGANTYÚ színátmenete továbbra is a PicasaButton nem-akcentusos
-// állapotát követi (a kézikönyv 06. fejezete: „Nagyítás csúszka − + / az
-// indexképek méretét szabályozza; semleges szürke fogantyú"), és a mért
-// eredetivel egybevág: a `scaleslider/thumb` képpontjai is semleges
-// szürkék (162…247), egyetlen kékes csatorna sincs bennük.
+// A FOGANTYÚ színátmenete a PicasaButton nem-akcentusos állapotát követi
+// (a kézikönyv 06. fejezete: „Nagyítás csúszka − + / az indexképek
+// méretét szabályozza; semleges szürke fogantyú") — semleges szürke,
+// egyetlen kékes csatorna sincs benne (#2627 mérése).
+//
+// #2656: az átmenet ÁTLÓS, nem tisztán függőleges — a `scaleslider/thumb`
+// és az `editslider/thumb` LEFELÉ és BALRÓL JOBBRA is sötétedik (a mért
+// négy sarok a Theme.qml-ben, `sliderHandleTopLeft` … `…BottomRight`
+// mellett). Mivel a QtQuick `Rectangle`-gradiens csak EGY tengely mentén
+// fut, a hatást KÉT, egymás mellé állított fél-fogantyú adja: a bal fél a
+// bal oszlop, a jobb fél a jobb oszlop színeivel fut felülről lefelé — a
+// kettő határa adja ki az átlós sötétedést. Mindkét fél a saját külső
+// sarkán kerekített (`topLeftRadius`/`bottomLeftRadius` illetve
+// `…Right…`, Qt 6.7+), a KERET pedig egy harmadik, átlátszó kitöltésű
+// Rectangle, ami a két fél FÖLÉ kerül (különben eltakarnák).
+//
+// #2663: a kitöltés ÉS a keret témafüggő — a világos ág VÁLTOZATLAN (a
+// #2656 mérése), a sötét ág saját döntés (nincs sötét mód az eredetiben).
 //
 // #2641: a fogantyú közepén ott a VÉSETT vonal — egy sötét és egy
 // világos, egy-egy képpont széles oszlop. A geometriát nem érinti.
@@ -135,7 +148,8 @@ Slider {
         }
     }
 
-    handle: Rectangle {
+    handle: Item {
+        id: fogantyu
         x: control.leftPadding + (control.isHorizontal
                ? control.visualPosition * (control.availableWidth - width)
                : (control.availableWidth - width) / 2)
@@ -144,20 +158,61 @@ Slider {
                : (1 - control.visualPosition) * (control.availableHeight - height))
         implicitWidth: control.handleWidth
         implicitHeight: control.handleHeight
-        radius: control.handleRadius
-        border.width: 1
-        border.color: control.pressed ? "#8f8f8f" : "#b5b5b5"
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: control.pressed ? "#d8d8d8" : "#fdfdfd"
-            }
-            GradientStop {
-                position: 1.0
-                color: control.pressed ? "#c8c8c8" : "#e4e4e4"
+        opacity: control.enabled ? 1.0 : 0.55
+
+        // #2656: a BAL fél — a mért bal oszlop (245 → 225 világosban),
+        // felülről lefelé fut. Csak a KÜLSŐ (bal) sarka kerekített, hogy a
+        // jobb féllel varrat nélkül illeszkedjen.
+        Rectangle {
+            width: Math.round(fogantyu.width / 2)
+            height: fogantyu.height
+            topLeftRadius: control.handleRadius
+            bottomLeftRadius: control.handleRadius
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: control.pressed
+                           ? Theme.sliderHandleTopLeftPressed : Theme.sliderHandleTopLeft
+                }
+                GradientStop {
+                    position: 1.0
+                    color: control.pressed
+                           ? Theme.sliderHandleBottomLeftPressed : Theme.sliderHandleBottomLeft
+                }
             }
         }
-        opacity: control.enabled ? 1.0 : 0.55
+        // #2656: a JOBB fél — a mért jobb oszlop (234 → 211 világosban).
+        // A bal félnél MINDIG sötétebb (fentről lefelé is, a tetején is),
+        // ez adja ki az átlós, balról jobbra is sötétedő átmenetet.
+        Rectangle {
+            x: Math.round(fogantyu.width / 2)
+            width: fogantyu.width - x
+            height: fogantyu.height
+            topRightRadius: control.handleRadius
+            bottomRightRadius: control.handleRadius
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: control.pressed
+                           ? Theme.sliderHandleTopRightPressed : Theme.sliderHandleTopRight
+                }
+                GradientStop {
+                    position: 1.0
+                    color: control.pressed
+                           ? Theme.sliderHandleBottomRightPressed : Theme.sliderHandleBottomRight
+                }
+            }
+        }
+        // A KERET egy harmadik, átlátszó kitöltésű réteg, a két fél FÖLÖTT
+        // — különben a fél-fogantyúk teljesen eltakarnák.
+        Rectangle {
+            anchors.fill: parent
+            radius: control.handleRadius
+            color: "transparent"
+            border.width: 1
+            border.color: control.pressed
+                          ? Theme.sliderHandleBorderPressed : Theme.sliderHandleBorder
+        }
 
         // #2641: a KÖZÉPRE VÉSETT vonal. A `respack.yt` mindkét fogantyú-
         // rétege ugyanazt adja (`scaleslider/thumb` 16 × 22 és

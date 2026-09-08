@@ -51,15 +51,21 @@ MERT_BEHUZAS = 5
 #: lazábbak, hogy az élsimítás ne buktassa meg őket, de a „nincs vonal"
 #: esetet (különbség 0) biztosan kizárják.
 MIN_SOTET_KULONBSEG = 12
-#: ⚠️ A VILÁGOS oldal küszöbe MÉRT okból alacsony, és ezt ki kell mondani.
-#: Az eredetiben a vésés soraiban a szomszédos oszlopok átlaga **231,9**,
-#: tehát a 244-es világos oszlop **+12**-vel emelkedik ki. A mi
-#: fogantyúnk ugyanott ~240 világosságú (az átmenetünk `#fdfdfd` →
-#: `#e4e4e4`, és nincs benne az eredeti balról jobbra sötétedése), ezért a
-#: kiemelkedés nálunk csak ~3,5. A különbség a fogantyú ÁTMENETÉBŐL jön,
-#: nem a vésésből — külön jegy: **#2656**, ami az átmenet javítása után
-#: ezt a küszöböt is FELVISZI a mért +12 közelébe.
-MIN_VILAGOS_KULONBSEG = 3
+#: #2656 ÓTA: a fogantyú átmenete átlós lett (a mért 245/225/234/211
+#: sarokértékekkel), a vésés melletti háttér ezért a régi ~240 helyett
+#: KIRAJZOLVA ~228,8 — a világos oszlop (244) emelkedése ~15,2, közel a
+#: mért +12-höz. A küszöböt ezért a mért értékre EMELTÜK (a korábbi 3
+#: csak a régi, túl világos átmenet miatt kellett).
+MIN_VILAGOS_KULONBSEG = 12
+
+#: #2663: a SÖTÉT témás fogantyú-kitöltés mellett a vésés-háttér
+#: KIRAJZOLVA ~112,1. A `Theme.sliderHandleGrooveDark`/`…Light` sötét ága
+#: ezt figyelembe véve lett hangolva: a sötét oldal ~30-cal a háttér
+#: ALATT (jóval a jegy kért ~40-es felső korlátja alatt — az máshogy
+#: „csík", nem „vésés" lenne), a világos ~12-vel FÖLÖTTE.
+MIN_SOTET_KULONBSEG_SOTET_TEMA = 15
+MAX_SOTET_KULONBSEG_SOTET_TEMA = 40
+MIN_VILAGOS_KULONBSEG_SOTET_TEMA = 6
 
 #: A próba fogantyúja — az `editslider/thumb` mért mérete (#2627/#2631).
 FOGANTYU_SZELES = 16
@@ -87,6 +93,7 @@ import PicasaPy 1.0
 Rectangle {
     width: %d; height: %d
     color: "#ffffff"
+    Component.onCompleted: Theme.dark = %s
     PicasaSlider {
         objectName: "proba"
         anchors.centerIn: parent
@@ -118,7 +125,7 @@ def _var_a_kirajzolasra(view: QQuickView, qt_app, masodperc: float = 10.0) -> No
     qt_app.processEvents()
 
 
-def _rajzol(qt_app, szeles: int, magas: int):
+def _rajzol(qt_app, szeles: int, magas: int, dark: bool = False):
     """A kirajzolt kép ÉS a fogantyú valódi doboza az ablak koordinátáiban."""
     import picasapy.app.application as app_module
 
@@ -126,7 +133,8 @@ def _rajzol(qt_app, szeles: int, magas: int):
     view.engine().addImportPath(str(app_module._APP_DIR / "qml"))
     component = QQmlComponent(view.engine())
     component.setData(
-        (_QML % (_SZELES, _MAGAS, szeles, magas)).encode("utf-8"), QUrl()
+        (_QML % (_SZELES, _MAGAS, str(dark).lower(), szeles, magas)).encode("utf-8"),
+        QUrl(),
     )
     hibak = [hiba.toString() for hiba in component.errors()]
     assert hibak == [], hibak
@@ -170,6 +178,12 @@ def _rajz(qt_app):
 @pytest.fixture(scope="module")
 def _rajz_masik(qt_app):
     return _rajzol(qt_app, MASIK_SZELES, MASIK_MAGAS)
+
+
+@pytest.fixture(scope="module")
+def _rajz_sotet_tema(qt_app):
+    """#2663: ugyanaz a fogantyúméret, de `Theme.dark = true`."""
+    return _rajzol(qt_app, FOGANTYU_SZELES, FOGANTYU_MAGAS, dark=True)
 
 
 def _veses_oszlopai(doboz: tuple[int, int, int, int]) -> tuple[int, int]:
@@ -461,34 +475,34 @@ class TestFuggolegesCsuszkan:
         ), "függőleges csúszkán a vésés sötét és világos oldala fel van cserélve"
 
 
-class TestAVesesSzineiNemTemafuggok:
-    """A #2641 code review KRITIKUS lelete, forrás-szintű kapuval.
+class TestAVesesSzineiTemafuggoek:
+    """#2663 — FORDÍTOTT elvárás a korábbi (`…NemTemafuggok`) próbához
+    képest: mostantól a fogantyú ÉS a vésés is témafüggő, EGYÜTT (a #2641
+    code review pontosan ezt a sorrendet kérte — lásd a Theme.qml
+    kommentjét a `sliderHandleGrooveDark`/`…Light` fölött).
 
-    A vésés két színe eredetileg `dark ? "#2f2f2f" : "#c7c7c7"` alakban
-    készült — csakhogy a fogantyú átmenete **beégetetten világos**
-    (`#fdfdfd` → `#e4e4e4`), sötét témában sem vált. Sötét módban tehát a
-    sötét téma vésése a VILÁGOS fogantyún jelent volna meg, 193 illetve 133
-    értékkel a szomszédja alatt — kirajzolva nem vésés, hanem fekete perjel.
-
-    Amíg a fogantyú maga nem témafüggő (**#2663**), a vésés sem lehet az.
-    Ez a próba a forrást olvassa, mert a hiba természete forrás-szintű: egy
-    `dark ? …` ág visszacsúszása a kirajzolt próbán (ami világos témában
-    fut) NEM látszana.
+    A forrást olvassuk, mert a hiba természete forrás-szintű: egy
+    visszacsúszott `dark ? …` ág törlése a kirajzolt próbán (ami csak EGY
+    témában fut egyszerre) nem feltétlenül látszana minden konfiguráción.
     """
 
     def _theme_forras(self) -> str:
         import picasapy.app.application as app_module
 
-        utvonal = (
-            app_module._APP_DIR / "qml" / "PicasaPy" / "Theme.qml"
-        )
+        utvonal = app_module._APP_DIR / "qml" / "PicasaPy" / "Theme.qml"
+        return utvonal.read_text(encoding="utf-8")
+
+    def _slider_forras(self) -> str:
+        import picasapy.app.application as app_module
+
+        utvonal = app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaSlider.qml"
         return utvonal.read_text(encoding="utf-8")
 
     @pytest.mark.parametrize(
         "tulajdonsag",
         ["sliderHandleGrooveDark", "sliderHandleGrooveLight"],
     )
-    def test_a_veses_szine_nem_fugg_a_temaol(self, tulajdonsag):
+    def test_a_veses_szine_temafuggo(self, tulajdonsag):
         forras = self._theme_forras()
         sorok = [
             sor.strip()
@@ -498,28 +512,82 @@ class TestAVesesSzineiNemTemafuggok:
         assert len(sorok) == 1, (
             f"a `{tulajdonsag}` {len(sorok)} helyen van megadva a Theme.qml-ben"
         )
-        assert "dark" not in sorok[0], (
-            f"a `{tulajdonsag}` témafüggő lett ({sorok[0]!r}). A fogantyú "
-            "átmenete beégetetten világos, ezért egy sötét témára hangolt "
-            "vésés a világos fogantyún jelenne meg: fekete perjel, nem "
-            "vésés. Együtt kell témafüggővé tenni a fogantyúval — #2663."
+        assert "dark ?" in sorok[0], (
+            f"a `{tulajdonsag}` NEM témafüggő ({sorok[0]!r}). A fogantyú "
+            "kitöltése #2663 óta témafüggő, a vésésnek EGYÜTT kell "
+            "maradnia vele — lásd a Theme.qml megjegyzését."
         )
 
-    def test_a_fogantyu_atmenete_MEG_nem_temafuggo(self):
-        """A fenti szabály előfeltétele — ha ez megdől, a szabály is dől.
-
-        Ha valaki a #2663-at megvalósítja (a fogantyú témafüggő lesz), ez a
-        próba bukik, és ezzel emlékeztet rá, hogy a vésés színeit vissza
-        kell kapcsolni a `dark ? … : …` ágra."""
-        import picasapy.app.application as app_module
-
-        forras = (
-            app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaSlider.qml"
-        ).read_text(encoding="utf-8")
-        kezd = forras.index("Rectangle {", forras.index("handle:"))
+    def test_a_fogantyu_kitoltese_temafuggo(self):
+        """A fenti szabály előfeltétele. Ha a fogantyú kitöltése (vagy a
+        kerete) beégetett hexával térne vissza, ez a próba bukik — és
+        emlékeztet rá, hogy a vésés a fogantyúval EGYÜTT módosítandó."""
+        forras = self._slider_forras()
+        kezd = forras.index("handle: Item")
         fogantyu_blokk = forras[kezd : forras.index("readonly property real vesesBehuzas")]
-        assert "Theme.dark" not in fogantyu_blokk and "dark ?" not in fogantyu_blokk, (
-            "a fogantyú rajza témafüggő lett — akkor a vésés két színének "
-            "(Theme.sliderHandleGrooveDark/Light) is vissza kell kapnia a "
-            "`dark ? … : …` ágat, és ezt a próbát a #2663 zárja le"
+        assert "Theme.sliderHandle" in fogantyu_blokk, (
+            "a fogantyú kitöltése/kerete nem a Theme tokenjeiből jön — "
+            "#2663 óta ezeknek témafüggőnek kell lenniük"
+        )
+        for tiltott in ("#fdfdfd", "#e4e4e4", "#d8d8d8", "#c8c8c8", "#b5b5b5", "#8f8f8f"):
+            assert tiltott not in fogantyu_blokk, (
+                f"a fogantyú rajza beégetett {tiltott} színt tartalmaz — "
+                "ennek a Theme.sliderHandle* tokenekből kellene jönnie"
+            )
+
+
+class TestAVesesSotetTemaban:
+    """#2663 elfogadási feltétele: a vésés-őr fusson le SÖTÉT témára is, és
+    a sötét oszlop a szomszédjánál LEGFELJEBB ~40-nel legyen sötétebb —
+    vésés maradjon, ne csík (a #2641 review pontosan ETTŐL óvott egy
+    korábbi, a világos fogantyúra hangolt kísérletnél: 193/133 volt a
+    különbség, jóval e fölött)."""
+
+    def _hatter(self, kep, doboz) -> float:
+        sotet_x, vilagos_x = _veses_oszlopai(doboz)
+        y0, y1 = _veses_sorai(doboz)
+        bal = _oszlop_atlaga(kep, sotet_x - 2, y0, y1)
+        jobb = _oszlop_atlaga(kep, vilagos_x + 2, y0, y1)
+        return (bal + jobb) / 2
+
+    def test_a_SOTET_oszlop_ott_van_es_nem_csik(self, _rajz_sotet_tema):
+        kep, doboz = _rajz_sotet_tema
+        sotet_x, _ = _veses_oszlopai(doboz)
+        y0, y1 = _veses_sorai(doboz)
+        veses = _oszlop_atlaga(kep, sotet_x, y0, y1)
+        hatter = self._hatter(kep, doboz)
+        kulonbseg = hatter - veses
+        assert kulonbseg >= MIN_SOTET_KULONBSEG_SOTET_TEMA, (
+            f"sötét témában a vésés sötét oszlopa (x={sotet_x}) {veses:.0f}, "
+            f"a környező fogantyú {hatter:.0f} — a különbség {kulonbseg:.1f}, "
+            f"a mérce {MIN_SOTET_KULONBSEG_SOTET_TEMA}"
+        )
+        assert kulonbseg <= MAX_SOTET_KULONBSEG_SOTET_TEMA, (
+            f"sötét témában a vésés sötét oszlopa {kulonbseg:.1f}-cal "
+            f"sötétebb a környezeténél — a jegy szerint ez fölötte már nem "
+            f"vésés, hanem csík (felső korlát {MAX_SOTET_KULONBSEG_SOTET_TEMA})"
+        )
+
+    def test_a_VILAGOS_oszlop_ott_van(self, _rajz_sotet_tema):
+        kep, doboz = _rajz_sotet_tema
+        _, vilagos_x = _veses_oszlopai(doboz)
+        y0, y1 = _veses_sorai(doboz)
+        veses = _oszlop_atlaga(kep, vilagos_x, y0, y1)
+        hatter = self._hatter(kep, doboz)
+        assert veses - hatter >= MIN_VILAGOS_KULONBSEG_SOTET_TEMA, (
+            f"sötét témában a vésés világos oszlopa (x={vilagos_x}) "
+            f"{veses:.0f}, a környező fogantyú {hatter:.0f} — a mérce "
+            f"{MIN_VILAGOS_KULONBSEG_SOTET_TEMA}"
+        )
+
+    def test_a_fogantyu_maga_is_sotet(self, _rajz_sotet_tema):
+        """Előfeltétel: sötét témában a fogantyú TÉNYLEG sötétebb, mint
+        világosban — különben a fenti két próba egy világos fogantyún
+        futna, és semmit nem bizonyítana a sötét ágról."""
+        kep, doboz = _rajz_sotet_tema
+        hatter = self._hatter(kep, doboz)
+        assert hatter < 180, (
+            f"a fogantyú háttere sötét témában {hatter:.0f} — ez még "
+            "mindig világos fogantyúnak látszik, a Theme.dark nem ért el "
+            "a kitöltéshez"
         )
