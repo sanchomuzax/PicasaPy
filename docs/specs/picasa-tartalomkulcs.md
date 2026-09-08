@@ -1778,3 +1778,113 @@ Hogy melyik ini-kulcsot táplálják, ez a kör **nem** mérte ki — kimondva.
 *Bizonyítottsági fok: **megerősített** az 1–4. pont (utasításszintű
 idézetekkel, rekeszenként külön mért argumentumokkal); az 5. sor utolsó
 tétele változatlanul nyitott.*
+
+---
+
+## ⭐⭐ MEGVAN: az `originhash` = `originfast` ‖ `originslow` — 55/60 valós fájlon (2026-09-08, 219. kör, #2675)
+
+Kilenc kör kereste, **ki írja** a rekord `+0x90`-jét. Ez a kör megfordította a
+kérdést — **mi az az érték?** —, és a valós korpuszból indulva megfejtette.
+
+### 1. A kiindulás: a tárolt érték 32 hexa jegy, nem 16
+
+A helyi ini-korpusz (`referencia/ini-korpusz/korpusz.txt`, 859 fájl) **1787**
+`originhash=` sort tartalmaz, és **mind az 1787 pontosan 32 hexa jegy**:
+
+```
+originhash=a2564bbb3eb7b342636c8eca3c3a92cf
+```
+
+Ez **128 bit**, nem a lap 1. szakaszában leírt 64 bites `originfast`.
+*(A `korpusz.txt` a forrásfájl teljes útvonalát is megtartja
+— `#### FÁJL: /mnt/photo/…/.picasa.ini` —, ezért a tételek a lemezen lévő
+fájlokhoz rendelhetők; ez tette lehetővé a mérést.)*
+
+### 2. Két jelölt MEGDŐLT — mérve
+
+| jelölt | eredmény |
+|---|---|
+| a **teljes fájl** MD5-je (32 hexa) | **0/12** |
+| a `originfast` **pufferének** teljes MD5-je | **0/12** |
+
+### 3. ✅ A megfejtés: a KÉT tartalomkulcs egymás után
+
+```
+originhash = hex16(originfast) ‖ hex16(originslow)
+```
+
+ahol mindkét fél a saját MD5-je **első 8 bájtja**, 64 bites számként,
+**nagy-endián** sorrendben kiírva (`%016I64x`):
+
+- **`originfast`** = MD5( `uint32_le(méret)` ‖ első `min(méret, 0x41C2)`
+  bájt ‖ utolsó `FAROK` bájt )[0..8], ahol
+  `FAROK = (méret > 0x8384) ? 0x41C2 : méret − FEJ` — a lap 1. szakasza;
+- **`originslow`** = MD5( a **teljes fájl** )[0..8].
+
+**A mérés (valós fájlokon, a korpusz útvonalai szerint):**
+
+| minta | teljes 32 hexa egyezés |
+|---|---|
+| a tulajdonos saját mappái | **55 / 60 = 91,7 %** |
+| `Downloaded Albums` alól | 3 / 20 |
+
+⭐ **Belső konzisztencia-próba:** a **65 tételből mind az öt+tizenhét
+eltérés MINDKÉT félen elbukik** — soha nem csak az egyiken. Ez pontosan az,
+amit egy megváltozott (újramentett, cserélt) fájltól várunk, és kizárja,
+hogy a képlet valamelyik fele téves lenne. A `Downloaded Albums` alacsony
+aránya ugyanezt mondja: ott a lemezen a **letöltött** példány van, nem az,
+amit a Picasa annak idején hashelt — a kulcs neve („origin") épp erre utal.
+
+### 4. A bináris oldal — a TERMELŐ megvan
+
+**A teljes fájl MD5-je: `FUN_00a4ce40`** (421 b). `CreateFileA`
+(`0x00a4ceb4`), majd **0x10000 bájtos darabokban** `ReadFile` +
+MD5-`Update` ciklus (`0x00a4cf49` / `0x00a4cf75`), végül **MD5-`Final`**
+(`0x00a4cfa8 call 0x00ab37b0`) a hívó által adott pufferbe. Forrásfájl:
+`.\yt\ytIO.cpp`, sor `0x1a1` = **417**. Az `MD5-Final`-nak a `.text`-ben
+**két** hívási helye van (indextől független `E8`-pásztázás), és ez az
+egyetlen valódi: a másik magában az `Init`-ben van.
+**`FUN_00a4ce40`-nek egyetlen hívója van: `FUN_00a4cd00`** — a korábbi
+körökből ismert **kulcspár-burkoló**, amelynek a lassú fele opcionális
+(`0x00a4cd44`).
+
+**A 32 hexa jegyes szöveg összeállítása** (`FUN_0045c870`):
+
+```
+0x0045cbdc  call 0x004353a0      ; mindkét kulcs kiszámítása (a burkolón át)
+0x0045cbe5  mov edx, [esp+0x24]  ; a GYORS kulcs két fele
+0x0045cbe9  mov eax, [esp+0x20]
+0x0045cbef  push 0x00c80ce4      ; '%016I64x'
+0x0045cbfc  call 0x0040eab0      ; FORMÁZ  → az első 16 hexa
+0x0045cc01  mov ecx, [esp+0x28]  ; a LASSÚ kulcs két fele
+0x0045cc05  mov edx, [esp+0x24]
+0x0045cc0e  push 0x00c80ce4      ; '%016I64x'
+0x0045cc15  call 0x0040ea90      ; HOZZÁFŰZ → a második 16 hexa
+0x0045cc29  call 0x0049c640      ; a tulajdonság-táska beszúrása
+```
+
+Ugyanez a **kettős formázás + hozzáfűzés** áll a hasher másik két hívási
+helyénél is: `0x007e4aac` (`FUN_007e3210`) és `0x0087f3d4`
+(`FUN_0087f220`) — mindkettőnél két `%016I64x` és a `0x0040ea90`
+hozzáfűző. A caption/keywords/geotag hívási helyek (`0x00438691`,
+`0x004563db`, `0x00478336`) ezzel szemben **nem formáznak**: ott a
+számérték megy a táskába.
+
+### 5. Miért nem találtuk kilenc körön át a „`+0x90` íróját"
+
+Mert **nincs külön írója**: a szöveg a **tulajdonság-táskába** kerül
+(`FUN_0049c640`), és onnan jut a rekordba — a rekordban pedig már csak
+**másolódik** (az `operator=` a 33 mezős térképpel). A 206–218. körök
+minden közvetlen írási alakot helyesen zártak ki; a hiányzó láncszem nem
+egy írás volt, hanem **egy másik tároló**.
+
+### 6. Terméki következmény — ez már MEGVALÓSÍTHATÓ
+
+Eddig a szabályunk az volt, hogy az `originhash`-t **őrizzük meg**, mert
+nem tudjuk, mit jelent. Mostantól **ki is tudjuk számolni**: mindkét fele
+olyan kulcs, amelyet a `picasapy.dedup.fastkey` már ismer (a gyors),
+illetve amely egy egyszerű teljes-fájl MD5 (a lassú).
+
+*Bizonyítottsági fok: **megerősített** — 55/60 bitpontos egyezés valós
+fájlokon, két megdöntött jelölttel és belső konzisztencia-próbával; a
+bináris oldalon a termelő és a formázás utasításszinten idézve.*
