@@ -879,15 +879,31 @@ elő fájlonként, és a `0x68` tulajdonságba teszik.**
 azt a `0x68` tulajdonságba teszi; amit a `0x68`-ból vesz, azt
 `originhash`/`imageuniqueid` néven írja ki.
 
+### 5/b ⛔ MÉRVE: az `imageuniqueid` NEM `.picasa.ini`-kulcs
+
+A 3. és 5. pont kulcsneve **nem** a `.picasa.ini`-é. A tulajdonos
+**859 fájlos** élő korpuszán (`referencia/ini-korpusz/korpusz.txt`,
+privát repó):
+
+| minta | találat |
+|---|---|
+| `originhash=` sor | **1787** *(pozitív kontroll — egyezik a lap korábbi számával)* |
+| `imageuniqueid` bárhol | **0** |
+
+⇒ az `imageuniqueid` a `Picasa` / `InternetShortcut` szakaszé (generált
+parancsikon-fájl), **nem** a `.picasa.ini`-é. A mi ini-olvasónkat és
+-írónkat tehát **nem érinti** — nem kell új kulcsot kezelnünk. A lelet
+attól még értékes: a két kimenet **közös forrását** azonosítja.
+
 ### 6. ⛳ Amit ez a #2675-re nézve hozzátesz
 
 - A 207. kör állítása (**mentéskor nincs újraszámolás**) **áll**, sőt
   most a másik oldalról is alátámasztott: az érték egy tulajdonságtárban
   utazik, amit a szakaszkezelők töltenek fel — nem a mentés.
-- **Új, önállóan hasznos lelet:** ugyanaz az érték `imageuniqueid` néven
-  is megjelenik. A mi `.picasa.ini`-olvasónk/írónk szempontjából ez azt
-  jelenti, hogy a két kulcs **ugyanazt a mennyiséget** hordozza, tehát
-  a round-tripnek mindkettőt ugyanúgy kell kezelnie.
+- **Új lelet, HATÓKÖRREL:** ugyanaz az érték `imageuniqueid` néven is
+  megjelenik — de az 5/b mérés szerint **nem a `.picasa.ini`-ben**
+  (859 fájl, 0 találat), hanem a generált parancsikon-fájlban. A mi
+  ini-round-tripünket ez **nem érinti**.
 - ⚠️ **Amit ez NEM mond ki:** hogy a `0x68` tulajdonság *hogyan* kerül
   a `[rekord+0x90]`-be. A tár egy `map<int, sztring>`; a materializálás
   helye nincs megmérve.
