@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.347] – 2026-09-08
+
+### Javítva
+
+- **Windowson az arcfelismerésből kizárt mappa ALMAPPÁI kimaradtak a
+  kizárásból** (#2761). A program a mappa alatti almappákat egy fixen `/`
+  jellel összerakott mintával kereste, a windowsos útvonalak viszont `\`
+  jelet használnak — így az almappákban lévő fényképek nem kapták meg a
+  „ne vizsgáld többé" jelölést, és a következő átvizsgálás újra végigment
+  volna rajtuk. Linuxon a hiba nem látszott, mert ott a `/` véletlenül
+  helyes volt.
+
 ## [0.8.346] – 2026-09-08
 
 ### Javítva
