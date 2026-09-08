@@ -7,9 +7,10 @@ test_controller.py `_quit_on` mintája szerint).
 import cv2
 import numpy as np
 import pytest
-from PySide6.QtCore import QEventLoop, QSettings, QTimer
+from PySide6.QtCore import QSettings
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -66,18 +67,25 @@ def _run(signal, action, timeout_ms=10000):
     A sorrend lényeges: a hibautak (üres kijelölés, hiányzó célfájl) még a
     hívó szálon, azonnal jeleznek — utólagos feliratkozás lemaradna róluk.
     Visszatérés: (megjött-e, argumentumok)."""
-    loop = QEventLoop()
+    loop = hangos_hurok(signal, timeout_ms=timeout_ms)
     received = {}
 
     def _on(*args):
+        # ⚠️ #1467: itt NEM szabad `loop.quit()`-et hívni. A hurkot a
+        # `hangos_hurok` SAJÁT szlotja zárja; ha a hívó szlotja zárná le
+        # előbb, a hurok kilépne, mielőtt a segéd nyilvántartásba veszi a
+        # jelzést — és a hangos vészfék HAMIS időtúllépést jelentene.
+        # (Mérve: a `test_create_controller.py` négy őre bukott így el.)
         received["args"] = args
-        loop.quit()
 
     signal.connect(_on)
     action()
-    if "args" not in received:
-        QTimer.singleShot(timeout_ms, loop.quit)
-        loop.exec()
+    loop.exec()
+    # #1467: a hívók egy része ELDOBJA a visszaadott `arrived` jelzőt
+    # (`_run(ctl.scanFinished, ctl.scanForFaces)` önmagában), ilyenkor az
+    # időtúllépés némán ment tovább, és a bukás egy későbbi, látszólag
+    # független állításon jelentkezett. Az `exec()` most ott helyben bukik;
+    # a visszatérési érték a régi hívók kedvéért marad.
     return ("args" in received, received.get("args", ()))
 
 

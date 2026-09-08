@@ -2,14 +2,18 @@
 könyvtár-listázása (#231) — valódi ideiglenes könyvtárfán, mock nélkül."""
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
+
+from support.qt_wait import hangos_hurok
 
 
 def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
+
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 @pytest.fixture

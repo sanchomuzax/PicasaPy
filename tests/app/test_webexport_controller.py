@@ -7,25 +7,21 @@ háttérszálas eredményre."""
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
 
 from picasapy.app.webexport_controller import WebExportController
 from picasapy.index import PhotoRecord
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 def _quit_on(signal):
-    """Eseményhurok, ami a jelzésre (vagy 5 s vészfékre) lép ki.
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
 
-    A vészfék-timer a hurok GYERMEKE: így a hurokkal együtt megsemmisül, és
-    nem marad árva, később elsülő timer a processzben (#430)."""
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    timer = QTimer(loop)
-    timer.setSingleShot(True)
-    timer.timeout.connect(loop.quit)
-    timer.start(5000)
-    return loop
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _record(folder, name, **overrides):

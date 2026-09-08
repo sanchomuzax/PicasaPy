@@ -8,32 +8,23 @@ from __future__ import annotations
 import sqlite3
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
 
 from picasapy.app.data_location import read_data_root
 from picasapy.app.relocate_controller import RelocateController
 from picasapy.index import open_index, sync_tree
+from support.qt_wait import hangos_hurok
 
 
 def _quit_on(signal, timeout_ms: int = 5000):
-    """Eseményhurok egy jelzésre — időtúllépéssel.
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
 
-    ⚠️ #2313: az időtúllépés NEM lehet néma. Korábban a hurok 5000 ms után
-    csendben kilépett, és a rákövetkező állítás úgy bukott el, mintha a
-    várt jelzés el sem hangzott volna — a windows-lábon pontosan ez
-    történt (`['database', 'cache']`, a `done` hiányzott). A hívó a
-    `.lejart` mezőből tudja meg, hogy melyik eset áll fenn.
-    """
-    loop = QEventLoop()
-    loop.lejart = True
-    signal.connect(loop.quit)
-
-    def _megjott():
-        loop.lejart = False
-
-    signal.connect(_megjott)
-    QTimer.singleShot(timeout_ms, loop.quit)
-    return loop
+    ⚠️ #2313 óta a segéd `.lejart` mezőben JELEZTE az időtúllépést — de
+    #1467-ben mérve **egyetlen hívó sem olvasta el** (hat várakozási hely,
+    nulla ellenőrzés). A vészfék tehát a javítás után is néma maradt: az
+    időtúllépés ugyanúgy egy későbbi, látszólag független állításon
+    bukott. A közös segéd ezért nem MEZŐT ad, hanem az `exec()`-ben,
+    ott helyben bukik — kihagyni nem lehet."""
+    return hangos_hurok(signal, timeout_ms=timeout_ms)
 
 
 def _make_source(tmp_path):

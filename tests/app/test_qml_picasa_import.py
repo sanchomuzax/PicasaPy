@@ -2,8 +2,9 @@
 felderítés-API-ját (scanner/discovery.py, #199) mockolva ellenőrizzük a
 dialógus megjelenését, a mappák kiválasztását és az átvételt."""
 
-from PySide6.QtCore import QEventLoop, QMetaObject, QObject, Qt, QTimer
+from PySide6.QtCore import QMetaObject, QObject, Qt
 from support.halasztott_parbeszed import nyisd_meg
+from support.qt_wait import hangos_hurok
 
 
 def _child(window, name):
@@ -17,10 +18,13 @@ def _child(window, name):
 
 
 def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
+
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _discovery_controller(engine):

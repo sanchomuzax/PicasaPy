@@ -3,9 +3,9 @@ MEGLÉVŐ elrejtés-úton) és 4. pont (lemezhely-ellenőrzés export/webexport/
 import előtt) controller-szintű tesztjei."""
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -94,14 +94,12 @@ class TestExportDiskSpaceCheck:
     @staticmethod
     def _run_export(controller, qt_app, rows, target):
         results = []
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.exportFinished)
         controller.exportFinished.connect(
             lambda done, failed: results.append((done, failed))
         )
-        controller.exportFinished.connect(loop.quit)
         controller.exportRows(rows, target, 0, 85)
         if not results:
-            QTimer.singleShot(5000, loop.quit)
             loop.exec()
         return results
 
@@ -157,24 +155,20 @@ class TestImportDiskSpaceCheck:
         monkeypatch.setattr(mod, "has_enough_free_space", lambda *a, **k: False)
 
         scan_results = []
-        scan_loop = QEventLoop()
+        scan_loop = hangos_hurok(ctl.sourceScanFinished)
         ctl.sourceScanFinished.connect(lambda items, count: scan_results.append(count))
-        ctl.sourceScanFinished.connect(scan_loop.quit)
         ctl.scanSource(str(source))
         if not scan_results:
-            QTimer.singleShot(5000, scan_loop.quit)
             scan_loop.exec()
         assert scan_results == [1]
 
         finished = []
         details = []
-        loop = QEventLoop()
+        loop = hangos_hurok(ctl.importFinished)
         ctl.importFinished.connect(lambda done, failed: finished.append((done, failed)))
-        ctl.importFinished.connect(loop.quit)
         ctl.importFailedDetails.connect(details.append)
         ctl.runImport(str(dest), "manual", "importalt", "leave")
         if not finished:
-            QTimer.singleShot(5000, loop.quit)
             loop.exec()
         assert finished == [(0, 1)]
         assert details and "disk space" in details[0][0]

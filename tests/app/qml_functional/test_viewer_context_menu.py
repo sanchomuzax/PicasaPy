@@ -16,7 +16,8 @@ csoportbontást és a viselkedési szabályokat a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from support.qt_wait import hangos_hurok
 
 # a spec 3. szakaszának teljes tételsora, sorrendben
 _EXPECTED_ITEMS = [
@@ -85,10 +86,8 @@ def _close_menu(window, qt_app):
 def _do_photo_op(controller, qt_app, action) -> None:
     """A forgatás háttérszálon fut — megvárja a `photoOpFinished`-t
     (a `test_viewer.py` mintája)."""
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
+    loop = hangos_hurok(controller.photoOpFinished)
     action()
-    QTimer.singleShot(2000, loop.quit)
     loop.exec()
     qt_app.processEvents()
 

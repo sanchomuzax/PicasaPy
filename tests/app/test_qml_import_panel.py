@@ -6,6 +6,7 @@ szálról direktben fut le, a kötések szinkron frissülnek).
 """
 
 from PySide6.QtCore import QObject
+from support.qt_wait import hangos_hurok
 
 
 def _child(window, name):
@@ -79,7 +80,6 @@ class TestImportPanel:
     ):
         """Valódi (háttérszálas) import: új gyökér hozzáadása után érkezik
         haladás-jelzés, és a végén a panel eltűnik."""
-        from PySide6.QtCore import QEventLoop, QTimer
 
         from support.jpeg_factory import make_jpeg
 
@@ -92,10 +92,8 @@ class TestImportPanel:
         controller.syncProgress.connect(
             lambda *args: progress_calls.append(args)
         )
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.addWatchedFolder(str(new_root))
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         qt_app.processEvents()
         assert progress_calls, "nem érkezett haladás-jelzés"

@@ -5,6 +5,7 @@
 import pytest
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -57,12 +58,9 @@ def _rows_by_name(controller, *names) -> list:
 
 
 def _do_rename(controller, action) -> None:
-    from PySide6.QtCore import QEventLoop, QTimer
 
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
+    loop = hangos_hurok(controller.photoOpFinished)
     action()
-    QTimer.singleShot(5000, loop.quit)
     loop.exec()
 
 

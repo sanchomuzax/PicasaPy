@@ -11,6 +11,7 @@ import threading
 import pytest
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 @pytest.fixture
@@ -65,7 +66,6 @@ class TestCancelSignal:
     ):
         """A futó (háttérszálas) sync az eltávolítás utáni ELSŐ mappa-
         határon leáll — nem dolgozza fel a maradék mappákat."""
-        from PySide6.QtCore import QEventLoop, QTimer
 
         import picasapy.app.controller as controller_module
 
@@ -86,25 +86,20 @@ class TestCancelSignal:
                     return
 
         monkeypatch.setattr(controller_module, "sync_tree", fake_sync_tree)
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
         assert started.wait(timeout=5)
         controller.removeWatchedFolder(str(library))  # főszál: cancel-jelzés
         resume.set()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert len(processed) == 1  # az első mappa-határon leállt
 
     def test_readd_clears_cancel_event(self, controller, library, qt_app):
-        from PySide6.QtCore import QEventLoop, QTimer
 
         controller.removeWatchedFolder(str(library))
         assert controller._cancel_event(str(library)).is_set()
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.addWatchedFolder(str(library))
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert controller._cancel_event(str(library)).is_set() is False
 

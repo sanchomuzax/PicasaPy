@@ -8,11 +8,9 @@ szándékosan funkció-szintű `qml_app` fixture-t használ.
 
 from PySide6.QtCore import (
     Q_ARG,
-    QEventLoop,
     QMetaObject,
     QObject,
     Qt,
-    QTimer,
 )
 from PySide6.QtQuick import QQuickWindow
 from support.halasztott_parbeszed import nyisd_meg
@@ -20,6 +18,7 @@ from support.halasztott_parbeszed import nyisd_meg
 from picasapy.index import open_index, sync_tree
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import hangos_hurok
 
 
 def _child(window, name):
@@ -41,10 +40,13 @@ def _dialog_window(window):
 
 
 def _quit_on(signal):
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
+
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _dedup_controller(engine):

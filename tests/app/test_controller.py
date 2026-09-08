@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from support.qt_wait import wait_for_photo_op
+from support.qt_wait import hangos_hurok, wait_for_photo_op
 from PIL import Image
 
 from support.jpeg_factory import make_jpeg
@@ -59,14 +59,13 @@ def library(tmp_path):
 
 
 def _quit_on(signal):
-    """QEventLoop, ami a `signal` érkezésekor (vagy 5 s vészfékkel) kilép —
-    háttérszálas jelzésekre váró tesztekhez."""
-    from PySide6.QtCore import QEventLoop, QTimer
+    """Eseményhurok, amit a `signal` érkezése zár le — HANGOS vészfékkel.
 
-    loop = QEventLoop()
-    signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
-    return loop
+    #1467: a korábbi `QTimer.singleShot(5000, loop.quit)` NÉMÁN engedte
+    tovább a tesztet, ha az idő járt le: a bukás egy későbbi, látszólag
+    független állításon jelentkezett, vagy a teszt véletlenül zöld maradt.
+    A közös segéd az `exec()`-ben, ott helyben bukik, beszédes üzenettel."""
+    return hangos_hurok(signal)
 
 
 def _do_photo_op(controller, action) -> None:
@@ -358,7 +357,7 @@ class TestToggleStar:
     def test_sync_failure_reported_not_swallowed(self, qt_app, tmp_path):
         # Elavult/rossz gyökér (pl. Windows-útvonal a WatchedFolders-ből) nem
         # fagyaszthatja némán a UI-t: syncFailed + syncFinished is jön.
-        from PySide6.QtCore import QEventLoop, QSettings, QTimer
+        from PySide6.QtCore import QSettings
         from picasapy.app.controller import AppController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
         from picasapy.thumbs import ThumbnailCache
@@ -375,10 +374,8 @@ class TestToggleStar:
         finished = []
         ctl.syncFailed.connect(errors.append)
         ctl.syncFinished.connect(lambda: finished.append(True))
-        loop = QEventLoop()
-        ctl.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(ctl.syncFinished)
         ctl.rescan()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert finished
         assert errors and "Pictures" in errors[0]
@@ -408,12 +405,9 @@ class TestToggleStar:
         assert started == []
 
     def test_sync_worker_emits(self, controller, qt_app):
-        from PySide6.QtCore import QEventLoop, QTimer
 
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
-        QTimer.singleShot(5000, loop.quit)  # vészfék
         loop.exec()
         assert controller.folders.folderCount == 1
 
@@ -950,20 +944,17 @@ class TestWatchedFolderManagement:
     def test_add_watched_folder_persists_and_indexes(
         self, controller, library, tmp_path, qt_app
     ):
-        from PySide6.QtCore import QEventLoop, QTimer
         from picasapy.scanner import read_watched_folders
 
         other = tmp_path / "masik"
         (other / "m").mkdir(parents=True)
         make_jpeg(other / "m" / "x.jpg")
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         from PySide6.QtCore import QUrl
 
         # URL-alakban adjuk át (a QML FolderDialog is azt ad) —
         # platformhelyesen képezve, Windowson is érvényes formával
         controller.addWatchedFolder(QUrl.fromLocalFile(str(other)).toString())
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert str(other) in controller.watchedFolders
         assert str(other) in read_watched_folders(controller._watched_file)
@@ -972,17 +963,15 @@ class TestWatchedFolderManagement:
     def test_add_folder_with_accents_and_spaces(self, controller, tmp_path):
         # #58: klasszikus Windows-mappa (ékezet + szóköz) becsatolása a
         # FolderDialog százalék-kódolt URL-alakjából sem bukhat el.
-        from PySide6.QtCore import QEventLoop, QTimer, QUrl
+        from PySide6.QtCore import QUrl
 
         target = tmp_path / "Régi képek 2020"
         target.mkdir()
         make_jpeg(target / "kep.jpg")
         url = bytes(QUrl.fromLocalFile(str(target)).toEncoded()).decode("ascii")
         assert "%20" in url and "%C3" in url  # tényleg kódolt alakot adunk át
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.addWatchedFolder(url)
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert str(target) in controller.watchedFolders
 
@@ -1113,15 +1102,12 @@ class TestLiveWatch:
     def test_dirty_folders_synced_into_index(self, controller, library, qt_app):
         # A watcher-jelzés (más szálból) a jelzett mappákat szinkronizálja,
         # és a nézet frissül — az új kép megjelenik.
-        from PySide6.QtCore import QEventLoop, QTimer
 
         controller.selectFolder(str(library / "nyaralas"))
         assert controller.photos.rowCount() == 2
         make_jpeg(library / "nyaralas" / "IMG_9999.jpg")
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller._on_folders_dirty([str(library / "nyaralas")])
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         qt_app.processEvents()
         assert controller.photos.rowCount() == 3
@@ -1661,17 +1647,14 @@ class TestExportRows:
     @staticmethod
     def _run_export(controller, qt_app, rows, target, max_dim=0, quality=85):
         """exportRows hívása + várakozás az exportFinished-re (max 5 mp)."""
-        from PySide6.QtCore import QEventLoop, QTimer
 
         results = []
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.exportFinished)
         controller.exportFinished.connect(
             lambda done, failed: results.append((done, failed))
         )
-        controller.exportFinished.connect(loop.quit)
         controller.exportRows(rows, target, max_dim, quality)
         if not results:  # háttérszálas út: a jel az eseményhurokban érkezik
-            QTimer.singleShot(5000, loop.quit)
             loop.exec()
         return results
 
@@ -1760,16 +1743,13 @@ class TestExportRows:
         controller.selectFolder(str(library / "nyaralas"))
         details = []
         results = []
-        from PySide6.QtCore import QEventLoop, QTimer
 
-        loop = QEventLoop()
+        loop = hangos_hurok(controller.exportFinished)
         controller.exportFailedDetails.connect(details.append)
         controller.exportFinished.connect(
             lambda done, failed: results.append((done, failed))
         )
-        controller.exportFinished.connect(loop.quit)
         controller.exportRows([0], str(tmp_path / "export-hiba"), 0, 85)
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert results == [(0, 1)]
         assert details and "rossz.jpg" in details[0][0]
@@ -1787,7 +1767,6 @@ class TestBusyAndBackgroundResync:
         import threading as _threading
 
         import picasapy.app.library_controller as library_controller_module
-        from PySide6.QtCore import QEventLoop, QTimer
 
         on_main = []
         original = library_controller_module.sync_folder
@@ -1799,10 +1778,8 @@ class TestBusyAndBackgroundResync:
             return original(conn, root, folder, exclude=exclude)
 
         monkeypatch.setattr(library_controller_module, "sync_folder", recording)
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.resyncFolder(str(library / "nyaralas"))
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert on_main == [False]
 
@@ -1814,7 +1791,6 @@ class TestBusyAndBackgroundResync:
         import threading as _threading
 
         import picasapy.app.library_controller as library_controller_module
-        from PySide6.QtCore import QEventLoop, QTimer
 
         started = _threading.Event()
         release = _threading.Event()
@@ -1824,8 +1800,7 @@ class TestBusyAndBackgroundResync:
             release.wait(5)
 
         monkeypatch.setattr(library_controller_module, "sync_folder", slow)
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.resyncFolder(str(library / "nyaralas"))
         # a hívás után azonnal itt vagyunk; a worker még a release-re vár
         assert started.wait(5)
@@ -1833,13 +1808,11 @@ class TestBusyAndBackgroundResync:
         # amíg a csík fel nem gyullad, ezért ez determinisztikusan bevárható
         assert _wait_until(qt_app, lambda: controller.isWorking is True)
         release.set()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert _wait_until(qt_app, lambda: controller.isWorking is False)
 
     def test_is_working_during_rescan(self, controller, qt_app, monkeypatch):
         import picasapy.app.controller as controller_module
-        from PySide6.QtCore import QEventLoop, QTimer
 
         # #505: a rescan a valódi (apró) teszt-könyvtáron a küszöbnél is
         # gyorsabban lefuthatna, ezért a munkát FEL KELL TARTANI, amíg a
@@ -1873,12 +1846,10 @@ class TestBusyAndBackgroundResync:
         controller.busyChanged.connect(
             lambda: transitions.append(controller.isWorking)
         )
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
         assert _wait_until(qt_app, lambda: controller.isWorking is True)
         engedd_tovabb.set()  # a busy-t LÁTTUK, a munka mehet tovább
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert _wait_until(qt_app, lambda: controller.isWorking is False)
         assert transitions[0] is True
@@ -2030,13 +2001,10 @@ class TestBackgroundThreadTeardown:
         assert controller.waitForBackgroundWorkers(0.0)
 
     def test_wait_joins_the_export_worker_thread(self, controller, library, tmp_path):
-        from PySide6.QtCore import QEventLoop, QTimer
 
         controller.selectFolder(str(library / "nyaralas"))
-        loop = QEventLoop()
-        controller.exportFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.exportFinished)
         controller.exportRows([0], str(tmp_path / "export-cel"), 0, 85)
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
 
         assert controller.waitForBackgroundWorkers(30.0)
@@ -2050,12 +2018,9 @@ class TestBackgroundThreadTeardown:
         assert not controller.backgroundWorkersRunning()
 
     def test_wait_joins_the_sync_worker_thread(self, controller, tmp_path):
-        from PySide6.QtCore import QEventLoop, QTimer
 
-        loop = QEventLoop()
-        controller.syncFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.syncFinished)
         controller.rescan()
-        QTimer.singleShot(5000, loop.quit)
         loop.exec()
 
         assert controller.waitForBackgroundWorkers(30.0)

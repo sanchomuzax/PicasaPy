@@ -11,6 +11,7 @@ import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
 
 from tests.support.qml_halasztott import epitsd_fel
+from support.qt_wait import hangos_hurok
 
 
 def _settle(qt_app, rounds=4):
@@ -106,10 +107,8 @@ class TestResultDialog:
     def test_collage_result_is_shown(self, qml_app, qt_app, tmp_path):
         window, controller, lib, engine = qml_app
         target = tmp_path / "kollazs.jpg"
-        loop = QEventLoop()
-        controller.collageFinished.connect(loop.quit)
+        loop = hangos_hurok(controller.collageFinished, timeout_ms=10000)
         controller.makeCollage([0, 1], "regulargrid", str(target))
-        QTimer.singleShot(10000, loop.quit)
         loop.exec()
         _settle(qt_app, 2)
 
