@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.348] – 2026-09-08
+
+### Javítva
+
+- **Az arcfelismerés mappa-szűrése most MINDKÉT útvonal-alakot felismeri**
+  (#2765). Az előző javítás (#2761) a windowsos `\` jelre állt át, ezzel
+  viszont a `/` jellel tárolt útvonalak maradtak ki — a hiba nem eltűnt,
+  hanem átfordult. A szűrés mostantól egyszerre keresi mindkét alakot, és
+  nem attól függ, milyen gépen fut a program: egy másik gépen készült vagy
+  átvett index is helyesen szűrődik.
+
 ## [0.8.347] – 2026-09-08
 
 ### Javítva
