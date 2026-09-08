@@ -586,9 +586,25 @@ out   = lerp(cél, forrás, alpha);    // csomagoltan, két csatornánként
 > **kétszer egymás után** futtatja rá. Két részlet a megvalósításban
 > FELTEVÉS (a docstring is kimondja):
 >
-> 1. **A „Mennyiség" → sugár leképezés.** A burkoló ezt az x87-veremen adja
->    át. A testvér `radblur` burkolójának alakját vettük át
->    (`W/100 · (Amount + 1) + 0,001`, ld. 4.2.4).
+> 1. ⭐ **LEZÁRVA (2026-09-09, #2736): a „Mennyiség" NEM hat az elmosásra.**
+>    A mérőszett három `linblur`-referenciája ugyanarról a képről készült, a
+>    láncuk csak a negyedik értékben tér el (`2,0` / `10,0` / `0,0`), és a
+>    valódi Picasa három kimenete **bitre azonos** (max eltérés 0), miközben
+>    a forrástól mindhárom eltér (átlag 12,21) — a szűrő tehát lefutott.
+>    A binárisban ugyanez: a burkoló (`0x008f99c0`) EGYETLEN lebegőpontos
+>    argumentumot ad a magnak (`fstp dword [esp]` a `call 0x0090de10`
+>    előtt), a mag pedig azt adja tovább mindkét tengelyre a közös
+>    elmosónak (`0x0090dec6`, `0x0090def6` → `0x009dd0d0`); a negyedik
+>    lánc-érték ebbe a láncba nem kerül be. A burkoló ugyanitt kiolvasva:
+>    a korong `trunc(0,5 · méret · (1 + p))`, a két konstans
+>    `[0x00c72150] = 0,5` és `[0x00cf3ac0] = 2³²` (előjel-fixup) — a #2710
+>    képlete tehát cím-szinten is igazolt.
+>
+>    A sugár mért értéke a mi `iir_blur`-paraméterezésünkben **1,5**: a ΔE a
+>    valódi exporttól 13,147 / 17,849 / 6,814 helyett mindháromra **0,279**.
+>    ⛔ A hatókör: EGY korong-álláson (`0,5; 0,5`) mérve — hogy a sugár
+>    függ-e a korong helyétől, az NINCS mérve (második referencia-pont:
+>    #2772), ezért a kód konstanst használ, nem képletet.
 > 2. **A súlytábla utolsó rekeszei.** A `round((1 − 2f) · 255,9999)` egy
 >    **bájtba** kerül; `f → 0` közelében (`i ≥ 338`) ez 256 lenne, ami 0-ra
 >    fordul körbe — a teljesen ÉLES tartomány egy sávjában 50%-os homályt

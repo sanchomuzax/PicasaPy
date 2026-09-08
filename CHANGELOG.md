@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.351] – 2026-09-09
+
+### Javítva
+
+- **A „Lineáris homályosítás" most annyira mos, amennyire az eredeti**
+  (#2736). Eddig sokkal erősebben elmosott a kelleténél, és a „Mennyiség"
+  csúszkára is reagált — kiderült, hogy az igazi Picasában ez a csúszka
+  **egyáltalán nem hat** erre az effektre: három, csak a Mennyiségben eltérő
+  beállítással a valódi program képre azonos kimenetet ad. Az elmosás
+  erősségét kimértük: a valódi exporttól való eltérés (ΔE) a három
+  mintaesetben 13,1 / 17,8 / 6,8 volt, most mindháromban **0,28** — vagyis
+  szabad szemmel nem különbözik az eredetitől.
+
 ## [0.8.350] – 2026-09-09
 
 ### Javítva

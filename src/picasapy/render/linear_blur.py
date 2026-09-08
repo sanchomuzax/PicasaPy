@@ -23,12 +23,28 @@ puffer), `idx >= +384` esetén a **nyers éles forrást** írja.
 
 ## Amit ez a modul KÖZELÍT — és min múlik
 
-1. **A „Mennyiség" csúszka → elmosási sugár leképezése.** A burkoló ezt az
-   x87-veremen adja át, a dekompilátor elvesztette. A testvér `radblur`
-   burkolójában viszont olvasható a minta (`szélesség/100 · (Amount+1)`),
-   ezért itt is ezt használjuk — **feltevés, nem mérés**; a kalibráció a
-   #317-es jegyben fut. A hatás JELLEGE (hol éles, hol homályos, milyen az
-   átmenet) ettől független és egzakt.
+1. ⭐ **MÉRVE (2026-09-09, #2736): a „Mennyiség" csúszka NEM hat az
+   elmosásra.** A mérőszett három `linblur`-referenciája ugyanarról a
+   képről készült, láncuk csak a negyedik értékben tér el
+   (`2,0` / `10,0` / `0,0`), és a valódi Picasa három kimenete **bitre
+   azonos** — miközben a forrástól mindhárom eltér (átlag 12,21), tehát a
+   szűrő lefutott. A binárisban ugyanez: a burkoló (`0x008f99c0`)
+   EGYETLEN lebegőpontos argumentumot ad a magnak (`fstp dword [esp]` a
+   `call 0x0090de10` előtt), a mag pedig azt adja tovább a közös elmosónak
+   mindkét tengelyre (`0x0090dec6`, `0x0090def6` → `0x009dd0d0`); a
+   negyedik lánc-érték ebbe a láncba nem kerül be.
+
+   A sugár mért értéke a mi (`iir_blur`) paraméterezésünkben **1,5**
+   (`LINBLUR_MERT_SUGAR`): a ΔE a valódi exporttól 13,147 / 17,849 / 6,814
+   (alap / max / min, a régi `szélesség/100·(Mennyiség+1)` képlettel)
+   helyett **mindháromra 0,279** — JPEG-zaj nagyságrend.
+
+   ⛔ **A hatókör:** a mérés EGY korong-álláson (`0,5; 0,5`) készült, mert
+   csak ahhoz van referencia-exportunk. Az MÉRVE van, hogy a „Mennyiség"
+   nem hat, és hogy ezen az álláson a sugár 1,5; az NINCS mérve, hogy a
+   sugár függ-e a korong helyétől — ezért konstans, nem képlet: egy
+   `1+|x|` alak ugyanezt az egy pontot találná el, de bizonyítatlan
+   függést állítana. Második referencia-pont: #2772.
 2. **A súlytábla utolsó rekeszei.** A natív kód a `round((1−2f)·255,9999)`
    értéket **bájtba** írja, így `f → 0` közelében (`i >= 338`) 256-ot
    tárolna, ami 0-ra fordul körbe — vagyis a teljesen ÉLES tartomány egy
@@ -65,9 +81,10 @@ _TABLE_STEP = 1.0 / 256.0
 #: A natív skálázó szorzó a súlytábla építésénél.
 _TABLE_SCALE = 255.9999
 
-#: A `radblur` burkolójából átvett sugár-képlet együtthatói (KÖZELÍTÉS).
-_RADIUS_WIDTH_FRACTION = 0.01
-_RADIUS_EPSILON = 0.001
+#: A MÉRT elmosási sugár a mi `iir_blur`-paraméterezésünkben (#2736). A
+#: referencia-exporttól mért ΔE ehhez az egy értékhez tartozik (0,279); a
+#: hatókör a modul-doc 1. pontjában áll kimondva.
+LINBLUR_MERT_SUGAR = 1.5
 
 
 def _spline_tail(t: float) -> float:
@@ -104,12 +121,18 @@ _WEIGHT_TABLE.setflags(write=False)
 
 
 def linblur_blur_radius(width: int, amount: float) -> float:
-    """A „Mennyiség" csúszka elmosási sugara — KÖZELÍTÉS (ld. modul-doc 1.).
+    """A `linblur` elmosási sugara — MÉRVE állandó (#2736).
 
-    A testvér `radblur` burkolójának mért alakja:
-    `sugár = szélesség · 0,01 · Mennyiség + 0,001 + szélesség · 0,01`.
+    A `width` és az `amount` SZÁNDÉKOSAN nem szól bele: a mérés szerint a
+    „Mennyiség" nem hat (három bitre azonos referencia-export három
+    különböző lánccal), és a szélesség-skálázásra sincs bizonyíték. A két
+    paraméter az API stabilitása miatt marad — a hívók (`chain`, a
+    regisztráció) aláírása nem változik.
+
+    Ld. a modul-doc 1. pontját: ott áll a mérés és a hatóköre.
     """
-    return width * _RADIUS_WIDTH_FRACTION * (max(amount, 0.0) + 1.0) + _RADIUS_EPSILON
+    del width, amount  # mérve nem hatnak — ld. a docstringet
+    return LINBLUR_MERT_SUGAR
 
 
 def _projection(
@@ -206,9 +229,11 @@ def apply_linblur(
     Vagyis az effekt mostantól a jó oldalon élesít (bal oldal elmosva, jobb
     oldal éles, az átmenet 0,7–0,85 W között), pontosan mint az eredeti; a
     megmaradó ΔE az elmosás ERŐSSÉGÉBŐL jön, nem a helyéből. A
-    „Mennyiség → sugár" leképezés és a súlytábla-csonkolás a modul 1–2.
-    pontja szerint KALIBRÁLATLAN közelítés — annak kimérése külön jegy
-    (#2736), és a ΔE-t csak az mozdíthatja.
+    ⭐ **A #2736 ezt kimérte:** a „Mennyiség" nem hat, a sugár állandó
+    (`LINBLUR_MERT_SUGAR = 1,5`), és ezzel a ΔE mindhárom esetre **0,279**
+    (13,147 / 17,849 / 6,814 helyett). A súlytábla csonkolása (2. pont)
+    továbbra is közelítés — a 0,279-es maradék ΔE-ben csak ez és a
+    JPEG-kerekítés lehet benne.
 
     A paritás-függés ettől FÜGGETLENÜL szűnik meg: mindkét olvasat
     középpontja `csonk(méret/2) == méret>>1`.
@@ -245,6 +270,7 @@ def apply_linblur(
 __all__ = [
     "LINBLUR_TABLE_SIZE",
     "apply_linblur",
+    "LINBLUR_MERT_SUGAR",
     "linblur_blur_radius",
     "linblur_weight_table",
 ]
