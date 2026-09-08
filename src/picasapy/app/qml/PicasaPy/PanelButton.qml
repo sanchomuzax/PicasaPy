@@ -334,6 +334,13 @@ Rectangle {
         //: lenti `anchors.topMargin` végzi, és a #2494 őre a felirat
         //: ELEMÉNEK helyzetét méri — egy gomb-magas, magában középező elem
         //: azt a mérést vakká tenné.
+        //:
+        //: ⚠️ A vágás a VÉGSŐ fék (#2597, a CI windows-lábán mérve): ha a
+        //: platform betűje a legkisebb megengedett fokozaton sem fér el, a
+        //: rajzolt szöveg egy képponttal túlnyúlhat a gombon. Vágás nélkül
+        //: ez a szomszéd gombra folyna — a mért eredeti ugyanezt teszi (a
+        //: `.tre` `*_clip` konténerei).
+        clip: pbtn.rogzitett
         //: #2494: a sorköz. A `Text` alapértelmezése a betűtípus SAJÁT
         //: sormagassága (Nunito Sans 10 px-en 13,64) — a kétsoros
         //: „Visszavonás: <effektnév>" ettől 14 képpontos sorközzel rajzolódott

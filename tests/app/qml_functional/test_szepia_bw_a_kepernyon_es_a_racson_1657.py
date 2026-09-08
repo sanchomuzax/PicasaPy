@@ -368,12 +368,23 @@ class TestNemModositAFajlt:
         import hashlib
 
         def lenyomatok() -> dict[str, str]:
+            """A KÖNYVTÁR fájljainak ujjlenyomata: képek és `.picasa.ini`-k.
+
+            ⚠️ A program SAJÁT beállításfájlja (`settings.ini`, a
+            `tests/app/conftest.py` `QSettings`-e ugyanebben a `tmp_path`-ban)
+            KIMARAD. A megjelenítési mód megőrzendő beállítás, tehát a
+            váltás JOGGAL írja — a mérés viszont a felhasználó fényképeiről
+            és Picasa-adatáról szól. Ez a különbség a CI windows-lábán
+            valódi bukást okozott (2026-09-08, main): ott a `QSettings` a
+            mérés ablakán BELÜL írta ki a fájlt, itthon még nem — vagyis
+            néma, platformfüggő flaky volt, nem termékhiba."""
             return {
                 str(f.relative_to(tmp_path)): hashlib.sha256(
                     f.read_bytes()
                 ).hexdigest()
                 for f in sorted(tmp_path.rglob("*"))
-                if f.is_file() and f.suffix.lower() in {".jpg", ".ini"}
+                if f.is_file()
+                and (f.suffix.lower() == ".jpg" or f.name == ".picasa.ini")
             }
 
         window, controller, grid = racs
@@ -398,7 +409,7 @@ class TestNemModositAFajlt:
         )
 
         # 3) a `filters=` lánc meg sem született (a szerkesztő effektje ide írna)
-        inik = list(tmp_path.rglob("*.ini"))
+        inik = [f for f in tmp_path.rglob(".picasa.ini") if f.is_file()]
         for ini in inik:
             szoveg = ini.read_text(encoding="utf-8", errors="replace")
             assert "filters=" not in szoveg, (
