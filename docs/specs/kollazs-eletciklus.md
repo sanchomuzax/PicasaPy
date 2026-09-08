@@ -4171,3 +4171,71 @@ Ez az első olyan nyom, amely **egyszerre** kapcsolódik (a) az
 (b) a `.cxf` egységrendszeréhez.
 
 *Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
+
+## 41. K1 — a `collage_adapt` BÉLYEGKÉP-SZINTET vált, nem geometriát (2026-09-08, #1412)
+
+*193. kutatói kör. A 40.5 lépését viszi: a lapegység (`[esp+0x4c]`) útja a
+`FUN_0083d730` gyerek-ciklusán.*
+
+### 41.1 A ciklus törzse, utasításonként
+
+A lapegység **kétszer** szerepel a függvényben: `0x0083d7b8` (előállítás)
+és `0x0083d830` (felhasználás) — más sehol.
+
+```
+U = [esp+0x4c]                  ; a lapegység képpontban (40.3)
+A = [ebx+0x168]  ·  B = [ebx+0x16c]      ; a csomópont-objektum két float tagja
+0x0083d836  [esp+0x20] = A × U
+0x0083d84c  [esp+0x18] = U × B
+0x0083d856  h  = [esp+0x44] − [esp+0x3c]         ; a téglalap egyik oldala
+0x0083d86a  ecx = (int)( h × (U × B) )           ; csonkolva (or eax,0xc00)
+0x0083d87e  w  = [esp+0x40] − [esp+0x38]         ; a másik oldal
+0x0083d89c  eax = (int)( w × (A × U) )
+0x0083d8b0  eax = MAX(eax, ecx)                  ; a NAGYOBB oldal képpontban
+```
+
+### 41.2 ⭐ És a MAX-ból BÉLYEGKÉP-SZINT lesz
+
+```
+0x0083d8c0  esi = 0
+            amíg  eax > [esi*4 + 0x00c7da84]  és  esi < 4:  esi++
+0x0083d8d1  … majd a panel [+0x270] objektumán  call 0x008366c0
+```
+
+⇒ **A `collage_adapt` parancs a csomópont KÉPPONTBAN mért méretéből
+bélyegkép-SZINTET választ, és azt kéri be.** Geometriát **nem** ír: a
+40.4 szerinti mezőírásai a mentés/visszaállítás párt érintik, nem a
+csomópontot.
+
+*Bizonyítottsági fok: **megerősített** — a ciklus utasításonként, a
+küszöbtábla kiolvasva.*
+
+### 41.3 ⭐ A BÉLYEGKÉP-SZINTEK kiolvasva: 72 · 144 · 288 · 640 · 1024
+
+A `0x00c7da84`-en álló tábla első öt `dword`-je:
+
+| index | küszöb (képpont) |
+|---:|---:|
+| 0 | **72** |
+| 1 | **144** |
+| 2 | **288** |
+| 3 | **640** |
+| 4 | **1024** |
+
+A ciklus az első **négyet** hasonlítja (`esi < 4`), és ha mindnél nagyobb,
+a `esi = 4` marad ⇒ **öt szint**, a legnagyobb az 1024.
+
+*(A tábla utáni két érték — `0,33` és `1024,0` — más célú konstans;
+a szintekhez nem tartoznak.)*
+
+### 41.4 ⛔ Amit ez a K1-re nézve kimond
+
+A húzás végén kiadott parancs (40.1) tehát **nem** alkalmazza a
+`scale`-t — bélyegképet vált. ⇒ a kézi átméretezés hatása a `scale`-re
+vagy **húzás közben** érvényesül, vagy **másik parancson** át.
+
+**A KÖVETKEZŐ lépés:** a `FUN_00868570` **húzás-KÖZBENI** ága —
+a `pan_hand_drag` (`0xc7ed28`) beállítása körül (`0x008687ae`): mit ír a
+kezelő minden egérmozgásra, és eljut-e valami a csomópont `+0x2c`-jéig.
+
+*Ez ÖRÖKÖLT nyitott kérdés; a munkasorban marad.*
