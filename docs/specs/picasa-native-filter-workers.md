@@ -901,6 +901,77 @@ mutat-e az elmosott képre — ez a hívó oldalán dől el (melyik puffer az �
 és melyik a „másik"). A `radblur` („Lágy fókusz") és a `radsat` („Fókuszos FF")
 ugyanezt a maszkot használja, ellentétes irányban.
 
+### 4.2.5/b ⭐⭐ A `pow` KÉT ARGUMENTUMA KIOLVASVA (2026-09-09, #2773)
+
+A 4.2.5 mérése azért kellett, mert „a `k = round(pow(a, b))` két argumentuma
+az FPU-veremben van, a dekompilátor nem látja". **A diszasszemblátumban
+mindkettő ott van** (`eszkozok/pe_dis.py`, `0x009dd0d0` prológusa):
+
+```
+0x009dd177  fld1                          ; 1
+0x009dd17c  fdivrp st(1)                  ; 1/R
+0x009dd17e  fld qword [0x00c7dd30]        ; = 0.1      ← az ALAP
+0x009dd186  call 0x00c0b410               ; pow(0.1, 1/R)
+0x009dd18b  fld1 ; fsubrp st(2)           ; 1 − pow
+0x009dd199  fmul qword [0x00cf3ff0]       ; = 32767.0  ← a SZORZÓ
+0x009dd19f  call 0x00c29990               ; __ftol → CSONKOL
+0x009dd1a4  fdiv dword [ebp + 0x10]       ; és ugyanez a MÁSODIK tengelyre
+```
+
+```
+k = trunc((1 − 0,1^(1/R)) · 32767)
+```
+
+⇒ az `R` **nem az e-hajtási, hanem a TIZEDELÉSI távolság**: `R` képpont alatt
+esik a maradék a tizedére. A `pmulhw` osztója továbbra is 65536, tehát az egy
+lépésben átvett arány `α = k/65536 < 0,5` — ahogy a 4.2.1 is írja.
+
+#### Miért nem mondott ellent a 4.2.5 mérése
+
+A natív alakból visszaszámolt e-hajtási hossz:
+
+| `R = 250^t` | `k` (natív) | `L` a natív alakból | `L/R` | mért `L` | mért `L/R` |
+|---:|---:|---:|---:|---:|---:|
+| 3,98 | 14 403 | 4,03 | 1,013 | 4,43 | 1,114 |
+| 15,81 | 4 440 | 14,25 | 0,902 | 15,29 | 0,967 |
+| 62,87 | 1 178 | 55,13 | 0,877 | 65,37 | 1,040 |
+| 250,00 | 300 | 217,95 | 0,872 | 216,04 | 0,864 |
+
+A mérés szórása (±0,092 a `L/R`-en) **nagyobb, mint a két alak közti
+eltérés**, ezért a mérés nem tudta eldönteni — az illesztett `exp(−1/R)`
+ugyanolyan jól leírta a négy pontot. A diszasszemblátum viszont eldönti:
+a bináris a `0,1`-es alapot és a 32767-es szorzót használja.
+
+#### A hívónkénti hatás (ΔE a valódi exporttól, `tools/golden`)
+
+| eset | illesztett alak | **natív alak** |
+|---|---:|---:|
+| `glow` / `glow2` alap | 0,449 | **0,373** |
+| `glow` / `glow2` max | 1,386 | **0,575** |
+| `glow` / `glow2` min | 0,174 | 0,174 |
+| `dir_sharp` alap | 5,444 | **5,260** |
+| `radblur` min | 4,541 | **0,326** |
+| `radblur` alap | 0,392 | 0,645 |
+| `radblur` max | 0,350 | 0,552 |
+| `linblur` ×3 | 0,279 | **0,241** (a sugár 1,5 → 0,5, #2736/#2773) |
+| `radsat` ×3 | 5,854 / 4,194 / 3,708 | változatlan |
+
+⚠️ **A `radblur` két esete romlott** (0,39 → 0,65 és 0,35 → 0,55, mindkettő
+jóval 1,0 alatt, tehát láthatatlan), miközben a harmadik nagyságrendet
+javult. Ez NEM a sugár-képlet hibája: a `radblur` burkolójának
+sugár-számítása szintén kiolvasva (`0x008f85b0`–`0x008f8605`,
+`[0x00cf40b8] = 0,01`, `[0x00cf3db0] = 0,001`):
+
+```
+R = szélesség·0,01 · Mennyiség + 0,001 + szélesség·0,01
+```
+
+— pontosan a 4.2.4-ben leírt és nálunk megvalósított alak. Mivel **mindkét
+képlet cím-szintű**, a `radblur` maradék ΔE-je máshonnan jön (a saját
+maszk-közelítéseiből), és azt a szabad paraméter korábban elnyelte. A
+`radsat` 4–6-os ΔE-je szintén nem ebből fakad (az együttható-váltás nem
+mozdítja).
+
 ### 4.2.5 A sugár → együttható leképezés — MEGMÉRVE (2026-08-13)
 
 A #576/#617 körökben a szerkezet megvolt, de a `k = round(pow(a, b))` két
@@ -946,6 +1017,11 @@ azaz a paraméter `R(t) = 250^t`, ahol `t ∈ [0,1]` a csúszka állása. Ezzel:
 > k = round(65536 · (1 − r))        ← ez megy a pmulhw-ba
 > ```
 > Ez összefér a dekompilált `pow` hívással: `exp(−1/R) = pow(e, −1/R)`.
+
+⛔ **EZT A KÖVETKEZTETÉST A 4.2.5/b FELÜLÍRTA (2026-09-09, #2773):** a `pow`
+két argumentuma kiolvasható a diszasszemblátumból (`0,1` és `32767`), és a
+mérés szórása nem tudta a két alakot szétválasztani. A fenti mérés
+érvényes, a belőle vont KÉPLET nem — a kód a natív alakot használja.
 
 #### Végponttól végpontig igazolás
 

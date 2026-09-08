@@ -61,12 +61,15 @@ def _minta(meret: int = 48) -> np.ndarray:
 
 
 class TestASugarNemFuggAMennyisegtol:
+    """⭐ A #2773 tovább vitte: a sugár nem is állandó, hanem a burkoló által
+    átadott ELSŐ normált lánc-érték (`params+0x34`) nagysága — a „Mennyiség"
+    függetlensége viszont változatlanul áll, és ez a fájl azt őrzi."""
+
     @pytest.mark.parametrize("amount", [0.0, 2.0, 10.0, 1000.0, -5.0])
     def test_a_sugar_minden_mennyisegre_ugyanaz(self, amount: float) -> None:
         assert linblur_blur_radius(960, amount) == LINBLUR_MERT_SUGAR
 
     def test_a_sugar_a_szelessegtol_sem_fugg(self) -> None:
-        """A mai képlet a szélességgel skálázott; a mérés ezt sem támogatja."""
         assert linblur_blur_radius(120, 2.0) == linblur_blur_radius(4000, 2.0)
 
     def test_a_kimenet_azonos_harom_mennyisegre(self) -> None:
@@ -79,9 +82,10 @@ class TestASugarNemFuggAMennyisegtol:
         assert np.array_equal(alap, minimum)
 
     def test_a_mert_sugar_erteke(self) -> None:
-        """A szám maga is őrizve: elírás vagy „finomhangolás" ne menjen át
-        némán, mert a 0,279-es ΔE ehhez az egy értékhez tartozik."""
-        assert LINBLUR_MERT_SUGAR == 1.5
+        """A szám maga is őrizve: „finomhangolás" ne menjen át némán, mert a
+        0,2407-es ΔE ehhez az egy értékhez ÉS a natív együttható-alakhoz
+        tartozik (#2773)."""
+        assert LINBLUR_MERT_SUGAR == 0.5
 
 
 class TestAHatasMegvan:

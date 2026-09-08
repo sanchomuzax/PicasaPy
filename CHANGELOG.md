@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.352] – 2026-09-09
+
+### Javítva
+
+- **Az elmosáson alapuló effektek (Ragyogás, sugaras elmosás, lineáris
+  homályosítás, irányított élesítés) most a Picasa saját számítását
+  használják** (#2773). Az elmosás központi képletét eddig mérésből
+  illesztettük, mert visszafejthetetlennek tűnt; kiderült, hogy a program
+  gépi kódjából kiolvasható, és nem egyezett a mienkkel. A valódi
+  Picasa-exportoktól való eltérés (ΔE) ott javult, ahol addig a legnagyobb
+  volt: a Ragyogás maximumon 1,39 → 0,58, a sugaras elmosás legkisebb
+  állásán 4,54 → 0,33, a lineáris homályosítás 0,28 → 0,24. Két sugaras
+  esetben minimálisan (0,39 → 0,65, 0,35 → 0,55) romlott, mindkettő jóval a
+  szabad szemmel észlelhető szint alatt — ezek maradék eltérése máshonnan
+  jön, és a régi képlet csak elrejtette.
+
 ## [0.8.351] – 2026-09-09
 
 ### Javítva

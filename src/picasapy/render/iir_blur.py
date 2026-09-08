@@ -12,18 +12,33 @@ előre:   s += ((x[i] << 7) − s) · k >> 16 ;   y[i] = clamp(s >> 7, 0, 255)
 vissza:  ugyanez a MÁR SZŰRT soron, visszafelé
 ```
 
-A **sugár → együttható** leképezés MÉRÉSBŐL való (a dekompilátor az
-`k = round(pow(a, b))` két argumentumát az x87-veremen elvesztette):
+⭐ **A sugár → együttható leképezés KIOLVASVA a binárisból** (2026-09-09,
+#2773). A korábbi docstring azt állította, hogy a `pow` két argumentuma az
+x87-veremen elveszett, és mérésből illesztett alakot használt
+(`exp(−1/R)`, 65536-os skála). A diszasszemblátumban **mindkét argumentum
+ott van**:
 
 ```
-r = exp(−1/R)          k = round(65536 · (1 − r))
+0x009dd177  fld1                          ; 1
+0x009dd17c  fdivrp st(1)                  ; 1/R
+0x009dd17e  fld qword [0x00c7dd30]        ; = 0.1        ← az ALAP
+0x009dd186  call 0x00c0b410               ; pow(0.1, 1/R)
+0x009dd18b  fld1 ; fsubrp st(2)           ; 1 − pow
+0x009dd199  fmul qword [0x00cf3ff0]       ; = 32767.0    ← a SKÁLA
+0x009dd19f  call 0x00c29990               ; __ftol → CSONKOL
 ```
 
-vagyis **az `R` paraméter képpontban az e-hajtási távolság**. A mérés a
-windowsos Picasa „Ragyogás" effektjének öt csúszkaállásán készült, a
-végponttól végpontig igazolás átlagos hibája 0,6–1,2 szint (JPEG-zaj
-nagyságrendje). Részletek és a mért táblázatok:
-`docs/specs/picasa-native-filter-workers.md` 4.2.1 és 4.2.5.
+⇒ **`k = trunc((1 − 0,1^(1/R)) · 32767)`**, tengelyenként (a második
+tengelyre ugyanez `[ebp+0x10]`-zel, `0x009dd1a4`-től). A menet lépése a
+MMX-kódból: `punpcklbw`+`psrlw 1` (érték `<< 7`), `psubw`, **`pmulhw`**
+(előjeles `>> 16`), `paddw`, majd `psrlw 7`+`packuswb` — pontosan a lenti
+rekurzió, tehát az együttható osztója 65536, a SKÁLÁJA viszont 32767.
+
+Vagyis az `R` **nem** az e-hajtási, hanem a **tizedelési** távolság: `R`
+képpont alatt esik a súly a tizedére. A korábbi, illesztett alak ezt a
+különbséget a hívók sugár-paraméterében nyelte el (szabad paraméter). A
+javítás mérése és a hívónkénti ΔE: `docs/specs/picasa-native-filter-workers.md`
+4.2.1 és 4.2.5.
 
 ## Amit ez a modul KÖZELÍT
 
@@ -50,17 +65,29 @@ _STATE_SHIFT = 7
 #: A `pmulhw` (előjeles 16×16 → felső 16 bit) osztója.
 _COEFF_SCALE = 65536
 
+#: A natív együttható SKÁLÁJA (`[0x00cf3ff0]`) — nem azonos az osztóval: a
+#: `pmulhw` 65536-tal oszt, a natív szorzó viszont 32767, tehát az egy
+#: lépésben átvett arány legfeljebb ~0,5 (#2773).
+_NATIVE_COEFF_SCALE = 32767
+
+#: A natív `pow` ALAPJA (`[0x00c7dd30]`) — az `R` a TIZEDELÉSI távolság.
+_NATIVE_POW_BASE = 0.1
+
 
 def blur_coefficient(radius: float) -> int:
-    """A `0x009dd0d0` 16 bites együtthatója az `R` sugárhoz (4.2.5 MÉRÉS).
+    """A `0x009dd0d0` 16 bites együtthatója az `R` sugárhoz — a NATÍV alak.
 
-    `radius <= 0` esetén `65536`-ot ad: az állapot minden lépésben teljesen
-    átveszi a bemenetet, tehát a szűrő azonosság. (A natív `pow(e, −1/R)`
-    itt nem lenne értelmezett — a hívók a 0 sugarat eleve kihagyják.)
+    `k = trunc((1 − 0,1^(1/R)) · 32767)`, a binárisból kiolvasva (#2773, ld.
+    a modul docstringjét). A `__ftol` **csonkol**, nem kerekít.
+
+    `radius <= 0` esetén a natív oldal az adott tengelyt ki sem futtatja (a
+    `0x009dd150`–`0x009dd177` két jelzőbájtja dönt); a hívóink ugyanígy
+    kihagyják, itt a teljes átvétel a biztonságos alapérték.
     """
     if radius <= 0.0:
         return _COEFF_SCALE
-    return int(round(_COEFF_SCALE * (1.0 - math.exp(-1.0 / radius))))
+    arany = 1.0 - math.pow(_NATIVE_POW_BASE, 1.0 / radius)
+    return int(_NATIVE_COEFF_SCALE * arany)
 
 
 def _sweep_axis_zero(values: np.ndarray, coefficient: int) -> np.ndarray:

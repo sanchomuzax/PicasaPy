@@ -23,25 +23,47 @@ from picasapy.render.iir_blur import apply_picasa_blur, blur_coefficient
 
 
 class TestBlurCoefficient:
-    """A mért `R → k` leképezés (4.2.5) számszerű pontjai."""
+    """A binárisból KIOLVASOTT `R → k` leképezés (#2773).
+
+    `k = trunc((1 − 0,1^(1/R)) · 32767)` — a `pow` alapja `[0x00c7dd30] = 0,1`,
+    a szorzó `[0x00cf3ff0] = 32767`, a `__ftol` csonkol. A korábbi számok
+    (14572 / 4017 / 1034) az illesztett `exp(−1/R)`, 65536-os alakhoz
+    tartoztak.
+    """
 
     @pytest.mark.parametrize(
         "slider,expected",
         [
-            (0.25, 14572),  # R = 250^0.25 = 3,9764
-            (0.50, 4017),  # R = 250^0.50 = 15,8114
-            (0.75, 1034),  # R = 250^0.75 = 62,8716
+            (0.25, 14403),  # R = 250^0.25 = 3,9764
+            (0.50, 4440),  # R = 250^0.50 = 15,8114
+            (0.75, 1178),  # R = 250^0.75 = 62,8716
         ],
     )
-    def test_a_mert_egyutthatok(self, slider: float, expected: int) -> None:
+    def test_a_kiolvasott_egyutthatok(self, slider: float, expected: int) -> None:
         # a `filterdesc.xml` szerint a Sugár csúszka logaritmikus: R = 250^t
         assert blur_coefficient(250.0**slider) == expected
+
+    def test_az_egyutthato_nem_lephet_a_szorzo_fole(self) -> None:
+        """A natív érték `int16`-ba megy (`pmulhw`): a szorzó 32767, tehát a
+        pozitív sugarak együtthatója SOSEM lehet ennél nagyobb. A régi,
+        65536-os alak ezt a korlátot megsértette (kis sugarakra 65536-ig
+        ment), és a hiba a hívók sugár-paraméterében tűnt el."""
+        for radius in (0.01, 0.1, 0.5, 1.0, 3.0, 100.0):
+            assert 0 <= blur_coefficient(radius) <= 32767
+
+    def test_a_tizedeles_ertelme(self) -> None:
+        """`R` a TIZEDELÉSI távolság: `R` képpont alatt a maradék tizedére
+        esik. Az együtthatóból visszaszámolva ez `0,1`-et ad."""
+        for radius in (2.0, 7.5, 40.0):
+            arany = blur_coefficient(radius) / 32767.0
+            assert (1.0 - arany) ** radius == pytest.approx(0.1, rel=2e-3)
 
     def test_nagyobb_sugar_kisebb_egyutthato(self) -> None:
         assert blur_coefficient(2.0) > blur_coefficient(20.0) > blur_coefficient(200.0)
 
     def test_a_nulla_sugar_nem_mos(self) -> None:
-        """A natív `pow(e, −1/R)` R=0-nál nem értelmezett — nálunk no-op."""
+        """A natív `pow(0,1, 1/R)` R=0-nál nem értelmezett; a natív oldal az
+        adott tengelyt ki sem futtatja (`0x009dd150` jelzőbájtjai)."""
         assert blur_coefficient(0.0) == 65536
 
 
