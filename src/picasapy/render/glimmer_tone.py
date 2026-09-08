@@ -319,6 +319,39 @@ def apply_quantizepalette(image, steps: float = 8.0, smoothing: float = 80.0, fa
 
     ⚠️ **Csak három beállításra mérve**, a szállítottakra — a `Steps`
     teljes tartományára (2…30) nem.
+
+    ## Az eredeti algoritmus — a régi „NEM ismert" HELYÉBE (#2231, 2026-09-08)
+
+    Két, egymásnak ellentmondó, de **mindkettő mért** leletünk van. A
+    docstring korábbi „a pontos algoritmus NEM ismert" mondata elavult:
+    mindkét oldal megvan, csak nem állnak össze.
+
+    **1. A binárisban álló művelet OKTREE-alapú palettaválasztó.**
+    A `glimmer::QuantizePaletteImageOperation` (vtábla `0x008eff58`,
+    alkalmazó `0x00bb5ad0`) két attribútumot olvas — `Steps` a `+0x24`-en
+    (kódbeli alapérték **255**), `Depth` a `+0x2c`-n (alapérték **2**) —,
+    a nevek a `0x00ceff4c` és `0x00c85524` sztringekből. A munkát a
+    `0x00bb5b60` végzi: egy 50×50-es, 256 színű mintából (`0x00bb5c44`
+    `mov eax, 0x32`) oktree-t épít, `Steps − 1`-re redukálja
+    (`Steps == 2` esetén 2-re), majd egy 256 rekeszes 3-3-2 keresőtáblát
+    tölt fel a fa legközelebbi színeivel. A `filterdesc.xml` (1255. sor)
+    `Depth="4"`-et és `Steps="{_sldrSteps.value}"`-t szállít.
+
+    **2. A szállított szűrő LÁTHATÓ kimenete viszont csatornánként
+    egyenletes rácsra ugrik** — ez a mienk. A NAS-mérőszett
+    `quantizepalette__alap` (`Steps=8`) esetén a Picasa saját exportjának
+    képpontértékei **97,6%-ban** a `round(i·255/(Steps−1))` rácson ülnek
+    (`min`, `Steps=2`: 98,4%), és a mezőnkénti leképezés csatornánként
+    FÜGGETLEN — pl. `(41, 60, 199) → (36, 72, 182)`. Ilyen színt egy
+    palettaválasztó nem tud előállítani: a `(36, 72, 182)` nincs benne a
+    forrásképben. A hű oktree-újraépítés ΔE-je ugyanezen a képen
+    **28,55** (`min`: 93,30) a lineáris **0,268** / **0,687** ellenében.
+
+    ⇒ **A lineáris modell marad**, mert a mérés szerint az írja le az
+    eredeti látható viselkedését. Az ellentmondás feloldása (miért nem az
+    oktree-út fut a `.picasa.ini`-vezérelt teljes felbontású renderben)
+    **NYITOTT** — ld. `docs/specs/filterdesc-registry.md`. Az őr:
+    `tests/render/test_quantizepalette_racs_2231.py`.
     """
     import numpy as np
 
