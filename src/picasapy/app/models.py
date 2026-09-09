@@ -8,6 +8,7 @@ import re
 import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
+from urllib.parse import quote
 import zlib
 
 from PySide6.QtCore import (
@@ -24,6 +25,7 @@ from picasapy.index import PhotoRecord
 
 from .display_mode_paint import (
     current_display_mode,
+    current_display_mode_suffix,
     display_mode_url_suffix,
 )
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
@@ -674,6 +676,34 @@ class PhotoGridModel(QAbstractListModel):
             return ""
         photo = self._photos[row]
         return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
+
+    @Slot(int, result=str)
+    def displayUrlAt(self, row: int) -> str:
+        """A kép URL-je a DIAVETÍTÉSNEK — a megjelenítési móddal (#1640).
+
+        Aktív mód nélkül a sima `file://` URL (bájtra a mód bevezetése
+        előtti), tehát a mindennapi használat semmivel nem lassul. Ha a mód
+        képpontot mozdít, a `displayphoto` szolgáltató URL-je jön, a móddal
+        a lekérdezésben — az URL így egyértelműen meghatározza a képpontokat
+        (ugyanaz az elv, mint a bélyegkép-úton, #1596).
+
+        ⚠️ A nyers fájl URL-jét a diavetítés korábban KÖZVETLENÜL töltötte
+        be, ezért a mód rajta soha nem látszott (#1640) — pedig a Projektor
+        mód épp a kivetítéshez való.
+        """
+        fajl_url = self.fileUrlAt(row)
+        if not fajl_url:
+            return ""
+        cimke = current_display_mode_suffix()
+        if not cimke:
+            return fajl_url
+        if not 0 <= row < len(self._photos):
+            return fajl_url
+        photo = self._photos[row]
+        utvonal = quote(f"{photo.folder_path}/{photo.name}")
+        # a cimke `&d=<mód>` alakú (a bélyegkép-URL-ekhez illeszkedve), itt
+        # ez az ELSŐ paraméter, ezért a `&`-et `?`-re cseréljük
+        return f"image://displayphoto/{utvonal}?{cimke[1:]}"
 
     @Slot(int, result=int)
     def pixelWidthAt(self, row: int) -> int:

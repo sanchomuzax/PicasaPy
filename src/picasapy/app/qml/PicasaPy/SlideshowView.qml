@@ -110,8 +110,14 @@ Rectangle {
         width: iniSteps % 2 ? parent.height : parent.width
         height: iniSteps % 2 ? parent.width : parent.height
         rotation: iniSteps * 90
+        // #1640: a megjelenítési mód (Projektor mód stb.) a NYERS fájl
+        // URL-jén nem látszik — a `displayUrlAt` aktív módnál a
+        // `displayphoto` szolgáltatóra vált, mód nélkül a sima file://-t
+        // adja vissza. A `controller.displayMode` referencia SZÁNDÉKOS: ettől
+        // értékelődik újra a kötés módváltáskor (a modell nem jelez).
         source: show.visible && show.photosModel && show.currentIndex >= 0
-                ? show.photosModel.fileUrlAt(show.currentIndex)
+                ? (controller.displayMode,
+                   show.photosModel.displayUrlAt(show.currentIndex))
                 : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: Qt.platform.pluginName !== "offscreen"
@@ -123,9 +129,12 @@ Rectangle {
     // már dekódolva van
     Image {
         visible: false
+        // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
+        // következő dia egy pillanatra a festetlen képet villantaná
         source: show.visible && show.photosModel
-                ? show.photosModel.fileUrlAt(
-                      show.nextPhotoIndex(show.currentIndex, 1))
+                ? (controller.displayMode,
+                   show.photosModel.displayUrlAt(
+                       show.nextPhotoIndex(show.currentIndex, 1)))
                 : ""
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true

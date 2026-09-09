@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.357] – 2026-09-09
+
+### Javítva
+
+- **A megjelenítési módok (pl. Projektor mód) végre a diavetítésben is
+  hatnak** (#1640). A `Nézet ▸ Megjelenítési mód` beállításai eddig a nagy
+  nézőben és a bélyegképeken látszottak, a diavetítésben viszont **semmit nem
+  csináltak** — pedig a Projektor mód épp a kivetítéshez való: aki
+  kipróbálta, jó eséllyel épp vetítés közben tette. A vetített kép mostantól
+  ugyanazon az egy átfestőn megy át, mint a többi felület.
+
 ## [0.8.356] – 2026-09-09
 
 ### Javítva

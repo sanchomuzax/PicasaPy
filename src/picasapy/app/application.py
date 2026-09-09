@@ -58,6 +58,7 @@ from .confirm_settings_bridge import ConfirmSettingsBridge
 from .folder_cover_provider import FolderCoverProvider
 from .controller import AppController
 from .data_location import read_data_root
+from . import display_photo_provider
 from .error_log import error_log_path, install_error_log
 from .exported_folders import (
     EXPORTED_FOLDERS_SETTINGS_KEY,
@@ -1233,6 +1234,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
+    # #1640: a diavetítés teljes felbontású képe — a megjelenítési móddal
+    engine.addImageProvider(
+        display_photo_provider.PROVIDER_NAME,
+        display_photo_provider.DisplayPhotoProvider(),
+    )
     engine.addImageProvider("effectthumb", effect_thumb_provider)
     # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
     # (lusta init), mert a kollázs állapota is ott él.
