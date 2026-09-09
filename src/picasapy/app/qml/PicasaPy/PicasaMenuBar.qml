@@ -138,6 +138,11 @@ MenuBar {
     signal optionsRequested()
     //: #2054: a súgó megnyitása; a paraméter a fejezet ( = főoldal)
     signal helpRequested(string topic)
+    // SAJÁT FUNKCIÓ (#287, jegyzékbe véve: #1364): a Duplikátum-kereső az
+    // eredeti Picasa 3.9 Eszközök menüjében NEM létezik
+    // (`docs/specs/ui-audit-menus.md`). A másodpéldány-kereséshez az eredeti
+    // az importáláskori ellenőrzést és a keresési módot adta (#1398) — ez a
+    // párbeszéd a mi hozzáadásunk.
     // #287: Duplikátum-kereső ablak megnyitása
     signal dedupRequested()
     // #1473: Arckeresés — az `Eszközök` menü tétele. Az eredetiben ez nem
@@ -1773,6 +1778,11 @@ MenuBar {
         MenuSeparator {}
         PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: true }
         MenuSeparator {}
+        // SAJÁT FUNKCIÓ (#1364): a Teljesítmény-monitor az eredeti Picasa
+        // 3.9 Súgó menüjében NEM létezik (`docs/specs/ui-audit-menus.md`) —
+        // a mi fejlesztői eszközünk, tehát a bináris-egyezés ide nem
+        // vonatkozik. (Az eredetinek volt `/uidebug` lapja a beépített
+        // kiszolgálón, de azt szándékosan nem építjük meg: ADR-011.)
         MenuItem {
             objectName: "menuHelpPerfMonitor"
             text: qsTr("Performance Monitor")
