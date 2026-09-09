@@ -970,7 +970,7 @@ ApplicationWindow {
         onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
         //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
         onClearGeotagRequested:
-            clearGeotagDialog.openFor(window.selectedRows())
+            clearGeotagDialog.ensure().openFor(window.selectedRows())
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.ensure().openRenameMany(window.selectedIndexes)
@@ -1025,7 +1025,7 @@ ApplicationWindow {
                     window.selectedRows(), controller.currentAlbumToken)
         }
         onRemoveFromPeopleAlbumRequested: {
-            if (controller) removePeopleFacesDialog.openFor(
+            if (controller) removePeopleFacesDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
         }
         // #444: a nem-destruktív mentés három fokozata — a megerősítések és
@@ -1080,7 +1080,7 @@ ApplicationWindow {
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: undoAllEditsDialog.openFor(window.selectedRows())
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
     }
 
     // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
@@ -1093,22 +1093,31 @@ ApplicationWindow {
     // kulcs kikerül a `.picasa.ini`-ből), és eddig kérdés NÉLKÜL futott le
     // a Helyek panel gombjáról. Mindkét belépési pont — a menüpont és a
     // panel gombja — ezen az EGY párbeszéden megy át.
-    ConfirmDialog {
+    //: #1612: halasztva — a geocímke-törlés megerősítése csak a menüpont/panel útján kell
+    DeferredDialog {
         id: clearGeotagDialog
-        objectName: "clearGeotagConfirm"
-        namePrefix: "clearGeotag"
-        title: qsTr("Clear Geotags")
-        property var rows: []
-        function openFor(rowList) {
-            if (!rowList || rowList.length === 0) return
-            rows = rowList
-            //: `ClearGeoTag::warn` — az eredeti szövege
-            ask("clearGeotag", qsTr(
-                "You are about to erase all geographic location information"
-                + " (i.e., latitude and longitude) from the selected photos."
-                + "\n\nOK to proceed?"))
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "clearGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "clearGeotagConfirm"
+                namePrefix: "clearGeotag"
+                title: qsTr("Clear Geotags")
+                property var rows: []
+                function openFor(rowList) {
+                    if (!rowList || rowList.length === 0) return
+                    rows = rowList
+                    //: `ClearGeoTag::warn` — az eredeti szövege
+                    ask("clearGeotag", qsTr(
+                        "You are about to erase all geographic location information"
+                        + " (i.e., latitude and longitude) from the selected photos."
+                        + "\n\nOK to proceed?"))
+                }
+                onConfirmed: controller.clearGeotagRows(rows)
+            }
         }
-        onConfirmed: controller.clearGeotagRows(rows)
     }
 
     // #2013: a Helyek PANEL saját két megerősítése. Az eredetiben ez KÉT
@@ -1119,82 +1128,109 @@ ApplicationWindow {
     //   hely TÖRLÉSE          >  5 GEOCÍMKÉZETT    (0x006527ad, cmp esi,5)
     //
     // A küszöb alatt az eredeti NEM kérdez — ezért itt sem kérdezünk.
-    ConfirmDialog {
+    //: #1612: halasztva — a helyváltoztatás megerősítése (küszöb fölött) csak a panel/menü útján kell
+    DeferredDialog {
         id: setGeotagDialog
-        objectName: "setGeotagConfirm"
-        namePrefix: "setGeotag"
-        title: qsTr("Change Location")
-        property var rows: []
-        property real lat: 0
-        property real lon: 0
-        function futtasd(rowList, latitude, longitude) {
-            if (!rowList || rowList.length === 0) return
-            if (rowList.length <= controller.geoChangeConfirmThreshold) {
-                controller.setGeotagRows(rowList, latitude, longitude)
-                return
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "setGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "setGeotagConfirm"
+                namePrefix: "setGeotag"
+                title: qsTr("Change Location")
+                property var rows: []
+                property real lat: 0
+                property real lon: 0
+                function futtasd(rowList, latitude, longitude) {
+                    if (!rowList || rowList.length === 0) return
+                    if (rowList.length <= controller.geoChangeConfirmThreshold) {
+                        controller.setGeotagRows(rowList, latitude, longitude)
+                        return
+                    }
+                    rows = rowList; lat = latitude; lon = longitude
+                    //: `GeoPanel::geotag_warning_change` — az eredeti szövege
+                    ask("setGeotag", qsTr(
+                        "You have more than a few items selected."
+                        + "\n\nAre you sure you want to change the location of all"
+                        + " %1 items?").arg(rowList.length))
+                }
+                onConfirmed: controller.setGeotagRows(rows, lat, lon)
             }
-            rows = rowList; lat = latitude; lon = longitude
-            //: `GeoPanel::geotag_warning_change` — az eredeti szövege
-            ask("setGeotag", qsTr(
-                "You have more than a few items selected."
-                + "\n\nAre you sure you want to change the location of all"
-                + " %1 items?").arg(rowList.length))
         }
-        onConfirmed: controller.setGeotagRows(rows, lat, lon)
     }
 
-    ConfirmDialog {
+    //: #1612: halasztva — a Helyek panel törlés-megerősítése csak onnan nyílik
+    DeferredDialog {
         id: panelClearGeotagDialog
-        objectName: "panelClearGeotagConfirm"
-        namePrefix: "panelClearGeotag"
-        title: qsTr("Clear Geotags")
-        property var rows: []
-        function futtasd(rowList) {
-            if (!rowList || rowList.length === 0) return
-            //: ⚠️ a küszöb a GEOCÍMKÉZETT elemek száma, nem a kijelölésé:
-            //: 100 kijelöltből 3 geocímkézettnél az eredeti nem kérdez.
-            var geos = controller.geotaggedCount(rowList)
-            if (geos <= controller.geoClearConfirmThreshold) {
-                controller.clearGeotagRows(rowList)
-                return
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "panelClearGeotagDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "panelClearGeotagConfirm"
+                namePrefix: "panelClearGeotag"
+                title: qsTr("Clear Geotags")
+                property var rows: []
+                function futtasd(rowList) {
+                    if (!rowList || rowList.length === 0) return
+                    //: ⚠️ a küszöb a GEOCÍMKÉZETT elemek száma, nem a kijelölésé:
+                    //: 100 kijelöltből 3 geocímkézettnél az eredeti nem kérdez.
+                    var geos = controller.geotaggedCount(rowList)
+                    if (geos <= controller.geoClearConfirmThreshold) {
+                        controller.clearGeotagRows(rowList)
+                        return
+                    }
+                    rows = rowList
+                    //: `GeoPanel::geotag_warning_clear` — az eredeti szövege
+                    ask("panelClearGeotag", qsTr(
+                        "You have more than a few items selected."
+                        + "\n\nAre you sure you want to clear the locations for all"
+                        + " %1 items?").arg(geos))
+                }
+                onConfirmed: controller.clearGeotagRows(rows)
             }
-            rows = rowList
-            //: `GeoPanel::geotag_warning_clear` — az eredeti szövege
-            ask("panelClearGeotag", qsTr(
-                "You have more than a few items selected."
-                + "\n\nAre you sure you want to clear the locations for all"
-                + " %1 items?").arg(geos))
         }
-        onConfirmed: controller.clearGeotagRows(rows)
     }
 
-    ConfirmDialog {
+    //: #1612: halasztva — a „minden szerkesztés visszavonása" megerősítése csak a menüpontból nyílik
+    DeferredDialog {
         id: undoAllEditsDialog
-        objectName: "undoAllEditsDialog"
-        namePrefix: "undoAllEdits"
-        title: qsTr("Undo All Edits")
-        property var rows: []
-        // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
-        // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
-        // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
-        // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
-        // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
-        // véglegesen elvész.
-        function openFor(rowList) {
-            if (rowList.length === 0) return
-            rows = rowList
-            var text = rowList.length === 1
-                ? qsTr("This will remove all edits you have made to the"
-                       + " current picture.")
-                : qsTr("This will remove all edits you have made to ALL of"
-                       + " the selected pictures.")
-            if (controller.selectionHasRedeye(rowList))
-                text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
-                                      + " remove all edits, your red eye fixes"
-                                      + " cannot be recovered.")
-            ask("undoAllEdits", text)
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "undoAllEditsDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "undoAllEditsDialog"
+                namePrefix: "undoAllEdits"
+                title: qsTr("Undo All Edits")
+                property var rows: []
+                // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
+                // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
+                // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
+                // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
+                // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
+                // véglegesen elvész.
+                function openFor(rowList) {
+                    if (rowList.length === 0) return
+                    rows = rowList
+                    var text = rowList.length === 1
+                        ? qsTr("This will remove all edits you have made to the"
+                               + " current picture.")
+                        : qsTr("This will remove all edits you have made to ALL of"
+                               + " the selected pictures.")
+                    if (controller.selectionHasRedeye(rowList))
+                        text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
+                                              + " remove all edits, your red eye fixes"
+                                              + " cannot be recovered.")
+                    ask("undoAllEdits", text)
+                }
+                onConfirmed: controller.clearAllEffectsMany(rows)
+            }
         }
-        onConfirmed: controller.clearAllEffectsMany(rows)
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
@@ -1474,8 +1510,8 @@ ApplicationWindow {
         // élnek, ld. PhotoViewer.qml). A Helyek-panel két írási művelete
         // UGYANAZON a megerősítésen megy át, mint a könyvtár-nézetben —
         // egy parancs, egy út.
-        onClearGeotagRequested: (rows) => panelClearGeotagDialog.futtasd(rows)
-        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.futtasd(rows, la, lo)
+        onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
+        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
         // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
         // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
@@ -2051,8 +2087,8 @@ ApplicationWindow {
             //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
             //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
             //: kérdez. A menüpont változatlanul azon megy át.
-            onClearGeotagRequested: (rows) => panelClearGeotagDialog.futtasd(rows)
-            onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.futtasd(rows, la, lo)
+            onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
+            onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
             visible: window.placesPanelOpen
             SplitView.preferredWidth: 320
             SplitView.minimumWidth: 220
@@ -2364,9 +2400,9 @@ ApplicationWindow {
             errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
         }
         function onBrokenPhotosDetected(items) {
-            var ids = brokenPhotoDialog.pendingIds.slice()
+            var ids = brokenPhotoDialog.ensure().pendingIds.slice()
             for (var i = 0; i < items.length; i++) ids.push(items[i].id)
-            brokenPhotoDialog.pendingIds = ids
+            brokenPhotoDialog.ensure().pendingIds = ids
             // #459: rövid összegyűjtés — több törött kép is felbukkanhat
             // egymás után görgetés közben, ezeket EGY dialógusba fűzzük
             // ("this file(s)"), nem fotónként külön felugró ablakot.
@@ -2385,25 +2421,39 @@ ApplicationWindow {
     // a felhasználó döntésével. A "Hide Files" a MEGLÉVŐ elrejtés-úton fut
     // (`controller.hidePhotosByIds` → `_apply_batch`, a `toggleHiddenRows`
     // mintája, `photo_ops_controller.py`) — itt NEM íródott újra.
-    ConfirmDialog {
+    //: #1612: halasztva — a sérült kép elrejtés-felajánlása csak akkor kell, ha tényleg akad ilyen kép
+    DeferredDialog {
         id: brokenPhotoDialog
-        namePrefix: "brokenPhoto"
-        yesText: qsTr("Hide Files")
-        noText: qsTr("Don't Hide")
-        property var pendingIds: []
-        onConfirmed: {
-            controller.hidePhotosByIds(brokenPhotoDialog.pendingIds)
-            brokenPhotoDialog.pendingIds = []
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "brokenPhotoDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                //: a BELSŐ példány saját neve: a `brokenPhotoDialog` a
+                //: halasztó `Loader`, tehát a saját mezőire innen NEM azon
+                //: a néven kell hivatkozni (az `ensure()` visszatérése ez az
+                //: objektum)
+                id: brokenPhotoBelso
+                namePrefix: "brokenPhoto"
+                yesText: qsTr("Hide Files")
+                noText: qsTr("Don't Hide")
+                property var pendingIds: []
+                onConfirmed: {
+                    controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
+                    brokenPhotoBelso.pendingIds = []
+                }
+                onDenied: brokenPhotoBelso.pendingIds = []
+            }
         }
-        onDenied: brokenPhotoDialog.pendingIds = []
     }
 
     Timer {
         id: brokenPhotoBatchTimer
         interval: 400
         onTriggered: {
-            if (brokenPhotoDialog.pendingIds.length > 0) {
-                brokenPhotoDialog.ask("", qsTr(
+            if (brokenPhotoDialog.ensure().pendingIds.length > 0) {
+                brokenPhotoDialog.ensure().ask("", qsTr(
                     "Picasa had a problem loading this file(s). Would you "
                     + "like to hide the files on disk?"))
             }
@@ -2576,7 +2626,7 @@ ApplicationWindow {
         // csak személy-albumban látszanak (üres `personName` = rejtve).
         personName: controller ? controller.currentPersonName : ""
         onRemoveFromPeopleAlbumRequested: {
-            if (controller) removePeopleFacesDialog.openFor(
+            if (controller) removePeopleFacesDialog.ensure().openFor(
                 window.selectedRows(), controller.currentPersonName)
         }
         onMoveToNewPersonRequested: {
@@ -2589,22 +2639,31 @@ ApplicationWindow {
     // az ADOTT személy arc-címkéjét (a régió is eltűnik: a Picasa is az
     // arcot veszi le, nem csak a nevet). Megerősítéssel: a névcímke
     // visszaállítása csak újbóli felismeréssel/kézi felvétellel lehetséges.
-    ConfirmDialog {
+    //: #1612: halasztva — az arcok eltávolításának megerősítése csak a menüpontból nyílik
+    DeferredDialog {
         id: removePeopleFacesDialog
-        objectName: "removePeopleFacesDialog"
-        namePrefix: "removePeopleFaces"
-        title: qsTr("Remove from People Album")
-        property var rows: []
-        property string person: ""
-        function openFor(rowList, name) {
-            if (rowList.length === 0 || name.length === 0) return
-            rows = rowList
-            person = name
-            ask("removePeopleFaces", qsTr(
-                "The face tag \"%1\" will be removed from %n selected"
-                + " picture(s).", "", rowList.length).arg(name))
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "removePeopleFacesDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "removePeopleFacesDialog"
+                namePrefix: "removePeopleFaces"
+                title: qsTr("Remove from People Album")
+                property var rows: []
+                property string person: ""
+                function openFor(rowList, name) {
+                    if (rowList.length === 0 || name.length === 0) return
+                    rows = rowList
+                    person = name
+                    ask("removePeopleFaces", qsTr(
+                        "The face tag \"%1\" will be removed from %n selected"
+                        + " picture(s).", "", rowList.length).arg(name))
+                }
+                onConfirmed: controller.removePersonFromRows(rows, person)
+            }
         }
-        onConfirmed: controller.removePersonFromRows(rows, person)
     }
 
     // #422: „Áthelyezés új személyhez…" — az adott személy arc-címkéje a
@@ -2924,18 +2983,27 @@ ApplicationWindow {
     // figyelmeztetésével (`CThumbUI::ResetAllFaces`). A `.picasa.ini`
     // névcímkéihez NEM nyúlunk: azt az eredeti is KÜLÖN kérdezte meg, és
     // az ember által adott név nálunk szent.
-    ConfirmDialog {
+    //: #1612: halasztva — az arcadatok nullázásának megerősítése csak a menüpontból nyílik
+    DeferredDialog {
         id: resetFacesConfirm
-        objectName: "resetFacesConfirm"
-        namePrefix: "resetFaces"
-        title: qsTr("Reset Faces")
-        message: qsTr("WARNING! This will move all the faces back to the "
-                      + "unnamed album and delete the face groups. Name tags "
-                      + "you have written into the photos are NOT touched. "
-                      + "Do you want to do this?")
-        onConfirmed: {
-            if (typeof faceScanController !== "undefined" && faceScanController)
-                faceScanController.resetAllFaces()
+        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
+        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
+        objectName: "resetFacesConfirmLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "resetFacesConfirm"
+                namePrefix: "resetFaces"
+                title: qsTr("Reset Faces")
+                message: qsTr("WARNING! This will move all the faces back to the "
+                              + "unnamed album and delete the face groups. Name tags "
+                              + "you have written into the photos are NOT touched. "
+                              + "Do you want to do this?")
+                onConfirmed: {
+                    if (typeof faceScanController !== "undefined" && faceScanController)
+                        faceScanController.resetAllFaces()
+                }
+            }
         }
     }
 

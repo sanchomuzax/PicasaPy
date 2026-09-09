@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.366] – 2026-09-10
+
+### Változott
+
+- **Kicsit gyorsabb indulás: hét kérdés-ablak csak akkor épül fel, amikor
+  tényleg kell** (#1612). A program eddig minden indításkor felépítette a
+  megerősítő ablakokat (geocímke törlése, helyváltoztatás, minden
+  szerkesztés visszavonása, arcok eltávolítása és társai), holott a
+  legtöbb indításnál a felhasználó egyet sem nyit meg. Mérve 516
+  objektummal kevesebb (−3,9%) épül fel; a felület viselkedése
+  változatlan.
+
 ## [0.8.365] – 2026-09-09
 
 ### Javítva
