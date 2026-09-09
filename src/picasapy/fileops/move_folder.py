@@ -20,8 +20,15 @@ fájlonként), és hogy a mozgatás vagy TELJESEN sikerüljön, vagy sehogy.
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
+
+#: A fájlrendszer-műveletek MODULSZINTŰ fogantyúi (#1375) — a teszt EZEKET
+#: cserélje, ne a globális `os`/`shutil` tagjait.
+_rename = os.rename
+_copytree = shutil.copytree
+_rmtree = shutil.rmtree
 
 #: A rendszer-könyvtárak, amiket sosem mozgatunk. Az eredeti is külön
 #: hibaüzenetet adott rá („Unable to Move a System Path") — nem hagyta,
@@ -120,13 +127,77 @@ def move_folder(folder: str | Path, dest_parent: str | Path) -> Path:
             "Ilyen nevű mappa már létezik a célmappában."
         )
 
+    _athelyez(source, target)
+    return target
+
+
+def _athelyez(source: Path, target: Path) -> None:
+    """A mappa átvitele úgy, hogy bukáskor NE maradjon félkész fa (#2785).
+
+    A `shutil.move` könyvtárnál `copytree` + `rmtree`-t végez, ha az
+    `os.rename` nem megy (más fájlrendszer). Ha a `copytree` menet közben
+    bukik, a **célban félig átmásolt fa marad**, a forrás pedig a helyén —
+    mérve (2026-09-09, cross-device szimuláció, olvashatatlan alkönyvtár):
+    `shutil.Error`, a forrás megvan, és a célban ott ül a gyökér fájlja. A
+    következő próbálkozás ezután „Ilyen nevű mappa már létezik"-kel áll meg.
+
+    A menet ezért négy lépés:
+
+    1. `os.rename` — ha megy, kész (atomi, ugyanazon a fájlrendszeren);
+    2. különben `copytree` egy **ideiglenes névre** a cél MELLÉ;
+    3. a forrás törlése;
+    4. az ideiglenes fa átnevezése a végleges névre.
+
+    A 2. és a 3. bukása visszagörgethető: az ideiglenes fa törlődik, a forrás
+    érintetlen, a célban semmi. A 4. az EGYETLEN nem visszagörgethető pont (a
+    forrás már nincs) — ott a hibaüzenet **megnevezi**, hol van a tartalom, és
+    nem hagyja a felhasználót keresni.
+    """
     try:
-        shutil.move(str(source), str(target))
+        _rename(str(source), str(target))
+        return
+    except OSError:
+        pass  # más fájlrendszer (vagy a forrás nem mozdítható) — másolunk
+
+    ideiglenes = target.parent / f".{target.name}.athelyezes"
+    if ideiglenes.exists():  # egy korábbi, félbehagyott kör maradéka
+        _biztonsagos_torles(ideiglenes)
+    try:
+        _copytree(str(source), str(ideiglenes))
+    except OSError as error:
+        _biztonsagos_torles(ideiglenes)
+        raise FolderMoveError(
+            f"A mappa áthelyezése egy hiba miatt nem sikerült: {error}. "
+            "A mappa a régi helyén maradt, a célban nem keletkezett semmi."
+        ) from error
+
+    try:
+        _rmtree(str(source))
+    except OSError as error:
+        # A másolat nem maradhat: a forrás megvan, tehát a művelet NEM
+        # sikerült — két példány rosszabb, mint egy hibaüzenet.
+        _biztonsagos_torles(ideiglenes)
+        raise FolderMoveError(
+            f"A mappa áthelyezése egy hiba miatt nem sikerült: {error}. "
+            "A mappa a régi helyén maradt, a célban nem keletkezett semmi."
+        ) from error
+
+    try:
+        _rename(str(ideiglenes), str(target))
     except OSError as error:
         raise FolderMoveError(
-            f"A mappa áthelyezése egy hiba miatt nem sikerült: {error}"
+            f"A mappa tartalma átkerült, de a végleges nevét nem sikerült "
+            f"beállítani ({error}). A tartalom itt van: {ideiglenes} — "
+            f"nevezd át erre: {target.name}. A régi hely már üres."
         ) from error
-    return target
+
+
+def _biztonsagos_torles(ut: Path) -> None:
+    """Takarítás, ami SOSEM nyomja el az eredeti hibát."""
+    try:
+        _rmtree(str(ut))
+    except OSError:
+        pass
 
 
 __all__ = ["FolderMoveError", "is_system_path", "move_folder"]

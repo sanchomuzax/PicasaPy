@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.356] – 2026-09-09
+
+### Javítva
+
+- **Sikertelen mappa-áthelyezésnél nem marad félkész mappa a célban**
+  (#2785). Ha egy mappa áthelyezése másik meghajtóra menet közben elakadt (pl.
+  olvashatatlan alkönyvtár), a célban ott maradt a **félig átmásolt** mappa, az
+  eredeti pedig a helyén — és a következő próbálkozás már azzal állt meg, hogy
+  „ilyen nevű mappa már létezik". Mostantól a program először egy ideiglenes
+  néven másol, és csak a sikeres másolás és az eredeti törlése után nevezi át a
+  véglegesre: bukáskor a célban nem keletkezik semmi, a mappa a régi helyén
+  marad. Az egyetlen visszafordíthatatlan ponton a hibaüzenet megmondja, hol
+  van a tartalom.
+
 ## [0.8.355] – 2026-09-09
 
 ### Javítva
