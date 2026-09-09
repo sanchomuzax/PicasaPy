@@ -147,7 +147,12 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 # kollázs „Klipek" lapjára, a három sor TÖRÖLVE, a plafon VISSZA 37-re —
 # ahogy a #455 kommentje előírta. A szám csökkentése így nem külön döntés
 # volt, hanem a jegy zárásának kötelező része.
-MAX_BASELINE_ENTRIES = 37
+# #1487: 37 → 35, mert a `canRenderEffect` és az `isDeadLegacyEffect` slot
+# TÖRÖLVE (2026-09-09): nulla hivatkozásuk volt, és a mögöttes adatot a
+# `legacyEffects` katalógus ugyanabból a két hívásból már megadja. A plafon
+# lemenetele SZÁNDÉKOS: ha nem követné a törlést, a szám csendben visszahízhatna
+# ugyanezekre a tételekre.
+MAX_BASELINE_ENTRIES = 35
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
 MAX_OSZTALY_ENTRIES = 3
