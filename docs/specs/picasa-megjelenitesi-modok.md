@@ -728,8 +728,12 @@ lezárult.)*
    rekordból **24 hordoz gyorsbillentyű-szöveget** és **5 ikonszámot** — a
    Megjelenítési mód almenü tehát nem kivétel, hanem a többség. A táblázat
    a [picasa-menu-leltar.md](picasa-menu-leltar.md) **8.** szakaszában.
-4. **Buboréksúgó.** A `stringres` a tizenegy tételhez **nem** ad
-   magyarázó szöveget; ezt kereséssel ellenőriztem, nem találtam.
+4. ~~**Buboréksúgó.** A `stringres` a tizenegy tételhez **nem** ad
+   magyarázó szöveget; ezt kereséssel ellenőriztem, nem találtam.~~
+   ⭐ **LEZÁRVA a 13. szakaszban (2026-09-10, #2838).** A negatív állítás
+   igaz volt, de **rossz forrásban** keresett: a buboréksúgók nem a
+   `stringres`-ben élnek, hanem a `TOOLTIPS.XML`-ben. Ott sincsenek — de
+   nem „nem találtam", hanem **szerkezetileg lehetetlen**.
 
 ## 10. Hivatkozások
 
@@ -1082,3 +1086,94 @@ A #1730 „Kész, ha" listája ma azt írja: *„a `mac` LUT `pow(x, 1/1,6)`"*.
 legnagyobb eltérés 10 szint. A megvalósítás **a `0x00d32bd0` 256 bájtos
 tábláját** vegye át (az 5.9-ben teljes egészében ki van írva), vagy a
 `p = 0,6945` kitevőt.
+
+
+---
+
+## 13. A buboréksúgó SZERKEZETILEG nem érhet menütételt (2026-09-10, #2838)
+
+**Bizalmi fok: megerősített** a kulcsolásra és a menürekord alakjára; a
+negatív állítás hatóköre a 13.4-ben.
+
+A 9.4 pont azt írta, hogy a `stringres` nem ad magyarázó szöveget a
+tizenegy módhoz. Ez igaz, de **nem a `stringres` a súgók helye.**
+
+### 13.1 A súgószövegek helye és KULCSOLÁSA
+
+A buboréksúgók a **`TOOLTIPS.XML`** erőforrásban élnek (a
+`picasa-gyorsbillentyuk.md` 2.3 szerint **41 nyelvi változatban**, köztük
+magyar). A magyar példány megvan a kutatási anyagban
+(`referencia/i18n-hu/tooltips.xml`, 1002 sor, 55 678 bájt), és az angol
+`.tre` oldala is (`referencia/tre-eroforrasok/tooltips.tre`, 174 sor).
+
+Mérve a magyar példányon:
+
+| mérőszám | érték |
+|---|---|
+| `<action>` elem | **333** |
+| különböző **célelem** | **245** |
+| ezekből `Tooltip` típusú | **146** |
+| `type` értékek | `Tooltip` 152 · `Label` 136 · `Text` 29 · `Text1…Text7` 16 |
+| a célnév alakja `panel/elem`? | **mind a 245-nél igen** |
+
+A `.tre` oldal ugyanígy kulcsol, csak sorpárokban:
+
+```
+Tooltip printpanel/walletbutton
+Print wallet-sized photos
+```
+
+⇒ **a kulcs a respack-ELEMNÉV**, semmi más.
+
+### 13.2 ⭐ A döntő próba: NULLA menü-szerű kulcs
+
+```python
+[b for _,b in t if re.search(r'menu|cmd|ID_|view_', b, re.I)]   # → []
+```
+
+A 333 elem közül **egyetlen** célnév sem menüre utal. A tizenegy mód
+egyetlen neve sem szerepel a fájlban (`projektor`, `gamma`, `szépia`,
+`LCD`, `túlcsordul`, `16 bit`, `24 bit`, `távoli`, `fekete-fehér` — mind
+**0 találat**; az „automatikus" 5 találata más panelekhez tartozik).
+
+**KONTROLL** (a hibás minta ellen): a `printpanel/walletbutton` célnév
+megvan, és 152 `Tooltip` típusú elem létezik ⇒ a minta lát adatot, a
+nulla-találat valódi.
+
+### 13.3 ⭐ MIÉRT lehetetlen: a menürekordban nincs elemnév
+
+A menütételek **natív Win32-menübe** kerülnek (`InsertMenuItem`,
+`picasa-menu-leltar.md` 8.4/d), és a 20 bájtos menürekord **hat mezője**
+(uo. 7. szakasz) ez:
+
+| mező | tartalom |
+|---|---|
+| `+0x00` | a lefordított felirat |
+| `+0x04` | gyorsbillentyű-szöveg |
+| `+0x08` | módosító-maszk |
+| `+0x0a` | parancsazonosító |
+| `+0x0c` | almenü-mutató |
+| `+0x10` | almenü-darabszám |
+
+**Elemnév-mező nincs.** A `TOOLTIPS.XML` viszont kizárólag elemnévre
+kulcsol ⇒ **nincs mit hozzárendelni**. Ez nem keresési kudarc, hanem a
+mechanizmus szerkezetéből következő kizárás — és ugyanezért **egyetlen**
+menütételnek sem lehet buboréksúgója, nem csak a tizenegy módnak.
+
+### 13.4 A negatív állítás HATÓKÖRE — kimondva
+
+- **Mérve:** a magyar `tooltips.xml` (333 elem) és az angol `tooltips.tre`
+  (45 kulcssor). Mindkettő `panel/elem` alakra kulcsol, menü-kulcs nincs.
+- **NEM mérve:** a további 40 nyelvi változat. Azok ugyanabban a
+  kulcstérben élnek (a célnév a nyelvtől független elemnév), de ezt nem
+  mértem — ha valaki mégis menü-kulcsot talál bármelyikben, ez a szakasz
+  megdől.
+- **NEM állítom**, hogy a Picasa menüjén sosem jelenik meg magyarázó
+  szöveg: az állapotsor-súgó (Win32 `WM_MENUSELECT`) más mechanizmus, és
+  **nem vizsgáltam**.
+
+### 13.5 Amit ez a NÁLUNK állapotra mond
+
+A mi menüsorunkban sincs menü-tooltip ⇒ **ez helyes**, nem hiány. Ezt
+azért írom ide, hogy ne kelljen újra felfedezni: a „hiányzik a menü
+buboréksúgója" észrevétel az eredetivel szemben **nem valódi eltérés**.
