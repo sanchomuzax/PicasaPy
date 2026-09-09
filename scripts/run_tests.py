@@ -583,6 +583,17 @@ def _reszfutas_kornyezete(sajat: Path) -> dict[str, str]:
 #: HELY viszont igen. Költsége a jelkezelők feltétele, futásidőben semmi.
 _FAULTHANDLER_VALTOZO = "PYTHONFAULTHANDLER"
 
+#: #1457: BERAGADÁSNÁL a pytest maga írja ki minden szál veremképét, mielőtt a
+#: futtató `_APP_FILE_TIMEOUT_S`-es időkorlátja megölné a processzt. Kisebbnek
+#: KELL lennie annál, különben a futtató előbb lő, és nem marad kimenet. A
+#: leghosszabb QML-tesztfájl helyben 44 s, tehát jogos futáson nem sül el.
+#:
+#: ⚠️ SZÁNDÉKOSAN itt áll, nem a `pyproject.toml`-ban: a `pyproject.toml` a
+#: felhasználóhoz eljutó fájlok közé tartozik (verzió, csomaglista), tehát a
+#: CHANGELOG-őr (#1340) joggal kérne hozzá kiadási mondatot — egy futtató-belső
+#: hibakeresési beállításhoz viszont nincs mit írni a felhasználónak.
+_FAULTHANDLER_TIMEOUT_S = 150
+
 
 def _faulthandlerrel(kornyezet: dict[str, str]) -> dict[str, str]:
     """A kapott környezet + `PYTHONFAULTHANDLER=1` (#1457)."""
@@ -622,6 +633,9 @@ def _run_pytest(
         "-rs",
         "-p",
         "no:cacheprovider",
+        # #1457: beragadásnál veremkép MINDEN szálról, a futtató timeoutja előtt
+        "-o",
+        f"faulthandler_timeout={_FAULTHANDLER_TIMEOUT_S}",
         f"--basetemp={basetemp}",
         *args,
     ]

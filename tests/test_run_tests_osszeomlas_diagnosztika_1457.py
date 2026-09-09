@@ -20,10 +20,16 @@ legyen újra vaktában elemzendő".
    hiányzott. Nem lassít (csak a jelkezelőket teszi fel), és a natív
    (Qt/C++) keret ugyan nem látszik, de a HÍVÁSI HELY igen: melyik teszt,
    melyik QML-hívás.
-2. **`faulthandler_timeout` a pytest-konfigban.** Beragadásnál (nem
+2. **`faulthandler_timeout` a részfutás parancssorán.** Beragadásnál (nem
    összeomlásnál) a pytest maga dobja ki a veremképeket, mielőtt a futtató
    `timeout`-ja megölné a processzt. A `_APP_FILE_TIMEOUT_S`-nél KISEBB
    értéknek kell lennie, különben a futtató előbb lő, és nincs kimenet.
+
+   ⚠️ A beállítás a FUTTATÓBAN áll, nem a `pyproject.toml`-ban: azt a
+   CHANGELOG-őr (#1340) a felhasználóhoz eljutó fájlnak tekinti (verzió,
+   csomaglista), és joggal kérne hozzá kiadási mondatot — egy futtató-belső
+   hibakeresési beállításhoz viszont nincs mit írni a felhasználónak. Mérve:
+   a #2779 első köre pontosan ezen bukott el.
 
 ⚠️ A `faulthandler` a natív hívási láncot nem adja meg — az csak core
 dumpból jönne. Ez a kör tudatosan a Python-oldali nyomot állítja be: az
@@ -35,7 +41,6 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-import tomllib
 from pathlib import Path
 
 _GYOKER = Path(__file__).resolve().parents[1]
@@ -96,16 +101,24 @@ class TestFaulthandlerKornyezet:
 
 
 class TestPytestFaulthandlerTimeout:
-    def test_a_beragadasra_van_veremkep(self) -> None:
-        beallitas = tomllib.loads(
-            (_GYOKER / "pyproject.toml").read_text(encoding="utf-8")
-        )
-        ini = beallitas["tool"]["pytest"]["ini_options"]
-        assert "faulthandler_timeout" in ini, (
+    def test_a_reszfutas_parancssoran_ott_van(self, monkeypatch) -> None:
+        elkapott: dict[str, list[str]] = {}
+
+        def hamis_run(command, **kw):
+            elkapott["command"] = list(command)
+            return _Eredmeny()
+
+        monkeypatch.setattr(rt, "_run", hamis_run)
+        monkeypatch.setattr(rt, "_memoria_burok", lambda: [])
+        rt._run_pytest(["tests/valami.py"], 60, cov=False, basetemp=Path("/tmp/bt"))
+        command = elkapott["command"]
+        assert f"faulthandler_timeout={rt._FAULTHANDLER_TIMEOUT_S}" in command, (
             "#1457: beragadásnál a pytest nem ír veremképet, tehát a futtató "
-            "timeoutja után csak annyit tudunk, hogy »beragadt«"
+            f"timeoutja után csak annyit tudunk, hogy »beragadt«: {command}"
         )
-        assert int(ini["faulthandler_timeout"]) < rt._APP_FILE_TIMEOUT_S, (
+
+    def test_a_timeout_a_futtatoe_ALATT_van(self) -> None:
+        assert rt._FAULTHANDLER_TIMEOUT_S < rt._APP_FILE_TIMEOUT_S, (
             "a pytest veremkép-időkorlátja NEM lehet nagyobb a futtató "
             f"fájl-timeoutjánál ({rt._APP_FILE_TIMEOUT_S}s), különben a futtató "
             "előbb lő, és nincs kimenet"

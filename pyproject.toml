@@ -66,11 +66,6 @@ include-package-data = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
-# #1457: BERAGADÁSNÁL a pytest maga írja ki minden szál veremképét, mielőtt a
-# futtató fájl-timeoutja (180 s) megölné a processzt. Kisebbnek KELL lennie
-# annál, különben a futtató előbb lő, és nem marad kimenet. A leghosszabb
-# QML-tesztfájl helyben 44 s, tehát a 150 s nem sülhet el jogos futáson.
-faulthandler_timeout = 150
 
 [tool.coverage.run]
 source = ["src/picasapy"]
