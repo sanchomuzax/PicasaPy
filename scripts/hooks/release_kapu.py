@@ -24,6 +24,11 @@ import re
 import subprocess
 import sys
 
+#: #1375: modulszintű fogantyú a `subprocess.run`-ra. A próbáknak EZT kell
+#: cserélniük — a globális `subprocess.run` átírása minden más modulra
+#: átszivárog, amíg a teszt fut (a `test_platform_seam_1217.py` őrzi).
+_run = subprocess.run
+
 FELOLDO = "PICASA_KIADAS=engedelyezve"
 
 # --- git tag: a létrehozás kiadási lépés, a listázás/törlés nem ------------
@@ -73,9 +78,17 @@ def _munkakonyvtar(cmd: str, cwd: str) -> str:
     return ut if os.path.isdir(ut) else cwd
 
 
+#: GLOBÁLIS git-kapcsolók a program és az alparancs között (`git -C <út> push`,
+#: `git -c user.name=x commit`, `git --git-dir=… push`). Enélkül a kapu a
+#: `git\s+push` alakot kereste, és a `-C`-s írásmód NÉMÁN átment — mérve
+#: 2026-09-09-én, a #66 vizsgálatakor.
+_GLOBALIS = r"(?:(?:-C|-c|--git-dir|--work-tree|--namespace)(?:=\S+|\s+\S+)\s+|--\S+\s+)*"
+
+
 def _parancsok(cmd: str, program: str, alparancs: str) -> list[str]:
     """A `program alparancs ...` előfordulásai PARANCSPOZÍCIÓBAN, a maradékkal."""
-    minta = _POZICIO + re.escape(program) + r"\s+" + alparancs + r"\b(.*)"
+    minta = (_POZICIO + re.escape(program) + r"\s+" + _GLOBALIS
+             + alparancs + r"\b(.*)")
     return [m.group(1) for m in re.finditer(minta, cmd)]
 
 
@@ -116,7 +129,7 @@ def _tag_push(cmd: str) -> bool:
 def _verziot_emel(cwd: str) -> bool:
     """A pushra váró ág emeli-e a pyproject verziószámát az origin/main-hez képest."""
     try:
-        diff = subprocess.run(
+        diff = _run(
             ["git", "diff", "origin/main...HEAD", "--", "pyproject.toml"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         ).stdout
@@ -138,7 +151,7 @@ def _verziot_emel_commitolatlanul(cwd: str) -> bool:
     `HEAD`-del, tehát egyetlen hívás elég.
     """
     try:
-        diff = subprocess.run(
+        diff = _run(
             ["git", "diff", "HEAD", "--", "pyproject.toml"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8",
             errors="replace", timeout=15,
@@ -159,18 +172,36 @@ def _commitol_is(cmd: str) -> bool:
     return bool(_parancsok(cmd, "git", "commit"))
 
 
+#: Hány szót vizsgálunk a `gh pr merge` UTÁN a PR-szám kereséséhez. Ugyanaz
+#: az óvatosság, mint a `_PUSH_ABLAK`-nál: prózában egy jóval később
+#: EMLÍTETT szám idegen PR diffjét kérné le, és azon blokkolna. Mérve
+#: 2026-09-09-én: egy jegyzetfájl írása, ami a `gh pr merge <szám>` alakot
+#: csak SZÖVEGKÉNT tartalmazta, valódi blokkolást váltott ki.
+_MERGE_ABLAK = 4
+
+
 def _pr_verziot_emel(cmd: str, cwd: str) -> bool:
-    """A beolvasztandó PR emeli-e a verziószámot (a merge maga a kiadás)."""
+    """A beolvasztandó PR emeli-e a verziószámot (a merge maga a kiadás).
+
+    ⚠️ A `gh pr merge` SZÁM NÉLKÜL az aktuális ág PR-jét olvasztja be, és
+    az éjszakai kör pontosan így dolgozik (`--auto`). Eddig a szám hiánya
+    csendes átengedés volt — nyolc verzióemelés ment ki mellette
+    2026-09-08 éjjel (#66). A `gh pr diff` argumentum nélkül ugyanazt az
+    ágat nézi, tehát a kérdés így is feltehető.
+    """
+    talalt = False
     szam = None
     for maradek in _parancsok(cmd, "gh", "pr\\s+merge"):
-        m = re.search(r"\b(\d+)\b", maradek)
+        talalt = True
+        ablak = " ".join(re.split(r"[|;&]", maradek)[0].split()[:_MERGE_ABLAK])
+        m = re.search(r"\b(\d+)\b", ablak)
         if m:
             szam = m.group(1)
-    if szam is None:
+    if not talalt:
         return False
     try:
-        diff = subprocess.run(
-            ["gh", "pr", "diff", szam], cwd=cwd,
+        diff = _run(
+            ["gh", "pr", "diff", *( [szam] if szam else [] )], cwd=cwd,
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
         ).stdout
     except Exception:
@@ -192,7 +223,7 @@ def _vizsgalt_fa(cwd: str) -> str:
     2026-08-20-án egy munkamenet ezért futott neki négyszer a SAJÁT ágának,
     ami végig üres volt. Egy sor megadta volna a választ."""
     try:
-        ag = subprocess.run(
+        ag = _run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
         ).stdout.strip()
