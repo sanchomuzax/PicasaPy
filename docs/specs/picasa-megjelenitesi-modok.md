@@ -721,9 +721,13 @@ lezárult.)*
    a gamma-táblapár bájtra ott van és kód hivatkozik rá, a színkezelés
    pedig ugyanazzal a kulccsal él. Mellékesen kiderült, hogy az 5.9 és az
    5.10 tábla-hozzárendelése fel volt cserélve.
-3. **A menü ikonjai és gyorsbillentyűi** — a rekordok `+0x04`/`+0x08`
+3. ~~**A menü ikonjai és gyorsbillentyűi** — a rekordok `+0x04`/`+0x08`
    mezője mindegyik módnál nulla, de ezt csak a Megjelenítési mód almenüre
-   néztem meg.
+   néztem meg.~~
+   ⭐ **LEZÁRVA (2026-09-09, #2819):** a teljes menüsorra kimérve. A 173
+   rekordból **24 hordoz gyorsbillentyű-szöveget** és **5 ikonszámot** — a
+   Megjelenítési mód almenü tehát nem kivétel, hanem a többség. A táblázat
+   a [picasa-menu-leltar.md](picasa-menu-leltar.md) **8.** szakaszában.
 4. **Buboréksúgó.** A `stringres` a tizenegy tételhez **nem** ad
    magyarázó szöveget; ezt kereséssel ellenőriztem, nem találtam.
 
