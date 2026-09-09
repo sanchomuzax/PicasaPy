@@ -653,9 +653,14 @@ nem olvastam végig.
 | `&Locate on Disk` | 0 | `Enter` | Ctrl+Enter | ✅ |
 | `&Help Contents and Index` | **0** | `F1` | **F1** (Ctrl nélkül) | ❌ |
 
-⇒ a „0 ⇒ Ctrl+" olvasat **egy ponton megdől**, tehát van még egy tényező
-(feltehetően a megnevezett funkcióbillentyűk külön ága). **Ezért a
-bit↔módosító táblát NEM adom át szerződésként.**
+⇒ a „0 ⇒ Ctrl+" olvasat **egy ponton megdől**, tehát van még egy tényező.
+**Ezért a bit↔módosító táblát NEM adom át szerződésként.**
+
+> ⭐ **FELOLDVA a 8.6-ban (ugyanazon a napon):** a tényező nem a
+> funkcióbillentyűk külön ága, hanem az, hogy a három bájt **lekérdezési
+> kulcs** egy futásidejű gyorsítóbillentyű-táblába (`0x00a6ade0`), és a
+> **tábla** adja a módosítókat. Statikus bit↔módosító tábla ezért nem
+> létezik — a kérdés volt rosszul feltéve.
 
 **A megszerzés útja:** a `0x00a6b3ce`–`0x00a6b451` szakasz végigolvasása,
 benne a `0xa6ade0` és a `0x5c2100` hívás visszatérési értékének
@@ -673,3 +678,115 @@ rekord-táblájában is.
 ⇒ **Termékhatás:** az öt „ikonos" tétel NEM ikont visel. Ha valaki a
 menüsorba ikont tett volna emiatt, az hibás lenne. A tényleges lelet az,
 hogy ennek az öt tételnek **más a módosító-készlete**, mint a többinek.
+
+---
+
+## 8.6 A „melyik bit melyik módosító" kérdés ROSSZUL VAN FELTÉVE (2026-09-09, #2821)
+
+**Bizalmi fok: megerősített** a szerkezetre; a kérdés átfogalmazásának oka
+utasításszinten kiolvasva.
+
+A 8.5 nyitva hagyta a bit↔módosító **polaritását**, mert a naiv olvasat a
+`&Help Contents and Index` tételen megdőlt (maszk `0`, mégis `F1`
+módosító nélkül). A hiányzó 133 bájt (`0x00a6b3ce`–`0x00a6b451`)
+elolvasva a válasz: **nincs statikus bit↔módosító leképezés.**
+
+### 8.6/a A három bájt egy KÉRDÉS, nem kódolás
+
+A `0x00a6b250` a maszk három bitjét **három külön bájtba** teríti szét, és
+mindegyikből **két példányt** készít:
+
+```
+0x00a6b3bb  mov cl, bl ; shr cl, 2 ; not cl ; and cl, 1   ; = NOT bit2
+0x00a6b3c0  mov al, bl ; and al, 1                        ; = bit0
+0x00a6b3c4  mov dl, bl ; and dl, 2                        ; = bit1
+0x00a6b3ce  mov byte ptr [esp + 0x24], al   ; ⎫ TARTALÉK példány
+0x00a6b3e4  mov byte ptr [esp + 0x23], cl   ; ⎬ (0x23…0x25)
+0x00a6b3ec  mov byte ptr [esp + 0x25], dl   ; ⎭
+0x00a6b3d2  mov byte ptr [esp + 0x21], al   ; ⎫ MUNKA-példány
+0x00a6b3e8  mov byte ptr [esp + 0x20], cl   ; ⎬ (0x20…0x22)
+0x00a6b3f0  mov byte ptr [esp + 0x22], dl   ; ⎭
+0x00a6b3e0  lea esi, [esp + 0x20]           ; ⭐ a MUNKA-példány CÍME
+0x00a6b3f8  call 0xa6ade0                   ; és átadja neki
+```
+
+⚠️ **A két példány maga a bizonyíték:** ha a hívott függvény nem
+módosíthatná a bájtokat, nem kellene tartalék. Az `esi` **be- és kimenő**
+paraméter.
+
+### 8.6/b A hívott függvény TÁBLÁT KERES, nem dekódol
+
+`0x00a6ade0` (162 bájt) egy tárolón iterál, és **soronként négy dolgot**
+hasonlít össze:
+
+```
+0x00a6adee  mov ebp, dword ptr [eax + 8] ; shr ebp, 1   ; a sorok száma
+0x00a6ae00  mov ecx, dword ptr [esi + 8]
+0x00a6ae03  cmp dword ptr [eax + 0xc], ecx             ; kulcs egyezés?
+0x00a6ae08  mov cl, byte ptr [eax + 3]                 ; a sor 1. bájtja
+0x00a6ae0b  movsx ebx, byte ptr [esi]                  ; a KÉRDÉS 1. bájtja
+0x00a6ae10  cmp cl, 0xff ; sete dl ; cmp ebx, edx      ; 0xFF = külön eset
+0x00a6ae20  mov cl, byte ptr [eax + 4]  / [esi + 1]    ; a 2. bájt
+0x00a6ae3a  mov cl, byte ptr [eax + 5]  / [esi + 2]    ; a 3. bájt
+```
+
+⇒ a három bájt **lekérdezési kulcs** egy futásidőben feltöltött
+gyorsítóbillentyű-táblába, `0xFF` jelöléssel a soroldalon. A **tábla**
+mondja meg a tényleges módosítókat, nem a maszk.
+
+### 8.6/c A visszaszámolás IDENTITÁS — csak újraolvasás
+
+A `0x00a6b451`–`0x00a6b473` blokk látszólag újrakódolja a maszkot. Kimérve
+**bitre azonosat** ad vissza:
+
+| utasítássor | mit ad |
+|---|---|
+| `bl = [esp+0x22]` (=bit1) `; neg bl ; sbb bl,bl ; and ebx,2` | bit1 → bit1 |
+| `cmp [esp+0x21],0 ; setne dl ; or bl,dl` | bit0 → bit0 |
+| `cmp [esp+0x20],0` (=NOT bit2) `; setne al ; sub al,1 ; and eax,4 ; or bl,al` | bit2 → bit2 (kettős tagadás) |
+
+Vagyis a blokk **nem átalakít**, hanem a `0xa6ade0` által esetleg
+**módosított** munka-példányt olvassa vissza maszkká.
+
+### 8.6/d Az előtag-fűzés KAPUZOTT — nem minden tételen fut
+
+```
+0x00a6b3fd  test al, al
+0x00a6b3ff  je 0xa6b475      ; ⭐ ha a táblakeresés NEM talált:
+0x00a6b4a3      push 0xffff  ;    beszúrás előtag NÉLKÜL
+0x00a6b4a9      call 0xa6b120
+0x00a6b4ae      jmp 0xa6b657 ;    és kész
+```
+
+A `Ctrl+`/`Shift+`/`Alt+` hármas (8.5/c) tehát **csak akkor** fut le, ha a
+táblakeresés talált sort. Ezen az ágon a `test bl, 4` / `1` / `2` hármas
+`jne`-vel **átlép**, amikor a bit **be van állítva** — vagyis a bit ott már
+azt jelenti, hogy az adott előtag **NEM kell**.
+
+### 8.6/e ⛔ Ezért a 8.5/d kontroll-anomáliája NEM anomália
+
+A `&Help Contents and Index` maszkja `0`, gyorsbillentyűje `F1` Ctrl
+nélkül. Statikus leképezéssel ez ellentmondás; **táblakereséssel nem az**:
+a Súgó parancsához tartozó tábla-sor a saját módosító-készletét adja, és a
+maszk csak a kulcs egy része. Nem kell külön ág a funkcióbillentyűkhöz.
+
+⇒ **A „melyik bit melyik módosító" kérdésre nem lehet táblát adni**, mert a
+válasz futásidejű adattól függ. A helyes megfogalmazás: *melyik tábla, ki
+tölti fel, és mi a sorformátuma.*
+
+### 8.6/f Ami ebből MÉG hiányzik — pontos következő lépés
+
+1. **A tábla tulajdonosa.** A `0xa6ade0` az `eax`-ben kapja a tárolót; a
+   hívóban ez `0x00a6b3d6  mov eax, dword ptr [esp + 0x4c]`, tehát a
+   `0x00a6b250` egyik paramétere. Vissza kell követni a `0x00a6b250`
+   hívási láncán (`0x00a6b02b` a bejáróból).
+2. **A kulcs.** `[esi + 8]` = a hívó `[esp + 0x28]`-a, amit a
+   `0x00a6b3da  mov dword ptr [esp + 0x28], esi` állít be az AKKORI `esi`
+   értékéből. Ezt egy verem-visszakövetés adja meg.
+3. **A sorformátum.** A `0xa6ade0` a `+0x3`, `+0x4`, `+0x5` bájtokat és a
+   `+0xc` dwordöt olvassa ⇒ a sor legalább 16 bájt; a lépést a
+   `shr ebp, 1` és az iteráció adja meg.
+
+⚠️ **Amit NEM állítok:** hogy a maszk bitjei „Ctrl/Shift/Alt"-ot jelentenek.
+Csak azt, hogy a **kereső hármas** ilyen sorrendben teszteli őket, ha a
+keresés talált. A jelentést a tábla adja.
