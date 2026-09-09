@@ -19,6 +19,27 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
+> ⛔ **2026-09-09 (#2813) — EZ A LISTA KIÜRÜLT, és ez önmagában lelet.**
+> A 241–242. kör auditja után (#2810, #2812) mind az **öt** itteni
+> bejegyzés „nincs nyitott kérdés" — vagyis ez a szakasz ma **nem tudja
+> ellátni a feladatát**: nem ad témát egy kutatói körnek.
+>
+> **A valódi nyitott tételek a spec-lapok SAJÁT 8./9. szakaszaiban élnek**
+> („Nyitott kérdések — és mi döntené el", „Amit NEM vizsgáltam"), nem itt.
+> A #2813 így talált témát:
+>
+> ```bash
+> for f in docs/specs/*.md; do n=$(grep -c 'NYITOTT' "$f"); [ "$n" -gt 0 ] && echo "$n $f"; done | sort -rn
+> ```
+>
+> majd a jelölt lapon **a lap saját szakaszlistája** (`grep -n '^## \|^### '`),
+> és csak azután a jelölés maga. A jelölésben álló jegyszám **zárt**
+> állapota a legolcsóbb elavulás-jel (mérő kérve: `picasapy-agent` #69).
+>
+> ⚠️ Amíg ez a szakasz nincs újratöltve, **ne innen válasszon** kutatói kör
+> témát — a fenti parancs a működő forrás.
+
+
 ### [ui-audit-editor.md](ui-audit-editor.md) — ✅ nincs nyitott kérdés (a #2061 2026-09-04-én LEZÁRULT; a fejléc 2026-09-05-ig elavult volt)
 
 ⭐ **2026-09-04 — a `plugins/red.cfg` LELTÁRA a `picasa-arcfelismeres.md`-ben (#2239, TULAJDONOSI DÖNTÉS alapján tájékoztató, nem normatív).** A tulajdonos 2026-09-04-én úgy döntött: *a korábbi működés kerüljön a dokumentációba, és a majdani saját eljárás specifikációjánál legyen irányadó, de **most ne épüljön be***. ⭐ **A fájl:** a `Red.dll` arc- ÉS vörösszem-motorjának betanított konfigurációja (2,2 MB) — **19 525 objektum, 75 osztály**. A szerializálás hatbájtos fejléce (`00 <len> <ClassId> 00`) és négy tároló-osztály payloadja megfejtve; a `ClassId→osztálynév` tábla a DLL regisztrációs sorozatából (550 osztály). ⭐ **Osztálycsaládok:** `ebs_` 12 215 (tárolók) · `ets_` 4 827 (mátrix/vektor) · `vlf_` 921 (lokális jellemzők) · `vqc_` 729 (kvantálás) · `egp_` 561 (térbeli gráf) · `vfv_` 242 · `vde_` 12 · `vfr_` 7 (legfelső szint) · **`vrd_` 6 (VÖRÖSSZEM — ugyanez a fájl a vörösszem-detektort és -korrektort is tartalmazza)** · `vpf_` 5. ⭐ **A lánc sorrendje** a `vfr_VdeFaceFinder`-től a `vfr_SowGrowStampClusterer`-ig, offszetekkel. ⭐ **Az egyetlen kiolvasott paraméter-ötös:** a klaszterező `0,7 / 0,98 / 1,0 / 25 000 000 / 25 000 000` (a mezők NEVE nincs megfejtve). ⛔ **Nem megfejtett:** a 75 osztályból 71 payload-sémája és a paraméterek jelentése. ⚠️ **A fájl a PARAMÉTEREKET adja, az ELJÁRÁST nem** — ez a fő oka annak, hogy az átvétele nem javasolt. A parser a privát repóban marad. Jegy: **#2239** (lezárva).

@@ -238,6 +238,11 @@ módok**, nem effektusok.
 horog** a rajzfelület-osztályon (más felületek is állítanak bele, pl.
 `0x009e8750`). A meghívás helye a rajzoló rutin:
 
+> ⚠️ **A 11. szakasz (2026-09-09, #2813) két ponton HELYESBÍTI ezt a
+> bekezdést:** a mező nem „rajzfelület"-osztályon, hanem a **`yt`
+> jelenetgráf-csomópont** alaposztályán ül (RTTI-vel igazolva), és a
+> `0x009e8750` **nem felület**, hanem maga egy képsor-átalakító.
+
 ```
 0x009e285d  mov  eax, dword ptr [edx + 0x254]
 0x009e2864  call eax                    ; (képsor-mutató, képpontszám)
@@ -681,10 +686,16 @@ hívója · az MT-vetőmagozás — és az 5.12-ben az EnableColorManagement
 felirathoz rendelt parancsazonosító kérdése, amely a #1582 képeivel
 lezárult.)*
 
-1. **A megjelenítő objektum osztálya és életciklusa.** A `+0x254` horog
+1. ~~**A megjelenítő objektum osztálya és életciklusa.** A `+0x254` horog
    egy általános rajzfelület-osztályon ül (más felületek is állítanak
    bele, pl. `0x009e8750`); nem derítettem ki, hány ilyen felület él
-   egyszerre, és a mód csak a főnézetre vagy minden felületre hat-e.
+   egyszerre, és a mód csak a főnézetre vagy minden felületre hat-e.~~
+   ⭐ **LEZÁRVA a 11. szakaszban (2026-09-09, #2813).** A horgot a
+   **yt jelenetgráf-csomópont** alaposztálya viseli, és a Nézet-menü módja
+   **pontosan EGY csomópontra** kerül. *(Két pontatlanság a fenti
+   megfogalmazásban: a `0x009e8750` nem felület, hanem maga az egyik
+   átalakító; és a mező nem „rajzfelület"-osztályon, hanem csomóponton
+   van.)*
 2. **A `Picasa Photo Viewer`** (külön `.exe`, saját bináris-indexe van:
    `binary-index-photoviewer`) — van-e ott is megjelenítési mód.
 3. **A menü ikonjai és gyorsbillentyűi** — a rekordok `+0x04`/`+0x08`
@@ -706,3 +717,181 @@ lezárult.)*
 - Kapcsolódó lapok: [picasa-menu-leltar.md](picasa-menu-leltar.md) ·
   [picasa-menu-parancsok-viselkedes.md](picasa-menu-parancsok-viselkedes.md) ·
   [ui-audit-menus.md](ui-audit-menus.md)
+
+---
+
+## 11. A `+0x254` horog HATÓKÖRE — a 9.1 pont lezárva (2026-09-09, #2813)
+
+**Bizalmi fok: megerősített** (utasításszintű pásztázás + RTTI + két
+független hívóhely-számlálás). A kérdés az volt: *hány rajzfelület viseli
+a `+0x254` horgot, és a Nézet-menü módja a főnézetre hat-e csak, vagy
+mindenre?* A #1730 kompozíciós rétegének hatóköre múlik rajta.
+
+### 11.1 A teljes `.text` pásztázása a `0x254` eltolásra
+
+A pásztázás **nem opkódra, hanem az eltolásra** szűrt — a `mov`-ra
+szűkített keresés hamis negatívot ad (bitmaszk-mezőket csak `or`/`and`
+ír). Eszköz: `eszkozok/binaris/paszta.py`, memóriaplafon alatt.
+
+| mérőszám | érték |
+|---|---|
+| összes `0x254`-eltolású utasítás | **118** |
+| ebből `[esp + 0x254]` (veremlokális, NEM a mező) | **16** |
+| opkód-megoszlás | `mov` 81 · `cmp` 15 · `test` 10 · `and` 4 · `lea` 3 · `fild` 2 · `fstp`/`fisub`/`sub` 1-1 |
+
+**Kontroll (a hibás minta ellen):** a spec 4. szakaszában megnevezett
+olvasó, `0x009e285d`, szerepel a találati listában. A pásztázás tehát
+nem üresre futott.
+
+**Függvénymutató-konstans mindössze kettő kerül a mezőbe:**
+
+| érték | hova írja | hányszor |
+|---|---|---|
+| `0x009e8750` | `[esi + 0x254]` | **4** írás: `0x00a6276d`, `0x00a63946`, `0x00a63a01`, `0x00a63b2f` (mindegyik előtt egy `cmp` ugyanerre az értékre: `0x00a6275e`, `0x00a6393d`, `0x00a639f8`, `0x00a63b20` — összesen 8 hivatkozás) |
+| `0x009d56f0` | `[esi + 0x254]` | **1** írás: `0x009d5a67`. A második hivatkozása (`0x009d556f`: `mov dword ptr [eax + 0x10], 0x9d56f0`) **más mezőbe** megy, nem a horogba |
+
+⚠️ **Helyesbítés a 4. és 9.1 szakaszhoz:** a `0x009e8750` **nem egy másik
+felület**, hanem maga egy képsor-átalakító — ugyanabba a mezőbe kerül,
+mint a Nézet-menü módjai.
+
+### 11.2 Az osztály-aláírás: `cmp` → dirty-jelző → `mov`
+
+A mezőt író helyek **egy** jól felismerhető idiómát követnek:
+
+```
+cmp dword ptr [this + 0x254], X
+je  tovabb
+or  dword ptr [this + 8], 2        ; ⭐ ÚJRARAJZOLÁS-JELZŐ
+mov dword ptr [this + 0x254], X
+```
+
+A 14 `cmp`-helyből **12 hordozza** ezt az alakot. A két kivétel:
+
+- `0x009e27bf` — a rajzoló null-ellenőrzése (`cmp …, 0` → átlép), nem író;
+- `0x00a6c356` — **ír, de NEM állítja a dirty-jelzőt** (`0x00a6c35e`). A
+  hívója (`0x00a6c240`) hat szövegcsomópont-osztály 17. vtábla-résében ül,
+  tehát a szövegcsomópont máshol kéri az újrarajzolást. *(Miért épp ott,
+  az NINCS megfejtve — nem volt a kérdés része.)*
+
+A `+0x8` dirty-jelző az osztály-azonosság **legerősebb jele**: minden író
+ugyanazt a szomszédos mezőt bolygatja meg.
+
+### 11.3 Az osztály: a **yt jelenetgráf-csomópont**, nem „rajzfelület"
+
+Két mezőíró **virtuális**, és ez adja meg az osztályt:
+
+| függvény | vtábla-rés | osztályok (RTTI) |
+|---|---|---|
+| `0x00a63340` | **17** | `ytButtonNode` (31 rés) · `ytColorWheelNode` (31) · `ytPopupListNode` (33) |
+| `0x00a6c240` | **17** | `CButtonText` · `CTextEditNode` · `ytFPSNode` · `ytTextEditNode` · `ytTextNode` · `ytToolTip` (mind 30 rés) |
+
+Hogy `esi` valóban a `this`, az a prológusból olvasható:
+
+```
+0x00a6334b  mov esi, ecx        ; FUN_00a63340 — this
+0x00a63998  mov esi, ecx        ; FUN_00a63990 — ugyanaz az osztály, nem virtuális tag
+```
+
+⇒ **A horog a respack/`yt` jelenetgráf csomópont-alaposztályán ül**, azon
+a családon, amelyből a Picasa felülete fel van építve (377 `yt*` osztály
+van RTTI-vel a binárisban). Nem egy dedikált „megjelenítő felület"
+osztályon.
+
+### 11.4 ⭐ A Nézet-menü módja PONTOSAN EGY csomópontra kerül
+
+A tíz átalakító-konstans a **teljes `.text`-ben egyetlen** függvényben
+szerepel közvetlen értékként — `0x005cb990`, a parancs-diszpécser —, és
+mindegyik ág ugyanoda ad tovább:
+
+```
+0x005cbc40  mov ecx, 0x9e8b80        ; a mód átalakítója
+0x005cbc45  call 0x575670            ; a mód-beállító
+```
+
+A mód-beállító (`0x00575670`) törzse **nem iterál**:
+
+```
+0x00575674  mov ebx, dword ptr [esp + 0x3c]   ; a TÁROLÓ (a hívó ebx-e)
+0x00575678  mov eax, dword ptr [ebx + 0x14c]  ; EGYETLEN csomópont
+0x00575683  je  0x575788                      ; ha nincs, nem tesz semmit
+0x00575689  cmp dword ptr [eax + 0x254], ecx
+0x00575691  or  dword ptr [eax + 8], 2
+0x00575695  mov dword ptr [eax + 0x254], ecx  ; ⭐ A MÓD IDE KERÜL
+0x005756a1  or  dword ptr [eax + 8], 7        ; teljes érvénytelenítés
+0x005756d5  call 0xa54b70                     ; és újrarajzolás
+```
+
+**Nincs lista, nincs ciklus, nincs második csomópont.** A `+0x14c` egyetlen
+slot; a `0x00a51e90` tanúsága szerint a tárolóban **két** csomópont-slot van
+(`+0x14c` és `+0x150`), és a mód-beállító csak az elsőt írja.
+
+**A hívóhely-készlet zárt** — indextől független pásztázással (nem a
+függvényindexből, mert az lyukas):
+
+| célfüggvény | hívóhely | hol |
+|---|---|---|
+| `0x00575670` mód-beállító | **13** | `0x0040be79`, `0x0040bea3` (indulási RDP-próba, `0x0040bd90`) + **11** a `0x005cb990`-ben = a tizenegy mód |
+| `0x009e1c40` képsor-ciklus | **2** | mindkettő a `0x009e2a60`-ban (`0x009e3184`, `0x009e3323`) — a 4. szakasz „egyetlen hívó" állítása ÁLL |
+| `0x009e2a60` rajzoló | **3** | `0x009e1a68` (`0x009e16d0`) + `0x00a55877`, `0x00a558aa` (`0x00a54b70`) |
+
+### 11.5 A 16 bites tartalék MÁS út — és az 7 felületre megy
+
+A `0x00a51e90` felület-csatoló a képernyő-színmélységtől függően **magától**
+telepít horgot, a Nézet-menütől függetlenül:
+
+```
+0x00a51f45  cmp dword ptr [0xd33958], 0x20   ; a képernyő 32 bites?
+0x00a51f4c  mov byte  ptr [esi + 0x213], 1
+0x00a51f53  mov dword ptr [esi + 0x244], ebp ; a csomópont szülője = a tároló
+0x00a51f59  je  0xa51f72                     ; 32 bit → nincs horog
+0x00a51f5b  mov eax, 0x9e8b80                ; egyébként a 16 bites átalakító
+0x00a51f6c  mov dword ptr [esi + 0x254], eax
+```
+
+Ennek **8 hívóhelye van 7 függvényben** (`0x0053010d`, `0x0062b25c`,
+`0x0080fc47`, `0x00810401`, `0x0088af20`, `0x009c6b18`, `0x00a58857`,
+`0x00a588fc`). Az egyik hívó, `0x0062b1e0`, a `CCaptureMoviePanelPopup`
+vtáblájának 34. rése ⇒ **önálló, felbukkanó felület**.
+
+⇒ **Két hatókör van, és nem ugyanaz:**
+
+| út | mit telepít | hány csomópontra |
+|---|---|---|
+| Nézet ▸ Megjelenítési mód (`0x00575670`) | a választott átalakító | **1** (tároló `+0x14c`) |
+| képernyő-mélység tartalék (`0x00a51e90`) | `0x009e8b80` (16 bites) | **7 csatolási pont** |
+
+### 11.6 A #1580 mérésével való feszültség — kimondva, nem elsimítva
+
+A #1580 képei szerint a `Mac gamma` **a teljes felületet** világosítja,
+„még a menüket is". A bináris viszont **egyetlen** csomópontra teszi a
+horgot. A kettő akkor és csak akkor egyeztethető össze, ha a `+0x14c`
+csomópont a **fő ablak jelenetgráfjának GYÖKERE** — a Picasa menüi és
+paneljei is `yt*` csomópontok, tehát a gyökér festése rájuk is kihat.
+
+⚠️ **Ez KÖVETKEZTETÉS, nem mérés.** Amit a bináris ad: egy slot, egy írás.
+Hogy a slot a gyökér-e, nincs kiolvasva.
+
+**Falszifikálható előrejelzés (a megvalósítás előtt érdemes ellenőrizni):**
+mivel a felbukkanó felületek (pl. `CCaptureMoviePanelPopup`) **külön**
+csatolási ponton élnek és csak a mélység-tartalékot kapják, `Mac gamma`
+bekapcsolt állapotában egy ilyen felbukkanó panelnek **változatlanul** kell
+megjelennie. Ha a tulajdonos képén a felbukkanó panel is világosodik, akkor
+a `+0x14c` nem gyökér, hanem valami közös kompozíciós cél — és a 11.4
+egyetlen-írás lelete akkor is áll, csak más jelentéssel.
+
+**Ez döntené el:** egyetlen képernyőkép a windowsos Picasából `Mac gamma`
+módban, **nyitott felbukkanó panellel** (pl. a filmfelvevő panel).
+
+### 11.7 Amit a #1730 ebből kap — hatókör-szerződés
+
+1. A módot **egy** helyre kell alkalmazni, a jelenetgráf gyökerére —
+   nem elemenként, nem képenként.
+2. Az érvényesítés két lépés az eredetiben: `or flags, 7` (teljes
+   érvénytelenítés) **és** egy explicit újrarajzolás-hívás. Nálunk is
+   kell egy „mindent újrafest" jelzés, nem elég a LUT beállítása.
+3. A **felbukkanó, önálló felületek** nem részei a hatókörnek (11.6
+   előrejelzés) — a megvalósítás ne próbálja őket bevonni, amíg a
+   képernyőkép nem mondja meg az ellenkezőjét.
+4. A **16 bites tartalék NEM a Nézet-menü része** (`0x009e8b80` a
+   mélységből jön) — a `dither16` kihagyása (#1579) tehát a menütételre
+   igaz, a tartalék-útra nem értelmezendő.
