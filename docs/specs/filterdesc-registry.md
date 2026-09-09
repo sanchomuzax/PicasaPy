@@ -93,6 +93,26 @@ alapállapot), `zero` (minden paraméter 0), `defaults` (a `default` értékek).
 | `rotate="1"` | forgatható irány-paramétere van (`dir_tint`) |
 | `persist="1"` | régió-adatot őriz (`redeye`, `retouch`, `picnik`) |
 
+> ⭐ **MÉRVE (2026-09-09, 225. kör): a jelzőket a `0x008ff550` olvassa be** —
+> ez a `filterdesc.xml` szűrő-elem attribútum-olvasója (2807 bájt). A
+> `zerostate`, `fullres`, `slow`, `resize`, `glimmer`, `persist` és további 29
+> attribútumnév itt dől el, `repe cmpsb` illetve `0x0057f350` összehasonlítóval.
+>
+> **A tárolási mód a két jelzőnél KÜLÖNBÖZŐ, és ez mérve van:**
+>
+> | jelző | kód | mit tárol |
+> |---|---|---|
+> | `fullres` | `0x008ff726`–`0x008ff733`: `call 0x00bf6a1c` (sztring→szám), majd `mov [esp+0x2c], eax` | az **egész** értéket |
+> | `slow` | `0x008ff74e`–`0x008ff75d`: ugyanaz a konverzió, majd `test eax, eax` + `setne byte [esp+0xf]` | **logikai** 0/1-et |
+>
+> ⇒ A két jelző tehát **nem** ugyanolyan típusú: a `fullres` szám, a `slow`
+> igen/nem. A lenti értelmezések (a jelentésük) továbbra is a NÉVBŐL vannak —
+> hogy ki kérdezi VISSZA a tárolt értéket, az nyitott (#2746).
+>
+> ⚠️ **Az index itt megtévesztett:** a `slow` a `string_xrefs` táblában
+> **nem szerepel**, holott a kód összehasonlítja (`0x00cd1760`). A táblán
+> mért hiányosság 26 % — ld. `binaris-regeszet-modszertan.md`.
+
 Ez a négy jelző **eddig sehol nem volt dokumentálva**, és közvetlenül
 meghatározza, hogy egy renderelő motor melyik szűrőt teheti be az „olcsó,
 előnézeten is futtatható" útvonalba.
