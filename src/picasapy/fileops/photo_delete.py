@@ -40,10 +40,10 @@ nem: ez tudatos csere az öröklés kizárásáért.
 
 from __future__ import annotations
 
-import shutil
 from collections.abc import Sequence
 from pathlib import Path
 
+from picasapy.fileops.safe_move import safe_move
 from picasapy.fileops.original_ini import remove_original_ini_sections
 from picasapy.fileops.originals import companions_of
 from picasapy.fileops.trash import (
@@ -53,7 +53,7 @@ from picasapy.fileops.trash import (
 )
 
 #: A `shutil.move` MODULSZINTŰ fogantyúja — a teszt EZT cserélje (#1375).
-_move = shutil.move
+_move = safe_move  # #998: bukáskor nem marad másolat
 
 
 class CompanionLeftBehindError(OSError):

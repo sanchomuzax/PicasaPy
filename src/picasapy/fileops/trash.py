@@ -19,6 +19,8 @@ import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
+from picasapy.fileops.safe_move import safe_move
+
 
 class TrashUnavailableError(OSError):
     """A megadott fájlhoz nincs elérhető lomtár — sem a home trash (mert más
@@ -41,7 +43,7 @@ def _platform() -> str:
 #: GLOBÁLIS `shutil` modult írja át, tehát a csere minden más modulra is hat,
 #: amíg a teszt fut (a lomtárazás bukását szimuláló csere így pont a
 #: takarítást is elronthatja).
-_move = shutil.move
+_move = safe_move  # #998: bukáskor nem marad másolat
 _access = os.access
 
 

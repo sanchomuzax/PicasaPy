@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.354] – 2026-09-09
+
+### Javítva
+
+- **Sikertelen áthelyezésnél többé nem marad ott a kép két példányban**
+  (#998). Ha egy fájl áthelyezése közben a program nem tudta törölni az
+  eredetit (zárolt fájl, írásvédett mappa), a másolat már a helyén volt, és a
+  kép **megkettőződött** — hibaüzenettel, ami erről nem szólt. Ez különösen a
+  duplikátum-feloldásnál kellemetlen: aki duplikátumot akart megszüntetni,
+  kapott egy újat. Mostantól ilyenkor a program visszatörli a félkész
+  másolatot, és a kép a régi helyén marad. Ugyanez a védelem működik a
+  Kukába helyezésnél, a visszaállításnál és a megőrzött eredetik
+  költöztetésénél is.
+
 ## [0.8.353] – 2026-09-09
 
 ### Hozzáadva

@@ -16,10 +16,10 @@ elvesztése nem lenne az.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 from picasapy.fileops.originals import originals_follow
+from picasapy.fileops.safe_move import safe_move
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
@@ -28,12 +28,10 @@ from picasapy.ini import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
-#: A `shutil.move` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
-#:
-#: A `"picasapy.fileops.move.shutil.move"` sztringes rögzítés nem a modult
-#: módosítja: a `move.shutil` MAGA a globális `shutil`, tehát a csere minden
-#: más modulra is átszivárog, amíg a teszt fut.
-_move = shutil.move
+#: Az áthelyezés MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#: A közös, visszagörgetéses áthelyezés (#998): bukáskor nem marad másolat a
+#: célban. Ld. `picasapy.fileops.safe_move`.
+_move = safe_move
 
 # Az ini-írás kezelt hibái: a fájlrendszeré (`OSError`), a kódolásé
 # (`IniSaveError`) és a tartós párhuzamos-írás-ütközésé (`IniConflictError`).
