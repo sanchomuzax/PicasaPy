@@ -578,6 +578,29 @@ mezője. Ezért tűnt mindhárom mező egyenletesen szórtnak, és ezért fordul
 hogy „néhány rekordban mindhárom mező azonos" (egymást követő, azonos kulcsú
 slotok — pl. egy fotó és a hozzá tartozó arckivágások).
 
+#### ⭐ MEGVAN az olvasó (2026-09-09, #1446)
+
+Az indexet a `picasapy.pmpimport.thumbindex.read_slot_index` olvassa (a
+`20 + 12n` elrendezés, #2195 tesztjeivel); a **tartalmat** mostantól a
+`picasapy.pmpimport.cacheblob` adja:
+
+```python
+tar = open_cache_store(db3_mappa, "thumbs")     # None, ha a pár nincs meg
+for i in tar.hasznalt():                        # a HOSSZ alapján, nem a kulcs
+    jpeg = tar.blob(i)                          # None ismeretlen/üres slotra
+```
+
+⚠️ Új `cacheindex.py` SZÁNDÉKOSAN nem készült (a jegy azt kérte): az
+index-olvasó már megvolt, és két igazságforrás ugyanabból a formátumból
+rosszabb, mint egy.
+
+**A valódi katalóguson ellenőrizve** (`Picasa2-arcok`, 17 próba):
+mind az öt tár megnyílik; a négy bélyegkép-szint első használt slotja
+`FF D8`-cal kezdődik és `FF D9`-cel végződik (tehát tényleg teljes JPEG); az
+arcsablonok hossza kivétel nélkül 1 044 bájt; a tartományok nem fednek át és
+a legnagyobb végük bájtra az adatfájl mérete (a fenti két mérés így a KÓDBÓL
+is igazolt); a `thumbs2` MINDEN használt slotja kiolvasható.
+
 #### Mit jelent a három vektor
 
 **`eltolas` és `hossz` — MÉRVE, nem következtetve.** A `hossz[i] > 0` slotok
