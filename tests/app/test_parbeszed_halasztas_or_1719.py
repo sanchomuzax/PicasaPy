@@ -100,13 +100,12 @@ AZONNAL_EPULO = {
         "ok, mint az AddFileDialog-nál: a mérhető nyereség nulla közeli."
     ),
     "PicasaImportDialog": (
-        "#146: 164 sor, EGYETLEN (integrátori) hívóhellyel. A halasztás "
-        "mérhető nyeresége kicsi, a hívólánc átkötése viszont öt tesztet "
-        "érint — külön kör dolga, ha egyszer méréssel indokolható."
-    ),
-    "ConfirmDialog": (
-        "Általános megerősítő — több, egymástól független hívóhely "
-        "használja ugyanazt a példányt."
+        "#146/#1612: saját `Connections { target: discoveryController }`-t "
+        "tart, benne az INDULÁSKORI néma felderítés kezelőjével "
+        "(`onStartupDiscoveryFinished`). Halasztva a kezelő nem létezne, "
+        "tehát a meglévő Picasa-telepítés felajánlása NÉMÁN elveszne — ez "
+        "a #1743 hibaalakja. Előbb a hallgatót kell kivinni a `Main.qml`-be "
+        "(a #2096 mintája), és az önálló, kockázatosabb lépés."
     ),
 }
 
