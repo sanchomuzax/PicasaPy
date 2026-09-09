@@ -27,7 +27,7 @@ miért:
 | `alist_hicolor_mac`, `alist_hicolor2_mac`, `alist_selcolor_mac` | Mac-specifikus, a projekt Linux-first |
 | `alabel_buttfont_*` | szállított betűtípus (`Praxis`), amit nem viszünk tovább |
 | `alabel_burncdOffset` | CD-írás — nyugdíjazott funkció (#638) |
-| `publishtoweb_color` (#0000FF) | MÁS család (webre publikálás), nálunk ma nincs meg — a #2825 jegy tárgya |
+| `publishtoweb_color` (#0000FF) | MÁS család (webre publikálás), nálunk ma nincs meg — a #2830 jegy tárgya |
 
 ⚠️ Ez az őr a szín JELENLÉTÉT méri a `Theme.qml`-ben, nem azt, hogy a
 felület melyik eleme viseli. A bekötést elemenként külön próbák mérik (a
