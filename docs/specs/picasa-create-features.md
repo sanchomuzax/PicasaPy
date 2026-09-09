@@ -361,6 +361,20 @@ négyzetbe, mi viszont a FOTÓT, és a keret azon kívül nő. A #1053 a 18
 polaroid golden csomóponton kimérte a szabályt, és a `_pile_nodes` azóta a
 KÜLSŐ dobozt illeszti a négyzetbe.
 
+⚠️ **Önhelyesbítés (#973, 2026-09-09):** a fenti „rendezve" a POLAROID ágra
+volt igaz. A **fehér szegély** ágán a fotó maradt a négyzetben, és a szegély
+azon kívül nőtt — mérve `pile_size = 337`-nél 371×371 / 207×355 / 359×247,
+azaz +5…10%. A `.cxf` írónk így a SAJÁT `scale` mezőjének (a befoglaló
+négyzet oldala) mondott ellent. A `_pile_nodes` azóta a
+`nodes.fit_outer_inside`-ot hívja, ami a keretes csempét illeszti a
+négyzetbe mindhárom kerettel; `noborder`-nél a növekmény nulla, tehát ott a
+viselkedés változatlan.
+
+Fehér szegélyes Képkupac-mintánk NINCS (a mért 49 csomópont polaroid és
+keret nélküli), tehát ez nem új mérés, hanem a meglévő mért szabály
+következetes alkalmazása — ezt az őr (`tests/collage/test_pile_keretes_csempe_973.py`)
+ki is mondja.
+
 *Bizonyítottsági fok: erős következtetés* (egyetlen valódi mintán mért,
 háromszorosan egybevágó számtan; a writer a `scale` FORRÁSÁT nem mondja ki).
 

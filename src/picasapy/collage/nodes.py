@@ -213,6 +213,54 @@ def outer_box(photo_width: int, photo_height: int, border: str) -> tuple[int, in
     return (photo_width + novekmeny[0], photo_height + novekmeny[1])
 
 
+def fit_outer_inside(
+    aspect: float, side: int, border: str
+) -> tuple[int, int, int, int]:
+    """A KERETES csempét illeszti a `side × side` négyzetbe (#973).
+
+    Visszatér: `(fotó szélesség, fotó magasság, külső szélesség, külső
+    magasság)`.
+
+    Miért kell: a `.cxf` `scale` mezője Képkupacban a csomópont befoglaló
+    NÉGYZETÉNEK oldala (spec 1.6/f, 49 golden csomóponton), a `w`/`h` pedig
+    a KIRAJZOLT — tehát kerettel együtt értendő — csempe doboza. A kettőből
+    következik, hogy a keretnek a négyzeten BELÜL kell lennie. Ha a fotót
+    illesztjük a négyzetbe, és a keret azon kívül nő, a saját írónk mond
+    ellent a mért szabálynak (fehér szegélynél mérve +5…10%).
+
+    A keretnövekmény a fotó méretétől függ (a fehér szegély a rövidebb
+    oldal 5%-a, kerekítve), ezért nem analitikus: fixpont-iteráció, majd
+    lépésenkénti zsugorítás, amíg a külső doboz tényleg befér. Ez a
+    `photo_box` mintája — ott ugyanez a lépcsősség indokolja a keresést.
+
+    `noborder`-nél a növekmény nulla, tehát a hívás visszaesik a puszta
+    `fit_aspect_inside`-ra: a keret nélküli csempe alakja marad a
+    forráskép aránya (golden `AI1.cxf`).
+    """
+    from .fitting import fit_aspect_inside
+
+    if side < 1:
+        raise ValueError(f"Érvénytelen négyzet-oldal: {side}")
+    cel_w = cel_h = side
+    for _ in range(_BORDER_FIXPOINT_STEPS):
+        foto_w, foto_h = fit_aspect_inside(aspect, max(1, cel_w), max(1, cel_h))
+        no_w, no_h = border_growth(max(1, foto_w), max(1, foto_h), border)
+        kov = (max(1, side - no_w), max(1, side - no_h))
+        if kov == (cel_w, cel_h):
+            break
+        cel_w, cel_h = kov
+    foto_w, foto_h = fit_aspect_inside(aspect, max(1, cel_w), max(1, cel_h))
+    kulso_w, kulso_h = outer_box(max(1, foto_w), max(1, foto_h), border)
+    # ⚠️ A kerekítés miatt a fixpont egy képponttal még túllőhet. Addig
+    # zsugorítunk, amíg a külső doboz befér — de csak amíg a fotó legalább
+    # 1 képpont marad; a legrosszabb eset a `side` lépés, ami korlátos.
+    while max(kulso_w, kulso_h) > side and min(foto_w, foto_h) > 1:
+        foto_w = max(1, foto_w - 1)
+        foto_h = max(1, foto_h - 1)
+        kulso_w, kulso_h = outer_box(foto_w, foto_h, border)
+    return (max(1, foto_w), max(1, foto_h), kulso_w, kulso_h)
+
+
 #: Az `outer_box` megfordításának keresési sugara képpontban.
 #:
 #: A fixpont-iteráció a fehér szegélynél billeghet egyet a helyes érték
@@ -441,6 +489,7 @@ def draw_nodes(
 
 
 __all__ = [
+    "fit_outer_inside",
     "SHEET_UNITS",
     "CollageNode",
     "ShadowParams",

@@ -67,6 +67,7 @@ from .nodes import (
     CollageNode,
     border_growth,
     draw_nodes,
+    fit_outer_inside,
     outer_box,
     photo_box,
     pixels_to_sheet,
@@ -487,8 +488,12 @@ def _pile_nodes(
             foto_oldal, kulso_w, kulso_h = _polaroid_negyzet(oldal)
             cel_w = cel_h = foto_oldal
         else:
-            cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
-            kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
+            # #973: a KERETES csempe illeszkedik a négyzetbe, nem a fotó. A
+            # fehér szegély korábban a négyzeten KÍVÜL nőtt (mérve +5…10%),
+            # tehát a `scale`-be írt szám és a `w`/`h` ellentmondott a mért
+            # szabálynak (spec 1.6/f). `noborder`-nél a növekmény nulla,
+            # tehát ez visszaesik a puszta fotó-illesztésre.
+            cel_w, cel_h, kulso_w, kulso_h = fit_outer_inside(aspect, oldal, keret)
         # ⚠️ #1045 VISSZAVONVA (#1094). Volt itt egy beszorítás, amely a
         # csempét a lapon TARTOTTA. Az eredeti ezt NEM teszi: a tulajdonos
         # három A4-es FEKVŐ kollázsán (AI8, AI9, AI10) a valódi Picasa

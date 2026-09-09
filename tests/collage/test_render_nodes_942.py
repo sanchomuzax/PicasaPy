@@ -82,7 +82,7 @@ from picasapy.collage.nodes import (
     pixels_to_sheet,
     sheet_to_pixels,
 )
-from picasapy.collage.fitting import MsvcRandom, fit_inside
+from picasapy.collage.fitting import MsvcRandom
 from picasapy.collage.frames import apply_border
 from picasapy.collage.layout import Placement
 from picasapy.collage.multi_exposure import blend_multi_exposure
@@ -99,6 +99,7 @@ from picasapy.collage.picasa_render import (
     make_picasa_collage,
     render_nodes,
 )
+from picasapy.collage.nodes import fit_outer_inside
 from picasapy.collage.pile import pile_layout, pile_top_left
 from picasapy.collage.rects import to_pixel_rects
 from picasapy.collage.regular_grid import regular_grid_rects, regular_grid_shape
@@ -187,7 +188,15 @@ def _regi_render_pile(canvas, images, settings):
             cel_h = cel_w
             kitolt = True
         else:
-            cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
+            # ⚠️ #973: a KERETES csempe illeszkedik a négyzetbe, nem a fotó
+            # (a fehér szegély korábban a négyzeten KÍVÜL nőtt, mérve
+            # +5…10%). A produkciós ág (`_pile_nodes`) a
+            # `nodes.fit_outer_inside`-ot hívja — ugyanaz az ok, mint a
+            # #1053-nál: ha ez a referencia-ág a régi alaknál maradna, az őr
+            # SZÁNDÉKOS viselkedésváltozásra bukna, nem regresszióra.
+            cel_w, cel_h, _kulso_w, _kulso_h = fit_outer_inside(
+                szelesseg / magassag, oldal, keret
+            )
             kitolt = False
         tile = apply_border(
             fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=kitolt),

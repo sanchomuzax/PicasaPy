@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.365] – 2026-09-09
+
+### Javítva
+
+- **A Képkupacban a fehér szegélyes képek már nem nőnek túl a kupac
+  méretén** (#973). A kupac minden csempéje egy adott oldalú négyzetbe
+  tartozik; a fehér szegély eddig ezen a négyzeten KÍVÜL nőtt, ezért a
+  szegélyes képek 5–10%-kal nagyobbak voltak a kelleténél, és a kupac
+  sűrűsége is elcsúszott az eredetitől. A polaroid keret és a keret nélküli
+  eset változatlan.
+
 ## [0.8.364] – 2026-09-09
 
 ### Javítva
