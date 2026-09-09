@@ -562,7 +562,7 @@ def _reszfutas_kornyezete(sajat: Path) -> dict[str, str]:
     Python-csomagok a felhasználói site-packages-ben laknak, és felülírt
     HOME-mal MINDEN részfutás `No module named pytest`-tel halt meg (mérve).
     """
-    kornyezet = dict(os.environ)
+    kornyezet = _faulthandlerrel(dict(os.environ))
     for valtozo, alkonyvtar in (
         ("XDG_DATA_HOME", "adat"),
         ("XDG_CACHE_HOME", "gyorstar"),
@@ -572,6 +572,21 @@ def _reszfutas_kornyezete(sajat: Path) -> dict[str, str]:
         ut = sajat / alkonyvtar
         ut.mkdir(parents=True, exist_ok=True)
         kornyezet[valtozo] = str(ut)
+    return kornyezet
+
+
+#: #1457: minden részfutás `faulthandler`-rel indul. A jel nélküli halál
+#: (SIGSEGV / ACCESS_VIOLATION) eddig NÉMA volt: a naplóban nem látszott, hol
+#: járt a folyamat, és a fájlok egyesével zölden futottak. A CPython
+#: `faulthandler`-e SIGSEGV/SIGABRT/SIGFPE/SIGBUS esetén a `stderr`-re dobja
+#: minden szál Python-veremét — a natív (Qt/C++) keret nem látszik, a HÍVÁSI
+#: HELY viszont igen. Költsége a jelkezelők feltétele, futásidőben semmi.
+_FAULTHANDLER_VALTOZO = "PYTHONFAULTHANDLER"
+
+
+def _faulthandlerrel(kornyezet: dict[str, str]) -> dict[str, str]:
+    """A kapott környezet + `PYTHONFAULTHANDLER=1` (#1457)."""
+    kornyezet[_FAULTHANDLER_VALTOZO] = "1"
     return kornyezet
 
 
@@ -615,6 +630,9 @@ def _run_pytest(
     else:
         command = [sys.executable, *pytest_args]
     command = _memoria_burok() + command
+    # #1457: a környezet SOSEM `None` — a faulthandler bekapcsolása különben
+    # a szülő környezetén múlna (a soros ág eddig nem adott át `env`-et).
+    kornyezet = _faulthandlerrel(dict(kornyezet if kornyezet is not None else os.environ))
     if not csendben:
         print(f"$ {' '.join(command)}", flush=True)
     try:
