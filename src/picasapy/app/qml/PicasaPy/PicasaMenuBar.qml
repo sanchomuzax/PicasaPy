@@ -119,6 +119,16 @@ MenuBar {
     // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
     property bool hasSavedBackup: false
     //: #1637: a rejtettek feloldása jelszóval / a jelszó beállítása
+    //: #1421: az eszköztár `folderviewpopup` (▾) gombja UGYANEZT az
+    //: almenüt nyitja meg — a bináris `0x005e2000` kezelője a pár
+    //: scope-kulcsos függvényét hívja, a tételek a Mappanézet tételei
+    //: (`picasa-konyvtar-eszkoztar-viselkedes.md` 4/b). Egy definíció, két
+    //: belépési pont: a menü NEM készül újra az eszköztáron.
+    function openFolderViewMenu(anchorItem) {
+        if (!anchorItem) return
+        folderViewMenu.popup(anchorItem, 0, anchorItem.height)
+    }
+
     signal hiddenUnlockRequested()
     signal hiddenPasswordRequested()
     signal rescanRequested()
