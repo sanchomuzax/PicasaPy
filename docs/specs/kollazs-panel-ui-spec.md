@@ -1195,9 +1195,36 @@ dolga** — a feature-branch csak leírja az igényt a jegyben.
 | a két oldalsó gombsort a **kijelölés** hozza elő | **erős** — a `m_hidden` bizonyított, a kiváltó ok következtetés |
 | a parancstábla, a képesség-maszkok, a gyűrű matematikája, a menütételek, a feliratok | **megerősített** |
 | a gyűrű 132 × 132-es rajz, és képernyő-egységben állandó | **erős** |
-| a maszk **7.** bitje = elforgatás | **erős** |
+| a maszk **7.** bitje = elforgatás | **erős** — 2026-09-09 (#1162) új adat, ld. lent |
 | a maszk **6.** bitje mit kapcsol | **MEGFEJTVE** (2026-08-21, #1170) — a `collagepanel/groupnode` csoport-csomópontot teszi külön overlay-ágba (`0x00860470` → `+0x219`); a rajza `#F85E0F` körvonalas téglalap. Részletek: `picasa-kollazs-felulet.md` **2.** és **2/b**. |
 | a `framegrid` `CLocationTree` pakolója | **KUTATÁS MEGVAN, átadásra kész** (2026-08-30) — a slot7/slot8/slot5 dekompilációja a privát `referencia/dekompilalt-pakolo/script-DecompilePacker3.log`-ban (`Gyöker 0x008906e0`, `0x008910b0`, `0x0089a5d0`); az **értelmezés**: a `0x008906e0` beszúró faépítést végez (a `-1.0` négységű képek kényszer-mentes listába kerülnek, `piVar10`), a `0x0089a5d0` a **rekurzív téglalap-számítás** min/max uniókkal (`FUN_0049fae0`=max, `FUN_0049fab0`=min), a slot8 (`0x008910b0`) az 56 bájtos `CLocationTreeNode`-gyártó — a **#916-os FEJLESZTŐI jegynek ez az alapja**. |
+
+#### A 7. bit — amit 2026-09-09-én mértem hozzá (#1162)
+
+A bitet olvasó helyet a `0x0083ad5f` adja (`shr eax, 7; test al, 1` a
+képesség-maszkot visszaadó virtuális híváson: `[ebx+0x130]` → `[eax+0x1c]`).
+A binárisban ez az EGYETLEN ilyen alakú 7-bit-próba a kollázs-környéken (a
+teljes `.text`-en három találat, a másik kettő más objektumon dolgozik).
+
+A kapuzott blokk:
+
+- az elem **lebegőpontos** mezőjét olvassa (`fld dword [esi+0x168]`,
+  `0x0083ad6c`), és egy virtuális hívásnak adja át;
+- `0,1`-es és `0,15`-es arányokkal számol (`[0x00c7dd30]`, `[0x00cf49c0]`),
+  majd 0x50 bájtos objektumot gyárt;
+- **fix szögre utaló konstans nincs benne** (se 90, se negyedfordulat-
+  aritmetika).
+
+*Következtetés, nem mérés:* a folytonos, lebegőpontos szög-mező inkább a
+**szabad** forgatáshoz illik, mint a negyedfordulathoz — de a mező ÍRÓI
+nincsenek azonosítva, ezért a fokozat marad **erős**. A következő lépés: a
+`+0x168` írói (ha ott 0/±90 fokú értékek jelennek meg, a bit a fix
+igazításhoz is tartozik).
+
+⚠️ **A megvalósítást ez nem blokkolta:** a #1162 a menü-gátolást a MI
+kódunk belső ellentmondására alapozva végezte el (a `snapRotation` a bitet
+nézi, a bepattintó gombsor gátolt volt, a jobbklikk-almenü nem) — a program
+viselkedése nem változott, csak láthatóvá lett.
 
 **Ez a lap nem igényel további bináris kutatást a megvalósítás
 megkezdéséhez.** A `framegrid` pakolója a #916-os jegy átadására kész állapotban
