@@ -781,10 +781,11 @@ tölti fel, és mi a sorformátuma.*
 
 ### 8.6/f Ami ebből MÉG hiányzik — pontos következő lépés
 
-> ⭐ **MIND A HÁROM PONT ELDŐLT a 8.7-ben (2026-09-10):** a tábla a
-> `runtime\shortcuts.xml` (a fájl megvan a kutatási anyagban), a sor három
-> bájtja a `ctrl`/`shift`/`alt` attribútum, és a maszk leképezése
-> **12/12** kontrollt kiállt. Az alábbi lépések már megtörténtek.
+> ⛔ **A 8.7 kimondja: ez a szál NAGYRÉSZT ÚJRAFELFEDEZÉS volt.** A
+> [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) **3.** szakasza a
+> jelzőmező bitjeit, a fordítási kulcsokat és a `runtime\shortcuts.xml`
+> betöltőt már tartalmazta. Az alábbi lépések tehát nem voltak szükségesek;
+> ami tényleg új, az a 8.7/a–c.
 
 1. **A tábla tulajdonosa.** A `0xa6ade0` az `eax`-ben kapja a tárolót; a
    hívóban ez `0x00a6b3d6  mov eax, dword ptr [esp + 0x4c]`, tehát a
@@ -803,78 +804,44 @@ keresés talált. A jelentést a tábla adja.
 
 ---
 
-## 8.7 ⭐ MEGVAN: a tábla a `runtime\shortcuts.xml`, és a maszk leképezése 12/12 (2026-09-10, #2821)
+## 8.7 ⛔ ÖNHELYESBÍTÉS: ez a szál NAGYRÉSZT ÚJRAFELFEDEZÉS volt — a testvérlap már tudta (2026-09-10, #2821)
 
-**Bizalmi fok: megerősített.** A 8.6 három nyitott pontja mind eldőlt, és a
-levezetett leképezés **12/12** független ellenőrzést kiállt.
+**A [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) 3. szakasza a
+#2821 három menetének a LÉNYEGÉT már tartalmazta**, és részletesebben.
+Amit ott már ki volt mérve:
 
-### 8.7/a A tábla: `runtime\shortcuts.xml`
-
-A tárolót a menüépítő **verem-lokálisa** hordozza, és a konstruktora
-nevezi meg a fájlt:
-
-```
-0x00559150  sub esp, 0x14
-0x00559155  xor ebx, ebx                     ; ⭐ ebx = 0 innentől
-0x00559158  lea ecx, [esp + 0x10]            ; a tároló CÍME
-0x0055915c  mov dword ptr [esp + 0x10], ebx  ; 0
-0x00559160  mov dword ptr [esp + 0x14], ebx  ; 0
-0x00559164  call 0x9a16b0                    ; a konstruktor…
-     └─ 0x009a16c1  push 0xc8c3d4            ; …és a sztring: 'runtime\shortcuts.xml'
-```
-
-⭐ **A fájl MEGVAN a kutatási anyagban:**
-`referencia/dekompilalt-617/SHORTCUTS.xml` — 149 sor, 4627 bájt, **48
-tétel**. Sorformátuma pontosan az, amit a kereső olvas:
-
-```xml
-<!-- Rename -->
-<item srckey="VK_F2" dstkey="" ctrl="0" shift="0" alt="0">
-```
-
-⇒ a `0x00a6ade0` három összehasonlított bájtja (`[eax+3]`, `[eax+4]`,
-`[eax+5]`) a **`ctrl`**, **`shift`**, **`alt`** attribútum, a `+0xc` dword
-pedig a kulcs.
-
-### 8.7/b A tároló ÚTJA — kilenc érintés az egész építőben
-
-A `[esp+0x10]` lokálist a 15 495 bájtos építő **pontosan kilencszer**
-érinti: egyszer a konstrukciónál, és **nyolcszor** a `call 0x005590c0`
-harmadik argumentumaként — **minden felső szintű menünél ugyanazt**. Más
-metódust nem hív rá, és többet nem is ír bele.
-
-A nyolc hívás második argumentuma a menü tételszáma:
-
-| menü tömbfeje | tételszám |
+| amit a 8.5–8.6 „megtalált" | hol állt már | 
 |---|---|
-| `0xd6d960` | 0x1b = **27** |
-| `0xd6db80` | 0x0e = **14** |
-| `0xd6dfa0` | 0x17 = **23** |
-| `0xd6e1c0` | 0x11 = **17** |
-| `0xd6e498` | 0x0b = **11** |
-| `0xd6e5b0` | 0x0a = **10** |
-| `0xd6e850` | 0x12 = **18** |
-| `0xd6e9b8` | 0x0d = **13** |
-| **összesen** | **133** |
+| a `+0x08` = **módosító-jelzőmező**, nem ikon | `picasa-gyorsbillentyuk.md` **3.1** rekordtáblája |
+| a bitek: 0 = Shift, 1 = Alt, 2 = **NINCS Ctrl** (fordított) | **3.2**, ugyanezzel a `0x00a6b3bb`…`0x00a6b3cb` diszasszemblátummal |
+| a három fordítási kulcs, benne az `ytMesu` **elírás az eredetiben** | **3.2** utolsó bekezdése |
+| a négyes ellenőrzés (0→`Ctrl+N`, 4→`F2`, 1→`Ctrl+Shift+O`, 6→`Alt+Enter`) | **3.2** |
+| a `SHORTCUTS.XML` 48 rekesze és a `runtime\shortcuts.xml` lemezes felülbírálat (`0x009a16b0`, `0x00c8c3d4`) | **1.** és **2.**, sőt azt is kimondja, hogy a fájl a szállított telepítésben **nincs** meg |
+| a menüsáv gyorsbillentyűs rekordjai | **3.3** — **32 sor**, magyar felirattal és képernyőkép-ellenőrzéssel |
 
-*(Kereszt-ellenőrzés: a 8.1 szerint 173 rekord van; 173 − 133 = 40 az
-almenükben, és 11 almenü-mutató áll a `+0x0c` mezőkben — összefér.)*
+⛔ **Miért nem vettem észre öt körön át:** a `megjelenitesi-modok.md` 9.3
+pontjából indultam, és ezen a lapon dolgoztam. **A testvérlapot a FUNKCIÓ
+nevére kellett volna keresnem** (`gyorsbillentyuk`), nem az elemnévre. A
+projekt saját tanulsága pontosan ez, és nem alkalmaztam.
 
-### 8.7/c ⛔ ÖNHELYESBÍTÉS: a 8.3 „maszk" oszlopa HIÁNYOS VOLT
+⇒ **A 8.5/c és a 8.6 mérései állnak** (a bejáró, a táblakereső, a kapuzás),
+de **nem újak**. Ez a szakasz azt tartja meg, ami tényleg új.
 
-A 8.3 táblát az **immediate** értékre szűrő pásztázás állította elő. Újramérve,
-a `+0x08` mező forrása szerint:
+### 8.7/a ⭐ ÚJ: a 8.3 maszk-oszlopa HIÁNYOS VOLT — négy rekord
 
-| a `+0x08` írásának forrása | rekord |
+Ez a saját, ebben a körben keletkezett hibám javítása. A 8.3 táblát az
+**immediate** értékre szűrő pásztázás állította elő. Újramérve, a `+0x08`
+írásának forrása a 173 rekordon:
+
+| forrás | rekord |
 |---|---|
-| közvetlen érték (`mov word ptr […], 4`) | **5** |
-| `bx` regiszter | **164** |
+| közvetlen érték | **5** |
+| `bx` regiszter (bizonyítottan 0: `0x00559155 xor ebx, ebx`, több `ebx`-írás nincs) | **164** |
 | **`di` regiszter** | **4** |
 | írás nélkül | 0 |
 
-A `bx` **bizonyítottan nulla** (`0x00559155 xor ebx, ebx`, és a builderben
-nincs több `ebx`-írás). A `di` **NEM nulla** — élő konstans, amely három
-ponton változik:
+A `di` **élő konstans**, amely három ponton változik — a builder egyetlen
+négy `edi`-írása:
 
 ```
 0x00559184  mov edi, 1
@@ -883,66 +850,70 @@ ponton változik:
 0x0055b25a  mov edi, 4
 ```
 
-⇒ a `di`-ből író **négy** rekord maszkja nem 0, hanem a soronkénti `edi`:
+⇒ a négy `di`-ből író rekord maszkja **nem 0**:
 
-| rekord | felirat | `edi` az írás pillanatában | maszk |
+| rekord | felirat | maszk | a `gyorsbillentyuk.md` 3.3 szerint |
 |---|---|---|---|
-| `0x00d6d9ec` | `&Open File(s) in an Editor` | 1 | **1** |
-| `0x00d6dab4` | `Export Pi&cture to Folder...` | 1 | **1** |
-| `0x00d6e318` | `&Rename...` (második példány) | 4 | **4** |
-| `0x00d6e9b8` | `&Help Contents and Index` | 4 | **4** |
+| `0x00d6d9ec` | `&Open File(s) in an Editor` | **1** | `Ctrl+Shift+O` ✅ |
+| `0x00d6dab4` | `Export Pi&cture to Folder...` | **1** | `Ctrl+Shift+S` ✅ |
+| `0x00d6e318` | `&Rename...` (második példány) | **4** | `F2` ✅ |
+| `0x00d6e9b8` | `&Help Contents and Index` | **4** | `F1` ✅ |
 
-**A 8.5/d „anomáliája" ezzel megszűnt:** a Súgó maszkja nem 0, hanem **4**.
-A hibát az én pásztázóm okozta, nem a bináris.
+**A 8.5/d „Help/F1 anomáliája" ezzel megszűnt** — és a magyarázat nem a
+binárisban volt, hanem az én pásztázómban. A 8.3 tábla fölé figyelmeztetés
+került, és a „24 gyorsbillentyű" száma is **alsó korlát**: a testvérlap
+3.3-a **32** rekordot sorol.
 
-### 8.7/d ⭐ A LEKÉPEZÉS — és a 12/12 kontroll
+### 8.7/b ⭐ ÚJ: a jelzőmező forrása egy XML-ből töltött tároló, és a tároló ÚTJA
 
-| maszk-bit | jelentés |
+A `gyorsbillentyuk.md` a fájlt és a betöltőt nevezi meg; ez a szakasz a
+**köztes utat** teszi hozzá, amit ott nem találtam:
+
+```
+0x00559158  lea ecx, [esp + 0x10]            ; a tároló CÍME (verem-lokális)
+0x0055915c  mov dword ptr [esp + 0x10], ebx  ; 0
+0x00559160  mov dword ptr [esp + 0x14], ebx  ; 0
+0x00559164  call 0x9a16b0                    ; a betöltő (→ 'runtime\shortcuts.xml')
+```
+
+A lokálist a 15 495 bájtos építő **pontosan kilencszer** érinti: egyszer itt,
+és **nyolcszor** a `call 0x005590c0` **harmadik** argumentumaként — mindig
+ugyanazt. Onnan a `0x00a6aee0` → `0x00a6b250` → `0x00a6ade0` láncon
+jut a keresőhöz. Más metódust nem hív rá, és többet nem ír bele.
+
+A nyolc hívás második argumentuma a menü tételszáma, `push`-ként kiolvasva:
+
+| menü tömbfeje | tételszám |
 |---|---|
-| **bit0 (1)** | `shift="1"` |
-| **bit1 (2)** | `alt="1"` |
-| **bit2 (4)** | **`ctrl="0"`** — FORDÍTOTT: a bit azt jelenti, hogy **NINCS** Ctrl |
+| `0xd6d960` | **27** · `0xd6db80` | **14** |
+| `0xd6dfa0` | **23** · `0xd6e1c0` | **17** |
+| `0xd6e498` | **11** · `0xd6e5b0` | **10** |
+| `0xd6e850` | **18** · `0xd6e9b8` | **13** |
+| **összesen** | **133** |
 
-A fordítást a kód is kimondja: a `0x00a6b3bb` a 2-es bitet
-`shr cl, 2` után **`not cl`**-lel fordítja meg, a 0-as és az 1-es bitet nem.
-Tervezési okból: a Ctrl a gyakori eset, ezért a `0` jelenti a „van Ctrl"-t.
+*(A 8.1 szerint 173 rekord van; 173 − 133 = 40 az almenükben.)*
 
-**Kontroll a `SHORTCUTS.xml` ellen** (a mért maszk vs. a levezetett szabály):
+### 8.7/c ⛔ ÚJ: a testvérlap 3.1-e egy ponton MEGDŐL
 
-| XML tétel | `srckey` | ctrl/shift/alt | mért maszk | levezetett | egyezik |
-|---|---|---|---|---|---|
-| New label | `N` | 1/0/0 | 0 | 0 | ✅ |
-| Import from | `M` | 1/0/0 | 0 | 0 | ✅ |
-| Open File in Editor | `O` | 1/1/0 | 1 | 1 | ✅ |
-| Rename | `VK_F2` | 0/0/0 | 4 | 4 | ✅ |
-| Export Picture to Folder | `S` | 1/1/0 | 1 | 1 | ✅ |
-| Locate on Disk | `VK_RETURN` | 1/0/0 | 0 | 0 | ✅ |
-| Delete from Disk | `VK_DELETE` | 0/0/0 | 4 | 4 | ✅ |
-| Invert Selection | `I` | 1/0/0 | 0 | 0 | ✅ |
-| Timeline | `5` | 1/0/0 | 0 | 0 | ✅ |
-| Print Contact Sheet | `P` | 1/1/0 | 1 | 1 | ✅ |
-| Properties | `VK_RETURN` | 0/0/1 | 6 | 6 | ✅ |
-| Help Contents and Index | `VK_F1` | 0/0/0 | 4 | 4 | ✅ |
+A `gyorsbillentyuk.md` **3.1** táblája azt írja, hogy a `+0x0c` és a `+0x10`
+mező „a szállított menükben 0". **Ez nem áll:** a menüépítőben **11**
+almenü-mutató kerül a `+0x0c` mezőkbe közvetlen értékként, például
 
-**EGYEZÉS: 12 / 12.** *(A 48 XML-tételből 12-nek van a menüben mért maszkja;
-a többi tétel nem menüből érhető el, vagy a maszkja `bx` = 0, ami a
-„Ctrl, Shift és Alt nélkül nincs" alapesetet adja.)*
+```
+0x0055abca  mov dword ptr [0xd6e128], 0xd6dc98
+0x0055ac38  mov dword ptr [0xd6e150], 0xd6ddc8
+0x0055af63  mov dword ptr [0xd6e21c], 0xd6e170
+```
 
-### 8.7/e Amit a fejlesztésnek ad
+és a `0x00a6aee0` bejáró épp ezen a mezőn dönt almenü és levél között
+(`0x00a6af2e cmp dword ptr [ebp], ebx`), majd **rekurzívan** hívja magát
+(`0x00a6af5c`). A 133 felső szintű tétel és a 173 rekord közti 40-es
+különbség is ezekben az almenükben van.
 
-1. **A gyorsbillentyűk igazságforrása egy ADATFÁJL**, nem a kód:
-   `runtime\shortcuts.xml`, 48 tétel, `srckey`/`dstkey`/`ctrl`/`shift`/`alt`
-   attribútumokkal. **Megvan nálunk**, tehát a teljes készlet átvehető.
-2. A menürekord `+0x08` mezője **nem a billentyűt írja le**, csak a
-   módosítókat, és a Ctrl bitje **fordított**. Aki a maszkot közvetlenül
-   olvassa be, a Ctrl-t az ellenkezőjére kapja.
-3. A `dstkey` attribútum szerepe **NINCS megfejtve** — mindenhol üres a
-   mintában. Ez marad nyitva.
+### 8.7/d Ami ebből NYITVA marad
 
-### 8.7/f Ami nyitva marad
+- a `dstkey` attribútum jelentése (a mintában 48/48 tételen `""`);
+- a `keymap id="0"` — van-e több keymap, és mi választ közülük.
 
-- **A `dstkey` üres attribútum jelentése** (48/48 tételen `""`). A
-  megszerzés útja: a `0x009a16b0` XML-elemzőjében a `dstkey` kulcsra
-  hivatkozó ág.
-- **A `keymap id="0"`** — van-e több keymap, és mi választ közülük? A
-  mintában egyetlen `keymap` van.
+Mindkettő a `gyorsbillentyuk.md` hatóköre; ott a 7. szakasz sorolja, mit
+nem vizsgált az a kör, és ez a kettő nincs benne.
