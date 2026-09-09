@@ -1876,33 +1876,13 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     # -- csúszkás effekt-alpanel (#316) --------------------------------------
 
-    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): az „Örökség" fül ugyanezt az
-    # adatot a `legacyEffects` katalógus `enabled` mezőjéből kapja, egyben.
-    @Slot(str, result=bool)
-    def canRenderEffect(self, name: str) -> bool:
-        """Kínálható-e ez az effekt ÁLLÍTHATÓ vezérlőként (#571, #1142)?
-
-        Az „Örökség" fül gombjai ebből tudják, hogy engedélyezettek-e. A
-        válasz a RENDERELŐBŐL jön (`chain._HANDLERS`), nem kézzel karban
-        tartott listából — így egy effekt bekötése automatikusan élővé teszi
-        a gombját, és nem maradhat hazug (aktív, de mégsem ható) gomb.
-
-        #1142: a „nem hazug" feltétel a modell meglétén TÚL azt is jelenti,
-        hogy a csúszkatartományon belül legyen látható hatása — a `blur`
-        lánc-szinten renderel, gombként mégsem kínálható (ld.
-        `chain.UI_INERT_RANGE_OPS`).
-        """
-        return can_offer_filter_control(name)
-
-    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a fül a `legacyEffects`
-    # katalógus `dead` mezőjét olvassa, nem szűrőnevenként kérdez.
-    @Slot(str, result=bool)
-    def isDeadLegacyEffect(self, name: str) -> bool:
-        """Halott (legacy) szűrőnév-e (#567)? A Picasa natív regiszterében
-        sincs hozzá feldolgozó — ez MÁS ok, mint a „még nincs modellünk",
-        ezért a felületen is más magyarázatot kap."""
-        return name.casefold() in DEAD_LEGACY_OPS
-
+    # #1487: a `canRenderEffect` és az `isDeadLegacyEffect` slot TÖRÖLVE
+    # (2026-09-09). Mérve: nulla hivatkozás — se QML-ből, se Pythonból, se
+    # tesztből —, és a MÖGÖTTES adat ugyanabból a két hívásból jön, amit a
+    # `legacyEffects` katalógus már használ (`enabled` = a `can_offer_filter_control`,
+    # `dead` = a `DEAD_LEGACY_OPS`, ld. fentebb a katalógus-építőt). A két slot
+    # tehát egy ÉLŐ út duplikátuma volt, nem tartalék: a #1487 szabálya szerint
+    # a holt kód nem marad ott „hátha".
     @Slot(str, result=bool)
     def effectHasParams(self, name: str) -> bool:
         """Nyíljon-e csúszkás alpanel a gombra kattintva?
