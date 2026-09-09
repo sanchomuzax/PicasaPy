@@ -131,6 +131,8 @@ class TestAFaulthandlerTENYLEG_ir(object):
             [sys.executable, str(szkript)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=60,
             env={"PYTHONFAULTHANDLER": "1", "PATH": "/usr/bin:/bin"},
         )
