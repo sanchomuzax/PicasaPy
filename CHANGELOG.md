@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.362] – 2026-09-09
+
+### Belső
+
+- **Egy soha be nem kötött belső jelző eltűnt a szerkesztőpanelből** (#1487). A
+  panel deklarált egy „van finomhangolás" jelzőt, de a kötés a vezérlőhöz soha
+  nem készült el: senki nem állította be és senki nem olvasta. A felhasználó
+  számára semmi nem változik — a szerkesztő eddig sem ebből dolgozott.
+
 ## [0.8.361] – 2026-09-09
 
 ### Belső

@@ -266,7 +266,10 @@ Rectangle {
     property real highlights: 0
     property real shadows: 0
     property real colorTemp: 0
-    property bool hasFinetune: false
+    // #1487: a `hasFinetune` QML-property TÖRÖLVE (2026-09-09) — mérve
+    // SENKI nem állította be és senki nem olvasta: a panel deklarált egy
+    // tükröt a vezérlő ugyanilyen nevű property-jéhez, de a kötés soha nem
+    // készült el. Két holt dolog mutatott egymásra.
     // programozott szinkronnál (nyitás/lapozás/kontroller-frissítés) NEM
     // váltunk ki finetunePreview-t — a tiltSlider mintáját követve
     property bool suppressFinetune: false
