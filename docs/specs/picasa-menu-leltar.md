@@ -187,7 +187,7 @@ felépítése soronként visszaköszön:
 push  <fordítási kulcs>                  ; pl. "eMenuView::ID_VIEW_PROJECTOR"
 mov   eax, <alapértelmezett angol felirat>   ; "&Projector Mode"
 mov   dword ptr [rek+0x04], ebx          ; gyorsbillentyű-szöveg
-mov   word  ptr [rek+0x08], bx           ; ikon
+mov   word  ptr [rek+0x08], bx           ; gyorsítóbillentyű-módosítók maszkja (8.5)
 mov   word  ptr [rek+0x0a], 0x9d20       ; <<< PARANCSAZONOSÍTÓ
 mov   dword ptr [rek+0x0c], ebx          ; almenü-tömb
 mov   dword ptr [rek+0x10], ebx          ; almenü darabszám
@@ -402,7 +402,7 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 
 ### 8.3 A teljes lista
 
-| rekord | parancs | angol felirat | gyorsbillentyű | ikon |
+| rekord | parancs | angol felirat | gyorsbillentyű | `+0x08` maszk |
 |---|---|---|---|---|
 | `0x00d6d960` | `0x9d67` | `&New Album...` | `N` | — |
 | `0x00d6d9b0` | `0x9c91` | `&Import From...` | `M` | — |
@@ -434,6 +434,12 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 és egy helyi menüben —, és a két példány mezői eltérnek: a `&Rename...`
 csak az egyik helyen kap ikont. A `Propert&ies` az egyetlen, amely
 gyorsbillentyűt ÉS ikont is visel.)*
+
+> ⛔ **2026-09-09, MÁSODIK MENET (#2821): A MEZŐ NEM IKON.** A `+0x08` a
+> **gyorsítóbillentyű-módosítók bitmaszkja** (`Ctrl+` / `Shift+` / `Alt+`).
+> Az olvasója megvan, és az alábbi 8.4 két „nulla olvasás" leletének is
+> megvan a magyarázata. A helyes állapot a **8.5** szakaszban; az alábbi
+> 8.4/8.4-b MÉRÉSEI állnak, a belőlük vont „ikon" olvasat NEM.
 
 ### 8.4 Mit jelentenek a számok az ikonmezőben — RÉSZBEN eldőlt (#2821)
 
@@ -521,3 +527,149 @@ menü tömbjének tartományában (`0x00d6e9d8`…`0x00d6eab8`), amelyeknek
 `Terms`, `&Uninstalling Picasa`, `&Check for Updates`, `&About Picasa`),
 azt **nem derítettem ki**. A 173-as rekordszám ezért **alsó korlát** a
 Súgó menüre nézve.
+
+---
+
+## 8.5 ⭐ A `+0x08` NEM ikon — a gyorsítóbillentyű-módosítók maszkja (2026-09-09, #2821)
+
+**Bizalmi fok: megerősített** a mező jelentésére; **feltételes** az egyes
+bitek polaritására (ld. 8.5/d).
+
+### 8.5/a Miért nem találta meg két korábbi pásztázás — két nevezhető ok
+
+Az előző menet (8.4) mind a hat rekordmezőre **nulla olvasást** mért. A
+magyarázat nem az volt, hogy a mezők halottak:
+
+**(1) A bejáró ELTOLJA a bázismutatóját.** A `0x00a6aee0` (378 bájt) így
+indul:
+
+```
+0x00a6aef9  mov ebp, dword ptr [esp + 0x24]   ; a rekordtömb feje
+0x00a6aefd  add ebp, 0xc                      ; ⭐ +0x0c-vel ELŐRE tolja
+```
+
+Ettől a rekord mezői **negatív eltolással** jelennek meg:
+
+| rekordmező | ahogy a bejáró látja |
+|---|---|
+| `+0x00` felirat | `[ebp - 0xc]` |
+| `+0x04` gyorsbillentyű | `[ebp - 8]` |
+| **`+0x08` maszk** | **`[ebp - 4]`** |
+| `+0x0a` parancsazonosító | `[ebp - 2]` |
+| `+0x0c` almenü-mutató | `[ebp]` |
+| `+0x10` almenü-darabszám | `[ebp + 4]` |
+
+A `[reg + 8]` / `[reg + 0xa]` alakra szűrő keresés ezért **elvileg sem**
+találhatta meg. *(A `+0x0c`/`+0x10` eltolás azért kapta a nullát, mert
+azokra a bejáró `[ebp]` / `[ebp+4]` alakban hivatkozik.)*
+
+**(2) A mezőt BÁJTKÉNT olvassa, holott az építő SZÓKÉNT írja.**
+
+```
+0x00559438  mov   word ptr [0xd6da30], 4      ; az ÍRÓ: word
+0x00a6b015  movzx ecx, byte ptr [ebp - 4]     ; az OLVASÓ: byte
+```
+
+A WORD-méretre szűrő keresés (8.4/e, 276 találat) ezért sem foghatta meg.
+
+### 8.5/b A bejáró három ága — mérve
+
+```
+0x00a6af04  cmp dword ptr [ebp - 0xc], ebx    ; felirat == 0 ?
+0x00a6af07  jne 0xa6af2e                      ;   nem → tovább
+            ...  push 0xffff ; call 0xa6b120  ;   igen → ELVÁLASZTÓ
+0x00a6af2e  cmp dword ptr [ebp], ebx          ; almenü-mutató == 0 ?
+0x00a6af31  je  0xa6afc3                      ;   igen → LEVÉL (tétel)
+0x00a6af5c  call 0xa6aee0                     ;   nem  → REKURZIÓ az almenüre
+```
+
+A **levél** ágon olvassa be mind a négy tartalmi mezőt:
+
+```
+0x00a6afc3  mov   edx, dword ptr [ebp - 8]    ; +0x04  gyorsbillentyű-szöveg
+0x00a6afe8  mov   edx, dword ptr [ebp - 0xc]  ; +0x00  felirat
+0x00a6b00d  movzx eax, word ptr [ebp - 2]     ; +0x0a  parancsazonosító
+0x00a6b015  movzx ecx, byte ptr [ebp - 4]     ; ⭐ +0x08
+0x00a6b02b  call  0xa6b250                    ; a tételbeszúró
+```
+
+### 8.5/c ⭐ Mit tesz a `0x00a6b250` a bájttal: BITENKÉNT szétszedi
+
+A `0x00a6b250` (1068 bájt) a bájtot `bl`-ben kapja
+(`0x00a6b25c  mov bl, byte ptr [esp + 0x38]`), majd bitenként bontja:
+
+```
+0x00a6b3bb  mov cl, bl ; shr cl, 2 ; not cl ; and cl, 1   ; a 2-es bit (0x04)
+0x00a6b3c0  mov al, bl ; and al, 1                        ; a 0-as bit (0x01)
+0x00a6b3c4  mov dl, bl ; and dl, 2                        ; az 1-es bit (0x02)
+```
+
+és három **bit-kapuzott** ág fűzi elé a módosító-előtagokat. A fordítási
+kulcsok és az angol alapértelmezések **kiolvasva**:
+
+| ág | teszt | fordítási kulcs | alapértelmezett |
+|---|---|---|---|
+| `0x00a6b575` | `test bl, 4` | `ytMenu::CtrlPrefix` (`0x00ce4a88`) | **`Ctrl+`** (`0x00ce4a80`) |
+| `0x00a6b5a4` | `test bl, 1` | `ytMesu::ShiftPrefix` (`0x00ce4aa4`) | **`Shift+`** (`0x00ce4a9c`) |
+| `0x00a6b5d3` | `test bl, 2` | `ytMenu::AltPrefix` (`0x00ce4ac0`) | **`Alt+`** (`0x00ce4ab8`) |
+
+⇒ **A `+0x08` a gyorsítóbillentyű MÓDOSÍTÓ-MASZKJA, nem ikonszám.**
+Bittérképet sehol nem tölt be belőle semmi — ez egyben megmagyarázza a
+8.4/d leletét (`MENUITEMINFO.fMask = 0x15`, `MIIM_BITMAP` nélkül): nincs
+is mit átadni.
+
+**A megfigyelt értékek ezzel értelmet kapnak:** `1` = 0-as bit, `4` = 2-es
+bit, `6` = 1-es + 2-es bit. Ez **bitkombináció, nem index** — és épp ezért
+nem fordul elő `3`, `5` vagy `7`.
+
+😀 **Melléklelet: elírás az EREDETIBEN.** A Shift-előtag kulcsa
+`ytMesu::ShiftPrefix` — a másik kettő `ytMenu::…`. A Google elírta, és így
+adta ki. Ha valaha átvesszük ezeket a kulcsokat, ezt **változatlanul** kell
+átvenni, különben a fordítás nem talál.
+
+### 8.5/d ⛔ Amit NEM állítok: az egyes bitek polaritása
+
+A `bl` a hármas teszt ELŐTT **újraszámolódik** — nem a nyers mező:
+
+```
+0x00a6b451  mov bl, byte ptr [esp + 0x22] ; neg bl ; sbb bl, bl ; and ebx, 2
+0x00a6b45c  cmp byte ptr [esp + 0x21], 0  ; setne dl ; or bl, dl
+0x00a6b466  cmp byte ptr [esp + 0x20], 0  ; setne al ; sub al, 1 ; and eax, 4 ; or bl, al
+```
+
+A három veremzászló a `0x00a6b3ce`–`0x00a6b451` szakaszon áll össze,
+amelyben **négy további hívás** is közbejön (`0xa6ade0`, `0x985990`,
+`0xc080f0`, `0x5c2100`), tehát **más bemenet is beszól**. Ezt a szakaszt
+nem olvastam végig.
+
+**Kontroll-ellenőrzés a mai ismert Picasa-gyorsbillentyűkkel** — a
+2-es bit (Ctrl elhagyása) négy ponton egyezik, egy ponton NEM:
+
+| tétel | `+0x08` | mért gyorsbillentyű-szöveg | ismert viselkedés | egyezik? |
+|---|---|---|---|---|
+| `&New Album...` | 0 | `N` | Ctrl+N | ✅ |
+| `&Rename...` | 4 | `F2` | F2 (Ctrl nélkül) | ✅ |
+| `Propert&ies` | 6 | `Enter` | Alt+Enter | ✅ |
+| `&Locate on Disk` | 0 | `Enter` | Ctrl+Enter | ✅ |
+| `&Help Contents and Index` | **0** | `F1` | **F1** (Ctrl nélkül) | ❌ |
+
+⇒ a „0 ⇒ Ctrl+" olvasat **egy ponton megdől**, tehát van még egy tényező
+(feltehetően a megnevezett funkcióbillentyűk külön ága). **Ezért a
+bit↔módosító táblát NEM adom át szerződésként.**
+
+**A megszerzés útja:** a `0x00a6b3ce`–`0x00a6b451` szakasz végigolvasása,
+benne a `0xa6ade0` és a `0x5c2100` hívás visszatérési értékének
+azonosítása. Egy kör, olcsó.
+
+### 8.5/e A 7. és a 8. szakasz HELYESBÍTÉSE
+
+A 7. szakasz rekord-táblájában a `+0x08` mellett „ikon" áll, és a 8.
+szakasz táblájának is „ikon" a fejléce. **Mindkettő téves elnevezés** —
+KÖVETKEZTETÉS volt, nem mérés (a `+0x0a`-ra volt bizonyíték). A helyes név:
+**gyorsítóbillentyű-módosítók bitmaszkja**. Ugyanez a téves elnevezés áll a
+[picasa-megjelenitesi-modok.md](picasa-megjelenitesi-modok.md) 1. szakasz
+rekord-táblájában is.
+
+⇒ **Termékhatás:** az öt „ikonos" tétel NEM ikont visel. Ha valaki a
+menüsorba ikont tett volna emiatt, az hibás lenne. A tényleges lelet az,
+hogy ennek az öt tételnek **más a módosító-készlete**, mint a többinek.
