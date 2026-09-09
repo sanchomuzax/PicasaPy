@@ -5102,3 +5102,77 @@ tehát **nem kérjük újra** — a jegy állapota változik: `bináris-kutathat
 
 *Állapot: **BLOKKOLT** (a tulajdonos gépe kell). Ez a K1 harmadik
 megengedett végállapota — nem „csak nyitva".*
+
+## 52. K1 — a HARMADIK címzési alak (indexelt) is lefedve: a kimerülés MEGERŐSÍTVE (2026-09-09, #1412)
+
+*238. kutatói kör. Nem új utat nyit, hanem az 51. szakasz kimerülés-állítását
+teszi próbára egy olyan címzési alakon, amelyet **egyik korábbi pásztázás sem
+fedett**.*
+
+### 52.1 Miért kellett ezt megnézni
+
+Az 51. szakasz a gépi keresést kimerültnek nyilvánította. A kimerülés két
+pásztázáson nyugszik, és azok **két címzési alakot** fednek le:
+
+| alak | hol fedte le |
+|---|---|
+| közvetlen — `[reg + 0x2c]` | 17.10 (47 valódi író, ebből 6 float) |
+| mutatós — `lea reg,[reg+0x2c]` | 51.1 (130 hely, 11 vizsgálandó) |
+| **indexelt — `[bázis + index*lépték + 0x2c]`** | **egyik sem** |
+
+Ugyanaznap a `filterdesc-registry.md` (237. kör) mérte ki, hogy pontosan ez a
+hibaosztály — a hiányos címzési/opkód-fedés — **három egymást követő körben**
+adott hamis negatívot egy másik lapon. Ezért a kimerülés nem volt elfogadható
+addig, amíg a harmadik alak nincs lefedve.
+
+### 52.2 A pásztázás és a POZITÍV KONTROLL
+
+Minta: `fst`/`fstp dword ptr` (`D9 /2`, `D9 /3`) **SIB-címzéssel**, `mod = 01`
+és `mod = 10`, a teljes `.text`-en, majd a kollázs-sávra
+(`0x00829000`–`0x00895000`) szűrve.
+
+- a `.text`-ben **16 347** SIB-címzésű float-tárolás, a sávban **1 498**;
+- **pozitív kontroll:** a beolvasó ismert írását (`0x008332b7`
+  `fstp [ebx+0x68]`) a pásztázó megtalálja ⇒ az opkód-illesztés jó.
+
+⚠️ **Olvasási csapda, kimondva:** a `+0x2c` eltolásra 489 SIB-es találat jön,
+de ezek **közül 487 valójában verem-lokális**: a SIB `index = 100b` kódja azt
+jelenti, hogy **nincs index**, tehát a `[esp + esp*1 + 0x2c]` alak egyszerűen
+`[esp + 0x2c]`. Ez ugyanaz a csapda, amelybe a 17.10 első változata is
+beleesett — csak ott a ModRM oldalán.
+
+### 52.3 Az eredmény: két valódi indexelt író, mindkettő ÁLLANDÓ 1,0
+
+Index-regiszterrel ténylegesen címzett `+0x2c`-írás a teljes `.text`-ben
+**kettő** van, és **mindkettő a kollázs-sávban**:
+
+| cím | alak | a közvetlenül előtte álló utasítás | függvény |
+|---|---|---|---|
+| `0x0088522d` | `fstp dword ptr [eax + esi + 0x2c]` | `0x0088520d` **`fld1`** | `FUN_00885060` — `regulargrid` |
+| `0x008885bc` | `fstp dword ptr [ebx + eax + 0x2c]` | `0x008885ac` **`fld1`** | `FUN_00888210` — `contactsheet` |
+
+⇒ Az indexelt alak **nem hoz új írót**: mindkét hely a két, már ismert
+elrendező, és mindkettő az `fld1` állandóját tárolja. Ez egyben megmagyarázza,
+hogyan írnak az elrendezők a csomópont-tömbbe: az `esi` / `eax` a csomópont
+eltolása (a szomszédos `+0x18`…`+0x24` mezők ugyanezzel az indexszel íródnak).
+
+⇒ **Az 51. szakasz kimerülés-állítása MEGERŐSÍTVE**, immár **három** címzési
+alakra: közvetlen, mutatós és indexelt.
+
+### 52.4 Melléklelet: a fordító EGÉSZ regisztereken viszi a lebegőpontos értéket
+
+A `0x00885205`–`0x00885226` szakasz ezt utasításszinten mutatja:
+
+```
+0x00885205  fstp dword ptr [esp + 0x38]      ; float → verem
+0x00885209  mov  ecx, dword ptr [esp + 0x38] ; verem → EGÉSZ regiszter
+0x0088520f  mov  dword ptr [eax + esi + 0x18], ecx   ; egész MOV-val a csomópontba
+```
+
+⇒ **Egy „float-író" pásztázás, amely csak `fst`/`fstp`-t keres, szerkezetileg
+vak** az ilyen mezőkre. A 17.10 helyesen vette be az egész `mov`-okat is (47
+író, ebből 6 float) — ez a szakasz ezt utólag igazolja, és rögzíti, hogy a
+jövőben is így kell.
+
+*Bizonyítottsági fok: **megerősített** — teljes `.text` bájtszintű pásztázás
+működő pozitív kontrollal, és mindkét találat utasításonként elolvasva.*
