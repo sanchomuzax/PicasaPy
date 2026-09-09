@@ -4915,9 +4915,12 @@ program egészében.
 
 A proveniencia-csatornát végigmérve (minden `[ctx+0x2c]` olvasás után írás a
 leíró `+4`-ébe, a `0x008fe000`–`0x00906000` tartományban bájtszintű mintával)
-**három** író adódott, nem egy. A harmadik a lezáró-kezelőben áll, közvetlenül
-a `"filter"` elemnév egyeztetése után (`0x0090016e`, 7 bájtos `repe cmpsb` a
-`0x00c843d8`-ra):
+**két** valódi író adódott, nem egy. *(A pásztázás három jelöltet adott; a
+`0x008fff9c` HAMIS POZITÍV: az ott betöltött leírót a `0x008fff8a`
+`operator new(0x20)` felülírja, tehát az írás egy ÚJ objektum `+4`-ét érinti,
+nem a leíróét — a 236. kör helyesbítése.)* A második író a lezáró-kezelőben
+áll, közvetlenül a `"filter"` elemnév egyeztetése után (`0x0090016e`, 7 bájtos
+`repe cmpsb` a `0x00c843d8`-ra):
 
 ```
 0x00900180  mov  eax, [ebp + 0x2c]        ; a leíró
@@ -4992,3 +4995,60 @@ lezáráshoz a mezők ÍRÓIT kell megnevezni a gyerekelem-kezelőkben (jelölte
 előléptetés, 24/24 kontroll nulla eltéréssel, kimerítő 84-es pásztázás, a mi
 oldalunk mért állapota); az 5. szakasz **nyitott**, a megszerzés útja
 megnevezve.*
+
+
+## A négy döntő mező — részleges névadás és egy KIMONDOTT feszültség (2026-09-09, 236. kör)
+
+A #2799 az előléptetés **szabályát** utasításszinten adta meg; ez a szakasz a
+négy vizsgált mező **nevét** kereste. Az eredmény részleges, és a hiányt
+kimondom.
+
+### 1. `+0x84` = a felhasználói vezérlők SZÁMLÁLÓJA — mérve
+
+| bizonyíték | cím |
+|---|---|
+| a leíró konstruktora nullázza | `0x008f6955` |
+| a `colorwheel`-kezelő olvassa, és **nem vesz fel többet, ha már ≥ 2** (`cmp dword ptr [leíró+0x84], 2` / `jge`) | `0x008ffb32` |
+| az `<effect>` törzsét feldolgozó `FUN_00900540` **növeli** (`edx = számláló + 1`, majd `mov [leíró+0x84], edx`) | `0x00900e1a` |
+
+A `FUN_00900540` azonosítása a sztringjeiből: `filter_%s_label%d` és
+`_sldrRadius` (az utóbbi a HDR sugár-csúszkájának azonosítója a leíróban) ⇒ ez
+a függvény az effekt-vászon **vezérlőit** veszi számba.
+
+### 2. `+0x38`, `+0x80`, `+0xa1` — az elemzőben CSAK a konstruktor írja őket
+
+Bájtszintű, teljes `.text`-re futtatott pásztázás (a `+0x80`/`+0xa1` a
+`disp32`, a `+0x38` a `disp8` alakban):
+
+| mező | írás a `.text`-ben | ebből a leíró-modulban |
+|---|---|---|
+| `+0x38` (bájt) | 78 | **1** — `0x008f694c`, a ktor |
+| `+0x80` (bájt) | 40 | **1** — `0x008f694f`, a ktor |
+| `+0xa1` (bájt) | 51 | **1** — `0x008f696d`, a ktor |
+
+### 3. ⚠️ A feszültség, kimondva
+
+Ha a fenti térkép teljes volna, akkor a `<sliders>`-szel rendelkező
+`unsharp2` is előléptetést kapna: a csúszka-adat mérve a leíró `+0x30`/`+0x34`
+mezőibe megy (`0x008ffe1a`, `0x008ffe1d`), a `<slider>` darabszámát pedig az
+ELEMZŐ objektum `+0x30` mezője gyűjti (`0x008ffcba` nullázás, `0x008ffce2`
+növelés) — egyik sem a négy vizsgált mező. Az `unsharp2` csempéjén viszont
+**nincs** jelvény (mérve a felvételen).
+
+⇒ **legalább egy beállító hiányzik a térképemből**: a négy mező valamelyikét
+egy segédfüggvényen keresztül, közvetett úton kell megkapnia a leírónak. A
+közvetlen írásokra futtatott pásztázás ezt szerkezetileg nem látja.
+
+**Amit ez NEM érint:** magát az előléptetési szabályt. Az közvetlenül az
+utasításfolyamból van kiolvasva (`0x00900180`–`0x009001a9`), és a 24/24-es
+kontroll nulla eltéréssel igazolta. A hiány a mezők NEVÉT érinti, nem a
+szabály érvényességét.
+
+**A következő lépés:** a `</slider>` / `</sliders>` záró-kezelőkből
+(`0x00900215`, `0x0090027e`, `0x009002d7`, `0x00900330`, `0x00900389` — a
+záró-diszpécser lánca) kiindulva a HÍVOTT segédfüggvényekben kell keresni a
+négy mező írását, nem a hívóban.
+
+*Bizonyítottsági fok: **megerősített** az 1–2. szakasz (utasításszintű olvasás,
+kimerítő bájtszintű pásztázás a teljes `.text`-en); a 3. szakasz **nyitott**, a
+hiány szerkezeti oka és a megszerzés útja megnevezve.*
