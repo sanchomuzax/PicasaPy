@@ -405,6 +405,12 @@ a fenti lépéssort kövesse, ne a nevet.
 
 ### 5.9 `ID_VIEW_LINEAR` — Lineáris gamma (2.2)
 
+> ⛔ **ÖNHELYESBÍTÉS (2026-09-09, #2816): EZ A SZAKASZ ÉS AZ 5.10 FEL VOLT
+> CSERÉLVE.** A `0.0`-ág a `0x00d32bd0` (előre kitöltött, ≈1,44) táblát
+> választja, a `2.2`-ág a `0x00d32cd0`-et (őrszemes, futásidőben töltődik
+> `pow(x, 1/2,2)`-vel). Az alábbi tábla tehát **a Mac gammáé**, nem a
+> lineárisé. A levezetés és a bizonyíték: **12. szakasz.**
+
 **MÉRVE** (`0x009e8b60` → `0x00aa3f80`): a mód a `2.2f` konstanssal
 (`0x00cf4140`) hívja a közös gamma-alkalmazót, amely csatornánként egy
 **256 bájtos keresőtáblát** alkalmaz B-re, G-re és R-re (az alfa marad).
@@ -443,6 +449,13 @@ round(pow(i/255, 1/gamma) · 255)`; MÉRVE `0x00aa3ff0`–`0x00aa404a`,
 a `1/255` és `255` konstansokkal `0x00cf4138`, `0x00cf39d0`.)*
 
 ### 5.10 `ID_VIEW_MAC` — Mac gamma (1.6) ⚠️ gyanús
+
+> ⛔ **ÖNHELYESBÍTÉS (2026-09-09, #2816): az alábbi „kitöltetlen tábla ⇒
+> szinte fekete képernyő" levezetés HAMIS PREMISSZÁRA épül.** A `0.0`-ág
+> **nem** a `0x00d32cd0`-et választja, hanem a `0x00d32bd0`-et, amely
+> előre ki van töltve. A Mac gamma tehát **mindig** az ≈1,44 kitevőjű
+> táblával dolgozik, és a hatása **nem futásidő-függő**. A levezetés:
+> **12. szakasz.**
 
 **MÉRVE** (`0x009e8b40`): a mód **`0.0f`**-fel (`fldz`) hívja ugyanazt a
 gamma-alkalmazót. A `0.0` ág a **`0x00d32cd0`** táblát választja, amely a
@@ -663,6 +676,12 @@ a Picasa saját elnevezése — **a mérés a szerződés**, nem a felirat.
 Ez a szakasz nem dönt, csak azt mondja meg, mi döntené el. Az itt lezárt
 NY-5 az **5.12**-ben kapott választ.
 
+> ⛔ **2026-09-09 (#2816): az NY-2 és az NY-3 sora ELAVULT.** Mindkettő a
+> két gamma-tábla FELCSERÉLT hozzárendelésére épült. A helyes állapot a
+> **12.5** pontban áll: az NY-3 futásidő-függése LEZÁRULT (a Mac gamma
+> mindig az előre kitöltött táblát kapja), az NY-2 pedig ÁTKERÜLT a Mac
+> gamma módra (1,44 vs. a feliratban ígért 1,6).
+
 | # | a kérdés | miért nem dőlt el statikusan | mi döntené el |
 |---|---|---|---|
 | **NY-1** | **Hat-e a mód az exportra / nyomtatásra?** | **LEZÁRVA 2026-08-30 (#1580)** — a tulajdonos exportjai és nyomtatásai **bájtszinten azonosak**: a `chart_color__b050-001-24bit.jpg` vs `…-projektor-mod.jpg` csak **4 bájtban** tér el (a fejléc időbérjegye `"20"→"47"`, offset 116–117 és 2916–2917), a **pixel-adat azonos**; a `print-24bit.pdf` vs `print-projektor-mod.pdf` csak **6 bájtban** (a fájl végén, PDF `/ID`+`CreationDate`). ⇒ a mód **nem hat sem az exportra, sem a nyomtatásra** (a test `0x009e285d`-hoz kötött, csak képernyős). | lezárva (nem hat) |
@@ -696,8 +715,12 @@ lezárult.)*
    megfogalmazásban: a `0x009e8750` nem felület, hanem maga az egyik
    átalakító; és a mező nem „rajzfelület"-osztályon, hanem csomóponton
    van.)*
-2. **A `Picasa Photo Viewer`** (külön `.exe`, saját bináris-indexe van:
-   `binary-index-photoviewer`) — van-e ott is megjelenítési mód.
+2. ~~**A `Picasa Photo Viewer`** (külön `.exe`, saját bináris-indexe van:
+   `binary-index-photoviewer`) — van-e ott is megjelenítési mód.~~
+   ⭐ **LEZÁRVA a 12. szakaszban (2026-09-09, #2816):** mód-MENÜ nincs, de
+   a gamma-táblapár bájtra ott van és kód hivatkozik rá, a színkezelés
+   pedig ugyanazzal a kulccsal él. Mellékesen kiderült, hogy az 5.9 és az
+   5.10 tábla-hozzárendelése fel volt cserélve.
 3. **A menü ikonjai és gyorsbillentyűi** — a rekordok `+0x04`/`+0x08`
    mezője mindegyik módnál nulla, de ezt csak a Megjelenítési mód almenüre
    néztem meg.
@@ -895,3 +918,163 @@ módban, **nyitott felbukkanó panellel** (pl. a filmfelvevő panel).
 4. A **16 bites tartalék NEM a Nézet-menü része** (`0x009e8b80` a
    mélységből jön) — a `dither16` kihagyása (#1579) tehát a menütételre
    igaz, a tartalék-útra nem értelmezendő.
+
+---
+
+## 12. A kísérő nézegető, és egy ÖNHELYESBÍTÉS a két gamma-táblán (2026-09-09, #2816)
+
+**Bizalmi fok: megerősített.** A 9.2 pont („van-e megjelenítési mód a
+`Picasa Photo Viewer`-ben") vizsgálata közben a nézegető **egyszerűbb**
+kódja láthatóvá tette, hogy az 5.9 és az 5.10 tábla-hozzárendelése fel
+volt cserélve. A kettő ugyanaz a lelet, ezért egy szakaszban áll.
+
+### 12.1 A kontroll, amely a negatív állítást hitelesíti
+
+A nézegető (`PicasaPhotoViewer.exe`, 4 806 984 bájt, belső neve
+*Slingshot*) **nyers bájtjaiban** kerestem, nem az indexben — az index
+`string_xrefs` táblája a fő binárison 26 %-ban hiányosnak bizonyult
+(225. kör). Kontrollnak a #453-ban megnevezett, biztosan létező
+feliratokat használtam:
+
+| minta | ASCII-találat |
+|---|---|
+| `Launch Picasa` | **0x4174e7** ✅ |
+| `More Options` | **0x417275** ✅ |
+
+⇒ a pásztázás lát szöveget; a lenti nulla-találatok nem a minta hibái.
+
+### 12.2 Megjelenítési mód MENÜ a nézegetőben NINCS
+
+| minta | ASCII | UTF-16LE |
+|---|---|---|
+| `Projector` · `Sepia` · `Remote Desktop` · `Mac gamma` · `Linear gamma` · `Display Mode` · `Overexposed` · `Black and White` · `ID_VIEW_` | **NINCS** | **NINCS** |
+| `LCD` | 0x1d0488 | NINCS |
+
+⚠️ A `LCD` **hamis pozitív**: négybetűs formátumazonosítók táblájában ül
+(`RLCC`, `RLCD`, `RLCE`, ` YMC`, ` VSH`, `YARG`) — a szomszédja dönti el,
+nem a minta.
+
+**A negatív állítás HATÓKÖRE:** a `PicasaPhotoViewer.exe` **teljes fájlját**
+pásztáztam ASCII és UTF-16LE alakban a fenti mintákra. Ebből az következik,
+hogy a nézegető **nem hordozza a fő program mód-feliratait**. Az **nem**
+következik, hogy a felület semmilyen módváltót nem kínál: a feliratok a
+Picasánál `.tre`/`stringres` erőforrásból is jöhetnek (a nézegető saját
+`i18n\setuptext.xml`-t nevez meg).
+
+### 12.3 ⭐ De a GAMMA-GÉPEZET ott van — bájtra ugyanaz
+
+A fő program 256 bájtos, előre kitöltött táblája (`0x00d32bd0`) a
+nézegetőben **bájtra azonosan**, pontosan **egyszer** megvan:
+
+| | fő program | nézegető |
+|---|---|---|
+| fájloffset | 0x932bd0 | **0x377b58** |
+| VA | 0x00d32bd0 | **0x00777b58** (`.data`) |
+| különböző bájtértékek | 222 / 256 | ugyanaz |
+| utána +256-on | `FF 00 00 …` őrszemes tábla | ugyanaz |
+
+*(A 222 különböző bájtérték miatt a 256 bájtos egyezés nem lehet
+véletlen. A **második** tábla önmagában `0xFF` + 255 nulla, tehát annak a
+puszta megtalálása értéktelen — az bizonyít, hogy a PÁR ugyanabban a
+sorrendben, +256 távolságra áll mindkét binárisban.)*
+
+És **kód hivatkozik rájuk**: a nézegető `.text`-jében a `0x00777b58`
+címre egy, a `0x00777c58`-ra egy hivatkozás van, mindkettő a
+`FUN_00512fb0`-ban.
+
+### 12.4 A nézegető kódja olvashatóbb — és ez buktatta le a felcserélést
+
+```
+0x00512fca  fldz                          ; 0.0
+0x00512fcd  fld  dword ptr [ebp + 0xc]    ; a paraméter
+0x00512fd3  fucom st(1)
+0x00512feb  jp   0x512ff2                 ; jp = NEM egyenlő
+0x00512fed  mov  edi, 0x777b58            ; ⭐ P == 0.0  →  ELŐRE KITÖLTÖTT tábla
+0x00512ff2  fcom qword ptr [0x7522a0]     ; a konstans kiolvasva: 2.2
+0x00512ffd  jp   0x513004
+0x00512fff  mov  edi, 0x777c58            ; ⭐ P == 2.2  →  ŐRSZEMES tábla
+0x00513004  cmp  byte ptr [edi], 0xff     ; kitöltetlen?
+0x00513009  fld1 / fdivrp                 ; ha igen: 1/P a kitevő
+```
+
+**Az `x87` ág-polaritás**, hogy ne kelljen elhinni: `fucom` után
+`fnstsw ax`, majd `test ah, 0x44` — a maszk a `C3` (0x40) és a `C2`
+(0x04) bitre megy. Egyenlőségnél `C3=1, C2=0` ⇒ az eredmény `0x40`, egy
+beállított bit ⇒ **páratlan** ⇒ `PF = 0` ⇒ a `jp` **NEM** ugrik.
+Tehát: `jp` ugrik ⇔ **nem** egyenlő.
+
+**Ugyanez a fő programban** (`0x00aa3f80`), veremkövetéssel:
+
+```
+0x00aa3f80  fld dword [0xcf4140]   ; 2.2 (kiolvasva)      verem: [2.2]
+0x00aa3f89  fld st(0)                                     [2.2, 2.2]
+0x00aa3f8c  fld dword [esp+0x18]   ; P                    [P, 2.2, 2.2]
+0x00aa3f95  fucom st(1) / fstp st(1)                      [P, 2.2]
+0x00aa3fa2  fldz                                          [0.0, P, 2.2]
+0x00aa3fa4  jnp 0xaa3fb5           ; jnp = EGYENLŐ (P==2.2) → ugrik
+   ... a másik ág fucomp-pal ellenőrzi, hogy P == 0.0, különben kiugrik
+0x00aa3fb5  fxch st(2)                                    [2.2, P, 0.0]
+0x00aa3fb9  fucomp st(1)           ; 2.2 vs P             [P, 0.0]
+0x00aa3fc0  jp 0xaa3fc7
+0x00aa3fc2  mov edi, 0xd32cd0      ; ⭐ P == 2.2  →  ŐRSZEMES tábla
+0x00aa3fc7  fucom st(1)            ; P vs 0.0
+0x00aa3fd0  jp 0xaa3fd9
+0x00aa3fd2  mov edi, 0xd32bd0      ; ⭐ P == 0.0  →  ELŐRE KITÖLTÖTT tábla
+0x00aa3fd9  test edi, edi / je     ; más érték nincs megengedve
+```
+
+És hogy melyik mód melyiket adja át, az a két átalakítóból olvasható:
+
+| mód | átalakító | mit ad át | melyik tábla |
+|---|---|---|---|
+| `ID_VIEW_MAC` — Mac gamma (1.6) | `0x009e8b40` (`fldz`) | **0.0** | `0x00d32bd0` — **előre kitöltött** |
+| `ID_VIEW_LINEAR` — Lineáris gamma (2.2) | `0x009e8b60` (`fld [0xcf4140]`) | **2.2** | `0x00d32cd0` — őrszemes, futásidőben töltődik |
+
+### 12.5 Mi dől el ezzel — és mi NEM
+
+**LEZÁRVA: NY-3 („mit csinál valójában a Mac gamma?") futásidő-függése.**
+A „kitöltetlen tábla ⇒ `1/0` ⇒ szinte fekete képernyő" félelem **hamis
+premisszán** állt: a Mac gamma ága az ELŐRE KITÖLTÖTT táblát választja,
+amelynek első bájtja `0`, tehát az őrszem-ellenőrzés (`cmp byte ptr
+[edi], 0xff`) sosem lép be rajta. A mód hatása **determinisztikus** — nem
+függ attól, mi futott előtte. Ez összhangban van a #1580 mérésével
+(világosodás), csak most már ok is tartozik hozzá.
+
+**ÁTHELYEZVE: NY-2 („miért ≈1,44?").** A kérdés nem a `2.2` módra
+vonatkozik — az a `pow(x, 1/2,2)`-t **futásidőben** számolja, tehát pontosan
+2,2. Az ≈1,44 tábla a **Mac gamma (1.6)** módé. A felirat és a tábla
+tehát eltér, és ez MÉRT, nem becsült:
+
+| kitevő | egyező bájt (256-ból) | max. eltérés |
+|---|---|---|
+| **0,6945** (a legjobb illesztés) | **219** | 1 |
+| 0,6944 (a korábbi illesztés) | 219 | 1 |
+| 0,6250 = 1/1,6 (a felirat ígérete) | **4** | **10** |
+| 0,4545 = 1/2,2 | 2 | 40 |
+
+⇒ a `Mac gamma (1.6)` tábla effektív gammája **1,44**, nem 1,6. A
+„miért épp 1,44" továbbra is **NYITOTT**, de a rés most 1,44 vs 1,6, nem
+1,44 vs 2,2 — és a megvalósításhoz nem kell: a szerződés a 256 bájtos
+tábla (5.9).
+
+### 12.6 Színkezelés a nézegetőben — VAN, ugyanazzal a kulccsal
+
+| lelet | bizonyíték |
+|---|---|
+| `EnableColorManagement` beállítás-kulcs | 0x327898, közvetlenül a `ViewerFullscreenStartup` mellett |
+| valódi ICC-kezelés, nem csak kulcs | import: **`mscms.dll` / `GetColorDirectoryA`** |
+| beépített profilnevek | `RSWOP.ICM`, `Photoshop5DefaultCMYK.icc`, `CMYKProfile`, `DebugDisplayProfile`, `(Picasa internal)` |
+
+⇒ a fő program 5.12-ben leírt `EnableColorManagement` kapcsolója
+**ugyanazzal a névvel** él a nézegetőben is. A #453 „négy kapcsolója"
+közül a beállítás-blokkban ezek látszanak: `ViewerFullscreenStartup`,
+`EnableColorManagement`, valamint a társítás-varázsló `setup/ui_option1`
+… `ui_option5` elemei.
+
+### 12.7 Amit a #1730 ebből kap — a LUT képlete ROSSZ a jegyben
+
+A #1730 „Kész, ha" listája ma azt írja: *„a `mac` LUT `pow(x, 1/1,6)`"*.
+**Ez mérhetően téves** — a fenti tábla szerint 256-ból 4 bájt egyezne, a
+legnagyobb eltérés 10 szint. A megvalósítás **a `0x00d32bd0` 256 bájtos
+tábláját** vegye át (az 5.9-ben teljes egészében ki van írva), vagy a
+`p = 0,6945` kitevőt.
