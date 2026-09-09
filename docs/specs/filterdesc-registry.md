@@ -4814,3 +4814,91 @@ program EGÉSZÉBEN? A megszerzés útja: a leíró-mutatót előállító helye
 *Bizonyítottsági fok: **megerősített** az 1–3. szakasz (utasításszintű
 mérés, md5-összevetés, bájtszintű rekesz-pásztázás); a 4. szakasz rése
 **nevesített és gépi úton zárható**.*
+
+## ⛔ A regisztert KÉT hely építi — önhelyesbítés, és miért nem pásztázható a `mode` mező (2026-09-09, 234. kör, #2125)
+
+### 1. A `+4` offszet NEM pásztázható — ez maga is lelet
+
+A 233. kör kérdése az volt: ki írja a leíró `+4` (`mode`) mezőjét a program
+egészében? A válasz módszertani: **így nem lehet kérdezni.** Mérve a teljes
+`.text`-en, bájtszintű mintával:
+
+| alak | előfordulás |
+|---|---|
+| `mov [reg+4], reg` (`89 /r`, mod=01, disp8=4) | **8 796** |
+| `mov [reg+4], imm32` (`C7 /0`) | **869** |
+
+A `+4` a program leggyakoribb tagoffszete. Egy „ki írja" kérdés tehát csak
+**provenienciával** dönthető el — azzal, hogy honnan lehet egyáltalán
+leíró-mutatót szerezni —, nem bájtmintával. *(Ez visszamenőleg pontosítja a
+232. kör „egyetlen író" leletét: az az állítás az XML-elemzőre igaz, és csak
+arra volt értve.)*
+
+**A provenienciát viszont kimértem, és szűk:**
+
+- a leíró-osztály ktorának (`FUN_008f6910`) **egyetlen** hívóhelye van
+  (`0x008ff81f`), és az egyetlen `push 0xec` a szűrő-ágon ugyanott
+  (`0x008ff80a`);
+- leíró **kizárólag** olyan elemre készül, amelynek a neve szó szerint
+  `filter` (`0x00c843d8`, 7 bájtos `repe cmpsb` a `0x008ff592`-nél);
+- leíróhoz hozzáférni két úton lehet: a `[regiszter+0x1454]` térképen át, és a
+  `CGenericFilter+8` tagon át.
+
+### 2. ⛔ ÖNHELYESBÍTÉS: a regiszter-globálisnak KÉT írója van, nem egy
+
+A 233. kör azt írta, hogy a `[0x00d67f68]` beállítójának (`FUN_00401fb0`)
+**egyetlen** hívóhelye van, és ezt a regiszter egyediségének bizonyítékaként
+adta elő. A **függvényre** igaz — a **globálisra nem**:
+
+```
+FUN_0053fe30:
+  0x0053fe77  mov eax, 0x00c7f150        ; "runtime\filterdesc.xml"
+  0x0053fe9f  mov eax, 0x00c7f168        ; "runtime\picnik_effects\"
+  0x0053fed4  push 0x146c ; call operator new
+  0x0053fef6  call 0x00401ac0            ; alaposztály-ktor a két útvonallal
+  0x0053fefb  mov [esi], 0x00c7f724      ; A REGISZTER VTÁBLÁJA
+  0x0053ff13  … call [[régi]+0]          ; a RÉGI regiszter felszabadítása
+  0x0053ff1b  mov [0x00d67f68], esi      ; ⭐ KÖZVETLEN írás — a beállítót MEGKERÜLVE
+  0x0053ff26  call 0x008fa470            ; és betöltés
+```
+
+⇒ **a szűrő-regiszter futásidőben újraépül és kicserélődik.** Az előző kör
+pásztázása azért nem vette észre, mert a beállító *függvény* hívóit kereste, a
+globális *írásait* pedig csak a `mov [globális], reg` alakokra — ez az ág
+viszont `mov [0xd67f68], esi` alakban ír, ami benne VOLT a 31 hivatkozás
+között (`0x0053ff1d`), csak nem lett elolvasva. **A hivatkozás-listát nem elég
+előállítani, el is kell olvasni.**
+
+**Amit ez NEM jelent:** az újraépítés **ugyanazt a két útvonal-literált**
+használja (`0x00c7f150`, `0x00c7f168`), tehát nem másik fájlból tölt.
+
+### 3. További mérések ebből a körből
+
+- **A betöltő** (`FUN_008fa470`, hívói: `0x00401fd1` és `0x0053ff26`) a leírót
+  `fopen(útvonal, "rb")` + `fseek`/`ftell` + `malloc` + `fread` úton olvassa be
+  (`0x00c82fdc = "rb"`), majd a `[reg+0x1454]` térképbe szúr be
+  (`0x008fa658 add ecx, 0x1454` → `call 0x009c1750`).
+- **A második útvonal NEM halott:** a betöltő a `0x008fa5b3`-nál kiolvassa a
+  `[reg+0xa2c]` mezőt — ez a `runtime\picnik_effects\` út —, és ha nem üres,
+  külön ágon dolgozza fel.
+- **A regiszter mezőkiosztása** (`FUN_00401ac0`): `+0` vtábla, `+4` az első
+  útvonal-objektum, `+0xa2c` a második, `+0x1454`…`+0x1460` a térkép,
+  `+0x1464` és `+0x1468` két gyár (`0x0050d740`, `0x0050e260`).
+- **A `GetMode()`-nak van MÁSODIK fogyasztója:** a `0x0050d740` gyár a
+  `0x0050d751`-nél maga is a `vtbl+0x14`-et hívja — tehát a mód nem csak a
+  csempeépítőt érdekli.
+
+### 4. A következő kérdés (K16) — és az is gépi
+
+Két, egymást kiegészítő rész:
+
+1. **Mikor fut az újratöltés?** A `FUN_0053fe30`-nak két hívója van
+   (`0x0054188a`, `0x00541e93`); ki kell olvasni, milyen eseményre futnak, és
+   hogy a szerkesztő-fül felépülése előtt vagy után.
+2. **Felülír-e a beszúrás?** A `0x009c1750` beszúró: ha egy már meglévő
+   azonosítót egy későbbi bejegyzés **felülír**, akkor a betöltés sorrendje
+   (első fájl → második út) érdemben más leírót adhat ugyanarra az azonosítóra.
+
+*Bizonyítottsági fok: **megerősített** az 1–3. szakasz (bájtszintű
+számlálás, egyértelmű hívólista, utasításszintű olvasás); a 4. szakasz
+kérdései **nyitottak**, a megszerzés útja megnevezve.*
