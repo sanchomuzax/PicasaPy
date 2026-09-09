@@ -435,14 +435,81 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 csak az egyik helyen kap ikont. A `Propert&ies` az egyetlen, amely
 gyorsbillentyűt ÉS ikont is visel.)*
 
-### 8.4 Mit jelentenek a számok az ikonmezőben
+### 8.4 Mit jelentenek a számok az ikonmezőben — RÉSZBEN eldőlt (#2821)
 
 A `+0x08` **word**, és mindössze három érték fordul elő: **1** (kétszer),
-**4** (kétszer), **6** (egyszer). ⛔ **Hogy melyik képre mutatnak, az NINCS
-megfejtve** — a mező kicsi, nem erőforrás-azonosítónak látszik, hanem egy
-belső ikonkészlet indexének. A megszerzés útja: a menü rajzolójának
-megkeresése, amely a `+0x08`-at olvassa. Ez **nem volt része a
-kérdésnek**, és önálló körben olcsó.
+**4** (kétszer), **6** (egyszer).
+
+**Amit a #2821 kimért — mindegyik állítás címmel:**
+
+**(a) Egyetlen rekordmezőt sem olvas senki ABSZOLÚT címen.** A 173 rekord
+mind a hat mezőjére, a teljes `.text`-en:
+
+| mező | írás | olvasás |
+|---|---|---|
+| `+0x00` felirat | 346 | **0** |
+| `+0x04` gyorsbillentyű | 177 | **0** |
+| `+0x08` ikon | 173 | **0** |
+| `+0x0a` parancsazonosító | 173 | **0** |
+| `+0x0c` almenü-mutató | 173 | **0** |
+| `+0x10` darabszám | 173 | **0** |
+
+⇒ a fogyasztás **mutatón át** történik, nem globális címen. *(A `+0x0a`
+sora egyben KONTROLL: a parancsazonosítót biztosan olvassa valaki, mégis
+nulla — tehát a nulla nem a mező halottságát jelenti, hanem a keresési
+alak korlátját.)*
+
+**(b) A rekordtömb pontosan NYOLCSZOR hagyja el a menüépítőt mutatóként**
+— a nyolc felső szintű menü tömbfeje:
+`0x0055988d`, `0x00559c7c`, `0x0055acb8`, `0x0055b289`, `0x0055ba48`,
+`0x0055be1f`, `0x0055ca04`, `0x0055cd89` (`push <tömbfej>` →
+`call 0x005590c0`). Ezen felül **11** almenü-mutató kerül a `+0x0c`
+mezőkbe (pl. `0x0055abca`: `mov dword ptr [0xd6e128], 0xd6dc98`).
+
+**(c) A `CreateMenu` és a `SetMenu` importot PONTOSAN EGY függvény hívja:**
+a menüépítő (`0x00559150`). A `CreatePopupMenu`-t a `0x005590c0` és a
+`0x00a6aee0`. ⇒ a menüsor valódi Win32-menü, és ez a lánc építi.
+
+**(d) ⭐ A mért úton NINCS bittérkép a Win32 felé.** Az egyetlen
+`MENUITEMINFO`-kitöltő ezen a láncon a `0x00559050` (**3** hívóhely,
+indextől független pásztázással: `0x00559122`, `0x005eaf9d`, `0x00a6af93`):
+
+```
+0x00559057  mov dword ptr [esp],     0x30    ; cbSize = 48 (MENUITEMINFOA)
+0x0055905e  mov dword ptr [esp + 4], 0x15    ; ⭐ fMask
+0x00559066  mov dword ptr [esp + 8], 0       ; fType = MFT_STRING
+0x00559093  push 0xffff                      ; pozíció = a végére
+0x005590a1  call dword ptr [0xd6958c]        ; InsertMenuItem
+```
+
+`fMask = 0x15` = `MIIM_STATE (0x01) | MIIM_SUBMENU (0x04) | MIIM_TYPE (0x10)`.
+**Hiányzik belőle a `MIIM_BITMAP` (0x80) ÉS a `MIIM_CHECKMARKS` (0x08)** ⇒
+ezen az úton a `+0x08` értéke **soha nem jut el a Win32-hez**.
+
+**(e) A teljes `.text` WORD-olvasásai a `+8` eltoláson: 276 találat**, és
+egyik sem menürekord (üzenetstruktúrák `[ebx+8]` = `wParam` alsó szava,
+FPU-vezérlőszavak `fldcw`, és hasonlók). ⚠️ **Reguláris-kifejezés csapda:**
+a `word ptr` **részsztringje** a `dword ptr`-nek — az első futásom ezért
+adott 276 helyett több ezer hamis találatot. A minta `(?<![a-z])word ptr`.
+
+### 8.4/b ⛔ Ami NEM dőlt el, és mi dönti el
+
+A per-TÉTEL beszúrás útja nincs meg. A `0x00a6aee0` (378 bájt) **rekurzív**
+menüjáró (`0x00a6af5c` önhívás), de **kétmezős** szerkezeten dolgozik
+(`[ebp]`, `[ebp+4]`), nem a 20 bájtos rekordon ⇒ **valami átalakítja a
+rekordtömböt** ebbe a szerkezetbe, és ezt az átalakítót nem találtam meg.
+
+**A megszerzés útja:** a `0x005590c0` (140 bájt) a tömbfejet a
+`0x00a6aee0`-nak adja át (`0x005590cd`–`0x005590e9`). Az átalakítás vagy
+ott, vagy a `0x00a6aee0` általam nem kilistázott ágain történik. Ha az
+átalakító a `+0x08`-at átveszi, ott derül ki, mit indexel; ha eldobja, a
+mező **halott** — és akkor a 7. szakasz „ikon" elnevezése KÖVETKEZTETÉS
+marad, nem mérés.
+
+⚠️ **Amit ebből NEM szabad levonni:** hogy a menüben nincs ikon. Csak azt,
+hogy a **mért úton** nem jut el bittérkép a Win32-hez. A Picasa saját
+menürajzolót is használhat (a `0x00a6aee0` és a `SetMenuInfo` hívások erre
+utalnak) — az a `+0x08`-at más úton is elérheti.
 
 ### 8.5 Amit ez a mérés NEM mond meg
 
