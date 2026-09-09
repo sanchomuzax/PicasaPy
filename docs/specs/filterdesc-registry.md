@@ -4481,6 +4481,81 @@ egy számított cím (bázis + eltolás, tábla-indexelés). Ez a hatókör szű
 mint a „nincs hivatkozás" — de a 223. kör indexre alapozott állításánál
 lényegesen erősebb.
 
+### 10. ⛔ A `fullres` HÁROMÁLLAPOTÚ, és a 2-es érték EGYETLEN szűrőé (2026-09-09, 227. kör, #2746)
+
+A 225. kör megtalálta a jelzők olvasóját; ez a kör végigvitte, **ki kérdezi
+vissza** a tárolt értéket. A fő kérdésre az eredmény **negatív**, de három
+önálló lelettel.
+
+#### 10.1 A jelzők tagoffszetei — mérve
+
+A `0x008ff550` a beolvasott értékeket a leíró-objektum tagjaiba írja
+(`[ebx+0x2c]` a leíró, a `0x008ff840`–`0x008ff891` sávban):
+
+| jelző | cím | tag | típus |
+|---|---|---|---|
+| `fullres` | `0x008ff85b` | **`+0xd8`** | dword |
+| `slow` | `0x008ff869` | **`+0xdc`** | byte |
+| (3 további byte-jelző) | `0x008ff876`, `0x008ff883`, `0x008ff891` | `+0xdd`, `+0xde`, `+0xdf` | byte |
+
+#### 10.2 ⭐ A `+0xd8` OLVASÓJA egy predikátum, ami a `2`-t vizsgálja
+
+`0x008f6fc0` (27 bájt), teljes törzs:
+
+```
+mov  eax, [ecx + 8]              ; [this+8] = a leíró-objektum
+cmp  dword [eax + 0xd8], 2       ; fullres == 2 ?
+jne  0x008f6fd8                  ;   nem → false
+cmp  byte [ecx + 0xc8], 0        ; [this+0xc8] != 0 ?
+je   0x008f6fd8                  ;   nulla → false
+mov  al, 1 ; ret                 ; TRUE
+xor  al, al ; ret                ; FALSE
+```
+
+⇒ **`fullres == 2` ÉS `[this+0xc8] != 0`.** A `+0xd8` tehát **nem logikai**
+jelző: a `2` kitüntetett érték.
+
+*(A `0x008f6f90` egy egyszerű getter: `mov eax, [eax+0xd8]`.)*
+
+#### 10.3 ⭐ A leíróban a `fullres` értékei — megszámolva
+
+`runtime/filterdesc.xml` (63 005 bájt), `grep -o` + `uniq -c`:
+
+| érték | darab |
+|---|---|
+| `fullres="1"` | **18** |
+| `fullres="2"` | **1** |
+
+**A `fullres="2"` egyetlen szűrőé: a `FocalZoom`** (888. sor):
+```xml
+<filter id="FocalZoom" mode="effect" zerostate="none" fullres="2">
+```
+
+A `QuantizePalette` (1244. sor) ezzel szemben `fullres="1" slow="1"`.
+
+⇒ **A `0x008f6fc0` predikátum a szállított leíróban KIZÁRÓLAG a `FocalZoom`-ra
+teljesülhet.** A `QuantizePalette` nem kap külön utat a `fullres` jelzőn át —
+a #2746 „külön renderút" hipotézise ezen a szálon **elesik**.
+
+#### 10.4 A többi jelző darabszáma — ugyanabból a mérésből
+
+| jelző | előfordulás |
+|---|---|
+| `slow="1"` | **13** (köztük a `QuantizePalette`) |
+| `resize="1"` | **5** |
+| `persist="1"` | **16** · `persist="0"` | **9** |
+
+⚠️ A lap 1.3 szakaszának jelentés-értelmezései (mit „jelent" a jelző) továbbra
+is a NÉVBŐL vannak. Ami MÉRVE van: a beolvasás helye, a tagoffszet, a `2`-es
+predikátum, és a fenti darabszámok.
+
+#### 10.5 Következmény a `FocalZoom`-ra (#723)
+
+A `FocalZoom` az **egyetlen** szűrő, amely a `fullres="2"` kitüntetett
+állapotot kapja, és van rá egy külön predikátum a binárisban. Ha a
+`FocalZoom`-ot valaha implementáljuk vagy javítjuk, ezt figyelembe kell venni
+— a #723 (a `FocalZoom` vezérlő-készlete) kapott erről kommentet.
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
