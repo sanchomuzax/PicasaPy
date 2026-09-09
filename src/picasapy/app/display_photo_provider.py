@@ -44,7 +44,7 @@ gyorstárában a mód bevezetése előtti kulcs marad.
 from __future__ import annotations
 
 import logging
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote
 
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
@@ -65,10 +65,18 @@ def _szetszed(azonosito: str) -> tuple[str, str]:
 
     A Qt a `image://displayphoto/` utáni részt adja át, a lekérdezéssel
     együtt. Az útvonal URL-kódolt lehet (ékezet, szóköz).
+
+    ⚠️ **`urlparse` NEM használható itt** (mérve a windows-lábon, #1640): a
+    `C:\kepek\a.jpg` alakú útvonalban a **meghajtó betűjét URL-sémának
+    olvassa** (`scheme='c'`), és az útvonal fele elveszik — a diavetítés képe
+    ilyenkor be sem töltődik. A kettéválasztás ezért kézzel megy az ELSŐ
+    `?`-nél: a lekérdezést mi magunk írjuk, az útvonalat pedig `quote()`-tal
+    kódoljuk (ami a `?`-et `%3F`-re cseréli), tehát az első `?` mindig a
+    lekérdezés kezdete.
     """
-    darabok = urlparse(azonosito)
-    mod = parse_qs(darabok.query).get(DISPLAY_MODE_QUERY_KEY, [""])[0]
-    return unquote(darabok.path), mod
+    kodolt_ut, _, lekerdezes = azonosito.partition("?")
+    mod = parse_qs(lekerdezes).get(DISPLAY_MODE_QUERY_KEY, [""])[0]
+    return unquote(kodolt_ut), mod
 
 
 class DisplayPhotoProvider(QQuickImageProvider):
