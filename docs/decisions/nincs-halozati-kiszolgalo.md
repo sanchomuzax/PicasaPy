@@ -74,3 +74,18 @@ próba **saját magát is ellenőrzi** egy ismert pozitívval — a nulla lelet 
 így jelent valamit.
 
 *A szándékos eltérést a teszt védje, ne a jószándék.*
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+⚠️ Ez a döntés **nem-építésről** szól, tehát nincs modul, ami „megvalósítja".
+A `Megvalósítja` mező ezért a **mért állapotot** nevezi meg: azt a csomagot,
+ahol a hálózati műveleteink élnek, és ahol a hiánynak fenn kell maradnia. A
+betartatás teljes egészében az `Őrzi` mezőn múlik.
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/webexport`, `src/picasapy/mailer`
+- **Őrzi:** `tests/test_nincs_halozati_kiszolgalo_2023.py`
