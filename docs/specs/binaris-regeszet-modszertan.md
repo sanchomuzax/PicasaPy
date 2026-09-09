@@ -1841,3 +1841,51 @@ csonkít" —, ott a komment lett javítva, nem a kód.
 > diszasszemblátumból (`0x0090b2bc`…`0x0090b30a`), az 1,370 → 0,614 a
 > #759 méréséből, a 113 246 208 / 0 / 71 551 056 a bitpontos
 > szimulációból.
+
+## ⛔ Az index `string_xrefs` táblája HIÁNYOS — mérve 26 % (2026-09-09, 225. kör)
+
+**Az indexre alapozott NEGATÍV állítás nem bizonyíték.** Ez nem elvi
+óvatosság, hanem mért tény.
+
+A `0x008ff550` függvényen (a `filterdesc.xml` attribútum-olvasója, 2807 bájt)
+kimérve:
+
+| | darab |
+|---|---|
+| a törzsében hivatkozott ASCII-sztringcímek (diszasszemblátumból) | **35** |
+| ebből a `string_xrefs` táblában szerepel | **26** |
+| ebből **hiányzik** | **9** (26 %) |
+
+A hiányzók: `id`, `type`, `none`, `mode`, `zero`, **`slow`**, `zoom`, `real`,
+`uint`.
+
+**Hogyan derült ki:** a 225. kör az index alapján azt állapította meg, hogy a
+`slow` attribútumnév „nem szerepel a binárisban" (0 találat, miközben a
+kontroll — `Steps`, `Depth` — megvolt). A diszasszemblátumban viszont ott áll
+egy **5 bájtos** összehasonlítás a `0x00cd1760`-ra, és a cím kiolvasva:
+`'slow'`. Az index nem indexelte.
+
+### Amit ez a gyakorlatban jelent
+
+1. **„Nincs rá hivatkozás" állítást SOHA ne alapozz csak az indexre.** A
+   negatívumhoz **indextől független pásztázás** kell (`paszta.py`), vagy a
+   `.rdata`-ban a sztring közvetlen megkeresése + a `.text` átvizsgálása a
+   címére.
+2. **A pozitív találat viszont áll** — amit az index ad, az ott van.
+3. ⚠️ **Visszamenőleg érintett lelet:** a 223. kör (`filterdesc-registry.md`
+   5.2) azt írta, hogy a binárisban „**pontosan egy**" `Quantize`-hivatkozás
+   van, az indexből. Ez az állítás **ezzel gyengül** — indextől független
+   pásztázással kell megismételni.
+
+### Két saját mérési hiba, amit ugyanez a kör elkapott
+
+Mindkettőt **kontroll-állítás** fogta meg, nem szerencse:
+
+| hiba | miért nem látszott | mi fogta meg |
+|---|---|---|
+| a cím-minta `0x00cd1760` alakot keresett | a capstone **rövidít**: `0xcd1760` | `assert 0x00cd1760 in cimek` |
+| a lekérdezés kulcsa `hex(FN)` = `0x8ff550` | az index **nullákkal** tárol: `0x008ff550` | `assert indexelt, "…rossz a kulcs"` |
+
+⇒ **Minden pásztázó szkriptbe tegyél kontroll-állítást egy ISMERT pozitívra.**
+Enélkül a „0 találat" a minta hibáját jelenti, nem leletet — és úgy néz ki,
+mint egy eredmény.
