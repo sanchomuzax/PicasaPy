@@ -5247,15 +5247,132 @@ A függvény bemenete egy téglalap (3–6. argumentum): `W = arg5 − arg3`,
 javítása. A `[téma+0x10]`, `+0x14`, `+0x18` mezők tehát **unsigned**-ként
 olvasódnak (rács-sor/oszlop/darabszám).
 
-### 53.4 Ami NYITVA marad — pontosan
+### 53.4 ⛔ HELYESBÍTVE (240. kör): ez a pont NEM volt nyitott
 
-A cella képpontos kiterjedését a `[esp+0x58]` / `[esp+0x5c]` és a futó
-`ecx` / `esi` adja; hogy ezekbe a fenti margók és a 0,88 / 0,79 arányok
-milyen zárt kifejezéssel jutnak, az a rács-hurok teljes végigszámolását
-igényli (FPU-verem szinten). **Becsült képletet nem adok** — a zárt alak a
-következő kör tétele, a megszerzés útja: a `0x008883c0`-tól induló hurok
-lépésköz-számítása, ugyanezzel a módszerrel.
+Az 53. szakasz első változata itt nyitva hagyta a cella képpontos
+kiterjedésének zárt alakját, és a következő kör tételévé tette. **Ez tévedés
+volt:** ugyanezen a lapon a **18.2** szakasz 2026-09-06 óta tartalmazza a
+teljes cellaosztást — mind az öt konstanst a saját címével és nyers
+bájtjaival, a csonkolás bizonyítékával és a sor/oszlop-azonosítással:
+
+```
+cellaSzél = CSONK(0,88 × W / [téma+0x14])      cellaMag = CSONK(0,79 × H / [téma+0x10])
+balMargó  = CSONK(W × 0,06)                    felsőMargó = CSONK(H × 0,15)
+rés       = CSONK([téma+0x18] × 0,08)          [téma+0x1c] = W / H
+```
+
+A 240. kör ezt FPU-verem szinten függetlenül újralevezette, és **bitre
+ugyanezt** kapta — a lelet tehát megerősítést kapott, de nem új.
+
+**Miért történt:** az 53. szakasz a lap 20. szakaszából indult, és nem nézte
+végig a lap SAJÁT szakaszlistáját a részkérdésre. A skill szabálya erre
+kimondott (*„a spec-lapon a TARTALOMJEGYZÉKKEL kezdd, ne az összefoglalóval"*)
+— itt egy **al**kérdés megnyitásakor maradt ki, nem a kör elején.
+
+**Ami tényleg új, egy sor:** a konstansok egzakt azonosságai —
+`0,88 = 1 − 2 × 0,06` és `0,79 = 1 − 0,15 − 0,06` —, amelyek pontosan a
+18.2-beli margókból adódnak (kétoldali oldalmargó, illetve felül címsáv és
+alul margó). Ez összefér a `collage/contact_sheet.py` független, korábbi
+olvasatával (`CONTACT_SHEET_HEADER_RATIO = 0,15`,
+`CONTACT_SHEET_LEFT_RATIO = 0,06`).
+
+⇒ **Nálunk MA (mérve):** a `collage/picasa_render.py`
+`_contact_sheet_geometry()` pontosan a 18.2 képleteit számolja
+(`math.trunc`-kal), a `shadow.py` pedig `CONTACT_USABLE_WIDTH = 0,88` /
+`CONTACT_USABLE_HEIGHT = 0,79` néven tartja a két arányt ⇒ **nincs teendő**.
 
 *Bizonyítottsági fok: **megerősített** az 53.1–53.3 (utasításonkénti olvasás,
 a konstansok címmel és kiolvasott értékkel); az 53.4 **nyitott**, a megszerzés
 útja megnevezve.*
+
+## 54. K1 — a `contactsheet` cella-osztása ZÁRT ALAKBAN, FPU-verem szinten (2026-09-09, #1412)
+
+*240. kutatói kör. Az 53.4 által nyitva hagyott tételt zárja le: hogyan áll
+elő a cella képpontos kiterjedése.*
+
+### 54.1 A két bemenő oldal és a téma aránya
+
+A függvény bemenete egy téglalap (3–6. argumentum). Legyen
+**`A = arg5 − arg3`** és **`B = arg6 − arg4`** (`0x00888216`–`0x0088822f`).
+A verem-követés szerint (`0x0088826b`–`0x00888277`):
+
+```
+fld A ; fld st(0) ; fld B ; fld st(0) ; fdivp st(2) ; fxch st(1)
+fstp dword ptr [ebp + 0x1c]      ⇒  téma+0x1c := A / B
+```
+
+### 54.2 A négy származtatott mennyiség — mind TRUNCÁLVA
+
+Mindegyik `fldcw 0xc00` + `fistp` páron megy át, azaz **csonkolás** (a
+`picturepile`-nál mért `0x0082cac4`-gyel azonos idióma):
+
+| cél | képlet | a kiolvasás helye |
+|---|---|---|
+| `[esp+0x40]` | `TRUNC(A × 0,06)` | `0x0088827a`–`0x00888286` |
+| `[esp+0x3c]` | `TRUNC(B × 0,15)` | `0x00888296`–`0x008882b4` |
+| `[esp+0x18]` | `TRUNC(n18 × 0,08)` | `0x008882c9`–`0x008882f5` |
+| **`[esp+0x2c]`** | **`TRUNC(A × 0,88 / n14)`** | `0x00888305`–`0x00888337` |
+| **`[esp+0x44]`** | **`TRUNC(B × 0,79 / n10)`** | `0x00888347`–`0x00888393` |
+
+ahol `n10 = [téma+0x10]`, `n14 = [téma+0x14]`, `n18 = [téma+0x18]`, mind
+**előjel nélküli** egészként olvasva (a `fild` utáni `jge` + `fadd 2³²` páros,
+`0x00cf39e4`).
+
+**A tengelyek azonosítása mérésből, nem feltevésből:** a rács-index osztása
+`div [téma+0x14]` (`0x008884bc`), és a **maradékot** a `[esp+0x2c]` szorozza
+(`0x008884c7 imul edx, [esp+0x2c]`) ⇒ `n14` az **oszlopszám**, `[esp+0x2c]` az
+**oszlop-lépésköz**; a hányados tengelyéhez a `[esp+0x44]` tartozik ⇒ `n10` a
+**sorszám**. Ezzel `A` a vízszintes, `B` a függőleges oldal.
+
+⇒ **A cellaosztás zárt alakja:**
+
+```
+cellaSzélesség = TRUNC(W × 0,88 / oszlopok)     [W = arg5 − arg3]
+cellaMagasság  = TRUNC(H × 0,79 / sorok)        [H = arg6 − arg4]
+```
+
+⭐ **A konstansok EGZAKT azonosságai:** `0,88 = 1 − 2 × 0,06` és
+`0,79 = 1 − 0,15 − 0,06`. Ez összefér egy **szimmetrikus vízszintes**
+(0,06–0,06) és egy **aszimmetrikus függőleges** (0,15 fent, 0,06 lent, azaz
+felül címsáv) margóképpel. *(Az azonosság pontos; a belőle olvasott margó-kép
+**erős**, nem megerősített — a margókat maga a rajzolás használja fel.)*
+
+### 54.3 A cellán belül: illesztés, behúzás, középre igazítás
+
+```
+0x008883c0  mov edi, [esp+0x18]        ; a behúzás = TRUNC(n18 × 0,08)
+0x0088844e  call 0x009b4aa0            ; az ARÁNYTARTÓ illesztő (26. szakasz)
+0x00888463  sub eax, edi               ; jobb  − behúzás
+0x00888465  add edx, edi               ; bal   + behúzás
+0x0088846d  add esi, edi               ; felső + behúzás
+0x0088846f  sub ecx, edi               ; alsó  − behúzás
+0x0088846b  sub eax, edx               ; ⇒ a behúzott kép SZÉLESSÉGE
+0x00888477  sub eax, edi ; cdq ; sub eax,edx ; sar ecx,1
+                                        ; ⇒ (cellaSzél − képSzél) / 2
+0x008884a3  lea edx, [ecx + edi]       ; ⇒ [esp+0x58] = középre-eltolás + képSzél
+0x008884a9  sar esi, 1                 ; ⇒ (cellaMag − képMag) / 2
+0x008884af  lea edx, [esi + eax]       ; ⇒ [esp+0x5c] = középre-eltolás + képMag
+```
+
+⇒ a kép a cellába **aránytartóan illesztve** (a `FUN_009b4aa0`, amelynek
+képlete a 26. szakaszban már ki van olvasva: `z = min((cw+0,499)/sw ;
+(ch+0,499)/sh)`, kerekítéssel), majd **minden oldalán behúzva**
+`TRUNC(n18 × 0,08)`-cal, végül **középre igazítva** egész osztással
+(`sar 1`, azaz a nullához vágó felezés).
+
+Ezt a két végpontot osztja el az 53.2 szerint a lap `W`/`H`-jával a csomópont
+`w`/`h` mezőjébe.
+
+⇒ **Az 53.4 tétele ezzel LEZÁRVA.**
+
+### 54.4 Nálunk MA — mérve
+
+`src/picasapy/collage/` — a `contactsheet` elrendezőnk cella-osztása és a
+0,88 / 0,79 / 0,06 / 0,15 / 0,08 arányok **nincsenek** így paraméterezve; a
+fenti öt konstans egyike sem szerepel a kódban (`grep`). ⇒ **termékoldali
+teendő külön jegyben**; ez a szakasz a normatív forrás.
+
+*Bizonyítottsági fok: **megerősített** — utasításonkénti FPU-verem-követés, a
+tengely-azonosítás a `div`/`imul` párosból, minden konstans címmel és
+kiolvasott értékkel. A margó-kép olvasata (54.2 vége) **erős**, és kimondottan
+el van választva a mért képletektől.*
