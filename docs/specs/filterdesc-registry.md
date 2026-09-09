@@ -5052,3 +5052,72 @@ négy mező írását, nem a hívóban.
 *Bizonyítottsági fok: **megerősített** az 1–2. szakasz (utasításszintű olvasás,
 kimerítő bájtszintű pásztázás a teljes `.text`-en); a 3. szakasz **nyitott**, a
 hiány szerkezeti oka és a megszerzés útja megnevezve.*
+
+## ✅ A négy döntő mező MEGVAN — bitmaszkok, és a pásztázásaim vakfoltja (2026-09-09, 237. kör)
+
+A 236. kör kimondott feszültsége (az `unsharp2` a térképem szerint
+előléptetődne, pedig nincs rajta jelvény) **feloldva**. Az ok módszertani volt:
+a mezőket **`or`**-ral írja a program, nem `mov`-val, és a pásztázásaim csak
+mozgató utasításokat kerestek.
+
+### 1. A négy mező — mind a négy megnevezve
+
+| mező | mi ez | az író |
+|---|---|---|
+| `+0x38` | a **csúszkák bitmaszkja**: `1 << <slider id>` | `0x008ffdcb` `or byte ptr [leíró+0x38], dl` (a `dl = 1 << [ctx+0x34]`), és `0x008ffdd8` `or …, 0x80` (a 7. bit egy további csúszka-tulajdonságra); harmadik író: `0x009007b0` |
+| `+0x80` | a **színkerék** (`colorcircle`) bitmaszkja: `1 << id` | `0x008ffc29` `or byte ptr [leíró+0x80], al` |
+| `+0xa1` | egy harmadik vezérlő-család bitmaszkja: `1 << n` | `0x00900c55` `or byte ptr [leíró+0xa1], dl` |
+| `+0x84` | az `<effect>`-ben talált vezérlők **darabszáma** | `0x00900e1a` (`FUN_00900540`, a `filter_%s_label%d` / `_sldrRadius` sztringekkel azonosítva); a `colorwheel`-kezelő 2-nél megáll (`0x008ffb32`) |
+
+A csúszka-bitmaszk előállítása utasításszinten:
+
+```
+0x008ffdc1  mov ecx, [ctx + 0x34]     ; a csúszka ID-je (az `id` attribútumból)
+0x008ffdc4  mov esi, [ctx + 0x2c]     ; a LEÍRÓ
+0x008ffdc7  mov dl, 1
+0x008ffdc9  shl dl, cl                ; 1 << id
+0x008ffdcb  or  byte ptr [esi + 0x38], dl
+```
+
+### 2. Ezzel az előléptetési szabály emberi nyelven
+
+> Egy `mode="effect"` szűrő futásidőben `oneclick`-ké válik, ha **semmi
+> állítható nincs rajta**: nincs csúszkája (`+0x38` = 0), nincs színkereke
+> (`+0x80` = 0), nincs a harmadik vezérlő-családból (`+0xa1` = 0), és az
+> `<effect>` törzse sem hozott vezérlőt (`+0x84` = 0).
+
+Az `unsharp2` egy csúszkát deklarál ⇒ `+0x38` 0. bitje áll ⇒ **nem** léptetődik
+elő ⇒ nincs rajta jelvény. Ez pontosan egyezik a felvétellel (a csempe jobb
+alsó sarkában **0** kékes képpont, szemben a szépia-csempe 114-ével).
+
+⇒ A 236. kör 3. szakaszának feszültsége **megszűnt**; a mezőtérkép zárt.
+
+### 3. ⛔ MÓDSZERTANI TANULSÁG — a „ki írja ezt a mezőt" pásztázás
+
+Három egymást követő kör pásztázása hibázott ugyanabban: csak **mozgató**
+utasításokat keresett (`mov`, `88/89/C6/C7`). A valódi írók
+**olvas-módosít-ír** alakúak voltak:
+
+- `or  r/m8, r8` (`08 /r`) — ez írja a `+0x38`, `+0x80`, `+0xa1` maszkokat;
+- `or  r/m8, imm8` (`80 /1 ib`) — a `0x008ffdd8`.
+
+Ezenfelül a 236. kör egy másik alakot is kihagyott: a **SIB-címzésű, indexelt**
+írásokat (`mov byte ptr [eax + ecx + 0x7c], 1`, `0x008ffdf6`) — ezek töltik a
+leíró csúszkánkénti jelző-tömbjét a `+0x7c`-nél (index 0–3, `cmp ecx, 4`).
+
+**A szabály:** egy „ki írja ezt a mezőt" kérdés pásztázása **kötelezően**
+tartalmazza (a) az olvas-módosít-ír opkódokat (`or`/`and`/`add`/`xor`) és
+(b) a SIB-címzésű alakokat. Enélkül a negatív eredmény („csak a konstruktor
+írja") **nem bizonyíték** — és nálunk három körön át nem is volt az.
+
+### 4. Melléklelet: a leíró csúszka-tárolása
+
+A `</slider>` feldolgozásakor mérve: lebegőpontos mezők a `+0x4c`-nél
+(`0x00900845`), csúszkánkénti bájt-jelzők a `+0x7c`-nél (`0x008ffdf6`,
+`0x0090084b`; index 0–3), további lebegőpontos tömb a `+0xa4`-nél
+(`0x0090085f`, `ecx*4` léptékkel). A `<slider>` `id` attribútuma a
+`[ctx+0x34]`-be megy (`0x008ffd30`), és ez az index minden fenti tömbben.
+
+*Bizonyítottsági fok: **megerősített** — utasításszintű olvasás mind a négy
+íróra, és a szabály a felvételen mért jelvényekkel egyezik (24/24, ebből az
+`unsharp2` ellenpróbája képpont-szinten is).*
