@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 37.**
+**Felületről el nem ért vezérlő-tag: 35.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -131,8 +131,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
-| `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
-| `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |
 | `fileOpsController` | `movePhoto` | Slot | `app/fileops_controller.py` | FELVÁLTVA — a QML a többes movePhotos alakot hívja |
 | `folderHierarchyController` | `setFolders` | Slot | `app/folder_hierarchy_controller.py` | BELSŐ — az application.py:704 tölti fel a fát |
