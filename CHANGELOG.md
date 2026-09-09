@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.361] – 2026-09-09
+
+### Belső
+
+- **Két soha nem hívott függvény törölve a szerkesztő vezérlőjéből** (#1487). A
+  felhasználó számára semmi nem változik: az adatot, amit adtak volna, a régi
+  effektek listája már ugyanabból a forrásból megkapja — a két függvény tehát
+  duplikátum volt, nem tartalék. A bekötetlen képességeket számláló mérőnk
+  plafonja is lement (37 → 35), hogy a szám ne hízhasson vissza csendben.
+
 ## [0.8.360] – 2026-09-09
 
 ### Hozzáadva
