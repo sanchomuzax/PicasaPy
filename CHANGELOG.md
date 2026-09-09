@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.353] – 2026-09-09
+
+### Hozzáadva
+
+- **Megnyílt a Picasa saját bélyegkép-gyorstára** (#1446). A program mostantól
+  ki tudja olvasni a Picasa által korábban elkészített kicsi és nagy
+  előnézeteket, valamint az arcsablonokat a `db3` mappából. Ez még nincs
+  bekötve a felületbe — magában semmi nem változik tőle —, de ez az alapja
+  annak, hogy importálásnál ne kelljen több tízezer bélyegképet újra
+  legyártani. A tulajdonos valódi katalógusán ellenőrizve: mind az öt tár
+  megnyílik, a képek ép JPEG-ek, az arcsablonok mindegyike a mért 1044 bájt.
+
 ## [0.8.352] – 2026-09-09
 
 ### Javítva
