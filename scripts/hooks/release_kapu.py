@@ -24,6 +24,11 @@ import re
 import subprocess
 import sys
 
+#: #1375: modulszintű fogantyú a `subprocess.run`-ra. A próbáknak EZT kell
+#: cserélniük — a globális `subprocess.run` átírása minden más modulra
+#: átszivárog, amíg a teszt fut (a `test_platform_seam_1217.py` őrzi).
+_run = subprocess.run
+
 FELOLDO = "PICASA_KIADAS=engedelyezve"
 
 # --- git tag: a létrehozás kiadási lépés, a listázás/törlés nem ------------
@@ -124,7 +129,7 @@ def _tag_push(cmd: str) -> bool:
 def _verziot_emel(cwd: str) -> bool:
     """A pushra váró ág emeli-e a pyproject verziószámát az origin/main-hez képest."""
     try:
-        diff = subprocess.run(
+        diff = _run(
             ["git", "diff", "origin/main...HEAD", "--", "pyproject.toml"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         ).stdout
@@ -146,7 +151,7 @@ def _verziot_emel_commitolatlanul(cwd: str) -> bool:
     `HEAD`-del, tehát egyetlen hívás elég.
     """
     try:
-        diff = subprocess.run(
+        diff = _run(
             ["git", "diff", "HEAD", "--", "pyproject.toml"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8",
             errors="replace", timeout=15,
@@ -195,7 +200,7 @@ def _pr_verziot_emel(cmd: str, cwd: str) -> bool:
     if not talalt:
         return False
     try:
-        diff = subprocess.run(
+        diff = _run(
             ["gh", "pr", "diff", *( [szam] if szam else [] )], cwd=cwd,
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
         ).stdout
@@ -218,7 +223,7 @@ def _vizsgalt_fa(cwd: str) -> str:
     2026-08-20-án egy munkamenet ezért futott neki négyszer a SAJÁT ágának,
     ami végig üres volt. Egy sor megadta volna a választ."""
     try:
-        ag = subprocess.run(
+        ag = _run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
         ).stdout.strip()

@@ -384,7 +384,11 @@ class TestAutoMerge:
             hivasok.append(list(argv))
             return Eredmeny()
 
-        monkeypatch.setattr(kapu.subprocess, "run", hamis_run)
+        # ⚠️ A MODUL FOGANTYÚJÁT cseréljük, nem a globális `subprocess.run`-t:
+        # az minden más modulra átszivárogna, amíg a teszt fut (#1375). A
+        # `test_platform_seam_1217.py` őrzi ezt a mintát — a CI-n bukott meg,
+        # amikor először `kapu.subprocess.run`-t írtam át.
+        monkeypatch.setattr(kapu, "_run", hamis_run)
         return hivasok
 
     _VERZIO_DIFF = (
