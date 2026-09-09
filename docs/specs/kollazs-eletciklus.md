@@ -5176,3 +5176,86 @@ jövőben is így kell.
 
 *Bizonyítottsági fok: **megerősített** — teljes `.text` bájtszintű pásztázás
 működő pozitív kontrollal, és mindkét találat utasításonként elolvasva.*
+
+## 53. K1 — a `contactsheet` geometriája: NORMALIZÁLT lap-koordináták, és a nyitott kérdés PREMISSZÁJA dől meg (2026-09-09, #1412)
+
+*239. kutatói kör. A `00-index.md` egyetlen nyitva hagyott tételét viszi: „a
+`contactsheet` csempeméretének zárt képlete — a keresés helye a
+`CContactSheetTheme` saját csempeméret-írása, a `0x0082cad0` analógiájára".*
+
+### 53.1 ⛔ A megnevezett keresési hely NEM LÉTEZIK
+
+A `picturepile` témánál a méret a téma `+0x3c` mezőjébe megy
+(`0x0082cad0`). A `contactsheet` elrendezőjében (`FUN_00888210`, 2 337 bájt)
+**a `+0x3c` eltolás mind a kilenc előfordulása verem-lokális** (`[esp+0x3c]`,
+SIB-alak) — egyik sem a témára mutat. A `CContactSheetTheme`-nek tehát **nincs
+a `0x0082cad0`-hoz hasonló csempeméret-írása**, és az analógia mint keresési
+irány megdőlt.
+
+*(Az osztály azonosítása: a `CContactSheetTheme::subtitle_format` sztring
+(`0x00cc4dec`) egyetlen hivatkozása a `0x0088877b`, azaz `FUN_00888210`-en
+belül ⇒ ez a függvény a téma elrendező metódusa.)*
+
+### 53.2 ⭐ Ami HELYETTE van: a csomópont mind a négy geometriai mezője a LAP ARÁNYÁBAN
+
+A csomópont-írás utasításonként (a `w`/`h` közvetlenül a `scale` előtt):
+
+```
+0x0088850e  fld  dword ptr [esp+0x48]     ; a LAP szélessége (W)
+0x00888519  fdivp st(2)                   ; x / W
+0x00888556  mov  [ebx+eax+0x18], edx      ; ⇒ csomópont x
+0x00888541  fld  dword ptr [esp+0x4c]     ; a LAP magassága (H)
+0x00888550  fdivp st(2)                   ; y / H
+0x00888568  mov  [ebx+eax+0x1c], edx      ; ⇒ csomópont y
+0x0088856c  mov  eax,[esp+0x58] ; sub eax,ecx   ; a cella SZÉLESSÉGE képpontban
+0x00888580  fdiv st(2)                    ; / W
+0x0088857e  mov  eax,[esp+0x5c] ; sub eax,esi   ; a cella MAGASSÁGA képpontban
+0x00888592  fdiv st(1)                    ; / H
+0x008885ae  mov  [ebx+eax+0x20], ecx      ; ⇒ csomópont w
+0x008885b6  mov  [ebx+eax+0x24], edx      ; ⇒ csomópont h
+0x008885ac  fld1
+0x008885bc  fstp dword ptr [ebx+eax+0x2c] ; ⇒ csomópont scale = 1,0
+```
+
+⇒ **A `contactsheet` a csomópont `x`, `y`, `w`, `h` mezőit a lap méretével
+elosztva, azaz `[0,1]` lap-hányadként írja, a `scale`-t pedig állandó 1,0-ra.**
+A „csempeméret" tehát **nem külön tárolt mennyiség**: a cella mérete
+közvetlenül a csomópont `w`/`h`-jában áll. Ezért nem volt megtalálható a
+`picturepile` mintájára keresve.
+
+⛔ **Ez helyesbíti a 20. szakasz egységes olvasatát is** abban a pontban, hogy
+a `contactsheet`-nél a `scale` „a lap-szintű csomópontmagasság" volna: a
+`scale` mérve **állandó 1,0**, a magasság a `h` mezőben van.
+
+### 53.3 A lap-geometria feje, konstansokkal
+
+A függvény bemenete egy téglalap (3–6. argumentum): `W = arg5 − arg3`,
+`H = arg6 − arg4` (`0x00888216`–`0x0088822f`).
+
+| mit | hol | érték |
+|---|---|---|
+| a téma `+0x1c` := **H / W** (a lap oldalaránya) | `0x00888277` `fstp [ebp+0x1c]` | — |
+| függőleges margó := `TRUNC(H × 0,06)` | `0x0088827c` + `fldcw 0xc00` + `fistp` | `0x00cf46d0` = **0,06** (double) |
+| vízszintes margó := `TRUNC(W × 0,15)` | `0x00888296`–`0x008882b4` | `0x00cf3fd0` = **0,15** (double) |
+| a `[téma+0x18]` **előjel nélküli** számmal × 0,08 | `0x008882c9`–`0x008882d4` | `0x00cf4df0` = **0,08** (double) |
+| osztás a `[téma+0x14]`-gyel, 0,88-as szorzóval | `0x00888305`–`0x00888321` | `0x00d3a140` = **0,88f** |
+| osztás a `[téma+0x10]`-zel, 0,79-es szorzóval | `0x00888347`–`0x00888358` | `0x00d3a144` = **0,79f** |
+
+⚠️ A `0x00cf39e4` **nem geometriai konstans**: `dword`-ként olvasva
+`4 294 967 296` = 2³², és minden előfordulása egy `fild` utáni
+`jge` + `fadd` páros — ez a fordító **előjel nélküli egész → lebegőpont**
+javítása. A `[téma+0x10]`, `+0x14`, `+0x18` mezők tehát **unsigned**-ként
+olvasódnak (rács-sor/oszlop/darabszám).
+
+### 53.4 Ami NYITVA marad — pontosan
+
+A cella képpontos kiterjedését a `[esp+0x58]` / `[esp+0x5c]` és a futó
+`ecx` / `esi` adja; hogy ezekbe a fenti margók és a 0,88 / 0,79 arányok
+milyen zárt kifejezéssel jutnak, az a rács-hurok teljes végigszámolását
+igényli (FPU-verem szinten). **Becsült képletet nem adok** — a zárt alak a
+következő kör tétele, a megszerzés útja: a `0x008883c0`-tól induló hurok
+lépésköz-számítása, ugyanezzel a módszerrel.
+
+*Bizonyítottsági fok: **megerősített** az 53.1–53.3 (utasításonkénti olvasás,
+a konstansok címmel és kiolvasott értékkel); az 53.4 **nyitott**, a megszerzés
+útja megnevezve.*
