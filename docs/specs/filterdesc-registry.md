@@ -4556,6 +4556,67 @@ A `FocalZoom` az **egyetlen** szűrő, amely a `fullres="2"` kitüntetett
 `FocalZoom`-ot valaha implementáljuk vagy javítjuk, ezt figyelembe kell venni
 — a #723 (a `FocalZoom` vezérlő-készlete) kapott erről kommentet.
 
+### 11. ⛔ A GÉPI LÁNC KIMERÜLT — nyolc irány kizárva (2026-09-09, 228. kör, #2746)
+
+A 228. kör az utolsó gépi jelöltet, a `NestedImageOperation` keverő ágát vitte
+végig. **Ott sincs.** Ezzel a `.picasa.ini`-vezérelt renderre nézve a bináris
+oldali lehetőségek elfogytak, és ezt kimondani helyesebb, mint újabb kört
+nyitni rá.
+
+#### 11.1 A `Nested` lánca — nincs benne aritmetika
+
+| mit néztem meg | eredmény |
+|---|---|
+| slot 0 (`0x00bc1280`, 73 b) | 0 aritmetikai utasítás |
+| slot 1 (`0x00bc12d0`, 5 b) → `jmp 0x00bc4900` | thunk |
+| slot 7 (`0x00bc12e0`, 246 b) | 0 aritmetikai utasítás |
+| slot 6 (`0x00bbf920`, 6 b) | **stub**: `or eax,-1; ret` (225. kör) |
+| a hívottak: `0x00bc4880` (123 b), `0x00bc13e0` (61 b), `0x00638ff0` (78 b) | 0 aritmetikai utasítás |
+| **`0x00bc4900`** (474 b) — a `Nested` attribútum-olvasója | 5 lebegőpontos utasítás, **mind `fld`/`fstp`** (érték-mozgatás), **osztás és szorzás nincs** |
+
+**A `BlendAlpha` hivatkozása pontosan EGY** — a `0x00bc4999`-nél, ebben az
+attribútum-olvasóban (indextől független pásztázás, a `fullres`-re állított
+kontrollal: `0x008ff714`, előkerült).
+
+⇒ A mért `round(i·255/(Steps−1))` rács **`Steps−1`-gyel osztást kíván**. A
+`Nested` láncában ilyen művelet nincs.
+
+#### 11.2 A nyolc kizárt irány — együtt
+
+| # | irány | kör | mi zárta ki |
+|---|---|---|---|
+| 1 | képponti alkalmazó (`0x00bcb2f0`) | 221 | 744 b törzs, 0 osztás, 0 lebegőpontos |
+| 2 | névre kereső megkerülő út | 223 → 226 | indextől függetlenül **1** hivatkozás (a regisztráló) |
+| 3 | a `4`-es visszatérési kód | 222 | 2806 hívóhely, 0 vizsgálja (3 hamis pozitív, elolvasva) |
+| 4 | a munkavégző (`0x00bb5b60`) | 223 | 1510 b, egyetlen osztás, konstansa **50,0** (mintaméret) |
+| 5 | a palettaméret | 224 | `Steps−1` = **7** szín vs a mért **11** egyedi szín |
+| 6 | a `fullres` jelző | 227 | a `2`-es predikátum a szállított leíróban **csak a `FocalZoom`-ra** áll |
+| 7 | a `Nested` slotjai | 228 | 0 aritmetikai utasítás |
+| 8 | a `Nested` attribútum-olvasója | 228 | a `BlendAlpha` egyetlen hivatkozója, 0 osztás/szorzás |
+
+#### 11.3 Amit ez a kérdésről mond — és amit NEM
+
+**A rács a szűrő-láncban sehol nem keletkezik.** Ez nyolc, egymástól független
+mérés eredménye, mindegyik címmel.
+
+⚠️ **Amit ez NEM jelent:** hogy a rács-olvasat hibás. A viselkedés-mérés
+(`ΔE 0,268`, 97,6 % a rácson) továbbra is megerősített. A két oldal
+**összeegyeztetése** a nyitott kérdés — és ehhez a bináris oldalán elfogytak a
+megnevezhető jelöltek.
+
+#### 11.4 Ami hátravan — és NEM gépi munka
+
+1. **#2770** (`felhasználóra-vár`): egy második, természetes átmenetes kép
+   exportja `Steps = 8`-cal. Ez **a rács-hipotézist** dönti el (képfüggő-e a
+   leképezés) — ma erre nincs mérésünk.
+2. Ha a #2770 azt adja, hogy a leképezés **képfüggő**, akkor az oktree-út
+   mégis futhat, és a 8-as pont (a palettaméret-ellentmondás) magyarázatra vár.
+3. Ha **képfüggetlen**, akkor a rács forrása a szűrő-láncon KÍVÜL van (a
+   mentési/JPEG-út vagy a színkezelés) — az új, még nem vizsgált terület.
+
+⛔ **Amíg a #2770 nem érkezik meg, erre a kérdésre gépi kört nyitni nem
+érdemes.** A jegy ezért `blocked`, nem `ready`.
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
