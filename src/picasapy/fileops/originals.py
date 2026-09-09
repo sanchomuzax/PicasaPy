@@ -120,6 +120,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
+
+from picasapy.fileops.safe_move import safe_move
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # a futásidejű import késleltetett (ld. `_move_ini_sections`)
@@ -130,7 +132,7 @@ if TYPE_CHECKING:  # a futásidejű import késleltetett (ld. `_move_ini_section
 #: A `"picasapy.fileops.originals.shutil.move"` sztringes rögzítés a GLOBÁLIS
 #: `shutil`-t írja át, tehát a „bukjon el a mozgatás" szimuláció a teszt
 #: minden más mozgatását is elrontja — a takarítást is.
-_move = shutil.move
+_move = safe_move  # #998: bukáskor nem marad másolat
 
 #: A `shutil.copy2` MODULSZINTŰ fogantyúja (#1450) — ugyanaz a gondolat.
 #:
