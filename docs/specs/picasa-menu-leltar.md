@@ -806,6 +806,11 @@ keresés talált. A jelentést a tábla adja.
 
 ## 8.7 ⛔ ÖNHELYESBÍTÉS: ez a szál NAGYRÉSZT ÚJRAFELFEDEZÉS volt — a testvérlap már tudta (2026-09-10, #2821)
 
+> ⭐ **A szál LEZÁRVA (2026-09-10).** A 8.7/d-ben nyitva hagyott utolsó két
+> tétel (`dstkey`, `keymap`) **sem volt nyitott** — a
+> [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) **2.2** és **2.3**
+> szakasza megválaszolja. A #2821 zárva.
+
 **A [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) 3. szakasza a
 #2821 három menetének a LÉNYEGÉT már tartalmazta**, és részletesebben.
 Amit ott már ki volt mérve:
@@ -910,10 +915,31 @@ almenü-mutató kerül a `+0x0c` mezőkbe közvetlen értékként, például
 (`0x00a6af5c`). A 133 felső szintű tétel és a 173 rekord közti 40-es
 különbség is ezekben az almenükben van.
 
-### 8.7/d Ami ebből NYITVA marad
+### 8.7/d ⛔ ÖNHELYESBÍTÉS: ez a kettő SEM volt nyitott (2026-09-10)
 
-- a `dstkey` attribútum jelentése (a mintában 48/48 tételen `""`);
-- a `keymap id="0"` — van-e több keymap, és mi választ közülük.
+Az előző változat azt írta, hogy a `dstkey` és a `keymap id` nyitva marad,
+azzal az indoklással, hogy „a `gyorsbillentyuk.md` 7. szakasza nem sorolja
+őket". **A hivatkozás volt hibás:** nem a 7.-ben vannak, mert a **2.2** és a
+**2.3** szakasz **megválaszolja** őket.
 
-Mindkettő a `gyorsbillentyuk.md` hatóköre; ott a 7. szakasz sorolja, mit
-nem vizsgált az a kör, és ez a kettő nincs benne.
+| tétel | hol van a válasz | a válasz |
+|---|---|---|
+| **`dstkey`** | `gyorsbillentyuk.md` **2.2** | a **kanonikus (angol)** billentyű, amire a program lefordítja; **üres `dstkey` = nincs átképezés**, a `srckey` maga a kanonikus. A cél-oldali módosítók (`dctrl`/`dshift`/`dalt`) **csak az olasz táblában** fordulnak elő. |
+| **`keymap`** | `gyorsbillentyuk.md` **2.3** | a DLL 3084 `XMLF` erőforrásából **pontosan nyolc** keymap (alap + `DE`, `ES`, `FR`, `IT`, `NL`, `PT-BR`, `RU`), erőforrás-eltolásokkal és az átképezett rekeszek számával. **Magyar nincs** ⇒ a magyar Picasa az **angol alaptáblát** használja. |
+
+⇒ **A #2821 szálában nem marad nyitott kérdés.**
+
+⛔ **A hiba mechanizmusa, harmadszor ugyanaz:** a testvérlapnak a *„mit nem
+vizsgáltam"* szakaszát olvastam, nem a **tartalomjegyzékét**. Egy „nyitott
+kérdés" állítás előtt a lap **saját szakaszlistája** a kötelező lépés
+(`grep -n '^## \|^### '`) — a 249. kör tanulsága, amit itt még nem
+alkalmaztam.
+
+### 8.7/e Ami MÉG kimaradhatott — kimondva
+
+Ez a szakasz (8.5–8.7) a `+0x08` mezőről szól. A `gyorsbillentyuk.md`
+**7. szakasza** azt sorolja, amit AZ A kör nem vizsgált; abból a `+0x08`-hoz
+tartozó tételek: **nincs olyan**. Amit ott nyitva hagyott (a menün kívüli
+billentyűk *(billentyű, módosító) → cmd* leképezése, a 12 kötés nélküli
+rekesz, a videólejátszó és a szerkesztőpanel billentyűi), az **nem ennek a
+lapnak a hatóköre**.
