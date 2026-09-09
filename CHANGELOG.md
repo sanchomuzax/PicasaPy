@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.358] – 2026-09-09
+
+### Javítva
+
+- **Windowson a diavetítés megjelenítési módja be sem töltötte volna a képet**
+  (#1640). Az előző verzióban bevezetett út a `C:\...` alakú útvonalakban a
+  meghajtó betűjét internetes cím-előtagnak olvasta, ezért az útvonal fele
+  elveszett: a vetített kép üresen maradt volna. Linuxon a hiba nem
+  jelentkezett. (Kiderítette a Windows-tesztláb, amelynek a bukását a #1864
+  óta látjuk.)
+
 ## [0.8.357] – 2026-09-09
 
 ### Javítva
