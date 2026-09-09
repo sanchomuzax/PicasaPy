@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.355] – 2026-09-09
+
+### Javítva
+
+- **A kollázs jobbklikk-menüjében a „Forgatás igazítása" többé nem kínál
+  olyat, ami nem történik meg** (#1162). Azokon a kollázs-témákon, amelyek nem
+  támogatják a forgatást (Rács, Indexkép, Keretrács, Többszörös expozíció,
+  Szabályos rács), a menütételre kattintva eddig **némán nem történt semmi** —
+  a program szándékosan nem forgatott, de ezt a menü nem mutatta. Mostantól a
+  tétel szürke, ahogy a keret-almenü és a bal oldali forgató gombsor esetében
+  is. A program viselkedése nem változott, csak látszik.
+
 ## [0.8.354] – 2026-09-09
 
 ### Javítva

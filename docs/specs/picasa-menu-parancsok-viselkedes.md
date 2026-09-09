@@ -1054,7 +1054,7 @@ tételket kétszer építi — egy második azonosító-párral (`HIDE`=`0x9c72`
 > **diszpécser-oldalról** is ellenőrizendő: a kezelő-paraméter
 > (írás/törlés, 90/270) dönt, nem a menüépítő blokkja.
 
-### 34.2 A forgatás — és a `rotate=` bit jelentése (#1162 LEZÁRVA)
+### 34.2 A forgatás — és a `rotate=` KULCS jelentése
 
 A menü-forgatás a `0x005eef30`-ra fut (a `thumbui/rotateright`/
 `rotateleft` névparancsok is ide érkeznek: `0x5dafcd` → `push 0x5a`,
@@ -1072,9 +1072,19 @@ A `rotate=` kulcs a **negyedfordulat** tárolója: a 864 ini-es korpuszban
 213/27) — **szabad szög sehol**. A szabad egyenesítés (Straighten) a
 `crop64` dőlése, nem a `rotate=`.
 
-⇒ **#1162 kérdésének válasza: a `rotate` bit és a menü UGYANAZ a
-mechanizmus** — a `rotate=rotate(N)` negyedfordulatot tárol, a szabad
-forgatás nem ebbe a kulcsba való. A mi oldalunkon
+⇒ **A fotó-forgatás és a `rotate=` kulcs UGYANAZ a mechanizmus** — a
+`rotate=rotate(N)` negyedfordulatot tárol, a szabad egyenesítés nem ebbe a
+kulcsba való.
+
+⛔ **ÖNHELYESBÍTÉS (2026-09-09, #1162): ez a szakasz NEM a #1162 kérdésére
+válaszol.** A jegy a **kollázs téma-képesség-maszkjának** `rotate` bitjéről
+szól (`collage/themes.py` 7. bit, a #1151 Keret-almenü párja), nem a
+fotó-forgatás `rotate=` ini-kulcsáról. A két dolog neve egyezik, a
+mechanizmusuk nem: az egyik a `.picasa.ini` negyedfordulat-tárolója, a másik
+a kollázs-témák képesség-bitje. A #1162 ezen a szakaszon **nem záródott le** —
+a maszkbit jelentése a `kollazs-panel-ui-spec.md`-ben áll, „erős" fokozaton.
+*(Tanulság: a névegyezés nem funkcióegyezés — a lezárás előtt a jegy TÖRZSÉT
+kell elolvasni, nem a kulcsszót keresni.)* A mi oldalunkon
 (`photo_ops_controller.py` `_rotate_many`) a `rotate({steps})` 0..3-ig
 **egyezik**; egyetlen eltérés: a videókat hallgatólagosan kihagyjuk
 (#103), az eredeti `IDS_ROT_TYPEFAILED`-et ad vegyes kijelölésnél.
@@ -1151,7 +1161,8 @@ webalbum nélkül nálunk nincs miről átvenni.
 Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
-- **LEZÁRVA:** #1162 (a rotate bit = negyedfordulat-tároló, a menüvel
+- **NEM ez zárja le a #1162-t** (az a kollázs-maszk bitje — ld. az
+  önhelyesbítést a 34.2-ben): a `rotate=` kulcs = negyedfordulat-tároló, a menüvel
   azonos mechanizmus); a forgatás két szöge és szövegei (34.2); a
   revert szöveg-hármasa és régió-tokenjei (34.3); a Reset Faces
   három ága (34.4).
