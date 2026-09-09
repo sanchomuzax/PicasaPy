@@ -323,3 +323,111 @@ class TestSzovegbeniEmlites:
 
     def test_a_kozvetlen_argumentum_meg_a_hatodik_szoban_is_szamit(self):
         assert kapu._tag_push("git push --quiet --force-with-lease origin v9.9.9")
+
+
+class TestGlobalisGitKapcsolo:
+    """#66: `git -C <út> push` — a kapu NÉMÁN átengedte.
+
+    A `_parancsok` a `git\\s+push` alakot kereste, tehát bármelyik globális
+    git-kapcsoló (`-C`, `-c`, `--git-dir`) elrejtette a pushot. Mérve
+    2026-09-09-én: verzióemeléssel a munkafában a `-C`-s írásmód átment,
+    a csupasz ugyanaz blokkolt.
+    """
+
+    def test_a_minusz_C_s_push_is_BLOKKOL(self, tmp_path):
+        repo = _mini_repo(tmp_path)
+        (repo / "pyproject.toml").write_text('version = "0.2.0"\n', encoding="utf-8")
+        _git(repo, "commit", "-qam", "verzió")
+
+        indok = kapu._blokkolando(f"git -C {repo} push origin main", str(repo))
+
+        assert indok is not None and "verzióemelést" in indok
+
+    def test_a_minusz_c_ertekadas_utan_is_BLOKKOL(self, tmp_path):
+        repo = _mini_repo(tmp_path)
+        (repo / "pyproject.toml").write_text('version = "0.2.0"\n', encoding="utf-8")
+        _git(repo, "commit", "-qam", "verzió")
+
+        indok = kapu._blokkolando("git -c user.name=x push origin main", str(repo))
+
+        assert indok is not None
+
+    @pytest.mark.parametrize("cmd", [
+        "git -C /valahol status",
+        "git -C /valahol log --oneline -5",
+        "git -c core.pager=cat diff",
+    ])
+    def test_az_artalmatlan_minusz_C_s_parancs_ATMEGY(self, cmd, tmp_path):
+        """Kapu-ellenőrzés: a globális kapcsoló önmagában nem gyanús."""
+        assert kapu._blokkolando(cmd, str(tmp_path)) is None
+
+
+class TestAutoMerge:
+    """#66: `gh pr merge` SZÁM NÉLKÜL — a kapu csendben átengedte.
+
+    Az éjszakai kör minden PR-t `--auto`-val nyit és olvaszt, szám nélkül
+    (az aktuális ág PR-je). A `_pr_verziot_emel` a szám hiányában azonnal
+    `False`-szal tért vissza — nyolc verzióemelés ment ki mellette
+    2026-09-08 éjjel. A `gh pr diff` argumentum nélkül ugyanazt az ágat
+    nézi, tehát a kérdés így is feltehető.
+    """
+
+    @staticmethod
+    def _hamis_gh(monkeypatch, *, diff: str) -> list[list[str]]:
+        """A `gh` hívásait rögzíti, és a megadott diffet adja vissza."""
+        hivasok: list[list[str]] = []
+
+        class Eredmeny:
+            stdout = diff
+
+        def hamis_run(argv, **_):
+            hivasok.append(list(argv))
+            return Eredmeny()
+
+        monkeypatch.setattr(kapu.subprocess, "run", hamis_run)
+        return hivasok
+
+    _VERZIO_DIFF = (
+        "diff --git a/pyproject.toml b/pyproject.toml\n"
+        '-version = "0.1.0"\n+version = "0.2.0"\n'
+    )
+
+    def test_a_szam_nelkuli_merge_is_BLOKKOL(self, monkeypatch, tmp_path):
+        hivasok = self._hamis_gh(monkeypatch, diff=self._VERZIO_DIFF)
+
+        assert kapu._pr_verziot_emel("gh pr merge --auto --squash", str(tmp_path))
+        # A `gh pr diff` argumentum NÉLKÜL fut — az aktuális ág PR-jére.
+        assert hivasok == [["gh", "pr", "diff"]]
+
+    def test_a_szamos_merge_TOVABBRA_IS_blokkol(self, monkeypatch, tmp_path):
+        hivasok = self._hamis_gh(monkeypatch, diff=self._VERZIO_DIFF)
+
+        assert kapu._pr_verziot_emel("gh pr merge 2786 --auto", str(tmp_path))
+        assert hivasok == [["gh", "pr", "diff", "2786"]]
+
+    def test_verzioemeles_NELKULI_merge_atmegy(self, monkeypatch, tmp_path):
+        """Kapu-ellenőrzés: a hétköznapi beolvasztás nem akadhat el."""
+        self._hamis_gh(monkeypatch, diff=(
+            "diff --git a/README.md b/README.md\n-a\n+b\n"))
+
+        assert not kapu._pr_verziot_emel("gh pr merge --auto", str(tmp_path))
+
+    def test_merge_nelkul_egyaltalan_nem_kerdez(self, monkeypatch, tmp_path):
+        """Fog: `gh pr diff` hívása minden parancsra 30 mp-es időkorlátot
+        akasztana a normál munkára."""
+        hivasok = self._hamis_gh(monkeypatch, diff=self._VERZIO_DIFF)
+
+        assert not kapu._pr_verziot_emel("gh pr list --state open", str(tmp_path))
+        assert hivasok == []
+
+    def test_a_KESON_emlitett_szam_nem_szamit(self, monkeypatch, tmp_path):
+        """Prózában egy jóval később említett szám IDEGEN PR diffjét kérné
+        le, és azon blokkolna. Az ablak ugyanaz az óvatosság, mint a
+        `_PUSH_ABLAK`-nál."""
+        hivasok = self._hamis_gh(monkeypatch, diff=self._VERZIO_DIFF)
+
+        kapu._pr_verziot_emel(
+            "gh pr merge --auto --squash --delete-branch # a 2786 mintajara",
+            str(tmp_path))
+
+        assert hivasok == [["gh", "pr", "diff"]]
