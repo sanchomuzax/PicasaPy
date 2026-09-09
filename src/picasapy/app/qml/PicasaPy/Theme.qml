@@ -61,6 +61,40 @@ QtObject {
     readonly property color panelSelectionText: "#ffffff"
     readonly property color panelYearText: dark ? "#9c988f" : "#7a776f"  // mono évszám-címke
 
+    // #1488: a `constants.ui` lista-hasáb (`alist_*`) ÖT élő színe, ami a
+    // #384 köréből kimaradt. Az értékek a szállított fájlból olvasva
+    // (`0xAARRGGBB`, az alfa mindegyiknél FF).
+    //
+    // A SÖTÉT párok a mi kiegészítésünk (az eredetinek nincs sötét témája),
+    // és NEM ízlésből születtek:
+    //
+    // * a három háttér-kitöltés (`listHighlightAlt`, `listCategoryBg`,
+    //   `listStickyBg`) megtartja az eredeti színezetét és telítettségét,
+    //   a világosságot pedig a MEGLÉVŐ sötét panel-fejlécétől veszi
+    //   (`panelHeaderBg`: 22%) — így ugyanabba a rétegrendbe illik, amibe a
+    //   világos oldalon tartozik. A tükrözött világosság (12%, 9%, 11%)
+    //   itt majdnem feketét adna, tehát a `folderTitle` SZÖVEG-szabálya
+    //   erre a célra nem jó.
+    // * a `listDotMarker` nem kitöltés, hanem LÁTHATÓ jelölő: a sötét
+    //   párja ugyanazt a kontrasztarányt tartja a sötét oldalsáv fölött
+    //   (1,675), mint az eredeti a világos lista (#F3F3F3) fölött.
+    // * a `listDragTarget` az eredetiben egy hajszállal a kiemelés alatt
+    //   van (#82A6BD vs #83A7BD — mindhárom csatornán eggyel kisebb); a
+    //   sötét pár ugyanezt a viszonyt tartja a `selectionBlue` sötét
+    //   párjához (#4d6b80 → #4c6a7f). A különbség szándékos: az eredeti
+    //   így jelzi, hogy a húzás célpontja NEM ugyanaz, mint a kijelölés.
+    //
+    //: `alist_hicolor2_win = #E5E2DA` — a lista MÁSODIK kiemelőszíne
+    readonly property color listHighlightAlt: dark ? "#423d2e" : "#e5e2da"
+    //: `alist_dragcolor = #82A6BD` — a fogd-és-vidd célpont jelzése
+    readonly property color listDragTarget: dark ? "#4c6a7f" : "#82a6bd"
+    //: `alist_catcolor = #EDEAE4` — kategória-fejléc (csoportsor) háttere
+    readonly property color listCategoryBg: dark ? "#433c2d" : "#edeae4"
+    //: `alist_dotcolor = #BEBEBE` — a lista pont-jelölője
+    readonly property color listDotMarker: dark ? "#4a4a4a" : "#bebebe"
+    //: `alist_stickycolor = #EAE7DC` — a rögzített (sticky) fejléc háttere
+    readonly property color listStickyBg: dark ? "#46402a" : "#eae7dc"
+
     // ------- lightbox / indexkép-csoport -------
     // #2043: az eredeti Picasa `runtime/constants.ui` fájljának „Album
     // Layout" blokkja — `alayout_titleColor = #634B45`, meleg sötétbarna.
