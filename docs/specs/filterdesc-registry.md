@@ -4902,3 +4902,93 @@ Két, egymást kiegészítő rész:
 *Bizonyítottsági fok: **megerősített** az 1–3. szakasz (bájtszintű
 számlálás, egyértelmű hívólista, utasításszintű olvasás); a 4. szakasz
 kérdései **nyitottak**, a megszerzés útja megnevezve.*
+
+## ✅ MEGOLDVA: az `Invert` futásidőben `oneclick` lesz — a leíró-elemző ELŐLÉPTETI (2026-09-09, 235. kör, #2125)
+
+Négy körön át állt az ellentmondás: a jelvény feltétele mérve `mode == 1`, az
+`Invert` a leíróban `mode="effect"` (4), a jelvény mégis ott van rajta. A hiba
+a **modellünkben** volt, ahogy a 234. kör kimondta: azt igazoltuk, hogy a
+leíró `+4` mezőjének **az elem NYITÓTAGJÁBAN** egy írója van — azt nem, hogy a
+program egészében.
+
+### 1. A hiányzó szem: előléptetés a `</filter>` lezárásakor
+
+A proveniencia-csatornát végigmérve (minden `[ctx+0x2c]` olvasás után írás a
+leíró `+4`-ébe, a `0x008fe000`–`0x00906000` tartományban bájtszintű mintával)
+**három** író adódott, nem egy. A harmadik a lezáró-kezelőben áll, közvetlenül
+a `"filter"` elemnév egyeztetése után (`0x0090016e`, 7 bájtos `repe cmpsb` a
+`0x00c843d8`-ra):
+
+```
+0x00900180  mov  eax, [ebp + 0x2c]        ; a leíró
+0x00900183  cmp  dword ptr [eax + 4], 4   ; mode == effect ?
+0x0090018a  jne  0x9001b0
+0x0090018c  cmp  byte  ptr [eax + 0x38], dl   ; (dl = 0)
+0x0090018f  jne  0x9001b0
+0x00900191  cmp  byte  ptr [eax + 0xa1], dl
+0x00900197  jne  0x9001b0
+0x00900199  cmp  byte  ptr [eax + 0x80], dl
+0x0090019f  jne  0x9001b0
+0x009001a1  cmp  dword ptr [eax + 0x84], edx
+0x009001a7  jne  0x9001b0
+0x009001a9  mov  dword ptr [eax + 4], 1   ; ⭐ MODE := 1 (oneclick)
+```
+
+⇒ **egy `mode="effect"` szűrő, amelynek ez a négy mezője üres marad a törzs
+feldolgozása után, futásidőben `oneclick`-ké válik** — és ezért kap kék
+jelvényt. A négy mezőt a `<filter>` **gyerekelemei** töltik (a nyitótag csak a
+`+4`, `+8`, `+0xd8`…`+0xdf` mezőket írja, `0x008ff847`–`0x008ff891`); a
+gyakorlatban ezek a **felhasználói vezérlők** tárolói.
+
+### 2. Kontroll: a szabály MIND A 24 megfigyelt csempére teljesül
+
+A leíró oldaláról a „nulla vezérlő" próbája: van-e a `<filter>` törzsében
+`<slider>`, `<colorwheel>`, `ctrl:*`, `mx:*` vagy névtér nélküli
+`HSlider*`/`VSlider*` elem. Előrejelzés = `mode=="oneclick"` **vagy** nulla
+vezérlő; megfigyelés = a `research/#1869-effekt-ful-kis-kek-jel/` két
+felvételén mért jelvények.
+
+| fül | egyezés |
+|---|---|
+| 3. (12 csempe) | 12/12 |
+| 4. (12 csempe) | 12/12 |
+| **eltérés** | **0** |
+
+*(A próba két saját hibáját a kontroll fogta meg: először a `ctrl:`/`mx:`
+névterű vezérlők, majd a névtér nélküli `HSliderPlus` maradt ki a mintából —
+mindkétszer az `assert` állította meg a jelentést. A vezérlő-készlet a
+javítás után zárt.)*
+
+### 3. A szállított leíróban PONTOSAN EGY szűrő esik az előléptetés alá
+
+A 84 szűrő végigmérve: `mode="effect"` **és** nulla vezérlő ⇒ **`Invert`**, és
+csak az. Az eredetileg `oneclick` 12 (`autobacklight, autocolor, autocontrast,
+autolight, bw, enhance, grain, grain2, movieend, moviestart, sepia, warm`)
+mellé tehát futásidőben **13.** lép be az `Invert`.
+
+⇒ **A tulajdonos megfigyelése helyes volt, a mechanizmus is helyes volt** — a
+kettő közé az előléptetés hiányzott. Az ellentmondás megszűnt.
+
+### 4. Nálunk MA — mérve
+
+`src/picasapy/render/registry.py: one_click_keys()` a `mode == "oneclick"`
+bejegyzéseket adja vissza: **12 kulcs**. A `registry_data.py:375` szerint az
+`invert` nálunk `"effect"`, tehát a Színinvertálás csempéjén **nincs**
+jelvény. Az eredetiben van. ⇒ termékoldali teendő (külön jegy): az
+`one_click_keys()` vegye fel az előléptetést is, azaz `effect` + nulla vezérlő
+⇒ jelvény; a várt eredmény **13 kulcs**.
+
+### 5. Ami ebből NYITVA marad — pontosan
+
+A négy mező (`+0x38`, `+0xa1`, `+0x80`, `+0x84`) **jelentése** mérésből
+következtetett, nem közvetlenül kiolvasott: a „felhasználói vezérlő" olvasat a
+24/24 egyezésen és a 84 szűrős kimerítő pásztázáson nyugszik. A közvetlen
+lezáráshoz a mezők ÍRÓIT kell megnevezni a gyerekelem-kezelőkben (jelöltek:
+`0x00903a48`, `0x0090407f`, `0x00904109`, `0x0090421c`, `0x00904338`,
+`0x0090436f` a `+0x38`-ra és `0x00900e1a` a `+0x84`-re). Ez a szabály
+ÉRVÉNYESSÉGÉT nem érinti, csak a mezők nevét.
+
+*Bizonyítottsági fok: **megerősített** az 1–4. szakasz (utasításszintű
+előléptetés, 24/24 kontroll nulla eltéréssel, kimerítő 84-es pásztázás, a mi
+oldalunk mért állapota); az 5. szakasz **nyitott**, a megszerzés útja
+megnevezve.*
