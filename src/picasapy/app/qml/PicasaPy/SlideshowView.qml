@@ -13,6 +13,12 @@ Rectangle {
     visible: false
 
     property var photosModel: null
+    // #1640: az AKTÍV megjelenítési mód — a vetített kép URL-jének valódi
+    // argumentuma (`displayUrlAt(index, mód)`). A hívó (Main.qml) köti a
+    // `controller.displayMode`-hoz; így a kötés módváltáskor újraértékelődik.
+    // Eldobott referenciával (`(controller.displayMode, url)`) MÉRVE nem
+    // működött: a dia a nyers fájlnál maradt.
+    property string displayMode: ""
     property int currentIndex: -1
     property int intervalMs: 3000
     property bool playing: false
@@ -112,12 +118,16 @@ Rectangle {
         rotation: iniSteps * 90
         // #1640: a megjelenítési mód (Projektor mód stb.) a NYERS fájl
         // URL-jén nem látszik — a `displayUrlAt` aktív módnál a
-        // `displayphoto` szolgáltatóra vált, mód nélkül a sima file://-t
-        // adja vissza. A `controller.displayMode` referencia SZÁNDÉKOS: ettől
-        // értékelődik újra a kötés módváltáskor (a modell nem jelez).
+        // `displayphoto` szolgáltatóra vált, mód nélkül a sima file://-t adja
+        // vissza.
+        //
+        // ⚠️ A mód VALÓDI ARGUMENTUM, nem eldobott referencia. Az első
+        // változat `(controller.displayMode, …)` alakú vessző-kifejezés volt,
+        // és MÉRVE nem hozott létre kötés-függőséget: módváltás után a dia
+        // URL-je a nyers fájlé maradt, a mód némán elveszett.
         source: show.visible && show.photosModel && show.currentIndex >= 0
-                ? (controller.displayMode,
-                   show.photosModel.displayUrlAt(show.currentIndex))
+                ? show.photosModel.displayUrlAt(
+                      show.currentIndex, show.displayMode)
                 : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: Qt.platform.pluginName !== "offscreen"
@@ -132,9 +142,8 @@ Rectangle {
         // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
         // következő dia egy pillanatra a festetlen képet villantaná
         source: show.visible && show.photosModel
-                ? (controller.displayMode,
-                   show.photosModel.displayUrlAt(
-                       show.nextPhotoIndex(show.currentIndex, 1)))
+                ? show.photosModel.displayUrlAt(
+                      show.nextPhotoIndex(show.currentIndex, 1), show.displayMode)
                 : ""
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true

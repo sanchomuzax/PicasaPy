@@ -226,6 +226,16 @@ def _build_qml_app(qt_app, tmp_path):
     engine.addImageProvider("thumbs", SzinkronKepSzolgaltato())
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
+    # #1640: a diavetítés teljes felbontású, MÓD-TUDATOS szolgáltatója. ⚠️ A
+    # harness a szolgáltató-listát KÉZZEL tükrözi az `application.py`-ból: aki
+    # új szolgáltatót vezet be és ezt kihagyja, a QML-tesztekben FEKETE képet
+    # kap, és a hiba a saját kódjának látszik (mérve a #1640-ben).
+    from picasapy.app import display_photo_provider
+
+    engine.addImageProvider(
+        display_photo_provider.PROVIDER_NAME,
+        display_photo_provider.DisplayPhotoProvider(),
+    )
     engine.addImageProvider("collagepreview", controller.collage_preview_provider)
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)

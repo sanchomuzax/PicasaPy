@@ -46,6 +46,7 @@ from __future__ import annotations
 import logging
 from urllib.parse import parse_qs, unquote
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -94,7 +95,13 @@ class DisplayPhotoProvider(QQuickImageProvider):
             _log.warning("a diavetítés képe nem tölthető be: %s", utvonal)
             return QImage()
         if requestedSize is not None and requestedSize.width() > 0:
-            kep = kep.scaledToWidth(requestedSize.width(), mode=1)
+            # ⚠️ A `mode=1` NEM működik (mérve: `ValueError: … called with
+            # wrong argument values` a QML-hívásban, #1640) — a PySide az
+            # enumot várja. A hiba csak a QML-úton jött elő: az egységpróba
+            # `None` méretet adott át, tehát ez az ág méretlen volt.
+            kep = kep.scaledToWidth(
+                requestedSize.width(), Qt.TransformationMode.SmoothTransformation
+            )
         kep = apply_display_mode_to_qimage(kep, mod)
         if size is not None:
             size.setWidth(kep.width())

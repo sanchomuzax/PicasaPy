@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.359] – 2026-09-09
+
+### Javítva
+
+- **A diavetítés megjelenítési módja élesben nem is működött — most tényleg
+  működik** (#1640). Az előző két verzió a lánc darabjait javította, de a
+  felületen a vetített kép **továbbra is festetlen maradt**: két hiba volt még
+  benne, és mindkettő csak a valódi, kirajzolt felületen jött elő (a program
+  hibanaplójában némán). Most a kirajzolt képpontokat mérő őr is zöld.
+
 ## [0.8.358] – 2026-09-09
 
 ### Javítva
