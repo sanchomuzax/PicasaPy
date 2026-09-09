@@ -91,12 +91,25 @@ _NYOMATEK = re.compile(
 _MIN_SZO = 4
 
 
+#: A GitHub-eszköz MINDEN írásmódja: csupasz `gh`, `gh-bot`, és a bot bármilyen
+#: útvonallal (`./eszkozok/gh-bot`, `~/picasapy-agent/eszkozok/gh-bot`,
+#: abszolút út).
+#:
+#: ⛔ **#72: eddig csak a csupasz `gh` alakot kereste** — miközben a projekt
+#: szabálya szerint GitHub-műveletet KIZÁRÓLAG a `gh-bot`-tal szabad kiadni.
+#: Az őr így élesben soha nem futott le: 2026-09-09-én átengedett egy
+#: egybetűs helyőrző címmel kiadott átnevezést, ugyanaznap viszont KÉTSZER
+#: blokkolta a jelenségről szóló PRÓZÁT, mert abban ott állt a csupasz alak.
+#: A kapu a szöveget fogta meg, a műveletet nem.
+_GH = r"(?:[\w.~-]*(?:/[\w.~-]+)*/)?gh(?:-bot)?"
+
+
 def _jegycimek(cmd: str) -> list[str]:
     """A parancsban szereplő JEGY-címek (`gh issue create/edit --title`).
 
     A `gh pr create --title` szándékosan kimarad: ott más a konvenció."""
     cimek: list[str] = []
-    minta = _POZICIO + r"gh\s+issue\s+(?:create|edit)\b(.*)"
+    minta = _POZICIO + _GH + r"\s+issue\s+(?:create|edit)\b(.*)"
     for talalat in re.finditer(minta, cmd):
         maradek = re.split(r"[|;&]", talalat.group(1))[0]
         try:
