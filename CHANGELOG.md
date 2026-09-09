@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.363] – 2026-09-09
+
+### Javítva
+
+- **A Picasával közben készített kollázs magától megjelenik** (#1123). Ha a
+  Google Picasa és a PicasaPy egyszerre dolgozik ugyanazon a gyűjteményen, a
+  Picasával mentett kollázs (és film) eddig csak az ötperces körben bukkant
+  fel — hálózati meghajtón a program nem kap értesítést a másik gép írásáról,
+  a tízmásodperces gyors ellenőrzés pedig csak azokat a mappákat nézte,
+  amelyek épp a rácson látszanak. A kollázs- és film-célmappa mostantól
+  minden körben sorra kerül, tehát a kép néhány másodperc múlva ott van. A
+  hálózati meghajtó terhelése ettől mappánként két-három művelettel nő
+  tízmásodpercenként — nagyságrendekkel a mért korlát alatt.
+
 ## [0.8.362] – 2026-09-09
 
 ### Belső

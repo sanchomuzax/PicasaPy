@@ -119,6 +119,33 @@ FOLDER_POLL_MS = 10_000
 #: ezért nem szabad a pecsétnek tévesen elavultat jelentenie.
 SWEEP_FOLDERS_PER_TICK = 8
 
+#: #1123 — a Picasa PROJEKT-mappái, amelyeket az IDEGEN Picasa is ír.
+#:
+#: A tulajdonos bejelentése: „létrehoztam egy kollázst a Picasa 3-mal,
+#: miközben fut a PicasaPy, és a PicasaPy alatt nem jelent meg" — másfél
+#: perc után sem (mérve, 2026-09-05), CIFS-mounton.
+#:
+#: MIÉRT nem hozta be egyik meglévő út sem:
+#:
+#: 1. **inotify**: CIFS/SMB-mounton a távoli gép írásáról egyáltalán nem
+#:    érkezik esemény (`docs/benchmarks/rpi5-sqlite-inotify.md`, mérve).
+#: 2. **a tízmásodperces pecsét-kör** (#1275/#1435): a KIVÁLASZTOTT mappát
+#:    és a rács feedjében látszó mappákat nézi. A feed a BETÖLTÖTT
+#:    fotó-rekordokból épül (`_update_feed_groups`), tehát egy fotó nélküli
+#:    (frissen létrehozott) Kollázsok mappa oda nem is kerülhet be; ami
+#:    pedig bekerül, az a körbeforgó kurzor miatt csak `ceil(N/8)`
+#:    körönként jön sorra — 500 mappánál tíz percenként.
+#: 3. **az ötperces teljes rescan**: ez hozta be — a tulajdonos szava
+#:    szerint „használhatatlanul lassú".
+#:
+#: A #1539 a MI kimenetünkre már megoldotta ezt (`noteOutputWritten`
+#: bejelentővel); idegen program írására bejelentő nem létezik, ott csak
+#: lekérdezés van. Ezért ez a KORLÁTOS, PRIORITÁSOS készlet: a kollázs- és
+#: film-célmappa MINDEN körben sorra kerül, a feedtől és a kurzortól
+#: függetlenül. Költsége mappánként két-három művelet, tehát a pecsét-kör
+#: kerete legfeljebb 24-ről 30 műveletre nő (≈3 művelet/mp) — a NAS mért
+#: 200/mp korlátja alatt marad.
+
 
 def _dedupe_paths(paths: tuple[str, ...]) -> list[str]:
     """Sorrendtartó duplikátum-szűrés a szinkronra küldött mappalistára.
@@ -1072,7 +1099,13 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # legrosszabb esetben is csak a várólistára kerül.
             self._on_folders_dirty([mappa])
             return
-        batch = self._sweep_candidates(mappa)
+        # #1123: a projekt-célmappák a feedtől és a körbeforgó kurzortól
+        # FÜGGETLENÜL, minden körben sorra kerülnek — az idegen Picasa oda ír.
+        batch = tuple(
+            _dedupe_paths(
+                (*self._sweep_candidates(mappa), *self._projekt_kimeneti_mappak())
+            )
+        )
         if not batch:
             # nincs más látszó mappa: a #1275 útja változatlanul
             self._on_folders_dirty([mappa])
@@ -1113,6 +1146,65 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # NÉMÁN sosem frissülne magától. Pont a jegy ellentéte.
             self._sweep_running = False
             raise
+
+    def _projekt_kimeneti_mappak(self) -> tuple[str, ...]:
+        """A Picasa projekt-célmappái, amelyeket körönként megnézünk (#1123).
+
+        Gyorstárazott: a feloldás fájlrendszert ér (a célmappa neve
+        honosított, ezért `letezo_vagy_honos_mappa` megnézi, melyik alak
+        létezik — ld. `collage_output.output_dir`), ezt pedig nem akarjuk
+        tíz másodpercenként megfizetni. A gyorstárat a `rescan()` üríti,
+        tehát legkésőbb öt perc múlva átveszi a megváltozott beállítást
+        vagy az újonnan létrejött mappát.
+
+        A szűrés SZÁNDÉKOSAN itt van, nem a pecsét-fázisban: a
+        `stale_folders` a tárolt pecsét nélküli mappát elavultnak
+        minősíti, a `_on_folders_dirty` pedig a gyökéren kívülit kihagyja
+        — a kettő együtt azt adná, hogy minden körben elindul egy
+        szinkron-szál, ami semmit nem tesz."""
+        gyorstar = getattr(self, "_projekt_kimenet_cache", None)
+        if gyorstar is None:
+            gyorstar = self._projekt_kimenet_felmeres()
+            self._projekt_kimenet_cache = gyorstar
+        return gyorstar
+
+    def _projekt_kimenet_felmeres(self) -> tuple[str, ...]:
+        """A célmappák feloldása és szűrése (létezik · figyelt gyökér alatt
+        · nincs kizárva) — a `_projekt_kimeneti_mappak` gyorstárának
+        tartalma.
+
+        Hiba esetén ÜRES eredmény: ez kényelmi gyorsítás, nem törhet meg
+        tőle a körönkénti alapfrissítés (a #1435 kivétel-hálójának
+        mintája)."""
+        from . import collage_output, collage_prefs, movie_output
+
+        try:
+            beallitasok = self._get_settings()
+            jeloltek = (
+                collage_output.output_dir(
+                    beallitasok.value(collage_prefs.OUTPUT_DIR_KEY)
+                ),
+                movie_output.output_dir(beallitasok.value(movie_output.OUTPUT_DIR_KEY)),
+            )
+        except Exception:
+            logger.debug("#1123: a projekt-célmappák feloldása nem sikerült",
+                         exc_info=True)
+            return ()
+        talalt: list[str] = []
+        for jelolt in jeloltek:
+            ut = str(jelolt)
+            try:
+                if not jelolt.is_dir():
+                    continue  # még létre sem hozták — nincs mit megnézni
+            except OSError:
+                continue  # elérhetetlen (lecsatolt mount)
+            gyoker = self._root_for_folder(ut)
+            if gyoker is None:
+                continue  # a figyelt gyökéren kívül: a szinkron kihagyná
+            if self._folder_manager_path_excluded(ut, gyoker):
+                continue  # a Mappakezelő kizárta — a szinkron kihagyná
+            talalt.append(ut)
+        return tuple(talalt)
 
     def _sweep_candidates(self, current: str) -> tuple[str, ...]:
         """A körönként megnézendő adag a feedben látszó, KIVÁLASZTOTTON
@@ -1198,6 +1290,10 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         self._sync_running = True
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
         # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
+        # #1123: a projekt-célmappák gyorstára itt ürül — így a beállítás
+        # megváltozása vagy egy újonnan létrejött célmappa legkésőbb öt
+        # perc múlva bekerül a tízmásodperces körbe.
+        self._projekt_kimenet_cache = None
         self._start_background(self._sync_worker, name="picasapy-sync-rescan")
 
     def _sync_worker(self) -> None:
