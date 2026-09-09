@@ -353,3 +353,104 @@ kérdés eldőlt**: mind a tizenegy **egyetlen kizáró rádiócsoport** tagja
 és a kinyert azonosítókra (diszasszemblálva + gépi kinyerés). A CSV
 **gépi kinyerés eredménye**: ahol az azonosító üres, ott a minta eltért —
 az ilyen tételt kézzel kell ellenőrizni (9 tétel a 177-ből... pontosan 32).*
+
+---
+
+## 8. A menürekord `+0x04` és `+0x08` mezője — gyorsbillentyű és ikon (2026-09-09, #2819)
+
+**Bizalmi fok: megerősített.** A 7. szakasz a `+0x0a` (parancsazonosító)
+mezőt mérte ki. Ez a szakasz a másik kettőt, a
+`picasa-megjelenitesi-modok.md` **9.3** pontjának kérdésére: a
+Megjelenítési mód almenüben mind a kettő nulla volt — **a többi menüben
+is?**
+
+### 8.1 A módszer és a KONTROLL
+
+A menüépítő (`0x00559150`, 15 495 bájt) törzsét pásztáztam, memóriaplafon
+alatt. A rekordokat nem sorrend, hanem **abszolút célcím** szerint
+csoportosítottam — a 7. szakaszban leírt „egy rekorddal elcsúszik" csapda
+így fel sem merül.
+
+**A rekordot az azonosítja, hogy a `+0x0a` cellájába WORD méretű írás
+történt** (ez a parancsazonosító mező alakja). Ez a szűrő a 207
+nyers jelöltből **173** valódi rekordot hagy meg.
+
+| mérőszám | érték |
+|---|---|
+| abszolút címre író utasítás a menüépítőben | 1469 |
+| ebből `dword` / `word` | 1123 / 346 |
+| nyers rekordkezdet-jelölt (`mov dword [X], eax`) | 207 |
+| **valódi rekord** (word-írás a `+0x0a`-ra) | **173** |
+| **KONTROLL: nem nulla parancsazonosító** | **162 / 173** |
+
+A kontroll a 7. szakasz 140 ellenőrzött azonosítójával összevethető: a
+pásztázó tehát nem üresre fut, a nulla-találatok valódiak.
+
+### 8.2 ⭐ A válasz: VAN gyorsbillentyű és VAN ikon
+
+| mező | nem nulla | a 173-ból |
+|---|---|---|
+| `+0x04` gyorsbillentyű-szöveg | **24** | 14 % |
+| `+0x08` ikonszám (word) | **5** | 3 % |
+
+⚠️ **Módszertani csapda, amibe menet közben beleestem:** a 24-ből
+**négyet** nem közvetlen értékként ír a fordító, hanem `eax`-en át
+(`mov dword ptr [rek+4], eax`, ahol az `eax`-be előbb a sztringcím
+került). Az „olvasd ki az immediate-et" pásztázás ezt a négyet **nem
+látja** — 20-at ad 24 helyett. A négy elveszett tétel épp a leghosszabb
+billentyűnevek: `Delete` és háromszor `Enter`.
+
+### 8.3 A teljes lista
+
+| rekord | parancs | angol felirat | gyorsbillentyű | ikon |
+|---|---|---|---|---|
+| `0x00d6d960` | `0x9d67` | `&New Album...` | `N` | — |
+| `0x00d6d9b0` | `0x9c91` | `&Import From...` | `M` | — |
+| `0x00d6da28` | `0x9d4f` | `&Rename...` | `F2` | 4 |
+| `0x00d6dadc` | `0x9c99` | `&Locate on Disk` | `Enter` | — |
+| `0x00d6daf0` | `0x9c9a` | `&Delete from Disk...` | `Delete` | 4 |
+| `0x00d6db18` | `0xe107` | `&Print...` | `P` | — |
+| `0x00d6db2c` | `0x9c97` | `&E-Mail...` | `E` | — |
+| `0x00d6db80` | `0x9d39` | `Cu&t` | `X` | — |
+| `0x00d6db94` | `0x9d3b` | `&Copy` | `C` | — |
+| `0x00d6dba8` | `0x9d3c` | `&Paste` | `V` | — |
+| `0x00d6dc48` | `0x9cb8` | `Select &All` | `A` | — |
+| `0x00d6dc70` | `0x9c47` | `&Invert Selection` | `I` | — |
+| `0x00d6dc84` | `0x9c90` | `C&lear Selection` | `D` | — |
+| `0x00d6dfb4` | `0x9c9d` | `S&mall Thumbnails` | `1` | — |
+| `0x00d6dfc8` | `0x9c9c` | `&Normal Thumbnails` | `2` | — |
+| `0x00d6dfdc` | `0x9c8f` | `&Edit View` | `3` | — |
+| `0x00d6e018` | `0x9d2c` | `&Tags` | `T` | — |
+| `0x00d6e090` | `0x9ccc` | `Ti&meline` | `5` | — |
+| `0x00d6e274` | `0x9c94` | `&Print Contact Sheet...` | `P` | 1 |
+| `0x00d6e2b0` | `0x9cba` | `&Locate on Disk` | `Enter` | — |
+| `0x00d6e318` | `0x9d4f` | `&Rename...` | `F2` | — |
+| `0x00d6e354` | `0x9ca3` | `Rotate &Counterclockwise` | — | 1 |
+| `0x00d6e498` | `0x9ca0` | `&View and Edit` | `3` | — |
+| `0x00d6e560` | `0x9ca8` | `Propert&ies` | `Enter` | 6 |
+| `0x00d6e9b8` | `0x9cac` | `&Help Contents and Index` | `F1` | — |
+
+*(A `&Rename...` és a `&Locate on Disk` **kétszer** szerepel — a fő menüben
+és egy helyi menüben —, és a két példány mezői eltérnek: a `&Rename...`
+csak az egyik helyen kap ikont. A `Propert&ies` az egyetlen, amely
+gyorsbillentyűt ÉS ikont is visel.)*
+
+### 8.4 Mit jelentenek a számok az ikonmezőben
+
+A `+0x08` **word**, és mindössze három érték fordul elő: **1** (kétszer),
+**4** (kétszer), **6** (egyszer). ⛔ **Hogy melyik képre mutatnak, az NINCS
+megfejtve** — a mező kicsi, nem erőforrás-azonosítónak látszik, hanem egy
+belső ikonkészlet indexének. A megszerzés útja: a menü rajzolójának
+megkeresése, amely a `+0x08`-at olvassa. Ez **nem volt része a
+kérdésnek**, és önálló körben olcsó.
+
+### 8.5 Amit ez a mérés NEM mond meg
+
+A menüépítő törzsében 30 további `mov dword [X], eax` írás áll a Súgó
+menü tömbjének tartományában (`0x00d6e9d8`…`0x00d6eab8`), amelyeknek
+**nincs `+0x0a` word-írásuk**, tehát nem rekordkezdetek. Hogy pontosan mik
+(a kinyert értékek a Súgó menü feliratai: `&Keyboard Shortcuts`,
+`Picasa &Forums`, `Online &ReadMe`, `Release &Notes`, `Privacy Policy`,
+`Terms`, `&Uninstalling Picasa`, `&Check for Updates`, `&About Picasa`),
+azt **nem derítettem ki**. A 173-as rekordszám ezért **alsó korlát** a
+Súgó menüre nézve.
