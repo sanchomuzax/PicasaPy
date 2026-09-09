@@ -4,6 +4,55 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-09
+
+**Arcok: nincs többé fölösleges újraszkennelés**
+
+- Az arckeresés **megjegyzi, melyik képet nézte már át**, és a következő
+  keresés átugorja. Eddig az arc nélküli képeket minden keresés újra
+  végigvette, mert nem maradt utánuk nyom. Ha egy kép megváltozik, a
+  keresés természetesen újra megnézi.
+- Ha a **Mappakezelőben kikapcsolod egy mappára az arcfelismerést**, a
+  program az **OK** megnyomásakor rákérdez, és utána törli a mappában és
+  az alfáiban **általa talált** arcokat. A **Picasában felvett nevek és
+  arckeretek megmaradnak** — azok a te adataid.
+- A kikapcsolt mappa képei jelölést kapnak, hogy a keresés ne induljon
+  rájuk újra. A jelölés a visszakapcsolás után is megmarad; így viselkedik
+  az eredeti Picasa is.
+
+**Szerkesztő**
+
+- A **Lineáris homályosítás** (Régi effektek fül) eddig a legtöbb képen
+  **semmit nem csinált**: az éles és a homályos rész határa mindig a kép
+  közepére esett, ahol az eredeti Picasa sem nyúl a képhez. Mostantól
+  látszik a hatása.
+- Az elmosásra épülő effektek — **Ragyogás**, **Lágy fókusz**,
+  **Lineáris homályosítás** — számítása az eredeti Picasa saját képletére
+  cserélődött. A rajzuk közelebb került az eredetihez; a különbség szabad
+  szemmel alig látható.
+
+**Kollázs**
+
+- Az **Indexkép** elrendezése az eredeti Picasa mért képletét követi: a
+  cellák mérete és a képek függőleges igazítása igazodott hozzá.
+
+**Mentés**
+
+- A mentés **nem ír többé `originhash` sort** a kép melletti
+  `.picasa.ini` fájlba. Az eddig kiírt érték olyan alakú volt, amilyet az
+  eredeti Picasa soha nem használ. A már meglévő sorokhoz a program
+  változatlanul nem nyúl.
+
+**Apróságok**
+
+- A csúszkák fogantyúja átlós árnyalást kapott, mint az eredetiben, és
+  sötét témában is a hozzá illő színt.
+- A **Visszavonás** és az **Újra** gomb magassága nem függ többé a
+  rendszer betűtípusától. Ha a felirat nem fér ki, a betű kicsinyít és
+  legfeljebb két sorba tördel.
+- A Mappakezelő arctörlési kérdésében a „kizárt mappák" helyett
+  „kihagyott mappák" áll.
+
 ## 2026-09-08
 
 **Vágás, vörösszem, arc felvétele: arány a billentyűvel**

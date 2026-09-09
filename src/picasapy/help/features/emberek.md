@@ -19,8 +19,18 @@ Az arckereséshez a program egy felismerő modellt használ. Ha még nincs
 letöltve, a párbeszéd felajánlja a **Modell letöltése** gombot, és mutatja
 a letöltés haladását. A letöltés egyszeri.
 
+### Egy képet csak egyszer néz át
+
+A program megjegyzi, melyik képen futott már le az arckeresés, és a
+következő keresés átugorja azokat. Ez az arc nélküli képekre is
+vonatkozik: eddig azokat minden keresés újra átnézte, mert nem maradt
+utánuk nyom. Ha a kép később megváltozik — átszerkeszted vagy kicseréled
+—, a keresés újra megnézi.
+
 Az arckeresést mappánként is szabályozhatod, lásd
-[Mappakezelő](mappakezelo.md).
+[Mappakezelő](mappakezelo.md). Ha ott kikapcsolod egy mappára, a program
+a mappa képeit is megjelöli, hogy a keresés ne induljon rájuk újra — a
+részletek ugyanott.
 
 ## Az Emberek panel
 

@@ -93,6 +93,10 @@ képpontonkénti működésük még nincs visszafejtve, ezért nem
 alkalmazhatók. Azért látszanak mégis, mert egy régi képeden ott lehet a
 szerkesztésben, és tudnod kell róla.
 
+A **Lineáris homályosítás** eddig a legtöbb képen nem csinált semmit;
+mostantól látszik a hatása. Ez az effekt a kép egyik oldalát élesen
+hagyja, a másikat elmossa, és a kettő közt átmenetet ad.
+
 ## Rejtett párok: a Shift billentyű
 
 Kilenc csempe **másik effektet ad, ha a Shift billentyűt lenyomva tartod,

@@ -20,9 +20,28 @@ vonatkozó beállítások. Ha még nem választottál semmit, ez áll ott:
 - **Eltávolítás a Picasából** — a mappa kikerül a nézetből. A lemezen
   lévő fájlokhoz **nem nyúl**.
 - **Arcfelismerés bekapcsolva / kikapcsolva** — mappánként külön
-  eldöntheted, keressen-e arcokat.
+  eldöntheted, keressen-e arcokat. A beállítás a mappára **és az alfáira**
+  is vonatkozik.
 
 Az **OK** gomb menti a változtatásokat, a **Mégse** elveti őket.
+
+### Ha kikapcsolod az arcfelismerést
+
+Az **OK** megnyomásakor a program megkérdezi: „Biztosan eltávolítja az
+összes arcot és névcímkét a kihagyott mappákból?"
+
+- **Igen** esetén a mappa és az alfái képeiről törlődnek azok az arcok,
+  amiket a program maga talált, és a képek jelölést kapnak, hogy a
+  következő arckeresés ne nézze meg őket újra.
+- A **nevek és arckeretek, amiket még a Picasában vettél fel**,
+  megmaradnak: azok a te saját adataid, azokhoz a program nem nyúl.
+- **Nem** esetén semmi nem mentődik el — sem az arcfelismerés kapcsolója,
+  sem a többi változtatásod —, és a Mappakezelő nyitva marad.
+
+> A jelölés akkor is megmarad, ha **később visszakapcsolod** az
+> arcfelismerést a mappára: a már megjelölt képeken a keresés nem indul
+> újra. Az eredeti Picasa is így viselkedik. A jelölés visszavonására ma
+> nincs parancs a felületen.
 
 ### Ha nem sikerül felvenni
 
