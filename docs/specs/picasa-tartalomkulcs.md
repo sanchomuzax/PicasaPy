@@ -157,7 +157,7 @@ gyorstárazás. **Elvetve, méréssel**: mindhárom téves jelölt a 3. pontban.
 | **Mi az `imagedata_originslow`?** | **LEZÁRVA (2026-09-05, #1482)** — `MD5(teljes fájl)[0:8]` kis-endián, **18/18** valódi fájlon; a korábbi „0/4"/„0/8" olyan sorokon mért, ahol a fájl azóta megváltozott (kontroll: ott az `originfast` sem egyezik). Szerepe: a gyors kulcs **ütközésfeloldója** — 28,5× dúsulás. |
 
 | **Mi az ini `originhash` kulcs?** | **LEZÁRVA (2026-09-07, #791)** — `fmt16(originfast) + fmt16(originslow)`, ld. lentebb |
-| Melyik fájl bájtjait rögzíti az `originhash` a mentés pillanatában? | **NYITVA** — a lemezen lévő aktuálisét vagy az eredetiét/importforrásét; a 60-as mintában 44 sor nem egyezett a MAI fájllal, és ezt sem az mtime, sem szerkesztési kulcs jelenléte nem magyarázta |
+| Melyik fájl bájtjait rögzíti az `originhash` a mentés pillanatában? | **LEZÁRVA (2026-09-09, 231. kör, #2790) — a kérdésnek HARMADIK válasza van:** nem a szerkesztett és nem is „az eredeti", hanem a fájl **első megismerésekori** bájtjai; a mentés **nem frissíti**. Ld. lentebb. ⚠️ A korábbi „44 sor nem egyezett" szám **elavult**: a 219. kör a pontosított képlettel **55/60**-at mért. |
 
 ```
 Nyitott kérdések: 1 nyílt · 6 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
@@ -1875,7 +1875,19 @@ originhash = hex16(originfast) ‖ hex16(originslow)
 ```
 
 ahol mindkét fél a saját MD5-je **első 8 bájtja**, 64 bites számként,
-**nagy-endián** sorrendben kiírva (`%016I64x`):
+**KIS-endián** sorrendben kiírva (`%016I64x`):
+
+> ⛔ **HELYESBÍTÉS (2026-09-09, 231. kör, #2790):** ez a mondat eredetileg
+> „nagy-endián"-t írt. **Téves.** Négy endianness-kombináció mérve tíz valós
+> kontroll-fájlon: `fast=big/slow=big` **0/10**, `big/little` **0/10**,
+> `little/big` **0/10**, **`little/little` 2/10** (a maradék nyolc megváltozott
+> fájl). Bitre, egy valós fájlon:
+> ```
+> ini        : 724307db42eb3240 f09ffe3be339a45b
+> fast little: 724307db42eb3240   slow little: f09ffe3be339a45b
+> ```
+> ✅ **A termékkódunk HELYES:** `dedup/fastkey.py:57` és `dedup/slowkey.py:32`
+> egyaránt `struct.Struct("<Q")` — kis-endián. Csak a lap szövege volt téves.
 
 - **`originfast`** = MD5( `uint32_le(méret)` ‖ első `min(méret, 0x41C2)`
   bájt ‖ utolsó `FAROK` bájt )[0..8], ahol
@@ -1949,3 +1961,57 @@ illetve amely egy egyszerű teljes-fájl MD5 (a lassú).
 *Bizonyítottsági fok: **megerősített** — 55/60 bitpontos egyezés valós
 fájlokon, két megdöntött jelölttel és belső konzisztencia-próbával; a
 bináris oldalon a termelő és a formázás utasításszinten idézve.*
+
+## ⭐⭐ LEZÁRVA: az `originhash` az ELSŐ MEGISMERÉSKORI bájtokat rögzíti (2026-09-09, 231. kör, #2790)
+
+A lap 6. szakasza ezt a kérdést így tette fel: *„a lemezen lévő aktuálisét
+vagy az eredetiét/importforrásét?"* — és „kontrollált mintát" kért a
+tulajdonostól. **A dichotómia félrevezető volt, és a minta nem is kellett.**
+
+### 1. Miért rossz a kérdés két ága
+
+A Picasa alaphelyzetben **nem írja felül** a képfájlt: a szerkesztés a
+`.picasa.ini`-be megy (`filters=`, `crop=`). Felülírás csak kifejezett
+mentéskor történik, és olyankor az eredeti a `.picasaoriginals` mappába kerül.
+A „szerkesztett vs. eredeti" tehát csak az utóbbi, ritka esetben értelmes.
+
+### 2. A mérés — és ami meglepő
+
+A helyi korpuszban (`referencia/ini-korpusz/korpusz.txt`, 859 fájl):
+
+| mit | darab |
+|---|---|
+| `.picasaoriginals` mappa | **51** |
+| bennük eredeti kép | **172** |
+| ezek közül a **szülő** ini-jében van `originhash` | **0** |
+| az originals-beli fájl **nem** elérhető | **0** (mind megvan) |
+
+⭐ **Az `originhash` és a `.picasaoriginals` a korpuszban DISZJUNKT** (0/172),
+és ez nem hozzáférési kérdés: a fájlok mind a lemezen vannak.
+
+### 3. A levezetés
+
+1. **Mentéskor nincs újraszámolás** — a 207. kör mérése, amit a 219. kör „a
+   másik oldalról is alátámasztott" (az érték tulajdonságtárban utazik, nem a
+   mentés tölti).
+2. Tehát az `originhash` a **keletkezésekor** rögzített bájtokat őrzi, és a
+   keletkezés nem a mentés ⇒ a fájl **első megismerése** (importálás/szkennelés).
+3. A 2. ponttal konzisztens, hogy a felülírt (originals-os) képeknél
+   **egyáltalán nincs** `originhash`: azok a mentési úton mentek át.
+
+⇒ **A válasz: az `originhash` a fájl ELSŐ MEGISMERÉSEKORI bájtjait rögzíti, és
+a mentés nem frissíti.**
+
+### 4. Bizonyítottsági fok — és mi hiányzik
+
+**Erős, levezetett** — nem közvetlen mérés. A 0/172 diszjunktság megerősítő,
+de önmagában csak azt mondja, hogy a felülírt képeknél nincs kulcs; a
+„mit hashelt akkor" bitre menő igazolásához továbbra is kontrollált minta
+kellene (ismert eredeti + a Picasával mentett kimenet együtt).
+
+⚠️ **Önhelyesbítés:** a #2790 jegyet ez a munkamenet nyitotta egy órával
+korábban azzal, hogy *„a minta már megvan a korpuszban"* (52
+`.picasaoriginals` említés). **Ez téves volt** — a mérés szerint azoknál a
+képeknél épp nincs `originhash`. A jegy kérdése így is eldőlt, csak nem azon
+az úton, amit a jegy ígért.
+
