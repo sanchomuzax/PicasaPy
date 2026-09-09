@@ -116,7 +116,7 @@ gyorsbillentyűjük nincs.)*
 |---|---|
 | `+0x00` | a lefordított felirat mutatója |
 | `+0x04` | gyorsbillentyű-szöveg |
-| `+0x08` (word) | ikon |
+| `+0x08` (word) | ~~ikon~~ → **gyorsítóbillentyű-módosítók bitmaszkja** (`Ctrl+`/`Shift+`/`Alt+`); helyesbítve 2026-09-09, #2821 — ld. [picasa-menu-leltar.md](picasa-menu-leltar.md) 8.5 |
 | `+0x0a` (word) | **parancsazonosító** |
 | `+0x0c` | almenü-tömb mutatója |
 | `+0x10` | almenü darabszáma |
