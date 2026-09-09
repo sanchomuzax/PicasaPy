@@ -4141,6 +4141,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <translation>Fastruktúrájú mappanézet beállítása</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="0"/>
+        <source>Folder view options</source>
+        <translation>Mappanézet beállításai</translation>
+    </message>
+    <message>
         <source>Click and drag over photos to magnify them</source>
         <translation>Kattintson és húzza a képek fölött a nagyításhoz</translation>
     </message>

@@ -1383,6 +1383,12 @@ ApplicationWindow {
         onTreeViewRequested: if (typeof folderHierarchyController !== "undefined"
                                  && folderHierarchyController)
                                  folderHierarchyController.setTreeView(true)
+        //: #1421: a ▾ gomb a menüsor MEGLÉVŐ Mappanézet-almenüjét nyitja —
+        //: nincs második menüdefiníció (a tételek pipái így sem tudnak
+        //: szétcsúszni a két belépési pont között).
+        onFolderViewMenuRequested: function (anchorItem) {
+            picasaMenuBar.openFolderViewMenu(anchorItem)
+        }
     }
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)

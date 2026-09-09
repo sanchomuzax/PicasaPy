@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.360] – 2026-09-09
+
+### Hozzáadva
+
+- **A felső eszköztárra visszakerült a mappanézet-lenyíló (▾)** (#1421). Az
+  eredeti Picasa eszköztárán a két nézetváltó gomb mellett van egy kis ▾ gomb,
+  ami a mappanézet beállításait nyitja le — nálunk ez hiányzott. A gomb
+  **ugyanazt a menüt** nyitja meg, mint a `Nézet ▸ Mappanézet`, tehát a
+  beállítások nem tudnak szétcsúszni a két hely között.
+
 ## [0.8.359] – 2026-09-09
 
 ### Javítva

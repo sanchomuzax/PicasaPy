@@ -48,6 +48,13 @@ Rectangle {
     //: nincs rajta — ezért van alapértéke.
     property bool treeViewActive: false
     signal flatViewRequested()
+    //: #1421: a `folderviewpopup` (▾) gomb — MÉRVE (a bináris
+    //: `0x005e2000` kezelője, `picasa-konyvtar-eszkoztar-viselkedes.md` 4.):
+    //: NEM önálló beállítás-panelt nyit, hanem UGYANAZT a lenyíló menüt,
+    //: ami a `Nézet ▸ Mappanézet` almenü. A menü ezért NEM készül újra
+    //: itt: a jelzést a Main.qml a menüsor meglévő almenüjének
+    //: megnyitására fordítja — egy definíció, két belépési pont.
+    signal folderViewMenuRequested(var anchorItem)
     signal treeViewRequested()
 
     function clearSearch() {
@@ -206,6 +213,38 @@ Rectangle {
                 HoverHandler { id: treeViewHover }
                 TapHandler { onTapped: toolbar.treeViewRequested() }
             }
+        }
+        // #1421: a `folderviewpopup` — MÉRT méret 22 × 22, és a mérés
+        // szerint ez ÖNÁLLÓ elem, nem a `hviewtoggle` 60 × 22-es csoport
+        // része (`konyvtar-ablak-meretek.md` 2.) — a pár csoportja ezért
+        // marad 60 széles.
+        //
+        // A kezelője a binárisban UGYANAZ a scope-kulcsos függvény, mint a
+        // páré (`0x00575130`), és a menü tételei a `Nézet ▸ Mappanézet`
+        // almenü tételei (spec 4/b) — ezért itt nem építünk új menüt.
+        Rectangle {
+            objectName: "toolbarFolderViewPopupButton"
+            visible: !toolbar.toolbarCompact
+            Layout.preferredWidth: 22
+            Layout.minimumWidth: 0
+            Layout.preferredHeight: 22
+            Layout.alignment: Qt.AlignVCenter
+            width: 22; height: 22; radius: 2
+            color: folderViewPopupHover.hovered ? "#ffffff" : "transparent"
+            border.width: folderViewPopupHover.hovered ? 1 : 0
+            border.color: Theme.selectionBlue
+            Text {
+                anchors.centerIn: parent
+                text: "▾"
+                font.pixelSize: 12
+                color: folderViewPopupHover.hovered ? Theme.selectionBlue : "#8f8b83"
+            }
+            //: `folderviewpopup` — a nézet-beállítások lenyílója
+            ToolTip.text: qsTr("Folder view options")
+            ToolTip.visible: folderViewPopupHover.hovered
+            ToolTip.delay: 500
+            HoverHandler { id: folderViewPopupHover }
+            TapHandler { onTapped: toolbar.folderViewMenuRequested(parent) }
         }
         // #1421: az `timelinebutton` — a NÉZET már megvolt (Nézet ▸ Időrend,
         // Ctrl+5, `timeline_controller.py`), csak az eszköztárról hiányzott.
