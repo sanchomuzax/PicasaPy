@@ -5247,14 +5247,39 @@ A függvény bemenete egy téglalap (3–6. argumentum): `W = arg5 − arg3`,
 javítása. A `[téma+0x10]`, `+0x14`, `+0x18` mezők tehát **unsigned**-ként
 olvasódnak (rács-sor/oszlop/darabszám).
 
-### 53.4 Ami NYITVA marad — pontosan
+### 53.4 ⛔ HELYESBÍTVE (240. kör): ez a pont NEM volt nyitott
 
-A cella képpontos kiterjedését a `[esp+0x58]` / `[esp+0x5c]` és a futó
-`ecx` / `esi` adja; hogy ezekbe a fenti margók és a 0,88 / 0,79 arányok
-milyen zárt kifejezéssel jutnak, az a rács-hurok teljes végigszámolását
-igényli (FPU-verem szinten). **Becsült képletet nem adok** — a zárt alak a
-következő kör tétele, a megszerzés útja: a `0x008883c0`-tól induló hurok
-lépésköz-számítása, ugyanezzel a módszerrel.
+Az 53. szakasz első változata itt nyitva hagyta a cella képpontos
+kiterjedésének zárt alakját, és a következő kör tételévé tette. **Ez tévedés
+volt:** ugyanezen a lapon a **18.2** szakasz 2026-09-06 óta tartalmazza a
+teljes cellaosztást — mind az öt konstanst a saját címével és nyers
+bájtjaival, a csonkolás bizonyítékával és a sor/oszlop-azonosítással:
+
+```
+cellaSzél = CSONK(0,88 × W / [téma+0x14])      cellaMag = CSONK(0,79 × H / [téma+0x10])
+balMargó  = CSONK(W × 0,06)                    felsőMargó = CSONK(H × 0,15)
+rés       = CSONK([téma+0x18] × 0,08)          [téma+0x1c] = W / H
+```
+
+A 240. kör ezt FPU-verem szinten függetlenül újralevezette, és **bitre
+ugyanezt** kapta — a lelet tehát megerősítést kapott, de nem új.
+
+**Miért történt:** az 53. szakasz a lap 20. szakaszából indult, és nem nézte
+végig a lap SAJÁT szakaszlistáját a részkérdésre. A skill szabálya erre
+kimondott (*„a spec-lapon a TARTALOMJEGYZÉKKEL kezdd, ne az összefoglalóval"*)
+— itt egy **al**kérdés megnyitásakor maradt ki, nem a kör elején.
+
+**Ami tényleg új, egy sor:** a konstansok egzakt azonosságai —
+`0,88 = 1 − 2 × 0,06` és `0,79 = 1 − 0,15 − 0,06` —, amelyek pontosan a
+18.2-beli margókból adódnak (kétoldali oldalmargó, illetve felül címsáv és
+alul margó). Ez összefér a `collage/contact_sheet.py` független, korábbi
+olvasatával (`CONTACT_SHEET_HEADER_RATIO = 0,15`,
+`CONTACT_SHEET_LEFT_RATIO = 0,06`).
+
+⇒ **Nálunk MA (mérve):** a `collage/picasa_render.py`
+`_contact_sheet_geometry()` pontosan a 18.2 képleteit számolja
+(`math.trunc`-kal), a `shadow.py` pedig `CONTACT_USABLE_WIDTH = 0,88` /
+`CONTACT_USABLE_HEIGHT = 0,79` néven tartja a két arányt ⇒ **nincs teendő**.
 
 *Bizonyítottsági fok: **megerősített** az 53.1–53.3 (utasításonkénti olvasás,
 a konstansok címmel és kiolvasott értékkel); az 53.4 **nyitott**, a megszerzés
