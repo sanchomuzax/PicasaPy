@@ -86,6 +86,27 @@ class TestASzolgaltato:
         assert not eredmeny.isNull(), "az ékezetes útvonal nem töltődött be"
         assert eredmeny.pixelColor(1, 1).red() == PROJEKTOROS
 
+    def test_a_WINDOWSOS_utvonal_nem_esik_szet(self) -> None:
+        """MÉRVE a windows-lábon (#1640): az `urlparse` a `C:` meghajtó-betűt
+        URL-SÉMÁNAK olvassa, és az útvonal fele elveszik — a diavetítés képe
+        be sem töltődik. A próba a szétszedőt közvetlenül méri, ezért
+        LINUXON IS lefut (sztring-művelet, nem fájlrendszer)."""
+        from picasapy.app.display_photo_provider import _szetszed
+
+        utvonal, mod = _szetszed("C:/Users/sancho/K%C3%A9pek/a.jpg?d=projector")
+        assert utvonal == "C:/Users/sancho/Képek/a.jpg", (
+            "a meghajtó-betű URL-sémaként értelmezve levágta az útvonal elejét"
+        )
+        assert mod == "projector"
+
+    def test_a_lekerdezes_nelkuli_windowsos_utvonal_is_ep(self) -> None:
+        from picasapy.app.display_photo_provider import _szetszed
+
+        assert _szetszed("D:/foto/nyaral%C3%A1s/b.jpg") == (
+            "D:/foto/nyaralás/b.jpg",
+            "",
+        )
+
     def test_a_hianyzo_fajl_URES_kepet_ad(self, tmp_path: Path) -> None:
         provider = DisplayPhotoProvider()
         assert provider.requestImage(str(tmp_path / "nincs.png"), None, None).isNull()
