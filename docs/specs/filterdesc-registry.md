@@ -4724,3 +4724,93 @@ melletti fájl **nem** az igazságforrás, és az ellentmondás magától felold
 újramérés, képpont-geometria, kimerítő bájtszintű kizárások); a 4. szakasz
 következtetése **erős**; az 5. szakasz kérdése **nyitott**, a megszerzés útja
 megnevezve.*
+
+## ✅ A `runtime\...` útvonalak GYÖKERE megvan — és ezzel a „másik fájl" magyarázat is BEZÁRUL (2026-09-09, 233. kör, #2125)
+
+A 232. kör azt mondta ki, hogy a jelvény-lánc három állítása közül az egyetlen
+cáfolható az, hogy a **futásidőben beolvasott** leíró azonos-e a lemezen
+lévővel. Ez a kör azt mérte ki — és **a saját előző következtetésemet is
+helyesbíti**: a magyarázat nem áll.
+
+### 1. A gyökér: egy globális, PONTOSAN két íróval
+
+A relatív utat (`runtime\filterdesc.xml`) az útvonal-objektum feloldója
+(`FUN_00980ec0`) a `[0x00d689f0]` globális elé fűzve állítja elő. A globálisra
+a `.text`-ben **15 hivatkozás** van (indextől független abszolút pásztázás);
+közvetlen `mov [globális], reg` alakú írás **egy sincs** (mind a kilenc
+lehetséges opkód-alakra kerestem) — a globális egy sztring-**objektum**, tehát
+értékadással kap értéket, és pontosan két helyen kap:
+
+| # | hol | mit tesz bele |
+|---|---|---|
+| 1 | `0x004057b3` (`call 0x407760`, `ecx = 0x00d689f0`) | a **`Runtime` / `AppPath` beállítás** értékét — de csak ha nem üres ÉS eltér a jelenlegitől (a `0x00405780`–`0x0040579a` összehasonlító hurok után) |
+| 2 | `0x00980f77` (`call 0x4084f0`, `eax = 0x00d689f0`) | **lusta alapérték**: ha a globális üres, a `[0x00d67840]` modul-leíróra hívott `GetModuleFileNameA` (`0x00980c7b`) eredményének a **könyvtár-része** (`0x004089e0`), és bejegyzi a globálisba |
+
+⇒ **Alapértelmezés: a futó modul saját könyvtára** (a telepítési mappa).
+**Felülírás: a `Runtime\AppPath` beállítás**, amelyet a beállítás-olvasó
+(`FUN_00407630`) a **`HKEY_CURRENT_USER`** kulcsból vesz
+(`0x0040764f mov eax, 0x80000001`).
+
+### 2. ⛔ ÖNHELYESBÍTÉS: a „másik fájl" magyarázat NEM áll
+
+A tulajdonos 2026-09-05-i telepítés-mentése (`/mnt/nas/My Pictures/
+Picasa-telepites-mappa-mentes-20260905/Picasa3/`) alapján, mérve:
+
+| mit | eredmény |
+|---|---|
+| `Picasa3.exe` md5 | `5a361547dc3abed7fc54c13c82c355ce` — **bájtra azonos** a kutatási fánkéval |
+| `runtime/filterdesc.xml` md5 | `2cdd163f7ab2cec09d0f6990f2a179bc` — **bájtra azonos** |
+| `runtime/picnik_effects/` | **nincs** |
+| `update/` | üres (`LifeScapeUpdater/`, tartalom nélkül) |
+| második `filterdesc*.xml` | nincs |
+
+Tehát **ugyanaz a bináris ugyanazt a leírót olvassa**. A `Runtime\AppPath`
+felülírás elvben más gyökeret adhatna, de az az EGÉSZ `runtime\` fát átvinné
+(i18n, respack, `constants.ui`) — egy ilyen telepítésben a program nem a
+megszokott felületét mutatná. ⇒ A 232. kör „az egyetlen cáfolható elem"
+állítása **megdőlt**: a leíró azonossága ezzel megerősített, nem nyitott.
+
+### 3. Ami ebben a körben MÉG megerősítést kapott
+
+- **`[0x00d67f68]` tényleg a szűrő-regiszter**: a beállítója (`FUN_00401fb0`,
+  `0x00401fc6 mov [0xd67f68], esi`) és a leszedője egyaránt **egyetlen**
+  hívóhelyű (`0x00405697`, `0x00405aea`), és a regiszter ktora
+  (`FUN_004021a0`) is egyetlen hívóhelyű (`0x0040568c`). A globálisra a
+  `.text`-ben 31 hivatkozás van, más beállító nincs.
+- **A térkép-keresés kulcsra megy** (`FUN_008fa400` → `FUN_00901c30` →
+  `FUN_0063dd70`, majd `[[reg+0x1454]+8][index*4]`) — nincs prefix- vagy
+  „legközelebbi" találat.
+- **A jelző rekeszét bájtszinten** is ellenőriztem (a lineáris dekódolás
+  elcsúszhat, ezért nem elég): a `0x005d7c20`–`0x005d8260` tartományban a
+  `[esp+0x64]` rekeszt **öt** utasítás érinti (`0x005d7d81`, `0x005d7d9d`,
+  `0x005d7ddf`, `0x005d7ecc` = a `sete`, `0x005d8109` = a `cmp`), a
+  `[esp+0x6c]`-et egy (`0x005d7e9d` = az alapérték). **Nincs rejtett író.**
+- **A rétegnevek 1-alapúak** (`editpanel/fx1_adorn` … `fx12_adorn`, `fx0_adorn`
+  **nincs**; a csempe-rétegek ugyanígy `fx1`…`fx12`), és a hurokváltozó a
+  névadáskor épp az 1-alapú index (a hurokvég `0x005d820d cmp ebx,0xc` +
+  `mov [esp+0x24], ebx` szerint `ebx` a KÖVETKEZŐ 0-alapú tábla-index, azaz a
+  törzsben az aktuális csempe **+1**). ⇒ **Nincs eltolódás** a jelvény és a
+  csempéje között.
+
+### 4. Hol tart ezzel a kérdés
+
+Két állítás mérve (a mechanizmus utasításszinten, a megfigyelés
+képpont-geometriával), a harmadik — a leíró azonossága — **most már szintén
+mérve**. A három együtt nem állhat fenn, tehát a hiba a **modellünkben** van,
+nem az adatban.
+
+**A megmaradt, meg nem vizsgált rés — kimondva:** a 232. kör azt igazolta, hogy
+a leíró `+4` mezőjének **az XML-elemzőben** egyetlen írója van. Azt **nem**
+igazolta, hogy a program futása során **máshonnan** senki nem ír bele. A
+`+4` egy közönséges tagoffszet; egy másik kódúton kapott leíró-mutatón át
+végzett írás a mostani pásztázásban nem látszana.
+
+**A következő kérdés (K15), és az is gépi:** ki írja a leíró `+4` mezőjét a
+program EGÉSZÉBEN? A megszerzés útja: a leíró-mutatót előállító helyek
+(`CGenericFilter+8`, a `[regiszter+0x1454]` térkép értékei, a
+`FUN_008fa0ea` ág) hívási környezetében minden `mov [reg+4], …` alakú írás
+összegyűjtése — nem csak az elemzőben.
+
+*Bizonyítottsági fok: **megerősített** az 1–3. szakasz (utasításszintű
+mérés, md5-összevetés, bájtszintű rekesz-pásztázás); a 4. szakasz rése
+**nevesített és gépi úton zárható**.*
