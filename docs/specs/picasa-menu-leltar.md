@@ -402,6 +402,11 @@ billentyűnevek: `Delete` és háromszor `Enter`.
 
 ### 8.3 A teljes lista
 
+> ⛔ **2026-09-10 (#2821): EZ A TÁBLA HIÁNYOS.** A „maszk" oszlopot az
+> immediate értékre szűrő pásztázás állította elő, ezért **négy rekordnál
+> nullát mutat 1 vagy 4 helyett** (a `di` regiszterből írt tételek). A
+> javított értékek és a hiba oka a **8.7/c**-ben.
+
 | rekord | parancs | angol felirat | gyorsbillentyű | `+0x08` maszk |
 |---|---|---|---|---|
 | `0x00d6d960` | `0x9d67` | `&New Album...` | `N` | — |
@@ -776,6 +781,11 @@ tölti fel, és mi a sorformátuma.*
 
 ### 8.6/f Ami ebből MÉG hiányzik — pontos következő lépés
 
+> ⭐ **MIND A HÁROM PONT ELDŐLT a 8.7-ben (2026-09-10):** a tábla a
+> `runtime\shortcuts.xml` (a fájl megvan a kutatási anyagban), a sor három
+> bájtja a `ctrl`/`shift`/`alt` attribútum, és a maszk leképezése
+> **12/12** kontrollt kiállt. Az alábbi lépések már megtörténtek.
+
 1. **A tábla tulajdonosa.** A `0xa6ade0` az `eax`-ben kapja a tárolót; a
    hívóban ez `0x00a6b3d6  mov eax, dword ptr [esp + 0x4c]`, tehát a
    `0x00a6b250` egyik paramétere. Vissza kell követni a `0x00a6b250`
@@ -790,3 +800,149 @@ tölti fel, és mi a sorformátuma.*
 ⚠️ **Amit NEM állítok:** hogy a maszk bitjei „Ctrl/Shift/Alt"-ot jelentenek.
 Csak azt, hogy a **kereső hármas** ilyen sorrendben teszteli őket, ha a
 keresés talált. A jelentést a tábla adja.
+
+---
+
+## 8.7 ⭐ MEGVAN: a tábla a `runtime\shortcuts.xml`, és a maszk leképezése 12/12 (2026-09-10, #2821)
+
+**Bizalmi fok: megerősített.** A 8.6 három nyitott pontja mind eldőlt, és a
+levezetett leképezés **12/12** független ellenőrzést kiállt.
+
+### 8.7/a A tábla: `runtime\shortcuts.xml`
+
+A tárolót a menüépítő **verem-lokálisa** hordozza, és a konstruktora
+nevezi meg a fájlt:
+
+```
+0x00559150  sub esp, 0x14
+0x00559155  xor ebx, ebx                     ; ⭐ ebx = 0 innentől
+0x00559158  lea ecx, [esp + 0x10]            ; a tároló CÍME
+0x0055915c  mov dword ptr [esp + 0x10], ebx  ; 0
+0x00559160  mov dword ptr [esp + 0x14], ebx  ; 0
+0x00559164  call 0x9a16b0                    ; a konstruktor…
+     └─ 0x009a16c1  push 0xc8c3d4            ; …és a sztring: 'runtime\shortcuts.xml'
+```
+
+⭐ **A fájl MEGVAN a kutatási anyagban:**
+`referencia/dekompilalt-617/SHORTCUTS.xml` — 149 sor, 4627 bájt, **48
+tétel**. Sorformátuma pontosan az, amit a kereső olvas:
+
+```xml
+<!-- Rename -->
+<item srckey="VK_F2" dstkey="" ctrl="0" shift="0" alt="0">
+```
+
+⇒ a `0x00a6ade0` három összehasonlított bájtja (`[eax+3]`, `[eax+4]`,
+`[eax+5]`) a **`ctrl`**, **`shift`**, **`alt`** attribútum, a `+0xc` dword
+pedig a kulcs.
+
+### 8.7/b A tároló ÚTJA — kilenc érintés az egész építőben
+
+A `[esp+0x10]` lokálist a 15 495 bájtos építő **pontosan kilencszer**
+érinti: egyszer a konstrukciónál, és **nyolcszor** a `call 0x005590c0`
+harmadik argumentumaként — **minden felső szintű menünél ugyanazt**. Más
+metódust nem hív rá, és többet nem is ír bele.
+
+A nyolc hívás második argumentuma a menü tételszáma:
+
+| menü tömbfeje | tételszám |
+|---|---|
+| `0xd6d960` | 0x1b = **27** |
+| `0xd6db80` | 0x0e = **14** |
+| `0xd6dfa0` | 0x17 = **23** |
+| `0xd6e1c0` | 0x11 = **17** |
+| `0xd6e498` | 0x0b = **11** |
+| `0xd6e5b0` | 0x0a = **10** |
+| `0xd6e850` | 0x12 = **18** |
+| `0xd6e9b8` | 0x0d = **13** |
+| **összesen** | **133** |
+
+*(Kereszt-ellenőrzés: a 8.1 szerint 173 rekord van; 173 − 133 = 40 az
+almenükben, és 11 almenü-mutató áll a `+0x0c` mezőkben — összefér.)*
+
+### 8.7/c ⛔ ÖNHELYESBÍTÉS: a 8.3 „maszk" oszlopa HIÁNYOS VOLT
+
+A 8.3 táblát az **immediate** értékre szűrő pásztázás állította elő. Újramérve,
+a `+0x08` mező forrása szerint:
+
+| a `+0x08` írásának forrása | rekord |
+|---|---|
+| közvetlen érték (`mov word ptr […], 4`) | **5** |
+| `bx` regiszter | **164** |
+| **`di` regiszter** | **4** |
+| írás nélkül | 0 |
+
+A `bx` **bizonyítottan nulla** (`0x00559155 xor ebx, ebx`, és a builderben
+nincs több `ebx`-írás). A `di` **NEM nulla** — élő konstans, amely három
+ponton változik:
+
+```
+0x00559184  mov edi, 1
+0x0055a335  mov edi, 5
+0x0055af40  mov edi, 4
+0x0055b25a  mov edi, 4
+```
+
+⇒ a `di`-ből író **négy** rekord maszkja nem 0, hanem a soronkénti `edi`:
+
+| rekord | felirat | `edi` az írás pillanatában | maszk |
+|---|---|---|---|
+| `0x00d6d9ec` | `&Open File(s) in an Editor` | 1 | **1** |
+| `0x00d6dab4` | `Export Pi&cture to Folder...` | 1 | **1** |
+| `0x00d6e318` | `&Rename...` (második példány) | 4 | **4** |
+| `0x00d6e9b8` | `&Help Contents and Index` | 4 | **4** |
+
+**A 8.5/d „anomáliája" ezzel megszűnt:** a Súgó maszkja nem 0, hanem **4**.
+A hibát az én pásztázóm okozta, nem a bináris.
+
+### 8.7/d ⭐ A LEKÉPEZÉS — és a 12/12 kontroll
+
+| maszk-bit | jelentés |
+|---|---|
+| **bit0 (1)** | `shift="1"` |
+| **bit1 (2)** | `alt="1"` |
+| **bit2 (4)** | **`ctrl="0"`** — FORDÍTOTT: a bit azt jelenti, hogy **NINCS** Ctrl |
+
+A fordítást a kód is kimondja: a `0x00a6b3bb` a 2-es bitet
+`shr cl, 2` után **`not cl`**-lel fordítja meg, a 0-as és az 1-es bitet nem.
+Tervezési okból: a Ctrl a gyakori eset, ezért a `0` jelenti a „van Ctrl"-t.
+
+**Kontroll a `SHORTCUTS.xml` ellen** (a mért maszk vs. a levezetett szabály):
+
+| XML tétel | `srckey` | ctrl/shift/alt | mért maszk | levezetett | egyezik |
+|---|---|---|---|---|---|
+| New label | `N` | 1/0/0 | 0 | 0 | ✅ |
+| Import from | `M` | 1/0/0 | 0 | 0 | ✅ |
+| Open File in Editor | `O` | 1/1/0 | 1 | 1 | ✅ |
+| Rename | `VK_F2` | 0/0/0 | 4 | 4 | ✅ |
+| Export Picture to Folder | `S` | 1/1/0 | 1 | 1 | ✅ |
+| Locate on Disk | `VK_RETURN` | 1/0/0 | 0 | 0 | ✅ |
+| Delete from Disk | `VK_DELETE` | 0/0/0 | 4 | 4 | ✅ |
+| Invert Selection | `I` | 1/0/0 | 0 | 0 | ✅ |
+| Timeline | `5` | 1/0/0 | 0 | 0 | ✅ |
+| Print Contact Sheet | `P` | 1/1/0 | 1 | 1 | ✅ |
+| Properties | `VK_RETURN` | 0/0/1 | 6 | 6 | ✅ |
+| Help Contents and Index | `VK_F1` | 0/0/0 | 4 | 4 | ✅ |
+
+**EGYEZÉS: 12 / 12.** *(A 48 XML-tételből 12-nek van a menüben mért maszkja;
+a többi tétel nem menüből érhető el, vagy a maszkja `bx` = 0, ami a
+„Ctrl, Shift és Alt nélkül nincs" alapesetet adja.)*
+
+### 8.7/e Amit a fejlesztésnek ad
+
+1. **A gyorsbillentyűk igazságforrása egy ADATFÁJL**, nem a kód:
+   `runtime\shortcuts.xml`, 48 tétel, `srckey`/`dstkey`/`ctrl`/`shift`/`alt`
+   attribútumokkal. **Megvan nálunk**, tehát a teljes készlet átvehető.
+2. A menürekord `+0x08` mezője **nem a billentyűt írja le**, csak a
+   módosítókat, és a Ctrl bitje **fordított**. Aki a maszkot közvetlenül
+   olvassa be, a Ctrl-t az ellenkezőjére kapja.
+3. A `dstkey` attribútum szerepe **NINCS megfejtve** — mindenhol üres a
+   mintában. Ez marad nyitva.
+
+### 8.7/f Ami nyitva marad
+
+- **A `dstkey` üres attribútum jelentése** (48/48 tételen `""`). A
+  megszerzés útja: a `0x009a16b0` XML-elemzőjében a `dstkey` kulcsra
+  hivatkozó ág.
+- **A `keymap id="0"`** — van-e több keymap, és mi választ közülük? A
+  mintában egyetlen `keymap` van.
