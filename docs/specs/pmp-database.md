@@ -977,10 +977,55 @@ egységessége `R > 0,995`, átlagos hue 15–55°. Ez szigorú, de nyilván nem
 hibátlan — épp ezért a **két készlet összevetése** a bizonyíték, nem az
 abszolút szám.)*
 
+#### ⭐⭐ ELDŐLT (2026-09-09, #1447): a tár a SZERKESZTETT képpontokat tárolja — de nem mindig frisset
+
+A 2. pont színalapú kontroll-mérése **jogosan** nem támogatta a tartalmi
+hipotézist: a „egyszínű barna" detektor a meleg tónusú EREDETIKKEL nem
+megkülönböztethető. A kérdés viszont eldönthető **színek nélkül, geometriával**
+— a `crop64` egy külön rögzített téglalap, tehát a vágott kép aránya
+**előre jelezhető**, és a bélyegkép arányával összevethető.
+
+**A mérés** (`Picasa2-arcok`, `thumbs` tár, csak a `crop64`-et tartalmazó,
+`tilt` nélküli fotó-sorok; a `rotate(1)/(3)` figyelembe véve; „döntő" = a
+vágott és az eredeti arány legalább 5 %-ban eltér; egyezés = 2 %-on belül):
+
+| a bélyegkép aránya | eset |
+|---|---:|
+| a **VÁGOTT** aránnyal egyezik | **42** |
+| az EREDETI aránnyal egyezik | 26 |
+| egyikkel sem | **0** |
+
+Nulla köztes eset: minden bélyegkép élesen az egyik állapotot mutatja.
+
+**A párosítás kontrollja — 1 440 / 1 440.** A SZERKESZTETLEN fotókon a
+bélyegkép aránya kivétel nélkül egyezik a `width`/`height` oszlopokéval
+(1 440 eset, 100 %). ⚠️ A nyers összevetés 85,7 %-ot adott; a 240 kivétel
+**mind arc-rekord** (`ThumbIndexEntry.is_face_record`) — az arckivágás
+aránya nem a szülő fotóé, tehát ott az összevetés eleve értelmetlen. Ezzel a
+`slot index = PMP sorindex` párosítás ezen a katalóguson **hibátlan**.
+
+**A 26 „eredeti arányú" eset MAGYARÁZATA is megvan:** ugyanazok a fájlnevek,
+**más mappában** (mérve: 4/4 vizsgált pár azonos név, eltérő mappa) — a
+felhasználó gyűjteményében kétszer meglévő képek. A `filters=` mindkét sorra
+rögzítve van, a gyorstár viszont csak az egyik példánynál készült újra.
+
+> ⭐ **A tár tehát RENDERELT (szerkesztett) képpontot tárol** — de **nem
+> igazságforrás**: a blob a szerkesztési láncnál ELAVULTABB is lehet. Aki
+> golden-referenciának használná, annak sloton­ként érvényesítenie kell
+> (erre szolgál minden jel szerint a meg nem fejtett `kulcs` mező).
+
+Színes megerősítés két, névvel azonosított képen (az EGYSZÍNŰSÉG itt nem
+detektor-heurisztika, hanem szélsőérték): a `sepia=1;enhance=1;` láncú sor
+bélyegképének hue-szórása **1,5** (egyetlen tónus), a
+`Holga=1,70,30,0;` láncúé pedig **teljesen szürke** (átlagos telítettség
+0,0). Mindkettő a szerkesztés utáni állapot.
+
 #### Amit ez kimond
 
 > ⛔ **A bélyegkép-tár ezen az úton NEM váltja ki a felhasználói exportot.**
-> A #951 (Finomhangolás kompozit mérése) **továbbra is exportra vár**.
+> A #951 (Finomhangolás kompozit mérése) **továbbra is exportra vár** — most
+> már nem azért, mert nem tudjuk, MI van a tárban, hanem mert a tartalma nem
+> garantáltan a mai szerkesztési lánc eredménye (ld. a fenti ⭐⭐ szakaszt).
 
 **Ami ettől még nyitva áll — 2026-08-25 óta OLCSÓBBAN:** a fájlonkénti
 párosítás már megvan (slot index = `thumbindex.db` sorindex), tehát a
