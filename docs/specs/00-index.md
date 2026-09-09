@@ -662,7 +662,7 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-tartalomkulcs.md](picasa-tartalomkulcs.md) — 1 NYITOTT tétel (2026-09-07, #791)
+### [picasa-tartalomkulcs.md](picasa-tartalomkulcs.md) — ✅ nincs nyitott tétel (2026-09-09, 231. kör, #2790: az `originhash` az **első megismeréskori** bájtokat rögzíti, a mentés nem frissíti — a „szerkesztett vs. eredeti" dichotómia félrevezető volt. ⛔ Két HELYESBÍTÉS ugyanott: az endianness **KIS**-endián, nem nagy (négy kombináció mérve, bitre igazolva; a termékkód `<Q`-val helyes), és a 6. mérleg „44 nem-egyező sor" száma a 219. kör 55/60-a után elavult volt)
 
 ⭐ **Az ini `originhash` kulcsa MEGFEJTVE:** `fmt16(originfast) + fmt16(originslow)` — nem egy digest, hanem kettő, szövegként összefűzve (16 + 16 kisbetűs hexa jegy). Ez magyarázza a korábbi „0/32" negatívumot is: mind a nyolc jelölt EGY digestet keresett. Bizonyíték: szétszedő `0x00414b40` (`cmp eax,0x20`, majd 16+16 `sscanf "%I64x"`), összerakó `0x00414c50` (`%016I64x` ×2), kiírás `0x007d5e74`, hasherek `0xa4d210` / `0xa4ce40`; a felosztás iránya három független jelből (`0x0070e594`, `0x005b0b0e`, `0x004386b6`). Mérve: **60 elérhető valódi fájlból 16 bitpontos egyezés, 0 részleges**.
 
