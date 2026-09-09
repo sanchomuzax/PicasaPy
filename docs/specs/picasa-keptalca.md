@@ -1194,3 +1194,68 @@ túlcsordulás-viselkedés a felületi keretrendszer dolga.
 *Bizonyítottsági fok: **megerősített** a hívási láncra és a két érintett
 csomópontra (kiolvasott utasítások, névvel); **nincs mérve** a konténer
 metódusának tartalma.*
+
+## ⭐ A mappa-token FELTÉTELE — teljes kiolvasás, és amit a #2741 nem mondott ki (2026-09-09, 229. kör)
+
+A #2741 hivatkozott a `0x00563530`-ra („a token akkor látszik, ha van
+mappa-/album-kijelölés, az nem üres, és a fénykép-kijelölés üres"). A 229. kör
+a **teljes 80 bájtos törzset** kiolvasta, és ez három részletet ad, ami eddig
+nem szerepelt.
+
+```
+0x00563530  mov  eax, [ecx + 0x10]        ; a dokumentum/kontextus
+0x00563533  test eax, eax  / jne         ;   nincs → return -1
+0x0056353d  mov  ecx, [eax + 0xeac]      ; A = az ALBUM-kijelölés objektuma
+0x00563543  test ecx, ecx  / jne         ;   NULL → al = 0 (nincs token)
+0x0056354b  mov  edx, 0xfffffffe         ; ⭐ MASZK: minden bit A 0. KIVÉTELÉVEL
+0x00563550  test [ecx + 0x330], edx      ; A nem üres?
+0x00563556  je   → al = 0                ;   üres → nincs token
+0x00563558  mov  eax, [eax + 0xea4]      ; B = a FÉNYKÉP-kijelölés objektuma
+0x0056355e  test [eax + 0x330], edx      ; B üres?
+0x00563564  sete al                      ; al = (B ÜRES)
+…
+0x00563574  lea  ecx, [ecx*4 + 4]        ; a visszaadott állapot: 4 vagy 8
+```
+
+### 1. ⭐ A `0xfffffffe` maszk — a 0. bit NEM számít
+
+A „nem üres" teszt **nem** a teljes `+0x330` mezőt nézi, hanem a **0. bit
+felett**. A 0. bit tehát valami mást jelent (érvényesség-jelző, „minden"
+pszeudo-elem vagy hasonló) — a puszta „van-e kijelölés" olvasat ezt elfedi.
+
+### 2. A kijelölés TARTALMA nem a `+0xeac`-ban van
+
+A `+0xeac` (album) és a `+0xea4` (fénykép) **objektum-pointerek**, 8 bájt
+távolságra, és mindkettőt ugyanazon a `+0x330` offszeten kérdezi a kód ⇒
+**azonos típusú kijelölés-objektumok**, tehát azonos mechanizmus állítja be
+őket. A `+0xeac` mérve: **7 író, 228 olvasó** (`tagkereso.py`, a
+`0x0056353d` saját olvasására állított kontrollal).
+
+| író | méret | hívók |
+|---|---|---|
+| `0x005675d0` | 162 b | **7** — a legkisebb és legtöbbet hívott, `mov [esi+0xeac], 0` (nullázás) |
+| `0x005fa020` | 1032 b | 8 — szintén nullázás |
+| `0x0056bc10` | 945 b | 3 |
+| `0x005733f0` | 1975 b | 1 |
+| `0x00662b20` | 3202 b | 1 |
+| `0x00576a20` | 3530 b | 1 |
+| `0x005643e0` | 3562 b | 1 |
+
+### 3. ⚠️ A #2741 két kérdést kever össze
+
+A jegy törzsében **📋 Neked szóló kérés** áll (a tulajdonos nézze meg, mikor
+vált át a tálca), de a jegy címkéje `ready` + `bináris-kutatható`. A kör
+megvizsgálta, jogos-e ez, és **igen** — mert a jegy aggálya:
+
+> „Nálunk a »mappa-kijelölés« mást jelent: a megnyitott mappa… Ha az eredeti
+> feltételt szó szerint átvennénk, a tálca a mindennapi használatban átváltana
+> token-nézetre."
+
+**egy FELTEVÉSEN áll**: hogy az eredetiben a mappa MEGNYITÁSA is beállítja az
+album-kijelölést. Ez **mérhető** — a fenti hét író átnézésével. Amíg nincs
+megmérve, a kérdést nem a tulajdonosnak kell eldöntenie.
+
+**A következő lépés, konkrétan:** a `0x005675d0` (162 b) és a **7 hívója** —
+ha a mappa-megnyitás útja ezt hívja (nullázás), akkor a megnyitás **törli** a
+kijelölést, és az aggály alaptalan; ha egy beállító ág fut, akkor áll.
+
