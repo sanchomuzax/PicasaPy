@@ -61,7 +61,7 @@ PROVIDER_NAME = "displayphoto"
 
 
 def _szetszed(azonosito: str) -> tuple[str, str]:
-    """(fájlútvonal, mód) a szolgáltatónak átadott azonosítóból.
+    r"""(fájlútvonal, mód) a szolgáltatónak átadott azonosítóból.
 
     A Qt a `image://displayphoto/` utáni részt adja át, a lekérdezéssel
     együtt. Az útvonal URL-kódolt lehet (ékezet, szóköz).
