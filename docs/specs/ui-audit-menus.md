@@ -117,7 +117,7 @@ tartalmilag megegyeznek a Mappa-éval.
 | Indexkép felirata ▸ (almenü) | — | igen | `Thumbnail Caption` almenü, tartalma egyezik (Nincs/Fájlnév/Felirat/Címkék/Felbontás) |
 | Mappanézet ▸ (almenü) | — | igen | `Folder View` almenü. ⚠️ A „tartalma egyezik” állítás TÉVES VOLT (#1454): az eredetiben itt nem rendezés, hanem három szerkezeti tétel áll (Egyszerű mappanézet · Fanézet · Egyszerűsített fanézet) — ld. `docs/specs/picasa-mappanezet.md` |
 
-**Nálunk van, az eredetiben nincs:** „Dark Theme" (sötét téma) — szándékos
+**Nálunk van, az eredetiben nincs:** „Dark Theme" (sötét téma) — **SAJÁT FUNKCIÓ (#28, jegyzékbe véve: #1364)**, szándékos
 PicasaPy-bővítés, jó helyen van jelölve.
 
 ## 4. Mappa / Album
@@ -207,7 +207,7 @@ PicasaPy-bővítés, jó helyen van jelölve.
 | Frissítések keresése | — | igen | inaktív (`Check for Updates`) |
 | A Picasa névjegye | — | igen | megvan, működik (`About PicasaPy`) |
 
-**Nálunk van, az eredetiben nincs:** „Performance Monitor" — szándékos
+**Nálunk van, az eredetiben nincs:** „Performance Monitor" — **SAJÁT FUNKCIÓ (#1364)**, szándékos
 PicasaPy-bővítés (fejlesztői teljesítménymérő panel).
 
 ---

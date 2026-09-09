@@ -83,6 +83,27 @@ kódtól).
   `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem
   árulja el a valódi bájtformátumot (#371 nyitott kérdés); amíg az elő nem
   kerül, ez a mi kódolásunk — paraméter nélkül bájtra egyezik az eredetivel.
+- `docs/specs/ui-audit-menus.md` (#28, #1364) — a menü-átvizsgálás lapja: a
+  „Nálunk van, az eredetiben nincs" tételek (sötét téma, Teljesítmény-monitor)
+  itt is a `SAJÁT FUNKCIÓ` jelölőt viselik, hogy a spec és ez a jegyzék EGY
+  nyelvet beszéljen — aki a lapon találja meg az eltérést, ne kutatási
+  találatnak vegye.
+- `src/picasapy/app/qml/PicasaPy/Theme.qml` (#28, jegyzékbe véve #1364) — a
+  **SÖTÉT TÉMA**. Az eredeti Picasa 3.9-nek egyetlen, világos megjelenése van;
+  a `docs/specs/ui-audit-menus.md` a „Nálunk van, az eredetiben nincs"
+  szakaszban szándékosnak nevezi. A világos tokenek a Picasa-paritás mércéje
+  maradnak — a sötét párjukra a bináris-egyezés NEM vonatkozik. ⚠️ A fájl a
+  mért forró fájlok közé tartozik: itt csak a fejléc-megjegyzés változott.
+- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#287, jegyzékbe véve
+  #1364) — a **Duplikátum-kereső** párbeszéd az Eszközök menüben. Az
+  eredetiben a másodpéldány-kezelés két MÁS mechanizmus: az importáláskori
+  ellenőrzés (`AcquireDupeCheckThread`) és a keresési sáv `dupesearch` módja
+  (#1398) — önálló kereső-párbeszéd nincs. A miénk tudatos hozzáadás.
+- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1364) — a
+  **Teljesítmény-monitor** a Súgó menüben: fejlesztői eszköz, az eredetiben
+  nincs ilyen menüpont. *(Az eredetinek volt `/uidebug` lapja a beépített
+  kiszolgálón, de azt szándékosan nem építjük meg — ADR-011,
+  `docs/decisions/nincs-halozati-kiszolgalo.md`.)*
 - `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1595) — a **Mappa ▸
   Rendezés ▸ „Legutóbbi változtatások"** tétel. Az eredeti Mappa menü
   rendezés-készlete (`ID_DATESORT` / `ID_NAMESORT` / `ID_SIZESORT` /

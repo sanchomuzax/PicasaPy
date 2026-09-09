@@ -5,6 +5,11 @@ import QtQuick
 // 2026-07-18) mint elsődleges rendszer, a valódi Picasa 3.9 screenshotok
 // mint történeti referencia. Ld. docs/specs/design-guide.md.
 //
+// SAJÁT FUNKCIÓ (#28, jegyzékbe véve: #1364): a SÖTÉT TÉMA az eredeti Picasa
+// 3.9-ben NEM létezik (`docs/specs/ui-audit-menus.md` — „Nálunk van, az
+// eredetiben nincs"). A világos tokenek a Picasa-paritás mércéje; a sötét
+// párjuk a mi hozzáadásunk, tehát rájuk a bináris-egyezés nem vonatkozik.
+//
 // #28: a tokenek PÁRBAN élnek — világos (alapértelmezés, a Picasa-paritás
 // mércéje) és sötét. A `dark` kapcsolót a Main.qml köti a
 // controller.darkTheme-hez; minden token kötése automatikusan követi, a
