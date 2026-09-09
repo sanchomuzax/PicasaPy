@@ -105,11 +105,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
-| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
-| `controller` | `collageTitle` | Property | `app/collage_save.py` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
+| `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | BELSŐ — #1487 (döntés): a Képkockamozaik hangsúlyos középső képe. A vászon SOSEM kérdezi; az értéket a rajzoló és a mentés olvassa Pythonból (collage_controller.py:537, :545) — a beállítása a `setCollageFrameCenter` slot dolga, ami BE VAN kötve. Felületi lekérdezésre nincs szükség, törölni viszont nem lehet: a `notify` jelzésre a panel újrarajzol. |
+| `controller` | `collageTitle` | Property | `app/collage_save.py` | BELSŐ — #1487 (döntés): a cím a KIMENETI FÁJLNÉV forrása (spec 9.1), Pythonból olvasva (collage_save.py:380, :451). Az eredetiben sem jelenik meg a felületen, tehát nincs hova bekötni; az írója (`setCollageTitle`) már BELSŐ. |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
 | `controller` | `setCollageSavedPath` | Slot | `app/collage_save.py` | MÉRVE — a mentett kollázs útja bekötetlen |
-| `controller` | `folderDateText` | Property | `app/controller.py` | MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban) |
+| `controller` | `folderDateText` | Property | `app/controller.py` | BELSŐ — #1487 (döntés): a fejléc dátumsorát a FEED modellje adja (`LightboxFeed.qml:578` → `modelData.dateText`), tehát a property-nek nincs felületi fogyasztója. Marad, mert a KÖZÖS `formatting.photo_dates`-en át számol az állapotsorral (#2304): a `test_controller.py::test_folder_date_text_matches_header` épp azt őrzi, hogy a két felirat ne mondhasson mást ugyanarról a mappáról. |
 | `controller` | `folderDescription` | Property | `app/controller.py` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |
 | `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |

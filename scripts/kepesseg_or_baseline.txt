@@ -78,6 +78,9 @@ folderHierarchyController.setAlbumThumbs FELVÁLTVA — a menü a toggleAlbumThu
 controller.restoreSession BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor
 controller.setCollageTitle BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918)
 controller.exportMovieFull BELSŐ — a beállítást az export_controller.py:371 olvassa vissza
+controller.collageFrameCenter BELSŐ — #1487 (döntés): a Képkockamozaik hangsúlyos középső képe. A vászon SOSEM kérdezi; az értéket a rajzoló és a mentés olvassa Pythonból (collage_controller.py:537, :545) — a beállítása a `setCollageFrameCenter` slot dolga, ami BE VAN kötve. Felületi lekérdezésre nincs szükség, törölni viszont nem lehet: a `notify` jelzésre a panel újrarajzol.
+controller.collageTitle BELSŐ — #1487 (döntés): a cím a KIMENETI FÁJLNÉV forrása (spec 9.1), Pythonból olvasva (collage_save.py:380, :451). Az eredetiben sem jelenik meg a felületen, tehát nincs hova bekötni; az írója (`setCollageTitle`) már BELSŐ.
+controller.folderDateText BELSŐ — #1487 (döntés): a fejléc dátumsorát a FEED modellje adja (`LightboxFeed.qml:578` → `modelData.dateText`), tehát a property-nek nincs felületi fogyasztója. Marad, mert a KÖZÖS `formatting.photo_dates`-en át számol az állapotsorral (#2304): a `test_controller.py::test_folder_date_text_matches_header` épp azt őrzi, hogy a két felirat ne mondhasson mást ugyanarról a mappáról.
 editController.redoAction BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t
 editController.cancelPendingPreview BELSŐ — az application.py:892 hívja leálláskor
 folderHierarchyController.setFolders BELSŐ — az application.py:704 tölti fel a fát
@@ -88,11 +91,8 @@ startupStatus.finish BELSŐ — az indítás végét az application.py jelenti b
 # Ezekre a bevezetéskor NEM volt jegy. Külön-külön kell eldönteni: felület
 # kell hozzá, vagy törölni kell a tagot. Amíg nincs döntés, itt állnak —
 # de a sorok CÉLJA, hogy elfogyjanak.
-controller.collageFrameCenter MÉRVE — kollázs-keret középpont; a vászon nem köti
-controller.collageTitle MÉRVE — a kollázs címe a felületen nem jelenik meg
 controller.setCollageSavedPath MÉRVE — a mentett kollázs útja bekötetlen
 controller.collageSeed MÉRVE — a véletlen elrendezés magja bekötetlen
-controller.folderDateText MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban)
 controller.locationOfRow MÉRVE — a sor helyadata bekötetlen
 controller.faceDetectionEnabledFor FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal.
 controller.setExportMovieFull MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ
