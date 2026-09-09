@@ -677,8 +677,9 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
 
+    @Slot(int, str, result=str)
     @Slot(int, result=str)
-    def displayUrlAt(self, row: int) -> str:
+    def displayUrlAt(self, row: int, mode: str = "") -> str:
         """A kép URL-je a DIAVETÍTÉSNEK — a megjelenítési móddal (#1640).
 
         Aktív mód nélkül a sima `file://` URL (bájtra a mód bevezetése
@@ -694,7 +695,14 @@ class PhotoGridModel(QAbstractListModel):
         fajl_url = self.fileUrlAt(row)
         if not fajl_url:
             return ""
-        cimke = current_display_mode_suffix()
+        # ⚠️ #1640: a módot a hívó ADJA ÁT, nem innen olvassuk. A QML-kötés
+        # csak akkor értékelődik újra módváltáskor, ha a mód VALÓDI
+        # ARGUMENTUM: egy eldobott `controller.displayMode` referencia
+        # (`(mod, url)` alakú vessző-kifejezés) nem hoz létre kötés-
+        # függőséget — mérve (#1640): a dia URL-je a módváltás után is a
+        # nyers fájlé maradt. Argumentum nélkül a modul-szintű mód a
+        # tartalék (a többi hívónak).
+        cimke = display_mode_url_suffix(mode) if mode else current_display_mode_suffix()
         if not cimke:
             return fajl_url
         if not 0 <= row < len(self._photos):

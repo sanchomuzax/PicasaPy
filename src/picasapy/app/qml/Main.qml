@@ -1436,6 +1436,9 @@ ApplicationWindow {
         z: 100
         // #305: null-őr
         photosModel: controller ? controller.photos : null
+        // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
+        // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
+        displayMode: controller ? controller.displayMode : ""
         onClosed: window.exitSlideshow()
         onStarToggled: function(index) { controller.toggleStar(index) }
         onRotateRequested: function(index, delta) {

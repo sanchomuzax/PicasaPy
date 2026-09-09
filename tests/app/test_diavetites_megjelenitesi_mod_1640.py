@@ -86,6 +86,7 @@ class TestASzolgaltato:
         assert not eredmeny.isNull(), "az ékezetes útvonal nem töltődött be"
         assert eredmeny.pixelColor(1, 1).red() == PROJEKTOROS
 
+<<<<<<< HEAD
     def test_a_WINDOWSOS_utvonal_nem_esik_szet(self) -> None:
         """MÉRVE a windows-lábon (#1640): az `urlparse` a `C:` meghajtó-betűt
         URL-SÉMÁNAK olvassa, és az útvonal fele elveszik — a diavetítés képe
@@ -106,6 +107,20 @@ class TestASzolgaltato:
             "D:/foto/nyaralás/b.jpg",
             "",
         )
+=======
+    def test_a_MERETEZO_ag_is_mukodik(self, kep: Path) -> None:
+        """A QML `sourceSize`-zal kér — ez az ág korábban `None` mérettel
+        méretlen maradt, és élesben `ValueError`-ral szállt el (#1640)."""
+        from PySide6.QtCore import QSize
+
+        provider = DisplayPhotoProvider()
+        eredmeny = provider.requestImage(
+            f"{kep}?d=projector", QSize(), QSize(6, 4)
+        )
+        assert not eredmeny.isNull(), "a méretezés elszállt"
+        assert eredmeny.width() == 6
+        assert eredmeny.pixelColor(3, 2).red() == PROJEKTOROS
+>>>>>>> 282005cf (fix(app): a diavetites modja a KIRAJZOLT kepen is hat — ket nema hiba (#1640))
 
     def test_a_hianyzo_fajl_URES_kepet_ad(self, tmp_path: Path) -> None:
         provider = DisplayPhotoProvider()
