@@ -4434,6 +4434,53 @@ művelet abban az útban**.
 visszaállított, teljes felbontású renderben? A `fullres="1" slow="1"` jelzők
 (1247. sor) épp arra utalnak, hogy ott **külön út** van.
 
+### 9. ✅ A „nincs név szerinti megkerülő út" MEGERŐSÍTVE — indextől függetlenül (2026-09-09, 226. kör, #2746)
+
+A 225. kör kimérte, hogy az index `string_xrefs` táblája **26 %-ban hiányos**,
+és ezzel gyengült az 5.2 szakasz lelete (*„pontosan egy `Quantize`-hivatkozás
+van"*). A 226. kör **indextől függetlenül** újramérte.
+
+**A módszer:** nyers bájtkeresés a teljes EXE-ben a `Quantize` mintára (nem az
+indexből), majd a `.text` végigpásztázása a talált VA-kra (`paszta.py`,
+darabolva, plafon alatt). Kontroll: a `0x00bb31f0` ismert hivatkozásának elő
+KELL kerülnie — `assert`-tel kikényszerítve.
+
+**A fájlban három** `Quantize`-tartalmú sztring van:
+
+| VA | sztring | mi ez |
+|---|---|---|
+| `0x00c94c90` | `QuantizePalette` | a leíró `id` attribútumának értéke |
+| `0x00cef9dc` | `imageOperations:QuantizePaletteImageOperation` | a művelet-gyár kulcsa |
+| `0x00d48744` | `.?AVQuantizePaletteImageOperation@glimmer@@` | RTTI-név |
+
+**A `.text`-ben ezekre pontosan EGY hivatkozás van:**
+
+```
+0x00bb3769  mov ecx, 0xcef9dc     ; a gyár-regisztráció (a 0x00bb31f0 törzsében)
+```
+
+⇒ **Az 5.2 szakasz lelete megerősítve**, most az indextől függetlenül.
+
+#### 9.1 ⭐ ÚJ részlet: a rövid névre NULLA kódbeli hivatkozás
+
+A `0x00c94c90` (`'QuantizePalette'`, a leíró `id`-je) címére a `.text`-ben
+**egyetlen utasítás sem** hivatkozik. ⇒ A `.picasa.ini`
+`filters=QuantizePalette=…` sorát a kód **nem beégetett névvel** azonosítja,
+hanem a `filterdesc.xml`-ből betöltött `id` attribútummal (azt a
+`0x008ff550` olvassa be, ld. az 1.3 szakasz mért jegyzetét).
+
+**Ez a fő kérdés szempontjából számít:** nincs olyan út, amely a szűrő NEVÉRE
+keresve kerülné meg a leíró-láncot. A `.picasa.ini`-vezérelt render a
+leíró-láncon megy.
+
+#### 9.2 A negatívum HATÓKÖRE — kimondva
+
+A pásztázás a **`.text` szakaszra** és a **közvetlen érték** alakra ment
+(`mov`, `push`, `cmp`, `lea` operandusában szereplő cím). Amit NEM zár ki:
+egy számított cím (bázis + eltolás, tábla-indexelés). Ez a hatókör szűkebb,
+mint a „nincs hivatkozás" — de a 223. kör indexre alapozott állításánál
+lényegesen erősebb.
+
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*

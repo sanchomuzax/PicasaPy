@@ -1889,3 +1889,20 @@ Mindkettőt **kontroll-állítás** fogta meg, nem szerencse:
 ⇒ **Minden pásztázó szkriptbe tegyél kontroll-állítást egy ISMERT pozitívra.**
 Enélkül a „0 találat" a minta hibáját jelenti, nem leletet — és úgy néz ki,
 mint egy eredmény.
+
+## ⚠️ A KONTROLL is mérendő — ne találomra vett tartomány (2026-09-09, 226. kör)
+
+A 225. kör szabálya („minden pásztázóba `assert` egy ismert pozitívra")
+azonnal hozott is egy tanulságot: **a kontroll maga is elromolhat.**
+
+A 226. kör pásztázója a `0x00bb31f0` függvényben lévő ismert hivatkozást
+kereste kontrollként, `0x00bb31f0 … +0x400` tartományban — a `0x400`
+**találomra** választott szám volt. A tényleges találat a `0x00bb3769`-en van,
+azaz **`0x579`-nél**; a függvény valódi mérete az indexből **3158 bájt**.
+
+⇒ A kontroll bukott, holott a minta HELYES volt. Az `assert` jól jelzett — de
+a hibát a kontroll definíciójában kellett keresni, nem a mintában.
+
+**A szabály:** a kontroll tartományát is **mérésből** vedd (az index
+`functions.size` mezője), ne kerekítsd. Különben a kontroll hamis riasztást ad,
+és a következő kör azt hiszi, hogy a mintája rossz — pedig nem az.
