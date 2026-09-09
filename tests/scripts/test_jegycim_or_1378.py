@@ -127,3 +127,62 @@ class TestFailOpen:
             io.StringIO(json.dumps({"tool_input": {"command": 'gh issue create --title "P1: x"'}})),
         )
         assert őr.main() == 0
+
+
+class TestBotEszkoz:
+    """#72: az őr eddig CSAK a csupasz `gh` alakot ismerte fel.
+
+    A projekt szabálya viszont kimondja, hogy GitHub-műveletet **kizárólag**
+    a `gh-bot`-tal szabad kiadni — az őr tehát élesben soha nem futott le.
+
+    ⚠️ A kár mért: 2026-09-09-én egy kör egy egybetűs helyőrző címmel
+    átnevezte a termék-repó egyik lezárt jegyét, `gh-bot`-tal, és az őr
+    **nem szólt**. Ugyanaznap viszont **kétszer blokkolta a jelenségről
+    szóló PRÓZÁT**, mert abban ott állt a csupasz alak. A kapu a szöveget
+    fogta meg, a műveletet nem — pontosan a „fogat csak lefutott
+    ellenőrzésnek" tiltása.
+    """
+
+    ROSSZ_CIM = "Hisztogram"
+
+    @pytest.mark.parametrize("program", [
+        "gh",
+        "gh-bot",
+        "./eszkozok/gh-bot",
+        "/home/sancho/picasapy-agent/eszkozok/gh-bot",
+        "~/picasapy-agent/eszkozok/gh-bot",
+    ])
+    def test_minden_irasmod_BLOKKOL(self, monkeypatch, program: str) -> None:
+        kod, uzenet = _futtat(
+            monkeypatch, f'{program} issue edit 66 --title "{self.ROSSZ_CIM}"')
+
+        assert kod == 2, f"átengedte: {program}"
+        assert "Jegycím-őr" in uzenet
+
+    @pytest.mark.parametrize("program", ["gh", "./eszkozok/gh-bot"])
+    def test_a_JO_cim_minden_irasmoddal_atmegy(self, monkeypatch, program: str) -> None:
+        """Kapu-ellenőrzés: a bővítés nem lett túl mohó."""
+        kod, _ = _futtat(
+            monkeypatch,
+            f'{program} issue create --title "A tálca gombja nem jelenik meg '
+            f'indulás után"')
+
+        assert kod == 0
+
+    def test_a_PROZA_tovabbra_is_atmegy(self, monkeypatch) -> None:
+        """A parancspozíció-szabály nem romolhat el: a szövegben EMLÍTETT
+        alak nem futtatás. Enélkül nem lehetne magáról a hibáról írni —
+        élesben pontosan ez akadályozta meg kétszer a #72 rögzítését."""
+        kod, _ = _futtat(
+            monkeypatch,
+            "echo './eszkozok/gh-bot issue edit 1 --title Hisztogram' >> jegyzet.md")
+
+        assert kod == 0
+
+    def test_a_bot_PR_cime_tovabbra_is_kimarad(self, monkeypatch) -> None:
+        """A `pr create` más konvenció — ez a bővítéssel sem változik."""
+        kod, _ = _futtat(
+            monkeypatch,
+            './eszkozok/gh-bot pr create --title "fix: a gombfelirat levágódik (#72)"')
+
+        assert kod == 0
