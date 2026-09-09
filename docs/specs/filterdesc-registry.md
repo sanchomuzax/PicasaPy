@@ -4620,3 +4620,107 @@ megnevezhető jelöltek.
 *Bizonyítottsági fok: a **viselkedés-mérés megerősített** (referencia-export,
 két kontrollal); a **binárisbeli olvasat megerősített** (minden állítás
 mellett cím); a **kettő összeegyeztetése NYITOTT**, a folytatás nevesítve.*
+
+## ⛔ A jelvény-lánc MINDEN szeme utasításszinten mérve — és az ellentmondás ezzel ÉLESEDIK (2026-09-09, 232. kör, #2125)
+
+A tulajdonos 2026-09-08-án megválaszolta a jegy blokkoló kérdését: *„Rajta
+van-e a kék »1« a Színinvertáláson egy másik képen? IGEN! SOK képen tesztelve
+Picasa 3 alatt!"* — és kimondta, hogy **több felhasználói teszt nem kérhető, a
+választ a binárisnak kell megadnia.**
+
+Ez a kör ezért egyetlen dolgot csinált: a 216–217. kör láncát **újramérte,
+szemenként, örökölt feltevés nélkül** — mert egy zárt láncnak és egy
+megismételt megfigyelésnek nem szabadna ellentmondania.
+
+### 1. Előbb a megfigyelés: a jelvény GEOMETRIÁVAL azonosítva
+
+A `research/#1869-effekt-ful-kis-kek-jel/` két felvételén a kék foltok
+befoglaló dobozai (küszöb: `B≥165 ∧ B−R≥70 ∧ B−G≥45`, összefüggő klaszterek
+≥25 képpont):
+
+| fül | doboz | méret |
+|---|---|---|
+| 3. (Szépia) | x 162–174, y 86–97 | **13×12** |
+| 3. (Fekete-fehér) | x 251–262, y 86–97 | 12×12 |
+| 3. (Melegítés) | x 74–86, y 158–168 | 13×11 |
+| **4. (Színinvertálás)** | **x 162–174**, y 224–235 | **13×12** |
+
+A 4. fül jelvénye **ugyanakkora és ugyanabban az oszlop-eltolásban** áll, mint
+a 3. fül szépia-jelvénye (a sorköz 72 képpont, a két ablak magassága 6
+képponttal tér el) ⇒ **ugyanaz a réteg**, nem valami más felületi elem. A 4.
+fülön ez az EGYETLEN ilyen doboz; a többi kék klaszter a Hőtérkép/HDR
+bélyegképének saját tartalma (75×46, 20×18 — nagyságrenddel nagyobbak).
+
+⇒ A megfigyelés **megerősítve, a saját anyagunkból, mérve** — nem emlékezeti
+tévedés és nem képfüggő.
+
+### 2. A lánc újramérése — mind a nyolc szem
+
+| # | állítás | ahol MÉRTEM |
+|---|---|---|
+| 1 | a csempe-tábla 36×12 bájt; `+0` elsődleges, `+4` másodlagos, **`+8` mind a 36 tételen 0** | nyers kiolvasás `0x00c7e5a0`-ról |
+| 2 | a csempeépítő a táblából **csak** a `+0`-t és a `+4`-et olvassa | `FUN_005d7c20` teljes törzsében pontosan 2 hivatkozás (`0x005d7d2e`, `0x005d7d70`) |
+| 3 | a kereső (`regiszter vtbl+4` = `FUN_0050e460`) **egyetlen** azonosítót kezel külön: `desat` (`0x00c86f24`, 6 bájt) | `0x0050e481`–`0x0050e4ad` |
+| 4 | ⭐ **ÚJ: a `FUN_008f9fe0` egy ÁLNEVET is felold** — `crop` (`0x00c812f8`) → **`crop64`** (`0x00c80adc`), és ez az egyetlen álnév | `0x008fa030`–`0x008fa06f` |
+| 5 | ⭐ **ÚJ: a keresés hibaágai** — ha a kereső nem 0-t ad, vagy a kapott mutató NULL, a jelző **érintetlen marad**, és az alapértéke 0 | `0x005d7ea3 test eax,eax / jne`, `0x005d7eaf test ecx,ecx / je` → `0x005d7fd2`; az alapérték `0x005d7e9c` |
+| 6 | a `CGenericFilter` vtáblája `0x00cd184c`, és a `+0x14` **tényleg** a `FUN_008f6cc0` | a vtábla nyers kiolvasása (`+0x10`→`0x008f6bc0`, `+0x14`→`0x008f6cc0`, `+0x18`→`0x008fc000`) |
+| 7 | `this+8` = a leíró | a ktor **első** utasítása: `0x008f6ad0 mov [esi+8], ecx` |
+| 8 | a leíró `+4` alapértéke **0**, és egyetlen írója van | `0x008ff5a7 mov [esp+0x28], 0` (alapérték) → `0x008ff847 mov [eax+4], ecx`; a `FUN_00900490`-nek **egy** hívója van (`0x008ff693`) |
+| 9 | a `mode=` kódtábla — az összehasonlítás **hosszával** együtt | `effect`=4 (`"effect\0"`, 7 bájt), `oneclick`=1 (9 bájt), `soft`=5, `hard`=2, `tool`=6, `history`=7, egyéb 0 |
+| 10 | a jelvény-réteg neve a **hurokindexszel** épül | `0x005d80d3 push ebx` + `push 0x00c96304` (`editpanel/fx%d_adorn`) |
+
+**Kontroll a vtábla-olvasásra:** a `+0x18`-as rés visszatérési értékét a hívó
+`strlen`-nel dolgozza fel és sztringgé alakítja (`0x005d7ee0`–`0x005d7ef2`) ⇒
+`char*` felirat. Egy egész és egy sztring a szomszédos réseken — a
+rés-kiosztás tehát nem elcsúszott olvasat.
+
+**Nincs második építési út:** a leíró vtáblájára (`0x00cd18fc`) és a
+`CGenericFilter` vtáblájára (`0x00cd184c`) egyaránt **pontosan két** abszolút
+hivatkozás van, és a második mindkét esetben **destruktor**
+(`0x008fa740`, `0x008fa880` — a végükön az ősosztály vtáblája,
+`0x00c7f980`). Konstruktor + destruktor = egy osztály, egy építési út.
+
+### 3. Amit ez a kör ÚJRA kizárt — indextől függetlenül
+
+| lehetőség | a mérés |
+|---|---|
+| beágyazott leíró az EXE-ben | `<filter` **0** előfordulás; `oneclick` **1** (maga az összehasonlítási literál); `zerostate` 1 |
+| második `Invert` azonosító | az `Invert` bájtsorozat a **teljes fájlban 4×**: `&Invert Selection`, a csempe-azonosító, egy hibaüzenet, egy RTTI-név — **nincs** második szűrő-azonosító |
+| kulcsütközés a 12 `oneclick` szűrővel | a 12: `autobacklight, autolight, autocolor, bw, enhance, warm, grain, grain2, sepia, autocontrast, moviestart, movieend` — egyik sem ütközik |
+| eltolt regisztráció (a szomszéd leírója) | fájlsorrend: az `Invert` (986. sor) elődje a `Holga`, utódja az `IR` — mindkettő `effect` |
+| a jelvényt más attribútum vezérli | a négy jelvényes (`sepia`,`bw`,`warm`,`Invert`) nyitótagját **egyetlen** attribútum sem különbözteti meg a jelvénytelen, ugyanilyen „csupasz" `effect`-ektől (`PicnikTint`, `radblur`, `IR`, `Sixties`, `TwoTone`) |
+| második leíró-fájl a telepítésben | a teljes fánkon `find -iname '*filterdesc*' -o -iname '*picnik*'` ⇒ **egyetlen** találat: `runtime/filterdesc.xml`; a `runtime/filters.txt` mappaszűrő (13 sor, `DirectoryFilters`), nem szűrőleíró |
+
+### 4. Az ellentmondás — élesen kimondva
+
+Három állítás, amelyek közül **legfeljebb kettő** lehet igaz:
+
+1. a jelvény akkor és csak akkor látszik, ha a csempe szűrőjének leíró-`+4`-e
+   `1` — *utasításszinten mérve, fent, tíz ponton*;
+2. a Színinvertálás csempéjén **van** jelvény — *a saját felvételünkön,
+   geometriával mérve, és a tulajdonos sok képen megerősítette*;
+3. a futásidejű leíróban az `Invert` `mode="effect"` (kód 4) — *ez az EGYETLEN,
+   amit nem a binárisból, hanem a LEMEZEN lévő fájlból tudunk.*
+
+⇒ **A cáfolható elem a 3.** A `0x00405615`-nél a program a
+`runtime\filterdesc.xml` **relatív** útvonalat kapja, és azt futásidőben oldja
+fel egy útvonal-objektumba (`FUN_00408b50`, `[reg+0x1450]`). Amíg nem tudjuk,
+**mihez képest** relatív ez az útvonal, addig a kutatási fánk 2015-ös
+telepítés-másolatának `filterdesc.xml`-je nem bizonyítottan azonos azzal, amit
+a tulajdonos futó Picasája beolvas.
+
+### 5. A következő lépés — és az is GÉPI
+
+**Nyitott kérdés (ÖRÖKÖLT, a 216. kör óta):** melyik könyvtárhoz képest oldja
+fel a szűrő-regiszter a `runtime\...` útvonalait? A megszerzés útja
+utasításszintű és nem igényel felhasználói tesztet: a regiszter
+(`0x146c` bájtos objektum, vtábla `0x00c7f724`) betöltő metódusából a
+`[this+0x1450]` útvonal-objektumot használó fájlmegnyitásig kell eljutni, és
+ki kell olvasni, mi kerül elé (telepítési mappa a `GetModuleFileName`-ből, vagy
+felhasználói adatkönyvtár). Ha felhasználói adatkönyvtár, akkor a telepítés
+melletti fájl **nem** az igazságforrás, és az ellentmondás magától feloldódik.
+
+*Bizonyítottsági fok: **megerősített** az 1–3. szakasz (utasításszintű
+újramérés, képpont-geometria, kimerítő bájtszintű kizárások); a 4. szakasz
+következtetése **erős**; az 5. szakasz kérdése **nyitott**, a megszerzés útja
+megnevezve.*
