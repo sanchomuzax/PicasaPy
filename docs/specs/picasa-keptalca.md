@@ -1259,3 +1259,71 @@ megmérve, a kérdést nem a tulajdonosnak kell eldöntenie.
 ha a mappa-megnyitás útja ezt hívja (nullázás), akkor a megnyitás **törli** a
 kijelölést, és az aggály alaptalan; ha egy beállító ág fut, akkor áll.
 
+## ⭐⭐ A mappa-token feltétele LEFORDÍTHATÓ — a tulajdonost nem kell megkérdezni (2026-09-09, 230. kör, #2741)
+
+A 229. kör kimutatta, hogy a jegy aggálya egy **feltevésen** áll: hogy az
+eredetiben a mappa MEGNYITÁSA is beállítja az album-kijelölést. A 230. kör
+megmérte. **Nem így van.**
+
+### 1. A `+0xeac` beállítója — és a hívói névvel
+
+A `0x005675d0` (162 b) **nem** egyszerű nullázó:
+
+```
+0x0056760f  mov  [esi+0xeac], 0        ; NULLÁZZA az album-kijelölést
+…
+0x0056765b  mov  eax, [edx+0x44]       ; a [esi+0x2a4] objektum 0x44 slotja
+0x0056765e  call eax                   ;   → EZ állítja be a kijelölést
+0x00567660  mov  eax, [esi+0xeac]      ; ÚJRA olvassa: beállt-e?
+0x00567666  test eax, eax / je → -1    ;   ha nem, hiba
+```
+
+A **7 hívója** a sztringjeikből azonosítva (az index `string_xrefs`-e pozitív
+találatra megbízható):
+
+| hívó | méret | mit árulnak a sztringjei |
+|---|---|---|
+| `0x005683a0` | 3760 b | `thumbui/albumview`, `thumbui/viewswitch`, `IDS_EDIT_IMAGE` — **nézetváltás** |
+| `0x005d9cc0` | 7153 b | 60 sztring, `thumbui/*` — **a fő könyvtárnézet** |
+| `0x005e8a70` | 3614 b | `searchcontainer/search`, `oneup/back`, `IDS_MUST_SELECT` — navigáció |
+| `0x0059d000` | 546 b | `FindSelectionForUpload`, `Don't Upload` — **feltöltési kijelölés** |
+| `0x0082c4e0` | 1214 b | `collage::*`, `picturepile` — **kollázs** |
+| `0x0087dcd0` | 3206 b | `collage::*`, `collagepanel/*` — **kollázs** |
+| `0x0087db30` | 205 b | 0 sztring |
+
+⭐ **A kollázs és a feltöltés is hívja.** Ezek **kijelölés-alapú** műveletek,
+nem „hol vagyok" állapotok. ⇒ A `+0xeac` az eredetiben **explicit
+kijelölés**, nem a megnyitott mappa.
+
+### 2. És nálunk IS van album-szintű kijelölés — mérve
+
+| | hol |
+|---|---|
+| `property string selectedAlbumToken: ""` | `app/qml/PicasaPy/FolderPane.qml:31` |
+| a táplálója: `controller.currentAlbumToken` | `app/qml/Main.qml:1661` |
+| már használt feltétel: `selectedAlbumToken === ""` | `FolderPane.qml:688`, `:932` |
+
+⇒ **A fordítás megvan:** a token feltétele nálunk
+
+```
+currentAlbumToken !== ""      (az eredeti [+0xeac] nem üres)
+   ÉS  a fénykép-kijelölés üres    (az eredeti [+0xea4] üres)
+```
+
+**A „mindennapi használatban átváltana" aggály alaptalan**, mert a
+`currentAlbumToken` **nem** a megnyitott mappa: explicit album-kijelölésre
+állítódik, ahogy az eredetiben is.
+
+### 3. Bizonyítottsági fok — és a fenntartás
+
+**Erős, de nem bitre menő.** A hívók azonosítása a sztringjeikből történt (nem
+dekompilációból), és a mi oldali megfelelés **levezetés**: a
+`currentAlbumToken` szemantikája a QML-ből olvasva egyezik az eredeti
+kijelölés-szerepével, de nem futásidőben összemérve.
+
+⚠️ Amit ez NEM mond meg: mit tegyen a token, ha a felhasználó **mappát** (nem
+albumot) jelöl ki. Az eredetiben a `CAlbumSelectionNode` mindkettőt fedi; ha
+nálunk a mappa-kijelölés nem állítja a `currentAlbumToken`-t, a token mappára
+nem jelenik meg. **Ez apró eltérés, és a bekötésnél mérendő** — de nem
+indokolja a tulajdonos megkérdezését.
+
