@@ -68,9 +68,23 @@ ColumnLayout {
         text: qsTr("You can drag and drop pictures here to make a new album.")
         font.pixelSize: Theme.fontSize - 1
         font.italic: true
-        color: albumDropArea.containsDrag ? Theme.picasaGreen : Theme.textGray
+        // #1488: húzás közben a CÉLPONT kap színt (`alist_dragcolor`), és a
+        // felirat fehérre vált — az eredeti a kiemeléshez tartozó fehér
+        // szöveget használja a kékes kitöltés fölött. Korábban a felirat
+        // zöldre váltott, ami a mi találmányunk volt, és a mért #82A6BD
+        // sehol nem jelent meg a felületen.
+        color: albumDropArea.containsDrag ? Theme.panelSelectionText : Theme.textGray
         topPadding: 4
         bottomPadding: 6
+
+        Rectangle {
+            objectName: "albumDropTargetFill"
+            anchors.fill: parent
+            // a szöveg MÖGÉ: a Text a saját gyerekei fölé rajzol, ha a
+            // gyerek z-je negatív
+            z: -1
+            color: albumDropArea.containsDrag ? Theme.listDragTarget : "transparent"
+        }
 
         DropArea {
             id: albumDropArea

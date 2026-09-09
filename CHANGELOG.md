@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.364] – 2026-09-09
+
+### Javítva
+
+- **Látszik, hova esik a képekből készülő új album** (#1488). Ha képeket
+  húzunk az albumok listájára, a célpont mostantól az eredeti Picasa mért
+  kékes hátterét kapja, fehér felirattal — eddig csak a szöveg váltott
+  zöldre, ami a mi találmányunk volt. A színt (és a lista négy másik,
+  eddig kimaradt eredeti színét) a téma a Picasa szállított
+  beállításfájljából veszi át.
+
 ## [0.8.363] – 2026-09-09
 
 ### Javítva
