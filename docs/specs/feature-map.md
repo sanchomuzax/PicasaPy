@@ -73,3 +73,12 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
   Projektek gyűjteményt ebből töltjük fel (#1029).
 - Windows/macOS csomagolás az 1. fázisban (Linux-first; a portolhatóság
   szempont a GUI-választásnál)
+- **Beérkező hálózati felület: hallgatózó kiszolgáló és `picasa://`-szerű
+  URL-séma** (#2023). Az eredetiben ez megvan (HTTP + WebDAV + 14 végpont +
+  adatbázis-böngésző lap + LAN-hirdetés + külső URL-ről bővítménybetöltés);
+  nálunk **szándékosan nem lesz** — a döntés és az indoklás:
+  [`ADR-011`](../decisions/nincs-halozati-kiszolgalo.md), a mért felület:
+  [`picasa-beepitett-webszerver.md`](picasa-beepitett-webszerver.md). ⚠️ Ez
+  tehát **nem** feltáratlan terület: a lefedettségi rangsorban nem
+  „fehér folt", hanem lezárt döntés. Az őre:
+  `tests/test_nincs_halozati_kiszolgalo_2023.py`.
