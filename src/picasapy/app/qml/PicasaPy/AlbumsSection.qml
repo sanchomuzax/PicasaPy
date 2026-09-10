@@ -112,7 +112,13 @@ ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left; anchors.leftMargin: 16
             spacing: 5
-            Text { text: "★"; color: Theme.starYellow; font.pixelSize: Theme.fontSize }
+            //: #1132: a Csillagozott képek KÜLÖNLEGES album — az eredetiben
+            //: `icons/special_album` (zöld könyv csillaggal), nem puszta
+            //: csillag-glif. A csillag az erőforrás része, ezért az ikonon van.
+            SpecialAlbumIcon {
+                objectName: "starredRowIcon"
+                anchors.verticalCenter: parent.verticalCenter
+            }
             Text {
                 text: qsTr("Starred photos")
                 font.pixelSize: Theme.fontSize
@@ -150,11 +156,12 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left; anchors.leftMargin: 16
                 spacing: 5
-                Rectangle {
-                    width: 10; height: 8
-                    radius: 1
+                //: #1132: a rendes album ikonja az eredetiben `icons/album`
+                //: (narancs könyv) — eddig egy zöld téglalap állt itt, ami a
+                //: KÜLÖNLEGES album zöldjével esett egybe.
+                AlbumIcon {
+                    objectName: "albumRowIcon_" + albumItem.modelData.token
                     anchors.verticalCenter: parent.verticalCenter
-                    color: Theme.picasaGreen
                 }
                 Text {
                     text: modelData.name + " (" + modelData.count + ")"

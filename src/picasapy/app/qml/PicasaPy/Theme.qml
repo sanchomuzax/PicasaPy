@@ -51,6 +51,29 @@ QtObject {
     readonly property color panelSelectionActive: dark ? "#1b4a68" : "#25648b"
     readonly property color folderGold: dark ? "#a98c53" : "#ebcc8f"     // mappa arany
     readonly property color folderGoldBorder: dark ? "#8a7040" : "#d9b571"
+    // #1132: a bal hasáb bejegyzés-TÍPUSAI külön ikont kapnak, mert az
+    // eredetiben az ikon nem díszítés, hanem a típust kódolja (kilenc
+    // erőforrás az `icons/` névtérben). A MÉRET és a JELENTÉS mért, a RAJZ
+    // és a színérték a miénk (`docs/specs/design-guide.md`) — az eredeti
+    // PNG-ket tilos a repóba másolni.
+    //
+    // A lemezes mappa az eredetiben KÉK (`icons/folder`, 17 × 15), nálunk
+    // eddig arany volt; ez a jegy javítja.
+    readonly property color folderBlue: dark ? "#5b7fa6" : "#9dc0e0"
+    readonly property color folderBlueBorder: dark ? "#43607e" : "#7ba3c8"
+    //: `icons/album` (16 × 18) — narancs könyv: rendes album
+    readonly property color albumOrange: dark ? "#b3762f" : "#eeae5e"
+    readonly property color albumOrangeBorder: dark ? "#8d5c24" : "#cf8f42"
+    //: `icons/special_album` (16 × 18) — ZÖLD könyv csillaggal:
+    //: különleges album (Csillagozott, Legutóbb frissítve)
+    readonly property color specialAlbumGreen: dark ? "#4f8a4a" : "#7fbe78"
+    readonly property color specialAlbumGreenBorder: dark ? "#3c6b38" : "#5d9d57"
+    //: `icons/projects` (15 × 16) — LILA könyv csillaggal: projekt-mappa
+    readonly property color projectPurple: dark ? "#8a5f9e" : "#bb96ce"
+    readonly property color projectPurpleBorder: dark ? "#6b4a7b" : "#9a75ad"
+    //: `icons/label` (15 × 12) — szürke címke
+    readonly property color labelGray: dark ? "#8d8d8d" : "#c7c7c7"
+    readonly property color labelGrayBorder: dark ? "#6f6f6f" : "#a6a6a6"
     readonly property color folderArrow: dark ? "#d9a63a" : "#e0a92e"    // mappafa nyíl
     readonly property color linkBlue: dark ? "#8ab4f8" : "#1a0dab"       // hivatkozások
 

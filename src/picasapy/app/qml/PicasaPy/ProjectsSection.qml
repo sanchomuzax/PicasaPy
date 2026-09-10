@@ -74,7 +74,10 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left; anchors.leftMargin: 16
                 spacing: 5
-                FolderIcon { anchors.verticalCenter: parent.verticalCenter }
+                //: #1132: a projekt-mappa SAJÁT típus (`icons/projects`, lila könyv
+                //: csillaggal) — eddig a lemezes mappa ikonját kapta, tehát a
+                //: kettő a felületen nem volt megkülönböztethető.
+                ProjectIcon { anchors.verticalCenter: parent.verticalCenter }
                 Text {
                     text: projectItem.modelData.name
                           + " (" + projectItem.modelData.count + ")"
@@ -137,7 +140,10 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left; anchors.leftMargin: 20
                 spacing: 5
-                FolderIcon { anchors.verticalCenter: parent.verticalCenter }
+                //: #1132: a projekt-mappa SAJÁT típus (`icons/projects`, lila könyv
+                //: csillaggal) — eddig a lemezes mappa ikonját kapta, tehát a
+                //: kettő a felületen nem volt megkülönböztethető.
+                ProjectIcon { anchors.verticalCenter: parent.verticalCenter }
                 Text {
                     text: exportedItem.modelData.name
                     font.pixelSize: Theme.fontSize

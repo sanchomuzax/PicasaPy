@@ -14,8 +14,14 @@ A kézikönyv fő döntései (implementálva):
 - **Vászon** #EAEAEA-n úszó **fehér tartalomkártya** (#FFFFFF, 1px #CDCDCD).
 - Csoport-fejléc: **16px/600 sans, tinta** (#1C1B19) — a 3.9-es Georgia
   szerif helyett, tudatos modernizálás; „Leírás hozzáadása" dőlt #A29E96.
-- **Mappa arany** #EBCC8F ikonok, amber ▸ nyilak (#E0A92E); évszám-címkék
+- ~~**Mappa arany** #EBCC8F ikonok~~, amber ▸ nyilak (#E0A92E); évszám-címkék
   mono betűvel (#7A776F).
+  ⚙️ **JAVÍTVA (2026-09-11, #1132):** a LEMEZES MAPPA ikonja **kék**, nem
+  arany — az eredeti `icons/folder` erőforrása (17 × 15) kicsomagolva kék, és
+  a tulajdonos „sárga" észrevétele épp a mi eltérésünk volt. A bal hasáb
+  bejegyzés-típusai azóta külön ikont kapnak (mappa kék · album narancs ·
+  különleges album zöld · projekt lila · címke szürke), mert az eredetiben az
+  ikon a TÍPUST kódolja. Az amber nyilak és az évszám-címkék változatlanok.
 - Eszköztár/sávok #E2E2E2; tinta #1C1B19; hivatkozás #1A0DAB.
 - Szűrősor: ★ ☺ ⚲ ▤ + csúszka; **aktív szűrő tónusa jelölő kék** #83A7BD.
 - Tálca: nagyítás-csúszka −/+ jelekkel; az **egyetlen zöld gomb jobbra**
@@ -151,7 +157,8 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
 
 - **Mappa-panel**: szekciók („Albumok (n)", „Projektek (n)", „Mappák (n)")
   lenyíló háromszöggel; alattuk **évszám-csoportok** (2026, 2025, …) sima
-  szürke sorként; mappa-sorok sárga mappa-ikonnal, névvel és `(darabszám)`-mal.
+  szürke sorként; mappa-sorok **kék** mappa-ikonnal (#1132 — az eredeti
+  `icons/folder`-e kék; korábban sárga volt), névvel és `(darabszám)`-mal.
   Kijelölés: teljes soros `#83a7bd` háttér, fehér szöveg.
 - **Lightbox**: mappánként fejléc (ikon + szerif cím + hosszú dátum +
   műveletsor: zöld ▶ lejátszó, kis gombok, „Feltöltés" legördülő) és
