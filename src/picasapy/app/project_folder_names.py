@@ -41,7 +41,7 @@ from pathlib import Path
 
 
 class ProjectFolderKind(Enum):
-    """A hat gyári projekt-mappa."""
+    """A gyári projekt-mappák."""
 
     COLLAGES = "collages"
     MOVIES = "movies"
@@ -49,6 +49,9 @@ class ProjectFolderKind(Enum):
     CAPTURED_VIDEOS = "captured_videos"
     EXPORTED_PICTURES = "exported_pictures"
     OTHER_STUFF = "other_stuff"
+    #: #1005: a háttérkép-BMP mappája (`CThumbUI::BackgroundsFolder`).
+    #: Ugyanaz a `<Képek>/Picasa/<név>` szint, mint a többi projekt-mappánál.
+    BACKGROUNDS = "backgrounds"
 
 
 #: nyelv → név, fajtánként. Az `en` az eredeti (nyers) alak; a `hu` a
@@ -71,6 +74,7 @@ _NEVEK: dict[ProjectFolderKind, dict[str, str]] = {
         "hu": "Exportált képek",
     },
     ProjectFolderKind.OTHER_STUFF: {"en": "Other Stuff", "hu": "Egyebek"},
+    ProjectFolderKind.BACKGROUNDS: {"en": "Backgrounds", "hu": "Hátterek"},
 }
 
 #: Ugyanannak a mappának a KORÁBBI vagy verziófüggő alakjai. Mérve a

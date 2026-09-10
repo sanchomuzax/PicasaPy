@@ -101,6 +101,15 @@ class CollageSaveMixin(BackgroundWorkerMixin):
     #: beállítás asztali környezettől függ (KDE/GNOME/labwc), ezért nem itt
     #: dől el — a jelzés a  UTÁN érkezik.
     collageDesktopBackgroundReady = Signal(str)
+    #: #1005: a háttérkép TÉNYLEGESEN beállítva — az argumentum a sikeres
+    #: eszköz neve (`gsettings` · `pcmanfm` · `xfconf-query` · `feh`), hogy a
+    #: felhasználó (és a naplónk) lássa, mi végezte el.
+    desktopBackgroundApplied = Signal(str)
+    #: #1005: a BMP kiírva, de az asztalt NEM sikerült beállítani — az
+    #: argumentum a BMP útvonala. A néma sikertelenség a legrosszabb kimenet
+    #: (#936): a felhasználónak legalább azt meg kell tudnia, HOVA került a
+    #: kép, hogy kézzel beállíthassa.
+    desktopBackgroundFailed = Signal(str)
 
     collageTitleChanged = Signal()
     collageSavedPathChanged = Signal()
@@ -292,6 +301,56 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageDone.emit(ut)
         if payload["hatterkep"]:
             self.collageDesktopBackgroundReady.emit(ut)
+            self._allitsd_be_hatterkepnek(ut)
+
+    def _allitsd_be_hatterkepnek(self, kep_ut: str) -> None:
+        """A kész kollázs BMP-ként a Hátterek mappába, majd háttérképnek (#1005).
+
+        Az eredeti két lépése (mérve, `0x0057aa10`): BMP a
+        `<Képek>/Picasa/<Hátterek>/picasabackground.bmp` útvonalra, majd a
+        rendszer háttérképének beállítása KÖZÉPRE, nyújtás nélkül
+        (`WallpaperStyle=0`, `TileWallpaper=0`). A Linux-megfelelőt a
+        `app/wallpaper.py` lánca végzi.
+
+        Hiba esetén NEM hallgatunk: a `desktopBackgroundFailed` a BMP útját
+        viszi, hogy a felhasználó kézzel beállíthassa."""
+        from . import wallpaper
+        from .project_folder_names import (
+            ProjectFolderKind,
+            letezo_vagy_honos_mappa,
+        )
+
+        try:
+            # ⚠️ A Hátterek mappa a KOLLÁZSOK mappa SZOMSZÉDJA, nem a
+            # rendszer képmappájából számolva. Alapállapotban a kettő
+            # ugyanaz (`<Képek>/Picasa/Hátterek` — ez a mért útvonal), de ha
+            # a felhasználó máshova állította a kollázs-célmappát, a háttér
+            # is oda tartozik: egy Picasa-projektgyökér, egy hely.
+            #
+            # Ez egyben a próbák elszigetelése is: a `collage/outputDir`
+            # beállítást a fixture-ök eltérítik, tehát a BMP nem a VALÓDI
+            # képmappába kerül. Az első változatom a `pictures_dir()`-ből
+            # számolt, és a CI őre (#1054) meg is fogta: egy meglévő teszt
+            # a `/home/runner/Pictures/Picasa/Backgrounds`-ba írt.
+            kollazs_mappa = output.output_dir(
+                self._get_settings().value(prefs.OUTPUT_DIR_KEY)
+            )
+            mappa = letezo_vagy_honos_mappa(
+                kollazs_mappa.parent,
+                ProjectFolderKind.BACKGROUNDS,
+                # ugyanaz a nyelvforrás, mint a Kollázsok mappánál (#1131):
+                # a FELÜLET nyelve, nem a rendszer területi beállítása
+                output._felulet_nyelve(),
+            )
+            bmp = wallpaper.write_background_bmp(Path(kep_ut), mappa)
+        except OSError as hiba:
+            self.collageFailed.emit(str(hiba))
+            return
+        eszkoz = wallpaper.set_desktop_background(bmp)
+        if eszkoz:
+            self.desktopBackgroundApplied.emit(eszkoz)
+        else:
+            self.desktopBackgroundFailed.emit(str(bmp))
 
     # -- létrehozás (8.2, 9.1) ---------------------------------------------
 

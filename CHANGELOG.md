@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.381] – 2026-09-10
+
+### Hozzáadva
+
+- **Az „Asztali háttérkép" gomb tényleg beállítja a hátteret** (#1005). Eddig
+  csak elmentette a kollázst, a gomb pedig szürke volt. Mostantól a kép BMP
+  formában a Hátterek mappába kerül (ahogy az eredeti Picasa teszi), és a
+  program beállítja asztali háttérképnek **középre, nyújtás nélkül**. Ha az
+  asztali környezetet nem sikerül elérni, megmondja, hova került a kép, hogy
+  kézzel beállíthasd.
+
 ## [0.8.380] – 2026-09-10
 
 ### Hozzáadva
