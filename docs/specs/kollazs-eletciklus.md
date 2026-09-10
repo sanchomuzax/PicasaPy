@@ -6535,3 +6535,80 @@ kerül a csomópont `+0x2c`-jébe, ha egyáltalán.
 `contactsheet` belépési pontja osztály-szinten; a csonkolás-térkép) ·
 **1 nyitott, gépi úton folytatható, megnevezett függvénnyel**
 (`FUN_0087bec0`) · 0 „csak nyitva".*
+
+---
+
+## 64. K1 — a `CPileTheme[8]` sem ír csomópontot; a TÉMA-OSZTÁLYOK kizárva (2026-09-11, #1412)
+
+*274. kutatói kör. A 63.5 horgonyát viszi végig, és ezzel a téma-osztályok
+mint hatókör lezárul.*
+
+### 64.1 `FUN_0087bec0` — EGYETLEN objektum-mezőt sem ír
+
+A `CPileTheme[8]` teljes törzse (1376 bájt) diszasszemblálva; a
+nem-verem bázisú tárolások száma: **0**. (Minden `fst`/`fstp`/`mov`
+célja `[esp+…]`.) A `0x0087bf10`/`0x0087bf26` `sqrt`-pár megvan —
+a kontroll tehát lefutott, a tartomány jó.
+
+### 64.2 ⭐ A méret NORMALIZÁLT alakja itt keletkezik
+
+```
+0x0087bf3e … 0x0087bf4b   fcom · fnstsw · test ah,5 · jnp · fld1
+                          ; a szokásos min(…, 1) vágás
+0x0087bf4d  fstp dword ptr [esp+0x18]     ; f(k)
+0x0087bf51  fld  dword ptr [esp+0x18]
+0x0087bf58  fmul qword ptr [0xcf46c0]     ; × 0,33   ← LAPSZÉLESSÉG NÉLKÜL
+```
+
+⇒ **`0,33 · f(k)`** — pontosan a csomópont `w`-je a fájlban
+(`0,329102 = 337/1024`). A `picturepile` mérete tehát **két alakban**
+él a binárisban:
+
+| alak | hol | mire |
+|---|---|---|
+| **képpont**: `0,33 · W · f(k)` | `FUN_0087bcb0` (62.2) | kép-/bélyegkérés |
+| **normalizált**: `0,33 · f(k)` | `FUN_0087bec0` (itt) | elrendezés |
+
+### 64.3 Hova megy — és mi NEM
+
+A számított értékek két helyre kerülnek:
+
+- **`FUN_00a4d570`** (69 b): a `0x00d67924` egyszeri inicializálása és
+  két IAT-hívás (`0x00c40030`, `0x00c40070`) — **szál/sor-kezelő**
+  segéd, nem geometria.
+- **`FUN_00838e60`** (78 b), **kétszer**: ez az **`AnimPlacementHandler`
+  konstruktora** (`0x00838e72 mov [eax], 0xcbfebc`), amely a négy
+  float-argumentumot a `+0x08`, `+0x1c`, `+0x20` mezőkbe teszi.
+
+⇒ A `CPileTheme[8]` az **interaktív elhelyezés-animációt** építi föl,
+nem a dokumentum csomópontját.
+
+### 64.4 ⛳ A TÉMA-OSZTÁLYOK mint hatókör KIZÁRVA
+
+A 60.2 óta a hat téma-osztály **mind a 48 metódusa** át van nézve
+(automatikus `+0x2c`-szűréssel), és a `CPileTheme` mind a hat saját
+metódusa **utasításonként** is (`[0]` 62.2/63.3, `[2]`, `[3]`, `[4]`
+a `sqrt`-párokkal, `[8]` ez a kör, `[11]` adat-tartomány).
+
+> **Egyetlen téma-metódus sem ír a csomópont `+0x2c`-jébe.**
+
+Ez a hatókör tehát lezárul; a `scale` írója **nem a téma-osztályokban**
+van.
+
+### 64.5 A KÖVETKEZŐ lépés, megnevezve
+
+A 179. kör előállított egy listát, amelyet azóta **senki nem dolgozott
+fel**: a `[dokumentum+0x48]` mezőt **ÍRÓ** függvények, **47 darab**
+(ugyanott: 106 olvasó, és 16 „dokumentum-alakú" író, ebből tíz
+`dword`-ként ír — `0x00829d60` · `0x00829dc0` · `0x0082a250` ·
+`0x00832500` · `0x00838ef0` · `0x0084bb30` · `0x0085ff90` ·
+`0x00865890` · `0x008833b0` · `0x0088b0a0`).
+
+Ezek közül a `0x00832500` már azonosított (a `CCollageParser` ktora,
+60.3). **A maradék kilencet kell elolvasni** — az egyik hozza létre a
+tömböt, és ott derül ki, mi kerül a friss elem `+0x2c`-ébe.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a
+`CPileTheme[8]` szerepe; a téma-osztályok mint hatókör) · **1 nyitott,
+gépi úton folytatható, ELŐÁLLÍTOTT listával** (a kilenc `dword`-író) ·
+0 „csak nyitva".*
