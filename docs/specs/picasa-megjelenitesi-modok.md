@@ -1260,6 +1260,96 @@ tartozik — köztük `byte` méretű írások is (`0x0067c2ac`), tehát ott biz
 más mező. **Ebből az eltolásból osztályt következtetni tilos.**
 
 **A megszerzés útja:** a szövegcsomópont-modulban **egyetlen** `+0x314`-írás
-van, `0x00a6b75c` (`mov dword ptr [ebp + 0x314], esi`) — ez a jelölt. A
-következő kör azt olvassa el, és onnan nevezi meg a cél osztályát, majd a
-11. rést.
+van, `0x00a6b75c` (`mov dword ptr [ebp + 0x314], esi`) — ez a jelölt.
+
+> ⛔ **A jelölt KIESETT (2026-09-10, #2842).** Nem hozzárendelés, hanem
+> nullázás: nyolc egymást követő mező kap `esi`-t, és az `esi` **bizonyítottan
+> 0**. A részletek és ami helyette kiderült: **15. szakasz.**
+
+
+---
+
+## 15. A célmutató NULLÁZOTT, és nincs mért hozzárendelése (2026-09-10, #2842)
+
+**Bizalmi fok: megerősített** a nullázásra és az osztálynévre; a
+„soha nem fut" állítás **feltételes** (15.4).
+
+### 15.1 A jelölt kiesett: nullázás, nem hozzárendelés
+
+A 14.4 a `0x00a6b75c`-t nevezte meg jelöltként. Elolvasva **nem** az:
+
+```
+0x00a6b6a9  xor esi, esi                       ; ⭐ esi = 0
+   …
+0x00a6b732  mov dword ptr [ebp + 0x2f8], esi
+0x00a6b738  mov dword ptr [ebp + 0x2fc], esi
+0x00a6b73e  mov dword ptr [ebp + 0x300], esi
+0x00a6b744  mov dword ptr [ebp + 0x304], esi
+0x00a6b74a  mov dword ptr [ebp + 0x308], esi
+0x00a6b750  mov dword ptr [ebp + 0x30c], esi
+0x00a6b756  mov dword ptr [ebp + 0x310], esi
+0x00a6b75c  mov dword ptr [ebp + 0x314], esi   ; ⭐ a „jelölt": NULLÁZÁS
+```
+
+**Nyolc egymást követő mező** kap ugyanazt a nullát. Ez konstruktor-kezdő
+tisztítás, nem célmutató-beállítás.
+
+### 15.2 ⭐ Az osztály MEGVAN: `ytTextNode`
+
+A tartalmazó `0x00a6b680` (623 bájt) **konstruktor**, és a vtábla-írásai
+megnevezik az osztályt:
+
+| cím | a beírt vtábla | RTTI-név |
+|---|---|---|
+| `0x00a6b68e` | `0xc9432c` a `[ebp]`-be | **`ITextSettings::vftable`** |
+| `0x00a6b69c` | `0xce4bb4` a `[esi]` = `this+4`-be | **`ytTextNode::vftable`** |
+| `0x00a6b6a2` | `0xce4b04` a `[ebp]` = `this+0`-ba | **`ytTextNode::vftable`** |
+
+⇒ a `+0x314` mező a **`ytTextNode`** (és a vele egy vtábla-alakot osztó öt
+társ) tagja, és a konstruktor **nullára** állítja.
+
+### 15.3 Az ÉRTÉK forrása viszont ÉL
+
+Nem szimmetrikus a helyzet: a `+0x294` (amit a `0x00a6c350` beolvas)
+**valódi, írt mező**. A `.text`-ben 18 írása van, és **kettő ugyanebben a
+modulban**:
+
+```
+0x00a6b7f5  mov dword ptr [ebp + 0x294], eax   ; ugyanebben a konstruktorban
+0x00a6ba7a  mov dword ptr [esi + 0x294], ecx
+```
+
+⇒ az érték oldala rendben van; **csak a célmutató marad nullán**.
+
+### 15.4 ⚠️ Amit ebből következtetni SZABAD — és amit nem
+
+**Mérve:** a `+0x314`-nek **22** írása van a `.text`-ben, és **egyik sem** a
+`ytTextNode` vtábla-slotjaiban (mind az **55** rekesz átnézve a két
+vtáblából).
+
+**Feltételes állítás:** a `0x00a6c35e` írása a szállított építésben
+**valószínűleg soha nem fut le**, mert a `0x00a6c34a` null-őr kilép, amikor
+a `+0x314` nulla.
+
+⛔ **Ez NEM bizonyítás.** A `ytTextNode` **nem virtuális** tagfüggvényei
+nincsenek a vtáblában, tehát egy nem virtuális tag vagy egy külső gyár
+beállíthatja a mezőt anélkül, hogy a fenti metszet megfogná.
+
+⛔ **A szomszéd-eltolás alapú keresés NEM bizonyíték.** Végigpróbáltam
+(`+0x294`, `+0x2ef`, `+0x2f8`…`+0x310`), és hét jelölt jött ki — de
+közülük több **`byte` méretű** hozzáférést használ ugyanazokon az
+eltolásokon (`0x00b97c7b byte ptr [ebx + 0x300], 0`), ami **más
+szerkezetet** jelent. Az eltolás-egyezés önmagában nem osztályazonosság.
+
+### 15.5 A megszerzés útja — pontos következő lépés
+
+A `ytTextNode` **nem virtuális** tagjait kell összeszedni, és bennük keresni
+a `+0x314`-írást. Két járható út:
+
+1. **A konstruktor hívói** (`0x00a6b680` xref-jei): a gyár vagy a szülő
+   csatolója, amely a példányt létrehozza — ott dőlhet el, ki kapja meg a
+   mutatót.
+2. **Az osztály jellemző mezőpárja**: olyan függvényt keresni, amely a
+   `+0x314`-et **és** a `+0x294`-et is érinti — ez erősebb szűrő, mint a
+   puszta szomszédság, mert a `+0x294` a `ytTextNode`-on bizonyítottan élő
+   mező.
