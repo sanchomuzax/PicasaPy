@@ -44,6 +44,7 @@ from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy import tray
 from picasapy.index import open_index, photo_by_id, photos_in_folder
+from picasapy.index.albums import album_photos
 from picasapy.ini.albums import with_album
 from picasapy.app import formatting
 from picasapy.app.models import _thumb_url
@@ -517,12 +518,14 @@ class TrayMixin:
     # album-/mappa-kijelölés, annak van eleme, ÉS a kép-kijelölés üres.
     # A levezetés a `tray.with_album_token` docstringjében áll.
     #
-    # ⚠️ Ezt a POLLING-szabályt itt NEM kötjük be. Két oka van: a mi
-    # „mappa-kijelölésünk" a megnyitott mappa, ami nem ugyanaz, mint az
-    # eredeti `CAlbumSelectionNode`-ja, és az automatikus megjelenítés a
-    # tálca mindennapi kinézetét írná át — működő felületet ellenőrizetlenül
-    # átírni tilos. A vezérlő ezért kifejezett belépőt ad; a bekötés külön
-    # kör, saját vizuális ellenőrzéssel.
+    # #2741: a szabály BE VAN kötve, de csak az ALBUM-kijelölésre — a
+    # `showSelectedAlbumToken` alatt áll a levezetés. A megnyitott mappára
+    # szándékosan NEM: nálunk a „mappa-kijelölés" a megnyitott mappa, és a
+    # szó szerinti átvétel a tálca MINDENNAPI kinézetét írná át (a
+    # mappanézetben szinte mindig üres a kép-kijelölés).
+    #
+    # A kézi belépő (`collapseFolderIntoTray`) megmarad: az `held` tokent
+    # tesz ki, amit a szabály nem söpörhet el.
 
     @Slot(str, result=bool)
     def collapseFolderIntoTray(self, folder_path: str) -> bool:
@@ -564,6 +567,68 @@ class TrayMixin:
             )
         )
         return True
+
+    @Slot(str, result=bool)
+    def showSelectedAlbumToken(self, album_token: str) -> bool:
+        """Az ALBUM-kijelölés tokenje — a mért szabály kimenete (#2741).
+
+        A felület a mért feltétel két bemenetét figyeli (`TrayBar.qml`):
+        a token akkor jár ki, ha **van album-kijelölés** ÉS a
+        **kép-kijelölés üres**. Ez a slot a döntés EREDMÉNYÉT hajtja végre:
+
+        * `album_token` üres → az automatikus token lekerül;
+        * különben az adott album tokene kerül ki, a korábbi automatikus
+          token HELYÉRE (két album-token egyszerre nem állhat kint).
+
+        ⚠️ Az automatikus token **NEM `held`** — ettől söpri el a következő
+        kép-kijelölés magától (`tray.with_selection`), pontosan úgy, ahogy
+        az eredetiben a bélyegképek átveszik a helyét. A kézzel
+        összecsukott mappa tokenje (`collapseFolderIntoTray`) ezzel szemben
+        `held`, tehát azt sem ez a slot, sem a kijelölés nem viszi el.
+
+        `False`, ha nem került ki token (üres kérés, vagy az album üres /
+        ismeretlen — üres tokent nem teszünk ki, az a felületen üres
+        dobozként jelenne meg).
+        """
+        self._ensure_tray_wired()
+        allapot = self._tray_nelkul_auto_token()
+        if not album_token:
+            self._tray_apply(allapot)
+            return False
+        try:
+            with open_index(self._db_path) as conn:
+                rekordok = album_photos(conn, album_token)
+        except OSError as hiba:
+            raise RuntimeError(
+                f"az album képei nem olvashatók az indexből: {album_token}"
+            ) from hiba
+        if not rekordok:
+            self._tray_apply(allapot)
+            return False
+        self._tray_apply(
+            tray.with_album_token(
+                allapot,
+                tray.TrayAlbumToken(
+                    key=str(album_token),
+                    photo_count=len(rekordok),
+                    cover_photo_id=int(rekordok[0].id),
+                    is_album=True,
+                    held=False,
+                ),
+            )
+        )
+        return True
+
+    def _tray_nelkul_auto_token(self):
+        """A tálca állapota az AUTOMATIKUS album-tokenek nélkül (#2741).
+
+        Az automatikus tokent a `held is False` ismeri fel — a kézi
+        összecsukás (#1919) `held=True`-t tesz ki, azt tehát meghagyjuk."""
+        allapot = self._tray
+        for token in tray.album_tokens(allapot):
+            if not token.held:
+                allapot = tray.without_album_token(allapot, token.key)
+        return allapot
 
     @Slot(str, result=bool)
     def expandFolderInTray(self, key: str) -> bool:

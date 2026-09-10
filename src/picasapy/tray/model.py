@@ -333,12 +333,17 @@ def with_album_token(
     Vagyis amint a felhasználó egyetlen képet is kijelöl, a token eltűnik,
     és a bélyegképek veszik át a helyét.
 
-    ⚠️ Ezt a szabályt a PicasaPy még NEM futtatja magától: a mi
-    „mappa-kijelölésünk" a megnyitott mappa, ami nem pontosan ugyanaz, mint
-    az eredeti `CAlbumSelectionNode`-ja, és az automatikus megjelenítés a
-    tálca MINDENNAPI kinézetét írná át. Amíg ez nincs a tulajdonos szeme
-    előtt ellenőrizve, a token kifejezett hívásra kerül ki — a szabály
-    viszont itt áll, hogy a bekötés ne kezdődjön újra a kutatással.
+    ⚙️ **A szabály 2026-09-10 óta FUT (#2741), de csak az ALBUM-kijelölésre**
+    (`TrayBar.qml` → `TrayMixin.showSelectedAlbumToken`): a token akkor jár
+    ki, ha `currentAlbumToken !== ""` ÉS a kép-kijelölés üres. A megnyitott
+    MAPPÁRA szándékosan nem szól — nálunk a „mappa-kijelölés" a megnyitott
+    mappa, ott a kép-kijelölés szinte mindig üres, tehát a szó szerinti
+    átvétel a tálca MINDENNAPI kinézetét írná át.
+
+    Az így kirakott token **nem `held`**, ezért a következő kép-kijelölést a
+    `with_selection` magától elsöpri — pontosan úgy, ahogy az eredetiben a
+    bélyegképek átveszik a helyét. A kézzel összecsukott mappa tokenje
+    (`collapseFolderIntoTray`) `held`, azt a szabály nem viszi el.
     """
     if not isinstance(token, TrayAlbumToken):
         raise TypeError(f"mappa-/album-token kellene, nem {type(token)!r}")

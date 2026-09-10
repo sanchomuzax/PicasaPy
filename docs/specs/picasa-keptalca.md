@@ -1332,3 +1332,21 @@ nálunk a mappa-kijelölés nem állítja a `currentAlbumToken`-t, a token mapp�
 nem jelenik meg. **Ez apró eltérés, és a bekötésnél mérendő** — de nem
 indokolja a tulajdonos megkérdezését.
 
+### 4. ✅ BEKÖTVE (2026-09-10, #2741) — és mit mértünk a bekötésnél
+
+A szabály fut: `TrayBar.qml` → `TrayMixin.showSelectedAlbumToken`. A sáv
+figyeli a két bemenetet (`albumTokenOrEmpty`, `selectedIndexesOrEmpty`), és a
+vezérlő hajtja végre a döntést. Két dolog, ami a bekötés közben derült ki:
+
+* **a token elrejtését nem kell külön kódolni:** az automatikus token
+  `held=False`, és a `with_selection` a nem megtartott elemeket magától
+  elsöpri — vagyis az „amint egy képet kijelöl, a token eltűnik" mért
+  viselkedés a MEGLÉVŐ modellből jön ki;
+* **a kézi és az automatikus token szét van választva** a `held` mezővel: a
+  #1919 kézi belépője (`collapseFolderIntoTray`) `held=True`-t tesz ki, tehát
+  a szabály nem söpri el a szándékos gyűjtést.
+
+A megnyitott MAPPA valóban nem kapja meg a tokent (a fenti eltérés) — ez a
+bekötés után is így van, és szándékos: a mappanézetben szinte mindig üres a
+kép-kijelölés, ott a token a tálca mindennapi kinézetét írná át.
+

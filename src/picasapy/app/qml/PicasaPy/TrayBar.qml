@@ -139,8 +139,47 @@ Column {
         if (tray.ctl && typeof tray.ctl.syncSelection === "function")
             tray.ctl.syncSelection(tray.selectedIndexesOrEmpty)
     }
-    onSelectedIndexesOrEmptyChanged: tray.syncTraySelection()
-    Component.onCompleted: tray.syncTraySelection()
+    // =====================================================================
+    // #2741: MIKOR LÁTSZIK az összecsukott ALBUM-TOKEN — a mért szabály
+    // =====================================================================
+    // Az eredetiben ez sem parancs: a `scratch/album` réteg küldöttje
+    // (`0x00572ba4` → `0x00563530`) minden frissítéskor újraértékel, és
+    // akkor mutat, ha van album-/mappa-kijelölés, annak van eleme, ÉS a
+    // KÉP-kijelölés üres.
+    //
+    // A 230. kutatói kör (PR #2789) fordította le a mi fogalmainkra: az
+    // eredeti `+0xeac` EXPLICIT kijelölés (hét hívója közt a kollázs és a
+    // feltöltési kijelölés), nem „hol vagyok" állapot — nálunk ez a
+    // `controller.currentAlbumToken`. A megnyitott MAPPÁRA a szabály
+    // szándékosan nem szól: ott a kép-kijelölés szinte mindig üres, tehát a
+    // tálca megszokott kinézete változna meg.
+    readonly property string albumTokenOrEmpty:
+        (typeof controller !== "undefined" && controller
+         && controller.currentAlbumToken !== undefined)
+            ? controller.currentAlbumToken : ""
+
+    function syncAlbumToken() {
+        if (!tray.ctl
+            || typeof tray.ctl.showSelectedAlbumToken !== "function")
+            return
+        var mutat = tray.albumTokenOrEmpty !== ""
+                    && tray.selectedIndexesOrEmpty.length === 0
+        tray.ctl.showSelectedAlbumToken(mutat ? tray.albumTokenOrEmpty : "")
+    }
+    // MIND A KÉT bemenetre újra kell értékelni — egyetlen kötésre figyelve
+    // a token hazug állapotban ragadna. A kijelölés-tükrözés MEGY ELŐRE: a
+    // `syncSelection` söpri el a nem megtartott elemeket, és a token utána
+    // kerül vissza, ha a szabály szerint kint kell lennie.
+    onAlbumTokenOrEmptyChanged: tray.syncAlbumToken()
+
+    onSelectedIndexesOrEmptyChanged: {
+        tray.syncTraySelection()
+        tray.syncAlbumToken()
+    }
+    Component.onCompleted: {
+        tray.syncTraySelection()
+        tray.syncAlbumToken()
+    }
 
     //: A tálca elemszáma (a rögzített ÉS a kijelölésből tükrözött együtt).
     //: Ez a KÖTÉSI FÜGGŐSÉG is: a `trayInfo()`/`isHeldAt()` függvényhívások
