@@ -1033,6 +1033,9 @@ ApplicationWindow {
         onInvertSelectionRequested: window.invertSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
+        //: #1398: a MÉRT parancs keresési MÓDOT kapcsol (`dupesearch`), nem
+        //: párbeszédet nyit — a kezelő-párbeszédhez a mód sávja vezet.
+        onDuplicateSearchRequested: if (controller) controller.showDuplicateFiles()
         // #1473: Eszközök → Arcok keresése…
         onFaceScanRequested: faceScanDialog.open()
         //: #1399: a szín-keresés a KERESŐMEZŐBE ír, ahogy az eredeti
@@ -1415,7 +1418,9 @@ ApplicationWindow {
         anchors.fill: parent
         sourceComponent: Component { FolderManagerDialog { } }
     }
-    // Duplikátum-kezelő (#287): Eszközök → "Find Duplicates..."
+    // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
+    // másodpéldány-mód eredménysávjáról nyílik („Manage Duplicates..."), nem
+    // az Eszközök menüből — a mért menüparancs a keresési módot kapcsolja.
     // #294: az appWindow-bekötés a „kijelölt képek" hatókörhöz kell — enélkül
     // a dialógus a mappa-hatókörre esne vissza (integrátori bekötés).
     DeferredDialog {
@@ -1913,7 +1918,11 @@ ApplicationWindow {
                             Text {
                                 id: viewAllText
                                 anchors.centerIn: parent
-                                text: qsTr("View All")
+                                //: #1398: MÉRVE a `viewallbutton` feliratának
+                                //: („Back to View All"); az eredeti súgója
+                                //: „Exit Search Mode". Nálunk a zöld sávnak
+                                //: nincs súgó-rétege, ezért csak a felirat.
+                                text: qsTr("Back to View All")
                                 font.pixelSize: Theme.fontSize - 1
                                 font.bold: true
                                 color: "#3b8f00"
@@ -1975,7 +1984,43 @@ ApplicationWindow {
                                 onTapped: controller.clearSimilarity()
                             }
                         }
+                        // #1398: a másodpéldány-mód jelzése a sávon (az
+                        // eredetiben a keresési sáv rejtett `dupesearch`
+                        // eleme jelzi). ⚠️ A felirat NEM mért — a rejtett
+                        // elemhez a szövegtár nem ad szöveget.
+                        Text {
+                            objectName: "dupeSearchLabel"
+                            visible: (controller
+                                      && controller.viewModeName !== undefined)
+                                     ? controller.viewModeName === "dupes"
+                                     : false
+                            text: qsTr("Duplicate Files")
+                            color: "white"
+                            font.pixelSize: Theme.fontSize
+                        }
                         Item { Layout.fillWidth: true }
+                    }
+                }
+
+                // #1398: a keresés ideje alatt is legyen látható jelzés —
+                // üres várakozás TILOS (#1798). A nagy könyvtár átvizsgálása
+                // másodpercekig tart, és a rács addig a régi nézetet mutatja.
+                Rectangle {
+                    objectName: "dupeSearchScanningBar"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+                    visible: (controller
+                              && controller.dupeSearchScanning !== undefined)
+                             ? controller.dupeSearchScanning : false
+                    color: "#f0e3b0"
+                    Text {
+                        objectName: "dupeSearchScanningText"
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 8
+                        text: qsTr("Looking for duplicate files...")
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
                     }
                 }
 

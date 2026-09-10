@@ -7,15 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.382] – 2026-09-10
+### Változott
 
-### Hozzáadva
+- **A „Fájlok másodpéldányainak megjelenítése" mostantól szűrt nézetbe visz,
+  nem ablakot nyit** (#1398). Az eredeti Picasa ezzel a paranccsal keresési
+  módba vált: a rács csak azokat a képeket mutatja, amelyekből több példány
+  van, és a zöld sáv „Vissza az összes megtekintéséhez" gombja vezet ki
+  belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
+  jelölt menüpontra került („Másodpéldányok kezelése…").
 
-- **„Beállítás asztali háttérképként" a Létrehozás menüben** (#1775). A
-  kijelölt képet egy kattintással asztali háttérképpé teszi: másolatot készít
-  belőle a Hátterek mappába (így a kép átnevezése vagy törlése nem viszi el a
-  hátteret), és középre helyezi — ahogy az eredeti Picasa. Eddig a menüpont
-  szürke volt.
 ## [0.8.384] – 2026-09-10
 
 ### Változott
@@ -25,6 +25,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kérdés eddig minden indításkor felépült, holott a legtöbb indításnál a
   felhasználó egyiket sem nyitja meg. Mérve 504 objektummal kevesebb (−3,9%)
   épül fel; a viselkedés változatlan.
+
+## [0.8.382] – 2026-09-10
+
+### Hozzáadva
+
+- **„Beállítás asztali háttérképként" a Létrehozás menüben** (#1775). A
+  kijelölt képet egy kattintással asztali háttérképpé teszi: másolatot készít
+  belőle a Hátterek mappába (így a kép átnevezése vagy törlése nem viszi el a
+  hátteret), és középre helyezi — ahogy az eredeti Picasa. Eddig a menüpont
+  szürke volt.
 
 ## [0.8.381] – 2026-09-10
 

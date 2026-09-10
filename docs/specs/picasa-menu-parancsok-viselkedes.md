@@ -632,8 +632,10 @@ a **másodpéldány-opciót** (`searchoptions/dupesearch`), és **újraépíti a
 listát** (`0x0065b840` — ugyanaz, amit a színkeresés is hív).
 
 ⇒ A találatok a **fő rácsban** jelennek meg. A felirat is ezt mondja:
-„Fájlok másodpéldányainak **megjelenítése**". Nálunk `DedupDialog`
-nyílik. Jegy: **#1398**.
+„Fájlok másodpéldányainak **megjelenítése**". **Nálunk 2026-09-10 óta
+ugyanígy** (#1398): a menüpont a `dupes` nézet-módot kapcsolja
+(`app/dupe_search_controller.py`), a `DedupDialog` — ami a MI bővítésünk
+(#287) — külön, saját jelölésű menüpontról nyílik.
 
 ### `ID_FACES` · `ID_FACESRANDOM` — a Film almenü két arc-tétele
 

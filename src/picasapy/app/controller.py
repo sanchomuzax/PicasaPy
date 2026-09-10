@@ -71,6 +71,7 @@ from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
 from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
+from .dupe_search_controller import DupeSearchMixin
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .side_pane_controller import SidePaneMixin
@@ -133,6 +134,10 @@ class AppController(
     # Lustán inicializálja magát, tehát az `__init__`-hez (forró fájl) nem
     # kell nyúlni.
     SimilarityMixin,
+    # #1398: „Fájlok másodpéldányainak megjelenítése" — az eredetiben
+    # keresési MÓD (`dupesearch`), nem párbeszéd. Szintén lustán
+    # inicializálja magát, tehát az `__init__`-hez nem kell nyúlni.
+    DupeSearchMixin,
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,
@@ -1251,6 +1256,11 @@ class AppController(
             # a mappa-nézetbe (a film- és a hasonlóság-szűrőnek is ezért van
             # ága). A vágópont ilyenkor ÚJRA számolódik a mostani időhöz.
             self._show_age_filtered(param)
+        elif mode == "dupes":
+            # #1398: a másodpéldány-mód is nézet-mód, tehát egy frissítés
+            # (ini-írás, háttér-szinkron) ne dobja vissza a felhasználót a
+            # mappa-nézetbe — a #1830/#1833 ágainak mintája.
+            self._show_filtered(self._duplicate_records(), 0.0)
         elif mode == "similar":
             # #1833: enélkül egy frissítés némán visszadobná a felhasználót
             # a mappa-nézetbe (a film-szűrőnek is ezért van ága, #1830).

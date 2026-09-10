@@ -4039,8 +4039,16 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/Main.qml" line="441"/>
-        <source>View All</source>
-        <translation>Az összes megtekintése</translation>
+        <source>Back to View All</source>
+        <translation>Vissza az összes megtekintéséhez</translation>
+    </message>
+    <message>
+        <source>Duplicate Files</source>
+        <translation>Másodpéldányok</translation>
+    </message>
+    <message>
+        <source>Looking for duplicate files...</source>
+        <translation>Másodpéldányok keresése…</translation>
     </message>
     <message>
         <source>Rename...</source>
@@ -5661,6 +5669,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
         <source>Recent &amp;changes</source>
         <translation>Legutóbbi &amp;változtatások</translation>
+    </message>
+    <message>
+        <source>Manage Duplicates...</source>
+        <translation>Másodpéldányok kezelése…</translation>
     </message>
 </context>
 <context>
