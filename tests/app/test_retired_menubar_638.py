@@ -49,9 +49,15 @@ NYUGDIJAZOTT = (
 #: visszaesne helyfoglalóvá, a `TestAmiMegvalosithato` már nem szólna;
 #: azt a `test_sugo_bekotes_2054.py` fogja meg (a tétel engedélyezett, és
 #: kattintásra megnyílik a néző).
+#: ⚠️ #1775: a „Set as Desktop Background..." is KIKERÜLT innen, ugyanezen
+#: okból: **elkészült**. A parancs a kijelölt képből BMP-másolatot ír a
+#: Hátterek mappába, és középre teszi (a mért `WallpaperStyle=0` /
+#: `TileWallpaper=0` párja); a motor közös a Kollázs-panel gombjáéval
+#: (#1005). Ha a tétel valaha visszaesne helyfoglalóvá, azt a
+#: `test_hatterkep_menu_1775.py` fogja meg (a menütétel nem helyfoglaló, és a
+#: parancs tényleg ír).
 HELYFOGLALO_MARAD = (
     "Check for Updates",
-    "Set as Desktop Background...",
     "Make a Gift CD...",
 )
 
