@@ -557,7 +557,12 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     if dates:
         first = long_date(dates[0], locale)
         last = long_date(dates[-1], locale)
-    meret = locale.toString(total_mb, "f", 1)
+    szam = locale.toString(total_mb, "f", 1)
+    # ⚠️ A MÉRTÉKEGYSÉG a méret-argumentum RÉSZE, nem a formátumé: az eredeti
+    # `     %s      %s on disk` második `%s`-e a kész „86,5 MB" szöveg (a
+    # magyar „%2$s/lemez" alak is így olvasható: „24,7 MB/lemez"). Enélkül a
+    # sávról eltűnik az egység — a CI épp ezt fogta meg.
+    meret = f"{szam} MB"
     # #1913: a méret-feliratnak KÉT alakja van, és a választás feltétele a két
     # FORMÁZOTT dátum sztring-egyenlősége (mérve: `0x00570266 sete al`) — nem
     # időbélyeg-összehasonlítás. Ebből következik, hogy nincs időablak:
@@ -568,7 +573,7 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     # magyar alakjuk KÜLÖNBÖZIK („%2$s/lemez" vs „%3$s a lemezen"), ezért két
     # külön fordítható sztring, nem egy közös + külön dátum-rész.
     if not dates:
-        farok = "   " + tr("%1 MB on disk").replace("%1", meret)
+        farok = "   " + tr("%1 MB on disk").replace("%1", szam)
     elif first == last:
         #: `il_GetSelectionInfo::5` — EGY dátum
         farok = (

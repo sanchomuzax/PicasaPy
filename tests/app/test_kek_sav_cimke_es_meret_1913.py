@@ -40,6 +40,8 @@ class _Rekord:
     taken_at: str | None = None
     keywords: str | None = None
     mtime_ns: int = 0
+    #: a dátum nélküli eset tartaléka (#2304) — a `photo_dates` ezt olvassa
+    sort_mtime_ns: int = 0
     name: str = "a.jpg"
     folder_path: str = "/kepek"
 
@@ -101,6 +103,26 @@ class TestAMeretKetAlakja:
             ]
         )
         assert egy_nap != ket_nap
+
+
+class TestAMertekegyseg:
+    def test_a_MB_egyseg_mindket_alakban_ott_van(self):
+        """A mértékegység a MÉRET-ARGUMENTUM része, nem a formátumé.
+
+        Az eredeti `     %s      %s on disk` második `%s`-e a kész „86,5 MB"
+        szöveg (a magyar „%2$s/lemez" alak is így olvasható: „24,7 MB/lemez").
+        Az első nekifutásomban a szám ment be egység nélkül, és a sávról
+        eltűnt az „MB" — a CI fogta meg (`test_controller.py:117`)."""
+        egy_nap = _szoveg([_Rekord(taken_at="2026-01-02T10:00:00")])
+        ket_nap = _szoveg(
+            [
+                _Rekord(taken_at="2026-01-02T10:00:00"),
+                _Rekord(taken_at="2026-02-02T10:00:00"),
+            ]
+        )
+        datum_nelkul = _szoveg([_Rekord()])
+        for szoveg in (egy_nap, ket_nap, datum_nelkul):
+            assert "MB" in szoveg, szoveg
 
 
 class TestACimkeResz:
