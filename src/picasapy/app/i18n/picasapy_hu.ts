@@ -3718,6 +3718,21 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>XmpFacesProgressPanel</name>
+    <message>
+        <source>Writing face tags</source>
+        <translation>Arccímkék írása</translation>
+    </message>
+    <message>
+        <source>%1 / %2 pictures</source>
+        <translation>%1 / %2 kép</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>BatchEditProgressPanel</name>
     <message>
         <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="38"/>
@@ -3776,6 +3791,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <message>
+        <source>Cancelled writing face tags (%1 file(s) written).</source>
+        <translation>Az arccímkék írása megszakítva (%1 fájl kiírva).</translation>
+    </message>
+
     <message>
         <source>Face data could not be written to XMP: %1</source>
         <translation>Az arcadatot nem sikerült XMP-be írni: %1</translation>

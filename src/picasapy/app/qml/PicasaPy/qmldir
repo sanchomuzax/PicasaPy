@@ -51,6 +51,7 @@ AboutDialog 1.0 AboutDialog.qml
 HelpDialog 1.0 HelpDialog.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 BatchEditProgressPanel 1.0 BatchEditProgressPanel.qml
+XmpFacesProgressPanel 1.0 XmpFacesProgressPanel.qml
 SaveProgressPanel 1.0 SaveProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
 PicasaImportDialog 1.0 PicasaImportDialog.qml
