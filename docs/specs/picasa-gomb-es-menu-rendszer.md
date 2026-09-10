@@ -396,6 +396,12 @@ a többi 19, 22 vagy 23).
 
 **A lista-tételek beállítása** (`Property itempadding` = bal fent jobb lent):
 
+> ⚠️ **Az alábbi tábla HIÁNYOS — a 8/d helyesbíti.** Hat értéket sorol
+> (31 sor), a korpuszban viszont **tíz** különböző érték áll **36** aktív
+> soron. A „bal fent jobb lent" sorrend ellenben IGAZOLÓDOTT, immár a
+> binárisból (8/d.2).
+
+
 | érték | hány helyen | jelentés |
 |---|---:|---|
 | `2 2 22 2` | 15 | a leggyakoribb — **22 px jobb margó** a pipának/nyílnak |
@@ -643,3 +649,80 @@ importtábla és a menüépítő).
 **Nyitott**: hogyan rajzolja a program a **letiltott** gombot (nincs `_d`
 réteg); a `popuplist` legördülő **panel** háttérszíne és keretszíne (a
 rétegek csak a bezárt vezérlőt tartalmazzák, a lenyíló listát kód rajzolja).
+
+## 8/d A legördülő-tételek beállításai a BINÁRISBÓL (2026-09-10, #2856)
+
+**Bizalmi fok: megerősített.** A 8. szakasz a `.tre`-ből következtetett; ez a
+szakasz a feldolgozó kódból igazolja, és két hibát javít.
+
+### 8/d.1 A feldolgozó és a formátum
+
+A `FUN_00609680` (1352 bájt) kezeli a `popuplist` négy tulajdonságát. Az
+`itempadding` ága négy egészet olvas:
+
+```
+0x00609727  mov dword ptr [esp+0x18], ebx    ; mind a négy tag 0-ra
+0x0060972b  mov dword ptr [esp+0x1c], ebx
+0x0060972f  mov dword ptr [esp+0x20], ebx
+0x00609733  mov dword ptr [esp+0x24], ebx
+…
+0x00609784  push 0xc9af74                    ; a formátum: "%d %d %d %d"
+0x0060978a  call _sscanf
+0x00609796  lea ecx, [esp+0x18]              ; a négyes címe
+0x0060979a  call 0x6081d0                    ; a beállító
+```
+
+⇒ **hiányzó szám = 0**, mert az előtöltés nullázza mind a négyet.
+
+A `0x006081d0` (83 bájt) a négy értéket a lista `+0x404`, `+0x408`, `+0x40c`,
+`+0x410` tagjába teszi, és ha bármelyik változott, `or dword ptr [eax+8], 7`
+— ugyanaz az újrarajzolás-jelző, mint a `megjelenitesi-modok.md` 11. pontjában.
+
+### 8/d.2 ⭐ A sorrend IGAZOLVA: bal · fent · jobb · lent
+
+A fogyasztó `0x00608a00`-ban a négyesből téglalapot épít:
+
+```
+0x00608af8  mov eax, dword ptr [esi + 0x404]        ; x  = p1          (BAL)
+0x00608afe  mov ecx, dword ptr [esi + 0x408]        ; y  = p2          (FENT)
+0x00608b04  mov edx, dword ptr [esi + 0x26c]
+0x00608b0a  sub edx, dword ptr [esi + 0x40c]        ; jobb = szél − p3 (JOBB)
+0x00608b1c  mov eax, dword ptr [esp + 0x14]
+0x00608b20  sub eax, dword ptr [esi + 0x410]        ; alj  = mag − p4  (LENT)
+```
+
+A méretszámoló (`0x00608820`) ugyanezt a párosítást használja: a **szélességből**
+a `p3` és a `p1`, a **magasságból** a `p4` és a `p2` vonódik le
+(`0x0060890d`, `0x00608913`, `0x00608919`, `0x0060891f`).
+
+⇒ a 8. szakasz „bal fent jobb lent" olvasata **helyes**, és most mérve is van.
+
+### 8/d.3 ⛔ HELYESBÍTÉS: a 8. értéktáblája hiányos
+
+A korpuszban **37** `Property itempadding` sor van, ebből **1 kikommentezett**
+⇒ 36 aktív, **tíz** különböző értékkel:
+
+| érték | db |
+|---|---:|
+| `2 2 22 2` | 15 |
+| `2 2 10 2` · `1 1 21 1` · `0 0 20 0` | 4 · 4 · 4 |
+| `2 2 5 2` | 3 |
+| `1 2 21 1` | 2 |
+| `2 3 23 4` · `2 2 20 4` · `2 2 20 2` · `2 1 23 2` | 1 · 1 · 1 · 1 |
+
+A 8. szakasz hat értéket sorolt (31 sor) — a hiányzó négy érték öt sora
+maradt ki.
+
+### 8/d.4 A másik három tulajdonság
+
+| `.tre` | mit ír | hol | megjegyzés |
+|---|---|---|---|
+| `maxrows N` | `[lista+0x290] = N` | `0x0060988d` | az `sscanf` kimeneti helye előre **10**-re van töltve (`0x00609817`), tehát olvashatatlan érték esetén 10 marad |
+| `customwidth N` | `[lista+0x280] = 2` **és** `[lista+0x28c] = N` | `0x00609981`, `0x00609987` | a `+0x280` **méretezési MÓD**; a `2` a „megadott szélesség" — tehát más módok is vannak |
+| `handlealphakeys` | `byte [lista+0x275] = 1` | `0x00609b89` | **értéket nem olvas** — ezért áll a `.tre`-ben szám nélkül |
+
+Mindhárom `or dword ptr [eax+8], 7`-tel jelzi az újrarajzolást, ha az érték
+változott.
+
+⚠️ A `+0x280` méretezési mód többi értéke (`0`, `1`, …) **NINCS feltárva** —
+ez a `customwidth` nélküli legördülők útja.
