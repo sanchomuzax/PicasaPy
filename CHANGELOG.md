@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.373] – 2026-09-10
+
+### Hozzáadva
+
+- **Szín szerinti keresés menüből** (#1399). Az Eszközök ▸ Kísérleti ▸
+  Keresés almenüben ott a hat szín (Piros, Narancssárga, Sárga, Zöld, Kék,
+  Lila). Bármelyikre kattintva a keresőmezőbe beíródik a keresés, és a rács
+  azonnal a hasonló színű képeket mutatja — ugyanúgy, ahogy az eredeti
+  Picasában.
+
 ## [0.8.371] – 2026-09-10
 
 ### Hozzáadva
