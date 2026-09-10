@@ -291,6 +291,69 @@ el (`0x008f7cf0` és társai), és **nincs kimérve**.
 **tovább él**, ezért csempézés esetén a csempe-sorrendet is reprodukálni kell.
 A munkafüggvényen belüli sorrend viszont — a fentiek szerint — rögzített.
 
+## 2.2/c NINCS csempézés és nincs szálindítás a burkolókban (2026-09-10, #2876)
+
+**Bizalmi fok: megerősített** a hét burkolóra; **kimondottan nem mérve** a
+teljes csővezeték párhuzamossága (2.2/c.4).
+
+A 2.2/b kimérte a munkafüggvényen BELÜLI sorrendet, és nyitva hagyta, hogy a
+keret hányszor és milyen sorrendben hívja. Ez a szakasz azt zárja le.
+
+### 2.2/c.1 A hét burkoló — egyikben sincs csempe-ciklus
+
+| burkoló | méret | a szűrő hívása | hátrafelé ugrás | import-hívás |
+|---|---:|---|---:|---:|
+| `FUN_008f7cf0` | 493 b | `0x008f7df0` | 0 | 0 |
+| `FUN_008f7ee0` | 471 b | `0x008f8037` | **1** (ld. 2.2/c.2) | 0 |
+| `FUN_008f80c0` | 468 b | `0x008f8283` | 0 | 0 |
+| `FUN_008f8b90` | 325 b | `0x008f8cb7` | 0 | 0 |
+| `FUN_008f8ce0` | 329 b | `0x008f8e0b` | 0 | 0 |
+| `KNOWN_CALLBACK_contrast` `0x008f8a20` | 55 b | `0x008f8a4c` | 0 | 0 |
+| `FUN_008f8a60` | 292 b | `0x008f8b74` | 0 | 0 |
+
+Az „import-hívás: 0" **két független forrásból** áll: a diszasszemblátumból
+(nincs `call dword ptr [IAT]`) és az index `imports` táblájából (a hét
+függvény egyike sem szerepel `function_address`-ként). A tábla-lekérdezés
+alakja hitelesítve: a `CreateThread`-re négy hívót ad
+(`0x00990a10`, `0x00abb050`, `0x00abb720`, `0x00c0bd82`) — **egyik sem** ezek közül.
+
+### 2.2/c.2 Az egyetlen hátrafelé ugrás EGYSZERI kapcsoló, nem ciklus
+
+```
+0x008f7f24  xor cl, cl          ; a kapcsoló KEZDETBEN 0
+…
+0x008f8023  mov eax, dword ptr [ebp + 0xc]   ; UGYANAZ a képleíró
+0x008f8037  call 0x90c3b0                    ; a szinthúzás
+0x008f803f  mov cl, 1                        ; ⭐ a kapcsoló BEÁLL
+0x008f8041  jmp 0x8f7fca                     ; vissza a közös blokkba
+0x008f7ff0  test cl, cl                      ; …ami most MÁS ágra megy
+```
+
+A `cl`-t a függvény **egyszer** nullázza és **csak 1-re** írja (három helyen:
+`0x008f7f92`, `0x008f7f98`, `0x008f803f`) — **soha nem vissza 0-ra**. ⇒ a
+blokk legfeljebb **kétszer** fut be, és a képleíró (`[ebp+0xc]`) **ugyanaz**;
+a függvényben **nincs** írás rá.
+
+⇒ **ez nem résztéglalapok bejárása**, hanem kétlépcsős menet ugyanazon a képen.
+
+### 2.2/c.3 A generátor GLOBÁLIS, nem szálankénti
+
+A `0x00d67f70` **abszolút** címként szerepel a kódban (`0x0090bd25 mov esi,
+0xd67f70`, index `0x00d67f74`, állapot `0x00d67f7c`) — nincs `fs:` előtag,
+tehát **nem szál-lokális**. Ez azt jelenti: ha két szűrőlánc **egyszerre**
+futna, a mintahúzásaik **összefésülődnének**.
+
+### 2.2/c.4 ⚠️ Amit NEM mértem ki
+
+Hogy a csővezeték futtat-e valaha **két szűrőláncot egyidejűleg**. A hét
+burkoló nem indít szálat, de a felettük lévő szint nincs átnézve.
+
+**A gyakorlati összegzés:** egyetlen kép, egyetlen szálon futó feldolgozása
+**bitre reprodukálható** — a vetőmag (`0x2D8228BE`, 2.2 helyesbítése), a
+képpont-sorrend (2.2/b) és a csempézés hiánya (ez a szakasz) együtt ezt adják
+ki. A golden-teszt ezért **tűrés nélkül** írható meg, ha a mérés
+egyszálú, egy képre vonatkozik.
+
 ## 2.3 Szinthúzás (Kiemelések / Árnyékok) — `0x0090c3b0`
 
 Két lépés: LUT-építés (`0x0090c1e0`) + a fenti alkalmazó.
