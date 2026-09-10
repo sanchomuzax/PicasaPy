@@ -564,6 +564,14 @@ Rectangle {
                         color: Theme.placeholderText
                         font.pixelSize: Theme.fontSize
                     }
+                    //: #1526: jobbklikk-menü a keresőmezőn is (a Picasa
+                    //: `Address` menüosztálya). A menü MÁR MEGVOLT (#422),
+                    //: csak épp arra a mezőre nem volt rákötve, amit a
+                    //: felhasználó a leggyakrabban használ — beilleszteni
+                    //: eddig csak billentyűvel lehetett ide.
+                    TextFieldContextArea {
+                        objectName: "searchFieldContextArea"
+                    }
                 }
                 Rectangle {   // törlő gomb, csak ha van mit törölni
                     objectName: "searchClear"
