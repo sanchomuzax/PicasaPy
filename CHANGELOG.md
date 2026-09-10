@@ -9,14 +9,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.368] – 2026-09-10
 
-### Hozzáadva
-
-- **Szín szerinti keresés az Eszközök menüből** (#1399). Az Eszközök ▸
-  Keresés almenüben ott a hat szín (Piros, Narancssárga, Sárga, Zöld, Kék,
-  Lila); bármelyikre kattintva a keresőmezőbe beíródik a keresés, és a rács
-  azonnal a hasonló színű képeket mutatja — ugyanúgy, ahogy az eredeti
-  Picasában.
-
 ### Javítva
 
 - **Magyarul jelenik meg az idő-csúszka súgója és a kor-felirat** (#1830). A

@@ -61,17 +61,6 @@ Rectangle {
         searchField.clear()
     }
 
-    //: #1399: a menüből indított keresés — a hat szín-menüpont ezen át ír a
-    //: keresőmezőbe. MÉRVE (`0x0065b7b0`, hat lépés): az eredeti a mező
-    //: SZÖVEGÉT állítja, a kurzort a szöveg VÉGÉRE viszi kijelölés nélkül
-    //: (`EM_SETSEL 0xFFFF,0xFFFF`), majd lefuttatja a keresést. Vagyis
-    //: pontosan az történik, mintha a felhasználó beírta volna — ezért NEM
-    //: külön szűrő-állapot, hanem ez a függvény.
-    function keresesSzoveggel(szoveg) {
-        searchField.text = szoveg
-        searchField.cursorPosition = searchField.text.length
-        toolbar.searchEdited(searchField.text)
-    }
 
     Rectangle {
         anchors.bottom: parent.bottom
