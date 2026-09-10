@@ -1166,6 +1166,19 @@
 <context>
     <name></name>
     <message>
+        <source>     %1      %2 on disk</source>
+        <translation>     %1      %2/lemez</translation>
+    </message>
+    <message>
+        <source>     %1 to %2     %3 on disk</source>
+        <translation>     %1-%2     %3 a lemezen</translation>
+    </message>
+    <message>
+        <source>Tags: </source>
+        <translation>Címkék: </translation>
+    </message>
+
+    <message>
         <source>Pictures up to %d days old.</source>
         <translation>Legfeljebb %d napos képek.</translation>
     </message>

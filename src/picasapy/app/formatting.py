@@ -553,16 +553,80 @@ def status_text(records, locale: QLocale, tr, tr_n) -> str:
     # mappa-fejléccel, hogy a két felirat ne mondhasson mást ugyanarról a
     # halmazról; a „mindent vagy semmit" tartalék indoklása is ott áll.
     dates = photo_dates(records)
-    date_part = ""
+    first = last = ""
     if dates:
         first = long_date(dates[0], locale)
         last = long_date(dates[-1], locale)
-        date_part = first if first == last else f"{first}-{last}"
-    return tr_n("%n picture(s)", "", len(records)) + (
-        f"   {date_part}   " if date_part else "   "
-    ) + tr("%1 MB on disk").replace(
-        "%1", locale.toString(total_mb, "f", 1)
+    szam = locale.toString(total_mb, "f", 1)
+    # ⚠️ A MÉRTÉKEGYSÉG a méret-argumentum RÉSZE, nem a formátumé: az eredeti
+    # `     %s      %s on disk` második `%s`-e a kész „86,5 MB" szöveg (a
+    # magyar „%2$s/lemez" alak is így olvasható: „24,7 MB/lemez"). Enélkül a
+    # sávról eltűnik az egység — a CI épp ezt fogta meg.
+    meret = f"{szam} MB"
+    # #1913: a méret-feliratnak KÉT alakja van, és a választás feltétele a két
+    # FORMÁZOTT dátum sztring-egyenlősége (mérve: `0x00570266 sete al`) — nem
+    # időbélyeg-összehasonlítás. Ebből következik, hogy nincs időablak:
+    # ugyanaznap 00:01 és 23:59 is az „egy dátum" alakot adja, mert a napra
+    # pontos formátum ugyanazt a szöveget adja.
+    #
+    # A két formátum az eredeti `il_GetSelectionInfo::5` és `::4` kulcsa; a
+    # magyar alakjuk KÜLÖNBÖZIK („%2$s/lemez" vs „%3$s a lemezen"), ezért két
+    # külön fordítható sztring, nem egy közös + külön dátum-rész.
+    if not dates:
+        farok = "   " + tr("%1 MB on disk").replace("%1", szam)
+    elif first == last:
+        #: `il_GetSelectionInfo::5` — EGY dátum
+        farok = (
+            tr("     %1      %2 on disk")
+            .replace("%1", first)
+            .replace("%2", meret)
+        )
+    else:
+        #: `il_GetSelectionInfo::4` — dátum-TARTOMÁNY
+        farok = (
+            tr("     %1 to %2     %3 on disk")
+            .replace("%1", first)
+            .replace("%2", last)
+            .replace("%3", meret)
+        )
+    return (
+        tr_n("%n picture(s)", "", len(records))
+        + farok
+        + _cimke_resz(records, tr)
     )
+
+
+def _cimke_resz(records, tr) -> str:
+    """A sáv UTOLSÓ, feltételes darabja: `     Címkék: <név> (<db>)` (#1913).
+
+    Mérve (`0x0057040e`–`0x00570442`): a honosított `Címkék: ` előtag után
+    címkénként a BEÉGETETT `%s (%d)` alak (a zárójeles darabszám nincs a
+    szövegtárban, tehát minden nyelven ugyanaz), az egész rész előtt ÖT
+    szóköz elválasztó — és ha nincs címke, **az elválasztó sem kerül ki**
+    (a `0x00570424` NULL-ága és a `0x00570430` üres-ága).
+
+    A darabszám a CÍMKÉZETT képek száma, nem a kijelöltek — a referencia
+    felvételen `67 képek … Címkék: AI image (66)`.
+
+    ⚠️ **Ami NINCS mérve:** több címke esetén az EGYES tételek közti
+    elválasztó. A referencia-felvételen egyetlen címke van, és a bináris
+    ciklusa a tételeket egyenként formázza. Itt vesszőt használunk (a
+    kulcsszavak amúgy is vesszővel tagoltak a `.picasa.ini`-ben); ha egyszer
+    előkerül egy több címkés felvétel, ez a pont felülvizsgálandó.
+    """
+    szamlalo: dict[str, int] = {}
+    for record in records:
+        for nyers in (getattr(record, "keywords", "") or "").split(","):
+            cimke = nyers.strip()
+            if cimke:
+                szamlalo[cimke] = szamlalo.get(cimke, 0) + 1
+    if not szamlalo:
+        return ""
+    tetelek = ", ".join(
+        f"{nev} ({db})"
+        for nev, db in sorted(szamlalo.items(), key=lambda p: (-p[1], p[0]))
+    )
+    return "     " + tr("Tags: ") + tetelek
 
 
 def build_feed_groups(records, locale: QLocale) -> tuple:

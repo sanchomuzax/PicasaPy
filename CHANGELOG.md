@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.372] – 2026-09-10
+
+### Hozzáadva
+
+- **A kék infósáv kiírja a címkéket, és a méret-felirat két alakot kapott**
+  (#1913). A sáv végén mostantól ott áll, hogy a kijelölésben mely címkék
+  szerepelnek és hány képen (például „Címkék: AI image (66)") — ha nincs
+  címke, semmi nem változik. Ha a kijelölt képek egyazon napról vannak, a
+  sáv a rövidebb „24,7 MB/lemez" alakot írja, több nap esetén a
+  „86,5 MB a lemezen" alakot — pontosan úgy, ahogy az eredeti Picasa.
+
 ## [0.8.371] – 2026-09-10
 
 ### Hozzáadva
