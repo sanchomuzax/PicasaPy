@@ -7222,6 +7222,36 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>U</source>
         <translation>A</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Edit Text</source>
+        <translation>Szöveg szerkesztése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Font:</source>
+        <translation>Betűtípus:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Size:</source>
+        <translation>Méret:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Style:</source>
+        <translation>Stílus:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Alignment:</source>
+        <translation>Igazítás:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Transparency</source>
+        <translation>Átlátszóság</translation>
+    </message>
 </context>
 <context>
     <name>EditorEffectsTab1</name>

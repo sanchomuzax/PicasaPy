@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Változott
+
+- **A szövegráíró panel feliratai az eredeti helyükre kerültek** (#2535). A
+  „Betűtípus:", „Méret:", „Stílus:" és „Igazítás:" mostantól a vezérlőjük
+  bal oldalán áll, jobbra igazítva, ahogy az eredeti Picasában; a panel
+  fejléce „Szöveg szerkesztése", a csúszka fölötti felirat „Átlátszóság".
+  Eddig két felirat volt csak, szakaszcímként, és három hiányzott.
+
 ### Hozzáadva
 
 - **Hat új gyorsbillentyű a könyvtárban** (#2163). `Ctrl+3` a kijelölt képet

@@ -27,8 +27,15 @@ ColumnLayout {
             source: "../../assets/tools/text.png"
         }
         Text {
+            objectName: "textPanelHeader"
             Layout.fillWidth: true
-            text: qsTr("Text")
+            //: #2535: MÉRT felirat (`edittextpanel/edittext_label`, 207 × 16,
+            //: `m_displayfont18_Reg`) — a hivatalos magyar szöveg a Picasa
+            //: saját erőforrásából jön (`panel-feliratok-hu.tsv:247`), nem
+            //: a mi fordításunk.
+            text: qsTr("Edit Text")
+            //: A fejléc 18 pt, a címkék 12 pt — a KÜLÖNBSÉG a mért tény, a
+            //: pontos képpontméret a mi alap-betűnkhöz igazodik.
             font.pixelSize: Theme.fontSize + 3
             color: Theme.ink
         }
@@ -74,15 +81,31 @@ ColumnLayout {
     // rendszerbetűvel (Segoe UI) nem. Kitöltővé téve a felirat a
     // rendelkezésre álló helyhez igazodik, a panel minimumát nem húzza föl.
     // Ugyanez az oka az alábbi `Label`-eknek és a szín-oszlopok feliratainak.
-    Text {
-        Layout.fillWidth: true
-        text: qsTr("Font")
-        font.pixelSize: Theme.fontSize
-        color: Theme.ink
-    }
+    // #2535: az eredetiben ez NEM szakaszcím a vezérlő fölött, hanem
+    // CÍMKEOSZLOP a vezérlő BAL oldalán, JOBBRA igazítva
+    // (`edittextpanel.tre:14` — `m_displayfont12`, a felirat 0..66, a
+    // legördülő 70-től). A négy címke (Betűtípus/Méret/Stílus/Igazítás)
+    // ezért egy-egy sorban, a vezérlője előtt áll.
+    //
+    // ⚠️ #779: a `Layout.maximumWidth` nem szépészeti — enélkül a felirat a
+    // saját (betűkészlet-függő) szélességét kötelező minimumként adná az
+    // oszlopnak, és a szélesebb windowsos rendszerbetűvel a PANEL feszülne
+    // szét. A mért szélesség egyben felső korlát, a szöveg elidál.
     RowLayout {
         Layout.fillWidth: true
-        spacing: 6
+        spacing: 4
+        Text {
+            objectName: "textFontLabel"
+            //: `edittextpanel/font_label` (66 × 15) — hivatalos magyar
+            //: felirat, kettősponttal.
+            text: qsTr("Font:")
+            Layout.preferredWidth: 66
+            Layout.maximumWidth: 66
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
         // #741: a legördülők MÉRT magassága 21 képpont (`fontfamily`
         // 202 × 21, `sizelist` 48 × 21 —
         // `docs/specs/szerkeszto-panel-meretek.md` 6.4/7.). A belső
@@ -100,6 +123,24 @@ ColumnLayout {
             currentIndex: Math.max(0, panel.fontFamilyKeys.indexOf(panel.textFontFamily))
             onActivated: panel.textFontFamilyEdited(panel.fontFamilyKeys[currentIndex])
         }
+    }
+    // #2535: a MÁSODIK sor az eredetiben négy elemet visz (y 85–87):
+    // `size_label` (0..66) · `sizelist` (70..118) · `style_label` (121..167)
+    // · `bold`/`italic`/`underline` (172 / 202 / 232).
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 4
+        Text {
+            objectName: "textSizeLabel"
+            //: `edittextpanel/size_label` (66 × 15)
+            text: qsTr("Size:")
+            Layout.preferredWidth: 66
+            Layout.maximumWidth: 66
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
         // #2287: az eredetiben ez egy 16 elemű, ABSZOLÚT egész-lista
         // (`sizelist`, 48 × 21-es legördülő), nem százalék. A lista a
         // `.data`-ból kiolvasva; a panel `"%d"`-vel írja ki az elemeket.
@@ -109,14 +150,21 @@ ColumnLayout {
             currentIndex: Math.max(0, panel.fontSizeChoices.indexOf(panel.textFontSize))
             onActivated: panel.textFontSizeEdited(panel.fontSizeChoices[currentIndex])
             Layout.fillWidth: false
-            Layout.preferredWidth: 90
+            Layout.preferredWidth: 48
             Layout.preferredHeight: 21
             font.pixelSize: Theme.fontSize - 1
         }
-    }
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
+        Text {
+            objectName: "textStyleLabel"
+            //: `edittextpanel/style_label` (46 × 15)
+            text: qsTr("Style:")
+            Layout.preferredWidth: 46
+            Layout.maximumWidth: 46
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
         PanelButton {
             objectName: "textBoldButton"
             label: qsTr("B")
@@ -139,6 +187,30 @@ ColumnLayout {
             onButtonClicked: panel.textUnderlineEdited(!panel.textUnderline)
         }
         Item { Layout.fillWidth: true }
+    }
+    // #2535: az igazítás az eredetiben SAJÁT soron áll (y 117), és a
+    // felirata (`align_label`, 94 × 15) nem a bal szélen kezdődik, hanem a
+    // VEZÉRLŐ-oszlopban (x 72..166) — ezért az üres helyfoglaló a bal
+    // címkeoszlop szélességével.
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 4
+        Item {
+            Layout.preferredWidth: 66
+            Layout.maximumWidth: 66
+            Layout.preferredHeight: 1
+        }
+        Text {
+            objectName: "textAlignLabel"
+            //: `edittextpanel/align_label` (94 × 15)
+            text: qsTr("Alignment:")
+            Layout.preferredWidth: 94
+            Layout.maximumWidth: 94
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
         // a három igazítás-gomb: fix készlet, ezért kiírva (a Repeater
         // delegáltjai a funkcionális tesztekből nem érhetők el)
         PanelButton {
@@ -229,9 +301,18 @@ ColumnLayout {
         onMoved: panel.textOutlineThicknessEdited(value)
     }
 
+    // #2535: a hatodik felirat a KIVÉTEL a címkeoszlopból: az eredetiben
+    // `Property textalign center` (`edittextpanel.tre:120`), és a geometria
+    // is ezt mondja — a felirat (127 × 15, x 79..206) pontosan a csúszka
+    // fölött ül, AZONOS szélességgel (127 × 27, x 79..206). Ezért marad a
+    // csúszka fölött, középre igazítva.
     Label {
+        objectName: "textTransparencyLabel"
         Layout.fillWidth: true
-        text: qsTr("Opacity")
+        horizontalAlignment: Text.AlignHCenter
+        //: `edittextpanel/transparency_label` — hivatalos magyar felirat
+        //: (`panel-feliratok-hu.tsv:257`), kettőspont NÉLKÜL.
+        text: qsTr("Transparency")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
