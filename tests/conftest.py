@@ -17,6 +17,20 @@ import pytest
 from support.fixture_guards import user_folder_guard
 
 
+def pytest_configure(config):
+    """A saját jelölések bejegyzése (#2897).
+
+    ⚠️ Szándékosan ITT, nem a `pyproject.toml`-ban: az a KIADÁS fájlja
+    (verzió, csomaglisták), és a CHANGELOG-őr joggal tekinti a módosítását
+    felhasználóhoz eljutó változásnak — egy teszt-jelölésért nem szabad
+    kiadási bejegyzést hazudni.
+    """
+    config.addinivalue_line(
+        "markers",
+        "valodi_kepmappa: a teszt a rendszer VALÓDI képmappáját méri (#2897)",
+    )
+
+
 @pytest.fixture(autouse=True)
 def nem_szennyezi_a_felhasznaloi_mappat():
     """Elhasal, ha a teszt a valódi képmappában bármit létrehoz vagy módosít."""
@@ -50,6 +64,46 @@ def nem_nyul_a_valodi_beallitasokhoz(tmp_path_factory):
     # a helyreállítás szándékosan kimarad: a Qt nem ad visszakérdezést a
     # korábbi útvonalra, és a folyamat a futás végén megszűnik
     del eredeti
+
+
+@pytest.fixture(autouse=True)
+def nem_ir_a_rendszer_kepmappajaba(request, tmp_path_factory, monkeypatch):
+    """A rendszer KÉPMAPPÁJA a teszt idejére ideiglenes mappa (#2897).
+
+    A kollázs- és a film-kimenet célmappája a beállítás HIÁNYÁBAN a rendszer
+    képmappájának `Picasa` alkönyvtárára esik vissza
+    (`collage_output.output_dir`, `movie_output.output_dir`). Aminek a
+    fixture-je nem téríti el a `collage/outputDir` beállítást, az a
+    felhasználó VALÓDI mappájába ír — a #1054-es őr ezt elkapja, de csak
+    UTÓLAG, teardownban, és a szennyezés akkor már megtörtént.
+
+    Mérve (#2897): a `tests/app/test_controller.py` windowsos darabja emiatt
+    tette a CI-t vörösre — a felhasználói profil `Pictures/Picasa/Collages`
+    mappájába került egy `autosave.cxf`. Linuxon a `HOME` eltérítése elfedte,
+    Windowson a `USERPROFILE` nem térült el (a `teszt-windowson-mas-a-home`
+    tanulság).
+
+    ⚠️ Ez NEM váltja ki a fixture-ök `collage/outputDir`-eltérítését: az a
+    teszt SAJÁT célmappáját adja meg (amit a próba utána megnéz). Ez itt a
+    hálót teszi a rendszer alá, hogy egy ELFELEDETT eltérítés se érje el a
+    valódi mappát.
+
+    A `pictures_dir`-t MINDKÉT modulban el kell téríteni: a `movie_output`
+    a saját névterébe importálja (`from .collage_output import pictures_dir`),
+    tehát a másik modul attribútumának átírása őt nem érné el.
+
+    Aki épp a VALÓDI feloldást méri, a `@pytest.mark.valodi_kepmappa`
+    jelöléssel kikéri magát.
+    """
+    if request.node.get_closest_marker("valodi_kepmappa"):
+        yield
+        return
+    from picasapy.app import collage_output, movie_output
+
+    mappa = tmp_path_factory.mktemp("rendszer-kepmappa")
+    monkeypatch.setattr(collage_output, "pictures_dir", lambda: mappa)
+    monkeypatch.setattr(movie_output, "pictures_dir", lambda: mappa)
+    yield
 
 
 @pytest.fixture(autouse=True)
