@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A duplikátum-keresés Mégse gombja akkor sem ragad be, ha a keresés épp
+  befejeződött** (#2900). Ha a keresés a kattintás pillanatában végzett, a
+  program eddig nem válaszolt a megszakításra, és a „keresés folyamatban"
+  állapot ottmaradt. Mostantól a Mégse mindig választ kap; a már megtalált
+  csoportok megmaradnak.
+
 ### Hozzáadva
 
 - **Felirat másolása és beillesztése a Szerkesztés menüből** (#1526). A

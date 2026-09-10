@@ -292,9 +292,37 @@ class DedupController(BackgroundWorkerMixin, QObject):
     def cancelScan(self) -> None:
         """A folyamatban lévő keresés megszakítása. A worker a következő
         ellenőrzési ponton tisztán leáll, és `scanCancelled`-t bocsát ki;
-        a már kiszámolt lenyomatok az indexben maradnak."""
-        if self._stop_event is not None:
-            self._stop_event.set()
+        a már kiszámolt lenyomatok az indexben maradnak.
+
+        #2900: **a megszakítás-kérés MINDIG választ kap.** Ha nincs futó
+        keresés — mert épp befejeződött, mielőtt a kattintás ideért —, a
+        jelzést itt bocsátjuk ki. MÉRVE (2026-09-11): a régi ág ilyenkor
+        SEMMIT nem tett, tehát a jelzés nem késett, hanem **elmaradt**; a
+        felület `scanning` állapota csak a `scanFinished`-től tisztult, a
+        `scanCancelled`-re váró hívó pedig időtúllépésbe futott (a main CI
+        linuxos lába emiatt lett vörös, `0x…` nélkül: pár apró képen a
+        keresés a két kattintás KÖZÖTT végzett).
+
+        A kiadott jelzés nem hazudik: a keresés valóban nem fut, és a
+        `DedupDialog` kezelője csak a `scanning` jelzőt oltja el — a talált
+        csoportokat nem törli, tehát egy épp befejeződött futás eredménye
+        megmarad."""
+        if self._allitsd_le_a_keresest():
+            return
+        self.scanCancelled.emit()
+
+    def _allitsd_le_a_keresest(self) -> bool:
+        """A futó keresés megszakítás-jelzőjének beállítása; volt-e mit.
+
+        ⚠️ SZÁNDÉKOSAN külön a `cancelScan`-től: az ÚJ keresés indítása is
+        leállítja az előzőt („egyszerre csak egy fusson"), de az nem
+        megszakítás-KÉRÉS — ha ott a `cancelScan`-t hívnánk, minden induló
+        keresés kibocsátana egy hazug `scanCancelled`-t (ez a #2900 első
+        javítási kísérletében meg is történt, a mérés fogta meg)."""
+        if self._stop_event is None:
+            return False
+        self._stop_event.set()
+        return True
 
     @Slot()
     def releaseThumbnails(self) -> None:
@@ -309,7 +337,9 @@ class DedupController(BackgroundWorkerMixin, QObject):
     def _start(self, select_photos) -> None:
         """A keresés elindítása HÁTTÉRSZÁLON. `select_photos`: a hatókört
         megvalósító lekérdezés (nyitott kapcsolatot kap)."""
-        self.cancelScan()  # egyszerre csak egy keresés fusson
+        # egyszerre csak egy keresés fusson — de ez NEM megszakítás-kérés,
+        # ezért nem a `cancelScan` (ld. `_allitsd_le_a_keresest`, #2900)
+        self._allitsd_le_a_keresest()
         stop_event = threading.Event()
         self._stop_event = stop_event
         self.scanStarted.emit()
