@@ -22,6 +22,8 @@ from __future__ import annotations
 
 
 import pytest
+from pathlib import Path
+
 from PySide6.QtCore import QByteArray, QMimeData, QUrl
 
 from picasapy.app.fileops_controller import FileOpsController, vagolap_fajlok
@@ -40,15 +42,25 @@ def _mime(utak, muvelet: str | None) -> QMimeData:
 
 
 class TestAzElemzo:
+    @staticmethod
+    def _utak(eredmeny):
+        """Az útvonalak `Path`-ként — windowson a `QUrl.toLocalFile()` „/"-t
+        ad, a `str(Path)` „\\"-t; a kettő UGYANAZ a fájl, tehát a próba nem
+        az elválasztót méri (a CI windows-lába pontosan ezen bukott el)."""
+        utak, muvelet = eredmeny
+        return ([Path(u) for u in utak], muvelet)
+
     def test_a_masolas_jelzese(self, tmp_path):
         fajl = tmp_path / "a.jpg"
         fajl.write_bytes(b"x")
-        assert vagolap_fajlok(_mime([fajl], "copy")) == ([str(fajl)], "copy")
+        assert self._utak(vagolap_fajlok(_mime([fajl], "copy"))) == (
+            [fajl], "copy"
+        )
 
     def test_a_kivagas_jelzese(self, tmp_path):
         fajl = tmp_path / "a.jpg"
         fajl.write_bytes(b"x")
-        assert vagolap_fajlok(_mime([fajl], "cut")) == ([str(fajl)], "cut")
+        assert self._utak(vagolap_fajlok(_mime([fajl], "cut"))) == ([fajl], "cut")
 
     def test_jelzes_NELKUL_masolas(self, tmp_path):
         """A biztonságos alapértelmezés: egy félreértett `cut` MOZGATNA.
@@ -57,7 +69,9 @@ class TestAzElemzo:
         fel — ott nincs `copy`/`cut` jelzés."""
         fajl = tmp_path / "a.jpg"
         fajl.write_bytes(b"x")
-        assert vagolap_fajlok(_mime([fajl], None)) == ([str(fajl)], "copy")
+        assert self._utak(vagolap_fajlok(_mime([fajl], None))) == (
+            [fajl], "copy"
+        )
 
     def test_ures_vagolap(self):
         assert vagolap_fajlok(None) == ([], "copy")

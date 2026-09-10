@@ -737,6 +737,25 @@ ApplicationWindow {
         onActivated: fileOpsController.cutFilesToClipboard(
             window.selectedPaths())
     }
+    //: #1526: a beillesztés EGY helyen — a menütétel és a billentyű is ezt
+    //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
+    //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
+    //: őr NEM LÁTJA meg a kötést, és a menütétel „néma hirdetőnek" látszik.)
+    function beillesztAVagolaprol() {
+        if (fileOpsController.pasteFilesFromClipboard(controller.currentFolder))
+            return
+        errorBanner.notice = true
+        errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
+    }
+
+    Shortcut {
+        //: #1526: a Beillesztés billentyűje — ugyanaz a fókusz-kapu, mint a
+        //: másoláson: szövegmezőben a mezőé a billentyű (különben átnevezés
+        //: közben nem lehetne beilleszteni a szövegbe).
+        sequence: "Ctrl+V"
+        enabled: !window._szovegmezoneVanFokusz
+        onActivated: window.beillesztAVagolaprol()
+    }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
@@ -932,13 +951,7 @@ ApplicationWindow {
         //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
         clipboardHasFiles: fileOpsController
                            ? fileOpsController.clipboardHasFiles : false
-        onPasteFilesRequested: {
-            if (!fileOpsController.pasteFilesFromClipboard(
-                    controller.currentFolder)) {
-                errorBanner.notice = true
-                errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
-            }
-        }
+        onPasteFilesRequested: window.beillesztAVagolaprol()
         // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
         // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
         // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.
