@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.380] – 2026-09-10
+
+### Hozzáadva
+
+- **Az arcadatok kiírása megszakítható, és látszik a haladása** (#1403). A
+  mappa képeinek XMP-írása közben megjelenik egy kis panel a haladással és
+  egy „Mégse" gombbal — ahogy az eredeti Picasában. A megszakítás után a
+  program megmondja, hány fájlba írt; azok érvényesek maradnak.
+
 ## [0.8.379] – 2026-09-10
 
 ### Hozzáadva

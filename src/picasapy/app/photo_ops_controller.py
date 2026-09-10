@@ -42,6 +42,7 @@ volna."""
 from __future__ import annotations
 
 import secrets
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
@@ -129,6 +130,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: EGY jelzés a köteg végén, a `batchFinished` mintája: a felhasználó egy
     #: üzenetet kap, nem fájlonként egyet.
     xmpFacesFinished = Signal(int, int, str)
+    #: #1403: a köteg állapota változott (aktív / haladás) — a folyamat-panel
+    #: ezen frissül. A haladást property-k adják, a `BatchEditProgressPanel`
+    #: bevált mintája szerint.
+    xmpFacesStateChanged = Signal()
+    #: #1403: a köteget MEGSZAKÍTOTTÁK. Az eredetinek külön állapotszövege van
+    #: rá (`FaceTagJob::cancelled` — *Cancelled writing face tags*), tehát ez
+    #: NEM ugyanaz, mint a befejezés. Az argumentum a MÁR kiírt darabszám.
+    xmpFacesCancelled = Signal(int)
     #: #1755: a forgatás két JELZŐ ága, az eredeti két erőforrásával.
     #: Eddig mindkettő néma visszatérés volt: vegyes fotó+videó
     #: kijelölésnél a videók hallgatólagosan kimaradtak (#103), üres
@@ -537,22 +546,49 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
     # -- Arcinformációk írása XMP-be (#1403) -----------------------------------
 
+    @Property(bool, notify=xmpFacesStateChanged)
+    def xmpFacesActive(self) -> bool:
+        """Fut-e épp az XMP-arcírás — a folyamat-panel ettől látszik."""
+        return bool(getattr(self, "_xmp_faces_total", 0)) and not getattr(
+            self, "_xmp_faces_done_all", True
+        )
+
+    @Property(int, notify=xmpFacesStateChanged)
+    def xmpFacesDone(self) -> int:
+        return int(getattr(self, "_xmp_faces_done", 0))
+
+    @Property(int, notify=xmpFacesStateChanged)
+    def xmpFacesTotal(self) -> int:
+        return int(getattr(self, "_xmp_faces_total", 0))
+
+    @Slot()
+    def cancelXmpFaces(self) -> None:
+        """A köteg megszakítása (#1403).
+
+        Az eredeti kötegelt munkája megszakítható, és külön állapotszöveget ad
+        rá (`FaceTagJob::cancelled`). A MÁR kiírt sidecarok érvényesek
+        maradnak — a megszakítás nem visszavonás, ahogy a csoportos
+        szerkesztésnél sem (`cancelBatchEdit`)."""
+        esemeny = getattr(self, "_xmp_faces_cancel", None)
+        if esemeny is not None:
+            esemeny.set()
+
     @Slot()
     def writeFacesToXmp(self) -> None:
         """A LÁTOTT mappa képeinek XMP-sidecarja, arcrégiókkal (#1403).
 
         Az eredeti parancsa (`eMenuTools::ID_WRITE_XMP_FACES`, `.fen`
-        `write_all_facetags`) kötegelt munkaként fut, saját folyamatjelzéssel
-        (`FaceTagJob::progress`/`::done`/`::cancelled`), és a **csak olvasható
-        fájl külön, megnevezett hibaeset**:
+        `write_all_facetags`) kötegelt munkaként fut, és a HÁROM állapotát
+        külön szöveg nevezi meg (`0x006b9dd0`): `FaceTagJob::progress` /
+        `::done` / `::cancelled`. A köteg tehát **megszakítható**, a csak
+        olvasható fájl pedig külön, megnevezett hibaeset:
 
             Face tag write failed for read only file: %s
 
-        Ezért a köteg itt sem áll le az első hibán: végigmegy, és a végén EGY
-        összegzést ad (kiírt · kihagyott · az első hiba oka) — a
-        `batchFinished` mintája. A megszakíthatóság (a `::cancelled` ág) még
-        nincs meg; a mappányi köteg a mérés szerint másodpercek alatt lefut,
-        és a félig kiírt sidecarok érvényesek maradnak.
+        Ezért a köteg nem áll le az első hibán: végigmegy, és a végén EGY
+        összegzést ad (kiírt · kihagyott · az első hiba oka). Megszakításnál a
+        `xmpFacesCancelled` megy ki a MÁR kiírt darabszámmal — azok a
+        sidecarok érvényesek maradnak.
 
         Az adat forrása a `.picasa.ini` (`export.export_sidecar_for_photo`),
         nem az index — így a frissen elnevezett arc is bekerül, mielőtt a
@@ -566,23 +602,41 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             self.xmpFacesFinished.emit(0, 0, "")
             return
 
+        megszakitas = threading.Event()
+        self._xmp_faces_cancel = megszakitas
+        self._xmp_faces_total = len(utak)
+        self._xmp_faces_done = 0
+        self._xmp_faces_done_all = False
+        self.xmpFacesStateChanged.emit()
+
         def worker() -> None:
             kiirt = 0
             kihagyott = 0
             elso_hiba = ""
-            for ut in utak:
+            megszakitva = False
+            for index, ut in enumerate(utak, start=1):
+                if megszakitas.is_set():
+                    megszakitva = True
+                    break
                 try:
                     eredmeny = export_sidecar_for_photo(ut)
                 except OSError as hiba:
                     kihagyott += 1
                     if not elso_hiba:
                         elso_hiba = f"{ut.name}: {hiba}"
-                    continue
-                if eredmeny is None:
-                    kihagyott += 1
                 else:
-                    kiirt += 1
-            self.xmpFacesFinished.emit(kiirt, kihagyott, elso_hiba)
+                    if eredmeny is None:
+                        kihagyott += 1
+                    else:
+                        kiirt += 1
+                self._xmp_faces_done = index
+                self.xmpFacesStateChanged.emit()
+            self._xmp_faces_done_all = True
+            self.xmpFacesStateChanged.emit()
+            if megszakitva:
+                self.xmpFacesCancelled.emit(kiirt)
+            else:
+                self.xmpFacesFinished.emit(kiirt, kihagyott, elso_hiba)
 
         self._start_background(worker, name="picasapy-xmp-arcok")
 

@@ -2325,6 +2325,23 @@ ApplicationWindow {
 
     // #425: lebegő „Csoportos szerkesztés" folyamat-panel — az
     // ImportProgressPanel mintájára, Mégse gombbal (megszakítható köteg)
+    //: #1403: az XMP-arcírás folyamat-panelje — MEGSZAKÍTHATÓ, ahogy az
+    //: eredeti kötegelt munkája (`FaceTagJob::cancelled`). A már kiírt
+    //: sidecarok érvényesek maradnak.
+    XmpFacesProgressPanel {
+        id: xmpFacesPanel
+        objectName: "xmpFacesProgressPanel"
+        z: 90
+        visible: (controller && controller.xmpFacesActive !== undefined)
+            ? controller.xmpFacesActive : false
+        folderName: controller ? controller.currentFolder : ""
+        doneCount: controller ? controller.xmpFacesDone : 0
+        totalCount: controller ? controller.xmpFacesTotal : 0
+        onCancelRequested: controller.cancelXmpFaces()
+        x: parent.width - width - 24
+        y: 56
+    }
+
     BatchEditProgressPanel {
         id: batchEditPanel
         objectName: "batchEditProgressPanel"
@@ -2508,6 +2525,13 @@ ApplicationWindow {
         //: #1403: az XMP-arcírás EGY összegzést ad a köteg végén (kiírt ·
         //: kihagyott · első hiba). A csak olvasható fájl az eredetiben is
         //: megnevezett hibaeset, ezért az okot kiírjuk.
+        //: #1403: `FaceTagJob::cancelled` — az eredetinek KÜLÖN
+        //: állapotszövege van a megszakításra, tehát nem a befejezés
+        //: üzenetét adjuk vissza.
+        function onXmpFacesCancelled(written) {
+            errorBanner.notice = true
+            errorBannerText.text = qsTr("Cancelled writing face tags (%1 file(s) written).").arg(written)
+        }
         function onXmpFacesFinished(written, skipped, reason) {
             errorBanner.notice = reason === ""
             if (reason !== "")
