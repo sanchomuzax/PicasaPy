@@ -2527,12 +2527,24 @@ ApplicationWindow {
             brokenPhotoBatchTimer.restart()
         }
     }
+    //: #1403: az arc elnevezése után AUTOMATIKUS XMP-írás hibája. A jelzés a
+    //: `faceScanController`-é (nem a `facesHelper`-é), és az eredetiben is
+    //: megnevezett hibaeset (csak olvasható fájl) — a névadás maga sikeres
+    //: volt, csak az XMP nem, ezért nem nyeljük el.
+    Connections {
+        target: window._faceScanController
+        function onXmpAutoWriteFailed(reason) {
+            errorBanner.notice = false
+            errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)
+        }
+    }
     Connections {
         target: typeof facesHelper !== "undefined" ? facesHelper : null
         function onFaceWriteFailed(message) {
             errorBanner.notice = false
             errorBannerText.text = message
         }
+
     }
 
     // #459: sérült/betölthetetlen kép — ELREJTÉS felajánlása (nem törlés),

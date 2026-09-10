@@ -42,7 +42,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
+from PySide6.QtCore import QSettings, Property, QLocale, QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
 from picasapy.faces import detector as detector_module
@@ -50,6 +50,7 @@ from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
 from picasapy.faces.detector import FaceDetector
 from picasapy.faces.embedder import FaceEmbedder
+from picasapy.export import export_sidecar_for_photo
 from picasapy.index import (
     all_photos,
     faces_missing_embedding,
@@ -108,6 +109,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     scanFinished = Signal(int, int)  # (talált arc, átvizsgált fotó)
     scanCancelled = Signal()
     scanFailed = Signal(str)
+    #: #1403: az arc elnevezése után AUTOMATIKUS XMP-írás hibája — az
+    #: eredetiben is megnevezett hibaeset („Face tag write failed for read
+    #: only file: %s"), ezért nem nyeljük el.
+    xmpAutoWriteFailed = Signal(str)
     # A modell hiányzik/nem tölthető be — a szkennelés el sem indul, ez
     # NEM hiba (a funkció tervezett, hiánytűrő kikapcsolása).
     modelUnavailable = Signal()
@@ -156,9 +161,14 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         faces_helper: FacesHelper | None = None,
         detector_factory: Callable[[], FaceDetector] | None = None,
         embedder_factory: Callable[[], FaceEmbedder] | None = None,
+        settings: "QSettings | None" = None,
     ) -> None:
         super().__init__()
         self._db_path = Path(db_path)
+        # #1403: az „arc elnevezésekor írjuk-e ki az XMP-t" kapcsoló tára. A
+        # próbák SAJÁT tárolót adnak — a valódi beállításokat egy teszt nem
+        # olvashatja (és nem is írhatja).
+        self._settings = settings if settings is not None else QSettings()
         # Tesztben/CI-ben injektálható helyettesítő detektor/embedder is
         # lehet — alapból a valódi (modell nélkül önmagát kikapcsoló)
         # YuNet/SFace-becsomagolás.
@@ -529,6 +539,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             by_id = {face.id: face for face in unnamed_faces(conn) if face.rect is not None}
         written_ids: list[int] = []
         touched_folders: set[str] = set()
+        #: #1403: az érintett FOTÓK (nem mappák) — ezekhez írjuk ki az XMP-t
+        written_paths: list[str] = []
         all_ok = True
         for face_id in ids:
             face = by_id.get(face_id)
@@ -542,6 +554,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             if written:
                 written_ids.append(face_id)
                 touched_folders.add(str(face.photo_path.parent))
+                written_paths.append(str(face.photo_path))
             else:
                 all_ok = False
         if written_ids:
@@ -558,7 +571,39 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     sync_tree(conn, folder)
                 conn.commit()
             self.unnamedCountChanged.emit()
+            self._irj_xmp_ha_kell(written_paths)
         return all_ok and bool(written_ids)
+
+    #: #1403: a kapcsoló kulcsa. Az eredeti a `Preferences` alatt tartja, és
+    #: az **alapértéke 1 (BE)** — a kapu a `0x00485382`-n, a kezelő a
+    #: `0x004852e0`. Nálunk ugyanez az alapértelmezés.
+    #:
+    #: ⚠️ A kapcsolóhoz NEM építünk felületi jelölőnégyzetet: az eredetiben a
+    #: `Preferences`-ág tartja, de hogy MELYIK panel mutatja, nincs kimérve —
+    #: kitalált helyre tett vezérlő rosszabb, mint a hiánya. A viselkedés
+    #: (automatikus írás) enélkül is az eredetié.
+    XMP_ON_NAME_KEY = "faces/writeXmpOnName"
+
+    def _xmp_iras_bekapcsolva(self) -> bool:
+        ertek = self._settings.value(self.XMP_ON_NAME_KEY, True)
+        if isinstance(ertek, str):
+            return ertek.strip().lower() not in ("false", "0", "no")
+        return bool(ertek)
+
+    def _irj_xmp_ha_kell(self, utak) -> None:
+        """Az elnevezett arcok fotóihoz XMP-sidecar (#1403).
+
+        Az eredeti az arc elnevezése után MAGÁTÓL kiírja az arc-adatot
+        (`0x004852e0`, alapérték BE) — ez a parancs második belépési pontja a
+        menüpont mellett. A csak olvasható fájl megnevezett hibaeset, ezért a
+        hibát jelezzük, de a többi fotót megírjuk."""
+        if not utak or not self._xmp_iras_bekapcsolva():
+            return
+        for ut in dict.fromkeys(utak):
+            try:
+                export_sidecar_for_photo(Path(ut))
+            except OSError as hiba:
+                self.xmpAutoWriteFailed.emit(f"{Path(ut).name}: {hiba}")
 
     @Slot(int, result=bool)
     def acceptSuggestion(self, face_id: int) -> bool:  # noqa: N802

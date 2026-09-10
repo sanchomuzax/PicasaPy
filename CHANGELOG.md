@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.379] – 2026-09-10
+
+### Hozzáadva
+
+- **Az arc elnevezése után magától kiíródik az XMP** (#1403). Ha nevet adsz
+  egy arcnak, a program a kép mellé írja az arc helyét és nevét
+  XMP-fájlba — pontosan úgy, ahogy az eredeti Picasa (nála is ez az
+  alapállapot). Ha valamelyik fájl írása nem megy (például írásvédett
+  mappa), a program megnevezve jelzi, és a névadás érvényben marad.
+
 ## [0.8.377] – 2026-09-10
 
 ### Hozzáadva
