@@ -81,9 +81,32 @@ class TestAKeresNelkuliMegszakitas:
 
 
 class TestAFutoKeresMegszakitasa:
-    def test_a_futo_kereses_megszakitasa_valtozatlan(self, dedup, qt_app):
+    def test_a_futo_kereses_megszakitasa_valtozatlan(
+        self, dedup, qt_app, monkeypatch
+    ):
         """Regresszió: a MEGSZAKÍTOTT futás továbbra is a workerből jelez, és
-        eredményt NEM ad."""
+        eredményt NEM ad.
+
+        ⚠️ A keresés itt SZÁNDÉKOSAN a megszakítás-jelzőre vár: két apró
+        képen a valódi keresés ezredmásodpercek alatt végez, és a CI-n
+        BEFEJEZŐDÖTT, mielőtt a megszakítás ideért — ekkor `finished` jött,
+        és a próba elbukott (main CI, 2026-09-11, run 34540630835). Ez pont az
+        a versenyhelyzet, amit a jegy javított; az ŐRNEK viszont a
+        megszakított ÁGAT kell mérnie, ezért a keresés magját a jelzőre
+        várakoztatjuk. A valódi mag megszakítás-szerződését a
+        `tests/dedup/` méri."""
+        from picasapy.dedup.api import DuplicateReport
+
+        def megszakitasra_var(conn, photos, stop_event):
+            assert stop_event.wait(20), (
+                "a megszakítás-jelző nem érkezett meg a worker-szálra"
+            )
+            return DuplicateReport(
+                exact_groups=(), similar_groups=(), cancelled=True
+            )
+
+        monkeypatch.setattr(dedup, "_find", megszakitasra_var)
+
         jelek = []
         dedup.scanCancelled.connect(lambda: jelek.append("cancelled"))
         dedup.scanFinished.connect(lambda groups: jelek.append("finished"))
