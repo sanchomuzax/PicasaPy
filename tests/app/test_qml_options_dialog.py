@@ -101,6 +101,36 @@ class FakeEmailController(QObject):
         self.useDefaultClientChanged.emit()
 
 
+class FakeImportSourceController(QObject):
+    """#2893: az `ImportSourceController` autoExclude-szelete.
+
+    A valódi vezérlő ugyanezt a property/slot-párt exportálja, és az
+    `import/autoexclude` QSettings-kulcsba ír — a Beállítások jelölője és az
+    importáló párbeszéd jelölője EZEN az egy állapoton osztozik."""
+
+    autoExcludeChanged = Signal()
+
+    def __init__(self, auto_exclude=False):
+        super().__init__()
+        self._auto_exclude = auto_exclude
+        self.set_calls = []
+
+    autoExclude = Property(
+        bool, lambda self: self._auto_exclude, notify=autoExcludeChanged
+    )
+
+    @Slot(bool)
+    def setAutoExclude(self, value) -> None:  # noqa: N802 — QML-konvenció
+        self.set_calls.append(value)
+        self._auto_exclude = value
+        self.autoExcludeChanged.emit()
+
+
+@pytest.fixture
+def fake_import_source_controller():
+    return FakeImportSourceController()
+
+
 @pytest.fixture
 def fake_controller():
     return FakeController()
@@ -320,7 +350,10 @@ class TestPlaceholderTabsAreDisabled:
             "optionsUiTransitionsCheck",
             "optionsShowTooltipsCheck",
             "optionsSingleClickExitCheck",
-            "optionsAutoExcludeCheck",
+            # #2893: az `optionsAutoExcludeCheck` KIKERÜLT innen — a
+            # másodpéldány-észlelés ÉLŐ lett (ld.
+            # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
+            # is tiltott, ezt ott állítjuk.
             "optionsClearCacheButton",
             "optionsSkipRemoveConfirmCheck",
             "optionsUsageStatsCheck",
@@ -562,3 +595,100 @@ class TestEmailTabLiveSettings:
         assert "480" in _child(window, "optionsMailSizeValue").property("text")
         assert _child(window, "optionsMailSingleSameRadio").property("checked") is True
         assert _child(window, "optionsMailDefaultRadio").property("checked") is True
+
+
+class TestGeneralTabAutoExclude:
+    """#2893: a „Detect duplicates on import" jelölő ÉLŐ lett.
+
+    A képesség a #1398 óta megvolt (a forrás-beolvasás megjelöli a
+    másodpéldányokat, és az `import/autoexclude` szerint hagyja ki őket), csak
+    a Beállítások jelölője maradt szürke helyfoglaló, hazug kommenttel.
+    """
+
+    def _dialog(self, qt_app, fake_controller, fake_confirm_settings, importer):
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", fake_controller)
+        engine.rootContext().setContextProperty(
+            "confirmSettings", fake_confirm_settings
+        )
+        engine.rootContext().setContextProperty(
+            "importSourceController", importer
+        )
+        factory = QQmlComponent(
+            engine,
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+        )
+        item = factory.create()
+        assert item is not None, factory.errorString()
+        engine._factory = factory  # a tulajdonjog a factory-n fut (ld. fentebb)
+        return item, engine
+
+    def test_vezerlovel_ELO(
+        self, qt_app, fake_controller, fake_confirm_settings,
+        fake_import_source_controller,
+    ):
+        window, engine = self._dialog(
+            qt_app, fake_controller, fake_confirm_settings,
+            fake_import_source_controller,
+        )
+        try:
+            assert _child(window, "optionsAutoExcludeCheck").property(
+                "enabled"
+            ) is True
+        finally:
+            window.deleteLater()
+            engine.deleteLater()
+            qt_app.processEvents()
+
+    def test_vezerlo_NELKUL_tiltott(self, dialog):
+        """Hazug „élő" állapot tilos: ha nincs kihez kötni, a pipa semmit nem
+        tárolna el."""
+        window, *_ = dialog
+        assert _child(window, "optionsAutoExcludeCheck").property(
+            "enabled"
+        ) is False
+
+    def test_a_pipa_a_vezerlo_allapotat_MUTATJA(
+        self, qt_app, fake_controller, fake_confirm_settings,
+    ):
+        importer = FakeImportSourceController(auto_exclude=True)
+        window, engine = self._dialog(
+            qt_app, fake_controller, fake_confirm_settings, importer
+        )
+        try:
+            assert _child(window, "optionsAutoExcludeCheck").property(
+                "checked"
+            ) is True
+        finally:
+            window.deleteLater()
+            engine.deleteLater()
+            qt_app.processEvents()
+
+    def test_a_kattintas_UGYANARRA_az_allapotra_ir(
+        self, qt_app, fake_controller, fake_confirm_settings,
+        fake_import_source_controller,
+    ):
+        """A jelölő SAJÁT `toggled` jelét bocsátjuk ki — ugyanazt, amit a
+        kattintás ad (a fájl `optionsSkipDeleteConfirmCheck`-próbájának
+        mintája). A `toggle()` metódus önmagában nem jelez."""
+        window, engine = self._dialog(
+            qt_app, fake_controller, fake_confirm_settings,
+            fake_import_source_controller,
+        )
+        try:
+            pipa = _child(window, "optionsAutoExcludeCheck")
+            pipa.setProperty("checked", True)
+            pipa.toggled.emit()
+            qt_app.processEvents()
+            assert fake_import_source_controller.set_calls == [True], (
+                "a Beállítások jelölője nem az importáló állapotára írt — "
+                "két külön állapot lenne belőle (#2893)"
+            )
+        finally:
+            window.deleteLater()
+            engine.deleteLater()
+            qt_app.processEvents()
