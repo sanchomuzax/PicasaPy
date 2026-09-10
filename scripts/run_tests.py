@@ -215,7 +215,33 @@ _KIHAGYOTT_APP_FAJLOK: dict[str, str] = {}
 #: a felhasználó e-mailt kap róla, és a többi munkamenet nem tudja megmondani,
 #: valódi-e a bukás. A visszakapcsolás feltétele a két hiba megértése és a
 #: háromszori ismételt futás — ld. a hozzá tartozó jegyet.
-_PARHUZAM = max(1, int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or 1)
+#:
+#: 2026-09-10 (#1038): az alapértelmezés **KETTŐ**, nem négy és nem egy. A
+#: jegy két nyitott feltétele közül a KETTŐ SZÁLAS mérés elvégezve, ezen a
+#: gépen (RPi5, 4 mag, 16 GB), ugyanazon a főág-állapoton:
+#:
+#:   | felállás | idő | kilépőkód | bukás |
+#:   |---|---:|---|---|
+#:   | soros | 74 m 47 s | 0 | nincs |
+#:   | 2 szál, 1. futás | 49 m 32 s | 0 | nincs |
+#:   | 2 szál, 2. futás | 49 m 19 s | 0 | nincs |
+#:   | 2 szál, 3. futás | 48 m 03 s | 0 | nincs |
+#:
+#: Vagyis **1,51–1,56×** gyorsulás, és a jegy kikötése („háromszori futás
+#: azonos bukó halmazzal") teljesült: mindhárom futás bukó halmaza ÜRES,
+#: mind az 580 fájl zöld.
+#:
+#: Miért kettő és nem négy: a NÉGY szálas bukások (ubuntu tray-export
+#: időtúllépés, windows 0xC0000005) gyökere közül a windowsos összeomlás
+#: MA SEM ismert, és négy egyidejű Qt-processz a négymagos gépet telíti. A
+#: kettő a mért felezés a kockázat nélkül.
+#:
+#: Miért nem érinti ezt a CI: a `ci.yml` **nem ezt a futtatót** használja,
+#: hanem darabonként közvetlenül a `pytest`-et (208. sor). Ez a szám tehát
+#: kizárólag a HELYI futásokra hat, és két védőháló is van rajta: a
+#: `_dontsd_el_a_parhuzamot` másik futás mellett magától sorosra vált
+#: (#1037), a `PICASAPY_TESZT_PARHUZAM=1` pedig bármikor visszaállítja.
+_PARHUZAM = max(1, int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or 2)
 
 
 def _masik_futas_pidjei() -> list[int]:
