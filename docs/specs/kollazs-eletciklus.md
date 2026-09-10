@@ -5846,3 +5846,121 @@ kimondottan ki nem fedett hatókör.
 `theta`/`scale` páros csak másolódik; a dokumentum tömbjén át nincs
 számoló írás) · **1 nyitott, gépi úton folytatható, megnevezett mintával**
 (a verem-példányos hozzáfűzés) · 0 „csak nyitva".*
+
+---
+
+## 58. K1 — MEGVAN a HOZZÁFŰZŐ, és KONSTANST ír a `scale`-be; önhelyesbítés az 56.3-hoz (2026-09-10, #1412)
+
+*268. kutatói kör. Az 57.5 megnevezte az egyetlen ki nem fedett alakot (a
+verem-példányos hozzáfűzés). Megvan — és negatív: konstanst ír.*
+
+### 58.1 ⭐ A hozzáfűzés alakja — három helyen szó szerint ugyanaz
+
+Az értékadó operátornak (`FUN_008341b0`) **31 hívóhelye** van a teljes
+`.text`-en (pozitív kontroll: `0x00887f9f`, az 56.2-ben elolvasott hely —
+**megvan**). Három hívóhely előtt betűre azonos előkészítés áll:
+
+```
+0x0087e3d9  mov  eax, [ebx + 0x4c]      ; a darabszám-mező
+0x0087e3dc  mov  edx, [ebx + 0x48]      ; a csomópont-tömb bázisa
+0x0087e3df  shr  eax, 1                 ; darabszám = mező >> 1
+0x0087e3e1  lea  ecx, [eax*8]
+0x0087e3e8  sub  ecx, eax               ; 7·n
+0x0087e3ea  lea  eax, [edx + ecx*8]     ; bázis + 56·n  ← a KÖVETKEZŐ rekesz
+0x0087e3ed  push eax                    ; CÉL
+0x0087e3ee  lea  esi, [esp + 0x2c]      ; FORRÁS: VEREM-példány
+0x0087e3f2  call 0x8341b0               ; *cél = *forrás
+```
+
+Ugyanez `0x00880b83`–`0x00880b9e` és `0x00884c38`–`0x00884c50` alatt.
+⇒ **Ez a hozzáfűzés**, és a forrás tényleg a veremben felépített
+csomópont — pontosan úgy, ahogy az 57.5 megjósolta.
+
+### 58.2 ⛳ És a `scale`-be KONSTANS kerül
+
+A verem-példány bázisa a `lea esi,[esp+K]`-ból (a `push` utáni keretben)
+visszaszámolható; a mezőtérképet a **sztring-idióma** hitelesíti: a
+`+0x30` (téma) rekeszén ott áll a `lea edi,[esp+…]` → `call 0x401000`
+sztring-elengedés, és később a `push 0xcbea20` (`'noborder'`) értékadás.
+
+`FUN_0087dcd0` (bázis = `esp+0x28`):
+
+```
+0x0087e21b  fldz                       ; 0,0
+0x0087e225  fst  dword ptr [esp+0x50]  ; +0x28  theta = 0,0
+0x0087e229  fld1                       ; 1,0
+0x0087e22f  fst  dword ptr [esp+0x54]  ; +0x2c  scale = 1,0
+```
+
+`FUN_00880580` (bázis = `esp+0x48`):
+
+```
+0x00880a05  fldz                       ; 0,0
+0x00880a0b  fst  dword ptr [esp+0x70]  ; +0x28  theta = 0,0
+0x00880a13  fst  dword ptr [esp+0x74]  ; +0x2c  scale = 0,0
+```
+
+⇒ A hozzáfűzés **konstanst** tesz a `scale`-be (`1,0`, illetve `0,0`) —
+**nem számol**. Ez zárja be az 57.5-ben megnevezett utolsó alakot.
+
+⚠️ **Módszertani melléklet:** a verem-csoportra írt alaki pásztázás
+(négy egymást követő `[esp+K…K+0xc]` írás egy 240 bájtos ablakban)
+**18 031** találatot adott, ebből 3 219 „hatos" — használhatatlanul zajos,
+mert ez a szokásos argumentum-pakolás alakja is. A választ nem az alak
+adta meg, hanem a **HÍVÁS**: a 31 hívóhely előtti tizenkét utasítás. Ha
+van egy azonosított függvény, a hívóhelyei olcsóbb és élesebb szűrő,
+mint bármilyen alaki minta.
+
+### 58.3 ⛔ ÖNHELYESBÍTÉS az 56.3-hoz: a téma-kapu SZTRING-összehasonlítás
+
+Az 56.3 azt írta, hogy a `picturepile`-kapu „**mutató**-azonosság, nem
+sztring-összehasonlítás", és ebből azt következtette, hogy fájlból
+betöltött `picturepile`-nál a szorzó nem fut. **Ez téves.** A törzs
+elolvasva:
+
+```
+0x008345a4  lea  edi, [eax + 4]
+0x008345a7  mov  esi, 0xcbea2c        ; 'picturepile'
+0x008345ac  mov  ecx, 0xc             ; 12 bájt
+0x008345b3  repe cmpsb                ; ← VALÓDI sztring-összehasonlítás
+0x008345b5  jmp  0x8345ef             ; → sete al
+```
+
+A `0x008345ea cmp eax, 0xcbea2c` mutató-összehasonlítás **csak a
+rövid/beágyazott sztring ágán** áll (`0x008345c9`-től), és ugyanabba a
+`sete al`-ba fut. ⇒ A szorzó **minden** `picturepile` témájú
+dokumentumra lefut, betöltöttre is. Az 55. kör képlete tehát nem szűkül.
+
+### 58.4 ⛳ A KÖVETKEZTETÉS — a kollázs-sáv KIMERÜLT, a hatókör tágul
+
+Az 55–58. kör együtt: a `[dokumentum+0x48]` csomópont `+0x2c` mezőjét a
+kollázs-sávban **kizárólag** ez a négy dolog éri:
+
+| ki | mit ír |
+|---|---|
+| a **hozzáfűzés** (58.1) | konstans `1,0` / `0,0` |
+| a két **elrendező** (56.4) | konstans `1,0` (`fld1`) |
+| a **másolók** (57.1) | változatlan másolat |
+| a `picturepile`-**szorzó** (55.2) | az egyetlen SZÁMÍTÁS |
+
+⇒ **A `contactsheet` mért `scale`-je (4→500, 6→256, 9→313, 12→158) nem a
+kollázs-sávban keletkezik.** Ez nem minta-korlátos állítás: mind a négy
+címzési alak, a blokk-másolás, a `theta`/`scale` páros és a hozzáfűzés
+is le van fedve, működő kontrollokkal.
+
+### 58.5 A KÖVETKEZŐ lépés, megnevezve
+
+A 267.1 pásztázás a (`theta`,`scale`) párost a **teljes `.text`-en**
+megszámolta: **329** hely, ebből **39** a kollázs-sávban. A maradék
+**290 hely a sávon KÍVÜL van, és NINCS átnézve** — ez a következő
+hatókör, és a lista már elő van állítva.
+
+Szűrő hozzá: azok a sávon kívüli párosok, amelyek környezetében
+`0x38`-as lépésköz vagy `[<reg>+0x48]` olvasás áll (a csomópont-tömb
+ujjlenyomatai) — a 265–267. kör mindkét mintája kész, csak a
+tartományt kell kinyitni.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a
+hozzáfűzés megvan és konstanst ír; a téma-kapu sztring-összehasonlítás)
+· **1 nyitott, gépi úton folytatható, előállított listával** (a 290
+sávon kívüli páros) · 0 „csak nyitva".*
