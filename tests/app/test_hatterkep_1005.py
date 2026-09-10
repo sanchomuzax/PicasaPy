@@ -116,6 +116,53 @@ class TestABeallitas:
         assert futtato.hivasok == []
 
 
+class TestAHely:
+    def test_a_Hatterek_a_KOLLAZSOK_mappa_szomszedja(self, tmp_path, qt_app):
+        """A BMP a kollázs-célmappa mellé kerül, nem a rendszer képmappájába.
+
+        Alapállapotban a kettő UGYANAZ (`<Képek>/Picasa/Hátterek` — ez a mért
+        útvonal), de ha a felhasználó máshova állította a kollázs-célmappát, a
+        háttér is oda tartozik. Ez egyben a próbák elszigetelése: az első
+        változatom a rendszer képmappájából számolt, és a CI őre (#1054) meg is
+        fogta — egy meglévő teszt a VALÓDI `~/Pictures/Picasa/Backgrounds`-ba
+        írt."""
+        from PySide6.QtCore import QSettings
+
+        from picasapy.app import collage_prefs, collage_save
+
+        kollazsok = tmp_path / "sajat-hely" / "Kollázsok"
+        kollazsok.mkdir(parents=True)
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        settings.setValue(collage_prefs.OUTPUT_DIR_KEY, str(kollazsok))
+        kep = tmp_path / "kollazs.jpg"
+        make_jpeg(kep)
+
+        from PySide6.QtCore import QObject
+
+        class _Gazda(collage_save.CollageSaveMixin, QObject):
+            """A mixin önmagában nem QObject — a jelzések csak a végső
+            osztályban élnek, ezért a próba is így példányosítja."""
+
+            def _get_settings(self):
+                return settings
+
+        gazda = _Gazda()
+        gazda._allitsd_be_hatterkepnek(str(kep))
+
+        # a mappanév a FELÜLET nyelve szerint honosított (#1131) — a próba
+        # ezért mindkét ismert alakot elfogadja, a HELYET méri
+        talalatok = list(
+            (kollazsok.parent).glob("*/picasabackground.bmp")
+        )
+        assert talalatok, (
+            "a BMP a kollázs-célmappa SZOMSZÉDJÁBA kerül: "
+            f"{list(kollazsok.parent.iterdir())}"
+        )
+        assert talalatok[0].parent.name in ("Hátterek", "Backgrounds")
+
+
 class TestABekotes:
     """A kollázs-ág tényleg meghívja a láncot, és jelez a végén.
 
