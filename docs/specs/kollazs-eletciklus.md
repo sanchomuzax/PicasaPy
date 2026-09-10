@@ -5736,3 +5736,113 @@ horgonnyal** (a csomópont-hozzáfűző) · 0 „csak nyitva".*
 
 ⚠️ **Az 55.6/1. pont (a csonkolás helye) NYITVA MARAD**, örökölt
 kérdésként — a munkasorban áll.
+
+---
+
+## 57. K1 — a `scale` írója NEM a dokumentum tömbjén át ír; a rekord `src`-je a `+0x00` (2026-09-10, #1412)
+
+*267. kutatói kör. Az 56.6 horgonyát viszi tovább: a `+0x28` (`theta`) és a
+`+0x2c` (`scale`) EGYÜTT keresése. Az eredmény három kimerítő negatív,
+mindegyik működő kontrollal — és egy pozitív mellékletet: a rekord első
+mezője.*
+
+### 57.1 A (`theta`, `scale`) PÁR — 39 hely a sávban, mind MÁSOLÓ
+
+Pásztázás: minden hely, amely **ugyanarra a bázisra** ír `+0x28`-at ÉS
+`+0x2c`-t 20 utasításnyi ablakban, bármely művelettel és címzési alakkal,
+a teljes `.text`-en (`paszta.py` memóriakapu alatt).
+**Pozitív kontroll:** `FUN_008341b0` `0x0083425b` (+0x28) / `0x00834264`
+(+0x2c) — **megvan**.
+
+| tartomány | találat |
+|---|---:|
+| teljes `.text` | **329** |
+| kollázs-sáv (`0x00829000`–`0x00895000`) | **39** |
+
+A sávból utasításonként elolvasva három, találomra a lebegőpontos
+alakúak közül:
+
+| cím | függvény | mi ez |
+|---|---|---|
+| `0x0083425b`/`0x00834264` | `FUN_008341b0` | a csomópont **értékadó operátora** (a kontroll) |
+| `0x0087b892`/`0x0087b898` | `FUN_0087b830` | ugyanaz a rekord **másolása** (`+0x08`…`+0x34` végig) |
+| `0x00890ca8`/`0x00890cae` | — | rekord-**másoló** (`+0x18`…`+0x34`, `+0x30`/`+0x31` bájtmezőkkel) |
+
+⇒ A sávban a `theta`/`scale` páros **kizárólag másolódik**. Számoló,
+mindkettőt beállító hely nincs.
+
+### 57.2 ⛳ A `+0x2c` írói a dokumentum tömbjén át — ÖT hely, egyik sem számol
+
+Pásztázás: minden `+0x2c`-írás (közvetlen **és** mutatóba emelt alak),
+amelynek 20 utasításon belüli előzményében `[<reg> + 0x48]` olvasás áll —
+ez a `[dokumentum+0x48]` csomópont-tömb címzésének ujjlenyomata.
+**Pozitív kontroll:** `0x00834696` (az 55. kör írása) — **megvan**.
+
+| cím | mi ez |
+|---|---|
+| `0x00834696` | az 55. kör `picturepile`-szorzója |
+| `0x0088522d` | elrendező (`FUN_00885060`) — **`fld1`, azaz 1,0** |
+| `0x008831fb` | sztring elengedése (az 51.2 tétele) |
+| `0x00837a46` · `0x0083dbc6` | **hamis pozitív** — az előzmény `[esp+0x48]`, verem |
+
+⇒ **A dokumentum csomópont-tömbjén keresztül SENKI nem ír számolt
+`scale`-t** — az egyetlen kivétel a `picturepile`-kapu mögötti szorzó.
+
+### 57.3 Az értékadó operátor tizenkét hívója, besorolva
+
+`FUN_008341b0` hívói (`xrefs`), a sztringjeikkel azonosítva:
+
+| hívó | sztringek | olvasat |
+|---|---|---|
+| `FUN_008342b0` | `picturepile` · `Untitled` · `CollageSpec::Untitled` | a **spec/dokumentum** kezdőállapota |
+| `FUN_0087dcd0` | `Preferences` · `avgcolor` · `noborder` · `picturepile` · `multiexp` · `collage::shadows` | beállításokból épülő kollázs |
+| `FUN_00880580` | `avgcolor` · `noborder` | ugyanez az ág |
+| `FUN_00833920` | `collage` · `background` | háttér |
+| `FUN_00887e50` | — | a `contactsheet` elrendezője (56.2) |
+| `FUN_0083dfa0` · `FUN_0083e280` · `FUN_0083e560` · `FUN_0087b4a0` · `FUN_0087e960` · `FUN_00884a90` · `FUN_00833cf0` | — | sztring nélküliek |
+
+Mind a tizenegy nevesíthető törzsében megnézve, hol írnak `+0x2c`-et:
+**egyetlen** nem-verem alapú találat van, `0x0087b7cf` a
+`FUN_0087b4a0`-ban — utasításonként elolvasva **más objektum**
+(`[eax+0x270]`, a `+0x40`/`+0x44`-ből másol a `+0x2c`/`+0x30`-ba).
+
+### 57.4 ⭐ Melléklelet: a rekord `src` mezője a `+0x00`
+
+Az író `FUN_008347b0` a `src` attribútum előtt **eltolás nélkül** címez:
+
+```
+0x008351f5  mov  ecx, dword ptr [ebx + 0x48]
+0x008351f8  mov  esi, dword ptr [esp + 0x24]
+0x008351fc  add  ecx, esi                 ; ← nincs displacement
+0x008351fe  call 0x999170
+0x00835203  push 0xcb1fb8                 ; 'src'
+```
+
+⇒ a 56.1 mezőtérkép kiegészül: **`src` = `+0x00`**, `theme` = `+0x30`,
+és a `+0x34` egy további `float` (a másolók végig átviszik).
+
+*Bizonyítottsági fok: **megerősített** — mindhárom pásztázás kontrollja
+lefutott, a besorolt helyek utasításonként elolvasva.*
+
+### 57.5 ⛳ A KÖVETKEZTETÉS és a KÖVETKEZŐ lépés
+
+Az 55–57. kör együtt kizárja, hogy a `scale`-t **a dokumentum tömbjén
+keresztül** írná bárki. Az 56.1 szerint a visszatöltő sem érinti. Marad
+**egy** szerkezeti alak, amelyet eddig egyik pásztázás sem fedett:
+
+> a csomópont **ideiglenes (verem-)példányként** épül fel, ott kapja meg a
+> `scale`-t, és az **értékadó operátor** viszi be a tömbbe.
+
+Ezt csak olyan pásztázás találja meg, amely **verem-eltolás-PÁRRA** keres:
+egy `K` bázishoz tartozó `[esp+K+0x18]`…`[esp+K+0x2c]` hatos csoport,
+majd a közelben `call 0x8341b0`. Ez **más minta**, mint bármelyik eddigi
+— a 265. kör tanulsága szerint épp ezért nem talált eddig semmi.
+
+⚠️ **A verem-alapú írásokat mindhárom eddigi pásztázás KIZÁRTA**
+(`'esp' not in op`), tehát ez nem „még egy próbálkozás", hanem a
+kimondottan ki nem fedett hatókör.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a
+`theta`/`scale` páros csak másolódik; a dokumentum tömbjén át nincs
+számoló írás) · **1 nyitott, gépi úton folytatható, megnevezett mintával**
+(a verem-példányos hozzáfűzés) · 0 „csak nyitva".*
