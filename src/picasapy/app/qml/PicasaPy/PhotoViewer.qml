@@ -1021,11 +1021,11 @@ Rectangle {
                     onUndoRequested: {
                         var action = editController.undoAction
                         if (action === "retouch")
-                            undoDataLossDialog.askFor("retouch", qsTr(
+                            undoDataLossDialogLoader.ensure().askFor("retouch", qsTr(
                                 "Retouch fixes cannot be recovered with redo."
                                 + " Are you sure you want to undo?"))
                         else if (action === "redeye")
-                            undoDataLossDialog.askFor("redeye", qsTr(
+                            undoDataLossDialogLoader.ensure().askFor("redeye", qsTr(
                                 "Redeye fixes cannot be recovered with redo."
                                 + " Are you sure you want to undo?"))
                         else
@@ -1153,7 +1153,7 @@ Rectangle {
                             editorPanel.textDraftContent = editorPanel.captionText
                             return
                         }
-                        copyCaptionConfirm.ask(
+                        copyCaptionConfirmLoader.ensure().ask(
                             "copyCaptionOverwrite",
                             qsTr("The caption will replace the text you have "
                                  + "typed. (This operation is not undoable)"))
@@ -2216,9 +2216,16 @@ Rectangle {
         && viewer.currentIndex >= 0
         ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
 
-    function openContextMenu(x, y) { viewerMenu.popup(viewer, x, y) }
+    //: #1612: a menü HALASZTOTT — az `ensure()` az első jobbklikkre építi
+    //: fel. Mérve: a `viewerContextMenu` 360 QObject, és a legtöbb
+    //: munkamenetben a felhasználó egyszer sem jobbklikkel a nagy képen.
+    function openContextMenu(x, y) { viewerMenuLoader.ensure().popup(viewer, x, y) }
 
-    ViewerContextMenu {
+    DeferredDialog {
+        id: viewerMenuLoader
+        objectName: "viewerContextMenuLoader"
+        sourceComponent: Component {
+        ViewerContextMenu {
         id: viewerMenu
         // a revision-nel együtt kötve, hogy a menü újranyitáskor friss
         // rejtett-állapotot mutasson (a PhotoContextMenu mintája)
@@ -2294,6 +2301,8 @@ Rectangle {
                     : viewer.appWindow.valtsFiokLapot("properties")
         }
     }
+        }
+    }
 
     // jobbklikk BÁRHOL a nézőn — a Picasában a nagy kép és a körülötte lévő
     // szürke háttér is ugyanezt a menüt nyitja
@@ -2307,22 +2316,34 @@ Rectangle {
 
     // #465 4. pont: a felirat-bemásolás megerősítése (ld.
     // `onTextCopyCaptionRequested`)
-    ConfirmDialog {
-        id: copyCaptionConfirm
-        namePrefix: "copyCaptionConfirm"
-        onConfirmed: editorPanel.textDraftContent = editorPanel.captionText
+    //: #1612: halasztva — a felirat-átvétel megerősítése csak akkor kell, ha
+    //: a felhasználó tényleg átveszi a feliratot (mérve: 74 QObject).
+    DeferredDialog {
+        id: copyCaptionConfirmLoader
+        sourceComponent: Component {
+            ConfirmDialog {
+                namePrefix: "copyCaptionConfirm"
+                onConfirmed: editorPanel.textDraftContent = editorPanel.captionText
+            }
+        }
     }
 
     // #465: a retus/vörösszem visszavonása ADATOT dob el (nincs „Újra") —
     // az eredeti Picasa két külön szövegével kérdez rá. A döntés-kulcs
     // eszközönként külön, hogy a „Ne kérdezze újra" a másikra ne hasson.
-    ConfirmDialog {
-        id: undoDataLossDialog
-        objectName: "undoDataLossDialog"
-        namePrefix: "undoDataLoss"
-        title: qsTr("Undo")
-        function askFor(key, text) { ask("undo-" + key, text) }
-        onConfirmed: editController.undo()
+    //: #1612: halasztva — a retus/vörösszem visszavonásának megerősítése csak
+    //: akkor kell, ha a felhasználó ilyet vissza is von (mérve: 76 QObject).
+    DeferredDialog {
+        id: undoDataLossDialogLoader
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "undoDataLossDialog"
+                namePrefix: "undoDataLoss"
+                title: qsTr("Undo")
+                function askFor(key, text) { ask("undo-" + key, text) }
+                onConfirmed: editController.undo()
+            }
+        }
     }
 
 }

@@ -16,6 +16,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle a Hátterek mappába (így a kép átnevezése vagy törlése nem viszi el a
   hátteret), és középre helyezi — ahogy az eredeti Picasa. Eddig a menüpont
   szürke volt.
+## [0.8.384] – 2026-09-10
+
+### Változott
+
+- **Kicsit gyorsabb indulás: a nagy nézet három ablaka csak akkor épül fel,
+  amikor kell** (#1612). A nagy képen a jobbklikk-menü és két megerősítő
+  kérdés eddig minden indításkor felépült, holott a legtöbb indításnál a
+  felhasználó egyiket sem nyitja meg. Mérve 504 objektummal kevesebb (−3,9%)
+  épül fel; a viselkedés változatlan.
 
 ## [0.8.381] – 2026-09-10
 
