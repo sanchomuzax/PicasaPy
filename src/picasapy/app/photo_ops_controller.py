@@ -46,6 +46,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from picasapy.export import export_sidecar_for_photo
 from picasapy.edit.effect_clipboard import (
     copy_all_effects,
     crop_mirror_value,
@@ -124,6 +125,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
+    #: #1403: az XMP-arcírás összegzése — (kiírt, kihagyott, első hiba oka).
+    #: EGY jelzés a köteg végén, a `batchFinished` mintája: a felhasználó egy
+    #: üzenetet kap, nem fájlonként egyet.
+    xmpFacesFinished = Signal(int, int, str)
     #: #1755: a forgatás két JELZŐ ága, az eredeti két erőforrásával.
     #: Eddig mindkettő néma visszatérés volt: vegyes fotó+videó
     #: kijelölésnél a videók hallgatólagosan kimaradtak (#103), üres
@@ -529,6 +534,57 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not self._write_album_batch(photos, mutate):
             return ""
         return token
+
+    # -- Arcinformációk írása XMP-be (#1403) -----------------------------------
+
+    @Slot()
+    def writeFacesToXmp(self) -> None:
+        """A LÁTOTT mappa képeinek XMP-sidecarja, arcrégiókkal (#1403).
+
+        Az eredeti parancsa (`eMenuTools::ID_WRITE_XMP_FACES`, `.fen`
+        `write_all_facetags`) kötegelt munkaként fut, saját folyamatjelzéssel
+        (`FaceTagJob::progress`/`::done`/`::cancelled`), és a **csak olvasható
+        fájl külön, megnevezett hibaeset**:
+
+            Face tag write failed for read only file: %s
+
+        Ezért a köteg itt sem áll le az első hibán: végigmegy, és a végén EGY
+        összegzést ad (kiírt · kihagyott · az első hiba oka) — a
+        `batchFinished` mintája. A megszakíthatóság (a `::cancelled` ág) még
+        nincs meg; a mappányi köteg a mérés szerint másodpercek alatt lefut,
+        és a félig kiírt sidecarok érvényesek maradnak.
+
+        Az adat forrása a `.picasa.ini` (`export.export_sidecar_for_photo`),
+        nem az index — így a frissen elnevezett arc is bekerül, mielőtt a
+        szinkron végigfut.
+        """
+        utak = [
+            Path(photo.folder_path) / photo.name
+            for photo in self._photos.photos
+        ]
+        if not utak:
+            self.xmpFacesFinished.emit(0, 0, "")
+            return
+
+        def worker() -> None:
+            kiirt = 0
+            kihagyott = 0
+            elso_hiba = ""
+            for ut in utak:
+                try:
+                    eredmeny = export_sidecar_for_photo(ut)
+                except OSError as hiba:
+                    kihagyott += 1
+                    if not elso_hiba:
+                        elso_hiba = f"{ut.name}: {hiba}"
+                    continue
+                if eredmeny is None:
+                    kihagyott += 1
+                else:
+                    kiirt += 1
+            self.xmpFacesFinished.emit(kiirt, kihagyott, elso_hiba)
+
+        self._start_background(worker, name="picasapy-xmp-arcok")
 
     @Slot(str, result=str)
     def showTagAsAlbum(self, tag: str) -> str:

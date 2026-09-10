@@ -1812,6 +1812,15 @@ MenuBar {
                 text: qsTr("Show &tag as album...")
                 onTriggered: bar.showTagAsAlbumRequested()
             }
+            //: #1403: `eMenuTools::ID_WRITE_XMP_FACES` — a Kísérleti almenü
+            //: UTOLSÓ tétele (`0xd6e838`, mérve). A MEGLÉVŐ XMP-építőt köti be
+            //: (`export/xmp.py`): a motor kész volt, csak a felhasználó felől
+            //: nem volt hozzá út (#1798 hibaosztálya).
+            MenuItem {
+                objectName: "menuToolsWriteXmpFaces"
+                text: qsTr("Write faces to XMP...")
+                onTriggered: controller.writeFacesToXmp()
+            }
             // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
             // is a Kísérleti almenüben lakott, az áthelyezés mellett
             MenuItem {

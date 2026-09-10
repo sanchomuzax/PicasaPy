@@ -2505,6 +2505,18 @@ ApplicationWindow {
             errorBanner.notice = true
             errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
         }
+        //: #1403: az XMP-arcírás EGY összegzést ad a köteg végén (kiírt ·
+        //: kihagyott · első hiba). A csak olvasható fájl az eredetiben is
+        //: megnevezett hibaeset, ezért az okot kiírjuk.
+        function onXmpFacesFinished(written, skipped, reason) {
+            errorBanner.notice = reason === ""
+            if (reason !== "")
+                errorBannerText.text = qsTr("Face data written to %1 file(s); %2 skipped. First problem: %3")
+                    .arg(written).arg(skipped).arg(reason)
+            else
+                errorBannerText.text = qsTr("Face data written to %1 file(s); %2 skipped.")
+                    .arg(written).arg(skipped)
+        }
         function onBrokenPhotosDetected(items) {
             var ids = brokenPhotoDialog.ensure().pendingIds.slice()
             for (var i = 0; i < items.length; i++) ids.push(items[i].id)
