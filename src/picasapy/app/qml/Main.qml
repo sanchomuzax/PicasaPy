@@ -737,6 +737,34 @@ ApplicationWindow {
         onActivated: fileOpsController.cutFilesToClipboard(
             window.selectedPaths())
     }
+    //: #1405: a keresés mentése albumként — a menütétel és a megerősítés is
+    //: ezt hívja (egy hely, egy viselkedés).
+    function mentsdAKeresest() {
+        if (controller.saveSearchAsAlbum() === "") {
+            errorBanner.notice = true
+            errorBannerText.text = qsTr("The search results could not be saved as an album.")
+        }
+    }
+
+    //: #1405: a megerősítés CSAK 1000 találat felett nyílik, ezért halasztott
+    //: (#1720): a legtöbb munkamenetben fel sem épül.
+    DeferredDialog {
+        id: saveSearchDialog
+        objectName: "saveSearchDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "saveSearchConfirm"
+                namePrefix: "saveSearch"
+                title: qsTr("Save search results")
+                //: `CThumbUI::SaveSearchBigBtn` — az eredeti gombfelirata NEM
+                //: „Igen", hanem a művelet megnevezése
+                yesText: qsTr("Create Album")
+                onConfirmed: window.mentsdAKeresest()
+            }
+        }
+    }
+
     //: #1526: a beillesztés EGY helyen — a menütétel és a billentyű is ezt
     //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
     //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
@@ -987,6 +1015,18 @@ ApplicationWindow {
         //: (`0x0065b7b0`) — a `color:` előtagot itt tesszük rá, mert a
         //: keresőmotor ezt a tokent érti (`index/search_color.py`, #383).
         onColorSearchRequested: (szin) => toolbar.keresesSzoveggel("color:" + szin)
+        canSaveSearch: controller ? controller.canSaveSearch : false
+        //: #1405: az eredeti CSAK 1000 találat FELETT kérdez (mérve,
+        //: `0x005d86a0`); alatta csendben létrejön az album. A megerősítés
+        //: gombja a mért „Create Album" felirat, nem Igen/Nem.
+        onSaveSearchRequested: {
+            if (controller.searchResultCount > 1000)
+                saveSearchDialog.ensure().ask("", qsTr(
+                    "This will create an album with more than 1000 images."
+                    + "  Do you want to continue?"))
+            else
+                window.mentsdAKeresest()
+        }
         // #350: Eszközök → Beállítások…
         onOptionsRequested: optionsDialog.open()
         //: #2054

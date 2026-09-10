@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.375] – 2026-09-10
+
+### Hozzáadva
+
+- **Keresési eredmények mentése albumként** (#1405). Az Eszközök ▸ Kísérleti
+  almenüben új menüpont: a keresés teljes találata egyetlen kattintással
+  albumba kerül (az album neve a keresés szövege). Ezer találat felett a
+  program megkérdezi, biztos-e — a gombja „Album létrehozása", ahogy az
+  eredeti Picasában; ezer alatt szó nélkül létrejön.
+
 ## [0.8.372] – 2026-09-10
 
 ### Hozzáadva

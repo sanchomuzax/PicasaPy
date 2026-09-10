@@ -521,6 +521,46 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             return ""
         return token
 
+    # -- Keresési eredmények mentése albumként (#1405) -------------------------
+
+    #: A megerősítés küszöbe: az eredeti CSAK e FELETT kérdez
+    #: (`0x005d86a0`, `CThumbUI::SaveSearchBig`). Alatta csendben létrejön az
+    #: album — a kérdés nem „biztonsági", hanem a nagy album miatti
+    #: figyelmeztetés.
+    SAVE_SEARCH_CONFIRM_OVER = 1000
+
+    def _mentheto_kereses(self) -> bool:
+        """Menthető-e a jelenlegi nézet albumként (a `canSaveSearch` magja).
+
+        Csak KERESÉSI nézetben él (az eredeti parancsa is az aktív keresés
+        találatát mentette), és csak ha van találat — üres keresésből album
+        sem lesz. A property a fővezérlőben áll, mert a `notify` jelzései
+        (`statusChanged`, `feedChanged`) ott élnek.
+        """
+        return self._view_mode[0] in ("search", "search-folder") and bool(
+            self._photos.photos
+        )
+
+    @Slot(result=str)
+    def saveSearchAsAlbum(self) -> str:
+        """A keresés TELJES találata új albumba (#1405).
+
+        Az album neve a keresés szövege. ⚠️ Ez a MI döntésünk: az eredeti
+        menüfelirat három pontra végződik („Save &search results..."), ami
+        párbeszédet sejtet, a mért kezelő (`0x005d86a0`, 362 bájt) viszont
+        CSAK az 1000 fölötti megerősítést tartalmazza — névkérő párbeszédnek
+        nincs nyoma benne. A keresés szövege a legkézenfekvőbb név, és a
+        felhasználó az albumot bármikor átnevezheti.
+
+        A megerősítést a FELÜLET kéri (a küszöb fölött), mert az eredeti is
+        ott kérdez; ez a slot már a döntés utáni munkát végzi. Visszatérés: az
+        új album tokenje, üres stringgel jelezve, hogy nem jött létre."""
+        if not self._mentheto_kereses():
+            return ""
+        mode, param = self._view_mode
+        nev = param if isinstance(param, str) else str(param[0])
+        return self.createAlbum(nev, list(range(len(self._photos.photos))))
+
     def _rows_to_photos(self, rows) -> list:
         photos = self._photos.photos
         return [photos[int(r)] for r in rows if 0 <= int(r) < len(photos)]

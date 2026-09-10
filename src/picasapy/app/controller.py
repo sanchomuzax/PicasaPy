@@ -393,6 +393,16 @@ class AppController(
         azt nem, hogy MIVEL — két szűrő-gomb egyszerre látszana aktívnak."""
         return self._view_mode[0]
 
+    @Property(bool, notify=statusChanged)
+    def canSaveSearch(self):
+        """Menthető-e a jelenlegi nézet albumként (#1405) — a mag a
+        `PhotoOpsMixin._mentheto_kereses`, a jelzés viszont itt lakik.
+
+        A megerősítés küszöbéhez a felület a MÁR MEGLÉVŐ
+        `searchResultCount`-ot olvassa (#7: az ÖSSZES találat, mappára
+        szűkítve is) — nem építünk mellé másodikat."""
+        return self._mentheto_kereses()
+
     @Property(str, notify=statusChanged)
     def filterStatusText(self):
         """A zöld eredménysáv szövege (Picasa-minta)."""
