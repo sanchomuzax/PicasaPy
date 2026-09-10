@@ -873,6 +873,24 @@ A `D` forrás **34 ágából** ezzel **hiányzik**: `Ctrl+0`, `Ctrl+3`,
 `Ctrl+Shift+U`, `Ctrl+Shift+V`, `Ctrl+Shift+Y`, `Ctrl+F6`, `Ctrl+F7`,
 `Ctrl+F8`, `Ctrl+F9` — **húsz**. Bekötés: **#2163**.
 
+⚙️ **FRISSÍTVE (2026-09-10, #2163): a húszból tíz bekötve, tíz indokkal
+kimaradt.** Bekötve: `Ctrl+0` (jobb fiók), `Ctrl+F` (keresés), `Ctrl+K`
+(Címkék), `Ctrl+C` (másolás), `Ctrl+3` (Megjelenítés és szerkesztés),
+`Ctrl+F6` (másodpéldány-mód, #1398), `Ctrl+F7` / `Ctrl+F8` (hasonlóság-minta
+és törlése, #1833), `Ctrl+Shift+B` / `Ctrl+Shift+E` (a `bw` és az `enhance`
+szűrő a kijelölésre, a köteg-szerkesztés útján).
+
+Kimaradt, mert a FUNKCIÓ nincs meg vagy az ág célja nincs kimérve:
+`Ctrl+6`, `Ctrl+8`, `Ctrl+G`, `Ctrl+Shift+L`, `Ctrl+Shift+U`,
+`Ctrl+Shift+Y`, `Ctrl+F9` (az ág célfüggvényének szemantikája nincs
+kiolvasva — találgatásból bekötni tilos), `Ctrl+9` (a szerkesztő bal fiókja
+nálunk nem létezik), `Ctrl+Shift+H` / `Ctrl+Shift+V` (tükrözés — a
+művelet a kódbázisban NINCS meg; külön jegy). A soronkénti elszámolás a
+#2163 kommentjében áll, a gépi őr a
+`tests/app/test_gyorsbillentyu_agak_2163.py`: az bukik, ha olyan billentyűt
+kötünk be, amire az eredetiben nincs ág (10.5), és a kivételeket
+indoklással kényszeríti ki.
+
 ### 10.8 Bizonyítottsági fok
 
 **Megerősített:** a dispatch szerkezete, a két tábla címe és tartalma, a

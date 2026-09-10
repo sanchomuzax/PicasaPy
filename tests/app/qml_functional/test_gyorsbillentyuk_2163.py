@@ -8,6 +8,12 @@ kezel; nálunk húsz hiányzott. Ez a kör a leképezhetőket köti be:
 | `Ctrl+0` | `thumbui/toggle_right_drawer` (`0x005e6206`) | a jobb fiók billentése |
 | `Ctrl+F` | `searchcontainer/searchbutton` (`0x005e63bb`) | a keresőmezőre fókusz |
 | `Ctrl+K` | ugyanaz az ág, mint a `Ctrl+T` (`0x005e650e`) | Címkék-panel |
+| `Ctrl+3` | `thumbui/fullview` (`0x005e624f`) | Megjelenítés és szerkesztés |
+| `Ctrl+F6` | `searchoptions/dupesearch` (`0x005e62bb`) | másodpéldány-mód (#1398) |
+| `Ctrl+F7` | `searchoptions/loadsim` (`0x005e62e8`) | keresés hasonlóra (#1833) |
+| `Ctrl+F8` | `searchoptions/clearsim` (`0x005e631d`) | a minta törlése |
+| `Ctrl+Shift+B` | `0x005fe370(panel, "bw")` (`0x005e6370`) | fekete-fehér a kijelölésre |
+| `Ctrl+Shift+E` | `0x005fe370(panel, "enhance")` (`0x005e638b`) | „Jó napom van" a kijelölésre |
 
 ⚠️ A `Ctrl+9` (`editpanel/toggle_left_drawer`) SZÁNDÉKOSAN kimarad: az
 eredetiben a szerkesztő-panel bal fiókját billenti, nálunk a szerkesztő
@@ -143,3 +149,44 @@ class TestAmitNEM_kotottunk_be:
         assert not talalt, (
             f"olyan billentyű van bekötve, amire az eredetiben NINCS ág: {talalt}"
         )
+
+
+class TestAMasodikKor:
+    """A #2163 második köre: hat további MÉRT ág bekötve.
+
+    A teljes, soronkénti elszámolás (mi maradt ki és miért) a jegy
+    kommentjében áll; a MÉRT ág ↔ belépő párosítást a
+    `tests/app/test_gyorsbillentyu_agak_2163.py` méri forrásszinten.
+    """
+
+    PAROK = [
+        ("editViewShortcut", "Ctrl+3"),
+        ("dupeSearchShortcut", "Ctrl+F6"),
+        ("findSimilarShortcut", "Ctrl+F7"),
+        ("clearSimilarShortcut", "Ctrl+F8"),
+        ("batchBwShortcut", "Ctrl+Shift+B"),
+        ("batchEnhanceShortcut", "Ctrl+Shift+E"),
+    ]
+
+    def test_mind_a_hat_letezik_a_mert_billentyuvel(self, qml_app, qt_app):
+        window, _c, _e = qml_app
+        for nev, billentyu in self.PAROK:
+            sc = _shortcut(window, nev)
+            assert sc.property("sequence") == billentyu, nev
+
+    def test_ures_kijelolesre_a_Ctrl3_NEM_nyit_nezot(self, qml_app, qt_app):
+        """Kijelölés nélkül nincs mit szerkeszteni — a néma megnyitás
+        rosszabb lenne, mint a hatástalanság."""
+        window, _c, _e = qml_app
+        window.setProperty("selectedIndexes", [])
+        window.setProperty("viewerOpen", False)
+        qt_app.processEvents()
+        _aktival(_shortcut(window, "editViewShortcut"), qt_app)
+        assert window.property("viewerOpen") is False
+
+    def test_a_minta_torlese_kijeloles_nelkul_sem_hibazik(self, qml_app, qt_app):
+        """A `clearsim` üresen se dobjon kivételt (a `clearSimilarity`
+        magja már őrzi ezt, #1833) — itt a BEKÖTÉS útját próbáljuk ki."""
+        window, _c, _e = qml_app
+        _aktival(_shortcut(window, "clearSimilarShortcut"), qt_app)
+        assert window.property("visible") is not None
