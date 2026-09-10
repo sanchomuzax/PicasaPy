@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Hozzáadva
 
+- **Album kijelölésekor a tálca összecsukott tokent mutat** (#2741). Ha egy
+  albumra kattintasz és nincs kijelölt képed, a képtálcán egy borítókép jelenik
+  meg a felirattal, hogy hány kép van benne — ahogy az eredeti Picasában.
+  Amint kijelölsz egy képet, a bélyegképek veszik át a helyét. A mappanézet
+  megszokott kinézete nem változik.
+
+### Hozzáadva
+
 - **Duplikátum-kapcsoló a keresősávon** (#2174). Amikor a másodpéldányok
   nézete be van kapcsolva, a keresősáv szűrő-gombjai közt megjelenik a
   másodpéldány-jelvény, és egy kattintással ki is vezet a módból. Ahogy az
