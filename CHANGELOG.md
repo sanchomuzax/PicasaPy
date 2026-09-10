@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Változott
 
+- **A Beállítások „Másodpéldányok észlelése importáláskor" jelölője működik**
+  (#2893). Eddig szürke volt, pedig a képesség megvolt: az importáló ablak
+  „Exclude Duplicates" jelölője már eddig is kihagyta a könyvtárban meglévő
+  képeket. Mostantól a két helyen ugyanaz az egy beállítás áll, tehát amit az
+  egyik helyen bekapcsolsz, a másikon is látszik.
+
+### Változott
+
 - **A szövegráíró panel feliratai az eredeti helyükre kerültek** (#2535). A
   „Betűtípus:", „Méret:", „Stílus:" és „Igazítás:" mostantól a vezérlőjük
   bal oldalán áll, jobbra igazítva, ahogy az eredeti Picasában; a panel

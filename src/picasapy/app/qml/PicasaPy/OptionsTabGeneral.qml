@@ -15,9 +15,12 @@ import QtQuick.Layouts
 //     context property), ugyanaz a tár, mint a FileOpsDialogs törlés-
 //     megerősítésénél.
 //
+//   - "Másodpéldányok észlelése importáláskor" — a #2893 óta ÉLŐ: ugyanaz
+//     az `import/autoexclude` kulcs, amit az importáló párbeszéd
+//     "Exclude Duplicates" jelölője ír (importSourceController).
+//
 // A többi FEN-vezérlőnek MA nincs PicasaPy-beli funkciója (nincs
-// tooltip-kapcsoló, nincs "egy kattintásra kilépés szerkesztőből"-mód,
-// nincs automatikus duplikátum-észlelés importáláskor, nincs
+// tooltip-kapcsoló, nincs "egy kattintásra kilépés szerkesztőből"-mód, nincs
 // gyorsítótár-törlés funkció, nincs statisztika-küldés/frissítés-
 // ellenőrzés, nincs kamera-esemény, nincs perzisztens alapértelmezett
 // importcélmappa) — ezek a struktúra kedvéért megjelennek, de
@@ -100,13 +103,39 @@ ColumnLayout {
             color: Theme.ink
         }
 
-        // nincs automatikus duplikátum-észlelés importáláskor — a
-        // duplikátum-keresés a PicasaPy-ban egy külön, kézzel indított
-        // eszköz (Eszközök → Duplikátumok keresése, DedupDialog.qml)
+        // ÉLŐ (#2893): az importáláskori másodpéldány-észlelés. UGYANAZT az
+        // `import/autoexclude` kulcsot írja, amit az importáló párbeszéd
+        // „Exclude Duplicates" jelölője (`importSourceController`,
+        // `AUTOEXCLUDE_SETTINGS_KEY`) — két külön állapot tilos: amit itt
+        // beállítasz, azt ott is látod, és viszont.
+        //
+        // Eddig szürke helyfoglaló volt, azzal az indoklással, hogy „nincs
+        // automatikus duplikátum-észlelés importáláskor". Ez a #1398 óta
+        // nem igaz: a forrás-beolvasás megjelöli a másodpéldányokat, és
+        // eszerint hagyja ki őket a válogatásból.
+        //
+        // ⚠️ A felirat: a `picasa-menu-parancsok-viselkedes.md` az
+        // `options.fen`-ből „Detect duplicates **while importing**" alakot
+        // idéz, nálunk „on import" áll. A kettő ugyanazt jelenti, és a fen
+        // teljes szövegkiírása nincs a lapon — a feliratot ezért NEM
+        // írjuk át egyetlen idézet alapján.
         CheckBox {
             objectName: "optionsAutoExcludeCheck"
             text: qsTr("Detect duplicates on import")
-            enabled: false
+            //: A jelölő CSAK akkor él, ha van kihez kötni: vezérlő nélkül
+            //: (próbákban, leépítés közben) a pipa semmit nem tárolna el —
+            //: a hazug „élő" állapot rosszabb, mint a szürke vezérlő.
+            enabled: typeof importSourceController !== "undefined"
+                     && importSourceController !== null
+            checked: (typeof importSourceController !== "undefined"
+                      && importSourceController
+                      && importSourceController.autoExclude !== undefined)
+                         ? importSourceController.autoExclude : false
+            onToggled: {
+                if (typeof importSourceController !== "undefined"
+                    && importSourceController)
+                    importSourceController.setAutoExclude(checked)
+            }
         }
         // nincs "gyorsítótár törlése" művelet — a bélyegkép-gyorsítótár
         // mérete a #144-es LRU-takarítóval automatikusan karban tartott,
