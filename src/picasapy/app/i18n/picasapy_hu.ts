@@ -4270,6 +4270,10 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Click and drag over photos to magnify them</source>
         <translation>Kattintson és húzza a képek fölött a nagyításhoz</translation>
     </message>
+    <message>
+        <source>Show duplicate files only</source>
+        <translation>Csak a másodpéldányok mutatása</translation>
+    </message>
 </context>
 <context>
     <name>PerfMonitorPanel</name>

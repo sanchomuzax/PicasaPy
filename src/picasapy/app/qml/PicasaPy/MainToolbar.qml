@@ -459,6 +459,50 @@ Rectangle {
                                   : controller.showVideosOnly()
                     }
                 }
+                Item {   // #2174: a duplikátum-kapcsoló (`searchoptions/
+                         // dupesearch`). MÉRVE, hogy alapból REJTETT: a
+                         // főablak-építő elrejti (`0x0040c8c9`), és csak a
+                         // mód bekapcsolása hozza elő — ezért nem lehet
+                         // vele BEkapcsolni a módot, csak kivezetni belőle
+                         // (a bekapcsolás a menüparancs dolga).
+                    objectName: "dupeFilter"
+                    width: 22; height: 20
+                    readonly property bool aktiv:
+                        (controller && controller.viewModeName !== undefined)
+                            ? controller.viewModeName === "dupes" : false
+                    visible: aktiv
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 2
+                        color: parent.aktiv ? "#ffffff" : "transparent"
+                        border.width: parent.aktiv ? 1 : 0
+                        border.color: Theme.selectionBlue
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        //: két egymásra csúszó lap — a másodpéldány jele
+                        text: "⧉"
+                        font.pixelSize: 12
+                        color: parent.aktiv
+                               ? Theme.selectionBlue
+                               : (dupeFilterHover.hovered
+                                  ? Theme.selectionBlue : "#8f8b83")
+                    }
+                    //: #2174: a kapcsoló buboréksúgója. ⚠️ NEM mért felirat —
+                    //: a `dupesearch` rejtett elem, a szövegtár nem ad hozzá
+                    //: szöveget; a szomszédos szűrők alakját követi.
+                    ToolTip.text: qsTr("Show duplicate files only")
+                    ToolTip.visible: dupeFilterHover.hovered
+                    ToolTip.delay: 500
+                    HoverHandler { id: dupeFilterHover }
+                    TapHandler {
+                        // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
+                        // kapcsoló és az `ID_DUPES` bitre ugyanazt hívja.
+                        onTapped: parent.aktiv
+                                  ? controller.clearFilter()
+                                  : controller.showDuplicateFiles()
+                    }
+                }
                 Item {   // geo-szűrő (#30) — csak akkor él, ha van geocímkés kép
                     objectName: "geoFilter"
                     width: 22; height: 20

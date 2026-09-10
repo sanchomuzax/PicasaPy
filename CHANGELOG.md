@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- **Duplikátum-kapcsoló a keresősávon** (#2174). Amikor a másodpéldányok
+  nézete be van kapcsolva, a keresősáv szűrő-gombjai közt megjelenik a
+  másodpéldány-jelvény, és egy kattintással ki is vezet a módból. Ahogy az
+  eredeti Picasában: a kapcsoló egyébként nem látszik, mert a módot a
+  menüpont kapcsolja be.
+
 ### Változott
 
 - **A „Fájlok másodpéldányainak megjelenítése" mostantól szűrt nézetbe visz,
