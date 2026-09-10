@@ -3777,6 +3777,23 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+        <translation>Ez több mint 1000 képet tartalmazó albumot hoz létre.  Folytatja?</translation>
+    </message>
+    <message>
+        <source>Create Album</source>
+        <translation>Album létrehozása</translation>
+    </message>
+    <message>
+        <source>Save search results</source>
+        <translation>Keresési eredmények mentése</translation>
+    </message>
+    <message>
+        <source>The search results could not be saved as an album.</source>
+        <translation>A keresési eredményeket nem sikerült albumként menteni.</translation>
+    </message>
+
+    <message>
         <source>There are no files on the clipboard to paste.</source>
         <translation>Nincs beilleszthető fájl a vágólapon.</translation>
     </message>
@@ -4676,6 +4693,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Save &amp;search results...</source>
+        <translation>Keresési eredmények &amp;mentése...</translation>
+    </message>
+
     <message>
         <source>Search for...</source>
         <translation>Keresés...</translation>

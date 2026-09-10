@@ -163,6 +163,9 @@ MenuBar {
     //: `yellow`, `green`, `blue`, `purple`) megy át, a `color:` előtagot a
     //: gazda teszi rá (a keresőmező szövege lesz belőle).
     signal colorSearchRequested(string szin)
+    //: #1405: a keresés mentése albumként — a gazda dönt a megerősítésről.
+    property bool canSaveSearch: false
+    signal saveSearchRequested()
     signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
@@ -1774,6 +1777,23 @@ MenuBar {
                     text: qsTr("&Purple")
                     onTriggered: bar.colorSearchRequested("purple")
                 }
+            }
+            //: #1405: `eMenuTools::ID_SAVESEARCH` — a Kísérleti almenü
+            //: NEGYEDIK tétele (a „Keresés…" almenü után), a bináris
+            //: menüépítőből mérve.
+            //:
+            //: MÉRVE (`0x005d86a0`, 362 bájt): 1000 találat FELETT
+            //: megerősítést kér („This will create an album with more than
+            //: 1000 images."), a gombja „Create Album" — alatta CSENDBEN
+            //: létrejön az album. A küszöb tehát nem biztonsági kérdés,
+            //: hanem a nagy album miatti figyelmeztetés.
+            MenuItem {
+                objectName: "menuToolsSaveSearch"
+                text: qsTr("Save &search results...")
+                //: csak keresési nézetben, találattal — üres keresésből
+                //: album sem lesz
+                enabled: bar.canSaveSearch
+                onTriggered: bar.saveSearchRequested()
             }
             // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
             // is a Kísérleti almenüben lakott, az áthelyezés mellett
