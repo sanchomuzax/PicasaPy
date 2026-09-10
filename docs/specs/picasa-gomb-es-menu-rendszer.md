@@ -612,44 +612,6 @@ zárható; a nyitva maradó rész csak a *miért éppen ez a szín* kérdés
 > 24 bites RGB-ként mérhető, a csomagolás csak a bináris-oldali
 > kereséshez számított.*
 
-## 9. A gomb-rétegek teljes leltára
-
-269 réteg a `globalbuttons/` névtérben. A névadás **kivétel nélkül**
-`<alap>_<állapot>`, ahol az állapot:
-
-| utótag | jelentés |
-|---|---|
-| `_n` | normál |
-| `_h` | rámutatás (hover) |
-| `_p` | lenyomott (pressed) |
-| `_t` | **bekapcsolt** (toggled) — csak 11 rétegnél |
-
-Néhány régebbi réteg a teljes szót írja ki: `wnormal`/`whover`/`wpress`/
-**`wthrob`**, `mb_normal`/`mb_hover`/`mb_press`,
-`prevnormal`/`prevhover`/`prevpress`, `roundnormal`/`roundhover`/
-`roundpress`, `walletnormal`/…, `3x5normal`/`4x6normal`/`5x7normal`/
-`8x10normal`/`fullnormal` (a nyomtatási méretválasztó 70 × 59-es lapkái).
-
-**Méretcsalád szerint** (mind 28 px magas, ha nincs jelölve):
-`b32` 32 · `b38` 40 · `b38a/b38l/b38r` 37 × **21** · `b48` 49 ·
-`b72` 71 · `b88` 88 · `b98` 98 · `b132` 132 · `b150` 150.
-
-A `#`-tel kezdődő nevek (`#chip_public`, `#chip_circle`, …)
-**kikommentezettek** — nem jelennek meg.
-
----
-
-## Bizonyítottsági fok
-
-**Megerősített**: a 9-szeletes nyújtás 8 px-es sapkája (három mintán
-mérve), minden állapotszín (képpontból olvasva), a stílus- és
-betű-makrók (a `.tre` szó szerinti tartalma), a kétféle menürendszer (az
-importtábla és a menüépítő).
-
-**Nyitott**: hogyan rajzolja a program a **letiltott** gombot (nincs `_d`
-réteg); a `popuplist` legördülő **panel** háttérszíne és keretszíne (a
-rétegek csak a bezárt vezérlőt tartalmazzák, a lenyíló listát kód rajzolja).
-
 ## 8/d A legördülő-tételek beállításai a BINÁRISBÓL (2026-09-10, #2856)
 
 **Bizalmi fok: megerősített.** A 8. szakasz a `.tre`-ből következtetett; ez a
@@ -726,3 +688,125 @@ változott.
 
 ⚠️ A `+0x280` méretezési mód többi értéke (`0`, `1`, …) **NINCS feltárva** —
 ez a `customwidth` nélküli legördülők útja.
+
+## 8/e A legördülő SZÉLESSÉGE — négy méretezési mód (2026-09-10, #2859)
+
+**Bizalmi fok: megerősített.** Minden szám kiolvasott immediate vagy cím
+szerinti utasítás; a pásztázások indextől függetlenül futottak
+(`eszkozok/binaris/paszta.py`, csúcs-RSS 86–87 MiB, kontrollpozitívval).
+
+### 8/e.1 A két osztály, és hol lakik a beállítás
+
+A `.tre`-elem a **`ytPopupListNode`** (`vftable 0xc9afb4`, konstruktor
+`FUN_00608700`). Ez a konstruktorában **`0x294` bájtot foglal**
+(`0x0060876c push 0x294`), és a benne épített listát a **`+0x3f8`** tagjába
+teszi (`0x00608793`). A belső osztály a **`CPopupListContainer`**
+(`vftable 0xca7f34`, konstruktor `FUN_0069d970`, `0x0069d994`).
+
+A 8/d.4 „listaobjektum" tehát pontosan ez: a `CPopupListContainer`.
+
+### 8/e.2 Az alapértékek — a konstruktorból kiolvasva
+
+```
+0x0069d9bb  mov dword ptr [ebp + 0x280], ebx      ; méretezési MÓD  = 0
+0x0069d9c1  mov byte  ptr [ebp + 0x284], 1        ; egy logikai jelző = 1
+0x0069d9c8  mov dword ptr [ebp + 0x288], ebx      ; a 3-as mód forrása = 0
+0x0069d9ce  mov dword ptr [ebp + 0x28c], ebx      ; customwidth = 0
+0x0069d9d4  mov dword ptr [ebp + 0x290], 0xa      ; maxrows = 10
+0x0069d9b5  mov byte  ptr [ebp + 0x275], bl       ; handlealphakeys = 0
+```
+
+A `ytPopupListNode` konstruktora ezt még egyszer megerősíti: `0x0060878e
+mov ecx, 0xa` → `0x006087a5 mov [eax+0x290], ecx`. ⇒ a 8/d.4-ben az
+`sscanf` előtöltéséből következtetett **10-es alapérték immár a
+konstruktorból is mérve van**.
+
+### 8/e.3 ⭐ A NÉGY mód — a szélességszámító `FUN_0069e010`-ből
+
+```
+0x0069e163  mov ecx, dword ptr [esi + 0x280]      ; a mód
+0x0069e16f  cmp ecx, edi                          ; edi = 0
+0x0069e171  jne 0x69e1ac
+0x0069e173  add eax, 8                            ; ⭐ MÓD 0
+…
+0x0069e1ac  cmp ecx, 2
+0x0069e1af  lea edx, [eax + eax*2 + 8]            ; ⭐ MÓD 1 (a nem-0 alapja)
+0x0069e1b7  jne 0x69e1c1
+0x0069e1b9  mov eax, dword ptr [esi + 0x28c]      ; ⭐ MÓD 2
+0x0069e1c1  cmp ecx, 3
+0x0069e1c4  jne 0x69e1d0
+0x0069e1c7  call 0x69e390                         ; ⭐ MÓD 3
+```
+
+| mód | a lista szélessége | ki állítja be |
+|---:|---|---|
+| **0** | a tételek mért szélessége **+ 8** | az **alapértelmezés** (konstruktor) |
+| **1** | a mért szélesség **× 3 + 8** | kódból, nem `.tre`-ből |
+| **2** | a **`customwidth`** értéke | `Property customwidth N` (8/d.4) |
+| **3** | a `0x0069e390` számolja a `+0x288` gyűjteményből | kódból |
+
+⇒ a korpuszban a `customwidth` **egyetlen** helyen áll, tehát a legördülők
+**túlnyomó többsége a 0-s módban fut**: mért szélesség + 8 képpont.
+
+### 8/e.4 A mód a VÍZSZINTES IGAZÍTÁST is átkapcsolja
+
+Ugyanez a függvény kétszer külön vizsgálja az **1**-es módot, és más
+x-képletet használ:
+
+```
+0x0069e23d  cmp dword ptr [esi + 0x280], 1
+0x0069e24a  lea eax, [eax + eax + 4]              ; 1-es mód
+0x0069e25c  sub ecx, eax ; add ecx, 4             ; minden más
+…
+0x0069e273  cmp dword ptr [esi + 0x280], 1
+0x0069e27c  mov ecx, 0xfffffffe ; sub ecx, eax ; add ecx, ecx
+0x0069e28f  sub eax, [esp+0x20] ; sub eax, 4
+```
+
+A `+0x284` bájt (alapból **1**) választ a két ág-pár között
+(`0x0069e1ff cmp byte ptr [esi + 0x284], 0`).
+
+### 8/e.5 Ami NYITVA marad
+
+A **3-as mód** forrása, a `+0x288` gyűjtemény: a `0x0069e390` a
+`[eax+0x10]` darabszámmal iterál rajta (`0x0069e3ed`). Hogy **mit** tárol
+ez a gyűjtemény, és melyik kód állítja be, nincs feltárva. A `+0x284`
+jelző jelentése szintén nyitott.
+
+## 9. A gomb-rétegek teljes leltára
+
+269 réteg a `globalbuttons/` névtérben. A névadás **kivétel nélkül**
+`<alap>_<állapot>`, ahol az állapot:
+
+| utótag | jelentés |
+|---|---|
+| `_n` | normál |
+| `_h` | rámutatás (hover) |
+| `_p` | lenyomott (pressed) |
+| `_t` | **bekapcsolt** (toggled) — csak 11 rétegnél |
+
+Néhány régebbi réteg a teljes szót írja ki: `wnormal`/`whover`/`wpress`/
+**`wthrob`**, `mb_normal`/`mb_hover`/`mb_press`,
+`prevnormal`/`prevhover`/`prevpress`, `roundnormal`/`roundhover`/
+`roundpress`, `walletnormal`/…, `3x5normal`/`4x6normal`/`5x7normal`/
+`8x10normal`/`fullnormal` (a nyomtatási méretválasztó 70 × 59-es lapkái).
+
+**Méretcsalád szerint** (mind 28 px magas, ha nincs jelölve):
+`b32` 32 · `b38` 40 · `b38a/b38l/b38r` 37 × **21** · `b48` 49 ·
+`b72` 71 · `b88` 88 · `b98` 98 · `b132` 132 · `b150` 150.
+
+A `#`-tel kezdődő nevek (`#chip_public`, `#chip_circle`, …)
+**kikommentezettek** — nem jelennek meg.
+
+---
+
+## Bizonyítottsági fok
+
+**Megerősített**: a 9-szeletes nyújtás 8 px-es sapkája (három mintán
+mérve), minden állapotszín (képpontból olvasva), a stílus- és
+betű-makrók (a `.tre` szó szerinti tartalma), a kétféle menürendszer (az
+importtábla és a menüépítő).
+
+**Nyitott**: hogyan rajzolja a program a **letiltott** gombot (nincs `_d`
+réteg); a `popuplist` legördülő **panel** háttérszíne és keretszíne (a
+rétegek csak a bezárt vezérlőt tartalmazzák, a lenyíló listát kód rajzolja).
