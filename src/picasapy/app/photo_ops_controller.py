@@ -544,6 +544,51 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             return ""
         return token
 
+    # -- Beállítás asztali háttérképként (#1775) --------------------------------
+
+    @Slot(int, result=bool)
+    def setPhotoAsDesktopBackground(self, row: int) -> bool:  # noqa: N802
+        """A kijelölt kép asztali háttérképnek (`eMenuCreate::ID_WALLPAPER`).
+
+        Az eredeti (mérve, `0x0057aa10`, 1143 b) **másolatot** ír:
+        `picasabackground.bmp` a `Picasa/Backgrounds` mappába — NEM az eredeti
+        fájlra mutat —, majd középre teszi (`WallpaperStyle=0`,
+        `TileWallpaper=0`). A másolat azért fontos, mert így a kép átnevezése
+        vagy törlése nem viszi el az asztal hátterét.
+
+        A motor közös a kollázs-ágéval (`app/wallpaper.py`, #1005): ugyanaz a
+        BMP-írás, ugyanaz a beállító lánc, és ugyanaz a két visszajelzés
+        (`desktopBackgroundApplied` / `desktopBackgroundFailed`) — egy hely,
+        egy viselkedés.
+
+        Visszatérés: elindult-e a művelet. Érvénytelen sorra `False`, és a
+        hívó ebből tud üzenetet adni."""
+        from . import collage_output as output
+        from . import collage_prefs, wallpaper
+
+        fotok = self._photos.photos
+        if not 0 <= int(row) < len(fotok):
+            return False
+        foto = fotok[int(row)]
+        forras = Path(foto.folder_path) / foto.name
+        try:
+            mappa = wallpaper.backgrounds_dir(
+                output.output_dir(
+                    self._get_settings().value(collage_prefs.OUTPUT_DIR_KEY)
+                ),
+                output._felulet_nyelve(),
+            )
+            bmp = wallpaper.write_background_bmp(forras, mappa)
+        except OSError as hiba:
+            self.photoOpFailed.emit(str(hiba))
+            return False
+        eszkoz = wallpaper.set_desktop_background(bmp)
+        if eszkoz:
+            self.desktopBackgroundApplied.emit(eszkoz)
+        else:
+            self.desktopBackgroundFailed.emit(str(bmp))
+        return True
+
     # -- Arcinformációk írása XMP-be (#1403) -----------------------------------
 
     @Property(bool, notify=xmpFacesStateChanged)

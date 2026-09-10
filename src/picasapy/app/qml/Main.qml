@@ -1046,6 +1046,13 @@ ApplicationWindow {
         //: #1406: a bekérő párbeszéd halasztott (#1720) — a legtöbb
         //: munkamenetben fel sem épül.
         onShowTagAsAlbumRequested: showTagAsAlbumDialog.ensure().openEmpty()
+        //: #1775: a KIJELÖLÉS ELSŐ képe lesz a háttér — a parancs egy képre
+        //: szól (az eredeti is egyet tesz háttérképnek).
+        onWallpaperRequested: {
+            var sorok = window.selectedIndexes
+            if (sorok.length > 0)
+                controller.setPhotoAsDesktopBackground(sorok[0])
+        }
         onSaveSearchRequested: {
             if (controller.searchResultCount > 1000)
                 saveSearchDialog.ensure().ask("", qsTr(

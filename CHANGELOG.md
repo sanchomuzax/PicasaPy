@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.382] – 2026-09-10
+
+### Hozzáadva
+
+- **„Beállítás asztali háttérképként" a Létrehozás menüben** (#1775). A
+  kijelölt képet egy kattintással asztali háttérképpé teszi: másolatot készít
+  belőle a Hátterek mappába (így a kép átnevezése vagy törlése nem viszi el a
+  hátteret), és középre helyezi — ahogy az eredeti Picasa. Eddig a menüpont
+  szürke volt.
+
 ## [0.8.381] – 2026-09-10
 
 ### Hozzáadva
