@@ -1574,3 +1574,53 @@ glifa-léptetésben adódik hozzá (`0x00a4661b fiadd`, `0x00a467b5 fild`,
 `0x00a4720b`, `0x00a4738f`), alapértéke **0** (`0x00a45b30`). Ez a
 **betűköz**-szerepre illik (a `.tre`-ben `fonttrack`), de a `.tre`-hez kötése
 ugyanaz a nyitott lépés, mint 17.5-ben.
+
+## 18. A `.tre` attribútum → mező kötés MEGVAN (2026-09-10, #2847)
+
+**Bizalmi fok: megerősített.** A lánc mindkét fele mérve, cím szerint.
+
+### 18.1 A két közvetlen mezőírás
+
+A `.tre` `Property`-feldolgozó (`FUN_009ca5e0`) a legtöbb attribútumot
+feloldó függvényen át adja tovább, **hármat viszont közvetlenül ír**:
+
+```
+0x009ca93d  call 0x9c6f10
+0x009ca94a  mov  dword ptr [eax + 0x29c], edi   ; ⭐ fonttrack
+…
+0x009ca9bf  call 0x9c6f10
+0x009ca9cc  mov  dword ptr [eax + 0x298], edi   ; ⭐ fontleading
+…
+0x009caa40  call 0x9c6f10
+0x009caa4d  mov  dword ptr [eax + 0x2a8], edi   ; virtualfontsize
+```
+
+A `0x009c6f10` a szövegcsomópontot adja vissza (a `+0x298` ott a konstruktor
+`0x00a6b7ff`-e szerint alapból 12).
+
+### 18.2 A teljes lánc, két körből összerakva
+
+| `.tre` attribútum | csomópont-mező | gyorstár-mező | szerep |
+|---|---|---|---|
+| `fontleading` | `+0x298` (`0x009ca9cc`) | `+0x254` (`0x00a6c35e`) | **sorelőtolás** (17.1) |
+| `fonttrack` | `+0x29c` (`0x009ca94a`) | `+0x250` (`0x00a6be1a`) | **betűköz** (17.6) |
+
+⇒ a 17. szakasz hipotézise (17.5) **beigazolódott**, immár méréssel: a
+`+0x254` valóban a `fontleading`, a `+0x250` valóban a `fonttrack`.
+
+### 18.3 A `fontsize`/`fontname`/`fontweight` MÁS úton megy
+
+Ez a három nem közvetlen mezőírás, hanem `0x009c6f60` + virtuális hívás
+(`call [edx+8]`): `0x009ca79d`, `0x009ca82e`, `0x009ca8b4`. Ez egybevág a
+`picasa-respack-format.md` 7. szakaszával: a `.ytf` fájlnév a
+**család–méret–skála–súly–stílus** ötöst kódolja, tehát ezek a gyorstár
+**azonosságához** tartoznak — a sorköz és a betűköz nem, azokat használatonként
+tolja be a rajzoló (16.6).
+
+### 18.4 Értékkészlet a `.tre`-ből (kontroll)
+
+`referencia/tre-eroforrasok/fontmacros_win.tre`, 308 sor: `fontleading` = 10
+(15 helyen) és 15 (1 helyen); `fonttrack` = −1 (34 helyen) és −2 (1 helyen).
+Mindkettő elfér a mért egész mezőben, és a `fonttrack` negatív értéke
+megmagyarázza, miért **hozzáadás** a glifa-léptetésnél (`0x00a4661b fiadd`):
+a negatív szám szűkíti a betűközt.

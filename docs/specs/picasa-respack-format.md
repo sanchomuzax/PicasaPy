@@ -301,3 +301,62 @@ A `runtime/*.ytf` (előre renderelt betűtípus-gyorsítótár) formátuma
 továbbra sincs megfejtve, és **nincs is rá szükség**: a PicasaPy natív
 rendszerbetűkkel dolgozik. A fájlnév kódolja a paramétereket
 (`<család>-<méret>-<skála>-<súly>-<stílus>.ytf`).
+
+## 8. A `Property` kulcskészlet — a binárisból, tételesen (2026-09-10, #2847)
+
+Az 5.1 eddig **példákat** sorolt. A `.tre` általános `Property`-feldolgozója
+(`FUN_009ca5e0`, 7899 bájt) **53 kulcsot** ismer fel; a lista a
+sztring-összehasonlítások sorrendjében, a bináris literálcímével:
+
+`fontsize` · `fontname` · `fontweight` · `fonttrack` · `fontleading` ·
+`virtualfontsize` · `underlineoffset` · `showtarget` · `hidetarget` ·
+`uptarget` · `downtarget` · `disabletarget` · `enabletarget` · `typecolor` ·
+`setpressed` · `setvisible` · `setautorepeat` · `sethiquality` · `drag` ·
+`windrag` · `winsize` · `normalcursor` · `textcursor` · `useshadow` ·
+`hitchildren` · `mousedown` · `scaleclamp` · `usealpha` · `dither` ·
+`croptofit` · `negativemode` · `disable` · `slider` · `vertslider` ·
+`focustarget` · `webtarget` · `alias` · `multiply` · `buddy` · `palette` ·
+`alphatest` · `escapekey` · `round` · `predraw` · `textalign` · `textwrap` ·
+`textclip` · `hiddentimer` · `prenotify` · `throb` · `enableclip` ·
+`buttcon` · `forceuidirection`
+
+(A literálok a `0xc7c99c`–`0xc7cc00` tartományban, egymás után állnak.)
+
+### 8.1 ⛔ HELYESBÍTÉS: a `hidden` NEM `Property`
+
+Az 5.1 a `hidden`-t `Property`-ként sorolta. A `.tre`-korpuszban **egyetlen
+`Property hidden` sincs**; ami van, az a `m_hidden` **makró**, és az
+`macros.tre:112–113` szerint így szól:
+
+```
+#define m_hidden
+Property setvisible 0
+```
+
+A binárisban sincs `hidden` kulcs — a `setvisible` van.
+
+### 8.2 A korpusz és a bináris ELTÉR — és ez lelet
+
+A `referencia/tre-eroforrasok/` 140 `.tre` fájljában **58** különböző
+`Property` kulcs fordul elő. A két halmaz metszete 45; a különbségek:
+
+**Csak a `.tre`-ben (13) — tehát MÁSIK feldolgozó kezeli őket:**
+`addtofocus` · `align` · `aligntobounds` · `button` · `cellheight` ·
+`cellwidth` · `customwidth` · `film` · `handlealphakeys` · `hitbox` ·
+`itempadding` · `maxrows` · `wraptext`
+
+A `button` **132 előfordulással** a korpusz leggyakoribb `Property`-je, és a
+`FUN_009ca5e0` nem ismeri ⇒ **elemtípus-függő feldolgozó(k) is vannak**, az
+általános mellett. Ezek felderítése nyitott.
+
+**Csak a binárisban (8) — a korpuszban nem használt, de támogatott:**
+`alphatest` · `dither` · `enabletarget` · `multiply` · `textclip` ·
+`underlineoffset` · `vertslider` · `windrag`
+
+### 8.3 Amit a kötésből tudunk
+
+A `fontleading` és a `fonttrack` végigkövetett útja (csomópont-mező →
+betűgyorstár-mező → szerep) a `picasa-megjelenitesi-modok.md` 18. szakaszában
+áll. A `fontsize`/`fontname`/`fontweight` a gyorstár **azonosságához**
+tartozik, ezért más úton megy — ez egybevág a 7. szakasz `.ytf`-fájlnév
+szerkezetével.
