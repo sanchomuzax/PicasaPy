@@ -337,6 +337,13 @@ A binárisban sincs `hidden` kulcs — a `setvisible` van.
 
 ### 8.2 A korpusz és a bináris ELTÉR — és ez lelet
 
+> ⛔ **ELAVULT — a 9. szakasz helyesbíti.** Az itteni korpusz-leltár
+> **aláhúzásnál levágta** a kulcsneveket (`button_state_n` → `button`,
+> `film_scale` → `film`), ezért a `button` „132 előfordulással" nem egy
+> kulcs, hanem **nyolc** (`button_*` család). A helyes szám **65** kulcs,
+> nem 58, és a hiányzó feldolgozók MEGVANNAK — ld. 9.
+
+
 A `referencia/tre-eroforrasok/` 140 `.tre` fájljában **58** különböző
 `Property` kulcs fordul elő. A két halmaz metszete 45; a különbségek:
 
@@ -360,3 +367,65 @@ betűgyorstár-mező → szerep) a `picasa-megjelenitesi-modok.md` 18. szakaszá
 áll. A `fontsize`/`fontname`/`fontweight` a gyorstár **azonosságához**
 tartozik, ezért más úton megy — ez egybevág a 7. szakasz `.ytf`-fájlnév
 szerkezetével.
+
+## 9. Az elemtípus-függő `Property`-feldolgozók (2026-09-10, #2853)
+
+**Bizalmi fok: megerősített.** Minden hivatkozás indextől független
+`.text`-pásztázásból (`eszkozok/binaris/paszta.py`, csúcs-RSS 86–87 MiB),
+kontrollpozitívval (`fontleading` a `0x009ca95d`-en).
+
+### 9.1 ⛔ ÖNHELYESBÍTÉS: a 8.2 korpusz-leltára rossz volt
+
+A 8.2 a korpusz kulcsait `Property [a-z]+` mintával gyűjtötte, ami
+**aláhúzásnál levág**. Ezért lett `button_state_n`-ből `button`, és
+`film_scale`-ból `film`. A helyes leltár (`Property [A-Za-z0-9_]+`):
+**65** különböző kulcs, és a „leggyakoribb `button`, 132 előfordulás" valójában
+**nyolc** kulcs családja:
+
+| kulcs | előfordulás |
+|---|---:|
+| `button_state_decrect_h` / `_n` / `_p` | 32 · 32 · 32 |
+| `button_buttcon` | 19 |
+| `button_state_h` / `_n` / `_p` | 5 · 5 · 5 |
+| `button_state_decrect_t` | 2 |
+
+### 9.2 Öt további feldolgozó — mind elemtípus-függő
+
+Az általános `FUN_009ca5e0` (8. szakasz) mellett:
+
+| függvény | méret | kulcsok | hol |
+|---|---:|---|---|
+| `FUN_00a69f50` | 1314 b | `button_` · `state_` · `decrect_` · `buttcon` | `0x00a69f8c`, `0x00a6a02a`, `0x00a6a115`, `0x00a6a41d` |
+| `FUN_00a699c0` | 574 b | `addtofocus` | `0x00a699e3` |
+| `FUN_005b4ca0` | 1239 b | `align` · `aligntobounds` (+ `hairline`, `nofillonly`) | `0x005b4cd6`, `0x005b4f83` |
+| `FUN_00597390` | 659 b | `cellwidth` · `cellheight` | `0x0059748f`, `0x00597556` |
+| `FUN_00609680` | 1352 b | `itempadding` · `maxrows` · `customwidth` · `handlealphakeys` (+ `justify`) | `0x006096bf`, `0x006097aa`, `0x0060989e`, `0x00609b20` |
+
+A `film_scale` (`0xc93578`) két helyről hivatkozott: `0x005a6513` és
+`0x005b89d3`.
+
+⚠️ A `center` / `left` / `right` / `justify` **ÉRTÉKEK, nem kulcsok**: a
+korpuszban `Property align center` áll, és a `center` soha nem `Property`-név.
+
+### 9.3 ⭐ Miért nincs literálja a `button_state_n`-nek: ELŐTAG-illesztés
+
+A `button_*` család egyik teljes neve sem szerepel sztringként a binárisban.
+A `FUN_00a69f50` **előtagonként** halad: előbb a `button_` (`0xce4a3c`),
+azon belül a `state_` (`0xce4a44`) vagy a `decrect_` (`0xce4a4c`), illetve a
+`buttcon`. Ezért a teljes névre keresés nulla találatot ad — a nulla itt
+**a keresés hibája volt, nem a bináris hiánya**.
+
+### 9.4 ⭐ Két `.tre` kulcs, amit a szállított Picasa3.exe NEM dolgoz fel
+
+A `hitbox` és a `wraptext` **sehol nem szerepel sztringként** a
+`Picasa3.exe`-ben (sem teljes névként, sem előtagként) ⇒ ezeket a sorokat a
+program **némán eldobja**.
+
+- `hitbox`: a `macros.tre:188–190` `m_hit_childlabel` makró törzsében áll
+  (`Property hitchildren 1` + `Property hitbox 1`), és a makrót a korpusz
+  **63 helyen** hívja — tehát a sor sokszor eljut a feldolgozóig, és
+  mindannyiszor hatástalan. A `hitchildren` ellenben a felismert 53 között van.
+- `wraptext`: egyetlen helyen, `upload.tre:79`.
+
+**Terméki következmény:** a `.tre`-ből átvett elrendezésnél ezt a két
+tulajdonságot **nem szabad megvalósítani** — az eredeti sem veszi figyelembe.
