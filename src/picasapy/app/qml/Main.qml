@@ -2528,6 +2528,20 @@ ApplicationWindow {
         //: #1403: `FaceTagJob::cancelled` — az eredetinek KÜLÖN
         //: állapotszövege van a megszakításra, tehát nem a befejezés
         //: üzenetét adjuk vissza.
+        //: #1005: a háttérkép TÉNYLEGESEN beállítva — megnevezzük, mi
+        //: végezte el (a felhasználó így tudja, melyik asztali környezet
+        //: fogadta el), mert Linuxon több út van.
+        function onDesktopBackgroundApplied(tool) {
+            errorBanner.notice = true
+            errorBannerText.text = qsTr("The desktop background is set (%1).").arg(tool)
+        }
+        //: #1005: a BMP kiírva, de az asztalt nem sikerült beállítani. A néma
+        //: sikertelenség a legrosszabb kimenet: megmondjuk, HOVA került a
+        //: kép, hogy kézzel beállíthassa.
+        function onDesktopBackgroundFailed(bmpPath) {
+            errorBanner.notice = false
+            errorBannerText.text = qsTr("The picture is ready at %1, but the desktop background could not be set automatically.").arg(bmpPath)
+        }
         function onXmpFacesCancelled(written) {
             errorBanner.notice = true
             errorBannerText.text = qsTr("Cancelled writing face tags (%1 file(s) written).").arg(written)

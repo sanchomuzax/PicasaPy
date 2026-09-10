@@ -3792,6 +3792,15 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>The desktop background is set (%1).</source>
+        <translation>Az asztali háttérkép beállítva (%1).</translation>
+    </message>
+    <message>
+        <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+        <translation>A kép elkészült itt: %1 — az asztali háttérképet viszont nem sikerült magától beállítani.</translation>
+    </message>
+
+    <message>
         <source>Cancelled writing face tags (%1 file(s) written).</source>
         <translation>Az arccímkék írása megszakítva (%1 fájl kiírva).</translation>
     </message>
@@ -8358,6 +8367,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>CollagePanel</name>
+    <message>
+        <source>Create the collage and set it as the desktop background</source>
+        <translation>A kollázs elkészítése és beállítása asztali háttérképként</translation>
+    </message>
+
     <message>
         <location filename="../qml/PicasaPy/CollagePanel.qml"/>
         <source>Desktop Background</source>
