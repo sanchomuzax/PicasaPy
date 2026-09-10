@@ -1574,6 +1574,12 @@ ezt a 18.4 `y`-képlete méri, 31/31 pontossággal.
 
 ### 18.6 Ami NYITVA marad: mi állítja be a `scale` ÉRTÉKÉT
 
+> ⭐ **RÉSZBEN LEZÁRVA a 265. körben (55.)** — a `picturepile` téma
+> `scale`-képlete megvan és 9/9 pontos:
+> `TRUNC(1024 × 0,33 × min(1/√(√k − 1), 1))`, ahol `k` a csomópont
+> sorszáma. Az író `FUN_00834520` @ `0x00834683`, témára kapuzva
+> (`'picturepile'`). A `contactsheet` alábbi kérdése MARAD nyitott.
+
 Két külön kérdés, mindkettő nyitott:
 
 **(a) Ki írja a `+0x2c`-t?** `FUN_00888210` a csomópontba
@@ -5376,3 +5382,207 @@ teendő külön jegyben**; ez a szakasz a normatív forrás.
 tengely-azonosítás a `div`/`imul` párosból, minden konstans címmel és
 kiolvasott értékkel. A margó-kép olvasata (54.2 vége) **erős**, és kimondottan
 el van választva a mért képletektől.*
+
+---
+
+## 55. K1 — MEGVAN a SZÁMOLÓ író: a `scale` helyben SZORZÓDIK (2026-09-10, #1412)
+
+*265. kutatói kör. Ez a szakasz **megdönti** az 51.6 és az 52. „a gépi út
+kimerült" állítását: a `+0x2c`-re LÉTEZIK számoló írás, és az EGÉSZ
+programban pontosan egy. Öt körön át azért nem került elő, mert a
+pásztázó mintája egy címzési alakra vak volt.*
+
+### 55.1 A csomópont-rekord TELJES mezőtérképe, lépésközzel
+
+Az író (`FUN_008347b0`) minden attribútumot **külön** ír ki: előbb a
+nevet tolja a verembe, majd a mezőt `%f`-fel (`0x00c817c0`) formázza. A
+név-sztring és a mező így **párban** olvasható ki — ez adja a térképet:
+
+| `.cxf` attribútum | névsztring VA | a mezőt olvasó utasítás | eltolás |
+|---|---|---|---|
+| `x` | `0x00cac5b4` | `0x00834c3f  fld dword ptr [eax+edx+0x18]` | **+0x18** |
+| `y` | — | `0x00834d26  fld dword ptr [edx+ecx+0x1c]` | **+0x1c** |
+| `w` | — | `0x00834e09  fld dword ptr [edx+ecx+0x20]` | **+0x20** |
+| `h` | — | `0x00834eec  fld dword ptr [edx+ecx+0x24]` | **+0x24** |
+| `theta` | — | `0x00834fcf  fld dword ptr [edx+ecx+0x28]` | **+0x28** |
+| `scale` | **`0x00cbf80c`** (`'scale'`) | `0x008350b2  fld dword ptr [edx+ecx+0x2c]` | **+0x2c** |
+| `theme` | `0x00cbf7c8` (`'theme'`) | `0x00835199  lea eax,[edx+ecx+0x30]` | **+0x30** |
+
+⛳ **A 17.4 ezzel MEGERŐSÍTVE**: a `scale=` tényleg a `+0x2c`-ből megy ki.
+(A kör azzal a hipotézissel indult, hogy más mezőből — **megcáfolva**, a
+névsztring közvetlenül a `+0x2c` olvasása ELŐTT áll.)
+
+**A tömb és a LÉPÉSKÖZ** (`0x00834c29`–`0x00834c3f`, kiolvasva):
+
+```
+ecx = index
+lea eax,[ecx*8] ; sub eax,ecx ; add eax,eax ; add eax,eax ; add eax,eax
+   ⇒  eax = ((8i − i) · 2 · 2 · 2) = 56·i        ⇒ LÉPÉSKÖZ = 0x38 (56 bájt)
+edx = [dokumentum + 0x48]                        ⇒ a csomópont-tömb BÁZISA
+darabszám = [dokumentum + 0x4c] >> 1
+```
+
+*Bizonyítottsági fok: **megerősített** — attribútumnév és mezőolvasás
+párban, utasításonként.*
+
+### 55.2 ⭐ A SZÁMOLÓ ÍRÓ: `FUN_00834520`, `0x00834683`–`0x00834696`
+
+```
+0x00834683  mov  eax, dword ptr [ebx + 0x48]      ; csomópont-tömb
+0x00834686  fld  dword ptr [edx + eax + 0x2c]     ; a MOSTANI scale
+0x0083468a  lea  eax, [edx + eax + 0x2c]          ; ← a cím MUTATÓBA
+0x0083468e  fmul st(1)                            ; × szorzó
+0x00834690  add  ecx, 1
+0x00834693  add  edx, 0x38                        ; lépésköz = 56
+0x00834696  fstp dword ptr [eax]                  ; ← IDE ÍR
+0x00834698  mov  eax, dword ptr [ebx + 0x4c]
+0x0083469b  shr  eax, 1
+0x0083469d  cmp  ecx, eax
+0x0083469f  jb   0x834683                         ; MINDEN csomópontra
+```
+
+⇒ **`csomópont.scale ×= M`**, a dokumentum minden csomópontjára.
+
+**A szorzó levezetése** (`0x008345fa`–`0x00834677`, utasításonként):
+
+```
+n = [dok+0x4c] >> 1                       ; a csomópontok száma
+ha n <= 1:   f = 1,0
+különben:    R = g( g((float)n) − 1,0 )   ; g = FUN_0049fe60
+             f = min( 1/R , 1,0 )         ; fcom/fld1 vágás, 0x0083464c
+M = f × 1024,0 × 0,33
+```
+
+**A három konstans a binárisból kiolvasva**, nem illesztés:
+
+| konstans | VA | nyers bájtok | érték |
+|---|---|---|---|
+| kivonandó | `0x00c7e328` | `000000000000f03f` (double) | **1,0** |
+| lapegység | `0x00cf4218` | `0000000000009040` (double) | **1024,0** |
+| tényező | `0x00cf46c0` | `00000060b81ed53f` (double) | **0,33** |
+
+`1024,0 × 0,33 = 337,92` — ez a szorzó **felső korlátja**, mert `f ≤ 1`.
+
+**`g` = `FUN_0049fe60` → `FUN_00c0b310`**: MSVC-s lebegőpontos
+könyvtárthunk (`fst qword [esp]` → NaN/Inf-szűrő `0x00c14398` → a
+vezérlőszót mentő-visszaállító mag `0x00c0b32d`). A neve **`sqrt`**,
+bizonyítva az 55.4-ben.
+
+*Bizonyítottsági fok: **megerősített** — a ciklus, a lépésköz, a vágás,
+a három konstans és a `g` neve is utasításból, illetve a CRT
+hibanév-táblájából.*
+
+### 55.3 ⛔ ÖNHELYESBÍTÉS: miért maradt ki öt körön át
+
+Az 51.1 szűrője szó szerint ez volt: **`lea <reg>, [<reg> + 0x2c]`** —
+azaz **bázis + eltolás**. A most talált hely alakja
+**`lea eax, [edx + eax + 0x2c]`** — **bázis + index + eltolás**. A minta
+erre **nem illeszkedik**, tehát a „130 találat, ebből 11 vizsgálandó"
+leltár nem is tartalmazhatta.
+
+⛔ **A pozitív kontroll sem védett meg**: a kontrollnak választott
+`0x0082a34c  lea eax,[edi+0x138]` **maga is bázis+eltolás alakú** — egy
+kontroll csak azt igazolja, amilyen alakú ő maga. Ha a minta egy
+címzési ALAKRA vak, azt kizárólag egy **ugyanolyan alakú** kontroll
+mutatja meg.
+
+**A megismételt pásztázás** (`lea2c.py`, teljes `.text`, `paszta.py`
+memóriakapu alatt, csúcs-RSS 87 MiB), szűrő: `lea <reg>,[<bázis> +
+<index> + 0x2c]`, majd 12 utasításon belül `fst`/`fstp dword ptr [<reg>]`
+ugyanabba a regiszterbe:
+
+```
+lea bázis+index+0x2c → FP-tárolás a célregiszterbe: 1 hely
+  0x0083468a  lea eax, [edx + eax + 0x2c]   →   0x00834696 fstp
+KONTROLL 0x0083468a megvan: True
+```
+
+⇒ Az **egész programban** pontosan ez az egy hely. A hatókör most a
+teljes `.text`, nem a kollázs-sáv.
+
+⛳ **Az 51.6 és az 52.3 „kimerült / megerősítve" állítása ezzel
+ÉRVÉNYÉT VESZTI** — a helyes olvasat: *a `+0x2c`-re a KÖZVETLEN
+(`fst`/`fstp [reg+0x2c]`), a SIB és az INDEXELT alakokon nincs számoló
+írás; a **mutatóba emelt** alakon **van**.*
+
+### 55.4 ⭐ `g` = **`sqrt`** — bizonyítva, nem feltételezve
+
+A `FUN_00c0b310` magja `FUN_00c0b32d`, és abban `0x00c0b34c  fsqrt` áll.
+A hibaág a CRT `_matherr`-tábláját tölti: `edx = 5` és
+`lea ecx,[0xd24ff0]` — a `0x00d24ff0` kiolvasva: **`'sqrt'`**.
+
+⇒ A szorzó zárt alakban:
+
+> **M(k) = 1024,0 × 0,33 × min( 1 / √(√k − 1) , 1 )**
+
+### 55.5 ⭐⭐ A `picturepile` `scale`-KÉPLETE — 9/9 PONTOS, szabad paraméter nélkül
+
+A ciklus **témára van kapuzva**: `0x008345ea  cmp eax, 0xcbea2c`, és a
+`0x00cbea2c` sztring **`'picturepile'`**. Ez megmondja, MELYIK témára
+kell a képletet próbálni.
+
+**Ellenőrző minta:** `03-finetune2.cxf` (`picturepile`, 9 csomópont, a
+tulajdonos gépén készült, `\\DS215j\lemez\My Pictures\1412-kollazs-cxf\`).
+A jóslat `TRUNC(1024 × 0,33 × min(1/√(√k−1), 1))`, ahol `k` a csomópont
+sorszáma 1-től — **minden konstans a binárisból**, illesztett paraméter
+**nincs**:
+
+| k | mért `scale` | mért `w × 1024` | képlet |
+|---:|---:|---:|---:|
+| 1 | 337 | 337,00 | **337** |
+| 2 | 337 | 337,00 | **337** |
+| 3 | 337 | 337,00 | **337** |
+| 4 | 337 | 337,00 | **337** |
+| 5 | 303 | 303,00 | **303** |
+| 6 | 280 | 280,00 | **280** |
+| 7 | 263 | 263,00 | **263** |
+| 8 | 249 | 249,00 | **249** |
+| 9 | 238 | 238,00 | **238** |
+
+**9/9 pontos egyezés**, és az 1–4. csomópont azonos értéke épp a
+`min(…,1)` vágást igazolja (`k ≤ 4`-re `1/√(√k−1) ≥ 1`).
+
+⛳ **Ezzel a 18.6 „a `scale` ÉRTÉKÉNEK képlete nyitva marad" a
+`picturepile` témára LEZÁRVA.** Egyben megerősíti a 18.1-et: a
+`picturepile` csomópont `w`-je és `scale`-je ugyanaz a szám
+(`scale = w × 1024`, mind a kilencen pontosan).
+
+⚠️ **A többi témára a képlet NEM áll** (mérve, ugyanabban a mappában):
+`regulargrid` (25 csomópont) minden csomóponton 198; `picturegrid`
+(4) minden csomóponton 491 `w×1024 = 512` mellett; `framegrid` (16)
+csomópontonként változó, mindig **kisebb**, mint `w×1024` (keretbehúzás).
+A kapu-sztring ezt előre megmondta.
+
+### 55.6 ⚠️ Amit ez NEM mond ki
+
+- **A csonkolás helye nincs megtalálva.** A szorzat `337,92`, a fájlban
+  `337,000000` áll; a `%f` magától nem csonkolna. A csonkoló utasítás
+  (vagy a `w`-n át vezető út) **NINCS MÉRVE**.
+- **A hívási időzítés nincs eldöntve.** A `FUN_00834520` négy hívója
+  (`FUN_0062c680`, `FUN_0082a670`, `FUN_008419e0`, `FUN_0087ed80`) a
+  sztringjeik szerint mind a kollázs-panel / -kezelő / autosave környéke
+  (`CollageUI::ReadError`, `collagepanel/*`, `collage::autosave`,
+  `CCollageManager::SavedCollages`). Hogy a szorzás a dokumentum
+  ÉPÍTÉSEKOR vagy a BETÖLTÉSKOR fut-e, **nincs mérve** — a mentett érték
+  a képletet mindkét esetben teljesíti.
+- **A `contactsheet` NEM ez.** A kapu kizárja, és a mért `contactsheet`
+  értékek (4→500, 6→256, 9→313, 12→158) a képletnek nem felelnek meg.
+  A `contactsheet` `scale`-je **továbbra is nyitott** (18.6), de már
+  tudjuk, hogy **témánként külön** írási út van.
+
+### 55.7 A KÖVETKEZŐ lépés, megnevezve
+
+1. **A csonkoló utasítás** megkeresése a `FUN_00834520` szorzása és a
+   kiírás között (vagy a `w` mező felé vezető úton).
+2. **A `contactsheet` saját útja**: ugyanezzel a mintával
+   (`lea <bázis>+<index>+eltolás` → `fstp [reg]`) végig kell nézni a
+   `+0x20` (`w`) és a `+0x24` (`h`) mezőt is — a `contactsheet` `scale`-je
+   nem a `w`-ből jön (18.1: az arány 1,03–1,21).
+3. **Az 55.3 tanulsága a többi pásztázásra**: minden korábbi „kimerítő
+   negatív" leletet, amely `lea <reg>,[<reg> + N]` mintával készült, meg
+   kell ismételni a bázis+index alakra is.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **1 lezárva** (a
+`picturepile` `scale`-képlete) · **2 nyitott, gépi úton folytatható**
+(csonkolás helye, `contactsheet` útja) · 0 „csak nyitva" — mindkettő
+megnevezett paranccsal, az 55.7-ben.*
