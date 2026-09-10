@@ -413,12 +413,23 @@ számolt első nyolc zajérték `B/G/R` bontásban
 `(5,3,3) (4,2,0) (2,2,6) (4,0,7) (2,0,1) (5,3,0) (4,2,2) (7,1,0)` — mind a
 mért `B 0…7 · G 0…3 · R 0…7` tartományban.
 
-⚠️ **A feltétel, amit NEM mértem ki:** hogy egyetlen másik statikus
-inicializáló sem hív közvetve `rand()`-ot vagy `srand()`-ot a magozás előtt. A
-pásztázás csak a **közvetlen** hívóhelyeket nézte. Ha ez a feltétel sérül, a
-mechanizmus és a determinizmus akkor is áll — csak a konstans más.
-**A megszerzés útja:** a `.CRT$XC` tábla teljes felsorolása és az egyes
-inicializálók hívási gráfja.
+✅ **A feltétel BETELJESÜLT (2026-09-10, #2868).** A CRT-inicializáló tábla
+(`0xc40af0`…`0xc418bc`, nullákkal határolva, **884** bejegyzés; a szemcséé
+előtt **864** áll) teljes felsorolása:
+
+- **közvetlenül** `rand`/`srand`-ot hívó bejegyzés: **pontosan 3** — a három
+  ismert magozó (`0xc416b0`, `0xc41870`, `0xc41884`);
+- **egy szinttel mélyebben**: a bejegyzésekből hívott **23** egyedi függvény
+  közül **egy sem** ér el `rand`-ot vagy `srand`-ot;
+- a bejegyzések **791**-e kizárólag `_atexit`-et hív (destruktor-regisztráció),
+  79-nek egyetlen hívása sincs.
+
+**Kontrollpozitív mindkét szinten:** a `0xc41870` bejegyzés közvetlenül
+hívónak, a `0x00c33f90` pedig CÉLKÉNT vizsgálva is `rand`-ot látónak
+mutatkozott.
+
+⇒ a **`0x80AE2D6C`** ezzel **bizonyított** — a kimondott hatókör: közvetlen és
+egy szint mély hívási gráf.
 
 ### 5.4 `ID_VIEW_LCD` — LCD fehérpont
 

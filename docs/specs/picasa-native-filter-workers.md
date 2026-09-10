@@ -203,10 +203,28 @@ A véletlenszám-forrás **Mersenne Twister (MT19937)**: a temperálás
 (`>>11`, `<<7 & 0xff3a58ad`, `<<15 & 0xffffdf8c`, `>>18`) és a 624 szavas
 újratöltés (`0x26f` határ → `0x00aa2930`) egyértelmű.
 
-> **Következmény a golden-mérésre:** a szinthúzás kimenete **nem
-> determinisztikus** képpont szinten — ±1 szint eltérés a ditherből ered. A
-> pixelpontos összevetés ezekre a szűrőkre **±1 tűréssel** végzendő, vagy a
-> ditherelést ki kell kapcsolni az összevetéshez.
+> ⛔ **HELYESBÍTÉS (2026-09-10, #2868).** Az itt korábban álló mondat — *„a
+> szinthúzás kimenete **nem determinisztikus** képpont szinten"* — **téves
+> volt**. A zaj képpontonként változik, de **futásról futásra AZONOS**: a
+> generátor vetőmagja determinisztikus.
+>
+> **Mérve:** ez az ág a **`0x00d67f70`** generátort használja
+> (`0x0090bd25 mov esi, 0xd67f70`, index `0x00d67f74`, állapot `0x00d67f7c`) —
+> **nem** ugyanazt, amit a képernyős 16 bites szemcsézés (az a `0x00d6c4a8`;
+> `picasa-megjelenitesi-modok.md` 5.3/b). Mindkettőt ugyanaz a
+> CRT-inicializáló minta magozza, **entrópiaforrás nélkül**: három `rand()`
+> `mag = r3 ^ ((r2 ^ (r1<<12)) << 12)` alakban. A `.CRT$XC` tábla mind a
+> **884** bejegyzése átnézve, közvetlenül és egy szint mélyen — a három
+> magozón kívül **senki** nem fogyaszt `rand()`-ot.
+>
+> Ez az ág a tábla **ELSŐ** magozója (`0xc416b0` → `0x00c32520`), tehát az
+> 1–3. `rand()`-ot kapja; az MSVC alapmagjával (1) ezek `41, 18467, 6334` ⇒
+> **a vetőmagja `0x2D8228BE`**.
+>
+> **Következmény a golden-mérésre:** a pixelpontos összevetés **tűrés nélkül**
+> elvégezhető, ha a mi implementációnk ugyanezt a generátort, vetőmagot és
+> bejárási sorrendet használja. A ±1-es tűrés csak akkor kell, ha ezt nem
+> reprodukáljuk.
 
 ## 2.3 Szinthúzás (Kiemelések / Árnyékok) — `0x0090c3b0`
 
