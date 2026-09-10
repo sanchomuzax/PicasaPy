@@ -800,9 +800,10 @@ A 14 `cmp`-helyből **12 hordozza** ezt az alakot. A két kivétel:
 
 - `0x009e27bf` — a rajzoló null-ellenőrzése (`cmp …, 0` → átlép), nem író;
 - `0x00a6c356` — **ír, de NEM állítja a dirty-jelzőt** (`0x00a6c35e`). A
-  hívója (`0x00a6c240`) hat szövegcsomópont-osztály 17. vtábla-résében ül,
-  tehát a szövegcsomópont máshol kéri az újrarajzolást. *(Miért épp ott,
-  az NINCS megfejtve — nem volt a kérdés része.)*
+  hívója (`0x00a6c240`) hat szövegcsomópont-osztály 17. vtábla-résében ül.
+  ⭐ **LEZÁRVA a 14. szakaszban (2026-09-10, #2840): ez nem anomália** — az
+  írás **nem a `this`-en** történik, hanem egy másik objektumon
+  (`[this + 0x314]`), tehát a `this` piszkosítása hibás lenne.
 
 A `+0x8` dirty-jelző az osztály-azonosság **legerősebb jele**: minden író
 ugyanazt a szomszédos mezőt bolygatja meg.
@@ -1177,3 +1178,88 @@ menütételnek sem lehet buboréksúgója, nem csak a tizenegy módnak.
 A mi menüsorunkban sincs menü-tooltip ⇒ **ez helyes**, nem hiány. Ezt
 azért írom ide, hogy ne kelljen újra felfedezni: a „hiányzik a menü
 buboréksúgója" észrevétel az eredetivel szemben **nem valódi eltérés**.
+
+
+---
+
+## 14. A dirty-jelző nélküli `+0x254`-írás NEM anomália (2026-09-10, #2840)
+
+**Bizalmi fok: megerősített** a szerkezetre; a célobjektum osztálya NINCS
+meghatározva (14.4).
+
+A 11.2 azt találta, hogy a 14 `cmp`-helyből 12 beállítja az
+`or [this+8], 2` újrarajzolás-jelzőt, egy viszont nem. A magyarázat egy
+mondat: **az az egy nem a `this`-re ír.**
+
+### 14.1 A `0x00a6c240` MÁS objektum mezőjét írja
+
+```
+0x00a6c342  mov eax, dword ptr [edi + 0x314]   ; edi = this ; eax = egy MÁSIK objektum
+0x00a6c348  test eax, eax
+0x00a6c34a  je  0xa6c406                       ; ha nincs, kilép
+0x00a6c350  mov ecx, dword ptr [edi + 0x294]   ; az ÉRTÉK a this-ből
+0x00a6c356  cmp dword ptr [eax + 0x254], ecx   ; ⭐ a CÉL mezője
+0x00a6c35c  je  0xa6c364
+0x00a6c35e  mov dword ptr [eax + 0x254], ecx
+```
+
+⇒ a függvény a **saját `+0x294` értékét másolja** a `+0x314`-ben tárolt
+másik csomópont horog-mezőjébe. A `this` **nem változik**, tehát a
+`this + 8` piszkosítása **hibás lenne** — a kivétel nem hiba, hanem
+következmény.
+
+**Szembeállítás** a másik slot-17 megvalósítással (`0x00a63340`, 652 bájt,
+`ytButtonNode` / `ytColorWheelNode` / `ytPopupListNode`):
+
+| | `0x00a63340` (vezérlő-csomópont) | `0x00a6c240` (szövegcsomópont) |
+|---|---|---|
+| a bázis | `esi` = **`this`** (`0x00a6334b mov esi, ecx`) | `eax` = **`[this+0x314]`** |
+| dirty-jelző | **igen**, `0x00a634da or [esi+8], 2` | **nincs** |
+| null-őr a bázisra | nincs (a `this` mindig él) | **van**, `0x00a6c34a` |
+
+### 14.2 Jelző helyett VIRTUÁLIS HÍVÁS a célobjektumon
+
+```
+0x00a6c3c3  mov ecx, dword ptr [edi + 0x314]   ; a cél
+0x00a6c3c9  mov edi, dword ptr [ecx]           ; a cél VTÁBLÁJA
+   …
+0x00a6c3ff  mov edx, dword ptr [edi + 0x2c]    ; 0x2c / 4 = a 11. rés
+0x00a6c404  call edx
+```
+
+⇒ a szövegcsomópont **nem bitet állít, hanem megkéri** a célobjektumot: a
+saját osztályának **11. virtuális rését** hívja. Ez a „máshol kéri az
+újrarajzolást" konkrét alakja.
+
+### 14.3 ⚠️ Amitől ez nem „hiányból vont következtetés"
+
+A függvényben a `[reg + 8]` alak **hatszor** előfordul, és könnyű lenne
+jelző-írásnak olvasni. Elolvasva **egyik sem az**: mind egy 16 bájtos
+szerkezet **veremre másolása** egy hívás előtt, felismerhető alakban:
+
+```
+0x00a6c3b0  sub esp, 0x10
+0x00a6c3b3  mov edx, esp
+0x00a6c3b5  mov dword ptr [edx],       ebx
+0x00a6c3ba  mov dword ptr [edx + 4],   ebx
+0x00a6c3cb  mov dword ptr [edx + 8],   ebx   ; ← ez NEM jelzőmező
+0x00a6c3ce  mov dword ptr [edx + 0xc], eax
+```
+
+Így a „a függvény semmit nem piszkosít" állítás **elolvasott utasításokon**
+áll, nem azon, hogy nem találtam jelző-írást.
+
+### 14.4 Ami NYITVA marad — pontos következő lépéssel
+
+**A célobjektum osztálya nincs meghatározva**, ezért a **11. rés** sem
+nevezhető meg: az a cél *dinamikus* típusától függ.
+
+⚠️ A `+0x314` eltolás **nem osztályspecifikus**: a `.text`-ben **22** írása
+van, szétszórva (`0x0062d4e4`-tól `0x00b98059`-ig), és több osztályhoz
+tartozik — köztük `byte` méretű írások is (`0x0067c2ac`), tehát ott biztosan
+más mező. **Ebből az eltolásból osztályt következtetni tilos.**
+
+**A megszerzés útja:** a szövegcsomópont-modulban **egyetlen** `+0x314`-írás
+van, `0x00a6b75c` (`mov dword ptr [ebp + 0x314], esi`) — ez a jelölt. A
+következő kör azt olvassa el, és onnan nevezi meg a cél osztályát, majd a
+11. rést.
