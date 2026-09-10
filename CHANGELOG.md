@@ -17,6 +17,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   címke, semmi nem változik. Ha a kijelölt képek egyazon napról vannak, a
   sáv a rövidebb „24,7 MB/lemez" alakot írja, több nap esetén a
   „86,5 MB a lemezen" alakot — pontosan úgy, ahogy az eredeti Picasa.
+## [0.8.374] – 2026-09-10
+
+### Hozzáadva
+
+- **Szín szerinti keresés menüből** (#1399). Az Eszközök ▸ Kísérleti ▸
+  Keresés almenüben ott a hat szín (Piros, Narancssárga, Sárga, Zöld, Kék,
+  Lila). Bármelyikre kattintva a keresőmezőbe beíródik a keresés, és a rács
+  azonnal a hasonló színű képeket mutatja — ugyanúgy, ahogy az eredeti
+  Picasában.
 
 ## [0.8.371] – 2026-09-10
 

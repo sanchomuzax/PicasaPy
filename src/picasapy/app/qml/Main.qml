@@ -983,6 +983,10 @@ ApplicationWindow {
         onDedupRequested: dedupDialog.open()
         // #1473: Eszközök → Arcok keresése…
         onFaceScanRequested: faceScanDialog.open()
+        //: #1399: a szín-keresés a KERESŐMEZŐBE ír, ahogy az eredeti
+        //: (`0x0065b7b0`) — a `color:` előtagot itt tesszük rá, mert a
+        //: keresőmotor ezt a tokent érti (`index/search_color.py`, #383).
+        onColorSearchRequested: (szin) => toolbar.keresesSzoveggel("color:" + szin)
         // #350: Eszközök → Beállítások…
         onOptionsRequested: optionsDialog.open()
         //: #2054
