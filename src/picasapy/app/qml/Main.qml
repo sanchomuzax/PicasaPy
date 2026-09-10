@@ -737,6 +737,30 @@ ApplicationWindow {
         onActivated: fileOpsController.cutFilesToClipboard(
             window.selectedPaths())
     }
+    //: #1406: `ID_SEARCHTOKEN` — a megadott címke tartalmából rendes album.
+    //: A HÁROM szöveg mind a saját helyén: a menüfelirat a menüsorban, a cím
+    //: és a felszólítás itt (mérve, `0x005d8330`).
+    DeferredDialog {
+        id: showTagAsAlbumDialog
+        objectName: "showTagAsAlbumDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            NameInputDialog {
+                objectName: "showTagAsAlbumDialog"
+                //: `ThumbUI::addsearchtoken`
+                title: qsTr("Add search tag")
+                //: `CAlbumState::addsearchprompt`
+                prompt: qsTr("Please enter a tag to show as an album")
+                onAccepted: {
+                    if (controller.showTagAsAlbum(enteredName) === "") {
+                        errorBanner.notice = true
+                        errorBannerText.text = qsTr("No pictures have that tag.")
+                    }
+                }
+            }
+        }
+    }
+
     //: #1405: a keresés mentése albumként — a menütétel és a megerősítés is
     //: ezt hívja (egy hely, egy viselkedés).
     function mentsdAKeresest() {
@@ -1019,6 +1043,9 @@ ApplicationWindow {
         //: #1405: az eredeti CSAK 1000 találat FELETT kérdez (mérve,
         //: `0x005d86a0`); alatta csendben létrejön az album. A megerősítés
         //: gombja a mért „Create Album" felirat, nem Igen/Nem.
+        //: #1406: a bekérő párbeszéd halasztott (#1720) — a legtöbb
+        //: munkamenetben fel sem épül.
+        onShowTagAsAlbumRequested: showTagAsAlbumDialog.ensure().openEmpty()
         onSaveSearchRequested: {
             if (controller.searchResultCount > 1000)
                 saveSearchDialog.ensure().ask("", qsTr(
