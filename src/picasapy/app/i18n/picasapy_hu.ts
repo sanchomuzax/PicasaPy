@@ -3777,6 +3777,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Face data could not be written to XMP: %1</source>
+        <translation>Az arcadatot nem sikerült XMP-be írni: %1</translation>
+    </message>
+
+    <message>
         <source>Face data written to %1 file(s); %2 skipped.</source>
         <translation>Arcadat kiírva %1 fájlba; %2 kihagyva.</translation>
     </message>

@@ -1313,7 +1313,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
     # `FacesHelper.addFace()` úton ír, ld. `face_scan_controller.py`).
     face_scan_controller = FaceScanController(
-        data_dir / "index.db", faces_helper=faces_helper
+        data_dir / "index.db",
+        faces_helper=faces_helper,
+        # #1403: a KÖZÖS beállítás-tároló — innen jön az „arc elnevezésekor
+        # írjuk-e ki az XMP-t" kapcsoló (alapérték BE, ahogy az eredetiben).
+        settings=QSettings(),
     )
     engine.rootContext().setContextProperty(
         "faceScanController", face_scan_controller
