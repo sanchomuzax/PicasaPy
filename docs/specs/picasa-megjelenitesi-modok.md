@@ -320,6 +320,106 @@ Steinberg) szemcsézés.
 `0x009db4b0`, szintén csak `[0xd33958] == 16` esetén — a szemcsézés tehát
 16 bites képernyőn a menütől függetlenül is fut valahol a láncban.)*
 
+### 5.3/b A szemcse VETŐMAGJA — determinisztikus (2026-09-10, #2865)
+
+**Bizalmi fok: megerősített** a mechanizmusra és a determinizmusra;
+**feltételes** a konkrét konstansra (5.3/b.5).
+
+#### 5.3/b.1 ⛔ HELYESBÍTÉS: a `0x00aa2930` NEM a magozás
+
+A 8. szakasz **NY-6** tétele így szólt: *„Az MT19937-változat vetőmagozását
+(`0x00aa2930`) nem néztem meg."* A cím **rossz**: a `0x00aa2930` (157 bájt) a
+**twist**, azaz az állapottömb újratöltése — `N = 624`, `M = 397`, a
+`mag01` tábla a `0xc782c0`-n, kiolvasott értéke **`{0, 0x9908B0DF}`**, azaz a
+**szabványos** MT19937-konstans. A végén `mov dword ptr [esi+4], 0` — az index
+nullázása.
+
+⇒ a magozás máshol van, és az alábbi szakasz megtalálta.
+
+#### 5.3/b.2 Az inicializáló: `FUN_00aa28f0` — és egy MÁSODIK eltérés
+
+```
+0x00aa28f7  mov dword ptr [edx + 0xc], eax          ; állapot[0] = mag
+0x00aa2900  mov ecx, dword ptr [edx + eax*4 + 8]    ; állapot[i-1]
+0x00aa2906  shr esi, 0x1e                           ; >> 30
+0x00aa290b  imul esi, esi, 0x19660d                 ; ⭐ szorzó
+0x00aa2911  add esi, eax                            ; + i
+0x00aa291a  cmp eax, 0x270                          ; i < 624
+0x00aa2921  mov dword ptr [edx + 4], 0x270          ; index = 624 ⇒ első
+                                                    ; használatkor twist
+```
+
+Ez az `init_genrand`, de a szorzó **`0x19660D`**, nem a szabványos
+`0x6C078965`. ⇒ a Picasa MT-változata **két** ponton tér el a szabványtól: az
+5.3-ban leírt két temperálási maszkban, és itt az inicializáló szorzójában.
+A twist ellenben szabványos.
+
+#### 5.3/b.3 ⭐ A magozás helye: egy CRT-STATIKUS INICIALIZÁLÓ
+
+```
+0x00c33f90  push esi ; push edi
+0x00c33f92  call 0xc08221        ; _rand   → r1
+0x00c33f99  shl  edi, 0xc        ; r1 << 12
+0x00c33f9c  call 0xc08221        ; _rand   → r2
+0x00c33fa3  xor  esi, edi
+0x00c33fa5  shl  esi, 0xc
+0x00c33fa8  call 0xc08221        ; _rand   → r3
+0x00c33fad  xor  eax, esi
+0x00c33faf  mov  edx, 0xd6c4a8   ; ⭐ a SZEMCSE generátorának objektuma
+0x00c33fb4  call 0xaa28f0        ; init_genrand(mag)
+```
+
+⇒ **mag = r3 ^ ((r2 ^ (r1 << 12)) << 12)**, ahol `r1..r3` három egymást
+követő CRT-`rand()`.
+
+Az objektum kiosztása ezzel megvan: `+0x4` = index (`0x00d6c4ac`),
+`+0xc` = állapot[0] (`0x00d6c4b4`) — pontosan az 5.3-ban mért két cím.
+
+#### 5.3/b.4 ⭐ NINCS entrópiaforrás a láncban
+
+- A `_rand` (`0x00c08221`) a szokásos MSVC-LCG: `mag = mag·0x343FD + 0x269EC3`,
+  visszaadva `(mag >> 16) & 0x7FFF`; a mag a szálankénti adatban, `[ptd+0x14]`.
+- Az `srand` (`0x00c08214`) **10 helyről** hívott — mind **alkalmazáskód**
+  (`0x00423a6c`, `0x00565cc5`, `0x006804c4`, `0x0071d993`, `0x0071e23b`,
+  `0x0085b76d`, `0x0087cb85`, `0x0088fed7`, `0x009180df`, `0x009902b8`),
+  egyik sem a CRT-inicializáló tartományban.
+- A magozó láncban **nincs** `GetTickCount`, `QueryPerformanceCounter` vagy
+  `time` — csak a három `rand()`.
+
+⇒ **a szemcse vetőmagja determinisztikus**, tehát a szemcsézés elvben
+**bitre reprodukálható**, és golden-teszt írható rá.
+
+#### 5.3/b.5 A konkrét konstans — és a feltétele
+
+A CRT-inicializáló tartományban (`0x00c30000`–`0x00c40000`) **pontosan
+kilenc** `rand()`-hívóhely van: **három** ilyen magozó blokk, egyenként
+hárommal. A CRT-tábla bejegyzései és a magozott objektumok:
+
+| tábla-bejegyzés | magozó | a generátor objektuma |
+|---|---|---|
+| `0xc416b0` | `0x00c32520` | `0x00d67f70` |
+| **`0xc41870`** | **`0x00c33f90`** | **`0x00d6c4a8` — a SZEMCSE** |
+| `0xc41884` | `0x00c34070` | `0x00d6ce80` |
+
+A szemcséé tehát a **második**, azaz a 4–6. `rand()`-hívás. Az MSVC
+alapértelmezett CRT-magjával (**1**) a sorozat első kilenc értéke
+`41, 18467, 6334, 26500, 19169, 15724, 11478, 29358, 26962`, ebből:
+
+**a szemcse-generátor vetőmagja = `0x80AE2D6C`** (2 158 898 540).
+
+**Ellenőrzés:** ezzel a maggal, a **kiolvasott** inicializáló szorzóval, a
+szabványos twisttel és az 5.3-beli **kiolvasott** temperálási maszkokkal
+számolt első nyolc zajérték `B/G/R` bontásban
+`(5,3,3) (4,2,0) (2,2,6) (4,0,7) (2,0,1) (5,3,0) (4,2,2) (7,1,0)` — mind a
+mért `B 0…7 · G 0…3 · R 0…7` tartományban.
+
+⚠️ **A feltétel, amit NEM mértem ki:** hogy egyetlen másik statikus
+inicializáló sem hív közvetve `rand()`-ot vagy `srand()`-ot a magozás előtt. A
+pásztázás csak a **közvetlen** hívóhelyeket nézte. Ha ez a feltétel sérül, a
+mechanizmus és a determinizmus akkor is áll — csak a konstans más.
+**A megszerzés útja:** a `.CRT$XC` tábla teljes felsorolása és az egyes
+inicializálók hívási gráfja.
+
 ### 5.4 `ID_VIEW_LCD` — LCD fehérpont
 
 **MÉRVE** (`0x009e8a70`, 87 bájt): **mindhárom csatorna** ×`0xF6`, majd
@@ -689,7 +789,7 @@ NY-5 az **5.12**-ben kapott választ.
 | **NY-3** | **Mit csinál valójában a `Mac gamma (1.6)`?** | **MÉRVE 2026-08-30 (#1580)**: a tulajdonos teljes képernyős felvételei (24bit / gamma / automatikus) + codex-pixel-mérés — a gamma kép **VILÁGOSABB**: teljes képernyős luma **+3,32%** (RGB +7,1/255), a központi **fotó +15,7%** (133,5→154,5), a felület is +1,3…+4,2%. A világosítás iránya **konzisztens az `x^(1/1,6)` (0,625) LUT-tal**, a korábbi „1/0 → fekete képernyő" feltételezés **MEGDŐLT** (az adott futásban a tábla egy normál gamma-táblával töltődött). | reprodukálható a `pow(x,1/1,6)` LUT-tel; a futásidő-függés két indítási képpel továbbra is csak közvetetten zárható ki (de a mérés szerint nem a hibás 0-s ág fut) |
 | **NY-4** | **Látszik-e a mód diavetítésben / teljes képernyőn?** | **LEZÁRVA 2026-08-30 (#1580)** — a tulajdonos megfigyelése (a `1580-megjelenitesi-mod/NY-4` README-je): **diavetítésben NEM látszik** a mód hatása. Ugyanakkor a **teljes képernyős** felületen IGEN (a NY-3 képei teljes képernyősek és a gamma hat rajtuk, a README: „a teljes felületre, még a menükre is"). | a diavetítés eltérő rajzolóúton fut; a mi implementációnk a NORMÁL nézetre tegye a módot |
 | **NY-5** | **Mit csinál a `Színkezelés használata` (`ID_VIEW_COLOR_MANAGED`)?** | **LEZÁRVA (2026-08-30, #1582)** — lásd az **5.12** szakaszt: önálló kapcsoló, `Preferences\EnableColorManagement`, alap 0; bekapcsoláskor a szerkesztő-előnézet újraépül; a beágyazott `icc_camera_profile`/`icc_camera_to_tone_matrix` metaadat-tagok a forrás. | **a kapcsoló megvalósítása → #1725**; a felirat↔pipa párosítás a tulajdonos képeivel MEGERŐSÍTVE (a pipa a „Színkezelés használata" során) |
-| **NY-6** | **A 16 bites szemcsézés pixelhű reprodukálhatósága.** | Az MT19937-változat vetőmagozását (`0x00aa2930`) nem néztem meg. | Csak akkor kell, ha valaki bitre egyező szemcsét akar — a **statisztika** (egyenletes 0…7 / 0…3 / 0…7) ehhez nem szükséges, az mérve van. |
+| **NY-6** | **A 16 bites szemcsézés pixelhű reprodukálhatósága.** | **LEZÁRVA 2026-09-10 (#2865, ld. 5.3/b).** ⛔ A cím téves volt: a `0x00aa2930` a **twist**, nem a magozás. A magozás a `0x00c33f90` CRT-statikus inicializálóban van: `mag = r3 ^ ((r2 ^ (r1<<12)) << 12)` három `rand()`-ból. **Nincs entrópiaforrás** a láncban ⇒ a szemcse **determinisztikus**. | lezárva — a vetőmag `0x80AE2D6C` (a feltétele az 5.3/b.5-ben), a szemcsézés bitre reprodukálható |
 
 ⚠️ **Amit szándékosan NEM állítok:** hogy az „LCD fehérpont" fehérpontot
 állítana. A kód mindhárom csatornát **azonos** szorzóval sötétíti, tehát
