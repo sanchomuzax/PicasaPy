@@ -6227,3 +6227,111 @@ beolvasó virtuális, `CCollageParser` 6. rekesz; a hat téma osztályainak
 mind a 48 metódusa átnézve, csomópont-`scale`-írás nincs) · **1
 nyitott, gépi úton folytatható, megnevezett paranccsal** (a `version`
 olvasat igazolása) · 0 „csak nyitva".*
+
+---
+
+## 61. K1 — BIZONYÍTVA: a `picturepile`-szorzó `version == 1` migráció (2026-09-10, #1412)
+
+*271. kutatói kör. A 60.3 „erős, de nem bizonyított" olvasatát dönti el,
+utasításszinten, mindkét oldalról.*
+
+### 61.1 A betöltő oldala: az `_atol` argumentuma a `parser + 0x30`
+
+A `FUN_00834520` kerete: `sub esp,0x7c` + négy `push`; a
+`CCollageParser` példány a **`esp+0x18`**-on épül
+(`0x0083453d lea eax,[esp+0x18]` → `0x00834541 call 0x832500`, a ktor).
+Ezért a kapu operandusa:
+
+```
+0x00834555  mov  eax, [esp + 0x48]     ; = parser + 0x30
+0x0083457d  call _atol                 ; a SZTRING számmá
+0x00834585  cmp  eax, 1
+0x00834588  jne  0x8346a3              ; ← ha nem 1, a szorzó kimarad
+```
+
+⚠️ A `[esp+0x48]`-at a `FUN_00834520` **sehol nem írja** (a törzs
+végigolvasva) — tehát a parser tölti fel.
+
+### 61.2 ⭐ A beolvasó oldala: a `parser + 0x30` a `version` ATTRIBÚTUM
+
+A `FUN_00832830` attribútum-hurkában:
+
+```
+0x008328fb  mov  esi, 0xc83df0        ; 'version'   (kiolvasva)
+0x00832900  mov  ecx, 8
+0x00832907  repe cmpsb                ; név-egyezés
+0x00832925  sete al
+0x0083292a  je   0x83297f             ; ha nem 'version', tovább
+0x0083292c  mov  edi, [esp + 0xc]     ; a parser
+0x00832933  add  edi, 0x30            ; ← parser + 0x30
+0x00832949  mov  [edi], eax           ; = az attribútum ÉRTÉKE (sztring)
+```
+
+⇒ **A kapu a `.cxf` gyökerének `version` attribútuma.** A két oldal
+ugyanarra a rekeszre mutat, és a névösszehasonlítás a `'version'`
+literálra megy — **bizonyítva**, nem következtetve.
+
+*Bizonyítottsági fok: **megerősített** — mindkét oldal utasításonként,
+a literál címmel és kiolvasott tartalommal.*
+
+### 61.3 ⛳ Amit ez KIMOND
+
+A `.cxf` gyökere a mintáinkban `<collage version="2" …>` (mind a
+nyolcban), tehát:
+
+> **A 265. kör szorzója (`0x00834683`) a mai fájlokra SOHA nem fut.**
+> Az `AI27`/`AI28`/`AI29`, a `03-finetune2.cxf` és a többi minta
+> `scale`-jét **nem ez a ciklus írta**.
+
+A `0x00834520` szerepe ezzel pontosan meghatározott: ez a **`.cxf`
+betöltője**, benne egy **`version 1 → 2` migrációval**, amely a régi
+alakban tárolt `picturepile`-`scale`-t alakítja át a mai 1024-es
+egységrendszerbe.
+
+### 61.4 ⛔ ÖNHELYESBÍTÉS az 55. és 58. szakaszhoz
+
+- **55.2** címe („MEGVAN a SZÁMOLÓ író") **pontosítandó**: a
+  `0x00834683` az egyetlen számoló írás, de **migrációs** úton, `version
+  == 1` mellett. A mai fájlok írója **nincs meg**.
+- **55.5 érintetlen marad:** a képlet
+  `TRUNC(1024 × 0,33 × min(1/√(√k − 1), 1))` a `03-finetune2.cxf`
+  kilenc csomópontján **9/9 pontos**, szabad paraméter nélkül. Mivel a
+  migráció nem futott rá, ez azt bizonyítja, hogy **ugyanezt a törvényt
+  a `picturepile` ELRENDEZŐJE is használja** — a fájlban
+  `scale = w × 1024` minden csomóponton.
+- **58.3** önhelyesbítése (a kapu sztring-összehasonlítás) **áll**, de
+  most már látszik, hogy a téma-teszt a **második** kapu; az első a
+  verzió.
+
+### 61.5 Melléklelet: a beolvasó attribútum-térképe (részleges)
+
+| attribútum | hova | hogyan |
+|---|---|---|
+| `version` (`0x00c83df0`) | `parser + 0x30` | sztring-értékadás (`0x00832949`) |
+| `albumID` (`0x00cbf7f0`) | `[parser+0x24] + 0x30` | `_atol` (`0x00832ea3`) |
+| — (előző ág) | `[parser+0x24] + 0x34` | sztring-értékadás (`0x00832e3f`) |
+| `scale` | a csomópont-karcoló `+0x2c` = `parser + 0x68` | `_atof` (`0x008332b7`, 59.2) |
+
+A kollázs-attribútumnevek egy összefüggő táblában állnak
+(`0x00cbf7a4`–`0x00cbf86c`: `orientation`, `portrait`, `landscape`,
+`theme`, `shadows`, `captions`, `albumUID`, `albumID`, `node`, `theta`,
+`scale`, `background`, `%08X`, `spacing`, `albumTitle`, `albumDate`,
+`Untitled`, `CollageSpec::Untitled`, `solid`) — a `version` **nem** ebben
+a táblában van, hanem a `0x00c83df0`-en, egy általános sztringnél.
+
+### 61.6 A KÖVETKEZŐ lépés, megnevezve
+
+**A `picturepile` ELRENDEZŐJE** — ő írja a mai fájlok `scale`-jét, és a
+törvényt már ismerjük, tehát a keresés mintája adott:
+
+1. a `CPileTheme` (`0x00cbf5ac`) 12 metódusa közül melyik számol
+   `min(1/√(√k − 1), 1)`-et — horgony: `call 0x49fe60` (a `sqrt`-thunk)
+   a `CPileTheme` metódusaiban vagy azok hívottjaiban;
+2. ugyanez a `CContactSheetTheme`-re (`0x00cbf670`) — a `contactsheet`
+   `scale`-jének képlete még ismeretlen, de ugyanaz az osztály-alapú
+   szűrő használható (a 60.2 módszere).
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **1 lezárva** (a kapu a
+`version`, bizonyítva) · **1 nyitott, gépi úton folytatható,
+megnevezett horgonnyal** (a `picturepile` elrendezőjének `sqrt`-hívása)
+· 0 „csak nyitva".*
