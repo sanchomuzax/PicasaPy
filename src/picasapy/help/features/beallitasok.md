@@ -46,6 +46,8 @@ megjelenítés:
 - **Szépia** és **Fekete-fehér** — az egész felület megjelenítésére.
 
 Ezek csak a képernyőn látszó képet módosítják; a fájljaidat nem érintik.
+A választott mód mindenütt hat, ahol képet látsz: az indexképeken, a nagy
+nézőben és a **diavetítésben** is.
 
 ## Ami az ablakról megmarad
 

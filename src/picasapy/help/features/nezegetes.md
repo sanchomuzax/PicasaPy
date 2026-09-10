@@ -85,6 +85,10 @@ változás megmarad.
 Kilépéskor a rács és a néző arra a képre ugrik, ahol a vetítés
 abbamaradt.
 
+A **Nézet ▸ Megjelenítési mód** beállítása a vetített képen is látszik —
+így a **Projektor mód** ott hat, ahol a legtöbb értelme van. Lásd
+[Beállítások](beallitasok.md).
+
 ## Videók
 
 A videófájlok ugyanúgy megjelennek a rácsban, mint a képek, és a nézőben

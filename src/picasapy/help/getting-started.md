@@ -81,9 +81,13 @@ Felülről lefelé:
 Súgó. A szürke tételek még nem működnek. Bármikor **F1**-et nyomva
 előjön ez a súgó (lásd [A beépített súgó](features/sugo.md)).
 
-**Eszköztár** — bal oldalt az **Importálás** gomb és az új album gombja,
-középen a szűrők (csillagozott képek, arcot tartalmazó képek, videók,
-geocímkézett képek), jobbra a **Keresés** mező.
+**Eszköztár** — bal oldalt az **Importálás** gomb, az új album gombja, a
+két kis nézetváltó gomb és mellettük egy **▾** gomb, ami a mappanézet
+beállításait nyitja le; középen a szűrők (csillagozott képek, arcot
+tartalmazó képek, videók, geocímkézett képek), jobbra a **Keresés** mező.
+Keskeny ablakban a kis gombok és a szűrők elrejtőznek; az **Importálás**
+gomb és a **Keresés** mező marad. A menüsorból ilyenkor is minden
+elérhető.
 
 **Bal hasáb** — a mappák, albumok, gyűjtemények és projektek listája.
 Innen választod ki, mit mutasson a rács.

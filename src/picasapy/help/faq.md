@@ -19,6 +19,13 @@ a PicasaPy változatlanul visszaírja azt is, amit ő maga nem ért. Nem
 javasolt viszont **egyszerre**, ugyanabban a percben mindkettőben
 szerkeszteni ugyanazt a mappát.
 
+Ha közben a régi Picasával készítesz **kollázst vagy filmet**, az néhány
+másodperc múlva a PicasaPy-ban is megjelenik — akkor is, ha a másik gépen
+készült, és a képek hálózati meghajtón vannak. A többi mappánál hálózati
+meghajtón előfordul, hogy a másik gép írásáról a program nem kap
+értesítést; ilyenkor a mappa helyi menüjének **Indexképek frissítése**
+parancsa azonnal beolvassa.
+
 ### Miért szürke a menü fele?
 
 Mert a menük az eredeti Picasa teljes szerkezetét mutatják, de a

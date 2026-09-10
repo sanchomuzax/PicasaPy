@@ -22,8 +22,14 @@ válthatsz köztük:
   **legalján** áll, elválasztva a másik kettőtől.
 
 Az első kettő között az eszköztár két kis nézetváltó gombjával is
-válthatsz. A hasáb üres részére jobbgombbal kattintva az
-**Egyszerűsített fanézet** kapcsoló érhető el.
+válthatsz. A két gomb mellett van egy **▾** gomb is: ez **ugyanazt a
+menüt** nyitja le, ami a **Nézet ▸ Mappanézet** almenü — a nézet, a
+sorrend és az indexképek kapcsolója tehát egy helyről vezérelhető, és a
+két belépési pont nem tud szétcsúszni. Keskeny ablakban a ▾ gomb
+elrejtőzik; a menüsorból ilyenkor is elérhető minden.
+
+A hasáb üres részére jobbgombbal kattintva az **Egyszerűsített fanézet**
+kapcsoló érhető el.
 
 **Mindhárom beállítás megmarad a következő indításig.**
 
@@ -94,8 +100,11 @@ több albumban is szerepelhet.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
   almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca album-gombjával.
 - Kivenni a **Eltávolítás az albumból** paranccsal tudsz.
-- Képeket egyszerűen rá is húzhatsz az **Albumok** feliratra: ilyenkor új
-  album készül belőlük.
+- Képeket egy meglévő album sorára húzva azok **abba az albumba**
+  kerülnek. Amíg egyetlen albumod sincs, az **Albumok** csoport alatt ott
+  áll a „Képeket idehúzva új albumot hozhat létre." sor — erre ejtve a
+  képeket **új album** készül belőlük. Húzás közben a célsor kék hátteret
+  kap, hogy lásd, hova esnek majd a képek.
 
 A **Csillagozott képek** egy állandó album: minden csillaggal megjelölt
 képet mutatja.

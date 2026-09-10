@@ -36,11 +36,11 @@ A **Beállítások** fülön:
   CD-borító, négyzet, kicsi és nagy nyomat, digitális képkeret, vagy
   kézi méret. Saját arányt is felvehetsz.
 - **Álló** / **Fekvő** tájolás.
-- **Rács vastagsága** — a képek közti hézag. Mozaiknál és
-  képkockamozaiknál a csúszka húzása közben a szám azonnal követ, az
-  átrendezés viszont csak akkor fut le, amikor megállsz vagy elengeded
-  a csúszkát.
-- **Árnyékok rajzolása**.
+- **Rács vastagsága** — a képek közti hézag. Csak a **Mozaiknál**, a
+  **Képkockamozaiknál** és a **Rácsnál** jelenik meg. A csúszka húzása
+  közben a szám azonnal követ, az átrendezés viszont csak akkor fut le,
+  amikor megállsz vagy elengeded a csúszkát.
+- **Árnyékok rajzolása** — a **Többszörös exponálásnál** nem jelenik meg.
 - **Képfeliratok megjelenítése** — a képek felirata rákerül a
   kollázsra. Csak a **Polaroid fényképezőgép** szegélyű képeken
   jelenik meg, a fehér sávba, a fotó alá. Kikapcsolva egyetlen
@@ -50,19 +50,40 @@ A **Beállítások** fülön:
 
 ## Képek kezelése a kollázson
 
-- Egy képet húzással mozgatsz, a sarkánál fogva forgatsz és méretezel.
-- A jobb szélen lévő gombokkal a képet **előrébb vagy hátrébb** viheted a
-  halomban (egy lépéssel, vagy egészen a tetejére/aljára).
+- Egy képet húzással mozgatsz.
+- A **Képkupacban** a kijelölt kép köré gyűrű kerül: ennek a fogantyújával
+  forgatod és méretezed egyszerre. Húzás közben a lenyomott **Ctrl** a
+  forgatást, az **Alt** a méretezést kapcsolja ki, ha csak az egyiket
+  akarod.
+- A lap **jobb szélén** megjelenő gombokkal a képet **előrébb vagy
+  hátrébb** viheted a halomban (egy lépéssel, vagy egészen a
+  tetejére/aljára). A két oldalsó gombsor csak akkor jön elő, ha van
+  kijelölt kép.
 - Az elforgatott képet egy kattintással **egyenesbe** vagy 90, 180, 270
-  fokba igazíthatod.
-- **Képek összekeverése** és **Véletlenszerű kollázs** — új véletlen
-  elrendezés.
+  fokba igazíthatod — a lap **bal szélén** lévő kis gombsorral, vagy a
+  képre jobbgombbal kattintva a **Forgatás igazítása** almenüben.
+- **Képek összekeverése** — a képek helyet cserélnek egymással, a
+  rések mérete és állása marad. Az **Indexképnél** és a **Többszörös
+  exponálásnál** ez a gomb szürke.
+- **Véletlenszerű kollázs** — teljesen új, véletlen elrendezés. Csak a
+  **Képkupacban** használható; a többi típusnál a helyeket az elrendezés
+  adja, ezért a gomb szürke.
 - **Kijelölés törlése** (Ctrl+D) és **Az összes kijelölése** (Ctrl+A).
 - **Eltávolítás** (Del) — a kijelölt képek kivétele a kollázsból.
 
+> A forgatás **csak a Képkupacban** használható. A másik öt típusnál
+> (Mozaik, Képkockamozaik, Rács, Indexkép, Többszörös exponálás) a képek
+> helyét és állását az elrendezés adja: ott nincs forgató gyűrű, a bal
+> oldali forgató gombsor és a **Forgatás igazítása** almenü pedig szürke.
+>
+> A **Többszörös exponálásnál** a képek egymásra vetítve jelennek meg,
+> ezért ott nincs mit kijelölni: a vászon üres területére jobbgombbal
+> kattintva nem nyílik meg menü.
+
 ## Háttér
 
-A **Háttér beállításai** dobozban:
+A **Háttér beállításai** doboz a **Többszörös exponálás** kivételével
+minden típusnál ott van. Benne:
 
 - **Egyszínű** — színválasztóval,
 - **Kép használata** — a kijelölt képet teszi háttérnek (**A kijelölt
@@ -71,8 +92,13 @@ A **Háttér beállításai** dobozban:
 
 ## Képszegélyek
 
-A **Képszegélyek** választóban: **Egyik sem**, **Fehér szegély**, vagy
-**Polaroid fényképezőgép**.
+A **Képszegélyek** választó a **Képkupacnál** és az **Indexképnél**
+jelenik meg; a többi típusnál a szegélyt az elrendezés adja. Amit
+választhatsz: **Egyik sem**, **Fehér szegély**, vagy **Polaroid
+fényképezőgép**.
+
+A **Képkupacban** a szegély a képnek járó helyen **belül** marad: a
+szegélyes kép ugyanakkora helyet foglal, mint a szegély nélküli.
 
 A **Polaroid fényképezőgép** szegély alsó fehér sávjába kerül a kép
 felirata, ha a **Képfeliratok megjelenítése** be van kapcsolva. A
@@ -91,6 +117,11 @@ gombbal újabb adagot behozni a könyvtárból.
 A **Kollázs létrehozása** gomb rendereli a végleges képet. A program
 kiírja, hova mentette. A kész kollázs a bal hasáb **Projektek ▸
 Kollázsok** mappájába kerül.
+
+A **Kollázsok** és a **Filmek** mappát a program **külön figyeli**, ha
+azok a figyelt mappáid alatt vannak. Ide néhány másodpercen belül bekerül
+az új kép akkor is, ha nem a PicasaPy készítette, hanem a régi Picasa egy
+másik gépről, hálózati meghajtón.
 
 Ha a kép már létezik ezen a néven, választhatsz: **Meglévő cseréje** vagy
 **Új létrehozása**.

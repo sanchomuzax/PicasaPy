@@ -29,6 +29,16 @@ A képpel együtt költözik a **mentéskor készült biztonsági másolata** is
 tehát a **Visszaállítás** az új helyen is működik — lásd
 [Mentés, visszaállítás](mentes.md).
 
+### Ha az áthelyezés elakad
+
+Előfordul, hogy a program nem tudja végigvinni a költöztetést: a fájl
+zárolva van, a mappára nincs írásjogod, vagy a másik lemez menet közben
+eltűnik. Ilyenkor a kép **a régi helyén marad**, és a célmappában nem
+keletkezik belőle másolat — a program a félbemaradt másolatot visszatörli.
+Így nem fordulhat elő, hogy egy sikertelen áthelyezésből kettő lesz
+ugyanabból a képből. Ugyanez a védelem működik a Kukába helyezésnél, a
+visszaállításnál és a megőrzött eredetik költöztetésénél is.
+
 ## Másolás és kivágás
 
 **Szerkesztés ▸ Másolás** (Ctrl+C) és **Kivágás** (Ctrl+X) a
@@ -63,7 +73,11 @@ A kép helyi menüjében ezen kívül:
 
 ## Mappák
 
-- **Mappa ▸ Áthelyezés…** — az egész mappa átköltöztetése.
+- **Mappa ▸ Áthelyezés…** — az egész mappa átköltöztetése. Ha ez menet
+  közben elakad (például egy olvashatatlan almappánál), a mappa a régi
+  helyén marad, és a célban **nem marad félkész másolat**. Egyetlen olyan
+  pillanat van, ami már nem fordítható vissza — ott a hibaüzenet megmondja,
+  hol találod a tartalmat.
 - **Mappa ▸ Törlés…** — a mappa törlése a lemezről. A program külön
   rákérdez, mert az almappákat is elviszi.
 - **Mappa ▸ Eltávolítás a Picasából…** — a mappa csak a nézetből kerül

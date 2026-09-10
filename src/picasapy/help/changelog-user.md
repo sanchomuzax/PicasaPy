@@ -4,6 +4,56 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-10
+
+**Fájlműveletek: a félbemaradt áthelyezés nem hagy kárt**
+
+- Ha egy kép áthelyezése elakadt (zárolt fájl, írásvédett mappa), eddig a
+  **másolat már ott volt a célban**, az eredeti pedig a helyén — vagyis a
+  képből kettő lett, és a hibaüzenet erről nem szólt. Mostantól a program
+  visszatörli a félkész másolatot, és a kép a régi helyén marad. Ugyanez
+  a védelem működik a Kukába helyezésnél, a visszaállításnál és a
+  megőrzött eredetik költöztetésénél.
+- Ha egy **mappa** áthelyezése akadt el menet közben, a célban ott maradt
+  a félig átmásolt mappa, és a következő próbálkozás már azzal állt meg,
+  hogy „ilyen nevű mappa már létezik". Most a célban nem keletkezik
+  semmi, amíg a másolás végig nem ment.
+
+**Diavetítés**
+
+- A **Nézet ▸ Megjelenítési mód** beállításai — köztük a **Projektor mód**
+  — végre a vetített képen is hatnak. Eddig csak a nagy nézőben és az
+  indexképeken látszottak, pedig a Projektor mód épp a kivetítéshez való.
+
+**Eszköztár**
+
+- A két nézetváltó gomb mellé visszakerült a **▾** gomb, ami a mappanézet
+  beállításait nyitja le. Ugyanazt a menüt adja, mint a **Nézet ▸
+  Mappanézet**, tehát a két hely nem tud szétcsúszni.
+
+**Kollázs**
+
+- A jobbgombos menü **Forgatás igazítása** almenüje mostantól szürke
+  azoknál a típusoknál, amelyek nem forgatnak (Mozaik, Képkockamozaik,
+  Rács, Indexkép, Többszörös exponálás). Eddig a menü felkínálta a négy
+  szöget, a kattintásra viszont **némán nem történt semmi**. A program
+  viselkedése nem változott, csak látszik.
+- A **Képkupacban** a fehér szegélyes képek már nem nőnek túl a nekik járó
+  helyen: a szegély eddig kifelé nőtt, ezért ezek a képek 5–10%-kal
+  nagyobbak voltak a kelleténél. A polaroid keret és a keret nélküli eset
+  változatlan.
+- A régi Picasával **közben** készített kollázs és film néhány másodperc
+  múlva magától megjelenik. Eddig hálózati meghajtón akár percekbe telt,
+  mert a program nem kap értesítést a másik gép írásáról.
+
+**Apróságok**
+
+- Ha képeket húzol az albumok listájára, a célsor mostantól kék hátteret
+  kap fehér felirattal, mint az eredetiben — eddig csak a szöveg váltott
+  zöldre.
+- Kicsit gyorsabb az indulás: hét megerősítő kérdés-ablak csak akkor épül
+  fel, amikor tényleg kell. A felület viselkedése nem változott.
+
 ## 2026-09-09
 
 **Arcok: nincs többé fölösleges újraszkennelés**
