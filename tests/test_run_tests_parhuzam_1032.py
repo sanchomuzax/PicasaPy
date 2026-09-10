@@ -36,6 +36,21 @@ class TestParhuzamDontes:
             "alapértelmezés",
         )
 
+    def test_az_alapertelmezes_KETTO(self):
+        """#1038: az alapértelmezés mért érték, nem ízlés.
+
+        Ha valaki átírja (négyre vagy vissza egyre), ITT bukik el, és a
+        bukás szövege megmondja, milyen MÉRÉS tartozik a mai számhoz. A
+        négy szálas felállás egyik bukásának (windows 0xC0000005) a gyökere
+        ma sem ismert, a kettő viszont háromszor, üres bukó halmazzal
+        lefutott (74 m 47 s → 48–49 m, 1,51–1,56×)."""
+        assert run_tests._PARHUZAM in (1, 2), (
+            "a helyi alapértelmezés kettő; ha másik futás is dolgozik a "
+            "gépen, a futtató magától egyre vált (#1037) — a négy szálas "
+            "felállás visszakapcsolásához a #1038 windowsos összeomlásának "
+            "gyökere kell"
+        )
+
     def test_soros_alapertelmezes_nem_valt_semmire(self):
         """Ha amúgy is egy szálon futunk, nincs mit visszavenni."""
         assert run_tests._dontsd_el_a_parhuzamot(None, 1, masik_fut=True) == (
