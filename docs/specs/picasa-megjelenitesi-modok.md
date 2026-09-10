@@ -1468,3 +1468,109 @@ nem a mező jelentésére.
   írást nem látott (`0x00b7160e`, `0x00b71946`) — egyik indexelt függvénybe
   sem esik. Mindkettő egy `malloc(0x320)`+`memset` C-struktúráé
   (`0x00b71898`), nem C++ objektumé.
+
+## 17. A `ytFontCache` `+0x254` a SORELŐTOLÁS (2026-09-10, #2845)
+
+**Bizalmi fok: megerősített** a szerepre; **feltételes** arra, hogy ez a
+`.tre` `fontleading` attribútuma (17.5).
+
+### 17.1 A mező egész szám, és a szövegtördelő Y-tengelyén dolgozik
+
+A `ytFontCache` `+0x254`-ének a teljes `.text`-ben nyolc hivatkozása van a
+`0x00a43000`–`0x00a4a000` tartományban (indextől független pásztázás,
+kontrollpozitív `0x00a4407e`): négy írás és négy olvasás. Mind a négy olvasás
+**egész-műveletként** használja (`fild` / `fisub` / `sub`), a
+`FUN_00a47410`-ben — ez a szövegtördelő.
+
+**A döntő hely: az új sor Y-előtolása.**
+
+```
+0x00a47b65  fild  dword ptr [ebp + 0x254]
+0x00a47b6b  mov   edi, dword ptr [esp + 0x474]   ; a toll {x:+0, y:+4}
+0x00a47b72  fadd  dword ptr [edi + 4]            ; y = y + sorelőtolás
+0x00a47b75  fstp  dword ptr [edi + 4]
+```
+
+**A férőképesség-vizsgálat ugyanezzel:**
+
+```
+0x00a47a22  fild  dword ptr [ebp + 0x254]
+0x00a47a2f  fadd  dword ptr [edx + 4]            ; a KÖVETKEZŐ sor alja
+0x00a47a32  fild  dword ptr [esp + 0x494]        ; a korlát
+0x00a47a39  fcompp                               ; belefér-e még?
+…
+0x00a47b7e  fld   dword ptr [edi + 4]
+0x00a47b81  fisub dword ptr [ebp + 0x254]        ; vissza az előző alapvonalra
+```
+
+⇒ a `+0x254` **egy sor függőleges előtolása képpontban**.
+
+### 17.2 A sorváltó ág ELŐTT a `\n` és a `\r` kezelése áll
+
+`0x00a479f2 cmp si, 0xa` (LF) és `0x00a479fc cmp si, 0xd` (CR) — mindkettő a
+`0xa47b20` karakter-léptetőre ugrik, és a ciklus kifutása után jön a fenti
+sorzáró blokk. A `+0x254` tehát a **sortörés** ára, nem a betű magassága.
+
+### 17.3 Egysoros ág: MÁSIK két mező
+
+Ha a `[esp+0x11]` jelző nulla (`0x00a47b43`), az egysoros út fut, és ott az
+Y-előtolás **nem** a `+0x254`:
+
+```
+0x00a47bd7  mov  edx, dword ptr [ebp + 0x1d0]
+0x00a47bdd  add  edx, dword ptr [ebp + 0x1c0]    ; magasság + ráadás
+0x00a47be9  fild dword ptr [esp + 0x30]
+0x00a47bf5  fadd dword ptr [ecx + 4]
+```
+
+⇒ a `+0x1c0` + `+0x1d0` a **természetes** sormagasság, a `+0x254` a
+**megadott** sorelőtolás. Ezért két külön mező.
+
+### 17.4 Az alapérték 12 — ugyanabban az utasításban, mint a `+0x1c0`-é
+
+```
+0x00a45b00  mov   eax, 0xc
+0x00a45b24  mov   dword ptr [esi + 0x1c0], eax   ; = 12
+0x00a45b30  mov   dword ptr [esi + 0x250], ebx   ; = 0
+0x00a45b36  mov   dword ptr [esi + 0x254], eax   ; = 12
+```
+
+A `FUN_00a45ac0` (a `ytFontCache` 5. vtábla-rekesze) minden újratöltésnél
+visszaállítja ezt a hármat.
+
+### 17.5 A kapcsolat a `.tre`-vel — EGYBEESÉS, nem bizonyíték
+
+A `picasa-gomb-es-menu-rendszer.md` 6. szakasza a `fontmacros_win.tre`-ből
+olvasva közli, hogy a leggyakoribb gombfelirat-makró (`m_buttonfontC`)
+`fontsize 12`, `fontleading 10`, `fonttrack -1`. A binárisban a
+**`fontleading`** literál egyetlen helyen szerepel (`0xc7c9c0`, a
+`FUN_009ca5e0` attribútum-feldolgozóban), ott viszont a feldolgozó
+**virtuális kezelőt hív** (`call [edx+8]` a `0x009c6f60` feloldása után), nem
+közvetlenül ír mezőt.
+
+⛔ **Ezért NEM állítjuk bizonyítottnak, hogy a `+0x254` == `fontleading`.**
+A szerep (sorelőtolás) mérve van; a `.tre`-attribútum és a mező összekötése
+egy további lépés: a `0x009ca5e0` `fontleading`-ágának kezelőjét kell
+végigkövetni a `0x009c6f60`-on át.
+
+### 17.6 Aki beleírja: a szövegcsomópont, MINDEN rajzolás előtt
+
+A 16. szakasz menete szerint a szövegcsomópont a saját valódi `+0x298`-át
+másolja ide (`0x00a6c35e`, `0x00a6c77b`), és ugyanabban a menetben még hármat:
+
+| a gyorstár mezője | forrás | hol |
+|---|---|---|
+| `+0x250` | `[esi+0x29c]` | `0x00a6be1a` |
+| `+0x254` | `[edi+0x294]` = valódi `+0x298` | `0x00a6c35e` |
+| `+0x258` | `[esi+0x2a4]` | `0x00a6be08` |
+| `+0x210` (bájt) | `byte [esi+0x2f0]` | `0x00a6be2c` |
+
+Ez azért kell, mert a gyorstár **közös**: a `0x00a48e10` gyárnak **25 hívója**
+van, tehát minden használó a saját szövegbeállításait tolja bele rajzolás
+előtt.
+
+**A `+0x250` szerepe is mérve** (ugyanaz a pásztázás): egész, és a
+glifa-léptetésben adódik hozzá (`0x00a4661b fiadd`, `0x00a467b5 fild`,
+`0x00a4720b`, `0x00a4738f`), alapértéke **0** (`0x00a45b30`). Ez a
+**betűköz**-szerepre illik (a `.tre`-ben `fonttrack`), de a `.tre`-hez kötése
+ugyanaz a nyitott lépés, mint 17.5-ben.
