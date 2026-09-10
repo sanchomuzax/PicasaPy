@@ -166,6 +166,8 @@ MenuBar {
     //: #1405: a keresés mentése albumként — a gazda dönt a megerősítésről.
     property bool canSaveSearch: false
     signal saveSearchRequested()
+    //: #1775: a kijelölt kép asztali háttérképnek — a gazda adja a sort.
+    signal wallpaperRequested()
     //: #1406: a címke albumként — a gazda nyitja a bekérő párbeszédet.
     signal showTagAsAlbumRequested()
     signal faceScanRequested()
@@ -1586,8 +1588,20 @@ MenuBar {
     }
     PicasaMenu {
         title: qsTr("&Create")
-        // hiányzott (#324 audit)
-        PicasaMenuItem { text: qsTr("Set as Desktop Background..."); placeholder: true }
+        //: #1775: `eMenuCreate::ID_WALLPAPER` (`0x9cd2`). Az eredeti MÁSOLATOT
+        //: ír (`picasabackground.bmp` a `Picasa/Backgrounds` mappába), nem az
+        //: eredeti fájlra mutat, és KÖZÉPRE teszi (`WallpaperStyle=0`,
+        //: `TileWallpaper=0`) — mérve, `0x0057aa10`. A motor közös a Kollázs
+        //: „Asztali háttérkép" gombjáéval (#1005).
+        //:
+        //: Kijelölés kell hozzá: a parancs EGY képet tesz háttérképnek, ezért
+        //: kijelölés nélkül szürke (a néma kattintás helyett).
+        MenuItem {
+            objectName: "menuCreateWallpaper"
+            text: qsTr("Set as Desktop Background...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.wallpaperRequested()
+        }
         PicasaMenuItem { text: qsTr("Make a &Poster..."); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}

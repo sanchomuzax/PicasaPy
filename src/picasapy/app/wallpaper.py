@@ -84,6 +84,28 @@ _LANC: tuple[tuple[str, tuple[Sequence[str], ...]], ...] = (
 )
 
 
+def backgrounds_dir(collage_output_dir: Path, language: str) -> Path:
+    """A Hátterek mappa — a KOLLÁZS-célmappa szomszédja (#1005, #1775).
+
+    Alapállapotban ez pontosan a mért `<Képek>/Picasa/<Hátterek>` útvonal,
+    hiszen a kollázsok is a `Picasa` mappában laknak. Ha a felhasználó
+    áthelyezte a kollázs-célmappát, a háttér is oda tartozik — egy
+    Picasa-projektgyökér, egy hely.
+
+    ⚠️ Ez egyben a próbák elszigetelése: a `collage/outputDir` beállítást a
+    fixture-ök eltérítik, tehát a BMP nem a VALÓDI képmappába kerül. A #1005
+    első változata a rendszer képmappájából számolt, és a CI őre (#1054) meg
+    is fogta — egy meglévő teszt a `~/Pictures/Picasa/Backgrounds`-ba írt.
+    """
+    from .project_folder_names import ProjectFolderKind, letezo_vagy_honos_mappa
+
+    return letezo_vagy_honos_mappa(
+        Path(collage_output_dir).parent,
+        ProjectFolderKind.BACKGROUNDS,
+        language,
+    )
+
+
 def background_bmp_path(backgrounds_dir: Path) -> Path:
     """A háttérkép-BMP útvonala a mért fájlnévvel."""
     return Path(backgrounds_dir) / BACKGROUND_FILE
@@ -149,6 +171,7 @@ def set_desktop_background(
 
 __all__ = [
     "BACKGROUND_FILE",
+    "backgrounds_dir",
     "background_bmp_path",
     "set_desktop_background",
     "write_background_bmp",
