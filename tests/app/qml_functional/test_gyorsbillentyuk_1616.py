@@ -404,10 +404,15 @@ class TestSweepOr:
         # (28 fájl), csak a programból nem lehetett megnyitni. A menütétel
         # mostantól valódi `MenuItem`, ami megnyitja a nézőt, és az F1 is
         # él. A szám tehát megint azért csökken, mert javult valami.
-        assert len(helyfoglalo_hirdetok) >= 3, (
-            "a mérésnek meg kell találnia a spec szerinti kilenc "
-            "hatókörön-kívüli helyfoglaló tételt — ha ez a szám lecsökkent, "
-            "vagy a regex tört el, vagy tényleg javult valami (ellenőrizd!)"
+        # ⚠️ #1526: 3 → 2. ÖTÖDSZÖR: a Szerkesztés ▸ Beillesztés (Ctrl+V)
+        # élővé vált — a vágólapon lévő fájlok bekerülnek a kiválasztott
+        # mappába, és a billentyű ugyanúgy FÓKUSZ-ÉRZÉKENY, mint a
+        # másoláson (szövegmezőben a mezőé marad, #1571). A szám tehát
+        # ismét azért csökken, mert javult valami.
+        assert len(helyfoglalo_hirdetok) >= 2, (
+            "a mérésnek meg kell találnia a maradék hatókörön-kívüli "
+            "helyfoglaló tételeket — ha ez a szám lecsökkent, vagy a regex "
+            "tört el, vagy tényleg javult valami (ellenőrizd!)"
         )
         # egyik helyfoglaló sem jelenik meg az ígéretszegések közt
         hibak = _igeretszegesek(menu_forras, forrasok)

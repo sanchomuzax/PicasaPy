@@ -308,6 +308,9 @@ MenuBar {
     signal undoAllEditsRequested()
     //: #1526: a kijelölt képek FÁJLJAI a vágólapra
     signal copyFilesRequested()
+    //: #1526: a Beillesztés — a gazda tudja, melyik mappa a cél.
+    property bool clipboardHasFiles: false
+    signal pasteFilesRequested()
     signal cutFilesRequested()
     // #1595: a Mappa menü négy néma tétele — mind a MEGNYITOTT mappára
     // vonatkozik (az eredetiben a „Mappa" menü ezt jelenti). A vezérlők
@@ -621,9 +624,20 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.copyFilesRequested()
         }
-        // #1526: a Beillesztés a fájl-vágólap MÁSIK fele — külön munka
-        // (ütközéskezelés, célmappa), ezért egyelőre helyfoglaló marad.
-        PicasaMenuItem { text: qsTr("&Paste") + "\tCtrl+V"; placeholder: true }
+        //: #1526: a Beillesztés a fájl-vágólap MÁSIK fele. A célmappa a
+        //: KIVÁLASZTOTT mappa, az ütközéskezelést és a haladásjelzést a
+        //: meglévő köteg-út adja (`copyPhotos`/`movePhotos`); a `cut`
+        //: jelzésű vágólap-tartalom áthelyez, a `copy` másol.
+        //:
+        //: A tétel akkor él, ha VAN fájl a vágólapon — üres vágólapnál a
+        //: szürke tétel megmagyarázza magát (nincs mit beilleszteni),
+        //: szemben egy néma kattintással.
+        MenuItem {
+            objectName: "menuEditPaste"
+            text: qsTr("&Paste") + "\tCtrl+V"
+            enabled: bar.clipboardHasFiles
+            onTriggered: bar.pasteFilesRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuEditCopyEffects"

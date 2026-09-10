@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.370] – 2026-09-10
+
+### Hozzáadva
+
+- **Beillesztés: a vágólapra tett képek bekerülnek a kiválasztott mappába**
+  (#1526). A Szerkesztés ▸ Beillesztés eddig halott menüpont volt. Mostantól
+  működik: ha a Fájlkezelőből (vagy a PicasaPy Másolás/Kivágás parancsával)
+  fájlok kerültek a vágólapra, a Beillesztés bemásolja őket az épp
+  kiválasztott mappába — kivágás esetén áthelyezi. Névütközésnél új nevet
+  ad, tehát semmi nem íródik felül. Üres vágólapnál a menüpont szürke, és
+  ha közben ürült ki, a program megmondja, miért nem történt semmi.
+
 ## [0.8.368] – 2026-09-10
 
 ### Javítva

@@ -3764,6 +3764,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>There are no files on the clipboard to paste.</source>
+        <translation>Nincs beilleszthető fájl a vágólapon.</translation>
+    </message>
+
+    <message>
         <source>Wrong password</source>
         <translation>Hibás jelszó</translation>
     </message>
