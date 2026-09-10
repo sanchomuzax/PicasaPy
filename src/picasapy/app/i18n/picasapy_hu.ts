@@ -4677,6 +4677,35 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>PicasaMenuBar</name>
     <message>
+        <source>Search for...</source>
+        <translation>Keresés...</translation>
+    </message>
+    <message>
+        <source>&amp;Red</source>
+        <translation>&amp;Piros</translation>
+    </message>
+    <message>
+        <source>&amp;Orange</source>
+        <translation>&amp;Narancssárga</translation>
+    </message>
+    <message>
+        <source>&amp;Yellow</source>
+        <translation>&amp;Sárga</translation>
+    </message>
+    <message>
+        <source>&amp;Green</source>
+        <translation>&amp;Zöld</translation>
+    </message>
+    <message>
+        <source>&amp;Blue</source>
+        <translation>&amp;Kék</translation>
+    </message>
+    <message>
+        <source>&amp;Purple</source>
+        <translation>&amp;Lila</translation>
+    </message>
+
+    <message>
         <source>Show Duplicate Files</source>
         <translation>Fájlok másodpéldányainak megjelenítése</translation>
     </message>
