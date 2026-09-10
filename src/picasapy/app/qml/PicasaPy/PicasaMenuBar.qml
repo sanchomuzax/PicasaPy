@@ -326,6 +326,11 @@ MenuBar {
     signal copyFilesRequested()
     //: #1526: a Beillesztés — a gazda tudja, melyik mappa a cél.
     property bool clipboardHasFiles: false
+    //: #1526: van-e SZÖVEG a vágólapon — a „Szöveg beillesztése" ettől él.
+    property bool hasCaptionTextClipboard: false
+    //: #1526: a feliratszöveg vágólap-parancsai (a gazda a kijelölésre hívja)
+    signal copyTextRequested()
+    signal pasteTextRequested()
     signal pasteFilesRequested()
     signal cutFilesRequested()
     // #1595: a Mappa menü négy néma tétele — mind a MEGNYITOTT mappára
@@ -668,9 +673,23 @@ MenuBar {
             onTriggered: bar.pasteAllEffectsRequested()
         }
         MenuSeparator {}
-        // hiányzott (#324 audit): feliratszöveg vágólap-műveletei
-        PicasaMenuItem { text: qsTr("Copy Text"); placeholder: true }
-        PicasaMenuItem { text: qsTr("Paste Text"); placeholder: true }
+        // #1526: a feliratszöveg vágólap-műveletei. MÉRVE, hogy ez a KETTŐ
+        // nem a fájlra hat, hanem a FELIRATRA — a fájl-vágólap
+        // (`Cut`/`Copy`/`Paste`) másik készlet, másik névtérben.
+        MenuItem {
+            objectName: "menuEditCopyText"
+            text: qsTr("Copy Text")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.copyTextRequested()
+        }
+        MenuItem {
+            objectName: "menuEditPasteText"
+            text: qsTr("Paste Text")
+            //: Üres vágólappal a tétel hatástalan volna — a szürke vezérlő
+            //: megmondja, hogy nincs mit beilleszteni.
+            enabled: bar.photoActionsEnabled && bar.hasCaptionTextClipboard
+            onTriggered: bar.pasteTextRequested()
+        }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Select All") + "\tCtrl+A"

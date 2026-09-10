@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- **Felirat másolása és beillesztése a Szerkesztés menüből** (#1526). A
+  „Szöveg másolása" a kijelölt kép feliratát a vágólapra teszi, a „Szöveg
+  beillesztése" pedig a vágólap szövegét MINDEN kijelölt kép feliratába írja —
+  így egy feliratot végig lehet vinni egy sorozaton. Üres vágólappal a
+  menüpont szürke, tehát nem törli le a meglévő feliratokat. Eddig mind a két
+  menüpont szürke helyfoglaló volt.
+
 ### Javítva
 
 - **A Színinvertálás csempéjén is ott a kék jelvény** (#2800). A szerkesztő

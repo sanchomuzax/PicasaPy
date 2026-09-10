@@ -122,6 +122,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
     _photoFieldUpdated = Signal(int, object, object)
     photoOpFailed = Signal(str)
+    #: #1526: a SZÖVEG-vágólap tartalma változott — ettől él/szürkül a
+    #: „Szöveg beillesztése" menütétel. A Qt vágólapjának `dataChanged`-jére
+    #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
+    #: eljut a menühöz, nem csak a sajátunk.
+    captionClipboardChanged = Signal()
     photoOpFinished = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
@@ -364,6 +369,119 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._run_photo_write(
             photo.id, perform, after=self._refresh_if_star_filtered
         )
+
+    # -- Szöveg-vágólap: a FELIRATRA hat, nem a fájlra (#1526) -------------
+    #
+    # MÉRVE: az `eMenuEdit` névtérben a `Copy Text` / `Paste Text` a
+    # feliratszöveg vágólap-műveletei — a fájl-vágólap (`Cut`/`Copy`/`Paste`,
+    # `fileops_controller`) ettől KÜLÖN készlet, két külön névtérben
+    # (`eMenuEdit` és `Address`). A jegy hét parancsából ez a kettő maradt.
+    #
+    # ⚠️ Fej nélküli környezetben (`offscreen`/`minimal`) NEM nyúlunk a
+    # rendszervágólaphoz: nincs mögötte vágólap-tulajdonos, és a Qt-hívás a
+    # CI-n SZEGMENSHIBÁVAL állította meg a tesztfájlt (`exit -11`) — nem
+    # kivétellel, amit el lehetne kapni (ld. `fileops_controller`
+    # `_tegyd_a_vagolapra`). Ilyenkor egy munkamenet-szintű szövegtár áll a
+    # helyén, tehát a művelet nem lesz néma, és a próbák AZT mérik, amit
+    # feltennénk.
+
+    def _ensure_caption_clipboard(self) -> None:
+        """Lusta, egyszeri bekötés a rendszervágólap `dataChanged`-jére.
+
+        Enélkül a menütétel csak a MI írásainkról tudna, egy másik program
+        vágólap-írásáról nem — a „Szöveg beillesztése" hazug állapotban
+        ragadna. Fej nélküli környezetben nincs mihez kötni; ott a
+        munkamenet-szintű tár változásait a saját írásunk jelzi."""
+        if getattr(self, "_caption_clipboard_wired", False):
+            return
+        self._caption_clipboard_wired = True
+        self._caption_clipboard = ""
+        from PySide6.QtGui import QGuiApplication
+
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return
+        vagolap = QGuiApplication.clipboard()
+        if vagolap is not None:
+            vagolap.dataChanged.connect(self.captionClipboardChanged.emit)
+
+    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: a felület nem a szövegtárral beszél, hanem
+    #: a `copyCaptionText`/`pasteCaptionText` parancsokkal. Egy bekötetlen
+    #: slot néma lánc-szakadás lenne (`scripts/kepesseg_or.py`), ez viszont
+    #: a próbák és a fej nélküli környezet belépője.
+    def setCaptionClipboardText(self, text: str) -> None:  # noqa: N802
+        """A szöveg-vágólap FELTÖLTÉSE."""
+        from PySide6.QtGui import QGuiApplication
+
+        self._ensure_caption_clipboard()
+        self._caption_clipboard = str(text or "")
+        self.captionClipboardChanged.emit()
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return
+        vagolap = QGuiApplication.clipboard()
+        if vagolap is not None:
+            vagolap.setText(self._caption_clipboard)
+
+    def captionClipboardText(self) -> str:  # noqa: N802
+        """A szöveg-vágólap tartalma. Fej nélküli környezetben a
+        munkamenet-szintű tár, egyébként a rendszervágólap.
+
+        (Szintén nem `@Slot` — ld. a `setCaptionClipboardText` fölötti okot.)"""
+        from PySide6.QtGui import QGuiApplication
+
+        self._ensure_caption_clipboard()
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return getattr(self, "_caption_clipboard", "")
+        vagolap = QGuiApplication.clipboard()
+        return "" if vagolap is None else vagolap.text()
+
+    @Property(bool, notify=captionClipboardChanged)
+    def hasCaptionTextClipboard(self) -> bool:  # noqa: N802
+        """Van-e SZÖVEG a vágólapon — ettől él a „Szöveg beillesztése".
+
+        Szándékosan nem gyorstárazzuk: a vágólapot más program is átírhatja,
+        és a menü megnyitásakor a FRISS állapot kell (a `clipboardHasFiles`
+        mintája)."""
+        return bool(self.captionClipboardText().strip())
+
+    @Slot(int, result=bool)
+    def copyCaptionText(self, row: int) -> bool:  # noqa: N802
+        """A kép FELIRATA a vágólapra („Copy Text").
+
+        `False`, ha nincs mit másolni: érvénytelen sor, vagy a képnek nincs
+        felirata. Üres szöveget feltenni annyi lenne, mint kiürítni a
+        vágólapot — azt a felhasználó nem kérte."""
+        photos = self._photos.photos
+        if not 0 <= int(row) < len(photos):
+            return False
+        felirat = (self._photos.captionAt(int(row)) or "").strip()
+        if not felirat:
+            return False
+        self.setCaptionClipboardText(felirat)
+        return True
+
+    @Slot("QVariantList", result=int)
+    def pasteCaptionText(self, rows) -> int:  # noqa: N802
+        """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
+
+        Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
+        hány képre indult írás.
+
+        ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
+        adatvesztés lenne — a törlésre a felirat-szerkesztő van."""
+        szoveg = self.captionClipboardText().strip()
+        if not szoveg:
+            return 0
+        darab = 0
+        for row in rows:
+            try:
+                sor = int(row)
+            except (TypeError, ValueError):
+                continue
+            if not 0 <= sor < len(self._photos.photos):
+                continue
+            self.setCaption(sor, szoveg)
+            darab += 1
+        return darab
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
