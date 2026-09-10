@@ -1096,6 +1096,14 @@ Rectangle {
         panel: panel
     }
 
+    //: #2480: nyitva van-e a szerkesztő valamelyik MODÁLIS párbeszéde. A
+    //: gazda (`PhotoViewer`) ebből teszi ki az elhomályosító réteget —
+    //: az eredetiben ez a `editpanel/modaldialogblur` (`editpanel.tre:1362`),
+    //: ami a `root` gyereke, tehát a TELJES szerkesztő fölé kerül, nem a bal
+    //: panelen belülre.
+    readonly property bool modalDialogOpen:
+        editorDialogs.anyModalOpen || addCustomAspectRatioDialog.visible
+
 
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------

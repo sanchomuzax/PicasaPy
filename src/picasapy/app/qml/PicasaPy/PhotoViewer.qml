@@ -2346,4 +2346,34 @@ Rectangle {
         }
     }
 
+    // #2480: a MODÁLIS párbeszédek elhomályosító rétege. Az eredetiben ez
+    // az `editpanel/modaldialogblur` (`editpanel.tre:1362`): a `root`
+    // közvetlen gyereke (tehát a TELJES szerkesztő fölé kerül, nem a bal
+    // panelen belülre), `m_scaleXY` (a teljes vászonra feszül) és
+    // `m_hidden` (alapból rejtett — a modális párbeszéd kapcsolja be).
+    //
+    // A fájl UTOLSÓ gyereke, hogy a rétegrendben minden fölé kerüljön: a
+    // bal panel, az előnézet és a felső sáv is alá esik. A Qt maga a
+    // párbeszédet még ennél is fölé rajzolja (külön `QQuickOverlay`), tehát
+    // a párbeszéd nem homályosodik el.
+    //
+    // ⚠️ A MÉRTÉK és a SZÍN a MI döntésünk: a `.tre` csak a réteg létét és
+    // kiterjedését adja meg, a rajzot a `respack.yt` rétege adná — az nincs
+    // kimérve. A választott érték a vászon-háttér 45%-a: elég ahhoz, hogy a
+    // fókusz a párbeszédre kerüljön, de a szerkesztő tartalma átlátszik
+    // (a felhasználónak látnia kell, mire válaszol).
+    //
+    // `enabled: false` — a réteg CSAK látvány: a modalitást a Qt biztosítja
+    // (a párbeszéd `modal: true`), egy eseményt elnyelő réteg viszont a
+    // párbeszéd bezárása utáni első kattintást is elvinné.
+    Rectangle {
+        objectName: "editorModalDialogBlur"
+        anchors.fill: parent
+        z: 1000
+        enabled: false
+        visible: editorPanel.modalDialogOpen
+        color: Theme.canvasBg
+        opacity: 0.45
+    }
+
 }
