@@ -127,8 +127,41 @@ FILTER_REGISTRY: dict[str, FilterSpec] = {
 }
 
 
+def _elolepteteshez_ures(spec: FilterSpec) -> bool:
+    """Nem hagyott-e hátra a szűrő EGYETLEN vezérlőt vagy jelzőt sem (#2800).
+
+    Az eredeti leíró-elemző a `</filter>` lezárásakor **előlépteti** az
+    `effect` módú szűrőt `oneclick`-re, ha öt mező mindegyike nulla
+    (`0x00900183`–`0x009001a9`): `[+4] == 4` (effect), majd `[+0x38]`,
+    `[+0xa1]`, `[+0x80]`, `[+0x84]` mind nulla ⇒ `[+4] := 1`.
+
+    A mi regiszterünkben ennek az felel meg, hogy a szűrőnek **nincs
+    felhasználói vezérlője** (nincs csúszka, nincs fókuszpont-kurzor, nincs
+    színválasztó), és **egyetlen viselkedés-jelzője sem áll**: nem kér teljes
+    felbontást, nem lassú, nem méretez, nem forgat, és nem tart meg régiót.
+
+    ⚠️ A megfelelés LEVEZETETT: a bináris öt mezőjének nincs egyenként
+    kimért neve. A kontroll a darabszám: a szállított `filterdesc.xml` 84
+    szűrőjéből az eredetiben **pontosan egy** esik a szabály alá (`Invert`),
+    és nálunk is pontosan egy — ha a `cinemascope`-ot is beengedné (annak
+    `full_res` és `resizes` jelzője áll), kettő lenne, tehát a szűkítés nem
+    önkényes. Ezt a `tests/render/test_egykattintasos_eloleptetes_2800.py`
+    méri.
+    """
+    return not (
+        spec.sliders
+        or spec.has_puck
+        or spec.color_kind != "none"
+        or spec.full_res
+        or spec.slow
+        or spec.resizes
+        or spec.rotates
+        or spec.persists_region
+    )
+
+
 def one_click_keys() -> tuple[str, ...]:
-    """A `mode="oneclick"` szűrők kulcsai — a szerkesztő kék jelvényéhez.
+    """A kék jelvényt kapó szűrők kulcsai — a szerkesztő csempéihez.
 
     #2126: az eredetiben a csempe kék jelvényét a szűrő MÓDJA kapcsolja, nem
     az, hogy alkalmazva van-e. A csempeépítő (`0x005d7c20`) a szűrő-leíró
@@ -136,12 +169,19 @@ def one_click_keys() -> tuple[str, ...]:
     vezérlőt; a `+4` a `mode` egésszé fordítva (`0x00900490`:
     `oneclick` → 1). Ez a függvény az EGYETLEN forrás — a felület ne
     tartson külön listát.
+
+    #2800: a mód nem csak a `filterdesc.xml`-ből jön — az elemző a
+    `</filter>`-nél **előlépteti** azt az `effect` módú szűrőt, ami egyetlen
+    vezérlőt sem hagyott hátra (ld. `_elolepteteshez_ures`). A szállított
+    leíróban pontosan egy ilyen van, a **Színinvertálás**, és az eredetiben
+    ott VAN a jelvény — a tulajdonos felvételén képpontra kimérve.
     """
     return tuple(
         sorted(
             kulcs
             for kulcs, spec in FILTER_REGISTRY.items()
             if spec.mode == "oneclick"
+            or (spec.mode == "effect" and _elolepteteshez_ures(spec))
         )
     )
 

@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+
+- **A Színinvertálás csempéjén is ott a kék jelvény** (#2800). A szerkesztő
+  effekt-csempéin a kis kék jel azt mutatja, hogy az effekt egy kattintással
+  hat, beállítás nélkül. A Színinvertálásról ez a jel lemaradt, pedig az
+  eredeti Picasában ott van. A többi csempe változatlan.
+
 ### Változott
 
 - **A Beállítások „Másodpéldányok észlelése importáláskor" jelölője működik**
