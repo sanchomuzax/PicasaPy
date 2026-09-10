@@ -580,8 +580,17 @@ használja** (`0x00aa40a0`, nyolc hívóval), méghozzá épp a `2.2`
 paraméterre — ha az előbb fut le, a Mac gamma az ő
 `pow(x, 1/2.2)`-táblájával fog dolgozni.
 
-⇒ **NYITOTT.** A mód tényleges hatása **futásidő-függő**, statikusan nem
-dönthető el; a `0x00aa40a0` hívói a gammát egy struktúramezőből
+⚠️ **ELAVULT JELÖLÉS (2026-09-10, #2825):** a kérdést a tulajdonos
+felvételeinek képpont-mérése **eldöntötte** (#1580 → **#1730**, 2026-08-30):
+a `Mac gamma (1.6)` **világosít** — teljes képernyős luma +3,32%, a központi
+fotó +15,7% —, és a mért görbe az **`x^(1/1,6)`** gammával konzisztens. Ezzel
+az alábbi „szinte fekete képernyő" ág **MEGDŐLT**, és a kért képernyőkép is
+megvan; ami hátramaradt, az a MEGVALÓSÍTÁS (a mód a teljes kompozícióra hat),
+és annak élő gazdajegye a **#1730**. A bekezdés szövege történeti okból marad.
+
+⚠️ **ELAVULT JELÖLÉS (#2825).**
+⇒ ~~**NYITOTT.** A mód tényleges hatása **futásidő-függő**, statikusan nem
+dönthető el;~~ a `0x00aa40a0` hívói a gammát egy struktúramezőből
 (`[eax+0x28]`) veszik, nem konstansból. **Ez döntené el:** a windowsos
 Picasában a `Mac gamma (1.6)` bekapcsolása egy semleges szürke ékre, és
 képernyőkép róla — közvetlenül indítás után, illetve néhány kép
