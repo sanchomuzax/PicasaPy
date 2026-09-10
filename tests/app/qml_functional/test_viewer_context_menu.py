@@ -94,8 +94,20 @@ def _do_photo_op(controller, qt_app, action) -> None:
 
 class TestViewerContextMenuStructure:
     def test_menu_exists_in_the_viewer(self, qml_app, qt_app):
+        """#1612: a menü HALASZTOTT — a nézővel együtt még nem épül fel.
+
+        A jobbklikk (`openContextMenu`) építi fel, ahogy a felhasználónál is.
+        Ezért a próba mindkettőt méri: a néző megnyitása után NINCS példány, a
+        jobbklikk után VAN — így a halasztás sem tűnhet el némán, és a menü
+        sem maradhat elérhetetlen."""
         window, _controller, _engine = qml_app
         _open_viewer(window, qt_app)
+
+        assert window.findChild(QObject, "viewerContextMenu") is None, (
+            "a menü induláskor/nézőnyitáskor NEM épül fel (#1612: 360 QObject)"
+        )
+
+        _open_menu(window, qt_app)
         assert window.findChild(QObject, "viewerContextMenu") is not None
 
     def test_all_seventeen_commands_are_present_in_order(self, qml_app, qt_app):
@@ -205,7 +217,9 @@ class TestSaveCommandsInTheViewer:
 
     def test_they_are_state_dependent_not_placeholders(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        menu = _child(window, "viewerContextMenu")
+        # #1612: a menü halasztott — a jobbklikk útján épül fel
+        _open_viewer(window, qt_app)
+        menu = _open_menu(window, qt_app)
 
         menu.setProperty("hasEdits", False)
         qt_app.processEvents()
@@ -220,7 +234,9 @@ class TestSaveCommandsInTheViewer:
 
     def test_revert_follows_the_backup(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        menu = _child(window, "viewerContextMenu")
+        # #1612: a menü halasztott — a jobbklikk útján épül fel
+        _open_viewer(window, qt_app)
+        menu = _open_menu(window, qt_app)
 
         menu.setProperty("hasBackup", True)
         qt_app.processEvents()
@@ -229,5 +245,8 @@ class TestSaveCommandsInTheViewer:
 
     def test_reset_faces_is_live(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
+        # #1612: a menü halasztott — a jobbklikk útján épül fel
+        _open_viewer(window, qt_app)
+        _open_menu(window, qt_app)
 
         assert _child(window, "viewerMenuResetFaces").property("enabled") is True
