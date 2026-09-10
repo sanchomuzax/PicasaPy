@@ -773,6 +773,94 @@ A **3-as mód** forrása, a `+0x288` gyűjtemény: a `0x0069e390` a
 ez a gyűjtemény, és melyik kód állítja be, nincs feltárva. A `+0x284`
 jelző jelentése szintén nyitott.
 
+## 8/f A modell és a `justify` — a 8/e.5 két nyitott mezője (2026-09-10, #2862)
+
+**Bizalmi fok: megerősített.** Minden állítás mellett cím; a pásztázások
+indextől függetlenül futottak, kontrollpozitívval.
+
+### 8/f.1 A `+0x288` a lista ADATMODELLJE
+
+Az író a **`FUN_00608b70`** (141 bájt) — a `ytPopupListNode` modell-beállítója:
+
+```
+0x00608b93  mov eax, dword ptr [ebx + 0x3f8]     ; a belső lista
+0x00608b9d  mov dword ptr [eax + 0x288], 0       ; a RÉGI modell leválasztva
+…
+0x00608bb3  mov dword ptr [ebx + 0x400], edi     ; a node saját mutatója
+0x00608bde  mov ecx, dword ptr [ebx + 0x400]
+0x00608be4  mov dword ptr [eax + 0x288], ecx     ; ⭐ az ÚJ modell
+```
+
+A régi modellt a **3.** vtábla-rekeszén értesíti (`0x00608b8a`–`0x00608b91`,
+argumentum `1`), az újat a **4.**-en (`0x00608bbb`–`0x00608bc2`) — leválasztás
+és becsatolás.
+
+⇒ a `+0x288` ugyanaz az objektum, amit a csomópont a `+0x400`-ban tart: a
+lista **tételforrása**. Elrendezése a használatból kiolvasva:
+`+0xc` = mutatótömb, `+0x10` = a tételszám **kétszerese** (a bejáró
+`shr ecx, 1`-gyel osztja, `0x0069e3fe` és `0x0069e46f`).
+
+### 8/f.2 ⭐ A 3-as méretezési mód: a LEGSZÉLESEBB tételhez igazít
+
+A `FUN_0069e390` (241 bájt) teljes menete:
+
+```
+0x0069e3a5  push 0xc95ebc                    ; "Praxis Semi Bold/Heavy"
+0x0069e3aa  mov  eax, 0x190                  ; súly 400
+0x0069e3af  mov  edi, 0xc                    ; méret 12
+0x0069e390  fld  dword ptr [0xc7dbbc]        ; skála 1,4
+0x0069e3b4  call 0xa48e10                    ; ⭐ a KÖZÖS betűgyorstár-gyár
+…
+0x0069e3e0  mov edi, [eax+8] ; sub edi, [eax] ; a JELENLEGI szélesség
+0x0069e407  mov eax, dword ptr [edx + esi*4] ; a modell esi-edik tétele
+0x0069e41d  call 0xc07db2                    ; __RTDynamicCast (0xd3b75c → 0xd3b71c)
+0x0069e427  je  0x69e475                     ; ha nem illik: kihagyva
+0x0069e453  call edx                         ; a gyorstár 12. rekesze: szövegmérés
+0x0069e45a  add ecx, 0x10                    ; a mért szélesség + 16
+0x0069e45f  jbe 0x69e463 ; mov edi, ecx      ; MAXIMUM
+0x0069e475  mov eax, edi                     ; a visszaadott szélesség
+```
+
+⇒ **3-as mód = a modell azon tételeinek legszélesebbje + 16 képpont**, amelyek
+a `0xd3b71c` típusra `dynamic_cast`-olhatók — és **soha nem szűkebb**, mint a
+vezérlő jelenlegi szélessége.
+
+A használt betű ugyanaz, mint a 6. szakasz „a felület alapbetűje": **Praxis
+Semi Bold/Heavy**, 12 px, súly 400. A gyár a `0x00a48e10`, ugyanaz, amit a
+`picasa-megjelenitesi-modok.md` 16. szakasza azonosított (25 hívó).
+
+### 8/f.3 ⭐ A `+0x284` a `Property justify` — és ⛔ ÖNHELYESBÍTÉS
+
+A `+0x284` egyetlen írója a `0x00609a91`, a legördülő `Property`-feldolgozójában:
+
+```
+0x00609a12  push 0xc939b8                    ; "right"  ← az ÉRTÉK
+…
+0x00609a7e  sete cl
+0x00609a81  cmp byte ptr [eax + 0x284], cl
+0x00609a89  or  dword ptr [eax + 8], 7       ; újrarajzolás, ha változott
+0x00609a91  mov byte ptr [eax + 0x284], cl
+```
+
+⇒ **`Property justify right` → `+0x284 = 1`**, bármi más → `0`. A konstruktor
+alapértéke **1** (`0x0069d9c1`), tehát a legördülő **alapból jobbra igazít**.
+
+⛔ **Helyesbítés a #2856 lezáró kommentjéhez:** ott az szerepelt, hogy a
+`justify` „érték, nem kulcs". A `center`/`left`/`right` valóban értékek (az
+`align`-é), de a **`justify` KULCS** — a `right` az ő értéke.
+
+⚠️ A korpuszban **egyetlen `Property justify` sor sincs** (`grep`), tehát ezt
+a kulcsot a szállított `.tre` nem használja — a bináris viszont támogatja.
+Ugyanaz a kategória, mint a `picasa-respack-format.md` 8.2 „csak a binárisban"
+listája, csak itt az elemtípus-függő feldolgozóban.
+
+### 8/f.4 Amit a jelző CSINÁL
+
+A `FUN_0069e010` a `0x0069e1ff cmp byte ptr [esi + 0x284], 0` alapján két
+teljesen külön x-számítási ág-párt futtat (8/e.4). A `.tre`-név szerint ez a
+jobbra igazítás; a két ág **képlete** ki van írva a 8/e.4-ben, a
+**vizuális** hatás mérése (renderelt kimenet vs. referencia) nincs meg.
+
 ## 9. A gomb-rétegek teljes leltára
 
 269 réteg a `globalbuttons/` névtérben. A névadás **kivétel nélkül**
