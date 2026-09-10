@@ -6335,3 +6335,108 @@ törvényt már ismerjük, tehát a keresés mintája adott:
 `version`, bizonyítva) · **1 nyitott, gépi úton folytatható,
 megnevezett horgonnyal** (a `picturepile` elrendezőjének `sqrt`-hívása)
 · 0 „csak nyitva".*
+
+---
+
+## 62. K1 — MEGVAN a mai fájlok írója: `CPileTheme` → `FUN_0087bcb0`, és a CSONKOLÁS helye (2026-09-10, #1412)
+
+*272. kutatói kör. A 61.6 két horgonyát viszi (a `sqrt`-thunk és a `0,33`
+konstans), és mindkét maradék kérdést lezárja: a mai (`version="2"`)
+fájlok `picturepile`-`scale`-jének írója, és az 55.6/1 óta nyitott
+csonkolás.*
+
+### 62.1 A két horgony, teljes `.text`-en
+
+| minta | találat | kontroll |
+|---|---:|---|
+| `call 0x49fe60` (a `sqrt`-thunk) | **91** | `0x00834622` **és** `0x00834638` (a migráció két hívása) — **megvan** |
+| `0x00cf46c0` (`0,33`) | **8** | `0x00834671` (a migráció szorzása) — **megvan** |
+| `0x00cf4218` (`1024,0`) | 14 | — |
+
+A `sqrt`-hívások **párban** állnak (`sqrt(sqrt(n) − 1)`), és a
+`0x0087b8c0`–`0x0087d0e4` sávban hat ilyen pár van — épp a `CPileTheme`
+metódusainak környékén.
+
+### 62.2 ⭐ `FUN_0087bcb0` — a `picturepile` MÉRETEZŐJE
+
+Egyetlen hívója a **`CPileTheme[0]`** (`0x0087b4a0`, a `0x00cbf5ac`
+vtábla 0. rekesze), tehát ez a téma **saját** kódja.
+
+**A lap-alap** (a `k = 1`-es méret), egyszer, a ciklus előtt:
+
+```
+0x0087bd36  mov  eax, [esp+0x48]
+0x0087bd3a  sub  eax, [esp+0x40]      ; a lap SZÉLESSÉGE képpontban
+0x0087bd3e  mov  edi, 1               ; k = 1
+0x0087bd47  fild dword ptr [esp+0x38]
+0x0087bd51  fmul qword ptr [0xcf46c0] ; × 0,33
+0x0087bd57  fstp qword ptr [esp+0x28] ; = ALAP = 0,33 · W
+```
+
+**A k-adik kép tényezője**, a cikluson belül (`edi` = `k`):
+
+```
+0x0087bd6e  fild dword [esp+0x38]     ; k
+0x0087bd7e  call 0x49fe60             ; √k
+0x0087bd83  fsub qword [0xc7e328]     ;   − 1,0
+0x0087bd94  call 0x49fe60             ; √(√k − 1)
+0x0087bd99  fld1 · fdivrp             ; 1 / …
+0x0087bdb2  test ah,5 · jnp · fld1    ; min(…, 1)   ← ugyanaz a vágás
+0x0087bdbf  fld  dword [esp+0x38]     ; a tényező
+0x0087bdc5  fmul qword ptr [esp+0x28] ; × ALAP
+```
+
+⇒ **`méret_k = 0,33 · W · min(1/√(√k − 1), 1)`** — betűre ugyanaz a
+törvény, mint az 55. kör migrációjában, csak **élő elrendezőként**, és
+`1024,0` helyett a lap valódi képpont-szélességével.
+
+⛳ **Ezzel megvan a mai fájlok írója.** Az 55.5 kilenc pontos egyezése
+így magyarázatot kap: a `.cxf` lap-arányos egységrendszerében
+(`W ↦ 1024`) a képlet éppen `TRUNC(1024 · 0,33 · min(1/√(√k − 1), 1))`.
+
+### 62.3 ⭐ És MEGVAN a CSONKOLÁS (az 55.6/1 óta nyitott)
+
+Közvetlenül a szorzás után:
+
+```
+0x0087bdcb  fnstcw word ptr [esp+0x38]
+0x0087bdcf  movzx  eax, word ptr [esp+0x38]
+0x0087bdd4  or     eax, 0xc00          ; ← RC = 11 : CSONKOLÁS (nulla felé)
+0x0087bdd9  mov    dword ptr [esp+0x20], eax
+```
+
+Az FPU **vezérlőszavának** kerekítési mezőjét `0xc00`-val
+(**„round toward zero"**) állítja be, mielőtt egészre alakítana. Ez a
+`337,92 → 337` — **nem** külön csonkoló utasítás, hanem a kerekítési
+mód átállítása.
+
+⇒ **Az 55.6/1 nyitott pontja LEZÁRVA.**
+
+*Bizonyítottsági fok: **megerősített** — utasításonként, a `sqrt`-pár, a
+vágás, a `0,33` és a vezérlőszó-maszk is kiolvasva; a kontrollok mindkét
+pásztázáson lefutottak.*
+
+### 62.4 Amit ez a `contactsheet`-re nézve jelent
+
+A `picturepile` mintája most **teljes**: téma-osztály → saját méretező →
+`0,33 · W · f(k)` → csonkolás → a csomópont geometriája → a `scale` a
+`w × 1024`-ből. A `contactsheet` `scale`-jére ugyanez a séma
+alkalmazandó: a `CContactSheetTheme` (`0x00cbf670`) 0. és 2. rekesze
+(`FUN_00887ad0`, `FUN_00887bd0`) a belépési pont, és a `0,33`-hoz
+hasonló téma-konstansát a 18.2/54. szakasz már kiolvasta
+(`0,88`, `0,79`, `0,06`, `0,15`, `0,08`).
+
+### 62.5 A KÖVETKEZŐ lépés, megnevezve
+
+1. **A `contactsheet` `scale`-je**: a `CContactSheetTheme[0]`
+   (`FUN_00887ad0`, 242 b) és `[2]` (`FUN_00887bd0`, 639 b) elolvasása
+   a `picturepile`-mintával — hol keletkezik a csomópont mérete, és
+   melyik mennyiség kerül a `scale`-be (a mért ellenőrző készlet:
+   4→500, 6→256, 9→313, 12→158).
+2. A `CPileTheme` további öt `sqrt`-párja (`0x0087b91f`, `0x0087bf10`,
+   `0x0087cc0b`, `0x0087d0ce`) — ugyanaz a törvény más szerepben?
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a mai
+fájlok írója; a csonkolás helye — az utóbbi ÖRÖKÖLT, 55.6/1) · **1
+nyitott, gépi úton folytatható, megnevezett függvényekkel** (a
+`contactsheet` `scale`-je) · 0 „csak nyitva".*
