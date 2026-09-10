@@ -4974,12 +4974,23 @@ kettő közé az előléptetés hiányzott. Az ellentmondás megszűnt.
 
 ### 4. Nálunk MA — mérve
 
-`src/picasapy/render/registry.py: one_click_keys()` a `mode == "oneclick"`
+~~`src/picasapy/render/registry.py: one_click_keys()` a `mode == "oneclick"`
 bejegyzéseket adja vissza: **12 kulcs**. A `registry_data.py:375` szerint az
 `invert` nálunk `"effect"`, tehát a Színinvertálás csempéjén **nincs**
 jelvény. Az eredetiben van. ⇒ termékoldali teendő (külön jegy): az
 `one_click_keys()` vegye fel az előléptetést is, azaz `effect` + nulla vezérlő
-⇒ jelvény; a várt eredmény **13 kulcs**.
+⇒ jelvény; a várt eredmény **13 kulcs**.~~
+
+✅ **MEGVAN (2026-09-10, #2800):** az `one_click_keys()` alkalmazza az
+előléptetést (`_elolepteteshez_ures`), és **13 kulcsot** ad — az `invert`-tel
+együtt. A mi oldali megfelelés: nincs csúszka, nincs fókuszpont-kurzor, nincs
+színválasztó, ÉS egyetlen viselkedés-jelző sem áll (`full_res`, `slow`,
+`resizes`, `rotates`, `persists_region`). **Kontroll a szűkösségre:** így
+pontosan EGY szűrő lép elő, ahogy az eredetiben is; a `cinemascope` (aminek
+szintén nincs csúszkája) a `full_res`/`resizes` jelzőin fennakad. Őrök:
+`tests/render/test_egykattintasos_eloleptetes_2800.py` (7 eset) és a rajzolt
+csempén `TestSzininvertalasJelveny`
+(`tests/app/qml_functional/test_effect_tile_grid_704.py`).
 
 ### 5. Ami ebből NYITVA marad — pontosan
 

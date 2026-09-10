@@ -265,20 +265,76 @@ class TestEgykattintasosJelveny:
 
         assert (jelveny.width(), jelveny.height()) == (13.0, 12.0)
 
-    def test_a_masik_ket_effekt_fulon_NINCS_egykattintasos_csempe(
+    def test_a_masik_ket_effekt_fulon_a_csempek_TOBBSEGEN_nincs_jelveny(
         self, qt_app
     ) -> None:
-        """#2126: a 3–4. effekt-fülön egyetlen `mode="oneclick"` csempe sincs
-        — tehát ott jelvénynek sem szabad lennie, alkalmazott effekttel sem.
+        """#2126: a 3–4. effekt-fül csempéi `mode="effect"`-esek, tehát
+        jelvénynek nem szabad rajtuk lennie, alkalmazott effekttel sem.
 
         Korábban (#704) ez az eset azt állította, hogy a láncba tett Lomo
         jelvényt kap. A Lomo `mode="effect"`, tehát az EREDETIBEN nincs rajta
-        jelvény: az állítás a téves modellt rögzítette."""
+        jelvény: az állítás a téves modellt rögzítette.
+
+        ⚠️ #2800: „egyetlen oneclick csempe sincs" MÁR NEM igaz — a
+        Színinvertálás futásidőben előlép (ld. `TestSzininvertalasJelveny`),
+        és az EREDETIBEN is jelvényes. A többi csempére az állítás áll."""
         gyoker = _render(qt_app, 3, chain={"lomo": 1, "holga": 2})
 
         for nev in ("effectLomoBadge", "effectHolgaBadge"):
             assert not _child(gyoker, nev).isVisible(), (
                 f"a(z) {nev} jelvényt kapott, pedig a szűrője nem oneclick"
+            )
+
+
+class TestSzininvertalasJelveny:
+    """#2800 — a Színinvertálás csempéjén VAN kék jelvény.
+
+    Az eredeti leíró-elemző a `</filter>`-nél előlépteti azt az `effect`
+    módú szűrőt, ami egyetlen vezérlőt sem hagyott hátra
+    (`0x00900183`–`0x009001a9`); a szállított leíróban pontosan egy ilyen
+    van, az `Invert`. A tulajdonos felvételén a jelvény képpontra kimérve ott
+    van (13 × 12 px, a bélyegkép jobb alsó sarkában).
+
+    A csempe a 4. effekt-fülön ül (`EditorEffectsTab2`, `activeTab === 3`).
+    """
+
+    #: a fül TÖBBI csempéje — ezeken NEM lehet jelvény
+    TOBBI = (
+        "effectIr", "effectLomo", "effectHolga", "effectHdr",
+        "effectCinemascope", "effectOrton", "effectSixties", "effectHeatMap",
+        "effectCrossProcess", "effectQuantizePalette", "effectTwoTone",
+    )
+
+    def test_a_csempen_URES_lancon_is_LATSZIK_a_jelveny(self, qt_app) -> None:
+        gyoker = _render(qt_app, 3, chain={})
+
+        assert _child(gyoker, "effectInvertBadge").isVisible(), (
+            "a Színinvertálás csempéjén nincs jelvény — az előléptetés "
+            "(`effect` + nulla vezérlő ⇒ `oneclick`) nem érvényesül (#2800)"
+        )
+
+    def test_a_jelvenyen_ALLANDO_1_all(self, qt_app) -> None:
+        gyoker = _render(qt_app, 3, chain={"invert": 3})
+
+        assert _child(gyoker, "effectInvertBadgeText").property("text") == "1"
+
+    def test_a_jelveny_merete_a_mert_ertek(self, qt_app) -> None:
+        """13 × 12 px — ugyanaz a mérés, mint a Szépiánál (spec 3.3)."""
+        gyoker = _render(qt_app, 3, chain={})
+
+        jelveny = _child(gyoker, "effectInvertBadge")
+
+        assert (jelveny.width(), jelveny.height()) == (13.0, 12.0)
+
+    def test_a_SZOMSZEDOK_nem_kaptak_jelvenyt(self, qt_app) -> None:
+        """Regresszió a fül másik tizenegy csempéjére — az előléptetés SZŰK.
+        A `cinemascope` a legszűkebb határeset: csúszkája neki sincs, de
+        méretez és teljes felbontást kér."""
+        gyoker = _render(qt_app, 3, chain={"cinemascope": 1, "orton": 2})
+
+        for nev in self.TOBBI:
+            assert not _child(gyoker, f"{nev}Badge").isVisible(), (
+                f"a(z) {nev} jelvényt kapott — az előléptetés túl bő (#2800)"
             )
 
 
