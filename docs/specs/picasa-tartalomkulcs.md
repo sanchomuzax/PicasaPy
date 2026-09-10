@@ -394,9 +394,15 @@ ugyanúgy „eltűntnek" látszik, mint egy véglegesen törölt mappa, és ezt 
 adatot nem tudnánk visszaállítani. Ha a mappa visszatér, az öröklés helyes
 marad; ha nem tér vissza, a bent maradt sorok tétlenek.
 
-**Ami NYITOTT marad:** ha az eltűnt fájl helyére a KÖVETKEZŐ szinkron előtt új
+⚠️ **ELAVULT JELÖLÉS (#2825).**
+~~**Ami NYITOTT marad:** ha az eltűnt fájl helyére a KÖVETKEZŐ szinkron előtt új
 fájl kerül ugyanazzal a névvel, a régi sor megmarad — a tábla ma nem tárol se
-méretet, se mtime-ot, amiből a csere látszana. Külön jegy: **#2099**.
+méretet, se mtime-ot, amiből a csere látszana. Külön jegy: **#2099**.~~
+
+⚠️ **ELAVULT JELÖLÉS (2026-09-10, #2825):** a #2099 **megvalósult** (#2298,
+v0.8.274): az `origin_keys` tábla két nullázható horgony-oszlopot kapott —
+`anchor_size` és `anchor_mtime_ns` (`index/origin.py`) —, tehát a névre kerülő
+ÚJ fájl a horgonyból látszik. A bekezdés szövege történeti okból marad.
 
 ---
 
@@ -527,7 +533,15 @@ olvasás elég, írni nem írunk PMP-t.
 
 ## Az `originhash` ÍRÁSI LÁNCA — a kiíró NEM hashel (2026-09-08, #2675)
 
-*206. kutatói kör.* A #2675 (és a lap „⛔ Ami NYITVA marad" szakasza) azt
+*206. kutatói kör.* ⚠️ **A jelölés ELAVULT (2026-09-10, #2825):** az itt
+feltett kérdésre a **231. kör (#2790, 2026-09-09)** megadta a választ — az
+`originhash` a fájl **ELSŐ MEGISMERÉSKORI** bájtjait rögzíti, és a mentés nem
+frissíti (ld. a lap utolsó, „⭐⭐ LEZÁRVA" szakaszát, valamint a 160. sor
+összefoglaló táblasorát). Az alábbi levezetés a válasz ELSŐ fele, nem nyitott
+kérdés.
+
+⚠️ **ELAVULT JELÖLÉS (#2825).**
+A #2675 (és a lap „⛔ Ami NYITVA marad" szakasza) azt
 kérdezi: **melyik fájl bájtjait rögzíti az `originhash` a mentés
 pillanatában** — a most kiírt szerkesztett képét, vagy a szerkesztés
 előtti eredetiét? A kör ezt a kérdést **átfogalmazza**, mert a

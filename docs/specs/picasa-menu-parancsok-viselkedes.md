@@ -5247,7 +5247,14 @@ kizárva):
 | `+0x3e0` | 1 | `0x00850405` | ÍRÓ — indulás |
 | `+0x3e0` | 2 | `0x00851ba7` | ÍRÓ — a kapcsoló |
 
-⚠️ **NYITOTT, és nevén nevezve:** a `+0x3e0` mezőnek **egyetlen bájt-szintű
+⚠️ **ELAVULT JELÖLÉS (2026-09-10, #2825):** a #2524 **lezárva** — a mező
+gazdája a **`CEmailAutoComplete`** (a `ComposeDialog+0x26c`-en, RTTI-vtábla
+`0x00cc2f90`), tehát `ComposeDialog+0x3e0` = **`CEmailAutoComplete+0x174`**;
+a teljes levezetés a lap **24. adagjában** áll (PR #2527). A pásztázás alábbi
+negatív eredménye érvényes marad — épp azt magyarázza meg, miért kellett az
+RTTI-út. A bekezdés szövege történeti okból marad.
+
+⚠️ ~~**NYITOTT, és nevén nevezve:**~~ a `+0x3e0` mezőnek **egyetlen bájt-szintű
 olvasója sincs** ebben a pásztázásban — csak a két írója. Ez **nem** jelenti,
 hogy halott: a fordító a `bázis + tag` konstanst összevonhatja (ezt a
 `facerect`-körben már mértük), ezért az olvasó egy másik bázisregiszterrel,

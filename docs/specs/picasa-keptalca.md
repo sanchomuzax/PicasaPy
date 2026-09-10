@@ -216,7 +216,12 @@ megépíteni.**
 
 ---
 
-## 10. Ami NYITVA marad (örökölt, a #455-ből)
+## 10. ~~Ami NYITVA marad (örökölt, a #455-ből)~~ — ELAVULT SZAKASZCÍM
+
+⚠️ **ELAVULT JELÖLÉS (2026-09-10, #2825):** a szakasz mindhárom tétele
+**LEZÁRVA** (2026-08-24, ld. a 12–14. szakaszt), és a gazdajegy (#455) is
+zárt — a szakaszban ma **nincs nyitott kérdés**. A tételek szövege
+történeti okból marad.
 
 1. ~~A „Hold Selection" és az „Add to Picture Tray" viszonya.~~ —
    ✅ **LEZÁRVA 2026-08-24, ld. 12.**

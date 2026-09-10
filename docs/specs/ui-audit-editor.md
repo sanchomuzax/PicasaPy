@@ -334,9 +334,15 @@ a #704-ben a mért értékekre állítva). A 276-ra bővült tartalom-oszlop mia
 a fülek margója igazodott (bal 5, jobb 9), hogy a rács továbbra is **88
 képpontos osztásközzel** álljon.
 
-> ⚠️ **A 15. sor NYITVA marad.** A felső sáv elrejtése a `Main.qml`-t
+> ⚠️ ~~**A 15. sor NYITVA marad.** A felső sáv elrejtése a `Main.qml`-t
 > érinti, ami a #741 munkájából ki volt zárva — külön körben kell
-> elvégezni.
+> elvégezni.~~
+>
+> ✅ **ELAVULT JELÖLÉS (2026-09-10, #2825): a 15. sor KÉSZ.** A `Main.qml`
+> fejlécének kötése ma `visible: !window.viewerOpen &&
+> window.libraryFrameVisible` — a `MainToolbar` tehát a nézőben és a
+> szerkesztőben sem látszik (a #1026 óta a könyvtár-panellel együtt tűnik
+> el), és a „Vissza a könyvtárhoz" a `PhotoViewer.qml`-ben áll.
 
 #### A gomb HELYE és a gomb RAJZA nem ugyanaz — 132 × 28 kontra 130 × 26
 
