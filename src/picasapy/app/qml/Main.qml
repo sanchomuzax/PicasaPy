@@ -927,6 +927,18 @@ ApplicationWindow {
             window.selectedPaths())
         onCutFilesRequested: fileOpsController.cutFilesToClipboard(
             window.selectedPaths())
+        //: #1526: a Beillesztés célmappája a KIVÁLASZTOTT mappa. Ha a
+        //: vágólap közben kiürült (más program írta át), a művelet nem
+        //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
+        clipboardHasFiles: fileOpsController
+                           ? fileOpsController.clipboardHasFiles : false
+        onPasteFilesRequested: {
+            if (!fileOpsController.pasteFilesFromClipboard(
+                    controller.currentFolder)) {
+                errorBanner.notice = true
+                errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
+            }
+        }
         // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
         // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
         // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.

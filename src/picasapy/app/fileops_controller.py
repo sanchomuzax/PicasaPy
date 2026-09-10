@@ -12,7 +12,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
 from PySide6.QtCore import QByteArray, QMimeData
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
@@ -50,6 +50,40 @@ from .formatting import to_local_path
 _OPERATION_ERRORS = (ValueError, OSError, IniSaveError, IniConflictError)
 
 
+#: A linuxos fájlkezelők vágólap-formátuma: az ELSŐ sora `copy` vagy `cut`.
+_GNOME_VAGOLAP_FORMATUM = "x-special/gnome-copied-files"
+
+
+def vagolap_fajlok(adat) -> tuple[list[str], str]:
+    """A vágólap tartalmából a fájlok és a művelet (`copy`/`cut`) (#1526).
+
+    A művelet forrása az `x-special/gnome-copied-files` ELSŐ sora — ez a
+    linuxos fájlkezelők konvenciója, és a windowsos `Preferred DropEffect`
+    párja (a mérés szerint a Picasa ugyanazt az adatot teszi fel másoláskor
+    és kivágáskor, csak ez a formátum különbözteti meg őket).
+
+    Ha a jelzés hiányzik, a művelet **`copy`** — a másolás a biztonságos
+    alapértelmezés: egy félreértett `cut` a felhasználó tudta nélkül
+    MOZGATNÁ a fájlt.
+
+    Csak a helyi (`file://`) útvonalak jönnek vissza: távoli URL-t nem tudunk
+    beilleszteni.
+    """
+    if adat is None or not adat.hasUrls():
+        return ([], "copy")
+    fajlok = [url.toLocalFile() for url in adat.urls() if url.isLocalFile()]
+    muvelet = "copy"
+    if adat.hasFormat(_GNOME_VAGOLAP_FORMATUM):
+        sorok = (
+            bytes(adat.data(_GNOME_VAGOLAP_FORMATUM))
+            .decode("utf-8", "replace")
+            .splitlines()
+        )
+        if sorok and sorok[0].strip() == "cut":
+            muvelet = "cut"
+    return (fajlok, muvelet)
+
+
 class FileOpsController(QObject):
     """A QML fájlművelet-kontextusmenüjéhez tervezett híd."""
 
@@ -60,6 +94,9 @@ class FileOpsController(QObject):
     # érintetlen marad, tehát a forrásmappa újraolvasása fölösleges munka.
     photoCopied = Signal(str, str)
     photoDeleted = Signal(str)  # (törölt_út)
+    #: #1526: a vágólap fájl-tartalma változott — ettől él/szürkül a
+    #: Beillesztés menütétel. A Qt vágólapjának `dataChanged`-jére kötjük.
+    clipboardFilesChanged = Signal()
     operationFailed = Signal(str, str)  # (művelet, hibaüzenet)
     # (művelet, kész, kihagyott, hibás, első_hiba_oka) — a köteg EGYETLEN
     # összegzése (#457/2). #1430: az OK is kimegy, nem csak a darabszám. A
@@ -417,7 +454,7 @@ class FileOpsController(QObject):
             adat.setUrls(urlek)
             sorok = [muvelet, *(u.toString() for u in urlek)]
             adat.setData(
-                "x-special/gnome-copied-files",
+                _GNOME_VAGOLAP_FORMATUM,
                 QByteArray("\n".join(sorok).encode("utf-8")),
             )
             return adat
@@ -456,6 +493,52 @@ class FileOpsController(QObject):
     def cutFilesToClipboard(self, paths) -> None:  # noqa: N802
         """Ugyanaz, de MOZGATÁSKÉNT — a `Preferred DropEffect` párja."""
         self._tegyd_a_vagolapra(paths, "cut")
+
+    # -- Beillesztés: a fájl-vágólap MÁSIK fele (#1526) -----------------------
+
+    def _vagolap_adata(self):
+        """A vágólap tartalma — a próbák EZT a metódust térítik el.
+
+        Fej nélküli környezetben (`offscreen`/`minimal`) `None`: ott nincs
+        vágólap-tulajdonos, és a Qt-hívás a CI-n SZEGMENSHIBÁVAL állította
+        meg a tesztfájlt (ld. a `_tegyd_a_vagolapra` figyelmeztetését)."""
+        if QGuiApplication.platformName() in ("offscreen", "minimal"):
+            return None
+        vagolap = QGuiApplication.clipboard()
+        return None if vagolap is None else vagolap.mimeData()
+
+    @Property(bool, notify=clipboardFilesChanged)
+    def clipboardHasFiles(self) -> bool:
+        """Van-e FÁJL a vágólapon — ettől él a Beillesztés menütétel.
+
+        Szándékosan nem gyorstárazzuk: a vágólapot más program is átírhatja,
+        és a menü megnyitásakor a FRISS állapot kell."""
+        return bool(vagolap_fajlok(self._vagolap_adata())[0])
+
+    @Slot(str, result=bool)
+    def pasteFilesFromClipboard(self, dest_folder: str) -> bool:  # noqa: N802
+        """A vágólapon lévő fájlok beillesztése a megadott mappába (#1526).
+
+        A `cut` jelzésű tartalom ÁTHELYEZ, a `copy` MÁSOL. A meglévő
+        köteg-utakat hívja (`copyPhotos`/`movePhotos`), tehát az
+        ütközéskezelés, a haladásjelzés és az összegző jelzés ugyanaz, mint a
+        fogd-és-vidd műveleteknél — nem külön ág, amit külön kellene őrizni.
+
+        Visszatérés: elindult-e művelet. Üres vágólapra `False`, és a hívó
+        ebből tud üzenetet adni — nem néma hatástalanság."""
+        fajlok, muvelet = vagolap_fajlok(self._vagolap_adata())
+        if not fajlok or not dest_folder:
+            return False
+        # ⚠️ `rename`, nem `skip` és nem felülírás: ütközésnél a beillesztés
+        # ÚJ nevet ad, tehát semmi nem vész el. Az eredeti ilyenkor
+        # párbeszédet nyit (ugyanazt a rename/skip kérdést, mint az
+        # áthelyezésnél); a párbeszéd bekötése önálló lépés, de a
+        # felülírás-mentesség nem várhat rá.
+        if muvelet == "cut":
+            self.movePhotos(fajlok, dest_folder, "rename")
+        else:
+            self.copyPhotos(fajlok, dest_folder, "rename")
+        return True
 
     @Slot(str, result=bool)
     def hasOriginalOnDisk(self, path: str) -> bool:  # noqa: N802
