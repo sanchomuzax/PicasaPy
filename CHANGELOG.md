@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.371] – 2026-09-10
+
+### Hozzáadva
+
+- **Jobbklikk-menü a keresőmezőn** (#1526). A keresőmezőben mostantól jobb
+  gombbal is elérhető a Visszavonás, Kivágás, Másolás, Beillesztés, Törlés
+  és Az összes kijelölése — eddig csak billentyűvel lehetett beilleszteni
+  ide. A menü ugyanaz, ami a program többi szövegmezőjén már működött.
+
 ## [0.8.370] – 2026-09-10
 
 ### Hozzáadva
