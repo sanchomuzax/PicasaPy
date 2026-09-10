@@ -30,7 +30,12 @@ _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 
 #: A ma megjelölt saját parancsaink. A teljes leltár a jegy szerint
 #: hatókörön kívül — de ami MEG VAN jelölve, arra az őr érvényes.
-SAJAT_TETELEK = ("menuHelpTesztuzem", "menuHelpSendLog")
+SAJAT_TETELEK = (
+    "menuHelpTesztuzem",
+    "menuHelpSendLog",
+    # #1398: a duplikátum-KEZELŐ párbeszéd (#287) — az eredetiben nincs
+    "menuToolsDedupManager",
+)
 
 #: Eredeti Picasa-parancsok — ezeken NEM lehet jelölés.
 EREDETI_TETELEK = ("menuFileSave", "menuFileExit", "menuToolsDedup")

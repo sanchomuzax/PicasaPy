@@ -21,7 +21,9 @@ from PySide6.QtCore import QMetaObject, QObject, Qt
 #: párbeszéd `objectName` → az őt megnyitó menüpont `objectName`-je
 MENUPONT = {
     "folderManagerDialog": "menuFileAddFolder",
-    "dedupDialog": "menuToolsDedup",
+    # #1398: a mért „Show Duplicate Files" parancs a keresési MÓDOT
+    # kapcsolja; a kezelő-párbeszédet a saját menüpontunk nyitja
+    "dedupDialog": "menuToolsDedupManager",
     "importSourceDialog": "menuFileImportFrom",
     "saveDialogs": "menuFileSave",
     "exportDialog": "menuFileExport",

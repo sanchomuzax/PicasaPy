@@ -153,8 +153,13 @@ MenuBar {
     // (`docs/specs/ui-audit-menus.md`). A másodpéldány-kereséshez az eredeti
     // az importáláskori ellenőrzést és a keresési módot adta (#1398) — ez a
     // párbeszéd a mi hozzáadásunk.
-    // #287: Duplikátum-kereső ablak megnyitása
+    // #287: Duplikátum-kereső ablak megnyitása (a SAJÁT kezelő-párbeszéd;
+    // #1398 óta nem a menüből, hanem a másodpéldány-mód eredménysávjáról)
     signal dedupRequested()
+    //: #1398: a MÉRT parancs (`eMenuTools::ID_DUPES`) — keresési MÓDBA vált
+    //: (`dupesearch`), párbeszédet NEM nyit. A kezelő-párbeszédhez a módból
+    //: vezet tovább út.
+    signal duplicateSearchRequested()
     // #1473: Arckeresés — az `Eszközök` menü tétele. Az eredetiben ez nem
     // menüpont volt, hanem alapból bekapcsolt háttérszál
     // (`BgFaceDetectThread`, ld. docs/specs/picasa-arcfelismeres.md 1.1);
@@ -1738,9 +1743,25 @@ MenuBar {
             // MÁSODIK tétele (`eMenuTools::ID_DUPES`, „Show Duplicate
             // Files"), nem a felső szinté. A #1794 mérte ki az Eszközök
             // menü teljes szerkezetét.
+            //
+            // #1398: MÉRVE, hogy ez a parancs NEM párbeszédet nyit: a
+            // keresési sáv rejtett `dupesearch` jelzőjét kapcsolja be,
+            // tehát szűrt nézetbe visz. A mi kezelő-párbeszédünk (#287)
+            // ezért innen elköltözött a mód eredménysávjára.
             MenuItem {
                 objectName: "menuToolsDedup"
                 text: qsTr("Show Duplicate Files")
+                onTriggered: bar.duplicateSearchRequested()
+            }
+            // SAJÁT FUNKCIÓ (#287): a duplikátum-KEZELŐ párbeszéd — az
+            // eredetiben nincs ilyen, ezért a #1701 szerinti jelölést kapja
+            // (kék felirat + buboréksúgó), és NEM a mért parancson ül: a
+            // fenti tétel a keresési módot kapcsolja, ez a kezelőt nyitja.
+            PicasaMenuItem {
+                objectName: "menuToolsDedupManager"
+                placeholder: false
+                sajat: true
+                text: qsTr("Manage Duplicates...")
                 onTriggered: bar.dedupRequested()
             }
             //: #1399: a hat szín-keresés almenüje — az eredetiben a KÍSÉRLETI

@@ -104,9 +104,15 @@ class TestMenuEntryPoint:
         assert item.property("enabled") is True
 
     def test_triggering_menu_item_opens_the_dialog(self, qml_app, qt_app):
+        """#1398: a KEZELŐ párbeszédet a saját menüpontunk nyitja.
+
+        A mért „Show Duplicate Files" (`menuToolsDedup`) ezóta keresési
+        MÓDOT kapcsol, nem párbeszédet nyit — a mi kezelőnk (#287) az
+        eredetiben nem létező parancs, ezért saját, #1701 szerint
+        megjelölt tétel."""
         window, _controller, _lib, engine = qml_app
-        item = window.findChild(QObject, "menuToolsDedup")
-        assert item is not None, "menuToolsDedup nem található"
+        item = window.findChild(QObject, "menuToolsDedupManager")
+        assert item is not None, "menuToolsDedupManager nem található"
         # #1720: a párbeszéd HALASZTOTT — induláskor LÉTRE SEM JÖN.
         assert window.findChild(QObject, "dedupDialog") is None, (
             "a Duplikátum-kereső már a menüpont előtt felépült — a #1720 "
