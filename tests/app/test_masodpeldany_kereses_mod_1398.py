@@ -16,6 +16,7 @@ import picasapy.app
 import pytest
 from PySide6.QtCore import QSettings
 
+from picasapy.dedup.fastkey import FEJ_MERET
 from support.jpeg_factory import make_jpeg
 from tests.support.py_blokk import fuggveny_torzs
 
@@ -91,6 +92,48 @@ class TestATalalatok:
         """Ismert negatív: enélkül a „minden kép találat" is átmenne."""
         nevek = {r.name for r in controller._duplicate_records()}
         assert "mas.jpg" not in nevek
+
+    def test_a_kulcs_a_MERT_originfast_nem_a_teljes_tartalom(
+        self, qt_app, tmp_path
+    ):
+        """MÉRVE (`picasa-kereses-modok.md` 6.): a döntés az `originfast`
+        (fej+farok MD5, #1481), nem a teljes fájl tartalma. Ez a két
+        szemantika itt válik el: a másolat KÖZEPÉN átírt bájt a tartalom-
+        hasht megváltoztatja, az `originfast`-ot nem."""
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.index import open_index, sync_tree
+        from picasapy.thumbs import ThumbnailCache
+
+        root = tmp_path / "kozep"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(120, 90))
+        # a fej és a farok 16 834–16 834 bájt (`fastkey.FEJ_MERET`), tehát a
+        # „közép" csak ennél nagyobb fájlban létezik — a JPEG végjele UTÁNI
+        # kitöltés a képet nem rontja el, a méretet viszont megadja
+        alap = (root / "a.jpg").read_bytes() + bytes(40_000)
+        (root / "a.jpg").write_bytes(alap)
+        bajtok = bytearray(alap)
+        kozep = len(bajtok) // 2
+        assert FEJ_MERET < kozep < len(bajtok) - FEJ_MERET
+        bajtok[kozep] ^= 0xFF
+        (root / "b.jpg").write_bytes(bytes(bajtok))
+        with open_index(tmp_path / "fk.db") as conn:
+            sync_tree(conn, root)
+        ctl = AppController(
+            tmp_path / "fk.db",
+            (str(root),),
+            ThumbnailProvider(ThumbnailCache(tmp_path / "th2", size=32)),
+            settings=QSettings(
+                str(tmp_path / "s2.ini"), QSettings.Format.IniFormat
+            ),
+            watched_file=tmp_path / "W2.txt",
+        )
+        try:
+            nevek = {r.name for r in ctl._duplicate_records()}
+            assert nevek == {"a.jpg", "b.jpg"}
+        finally:
+            assert ctl.waitForBackgroundWorkers(30.0)
 
     def test_masodpeldany_nelkul_URES(self, qt_app, tmp_path):
         from picasapy.app.controller import AppController

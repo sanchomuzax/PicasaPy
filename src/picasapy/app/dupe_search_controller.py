@@ -14,17 +14,22 @@ kizárólag a menüpont kapcsolja.
 
 ## Mit tekintünk másodpéldánynak
 
-**Bitre azonos fájlokat** (`dedup/exact.py`), a Picasa fej+farok
-gyorskulcsával előszűrve (#1481) és az index gyorstárából kiszolgálva
-(#1494). A perceptuálisan HASONLÓ képek szándékosan kimaradnak: az
-eredetiben a hasonlóság-keresés öt eleme ki van kommentezve, tehát nem
-létezik — nálunk külön funkció (`similarity_controller.py`, #1833),
-saját belépési ponttal.
+**A Picasa saját `originfast` kulcsát** (fej+farok MD5, 64 bit — #1481). Ez
+MÉRT döntés, nem a mi választásunk: a `iCAcquireDupeCheckJob`
+(`0x00513730`) a fájl `originfast`-ját számolja ki (`FUN_00a4d210`), és ezt
+a 64 bites értéket keresi a másodpéldány-listában (`FUN_00436980`) — a
+találat a dupe-jelölés (`docs/specs/picasa-kereses-modok.md`, 6. szakasz;
+Ghidra-C, megerősített). Tehát NEM a fájlnév, NEM a `backuphash`, és nem
+is a teljes tartalom-hash.
 
-⚠️ Amit a bináris NEM árult el: hogy a mód milyen kulcs alapján dönt
-(`iCAcquireDupeChecker` vtable-je nincs végigjárva, ld. a jegy „örökölt"
-nyitott kérdését). A tartalom-hash a MI döntésünk — a legszigorúbb
-értelmezés, tehát hamis találatot nem ad.
+A kulcsokat az index gyorstára szolgálja ki (#1494,
+`IndexFastKeySource`): a változatlan képek fájlvégeit a második keresés sem
+olvassa be újra, és a teljes fájlt egyszer sem olvassuk végig — a kulcs
+legfeljebb 33 672 bájtot lát fájlonként.
+
+A perceptuálisan HASONLÓ képek szándékosan kimaradnak: az eredetiben a
+hasonlóság-keresés öt eleme ki van kommentezve, tehát nem létezik — nálunk
+külön funkció (`similarity_controller.py`, #1833), saját belépési ponttal.
 """
 
 from __future__ import annotations
@@ -34,7 +39,6 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
-from picasapy.dedup.exact import group_exact_duplicates
 from picasapy.index import open_index
 from picasapy.index.fast_key_source import IndexFastKeySource
 
@@ -109,30 +113,44 @@ class DupeSearchMixin:
     def _duplicate_records(self):
         """A könyvtár azon fotó-rekordjai, amelyeknek van másodpéldánya.
 
-        A csoportok MINDEN tagja bekerül (az „eredeti" is): a felhasználó
-        épp azt akarja látni, mi kettőződött meg. A sorrend az indexé, hogy
-        a rács mappánkénti csoportosítása változatlan maradjon."""
+        A csoportosítás kulcsa a Picasa `originfast`-ja (ld. a modul
+        docstringjét). Egy kulcshoz tartozó MINDEN kép bekerül (az
+        „eredeti" is): a felhasználó épp azt akarja látni, mi kettőződött
+        meg. A sorrend az indexé, hogy a rács mappánkénti csoportosítása
+        változatlan maradjon."""
         from picasapy.index.queries import all_photos
 
         with open_index(self._db_path) as conn:
             rekordok = all_photos(conn)
-            utak = {
-                str(Path(rekord.folder_path) / rekord.name): rekord
+            azonossagok = {
+                str(Path(rekord.folder_path) / rekord.name): (
+                    str(Path(rekord.folder_path) / rekord.name),
+                    rekord.mtime_ns,
+                    rekord.size,
+                )
                 for rekord in rekordok
             }
-            kulcsforras = IndexFastKeySource(conn)
+            kulcsforras = IndexFastKeySource(conn, azonossagok)
+            kulcsok: dict[str, int] = {}
             try:
-                csoportok = group_exact_duplicates(
-                    [Path(ut) for ut in utak],
-                    fast_key_source=kulcsforras,
-                )
+                for ut in azonossagok:
+                    kulcs = kulcsforras(Path(ut))
+                    if kulcs is not None:
+                        kulcsok[ut] = kulcs
             finally:
                 # a `flush()` maga commitol és maga nyeli el a saját
                 # index-hibáit (#1494) — kész eredményt nem ronthat el
                 kulcsforras.flush()
-        parban = {str(ut) for csoport in csoportok for ut in csoport.paths}
+        darab: dict[int, int] = {}
+        for kulcs in kulcsok.values():
+            darab[kulcs] = darab.get(kulcs, 0) + 1
         return tuple(
-            rekord for ut, rekord in utak.items() if ut in parban
+            rekord
+            for rekord in rekordok
+            if darab.get(
+                kulcsok.get(str(Path(rekord.folder_path) / rekord.name), -1), 0
+            )
+            > 1
         )
 
     def _on_dupes_ready(self, records) -> None:
