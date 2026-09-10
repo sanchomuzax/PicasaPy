@@ -5964,3 +5964,164 @@ tartományt kell kinyitni.
 hozzáfűzés megvan és konstanst ír; a téma-kapu sztring-összehasonlítás)
 · **1 nyitott, gépi úton folytatható, előállított listával** (a 290
 sávon kívüli páros) · 0 „csak nyitva".*
+
+---
+
+## 59. K1 — a sávon kívül sincs író; és MEGVAN a HARMADIK út: a TAG-KARCOLÓ (2026-09-10, #1412)
+
+*269. kutatói kör. Az 58.5 hatókörét viszi (a sávon kívüli
+(`theta`,`scale`) párosok), és közben megtalálja azt a szerkezeti utat,
+amelyet egyik eddigi pásztázás sem fedett: a csomópont-mezők egy
+OBJEKTUM-TAGKÉNT élő karcoló-példányon át jutnak a tömbbe.*
+
+### 59.1 A sávon kívüli párosok — mind a kilenc azonosítva
+
+Pásztázás: (`theta`,`scale`) páros ugyanarra a bázisra, 120 bájtos
+ablakban, a teljes `.text`-en; utána a csomópont-tömb két ujjlenyomata
+±200 bájton belül.
+
+| mérőszám | érték |
+|---|---:|
+| páros összesen | **337** |
+| kollázs-sávban | **37** |
+| sávon **kívül** | **300** |
+| ebből `[reg+0x48]`-olvasás a közelben | 145 |
+| ebből **56 bájtos lépésköz** a közelben | **9** |
+
+⚠️ **A `[reg+0x48]` ujjlenyomat NEM megkülönböztető** — 145 találat, mert
+bármely osztálynak lehet `+0x48` tagja. Ezt a szűrőt a kör **elveti**;
+az érdemi szűrő a **lépésköz**.
+
+*(A 267. kör 329/39-et számolt; ott a páros feltétele „20 utasításnyi
+ablak" volt, itt „120 bájt" — ezért a kis eltérés. A kontroll mindkét
+futásban lefutott.)*
+
+**Pozitív kontroll a szűrőre:** a `0x00834686` (az 55. kör szorzója)
+környékén mindkét ujjlenyomat megvan — **True/True**.
+
+**A kilenc, tételesen elolvasva:**
+
+| cím | mi ez |
+|---|---|
+| `0x00562843` | `Readme` **ktor** (`vftable 0x00c9088c`) |
+| `0x0078d78d` | `FocusContactParser` **ktor** (`vftable 0x00cb4d38`) |
+| `0x007a7808` | `CollaborativeParser` **ktor** (`vftable 0x00cb6140`) |
+| `0x0049368f` | `ytDictionary<ytBase>` **ktor** (`vftable 0x00c81f64`) |
+| `0x00605cad` | `MultiNodeHandler` **ktor** (`vftable 0x00c9ad04`) |
+| `0x004ae6c1` | `FUN_004ae600` — mezőnkénti **másoló** (`[esi+X]`→`[ebx+X]`) |
+| `0x0059978b` | `FUN_00599750` — ugyanaz a **másoló**-idióma |
+| `0x00c11506`, `0x00c11563` | CRT-rutin (`0x00c114d0`) |
+
+⇒ **A sávon kívül sincs olyan hely, amely a kollázs-csomópont `+0x2c`-ébe
+számított értéket írna.**
+
+### 59.2 ⭐ A HARMADIK út: a TAG-KARCOLÓ — és a beolvasó ezt használja
+
+A `.cxf`-beolvasó (`FUN_00832830`) minden `<node>` előtt **visszaállít
+egy tag-mezőcsoportot**, majd abba parsol:
+
+```
+0x00832fa2  fldz                            ; 0,0
+0x00832fba  fstp dword ptr [ebx + 0x64]     ;  theta = 0,0
+0x00832fbd  fld1                            ; 1,0
+0x00832fc2  fstp dword ptr [ebx + 0x68]     ;  scale = 1,0   ← ALAPÉRTÉK
+…
+0x008332b2  call 0xc080d7                   ; _atof("500.000000")
+0x008332b7  fstp dword ptr [ebx + 0x68]     ;  scale = a FÁJL értéke
+```
+
+A mezőcsoport bázisa **`[parser+0x3c]`**: a `+0x28` (theta) így a
+`+0x64`, a `+0x2c` (scale) a `+0x68` — és a `+0x40`/`+0x44`/`+0x48`
+rekeszeken ott áll a **sztring-elengedés** idiómája (`lea edi,[ebx+0x40]`
+→ `call 0x401000`), ami a rekord eleji sztringmezőket hitelesíti.
+
+⛳ **Ezzel a 17.16/51.4 megállapítása értelmet kap:** az `atof` eredménye
+tényleg változatlanul kerül a `+0x68`-ba — mert az a **karcoló-példány
+`scale` mezője**, nem a parser valamilyen segédváltozója.
+
+### 59.3 ⛳ Amit ez a keresésre nézve KIMOND
+
+A csomópont-mezők eddig **kétféle** úton voltak keresve:
+a **tömbön** keresztül (55–57.) és **verem-példányon** keresztül (58.).
+Most kiderült, hogy van egy **harmadik**: az **objektum TAGJAKÉNT** élő
+karcoló-példány, amelyet később az értékadó operátor visz a tömbbe.
+
+⚠️ Ezt **egyik eddigi pásztázás sem fedte**: a tömbösök `[reg+0x48]`
+előzményt vagy 56-os lépésközt követeltek, a verem-alapúak `esp`-bázist.
+Egy `[objektum+0x68]` alakú írásnak **egyik ujjlenyomata sincs meg**.
+
+### 59.4 ⭐ Az ALAPÉRTÉK-PÁR pásztázás LEFUTOTT — és egyetlen helyet ad
+
+A minta nem eltolásra épül, hanem a **hitelesített alapérték-párra**:
+
+```
+fldz  →  fst/fstp [<reg> + N]       ; theta = 0,0
+fld1  →  fst/fstp [<reg> + N+4]     ; scale = 1,0
+```
+
+⚠️ **Az első futás egyik kontrollja MEGBUKOTT** (`0x00832fc2`, a
+beolvasó): a szűrő minden `fst`-nél törölte a „most `fldz` van a
+tetején" jelzőt — holott az `fst` **nem vesz le** az FPU-veremről, csak
+az `fstp`. A beolvasó épp három `fst` után `fstp`-vel zárja a nullát.
+Javítva; a végleges futásban **mindkét kontroll lefut**.
+
+| szűrő | találat |
+|---|---:|
+| alapérték-pár a teljes `.text`-en | **574** |
+| ebből 400 bájton belül `call 0x8341b0` (az értékadó operátor) | **1** |
+
+```
+alapertek-par: 574  |  ebbol 400 bajton belul `call 0x8341b0`: 1
+KONTROLL 0x0087e22f: True
+  0x0087e225 [esp+0x50]=0,0  →  0x0087e22f [esp+0x54]=1,0
+```
+
+⇒ **Az egyetlen ilyen hely az 58.1 hozzáfűzése.** Létrehozó oldali
+tag-karcoló, amelyet az értékadó operátor visz a tömbbe, **NINCS**.
+
+### 59.5 ⛳ A KÖVETKEZTETÉS — az EGYETLEN nem-konstans forrás a FÁJL
+
+Az 55–59. kör együtt, mindegyik lépés kimondott kontrollal:
+
+| ki írja a csomópont `+0x2c`-jét | mit ír |
+|---|---|
+| hozzáfűzés (58.1) | konstans `1,0` / `0,0` |
+| elrendezők (56.4) | konstans `1,0` (`fld1`) |
+| másolók (57.1, 59.1) | változatlan másolat |
+| `picturepile`-szorzó (55.2) | **számítás**, témára kapuzva |
+| **`.cxf`-beolvasó (59.2)** | **`_atof` — a FÁJL értéke, változatlanul** |
+
+⇒ **A `picturepile`-ágon kívül az EGYETLEN mód, ahogy egy csomópont
+`scale`-je nem-konstans értéket kap, az, hogy a `.cxf`-ből olvassák be.**
+
+Ez a 18. szakasz **(1)-es ágát** — „a `scale` egy korábbi mentésből
+öröklődik" — visszahozza. A 18. szakasz azért vetette el, mert a
+tulajdonos a mintákat frissen létrehozottként adta meg; **gépi
+bizonyíték az elvetésre nem volt**, és most a gépi bizonyíték az
+ellenkező irányba mutat.
+
+⚠️ **Ez NEM állítás a mintákról.** Két magyarázat maradt, és a kettő
+között gépi úton kell dönteni:
+
+1. a `contactsheet` `scale` értéke **beolvasásból** származik (sablon,
+   korábbi mentés, vagy a Picasa saját kollázs-tárából visszatöltött
+   dokumentum);
+2. van egy írási út, amely **mind az öt** eddigi minta-családon kívül
+   esik (tömb-indexelt, mutatós, verem, tag-karcoló, blokk-másolás).
+
+### 59.6 A KÖVETKEZŐ lépés, megnevezve
+
+1. **A beolvasó hívóláncát végig kell járni**: honnan kap `.cxf`-et egy
+   ÚJ kollázs. Horgony: a `FUN_0087ed80` (`CCollageManager::SavedCollages`,
+   `Collage Files`, `*.cxf`) és az autosave-ág (`FUN_008419e0`,
+   `collage::autosave`, `Recovered Autosave`) — ha az „új kollázs" a
+   Picasa saját tárából tölt vissza egy dokumentumot, az (1) ág igazolt.
+2. **Ellenőrző készlet**: a `1412-kollazs-cxf` négy témája + AI6/AI27/
+   AI28/AI29 — ha az (1) ág áll, a `scale` értékek egy KORÁBBI fájlban
+   is meg kell hogy legyenek.
+3. Örökölt: a csonkolás helye (55.6/1).
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **3 lezárva** (a sávon
+kívül sincs író; a `[reg+0x48]` ujjlenyomat nem használható; létrehozó
+oldali tag-karcoló nincs) · **1 nyitott, gépi úton folytatható,
+megnevezett horgonnyal** (a beolvasó hívólánca) · 0 „csak nyitva".*
