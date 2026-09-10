@@ -26,6 +26,19 @@ trunc(napok/30) ≤ 12 vagy trunc(napok/365) == 0 → „… hónapos képek.”
 különben                   → „… éves képek.”
 ```
 
+## Miért a `tests/` alatt van, és nem a `tests/app/` alatt
+
+Ez tiszta képlet- és lekérdezés-próba: nincs benne Qt, nincs ablak, nincs
+vezérlő. A `tests/app/` alatt viszont fut egy őr, ami a felhasználó VALÓDI
+képmappáját figyeli (#1054) — és a főág windows-lábán ez a fájl ott elbukott
+egy windowsos `…/Pictures/Picasa/Collages/autosave.cxf`-re,
+amit NEM ez a fájl írt (mind a 19 próbája átment; a bukás a teardownban
+volt). A gyanú egy előző fájlból ottmaradt folyamat; az őr a keletkezést
+ahhoz a teszthez rendeli, amelyik épp fut.
+
+Ettől függetlenül a helye itt van: ami nem indít alkalmazást, annak nem kell
+az app-harness környezete. A jelenséget külön jegy nézi meg.
+
 ## Mit mér ez a fájl
 
 A képletet a mért `s → napok` párokon, a feliratot a HATÁROKON (29/30 nap,
