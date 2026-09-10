@@ -38,12 +38,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import QStandardPaths
 
 from picasapy.app.collage_output import DEFAULT_OUTPUT_SUBPATH, output_dir
 
 
 class TestAGyoker:
+    @pytest.mark.valodi_kepmappa
     def test_a_rendszer_kepmappajabol_indul(self):
         """⚠️ Ez a jegy: a `Path.home() / "Pictures"` nem követi sem az
         átirányítást, sem a honosított mappanevet."""
