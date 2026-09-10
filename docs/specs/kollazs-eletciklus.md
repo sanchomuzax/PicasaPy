@@ -6125,3 +6125,105 @@ között gépi úton kell dönteni:
 kívül sincs író; a `[reg+0x48]` ujjlenyomat nem használható; létrehozó
 oldali tag-karcoló nincs) · **1 nyitott, gépi úton folytatható,
 megnevezett horgonnyal** (a beolvasó hívólánca) · 0 „csak nyitva".*
+
+---
+
+## 60. K1 — a témák OSZTÁLYOK, a beolvasó VIRTUÁLIS, és a `FUN_00834520` a BETÖLTŐ (2026-09-10, #1412)
+
+*270. kutatói kör. Az 59.6 a beolvasó hívóláncát nevezte meg. A lánc
+első lépése azonnal két strukturális levelet adott, amelyet öt kör
+címtartomány-alapú pásztázása elvi okból nem találhatott meg.*
+
+### 60.1 A beolvasónak NINCS közvetlen hívója — virtuális
+
+`call 0x832830` a teljes `.text`-en: **0 hely** (`paszta.py`, és az
+`xrefs` index is nulla). A cím viszont **adatként** ott áll:
+
+```
+0x00cbf890  → 0x00832830
+```
+
+és a `0x00cbf878` az **`CCollageParser::vftable`** ⇒ a `.cxf`-beolvasó a
+`CCollageParser` **6. vtábla-rekesze**.
+
+⛳ Ez visszamenőleg megmagyarázza, miért nem adott hívóláncot semmi: az
+`xrefs` index a vtábla-hívást nem látja (ez a projektben többször
+rögzített korlát), és a `call`-mintás pásztázás sem.
+
+### 60.2 ⭐ A HAT TÉMA C++ OSZTÁLY, 12 rekeszes vtáblával
+
+| osztály | vtábla |
+|---|---|
+| `CPileTheme` | `0x00cbf5ac` |
+| `CGridTheme` | `0x00cbf5dc` |
+| `CRegularGridTheme` | `0x00cbf610` |
+| `CMultiExposureTheme` | `0x00cbf640` |
+| **`CContactSheetTheme`** | **`0x00cbf670`** |
+| `CFrameGridTheme` | `0x00cbf6a0` |
+
+Ez **új szűrő**: eddig minden pásztázás CÍMTARTOMÁNYRA szólt („a
+kollázs-sáv"), holott a viselkedés osztályhoz kötött.
+
+**Mind a 48 különböző metódus átnézve** (6 osztály × 12 rekesz,
+deduplikálva; pozitív kontroll: a `CPileTheme[0]` = `0x0087b4a0`, az
+értékadó operátor ismert hívója — **megvan**). `+0x2c`-írás négy
+metódusban van, mindegyik **más objektum** mezője (sztring/mutató,
+illetve nulla), csomópont-`scale` egyikben sem.
+
+### 60.3 ⭐⭐ A `FUN_00834520` a `.cxf` BETÖLTŐJE — és a szorzó VERZIÓ-KAPUS
+
+A `CCollageParser` konstruktora (`FUN_00832500`, a `0x00832524` /
+`0x00832574` vtábla-írásból) **egyetlen** helyről hívódik: a
+`FUN_00834520`-ból. A függvény feje:
+
+```
+0x00834541  call 0x832500     ; CCollageParser megépítése
+0x0083454c  call 0x8325e0     ; a feldolgozás lefuttatása
+0x0083457d  call _atol        ; egy beolvasott attribútum SZÁMMÁ
+0x00834585  cmp  eax, 1
+0x00834588  jne  0x8346a3     ; ← ha NEM 1, a szorzó-blokk KIMARAD
+0x008345b3  repe cmpsb        ; …és csak utána a 'picturepile' teszt
+0x00834683  …                 ; a szorzó ciklus (55.2)
+```
+
+⇒ **Az 55. kör szorzója egy BETÖLTÉS-KORI blokk**, amely két kaput
+követel: az `_atol`-lal olvasott szám **1**, és a téma `picturepile`.
+
+⚠️ **Erős, de nem bizonyított olvasat:** az `_atol`-lal olvasott
+attribútum a `.cxf` gyökerének `version`-je. Mellette szól, hogy a
+mintafájlok gyökere `<collage version="2" …>`, tehát a mai fájlokra a
+blokk **nem futna**; ellene semmi. A **bizonyítás módja**: a
+`FUN_008325e0` kimenő paraméterének (`[esp+0x48]`) visszavezetése az
+attribútumnévig — ez a következő kör első lépése.
+
+### 60.4 ⛔ Amit ez az 55.5-höz KIMOND
+
+Ha a szorzó tényleg `version="1"`-re szól, akkor a `03-finetune2.cxf`
+(`version="2"`) `scale` értékeit **nem ez a ciklus írta** — a 9/9-es
+egyezés akkor azt jelenti, hogy **ugyanazt a törvényt** használja a
+`picturepile` ELRENDEZŐJE is (a `w` és a `scale` a fájlban minden
+csomóponton azonos, `scale = w × 1024`), és a migráció ugyanezt a
+törvényt alkalmazza a régi alakra.
+
+⇒ **A KÉPLET áll** (`TRUNC(1024 × 0,33 × min(1/√(√k − 1), 1))`, 9/9
+mérve, minden konstans a binárisból), **de az 55.2-es cím nem
+feltétlenül az a hely, amely a mai fájlokba írja.** Ez a különbségtétel
+eddig hiányzott, és a `version`-olvasat igazolása dönti el.
+
+### 60.5 A KÖVETKEZŐ lépés, megnevezve
+
+1. **A `version` olvasat igazolása**: a `FUN_008325e0` kimenő
+   paraméterének visszavezetése az attribútumnévig (`0x00834555 mov eax,
+   [esp+0x48]`). Ez dönti el a 60.4-et.
+2. **A `CCollageParser` FUTTATÓJA**: ki hívja a `FUN_00834520`-at — a
+   négy hívó (`FUN_0062c680`, `FUN_0082a670`, `FUN_008419e0`,
+   `FUN_0087ed80`) sztringjei mind betöltés/autosave/kezelő
+   környékiek (55.5, 266.), tehát **új kollázs nem megy át rajta** —
+   ezt viszont utasításszinten is ki kell mondani.
+3. Örökölt: a csonkolás helye (55.6/1).
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a
+beolvasó virtuális, `CCollageParser` 6. rekesz; a hat téma osztályainak
+mind a 48 metódusa átnézve, csomópont-`scale`-írás nincs) · **1
+nyitott, gépi úton folytatható, megnevezett paranccsal** (a `version`
+olvasat igazolása) · 0 „csak nyitva".*
