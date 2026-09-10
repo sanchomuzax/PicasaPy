@@ -1819,7 +1819,17 @@ ApplicationWindow {
                         }
                         Text {
                             // #305: null-őr
-                            text: controller ? controller.filterStatusText : ""
+                            //: #1830: a kor-szűrő mondata a találati sáv
+                            //: szövege UTÁN jön („Legfeljebb N napos
+                            //: képek."), ahogy az eredeti a találati
+                            //: fejlécben írja ki. Szűrés nélkül üres, tehát
+                            //: a sáv változatlan.
+                            text: controller
+                                  ? (controller.ageFilterText
+                                     ? controller.filterStatusText + " "
+                                       + controller.ageFilterText
+                                     : controller.filterStatusText)
+                                  : ""
                             color: "white"
                             font.pixelSize: Theme.fontSize
                             font.bold: true

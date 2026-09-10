@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.367] – 2026-09-10
+
+### Hozzáadva
+
+- **Működik a keresősáv idő-csúszkája: „legfeljebb ennyi idős képek"**
+  (#1830). Eddig le volt tiltva. A csúszkát jobbra húzva egyre frissebb
+  képek maradnak a rácson, és a zöld sávon megjelenik, mit szűrtünk
+  (például „Legfeljebb 9 hetes képek."). A bal széle kikapcsolja a szűrőt.
+  A viselkedés az eredeti Picasáéval egyezik — ott is egyetlen érték adja
+  meg a legnagyobb kort, a „dátumtartomány" felirat ellenére.
+
 ## [0.8.366] – 2026-09-10
 
 ### Változott

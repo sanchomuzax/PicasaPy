@@ -10,6 +10,7 @@ változatlan."""
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import (
@@ -35,12 +36,13 @@ from picasapy.index import (
     is_folder_hidden,
     set_folder_hidden,
     starred_photos,
+    photos_up_to_age,
     video_photos,
     sync_tree,
 )
 from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
-from . import formatting
+from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
@@ -236,6 +238,10 @@ class AppController(
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""
+        #: #1830: az idő-csúszka kor-szűrője — a MEGENGEDETT legnagyobb kor
+        #: napban, vagy `None`, ha nincs kor-szűrés. A csúszka nyers értékét
+        #: nem tartjuk meg: a felirat és a vágópont is a napokból számol.
+        self._age_filter_days: float | None = None
         self._folders_filtered = False  # a bal hasáb keresésre szűkítve (#49)
         self._feed_groups: tuple[dict, ...] = ()  # a rács mappa-csoportjai (#64)
         # #142: az index fájl-pecsétje a feed betöltésekor — amíg egyezik,
@@ -1075,6 +1081,50 @@ class AppController(
             records = video_photos(conn)
         self._show_filtered(records, time.perf_counter() - started)
 
+    # -- kor-szűrő: az idő-csúszka (#1830) ------------------------------------
+
+    @Slot(float)
+    def setAgeFilter(self, ertek: float) -> None:
+        """Az idő-csúszka: „legfeljebb ennyi napos képek" (`timeslider`).
+
+        ⚠️ A csúszka NEM tartományt választ, hiába ezt sejti a felirata
+        („Filter by date range") — az eredetiben is egyetlen érték adja meg
+        a MAXIMÁLIS KORT. A képlet és a mérés az `app/kor_szuro.py`-ban áll.
+
+        Nulla értéknél a szűrő KIKAPCSOL (ez az eredeti nulla-ága), tehát a
+        csúszka bal széle nem „nagyon régi", hanem „nincs szűrés".
+        """
+        nap = kor_szuro.napok(max(0.0, min(1.0, float(ertek))))
+        if nap is None:
+            self._age_filter_days = None
+            self.clearFilter()
+            return
+        self._age_filter_days = nap
+        self._view_mode = ("age", nap)
+        self._show_age_filtered(nap)
+
+    def _show_age_filtered(self, nap: float) -> None:
+        """A kor-szűrt nézet — a vágópont MINDIG a hívás pillanatához mérve.
+
+        Ezért nem a vágópontot tároljuk, hanem a napokat: egy órákkal
+        későbbi frissítésnek a MOSTANI „most"-hoz kell mérnie, különben a
+        nézet észrevétlenül elavul."""
+        started = time.perf_counter()
+        vagas = kor_szuro.vagopont(nap, datetime.now())
+        with open_index(self._db_path) as conn:
+            records = photos_up_to_age(conn, vagas.isoformat(timespec="seconds"))
+        self._show_filtered(records, time.perf_counter() - started)
+
+    @Property(str, notify=statusChanged)
+    def ageFilterText(self) -> str:
+        """A kor-szűrő felirata a találati sávra, vagy üres, ha nincs szűrés.
+
+        A négy szövegforma és a csonkított mértékegység a `.tre`-ből és a
+        binárisból mérve (`kor_szuro.felirat`)."""
+        if self._age_filter_days is None:
+            return ""
+        return kor_szuro.felirat(self._age_filter_days, self.tr)
+
     # -- arc-szűrő (#1830) ---------------------------------------------------
 
     @Slot()
@@ -1119,6 +1169,9 @@ class AppController(
         """Szűrő ki („Az összes megtekintése") — vissza a mappa-nézethez."""
         self._filter_active = False
         self._filter_status = ""
+        # #1830: a kor-felirat is tűnjön el — különben a sávon ottmaradna
+        # egy „Legfeljebb N napos képek." mondat szűrés nélkül
+        self._age_filter_days = None
         if self._current_folder:
             self.selectFolder(self._current_folder)
         else:
@@ -1183,6 +1236,11 @@ class AppController(
             with open_index(self._db_path) as conn:
                 records = video_photos(conn)
             self._show_filtered(records, time.perf_counter() - started)
+        elif mode == "age":
+            # #1830: enélkül egy frissítés némán visszadobná a felhasználót
+            # a mappa-nézetbe (a film- és a hasonlóság-szűrőnek is ezért van
+            # ága). A vágópont ilyenkor ÚJRA számolódik a mostani időhöz.
+            self._show_age_filtered(param)
         elif mode == "similar":
             # #1833: enélkül egy frissítés némán visszadobná a felhasználót
             # a mappa-nézetbe (a film-szűrőnek is ezért van ága, #1830).

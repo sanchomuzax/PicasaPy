@@ -172,6 +172,32 @@ def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     return _records(rows)
 
 
+def photos_up_to_age(
+    conn: sqlite3.Connection, cutoff: str
+) -> tuple[PhotoRecord, ...]:
+    """A `cutoff` (ISO időpont) UTÁN készült fotók (#1830) — a kor-szűrő.
+
+    Az eredeti csúszkája maximális KORT ad meg (`app/kor_szuro.py`), a
+    vágópontot pedig a hívó számolja ki — ez a függvény csak szűr, hogy a
+    „mikor van MOST" kérdés ne kerüljön az adatrétegbe (tesztelhetőség).
+
+    ⚠️ A dátum NÉLKÜLI fotó KIMARAD: kora nincs, tehát nem lehet
+    „legfeljebb N napos". Ez ellentétes a `geotagged_photos` rendezésével,
+    ahol a datálatlan kép a lista VÉGÉRE kerül — ott a hiány nem zárja ki
+    a találatot, itt igen.
+
+    A `taken_at` ISO-8601 szöveg, tehát a `>=` összehasonlítás
+    karakterenkénti — ez a séma szándéka (`index/schema.py`), és a hírfolyam
+    rendezése is erre épül.
+    """
+    rows = conn.execute(
+        f"{_SELECT} WHERE p.taken_at IS NOT NULL AND p.taken_at >= ?"
+        " ORDER BY p.taken_at DESC, f.path, p.name",
+        (str(cutoff),),
+    )
+    return _records(rows)
+
+
 def set_folder_hidden(
     conn: sqlite3.Connection, folder_path: str, hidden: bool
 ) -> bool:
