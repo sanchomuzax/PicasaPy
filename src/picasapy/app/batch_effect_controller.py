@@ -59,7 +59,11 @@ from .worker_thread import BackgroundWorkerMixin
 # Az `EditSession` metódusa szerint csoportosítva:
 _APPLY_NAMES = frozenset({"autolight", "autocolor", "enhance"})  # append-only
 _TOGGLE_NAMES = frozenset({"redeye"})  # a meglévő egy-példányos kapcsoló
-_APPEND_NAMES = frozenset({"unsharp", "grain2", "warm"})  # paraméter nélküli
+_APPEND_NAMES = frozenset({"unsharp", "grain2", "warm", "bw"})  # paraméter nélküli
+# #2163: a `bw` azért került ide, mert az eredeti `Ctrl+Shift+B`-je
+# ugyanezt teszi: a fekete-fehér szűrőt adja a KIJELÖLÉSRE
+# (`0x005fe370(panel, "bw")`). A `render/chain.py` egykattintásos
+# effektként már ismerte, csak a köteg-út nem.
 _KNOWN_EFFECTS = _APPLY_NAMES | _TOGGLE_NAMES | _APPEND_NAMES
 
 

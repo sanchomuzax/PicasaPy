@@ -138,6 +138,52 @@ ApplicationWindow {
         if (toolbar && toolbar.fokuszAKeresore) toolbar.fokuszAKeresore()
     }
 
+    //: #2163: a `Ctrl+3` (Szerkesztési nézet, `0x005e624f` →
+    //: `thumbui/fullview`) UGYANAZT teszi, mint a „Megjelenítés és
+    //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
+    //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
+    //: menüje (#1917) is ezt hívja.
+    function nezdEsSzerkeszd() {
+        var sorok = window.selectedRows()
+        if (sorok.length === 0) return
+        window.viewerOpen = true
+        photoViewer.show(sorok[0])
+    }
+
+    //: #2163: a `Ctrl+F7` az eredetiben a `searchoptions/loadsim`-et
+    //: kattintja — a MINTA a jelenlegi kép, és a keresés a hozzá
+    //: hasonlókat adja (a mag a #1833-ban kész).
+    //: #2163: a `Ctrl+F6` a másodpéldány-módot kapcsolja (#1398). A
+    //: null-őr FÜGGVÉNYBEN áll, nem a `Shortcut` törzsében: a #1616 őre
+    //: egyetlen zárójel-szintet lát, az ágazó törzs láthatatlan neki.
+    function masodpeldanyokMutatasa() {
+        if (controller) controller.showDuplicateFiles()
+    }
+
+    //: #2163: a `clearsim` párja — ugyanezért függvény.
+    function torolAHasonlosagMintat() {
+        if (controller) controller.clearSimilarity()
+    }
+
+    function keressHasonlot() {
+        if (!controller) return
+        var sorok = window.selectedRows()
+        if (sorok.length === 0) return
+        controller.showSimilarTo(sorok[0])
+    }
+
+    //: #2163: a `Ctrl+Shift+B` és a `Ctrl+Shift+E` az eredetiben egyetlen
+    //: szűrő-alkalmazóba megy (`0x005fe370(panel, "bw"|"enhance")`), ami a
+    //: KIJELÖLÉSRE hat — nálunk ez a köteg-szerkesztés útja
+    //: (`applyEffectMany`), ugyanaz, amit az Kép ▸ Köteg-szerkesztés
+    //: menütételei hívnak. Nincs második ág.
+    function kotegEffekt(nev) {
+        if (!controller) return
+        var sorok = window.selectedRows()
+        if (sorok.length === 0) return
+        controller.applyEffectMany(sorok, nev)
+    }
+
     function billentsdAFiokot() {
         if (window.activeDrawerTab !== "") {
             window.utolsoFiokLap = window.activeDrawerTab
@@ -648,6 +694,49 @@ ApplicationWindow {
         sequence: "Ctrl+K"
         //: Az eredetiben UGYANAZ az ág, mint a `Ctrl+T`-é (`0x005e650e`).
         onActivated: window.valtsFiokLapot("tags")
+    }
+    Shortcut {
+        objectName: "editViewShortcut"
+        sequence: "Ctrl+3"
+        //: `thumbui/fullview` (`0x005e624f`) — Nézet ▸ Szerkesztési nézet
+        //: (`cmd 0x9c8f`) és Kép ▸ Megjelenítés és szerkesztés (`cmd 0x9ca0`)
+        //: ugyanezen a billentyűn (a lap 10.3 és a keymap 21. rekesze).
+        onActivated: window.nezdEsSzerkeszd()
+    }
+    Shortcut {
+        objectName: "dupeSearchShortcut"
+        sequence: "Ctrl+F6"
+        //: `searchoptions/dupesearch` (`0x005e62bb`) — ugyanaz a
+        //: másodpéldány-MÓD, amit a menüparancs kapcsol (#1398).
+        onActivated: window.masodpeldanyokMutatasa()
+    }
+    Shortcut {
+        objectName: "findSimilarShortcut"
+        sequence: "Ctrl+F7"
+        //: `searchoptions/loadsim` (`0x005e62e8`, azonosító `0x15`).
+        onActivated: window.keressHasonlot()
+    }
+    Shortcut {
+        objectName: "clearSimilarShortcut"
+        sequence: "Ctrl+F8"
+        //: `searchoptions/clearsim` (`0x005e631d`, azonosító `0x16`).
+        onActivated: window.torolAHasonlosagMintat()
+    }
+    Shortcut {
+        objectName: "batchBwShortcut"
+        sequence: "Ctrl+Shift+B"
+        //: `0x005fe370(panel, "bw")` (`0x005e6370`) — a fekete-fehér szűrő a
+        //: KIJELÖLÉSRE. Az eredetiben ehhez nincs kiírt menütétel (keymap
+        //: 31.), a billentyű mégis él.
+        onActivated: window.kotegEffekt("bw")
+    }
+    Shortcut {
+        objectName: "batchEnhanceShortcut"
+        sequence: "Ctrl+Shift+E"
+        //: `0x005fe370(panel, "enhance")` (`0x005e638b`) — a „Jó napom van"
+        //: (keymap 32.) a kijelölésre; ugyanaz az út, mint a
+        //: Köteg-szerkesztés menütételé.
+        onActivated: window.kotegEffekt("enhance")
     }
 
     Shortcut {
@@ -2705,12 +2794,8 @@ ApplicationWindow {
         // #1917: a tálca helyi menüjének öt ÖRÖKÖLT tétele. Ugyanazokra a
         // vezérlőkre megy, mint a rács helyi menüjének párja — a tálca
         // kijelölésén, mert a menü a tálcára hat.
-        onViewAndEditRequested: {
-            var sorok = window.selectedRows()
-            if (sorok.length === 0) return
-            window.viewerOpen = true
-            photoViewer.show(sorok[0])
-        }
+        //: #2163: EGY belépő — a `Ctrl+3` ugyanezt a függvényt hívja.
+        onViewAndEditRequested: window.nezdEsSzerkeszd()
         onTrayRotateRightRequested: controller.rotateRightMany(window.selectedRows())
         onTrayRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
         onTrayLocateRequested: {

@@ -9,6 +9,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Hozzáadva
 
+- **Hat új gyorsbillentyű a könyvtárban** (#2163). `Ctrl+3` a kijelölt képet
+  megnyitja szerkesztésre, `Ctrl+F6` a másodpéldányok nézetére vált, `Ctrl+F7`
+  a hasonló képeket keresi, `Ctrl+F8` törli a hasonlóság-mintát, a
+  `Ctrl+Shift+B` fekete-fehérré, a `Ctrl+Shift+E` pedig „Jó napom van"-nal
+  javítja a kijelölt képeket. Mind az eredeti Picasa mért billentyűje.
+
+### Hozzáadva
+
 - **Album kijelölésekor a tálca összecsukott tokent mutat** (#2741). Ha egy
   albumra kattintasz és nincs kijelölt képed, a képtálcán egy borítókép jelenik
   meg a felirattal, hogy hány kép van benne — ahogy az eredeti Picasában.
