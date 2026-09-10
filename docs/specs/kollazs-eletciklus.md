@@ -6440,3 +6440,98 @@ hasonló téma-konstansát a 18.2/54. szakasz már kiolvasta
 fájlok írója; a csonkolás helye — az utóbbi ÖRÖKÖLT, 55.6/1) · **1
 nyitott, gépi úton folytatható, megnevezett függvényekkel** (a
 `contactsheet` `scale`-je) · 0 „csak nyitva".*
+
+---
+
+## 63. K1 — a `contactsheet` belépési pontja osztály-szinten, a CSONKOLÁS-térkép, és a `w × 1024` átváltó (2026-09-10, #1412)
+
+*273. kutatói kör. A 62.5 három pontját viszi; kettőt lezár, a
+harmadikat egy megnevezett függvényig szűkíti.*
+
+### 63.1 A `contactsheet` belépési pontja — osztály-szinten igazolva
+
+`CContactSheetTheme[0]` = **`FUN_00887ad0`** (242 b), és a törzse:
+
+```
+0x00887b93  lea  ecx, [esp+0x18]      ; VEREM-lokális vektor
+0x00887b98  push esi
+0x00887b99  call 0x888210             ; a contactsheet ELRENDEZŐJE (18.2)
+0x00887ba4  call 0x62d010             ; …és a vektor AZONNAL elpusztul
+```
+
+⇒ A 179. kör „az elrendező ideiglenes, a hívóban elpusztított vektorba
+ír" leletét ez **osztály-szinten** is megerősíti: a `CContactSheetTheme`
+0. rekesze az, amelyik így hív.
+
+### 63.2 A CSONKOLÁS-térkép a kollázs-sávban
+
+`or <reg>, 0xc00` (a kerekítési mód „nulla felé" állítása — a 62.3
+mechanizmusa), a teljes `.text`-en pásztázva, a sávra szűrve.
+**Pozitív kontroll:** `0x0087bdd4` (a 62.3 helye) — **megvan**.
+
+| tartomány | találat |
+|---|---:|
+| kollázs-sáv (`0x00829000`–`0x00895000`) | **30** |
+
+Ebből a `contactsheet` elrendezőjében (`FUN_00888210`, `0x00888210`–
+`0x00888b31`) **nyolc** áll: `0x008880a6` · `0x008880fa` · `0x00888144`
+· `0x00888258` · `0x008882a7` · `0x008882e6` · `0x00888323` ·
+`0x0088837b`, plusz a csomópont-írás körül `0x008885c5` és `0x008885fa`,
+majd `0x008888d6` és `0x00888a11`.
+
+⇒ **A `contactsheet` geometriája végig EGÉSZ KÉPPONTOKBAN számol** —
+ez utólag megmagyarázza az 54. szakasz `CSONK(...)`-láncát: nem
+külön kerekítő hívások, hanem a **kerekítési mód** átállítása.
+
+### 63.3 ⭐ A `w × 1024` átváltó MEGVAN — de a KÉP-KÉRÉS útján áll
+
+**`FUN_0087c420`** (75 bájt), teljes egészében:
+
+```
+0x0087c423  fld   dword ptr [ecx + 0x20]   ; a csomópont `w` mezője
+0x0087c426  fmul  qword ptr [0xcf4218]     ; × 1024,0
+0x0087c435  or    eax, 0xc00               ; kerekítés = CSONKOLÁS
+0x0087c442  fistp qword ptr [esp+8]        ; egészre
+0x0087c454  fld1  · push                   ; és egy 1,0 argumentum
+0x0087c460  call  0x87c470
+```
+
+Ez **betűre** az a törvény, amit a fájlban mérünk
+(`scale = TRUNC(w × 1024)`). ⛔ **De nem a csomópontba ír:** egyetlen
+hívója a `CPileTheme[8]` (`FUN_0087bec0`), és az eredményt a
+`FUN_0087c470`-nek adja át, amely egy **0x354 bájtos objektumot foglal**
+(`0x0087c493 push 0x354`) — ez **kép-/bélyegkérés**, nem
+csomópont-írás. Ugyanide adja a 62.2 méretezője is a saját csonkolt
+méretét (`0x0087be05 call 0x87c470`).
+
+⛳ **Elhatárolás:** a `× 1024` + csonkolás **létezik**, de a
+**kép-kérési** ágon. A csomópont `+0x2c`-jébe ez a hely nem ír.
+
+### 63.4 ⛳ Amit ez aritmetikailag KIMOND
+
+A `picturepile` fájlban minden csomópontra `scale = w × 1024` **pontosan**
+(9/9, 55.5), és a méretező `0,33 · W · f(k)` képpontban dolgozik (62.2).
+A kettő csak akkor eshet egybe, ha az elrendezés **koordináta-rendszere
+1024 egység széles** — akkor a képpontméret és a `scale` **ugyanaz a
+szám**, a `w` pedig ennek 1024-ed része.
+
+⚠️ **És itt marad az ellentmondás:** a mért elrendezők a `+0x2c`-be
+`1,0`-t írnak (`fld1`, 56.4). Vagyis vagy van egy nem mért hely, amely a
+nyers méretet teszi a `+0x2c`-be, vagy a `picturepile` node-jait nem a
+mért két elrendező tölti.
+
+### 63.5 A KÖVETKEZŐ lépés, megnevezve
+
+**`FUN_0087bec0`** = `CPileTheme[8]`, **1376 bájt** — a `CPileTheme`
+legnagyobb metódusa, ez hívja a `w × 1024` átváltót, és ez a téma
+egyetlen olyan metódusa, amelyet még nem olvastunk végig. Ha van
+csomópont-`scale`-írás a `picturepile`-ágon, itt kell lennie.
+
+Utána ugyanez a `contactsheet`-re: a `FUN_00888210` nyolc
+csonkoló-helyének végigolvasása (63.2 listája) — melyik mennyiség
+kerül a csomópont `+0x2c`-jébe, ha egyáltalán.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a
+`contactsheet` belépési pontja osztály-szinten; a csonkolás-térkép) ·
+**1 nyitott, gépi úton folytatható, megnevezett függvénnyel**
+(`FUN_0087bec0`) · 0 „csak nyitva".*
