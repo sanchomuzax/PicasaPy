@@ -57,6 +57,7 @@ from .queries import (
     is_folder_hidden,
     set_folder_hidden,
     starred_photos,
+    photos_up_to_age,
     video_photos,
 )
 from .people import (
@@ -121,6 +122,7 @@ __all__ = [
     "hidden_folders",
     "is_folder_hidden",
     "set_folder_hidden",
+    "photos_up_to_age",
     "video_photos",
     "group_unnamed_faces",
     "load_color_tokens",

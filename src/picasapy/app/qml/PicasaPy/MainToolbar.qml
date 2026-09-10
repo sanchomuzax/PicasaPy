@@ -61,6 +61,7 @@ Rectangle {
         searchField.clear()
     }
 
+
     Rectangle {
         anchors.bottom: parent.bottom
         width: parent.width; height: 1
@@ -482,10 +483,32 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
                 Item { width: 6; height: 1 }
+                //: #1830: az idő-csúszka — az eredeti `timeslider`.
+                //:
+                //: ⚠️ NEM tartományt választ, hiába ezt sejti a buboréksúgó
+                //: felirata („Filter by date range"): egyetlen érték adja meg
+                //: a MEGENGEDETT legnagyobb KORT. A félrevezető felirat az
+                //: EREDETI sajátja (`searchcontainer.tre:101–102`), ezért
+                //: szó szerint átvesszük — a mért viselkedés a
+                //: `app/kor_szuro.py`-ban áll.
+                //:
+                //: A nulla NEM „nagyon régi", hanem „nincs szűrés" — a
+                //: vezérlő nulla értéknél kikapcsolja a szűrőt.
                 PicasaSlider {
+                    objectName: "dateRangeFilterSlider"
                     width: 90; height: 20
-                    enabled: false
+                    from: 0.0
+                    to: 1.0
                     anchors.verticalCenter: parent.verticalCenter
+                    //: `timecontainer_label` — az eredeti buboréksúgója
+                    ToolTip.text: qsTr("Filter by date range")
+                    ToolTip.visible: dateRangeHover.hovered
+                    ToolTip.delay: 500
+                    HoverHandler { id: dateRangeHover }
+                    //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
+                    //: `moved` az elengedésre/lépésre szól, a `valueChanged`
+                    //: minden képpontnyi vonszolásra lekérdezné az indexet
+                    onMoved: if (controller) controller.setAgeFilter(value)
                 }
             }
         }
