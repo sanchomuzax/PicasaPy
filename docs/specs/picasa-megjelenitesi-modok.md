@@ -1271,6 +1271,13 @@ van, `0x00a6b75c` (`mov dword ptr [ebp + 0x314], esi`) — ez a jelölt.
 
 ## 15. A célmutató NULLÁZOTT, és nincs mért hozzárendelése (2026-09-10, #2842)
 
+> ⛔ **ELAVULT — a 16. szakasz helyesbíti.** Ez a szakasz a konstruktor
+> `+0x314`-ét azonosította a célmutatóval; **rossz mező**. Az olvasó a
+> MÁSODLAGOS vtáblából jön, tehát `this+4`-et kap, és a mezője a valódi
+> `+0x318`. A célmutatót a `0x00a6bdfa` állítja be minden olvasás előtt,
+> a cél osztálya `ytFontCache`. Az alábbi 15.4 „valószínűleg soha nem fut
+> le" állítása MEGDŐLT.
+
 **Bizalmi fok: megerősített** a nullázásra és az osztálynévre; a
 „soha nem fut" állítás **feltételes** (15.4).
 
@@ -1353,3 +1360,111 @@ a `+0x314`-írást. Két járható út:
    `+0x314`-et **és** a `+0x294`-et is érinti — ez erősebb szűrő, mint a
    puszta szomszédság, mert a `+0x294` a `ytTextNode`-on bizonyítottan élő
    mező.
+
+## 16. A célmutató MEGVAN — `ytFontCache`, és a 15. szakasz ÖNHELYESBÍTÉSE (2026-09-10, #2842)
+
+**Bizalmi fok: megerősített.** Minden állítás mellett cím és kiolvasott alak
+áll; a pásztázások a lyukas függvényindextől FÜGGETLENÜL, a teljes `.text`-en
+futottak (`eszkozok/binaris/paszta.py`, csúcs-RSS 86–87 MiB).
+
+### 16.1 ⛔ ÖNHELYESBÍTÉS: a 15. szakasz ROSSZ MEZŐT vizsgált
+
+A 15. szakasz abból indult ki, hogy a `0x00a6c342` által olvasott
+`[edi + 0x314]` ugyanaz a mező, amit a konstruktor a `0x00a6b75c`-en nulláz
+(`[ebp + 0x314]`). **Nem ugyanaz.** A két bázis négy bájttal eltér:
+
+| hely | bázis | mi ez |
+|---|---|---|
+| konstruktor `0x00a6b680` | `ebp` | az objektum **valódi** kezdete — ide megy a `0xce4b04` elsődleges vtábla (`0x00a6b6a2`) |
+| olvasó `0x00a6c240` | `edi = ecx` | a **MÁSODLAGOS** alobjektum: a `0xce4bb4` vtábla a `this+4`-en ül (`0x00a6b68b lea esi,[ebp+4]`, `0x00a6b69c mov [esi], 0xce4bb4`) |
+
+Az index megnevezi, melyik vtáblában áll az olvasó: a `0x00a6c240` a
+**`ytTextNode::vftable` `0x00ce4bb4`** tábla **17.** rekesze, a `0x00a6c4b0`
+ugyanennek a 8. rekesze. A `0x00ce4bb4` a `this+4`-re írt tábla ⇒ mindkét
+metódus `this+4`-et kap.
+
+**Bizonyíték a kódból, két helyen**, mindkettő a segédhívás előtt:
+
+```
+0x00a6c32e  lea esi, [edi - 4]      ; olvasó A: vissza az objektum elejére
+0x00a6c335  call 0xa6bd80
+…
+0x00a6c75d  lea esi, [ebx - 4]      ; olvasó B: ugyanaz
+0x00a6c760  call 0xa6bd80
+```
+
+⇒ az olvasók `[+0x314]`-e az objektum **valódi `+0x318`** mezője, a
+konstruktor nullázott `+0x314`-e pedig a **szomszédja**. A 15.4 „a
+`0x00a6c35e` írása valószínűleg soha nem fut le" állítása ezzel **MEGDŐL**.
+
+### 16.2 A célmutatót a `0x00a6bdfa` állítja be — minden olvasás ELŐTT
+
+```
+0x00a6bdea  mov  eax, dword ptr [esi + 0x2a0]
+0x00a6bdf0  call 0xa48e10                      ; ⭐ betűkészlet-gyorstár lekérése
+0x00a6bdf5  add  esp, 8
+0x00a6bdf8  test eax, eax
+0x00a6bdfa  mov  dword ptr [esi + 0x318], eax  ; ⭐ A CÉLMUTATÓ
+0x00a6be00  je   0xa6be37                      ; NULL -> 4-es hibakód, a rajzolás elmarad
+0x00a6be08  mov  dword ptr [eax + 0x258], ecx  ; cél +0x258 <- [esi+0x2a4]
+0x00a6be1a  mov  dword ptr [edx + 0x250], eax  ; cél +0x250 <- [esi+0x29c]
+0x00a6be2c  mov  byte  ptr [ecx + 0x210], dl   ; cél +0x210 <- byte [esi+0x2f0]
+```
+
+A `0x00a48e10` (309 bájt) **közös gyár, 25 hívóval** — nem a szövegcsomópont
+sajátja. A mutató tehát **lustán frissített gyorstár**, nem halott mező.
+
+A második írás, `0x00a6bb37` (`FUN_00a6b9e0`), **másolás**: ugyanabban a
+menetben viszi át a `+0x318`, `+0x2a4`, `+0x2a8`, `+0x24c` mezőket.
+
+### 16.3 A cél osztálya: `ytFontCache` — két független mérés
+
+**(a) A veremméret ujjlenyomata.** A `0x00a6c3ff` hívóhely `0x38` bájtot tol
+be (4+4+16+16+4+4+4+4), és utána `mov esp, ebp`-vel áll helyre ⇒ a hívott
+`ret 0x38`. Az RTTI **150 különböző 11. rekesze** közül **pontosan egy**
+ilyen: `0x00a46bb0` = **`ytFontCache::vftable` (`0x00ce400c`)** 11. rekesze.
+
+**(b) A `+0x254` mező létezése.** A cél `+0x254`-ét a `0x00a6c35e` írja. A
+`ytFontCache` konstruktora (`FUN_00a43f80`, a `0xce400c`-t a `[edi]`-be írja)
+**maga is írja ezt a mezőt**: `0x00a4407e mov dword ptr [edi + 0x254], eax`.
+
+### 16.4 Amit a 11. rekesz csinál — és a 12.
+
+| hívóhely | rekesz | cím | hogyan |
+|---|---|---|---|
+| `0x00a6c3ff` | **11** (`[vtbl+0x2c]`) | `0x00a46bb0` (581 b) | `mov edi,[ecx]` (a cél vtáblája), `call [edi+0x2c]`, `this=ecx` |
+| `0x00a6c7c5` | **12** (`[vtbl+0x30]`) | `0x00a48240` | `mov edx,[ecx]`, `mov edx,[edx+0x30]` |
+
+Mindkettő két 16 bájtos veremblokkot kap (a `[ebx+0x60]` négy dwordje és egy
+`[esp+0x38]`-tól másolt négyes) ⇒ két téglalap/négyes, plusz jelzők.
+
+### 16.5 A `+0x254`-be írt ÉRTÉK — mérve, de a JELENTÉSE nyitott
+
+```
+0x00a6c350  mov ecx, dword ptr [edi + 0x294]   ; = valódi +0x298
+0x00a6c356  cmp dword ptr [eax + 0x254], ecx
+0x00a6c35e  mov dword ptr [eax + 0x254], ecx
+```
+
+A forrás a szövegcsomópont **valódi `+0x298`** mezője. A konstruktor
+`0x00a6b7ec mov eax, 0xc` / `0x00a6b7ff mov [ebp+0x298], eax` ⇒ az
+**alapértéke 12**. A teljes `.text`-en a valódi `+0x298`-nak **89 írása** van,
+ebből a szövegmodulban kettő: a konstruktor és a másoló (`0x00a6ba86`).
+
+⛔ **NEM állítjuk, hogy ez a megjelenítési mód.** A 11. szakasz `+0x254`-e a
+`yt` **jelenetgráf-csomópont** mezője; a `ytFontCache` **más osztály**, az ő
+`+0x254`-e külön kérdés. A hatókör: a fenti mérés a `+0x298` ÍRÓIRA vonatkozik,
+nem a mező jelentésére.
+
+### 16.6 A negatív állítások pontos hatóköre
+
+- A teljes `.text`-en **27** írás megy a `+0x314`-re; ebből **egy** a
+  `ytTextNode`-é (`0x00a6b75c`), és az **nulláz**. Kontrollpozitív: igen.
+- Az **eltolt bázisú** (`lea r,[b+K]` / `add r,K`) pásztázás eredőre `+0x314`:
+  **23** találat, a szövegmodulban egy sem; a `0x00a62a65` a
+  `ytButtonNode` (`0x00a62982` írja a `0xce4874`-et) alstruktúra-nullázása.
+  Kontrollpozitív: igen.
+- ⛔ **Az index lyukas, mérve:** a függvényindexre alapozott futás **két**
+  írást nem látott (`0x00b7160e`, `0x00b71946`) — egyik indexelt függvénybe
+  sem esik. Mindkettő egy `malloc(0x320)`+`memset` C-struktúráé
+  (`0x00b71898`), nem C++ objektumé.
