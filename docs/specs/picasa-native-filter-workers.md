@@ -226,6 +226,71 @@ A véletlenszám-forrás **Mersenne Twister (MT19937)**: a temperálás
 > bejárási sorrendet használja. A ±1-es tűrés csak akkor kell, ha ezt nem
 > reprodukáljuk.
 
+## 2.2/b A BEJÁRÁSI SORREND — a bitre egyezés feltétele (2026-09-10, #2874)
+
+**Bizalmi fok: megerősített** a munkafüggvényen belül; **kimondottan nem
+mérve** a keretrendszer csempézése (2.2/b.4).
+
+A #2868 kimérte, hogy a dither **determinisztikus** (generátor `0x00d67f70`,
+vetőmag `0x2D8228BE`). A bitre egyezéshez viszont az is kell, hogy a
+**mintákat ugyanabban a sorrendben** fogyasszuk. Ez a szakasz azt méri ki.
+
+### 2.2/b.1 Két egymásba ágyazott ciklus, sorfolytonosan
+
+```
+0x0090bcc0  mov edi, dword ptr [edx + 4]     ; forrás sorléptetés
+0x0090bcc3  mov ebp, dword ptr [edx + 0x10]  ; forrás adatmutató
+0x0090bcc6  imul edi, eax                    ; × a SOR indexe
+0x0090bcc9  lea edi, [ebp + edi*4]           ; a sor eleje (4 bájt/képpont)
+   …ugyanez a célképre (`[ecx+4]`, `[ecx+0x10]`)
+0x0090bcf0  ⟵ a BELSŐ ciklus eleje
+0x0090be2b  add ebp, 4                       ; forrás += 1 képpont
+0x0090be28  add ecx, 4                       ; cél    += 1 képpont
+0x0090be37  jne 0x90bcf0                     ; amíg a sorból van hátra
+0x0090be4d  add eax, 1                       ; a KÖVETKEZŐ sor
+0x0090be50  cmp eax, dword ptr [esp + 0x18]
+0x0090be58  jb  0x90bcc0
+```
+
+⇒ **külső ciklus = sorok, `0`-tól növekvő** (`0x0090bca8 xor eax, eax`), tehát
+**fentről lefelé**; **belső ciklus = képpontok, `+4` bájtos lépésekkel**, tehát
+**balról jobbra**. **Sorfolytonos (row-major) bejárás.**
+
+### 2.2/b.2 Képpontonként PONTOSAN EGY minta
+
+A generátor-hivatkozások **egyetlen** blokkot alkotnak, és az a **belső**
+ciklus törzsében áll, a három csatorna számítása ELŐTT:
+
+```
+0x0090bd0d  cmp dword ptr [0xd67f74], 0x270   ; kifogyott az állapot?
+0x0090bd25  mov esi, 0xd67f70
+0x0090bd2a  call 0xaa2930                     ; twist
+0x0090bd2f  mov ecx, dword ptr [0xd67f74]
+0x0090bd35  mov eax, dword ptr [ecx*4 + 0xd67f7c]
+0x0090bd3c  add ecx, 1
+0x0090bd3f  mov dword ptr [0xd67f74], ecx
+```
+
+⇒ **soronként nincs extra húzás**, és nincs maradék-kezelés (a belső ciklus
+képpontonként halad, nincs SIMD-blokkosítás).
+
+### 2.2/b.3 A munkafüggvény EGYSZER fut egy téglalapra
+
+A két hívója (`0x0090c3b0` szinthúzás, `0x0090c2c0` kontraszt) **ciklus
+nélkül**, egyszer hívja (`0x0090c401`, illetve a párja), a LUT megépítése
+után. A keretrendszer felőli belépő (`KNOWN_CALLBACK_contrast`, `0x008f8a20`,
+55 bájt) szintén **továbbító** — se ciklus, se szálindítás.
+
+### 2.2/b.4 ⚠️ Amit NEM mértem ki: a keretrendszer csempézése
+
+Hogy a keret **hányszor** és **milyen sorrendben** hívja a visszahívást — egy
+egész képre egyszer, vagy csempénként/sávonként —, az egy szinttel feljebb dől
+el (`0x008f7cf0` és társai), és **nincs kimérve**.
+
+**Ez a bitre egyezés maradék feltétele:** a generátor állapota a hívások közt
+**tovább él**, ezért csempézés esetén a csempe-sorrendet is reprodukálni kell.
+A munkafüggvényen belüli sorrend viszont — a fentiek szerint — rögzített.
+
 ## 2.3 Szinthúzás (Kiemelések / Árnyékok) — `0x0090c3b0`
 
 Két lépés: LUT-építés (`0x0090c1e0`) + a fenti alkalmazó.
