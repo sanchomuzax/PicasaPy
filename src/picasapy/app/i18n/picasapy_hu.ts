@@ -1165,6 +1165,23 @@
 </context>
 <context>
     <name></name>
+    <message>
+        <source>Pictures up to %d days old.</source>
+        <translation>Legfeljebb %d napos képek.</translation>
+    </message>
+    <message>
+        <source>Pictures up to %d weeks old.</source>
+        <translation>Legfeljebb %d hetes képek.</translation>
+    </message>
+    <message>
+        <source>Pictures up to %d months old.</source>
+        <translation>Legfeljebb %d hónapos képek.</translation>
+    </message>
+    <message>
+        <source>Pictures up to %d years old.</source>
+        <translation>Legfeljebb %d éves képek.</translation>
+    </message>
+
             <message>
         <location filename="../formatting.py"/>
         <source>Yes</source>
@@ -4084,6 +4101,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>MainToolbar</name>
     <message>
+        <source>Filter by date range</source>
+        <translation>Szűrés dátumtartomány szerint</translation>
+    </message>
+
+    <message>
         <source>Show only photos with faces</source>
         <translation>Csak az arcokat ábrázoló fotók</translation>
     </message>
@@ -4687,6 +4709,34 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     <message>
         <source>Find Faces...</source>
         <translation>Arcok keresése…</translation>
+    </message>
+    <message>
+        <source>&amp;Search for</source>
+        <translation>&amp;Keresés</translation>
+    </message>
+    <message>
+        <source>&amp;Red</source>
+        <translation>&amp;Piros</translation>
+    </message>
+    <message>
+        <source>&amp;Orange</source>
+        <translation>&amp;Narancssárga</translation>
+    </message>
+    <message>
+        <source>&amp;Yellow</source>
+        <translation>&amp;Sárga</translation>
+    </message>
+    <message>
+        <source>&amp;Green</source>
+        <translation>&amp;Zöld</translation>
+    </message>
+    <message>
+        <source>&amp;Blue</source>
+        <translation>&amp;Kék</translation>
+    </message>
+    <message>
+        <source>&amp;Purple</source>
+        <translation>&amp;Lila</translation>
     </message>
     <message>
         <source>Export to Google Earth File</source>

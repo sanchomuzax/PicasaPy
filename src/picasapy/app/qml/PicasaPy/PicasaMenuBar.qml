@@ -159,6 +159,10 @@ MenuBar {
     // menüpont volt, hanem alapból bekapcsolt háttérszál
     // (`BgFaceDetectThread`, ld. docs/specs/picasa-arcfelismeres.md 1.1);
     // nálunk háttérmotor híján ez a belépési pont (FaceScanDialog.qml).
+    //: #1399: a hat szín-keresés menüpontja — a token (`red`, `orange`,
+    //: `yellow`, `green`, `blue`, `purple`) megy át, a `color:` előtagot a
+    //: gazda teszi rá (a keresőmező szövege lesz belőle).
+    signal colorSearchRequested(string szin)
     signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
@@ -1628,6 +1632,51 @@ MenuBar {
         // megszakítható keresés saját ablakkal. A tétel MINDIG él — ha a
         // modell hiányzik, azt a megnyíló ablak MONDJA MEG; egy szürke
         // menüpont nem tudja megmagyarázni magát (néma tiltás, #1473).
+        //: #1399: `eMenuTools::Searchfor` almenü a hat szín-kereséssel.
+        //:
+        //: MÉRVE (`0x005ccc41`–`0x005ccca2` + `0x0065b7b0`): mind a hat
+        //: parancs UGYANAZT teszi, csak más tokennel — beírja a
+        //: `color:<szín>`-t a keresőmezőbe, és lefuttatja a keresést. Nincs
+        //: mögötte külön szűrő-mechanizmus.
+        //:
+        //: ⚠️ A diszpécserben van egy HETEDIK kezelő is (`color:black`,
+        //: `0x005ccca7`), de a szövegtárban nincs hozzá felirat — az
+        //: eredetiben tehát menüből nem érhető el. Nálunk sem épül hozzá
+        //: menüpont: hat tétel kell, nem hét.
+        PicasaMenu {
+            title: qsTr("&Search for")
+            MenuItem {
+                objectName: "menuToolsSearchRed"
+                text: qsTr("&Red")
+                onTriggered: bar.colorSearchRequested("red")
+            }
+            MenuItem {
+                objectName: "menuToolsSearchOrange"
+                text: qsTr("&Orange")
+                onTriggered: bar.colorSearchRequested("orange")
+            }
+            MenuItem {
+                objectName: "menuToolsSearchYellow"
+                text: qsTr("&Yellow")
+                onTriggered: bar.colorSearchRequested("yellow")
+            }
+            MenuItem {
+                objectName: "menuToolsSearchGreen"
+                text: qsTr("&Green")
+                onTriggered: bar.colorSearchRequested("green")
+            }
+            MenuItem {
+                objectName: "menuToolsSearchBlue"
+                text: qsTr("&Blue")
+                onTriggered: bar.colorSearchRequested("blue")
+            }
+            MenuItem {
+                objectName: "menuToolsSearchPurple"
+                text: qsTr("&Purple")
+                onTriggered: bar.colorSearchRequested("purple")
+            }
+        }
+        MenuSeparator {}
         MenuItem {
             objectName: "menuToolsFaceScan"
             text: qsTr("Find Faces...")
