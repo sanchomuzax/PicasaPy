@@ -6612,3 +6612,106 @@ tömböt, és ott derül ki, mi kerül a friss elem `+0x2c`-ébe.
 `CPileTheme[8]` szerepe; a téma-osztályok mint hatókör) · **1 nyitott,
 gépi úton folytatható, ELŐÁLLÍTOTT listával** (a kilenc `dword`-író) ·
 0 „csak nyitva".*
+
+---
+
+## 65. K1 — a TÁROLÓ-GÉPEZET végig feltérképezve; értéktábla nincs (2026-09-11, #1412)
+
+*275. kutatói kör. A 64.5 listáját dolgozza fel, megtalálja a hiányzó
+láncszemet (a vektor NÖVELÉSÉT), és kizár egy eddig nem próbált
+lehetőséget (értéktábla).*
+
+### 65.1 A tíz `dword`-író: mind KONSTRUKTOR vagy DESTRUKTOR
+
+Mind a tíz függvény törzse átnézve; mindegyik **csak a vektor-párt**
+(`+0x48` adatmutató, `+0x4c` darabszám) írja, nullázva vagy átvéve:
+
+| cím | `+0x48` / `+0x4c` írás | RTTI |
+|---|---|---|
+| `0x00829d60` · `0x00829dc0` · `0x0082a250` · `0x00832500` · `0x0085ff90` · `0x00865890` · `0x0088b0a0` | `ecx`/`ebx` (nulla) | van vtábla-írás ⇒ **ktor/dtor** |
+| `0x00838ef0` · `0x008833b0` | nulla, illetve `[+0x4c]=1`, `[+0x48]=0` | — |
+| `0x0084bb30` | **más objektum** (`+0x38 = 0x19f15`, egyetlen hívó) | — |
+
+⇒ **Egyik sem foglal, és egyik sem ír elemet.** A tíz `dword`-író
+szűkítés tehát **nem volt elég** — ezt ki kell mondani.
+
+### 65.2 ⭐ MEGVAN a hiányzó láncszem: a vektor NÖVELÉSE
+
+`n × 56` bájtos foglalás mintája (`mov edx,0x38` · `mul` · `call
+0xc0769f`), teljes `.text`, **pozitív kontroll: `0x00887f3c`** (a
+`contactsheet`-téma munkatömbje, 56.2) — **megvan**; összesen **25**
+hely, ebből hat a csomópont-vektoré.
+
+**`FUN_0083dfa0`** (736 b), `0x0083e030`-tól:
+
+```
+0x0083e030  mov  edx, 0x38 · mul        ; n × 56
+0x0083e040  add  ecx, 4                 ;   + 4 (a darabszám fejléc)
+0x0083e04b  call 0xc0769f               ; foglalás
+0x0083e05b  lea  ebx, [eax + 4]         ; az ELEMEK itt kezdődnek
+0x0083e063  mov  [eax], ebp             ; a darabszám a fejlécbe
+0x0083e05e  push 0x833cd0 · push 0x38
+0x0083e06b  call 0x4010e0               ; alap-ktorral MEGÉPÍTI
+…                                       ; majd a régieket átmásolja
+```
+
+⛳ **És ez sem a `scale` forrása:** az alap-ktor (`FUN_00833cd0`) a
+`+0x2c`-t és a `+0x28`-at **nem inicializálja** (56.2), a régi elemek
+pedig **változatlanul** másolódnak.
+
+Ugyanígy a dokumentum-másoló `FUN_008342b0`: `[ebp+0x4c]` darabszám,
+`[ebp+0x48]` bázis, foglalás (`0x00834439`), majd elemenként
+`call 0x8341b0` (`0x0083447c`) — **aritmetika nélkül**.
+
+### 65.3 ⛔ ÉRTÉKTÁBLA NINCS — negatív, kontrollal
+
+Eddig nem próbált lehetőség: a négy mért `contactsheet`-érték
+**konstansként** a binárisban. Az összes adatszakasz végigpásztázva
+`float32`, `float64` és egész alakban a `500` · `256` · `313` · `158`
+értékekre. **Kontroll:** ugyanez a keresés megtalálja a `0,33`-at
+(`0x00cf4e60`) és az `1024,0`-t (`0x00cf4218`) — **rendben**.
+
+Találat `float32`-ben hat, és a `500,0`-s csoport (`0x00c7a690`,
+`0x00c7a6a8`, `0x00c7a6d8`) egy **objektív-tábla** rekordjaiban áll:
+
+```
+0x00c7a68c → 0x00cdef64 = 'Canon EF 500mm f/4.5L'
+0x00c7a6bc → 0x00cdef48 = 'Canon EF 300mm f/2.8L IS'
+0x00c7a6d4 → 0x00cdef30 = 'Canon EF 500mm f/4L IS'
+```
+
+— a `500` itt **gyújtótávolság**. ⇒ **A `contactsheet` értékei nem
+állnak táblában.**
+
+### 65.4 ⛳ Ahol most tartunk — a teljes lánc
+
+| lépés | ki | mit tesz a `+0x2c`-vel |
+|---|---|---|
+| vektor-növelés | `FUN_0083dfa0` (65.2) | alap-ktor: **nem írja** |
+| hozzáfűzés | `0x0087e3f2` / `0x00880b9e` / `0x00884c50` (58.1) | konstans `1,0` / `0,0` |
+| elrendezés | `FUN_00888210` · `FUN_00885060` (56.4) | konstans `1,0` |
+| visszatöltés | `FUN_00881710` (56.1) | **nem érinti** |
+| másolás | `FUN_008341b0` · `FUN_0087b830` · `FUN_008342b0` (57.1, 65.2) | változatlan |
+| téma-osztályok | mind a 48 metódus (64.4) | **nem írnak** |
+| migráció | `FUN_00834520` @ `0x00834683` (55.2) | **számít**, de `version == 1` |
+| **beolvasás** | `0x008332b7` (59.2) | **a FÁJL értéke** |
+
+⇒ A tároló-gépezet **végig fel van térképezve**, és a `picturepile`-ág
+migrációján kívül **az egyetlen nem-konstans forrás a `.cxf` beolvasás**.
+
+### 65.5 A KÖVETKEZŐ lépés, megnevezve
+
+A 46.2 megállapította, hogy a **mentett** dokumentum az 1. argumentum
+`+0x138`-asa, a 44/45. szakasz pedig a dokumentum-másoló **kilenc**
+hívási helyét sorolta be. Amit még **senki nem olvasott el**: a
+`+0x138`-as dokumentum **honnan kapja a csomópont-vektorát** — a
+`0x00834473`/`0x00834490` (a `FUN_008342b0` másolása) csak azt mondja,
+hogy másolat, de **melyik forrásból**.
+
+⇒ A következő kör a `FUN_008342b0` **kilenc hívóhelyét** veszi sorra
+(45.2 listája), és minden hívásnál megnevezi a FORRÁS dokumentumot.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **3 lezárva** (a tíz
+`dword`-író besorolva; a vektor-növelés megvan és nem forrás; értéktábla
+nincs) · **1 nyitott, gépi úton folytatható, meglévő listával** (a
+dokumentum-másoló kilenc hívóhelye) · 0 „csak nyitva".*
