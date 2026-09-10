@@ -5586,3 +5586,153 @@ A kapu-sztring ezt előre megmondta.
 `picturepile` `scale`-képlete) · **2 nyitott, gépi úton folytatható**
 (csonkolás helye, `contactsheet` útja) · 0 „csak nyitva" — mindkettő
 megnevezett paranccsal, az 55.7-ben.*
+
+---
+
+## 56. K1 — a dokumentum-tömb FELTÖLTŐJE megvan, és a `scale` a LAYOUT ELŐTT dől el (2026-09-10, #1412)
+
+*266. kutatói kör. Az 55. kör megtalálta a `picturepile` számoló íróját; ez a
+kör azt kérdezte, van-e a `contactsheet`-nek SAJÁT, téma-kapuzott útja. A
+válasz **NINCS** — és a nyomozás közben előkerült az a függvény, amit öt kör
+óta keresünk: a **`[dokumentum+0x48]` csomópont-tömb feltöltője**.*
+
+### 56.1 ⭐ `FUN_00881710` — a csomópont-tömb FELTÖLTŐJE
+
+```
+0x00881727  mov  edi, [ecx + 0x2c]        ; a FORRÁS tömb
+0x0088172a  fld  dword ptr [eax + edi]    ; forrás[+0]  = bal
+0x0088172d  mov  ebp, [esi + 0x48]        ; a CÉL: a dokumentum csomópont-tömbje
+0x00881730  fstp dword ptr [edx + ebp + 0x18]     ; → csomópont.x
+0x00881737  fld  dword ptr [edi + eax + 4]        ; forrás[+4]  = fent
+0x0088173e  fstp dword ptr [edx + ebp + 0x1c]     ; → csomópont.y
+0x00881745  fld  dword ptr [edi + eax + 8]        ; forrás[+8]  = jobb
+0x0088174b  fsub dword ptr [edi]                  ;   − bal
+0x00881753  add  edx, 0x38                        ; lépésköz 56
+0x0088175e  fstp dword ptr [edi + edx - 0x18]     ; → csomópont.w   (0x38−0x18 = 0x20)
+0x00881765  fld  dword ptr [edi + eax + 0xc]      ; forrás[+0xc] = lent
+0x0088176b  fsub dword ptr [edi + 4]              ;   − fent
+0x00881771  add  eax, 0x10                        ; a forrás rekordja 16 bájt
+0x0088177c  fstp dword ptr [edi + edx - 0x14]     ; → csomópont.h   (0x38−0x14 = 0x24)
+0x00881780  mov  edi, [esi + 0x4c]  · shr edi,1   ; darabszám
+```
+
+**A forrás egy TÉGLALAP-tömb** (`bal, fent, jobb, lent`, 4 float =
+**16 bájt/rekord**), a cél a dokumentum 56 bájtos csomópont-rekordja.
+
+⛳ **És ami NINCS benne: a `+0x2c` (`scale`) és a `+0x28` (`theta`).** A
+feltöltő a négy geometriai mezőt írja, semmi mást.
+
+*Bizonyítottsági fok: **megerősített** — utasításonként, a negatív
+eltolások (`edx−0x18`, `edx−0x14`) a `0x38`-as léptetés UTÁNI állapotból
+kiszámolva.*
+
+### 56.2 ⭐ A rekord konstruktora sem állítja be — a másoló viszont átviszi
+
+| függvény | mit tesz a `+0x2c`-vel |
+|---|---|
+| `FUN_00833cd0` (alap-ktor, `0x00833cd6`–`0x00833ce7`) | **NEM ÍRJA.** `fldz`-vel nullázza a `+0x18`/`+0x1c`/`+0x20`/`+0x24`-et és a `+0x30` sztringet — a `+0x28` és a `+0x2c` érintetlen |
+| `FUN_008341b0` (másoló, `0x00834261`) | `fld [esi+0x2c]` → `fstp [ebx+0x2c]` — **átviszi** |
+
+A `contactsheet` elrendezője (`FUN_00887e50`) `n × 56` bájtot foglal
+(`0x00887f3c mov edx,0x38` · `mul`), a tömböt az alap-ktorral építi
+(`0x00887f66 push 0x833cd0`), majd **elemenként a másolóval tölti fel** egy
+forrás-tömbből (`0x00887f9f call 0x8341b0`, `0x00887fa4 add edi,0x38`).
+
+⇒ **A `scale` a munkatömbbe MÁSOLÁSSAL kerül** — tehát már a forrásban
+benne van, az elrendezés ELŐTT.
+
+### 56.3 ⛳ A kör kérdésére a válasz: NINCS `contactsheet`-kapu
+
+**A téma-sztringek egy összefüggő táblában állnak** (kiolvasva):
+
+| név | VA | | név | VA |
+|---|---|---|---|---|
+| `polaroid` | `0x00cbea08` | | `regulargrid` | `0x00cbea44` |
+| `whiteborder` | `0x00cbea14` | | `multiexp` | `0x00cbea50` |
+| `noborder` | `0x00cbea20` | | `contactsheet` | `0x00cbea5c` |
+| `picturepile` | `0x00cbea2c` | | `framegrid` | `0x00cbea6c` |
+| `picturegrid` | `0x00cbea38` | | | |
+
+**Minden** immediate hivatkozás ezekre a címekre, a teljes `.text`-en
+(pozitív kontroll: `0x008345ea`, az 55. kör kapuja — **megvan**): a
+`0x00841570`–`0x00841795` blokk mind a hatot végigpróbálja, majd
+ismeretlen témánál **`picturepile`-ra esik vissza** (`0x00841795`). Ez
+**érvényesítő**, nem elágazás: geometriát nem érint.
+
+⇒ **`contactsheet`-re nincs téma-kapuzott `scale`-út.** Az egyetlen
+téma-kapuzott hely az 55. köré, és az `picturepile`-ra szól.
+
+⚠️ **Finomítás az 55.2-höz:** a kapu `cmp eax, 0xcbea2c` — **mutató**-
+azonosság, nem sztring-összehasonlítás. Tehát a szorzás csak akkor fut,
+ha a téma épp ebből a literálból lett beállítva (új kollázs, illetve a
+`0x00841795` visszaesés) — **fájlból betöltött** `picturepile`-nál a
+sztring másolat, a mutató más, és a ciklus **nem** fut.
+
+### 56.4 A `+0x2c` írói a kollázs-sávban — TELJES leltár, három alakban
+
+Két menetben, `paszta.py` memóriakapu alatt (csúcs-RSS 87 MiB), a
+`0x00829000`–`0x00895000` sávon, **három** címzési alakra
+(közvetlen · mutatóba emelt `lea` · a léptetés utáni negatív eltolás).
+⚠️ **Az első futás kontrollja MEGBUKOTT** (a mutatós alakot a szűrő nem
+látta) — a minta javítva, a végleges futás kontrolljai: `0x00834693`
+(léptetés) **és** `0x00834696` (írás) — mindkettő megvan.
+
+| mérőszám | érték |
+|---|---|
+| `+0x2c`-re író hely a sávban | **78** |
+| ebből 56 bájtos léptetés közelében (≤200 bájt) | **3** |
+| indexelt `+0x2c`-hozzáférés az EGÉSZ binárisban | **22** |
+| ebből a kollázs-sávban | **4** |
+
+A négy indexelt hely tételesen: `0x00834686`/`0x0083468a` (az 55. kör
+szorzója), `0x008350b2` (az író olvasása), `0x0088522d` és `0x008885bc` —
+**mindkettő elrendező, és mindkettő `fld1`-et, azaz 1,0-t ír**
+(`FUN_00885060` és `FUN_00888210`). A három léptetés-közeli: az 55. köré,
+egy **rekord-másoló** (`0x00890cae`, `+0x18`…`+0x34` szó szerint) és egy
+**inicializáló** (`0x00893d2d`, nullát ír).
+
+**Blokk-másolás:** a sávban összesen **két** `rep movsd` van
+(`0x00873d70` 14 dword = 56 bájt a VEREMRE, `0x0087b3a9` 10 dword egy
+`+0x1dc` mezőbe) — egyik sem a csomópont-tömbbe másol. (Kontroll: a
+`repe cmpsb` sztring-utasításokat ugyanez a pásztázás látja.)
+
+⇒ **A kollázs-sávban egyetlen hely sem ír SZÁMOLT `scale`-t a
+`contactsheet`-nek.** Ez most már nem minta-korlátos állítás: mind a
+három címzési alak és a blokk-másolás is le van fedve, működő
+kontrollokkal.
+
+### 56.5 ⛳ A KÖVETKEZTETÉS, kimondva
+
+A mentett `contactsheet` `scale` (4→500, 6→256, 9→313, 12→158) **nem az
+elrendezésben és nem a mentésben keletkezik**:
+
+- az elrendezők `1,0`-t írnak (56.4),
+- a feltöltő a `+0x2c`-hez hozzá sem nyúl (56.1),
+- az író átalakítás nélkül nyomtatja (17.4, 55.1),
+- téma-kapuzott ág nincs rá (56.3),
+- a munkatömb a `scale`-t **másolással** kapja (56.2).
+
+⇒ **A `scale` már a dokumentum csomópontjában benne van, mielőtt bármelyik
+elrendező elindulna.** Aki beállítja, az a csomópontot LÉTREHOZÓ út — az,
+amelyik a kiválasztott képekből felépíti a `[dokumentum+0x48]` tömböt.
+
+### 56.6 A KÖVETKEZŐ lépés, megnevezve
+
+1. **A csomópont-HOZZÁFŰZŐ út**: ki növeli a `[dok+0x4c]` darabszámot, és
+   mit ír a friss elem `+0x2c`-ébe. Horgony: a `FUN_00833cd0` alap-ktor
+   **nem** inicializálja a `+0x2c`-t, tehát a hozzáfűzőnek kötelezően
+   írnia kell — különben szemét kerülne a fájlba, márpedig a mért
+   értékek szabályosak.
+2. **A `+0x28` (`theta`) ugyanígy**: a ktor azt sem írja, a fájlban mégis
+   `0,000000` áll — ugyanaz a hozzáfűző út állítja be, tehát a kettő
+   EGYÜTT kereshető (egy olyan hely, amely mindkettőt írja).
+3. A `contactsheet` mért `scale`-jei a hozzáfűzőben talált képlet
+   **ellenőrző készlete** (4→500, 6→256, 9→313, 12→158).
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (van-e
+`contactsheet`-kapu — NINCS; ki tölti fel a dokumentum-tömböt —
+`FUN_00881710`) · **1 nyitott, gépi úton folytatható, megnevezett
+horgonnyal** (a csomópont-hozzáfűző) · 0 „csak nyitva".*
+
+⚠️ **Az 55.6/1. pont (a csonkolás helye) NYITVA MARAD**, örökölt
+kérdésként — a munkasorban áll.
