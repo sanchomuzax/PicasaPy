@@ -3777,6 +3777,19 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Add search tag</source>
+        <translation>Keresési címke hozzáadása</translation>
+    </message>
+    <message>
+        <source>Please enter a tag to show as an album</source>
+        <translation>Írja be az albumként megjelenítendő címkét</translation>
+    </message>
+    <message>
+        <source>No pictures have that tag.</source>
+        <translation>Egyetlen képen sincs ez a címke.</translation>
+    </message>
+
+    <message>
         <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
         <translation>Ez több mint 1000 képet tartalmazó albumot hoz létre.  Folytatja?</translation>
     </message>
@@ -4693,6 +4706,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Show &amp;tag as album...</source>
+        <translation>&amp;Címke megjelenítése albumként...</translation>
+    </message>
+
     <message>
         <source>Save &amp;search results...</source>
         <translation>Keresési eredmények &amp;mentése...</translation>

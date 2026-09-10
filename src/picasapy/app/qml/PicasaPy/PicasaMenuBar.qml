@@ -166,6 +166,8 @@ MenuBar {
     //: #1405: a keresés mentése albumként — a gazda dönt a megerősítésről.
     property bool canSaveSearch: false
     signal saveSearchRequested()
+    //: #1406: a címke albumként — a gazda nyitja a bekérő párbeszédet.
+    signal showTagAsAlbumRequested()
     signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
@@ -1794,6 +1796,21 @@ MenuBar {
                 //: album sem lesz
                 enabled: bar.canSaveSearch
                 onTriggered: bar.saveSearchRequested()
+            }
+            //: #1406: `eMenuTools::ID_SEARCHTOKEN` — a Kísérleti almenü
+            //: ÖTÖDIK tétele (a keresés-mentés után), a bináris menüépítőből
+            //: mérve.
+            //:
+            //: A színkeresés (#1399) FORDÍTOTTJA: ott a menüpont a
+            //: keresőmezőbe ír, itt a felhasználó megad egy címkét, és abból
+            //: RENDES ALBUM lesz — nem élő szűrő. Három külön szöveg tartozik
+            //: hozzá (mérve, `0x005d8330`): a menüfelirat, a párbeszéd címe
+            //: (`ThumbUI::addsearchtoken`) és a beviteli felszólítás
+            //: (`CAlbumState::addsearchprompt`).
+            MenuItem {
+                objectName: "menuToolsShowTagAsAlbum"
+                text: qsTr("Show &tag as album...")
+                onTriggered: bar.showTagAsAlbumRequested()
             }
             // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
             // is a Kísérleti almenüben lakott, az áthelyezés mellett

@@ -172,6 +172,43 @@ def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     return _records(rows)
 
 
+def photos_with_keyword(
+    conn: sqlite3.Connection, keyword: str
+) -> tuple[PhotoRecord, ...]:
+    """Az adott CÍMKÉT hordozó fotók (#1406) — a „Címke megjelenítése
+    albumként" parancs forrása.
+
+    ⚠️ A szűrés TÉTELENKÉNT egyezik, nem részszóra: a `keywords` oszlop
+    vesszővel tagolt lista, és egy `LIKE '%nyár%'` a „nyáron" és a
+    „nyaralás" címkét is behúzná. A vesszős tagolás miatt SQL-ben ez
+    csak csúnya kifejezéssel volna kifejezhető, ezért az egyezést itt
+    döntjük el — a jelölt halmaz (címkézett fotók) amúgy is kicsi a
+    teljes könyvtárhoz képest.
+
+    A hasonlítás kis-nagybetűre nem érzékeny (a Picasa címkéi sem azok),
+    és a tételek körüli szóközök nem számítanak.
+    """
+    kulcs = (keyword or "").strip().casefold()
+    if not kulcs:
+        return ()
+    rows = conn.execute(
+        # ⚠️ A `keywords` a SELECT-ben számolt alias (IPTC > ini), tehát a
+        # WHERE-ben nem hivatkozható — a két forrásoszlopra szűrünk.
+        f"{_SELECT} WHERE COALESCE(p.keywords_file, p.keywords_ini) IS NOT NULL"
+        " AND COALESCE(p.keywords_file, p.keywords_ini) <> ''"
+        " ORDER BY f.path, p.name"
+    )
+    return tuple(
+        record
+        for record in _records(rows)
+        if kulcs
+        in {
+            tetel.strip().casefold()
+            for tetel in (record.keywords or "").split(",")
+        }
+    )
+
+
 def photos_up_to_age(
     conn: sqlite3.Connection, cutoff: str
 ) -> tuple[PhotoRecord, ...]:

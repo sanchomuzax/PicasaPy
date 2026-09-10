@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.376] – 2026-09-10
+
+### Hozzáadva
+
+- **Címke megjelenítése albumként** (#1406). Az Eszközök ▸ Kísérleti
+  almenüben új menüpont: beírsz egy címkét, és a program albumot készít
+  mindazokból a képekből, amelyeken ez a címke szerepel. A címke egészben
+  számít, tehát a „nyár" nem húzza be a „nyaralás"-t. Ha egyetlen képen sincs
+  ilyen címke, a program megmondja.
+
 ## [0.8.375] – 2026-09-10
 
 ### Hozzáadva

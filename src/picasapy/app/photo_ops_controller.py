@@ -54,6 +54,7 @@ from picasapy.edit.effect_clipboard import (
 from picasapy.fileops import RenameItem, preview_name, rename_photos_many
 from picasapy.index import (
     open_index,
+    photos_with_keyword,
     photo_by_id,
     search_photos,
     update_photo_fields,
@@ -507,8 +508,16 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         kiírva — a Picasa is minden mappába kiírja, ahol az albumnak van
         tagja —, a tagság pedig `with_album`-mal minden kijelölt fotónál.
         Visszaadja az új tokent (üres kijelölésnél/hibánál üres stringet)."""
-        valid = self._rows_to_photos(rows)
-        if not valid:
+        return self._albumot_keszit(name, self._rows_to_photos(rows))
+
+    def _albumot_keszit(self, name: str, photos) -> str:
+        """Album készítése MEGADOTT fotókból (a `createAlbum` magja, #1406).
+
+        A `createAlbum` a KIJELÖLÉS soraiból hívja, a „Címke megjelenítése
+        albumként" pedig a címke szerint lekérdezett fotókkal — a kettő
+        ugyanezt az egyetlen írási utat használja, tehát az ini-írás, a
+        hibakezelés és az albumlista-frissítés is közös."""
+        if not photos:
             return ""
         token = secrets.token_hex(16)
         clean_name = (name or "").strip() or None
@@ -517,9 +526,28 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             document = ensure_album(document, token, clean_name)
             return with_album(document, photo.name, token)
 
-        if not self._write_album_batch(valid, mutate):
+        if not self._write_album_batch(photos, mutate):
             return ""
         return token
+
+    @Slot(str, result=str)
+    def showTagAsAlbum(self, tag: str) -> str:
+        """Egy CÍMKE tartalmából rendes album (#1406, `ID_SEARCHTOKEN`).
+
+        Az eredeti a színkeresés FORDÍTOTTJA: ott a menüpont a keresőmezőbe
+        ír (#1399), itt a felhasználó megad egy címkét, és abból **rendes
+        album** lesz — nem élő szűrő.
+
+        A címkét tételenként egyeztetjük (`index.photos_with_keyword`), tehát
+        a „nyár" címke nem húzza be a „nyaralás"-t. Üres címkére és találat
+        nélküli címkére üres stringgel térünk vissza — a felület ebből tud
+        üzenetet adni (néma hatástalanság helyett)."""
+        cimke = (tag or "").strip()
+        if not cimke:
+            return ""
+        with open_index(self._db_path) as conn:
+            fotok = photos_with_keyword(conn, cimke)
+        return self._albumot_keszit(cimke, list(fotok))
 
     # -- Keresési eredmények mentése albumként (#1405) -------------------------
 
