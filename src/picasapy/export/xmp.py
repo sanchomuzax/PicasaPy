@@ -38,6 +38,14 @@ _NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 _NS_DC = "http://purl.org/dc/elements/1.1/"
 _NS_LR = "http://ns.adobe.com/lightroom/1.0/"
 _NS_MWG_RS = "http://www.metadataworkinggroup.com/schemas/regions/"
+#: #1403: a Microsoft Photo 1.2 arcrégió-séma. Az eredeti Picasa MINDKETTŐT
+#: kiírja (a mérés a `mwg-rs` mellett a `MicrosoftPhoto` útvonalakat is
+#: megtalálta a szállított binárisban), és a két szabvány KÜLÖNBÖZŐ
+#: koordináta-értelmezést használ — a részletek a `_region_info_property`
+#: docstringjében.
+_NS_MP = "http://ns.microsoft.com/photo/1.2/"
+_NS_MPRI = "http://ns.microsoft.com/photo/1.2/t/RegionInfo#"
+_NS_MPREG = "http://ns.microsoft.com/photo/1.2/t/Region#"
 _NS_ST_AREA = "http://ns.adobe.com/xmp/sType/Area#"
 _NS_ST_DIM = "http://ns.adobe.com/xap/1.0/sType/Dimensions#"
 
@@ -185,6 +193,11 @@ def _rdf_description(meta: XmpImageMetadata) -> str:
         )
     if meta.regions:
         props.append(_regions_property(meta, indent="   "))
+        # #1403: a MÁSODIK arcrégió-séma. A Picasa mindkettőt kiírja, és a
+        # kettő nem váltja ki egymást: az olvasók egyik vagy másik ágat
+        # ismerik (a Windows Fotógaléria és a Photoshop Elements a
+        # MicrosoftPhoto-t, a digiKam/Lightroom az mwg-rs-t).
+        props.append(_region_info_property(meta, indent="   "))
 
     open_tag = (
         '  <rdf:Description rdf:about=""\n'
@@ -192,7 +205,10 @@ def _rdf_description(meta: XmpImageMetadata) -> str:
         f'    xmlns:lr="{_NS_LR}"\n'
         f'    xmlns:mwg-rs="{_NS_MWG_RS}"\n'
         f'    xmlns:stArea="{_NS_ST_AREA}"\n'
-        f'    xmlns:stDim="{_NS_ST_DIM}">\n'
+        f'    xmlns:stDim="{_NS_ST_DIM}"\n'
+        f'    xmlns:MP="{_NS_MP}"\n'
+        f'    xmlns:MPRI="{_NS_MPRI}"\n'
+        f'    xmlns:MPReg="{_NS_MPREG}">\n'
     )
     return open_tag + "".join(props) + "  </rdf:Description>\n"
 
@@ -253,6 +269,47 @@ def _region_li(region: XmpRegion, indent: str) -> str:
         ' stArea:unit="normalized"/>\n'
         f"{indent}</rdf:li>\n"
     )
+
+
+def _region_info_property(meta: XmpImageMetadata, indent: str) -> str:
+    """A Microsoft Photo 1.2 `MP:RegionInfo` blokk (#1403).
+
+    ⚠️ **A két szabvány MÁSHOGY érti a téglalapot**, és ez a legkönnyebben
+    elvéthető pont:
+
+    | | mwg-rs (`stArea`) | MicrosoftPhoto (`MPReg:Rectangle`) |
+    |---|---|---|
+    | x, y | a régió **KÖZÉPPONTJA** | a régió **BAL FELSŐ** sarka |
+    | alak | négy attribútum | EGY szöveg, `x, y, w, h` sorrendben |
+    | egység | normalizált (0..1) | normalizált (0..1) |
+
+    Az átszámítás ezért `bal = x − w/2`, `felső = y − h/2`. A koordináták a
+    kép szélére csúszó arcnál negatívba mehetnének; a Microsoft-olvasók ezt
+    nem tiltják, de a 0-ra vágás értelmes régiót ad — ezért vágunk.
+
+    A név mezője `MPReg:PersonDisplayName` (a `mwg-rs:Name` párja); a
+    régió-TÍPUST (`Face`) ez a séma nem hordozza, tehát csak a nevesített
+    arcok jönnek át — ez a séma sajátja, nem a mi szűkítésünk.
+    """
+    lines = [f'{indent}<MP:RegionInfo rdf:parseType="Resource">\n']
+    lines.append(f"{indent} <MPRI:Regions>\n")
+    lines.append(f"{indent}  <rdf:Bag>\n")
+    for region in meta.regions:
+        bal = max(0.0, region.x - region.w / 2.0)
+        felso = max(0.0, region.y - region.h / 2.0)
+        lines.append(
+            f'{indent}   <rdf:li rdf:parseType="Resource">\n'
+            f"{indent}    <MPReg:Rectangle>"
+            f"{_fmt(bal)}, {_fmt(felso)}, {_fmt(region.w)}, {_fmt(region.h)}"
+            "</MPReg:Rectangle>\n"
+            f"{indent}    <MPReg:PersonDisplayName>{escape(region.name)}"
+            "</MPReg:PersonDisplayName>\n"
+            f"{indent}   </rdf:li>\n"
+        )
+    lines.append(f"{indent}  </rdf:Bag>\n")
+    lines.append(f"{indent} </MPRI:Regions>\n")
+    lines.append(f"{indent}</MP:RegionInfo>\n")
+    return "".join(lines)
 
 
 def _fmt(value: float) -> str:

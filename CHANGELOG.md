@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.377] – 2026-09-10
+
+### Hozzáadva
+
+- **Arcinformációk írása XMP-adatokba** (#1403). Az Eszközök ▸ Kísérleti
+  almenü új pontja a látott mappa képeihez XMP-fájlt ír, benne az elnevezett
+  arcok helyével — mostantól két szabvány szerint egyszerre, hogy a Windows
+  Fotógaléria és a digiKam/Lightroom is felismerje. A program a végén
+  megmondja, hány fájlba írt és mennyit hagyott ki; ha valamelyik fájl írása
+  nem megy (például írásvédett mappa), azt megnevezve jelzi, és a többivel
+  folytatja.
+
 ## [0.8.376] – 2026-09-10
 
 ### Hozzáadva

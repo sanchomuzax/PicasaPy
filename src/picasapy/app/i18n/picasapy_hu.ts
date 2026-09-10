@@ -3777,6 +3777,15 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Face data written to %1 file(s); %2 skipped.</source>
+        <translation>Arcadat kiírva %1 fájlba; %2 kihagyva.</translation>
+    </message>
+    <message>
+        <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+        <translation>Arcadat kiírva %1 fájlba; %2 kihagyva. Az első hiba: %3</translation>
+    </message>
+
+    <message>
         <source>Add search tag</source>
         <translation>Keresési címke hozzáadása</translation>
     </message>
@@ -4706,6 +4715,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Write faces to XMP...</source>
+        <translation>Arcinformációk írása XMP-adatokba...</translation>
+    </message>
+
     <message>
         <source>Show &amp;tag as album...</source>
         <translation>&amp;Címke megjelenítése albumként...</translation>
