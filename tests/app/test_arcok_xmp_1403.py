@@ -101,7 +101,11 @@ class TestAzIras:
         assert eredmeny == {"kiirt": 0, "kihagyott": 0, "ok": ""}
 
 
-@pytest.mark.skipif(os.name == "nt", reason="a POSIX írásvédelem nem érvényes")
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason="#1864: a `chmod` csak POSIX-on érvényesíti a jogosultságot — "
+    "windowson a hibahelyzet elő sem áll, tehát az állítás hamisan zöld lenne",
+)
 class TestAzIrasvedettHely:
     def test_a_koteg_nem_all_le_es_MEGNEVEZI_az_okot(self, vezerlo, konyvtar):
         """Az eredetiben is külön, megnevezett hibaeset a csak olvasható fájl."""
