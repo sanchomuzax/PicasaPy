@@ -12,6 +12,7 @@ egyetlen jelzésbe gyűjti, és csak a releváns változásokra szól
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from pathlib import Path, PurePath
@@ -64,6 +65,12 @@ class _Handler(FileSystemEventHandler):
                 self._watcher._mark_dirty(str(PurePath(path_str).parent))
 
 
+_log = logging.getLogger(__name__)
+
+#: #1457: ennyit várunk a megfigyelő szálára a leállításkor.
+_JOIN_TIMEOUT_S = 5
+
+
 class LibraryWatcher:
     """Figyelt gyökerek alatti változások debounce-olt jelzése.
 
@@ -113,8 +120,48 @@ class LibraryWatcher:
             self._first_dirty_at = None
         if self._observer is not None:
             self._observer.stop()
-            self._observer.join(timeout=5)
-            self._observer = None
+            self._observer.join(timeout=_JOIN_TIMEOUT_S)
+            # #1457: a referenciát CSAK akkor engedjük el, ha a szál
+            # tényleg leállt. Korábban minden esetben eldobtuk — ha a join
+            # időtúllépéssel tért vissza, a szál tovább futott egy olyan
+            # kezelővel, ami a lebontás alatt álló figyelőre (és rajta át a
+            # hívó vezérlőre) mutat. A CI jel nélküli összeomlásai
+            # kivétel nélkül a valódi figyelőt indító tesztfájlokban
+            # jelentek meg; hogy ez az OK is, azt a következő összeomlás
+            # veremképe dönti el (a futtató most már kiírja).
+            if self._szal_el(self._observer):
+                _log.warning(
+                    "a mappa-figyelő szála %s s alatt nem állt le — a "
+                    "referenciát megtartjuk, hogy ne egy felszabadított "
+                    "objektumra dolgozzon tovább",
+                    _JOIN_TIMEOUT_S,
+                )
+            else:
+                self._observer = None
+
+    @staticmethod
+    def _szal_el(megfigyelo) -> bool:
+        """Fut-e még a megfigyelő szála (#1457).
+
+        A watchdog `Observer`-e `threading.Thread` leszármazott, tehát
+        ismeri az `is_alive`-ot; ha egy próba mégis olyan objektumot ad,
+        ami nem, az NEM dönthet le semmit — ilyenkor leállítottnak
+        tekintjük."""
+        elet = getattr(megfigyelo, "is_alive", None)
+        if elet is None:
+            return False
+        try:
+            return bool(elet())
+        except Exception:  # noqa: BLE001 — a leállítás nem bukhat el ezen
+            return False
+
+    def leallt(self) -> bool:
+        """Leállt-e a figyelő MARADÉKTALANUL (#1457).
+
+        `False`, ha a megfigyelő szála a `stop()` után is fut — a hívó
+        (teszt-teardown, alkalmazás-kilépés) így meg tudja nevezni a
+        problémát, ahelyett hogy a folyamat később jel nélkül halna meg."""
+        return self._observer is None or not self._szal_el(self._observer)
 
     def _mark_dirty(self, folder: str) -> None:
         with self._lock:

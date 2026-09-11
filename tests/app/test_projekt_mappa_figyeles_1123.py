@@ -45,6 +45,7 @@ import time
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 
@@ -118,8 +119,7 @@ def controller(qt_app, tmp_path, library, monkeypatch):
         "a kezdő szinkron nem állt le 20 s alatt"
     )
     if ctl._watcher is not None:
-        ctl._watcher.stop()
-        ctl._watcher = None
+        allitsd_le_a_figyelot(ctl)
     yield ctl
     ctl.shutdown()
     assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"

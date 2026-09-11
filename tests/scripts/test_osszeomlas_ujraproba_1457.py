@@ -99,3 +99,97 @@ class TestAzElszamolasNemNema:
             "az összeomlás-lista a bukás-jelentés UTÁN áll — a napló végén "
             "a bukások zaja alá kerülne"
         )
+
+
+class TestAzOsszeomlasNYOMAmegmarad:
+    """#1457: az összeomlott részfutás KIMENETE is kell, nem csak a ténye.
+
+    Mérve (2026-09-11, CI-napló): a `34561332733` futás windows-lábán a
+    `test_projekt_mappa_figyeles_1123.py` `exit 3221226505`-tel omlott
+    össze, a napló viszont CSAK az „ÚJRAPRÓBÁLÁS" sort tartalmazta. A
+    részfutás `stderr`-je — benne a `faulthandler` veremképével, amit a
+    futtató külön ezért kapcsol be — a `_KIMENET`-ben ült, és az
+    újrapróbálás felülírta. A sikeres retry után tehát a nyom ELVESZETT,
+    és a következő összeomlás megint vakon elemzendő.
+
+    Ez a próba a párhuzamos ágat méri, mert a CI ott fut.
+    """
+
+    def _fajl(self, modul):
+        return modul._ROOT / "tests" / "app" / "test_kitalalt_1457.py"
+
+    def test_az_osszeomlott_reszfutas_kimenete_KIMEGY(self, tmp_path, capsys):
+        modul = _run_tests_modul()
+        fajl = self._fajl(modul)
+        relative = str(fajl.relative_to(modul._ROOT))
+        hivasok = []
+
+        def hamis_run_pytest(args, timeout_s, **kwargs):
+            hivasok.append(args)
+            if len(hivasok) == 1:
+                modul._KIMENET[relative] = (
+                    "Fatal Python error: Segmentation fault\n"
+                    "Current thread 0x00007f...:\n"
+                    '  File "tests/app/test_kitalalt_1457.py", line 12 in test_x\n'
+                )
+                return -11
+            modul._KIMENET[relative] = "1 passed"
+            return 0
+
+        modul._run_pytest = hamis_run_pytest
+        modul._OSSZEOMLAS_UJRAPROBA.clear()
+        bukasok = modul._app_fajlok_parhuzamosan(
+            [fajl], cov=False, basetemp=tmp_path
+        )
+        kimenet = capsys.readouterr().out
+
+        assert bukasok == [], "a sikeres újrapróbálás után nincs bukás"
+        assert "Fatal Python error" in kimenet, (
+            "az összeomlott részfutás kimenete nem került a naplóba — a "
+            "faulthandler veremképe elveszett az újrapróbálással"
+        )
+        assert relative in modul._OSSZEOMLAS_UJRAPROBA
+
+    def test_a_kimenet_az_UJRAPROBALAS_elott_all(self, tmp_path, capsys):
+        """A naplóban a nyom a retry-sor ELŐTT legyen: így a két sor
+        egymás mellett olvasható, és nem keveredik a retry kimenetével."""
+        modul = _run_tests_modul()
+        fajl = self._fajl(modul)
+        relative = str(fajl.relative_to(modul._ROOT))
+
+        hivasok = []
+
+        def hamis_run_pytest(args, timeout_s, **kwargs):
+            hivasok.append(args)
+            modul._KIMENET[relative] = (
+                "Fatal Python error: Segmentation fault"
+                if len(hivasok) == 1
+                else "1 passed"
+            )
+            return -11 if len(hivasok) == 1 else 0
+
+        modul._run_pytest = hamis_run_pytest
+        modul._OSSZEOMLAS_UJRAPROBA.clear()
+        modul._app_fajlok_parhuzamosan([fajl], cov=False, basetemp=tmp_path)
+        kimenet = capsys.readouterr().out
+        assert kimenet.index("Fatal Python error") < kimenet.index("ÚJRAPRÓBÁLÁS")
+
+    def test_a_SOROS_ag_is_kiirja(self, tmp_path, capsys):
+        """A soros ág kimenete nem gyűjtött (`csendben=False`), tehát ott a
+        nyom magától a képernyőre megy — de a JELÖLÉSNEK ott is látszania
+        kell, hogy a napló olvasója tudja, mi tartozik az összeomláshoz."""
+        modul = _run_tests_modul()
+        fajl = self._fajl(modul)
+        hivasok = []
+
+        def hamis_run_pytest(args, timeout_s, **kwargs):
+            hivasok.append(args)
+            return -11 if len(hivasok) == 1 else 0
+
+        modul._run_pytest = hamis_run_pytest
+        modul._OSSZEOMLAS_UJRAPROBA.clear()
+        modul._app_fajlok_sorosan([fajl], cov=False, basetemp=tmp_path)
+        kimenet = capsys.readouterr().out
+        assert "ÖSSZEOMLÁS" in kimenet, (
+            "a soros ág nem jelöli meg, hol kezdődik az összeomlás nyoma"
+        )

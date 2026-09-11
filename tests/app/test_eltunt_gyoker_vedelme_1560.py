@@ -79,6 +79,7 @@ from pathlib import Path
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 _ROOTKENT_FUT = hasattr(os, "geteuid") and os.geteuid() == 0
@@ -188,8 +189,7 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool):
         "jelentkezne"
     )
     if not watcher and ctl._watcher is not None:
-        ctl._watcher.stop()
-        ctl._watcher = None
+        allitsd_le_a_figyelot(ctl)
     assert _var(qt_app, lambda: not ctl._sync_running), (
         "#2408: a szinkron nem állt le időben"
     )

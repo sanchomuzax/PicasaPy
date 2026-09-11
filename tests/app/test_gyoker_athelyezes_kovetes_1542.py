@@ -52,6 +52,7 @@ from pathlib import Path
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 
@@ -156,8 +157,7 @@ def _vezerlot_epit(qt_app, tmp_path, library, *, watcher: bool, lekerdezes: bool
     # (`watcher=False`): ez csak azt a néhány tized másodpercet szünteti
     # meg, amíg fölöslegesen élt.
     if not watcher and ctl._watcher is not None:
-        ctl._watcher.stop()
-        ctl._watcher = None
+        allitsd_le_a_figyelot(ctl)
     if not lekerdezes and ctl._folder_poll_timer is not None:
         ctl._folder_poll_timer.stop()
     assert _var(qt_app, lambda: not ctl._sync_running), (
@@ -390,8 +390,7 @@ class TestHaMasMappaAllARegiHelyen:
             "#2408: a szinkron nem állt le időben"
         )
         if ctl._watcher is not None:
-            ctl._watcher.stop()
-            ctl._watcher = None
+            allitsd_le_a_figyelot(ctl)
         if ctl._folder_poll_timer is not None:
             ctl._folder_poll_timer.stop()
         assert _var(qt_app, lambda: not ctl._sync_running), (

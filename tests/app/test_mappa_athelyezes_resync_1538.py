@@ -50,6 +50,7 @@ import time
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 
@@ -206,8 +207,7 @@ class TestAzAthelyezettMappaAzUjHelyenLatszik:
         )
         # a figyelő és a lekérdezés is LE: csak a célzott resync maradhat
         if ctl._watcher is not None:
-            ctl._watcher.stop()
-            ctl._watcher = None
+            allitsd_le_a_figyelot(ctl)
         if ctl._folder_poll_timer is not None:
             ctl._folder_poll_timer.stop()
         assert _var(qt_app, lambda: not ctl._sync_running), (
