@@ -5838,6 +5838,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Tags cannot be modified because one or more items are read-only.</source>
+        <translation>A címkék nem módosíthatók, mert a kijelölésben írásvédett elem van.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
         <source>Quick tags</source>
         <translation>Gyorscímkék</translation>
     </message>
