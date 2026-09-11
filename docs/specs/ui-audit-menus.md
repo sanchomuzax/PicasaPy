@@ -361,10 +361,37 @@ A **túlcsordult képpontok** és a **színkezelés** kapcsoló komoly, fotós
 funkciók; a gamma-választók a korabeli kevert Mac/PC monitorpark miatt
 kellettek.
 
+### Nálunk — mérve (2026-09-11, #427)
+
+⚠️ **A „soha nem fényképeztük le" azóta megvalósult résszé vált.** Az
+almenü tizenegy tételéből **tíz megvan**
+(`app/display_mode_controller.py::DISPLAY_MODES`), a menüben kizáró
+csoportként:
+
+| tétel | nálunk |
+|---|---|
+| Automatikus · 24 bites · 16 bites (szemcsézett) | `auto` · `normal` · `dither16` |
+| Fekete-fehér · Szépia | `bw` · `sepia` |
+| LCD fehérpont · Lineáris gamma · Mac gamma | `lcd` · `linear` · `mac` |
+| **Túlcsordult képpontok** | `overflow` |
+| Projektor mód · Távoli asztal | `projector` · `rdesk` |
+| **Színkezelés használata** (ICC) | **nincs** |
+
+A „Kis képek" nálunk nem megjelenítési mód. Az alapértelmezés `auto`,
+ahogy az eredetiben (`0x0040bd90`).
+
+⇒ A #427 lépcsőiből egyedül az **ICC-színkezelés** maradt.
+
 ## K.3 Nézet → indexkép-felirat almenü (`ID_CAP*`)
 
 Mit írjon ki a Picasa az indexkép alá: **Nincs · Fájlnév · Képfelirat ·
-Felbontás · Címkék**. Nálunk ez ma fixen kötött.
+Felbontás · Címkék**.
+
+✅ **Nálunk MEGVAN** (mérve 2026-09-11, #427): mind az öt állás
+(`controller.py::_THUMB_CAPTION_MODES` = `none`, `filename`, `caption`,
+`tags`, `resolution`), a Nézet menüben kizáró csoportként, és a
+választás megmarad (`view/thumbCaption`). A lap korábbi „ma fixen
+kötött" mondata elavult volt.
 
 ## K.4 Nézet → fanézet-változatok
 
