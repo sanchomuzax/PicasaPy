@@ -1531,6 +1531,55 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._register_preview(self._session_with_redeye_pending())
         self._bump_revision()
 
+    @Slot(float, float, result=bool)
+    def removeRedeyeRegionAt(self, x: float, y: float) -> bool:
+        """A megadott ponton lévő kijelölő-négyzet TÖRLÉSE (#604).
+
+        Az eredeti eszköz mindhárom útmutató szövege ezt ígéri:
+        *„Megjegyzés: a keretbe kattintva visszavonhatja a változást."*
+        (`RedEye::AutoFixedMessage`, `::DragToSelectMessage`,
+        `::AutoFixRedoMessage`) — vagyis a keretek EGYEDILEG is törölhetők, nem
+        csak az utolsó (`undoRedeyeRegion`) vagy mind (`resetRedeyeRegions`).
+
+        ⚠️ **Csak az Alkalmazás ELŐTT.** A javítás alkalmazáskor a mentett
+        képpontokba kerül, és a keretek koordinátáit nem tároljuk — az eredeti
+        maga is figyelmeztet rá (`IDS_CONFIRM_UNDO_REDEYE`: a
+        vörösszemjavítások nem állíthatók helyre). Ez a hívás tehát a
+        PUFFERT szerkeszti.
+
+        Átfedő kereteknél a **legutóbb felvett** nyer (a lista vége felől
+        keresünk): a felhasználó azt látja legfelül, és arra kattint.
+
+        Visszatérés: törölt-e valamit. `False`, ha a pont egyetlen kereten sem
+        volt — a hívó ebből tudja, hogy a kattintás nem törlés volt.
+        """
+        self._require_active()
+        for index in range(len(self._redeye_regions) - 1, -1, -1):
+            rect = self._redeye_regions[index]
+            if rect.left <= x <= rect.right and rect.top <= y <= rect.bottom:
+                self._redeye_region_undo.append(self._redeye_regions)
+                self._redeye_regions = (
+                    *self._redeye_regions[:index],
+                    *self._redeye_regions[index + 1 :],
+                )
+                self._register_preview(self._session_with_redeye_pending())
+                self._bump_revision()
+                return True
+        return False
+
+    @Slot(float, float, result=bool)
+    def redeyeRegionHitAt(self, x: float, y: float) -> bool:
+        """Van-e kijelölő-négyzet a megadott ponton (#604)?
+
+        A felület ebből állítja a kurzort: a keret fölött jelezze, hogy
+        kattintható. Állapotot NEM változtat — a kurzor-kötés minden
+        mozgásra lefut, egy mellékhatásos vizsgálat itt drága és hibás is
+        lenne."""
+        return any(
+            rect.left <= x <= rect.right and rect.top <= y <= rect.bottom
+            for rect in self._redeye_regions
+        )
+
     @Slot()
     def undoRedeyeRegion(self) -> None:
         """Az utoljára húzott téglalap visszavonása a pufferben."""

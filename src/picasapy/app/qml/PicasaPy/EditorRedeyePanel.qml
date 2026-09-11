@@ -77,6 +77,25 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    //: #604: a keretenkénti visszavonás mondata. MÉRVE, de MÁS forrásból,
+    //: mint a fölötte lévő útmutató: az a panel statikus címkéje
+    //: (`editpanel/redeyetext`), ez pedig az eszköz HÁROM állapotüzenetének
+    //: közös mondata (`RedEye::AutoFixedMessage`,
+    //: `::DragToSelectMessage`, `::AutoFixRedoMessage`). Mindháromban ott
+    //: van, tehát az eszköz nyitva léte alatt mindig érvényes — ezért áll
+    //: külön soron, állapottól függetlenül.
+    //:
+    //: A magyar a Picasa saját erőforrásából, szó szerint; az ANGOL a mi
+    //: megfogalmazásunk (az eredeti angol alakja nincs kimérve).
+    Text {
+        objectName: "redeyeFrameHintLabel"
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        text: qsTr("Note: click inside the box to undo the change.")
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.textGray
+    }
+
     // az automatika visszajelzése — a jegy szó szerinti sikerüzenete
     Text {
         objectName: "redeyeAutoResultLabel"
