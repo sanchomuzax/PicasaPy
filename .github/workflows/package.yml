@@ -143,3 +143,98 @@ jobs:
           done
           echo "::error::A(z) $TAG kiadáshoz öt kísérlet után sem sikerült feltölteni a csomagokat."
           exit 1
+
+  # ------------------------------------------------------------------------
+  # #3021: IGAZI windowsos telepítő. A tulajdonos szava: „Egy felhasználó
+  # nem klónoz repót, nem keres batch fájlt, és nincs Pythonja." A
+  # PyInstaller a Python futtatókörnyezetet is a csomagba teszi, az Inno
+  # Setup pedig rendes telepítőt csinál belőle (Start menü, asztali ikon,
+  # eltávolítás).
+  #
+  # ⚠️ A lépéssor NEM ér véget a csomagolással: a felépített `.exe`-t
+  # ELINDÍTJUK (`--onellenorzes`). Qt/QML-programnál a csomag hiányossága
+  # (kimaradt bővítmény, hiányzó QML-fa) csak indításkor derül ki — és ott
+  # kell kiderülnie, nem a felhasználó gépén.
+  # ------------------------------------------------------------------------
+  windows-telepito:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - name: Tag meghatározása
+        id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
+          if [ -z "$TAG" ]; then
+            TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::nem sikerült feloldani a kiadás tagjét"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Függőségek + PyInstaller
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
+          pip install pyinstaller
+
+      - name: PyInstaller-csomagolás
+        shell: bash
+        run: pyinstaller --noconfirm packaging/windows/picasapy.spec
+
+      - name: Füstpróba — a CSOMAGOLT program elindul
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
+          # felület felépülése után kilép, eseményciklus nélkül.
+          ./dist/PicasaPy/PicasaPy.exe --onellenorzes > fustproba.txt 2>&1 || {
+            echo "::error::a csomagolt program nem indult el"; cat fustproba.txt; exit 1; }
+          cat fustproba.txt
+          grep -q "onellenorzes" fustproba.txt || {
+            echo "::error::a felület nem épült fel a csomagból"; exit 1; }
+
+      - name: Inno Setup telepítő
+        shell: bash
+        run: |
+          choco install innosetup --no-progress -y
+          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          "$ISCC" "/DMyAppVersion=${{ steps.tag.outputs.verzio }}" \
+                  packaging/windows/picasapy.iss
+
+      - name: A telepítő feltöltése a kiadásra
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
+          for kiserlet in 1 2 3 4 5; do
+            if gh release upload "$TAG" "$FAJL" \
+                 --repo "$GITHUB_REPOSITORY" --clobber; then
+              exit 0
+            fi
+            echo "A feltöltés nem sikerült (${kiserlet}.) — újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::a telepítőt öt kísérlet után sem sikerült feltölteni"
+          exit 1
