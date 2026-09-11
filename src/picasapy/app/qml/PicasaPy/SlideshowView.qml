@@ -155,8 +155,28 @@ Rectangle {
     //: ⚠️ A `cut` nem „nincs átmenet": az eredeti készletben SAJÁT tétel
     //: (`transtype` 1. eleme), ezért a választóban is szerepel — a
     //: viselkedése nulla hosszú áttűnés.
+    //: #3023: a kimenő másolat GEOMETRIÁJA is a látott diáé. A tulajdonos
+    //: jelentése: „az éppen eltűnő kép egy picit kisebb lesz, emiatt ugrálás
+    //: hatás van" — a másolat ugyanis alapméreten (`scale` 1,0, elfordulás
+    //: nélkül) jelent meg, tehát a váltás pillanatában visszaugrott.
+    //:
+    //: A kötések itt MÉG a kimenő diáé (ugyanaz a lusta újraértékelés, amin
+    //: a #3018 kimenő URL-je is múlik), ezért a dia élő értékeit másoljuk.
+    function _geometriatAtvesz() {
+        elozoSlide.width = slide.width
+        elozoSlide.height = slide.height
+        elozoSlide.rotation = slide.rotation
+        elozoSlide.scale = slide.scale
+    }
+
     function _atmenetIndit(elozoUrl) {
         atmenetAnimacio.stop()
+        show._geometriatAtvesz()
+        //: a bejövő dia a pásztázás ELEJÉRŐL induljon: az előző dia
+        //: nagyítása a másolaton él tovább, a diát visszaállítjuk
+        slide.scale = 1.0
+        if (show.transitionKind === "kenburns")
+            kenBurns.restart()
         if (show.transitionKind === "cut" || !elozoUrl) {
             elozoSlide.opacity = 0
             slide.opacity = 1
@@ -233,6 +253,8 @@ Rectangle {
         id: elozoSlide
         objectName: "slideshowPrevImage"
         anchors.centerIn: parent
+        //: a méretet/elfordulást a váltáskor a `_geometriatAtvesz` írja —
+        //: ezek csak a kezdőértékek (első dia, még nincs mit másolni)
         width: parent.width
         height: parent.height
         opacity: 0

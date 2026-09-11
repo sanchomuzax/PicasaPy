@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.419] – 2026-09-11
+
+### Javítva
+
+- **Nincs több ugrálás a diavetítés váltásánál** (#3023). Az áttűnés alatt
+  a kifelé halványuló kép egy külön másolaton jelenik meg, és ez a másolat
+  eddig nem vette át a látott dia nagyítását és elforgatását: a váltás
+  pillanatában visszaugrott alapméretre. A „Pásztázás és nagyítás"
+  átmenetnél ez látszott a legjobban, elforgatott képnél pedig a kimenő
+  kép el is fordult. Mostantól a másolat pontosan úgy áll, ahogy a néző az
+  előző pillanatban látta, és a következő dia a pásztázás elejéről indul.
+  ⚠️ A te gépeden ez még nincs ellenőrizve.
+
 ## [0.8.418] – 2026-09-11
 
 ### Javítva
