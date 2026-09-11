@@ -11,12 +11,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
-- **Az „Indexképek megjelenítése a könyvtárban" végre mutat is fotó-kupacot**
-  (#2984). A bal hasáb bekapcsolt kapcsolóval is a sárga mappaikont mutatta:
-  a borítót összeállító lekérdezés a fotórekord egy nem létező mezőjét
-  olvasta, és a hiba némán „nincs borító"-vá alakult. A lekérdezés mostantól
-  önálló, tesztelhető függvény — a korábbi őrök helyette kitalált adatot
-  adtak be, ezért nem vették észre a hibát.
+- **A mappa-borító lekérdezése egy nem létező mezőt olvasott** (#2984). A bal
+  hasáb a bekapcsolt „Indexképek megjelenítése a könyvtárban" mellett is a
+  sárga mappaikont mutatta: a lekérdezés a fotórekord egy nem létező mezőjét
+  kérte, és a hiba némán „nincs borító"-vá alakult. A lekérdezés mostantól
+  önálló függvény, és valódi indexből futó teszt őrzi. A megjelenés
+  ellenőrzése a felhasználó gépén még hátravan, és a referencia-képek szerint
+  a sor-ikon egyetlen, el nem forgatott bélyegkép — ez a #2989.
 
 ## [0.8.405] – 2026-09-11
 
