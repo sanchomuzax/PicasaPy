@@ -3519,3 +3519,106 @@ Hogy **melyik hívó** süti el először a beállítót egy újonnan felfedezet
 mappára. A beállító helye megvan (`0x004460a0`, vtábla-mutató a
 `0x00c81fb0`-on), de a hívóit vtábla-résen keresztül kell megkeresni, nem
 szöveges kereséssel.
+
+---
+
+## ⛳ A `flipped(N)` BITMASZK — és a mi bit-hozzárendelésünk FORDÍTVA van (2026-09-11, 287. kör, #2938)
+
+*A #2938 azért tartotta az indexben a tükrözés-jelzőt, mert az `N`
+jelentése feltevés volt: „a billentyű-ág argumentuma 1/2, de a fájlba írt
+érték egyezése nem igazolt". Ez a kör kiméri — és a válasz egyik fele
+**megfordítja** a mai modellünket.*
+
+*Forrás: `0x0042d7e0` (az ini-író `flipped` ága) · `0x0042d6c0` (az olvasó)
+· `0x006bb4a0` (a bitekhez tartozó művelet) · `0x005eef30` (a
+billentyű-ág művelete) · a sztringek: `0x00c814bc` = `"flipped(%d)"`,
+`0x00c80ae4` = `"flipped"`, `0x00c7f979` = `""`.*
+
+### 1. ⛳ Az `N` BITMASZK — bitenként vizsgálva
+
+Az író a RÉGI (`[esp+0x1c]`, az olvasóból) és az ÚJ (`ebx`) értéket
+**bitenként** nézi, nem felsorolásként:
+
+```asm
+0x0042d813  test byte ptr [esp + 0x1c], 1   ; regi ertek, 0. bit
+0x0042d81a  test bl, 1                       ; uj ertek, 0. bit
+0x0042d81f  push 2                           ;   -> a 2-es muvelet
+0x0042d828  call 0x6bb4a0
+
+0x0042d82d  test byte ptr [esp + 0x1c], 2   ; regi ertek, 1. bit
+0x0042d834  test bl, 2                       ; uj ertek, 1. bit
+0x0042d839  push 1                           ;   -> az 1-es muvelet
+0x0042d842  call 0x6bb4a0
+```
+
+⇒ **A két bit független**, tehát a `3` érvényes érték: mindkét tükrözés.
+A jegy feltevése ezen a ponton **helyes volt**.
+
+### 2. ⛔ A BIT→TENGELY hozzárendelés FORDÍTOTT a mai modellünkhöz képest
+
+A `0x006bb4a0` és a `0x005eef30` **ugyanabban a műveletkód-térben**
+dolgozik — ezt a hívóhelyeik bizonyítják: mindkettő kap **`0x5a`** (90) és
+**`0x10e`** (270) kódot is más helyekről, azaz a kódtér a forgatás
+szögeit és a tükrözéseket együtt tartalmazza:
+
+| függvény | a hívóhelyeken átadott kódok |
+|---|---|
+| `0x006bb4a0` | `0x10e` · **2** · **1** |
+| `0x005eef30` | `0x5a` · `0x10e` (sokszor) · **2** · **1** |
+
+A két tükrözés-kód jelentése a #2902 mérése szerint:
+`Ctrl+Shift+H` → `0x005e63d6` → **`2` = vízszintes**;
+`Ctrl+Shift+V` → `0x005e6408` → **`1` = függőleges`**.
+
+Ezt összefűzve az 1. ponttal:
+
+| `flipped` bit | érték | a kiváltott művelet | **tengely** |
+|---|---:|---:|---|
+| 0. bit | **1** | 2 | **VÍZSZINTES** |
+| 1. bit | **2** | 1 | **FÜGGŐLEGES** |
+| mindkettő | **3** | 2 és 1 | mindkét irány |
+
+> ⛔ **A mi jelzőnk ma fordítva van:** `1 = függőleges`, `2 = vízszintes`.
+> A bitmaszk-szerkezet stimmel, a **hozzárendelés nem**. Ha a jelzőt
+> átvinnénk a `.picasa.ini`-be javítás nélkül, a fájl a **másik tengelyt**
+> írná le, és az eredeti Picasa rosszul olvasná vissza.
+
+### 3. ⭐ A `0` NEM `flipped(0)` — a kulcs ÜRESEN íródik
+
+```asm
+0x0042d847  test ebx, ebx
+0x0042d849  je   0x42d864
+0x0042d84b  push ebx                 ; %d = a teljes maszk
+0x0042d850  push 0xc814bc            ; "flipped(%d)"
+   …
+0x0042d864  mov  eax, 0xc7f979       ; ÜRES sztring
+0x0042d86c  push 0xc80ae4            ; a kulcs: "flipped"
+0x0042d873  call 0x454770            ; kulcs = ertek
+```
+
+⇒ Nulla maszknál a kulcs **üres értéket** kap, nem `flipped(0)`-t.
+**Ez pontosan megmagyarázza a korpuszt:** az `imagedata_flipped.pmp`
+3 011/3 011 üres, és a 859 ini-fájlban 0 db `flipped=` sor — mert a
+tulajdonos soha nem tükrözött, és a nulla érték nem ír ki számot.
+
+⚠️ A `00-index.md` „alapértéknek `flipped`→`flipped(0)`" sora az ini-író
+**kulcstáblájának** alapértéke (`0x00ca7860`), **nem** az, amit a program
+ténylegesen kiír. A kettő eltér.
+
+### 4. Ami NEM dőlt el ebben a körben
+
+A **forgatás és a tükrözés sorrendje** (a jegy 3. pontja). A két művelet
+ugyanazon a dispatcheren megy át, felhasználói műveletként, egymás után —
+de hogy a BETÖLTŐ milyen sorrendben alkalmazza a két ini-kulcsot, azt nem
+mértem. A következő gépi lépés: a `rotate` és a `flipped` olvasóinak
+sorrendje a kép-előkészítő láncban.
+
+*Bizonyítottsági fok: **megerősített** a bitmaszkra, a bit→művelet
+hozzárendelésre és az üres-írásra (utasításszintű olvasás, a sztringek
+nyers bájtból); **megerősített** a tengelyekre is, de **láncolt**
+bizonyítékkal: a kódtér azonosságát a közös `0x5a`/`0x10e` kódok adják, a
+2/1 → vízszintes/függőleges megfeleltetés pedig a #2902 mérése.*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a bit-jelentés) ·
+0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". A sorrend a
+#2938 ÖRÖKÖLT kérdése, a munkasorban marad.*
