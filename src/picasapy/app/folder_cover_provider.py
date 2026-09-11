@@ -36,6 +36,33 @@ from picasapy.thumbs.album_borito import (
 
 _log = logging.getLogger(__name__)
 
+#: #2983: a Qt az `image://` URL útvonalát dekódolja, a KÓDOLT ELVÁLASZTÓT
+#: viszont meghagyja — szándékosan, mert a dekódolás megváltoztatná az
+#: útvonal szerkezetét. Mérve (valódi QML-motor, négy útvonal):
+#:
+#: | a QML-nek átadva | amit a szolgáltató KAP |
+#: |---|---|
+#: | `C:\Users\…\Képek\AI` | **`C:%5CUsers%5C…%5CKépek%5CAI`** |
+#: | `C:/Users/…/Képek/AI` | változatlanul ✅ |
+#: | `/home/…/nyaralás 2024` | változatlanul ✅ (ékezet, szóköz rendben) |
+#: | `/home/…/a#b` | változatlanul ✅ |
+#:
+#: Windowson az index NATÍV, visszaperes útvonalat tárol, tehát a kódolt
+#: alakkal a keresés nem talál fájlt, a borító `None` lesz, és minden mappa
+#: a mappaikonra esik vissza — pontosan ez volt a #2983.
+#:
+#: ⚠️ Csak a KÓDOLT ELVÁLASZTÓT oldjuk fel, nem az egész sztringet: a teljes
+#: `fromPercentEncoding` egy `a%41b` nevű mappát `aAb`-vé rontana (a `%`-ot a
+#: Qt már feloldotta `%25`-ből).
+_KODOLT_ELVALASZTOK = (("%5C", "\\"), ("%5c", "\\"), ("%2F", "/"), ("%2f", "/"))
+
+
+def normalizald_az_azonositot(id: str) -> str:
+    """A szolgáltatónak átadott azonosító → a valódi útvonal (#2983)."""
+    for kodolt, karakter in _KODOLT_ELVALASZTOK:
+        id = id.replace(kodolt, karakter)
+    return id
+
 #: A kupacba kerülő egyes lapok leghosszabb oldala képpontban. Az élő
 #: mintákban a KÉSZ borító leghosszabb oldala 72–119 px; egy lap ennél
 #: kisebb, mert a kupac szétterül. A 60 px ebbe a sávba viszi a
@@ -101,7 +128,7 @@ class FolderCoverProvider(QQuickImageProvider):
         self._gyorstar = {}
 
     def requestImage(self, id: str, size, requestedSize) -> QImage:  # noqa: A002
-        mappa = id
+        mappa = normalizald_az_azonositot(id)
         kesz = self._gyorstar.get(mappa)
         if kesz is None:
             kesz = self._rajzold(mappa)

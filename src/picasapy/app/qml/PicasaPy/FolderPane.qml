@@ -781,7 +781,12 @@ Rectangle {
                                 // szolgáltató meg sem szólal: négy JPEG
                                 // dekódolása mappánként nem indul el
                                 // feleslegesen.
-                                source: pane.albumThumbs
+                                //: #2983: üres útvonalra sem kérünk borítót —
+                                //: a napló szerint a hasáb hét ilyen kérést
+                                //: adott ki (album/gyűjtemény-sorok, amiknek
+                                //: nincs mappa-útvonala), és mindegyik egy
+                                //: hibasort írt a konzolra.
+                                source: (pane.albumThumbs && path !== "")
                                         ? "image://foldercover/" + path
                                         : ""
                             }

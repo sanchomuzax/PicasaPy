@@ -183,9 +183,16 @@ def flatten(root: HierNode, expanded) -> tuple[dict, ...]:
     """A fa megjelenítendő soraivá lapítva, a kinyitott ágakat követve.
 
     Egy sor: `kind` („root" a virtuális gyökérsor, egyébként „folder"),
-    `name`, `path`, `depth`, `count` (a részfa összege), `hasChildren`,
-    `expanded`. A `kind` azért kell, mert a gyökérsor feliratát a QML
-    adja (`qsTr("My Computer")`) — felhasználói szöveg nem Pythonból jön.
+    `name`, `path`, `depth`, `count` (a részfa összege), `own` (a mappa SAJÁT
+    fotói), `hasChildren`, `expanded`. A `kind` azért kell, mert a gyökérsor
+    feliratát a QML adja (`qsTr("My Computer")`) — felhasználói szöveg nem
+    Pythonból jön.
+
+    Az `own` a #2983 óta van a soron: a mappa-borítót CSAK saját fotóval
+    rendelkező sorra kérjük el. A szintetikus köztes szintek (`C:`,
+    `C:/Users`, a hálózati gazdanév) `own = 0`-sak — nincs mit kupacba
+    rakni, és a borító-kérés minden ilyen sorra egy „Failed to get image
+    from provider" naplósort írt a felhasználó konzoljára.
     """
     open_paths = frozenset(expanded)
     rows: list[dict] = []
@@ -199,6 +206,7 @@ def flatten(root: HierNode, expanded) -> tuple[dict, ...]:
                 "path": node.path,
                 "depth": depth,
                 "count": node.total,
+                "own": node.own,
                 "hasChildren": bool(node.children),
                 "expanded": is_open,
             }
