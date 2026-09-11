@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.420] – 2026-09-11
+
+### Javítva
+
+- **Wayland-asztalon a program megmondja, mi hiányzik** (#3028). Ha a Qt 6
+  wayland-bővítménye nincs telepítve, a program eddig a Qt angol
+  hibaüzenetével állt meg, megoldás nélkül. Mostantól magyarul kiírja a
+  telepítendő csomagot (`qt6-wayland`), és a csomag felkerült az egyetlen
+  rendszercsomag-listánkra is. ⚠️ Ez a figyelmeztetés csak jelez: a
+  csomagot magadnak kell telepítened, mert rendszergazdai jog kell hozzá.
+
 ## [0.8.419] – 2026-09-11
 
 ### Javítva
