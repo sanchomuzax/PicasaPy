@@ -18,6 +18,15 @@ on:
     types: [completed]
   release:
     types: [published]  # kézzel publikált release-ekhez továbbra is él
+  # #3021: a csomagolás a PR-en is fusson — enélkül az ELSŐ bizonyíték a
+  # kiadás utáni futás volna, tehát a hiányos csomag már a Releases-en
+  # jelenne meg. A PR-ágon csak ÉPÍT és INDÍT, nem tölt fel semmit.
+  pull_request:
+    paths:
+      - "packaging/windows/**"
+      - ".github/workflows/package.yml"
+      - "src/picasapy/app/application.py"
+      - "pyproject.toml"
   workflow_dispatch:
     inputs:
       tag:
@@ -33,8 +42,13 @@ permissions:
 
 jobs:
   build-and-upload:
-    # workflow_run esetén csak sikeres Release-futás után fussunk
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # workflow_run esetén csak sikeres Release-futás után fussunk;
+    # PR-en ez a job nem kell (#3021 — ott csak a windowsos csomagolást
+    # próbáljuk ki)
+    if: >-
+      github.event_name != 'pull_request'
+      && (github.event_name != 'workflow_run'
+          || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -157,16 +171,28 @@ jobs:
   # kell kiderülnie, nem a felhasználó gépén.
   # ------------------------------------------------------------------------
   windows-telepito:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      github.event_name != 'workflow_run'
+      || github.event.workflow_run.conclusion == 'success'
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
-      - name: Tag meghatározása
+      - uses: actions/checkout@v4
+
+      # PR-ágon nincs kiadás: a verzió a pyproject.toml-ból jön (egyetlen
+      # forrás), és a feltöltés kimarad.
+      - name: Verzió és tag meghatározása
         id: tag
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            VERZIO="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "verzio=$VERZIO" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           TAG="${{ github.event.release.tag_name }}"
           if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
           if [ -z "$TAG" ]; then
@@ -176,12 +202,9 @@ jobs:
             echo "::error::nem sikerült feloldani a kiadás tagjét"
             exit 1
           fi
+          git checkout --detach "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.tag.outputs.tag }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -221,6 +244,7 @@ jobs:
                   packaging/windows/picasapy.iss
 
       - name: A telepítő feltöltése a kiadásra
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -238,3 +262,11 @@ jobs:
           done
           echo "::error::a telepítőt öt kísérlet után sem sikerült feltölteni"
           exit 1
+
+      - name: A telepítő elkészült (PR-ág)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
+          ls -l "$FAJL"
