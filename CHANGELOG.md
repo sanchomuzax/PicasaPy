@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.386] – 2026-09-11
+
+### Javítva
+
+- **Öt videóformátum eddig némán kimaradt a beolvasásból** (#2929): `.ts`,
+  `.tp`, `.m2v`, `.ogg`, `.ogv`. A tulajdonos közreadta a Picasa mért
+  fájlszűrőjét, és ez az öt hiányzott nálunk. A „Fájl hozzáadása…"
+  választójának szűrője is a felismert halmazhoz igazodott — eddig abból a
+  `.webp`, a `.jpe`, a `.mpeg` és a `.ty` is kimaradt.
+
 ## [0.8.385] – 2026-09-11
 
 ### Javítva

@@ -66,6 +66,17 @@ VIDEO_EXTENSIONS = frozenset(
         # #2415: a 8. ág a `.mpg` mellett ezt a kettőt is regisztrálja
         # (`0x004fb0f1`). A súgó-listából mindkettő hiányzott.
         ".mpeg", ".ty",
+        # #2929: a tulajdonos közreadta a Picasa TELJES, kiterjesztés
+        # szintű fájlszűrőjét (#528) — a tallózásnál és a beolvasásnál
+        # ugyanez a lista futott. Ez az öt nálunk hiányzott, tehát egy
+        # `felvetel.ts` NÉMÁN kimaradt a beolvasásból.
+        #   `.tp`/`.ts` transport stream (kamerás felvétel),
+        #   `.m2v` elemi MPEG-2 videó, `.ogg`/`.ogv` Ogg-tároló.
+        # ⚠️ A halmaz csak NŐTT: a fentiek (`.m2t`, `.m2ts`, `.mmv`,
+        # `.mts`, `.ty`) a súgó-listából és a #2415 mért ugrótáblájából
+        # jönnek, azokat a mért szűrő hiánya NEM cáfolja — a szűrő 16. ága
+        # dinamikusan töltődik (ld. a modul fejlécét).
+        ".tp", ".ts", ".m2v", ".ogg", ".ogv",
     }
 )
 
