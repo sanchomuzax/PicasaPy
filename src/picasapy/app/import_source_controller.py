@@ -56,6 +56,7 @@ from picasapy.fileops import (
 )
 from picasapy.fileops.original_ini import remove_original_ini_sections
 from picasapy.importsource import (
+    scan_source_detailed,
     ATMERETEZES_EREDETI,
     ATMERETEZES_OPCIOK,
     MEDIA_FILTER_PICTURES_AND_MOVIES,
@@ -66,7 +67,6 @@ from picasapy.importsource import (
     atmeretez_masolatot,
     destination_subpath_for_mode,
     duplicate_paths,
-    scan_source,
 )
 from picasapy.index import (
     IndexFastKeySource,
@@ -78,6 +78,7 @@ from picasapy.ini import load_document, save_document, update_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
 from .formatting import to_local_path
+from .wipe_card_warning import WipeCardFacts, wipe_card_warning
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix
 
@@ -260,6 +261,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         self._index_path = index_path
         self._settings = settings
         self._candidates: tuple[ImportCandidate, ...] = ()
+        #: #860: a forráson lévő, NEM média fájlok száma (a kártyatörlés
+        #: figyelmeztetéséhez). `-1` = még nem pásztáztunk.
+        self._unrecognized = -1
         # a legutóbb szkennelt duplikátumok útvonalai (#441) — az
         # autoExclude kapcsoló ÉLŐBEN (rescan nélkül) alkalmazza/vonja
         # vissza ezekre a kizárást
@@ -552,7 +556,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         def worker() -> None:
             try:
-                candidates = scan_source(target, self._media_filter)
+                #: #860: a NEM felismert fájlok száma is kell — a
+                #: kártyatörlés figyelmeztetése kimondja, hány idegen fájlt
+                #: visz el a törlés
+                scan = scan_source_detailed(target, self._media_filter)
+                candidates = scan.candidates
+                self._unrecognized = scan.unrecognized
             except (FileNotFoundError, NotADirectoryError) as error:
                 self.sourceScanFailed.emit(str(error))
                 return
@@ -584,6 +593,23 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-scan")
+
+    @Slot(result=str)
+    def wipeCardWarning(self) -> str:  # noqa: N802 — QML-stílus
+        """A „minden fájl törlése a forrásról" ÖSSZEÁLLÍTOTT figyelmeztetése.
+
+        Az eredeti hét erőforrás-darabból fűzi össze (#860,
+        `wipe_card_warning`); a darabszámokat a legutóbbi pásztázásból
+        vesszük. Ha még nem pásztáztunk, a szöveg ezt KIMONDJA, nem
+        találgat számot."""
+        return wipe_card_warning(
+            WipeCardFacts(
+                scan_done=self._unrecognized >= 0,
+                total=len(self._candidates) + max(0, self._unrecognized),
+                duplicates=len(self._duplicate_paths),
+                unrecognized=max(0, self._unrecognized),
+            )
+        )
 
     # -- import ---------------------------------------------------------------
 

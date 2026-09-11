@@ -115,6 +115,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.391] – 2026-09-11
+
+### Javítva
+
+- **A kártyatörlés figyelmeztetése megmondja, mi fog történni** (#860). Az
+  importálás „minden fájl törlése a forrásról" ága eddig egy három pontra
+  rövidített mondatot adott. Mostantól az eredeti Picasa módján épül fel:
+  hány fájl törlődik, mennyi nem lesz importálva másodpéldány miatt, hány
+  fájlt nem ismer fel a program — és a végén „A MŰVELET NEM VONHATÓ VISSZA."
+  Ha még nem pásztáztuk a kártyát, a szöveg ezt kimondja, nem találgat számot.
+
 ## [0.8.390] – 2026-09-11
 
 ### Javítva

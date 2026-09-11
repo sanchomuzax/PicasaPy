@@ -749,8 +749,14 @@ Window {
         title: qsTr("Import from Source")
         onConfirmed: {
             if (importSourceWindow.afterCopying === "delete_all") {
-                deleteAllWarningConfirm.ask("importSourceDeleteAllWarning", qsTr(
-                    "WARNING! You have chosen to delete ALL FILES…"))
+                //: #860: az ÖSSZEÁLLÍTOTT figyelmeztetés a vezérlőtől jön
+                //: (`wipe_card_warning`) — darabszámokkal, a nem felismert
+                //: fájlokkal és a záró „A MŰVELET NEM VONHATÓ VISSZA."
+                //: mondattal. Korábban egy három pontra rövidített mondat
+                //: állt itt, ami épp a lényeget hallgatta el.
+                deleteAllWarningConfirm.ask(
+                    "importSourceDeleteAllWarning",
+                    importSourceController.wipeCardWarning())
             } else {
                 importSourceWindow.runImportNow()
             }

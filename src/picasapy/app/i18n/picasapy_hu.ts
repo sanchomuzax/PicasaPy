@@ -6232,6 +6232,70 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>ImportSourceController</name>
     <message>
+        <source>WARNING
+
+You have chosen to delete ALL FILES from the source media.
+
+</source>
+        <translation>FIGYELMEZTETÉS
+
+Azt választotta, hogy az ÖSSZES FÁJLT törli a forrás adathordozóról.
+
+</translation>
+    </message>
+    <message>
+        <source>After importing, %1 file(s) will be deleted.
+</source>
+        <translation>Importálás után a program %1 fájlt töröl.
+</translation>
+    </message>
+    <message>
+        <source>An unknown number of files will be deleted after importing.
+</source>
+        <translation>A program ismeretlen számú fájlt fog törölni az importálás után.
+</translation>
+    </message>
+    <message>
+        <source>1 file will not be imported because it is already a duplicate in Picasa.
+</source>
+        <translation>1 fájl nem lesz importálva, mert már másodpéldány a Picasában.
+</translation>
+    </message>
+    <message>
+        <source>%1 files will not be imported because they are already duplicates in Picasa.
+</source>
+        <translation>%1 fájl nem lesz importálva, mert már másodpéldányok a Picasában.
+</translation>
+    </message>
+    <message>
+        <source>
+Picasa does not recognize 1 of the files to be deleted.
+</source>
+        <translation>
+A Picasa 1 fájlt nem ismer fel a törlendő fájlok közül.
+</translation>
+    </message>
+    <message>
+        <source>
+Picasa does not recognize %1 of the files to be deleted.
+</source>
+        <translation>
+A Picasa %1 fájlt nem ismer fel a törlendő fájlok közül.
+</translation>
+    </message>
+    <message>
+        <source>
+Are you sure you want to remove ALL FILES?
+
+THIS CANNOT BE UNDONE.
+</source>
+        <translation>
+Biztosan eltávolítja az ÖSSZES FÁJLT?
+
+A MŰVELET NEM VONHATÓ VISSZA.
+</translation>
+    </message>
+    <message>
         <location filename="../import_source_controller.py" line="142"/>
         <source>Choose a source folder first.</source>
         <translation>Előbb válassz forrásmappát.</translation>

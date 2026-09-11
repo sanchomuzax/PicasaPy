@@ -157,6 +157,74 @@ def atmeretez_masolatot(target: Path, hatar: int) -> bool:
     return True
 
 
+@dataclass(frozen=True)
+class SourceScan:
+    """A forrás-pásztázás teljes eredménye (#860).
+
+    A `candidates` a médiafájlok, az `unrecognized` pedig azoknak a
+    fájloknak a száma, amik a SZÓBA JÖVŐ MAPPÁKBAN vannak, de nem média (pl.
+    `.thm` kísérők, `MISC/`-beli szövegfájlok, kamerabeállítás-fájlok).
+
+    Ez a szám a kártyatörlés figyelmeztetéséhez kell: az eredeti kimondja,
+    hány fájlt „nem ismer fel" a törlendők közül
+    (`CAcquireUI::WipeCardOtherFiles`) — enélkül a felhasználó nem tudja,
+    hogy a törlés a kártyán lévő IDEGEN fájlokat is elviszi.
+
+    ⚠️ A számolás a `scan_tree` által VISSZAADOTT mappákra szorítkozik: azok
+    a mappák, amikből importálnánk, tehát amiket a törlés érintene. A
+    névszűrővel kihagyott mappák (`Originals`, `temp`, …) szándékosan
+    kimaradnak — azokból nem importálunk, tehát nem is törlünk."""
+
+    candidates: tuple[ImportCandidate, ...]
+    unrecognized: int
+
+
+def scan_source_detailed(
+    folder: str | Path, media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
+) -> SourceScan:
+    """A `scan_source` bővebb alakja: a NEM felismert fájlok számát is adja.
+
+    A média-jelöltek ugyanazon az úton jönnek, mint a `scan_source`-ban (a
+    `scan_tree` névszűrőivel együtt); a nem-média fájlokat a visszaadott
+    mappák tartalmának egyszeri átfutása számolja meg. A költség
+    elhanyagolható a jelöltek EXIF-olvasása mellett, ami ugyanitt fut."""
+    import os
+
+    folder = Path(folder)
+    kinds = _FILTER_KINDS.get(
+        media_filter, _FILTER_KINDS[MEDIA_FILTER_PICTURES_AND_MOVIES]
+    )
+    scans = scan_tree(folder)
+    candidates = [
+        ImportCandidate(
+            path=scan.path / media.name,
+            date=_resolve_file_date(scan.path / media.name, media.mtime_ns),
+        )
+        for scan in scans
+        for media in scan.files
+        if media_kind_of(media.name) in kinds
+    ]
+    felismert = {str(jelolt.path) for jelolt in candidates}
+    unrecognized = 0
+    for scan in scans:
+        try:
+            with os.scandir(scan.path) as bejegyzesek:
+                for bejegyzes in bejegyzesek:
+                    if not bejegyzes.is_file(follow_symlinks=False):
+                        continue
+                    if bejegyzes.path not in felismert:
+                        unrecognized += 1
+        except OSError:
+            # olvashatatlan mappa: a figyelmeztetés ne dőljön el rajta
+            continue
+    return SourceScan(
+        candidates=tuple(
+            sorted(candidates, key=lambda candidate: str(candidate.path))
+        ),
+        unrecognized=unrecognized,
+    )
+
+
 def scan_source(
     folder: str | Path, media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
 ) -> tuple[ImportCandidate, ...]:
