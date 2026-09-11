@@ -28,6 +28,8 @@ from .display_mode_paint import (
     current_display_mode_suffix,
     display_mode_url_suffix,
 )
+from picasapy.ini.movie_trim import trim_from_filters
+
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
@@ -715,6 +717,27 @@ class PhotoGridModel(QAbstractListModel):
     def isVideoAt(self, row: int) -> bool:
         """Videó-e a sor (#14) — a néző erre vált lejátszó-nézetre."""
         return 0 <= row < len(self._photos) and self._photos[row].kind == "video"
+
+    @Slot(int, result="QVariantMap")
+    def movieTrimAt(self, row: int) -> dict:
+        """A sor videó-VÁGÁSPONTJAI ezredmásodpercben (#1838).
+
+        `{"start": <ms|-1>, "end": <ms|-1>}` — a **−1 jelenti, hogy azon az
+        oldalon NINCS vágás**. Nem 0-t és nem a hosszt adunk: a hiányzó token
+        más, mint a nulla pontra állított kezdés, és a QML-oldalon a `null`
+        egy `int` kötésben némán 0-vá lapulna.
+
+        A vágáspontok a `.picasa.ini` `filters=` láncából jönnek, és a
+        round-trip őrzi őket akkor is, ha nem mi írtuk (`ini.movie_trim`).
+        """
+        if not 0 <= row < len(self._photos):
+            return {"start": -1, "end": -1}
+        trim = trim_from_filters(self._photos[row].filters or "")
+        kezdet, veg = trim.start_ms(), trim.end_ms()
+        return {
+            "start": -1 if kezdet is None else kezdet,
+            "end": -1 if veg is None else veg,
+        }
 
     @Slot(int, result=str)
     def captionAt(self, row: int) -> str:

@@ -1413,6 +1413,29 @@ Rectangle {
                         when: videoLoader.status === Loader.Ready
                               && viewer.isCurrentVideo
                     }
+                    //: #1838: a VÁGÁSPONTOK átadása a lejátszónak. A Picasából
+                    //: örökölt `moviestart`/`movieend` a `filters=` láncban ül;
+                    //: a modell ezredmásodpercre váltva adja, és a **−1
+                    //: jelenti, hogy azon az oldalon nincs vágás** (a 0 a
+                    //: nulla pontra állított kezdés lenne).
+                    Binding {
+                        target: videoLoader.item
+                        property: "trimStartMs"
+                        value: viewer.photosModel
+                               ? viewer.photosModel.movieTrimAt(
+                                     viewer.currentIndex).start : -1
+                        when: videoLoader.status === Loader.Ready
+                              && viewer.isCurrentVideo
+                    }
+                    Binding {
+                        target: videoLoader.item
+                        property: "trimEndMs"
+                        value: viewer.photosModel
+                               ? viewer.photosModel.movieTrimAt(
+                                     viewer.currentIndex).end : -1
+                        when: videoLoader.status === Loader.Ready
+                              && viewer.isCurrentVideo
+                    }
                     Text {
                         objectName: "videoUnavailableText"
                         visible: viewer.isCurrentVideo

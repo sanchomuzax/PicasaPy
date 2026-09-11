@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.400] – 2026-09-11
+
+### Hozzáadva
+
+- **A Picasából örökölt videó-vágás mostantól érvényes a lejátszásnál**
+  (#1838). Ha egy klipen a régi programban beállítottad a kezdő- és
+  végpontot, a PicasaPy eddig a teljes nyers fájlt játszotta le. Most a
+  megfelelő helyen indul és ott áll meg, és a pozíció-csúszka is csak a vágott
+  szakaszon mozog.
+
+  A vágáspontok a `.picasa.ini` szűrőláncában ülnek, 100 nanoszekundumos
+  egységben — a formátumot a program saját kódjából és a te
+  fotókönyvtáradból mértük ki, a videók tényleges hosszához ellenőrizve.
+
+  ⚠️ A vágáspontokat **beállítani** még nem lehet a felületen, és a videófájl
+  nem alakul át: a vágás csak a lejátszásra hat. A vezérlők (kezdő- és
+  végpont, visszaállítás, képkocka mentése) a jegy további része.
+
 ## [0.8.399] – 2026-09-11
 
 ### Változott
