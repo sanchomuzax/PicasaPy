@@ -151,3 +151,38 @@ class TestRender:
         text = "<%if show%>Szia, <%name%>!<%endif%>"
         assert render(text, {"show": "true", "name": "Éva"}) == "Szia, Éva!"
         assert render(text, {"show": "", "name": "Éva"}) == ""
+
+
+class TestABehelyettesitesVedese:
+    """#2932: a behelyettesített érték felhasználói szöveg (felirat,
+    albumnév, fájlnév) — egy `&` vagy idézőjel nyersen kiírva elrontja a
+    kimenetet. Az `alt`/`href` attribútum idő előtt bezárul, és a maradék
+    szöveg HTML-lé válik."""
+
+    SZOVEG = 'Kutya & macska <3 "idézet" \'aposztróf\''
+
+    def test_szovegpozicioban_vedett(self):
+        kimenet = render("<p><%c%></p>", {"c": self.SZOVEG})
+        assert "&amp;" in kimenet
+        assert "&lt;3" in kimenet
+        assert "<3" not in kimenet
+
+    def test_attributum_nem_torik_el(self):
+        """A mérce a SZERKEZET: az `alt` értéke egyetlen attribútum marad."""
+        from xml.etree import ElementTree
+
+        kimenet = render('<img alt="<%c%>">', {"c": self.SZOVEG})
+        elem = ElementTree.fromstring(kimenet.replace(">", "/>", 1))
+        assert elem.get("alt") == self.SZOVEG
+
+    def test_a_sima_szoveg_valtozatlan(self):
+        """Regresszió: ami nem tartalmaz különös karaktert, ugyanaz marad —
+        a gyári sablonok kimenete nem változik."""
+        assert render(
+            '<a href="<%p%>"><%n%></a>', {"p": "kepek/nagy_01.jpg", "n": "Nyaralás"}
+        ) == '<a href="kepek/nagy_01.jpg">Nyaralás</a>'
+
+    def test_a_feltetel_a_vedes_ELOTT_dol_el(self):
+        """A feltétel a NÉV alapján dönt, nem a védett szövegből — egy
+        `<`-t tartalmazó érték is igaznak számít."""
+        assert render("<%if c%>igen<%endif%>", {"c": "<3"}) == "igen"
