@@ -286,7 +286,7 @@ class SaveMixin(BackgroundWorkerMixin):
         """
         records = [
             (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(r.flip_flags or 0))
+             r.filters or "", int(getattr(r, "flip_flags", 0) or 0))
             for r in self._selected_records(rows)
         ]
         if not records:
@@ -385,7 +385,7 @@ class SaveMixin(BackgroundWorkerMixin):
         """A másolat-mentés közös háttérszálas útja."""
         items = [
             (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(r.flip_flags or 0))
+             r.filters or "", int(getattr(r, "flip_flags", 0) or 0))
             for r in records
         ]
         if not items:

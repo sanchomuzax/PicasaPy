@@ -72,7 +72,7 @@ def prepare_photo_exports(
         item = ExportItem(
             source=source,
             rotate_steps=record.rotate_steps,
-            flip_flags=record.flip_flags,  # #2902
+            flip_flags=getattr(record, "flip_flags", 0),  # #2902
             filters=record.filters,
         )
         thumb_report = export_photos((item,), thumb_dir, thumb_settings)

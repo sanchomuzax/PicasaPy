@@ -337,7 +337,11 @@ def _thumb_url(photo: PhotoRecord, display_mode: str | None = None) -> str:
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
     return (
         f"image://thumbs/{photo.id}"
-        f"?r={photo.rotate_steps}&fl={photo.flip_flags}&f={filters_tag}"
+        #: #2902: a tükrözés-jelző is gyorstár-törő — enélkül a rácson a
+        #: régi állású kép maradna. Elnézően olvassuk: a kollázs-sáv
+        #: rekord-hasonmásai nem ismerik a mezőt, és a 0 a helyes rájuk.
+        f"?r={photo.rotate_steps}"
+        f"&fl={getattr(photo, 'flip_flags', 0)}&f={filters_tag}"
         f"&m={photo.mtime_ns}&s={photo.size}"
         f"{display_mode_url_suffix(display_mode)}"
     )
