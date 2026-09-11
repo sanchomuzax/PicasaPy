@@ -550,6 +550,32 @@ class AppController(
         self._get_settings().setValue("view/folderSort", mode)
         self._refresh_view()
 
+    @Slot(result=int)
+    def clearThumbnailCache(self) -> int:  # noqa: N802 — QML-stílus
+        """A bélyegkép-gyorsítótár ürítése; a felszabadult bájtok (#598).
+
+        A Beállítások „Gyorsítótár ürítése" gombja hívja — az eredeti
+        `disposepreviews` kapcsolójának megfelelője. Nem adatvesztés: a
+        bélyegképek kérésre újraépülnek."""
+        return int(self._provider.clear_cache())
+
+    @Slot(int)
+    def setThumbCellSize(self, cella_px: int) -> None:  # noqa: N802 — QML-stílus
+        """A rács cellamérete → a bélyegkép-SZINT (#598).
+
+        A QML a csúszka fokozatát adja át; a szintet a bélyegkép-tár dönti
+        el (`72 · 144 · a maximum`). A felső szinten `None` megy a modellbe,
+        hogy az URL bájtra a #598 előtti legyen — a meglévő gyorstár így
+        érvényes marad.
+
+        Egy szint több csúszka-fokozatot fed le, ezért a húzás nem kér újra
+        minden bélyegképet, csak a szinthatár átlépése."""
+        model = getattr(self, "photos", None)
+        if model is None or cella_px <= 0:
+            return
+        szint = self._provider.level_for(cella_px)
+        model.set_thumb_level(None if szint >= self._provider.top_level else szint)
+
     @Slot(result=bool)
     def backgroundWorkRunning(self) -> bool:  # noqa: N802 — QML-stílus
         """Fut-e BÁRMELYIK vezérlő háttérmunkája (#671).

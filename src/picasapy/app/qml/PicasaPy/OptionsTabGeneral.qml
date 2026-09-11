@@ -19,15 +19,31 @@ import QtQuick.Layouts
 //     az `import/autoexclude` kulcs, amit az importáló párbeszéd
 //     "Exclude Duplicates" jelölője ír (importSourceController).
 //
+//   - "Gyorsítótár ürítése…" — a #598 óta ÉLŐ: az eredeti `disposepreviews`
+//     kapcsolójának megfelelője, a bélyegkép-tár lemezes ürítése
+//     (controller.clearThumbnailCache).
+//
 // A többi FEN-vezérlőnek MA nincs PicasaPy-beli funkciója (nincs
 // tooltip-kapcsoló, nincs "egy kattintásra kilépés szerkesztőből"-mód, nincs
-// gyorsítótár-törlés funkció, nincs statisztika-küldés/frissítés-
+// statisztika-küldés/frissítés-
 // ellenőrzés, nincs kamera-esemény, nincs perzisztens alapértelmezett
 // importcélmappa) — ezek a struktúra kedvéért megjelennek, de
 // `enabled: false`, a hiányzó funkció megnevezésével kommentben.
 ColumnLayout {
     id: root
     spacing: 14
+
+    //: #598: a felszabadult hely emberi alakja. Kilobájt alatt bájtban —
+    //: egy „0,0 MB" eredmény azt sugallná, hogy nem történt semmi.
+    function emberiMeret(bajt) {
+        if (bajt < 1024)
+            return qsTr("%1 bytes").arg(bajt)
+        if (bajt < 1024 * 1024)
+            return qsTr("%1 kB").arg(Number(bajt / 1024).toLocaleString(
+                Qt.locale(), "f", 1))
+        return qsTr("%1 MB").arg(Number(bajt / (1024 * 1024)).toLocaleString(
+            Qt.locale(), "f", 1))
+    }
 
     // ---- Kezelőfelület (labelgroup4) ------------------------------------
     ColumnLayout {
@@ -137,13 +153,37 @@ ColumnLayout {
                     importSourceController.setAutoExclude(checked)
             }
         }
-        // nincs "gyorsítótár törlése" művelet — a bélyegkép-gyorsítótár
-        // mérete a #144-es LRU-takarítóval automatikusan karban tartott,
-        // kézi ürítés ma nincs bekötve
+        //: #598: az eredeti `disposepreviews` kapcsolójának megfelelője. A
+        //: #144-es LRU-takarító a MÉRETET tartja karban; ez a gomb a
+        //: felhasználó döntése, ha most akar helyet visszanyerni.
+        //: A hármas pont a feliratban azt ígéri, hogy kérdez — ezért
+        //: megerősítést kér, és utána megmondja, mennyit szabadított fel.
         Button {
             objectName: "optionsClearCacheButton"
             text: qsTr("Clear Cache...")
-            enabled: false
+            onClicked: clearCacheConfirm.ask(
+                "", qsTr("Empty the thumbnail cache? The thumbnails are "
+                         + "rebuilt when needed — no picture is lost."))
+        }
+        ConfirmDialog {
+            id: clearCacheConfirm
+            objectName: "optionsClearCacheConfirm"
+            namePrefix: "optionsClearCache"
+            yesText: qsTr("Empty")
+            noText: qsTr("Keep")
+            onConfirmed: {
+                var bajt = (typeof controller !== "undefined" && controller)
+                           ? controller.clearThumbnailCache() : 0
+                clearCacheResult.text = qsTr("%1 freed.").arg(
+                    root.emberiMeret(bajt))
+            }
+        }
+        Text {
+            id: clearCacheResult
+            objectName: "optionsClearCacheResult"
+            visible: text !== ""
+            color: Theme.ink
+            font.pixelSize: Theme.fontSize
         }
 
         // ÉLŐ: a törlés-megerősítés elnyomása — ugyanaz a confirmSettings

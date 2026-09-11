@@ -537,6 +537,34 @@
         <translation>Gyorsítótár ürítése…</translation>
     </message>
     <message>
+        <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
+        <translation>Kiürítjük a bélyegkép-gyorsítótárat? A bélyegképek szükség szerint újra elkészülnek — egyetlen kép sem veszik el.</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>Ürítés</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <translation>Marad</translation>
+    </message>
+    <message>
+        <source>%1 freed.</source>
+        <translation>%1 szabadult fel.</translation>
+    </message>
+    <message>
+        <source>%1 bytes</source>
+        <translation>%1 bájt</translation>
+    </message>
+    <message>
+        <source>%1 kB</source>
+        <translation>%1 kB</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
         <source>Delete from disk without confirmation</source>
         <translation>Törlés a lemezről megerősítés nélkül</translation>
     </message>

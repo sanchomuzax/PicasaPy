@@ -71,6 +71,10 @@ ApplicationWindow {
     readonly property var appController: controller
 
     property int thumbSize: 144
+    //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
+    //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
+    //: mindent: egy szint több fokozatot fed le.
+    onThumbSizeChanged: if (controller) controller.setThumbCellSize(thumbSize)
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
     // #142: a kijelölés set-alakban (sor → true) — a rács-cellák O(1)
@@ -1657,6 +1661,10 @@ ApplicationWindow {
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
+        //: #598: a kezdő cellaméret átadása a bélyegkép-tárnak — enélkül az
+        //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
+        //: kisebb szintből tízszer olcsóbban áll elő.
+        if (controller) controller.setThumbCellSize(window.thumbSize)
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is

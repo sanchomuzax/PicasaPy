@@ -29,6 +29,7 @@ from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
+from picasapy.thumbs.szintek import szint_cellahoz, szintek
 
 _log = logging.getLogger(__name__)
 
@@ -146,6 +147,11 @@ class ThumbnailCache:
         `~/.cache` alatti tár ne nőjön korlátlanul."""
         self._root = Path(root)
         self._size = size
+        #: #598: a tár SZINTJEI (72 · 144 · a rács maximuma). A felső szint
+        #: útvonala szándékosan VÁLTOZATLAN (`root/<2 hex>/…`): így a már
+        #: meglévő — százezres könyvtárnál órákba kerülő — gyorsítótár
+        #: érvényes marad, és csak a két új kis szint épül fel menet közben.
+        self._szintek = szintek(size)
         self._max_bytes = max_bytes
         # A szál referenciáját eltároljuk, hogy a hívó (pl. teszt) be
         # tudja várni — enélkül a takarítás versenyezne a mappa-törléssel.
@@ -160,25 +166,86 @@ class ThumbnailCache:
             return 0
         return prune_cache_dir(self._root, self._max_bytes)
 
-    def thumbnail_path(self, photo_path: Path, mtime_ns: int, size_bytes: int) -> Path:
-        key = f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{self._size}"
+    @property
+    def levels(self) -> tuple[int, ...]:
+        """A tár szintjei növő sorrendben (#598) — a legnagyobb a saját mérete."""
+        return self._szintek
+
+    def level_for(self, cella_px: int) -> int:
+        """A `cella_px` oldalú megjelenítéshez tartozó szint (#598)."""
+        return szint_cellahoz(cella_px, self._size)
+
+    def clear(self) -> int:
+        """A LEMEZES bélyegkép-tár ürítése; a felszabadult bájtok száma (#598).
+
+        Az eredeti Beállítások „Clear Cache…" kapcsolójának megfelelője
+        (`disposepreviews`). Minden szintet töröl, a mappaszerkezetet
+        meghagyja — a bélyegképek kérésre újraépülnek, tehát ez nem
+        adatvesztés, csak lemezhely-visszanyerés.
+
+        Best-effort, mint a takarító: az időközben eltűnt vagy zárolt fájlt
+        kihagyja. Egy sikertelen törlés nem hibaüzenet, hanem kevesebb
+        visszanyert hely."""
+        import contextlib
+
+        freed = 0
+        if not self._root.is_dir():
+            return 0
+        try:
+            fajlok = list(self._root.rglob("*.jpg"))
+        except OSError:
+            return 0
+        for path in fajlok:
+            try:
+                meret = path.stat().st_size
+            except OSError:
+                continue
+            with contextlib.suppress(OSError):
+                path.unlink()
+                freed += meret
+        return freed
+
+    def thumbnail_path(
+        self,
+        photo_path: Path,
+        mtime_ns: int,
+        size_bytes: int,
+        level: int | None = None,
+    ) -> Path:
+        """A bélyegkép helye. `level` nélkül a legnagyobb (régi) szint.
+
+        A kulcsban a szint SZÁMA áll — ugyanaz a séma, mint korábban a
+        `self._size`-zal —, a kis szintek pedig külön alkönyvtárba mennek,
+        hogy a takarító szintenként is dolgozni tudjon."""
+        px = self._size if level is None else level
+        key = f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{px}"
         digest = hashlib.sha1(key.encode("utf-8")).hexdigest()
-        return self._root / digest[:2] / f"{digest}.jpg"
+        gyoker = self._root if px == self._size else self._root / f"sz{px}"
+        return gyoker / digest[:2] / f"{digest}.jpg"
 
     def get_or_create(
-        self, photo_path: str | Path, mtime_ns: int, size_bytes: int
+        self,
+        photo_path: str | Path,
+        mtime_ns: int,
+        size_bytes: int,
+        level: int | None = None,
     ) -> Path | None:
-        """A kész thumbnail útvonala; None, ha a forrás nem dekódolható."""
+        """A kész thumbnail útvonala; None, ha a forrás nem dekódolható.
+
+        `level` (#598) a kért szint; érvénytelen értéket a legközelebbi
+        szintre kerekítünk, mert egy elgépelt szám némán negyedik, sosem
+        találatot adó tárat nyitna."""
         source = Path(photo_path)
-        target = self.thumbnail_path(source, mtime_ns, size_bytes)
+        px = self._size if level is None else self.level_for(level)
+        target = self.thumbnail_path(source, mtime_ns, size_bytes, px)
         if target.exists():
             return target
-        image = self._decode_source(source)
+        image = self._szint_forras(source, mtime_ns, size_bytes, px)
         if image is None:
             return None
         # #871: a bélyegkép a Picasa magjával készül — ott mértük
         # (bigthumbs, 119 kép), és ott gyorsabb is az INTER_AREA-nál.
-        thumb = scale_down_picasa_mag(image, self._size)
+        thumb = scale_down_picasa_mag(image, px)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
         )
@@ -190,12 +257,36 @@ class ThumbnailCache:
             return None  # tele lemez / NAS-hiba — a hívó placeholderre esik
         return target
 
+    def _szint_forras(
+        self, source: Path, mtime_ns: int, size_bytes: int, px: int
+    ):
+        """Egy szint bemenete: a legkisebb NAGYOBB, már kész szint — ha nincs,
+        a forrásfájl (#598).
+
+        A mérés szerint (`szintek` modul) ez a lépés adja a nyereséget: a
+        72/144-es szint felépítése egy kész 256-osból nagyságrenddel kevesebb
+        munka, mint a forrásfotó újradekódolása."""
+        for nagyobb in self._szintek:
+            if nagyobb <= px:
+                continue
+            kesz = self.thumbnail_path(source, mtime_ns, size_bytes, nagyobb)
+            if not kesz.exists():
+                continue
+            payload = read_image_bytes(kesz)
+            if payload is None:
+                continue
+            kep = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
+            if kep is not None:
+                return kep
+        return self._decode_source(source)
+
     def get_or_create_edited(
         self,
         photo_path: str | Path,
         mtime_ns: int,
         size_bytes: int,
         ops: tuple[FilterOp, ...],
+        level: int | None = None,
     ) -> Path | None:
         """Szerkesztett bélyegkép: a `filters=` láncot nagy felbontású
         bázison alkalmazza, majd a végeredményt kicsinyíti a célméretre
@@ -206,12 +297,39 @@ class ThumbnailCache:
         mentes). A cache-kulcs tartalmazza a láncot, így a szerkesztett
         bélyegkép külön fájlba kerül és görgetéskor nem kell újraszámolni."""
         if not ops:
-            return self.get_or_create(photo_path, mtime_ns, size_bytes)
+            return self.get_or_create(photo_path, mtime_ns, size_bytes, level)
         source = Path(photo_path)
+        lanc = serialize_filters(ops)
+        px = self._size if level is None else self.level_for(level)
         target = self.edited_thumbnail_path(
-            source, mtime_ns, size_bytes, serialize_filters(ops)
+            source, mtime_ns, size_bytes, lanc, px
         )
         if target.exists():
+            return target
+        #: #598: a kis szint a FELSŐ szint kész, szerkesztett bélyegképéből
+        #: áll elő — a `filters=` láncot sosem futtatjuk kétszer ugyanarra a
+        #: képre. A lánc drága (nagy bázison fut), a kicsinyítés nem.
+        if px != self._size:
+            nagy = self.get_or_create_edited(source, mtime_ns, size_bytes, ops)
+            if nagy is None:
+                return None
+            payload = read_image_bytes(nagy)
+            if payload is None:
+                return None
+            kep = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
+            if kep is None:
+                return None
+            ok, encoded = cv2.imencode(
+                ".jpg",
+                scale_down_picasa_mag(kep, px),
+                [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY],
+            )
+            if not ok:
+                return None
+            try:
+                self._write_atomic(target, encoded.tobytes())
+            except OSError:
+                return None
             return target
         base_size = _edit_base_size(self._size)
         base = self._decode_source(source, base_size)
@@ -237,18 +355,25 @@ class ThumbnailCache:
         return target
 
     def edited_thumbnail_path(
-        self, photo_path: Path, mtime_ns: int, size_bytes: int, chain: str
+        self,
+        photo_path: Path,
+        mtime_ns: int,
+        size_bytes: int,
+        chain: str,
+        level: int | None = None,
     ) -> Path:
         # #525: a kulcsban az _EDIT_CACHE_VERSION is szerepel — ha a
         # bázisméret-képlet változik, a régi (esetleg hibásan sötét)
         # lemez-cache-bejegyzések automatikusan érvénytelenné válnak,
         # ahelyett hogy örökre beragadnának.
+        px = self._size if level is None else level
         key = (
-            f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{self._size}"
+            f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{px}"
             f"\x00e{_EDIT_CACHE_VERSION}\x00{chain}"
         )
         digest = hashlib.sha1(key.encode("utf-8")).hexdigest()
-        return self._root / digest[:2] / f"{digest}.jpg"
+        gyoker = self._root if px == self._size else self._root / f"sz{px}"
+        return gyoker / digest[:2] / f"{digest}.jpg"
 
     def _decode_source(self, source: Path, target: int | None = None):
         """Forrás → BGR numpy kép: videónál egy képkocka, képnél imdecode.

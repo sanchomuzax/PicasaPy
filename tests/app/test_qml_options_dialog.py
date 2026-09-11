@@ -354,7 +354,10 @@ class TestPlaceholderTabsAreDisabled:
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
             # is tiltott, ezt ott állítjuk.
-            "optionsClearCacheButton",
+            # #598: az `optionsClearCacheButton` is KIKERÜLT — a
+            # bélyegkép-gyorsítótár kézi ürítése ÉLŐ lett
+            # (`controller.clearThumbnailCache`), az őre a
+            # `test_belyegkep_szint_598.py`.
             "optionsSkipRemoveConfirmCheck",
             "optionsUsageStatsCheck",
         ],
