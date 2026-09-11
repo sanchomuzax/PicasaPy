@@ -536,3 +536,113 @@ Diszasszemblálás nem kellett: a kérdés az olcsó lánc első két lépésén
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — melyik forrás normatív
 az elhelyezésre) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak
 nyitva".*
+
+---
+
+## 11. ⭐ A CSÚSZKA KVANTÁLT: az érték a vályú KÉPPONTJA osztva a vályú szélességével (2026-09-11, 281. kör, #2946)
+
+*A #938 azt hagyta nyitva, hogy a derítőfény-exportok tényleges
+csúszkaértéke ismeretlen, ezért a 75 %-os mérőpont magyarázata „erős, nem
+megerősített". Ez a szakasz kiméri — és a magyarázat helyett **számot** ad.*
+
+*Forrás: `scaleslider.tre:1` (`scaleslider/rect: scaleslider`) ·
+`editpanel.tre:188` (`flightslider1/thumb: flightslider1/scaleslider`) ·
+`editpanel.tre:192` (`Property slider 0`) · `editpanel.tre:539`
+(`editslider1/editslider`) · a rétegrekordok a `respack.yt` 13 bájtos
+fejlécéből (3. szakasz).*
+
+### 11.1 A korpusz: a `.picasa.ini` értékei RÁCSON ülnek
+
+A 859 valós `.picasa.ini` minden `<szűrő>=1,<tizedes>` bejegyzésére
+megkerestem azokat az `N` osztásszámokat, amelyekre **minden** érték `k/N`
+alakú (`N = 2…4096`, a hatjegyű kiírás tűrésével).
+
+**Kontroll-pozitív:** a `fill` három leggyakoribb értéke — `0,261682` ·
+`0,280374` · `0,271028` — 107-tel szorozva **pontosan** 28 · 30 · 29.
+
+| paraméter | előfordulás | különböző érték | **N** | `k` tartomány |
+|---|---:|---:|---:|---|
+| `fill` | 1090 | 78 | **107** | 3 … 84 |
+| `finetune2` (1. mező) | 566 | 56 | **171** | 2 … 76 |
+| `sat` | 100 | 35 | **171** (34/35) | 1 … 145 |
+| `tilt` | 30 | 24 | — (12/24 a 253-ra) | — |
+| `radblur` | 18 | 11 | **nincs** 4096-ig | — |
+| `dir_tint` | 10 | 10 | **nincs** 4096-ig | — |
+
+### 11.2 ⛳ A forrás: a vályú KÉPPONT-SZÉLESSÉGE
+
+*Forrás: `scaleslider.tre:1` · `bigslider.tre:8` (`Property slider 3`) ·
+`editpanel.tre:539` (`editslider1/editslider: root`); a dobozok a
+`respack.yt` rétegrekordjaiból (3. szakasz).*
+
+A rétegrekordok megadják a csúszka-sablonok dobozát:
+
+| sablon | rétegrekord | **szélesség** | ki használja |
+|---|---|---:|---|
+| `scaleslider` | `scaleslider/rect: scaleslider` | **107** × 27 | `flightslider1` (**derítőfény**), `brushslider`, `zoomslider`, `textopacityslider`, `outlineweightslider`, a filmkészítő négy csúszkája, `printborderslider` |
+| `editslider` | `editslider/rect: editslider` | **171** × 27 | `editslider1…4` (a finomhangolás négy csúszkája) |
+| `bigslider` | `bigslider/rect: bigslider` | **171** × 27 | a kollázs `spacing_slider`-e |
+| `toolslider` | `toolslider/rect: toolslider` | **253** × 28 | az eszközsáv csúszkája |
+
+⇒ **`érték = hüvelyk_képpont / vályú_szélesség`.** A `.tre` szerkezeti
+oldala ezt megerősíti: a `flightslider1/thumb` a `flightslider1/scaleslider`
+gyereke, `m_centerXY`-nal, a vályú pedig `Property slider 0`.
+
+**A `fill` 107-e és a `finetune2`/`sat` 171-e tehát nem véletlen szám: a
+két csúszka-sablon szélessége.** Két független forrás — a felhasználói
+korpusz és a bináris erőforrás geometriája — ugyanazt adja.
+
+⚠️ **Amit ez NEM mond:** a `radblur` és a `dir_tint` értékeire 4096-ig nincs
+közös osztásszám. Ez összefér azzal, amit róluk tudunk: mindkettő
+**puck**-vezérelt (kétdimenziós), nem csúszka — a `dir_tint` szöge a puck
+koordinátájából jön (`filters-decoded.md`, #874). A `tilt` felerészt illik a
+253-ra; egydimenziós csúszka-kvantálásként **nem írható le**, és ezt így is
+hagyjuk — nem feltevéssel.
+
+⚠️ A `sat` egyetlen kilógó értéke a **`0,161800`**, ami 48-szor fordul elő.
+Egy 48-szor előforduló, rácson kívüli érték nem csúszkahúzás — de hogy mi
+írja, **nincs mérve**, és nem is tippelünk rá.
+
+### 11.3 ⛳ Ezzel a #938 nyitott pontja MEGVÁLASZOLVA
+
+A hat derítőfény-export (`referencia/deritofeny/`) tényleges csúszkaértékét
+a rácson kerestem meg: minden `k = 0…107`-re lefuttattam a mai `apply_fill`-t
+a `percent 0.jpg`-re, és a valódi exporthoz mért **átlagos abszolút
+csatorna-eltérés** minimumát vettem (minden 6. képpont, 121 268 minta).
+
+| export | **legjobb `k`** | `k/107` | eltérés | a naiv `s = %`/100-nál |
+|---|---:|---:|---:|---:|
+| 10 % | 9 | 0,084112 | 0,551 | 0,822 |
+| 25 % | 29 | 0,271028 | 0,733 | 1,414 |
+| 50 % | 54 | 0,504673 | 0,919 | 0,934 |
+| 75 % | **84** | **0,785047** | **1,228** | **4,528** |
+| 100 % | 107 | 1,000000 | 1,216 | 1,216 |
+
+> **A 75 %-os pont nem modellhiba és nem is találgatás:** az export
+> csúszkája a vályú **84.** képpontján állt, azaz `84/107 = 0,785047` — nem
+> `0,75`-ön. Ezzel az eltérése **4,53-ról 1,23-ra** esik, a többi pont
+> szintjére.
+
+⚠️ **Mértékegység:** ezek **átlagos abszolút csatorna-eltérések**, nem ΔE —
+a #938 táblája ΔE-ben számol, a két szám **nem hasonlítható össze
+közvetlenül**. A rácskeresés relatív rangsora viszont a metrikától
+független: minden ponton ugyanaz a `k` nyer.
+
+### 11.4 ⭐ TERMÉKI KÖVETKEZMÉNY
+
+1. **A mi csúszkánk is rácsra írjon.** Egy `fill` érték, ami nem `k/107`,
+   a Picasa szemszögéből lehetetlen állás; a `.picasa.ini` round-trip
+   szempontjából ez formátumhűség kérdése.
+2. **A #938 mérőszettje a mért `k`-kat használja**, ne a fájlnév
+   százalékát: 9 · 29 · 54 · 84 · 107 a 107-es rácson.
+3. A finomhangolás négy csúszkája és a telítettség a **171**-es rácsra
+   kerül.
+
+*Bizonyítottsági fok: **megerősített** — két független forrás (859 valós
+`.picasa.ini` és a bináris erőforrás geometriája) ugyanazt az osztásszámot
+adja, kontroll-pozitívval; a #938 pontjára pedig saját rácskeresés áll.*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a kvantálás és a
+lépésköz forrása) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak
+nyitva". A `tilt` és a `sat` kilógó értéke **kimondott, mért negatívum**,
+nem nyitva hagyott kérdés.*
