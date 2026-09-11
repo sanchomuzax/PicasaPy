@@ -6715,3 +6715,92 @@ hogy másolat, de **melyik forrásból**.
 `dword`-író besorolva; a vektor-növelés megvan és nem forrás; értéktábla
 nincs) · **1 nyitott, gépi úton folytatható, meglévő listával** (a
 dokumentum-másoló kilenc hívóhelye) · 0 „csak nyitva".*
+
+---
+
+## 66. K1 — az „új kollázs" a dokumentum ÚJRAINDÍTÁSA, és a 0. csomópont `scale`-je ÁTÖRÖKLŐDIK (2026-09-11, #1412)
+
+*276. kutatói kör. A 65.5 horgonyát viszi: a dokumentum-másoló
+hívóhelyeit. Az eredmény megadja azt a mechanizmust, amit a 18. szakasz
+(1)-es ága feltételezett — címekkel.*
+
+### 66.1 A `FUN_008342b0` tizennégy hívóhelye
+
+Teljes `.text`, `paszta.py` alatt; **pozitív kontroll: `0x00834536`**
+(a betöltő hívása, 61.1) — **megvan**. Összesen **14** hely, ebből a
+mintázat szerint három csoport:
+
+| csoport | példa | mit lát az előzmény |
+|---|---|---|
+| frissen nullázott objektum | `0x0062c4fb` · `0x0082a386` · `0x0082a3eb` | a `+0x1c`…`+0x4c` mezők épp nullázva ⇒ **konstruktor-lánc** |
+| **`[… + 0x138]`** | **`0x0082c621`** | `0x0082c61a lea eax,[ebx+0x138]` ⇒ a PANEL dokumentuma |
+| verem-objektum | `0x00831472` · `0x00834536` | helyi/argumentum dokumentum |
+
+### 66.2 ⭐ Mit tesz valójában a `FUN_008342b0`
+
+A prológ megadja az irányt: `0x008342b2 mov ebp, [esp+0xc]` és utána
+`0x008342bb mov byte [ebp], 0` ⇒ **`ebp` a CÉL** (az inicializált
+objektum). A törzs:
+
+```
+0x008342c4  push 0xcbf854 · mov eax, 0xcbf848   ; 'Untitled' / 'CollageSpec::Untitled'
+0x0083439a  mov  [ebp+0x28], 0xff000000         ; háttér = átlátszó fekete
+0x008343a1  mov  eax, [ebp+0x4c] · shr eax,1    ; a MOSTANI csomópontszám
+0x00834439  call 0xc0769f                       ; 1 × 56 + 4 foglalás
+0x0083444d  mov  [eax], edi                     ; edi = 1  ⇒ ÚJ DARABSZÁM = 1
+0x00834455  call 0x4010e0                       ; alap-ktorral megépít
+0x0083445e  mov  eax, [ebp+0x4c] · shr eax,1
+0x00834463  cmp  eax, edi · jbe · mov eax, edi  ; min(régi, 1)
+0x00834473  mov  esi, [ebp+0x48]
+0x0083447c  call 0x8341b0                       ; az elemet VÁLTOZATLANUL átmásolja
+```
+
+⇒ **`FUN_008342b0` a dokumentum ÚJRAINDÍTÁSA (`reset`)**: téma
+`picturepile`, cím `Untitled`, és a csomópont-vektor **1 elemre**
+zsugorodik — a megmaradó **0. elemet az értékadó operátor
+VÁLTOZATLANUL viszi át**.
+
+⛳ **Tehát a 0. csomópont `scale`-je ÁTÖRÖKLŐDIK**, nem áll vissza
+konstansra. Ez az első mért mechanizmus, amely nem-konstans `scale`-t
+képes átvinni egy „új" kollázsba.
+
+### 66.3 ⭐ És mi hívja: az „új kollázs" a beállításokból
+
+A `0x0082c621` hívóhely a **`FUN_0082c4e0`**-ban van (1214 b, egyetlen
+hívója a kollázs-panel `FUN_0082a670`), és a függvény a
+**`Preferences`**-ből olvassa a `collage::theme`, `collage::shadows`,
+`collage::showcaptions`, `collage::orientation`, `collage::bgcolor`
+kulcsokat (`string_xrefs`), a `0x0082c5f8 push 0xcbee44` =
+`'collage::bgcolor'` és a `0x0082c5fd push 0xc7eafc` = `'Preferences'`
+utasításokkal.
+
+⇒ **Az „új kollázs" nem üres dokumentumot épít, hanem a PANEL meglévő
+dokumentumát (`[panel+0x138]`) indítja újra**, majd a témát és a
+jelzőket a beállításokból írja felül.
+
+### 66.4 ⚠️ Amit ez NEM mond ki
+
+A `reset` **egy** elemet tart meg. A mintáinkban viszont **minden**
+csomópont ugyanazt a `scale`-t hordozza (`AI27`: 4 × 500). Két
+lehetőség, és hogy melyik, az **nincs mérve**:
+
+1. a hozzáfűzés a 0. elemből veszi az értéket (a verem-példány
+   feltöltése onnan másol) — a 58.2 szerint ott `fld1`/`fldz` áll, de
+   a verem-példány TÖBB mezője is máshonnan jön;
+2. egy külön lépés a 0. elem `scale`-jét szétosztja a többire.
+
+### 66.5 A KÖVETKEZŐ lépés, megnevezve
+
+A hozzáfűzés (58.1) **verem-példányát** kell végigolvasni: a
+`FUN_0087dcd0` `esp+0x28` bázisú példánya melyik mezőit tölti
+MÁSHONNAN (nem konstansból). Konkrétan a `0x0087e1b0`–`0x0087e263`
+blokk már megvan; ami hiányzik, az a **`+0x2c` rekesz (`esp+0x54`)
+későbbi felülírása** — a `0x0087e22f` utáni írások a függvény
+hátralévő részében (`0x0087e4c9`, `0x0087e55a` környéke), amelyeket
+még nem olvastunk el.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 lezárva** (a 14
+hívóhely besorolva; a `FUN_008342b0` valódi szerepe — dokumentum-reset,
+1 elemre, a 0. elem átörökítésével) · **1 nyitott, gépi úton
+folytatható, megnevezett címekkel** (a verem-példány `+0x2c` rekeszének
+későbbi írásai) · 0 „csak nyitva".*
