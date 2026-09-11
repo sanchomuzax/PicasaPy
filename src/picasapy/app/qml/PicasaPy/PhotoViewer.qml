@@ -1631,7 +1631,16 @@ Rectangle {
                             objectName: "redeyeDragArea"
                             anchors.fill: parent
                             enabled: editorPanel.redeyeActive
-                            cursorShape: Qt.CrossCursor
+                            //: #604: a keret fölött a kurzor JELZI, hogy
+                            //: kattintva törölhető — az eredeti mindhárom
+                            //: útmutatója ezt ígéri. Húzás közben marad a
+                            //: célkereszt, különben a kurzor a keret fölé
+                            //: érve váltogatna.
+                            cursorShape: (!dragging && keretenAll)
+                                         ? Qt.PointingHandCursor
+                                         : Qt.CrossCursor
+                            hoverEnabled: editorPanel.redeyeActive
+                            property bool keretenAll: false
                             property bool dragging: false
                             property real startX: 0
                             property real startY: 0
@@ -1656,15 +1665,32 @@ Rectangle {
                                 selW = 0; selH = 0
                             }
                             onPositionChanged: function(mouse) {
-                                if (!dragging) return
+                                if (!dragging) {
+                                    keretenAll = (width > 0 && height > 0
+                                        && editController.redeyeRegionHitAt(
+                                            mouse.x / width, mouse.y / height))
+                                    return
+                                }
                                 frissit(mouse)
                             }
+                            onExited: keretenAll = false
                             onReleased: function(mouse) {
                                 dragging = false
                                 if (width <= 0 || height <= 0) return
                                 frissit(mouse)
-                                // a puszta kattintás (nulla méretű téglalap)
-                                // a kontrollerben néma no-op
+                                //: #604: a nulla méretű kijelölés — vagyis a
+                                //: puszta KATTINTÁS — a kereten TÖRLÉS, azon
+                                //: kívül továbbra is néma no-op. A húzás
+                                //: változatlanul új régiót ad, akkor is, ha
+                                //: egy meglévő kereten indul.
+                                if (selW <= 0 || selH <= 0) {
+                                    editController.removeRedeyeRegionAt(
+                                        mouse.x / width, mouse.y / height)
+                                    keretenAll = editController
+                                        .redeyeRegionHitAt(
+                                            mouse.x / width, mouse.y / height)
+                                    return
+                                }
                                 editController.addRedeyeRegion(
                                     selX / width, selY / height,
                                     selW / width, selH / height)

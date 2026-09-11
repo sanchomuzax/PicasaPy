@@ -7204,6 +7204,10 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.</source>
         <translation>Kattintson az egérrel, tartsa lenyomva a gombot, és mozgassa az egérmutatót a szemek körül külön-külön a kijelöléshez. Egy kijelölő keret jelenik meg a terület fölött. Engedje fel az egérgombot a kijelölés befejezéséhez. A fotóról eltűnik a vörösszem.</translation>
     </message>
+    <message>
+        <source>Note: click inside the box to undo the change.</source>
+        <translation>Megjegyzés: a keretbe kattintva visszavonhatja a változást.</translation>
+    </message>
 </context>
 <context>
     <name>EditorRetouchPanel</name>

@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.399] – 2026-09-11
+
+### Változott
+
+- **A vörösszem-keretre kattintva visszavonható az az egy javítás** (#604).
+  Eddig csak az utolsó keret volt visszavonható, vagy mind egyszerre: ha a
+  program négy szemet talált és a harmadik javítás rossz, háromszor kellett
+  visszavonni. Most a rossz keretre kattintva csak az esik ki. A keret fölött
+  a kurzor is jelzi, hogy kattintható, és a panel útmutatója kimondja —
+  ahogy az eredeti Picasa mindhárom üzenete tette.
+
+  A „Visszavonás" és az „Alaphelyzet" gomb megmarad, és a keret-törlés is
+  visszavonható velük. ⚠️ Mindez az **Alkalmazás előtt** érvényes: utána a
+  javítás a képpontokban van, és a keretek nem állíthatók vissza — az
+  eredeti is így működött.
+
 ## [0.8.398] – 2026-09-11
 
 ### Hozzáadva
