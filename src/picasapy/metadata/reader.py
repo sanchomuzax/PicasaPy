@@ -378,3 +378,32 @@ def _keywords(
     return tuple(
         decoded for item in items if (decoded := _decode(item, utf8_marked))
     )
+
+
+#: #2996: az EXIF-orientáció azon állásai, amelyek FELCSERÉLIK az oldalakat.
+#: (5–8: a kép 90°-kal el van forgatva, tükrözéssel vagy anélkül.)
+_ALLO_ORIENTACIOK = frozenset({5, 6, 7, 8})
+
+
+def megjelenitett_meret(width, height, orientation):
+    """A MEGJELENÍTETT (orientációval korrigált) szélesség és magasság.
+
+    Az index a fájlban TÁROLT méretet őrzi — az a fájl igazsága, és az is
+    marad a kanonikus adat. A dekódolás viszont alkalmazza az
+    EXIF-orientációt (mérve: OpenCV a teljes ÉS a redukált ágon is),
+    tehát 5–8 állásban a megjelenített kép oldalai fel vannak cserélve.
+    Aki ARÁNYT számol, ezt a segédet hívja (#2996).
+
+    ⚠️ A `.picasa.ini` `rotate=` forgatása NEM tartozik ide: azt a felület
+    alkalmazza külön, a már EXIF-helyes képre — a kettő halmozódik.
+
+    Ismeretlen vagy értelmezhetetlen értéket változatlanul ad vissza: egy
+    hiányos index-sor ne forgasson el semmit vaktában.
+    """
+    try:
+        allas = int(orientation)
+    except (TypeError, ValueError):
+        return (width, height)
+    if allas in _ALLO_ORIENTACIOK:
+        return (height, width)
+    return (width, height)

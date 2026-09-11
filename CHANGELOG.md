@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.415] – 2026-09-11
+
+### Javítva
+
+- **Az álló tájolású fényképek már nem fekvőként viselkednek** (#2996). A
+  telefonok és fényképezőgépek nem forgatják el a képpontokat, csak
+  megjelölik a képet — a program viszont a fájlban tárolt, fekvő méretet
+  használta. Emiatt a kollázs fekvő helyet osztott az álló képnek, a néző
+  1:1 nagyítása rossz méretből számolt, és a felbontás-felirat fordítva
+  mutatott. Mindhárom helyen a megjelenített méret számít mostantól.
+
 ## [0.8.414] – 2026-09-11
 
 ### Hozzáadva

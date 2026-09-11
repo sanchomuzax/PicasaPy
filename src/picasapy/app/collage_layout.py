@@ -28,6 +28,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import replace
 from pathlib import Path
+
+from picasapy.metadata import megjelenitett_meret
 from typing import NamedTuple
 
 from picasapy.collage.picasa_render import (
@@ -73,11 +75,17 @@ def sources_from_photos(photos: Sequence, rows: Iterable) -> tuple[CollageSource
         if not 0 <= index < len(photos):
             continue
         photo = photos[index]
+        # #2996: a MEGJELENÍTETT arány kell — az index a fájlban TÁROLT
+        # méretet őrzi, a dekódolás viszont alkalmazza az EXIF-orientációt.
+        # Enélkül minden álló tájolású telefonfelvétel fekvő helyet kapott.
+        szelesseg, magassag = megjelenitett_meret(
+            photo.width, photo.height, getattr(photo, "orientation", None)
+        )
         result.append(
             CollageSource(
                 path=str(Path(photo.folder_path) / photo.name),
                 caption=photo.caption or "",
-                aspect=aspect_of(photo.width, photo.height),
+                aspect=aspect_of(szelesseg, magassag),
             )
         )
     return tuple(result)
