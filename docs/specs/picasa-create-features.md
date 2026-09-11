@@ -1539,6 +1539,56 @@ illesztésnél használ.
 a konstans-szerepekre és az egyszeres esetre — a törzs szó szerinti
 átfésülésével.*
 
+##### A hangsúlyos kép TÉGLALAPJA — MEGVAN (2026-09-11, helyi diszasszemblálás)
+
+Eddig a keresés adatszerkezete volt leírva, a **kényszer-téglalap forrása**
+nem. Két tévhitet is oszlat a mérés:
+
+1. **A gomb nem téglalapot állít.** A „Beállítás képkockaközéppontként"
+   (`0x0083d520`) mindössze ennyit tesz: `[téma+0x50] = 1`,
+   `[téma+0x54] = a kijelölt kép azonosítója` (`0x0083d599`–`0x0083d59d`),
+   majd `vtbl+8`-cal újrapakolást kér. Sem koordináta, sem méret.
+2. **A téglalapot a téma pakolója számolja** (`CFrameGridTheme` 11. slot,
+   `0x00889185`–`0x00889241`), a kép betöltött oldalarányából:
+
+```asm
+0x00829d8c  fstp dword [eax+0x58]  ; a GYÁRTÓ: 0,5  (0xc7dafc)  ← a méret
+0x00889192  fstp [esp+0x18]        ; s·A        (A = a lap SZÉLESSÉGE)
+0x008891a4  fstp [esp+0x10]        ; s·A/a      (a = a KÉP oldalaránya)
+0x008891b1  jne 0x8891d7           ; ha a < 1 (ÁLLÓ kép), csere:
+0x008891ba  fstp [esp+0x10]        ;   s·B      (B = a lap MAGASSÁGA)
+0x008891c2  fstp [esp+0x18]        ;   a·s·B
+0x008891e6  fld  qword [0xc72150]  ; 0,5 — a fél oldalak
+0x00889216  mov  [eax], edx        ; x0 = 0,5 − félszélesség
+```
+
+A mozgó kapu megnevezése is megvan: a `[téma+0x54]` a **−1** kezdőértéket a
+gyártóban kapja (`0x00829d99`), és a pakoló a listát úgy rendezi, hogy a
+hangsúlyos kép az **első** elem legyen (`0x00888f60` körül) — innen jön a
+`**(float**)(téma+0x1c)` mint „az első kép aránya".
+
+**A képlet, `P = A/B` lapoldalaránnyal és `s = 0,5`-tel:**
+
+| a kép | a cella a lap közepén |
+|---|---|
+| fekvő (`a ≥ 1`) | szélesség `s`, magasság `s·P/a` |
+| álló (`a < 1`) | magasság `s`, szélesség `s·a/P` |
+
+Mindkét ág ugyanazt mondja: a cella **képpontban a kép oldalarányát tartja**
+(a hangsúlyos kép nem torzul), és a **nagyobb oldala a lap fele**.
+
+⚠️ **Ez döntötte el a #916-ot.** A korábbi megvalósításunk a hangsúlyos
+képet a `(0,25 … 0,75)` téglalapba tette — ami a képlet **határesete**,
+pontosan akkor helyes, ha a kép oldalaránya éppen a lapé (`P/a = 1`). Egy
+16:9-es kép 4:3-as lapon ennél **kétszer alacsonyabb** cellát kap.
+
+*Bizonyítottsági fok: **mért** — a gyártó konstansa (`0xc7dafc` = 0,5), a
+gomb törzse és a képlet utasításonként kiolvasva.*
+
+*Ami továbbra sincs meg:* a maradék terület felosztása
+(`0x0089e140`, 8524 b) — a megvalósításunk ott saját, kimondott szerkezetet
+használ (négy sáv a cella körül), a MÉRT célfüggvénnyel választva.
+
 ##### ~~Ami NYITVA marad~~ → MEGVÁLASZOLVA (2026-08-18)
 
 > A kérdés az volt: **melyik részfába irányítja a vágó a

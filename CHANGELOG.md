@@ -9,6 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Változott
 
+- **A Képkockamozaik hangsúlyos képe már nem torzul** (#916). A
+  „Beállítás képkockaközéppontként" képe eddig mindig a lap arányához
+  igazodó, fix területet kapott; egy panorámakép így kétszer alacsonyabb
+  helyre került, mint kell. Mostantól a cella a kép saját oldalarányát
+  tartja, a nagyobb oldala pedig a lap fele — pontosan úgy, ahogy az
+  eredeti Picasa számolja. A többi kép a hangsúlyos kép körüli négy sávra
+  kerül, és egyik sem fedi el.
 - **A vágó, a vörösszem és a retusálás útmutató szövege az eredeti Picasa
   teljes szövege** (#901). Eddig rövidített vagy átfogalmazott változat állt
   ott: a vörösszemnél lemaradt, hogyan fejezed be a kijelölést, a

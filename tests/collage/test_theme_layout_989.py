@@ -220,7 +220,14 @@ class TestKepkockamozaik:
         assert hangsulyos.path == UTAK[1]
         assert hangsulyos.center_x == pytest.approx(512.0, abs=2.0)
         assert hangsulyos.center_y == pytest.approx(384.0, abs=2.0)
-        assert hangsulyos.width == pytest.approx(512.0, abs=2.0)
+        #: #916: a hangsúlyos cella MÉRT mérete (`[téma+0x58] = 0,5`): a kép
+        #: nagyobb oldala a lap megfelelő oldalának fele. A 3:4-es (ÁLLÓ)
+        #: kép ezért a lap magasságának felét kapja, és a szélessége ebből
+        #: az oldalarányból következik — nem fordítva. Korábban itt 512 (a
+        #: lap szélességének fele) állt: az a kivezetett közelítés volt,
+        #: ami minden képnek a lap arányát adta.
+        assert hangsulyos.height == pytest.approx(384.0, abs=2.0)
+        assert hangsulyos.width == pytest.approx(288.0, abs=2.0)
 
     def test_rogzites_nelkul_az_alap_pakolora_esik_vissza(self):
         """Az eredeti is ezt teszi (`CLocationTree` csak KIEGÉSZÍTI a

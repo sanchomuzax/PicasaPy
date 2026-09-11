@@ -229,7 +229,14 @@ class TestSzabalyosTemak:
         hangsulyos = nodes[nyitott.collageFrameCenter]
         assert Path(hangsulyos.path).name == "b.jpg"
         assert hangsulyos.center_x == pytest.approx(512.0, abs=3.0)
-        assert hangsulyos.width == pytest.approx(512.0, abs=3.0)
+        #: #916: a hangsúlyos cella MÉRT mérete — a kép NAGYOBB oldala a lap
+        #: megfelelő oldalának fele (`[téma+0x58] = 0,5`). Melyik oldal az,
+        #: a kép oldalarányától függ, ezért a kettő közül a nagyobbat mérjük;
+        #: a korábbi „szélesség = a lap fele" a kivezetett közelítés volt.
+        lap_magassag = 1024.0 * nyitott.collagePageRatio
+        assert max(
+            hangsulyos.width / 1024.0, hangsulyos.height / lap_magassag
+        ) == pytest.approx(0.5, abs=0.01)
 
 
 class TestAMentettKimenet:
