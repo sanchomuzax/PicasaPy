@@ -552,6 +552,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 background_image=background_image,
                 format_key=self._collage_panel_format,
                 node_uids=self._collage_panel_node_uids,
+                node_scales=self._collage_panel_node_scales,
                 should_cancel=self._rendered_now_writing,
             )
         except (ValueError, OSError) as error:
@@ -675,6 +676,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                     background_image=self._background_image_for_cxf(),
                     format_key=self._collage_panel_format,
                     node_uids=self._collage_panel_node_uids,
+                    node_scales=self._collage_panel_node_scales,
                 ),
             )
         except (OSError, ValueError) as hiba:
@@ -1014,6 +1016,16 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             kulcs: node.uid
             for node in projekt.nodes
             if node.uid and node.src
+            for kulcs in {node.src, str(decode_cxf_path(node.src))}
+        }
+        # #2923: a `scale` UGYANÍGY a projektből él tovább. A #1412 277. köre
+        # kimérte, hogy az eredeti nem számolja: a fájlból örökli, és a
+        # másolók/`reset` változatlanul viszik. A mi számolt értékünk egy
+        # Picasával készült kollázs újramentésekor elrontotta a fájlt.
+        self._collage_panel_node_scales = {
+            kulcs: node.scale
+            for node in projekt.nodes
+            if node.scale and node.src
             for kulcs in {node.src, str(decode_cxf_path(node.src))}
         }
         panel_csomopontok = _panel_nodes_of(nodes_from_project(projekt))

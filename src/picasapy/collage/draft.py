@@ -261,6 +261,7 @@ def _tema_scale(
     *,
     page_ratio: float,
     contact_scale: float | None = None,
+    orzott_scale: float | None = None,
 ) -> CxfNode:
     """A már normalizált csomópont `scale`-jének témánkénti helyesbítése.
 
@@ -272,8 +273,20 @@ def _tema_scale(
     A `contactsheet` KÜLÖN utat kap (#2583): a `scale` itt NEM a csomópont
     saját doboza (18.5), hanem egy LAP-SZINTŰ állandó — ezt `project_from_nodes`
     számolja ki egyszer, `contact_sheet_cell_scale`-lel, és ide adja be
-    `contact_scale`-ként."""
-    if theme == CONTACTSHEET and contact_scale is not None:
+    `contact_scale`-ként.
+
+    ⚠️ **#2923: a MEGNYITOTT projektből hozott `scale` mindent felülír.** A
+    #1412 277. köre kimérte, hogy az eredeti a csomópont `scale`-jét nem
+    számolja: az a **fájlból** jön (`_atof`), és a másolók/`reset` változatlanul
+    viszik tovább. Egy Picasával készült kollázs újramentésekor tehát a mi
+    számolt értékünk ELRONTOTTA a fájlt — ezért az `orzott_scale` (a
+    `node_uids` mintája, #1092) érintetlenül megy vissza.
+
+    Az Indexkép `y`-ja ilyenkor is a `scale`-hez igazodik (a `.cxf` a
+    `scale`-lel középre igazított doboz TETEJÉT írja) — csak most a megőrzött
+    értékhez, nem a számolthoz."""
+    if theme == CONTACTSHEET and (orzott_scale or contact_scale) is not None:
+        contact_scale = orzott_scale if orzott_scale else contact_scale
         # #2583: a `scale` LAP-SZINTŰ — és az `y` is ebből jön, nem a
         # csomópont saját magasságából. A csomópont KÖZEPE a cella közepe
         # (`picasa_render._contact_sheet_nodes`), a `.cxf` viszont a
@@ -286,9 +299,25 @@ def _tema_scale(
         return replace(
             node, scale=contact_scale, y=node.y + eltolas / lap_magassag
         )
+    if orzott_scale:
+        return replace(node, scale=orzott_scale)
     szelesseg = node.w * SHEET_UNITS
     magassag = node.h * SHEET_UNITS * page_ratio
     return replace(node, scale=scale_for_theme(szelesseg, magassag, theme))
+
+
+def _orzott_scale(node, scales: Mapping[str, float]) -> float | None:
+    """A MEGNYITOTT projektből hozott `scale` ehhez a csomóponthoz (#2923).
+
+    A kulcs a `src` — kódolt és feloldott alakban is keresve, ahogy a
+    `node_uids`-nál (#1096: a `.cxf` a Picasa változós útvonalát tárolja)."""
+    forras = getattr(node, "path", None)
+    if not forras:
+        return None
+    for kulcs in (str(forras), encode_cxf_path(str(forras))):
+        if kulcs in scales:
+            return scales[kulcs]
+    return None
 
 
 def _azonositoval(node: CxfNode, node_uids: Mapping[str, str]) -> CxfNode:
@@ -328,6 +357,7 @@ def project_from_nodes(
     background_image: str = "",
     format_key: str = "",
     node_uids: Mapping[str, str] | None = None,
+    node_scales: Mapping[str, float] | None = None,
 ) -> CxfProject:
     """A kirajzolt vászonból teljes `.cxf` projekt.
 
@@ -348,10 +378,16 @@ def project_from_nodes(
     benne van, az változatlanul megy vissza; a többi csomópont a `src`-ből
     származtatott azonosítót kapja (`uids.node_uid_for`).
 
+    ⚠️ A `node_scales` ugyanez a `scale`-re (#2923): az eredeti sem számolja
+    a csomópont `scale`-jét — a fájlból örökli. Ami benne van, az érintetlenül
+    megy vissza; ami nincs (ÚJ csomópont), az kapja a téma szabálya szerinti
+    számolt értéket.
+
     ⚠️ Az Indexkép (`contactsheet`) `scale`-je LAP-SZINTŰ állandó, nem
     csomópontonkénti (18.5, #2583) — ezért itt, EGYSZER számoljuk ki
     (`contact_sheet_cell_scale`), és minden csomópontnak ugyanazt adjuk."""
     uids = dict(node_uids or {})
+    scales = dict(node_scales or {})
     page_ratio = settings.height / settings.width
     contact_scale = (
         contact_sheet_cell_scale(settings.width, settings.height, len(nodes))
@@ -389,6 +425,7 @@ def project_from_nodes(
                     settings.theme,
                     page_ratio=page_ratio,
                     contact_scale=contact_scale,
+                    orzott_scale=_orzott_scale(node, scales),
                 ),
                 uids,
             )
