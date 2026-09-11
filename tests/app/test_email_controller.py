@@ -30,6 +30,9 @@ class _FakePhoto:
     folder_path: str
     name: str
     rotate_steps: int = 0
+    #: #2902: a valódi `PhotoRecord`-nak is van tükrözés-jelzője, és a
+    #: melléklet-készítés beégeti — a hasonmásnak is tudnia kell róla
+    flip_flags: int = 0
     filters: str | None = None
 
 

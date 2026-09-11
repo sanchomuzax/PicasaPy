@@ -316,6 +316,7 @@ class EmailController(QObject):
                 ExportItem(
                     source=Path(photo.folder_path) / photo.name,
                     rotate_steps=photo.rotate_steps,
+                    flip_flags=getattr(photo, "flip_flags", 0),  # #2902
                     filters=photo.filters,
                 )
             )

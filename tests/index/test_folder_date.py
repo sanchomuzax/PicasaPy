@@ -78,6 +78,8 @@ class TestMigrationV3:
         raw.execute("ALTER TABLE photos DROP COLUMN exif_lon")
         # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
         raw.execute("ALTER TABLE photos DROP COLUMN first_seen_mtime_ns")
+        # #2902: a tükrözés jelzője a v19-ben érkezik
+        raw.execute("ALTER TABLE photos DROP COLUMN flip_flags")
         # #26: a face/face_group táblákat is eldobjuk, hogy a 8→9→10
         # migrációs lánc (nem idempotens ALTER-t is tartalmaz) a valódi
         # útvonalon fusson, ne a friss DDL-ből örökölt, már bővített táblán

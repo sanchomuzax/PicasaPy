@@ -11,11 +11,12 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v18: az „arc-detektálás lefutott" nyom (#2519) — `face_scan`
-        # (v17: a befagyasztott, első látáskori fájlidő, #2486 —
+        # v19: a tükrözés jelzője (#2902) — `photos.flip_flags`
+        # (v18: az „arc-detektálás lefutott" nyom, #2519 — `face_scan`;
+        # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 18
+        assert SCHEMA_VERSION == 19
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -33,6 +34,8 @@ class TestSchema:
             conn.execute("PRAGMA user_version = 5")
             conn.execute("DROP TABLE photo_hashes")
             # #30: az 5-ös séma még nem ismerte a geo-oszlopokat sem
+            # #2902: a tükrözés jelzője a v19-ben érkezik
+            conn.execute("ALTER TABLE photos DROP COLUMN flip_flags")
             conn.execute("ALTER TABLE photos DROP COLUMN geotag_ini")
             conn.execute("ALTER TABLE photos DROP COLUMN exif_lat")
             conn.execute("ALTER TABLE photos DROP COLUMN exif_lon")

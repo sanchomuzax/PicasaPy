@@ -954,6 +954,29 @@ ApplicationWindow {
             if (row >= 0) controller.rotateLeft(row)
         }
     }
+    //: #2902: tükrözés — az eredeti könyvtárnézeti kezelőjének két ága
+    //: (`0x005e63d6` vízszintes, `0x005e6408` függőleges), a keymapben
+    //: 35. *Flip Horizontal* / 36. *Flip Vertical*. MENÜPONT SZÁNDÉKOSAN
+    //: NINCS hozzá: a 3.9 menüiben sem volt, a funkció csak billentyűvel
+    //: érhető el (`docs/specs/picasa-gyorsbillentyuk.md` 10.3–10.4).
+    //:
+    //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
+    //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
+    function tukrozesiSorok() {
+        if (window.viewerOpen) return [photoViewer.currentIndex]
+        return window.selectedRows()
+    }
+    Shortcut {
+        objectName: "flipHorizontalShortcut"
+        sequence: "Ctrl+Shift+H"
+        onActivated: controller.flipHorizontalMany(window.tukrozesiSorok())
+    }
+    Shortcut {
+        objectName: "flipVerticalShortcut"
+        sequence: "Ctrl+Shift+V"
+        onActivated: controller.flipVerticalMany(window.tukrozesiSorok())
+    }
+
     // #8: Ctrl+4 — diavetítés (Picasa-billentyű)
     Shortcut {
         sequence: "Ctrl+4"

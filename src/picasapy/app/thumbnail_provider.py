@@ -54,6 +54,7 @@ from PySide6.QtQuick import (
 from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
 from picasapy.ini.filters import serialize_filters
+from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
 from picasapy.thumbs import ThumbnailCache
 from .display_mode_paint import (
     apply_display_mode_to_qimage,
@@ -452,10 +453,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         path = Path(photo.folder_path) / photo.name
         mtime_ns, size_bytes = photo.mtime_ns, photo.size
         rotate = photo.rotate_steps
+        #: #2902: a tükrözés a forgatás párja — ugyanúgy nem-destruktív, és
+        #: ugyanúgy a KÉSZ kis bélyegképen történik.
+        flip = int(getattr(photo, "flip_flags", 0) or 0)
         ops, chain_crc = self._resolved_ops(photo)
         # #144: szűrt képnél előbb a memóriacache — találatnál a filters-
         # lánc, a lemez-dekód és a forgatás is kimarad
-        memo_key = (str(path), mtime_ns, size_bytes, chain_crc, rotate)
+        memo_key = (str(path), mtime_ns, size_bytes, chain_crc, rotate, flip)
         if ops:
             cached = self._memo.get(memo_key)
             if cached is not None:
@@ -483,6 +487,11 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         if rotate:
             # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
             image = image.transformed(QTransform().rotate(90 * rotate))
+        if flip:
+            # #2902: a `QImage.mirrored` maga is új képet ad — a gyorstárban
+            # tükrözetlen bélyegkép marad, ahogy a forgatásnál is
+            image = image.mirrored(bool(flip & FLIP_HORIZONTAL),
+                                   bool(flip & FLIP_VERTICAL))
         if ops:
             self._memo.put(memo_key, image)
         return image

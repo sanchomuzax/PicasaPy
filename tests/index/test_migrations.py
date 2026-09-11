@@ -179,6 +179,7 @@ class TestAlbumsMigration:
             "ALTER TABLE folders DROP COLUMN unread;"
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;"
+            "ALTER TABLE photos DROP COLUMN flip_flags;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -234,6 +235,7 @@ class TestFaceMigration:
             "ALTER TABLE folders DROP COLUMN unread;\n"
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
+            "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             "PRAGMA user_version = 8;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -294,6 +296,7 @@ class TestFaceEmbeddingMigration:
             "ALTER TABLE folders DROP COLUMN unread;\n"
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
+            "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
