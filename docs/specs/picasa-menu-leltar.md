@@ -943,3 +943,84 @@ tartozó tételek: **nincs olyan**. Amit ott nyitva hagyott (a menün kívüli
 billentyűk *(billentyű, módosító) → cmd* leképezése, a 12 kötés nélküli
 rekesz, a videólejátszó és a szerkesztőpanel billentyűi), az **nem ennek a
 lapnak a hatóköre**.
+
+---
+
+## 9. ⛳ A `winedisable.txt` FELOLDVA — mit tiltott le a Picasa Wine alatt (2026-09-11, 285. kör, #2963)
+
+*A #531 két utat kínált a 13 parancsazonosító feloldására: Wine-kísérletet
+vagy visszafejtést. **Egyik sem kellett**: a 7. szakasz parancstérképe
+(2026-09-01, #1581) azóta megvan, és kilencet azonnal megad. A maradék
+négyre ez a szakasz ad mért — negatív — választ.*
+
+*Forrás: `runtime/winedisable.txt` · `docs/specs/picasa-menu-parancsok.csv`
+(137 azonosító) · a menüépítő `mov word ptr [<rekord-mező>], <ID>`
+tárolásai.*
+
+### 9.1 A kilenc feloldott parancs
+
+| szám | hex | menü | parancs | felirat |
+|---:|---|---|---|---|
+| 40019 | `0x9c53` | Súgó | `ID_HELP_CHECK_FOR_UPDATES` | Frissítések keresése |
+| 40276 | `0x9d54` | Eszközök | `ID_FTPWEB` | Közzététel FTP-n keresztül… |
+| 40284 | `0x9d5c` | Létrehozás | `ID_SCREENSAVER` | Hozzáadás a képernyővédőhöz… |
+| 40350 | `0x9d9e` | Eszközök | `ID_VIEW_EARTH` | Megtekintés a Google Earth programban… |
+| 40368 | `0x9db0` | Eszközök | `ID_EXPORT_EARTH` | Exportálás Google Earth-fájlba |
+| 40372 | `0x9db4` | Eszközök | `ID_PICTURE_GEOTAG` | Geocímkézés a Google Earth programmal… |
+| 40373 | `0x9db5` | Eszközök | `ID_PICTURE_GEOUNTAG` | Geocímkék törlése |
+| 40393 | `0x9dc9` | Eszközök | `ID_TOOLS_CONFIG_SCREENSAVER` | Képernyővédő konfigurálása… |
+| 40432 | `0x9df0` | Eszközök | `ID_TOOLS_CONFIG_SLINGSHOT` | Fotómegjelenítő beállítása… |
+
+**Funkció szerint:** **Google Earth** (4) · **képernyővédő** (2) ·
+**frissítéskeresés** (1) · **FTP-közzététel** (1) · **fotómegjelenítő
+beállítása** (1).
+
+### 9.2 ⛔ A #531 JELÖLTLISTÁJA NAGYRÉSZT TÉVES VOLT
+
+A jegy „jelöltek (találgatás, nem bizonyíték)" sora ezt írta: *nyomtatás,
+e-mail-küldés MAPI-n, képernyővédő-beállítás, CD/DVD-írás,
+Windows-héjintegráció, TWAIN/WIA képbeolvasás, asztali háttérkép*.
+
+A mérés szerint **a hétből egy** szerepel a listán (a képernyővédő). A
+nyomtatás, az e-mail, a CD-írás, a héjintegráció, a képbeolvasás és a
+háttérkép **NINCS letiltva** Wine alatt.
+
+⭐ **Ez rangsorolási információ, és az ellenkezőjét mondja, mint a
+feltevés:** amit a Google feladott, az nem a Windows-API-hoz kötött
+klasszikus funkció, hanem a **külső Google-szolgáltatásra** épülő
+(Earth, frissítés, FTP, saját fotómegjelenítő).
+
+### 9.3 A maradék NÉGY: a szállított binárisban NINCS rájuk hivatkozás
+
+`40225` (`0x9d21`) · `40192` (`0x9d00`) · `40370` (`0x9db2`) ·
+`40371` (`0x9db3`).
+
+**A mérés menete és a kontrollja.** A menüépítő a parancsazonosítót
+`mov word ptr [<rekord-mező>], <ID>` alakban írja ki, és a rekord kulcsát
+két `push`-sal korábban tolja a veremre (ez a 7. szakaszban leírt
+kiírási csúsztatás). Ezzel a szabállyal a **kilenc ismert azonosító
+9/9-ben** visszaadja a saját nevét — a mérőlánc tehát helyes.
+
+Ugyanezzel a pásztázással (indextől független, teljes `.text`):
+
+| azonosító | utasítás-előfordulás a `.text`-en |
+|---|---:|
+| `0x9db4` (kontroll, ismert parancs) | **2** |
+| `0x9d21` · `0x9d00` · `0x9db2` · `0x9db3` | **0** |
+
+⇒ **A négy azonosítóra a `Picasa3.exe` kódjában egyetlen hivatkozás sincs.**
+Nincs menürekordjuk, tehát a letiltásuk ebben a buildben **hatástalan**.
+
+⚠️ **A hatókör kimondva:** ez a `Picasa3.exe`-re áll. A telepítés többi
+binárisát **nem** mértem ki utasításszinten; a nyers bájtminta-számlálás
+ott nem bizonyíték (a kontroll-azonosítók is „előfordulnak" olyan
+fájlokban, amelyekben menü nincs). Hogy a négy szám egy korábbi build
+maradványa-e, a **szállított** fájlokból nem dönthető el.
+
+*Bizonyítottsági fok: **megerősített** a kilencre (két független forrás: a
+parancstérkép és a menüépítő), és **megerősített negatív** a négyre
+(kontroll-pozitívval futtatott, indextől független pásztázás).*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a négy maradék: a
+binárisban nincs rájuk hivatkozás) · 0 nyitott · 0 blokkolt · 0 hatókörön
+kívül · 0 „csak nyitva".*
