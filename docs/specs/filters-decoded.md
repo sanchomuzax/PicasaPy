@@ -1177,6 +1177,51 @@ majd mindhármat **256,0**-lal (`[0xcf39d8]`) szorozva egészre kerekíti
 kiolvasva (`255.0`, `256.0`), a normalizálás lépésről lépésre a
 lebegőpontos veremműveletekből.*
 
+#### ⭐ ÚJRAMÉRVE, és egy ÚJ részlet: a natív súlyok `/256`-ra KVANTÁLTAK (2026-09-11, 286. kör, #939)
+
+*A fenti szakasz 2026-08-23-i; a #939 törzse azóta is „felhasználói
+exportra vár"-t írt. Ez a kör **újra kimérte** — a spec és a kód
+megjegyzése önmagában nem bizonyíték —, és a megerősítés mellé egy
+mennyiséget is tesz.*
+
+**Kontroll-pozitív:** a két konstans nyers bájtja a fájlból:
+`0xcf39d0` = `00 00 00 00 00 e0 6f 40` = **`255,0`**, és
+`0xcf39d8` = `00 00 00 00 00 00 70 40` = **`256,0`**. A normalizálás
+lépésről lépésre megvan (`0x0090e6b7`–`0x0090e6e8`): összeg → `fld1` →
+`fdivrp` (`1/összeg`) → mindhárom súly szorzása.
+
+⭐ **Amit a korábbi olvasat nem mondott ki:** a normalizálás UTÁN a mag
+mindhárom súlyt `256,0`-lal szorozza, és **egészre kerekíti**
+(`0x0090e6f8`, `0x0090e706`, `0x0090e714` → `0x00c29990`). A natív
+csatornasúlyok tehát **`k/256` alakú fixpontos** értékek, a miénk viszont
+lebegőpontos.
+
+**Mennyit számít ez?** Kimérve **mind a 16 777 215** lehetséges
+szűrőszínre (a szürke eltérés felső korlátja
+`Σ|w_lebegő − w_natív/256| × 255`):
+
+| mérőszám | érték |
+|---|---|
+| a legnagyobb eltérés | **0,9961 szint** (a `(3, 73, 146)` színnél) |
+| a kerekített súlyok összege = 256 | 12 615 861 szín |
+| …= 255 | 2 074 818 szín |
+| …= 257 | 2 086 536 szín |
+
+⇒ **A különbség mindig egy szürkeszint alatt marad**, tehát a kimeneten
+legfeljebb ±1 a `uint8` kerekítés után. ⚠️ Mellékesen: a natív súlyok
+összege **nem mindig pontosan 256** — a színek negyedénél 255 vagy 257,
+vagyis maga a natív normalizálás is hordoz egy `1/256`-os hibát.
+
+> ### ⛳ A #939 LEZÁRHATÓ — export NEM kell
+> A színes szűrő súlyozása **megerősített** (a binárisból), és a
+> maradék eltérés **mérve** egy szürkeszint alatt van. A jegy „Kész, ha"
+> listája színes szűrős exportot kért; az a **képlet eldöntéséhez
+> felesleges**, mert a bináris megadja.
+
+*Bizonyítottsági fok: **megerősített** — mindkét konstans nyers bájtból,
+a normalizálás és a kvantálás utasításonként, a maradék eltérés a teljes
+színtéren kimérve.*
+
 ### `tint`
 
 A `+0x50`-es színt használja, a keverési arány `256 − round(amount)`, és
