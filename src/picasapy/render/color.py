@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from picasapy.render.curves import apply_channel_luts, lut_ramp, validate_image
+from picasapy.render.curves import apply_channel_luts, validate_image
 from picasapy.render.saturation_positive import apply_positive_saturation
 from picasapy.render.warmify_lut import warmify_lut_array
 
@@ -21,25 +21,29 @@ _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 #: Flash-örökségű (0,3 / 0,59 / 0,11) súlyozás adta a legkisebb szórást a
 #: luma-vödrökön belül (1,21) — a Rec.601 (1,26) és a Rec.709 (2,29)
 #: rosszabb. A különbség kicsi, de következetes.
-_SEPIA_LUMA_WEIGHTS = (0.3, 0.59, 0.11)
+#: #619: a szépia MÉRT egész-szorzói — nincs bennük illesztés.
+#:
+#: A szűrő teljes algoritmusa visszafejtve (#617), és három lépésből áll,
+#: MINDVÉGIG egész aritmetikával. A lebegőpontos változat máshol kerekít, és a
+#: kimenet ±1-gyel elcsúszik, ezért a `>> 8` és a `* 218` pontosan így áll:
+#:
+#: 1. **szürkeárnyalat** — ITU-R BT.601 egészben: `(77R + 151G + 28B) >> 8`;
+#:    az együtthatók összege PONTOSAN 256, tehát nincs erősítés;
+#: 2. **halványítás** — invertálás → `218/256` → visszainvertálás:
+#:    `base = 255 − (((255 − gray) * 218) >> 8)`. A `gray = 0` így 38-at ad:
+#:    a feketék MEGEMELVE, ez adja a szépia „poros" alját;
+#: 3. **színezés** — OVERLAY-keverés fix tintával (`0x9b, 0x7d, 0x63`):
+#:    `base < 128` esetén multiply, egyébként screen.
+#:
+#: Mivel a `base` mindhárom csatornán ugyanaz, az egész **egyetlen 256 → RGB
+#: tábla** — de a TÁBLA helyett a KÉPLET áll a kódban, mert abból a tábla
+#: bármikor újraszámolható, visszafelé viszont nem.
+_SEPIA_INT_LUMA = (77, 151, 28)
+_SEPIA_FADE = 218
+_SEPIA_TINT = (155, 125, 99)
 
-#: A szépia MÉRT tónusgörbéi (`referencia/sepia/`, 2560×1702-es export a
-#: `filterdesc.xml`-en kívülről): luma 0, 16, 32 … 240, 255 → kimenő
-#: csatornaérték. A korábbi lineáris közelítés (meredekség/eltolás
-#: csatornánként) átlagosan **4,40**-gyel tért el a valódi Picasa-
-#: kimenettől; ezekkel a horgonypontokkal **0,86** (viszonyításul: az
-#: érintetlen kép eltérése 30,16). A görbe erősen nemlineáris — a kék
-#: csatorna a sötét felén lapos, a világos felén meredek —, ezért nem
-#: lehetett egyenessel eltalálni.
-_SEPIA_ANCHOR_INPUTS = tuple(range(0, 256, 16)) + (255,)
-_SEPIA_ANCHOR_CURVES = (
-    (46.0, 61.9, 79.1, 95.1, 111.6, 128.1, 144.3, 160.4, 171.1, 181.6,
-     192.2, 202.8, 213.6, 224.4, 234.6, 246.4, 254.8),
-    (36.7, 49.2, 63.2, 77.2, 89.5, 103.1, 116.9, 132.5, 146.0, 159.5,
-     173.3, 186.8, 201.4, 215.0, 228.7, 242.5, 254.8),
-    (27.7, 39.4, 49.9, 61.0, 71.0, 81.2, 92.6, 108.1, 123.6, 140.0,
-     157.4, 173.2, 190.1, 206.2, 222.7, 239.4, 254.4),
-)
+#: a táblát egyszer számoljuk ki (a `sepia_lut_array` gyorstára)
+_SEPIA_LUT: np.ndarray | None = None
 
 # A sat mért gain-táblája (nem 1+s!); s=−1 → teljes telítetlenítés.
 _SATURATION_KNOTS = (-1.0, -0.333, 0.0, 0.25, 0.5, 1.0)
@@ -79,26 +83,61 @@ def _monochrome_tone(image: np.ndarray, linear: tuple) -> np.ndarray:
     return _to_uint8(np.stack(channels, axis=-1))
 
 
-def apply_sepia(image: np.ndarray) -> np.ndarray:
-    """Szépia: luma → a MÉRT R/G/B tónusgörbék (#317).
+def sepia_lut_array() -> np.ndarray:
+    """A szépia 256 × 3 táblája a MÉRT képletből (#619).
 
-    A valódi Picasa-kimenettől való átlagos csatorna-eltérés **0,86**
-    (a korábbi lineáris közelítésé 4,40; az érintetlen képé 30,16).
+    Egész aritmetikával, ahogy a natív szűrő: `>> 8` eltolás, nem osztás.
+    A tábla determinisztikus, ezért egyszer számoljuk ki."""
+    global _SEPIA_LUT
+    if _SEPIA_LUT is None:
+        gray = np.arange(256, dtype=np.int32)
+        base = 255 - (((255 - gray) * _SEPIA_FADE) >> 8)
+        csatornak = []
+        for tint in _SEPIA_TINT:
+            multiply = (2 * base * tint) >> 8
+            screen = 255 - ((2 * (255 - base) * (255 - tint)) >> 8)
+            csatornak.append(np.where(base < 128, multiply, screen))
+        _SEPIA_LUT = np.clip(
+            np.stack(csatornak, axis=-1), 0, 255
+        ).astype(np.uint8)
+    return _SEPIA_LUT
+
+
+def apply_sepia(image: np.ndarray) -> np.ndarray:
+    """Szépia: a MÉRT algoritmus egész aritmetikával (#619, a #617 alapján).
+
+    Három lépés (a konstansok mellett álló levezetés szerint): egész BT.601
+    szürkeárnyalat, `218/256`-os halványítás invertálva, majd OVERLAY-keverés
+    a fix `(155, 125, 99)` tintával.
+
+    **PONTOS, nem közelítés.** A korábbi változat 17 mért horgonypontból
+    interpolált csatornagörbéket használt (#317) — az illesztés volt, ez a
+    tényleges algoritmus. A referencia-exporton mérve (2560×1702,
+    `referencia/sepia/`, bemenet ugyanannak a képnek az effekt nélküli
+    exportja):
+
+    | | átlagos eltérés R/G/B | ±1 | ±2 |
+    |---|---|---|---|
+    | ez a képlet | **0,92 / 0,60 / 1,07** | 82,6% | 95,5% |
+    | a korábbi horgonypontos | 0,92 / 0,69 / 1,06 | 82,3% | 95,3% |
+
+    ⚠️ A százalékok **csatorna-értékre** vetítve értendők (nem képpontra: ott
+    59,5% / 88,5%) — a #619 jegy számai is ilyenek. A maradék eltérés a
+    JPEG-újrakódolásból ered: a referencia és a bemenet is JPEG, tehát
+    szigorúbb egyezés ezen a méréson elvben sem elérhető.
+
+    Az alfa-csatorna (ha van) érintetlen — a `validate_image` utáni három
+    csatornán dolgozunk.
     """
     validate_image(image)
-    red_w, green_w, blue_w = _SEPIA_LUMA_WEIGHTS
+    red_w, green_w, blue_w = _SEPIA_INT_LUMA
+    channels = image[..., :3].astype(np.int32)
     gray = (
-        np.float32(red_w) * image[..., 0].astype(np.float32)
-        + np.float32(green_w) * image[..., 1].astype(np.float32)
-        + np.float32(blue_w) * image[..., 2].astype(np.float32)
-    )
-    ramp = lut_ramp()
-    luts = tuple(
-        np.interp(ramp, _SEPIA_ANCHOR_INPUTS, curve).astype(np.float32)
-        for curve in _SEPIA_ANCHOR_CURVES
-    )
-    index = np.clip(np.rint(gray), 0, 255).astype(np.uint8)
-    return _to_uint8(np.stack([lut[index] for lut in luts], axis=-1))
+        red_w * channels[..., 0]
+        + green_w * channels[..., 1]
+        + blue_w * channels[..., 2]
+    ) >> 8
+    return sepia_lut_array()[np.clip(gray, 0, 255).astype(np.uint8)]
 
 
 def apply_warm(image: np.ndarray) -> np.ndarray:
