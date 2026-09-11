@@ -207,10 +207,16 @@ def first_date_text(records, locale: QLocale) -> str:
 
 
 def format_exposure(seconds: float, locale: QLocale) -> str:
-    """Záridő fotós alakban: 1 mp alatt `1/N s`, fölötte `N s`."""
+    """Záridő fotós alakban a MÉRT formátumokkal (#866).
+
+    Az eredeti két erőforrást tart rá: `1/%ds` az 1 másodperc alattira és
+    `%2.1fs` a fölöttire (`il_NerdView::4` és `::5`,
+    `docs/specs/picasa-hisztogram.md` 6.). A hosszú expozíció tehát MINDIG
+    egy tizedesjeggyel jelenik meg — a korábbi `g`-formátum 4 értékes
+    jegyre kerekített (`2.5` helyett `2.500`, `10` helyett `10.00`)."""
     if 0 < seconds < 1:
         return f"1/{round(1 / seconds)} s"
-    return f"{locale.toString(seconds, 'g', 3)} s"
+    return f"{locale.toString(seconds, 'f', 1)} s"
 
 
 def _dimensions_text(photo, tr) -> str:
@@ -503,9 +509,11 @@ def camera_summary_text(details, locale: QLocale, tr) -> str:
     if details.camera:
         left.append(details.camera)
     if details.focal_mm:
+        #: #866: `%3.1f` — EGY tizedesjegy (`il_NerdView::2`). A korábbi
+        #: `g`/4 értékes jegy `6.700`-at adott a mért `6.7` helyett.
         left.append(
             tr("Focal length: %1 mm").replace(
-                "%1", _EXIF_LOCALE.toString(details.focal_mm, "g", 4)
+                "%1", _EXIF_LOCALE.toString(details.focal_mm, "f", 1)
             )
         )
     if details.focal_35mm:
@@ -515,11 +523,18 @@ def camera_summary_text(details, locale: QLocale, tr) -> str:
     if details.exposure_seconds:
         right.append(format_exposure(details.exposure_seconds, _EXIF_LOCALE))
     if details.f_number:
-        right.append(f"f/{_EXIF_LOCALE.toString(details.f_number, 'g', 3)}")
+        #: #866: `f/%3.1f` — egy tizedes (`il_NerdView::6`); a `g`/3
+        #: `f/1.70`-et adott a mért `f/1.7` helyett.
+        right.append(f"f/{_EXIF_LOCALE.toString(details.f_number, 'f', 1)}")
     if details.iso:
-        right.append(tr("ISO: %1").replace("%1", str(details.iso)))
-    if details.flash_fired is not None:
-        right.append(tr("Flash: Fired") if details.flash_fired else tr("Flash: Off"))
+        #: #866: `ISO: %2d` — a szám LEGALÁBB két karakter széles, szóközzel
+        #: kitöltve (`il_NerdView::7`), és ez az utolsó sor: `\n` nélkül.
+        right.append(tr("ISO: %1").replace("%1", f"{int(details.iso):2d}"))
+    #: ⛔ #866: VAKU-SOR NINCS. Az eredeti hisztogram-blokkja pontosan hét
+    #: formátum-sztringet ismer (`il_NerdView::1..7`, és a `0x00567e10`
+    #: másoló is hét mezőt mozgat) — vaku nem szerepel köztük. A vaku-adat
+    #: NEM tűnt el: a Tulajdonságok-panel `exif_entries` sora hozza, ahol az
+    #: eredetiben is ott van.
     if not left and not right:
         return ""
     rows = itertools.zip_longest(left, right, fillvalue="")

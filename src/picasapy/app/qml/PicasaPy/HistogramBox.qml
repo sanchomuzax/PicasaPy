@@ -221,7 +221,8 @@ Rectangle {
             objectName: "cameraSummaryText"
             width: parent.width
             visible: cameraLabel.summaryRows.length === 0
-            text: qsTr("No EXIF data available")
+            //: #866: a MÉRT szöveg PONTTAL zárul (`il_NerdView::1`)
+            text: qsTr("No EXIF data available.")
             font.pixelSize: Theme.fontSize - 2
             font.italic: true
             color: Theme.ink

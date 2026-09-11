@@ -115,6 +115,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.390] – 2026-09-11
+
+### Javítva
+
+- **A hisztogram alatti fényképezőgép-adatok a Picasa mért formátumát
+  követik** (#866): a fókusztávolság és a rekesz egy tizedesjeggyel
+  (`6.7 mm`, `f/1.7` a korábbi `6.700` és `f/1.70` helyett), a hosszú
+  záridő szintén, az ISO legalább két karakter széles. A **vaku-sor
+  eltűnt** a blokkból, mert az eredetiben sem volt — a vaku adata továbbra
+  is ott van a Tulajdonságok között. EXIF nélküli képnél a felirat
+  „Nincs elérhető EXIF-adat."
+
 ## [0.8.389] – 2026-09-11
 
 ### Hozzáadva
