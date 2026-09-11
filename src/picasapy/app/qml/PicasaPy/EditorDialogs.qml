@@ -9,6 +9,15 @@ import QtQuick.Controls
 Item {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
+
+    //: #2480: nyitva van-e valamelyik MODÁLIS párbeszéd. Az eredetiben
+    //: ilyenkor egy külön réteg (`editpanel/modaldialogblur`, a `root`
+    //: gyereke, `m_scaleXY`, `m_hidden`) homályosítja el a szerkesztőt —
+    //: ezt a jelzőt olvassa a gazda, hogy a réteget megjelenítse.
+    readonly property bool anyModalOpen:
+        deleteCustomAspectConfirm.visible
+        || editReadOnlyDialog.visible
+        || editSaveErrorDialog.visible
     // #448: az egyéni arány törlésének megerősítése (a jegy szerint az
     // egyéni tételek törölhetők) — #422 mintája szerint EGYEDI namePrefix.
     ConfirmDialog {

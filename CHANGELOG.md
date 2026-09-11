@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+
+- **A szerkesztő elhomályosodik a kérdések mögött** (#2480). Amikor a
+  szerkesztőben megerősítést kérő ablak nyílik, a mögötte lévő felület
+  halványabb lesz, ahogy az eredeti Picasában — így látszik, mire kell
+  válaszolni. A kérdés bezárásával a felület visszatér.
+
 ### Javítva
 
 - **A duplikátum-keresés Mégse gombja akkor sem ragad be, ha a keresés épp
