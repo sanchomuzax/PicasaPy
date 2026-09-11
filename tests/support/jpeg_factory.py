@@ -64,6 +64,7 @@ def make_jpeg(
     encoding: str = "utf-8",
     charset_marker: bool = False,
     gps: tuple[float, float] | None = None,
+    camera: tuple[str, str] | None = None,
 ):
     """`encoding`/`charset_marker`: legacy (nem UTF-8) IPTC szimulálásához
     (#133) — pl. CP1250, jelölő nélkül, ahogy a régi Picasa írta."""
@@ -72,6 +73,13 @@ def make_jpeg(
     gps_ifd = _gps_ifd(*gps) if gps is not None else {}
     if orientation is not None:
         zeroth[piexif.ImageIFD.Orientation] = orientation
+    if camera is not None:
+        # #440: fényképezőgép-adat (`Make`/`Model`) — a mentés-készlet
+        # harmadik fájlszűrője („csak JPEG-ek fényképezőgép-adatokkal")
+        # ezt keresi.
+        gyarto, modell = camera
+        zeroth[piexif.ImageIFD.Make] = gyarto
+        zeroth[piexif.ImageIFD.Model] = modell
     if datetime_0th is not None:
         zeroth[piexif.ImageIFD.DateTime] = datetime_0th
     if taken_at is not None:

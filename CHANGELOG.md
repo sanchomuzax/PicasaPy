@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.410] – 2026-09-11
+
+### Hozzáadva
+
+- **Alapozás a biztonsági mentéshez** (#440). A Picasa „Képek biztonsági
+  mentése" funkciójának a magja: nevesített mentés-készlet, ami megjegyzi,
+  hova mentett és mit mentett már el, tehát másodszorra csak az új és a
+  megváltozott fájlokat viszi át. A mentés a mappaszerkezetet megtartja, a
+  képek mellé viszi a `.picasa.ini`-t, és a cél gyökerébe listát ír a
+  másolt fájlokról — így a mentés a programunk nélkül is ellenőrizhető.
+  ⚠️ **A felületről ma még nem érhető el**: a menüpont és a párbeszédpanel
+  külön munka, addig ez csak alap.
+
 ## [0.8.409] – 2026-09-11
 
 ### Javítva
