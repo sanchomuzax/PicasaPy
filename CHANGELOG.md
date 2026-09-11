@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.422] – 2026-09-12
+
+### Javítva
+
+- **A grafikus bővítmények felsorolása minden rendszeren működik** (#3031).
+  Az előző kiadásban bevezetett ellenőrzés csak a linuxos fájlnév-alakot
+  ismerte, ezért Windowson és macOS-en üres listát adott. Felhasználóként
+  ez nem látszott, de az ellenőrzés állítása hamis volt.
+
 ## [0.8.421] – 2026-09-11
 
 ### Javítva
