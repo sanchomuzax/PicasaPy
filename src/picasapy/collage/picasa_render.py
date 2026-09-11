@@ -73,6 +73,7 @@ from .nodes import (
     pixels_to_sheet,
     sheet_to_pixels,
 )
+from .location_tree import pack_with_center
 from .packing import pack
 from .pile import pile_layout
 from .rects import NormRect, to_pixel_rects
@@ -131,15 +132,6 @@ BACKGROUND_DIM_FACTOR = (255 - BACKGROUND_DIM_ALPHA) / 255
 _DEFAULT_WIDTH = 1600
 _DEFAULT_HEIGHT = 1200
 
-#: A Képkockamozaik hangsúlyos, KÖZPONTI képének helye a lapon.
-#:
-#: ⚠️ **Közelítés, tudatosan.** A `framegrid` valódi pakolója a
-#: `CLocationTree` (spec 1.9.14), amelynek csak a VÁZA van visszafejtve:
-#: időkorlátos, véletlen újrapróbálkozású keresés, ahol a rögzített képek
-#: `(x0,y0,x1,y1)` téglalapot és egy „van már helye" jelzőt kapnak. A pontos
-#: keresés még nincs meg, ezért itt a rögzített kép egyszerűen a középső
-#: területre kerül, a többi pedig az alap pakolóval köré. A külön jegy: #916.
-_FRAMEGRID_CENTER = NormRect(0.25, 0.25, 0.75, 0.75)
 
 @dataclass(frozen=True)
 class PicasaCollageSettings:
@@ -891,19 +883,21 @@ def layout_nodes_for_aspects(
                 MsvcRandom(settings.seed),
             )
             return _cell_nodes(paths, rects, settings)
-        tobbi = [a for index, a in enumerate(aspects) if index != rogzitett]
-        tobbi_ut = [ut for index, ut in enumerate(paths) if index != rogzitett]
-        nodes = []
-        if tobbi:
-            rects = pack(
-                tobbi,
-                settings.width / settings.height,
-                MsvcRandom(settings.seed),
-            )
-            nodes.extend(_cell_nodes(tobbi_ut, rects, settings))
-        # a hangsúlyos kép LEGFELÜL — a lista végén, a középső területre
-        nodes.extend(
-            _cell_nodes([paths[rogzitett]], (_FRAMEGRID_CENTER,), settings)
+        #: #916: a hangsúlyos kép a MÉRT cellát kapja (`0x00889185`), a
+        #: többi a maradék sávokra — a `CLocationTree` pakolója.
+        rects = pack_with_center(
+            list(aspects),
+            settings.width / settings.height,
+            MsvcRandom(settings.seed),
+            center=rogzitett,
+        )
+        #: a hangsúlyos kép LEGFELÜL: a lista VÉGÉN áll, hogy a rajzoló ne
+        #: takarja el a köré pakolt csempékkel
+        sorrend = [i for i in range(len(aspects)) if i != rogzitett] + [rogzitett]
+        nodes = _cell_nodes(
+            [paths[i] for i in sorrend],
+            tuple(rects[i] for i in sorrend),
+            settings,
         )
         return nodes
     if settings.theme == REGULARGRID:

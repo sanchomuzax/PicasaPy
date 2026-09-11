@@ -88,9 +88,6 @@ from picasapy.collage.layout import Placement
 from picasapy.collage.multi_exposure import blend_multi_exposure
 from picasapy.collage.packing import pack
 from picasapy.collage.picasa_render import (
-    _FRAMEGRID_CENTER as FRAMEGRID_CENTER,
-)
-from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
     _draw_contact_header,
     _polaroid_negyzet,
@@ -101,7 +98,7 @@ from picasapy.collage.picasa_render import (
 )
 from picasapy.collage.nodes import fit_outer_inside
 from picasapy.collage.pile import pile_layout, pile_top_left
-from picasapy.collage.rects import to_pixel_rects
+from picasapy.collage.rects import NormRect, to_pixel_rects
 from picasapy.collage.regular_grid import regular_grid_rects, regular_grid_shape
 from picasapy.collage.render import _paste, _rotated_paste, fit_to_frame
 from picasapy.collage.themes import (
@@ -119,6 +116,16 @@ from picasapy.collage.themes import (
 )
 
 # --- Segédek ----------------------------------------------------------------
+
+
+#: A #916 ELŐTTI hangsúlyos-kép-közelítés, befagyasztva.
+#:
+#: Az orákulum a #942 előtti rajzolót kódolja, ezért itt a régi, beégetett
+#: téglalap MARAD — a mai kód ehelyett a mért `location_tree.frame_center_rect`
+#: cellát adja (#916). A bájtazonossági rács `frame_center`-t nem állít, tehát
+#: ez az ág az összevetésben nem szerepel; a mért cellát a
+#: `test_locationtree_916.py` őrzi.
+FRAMEGRID_CENTER = NormRect(0.25, 0.25, 0.75, 0.75)
 
 
 def _ir_kepet(utvonal, szelesseg, magassag, szin):
