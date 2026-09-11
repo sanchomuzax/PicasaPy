@@ -129,16 +129,19 @@ Rectangle {
         if (target >= 0) currentIndex = target
     }
 
-    //: #433: a váltás pillanatában a MOSTANI kép URL-je még a régi — ezt
-    //: adjuk a kimenő diának, mielőtt a `source` kötése átfordul.
+    //: #433: a váltás pillanatában a `slide.source` MÉG a kimenő kép URL-je
+    //: (a kötés csak a kezelő után fordul át) — ezt adjuk az áttűnésnek.
+    //:
+    //: ⚠️ #3018 — MÉRVE, és ez volt a hiba. Korábban egy külön `elozoUrl`
+    //: tárolón át ment, és EGY LÉPÉSSEL eltolódott: az áttűnés a KÉT
+    //: lépéssel korábbi képet mutatta. A tulajdonos ezt látta „bevillanó
+    //: idegen képként". A mérés (három kép, két váltás): a második
+    //: áttűnés kimenő képe az ELSŐ kép volt, pedig a MÁSODIKAT nézte.
     onCurrentIndexChanged: {
-        var elozo = elozoUrl
-        elozoUrl = slide.source
-        if (show.visible && elozo !== "")
-            show._atmenetIndit(elozo)
+        var kimeno = slide.source
+        if (show.visible && kimeno !== "")
+            show._atmenetIndit(kimeno)
     }
-    //: az utolsó megjelenített URL (a kimenő dia bemenete)
-    property url elozoUrl: ""
 
     function togglePause() { playing = !playing }
     function starCurrent() { show.starToggled(currentIndex) }
