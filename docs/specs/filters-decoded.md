@@ -5528,3 +5528,112 @@ kilenc leképezésre és mind a hét alapértékre, kontroll-pozitívval; a
 
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — az `aspectRatio`
 tartaléka) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".*
+
+---
+
+## ⛳ A `TiledImageMask` MIND A TIZENKÉT tartaléka — a #2956 mintája általánosít (2026-09-11, 284. kör, #2960)
+
+*A #785 első „Kész, ha" pontja a **konstruktorban** kereste a beégetett
+alapértékeket — a konstruktor viszont csak nulláz, és a jegy emiatt állt
+2026-08 óta. A 283. kör a testvér-osztálynál (`CircularGradientImageMask`)
+megtalálta a valódi mechanizmust; ez a szakasz **ide alkalmazza**, és ezzel
+a minta **általánosnak** bizonyul.*
+
+*Forrás: `0x00cf02e8` (vtábla, RTTI `.?AVTiledImageMask@glimmer@@`) ·
+`0x00bba2e0` (attribútum-olvasó, 5. rekesz) · `0x00bba580` (hívó, 7. rekesz)
+· `0x00bbace0` (kiértékelő) · `0xc7dbc4` (a `0,8` konstans).*
+
+### A két osztály vtáblája AZONOS ALAKÚ
+
+| rekesz | `CircularGradientImageMask` | `TiledImageMask` | szerep |
+|---:|---|---|---|
+| 5 (`+0x14`) | `0x00bcfc70` | **`0x00bba2e0`** | attribútum-olvasó |
+| 7 (`+0x1c`) | `0x00bcfe10` | **`0x00bba580`** | a hívó, ami az alapértékeket előre beírja |
+
+**Kontroll-pozitív:** az olvasóban mind a **tizenkét** attribútumnév
+megvan a `0xcf0228`…`0xcf02ac` sávból, és mindegyik a saját, 8-asával
+lépő objektum-mezőjébe ír — pontosan a #785 névsora szerint.
+
+### Az objektum-mező → struktúra-mező leképezés (`0x00bbace0`)
+
+| objektum | attribútum | struktúra | típus | az író |
+|---|---|---|---|---|
+| `+0x10` | *(nem a tizenkettő közül)* | `+0x04` | egész | `0x00bbad37` |
+| `+0x18` | `tileWidth` | `+0x08` | **egész** | `0x00bbad86` |
+| `+0x20` | `tileHeight` | `+0x0c` | **egész** | `0x00bbadc5` |
+| `+0x28` | `scaleWidth` | `+0x10` | **float** | `0x00bbadde` |
+| `+0x30` | `scaleHeight` | `+0x14` | **float** | `0x00bbadf7` |
+| `+0x38` | `paddingLeft` | `+0x18` | egész | `0x00bbae3c` |
+| `+0x40` | `paddingTop` | `+0x1c` | egész | `0x00bbae79` |
+| `+0x48` | `paddingRight` | `+0x20` | egész | `0x00bbaeb6` |
+| `+0x50` | `paddingBottom` | `+0x24` | egész | `0x00bbaef0` |
+| `+0x58` | `offsetX` | `+0x28` | float | `0x00bbaf04` |
+| `+0x60` | `offsetY` | `+0x2c` | float | `0x00bbaf1d` |
+| `+0x68` | `alphaMin` | `+0x30` | float | `0x00bbaf36` |
+| `+0x70` | `alphaMax` | `+0x34` | float | `0x00bbaf89` |
+
+### ⛳ A TIZENKÉT TARTALÉK — a hívó prológusából
+
+⚠️ A prológus **négy `push`-t** szúr a tárolások közé, ezért a
+`[esp + N]` címek nem ugyanahhoz az alaphoz szólnak; a struktúra alapja a
+`0x00bba5b3 lea esi, [esp + 0x14]`. Az eltolást kibontva, és figyelembe
+véve, hogy az x87 verem **csak az `fstp`-nél fogy**:
+
+| attribútum | struktúra | **tartalék** |
+|---|---|---:|
+| `tileWidth` · `tileHeight` | `+0x08` · `+0x0c` | `0` |
+| **`scaleWidth`** | `+0x10` | **`0,8`** |
+| **`scaleHeight`** | `+0x14` | **`0,8`** |
+| `paddingLeft/Top/Right/Bottom` | `+0x18`…`+0x24` | `0` |
+| `offsetX` · `offsetY` | `+0x28` · `+0x2c` | `0,0` |
+| `alphaMin` | `+0x30` | `0,0` |
+| **`alphaMax`** | `+0x34` | **`1,0`** |
+
+A `0,8` a `0xc7dbc4`-en álló `float`, nyersen `cd cc 4c 3f` =
+**`0,800000011920929`**.
+
+⭐ **Belső kereszt-ellenőrzés:** a hat x87-tárolás pontosan a hat
+**float**-típusú attribútumra esik, a hét `mov ebx` (`= 0`) pedig a hét
+**egész** típusúra. A két, egymástól független olvasat (a kiértékelő
+típusai és a prológus tárolásai) **maradék nélkül fedi egymást** — ha az
+eltolás-számításom hibás volna, ez nem jönne ki.
+
+### ⭐ Amit ez a #785-nek ad
+
+A `Comicize` a tizenkettőből **hármat** állít (`tileWidth`, `tileHeight`,
+`alphaMin`; a második maszkon `offsetX` is). A maradék **kilenc beégetett
+érték** tehát:
+
+```
+scaleWidth = 0,8      scaleHeight = 0,8
+paddingLeft = paddingTop = paddingRight = paddingBottom = 0
+offsetX (az 1. maszkon) = 0,0      offsetY = 0,0
+alphaMax = 1,0
+```
+
+⇒ A jegy CÍME („a csempe-lépték 0,8") **igazolva**, és most már tudjuk,
+hogy **két** mezőre áll: a `scaleWidth`-re és a `scaleHeight`-re egyaránt.
+
+⛔ **A jegy első pontja rossz helyre mutatott:** az alapértékek **nem a
+konstruktorban** (`0x00bba030` / `0x00bba250`) vannak, hanem a **7. rekesz
+hívójának vermében**. A konstruktor tényleg csak nulláz.
+
+### A minta ÁLTALÁNOS — két osztályon igazolva
+
+| | `CircularGradient…` | `TiledImageMask` |
+|---|---|---|
+| az attribútum sztringként ül az objektumban | ✅ | ✅ |
+| 8-asával lépő mezők a `+0x18`-tól | ✅ (7 db) | ✅ (12 db) |
+| a tartalék a 7. rekesz hívójának vermében | ✅ | ✅ |
+| a kiértékelő hibájakor a tárolás kimarad | ✅ | ✅ |
+
+⇒ Ha egy további `glimmer` maszk-osztály alapértéke kell, **ez a recept**:
+5. rekesz = névsor és mezők, 7. rekesz prológusa = tartalékok, a
+kiértékelő = a leképezés.
+
+*Bizonyítottsági fok: **megerősített** — utasításszintű olvasás mind a 13
+leképezésre és mind a 14 előre beírt értékre, kontroll-pozitívval (12/12
+attribútumnév), plusz a típus-egyezés kereszt-ellenőrzése.*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a tizenkét tartalék) ·
+0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".*
