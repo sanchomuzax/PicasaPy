@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.395] – 2026-09-11
+
+### Hozzáadva
+
+- **A kilépés rákérdez, ha még fut háttérmunka** (#671). Exportálás, webexport
+  vagy arcfelismerés közben az ablak bezárása és a Fájl ▸ Kilépés is
+  megkérdezi, mit szeretnél — „Kilépés most" vagy „Folytatás" —, és kimondja,
+  hogy a munka nem folytatódik később. Ha nincs futó munka, a kilépés
+  továbbra is kérdés nélkül megy.
+
 ## [0.8.394] – 2026-09-11
 
 ### Javítva

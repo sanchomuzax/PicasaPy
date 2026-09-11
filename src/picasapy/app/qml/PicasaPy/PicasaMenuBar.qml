@@ -133,6 +133,8 @@ MenuBar {
     signal hiddenPasswordRequested()
     signal rescanRequested()
     signal aboutRequested()
+    //: #671: a Fájl ▸ Kilépés — a gazda dönti el, kérdez-e
+    signal exitRequested()
     signal thumbSizePreset(int size)
     signal selectStarredRequested()
     signal selectAllRequested()
@@ -592,7 +594,10 @@ MenuBar {
         MenuItem {
             objectName: "menuFileExit"
             text: qsTr("E&xit")
-            onTriggered: Qt.quit()
+            //: #671: a kilépés EGY helyen dől el (`Main.qml` `kilepes()`) —
+            //: ott van a háttérmunka-kérdés. A `Qt.quit()` közvetlen hívása
+            //: megkerülte volna.
+            onTriggered: bar.exitRequested()
         }
     }
     PicasaMenu {
