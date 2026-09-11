@@ -13,12 +13,21 @@ közelítések:
 **Egy dokumentált eltérés a natívtól: a ditherelés.** A natív alkalmazó
 (`0x0090bc60`) képpontonként egy MT19937-mintát húz, és a LUT helyi
 meredekségével arányos, ±delta/2 amplitúdójú zajt kever a kimenetbe — ettől
-nem sávosodik a széthúzott hisztogram. Ez a zaj nulla várható értékű, viszont
-**nem determinisztikus**, ezért az élő előnézetben villogna, a pixelpontos
-összevetést pedig ±1 szintre rontaná. A megvalósítás ezért a dither NÉLKÜLI
-alakot futtatja (a natív `v >> 8` csonkolással). A #685 mérőszettjén ez
-képenként 0,18–0,37 átlagos ΔE-t ad a valódi Picasa-kimenethez képest — a
-JPEG-újratömörítés saját zaja alatt, tehát a különbség nem látható.
+nem sávosodik a széthúzott hisztogram. Ez a zaj nulla várható értékű, és
+— a #2868 mérése szerint — **determinisztikus**: a generátor magozásában
+nincs entrópiaforrás, a vetőmag `0x2D8228BE`, tehát futásról futásra
+ugyanaz a zajkép. (A korábbi „nem determinisztikus, ezért villogna"
+indoklás MEGDŐLT; a `picasa-native-filter-workers.md` 2.2-ben a #2868
+helyesbítette.)
+
+A megvalósítás **mégis** a dither NÉLKÜLI alakot futtatja (a natív
+`v >> 8` csonkolással), de már más okból: a bitre egyező zajhoz a
+képpont-bejárás SORRENDJE is kell, és az a `0x0090bc60` ciklusszerkezetéből
+nincs kimérve — magozás-egyezés önmagában nem elég. A #685 mérőszettjén a
+mai alak képenként 0,18–0,37 átlagos ΔE-t ad a valódi Picasa-kimenethez
+képest — a JPEG-újratömörítés saját zaja alatt, tehát a különbség nem
+látható. A dither megvalósítása külön jegy, aminek előfeltétele a bejárási
+sorrend mérése (#2926).
 """
 
 from __future__ import annotations
