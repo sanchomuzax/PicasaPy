@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.416] – 2026-09-11
+
+### Javítva
+
+- **Windowson is beáll az asztali háttérkép** (#2985). A program eddig
+  elkészítette a képet, de megmondta, hogy beállítani nem tudja: a
+  beállító-lánc négy eleme mind Linux-eszköz volt. Mostantól Windowson a
+  rendszer saját útján megy — középre illesztve, ahogy az eredeti Picasa
+  is teszi. Ha mégsem sikerül, a program továbbra is megmondja, hova
+  került a kép.
+
 ## [0.8.415] – 2026-09-11
 
 ### Javítva

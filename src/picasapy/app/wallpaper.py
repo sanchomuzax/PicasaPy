@@ -43,10 +43,26 @@ kimenet (#936).
 
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
+
+#: #2985/#1775: a mért Windows-értékek. A `0`/`0` pár a KÖZÉPRE illesztés
+#: (nyújtás és mozaik nélkül) — ugyanaz, amit a Linux-lánc minden eleme kér.
+_WINDOWS_STILUS: tuple[tuple[str, str], ...] = (
+    ("WallpaperStyle", "0"),
+    ("TileWallpaper", "0"),
+)
+
+#: `SystemParametersInfoW` állandói (`winuser.h`): a művelet és a két jelző.
+_SPI_SETDESKWALLPAPER = 0x0014
+_SPIF_UPDATEINIFILE = 0x01
+_SPIF_SENDCHANGE = 0x02
 
 #: A mért fájlnév — az eredeti ezt írja a Hátterek mappába.
 BACKGROUND_FILE = "picasabackground.bmp"
@@ -130,20 +146,83 @@ def write_background_bmp(source_image: Path, backgrounds_dir: Path) -> Path:
     return cel
 
 
+def _windows_registry_setter(kulcs: str, ertek: str) -> None:
+    """A `HKCU\\Control Panel\\Desktop` egy értékének írása (#2985)."""
+    import winreg  # csak Windowson létezik — a hívás is csak ott fut
+
+    with winreg.OpenKey(
+        winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop", 0,
+        winreg.KEY_SET_VALUE,
+    ) as kulcs_objektum:
+        winreg.SetValueEx(kulcs_objektum, kulcs, 0, winreg.REG_SZ, ertek)
+
+
+def _windows_api(ut: str) -> bool:
+    """`SystemParametersInfoW(SPI_SETDESKWALLPAPER, …)` — a mért hívás."""
+    import ctypes
+
+    return bool(
+        ctypes.windll.user32.SystemParametersInfoW(
+            _SPI_SETDESKWALLPAPER,
+            0,
+            ut,
+            _SPIF_UPDATEINIFILE | _SPIF_SENDCHANGE,
+        )
+    )
+
+
+def _allitsd_be_windowson(
+    ut: str,
+    registry_setter: Callable[[str, str], None],
+    windows_api: Callable[[str], bool],
+) -> str | None:
+    """A Windows-ág: előbb a stílus, aztán a rendszernek szólás (#2985).
+
+    A sorrend a mérésé (#1775): a stílus-értékek a registrybe mennek, és
+    az API-hívás `SPIF_UPDATEINIFILE | SPIF_SENDCHANGE` jelzővel frissíti
+    és szétkürtöli a változást. Bukásnál `None` — a hívó ilyenkor megmondja
+    a felhasználónak, hova került a BMP (#936).
+    """
+    try:
+        for kulcs, ertek in _WINDOWS_STILUS:
+            registry_setter(kulcs, ertek)
+        if not windows_api(ut):
+            _log.warning("a háttérkép beállítása nem sikerült: %s", ut)
+            return None
+    except Exception:  # noqa: BLE001 — a kudarc nem dönthet le semmit
+        _log.exception("a windowsos háttérkép-beállítás elszállt")
+        return None
+    return "windows"
+
+
 def set_desktop_background(
     bmp_path: Path,
     *,
     runner: Callable[..., subprocess.CompletedProcess] | None = None,
     which: Callable[[str], str | None] | None = None,
+    platform: str | None = None,
+    registry_setter: Callable[[str, str], None] | None = None,
+    windows_api: Callable[[str], bool] | None = None,
 ) -> str | None:
-    """Beállítja a háttérképet; visszaadja a SIKERES eszköz nevét, vagy `None`.
+    """Beállítja a háttérképet; visszaadja a SIKERES ág nevét, vagy `None`.
 
-    A `runner`/`which` befecskendezhető — a próbák így nem nyúlnak a valódi
-    asztalhoz (és a CI-n sincs asztali környezet).
+    #2985: az ág-választás **platform szerint** dől el, nem
+    eszköz-kereséssel — Windowson a négy Linux-eszköz keresése fölösleges
+    alfutás volna, és mindig üres kézzel tért vissza (ez volt a hiba).
+
+    Minden fogantyú befecskendezhető (`runner`, `which`, `platform`,
+    `registry_setter`, `windows_api`) — a próbák így nem nyúlnak a valódi
+    asztalhoz és a valódi registryhez.
     """
+    ut = str(Path(bmp_path))
+    if (platform or sys.platform) == "win32":
+        return _allitsd_be_windowson(
+            ut,
+            registry_setter or _windows_registry_setter,
+            windows_api or _windows_api,
+        )
     fut = runner or subprocess.run
     keres = which or shutil.which
-    ut = str(Path(bmp_path))
     for nev, parancsok in _LANC:
         if keres(nev) is None:
             continue
