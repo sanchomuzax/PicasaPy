@@ -55,6 +55,19 @@ drágább, mint a kihagyás** — egy zajos őrt a következő kör kikapcsol.
 visszaadott érték, és a háromnál mélyebb tördelésű kötés. Az őr
 SZÁNDÉKOSAN szűk: inkább hagyjon ki, mint hogy kiabáljon.
 
+⚠️ **A CSUPASZ NÉV vakfoltja (#3005).** Ez az őr a ``!== undefined``
+záradékot őrzésnek fogadja el, a QML viszont a **csupasz névnél** eldobja
+a kiértékelést, ha a kontextus-tulajdonság egyáltalán nincs beállítva — a
+``&&`` már el sem indul, ``ReferenceError`` jön. A #798-ban pontosan ez
+történt: helyben minden zöld volt, a CI három QML-tesztfájlt bukott el.
+
+Forrás-szinten ezt nem tiltjuk: mérve **296 kötés** hivatkozik vezérlőre
+``typeof`` nélkül (35 fájlban), és a többségük soha nem épül fel vezérlő
+nélkül — a tiltás 296 hamis riasztás volna. A vakfoltot ezért
+VISELKEDÉSI őr fedi: ``tests/app/qml_functional/test_vezerlo_nelkuli_felepules_3005.py``
+felépíti mind a komponenst kontextus-tulajdonság nélkül, és tiltja, hogy
+a ``ReferenceError``-t dobók listája hízzon.
+
 **Az alsó korlát.** Egy SZÁMOLÓ őr üres halmazon is zöld, tehát semmit nem
 őriz. Ezért a szkript 2-es kóddal áll el, ha nem talál QML-fájlt, nem talál
 regisztrált vezérlőt, vagy egyetlen őrzött vezérlő-hivatkozást sem lát — az
