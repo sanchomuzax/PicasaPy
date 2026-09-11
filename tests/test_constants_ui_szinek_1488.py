@@ -27,7 +27,7 @@ miért:
 | `alist_hicolor_mac`, `alist_hicolor2_mac`, `alist_selcolor_mac` | Mac-specifikus, a projekt Linux-first |
 | `alabel_buttfont_*` | szállított betűtípus (`Praxis`), amit nem viszünk tovább |
 | `alabel_burncdOffset` | CD-írás — nyugdíjazott funkció (#638) |
-| `publishtoweb_color` (#0000FF) | MÁS család (webre publikálás), nálunk ma nincs meg — a #2830 jegy tárgya |
+| `publishtoweb_color` (#0000FF) | **HALOTT kulcs az eredetiben** (#2830): a `publishtoweb` név a teljes Picasa-telepítésben EGYETLEN helyen szerepel — magában a `constants.ui`-ban. Nincs fogyasztója, tehát nem a webre-publikálás hivatkozásának színe (azt a NÉVBŐL olvasta ki egy korábbi kör). Kontroll: a szomszédos `thumbsel_color1`/`2` a `0x007224f0`-en hivatkozott. A funkció (Web Albums feltöltés) megszűnt, és a #1935 tulajdonosi döntése szerint nem is épül meg ⇒ **hatókörön kívüli** |
 
 ⚠️ Ez az őr a szín JELENLÉTÉT méri a `Theme.qml`-ben, nem azt, hogy a
 felület melyik eleme viseli. A bekötést elemenként külön próbák mérik (a
