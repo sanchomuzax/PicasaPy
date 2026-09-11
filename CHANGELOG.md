@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.414] – 2026-09-11
+
+### Hozzáadva
+
+- **A diaidő állítható a vetítés sávján** (#2992). A vezérlősáv megkapta az
+  eredeti diaidő-blokkját: „Diaidő" felirat, mínusz és plusz gomb, közte a
+  másodperc. Az alapérték 3 másodperc, ahogy az eredetiben, és a választás
+  megmarad a következő vetítésre. Az átmenet-választó és a feliratmód-gomb
+  eddig is megvolt.
+
 ## [0.8.413] – 2026-09-11
 
 ### Javítva

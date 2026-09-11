@@ -20,7 +20,12 @@ Rectangle {
     // működött: a dia a nyers fájlnál maradt.
     property string displayMode: ""
     property int currentIndex: -1
-    property int intervalMs: 3000
+    //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
+    //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
+    //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
+    //: hogy megmaradjon; kötés nélkül a mért alapérték marad.
+    property int seconds: 3
+    readonly property int intervalMs: Math.max(1, show.seconds) * 1000
     property bool playing: false
 
     //: #433: az ÁTMENET a diák között. Az eredeti diavetítése ugyanazt a
@@ -40,6 +45,11 @@ Rectangle {
         { kulcs: "kenburns", nev: qsTr("Pan and Zoom") }
     ]
     property string transitionKind: "dissolve"
+    //: #2992: a diaidő a sáv ± gombjairól a HÍVÓNAK megy (Main.qml →
+    //: vezérlő), hogy megmaradjon — a vetítő maga nem ír beállítást. Az
+    //: átmenet és a feliratmód ugyanezt az utat járja (`transitionPicked`,
+    //: `captionModePicked`).
+    signal secondsChosen(int masodperc)
     //: az átmenet hossza (`SlideshowEffectTime`) — a dia-időnél rövidebb
     property int transitionMs: 700
     //: #433: a felirat megjelenítési módja vetítés közben (`captionmode`):
@@ -443,6 +453,48 @@ Rectangle {
                            ? Theme.starYellow : "#ffffff"
                     style: Text.Outline
                     styleColor: "#9a9a9a"
+                }
+            }
+
+            //: #2992: a DIAIDŐ-blokk — az eredeti sávján `tpslabel`
+            //: („Display Time"), `minusone`, `tps` (a szám) és `plusone`.
+            //: A tulajdonos jelezte, hogy nálunk nem volt állítható.
+            Row {
+                objectName: "slideshowTimeBlock"
+                spacing: 2
+                anchors.verticalCenter: parent.verticalCenter
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Display Time")
+                    color: "#ffffff"
+                    font.pixelSize: Theme.fontSize - 2
+                    rightPadding: 4
+                }
+                PicasaButton {
+                    objectName: "slideshowTimeMinus"
+                    width: 26
+                    height: controlsRow.buttonHeight
+                    text: "−"
+                    enabled: show.seconds > 1
+                    onClicked: show.secondsChosen(show.seconds - 1)
+                }
+                Text {
+                    objectName: "slideshowTimeValue"
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 34
+                    horizontalAlignment: Text.AlignHCenter
+                    //: másodperc-jelölés a szám után (az eredeti `tps` mezője)
+                    text: show.seconds + qsTr(" s")
+                    color: "#ffffff"
+                    font.pixelSize: Theme.fontSize
+                }
+                PicasaButton {
+                    objectName: "slideshowTimePlus"
+                    width: 26
+                    height: controlsRow.buttonHeight
+                    text: "+"
+                    enabled: show.seconds < 30
+                    onClicked: show.secondsChosen(show.seconds + 1)
                 }
             }
         }
