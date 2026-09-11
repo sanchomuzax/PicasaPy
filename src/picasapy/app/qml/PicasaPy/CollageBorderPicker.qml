@@ -94,7 +94,7 @@ Item {
                 HoverHandler { id: borderHover }
                 ToolTip.text: gomb.modelData.name
                 ToolTip.visible: borderHover.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
 
                 MouseArea {
                     anchors.fill: parent

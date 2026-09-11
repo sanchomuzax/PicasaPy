@@ -57,7 +57,7 @@ Item {
         //: `rand_placement` buboréksúgó.
         ToolTip.text: qsTr("Mix up the collage layout")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.scrambleCollage()
     }
 
@@ -71,7 +71,7 @@ Item {
         //: `rand_order` buboréksúgó.
         ToolTip.text: qsTr("Randomize the order of the pictures")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.shufflePictures()
     }
 

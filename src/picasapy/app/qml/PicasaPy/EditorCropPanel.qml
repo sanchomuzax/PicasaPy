@@ -50,11 +50,20 @@ ColumnLayout {
         }
     }
 
+    //: #901: a vágó BEÉPÍTETT útmutatója — az eredetiben ez a
+    //: `editpanel/text(crop tip): croptext`, MÉRT dobozzal: **257 × 54**
+    //: (`editpanel.tre:761`, a `crop_well` gyereke). A szöveg az eredeti szó
+    //: szerinti angolja, a magyar pedig a Picasa SAJÁT magyar erőforrásából
+    //: (`panel-feliratok-hu.tsv:4976`) — eddig a mi átfogalmazásunk állt itt,
+    //: rövidebben.
     Text {
+        objectName: "cropGuideText"
         Layout.fillWidth: true
+        Layout.preferredWidth: 257
+        Layout.preferredHeight: 54
         wrapMode: Text.WordWrap
-        text: qsTr("Choose a size below, then drag on the picture to "
-                   + "select the area you want to keep.")
+        text: qsTr("Select a dimension below and then click and drag on the "
+                   + "image to select the portion of the image you wish to crop.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }

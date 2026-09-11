@@ -346,7 +346,7 @@ Item {
         //: `delete_custom_aspect` buboréksúgó.
         ToolTip.text: qsTr("Delete the current aspect ratio")
         ToolTip.visible: trashHover.hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
 
         MouseArea {
             anchors.fill: parent
@@ -400,7 +400,7 @@ Item {
             //: `landscape` buboréksúgó.
             ToolTip.text: qsTr("Landscape: orient the collage horizontally")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: if (tab.controller)
                            tab.controller.setCollageOrientation("landscape")
         }
@@ -433,7 +433,7 @@ Item {
             //: `portrait` buboréksúgó.
             ToolTip.text: qsTr("Portrait: orient the collage vertically")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: if (tab.controller)
                            tab.controller.setCollageOrientation("portrait")
         }
@@ -547,7 +547,7 @@ Item {
         ToolTip.text: qsTr("Show picture captions as text on pictures with the "
                            + "Polaroid Camera border")
         ToolTip.visible: captionHover.hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         HoverHandler { id: captionHover }
         onToggled: if (tab.controller)
                        tab.controller.setCollageCaptions(!tab.captions)

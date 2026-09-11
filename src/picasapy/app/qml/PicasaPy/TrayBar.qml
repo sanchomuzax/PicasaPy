@@ -882,7 +882,7 @@ Column {
                     tray.appWindow.selectedIndexes)
                 ToolTip.text: qsTr("Hold selected items")
                 ToolTip.visible: trayHoldBtn.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 contentItem: Image {
                     objectName: "trayHoldIcon"
                     // #1188: a `Control` a contentItem geometriáját maga
@@ -906,7 +906,7 @@ Column {
                 onClicked: trayClearConfirm.open()
                 ToolTip.text: qsTr("Clear items from the selection")
                 ToolTip.visible: trayClearBtn.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 contentItem: Image {
                     objectName: "trayClearIcon"
                     // #1188: ld. a `trayHoldBtn` indoklását fentebb.
@@ -943,7 +943,7 @@ Column {
                 onClicked: trayAddToMenu.popup()
                 ToolTip.text: qsTr("Add selected items to an Album")
                 ToolTip.visible: trayAddToBtn.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 contentItem: Image {
                     objectName: "trayAddToIcon"
                     fillMode: Image.PreserveAspectFit
@@ -1087,7 +1087,7 @@ Column {
                         //: nem volt súgója.
                         ToolTip.text: qsTr("Add/Remove Star")
                         ToolTip.visible: trayMoreBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                         // #718: null-őr — ld. a fenti `ctl` docstringje;
                         // appWindow hiányában a célsor -1 (nincs cél).
                         readonly property int targetRow: tray.appWindow
@@ -1147,7 +1147,7 @@ Column {
                         //: #1929: `thumbui/rotateleft` — az EREDETI súgója.
                         ToolTip.text: qsTr("Rotate counter-clockwise")
                         ToolTip.visible: hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                         // #103: csak-videó kijelölésnél tiltva (photos.revision:
                         // modell-frissüléskor újraértékelt kötés)
                         // #718: null-őr — az appWindow (`window`) az engine-
@@ -1192,7 +1192,7 @@ Column {
                         //: #1929: `thumbui/rotateright` — az EREDETI súgója.
                         ToolTip.text: qsTr("Rotate clockwise")
                         ToolTip.visible: hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                         // #718: null-őr — ld. trayRotateLeftBtn indoklása.
                         enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
                                   tray.appWindow
@@ -1308,7 +1308,7 @@ Column {
                             accent: aktiv ? Theme.selectionBlue : "transparent"
                             ToolTip.text: modelData.sugo
                             ToolTip.visible: hovered
-                            ToolTip.delay: 500
+                            ToolTip.delay: Theme.tooltipDelay
                             //: ⚠️ a #1773 rádió-csapdája: az AKTÍV gombra
                             //: kattintva a fiók BEZÁRUL, nem marad
                             //: állapot nélkül
@@ -1420,7 +1420,7 @@ Column {
                             //: új viselkedést.
                             ToolTip.text: qsTr("Loupe — drag over the photos")
                             ToolTip.visible: hovered
-                            ToolTip.delay: 500
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: {
                                 if (!tray.appWindow) return
                                 tray.appWindow.loupeActive =
@@ -1501,7 +1501,7 @@ Column {
                                 //: Az eredeti kimért felirata.
                                 ToolTip.text: qsTr("Fit Photo inside viewing area")
                                 ToolTip.visible: hovered
-                                ToolTip.delay: 500
+                                ToolTip.delay: Theme.tooltipDelay
                                 //: `Property mousedown 1` — LENYOMÁSRA sül
                                 //: el, nem felengedésre.
                                 onPressed: tray.zoomFitRequested()
@@ -1522,7 +1522,7 @@ Column {
                                 //: Az eredeti kimért felirata.
                                 ToolTip.text: qsTr("Display Photo at actual size")
                                 ToolTip.visible: hovered
-                                ToolTip.delay: 500
+                                ToolTip.delay: Theme.tooltipDelay
                                 onPressed: tray.zoomActualRequested()
                                 contentItem: Item {
                                     Image {
@@ -1621,7 +1621,7 @@ Column {
                     accent: Theme.picasaGreen
                     ToolTip.text: trayUploadBtn.text
                     ToolTip.visible: trayUploadBtn.hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     // #1420: a gomb FIX 141 × 35, a felirat pedig KÉT SORBA
                     // tördel benne — pontosan úgy, ahogy az eredetin
                     // („Feltöltés a Google / Fotókba"). A `PicasaButton`
@@ -1794,7 +1794,7 @@ Column {
                         // ezért minden ablakszélességen látszik.
                         ToolTip.text: trayPrintBtn.text
                         ToolTip.visible: trayPrintBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 TrayActionCell {
@@ -1817,7 +1817,7 @@ Column {
                         onClicked: tray.emailRequested()
                         ToolTip.text: trayEmailBtn.text
                         ToolTip.visible: trayEmailBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 TrayActionCell {
@@ -1839,7 +1839,7 @@ Column {
                         onClicked: tray.exportRequested()
                         ToolTip.text: trayExportBtn.text
                         ToolTip.visible: trayExportBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 // #1672: `outputlayout/shop` — „Papírképek rendelése".
@@ -1860,7 +1860,7 @@ Column {
                         //: kivezetett: a nyomat-rendelő szolgáltatás megszűnt
                         ToolTip.text: qsTr("Order Prints (service discontinued)")
                         ToolTip.visible: trayOrderBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 // `outputlayout/sharewith` („Hello") — backend híján tiltott
@@ -1892,7 +1892,7 @@ Column {
                         //: kivezetett: a Blogger-integráció megszűnt
                         ToolTip.text: qsTr("Publish to Blogger (service discontinued)")
                         ToolTip.visible: trayBlogBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 // #1345: a csoportelválasztó (`outputlayout/separator`),
@@ -1930,7 +1930,7 @@ Column {
                         ToolTip.text: qsTr(
                             "Create a Photo Collage with your selection")
                         ToolTip.visible: trayCollageBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
                 TrayActionCell {
@@ -1987,7 +1987,7 @@ Column {
                         //: `Click here for more options`
                         ToolTip.text: qsTr("Click here for more options")
                         ToolTip.visible: trayMoreBtn.hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                     }
                 }
             }
@@ -2107,7 +2107,7 @@ Column {
                 text: qsTr("Back to Collage")
                 ToolTip.text: qsTr("Go back to what you were editing")
                 ToolTip.visible: hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: tray.backToCollageRequested()
             }
 
@@ -2123,7 +2123,7 @@ Column {
                 text: "\u2715"
                 ToolTip.text: qsTr("Cancel \"Get more\"")
                 ToolTip.visible: hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 //: CSAK elrejt — a módból NEM lép ki (spec 2.3)
                 onClicked: traySingleActionBar.elrejtve = true
             }

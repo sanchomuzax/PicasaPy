@@ -94,5 +94,5 @@ Rectangle {
     }
     ToolTip.text: tbtn.description !== "" ? tbtn.description : tbtn.label
     ToolTip.visible: tabMouse.containsMouse
-    ToolTip.delay: 400
+    ToolTip.delay: Theme.tooltipDelay
 }

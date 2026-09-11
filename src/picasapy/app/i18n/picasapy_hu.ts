@@ -6880,6 +6880,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Top left</source>
         <translation>Bal felső</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Select a dimension below and then click and drag on the image to select the portion of the image you wish to crop.</source>
+        <translation>Válasszon az alábbi méretek közül, majd a fogd és húzd módszerrel jelölje ki a képnek azt a részét, amelyiket ki szeretné vágni.</translation>
+    </message>
 </context>
 <context>
     <name>TextFieldContextMenu</name>
@@ -7066,6 +7071,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>You can also draw a square around any red eye that Picasa may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
         <translation>A kihagyott vörös szemek köré Ön is húzhat négyzetet. Kattintson, tartsa nyomva, és húzza az egeret külön-külön minden szem köré a kijelöléshez. A terület fölött megjelenik a kijelölő négyzet.</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area. Release the mouse to complete your selection. The Photo is displayed with the red-eye removed.</source>
+        <translation>Kattintson az egérrel, tartsa lenyomva a gombot, és mozgassa az egérmutatót a szemek körül külön-külön a kijelöléshez. Egy kijelölő keret jelenik meg a terület fölött. Engedje fel az egérgombot a kijelölés befejezéséhez. A fotóról eltűnik a vörösszem.</translation>
+    </message>
 </context>
 <context>
     <name>EditorRetouchPanel</name>
@@ -7118,6 +7128,11 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
         <source>Undo Patch</source>
         <translation>Folt visszavonása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat. Note: you can use ctrl-drag to pan.</source>
+        <translation>Kattintással jelölje ki a javítani kívánt területet. Ezután mozgassa az egeret, és figyelje meg a változást az előnézetben. A művelet véglegesítéséhez kattintson újra a képre. Ismételje meg többször ezt a műveletet. Megjegyzés: a Ctrl billentyűt nyomva tartva az egér húzásával pásztázhat.</translation>
     </message>
 </context>
 <context>

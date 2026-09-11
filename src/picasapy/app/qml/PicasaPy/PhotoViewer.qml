@@ -732,7 +732,7 @@ Rectangle {
                     ToolTip.text: qsTr(
                         "Edit the collage from which this image was created")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     //: A null-őr a #305 szabálya: a vezérlő a lebontáskor és a
                     //: komponens-teszteknél hiányozhat (ld. a `viewer`
                     //: gyökerén a `controllerReady`-t).
@@ -754,7 +754,7 @@ Rectangle {
                     //: testvérek hangnemében. Ez tudatos eltérés.
                     ToolTip.text: qsTr("Start slideshow")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     onClicked: viewer.playRequested()
                 }
                 // #1993: a MÉRT léptető — 30 × 31, KÖR alakú rajz.
@@ -787,7 +787,7 @@ Rectangle {
                     }
                     ToolTip.text: qsTr("Previous picture")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                 }
                 // #1905: a szalag CSAK a jelenlegi kép mappáját mutatja.
                 //
@@ -871,7 +871,7 @@ Rectangle {
                     }
                     ToolTip.text: qsTr("Next picture")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                 }
                 Item { Layout.fillWidth: true }
                 // #6: A/AB/AA összehasonlító nézetek — placeholder (a
@@ -889,7 +889,7 @@ Rectangle {
                     //: Az eredeti `only_1up_toggle` felirata.
                     ToolTip.text: qsTr("View only one image")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                 }
                 PicasaButton {
                     objectName: "compareButtonAB"
@@ -897,7 +897,7 @@ Rectangle {
                     Layout.preferredWidth: 32
                     ToolTip.text: qsTr("View two different images")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                 }
                 PicasaButton {
                     objectName: "compareButtonAA"
@@ -905,7 +905,7 @@ Rectangle {
                     Layout.preferredWidth: 32
                     ToolTip.text: qsTr("View the same image twice")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                 }
             }
         }
@@ -1748,7 +1748,7 @@ Rectangle {
                     y: parent.height * 0.875 - height / 2
                     ToolTip.text: qsTr("Render the final collage from this draft")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     onClicked: controller.finishCollageDraft(
                         viewer.currentFilePath)
                 }
@@ -1941,7 +1941,7 @@ Rectangle {
                         //: `captiontrash` — az eredeti buboréksúgója
                         ToolTip.text: qsTr("Delete this caption")
                         ToolTip.visible: hovered
-                        ToolTip.delay: 500
+                        ToolTip.delay: Theme.tooltipDelay
                         // üres feliratot nincs mit törölni
                         enabled: captionField.text.length > 0
                         contentItem: Text {
@@ -2017,7 +2017,7 @@ Rectangle {
 
                     ToolTip.text: qsTr("Show/Hide Caption")
                     ToolTip.visible: egerTerulet.containsMouse
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: egerTerulet
                         anchors.fill: parent

@@ -50,13 +50,21 @@ ColumnLayout {
         }
     }
 
+    //: #901: a retusálás BEÉPÍTETT útmutatója — az eredetiben
+    //: `editpanel/text(retouch tip): retouchtext`, MÉRT dobozzal: **258 × 96**.
+    //: A szöveg az eredeti szó szerinti angolja (a `Ctrl`-húzásról szóló
+    //: megjegyzés eddig LEMARADT — épp az, ami a pásztázást elárulja), a
+    //: magyar a Picasa saját erőforrásából (`panel-feliratok-hu.tsv:5001`).
     Text {
+        objectName: "retouchGuideText"
         Layout.fillWidth: true
+        Layout.preferredWidth: 258
+        Layout.preferredHeight: 96
         wrapMode: Text.WordWrap
-        text: qsTr("Click to select the area to fix. Then, move the"
-                   + " mouse to see a preview of the replacement area."
-                   + " Click on the image again to finalize. Lather,"
-                   + " rinse, repeat.")
+        text: qsTr("Click to select the area to fix. Then, move the mouse to "
+                   + "see a preview of the replacement area. Click on the image "
+                   + "again to finalize. Lather, rinse, repeat. Note: you can "
+                   + "use ctrl-drag to pan.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }

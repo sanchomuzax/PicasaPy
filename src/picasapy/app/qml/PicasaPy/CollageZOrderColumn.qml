@@ -108,7 +108,7 @@ Item {
             }
             ToolTip.text: modelData.hint
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: column.run(modelData.name)
         }
     }
