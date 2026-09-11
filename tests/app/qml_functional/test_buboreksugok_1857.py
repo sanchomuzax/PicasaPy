@@ -121,13 +121,19 @@ class TestANezoKilencGombja:
 
     @pytest.mark.parametrize("gomb", KILENC_GOMB)
     def test_a_testverek_mintajat_koveti(self, gomb):
-        """`hovered` + 500 ms — a fájl saját, explicit konvenciója.
+        """`hovered` + a KÖZÖS késleltetés — a fájl saját konvenciója.
 
-        (A jegy 400-at írt; a fájlban MINDEN kiírt késleltetés 500, tehát
-        a mért testvéreket követjük, nem a jegy becslését.)"""
+        (A jegy 400-at írt; a fájlban MINDEN kiírt késleltetés 500 volt, tehát
+        a mért testvéreket követtük, nem a jegy becslését.)
+
+        ⚙️ #901: a szám kikerült a vezérlőkből — a késleltetés mostantól
+        `Theme.tooltipDelay`, egyetlen helyen. Az állítás LÉNYEGE változatlan:
+        a súgó `hovered`-re jön, és **van** késleltetése, nem a Qt
+        alapértelmezésére bízzuk. Beégetett számot a `#901` őre külön tilt.
+        """
         blokk = _gomb_blokkja(gomb)
         assert "ToolTip.visible: hovered" in blokk
-        assert "ToolTip.delay: 500" in blokk
+        assert "ToolTip.delay: Theme.tooltipDelay" in blokk
 
     @pytest.mark.parametrize("gomb", KILENC_GOMB)
     def test_a_sugo_le_van_forditva(self, gomb):
