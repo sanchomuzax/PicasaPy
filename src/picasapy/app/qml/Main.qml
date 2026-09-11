@@ -2444,12 +2444,33 @@ ApplicationWindow {
             }
         }
 
-        // Címkék-panel (#12): jobb oldali hasáb, Ctrl+T / Nézet → Címkék
+        //: #754: EGY jobb fiók, közös fejléccel — a négy tartalom UGYANITT
+        //: vált. Eddig négy külön `SplitView`-cella volt, négy különböző
+        //: szélességgel (190 · 320 · 210 · 200); az eredetiben egyetlen,
+        //: 280 képpontos fiók van (`docs/specs/jobb-fiok-meretek.md`).
+        RightDrawer {
+            id: jobbFiok
+            visible: window.activeDrawerTab !== ""
+            ablakSzelesseg: window.width
+            //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
+            //: (#754) — a gyorsítót és a billentyű-tippet levágva
+            cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
+                 : window.activeDrawerTab === "tags" ? qsTr("Tags")
+                 : window.activeDrawerTab === "people" ? qsTr("People")
+                 : window.activeDrawerTab === "places" ? qsTr("Places") : ""
+            SplitView.preferredWidth: jobbFiok.kivantSzelesseg
+            //: a MÉRT két szélesség az ALAPÉRTELMEZÉS, nem korlát: a
+            //: fogantyúval húzható fiók a #2566 óta működő viselkedés, azt
+            //: nem vesszük el — csak a kiinduló méret lesz az eredetié.
+            SplitView.minimumWidth: 150
+            SplitView.maximumWidth: Math.max(jobbFiok.kivantSzelesseg, 600)
+            onCloseRequested: window.ureseidAFiokot()
+
+        // Címkék-panel (#12): a fiók egyik lapja, Ctrl+T / Nézet → Címkék
         TagsPanel {
             objectName: "tagsPanel"
             visible: window.tagsPanelOpen
-            SplitView.preferredWidth: 190
-            SplitView.minimumWidth: 150
+            anchors.fill: parent
             hasSelection: window.selectedRows().length > 0
             //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
             //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
@@ -2493,8 +2514,7 @@ ApplicationWindow {
             onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
             onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
             visible: window.placesPanelOpen
-            SplitView.preferredWidth: 320
-            SplitView.minimumWidth: 220
+            anchors.fill: parent
             appWindow: window
             onCloseRequested: window.ureseidAFiokot()
             onPhotoActivated: function(row) {
@@ -2508,8 +2528,7 @@ ApplicationWindow {
         PropertiesPanel {
             objectName: "propertiesPanel"
             visible: window.propertiesPanelOpen
-            SplitView.preferredWidth: 210
-            SplitView.minimumWidth: 160
+            anchors.fill: parent
             hasSelection: window.selectedIndex >= 0
             // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
             // #305: null-őr
@@ -2527,8 +2546,7 @@ ApplicationWindow {
         PeoplePanel {
             objectName: "peoplePanel"
             visible: window.peoplePanelOpen
-            SplitView.preferredWidth: 200
-            SplitView.minimumWidth: 160
+            anchors.fill: parent
             selectionCount: window.selectedRows().length
             currentPerson: controller ? controller.currentPersonName : ""
             // a photos.revision-nel együtt kötve: arc-írás után frissül
@@ -2547,6 +2565,7 @@ ApplicationWindow {
                 controller.showPerson(name)
             }
             onCloseRequested: window.ureseidAFiokot()
+        }
         }
     }
 

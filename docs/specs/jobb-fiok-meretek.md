@@ -56,10 +56,14 @@ rightdrawerpanel/base_decrect            276 széles
   foglalja (x 186..275), tehát a negyedik a harmadikkal cserélődik;
 - 3 × 89 + 2 × 3 px hézag = 273.
 
-> ⚠️ **Nálunk ma négy KÜLÖN panel van**, mind saját `SplitView`-cellában és
-> **mind más szélességgel**: `TagsPanel` **190**, `PlacesPanel` **320**,
-> `PropertiesPanel` **210**, `PeoplePanel` **200**. Se közös fejléc, se
-> fülsáv, se egységes szélesség. **Ez a fő szerkezeti eltérés.**
+> ✅ **MEGVALÓSÍTVA (#754).** Eddig négy KÜLÖN panel volt, mind saját
+> `SplitView`-cellában és mind más szélességgel (`TagsPanel` 190,
+> `PlacesPanel` 320, `PropertiesPanel` 210, `PeoplePanel` 200), közös
+> fejléc nélkül. Mostantól EGY fiók van (`RightDrawer.qml`): 280 képpont,
+> 276-os tartalom-vászon, 30 képpontos fejléc középre igazított címmel, és
+> `size_toggle` + `close` 14 × 14. A fejléc címe a LAP neve (a jegy
+> 2026-08-16-i mérése), a lapváltás a Nézet menüből megy (#1773). Fülsáv
+> nincs — a kiadott csomagban ki van kommentezva.
 
 | gomb | méret | súgó | horgony |
 |---|---:|---|---|

@@ -437,6 +437,17 @@
     </message>
 </context>
 <context>
+    <name>RightDrawer</name>
+    <message>
+        <source>Switch between the small and large side panel</source>
+        <translation>Váltás a kis és a nagy oldalpanel közt</translation>
+    </message>
+    <message>
+        <source>Close side panel</source>
+        <translation>Oldalpanel bezárása</translation>
+    </message>
+</context>
+<context>
     <name>FacesOverlay</name>
     <message>
         <source>Add a name</source>
@@ -3819,6 +3830,24 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <!-- #754: a jobb fiók fejléc-címe — UGYANAZ a négy szöveg, mint a
+         Nézet menü tételeié (a gyorsító és a billentyű-tipp nélkül) -->
+    <message>
+        <source>Properties</source>
+        <translation>Tulajdonságok</translation>
+    </message>
+    <message>
+        <source>Tags</source>
+        <translation>Címkék</translation>
+    </message>
+    <message>
+        <source>People</source>
+        <translation>Emberek</translation>
+    </message>
+    <message>
+        <source>Places</source>
+        <translation>Helyek</translation>
+    </message>
     <message>
         <source>Exit PicasaPy</source>
         <translation>Kilépés a PicasaPy-ból</translation>

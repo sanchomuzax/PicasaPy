@@ -49,17 +49,23 @@ class TestPanelWiring:
         assert _child(window, "peoplePanel").property("visible") is True
 
     def test_the_title_is_the_original_one(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        """#754: a cím a FIÓK közös fejlécében él, nem a panelben.
 
-        assert _child(window, "peoplePanelTitle").property("text") == "People"
+        Az eredetiben egy fejléc van, és annak szövege a lap neve — ugyanaz,
+        mint a Nézet menü tételéé (`PeoplePanel::title`)."""
+        window, _controller, _engine = qml_app
+        _open(window, qt_app)
+
+        assert _child(window, "rightDrawerTitle").property("text") == "People"
 
     def test_the_close_button_closes_it(self, qml_app, qt_app):
+        """#754: a bezáró gomb is a fiók fejlécében van (`close`, 14 × 14)."""
         window, _controller, _engine = qml_app
         _open(window, qt_app)
 
         QMetaObject.invokeMethod(
-            _child(window, "peoplePanelClose"),
-            "clicked",
+            _child(window, "rightDrawerClose"),
+            "kattints",
             Qt.ConnectionType.DirectConnection,
         )
         qt_app.processEvents()

@@ -49,22 +49,9 @@ Rectangle {
         anchors.margins: 8
         spacing: 6
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                objectName: "peoplePanelTitle"
-                Layout.fillWidth: true
-                text: qsTr("People")
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.ink
-            }
-            ToolButton {
-                objectName: "peoplePanelClose"
-                text: "✕"
-                onClicked: panel.closeRequested()
-            }
-        }
+        //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
+        //: (`RightDrawer`), nem a panelben. A darabszám-felirat a
+        //: panelé marad — az a tartalomról szól, nem a fiókról.
 
         // -- 1. szakasz: akik a kijelölt képeken vannak ------------------
         Text {
