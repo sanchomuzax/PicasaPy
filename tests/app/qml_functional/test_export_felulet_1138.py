@@ -26,7 +26,22 @@ from __future__ import annotations
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtGui import QValidator
 
+import pytest
+
 from support.halasztott_parbeszed import epitsd_fel
+
+
+@pytest.fixture
+def qml_app(qml_app_module):
+    """#2851: az ablakot a MODUL építi EGYSZER, nem tesztenként.
+
+    A fájl az export-párbeszéd FELÜLETÉT méri (tiltás, felirat, geometria) —
+    tartós állapotot egyetlen teszt ír (`saveExportSettings`), és az FRISS
+    ablakot kap (`qml_app_friss`). A párbeszéd megnyitása/zárása felület-
+    állapot, amit minden teszt maga állít be a `_megnyit`-tel.
+
+    Mérve (#2851): 22 teszt × egy-egy ablaképítés 36,7 s volt."""
+    return qml_app_module
 
 
 def _elem(window, nev):
@@ -318,6 +333,14 @@ class TestFilmCsoport:
 
 
 class TestMegorzottBeallitasok:
+    @pytest.fixture
+    def qml_app(self, qml_app_friss):
+        """#2851: ez az OSZTÁLY tartós állapotot ír (a megőrzött
+        export-beállításokat: az egyik teszt ír, a másik épp azt méri, hogy
+        NEM íródott ki semmi), ezért minden tesztje FRISS ablakot kap — a
+        fájl többi része a modul közös ablakán fut."""
+        return qml_app_friss
+
     def test_a_parbeszed_a_mentett_allapotbol_indul(self, qml_app, qt_app):
         """Spec 4.: a párbeszéd MEGJEGYZI az előző választást."""
         window, controller, _engine = qml_app
@@ -385,6 +408,12 @@ class TestMegorzottBeallitasok:
 
 
 class TestAtmeretezesVegponttolVegpontig:
+    @pytest.fixture
+    def qml_app(self, qml_app_friss):
+        """#2851: ez az OSZTÁLY VÉGIGVISZI az exportot (fájlt ír, és a
+        párbeszéd mezőit is állítja), ezért minden tesztje FRISS ablakot kap."""
+        return qml_app_friss
+
     def test_a_mezobe_irt_meret_ervenyesul_az_exportban(
         self, qml_app, qt_app, tmp_path
     ):

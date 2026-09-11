@@ -151,6 +151,22 @@ def _fiokot_urit(window, qt_app) -> None:
     qt_app.processEvents()
 
 
+@pytest.fixture
+def qml_app(qml_app_module):
+    """#2851: az ablakot a MODUL építi EGYSZER, nem tesztenként.
+
+    Ez a fájl nem ír tartós állapotot (se ini-t, se beállítást, se fájlt) —
+    csak felületi kötéseket és geometriát mér. A tesztek közti felület-
+    állapotot a `_tiszta_indulas` autouse fixture nullázza, ami eddig is
+    futott: zárt néző, üres fiók, üres kijelölés, 1280 × 800.
+
+    Mérve (#2851): 18 teszt × egy-egy ablaképítés 59,2 s volt; egyetlen
+    ablakkal 9,3 s — a fájl ideje HATODÁRA esett. A kimondott feltétel az
+    állapotmentesség: ha ide állapotot író teszt kerül, ezt az `override`-ot
+    kell törölni, nem a nullázást bővíteni."""
+    return qml_app_module
+
+
 @pytest.fixture(autouse=True)
 def _tiszta_indulas(qml_app, qt_app):
     """Minden teszt zárt fiókkal és zárt nézővel indul."""
@@ -508,8 +524,14 @@ class TestAFiokKifeleMenoParancsai:
         assert window.property("viewerOpen") is False
         assert _var(qt_app, lambda: controller.currentPersonName == "Anna")
 
-    def test_a_hely_beallitasa_es_torlese_a_GAZDAHOZ_er(self, qml_app, qt_app):
+    def test_a_hely_beallitasa_es_torlese_a_GAZDAHOZ_er(
+        self, qml_app_friss, qt_app
+    ):
         """A `PlacesPanel` két írási jele a nézőből is a gazdához megy.
+
+        #2851: ez az EGYETLEN teszt a fájlban, ami tartós állapotot ír (a
+        geocímkét a képre), ezért FRISS ablakot kap — a többi a modul közös
+        ablakán fut.
 
         ⚠️ Az állítás a JEL ÚTJA, nem a megerősítés küszöbe: a
         `panelClearGeotagDialog.futtasd` küszöb alatt SZÁNDÉKOSAN nem
@@ -517,6 +539,7 @@ class TestAFiokKifeleMenoParancsai:
         A küszöb-logikát a `test_hely_megerosites_2013.py` méri; itt az a
         kérdés, hogy a nézőből ugyanoda fut-e be a parancs, mint a
         könyvtárból."""
+        qml_app = qml_app_friss
         window, controller, _engine = qml_app
         _nezot_nyit(window, qt_app)
         _kattints(window, _talca_gomb(window, "places"), qt_app)

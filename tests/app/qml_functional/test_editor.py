@@ -771,6 +771,22 @@ class TestViewerFolderBoundedNavigation:
         assert prev_button.property("enabled") is False
 
 
+class _ModulAblakMixin:
+    """#2851: a modul KÖZÖS ablakán futó osztályok jelölője.
+
+    Csak olyan osztály veheti fel, amely **nem ír tartós állapotot** — se
+    ini-t, se beállítást, se fájlt: felület-geometriát és kötést mér. A
+    felület-állapotot (nyitott néző, aktív fül) minden teszt maga állítja be.
+
+    A fájl nagyobb fele (`TestEditorWiring`, `TestViewerFolderBoundedNavigation`)
+    SZÁNDÉKOSAN nem ilyen: azok ini-t írnak, illetve saját könyvtárat
+    építenek, tehát tesztenként friss ablakot kapnak."""
+
+    @pytest.fixture
+    def qml_app(self, qml_app_module):
+        return qml_app_module
+
+
 class _ViewerOpenMixin:
     """Az `_open_viewer` segédet a #464-es tesztek is használják."""
 
@@ -782,7 +798,7 @@ class _ViewerOpenMixin:
         return viewer
 
 
-class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
+class TestFinetuneTabQuickFixesAndPicker(_ModulAblakMixin, _ViewerOpenMixin):
     """#464: a 2. fülön ott van a két egykattintásos javítás és a
     „semleges szín" pipetta.
 
@@ -851,7 +867,7 @@ class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
         assert area.property("enabled") is True
 
 
-class TestEffectTabsFitWithoutScrolling(_ViewerOpenMixin):
+class TestEffectTabsFitWithoutScrolling(_ModulAblakMixin, _ViewerOpenMixin):
     """#422 (felhasználói döntés): az effekt-füleknek KERET/GÖRGETÉS NÉLKÜL
     ki kell férniük.
 
@@ -904,7 +920,7 @@ class TestEffectTabsFitWithoutScrolling(_ViewerOpenMixin):
             )
 
 
-class TestModeToolPanelsDoNotOverflow(_ViewerOpenMixin):
+class TestModeToolPanelsDoNotOverflow(_ModulAblakMixin, _ViewerOpenMixin):
     """#464: ugyanaz a hibaosztály, mint az effekt-füleknél — a mód-eszközök
     (vágás/retusálás/vörösszem/szöveg) panelje a tartalmától függően
     magasabb lehet a rendelkezésre álló helynél, és rálógna a panel alján
@@ -950,7 +966,7 @@ class TestModeToolPanelsDoNotOverflow(_ViewerOpenMixin):
             qt_app.processEvents()
 
 
-class TestGlobalUndoRedoRow(_ViewerOpenMixin):
+class TestGlobalUndoRedoRow(_ModulAblakMixin, _ViewerOpenMixin):
     """#464: a Visszavonás/Újra a panel alján, GLOBÁLISAN — nem fülönként
     ismételve (az eredetiben sem volt fülhöz kötve)."""
 
@@ -977,7 +993,7 @@ class TestGlobalUndoRedoRow(_ViewerOpenMixin):
 
 
 
-class TestTextToolTypography:
+class TestTextToolTypography(_ModulAblakMixin):
     """#450 (2. lépcső): a szöveg-eszköz tipográfia-vezérlői a panelen —
     betűcsalád, méret, félkövér/dőlt/aláhúzott, igazítás."""
 
