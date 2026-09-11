@@ -5683,3 +5683,113 @@ attribútumnév), plusz a típus-egyezés kereszt-ellenőrzése.*
 
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a tizenkét tartalék) ·
 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".*
+
+## ⛳ A `Holga`/`Lomo` 16–23 ΔE-je NEM a lánc egyik tagja — a mérő kisbetűvel írta a szűrő nevét (2026-09-11, 288. kör, #2948)
+
+A #2948 azt kérdezte, **melyik lánc-tag** viszi a 16–23 ΔE-t. A válasz:
+**egyik sem.** A szám nem a modellből jött, hanem abból, hogy a szűrő
+**le sem futott**.
+
+### A bizonyíték
+
+Az `eszkozok/export_keszletek_meres.py` (privát repó) a láncot
+**kisbetűvel** adta át: `holga=1,70.000000,30.000000,0.000000;`. A lánc
+bejárója viszont a #1141 óta a **nem kanonikus írásmódú tagot ismeretlennek
+veszi**, és kihagyja:
+
+```
+'holga=1,70.000000,30.000000,0.000000;'  ops=['holga'] kihagyott=('holga',) valtozott=False
+'lomo=1,50.000000,0.000000;'             ops=['lomo']  kihagyott=('lomo',)  valtozott=False
+is_exact_filter_name("holga") = False    is_exact_filter_name("Holga") = True
+is_exact_filter_name("lomo")  = False    is_exact_filter_name("Lomo")  = True
+```
+
+*Forrás: `src/picasapy/render/chain.py:794` (a kihagyó ág), a mérő
+`eszkozok/export_keszletek_meres.py:57` és `:66` (a kisbetűs láncok).*
+
+A mérő tehát az **érintetlen bemenetet** hasonlította az exporthoz. Ez
+magyarázza a jegy legbeszédesebb tényét is: a három `holga` csúszkaállás
+0,1 ΔE-n belül volt egymáshoz, mert egyik sem függött a csúszkától.
+
+### A VALÓDI eltérések (kanonikus névvel, ugyanaz a kép és ugyanaz a metrika)
+
+| készlet | a mérő eddigi száma | a valódi |
+|---|---|---|
+| Holga default | 23,219 | **1,948** |
+| Holga blur edges min | 23,200 | **1,942** |
+| Holga blur edges max | 23,294 | **2,013** |
+| Holga grain min | 23,209 | **1,551** |
+| Holga grain max | 24,580 | **4,008** |
+| Holga fade max | 0,000 | **0,000** |
+| Lomo default | 16,300 | **9,099** |
+| Lomo blur edges min | 16,213 | **9,003** |
+| Lomo bluer edges max | 16,593 | **9,507** |
+| Lomo fade max | 0,000 | **0,000** |
+
+*Mérés: `referencia/holga|lomo/… no effect` → `apply_filters` → ΔE CIE76
+(`tools/golden/compare_render.py`), 2560×1702.*
+
+### Tagonkénti ablácio — a jegy 1. „Kész, ha" pontja
+
+Egy-egy tag kihagyásával, a többi változatlanul; a `fade` 0, tehát a záró
+áttűnés azonosság. Ahol a szám NAGYOBB a teljes láncénál, ott a tag
+**kell**.
+
+| `Holga` (teljes **1,948**) | ΔE a tag nélkül | | `Lomo` (teljes **9,099**) | ΔE a tag nélkül |
+|---|---|---|---|---|
+| `AutoFix` | 1,948 | | belső ragyogás | 20,456 |
+| belső ragyogás | 12,561 | | maszkolt elmosás | 9,337 |
+| maszkolt elmosás | 1,972 | | színmátrix | 12,872 |
+| `#ff6666` tintelt B&W | 15,408 | | | |
+| kontraszt +25 | 5,341 | | | |
+| szemcse | 2,988 | | | |
+
+Két olvasat azonnal adódik:
+
+- **az `AutoFix` ezen a képen NEM HAT** (1,948 vele és nélküle, bitre) — a
+  kép hisztogramja már kifeszített, tehát ez a tag ezzel a mintával nem
+  mérhető; a mérés se nem igazolja, se nem cáfolja;
+- **a `Holga` maszkolt elmosása is alig hat** (1,972 nélküle) — a
+  `blur edges min`/`max` közti 0,07 ΔE ugyanezt mondja.
+
+### Hol maradt a `Lomo` 9,1-e — és mi NEM oldja meg
+
+A kép **közepén** (`r < 0,35·R`, 630 548 képpont; ott a körmaszk még nem
+kever elmosást) a csatornánkénti átviteli görbe mérve: a mi kimenetünk a
+**középtónusokban** következetesen 12–20 egységgel világosabb, a két végén
+pedig egybeesik az exporttal. Nem eltolás, hanem **túl erős
+középtónus-nyújtás**.
+
+Négy diszkrét — szabad paraméter nélküli — hipotézis, mind megmérve a
+középen (a mai állapot 5,193):
+
+| hipotézis | ΔE középen | verdikt |
+|---|---|---|
+| `Brightness = 0` az 5 helyett | 4,045 | **elvetve**: a `filterdesc.xml:1050` `Brightness="5"`-öt ír |
+| `Saturation = 0` a 20 helyett | 7,530 | elvetve, rosszabb |
+| a `ContrastAndBrightnessLinked` kódút | 4,518 | elvetve: az XML nem állítja be a jelzőt |
+| se kontraszt, se fényerő, se telítettség | 15,698 | a viszonyítási alap |
+
+A teljes láncon még két mérés:
+
+| hipotézis | teljes ΔE | verdikt |
+|---|---|---|
+| `quality="3"` háromszoros dobozelmosás Gauss helyett | 9,099 → **8,897** | kicsit jobb, az XML-hű irány |
+| a ragyogás sugara az XML szerinti **896**, a mi 255-ös vágásunk helyett | 8,897 → **23,819** | **sokkal rosszabb** |
+
+*Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml:1048–1050`
+(a `Lomo` három gyerekművelete), `src/picasapy/render/glimmer_creative.py:160`.*
+
+### Következtetés
+
+1. **A jegy kérdése megválaszolva:** a 16–23 ΔE-t egyetlen lánc-tag sem
+   viszi, mert a lánc nem futott. A mérő hibája, nem a modellé.
+2. **A `Holga` modellje lényegében jó** (1,5–4,0 ΔE); a `grain max` 4,0-ja a
+   szemcse-modell maradéka.
+3. **A `Lomo` maradék 9,1-e a RAGYOGÁS kernelében van, nem a
+   paramétereiben.** Mind a három paraméter (`Saturation 20`,
+   `Contrast 35`, `Brightness 5`) bitre egyezik a `filterdesc.xml`-lel, a
+   sugár XML-hű felvétele viszont két és félszeresére rontja az eltérést ⇒
+   a `GlowImageOperation` `strength`/`quality="3"`/`innerglow` együttese az,
+   amit nálunk más kernel közelít. **Ez a következő gépi irány** — nem
+   csúszka-kalibráció.
