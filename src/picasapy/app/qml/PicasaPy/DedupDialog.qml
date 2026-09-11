@@ -248,7 +248,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: scopeBox
                 objectName: "dedupScopeBox"
                 Layout.preferredWidth: 260

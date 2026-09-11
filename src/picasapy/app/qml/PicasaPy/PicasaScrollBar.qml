@@ -31,23 +31,58 @@ ScrollBar {
     minimumSize: 0.06
     padding: 0
 
-    // fogantyú: semleges szürke, hover/press-en enyhén sötétedik
+    // #894: a fogantyú a MÉRT átmenetet kapja (`scrollart/base_win`, 15 × 25:
+    // VÍZSZINTES átmenet, függőlegesen állandó — tehát egy függőleges sáv
+    // hüvelykje):
+    //
+    //   x0 #B6B6B6 (sötét bal él) · x1 #C7C7C7 → x7 #D9D9D9 → x13 #EDEDED
+    //   · x14 #C8C8C8 (jobb él)
+    //
+    // ⚠️ A Picasa SAJÁT görgetősávot rajzol, és a platformot a RAJZON át
+    // követi (külön `_win` és `_mac` réteg, a Mac-változat kisebb). Mi egy
+    // rajzot adunk: a windowsos mérést, mert a fejlesztés Linuxon fut, és a
+    // `_mac` rétegre nincs platformunk. Ezt itt kimondjuk, hogy ne látsszon
+    // kimaradásnak.
+    //
+    // Az átmenet TENGELYE a sáv irányához igazodik: függőleges sávnál
+    // vízszintes (a mérés szerint), vízszintes sávnál elfordítva.
     contentItem: Rectangle {
         implicitWidth: control.barThickness - control.handleMargin * 2
         implicitHeight: implicitWidth
         radius: width / 2
-        color: control.pressed
-               ? Qt.darker(Theme.chromeBorder, 1.35)
-               : (control.hovered
-                  ? Qt.darker(Theme.chromeBorder, 1.15)
-                  : Theme.chromeBorder)
+        objectName: "picasaScrollThumb"
+        //: a nyomott/hover állapot a mért átmenetet SÖTÉTÍTI, nem cseréli —
+        //: az eredeti is ugyanazt a rajzot használja minden állapotban
+        readonly property real tonus: control.pressed ? 1.25
+                                      : (control.hovered ? 1.1 : 1.0)
+        gradient: Gradient {
+            orientation: control.horizontal
+                         ? Gradient.Vertical : Gradient.Horizontal
+            GradientStop {
+                position: 0.0
+                color: Qt.darker(Theme.scrollThumbEdgeDark, parent.tonus)
+            }
+            GradientStop {
+                position: 0.07
+                color: Qt.darker(Theme.scrollThumbEdgeSoft, parent.tonus)
+            }
+            GradientStop {
+                position: 0.5
+                color: Qt.darker(Theme.scrollThumbMid, parent.tonus)
+            }
+            GradientStop {
+                position: 0.9
+                color: Qt.darker(Theme.scrollThumbLight, parent.tonus)
+            }
+            GradientStop {
+                position: 1.0
+                color: Qt.darker(Theme.scrollThumbEdgeSoft, parent.tonus)
+            }
+        }
         opacity: control.barVisible ? 1.0 : 0.0
 
         Behavior on opacity {
             NumberAnimation { duration: 150 }
-        }
-        Behavior on color {
-            ColorAnimation { duration: 100 }
         }
     }
 

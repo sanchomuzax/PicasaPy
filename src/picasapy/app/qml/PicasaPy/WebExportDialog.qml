@@ -157,7 +157,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: templateBox
                 objectName: "webExportTemplateBox"
                 Layout.fillWidth: true
@@ -189,7 +189,7 @@ Window {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                ComboBox {
+                PicasaComboBox {
                     id: thumbSizeBox
                     objectName: "webExportThumbSizeBox"
                     readonly property var sizeOptions: [0, 100, 160, 200, 320]
@@ -205,7 +205,7 @@ Window {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                ComboBox {
+                PicasaComboBox {
                     id: imageSizeBox
                     objectName: "webExportImageSizeBox"
                     readonly property var sizeOptions: [0, 640, 800, 1024, 1600]

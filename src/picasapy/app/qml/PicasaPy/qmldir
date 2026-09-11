@@ -9,6 +9,7 @@ PicasaMenu 1.0 PicasaMenu.qml
 LightboxHeader 1.0 LightboxHeader.qml
 PhotoViewer 1.0 PhotoViewer.qml
 FolderIcon 1.0 FolderIcon.qml
+PicasaComboBox 1.0 PicasaComboBox.qml
 AlbumIcon 1.0 AlbumIcon.qml
 SpecialAlbumIcon 1.0 SpecialAlbumIcon.qml
 ProjectIcon 1.0 ProjectIcon.qml
