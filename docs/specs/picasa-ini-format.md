@@ -3622,3 +3622,72 @@ bizonyítékkal: a kódtér azonosságát a közös `0x5a`/`0x10e` kódok adják
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — a bit-jelentés) ·
 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva". A sorrend a
 #2938 ÖRÖKÖLT kérdése, a munkasorban marad.*
+
+## A `0x0068b320` öt kulcsa CIKLUSSAL megy ki — a sorrend RÖGZÍTETT, és a `flipped` az ELSŐ (2026-09-11, 289. kör, #2938)
+
+A fenti tábla a kulcsokat és az alapértékeiket adta meg. Ez a szakasz azt
+teszi hozzá, hogy a tábla **sorrendje is jelentéssel bír**, mert egy
+ciklus járja be — és megadja a kiírás pontos feltételét és alakját.
+
+### A ciklus
+
+```
+0x0068b671  xor  ebx, ebx                      ; index = 0
+0x0068b680  (ciklusfej)
+0x0068b68b  mov  ebp, [esp + ebx + 0x68]       ; a KULCSNÉV tömb
+0x0068b6c6  mov  eax, [esp + ebx + 0x80]       ; az ALAPÉRTÉK tömb
+0x0068b6d5  (bájtonkénti sztring-összehasonlítás a kettő közt)
+0x0068b709  push esi / push ebp / push 0xca77e8
+0x0068b714  call 0x40ea90                      ; csak ha KÜLÖNBÖZIK
+0x0068b71c  add  ebx, 4                        ; a következő kulcs
+```
+
+A két tömb **párhuzamos**, a lépésköz 4 bájt, a lezárás `0`
+(`0x0068b55d`, `0x0068b58c`). ⇒ a kulcsok **abban a sorrendben** kerülnek
+ki, ahogy a verembe kerültek:
+
+| sorrend | kulcs | alapérték | a literál címe |
+|---:|---|---|---|
+| 1. | **`flipped`** | `flipped(0)` | `0x00ca7860` |
+| 2. | **`rotate`** | `rotate(0)` | `0x00c81964` |
+| 3. | `filters` | *üres* | `0x00c7f979` |
+| 4. | `text` | *üres* | ua. |
+| 5. | `moddate` | *üres* | ua. |
+
+### A kiírás feltétele és alakja
+
+- **feltétel:** a kulcs értéke **eltér** az alapértékétől (`0x0068b705
+  test al, al` / `0x0068b707 jne` a kihagyó ág) — ez adja meg, miért
+  maradhat el egy kulcs a fájlból, és miért NEM az üres érték a
+  „nincs" jelentése;
+- **alak:** `"%s=%s\r\n"` (`0x00ca77e8`) — **CRLF**, nem LF.
+
+*Forrás: `0x0068b671`–`0x0068b71c` (a ciklus), `0x0068b535`–`0x0068b58c`
+(a két tömb), `0x00ca77e8` (`"%s=%s\r\n"`), `0x0040ea90` (a hozzáfűző).*
+
+### ⛔ Ez az ÍRÁS sorrendje, NEM a képre alkalmazásé
+
+A #2938 nyitott kérdése az, hogy a betöltő **milyen sorrendben alkalmazza**
+a forgatást és a tükrözést a képre. Ez a ciklus a **szerializálót** írja le,
+tehát a kérdésre **nem válasz** — külön kell kimérni, és ezt a szakasz
+kimondja, hogy a következő kör ne olvassa félre.
+
+Amit a kör a másik oldalról megmért, és a folytatás horgonya:
+
+| lelet | szám / cím |
+|---|---|
+| a művelet-diszpécser (`0x006bb4a0`) és a billentyű-ág (`0x005eef30`) **összes** hívóhelye a `.text`-en | **16** |
+| opkód-eloszlás | `0x10e` ×6 · `0x5a` ×5 · `2` ×2 · `1` ×2 (egy hívóhelyen az opkód nem közvetlen) |
+| a `2` = vízszintes, `1` = függőleges tükrözés | `0x0042d828`, `0x0042d842` (ini-ág) · `0x005e63e0`, `0x005e6412` (billentyű-ág) |
+| a `0x10e` az ini-ágban is megjelenik | **`0x0042cfb0`** — ez a forgatás jelöltje, **nincs igazolva** |
+| a mezőkötés: `rotate` → a példány **`+0x550`**, `flipped` → **`+0x618`** | a bejegyző `0x004941f0`, hívások `0x00412985` és `0x004129d7` |
+| a két kulcsot EGYÜTT hivatkozó függvények száma | **4** (`0x004129xx`, `0x0046b7xx`, `0x0046e7xx`, `0x0046f5xx`) |
+
+**A következő gépi lépés:** a `0x0042cfb0` körüli függvény törzse — ha ott
+a `0x10e` a `rotate` mezőből (`+0x550`) jön, akkor a `0x10e` a forgatás
+opkódja, és a négy közös hivatkozójú függvény egyikében a két művelet
+kiadási sorrendje közvetlenül leolvasható.
+
+*Forrás: a `.text` teljes pásztázása `eszkozok/binaris/paszta.py`-val
+(hívóhely-leltár), és a négy kulcs-literál (`0x00c80ad4`, `0x00c80ae4`,
+`0x00c81474`, `0x00c814bc`) összes kódbeli hivatkozása: 15 · 6 · 14 · 3.*
