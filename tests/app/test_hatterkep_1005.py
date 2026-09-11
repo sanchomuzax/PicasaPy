@@ -64,12 +64,21 @@ class TestABmp:
 
 
 class TestABeallitas:
+    """#3026: minden próba KIMONDJA, melyik platform ágát méri.
+
+    A #2985 óta a beállító platform szerint ágazik el. Ez a szakasz a
+    LINUX láncot méri (`gsettings` → `pcmanfm` → `feh` → …), tehát a
+    `platform="linux"` nem díszítés: nélküle a windowsos futtatón mind a
+    négy próba a windowsos ágra fut, és a main CI windows-lába pirosra
+    vált — pontosan ez történt a v0.8.417-nél."""
+
     def test_a_lanc_KOZEPRE_illeszt(self, tmp_path):
         """A mért `WallpaperStyle=0`/`TileWallpaper=0` párja: középre, nyújtás
         nélkül. Ha valaki „szebb" kitöltésre írja át, itt bukik el."""
         futtato = _Futtato()
         eszkoz = wallpaper.set_desktop_background(
-            tmp_path / "h.bmp", runner=futtato, which=lambda nev: "/usr/bin/" + nev
+            tmp_path / "h.bmp", runner=futtato, platform="linux",
+            which=lambda nev: "/usr/bin/" + nev
         )
 
         assert eszkoz == "gsettings", "a lánc első elérhető eszköze nyer"
@@ -82,7 +91,8 @@ class TestABeallitas:
         futtato = _Futtato(hibas={"gsettings"})
 
         eszkoz = wallpaper.set_desktop_background(
-            tmp_path / "h.bmp", runner=futtato, which=lambda nev: "/usr/bin/" + nev
+            tmp_path / "h.bmp", runner=futtato, platform="linux",
+            which=lambda nev: "/usr/bin/" + nev
         )
 
         assert eszkoz == "pcmanfm"
@@ -94,6 +104,7 @@ class TestABeallitas:
         eszkoz = wallpaper.set_desktop_background(
             tmp_path / "h.bmp",
             runner=futtato,
+            platform="linux",
             which=lambda nev: "/usr/bin/feh" if nev == "feh" else None,
         )
 
@@ -109,7 +120,8 @@ class TestABeallitas:
         futtato = _Futtato()
         assert (
             wallpaper.set_desktop_background(
-                tmp_path / "h.bmp", runner=futtato, which=lambda _nev: None
+                tmp_path / "h.bmp", runner=futtato, platform="linux",
+                which=lambda _nev: None
             )
             is None
         )
