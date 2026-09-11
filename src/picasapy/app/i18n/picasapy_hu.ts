@@ -5748,6 +5748,26 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>SlideshowView</name>
     <message>
+        <source>Cut</source>
+        <translation>Kivágás</translation>
+    </message>
+    <message>
+        <source>Dissolve</source>
+        <translation>Szétoszlás</translation>
+    </message>
+    <message>
+        <source>Dissolve through black</source>
+        <translation>Szétoszlás feketén át</translation>
+    </message>
+    <message>
+        <source>Dissolve through white</source>
+        <translation>Szétoszlás fehéren át</translation>
+    </message>
+    <message>
+        <source>Pan and Zoom</source>
+        <translation>Pásztázás és nagyítás</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/SlideshowView.qml" line="177"/>
         <source>Exit</source>
         <translation>Kilépés</translation>

@@ -22,9 +22,51 @@ Rectangle {
     property int currentIndex: -1
     property int intervalMs: 3000
     property bool playing: false
+
+    //: #433: az ÁTMENET a diák között. Az eredeti diavetítése ugyanazt a
+    //: 18-as készletet használja, mint a filmkészítő (`transtype`,
+    //: `picasa-create-features.md` 2.1) — ebből az az öt van meg, amelyik a
+    //: Picasa jellegzetes érzetét adja; a maradék 13 a filmkészítővel
+    //: együtt jön (#432). A választó csak azt sorolja fel, ami MŰKÖDIK.
+    //: A feliratok az eredeti HIVATALOS magyar szövegei
+    //: (`CTransitions::*`, `picasa-create-features.md` 2.1): Kivágás ·
+    //: Szétoszlás · Szétoszlás feketén át · Szétoszlás fehéren át ·
+    //: Pásztázás és nagyítás — nem a mi fordításunk.
+    readonly property var atmenetek: [
+        { kulcs: "cut", nev: qsTr("Cut") },
+        { kulcs: "dissolve", nev: qsTr("Dissolve") },
+        { kulcs: "dissolveblack", nev: qsTr("Dissolve through black") },
+        { kulcs: "dissolvewhite", nev: qsTr("Dissolve through white") },
+        { kulcs: "kenburns", nev: qsTr("Pan and Zoom") }
+    ]
+    property string transitionKind: "dissolve"
+    //: az átmenet hossza (`SlideshowEffectTime`) — a dia-időnél rövidebb
+    property int transitionMs: 700
+    //: #433: a felirat megjelenítési módja vetítés közben (`captionmode`):
+    //: a felirat, a fájlnév, vagy semmi — ugyanaz a hármas, mint a
+    //: nyomtatás-opciókban.
+    readonly property var feliratModok: ["caption", "filename", "none"]
+    property string captionMode: "caption"
+
+    //: a VETÍTETT felirat — a mód szerint felirat, fájlnév vagy üres
+    readonly property string aktualisFelirat: {
+        if (!show.photosModel || show.currentIndex < 0) return ""
+        if (show.captionMode === "none") return ""
+        show.photosModel.revision  // a kötés kövesse a szerkesztést
+        if (show.captionMode === "filename") {
+            var ut = show.photosModel.filePathAt(show.currentIndex)
+            var perjel = ut.lastIndexOf("/")
+            return perjel >= 0 ? ut.substring(perjel + 1) : ut
+        }
+        return show.photosModel.captionAt(show.currentIndex)
+    }
     signal closed()
     signal starToggled(int index)
     signal rotateRequested(int index, int delta)
+    //: #433: a választó nem ír közvetlenül a beállításba — a gazda dönti el,
+    //: hova kerül (a `starToggled`/`rotateRequested` mintája).
+    signal transitionPicked(string kulcs)
+    signal captionModePicked(string mod)
 
     function count() {
         return photosModel ? photosModel.rowCount() : 0
@@ -77,9 +119,76 @@ Rectangle {
         if (target >= 0) currentIndex = target
     }
 
+    //: #433: a váltás pillanatában a MOSTANI kép URL-je még a régi — ezt
+    //: adjuk a kimenő diának, mielőtt a `source` kötése átfordul.
+    onCurrentIndexChanged: {
+        var elozo = elozoUrl
+        elozoUrl = slide.source
+        if (show.visible && elozo !== "")
+            show._atmenetIndit(elozo)
+    }
+    //: az utolsó megjelenített URL (a kimenő dia bemenete)
+    property url elozoUrl: ""
+
     function togglePause() { playing = !playing }
     function starCurrent() { show.starToggled(currentIndex) }
     function rotateCurrent(delta) { show.rotateRequested(currentIndex, delta) }
+
+    //: #433: az ÁTMENET motorja. A kimenő képet egy második `Image` tartja
+    //: (`slideshowPrevImage`), a fekete/fehér áttűnést pedig egy fátyol —
+    //: így a négy átmenet ugyanabból a két elemből épül, elágazás nélkül a
+    //: rajzoló oldalon.
+    //:
+    //: ⚠️ A `cut` nem „nincs átmenet": az eredeti készletben SAJÁT tétel
+    //: (`transtype` 1. eleme), ezért a választóban is szerepel — a
+    //: viselkedése nulla hosszú áttűnés.
+    function _atmenetIndit(elozoUrl) {
+        atmenetAnimacio.stop()
+        if (show.transitionKind === "cut" || !elozoUrl) {
+            elozoSlide.opacity = 0
+            slide.opacity = 1
+            fatyol.opacity = 0
+            return
+        }
+        elozoSlide.source = elozoUrl
+        elozoSlide.opacity = 1
+        slide.opacity = show.transitionKind === "dissolve" ? 0 : 1
+        fatyol.color = show.transitionKind === "dissolvewhite"
+            ? "#ffffff" : "#000000"
+        fatyol.opacity = 0
+        atmenetAnimacio.start()
+    }
+
+    SequentialAnimation {
+        id: atmenetAnimacio
+        objectName: "slideshowTransition"
+        //: az egyszerű áttűnés PÁRHUZAMOS (a kimenő halványul, a bejövő
+        //: erősödik), a fekete/fehér áttűnés SOROS (előbb a fátyol be, utána
+        //: ki) — ezért van két, egymást kizáró szakasz.
+        ParallelAnimation {
+            NumberAnimation {
+                target: elozoSlide; property: "opacity"; to: 0
+                duration: show.transitionKind === "dissolve"
+                          ? show.transitionMs : show.transitionMs / 2
+            }
+            NumberAnimation {
+                target: slide; property: "opacity"; to: 1
+                duration: show.transitionKind === "dissolve"
+                          ? show.transitionMs : 1
+            }
+            NumberAnimation {
+                target: fatyol; property: "opacity"
+                to: show.transitionKind === "dissolve" ? 0 : 1
+                duration: show.transitionKind === "dissolve"
+                          ? 1 : show.transitionMs / 2
+            }
+        }
+        NumberAnimation {
+            target: fatyol; property: "opacity"; to: 0
+            duration: show.transitionKind === "dissolve"
+                      ? 1 : show.transitionMs / 2
+        }
+    }
 
     Timer {
         id: stepTimer
@@ -102,6 +211,22 @@ Rectangle {
                 (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
             event.accepted = true
         }
+    }
+
+    //: #433: a KIMENŐ dia — az átmenet alatt ez halványul el. A fő kép
+    //: ALATT rajzolódik (előbb szerepel), tehát az áttűnés végén a bejövő
+    //: kép van fölül.
+    Image {
+        id: elozoSlide
+        objectName: "slideshowPrevImage"
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        fillMode: Image.PreserveAspectFit
+        asynchronous: false
+        autoTransform: true
+        sourceSize.width: 2560
     }
 
     Image {
@@ -133,6 +258,33 @@ Rectangle {
         asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
         sourceSize.width: 2560
+
+        //: #433 „Pan and Zoom" (`kenburns`): a dia a tartózkodása alatt
+        //: LASSAN nagyít. Nem átmenet, hanem a diára rakott mozgás — ezért
+        //: a dia-időhöz kötött, nem az átmenet-hosszhoz.
+        NumberAnimation on scale {
+            id: kenBurns
+            objectName: "slideshowKenBurns"
+            running: show.visible && show.transitionKind === "kenburns"
+                     && show.currentIndex >= 0
+            from: 1.0
+            to: 1.08
+            duration: Math.max(show.intervalMs, 1)
+        }
+        //: a nagyítás NEM ragadhat be: átmenet-váltáskor visszaáll
+        onScaleChanged: if (show.transitionKind !== "kenburns" && scale !== 1.0)
+                            scale = 1.0
+    }
+
+    //: #433: az áttűnés FÁTYLA (fekete vagy fehér) — a `dissolveblack` és a
+    //: `dissolvewhite` ezen megy át. A diák FÖLÖTT, a vezérlősáv ALATT.
+    Rectangle {
+        id: fatyol
+        objectName: "slideshowVeil"
+        anchors.fill: parent
+        color: "#000000"
+        opacity: 0
+        visible: opacity > 0
     }
 
     // elő-betöltés a következő fotóra (DoD): mire a timer lép, a kép
@@ -161,6 +313,27 @@ Rectangle {
             hideTimer.restart()
         }
     }
+    //: #433: a felirat vetítés közben (`captionmode`). A vezérlősáv fölött
+    //: ül, hogy a sáv megjelenése ne takarja el.
+    Text {
+        id: feliratSzoveg
+        objectName: "slideshowCaption"
+        visible: show.aktualisFelirat.length > 0
+        text: show.aktualisFelirat
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 72
+        width: parent.width - 96
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.WordWrap
+        maximumLineCount: 2
+        elide: Text.ElideRight
+        color: "#ffffff"
+        font.pixelSize: Theme.fontSize + 4
+        style: Text.Outline
+        styleColor: "#000000"
+    }
+
     Timer {
         id: hideTimer
         interval: 2500
@@ -222,6 +395,37 @@ Rectangle {
                 text: "↻"; width: 34
                 height: controlsRow.buttonHeight
                 onClicked: show.rotateCurrent(1)
+            }
+            //: #433: az ÁTMENET-választó a vezérlősávban — az eredetiben is
+            //: ott ül (`slideshowctrls/transtype`, a lebegő sáv alján).
+            PicasaComboBox {
+                objectName: "slideshowTransitionBox"
+                height: controlsRow.buttonHeight
+                width: 150
+                model: show.atmenetek.map(function (a) { return a.nev })
+                currentIndex: {
+                    for (var i = 0; i < show.atmenetek.length; ++i)
+                        if (show.atmenetek[i].kulcs === show.transitionKind)
+                            return i
+                    return 0
+                }
+                onActivated: show.transitionPicked(
+                    show.atmenetek[currentIndex].kulcs)
+            }
+            //: #433: a feliratmód körbejáró gombja (felirat → fájlnév →
+            //: semmi). Az eredetiben a `captionmode` beállítás; a vetítés
+            //: közbeni váltás nálunk kényelmi többlet.
+            PicasaButton {
+                objectName: "slideshowCaptionModeButton"
+                width: 34
+                height: controlsRow.buttonHeight
+                text: show.captionMode === "caption" ? "T"
+                      : (show.captionMode === "filename" ? "F" : "—")
+                onClicked: {
+                    var i = show.feliratModok.indexOf(show.captionMode)
+                    show.captionModePicked(
+                        show.feliratModok[(i + 1) % show.feliratModok.length])
+                }
             }
             PicasaButton {
                 objectName: "slideshowStarButton"
