@@ -506,6 +506,16 @@ def _find_export(export_dir: Path, image_name: str) -> Path | None:
     return None
 
 
+class UresKeszlet(ValueError):
+    """A kit-könyvtár LÉTEZIK, de egyetlen összevethető párt sem tartalmaz.
+
+    #1620: enélkül a nulla összevetés „0 eltér" összegzést adott, ami
+    sikernek olvasható. A golden-készlet (`research/golden-kit*/`) a
+    fejlesztői gépen él, a repóban nincs — a CI tehát SOHA nem vet össze
+    semmit. Ha ez némán történik, a hiány észrevétlen marad.
+    """
+
+
 def run_kit(
     kit_dir: Path | str, thresholds: Thresholds, luts: GoldenLuts
 ) -> list[ComparisonResult]:
@@ -535,6 +545,13 @@ def run_kit(
             worklist.append((row_name, original, golden, filters_value))
 
     total = len(worklist)
+    if total == 0:
+        # #1620: a néma nulla a legrosszabb kimenet — a riport sikernek
+        # látszana, holott semmit nem mértünk.
+        raise UresKeszlet(
+            f"A kit-könyvtár létezik, de nincs benne egyetlen "
+            f"`<mappa>/.picasa.ini` + kép pár sem: {kit}"
+        )
     results: list[ComparisonResult] = []
     for index, (row_name, original, golden, filters_value) in enumerate(
         worklist, start=1
