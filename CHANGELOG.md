@@ -7,7 +7,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
-## [0.8.405] – 2026-09-11
+## [0.8.406] – 2026-09-11
 
 ### Javítva
 
@@ -17,6 +17,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   olvasta, és a hiba némán „nincs borító"-vá alakult. A lekérdezés mostantól
   önálló, tesztelhető függvény — a korábbi őrök helyette kitalált adatot
   adtak be, ezért nem vették észre a hibát.
+
+## [0.8.405] – 2026-09-11
+
+### Változott
+
+- **A panel feliratai az eredeti betűközzel állnak** (#815). A Picasa minden
+  érintett felirata szorosabb szedésű (−1 betűköz); ez eddig nálunk nem volt
+  beállítva. A gombok és az effekt-csempék szövege ezzel egy hajszállal
+  tömörebb, és több fér ki belőle a szűk gombokon.
+- **A feliratok szövegszíne 80%-os**, ahogy az eredetiben (#815) — eddig
+  teljesen átlátszatlan volt. A szín továbbra is a témához igazodik, tehát
+  sötét témában is olvasható marad.
 
 ## [0.8.404] – 2026-09-11
 

@@ -32,6 +32,12 @@ Rectangle {
     property int minimumLabelPixelSize: Math.max(7, Theme.fontSize - 5)
     //: #422: a felirat alap-fokozata (a `ToolTile`-lel azonos szint).
     property int labelAlapFokozat: Theme.fontSize - 2
+    //: #815: a felirat BETŰKÖZE — MÉRVE, `fonttrack -1`. Ugyanez az érték
+    //: minden érintett makróban: `m_fxlabel` (a 12 effekt-csempe felirata),
+    //: `m_buttonfontC`, `m_buttonfontCbelow`, `m_buttonfontLC` (a panel
+    //: gombfeliratai) — vagyis a panel EGÉSZ tipográfiája szorosabb, nem
+    //: csak a csempéké.
+    readonly property real labelBetukoz: -1
     //: #2597: a mért eredeti KÉT sorban mutatja a „Visszavonás: <effektnév>"
     //: feliratot a 26 képpontos gombban.
     readonly property int rogzitettSorok: 2
@@ -140,6 +146,10 @@ Rectangle {
         font.family: pbtnLabel.font.family
         font.bold: pbtnLabel.font.bold
         font.pixelSize: pbtn.labelAlapFokozat
+        //: #815: a betűköz a MÉRŐELEMEN is — különben a #2597 fokozat-
+        //: illesztése a betűköz nélküli, SZÉLESEBB szöveggel számolna, és a
+        //: felirat a kelleténél kisebb fokozatra esne.
+        font.letterSpacing: pbtn.labelBetukoz
     }
     // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
     property string thumbSource: ""
@@ -384,12 +394,28 @@ Rectangle {
         // NAGYOBB volt, mint az 1. fül eszköz-csempéié — a kisebb a helyes,
         // ezért a `ToolTile`-lel azonos fokozatra állítva.
         font.pixelSize: pbtn.labelFokozat
+        font.letterSpacing: pbtn.labelBetukoz
         // #704: az eredeti csempe-felirat FÉLKÖVÉR (`fontmacros_win.tre`
         // `#define m_fxlabel` → `fontweight 700`), középre zárva. A színe
         // ott #333333; nálunk a témafüggő `Theme.textDark` marad, hogy
         // sötét témában is olvasható legyen (a fix hexa ott elveszne).
         font.bold: pbtn.thumbSource !== ""
-        color: pbtn.enabled ? Theme.textDark : Theme.textGray
+        //: #815: a MÉRT szövegszín ALFÁJA 80% (`CC`), nem átlátszatlan — a
+        //: `m_buttontypecolor` (`CC000000`) a leggyakoribb gombszín-makró,
+        //: **136 elemen** használva. A SZÍNT témafüggőnek hagyjuk
+        //: (`Theme.textDark`): a fix `#000000` sötét témában elveszne.
+        //:
+        //: ⚠️ EGÉR ALATT NEM VÁLT SZÍNT, és ez mérés, nem kihagyás. A
+        //: `typecolor` három állapota a `m_buttontypecolor`-ban azonos
+        //: (`CC000000 CC000000 CC000000`). A fehérre váltó két makró
+        //: (`m_buttontypecolor2`, `m_buttonfont12`) a teljes
+        //: erőforráskészletben **nulla elemen** szerepel — csak a saját
+        //: `#define`-juk hivatkozik rájuk, tehát halott erőforrás. A
+        //: LENYOMOTT állapot minden makróban visszatér az alapszínre.
+        color: pbtn.enabled
+               ? Qt.rgba(Theme.textDark.r, Theme.textDark.g, Theme.textDark.b,
+                         0.8)
+               : Theme.textGray
         // #318: elide helyett tördelés — a panel szélessége nem nőhet,
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
         // határon tör, hosszú, tördelhetetlen szónál karakterhatáron.
