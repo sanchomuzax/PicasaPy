@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.403] – 2026-09-11
+
+### Változott
+
+- **Az effekt-csempék „alkalmazva" jelvényén nincs többé szám** (#809). Az
+  eredeti Picasában a jelvény néma grafika: vagy látszik, vagy nem. Nálunk egy
+  „1" állt rajta, ami semmit nem jelentett. A jelvény helye is pontosabb lett:
+  a csempe jobb szélétől hat képpontra ül, ahogy az eredeti erőforrás megadja.
+
 ## [0.8.402] – 2026-09-11
 
 ### Változott
