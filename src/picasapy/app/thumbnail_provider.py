@@ -60,6 +60,7 @@ from .display_mode_paint import (
     apply_display_mode_to_qimage,
     display_mode_from_thumb_id,
 )
+from .thumb_level_url import szint_from_thumb_id
 from .worker_thread import register_pool_owner
 
 # #151/7: közös konstans — az edit-előnézet provider is ezt importálja,
@@ -124,6 +125,11 @@ class _FilteredThumbMemo:
             # sekély (copy-on-write) másolat: a hívó felé kiadott példány
             # független a cache-belitől, a pixeladat mégis közös
             return QImage(image)
+
+    def clear(self) -> None:
+        """A rekesz ürítése (#598) — a kézi gyorsítótár-ürítés hívja."""
+        with self._lock:
+            self._items.clear()
 
     def put(self, key: tuple, image: QImage) -> None:
         with self._lock:
@@ -363,6 +369,28 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             self._ops_cache[filters] = entry
         return entry
 
+    def clear_cache(self) -> int:
+        """A bélyegkép-tár ürítése lemezen ÉS memóriában (#598).
+
+        A memóriabeli rekeszeket is ki KELL üríteni: a lemezes fájl törlése
+        önmagában nem elég, mert a szűrt bélyegképek memo-rekesze és a
+        lánc-gyorstár ugyanazokat a képpontokat adná vissza — a felhasználó
+        pedig nem látná, hogy történt valami."""
+        freed = self._cache.clear()
+        self._memo.clear()
+        with self._ops_lock:
+            self._ops_cache.clear()
+        return freed
+
+    def level_for(self, cella_px: int) -> int:
+        """A cellamérethez tartozó bélyegkép-szint (#598) — a tár dönti el."""
+        return self._cache.level_for(cella_px)
+
+    @property
+    def top_level(self) -> int:
+        """A tár legnagyobb szintje (#598): a rács maximuma × a képernyő DPR-je."""
+        return self._cache.levels[-1]
+
     def requestImageResponse(self, photo_id: str, requested_size) -> _ThumbResponse:
         """Aszinkron belépési pont (a Qt a saját olvasószálán hívja): a
         munka a poolba kerül, a válasz azonnal visszamegy.
@@ -469,12 +497,17 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         # vágott kép így éles marad, nem a kész kis thumbnailt vágjuk tovább
         # (ami felnagyítva homályos lenne). A forgatás lentebb, a kész kis
         # bélyegképen történik (veszteségmentes 90°-os lépés).
+        #: #598: a SZINT az URL-ből jön (`&sz=`), nem a szolgáltató
+        #: állapotából — ugyanaz az elv, mint a megjelenítési módnál: az URL
+        #: egyértelműen meghatározza a képpontokat, így a Qt URL-kulcsú
+        #: gyorstárába nem ragadhat be más szintű kép.
+        szint = szint_from_thumb_id(photo_id)
         if ops:
             thumb = self._cache.get_or_create_edited(
-                path, mtime_ns, size_bytes, ops
+                path, mtime_ns, size_bytes, ops, szint
             )
         else:
-            thumb = self._cache.get_or_create(path, mtime_ns, size_bytes)
+            thumb = self._cache.get_or_create(path, mtime_ns, size_bytes, szint)
         if thumb is None:
             _log.warning("thumbnail nem készült el: %s", path)
             self.brokenImageDetected.emit(str(photo.id))

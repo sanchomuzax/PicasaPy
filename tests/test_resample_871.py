@@ -225,9 +225,14 @@ class TestBekotes:
             Path(__file__).resolve().parents[1]
             / "src" / "picasapy" / "thumbs" / "cache.py"
         ).read_text(encoding="utf-8")
-        assert szoveg.count("scale_down_picasa_mag(") == 2, (
-            "a bélyegkép-gyorsítótárban nem a várt KÉT híváshely hívja a "
-            "Picasa magját (a szűretlen és a szerkesztett bélyegkép)"
+        #: #598: HÁROM híváshely — a szűretlen bélyegkép, a szerkesztett, és
+        #: a rétegzett tár SZINT-levezetése (a kis szint a nagyobbik kész
+        #: bélyegképéből áll elő). Mindhárom ugyanazt a magot hívja; a kapu
+        #: azt őrzi, hogy egyik se csússzon vissza az OpenCV-alapértelmezésre.
+        assert szoveg.count("scale_down_picasa_mag(") == 3, (
+            "a bélyegkép-gyorsítótárban nem a várt HÁROM híváshely hívja a "
+            "Picasa magját (a szűretlen, a szerkesztett bélyegkép és a "
+            "szint-levezetés, #598)"
         )
         assert "scale_down_picasa_mag,\n" in szoveg, "hiányzik az import"
 

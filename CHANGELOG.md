@@ -7,8 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.397] – 2026-09-11
+
 ### Változott
 
+- **A rács bélyegképei három méretben készülnek** (#598). Az eredeti Picasa
+  négy bélyegkép-tárat tartott (72, 144, 288 és 640 képpont); mi eddig
+  egyetlenből, a legnagyobból dolgoztunk minden nagyítási fokozaton. A két
+  kicsi szint mostantól nálunk is megvan, és a kisebb a nagyobbikból áll elő
+  — a kis fokozatokon egy bélyegkép megjelenítése így tizedannyi munka.
+- **A Beállítások „Gyorsítótár ürítése…" gombja működik** (#598). Eddig
+  tiltva volt; most megkérdezi, hogy biztos-e, majd megmondja, mennyi helyet
+  szabadított fel. Kép nem veszik el: a bélyegképek szükség szerint újra
+  elkészülnek.
 - **A Képkockamozaik hangsúlyos képe már nem torzul** (#916). A
   „Beállítás képkockaközéppontként" képe eddig mindig a lap arányához
   igazodó, fix területet kapott; egy panorámakép így kétszer alacsonyabb

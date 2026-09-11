@@ -304,7 +304,11 @@ def _has_edits(photo: PhotoRecord) -> bool:
     return bool(photo.filters and photo.filters.strip())
 
 
-def _thumb_url(photo: PhotoRecord, display_mode: str | None = None) -> str:
+def _thumb_url(
+    photo: PhotoRecord,
+    display_mode: str | None = None,
+    szint: int | None = None,
+) -> str:
     """Thumb-URL forgatás-, szerkesztés- és FÁJLVÁLTOZÁS-érzékeny
     cache-busterrel (#59, #1186), megjelenítési mód-cimkével (#1596).
 
@@ -343,6 +347,13 @@ def _thumb_url(photo: PhotoRecord, display_mode: str | None = None) -> str:
         f"?r={photo.rotate_steps}"
         f"&fl={getattr(photo, 'flip_flags', 0)}&f={filters_tag}"
         f"&m={photo.mtime_ns}&s={photo.size}"
+        #: #598: a SZINT is az URL része, ugyanabból az okból, mint a
+        #: megjelenítési mód: az URL egyértelműen határozza meg a
+        #: képpontokat, különben a Qt URL-kulcsú gyorstárába más szintű kép
+        #: ragadhatna be. A cimke csak akkor kerül ki, ha nem a felső
+        #: szintről van szó — így a mai URL-ek bájtra változatlanok, és a
+        #: meglévő gyorstár érvényes marad.
+        f"{'' if szint is None else f'&sz={szint}'}"
         f"{display_mode_url_suffix(display_mode)}"
     )
 
@@ -459,6 +470,30 @@ class PhotoGridModel(QAbstractListModel):
         # a `thumbnail_provider` írja át. Amíg senki nem állította be, a
         # bélyegkép-URL-ek bájtra a mód bevezetése előttiek.
         self._display_mode = ""
+        #: #598: a rács bélyegkép-SZINTJE. `None` = a felső szint, azaz a
+        #: mai viselkedés; a QML a csúszka fokozatából állítja be.
+        self._thumb_level: int | None = None
+
+    def set_thumb_level(self, level: int | None) -> None:
+        """A rács bélyegkép-szintje (#598) — a cellaméretből.
+
+        A `set_display_mode` mintáját követi, mert ugyanaz a természete: az
+        URL-t írja át, tehát minden látható cellát újrakér. Ezért **csak
+        SZINTVÁLTÁSKOR** jelez: a csúszka fokozatai között egy szint több
+        fokozatot fed le (72 · 144 · a maximum), így a csúszka húzása nem
+        kér újra mindent, csak a szinthatár átlépése."""
+        uj = None if level is None else int(level)
+        if uj == self._thumb_level:
+            return
+        self._thumb_level = uj
+        self._revision += 1
+        self.revisionChanged.emit()
+        if self._photos:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(len(self._photos) - 1, 0),
+                [self.ThumbUrlRole],
+            )
 
     def set_folder_photo_sort(
         self, sort_mode: str, reverse: bool, is_active=None
@@ -619,7 +654,7 @@ class PhotoGridModel(QAbstractListModel):
         if not 0 <= row < len(self._photos):
             return ""
         photo = self._photos[row]
-        return _thumb_url(photo, self._display_mode)
+        return _thumb_url(photo, self._display_mode, self._thumb_level)
 
     @Slot(int, result="QVariantMap")
     def itemAt(self, row: int) -> dict:
@@ -631,7 +666,7 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return {
             "name": photo.name,
-            "thumbUrl": _thumb_url(photo, self._display_mode),
+            "thumbUrl": _thumb_url(photo, self._display_mode, self._thumb_level),
             "star": photo.star,
             "caption": photo.caption or "",
             "isVideo": photo.kind == "video",
@@ -947,7 +982,7 @@ class PhotoGridModel(QAbstractListModel):
             return photo.name
         if role == self.ThumbUrlRole:
             # cache-buster: forgatás/szerkesztés után új URL → friss kép (#59)
-            return _thumb_url(photo, self._display_mode)
+            return _thumb_url(photo, self._display_mode, self._thumb_level)
         if role == self.StarRole:
             return photo.star
         if role == self.CaptionRole:
