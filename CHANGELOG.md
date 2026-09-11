@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.421] – 2026-09-11
+
+### Javítva
+
+- **A tükrözés bekerül a fotó mellé, a helyes tengellyel** (#2976). A
+  vízszintes és a függőleges tükrözés eddig csak a belső nyilvántartásban
+  élt, mert nem tudtuk biztosan, melyik számérték melyik tengelyt jelenti
+  a Picasa saját fájljában. Ez most ki van mérve, és kiderült, hogy a mi
+  két értékünk fordítva állt. Mostantól a tükrözés a `.picasa.ini`-be
+  kerül, ugyanoda és ugyanúgy, ahogy az eredeti program írja — tehát az
+  eredeti Picasa is helyesen olvassa vissza. ⚠️ A te gépeden ez még nincs
+  ellenőrizve.
+
 ## [0.8.420] – 2026-09-11
 
 ### Javítva
