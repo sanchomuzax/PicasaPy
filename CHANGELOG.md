@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.385] – 2026-09-11
+
+### Javítva
+
+- **A feliratbeillesztés a teljes kijelölésen végigfut** (#2915). Több képet
+  kijelölve a „Szöveg beillesztése" eddig képenként külön háttérszálat
+  indított; ugyanabba a mappa-ini-be írva ez versenyhelyzet volt, és a
+  kijelölés egy része felirat nélkül maradhatott. Mostantól egyetlen soros
+  köteg fut, ami a hálózati tárat is kíméli.
+
 ## [0.8.384] – 2026-09-10
 
 ### Változott
