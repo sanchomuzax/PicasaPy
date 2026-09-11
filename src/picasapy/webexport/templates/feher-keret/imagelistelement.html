@@ -1,0 +1,7 @@
+<figure class="thumb<%if shadowedThumbnails%> shadow<%endif%>" style="--shadow-color: <%bgColor%>;">
+<a href="<%itemLargeImage%>">
+<img src="<%itemThumbnailImage%>" width="<%itemThumbnailWidth%>" height="<%itemThumbnailHeight%>" alt="<%itemCaption%>" loading="lazy">
+</a>
+<%if itemCaption%><figcaption><%itemCaption%></figcaption><%endif%>
+<%if !itemCaption%><figcaption><%itemNameOnly%></figcaption><%endif%>
+</figure>

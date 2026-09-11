@@ -20,6 +20,10 @@ class TemplateInfo:
     name: str
     description: str
     path: Path
+    #: #534: a választó előnézeti rajza (`preview.svg`), ha a sablon
+    #: mellett ott van. Az eredeti `preview.jpg`-t használt; nálunk saját,
+    #: sematikus SVG (paletta + csempe-stílus), nem képernyőkép.
+    preview_path: Path | None = None
 
 
 def list_bundled_templates() -> tuple[TemplateInfo, ...]:
@@ -34,12 +38,14 @@ def list_bundled_templates() -> tuple[TemplateInfo, ...]:
         if not entry.is_dir() or not index_tpl.is_file():
             continue
         header = parse_header(index_tpl.read_text(encoding="utf-8"))
+        preview = entry / "preview.svg"
         infos.append(
             TemplateInfo(
                 id=entry.name,
                 name=header.name or entry.name,
                 description=header.description,
                 path=entry,
+                preview_path=preview if preview.is_file() else None,
             )
         )
     return tuple(infos)

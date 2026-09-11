@@ -1,0 +1,9 @@
+/* nyomtatási stílus — a `copy assets/` parancs demonstrálására (a
+   sablon-nyelv statikus erőforrás-másolása, docs/specs/
+   picasa-program-resources.md 2.3.) */
+@media print {
+  .item-nav,
+  .back-link {
+    display: none;
+  }
+}

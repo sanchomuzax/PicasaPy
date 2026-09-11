@@ -1,0 +1,13 @@
+<p class="back-link"><a href="<%referrer%>">&larr; Vissza a galériához</a></p>
+<figure class="item-figure<%if shadowedImages%> shadow<%endif%>" style="--shadow-color: <%bgColor%>;">
+<img src="<%itemLargeImage%>" width="<%itemWidth%>" height="<%itemHeight%>" alt="<%itemCaption%>">
+<%if itemCaption%><figcaption><%itemCaption%></figcaption><%endif%>
+</figure>
+<nav class="item-nav">
+<%if isPrevTarget%><a href="<%prevTarget%>">&larr; Előző</a><%endif%>
+<%if !isPrevTarget%><span class="disabled">&larr; Előző</span><%endif%>
+<%if isNextTarget%><a href="<%nextTarget%>">Következő &rarr;</a><%endif%>
+<%if !isNextTarget%><span class="disabled">Következő &rarr;</span><%endif%>
+</nav>
+</body>
+</html>

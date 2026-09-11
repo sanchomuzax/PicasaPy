@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #534: az XML-sablon nem weboldalt ad, ezért az előnézete sem galéria:
+     egy adatfájl sematikus rajza. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" width="160" height="100" role="img">
+  <title>XML előnézet</title>
+  <rect x="0" y="0" width="160" height="100" fill="#f4f4f4"/>
+  <rect x="34" y="12" width="92" height="76" rx="3" fill="#ffffff" stroke="#bbbbbb"/>
+  <text x="44" y="34" font-family="monospace" font-size="9" fill="#444444">&lt;album&gt;</text>
+  <text x="52" y="48" font-family="monospace" font-size="9" fill="#444444">&lt;photo/&gt;</text>
+  <text x="52" y="62" font-family="monospace" font-size="9" fill="#444444">&lt;photo/&gt;</text>
+  <text x="44" y="76" font-family="monospace" font-size="9" fill="#444444">&lt;/album&gt;</text>
+</svg>

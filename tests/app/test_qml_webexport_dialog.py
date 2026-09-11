@@ -24,13 +24,21 @@ class FakeWebExportController(QObject):
         super().__init__()
         self.generate_calls = []
         self._templates = [
-            {"id": "feher", "name": "Fehér", "description": "Fehér hátterű sablon"},
-            {"id": "masik", "name": "Másik", "description": ""},
+            {
+                "id": "feher", "name": "Fehér",
+                "description": "Fehér hátterű sablon",
+                "preview": "file:///tmp/feher/preview.svg",
+            },
+            {"id": "masik", "name": "Másik", "description": "", "preview": ""},
         ]
 
     @Slot(result=list)
     def listWebExportTemplates(self):
         return self._templates
+
+    @Slot(result=str)
+    def defaultWebExportTarget(self):
+        return "/tmp/Kepek/Picasa HTML exportok"
 
     @Slot(str, str, str, int, int, bool, bool)
     def generateWebExport(
@@ -108,8 +116,12 @@ class TestDialogWindow:
 
 class TestGenerateButtonEnablement:
     def test_disabled_without_target_folder(self, dialog, qt_app):
+        """#534: a megnyitás ELŐRE kitölti a célmappát, ezért az üres
+        állapotot itt kimondottan elő kell állítani — a szabály maga
+        (üres célmappa ⇒ tiltott gomb) változatlan."""
         window, _fake, _qt_app2 = dialog
         QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        window.setProperty("targetFolder", "")
         qt_app.processEvents()
         button = _child(window, "webExportGenerateButton")
         assert button.property("enabled") is False
@@ -180,3 +192,49 @@ class TestStartExport:
         qt_app.processEvents()
         close_button = _child(window, "webExportCloseButton")
         assert close_button.property("enabled") is False
+
+
+class TestAzElorekitoltottCelmappa:
+    """#534: az eredetinek van alapértelmezett kimeneti mappája; nálunk a
+    párbeszéd „(nincs kijelölve)" állapotban nyílt, tehát minden exportnál
+    tallózni kellett — és a Generálás gomb addig tiltott volt."""
+
+    def test_megnyitaskor_kitolt(self, dialog, qt_app):
+        window, _fake, _qt_app = dialog
+        assert window.property("targetFolder") == ""
+
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+        assert window.property("targetFolder") == "/tmp/Kepek/Picasa HTML exportok"
+
+    def test_a_mar_kivalasztott_mappat_NEM_irja_felul(self, dialog, qt_app):
+        window, _fake, _qt_app = dialog
+        window.setProperty("targetFolder", "/sajat/hely")
+
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+        assert window.property("targetFolder") == "/sajat/hely"
+
+
+class TestASablonElonezete:
+    """#534: a választó előnézetet mutat (az eredetiben `preview.jpg`)."""
+
+    def test_a_kivalasztott_sablon_rajza_latszik(self, dialog, qt_app):
+        window, _fake, _qt_app = dialog
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+        kep = _child(window, "webExportTemplatePreview")
+        assert kep.property("visible") is True
+        assert kep.property("source").toString() == "file:///tmp/feher/preview.svg"
+
+    def test_rajz_nelkuli_sablonnal_elrejtve(self, dialog, qt_app):
+        """Üres `preview` esetén ne maradjon ott egy üres képkeret."""
+        window, _fake, _qt_app = dialog
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        window.setProperty("templateIndex", 1)
+        qt_app.processEvents()
+
+        assert _child(window, "webExportTemplatePreview").property("visible") is False
