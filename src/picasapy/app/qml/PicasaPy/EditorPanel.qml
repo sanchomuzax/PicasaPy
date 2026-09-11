@@ -277,18 +277,28 @@ Rectangle {
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
 
     // ------------------------------------------------------------------
-    // #2146: a Shift MÁSODLAGOS szűrőt ad kilenc csempén
+    // #2146 + #798: a Shift MÁSODLAGOS szűrőt ad kilenc csempén
     // ------------------------------------------------------------------
     //
-    // Az eredeti az effekt-fül FELÉPÜLÉSEKOR egyszer kérdezi le a Shift
-    // állapotát (`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`), és a bitet
-    // eltárolja (`[ecx+0x33a8]`); a csempék ezután a TÁROLT értéket nézik.
-    // Ezért nem `Keys`-figyelő és nem kötés: a fül láthatóvá válásakor
-    // olvassuk ki, egyszer.
+    // A Shift bitjét a `FUN_005d7c20` olvassa ki (`0x005d7c91`:
+    // `push 0x10` → `GetAsyncKeyState` → `mov [ecx+0x33a8], al`).
     //
-    // Ha képkockánként kérdeznénk, a csempék a Shift minden le-fel
-    // nyomására átbillennének — az eredeti pontosan ezt NEM teszi.
-    property bool shiftMasodlagos: false
+    // ⚠️ #798 — HELYESBÍTÉS. A #2146 ezt „a fül felépülésekor egyszer"
+    // olvasatnak vette, és a panel tényleg csak kétszer kérdezte meg:
+    // felépüléskor és fülváltáskor. A tulajdonos jelentette, hogy a
+    // Shift ÉLESBEN nem működik — aki az effekt-fülön áll és lenyomja,
+    // semmit nem lát. A mérés az olvasat ellen szól: ugyanez a függvény
+    // `LoadCursorA`-t és `SetCursor`-t is hív (`imports.csv`), ami
+    // mutató-eseményhez tartozik, nem egyszeri felépítéshez.
+    //
+    // Mostantól a vezérlő ÉLŐ állapotot ad (`shiftAktiv`, eseményszűrő),
+    // és ez a kötés követi. A `frissitsdAShiftAllapotot()` megmarad a
+    // felépülés pillanatára: akkor még nem volt billentyű-esemény,
+    // amiből a szűrő tudhatna (a felhasználó már előtte is nyomhatja).
+    property bool shiftMasodlagos: (editController
+                                    && editController.shiftAktiv !== undefined)
+        ? editController.shiftAktiv
+        : false
 
     function frissitsdAShiftAllapotot() {
         //: ⚠️ A #305 null-őr ITT NEM ELÉG. A QML-tesztek egy része CSONK
@@ -302,6 +312,11 @@ Rectangle {
         if (typeof editController === "undefined" || !editController)
             return
         if (typeof editController.shiftLenyomva !== "function")
+            return
+        //: #798: a kötést csak akkor írjuk felül, ha a vezérlő NEM adja
+        //: az élő állapotot (régi csonk a próbákban). Élő vezérlőnél a
+        //: kötés magától követ, és a felülírás pont azt törné el.
+        if (editController.shiftAktiv !== undefined)
             return
         panel.shiftMasodlagos = editController.shiftLenyomva()
     }

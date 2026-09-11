@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.411] – 2026-09-11
+
+### Javítva
+
+- **A Shift most már tényleg átváltja az effekt-csempéket** (#798). A
+  kilenc rejtett, másodlagos effekt eddig csak akkor jelent meg, ha a
+  Shiftet már a fül megnyitása előtt nyomva tartottad — aki az
+  effekt-fülön állva nyomta le, semmit nem látott. Mostantól a csempék a
+  billentyű lenyomására azonnal váltanak, és elengedésre visszaállnak.
+
 ## [0.8.410] – 2026-09-11
 
 ### Hozzáadva

@@ -13,11 +13,14 @@ from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import (
     Property,
     QCoreApplication,
+    QEvent,
     QLocale,
     QObject,
     Signal,
     Slot,
 )
+from PySide6.QtCore import Qt as QtNamespace
+from PySide6.QtGui import QGuiApplication
 
 from picasapy.app.effect_params import (
     format_param_values,
@@ -344,6 +347,10 @@ class EditController(QObject, BackgroundWorkerMixin):
     # GPU-réteg elkerülni hivatott). A gpuPrefixSource/gpuLutSource ezt a
     # jelet figyeli.
     gpuRevisionChanged = Signal()
+    #: #798: a Shift ÉLŐ állapota. A #2146 az effekt-fül felépülésekor
+    #: olvasta egyszer, ezért az effekt-fülön állva a Shift lenyomása
+    #: semmit nem váltott — a tulajdonos pontosan ezt jelentette.
+    shiftAktivChanged = Signal()
     # #459: a szerkesztés mentése (minden effekt/vágás/felirat-módosítás
     # a `_save()`/`_save_text()`-en át azonnal lemezre ír) csak-olvasható
     # mappán vagy egyéb lemezhibán elbukhat — az eredeti Picasa szövege
@@ -382,6 +389,14 @@ class EditController(QObject, BackgroundWorkerMixin):
         # régebbi képet a frissebb fölé.
         self._preview_job = 0
         self._previewRendered.connect(self._on_preview_rendered)
+        # #798: a Shift élő követése. Az eseményszűrő az ALKALMAZÁSRA megy,
+        # mert a billentyű-esemény a fókuszált elemhez érkezik, nem a
+        # vezérlőhöz — az effekt-rácsnak viszont fókusz nélkül is tudnia
+        # kell róla.
+        self._shift_aktiv = False
+        alkalmazas = QGuiApplication.instance()
+        if alkalmazas is not None:
+            alkalmazas.installEventFilter(self)
         self._photo_id = ""
         self._image_path: Path | None = None
         # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
@@ -2303,6 +2318,38 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
         return True
+
+    def eventFilter(self, figyelt, esemeny) -> bool:  # noqa: N802 — Qt-név
+        """A Shift le- és felengedésének követése (#798).
+
+        A szűrő SOHA nem nyeli el az eseményt: csak megjegyzi az állapotot
+        és jelez, ha változott. Az ismétlődő (nyomva tartott) lenyomás nem
+        ad új jelzést — különben a kötések feleslegesen pörögnének.
+        """
+        tipus = esemeny.type()
+        if tipus in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            kulcs = getattr(esemeny, "key", None)
+            if kulcs is not None and kulcs() == QtNamespace.Key.Key_Shift:
+                self._allitsd_a_shiftet(tipus == QEvent.Type.KeyPress)
+        return super().eventFilter(figyelt, esemeny)
+
+    def _allitsd_a_shiftet(self, aktiv: bool) -> None:
+        if aktiv == self._shift_aktiv:
+            return
+        self._shift_aktiv = aktiv
+        self.shiftAktivChanged.emit()
+
+    @Property(bool, notify=shiftAktivChanged)
+    def shiftAktiv(self) -> bool:
+        """Le van-e nyomva ÉPPEN MOST a Shift (#798).
+
+        Ez a kötés-barát alak: a QML rá köt, és a lenyomás pillanatában
+        újraértékelődik. A `shiftLenyomva()` lekérdezés megmarad — a panel
+        FELÉPÜLÉSEKOR arra van szükség, mert akkor még nem volt olyan
+        billentyű-esemény, amiből a szűrő tudhatna (a felhasználó már a
+        fül megnyitása előtt is nyomva tarthatja).
+        """
+        return self._shift_aktiv
 
     @Slot(result=bool)
     def shiftLenyomva(self) -> bool:  # noqa: N802 — QML-stílusú név
