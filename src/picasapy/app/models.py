@@ -21,6 +21,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from picasapy.metadata import megjelenitett_meret
 from picasapy.index import PhotoRecord
 
 from .display_mode_paint import (
@@ -296,6 +297,18 @@ class FolderListModel(QAbstractListModel):
             self.OfflineRole: b"offline",
             self.UnreadRole: b"unread",
         }
+
+
+def _felbontas(photo) -> str:
+    """A MEGJELENÍTETT felbontás felirata (#2996).
+
+    Az index a fájlban TÁROLT méretet őrzi — a megjelenített kép viszont
+    az EXIF-orientációval jön. Enélkül minden álló tájolású telefonkép
+    fordítva mutatta a felbontását."""
+    szelesseg, magassag = megjelenitett_meret(
+        photo.width, photo.height, getattr(photo, "orientation", None)
+    )
+    return f"{szelesseg}x{magassag}" if szelesseg and magassag else ""
 
 
 def _has_edits(photo: PhotoRecord) -> bool:
@@ -689,11 +702,9 @@ class PhotoGridModel(QAbstractListModel):
             "caption": photo.caption or "",
             "isVideo": photo.kind == "video",
             "keywords": photo.keywords or "",
-            "resolution": (
-                f"{photo.width}x{photo.height}"
-                if photo.width and photo.height
-                else ""
-            ),
+            #: #2996: a MEGJELENÍTETT felbontás — az index a tárolt méretet
+            #: őrzi, a kép viszont az EXIF-orientációval jelenik meg.
+            "resolution": _felbontas(photo),
             "hasEdits": _has_edits(photo),
             "hidden": photo.hidden,
             # #463: piros geo-pin jelvény — a `PhotoRecord.location` az
@@ -791,6 +802,16 @@ class PhotoGridModel(QAbstractListModel):
         # ez az ELSŐ paraméter, ezért a `&`-et `?`-re cseréljük
         return f"image://displayphoto/{utvonal}?{cimke[1:]}"
 
+    def _megjelenitett(self, row: int):
+        """A sor MEGJELENÍTETT mérete (#2996) — EXIF-orientációval.
+
+        ⚠️ A `.picasa.ini` `rotate=` forgatása NEM tartozik ide: azt a
+        felület alkalmazza külön (`rotateAt`), a már EXIF-helyes képre."""
+        photo = self._photos[row]
+        return megjelenitett_meret(
+            photo.width, photo.height, getattr(photo, "orientation", None)
+        )
+
     @Slot(int, result=int)
     def pixelWidthAt(self, row: int) -> int:
         """A kép VALÓDI képpont-szélessége (0, ha ismeretlen) — #2492.
@@ -806,7 +827,7 @@ class PhotoGridModel(QAbstractListModel):
         szétszedni törékeny lenne."""
         if not 0 <= row < len(self._photos):
             return 0
-        return int(self._photos[row].width or 0)
+        return int(self._megjelenitett(row)[0] or 0)
 
     @Slot(int, result=int)
     def pixelHeightAt(self, row: int) -> int:
@@ -817,7 +838,7 @@ class PhotoGridModel(QAbstractListModel):
         csak a kettővel együtt számolható."""
         if not 0 <= row < len(self._photos):
             return 0
-        return int(self._photos[row].height or 0)
+        return int(self._megjelenitett(row)[1] or 0)
 
     @Slot(int, result=str)
     def idAt(self, row: int) -> str:
@@ -1037,11 +1058,7 @@ class PhotoGridModel(QAbstractListModel):
         if role == self.KeywordsRole:
             return photo.keywords or ""
         if role == self.ResolutionRole:
-            return (
-                f"{photo.width}x{photo.height}"
-                if photo.width and photo.height
-                else ""
-            )
+            return _felbontas(photo)
         if role == self.FolderPathRole:
             return photo.folder_path
         return None

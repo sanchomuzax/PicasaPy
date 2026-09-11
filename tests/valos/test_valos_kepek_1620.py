@@ -10,8 +10,8 @@ beágyazott ICC-profil, 16 bites PNG, nagy felbontás.
 Az EXIF-orientáció 5–8 állásában az index a fájlban TÁROLT méretet őrzi
 (fekvő), a megjelenített kép viszont álló — a `cvimage` dekódolása
 alkalmazza az orientációt. A két adat így ellentmond egymásnak; a
-következményeket a #2996 viszi (a `test_az_orientacio_es_a_tarolt_meret_ELTER`
-ezt a mai állapotot MÉRI, nem helyesli).
+következményeit a #2996 rendezte (0.8.415): az index marad a fájl
+igazságánál, a fogyasztók a `metadata.megjelenitett_meret`-et hívják.
 
 ## Amit NEM talált (mérve, hogy ne tűnjön hiánynak)
 
@@ -129,8 +129,12 @@ class TestAzOrientacio:
         Az index a fájlban tárolt (fekvő) méretet őrzi, miközben a
         megjelenített kép álló. Aki a `width`/`height` párból arányt számol
         — a kollázs-elrendezés és a néző 1:1 nagyítása —, forgatott képnél
-        rossz arányt kap. A javítást a #2996 viszi; ha valaki megjavítja,
-        ez a próba bukik, és akkor ide a helyes állítás kerül.
+        rossz arányt kapott. **A #2996 ezt eldöntötte** (0.8.415): a
+        kanonikus adat MARAD a tárolt méret + az orientáció — az index a
+        fájl igazságát tükrözi —, a fogyasztók viszont a
+        `metadata.megjelenitett_meret` segéden át a megjelenített méretet
+        kérik. Ez a próba ezért továbbra is a TÁROLT értéket állítja, és
+        szándékosan marad zöld.
         """
         fajl = orientacios_jpeg(
             tmp_path / f"o{orientacio}.jpg", orientacio, meret=(60, 40)

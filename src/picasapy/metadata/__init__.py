@@ -16,6 +16,7 @@ from .reader import (
     ExifDetails,
     FileMetadata,
     read_exif_details,
+    megjelenitett_meret,
     read_file_metadata,
 )
 
@@ -31,6 +32,7 @@ __all__ = [
     "ExifDetails",
     "FileMetadata",
     "read_exif_details",
+    "megjelenitett_meret",
     "read_file_metadata",
     "write_iptc_caption",
     "write_iptc_keywords",
