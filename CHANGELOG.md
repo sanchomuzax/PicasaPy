@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.412] – 2026-09-11
+
+### Hozzáadva
+
+- **Képek biztonsági mentése — most már a felületről is** (#440). Az
+  Eszközök menü eddig helyőrző tétele megnyitja a mentés-készletek
+  ablakát: készlet létrehozása, módosítása, törlése (kérdéssel), a
+  mentés helyének kiválasztása és a három fájlszűrő (minden fájl · minden
+  kép videók nélkül · csak fényképezőgép-adatos JPEG-ek). A készlet
+  megjegyzi, mit mentett már el, tehát a következő futás csak az újat és
+  a megváltozottat viszi át — a mappaszerkezettel és a képek melletti
+  beállításfájllal együtt.
+
 ## [0.8.411] – 2026-09-11
 
 ### Javítva

@@ -9420,4 +9420,134 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>A jelszó törlése</translation>
     </message>
 </context>
+<context>
+    <name>BackupController</name>
+    <message>
+        <source>Give the backup set a name.</source>
+        <translation>Adj nevet a mentés-készletnek.</translation>
+    </message>
+    <message>
+        <source>Choose where to save the backup.</source>
+        <translation>Válaszd ki, hova mentsünk.</translation>
+    </message>
+    <message>
+        <source>Unknown file filter.</source>
+        <translation>Ismeretlen fájlszűrő.</translation>
+    </message>
+    <message>
+        <source>A backup set with this name already exists.</source>
+        <translation>Ilyen nevű mentés-készlet már van.</translation>
+    </message>
+    <message>
+        <source>The backup set could not be changed.</source>
+        <translation>A mentés-készletet nem sikerült módosítani.</translation>
+    </message>
+    <message>
+        <source>There is no such backup set.</source>
+        <translation>Nincs ilyen mentés-készlet.</translation>
+    </message>
+    <message>
+        <source>The backup did not finish: %1</source>
+        <translation>A mentés nem fejeződött be: %1</translation>
+    </message>
+</context>
+<context>
+    <name>BackupDialog</name>
+    <message>
+        <source>Back Up Pictures</source>
+        <translation>Képek biztonsági mentése</translation>
+    </message>
+    <message>
+        <source>All file types</source>
+        <translation>Minden fájltípus</translation>
+    </message>
+    <message>
+        <source>All pictures (no movies)</source>
+        <translation>Minden kép (videók nélkül)</translation>
+    </message>
+    <message>
+        <source>Only JPEGs with camera data</source>
+        <translation>Csak JPEG-ek fényképezőgép-adatokkal</translation>
+    </message>
+    <message>
+        <source>A backup set remembers where it saves and what it has already saved, so the next run only copies what is new.</source>
+        <translation>A mentés-készlet megjegyzi, hova ment és mit mentett már el, így a következő futás csak az újat másolja át.</translation>
+    </message>
+    <message>
+        <source>%1 — last run: %2</source>
+        <translation>%1 — utolsó futás: %2</translation>
+    </message>
+    <message>
+        <source>%1 — not run yet</source>
+        <translation>%1 — még nem futott</translation>
+    </message>
+    <message>
+        <source>No backup sets yet.</source>
+        <translation>Még nincs mentés-készlet.</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>Név:</translation>
+    </message>
+    <message>
+        <source>Save to:</source>
+        <translation>Mentés ide:</translation>
+    </message>
+    <message>
+        <source>Files:</source>
+        <translation>Fájlok:</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>New Set...</source>
+        <translation>Új készlet…</translation>
+    </message>
+    <message>
+        <source>Edit Set...</source>
+        <translation>Készlet módosítása…</translation>
+    </message>
+    <message>
+        <source>Delete Set</source>
+        <translation>Készlet törlése</translation>
+    </message>
+    <message>
+        <source>Delete this backup set? The saved files stay where they are.</source>
+        <translation>Törlöd ezt a mentés-készletet? Az elmentett fájlok a helyükön maradnak.</translation>
+    </message>
+    <message>
+        <source>Back Up</source>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>Copying %1 file(s)...</source>
+        <translation>%1 fájl másolása…</translation>
+    </message>
+    <message>
+        <source>Backup complete: %1 file(s).</source>
+        <translation>A mentés kész: %1 fájl.</translation>
+    </message>
+    <message>
+        <source>Everything was already backed up.</source>
+        <translation>Minden el volt már mentve.</translation>
+    </message>
+    <message>
+        <source>Choose the backup location</source>
+        <translation>Válaszd ki a mentés helyét</translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
 </TS>

@@ -1284,6 +1284,9 @@ ApplicationWindow {
             : fileOpsDialogs.ensure().openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
+        //: #440: a mentés-készletek párbeszéde — halasztva épül fel, mint a
+        //: többi ritkán nyitott ablak.
+        onBackupRequested: backupDialog.ensure().open()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
         // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
@@ -3451,6 +3454,12 @@ ApplicationWindow {
         id: moveDatabaseDialog
         anchors.fill: parent
         sourceComponent: Component { MoveDatabaseDialog { } }
+    }
+    // #440: Képek biztonsági mentése — mentés-készletek
+    DeferredDialog {
+        id: backupDialog
+        anchors.fill: parent
+        sourceComponent: Component { BackupDialog { } }
     }
     // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
     DeferredDialog {
