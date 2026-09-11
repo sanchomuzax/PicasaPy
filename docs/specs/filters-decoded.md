@@ -1453,6 +1453,42 @@ kódban a csonkolt, 0,572-es modell fut. A kiugró kép (Utopic Unicorn)
 **Ami NYITVA marad:** a 0,572 maradékának forrása (JPEG-újratömörítés kontra
 modell-hiba) nincs szétválasztva.
 
+### ✅ FRISS MÉRÉS A MAI KÓDON — a #539 mind a négy feltétele teljesül (2026-09-11, 280. kör, #2940)
+
+*A #539 törzse 26 napig azt írta, hogy „fix 0,5 % / 0,2 % percentillel
+közelítjük" és 5,48 az eltérés. A kód ma mást csinál — ezt a szakasz saját,
+friss méréssel mondja ki, nem a docstringre hivatkozva (a komment nem
+bizonyíték).*
+
+*Forrás: `src/picasapy/render/ops.py:61` (`_LEVELS_CLIP_RATIO = 0.005`) ·
+`src/picasapy/render/ops.py:144` (a kumulált darabszám keresése).*
+
+**Kontroll-pozitív:** az érintetlen (feldolgozatlan) kép átlagos
+csatorna-eltérése **10,346** — betűre az az érték, amit a korábbi kör
+mért. A mérőlánc (betöltés, színsorrend, párosítás) tehát helyes; enélkül a
+többi szám semmit nem érne.
+
+| a #539 elfogadási feltétele | a jegy szerint „ma" | **MÉRVE (2026-09-11)** | ✓ |
+|---|---:|---:|:--:|
+| a 12 pár átlaga **2 alá** megy | 5,48 | **0,572** | ✅ |
+| a kiugró kép érdemben csökken | 46,0 | **0,521** | ✅ |
+| a már jó képek nem romlanak | 1,80 (11 kép) | **0,508** (11 kép) | ✅ |
+| az azonosság-eset bájtra pontos | — | **1/1** | ✅ |
+
+⭐ **A kiugró kép már nem a „Utopic Unicorn".** Az 46,0-ről **0,521**-re
+esett, és a mai legnagyobb eltérés a „Sunny Autumn" **1,269**-cel — ami
+szintén a 2-es küszöb alatt van. A 12 kép teljes sora, csökkenő eltérés
+szerint: 1,269 · 0,771 · 0,733 · 0,641 · 0,640 · 0,604 · 0,598 · 0,521 ·
+0,487 · 0,401 · 0,196 · 0,000.
+
+**Az azonosság-eset pontos alakja:** a 12 párból **egyen** nem változtatott
+maga a Picasa sem (`Night Seascape`), és azon a mi kimenetünk is **bájtra
+azonos** a bemenettel. A többi tizenegyen a Picasa igenis húzott, tehát ott
+az azonosság nem elvárás.
+
+⇒ **A #539 érdemben elkészült** (a #535 + #721 körök nyomán); a jegyen csak a
+törzs maradt elavult. A jegy lezárva, a törzse és a címe javítva.
+
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:
