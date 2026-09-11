@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.418] – 2026-09-11
+
+### Javítva
+
+- **Újra elkészül a windowsos indítóikon** (#3021). A telepítő eddig két
+  külön döntést hozott: a programot a gépen talált Pythonok közül
+  tartalékkal telepítette, az Asztalra és a Start menübe kerülő
+  parancsikon útvonalát viszont egyetlen, beégetett verziótól kérdezte
+  meg. Ha az a verzió eltűnt a gépről, a telepítés sikerrel lefutott, a
+  parancsikon viszont némán elmaradt vagy a régi helyre mutatott.
+  Mostantól a telepítő az elején kiválaszt EGY értelmezőt, és mindent
+  abból kérdez. ⚠️ A te gépeden ez még nincs ellenőrizve; a jelenség
+  okát a #3021 nyitott kérdései tisztázzák.
+
 ## [0.8.417] – 2026-09-11
 
 ### Javítva
