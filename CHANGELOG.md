@@ -9,11 +9,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Változott
 
-- **A feliratbeillesztés a teljes kijelölésen végigfut** (#2915). Több képet
-  kijelölve a „Szöveg beillesztése" eddig képenként külön háttérszálat
-  indított; ugyanabba a mappa-ini-be írva ez versenyhelyzet volt, és a
-  kijelölés egy része felirat nélkül maradhatott. Mostantól egyetlen soros
-  köteg fut, ami a hálózati tárat is kíméli.
 - **A vágó, a vörösszem és a retusálás útmutató szövege az eredeti Picasa
   teljes szövege** (#901). Eddig rövidített vagy átfogalmazott változat állt
   ott: a vörösszemnél lemaradt, hogyan fejezed be a kijelölést, a
@@ -119,6 +114,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   van, és a zöld sáv „Vissza az összes megtekintéséhez" gombja vezet ki
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
+
+## [0.8.385] – 2026-09-11
+
+### Javítva
+
+- **A feliratbeillesztés a teljes kijelölésen végigfut** (#2915). Több képet
+  kijelölve a „Szöveg beillesztése" eddig képenként külön háttérszálat
+  indított; ugyanabba a mappa-ini-be írva ez versenyhelyzet volt, és a
+  kijelölés egy része felirat nélkül maradhatott. Mostantól egyetlen soros
+  köteg fut, ami a hálózati tárat is kíméli.
 
 ## [0.8.384] – 2026-09-10
 
