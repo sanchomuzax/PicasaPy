@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.406] – 2026-09-11
+
+### Javítva
+
+- **Az „Indexképek megjelenítése a könyvtárban" végre mutat is fotó-kupacot**
+  (#2984). A bal hasáb bekapcsolt kapcsolóval is a sárga mappaikont mutatta:
+  a borítót összeállító lekérdezés a fotórekord egy nem létező mezőjét
+  olvasta, és a hiba némán „nincs borító"-vá alakult. A lekérdezés mostantól
+  önálló, tesztelhető függvény — a korábbi őrök helyette kitalált adatot
+  adtak be, ezért nem vették észre a hibát.
+
 ## [0.8.405] – 2026-09-11
 
 ### Változott
@@ -23,12 +34,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 
-- **Windowson végre megjelennek a mappa-borítók** (#2983). A bal hasábon és a
-  mappafában egyetlen mappa sem mutatta a fotóiból összeálló kis képhalmot, és
-  a program minden sorra hibát írt a naplóba. Az ok: a windowsos útvonalak
-  visszaperét a Qt kódolt alakban (`%5C`) adta át a borító-előállítónak, az
-  pedig így nem találta meg a mappát. Linuxon ez nem látszott, mert ott az
-  útvonalban nincs visszaper.
+- **A mappa-borító azonosítójában a kódolt visszaper feloldva** (#2983).
+  Windowson a `C:\…` útvonalak visszapere `%5C`-ként érkezett a
+  borító-előállítóhoz, ami így nem találta meg a mappát.
+
+  > ⚠️ **HELYESBÍTÉS.** Itt eredetileg az állt, hogy ezzel „végre
+  > megjelennek a mappa-borítók” — **ez megalapozatlan volt**, és a
+  > tulajdonos gépén nem teljesült. A kódolási hiba valós, de a borítók
+  > hiányát nem ez okozta: a lekérdezés egy nem létező mezőt olvasott,
+  > ld. a 0.8.405 alatt (#2984).
 - **A napló nem telik meg hibával olyan sorokra, amiknek nincs is borítójuk**
   (#2983). A mappafa köztes szintjei (például a `C:` vagy a hálózati
   gépnév) nem tartalmaznak fotót; ezekre eddig is elindult a borító-kérés, és
