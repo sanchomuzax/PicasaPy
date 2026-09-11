@@ -34,12 +34,6 @@ Item {
     // komponens magasságát is, ezért felülírhatónak kell lennie.
     property int rowHeight: 22
 
-    // #2049: „Indexképek megjelenítése a könyvtárban" — a fasorok fotó-kupac
-    // borítója. A `!== undefined` a próbák stub-vezérlőjére véd (#1572).
-    property bool albumThumbs:
-        (root.hierarchy && root.hierarchy.albumThumbs !== undefined)
-            ? root.hierarchy.albumThumbs : false
-
     signal folderChosen(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
@@ -127,26 +121,28 @@ Item {
                     }
                 }
 
-                // #2049: az eredeti a fasorokon nem sárga mappaikont mutat,
-                // hanem a mappa első legfeljebb négy fotójából
-                // összeállított kis kupacot — de CSAK ha az „Indexképek
-                // megjelenítése a könyvtárban" be van kapcsolva
-                // (`ShowAlbumThumbnails2`, alapérték 0). Ha nincs borító
+                // #2049/#2989: az eredeti a fasorokon nem sárga
+                // mappaikont mutat, hanem a mappa ELSŐ fotójának kis
+                // bélyegképét.
+                //
+                // ⚠️ #2989: a fában ez NEM a kapcsolótól függ. A tulajdonos
+                // 3. felvételén (`research/#2984-indexkepek-mappa-ikonokon/`)
+                // a menütétel SZÜRKE, a bélyegképek mégis ott vannak —
+                // tehát a `ShowAlbumThumbnails2` kizárólag az egydimenziós
+                // listára vonatkozik (`FolderPane.qml`). Ha nincs borító
                 // (kép nélküli mappa), a sor a mappaikonjára esik vissza:
                 // az eredeti is helyettesítő ikonokat sorol fel erre az
                 // esetre (`0x00761870`: `icons/folder`, `icons/album`, …).
                 Item {
                     objectName: "hierFolderCover:" + row.modelData.path
                     visible: !row.isRoot
-                    // #2215: a hely a KUPAC arányához igazodik. A 13
-                    // képpont a mappaikon mérete; a kupac ennél szélesebb
-                    // lehet — mérve 78×62, 84×77, 80×73 (a #2049 kommentje
-                    // fordítva tudta: „magasabb, mint széles"). Fix 13-mal
-                    // a mappanév ráfolyt volna a kupacra.
-                    width: boritoLatszik && borito.implicitHeight > 0
-                        ? Math.max(13, Math.ceil(
-                            height * borito.implicitWidth / borito.implicitHeight))
-                        : 13
+                    // #2989: a hely FIX, a mért 17 × 15 arányában — a kép
+                    // aránytartón fér bele. Az eredetin minden sor ikonja
+                    // ugyanabban a dobozban ül (a szélesebb képernyőkép
+                    // 17 × 12 lett, nem 21 × 15), tehát a nevek EGY
+                    // vonalban kezdődnek.
+                    readonly property int ikonDoboz: Math.round(height * 17 / 15)
+                    width: boritoLatszik ? ikonDoboz : 13
                     height: root.rowHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -158,8 +154,7 @@ Item {
                     // méret-ellenőrzés pedig második védelem arra az
                     // esetre, ha valaki visszahozná a helyettesítő képet.
                     readonly property bool boritoLatszik:
-                        root.albumThumbs
-                        && borito.status === Image.Ready
+                        borito.status === Image.Ready
                         && borito.implicitWidth > 1
 
                     FolderIcon {
@@ -173,14 +168,15 @@ Item {
                         id: borito
                         objectName: "hierFolderCoverImage:" + row.modelData.path
                         anchors.centerIn: parent
-                        // A kupac magasabb, mint széles; a fasor magassága
-                        // szabja meg, a szélessége ehhez igazodik.
+                        // #2989: a kép a doboz MINDKÉT méretébe belefér,
+                        // aránytartón — a fekvő kép alacsonyabb lesz.
+                        width: parent.ikonDoboz
                         height: parent.height
                         fillMode: Image.PreserveAspectFit
                         visible: parent.boritoLatszik
                         asynchronous: true
-                        // ⚠️ Üres forrással a `status` `Null` marad, tehát a
-                        // kikapcsolt állapotban NEM készül borító: a
+                        // ⚠️ Üres forrással a `status` `Null` marad, tehát
+                        // útvonal nélküli sorra NEM készül kép: a
                         // szolgáltató meg sem szólal.
                         //
                         // #2983: a SAJÁT fotószám is feltétel. A szintetikus
@@ -191,8 +187,7 @@ Item {
                         // naplósort írt a felhasználó konzoljára. A
                         // `count` erre NEM jó: az a RÉSZFA összege, tehát egy
                         // fotó nélküli köztes szinten is pozitív.
-                        source: (root.albumThumbs
-                                 && row.modelData.path !== ""
+                        source: (row.modelData.path !== ""
                                  && row.modelData.own > 0)
                                 ? "image://foldercover/" + row.modelData.path
                                 : ""

@@ -1,8 +1,12 @@
 """#2049: az `image://foldercover/<mappa>` szolgáltató.
 
-A kupac mértanát a `tests/thumbs/test_album_borito_2049.py` méri; itt az
-a kérdés, hogy a mappa fájljaiból tényleg összeáll-e egy kép, és hogy a
-hibás bemenet NEM dönti-e le a felületet.
+Itt az a kérdés, hogy a mappa fájljaiból tényleg összeáll-e egy kép, és
+hogy a hibás bemenet NEM dönti-e le a felületet.
+
+⚠️ **A #2989 óta ez a szolgáltató EGYETLEN bélyegképet ad, nem kupacot** —
+az alakra vonatkozó állítások a `test_mappa_borito_egy_kep_2989.py`-ban
+vannak. A kupac-rajzoló saját mérése a
+`tests/thumbs/test_album_borito_2049.py`-ban él tovább.
 """
 
 from __future__ import annotations
@@ -29,12 +33,12 @@ class TestABoritoOsszeall:
         borito = keszits_mappa_boritot(str(tmp_path / "m"), fajlok)
         assert borito is not None and borito.shape[2] == 4
 
-    def test_legfeljebb_negy_lap_kerul_bele(self, tmp_path):
-        """Hat fájlból is négylapos kupac lesz — a lista ELEJE számít."""
+    def test_a_lista_ELEJE_szamit(self, tmp_path):
+        """Hat fájlból is ugyanaz az ikon, mint az elsőből (#2989)."""
         sok = _mappa_kepekkel(tmp_path / "m", 6)
-        negy = keszits_mappa_boritot(str(tmp_path / "m"), sok)
-        ugyanaz = keszits_mappa_boritot(str(tmp_path / "m"), sok[:4])
-        assert negy.shape == ugyanaz.shape
+        hatbol = keszits_mappa_boritot(str(tmp_path / "m"), sok)
+        egybol = keszits_mappa_boritot(str(tmp_path / "m"), sok[:1])
+        assert hatbol.shape == egybol.shape
 
     def test_kep_nelkuli_mappara_nincs_borito(self, tmp_path):
         assert keszits_mappa_boritot(str(tmp_path), []) is None
@@ -46,7 +50,7 @@ class TestABoritoOsszeall:
         romlott.write_bytes(b"ez nem JPEG")
         jo = _mappa_kepekkel(mappa, 1)
         borito = keszits_mappa_boritot(str(mappa), [romlott, *jo])
-        assert borito is not None, "a romlott fájl elnyelte a jó lapot is"
+        assert borito is not None, "a romlott fájl elnyelte a jó képet is"
 
     def test_csak_romlott_fajlokra_nincs_borito(self, tmp_path):
         rossz = tmp_path / "x.jpg"
