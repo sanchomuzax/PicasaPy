@@ -11,6 +11,32 @@ Item {
     id: player
     property url source: ""
 
+    //: #1838: a Picasából örökölt VÁGÁSPONTOK ezredmásodpercben. A **−1
+    //: jelenti, hogy azon az oldalon nincs vágás** — nem 0 és nem a hossz.
+    //: Az eredeti a `video_control_bar/setin`/`setout` gombokkal állítja
+    //: őket, és a `filters=` lánc `moviestart`/`movieend` tokenjében tárolja
+    //: (100 ns-os egységben, ld. `ini/movie_trim.py`).
+    //:
+    //: ⚠️ A vágás nálunk ma CSAK a lejátszásra hat: a fájlt nem alakítjuk át,
+    //: és a pontokat a felületen még nem lehet ÁLLÍTANI — az a #1838 további
+    //: része. Ami már most számít: egy Picasából örökölt klip a megfelelő
+    //: helyen indul és ott áll meg, nem a nyers fájl elején-végén.
+    property int trimStartMs: -1
+    property int trimEndMs: -1
+
+    readonly property bool trimmed: trimStartMs >= 0 || trimEndMs >= 0
+    //: a lejátszható szakasz — a vágás nélküli oldalon a fájl határa
+    readonly property int playFromMs: Math.max(0, trimStartMs)
+    readonly property int playToMs: trimEndMs >= 0
+        ? trimEndMs : Math.max(1, media.duration)
+
+    //: a vágás kezdetére ugrás — a betöltés UTÁN, mert a `position` írása
+    //: üres médián elveszik
+    function seekToTrimStart() {
+        if (player.trimStartMs > 0 && media.duration > 0)
+            media.position = Math.min(player.trimStartMs, media.duration)
+    }
+
     // Bezárásnál/navigálásnál a Loader elereszti a komponenst, a lejátszás
     // vele áll le — külön stop-kezelés nem kell.
     MediaPlayer {
@@ -24,6 +50,15 @@ Item {
         // különben árnyékolná a MediaPlayer id-ját.
         onSourceChanged: () => {
             if (String(media.source).length > 0) media.play()
+        }
+        //: #1838: a hossz csak a betöltés után ismert — a kezdőpontra ekkor
+        //: tudunk ugrani (előbb a `position` írása elveszik)
+        onDurationChanged: () => player.seekToTrimStart()
+        //: a kimeneti pont: ott megállunk, mintha a klip véget érne. A
+        //: vágáson TÚLI szakaszt nem játsszuk le — az eredeti sem teszi.
+        onPositionChanged: () => {
+            if (player.trimEndMs >= 0 && media.position > player.trimEndMs)
+                media.pause()
         }
         Component.onCompleted: () => {
             if (String(media.source).length > 0) media.play()
@@ -86,8 +121,12 @@ Item {
                 id: seek
                 objectName: "videoSeekSlider"
                 Layout.fillWidth: true
-                from: 0
-                to: Math.max(1, media.duration)
+                //: #1838: a csúszka a VÁGOTT szakaszra szorítva — a vágáson
+                //: kívüli részre a felhasználó se tudjon odatekerni (vágás
+                //: nélkül a szakasz a fájl eleje…vége, tehát a viselkedés a
+                //: #1838 előtti)
+                from: player.playFromMs
+                to: Math.max(player.playFromMs + 1, player.playToMs)
                 onMoved: media.position = value
                 // húzás közben a kéz vezet; egyébként a lejátszás-pozíció
                 Binding on value {
