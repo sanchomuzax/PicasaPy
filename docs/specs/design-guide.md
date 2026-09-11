@@ -67,7 +67,7 @@ eltérés van, ez a mérvadó. Az eddigi mintavételünket **megerősítik**
 | `alayout_titleOffsetX` | 28 | a cím bal behúzása |
 | `alayout_bodyFont` / `Size` | Georgia / 14 | **a dátumsor is Georgia** ✅ |
 | `thumbsel_color1` / `color2` | `#009EFF` / `#FFFFFF` | **a kijelölt indexkép kerete KÉTSZÍNŰ**: kívül azúr, belül fehér — a mostani egyszínű keretünk ezzel pontosítható |
-| `publishtoweb_color` | `#0000FF` | a „Feltöltés a webre" hivatkozás színe |
+| `publishtoweb_color` | `#0000FF` | ⛔ **HALOTT kulcs** (#2830): a `publishtoweb` név a teljes telepítésben csak itt, a definícióban szerepel — nincs fogyasztója, tehát a hivatkozás-szín olvasat a NÉVBŐL jött, nem mérésből. Hatókörön kívüli |
 
 Két tanulság: (1) a mappalista **három** kékárnyalattal dolgozik
 (hover `#83A7BD`, kijelölés `#25648B`, húzás `#82A6BD`), nem eggyel;
