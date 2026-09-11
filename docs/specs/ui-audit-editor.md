@@ -2841,3 +2841,78 @@ A `preview2` ugyanabba a csoportba tartozik, mint az `aa_2up_toggle`,
 **Bizonyítottsági fok: megerősített** — a `.tre`-sorok és a
 sztring-hivatkozások közvetlen kiolvasás; a be-/visszakapcsoló két címe
 diszasszemblált.
+
+## ⛳ A 4.2 MEGERŐSÍTVE, teljes szülő-lánccal — és a hat `editcontrols` NEM második készlet (2026-09-11, 292. kör, #710)
+
+A #710 az egész összevonást a 4.2 szakasz állítására építi („az alpanel és a
+Finomhangolás fül **ugyanaz** a vezérlőkészlet"). Mielőtt bárki két QML-fájlt
+egyesít, ez a szakasz **forrásból** igazolja — és két pontatlanságot
+helyesbít.
+
+### A szülő-lánc, sorszámmal
+
+```
+editpanel/editcontrols        : root                      (:1230)
+  editpanel/editcontrol_well  : editpanel/editcontrols    (:664)
+```
+
+A Finomhangolás fül pontosan a **well**-t jeleníti meg:
+
+```
+editpanel/tab2: editpanel/tabs                            (:253)
+  Property showtarget editpanel/editcontrol_well          (:254)
+  Property showtarget editpanel/tabpanel2                 (:255)
+```
+
+⇒ **A 4.2 állítása MÉRT, nem értelmezés.**
+
+### A well **17** közvetlen gyermeke — teljes lista
+
+| sor | elem | | sor | elem |
+|---:|---|---|---:|---|
+| 501 | `eraserbutton` | | 570 | `editlabel4` |
+| 513 | `editcheckbox1` | | 579 | `editslider4_container` |
+| 523 | `editcheckbox2` | | 590 | `editcircle1_well` |
+| 531 | `editlabel1` | | 594 | `editcircle1` |
+| 540 | `editslider1_container` | | 598 | `droppertoggle` |
+| 544 | `editlabel2` | | 607 | `ok` |
+| 553 | `editslider2_container` | | 621 | `cancel` |
+| 557 | `editlabel3` | | 659 | `colorwheel_container` |
+| 566 | `editslider3_container` | | | |
+
+### ⛔ Hat további `showtarget editpanel/editcontrols` — és NEM készlet
+
+A fájlban a `editcontrols` **hatszor** áll `showtarget`-ként. Egyik sem
+második vezérlőkészlet: mind a hat az **eszközpanelek Alkalmaz/Mégse
+gombja**, amely a munka végén **visszanavigál** a szerkesztő-vezérlőkre —
+tehát a well **szülőjét** mutatja meg, nem a wellt.
+
+| sor | gazda | szülő |
+|---:|---|---|
+| 726 | `editpanel/redeyeapply` | `redeye_well` |
+| 743 | `editpanel/redeyecancel` | `redeye_well` |
+| 814 | `editpanel/cropcancel` | `crop_well` |
+| 826 | `editpanel/cropapply` | `crop_well` |
+| 900 | `editpanel/retouchapply` | `retouch_well` |
+| 912 | `editpanel/retouchcancel` | `retouch_well` |
+
+*Forrás: `editpanel.tre:726` · `:743` · `:814` · `:826` · `:900` · `:912`.*
+
+*(A `editcontrols` közvetlen gyermeke egyébként **12**: a három
+előzmény-gomb (`filter_undo`, `filter_redo`, `writetodisk`), az öt
+`tabpanel1..5`, a `movietabpanel`, és maga a `editcontrol_well`.)*
+
+### Két helyesbítés a 4.2 forrásmegjelöléséhez
+
+1. a `editpanel/colorwheel0` szülője **nem** a well, hanem a
+   `colorwheel_container` (`:640`), ami viszont a well gyermeke (`:659`) —
+   a szakasz a 640-es sort a wellhez kötötte, egy szinttel feljebb;
+2. az `editlabel5`/`editlabel6` a **jelölőnégyzetek** gyermeke (`:508`,
+   `:518`), nem a wellé.
+
+Egyik sem érinti a 4.2 következtetését; a táblázat darabszámai
+(4 csúszka · 2 jelölőnégyzet · 2 színkorong · pipetta · radír · OK/Mégse)
+a fenti listával **egyeznek**.
+
+*Forrás: `referencia/tre-eroforrasok/editpanel.tre` (1455 sor), a fenti
+sorszámok mind onnan.*
