@@ -123,6 +123,16 @@ Balról jobbra, ahogy a felvételen mérve áll:
 
 ## 4. A „paletta-ikonos gomb" = **`editpanel/quickupload`** (#1905/2)
 
+⛔ **TULAJDONOSI DÖNTÉS (2026-09-10, #1935): ez a gomb NEM épül meg — se élőn,
+se szürkén.** A tulajdonos szava: *„Ez egy nem működő, hibás funkcióra vezető
+gomb. Jelenleg ne implementáljuk, csak dokumentáljuk, ha majd lesz újra
+bármiféle »Feltöltés a Webalbumok Főalbum mappájába« szerű funkció."* Ez
+felülírja a 2026-09-05-i „legyenek ott szürkén" döntést. Az alábbi mérés
+SZÁNDÉKOSAN marad itt: ha a funkció visszatér, ebből egy kör alatt
+megépíthető. A döntés lapja:
+[`nincs-webalbum-feltoltes-gomb.md`](../decisions/nincs-webalbum-feltoltes-gomb.md)
+(ADR-012); az őr: `tests/app/test_nincs_webalbum_feltolto_gomb_1935.py`.
+
 A #1905 „paletta-ikonos gombnak" nevezte. **Nem paletta:** a 23 × 15-ös
 ikon egy **hármas fénykép-pakli, előtte zöld FELFELÉ nyíllal** — a
 `respack.yt` `layer:editpanel/quickupload-icon` rétege képpontra ugyanaz,
