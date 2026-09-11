@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.393] – 2026-09-11
+
+### Változott
+
+- **A vignetta lágyulása a Picasa levezetett sugarát használja** (#2159). Az
+  eddigi érték illesztés volt (valódi exportokhoz hangolt szám); most a natív
+  lánc végigszámolásából jön, és 1–2 százalékon belül ugyanazt adja — a
+  vignetta tehát nem látszik másnak, de már nem szabad paraméter. Négy mért
+  esetből háromban kicsit pontosabb is.
+
 ## [0.8.392] – 2026-09-11
 
 ### Javítva

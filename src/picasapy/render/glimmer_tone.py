@@ -18,6 +18,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import math
+
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
     adjust_curves,
@@ -58,11 +60,85 @@ from picasapy.render.glimmer_ops import (
 #: mért, ott érvényes marad (#518).
 VIGNETTE_RADIUS_FACTOR = 0.02 / 8.0
 
+#: A `filterdesc.xml` `xblur`-képlete: `Blur · 0,02 · max(W,H) / 4`
+#: (`filterdesc-registry.md` 4.3). A mi sugarunk ennek a FELE — és a #2159
+#: levezetése szerint ez nem illesztés, hanem következmény (ld. lentebb).
+VIGNETTE_XBLUR_FACTOR = 0.02 / 4.0
+
+#: A natív blur-átváltó (`0x00bb89b0`) korlátja és a maszképítő vágása.
+_ATVALTO_KORLAT = 255.0
+_MASZK_VAGAS = 253.0
+
+
+def blur_atvalto(blur_px: float, meret: float) -> float:
+    """A natív `0x00bb89b0` — a Glow MUNKAPUFFERÉNEK léptéke (#2159).
+
+    Kiolvasott, zárt alak (`filterdesc-registry.md`, „A blur ÁTVÁLTÓJA"):
+
+    ```
+    p' = min(p, 255)
+    k  = p' / p
+    X  = ((100 + d) − d·k) / p'
+    f  = (X > 3) ? k : k·X/3
+    ```
+
+    ⚠️ A visszatérés NEM azonosság: az egyetlen hívó (`0x00bb8f70`) ezzel
+    szorozza a kép szélességét, tehát a ragyogás **lekicsinyített** képen
+    készül. A `Vignette` `xblur`-je a referenciaképen 448 (Blur 35) és 640
+    (Blur 50) — mindkettő a `p ≥ 255` ágon, ahol `f = 255/p`.
+    """
+    if blur_px <= 0:
+        blur_px = 1e-05
+    vagott = min(blur_px, _ATVALTO_KORLAT)
+    k = vagott / blur_px
+    x = ((100.0 + meret) - meret * k) / vagott
+    return k if x > 3.0 else k * x / 3.0
+
+
+def vignette_radius(blur: float, width: int, height: int) -> float:
+    """A `Vignette` ragyogás-sugara — LEVEZETVE, nem illesztve (#2159).
+
+    A lánc végigszámolható: a `filterdesc` `xblur`-je (`p`) átmegy a
+    `blur_atvalto`-n (`f`), a maszképítő a **lekicsinyített** térben
+    `[1, 253]`-ra vág, és menetenkénti dobozsugarat számol
+    (`rp = ⌈(min(p·f, 253) − 1) / 2⌉`); teljes felbontásba visszaváltva ez
+    `rp / f`.
+
+    A referenciaképen (2560 × 1702) ez **221,4** (Blur 35) és **316,2**
+    (Blur 50) — az eddig ILLESZTETT `Blur · 0,02 · max(W,H) / 8` ugyanitt
+    224,0 és 320,0. A két érték 1–2 %-ra egyezik, és az egyezés nem
+    véletlen: `p/2 = ⌈(p−1)/2⌉` egész `p`-re, vagyis a régi „felezés"
+    pontosan az eredeti menetenkénti dobozsugara volt.
+
+    ⚠️ Az `f`-et a SZÉLESSÉGGEL számoljuk (a natív hívó az `xblur`-höz a
+    képszélességet adja); a sugarat mindkét tengelyre ugyanezt használjuk,
+    ahogy a `filterdesc` is egyetlen `Blur` csúszkából származtatja
+    mindkettőt.
+
+    Mérve a nyolc valódi exporton (`referencia/vignette/`, CIE76-átlag ΔE):
+    a levezetett sugár a `default`, `size max`, `strenght max` és
+    `strenght min` esetben javít (0,700 → 0,676 · 0,909 → 0,862 ·
+    0,695 → 0,687 · 0,628 → 0,626), a két FELTEVÉSEN alapuló
+    csúszkaálláson (`strenght mid`, `fade mid`) 0,003–0,005-tel ront —
+    hat eset átlaga **0,724 → 0,712**.
+    """
+    xblur = blur * VIGNETTE_XBLUR_FACTOR * max(width, height)
+    if xblur <= 0:
+        return 0.0
+    f = blur_atvalto(xblur, float(width))
+    lekicsinyitett = min(xblur * f, _MASZK_VAGAS)
+    dobozsugar = math.ceil((lekicsinyitett - 1.0) / 2.0)
+    return dobozsugar / f
+
 
 def _glow_vignette(image, blur, strength, color, fade):
     validate_image(image)
     height, width = image.shape[:2]
-    radius = blur * VIGNETTE_RADIUS_FACTOR * max(height, width)
+    #: #2159: LEVEZETETT sugár (`vignette_radius`), nem az illesztett
+    #: `VIGNETTE_RADIUS_FACTOR`. A konstans megmarad, mert a Múzeumi matt
+    #: ragyogása a saját, FÜGGETLEN mérésén (`referencia/museummatte/`)
+    #: nyugszik — azt ez a jegy nem érinti.
+    radius = vignette_radius(blur, width, height)
     glowed = inner_glow(image, color, radius, radius, strength, alpha=1.0)
     return to_uint8(alpha_blend(to_float(image), to_float(glowed), fade_alpha(fade)))
 
@@ -72,13 +148,14 @@ def apply_vignette(
 ):
     """`Vignette=1,Blur,Strength,Fade,szín` — belső, fekete ragyogás a szélektől.
 
-    Blur `[0..50]` (alap 35), Strength `[1..2]` (alap 1,4), `xblur=yblur =
-    Blur·0,02·max(W,H)/**8**` (`filterdesc-registry.md` 4.3).
+    Blur `[0..50]` (alap 35), Strength `[1..2]` (alap 1,4).
 
-    #2159: a docstring korábban `/4`-et írt, a `VIGNETTE_RADIUS_FACTOR`
-    viszont `0.02 / 8.0` — és a konstans fölötti komment a **/8**-at
-    indokolja, valódi Picasa-exportokon mért illesztéssel (Blur=35 → σ≈220,
-    Blur=50 → σ≈310–320). A szöveg tévedett, nem a szám.
+    A sugár a `vignette_radius` LEVEZETETT értéke (#2159): a `filterdesc`
+    `xblur`-je (`Blur·0,02·max(W,H)/4`) átmegy a natív blur-átváltón
+    (`0x00bb89b0`), a maszképítő a **lekicsinyített** térben `[1, 253]`-ra
+    vág, és menetenkénti dobozsugarat számol. A korábbi `/8`-as alak
+    ugyanennek az ILLESZTETT közelítése volt (1–2 %-ra egyezik) — a
+    levezetés ezt váltja ki, nem a mérés cáfolta.
     """
     return _glow_vignette(image, blur, strength, color, fade)
 
