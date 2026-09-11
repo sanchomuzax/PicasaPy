@@ -10,6 +10,8 @@ csővezetéke (`glimmer_frames.py`).
 
 from __future__ import annotations
 
+import math
+
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
@@ -116,6 +118,51 @@ def draw_border(
     return add_caption(ring, caption_height_px, outer_color)
 
 
+#: #649/#626: a `DropShadowImageOperation` (`0x00bbb720`) DÖNTETLEN-ELDÖNTŐ
+#: eltolásai. A natív kód az árnyék eltolását így számolja:
+#:
+#:     dx = round( (cosf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
+#:     dy = round( (sinf(szög·π/180) + 6.7e-06f) · távolság + 0.001825f )
+#:
+#: A két apró szám NEM paraméter: az egész értékhez közeli eseteknél dönti
+#: el, merre billen a kerekítés (`docs/specs/filterdesc-registry.md` 4.11).
+_SHADOW_TIE_SLOPE = 6.7e-06
+_SHADOW_TIE_OFFSET = 0.001825
+
+
+def _c_round(value: float) -> int:
+    """A C `round()`-ja: a felet a nullától ELFELÉ kerekíti.
+
+    ⚠️ A Python `round()` bankári kerekítést végez (`round(0.5) == 0`),
+    tehát a natív képletet vele nem lehet reprodukálni — épp a döntetlen
+    eseteknél térne el, amikre a fenti két konstans készült."""
+    return (
+        int(math.floor(value + 0.5))
+        if value >= 0
+        else -int(math.floor(-value + 0.5))
+    )
+
+
+def shadow_offset(distance_px: float, angle: float) -> tuple[int, int]:
+    """Az árnyék (dx, dy) eltolása a MÉRT natív képlettel (#649).
+
+    A korábbi alak a döntetlen-igazítás nélkül, Python-kerekítéssel számolt:
+    a 12 × 360 (távolság, szög) kombinációból **42**-nél adott más értéket —
+    például 1 képpont távolságnál 30°-on `(1, 0)` helyett a natív `(1, 1)`.
+    """
+    radian = math.radians(angle)
+    return (
+        _c_round(
+            (math.cos(radian) + _SHADOW_TIE_SLOPE) * distance_px
+            + _SHADOW_TIE_OFFSET
+        ),
+        _c_round(
+            (math.sin(radian) + _SHADOW_TIE_SLOPE) * distance_px
+            + _SHADOW_TIE_OFFSET
+        ),
+    )
+
+
 def compose_drop_shadow(
     image: np.ndarray,
     shadow_color: tuple[int, int, int],
@@ -137,9 +184,7 @@ def compose_drop_shadow(
     canvas = np.empty((canvas_h, canvas_w, 3), dtype=np.float32)
     canvas[:] = np.array(background_color, dtype=np.float32)
 
-    angle_rad = np.deg2rad(angle)
-    offset_x = int(round(distance_px * float(np.cos(angle_rad))))
-    offset_y = int(round(distance_px * float(np.sin(angle_rad))))
+    offset_x, offset_y = shadow_offset(distance_px, angle)
     shadow_layer = np.zeros((canvas_h, canvas_w), dtype=np.float32)
     top = margin + offset_y
     left = margin + offset_x
@@ -233,6 +278,7 @@ __all__ = [
     "add_caption",
     "draw_border",
     "compose_drop_shadow",
+    "shadow_offset",
     "draw_drop_shadow",
     "rotate_with_pad",
 ]

@@ -115,6 +115,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.392] – 2026-09-11
+
+### Javítva
+
+- **A vetett árnyék egy képpontnyi eltolása a Picasa szerint dől el** (#649).
+  A natív kód két apró számmal (`6,7e−06` és `0,001825`) dönti el, merre
+  billen a kerekítés az egészhez közeli szögeknél; nálunk ez kimaradt, és a
+  Python bankári kerekítése épp ezekben az esetekben tért el. A 12 × 360
+  szög-távolság kombinációból 42-nél volt más az árnyék helye.
+
+### Változott
+
+- **A README pontosabban írja le a Picasával való együttélést** (#649): a
+  kétirányú kompatibilitás áll, de az éppen **futó** Picasa nem olvassa újra a
+  `.picasa.ini`-t — a PicasaPy-ben végzett módosítás ott a mappa
+  újraolvasása vagy újraindítás után jelenik meg. Ez mért korlát, nem
+  feltevés.
+
 ## [0.8.391] – 2026-09-11
 
 ### Javítva
