@@ -213,7 +213,7 @@ Window {
             }
             // #441: a korábbi importok listája — az eredeti legördülője is
             // ezt kínálta a „Choose…" mellett (`LastImport…`)
-            ComboBox {
+            PicasaComboBox {
                 objectName: "importSourceRecentBox"
                 Layout.preferredWidth: 180
                 visible: model.length > 0
@@ -245,7 +245,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 objectName: "importSourceMediaFilterBox"
                 Layout.preferredWidth: 220
                 readonly property var filterKeys:
@@ -509,7 +509,7 @@ Window {
             // Nálunk a FORRÁSÉVAL AZONOS legördülő adja az első kettőt (az
             // alapértelmezett hely az utolsó tétel), a „Tallózás…" pedig a
             // mellette álló gomb — így a szakaszhatár is látszik.
-            ComboBox {
+            PicasaComboBox {
                 id: destRecentBox
                 objectName: "importSourceRecentDestBox"
                 Layout.preferredWidth: 180
@@ -538,7 +538,7 @@ Window {
             // #1555: ÁTMÉRETEZÉS importáláskor — öt kizáró opció, a mért
             // képpontértékekkel (0 = eredeti méret). A tárolt érték
             // KÉPPONT, nem sorszám (ld. `RESIZE_SETTINGS_KEY`).
-            ComboBox {
+            PicasaComboBox {
                 id: resizeBox
                 objectName: "importSourceResizeBox"
                 Layout.preferredWidth: 150

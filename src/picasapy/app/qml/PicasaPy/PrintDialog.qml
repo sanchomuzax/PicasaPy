@@ -365,7 +365,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: printSizeBox
                 objectName: "printSizeBox"
                 Layout.fillWidth: true
@@ -563,7 +563,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: printerBox
                 objectName: "printPrinterBox"
                 Layout.fillWidth: true
@@ -677,7 +677,7 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: orientationBox
                 objectName: "printOrientationBox"
                 readonly property var values: ["auto", "portrait", "landscape"]

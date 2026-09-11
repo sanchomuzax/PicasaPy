@@ -36,7 +36,7 @@ ColumnLayout {
     RowLayout {
         spacing: 8
         Text { text: qsTr("Network logging level:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        ComboBox {
+        PicasaComboBox {
             objectName: "optionsNetworkLogLevelCombo"
             model: [qsTr("Disable logging"), qsTr("Log errors only"),
                     qsTr("Minimal log information"), qsTr("Detailed log information"),

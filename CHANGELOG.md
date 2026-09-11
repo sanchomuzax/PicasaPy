@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Változott
+
+- **A legördülő listák és a görgetősáv az eredeti Picasa rajzát kapták**
+  (#894). A legördülő panel mostantól sík, világosszürke, egy képpont
+  keretével és halvány árnyékkal, ahogy az eredetiben — nem a rendszer saját
+  ablakkerete. A kiválasztott sor keskenyen lekerekített, és a görgetősáv
+  fogantyúja a Picasa lágy átmenetét mutatja.
+
 ### Hozzáadva
 
 - **A szerkesztő elhomályosodik a kérdések mögött** (#2480). Amikor a

@@ -111,7 +111,7 @@ ColumnLayout {
         // `docs/specs/szerkeszto-panel-meretek.md` 6.4/7.). A belső
         // térközöket is nullázni kell, különben a vezérlő tartalma
         // kilógna a 21 képpontos dobozból.
-        ComboBox {
+        PicasaComboBox {
             id: textFontBox
             objectName: "textFontFamilyBox"
             Layout.fillWidth: true
@@ -144,7 +144,7 @@ ColumnLayout {
         // #2287: az eredetiben ez egy 16 elemű, ABSZOLÚT egész-lista
         // (`sizelist`, 48 × 21-es legördülő), nem százalék. A lista a
         // `.data`-ból kiolvasva; a panel `"%d"`-vel írja ki az elemeket.
-        ComboBox {
+        PicasaComboBox {
             objectName: "textFontSizeBox"
             model: panel.fontSizeChoices
             currentIndex: Math.max(0, panel.fontSizeChoices.indexOf(panel.textFontSize))

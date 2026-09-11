@@ -125,7 +125,7 @@ Item {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                ComboBox {
+                PicasaComboBox {
                     id: collageKindBox
                     objectName: "collageKindBox"
                     Layout.preferredWidth: 180
@@ -143,7 +143,7 @@ Item {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                ComboBox {
+                PicasaComboBox {
                     id: collageBorderBox
                     objectName: "collageBorderBox"
                     Layout.preferredWidth: 180
@@ -243,7 +243,7 @@ Item {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
-                ComboBox {
+                PicasaComboBox {
                     id: movieHeightBox
                     objectName: "movieHeightBox"
                     Layout.preferredWidth: 160

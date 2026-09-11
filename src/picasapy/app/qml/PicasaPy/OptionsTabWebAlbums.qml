@@ -23,7 +23,7 @@ ColumnLayout {
     RowLayout {
         spacing: 8
         Text { text: qsTr("Default upload size:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        ComboBox {
+        PicasaComboBox {
             objectName: "optionsWebUploadSizeCombo"
             model: ["800px", "1024px", "1600px", qsTr("Original size")]
         }

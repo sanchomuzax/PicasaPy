@@ -59,6 +59,31 @@ QtObject {
     //
     // A lemezes mappa az eredetiben KÉK (`icons/folder`, 17 × 15), nálunk
     // eddig arany volt; ez a jegy javítja.
+    // #894: a LEGÖRDÜLŐ LISTA panelének MÉRT rajza (`listdecrect/listdecrect`,
+    // 17 × 17-es nyújtható réteg, képpontból olvasva). A panel SÍK — nincs
+    // benne színátmenet, ellentétben a gombokkal.
+    //
+    //   sor 2:   #D6D6D6  lágy árnyék (kívül)
+    //   sor 3:   #BABABA  a keret, 1 px
+    //   sor 4–12 #E8E8E8  a kitöltés
+    //   sor 13:  #F8F8F8  belső fénykiemelés alul
+    //   sor 14:  #F0F0F0
+    //
+    // ⚠️ A sötét módban a mért világos értékek nem használhatók (a panel
+    // olvashatatlan lenne), ezért ott a saját króm-tónusaink állnak — a
+    // VILÁGOS mód az, ami az eredetit követi.
+    readonly property color listPanelBg: dark ? "#2e2e2e" : "#e8e8e8"
+    readonly property color listPanelBorder: dark ? "#5a5a5a" : "#bababa"
+    readonly property color listPanelShadow: dark ? "#1f1f1f" : "#d6d6d6"
+    readonly property color listPanelInnerLight: dark ? "#3a3a3a" : "#f8f8f8"
+    readonly property color listPanelInnerLight2: dark ? "#343434" : "#f0f0f0"
+    // #894: a görgetősáv hüvelykjének MÉRT átmenete (`scrollart/base_win`,
+    // 15 × 25: vízszintes átmenet, függőlegesen állandó).
+    //   x0 #B6B6B6 · x1 #C7C7C7 → x7 #D9D9D9 → x13 #EDEDED · x14 #C8C8C8
+    readonly property color scrollThumbEdgeDark: dark ? "#3f3f3f" : "#b6b6b6"
+    readonly property color scrollThumbMid: dark ? "#5a5a5a" : "#d9d9d9"
+    readonly property color scrollThumbLight: dark ? "#6d6d6d" : "#ededed"
+    readonly property color scrollThumbEdgeSoft: dark ? "#454545" : "#c8c8c8"
     readonly property color folderBlue: dark ? "#5b7fa6" : "#9dc0e0"
     readonly property color folderBlueBorder: dark ? "#43607e" : "#7ba3c8"
     //: `icons/album` (16 × 18) — narancs könyv: rendes album

@@ -411,7 +411,7 @@ Item {
             RowLayout {
                 spacing: 8
                 Layout.fillWidth: true
-                ComboBox {
+                PicasaComboBox {
                     id: exportQualityPreset
                     objectName: "exportQualityPreset"
                     Layout.preferredWidth: 153

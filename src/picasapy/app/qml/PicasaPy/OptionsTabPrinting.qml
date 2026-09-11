@@ -25,7 +25,7 @@ ColumnLayout {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 objectName: "optionsPrintSizeCombo" + index
                 model: ["4x6", "5x7", "8x10", "Letter", "A4"]
             }

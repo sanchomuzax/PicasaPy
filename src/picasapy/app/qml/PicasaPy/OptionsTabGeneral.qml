@@ -69,7 +69,7 @@ ColumnLayout {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            ComboBox {
+            PicasaComboBox {
                 id: languageCombo
                 objectName: "optionsLanguageCombo"
                 // a megjelenő lista a nyelvkódok emberi neve — a controller
