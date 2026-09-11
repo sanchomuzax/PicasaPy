@@ -1574,6 +1574,12 @@ ezt a 18.4 `y`-képlete méri, 31/31 pontossággal.
 
 ### 18.6 Ami NYITVA marad: mi állítja be a `scale` ÉRTÉKÉT
 
+> ⭐⭐ **TELJESEN LEZÁRVA a 277. körben (67.)** — a `contactsheet`
+> `scale`-je **nem számított érték**: az elrendezés a `+0x2c`-hez nem
+> nyúl, minden előállító konstanst ír, és a `scale` a dokumentumban
+> **öröklődik** (végső forrása a `.cxf` beolvasása). Az alábbi „nyitva
+> marad" tehát TÖRTÉNETI.
+>
 > ⭐ **RÉSZBEN LEZÁRVA a 265. körben (55.)** — a `picturepile` téma
 > `scale`-képlete megvan és 9/9 pontos:
 > `TRUNC(1024 × 0,33 × min(1/√(√k − 1), 1))`, ahol `k` a csomópont
@@ -6804,3 +6810,89 @@ hívóhely besorolva; a `FUN_008342b0` valódi szerepe — dokumentum-reset,
 1 elemre, a 0. elem átörökítésével) · **1 nyitott, gépi úton
 folytatható, megnevezett címekkel** (a verem-példány `+0x2c` rekeszének
 későbbi írásai) · 0 „csak nyitva".*
+
+---
+
+## 67. K1 — LEZÁRVA: a `contactsheet` `scale`-je NEM SZÁMÍTOTT ÉRTÉK, hanem ÁTÖRÖKLŐDIK (2026-09-11, #1412)
+
+*277. kutatói kör. A 66.5 utolsó horgonyát méri ki, és ezzel a
+`kollazs-eletciklus.md` 18.6 „a `scale` ÉRTÉKÉNEK képlete nyitva marad"
+pontja a `contactsheet`-re is LEZÁRUL — negatív, de határozott
+válasszal.*
+
+### 67.1 A hozzáfűzött csomópont `scale`-je KONSTANS marad
+
+A három hozzáfűző út verem-példányának `scale`-rekeszét (a `+0x2c`-nek
+megfelelő eltolást) a **teljes** függvénytörzsben megkerestük.
+**Pozitív kontroll: `0x0087e22f`** — megvan.
+
+| hozzáfűző | rekesz | írások száma | mit ír |
+|---|---|---:|---|
+| `FUN_0087dcd0` | `esp+0x54` | **1** | `fld1` ⇒ **`1,0`** |
+| `FUN_00880580` | `esp+0x74` | **1** | `fldz` ⇒ **`0,0`** |
+| `FUN_00884a90` | — | **0** | ⚠️ a forrásobjektumról nem igazolható, hogy beágyazott verem-csomópont; **erre nem állítunk semmit** |
+
+⇒ **A `fld1` UTÁN a rekesz nem változik.** A hozzáfűzött csomópontok
+`scale`-je tehát az adott úton **konstans** — nincs „szétosztás" a 0.
+elemből.
+
+### 67.2 ⛳ A TELJES bizonyítéklánc — és a következtetés
+
+| lépés | ki | mit tesz a `+0x2c`-vel | szakasz |
+|---|---|---|---|
+| vektor-növelés | `FUN_0083dfa0` | alap-ktor: **nem írja** | 65.2 |
+| dokumentum-`reset` | `FUN_008342b0` | 1 elemre zsugorít, a 0.-at **változatlanul** átveszi | 66.2 |
+| hozzáfűzés | három út | **konstans** (`1,0` / `0,0`) | 58.2, 67.1 |
+| elrendezés | `FUN_00888210` · `FUN_00885060` | konstans `1,0` | 56.4 |
+| visszatöltés | `FUN_00881710` | **nem érinti** | 56.1 |
+| másolás | `FUN_008341b0` · `FUN_0087b830` · `FUN_008342b0` | **változatlan** | 57.1, 65.2 |
+| téma-osztályok | mind a 48 metódus | **nem írnak** | 64.4 |
+| értéktábla | — | **nincs** | 65.3 |
+| migráció | `0x00834683` | **számít**, de `version == 1` | 55.2, 61. |
+| **beolvasás** | `0x008332b7` | **a FÁJL értéke** (`_atof`) | 59.2 |
+
+**A mintáink `x`/`y`/`w`/`h` értékei az elrendezés kimenetei** (mind
+`n/1024` alakú, és `AI27`-nél két oszlop / két sor rácsra állnak, 265.
+kör mérése) ⇒ **az elrendező LEFUTOTT**. A `scale` viszont egyik
+előállítónál sem kap nem-konstans értéket.
+
+> ### ⛳ A VÁLASZ
+> A `contactsheet` csomópontjainak `scale`-je **nem számított érték**.
+> Az elrendezés a `+0x2c`-hez nem nyúl; a `scale` a dokumentumban
+> **öröklődik** — végső forrása a `.cxf` beolvasása (`_atof`), a
+> `picturepile`-nál pedig ezen felül a `version == 1` migráció.
+
+Ez az 18. szakasz **(1)-es ága**, most **gépi bizonyítékkal**: nem azért
+nem találtuk a képletet öt hónapig, mert rejtve volt, hanem mert
+**nincs**.
+
+### 67.3 ⚠️ A hatókör, kimondva
+
+A lánc a `Picasa3.exe` **ezen** példányára áll. Két dolgot **nem** zár ki,
+és ezek gépi úton nem is dönthetők el a binárisból:
+
+1. hogy a mintákat író Picasa-futás a dokumentumot korábban egy
+   `.cxf`-ből töltötte-e (ezt csak a **futó program** megfigyelése
+   mutatná meg);
+2. hogy egy MÁS Picasa-verzió kódja eltér-e.
+
+⛔ **Új felhasználói mintát ezért sem kérünk** — a tulajdonos kifejezett
+utasítása (17.15, #1412), és a fenti kettő nem is minta-kérdés.
+
+### 67.4 ⭐ TERMÉKI KÖVETKEZMÉNY (a dev körnek)
+
+A `src/picasapy/collage/picasa_render.py` **közelítést** számol a
+`scale`-re (`cella_h − 2 · belső`, `contact_sheet_cell_scale`, ⚠️-vel
+megjelölve, hogy „a pontos képlet nyitott"). A mérés szerint:
+
+- **frissen létrehozott** csomópontnál az eredeti **`1,0`**-t ír;
+- **betöltött** `.cxf`-nél a fájl értékét **változatlanul** viszi tovább;
+- `picturepile` **`version="1"`** fájlnál egyszeri migrációs szorzás.
+
+⇒ A közelítést **el kell hagyni**, és a `scale`-t **átvinni**, nem
+számolni. Ehhez önálló fejlesztői jegy nyílt.
+
+*Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 LEZÁRVA** (a
+hozzáfűzés `scale`-rekesze konstans; és ezzel a `contactsheet`-`scale`
+eredete — „nem számított, hanem öröklött") · 0 nyitott · 0 blokkolt ·
+0 hatókörön kívül · 0 „csak nyitva".*
