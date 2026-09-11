@@ -507,6 +507,23 @@ class AppController(
         self._get_settings().setValue("view/folderSort", mode)
         self._refresh_view()
 
+    @Slot(result=bool)
+    def backgroundWorkRunning(self) -> bool:  # noqa: N802 — QML-stílus
+        """Fut-e BÁRMELYIK vezérlő háttérmunkája (#671).
+
+        A kilépés kérdéséhez kell (`Main.qml` `kilepes()`): az eredeti Picasa
+        a kilépést nem blokkolja, de ha folyamatban van munka, RÁKÉRDEZ
+        („Uploads are in progress. Would you like to exit now?", két gombbal).
+
+        ⚠️ SZÁNDÉKOSAN a globális nyilvántartást kérdezi
+        (`running_background_workers`), nem a saját mixinjét: a futó munka
+        lehet a webexport, a kötegelt effekt vagy az arc-szkennelés
+        vezérlőjében is, és a felhasználó számára az mind „még dolgozik".
+        """
+        from .worker_thread import running_background_workers
+
+        return bool(running_background_workers())
+
     @Slot()
     def toggleFolderSortReverse(self) -> None:
         self._get_settings().setValue(

@@ -26,6 +26,15 @@ ApplicationWindow {
     // és őr-teszt méri újra élőben.
     minimumWidth: trayBar.requiredWidth
     visible: true
+    //: #671: az ablak „X"-e UGYANAZT az utat járja, mint a Fájl ▸ Kilépés.
+    //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;
+    //: egyébként a Qt zárja az ablakot, ahogy eddig.
+    onClosing: function (close) {
+        if (controller && controller.backgroundWorkRunning()) {
+            close.accepted = false
+            kilepesDialog.askExit()
+        }
+    }
     title: "PicasaPy"
     color: Theme.lightboxBg
 
@@ -878,6 +887,49 @@ ApplicationWindow {
         }
     }
 
+    //: #671 4. pont: a kilépés NEM kérdez — KIVÉVE, ha háttérmunka fut.
+    //: Az eredeti Picasa sem blokkolja a kilépést („Uploads will resume next
+    //: time"), de rákérdez; nálunk a háttérmunka NEM folytatódik legközelebb,
+    //: ezért a szöveg a mi valóságunkat mondja, nem az eredetit fordítja.
+    //:
+    //: Egy helyen fut: a Fájl ▸ Kilépés menütétel és az ablak „X"-e is ezt
+    //: hívja — különben az egyik út megkérdezné, a másik nem.
+    function kilepes() {
+        //: #305: null-őr — a leépülő motor is újraértékelheti a kötést
+        if (controller && controller.backgroundWorkRunning()) {
+            kilepesDialog.askExit()
+            return
+        }
+        Qt.quit()
+    }
+
+    //: #1720: halasztott — a legtöbb munkamenetben fel sem épül.
+    DeferredDialog {
+        id: kilepesDialog
+        objectName: "exitConfirmDialogLoader"
+        anchors.fill: parent
+        function askExit() {
+            //: a `decisionKey` SZÁNDÉKOSAN üres: az adatvesztéssel járó
+            //: kérdést nem lehet „ne kérdezze újra"-val elnyomni
+            ensure().ask("", qsTr(
+                "Background work is still running (export, web export or "
+                + "face scanning). If you exit now, it stops and does not "
+                + "resume later."))
+        }
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "exitConfirm"
+                namePrefix: "exit"
+                title: qsTr("Exit PicasaPy")
+                //: az eredeti gombpárja „Exit Now" / „Keep Going" — a
+                //: viselkedés (accept/deny) változatlan, csak a felirat
+                yesText: qsTr("Exit Now")
+                noText: qsTr("Keep Going")
+                onConfirmed: Qt.quit()
+            }
+        }
+    }
+
     //: #1526: a beillesztés EGY helyen — a menütétel és a billentyű is ezt
     //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
     //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
@@ -1107,6 +1159,8 @@ ApplicationWindow {
     menuBar: PicasaMenuBar {
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
+        //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
+        onExitRequested: window.kilepes()
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a

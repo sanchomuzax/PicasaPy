@@ -3792,6 +3792,22 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <source>Exit PicasaPy</source>
+        <translation>Kilépés a PicasaPy-ból</translation>
+    </message>
+    <message>
+        <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+        <translation>Még fut háttérmunka (exportálás, webexport vagy arcfelismerés). Ha most kilép, az leáll, és később nem folytatódik.</translation>
+    </message>
+    <message>
+        <source>Exit Now</source>
+        <translation>Kilépés most</translation>
+    </message>
+    <message>
+        <source>Keep Going</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
         <source>The desktop background is set (%1).</source>
         <translation>Az asztali háttérkép beállítva (%1).</translation>
     </message>

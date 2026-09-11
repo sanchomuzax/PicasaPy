@@ -260,7 +260,12 @@ class BackgroundWorkerMixin:
         return thread
 
     def backgroundWorkersRunning(self) -> bool:  # noqa: N802 — a webexport_controller QML-stílusú elnevezését követi
-        """Fut-e éppen legalább egy nyilvántartott háttérszál?"""
+        """Fut-e éppen legalább egy nyilvántartott háttérszál?
+
+        ⚠️ Ez a MIXIN saját szálaira válaszol. A kilépés kérdése (#671)
+        MINDEN vezérlőre kérdez, ezért a globális `running_background_workers`
+        megy oda — ld. `AppController.backgroundWorkRunning`.
+        """
         return any(worker.is_alive() for worker in self._bg_worker_set())
 
     def waitForBackgroundWorkers(self, timeout_s: float = 30.0) -> bool:  # noqa: N802
