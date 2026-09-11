@@ -31,8 +31,8 @@ a Start menüben, a PicasaPy-ikonnal (ha ez valamiért kimarad, a "picasapy"
 parancs a parancssorból ekkor is működik).
 
 Ha inkább kézzel csinálnád, nyiss parancssort (cmd) ebben a mappában, és:
-  py -3.12 -m pip install --upgrade pip
-  py -3.12 -m pip install picasapy-__VERSION__-py3-none-any.whl
+  py -3 -m pip install --upgrade pip
+  py -3 -m pip install picasapy-__VERSION__-py3-none-any.whl
 
 3. lépés — Indítás
 -------------------
