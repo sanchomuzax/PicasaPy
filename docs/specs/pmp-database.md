@@ -3976,3 +3976,82 @@ sincs megvalósítva. → jegy **#2435**.
 |---|---|
 | **mind a jelölt hívóhely `CThumbDB`-e?** | ✅ **LEZÁRVA** — igen, a 13.2 egyediség-mérése alapján; per-hívóhelyes elemzés nem kell |
 | a „29 jelölt" szám helyessége | ✅ **LEZÁRVA (megdőlt)** — a szám szabályfüggő (17/21/27); nem bizonyíték, és nem is szükséges (13.3) |
+
+---
+
+## 14. ⭐ A NÉGY SZINT KÖLTSÉGE — bájt/bejegyzés és kihasználtság, valódi katalóguson (2026-09-11, 282. kör, #2951)
+
+*A 2026-08-15-i mérés a szintek PIXELMÉRETÉT adta meg (72 · 144 · 288 · 640).
+Ez a szakasz a másik felét: **mennyibe kerül egy bejegyzés**, és **hány slot
+van tele**. A #598 harmadik pontja („a nagy előnézetek gyorsan esznek
+lemezt") eddig feltevés volt.*
+
+*Forrás: `src/picasapy/pmpimport/thumbindex.py:235` (`read_slot_index`) ·
+`research/testdata/Picasa2/db3/` és `research/testdata/Picasa2-arcok/Picasa2/db3/`.*
+
+⛔ **Csak hossz- és eltolás-adatot olvastunk**; a `*_0.db` adatfájlokat meg
+sem nyitottuk, képtartalmat nem bontottunk ki — ugyanaz az adatvédelmi
+korlát, mint a 2026-08-15-i mérésnél.
+
+**Kontroll-pozitív:** a nagy katalógus `thumbs_index.db`-jére az olvasó
+`n = 140 755`-öt ad — betűre az, ami a fenti formátum-táblában áll.
+
+### 14.1 A mérés
+
+**A nagy katalógus** (`research/testdata/Picasa2/db3/`):
+
+| szint | px | slot (`n`) | használt | kihasználtság | össz. | **bájt/bejegyzés** | medián | max | `_0.db` | holt hely |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `thumbs2` | 72 | 140 755 | 133 454 | **94,8 %** | 263,0 MB | **1 971** | 1 989 | 4 485 | 279,2 MB | 5,8 % |
+| `thumbs` | 144 | 140 755 | 133 454 | **94,8 %** | 749,9 MB | **5 619** | 5 613 | 15 360 | 806,6 MB | 7,0 % |
+| `bigthumbs` | 288 | 273 921 | 14 531 | **5,3 %** | 203,3 MB | **13 992** | 13 387 | 37 487 | 208,8 MB | 2,6 % |
+| `previews` | 640 | 273 921 | 14 531 | **5,3 %** | 689,3 MB | **47 434** | 42 968 | 170 340 | 711,2 MB | 3,1 % |
+
+**A kis katalógus** (`Picasa2-arcok`) ugyanezt a mintát adja: 96,0 % · 96,0 %
+· 19,8 % · 17,3 % kihasználtság, 1 536 / 4 245 / 10 149 / 39 598
+bájt/bejegyzés.
+
+### 14.2 ⛳ KÉT megtartási politika, nem négy
+
+A slotszám nem szintenként külön: **`thumbs2` és `thumbs` ugyanazon a
+140 755-ös slottéren osztozik, `bigthumbs` és `previews` a 273 921-esen.**
+A kihasználtság viszont élesen kettéválik:
+
+- a **két kis szint tele van** (94,8 %) — minden beolvasott képhez készül;
+- a **két nagy szint majdnem üres** (5,3 %) — **igény szerint** töltődik.
+
+⇒ A Picasa nem négy egyenrangú szintet tart karban: **kettőt előre feltölt,
+kettőt lustán**.
+
+### 14.3 ⛔ A #598 feltevése FÉLIG megdől
+
+> „a nagy előnézetek gyorsan esznek lemezt"
+
+**Bejegyzésenként igaz** (47 434 vs. 1 971 bájt — **24×**), **összesen
+viszont nem**: a 640 képpontos szint ma 689 MB, a 72 képpontos 263 MB, de a
+72-es szint **9,2× annyi bejegyzést** tart. A lemezt tehát nem a méret eszi,
+hanem a **darabszám**.
+
+**A valódi kockázat a lusta töltés megszűnése.** Ha mind a 133 454 képhez
+elkészülne az előnézet, az `133 454 × 47 434 B ≈ 6,3 GB` lenne a mai 689 MB
+helyett; a `bigthumbs` 203 MB helyett ≈ 1,9 GB. **Egy mohó előnézet-szint
+tízszeresére hizlalja a gyorsítótárat.**
+
+### 14.4 ⭐ TERMÉKI KÖVETKEZMÉNY (a #598-ra)
+
+1. **A pixelméretek megvannak** (72 · 144 · 288 · 640, a 2026-08-15-i
+   mérés) — a jegy „nem derülnek ki a binárisból" mondata elavult.
+2. **A szintek nem egyenrangúak.** A két kicsit érdemes minden képre
+   elkészíteni, a két nagyot **csak igényre** — ezt teszi az eredeti is.
+3. **A takarítás célpontja a lusta szint**, de nem azért, mert sok, hanem
+   mert **drága bejegyzésenként**: egy előnézet 24 kis bélyegkép árán van.
+4. **Költségterv egy 130 ezer képes gyűjteményre** (a mért bájt/bejegyzéssel):
+   kis szint ≈ 0,26 GB · normál ≈ 0,75 GB · nagy (teljes) ≈ 1,9 GB ·
+   előnézet (teljes) ≈ 6,3 GB. A holt hely mindegyik tárban 3–7 %.
+
+*Bizonyítottsági fok: **megerősített** — két független valódi katalógus,
+ugyanazzal a mintával, kontroll-pozitívval (`n = 140 755`).*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — bájt/bejegyzés és
+kihasználtság szintenként) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül ·
+0 „csak nyitva".*
