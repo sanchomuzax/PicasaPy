@@ -1,0 +1,142 @@
+/* PicasaPy „Fekete keret" webexport-sablon — saját, GPL-kompatibilis stílus.
+   Az eredeti Picasa `blackfrm` sablonjának KINÉZETÉT idézi (passzpartús keret a csempék körül);
+   a CSS/HTML maga saját írás, a Picasa sablonfájljaiból semmi nem került
+   át (#534). A szerkezet és a helyőrző-nyelv az eredetié, az szabadon
+   követhető: `docs/specs/picasa-web-template-nyelv.md`. */
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #101010;
+  color: #ededed;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.album-header {
+  padding: 24px 32px 12px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.album-header h1 {
+  margin: 0 0 6px;
+  font-size: 1.6em;
+  font-weight: 600;
+}
+
+.album-caption {
+  margin: 0 0 4px;
+  color: #b8b8b8;
+}
+
+.album-meta {
+  margin: 0;
+  color: #8a8a8a;
+  font-size: 0.9em;
+}
+
+main {
+  padding: 24px 32px;
+}
+
+.thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.thumb {
+  margin: 0;
+  background: #1f1f1f;
+  padding: 10px;
+  border: 1px solid #4a4a4a;
+  text-align: center;
+}
+
+.thumb.shadow {
+  box-shadow: 0 2px 6px 0 var(--shadow-color, #101010);
+}
+
+.thumb img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.thumb figcaption {
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: #b8b8b8;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-list {
+  padding: 0 32px 32px;
+}
+
+.page-list ol {
+  columns: 3;
+}
+
+.page-list a {
+  color: #ededed;
+}
+
+.item-page {
+  text-align: center;
+  padding: 24px;
+}
+
+.back-link {
+  text-align: left;
+}
+
+.back-link a,
+.item-nav a {
+  color: #ededed;
+}
+
+.item-figure {
+  margin: 16px auto;
+  background: #1f1f1f;
+  padding: 10px;
+  border: 1px solid #4a4a4a;
+  display: inline-block;
+}
+
+.item-figure.shadow img {
+  box-shadow: 0 4px 16px 0 var(--shadow-color, #101010);
+}
+
+.item-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.item-figure figcaption {
+  margin-top: 6px;
+  color: #b8b8b8;
+  font-size: 0.9em;
+}
+
+.item-nav {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.item-nav .disabled {
+  color: #8a8a8a;
+}
+
+.album-footer {
+  padding: 16px 32px;
+  color: #8a8a8a;
+  font-size: 0.8em;
+  border-top: 1px solid #2a2a2a;
+}

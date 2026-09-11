@@ -34,6 +34,13 @@ Window {
         webExportWindow.templateIndex >= 0
         && webExportWindow.templateIndex < webExportWindow.templates.length
             ? webExportWindow.templates[webExportWindow.templateIndex].id : ""
+    //: #534: a kiválasztott sablon előnézeti rajzának URL-je (üres, ha
+    //: nincs) — az eredeti választójában is előnézeti kép van
+    //: (`preview.jpg`), nálunk saját, sematikus SVG.
+    readonly property url templatePreview:
+        webExportWindow.templateIndex >= 0
+        && webExportWindow.templateIndex < webExportWindow.templates.length
+            ? webExportWindow.templates[webExportWindow.templateIndex].preview : ""
 
     property bool exporting: false
     property int progressDone: 0
@@ -50,6 +57,14 @@ Window {
         if (typeof webExportController !== "undefined"
                 && webExportController) {
             webExportWindow.templates = webExportController.listWebExportTemplates()
+            //: #534: a célmappa ELŐRE ki van töltve — az eredetiben is van
+            //: alapértelmezés (`Picasa HTML Exports`), a „(nincs kijelölve)"
+            //: állapot minden exportnál tallózást kényszerített. A már
+            //: kiválasztott mappát nem írjuk felül.
+            if (webExportWindow.targetFolder.length === 0) {
+                webExportWindow.targetFolder =
+                    webExportController.defaultWebExportTarget()
+            }
         }
         webExportWindow.visible = true
     }
@@ -164,6 +179,19 @@ Window {
                 model: webExportWindow.templates.map(function(t) { return t.name })
                 currentIndex: webExportWindow.templateIndex
                 onActivated: webExportWindow.templateIndex = currentIndex
+            }
+            Image {
+                objectName: "webExportTemplatePreview"
+                source: webExportWindow.templatePreview
+                visible: webExportWindow.templatePreview.toString().length > 0
+                //: a rajz 160 x 100; kétszeres méretben kérjük be, hogy
+                //: nagy felbontású kijelzőn se legyen puha
+                sourceSize.width: 320
+                sourceSize.height: 200
+                fillMode: Image.PreserveAspectFit
+                Layout.preferredWidth: 160
+                Layout.preferredHeight: 100
+                Layout.topMargin: 4
             }
             Text {
                 objectName: "webExportTemplateDescription"

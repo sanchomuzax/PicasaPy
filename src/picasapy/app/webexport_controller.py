@@ -93,10 +93,43 @@ class WebExportController(BackgroundWorkerMixin, QObject):
     def listWebExportTemplates(self) -> list[dict]:
         """A telepített sablonok a választó-lenyílóhoz: `[{"id","name",
         "description"}, ...]` (a `webexport.fen` "sablon-lista" mezője)."""
+        #: #534: a `preview` a sablon előnézeti rajzának `file://` URL-je
+        #: (üres sztring, ha a sablonhoz nincs rajz) — a QML `Image.source`
+        #: URL-t vár, nem fájlútvonalat.
+        from PySide6.QtCore import QUrl
+
         return [
-            {"id": info.id, "name": info.name, "description": info.description}
+            {
+                "id": info.id,
+                "name": info.name,
+                "description": info.description,
+                "preview": (
+                    QUrl.fromLocalFile(str(info.preview_path)).toString()
+                    if info.preview_path is not None
+                    else ""
+                ),
+            }
             for info in list_bundled_templates()
         ]
+
+    #: #534: az eredeti alapértelmezett kimeneti mappája
+    #: (`CWebExporter::DefaultPath` / `IDS_DEFAULT_WEB_EXPORT_PATH`):
+    #: „Picasa HTML Exports\" — KÖZVETLENÜL a rendszer képmappájában, nem a
+    #: `Picasa/` alatt (ott a Kollázsok és a filmek vannak). A magyar név a
+    #: mi honosított mappaneveink mintáját követi.
+    HTML_EXPORT_MAPPA = "Picasa HTML exportok"
+
+    @Slot(result=str)
+    def defaultWebExportTarget(self) -> str:  # noqa: N802
+        """A javasolt célmappa a párbeszéd megnyitásakor (#534).
+
+        A képmappát a RENDSZERTŐL kérdezzük (`collage_output.pictures_dir`,
+        #1088) — a `Path.home() / "Pictures"` a tulajdonos gépén rossz
+        helyre mutatott, mert az OneDrive-átirányítást nem követi. A mappát
+        NEM hozzuk létre: azt az export teszi, ha tényleg elindul."""
+        from .collage_output import pictures_dir
+
+        return str(pictures_dir() / self.HTML_EXPORT_MAPPA)
 
     @Slot(str, str, str, int, int, bool, bool)
     def generateWebExport(

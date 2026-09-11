@@ -169,3 +169,28 @@ class TestBackgroundThreadTeardown:
         loop.exec()
         assert controller.waitForExport(30.0)
         assert not controller.exportRunning()
+
+
+class TestAzAlapertelmezettCelmappa:
+    """#534: az eredetinek van alapértelmezett kimeneti mappája
+    (`IDS_DEFAULT_WEB_EXPORT_PATH` — „Picasa HTML Exports\\"), nálunk a
+    párbeszéd eddig „(nincs kijelölve)" állapotban nyílt, tehát minden
+    exportnál tallózni kellett."""
+
+    def test_a_rendszer_kepmappajabol_szarmazik(self, monkeypatch, tmp_path, controller):
+        """A képmappát a RENDSZER adja (#1088) — nem `home()/Pictures`."""
+        from picasapy.app import collage_output
+
+        monkeypatch.setattr(collage_output, "pictures_dir", lambda: tmp_path / "Képek")
+        assert controller.defaultWebExportTarget() == str(
+            tmp_path / "Képek" / "Picasa HTML exportok"
+        )
+
+    def test_nem_hozza_letre_a_mappat(self, monkeypatch, tmp_path, controller):
+        """Csak javaslat: aki megnyitja a párbeszédet és mégsem exportál, ne
+        hagyjon üres mappát a képei közt."""
+        from picasapy.app import collage_output
+
+        monkeypatch.setattr(collage_output, "pictures_dir", lambda: tmp_path / "Képek")
+        controller.defaultWebExportTarget()
+        assert not (tmp_path / "Képek").exists()

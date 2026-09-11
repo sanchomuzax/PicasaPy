@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #534: a sablonválasztó előnézete. NEM képernyőkép: sematikus rajz a
+     sablon palettájáról és csempe-stílusáról (háttérszín, passzpartú,
+     szegély). Saját rajz, a Picasa `preview.jpg`-jeiből semmi nem került
+     át. Ha a stíluslap palettája változik, ezt is át kell írni. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" width="160" height="100" role="img">
+  <title>szurke előnézet</title>
+  <rect x="0" y="0" width="160" height="100" fill="#4d4d4d"/>
+  <rect x="10" y="9" width="72" height="7" rx="2" fill="#f2f2f2" opacity="0.85"/>
+  <rect x="10" y="20" width="44" height="4" rx="2" fill="#f2f2f2" opacity="0.45"/>
+  <line x1="0" y1="29" x2="160" y2="29" stroke="#f2f2f2" stroke-opacity="0.18"/>
+  <rect x="12" y="36" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="14" y="38" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="55" y="36" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="57" y="38" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="98" y="36" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="100" y="38" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="12" y="67" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="14" y="69" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="55" y="67" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="57" y="69" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="98" y="67" width="38" height="26" fill="#575757" stroke="#606060" stroke-width="1"/>
+  <rect x="100" y="69" width="34" height="22" fill="#8aa6c0"/>
+  <rect x="10" y="88" width="56" height="4" rx="2" fill="#f2f2f2" opacity="0.3"/>
+</svg>

@@ -115,6 +115,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.388] – 2026-09-11
+
+### Hozzáadva
+
+- **Hét webexport-sablon, előnézettel** (#534). Eddig egyetlen („Fehér")
+  galéria-sablon volt; mostantól mind a hat kinézet választható — fehér,
+  szürke és fekete háttér, sima és passzpartús csempékkel —, plusz egy
+  **XML-sablon**, ami nem weboldalt, hanem gépi feldolgozásra szánt
+  album- és képadatokat ad. A választóban minden sablonhoz előnézeti rajz
+  tartozik.
+- **A célmappa előre ki van töltve** (#534): a rendszer képmappáján belüli
+  „Picasa HTML exportok". Eddig minden exportnál tallózni kellett.
+
 ## [0.8.387] – 2026-09-11
 
 ### Javítva

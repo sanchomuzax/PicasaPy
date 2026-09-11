@@ -1,0 +1,6 @@
+    <photo number="<%itemNumber%>" name="<%itemName%>">
+<%if itemCaption%>      <caption><%itemCaption%></caption>
+<%endif%>      <original width="<%itemWidth%>" height="<%itemHeight%>" sizeKb="<%itemSize%>" path="<%itemOriginalPath%>"/>
+      <thumbnail src="<%itemThumbnailImage%>" width="<%itemThumbnailWidth%>" height="<%itemThumbnailHeight%>"/>
+      <large src="<%itemLargeImage%>"/>
+    </photo>
