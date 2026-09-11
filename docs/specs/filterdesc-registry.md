@@ -5132,3 +5132,150 @@ A `</slider>` feldolgozásakor mérve: lebegőpontos mezők a `+0x4c`-nél
 *Bizonyítottsági fok: **megerősített** — utasításszintű olvasás mind a négy
 íróra, és a szabály a felvételen mért jelvényekkel egyezik (24/24, ebből az
 `unsharp2` ellenpróbája képpont-szinten is).*
+
+---
+
+## 11. A SÁV-JELZŐK TELJES LÁNCA: öt jelző, hat vtábla-rekesz, és a `fullres` VALÓDI fogyasztója (2026-09-11, 278. kör, #2924)
+
+*A #819 („Ami NYITVA marad") bináris blokkolója. A 10. szakasz a
+tag-eltolásokig jutott; ez a szakasz megnevezi mind az öt jelzőt, megtalálja
+az olvasóikat, és kimondja, mit CSINÁL velük az eredeti.*
+
+### 11.1 ⭐ Mind az ÖT jelző neve és tagja — a parser utasításszinten
+
+A `0x008ff690`–`0x008ff891` sávban az attribútumnév-összehasonlítás és a
+tagba írás párba állítható. A név a `repe cmpsb`/`0x0057f350` hasonlítás
+operandusa, a tag a `[ebx+0x2c]` leíróba írt eltolás:
+
+| attribútum | verem-rekesz | tag | típus | feldolgozás |
+|---|---|---|---|---|
+| `fullres` | `[esp+0x2c]` | **`+0xd8`** | dword | **`_atoi`** (`0x00bf6a1c`) — ezért van értelme az `1`/`2` megkülönböztetésnek |
+| `slow` | `[esp+0x0f]` | **`+0xdc`** | byte | `setne` (jelenlét) |
+| `resize` | `[esp+0x10]` | **`+0xdd`** | byte | `setne` |
+| `persist` | `[esp+0x11]` | **`+0xde`** | byte | `setne` |
+| `rotate` | `[esp+0x12]` | **`+0xdf`** | byte | `setne` |
+| `glimmer` | `[esp+0x13]` | **— nincs tag** | — | csak a `0x008ff897` elágazást kapuzza |
+
+⇒ A 10.1 „(3 további byte-jelző)" sora ezzel **név szerint feloldva**. A
+`glimmer` **nem kerül a leíróba**, és a szállított `filterdesc.xml`-ben
+egyszer sem fordul elő.
+
+Darabszámok a szállított fájlból (`grep -o … | uniq -c`):
+
+| jelző | darab |
+|---|---|
+| `fullres="1"` | 18 |
+| `fullres="2"` | 1 (`FocalZoom`) |
+| `slow="1"` | 13 |
+| `resize="1"` | 5 |
+| `persist` | 16 × `"1"`, 9 × `"0"` |
+| `rotate="1"` | **1** — kizárólag a `dir_tint` |
+| `glimmer` | **0** |
+
+### 11.2 ⭐ A hat akcesszor a `CGenericFilter` vtáblájának 35–40. rekesze
+
+A `0x008f6f90` és a `0x008f6fc0` **közvetlen hívóhelye NULLA** a teljes
+`.text`-en (kontroll: a `0x008f6fc3 cmp dword [eax+0xd8], 2` megvan). Mind a
+hat cím **adatként** áll, hat egymást követő dwordban (`0xcd18d8`–`0xcd18ec`)
+— ez a `0xcd184c`-nál kezdődő vtábla, RTTI-neve **`.?AVCGenericFilter@@`**:
+
+| rekesz | eltolás | cím | mit ad |
+|---:|---|---|---|
+| 35 | `+0x8c` | `0x008f6f90` | **`fullres == 1`** predikátum |
+| 36 | `+0x90` | `0x008f6fc0` | **`fullres == 2` ÉS `[this+0xc8] != 0`** |
+| 37 | `+0x94` | `0x008f6fe0` | `slow` (`+0xdc`) |
+| 38 | `+0x98` | `0x008f6ff0` | `resize` (`+0xdd`) |
+| 39 | `+0x9c` | `0x008f7000` | `persist` (`+0xde`) |
+| 40 | `+0xa0` | `0x008f7010` | `rotate` (`+0xdf`) |
+
+Mind a hat cím **pontosan EGYSZER** fordul elő adatként az egész fájlban ⇒
+**egyetlen vtábla tartalmazza őket, felülíró leszármazott nincs.** Mindegyik
+`this`-en kívül argumentum nélküli (`ret` immediate nélkül), és a leírót a
+`[this+8]`-ból veszi.
+
+### 11.3 ⛳ A `fullres` FOGYASZTÓJA — a lánc KETTÉVÁGÁSA
+
+Három lánc-szintű lekérdező ül egymás mellett, mindhárom ugyanazon a
+szerkezeten: `[lánc+0x48]` a szűrő-mutatók tömbje, `[lánc+0x4c] >> 1` a
+darabszám.
+
+| cím | mit csinál | rekesz |
+|---|---|---|
+| **`0x009084c0`** | **VISSZAFELÉ** járja be a láncot, és az UTOLSÓ olyan szűrő **INDEXÉT** adja vissza, amelyre a `fullres == 1` igaz; ha nincs ilyen: **`-1`** | 35 |
+| `0x00908500` | előrefelé: van-e `slow` szűrő a láncban | 37 |
+| `0x00908540` | előrefelé: van-e `persist` szűrő (logikai) | 39 |
+
+A `0x009084c0`-nak **három hívója** van, mind a szerkesztő/előnézet
+moduljában (`0x0069e74a`, `0x0069e931`, `0x0069f25c`), és **kettő ugyanazt
+teszi az indexszel**:
+
+```
+0x0069e74a  call 0x9084c0          ; esi = az utolso fullres INDEXE
+0x0069e766  cmp  esi, -1
+0x0069e769  je   0x69e786          ;   nincs fullres -> egyszeru ut
+0x0069e77d  lea  eax, [esi + 1]    ; ⭐ INDEX + 1
+0x0069e781  call 0x907f30          ;   a lancot INNENTOL futtatja
+```
+
+```
+0x0069f25c  call 0x9084c0
+0x0069f261  cmp  eax, -1
+0x0069f268  jne  0x69f2bb
+0x0069f315  add  edi, 1            ; ⭐ ugyanaz: INDEX + 1
+```
+
+> ### ⛳ A VÁLASZ a #819 nyitott kérdésére
+> Az eredeti **nem** külön előnézeti útvonalat tart fenn a `fullres`
+> szűrőknek, és nem is rendereli az egész láncot teljes felbontáson.
+> **Kettévágja a láncot** az utolsó `fullres` szűrőnél: az `index`-ig
+> bezárólag tartó rész az egyik úton megy, a maradék **`index + 1`-től**
+> külön hívással. Ha nincs `fullres` szűrő (`-1`), az egyszerű út fut.
+
+### 11.4 A `rotate` két beolvasott olvasója — és mit mond a VALÓS korpusz
+
+A teljes `.text`-en a `[reg+8] → [reg+0xd8…0xdf]` ujjlenyomatra **15**
+találat van (kontroll: mind a **6/6** akcesszor megvan). Ebből a szűrő-modulban
+a hat akcesszoron kívül **kettő** akad, és mindkettő a **`rotate`** (`+0xdf`)
+olvasója:
+
+| cím | hol | mit tesz |
+|---|---|---|
+| `0x008faf6f` | a paraméter-**sorosító** (`0x008fae60`-tól: `,%f` ×4 · `,%08x` · `,%d` ×2) | ha `rotate`, a végére fűzi a `[szűrő+0xc4] & 3` értéket `,%d`-vel |
+| `0x008fb8c0` | a paraméter-**visszaolvasó** | ha `rotate`, egy további mezőt olvas `_atoi`-val és `& 3` |
+
+A `fullres`-nek és a `slow`-nak **egyetlen beágyazott olvasója sincs** — azok
+kizárólag a 11.3 lánc-lekérdezőin át fogynak.
+
+⚠️ **A valós korpusz mérése:** a 859 `.picasa.ini`-ből kigyűjtött **kilenc**
+`dir_tint=` sor **mind** a `%08x` színnel ér véget, záró egész mező nélkül
+(pl. `dir_tint=1,0.898417,0.861160,0.250000,0.250000,ffbba6a2`). ⇒ A
+`rotate`-ág ezeken a fájlokon **nem futott le**, tehát a
+`filters-decoded.md` állítása — *„a `.picasa.ini` `dir_tint=` alakja irányt
+nem hordoz"* — **áll**. (A `dir_tint=1,0.432422,…` alak, ami a repóban
+szerepel, a SAJÁT golden-kitünk generált sora, nem Picasa-kimenet.)
+
+### 11.5 ⛔ ÖNHELYESBÍTÉS menet közben: a `+0x90` eltolás ÖNMAGÁBAN nem azonosít
+
+A kör első jelöltje a `0x0093e7b0` jelzőszó-építő volt: `[esi+0x74]`-ből
+indul, `or ebx, 0x10`-et tesz egy `[vtbl+0x90]` hívás igaz ágán, és a
+végeredmény egy ` [%u]` alakú **szöveges** címkébe megy (`0x0093e972`).
+Kézenfekvőnek látszott, hogy ez a `fullres == 2` predikátum fogyasztója.
+
+**Nem az.** Ugyanez a függvény a `+0x60`, `+0x70` és `+0x88` rekeszeket is
+**argumentum nélkül** hívja, a `CGenericFilter` ezen rekeszei viszont
+argumentumot várnak (`0x008fbeb0 ret 8`, `0x008f6f20 ret 4`,
+`0x008f6d40 ret 4`) ⇒ a fogadó **más osztály**.
+
+⭐ **Ebből lett a kör olcsó szűrője:** a virtuális hívóhelyeket az
+**argumentumszám** választja szét. A `mov reg,[obj+N]` → `call reg` alakra
+a `+0x8c`-nél 47 találat van, de csak **16** olyan, amelyik a hívásig
+semmit nem push-ol; a `+0xa0`-nál 131-ből mindössze **10**. A megoldás
+mindhárom lánc-lekérdezője ebben a szűk halmazban volt.
+
+*Bizonyítottsági fok: **megerősített** — minden állítás mögött indextől
+független, kontroll-pozitívval futtatott pásztázás (csúcs-RSS 87 MiB) vagy
+utasításszintű olvasás áll.*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — ki olvassa a jelzőket
+és mit tesz velük) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak
+nyitva".*
