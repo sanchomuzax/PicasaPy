@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.401] – 2026-09-11
+
+### Változott
+
+- **A Szépia effektus mostantól a visszafejtett algoritmust futtatja**
+  (#619). Eddig 17 mért pontból interpolált görbékkel közelítettük; most a
+  program saját három lépése fut, egész számokkal — ugyanaz a szürkítés,
+  ugyanaz a halványítás és ugyanaz a barna tinta, amit az eredeti használt.
+
+  A képen ez alig látszik (a referencia-exporttól való átlagos eltérés
+  0,9 fokozat körüli maradt), a kódban viszont nagy a különbség: 51 illesztett
+  szám helyett három mért szorzó áll benne, és a Nézet menü Szépia módja
+  ugyanazt a számítást végzi — a két, egymástól független visszafejtés
+  ugyanarra az algoritmusra vezetett.
+
 ## [0.8.400] – 2026-09-11
 
 ### Hozzáadva

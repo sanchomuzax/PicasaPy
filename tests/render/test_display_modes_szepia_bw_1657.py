@@ -259,8 +259,21 @@ class TestNemAKeteffekt:
     """A megjelenítési mód NEM a szerkesztő `bw`/`sepia` effektje.
 
     Amaz a mentett képre ír és a `filters=` láncba kerül; ez csak a
-    képernyőre hat. A képletük is más (amaz lebegőpontos Rec.601 / mért
-    tónusgörbék), tehát összevonni paritás-vesztés volna.
+    képernyőre hat. **A különbség a HATÓKÖRBEN van, nem szükségképpen a
+    képpontokban.**
+
+    ⚠️ #619: a `bw`-nél a képlet is más (lebegőpontos Rec.601), a
+    **szépiánál viszont MÁR NEM**. Amíg a szépia effekt 17 mért
+    horgonypontból interpolált (#317), a két kimenet eltért; a #619 óta az
+    effekt a TELJES visszafejtett algoritmust futtatja (egész BT.601,
+    `218/256` halványítás, overlay a `#9B7D63` tintával) — és ez
+    **ugyanaz**, amit a megjelenítési mód mért műveletsora (#1657) végez.
+
+    Mérve (300×400 véletlen kép): a két kimenet **bájtra azonos**, és a
+    256 → RGB táblájuk is. Ez nem hiba, hanem **kereszt-megerősítés**: két
+    független kutatási kör, két különböző erőforrásból, ugyanaz az
+    algoritmus. Ezért a szépiánál a képpont-eltérést állítani annyi volna,
+    mint megkövetelni, hogy az egyik rossz legyen.
     """
 
     def test_a_bw_kimenete_kulonbozik_az_effektetol(self):
@@ -269,11 +282,16 @@ class TestNemAKeteffekt:
         be = _folt(VEGYES)
         assert not np.array_equal(apply_display_bw(be), apply_bw(be))
 
-    def test_a_szepia_kimenete_kulonbozik_az_effektetol(self):
+    def test_a_szepia_kimenete_UGYANAZ_mint_az_effekte(self):
+        """#619: a két mért algoritmus egybeesik — a hatókör marad a különbség.
+
+        A megjelenítési mód a képernyőre hat és nem ír `filters=` láncot; az
+        effekt a mentett képre. Ezt a `TestNemMutal` és a lánc-oldali őrök
+        mérik, nem a képpont-eltérés."""
         from picasapy.render.color import apply_sepia
 
         be = _folt(VEGYES)
-        assert not np.array_equal(apply_display_sepia(be), apply_sepia(be))
+        assert np.array_equal(apply_display_sepia(be), apply_sepia(be))
 
     def test_a_ket_megjelenitesi_mod_kulonbozik_egymastol(self):
         be = _folt(KOZEPSZURKE)
