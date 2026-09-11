@@ -55,7 +55,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
-from .folder_cover_provider import FolderCoverProvider
+from .folder_cover_provider import FolderCoverProvider, borito_fajljai
 from .controller import AppController
 from .data_location import read_data_root
 from . import display_photo_provider
@@ -1248,13 +1248,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # INDEXBŐL veszi a mappa fotóit, névsorban — a kupacba a lista első
     # legfeljebb négy eleme kerül (`0x004237ab`), tehát a sorrend
     # látszik is a képen.
-    def _borito_fajljai(mappa: str):
-        from picasapy.index.queries import photos_in_folder
-
-        with open_index(data_dir / "index.db") as conn:
-            return [Path(rekord.path) for rekord in photos_in_folder(conn, mappa)[:4]]
-
-    folder_cover_provider = FolderCoverProvider(_borito_fajljai)
+    # #2984: a lekérdezés MODUL-SZINTŰ (`folder_cover_provider.borito_fajljai`),
+    # hogy őr tudjon rá futni — lezárásként évekig hibásan állt, és a
+    # `lambda`-val hívott őrök nem látták.
+    folder_cover_provider = FolderCoverProvider(
+        lambda mappa: borito_fajljai(data_dir / "index.db", mappa)
+    )
     engine.addImageProvider("foldercover", folder_cover_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók

@@ -62,6 +62,32 @@ def normalizald_az_azonositot(id: str) -> str:
     for kodolt, karakter in _KODOLT_ELVALASZTOK:
         id = id.replace(kodolt, karakter)
     return id
+#: A kupacba kerülő fotók száma — a natív összeállító is az első
+#: `min(N, 4)` fotót veszi (`0x004237ab`), névsorban.
+BORITO_FOTOK_MAXIMUMA = 4
+
+
+def borito_fajljai(index_db: Path, mappa: str) -> list[Path]:
+    """A mappa első legfeljebb négy fotójának ÚTVONALA, névsorban.
+
+    ⚠️ **#2984 — ez a függvény azért MODUL-SZINTŰ, hogy legyen mit
+    tesztelni.** Korábban az `application.py` belsejében élő lezárás volt,
+    és `rekord.path`-t olvasott — a `PhotoRecord`-nak viszont nincs ilyen
+    mezője (`folder_path` + `name` van). MINDEN mappán `AttributeError`-t
+    dobott, amit a szolgáltató „nincs borító"-vá nyelt, tehát a bal hasáb
+    bekapcsolt kapcsolóval is mappaikont mutatott. A meglévő őrök
+    `lambda`-val hívták a szolgáltatót, ezért a hibás lezárás **zölden
+    átcsúszott**. Ugyanez a hiba volt a #1589 (Earth-export) — a közös
+    segéd (`export.earth.record_path`) onnan származik.
+    """
+    from picasapy.export.earth import record_path
+    from picasapy.index import open_index
+    from picasapy.index.queries import photos_in_folder
+
+    with open_index(index_db) as conn:
+        rekordok = photos_in_folder(conn, mappa)[:BORITO_FOTOK_MAXIMUMA]
+    return [record_path(rekord) for rekord in rekordok]
+
 
 #: A kupacba kerülő egyes lapok leghosszabb oldala képpontban. Az élő
 #: mintákban a KÉSZ borító leghosszabb oldala 72–119 px; egy lap ennél
