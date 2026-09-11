@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.417] – 2026-09-11
+
+### Javítva
+
+- **A diavetítésben nem villan be idegen kép a váltásoknál** (#3018). Az
+  áttűnés a **két lépéssel korábbi** képet vegyítette a mostani alá, nem
+  azt, amit épp néztél — így minden váltásnál felbukkant egy pillanatra
+  egy harmadik kép. Mérve: három képnél a második váltás kimenő képe az
+  első volt, pedig a másodikat nézted.
+
 ## [0.8.416] – 2026-09-11
 
 ### Javítva
