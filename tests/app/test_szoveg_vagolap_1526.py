@@ -133,6 +133,25 @@ class TestASzovegBeillesztese:
             ),
         ), "nem mindegyik kép kapta meg a feliratot"
 
+    def test_a_kijelolesre_EGYETLEN_hatterszal_indul(self, controller):
+        """#2915: képenként egy szál helyett EGY soros köteg.
+
+        Két, ugyanabban a mappában levő kép ugyanabba a `.picasa.ini`-be és
+        ugyanabba az indexbe ír. Képenként külön szálat indítva ez
+        versenyhelyzet: a windowsos CI-n a kijelölés egy része felirat
+        nélkül maradt (a hiba nem időzítési türelemmel oldódik, hanem a
+        párhuzamosság megszüntetésével)."""
+        sorok = [_sor(controller, "egy.png"), _sor(controller, "ketto.png")]
+        controller.setCaptionClipboardText("Közös felirat")
+        inditasok = []
+        controller._start_background = lambda *a, **k: inditasok.append(a)
+
+        assert controller.pasteCaptionText(sorok) == 2
+        assert len(inditasok) == 1, (
+            f"{len(inditasok)} háttérszál indult két képre — "
+            "a köteg soros útja hiányzik"
+        )
+
     def test_URES_vagolapra_nem_tesz_semmit(self, controller):
         """Az üres vágólap ne törölje le a meglévő feliratokat — az néma
         adatvesztés lenne."""

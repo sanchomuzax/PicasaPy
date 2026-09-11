@@ -286,6 +286,42 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-photowrite")
 
+    def _run_photo_writes(self, jobs, after=None) -> None:
+        """Több kép írása SOROSAN, EGYETLEN háttérszálon (#2915).
+
+        Képenként külön szálat indítani versenyhelyzet: a kijelölés képei
+        jellemzően EGY mappában vannak, tehát ugyanabba a `.picasa.ini`-be
+        és ugyanabba az indexbe írnak. A windowsos CI ki is mutatta: a
+        kijelölés egy része felirat nélkül maradt. A soros út mellékesen a
+        NAS-t is kíméli (N párhuzamos backup+temp+fsync helyett egy), és a
+        `_apply_batch`-hez hasonlóan EGY index-kapcsolatot használ.
+
+        `jobs`: `(photo_id, perform)` párok; a `perform()` a teljes lassú
+        munka, ugyanúgy, mint a `_run_photo_write`-nál. Az `after` utómunka
+        a GUI-szálon, a KÖTEG végén fut le egyszer.
+        """
+        self._ensure_photo_ops_wired()
+        jobs = tuple(jobs)
+        if not jobs:
+            return
+
+        def worker() -> None:
+            try:
+                with open_index(self._db_path) as conn:
+                    for index, (photo_id, perform) in enumerate(jobs):
+                        fields = perform()
+                        if fields:
+                            update_photo_fields(conn, photo_id, **fields)
+                        record = photo_by_id(conn, photo_id)
+                        utolso = index == len(jobs) - 1
+                        self._photoFieldUpdated.emit(
+                            photo_id, record, after if utolso else None
+                        )
+            except _WRITE_ERRORS as error:
+                self.photoOpFailed.emit(str(error))
+
+        self._start_background(worker, name="picasapy-photowrite-koteg")
+
     #: #1443: azok a nézetmódok, amelyek TAGSÁGA a csillag-mezőtől függ.
     #: Ha itt állunk, a csillag ki/be kapcsolása nem egy sor megjelenését
     #: változtatja, hanem a lista TARTALMÁT — a nézetet újra le kell
@@ -471,17 +507,31 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         szoveg = self.captionClipboardText().strip()
         if not szoveg:
             return 0
-        darab = 0
+        photos = self._photos.photos
+        kijeloles = []
         for row in rows:
             try:
                 sor = int(row)
             except (TypeError, ValueError):
                 continue
-            if not 0 <= sor < len(self._photos.photos):
-                continue
-            self.setCaption(sor, szoveg)
-            darab += 1
-        return darab
+            if 0 <= sor < len(photos):
+                kijeloles.append(photos[sor])
+        if not kijeloles:
+            return 0
+
+        # #2915: EGY soros köteg, nem képenként egy szál — ugyanabba az
+        # ini-be és indexbe írás párhuzamosan versenyhelyzet volt.
+        azonositok = [photo.id for photo in kijeloles]
+
+        def utomunka() -> None:
+            for photo_id in azonositok:
+                self._refresh_if_dropped_from_search(photo_id)
+
+        self._run_photo_writes(
+            [self._felirat_iras(photo, szoveg) for photo in kijeloles],
+            after=utomunka,
+        )
+        return len(kijeloles)
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
@@ -497,7 +547,20 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not 0 <= row < len(photos):
             return
         photo = photos[row]
-        text = text.strip()
+        photo_id, perform = self._felirat_iras(photo, text)
+        self._run_photo_write(
+            photo_id,
+            perform,
+            after=lambda: self._refresh_if_dropped_from_search(photo_id),
+        )
+
+    def _felirat_iras(self, photo, text: str):
+        """Egy kép felirat-írása `(photo_id, perform)` párként (#2915).
+
+        A `perform()` a teljes lassú munka (IPTC- vagy ini-írás); így
+        ugyanaz a kód szolgálja az egy képre menő `setCaption`-t és a
+        kijelölésre menő, SOROS köteget (`pasteCaptionText`)."""
+        text = (text or "").strip()
         is_jpeg = photo.name.lower().endswith((".jpg", ".jpeg"))
 
         def perform() -> dict:
@@ -515,11 +578,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"caption_ini": text or None}
 
-        self._run_photo_write(
-            photo.id,
-            perform,
-            after=lambda: self._refresh_if_dropped_from_search(photo.id),
-        )
+        return photo.id, perform
 
     # -- tömeges átnevezés (#366, rename.fen paritás) ------------------------
 
