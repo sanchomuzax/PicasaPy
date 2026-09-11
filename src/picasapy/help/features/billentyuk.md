@@ -28,8 +28,14 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+I | Kiválasztás megfordítása |
 | Ctrl+C | Másolás |
 | Ctrl+X | Kivágás |
+| Ctrl+V | Beillesztés a kiválasztott mappába |
 | Ctrl+R | Forgatás jobbra |
 | Ctrl+Shift+R | Forgatás balra |
+| Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |
+| Ctrl+Shift+E | „Jó napom van" a kijelölt képekre |
+
+A **Ctrl+V** szövegmezőben — például átnevezés közben — a mezőé marad,
+tehát ott szöveget illeszt be.
 
 Egérrel: Ctrl+kattintás egyenkénti hozzávételhez, Shift+kattintás
 tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
@@ -44,8 +50,16 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+T | Címkék panel nyitása/zárása |
 | Ctrl+K | Címkék panel (ugyanaz, mint a Ctrl+T) |
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
+| Ctrl+3 | A kijelölt kép megnyitása a nézőben |
 | Ctrl+F | A kereső mezőre ugrik |
+| Ctrl+F6 | Váltás a másodpéldányok nézetére |
+| Ctrl+F7 | Keresés hasonló képekre |
+| Ctrl+F8 | A hasonlóság-minta törlése |
 | Alt+Enter | Tulajdonságok panel |
+
+> A **Ctrl+3** billentyű működik, a hozzá tartozó két menüpont
+> (**Nézet ▸ Szerkesztési nézet** és **Kép ▸ Megjelenítés és
+> szerkesztés**) viszont még szürke.
 
 A **Ctrl+0** azt a panelt zárja be, amelyik éppen nyitva van a jobb
 oldalon (Címkék, Helyek, Tulajdonságok vagy Emberek), és újranyitáskor

@@ -100,6 +100,46 @@ A cél fájl épp foglalt, vagy nincs rá írási jogod.
 Ha a lemez megtelt vagy csak olvasható, a program megnevezi az érintett
 fájlt. Szabadíts fel helyet, vagy ellenőrizd a mappa jogosultságait.
 
+### „Nincs beilleszthető fájl a vágólapon."
+
+A **Szerkesztés ▸ Beillesztés** parancsot használtad, de a vágólapon
+nincs fájl. Előbb másolj vagy vágj ki képeket — akár a PicasaPy-ban,
+akár a fájlkezelőben.
+
+### „Egyetlen képen sincs ez a címke."
+
+A **Címke megjelenítése albumként…** párbeszédbe olyan címkét írtál be,
+ami egyetlen képeden sem szerepel. A címke egészben számít, tehát a
+„nyár" nem találja meg a „nyaralás"-t.
+
+### „A keresési eredményeket nem sikerült albumként menteni."
+
+A **Keresési eredmények mentése…** parancs nem tudott albumot készíteni
+— jellemzően azért, mert időközben kiléptél a keresésből, vagy nem
+maradt találat.
+
+### „Arcadat kiírva … fájlba; … kihagyva."
+
+Az **Arcinformációk írása XMP-adatokba…** összegzése. A kihagyott képek
+vagy nem tartalmaznak elnevezett arcot, vagy nem sikerült melléjük írni;
+ez utóbbinál a program megnevezi az első hibát. A leggyakoribb ok az
+írásvédett mappa.
+
+### „Az arcadatot nem sikerült XMP-be írni: …"
+
+Egy arc elnevezése után a program a kép mellé írná az arc helyét és
+nevét, de a fájlt nem tudta megírni. **A névadás ettől érvényben marad**
+— csak a kísérőfájl hiányzik. Oldd fel a mappa írásvédettségét, és a
+mappa összes képére egyszerre pótolhatod az **Eszközök ▸ Kísérleti ▸
+Arcinformációk írása XMP-adatokba…** paranccsal.
+
+### „A kép elkészült itt: … — az asztali háttérképet viszont nem sikerült magától beállítani."
+
+A háttérképnek szánt kép elkészült, de a program nem érte el az asztali
+környezet beállítását. Az üzenet megmondja, hova tette a képet; állítsd
+be kézzel a rendszer saját beállításaiban. Lásd
+[Asztali háttérkép](features/hatterkep.md).
+
 ### „Nincs nyomtatható kép." / „Ezeket a képeket nem lehetett kinyomtatni"
 
 Az elsőnél nincs kijelölve semmi. A másodiknál a felsorolt fájlok nem

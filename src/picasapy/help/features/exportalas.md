@@ -48,6 +48,13 @@ Beállítható:
 
 A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
 
+## Arcinformációk kísérőfájlba
+
+Az **Eszközök ▸ Kísérleti ▸ Arcinformációk írása XMP-adatokba…** a látott
+mappa képei mellé kis kísérőfájlokat ír az elnevezett arcok helyével és
+nevével, hogy más fényképkezelők is felismerjék őket. A képfájlokhoz nem
+nyúl. Részletek: [Emberek és arcok](emberek.md).
+
 ## Google Earth
 
 **Eszközök ▸ Geocímke ▸ Exportálás Google Earth-fájlba** a helyhez kötött

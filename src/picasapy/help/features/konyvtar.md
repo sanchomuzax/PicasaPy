@@ -2,6 +2,12 @@
 
 A bal hasáb a könyvtárad térképe. Négy fajta bejegyzés lehet benne.
 
+Mindegyiknek **saját ikonja** van, hogy egy pillantásra lásd, mit
+nézel: a mappa **kék** mappaikon, a rendes album **narancs könyv**, a
+Csillagozott képek **zöld könyv csillaggal**, a program készítette
+projekt-mappák (Kollázsok, Mozgófilmek, Exportált képek) **lila könyv
+csillaggal**, a címke pedig **szürke címke**.
+
 A **Nézet ▸ Könyvtárnézet** pipa mutatja, hogy a főablak a könyvtárat
 mutatja. Ez ma mindig be van kapcsolva; a párja, a **Szerkesztési
 nézet**, még nem készült el.
@@ -48,7 +54,7 @@ gyakran adódik: a duplikátum-kereső minden forrásmappában saját
 ### Fotó-kupac a mappaikon helyett
 
 A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
-bekapcsolásával a hasáb sorain a sárga mappaikon helyett a mappa első
+bekapcsolásával a hasáb sorain a kék mappaikon helyett a mappa első
 néhány fotójából álló kis kupac látszik. Ugyanaz a mappa mindig ugyanúgy
 néz ki, futások között is. Alapból kikapcsolva indul, és a választásod
 megmarad.
@@ -157,6 +163,13 @@ Az ablak alján lévő tálca mindig a jelenlegi kijelölést mutatja. A kék
 csík fölötte kiírja, hány kép van benne, milyen dátumtartományból, és
 mekkora helyet foglalnak.
 
+A csíkon a dátum **két alakban** jelenhet meg. Ha a kijelölt képek
+mindegyike ugyanarról a napról való, egyetlen dátum áll ott; ha többről,
+akkor a legkorábbi és a legkésőbbi dátum. A méret felirata is ehhez
+igazodik. A csík végén — ha van mit kiírni — ott áll még, hogy a
+kijelölésben **mely címkék** szerepelnek, és hány képen (például
+`Címkék: nyaralás (12)`). Címke nélküli kijelölésnél ez a rész elmarad.
+
 A tálca akkor hasznos igazán, ha **több mappából** akarsz képeket
 összeszedni — például egy kollázshoz:
 
@@ -164,6 +177,15 @@ A tálca akkor hasznos igazán, ha **több mappából** akarsz képeket
   mappára lépve sem tűnik el. Ettől kezdve az újabb kijelöléseidet
   hozzáadhatod.
 - **Törlés a tálcáról** — kiüríti.
+
+### Ha albumra kattintasz
+
+Ha a bal hasábon egy **albumot** választasz ki, és közben egyetlen kép
+sincs kijelölve, a tálcán nem bélyegképek sorakoznak, hanem **egyetlen
+borítókép** a felirattal, hogy mi van kiválasztva és hány kép van benne
+— például `Kiválasztott album - 12 fotó`. Amint kijelölsz egy képet, a
+bélyegképek veszik át a helyét. A mappákra ez nem vonatkozik: a
+mappanézet megszokott kinézete nem változik.
 
 A tálcának **saját kijelölése** van, a rácsétól függetlenül. A tálcán
 egy képre kattintva kijelölöd (kék kerettel jelöli), Ctrl-lal

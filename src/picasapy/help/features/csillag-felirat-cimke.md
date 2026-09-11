@@ -35,6 +35,16 @@ A sáv két végén egy-egy kis gomb áll:
 A rácsban a **Nézet ▸ Indexkép felirata ▸ Képfelirat** beállítással
 hozhatod elő az indexképek alá.
 
+### Ugyanaz a felirat több képre
+
+A **Szerkesztés ▸ Szöveg másolása** a kijelölt kép feliratát a vágólapra
+teszi, a **Szerkesztés ▸ Szöveg beillesztése** pedig a vágólap szövegét
+**minden kijelölt kép** feliratába beírja. Így egy feliratot végig lehet
+vinni egy egész sorozaton.
+
+Üres vágólappal a **Szöveg beillesztése** szürke, tehát nem tudja
+véletlenül letörölni a meglévő feliratokat.
+
 A feliratot a PicasaPy a JPEG-fájl IPTC-mezőjébe is beírja, így más
 programok is látják.
 
@@ -49,6 +59,18 @@ nyitja és zárja is a panelt.
 - A panelen látszik, mely címkék vannak a kijelölésen. Egy címkére
   jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
   **Így címkézett elemek keresése**, **Címke eltávolítása**.
+
+### Egy címke tartalmából album
+
+Az **Eszközök ▸ Kísérleti ▸ Címke megjelenítése albumként…** paranccsal
+egy címkéből **rendes album** lesz: beírod a címkét, és a program
+albumba gyűjti az összes olyan képet, amin szerepel.
+
+A címke egészben számít, tehát a „nyár" nem húzza be a „nyaralás"-t. Ha
+egyetlen képen sincs ilyen címke, a program megmondja: „Egyetlen képen
+sincs ez a címke."
+
+Ez nem élő szűrő: a kész album onnantól önálló, és a bal hasábon marad.
 
 ### Gyorscímkék
 

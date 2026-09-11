@@ -126,9 +126,9 @@ másik gépről, hálózati meghajtón.
 Ha a kép már létezik ezen a néven, választhatsz: **Meglévő cseréje** vagy
 **Új létrehozása**.
 
-A panel **Asztali háttérkép** gombja **még nem működik** — a kollázst a
-**Kollázs létrehozása** gombbal mentsd el, és utána állítsd be
-háttérképnek a rendszer saját beállításaiban.
+A panel **Asztali háttérkép** gombja egy lépésben elkészíti a kollázst,
+és rögtön be is állítja az asztalod háttérképének. Részletek:
+[Asztali háttérkép](hatterkep.md).
 
 ## Piszkozat
 

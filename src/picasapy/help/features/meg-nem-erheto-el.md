@@ -17,13 +17,12 @@ fölöslegesen.
 
 **Szerkesztés**
 
-- Beillesztés (Ctrl+V)
-- Szöveg másolása, Szöveg beillesztése
 - Szövegmezők helyi menüjében: Automatikus kitöltés
 
 **Nézet**
 
-- Szerkesztési nézet (Ctrl+3)
+- Szerkesztési nézet — a **Ctrl+3** billentyű viszont **működik**: a
+  kijelölt képet megnyitja a nézőben
 - Szerkesztési vezérlők megjelenítése
 - Keresési opciók
 - Kis képek
@@ -41,14 +40,14 @@ fölöslegesen.
 
 **Kép**
 
-- Megjelenítés és szerkesztés (Ctrl+3)
+- Megjelenítés és szerkesztés — a **Ctrl+3** billentyű viszont
+  **működik**
 - Szöveg megjelenítése, Szöveg elrejtése
 - Megjelenítés
 - Arcok alaphelyzetbe állítása
 
 **Létrehozás**
 
-- Beállítás háttérképként…
 - Poszter készítése…
 - Hozzáadás a képernyővédőhöz…
 - Ajándék CD készítése…
@@ -60,7 +59,7 @@ fölöslegesen.
 - Képernyővédő konfigurálása…
 - Képek biztonsági mentése…
 - Dátum és idő beállítása…
-- Kísérleti ▸ Gombok konfigurálása…
+- Gombok konfigurálása…
 
 **Súgó**
 
@@ -89,7 +88,8 @@ már **működik**: ezt a súgót nyitja meg — lásd
 
 A **Beállítások** párbeszéd nyolc füléből ma kettőn van élő vezérlő:
 
-- **Általános** — a nyelv és a törlés-megerősítés kapcsolója,
+- **Általános** — a nyelv, a törlés-megerősítés és a duplikátum-észlelés
+  kapcsolója,
 - **E-mail** — a levelezőprogram megválasztása és a küldött képek mérete
   (lásd [Küldés e-mailben](email.md)). Ugyanezen a fülön a videók
   küldési módja és az Outlook-kapcsoló még szürke.

@@ -39,10 +39,25 @@ keletkezik belőle másolat — a program a félbemaradt másolatot visszatörli
 ugyanabból a képből. Ugyanez a védelem működik a Kukába helyezésnél, a
 visszaállításnál és a megőrzött eredetik költöztetésénél is.
 
-## Másolás és kivágás
+## Másolás, kivágás, beillesztés
 
 **Szerkesztés ▸ Másolás** (Ctrl+C) és **Kivágás** (Ctrl+X) a
 fájlkezelőbe adja át a fájlokat, így máshova beillesztheted őket.
+
+A **Szerkesztés ▸ Beillesztés** (Ctrl+V) a másik irány: a vágólapra tett
+fájlokat az **éppen kiválasztott mappába** másolja. Mindegy, honnan
+kerültek oda — a fájlkezelőből vagy a PicasaPy fenti két parancsából.
+Kivágás után áthelyezés lesz belőle, másolás után másolás.
+
+Ha a célmappában már van azonos nevű fájl, a beillesztett kép **új nevet
+kap**: semmi nem íródik felül.
+
+Üres vágólapnál a menüpont szürke. Ha közben ürült ki a vágólap, a
+program megmondja, miért nem történt semmi („Nincs beilleszthető fájl a
+vágólapon.").
+
+Szövegmezőben — például átnevezés közben — a Ctrl+V a mezőé marad, tehát
+a szövegbe illeszt be, nem fájlt.
 
 ## Törlés
 

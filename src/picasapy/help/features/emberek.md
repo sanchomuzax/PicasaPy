@@ -74,6 +74,32 @@ oldalarányát, ugyanúgy, mint a vágónál — a részletek a
 > Az **Arcok alaphelyzetbe állítása** menüpont **még nem működik**: a
 > helye megvan, de az arcadatok törlése mögötte még nincs bekötve.
 
+## A nevek átadása más programoknak
+
+Ha nevet adsz egy arcnak, a program a kép mellé — **a képfájl
+átírása nélkül** — kiír egy kis kísérőfájlt is, benne az arc helyével és
+nevével. Ez magától történik, nem kell kérned. Két szabvány szerint
+egyszerre írja ki, hogy a Windows Fotógaléria és a digiKam vagy a
+Lightroom is felismerje.
+
+Ha egy fájlt nem sikerül megírni — például mert a mappa írásvédett —, a
+program megnevezve jelzi, **a névadás viszont érvényben marad**.
+
+### Egy egész mappára, egyben
+
+Az **Eszközök ▸ Kísérleti ▸ Arcinformációk írása XMP-adatokba…**
+paranccsal az **épp látott mappa** összes képére kiíratod ugyanezt.
+Hasznos, ha a neveket még a régi Picasában adtad meg, vagy ha
+írásvédettség miatt korábban kimaradt néhány kép.
+
+Közben a jobb felső sarokban kis panel mutatja a haladást (**Arccímkék
+írása**, alatta hány kép készült el), és a **Mégse** gombbal
+megszakítható. A megszakítás után a program megmondja, hány fájlba írt —
+azok érvényesek maradnak.
+
+A végén összegzést kapsz: hány fájlba írt, hányat hagyott ki, és ha volt
+hiba, mi volt az első.
+
 ## Emberek albumok
 
 Az **Áthelyezés új személyhez…** paranccsal egy rosszul besorolt arcot új

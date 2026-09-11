@@ -131,7 +131,7 @@ Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Beállítható:
   **aláhúzott** stílus,
 - **igazítás** balra, középre, jobbra,
 - **Szöveg színe** és **Körvonal színe**, **Körvonal vastagsága**,
-- **Átlátszatlanság**,
+- **Átlátszóság**,
 - kapcsoló, amivel csak a körvonal látszik, kitöltés nélkül.
 
 A **betűméret** az eredeti Picasa tizenhat méretéből választható:

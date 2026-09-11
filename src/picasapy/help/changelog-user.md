@@ -4,6 +4,98 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-11
+
+**Másodpéldányok: új, gyors nézet**
+
+- Az **Eszközök ▸ Kísérleti ▸ Fájlok másodpéldányainak megjelenítése**
+  mostantól **nem ablakot nyit**, hanem szűrt nézetbe visz: a rács csak
+  azokat a képeket mutatja, amikből több példány van. Kilépni a zöld sáv
+  **Vissza az összes megtekintéséhez** gombjával lehet, vagy a keresősávon
+  megjelenő másodpéldány-jelvénnyel. A billentyűje **Ctrl+F6**.
+- A korábbi duplikátum-kezelő ablak megmaradt, csak külön menüpontra
+  került: **Másodpéldányok kezelése…**.
+- A kezelő **Mégse** gombja akkor sem ragad be, ha a keresés épp abban a
+  pillanatban ért véget.
+
+**Keresés**
+
+- Működik az eszköztár **idő-csúszkája**: jobbra húzva egyre frissebb
+  képek maradnak a rácson, és a zöld sáv kiírja, mit szűrtél („Legfeljebb
+  9 hetes képek."). A bal széle kikapcsolja.
+- Hat szín menüből is kereshető: **Eszközök ▸ Kísérleti ▸ Keresés…**
+  almenü.
+- A keresés teljes találatából album lehet: **Eszközök ▸ Kísérleti ▸
+  Keresési eredmények mentése…**.
+- A keresőmezőn már **jobbgombbal** is elérhető a Beillesztés, a Másolás
+  és a többi szövegparancs.
+
+**Címkék és feliratok**
+
+- Egy címke tartalmából rendes album készíthető: **Eszközök ▸ Kísérleti ▸
+  Címke megjelenítése albumként…**.
+- A **Szerkesztés ▸ Szöveg másolása** és **Szöveg beillesztése** működik:
+  egy képfeliratot végig lehet vinni egy egész sorozaton.
+- A képtálca fölötti kék csík kiírja, mely **címkék** szerepelnek a
+  kijelölésben és hány képen, a dátum és a méret pedig rövidebb alakot
+  kap, ha a képek egyazon napról valók.
+
+**Arcok**
+
+- Ha nevet adsz egy arcnak, a program magától a kép mellé írja az arc
+  helyét és nevét, hogy más fényképkezelők is felismerjék. A képfájlhoz
+  nem nyúl.
+- Egy egész mappára is kiíratható: **Eszközök ▸ Kísérleti ▸
+  Arcinformációk írása XMP-adatokba…**. Közben látszik a haladás, és
+  **Mégse** gombbal megszakítható.
+
+**Asztali háttérkép**
+
+- Új fejezet a súgóban. A **Létrehozás ▸ Beállítás háttérképként…**
+  paranccsal egy kijelölt képből, a kollázs-panel **Asztali háttérkép**
+  gombjával pedig egy kollázsból lesz háttérkép. Mindkettő másolatot
+  készít, és középre helyezi a képet.
+
+**Fájlműveletek**
+
+- Működik a **Szerkesztés ▸ Beillesztés** (**Ctrl+V**): a vágólapra tett
+  fájlok a kiválasztott mappába kerülnek. Névütközésnél új nevet kapnak,
+  tehát semmi nem íródik felül.
+
+**Új billentyűk**
+
+- **Ctrl+3** a kijelölt képet megnyitja a nézőben, **Ctrl+F6** a
+  másodpéldányok nézete, **Ctrl+F7** hasonló képeket keres, **Ctrl+F8**
+  törli a hasonlóság-mintát, **Ctrl+Shift+B** fekete-fehérré,
+  **Ctrl+Shift+E** pedig „Jó napom van"-nal javítja a kijelölt képeket.
+
+**Megjelenés**
+
+- A bal hasáb bejegyzései saját ikont kaptak: a mappa **kék** (eddig
+  sárga volt), a rendes album narancs könyv, a Csillagozott képek zöld
+  könyv csillaggal, a projektmappák lila könyv csillaggal, a címke pedig
+  szürke címke.
+- Albumra kattintva — amíg nincs kijelölt képed — a képtálcán egy
+  borítókép áll a felirattal, hogy hány kép van benne.
+- A legördülő listák és a görgetősáv az eredeti Picasa rajzát kapták.
+- A szerkesztőben megnyíló kérdések mögött a felület elhalványul, hogy
+  látszódjon, mire kell válaszolni.
+- A szövegráíró panel feliratai a vezérlőik mellé kerültek; az
+  átlátszóság-csúszka felirata **Átlátszóság**.
+- A **Színinvertálás** csempéjén is ott a kék jelvény, ami az egy
+  kattintással ható effekteket jelöli.
+
+**Beállítások**
+
+- A **Beállítások ▸ Általános** fülön a **Duplikátumok észlelése
+  importáláskor** kapcsoló működik, és ugyanazt az egy beállítást mutatja,
+  mint az importáló ablak **Duplikátumok kizárása** jelölője.
+
+**Gyorsaság**
+
+- Valamivel gyorsabb az indulás: a nagy nézet néhány ritkán használt
+  ablaka csak akkor épül fel, amikor tényleg kell.
+
 ## 2026-09-10
 
 **Fájlműveletek: a félbemaradt áthelyezés nem hagy kárt**

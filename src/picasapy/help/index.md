@@ -41,6 +41,7 @@ szerkesztő fülei ugyanott vannak.
 - [Küldés e-mailben](features/email.md)
 - [Kollázs](features/kollazs.md)
 - [Mozgófilm](features/mozgofilm.md)
+- [Asztali háttérkép](features/hatterkep.md)
 
 ## Beállítás és karbantartás
 

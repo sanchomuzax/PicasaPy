@@ -7,11 +7,12 @@
 **Webalbumok**, **Névcímkék**.
 
 > **Fontos:** ma két fülön van élő vezérlő. Az **Általános** fülön a
-> **nyelv** és a **Törlés a lemezről megerősítés nélkül** kapcsoló, az
-> **E-mail** fülön a levelezőprogram megválasztása és a küldött képek
-> mérete (lásd [Küldés e-mailben](email.md)). A többi vezérlő szürke — a
-> helye megvan, de a funkció mögötte még nem készült el. A **Bezárás**
-> gomb zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
+> **nyelv**, a **Törlés a lemezről megerősítés nélkül** és a
+> **Duplikátumok észlelése importáláskor** kapcsoló, az **E-mail** fülön
+> a levelezőprogram megválasztása és a küldött képek mérete (lásd
+> [Küldés e-mailben](email.md)). A többi vezérlő szürke — a helye
+> megvan, de a funkció mögötte még nem készült el. A **Bezárás** gomb
+> zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
 > hatnak.
 
 ### Nyelv
@@ -26,6 +27,14 @@ Ugyanez elérhető az **Eszközök ▸ Nyelv** menüből is.
 Ha bekapcsolod a **Törlés a lemezről megerősítés nélkül** pipát, a
 program a törlésnél nem kérdez rá többé. Ugyanezt beállíthatod magában a
 törlés-megerősítő ablakban is, a **Ne kérdezze újra** pipával.
+
+### Duplikátumok észlelése importáláskor
+
+Ha be van kapcsolva, az importálás kihagyja azokat a képeket, amik már
+benne vannak a könyvtáradban. Ugyanez a kapcsoló az importáló ablakban
+**Duplikátumok kizárása** néven látszik — a két hely **ugyanazt az egy
+beállítást** mutatja, tehát amit az egyiken átállítasz, a másikon is
+látszik.
 
 ## Sötét téma
 
