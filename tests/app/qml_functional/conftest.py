@@ -294,6 +294,17 @@ def qml_app(qt_app, tmp_path):
     yield from _build_qml_app(qt_app, tmp_path)
 
 
+@pytest.fixture
+def qml_app_friss(qt_app, tmp_path):
+    """Ugyanaz, mint a `qml_app`, más NÉVEN (#2851).
+
+    Arra kell, hogy egy modul-szintű ablakra átállított fájl EGYETLEN,
+    állapotot író tesztje friss ablakot kérhessen: ott a `qml_app` nevet a
+    modul már a `qml_app_module`-ra írta át, tehát a funkció-scope-ú
+    változatot más néven kell elérni."""
+    yield from _build_qml_app(qt_app, tmp_path)
+
+
 @pytest.fixture(scope="module")
 def qml_app_module(
     qt_app,
