@@ -68,6 +68,7 @@ from .exported_folders import (
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
 from . import collage_output, collage_prefs
+from .backup_controller import BackupController
 from .dedup_controller import DedupController
 from .email_controller import EmailController
 from .discovery_controller import DiscoveryController
@@ -1157,6 +1158,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # épp nyitva van — a TimelineView.qml a megnyitáskor is újratölt.
     timeline_controller = TimelineController(data_dir / "index.db", provider)
     controller.syncFinished.connect(timeline_controller.reload)
+    # #440: a mentés-készletek hídja. A jelölteket a FIGYELT GYÖKEREK
+    # alól szedi (a szűrést a készlet fájlszűrője végzi).
+    backup_controller = BackupController(data_dir / "index.db", tuple(roots))
     # Duplikátum-kezelő (#287): a picasapy.dedup mag fölötti UI-híd —
     # a DedupDialog.qml-nek adja a csoportokat, a thumbnail-providernél
     # regisztrálja az érintett fotókat
@@ -1280,6 +1284,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
     )
+    engine.rootContext().setContextProperty("backupController", backup_controller)
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
     # #1066 — az „E-Mail" beállításfül és a webexportálás párbeszéde
     engine.rootContext().setContextProperty("emailController", email_controller)

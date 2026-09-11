@@ -180,6 +180,8 @@ MenuBar {
     signal faceScanRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
+    //: #440: Eszközök ▸ Képek biztonsági mentése… (`ID_TOOLS_BACKUP`)
+    signal backupRequested()
     signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
@@ -1709,7 +1711,13 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("&Back Up Pictures..."); placeholder: true }
+        // #440: a mentés-készletek párbeszéde. A helye MÉRT (#1774): a
+        // „Képernyővédő konfigurálása…" utáni csoporthatár alatt áll.
+        MenuItem {
+            objectName: "menuToolsBackup"
+            text: qsTr("&Back Up Pictures...")
+            onTriggered: bar.backupRequested()
+        }
         PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Adjust &Date and Time..."); placeholder: true }
         MenuSeparator {}
