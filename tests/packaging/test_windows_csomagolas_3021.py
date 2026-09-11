@@ -101,7 +101,7 @@ class TestAzInnoSetupTelepito:
 
 class TestACI:
     def _windows_lepesek(self, munkafolyamat) -> list[dict]:
-        for nev, job in munkafolyamat["jobs"].items():
+        for _nev, job in munkafolyamat["jobs"].items():
             fut = str(job.get("runs-on", ""))
             if "windows" in fut:
                 return job["steps"]
