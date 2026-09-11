@@ -130,6 +130,9 @@ class TestAHianyzoAgakBekotese:
             ("Ctrl+F8", "window.torolAHasonlosagMintat()"),
             ("Ctrl+Shift+B", 'window.kotegEffekt("bw")'),
             ("Ctrl+Shift+E", 'window.kotegEffekt("enhance")'),
+            # #2902: a tükrözés két ága — a keymap 35./36. tétele
+            ("Ctrl+Shift+H", "controller.flipHorizontalMany"),
+            ("Ctrl+Shift+V", "controller.flipVerticalMany"),
         ],
     )
     def test_a_billentyu_a_MERT_belepot_hivja(self, billentyu, horgony):

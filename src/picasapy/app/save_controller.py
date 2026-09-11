@@ -42,6 +42,7 @@ from picasapy.edit.save_copy import (
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniConflictError, IniSaveError
 from picasapy.render.chain import apply_filters, can_render_filter
+from picasapy.render.flip import apply_flip
 
 from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
@@ -66,11 +67,14 @@ _SAVE_ERRORS = (OSError, ValueError, SaveError, IniSaveError, IniConflictError)
 _FAILED_DETAILS_LIMIT = 5
 
 
-def _render_for_save(path: Path, rotate_steps: int, filters: str) -> np.ndarray:
+def _render_for_save(
+    path: Path, rotate_steps: int, filters: str, flip_flags: int = 0
+) -> np.ndarray:
     """A képfájl a szerkesztésekkel BEÉGETVE, OpenCV BGR-ben.
 
-    A forgatás és a `filters=` lánc ugyanazon a renderelő-úton megy, mint
-    az exportnál — a mentett fájl és a rácsban látott kép így egyezik.
+    A forgatás, a tükrözés (#2902) és a `filters=` lánc ugyanazon a
+    renderelő-úton megy, mint az exportnál — a mentett fájl és a rácsban
+    látott kép így egyezik.
     """
     payload = read_image_bytes(path)
     if payload is None:
@@ -81,6 +85,7 @@ def _render_for_save(path: Path, rotate_steps: int, filters: str) -> np.ndarray:
     steps = int(rotate_steps or 0) % 4
     for _ in range(steps):
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    image = apply_flip(image, flip_flags)
     ops = EditSession.from_value(filters).ops
     if not ops:
         return image
@@ -280,7 +285,8 @@ class SaveMixin(BackgroundWorkerMixin):
         pillanatkép az „Utolsó mentés visszavonása" számára).
         """
         records = [
-            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0), r.filters or "")
+            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
+             r.filters or "", int(r.flip_flags or 0))
             for r in self._selected_records(rows)
         ]
         if not records:
@@ -296,9 +302,9 @@ class SaveMixin(BackgroundWorkerMixin):
             # fájlokat: három külön mondata van, és a lemezhiba-ágon az
             # ELSŐ érintett fájl neve + a hibakód jelenik meg.
             jelentett_agak: set[str] = set()
-            for index, (path, rotate_steps, filters) in enumerate(records):
+            for index, (path, rotate_steps, filters, flip) in enumerate(records):
                 try:
-                    rendered = _render_for_save(path, rotate_steps, filters)
+                    rendered = _render_for_save(path, rotate_steps, filters, flip)
                     save_edited(path, rendered, EditSession.from_value(filters))
                 except _SAVE_ERRORS as error:
                     failed += 1
@@ -378,7 +384,8 @@ class SaveMixin(BackgroundWorkerMixin):
     def _save_copies(self, records, *, target: Path | None) -> None:
         """A másolat-mentés közös háttérszálas útja."""
         items = [
-            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0), r.filters or "")
+            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
+             r.filters or "", int(r.flip_flags or 0))
             for r in records
         ]
         if not items:
@@ -400,9 +407,9 @@ class SaveMixin(BackgroundWorkerMixin):
             # megy be az indexbe a ciklus UTÁN — képenként külön kapcsolatot
             # nyitni fölösleges lemezmunka lenne.
             orokolt_kulcsok: list[tuple[str, int]] = []
-            for index, (path, rotate_steps, filters) in enumerate(items):
+            for index, (path, rotate_steps, filters, flip) in enumerate(items):
                 try:
-                    rendered = _render_for_save(path, rotate_steps, filters)
+                    rendered = _render_for_save(path, rotate_steps, filters, flip)
                     eredmeny = save_copy(
                         path,
                         rendered,

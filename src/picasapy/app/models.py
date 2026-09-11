@@ -337,7 +337,7 @@ def _thumb_url(photo: PhotoRecord, display_mode: str | None = None) -> str:
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
     return (
         f"image://thumbs/{photo.id}"
-        f"?r={photo.rotate_steps}&f={filters_tag}"
+        f"?r={photo.rotate_steps}&fl={photo.flip_flags}&f={filters_tag}"
         f"&m={photo.mtime_ns}&s={photo.size}"
         f"{display_mode_url_suffix(display_mode)}"
     )

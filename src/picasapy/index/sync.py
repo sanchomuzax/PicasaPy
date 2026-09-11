@@ -1213,6 +1213,10 @@ _TARGETED_UPDATE_COLUMNS = {
     "keywords_ini",
     "keywords_file",
     "rotate_steps",
+    # #2902: a tükrözés-jelző — a forgatás párja, ugyanígy célzottan
+    # frissíthető. A mappa-resync NEM írja (nem ini-eredetű), ezért egy
+    # újraszkennelés meg is ŐRZI.
+    "flip_flags",
 }
 
 

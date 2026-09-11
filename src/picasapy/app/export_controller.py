@@ -65,6 +65,9 @@ def _export_item(record) -> ExportItem:
     return ExportItem(
         source=Path(record.folder_path) / record.name,
         rotate_steps=record.rotate_steps,
+        #: #2902: a tükrözés is beleég — különben az exportált fájl más
+        #: állású lenne, mint amit a rácson lát a felhasználó
+        flip_flags=record.flip_flags,
         filters=record.filters,
         # #1166: a felirat és a címkék átkerülnek a célmappa
         # `.picasa.ini`-jébe — az eredetiben ezt a közös kimeneti mag

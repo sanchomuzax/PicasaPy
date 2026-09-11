@@ -61,6 +61,8 @@ class TestMigracio:
         raw.executescript(
             # #2486: a befagyasztott fájlidő oszlopa a v17-ben érkezik
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
+            # #2902: a tükrözés jelzője a v19-ben
+            "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             "DROP TABLE photo_hashes;\n"
             "CREATE TABLE photo_hashes ("
             " path TEXT PRIMARY KEY,"

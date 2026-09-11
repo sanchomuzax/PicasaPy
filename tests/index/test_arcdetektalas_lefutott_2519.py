@@ -77,7 +77,10 @@ class TestSema:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
-        raw.executescript("DROP TABLE face_scan;\nPRAGMA user_version = 17;")
+        raw.executescript("DROP TABLE face_scan;\n"
+            #: #2902: a friss séma már tartalmazza — a v17 nem
+            "ALTER TABLE photos DROP COLUMN flip_flags;\n"
+            "PRAGMA user_version = 17;")
         raw.execute("INSERT INTO folders(id, path, has_ini) VALUES (1, '/kepek', 0)")
         raw.execute(
             "INSERT INTO photos(id, folder_id, name, kind, size, mtime_ns)"

@@ -69,6 +69,7 @@ from picasapy.ini import (
 )
 from picasapy.ini.albums import ensure_album, with_album, without_album
 from picasapy.metadata import write_iptc_caption
+from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL, toggled_flip
 from picasapy.scanner import PICASA_INI_NAME
 
 from .worker_thread import BackgroundWorkerMixin
@@ -1011,6 +1012,55 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             return forgatas_mutacio(document, photo.name, steps)
 
         self._apply_batch(valid, mutate)
+
+    # -- Tükrözés (#2902): a forgatás párja, INDEX-ben tárolva ------------
+    #
+    # Az eredeti két billentyűt szán rá (`Ctrl+Shift+H` vízszintes,
+    # `Ctrl+Shift+V` függőleges; `0x005e63d6` / `0x005e6408`), MENÜPONTOT
+    # nem — a 3.9 menüiben nincs ilyen parancs, és nálunk sem lesz.
+    #
+    # ⛔ Miért nem a `.picasa.ini`-be írunk: az ini `flipped(N)` kulcsa
+    # megvan, de az `N` bit-jelentése NINCS kimérve (ld. `render/flip.py`).
+    # Egy találgatott érték a felhasználó valódi fájljaiba menne, és a
+    # kétirányú ini-kompatibilitás a projekt központi ígérete.
+
+    @Slot(list)
+    def flipHorizontalMany(self, rows) -> None:  # noqa: N802
+        """Vízszintes tükrözés a kijelölésre (a mért `(panel, 2)` ág)."""
+        self._flip_many(rows, FLIP_HORIZONTAL)
+
+    @Slot(list)
+    def flipVerticalMany(self, rows) -> None:  # noqa: N802
+        """Függőleges tükrözés a kijelölésre (a mért `(panel, 1)` ág)."""
+        self._flip_many(rows, FLIP_VERTICAL)
+
+    def _flip_many(self, rows, direction: int) -> None:
+        """A jelző átváltása a kijelölés minden képén, EGY index-kapcsolaton.
+
+        A videókat kihagyja, a forgatás mintája szerint (#103): a tükrözés
+        képi művelet, videón nincs értelmes hatása. Ha a kijelölés üres, a
+        forgatásnál bevált jelzést adja (`rotationNeedsSelection`), hogy a
+        felület ugyanazt az eredeti üzenetet mutathassa."""
+        photos = self._photos.photos
+        kert = [int(r) for r in rows or () if 0 <= int(r) < len(photos)]
+        valid = [photos[r] for r in kert if photos[r].kind != "video"]
+        if not kert:
+            self.rotationNeedsSelection.emit()
+            return
+        kihagyott = len(kert) - len(valid)
+        if kihagyott:
+            self.rotationTypeFailed.emit(kihagyott)
+        if not valid:
+            return
+
+        self._ensure_photo_ops_wired()
+        with open_index(self._db_path) as conn:
+            for photo in valid:
+                update_photo_fields(
+                    conn, photo.id,
+                    flip_flags=toggled_flip(photo.flip_flags, direction),
+                )
+        self._refresh_view()
 
     def _apply_batch(self, photos, mutate) -> None:
         """Kötegelt ini-módosítás: mappánként egyetlen (atomikus, backupolt)

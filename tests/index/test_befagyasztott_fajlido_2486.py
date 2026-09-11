@@ -270,6 +270,8 @@ class TestMigracio:
         # a v17 oszlopának eltávolítása = a v16-os alak visszaállítása
         raw.executescript(
             "ALTER TABLE photos DROP COLUMN first_seen_mtime_ns;\n"
+            #: #2902: a friss séma már tartalmazza — a v16 nem
+            "ALTER TABLE photos DROP COLUMN flip_flags;\n"
             "PRAGMA user_version = 16;"
         )
         raw.execute("INSERT INTO folders(id, path, has_ini) VALUES (1, '/kepek', 0)")

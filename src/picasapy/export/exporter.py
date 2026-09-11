@@ -26,6 +26,7 @@ from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
+from picasapy.render.flip import apply_flip
 from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
@@ -160,6 +161,10 @@ class ExportItem:
 
     source: Path
     rotate_steps: int = 0
+    #: #2902: tükrözés-jelző (`1` = függőleges, `2` = vízszintes) — a
+    #: forgatás párja, ugyanúgy beégetendő, hogy az exportált fájl a rácsban
+    #: látott képpel egyezzen.
+    flip_flags: int = 0
     filters: str | None = None
     # #1166: a `.picasa.ini` `caption`/`keywords` mezője ÁTKERÜL a
     # célmappába — az eredetiben ezt a közös kimeneti mag (`CImageOutput`,
@@ -367,6 +372,7 @@ def _export_one(
     image = _decode_image(source)
     image = _apply_filter_chain(image, ops)
     image = _apply_rotation(image, item.rotate_steps)
+    image = apply_flip(image, item.flip_flags)
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
     payload = _transfer_metadata(source, _encode_jpeg(image, settings, source))

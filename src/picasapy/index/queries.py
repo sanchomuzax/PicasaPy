@@ -18,7 +18,8 @@ _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
-       p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height,
+       p.rotate_steps, p.flip_flags, p.filters, p.taken_at, p.orientation,
+       p.width, p.height,
        p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
        -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
        -- képen, és hány vár még névadásra. A `face` tábla származtatott
@@ -68,6 +69,12 @@ class PhotoRecord:
     # „legutóbbi változtatás" rendezés), ez pedig áll. `None` a v17 előtt
     # indexelt, azóta nem látott sorokon — a `sort_mtime_ns` kezeli.
     first_seen_mtime_ns: int | None = None
+    # #2902: tükrözés-jelző (`1` = függőleges, `2` = vízszintes, `3` =
+    # mindkettő) — a mért `0x005eef30` argumentumai szerint. Veszteségmentes,
+    # mint a forgatás. SZÁNDÉKOSAN az indexben él, nem a `.picasa.ini`-ben:
+    # az ini `flipped(N)` kulcsa megvan, de az `N` bit-jelentése nincs
+    # kimérve (ld. `render/flip.py`).
+    flip_flags: int = 0
 
     @property
     def sort_mtime_ns(self) -> int:
@@ -492,6 +499,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             caption=row["caption"],
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],
+            flip_flags=row["flip_flags"],
             filters=row["filters"],
             taken_at=row["taken_at"],
             orientation=row["orientation"],

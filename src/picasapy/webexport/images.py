@@ -70,7 +70,10 @@ def prepare_photo_exports(
             continue
         source = Path(record.folder_path) / record.name
         item = ExportItem(
-            source=source, rotate_steps=record.rotate_steps, filters=record.filters
+            source=source,
+            rotate_steps=record.rotate_steps,
+            flip_flags=record.flip_flags,  # #2902
+            filters=record.filters,
         )
         thumb_report = export_photos((item,), thumb_dir, thumb_settings)
         image_report = export_photos((item,), image_dir, image_settings)

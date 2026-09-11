@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -396,6 +396,7 @@ CREATE TABLE IF NOT EXISTS photos (
     caption_ini TEXT,
     keywords_ini TEXT,
     rotate_steps INTEGER NOT NULL DEFAULT 0,
+    flip_flags INTEGER NOT NULL DEFAULT 0,
     filters TEXT,
     taken_at TEXT,
     orientation INTEGER NOT NULL DEFAULT 1,
@@ -532,4 +533,14 @@ ALTER TABLE folders ADD COLUMN unread INTEGER NOT NULL DEFAULT 0;
     16: _FIRST_SEEN_MTIME_MIGRATION,
     # #2519: az „arc-detektálás lefutott" nyom táblája (ld. a DDL-nél).
     17: _FACE_SCAN_DDL,
+    # #2902: a tükrözés jelzője (`1` = függőleges, `2` = vízszintes, a mért
+    # `0x005eef30` argumentumai szerint). SZÁNDÉKOSAN az indexben él, nem a
+    # `.picasa.ini`-ben: az ini `flipped(N)` kulcsa megvan, de hogy az `N`
+    # melyik bitje melyik irány, NINCS kimérve (a tulajdonos korpuszában
+    # minden `flipped` üres), és egy találgatott érték a valódi fájljaiba
+    # menne — ugyanaz az indoklás, mint a mappa-elrejtésnél (12-es lépés).
+    # Minden meglévő sor 0-val (nincs tükrözés) indul; újraindexelés nem kell.
+    18: """
+ALTER TABLE photos ADD COLUMN flip_flags INTEGER NOT NULL DEFAULT 0;
+""",
 }

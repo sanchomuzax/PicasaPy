@@ -115,6 +115,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.389] – 2026-09-11
+
+### Hozzáadva
+
+- **Tükrözés vízszintesen és függőlegesen** (#2902): `Ctrl+Shift+H` és
+  `Ctrl+Shift+V` a kijelölésre (nézőben a megnyitott képre). Veszteségmentes,
+  mint a forgatás — ugyanaz a billentyű visszaállítja —, és a bélyegképen, a
+  mentésben, az exportban, a levélmellékletben és a webexportban is
+  megjelenik. Menüpont szándékosan nincs hozzá: az eredeti Picasában sem volt,
+  a funkció ott is csak billentyűvel érhető el.
+
 ## [0.8.388] – 2026-09-11
 
 ### Hozzáadva
