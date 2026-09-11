@@ -234,14 +234,19 @@ class TestAVezerloIntegracio:
         assert vezerlo.folderPhotoSort == "color"
 
     def test_a_vezerlo_az_INDEXBOL_adja_a_szinezetet(self, vezerlo, tmp_path):
+        #: A kulcs útvonalát UGYANÚGY állítjuk elő, ahogy a termékkód
+        #: (`str(Path(mappa) / név)`) — beégetett `"/k/a.jpg"` literállal ez a
+        #: teszt WINDOWSON elbukott, mert ott a `Path` fordított perjelet ad
+        #: (`\k\a.jpg`), és a két kulcs nem találkozott. A termékkód maga
+        #: konzisztens: a `backfill_colors` is ezzel az alakkal ír.
+        ut = str(Path("/k") / "a.jpg")
         with open_index(tmp_path / "index.db") as conn:
             save_colors(
-                conn,
-                [("/k/a.jpg", 5, 100, rgb_to_avgcolor(0, 0, 255), ("blue",))],
+                conn, [(ut, 5, 100, rgb_to_avgcolor(0, 0, 255), ("blue",))]
             )
             conn.commit()  # a `save_colors` a HÍVÓRA hagyja a commitot
         tabla = vezerlo._folder_photo_hues([_foto("a.jpg")])
-        assert tabla[("/k/a.jpg", 5, 100)] == pixel_hue(0, 0, 255)
+        assert tabla[(ut, 5, 100)] == pixel_hue(0, 0, 255)
 
     def test_ures_rekordlistara_nem_nyit_indexet(self, vezerlo):
         assert vezerlo._folder_photo_hues([]) == {}
