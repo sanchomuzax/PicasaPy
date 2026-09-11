@@ -436,6 +436,49 @@ class AppController(
         követve."""
         return list(self._face_excluded_roots)
 
+    #: #433: a diavetítés MEGŐRZÖTT beállításai. Az eredeti a `Preferences`
+    #: alá teszi őket (`SlideshowEffectTime`, `captionmode`); nálunk a saját
+    #: beállítás-tárolóba mennek, a `view/…` kulcsok mintájára — a
+    #: registry-kulcsok egy-az-egyben átvétele nem cél (más a platform).
+    @Property(str, notify=statusChanged)
+    def slideshowTransition(self):  # noqa: N802 — QML-property-konvenció
+        return self._get_settings().value("view/slideshowTransition", "dissolve")
+
+    @Slot(str)
+    def setSlideshowTransition(self, value: str) -> None:  # noqa: N802
+        """A vetítés-átmenet megőrzése (#433).
+
+        Ismeretlen kulcsot NEM tárolunk: a választó csak a megvalósított
+        ötöt sorolja fel, és egy elgépelt érték némán átmenet nélküli
+        vetítést adna."""
+        if value not in ("cut", "dissolve", "dissolveblack", "dissolvewhite", "kenburns"):
+            return
+        self._get_settings().setValue("view/slideshowTransition", value)
+        self.statusChanged.emit()
+
+    @Property(int, notify=statusChanged)
+    def slideshowTransitionMs(self):  # noqa: N802
+        """Az átmenet hossza milliszekundumban (`SlideshowEffectTime`)."""
+        try:
+            value = int(self._get_settings().value("view/slideshowTransitionMs", 700))
+        except (TypeError, ValueError):
+            return 700
+        #: a dia-idő alatt kell maradnia, különben az átmenet sosem fejeződik
+        #: be; a felső korlát a legrövidebb dia-idő (1 s) fele
+        return max(0, min(value, 500))
+
+    @Property(str, notify=statusChanged)
+    def slideshowCaptionMode(self):  # noqa: N802
+        return self._get_settings().value("view/slideshowCaptionMode", "caption")
+
+    @Slot(str)
+    def setSlideshowCaptionMode(self, value: str) -> None:  # noqa: N802
+        """A vetítés feliratmódja (#433): felirat / fájlnév / semmi."""
+        if value not in ("caption", "filename", "none"):
+            return
+        self._get_settings().setValue("view/slideshowCaptionMode", value)
+        self.statusChanged.emit()
+
     @Property(str, notify=statusChanged)
     def folderSort(self):
         return self._get_settings().value("view/folderSort", "date")

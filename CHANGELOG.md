@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.396] – 2026-09-11
+
+### Hozzáadva
+
+- **Átmenetek a diavetítésben** (#433): Kivágás, Szétoszlás, Szétoszlás
+  feketén át, Szétoszlás fehéren át és Pásztázás és nagyítás — a választó a
+  vetítés vezérlősávjában ül, a feliratok az eredeti Picasa hivatalos magyar
+  szövegei. A vetítés közben a felirat módja is váltható (felirat → fájlnév →
+  semmi), és mindhárom választás megmarad a következő vetítésre.
+
 ## [0.8.395] – 2026-09-11
 
 ### Hozzáadva

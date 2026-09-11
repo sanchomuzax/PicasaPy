@@ -1786,6 +1786,17 @@ ApplicationWindow {
         // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
         // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
         displayMode: controller ? controller.displayMode : ""
+        //: #433: a vetítés-beállítások MEGŐRZÖTTEK — a választó a
+        //: vezérlőbe ír, a kötés innen olvassa vissza.
+        transitionKind: controller ? controller.slideshowTransition : "dissolve"
+        transitionMs: controller ? controller.slideshowTransitionMs : 700
+        captionMode: controller ? controller.slideshowCaptionMode : "caption"
+        onTransitionPicked: function (kulcs) {
+            controller.setSlideshowTransition(kulcs)
+        }
+        onCaptionModePicked: function (mod) {
+            controller.setSlideshowCaptionMode(mod)
+        }
         onClosed: window.exitSlideshow()
         onStarToggled: function(index) { controller.toggleStar(index) }
         onRotateRequested: function(index, delta) {
