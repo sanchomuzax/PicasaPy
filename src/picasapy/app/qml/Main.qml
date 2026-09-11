@@ -256,7 +256,16 @@ ApplicationWindow {
     // A néző/szerkesztő NEM projekt-lap: az a mai módon fedi le a
     // könyvtárat a saját kötéseivel, azon ez a kapcsoló nem változtat.
     readonly property bool libraryFrameVisible:
-        documentTabStrip.libraryActive || window.viewerOpen
+        (documentTabStrip.libraryActive || window.viewerOpen)
+        && !window.slideshowRunning
+
+    //: #2987: MÉRVE — a vetítés eddig az `ApplicationWindow` contentItem-jét
+    //: töltötte ki, vagyis a fejléc ÉS a lábléc KÖZÖTTI sávot, a menüsáv
+    //: nélkül: 800 képpontos ablakban 626 px jutott neki, és mind a három
+    //: sáv látszott. Az ablak teljes képernyőre váltott (a kérés kiment),
+    //: a vetítés mégis dobozban maradt — a jegy 3. esete, platformfüggetlenül.
+    //: Az eredetiben a vetítés alatt SEMMI MÁS nem látszik (#1903).
+    readonly property bool slideshowRunning: slideshow.visible
 
     // A „Vissza a kollázshoz" gomb csak a „Továbbiak..." után jelenik meg
     // (spec 4.3/13.): az eredeti is AKKOR rakja a könyvtár lapjára.
@@ -1161,6 +1170,9 @@ ApplicationWindow {
         }
     }
     menuBar: PicasaMenuBar {
+        //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
+        //: contentItem nem kapja meg a teljes ablakot.
+        visible: !window.slideshowRunning
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
