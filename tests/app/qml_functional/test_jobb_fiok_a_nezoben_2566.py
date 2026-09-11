@@ -40,11 +40,16 @@ from PySide6.QtTest import QTest
 
 # (fiók-lap neve, a nézőbeli panel objectName-je, a könyvtárbeli párja,
 #  a könyvtárbeli SplitView-szélesség)
+#: #754: a negyedik érték a KÖNYVTÁRI panel kirajzolt szélessége. Eddig
+#: négy különböző szám állt itt (200 · 320 · 190 · 210) — az a mi régi,
+#: mérés nélküli állapotunk volt. Az eredetiben EGY fiók van, 280 képpont,
+#: benne 276-os tartalom-vászon (`docs/specs/jobb-fiok-meretek.md`), és
+#: mind a négy lap ugyanazt a vásznat kapja.
 A_NEGY_LAP = [
-    ("people", "viewerPeoplePanel", "peoplePanel", 200),
-    ("places", "viewerPlacesPanel", "placesPanel", 320),
-    ("tags", "viewerTagsPanel", "tagsPanel", 190),
-    ("properties", "viewerPropertiesPanel", "propertiesPanel", 210),
+    ("people", "viewerPeoplePanel", "peoplePanel", 276),
+    ("places", "viewerPlacesPanel", "placesPanel", 276),
+    ("tags", "viewerTagsPanel", "tagsPanel", 276),
+    ("properties", "viewerPropertiesPanel", "propertiesPanel", 276),
 ]
 
 
@@ -375,11 +380,13 @@ class TestAKonyvtarValtozatlan:
         #: KIRAJZOLT szélességet mérjük — az amúgy is erősebb állítás.
         assert abs(panel.width() - szelesseg) <= 1, (
             f"a(z) {konyvtari} {panel.width():.0f} px széles a könyvtárban, "
-            f"a mért alapérték {szelesseg}"
+            f"a mért tartalom-vászon {szelesseg} (#754)"
         )
-        # a fiók a JOBB szélen ül, az ablak széléig
-        p_x, _p_y, p_w, _p_h = _ablakban(panel)
-        assert abs((p_x + p_w) - window.width()) <= 1
+        #: #754: a panel a FIÓK vásznán ül, a fiók pedig a jobb szélen — a
+        #: panel jobb éle ezért a fiók keretéig ér, nem az ablak széléig.
+        fiok = _elem(window, "rightDrawer")
+        f_x, _f_y, f_w, _f_h = _ablakban(fiok)
+        assert abs((f_x + f_w) - window.width()) <= 1
 
     @pytest.mark.parametrize("lap,nezo_panel,_konyvtari,_szel", A_NEGY_LAP)
     def test_a_nezo_masodpeldanya_NEM_letezik_a_konyvtarban(
@@ -447,14 +454,17 @@ class TestAKonyvtarValtozatlan:
                 f"a fogantyú {fogantyu.width():.0f} px széles (#322: 6) — "
                 "ennyivel nem lehet megfogni"
             )
-        p_x, _p_y, _p_w, _p_h = _ablakban(panel)
+        #: #754: a fogantyú a FIÓK bal éle mellett van, nem a panelé mellett
+        #: — a panel a fiók 276-os vásznán ül, két képpont behúzással.
+        fiok = _elem(window, "rightDrawer")
+        f_x, _f_y, _f_w, _f_h = _ablakban(fiok)
         balra = [
             f
             for f in fogantyuk
-            if abs((_ablakban(f)[0] + _ablakban(f)[2]) - p_x) <= 1
+            if abs((_ablakban(f)[0] + _ablakban(f)[2]) - f_x) <= 1
         ]
         assert balra, (
-            "a fiók bal éle mellett nincs fogantyú — a panel nem méretezhető"
+            "a fiók bal éle mellett nincs fogantyú — a fiók nem méretezhető"
         )
 
     def test_a_konyvtar_panelje_a_nezobol_visszaterve_ugyanaz(

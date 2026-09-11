@@ -22,29 +22,9 @@ Rectangle {
         anchors.margins: 8
         spacing: 6
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                text: qsTr("Properties")
-                font.pixelSize: Theme.fontSize + 1
-                font.bold: true
-                color: Theme.ink
-            }
-            Item { Layout.fillWidth: true }
-            Rectangle {
-                objectName: "propertiesPanelClose"
-                width: 16; height: 16; radius: 2
-                color: closeHover.hovered ? Theme.chromeBorder : "transparent"
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 9
-                    color: Theme.textGray
-                }
-                HoverHandler { id: closeHover }
-                TapHandler { onTapped: panel.closeRequested() }
-            }
-        }
+        //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
+        //: (`RightDrawer`), nem a panelben — az eredetiben egy fejléc
+        //: van, és annak címe a lap neve.
 
         Text {
             visible: !panel.hasSelection

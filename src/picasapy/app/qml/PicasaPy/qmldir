@@ -33,6 +33,8 @@ PhotoContextMenu 1.0 PhotoContextMenu.qml
 ViewerContextMenu 1.0 ViewerContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
+RightDrawer 1.0 RightDrawer.qml
+DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
 QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml

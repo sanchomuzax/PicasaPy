@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.423] – 2026-09-12
+
+### Változott
+
+- **A jobb oldali panelek egyetlen fiókba kerültek** (#754). Eddig a
+  Címkék, a Helyek, a Tulajdonságok és az Emberek négy külön hasáb volt,
+  négy különböző szélességgel és négy saját fejléccel. Mostantól egyetlen,
+  280 képpontos fiók van, közös fejléccel: a cím középen a lap nevét
+  mutatja, mellette balra a kis/nagy méretváltó, jobbra a bezárás. A
+  tartalom mind a négy lapnál ugyanazon a vásznon ül, ahogy az eredeti
+  Picasában. A fiók a fogantyúval továbbra is húzható.
+- **A tíz gyorscímke-gomb a mért 2-3-2-3 elrendezésbe került** (#754), az
+  első két sor közt elválasztóval — eddig két ötös sorban álltak.
+
+⚠️ A te gépeden ez még nincs ellenőrizve.
+
 ## [0.8.422] – 2026-09-12
 
 ### Javítva

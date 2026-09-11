@@ -60,30 +60,9 @@ Rectangle {
         anchors.margins: 8
         spacing: 6
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                text: qsTr("Tags")
-                font.pixelSize: Theme.fontSize + 1
-                font.bold: true
-                color: Theme.ink
-            }
-            Item { Layout.fillWidth: true }
-            // bezáró ✕ (a Nézet menü / Ctrl+T is zár)
-            Rectangle {
-                objectName: "tagsPanelClose"
-                width: 16; height: 16; radius: 2
-                color: closeHover.hovered ? Theme.chromeBorder : "transparent"
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 9
-                    color: Theme.textGray
-                }
-                HoverHandler { id: closeHover }
-                TapHandler { onTapped: panel.closeRequested() }
-            }
-        }
+        //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
+        //: (`RightDrawer`), nem a panelben — az eredetiben egy fejléc
+        //: van, és annak címe a lap neve.
 
         RowLayout {
             Layout.fillWidth: true
@@ -269,6 +248,8 @@ Rectangle {
                         : "") || ""
                 objectName: "quickTagButton" + quickTagButton.slot
                 Layout.fillWidth: true
+                //: a mért gombmagasság (`quicktag_*`)
+                Layout.preferredHeight: 21
                 text: quickTagButton.label.length > 0
                       ? quickTagButton.label : "?"
                 font.pixelSize: Theme.fontSize - 1
@@ -276,20 +257,43 @@ Rectangle {
                 onClicked: panel.addRequested(quickTagButton.label)
             }
 
+            //: #754: a MÉRT elrendezés 2 · 3 · 2 · 3, nem 5 · 5. A kettes
+            //: sorok gombjai 128–129 képpont szélesek, a hármas sorokéi 85,
+            //: és az 1. meg a 2. sor közt 3 képpontos elválasztó áll
+            //: (`docs/specs/jobb-fiok-meretek.md` 3.). Minden gomb 21 magas.
             RowLayout {
+                objectName: "quickTagsRow0"
                 Layout.fillWidth: true
-                spacing: 4
+                spacing: 2
                 QuickTagButton { slot: 0 }
                 QuickTagButton { slot: 1 }
+            }
+            //: `divider` 242 × 3
+            Rectangle {
+                objectName: "quickTagsDivider"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 3
+                color: Theme.chromeBorder
+            }
+            RowLayout {
+                objectName: "quickTagsRow1"
+                Layout.fillWidth: true
+                spacing: 2
                 QuickTagButton { slot: 2 }
                 QuickTagButton { slot: 3 }
                 QuickTagButton { slot: 4 }
             }
             RowLayout {
+                objectName: "quickTagsRow2"
                 Layout.fillWidth: true
-                spacing: 4
+                spacing: 2
                 QuickTagButton { slot: 5 }
                 QuickTagButton { slot: 6 }
+            }
+            RowLayout {
+                objectName: "quickTagsRow3"
+                Layout.fillWidth: true
+                spacing: 2
                 QuickTagButton { slot: 7 }
                 QuickTagButton { slot: 8 }
                 QuickTagButton { slot: 9 }

@@ -45,26 +45,18 @@ Rectangle {
         anchors.margins: 8
         spacing: 6
 
+        //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
+        //: (`RightDrawer`), nem a panelben. A darabszám-felirat a
+        //: panelé marad — az a tartalomról szól, nem a fiókról.
         RowLayout {
             Layout.fillWidth: true
-            Text {
-                text: qsTr("Places")
-                font.pixelSize: Theme.folderTitleSize
-                font.weight: Font.DemiBold
-                color: Theme.ink
-            }
-            Item { Layout.fillWidth: true }
             Text {
                 objectName: "placesCountLabel"
                 text: qsTr("%1 pictures with a place").arg(panel.markers.length)
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
-            PicasaButton {
-                objectName: "placesCloseButton"
-                text: qsTr("Close")
-                onClicked: panel.closeRequested()
-            }
+            Item { Layout.fillWidth: true }
         }
 
         Loader {
