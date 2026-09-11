@@ -5776,6 +5776,14 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 <context>
     <name>SlideshowView</name>
     <message>
+        <source>Display Time</source>
+        <translation>Diaidő</translation>
+    </message>
+    <message>
+        <source> s</source>
+        <translation> mp</translation>
+    </message>
+    <message>
         <source>Cut</source>
         <translation>Kivágás</translation>
     </message>

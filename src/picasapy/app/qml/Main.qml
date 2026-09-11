@@ -1814,11 +1814,17 @@ ApplicationWindow {
         transitionKind: controller ? controller.slideshowTransition : "dissolve"
         transitionMs: controller ? controller.slideshowTransitionMs : 700
         captionMode: controller ? controller.slideshowCaptionMode : "caption"
+        //: #2992: a diaidő (`SlideshowEffectTime`) — a sáv ± gombjai a
+        //: vezérlőbe írnak, a kötés innen olvassa vissza.
+        seconds: controller ? controller.slideshowSeconds : 3
         onTransitionPicked: function (kulcs) {
             controller.setSlideshowTransition(kulcs)
         }
         onCaptionModePicked: function (mod) {
             controller.setSlideshowCaptionMode(mod)
+        }
+        onSecondsChosen: function (masodperc) {
+            controller.setSlideshowSeconds(masodperc)
         }
         onClosed: window.exitSlideshow()
         onStarToggled: function(index) { controller.toggleStar(index) }

@@ -467,6 +467,40 @@ class AppController(
         #: be; a felső korlát a legrövidebb dia-idő (1 s) fele
         return max(0, min(value, 500))
 
+    #: #2992: a diaidő alsó/felső korlátja. ⚠️ NINCS KIMÉRVE — az eredeti
+    #: `minusone`/`plusone` gombjainak határa nem szerepel a specben
+    #: (`picasa-create-features.md`: csak az alapérték, 3 másodperc). Ez a
+    #: mi választásunk; ha egyszer kimérjük, cserélhető.
+    SLIDESHOW_SECONDS_MIN = 1
+    SLIDESHOW_SECONDS_MAX = 30
+
+    @Property(int, notify=statusChanged)
+    def slideshowSeconds(self):  # noqa: N802 — QML-property-konvenció
+        """Egy dia ideje másodpercben (`SlideshowEffectTime`, alapérték 3).
+
+        Mérve: `0x007facd3` (`mov dword ptr [esp+0x3c], 3`). A sérült vagy
+        tartományon kívüli tárolt érték az alapértékre esik vissza — egy
+        elgépelt beállítás ne fagyassza meg a vetítést egy képen."""
+        try:
+            ertek = int(self._get_settings().value("view/slideshowSeconds", 3))
+        except (TypeError, ValueError):
+            return 3
+        if not (self.SLIDESHOW_SECONDS_MIN <= ertek <= self.SLIDESHOW_SECONDS_MAX):
+            return 3
+        return ertek
+
+    @Slot(int)
+    def setSlideshowSeconds(self, value: int) -> None:  # noqa: N802
+        """A diaidő megőrzése; a tartományon kívüli érték NEM megy be."""
+        try:
+            ertek = int(value)
+        except (TypeError, ValueError):
+            return
+        if not (self.SLIDESHOW_SECONDS_MIN <= ertek <= self.SLIDESHOW_SECONDS_MAX):
+            return
+        self._get_settings().setValue("view/slideshowSeconds", ertek)
+        self.statusChanged.emit()
+
     @Property(str, notify=statusChanged)
     def slideshowCaptionMode(self):  # noqa: N802
         return self._get_settings().value("view/slideshowCaptionMode", "caption")
