@@ -2,9 +2,17 @@
 
 ## A mérés
 
-Az eredeti a fül felépülésekor **egyszer** lekérdezi a Shift állapotát
-(`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`–`0x005d7cc0`), és eltárolja
-(`[ecx+0x33a8]`). A csempe-tábla (`0x00c7e5a0`) rekordjai **hármasak** —
+A Shift bitjét a `GetAsyncKeyState(VK_SHIFT)` adja
+(`0x005d7c91`–`0x005d7cc0`), és a program eltárolja (`[ecx+0x33a8]`).
+
+⚠️ **#798 — HELYESBÍTÉS.** Ez a fájl eredetileg azt írta, hogy a
+lekérdezés a fül felépülésekor történik **egyszer**, és a panel is így
+működött: a tulajdonos jelentette, hogy élesben a Shift nem hat. A
+lekérdezést tartalmazó `FUN_005d7c20` `LoadCursorA`-t és `SetCursor`-t is
+hív, tehát mutató-eseményen ül, nem egyszeri felépítésen. A panel
+mostantól a vezérlő ÉLŐ állapotára van kötve; az itteni forrás-állítások
+a felépüléskori tartalék-olvasásra vonatkoznak, és érvényesek maradnak.
+A billentyűt lenyomó őr: `tests/app/test_shift_elo_798.py`. A csempe-tábla (`0x00c7e5a0`) rekordjai **hármasak** —
 elsődleges, másodlagos, 0 —, és a másodlagos akkor és csak akkor fut, ha a
 tárolt bit igaz (`0x005d7d63`–`0x005d7d78`).
 
@@ -167,9 +175,13 @@ class TestAFrissitesBEKOTESE:
         )
 
     def test_INDULASKOR_is_olvas(self):
-        assert (
-            "Component.onCompleted: panel.frissitsdAShiftAllapotot()" in _PANEL
-        ), "induláskor nem olvassuk ki a Shift állapotát"
+        #: #798: a `Component.onCompleted` blokkossá vált (a Shift-figyelés
+        #: bekapcsolása is oda került), ezért a hívásra illesztünk, nem a
+        #: teljes egysoros alakra.
+        blokk = blokk_horgony_utan(_PANEL, "Component.onCompleted")
+        assert "frissitsdAShiftAllapotot()" in blokk, (
+            "induláskor nem olvassuk ki a Shift állapotát"
+        )
 
     def test_a_frissito_a_VEZERLOT_hivja(self):
         # ⚠️ A függvény TELJES törzse kell, kapcsos zárójel szerint vágva:

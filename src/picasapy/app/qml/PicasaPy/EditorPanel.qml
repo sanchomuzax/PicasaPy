@@ -277,18 +277,34 @@ Rectangle {
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
 
     // ------------------------------------------------------------------
-    // #2146: a Shift MÁSODLAGOS szűrőt ad kilenc csempén
+    // #2146 + #798: a Shift MÁSODLAGOS szűrőt ad kilenc csempén
     // ------------------------------------------------------------------
     //
-    // Az eredeti az effekt-fül FELÉPÜLÉSEKOR egyszer kérdezi le a Shift
-    // állapotát (`GetAsyncKeyState(VK_SHIFT)`, `0x005d7c91`), és a bitet
-    // eltárolja (`[ecx+0x33a8]`); a csempék ezután a TÁROLT értéket nézik.
-    // Ezért nem `Keys`-figyelő és nem kötés: a fül láthatóvá válásakor
-    // olvassuk ki, egyszer.
+    // A Shift bitjét a `FUN_005d7c20` olvassa ki (`0x005d7c91`:
+    // `push 0x10` → `GetAsyncKeyState` → `mov [ecx+0x33a8], al`).
     //
-    // Ha képkockánként kérdeznénk, a csempék a Shift minden le-fel
-    // nyomására átbillennének — az eredeti pontosan ezt NEM teszi.
-    property bool shiftMasodlagos: false
+    // ⚠️ #798 — HELYESBÍTÉS. A #2146 ezt „a fül felépülésekor egyszer"
+    // olvasatnak vette, és a panel tényleg csak kétszer kérdezte meg:
+    // felépüléskor és fülváltáskor. A tulajdonos jelentette, hogy a
+    // Shift ÉLESBEN nem működik — aki az effekt-fülön áll és lenyomja,
+    // semmit nem lát. A mérés az olvasat ellen szól: ugyanez a függvény
+    // `LoadCursorA`-t és `SetCursor`-t is hív (`imports.csv`), ami
+    // mutató-eseményhez tartozik, nem egyszeri felépítéshez.
+    //
+    // Mostantól a vezérlő ÉLŐ állapotot ad (`shiftAktiv`, eseményszűrő),
+    // és ez a kötés követi. A `frissitsdAShiftAllapotot()` megmarad a
+    // felépülés pillanatára: akkor még nem volt billentyű-esemény,
+    // amiből a szűrő tudhatna (a felhasználó már előtte is nyomhatja).
+    //: ⚠️ A `typeof` NEM elhagyható: a QML-próbák egy része vezérlő
+    //: NÉLKÜL építi fel a panelt, és a csupasz név ilyenkor
+    //: `ReferenceError`-t dob (a CI ezt el is kapta, #798). A
+    //: `qml_undefined_or.py` a csupasz alakot átengedte — a `!== undefined`
+    //: záradékot látta őrzésnek.
+    property bool shiftMasodlagos: (typeof editController !== "undefined"
+                                    && editController
+                                    && editController.shiftAktiv !== undefined)
+        ? editController.shiftAktiv
+        : false
 
     function frissitsdAShiftAllapotot() {
         //: ⚠️ A #305 null-őr ITT NEM ELÉG. A QML-tesztek egy része CSONK
@@ -303,10 +319,36 @@ Rectangle {
             return
         if (typeof editController.shiftLenyomva !== "function")
             return
+        //: #798: a kötést csak akkor írjuk felül, ha a vezérlő NEM adja
+        //: az élő állapotot (régi csonk a próbákban). Élő vezérlőnél a
+        //: kötés magától követ, és a felülírás pont azt törné el.
+        if (editController.shiftAktiv !== undefined)
+            return
         panel.shiftMasodlagos = editController.shiftLenyomva()
     }
 
-    Component.onCompleted: panel.frissitsdAShiftAllapotot()
+    function allitsdAShiftFigyelest() {
+        //: #798: a Shift-figyelés eseményszűrője MINDEN eseményre átlép
+        //: Pythonba — mérve a `test_people_panel_26.py` 13 s-ról 25 s-ra
+        //: nőtt tőle. Ezért csak a NÉGY effekt-fülön van fent (2–5); a
+        //: Shift a kilenc csempe közül négyet ezeken vált át.
+        if (typeof editController === "undefined" || !editController)
+            return
+        if (typeof editController.figyeldAShiftet !== "function")
+            return
+        editController.figyeldAShiftet(panel.activeTab >= 2
+                                       && panel.activeTab <= 5)
+    }
+
+    Component.onCompleted: {
+        panel.allitsdAShiftFigyelest()
+        panel.frissitsdAShiftAllapotot()
+    }
+    Component.onDestruction: {
+        if (typeof editController !== "undefined" && editController
+                && typeof editController.figyeldAShiftet === "function")
+            editController.figyeldAShiftet(false)
+    }
 
     // Effektek (#20): minden gomb új réteget fűz a láncra (append-only)
     signal effectRequested(string name)
@@ -616,8 +658,10 @@ Rectangle {
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
-        // #2146: az effekt-fülek megjelenésekor újra kell olvasni a Shift
-        // állapotát — az eredeti is a fül FELÉPÜLÉSEKOR teszi, egyszer.
+        // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a
+        // figyelést, máshol KI. A tartalék-olvasás megmarad azoknak a
+        // vezérlőknek, amelyek nem ismerik az élő állapotot.
+        panel.allitsdAShiftFigyelest()
         panel.frissitsdAShiftAllapotot()
         // #583: fülváltáskor a nyitott effekt-paraméter alpanel BEZÁRUL, és
         // az élő előnézete elvész (a mentett lánc érintetlen marad — ez a
