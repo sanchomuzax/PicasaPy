@@ -12,19 +12,26 @@ A `SHORTCUTS.xml` keymapje ugyanezt nevezi meg (35. *Flip Horizontal*,
 36. *Flip Vertical*), és a 3.9 MENÜIBEN nincs ilyen parancs — a funkció csak
 billentyűvel érhető el (`docs/specs/picasa-gyorsbillentyuk.md` 10.3–10.4).
 
-**A jelzőértékek a MÉRT argumentumokat követik:** `1` = függőleges, `2` =
-vízszintes, tehát a kettő bitként fér egymás mellé (`3` = mindkettő). Ez nem
-találgatás, hanem a két ág átadott számának átvétele.
+**A jelzőértékek az ini BITMASZKJÁT követik (#2976):** `1` = vízszintes,
+`2` = függőleges, `3` = mindkettő. A #2938 kimérte az ini-írót
+(`0x0042d7e0`): a 0. bit a `2`-es, az 1. bit az `1`-es műveletet váltja ki,
+és a fenti tábla szerint a `2` a vízszintes. A billentyű-ág argumentuma
+tehát MÁS számtér, mint a fájlba írt maszk — a jelzőnk korábban azt vette
+át, és emiatt fordítva állt.
 
-⛔ **Amit NEM írunk a `.picasa.ini`-be.** Az ini-nek van `flipped(N)` kulcsa
-(a Picasa írójának kulcs→alapérték táblája szerint `flipped(0)` az alapérték,
-`docs/specs/00-index.md`), de hogy az `N` MELYIK bitje melyik irány, **nincs
-kimérve**: a tulajdonos teljes korpuszában minden `flipped` üres
-(`imagedata_flipped.pmp`: 3011/3011, és 0 db `flipped=` sor 859 ini-fájlban).
-Egy találgatott érték a felhasználó valódi fájljaiba menne, és a kétirányú
-ini-kompatibilitás a projekt központi ígérete — ezért a tükrözés-jelző
-egyelőre **csak az indexben** él, a mappa-elrejtés (#1281) mintája szerint. A
-tároló kimérése külön jegy.
+**A jelző a `.picasa.ini`-be megy (#2976).** A #2902 idejében a bit-jelentés
+még feltevés volt, ezért a jelző csak az indexben élt; a #2938 mérése óta a
+tárolás igazolt, tehát a `flipped(N)` kulcsba írjuk — a `rotate(N)` mintája
+szerint.
+
+⚠️ **Nulla maszknál a kulcs ÜRES értéket kap**, nem `flipped(0)`-t
+(`0x0042d864`). Ez magyarázza a korpuszt is: az `imagedata_flipped.pmp`
+3011/3011 üres, és 859 ini-fájlban 0 db `flipped=` sor van — a tulajdonos
+sosem tükrözött, a nulla pedig nem ír ki számot.
+
+⚠️ **A forgatás és a tükrözés SORRENDJE nincs kimérve** (a #2938 örökölt
+kérdése). A mai sorrend — előbb forgatás, utána tükrözés — kimondott
+feltevés, nem mérés.
 """
 
 from __future__ import annotations
@@ -32,10 +39,10 @@ from __future__ import annotations
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-#: Függőleges tükrözés (fel-le) — a mért `0x005eef30(panel, 1)` ág.
-FLIP_VERTICAL = 1
-#: Vízszintes tükrözés (bal-jobb) — a mért `0x005eef30(panel, 2)` ág.
-FLIP_HORIZONTAL = 2
+#: Vízszintes tükrözés (bal-jobb) — az ini-maszk 0. bitje (#2976).
+FLIP_HORIZONTAL = 1
+#: Függőleges tükrözés (fel-le) — az ini-maszk 1. bitje (#2976).
+FLIP_VERTICAL = 2
 #: A két bit együtt. Ennél nagyobb értéket nem értelmezünk.
 FLIP_MASK = FLIP_VERTICAL | FLIP_HORIZONTAL
 
