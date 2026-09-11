@@ -13,7 +13,7 @@
 
 ## Mi ez?
 
-A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forráskódú újraírása Python nyelven. A Picasát a Google 2016-ban kivezette, de sokan a mai napig használják gyors böngészés, csillagozás, feliratozás és nem-destruktív szerkesztés miatt. A PicasaPy célja egy modern, keresztplatformos utód, amely **kétirányúan kompatibilis** a Picasa `.picasa.ini` formátumával — így a régi és az új szoftver párhuzamosan, ugyanazon a fotótáron használható. Python nyelven, PySide6 (Qt 6) / QML felülettel készül; a fejlesztés Linux-first (Raspberry Pi 5-ön épül és tesztelődik), licence **GPL-3.0**. A projekt még **korai fejlesztési fázisban** van (0.x), messze az 1.0-tól — hibák és hiányzó funkciók még előfordulhatnak.
+A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forráskódú újraírása Python nyelven. A Picasát a Google 2016-ban kivezette, de sokan a mai napig használják gyors böngészés, csillagozás, feliratozás és nem-destruktív szerkesztés miatt. A PicasaPy célja egy modern, keresztplatformos utód, amely **kétirányúan kompatibilis** a Picasa `.picasa.ini` formátumával — a régi és az új szoftver ugyanazon a fotótáron használható. ⚠️ Egy korlátot érdemes tudni: az **éppen futó** Picasa nem olvassa újra a `.picasa.ini`-t, ezért amit a PicasaPy-ben módosít, abban a Picasában csak a mappa újraolvasása vagy újraindítás után jelenik meg (a másik irány azonnal működik). Ezt kimértük, nem feltevés. Python nyelven, PySide6 (Qt 6) / QML felülettel készül; a fejlesztés Linux-first (Raspberry Pi 5-ön épül és tesztelődik), licence **GPL-3.0**. A projekt még **korai fejlesztési fázisban** van (0.x), messze az 1.0-tól — hibák és hiányzó funkciók még előfordulhatnak.
 
 <p align="center">
   <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy fő ablak rács nézetben" width="700">
@@ -28,7 +28,7 @@ fázisban (szerkesztő) jár. A ténylegesen kész funkciók fázisonként:
 
 **Kezelő + néző (1. fázis)**
 
-- **`.picasa.ini` byte-egzakt round-trip parser** — amit a PicasaPy nem ismer fel egy `.picasa.ini` fájlban, azt változtatás nélkül visszaírja. Ide tartozik a virtuális albumok (`[.album:…]` szekciók) round-trip olvasása/megőrzése is — böngésző UI-juk még nincs.
+- **`.picasa.ini` byte-egzakt round-trip parser** — amit a PicasaPy nem ismer fel egy `.picasa.ini` fájlban, azt változtatás nélkül visszaírja. Az írás ütközésbiztos: ha a Picasa közben belenyúlt a fájlba, a módosítás a friss tartalomra játszódik újra, nem felül rajta. Ide tartozik a virtuális albumok (`[.album:…]` szekciók) round-trip olvasása/megőrzése is — böngésző UI-juk még nincs.
 - **Mappa-bejárás (scanner)** a támogatott képformátumokra, watched-folders kezeléssel.
 - **SQLite + FTS5 alapú index** a gyors kereséshez és szűréshez.
 - **EXIF/IPTC metaadat-olvasás**, valamint **IPTC felirat (caption) írás** JPEG fájlokba.
