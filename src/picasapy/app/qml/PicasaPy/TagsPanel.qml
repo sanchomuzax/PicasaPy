@@ -134,11 +134,12 @@ Rectangle {
                     anchors.leftMargin: 6
                     anchors.rightMargin: 4
                     spacing: 4
-                    // címke-ikon (rajzolt, Picasa-minta)
-                    Rectangle {
-                        width: 10; height: 7; radius: 1
-                        color: Theme.folderGold
-                        border.color: Theme.folderArrow
+                    //: #1132: a címke SAJÁT típus (`icons/label`, szürke
+                    //: címke) — eddig a MAPPA aranyát használta, tehát a
+                    //: címke ugyanúgy nézett ki, mint egy mappa.
+                    LabelIcon {
+                        objectName: "tagRowIcon"
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
                         Layout.fillWidth: true

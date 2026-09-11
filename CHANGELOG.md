@@ -14,6 +14,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   halványabb lesz, ahogy az eredeti Picasában — így látszik, mire kell
   válaszolni. A kérdés bezárásával a felület visszatér.
 
+### Változott
+
+- **A bal hasáb ikonjai megmondják, mit látsz** (#1132). Eddig az albumok, a
+  projektek, a mappák és a címkék szinte egyforma ikont kaptak. Mostantól
+  mindegyiknek saját ikonja van, ahogy az eredeti Picasában: a mappa **kék**
+  (eddig sárga volt, ez a mi eltérésünk volt), a rendes album narancs könyv, a
+  Csillagozott képek zöld könyv csillaggal, a projekt-mappa lila könyv
+  csillaggal, a címke pedig szürke címke.
+
 ### Javítva
 
 - **A duplikátum-keresés Mégse gombja akkor sem ragad be, ha a keresés épp
