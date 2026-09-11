@@ -49,13 +49,17 @@ class TestCameraSummaryText:
         rows = _rows(camera_summary_text(details, QLocale(), _tr))
         # bal oszlop: gép, fókusztávolság címkével, 35 mm-egyenérték
         assert rows[0][0] == "Canon EOS 90D"
-        assert rows[1][0] == "Focal length: 50 mm"
+        #: #866: `%3.1f` — EGY tizedes a mért formátum szerint
+        assert rows[1][0] == "Focal length: 50.0 mm"
         assert rows[2][0] == "(35 mm equivalent: 80 mm)"
         # jobb oszlop: expozíció, rekesz, ISO címkével, vaku
         assert rows[0][1] == "1/125 s"
         assert rows[1][1] == "f/5.6"
         assert rows[2][1] == "ISO: 200"
-        assert rows[3][1] == "Flash: Off"
+        #: #866: a blokknak NINCS vaku-sora — az eredeti hét formátuma
+        #: (`il_NerdView::1..7`) nem tartalmaz vakut, tehát a jobb oszlop
+        #: három sor után véget ér. A vaku-adat a Tulajdonságok-panelen van.
+        assert len(rows) == 3
 
     def test_empty_details_gives_empty_string(self):
         assert camera_summary_text(ExifDetails(), QLocale(), _tr) == ""
@@ -64,10 +68,14 @@ class TestCameraSummaryText:
         details = ExifDetails(camera="Nikon D850")
         assert camera_summary_text(details, QLocale(), _tr) == "Nikon D850\t"
 
-    def test_flash_fired_true_reports_fired(self):
+    def test_a_vaku_NEM_kerul_a_blokkba(self):
+        """#866: mérve — a hisztogram-blokk hét formátuma közt vaku nincs.
+
+        Korábban ez a teszt épp az ELLENKEZŐJÉT állította („Flash: Fired" a
+        jobb oszlopban); a mért erőforrás-készlet ezt megdöntötte."""
         details = ExifDetails(camera="X", flash_fired=True)
         rows = _rows(camera_summary_text(details, QLocale(), _tr))
-        assert rows[0] == ["X", "Flash: Fired"]
+        assert rows[0] == ["X", ""]
 
     def test_sub_second_exposure_uses_fraction_form(self):
         details = ExifDetails(exposure_seconds=1 / 400)
@@ -77,7 +85,8 @@ class TestCameraSummaryText:
         details = ExifDetails(camera="X", focal_mm=6.72)
         text = camera_summary_text(details, QLocale(), _tr)
         assert "equivalent" not in text
-        assert "Focal length: 6.72 mm" in text
+        #: #866: egy tizedesre kerekít (`%3.1f`)
+        assert "Focal length: 6.7 mm" in text
 
 
 class TestPropertiesOrderFollowsPicasa:

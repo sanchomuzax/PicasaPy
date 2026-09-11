@@ -1819,8 +1819,8 @@
         <translation>Vaku: nem villant</translation>
     </message>
     <message>
-        <source>No EXIF data available</source>
-        <translation>No EXIF data available</translation>
+        <source>No EXIF data available.</source>
+        <translation>Nincs elérhető EXIF-adat.</translation>
     </message>
 </context>
 <context>
@@ -3700,7 +3700,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/HistogramBox.qml" line="111"/>
-        <source>No EXIF data available</source>
+        <source>No EXIF data available.</source>
         <translation>Nincs elérhető EXIF-adat.</translation>
     </message>
 </context>
