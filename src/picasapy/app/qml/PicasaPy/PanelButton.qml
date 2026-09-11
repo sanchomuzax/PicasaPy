@@ -454,27 +454,43 @@ Rectangle {
     // A HELYE, MÉRETE, ALAKJA és SZÍNE megerősített, nem becslés
     // (`docs/specs/ui-audit-editor.md` 3.3): az `macros.tre:301`
     // `#define m_fxadorner` szerint `XConstraint 1, 1, -6` /
-    // `YConstraint 1, 1, -19`, azaz a jelvény jobb széle a csempe jobb
-    // szélétől 6 px-re, az alja a csempe aljától 19 px-re van — mivel a
-    // feliratsáv a csempe alsó 18 px-e, ez pontosan a BÉLYEGKÉP alsó élére
-    // simul. Az 1920×1080-as felvételen mérve: 13 × 12 px, kitöltés
-    // #379FFD, negyed-korong alak (CSAK a bal felső sarka lekerekített),
-    // benne fehér, félkövér szám. Ezért horgonyozzuk a bélyegkép-doboz
-    // jobb alsó sarkához, nem a gomb sarkához.
+    // `YConstraint 1, 1, -19` — a jelvény jobb széle a CSEMPE jobb szélétől
+    // 6 px-re, az alja a csempe aljától 19 px-re. Az 1920×1080-as
+    // felvételen mérve: 13 × 12 px, kitöltés #379FFD, negyed-korong alak
+    // (CSAK a bal felső sarka lekerekített).
     //
-    // ⚠️ A SZÁM JELENTÉSE NYITOTT KÉRDÉS (spec 3.4). Cáfolva, hogy a lánc
-    // sorszáma lenne (egy felvételen három csempén egyszerre áll „1"), de a
-    // „hányszor alkalmazták" olvasat sem áll össze: azon a felvételen a fotó
-    // szerkesztetlen (a Visszavonás/Újra egyaránt letiltott). A kiírt érték
-    // ezért EGYELŐRE a legvédhetőbb olvasat — a szűrő előfordulásainak száma
-    // a láncban —, és a spec 3.4 N1 pontja szerint felülvizsgálandó
-    // (célzott képernyőkép-kérés, illetve a `FUN_005d7c20` dekompilálása).
-    // A jelvény SZÁMÁRA semmilyen viselkedés nem épül.
+    // #809: A JELVÉNYEN NINCS SZÁM. Két, egymástól független forrás:
+    //
+    //  1. a `m_fxadorner` makró TELJES definíciója a fenti két megkötés —
+    //     se szövegkötés, se betűtípus, se tartalom-tulajdonság; ilyen elem
+    //     nem tud szöveget mutatni (a felirat külön elem: `m_fxlabel`);
+    //  2. a csempe-kirakó (`0x005d7c20`) a jelvényen EGYETLEN műveletet
+    //     végez: `vtbl[27]` megmutat vagy `vtbl[26]` elrejt
+    //     (`0x005d8111`/`0x005d8116`), a láthatóság feltétele
+    //     `állapot == 1` (`sete` a `0x005d7eca`-n). Semmi nem ír bele értéket.
+    //
+    // ⚠️ A #809 egy 08-30-i kommentje szerint a `FUN_005d7c20`-ban van egy
+    // példányszám-számítás, és abból arra következtetett, hogy a jelvény azt
+    // MUTATJA. A számítás megléte nem jelenti, hogy a jelvénybe kerül — a
+    // makródefiníció szerint nem is kerülhet. A mechanizmus nem diagnózis.
+    //
+    // ⚠️ A FÜGGŐLEGES igazítás a BÉLYEGKÉP aljához megy, nem a csempéhez, és
+    // ez SZÁNDÉKOS eltérés a nyers −19-től: az eredeti csempe 86 × 69
+    // (a feliratsávja 18 px), ott tehát `69 − 19 = 50` PONTOSAN a bélyegkép
+    // alsó éle. A mi csempénk ~87 magas (a feliratsávunk ~30 px, két sorra),
+    // így a nyers −19 a feliratsáv KÖZEPÉRE esne — 15 px-rel lejjebb, mint
+    // az eredetiben. A mért SZÁNDÉK a bélyegkép alsó éle; azt követjük.
+    // (A csempe magasságának eltérése a #704 mérésének ismert nyitott pontja.)
     Item {
         id: pbtnBadge
         objectName: pbtn.objectName ? pbtn.objectName + "Badge" : ""
         visible: pbtn.badge && pbtn.thumbSource !== ""
-        anchors.right: pbtnThumbBox.right
+        //: #809: a MÉRT vízszintes igazítás a CSEMPE jobb széléhez, −6 px —
+        //: derivált érték nélkül. (A bélyegkép-dobozhoz igazítva 1 px-rel
+        //: kijjebb ült: az eredetiben a jelvény 2 px-rel a bélyegkép jobb
+        //: élén BELÜL van, nem simul rá.)
+        anchors.right: pbtn.right
+        anchors.rightMargin: 6
         anchors.bottom: pbtnThumbBox.bottom
         width: 13
         height: 12
@@ -502,24 +518,6 @@ Rectangle {
             anchors.bottom: parent.bottom
             height: 6
             color: pbtn.badgeBlue
-        }
-
-        Text {
-            id: pbtnBadgeText
-            objectName: pbtn.objectName ? pbtn.objectName + "BadgeText" : ""
-            // a felvételen a szám a jelvény JOBB oldalán ül (a lekerekített
-            // bal felső sarok elől kihúzódva)
-            anchors.right: parent.right
-            anchors.rightMargin: 2
-            anchors.verticalCenter: parent.verticalCenter
-            // #2126: a szám ÁLLANDÓ „1". Az eredetiben a jelvény akkor és
-            // csak akkor látszik, ha a szűrő módja `oneclick` — a
-            // csempeépítő `== 1`-re vizsgál —, tehát más érték nem is
-            // jelenhet meg. Nem számláló.
-            text: pbtn.badge ? "1" : ""
-            font.pixelSize: Theme.fontSize - 3
-            font.bold: true
-            color: Theme.panelSelectionText
         }
     }
 

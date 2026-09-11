@@ -221,35 +221,75 @@ class TestEgykattintasosJelveny:
         for nev in ("effectBwBadge", "effectWarmBadge"):
             assert _child(gyoker, nev).isVisible(), f"{nev}: hiányzik a jelvény"
 
-    def test_a_jelvenyen_ALLANDO_1_all(self, qt_app) -> None:
-        """A szám nem számláló: a feltétel `== 1`, tehát más érték nem is
-        jelenhet meg. Alkalmazott effekttel sem változik."""
+    def test_a_jelvenyen_NINCS_SZOVEG(self, qt_app) -> None:
+        """#809: a jelvény NÉMA GRAFIKA — se szám, se más szöveg.
+
+        Két, egymástól független forrás: a `m_fxadorner` makró teljes
+        definíciója két megkötés (se szövegkötés, se betűtípus — ilyen elem
+        nem tud szöveget mutatni), és a csempe-kirakó (`0x005d7c20`) a
+        jelvényen csak MEGMUTAT/ELREJT műveletet végez.
+
+        Az őr a jelvény RÉSZFÁJÁT nézi: így akkor is elbukik, ha a szöveg más
+        elemnéven kerül vissza."""
         gyoker = _render(qt_app, 2, chain={"sepia": 3, "warm": 2})
 
-        for name in ("effectSepiaBadgeText", "effectWarmBadgeText"):
-            assert _child(gyoker, name).property("text") == "1", (
-                f"a(z) {name} jelvényén nem »1« áll"
+        for nev in ("effectSepiaBadge", "effectWarmBadge"):
+            assert _texts(_child(gyoker, nev)) == [], (
+                f"a(z) {nev} jelvényén SZÖVEG van — a #809 szerint néma grafika"
             )
 
-    def test_a_jelveny_a_belyegkep_jobb_also_sarkaban_ul(self, qt_app) -> None:
-        """A hely az EREDETI erőforrásból egzakt (`ui-audit-editor.md` 3.3):
-        `m_fxadorner` = jobb szél −6, alsó szél −19 a csempéhez képest —
-        vagyis a BÉLYEGKÉP jobb alsó sarka, a feliratsáv fölött."""
+    def test_az_EFFEKT_ketszeri_alkalmazasa_nem_valtoztat_a_jelvenyen(
+        self, qt_app
+    ) -> None:
+        """A jegy kimondott feltétele: egyszer és kétszer alkalmazva ugyanúgy
+        néz ki. Szám nélkül ez a geometriára és a láthatóságra szorítkozik."""
+        egyszer = _child(_render(qt_app, 2, chain={"sepia": 1}), "effectSepiaBadge")
+        egy = (egyszer.width(), egyszer.height(), egyszer.isVisible())
+        ketszer = _child(_render(qt_app, 2, chain={"sepia": 2}), "effectSepiaBadge")
+        assert (ketszer.width(), ketszer.height(), ketszer.isVisible()) == egy
+
+    def test_a_jelveny_vizszintesen_a_CSEMPE_jobb_szeletol_6_px(
+        self, qt_app
+    ) -> None:
+        """#809: a MÉRT érték a csempéhez szól (`m_fxadorner`:
+        `XConstraint 1, 1, -6`), nem a bélyegképhez.
+
+        Az eredetiben a jelvény ezért 2 px-rel a bélyegkép jobb élén BELÜL
+        van, nem simul rá — nálunk a bélyegkép-doboz 5 px-re van a csempe
+        szélétől, tehát a régi, dobozhoz igazított horgony 1 px-rel kijjebb
+        ült."""
+        gyoker = _render(qt_app, 2, chain={"sepia": 1})
+
+        csempe = _child(gyoker, "effectSepia")
+        jelveny = _child(gyoker, "effectSepiaBadge")
+
+        jelveny_jobb = jelveny.mapToItem(None, jelveny.width(), 0).x()
+        csempe_jobb = csempe.mapToItem(None, csempe.width(), 0).x()
+        assert abs((csempe_jobb - jelveny_jobb) - 6.0) <= 0.01, (
+            "a jelvény jobb széle nem a csempe jobb szélétől 6 px-re van"
+        )
+
+    def test_a_jelveny_alja_a_BELYEGKEP_also_elere_simul(self, qt_app) -> None:
+        """#809: a függőleges igazítás SZÁNDÉKOS eltérés a nyers −19-től.
+
+        Az eredeti csempe 86 × 69, a feliratsávja 18 px, tehát ott
+        `69 − 19 = 50` pontosan a bélyegkép alsó éle. A mi csempénk ~87 magas
+        (a feliratsávunk ~30 px, két sorra), így a nyers −19 a feliratsáv
+        KÖZEPÉRE esne, 15 px-rel lejjebb, mint az eredetiben. A mért SZÁNDÉK
+        a bélyegkép alsó éle — azt mérjük.
+
+        (A csempe magasságának eltérése a #704 mérésének ismert nyitott
+        pontja, nem ennek a jegynek a tárgya.)"""
         gyoker = _render(qt_app, 2, chain={"sepia": 1})
 
         belyegkep = _child(gyoker, "effectSepiaThumb")
         jelveny = _child(gyoker, "effectSepiaBadge")
         felirat = _child(gyoker, "effectSepiaLabel")
 
-        jelveny_jobb = jelveny.mapToItem(None, jelveny.width(), 0).x()
         jelveny_alja = jelveny.mapToItem(None, 0, jelveny.height()).y()
-        kep_jobb = belyegkep.mapToItem(None, belyegkep.width(), 0).x()
         kep_alja = belyegkep.mapToItem(None, 0, belyegkep.height()).y()
         felirat_teteje = felirat.mapToItem(None, 0, 0).y()
 
-        assert abs(jelveny_jobb - kep_jobb) <= 1.5, (
-            "a jelvény jobb széle nem simul a bélyegkép jobb szélére"
-        )
         assert abs(jelveny_alja - kep_alja) <= 1.5, (
             "a jelvény alja nem simul a bélyegkép alsó élére"
         )
@@ -313,10 +353,11 @@ class TestSzininvertalasJelveny:
             "(`effect` + nulla vezérlő ⇒ `oneclick`) nem érvényesül (#2800)"
         )
 
-    def test_a_jelvenyen_ALLANDO_1_all(self, qt_app) -> None:
+    def test_a_jelvenyen_NINCS_SZOVEG(self, qt_app) -> None:
+        """#809: néma grafika itt is — a jelvény nem szöveges elem."""
         gyoker = _render(qt_app, 3, chain={"invert": 3})
 
-        assert _child(gyoker, "effectInvertBadgeText").property("text") == "1"
+        assert _texts(_child(gyoker, "effectInvertBadge")) == []
 
     def test_a_jelveny_merete_a_mert_ertek(self, qt_app) -> None:
         """13 × 12 px — ugyanaz a mérés, mint a Szépiánál (spec 3.3)."""
