@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.404] – 2026-09-11
+
+### Javítva
+
+- **Windowson végre megjelennek a mappa-borítók** (#2983). A bal hasábon és a
+  mappafában egyetlen mappa sem mutatta a fotóiból összeálló kis képhalmot, és
+  a program minden sorra hibát írt a naplóba. Az ok: a windowsos útvonalak
+  visszaperét a Qt kódolt alakban (`%5C`) adta át a borító-előállítónak, az
+  pedig így nem találta meg a mappát. Linuxon ez nem látszott, mert ott az
+  útvonalban nincs visszaper.
+- **A napló nem telik meg hibával olyan sorokra, amiknek nincs is borítójuk**
+  (#2983). A mappafa köztes szintjei (például a `C:` vagy a hálózati
+  gépnév) nem tartalmaznak fotót; ezekre eddig is elindult a borító-kérés, és
+  mindegyik egy hibasort írt.
+
 ## [0.8.403] – 2026-09-11
 
 ### Változott

@@ -182,7 +182,18 @@ Item {
                         // ⚠️ Üres forrással a `status` `Null` marad, tehát a
                         // kikapcsolt állapotban NEM készül borító: a
                         // szolgáltató meg sem szólal.
-                        source: root.albumThumbs
+                        //
+                        // #2983: a SAJÁT fotószám is feltétel. A szintetikus
+                        // köztes szintek (`C:`, `C:/Users`, a hálózati
+                        // gazdanév, és a virtuális gyökér) `own = 0`-sak —
+                        // nincs mit kupacba rakni, a kérés viszont minden
+                        // ilyen sorra egy „Failed to get image from provider"
+                        // naplósort írt a felhasználó konzoljára. A
+                        // `count` erre NEM jó: az a RÉSZFA összege, tehát egy
+                        // fotó nélküli köztes szinten is pozitív.
+                        source: (root.albumThumbs
+                                 && row.modelData.path !== ""
+                                 && row.modelData.own > 0)
                                 ? "image://foldercover/" + row.modelData.path
                                 : ""
                     }
