@@ -85,3 +85,31 @@ class TestAForrasMegnevezi_a_binaris_tablat:
         assert "0x004fadb0" in fejlec and "0x004fb948" in fejlec, (
             "a fejléc nem nevezi meg a mért kapcsolótáblát (#2415)"
         )
+
+
+class TestATulajdonosMertFajlszuroje:
+    """#2929: a tulajdonos közreadta a Picasa teljes, kiterjesztés szintű
+    fájlszűrőjét (#528). Az öt hiányzó videó-kiterjesztés fájljai eddig
+    NÉMÁN kimaradtak a beolvasásból — ugyanaz a kárkép, mint a #2344
+    WebP-esete."""
+
+    #: A mért szűrő videó-sora, szó szerint (#528).
+    MERT_VIDEO = (
+        ".avi", ".mpg", ".mpeg", ".wmv", ".asf", ".divx", ".mkv", ".mod",
+        ".tod", ".tp", ".ts", ".ogg", ".ogv", ".mov", ".3gp", ".3g2",
+        ".m4v", ".m2v", ".mp4",
+    )
+
+    #: A mért szűrő kép-sora, szó szerint (#528).
+    MERT_KEP = (
+        ".jpg", ".jpe", ".jpeg", ".bmp", ".psd", ".tif", ".tiff", ".webp",
+        ".gif", ".png", ".tga",
+    )
+
+    @pytest.mark.parametrize("kiterjesztes", MERT_VIDEO)
+    def test_a_mert_szuro_MINDEN_videoja_video(self, kiterjesztes):
+        assert media_kind_of(f"felvetel{kiterjesztes}") == "video"
+
+    @pytest.mark.parametrize("kiterjesztes", MERT_KEP)
+    def test_a_mert_szuro_MINDEN_kepe_kep(self, kiterjesztes):
+        assert media_kind_of(f"kep{kiterjesztes}") == "photo"

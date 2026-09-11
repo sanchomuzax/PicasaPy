@@ -34,9 +34,16 @@ FileDialog {
     // hogy ne kelljen új fordítást felvenni
     nameFilters: [
         qsTr("Picture and Movie Files") + " ("
-            + "*.jpg *.jpeg *.png *.tif *.tiff *.bmp *.gif *.psd *.tga "
-            + "*.3g2 *.3gp *.asf *.avi *.divx *.m2t *.m2ts *.m4v *.mkv "
-            + "*.mmv *.mod *.mov *.mp4 *.mpg *.mts *.tod *.wmv)",
+            // #2929: a szűrőnek a FELISMERT halmazzal kell egyeznie
+            // (`scanner/filetypes.py`) — ami itt kimarad, azt a
+            // felhasználó nem is tudja kiválasztani, pedig beolvasnánk.
+            // Az őr a két listát egymáshoz méri
+            // (`tests/app/qml_functional/test_addfile_szuro_2929.py`).
+            + "*.bmp *.gif *.jpe *.jpeg *.jpg *.png *.psd *.tga *.tif "
+            + "*.tiff *.webp "
+            + "*.3g2 *.3gp *.asf *.avi *.divx *.m2t *.m2ts *.m2v *.m4v "
+            + "*.mkv *.mmv *.mod *.mov *.mp4 *.mpeg *.mpg *.mts *.ogg "
+            + "*.ogv *.tod *.tp *.ts *.ty *.wmv)",
         qsTr("All Files") + " (*)"
     ]
     onAccepted: addFileDialog.addSelectedFiles(addFileDialog.selectedFiles)
