@@ -45,3 +45,16 @@ libpulse0
 # egy félrevezető `ImportError: libEGL.so.1`-gyel. (Mérve: #1472, a
 # 32938928311 futás.) Az őr: `tests/test_fuggoseg_jeloles_1491.py`.
 python3-pyside6.qtprintsupport
+
+# Qt 6 wayland platform-bővítmény (#3028).
+#
+# Wayland-asztalon enélkül a program EL SEM INDUL: a Qt a „Could not find
+# the Qt platform plugin wayland" üzenettel megáll. A tulajdonos Raspberry
+# Pi 5-ösén pontosan ez történt — a gépen a `qtwayland5` volt fent, ami a
+# Qt 5-é, és a Qt 6 nem használja.
+#
+# Miért a csak-disztribúciós szakaszban: a pip-es PySide6 kerék a saját
+# wayland-bővítményét maga hozza, a CI ubuntu-futtatója pedig azzal megy —
+# ott ez a csomag fölös, és egy fölös tétel az egész `apt-get install`
+# lépést elviszi (#1472).
+qt6-wayland

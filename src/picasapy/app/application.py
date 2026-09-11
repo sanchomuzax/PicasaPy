@@ -99,6 +99,7 @@ try:
     from .print_controller import PrintController
 except ImportError:  # pragma: no cover — csak a hiányos Qt-telepítésen fut
     PrintController = None
+from .platform_check import hianyzo_wayland_bovitmeny
 from .platform_storage import (
     MigrationNotice,
     StorageAlreadyRunning,
@@ -952,6 +953,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
     _set_windows_app_id()
+
+    # #3028: a hiányzó platform-bővítményt a Qt angolul, megoldás nélkül
+    # jelenti, és utána KILÉP — ezért itt szólunk, a QGuiApplication ELŐTT.
+    # Csak jelzünk: néma átterelés más platformra elrejtené a valódi hiányt.
+    figyelmeztetes = hianyzo_wayland_bovitmeny()
+    if figyelmeztetes:
+        print(figyelmeztetes, file=sys.stderr)
 
     timeline.mark("Qt-stílus és platform-kapcsolók")
     app = QGuiApplication(argv)
