@@ -3258,12 +3258,13 @@ végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
 | `desat` negyedik `0,333`-as mezője | **nem létezik**, `picasa-native-filter-registry.md` |
 | `_MIN_STRETCH_SPAN = 58` mint gain-korlát | **nem korlát** — a csatorna-keverés mellékhatása |
 | a `finetune` v1 ↔ v2 2×-skála | **megdőlt**, saját LUT kell |
+| az **`unsharp`** elmosó magja | **köbös B-spline**, 3 képpont tartósugár (σ = 0,8684) — az átméretező 2-es módja 1 : 1 léptéken, `1,5f` szélesítéssel; a kódban `render/sharpen.py` (#762) |
 
 ### Ami TÉNYLEG nyitott (jeggyel)
 
 | kérdés | jegy |
 |---|---|
-| az elmosó mag pontos alakja (`unsharp`, `blur`) | **#762** |
+| a `blur` elmosó magja (a `(h+1)·(w+1)` 16 bites akkumulátor) | **#762** |
 | az `autocolor` 3 × 3-as mátrixának összeállítása | **#759** |
 | az `enhance` keverés bevezetése a kódba | **#721** |
 | a `radblur` sugár-hányada: `0,009` (mért) vs `0,01` (dekompilátum) | #317 |

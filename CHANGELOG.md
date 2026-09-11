@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.402] – 2026-09-11
+
+### Változott
+
+- **Az Élesítés a visszafejtett elmosómagot használja** (#762). Eddig
+  Gauss-elmosásra épült; most az eredeti program saját magja fut (köbös
+  B-spline, három képpont hatósugárral), ami egy hajszállal kevesebbet mos. A
+  különbség a képen nem látszik — a korábbi közelítés is a mért tűrésen belül
+  volt —, de az élesítés mostantól nem becslésen áll.
+
 ## [0.8.401] – 2026-09-11
 
 ### Változott
