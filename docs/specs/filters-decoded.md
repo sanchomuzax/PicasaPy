@@ -5793,3 +5793,62 @@ A teljes láncon még két mérés:
    a `GlowImageOperation` `strength`/`quality="3"`/`innerglow` együttese az,
    amit nálunk más kernel közelít. **Ez a következő gépi irány** — nem
    csúszka-kalibráció.
+
+## ⛳ A RENDER-LEFEDETTSÉG KIMÉRVE: 84 = 77 + 6 + 1, hézag NINCS (2026-09-11, 291. kör, #684)
+
+A #684 törzse kimondja az indítási feltételét: *„Csak akkor, ha a dev
+elvileg **minden effekttel kész**. … Ezért `blocked`."* A jegy címkéi
+viszont `ready` — a törzs és a címke ellentmond. Ez a szakasz **eldönti**
+a kérdést, méréssel.
+
+### A leltár — a regiszter és a lánc összevetve
+
+| halmaz | darab | mi ez |
+|---|---:|---|
+| a `filterdesc`-regiszter **összes** tétele | **84** | `registry_data.RAW_FILTERS` |
+| ebből **van kezelőnk** | **77** | `chain._HANDLERS` + `_FRAME_EFFECTS` + `_NOOP_MARKERS` |
+| **kimondottan nem renderelendő** | **6** | `colorfix` · `debug` · `focalpixelate` · `picnikfocalpixelate` · `rainbow` · `whitept` |
+| maradék | **1** | `crop64` — a vágás, amit az `apply_filters` **külön** ágon alkalmaz, nem a `_HANDLERS`-en át |
+
+⚠️ **A kontroll stimmel: `77 + 6 + 1 = 84`.** ⇒ **Nincs olyan tétel, amihez
+se kezelő, se kimondott indok nem tartozik.**
+
+Módok szerint: `effect` **56** · `oneclick` **12** · `history` 7 ·
+`soft` 7 · `tool` 2.
+
+A hat „nem renderelendő" négy külön listából jön, mindegyik saját mért
+indokkal (`DEAD_LEGACY_OPS` 1 · `MEASURED_IDLE_OPS` 2 ·
+`MEASURED_NOT_RUNNING_OPS` 1 · `KNOWN_UNRENDERED_OPS` 4; az átfedés miatt
+hat egyedi név).
+
+*Forrás: `src/picasapy/render/registry_data.py` (`RAW_FILTERS`),
+`src/picasapy/render/chain.py` (`_HANDLERS`, `_FRAME_EFFECTS`,
+`_NOOP_MARKERS` és a négy kizáró lista).*
+
+### ⇒ A #684 indítási feltétele TELJESÜL
+
+Modell **minden** effekt mögött van; a törzs „ezért `blocked`" mondata
+**elavult**. Ami hátravan, az nem hiányzó modell, hanem **hitelesítés** — és
+épp ezt dönti el egy golden-export.
+
+### Amit az exportnak le KELL fednie — a fenti státusztáblából, tételesen
+
+| effekt | miért kell rá export |
+|---|---|
+| `Comicize` · `FocalZoom` · `PicnikFocalPixelate` | a csővezeték egzakt, de a **mintavételezés perem-/interpolációs szabálya** golden-összevetésre vár (#569, #570) |
+| `radtint` | a **Feather** csúszka affin leképezése feltevés (#565) |
+| `dir_sharp` | egy skalár az x87-veremen ment át, a helyén **indokolt feltevés** áll (#623) |
+| `grain` (v1) | saját mérése nincs — a `grain2` modelljét futtatjuk rá (#347) |
+| `tint` · `dir_tint` | **MÉRT, DE ELTÉR**: ΔE 20,6 és 9 |
+| `ansel` | ΔE 5,6 — miközben a színsúlyok a binárisból **megerősítettek** (#939, 286. kör) ⇒ az eltérés a lánc **más** tagjában van, és ez nincs kimérve |
+| `Lomo` | ΔE 9,0–9,5, a maradék a `GlowImageOperation` kernelében (#2982) |
+
+⚠️ **`PicnikTint` NEM tartozik ide:** a státusztábla „MÉRT, DE ELTÉR" sora a
+`tint`-re vonatkozik, a `PicnikTint`-et a #884 **ΔE 1,50**-re vitte. A két
+név hasonlósága miatt ezt külön kimondom.
+
+⛔ **Amit ez a szakasz NEM mond meg:** hogy a 77 kezelőből hány fut
+*egzakt* és hány *közelítő* modellen. A kézenfekvő próba (a kezelő
+docstringjének mintázása) **megbukott**: 52 kezelő vékony burkoló
+docstring nélkül, tehát a jelölés a hívott függvényen ül. Az egyetlen
+megbízható forrás a **fenti státusztábla**, és a fenti lista abból való.
