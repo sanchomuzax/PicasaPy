@@ -442,7 +442,12 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             self._folder_poll_timer = None
         if self._watcher is not None:
             self._watcher.stop()
-            self._watcher = None
+            # #1457: a figyelő MAGA dönti el, elengedhető-e. Ha a
+            # megfigyelő szála a `join` után is fut, a referenciát nála
+            # hagyjuk — így nem egy felszabadított objektumra dolgozik
+            # tovább. A tényt a `LibraryWatcher` naplózza.
+            if self._watcher.leallt():
+                self._watcher = None
 
     # -- A Mappakezelő OK-jának MENTÉSI ÚTJA (#1334) -------------------------
     #

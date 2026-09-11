@@ -25,6 +25,7 @@ import time
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 
@@ -109,8 +110,7 @@ class TestAFigyeloNELKUL:
         mappa = library / "nyaralas"
         controller.selectFolder(str(mappa))
         assert _var(qt_app, lambda: controller.photos.rowCount() == 2)
-        controller._watcher.stop()
-        controller._watcher = None
+        allitsd_le_a_figyelot(controller)
         assert _var(qt_app, lambda: not controller._sync_running)
 
         make_jpeg(mappa / "IMG_7777.jpg")
@@ -124,8 +124,7 @@ class TestAFigyeloNELKUL:
         mappa = library / "nyaralas"
         controller.selectFolder(str(mappa))
         assert _var(qt_app, lambda: controller.photos.rowCount() == 2)
-        controller._watcher.stop()
-        controller._watcher = None
+        allitsd_le_a_figyelot(controller)
         assert _var(qt_app, lambda: not controller._sync_running)
 
         (mappa / "IMG_0002.jpg").unlink()

@@ -549,6 +549,27 @@ _KIMENET: dict[str, str] = {}
 _OSSZEOMLAS_UJRAPROBA: list[str] = []
 
 
+def _ird_ki_az_osszeomlas_nyomat(relative: str, returncode: int) -> None:
+    """Az összeomlott részfutás KIMENETE a naplóba, az újrapróbálás ELŐTT.
+
+    #1457: a futtató külön ezért kapcsol `PYTHONFAULTHANDLER`-t — a
+    veremkép a részfutás `stderr`-jén jön. Párhuzamos ágon ez a
+    `_KIMENET`-be gyűlik, és az újrapróbálás FELÜLÍRTA: sikeres retry után
+    csak az „ÚJRAPRÓBÁLÁS" sor maradt a naplóban. Mérve (CI, 2026-09-11, a
+    `34561332733` futás windows-lába): a `test_projekt_mappa_figyeles_1123.py`
+    `exit 3221226505`-tel omlott össze, és a napló EGY sort tartalmazott
+    róla — a következő összeomlás megint vakon volna elemzendő.
+
+    A soros ágon a részfutás magától a képernyőre ír; ott a JELÖLÉS a
+    hozadék, hogy a napló olvasója tudja, mi tartozik az összeomláshoz.
+    """
+    print(f"--- ÖSSZEOMLÁS NYOMA ({relative}, exit {returncode}) ---", flush=True)
+    nyom = _KIMENET.get(relative)
+    if nyom:
+        print(nyom, flush=True)
+    print("--- az összeomlás nyoma vége ---", flush=True)
+
+
 def _osszeomlas(returncode: int) -> bool:
     """A részfutás JELRE halt meg (nem tesztbukás, nem időtúllépés)?
 
@@ -1156,6 +1177,7 @@ def _app_fajlok_sorosan(
             # #1457: a folyamat JELRE halt meg. Egyszeri újrapróbálás —
             # a tartósan összeomló fájl így is kibukik, a végén pedig
             # tételes lista megy ki arról, mi omlott össze elsőre.
+            _ird_ki_az_osszeomlas_nyomat(str(relative), returncode)
             print(
                 f"ÚJRAPRÓBÁLÁS (összeomlás után, exit {returncode}): "
                 f"{relative}", flush=True
@@ -1199,6 +1221,7 @@ def _app_fajlok_parhuzamosan(
                 )
             elif _osszeomlas(returncode):
                 # #1457: JELRE halt meg a folyamat — egyszeri újrapróbálás
+                _ird_ki_az_osszeomlas_nyomat(relative, returncode)
                 print(
                     f"ÚJRAPRÓBÁLÁS (összeomlás után, exit {returncode}): "
                     f"{relative}", flush=True

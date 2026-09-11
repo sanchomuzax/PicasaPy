@@ -30,6 +30,7 @@ import time
 
 import pytest
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 
@@ -148,8 +149,7 @@ class TestAHalozatiTartalek:
         elo_controller.selectFolder(str(mappa))
         assert _var(qt_app, lambda: elo_controller.photos.rowCount() == 2)
         # a figyelőt LEÁLLÍTJUK: ez a hálózati megosztás helyzete
-        elo_controller._watcher.stop()
-        elo_controller._watcher = None
+        allitsd_le_a_figyelot(elo_controller)
         assert _nyugalom(qt_app, elo_controller), "a kezdeti szinkron nem állt le"
 
         make_jpeg(mappa / "IMG_8888.jpg")

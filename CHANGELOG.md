@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.409] – 2026-09-11
+
+### Javítva
+
+- **A mappa-figyelő nem hagy maga után futó szálat** (#1457). Kilépéskor
+  és a figyelt mappák átállításakor a program eddig akkor is „elfelejtette"
+  a figyelőt, ha a szála még dolgozott — ez a háttérben futó szálat egy
+  már lebontott állapoton hagyta. Mostantól megvárja, és ha mégsem áll le,
+  a naplóba is beírja. A program viselkedése ettől nem változik; a
+  véletlenszerű, jel nélküli leállások esélye csökken.
+
 ## [0.8.408] – 2026-09-11
 
 ### Hozzáadva

@@ -32,6 +32,7 @@ from PySide6.QtCore import (
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickItem, QQuickView
 
+from support.figyelo import allitsd_le_a_figyelot
 from support.jpeg_factory import make_jpeg
 
 try:
@@ -123,9 +124,7 @@ def exportalt_hasab(qt_app, tmp_path):
         "#2408: a szinkron nem állt le időben — a teszt hiányos "
         "állapoton menne tovább"
     )
-    if ctl._watcher is not None:
-        ctl._watcher.stop()
-        ctl._watcher = None
+    allitsd_le_a_figyelot(ctl)
     if ctl._folder_poll_timer is not None:
         ctl._folder_poll_timer.stop()
     assert _var(qt_app, lambda: not ctl._sync_running), (
