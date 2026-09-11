@@ -510,6 +510,7 @@ def render_collage(
     background_image: str = "",
     format_key: str = "",
     node_uids: Mapping[str, str] | None = None,
+    node_scales: Mapping[str, float] | None = None,
     should_cancel=None,
 ) -> SaveResult:
     """A vászon kirajzolása és kiírása — a JPEG és a `.cxf` párja.
@@ -527,6 +528,10 @@ def render_collage(
     A `node_uids` a MEGNYITOTT projekt `src → uid` párjai (#1092): ami
     benne van, az változatlanul megy vissza a fájlba, a többi csomópont a
     `src`-ből származtatott azonosítót kapja.
+
+    A `node_scales` ugyanez a `scale`-re (#2923): az eredeti sem számolja a
+    csomópont `scale`-jét, a fájlból örökli — ezért egy megnyitott projekt
+    értékét NEM írjuk át a magunk számolt értékére.
 
     A `should_cancel` a megszakítás egyetlen fogantyúja (spec 9.1): a
     rajzolás UTÁN, az írás ELŐTT kérdezzük meg. Így a megszakított mentés
@@ -556,6 +561,7 @@ def render_collage(
         background_image=background_image,
         format_key=format_key,
         node_uids=node_uids,
+        node_scales=node_scales,
     )
     ut = _write_pair(Path(target), jelentes.image, projekt)
     # A mappa megjelölése projekt-albumként — enélkül a mentett kollázs

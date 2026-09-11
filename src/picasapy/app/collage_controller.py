@@ -161,6 +161,9 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         # eredeti Picasa írta `<uid>` túléli az újramentést, ahelyett hogy
         # a származtatott sajátunkra cserélnénk.
         self._collage_panel_node_uids: dict[str, str] = {}
+        #: #2923: a megnyitott projekt `src → scale` párjai — ami innen
+        #: jön, az érintetlenül megy vissza a `.cxf`-be.
+        self._collage_panel_node_scales: dict[str, float] = {}
         # a legutóbb kiírt kollázs útvonala — ebből lesz a „Meglévő cseréje"
         # ága (spec 9.2). Üres szöveg = még nem mentettük ezt a kollázst.
         self._collage_panel_saved_path = ""
@@ -428,6 +431,7 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         from .collage_output import _felulet_nyelve
 
         self._collage_panel_node_uids = {}
+        self._collage_panel_node_scales = {}
         self._collage_panel_album_id = ""
         self._collage_panel_album_uid, self._collage_panel_album_date = (
             album_fields_of(
@@ -470,6 +474,7 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._set_nodes((), dirty=False)
         self._set_dirty(False)
         self._collage_panel_node_uids = {}
+        self._collage_panel_node_scales = {}
         self._collage_panel_album_uid = ""
         self._collage_panel_album_id = ""
         self._collage_panel_album_date = ""

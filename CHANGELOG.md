@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.394] – 2026-09-11
+
+### Javítva
+
+- **Egy Picasával készült kollázs újramentése nem írja át a méret-adatot**
+  (#2923). A `.cxf` csomópontjainak `scale` értékét eddig a mentés
+  újraszámolta; az eredeti viszont nem számolja, hanem a fájlból örökli — így
+  a mi értékünk elrontotta a megnyitott projektet. Mostantól ami a fájlból
+  jött, az érintetlenül megy vissza; új képnél marad a számolt érték.
+
 ## [0.8.393] – 2026-09-11
 
 ### Változott
