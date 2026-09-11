@@ -8440,6 +8440,10 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <translation>&amp;Mappa áthelyezése...</translation>
     </message>
     <message>
+        <source>&amp;Color</source>
+        <translation>&amp;Szín</translation>
+    </message>
+    <message>
         <source>&amp;Name</source>
         <translation>&amp;Név</translation>
     </message>

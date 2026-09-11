@@ -174,6 +174,22 @@ PicasaMenu {
                 })
             }
         }
+        //: #467: a NEGYEDIK szempont — az eredeti rendezés-motorja ismerte
+        //: („Rendezés szín alapján", `CSelectionNode` → `SortColor`), de a
+        //: menübe sosem került be. Nálunk a #383 átlagszín-indexéből
+        //: azonnal megvan.
+        MenuItem {
+            objectName: "folderMenuSortByColor"
+            text: qsTr("&Color")
+            checkable: true
+            checked: menu.sortMode === "color"
+            onTriggered: {
+                menu.sortModeRequested("color")
+                checked = Qt.binding(function () {
+                    return menu.sortMode === "color"
+                })
+            }
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "folderMenuSortReverse"
