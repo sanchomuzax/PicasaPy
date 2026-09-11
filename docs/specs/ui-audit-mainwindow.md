@@ -1139,3 +1139,76 @@ Mind a négy gomb **három állapotképet** használ a szokásos
 
 *Bizonyítottsági fok: megerősített* (a `scrollart/` 46 és a `throttle/`
 22 rétege, plusz a `throttle.tre` teljes tartalma).
+
+## ⛳ A keresősáv „ellenőrizni" pontjai SZÁMMAL — és a kétállású ikon EGYIRÁNYÚ (2026-09-12, 293. kör, #839)
+
+A #839 táblájának utolsó sora *„a betűméret és az eltolás **ellenőrzése**"*
+volt. „Ellenőrizni" nem szám: a fejlesztő abból nem tud betűt beállítani.
+Ez a szakasz a hiányzó értékeket adja meg, forrásból.
+
+### A „Szűrők" felirat — teljes leírás
+
+```
+searchcontainer/filter_label: thumbui/searchcontainer   (:31)
+m_displayfont12                                          (:32)
+m_offsetL                                                (:33)
+YConstraint 0, 0, -4                                     (:34)
+```
+
+A makrók feloldva:
+
+| makró | mit ad | érték |
+|---|---|---|
+| `m_displayfont12` | `fontname` | **Praxis Semi Bold/Heavy** |
+| | `fontsize` | **12** |
+| | `fontweight` | **400** |
+| | `fonttrack` (betűköz) | **−1** |
+| `m_offsetL` | `MaintainOffset left` | átméretezéskor a **bal** eltolás marad |
+| `YConstraint 0, 0, -4` | függőleges | **−4** képpont |
+
+⚠️ A `fontmacros_win.tre` és a `fontmacros_mac.tre` `m_displayfont12`-je
+**bájtra azonos** — nincs platform-eltérés.
+
+*Forrás: `searchcontainer.tre:31–34` · `fontmacros_win.tre:43–47` ·
+`fontmacros_mac.tre:43–47` · `macros.tre:47–48`.*
+
+### Az öt szűrőgomb — mind az öt BETŰRE azonos szerkezet
+
+```
+searchcontainer/<név>_icon_0: searchcontainer/<név>
+searchcontainer/<név>_icon_1: searchcontainer/<név>
+m_hidden                                   <- az icon_1-re vonatkozik
+searchcontainer/<név>: searchcontainer/filterbase
+m_offsetLT
+Property mousedown 1
+SharedHandler searchcontainer/tip hottip searchcontainer/filter_label
+Property showtarget searchcontainer/<név>_icon_1
+Property hidetarget searchcontainer/<név>_icon_0
+```
+
+A `<név>` sorrendben: `starsearch` (:39) · `facesearch` (:49) ·
+`moviesearch` (:59) · `webview` (:69) · `geotagsearch` (:79).
+
+### ⛔ A kétállású ikon a forrásból EGYIRÁNYÚ
+
+A `showtarget`/`hidetarget` pár **csak a bekapcsolást** írja le: megmutatja
+az `_icon_1`-et és elrejti az `_icon_0`-t. **Visszafelé nincs utasítás a
+forrásban** — a kikapcsolás nem az erőforrásból jön, hanem kódból.
+
+⇒ Aki a „két képállapot" sort pusztán ebből a `.tre`-ből valósítja meg,
+**egyirányú kapcsolót** kap: a szűrő bekapcsol, és nem lehet kikapcsolni.
+Ez a szakasz legfontosabb figyelmeztetése.
+
+### A súgó helye — mind az ötnél ugyanaz
+
+`SharedHandler searchcontainer/tip hottip searchcontainer/filter_label` ⇒ a
+buboréksúgó szövege a **„Szűrők" felirat helyén** jelenik meg, nem lebegő
+buborékban. Mind az öt gomb ugyanazt a `tip` kezelőt osztja.
+
+*Forrás: `searchcontainer.tre:36–84` (az öt blokk), `:86`
+(`searchcontainer/filterbase`).*
+
+### Kontroll
+
+A fájl **125 sor** — egyezik a #838 mérésével; a `searchcontainer/` előtagú
+elemek száma **26**, köztük mind a tíz ikon (öt gomb × 2 állapot).
