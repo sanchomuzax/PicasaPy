@@ -72,6 +72,16 @@ QtObject {
     // ⚠️ A sötét módban a mért világos értékek nem használhatók (a panel
     // olvashatatlan lenne), ezért ott a saját króm-tónusaink állnak — a
     // VILÁGOS mód az, ami az eredetit követi.
+    // #901: a buboréksúgó KÉSLELTETÉSE egy helyen. Az eredeti értéke NINCS
+    // kiolvasva a binárisból (a jegy ezt kimondja), nálunk viszont eddig
+    // háromféle volt: 400 ms három helyen, 500 ms hatvanhaton, és sok helyen
+    // meg sem volt adva (a Qt alapértelmezése). A 400 → 500 egyesítés a
+    // TÖBBSÉGET követi, tehát a legkevesebb látható változással jár.
+    //
+    // ⚠️ Ez a MI döntésünk, nem mérés. Ha az eredeti késleltetése egyszer
+    // kiolvasható lesz, EGY számot kell átírni.
+    readonly property int tooltipDelay: 500
+
     readonly property color listPanelBg: dark ? "#2e2e2e" : "#e8e8e8"
     readonly property color listPanelBorder: dark ? "#5a5a5a" : "#bababa"
     readonly property color listPanelShadow: dark ? "#1f1f1f" : "#d6d6d6"

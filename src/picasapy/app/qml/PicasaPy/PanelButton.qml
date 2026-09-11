@@ -531,5 +531,5 @@ Rectangle {
     }
     ToolTip.text: pbtn.tooltip
     ToolTip.visible: pbtn.tooltip.length > 0 && pbtnMouse.containsMouse
-    ToolTip.delay: 400
+    ToolTip.delay: Theme.tooltipDelay
 }

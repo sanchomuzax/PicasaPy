@@ -58,13 +58,21 @@ ColumnLayout {
         }
     }
 
+    //: #901: a vörösszem-eszköz BEÉPÍTETT útmutatója — az eredetiben
+    //: `editpanel/text(redeye tip): redeyetext`, MÉRT dobozzal: **242 × 129**.
+    //: A szöveg az eredeti szó szerinti angolja (az utolsó két mondat eddig
+    //: LEMARADT), a magyar a Picasa saját erőforrásából
+    //: (`panel-feliratok-hu.tsv:4989`).
     Text {
+        objectName: "redeyeGuideText"
         Layout.fillWidth: true
+        Layout.preferredWidth: 242
+        Layout.preferredHeight: 129
         wrapMode: Text.WordWrap
-        text: qsTr("You can also draw a square around any red eye that"
-                   + " Picasa may have missed. Click, hold, and drag the"
-                   + " mouse around each eye separately to select it. A"
-                   + " selection box appears over the area.")
+        text: qsTr("Click, hold, and drag the mouse around each eye separately "
+                   + "to select it. A selection box appears over the area. "
+                   + "Release the mouse to complete your selection. The Photo is "
+                   + "displayed with the red-eye removed.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }

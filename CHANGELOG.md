@@ -9,6 +9,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Változott
 
+- **A vágó, a vörösszem és a retusálás útmutató szövege az eredeti Picasa
+  teljes szövege** (#901). Eddig rövidített vagy átfogalmazott változat állt
+  ott: a vörösszemnél lemaradt, hogyan fejezed be a kijelölést, a
+  retusálásnál pedig az, hogy a Ctrl lenyomva tartásával húzva pásztázhatsz a
+  képen. A magyar szövegek a Picasa saját magyar fordításából jönnek.
+- **A buboréksúgók egyforma késleltetéssel jelennek meg** (#901). Eddig
+  háromféle volt: fél másodperc, négytized, és sok helyen a Qt saját
+  beállítása.
+
+### Változott
+
 - **A legördülő listák és a görgetősáv az eredeti Picasa rajzát kapták**
   (#894). A legördülő panel mostantól sík, világosszürke, egy képpont
   keretével és halvány árnyékkal, ahogy az eredetiben — nem a rendszer saját

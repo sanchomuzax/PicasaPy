@@ -65,7 +65,7 @@ Item {
         //: `select_all` buboréksúgó.
         ToolTip.text: qsTr("Select all the pictures (Ctrl+A)")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.selectAllNodes()
     }
 
@@ -77,7 +77,7 @@ Item {
         //: `select_none` buboréksúgó.
         ToolTip.text: qsTr("Deselect all the pictures (Ctrl+D)")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.selectNoNodes()
     }
 
@@ -89,7 +89,7 @@ Item {
         //: `remove_node` buboréksúgó.
         ToolTip.text: qsTr("Remove selected items from the collage (Del)")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.removeSelectedNodes()
     }
 
@@ -102,7 +102,7 @@ Item {
         //: `set_background` buboréksúgó.
         ToolTip.text: qsTr("Use the selected picture as the background")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (row.controller) row.controller.setBackgroundFromSelection()
     }
 }

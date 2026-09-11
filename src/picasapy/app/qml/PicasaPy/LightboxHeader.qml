@@ -179,7 +179,7 @@ ColumnLayout {
             Layout.preferredHeight: 22
             ToolTip.text: qsTr("Select starred photos")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: header.selectStarredRequested()
         }
         // #1823: „szerkesztések mentése lemezre" (`save_edits`) — a
@@ -192,7 +192,7 @@ ColumnLayout {
             Layout.preferredHeight: 22
             ToolTip.text: qsTr("Save edited photos to disk")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: header.saveEditsRequested()
         }
         // #1006: `headerpanel/create_collage` — MÉRT 29 × 27
@@ -212,7 +212,7 @@ ColumnLayout {
             Layout.preferredHeight: 27
             ToolTip.text: qsTr("Create Photo Collage")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: header.collageRequested()
             contentItem: Item {
                 Image {

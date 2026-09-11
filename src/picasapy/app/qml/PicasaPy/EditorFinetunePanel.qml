@@ -126,7 +126,7 @@ ColumnLayout {
         }
         ToolTip.visible: iconMouse.containsMouse && iconButton.tooltip !== ""
         ToolTip.text: iconButton.tooltip
-        ToolTip.delay: 400
+        ToolTip.delay: Theme.tooltipDelay
     }
 
     // --- Derítőfény -------------------------------------------------------

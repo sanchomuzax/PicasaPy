@@ -423,7 +423,7 @@ Window {
                     ToolTip.text: qsTr(
                         "Add another copy of each Photo to be printed")
                     ToolTip.visible: hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     onClicked: {
                         printWindow.copies += 1
                         printWindow.frissitsdAzElonezetet()
@@ -541,7 +541,7 @@ Window {
                 ToolTip.text: qsTr(
                     "Make sure your photos are ready to print")
                 ToolTip.visible: hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 // Az eredetiben a „You are ready to print." ágon nincs
                 // mit ellenőrizni.
                 visible: printWindow.quality.small > 0
@@ -587,7 +587,7 @@ Window {
                 ToolTip.text: qsTr(
                     "Open printer setup controls for the selected printer")
                 ToolTip.visible: nyomtatoBeallitas.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 onClicked: {
                     if (typeof printController !== "undefined" && printController) {
                         printController.openPrinterSetup(printWindow.printerName)

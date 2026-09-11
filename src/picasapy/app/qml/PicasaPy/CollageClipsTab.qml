@@ -98,7 +98,7 @@ Item {
         //: Buboréksúgó a „Továbbiak..." gombon (1.10.6 `getmoreclips`).
         ToolTip.text: qsTr("Load more pictures from the library")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         // A gomb BAL oldalán ikon áll (spec 4.3) — ezért cseréljük a
         // `PicasaButton` egyszerű szöveges tartalmát egy sorra.
         contentItem: Row {
@@ -131,7 +131,7 @@ Item {
         //: Buboréksúgó a „+" gombon (1.10.6 `addclips`).
         ToolTip.text: qsTr("Add selected clips to the collage")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         // #1276: a kép a TÁLCÁN MARAD, csak kiesik a fel nem használtak
         // közül — ezért felhasználtnak jelöljük, nem eltávolítjuk. A
         // kollázsra helyezést továbbra is az `addClips` végzi.
@@ -157,7 +157,7 @@ Item {
         //: Buboréksúgó a „–" gombon (1.10.6 `deleteclips`).
         ToolTip.text: qsTr("Remove the selected pictures from the tray")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         // #1276: a súgó a TÁLCÁT ígéri, tehát a tálcából veszünk ki —
         // korábban a kollázsról törölt (`deleteClips`), ami más lista.
         onClicked: {

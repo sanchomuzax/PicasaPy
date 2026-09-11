@@ -214,7 +214,7 @@ Item {
         //: elkészül ÉS a háttér be is áll (#1005).
         ToolTip.text: qsTr("Create the collage and set it as the desktop background")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: panel.requestSave(true)
     }
     PicasaButton {
@@ -236,7 +236,7 @@ Item {
         ToolTip.text: qsTr("Save as a JPG in the Collages album (in the Projects "
                    + "collection).")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: panel.requestSave(false)
     }
     PicasaButton {
@@ -246,7 +246,7 @@ Item {
         //: Buboréksúgó az „Alaphelyzet" gombon.
         ToolTip.text: qsTr("Undo all changes")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: if (panel.controller) panel.controller.resetCollage()
     }
     PicasaButton {
@@ -257,7 +257,7 @@ Item {
         //: Buboréksúgó a „Bezárás" gombon.
         ToolTip.text: qsTr("Close the Collage tab")
         ToolTip.visible: hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         onClicked: panel.requestClose()
     }
 

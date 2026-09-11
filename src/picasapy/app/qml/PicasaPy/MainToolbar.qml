@@ -109,7 +109,7 @@ Rectangle {
             //: szerint (`referencia/ui-leltar.csv`). Eddig nem volt súgója.
             ToolTip.text: qsTr("Get photos from a camera, scanner, or other media")
             ToolTip.visible: hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: toolbar.importRequested()
         }
         // #1421: az `newalbum` gomb — a FUNKCIÓ már megvolt (a Fájl ▸ Új
@@ -162,7 +162,7 @@ Rectangle {
             //: `newalbum` — az eredeti buboréksúgója
             ToolTip.text: qsTr("Create a new album")
             ToolTip.visible: newAlbumHover.hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: newAlbumHover }
             TapHandler { onTapped: toolbar.newAlbumRequested() }
         }
@@ -200,7 +200,7 @@ Rectangle {
                 //: `flatview` — az eredeti buboréksúgója
                 ToolTip.text: qsTr("Set view to show flat folder structure")
                 ToolTip.visible: flatViewHover.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: flatViewHover }
                 TapHandler { onTapped: toolbar.flatViewRequested() }
             }
@@ -221,7 +221,7 @@ Rectangle {
                 //: `folderview` — az eredeti buboréksúgója
                 ToolTip.text: qsTr("Set view to show folder tree structure")
                 ToolTip.visible: treeViewHover.hovered
-                ToolTip.delay: 500
+                ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: treeViewHover }
                 TapHandler { onTapped: toolbar.treeViewRequested() }
             }
@@ -254,7 +254,7 @@ Rectangle {
             //: `folderviewpopup` — a nézet-beállítások lenyílója
             ToolTip.text: qsTr("Folder view options")
             ToolTip.visible: folderViewPopupHover.hovered
-            ToolTip.delay: 500
+            ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: folderViewPopupHover }
             TapHandler { onTapped: toolbar.folderViewMenuRequested(parent) }
         }
@@ -418,7 +418,7 @@ Rectangle {
                     //: `facesearch` — az eredeti buboréksúgója
                     ToolTip.text: qsTr("Show only photos with faces")
                     ToolTip.visible: faceFilterHover.hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: faceFilterHover }
                     TapHandler {
                         onTapped: parent.aktiv
@@ -451,7 +451,7 @@ Rectangle {
                     //: `moviesearch` — az eredeti buboréksúgója
                     ToolTip.text: qsTr("Show movies only")
                     ToolTip.visible: movieFilterHover.hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: movieFilterHover }
                     TapHandler {
                         onTapped: parent.aktiv
@@ -493,7 +493,7 @@ Rectangle {
                     //: szöveget; a szomszédos szűrők alakját követi.
                     ToolTip.text: qsTr("Show duplicate files only")
                     ToolTip.visible: dupeFilterHover.hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: dupeFilterHover }
                     TapHandler {
                         // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
@@ -558,7 +558,7 @@ Rectangle {
                     //: `timecontainer_label` — az eredeti buboréksúgója
                     ToolTip.text: qsTr("Filter by date range")
                     ToolTip.visible: dateRangeHover.hovered
-                    ToolTip.delay: 500
+                    ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: dateRangeHover }
                     //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
                     //: `moved` az elengedésre/lépésre szól, a `valueChanged`

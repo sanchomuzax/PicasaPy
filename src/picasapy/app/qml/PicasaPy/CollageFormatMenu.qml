@@ -132,7 +132,7 @@ Item {
         ToolTip.text: qsTr("You can select the relative width and height of "
                            + "the collage")
         ToolTip.visible: menuHover.hovered
-        ToolTip.delay: 500
+        ToolTip.delay: Theme.tooltipDelay
         HoverHandler { id: menuHover }
     }
 
