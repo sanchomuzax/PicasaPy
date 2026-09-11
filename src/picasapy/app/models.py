@@ -465,6 +465,9 @@ class PhotoGridModel(QAbstractListModel):
         self._folder_photo_sort = DEFAULT_SORT_MODE
         self._folder_photo_sort_reverse = False
         self._folder_photo_sort_active = None
+        #: #467: a szín-rendezés adatforrása (a vezérlő adja) — enélkül a
+        #: szempont a fájlnév-sorrendre esik vissza, nem ürül ki a rács
+        self._folder_photo_hues = None
         # #1596: a `Nézet ▸ Megjelenítési mód` aktív tétele. A modell csak
         # az URL-cimkét adja hozzá (`display_mode_url_suffix`); a képpontokat
         # a `thumbnail_provider` írja át. Amíg senki nem állította be, a
@@ -496,16 +499,23 @@ class PhotoGridModel(QAbstractListModel):
             )
 
     def set_folder_photo_sort(
-        self, sort_mode: str, reverse: bool, is_active=None
+        self, sort_mode: str, reverse: bool, is_active=None, hues=None
     ) -> None:
         """A mappán belüli képsorrend beállítása (#1436).
 
         A MÁR megjelenített képekre azonnal érvényesül, hogy a menüpont
         hatása ne csak a következő újratöltéskor látszódjon.
+
+        `hues` (#467): a szín-rendezés adatforrása — `rekordok → {fájl-
+        azonosság: színezet}` visszahívás. **Csak `color` szempontnál hívjuk
+        meg**: az index olvasása minden más rendezésnél fölösleges munka
+        lenne, egy nagy könyvtárban pedig minden frissítéskor.
         """
         self._folder_photo_sort = sort_mode
         self._folder_photo_sort_reverse = bool(reverse)
         self._folder_photo_sort_active = is_active
+        if hues is not None:
+            self._folder_photo_hues = hues
         if self._photos:
             self.set_photos(self._photos)
 
@@ -553,8 +563,14 @@ class PhotoGridModel(QAbstractListModel):
             and not self._folder_photo_sort_reverse
         ):
             return photos
+        hues = None
+        if self._folder_photo_sort == "color" and self._folder_photo_hues is not None:
+            hues = self._folder_photo_hues(photos)
         return sort_folder_blocks(
-            photos, self._folder_photo_sort, self._folder_photo_sort_reverse
+            photos,
+            self._folder_photo_sort,
+            self._folder_photo_sort_reverse,
+            hues,
         )
 
     @Property(int, notify=revisionChanged)

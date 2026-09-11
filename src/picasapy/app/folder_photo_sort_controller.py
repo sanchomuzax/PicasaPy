@@ -28,7 +28,14 @@ minta, ahogy a `CollageMixin` is magával hozza a saját szeleteit.
 
 from __future__ import annotations
 
+import sqlite3
+from pathlib import Path
+
 from PySide6.QtCore import Property, Signal, Slot
+
+from picasapy.color import avgcolor_to_rgb, pixel_hue
+from picasapy.index import open_index
+from picasapy.index.colors import load_avgcolors
 
 from .photo_sort import (
     FOLDER_PHOTO_SORT_KEY,
@@ -111,4 +118,34 @@ class FolderPhotoSortMixin:
             self._folder_photo_sort,
             self._folder_photo_sort_reverse,
             is_active=lambda: getattr(self, "_view_mode", ("", ""))[0] == "folder",
+            hues=self._folder_photo_hues,
         )
+
+    def _folder_photo_hues(self, records) -> dict:
+        """#467: fájl-azonosság → színezet a szín-rendezéshez.
+
+        A #383 átlagszín-indexéből (`photo_colors.avgcolor`) olvas, és a MÉRT
+        színezet-számítással (`color.pixel_hue`) alakítja rendezhető értékké.
+        A telítetlen képek `None`-t kapnak — a rendező azokat a színesek után
+        teszi; ami az indexben nincs meg, az ki sem kerül a szótárból, és a
+        lista végére esik.
+
+        A modell csak `color` szempontnál hívja, tehát a többi rendezés nem
+        nyit indexet. Index-hiba esetén ÜRES szótárat adunk: a rendezés
+        ilyenkor fájlnév-sorrendre esik vissza — a rács sosem ürül ki egy
+        adatbázis-hiba miatt."""
+        db_path = getattr(self, "_db_path", None)
+        if db_path is None or not records:
+            return {}
+        kulcsok = [
+            (str(Path(r.folder_path) / r.name), r.mtime_ns, r.size) for r in records
+        ]
+        try:
+            with open_index(db_path) as conn:
+                nyers = load_avgcolors(conn, kulcsok)
+        except sqlite3.Error:
+            return {}
+        hues: dict = {}
+        for kulcs, avgcolor in nyers.items():
+            hues[kulcs] = pixel_hue(*avgcolor_to_rgb(avgcolor))
+        return hues

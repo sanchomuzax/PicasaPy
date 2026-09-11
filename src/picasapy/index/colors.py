@@ -139,6 +139,39 @@ def load_color_tokens(
     return found
 
 
+def load_avgcolors(
+    conn: sqlite3.Connection, keys: Sequence[ColorKey]
+) -> dict[ColorKey, int]:
+    """A megadott fájl-azonosságokhoz tárolt `avgcolor` (0xAARRGGBB) értékek.
+
+    A #467 szín-rendezése ezt olvassa. Csak az ÉRVÉNYES (azonos mtime_ns és
+    méret melletti) sorok szerepelnek; a hiányzókat a hívó a lista végére
+    teszi, és a háttér-feltöltés (`backfill_colors`) idővel pótolja.
+
+    Ugyanaz a kötegelés és kulcsszűrés, mint a `load_color_tokens`-nél — a
+    két lekérdezés szándékosan KÜLÖN áll: a keresésnek a tokenek kellenek,
+    a rendezésnek az átlagszín, és egyik hívó se olvasson fölöslegesen."""
+    ensure_color_table(conn)
+    wanted = {(str(path), int(mtime_ns), int(size)) for path, mtime_ns, size in keys}
+    if not wanted:
+        return {}
+    found: dict[ColorKey, int] = {}
+    paths = [key[0] for key in wanted]
+    for start in range(0, len(paths), _BATCH_SIZE):
+        batch = paths[start : start + _BATCH_SIZE]
+        placeholders = ",".join("?" * len(batch))
+        rows = conn.execute(
+            "SELECT path, mtime_ns, size, avgcolor FROM photo_colors "
+            f"WHERE path IN ({placeholders})",
+            batch,
+        )
+        for row in rows:
+            key = (row["path"], row["mtime_ns"], row["size"])
+            if key in wanted and row["avgcolor"] is not None:
+                found[key] = int(row["avgcolor"])
+    return found
+
+
 def save_colors(
     conn: sqlite3.Connection, items: Iterable[tuple[str, int, int, int, Sequence[str]]]
 ) -> None:

@@ -20,15 +20,34 @@ A „Fordított sorrend" fordítja meg.
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 # QSettings-kulcsok — a `view/` névtér a többi nézet-beállításé is
 # (folderSort, paneSort, thumbCaption, showHidden).
 FOLDER_PHOTO_SORT_KEY = "view/folderPhotoSort"
 FOLDER_PHOTO_SORT_REVERSE_KEY = "view/folderPhotoSortReverse"
 
-# A menü három szempontja (spec 6.3: Dátum · Név · Méret · Fordított
-# sorrend) — a „legutóbbi változtatás" a BAL HASÁB menüjéé, ide nem való.
-SORT_MODES = ("date", "name", "size")
+# A menü szempontjai (spec 6.3: Dátum · Név · Méret · Fordított sorrend) —
+# a „legutóbbi változtatás" a BAL HASÁB menüjéé, ide nem való.
+#
+# #467: a NEGYEDIK a szín. Az eredeti rendezés-motorja ismerte
+# (`CSelectionNode` → `SortColor`, „Rendezés szín alapján"), de a menübe
+# sosem került be, tehát a felhasználó nem érhette el. Nálunk a #383
+# átlagszín-indexe már megvan, ezért egyetlen rendezőkulcs.
+SORT_MODES = ("date", "name", "size", "color")
+
+#: #467: a szín-rendezés osztályai. A sorrend a kulcs első eleme, tehát ez
+#: dönti el, mi kerül a lista végére:
+#:
+#: 0. **színes** kép — színezet szerint, a hue-kör alján kezdve (piros)
+#: 1. **telítetlen** (szürke/fekete/fehér) kép — a jegy javaslata szerint a
+#:    színesek UTÁN, mert a színezetük nem értelmes
+#: 2. **még nem indexelt** kép — utolsóként, fájlnév szerint
+#:
+#: A harmadik osztály nem hiba, hanem átmeneti állapot: a színindexet
+#: háttérben töltjük fel (`index.colors.backfill_colors`), tehát egy friss
+#: könyvtárban a rács alja addig fájlnév-sorrendben áll.
+SZINES, TELITETLEN, NINCS_ADAT = 0, 1, 2
 
 # Az alapérték a fájlnév: ez volt a viselkedés a #1436 előtt is, tehát aki
 # nem nyúl a menühöz, semmilyen változást nem lát.
@@ -111,16 +130,42 @@ def _datum_kulcs(record) -> str:
         return _ROMLOTT_KULCS
 
 
-def _sort_key(sort_mode: str):
+def szin_kulcs(record, hues) -> tuple:
+    """A szín-rendezés kulcsa egy rekordra (#467).
+
+    `hues`: fájl-azonosság → színezet (0…254) vagy `None` a telítetlenre.
+    A hiányzó kulcs = még nincs indexelve.
+
+    A másodlagos kulcs mindenhol a fájlnév, hogy a sorrend
+    determinisztikus legyen — két azonos színezetű kép között a futásonként
+    változó sorrend a rácson „ugrálásnak" látszana."""
+    kulcs = (str(Path(record.folder_path) / record.name), record.mtime_ns, record.size)
+    if kulcs not in hues:
+        return (NINCS_ADAT, 0, record.name.casefold())
+    hue = hues[kulcs]
+    if hue is None:
+        return (TELITETLEN, 0, record.name.casefold())
+    return (SZINES, hue, record.name.casefold())
+
+
+def _sort_key(sort_mode: str, hues=None):
     """Rendezőkulcs egy mappa-blokkon belül."""
     if sort_mode == "date":
         return lambda r: (_datum_kulcs(r), r.name.casefold())
     if sort_mode == "size":
         return lambda r: (r.size, r.name.casefold())
+    if sort_mode == "color":
+        #: színadat nélkül a szín-rendezés a fájlnév-sorrendre esik vissza —
+        #: ez a helyes viselkedés, amíg a háttér-index fel nem töltött:
+        #: egy üres rács vagy egy futásfüggő sorrend rosszabb lenne
+        tabla = {} if hues is None else hues
+        return lambda r: szin_kulcs(r, tabla)
     return lambda r: r.name.casefold()
 
 
-def sort_folder_blocks(records, sort_mode: str, reverse: bool = False) -> tuple:
+def sort_folder_blocks(
+    records, sort_mode: str, reverse: bool = False, hues=None
+) -> tuple:
     """A képek újrarendezése MAPPA-BLOKKONKÉNT (a blokkhatárok maradnak).
 
     Új sorozatot ad vissza, a bemenetet nem módosítja. Ismeretlen
@@ -129,7 +174,7 @@ def sort_folder_blocks(records, sort_mode: str, reverse: bool = False) -> tuple:
     records = tuple(records)
     if not records:
         return records
-    key = _sort_key(coerce_sort_mode(sort_mode))
+    key = _sort_key(coerce_sort_mode(sort_mode), hues)
     ordered: list = []
     block: list = []
     current: str | None = None

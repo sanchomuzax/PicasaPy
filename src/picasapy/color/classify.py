@@ -211,6 +211,27 @@ def pixel_bucket(red: int, green: int, blue: int) -> int | None:
     return None if bucket < 0 else bucket
 
 
+def pixel_hue(red: int, green: int, blue: int) -> int | None:
+    """Egyetlen RGB képpont MÉRT színezete (0…254), vagy `None`, ha a képpont
+    telítetlen (`S <= SATURATION_MIN`).
+
+    ⚠️ **Más kérdés, mint a `pixel_bucket`.** A vödrözés a mért `switch`-et
+    követi, beleértve a **rést** (a `b == 25` tized egyetlen vödörbe sem
+    kerül) — ez a KERESÉS szemantikája. A folytonos színezet ettől
+    független: a réshez tartozó képpontnak is van színezete, csak vödre
+    nincs. A #467 szín-rendezése ezt a folytonos értéket használja, mert egy
+    hét elemű vödörskála a rácsot hét kupacba rendezné, nem szivárványba.
+
+    A telítetlen (`None`) eset a hívó döntése: a szín-rendezés a lista
+    VÉGÉRE teszi őket (#467), a keresés az akromatikus hármassal fedi le.
+    """
+    channels = tuple(np.array([value], dtype=np.int32) for value in (red, green, blue))
+    maximum, delta, saturation = _saturation(*channels)
+    if int(saturation[0]) <= SATURATION_MIN:
+        return None
+    return int(_hue(*channels, maximum, delta)[0])
+
+
 def hue_histogram(
     image: np.ndarray | Sequence[Sequence[Sequence[int]]], *, order: str = "rgb"
 ) -> tuple[int, ...]:

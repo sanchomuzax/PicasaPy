@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.398] – 2026-09-11
+
+### Hozzáadva
+
+- **Rendezés szín szerint** (#467). A mappa jobbklikk-menüjének „Mappa
+  rendezésének alapja" almenüje egy negyedik szemponttal bővült: **Szín**. A
+  rács ilyenkor színezet szerint, szivárvány-sorrendben áll össze; a
+  telítetlen (szürke, fekete-fehér) képek a színesek után jönnek. Az eredeti
+  Picasa rendezés-motorja ismerte ezt a módot, de a menübe sosem került be,
+  tehát ott soha nem lehetett használni.
+
+  A sorrend a színkeresés indexére épül, amit a program a háttérben töltöget
+  — egy frissen beolvasott könyvtárban az addig ki nem számolt képek a lista
+  végén, fájlnév szerint állnak, és ahogy az index feltöltődik, a helyükre
+  kerülnek.
+
 ## [0.8.397] – 2026-09-11
 
 ### Változott
