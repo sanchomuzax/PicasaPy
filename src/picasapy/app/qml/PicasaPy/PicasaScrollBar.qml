@@ -47,6 +47,12 @@ ScrollBar {
     // Az átmenet TENGELYE a sáv irányához igazodik: függőleges sávnál
     // vízszintes (a mérés szerint), vízszintes sávnál elfordítva.
     contentItem: Rectangle {
+        //: ⚠️ Az `id` NEM formaság: a `GradientStop`-on belül a `parent` NULL
+        //: (a gradiens-lépések nem a Rectangle gyerekei a láthatósági fában),
+        //: ezért a `tonus`-t nevén kell hivatkozni. A `huvelyk.tonus` alak a CI
+        //: #1260-as QML-szkripthiba-őrén bukott meg — némán annyit jelentett
+        //: volna, hogy a hover/press tónus nem érvényesül.
+        id: huvelyk
         implicitWidth: control.barThickness - control.handleMargin * 2
         implicitHeight: implicitWidth
         radius: width / 2
@@ -60,23 +66,23 @@ ScrollBar {
                          ? Gradient.Vertical : Gradient.Horizontal
             GradientStop {
                 position: 0.0
-                color: Qt.darker(Theme.scrollThumbEdgeDark, parent.tonus)
+                color: Qt.darker(Theme.scrollThumbEdgeDark, huvelyk.tonus)
             }
             GradientStop {
                 position: 0.07
-                color: Qt.darker(Theme.scrollThumbEdgeSoft, parent.tonus)
+                color: Qt.darker(Theme.scrollThumbEdgeSoft, huvelyk.tonus)
             }
             GradientStop {
                 position: 0.5
-                color: Qt.darker(Theme.scrollThumbMid, parent.tonus)
+                color: Qt.darker(Theme.scrollThumbMid, huvelyk.tonus)
             }
             GradientStop {
                 position: 0.9
-                color: Qt.darker(Theme.scrollThumbLight, parent.tonus)
+                color: Qt.darker(Theme.scrollThumbLight, huvelyk.tonus)
             }
             GradientStop {
                 position: 1.0
-                color: Qt.darker(Theme.scrollThumbEdgeSoft, parent.tonus)
+                color: Qt.darker(Theme.scrollThumbEdgeSoft, huvelyk.tonus)
             }
         }
         opacity: control.barVisible ? 1.0 : 0.0

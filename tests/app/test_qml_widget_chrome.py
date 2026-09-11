@@ -195,9 +195,14 @@ class TestPicasaSlider:
 
 
 class TestWidgetChromeUsesThemeTokens:
-    """A színek a Theme-ből jönnek — NEM a Theme.qml módosításával (tiltott
-    forró fájl), hanem a meglévő tokenek felhasználásával (chromeBg,
-    chromeBorder — a kézikönyv „Görgetősáv #CDCDCD" tokenje)."""
+    """A színek a Theme-ből jönnek, nem beégetett hexából.
+
+    ⚙️ #894: a fogantyú színe már NEM a kézikönyv `chromeBorder`-e, hanem a
+    MÉRT `scrollart/base_win` átmenet (`Theme.scrollThumb*`) — a mérés
+    felülírta a korábbi, saját tónust. Az állítás LÉNYEGE változatlan: a szín
+    a `Theme`-ből jön, tehát egy helyen cserélhető, és a sötét mód is
+    követi. A sín továbbra is a `chromeBg`-t használja.
+    """
 
     def test_scrollbar_source_references_theme_tokens(self):
         import picasapy.app.application as app_module
@@ -206,8 +211,39 @@ class TestWidgetChromeUsesThemeTokens:
             app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaScrollBar.qml"
         )
         source = qml_path.read_text(encoding="utf-8")
-        assert "Theme.chromeBorder" in source
+        #: a fogantyú MÉRT átmenete (#894) — mind a négy token a Theme-ből
+        for token in (
+            "Theme.scrollThumbEdgeDark",
+            "Theme.scrollThumbEdgeSoft",
+            "Theme.scrollThumbMid",
+            "Theme.scrollThumbLight",
+        ):
+            assert token in source, token
         assert "Theme.chromeBg" in source
+
+    def test_scrollbar_source_has_no_hardcoded_hex(self):
+        """Ez az eredeti szándék foga: beégetett hexa nem kerülhet a
+        vezérlőbe, mert a sötét mód némán elromlana tőle. (A mért értékek a
+        `Theme`-ben állnak, kommentben itt is szerepelhetnek — ezért a
+        vizsgálat a KÓD-sorokra szűkül.)"""
+        import re
+
+        import picasapy.app.application as app_module
+
+        qml_path = (
+            app_module._APP_DIR / "qml" / "PicasaPy" / "PicasaScrollBar.qml"
+        )
+        kodsorok = [
+            sor
+            for sor in qml_path.read_text(encoding="utf-8").splitlines()
+            if not sor.lstrip().startswith("//")
+        ]
+        talalatok = [
+            sor.strip()
+            for sor in kodsorok
+            if re.search(r'"#[0-9a-fA-F]{3,8}"', sor)
+        ]
+        assert talalatok == [], f"beégetett szín a görgetősávban: {talalatok}"
 
     def test_slider_source_references_theme_tokens(self):
         """#2627: a csúszka sávja a SAJÁT tokenjeit használja.
