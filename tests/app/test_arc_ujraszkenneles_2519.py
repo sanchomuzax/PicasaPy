@@ -24,6 +24,22 @@ def _index_conn(tmp_path):
     return open_index(tmp_path / "index.db")
 
 
+def _index_allapot(tmp_path) -> list[tuple[str, int, int]]:
+    """(név, mtime_ns, méret) az indexből — a #2824 bukás-üzeneteihez.
+
+    Az ingadozó bukás eddig csak annyit mondott, hogy `1 == 2`. Ez a
+    segéd megmutatja, mit LÁTOTT az index abban a pillanatban, tehát a
+    következő CI-bukás megkülönbözteti a szinkronizálás és a vezérlő
+    hibáját."""
+    with _index_conn(tmp_path) as conn:
+        return [
+            (sor[0], int(sor[1]), int(sor[2]))
+            for sor in conn.execute(
+                "SELECT name, mtime_ns, size FROM photos ORDER BY name"
+            )
+        ]
+
+
 class TestMasodikMenet:
     def test_a_valtozatlan_fotot_nem_vizsgalja_ujra(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
@@ -74,7 +90,19 @@ class TestMasodikMenet:
 
     def test_a_MEGVALTOZOTT_fotot_ujra_vizsgalja(self, qt_app, tmp_path):
         """A jelölés a fájl azonosságához kötött: szerkesztés után újra kell
-        nézni a képet."""
+        nézni a képet.
+
+        ⚠️ **#2824 — a próba INGADOZOTT a CI-n**, mindkét lábon (windows
+        2026-09-11 19:46, ubuntu ugyanaznap 20:33), és helyben 14 futásból
+        egyszer sem reprodukálható, terhelés alatt sem. A bukás alakja
+        `1 == 2` volt: a detektor ÖSSZESEN egyszer futott, tehát vagy az
+        ELSŐ, vagy a MÁSODIK menet maradt el.
+
+        A két lehetőséget eddig semmi nem különböztette meg. Ezért a próba
+        most **lépésenként** állít, és a bukás-üzenetben megmutatja az
+        index állapotát — a következő CI-bukás így megmondja, melyik
+        menetben és miért veszett el a hívás.
+        """
         root = tmp_path / "kepek"
         root.mkdir()
         kep = root / "a.jpg"
@@ -83,6 +111,13 @@ class TestMasodikMenet:
         ctl = _make_controller(qt_app, tmp_path, root, detector=detektor)
         _run(ctl.scanFinished, ctl.scanForFaces)
         assert ctl.waitForBackgroundWorkers(5.0)
+        # #2824: az ELSŐ menetnek le KELL futnia — ha nem, a hiba nem a
+        # változás-felismerésben van, hanem abban, hogy a fotó még nem volt
+        # az indexben a szkennelés pillanatában.
+        assert len(detektor.calls) == 1, (
+            f"az első menet {len(detektor.calls)} hívást adott 1 helyett — "
+            f"az index tartalma: {_index_allapot(tmp_path)}"
+        )
 
         # a fájl megváltozik, és az index is tudomást szerez róla
         make_jpeg(kep, size=(80, 60))
@@ -94,10 +129,21 @@ class TestMasodikMenet:
             sync_tree(conn, root)
             conn.commit()
 
+        # #2824: a MÁSODIK menet előfeltétele, hogy az index tényleg átvette
+        # az új fájlállapotot. Ha nem, a detektor jogosan nem fut újra — és
+        # akkor a hiba a szinkronizálásban van, nem a vezérlőben.
+        allapot = _index_allapot(tmp_path)
+        varhato = kep.stat()
+        assert allapot and allapot[0][1] == varhato.st_mtime_ns, (
+            "a szinkronizálás nem vette át az új fájlállapotot: "
+            f"index={allapot}, fájl=(mtime_ns={varhato.st_mtime_ns}, "
+            f"size={varhato.st_size})"
+        )
+
         _run(ctl.scanFinished, ctl.scanForFaces)
         assert len(detektor.calls) == 2, (
             "a megváltozott fotót ÚJRA meg kell vizsgálni — a régi eredmény "
-            "másik tartalomra vonatkozott"
+            f"másik tartalomra vonatkozott (index: {_index_allapot(tmp_path)})"
         )
         assert ctl.waitForBackgroundWorkers(5.0)
 
