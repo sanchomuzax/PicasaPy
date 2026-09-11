@@ -1309,6 +1309,10 @@ MenuBar {
             MenuItem {
                 objectName: "menuViewAlbumThumbnails"
                 text: qsTr("Show &Thumbnails in Library")
+                //: #2989: fastruktúrájú nézetben SZÜRKE. A tulajdonos 3.
+                //: felvételén a tétel letiltva áll, a bélyegképek mégis
+                //: látszanak — ott a kapcsoló nem szabályoz semmit.
+                enabled: !folderViewMenu.treeMode
                 checkable: true
                 checked: folderViewMenu.albumThumbsMode
                 onTriggered: {

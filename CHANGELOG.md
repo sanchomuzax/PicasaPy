@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.407] – 2026-09-11
+
+### Változott
+
+- **A bal hasáb sor-ikonja EGYETLEN bélyegkép, nem négylapos kupac**
+  (#2989). A tulajdonos három felvétele szerint a négy fotót tartalmazó
+  mappa sora is egy sima, el nem forgatott négyszöget kap, 17 × 15
+  képpontos helyen, aránytartón. A kupac-rajzoló megmarad — a
+  visszafejtése érvényes, csak nem ez a felület használja.
+- **A fastruktúrájú nézetben a bélyegkép mindig látszik**, az „Indexképek
+  megjelenítése a könyvtárban" kapcsolótól függetlenül (#2989). A
+  kapcsoló kizárólag az egydimenziós listára vonatkozik, ezért a menütétel
+  a fanézetben szürke.
+
 ## [0.8.406] – 2026-09-11
 
 ### Javítva

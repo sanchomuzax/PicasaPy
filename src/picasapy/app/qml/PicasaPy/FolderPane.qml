@@ -730,9 +730,9 @@ Rectangle {
                         anchors.left: parent.left; anchors.leftMargin: 12
                         spacing: 5
                         // #2049: az eredeti a Mappák-lista sorain nem sárga
-                        // mappaikont mutat, hanem a mappa első legfeljebb
-                        // négy fotójából összeállított kis kupacot — de
-                        // CSAK ha az „Indexképek megjelenítése a
+                        // mappaikont mutat, hanem a mappa ELSŐ fotójának
+                        // kis bélyegképét (#2989) — de az egydimenziós
+                        // listán CSAK ha az „Indexképek megjelenítése a
                         // könyvtárban" be van kapcsolva
                         // (`ShowAlbumThumbnails2`, alapérték 0). Ha nincs
                         // borító (kép nélküli mappa), a sor visszaesik a
@@ -741,14 +741,11 @@ Rectangle {
                         // `icons/album`, `icons/smartalbum`, …).
                         Item {
                             objectName: "folderRowCover"
-                            // #2215: a hely a KUPAC arányához igazodik (a
-                            // 13 a mappaikon mérete); fix szélességgel a
-                            // mappanév ráfolyt a szélesebb kupacokra.
-                            width: boritoLatszik && folderRowCoverImage.implicitHeight > 0
-                                ? Math.max(13, Math.ceil(
-                                    height * folderRowCoverImage.implicitWidth
-                                    / folderRowCoverImage.implicitHeight))
-                                : 13
+                            // #2989: a hely FIX, a mért 17 × 15 arányában —
+                            // a kép aránytartón fér bele, és a nevek EGY
+                            // vonalban kezdődnek (a 13 a mappaikon mérete).
+                            readonly property int ikonDoboz: Math.round(18 * 17 / 15)
+                            width: boritoLatszik ? ikonDoboz : 13
                             height: 18
                             anchors.verticalCenter: parent.verticalCenter
                             opacity: offline ? 0.45 : 1.0
@@ -773,6 +770,9 @@ Rectangle {
                                 id: folderRowCoverImage
                                 objectName: "folderRowCoverImage"
                                 anchors.centerIn: parent
+                                // #2989: EGYETLEN bélyegkép, a dobozba
+                                // aránytartón beillesztve — nem kupac.
+                                width: parent.ikonDoboz
                                 height: parent.height
                                 fillMode: Image.PreserveAspectFit
                                 visible: parent.boritoLatszik

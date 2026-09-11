@@ -1,20 +1,27 @@
-"""`image://foldercover/<mappa>` — a mappa fotó-kupac borítója (#2049).
+"""`image://foldercover/<mappa>` — a bal hasáb sor-ikonja (#2049, #2989).
 
-A bal hasáb fasorain az eredeti Picasa nem sárga mappaikont mutat, hanem
-a mappa első néhány fotójából összeállított kis képhalmot. A mértant a
-`picasapy.thumbs.album_borito` számolja; ez a modul csak a képeket szedi
-össze és adja át a QML-nek.
+Az eredeti Picasa a bal hasáb sorain — bekapcsolt „Indexképek
+megjelenítése a könyvtárban" mellett — nem sárga mappaikont mutat, hanem
+a mappa **első fotójának** kis bélyegképét. Ez a modul szedi össze a
+fájlokat és adja át a képet a QML-nek.
+
+⚠️ **#2989: EGYETLEN kép, nem kupac.** A #2049 négylapos, elforgatott
+halmot rajzolt ide. A tulajdonos három felvétele
+(`research/#2984-indexkepek-mappa-ikonokon/`) ezt cáfolja: a négy fotós
+mappa sora is egy sima, tengelypárhuzamos négyszöget kap, 17 × 15
+képpontos helyen, aránytartón. A kupac-rajzoló (`thumbs.album_borito`,
+`0x00423780`) megmarad — csak nem ez a felület használja.
 
 ## Miért SZINKRON, szemben a rács providerével
 
 A `thumbs` provider aszinkron, mert a rácson egyszerre több száz cella
-kérhet nagy bélyegképet. Itt a nagyságrend más: egyszerre annyi borító
-látszik, ahány fasor, mindegyik legfeljebb négy KIS képből áll, és a
-kész borítót gyorstárazzuk. A szinkron ág ezért olcsóbb — és nincs
-szükség az aszinkron providernél kimért élettartam-tánchoz (#1457).
+kérhet nagy bélyegképet. Itt a nagyságrend más: egyszerre annyi ikon
+látszik, ahány sor, mindegyik EGY kis képből áll, és a kész ikont
+gyorstárazzuk. A szinkron ág ezért olcsóbb — és nincs szükség az
+aszinkron providernél kimért élettartam-tánchoz (#1457).
 
 Hibatűrés (#66): a rajzolásból kivétel SOHA nem szökhet ki — hibánál üres
-képet adunk vissza, és a fasor a szokásos mappaikonjára esik vissza.
+képet adunk vissza, és a sor a szokásos mappaikonjára esik vissza.
 """
 
 from __future__ import annotations
@@ -28,11 +35,6 @@ import numpy as np
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
-from picasapy.thumbs.album_borito import (
-    LAPOK_MAXIMUMA,
-    keszits_boritot,
-    mappa_magja,
-)
 
 _log = logging.getLogger(__name__)
 
@@ -89,11 +91,10 @@ def borito_fajljai(index_db: Path, mappa: str) -> list[Path]:
     return [record_path(rekord) for rekord in rekordok]
 
 
-#: A kupacba kerülő egyes lapok leghosszabb oldala képpontban. Az élő
-#: mintákban a KÉSZ borító leghosszabb oldala 72–119 px; egy lap ennél
-#: kisebb, mert a kupac szétterül. A 60 px ebbe a sávba viszi a
-#: végeredményt, és a fasor magasságára még bőven van mit kicsinyíteni.
-LAP_MERET = 60
+#: A sor-ikon leghosszabb oldala képpontban. A felület ennél kisebb helyre
+#: (17 × 15 px, #2989) kicsinyíti; itt azért adunk nagyobbat, hogy a
+#: nagyobb felbontású képernyőn se legyen szemcsés.
+IKON_MERET = 64
 
 
 def _olvasd_be(utvonal: Path):
@@ -108,7 +109,7 @@ def _olvasd_be(utvonal: Path):
     if kep is None:
         return None
     magassag, szelesseg = kep.shape[:2]
-    arany = LAP_MERET / max(magassag, szelesseg)
+    arany = IKON_MERET / max(magassag, szelesseg)
     if arany < 1.0:
         kep = cv2.resize(
             kep,
@@ -119,26 +120,37 @@ def _olvasd_be(utvonal: Path):
 
 
 def keszits_mappa_boritot(mappa: str, fajlok: Sequence[Path]):
-    """A mappa borítója RGBA tömbként, vagy `None`, ha nem áll össze.
+    """A mappa sor-ikonja BGRA tömbként, vagy `None`, ha nem áll össze.
 
-    A kupacba a kapott lista **első** legfeljebb négy olvasható fájlja
-    kerül — az eredeti is a lista elejét veszi (`0x004237ab`), nem a
-    legrégebbit vagy a csillagozottat.
+    ⚠️ **#2989 — EGYETLEN bélyegkép, nem kupac.** A tulajdonos három
+    felvétele (`research/#2984-indexkepek-mappa-ikonokon/`) szerint a bal
+    hasáb minden sora egy sima, tengelypárhuzamos négyszöget kap: a négy
+    fotós `Duplikátumok (4)` is. Az ikon helye 17 × 15 képpont, és a kép
+    aránytartón fér bele (a 17 × 12-es képernyőkép-sor ezt mutatja).
+
+    A négylapos, elforgatott kupacot rajzoló `thumbs.album_borito` (#2049,
+    `0x00423780`) **érvényes marad** — csak nem ez a felület használja;
+    hogy hol jelenik meg, nyitott kérdés.
+
+    A lista **első olvasható** fájlja kerül az ikonra (a `mappa` a hívás
+    naplózásához kell, a képválasztást nem befolyásolja).
     """
-    lapok = []
     for fajl in fajlok:
-        if len(lapok) >= LAPOK_MAXIMUMA:
-            break
         try:
             kep = _olvasd_be(Path(fajl))
         except OSError as hiba:
-            _log.warning("a borító lapja nem olvasható: %s (%s)", fajl, hiba)
+            _log.warning("a sor-ikon képe nem olvasható: %s (%s)", fajl, hiba)
             continue
         if kep is not None:
-            lapok.append(kep)
-    if not lapok:
-        return None
-    return keszits_boritot(lapok, mappa_magja(mappa))
+            # A felület `Format_ARGB32`-t vár: a BGR mellé teli alfa jön.
+            # Átlátszó képpont itt NINCS — a kupac hátterének hiánya a
+            # #2989 őrének egyik állítása.
+            magassag, szelesseg = kep.shape[:2]
+            bgra = np.empty((magassag, szelesseg, 4), dtype=np.uint8)
+            bgra[:, :, :3] = kep
+            bgra[:, :, 3] = 255
+            return bgra
+    return None
 
 
 class FolderCoverProvider(QQuickImageProvider):
