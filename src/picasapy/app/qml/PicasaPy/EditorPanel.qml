@@ -327,7 +327,28 @@ Rectangle {
         panel.shiftMasodlagos = editController.shiftLenyomva()
     }
 
-    Component.onCompleted: panel.frissitsdAShiftAllapotot()
+    function allitsdAShiftFigyelest() {
+        //: #798: a Shift-figyelés eseményszűrője MINDEN eseményre átlép
+        //: Pythonba — mérve a `test_people_panel_26.py` 13 s-ról 25 s-ra
+        //: nőtt tőle. Ezért csak a NÉGY effekt-fülön van fent (2–5); a
+        //: Shift a kilenc csempe közül négyet ezeken vált át.
+        if (typeof editController === "undefined" || !editController)
+            return
+        if (typeof editController.figyeldAShiftet !== "function")
+            return
+        editController.figyeldAShiftet(panel.activeTab >= 2
+                                       && panel.activeTab <= 5)
+    }
+
+    Component.onCompleted: {
+        panel.allitsdAShiftFigyelest()
+        panel.frissitsdAShiftAllapotot()
+    }
+    Component.onDestruction: {
+        if (typeof editController !== "undefined" && editController
+                && typeof editController.figyeldAShiftet === "function")
+            editController.figyeldAShiftet(false)
+    }
 
     // Effektek (#20): minden gomb új réteget fűz a láncra (append-only)
     signal effectRequested(string name)
@@ -637,8 +658,10 @@ Rectangle {
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
-        // #2146: az effekt-fülek megjelenésekor újra kell olvasni a Shift
-        // állapotát — az eredeti is a fül FELÉPÜLÉSEKOR teszi, egyszer.
+        // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a
+        // figyelést, máshol KI. A tartalék-olvasás megmarad azoknak a
+        // vezérlőknek, amelyek nem ismerik az élő állapotot.
+        panel.allitsdAShiftFigyelest()
         panel.frissitsdAShiftAllapotot()
         // #583: fülváltáskor a nyitott effekt-paraméter alpanel BEZÁRUL, és
         // az élő előnézete elvész (a mentett lánc érintetlen marad — ez a

@@ -53,8 +53,59 @@ def edit_controller(qt_app, tmp_path):
     from picasapy.app.edit_preview import EditPreviewProvider
 
     vezerlo = EditController(EditPreviewProvider())
+    # #798: a figyelés az effekt-füleken kapcsolódik be (a panel teszi);
+    # itt kézzel, mert a vezérlőt panel nélkül próbáljuk.
+    vezerlo.figyeldAShiftet(True)
     yield vezerlo
+    vezerlo.figyeldAShiftet(False)
     vezerlo.shutdown() if hasattr(vezerlo, "shutdown") else None
+
+
+class TestAFigyelesKapcsoloja:
+    """A szűrő CSAK az effekt-füleken van fent (#798).
+
+    ⚠️ Mérve: az alkalmazás-szintű eseményszűrő MINDEN eseményre átlép
+    Pythonba. Állandóra téve a `tests/app/qml_functional/test_people_panel_26.py`
+    futásideje 13 s-ról **25 s-ra** nőtt, és két időzítésre épülő próba el
+    is bukott — a felhasználó ugyanezt a lassulást kapná az egész
+    felületen, egy olyan funkcióért, ami csak az effekt-fülön él.
+    """
+
+    def test_alapbol_NEM_figyel(self, qt_app):
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        vezerlo = EditController(EditPreviewProvider())
+        _kuldd(_shift(QKeyEvent.Type.KeyPress))
+        try:
+            assert vezerlo.shiftAktiv is False, (
+                "a vezérlő figyel, pedig senki nem kérte — ez az egész "
+                "felületet lassítja"
+            )
+        finally:
+            _kuldd(_shift(QKeyEvent.Type.KeyRelease))
+
+    def test_a_KIKAPCSOLAS_visszaallitja_az_allapotot(self, edit_controller):
+        _kuldd(_shift(QKeyEvent.Type.KeyPress))
+        assert edit_controller.shiftAktiv is True
+        edit_controller.figyeldAShiftet(False)
+        assert edit_controller.shiftAktiv is False, (
+            "a fülről lelépve a csempék Shift-es állapotban ragadnának"
+        )
+        _kuldd(_shift(QKeyEvent.Type.KeyRelease))
+        edit_controller.figyeldAShiftet(True)
+
+    def test_a_BEKAPCSOLAS_beolvassa_a_pillanatnyi_allapotot(self, qt_app):
+        """A felhasználó már a fül megnyitása előtt is nyomhatja."""
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        vezerlo = EditController(EditPreviewProvider())
+        vezerlo.figyeldAShiftet(True)
+        try:
+            assert vezerlo.shiftAktiv == vezerlo.shiftLenyomva()
+        finally:
+            vezerlo.figyeldAShiftet(False)
 
 
 class TestAzEloAllapot:
@@ -147,6 +198,8 @@ class TestACsempeFelirata:
     """
 
     def test_a_panel_kotese_KOVETI_a_billentyut(self, editor_panel):
+        # az effekt-fülre lépve kapcsol be a figyelés (a panel teszi)
+        editor_panel.setProperty("activeTab", 2)
         assert editor_panel.property("shiftMasodlagos") is False
         _kuldd(_shift(QKeyEvent.Type.KeyPress))
         assert editor_panel.property("shiftMasodlagos") is True, (
@@ -184,3 +237,35 @@ class TestVezerloNelkul:
         assert panel is not None, komponens.errorString()
         assert panel.property("shiftMasodlagos") is False
         panel.deleteLater()
+
+
+class TestAFulValtas:
+    """A figyelés a FÜLLEL jár (#798)."""
+
+    def test_a_NEM_effekt_fulon_nem_hat_a_shift(self, editor_panel):
+        editor_panel.setProperty("activeTab", 0)
+        _kuldd(_shift(QKeyEvent.Type.KeyPress))
+        try:
+            assert editor_panel.property("shiftMasodlagos") is False, (
+                "a Finomhangolás fülön is figyelünk — felesleges teher"
+            )
+        finally:
+            _kuldd(_shift(QKeyEvent.Type.KeyRelease))
+
+    def test_MIND_A_NEGY_effekt_fulon_hat(self, editor_panel):
+        for ful in (2, 3, 4, 5):
+            editor_panel.setProperty("activeTab", ful)
+            _kuldd(_shift(QKeyEvent.Type.KeyPress))
+            allapot = editor_panel.property("shiftMasodlagos")
+            _kuldd(_shift(QKeyEvent.Type.KeyRelease))
+            assert allapot is True, f"a(z) {ful}. fülön nem hat a Shift"
+
+    def test_a_fulrol_LELEPVE_visszaall(self, editor_panel):
+        editor_panel.setProperty("activeTab", 2)
+        _kuldd(_shift(QKeyEvent.Type.KeyPress))
+        assert editor_panel.property("shiftMasodlagos") is True
+        editor_panel.setProperty("activeTab", 0)
+        assert editor_panel.property("shiftMasodlagos") is False, (
+            "a csempék Shift-es állapotban ragadtak a fülváltás után"
+        )
+        _kuldd(_shift(QKeyEvent.Type.KeyRelease))

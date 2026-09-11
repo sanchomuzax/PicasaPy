@@ -175,9 +175,13 @@ class TestAFrissitesBEKOTESE:
         )
 
     def test_INDULASKOR_is_olvas(self):
-        assert (
-            "Component.onCompleted: panel.frissitsdAShiftAllapotot()" in _PANEL
-        ), "induláskor nem olvassuk ki a Shift állapotát"
+        #: #798: a `Component.onCompleted` blokkossá vált (a Shift-figyelés
+        #: bekapcsolása is oda került), ezért a hívásra illesztünk, nem a
+        #: teljes egysoros alakra.
+        blokk = blokk_horgony_utan(_PANEL, "Component.onCompleted")
+        assert "frissitsdAShiftAllapotot()" in blokk, (
+            "induláskor nem olvassuk ki a Shift állapotát"
+        )
 
     def test_a_frissito_a_VEZERLOT_hivja(self):
         # ⚠️ A függvény TELJES törzse kell, kapcsos zárójel szerint vágva:

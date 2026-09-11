@@ -394,9 +394,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         # vezérlőhöz — az effekt-rácsnak viszont fókusz nélkül is tudnia
         # kell róla.
         self._shift_aktiv = False
-        alkalmazas = QGuiApplication.instance()
-        if alkalmazas is not None:
-            alkalmazas.installEventFilter(self)
+        self._shift_figyeles = False
         self._photo_id = ""
         self._image_path: Path | None = None
         # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
@@ -2318,6 +2316,36 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._bump_revision()
         self.toolsChanged.emit()
         return True
+
+    @Slot(bool)
+    def figyeldAShiftet(self, kell: bool) -> None:  # noqa: N802 — QML-slot
+        """A Shift követésének be-/kikapcsolása (#798).
+
+        ⚠️ **MÉRVE, miért nem állandó.** Az első változat az
+        alkalmazás-szintű szűrőt a vezérlő születésekor tette fel, és ott
+        is hagyta. Az eseményszűrő MINDEN eseményre átlép Pythonba: a
+        `tests/app/qml_functional/test_people_panel_26.py` futásideje
+        13 s-ról **25 s-ra** nőtt tőle, és két időzítésre épülő próba el is
+        bukott. A felhasználó ugyanezt a lassulást kapná az egész
+        felületen, egy olyan funkcióért, ami CSAK az effekt-fülön él.
+
+        Ezért a szűrő addig van fent, amíg az effekt-fül látszik — a panel
+        kapcsolja. Felrakáskor a pillanatnyi állapotot is beolvassuk, mert
+        a felhasználó már a fül megnyitása előtt is nyomhatja a Shiftet.
+        """
+        kell = bool(kell)
+        if kell == self._shift_figyeles:
+            return
+        alkalmazas = QGuiApplication.instance()
+        if alkalmazas is None:
+            return
+        self._shift_figyeles = kell
+        if kell:
+            alkalmazas.installEventFilter(self)
+            self._allitsd_a_shiftet(self.shiftLenyomva())
+        else:
+            alkalmazas.removeEventFilter(self)
+            self._allitsd_a_shiftet(False)
 
     def eventFilter(self, figyelt, esemeny) -> bool:  # noqa: N802 — Qt-név
         """A Shift le- és felengedésének követése (#798).
