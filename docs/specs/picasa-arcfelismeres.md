@@ -804,7 +804,14 @@ amiknek személy-albumuk. Állapot- vagy verziójelző, nem hash.
 > tagságából képződik — a mérés szerint nem: a `personalbumid`-os képek
 > **97%-án nincs** rajta.
 
-### `albumdata_albumpeoplechecksum` — ez VALÓDI hash, és NINCS megfejtve
+### `albumdata_albumpeoplechecksum` — ⛔ EZ A SZAKASZ ELAVULT (a képlet MEGVAN, ld. 14.6)
+
+> ⚠️ **Ne ez alapján dolgozz.** A 14.6 szakasz (2026-09-05, #2391) **megfejtette**
+> a képletet, és a tulajdonos valódi katalógusán 9 albumból 8-on **bitre**
+> egyezik: `acc = rol(acc, 7) XOR képindex`, két szűrővel. Az alábbi
+> „nincs megfejtve" állítás 2026-09-05 óta **nem igaz**; a szakasz azért
+> marad meg, mert a **három megdőlt hipotézise** továbbra is érvényes
+> negatív lelet.
 
 Kilenc nevesített személy-album (`]facealbum:109` … `]facealbum:117`),
 nyolc nem nulla, egymástól független 32 bites érték.
@@ -839,8 +846,9 @@ közülük **egyetlen** írja.
 
 *Bizonyítottsági fok: **megerősített** a `peoplealbumchecksum` konstans
 voltára és az arckeret-korrelációra (valódi adaton mérve); **megerősített
-negatívum** a három megdőlt hipotézisre. Az `albumpeoplechecksum` képzési
-szabálya **nyitva marad**.*
+negatívum** a három megdőlt hipotézisre. ⛔ **Az `albumpeoplechecksum`
+képzési szabálya 2026-09-05 óta MEGVAN** (14.6) — a fenti „nyitva marad"
+elavult.*
 
 ⚠️ **Adatvédelem:** a szóban forgó adatbázis valódi családi neveket
 tartalmaz. A mérések ide csak **album-indexszel** kerülnek, névvel soha.
@@ -1528,3 +1536,90 @@ arc-adatai **ellenőrizhetővé** válnak. Jegy: **#2391** (lezárva).
 | **az `albumpeoplechecksum` képlete** | ✅ **LEZÁRVA** — `acc = rol(acc,7) ^ képindex`, két szűrővel; 8/9 albumon mérve |
 | a „1 tag → 0" jelentése | ✅ **LEZÁRVA** — a küszöb alatti minőség miatt üres a hajtogatás (14.6.5) |
 | a 115-ös album eltérése | ✅ **LEZÁRVA** — elavult tárolt érték; minden más magyarázat kipróbálva és kizárva (14.6.4) |
+
+## 17. ⛳ ÖNHELYESBÍTÉS + a `0xa0cd` LEZÁRVA: nem parancs, hanem ALMENÜ-HORGONY (2026-09-11, 290. kör, #26)
+
+A kör a **saját lapunk felmérésével** kezdett, és a lap **önmagával
+ellentmondott**. Ez a szakasz feloldja, és lezárja az utolsó valóban nyitott
+tételt is.
+
+### 17.1 Három elavult hely — feloldva
+
+| hol | mit állított | miért elavult |
+|---|---|---|
+| a `albumdata_albumpeoplechecksum` szakasz címe | „ez VALÓDI hash, és **NINCS megfejtve**" | a **14.6** (2026-09-05) megfejtette: `acc = rol(acc,7) XOR képindex`, 8/9 albumon bitre |
+| ugyanott a bizonyítottsági sor | „a képzési szabálya **nyitva marad**" | ua. |
+| a **12.** mérleg 3. tétele | „a két `*checksum` **továbbra is BLOKKOLT**", jegy **#1238** | a `peoplealbumchecksum` a 2026-08-24-i szakaszban (**konstans arc-jelző**, nem checksum), az `albumpeoplechecksum` a 14.6-ban lezárult; a **#1238 jegy pedig ZÁRVA** (`wontfix`, 2026-09-06) |
+
+⇒ A 12. szakasz mérlege ezzel **`0 nyílt · 11 lezárva · 0 blokkolt ·
+1 hatókörön kívül · 0 csak-nyitva`** (a 8. tételt ld. lent).
+
+### 17.2 A `0xa0cd` („Hozzáadás az Emberek albumhoz") — LEZÁRVA
+
+A 12. szakasz 8. tétele ezt írta: *„nincs saját ága a szétosztóban, az
+alapértelmezett ágra fut, amiben egyetlen sztring sincs; **futásidőben
+töltött almenü gyanúja**"*. A gyanú most **bizonyítás**.
+
+**Kimerítő pásztázás a teljes `.text`-en** (`eszkozok/binaris/paszta.py`):
+a `0xa0cd` **13** találatából **11 cím-egybeesés** (a `0x00a0cdXX`
+utasításcímek és egy adatcím), tehát **pontosan KÉT** valódi előfordulás van:
+
+| cím | utasítás | mi ez |
+|---|---|---|
+| `0x007356ee` | `mov word ptr [0xd6f8c2], 0xa0cd` | a **menürekord** azonosító-mezője |
+| `0x0056d12d` | `push 0xa0cd` | az egyetlen kódbeli használat |
+
+*Kontroll-pozitív:* a `0x9e11` („Arcok alaphelyzetbe") **25** előfordulást ad
+ugyanezekkel az alakokkal (menürekord + szétosztó-push) ⇒ a minta nem vak.
+
+**Mit csinál a `0x0056d12d` körüli blokk:**
+
+```
+0x0056d11a  call [0x00c408f0]        ; CreatePopupMenu  -> eax = ÚJ, ÜRES almenü
+0x0056d137  mov [esp+0xa8], 0x30     ; MENUITEMINFO.cbSize = 48
+0x0056d142  mov [esp+0xac], 4        ; MENUITEMINFO.fMask = MIIM_SUBMENU
+0x0056d14d  mov [esp+0xbc], eax      ; MENUITEMINFO.hSubMenu = a fenti popup
+0x0056d129  push ecx                 ; &MENUITEMINFO   (esp+0x98 … a struktúra)
+0x0056d12c  push ebx (= 0)           ; fByPosition = FALSE  -> AZONOSÍTÓ szerint
+0x0056d12d  push 0xa0cd              ; uItem
+0x0056d132  push edx                 ; hMenu
+0x0056d159  call [0x00d69584]        ; SetMenuItemInfo alakja
+```
+
+A `cbSize = 0x30` (48 = `sizeof(MENUITEMINFO)`), az `fMask = 4`
+(`MIIM_SUBMENU`) és a `+0x14`-es `hSubMenu` mező együtt egyértelmű.
+
+⇒ **A `0xa0cd` NEM parancs, hanem ALMENÜ-HORGONY.** A program futás közben
+készít hozzá egy üres felugró menüt, és azt akasztja rá. Ezért **nincs saját
+ága a szétosztóban**, és ezért üres az alapértelmezett ág: a tényleges
+parancs az almenü **futásidőben betöltött** tételeiből jön (a személy-albumok
+listája).
+
+⚠️ **A hívott függvény NEVE olvasat, nem kiolvasott érték:** a `0x00d69584`
+nem az importtáblában áll, hanem futásidőben feloldott mutató (a `user32`
+közvetlen importjai közt `SetMenuItemInfo` nincs — `CreatePopupMenu`,
+`CreateMenu`, `GetMenuItemInfoA`, `RemoveMenu`, `TrackPopupMenu(Ex)`,
+`SetMenuInfo`, `SetMenuDefaultItem` viszont igen). Az **argumentum-alak**
+viszont önmagában bizonyító erejű.
+
+### 17.3 Mit jelent ez a #26-nak
+
+A menütétel átvételekor **ne keress hozzá kezelőt** — nincs és nem is lesz.
+A tétel egy **dinamikus lista** gazdája: a személy-albumokat kell alá
+építeni, és a parancs onnan jön. Ez felületi (QML-)feladat, nem bináris
+kérdés ⇒ a #26 bináris blokkolója **elfogyott**.
+
+*Forrás: `0x0056d0fa`–`0x0056d159` (a blokk), `0x007356ee` (a menürekord),
+`0x00c408f0` = `CreatePopupMenu`, `0x00d69584` (futásidejű mutató);
+a pásztázás `eszkozok/binaris/paszta.py`, kontroll `0x9e11` = 25 találat.*
+
+### 17.4 Nyitott kérdések mérlege (17.)
+
+`0 nyílt · 4 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
+
+| kérdés | állapot |
+|---|---|
+| a `albumpeoplechecksum` szakasz elavultsága | ✅ LEZÁRVA — feloldva (17.1) |
+| a 12. mérleg „2 blokkolt checksum" tétele | ✅ LEZÁRVA — mindkettő megfejtve, a jegy zárva (17.1) |
+| a `0xa0cd` tényleges kezelője | ✅ LEZÁRVA — **nincs**: almenü-horgony (17.2) |
+| a #26 bináris blokkolója | ✅ LEZÁRVA — elfogyott; ami maradt, az felületi munka (17.3) |
