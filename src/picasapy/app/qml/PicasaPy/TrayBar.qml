@@ -421,13 +421,11 @@ Column {
         //: számol (`0x0059883e`–`0x00598863`), és a #1420 a kirajzolt
         //: képernyőképen is 55-öt mért. Ezért nincs hézag a gombok között.
         readonly property int actionCellWidth: 55
-        //: a MEGLÉVŐ hat kimeneti gomb (nyomtatás, e-mail, exportálás,
-        //: megosztás, kollázs, film) — a hiányzó `shop`/`blog`/`morebutton`
-        //: nélkül (`docs/specs/ui-lefedettseg.md`)
         // #1672: hat MINDIG látszó cella (nyomtatás, e-mail, exportálás,
         // Hello, kollázs, film) + két KIVEZETETT (Rendelés, Blogger),
-        // amelyek szűk ablakban elsőként esnek ki. Az eredetiben erre a
-        // `morebutton`/`overflow` való — az nálunk még nincs meg (#1672).
+        // amelyek szűk ablakban elsőként esnek ki. A ki nem férő tételeket
+        // a „További…" (`morebutton`) hozza elő — az a #2191 óta MEGVAN
+        // (`trayMoreButton` lentebb), tehát a sor nem veszít el gombot.
         //
         // A kivezetett gombok a legjobb jelöltek a kiesésre: nem
         // kattinthatók, tehát semmit nem vesznek el a felhasználótól.
@@ -1898,8 +1896,9 @@ Column {
                 // #1345: a csoportelválasztó (`outputlayout/separator`),
                 // 2 × 27 képpont a saját 59 × 40-es cellájában. Szűk
                 // ablakban elmarad: a fix méretű cellák mellett ez a 118
-                // képpont az, ami már nem fér be (az eredetiben erre való
-                // a `morebutton`/`overflow`, ami nálunk még nincs meg).
+                // képpont az, ami már nem fér be. A kiesett GOMBOK a
+                // „További…" mögé kerülnek (#2191); az elválasztó nem —
+                // az puszta tagolás, nincs mit előhozni belőle.
                 TrayActionSeparator { visible: trayMainBar.separatorsVisible }
                 // #361: Kollázs / Film — a PBZ-leltár szerint
                 // (outputlayout/collage, /makemovie) az eredeti kimeneti
@@ -1958,6 +1957,20 @@ Column {
                 TrayActionCell {
                     objectName: "trayMoreCell"
                     visible: trayActionRow.vanRejtett
+                    //: ⚠️ #1672: a MECHANIZMUS itt SZÁNDÉKOSAN más, mint az
+                    //: eredetiben. A mérés szerint (`picasa-keptalca.md` 22.)
+                    //: a gomb nem menüt nyit, hanem a túlcsordulás-konténert
+                    //: BILLENTI: a `0x005fe090` a `morebutton` állapotbájtját
+                    //: invertálva írja a főablakba, és az
+                    //: `outputlayout/overflowcontainer` vtable 14. rését
+                    //: hívja. Azt, hogy ez a billentés MIT MUTAT a képernyőn
+                    //: (a sor helyben kinyílik? második sorba tördel?), a
+                    //: kutatás NEM mérte ki — a vtable-rés törzse nincs
+                    //: dekompilálva.
+                    //:
+                    //: Amíg nincs, a felugró lista ugyanazt a felhasználói
+                    //: célt szolgálja (a rejtett gombok elérhetők), és nem
+                    //: tesz hamis ígéretet. A különbség saját jegyen áll.
                     TrayActionButton {
                         id: trayMoreBtn
                         objectName: "trayMoreButton"

@@ -134,3 +134,34 @@ class TestAMorebuttonMarBent:
         blokk = blokk_horgonyra(forras, 'objectName: "trayMoreButton"')
         assert 'text: qsTr("More...")' in blokk
         assert 'qsTr("Click here for more options")' in blokk
+
+
+class TestAKommentSemHazudhat:
+    """#1672: a forrás-kommentek nem állíthatják, hogy a gomb HIÁNYZIK.
+
+    Három helyen állt, hogy a `morebutton` „nálunk még nincs meg" — a #2191
+    óta megvan. A forrás-szintű őrök (és a következő olvasó) a kommentet is
+    olvassák: egy elavult megjegyzés ugyanúgy félrevisz, mint egy hibás sor."""
+
+    def test_nem_allitja_hogy_hianyzik(self):
+        forras = _TRAY.read_text(encoding="utf-8")
+        for hamis in ("nálunk még nincs meg", "hiányzó `shop`/`blog`/`morebutton`"):
+            assert hamis not in forras, (
+                f"elavult komment a tálca-sorban: {hamis!r} — a „További…” "
+                "a #2191 óta be van kötve"
+            )
+
+    def test_a_MECHANIZMUS_eltereset_kimondja(self):
+        """A mérés szerint az eredeti a túlcsordulás-konténert BILLENTI, mi
+        felugró listát nyitunk. Az eltérésnek a kódban kell állnia — egy
+        kimondatlan eltérés a következő körben „hibának" látszik, és valaki
+        elkezdi javítani a mérés nélkül."""
+        #: ⚠️ NEM a `blokk_horgonyra` segítővel: az szándékosan KIVÁGJA a
+        #: kommenteket (#2493), ez az eset viszont épp a kommentet méri.
+        #: Ezért két NEVESÍTETT horgony közti nyers szelet — nem fix ablak.
+        forras = _TRAY.read_text(encoding="utf-8")
+        kezd = forras.index('objectName: "trayMoreCell"')
+        veg = forras.index('objectName: "trayMoreButton"', kezd)
+        blokk = forras[kezd:veg]
+        assert "overflowcontainer" in blokk
+        assert "SZÁNDÉKOSAN más" in blokk
