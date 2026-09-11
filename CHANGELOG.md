@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.408] – 2026-09-11
+
+### Hozzáadva
+
+- **A Címkék-panel előre szól, ha a kijelölésben írásvédett elem van**
+  (#2998). Eddig csak a mentés bukása után derült ki: a felhasználó beírta
+  a címkét, megnyomta a gombot, és utána jött a hibasáv. Mostantól a panel
+  kiírja, hogy „a címkék nem módosíthatók, mert a kijelölésben írásvédett
+  elem van", és a mezőt sem engedi — ahogy az eredeti Picasa is teszi.
+  NAS-on és írásvédett köteten ez mindennapi eset.
+
 ## [0.8.407] – 2026-09-11
 
 ### Változott

@@ -13,6 +13,12 @@ Rectangle {
     property var tags: []
     // van-e kijelölt kép — enélkül a bevitel tiltott
     property bool hasSelection: false
+    //: #2998: a kijelölésben van írásvédett elem. Az eredeti
+    //: (`keywords/readonly_label`) „one or more items"-et mond, tehát
+    //: egyetlen ilyen elem is elég — és a bevitelt is tiltja.
+    property bool readOnlySelection: false
+    readonly property bool cimkezheto: panel.hasSelection
+                                       && !panel.readOnlySelection
 
     signal addRequested(string keyword)
     signal removeRequested(string keyword)
@@ -86,7 +92,7 @@ Rectangle {
                 id: tagInput
                 objectName: "tagInput"
                 Layout.fillWidth: true
-                enabled: panel.hasSelection
+                enabled: panel.cimkezheto
                 font.pixelSize: Theme.fontSize
                 placeholderText: qsTr("Add a tag...")
                 onAccepted: panel.submit()
@@ -96,10 +102,22 @@ Rectangle {
             PicasaButton {
                 objectName: "tagAddButton"
                 text: "+"
-                enabled: panel.hasSelection && tagInput.text.trim().length > 0
+                enabled: panel.cimkezheto && tagInput.text.trim().length > 0
                 Layout.preferredWidth: 26
                 onClicked: panel.submit()
             }
+        }
+
+        Text {
+            //: #2998: az eredeti `keywords/readonly_label` megfelelője.
+            //: A kijelölés-kérő szöveg elé kerül, mert konkrétabb nála.
+            objectName: "tagsReadOnlyNotice"
+            visible: panel.hasSelection && panel.readOnlySelection
+            Layout.fillWidth: true
+            text: qsTr("Tags cannot be modified because one or more items are read-only.")
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
         }
 
         Text {
@@ -254,7 +272,7 @@ Rectangle {
                 text: quickTagButton.label.length > 0
                       ? quickTagButton.label : "?"
                 font.pixelSize: Theme.fontSize - 1
-                enabled: panel.hasSelection && quickTagButton.label.length > 0
+                enabled: panel.cimkezheto && quickTagButton.label.length > 0
                 onClicked: panel.addRequested(quickTagButton.label)
             }
 

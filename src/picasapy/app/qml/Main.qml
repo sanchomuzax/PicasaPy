@@ -2430,6 +2430,14 @@ ApplicationWindow {
             SplitView.preferredWidth: 190
             SplitView.minimumWidth: 150
             hasSelection: window.selectedRows().length > 0
+            //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
+            //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
+            //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+            readOnlySelection: (controller
+                                && controller.selectionReadOnly !== undefined)
+                ? (controller.photos.revision,
+                   controller.selectionReadOnly(window.selectedRows()))
+                : false
             // a photos.revision-nel együtt kötve: címke-írás után frissül
             // #305: null-őr
             tags: controller

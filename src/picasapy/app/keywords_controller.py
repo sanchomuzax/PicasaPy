@@ -9,6 +9,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from picasapy.fileops import is_folder_writable
 from picasapy.index import all_photos, open_index
 from picasapy.ini import update_document
 from picasapy.metadata import write_iptc_keywords
@@ -36,6 +37,12 @@ _KEY_QUICK_LABELS = "quickTags/labels"
 _KEY_QUICK_RESERVE_RECENT = "quickTags/reserveRecentForTop2"
 _KEY_QUICK_AUTOFILL = "quickTags/autoFillFrequent"
 _KEY_QUICK_RECENT = "quickTags/recentKeywords"
+
+#: #2998: az írhatóság-próba MODULSZINTŰ fogantyúja (a `fileops/trash.py`
+#: `_access`-mintája). A próba valódi fájlt ír és töröl a mappába, ezért a
+#: tesztek ezt cserélik ki — `chmod`-ra épülő próba a windows-lábon némán
+#: zölden állna (#1560: a `chmod` ott mappára hatástalan).
+_irhato_e = is_folder_writable
 
 
 def _split_keywords(raw: str | None) -> tuple[str, ...]:
@@ -88,6 +95,44 @@ class KeywordsMixin:
             for keyword in _split_keywords(photos[int(row)].keywords):
                 seen.setdefault(keyword.casefold(), keyword)
         return sorted(seen.values(), key=str.casefold)
+
+    @Slot(list, result=bool)
+    def selectionReadOnly(self, rows) -> bool:
+        """Van-e a kijelölésben ÍRÁSVÉDETT elem (#2998).
+
+        Az eredeti `keywords/readonly_label` szövege „one or more items",
+        tehát EGYETLEN írásvédett elem is elég a jelzéshez — a panel ilyenkor
+        előre szól, és a beviteli mezőt sem engedi.
+
+        Mappánként egyszer kérdez: a próba valódi fájlt ír és töröl, tehát
+        kijelölésenként nem szaporítható. A válasz a gyorstárban marad, amíg
+        az `uritsd_az_irhatosag_gyorstarat` el nem dobja (újraolvasáskor).
+        """
+        photos = self._photos.photos
+        mappak: list[str] = []
+        for row in rows:
+            try:
+                index = int(row)
+            except (TypeError, ValueError):
+                continue
+            if not 0 <= index < len(photos):
+                continue
+            mappa = photos[index].folder_path
+            if mappa not in mappak:
+                mappak.append(mappa)
+        return any(not self._mappa_irhato(mappa) for mappa in mappak)
+
+    def _mappa_irhato(self, mappa: str) -> bool:
+        gyorstar = getattr(self, "_irhatosag_gyorstar", None)
+        if gyorstar is None:
+            gyorstar = self._irhatosag_gyorstar = {}
+        if mappa not in gyorstar:
+            gyorstar[mappa] = bool(_irhato_e(Path(mappa)))
+        return gyorstar[mappa]
+
+    def uritsd_az_irhatosag_gyorstarat(self) -> None:
+        """A jogosultság menet közben változhat (csatolás, hálózati kötet)."""
+        self._irhatosag_gyorstar = {}
 
     @Slot(list, str)
     def addKeywordToRows(self, rows, keyword: str) -> None:
