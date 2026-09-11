@@ -204,6 +204,9 @@ Window {
                 text: backupWindow.urlapNev
                 font.pixelSize: Theme.fontSize
                 onTextEdited: backupWindow.urlapNev = text
+                // #422: jobbklikk-menü minden szövegmezőn (a `Address`
+                // megfelelője az eredetiben)
+                TextFieldContextArea {}
             }
 
             Text {
@@ -220,6 +223,8 @@ Window {
                     text: backupWindow.urlapCel
                     font.pixelSize: Theme.fontSize
                     onTextEdited: backupWindow.urlapCel = text
+                    // #422: jobbklikk-menü minden szövegmezőn
+                    TextFieldContextArea {}
                 }
                 PicasaButton {
                     objectName: "backupChooseTarget"
