@@ -12,6 +12,8 @@ fájl-beillesztést, hurkolást és a változó-táblák feltöltését az `engi
 
 from __future__ import annotations
 
+import html
+
 import re
 from dataclasses import dataclass
 from typing import Mapping
@@ -227,6 +229,21 @@ def _find_matching_endif(text: str, start: int) -> int | None:
     return None
 
 
+def vedett(ertek: str) -> str:
+    """A behelyettesítendő érték jelölés-biztos alakja (#2932).
+
+    A változók felhasználói szövegek — felirat, albumnév, fájlnév —, ezért
+    a `&`, `<`, `>`, `"` és `\'` karaktereket entitásra kell váltani.
+    Nyersen kiírva a `"` az `alt`/`href` attribútumot idő előtt bezárja, és
+    a maradék szöveg jelöléssé válik; a `&` érvénytelen entitás-kezdet.
+
+    Ugyanez a védés helyes HTML-ben ÉS XML-ben, tehát a gépi XML-sablon is
+    ezen az úton ad érvényes kimenetet. A mai gyári sablonok kimenete nem
+    változik: azok értékei sima szövegek és útvonalak.
+    """
+    return html.escape(ertek, quote=True)
+
+
 def _substitute_one(match: re.Match[str], variables: Mapping[str, str]) -> str:
     name = match.group(1)
     if name == "endif":
@@ -234,13 +251,17 @@ def _substitute_one(match: re.Match[str], variables: Mapping[str, str]) -> str:
         # eval_conditionals mindig előbb fut, ez csak védőháló hibás/
         # befejezetlen sablonra (ld. eval_conditionals unterminated-if ága)
         return match.group(0)
-    return variables.get(name, "")
+    return vedett(variables.get(name, ""))
 
 
 def substitute_vars(text: str, variables: Mapping[str, str]) -> str:
     """`<%name%>` → `variables[name]`; ismeretlen változó üres sztringre
     cserélődik (megengedő viselkedés — a hiányzó változó nem hibás sablon,
-    csak üres kimenetet ad, ahogy egy egyszerű makrónyelvtől elvárható)."""
+    csak üres kimenetet ad, ahogy egy egyszerű makrónyelvtől elvárható).
+
+    #2932: a behelyettesített érték JELÖLÉS-BIZTOS alakban kerül a
+    kimenetbe (`vedett`) — a feltétel-kiértékelés viszont a nyers értéket
+    látja, mert az a NÉV jelenlétéről dönt, nem a szövegről."""
     return _VAR_PATTERN.sub(lambda m: _substitute_one(m, variables), text)
 
 

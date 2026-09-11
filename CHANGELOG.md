@@ -115,6 +115,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   belőle. A saját duplikátum-kezelő ablakunk megmarad, csak külön, kékkel
   jelölt menüpontra került („Másodpéldányok kezelése…").
 
+## [0.8.387] – 2026-09-11
+
+### Javítva
+
+- **A HTML-webexport nem romlik el az „&" és az idézőjel miatt** (#2932). A
+  sablonmotor nyersen írta ki a feliratot, az albumnevet és a fájlnevet, így
+  egy „Anyu & Apu" felirat érvénytelen oldalt adott, egy idézőjel pedig
+  idő előtt bezárta a kép `alt` attribútumát. A behelyettesítés mostantól
+  jelölés-biztos, HTML-ben és XML-ben egyaránt.
+
 ## [0.8.386] – 2026-09-11
 
 ### Javítva
