@@ -5445,3 +5445,86 @@ visszahívása adja meg.
 *Bizonyítottsági fok: **megerősített** az 1–5. pont minden állítása
 (mind utasításszinten, a pásztázások pozitív kontrollal); **erős** a
 6.4 (a #880-nal való összeférés); **feltételes** a 8. pont első tétele.*
+
+---
+
+## ⛳ MEGVAN a körmaszk MIND A HÉT tartalék értéke — az `aspectRatio` tényleg `1,0` (2026-09-11, 283. kör, #2956)
+
+*A #788 CÍME azt állította, hogy „az `aspectRatio` konstans 1,0", a TÖRZSE és
+ez a lap viszont **nyitottnak** mondta. A kettő nem lehet egyszerre igaz; ez
+a szakasz eldönti — és mellé adja a másik hatot is.*
+
+*Forrás: `0x00cf0890` (a `CircularGradientImageMask` vtáblája) ·
+`0x00bcfc70` (attribútum-olvasó, 5. rekesz) · `0x00bcfe10` (7. rekesz, az
+alapértékek) · `0x00bd02d0` (a kiértékelő).*
+
+### A mechanizmus: az attribútum SZTRINGKÉNT ül, a tartalék a HÍVÓ VERMÉBEN van
+
+**Kontroll-pozitív:** az attribútum-olvasó a `0xcf0d9c` (`"aspectRatio"`)
+sztringre hivatkozik, és a `0x00bcfc9b`-nél a `[objektum+0x18]`-ba ír —
+pontosan úgy, ahogy a fenti tábla mondja.
+
+Amit viszont **ír**, az nem szám: a `0x008eb520` **sztring-értékadás**, nem
+lebegőpontos tárolás. Ezért nem talál semmit az a keresés, amelyik a
+`[maszk+0x18]` **dupla pontosságú** olvasóját keresi — a teljes `.text`-en
+egyetlen ilyen sincs (indextől független pásztázás). A mező a nyers
+attribútum-**szöveget** tartja.
+
+A szöveget a **`0x00bd02d0`** értékeli ki egy lapos `float`-struktúrába, és
+a kiértékelő (`0x008ef520`) **hibajelzésére a tárolás KIMARAD** — ilyenkor a
+hívó által előre beírt alapérték marad érvényben. Az objektum-mező →
+struktúra-mező leképezés, utasításonként kiolvasva:
+
+| objektum | attribútum | struktúra | az író utasítás |
+|---|---|---|---|
+| `+0x18` | **`aspectRatio`** | `+0x08` | `0x00bd0340` |
+| `+0x20` | `innerRadius` | `+0x0c` | `0x00bd0359` |
+| `+0x28` | `outerRadius` | `+0x10` | `0x00bd0372` |
+| `+0x30` | `innerAlpha` | `+0x14` | `0x00bd038b` |
+| `+0x38` | `outerAlpha` | `+0x18` | `0x00bd03de` |
+| `+0x40` | `xCenter` | `+0x1c` | `0x00bd042b` |
+| `+0x48` | `yCenter` | `+0x20` | `0x00bd0444` |
+
+### ⛳ A TARTALÉK ÉRTÉKEK — a `0x00bcfe10` prológusából
+
+A hívó a struktúrát az `esp+0x28`-on építi, és **a kiértékelés ELŐTT**
+feltölti. A hét tárolás sorrendje nem a mezők sorrendje, mert az x87 verem
+csak az `fstp`-nél fogy (`fst` **nem** vesz le) — kibontva:
+
+| attribútum | struktúra | verem-rekesz | **tartalék** |
+|---|---|---|---:|
+| `aspectRatio` | `+0x08` | `esp+0x30` | **`1,0`** |
+| `innerRadius` | `+0x0c` | `esp+0x34` | `0,0` |
+| `outerRadius` | `+0x10` | `esp+0x38` | **`100,0`** (`0xcf39ec`) |
+| `innerAlpha` | `+0x14` | `esp+0x3c` | `0,0` |
+| `outerAlpha` | `+0x18` | `esp+0x40` | **`1,0`** |
+| `xCenter` | `+0x1c` | `esp+0x44` | `0,0` |
+| `yCenter` | `+0x20` | `esp+0x48` | `0,0` |
+
+Az `innerAlpha` és az `outerAlpha` ezen felül **`[0,1]`-re vágódik**
+(`0x00bd0391`–`0x00bd03bd`, illetve `0x00bd03e1`–`0x00bd040a`).
+
+> ### ⛳ A VÁLASZ
+> Az **`aspectRatio` tartaléka `1,0`** — a maszk tehát **kör**, nem
+> ellipszis, és a `filterdesc.xml` egyszer sem írja felül. ⇒ A mai
+> `np.hypot(x − cx, y − cy)` **helyes**; az „ellipszis kell" ág **elesik**.
+
+### ⚠️ Amit ez NEM old meg — és egy spec-hiba
+
+A `#788` másik két pontja **áll**: az `innerAlpha`/`outerAlpha` a
+`filterdesc`-ből jön, a mi maszkunk pedig fixen `0 → 1`-et használ. A mért
+tartalék (`0,0` → `1,0`) épp ezzel egyezik, tehát az **alapeset** jó — a
+paraméterezés viszont a „Fordított" jelölőhöz továbbra is kell.
+
+⛔ **Spec-helyesbítés:** a `filterdesc-registry.md` a vtáblát
+`0x008f0890`-ként írja; a valódi cím **`0x00cf0890`**, RTTI-neve
+`.?AVCircularGradientImageMask@glimmer@@`. A `0x008f0890`-en nincs
+olvasható RTTI.
+
+*Bizonyítottsági fok: **megerősített** — utasításszintű olvasás mind a
+kilenc leképezésre és mind a hét alapértékre, kontroll-pozitívval; a
+„nincs dupla pontosságú olvasó" negatívum indextől független pásztázásból
+(csúcs-RSS 89 MiB).*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — az `aspectRatio`
+tartaléka) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".*
