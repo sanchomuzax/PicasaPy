@@ -441,6 +441,10 @@ kiméri, melyik igaz, és hol.*
 
 ### 10.1 A mérés — a TELJES korpuszon, nem példán
 
+*Forrás: `editpanel.tre:136` (`editpanel/crop: editpanel/tabpanel1`) ·
+`editpanel.tre:134` (`editpanel/crop-label`) · `macros.tre` (a 105 `#define`) ·
+a rétegrekordok a `respack.yt` 13 bájtos fejlécéből (3. szakasz).*
+
 **Kontroll-pozitív, kettő, mindkettő teljesült:**
 
 1. az elemző **2021** vezérlő-definíciót talált a 140 `.tre`-ben — a #656
