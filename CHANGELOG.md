@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.413] – 2026-09-11
+
+### Javítva
+
+- **A diavetítés végre az egész képernyőt kitölti** (#2987). Eddig az
+  ablak ugyan teljes képernyőre váltott, a vetítés mégis dobozban maradt:
+  fölötte a menüsáv és az eszköztár, alatta a tálca. Mérve: egy 800
+  képpont magas ablakban a vetítésnek 626 képpont jutott. A vetítés alatt
+  mostantól a három sáv eltűnik, és kilépéskor visszajön — az eredeti
+  Picasában sem látszik közben semmi más.
+
 ## [0.8.412] – 2026-09-11
 
 ### Hozzáadva
