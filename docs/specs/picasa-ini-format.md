@@ -3578,10 +3578,11 @@ Ezt összefűzve az 1. ponttal:
 | 1. bit | **2** | 1 | **FÜGGŐLEGES** |
 | mindkettő | **3** | 2 és 1 | mindkét irány |
 
-> ⛔ **A mi jelzőnk ma fordítva van:** `1 = függőleges`, `2 = vízszintes`.
-> A bitmaszk-szerkezet stimmel, a **hozzárendelés nem**. Ha a jelzőt
-> átvinnénk a `.picasa.ini`-be javítás nélkül, a fájl a **másik tengelyt**
-> írná le, és az eredeti Picasa rosszul olvasná vissza.
+> ✅ **JAVÍTVA (#2976).** A jelzőnk ekkor `1 = függőleges`, `2 =
+> vízszintes` volt — a bitmaszk-szerkezet stimmelt, a hozzárendelés nem. A
+> #2976 megfordította (`render/flip.py`), és egyben át is vitte a jelzőt a
+> `.picasa.ini` `flipped(N)` kulcsába: az író a fenti maszkot írja, a
+> mappa-szinkron pedig onnan olvassa vissza.
 
 ### 3. ⭐ A `0` NEM `flipped(0)` — a kulcs ÜRESEN íródik
 
@@ -3597,6 +3598,8 @@ Ezt összefűzve az 1. ponttal:
 ```
 
 ⇒ Nulla maszknál a kulcs **üres értéket** kap, nem `flipped(0)`-t.
+*(A #2976 ezt átvette, a `rotate` megőrző szabályával kiegészítve: ahol
+eddig nem volt `flipped=` sor, ott nulla maszknál nem is keletkezik.)*
 **Ez pontosan megmagyarázza a korpuszt:** az `imagedata_flipped.pmp`
 3 011/3 011 üres, és a 859 ini-fájlban 0 db `flipped=` sor — mert a
 tulajdonos soha nem tükrözött, és a nulla érték nem ír ki számot.

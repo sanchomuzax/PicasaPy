@@ -69,7 +69,12 @@ from picasapy.ini import (
 )
 from picasapy.ini.albums import ensure_album, with_album, without_album
 from picasapy.metadata import write_iptc_caption
-from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL, toggled_flip
+from picasapy.render.flip import (
+    FLIP_HORIZONTAL,
+    FLIP_MASK,
+    FLIP_VERTICAL,
+    toggled_flip,
+)
 from picasapy.scanner import PICASA_INI_NAME
 
 from .worker_thread import BackgroundWorkerMixin
@@ -108,6 +113,33 @@ def forgatas_mutacio(document, nev: str, steps: int):
     if volt_sor:
         return document.with_value(nev, "rotate", "rotate(0)")
     return document.with_removed(nev, "rotate")
+
+
+#: #2976: a tükrözés ini-mutációja — a `forgatas_mutacio` párja.
+#:
+#: A mért írói szabály (`0x0042d7e0`) két részből áll: nem nulla maszknál
+#: `flipped(N)`, nulla maszknál viszont a kulcs ÜRES értéket kap
+#: (`0x0042d864`) — NEM `flipped(0)`.
+def tukrozes_mutacio(document, nev: str, flags: int):
+    """A tükrözés ini-mutációja, MEGŐRZŐ szabállyal.
+
+    | a fájlban volt `flipped=` sor? | 0 maszknál |
+    |---|---|
+    | igen | marad, ÜRES értékkel (ezt írja az eredeti) |
+    | nem | nem keletkezik |
+
+    Miért nem írunk mindig üres sort: a korpusz 859 fájljában egyetlen
+    `flipped=` sor sincs, mert a tulajdonos sosem tükrözött. Egy
+    feltétel nélküli kiírás minden érintett fájlba új sort vinne, és az
+    ugyanúgy eltérés a round-triptől — ez a `rotate` #2004-es szabálya."""
+    maszk = int(flags or 0) & FLIP_MASK
+    if maszk:
+        return document.with_value(nev, "flipped", f"flipped({maszk})")
+    szakasz = document.section(nev)
+    volt_sor = szakasz is not None and szakasz.get("flipped") is not None
+    if volt_sor:
+        return document.with_value(nev, "flipped", "")
+    return document.with_removed(nev, "flipped")
 
 
 class PhotoOpsMixin(BackgroundWorkerMixin):
@@ -1019,10 +1051,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # `Ctrl+Shift+V` függőleges; `0x005e63d6` / `0x005e6408`), MENÜPONTOT
     # nem — a 3.9 menüiben nincs ilyen parancs, és nálunk sem lesz.
     #
-    # ⛔ Miért nem a `.picasa.ini`-be írunk: az ini `flipped(N)` kulcsa
-    # megvan, de az `N` bit-jelentése NINCS kimérve (ld. `render/flip.py`).
-    # Egy találgatott érték a felhasználó valódi fájljaiba menne, és a
-    # kétirányú ini-kompatibilitás a projekt központi ígérete.
+    # #2976: a jelző MOSTANTÓL a `.picasa.ini`-be megy. A #2902 idejében az
+    # `N` bit-jelentése feltevés volt, ezért maradt az indexben; a #2938
+    # kimérte (0. bit = vízszintes, 1. bit = függőleges, nulla maszknál ÜRES
+    # érték), tehát a tárolás igazolt — a forgatás útját járja.
 
     @Slot(list)
     def flipHorizontalMany(self, rows) -> None:  # noqa: N802
@@ -1053,14 +1085,13 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not valid:
             return
 
-        self._ensure_photo_ops_wired()
-        with open_index(self._db_path) as conn:
-            for photo in valid:
-                update_photo_fields(
-                    conn, photo.id,
-                    flip_flags=toggled_flip(photo.flip_flags, direction),
-                )
-        self._refresh_view()
+        def mutate(document, photo):
+            return tukrozes_mutacio(
+                document, photo.name,
+                toggled_flip(photo.flip_flags, direction),
+            )
+
+        self._apply_batch(valid, mutate)
 
     def _apply_batch(self, photos, mutate) -> None:
         """Kötegelt ini-módosítás: mappánként egyetlen (atomikus, backupolt)

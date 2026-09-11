@@ -22,6 +22,7 @@ from picasapy.ini import IniDocument, load_document, read_folder_date_override
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
 from picasapy.paths import normalize_path
+from picasapy.render.flip import FLIP_MASK
 from picasapy.scanner import (
     PICASA_INI_NAME,
     FolderScan,
@@ -47,6 +48,9 @@ from picasapy.scanner import (
 _stat = os.stat
 
 _ROTATE = re.compile(r"^rotate\((\d+)\)$")
+#: #2976: a tükrözés maszkja. A `flipped=` ÜRES értéke (és a hiányzó kulcs)
+#: egyaránt „nincs tükrözés" — az eredeti a nullát épp üresen írja ki.
+_FLIPPED = re.compile(r"^flipped\((\d+)\)$")
 
 # #143: az inkrementális kihagyás frissesség-védőablaka. A mappa- és
 # ini-mtime felbontása durva lehet (SMB/FAT: 2 s; ext4 is csak jiffy-pontos),
@@ -841,13 +845,14 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
                 row["caption_ini"],
                 row["keywords_ini"],
                 row["rotate_steps"],
+                row["flip_flags"],
                 row["filters"],
                 row["geotag_ini"],
             ),
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
-            " keywords_ini, rotate_steps, filters, geotag_ini"
+            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
@@ -862,6 +867,8 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             section.get("caption") if section else None,
             section.get("keywords") if section else None,
             _rotate_steps(section.get("rotate")) if section else 0,
+            # #2976: a tükrözés is ini-eredetű (a bit-jelentés a #2938 mérése)
+            flip_jelzo(section.get("flipped")) if section else 0,
             section.get("filters") if section else None,
             # #30: a geocímke nyers ini-értéke — a feloldást (ini > EXIF)
             # a lekérdezés-réteg végzi, itt bitre pontosan az tárolódik,
@@ -877,8 +884,8 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             if current[1] != ini_fields:
                 conn.execute(
                     "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
-                    " keywords_ini = ?, rotate_steps = ?, filters = ?,"
-                    " geotag_ini = ?"
+                    " keywords_ini = ?, rotate_steps = ?, flip_flags = ?,"
+                    " filters = ?, geotag_ini = ?"
                     " WHERE folder_id = ? AND name = ?",
                     (*ini_fields, folder_id, media.name),
                 )
@@ -969,11 +976,11 @@ def _upsert_photo(
     conn.execute(
         "INSERT INTO photos"
         "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
-        " keywords_ini, rotate_steps, filters, geotag_ini, taken_at,"
-        " orientation, width, height, caption_file, keywords_file,"
+        " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
+        " taken_at, orientation, width, height, caption_file, keywords_file,"
         " exif_lat, exif_lon, first_seen_mtime_ns)"
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-        " ?) "
+        " ?, ?) "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
         # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
         # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
@@ -989,6 +996,7 @@ def _upsert_photo(
         "caption_ini = excluded.caption_ini, "
         "keywords_ini = excluded.keywords_ini, "
         "rotate_steps = excluded.rotate_steps, "
+        "flip_flags = excluded.flip_flags, "
         "filters = excluded.filters, "
         "geotag_ini = excluded.geotag_ini, "
         "taken_at = excluded.taken_at, orientation = excluded.orientation, "
@@ -1032,6 +1040,17 @@ def _rotate_steps(value: str | None) -> int:
         return 0
     match = _ROTATE.match(value)
     return int(match.group(1)) % 4 if match else 0
+
+
+def flip_jelzo(value: str | None) -> int:
+    """A `flipped(N)` maszkja; `0`, ha nincs, üres, vagy értelmezhetetlen.
+
+    A fölös bitek leesnek (`FLIP_MASK`): a mért írónak két bitje van, és egy
+    harmadikra nincs jelentésünk — kitalálni tilos."""
+    if not value:
+        return 0
+    match = _FLIPPED.match(value)
+    return int(match.group(1)) & FLIP_MASK if match else 0
 
 
 _PRUNE_TEMP_TABLE = "_prune_photos_names"
@@ -1213,9 +1232,9 @@ _TARGETED_UPDATE_COLUMNS = {
     "keywords_ini",
     "keywords_file",
     "rotate_steps",
-    # #2902: a tükrözés-jelző — a forgatás párja, ugyanígy célzottan
-    # frissíthető. A mappa-resync NEM írja (nem ini-eredetű), ezért egy
-    # újraszkennelés meg is ŐRZI.
+    # #2902/#2976: a tükrözés-jelző — a forgatás párja, ugyanígy célzottan
+    # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
+    # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
     "flip_flags",
 }
 
