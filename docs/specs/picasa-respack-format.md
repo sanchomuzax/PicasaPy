@@ -429,3 +429,106 @@ program **némán eldobja**.
 
 **Terméki következmény:** a `.tre`-ből átvett elrendezésnél ezt a két
 tulajdonságot **nem szabad megvalósítani** — az eredeti sem veszi figyelembe.
+
+---
+
+## 10. ⛳ MELYIK FORRÁS NORMATÍV? A `.tre` a SZERKEZET, a rétegrekord a GEOMETRIA (2026-09-11, 279. kör, #2935)
+
+*A #656 gépi UI-összevető terve azon áll, hogy a `.tre` „az eredeti felület
+deklaratív elrendezés-nyelve" — az 5. szakasz szóhasználata után szabadon. Egy
+2026-08-16-i mérés (#464) viszont az ellenkezőjét mondta. Ez a szakasz
+kiméri, melyik igaz, és hol.*
+
+### 10.1 A mérés — a TELJES korpuszon, nem példán
+
+**Kontroll-pozitív, kettő, mindkettő teljesült:**
+
+1. az elemző **2021** vezérlő-definíciót talált a 140 `.tre`-ben — a #656
+   törzsében független úton „2020" áll;
+2. a #464-ben képernyőképpel igazolt gombrács a rétegrekordokból pontosan
+   visszajön:
+
+| x | y | méret | réteg |
+|---:|---:|---|---|
+| 37 | 91 | 44×30 | `editpanel/button(crop): crop` |
+| 118 | 91 | 44×29 | `editpanel/button(straighten): horizonadjust` |
+| 198 | 91 | 44×29 | `editpanel/button(redeye): redeye` |
+| 37 | 155 | 44×31 | `editpanel/button(enhance): enhance` |
+| 37 · 118 · 198 | 223 | 44×30 | `retouch` · `edittext` · `picnik` |
+| 37 | 290 | 44×30 | `filllight_icon` |
+
+⇒ a `respack.yt` 13 bájtos rétegfejléce (`int16 x0,y0,x1,y1`) **képpontra
+pontos**, és a mérőláncom helyes.
+
+**A két azonosító-készlet:**
+
+| | darab |
+|---|---:|
+| `.tre` vezérlő-definíció | **2021** |
+| rétegrekord-azonosító (`panel/név`) | **2742** |
+| **közös** | **1381** |
+| csak `.tre` | 640 |
+| csak rétegrekord | **1361** |
+
+**A közös 1381 vezérlőn a `.tre` ennyit ad az elhelyezésről:**
+
+| mit ad | darab | arány |
+|---|---:|---:|
+| csak makróhivatkozás (`m_*`) | **1130** | 82 % |
+| nyers `XConstraint`/`YConstraint` sor | 217 | 16 % |
+| …ebből nem-nulla képpont-eltolással | 156 | 11 % |
+| semmilyen elhelyezési sor | 34 | 2 % |
+| **explicit MÉRET (`Size`)** | **4** | **0,3 %** |
+
+A makró-szótár (**105** egyedi `#define`; a `_win`/`_mac` páros miatt a nyers
+`grep` kétszer számol): 37 tisztán elrendezési, 19 vegyes, 46 csak
+`Property`, 3 egyéb. Harminc makró hordoz nem-nulla képpont-eltolást — és
+**egyetlenegy sem hordoz méretet**.
+
+### 10.2 ⛳ A VÁLASZ — és ez NEM „vagy-vagy"
+
+> **A `.tre` a SZERKEZETRE normatív, a rétegrekord a GEOMETRIÁRA.**
+>
+> | kérdés | a normatív forrás |
+> |---|---|
+> | ki kinek a gyereke | **`.tre`** (`elem : szülő`) |
+> | mihez horgonyzott, melyik oldalhoz, középre-e | **`.tre`** (`XConstraint`/`MaintainOffset`, makrón át) |
+> | viselkedés, panelváltás, betű, felirat | **`.tre`** (`Property`, `Label`/`Text`/`Tooltip`) |
+> | **hol van** (x, y) | **rétegrekord** |
+> | **mekkora** (szélesség, magasság) | **rétegrekord** — a `.tre` 1381-ből **4**-nél mond méretet |
+
+A 2026-08-16-i tanulság tehát **áll, de szűkíthető**: a `.tre` nem
+„helymegadás nélküli", hiszen 156 vezérlőnél ad képpont-eltolást — de
+**méretet gyakorlatilag soha**, és horgony + eltolás méret nélkül nem
+határoz meg dobozt. Ezért a sorrendre és a pozícióra következtetni belőle
+továbbra is hiba.
+
+### 10.3 ⭐ Mit jelent ez a #656 tervére
+
+- Az **R2** (konténer-eltérés) és az **R3** (horgonyzási osztály) a `.tre`-ből
+  **helyesen** mérhető — ez a forrás épp ezt adja. A terv ezen a ponton áll.
+- Az **R4** (túlcsordulás, nem-illeszkedés) a `.tre`-ből **nem** mérhető:
+  méret nélkül nincs mihez hasonlítani. Ehhez a rétegrekordok kellenek
+  (vagy a terv szerinti saját-invariáns út, ami referencia nélkül megy).
+- A **lefedettség** a terv gyenge pontja: a `.tre` a rétegrekordok
+  **1361 azonosítóját nem ismeri**, a rétegek pedig a `.tre` 640-ét. Egy
+  csak-`.tre` referenciamodell a felület felét sem fedi; a két forrást
+  **össze kell fűzni** a `panel/név` kulcson (a közös rész 1381).
+
+⇒ Az 1. fázis kimenete ne `picasa-ui-model.json` legyen a `.tre`-ből, hanem
+**egyesített** modell: szerkezet és horgony a `.tre`-ből, doboz a
+rétegrekordból, és jelölve, melyik mező honnan jön.
+
+### 10.4 ⚠️ Az 5. szakasz szóhasználata pontosítandó
+
+Az 5. szakasz a `.tre`-t „a tényleges elrendezés-forráskódja"-ként vezeti be.
+A mérés szerint ez **a szerkezetre igaz, a geometriára nem** — és épp ebből a
+mondatból lett a #656 terve. A pontos megfogalmazás a 10.2 táblája.
+
+*Bizonyítottsági fok: **megerősített** — teljes korpusz-mérés mindkét
+forráson, két kontroll-pozitívval (a 2021-es darabszám és a #464 gombrácsa).
+Diszasszemblálás nem kellett: a kérdés az olcsó lánc első két lépésén eldőlt.*
+
+*Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — melyik forrás normatív
+az elhelyezésre) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak
+nyitva".*
