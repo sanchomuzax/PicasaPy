@@ -155,3 +155,32 @@ class TestACsempeFelirata:
         )
         _kuldd(_shift(QKeyEvent.Type.KeyRelease))
         assert editor_panel.property("shiftMasodlagos") is False
+
+
+class TestVezerloNelkul:
+    """A panel vezérlő NÉLKÜL is felépül (#798).
+
+    A CI ezt fogta meg: a csupasz `editController` név a kötésben
+    `ReferenceError`-t dobott azoknál a próbáknál, amelyek kontextus-
+    tulajdonság nélkül építik fel a panelt — három QML-tesztfájl bukott
+    el rá. A `qml_undefined_or.py` átengedte, mert a `!== undefined`
+    záradékot őrzésnek látta; a `typeof` viszont hiányzott.
+    """
+
+    def test_felepul_kontextus_tulajdonsag_nelkul(self, qt_app):
+        from pathlib import Path as Ut
+
+        import picasapy.app
+        from PySide6.QtCore import QUrl
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        qml = Ut(picasapy.app.__file__).parent / "qml"
+        motor = QQmlEngine()
+        motor.addImportPath(str(qml))
+        komponens = QQmlComponent(
+            motor, QUrl.fromLocalFile(str(qml / "PicasaPy" / "EditorPanel.qml"))
+        )
+        panel = komponens.create()
+        assert panel is not None, komponens.errorString()
+        assert panel.property("shiftMasodlagos") is False
+        panel.deleteLater()

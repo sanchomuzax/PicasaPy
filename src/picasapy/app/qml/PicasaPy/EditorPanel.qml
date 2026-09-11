@@ -295,7 +295,13 @@ Rectangle {
     // és ez a kötés követi. A `frissitsdAShiftAllapotot()` megmarad a
     // felépülés pillanatára: akkor még nem volt billentyű-esemény,
     // amiből a szűrő tudhatna (a felhasználó már előtte is nyomhatja).
-    property bool shiftMasodlagos: (editController
+    //: ⚠️ A `typeof` NEM elhagyható: a QML-próbák egy része vezérlő
+    //: NÉLKÜL építi fel a panelt, és a csupasz név ilyenkor
+    //: `ReferenceError`-t dob (a CI ezt el is kapta, #798). A
+    //: `qml_undefined_or.py` a csupasz alakot átengedte — a `!== undefined`
+    //: záradékot látta őrzésnek.
+    property bool shiftMasodlagos: (typeof editController !== "undefined"
+                                    && editController
                                     && editController.shiftAktiv !== undefined)
         ? editController.shiftAktiv
         : false
