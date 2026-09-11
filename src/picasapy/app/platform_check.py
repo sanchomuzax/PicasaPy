@@ -27,6 +27,9 @@ from pathlib import Path
 #: a hiányzó bővítmény csomagneve Debian/Ubuntu alatt
 _CSOMAG = "qt6-wayland"
 
+#: a megosztott könyvtárak végződései a három platformon (#3031)
+_KONYVTAR_VEGZODESEK = frozenset({".so", ".dll", ".dylib"})
+
 _UZENET = (
     "PicasaPy: a program wayland-asztalon fut, de a Qt 6 wayland-bővítménye "
     "hiányzik, ezért nem indul el.\n"
@@ -51,8 +54,17 @@ def elerheto_platformok(plugin_dir: Path | None = None) -> tuple[str, ...]:
     if not plugin_dir.is_dir():
         return ()
     nevek = set()
-    for fajl in plugin_dir.glob("libq*.so"):
-        nevek.add(fajl.stem[4:])  # "libqwayland-egl" -> "wayland-egl"
+    #: #3031: a fájlnév-alak platformonként MÁS — `libqxcb.so` (Linux),
+    #: `qwindows.dll` (Windows), `libqoffscreen.dylib` (macOS). A korábbi,
+    #: csak `libq*.so` minta Windowson egyetlen bővítményt sem talált, és a
+    #: függvény üres listát adott: hamis állítás, és piros CI.
+    for fajl in plugin_dir.iterdir():
+        if fajl.suffix not in _KONYVTAR_VEGZODESEK:
+            continue
+        nev = fajl.stem.removeprefix("lib")
+        if not nev.startswith("q") or len(nev) < 2:
+            continue
+        nevek.add(nev[1:])  # "qwayland-egl" -> "wayland-egl"
     #: a wayland bővítmény több fájlból áll (`libqwayland-generic.so`,
     #: `libqwayland-egl.so`); bármelyik jelenléte elég
     if any(nev.startswith("wayland") for nev in nevek):

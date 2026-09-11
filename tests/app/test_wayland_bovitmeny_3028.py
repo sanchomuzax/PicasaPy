@@ -20,6 +20,8 @@ tartja fenn, hogy a mi üzenetünk megmondja — és hogy TÉVESEN ne szóljon.
 
 from __future__ import annotations
 
+import pytest
+
 from picasapy.app.platform_check import hianyzo_wayland_bovitmeny
 
 
@@ -97,3 +99,38 @@ class TestABovitmenyLista:
             "a tesztek offscreen platformon futnak, tehát léteznie kell: "
             f"{nevek}"
         )
+
+    #: #3031: a fájlnév-alak platformonként MÁS. A `libq*.so` minta
+    #: Windowson (`qoffscreen.dll`) és macOS-en (`libqoffscreen.dylib`)
+    #: egyet sem talált — a main CI windows-lába emiatt lett piros.
+    @pytest.mark.parametrize(
+        "fajlnev, vart",
+        [
+            ("libqxcb.so", "xcb"),
+            ("libqwayland-generic.so", "wayland-generic"),
+            ("qwindows.dll", "windows"),
+            ("qoffscreen.dll", "offscreen"),
+            ("libqoffscreen.dylib", "offscreen"),
+        ],
+    )
+    def test_MINDHAROM_fajlnev_alakot_ismeri(self, tmp_path, fajlnev, vart):
+        from picasapy.app.platform_check import elerheto_platformok
+
+        (tmp_path / fajlnev).write_bytes(b"")
+        assert vart in elerheto_platformok(tmp_path), (
+            f"a {fajlnev} alakot nem ismeri fel"
+        )
+
+    def test_az_idegen_fajlt_kihagyja(self, tmp_path):
+        from picasapy.app.platform_check import elerheto_platformok
+
+        (tmp_path / "olvassel.txt").write_bytes(b"")
+        (tmp_path / "libsomething.so").write_bytes(b"")
+        assert elerheto_platformok(tmp_path) == ()
+
+    def test_a_wayland_darabjaibol_egy_NEV_lesz(self, tmp_path):
+        """A wayland több fájlból áll; a hívónak egy `wayland` név kell."""
+        from picasapy.app.platform_check import elerheto_platformok
+
+        (tmp_path / "libqwayland-egl.so").write_bytes(b"")
+        assert "wayland" in elerheto_platformok(tmp_path)
