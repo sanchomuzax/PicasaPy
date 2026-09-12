@@ -2192,6 +2192,60 @@ együtt az `editpanel/weblink`, `quickupload` és `uploadchanges` elemekkel.
 ⇒ **A szerkesztő felismeri, hogy a megnyitott kép egy PROJEKT kimenete**
 (kollázs vagy mozgófilm), és felkínálja a **forrásprojekt újranyitását**.
 
+#### ⭐ HOGYAN ismeri fel — kimérve (#2114 → #432, 2026-09-12)
+
+A `0x00567a00` csak a láthatóságot állítja; a döntést egy **leíró-rekord**
+két bájtja hordozza, és azt a `FUN_0077f690` (1078 b) töltötte ki. A lánc
+végig kiolvasott utasítás:
+
+**1. A láthatóság a leíró két bájtja.** A kezelő ugyanabból az objektumból
+(`edi`) olvassa mindkettőt, és ugyanaz a panel-szintű elnyomó kapuzza:
+
+| gomb | feltétel | cím |
+|---|---|---|
+| `editpanel/editcollage` | `[leíró+0x28] != 0` **ÉS** `[panel+0x332f] == 0` | `0x00567a84`–`0x00567a98`, kiadás `0x00567c5f` |
+| `editpanel/editslideshow` | `[leíró+0x30] != 0` **ÉS** `[panel+0x332f] == 0` | `0x00567a9d`–`0x00567ab1`, kiadás `0x00567c71` |
+
+A két bájt tehát **szomszédos mező ugyanazon a rekordon** — a kollázs- és a
+mozgófilm-ág nem két külön mechanizmus.
+
+**2. A kitöltő a tétel TÍPUSKÓDJÁRA ágazik** (`[leíró+0x24]`), és mindkét
+ágon ugyanazt teszi: a tétel útvonalából (`[leíró+0x18]`) **kicseréli a
+kiterjesztést**, majd megkérdezi, hogy a fájl **létezik-e**:
+
+| ág | típuskód | kiterjesztés | ha létezik | cím |
+|---|---|---|---|---|
+| kollázs | **2** | **`.cxf`** (`0x00c81b30`) | `[leíró+0x28] = 1`, és a `.cxf` útvonala a `+0x2c`-be | `0x0077f6eb`, `0x0077f73d` |
+| **mozgófilm** | **9 vagy 0x0b** | **`.mxf`** (`0x00c8e8c4`) | `[leíró+0x30] = 1` | `0x0077f809`–`0x0077f85e` |
+
+A három segéd, amin ez nyugszik:
+
+- `FUN_004089e0` — útvonal-építő inicializálása a tétel útjából (öt
+  sztring-rés: `+4`, `+0x20c`, `+0x414`, `+0x61c`, `+0x824`; a
+  kiterjesztés-rés a `+0x824`/`+0x828`);
+- `FUN_009a3620` — **kiterjesztés-csere**: `__stricmp`-pel összeveti a
+  mostanit, és ha más, `'.'` + az új kiterjesztés kerül a `+0x828`-tól;
+- `FUN_00992ed0` — **létezés-próba**: a `„Exists"` sztringre hivatkozik, a
+  `[0x00d694bc]` hívás `-1`-je a „nincs" (`cmp eax,-1; setne bl`).
+
+**3. A mozgófilm-ág egy MÁSODIK fájlt is eltesz.** Ha a `.mxf` megvan, a
+kitöltő a kiterjesztést **`.wmv`**-re (`0x00c81a44`) váltja, és ezt az
+útvonalat teszi a `[leíró+0x34]`-be; a fájl attribútum-lekérdezésének
+(`[0x00d69518]`) 8. bitje a `[leíró+0x31]`-be megy. A kollázs-ág
+ugyanezt az attribútum-bitet az EREDETI képre kérdezi meg.
+
+⇒ **Amit a #432 ebből kap:** a mozgófilm-projekt tartós nyoma az eredetiben
+**a kimenet mellett álló, azonos alapnevű `.mxf` fájl** — pontosan a
+kollázs `.cxf`-jének a párja. A szerkesztőnek nem kell adatbázist
+kérdeznie: egy kiterjesztés-csere és egy létezés-próba. A `.wmv` a
+renderelt kimenet neve, ugyanazzal az alapnévvel.
+
+*Bizonyítottsági fok: **megerősített** — a típuskódok, a két kiterjesztés, a
+mezőeltolások és a három segéd mind kiolvasott utasítás, illetve a
+`.rdata`-ból kiolvasott sztring. **Nem azonosított**: mit jelent a 9 és a
+0x0b típuskód különbsége (mindkettő a mozgófilm-ágra megy), és mit jelöl a
+`[panel+0x332f]` elnyomó.*
+
 #### ⭐ A két FELTÖLTŐ gomb kapcsolási feltétele — kimérve (#1935, 2026-09-04)
 
 Ugyanez a `0x00567a00` dönt az `editpanel/quickupload` és
@@ -2263,6 +2317,11 @@ neve.*
 **Nálunk a kollázs-ág MEGVAN** (`PhotoViewer.qml:590`, #1002, a
 `collage_save.py:753` is hivatkozik rá), a **mozgófilm-ág nincs**
 (`grep -rn 'editslideshow' src/` → **0**). ⇒ **#2114**.
+
+A #2114 előfeltétele — „mi a mozgófilm-projekt tartós nyoma?" — 2026-09-12
+óta **kimérve** (ld. a fenti „HOGYAN ismeri fel" szakaszt): a kimenet
+mellett álló, azonos alapnevű **`.mxf`**. A gomb megépítése tehát már csak
+azon áll, hogy a filmkészítő (#432) írjon ilyet.
 
 ### 3. `editpanel/edithelpbutton` — a gomb él, az IKONJA nincs
 
