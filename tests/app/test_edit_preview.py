@@ -133,9 +133,11 @@ class TestSourceCaching:
         calls = []
         original = edit_preview._decode_source
 
-        def counting_decode(path):
+        #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
+        #: szűrőknél a korlát elmarad. A számláló továbbadja.
+        def counting_decode(path, **kulcsszavak):
             calls.append(path)
-            return original(path)
+            return original(path, **kulcsszavak)
 
         monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
         provider = _make_provider()
@@ -152,9 +154,11 @@ class TestSourceCaching:
         calls = []
         original = edit_preview._decode_source
 
-        def counting_decode(path):
+        #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
+        #: szűrőknél a korlát elmarad. A számláló továbbadja.
+        def counting_decode(path, **kulcsszavak):
             calls.append(path)
-            return original(path)
+            return original(path, **kulcsszavak)
 
         monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
         provider = _make_provider()
@@ -169,9 +173,11 @@ class TestSourceCaching:
         calls = []
         original = edit_preview._decode_source
 
-        def counting_decode(path):
+        #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
+        #: szűrőknél a korlát elmarad. A számláló továbbadja.
+        def counting_decode(path, **kulcsszavak):
             calls.append(path)
-            return original(path)
+            return original(path, **kulcsszavak)
 
         monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
         provider = _make_provider()

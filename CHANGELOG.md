@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.429] – 2026-09-12
+
+### Javítva
+
+- **A szerkesztő előnézete pontosabb tizenkilenc effektnél** (#819). Ezek
+  az effektek csak a teljes felbontású képen adnak helyes eredményt, mi
+  viszont a kicsinyített előnézeten futtattuk őket — így a szerkesztőben
+  más látszott, mint amit a mentett kép tartalmaz. Mostantól ezeknél a
+  teljes kép megy át a feldolgozáson, és csak a megjelenítés előtt
+  kicsinyítünk. A többi effektnél marad a gyors, kicsinyített út.
+
 ## [0.8.428] – 2026-09-12
 
 ### Változott
