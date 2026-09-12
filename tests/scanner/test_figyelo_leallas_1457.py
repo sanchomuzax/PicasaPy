@@ -116,3 +116,47 @@ class TestALeallas:
         from watchdog.observers import Observer
 
         assert issubclass(Observer, threading.Thread)
+
+
+class TestAVarakozas3059:
+    """#3059: a teszt-segéd MEGVÁRJA a megfigyelő szálat.
+
+    A windowsos CI-n a `test_projekt_mappa_figyeles_1123.py` `0xC0000409`
+    fast-faillel omlott össze — kétszer egymás után. A segéd eddig EGYSZER
+    kérdezte meg, leállt-e a szál, és ha nem, továbbengedte a teardownt: a
+    megfigyelő szál a lebontás közben is futott.
+    """
+
+    def test_a_segéd_VÁR_a_szálra(self):
+        """Forrás-szintű állítás: van ciklus és határidő.
+
+        Viselkedésben nem reprodukálható: a szál megállása gépfüggő, és a
+        hiba pont ott jött elő, ahol nem tudunk futtatni (Windows)."""
+        from pathlib import Path
+
+        import tests.support.figyelo as modul
+
+        forras = Path(modul.__file__).read_text(encoding="utf-8")
+        assert "_VARAKOZAS_S" in forras
+        assert "while not figyelo.leallt()" in forras
+
+    def test_a_le_nem_allt_figyelot_NEM_dobja_el(self):
+        """A referencia eldobása a szál alól szabadítaná fel a figyelőt."""
+        from tests.support.figyelo import allitsd_le_a_figyelot
+
+        class MakacsFigyelo:
+            def stop(self):
+                pass
+
+            def leallt(self):
+                return False
+
+        class Vezerlo:
+            _watcher = MakacsFigyelo()
+
+        vezerlo = Vezerlo()
+        allitsd_le_a_figyelot(vezerlo)
+
+        assert vezerlo._watcher is not None, (
+            "a le nem állt figyelő referenciáját eldobtuk"
+        )
