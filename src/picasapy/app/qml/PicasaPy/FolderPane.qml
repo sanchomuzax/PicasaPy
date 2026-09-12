@@ -837,6 +837,7 @@ Rectangle {
                     ToolTip.text: offline
                         ? path + "\n" + qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
                         : path
+                    ToolTip.delay: Theme.tooltipDelay
                     MouseArea {
                         id: folderRowMouse
                         enabled: kind === "folder"

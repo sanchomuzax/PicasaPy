@@ -121,6 +121,7 @@ ColumnLayout {
             ToolTip.visible: hovered
             ToolTip.text: qsTr("Move the selected people to the ignored "
                                + "people album")
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: ignoreConfirm.open()
         }
         Button {
@@ -134,6 +135,7 @@ ColumnLayout {
             ToolTip.visible: hovered
             ToolTip.text: qsTr(
                 "Assign a name to all of the selected faces")
+            ToolTip.delay: Theme.tooltipDelay
             onClicked: {
                 var ids = []
                 var key

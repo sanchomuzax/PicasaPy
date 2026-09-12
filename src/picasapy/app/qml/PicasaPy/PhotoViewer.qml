@@ -1958,6 +1958,7 @@ Rectangle {
                             width: 26; height: 20
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Show Faces")
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: viewer.toggleFaces()
                         }
                         // #26 (2. kör): arc-SZERKESZTŐ mód be/ki
@@ -1972,6 +1973,7 @@ Rectangle {
                             width: 26; height: 20
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Edit Faces")
+                            ToolTip.delay: Theme.tooltipDelay
                             onClicked: viewer.toggleFacesEdit()
                         }
                     }
