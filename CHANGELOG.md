@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.427] – 2026-09-12
+
+### Változott
+
+- **A nézetváltók, a szűrők és a szerkesztő fülei lenyomásra reagálnak**
+  (#885). Az eredeti Picasában 49 vezérlő azonnal hat, amint lenyomod: a
+  fülváltás, a nézetváltók, a kép-léptetés és a keresősáv szűrői. Nálunk
+  eddig mind a felengedést várta, ezért a felület ugyanezeken a helyeken
+  lomhábbnak érződött. A műveletet végző gombok (importálás, új album,
+  mentés) szándékosan maradnak felengedésre: onnan az egeret elhúzva
+  vissza lehet vonni a kattintást.
+
 ## [0.8.426] – 2026-09-12
 
 ### Hozzáadva
