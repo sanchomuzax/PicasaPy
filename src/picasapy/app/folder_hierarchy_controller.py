@@ -103,6 +103,9 @@ class FolderHierarchyController(QObject):
         super().__init__(parent)
         self._settings = settings
         self._folders: tuple[dict, ...] = ()
+        #: #1407: a FIGYELT mappák — az „Egyszerűsített fanézet" ezekre
+        #: szűkíti a fát. Üresen a szűkítés elmarad (nem találgatunk).
+        self._watched_roots: tuple[str, ...] = ()
         self._expanded: frozenset[str] = frozenset()
         self._simplified = self._olvas(self._KULCS_SIMPLIFIED)
         #: #2049: a mappa-borítók megjelenítése — az eredetiben is
@@ -151,6 +154,22 @@ class FolderHierarchyController(QObject):
         self._folders = tuple(dict(folder) for folder in folders or ())
         self._rebuild()
 
+    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: a figyelt mappák listája a PROGRAMTÓL
+    #: jön (`application.py`), nem a felületről. Slotként a #1476 őre
+    #: joggal jelezné, hogy felületről elérhetetlen vezérlő-tag.
+    def setWatchedRoots(self, roots) -> None:
+        """A figyelt mappák átvétele (#1407).
+
+        Az „Egyszerűsített fanézet" ezekre az ágakra szűkíti a fát — az
+        eredetiben a `SimplifiedHierarchy = 1` az `all` gyökeret
+        `watched`-re cseréli (`0x0057517c`–`0x005751ec`)."""
+        ujak = tuple(str(ut) for ut in roots or ())
+        if ujak == self._watched_roots:
+            return
+        self._watched_roots = ujak
+        if self._simplified:
+            self._rebuild()
+
     # -- nézetmód: Egyszerű ↔ Fa (`thumbui/hviewtoggle`) -----------------
 
     @Property(bool, notify=treeViewChanged)
@@ -182,15 +201,17 @@ class FolderHierarchyController(QObject):
     @Property(bool, notify=simplifiedChanged)
     def simplified(self) -> bool:
         """Az „Egyszerűsített fanézet" (`eMenuView::ID_VIEW_WATCHED`)
-        állapota: az egygyermekes, fotó nélküli köztes szintek
-        összevonása.
+        állapota.
 
-        ⚠️ A MECHANIZMUS eltér az eredetitől: ott a
-        `SimplifiedHierarchy = 1` az `all` gyökeret `watched`-re cseréli
-        (`0x0057517c`–`0x005751ec`), vagyis a fa HATÓKÖRÉT szűkíti a
-        figyelt mappák ágaira; nálunk útvonal-tömörítés, ami sosem rejt
-        el mappát. A látvány hasonló, a szemantika nem — a helyreállítása
-        a #1407 tárgya, a #1454 csak bekötötte a menübe azt, ami van.
+        #1407: a fa HATÓKÖRE szűkül a figyelt mappák ágaira — az
+        eredetiben a `SimplifiedHierarchy = 1` az `all` gyökeret
+        `watched`-re cseréli (`0x0057517c`–`0x005751ec`). A szűkített
+        ágakon belül az útvonal-tömörítés is fut, hogy a hosszú láncok
+        olvashatók maradjanak.
+
+        ⚠️ Ha a figyelt mappák listája üres (a vezérlő még nem kapta
+        meg), a szűkítés ELMARAD: a felhasználó mappáit elrejteni
+        rosszabb kimenet, mint a szűkítés hiánya.
         """
         return self._simplified
 
@@ -290,7 +311,11 @@ class FolderHierarchyController(QObject):
     # -- belső ----------------------------------------------------------
 
     def _tree(self):
-        return build_hierarchy(self._folders, simplified=self._simplified)
+        return build_hierarchy(
+            self._folders,
+            simplified=self._simplified,
+            watched_roots=self._watched_roots,
+        )
 
     def _set_expanded(self, expanded: frozenset[str]) -> None:
         if expanded == self._expanded:

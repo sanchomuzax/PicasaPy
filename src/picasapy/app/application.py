@@ -1151,6 +1151,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # Nem téveszthető össze a fenti `folder_tree_controller`-rel: az a
     # Mappakezelő dialógus fájlrendszer-böngészője, ez az indexé.
     folder_hierarchy_controller = FolderHierarchyController()
+    #: #1407: az „Egyszerűsített fanézet" a FIGYELT mappák ágaira szűkíti a
+    #: fát — a vezérlőnek tudnia kell, melyek azok.
+    folder_hierarchy_controller.setWatchedRoots(list(roots))
 
     def _reload_folder_hierarchy() -> None:
         """A fa-nézet mappalistájának újratöltése az indexből.

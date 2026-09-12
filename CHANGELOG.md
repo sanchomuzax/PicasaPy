@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.428] – 2026-09-12
+
+### Változott
+
+- **Az „Egyszerűsített fanézet" a figyelt mappáidat mutatja** (#1407).
+  Eddig ez a nézet csak összevonta a hosszú mappaláncokat, de semmit nem
+  hagyott ki. Az eredeti Picasában viszont épp az a dolga, hogy szűkítsen:
+  bekapcsolva csak a figyelt mappák ágai látszanak, a gép többi része nem.
+  Mostantól nálunk is így működik. Ha a figyelt mappák listája üresen
+  érkezik, a szűkítés elmarad, tehát nem tűnhet el mappa emiatt.
+
 ## [0.8.427] – 2026-09-12
 
 ### Változott
