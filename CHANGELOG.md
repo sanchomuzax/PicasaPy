@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.437] – 2026-09-12
+
+### Javítva
+
+- **A Lineáris és a Mac gamma nézetmód képe felcserélve volt** (#3068). A
+  megjelenítési módok közül kettő a másik tábláját használta: a Lineáris
+  gamma azt a beégetett átalakítót kapta, amelyik az eredetiben a Mac
+  gammáé, a Mac gamma pedig egy képernyőképből illesztett közelítést. A
+  csere a bináris két ágából mérhető, ezért mindkettő a helyére került. A
+  Lineáris gamma mostantól valóban 2,2-es, a Mac gamma pedig bájtra az
+  eredeti tábláját használja.
+
 ## [0.8.436] – 2026-09-12
 
 ### Javítva

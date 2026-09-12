@@ -53,22 +53,29 @@ képernyő, **nem** energiagazdálkodás és **nem** nagyítás.
 A szorzás **egész aritmetikával** megy (`>> 8`, nem `/ 256` kerekítéssel):
 a levágás iránya a mért viselkedés része, `255 · 246 >> 8 = 245`, nem 246.
 
-## `linear` — Lineáris gamma (2.2) (#1578)
+## `linear` és `mac` — a KÉT gamma-mód, és melyik tábla kié (#1578, #3068)
 
-**MÉRVE** (`0x009e8b60` → `0x00aa3f80`; spec 5.9): csatornánként egy 256
-bájtos keresőtábla B-re, G-re, R-re; az alfa marad.
+**MÉRVE** (spec 12.4): mindkét mód ugyanazt a gamma-alkalmazót hívja, csak
+más float-ot ad át neki, és az választja ki a táblát:
 
-🔴 **A tábla NEM `x^(1/2.2)` — és semmilyen más képlet sem.** A `2.2f` float
-a binárisban a **tábla kiválasztó kulcsa**, nem kitevő; maga a tábla a
-`0x00d32bd0` címen **előre kitöltve** érkezik. A legjobb hatványillesztés
-`p = 0,6944` (gamma ≈ 1,44), és még az is 256-ból 37 helyen téved ±1-gyel.
+| mód | átalakító | mit ad át | melyik tábla |
+|---|---|---|---|
+| `mac` — Mac gamma (1,6) | `0x009e8b40` (`fldz`) | **0,0** | `0x00d32bd0`, **beégetve** |
+| `linear` — Lineáris gamma (2,2) | `0x009e8b60` | **2,2** | `0x00d32cd0`, futásidőben töltve |
 
-⇒ **Aki képletet illeszt ide, mérhetően rossz eredményt kap.** A
-`LINEAR_GAMMA_LUT` ezért **mért adat, nem levezetés**: a spec 5.9
-szakaszának 256 bájtja, kiírva. Hatványfüggvényre cserélni nem
-egyszerűsítés, hanem paritás-vesztés — a
-`tests/render/test_display_modes_1577_1578.py::TestNemKeplet` ezt tételesen
-őrzi.
+🔴 **A beégetett tábla a MAC gammáé, nem a lineárisé.** A `MAC_GAMMA_LUT`
+ezért **mért adat**: a spec 5.9 szakaszának 256 bájtja, kiírva.
+Hatványfüggvényre cserélni nem egyszerűsítés, hanem paritás-vesztés — a
+legjobb illesztés (`p = 0,6945`) is 37 helyen téved ±1-gyel. A menüfelirat
+1,6-ot ígér, a tábla effektív gammája ≈1,44; az eltérés az EREDETIÉ.
+
+🟡 **A lineáris tábla viszont SZÁMÍTOTT — és épp ez a hű alak.** Az eredeti
+a `0x00d32cd0`-et futásidőben tölti fel (`0x00aa3ff0`–`0x00aa404a`) a
+`round(pow(i/255, 1/gamma) · 255)` képlettel, `gamma = 2,2`-vel.
+
+⚠️ A kettő 2026-09-12-ig **fel volt cserélve** nálunk, mert a spec 5.9 és
+5.10 szakasza is fel volt cserélve, és a #1578 abban az állapotban készült
+el. A cserét a `tests/render/test_gamma_tablak_felcserelve_3068.py` őrzi.
 
 ## `bw` — Fekete-fehér (megjelenítési mód) (#1657)
 
@@ -186,35 +193,13 @@ LINEAR_GAMMA_MODE = "linear"
 #: `ID_VIEW_MACGAMMA` módazonosítója (#1730).
 MAC_MODE = "mac"
 
-#: A Mac gamma kitevője — a MÉRÉSBŐL, nem a menüfeliratból.
-#:
-#: 🟡 SZÁMÍTOTT érték, NEM mért tábla. A `LINEAR_GAMMA_LUT` (2.2) minden
-#: bájtja a binárisból van kiolvasva; ez NEM az. A #1580 képpont-mérése a
-#: világosítás irányát és nagyságát adta meg, a bináris tábláját nem
-#: láttuk.
-#:
-#: ⚠️ A MENÜFELIRAT („Mac gamma (1.6)") ÉS A MÉRÉS NEM EGYEZIK. A #1730
-#: jegy azt írta, hogy a mérés „konzisztens az `x^(1/1,6)` gammával" —
-#: SZÁMSZERŰEN NEM AZ. A mért pár a központi fotón luma **133,5 → 154,5**;
-#: ebből a kitevő:
-#:
-#:     ln(154,5/255) / ln(133,5/255) = 0,7743   →   gamma = 1,292
-#:
-#: Az `1/1,6 = 0,625` kitevő ugyanerre a bemenetre **170,2**-t adna, azaz
-#: jóval világosabbat a mértnél.
-#:
-#: A MÉRÉST követjük, nem a feliratot: a felirat az eredeti UI szövege, a
-#: 154,5 viszont a tulajdonos gépén készült felvétel képpontja. Hogy az
-#: 1,6-os felirat mire vonatkozik (más színtér? a felület más rétege?),
-#: NYITOTT KÉRDÉS — a jegyben rögzítve.
-MAC_GAMMA_MEASURED_PAIR: tuple[float, float] = (133.5, 154.5)
-MAC_GAMMA_EXPONENT = 0.7743
-
-#: A számított tábla, hogy a futásidőben ne kelljen hatványozni.
-MAC_GAMMA_LUT: tuple[int, ...] = tuple(
-    int(round(255.0 * (ertek / 255.0) ** MAC_GAMMA_EXPONENT))
-    for ertek in range(256)
-)
+#: A #1580 képernyőkép-mérése: a központi fotó lumája a Mac gammával
+#: 133,5 → 154,5. Ez a pár **kereszt-ellenőrzés**, NEM a tábla forrása —
+#: a forrás a binárisból kiolvasott `MAC_GAMMA_LUT` (lent). A képernyőkép
+#: illesztett kitevője 0,7743 volna, a bináris tábláé 0,6945; a kettő
+#: eltérése a felvétel körülményeiből (megjelenítő, tömörítés) fakad, és
+#: nem ok arra, hogy képletet tegyünk mért tábla helyére (#3068).
+MAC_GAMMA_SCREENSHOT_PAIR: tuple[float, float] = (133.5, 154.5)
 
 #: `ID_VIEW_BW` módazonosítója.
 BW_MODE = "bw"
@@ -240,13 +225,20 @@ PROJECTOR_MULTIPLIER = 220
 #: A neve ellenére NEM fehérpont-korrekció, ld. a modul-docstringet.
 LCD_MULTIPLIER = 246
 
-#: A lineáris gamma (2.2) keresőtáblája — **MÉRT ADAT, NEM LEVEZETÉS**.
+#: A **Mac gamma (1,6)** keresőtáblája — **MÉRT ADAT, NEM LEVEZETÉS**.
 #:
 #: A bináris `0x00d32bd0` címén előre kitöltve álló 256 bájt (spec 5.9),
-#: soronként 16 érték. **Képlettel helyettesíteni tilos**: a legjobb
-#: hatványillesztés (`p = 0,6944`) is 37 helyen téved, a kézenfekvő
-#: `x^(1/2.2)` pedig 16-tal is mellémegy az alacsony értékeknél.
-LINEAR_GAMMA_LUT: tuple[int, ...] = (
+#: soronként 16 érték; a fájlban a `0x00932bd0` offszeten olvasható ki.
+#: **Képlettel helyettesíteni tilos**: a legjobb hatványillesztés
+#: (`p = 0,6945`) is 37 helyen téved.
+#:
+#: ⚠️ #3068: ez a tábla sokáig a LINEÁRIS módé volt nálunk, mert a spec
+#: 5.9 és 5.10 szakasza fel volt cserélve. A 12.4 szerint az `ID_VIEW_MAC`
+#: átalakítója (`0x009e8b40`) `0,0`-t ad át, és a `0,0`-ág választja ezt az
+#: előre kitöltött táblát (`0x00aa3fd2`). A menüfelirat 1,6-ot ígér, a
+#: tábla effektív gammája ≈1,44 — az eltérés az EREDETI sajátossága, és a
+#: hűség a táblát követi, nem a feliratot.
+MAC_GAMMA_LUT: tuple[int, ...] = (
       0,   5,   9,  11,  14,  16,  19,  21,  23,  25,  27,  29,  30,  32,  34,  36,
      37,  39,  40,  42,  44,  45,  47,  48,  49,  51,  52,  54,  55,  56,  58,  59,
      60,  62,  63,  64,  66,  67,  68,  69,  71,  72,  73,  74,  75,  77,  78,  79,
@@ -264,6 +256,18 @@ LINEAR_GAMMA_LUT: tuple[int, ...] = (
     233, 233, 234, 235, 236, 236, 237, 238, 238, 239, 240, 241, 241, 242, 243, 243,
     244, 245, 245, 246, 247, 248, 248, 249, 250, 250, 251, 252, 252, 253, 254, 255,
 )  # fmt: skip
+
+#: A **lineáris gamma (2,2)** keresőtáblája — **SZÁMÍTOTT**, és ez a hű
+#: alak: az eredeti ezt a táblát (`0x00d32cd0`) nem égeti be, hanem
+#: futásidőben tölti fel (`0x00aa3ff0`–`0x00aa404a`) a
+#: `round(pow(i/255, 1/gamma) · 255)` képlettel. Az `ID_VIEW_LINEAR`
+#: átalakítója (`0x009e8b60`) a `2,2`-t adja át (`[0x00cf4140]`), tehát a
+#: kitevő pontosan `1/2,2` (spec 12.4, #3068).
+LINEAR_GAMMA_GAMMA = 2.2
+LINEAR_GAMMA_LUT: tuple[int, ...] = tuple(
+    int(round(255.0 * (ertek / 255.0) ** (1.0 / LINEAR_GAMMA_GAMMA)))
+    for ertek in range(256)
+)
 
 #: A gamma-tábla `cv2.LUT`-kész alakja — egyszer épül fel, modulszinten.
 _LINEAR_GAMMA_TABLE: np.ndarray = np.array(LINEAR_GAMMA_LUT, dtype=np.uint8)
@@ -425,14 +429,14 @@ def darken(rgb: np.ndarray, multiplier: int) -> np.ndarray:
 
 
 def apply_linear_gamma(rgb: np.ndarray) -> np.ndarray:
-    """A lineáris gamma (2.2) MÉRT keresőtáblája csatornánként (spec 5.9).
+    """A lineáris gamma (2,2) keresőtáblája csatornánként (spec 12.4).
 
     A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
 
-    🔴 A tábla (`LINEAR_GAMMA_LUT`) **mért adat**, a binárisból kiolvasva —
-    **nem** `x^(1/2.2)` és nem is más képlet. Ha valaki „egyszerűsítené"
-    hatványfüggvényre, a kép mérhetően eltérne az eredetitől; a részleteket
-    ld. a modul-docstringben.
+    🟡 A tábla (`LINEAR_GAMMA_LUT`) **SZÁMÍTOTT**, és ez a hű alak: az
+    eredeti a `0x00d32cd0` táblát futásidőben tölti fel a
+    `round(pow(i/255, 1/2,2) · 255)` képlettel. A binárisba beégetett
+    `0x00d32bd0` tábla NEM ezé a módé, hanem a Mac gammáé (#3068).
     """
     if not _rgb_kep_e(rgb):
         return rgb
@@ -444,12 +448,15 @@ def apply_mac_gamma(rgb: np.ndarray) -> np.ndarray:
 
     A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
 
-    🟡 A tábla **SZÁMÍTOTT**, nem mért. A `LINEAR_GAMMA_LUT` (2.2) a
-    binárisból kiolvasott adat, ez NEM az — a #1580 képpont-mérése a
-    világosítás irányát és nagyságát adta meg, a bináris tábláját nem
-    láttuk. A kitevő a MÉRT párból jön (133,5 → 154,5), nem a
-    menüfeliratból: az `1/1,6` ugyanerre 170,2-t adna. Ld. a
-    `MAC_GAMMA_EXPONENT` melletti levezetést.
+    🔴 A tábla (`MAC_GAMMA_LUT`) **MÉRT adat**: a binárisba beégetett
+    `0x00d32bd0` 256 bájtja (spec 5.9). Képlettel helyettesíteni tilos —
+    a legjobb illesztés (`p = 0,6945`) is 37 helyen téved.
+
+    ⚠️ A MENÜFELIRAT („Mac gamma (1.6)") ÉS A TÁBLA NEM EGYEZIK: a tábla
+    effektív gammája ≈1,44. Ez az EREDETI sajátossága, nem a mi hibánk, és
+    a hűség a táblát követi. A #1580 képernyőkép-mérése (133,5 → 154,5)
+    kereszt-ellenőrzés: az irány és a nagyságrend stimmel, a pontos érték
+    a felvétel körülményeitől függ (#3068).
 
     A 0 és a 255 fixpont marad, tehát a fekete nem mosódik szürkévé, a
     fehér nem csordul ki.

@@ -89,9 +89,11 @@ PROJEKTOROS_FEHER = (219, 219, 219)
 #: `200·246>>8` és `255·246>>8` — KIÍRVA, nem az `LCD_MULTIPLIER`-ből.
 LCD_HATTER = (192, 192, 192)
 LCD_FEHER = (245, 245, 245)
-#: A MÉRT lineáris gamma-tábla 200. és 255. eleme — KIÍRVA, nem a
-#: `LINEAR_GAMMA_LUT`-ból indexelve.
-LINEARIS_HATTER = (215, 215, 215)
+#: A lineáris gamma (2,2) 200-as és 255-ös értéke — KIÍRVA, nem a
+#: `LINEAR_GAMMA_LUT`-ból indexelve. `round(pow(200/255, 1/2,2) · 255)`
+#: = 228. (#3068: a korábbi 215 a MAC-tábláé volt, a két mód fel volt
+#: cserélve.)
+LINEARIS_HATTER = (228, 228, 228)
 LINEARIS_FEHER = (255, 255, 255)
 #: A túlcsordulás-jelölő (`0xFFFF7F7F`) — KIÍRVA.
 JELOLO = (255, 127, 127)

@@ -12,14 +12,19 @@ A `Mac gamma (1.6)` **világosít**:
 
 A világosítás **konzisztens az `x^(1/1,6)` gammával** (0,625-ös kitevő).
 
-## ⚠️ Ez SZÁMÍTOTT tábla, nem MÉRT — a különbség számít
+## ⛔ HELYESBÍTVE (#3068): a tábla MÉRT, nem számított
 
-A `LINEAR_GAMMA_LUT` (2.2) a **binárisból kiolvasott** adat: minden
-bájtja mérés. A `MAC_GAMMA_LUT` **nem az** — a képlet a képpont-mérés
-IRÁNYÁBÓL és NAGYSÁGÁBÓL következtetett, a bináris táblát nem láttuk.
+A fájl eredetileg azt írta, hogy a `MAC_GAMMA_LUT` a képernyőkép-mérésből
+ILLESZTETT képlet. Azóta a `0x00d32bd0` beégetett tábla megvan (spec 5.9 és
+12.4), és a Mac gamma azt kapja. A képernyőkép-mérés így **kereszt-ellenőrzés**
+maradt: az irányt és a nagyságrendet igazolja, a pontos bájtokat nem.
 
-Ezért a teszt nem bájtra egyeztet, hanem azt méri, amit a mérés
-tényleg megmond: **hogy világosít, és mekkora nagyságrendben.**
+A bájtra menő egyeztetést a `test_gamma_tablak_felcserelve_3068.py` végzi; ez
+a fájl azt őrzi, amit a #1580 mérése mond — **hogy világosít, és mekkora
+nagyságrendben.**
+
+A menüfelirat („1,6") és a tábla effektív gammája (≈1,44) eltér; ez az
+EREDETI sajátossága.
 """
 
 from __future__ import annotations
@@ -28,8 +33,7 @@ import numpy as np
 import pytest
 
 from picasapy.render.display_modes import (
-    MAC_GAMMA_EXPONENT,
-    MAC_GAMMA_MEASURED_PAIR,
+    MAC_GAMMA_SCREENSHOT_PAIR,
     MAC_MODE,
     apply_display_mode,
     apply_mac_gamma,
@@ -103,28 +107,24 @@ class TestABekotes:
         assert apply_display_mode(None, MAC_MODE) is None
 
 
-class TestASzamitottTabla:
-    def test_a_kitevo_a_MERT_parbol_jon_nem_a_feliratbol(self):
-        """⚠️ A jegy szerint a mérés „konzisztens az `x^(1/1,6)`
-        gammával" — SZÁMSZERŰEN NEM AZ. A mért pár (133,5 → 154,5)
-        kitevője 0,7743 (gamma 1,292); az `1/1,6 = 0,625` ugyanerre
-        170,2-t adna. A mérést követjük, nem a menüfeliratot."""
-        import math
+class TestAMertTabla:
+    def test_a_kepernyokep_parja_a_TABLAVAL_is_egyezik_nagysagrendben(self):
+        """A #1580 felvételén a központi fotó lumája 133,5 → 154,5 (+15,7 %).
+        A mért tábla ugyanerre a bemenetre +20 % körül ad — ugyanaz az
+        irány és nagyságrend, tehát a tábla és a felvétel nem mond ellent
+        egymásnak. A pontos bájtokat a tábla adja, nem a felvétel."""
+        be, ki = MAC_GAMMA_SCREENSHOT_PAIR
+        felvetelen = (ki - be) / be
+        tablaval = (int(apply_mac_gamma(_szurke(int(be)))[0, 0, 0]) - be) / be
+        assert 0.10 <= felvetelen <= 0.25
+        assert 0.10 <= tablaval <= 0.25
 
-        be, ki = MAC_GAMMA_MEASURED_PAIR
-        mert_kitevo = math.log(ki / 255) / math.log(be / 255)
-        assert MAC_GAMMA_EXPONENT == pytest.approx(mert_kitevo, abs=0.001)
-        assert MAC_GAMMA_EXPONENT != pytest.approx(1.0 / 1.6, abs=0.01), (
-            "a kitevő visszacsúszott a menüfelirat 1,6-os értékére — az "
-            "a mértnél jóval világosabb képet adna (#1730)"
-        )
-
-    def test_a_docstring_KIMONDJA_hogy_szamitott(self):
-        """A `LINEAR_GAMMA_LUT` mért adat; ez nem az. Ha a kód ezt
-        elhallgatná, egy későbbi kör mérésnek hinné."""
+    def test_a_docstring_KIMONDJA_hogy_mert(self):
+        """A fokozat a kódban is álljon: aki ide nyúl, tudja, hogy mért
+        táblát mozgat, nem illesztett képletet."""
         from picasapy.render import display_modes
 
         szoveg = " ".join((apply_mac_gamma.__doc__ or "").split())
-        assert "SZÁMÍTOTT" in szoveg or "számított" in szoveg
-        assert "nem mért" in szoveg or "NEM mért" in szoveg
-        assert display_modes.MAC_GAMMA_LUT, "a tábla üres"
+        assert "MÉRT adat" in szoveg
+        assert "0x00d32bd0" in szoveg
+        assert len(display_modes.MAC_GAMMA_LUT) == 256

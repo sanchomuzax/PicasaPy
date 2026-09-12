@@ -7,18 +7,24 @@ Bizonyíték: `docs/specs/picasa-megjelenitesi-modok.md` 5.4, 5.5 és 5.9 — a
 |---|---|---|
 | `projector` | `0x009e8a10` | `c' = (c · 220) >> 8` mindhárom csatornára |
 | `lcd` | `0x009e8a70` | `c' = (c · 246) >> 8` mindhárom csatornára |
-| `linear` | `0x009e8b60` → `0x00aa3f80` | 256 bájtos, a binárisból MÉRT tábla |
+| `linear` | `0x009e8b60` → `0x00aa3f80` | `round(pow(c/255, 1/2,2) · 255)` — futásidőben töltött tábla |
+| `mac` | `0x009e8b40` → `0x00aa3f80` | 256 bájtos, a binárisból MÉRT tábla (`0x00d32bd0`) |
 
 ⚠️ **Minden várt érték KIÍRT LITERÁL**, nem a termékbeli konstansról
 olvasva. Ha a teszt a `PROJECTOR_MULTIPLIER`-ből vagy a `LINEAR_GAMMA_LUT`-ból
 számolná a várt értéket, önmagát igazolná: a szorzó vagy a tábla elrontása
 zöld maradna. Ez a „szabad paraméter elnyeli a hibát" csapda (#1462).
 
-⚠️ **A gamma-tábla NEM `x^(1/2.2)`.** A `2.2f` float a binárisban a tábla
-KIVÁLASZTÓ KULCSA; a tábla előre kitöltve érkezik (`0x00d32bd0`). A legjobb
-hatványillesztés `p = 0,6944` (gamma ≈ 1,44), és még az is 37 helyen téved
-±1-gyel. Az alábbi `SPEC_LUT` ezért a spec táblájának FÜGGETLEN átirata — a
-`TestNemKeplet` osztály tételesen bizonyítja, hogy képlettel nem pótolható.
+⛔ **HELYESBÍTVE (#3068): a beégetett tábla a MAC gammáé, nem a lineárisé.**
+A spec 5.9 és 5.10 szakasza fel volt cserélve, és a #1578 ebben az állapotban
+készült el. A 12.4 szerint az `ID_VIEW_MAC` `0,0`-t ad át és a `0x00d32bd0`
+előre kitöltött táblát kapja; az `ID_VIEW_LINEAR` a `2,2`-t adja át, és a
+`0x00d32cd0`-et, amit a rutin futásidőben tölt fel a
+`round(pow(i/255, 1/gamma) · 255)` képlettel.
+
+Az alábbi `SPEC_LUT` ezért a **Mac gamma** táblájának FÜGGETLEN átirata — a
+`TestNemKeplet` osztály tételesen bizonyítja, hogy AZ képlettel nem
+pótolható. A lineáris oszlop viszont képletből jön, és úgy is helyes.
 """
 
 from __future__ import annotations
@@ -35,10 +41,12 @@ from picasapy.render.display_modes import (
     LCD_MULTIPLIER,
     LINEAR_GAMMA_LUT,
     LINEAR_GAMMA_MODE,
+    MAC_GAMMA_LUT,
     PROJECTOR_MODE,
     PROJECTOR_MULTIPLIER,
     apply_display_mode,
     apply_linear_gamma,
+    apply_mac_gamma,
     darken,
     display_mode_changes_pixels,
 )
@@ -51,7 +59,8 @@ SPEC = (
 )
 
 #: A spec 5.9 táblája KIÍRVA, soronként 16 érték — a bináris `0x00d32bd0`
-#: címén mért 256 bájt. A tábla elrontása így a termékben BUKÁST okoz.
+#: címén mért 256 bájt, a **Mac gammáé** (#3068). A tábla elrontása így a
+#: termékben BUKÁST okoz.
 SPEC_LUT: tuple[int, ...] = (
       0,   5,   9,  11,  14,  16,  19,  21,  23,  25,  27,  29,  30,  32,  34,  36,
      37,  39,  40,  42,  44,  45,  47,  48,  49,  51,  52,  54,  55,  56,  58,  59,
@@ -71,22 +80,24 @@ SPEC_LUT: tuple[int, ...] = (
     244, 245, 245, 246, 247, 248, 248, 249, 250, 250, 251, 252, 252, 253, 254, 255,
 )  # fmt: skip
 
-#: Tizenkét mintaérték, KIÍRVA: `(bemenet, projektor, lcd, lineáris gamma)`.
+#: Tizenkét mintaérték, KIÍRVA:
+#: `(bemenet, projektor, lcd, Mac gamma, lineáris gamma)`.
 #: A projektor/LCD oszlop a `(c·220)>>8` illetve `(c·246)>>8` egész
-#: aritmetikából, a gamma oszlop a spec táblájából.
-MINTAK: tuple[tuple[int, int, int, int], ...] = (
-    (0, 0, 0, 0),
-    (1, 0, 0, 5),
-    (2, 1, 1, 9),
-    (16, 13, 15, 37),
-    (32, 27, 30, 60),
-    (64, 55, 61, 98),
-    (100, 85, 96, 133),
-    (128, 110, 123, 158),
-    (160, 137, 153, 184),
-    (200, 171, 192, 215),
-    (254, 218, 244, 254),
-    (255, 219, 245, 255),
+#: aritmetikából, a Mac-oszlop a spec táblájából, a lineáris oszlop a
+#: `round(pow(c/255, 1/2,2) · 255)` képletből — mindhárom KIÍRVA.
+MINTAK: tuple[tuple[int, int, int, int, int], ...] = (
+    (0, 0, 0, 0, 0),
+    (1, 0, 0, 5, 21),
+    (2, 1, 1, 9, 28),
+    (16, 13, 15, 37, 72),
+    (32, 27, 30, 60, 99),
+    (64, 55, 61, 98, 136),
+    (100, 85, 96, 133, 167),
+    (128, 110, 123, 158, 186),
+    (160, 137, 153, 184, 206),
+    (200, 171, 192, 215, 228),
+    (254, 218, 244, 254, 255),
+    (255, 219, 245, 255, 255),
 )
 
 
@@ -116,11 +127,12 @@ class TestSpecAtirat:
         assert SPEC_LUT == _spec_tablaja()
 
     def test_a_termek_tablaja_a_spec_tablaja(self):
-        assert tuple(LINEAR_GAMMA_LUT) == _spec_tablaja()
+        """#3068: a spec 5.9 táblája a **Mac gammáé**, nem a lineárisé."""
+        assert tuple(MAC_GAMMA_LUT) == _spec_tablaja()
 
     def test_a_termek_tablaja_a_kiirt_literal(self):
-        assert tuple(LINEAR_GAMMA_LUT) == SPEC_LUT
-        assert len(LINEAR_GAMMA_LUT) == 256
+        assert tuple(MAC_GAMMA_LUT) == SPEC_LUT
+        assert len(MAC_GAMMA_LUT) == 256
 
 
 class TestSzorzokKiirva:
@@ -143,8 +155,8 @@ class TestSzorzokKiirva:
 class TestSotetites:
     """`darken` — az egyenletes, csatornaazonos szorzás (5.4/5.5)."""
 
-    @pytest.mark.parametrize("be,projektor,_lcd,_gamma", MINTAK)
-    def test_projektor_mintaertekek(self, be, projektor, _lcd, _gamma):
+    @pytest.mark.parametrize("be,projektor,_lcd,_mac,_linearis", MINTAK)
+    def test_projektor_mintaertekek(self, be, projektor, _lcd, _mac, _linearis):
         eredmeny = darken(_raszter((be, be, be)), 220)
         assert tuple(int(c) for c in eredmeny[0, 0]) == (
             projektor,
@@ -152,8 +164,8 @@ class TestSotetites:
             projektor,
         )
 
-    @pytest.mark.parametrize("be,_projektor,lcd,_gamma", MINTAK)
-    def test_lcd_mintaertekek(self, be, _projektor, lcd, _gamma):
+    @pytest.mark.parametrize("be,_projektor,lcd,_mac,_linearis", MINTAK)
+    def test_lcd_mintaertekek(self, be, _projektor, lcd, _mac, _linearis):
         eredmeny = darken(_raszter((be, be, be)), 246)
         assert tuple(int(c) for c in eredmeny[0, 0]) == (lcd, lcd, lcd)
 
@@ -204,26 +216,31 @@ class TestSotetites:
 class TestLinearisGamma:
     """`apply_linear_gamma` — a MÉRT tábla csatornánként (5.9)."""
 
-    @pytest.mark.parametrize("be,_projektor,_lcd,gamma", MINTAK)
-    def test_mintaertekek(self, be, _projektor, _lcd, gamma):
+    @pytest.mark.parametrize("be,_projektor,_lcd,mac,linearis", MINTAK)
+    def test_mintaertekek(self, be, _projektor, _lcd, mac, linearis):
         ki = apply_linear_gamma(_raszter((be, be, be)))
-        assert tuple(int(c) for c in ki[0, 0]) == (gamma, gamma, gamma)
+        assert tuple(int(c) for c in ki[0, 0]) == (linearis,) * 3
+        mac_ki = apply_mac_gamma(_raszter((be, be, be)))
+        assert tuple(int(c) for c in mac_ki[0, 0]) == (mac,) * 3
 
-    def test_mind_a_256_ertek(self):
-        """A teljes értékkészlet tételesen, a KIÍRT táblához mérve."""
+    def test_a_MAC_mind_a_256_erteke(self):
+        """A teljes értékkészlet tételesen, a KIÍRT táblához mérve — ez a
+        tábla a Mac gammáé (#3068)."""
         be = np.arange(256, dtype=np.uint8).reshape((1, 256, 1))
-        ki = apply_linear_gamma(np.repeat(be, 3, axis=2))
-        assert list(ki[0, :, 0]) == list(SPEC_LUT)
-        assert list(ki[0, :, 1]) == list(SPEC_LUT)
-        assert list(ki[0, :, 2]) == list(SPEC_LUT)
+        ki = apply_mac_gamma(np.repeat(be, 3, axis=2))
+        for csatorna in range(3):
+            assert list(ki[0, :, csatorna]) == list(SPEC_LUT)
 
     def test_csatornankent_kulon(self):
         ki = apply_linear_gamma(_raszter((0, 128, 255)))
-        assert tuple(int(c) for c in ki[0, 0]) == (0, 158, 255)
+        assert tuple(int(c) for c in ki[0, 0]) == (0, 186, 255)
+        mac = apply_mac_gamma(_raszter((0, 128, 255)))
+        assert tuple(int(c) for c in mac[0, 0]) == (0, 158, 255)
 
     def test_vilagosit(self):
-        """A csoport EGYETLEN világosító módja — a sötét részletek nyílnak."""
+        """A két gamma-mód világosít, a két sötétítő nem."""
         assert SPEC_LUT[1] > 1 and SPEC_LUT[64] > 64 and SPEC_LUT[200] > 200
+        assert LINEAR_GAMMA_LUT[1] > 1 and LINEAR_GAMMA_LUT[200] > 200
 
     def test_a_bemenetet_nem_irja_at(self):
         be = _raszter((10, 20, 30))
@@ -262,24 +279,27 @@ class TestNemKeplet:
             "tábla nem a mért adat"
         )
 
-    def test_a_2_2_csak_kivalaszto_kulcs(self):
-        """Forrás-őr: a modul nem számol hatványt a táblához."""
+    def test_a_MAC_tabla_kiirt_literal_marad(self):
+        """Forrás-őr: a Mac tábla a forrásban KIÍRT 256 bájt, nem képlet.
+
+        A lineáris tábla ellenben KÉPLET — ezért a régi, modulra általánosan
+        tiltó őr helyett itt a MAC tábla alakját mérjük: az első és az
+        utolsó néhány bájtja szerepeljen a forrásban kiírva."""
         from picasapy.render import display_modes
 
         forras = inspect.getsource(display_modes)
-        for tiltott in ("** (1 / 2.2)", "np.power", "math.pow", "** (1/2.2)"):
-            assert tiltott not in forras, (
-                f"a modul hatványt számol ({tiltott!r}) — a tábla MÉRT adat, "
-                "képlettel helyettesítve mérhetően rossz eredményt ad"
-            )
+        kezdet = forras.index("MAC_GAMMA_LUT: tuple[int, ...] = (")
+        blokk = forras[kezdet : forras.index(")  # fmt: skip", kezdet)]
+        szamok = [int(x) for x in blokk.replace("\n", " ").split("(")[-1].split(",") if x.strip()]
+        assert tuple(szamok) == SPEC_LUT
 
-    def test_a_kod_kimondja_hogy_nem_keplet(self):
-        """A következő olvasó ne „javítsa ki" a táblát képletre."""
+    def test_a_kod_kimondja_melyik_tabla_kie(self):
+        """A következő olvasó ne cserélje vissza a kettőt."""
         from picasapy.render import display_modes
 
         forras = inspect.getsource(display_modes)
-        assert "MÉRT" in forras or "MÉRVE" in forras
-        assert "nem" in forras and "1/2.2" in forras.replace(" ", "")
+        assert "0x00d32bd0" in forras and "0x00d32cd0" in forras
+        assert "#3068" in forras
 
 
 class TestModValaszto:
@@ -295,6 +315,10 @@ class TestModValaszto:
 
     def test_linearis_gamma(self):
         ki = apply_display_mode(_raszter((0, 128, 255)), "linear")
+        assert tuple(int(c) for c in ki[0, 0]) == (0, 186, 255)
+
+    def test_mac_gamma(self):
+        ki = apply_display_mode(_raszter((0, 128, 255)), "mac")
         assert tuple(int(c) for c in ki[0, 0]) == (0, 158, 255)
 
     def test_a_ket_sotetites_kulonbozik(self):
