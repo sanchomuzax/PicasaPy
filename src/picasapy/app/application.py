@@ -928,6 +928,26 @@ def _indulasi_idovonal(
     return timeline, argv_kapcsolo_nelkul(argv)
 
 
+#: #3021: a csomagolás FÜSTPRÓBÁJÁNAK belépője. A windowsos telepítőt a CI
+#: építi (PyInstaller + Inno Setup), és a kész `.exe`-t el is indítja ezzel a
+#: kapcsolóval: ha a csomagból kimaradt egy Qt-bővítmény vagy a QML-fa, a
+#: program itt bukik el — a CI-ban, nem a tulajdonos gépén.
+#:
+#: ⚠️ A kapcsolót KI KELL SZEDNI az argumentumlistából: az `_resolve_roots`
+#: minden `argv[1:]` elemet figyelt mappának vesz, tehát bennhagyva egy
+#: `--onellenorzes` nevű mappát próbálnánk indexelni (ez a `--tesztuzem`
+#: mért hibája volt).
+_ONELLENORZES_KAPCSOLO = "--onellenorzes"
+
+
+def argv_onellenorzes(argv: list[str]) -> tuple[bool, list[str]]:
+    """`(kérték-e, a kapcsoló nélküli argumentumlista)`."""
+    kert = _ONELLENORZES_KAPCSOLO in argv
+    if not kert:
+        return False, list(argv)
+    return True, [elem for elem in argv if elem != _ONELLENORZES_KAPCSOLO]
+
+
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
     """Az alkalmazás indítása.
 
@@ -939,6 +959,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
     (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
     környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
+    onellenorzes, argv = argv_onellenorzes(argv)
     timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
 
     # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
@@ -1345,6 +1366,22 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         return 1
+
+    #: #3021: a csomagolás füstpróbája. Idáig eljutni azt jelenti, hogy a
+    #: Qt-bővítmények, a QML-fa, a fordítás és az ikon MIND a csomagban van
+    #: — a felület felépült. Az ablakot már nem mutatjuk meg, és az
+    #: eseményciklus el sem indul.
+    #:
+    #: ⚠️ A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
+    #: vannak; nélkülük a processz nem lép ki, csak áll — a windowsos
+    #: CI-futáson MÉRVE 38 percig, amíg a job időkorlátja levágta. A
+    #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
+    if onellenorzes:
+        print("onellenorzes: a felulet felepult", flush=True)
+        controller.shutdown()
+        edit_controller.cancelPendingPreview()
+        edit_controller.waitForBackgroundWorkers(2.0)
+        return 0
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
     # Windowson a korábbi singleShot(0) még az első frame előtt lefutott, a

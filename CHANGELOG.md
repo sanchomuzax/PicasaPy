@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.426] – 2026-09-12
+
+### Hozzáadva
+
+- **Igazi windowsos telepítő** (#3021). Eddig a windowsos telepítés egy
+  repóból kicsomagolt batch-fájl volt, és Pythont is kellett hozzá
+  telepíteni. Mostantól minden kiadásnál készül egy
+  `PicasaPy-Setup-<verzió>.exe`: egy fájl, letöltés, indítás. A program a
+  saját futtatókörnyezetét hozza magával, tehát a gépen semmit nem kell
+  előre feltenni. A telepítő Start menü bejegyzést és — ha kéred — asztali
+  ikont ad, és a Programok és szolgáltatások alól eltávolítható.
+  ⚠️ Az első telepítő azzal a kiadással jelenik meg, amelyik ezt a
+  változást tartalmazza; a te gépeden még nincs kipróbálva.
+
 ## [0.8.425] – 2026-09-12
 
 ### Javítva

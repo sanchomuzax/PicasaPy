@@ -101,9 +101,22 @@ cd PicasaPy
 ./picasapy ~/Kepek
 ```
 
-## Futtatás Windowson
+## Telepítés Windowson
 
-Windows-os támogatás **kísérleti** — a fejlesztés Linuxon (RPi5) folyik, de a tesztkészletet a CI Windowson is futtatja.
+**A rendes út: a telepítő.** A
+[Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon minden
+kiadásnál ott van a `PicasaPy-Setup-<verzió>.exe` — egy fájl, letöltés,
+indítás. Pythont **nem** kell telepíteni: a program a saját
+futtatókörnyezetét hozza magával. A telepítő Start menü bejegyzést és (ha
+kéred) asztali ikont ad, és a Programok és szolgáltatások alól
+eltávolítható ([#3021](https://github.com/sanchomuzax/PicasaPy/issues/3021)).
+
+### Fejlesztői út (Windows)
+
+Az alábbi lépések a **fejlesztéshez** kellenek, nem a használathoz — ahogy a
+`packaging/windows/install.bat` is fejlesztői eszköz. Windows-os támogatás
+**kísérleti**: a fejlesztés Linuxon (RPi5) folyik, de a tesztkészletet a CI
+Windowson is futtatja.
 
 1. Telepíts Python 3.12+-t a [python.org](https://www.python.org/) oldalról.
 2. Telepítsd a függőségeket:

@@ -18,6 +18,15 @@ on:
     types: [completed]
   release:
     types: [published]  # kézzel publikált release-ekhez továbbra is él
+  # #3021: a csomagolás a PR-en is fusson — enélkül az ELSŐ bizonyíték a
+  # kiadás utáni futás volna, tehát a hiányos csomag már a Releases-en
+  # jelenne meg. A PR-ágon csak ÉPÍT és INDÍT, nem tölt fel semmit.
+  pull_request:
+    paths:
+      - "packaging/windows/**"
+      - ".github/workflows/package.yml"
+      - "src/picasapy/app/application.py"
+      - "pyproject.toml"
   workflow_dispatch:
     inputs:
       tag:
@@ -33,8 +42,13 @@ permissions:
 
 jobs:
   build-and-upload:
-    # workflow_run esetén csak sikeres Release-futás után fussunk
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # workflow_run esetén csak sikeres Release-futás után fussunk;
+    # PR-en ez a job nem kell (#3021 — ott csak a windowsos csomagolást
+    # próbáljuk ki)
+    if: >-
+      github.event_name != 'pull_request'
+      && (github.event_name != 'workflow_run'
+          || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -143,3 +157,136 @@ jobs:
           done
           echo "::error::A(z) $TAG kiadáshoz öt kísérlet után sem sikerült feltölteni a csomagokat."
           exit 1
+
+  # ------------------------------------------------------------------------
+  # #3021: IGAZI windowsos telepítő. A tulajdonos szava: „Egy felhasználó
+  # nem klónoz repót, nem keres batch fájlt, és nincs Pythonja." A
+  # PyInstaller a Python futtatókörnyezetet is a csomagba teszi, az Inno
+  # Setup pedig rendes telepítőt csinál belőle (Start menü, asztali ikon,
+  # eltávolítás).
+  #
+  # ⚠️ A lépéssor NEM ér véget a csomagolással: a felépített `.exe`-t
+  # ELINDÍTJUK (`--onellenorzes`). Qt/QML-programnál a csomag hiányossága
+  # (kimaradt bővítmény, hiányzó QML-fa) csak indításkor derül ki — és ott
+  # kell kiderülnie, nem a felhasználó gépén.
+  # ------------------------------------------------------------------------
+  windows-telepito:
+    if: >-
+      github.event_name != 'workflow_run'
+      || github.event.workflow_run.conclusion == 'success'
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # PR-ágon nincs kiadás: a verzió a pyproject.toml-ból jön (egyetlen
+      # forrás), és a feltöltés kimarad.
+      - name: Verzió és tag meghatározása
+        id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            VERZIO="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "verzio=$VERZIO" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
+          if [ -z "$TAG" ]; then
+            TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::nem sikerült feloldani a kiadás tagjét"
+            exit 1
+          fi
+          git checkout --detach "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Függőségek + PyInstaller
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
+          pip install pyinstaller
+
+      - name: PyInstaller-csomagolás
+        shell: bash
+        run: pyinstaller --noconfirm packaging/windows/picasapy.spec
+
+      - name: Füstpróba — a CSOMAGOLT program elindul
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
+          # felület felépülése után kilép, eseményciklus nélkül.
+          # ⚠️ KEMÉNY időkorlát: ha a csomagolt program nem lép ki, a job
+          # időkorlátja vágná le 40 perc után, és a napló nem mondaná meg,
+          # mi történt (mérve: 38 perc várakozás egy hiányzó lezárás miatt).
+          timeout 300 ./dist/PicasaPy/PicasaPy.exe --onellenorzes \
+              > fustproba.txt 2>&1 || {
+            KOD=$?
+            if [ "$KOD" = "124" ]; then
+              echo "::error::a csomagolt program 5 perc alatt nem lépett ki"
+            else
+              echo "::error::a csomagolt program nem indult el (kód: $KOD)"
+            fi
+            cat fustproba.txt; exit 1; }
+          cat fustproba.txt
+          grep -q "onellenorzes" fustproba.txt || {
+            echo "::error::a felület nem épült fel a csomagból"; exit 1; }
+
+      # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
+      # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
+      # „You may not specify more than one script filename" hibával állt le
+      # (mérve). A `pwsh` nem ír át semmit.
+      - name: Inno Setup telepítő
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          & $iscc "/DMyAppVersion=${{ steps.tag.outputs.verzio }}" `
+                  "packaging\windows\picasapy.iss"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "az Inno Setup nem tudta legyártani a telepítőt"
+            exit 1
+          }
+
+      - name: A telepítő feltöltése a kiadásra
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
+          for kiserlet in 1 2 3 4 5; do
+            if gh release upload "$TAG" "$FAJL" \
+                 --repo "$GITHUB_REPOSITORY" --clobber; then
+              exit 0
+            fi
+            echo "A feltöltés nem sikerült (${kiserlet}.) — újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::a telepítőt öt kísérlet után sem sikerült feltölteni"
+          exit 1
+
+      - name: A telepítő elkészült (PR-ág)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
+          ls -l "$FAJL"
