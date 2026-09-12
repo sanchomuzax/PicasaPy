@@ -35,7 +35,8 @@ tizenegy mód egyetlen közös mechanizmuson ül; ezért ezek előre:
 | **24 bites** `ID_VIEW_NORMAL` | **semmire** — nincs átalakító (`NULL` mutató) | `0x005cbc4f` · 5.1 | MÉRVE |
 | **16 bites (szemcsézett)** `ID_VIEW_16` | véletlen zaj hozzáadása telítéssel: **B += 0…7, G += 0…3, R += 0…7**, alfa változatlan; a zaj MT19937-alakú generátorból, maszk `0x00070307` | `0x009e8b90` · 5.3 | MÉRVE (az „ez RGB565-höz illesztett szemcsézés” értelmezés: KÖVETKEZTETÉS) |
 | **LCD fehérpont** `ID_VIEW_LCD` | mindhárom csatorna **×246/256** (≈ −3,9 % fényerő), **színeltolás nélkül** | `0x009e8a70` · 5.4 | MÉRVE |
-| **Lineáris gamma (2.2)** `ID_VIEW_LINEAR` | csatornánként egy **beégetett 256 bájtos LUT** (a teljes tábla az 5.9-ben). **NEM `x^(1/2.2)`** — a legjobb illeszkedés ≈ gamma 1,44 | `0x009e8b60` → `0x00aa3f80`, tábla `0x00d32bd0` · 5.9 | MÉRVE (a tábla bájtra; a „miért 1,44” NYITOTT) |
+| **Lineáris gamma (2.2)** `ID_VIEW_LINEAR` | csatornánként egy LUT, amit a rutin **futásidőben tölt fel** `round(pow(c/255, 1/2,2) · 255)`-tel — tehát pontosan 2,2-es | `0x009e8b60` → `0x00aa3f80`, tábla `0x00d32cd0`, kitöltő `0x00aa3ff0` · 12.4 | MÉRVE |
+| **Mac gamma (1.6)** `ID_VIEW_MAC` | csatornánként egy **beégetett 256 bájtos LUT** (a teljes tábla az 5.9-ben). **NEM `x^(1/1,6)`** — a legjobb illeszkedés ≈ gamma 1,44 | `0x009e8b40` → `0x00aa3f80`, tábla `0x00d32bd0` · 5.9 · 12.4 | MÉRVE (a tábla bájtra; a „miért 1,44” NYITOTT) |
 | **Túlcsordult képpontok** `ID_VIEW_OV` | **kizárólag** a tökéletesen fehér képpontot (B=G=R=255) írja át **`#FF7F7F`**-re. Nincs tűrés, nincs csatornánkénti jelölés, a **fekete oldali levágás nincs jelölve** | `0x009e8810` · 5.6 | MÉRVE |
 | **Projektor mód** `ID_VIEW_PROJECTOR` | mindhárom csatorna **×220/256** (≈ −14,1 % fényerő). **Nem** teljes képernyő, **nem** energiagazdálkodás, **nem** nagyítás | `0x009e8a10` · 5.5 | MÉRVE |
 
@@ -47,7 +48,7 @@ tizenegy mód egyetlen közös mechanizmuson ül; ezért ezek előre:
 | **Fekete-fehér** `ID_VIEW_BW` | `Y = (77·R + 151·G + 28·B) >> 8`, mindhárom csatornára | `0x009e89a0` · 5.7 | MÉRVE |
 | **Szépia** `ID_VIEW_SEPIA` | luma → világosítás (`255 − (255−Y)·218/256`) → overlay a **`#9B7D63`** színnel | `0x009e8850` · 5.8 | a konstansok és a műveletsor MÉRVE; „ez overlay” KÖVETKEZTETÉS |
 | **Távoli asztal** `ID_VIEW_RDESK` | `B+G+R < 96` → fekete, `> 672` → fehér, egyébként csatornánként `& 0xE0` (**3-3-3 bit**) | `0x009e8ad0` · 5.11 | MÉRVE |
-| **Mac gamma (1.6)** `ID_VIEW_MAC` | **futásidő-függő** — a `0.0f` kulcs egy MEGOSZTOTT, lustán feltöltődő táblát választ | `0x009e8b40` → `0x00aa3f80`, tábla `0x00d32cd0` · 5.10 | **NYITOTT** (8. szakasz, `NY-3`) |
+| ~~**Mac gamma (1.6)** `ID_VIEW_MAC` — „futásidő-függő”~~ | ⛔ **MEGDŐLT (#2816):** a `0.0f` kulcs az ELŐRE KITÖLTÖTT `0x00d32bd0` táblát választja (`0x00aa3fd2`), tehát a mód determinisztikus. A sor fent, a mért táblázatban áll. | `0x00aa3fd2` · 12.4 | LEZÁRVA |
 
 ⚠️ **Amit a jegy feltevéséből el kell dobni:** a jegy 1. kérdése azt
 feltételezte, hogy a `24 bites` / `16 bites` / `LCD` / `Lineáris gamma`

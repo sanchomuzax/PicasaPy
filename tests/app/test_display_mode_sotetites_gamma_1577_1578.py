@@ -40,8 +40,10 @@ FEKETE = (0, 0, 0)
 VART_PROJEKTOR = {(219, 219, 219), (110, 110, 110), (0, 0, 0)}
 #: lcd: (255·246)>>8 = 245, (128·246)>>8 = 123, 0 → 0
 VART_LCD = {(245, 245, 245), (123, 123, 123), (0, 0, 0)}
-#: lineáris gamma: a spec 5.9 táblája a 255/128/0 indexeken → 255/158/0
-VART_LINEAR = {(255, 255, 255), (158, 158, 158), (0, 0, 0)}
+#: lineáris gamma (2,2): `round(pow(c/255, 1/2,2) · 255)` a 255/128/0
+#: bemenetekre → 255/186/0. (#3068: a korábbi 158 a spec 5.9 táblájából jött,
+#: az viszont a MAC gammáé — a két mód fel volt cserélve.)
+VART_LINEAR = {(255, 255, 255), (186, 186, 186), (0, 0, 0)}
 
 VARTAK = {
     "projector": VART_PROJEKTOR,
