@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.425] – 2026-09-12
+
+### Javítva
+
+- **A jobb oldali fiók kis/nagy váltója mindkét irányban működik** (#3037).
+  Az előző kiadásban a váltó egyszer működött, aztán a nagy fiók beragadt:
+  a fiók egy osztó-cellában ült, az pedig a kétállású szélességgel nem tud
+  dolgozni. Mostantól a fiók a jobb szélhez illeszkedik, és a könyvtár
+  mellette ér véget — ahogy az eredeti Picasa is a tartalmat tolja el.
+  ⚠️ Ezzel a fiók **fogantyús húzása megszűnt**: a szélességét a fejléc
+  váltója állítja, a két mért méret közt. Az eredetiben sincs húzás.
+
 ## [0.8.423] – 2026-09-12
 
 ### Változott

@@ -63,6 +63,20 @@ def _gyerek(gyoker, nev):
     return objektum
 
 
+def _var_a_szelessegre(fiok, qt_app, vart, korok: int = 40) -> float:
+    """Megvárja, amíg a fiók felveszi a kért szélességet.
+
+    ⚠️ Egyetlen `processEvents` nem elég: a `SplitView` átméretezése egy
+    POLISH körben történik, és a csökkentés MÉRVE néha csak a második
+    körben ér el az elemig. Enélkül a próba a sorrend és a gép terhelése
+    szerint bukott el (a #3037 első javítási kísérlete)."""
+    for _ in range(korok):
+        if abs(fiok.property("width") - vart) <= 1:
+            break
+        qt_app.processEvents()
+    return fiok.property("width")
+
+
 def _nyisd(window, qt_app, menu_nev):
     QMetaObject.invokeMethod(
         _gyerek(window, menu_nev), "triggered",
@@ -168,27 +182,37 @@ class TestAFejlec:
 class TestAKetSzelesseg:
     """#2529: a `size_toggle` a MÉRT két szélesség közt vált."""
 
-    @pytest.fixture(autouse=True)
-    def _kicsibol_indulunk(self, qml_app, qt_app):
-        """A `qml_app` ablakot több próba OSZTJA, tehát a fiók állapota
-        átszivárog. A billentés csak akkor mérhető, ha tudjuk, honnan
-        indul — ezért itt kimondjuk."""
-        window, _controller, _engine = qml_app
-        _gyerek(window, "rightDrawer").setProperty("nagy", False)
-        qt_app.processEvents()
+    @staticmethod
+    def _kicsire(window, qt_app):
+        """Ismert állapotba visz: KATTINTÁSSAL, nem a tulajdonság írásával.
+
+        ⚠️ A `nagy` tulajdonság közvetlen írása nem elég: a `SplitView` a
+        kirajzolt szélességet csak akkor számolja újra, ha a kötés értéke
+        MEGVÁLTOZIK. Ha ugyanarra az értékre írjuk, a fiók a régi
+        szélességén marad — a CI-n ezért bukott el rendre a billentés
+        próbája, miközben helyben átment (a próbák sorrendje döntötte el,
+        mekkora fiókot örökölt)."""
+        fiok = _gyerek(window, "rightDrawer")
+        if fiok.property("nagy"):
+            QMetaObject.invokeMethod(
+                _gyerek(window, "rightDrawerSizeToggle"), "kattints",
+                Qt.ConnectionType.DirectConnection,
+            )
+        _var_a_szelessegre(fiok, qt_app, ALAP_SZELESSEG)
+        assert fiok.property("nagy") is False
+        return fiok
 
     def test_a_nagy_allas_az_ablak_30_szazaleka(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, LAPOK[0][0])
-        fiok = _gyerek(window, "rightDrawer")
+        fiok = self._kicsire(window, qt_app)
 
         QMetaObject.invokeMethod(
             _gyerek(window, "rightDrawerSizeToggle"), "kattints",
             Qt.ConnectionType.DirectConnection,
         )
-        qt_app.processEvents()
-
         vart = min(window.property("width") * NAGY_ARANY, NAGY_PLAFON)
+        _var_a_szelessegre(fiok, qt_app, vart)
         assert abs(fiok.property("width") - vart) <= 1, (
             f"a nagy fiók {fiok.property('width')} széles, a mért képlet "
             f"szerint {vart} (az ablak 30 %-a, legfeljebb {NAGY_PLAFON})"
@@ -200,14 +224,30 @@ class TestAKetSzelesseg:
         mérése volna."""
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, LAPOK[0][0])
-        assert _gyerek(window, "rightDrawer").property("visible") is True
+        fiok = self._kicsire(window, qt_app)
+        assert fiok.property("visible") is True
+        assert fiok.property("width") == ALAP_SZELESSEG
+
         gomb = _gyerek(window, "rightDrawerSizeToggle")
-        for _ in range(2):
+        #: #3037: NÉGY kattintás, nem kettő. A hiba az volt, hogy a
+        #: `SplitView` a növelést átvette, a csökkentést nem — a váltó
+        #: egyszer működött, aztán beragadt a nagy fiók. Két kattintás ezt
+        #: még elfedhetné, ha csak a végállapotot néznénk.
+        nagy_vart = min(window.property("width") * NAGY_ARANY, NAGY_PLAFON)
+        latott = []
+        for kor in range(4):
             QMetaObject.invokeMethod(
                 gomb, "kattints", Qt.ConnectionType.DirectConnection
             )
-            qt_app.processEvents()
-        assert _gyerek(window, "rightDrawer").property("width") == ALAP_SZELESSEG
+            vart = nagy_vart if kor % 2 == 0 else ALAP_SZELESSEG
+            latott.append(_var_a_szelessegre(fiok, qt_app, vart))
+
+        assert latott[1] == ALAP_SZELESSEG and latott[3] == ALAP_SZELESSEG, (
+            f"a váltó nem vált vissza kicsire: a négy szélesség {latott}"
+        )
+        assert latott[0] > ALAP_SZELESSEG and latott[2] > ALAP_SZELESSEG, (
+            f"a váltó nem nagyít: a négy szélesség {latott}"
+        )
 
 
 class TestAGyorscimkek:

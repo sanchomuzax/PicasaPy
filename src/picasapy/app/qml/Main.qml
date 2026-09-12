@@ -1963,7 +1963,9 @@ ApplicationWindow {
         // képpontra ugyanaz marad.
         anchors.top: documentTabStrip.bottom
         anchors.left: parent.left
-        anchors.right: parent.right
+        //: #3037: a fiók a jobb szélen ül, a könyvtár mellette ér véget —
+        //: ez a mért `RIGHTDRAWEROFFSET` viselkedés (a tartalom eltolása).
+        anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
         anchors.bottom: parent.bottom
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
@@ -2444,129 +2446,136 @@ ApplicationWindow {
             }
         }
 
-        //: #754: EGY jobb fiók, közös fejléccel — a négy tartalom UGYANITT
-        //: vált. Eddig négy külön `SplitView`-cella volt, négy különböző
-        //: szélességgel (190 · 320 · 210 · 200); az eredetiben egyetlen,
-        //: 280 képpontos fiók van (`docs/specs/jobb-fiok-meretek.md`).
-        RightDrawer {
-            id: jobbFiok
-            visible: window.activeDrawerTab !== ""
-            ablakSzelesseg: window.width
-            //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
-            //: (#754) — a gyorsítót és a billentyű-tippet levágva
-            cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
-                 : window.activeDrawerTab === "tags" ? qsTr("Tags")
-                 : window.activeDrawerTab === "people" ? qsTr("People")
-                 : window.activeDrawerTab === "places" ? qsTr("Places") : ""
-            SplitView.preferredWidth: jobbFiok.kivantSzelesseg
-            //: a MÉRT két szélesség az ALAPÉRTELMEZÉS, nem korlát: a
-            //: fogantyúval húzható fiók a #2566 óta működő viselkedés, azt
-            //: nem vesszük el — csak a kiinduló méret lesz az eredetié.
-            SplitView.minimumWidth: 150
-            SplitView.maximumWidth: Math.max(jobbFiok.kivantSzelesseg, 600)
-            onCloseRequested: window.ureseidAFiokot()
+    }
 
-        // Címkék-panel (#12): a fiók egyik lapja, Ctrl+T / Nézet → Címkék
-        TagsPanel {
-            objectName: "tagsPanel"
-            visible: window.tagsPanelOpen
-            anchors.fill: parent
-            hasSelection: window.selectedRows().length > 0
-            //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
-            //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
-            //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
-            readOnlySelection: (controller
-                                && controller.selectionReadOnly !== undefined)
-                ? (controller.photos.revision,
-                   controller.selectionReadOnly(window.selectedRows()))
-                : false
-            // a photos.revision-nel együtt kötve: címke-írás után frissül
-            // #305: null-őr
-            tags: controller
-                ? (controller.photos.revision,
-                   controller.keywordsOfRows(window.selectedRows()))
-                : []
-            onAddRequested: function(keyword) {
+    //: #754: EGY jobb fiók, közös fejléccel — a négy tartalom UGYANITT
+    //: vált. Eddig négy külön `SplitView`-cella volt, négy különböző
+    //: szélességgel (190 · 320 · 210 · 200); az eredetiben egyetlen,
+    //: 280 képpontos fiók van (`docs/specs/jobb-fiok-meretek.md`).
+    //:
+    //: #3037: a fiók NEM a `SplitView` cellája. Mérve: a `SplitView` a
+    //: kétállású szélességgel nem tud dolgozni — az első elrendezés után a
+    //: saját nyilvántartását tekinti hitelesnek, és a váltó hol a
+    //: növelést, hol a csökkentést nyelte el. Az eredeti sem osztó: a
+    //: `RIGHTDRAWEROFFSET -280` a tartalmat TOLJA el (`thumbui.tre:700`),
+    //: ezért a fiók a jobb szélhez horgonyzott, a `mainSplit` pedig
+    //: mellette ér véget.
+    RightDrawer {
+        id: jobbFiok
+        visible: window.activeDrawerTab !== "" && mainSplit.visible
+        ablakSzelesseg: window.width
+        anchors.top: mainSplit.top
+        anchors.bottom: mainSplit.bottom
+        anchors.right: parent.right
+        width: jobbFiok.kivantSzelesseg
+        //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
+        //: (#754) — a gyorsítót és a billentyű-tippet levágva
+        cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
+             : window.activeDrawerTab === "tags" ? qsTr("Tags")
+             : window.activeDrawerTab === "people" ? qsTr("People")
+             : window.activeDrawerTab === "places" ? qsTr("Places") : ""
+        onCloseRequested: window.ureseidAFiokot()
+
+    // Címkék-panel (#12): a fiók egyik lapja, Ctrl+T / Nézet → Címkék
+    TagsPanel {
+        objectName: "tagsPanel"
+        visible: window.tagsPanelOpen
+        anchors.fill: parent
+        hasSelection: window.selectedRows().length > 0
+        //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
+        //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
+        //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
+        readOnlySelection: (controller
+                            && controller.selectionReadOnly !== undefined)
+            ? (controller.photos.revision,
+               controller.selectionReadOnly(window.selectedRows()))
+            : false
+        // a photos.revision-nel együtt kötve: címke-írás után frissül
+        // #305: null-őr
+        tags: controller
+            ? (controller.photos.revision,
+               controller.keywordsOfRows(window.selectedRows()))
+            : []
+        onAddRequested: function(keyword) {
+            controller.addKeywordToRows(window.selectedRows(), keyword)
+        }
+        onRemoveRequested: function(keyword) {
+            controller.removeKeywordFromRows(window.selectedRows(), keyword)
+        }
+        onCloseRequested: window.ureseidAFiokot()
+        // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
+        onAddToSelectionRequested: function(keyword) {
+            if (controller)
                 controller.addKeywordToRows(window.selectedRows(), keyword)
-            }
-            onRemoveRequested: function(keyword) {
-                controller.removeKeywordFromRows(window.selectedRows(), keyword)
-            }
-            onCloseRequested: window.ureseidAFiokot()
-            // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
-            onAddToSelectionRequested: function(keyword) {
-                if (controller)
-                    controller.addKeywordToRows(window.selectedRows(), keyword)
-            }
-            onFindTaggedRequested: function(keyword) {
-                if (controller) controller.search(keyword)
-            }
         }
+        onFindTaggedRequested: function(keyword) {
+            if (controller) controller.search(keyword)
+        }
+    }
 
-        // Helyek-panel (#30): jobb oldali hasáb, Nézet → Helyek — a látszó
-        // képek helyei térképen, és a kijelölés geocímkézése
-        PlacesPanel {
-            objectName: "placesPanel"
-            //: #2013: a PANEL a saját, mért küszöbén megy át (5 GEOCÍMKÉZETT
-            //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
-            //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
-            //: kérdez. A menüpont változatlanul azon megy át.
-            onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
-            onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
-            visible: window.placesPanelOpen
-            anchors.fill: parent
-            appWindow: window
-            onCloseRequested: window.ureseidAFiokot()
-            onPhotoActivated: function(row) {
-                window.selectedIndexes = [row]
-                window.selectedIndex = row
-            }
+    // Helyek-panel (#30): jobb oldali hasáb, Nézet → Helyek — a látszó
+    // képek helyei térképen, és a kijelölés geocímkézése
+    PlacesPanel {
+        objectName: "placesPanel"
+        //: #2013: a PANEL a saját, mért küszöbén megy át (5 GEOCÍMKÉZETT
+        //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
+        //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
+        //: kérdez. A menüpont változatlanul azon megy át.
+        onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
+        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
+        visible: window.placesPanelOpen
+        anchors.fill: parent
+        appWindow: window
+        onCloseRequested: window.ureseidAFiokot()
+        onPhotoActivated: function(row) {
+            window.selectedIndexes = [row]
+            window.selectedIndex = row
         }
+    }
 
-        // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /
-        // Nézet → Tulajdonságok — csak olvasás
-        PropertiesPanel {
-            objectName: "propertiesPanel"
-            visible: window.propertiesPanelOpen
-            anchors.fill: parent
-            hasSelection: window.selectedIndex >= 0
-            // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
-            // #305: null-őr
-            entries: controller
-                ? (controller.photos.revision,
-                   controller.propertiesOf(window.selectedIndex))
-                : []
-            onCloseRequested: window.ureseidAFiokot()
-        }
+    // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /
+    // Nézet → Tulajdonságok — csak olvasás
+    PropertiesPanel {
+        objectName: "propertiesPanel"
+        visible: window.propertiesPanelOpen
+        anchors.fill: parent
+        hasSelection: window.selectedIndex >= 0
+        // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
+        // #305: null-őr
+        entries: controller
+            ? (controller.photos.revision,
+               controller.propertiesOf(window.selectedIndex))
+            : []
+        onCloseRequested: window.ureseidAFiokot()
+    }
 
-        // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
-        // az eredeti szövegforrásából jön — „In this photo:" (a kijelölt
-        // képek nevesített emberei) és „Also in these photos:" (akik a
-        // nézett SZEMÉLLYEL együtt szerepelnek).
-        PeoplePanel {
-            objectName: "peoplePanel"
-            visible: window.peoplePanelOpen
-            anchors.fill: parent
-            selectionCount: window.selectedRows().length
-            currentPerson: controller ? controller.currentPersonName : ""
-            // a photos.revision-nel együtt kötve: arc-írás után frissül
-            peopleHere: controller
-                ? (controller.photos.revision,
-                   controller.peopleOfRows(window.selectedRows()))
-                : []
-            peopleWith: controller && controller.currentPersonName.length > 0
-                ? (controller.photos.revision,
-                   controller.peopleWith(controller.currentPersonName))
-                : []
-            onPersonChosen: function(name) {
-                if (!controller) return
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                controller.showPerson(name)
-            }
-            onCloseRequested: window.ureseidAFiokot()
+    // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
+    // az eredeti szövegforrásából jön — „In this photo:" (a kijelölt
+    // képek nevesített emberei) és „Also in these photos:" (akik a
+    // nézett SZEMÉLLYEL együtt szerepelnek).
+    PeoplePanel {
+        objectName: "peoplePanel"
+        visible: window.peoplePanelOpen
+        anchors.fill: parent
+        selectionCount: window.selectedRows().length
+        currentPerson: controller ? controller.currentPersonName : ""
+        // a photos.revision-nel együtt kötve: arc-írás után frissül
+        peopleHere: controller
+            ? (controller.photos.revision,
+               controller.peopleOfRows(window.selectedRows()))
+            : []
+        peopleWith: controller && controller.currentPersonName.length > 0
+            ? (controller.photos.revision,
+               controller.peopleWith(controller.currentPersonName))
+            : []
+        onPersonChosen: function(name) {
+            if (!controller) return
+            window.clearSelection()
+            window.unnamedFacesOpen = false
+            controller.showPerson(name)
         }
-        }
+        onCloseRequested: window.ureseidAFiokot()
+    }
     }
 
     // #985: a Kollázs LAP tartalma — a Könyvtár lapjának TESTVÉRE, ugyanazon
