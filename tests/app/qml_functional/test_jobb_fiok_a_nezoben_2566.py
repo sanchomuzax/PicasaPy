@@ -363,17 +363,24 @@ class TestANezettKepreHat:
 # --------------------------------------------------------------------------
 class TestAKonyvtarValtozatlan:
     @pytest.mark.parametrize("lap,_nezo,konyvtari,szelesseg", A_NEGY_LAP)
-    def test_a_panel_a_konyvtar_SplitView_jeben_nyilik(
+    def test_a_panel_a_konyvtari_FIOKBAN_nyilik(
         self, qml_app, qt_app, lap, _nezo, konyvtari, szelesseg
     ):
-        """Ugyanott, ugyanolyan szélességgel, ugyanabban a hasábban."""
+        """Ugyanott, ugyanolyan szélességgel, a könyvtári fiókban.
+
+        #3037: a fiók már NEM a `SplitView` cellája. A `SplitView` a
+        kétállású szélességgel nem tudott dolgozni (a váltó hol a növelést,
+        hol a csökkentést nyelte el), és az eredeti sem osztó: a
+        `RIGHTDRAWEROFFSET -280` a tartalmat TOLJA el. A fiók ezért a jobb
+        szélhez horgonyzott, a könyvtár osztója mellette ér véget — a
+        könyvtár-oldali állítás tehát a FIÓKRA szól."""
         window = qml_app[0]
-        oszto = _elem(window, "mainSplit")
+        fiok = _elem(window, "rightDrawer")
         _kattints(window, _talca_gomb(window, lap), qt_app)
         panel = _elem(window, konyvtari)
         assert _var(qt_app, lambda: panel.isVisible() and panel.width() > 0)
-        assert _leszarmazottja(panel, oszto), (
-            f"a(z) {konyvtari} kikerült a könyvtár SplitView-jéből"
+        assert _leszarmazottja(panel, fiok), (
+            f"a(z) {konyvtari} kikerült a jobb fiókból"
         )
         #: A `SplitView` csatolt tulajdonságai Pythonból nem olvashatók
         #: (`property("SplitView.preferredWidth")` → None), ezért a
@@ -442,9 +449,13 @@ class TestAKonyvtarValtozatlan:
             for item in _walk(window.contentItem())
             if item.objectName() == "folderPaneHandle" and item.isVisible()
         ]
-        assert len(fogantyuk) == 2, (
-            "nyitott fiók mellett KÉT látható fogantyú kell (bal hasáb és "
-            f"a fiók), de {len(fogantyuk)} van"
+        #: #3037: EGY fogantyú van, a bal hasábé. A jobb fiók nem osztó:
+        #: két MÉRT szélessége van, és a fejléc váltója állítja
+        #: (`0x005d95d0`, a #2529 mérése) — fogantyús húzásra nincs
+        #: bizonyíték az eredetiben.
+        assert len(fogantyuk) == 1, (
+            "a bal hasáb fogantyúja kell (a jobb fiók nem osztó), de "
+            f"{len(fogantyuk)} látható fogantyú van"
         )
         #: ⚠️ A `visible: false` a fogantyún NEM mutációs próba: a
         #: `SplitView` maga állítja a fogantyú láthatóságát, tehát a kötést
@@ -454,17 +465,16 @@ class TestAKonyvtarValtozatlan:
                 f"a fogantyú {fogantyu.width():.0f} px széles (#322: 6) — "
                 "ennyivel nem lehet megfogni"
             )
-        #: #754: a fogantyú a FIÓK bal éle mellett van, nem a panelé mellett
-        #: — a panel a fiók 276-os vásznán ül, két képpont behúzással.
+        #: #3037: a fiók MELLETT nincs fogantyú (nem osztó) — a méretét a
+        #: fejléc váltója állítja. Azt viszont megkövetelhetjük, hogy a
+        #: fiók a mainSplit jobb széléhez ILLESZKEDJEN, rés nélkül.
         fiok = _elem(window, "rightDrawer")
+        oszto = _elem(window, "mainSplit")
         f_x, _f_y, _f_w, _f_h = _ablakban(fiok)
-        balra = [
-            f
-            for f in fogantyuk
-            if abs((_ablakban(f)[0] + _ablakban(f)[2]) - f_x) <= 1
-        ]
-        assert balra, (
-            "a fiók bal éle mellett nincs fogantyú — a fiók nem méretezhető"
+        o_x, _o_y, o_w, _o_h = _ablakban(oszto)
+        assert abs((o_x + o_w) - f_x) <= 1, (
+            f"rés a könyvtár (jobb széle {o_x + o_w}) és a fiók (bal éle "
+            f"{f_x}) közt"
         )
 
     def test_a_konyvtar_panelje_a_nezobol_visszaterve_ugyanaz(
