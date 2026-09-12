@@ -5695,6 +5695,15 @@ A `#788` másik két pontja **áll**: az `innerAlpha`/`outerAlpha` a
 tartalék (`0,0` → `1,0`) épp ezzel egyezik, tehát az **alapeset** jó — a
 paraméterezés viszont a „Fordított" jelölőhöz továbbra is kell.
 
+> ✅ **ELKÉSZÜLT (2026-09-12, #788):** a `focal_mask` és a
+> `circular_gradient_mask` megkapta az `inner_alpha`/`outer_alpha`
+> paramétert (a natív `[0,1]`-vágással együtt), és a
+> `PicnikFocalPixelate` `reverse` jelölője **a két alfa cseréjén** át
+> működik — ahogy a `filterdesc.xml` is teszi, külön ág nélkül. Az
+> `aspectRatio` SZÁNDÉKOSAN nem lett paraméter: a tartaléka `1,0`, a nem
+> 1,0-s eset geometriája pedig nincs kimérve. Őr:
+> `tests/render/test_kormaszk_alfak_788.py`.
+
 ⛔ **Spec-helyesbítés:** a `filterdesc-registry.md` a vtáblát
 `0x008f0890`-ként írja; a valódi cím **`0x00cf0890`**, RTTI-neve
 `.?AVCircularGradientImageMask@glimmer@@`. A `0x008f0890`-en nincs
