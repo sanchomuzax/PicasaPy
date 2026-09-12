@@ -666,11 +666,33 @@ def contact_sheet_cell_scale(width: int, height: int, count: int) -> float:
     `layout_nodes_for_aspects` kap `PicasaCollageSettings`-ben), a `count`
     a csomópontok száma.
 
-    ⚠️ A PONTOS képlet nyitott (18.6, #1412) — ez a legjobb ismert
-    közelítés (`cella_h − 2·belső ráhagyás`), a négy mért mintán
-    legfeljebb 2 lapegység eltéréssel (18.8; a 183. kutatói kör
-    megerősítette, hogy ez a maradék a bináris SAJÁT aritmetikájával is
-    megvan — nem a mi hibánk)."""
+    ## Miért SZÁMOLJUK, amikor az eredeti nem számolja (67. szakasz, #2923)
+
+    A 277. kutatói kör a binárisban kimérte, hogy a csomópont `scale`-jéhez
+    (`+0x2c`) **egyetlen előállító sem ír nem-konstans értéket**: az
+    elrendezők nem nyúlnak hozzá, a hozzáfűző utak `1,0`-t vagy `0,0`-t
+    írnak, a másolók és a dokumentum-`reset` változatlanul viszik tovább —
+    az egyetlen nem-konstans forrás a FÁJL (`_atof`). A 67.4 ebből azt
+    vezette le, hogy a frissen létrehozott csomópontnak `1,0`-t kellene
+    kapnia, a közelítésnek pedig el kellene tűnnie.
+
+    ⛔ **Ez a termékkövetkezmény a mérésen MEGDŐLT** (#2923), két egymástól
+    független számon:
+
+    1. a `.cxf` `y`-ja a `scale`-lel igazított doboz TETEJE (30.2: 10/10 sor,
+       négy minta) — `scale = 1,0`-nál az Indexkép minden sora elcsúszna;
+    2. a négy minta `scale`-je a MINTA SAJÁT cellageometriáját követi
+       (31.5: 0…2 lapegység), és a másik három mintáé nem illik rá — egy
+       idegen fájlból ÖRÖKÖLT érték ezt nem tudná megtenni.
+
+    Ezért a frissen létrehozott Indexkép-csomópont itt számolt, lap-szintű
+    `scale`-t kap. A MEGNYITOTT projektből hozott érték viszont érintetlenül
+    megy vissza (`draft.project_from_nodes` `node_scales`, #2954) — az a
+    jegynek az az ága, amelyet a mérés megerősített.
+
+    A maradék 0…2 lapegység nem a mi hibánk: a 183. kutatói kör a bináris
+    SAJÁT aritmetikájával számolva ugyanezt kapta (31.5). Őr:
+    `tests/collage/test_scale_atvitel_2923.py`."""
     if count < 1:
         raise ValueError(f"Érvénytelen csomópontszám: {count}")
     geometria = _contact_sheet_geometry(width, height, count)
