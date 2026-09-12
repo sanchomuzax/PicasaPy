@@ -141,6 +141,10 @@ def _build_qml_app(
     _display_mode_bridge = app_module.wire_display_mode(
         controller, edit_controller, edit_preview
     )
+    # színkezelés (#1725) — az application.py bekötésének tükre
+    _color_management_bridge = app_module.wire_color_management(
+        controller, edit_controller, edit_preview
+    )
     # #1457: az effekt-bélyegkép szolgáltatót itt SZÁNDÉKOSAN nem hozzuk
     # létre. A motor szinkron szolgáltatót kap (ld. lentebb), tehát a
     # valódi, pool-szálas változatra ezekben a tesztekben nincs szükség —

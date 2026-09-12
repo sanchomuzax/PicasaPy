@@ -884,8 +884,26 @@ MenuBar {
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
         MenuSeparator {}
-        // hiányzott (#324 audit): színprofil-kezelés kapcsoló
-        PicasaMenuItem { text: qsTr("Use Color Management"); checkable: true; placeholder: true }
+        // #1725: színkezelés — a beágyazott ICC-profil érvényesítése.
+        // MÉRVE (spec 5.12): perzisztens kapcsoló, alapból KI, és
+        // bekapcsoláskor a szerkesztő-előnézet újraépül.
+        MenuItem {
+            objectName: "menuViewColorManagement"
+            text: qsTr("Use Color Management")
+            checkable: true
+            checked: (bar.ctl && bar.ctl.colorManagement !== undefined)
+                ? bar.ctl.colorManagement : false
+            onTriggered: {
+                controller.toggleColorManagement()
+                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+                // `checked`-et, és ez eldobja a fenti kötést — a jelzés utáni
+                // visszakötés nélkül a pipa a következő megnyitásig hazudna.
+                checked = Qt.binding(function () {
+                    return (bar.ctl && bar.ctl.colorManagement !== undefined)
+                        ? bar.ctl.colorManagement : false
+                })
+            }
+        }
         MenuItem {
             // #28: opcionális sötét téma — az alapértelmezés a világos
             objectName: "menuViewDarkTheme"

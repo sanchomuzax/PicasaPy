@@ -83,6 +83,7 @@ from .language_controller import (
     LANGUAGE_KEY,
     coerce_language,
 )
+from .color_management_controller import wire_color_management
 from .display_mode_controller import wire_display_mode
 from .fileops_controller import FileOpsController
 from .folder_hierarchy_controller import FolderHierarchyController
@@ -1119,6 +1120,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # állapota a KÉPERNYŐRE ható átalakítóig. A visszaadott átvezetőt névre
     # kötjük, hogy a kapcsolat a motor életében biztosan éljen.
     _display_mode_bridge = wire_display_mode(
+        controller, edit_controller, edit_preview
+    )
+
+    # színkezelés (#1725): a `Nézet ▸ Színkezelés használata` kapcsoló a
+    # beágyazott ICC-profil érvényesítéséig. Ugyanaz a névre kötés, mint
+    # fentebb — a bekötés a motor életében éljen.
+    _color_management_bridge = wire_color_management(
         controller, edit_controller, edit_preview
     )
 

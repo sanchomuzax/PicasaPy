@@ -44,6 +44,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
+from .color_management_controller import ColorManagementMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
 from .collage_controller import CollageMixin
@@ -150,6 +151,7 @@ class AppController(
     # és a KÖVETKEZŐ indulást naplózza az első ezredmásodperctől
     TesztuzemMixin,
     AppearanceMixin,
+    ColorManagementMixin,
     LanguageMixin,
     # #1575: Nézet ▸ Megjelenítési mód — a tizenegy tagú kizáró
     # csoport állapota. A szelet nem perzisztens (mérve: az eredeti
@@ -284,6 +286,7 @@ class AppController(
         self._init_tesztuzem()
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
+        self._init_color_management()  # #1725
         self._init_language()
         self._init_display_mode()
         # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a PeopleMixin
