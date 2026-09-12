@@ -71,6 +71,10 @@ OSZLOP_TIPUSOK: dict[str, int | None] = {
     "crop64": 0x04,
     "lat": 0x02,
     "long": 0x02,
+    #: #2336: a geotag jelzője. A típus MÉRVE a tulajdonos adatmappáján
+    #: (`imagedata_geoview.pmp` fejléce: `0x00`, `ytString`); a tartalma egy
+    #: KML `<LookAt>` blokk — az importáló csak azt nézi, üres-e.
+    "geoview": 0x00,
     "star": None,  # örökölt, ld. fent
 }
 

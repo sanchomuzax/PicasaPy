@@ -22,9 +22,11 @@ from .thumbindex import read_thumb_index, resolve_path
 #: #2336: a `tags`, `lat` és `long` a valódi adatbázisban 342, illetve
 #: 219 képet érint — eddig NÉMÁN elvesztek, mert nem szerepeltek itt.
 #: Mezőtípusok mérve: `tags` = 0x06 (sztring), `lat`/`long` = 0x02 (double).
+#: #2336: a `geoview` a geotag TÉNYLEGES jelzője (ld. `_koordinata`) —
+#: a tartalmát nem értelmezzük, csak azt, hogy üres-e.
 _COLUMNS = (
     "caption", "rotate", "star", "filters", "crop64", "deferredregion",
-    "tags", "lat", "long",
+    "tags", "lat", "long", "geoview",
 )
 
 #: #2335: a csillagozás VALÓDI helye. A tulajdonos 2026-08-22-i
@@ -56,9 +58,9 @@ class PhotoRecord:
     #: #2336: kulcsszavak. Az oszlop egyetlen sztring, vesszővel elválasztva
     #: (ugyanaz az alak, mint a `.picasa.ini` `keywords=` kulcsa).
     tags: tuple[str, ...]
-    #: #2336: földrajzi hely. A **0,0 nem hely**, hanem a hiányzó érték
-    #: alakja — a Picasa nem hagy lyukat az oszlopban —, ezért `None`-ra
-    #: fordul: geotag nélküli képre nem adhatunk Null-szigetet.
+    #: #2336: földrajzi hely. Hogy van-e egyáltalán geotag, azt a
+    #: `geoview` oszlop üressége mondja meg (mérve: képenkénti egyezés),
+    #: nem a koordináta értéke — ld. `_koordinata`.
     latitude: float | None
     longitude: float | None
     faces: tuple[DeferredFace, ...]
@@ -100,6 +102,14 @@ def iter_photo_records(
             # hibás régió-bejegyzés nem dönti be az importot — a fotó
             # többi adata így is értékes (részleges import elve)
             faces = ()
+        # #2336: a geotag jelzője a `geoview` üressége, nem a koordináta
+        # nulla értéke. Ha az OSZLOP hiányzik (régebbi adatmappa), a jelző
+        # nem kérdezhető meg — a `None` erre az esetre szól.
+        geoview_jelzo = (
+            bool(table.value("geoview", entry.index))
+            if table.column("geoview")
+            else None
+        )
         records.append(
             PhotoRecord(
                 local_path=local_path,
@@ -115,8 +125,12 @@ def iter_photo_records(
                 filters=table.value("filters", entry.index) or None,
                 crop64=table.value("crop64", entry.index),
                 tags=_split_tags(table.value("tags", entry.index)),
-                latitude=_koordinata(table.value("lat", entry.index)),
-                longitude=_koordinata(table.value("long", entry.index)),
+                latitude=_koordinata(
+                    table.value("lat", entry.index), geoview_jelzo
+                ),
+                longitude=_koordinata(
+                    table.value("long", entry.index), geoview_jelzo
+                ),
                 faces=faces,
             )
         )
@@ -200,16 +214,23 @@ def _split_tags(nyers: str | None) -> tuple[str, ...]:
     return tuple(darab.strip() for darab in nyers.split(",") if darab.strip())
 
 
-def _koordinata(ertek: float | None) -> float | None:
+def _koordinata(ertek: float | None, van_geotag: bool | None) -> float | None:
     """A `lat`/`long` oszlop értéke, a hiányt `None`-ra fordítva (#2336).
 
-    ⚠️ A **0,0 nem hely**. A Picasa a geotag nélküli képeknél is kitölti az
-    oszlopot (nem hagy lyukat), és a hiányt nullával jelöli. Nullaként
-    átvéve minden geotag nélküli kép a Guineai-öbölbe (Null-sziget) kerülne
-    a Helyek-panelen.
+    A Picasa a geotag nélküli képeknél is kitölti az oszlopot (nem hagy
+    lyukat), és a hiányt nullával jelöli — nullaként átvéve minden geotag
+    nélküli kép a Guineai-öbölbe (Null-sziget) kerülne a Helyek-panelen.
 
-    A valódi 0,0-s koordináta elvesztése elméleti kockázat: az Egyenlítő és
-    a kezdő délkör metszéspontja nyílt tenger.
+    **A jelző a `geoview` oszlop üressége, nem a koordináta értéke.**
+    Mérve a tulajdonos adatmappáján (515 sor): ahol a `geoview` nem üres,
+    ott a koordináta sem nulla (219 sor), és fordítva sem fordul elő
+    kivétel (`CSAK geoview` 0 sor, `CSAK koordináta` 0 sor). A képenkénti
+    egyezés tehát teljes, így a valódi 0,0-s koordináta (Egyenlítő × kezdő
+    délkör, nyílt tenger) sem vész el.
+
+    `van_geotag` = `None`, ha a `geoview` OSZLOP hiányzik a db3-ból
+    (régebbi adatmappa): ott a jelző nem kérdezhető meg, ezért marad a
+    „0,0 nem hely" szabály.
     """
     if ertek is None:
         return None
@@ -217,4 +238,6 @@ def _koordinata(ertek: float | None) -> float | None:
         szam = float(ertek)
     except (TypeError, ValueError):
         return None
-    return None if szam == 0.0 else szam
+    if van_geotag is None:
+        return None if szam == 0.0 else szam
+    return szam if van_geotag else None
