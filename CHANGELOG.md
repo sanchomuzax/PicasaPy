@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.434] – 2026-09-12
+
+### Hozzáadva
+
+- **Kettős nézet a szerkesztőben: előtte-utána** (#3013). A néző fejlécében
+  megjelent a háromállású kapcsoló: egy kép, ugyanaz kétszer, vagy két
+  különböző. A középső állásban balra a szerkesztés előtti, jobbra a mai
+  állapot látszik, és a „Kijelölve" jelvény mutatja, melyik oldal az aktív
+  — a nyíl gombbal váltható. A harmadik állás (két különböző kép) még
+  nem használható, ezért láthatóan tiltott.
+
 ## [0.8.433] – 2026-09-12
 
 ### Változott
