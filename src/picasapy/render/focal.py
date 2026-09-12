@@ -45,6 +45,8 @@ def focal_mask(
     radius: float,
     hardness: float,
     scale: float = 1.0,
+    inner_alpha: float = 0.0,
+    outer_alpha: float = 1.0,
 ) -> np.ndarray:
     """A két fókusz-effekt KÖZÖS körmaszkja (#570) — float32 [0,1], (H, W).
 
@@ -60,6 +62,13 @@ def focal_mask(
     kapott felbontáson dolgozik; ha a hívó kicsinyített előnézetet renderel,
     ezzel az aránnyal tudja a sugarat arányosan visszaskálázni. Alapértéke
     1,0 — a teljes felbontású render esete.
+
+    #788: az `inner_alpha`/`outer_alpha` a natív `CircularGradientImageMask`
+    `innerAlpha`/`outerAlpha` attribútuma. Az alapértékek a KIOLVASOTT
+    tartalékok (`0,0` → `1,0`), tehát az alapeset változatlan; a natív olvasó
+    mindkettőt `[0,1]`-re vágja (`0x00bd0391`, `0x00bd03e1`), ezért itt is
+    vágunk. Ez adja a `PicnikFocalPixelate` „Fordított" jelölőjét: a
+    `filterdesc.xml` ott pontosan a két alfát cseréli.
     """
     hard = float(np.clip(hardness, 0.0, 100.0)) / _HARDNESS_DIVISOR
     base = max(float(radius), 0.0) * max(float(scale), 0.0)
@@ -70,11 +79,15 @@ def focal_mask(
         xs + np.float32(0.5) - np.float32(x * width),
         ys + np.float32(0.5) - np.float32(y * height),
     )
+    belso = np.float32(np.clip(inner_alpha, 0.0, 1.0))
+    kulso = np.float32(np.clip(outer_alpha, 0.0, 1.0))
     if outer <= inner:
-        return (dist >= np.float32(inner)).astype(np.float32)
-    return np.clip(
-        (dist - np.float32(inner)) / np.float32(outer - inner), 0.0, 1.0
-    ).astype(np.float32)
+        arany = (dist >= np.float32(inner)).astype(np.float32)
+    else:
+        arany = np.clip(
+            (dist - np.float32(inner)) / np.float32(outer - inner), 0.0, 1.0
+        ).astype(np.float32)
+    return (belso + arany * (kulso - belso)).astype(np.float32)
 
 
 def zoom_sample_count(impact: float) -> int:
@@ -167,6 +180,7 @@ def apply_focal_pixelate(
     hardness: float = 50.0,
     fade: float = 0.0,
     scale: float = 1.0,
+    reverse: bool = False,
 ) -> np.ndarray:
     """`PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade` (#570).
 
@@ -174,6 +188,12 @@ def apply_focal_pixelate(
     visszanagyítás `W × H`-ra **`smoothing = false`** módban — vagyis
     legközelebbi-szomszéd, nem interpoláció (ettől lesznek éles blokkjai, nem
     elmosódott foltjai). Ugyanaz a körmaszk és `Fade`, mint a `FocalZoom`-nál.
+
+    #788: a `reverse` a felület ötödik vezérlője (`_chkReverse`, alapból ki).
+    A `filterdesc.xml` ezt **a körmaszk két alfájának cseréjével** valósítja
+    meg (`outerAlpha = Reverse ? 0 : 1`, `innerAlpha = Reverse ? 1 : 0`), nem
+    külön ággal — ezért itt sincs külön ág. Alaphelyzetben a kör KÖZEPE marad
+    éles, fordítva épp az lesz pixeles.
     """
     validate_image(image)
     if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
@@ -198,7 +218,17 @@ def apply_focal_pixelate(
         small, (width, height), interpolation=cv2.INTER_NEAREST
     ).astype(np.float32)
 
-    mask = focal_mask(height, width, x, y, radius, hardness, scale)[..., np.newaxis]
+    mask = focal_mask(
+        height,
+        width,
+        x,
+        y,
+        radius,
+        hardness,
+        scale,
+        inner_alpha=1.0 if reverse else 0.0,
+        outer_alpha=0.0 if reverse else 1.0,
+    )[..., np.newaxis]
     focused = image_f + mask * (pixelated - image_f)
     weight = np.float32(np.clip(1.0 - fade / 100.0, 0.0, 1.0))
     return _to_uint8(image_f + weight * (focused - image_f))

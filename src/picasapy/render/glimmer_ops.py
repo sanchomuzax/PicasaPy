@@ -735,18 +735,37 @@ def circular_gradient_mask(
     inner_radius: float,
     outer_radius: float,
     center: tuple[float, float] | None = None,
+    inner_alpha: float = 0.0,
+    outer_alpha: float = 1.0,
 ) -> np.ndarray:
-    """`CircularGradient`: (H, W) float32 [0,1] maszk — 0 az `inner_radius`-on
-    belül (védett, „éles" zóna), 1 az `outer_radius`-on túl (teljesen
-    hatásba vont zóna), lineárisan a kettő között. `center` alapból a kép
+    """`CircularGradient`: (H, W) float32 [0,1] maszk — `inner_alpha` az
+    `inner_radius`-on belül (védett, „éles" zóna), `outer_alpha` az
+    `outer_radius`-on túl, lineárisan a kettő között. `center` alapból a kép
     közepe, pixel-egységben.
+
+    #788: a két alfa a natív `CircularGradientImageMask`
+    `innerAlpha`/`outerAlpha` attribútuma; az alapértékek a KIOLVASOTT
+    tartalékok (`0,0` → `1,0`), tehát az alapeset változatlan. A natív olvasó
+    mindkettőt `[0,1]`-re vágja (`0x00bd0391`, `0x00bd03e1`).
+
+    ⚠️ **`aspectRatio` SZÁNDÉKOSAN nem paraméter.** A 283. kutatói kör
+    kimérte, hogy a tartaléka `1,0`, és a `filterdesc.xml` mind a négy
+    használatban elhagyja — a maszk tehát KÖR, és a `np.hypot` helyes. A nem
+    1,0-s eset geometriája NINCS kimérve, ezért egy ilyen paraméter csak
+    találgatást hordozhatna (`docs/specs/filters-decoded.md`).
     """
     cx, cy = center if center is not None else (width / 2.0, height / 2.0)
     ys, xs = np.mgrid[0:height, 0:width].astype(np.float32)
     dist = np.hypot(xs + 0.5 - cx, ys + 0.5 - cy)
+    belso = float(np.clip(inner_alpha, 0.0, 1.0))
+    kulso = float(np.clip(outer_alpha, 0.0, 1.0))
     if outer_radius <= inner_radius:
-        return (dist >= inner_radius).astype(np.float32)
-    return np.clip((dist - inner_radius) / (outer_radius - inner_radius), 0.0, 1.0)
+        arany = (dist >= inner_radius).astype(np.float32)
+    else:
+        arany = np.clip(
+            (dist - inner_radius) / (outer_radius - inner_radius), 0.0, 1.0
+        ).astype(np.float32)
+    return (np.float32(belso) + arany * np.float32(kulso - belso)).astype(np.float32)
 
 
 def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) -> np.ndarray:

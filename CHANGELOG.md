@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.444] – 2026-09-12
+
+### Belső
+
+- **A körkörös maszk átlátszósága mostantól paraméter** (#788). A
+  homályosító és pixelesítő hatások körmaszkja eddig fixen ugyanabba az
+  irányba futott. A visszafejtés megmutatta, hogy az eredetiben ez két
+  beállítható érték, és a „Fordított" jelölő pontosan ezek megfordítása —
+  így a hatás a kör belsejére is fordítható. A mai kép változatlan: a
+  bevezetett alapértékek pontosan az eredeti alapértékei.
+
 ## [0.8.443] – 2026-09-12
 
 ### Hozzáadva
