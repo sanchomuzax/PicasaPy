@@ -3754,3 +3754,77 @@ hívó adja a sorrendet.
 *Forrás: `0x0042cf60`–`0x0042cfb0` (a szög-kapcsoló), `0x0042d828` /
 `0x0042d842` (a tükrözés-ág, 287. kör), `0x00c80ad4` = `"rotate"`,
 `0x00c80ae4` = `"flipped"`.*
+
+## ⛳ MEGVAN A SORREND: ELŐBB a tükrözés, UTÁNA a forgatás (2026-09-12, 298. kör, #2938)
+
+*Forrás: `0x0042ef4e`–`0x0042f02d`, `0x006b5034`–`0x006b50ba`,
+`0x00805161`–`0x00805229` (három független összeállító), a képpont-műveletek
+`0x009a9dd0` · `0x009a9ea0` · `0x009aa270`, a diszpécser `0x006bb4a0`.*
+
+A 287. kör kimérte a `flipped(N)` bitmaszkot, a 297. kör az argumentum-tér
+értékeit (`1`/`2` = tükrözés, `90`/`180`/`270` = forgatás fokban) — a
+**sorrend** azóta nyitva volt. Ez a kör lezárja.
+
+### 1. A három képpont-művelet — a bitjelentés a CIKLUSBÓL igazolva
+
+A diszpécser (`0x006bb4a0`) nem műveletlistát épít, hanem **azonnal átalakítja
+a gyorsítótárban álló két képpuffert** (`[this+0xf8]` és `[this+0x120]`), az
+argumentum szerint szétágazva:
+
+| argumentum | hívott művelet | mit tesz a pufferrel | bizonyíték |
+|---|---|---|---|
+| `2` | `0x009a9ea0` | **oszlopcsere** — `[esi+8]` (szélesség) szerint indexel, `ebp = szélesség − 1`, `[ebx + ebp*4]` | `0x009a9ed3`–`0x009a9efb` |
+| `1` | `0x009a9dd0` | **sorcsere** — `[esi+0xc]` (magasság) felét járja be (`shr ebx,1`) | `0x009a9dd4`–`0x009a9e1a` |
+| `0x5a` (90) | `0x009aa270` | negyedfordulat a pufferen | `0x006bb596`–`0x006bb5a9` |
+
+⇒ **`2` = VÍZSZINTES** (bal↔jobb), **`1` = FÜGGŐLEGES** (fent↔lent). Ez a 297.
+kör értéktáblájának **független megerősítése**: ott a switch-ből jött, itt a
+képpont-ciklus bejárási tengelyéből.
+
+### 2. A sorrend — három egymástól független összeállító, betűre azonos alakban
+
+Mindhárom helyen ugyanaz a hatlépéses alak áll: a tárolt tükrözés-maszk
+kiolvasása, a **vízszintes**, majd a **függőleges** tükrözés, és csak
+**ezután** a forgatás negyedfordulat-számra ágazva.
+
+```
+call 0x0042d6c0          ; kiolvassa a tárolt tükrözés-maszkot
+test al, 1  ->  call 0x009a9ea0      ; 0. bit: VÍZSZINTES
+test al, 2  ->  call 0x009a9dd0      ; 1. bit: FÜGGŐLEGES
+cmp byte [...], 0 ; je   ; van-e egyáltalán forgatás
+sub eax,1 / sub eax,1 …  ; 1·2·3 negyedfordulat
+                 call 0x009aa270     ; FORGATÁS
+```
+
+| összeállító | vízszintes | függőleges | forgatás |
+|---|---|---|---|
+| `0x0042ef30` sáv | `0x0042ef68` | `0x0042ef77` | `0x0042f02d` |
+| `0x006b5030` sáv | `0x006b5047` | `0x006b5056` | `0x006b50ba` |
+| `0x00805160` sáv | `0x00805171` | `0x00805181` | `0x00805229` |
+
+**A KÖVETKEZTETÉS:** a tárolt `flipped` és `rotate` értékekből a kép úgy áll
+elő, hogy **először a tükrözés hat (vízszintes, majd függőleges), és a
+forgatás a már tükrözött képre jön** — azaz `kép = forgat(tükröz(eredeti))`.
+Bizalmi fok: **megerősített** (három független hívóhely, mindegyik a tárolt
+értéket olvassa, nem különbséget alkalmaz).
+
+### 3. A növekményes út ugyanezt a sorrendet követi
+
+A nézet gyorsítótárát frissítő két kibocsátó külön függvény: a tükrözésé a
+`0x0042d7e0` (benne `push 2` a `0x0042d81f`-en, **majd** `push 1` a
+`0x0042d839`-en), a forgatásé a `0x0042c980`-ban álló `0x0042cfb0`. A `.text`
+egészén **pontosan három** `call 0x006bb4a0` hívóhely van (kontroll-pozitívval
+mérve), és a kettőt együtt hívó három helyen (`0x004613d1`+`0x00461419`,
+`0x0046860b`+`0x00468641`, `0x0046e218`+`0x0046e252`) a **tükrözés-kibocsátó
+mindig előbb** fut. ⇒ A növekményes és a teljes út sorrendje **egyezik**.
+
+### 4. ⛔ Amit ez NEM mond ki
+
+- A `0x005b0c9e` sávban mind a három művelet szerepel, de az **ugrótáblás
+  diszpécser** (`jmp [eax*4 + 0x5b0fe8]`, hat eset): ott minden eset **egyetlen**
+  műveletet hajt végre, tehát **nem** összeállító. Sorrend-bizonyítékként
+  nem szerepel a fenti táblában.
+- A `0x006bb4a0` a `0x5a`-nál kívül a `0xb4`/`0x10e` ágakat a `0x006bb5f3`-tól
+  kezeli; azok törzsét ez a kör nem olvasta el — a 90 fokos ág elég volt a
+  művelet AZONOSÍTÁSÁHOZ, de a 180/270 belső bontása (kétszer/háromszor 90,
+  vagy külön rutin) **NINCS kimérve**.
