@@ -4052,11 +4052,98 @@ szürke sáv:  10→0 · 31→36 · 53→36 · 74→73 · 95→109 · 116→109 
 
 ⇒ **Palettaválasztás ezt nem tudja előállítani.** Egy oktree-paletta a
 kép SAJÁT színeinek átlagaiból áll; a `(36, 73, 182)` egyik forrásszín
-átlagaként sem jön ki. A leképezés ráadásul **képfüggetlen**: ugyanaz a
-bemeneti szín ugyanazt a kimenetet adja más színeloszlású képben is.
+átlagaként sem jön ki.
+
+⛔ **A „képfüggetlen" állítás MEGDŐLT (2026-09-12, #2770).** Ez a szakasz
+korábban azt is állította, hogy *„a leképezés ráadásul képfüggetlen: ugyanaz
+a bemeneti szín ugyanazt a kimenetet adja más színeloszlású képben is"*. Erre
+**nem volt mérés** — mind a három eset UGYANANNAK a mértani mezős képnek a
+három beállítása volt. A tulajdonos leszállította a kért második, természetes
+átmenetes képet, és a mérés az állítást **megdöntötte**. Ld. az 1/b pontot.
 
 Őr: `tests/render/test_quantizepalette_racs_2231.py` (28 állítás; a hű
-oktree-modellel 27 bukik).
+oktree-modellel 27 bukik). ⚠️ Ez az őr a mérőszett képére igaz — a
+természetes fotóra NEM, ld. lent.
+
+### 1/b A MÁSODIK kép megdönti a képfüggetlenséget (2026-09-12, #2770)
+
+Bemenet: a tulajdonos exportja (`My Pictures/2770-poszterizalas/`,
+`original.t21.jpg` + `export.t21.jpg`, 2560 × 1696), természetes átmenetes
+fotó, a kérés szerint gyári alapbeállítással (`Steps 8 · Smoothing 80 ·
+Fade 0`).
+
+**Előbb a proveniencia: az export tényleg poszterizált.** Átlagos
+`|különbség|` az eredetihez **21,01** szint, a képpontok mindössze **0,91%-a**
+változatlan (±2). Egy 64 × 64-es kivágat egyedi színei: eredeti **2861**,
+export **353** — a kvantálás megtörtént.
+
+**A rács viszont NINCS ott.** A spec 1. pontjának saját kontrollját
+(a kimeneti csatornaértékek hány százaléka van ±2-n belül a
+`round(i·255/(Steps−1))` rács egy pontjától) ugyanazzal a metrikával:
+
+| kép | rács-illeszkedés (`Steps = 8`) |
+|---|---:|
+| az ELSŐ, mértani mezős export | **97,62%** |
+| **a MÁSODIK, természetes export** | **11,94%** |
+| kontroll: a második kép EREDETIJE | 21,21% |
+
+Az export tehát **kevésbé** illeszkedik a rácsra, mint a saját eredetije.
+
+**A „a simítás mozdította el" magyarázat is elesik.** Ha a simítás a
+kvantálás UTÁN futna, a LAPOS területeken a rács megmaradna. A kép
+**73,25%-a** lapos (helyi szórás < 1), és ott is csak **13,13%** az
+illeszkedés (szórás < 0,5 mellett 13,36%). A rács a lapos területeken sem
+létezik.
+
+**Ami HELYETTE van: hét színű, KÉPFÜGGŐ paletta.** A lapos területek
+(3 008 549 képpont) színeloszlása, 4-es raszterben:
+
+| | eredeti | export |
+|---|---:|---:|
+| a 7 leggyakoribb szín fedése | — | **97,92%** |
+| a 12 leggyakoribb szín fedése | 41,81% | 99,29% |
+| eltérő színek száma | **720** | **138** |
+| 1% felett álló csatorna-szintek (B / G / R) | 25 / 15 / 3 | **7 / 7 / 7** |
+
+A csatorna-szintek a lapos területen:
+
+```
+B: 9 · 12 · 50 · 91 · 147 · 169 · 240
+G: 13 · 18 · 98 · 171 · 219 · 220 · 252
+R: 14 · 23 · 162 · 226 · 247 · 252 · 254
+```
+
+**Nem egyenletes** — a szomszédos szintek távolsága B-ben 3 · 38 · 41 · 56 ·
+22 · 71 —, és a `0 · 36 · 73 · 109 · 146 · 182 · 219 · 255` rácshoz nem
+illeszkedik.
+
+**A hét szín egybeesik a bináris palettaméretével.** A 224. kör kiolvasta,
+hogy a palettaépítő `Steps−1` = **7** színt épít (`0x00bb5dc4 add eax,-1`).
+A mért kimenet lapos területeit **pontosan 7 szín** fedi 97,92%-ban. Ez
+függetlenül, a kimenet oldaláról erősíti meg a palettás olvasatot.
+
+⇒ **A #2746 kérdésének második fele volt a hibás premissza.** A kérdés így
+szólt: *„miért nem az oktree-út eredménye kerül a képre, holott a bináris
+oktree-t épít és a látható kimenet csatornánként egyenletes rácson ül?"* — a
+látható kimenet **nem** ül egyenletes rácson. Az első mérőkép 97,62%-a annak
+a képnek a sajátja, nem a szűrőé: mértani mezős képen a 7 színű paletta
+elemei épp a rácspontok közelébe esnek.
+
+### Amit ez a MEGVALÓSÍTÁSRA jelent
+
+A mai rácsos implementációnk (ΔE 0,268 a mérőszetten) **csak a mérőszett
+képére hű**. Természetes fotón mérhetően más képet ad, mint az eredeti. A
+csere önálló jegyet kíván, mert renderelő-cserét jelent, nem paraméterezést.
+
+### Amit ez NEM mond meg
+
+- A **beállításokat nem tudom igazolni** az exportból: a kérés a gyári
+  alapot (8/80/0) adta meg, és a 7 színű paletta ezzel konzisztens
+  (`Steps−1` = 7), de a csúszkák állását maga a fájl nem hordozza.
+- Hogy a paletta **hogyan** épül (oktree-mélység, a vágás sorrendje), ez a
+  mérés nem mondja meg — csak azt, hogy képfüggő és hét elemű.
+- A `Smoothing` szerepét sem: a lapos/átmenetes szétválasztás csak azt
+  zárta ki, hogy a rácsot utólagos simítás mosta volna el.
 
 ### 2. A binárisbeli olvasat — megerősítve és BŐVÍTVE
 
