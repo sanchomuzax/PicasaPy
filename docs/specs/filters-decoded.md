@@ -2304,9 +2304,17 @@ ecx` + `0x0090ca1b idiv ecx`) — a `picasa-native-filter-workers.md` 4.2.3
 `0x0090cd90` hívássorrendje háromszor ismétlődik:
 `0x0090ca10` (fal-jelölés) → `0x0090c6b0` ×2 (a két menet) →
 `0x0090cbe0` (a lépték váltása) — `0x0090cead`…`0x0090cf46`. A fal-bit
-maszkja léptékenként `n · 0x5555`, a másik iránynak ennek a kétszerese
-(`0x0090ca1d`, `0x0090ca3a`) — ezért kell a **16 bit**: több lépték
+maszkja léptékenként **`n² · 0x5555`**, a másik iránynak ennek a kétszerese
+(`0x0090ca1d` és `0x0090ca3a`: a `ecx` az `idiv` után is `n²`; a
+`0x0090cbe0` ugyanezt a párt számolja, `n² · 0x5555` és `n² · 0xaaaa`,
+`0x0090cbf4`/`0x0090cbfb`) — ezért kell a **16 bit**: több lépték
 fal-jelzője ül egymás mellett ugyanabban a rekeszben.
+
+A `0x0090cbe0` nem csak léptéket vált: **fal-PROPAGÁCIÓ**. Végigolvassa a
+térképet, és ahol az adott lépték fal-bitje áll, a bitet a szomszédos
+rekeszekbe is beírja (`0x0090cc3c` olvasás, `0x0090cc42` `test esi, ebp`,
+`0x0090cc4e` `or edx, esi`) — a finomabb léptéken talált él tehát a durvább
+léptéken is fal marad.
 
 **4. A simító mag: `(4·közép + 3·(négy szomszéd) + 8) >> 4`.** A
 `0x0090c6b0` SWAR-ban dolgozik, két csatornacsoportra osztva
@@ -2338,8 +2346,10 @@ megdőlt.
 1. **Mit tesz a mag a falba futó szomszéddal** (a közép értékét veszi-e át,
    vagy a súlyt osztja újra) — a `0x0090c6b0` a 16 bites térképet olvassa
    (`0x0090c833`, `0x0090c858`), de az ágak szerepe nincs kibontva.
-2. **A három lépték `n`-értékei** (`0x0090cbe0`, 
-   a maszk `n · 0x5555` alakja `n = 4`-nél már 16 biten túlcsordulna).
+2. **A három lépték `n`-értékei.** A maszk `n² · 0x5555`, és ez 16 biten
+   csak `n = 1` mellett fér el hiánytalanul (`n = 2`-nél `0x15554`, amiből a
+   `movzx`-szel olvasott 16 bitre `0x5554` marad) — a lépték-sorozatot
+   tehát a hívó adja, és az **nincs kiolvasva**.
 3. A szomszédok **geometriája** léptékenként (a `ecx*2` / `ecx*4` indexelés).
 
 Ezek nélkül a mag NEM építhető be pixelhűen — a mai, mért Gauss-közelítés
