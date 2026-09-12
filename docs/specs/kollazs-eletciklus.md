@@ -6896,3 +6896,91 @@ számolni. Ehhez önálló fejlesztői jegy nyílt.
 hozzáfűzés `scale`-rekesze konstans; és ezzel a `contactsheet`-`scale`
 eredete — „nem számított, hanem öröklött") · 0 nyitott · 0 blokkolt ·
 0 hatókörön kívül · 0 „csak nyitva".*
+
+## 68. LEZÁRVA: a szorzat UGYANABBA a mezőbe megy vissza — de a körbejárás STABIL (2026-09-12, 299. kör, #2593)
+
+*Forrás: a betöltő szorzó-ciklusa `0x00834681`–`0x008346a1`, a verzió-kapu
+`0x00834585`, a téma-kapu `0x008345b3` (`0x00cbea2c` = `picturepile`), az író
+`0x008350ab`–`0x008350c9` (`0x00cbf80c` = `scale`, `0x00c817c0` = `%f`), a
+verzió kiírása `0x00834801` (`push 2`, `0x00c81844` = `%d`).*
+
+A jegy kérdése: a betöltő megszorozza a csomópont `scale`-jét — ez a szorzott
+érték kerül-e vissza a fájlba mentéskor? A tulajdonos 2026-09-09-i kommentje
+két konkrét gépi lépést nevezett meg; mindkettő lefutott.
+
+### 1. A szorzat UGYANARRA A CÍMRE megy vissza — nem dekódolási maradék
+
+A ciklus teljes törzse, a fejével együtt:
+
+```
+0x00834681  xor  edx, edx                  ; edx = eltolás a tömbben
+0x00834683  mov  eax, [ebx+0x48]           ; a csomópont-tömb bázisa
+0x00834686  fld  dword [edx+eax+0x2c]      ; az i. elem `scale`-je
+0x0083468a  lea  eax, [edx+eax+0x2c]       ; UGYANANNAK a cellának a CÍME
+0x0083468e  fmul st(1)                     ; × a tényező
+0x00834690  add  ecx, 1
+0x00834693  add  edx, 0x38                 ; 56 bájtos lépésköz
+0x00834696  fstp dword [eax]               ; VISSZAÍRÁS ugyanoda
+0x00834698  mov  eax, [ebx+0x4c] / shr 1   ; darabszám
+0x0083469f  jb   0x834683
+```
+
+A `lea` a **`add edx,0x38` ELŐTT** fut, tehát az `eax` az **aktuális** elem
+`+0x2c`-jét címzi, nem a tömb elejét. ⇒ **A `fstp dword [eax]` az olvasás
+helyére ír.** Ez zárja a tulajdonos által nevesített rést: nem dekódolási
+maradék, és nem egy másik cél.
+
+A tényező a ciklus előtt készül el: `0x0083466b fmul [0xcf4218]` (**1024,0**)
+és `0x00834671 fmul [0xcf46c0]` (**0,33**) a felette kiszámolt
+`min(1/√(√k − 1), 1)`-re. A ciklus tehát **szoroz, nem értéket ad** — ezért
+kétszer lefutva a tényezőt négyzetre emelné.
+
+### 2. Az ÍRÓ ugyanazt a mezőt látja — a bázis azonos
+
+```
+0x008350ab  mov  ecx, [ebx+0x48]           ; UGYANAZ a csomópont-tömb
+0x008350ae  mov  edx, [esp+0x24]           ; a ciklus eltolása
+0x008350b2  fld  dword [edx+ecx+0x2c]      ; ugyanaz a `scale` cella
+0x008350bd  fstp qword [esp]               ; → `%f` (`0x00c817c0`)
+```
+
+az attribútumnév `scale` (`0x00cbf80c`, közvetlenül előtte). ⇒ **Ha a szorzás
+lefut, a szorzott érték megy a fájlba.** A tulajdonos következtetése helyes,
+és mintára tényleg nem volt szükség.
+
+### 3. ⛳ DE a körbejárás STABIL — mert a szorzás KÉTSZERESEN kapuzott
+
+A ciklus csak akkor fut, ha **mind a kettő** teljesül:
+
+| kapu | hol | mi | ha nem teljesül |
+|---|---|---|---|
+| `version == 1` | `0x00834585 cmp eax,1` | az `_atol`-ozott `version` attribútum | `jne 0x8346a3` |
+| téma == `picturepile` | `0x008345b3 repe cmpsb` 12 bájtra a `0x00cbea2c`-vel | a dokumentum témája | ugyanoda ugrik |
+
+A `0x008346a3` **pontosan a ciklus UTÁN** van (a ciklus a `0x008346a1`-en
+zárul), tehát minden bukó kapu átlépi a szorzást.
+
+És az író **beégetve `2`-t** ír a `version`-be (`0x00834801 push 2`, alak
+`%d`). ⇒ Egy `version="1"` fájl **egyszer** megy át a szorzáson, és
+`version="2"`-ként kerül vissza; onnantól a kapu zár.
+
+### ⛳ A VÁLASZ
+
+**A `scale` körbejárása értéktartó minden `version="2"` fájlra** — azaz
+mindenre, amit a mai Picasa ír. A szorzás egy **egyszeri, tartósított
+1 → 2 migráció**, nem a mentés melléktermékke: a szorzott értéknek ÉPP a
+fájlba kell kerülnie, különben a migráció elveszne.
+
+Bizalmi fok: **megerősített**. Mindkét oldal ugyanarra a
+`[dokumentum+0x48] + 56·i + 0x2c` cellára mutat, a két kapu és a
+verzió-kiírás kiolvasva.
+
+### ⛔ Amit ez NEM mond ki
+
+- A `contactsheet` és a többi négy téma `scale`-jére a szorzás **sosem** fut
+  (téma-kapu) — az ő öröklődési útja a 67. szakasz tárgya, itt nem változik.
+- A tulajdonos kérésére a „tizenkét arany `.cxf`-ben nincs szorzott érték"
+  megfigyelés **nem szerepel bizonyítékként**: egyikről sem tudjuk, hogy a
+  Picasa betöltötte-e és újramentette-e.
+- Nincs mérve, hogy a `version="1"` alak a valóságban előfordul-e a
+  tulajdonos gyűjteményében — a kérdés ettől független.
