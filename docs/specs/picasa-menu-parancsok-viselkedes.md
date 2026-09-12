@@ -5391,3 +5391,114 @@ beállítást tárolja, alapból bekapcsolva.
 
 Jegyek: **#2524** (ez a szakasz), **#1526** (a kapcsoló megépítése),
 **#2526** (a `[Contacts2]` mezőnevek és a hármas token-szabály nálunk).
+
+## ⛳ `ID_MOVE_DATABASE` — az adatbázis áthelyezése, a kilenc pont szerint (2026-09-12, 295. kör, #1402)
+
+A #1402 azt kérte, hogy a **működés** legyen feltárva, a módszertan
+sorrendjében. A válasz nagy része a **`.fen` párbeszédleírókból és a
+szövegtárból** jött — dekompiláció nélkül.
+
+### 1. MI AKTIVÁLJA
+
+Az **Eszközök** menü `ID_MOVE_DATABASE` tétele; magyar felirata
+**„Adatbázis helyének kiválasztása…"**. A parancs a `0x00600983`-on nyitja
+a párbeszédet (`push 0xc94e40` = `move_database`, majd a `.fen`-megnyitó
+`0x009a5540`).
+
+⚠️ **Nem mértem ki**, hogy van-e más belépési pontja (gyorsbillentyű,
+helyi menü) — a `move_database` névre a `.text`-en **egyetlen** hivatkozás
+van, de ez a névre szól, nem a parancsazonosítóra.
+
+### 2. MIT INDÍT EL — `move_database.fen`
+
+| vezérlő | név | mit ad |
+|---|---|---|
+| útvonal-mező (csak olvasás) | `current_location` | a **mostani** hely |
+| útvonal-mező, 25 em | `new_location` | az **új** hely (a fókusz is ezen indul) |
+| gomb | `changeloc` | „Browse…" |
+| gomb | `defaultloc` | „Default" — az alapértelmezett helyre állít |
+| elfogadó gomb | `move` | **„Move on next restart"** |
+| mégse | — | „Cancel" |
+
+A párbeszéd **két figyelmeztetést** ír ki:
+
+> „You will need to restart Picasa for the changes to take effect."
+>
+> „Please Note: You should backup your database before trying out this
+> **experimental** feature. **NEVER** move the database to a network,
+> removable, or external drive, or you may lose data."
+
+⇒ maga a Picasa **kísérletinek** nevezi, és kimondja a hálózati/cserélhető/
+külső meghajtó tilalmát.
+
+### 3–4. MIT ÍR és MIKOR
+
+Az elfogadó gomb felirata és a figyelmeztetés együtt dönt: a művelet **a
+KÖVETKEZŐ INDÍTÁSKOR** fut le, nem az OK-ra. A párbeszéd tehát csak
+**szándékot rögzít**.
+
+⛔ **NYITOTT:** hol tárolja a szándékot (registry-kulcs vagy fájl). A
+`MoveDatabase`, `DatabaseLocation`, `PendingMove` és hasonló nevekre a
+binárisban **nincs sztring** — a kulcs máshogy hívódik.
+
+### 5. MI TÖRTÉNIK A MEGLÉVŐ ADATTAL — KÉT mappa, és LOMTÁR
+
+A hibaüzenetek nevezik meg, mi mozog:
+
+| üzenet-kulcs | angol | magyar |
+|---|---|---|
+| `MoveDatabase::MoveDbFailed` | Picasa failed to send old **database** to the trash. | A Picasa nem tudta a kukába helyezni a régi adatbázist. |
+| `MoveDatabase::MoveAlbumsFailed` | Picasa failed to send old **albums folder** to the trash. | A Picasa nem tudta a kukába helyezni a régi albumok mappáját. |
+
+⇒ **két külön dolog** költözik (az adatbázis és az **albumok mappája**), és
+a régi példány **a Lomtárba** kerül — nem törlődik véglegesen.
+
+### 6. MI FUT LE UTÁNA
+
+A tényleges másolás alatt a **`moving_database.fen`** folyamatjelző
+párbeszéd látszik („Picasa is moving the database.", `progress` sáv). A
+burkolója a **`0x00404c30`** (`push 0xc7eb48` = `moving_database`,
+`push 0xc85fdc` = `progress`). Siker esetén
+`MoveDatabase::Success` — „A Picasa-adatbázis áthelyezése sikerült."
+
+### 7. HIBAESETEK — a bináris mind a hármat megnevezi
+
+| kulcs | mikor |
+|---|---|
+| `MoveDatabase::LocalDriveOnly` | a cél nem **írható helyi merevlemez** — „No changes will be made" |
+| `MoveDatabase::Failure` | a másolás elbukott — „make sure the destination is **empty** and try again" |
+| `MoveDbFailed` / `MoveAlbumsFailed` | a régi példányt nem sikerült a Lomtárba tenni |
+
+⇒ a cél-könyvtárnak **üresnek** kell lennie, és a meghajtó-ellenőrzés
+**megelőzi** a műveletet (nem részleges állapotot hagy).
+
+### 8. HONNAN JÖN INDULÁSKOR
+
+A folyamatjelző burkolója a `0x00404c30`-on ül — a `.text` **alacsony**
+tartományában, ami indulási kódra vall. A szándék-tároló olvasója ezzel a
+függvénnyel egy hívóláncban lesz. ⛔ **Ez a következő gépi lépés:** a
+`0x00404c30` hívóinak felderítése, és onnan a kulcs.
+
+### 9. Geometria
+
+A `.fen` `width="fit"`, a `new_location` mező `25em`; a többi a
+`.fen`-szerkezetből adódik. Ikon nincs.
+
+### A jegy CÍMÉNEK három állítása — mind IGAZOLT
+
+| állítás | forrás |
+|---|---|
+| „két mappa" | `MoveDbFailed` + `MoveAlbumsFailed` |
+| „Lomtár" | mindkét üzenet „send … to the **trash**" |
+| „csak helyi írható lemez" | `MoveDatabase::LocalDriveOnly` |
+
+### Nyitott kérdések mérlege (295.)
+
+`1 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
+
+A nyílt: **hol tárolódik az áthelyezési szándék** — a megszerzés útja a 8.
+pontban megnevezve.
+
+*Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/move_database.fen` és
+`moving_database.fen`; `referencia/stringres-en-hu.tsv:2038–2042` és
+`:2707`; a binárisban `0x00600983`, `0x00404c30`–`0x00404c4d`.*
