@@ -807,13 +807,20 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
 
         ⚠️ A `snap_9` **−90,0 fokot** tárol (nem 270-et): a `.cxf`-be
         −1,570796 kerül, különben a windowsos Picasával az oda-vissza olvasás
-        elcsúszna. Az értéket a `canvas.snap_theta` adja."""
+        elcsúszna. Az értéket a `canvas.snap_theta` adja.
+
+        ⚠️ #1162: ez a művelet **NEM függ** a téma `rotate` képességétől.
+        Kimérve az eredeti binárisból: a négy `collagepanel/snap_*`
+        parancsnév a `0x0083b900` végrehajtóra fut (0 / 90 / 180 / −90 fok,
+        `pi/180`-nal radiánra váltva, az elem `+0x15c` mezőjébe), és abban a
+        függvényben nincs képesség-maszk vizsgálat. A maszk 7. bitjét a
+        teljes `.text` egyetlen helyen nézi (`0x0083ad5f`), és az a
+        szórás-animációt (`AnimPlacementHandler`: hely + szög + méret)
+        kapuzza — vagyis a bit a SZABAD elrendezésé, nem a fix igazításé."""
         nodes = self._nodes()
         selection = selected_indices(nodes)
         if not selection:
             self.collageNeedsSelection.emit()
-            return
-        if not self._capabilities().rotate:
             return
         try:
             theta = canvas.snap_theta(command)

@@ -1195,36 +1195,47 @@ dolga** — a feature-branch csak leírja az igényt a jegyben.
 | a két oldalsó gombsort a **kijelölés** hozza elő | **erős** — a `m_hidden` bizonyított, a kiváltó ok következtetés |
 | a parancstábla, a képesség-maszkok, a gyűrű matematikája, a menütételek, a feliratok | **megerősített** |
 | a gyűrű 132 × 132-es rajz, és képernyő-egységben állandó | **erős** |
-| a maszk **7.** bitje = elforgatás | **erős** — 2026-09-09 (#1162) új adat, ld. lent |
+| a maszk **7.** bitje = a **szabad, szórásos** elhelyezés (hely + szög + méret), NEM a fix igazítás | **MEGERŐSÍTVE** (2026-09-12, #1162) — ld. lent |
 | a maszk **6.** bitje mit kapcsol | **MEGFEJTVE** (2026-08-21, #1170) — a `collagepanel/groupnode` csoport-csomópontot teszi külön overlay-ágba (`0x00860470` → `+0x219`); a rajza `#F85E0F` körvonalas téglalap. Részletek: `picasa-kollazs-felulet.md` **2.** és **2/b**. |
 | a `framegrid` `CLocationTree` pakolója | **KUTATÁS MEGVAN, átadásra kész** (2026-08-30) — a slot7/slot8/slot5 dekompilációja a privát `referencia/dekompilalt-pakolo/script-DecompilePacker3.log`-ban (`Gyöker 0x008906e0`, `0x008910b0`, `0x0089a5d0`); az **értelmezés**: a `0x008906e0` beszúró faépítést végez (a `-1.0` négységű képek kényszer-mentes listába kerülnek, `piVar10`), a `0x0089a5d0` a **rekurzív téglalap-számítás** min/max uniókkal (`FUN_0049fae0`=max, `FUN_0049fab0`=min), a slot8 (`0x008910b0`) az 56 bájtos `CLocationTreeNode`-gyártó — a **#916-os FEJLESZTŐI jegynek ez az alapja**. |
 
-#### A 7. bit — amit 2026-09-09-én mértem hozzá (#1162)
+#### A 7. bit — MEGFEJTVE (2026-09-12, #1162)
 
-A bitet olvasó helyet a `0x0083ad5f` adja (`shr eax, 7; test al, 1` a
-képesség-maszkot visszaadó virtuális híváson: `[ebx+0x130]` → `[eax+0x1c]`).
-A binárisban ez az EGYETLEN ilyen alakú 7-bit-próba a kollázs-környéken (a
-teljes `.text`-en három találat, a másik kettő más objektumon dolgozik).
+**Amit a bit kapuz.** A teljes `.text` pásztázása (minden indirekt `call`
+utáni bitvizsgálat, nem csak egy alak) **egyetlen** 7-bit-próbát ad:
+`0x0083ad5f`, a `FUN_0083abe0`-ban — abban a függvényben, amelyik a
+`collagepanel/tab2` alá tartozik, és végigmegy a kollázs minden elemén.
+A kapuzott ág elemenként egy **`AnimPlacementHandler`** objektumot gyárt
+(vtábla `0x00cbfebc`, RTTI-névvel), a kikapuzott ág helyette két jelzőt
+állít (`+0x250`, `+0x251`).
 
-A kapuzott blokk:
+Az `AnimPlacementHandler` léptető metódusa (`FUN_007f8d10`) az elem
+**helyét, szögét és méretét** animálja: olvassa a `+0x15c`-t (szög) és a
+`+0x168`-at (méret), majd a `ytNode` beállítóit hívja (`FUN_009dec60` =
+szög, `FUN_009deca0` = méret, `FUN_009debd0` = hely). A 0,1-es és 0,15-ös
+arányok (`[0x00c7dd30]`, `[0x00cf49c0]`) ezeknek a célértékei.
 
-- az elem **lebegőpontos** mezőjét olvassa (`fld dword [esi+0x168]`,
-  `0x0083ad6c`), és egy virtuális hívásnak adja át;
-- `0,1`-es és `0,15`-es arányokkal számol (`[0x00c7dd30]`, `[0x00cf49c0]`),
-  majd 0x50 bájtos objektumot gyárt;
-- **fix szögre utaló konstans nincs benne** (se 90, se negyedfordulat-
-  aritmetika).
+**Amit a bit NEM kapuz: a fix igazítást.** A négy `collagepanel/snap_*`
+parancs a `FUN_0083b900`-ra fut (`0x0082e0f3`, `0x0082e171`, `0x0082e1ef`,
+`0x0082e26d`), a szög rendre **0 · 90 · 180 · −90** fok
+(`[0xcf4370]` = 90, `[0xcf409c]` = 180, `[0xcf50d0]` = −90), amit
+`pi/180`-nal (`[0xcf3fc8]` = 0,017453292519938) radiánra vált, és az elem
+`+0x15c` mezőjébe ír. **A 341 bájtos függvényben nincs képesség-maszk
+vizsgálat.** A parancsnevet szétosztó `FUN_0082d570` és a nevet kiadó
+`FUN_005cb990` sem nézi a 7. bitet.
 
-*Következtetés, nem mérés:* a folytonos, lebegőpontos szög-mező inkább a
-**szabad** forgatáshoz illik, mint a negyedfordulathoz — de a mező ÍRÓI
-nincsenek azonosítva, ezért a fokozat marad **erős**. A következő lépés: a
-`+0x168` írói (ha ott 0/±90 fokú értékek jelennek meg, a bit a fix
-igazításhoz is tartozik).
+> A `−90` (nem 270) független megerősítése annak, amit a
+> `collage/canvas.py` `SNAP_FOKOK` táblája tárol.
 
-⚠️ **A megvalósítást ez nem blokkolta:** a #1162 a menü-gátolást a MI
-kódunk belső ellentmondására alapozva végezte el (a `snapRotation` a bitet
-nézi, a bepattintó gombsor gátolt volt, a jobbklikk-almenü nem) — a program
-viselkedése nem változott, csak láthatóvá lett.
+**Következmény a megvalósításra.** A bepattintó igazítás MINDEN témán
+elérhető: a vezérlő `snapRotation`-ja, a bepattintó gombsor és a
+jobbklikk-almenü egyike sem nézheti a `rotate` képességet. A #1162 első
+köre (PR #2788) ezt fordítva vezette be — a belső egyezés érve helyes volt,
+csak a rossz pontra igazított; 2026-09-12-én visszavonva.
+
+⚠️ **Amit ez NEM mond meg:** hogy az eredeti a nem forgató témákon mit
+RAJZOL az elforgatott csempéből. Ahhoz referencia-képernyőkép kellene; a
+mérés csak a parancs lefutásáról és a tárolt értékről szól.
 
 **Ez a lap nem igényel további bináris kutatást a megvalósítás
 megkezdéséhez.** A `framegrid` pakolója a #916-os jegy átadására kész állapotban

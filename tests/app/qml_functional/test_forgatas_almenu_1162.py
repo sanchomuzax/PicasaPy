@@ -1,40 +1,41 @@
-r"""A Forgatás-almenü csak a forgatást TÁMOGATÓ témákon aktív (#1162).
+r"""A Forgatás-almenü MINDEN kollázs-témán aktív (#1162).
 
-## Miért nyílt ez a jegy, és mi lett a válasza
+## A jegy kérdése, és a mért válasz
 
-A #1151 (Keret-almenü) javításakor előkerült egy hasonló eset, amit
-szándékosan nem javítottunk: a képesség-maszk `rotate` bitje **állítólag** a
-szabad (tetszőleges szögű) forgatásra vonatkozik, a jobbklikk-menü viszont
-FIX szögeket (0/90/180/270) kínál. Ha a kettő NEM ugyanaz, a menüt nem
-szabad a bit szerint tiltani.
+A #1151 (Keret-almenü) javításakor előkerült egy hasonló eset: a
+képesség-maszk `rotate` bitje **állítólag** a szabad (tetszőleges szögű)
+forgatásra vonatkozik, a jobbklikk-menü viszont FIX szögeket (0/90/180/270)
+kínál. A jegy azt kérte, hogy ezt a binárisból kell eldönteni.
 
-**A javítást most nem ez dönti el, hanem a BELSŐ ELLENTMONDÁS.** A mai
-kódban ugyanaz a művelet két belépési ponton érhető el, és a kettő NEM
-egyezik:
+**Kimérve (2026-09-12), az eredeti `Picasa3.exe` 3.9.141.259-en:**
 
-| belépési pont | gátolt-e |
-|---|---|
-| a bepattintó gombsor (`CollageSnapColumn.qml`) | **igen** (`capabilities.rotate`) |
-| a jobbklikk Forgatás-almenüje | **nem** volt |
+| kérdés | válasz | bizonyíték |
+|---|---|---|
+| hova fut a négy `collagepanel/snap_*` parancs? | `FUN_0083b900` | `0x0082e0f3`, `0x0082e171`, `0x0082e1ef`, `0x0082e26d` |
+| milyen szöggel? | 0 · 90 · 180 · **−90** fok | `0xcf4370` = 90, `0xcf409c` = 180, `0xcf50d0` = −90 |
+| hogyan tárolja? | `* pi/180`, az elem `+0x15c` mezőjébe | `0xcf3fc8` = 0,017453292519938 |
+| nézi-e a képesség-maszkot? | **NEM** — a 341 bájtos függvényben nincs ilyen vizsgálat | `FUN_0083b900` teljes diszasszemblátuma |
+| hol nézi bárki a 7. bitet? | a teljes `.text`-en **egy** helyen: `0x0083ad5f` | pásztázás minden `call <reg>` utáni bitvizsgálatra |
+| mit kapuz az az egy hely? | egy `AnimPlacementHandler` létrehozását elemenként | vtábla `0x00cbfebc`, RTTI-név |
+| mit animál az? | hely + **szög** + méret (`+0x15c`, `+0x168`) | `FUN_007f8d10` → `FUN_009dec60`/`FUN_009deca0` |
 
-És a vezérlő maga is a bitet nézi: a `snapRotation` **némán visszatér**
-(`collage_controller.py`), ha a téma nem forgat. A menütételek tehát azon az
-öt témán, ahol a bit 0, egy néma no-opot ajánlottak — pontosan a #1151
-osztálya („a felhasználó egy menütételt kapott, ami némán nem csinál
-semmit").
+**Következtetés:** a 7. bit a téma SZABAD, szórásos elrendezését engedi (a
+Képkupacnál), nem a fix igazítást. A jobbklikk-almenüt tehát nem szabad a
+bit szerint tiltani — és a vezérlőnek sem szabad némán visszatérnie.
 
-⚠️ **Ez a javítás NEM változtat a program viselkedésén**, csak láthatóvá
-teszi a meglévőt: a szürke tétel megmondja, hogy a funkció létezik, csak nem
-ehhez a témához. Tiltás és nem elrejtés — a #1151 döntését követve; hogy az
-eredeti rejt vagy tilt, **nincs kimérve**.
+## Amit ez visszavon
 
-## A bináris kérdés MARAD, és a jegyben áll
+A #1162 korábbi köre (PR #2788) a menüt a bit szerint GÁTOLTA, a vezérlő
+akkori `snapRotation`-jához igazodva. A belső egyezés érve helyes volt, csak
+a rögzítési pontot választotta rosszul: a vezérlő volt az, ami tévedett.
+Most mind a három belépési pont — vezérlő, bepattintó gombsor, helyi menü —
+a mért eredetit követi.
 
-A maszk 7. bitjéről a spec „erős" fokozatot ad. A #1162 körében mért új
-adat: a bit által kapuzott blokk (`0x0083ad5f`) az elem **lebegőpontos**
-mezőjét (`[esi+0x168]`) olvassa, és 0,1/0,15-es arányokkal számol —
-folytonos szögre utal, nem negyedfordulatra. Ez azonban **nem bizonyíték**
-(a mező írói nincsenek azonosítva), ezért a mai viselkedés marad.
+## Amit ez NEM állít
+
+Nem méri, hogy az eredeti a nem forgató témákon MIT MUTAT a vásznon a
+elforgatott csempéből; csak azt, hogy a parancs lefut és tárol. A vizuális
+egyezéshez referencia-képernyőkép kellene.
 """
 
 from __future__ import annotations
@@ -44,15 +45,16 @@ from PySide6.QtCore import QObject
 from PySide6.QtGui import QGuiApplication
 
 from support.collage_canvas_harness import (
+    _child,
     _panel,
     keszits_kepeket,
     nyitott_vezerlo,
 )
 
-#: A forgatást TÁMOGATÓ témák (a maszk 7. bitje 1) és a többi — a
-#: `themes.capabilities_for` szerint, nem feltevésből.
-FORGATOS = ("picturepile",)
-FORGATAS_NELKULI = (
+#: Mind a hat kollázs-téma — a forgatást „támogató" (a maszk 7. bitje 1) és
+#: a többi egyaránt. A megkülönböztetés ezen a felületen megszűnt.
+TEMAK = (
+    "picturepile",
     "contactsheet",
     "framegrid",
     "multiexp",
@@ -83,67 +85,53 @@ def _csoport_forgatas_almenu(panel):
     return menu
 
 
-class TestATiltas:
-    @pytest.mark.parametrize("tema", FORGATAS_NELKULI)
-    def test_a_forgatast_nem_tamogato_teman_TILTOTT(self, controller, tema):
+class TestAzAlmenuMindenTemanAktiv:
+    @pytest.mark.parametrize("tema", TEMAK)
+    def test_az_egyes_menu(self, controller, tema):
         controller.setCollageTheme(tema)
         panel = _panel(controller)
         QGuiApplication.instance().processEvents()
 
-        assert _forgatas_almenu(panel).property("enabled") is False, (
-            f"a Forgatás-almenü aktív a(z) {tema} témán, pedig a `snapRotation` "
-            "ott némán visszatér — a tétel no-opot ajánl"
+        assert _forgatas_almenu(panel).property("enabled") is True, (
+            f"a Forgatás-almenü gátolt a(z) {tema} témán, pedig az eredeti "
+            "végrehajtója (`FUN_0083b900`) nem nézi a képesség-maszkot"
         )
 
-    @pytest.mark.parametrize("tema", FORGATOS)
-    def test_a_forgato_temakon_AKTIV(self, controller, tema):
+    @pytest.mark.parametrize("tema", TEMAK)
+    def test_a_csoportos_menu(self, controller, tema):
+        """A több kijelölt képre nyíló menüben ugyanez az almenü áll — a
+        #1151 tanulsága szerint MINDEN belépési pontot végig kell nézni."""
         controller.setCollageTheme(tema)
-        panel = _panel(controller)
-        QGuiApplication.instance().processEvents()
-
-        assert _forgatas_almenu(panel).property("enabled") is True
-
-
-class TestACsoportosMenuIsGatolt:
-    """A több kijelölt képre nyíló menüben ugyanez az almenü áll — a
-    gátolásnak ott is látszania kell, különben a hiba egy másik belépési
-    ponton visszatér (#1151 tanulsága: MINDEN belépési pontot végig kell nézni)."""
-
-    def test_a_csoportos_almenu_is_tiltott(self, controller):
-        controller.setCollageTheme("regulargrid")
-        panel = _panel(controller)
-        QGuiApplication.instance().processEvents()
-
-        assert _csoport_forgatas_almenu(panel).property("enabled") is False
-
-    def test_a_csoportos_almenu_forgato_teman_aktiv(self, controller):
-        controller.setCollageTheme("picturepile")
         panel = _panel(controller)
         QGuiApplication.instance().processEvents()
 
         assert _csoport_forgatas_almenu(panel).property("enabled") is True
 
 
-class TestABelsoEgyezes:
-    """A menü gátolása a VEZÉRLŐ szabályát kövesse, ne egy másolt listát.
+class TestABepattintoGombsorIsAktiv:
+    """A harmadik belépési pont: a vászon bal szélén álló négy kis gomb.
 
-    A `snapRotation` egyetlen helyen dönt (`_capabilities().rotate`); ha a
-    menü egy kézzel írt téma-listát nézne, a kettő idővel elcsúszna. Ez a
-    próba minden témára összeveti a menü állapotát a vezérlő képességével —
-    így egy ÚJ téma felvétele sem tudja némán megbontani az egyezést.
+    Ha csak a menüt oldanánk fel, ugyanaz a funkció két helyen más választ
+    adna — pontosan az az ellentmondás, amiért a #1162 első köre a menüt
+    gátolta.
+
+    A `multiexp` kimarad: ott a `selection` képesség hiányzik, tehát az
+    egész oszlop rejtett (spec 2.4, #948) — az a gátolás más kérdés, és
+    ehhez a jegyhez nincs köze.
     """
 
-    @pytest.mark.parametrize("tema", FORGATOS + FORGATAS_NELKULI)
-    def test_a_menu_a_vezerlo_kepesseget_koveti(self, controller, tema):
+    @pytest.mark.parametrize(
+        "tema", [t for t in TEMAK if t != "multiexp"]
+    )
+    @pytest.mark.parametrize("gomb", ["collageSnap12", "collageSnap3"])
+    def test_a_gomb_nem_gatolt(self, controller, tema, gomb):
         controller.setCollageTheme(tema)
         panel = _panel(controller)
+        controller.selectAllNodes()
         QGuiApplication.instance().processEvents()
 
-        kepessegek = controller.property("collageCapabilities")
-        assert kepessegek is not None, "nincs képesség-térkép a vezérlőn"
-        elvart = bool(kepessegek["rotate"])
-        assert _forgatas_almenu(panel).property("enabled") is elvart, (
-            f"{tema}: a menü és a vezérlő `rotate` képessége eltér — a "
-            "`snapRotation` némán visszatérne, a menü mégis kínálná"
+        elem = _child(panel, gomb)
+        assert elem.property("enabled") is True, (
+            f"{tema}: a(z) {gomb} gomb gátolt, pedig az eredeti "
+            "végrehajtója nem nézi a képesség-maszkot"
         )
-        assert _csoport_forgatas_almenu(panel).property("enabled") is elvart

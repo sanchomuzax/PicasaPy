@@ -1084,7 +1084,9 @@ szól (`collage/themes.py` 7. bit, a #1151 Keret-almenü párja), nem a
 fotó-forgatás `rotate=` ini-kulcsáról. A két dolog neve egyezik, a
 mechanizmusuk nem: az egyik a `.picasa.ini` negyedfordulat-tárolója, a másik
 a kollázs-témák képesség-bitje. A #1162 ezen a szakaszon **nem záródott le** —
-a maszkbit jelentése a `kollazs-panel-ui-spec.md`-ben áll, „erős" fokozaton.
+a maszkbit jelentése a `kollazs-panel-ui-spec.md`-ben áll; azt 2026-09-12-én
+mértük ki (a bit a kollázs SZÓRÁSOS elhelyezését kapuzza, a fix igazítást
+nem), a fokozat ott már **megerősített**.
 *(Tanulság: a névegyezés nem funkcióegyezés — a lezárás előtt a jegy TÖRZSÉT
 kell elolvasni, nem a kulcsszót keresni.)* A mi oldalunkon
 (`photo_ops_controller.py` `_rotate_many`) a `rotate({steps})` 0..3-ig
@@ -1163,8 +1165,9 @@ webalbum nélkül nálunk nincs miről átvenni.
 Nyitott kérdések: 0 nyílt · 4 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
-- **NEM ez zárja le a #1162-t** (az a kollázs-maszk bitje — ld. az
-  önhelyesbítést a 34.2-ben): a `rotate=` kulcs = negyedfordulat-tároló, a menüvel
+- **NEM ez zárta le a #1162-t** (az a kollázs-maszk bitje — ld. az
+  önhelyesbítést a 34.2-ben; a jegy a `kollazs-panel-ui-spec.md` 15.
+  szakaszán zárult, 2026-09-12): a `rotate=` kulcs = negyedfordulat-tároló, a menüvel
   azonos mechanizmus); a forgatás két szöge és szövegei (34.2); a
   revert szöveg-hármasa és régió-tokenjei (34.3); a Reset Faces
   három ága (34.4).
