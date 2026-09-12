@@ -18,8 +18,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   saját futtatókörnyezetét hozza magával, tehát a gépen semmit nem kell
   előre feltenni. A telepítő Start menü bejegyzést és — ha kéred — asztali
   ikont ad, és a Programok és szolgáltatások alól eltávolítható.
-  ⚠️ Az első telepítő azzal a kiadással jelenik meg, amelyik ezt a
-  változást tartalmazza; a te gépeden még nincs kipróbálva.
+  Az első telepítő azzal a kiadással jelenik meg, amelyik ezt a
+  változást tartalmazza.
 
 ## [0.8.425] – 2026-09-12
 
@@ -47,7 +47,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - **A tíz gyorscímke-gomb a mért 2-3-2-3 elrendezésbe került** (#754), az
   első két sor közt elválasztóval — eddig két ötös sorban álltak.
 
-⚠️ A te gépeden ez még nincs ellenőrizve.
 
 ## [0.8.422] – 2026-09-12
 
@@ -93,7 +92,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   átmenetnél ez látszott a legjobban, elforgatott képnél pedig a kimenő
   kép el is fordult. Mostantól a másolat pontosan úgy áll, ahogy a néző az
   előző pillanatban látta, és a következő dia a pásztázás elejéről indul.
-  ⚠️ A te gépeden ez még nincs ellenőrizve.
 
 ## [0.8.418] – 2026-09-11
 
@@ -106,8 +104,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   meg. Ha az a verzió eltűnt a gépről, a telepítés sikerrel lefutott, a
   parancsikon viszont némán elmaradt vagy a régi helyre mutatott.
   Mostantól a telepítő az elején kiválaszt EGY értelmezőt, és mindent
-  abból kérdez. ⚠️ A te gépeden ez még nincs ellenőrizve; a jelenség
-  okát a #3021 nyitott kérdései tisztázzák.
+  abból kérdez.
 
 ## [0.8.417] – 2026-09-11
 
