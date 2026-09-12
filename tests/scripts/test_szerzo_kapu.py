@@ -63,8 +63,12 @@ class SzerzoKapuTeszt(unittest.TestCase):
             with self.subTest(jog=jog):
                 self.assertNotIn(jog, self.hatasos)
 
-    def test_a_lista_tartalmazza_a_mai_ket_szerzot(self) -> None:
-        for szerzo in ("sanchomuzax", "picasapy-claude-agent[bot]"):
+    def test_a_lista_tartalmazza_a_jovahagyott_szerzoket(self) -> None:
+        for szerzo in (
+            "sanchomuzax",
+            "picasapy-claude-agent[bot]",
+            "picasapy-codex[bot]",
+        ):
             with self.subTest(szerzo=szerzo):
                 self.assertIn(szerzo, self.szoveg)
 
