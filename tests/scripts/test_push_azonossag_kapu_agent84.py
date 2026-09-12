@@ -47,7 +47,9 @@ BLOKKOLANDO = [
     "git --git-dir=/x/.git --work-tree=/x push origin main",
     "git -c user.name=X push origin main",
     # összetett parancsban, a második tagként
-    "cd /x && git push",
+    # ⚠️ #3105 óta a MEGNEVEZETT út dönt, nem a cwd — ezért a projekt
+    # egyik munkafájára mutat. Idegen útra ugyanez ÁTMEGY (TestHatokor).
+    "cd ~/Documents/PicasaPy-wt-42 && git push",
     'git commit -q -m "üzenet" && git push origin main',
     "git add f && git commit -m x && git push -q origin main",
     "git pull --rebase --quiet && git push -q origin main",
@@ -73,14 +75,66 @@ ATENGEDENDO = [
 ]
 
 
+#: A projekt egyik munkafája — a kapu hatóköre (#3105).
+PROJEKT = "/home/sancho/Documents/PicasaPy"
+
+#: A felhasználó egy MÁSIK projektje. Ott a bot GitHub Appja nincs telepítve,
+#: tehát a kapu javasolta burkoló sem járható út.
+IDEGEN = "/home/sancho/Documents/claude-code-rules"
+
+
 @pytest.mark.parametrize("cmd", BLOKKOLANDO)
 def test_blokkolja(cmd: str) -> None:
-    assert kapu.blokkolando(cmd), cmd
+    assert kapu.blokkolando(cmd, PROJEKT), cmd
 
 
 @pytest.mark.parametrize("cmd", ATENGEDENDO)
 def test_atengedi(cmd: str) -> None:
-    assert not kapu.blokkolando(cmd), cmd
+    assert not kapu.blokkolando(cmd, PROJEKT), cmd
+
+
+class TestHatokor:
+    """#3105 — a kapu MÁS projektben néma.
+
+    Élesben azonnal megharapott: a felhasználó egy másik projektjének
+    repójába menő feltöltést blokkolta, ahol a bot Appja nincs is telepítve.
+    A rosszul méretezett őr a HELYES utat zárja el.
+    """
+
+    def test_idegen_repoban_nem_blokkol(self) -> None:
+        assert not kapu.blokkolando("git push", IDEGEN)
+
+    def test_a_MEGNEVEZETT_ut_dont_a_cwd_helyett(self) -> None:
+        """`cd <idegen repó>` után a munkamenet cwd-je még a miénk."""
+        assert not kapu.blokkolando(f"cd {IDEGEN} && git push", PROJEKT)
+
+    def test_a_mi_repnkra_idegen_cwd_bol_is_blokkol(self) -> None:
+        assert kapu.blokkolando(
+            "git -C ~/picasapy-agent push origin main", IDEGEN)
+
+    def test_a_projekt_munkafajaban_blokkol(self) -> None:
+        assert kapu.blokkolando("git push", PROJEKT + "-wt-42")
+
+
+class TestAProzaAtmegy:
+    """#3105 — a kapu a SAJÁT jegyének megnyitását blokkolta.
+
+    A jegy törzsében szerepelt a tiltott parancs neve, és a kapu a
+    jegynyitást állította meg. Az azonosság-kapu ezt régóta jól kezeli:
+    idézett szakaszokat kivág, mielőtt parancsot keresne.
+    """
+
+    def test_idezojelben_nem_parancs(self) -> None:
+        assert not kapu.blokkolando(
+            f'gh issue create --body "a csupasz {""}git push" tiltva"', PROJEKT)
+
+    def test_backtickben_sem(self) -> None:
+        assert not kapu.blokkolando(
+            "gh issue edit 1 --body 'a `git push` helyett a burkolót'", PROJEKT)
+
+    def test_a_helyes_parancs_idezojelben_is_atmegy(self) -> None:
+        assert not kapu.blokkolando(
+            '"~/picasapy-agent/eszkozok/git-push-bot" . main', PROJEKT)
 
 
 class TestAHookVege:
