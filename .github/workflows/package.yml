@@ -178,6 +178,10 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          # a kiadási ághoz a TAG is kell — sekély klónban a `git checkout`
+          # „does not take a path argument" hibával állt le (mérve, #3040)
+          fetch-depth: 0
 
       # PR-ágon nincs kiadás: a verzió a pyproject.toml-ból jön (egyetlen
       # forrás), és a feltöltés kimarad.
@@ -202,7 +206,8 @@ jobs:
             echo "::error::nem sikerült feloldani a kiadás tagjét"
             exit 1
           fi
-          git checkout --detach "$TAG"
+          git fetch --tags --force origin
+          git checkout --detach "refs/tags/$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
 
