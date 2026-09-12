@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.441] – 2026-09-12
+
+### Belső
+
+- **A tónus-szűrők zajkeverése már nem mérési hiányon áll** (#2926). A
+  program a Picasa finom, sávosodást megszüntető zaját ma nem keveri a
+  képbe. Eddig azért nem, mert hiányzott egy mérés; az megvan, tehát
+  mostantól ez elvégzendő munka, nem nyitott kérdés. A kép ettől ma nem
+  változik.
+
 ## [0.8.440] – 2026-09-12
 
 ### Belső
