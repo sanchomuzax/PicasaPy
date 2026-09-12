@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.432] – 2026-09-12
+
+### Hozzáadva
+
+- **A mentés megmondja, hány lemezre férne** (#2074). A biztonsági mentés
+  tervénél mostantól ott a becslés is: hány CD-re vagy DVD-re menne át az
+  anyag. A számítás az eredeti Picasa mért képletét követi, tehát a
+  lemezzáró sáv helyét is figyelembe veszi — nem a marketing-méretekkel
+  számol. A lemezre írás maga még nincs benne.
+
 ## [0.8.431] – 2026-09-12
 
 ### Javítva

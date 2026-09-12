@@ -9490,6 +9490,11 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>BackupDialog</name>
+    <!-- #2074: lemezszám-becslés a mért kapacitás-képletből -->
+    <message>
+        <source>Copying %1 file(s)... (%2 CD or %3 DVD)</source>
+        <translation>Másolás: %1 fájl… (%2 CD vagy %3 DVD)</translation>
+    </message>
     <!-- #3009: a másolás háttérszálon fut, és végig beszél -->
     <message>
         <source>Copying (%1/%2) files</source>

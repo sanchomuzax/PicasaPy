@@ -348,9 +348,13 @@ Window {
                         return
                     var k = backupWindow.keszletek[backupWindow.kivalasztott]
                     var terv = backupController.terv(k.id)
+                    //: #2074: a lemezszám-becslés is látszik, ahogy az
+                    //: eredetiben („Est. %d CDs or %d DVDs") — a kapacitás
+                    //: a mért képletből jön.
                     backupWindow.uzenet = terv.darab === 0
                         ? qsTr("Everything was already backed up.")
-                        : qsTr("Copying %1 file(s)...").arg(terv.darab)
+                        : qsTr("Copying %1 file(s)... (%2 CD or %3 DVD)")
+                            .arg(terv.darab).arg(terv.cd).arg(terv.dvd)
                     backupController.futtasdMost(k.id)
                 }
             }

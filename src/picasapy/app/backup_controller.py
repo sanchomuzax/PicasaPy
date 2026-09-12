@@ -28,6 +28,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.backup import futtasd, tervezd_meg
+from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
 from .worker_thread import BackgroundWorkerMixin
 from picasapy.index.backup_sets import (
@@ -39,6 +40,12 @@ from picasapy.index.backup_sets import (
 )
 
 _log = logging.getLogger(__name__)
+
+#: #2074: a névleges lemezek szektorszáma. A 700 MB-os CD 360 000, a
+#: 4,7 GB-os egyrétegű DVD 2 295 104 szektor — ezekből a MÉRT képlet adja
+#: a ténylegesen használható méretet.
+_CD_SZEKTOR = 360_000
+_DVD_SZEKTOR = 2_295_104
 
 
 class BackupController(BackgroundWorkerMixin, QObject):
@@ -171,10 +178,22 @@ class BackupController(BackgroundWorkerMixin, QObject):
             terv = tervezd_meg(
                 conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
             )
+        #: #2074: hány lemezre férne — az eredeti is megmutatja
+        #: („Est. %d CDs or %d DVDs"). A kapacitás a MÉRT képletből jön
+        #: (`szektor × 2048 − tartalék`, `0x0066be90`); a szektorszámok a
+        #: névleges 700 MB-os CD-é és 4,7 GB-os DVD-é.
         return {
             "darab": len(terv.fajlok),
             "bajt": terv.osszes_bajt,
             "kihagyott": terv.kihagyott,
+            "cd": lemezek_szama(
+                terv.osszes_bajt,
+                hasznalhato_kapacitas(CD, szektorszam=_CD_SZEKTOR),
+            ),
+            "dvd": lemezek_szama(
+                terv.osszes_bajt,
+                hasznalhato_kapacitas(DVD, szektorszam=_DVD_SZEKTOR),
+            ),
         }
 
     @Slot(int)
