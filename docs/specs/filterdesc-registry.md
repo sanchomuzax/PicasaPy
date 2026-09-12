@@ -5279,3 +5279,78 @@ utasításszintű olvasás áll.*
 *Kérdés-mérleg (SAJÁT kérdések): **1 LEZÁRVA** (K1 — ki olvassa a jelzőket
 és mit tesz velük) · 0 nyitott · 0 blokkolt · 0 hatókörön kívül · 0 „csak
 nyitva".*
+
+## ⛳ A festhető maszk: ÖT effekt, KÉT család — és a maszk nem lánc-paraméter (2026-09-12, 296. kör, #1908)
+
+A #1908 azt kérdezte, hogy a festett maszk **foglal-e lánc-paramétert**, és
+**visszatölthető-e**. A `filterdesc.xml` mindkettőre válaszol — és közben
+kiderül, hogy a jegy (és a kódunk) **kettőt** ismer az **ötből**.
+
+### Mind az öt `Mask="{_mctr.mask}"` — sorszámmal
+
+| sor | szűrő | a kanavász |
+|---:|---|---|
+| 715 | **`Boost`** | `cnt:PaintEffectCanvas` |
+| 1199 | **`Pixelate`** | `cnt:PaintEffectCanvas` |
+| 1283 | **`ReanimatedEyeColor`** | **`eff:PaintOnEffectBase`** |
+| 1348 | **`Soften`** | `cnt:PaintEffectCanvas` |
+| 1360 | **`PicnikTint`** | `cnt:PaintEffectCanvas` |
+
+⚠️ **Két különböző befoglaló elem adja a `_mctr`-t.** Ezért téveszt, aki
+csak a `PaintEffectCanvas`-ra keres: a `ReanimatedEyeColor` **más** bázison
+ül (`eff:PaintOnEffectBase`, ecset-paraméterekkel:
+`_nBrushHardness="0.15"`, `BrushSizeAndEraserButton startValueFactor="0.03"
+maximumFactor="0.2"`).
+
+⛔ **Nálunk `PAINTABLE_MASK_OPS = {"picniktint", "reanimatedeyecolor"}`**
+(`render/chain_glimmer_handlers.py:263`) — **egy tag mindkét családból, a
+másik három hiányzik**. A `Boost`, a `Pixelate` és a `Soften` így **nem kap**
+festhető-maszk figyelmeztetést a láncban.
+
+### A maszk NEM lánc-paraméter — a forrásból
+
+A `Mask` értéke minden esetben **`{_mctr.mask}`**: futásidejű
+**vezérlő-objektum** hivatkozása, amit a kanavász ad. A szűrő **deklarált**
+bemenetei ezzel szemben a csúszkák és a színválasztó — például a
+`PicnikTint`-nél `_clrsw` (`ImageColorSwatch`) és `_sldrFade`.
+
+⇒ a `filters=` lánc **csak a deklarált értékeket** hordozhatja; a maszknak
+**nincs mezője**. Ebből következik a #1908 3. kérdésének válasza is: a
+`.picasa.ini`-n keresztül a festett maszk **nem jön vissza**.
+
+⚠️ **A hatókör kimondva:** ez azt bizonyítja, hogy az **ini-lánc** nem
+hordozza. Hogy a Picasa **máshol** (pl. a `db3`-ban) tárolja-e, ezt a mérés
+**nem zárja ki** — az a következő gépi lépés.
+
+### A valódi korpusz — egyik sem fordul elő
+
+A tulajdonos **859** `.picasa.ini`-jében (`ini-korpusz/korpusz.txt`,
+5 658 `filters=` sor) **28 különböző** szűrő szerepel:
+
+```
+autocolor autolight Boost bw Cinemascope crop64 CrossProcess dir_tint
+enhance fill finetune2 glow2 HDR Holga Lomo movieend moviestart radblur
+redeye retouch sat sepia Sixties tilt tint unsharp2 Vignette warm
+```
+
+**`PicnikTint` és `ReanimatedEyeColor` egyszer sem.** ⚠️ Ez **összhangban
+van** a fentivel, de önmagában **nem bizonyíték** — a tulajdonos egyszerűen
+nem használta őket. A bizonyíték a `filterdesc.xml` szerkezete.
+
+⭐ A `Boost` viszont **szerepel** a korpuszban — tehát egy festhető maszkos
+effekt **igenis eljut az ini-be**, a maszkja nélkül.
+
+*Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/filterdesc.xml:715`,
+`:1199`, `:1283`, `:1348`, `:1360`; `referencia/ini-korpusz/korpusz.txt`;
+`src/picasapy/render/chain_glimmer_handlers.py:263`.*
+
+### Nyitott kérdések mérlege (296.)
+
+`1 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
+
+| kérdés | állapot |
+|---|---|
+| foglal-e a maszk lánc-paramétert | ✅ **NEM** — `{_mctr.mask}` futásidejű objektum |
+| visszatölthető-e a `.picasa.ini`-ből | ✅ **NEM** — következik a fentiből |
+| hány festhető maszkos effekt van | ✅ **ÖT**, két családban (a jegy kettőt mondott) |
+| tárolja-e a Picasa **máshol** (db3) | ⛔ **NYITOTT** — ezt a mérés nem zárja ki |
