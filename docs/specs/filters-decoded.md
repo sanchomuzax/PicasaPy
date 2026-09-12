@@ -2252,8 +2252,12 @@ objektum 2-es módja) — ehhez egy mélyebb kör kell.~~
 FUN_0090cf60(dst, src, /*kuszob*/ *(p + 0x28), /*skala*/ 1.0f);
 ```
 
-A munkafüggvény `(h+1)·(w+1)` darab **16 bites** akkumulátort foglal — ez
-összegzőtábla/dobozszűrő-jellegű megvalósításra utal, nem Gauss-konvolúcióra.
+A munkafüggvény `(h+1)·(w+1)` darab **16 bites** rekeszt foglal.
+
+> ⛔ **ÖNHELYESBÍTÉS (2026-09-12, #762): ez NEM akkumulátor.** A szakasz
+> korábban „összegzőtábla/dobozszűrő-jellegű megvalósításra utal"-t írt. A
+> `0x0090cf60` teljes törzse ezt megdönti: a tömb egy **FAL-BITTÉRKÉP**, és a
+> tényleges simítás **fix súlyú konvolúció**. Kiolvasva alább.
 
 > ⚠️ **HELYESBÍTÉS (#1142): a harmadik argumentum NEM sugár.** A szakasz
 > korábbi címe („a csúszka a sugár") megdőlt. A `filterdesc.xml` a `blur`
@@ -2270,6 +2274,81 @@ tesztábra; a JPEG-újratömörítés zajszintje ebben a szettben 0,240):**
 | `blur=1;` (alapérték, 0,1) | 0,240 | tétlen |
 | `blur=1,0.500000;` (a csúszka teteje) | 0,562 | tétlen (σ ≤ 0,3) |
 | `blur=1,2.000000;` (tartományon KÍVÜL) | 17,317 | **σ = 4,00 Gauss**, 0,552 maradék |
+
+#### ⭐ A `blur` GÉPEZETE, utasításszinten (2026-09-12, #762)
+
+*Három függvény: a keretező `0x0090cf60`, a vezénylő `0x0090cd90`, a
+simító `0x0090c6b0`. Minden állítás mellett cím áll.*
+
+**1. A `(h+1)·(w+1)` tömb egy FAL-BITTÉRKÉP.** A `0x0090cf60` a puffert
+`(w+1)·(h+1)·2` bájton kéri (`0x0090cfd7` `imul eax, esi` + `add eax, eax`),
+`_memset`-tel **nullázza** (`0x0090d001`), majd a **kép peremét** jelöli be:
+
+| perem | mit ír | hol |
+|---|---|---|
+| bal és jobb oldali oszlop | `or word, 0x5555` — a **páros** bitek | `0x0090d07d`, `0x0090d082` (h+1 soron, `2·(w+1)` léptékkel) |
+| felső és alsó sor | `or word, 0xaaaa` — a **páratlan** bitek | `0x0090d0a0`, `0x0090d0a6` |
+
+⇒ A rekesz nem összeg, hanem **jelzőbitek halmaza**: a páros bitek az egyik,
+a páratlanok a másik irány „falát" jelentik, és a kép széle eleve fal. Ez
+teszi élmegőrzővé a simítást (a 4.2.3 dekompilátum „fal" fogalma).
+
+**2. A küszöb: `CSONK(küszöb² · 65536) / n²`.** A `0x0090cd90` a float
+paramétert **négyzetre emeli** (`0x0090cdf3 fmul st(0), st(0)`), megszorozza
+a `0xcf3cb0` konstanssal (**65536,0**), és egészre konvertál (`0x0090cdfb`).
+A fal-jelölő (`0x0090ca10`) ezt **`n²`-tel osztja** (`0x0090ca17 imul ecx,
+ecx` + `0x0090ca1b idiv ecx`) — a `picasa-native-filter-workers.md` 4.2.3
+`küszöb / n²` alakja ezzel kódra van vezetve.
+
+**3. HÁROM LÉPTÉK, léptékenként fal-jelölés + KÉT simító menet.** A
+`0x0090cd90` hívássorrendje háromszor ismétlődik:
+`0x0090ca10` (fal-jelölés) → `0x0090c6b0` ×2 (a két menet) →
+`0x0090cbe0` (a lépték váltása) — `0x0090cead`…`0x0090cf46`. A fal-bit
+maszkja léptékenként `n · 0x5555`, a másik iránynak ennek a kétszerese
+(`0x0090ca1d`, `0x0090ca3a`) — ezért kell a **16 bit**: több lépték
+fal-jelzője ül egymás mellett ugyanabban a rekeszben.
+
+**4. A simító mag: `(4·közép + 3·(négy szomszéd) + 8) >> 4`.** A
+`0x0090c6b0` SWAR-ban dolgozik, két csatornacsoportra osztva
+(`and 0xff00ff` = R és B, `and 0xff00` = G):
+
+```asm
+ecx = (c1+c2+c3+c4) & 0xff00ff        ; 0x0090c8f7–0x0090c926
+ecx = ecx·3                            ; 0x0090c930  lea ecx,[ecx+ecx*2]
+ecx = ecx + kozep·4 + 0x80008          ; 0x0090c946  (a 0x8 a kerekítés)
+ecx &= 0xff00ff0                       ; 0x0090c957
+eax = ((g1+g2+g3+g4)·3 + kozep_g·4 + 0x800) & 0xff000   ; 0x0090c93b–0x0090c964
+ecx = (ecx | eax) >> 4                 ; 0x0090c969, 0x0090c96f
+```
+
+⇒ **Öt tagú, fix súlyú konvolúció**: a közép súlya `4/16`, a négy szomszéd
+mindegyike `3/16`, a kerekítés `+8` csatornánként a `>> 4` előtt. **Nem**
+futó összeg és **nem** összegzőtábla — a 2026-08-15-i következtetés
+megdőlt.
+
+> ### ⛳ A VÁLASZ a #762 két nyitott pontjára
+> * a `blur` magja **konvolúció** súlytáblával (`4 : 3 : 3 : 3 : 3` / 16),
+>   nem dobozszűrő;
+> * a `(h+1)·(w+1)` **16 bites** tömb **fal-bittérkép** (léptékenként két
+>   bit), nem akkumulátor — a `+1` a perem-fal helye, nem az összegzőtábla
+>   eltolása.
+
+#### ⚠️ Ami ebből még NINCS kiolvasva
+
+1. **Mit tesz a mag a falba futó szomszéddal** (a közép értékét veszi-e át,
+   vagy a súlyt osztja újra) — a `0x0090c6b0` a 16 bites térképet olvassa
+   (`0x0090c833`, `0x0090c858`), de az ágak szerepe nincs kibontva.
+2. **A három lépték `n`-értékei** (`0x0090cbe0`, 
+   a maszk `n · 0x5555` alakja `n = 4`-nél már 16 biten túlcsordulna).
+3. A szomszédok **geometriája** léptékenként (a `ecx*2` / `ecx*4` indexelés).
+
+Ezek nélkül a mag NEM építhető be pixelhűen — a mai, mért Gauss-közelítés
+(`render/blur.py`, σ = 4,0 a tartományon kívül) marad, amíg ez a három
+megvan.
+
+*Bizonyítottsági fok: **megerősített** a fal-bittérképre, a küszöb-képletre,
+a három léptékre és az öt tagú magra (helyi diszasszemblálás, minden lépés
+címmel) · **nyitott** a fal-ág, a lépték-sorozat és a szomszéd-geometria.*
 
 A σ optimuma éles (3,90 → 0,650; 4,10 → 0,692), és minden más próbált mag
 rosszabb: a Picasa saját IIR-elmosója (`iir_blur`, a legjobb sugarán) 3,49;
@@ -3267,7 +3346,7 @@ végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
 
 | kérdés | jegy |
 |---|---|
-| a `blur` elmosó magja (a `(h+1)·(w+1)` 16 bites akkumulátor) | **#762** |
+| a `blur` magjának fal-ága, lépték-sorozata és szomszéd-geometriája (a mag maga és a fal-bittérkép MEGVAN, 2026-09-12) | **#762** |
 | az `autocolor` 3 × 3-as mátrixának összeállítása | **#759** |
 | az `enhance` keverés bevezetése a kódba | **#721** |
 | a `radblur` sugár-hányada: `0,009` (mért) vs `0,01` (dekompilátum) | #317 |
