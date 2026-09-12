@@ -250,6 +250,14 @@ Rectangle {
     // zoomValue: 0 = illesztés, 0,5 = valódi méret (100 %), 1 = 400 %.
     property real zoomValue: 0
     //: a MÉRT leképezés szerint számolt szorzó az ILLESZTETT mérethez képest
+    //: #3013: a KETTŐS NÉZET üzemmódja — `editpanel/layout_2up_group`.
+    //: `"1up"` (alapértelmezés, `Property setpressed 1`), `"aa"` (ugyanaz a
+    //: kép kétszer: balra a szerkesztés ELŐTTI, jobbra a mai), `"ab"` (két
+    //: különböző kép — a #3014 hozza).
+    property string layoutMode: "1up"
+    //: melyik oldal az aktív — a „Kijelölve" jelvény ezt mutatja
+    property string aktivOldal: "jobb"
+
     readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
     readonly property string zoomMode:
         viewer.zoomValue === 0 ? "fit"
@@ -744,6 +752,53 @@ Rectangle {
                     onClicked: viewer.editCollageRequested(viewer.currentFilePath)
                 }
                 Item { Layout.fillWidth: true }
+                //: #3013: a kettős nézet háromszegmenses kapcsolója
+                //: (`editpanel/layout_2up_group`), a mért sorrendben és a
+                //: hivatalos magyar buboréksúgókkal.
+                Row {
+                    objectName: "viewerLayoutGroup"
+                    spacing: 1
+                    LayoutSegment {
+                        objectName: "viewerLayoutOnly1up"
+                        nezo: viewer
+                        mod: "1up"
+                        jel: "▭"
+                        sugo: qsTr("Show only one picture")
+                    }
+                    LayoutSegment {
+                        objectName: "viewerLayoutAa"
+                        nezo: viewer
+                        mod: "aa"
+                        jel: "▯▯"
+                        sugo: qsTr("Show the same picture twice")
+                    }
+                    LayoutSegment {
+                        objectName: "viewerLayoutAb"
+                        nezo: viewer
+                        mod: "ab"
+                        jel: "▯▮"
+                        sugo: qsTr("Show two different pictures")
+                        //: a #3014 hozza — addig LÁTHATÓ, de tiltott: a
+                        //: néma no-op rosszabb volna, mert a felhasználó
+                        //: nem tudná, hogy nem működik
+                        enabled: false
+                    }
+                }
+
+                //: #3013: `swap_2up_focus` — csak 2-up módban látszik
+                LayoutSegment {
+                    objectName: "viewerSwapFocus"
+                    nezo: viewer
+                    mod: ""
+                    jel: "⇄"
+                    sugo: qsTr("Switch focus between the pictures")
+                    visible: viewer.layoutMode !== "1up"
+                    function kattints() {
+                        viewer.aktivOldal =
+                            viewer.aktivOldal === "jobb" ? "bal" : "jobb"
+                    }
+                }
+
                 PicasaButton {
                     objectName: "viewerPlayButton"
                     text: "▶ " + qsTr("Play")
@@ -1297,6 +1352,50 @@ Rectangle {
                     // vág, a zoomhoz kötelező a clip
                     clip: true
 
+                    //: #3013: a KETTŐS NÉZET bal oldala — a szerkesztés
+                    //: ELŐTTI kép. A nyers fájl URL-je, a `filters=` lánc
+                    //: nélkül: ez a „mi volt" oldal. Csak 2-up módban
+                    //: látszik, és a fő képpel EGYFORMA méretet kap.
+                    Image {
+                        id: photoElotte
+                        objectName: "viewerImageElotte"
+                        visible: viewer.layoutMode !== "1up"
+                                 && !viewer.isCurrentVideo
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: viewer.layoutMode === "1up"
+                            ? 0 : Math.floor((parent.width - 8) / 2)
+                        source: viewer.isCurrentVideo
+                            ? "" : viewer.urlAt(viewer.currentIndex)
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: Qt.platform.pluginName !== "offscreen"
+                        autoTransform: true
+                        sourceSize.width: 2560
+                    }
+
+                    //: #3013: a „Kijelölve" jelvény az AKTÍV oldalon
+                    Rectangle {
+                        objectName: "viewerFocusBadge"
+                        visible: viewer.layoutMode !== "1up"
+                        width: jelvenySzoveg.implicitWidth + 12
+                        height: 18
+                        radius: 2
+                        color: Theme.selectionBlue
+                        anchors.top: parent.top
+                        anchors.left: viewer.aktivOldal === "bal"
+                            ? parent.left : undefined
+                        anchors.right: viewer.aktivOldal === "jobb"
+                            ? parent.right : undefined
+                        Text {
+                            id: jelvenySzoveg
+                            anchors.centerIn: parent
+                            text: qsTr("Selected")
+                            font.pixelSize: Theme.fontSize - 2
+                            color: "#ffffff"
+                        }
+                    }
+
                     Image {
                         id: photo
                         objectName: "viewerImage"
@@ -1317,7 +1416,13 @@ Rectangle {
                         scale: viewer.zoomFactor
                         transformOrigin: Item.Center
                         // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
-                        width: iniSteps % 2 ? photoArea.height : photoArea.width
+                        //: #3013: 2-up módban a fő kép a JOBB felet kapja
+                        //: (ez a „mai" állapot), egy képen a teljes terület
+                        width: iniSteps % 2
+                            ? photoArea.height
+                            : (viewer.layoutMode === "1up"
+                               ? photoArea.width
+                               : Math.floor((photoArea.width - 8) / 2))
                         height: iniSteps % 2 ? photoArea.width : photoArea.height
                         rotation: iniSteps * 90
                         // nyitott szerkesztésnél a filters= láncot alkalmazó
