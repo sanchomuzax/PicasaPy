@@ -3694,3 +3694,63 @@ kiadási sorrendje közvetlenül leolvasható.
 *Forrás: a `.text` teljes pásztázása `eszkozok/binaris/paszta.py`-val
 (hívóhely-leltár), és a négy kulcs-literál (`0x00c80ad4`, `0x00c80ae4`,
 `0x00c81474`, `0x00c814bc`) összes kódbeli hivatkozása: 15 · 6 · 14 · 3.*
+
+## ⛳ ÖNHELYESBÍTÉS: az „opkódok" FOKOK — 90 · 180 · 270 (2026-09-12, 297. kör, #2938)
+
+A 289. kör a `0x006bb4a0` hívóhelyeinek opkód-eloszlását mérte
+(`0x10e` ×6 · `0x5a` ×5 · `2` ×2 · `1` ×2), és a `0x10e`-t a **forgatás
+igazolatlan jelöltjének** nevezte. A jelölt **igazolódott — és többet is
+mond**, mint amit akkor feltettem.
+
+### A kapcsoló, utasításszinten
+
+```
+0x0042cf60  or   eax, 0xfffffffc       ; a negyedfordulat-szám
+   …        (modulo-4 normalizálás)
+0x0042cf8a  sub  eax, 1 / je 0x42cfa4  ->  push 0x10e    (= 270)
+0x0042cf8f  sub  eax, 1 / je 0x42cf9d  ->  push 0xb4     (= 180)
+0x0042cf94  sub  eax, 1 / jne …        ->  push 0x5a     (= 90)
+0x0042cfa9  push edi
+0x0042cfaa  lea  eax, [ebx + 0x3200]
+0x0042cfb0  call 0x6bb4a0
+```
+
+⇒ **A három érték nem három opkód, hanem a FORGATÁS SZÖGE FOKBAN:**
+
+| érték | tizedesen | jelentés |
+|---|---:|---|
+| `0x5a` | **90** | egy negyedfordulat |
+| `0xb4` | **180** | fél fordulat |
+| `0x10e` | **270** | három negyedfordulat |
+
+A `0`-t (nincs forgatás) a kapcsoló **nem** adja ki — a harmadik `sub`
+után `jne` ugrik a hívás fölé.
+
+### Mit jelent ez a 289. kör táblájára
+
+A `0x006bb4a0` / `0x005eef30` **egyetlen argumentum-tere kétféle dolgot**
+hordoz:
+
+| érték | mi |
+|---|---|
+| `1` | **függőleges** tükrözés |
+| `2` | **vízszintes** tükrözés |
+| `90` · `180` · `270` | forgatás, fokban |
+
+⇒ a 289. kör „opkód-eloszlása" valójában **szög-eloszlás** a forgató
+hívóhelyeken, és a `0x5a` ötszöri előfordulása öt **90 fokos** hívóhely.
+
+### ⛔ A jegy kérdése (a SORRENDJÜK) továbbra is nyitva
+
+A forgatás ebből a kapcsolóból megy ki (`0x0042cfb0`), a két tükrözés
+viszont **másik függvényből** (`0x0042d828` → `2`, `0x0042d842` → `1`,
+a `flipped` ini-ága). ⇒ **a sorrendet a KÖZÖS HÍVÓJUK dönti el**, nem
+egyikük sem.
+
+**A következő gépi lépés:** a `0x0042cf60` körüli függvény kezdetének
+megkeresése, és annak hívói — a `0x0042d7e0`-nal (a `flipped` ága) közös
+hívó adja a sorrendet.
+
+*Forrás: `0x0042cf60`–`0x0042cfb0` (a szög-kapcsoló), `0x0042d828` /
+`0x0042d842` (a tükrözés-ág, 287. kör), `0x00c80ad4` = `"rotate"`,
+`0x00c80ae4` = `"flipped"`.*
