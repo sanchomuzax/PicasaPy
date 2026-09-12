@@ -136,8 +136,10 @@ Buchinger „brightness"-nek hitte a p1-et — valójában fill light; a p5-öt
 ### `finetune` (v1) viszonya a v2-höz
 
 - p1 (fill): **bitre azonos** a v2-vel (max|Δ|=0).
-- p5 (temp): eltér (max|Δ|≈10 a ±0,5 sweepnél) — a v1 temp-skálája más.
-  → külön LUT/együttható kell a v1-hez.
+- p5 (temp): eltér — a v1 **nem a v2 görbéjét skálázza**, hanem a natív
+  `0x0090ea10` középtónus-parabolás workert futtatja. A pontos bekötést,
+  skálát és csonkolást a „`finetune` v1 színága” szakasz rögzíti lentebb
+  (#958).
 
 ### `fill=1,s` — fill light görbecsalád
 
@@ -3168,8 +3170,9 @@ maximumán (±1,0)**. Ez a 2× *tágítás* várakozásával ellentétes irány�
 tengely szélesebb lett, a hatás mégis gyengébb. A két változat **más görbét**
 használ, nem ugyanazt más skálán.
 
-**Következmény:** a v1-hez **saját LUT kell**; a 9. pont „olcsó nyereség"
-ígérete nem áll.
+**Következmény:** a v1-hez **saját modell kell**; a 9. pont „olcsó nyereség"
+ígérete nem áll. A modell 2026-09-12-én binárisból azonosítva lett:
+`0x0090ea10`, nem mért LUT — lásd lentebb a #958 szakaszát.
 
 ### ⚠️ Mérőanyag-figyelmeztetés: a `chart_detail` a v1-hez használhatatlan
 
@@ -3257,7 +3260,7 @@ végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
 | `tint` 4 jegyes hex „anomáliája" | saját tesztadat-artefaktum, ld. a megfelelő szakaszt |
 | `desat` negyedik `0,333`-as mezője | **nem létezik**, `picasa-native-filter-registry.md` |
 | `_MIN_STRETCH_SPAN = 58` mint gain-korlát | **nem korlát** — a csatorna-keverés mellékhatása |
-| a `finetune` v1 ↔ v2 2×-skála | **megdőlt**, saját LUT kell |
+| a `finetune` v1 ↔ v2 2×-skála | **megdőlt**; a v1 a `0x0090ea10`, a v2 a `0x0090e9d0` workert futtatja (#958) |
 | az **`unsharp`** elmosó magja | **köbös B-spline**, 3 képpont tartósugár (σ = 0,8684) — az átméretező 2-es módja 1 : 1 léptéken, `1,5f` szélesítéssel; a kódban `render/sharpen.py` (#762) |
 
 ### Ami TÉNYLEG nyitott (jeggyel)
@@ -4750,6 +4753,68 @@ A callback (`0x008f7ee0`) **két egymás utáni** mátrix-menetet futtat:
 
 A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a
 `0x0090e9d0` helyett.
+
+### A `finetune` v1 színága — binárisból lezárva és goldennel ellenőrizve (2026-09-12, #958)
+
+A fenti egy mondat paraméterátadása is teljesen megvan. A v1 callback
+`0x008f7cf0`; a színhőmérsékletet a szűrőobjektum `+0x3c` mezőjéből olvassa
+(`0x008f7e07`), a semleges színt a `+0x40` mezőből (`0x008f7e0a`). A színág
+sorrendje:
+
+1. aktív semleges színnél `0x0090eda0` (`0x008f7e39`);
+2. aktív hőmérsékletnél `0x0090ea10` (`0x008f7e50` vagy `0x008f7e75`).
+
+Ez **két külön képpontmenet**: a semlegesítő a célpufferbe ír, a következő
+hívás pedig ugyanazt a puffert adja forrásként és célként a hőmérsékletnek
+(`push esi; push esi`, `0x008f7e4e`–`0x008f7e4f`). A két művelet között tehát
+megmarad a semlegesítő 8 bites kimeneti kvantálása; nem vonhatók össze egy
+lebegőpontos menetté.
+
+A v1 a worker fehérváltás-argumentumába mindkét ágon **0,0**-t tesz
+(`fldz`, `0x008f7e3e` és `0x008f7e67`). A hőmérséklet a workerben:
+
+```c
+t = trunc(temperature * 256.0);       // 0x0090ead6, konstans 0x00cf39d8
+t_green = (t >= 1) ? t : 0;
+
+r2 = clamp(r + (r * (256 - r) * t >> 15));
+g2 = clamp(g + (g * (256 - g) * t_green >> 17));
+b2 = clamp(b - (b * (256 - b) * t >> 15));
+```
+
+A `256.0` bináris bájtjai `00 00 00 00 00 00 70 40` (EXE-fájleltolás
+`0x008f39d8`). Az átalakító `0x00c29990` SSE-ágában a `cvttsd2si`
+(`0x00c299a5`) nulla felé csonkol. Fehérváltás nélkül a worker két LUT-ja
+azonosság, ezért a fenti rövid képlet közvetlenül adja a v1 hőmérsékletét.
+A teljes általános worker a `picasa-native-filter-workers.md` 2.5 pontjában
+áll.
+
+**Független dinamikus kontroll.** A képletet a meglévő
+`research/testdata/PicasaPy-merokit` eredeti JPEG-jeire futtatva, majd a
+Picasa `export/04-finetune1` kimenetéhez mérve:
+
+| kép · hőmérséklet | natív worker ΔE76 átlag | jelenlegi v2 modell ΔE76 átlag |
+|---|---:|---:|
+| `chart_color` · +0,5 | 0,5165 | 25,1455 |
+| `chart_color` · −0,5 | 0,6601 | 18,8400 |
+| `chart_ramp` · +0,5 | 0,4555 | 20,4677 |
+| `chart_ramp` · −0,5 | 0,3940 | 13,8583 |
+
+A natív worker SSIM-je ugyanezen a négy páron rendre 0,998878 · 0,998886 ·
+0,999369 · 0,999487. Ez a mérés igazolja, hogy a megfejtett mechanizmus a
+látható v1-eltérés oka; a korábbi, v2-re épülő modell mind a négy kontrollon
+nagyságrenddel rosszabb. A `chart_detail` továbbra sem kontroll: azon a v1
+export korábban igazoltan teljes no-op.
+
+**Nálunk / teendő.** A `render/chain.py::_apply_finetune_op` ma a
+`finetune`-t és a `finetune2`-t egyaránt az `apply_finetune2` útjára küldi.
+A `render/native_colortemp.py` worker-alakja már megvan, de a két skálán
+`round`-ot használ; a bináris szerint **`trunc` kell**. A fejlesztési javítás:
+v1-nél a neutrális menet után ezt a workert kell futtatni
+`white_shift=0.0`-val, a v2 út változatlanul marad. Kész, ha a fenti négy
+goldenpár külön-külön legfeljebb **0,67 átlagos ΔE76**-ot ad (a határ a négy
+most mért natív érték maximuma felfelé, két tizedesre kerekítve), és egy
+nem-egész lépéssé skálázódó bemenet ellenőrzi a nulla felé csonkolást.
 
 *Bizonyítottsági fok: megerősített* a hőmérséklet-ágra, a két konstansra,
 a tábla tartalmára és a `0x0090eda0` azonosságára · **erős** a

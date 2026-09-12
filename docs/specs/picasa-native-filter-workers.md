@@ -411,7 +411,24 @@ paraméterét:
 FUN_0090ea10(dst, src, param[0x28], param[0x2c]);   // = a filters= lánc 0. és 1. értéke
 ```
 
-A munkafüggvény két egészre kerekíti őket — nevezzük **`s`** és **`t`** —, majd:
+A munkafüggvény a két lebegőpontos értéket egész lépéssé alakítja — nevezzük
+**`s`** és **`t`** —, majd:
+
+```c
+t = trunc(CoolToWarm * 256.0);
+s = trunc(WhiteShift * 128.0);
+```
+
+Ez már nem illesztett skála. A binárisban a `t` útja `0x0090ead6` →
+`fmul qword ptr [0x00cf39d8]`, ahol a nyolc bájt
+`00 00 00 00 00 00 70 40` = **256,0**; az `s` útja `0x0090ea5e` →
+`fmul qword ptr [0x00cf3a38]`, ahol
+`00 00 00 00 00 00 60 40` = **128,0**. A közös átalakító
+`0x00c29990` SSE-ágának `cvttsd2si` utasítása (`0x00c299a5`) nulla felé
+csonkol; a tartalék x87-ág ugyanezt korrigálja ki. A két konstans EXE-beli
+fájleltolása rendre `0x008f39d8` és `0x008f3a38`.
+
+Ezután:
 
 ```c
 k_down[i] = (i * (256 - s)) >> 8;                 // lekicsinyítés: fejtér a felfelé húzáshoz
@@ -436,11 +453,24 @@ out = (k_up[clamp(R')], k_up[clamp(G')], k_up[clamp(B')]),  alfa = 0xFF
   ott nem változik semmi. Ezért nem szürkül el a fehér a melegítéstől.
 - A maximális elmozdulás `t·16384/32768 = t/2` szint.
 
-**Bizonyítottság:** a szerkezet **megerősített**. A `filterdesc.xml` szerint a
-két csúszka `0 = Cool to Warm [-0.5..0.5]`, `1 = White Shift [0..1]`; a
-**×256-os skálázás** (`s = round(WhiteShift·256)`, `t = round(CoolToWarm·256)`)
-**erős következtetés**, mert `s`-nek 256 alatt kell maradnia és `t/2` így ad
-értelmes, ±64 szintes kitérést — de **egyetlen méréssel igazolandó**.
+**A `finetune` v1 bekötése (`0x008f7cf0`).** A callback a hőmérsékletet a
+szűrőobjektum `+0x3c` mezőjéből olvassa (`0x008f7e07`), a semleges színt a
+`+0x40` mezőből (`0x008f7e0a`). Ha mindkettő aktív, előbb a semlegesítő
+`0x0090eda0` fut (`0x008f7e39`), utána a `0x0090ea10`. A worker mindkét
+v1-es hívóhelyén a második lebegőpontos argumentum **pontosan 0,0**
+(`fldz`, majd veremre írás: `0x008f7e3e`–`0x008f7e50` és
+`0x008f7e67`–`0x008f7e75`), az első pedig a `+0x3c` hőmérséklet. Vagyis:
+
+```c
+// a v1 színágának sorrendje, a korábbi fény/levels lépések után
+if (neutral_rgb != 0) apply_neutral(dst, src, neutral_rgb);  // 0x0090eda0
+apply_colortemp(dst, src, temperature, 0.0f);                 // 0x0090ea10
+```
+
+**Bizonyítottság:** a teljes worker, a két skála, a nulla felé csonkolás, a
+v1 paraméterátadás és a színág sorrendje **binárisból megerősített**. A
+`filterdesc.xml` ettől függetlenül igazolja a `colortemp` két csúszkájának
+nevét és tartományát: `Cool to Warm [-0.5..0.5]`, `White Shift [0..1]`.
 
 ## 2.6 Automatikus szinthúzás / hisztogram-elemzés — `0x009db610` *(a #539 magja)*
 
@@ -1238,7 +1268,7 @@ Három részlet, ami a mérésben látszik is:
    HELYBEN dolgozó alkalmazóval (`0x0090be70`) — a Derítőfény utáni második
    lépéshez. Nincs bennük külön matematika.
 
-## 5.2 MEGOLDVA: a `colortemp` két skálája (a 2.5 nyitott kérdése)
+## 5.2 MEGOLDVA: a `colortemp` két skálája (a 2.5 korábbi nyitott kérdése)
 
 A 2.5 pont a `s` és `t` ×256-os skálázását „erős következtetésként" jelölte.
 A mérőszett három `colortemp` esete eldöntötte — a rácskeresés optimuma
@@ -1251,15 +1281,18 @@ mindhárom képen tiszta:
 | min | −0,5 | 0,0 | −128 | 0 | **0,63** |
 
 ```
-t = round(HidegMeleg  · 256)      ← a 2.5 következtetése IGAZOLVA
-s = round(Fehérváltás · 128)      ← a FELE annak, amit vártunk
+t = trunc(HidegMeleg  · 256)
+s = trunc(Fehérváltás · 128)
 ```
 
 A ×128 azért fontos, mert a ×256 a csúszka felső állásán `256 − s = 0`-t adna,
-azaz nullaosztást — a mért fele viszont pont értelmes marad. Ez **mérés, nem
-visszafejtés**: a szorzás az x87-veremen megy át, a dekompilátum nem őrizte
-meg. (Az érintetlen kép ΔE-je ugyanezen a három képen 11,7 / 55,3 / 26,3 —
-vagyis a modell két nagyságrenddel pontosabb.)
+azaz nullaosztást — a fele viszont pont értelmes marad. A 2026-08-16-i mérés
+helyesen találta meg a két skálát, de a kerekítést nem tudta eldönteni. A
+2026-09-12-i célzott disassembly ezt lezárta: `0x0090ead6` a
+`0x00cf39d8`-on álló **256,0**-val, `0x0090ea5e` a `0x00cf3a38`-on álló
+**128,0**-val szoroz, a `0x00c29990` pedig **nulla felé csonkol**. A fenti
+táblázat ettől független dinamikus kontroll: az érintetlen kép ΔE-je a három
+esetben 11,7 / 55,3 / 26,3, vagyis a modell két nagyságrenddel pontosabb.
 
 ## 5.3 MEGOLDVA: a `gamma` kitevőjének iránya
 

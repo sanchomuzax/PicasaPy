@@ -189,6 +189,16 @@ jelvénye — és a jelvény **két különböző felvételen**, eltérő szerke
 
 ### [filters-decoded.md](filters-decoded.md) — 1 BLOKKOLT tétel (a #2456: fut-e a `PicnikFocalPixelate` a SAJÁT, hetes alakjával — egy windowsos export dönti el)
 
+⭐ **2026-09-12 — a `finetune` v1 színhőmérséklete teljesen lezárva
+(#958).** A callback `0x008f7cf0` a neutrális `0x0090eda0` után a
+`0x0090ea10` középtónus-parabolás workert hívja, a worker második
+(fehérváltás-) argumentuma pontosan 0,0. A hőmérséklet egész lépése
+`trunc(temp·256)` (`0x0090ead6`, konstans `0x00cf39d8` = 256,0;
+`0x00c299a5` = `cvttsd2si`). Négy meglévő v1 goldenpáron a megfejtett worker
+átlagos ΔE76-ja 0,3940–0,6601, a ma tévesen közös v2 modellé
+13,8583–25,1455. A pontos „eredeti / nálunk / teendő / kész, ha" átadás a
+`filters-decoded.md` új szakaszában áll; a fejlesztés továbbra is #958.
+
 ✅ **2026-08-24 — az utolsó kérdés (a `FocalZoom` perem-módja) LEZÁRVA MÉRÉSSEL:**
 a halmozás csak nagyít (`zoom ≥ 1`), ezért minden minta a képen belülre esik —
 négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A mai
