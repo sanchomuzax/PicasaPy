@@ -29,9 +29,12 @@ szerint.
 3011/3011 üres, és 859 ini-fájlban 0 db `flipped=` sor van — a tulajdonos
 sosem tükrözött, a nulla pedig nem ír ki számot.
 
-⚠️ **A forgatás és a tükrözés SORRENDJE nincs kimérve** (a #2938 örökölt
-kérdése). A mai sorrend — előbb forgatás, utána tükrözés — kimondott
-feltevés, nem mérés.
+**A SORREND MÉRVE (#2938, 298. kör):** az eredeti előbb tükröz, utána
+forgat — `kép = forgat(tükröz(eredeti))`. Három független összeállító
+ugyanebben az alakban: `0x0042ef68`/`0x0042ef77`/`0x0042f02d`,
+`0x006b5047`/`0x006b5056`/`0x006b50ba`,
+`0x00805171`/`0x00805181`/`0x00805229`. A mi két hívóhelyünk ma fordítva
+teszi — a javítás a #3065.
 """
 
 from __future__ import annotations
