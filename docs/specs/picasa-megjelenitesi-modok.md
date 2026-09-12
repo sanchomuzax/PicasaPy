@@ -1745,3 +1745,50 @@ tolja be a rajzoló (16.6).
 Mindkettő elfér a mért egész mezőben, és a `fonttrack` negatív értéke
 megmagyarázza, miért **hozzáadás** a glifa-léptetésnél (`0x00a4661b fiadd`):
 a negatív szám szűkíti a betűközt.
+
+## 19. A buboréksúgó várakozása **600 ms** (2026-09-12, #901)
+
+**Bizonyítottsági fok: erős.** A küszöb és a hozzá tartozó időmérő a
+`ytToolTip` virtuális metódusából kiolvasható. A megjelenés teljes
+egér-eseményláncát ebben a körben nem futtattuk végig, ezért a lelet nem
+állít többet annál, mint amit a bináris közvetlenül mutat.
+
+### 19.1 A küszöb a binárisban
+
+| tétel | bizonyíték | érték |
+|---|---|---|
+| osztály | `ytToolTip::vftable` | `0x008909d4` |
+| vizsgált virtuális rekesz | vtábla `+0x74` | `0x00a6de20` |
+| időmérő segédfüggvény | a metódus ebből kapja az eltelt időt; a segéd a `QueryPerformanceCounter` és `QueryPerformanceFrequency` IAT-bejegyzéseit használja | bináris |
+| összehasonlítás küszöbe | `0x00c7e304` | bináris: `9a 99 19 3f` = IEEE-754 `0,6000000238418579` másodperc |
+
+⇒ a küszöb **600 ms**. Ez nem kerekített vagy illesztett érték: a forrásban
+tárolt egyes pontosságú lebegőpontos konstans átváltása ezredmásodpercre.
+
+Ugyanez a `ytToolTip`-sáv a `ShowTooltips` beállítást is olvassa
+(`0x00a6e0fd`), tehát a várakozás csak az engedélyezett buboréksúgók
+megjelenítésének ágában értelmezhető.
+
+### 19.2 Eredeti / nálunk / teendő
+
+| | várakozás | bizonyíték |
+|---|---:|---|
+| eredeti Picasa | **600 ms** | bináris: `0x00c7e304` |
+| PicasaPy jelenleg | **500 ms** | `src/picasapy/app/qml/PicasaPy/Theme.qml:83` |
+| fejlesztői teendő | `Theme.tooltipDelay` legyen **600** | #901 |
+
+**Kész, ha:**
+
+- [ ] a `Theme.tooltipDelay` értéke 600;
+- [ ] a QML-ben ténylegesen ezt az értéket használó buboréksúgó 600 ms után
+  válik láthatóvá;
+- [ ] a `ShowTooltips` kikapcsolása mellett nem jelenik meg buboréksúgó.
+
+### 19.3 Amit NEM állítunk
+
+- **NINCS MEG:** a teljes egérbelépés → időbélyeg → láthatóvá válás lánc
+  minden hívóhelye; ezt célzott, futó eredeti Picasa-méréssel vagy a
+  `0x00a6de20` összes hívójának feltárásával lehet lezárni.
+- **NINCS MÉRÉS:** hogy a 100 ms-os eltérés a PicasaPy felületén milyen
+  felhasználói hatással jár; a 600 ms-os implementációs értéket ettől
+  függetlenül a bináris küszöbe írja elő.
