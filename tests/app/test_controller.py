@@ -97,6 +97,13 @@ def controller(qt_app, tmp_path, library):
     )
     ctl._reload()
     yield ctl
+    # #3042: a teardown a PROGRAM kilépési útját követi — előbb `shutdown()`,
+    # utána a szálak bevárása. A lezárás eddig kimaradt, és a figyelő-szál
+    # meg a Qt-objektumok lebontási sorrendje a szemétgyűjtésen múlt: a
+    # CI-n `exit -11`-gyel omlott össze a fájl (kétszer, egymás után),
+    # tehermentes gépen viszont zöld volt. Ez a #430 / #438 / #988 / #999
+    # osztály, és a program `application.py`-ja pontosan így zár.
+    ctl.shutdown()
     # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controller
     # még él — a #430 SIGSEGV-osztály elkerülése (ld.
     # picasapy.app.worker_thread.BackgroundWorkerMixin).
