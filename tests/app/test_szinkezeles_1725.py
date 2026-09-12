@@ -171,10 +171,14 @@ class TestValosProfilok:
         from pathlib import Path as _Path
 
         gyoker = _Path(__file__).resolve().parents[2] / "src" / "picasapy" / "thumbs"
+        # ⚠️ Windowson a `read_text()` alapértelmezése a rendszer kódlapja
+        # (cp1252), és a magyar forrásfájlokon `UnicodeDecodeError`-t dob —
+        # a main CI 2026-09-12-én emiatt lett piros. A forrás mindig UTF-8.
         talalatok = [
             f.name
             for f in gyoker.rglob("*.py")
-            if "color_management" in f.read_text() or "colorManagement" in f.read_text()
+            if "color_management" in f.read_text(encoding="utf-8")
+            or "colorManagement" in f.read_text(encoding="utf-8")
         ]
         assert talalatok == [], f"a bélyegkép-út színkezelést említ: {talalatok}"
 
