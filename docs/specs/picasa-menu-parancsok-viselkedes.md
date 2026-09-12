@@ -430,8 +430,59 @@ mintát követi az `unsharp`/`unsharp2` is. Jegy: **#1409**.
 
 Három felirat: `Passport0` = „Nem találhatók arcok", `Passport1` = „Úgy
 tűnik, több arc van a képen.", `Passportfail` = „Megpróbálkozik egy másik
-képpel?" (kérdés ⇒ igen/nem párbeszéd). Konstans: `0xc7dcc8` = **0,3**.
-Jegy: **#1401**.
+képpel?" (kérdés ⇒ igen/nem párbeszéd). Jegy: **#1401**.
+
+#### ⭐ A KIVÁGÁS GEOMETRIÁJA — kimérve (2026-09-12, #1401)
+
+A jegy blokkolója az volt, hogy „a kivágási arány külön kérdés". Nem az: a
+sikeres ág (`0x00531e50`-től) végig kiolvasható.
+
+**1. Az arc-téglalap képpontra váltása.** A felismerő normalizált (0…1)
+téglalapot ad; a kód a `+0x10`/`+0x14`/`+0x18`/`+0x1c` mezőket
+(bal · fent · jobb · lent) a kép **szélességével** (bal, jobb) illetve
+**magasságával** (fent, lent) szorozza (`0x00531e8a`–`0x00531ec4`). A
+`fild` melletti `fadd [0xcf39e4]` a szokásos előjel nélküli javítás
+(`0xcf39e4` **float** alakja `4294967296,0` = 2³²), nem geometria.
+
+**2. Kerekítés kifelé.** `bal`-ból és `fent`-ből `−0,5`, `jobb`-hoz és
+`lent`-hez `+0,5`, majd `fistp` (`0x00531efa`–`0x00531f5a`; a konstans
+`0xc72150` = **0,5**).
+
+**3. A függőleges ráhagyás — ez volt a hiányzó arány:**
+
+```
+arcMagassag = lent − fent
+kivagasFent = kerek(fent − arcMagassag / 3,0)      ; 0xcf39f8 = 3,0
+kivagasLent = kerek(lent + arcMagassag · 0,6)      ; 0xcf3a70 = 0,6
+```
+
+⇒ **felül az arcmagasság harmada, alul a hat tizede** — fejtér fent,
+váll lent. A kivágás magassága így `arcMagassag · (1 + 1/3 + 0,6)` =
+**1,9333 · arcMagassag**.
+
+**4. A kivágás NÉGYZET, az arc közepére igazítva** (`0x00531faa`–
+`0x00531fc7`):
+
+```
+kozepX      = (bal + jobb) / 2                      ; elojeles, nulla fele kerekitve
+fel         = (kivagasLent − kivagasFent) / 2
+kivagasBal  = kozepX − fel
+kivagasJobb = kozepX + fel
+```
+
+**5. Levágás a kép határaira:** a bal és a fent alsó korlátja **0**
+(`0x00531fcf`–`0x00531fe5`), a jobb a kép szélességére, a lent a
+magasságára korlátozódik (`0x00531fe9`–`0x00531ffd`).
+
+**A `0xc7dcc8` = 0,3 NEM ebben az ágban van** — a korábbi jegyzet ezt a
+kivágás arányának sejtette. A sikeres ág nem hivatkozik rá; a
+kivágás arányait a **3,0** és a **0,6** adja.
+
+⚠️ **Ami a kivágás UTÁN van, még nincs kimérve:** a kapott téglalappal a
+kód a `FUN_0056b5c0` (a kép megszerzése), a `FUN_006b0200`, majd két
+állapotváltás (`FUN_00579910` `2`-vel, `FUN_00744d00` `0xf`-fel) útján
+dolgozik tovább. Hogy ebből fájl, nyomtatási munka vagy szerkesztő-állapot
+lesz-e, **nincs mérve** — a #1401 harmadik kérdése ezen áll.
 
 ### 25. `ID_PICTURE_GEOUNTAG`
 
