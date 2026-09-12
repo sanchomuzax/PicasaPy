@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.438] – 2026-09-12
+
+### Belső
+
+- **A Picasából áthozott helyadat felismerése méréssel dől el** (#2336). A
+  régi szabály szerint a 0,0-s koordináta „nincs hely" volt, ami egy valódi
+  egyenlítői helyet eldobott volna. Az eredeti adatbázisban a térképnézet
+  oszlopa mondja meg, van-e egyáltalán hely a képhez, és ez a jelző a
+  tulajdonos adatmappáján képenként egyezik a koordinátákkal. Mostantól ezt
+  olvassuk. A db3-importnak a programban még nincs fogyasztója, ezért a
+  változás a felületen nem látszik.
+
 ## [0.8.437] – 2026-09-12
 
 ### Javítva
