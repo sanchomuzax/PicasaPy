@@ -19,7 +19,7 @@ Eddig ezt a fájlt csak „létezik" szinten említette a
 | Eddigi nyitott kérdés | Amit a `filterdesc.xml` ad |
 |---|---|
 | a 4–5. effektfül paraméter-jelentései (`filters-decoded.md`, Nyitva 7) | minden csúszka **neve, min–max, alapérték** és a sorrendjük |
-| `finetune` (v1) és `finetune2` (v2) hőmérséklet-eltérése | **nem más algoritmus, más SKÁLA**: v1 `[-0,5..0,5]`, v2 `[-1..1]` |
+| `finetune` (v1) és `finetune2` (v2) hőmérséklet-tartománya | a tartomány valóban v1 `[-0,5..0,5]`, v2 `[-1..1]`; az algoritmus viszont **is eltér**: v1 `0x0090ea10`, v2 `0x0090e9d0` (#958) |
 | `Vignette` analitikus modellje (Nyitva 2) | belső ragyogás (inner glow), `sugár = blur·0,02·max(W,H)/4`, erősség = 2. paraméter |
 | `unsharp` v1 ↔ `unsharp2` | ugyanaz az „Amount", csak a v1 felső korlátja **1,0**, a v2-é **3,0** |
 | `tilt` 2. paramétere | a v1-kompatibilitás miatt fenntartott, **letiltott** (`enable="0"`) csúszka |
@@ -1719,10 +1719,11 @@ készüljön UI kiadott recept vagy valós adat nélkül.
    (`sat ∈ [−1,1]`, `finetune2` hőmérséklet `∈ [−1,1]`, highlights/shadows
    `∈ [0, 0,48]`) — a tartományon kívüli érték gyanús adat, nem néma
    elfogadás.
-2. A **`finetune` v1 → v2 átszámítás** ezentúl egzakt: a hőmérséklet-tengely
-   skálája **kétszeres** (`v2 = 2 · v1`), nem külön LUT-ot igényel. Ezt a
-   `filters-decoded.md` 1. körének „a v1 temp-skálája más" megfigyelése
-   mellé kell tenni és méréssel megerősíteni.
+2. A **`finetune` v1 → v2 kétszeres átszámítás nem létezik**. A tartományok
+   valóban kétszeresek, de a #958 célzott disassembly-je szerint a v1 a
+   középtónus-parabolás `0x0090ea10`, a v2 a feketetest-táblás
+   `0x0090e9d0` workert futtatja. A v1 pontos képlete és golden-kontrollja a
+   `filters-decoded.md` „`finetune` v1 színága" szakaszában áll.
 3. A `fullres` / `slow` / `resize` jelzők alapján a renderelő **három
    sávra** bontható: olcsó-előnézetes, teljes-felbontású, méretváltó.
 4. A szerkesztő UI csúszkáinak **feliratai, tartományai és alapértékei**
