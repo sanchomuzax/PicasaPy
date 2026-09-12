@@ -724,11 +724,56 @@ dolog**:
 
 **Bizonyítottsági fok: megerősített** a fade-kezelőre (a képlet, a négy
 konstans és a 12 képpontos tűrés a `0x007e6220` diszasszemblátumából), és
-a felhasználó leírása pontosan ezt írja le. A **zár-kezelő** (`0x007e6390`)
-eseményágai **részben** feltártak: az 1., 2. és 3. eseményre reagál, és a
-`[ebx+0x20] / [ebx+0x24]` párral tartja nyilván az állapotot — **hogy
-pontosan mely felhasználói gesztus állítja a zárat, nem megállapított**
-(a húzás a legvalószínűbb).
+a felhasználó leírása pontosan ezt írja le.
+
+#### 5.1/c A ZÁR-kezelő találatvizsgálata a GYŰRŰ SAJÁT dobozára megy (2026-09-12, #1379)
+
+A zár-kezelő (`0x007e6390`, 434 bájt) eseményágai korábban „részben
+feltártak" voltak. Az egérmozgás ága most **végig kiolvasva**:
+
+```
+0x007e6451  eax = [node]                  ; a csomópont vtáblája
+0x007e6461  call 0x40eae0                 ; egység-transzformáció (37 b, fld1 + nullák)
+0x007e646e  edx = [vtbl + 0x20]           ; a HATÁROLÓ DOBOZ lekérdezése
+0x007e6478  call edx                      ; -> ecx = RECT (4 egész)
+0x007e647a  fld  [esemény+0x54] ; fild [ecx]      ; x  vs  bal
+0x007e648a  fld  [esemény+0x54] ; fild [ecx+8]    ; x  vs  jobb
+0x007e6499  fld  [esemény+0x58] ; fild [ecx+4]    ; y  vs  fent
+0x007e64a8  fld  [esemény+0x58] ; fild [ecx+0xc]  ; y  vs  lent
+                                          ; bármelyik kilóg -> 0x7e64cb (nem csinál semmit)
+0x007e64b7  fld  [0xc7c608]               ; 0,25 s — az IDŐTARTAM
+0x007e64be  mov edi, 0x100                ; a CÉL alfa = 256 (teljes)
+0x007e64c6  call 0x9e3a60                 ; animáció
+```
+
+⚠️ **A `0xc7c608` = 0,25 itt IDŐTARTAM, nem átlátszóság** — ugyanaz a
+konstans, mint a megjelenési animációé fent. A cél alfát az `edi = 0x100`
+adja.
+
+**Melyik doboz?** A `vtbl + 0x20` a `ytSelectionNode`-nál a `0x009e0660`
+(RTTI-ból), az pedig a csomópont **saját** `[+0x188 … +0x194]`
+téglalapját adja vissza (bal · fent · jobb · lent) — ugyanaz a négy mező,
+amit a kollázs-szórás is olvas (`0x0083ad84`).
+
+⇒ **A zár-kezelő tehát a GYŰRŰ SAJÁT dobozára vizsgál, nem a képére.** Aki
+a forgató-méretező peremen áll (r = 48…66), az a gyűrű dobozán BELÜL van,
+tehát a gyűrű **teljes átlátszatlanságra** áll vissza — nem halványul el.
+
+**A másik két ág** (a teljesség kedvéért): a 3. esemény alfa **1**-re
+animál azonnali időtartammal (`fldz`, `edi = ecx−2 = 1`); a 3. állapot + 1.
+esemény pedig nullázza az állapotot, és ha a `[node+0x20c]` jelző áll, a
+`0x004d7fc0`-t hívja nullával.
+
+*Bizonyítottsági fok: **megerősített** a találatvizsgálat forrására és a
+cél alfára (kiolvasott utasítás + RTTI-ból feloldott slot). **Nem
+megállapított**, hogy a két kezelő (fade és zár) együtt milyen
+állapotgépet ad — ehhez a `0x007e6220` eseményágait is egyben kell
+olvasni.*
+
+**Amit a megvalósításunknak jelent (#1379):** a mi találatvizsgálatunk a
+KÉP dobozára + 12 képpontra megy, ezért ~60 képtől a perem kikerül a
+zónából, és a gyűrű elhalványul. Az eredeti szabálya más: a **gyűrű saját
+doboza** a mérce.
 
 ### 5.2 Mozgatás
 
