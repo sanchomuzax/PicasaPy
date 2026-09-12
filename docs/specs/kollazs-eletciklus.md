@@ -3110,6 +3110,13 @@ téma-elrendező (`0x00885060`, `0x00888210` — `fld1`), két **másoló**
 (`0x00860f60`, `0x00861190` — 17.15), valamint három nullázó/−1,0
 inicializáló (`0x00829770`, `0x0088e7e0`, `0x008910b0` — 17.15).
 
+⚠️ **ÚJRAVIZSGÁLANDÓ (2026-09-12, #2828): a maradék 26 kizárása az
+`xrefs` TÁBLÁN áll.** Az index nem látja a vtábla-hívásokat, tehát „a sáv nem
+hívja" ezen az alapon **gyengébb bizonyíték**, nem kizárás. Ez nem elavulás:
+az alább OLVASOTT kizárás (a `FUN_009dd800` konstruktor, 76 bájtos lépésköz)
+érvényes marad. Ami pótlásra vár, az a 26 el nem olvasott függvény —
+indextől független úton (`call [reg+…]` alakokra pásztázva).
+
 **A 27 sávon kívüliből `xrefs` szerint EGYETLENT hív a sáv:**
 `FUN_009dd800` (926 b; hívói `0x0085fd60`, `0x0087c820`, `0x0088ae30`).
 **Elolvasva, tartalmilag KIZÁRVA:** konstruktor, amely a `[esi]`-be a

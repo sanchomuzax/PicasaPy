@@ -12,6 +12,43 @@ Forrás, amin mindez kipróbálva: Picasa 3.9.141.259 telepítése
 
 ---
 
+## Az index NEGATÍV találata — mikor lelet, és mikor nem (2026-09-12, #2828)
+
+A szabály ismert: *„az xref-index negatív találata nem lelet"* — az index nem
+látja a vtábla-hívásokat. A #2828 audit ezért 42 bekezdést jelölt
+átvizsgálásra 17 lapon. **A mérés szerint a valódi lista ennek a
+huszonötöde**, és az ok egy szűrési hiba:
+
+| szűrő | találat |
+|---|---:|
+| az `index`/`xref` SZÓ + kizárás-szó | **45 bekezdés, 16 lap** |
+| az `xrefs`/`string_xrefs` TÁBLÁRA épülő kizárás | **6 bekezdés, 5 lap** |
+| ebből a `00-index.md` összefoglalója (duplikátum) | −1 |
+| ebből a #2746, azóta lezárva (#2770) | −1 |
+| **valóban átvizsgálandó** | **4 bekezdés, 3 lap** |
+| ebből a kizárás tényleg csak az indexen áll | **1** |
+
+**Miért ilyen nagy a különbség.** A capstone-pásztázások is „az indexből"
+dolgoznak — de csak a **függvénylistát** veszik onnan, és az nem a hiányos
+rész. A hiányos rész az `xrefs` és a `string_xrefs` **tábla**. Egy bekezdés
+tehát akkor gyanús, ha a kizárás azon áll, hogy *„az xrefs szerint semmi nem
+hívja"* vagy *„a string_xrefs 0 sort ad"* — és nem akkor, ha csak említi az
+indexet.
+
+**És a maradék három is védve volt.** A `picasa-fo-ablak-elrendezes.md` és a
+`racs-ures-allapot.md` bekezdése a `string_xrefs` mellé **nyers
+bájtpásztázást a teljes PE-n** és a `.tre`-korpusz grepjét is odatette; a
+`kollazs-eletciklus.md` első bekezdése maga mondja ki, hogy három
+függvényre a kizárás gyengébb. Vagyis a lapok nagy részében a fegyelem
+MEGVOLT — az audit szűrője volt túl bő.
+
+⇒ **Amit ebből átvenni:** a negatív-állítás ellenőrzésénél ne a szóra
+keressünk, hanem arra, hogy a kizárás MIN áll. A minta:
+`xrefs` / `string_xrefs` + kizárás-szó ugyanabban a bekezdésben, és mellette
+NINCS indextől független ellenőrzés (nyers bájtminta, `.tre`-grep,
+utasításszintű pásztázás).
+
+
 ## 1. Szövegkinyerés — mindkét kódolásban
 
 ```sh
