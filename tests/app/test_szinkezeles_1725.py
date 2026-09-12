@@ -125,6 +125,60 @@ class TestDekodolas:
         assert tuple(be[0, 0][:3]) == tuple(ki[0, 0][:3])
 
 
+class TestValosProfilok:
+    """A #3007 külön kikért őrei: valódi ICC-profilos kép és hibás profil."""
+
+    def test_beagyazott_sRGB_profil_nem_valtoztat(self, qt_app, tmp_path):
+        """A #1620 készletének profilos JPEG-je sRGB-profilt ágyaz be.
+
+        A színkezelés bekapcsolva ezen **nem** változtathat: a cél színtér
+        ugyanaz. Ez a valódi ICC-úton futó ág őre, nem szintetikus profilé.
+        """
+        import numpy as np
+
+        from tests.support.valos_kepek import szinprofilos_jpeg
+
+        utvonal = szinprofilos_jpeg(tmp_path / "srgb.jpg")
+        be = _decode_source(utvonal, color_managed=True)
+        ki = _decode_source(utvonal, color_managed=False)
+        assert be is not None and ki is not None
+        assert np.array_equal(be, ki), (
+            "sRGB-profilos képen a színkezelés nem változtathat"
+        )
+
+    def test_serult_profil_nem_donti_le_a_megjelenitest(self, qt_app, tmp_path):
+        """Értelmezhetetlen profil = profil nélküli kép, nem hiba.
+
+        A megjelenítés sosem eshet el egy rossz metaadaton (#3007).
+        """
+        from PIL import Image
+
+        utvonal = tmp_path / "rossz.jpg"
+        Image.new("RGB", (32, 24), (128, 64, 32)).save(
+            utvonal, "JPEG", quality=90, icc_profile=b"ez nem egy ICC profil"
+        )
+        tomb = _decode_source(utvonal, color_managed=True)
+        assert tomb is not None, "a sérült profil ledöntötte a dekódolást"
+        assert tomb.shape[:2] == (24, 32)
+
+    def test_a_belyegkep_ut_erintetlen(self):
+        """A konverzió a MEGJELENÍTÉSÉ: a bélyegkép-tár nem színkezelt.
+
+        Forrás-szintű őr: a `thumbs` csomag nem hivatkozik a
+        színkezelés-kapcsolóra, tehát a kapcsoló átállítása nem avítja el a
+        bélyegkép-gyorsítótárat (#3007).
+        """
+        from pathlib import Path as _Path
+
+        gyoker = _Path(__file__).resolve().parents[2] / "src" / "picasapy" / "thumbs"
+        talalatok = [
+            f.name
+            for f in gyoker.rglob("*.py")
+            if "color_management" in f.read_text() or "colorManagement" in f.read_text()
+        ]
+        assert talalatok == [], f"a bélyegkép-út színkezelést említ: {talalatok}"
+
+
 class TestBekotes:
     def test_az_atvezeto_a_kezdo_allapotot_is_atviszi(self, qt_app, tmp_path):
         """A `wire_display_mode` mintája: a bekötés azonnal is átvezet."""
