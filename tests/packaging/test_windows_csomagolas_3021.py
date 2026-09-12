@@ -51,8 +51,25 @@ class TestAPyInstallerCsomag:
     def test_a_spec_letezik(self):
         assert _SPEC.is_file()
 
-    def test_a_belepesi_pont_a_sajat_modulunk(self, spec):
-        assert "picasapy" in spec and "__main__" in spec
+    def test_a_belepesi_pont_IMPORT_MENTES_indito(self, spec):
+        """A PyInstaller SZKRIPTKÉNT futtatja a belépőt, tehát relatív
+        import nem lehet benne. A `__main__.py`-val mérve `ImportError`
+        lett, és — ablakos csomagban — egy kattintásra váró hibaablak."""
+        assert "picasapy_launcher.py" in spec
+        assert "__main__.py" not in spec.split("a = Analysis")[1][:200]
+
+    def test_az_indito_letezik_es_nincs_benne_relativ_import(self):
+        indito = _GYOKER / "packaging" / "windows" / "picasapy_launcher.py"
+        assert indito.is_file()
+        #: csak a KÓD-sorokat nézzük: a docstring maga idézi a hibás alakot
+        kod = [
+            sor for sor in indito.read_text(encoding="utf-8").splitlines()
+            if sor and not sor.startswith(("#", " ", '"', "'"))
+        ]
+        assert any("from picasapy.app" in sor for sor in kod)
+        assert not [sor for sor in kod if sor.startswith("from .")], (
+            f"relatív import a csomag belépőjében: {kod}"
+        )
 
     def test_a_QML_konyvtarat_VISZI(self, spec):
         """Qt/QML-programnál ez a legkényesebb pont: a `.qml` fájlok nem

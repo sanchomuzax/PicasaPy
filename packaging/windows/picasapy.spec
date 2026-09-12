@@ -42,8 +42,11 @@ adatok = [
 #: a `help/` és a többi csomagon belüli adat a saját hookok nélkül is kell
 adatok += collect_data_files("picasapy", includes=["**/*.md", "**/*.json"])
 
+#: ⚠️ NEM a `__main__.py`: azt a PyInstaller szkriptként futtatná, és a
+#: relatív importja `ImportError`-ral esne el (mérve a windowsos CI-n). A
+#: belépő egy külön, import-mentes indító.
 a = Analysis(
-    [str(GYOKER / "src" / "picasapy" / "app" / "__main__.py")],
+    [str(Path(SPECPATH) / "picasapy_launcher.py")],
     pathex=[str(GYOKER / "src")],
     binaries=[],
     datas=adatok,
