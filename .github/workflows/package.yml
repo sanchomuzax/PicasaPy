@@ -245,13 +245,23 @@ jobs:
           grep -q "onellenorzes" fustproba.txt || {
             echo "::error::a felület nem épült fel a csomagból"; exit 1; }
 
+      # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
+      # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
+      # „You may not specify more than one script filename" hibával állt le
+      # (mérve). A `pwsh` nem ír át semmit.
       - name: Inno Setup telepítő
-        shell: bash
+        shell: pwsh
         run: |
-          choco install innosetup --no-progress -y
-          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
-          "$ISCC" "/DMyAppVersion=${{ steps.tag.outputs.verzio }}" \
-                  packaging/windows/picasapy.iss
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          & $iscc "/DMyAppVersion=${{ steps.tag.outputs.verzio }}" `
+                  "packaging\windows\picasapy.iss"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "az Inno Setup nem tudta legyártani a telepítőt"
+            exit 1
+          }
 
       - name: A telepítő feltöltése a kiadásra
         if: github.event_name != 'pull_request'
