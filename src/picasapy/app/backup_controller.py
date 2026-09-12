@@ -22,12 +22,14 @@ fájlt a szűrő úgyis kihagyja.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.backup import futtasd, tervezd_meg
 from picasapy.index import open_index
+from .worker_thread import BackgroundWorkerMixin
 from picasapy.index.backup_sets import (
     SZUROK,
     keszlet_letrehozasa,
@@ -39,7 +41,7 @@ from picasapy.index.backup_sets import (
 _log = logging.getLogger(__name__)
 
 
-class BackupController(QObject):
+class BackupController(BackgroundWorkerMixin, QObject):
     """Az `Eszközök ▸ Képek biztonsági mentése…` háttér-hídja."""
 
     #: emberi nyelvű hibaszöveg a felületnek (hibasáv / párbeszéd)
@@ -48,11 +50,20 @@ class BackupController(QObject):
     keszletekValtoztak = Signal()
     #: (átmásolt darab, átmásolt bájt)
     futasKesz = Signal(int, int)
+    #: #3009: (hányadik, hány) — az eredeti is végig beszél
+    #: („Copying (%d/%d) files"). A felület ebből tud haladást mutatni.
+    haladas = Signal(int, int)
+    #: #3009: elindult a másolás (a felület ilyenkor mutatja a
+    #: haladás-sávot és a Megszakítás gombot)
+    futasIndult = Signal(int)
 
     def __init__(self, db_path: Path, gyokerek: tuple[str, ...]) -> None:
         super().__init__()
         self._db_path = Path(db_path)
         self._gyokerek = tuple(str(gy) for gy in gyokerek)
+        #: #3009: a megszakítás jelzője. Szálak között olvassuk/írjuk,
+        #: ezért `Event` — a `bool` mezőre nincs memória-garancia.
+        self._megszakitas = threading.Event()
 
     # -- készletek --------------------------------------------------------
 
@@ -168,7 +179,28 @@ class BackupController(QObject):
 
     @Slot(int)
     def futtasdMost(self, keszlet_id: int) -> None:  # noqa: N802
-        """A készlet futtatása. A hibát jelezzük, nem dobjuk tovább."""
+        """A készlet futtatása HÁTTÉRSZÁLON (#3009).
+
+        A másolás a hívó szálon futott, tehát nagy gyűjteménynél az ablak a
+        művelet idejére megállt. Az adatbázis-kapcsolat a szálon belül
+        nyílik: az `sqlite3` objektumok nem adhatók át szálak között."""
+        self._megszakitas.clear()
+        self._start_background(
+            self._futtatas_hattereben, args=(int(keszlet_id),),
+            name="backup-run",
+        )
+
+    @Slot()
+    def szakitsdMeg(self) -> None:  # noqa: N802
+        """A futó mentés megszakítása (#3009).
+
+        A már átmásolt fájlok a nyilvántartásba kerülnek, tehát a következő
+        futás pontosan a hiányzókat viszi — a megszakítás nem veszít el
+        munkát, csak elhalasztja."""
+        self._megszakitas.set()
+
+    def _futtatas_hattereben(self, keszlet_id: int) -> None:
+        """A másolás törzse — háttérszálon fut."""
         try:
             with open_index(self._db_path) as conn:
                 keszlet = self._keszlet(conn, keszlet_id)
@@ -178,7 +210,14 @@ class BackupController(QObject):
                 terv = tervezd_meg(
                     conn, keszlet, self._jeloltek(), gyokerek=self._gyokerek
                 )
-                masoltak = futtasd(conn, keszlet, terv)
+                self.futasIndult.emit(len(terv.fajlok))
+                masoltak = futtasd(
+                    conn,
+                    keszlet,
+                    terv,
+                    haladas=lambda par: self.haladas.emit(par[0], par[1]),
+                    megszakitva=self._megszakitas.is_set,
+                )
                 conn.commit()
         except OSError as hiba:
             _log.warning("a mentés elszállt: %s", hiba)

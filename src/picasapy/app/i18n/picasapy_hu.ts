@@ -9490,6 +9490,15 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 </context>
 <context>
     <name>BackupDialog</name>
+    <!-- #3009: a másolás háttérszálon fut, és végig beszél -->
+    <message>
+        <source>Copying (%1/%2) files</source>
+        <translation>Másolás (%1/%2) fájl</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Megszakítás</translation>
+    </message>
     <message>
         <source>Back Up Pictures</source>
         <translation>Képek biztonsági mentése</translation>

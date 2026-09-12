@@ -23,6 +23,8 @@ ellenőrizhető** legyen. Soronként: relatív útvonal, méret, mtime.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -137,18 +139,35 @@ def _ird_ki_a_manifesztet(cel: Path, tetelek) -> Path:
     return manifeszt
 
 
-def futtasd(conn, keszlet, terv: Terv, *, most: str | None = None) -> tuple[Path, ...]:
+def futtasd(
+    conn,
+    keszlet,
+    terv: Terv,
+    *,
+    most: str | None = None,
+    haladas: Callable[[tuple[int, int]], None] | None = None,
+    megszakitva: Callable[[], bool] | None = None,
+) -> tuple[Path, ...]:
     """A terv végrehajtása; a ténylegesen átmásolt fájlok célútjai.
 
     A nyilvántartásba CSAK a sikeresen átmásolt fájl kerül be — egy
     megszakadt mentés után a következő futás így pótolja a hiányzót.
+
+    #3009: `haladas` fájlonként kapja a `(hányadik, hány)` párt — az
+    eredeti is végig beszél („Copying (%d/%d) files"). A `megszakitva`
+    minden fájl ELŐTT megkérdezi, folytassuk-e; a már átmásoltak
+    bekerülnek a nyilvántartásba, tehát a megszakítás nem veszít el
+    munkát, csak elhalasztja a maradékot.
     """
     cel = Path(keszlet.cel)
     cel.mkdir(parents=True, exist_ok=True)
     masoltak: list[Path] = []
     feljegyzendo: list[tuple[str, int, int]] = []
     ini_mappak: set[Path] = set()
-    for tetel in terv.fajlok:
+    osszes = len(terv.fajlok)
+    for index, tetel in enumerate(terv.fajlok, start=1):
+        if megszakitva is not None and megszakitva():
+            break
         celfajl = cel / tetel.relativ
         celfajl.parent.mkdir(parents=True, exist_ok=True)
         try:
@@ -160,6 +179,8 @@ def futtasd(conn, keszlet, terv: Terv, *, most: str | None = None) -> tuple[Path
         masoltak.append(celfajl)
         feljegyzendo.append((str(tetel.forras), tetel.meret, tetel.mtime_ns))
         ini_mappak.add(tetel.forras.parent)
+        if haladas is not None:
+            haladas((index, osszes))
 
     for mappa in sorted(ini_mappak):
         ini = mappa / PICASA_INI_NAME

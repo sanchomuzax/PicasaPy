@@ -42,6 +42,16 @@ def vezerlo(qt_app, tmp_path, gyujtemeny):
     return BackupController(db, (str(gyujtemeny),))
 
 
+def _vard_be(vezerlo, qt_app) -> None:
+    """#3009: a másolás HÁTTÉRSZÁLON fut — a hívás után be kell várni.
+
+    Enélkül a próba a még el sem indult másolás eredményét nézné. A
+    `processEvents` a szálak közti jelzéseket (haladás, futasKesz) is
+    kézbesíti, azok nélkül a jelzés-próbák üresen maradnának."""
+    assert vezerlo.waitForBackgroundWorkers(20.0), "a mentés szála nem állt le"
+    qt_app.processEvents()
+
+
 class TestAKeszletek:
     def test_ures_indulaskor(self, vezerlo):
         assert vezerlo.keszletek() == []
@@ -87,39 +97,44 @@ class TestATerv:
         assert terv["bajt"] > 0
         assert terv["kihagyott"] == 0
 
-    def test_a_MASODIK_terv_ures(self, vezerlo, tmp_path):
+    def test_a_MASODIK_terv_ures(self, qt_app, vezerlo, tmp_path):
         vezerlo.ujKeszlet("K", str(tmp_path / "cel"), "minden")
         azonosito = vezerlo.keszletek()[0]["id"]
         vezerlo.futtasdMost(azonosito)
+        _vard_be(vezerlo, qt_app)
         terv = vezerlo.terv(azonosito)
         assert terv["darab"] == 0, "másodszorra is mentene"
         assert terv["kihagyott"] == 2
 
 
 class TestAFuttatas:
-    def test_a_fajlok_atkerulnek(self, vezerlo, tmp_path):
+    def test_a_fajlok_atkerulnek(self, qt_app, vezerlo, tmp_path):
         cel = tmp_path / "cel"
         vezerlo.ujKeszlet("K", str(cel), "minden")
         vezerlo.futtasdMost(vezerlo.keszletek()[0]["id"])
+        _vard_be(vezerlo, qt_app)
         assert (cel / "nyaralas" / "a.jpg").is_file()
         assert (cel / "files.txt").is_file()
 
-    def test_a_futas_UTAN_van_idopont(self, vezerlo, tmp_path):
+    def test_a_futas_UTAN_van_idopont(self, qt_app, vezerlo, tmp_path):
         vezerlo.ujKeszlet("K", str(tmp_path / "cel"), "minden")
         azonosito = vezerlo.keszletek()[0]["id"]
         assert vezerlo.keszletek()[0]["utolsoFutas"] == ""
         vezerlo.futtasdMost(azonosito)
+        _vard_be(vezerlo, qt_app)
         assert vezerlo.keszletek()[0]["utolsoFutas"] != ""
 
-    def test_a_JELZES_megmondja_mennyi_ment_at(self, vezerlo, tmp_path):
+    def test_a_JELZES_megmondja_mennyi_ment_at(self, qt_app, vezerlo, tmp_path):
         kesz = []
         vezerlo.futasKesz.connect(lambda db, bajt: kesz.append((db, bajt)))
         vezerlo.ujKeszlet("K", str(tmp_path / "cel"), "minden")
         vezerlo.futtasdMost(vezerlo.keszletek()[0]["id"])
+        _vard_be(vezerlo, qt_app)
         assert kesz and kesz[0][0] == 2
 
-    def test_ISMERETLEN_keszletre_nem_omlik_ossze(self, vezerlo):
+    def test_ISMERETLEN_keszletre_nem_omlik_ossze(self, qt_app, vezerlo):
         hibak = []
         vezerlo.hibatJelez.connect(hibak.append)
         vezerlo.futtasdMost(9999)
+        _vard_be(vezerlo, qt_app)
         assert hibak
