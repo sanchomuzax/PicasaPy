@@ -185,6 +185,9 @@ Rectangle {
             Layout.alignment: Qt.AlignVCenter
             Rectangle {
                 objectName: "toolbarFlatViewButton"
+                //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                property bool lenyomasra: true
                 width: 30; height: 22; radius: 2
                 readonly property bool aktiv: !toolbar.treeViewActive
                 color: aktiv ? "#ffffff" : "transparent"
@@ -202,10 +205,16 @@ Rectangle {
                 ToolTip.visible: flatViewHover.hovered
                 ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: flatViewHover }
-                TapHandler { onTapped: toolbar.flatViewRequested() }
+                TapHandler {
+                    //: #885: lenyomásra, nem felengedésre
+                    onPressedChanged: if (pressed) toolbar.flatViewRequested()
+                }
             }
             Rectangle {
                 objectName: "toolbarTreeViewButton"
+                //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                property bool lenyomasra: true
                 width: 30; height: 22; radius: 2
                 readonly property bool aktiv: toolbar.treeViewActive
                 color: aktiv ? "#ffffff" : "transparent"
@@ -223,7 +232,10 @@ Rectangle {
                 ToolTip.visible: treeViewHover.hovered
                 ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: treeViewHover }
-                TapHandler { onTapped: toolbar.treeViewRequested() }
+                TapHandler {
+                    //: #885: lenyomásra, nem felengedésre
+                    onPressedChanged: if (pressed) toolbar.treeViewRequested()
+                }
             }
         }
         // #1421: a `folderviewpopup` — MÉRT méret 22 × 22, és a mérés
@@ -375,13 +387,19 @@ Rectangle {
                     }
                     HoverHandler { id: starFilter }
                     TapHandler {
-                        onTapped: controller.filterActive
-                                  ? controller.clearFilter()
-                                  : controller.showStarred()
+                        //: #885: lenyomásra, nem felengedésre
+                        onPressedChanged: if (pressed) {
+                            controller.filterActive
+                                ? controller.clearFilter()
+                                : controller.showStarred()
+                        }
                     }
                 }
                 Item {   // #1830: „arcos képek" — az eredeti `facesearch`
                     objectName: "faceFilter"
+                    //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                    //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                    property bool lenyomasra: true
                     // ⚠️ HELYESBÍTÉS. Itt korábban helyfoglaló állt, ezzel
                     // az indoklással: „az ini `faces=` adata NINCS az
                     // indexben, ezért ez a szűrő ma nem építhető meg a
@@ -421,13 +439,19 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: faceFilterHover }
                     TapHandler {
-                        onTapped: parent.aktiv
-                                  ? controller.clearFilter()
-                                  : controller.showFacesOnly()
+                        //: #885: lenyomásra, nem felengedésre
+                        onPressedChanged: if (pressed) {
+                            parent.aktiv
+                                ? controller.clearFilter()
+                                : controller.showFacesOnly()
+                        }
                     }
                 }
                 Item {   // #1830: „csak filmek" — az eredeti `moviesearch`
                     objectName: "movieFilter"
+                    //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                    //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                    property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool aktiv:
                         (controller && controller.viewModeName !== undefined)
@@ -454,9 +478,12 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: movieFilterHover }
                     TapHandler {
-                        onTapped: parent.aktiv
-                                  ? controller.clearFilter()
-                                  : controller.showVideosOnly()
+                        //: #885: lenyomásra, nem felengedésre
+                        onPressedChanged: if (pressed) {
+                            parent.aktiv
+                                ? controller.clearFilter()
+                                : controller.showVideosOnly()
+                        }
                     }
                 }
                 Item {   // #2174: a duplikátum-kapcsoló (`searchoptions/
@@ -466,6 +493,9 @@ Rectangle {
                          // vele BEkapcsolni a módot, csak kivezetni belőle
                          // (a bekapcsolás a menüparancs dolga).
                     objectName: "dupeFilter"
+                    //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                    //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                    property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool aktiv:
                         (controller && controller.viewModeName !== undefined)
@@ -498,13 +528,19 @@ Rectangle {
                     TapHandler {
                         // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
                         // kapcsoló és az `ID_DUPES` bitre ugyanazt hívja.
-                        onTapped: parent.aktiv
-                                  ? controller.clearFilter()
-                                  : controller.showDuplicateFiles()
+                        //: #885: lenyomásra, nem felengedésre
+                        onPressedChanged: if (pressed) {
+                            parent.aktiv
+                                ? controller.clearFilter()
+                                : controller.showDuplicateFiles()
+                        }
                     }
                 }
                 Item {   // geo-szűrő (#30) — csak akkor él, ha van geocímkés kép
                     objectName: "geoFilter"
+                    //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
+                    //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
+                    property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool ctlHasGeo:
                         controller ? controller.geoMarkerCount > 0 : false
@@ -525,9 +561,12 @@ Rectangle {
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
                         enabled: parent.ctlHasGeo
-                        onTapped: controller.filterActive
-                                  ? controller.clearFilter()
-                                  : controller.showGeotagged()
+                        //: #885: lenyomásra, nem felengedésre
+                        onPressedChanged: if (pressed) {
+                            controller.filterActive
+                                ? controller.clearFilter()
+                                : controller.showGeotagged()
+                        }
                     }
                 }
                 Text {   // mozgókép / méret
