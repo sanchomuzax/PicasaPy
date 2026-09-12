@@ -3570,6 +3570,74 @@ tartalma és a pusztító felszabadítási mintája.
 a raszterizáló (`0x00bba580` → `0x00bba670` → `0x00bba980` / `0x00bbb070`) —
 ott kell megnézni, mit tesz üres `padding*` / `alphaMax` / `scale*` esetén.
 
+#### ⭐ MEGFEJTVE: a pont éle KÉTMEGÁLLÓS, LINEÁRIS alfa-rámpa (2026-09-12, #2476)
+
+Az előző kör által megnevezett belépőn végigmenve (`0x00bba980` →
+`0x00bbaa90`) a maszk profilja **kiolvasható**, és ezzel a `Comicize`
+„natív pontmaszk pontos antialiasingja" kérdése LEZÁRUL.
+
+**A csemperajzoló (`0x00bbaa90`) két színmegállót állít össze**, byte-onként
+a vermen:
+
+| megálló | pozíció | alfa | honnan |
+|---|---:|---|---|
+| 0 (**a pont közepe**) | `0x00` | `CSONK(alphaMax · 255)` | `0x00bbab26` `fld [edi+0x34]` · `0x00bbab29` `fld qword [0xcf39d0]` = **255,0** · `0x00bbab66` `fistp` → `[esp+0x1b]` |
+| 1 (**a pont széle**) | `0xFF` | `CSONK(alphaMin · 255)` | `0x00bbab79` `fmul [edi+0x30]` · `0x00bbab92` `fistp` → `[esp+0x1f]` |
+
+A pozíció-tömb a `[esp+0x4c] = 0` (`bl`) és `[esp+0x4d] = 0xFF` (`cl`) bájtpár
+(`0x00bbaba8`, `0x00bbabc0`), és **pontosan kettőt** ad át:
+`0x00bbacba push 2` → `0x008f3970`. A `0x008f3970` ezt a két megállót
+interpolálja 256 rekeszes táblává (`0x008f3a0d`…`0x008f3a4b`,
+`FUN_008f3700` = szín-lerp) — tehát **nincs küszöb, nincs
+felül-mintavételezés: a pont alfája a középtől a széléig LINEÁRISAN fut le.**
+
+A gradiens geometriáját a párja (`0x008f3840`) kapja, öt lebegőpontos
+argumentummal; a középpont a `0x00bbac5a` `fld qword [0xc72150]` = **0,5**
+szorzóval a doboz közepe. Ugyanezt a párost hívja a
+`CircularGradientImageMask` (`0x00bc2a50`) — a rámpa tehát **radiális**.
+
+#### ⭐ Az attribútum-eltolások IGAZOLVA — és a maszk GYORSÍTÓTÁRAZOTT
+
+A `0x00bba980` a csempéhez **gyorsítótár-kulcsot** épít
+(`"%d-%d"` + `"-%d-%d-%d-%d-%g-%g-%g-%g"`, `0x00bba990` / `0x00bba9d4`), és
+ez a formátum-sztring **megnevezi a mezőket**:
+
+| eltolás | típus | attribútum | független bizonyíték |
+|---|---|---|---|
+| `+0x08` · `+0x0c` | `%d` | `tileWidth` · `tileHeight` | a rajzoló ebből indul (`0x00bbaa93`) |
+| `+0x10` · `+0x14` | float | `scaleWidth` · `scaleHeight` | szorzóként (`0x00bbabd2`, `0x00bbabf9`) |
+| `+0x18` · `+0x1c` · `+0x20` · `+0x24` | `%d` | `paddingLeft` · `Top` · `Right` · `Bottom` | a rajzoló **belső doboza**: `tileWidth − paddingRight − paddingLeft` (`0x00bbab9e`–`0x00bbabb2`), ugyanígy függőlegesen |
+| `+0x28` · `+0x2c` | `%g` | `offsetX` · `offsetY` | a kulcs négy `%g`-jének első kettője |
+| `+0x30` · `+0x34` | `%g` | **`alphaMin` · `alphaMax`** | a fenti két megálló |
+
+A kulcs `%d`-i és `%g`-i **csak a csempe saját paramétereit** tartalmazzák:
+kép-tartalom nem szerepel bennük. ⇒ **A csempemaszk gyorsítótárazott, tehát
+képfüggetlen** — ez a 00-index „a pontmaszk STATIKUS" megállapításának
+független, második bizonyítéka, most a gyorsítótár-kulcs oldaláról.
+
+#### ⛳ Amit ez a TERMÉKNEK mond (#2476)
+
+1. **Nincs élsimítási kapcsoló.** A „félhangos pont" egyetlen alakja egy
+   lineáris radiális rámpa `alphaMax` (közép) → `alphaMin` (szél). A
+   `Comicize` `alphaMin="0.0"`-t ad, az `alphaMax` a tartalékon fut.
+2. **A pont mérete a `padding*` négyesből jön**, nem a tónusból: a belső
+   doboz `tile − (bal+jobb)` × `tile − (fent+lent)`.
+3. ⚠️ **Nálunk a tónus a pont SUGARÁT modulálja** (`halftone.py:82`), az
+   eredetiben a csempe geometriája **állandó** (gyorsítótárazott), és a
+   tónus a láncból jön. Ez a #1606 „kb. 1,5× túl erős" leletének mechanizmusa.
+
+#### Ami NYITVA marad — pontosan egy tétel
+
+Az `alphaMax` (és a `padding*`) **tartalék értéke**. A `0x00bba670` nem
+tartalmaz numerikus konstanst, tehát a kitöltés máshol van: a fenti
+gyorsítótár-kulcsot adó **paraméter-struktúra** feltöltőjében (a `ebx`,
+amellyel a `0x00bba980` dolgozik). A következő kör belépője ez a feltöltő.
+
+*Bizonyítottsági fok: **megerősített** a kétmegállós lineáris rámpára, a
+radiális geometriára, az eltolás-térképre és a gyorsítótárazásra (helyi
+diszasszemblálás, minden lépés címmel) · **nyitott** az `alphaMax`/`padding*`
+tartalékértéke.*
+
 ### A `CircularGradientImageMask` HÉT attribútuma — és egy, amit sosem állítunk (2026-08-16)
 
 A radiális maszkot a `glimmer::CircularGradientImageMask` adja (vtable
