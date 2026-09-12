@@ -32,11 +32,12 @@ jobs:
           FORKBOL: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           # Az elfogadott szerzők listája. Új agent felvétele TUDATOS döntés:
-          # csak ide írva kap befésülési jogot. (agent-#32: a Codex és az
-          # OpenCode saját bot-neve ide jön, ha megkapják a saját App-jukat.)
+          # csak ide írva kap befésülési jogot. (agent-#32: az OpenCode saját
+          # bot-neve ide jön, ha megkapja a saját App-ját.)
           ELFOGADOTT="
           sanchomuzax
           picasapy-claude-agent[bot]
+          picasapy-codex[bot]
           "
           echo "PR szerzője: $SZERZO"
           echo "forkból érkezett: $FORKBOL"
