@@ -2462,12 +2462,28 @@ ApplicationWindow {
     //: mellette ér véget.
     RightDrawer {
         id: jobbFiok
-        visible: window.activeDrawerTab !== "" && mainSplit.visible
+        //: #3035: a fiók ANIMÁLVA tolódik be és ki (`thumbui.tre:700`:
+        //: `varbutton RIGHTDRAWEROFFSET -280 0 1` — a harmadik érték az
+        //: animáció jelzője; az időtartam 0,4 s, `0x00cf4ce0`). A csukott
+        //: állapot NULLA széles, tehát a könyvtár visszakapja a helyet —
+        //: és mivel a `mainSplit` jobb széle a fiók bal éléhez van kötve,
+        //: a szerkesztő előnézete is EGYÜTT méreteződik vele, ahogy a mért
+        //: kapcsoló két elemet értesít (`editpanel/previewimage…`).
+        //: nyitáskor AZONNAL látszik (a tartalom nem késik), záráskor
+        //: pedig a kitolás végéig marad látható
+        visible: (window.activeDrawerTab !== "" || jobbFiok.width > 0)
+                 && mainSplit.visible
         ablakSzelesseg: window.width
         anchors.top: mainSplit.top
         anchors.bottom: mainSplit.bottom
         anchors.right: parent.right
-        width: jobbFiok.kivantSzelesseg
+        width: window.activeDrawerTab !== "" ? jobbFiok.kivantSzelesseg : 0
+        Behavior on width {
+            NumberAnimation {
+                duration: jobbFiok.animacioMs
+                easing.type: Easing.InOutQuad
+            }
+        }
         //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
         //: (#754) — a gyorsítót és a billentyű-tippet levágva
         cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
@@ -2576,6 +2592,25 @@ ApplicationWindow {
         }
         onCloseRequested: window.ureseidAFiokot()
     }
+    }
+
+    //: #3035: `m_fakehidden` (`thumbui.tre:696`) — NEM LÁTSZÓ, de
+    //: kattintható sáv a fiók szélén, ami billenti a fiókot. Csukott
+    //: fióknál is ott van: ez a MÁSIK belépési pont a Nézet menü mellett.
+    Rectangle {
+        id: jobbFiokFogo
+        objectName: "rightDrawerFogo"
+        //: a `kattints()` a próbáké is: a vezérlőre kattintunk, nem a
+        //: kezelő metódusát hívjuk
+        function kattints() { window.billentsdAFiokot() }
+        visible: mainSplit.visible
+        opacity: 0
+        width: 6
+        anchors.top: mainSplit.top
+        anchors.bottom: mainSplit.bottom
+        anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
+        color: "transparent"
+        TapHandler { onTapped: jobbFiokFogo.kattints() }
     }
 
     // #985: a Kollázs LAP tartalma — a Könyvtár lapjának TESTVÉRE, ugyanazon
