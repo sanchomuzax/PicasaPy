@@ -479,15 +479,37 @@ class TestEditControllerShutdownOnExit:
         return Path(app_module.__file__).read_text(encoding="utf-8")
 
     def test_invalidate_then_wait_after_exec(self):
+        """A KILÉPÉSI úton — vagyis az `app.exec()` UTÁNI előforduláson.
+
+        #3021: a lezárás azóta MÁSHOL is szerepel: az `--onellenorzes`
+        füstpróba az eseményciklus elindítása ELŐTT lép ki, és ott is
+        lezárja a szálakat (nélküle a csomagolt program nem lépett ki, a
+        windowsos CI-n 38 percig állt). Az első előfordulás ezért már nem a
+        kilépési út — a sorrendet az `app.exec()` utáni, azaz UTOLSÓ
+        előfordulásokon kell mérni."""
         source = self._source()
         exec_at = source.index("exit_code = app.exec()")
-        cancel_at = source.index("edit_controller.cancelPendingPreview()")
-        wait_at = source.index("edit_controller.waitForBackgroundWorkers(")
+        cancel_at = source.rindex("edit_controller.cancelPendingPreview()")
+        wait_at = source.rindex("edit_controller.waitForBackgroundWorkers(")
         return_at = source.index("return exit_code")
         assert exec_at < cancel_at < wait_at < return_at, (
             "a szerkesztő háttér-renderének érvénytelenítése/bevárása nem a "
             "kilépési úton, helyes sorrendben áll"
         )
+
+    def test_az_onellenorzes_is_LEZAR(self):
+        """#3021: a füstpróba-ág is zárja a szálakat, a `return` ELŐTT.
+
+        Enélkül a csomagolt program a felület felépülése után NEM LÉP KI —
+        mérve a windowsos CI-n: 38 perc állás, amíg a job időkorlátja
+        levágta. A füstpróba pontosan azt nem mutatta volna meg, amiért van."""
+        source = self._source()
+        agi = source.index('print("onellenorzes: a felulet felepult"')
+        veg = source.index("return 0", agi)
+        szakasz = source[agi:veg]
+        assert "controller.shutdown()" in szakasz
+        assert "edit_controller.cancelPendingPreview()" in szakasz
+        assert "edit_controller.waitForBackgroundWorkers(" in szakasz
 
     def test_wait_has_a_bounded_timeout(self):
         """A perces rendert NEM várjuk végig — az emit-ág már érvénytelen,
