@@ -3256,6 +3256,41 @@ nem mondja meg — a hatókör ez az egy, valódi adatbázis.)*
 
 Jegyek: a csillag-hiba **#2335**, a kulcsszó/helyadat-hiány **#2336**.
 
+### ⭐ A `geoview` a geotag TÉNYLEGES jelzője — képenkénti mérés (2026-09-12, #2336)
+
+A fenti táblázat `geoview` sora ugyanazt a **219**-et adja, mint a
+`lat`/`long`. Ez összegszinten véletlen is lehetne, ezért **soronként**
+mértem meg (`Picasa2-arcok/Picasa2/db3`, 515 sor):
+
+| eset | sor |
+|---|---:|
+| `geoview` nem üres **és** a koordináta nem nulla | **219** |
+| **CSAK** `geoview` | **0** |
+| **CSAK** koordináta | **0** |
+| egyik sem | 296 |
+| `geoview` nem üres, de a koordináta 0,0 | **0** |
+
+⇒ A képenkénti egyezés **teljes**: a `geoview` üressége a hiányzó geotag
+mért jelzője. Az importáló ezért a `geoview`-t kérdezi, nem a koordináta
+értékét (`importer.py` → `_koordinata`); így a valódi 0,0-s koordináta
+(Egyenlítő × kezdő délkör) sem vész el. Ha a `geoview` **oszlop** hiányzik
+(régebbi adatmappa), marad a „0,0 nem hely" szabály — ott a jelző nem
+kérdezhető meg.
+
+**Mezőtípus MÉRVE:** `imagedata_geoview.pmp` fejléce `0x00` (`ytString`).
+
+**Melléklelet (a #2336 hatókörén kívül, de kiolvasva):** a `geoview`
+tartalma egy KML-részlet, és **maga is hordozza a koordinátát**:
+
+```
+<LookAt><longitude>18.867705</longitude><latitude>46.438392</latitude>
+<range>143.802000</range><tilt>0.000000</tilt><heading>0.000000</heading></LookAt>
+```
+
+A `range`/`tilt`/`heading` a térképnézet kameraállása. Hogy a `lat`/`long`
+oszlop és a `geoview` koordinátája mindig egyezik-e, **nincs mérve** — a
+mai import a `lat`/`long` oszlopot használja értékként.
+
 ---
 
 ## Az `albumdata_date` oszlop — a mappa dátuma TÁROLT, nem számított (2026-09-04, #2304)

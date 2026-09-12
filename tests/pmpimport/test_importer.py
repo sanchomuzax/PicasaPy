@@ -282,3 +282,86 @@ class TestKulcsszavakEsHely2336:
         elso = iter_photo_records(tmp_path, remapper)[0]
         assert elso.tags == ()
         assert elso.latitude is None and elso.longitude is None
+
+
+class TestAGeoviewAGeotagJelzoje2336:
+    """#2336: a geotag TÉNYLEGES jelzője a `geoview` oszlop, nem a nulla.
+
+    ## A mérés, ami ezt eldöntötte (2026-09-12)
+
+    A tulajdonos valódi adatmappáján (`Picasa2-arcok/Picasa2/db3`, 515 sor)
+    a `geoview` jelenlétét és a `lat`/`long` nem nulla értékét **soronként**
+    összevetve:
+
+    | eset | sor |
+    |---|---|
+    | mindkettő megvan | **219** |
+    | CSAK `geoview` | **0** |
+    | CSAK koordináta | **0** |
+    | egyik sem | 296 |
+
+    ⇒ a képenkénti egyezés **teljes**, tehát a `geoview` üressége a hiányzó
+    geotag mért jelzője. Ezzel a „0,0 nem hely" heurisztika kiváltható, és a
+    valódi 0,0-s koordináta elvesztése elméleti kockázatként is megszűnik.
+
+    ⚠️ Ez NEM a `geoview` tartalmának megfejtése (az a jegyben hatókörön
+    kívül van) — csak annyi, hogy üres-e.
+    """
+
+    def _db(self, tmp_path, geoview) -> None:
+        _write_db3(tmp_path)
+        (tmp_path / "imagedata_lat.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        )
+        (tmp_path / "imagedata_long.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        )
+        if geoview is not None:
+            (tmp_path / "imagedata_geoview.pmp").write_bytes(
+                build_pmp_column(0x0, geoview)
+            )
+
+    def test_geoviewval_a_NULLA_is_valodi_hely(self, tmp_path, remapper):
+        """A Guineai-öböl egyenlítői pontja valódi hely — ha a `geoview`
+        ott áll, nem dobhatjuk el."""
+        # a sorindexek a thumbindexhez igazodnak: az ELSŐ fotó a 1. sor
+        self._db(tmp_path, ["", "x", "", "", "", ""])
+        elso, masodik = iter_photo_records(tmp_path, remapper)
+        assert elso.latitude == 0.0 and elso.longitude == 0.0, (
+            "a `geoview` jelen van, tehát a 0,0 VALÓDI hely — eldobtuk"
+        )
+        assert masodik.latitude is None and masodik.longitude is None
+
+    def test_geoview_nelkul_a_nulla_nem_hely(self, tmp_path, remapper):
+        self._db(tmp_path, ["", "", "", "", "", ""])
+        elso = iter_photo_records(tmp_path, remapper)[0]
+        assert elso.latitude is None and elso.longitude is None
+
+    def test_a_geoview_OSZLOP_hianya_a_regi_szabalyra_esik_vissza(
+        self, tmp_path, remapper
+    ):
+        """Régebbi adatmappában nincs `geoview.pmp`. Ott a jelző nem
+        kérdezhető meg, tehát marad a „0,0 nem hely" — enélkül minden
+        geotag nélküli kép a Null-szigetre kerülne."""
+        self._db(tmp_path, None)
+        elso = iter_photo_records(tmp_path, remapper)[0]
+        assert elso.latitude is None and elso.longitude is None
+
+    def test_a_geoview_nem_nyomja_el_a_valodi_koordinatat(
+        self, tmp_path, remapper
+    ):
+        """Üres `geoview` mellett nem nulla koordináta a mért korpuszban
+        NEM fordul elő (0 sor). Ha mégis előfordulna, a koordináta a
+        mérés szerint nem geotag — a próba ezt a döntést szögezi le."""
+        _write_db3(tmp_path)
+        (tmp_path / "imagedata_lat.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 47.4979, 0.0, 0.0, 0.0, 0.0])
+        )
+        (tmp_path / "imagedata_long.pmp").write_bytes(
+            build_pmp_column(0x2, [0.0, 19.0402, 0.0, 0.0, 0.0, 0.0])
+        )
+        (tmp_path / "imagedata_geoview.pmp").write_bytes(
+            build_pmp_column(0x0, ["", "", "", "", "", ""])
+        )
+        elso = iter_photo_records(tmp_path, remapper)[0]
+        assert elso.latitude is None and elso.longitude is None
