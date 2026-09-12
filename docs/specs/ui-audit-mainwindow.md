@@ -1212,3 +1212,66 @@ buborékban. Mind az öt gomb ugyanazt a `tip` kezelőt osztja.
 
 A fájl **125 sor** — egyezik a #838 mérésével; a `searchcontainer/` előtagú
 elemek száma **26**, köztük mind a tíz ikon (öt gomb × 2 állapot).
+
+## ⛳ A görgetősáv NÉGY gombja: mind a négy EGY objektum négy vtábla-rekeszére megy (2026-09-12, 294. kör, #857)
+
+A #857 „Ami NYITVA marad" szakasza egyetlen kérdést hagyott: **mit jelent az
+„album" az ugrásnál.** A `.tre` csak a gombot adja meg, a viselkedést nem
+— ez a szakasz a **működés** felé viszi a kérdést, és megadja a kezelők
+pontos helyét.
+
+### A szétosztó
+
+Mind a négy gomb ugyanabban a névre illesztő láncban ül
+(`0x005de13b`–`0x005de41c`), és mind a négy **paraméter nélküli
+farokhívással** (`jmp eax`) megy tovább — ugyanarra az objektumra, a
+gazdapanel **`+0x2a4`** tagjára:
+
+| elem | a név címe | az összehasonlítás | a hívott vtábla-rekesz |
+|---|---|---|---|
+| `throttle/albumscrolltop` | `0x00c96818` | `0x005de176` | **`+0x20`** (8.) |
+| `throttle/albumscrollbottom` | `0x00c96830` | `0x005de1e4` | **`+0x24`** (9.) |
+| `throttle/nextalbum` | `0x00c9684c` | `0x005de334` | **`+0x3c`** (15.) |
+| `throttle/prevalbum` | `0x00c96860` | `0x005de39a` | **`+0x40`** (16.) |
+
+Mindegyik ág betűre azonos alakú:
+
+```
+lea ecx, [edx + 0x2a4]     ; a gazdapanel tagja
+mov edx, [ecx]             ; a vtábla
+mov eax, [edx + <rekesz>]
+jmp eax                    ; FAROKHÍVÁS, argumentum nélkül
+```
+
+### Amit ez eldönt
+
+1. **A négy gomb nem négy változata egy műveletnek.** A görgető pár (8., 9.)
+   és az album-pár (15., 16.) a vtáblában **távol** van egymástól ⇒ külön
+   interfész-metódusok, nem egy „lépj N-et" paraméterezett hívás.
+2. **A művelet paraméter nélküli** — a cél-objektum tudja, mit kell tennie;
+   a gomb csak jelez.
+3. A gomb `m_autorepeat`-je (`throttle.tre`) ⇒ nyomva tartva **ismételt**
+   hívás ugyanarra a rekeszre.
+
+### ⛔ Amit ez NEM dönt el — a jegy kérdése NYITVA marad
+
+Hogy a 16. rekesz **a listában a következő albumra** lép-e, vagy **a rács
+következő szakaszfejlécére**, abból nem derül ki, hogy melyik rekeszt hívja.
+Ehhez a `+0x2a4`-en ülő objektum **osztályát** kell azonosítani (RTTI a
+vtáblájából), és a `+0x40` rekesz törzsét elolvasni.
+
+**A következő gépi lépés:** a szétosztó gazdafüggvényének megkeresése
+(`0x005de13b` körül), abból a `+0x2a4` tag írója, és onnan az RTTI.
+
+### ⚠️ MÓDSZERTAN — a név MINŐSÍTETT, és ezen bukik a keresés
+
+Az első pásztázásom **mind a hét elemnévre 0 találatot** adott — a
+**kontroll-pozitívra is**, ezért egyetlen negatív állítást sem közöltem.
+Az ok: a binárisban a név **minősítve** áll (`throttle/prevalbum`,
+`0x00c96860`), a csupasz `prevalbum` pedig annak a **belsejébe** mutat
+(`0x00c96869`), oda viszont semmi nem hivatkozik. A minősített címmel
+mind a négy névre **3-3** találat jött.
+
+*Forrás: a nevek `0x00c96818`–`0x00c96874` között, egy folytonos
+névtáblában; a szétosztó `0x005de13b`–`0x005de41c`; a `.tre` oldala
+`throttle.tre` (38 sor).*
