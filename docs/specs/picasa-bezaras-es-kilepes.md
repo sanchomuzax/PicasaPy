@@ -154,11 +154,49 @@ kapcsolatban áll (`0x005e4240`, `0x5e4250`–`0x5e42dd`):
 A válasz **`0xf4242` (vétó)** esetén a kapu a kilépés állapotát 3-ról
 2-re visszavételezi (`0x0057c5d6`), és az ablak nyitva marad.
 
-> **Pontos jelentése a „be nem fejeződött művelet" listának** (mely
-> szolgáltatások neve kerül a párbeszédbe, ha egyáltalán bekerül) ez a
-> kör nem oldotta meg — a `0x009b40a0` három sztringpuffert tölt, a
-> formátumsztringjét nem találtuk. BLOKKOLT: élő Picasán futtatott
-> feltöltés megszakításának képernyőképe döntené el.
+#### ⭐ LEZÁRVA (2026-09-12, #1738): a párbeszéd NEM sorolja fel a műveleteket
+
+A korábbi kör ezt élő Picasa-képernyőképre bízta volna. **Nem kell hozzá** —
+a `0x009b40a0` elolvasása eldönti.
+
+**Mit csinál a begyűjtő.** Végigmegy a bejegyzett kezelők tömbjén
+(`[obj+0x54]`, lépésköz `0x14`, darabszám `[obj+0x58] >> 1`), és
+kezelőnként két virtuálist hív: a `vtbl+0xc`-t (szűrés — a `0xf4241` és a
+nulla visszatérés kihagyja a tételt), majd a `vtbl+0x10`-et, ami egy
+szöveget ad vissza.
+
+**A döntő rész: EGYETLEN szöveget tart meg.**
+
+| helyzet | mi történik | cím |
+|---|---|---|
+| az eddigi szöveg üres | az újat átveszi | `0x009b412b` (`FUN_005c2100` = sztring-értékadás) |
+| az új szöveg **azonos** az eddigivel | továbblép, egy példányt tart | `0x009b4190`–`0x009b41ac` (bájtonkénti összevetés) |
+| az új szöveg **eltér** | **mind a négy puffert kiüríti és `-1`-gyel tér vissza** | `0x009b41ef` → `0x009b41b2` |
+
+Vagyis **összefűzés, elválasztó és formátumsztring nincs** — ezért nem
+találta meg egyetlen kör sem: nem létezik.
+
+**Mit tesz a hívó a `-1`-gyel.** A `0x005e4240` a visszakapott szöveget az
+`edi`-ben nézi meg; ha üres (`0x005e42e5`–`0x005e42f3`), a **beégetett
+általános szöveget** tölti be:
+
+```
+0x005e42f5  push 0xc97450("WarnClosePlugins::message")
+0x005e42fa  mov  eax, 0xc97400("Closing Picasa will cancel unfinished
+                               operations. Do you really want to close?")
+```
+
+Ha nem üres, azt a szöveget használja helyette (`jne 0x5e431e`).
+
+⇒ **A válasz a jegy kérdésére:** a párbeszéd **soha nem sorol fel
+műveleteket**. Vagy egyetlen, a bővítménytől kapott üzenetet mutat — és azt
+is csak akkor, ha MINDEN blokkoló bővítmény UGYANAZT a szöveget adja —, vagy
+a fenti általános mondatot.
+
+**Amit ez NEM mond meg:** hogy a bővítmények milyen szöveget adnak vissza
+(a `vtbl+0x10` az egyes bővítményekben), és hogy élesben előfordul-e egyáltalán
+a nem üres ág. A megvalósításunkhoz ez nem kell: a felsorolás lehetősége
+kizárva, az általános szöveg pedig ki van olvasva.
 
 ### Az `exit_nag` kulcs
 
