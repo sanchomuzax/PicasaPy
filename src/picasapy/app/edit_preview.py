@@ -26,6 +26,7 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters, count_redeye_spots
+from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
     apply_display_mode,
     display_mode_changes_pixels,
@@ -252,7 +253,14 @@ class EditPreviewProvider(QQuickImageProvider):
             # ilyenkor egyszerűen nem talál, és újra dekódolunk (a dekóder
             # a hiányzó fájlra `None`-nal, azaz helyőrzővel felel).
             mtime = None
-        source_array = self._resolve_source(key, path, mtime, shared_cache)
+        #: #819: a lánc sáv-jelzői. A `fullres` szűrők csak teljes
+        #: felbontáson helyesek, ezért náluk a dekód korlátja elmarad.
+        teljes_felbontas, _lassu, _ujrameretez = chain_flags(
+            [op.name for op in ops]
+        )
+        source_array = self._resolve_source(
+            key, path, mtime, shared_cache, full_res=teljes_felbontas
+        )
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
         # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
         # megosztott állapot sem, amit sorosítani kellene.
@@ -284,7 +292,11 @@ class EditPreviewProvider(QQuickImageProvider):
                 underline=text.underline,
                 align=text.align,
             )
-        image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
+        image = (
+            _rgb_array_to_qimage(_megjelenitendo(result_array, teljes_felbontas))
+            if result_array is not None
+            else QImage()
+        )
         histogram = (
             compute_rgb_histogram(result_array)
             if result_array is not None
@@ -431,7 +443,12 @@ class EditPreviewProvider(QQuickImageProvider):
             store.popitem(last=False)
 
     def _resolve_source(
-        self, key: str, path: Path, mtime: float | None, shared_cache: bool
+        self,
+        key: str,
+        path: Path,
+        mtime: float | None,
+        shared_cache: bool,
+        full_res: bool = False,
     ) -> np.ndarray | None:
         """A dekódolt forráskép — a GUI-úton gyorsítótárazva, háttéren nem.
 
@@ -440,18 +457,25 @@ class EditPreviewProvider(QQuickImageProvider):
         cserébe a két szál között nincs megosztott, zárral védendő állapot.
         """
         if not shared_cache:
-            return _decode_source(path)
+            return _decode_source(path, full_res=full_res)
         cached = self._sources.get(key)
-        if cached is not None and cached[0] == path and cached[1] == mtime:
+        #: #819: a kicsinyített és a teljes felbontású forrás NEM cserélhető
+        #: fel — a negyedik mező mondja meg, melyik van a gyorsítótárban.
+        if (
+            cached is not None
+            and cached[0] == path
+            and cached[1] == mtime
+            and (len(cached) < 4 or cached[3] == full_res)
+        ):
             source_array = cached[2]
         else:
-            source_array = _decode_source(path)
+            source_array = _decode_source(path, full_res=full_res)
         # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
         # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
         # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
         # A forrás-referencia (source_array) azonossága megmarad, így a
         # lánc-prefix gyorsítótár (#140) találata a re-store után is érvényes.
-        self._sources[key] = (path, mtime, source_array)
+        self._sources[key] = (path, mtime, source_array, full_res)
         self._sources.move_to_end(key)
         while len(self._sources) > _LRU_CAPACITY:
             self._sources.popitem(last=False)
@@ -602,17 +626,23 @@ class EditPreviewProvider(QQuickImageProvider):
         return image
 
 
-def _decode_source(path: Path) -> np.ndarray | None:
+def _decode_source(path: Path, *, full_res: bool = False) -> np.ndarray | None:
     """A forráskép dekódolása RGB numpy tömbbé, előnézet-felbontásra korlátozva.
 
     QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza —
     a néző natív Image-e is így tesz (autoTransform: true). A dekód mérete
     korlátozott: az előnézethez elég, és a GUI-szálon futó renderelés így
-    nagy képnél is gyors marad. `None`, ha a kép nem olvasható be."""
+    nagy képnél is gyors marad. `None`, ha a kép nem olvasható be.
+
+    #819: `full_res=True` esetén a korlát ELMARAD. A szűrő-regiszter 19
+    szűrőre `fullres` jelzőt ad — ezek csak teljes felbontáson adnak helyes
+    eredményt, tehát a kicsinyített forráson futtatva a felhasználó MÁST
+    látna, mint amit a mentett kép tartalmaz. A megjelenített előnézet
+    ettől függetlenül a korlátra kicsinyül (`_kicsinyitsd_a_megjelenitendot`)."""
     reader = QImageReader(str(path))
     reader.setAutoTransform(True)
     native = reader.size()
-    if native.isValid():
+    if native.isValid() and not full_res:
         longest = max(native.width(), native.height())
         if longest > _MAX_PREVIEW_EDGE:
             scale = _MAX_PREVIEW_EDGE / longest
@@ -623,6 +653,27 @@ def _decode_source(path: Path) -> np.ndarray | None:
     if source.isNull():
         return None
     return _qimage_to_rgb_array(source)
+
+
+def _megjelenitendo(tomb: np.ndarray, teljes_felbontas: bool) -> np.ndarray:
+    """A MEGJELENÍTENDŐ kép — a teljes felbontású render kicsinyítve (#819).
+
+    A `fullres` szűrők a teljes felbontású forráson futnak, de a felületre
+    kikerülő előnézet ettől nem lehet nagyobb: a néző úgyis kicsinyítve
+    mutatja, a nagy `QImage` viszont a memóriát és a rajzolást terheli
+    (egy 3200×2400-as RGB kép ~23 MB)."""
+    if not teljes_felbontas:
+        return tomb
+    magas, szeles = tomb.shape[0], tomb.shape[1]
+    leghosszabb = max(szeles, magas)
+    if leghosszabb <= _MAX_PREVIEW_EDGE:
+        return tomb
+    arany = _MAX_PREVIEW_EDGE / leghosszabb
+    from picasapy.render.glimmer_ops import resize_image
+
+    return resize_image(
+        tomb, max(1, round(szeles * arany)), max(1, round(magas * arany))
+    )
 
 
 def _placeholder() -> QImage:

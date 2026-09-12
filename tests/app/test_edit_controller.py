@@ -94,9 +94,10 @@ class TestPagingMemory:
         calls = []
         original = edit_preview._decode_source
 
-        def counting_decode(path):
+        #: #819: a dekóder `full_res` kapcsolót is kap
+        def counting_decode(path, **kulcsszavak):
             calls.append(path)
-            return original(path)
+            return original(path, **kulcsszavak)
 
         monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
         first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
