@@ -383,6 +383,31 @@ class TestForgatas:
         nyitott.snapRotation("snap_3")
         assert kert == [1]
 
+    @pytest.mark.parametrize(
+        "tema",
+        ["contactsheet", "framegrid", "picturegrid", "regulargrid"],
+    )
+    def test_a_nem_forgato_temakon_IS_hat(self, nyitott, tema):
+        """#1162: a bepattintó igazítás NEM a téma `rotate` bitjétől függ.
+
+        Kimérve az eredeti binárisból: a négy `collagepanel/snap_*` parancs a
+        `0x0083b900` végrehajtóra fut (0 / 90 / 180 / −90 fok, `pi/180`-nal
+        radiánra váltva, az elem `+0x15c` mezőjébe), és abban a függvényben
+        **nincs képesség-maszk vizsgálat**. A maszk 7. bitjét a teljes `.text`
+        egyetlen helyen nézi (`0x0083ad5f`), az pedig a szórás-animációt
+        (`AnimPlacementHandler`) kapuzza — nem ezt.
+
+        A `multiexp` kimarad: ott a `selection` képesség hiányzik, tehát
+        kijelölés sincs, és a `snapRotation` már a kijelölés-ágon megáll.
+        Az egy másik kapu, nem ez.
+        """
+        nyitott.setCollageTheme(tema)
+        nyitott.setCollageSelection([0])
+        nyitott.snapRotation("snap_3")
+        assert nyitott.collageNodes.nodes[0].theta == pytest.approx(
+            math.radians(90.0)
+        )
+
     def test_ismeretlen_parancs_nem_omlik_ossze(self, nyitott):
         """#989: a Képkupac a képeket LEGYEZŐSEN dönti meg (`pile_rotation`),
         tehát a kiinduló szög nem nulla — az állítás azért arról szól, hogy

@@ -143,20 +143,13 @@ Item {
         //: `CollageS::AlignRotation`
         title: qsTr("Align Rotation")
 
-        // #1162: a forgatás a maszk függvénye — a vezérlő `snapRotation`-ja
-        // NÉMÁN visszatér, ha a téma nem forgat (`collage_controller.py`), és
-        // a bepattintó gombsor (`CollageSnapColumn.qml`) ezért gátolt is. A
-        // helyi menü viszont NEM volt: kirakta mind a négy szöget, a hívás
-        // lefutott, és nem történt semmi — pontosan a #1151 osztálya.
-        //
-        // ⚠️ Ez a gátolás NEM változtatja a program viselkedését, csak
-        // láthatóvá teszi a meglévőt. Tiltás és nem elrejtés (a #1151
-        // döntése); hogy az eredeti rejt vagy tilt, NINCS kimérve.
-        //
-        // A maszk 7. bitjének JELENTÉSE (szabad vs. fix szög) továbbra is
-        // nyitott kérdés a #1162-ben — de bármi is a válasza, a két belépési
-        // pontnak egyeznie kell.
-        enabled: menus.can("rotate")
+        // #1162: a bepattintó igazítás NEM a téma `rotate` bitjétől függ,
+        // ezért nincs itt gátolás. Kimérve az eredeti binárisból: a négy
+        // `collagepanel/snap_*` parancs a `0x0083b900` végrehajtóra fut
+        // (0 / 90 / 180 / −90 fok, `pi/180`-nal radiánra váltva, az elem
+        // `+0x15c` mezőjébe), és abban a függvényben nincs képesség-maszk
+        // vizsgálat. A maszk 7. bitjét a teljes `.text` egyetlen helyen nézi
+        // (`0x0083ad5f`), és az a szórás-animációt kapuzza, nem ezt.
 
         MenuItem {
             objectName: prefix + "Align0"

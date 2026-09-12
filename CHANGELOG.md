@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.436] – 2026-09-12
+
+### Javítva
+
+- **A kollázs forgatás-igazítása minden témán működik** (#1162). A négy
+  bepattintó szög (0, 90, 180, 270 fok) eddig csak a Képkupacnál hatott: a
+  többi témán a menütétel és a gombsor is szürke volt, a művelet pedig némán
+  visszatért. Az eredeti Picasa binárisából most kimértük, hogy az igazítás
+  ott egyik témán sincs korlátozva — a témák „forgatás" jelzője a kollázs
+  szórásos elrendezését engedi, nem ezt a négy gombot. Mindhárom belépési
+  pont — menü, gombsor, vezérlő — az eredetit követi.
+
 ## [0.8.435] – 2026-09-12
 
 ### Javítva

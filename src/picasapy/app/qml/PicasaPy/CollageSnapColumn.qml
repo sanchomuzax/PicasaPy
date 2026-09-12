@@ -86,9 +86,8 @@ Item {
             height: 15
             padding: 0
             horizontalPadding: 0
-            // A forgatás a maszk függvénye (`snapRotation` ugyanezt nézi):
-            // ahol a téma nem forgat, a gomb halvány, nem néma.
-            enabled: column.capabilities.rotate === true
+            // #1162: a bepattintó igazítás minden témán működik — az
+            // eredeti végrehajtója (`0x0083b900`) nem nézi a képesség-maszkot.
             contentItem: Item {
                 Image {
                     objectName: column.nameFor(modelData.key) + "Icon"
