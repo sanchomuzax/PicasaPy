@@ -66,6 +66,7 @@ MenuItem {
     ToolTip.visible: control.sajat && control.hovered
     ToolTip.text: control.sajatSugo
 
+    ToolTip.delay: Theme.tooltipDelay
     // sem a helyfoglaló, sem a nyugdíjazott tétel nem kattintható
     enabled: !placeholder && !control.retired
 

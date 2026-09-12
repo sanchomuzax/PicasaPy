@@ -724,6 +724,7 @@ Rectangle {
             ToolTip.visible: versionHover.hovered
             ToolTip.text: versionLabel.tooltipText
 
+            ToolTip.delay: Theme.tooltipDelay
             HoverHandler {
                 id: versionHover
                 objectName: "versionCursor"

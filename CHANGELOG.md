@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.439] – 2026-09-12
+
+### Javítva
+
+- **Hét buboréksúgó azonnal ugrott elő a többi helyett** (#901). A
+  felületen hetvenhét súgó van, és ezek közül hét nem a közös
+  késleltetéssel jelent meg, hanem a Qt alapértelmezésével — a mappafán, az
+  eszköztár verzió-feliratán, a nézegető két arc-gombján, a menütételeken és
+  a névtelen arcok nézetén. Mostantól mind egyformán viselkedik, és egy őr
+  figyeli, hogy ez így is maradjon.
+
 ## [0.8.438] – 2026-09-12
 
 ### Belső
