@@ -229,8 +229,18 @@ jobs:
         run: |
           # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
           # felület felépülése után kilép, eseményciklus nélkül.
-          ./dist/PicasaPy/PicasaPy.exe --onellenorzes > fustproba.txt 2>&1 || {
-            echo "::error::a csomagolt program nem indult el"; cat fustproba.txt; exit 1; }
+          # ⚠️ KEMÉNY időkorlát: ha a csomagolt program nem lép ki, a job
+          # időkorlátja vágná le 40 perc után, és a napló nem mondaná meg,
+          # mi történt (mérve: 38 perc várakozás egy hiányzó lezárás miatt).
+          timeout 300 ./dist/PicasaPy/PicasaPy.exe --onellenorzes \
+              > fustproba.txt 2>&1 || {
+            KOD=$?
+            if [ "$KOD" = "124" ]; then
+              echo "::error::a csomagolt program 5 perc alatt nem lépett ki"
+            else
+              echo "::error::a csomagolt program nem indult el (kód: $KOD)"
+            fi
+            cat fustproba.txt; exit 1; }
           cat fustproba.txt
           grep -q "onellenorzes" fustproba.txt || {
             echo "::error::a felület nem épült fel a csomagból"; exit 1; }

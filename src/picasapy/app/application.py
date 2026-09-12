@@ -1371,8 +1371,16 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     #: Qt-bővítmények, a QML-fa, a fordítás és az ikon MIND a csomagban van
     #: — a felület felépült. Az ablakot már nem mutatjuk meg, és az
     #: eseményciklus el sem indul.
+    #:
+    #: ⚠️ A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
+    #: vannak; nélkülük a processz nem lép ki, csak áll — a windowsos
+    #: CI-futáson MÉRVE 38 percig, amíg a job időkorlátja levágta. A
+    #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
     if onellenorzes:
         print("onellenorzes: a felulet felepult", flush=True)
+        controller.shutdown()
+        edit_controller.cancelPendingPreview()
+        edit_controller.waitForBackgroundWorkers(2.0)
         return 0
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —

@@ -117,6 +117,18 @@ class TestACI:
         assert "pyinstaller" in szoveg.lower()
         assert "iscc" in szoveg.lower() or "innosetup" in szoveg.lower()
 
+    def test_a_fustproba_IDOKORLATOS(self, munkafolyamat):
+        """Mérve: a lezárás nélküli önellenőrzés 38 percig ÁLLT a windowsos
+        futtatón, és a job időkorlátja vágta le — a napló nem mondta meg,
+        mi történt. Kemény időkorlát nélkül a füstpróba pont azt nem
+        mutatja meg, amiért van."""
+        szoveg = " ".join(
+            str(lepes.get("run", "")) for lepes in self._windows_lepesek(munkafolyamat)
+        )
+        assert "timeout " in szoveg, (
+            "a füstpróbát időkorláttal kell futtatni"
+        )
+
     def test_a_csomagolt_programot_EL_IS_INDITJA(self, munkafolyamat):
         """A jegy Kész-ha pontja: füstpróba, nem csak fordítás. Hiányos
         csomag esetén ITT kell elbukni, nem a tulajdonos gépén."""
