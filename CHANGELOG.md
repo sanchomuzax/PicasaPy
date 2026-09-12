@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.430] – 2026-09-12
+
+### Változott
+
+- **A biztonsági mentés nem fagyasztja be az ablakot** (#3009). A másolás
+  mostantól a háttérben fut, közben látod, hányadik fájlnál tart, és meg
+  is szakíthatod. A megszakított mentés nem vész kárba: a következő
+  futás pontosan a hiányzó fájlokat viszi át.
+
 ## [0.8.429] – 2026-09-12
 
 ### Javítva
