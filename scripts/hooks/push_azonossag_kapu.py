@@ -45,8 +45,40 @@ a párhuzamos munkameneteket.
 """
 
 import json
+import os
 import re
 import sys
+
+#: Idezet-szakaszok — kivagjuk, mielott parancsot keresnenk (#3105). Enelkul
+#: egy jegytorzs vagy dokumentum, amiben a tiltott parancs SZOVEGKENT
+#: szerepel, sajat magat blokkolja. Elesben pontosan ez tortent: a kaput
+#: leiro jegy megnyitasat akadalyozta meg a kapu.
+_IDEZET = re.compile(r"'[^']*'|\"[^\"]*\"|`[^`]*`")
+
+#: A projekt repoi. A kapu MAS projektben nema — a felhasznalo gepen tobb
+#: repo el, es a bot GitHub Appja csak ezekre van telepitve, tehat mashol a
+#: javasolt burkolo sem jarhato ut.
+_HATOKOR = ("picasapy", "PicasaPy")
+
+#: A parancsban megnevezett munkakonyvtar: `cd X` vagy `-C X`. A `cwd`
+#: onmagaban felrevisz: `cd <masik repo>` utan a munkamenet cwd-je meg a
+#: mienk, a muvelet viszont mashova megy.
+_UTVONAL = re.compile(
+    r"(?:^|[;&|]\s*|\n\s*)cd\s+(\S+)|(?:^|\s)-C[=\s]+(\S+)")
+
+
+def megnevezett_utvonalak(cmd: str) -> list[str]:
+    """A parancsban kimondott konyvtarak, sorrendben."""
+    return [(a or b) for a, b in _UTVONAL.findall(cmd) if (a or b)]
+
+
+def hatokorben(cmd: str, cwd: str = "") -> bool:
+    """A projekt repoit erinti-e a parancs?"""
+    utak = megnevezett_utvonalak(cmd)
+    if utak:
+        return any(j in u for u in utak for j in _HATOKOR)
+    return any(j in (cwd or "") for j in _HATOKOR)
+
 
 #: Parancspozíció: sor eleje vagy shell-elválasztó után, esetleges
 #: környezeti előtagokkal. Enélkül a parancs SZÖVEGÉBEN szereplő említés is
@@ -72,13 +104,15 @@ _BURKOLO = re.compile(r"(?:^|[\s;&|/])git-push-bot\b")
 _BOT_AZONOSSAG = re.compile(r"x-access-token|gh_bot_token\.py")
 
 
-def blokkolando(cmd: str) -> bool:
-    """Csupasz `git push`, ami NEM a bot azonosságával megy?"""
-    if not _GIT_PUSH.search(cmd):
+def blokkolando(cmd: str, cwd: str = "") -> bool:
+    """Csupasz feltoltes a projekt repojaba, NEM a bot azonossagaval?"""
+    if not hatokorben(cmd, cwd):
         return False
     if _BURKOLO.search(cmd) or _BOT_AZONOSSAG.search(cmd):
         return False
-    return True
+    #: Az idezeteket a burkolo-vizsgalat UTAN vagjuk ki: a helyes
+    #: parancs utvonala is allhat idezojelben.
+    return bool(_GIT_PUSH.search(_IDEZET.sub(" ", cmd)))
 
 
 _SEGITSEG = """
@@ -104,10 +138,11 @@ def main() -> int:
     try:
         adat = json.load(sys.stdin)
         cmd = (adat.get("tool_input") or {}).get("command") or ""
+        cwd = adat.get("cwd") or os.getcwd()
     except Exception:
         return 0  # fail-open: rossz bemenet nem blokkolhat
     try:
-        fogva = blokkolando(cmd)
+        fogva = blokkolando(cmd, cwd)
     except Exception:
         return 0  # fail-open: elromlott kapu nem akaszthat meg munkát
     if not fogva:
