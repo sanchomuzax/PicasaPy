@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.431] – 2026-09-12
+
+### Javítva
+
+- **A lassú effektek nem akasztják meg a szerkesztőt** (#819). Tizenhárom
+  effekt annyira számításigényes, hogy a csúszka húzása közben megfogta az
+  ablakot. Mostantól ezek a háttérben számolnak: a kép a végén frissül, de
+  a felület közben él, és a haladásjelző csík is mozog. A gyors effekteknél
+  marad az azonnali visszajelzés.
+
 ## [0.8.430] – 2026-09-12
 
 ### Változott
