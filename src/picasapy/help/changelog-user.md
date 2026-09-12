@@ -4,6 +4,130 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-12
+
+**Képek biztonsági mentése — új fejezet**
+
+- Az **Eszközök ▸ Képek biztonsági mentése…** mostantól **működik**.
+  Nevesített **mentés-készletet** hozol létre: hova mentsen, és mit
+  vigyen át (minden fájltípus / minden kép videók nélkül / csak
+  fényképezőgép-adatos JPEG-ek). A készlet megjegyzi, mit mentett már el,
+  ezért a második futás csak az újat és a megváltozottat másolja.
+- A képek mellé a `.picasa.ini` fájlok is átmennek, a cél gyökerébe pedig
+  egy `files.txt` lista kerül arról, mi került át. CD-re és DVD-re nem
+  tud írni a program: a cél mindig egy mappa. Lásd
+  [Képek biztonsági mentése](features/biztonsagi-mentes.md).
+
+**Diavetítés**
+
+- A vetítés mostantól a **teljes ablakot** kitölti: a menüsor, az
+  eszköztár és a képtálca a vetítés idejére eltűnik.
+- A vezérlősávon **átmenet** választható: Kivágás, Szétoszlás, Szétoszlás
+  feketén át, Szétoszlás fehéren át, valamint **Pásztázás és nagyítás**.
+- A **Diaidő** a sáv **−** és **+** gombjával 1 és 30 másodperc közt
+  állítható.
+- Egy gomb körbejárja a feliratmód három állását: a felirat, a fájlnév,
+  vagy semmi.
+- Mindhárom választás megmarad a következő vetítésre.
+- Az áttűnés a **közvetlenül előző** képet mutatja, és a kimenő kép
+  átveszi a dia nagyítását és elfordulását.
+
+**Egy jobb oldali fiók négy hasáb helyett**
+
+- A Címkék, az Emberek, a Helyek és a Tulajdonságok panel mostantól
+  **ugyanabban a fiókban** vált, közös fejléccel. A fejléc közepén annak
+  a panelnek a neve áll, amelyik látszik; balra a **Váltás a kis és a
+  nagy oldalpanel közt** gomb, jobbra az **Oldalpanel bezárása**.
+- Eddig mind a négy panelnek külön szélessége és külön fejléce volt.
+
+**Tükrözés**
+
+- Két új billentyű: **Ctrl+Shift+H** vízszintesen, **Ctrl+Shift+V**
+  függőlegesen tükrözi a kijelölt képeket (a nézőben azt, amit látsz).
+  Ugyanaz a billentyű vissza is fordítja. Menüpontja nincs — az eredeti
+  Picasában sem volt.
+- A tükrözés a kép melletti `.picasa.ini` fájlba kerül, és látszik a
+  bélyegképen, a mentésben, az exportált fájlban, a levélmellékletben és
+  a weboldal-exportálásban is.
+
+**Rendezés szín szerint**
+
+- A **Mappa rendezése** almenü negyedik szempontja a **Szín**: a színes
+  képek jönnek elöl, a szivárvány sorrendjében, utánuk a színtelenek.
+
+**Weboldal-exportálás**
+
+- Egy sablon helyett **hét** van: három háttérszín (fehér, szürke,
+  fekete), mindegyik kétféle csempével — sima és passzpartus keretes —,
+  valamint egy **XML (gépi)** sablon, ami nem weboldalt, hanem egyetlen
+  adatfájlt ír.
+- A választó **kis előnézeti rajzot** mutat mindegyikhez.
+- A célmappa előre ki van töltve: a képmappádon belüli **Picasa HTML
+  exportok**.
+
+**Szerkesztő**
+
+- A **Vörösszem** eszközben egyetlen keretet is ki lehet venni: kattints
+  bele. Átfedő kereteknél a később felvett esik ki.
+- A **Shift** billentyű most már **élesben is** átváltja az
+  effekt-csempéket: elég lenyomni, miközben az effekt-fülön állsz.
+- A Vágás, a Vörösszem és a Retusálás panelén az útmutató szövege
+  teljesebb lett — a retusálásnál kiderül, hogy nagyított képen a
+  **Ctrl** lenyomva tartásával lehet pásztázni.
+- A szépia, az életlen maszk, a vignetta és a vetett árnyék a
+  visszafejtett eredeti számítást követi, tehát közelebb kerül ahhoz,
+  amit a Picasa adott.
+
+**Biztonság és figyelmeztetések**
+
+- Kilépéskor a program **rákérdez**, ha még fut valamilyen háttérmunka —
+  például exportálás vagy arcfelismerés. Ez az ablak „X" gombjára is
+  vonatkozik, és nem lehet kikapcsolni.
+- Az importálás **Minden törlése a kártyáról** választása részletes
+  figyelmeztetést ad: hány fájl törlődik, hány marad ki másodpéldány
+  miatt, és hányat nem ismer fel a program. Ha a forrást még nem
+  pásztázta végig, azt mondja meg — számot nem találgat.
+- A **Címkék** panel **előre szól**, ha a kijelölésben írásvédett kép
+  van, és nem engedi elkezdeni a gépelést.
+
+**Beállítások**
+
+- Az **Általános** fülön élő lett a **Gyorsítótár ürítése…** gomb:
+  rákérdez, majd megmondja, mennyi helyet szabadított fel. A bélyegképek
+  szükség szerint újra elkészülnek.
+- A bélyegképek több méretben készülnek, ezért a kisebb indexkép-méretek
+  **érezhetően gyorsabban** jelennek meg.
+
+**Videók**
+
+- Öt kiterjesztés eddig némán kimaradt a beolvasásból: `.tp`, `.ts`,
+  `.m2v`, `.ogg` és `.ogv`. Ezek fájljai ott voltak a mappában, de a
+  rácson nem jelentek meg. A **Fájl hozzáadása…** választója is ismeri
+  már ugyanazt a listát.
+- Ha egy videóhoz a régi Picasában kezdő- és végpontot adtál meg, a
+  lejátszás **érvényesíti**: a kezdőpontra ugrik, a végpontnál megáll. A
+  pontokat a PicasaPy felületén ma még nem lehet megadni.
+
+**Javítások**
+
+- Az **asztali háttérkép** Windowson is beáll.
+- Wayland-asztalon a program megmondja, hogy a `qt6-wayland` csomag
+  hiányzik, ahelyett hogy angol hibaüzenettel megállna.
+- Az **álló tájolású** fényképek megjelenített mérete számít: helyesen
+  kapnak helyet a kollázsban, helyes az 1:1 nagyítás és a felbontás
+  felirata.
+- A bal hasáb mappasorain **egyetlen** bélyegkép áll a kupac helyett, és
+  a fanézetben mindig látszik — ott ezért a menüpont szürke.
+- A **Szöveg beillesztése** egyszerre, egy menetben adja a feliratot a
+  teljes kijelölésnek, így egyetlen kép sem marad ki.
+- Az effekt-csempék jelvényéről eltűnt a mindig „1"-et mutató szám, és a
+  jelvény a csempe sarkába került.
+- A hisztogram melletti felvételi adatok rövidebb, fotós alakban állnak
+  (`6.7 mm`, `f/1.7`, `2.5 s`), és a vaku adata csak a Tulajdonságok
+  panelen szerepel — ahogy az eredeti Picasában is.
+- A jobb oldali fiók a jobb szélhez igazodik, ezért a méretváltó gomb
+  mindkét irányban működik.
+
 ## 2026-09-11
 
 **Másodpéldányok: új, gyors nézet**

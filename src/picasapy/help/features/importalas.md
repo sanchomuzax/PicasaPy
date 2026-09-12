@@ -40,6 +40,22 @@ A **Másolás után** beállítás dönti el, mi történjen a forrással:
 - **Csak a másolt fényképek törlése**,
 - **Minden törlése a kártyáról**.
 
+A két törlő választásra a program rákérdez, és a válasz **nem vonható
+vissza** — ami a kártyáról lemegy, az nem kerül a Lomtárba.
+
+A **Minden törlése a kártyáról** esetén a kérdés tételesen felsorolja,
+mibe mész bele:
+
+- hány fájlt töröl az importálás után;
+- hány fájl **nem** kerül be, mert már megvan a könyvtáradban;
+- hány fájlt **nem ismer fel** a program — ezek is törlődnek. Ide
+  tartoznak a fényképezőgép kísérőfájljai és a kártyán lévő egyéb
+  fájlok, tehát nem csak képekről van szó.
+
+Ha a forrást még nem pásztázta végig a program, a darabszámot nem
+találgatja: ezt írja ki, hogy „ismeretlen számú fájlt fog törölni".
+Ilyenkor érdemes megvárni a pásztázás végét, mielőtt igent mondasz.
+
 ### Az importálás közben
 
 Haladásjelző sáv mutatja, hol tart (`hány / hányból`), és a sebességet is

@@ -67,7 +67,9 @@ A többi adat nem rövidül.
 Indítás: **Nézet ▸ Diavetítés**, a **Mappa ▸ Diavetítés megtekintése**,
 a néző gombja, vagy a **Ctrl+4** billentyű.
 
-A vetítés valódi teljes képernyőn fut. Vezérlés közben:
+A vetítés teljes képernyőre vált, és a program **egész ablakát** kitölti:
+a menüsor, az eszköztár és a képtálca a vetítés idejére eltűnik,
+kilépéskor visszajön. Vezérlés közben:
 
 | billentyű | mit csinál |
 |---|---|
@@ -78,12 +80,42 @@ A vetítés valódi teljes képernyőn fut. Vezérlés közben:
 | Ctrl+Shift+R | forgatás balra |
 | Esc | kilépés |
 
-Az egérrel megjelenő vezérlősávon **Kilépés**, **lejátszás/szünet** és
-**csillag** gomb van. Ha a vetítés közben csillagozol vagy forgatsz, a
-változás megmarad.
-
 Kilépéskor a rács és a néző arra a képre ugrik, ahol a vetítés
 abbamaradt.
+
+### A vezérlősáv
+
+Az egeret megmozdítva a kép alján előjön a vezérlősáv:
+
+- **✕ Kilépés**;
+- **◀** előző, **▶** / **❚❚** lejátszás és szünet, **▶▶** következő;
+- **↺** és **↻** forgatás — a vetítés közbeni forgatás megmarad;
+- **átmenet-választó** (lásd lentebb);
+- **feliratmód** gombja — körbejár a három állás közt: a felirat (**T**),
+  a fájlnév (**F**), vagy semmi (**—**);
+- **★** csillagozás — ez is megmarad;
+- **Diaidő** — a **−** és a **+** gombbal 1 és 30 másodperc közt
+  állítható, hogy meddig álljon egy kép. A szám a két gomb közt látszik.
+
+A választott átmenet, feliratmód és diaidő **megmarad** a következő
+vetítésre és a következő indításig is.
+
+### Átmenetek
+
+A választóban öt átmenet van:
+
+| átmenet | mit csinál |
+|---|---|
+| Kivágás | nincs átmenet, a következő kép azonnal ott van |
+| Szétoszlás | a két kép egymásba úszik |
+| Szétoszlás feketén át | az előző kép feketébe halványul, onnan jön elő a következő |
+| Szétoszlás fehéren át | ugyanez fehéren keresztül |
+| Pásztázás és nagyítás | a kép lassan mozog, és közben egyre nagyobb lesz |
+
+A **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a képen
+fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához.
+
+### Megjelenítési mód a vetítésben
 
 A **Nézet ▸ Megjelenítési mód** beállítása a vetített képen is látszik —
 így a **Projektor mód** ott hat, ahol a legtöbb értelme van. Lásd
@@ -97,3 +129,15 @@ hiányzik, a program fut tovább, csak a lejátszó helyén ezt írja ki:
 „A videó-lejátszáshoz a Qt Multimedia modul szükséges."
 
 Az eszköztár szűrőjével csak a videókat is megjelenítheted.
+
+### Az eredeti Picasából hozott vágáspontok
+
+Ha egy videóhoz a régi Picasában megadtál kezdő- és végpontot, a PicasaPy
+ezt elolvassa a videó melletti adatokból, és **a lejátszásnál
+érvényesíti**:
+a kezdőpontra ugrik, a végpontnál megáll, a csúszka pedig csak a
+kijelölt szakaszon mozog.
+
+A **fájlhoz nem nyúlunk**, és a vágáspontokat a PicasaPy felületén ma még
+**nem lehet megadni vagy módosítani** — csak azt tudjuk használni, ami
+már ott van.

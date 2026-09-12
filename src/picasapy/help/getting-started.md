@@ -102,7 +102,11 @@ nagyító, indexkép-méret, **Kollázs**, **Mozgófilm**, **Exportálás**,
 nagyítás három vezérlője.
 
 **Jobb oldali fiók** — a Címkék, Emberek, Helyek és Tulajdonságok panel.
-A Nézet menüből vagy a tálca gombjaival nyitható.
+A Nézet menüből vagy a tálca gombjaival nyitható. **Egy** fiók van, közös
+fejléccel: a fejléc közepén annak a panelnek a neve áll, amelyik éppen
+látszik. Balra a **Váltás a kis és a nagy oldalpanel közt** gomb: a fiók
+keskeny és széles állás közt vált. Jobbra az **Oldalpanel bezárása**
+gomb.
 
 ## Hova kerülnek az adataid
 

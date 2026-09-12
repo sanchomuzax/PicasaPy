@@ -41,12 +41,32 @@ helyi menüjéből.
 Beállítható:
 
 - **Oldal címe**,
-- **Mentés ide** (**Tallózás…**),
-- **Sablon** — a kész oldal elrendezése,
+- **Mentés ide** (**Tallózás…**) — előre kitöltve a képmappádon belüli
+  **Picasa HTML exportok** mappával. Ez csak javaslat: a mappát a program
+  csak a **Létrehozás** gombra kattintva hozza létre, és bármikor
+  átírhatod.
+- **Sablon** — a kész oldal kinézete, kis előnézeti rajzzal,
 - **Bélyegkép mérete** és **Kép mérete** (vagy eredeti méret),
 - **Árnyékolt bélyegképek** és **Árnyékolt képek**.
 
 A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
+
+### A hét sablon
+
+Hat galéria-sablon van: három háttérszín, mindegyik kétféle csempével.
+
+| sablon | háttér | csempe |
+|---|---|---|
+| Fehér | fehér | sima |
+| Fehér keret | fehér | passzpartus keret |
+| Szürke | szürke | sima |
+| Szürke keret | szürke | passzpartus keret |
+| Fekete | fekete | sima |
+| Fekete keret | fekete | passzpartus keret |
+
+A hetedik, az **XML (gépi)**, nem weboldal: egyetlen `album.xml` fájlt ír
+az album és a képek adataival. Akkor jó, ha az adatokat egy másik program
+dolgozza fel; böngészőben nem lesz belőle galéria.
 
 ## Arcinformációk kísérőfájlba
 

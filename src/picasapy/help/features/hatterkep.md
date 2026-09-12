@@ -30,8 +30,10 @@ Picasa is tette.
 
 ## Ha nem sikerül beállítani
 
-A program a legelterjedtebb asztali környezetekkel próbálkozik. Ha
-egyikkel sem jár sikerrel, nem hallgat el: **megmondja, hova tette a
-képet**, hogy a rendszer saját beállításaiban kézzel kiválaszthasd.
+Windowson a program magával a rendszerrel állíttatja be a hátteret, ezért
+ott rendszerint sikerül. Linuxon a legelterjedtebb asztali környezetekkel
+próbálkozik; ezek valamelyike hiányozhat. Ha egyikkel sem jár sikerrel,
+nem hallgat el: **megmondja, hova tette a képet**, hogy a rendszer saját
+beállításaiban kézzel kiválaszthasd.
 
 Siker esetén rövid üzenet jelzi, hogy a háttérkép beállt.

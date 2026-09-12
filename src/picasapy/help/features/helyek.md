@@ -7,8 +7,8 @@ telefon már eleve beleírja a fájlba; a többi képhez kézzel adhatod meg.
 
 Megnyitás: **Nézet ▸ Helyek**, vagy a képtálca Helyek gombja.
 
-A panelen térkép látszik, rajta a helyhez kötött képeid jelölői. A panel
-fejléce kiírja, hány képed rendelkezik hellyel.
+A panelen térkép látszik, rajta a helyhez kötött képeid jelölői. A térkép
+fölött ott áll, hány képed rendelkezik hellyel.
 
 Hely megadása: jelöld ki a képeket a rácsban, majd **kattints jobb
 gombbal a térképen** arra a pontra, ahova tartoznak. A kijelölés minden

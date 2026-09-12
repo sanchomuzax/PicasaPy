@@ -45,6 +45,31 @@ a figyelt mappákat.
 
 ## Hibaüzenetek
 
+### Nem indul el: hiányzik a Qt 6 wayland-bővítménye
+
+Linuxon, wayland-asztalon a program a rendszer egy kiegészítő csomagja
+nélkül nem tud ablakot nyitni. Ilyenkor most már **megmondja, mi hiányzik
+és mit kell tenni**, ahelyett hogy angol Qt-hibaüzenettel megállna.
+A megoldás egyetlen parancs egy terminálban:
+
+```bash
+sudo apt install qt6-wayland
+```
+
+A gépen esetleg meglévő `qtwayland5` csomag a Qt 5-höz tartozik, ezt a
+program nem tudja használni.
+
+### „Még fut háttérmunka … Ha most kilép, az leáll, és később nem folytatódik."
+
+Kilépéskor kapod, ha épp fut valamilyen háttérmunka — például egy
+exportálás, egy weboldal-exportálás, egy csoportos effektezés vagy egy
+arcfelismerés. A **Kilépés most** megszakítja a munkát, és az **nem
+folytatódik** a következő indításkor; a **Folytatás** visszavisz a
+programba, hogy megvárd a végét.
+
+Ez a kérdés akkor is előjön, ha az ablak „X" gombjával zárnád be a
+programot, és szándékosan nem lehet kikapcsolni: adat múlhat rajta.
+
 ### „Ez a mappa jelenleg nem elérhető…"
 
 Egy külső lemez vagy hálózati megosztás nincs csatlakoztatva. A képek
@@ -136,8 +161,9 @@ Arcinformációk írása XMP-adatokba…** paranccsal.
 ### „A kép elkészült itt: … — az asztali háttérképet viszont nem sikerült magától beállítani."
 
 A háttérképnek szánt kép elkészült, de a program nem érte el az asztali
-környezet beállítását. Az üzenet megmondja, hova tette a képet; állítsd
-be kézzel a rendszer saját beállításaiban. Lásd
+környezet beállítását. Ez linuxos asztalokon fordulhat elő; Windowson a
+beállítást maga a rendszer végzi. Az üzenet megmondja, hova tette a
+képet; állítsd be kézzel a rendszer saját beállításaiban. Lásd
 [Asztali háttérkép](features/hatterkep.md).
 
 ### „Nincs nyomtatható kép." / „Ezeket a képeket nem lehetett kinyomtatni"

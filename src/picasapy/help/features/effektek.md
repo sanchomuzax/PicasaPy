@@ -115,13 +115,11 @@ kapsz. Ezt az eredeti Picasa is így csinálta.
 | Művészi | Szegély | Lekerekített sarkok |
 | További effektek | Filmszemcse | Régi filmszemcse |
 
-Két dolgot érdemes tudni:
+A váltás **azonnali**: elég lenyomni a Shiftet, miközben az effekt-fülön
+állsz, és a kilenc csempe felirata átvált; elengedve visszaáll.
 
-- a program **a fülre váltáskor egyszer** nézi meg, le van-e nyomva a
-  Shift; ha utólag nyomod le, a csempék nem váltanak át — válts fült
-  újra, lenyomva tartott Shifttel;
-- a csempe **kis előnézete az alap effekté marad**, csak a felirat és a
-  hatás vált.
+A csempe **kis előnézete az alap effekté marad**, csak a felirat és a
+hatás vált.
 
 A többi csempén a Shiftnek nincs hatása.
 

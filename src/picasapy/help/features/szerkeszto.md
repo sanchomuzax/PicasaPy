@@ -113,13 +113,24 @@ a vágásnál, a fentebbi „Arány kényszerítése húzás közben" szakasz sz
 A panel számolja, hány területet jelöltél ki. A **Visszavonás** az utolsó
 jelölést veszi vissza, az **Alaphelyzet** mindet.
 
+Egyetlen keretet is kivehetsz: **kattints bele** — a panel is ezt írja
+(„Megjegyzés: a keretbe kattintva visszavonhatja a változást"). Az egér
+mutatója megváltozik a keret fölött, ebből látod, hogy odatalálsz. Ha két
+keret átfedi egymást, a később felvett esik ki: azt látod felül.
+
+Ez az **Alkalmazás** előtt működik. Utána a javítás már a képpontokban
+van, és a keretek nem jönnek vissza.
+
 Van egy kapcsoló, amivel a négyzetes körvonalak nélkül nézheted meg az
 eredményt.
 
 ## Retusálás
 
-Az **Ecset mérete** csúszkával állítod a folt méretét, majd a képre
-kattintva tünteted el a hibát. A panel kiírja, hány foltot javítottál.
+Az **Ecset mérete** csúszkával állítod a folt méretét. Kattintással
+jelölöd ki a javítandó területet; utána az egeret mozgatva előnézetben
+látod, mivel pótolná a program, és egy újabb kattintás véglegesíti.
+Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz. A
+panel kiírja, hány foltot javítottál.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
 **Alaphelyzet** mindet törli.
 
@@ -165,9 +176,13 @@ képen egy semleges szürke pontot, és a program ahhoz igazítja a színeket.
 
 ## Hisztogram
 
-A szerkesztő alatt a **hisztogram** mutatja a kép fényeloszlását és a
-fényképezőgép adatait. Ha a fájlban nincs EXIF-információ, ezt írja:
-„Nincs elérhető EXIF-adat."
+A szerkesztő alatt a **hisztogram** mutatja a kép fényeloszlását, mellette
+pedig a felvétel adatai: a fényképezőgép neve, a gyújtótávolság (és ennek
+kisfilmre átszámított értéke), a záridő, a rekesz és az ISO-érzékenység.
+Ha a fájlban nincs EXIF-információ, ezt írja: „Nincs elérhető EXIF-adat."
+
+A vaku adata **nem** itt van, hanem a Tulajdonságok panelen — az eredeti
+Picasában is ott volt.
 
 ## Visszavonás
 

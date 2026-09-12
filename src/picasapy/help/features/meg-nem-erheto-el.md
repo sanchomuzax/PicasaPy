@@ -36,7 +36,9 @@ fölöslegesen.
 - Leírás szerkesztése… — a mappa helyi menüjének **Mappaleírás
   szerkesztése…** tétele viszont **működik**
 - A mappalista helyi menüjében: Elrejtés, Megjelenítés, Indexképek
-  megjelenítése a könyvtárban, Gyorsbillentyűk, Asztal
+  megjelenítése a könyvtárban, Gyorsbillentyűk, Asztal — a **Nézet ▸
+  Mappanézet** almenü **Indexképek megjelenítése a könyvtárban** tétele
+  viszont **működik**
 
 **Kép**
 
@@ -57,9 +59,11 @@ fölöslegesen.
 - Személyek kezelése…
 - Fotómegjelenítő beállítása…
 - Képernyővédő konfigurálása…
-- Képek biztonsági mentése…
 - Dátum és idő beállítása…
 - Gombok konfigurálása…
+
+(A **Képek biztonsági mentése…** tétel viszont már **működik** — lásd
+[Képek biztonsági mentése](biztonsagi-mentes.md).)
 
 **Súgó**
 
@@ -89,12 +93,15 @@ már **működik**: ezt a súgót nyitja meg — lásd
 A **Beállítások** párbeszéd nyolc füléből ma kettőn van élő vezérlő:
 
 - **Általános** — a nyelv, a törlés-megerősítés és a duplikátum-észlelés
-  kapcsolója,
+  kapcsolója, valamint a **Gyorsítótár ürítése…** gomb,
 - **E-mail** — a levelezőprogram megválasztása és a küldött képek mérete
   (lásd [Küldés e-mailben](email.md)). Ugyanezen a fülön a videók
   küldési módja és az Outlook-kapcsoló még szürke.
 
-A többi hat fül vezérlői szürkék.
+A többi hat fül vezérlői szürkék. A **Diavetítés** fül is köztük van,
+pedig a vetítésnek vannak beállításai — azokat magán a vetítés
+vezérlősávján állítod, és a program meg is jegyzi őket. Lásd
+[Nézegetés](nezegetes.md).
 
 ## Megszűnt szolgáltatások — ezek nem is fognak elkészülni
 
@@ -126,6 +133,10 @@ Google Fiókkal" felirat sem — az csak az eredeti elrendezés része.
   venni, lásd [Importálás](importalas.md).
 - **Névjegyzék írása** — a régi Picasa névjegyzékét olvassuk, de írni még
   nem tudjuk.
+- **Videó vágáspontjai** — ha a régi Picasában megadtál egy videóhoz
+  kezdő- és végpontot, a lejátszás betartja, de **megadni vagy
+  módosítani ma nem lehet** a PicasaPy felületén. Lásd
+  [Nézegetés](nezegetes.md).
 - **A rejtett mappák jelszava** — a jelszó-kapu megvan a programban (a
   **Nézet ▸ Rejtett képek** bekapcsolása jelszót kérne, ha volna
   beállítva), de **jelszót ma nem lehet megadni a felületről**: a

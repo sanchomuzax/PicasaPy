@@ -31,8 +31,17 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+V | Beillesztés a kiválasztott mappába |
 | Ctrl+R | Forgatás jobbra |
 | Ctrl+Shift+R | Forgatás balra |
+| Ctrl+Shift+H | Tükrözés vízszintesen (balról jobbra) |
+| Ctrl+Shift+V | Tükrözés függőlegesen (fentről le) |
 | Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |
 | Ctrl+Shift+E | „Jó napom van" a kijelölt képekre |
+
+A **tükrözésnek nincs menüpontja** — az eredeti Picasában sem volt, csak
+billentyűvel érhető el. A kijelölt képekre hat, a nézőben pedig arra,
+amit épp látsz. Ugyanaz a billentyű visszafordítja: a tükrözés önmaga
+ellentéte. A képfájlhoz ez sem nyúl; a jelölés a kép melletti
+`.picasa.ini` fájlba kerül, és végigmegy a bélyegképen, a mentésen, az
+exportáláson, a levélmellékleten és a weboldal-exportáláson is.
 
 A **Ctrl+V** szövegmezőben — például átnevezés közben — a mezőé marad,
 tehát ott szöveget illeszt be.

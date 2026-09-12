@@ -48,6 +48,7 @@ szerkesztő fülei ugyanott vannak.
 - [Mappakezelő és figyelt mappák](features/mappakezelo.md)
 - [Beállítások, nyelv, megjelenés](features/beallitasok.md)
 - [Az adatbázis: hol van, áthelyezés, tömörítés](features/adatbazis.md)
+- [Képek biztonsági mentése](features/biztonsagi-mentes.md)
 - [Billentyűparancsok](features/billentyuk.md)
 
 ## Egyéb

@@ -60,6 +60,17 @@ nyitja és zárja is a panelt.
   jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
   **Így címkézett elemek keresése**, **Címke eltávolítása**.
 
+### Ha a kijelölésben írásvédett kép van
+
+A címkék a kép melletti `.picasa.ini` fájlba kerülnek, tehát írásvédett
+mappában nem lehet őket megváltoztatni. A panel **előre szól**, mielőtt
+gépelni kezdenél: „A címkék nem módosíthatók, mert a kijelölésben
+írásvédett elem van." Ilyenkor a beíró mező, a hozzáadás gomb és a
+gyorscímke-gombok is szürkék.
+
+**Egyetlen** írásvédett kép is elég a jelzéshez. Ha csak egy ilyen csúszott
+a kijelölésbe, vedd ki, és a többire már megy a címkézés.
+
 ### Egy címke tartalmából album
 
 Az **Eszközök ▸ Kísérleti ▸ Címke megjelenítése albumként…** paranccsal

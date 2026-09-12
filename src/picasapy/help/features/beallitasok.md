@@ -8,8 +8,9 @@
 
 > **Fontos:** ma két fülön van élő vezérlő. Az **Általános** fülön a
 > **nyelv**, a **Törlés a lemezről megerősítés nélkül** és a
-> **Duplikátumok észlelése importáláskor** kapcsoló, az **E-mail** fülön
-> a levelezőprogram megválasztása és a küldött képek mérete (lásd
+> **Duplikátumok észlelése importáláskor** kapcsoló, valamint a
+> **Gyorsítótár ürítése…** gomb; az **E-mail** fülön a levelezőprogram
+> megválasztása és a küldött képek mérete (lásd
 > [Küldés e-mailben](email.md)). A többi vezérlő szürke — a helye
 > megvan, de a funkció mögötte még nem készült el. A **Bezárás** gomb
 > zárja az ablakot; nincs külön OK, mert az élő beállítások azonnal
@@ -35,6 +36,16 @@ benne vannak a könyvtáradban. Ugyanez a kapcsoló az importáló ablakban
 **Duplikátumok kizárása** néven látszik — a két hely **ugyanazt az egy
 beállítást** mutatja, tehát amit az egyiken átállítasz, a másikon is
 látszik.
+
+### Gyorsítótár ürítése
+
+Az **Általános** fülön a **Gyorsítótár ürítése…** gomb kitakarítja a
+lemezen tartott bélyegképeket. A program rákérdez, és a kiürítés után
+megmondja, mennyi helyet szabadított fel.
+
+Egyetlen kép sem vész el: a bélyegképek szükség szerint újra elkészülnek.
+Közvetlenül utána a mappák lassabban nyílnak meg, amíg a bélyegképek
+újra fel nem épülnek.
 
 ## Sötét téma
 

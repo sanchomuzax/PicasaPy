@@ -51,13 +51,16 @@ egyformán néz ki. Ha rámutatsz egy sorra, buborékban megjelenik a mappa
 gyakran adódik: a duplikátum-kereső minden forrásmappában saját
 `Duplikátumok` alkönyvtárat hoz létre.)
 
-### Fotó-kupac a mappaikon helyett
+### Bélyegkép a mappaikon helyett
 
 A **Nézet ▸ Mappanézet ▸ Indexképek megjelenítése a könyvtárban**
-bekapcsolásával a hasáb sorain a kék mappaikon helyett a mappa első
-néhány fotójából álló kis kupac látszik. Ugyanaz a mappa mindig ugyanúgy
-néz ki, futások között is. Alapból kikapcsolva indul, és a választásod
+bekapcsolásával a hasáb sorain a kék mappaikon helyett a mappa egyik
+fotójának kis bélyegképe látszik. Ugyanaz a mappa mindig ugyanazt a képet
+kapja, futások között is. Alapból kikapcsolva indul, és a választásod
 megmarad.
+
+**A fanézetben ez mindig látszik**, a kapcsolótól függetlenül — ott ezért
+a menüpont szürke. A kapcsoló az egyszerű, egyszintű listára vonatkozik.
 
 > A hasáb helyi menüjében is szerepel egy **Indexképek megjelenítése a
 > könyvtárban** tétel, de az **még nem működik** — a menüsorból viszont
@@ -92,8 +95,14 @@ A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjéb
 ### Egy mappán belül a képek sorrendje
 
 A mappára jobbgombbal kattintva a **Mappa rendezése** almenüben: dátum,
-név vagy méret szerint, a **Fordított sorrend** kapcsolóval párosítva.
-Ugyanez a **Mappa** menüben is megvan.
+név, méret vagy **szín** szerint, a **Fordított sorrend** kapcsolóval
+párosítva. Ugyanez a **Mappa** menüben is megvan.
+
+A **Szín** szerinti rendezés a képek uralkodó színe szerint sorakoztat: a
+színes képek jönnek elöl, a szivárvány sorrendjében, utánuk a
+színtelenek. Ha egy mappát épp most olvasott be a program, a szín szerint
+még be nem sorolt képek a lista végén, névsorban állnak; ez magától a
+helyére kerül, ahogy a háttérben elkészül a színindex.
 
 ## Albumok
 
@@ -225,7 +234,8 @@ A figyelt mappákban a PicasaPy háromféle fájlt vesz észre:
   BMP, GIF, PSD, TGA és **WebP**.
 - **Nyers (RAW) felvételek** — a szokásos gyártói kiterjesztések, például
   CR2, NEF, ARW, DNG, ORF, RAF, RW2.
-- **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP.
+- **Videók** — például AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP, TS,
+  M2V, OGG és OGV.
 
 Minden más fájl (dokumentum, hangfelvétel) láthatatlan marad: a program
 nem indexeli és nem is bántja.
