@@ -4518,6 +4518,28 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
 </context>
 <context>
     <name>PhotoViewer</name>
+    <!-- #3013: a kettős nézet szegmensei — a MÉRT hivatalos magyar
+         buboréksúgók (`docs/specs/ui-audit-editor.md`) -->
+    <message>
+        <source>Show only one picture</source>
+        <translation>Csak egy kép megjelenítése</translation>
+    </message>
+    <message>
+        <source>Show the same picture twice</source>
+        <translation>Ugyanazon kép megjelenítése kétszer</translation>
+    </message>
+    <message>
+        <source>Show two different pictures</source>
+        <translation>Két különböző kép megjelenítése</translation>
+    </message>
+    <message>
+        <source>Switch focus between the pictures</source>
+        <translation>Fókusz váltása a képek között</translation>
+    </message>
+    <message>
+        <source>Selected</source>
+        <translation>Kijelölve</translation>
+    </message>
     <message>
         <source>Show/Hide Caption</source>
         <translation>Felirat megjelenítése/elrejtése</translation>
