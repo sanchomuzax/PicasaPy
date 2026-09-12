@@ -2341,24 +2341,46 @@ megdőlt.
 >   bit), nem akkumulátor — a `+1` a perem-fal helye, nem az összegzőtábla
 >   eltolása.
 
-#### ⚠️ Ami ebből még NINCS kiolvasva
+**5. ⭐ A falba futó szomszéd helyére a KÖZÉP kerül.** A `0x0090c6b0` a
+négy szomszéd-regiszterét **először mind a közép képpontra állítja**, és
+csak akkor olvas valódi szomszédot, ha az adott irány fal-bitje **nulla**:
 
-1. **Mit tesz a mag a falba futó szomszéddal** (a közép értékét veszi-e át,
-   vagy a súlyt osztja újra) — a `0x0090c6b0` a 16 bites térképet olvassa
-   (`0x0090c833`, `0x0090c858`), de az ágak szerepe nincs kibontva.
-2. **A három lépték `n`-értékei.** A maszk `n² · 0x5555`, és ez 16 biten
+```asm
+eax = kozep                            ; 0x0090c8a6
+edx = edi = esi = ebx = eax            ; 0x0090c8a8–0x0090c8ae  (mind a négy)
+cmp [esp+0x64], 0 / jne …              ; 0x0090c89d  fal fölfelé?
+  esi = kepppont_fel                   ; 0x0090c8c0  csak ha NINCS fal
+cmp [esp+0x58], 0 / jne …              ; 0x0090c8c3  fal balra?
+  edi = kepppont_bal                   ; 0x0090c8ce
+cmp [esp+0x54], 0 / jne …              ; 0x0090c8d0  fal jobbra?
+```
+
+A fal-biteket a menet a térképből olvassa (`0x0090c833`, `0x0090c858`,
+`0x0090c875`, `0x0090c893`), az adott lépték maszkjával (`and edi, edx`,
+illetve `and eax, esi` — a két irány maszkja). A kép **szélén** a betöltés
+`cmp`/`jl` párral kimarad, tehát az előre beállított „van fal" állapot
+marad érvényben — ez egybevág a `0x0090cf60` perem-jelölésével.
+
+⇒ **A súlyok nem osztódnak újra: a fal mögötti tag helyére a közép megy.**
+Ezért nem mos át a simítás az éleken, és ezért marad az összeg mindig 16.
+
+#### ⚠️ Ami ebből még NINCS kiolvasva
+1. **A három lépték `n`-értékei.** A maszk `n² · 0x5555`, és ez 16 biten
    csak `n = 1` mellett fér el hiánytalanul (`n = 2`-nél `0x15554`, amiből a
    `movzx`-szel olvasott 16 bitre `0x5554` marad) — a lépték-sorozatot
    tehát a hívó adja, és az **nincs kiolvasva**.
-3. A szomszédok **geometriája** léptékenként (a `ecx*2` / `ecx*4` indexelés).
+2. A szomszéd-sorok **léptéke**: a négy sormutatót a hívó adja be
+   (`esp+0x28/0x34/0x3c/0x40`), a menet csak `ecx*4`-gyel indexel oszlopra —
+   a sorok közti távolság tehát a hívóban áll elő, és nincs kiolvasva.
 
 Ezek nélkül a mag NEM építhető be pixelhűen — a mai, mért Gauss-közelítés
 (`render/blur.py`, σ = 4,0 a tartományon kívül) marad, amíg ez a három
 megvan.
 
 *Bizonyítottsági fok: **megerősített** a fal-bittérképre, a küszöb-képletre,
-a három léptékre és az öt tagú magra (helyi diszasszemblálás, minden lépés
-címmel) · **nyitott** a fal-ág, a lépték-sorozat és a szomszéd-geometria.*
+a három léptékre, az öt tagú magra és a fal-ágra (helyi diszasszemblálás,
+minden lépés címmel) · **nyitott** a lépték-sorozat és a szomszéd-sorok
+léptéke.*
 
 A σ optimuma éles (3,90 → 0,650; 4,10 → 0,692), és minden más próbált mag
 rosszabb: a Picasa saját IIR-elmosója (`iir_blur`, a legjobb sugarán) 3,49;
