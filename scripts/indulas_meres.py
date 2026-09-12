@@ -168,6 +168,44 @@ def _szakaszok(jelentes: str) -> list[tuple[str, float]]:
     return talalt
 
 
+def _terheles_sor(elott: list[float] | None, utan: list[float] | None) -> str:
+    """Az ember által olvasható terhelés-sor a jelentés alá (#3080)."""
+    magok = os.cpu_count() or 1
+    if elott is None and utan is None:
+        return (
+            "terhelés: ezen a platformon nem mérhető (nincs `getloadavg`) — "
+            f"{magok} mag"
+        )
+
+    def alak(v: list[float] | None) -> str:
+        return "—" if v is None else " / ".join(f"{x:.2f}" for x in v)
+
+    return (
+        f"terhelés {magok} magon — a mérés előtt: {alak(elott)} · "
+        f"utána: {alak(utan)}   (1/5/15 perces átlag)"
+    )
+
+
+def _terheles() -> list[float] | None:
+    """A gép futásidejű terhelése (`os.getloadavg()`), vagy `None`.
+
+    #3080: **enélkül két mérés akkor sem összehasonlítható, ha ugyanazon a
+    gépen készült.** Mérve 2026-09-12-én: a QML-betöltés 3649 ms-ot adott,
+    miközben a #1612 alapvonala 1914 ms — de a gépen `load average` 5,20 /
+    6,50 / 6,35 volt NÉGY magon (párhuzamos munkamenetek tesztjei). A két
+    szám így nem vethető össze, és az alapvonal terhelése nincs feljegyezve,
+    tehát arról sem tudható semmi.
+
+    Windowson a `getloadavg` NEM létezik (`AttributeError`) — ott a mező
+    `None`, és ezt a jelentés is kimondja. Nem pótoljuk semmivel: egy
+    kitalált szám rosszabb volna a hiánynál.
+    """
+    try:
+        return [round(x, 2) for x in os.getloadavg()]
+    except (AttributeError, OSError):
+        return None
+
+
 def _osszesen_ms(jelentes: str) -> float:
     """Az `ÖSSZESEN` sor értéke — a teljes indulás."""
     for sor in jelentes.splitlines():
@@ -545,6 +583,7 @@ def main(argv: list[str] | None = None) -> int:
             # `alap`): a 2. indítás így valóban meleg indexet lát, ahogy a
             # tulajdonos „második indítás 25 mp" esete.
             alap = munka / "kornyezet"
+            terheles_elott = _terheles()
             jelentes, eltelt = _egy_futas(gyoker, alap, args.idokorlat)
             print(f"\n---- {cimke} · {futas}. indítás ----", flush=True)
             print(jelentes, flush=True)
@@ -552,6 +591,9 @@ def main(argv: list[str] | None = None) -> int:
                 f"faliórai idő az indítástól a jelentésig: {eltelt:.1f} mp",
                 flush=True,
             )
+            # #3080: a terhelés a naplóba nézőnek is látszódjon — enélkül a
+            # fenti milliszekundumokról nem dönthető el, mit jelentenek.
+            print(_terheles_sor(terheles_elott, _terheles()), flush=True)
             osszes.append(
                 {
                     "cimke": cimke,
@@ -560,6 +602,12 @@ def main(argv: list[str] | None = None) -> int:
                     "futas": futas,
                     "osszesen_ms": _osszesen_ms(jelentes),
                     "faliora_mp": round(eltelt, 2),
+                    # #3080: a terhelés a mérés ELEJÉN és VÉGÉN — egy hosszú
+                    # futás alatt változik, ezért egy pillanatkép kevés. A
+                    # magszám nélkül a terhelés nem értelmezhető.
+                    "magok": os.cpu_count(),
+                    "terheles_elott": terheles_elott,
+                    "terheles_utan": _terheles(),
                     "szakaszok": _szakaszok(jelentes),
                 }
             )

@@ -67,7 +67,7 @@ class SzerzoKapuTeszt(unittest.TestCase):
         for szerzo in (
             "sanchomuzax",
             "picasapy-claude-agent[bot]",
-            "picasapy-codex[bot]",
+            "picasapy-codex-agent[bot]",
         ):
             with self.subTest(szerzo=szerzo):
                 self.assertIn(szerzo, self.szoveg)
