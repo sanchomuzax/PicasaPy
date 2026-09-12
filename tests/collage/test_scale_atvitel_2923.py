@@ -1,133 +1,129 @@
-"""#2923: a megnyitott `.cxf` `scale`-je VÁLTOZATLANUL megy vissza.
+"""A csomópont `scale`-je: mit viszünk át, és mit NEM számolunk (#2923).
 
-A #1412 277. köre kimérte, hogy az eredeti Picasa a csomópont `scale`-jét
-**nem számolja**: az a fájlból jön (`_atof`, `0x008332b7`), az elrendezők a
-`+0x2c`-hez nem nyúlnak, a másolók és a dokumentum-`reset` változatlanul
-viszik tovább. Nálunk viszont a mentés a MAGA számolt értékét írta be —
-tehát egy Picasával készült kollázs újramentése elrontotta a fájlt.
+A jegy a `docs/specs/kollazs-eletciklus.md` **67. szakaszára** épül (277.
+kutatói kör): az elrendező a csomópont `+0x2c`-jéhez nem nyúl, minden
+hozzáfűző út konstanst ír, a másolók és a dokumentum-`reset` változatlanul
+viszik tovább — az egyetlen nem-konstans forrás a **fájl** (`_atof`).
 
-Az őr a `node_uids` (#1092) bevált mintáját méri a `scale`-re: ami a
-megnyitott projektből jön, az érintetlen; ami új csomópont, az kapja a téma
-szabálya szerinti értéket.
+Ebből a jegy két termékkövetelményt vezetett le. Az egyik **elkészült**
+(betöltött `.cxf`: a `scale` érintetlenül megy vissza, #2954), a másik —
+„frissen létrehozott csomópontnál `scale = 1,0`" — a **mérésen megdől**,
+és ez a fájl az ő őre. Két, egymástól független szám mondja ki:
+
+1. `scale = 1,0`-nál az Indexkép `y`-ja elmozdul, mert a `.cxf` a
+   `scale`-lel igazított doboz TETEJÉT írja (30.2: 10/10 sor, négy minta);
+2. a négy minta `scale`-je a MINTA SAJÁT cellageometriáját követi
+   (31.5: 0…2 lapegység) — öröklött, a kollázstól független érték ezt nem
+   tudná megtenni.
 """
 
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
+
 import pytest
 
-from picasapy.collage.cxf import CxfProject, dumps, loads
 from picasapy.collage.draft import project_from_nodes
-from picasapy.collage.nodes import CollageNode
-from picasapy.collage.picasa_render import PicasaCollageSettings
+from picasapy.collage.picasa_render import (
+    PicasaCollageSettings,
+    _contact_sheet_geometry,
+    _contact_sheet_nodes,
+    contact_sheet_cell_scale,
+)
+from picasapy.collage.themes import CONTACTSHEET, NOBORDER
 
-#: Egy valódi, Picasával készült Indexkép-projekt szeletének mása: a
-#: `scale` mind a három csomóponton **313**, és ez az érték semmilyen
-#: általunk számolható képletből nem jön ki (a mi Indexkép-formulánk a
-#: cellamagasságból számol).
-MERT_SCALE = 313.0
-
-_CXF = """<?xml version="1.0" encoding="utf-8" ?>
-<collage version="2" format="4:3" orientation="portrait" theme="contactsheet"
- shadows="1" captions="1" albumUID="a4ef8e0fd2dbb152d25d79eb2bd2a28b">
- <albumTitle>AI</albumTitle>
- <albumDate>2023. november</albumDate>
- <background type="solid" color="FFD5D9AB"/>
- <spacing value="0.000000"/>
- <node x="0.087891" y="0.166300" w="0.236328" h="0.221612" theta="0.000000"
-  scale="313.000000">
-  <theme>whiteborder</theme>
-  <src>elso.png</src>
-  <uid>ec0932a3ccc166540000000000000000</uid>
- </node>
- <node x="0.380859" y="0.166300" w="0.236328" h="0.221612" theta="0.000000"
-  scale="313.000000">
-  <theme>whiteborder</theme>
-  <src>masodik.png</src>
-  <uid>ec0932a3ccc166540000000000000001</uid>
- </node>
-</collage>
-"""
+# minta → (lapmagasság, képszám, a FÁJLBAN álló `scale`) — kiírt literálok a
+# négy arany `.cxf`-ből (kollazs-eletciklus.md 31.5), nem termékkódból.
+_MINTAK = {
+    "AI6": (1365, 9, 313),
+    "AI27": (1448, 4, 500),
+    "AI28": (768, 6, 256),
+    "AI29": (708, 12, 158),
+}
 
 
-@pytest.fixture
-def projekt() -> CxfProject:
-    return loads(_CXF)
+def _aspektusok_ai27() -> list[float]:
+    """Az AI27 négy képének képaránya (a fájlból olvasott dobozokból)."""
+    return [250 / 446.078, 257 / 449.750, 216 / 432.001, 250 / 446.078]
 
 
-def _csomopontok(projekt: CxfProject) -> tuple[CollageNode, ...]:
-    from picasapy.collage.draft import nodes_from_project
+def test_a_kozelites_docstringje_nem_allitja_hogy_a_keplet_nyitott():
+    """A 67. szakasz LEZÁRTA a kérdést: nincs képlet a binárisban.
 
-    return nodes_from_project(projekt)
+    A `contact_sheet_cell_scale` docstringje eddig „a pontos képlet
+    nyitott"-ot állított, és a 18.6-ra hivatkozott. A komment sem
+    hazudhat: a lezárás után a hivatkozás a 67. szakaszra szól."""
+    leiras = inspect.getdoc(contact_sheet_cell_scale) or ""
+    assert "nyitott" not in leiras, (
+        "a docstring még nyitott kérdésnek mondja a `scale` képletét, "
+        "pedig a 67. szakasz lezárta"
+    )
+    assert "67." in leiras, "a docstring nem hivatkozik a spec 67. szakaszára"
 
 
-def _scale_map(projekt: CxfProject) -> dict[str, float]:
-    return {
-        node.src: node.scale for node in projekt.nodes if node.scale and node.src
-    }
+def test_scale_1_0_elmozditana_az_indexkep_sorait():
+    """A jegy 2. pontja (`scale = 1,0`) 200+ lapegységet mozdítana az `y`-on.
 
-
-def _ujraments(projekt: CxfProject, **kwargs) -> CxfProject:
+    Az AI27 első sorának mért `y`-ja 252 lapegység, és ez a `scale`-lel
+    (500) igazított doboz teteje. Ugyanaz a csomópont `scale = 1,0`-val
+    a cella közepére ugrik — tehát a jegy 2. pontja mért, golden-tesztelt
+    viselkedést rontana el."""
     settings = PicasaCollageSettings(
-        theme=projekt.theme, border="whiteborder", width=1024, height=1365
+        theme=CONTACTSHEET, border=NOBORDER, width=1024, height=1448
     )
-    return project_from_nodes(
-        _csomopontok(projekt), settings, format_key="", **kwargs
+    paths = tuple(Path(f"{i}.png") for i in range(4))
+    nodes, _, _ = _contact_sheet_nodes(_aspektusok_ai27(), paths, settings)
+    lap_magassag = 1448.0
+
+    mert = project_from_nodes(nodes, settings)
+    assert mert.nodes[0].y * lap_magassag == pytest.approx(252.0, abs=1.5)
+
+    egysegre_kenyszeritve = project_from_nodes(
+        nodes, settings, node_scales={node.src: 1.0 for node in mert.nodes}
+    )
+    eltolt_y = egysegre_kenyszeritve.nodes[0].y * lap_magassag
+    assert abs(eltolt_y - 252.0) > 200.0, (
+        f"a scale=1,0 nem mozdítja az y-t ({eltolt_y}) — a 30.2 mérése szerint kellene"
     )
 
 
-class TestAMegorzottScale:
-    def test_a_megnyitott_ertek_VALTOZATLAN(self, projekt):
-        ujra = _ujraments(projekt, node_scales=_scale_map(projekt))
-        assert [node.scale for node in ujra.nodes] == [MERT_SCALE, MERT_SCALE]
+@pytest.mark.parametrize("minta", sorted(_MINTAK))
+def test_a_scale_a_minta_sajat_cellageometriajat_koveti(minta):
+    """A `scale` nem lehet a kollázstól FÜGGETLEN, öröklött érték.
 
-    def test_a_megorzes_NELKUL_masik_szamot_kapnank(self, projekt):
-        """Ez maga a hiba, amit a jegy leír: a mi számolt értékünk MÁS."""
-        ujra = _ujraments(projekt)
-        assert all(node.scale != MERT_SCALE for node in ujra.nodes), (
-            "ha ez egyezik, a teszt nem azt méri, amit hisz"
+    A 67.3 kimondja: gépi úton nem zárható ki, hogy a mintákat író
+    Picasa-futás a dokumentumot korábban egy `.cxf`-ből töltötte, és a
+    `scale` onnan öröklődött. Ez a teszt ezt SZÁMMAL szűkíti: mind a négy
+    mintában a fájl `scale`-je a minta SAJÁT cellageometriájából jön
+    (0…2 lapegység, 31.5), a másik három mintáé pedig nem illik rá.
+    Egy idegen fájlból örökölt érték ezt nem tudná megtenni."""
+    magassag, kepszam, fajl_scale = _MINTAK[minta]
+    geometria = _contact_sheet_geometry(1024, magassag, kepszam)
+    sajat = max(1, geometria.cella_h - 2 * geometria.belso)
+    assert abs(sajat - fajl_scale) <= 2, f"{minta}: {sajat} vs {fajl_scale}"
+    for masik, (_, _, masik_scale) in _MINTAK.items():
+        if masik == minta:
+            continue
+        assert abs(sajat - masik_scale) > 2, (
+            f"{minta} geometriája a(z) {masik} scale-jére is illik — "
+            "a minták nem különböztetnék meg az öröklést a számítástól"
         )
 
-    def test_az_UJ_csomopont_szamolt_erteket_kap(self, projekt):
-        """Csak ami a fájlból jött, azt őrizzük — az új kép nem maradhat
-        `scale` nélkül."""
-        csomopontok = _csomopontok(projekt)
-        ujak = csomopontok + (
-            CollageNode(
-                path="uj.png",
-                center_x=512.0,
-                center_y=900.0,
-                width=200.0,
-                height=150.0,
-                theta=0.0,
-                border="whiteborder",
-            ),
-        )
-        settings = PicasaCollageSettings(
-            theme=projekt.theme, border="whiteborder", width=1024, height=1365
-        )
-        ujra = project_from_nodes(
-            ujak, settings, format_key="", node_scales=_scale_map(projekt)
-        )
-        assert [node.scale for node in ujra.nodes][:2] == [MERT_SCALE, MERT_SCALE]
-        assert ujra.nodes[-1].scale > 0.0
 
-    def test_a_KULCS_a_feloldott_es_a_kodolt_alak_is(self, projekt):
-        """A `.cxf` a Picasa változós útvonalát tárolja (#1096): a kulcs
-        mindkét alakban találjon."""
-        from picasapy.collage.win_paths import encode_cxf_path
+def test_a_betoltott_scale_valtozatlanul_megy_vissza():
+    """A jegy 3. pontja (elkészült, #2954) őre: a fájl értéke érintetlen.
 
-        kodolt = {
-            encode_cxf_path(node.src): node.scale
-            for node in projekt.nodes
-            if node.scale and node.src
-        }
-        ujra = _ujraments(projekt, node_scales=kodolt)
-        assert [node.scale for node in ujra.nodes] == [MERT_SCALE, MERT_SCALE]
-
-
-class TestAKorbenjaras:
-    def test_a_kiirt_fajlban_ott_a_MERT_szam(self, projekt):
-        """Végponttól végpontig: a szerializált `.cxf`-ben is a 313 áll."""
-        ujra = _ujraments(projekt, node_scales=_scale_map(projekt))
-        szoveg = dumps(ujra).decode("utf-8")
-        assert szoveg.count('scale="313.000000"') == 2
+    A számolt közelítés az AI27-en 499 — ha a mentés újraszámolná, egy
+    Picasával készült kollázs `scale`-je 500-ról 499-re csúszna."""
+    settings = PicasaCollageSettings(
+        theme=CONTACTSHEET, border=NOBORDER, width=1024, height=1448
+    )
+    paths = tuple(Path(f"{i}.png") for i in range(4))
+    nodes, _, _ = _contact_sheet_nodes(_aspektusok_ai27(), paths, settings)
+    szamolt = project_from_nodes(nodes, settings)
+    orzott = project_from_nodes(
+        nodes, settings, node_scales={node.src: 500.0 for node in szamolt.nodes}
+    )
+    assert {node.scale for node in orzott.nodes} == {500.0}
+    assert contact_sheet_cell_scale(1024, 1448, 4) != 500.0

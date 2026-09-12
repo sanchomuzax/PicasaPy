@@ -6899,6 +6899,11 @@ megjelölve, hogy „a pontos képlet nyitott"). A mérés szerint:
 ⇒ A közelítést **el kell hagyni**, és a `scale`-t **átvinni**, nem
 számolni. Ehhez önálló fejlesztői jegy nyílt.
 
+⛔ **HELYESBÍTVE a 69. szakaszban (#2923):** ebből csak a betöltési ág áll.
+A „frissen létrehozott csomópontnál `1,0`" két mérésen megdől (30.2: az `y`
+a `scale`-ből jön, 10/10; 31.5: a `scale` a minta SAJÁT cellageometriáját
+követi, 0…2 lapegység), tehát a közelítés a termékben MARAD.
+
 *Kérdés-mérleg (SAJÁT kérdések, ebben a körben): **2 LEZÁRVA** (a
 hozzáfűzés `scale`-rekesze konstans; és ezzel a `contactsheet`-`scale`
 eredete — „nem számított, hanem öröklött") · 0 nyitott · 0 blokkolt ·
@@ -6991,3 +6996,43 @@ verzió-kiírás kiolvasva.
   Picasa betöltötte-e és újramentette-e.
 - Nincs mérve, hogy a `version="1"` alak a valóságban előfordul-e a
   tulajdonos gyűjteményében — a kérdés ettől független.
+
+## 69. LEZÁRVA: a 67.4 termékkövetkezménye MEGDŐLT — a `scale` a minta SAJÁT cellageometriáját követi (2026-09-12, #2923)
+
+*Fejlesztői kör. A 67. szakasz bináris lánca érvényben marad; ami megdől,
+az a belőle levont TERMÉKI következtetés („frissen létrehozott csomópontnál
+`scale = 1,0`").*
+
+### 69.1 A két szám, amely a `scale = 1,0`-t kizárja
+
+| # | mérés | honnan | mit zár ki |
+|---|---|---|---|
+| 1 | a `.cxf` `y`-ja a `scale`-lel igazított doboz TETEJE — **10/10 sor**, négy minta; a tárolt `h`-val 3–27 lapegység az eltérés | 30.2 | `scale = 1,0` az Indexkép **minden sorát** elmozdítaná |
+| 2 | a fájl `scale`-je a minta SAJÁT cellageometriájából jön, **0…2 lapegység** (AI6 311/313 · AI27 499/500 · AI28 255/256 · AI29 158/158) | 31.5 | a 67.3/1. „idegen `.cxf`-ből öröklődött" kibúvó |
+
+A második sor a 67.3 első hatókör-megszorítását szűkíti. A négy minta
+`scale`-je (313 · 500 · 256 · 158) **nem felcserélhető**: mindegyik a saját
+kollázsának cellamagasságából jön, a másik háromra 2 lapegységnél messzebb
+esik. Egy korábban betöltött, a kollázstól FÜGGETLEN fájlból öröklött érték
+ezt nem tudná megtenni — négy különböző cellageometriát négy különböző, de
+mindig illeszkedő számmal eltalálni nem öröklés.
+
+⇒ A dokumentumban **valami mégis beállítja** a `contactsheet` `scale`-jét a
+cellamagasságra. A 67. szakasz lánca ezt a helyet nem találta meg; a 31.6
+már megnevezte a leggyengébb láncszemet (az elrendező IDEIGLENES vektorba
+ír, és a dokumentum-tömbbe másoló út nincs kiolvasva). Ez **továbbra is a
+#1412 nyitott kérdése**, nem ennek a jegynek a tárgya.
+
+### 69.2 ⭐ A TERMÉK döntése — és hol a foga
+
+| a jegy pontja | állapot | miért |
+|---|---|---|
+| betöltött `.cxf`: a `scale` **változatlanul** megy vissza | **kész** (#2954, `node_scales`) | a 67. lánc beolvasási ága mérve; eddig a mentés 500-ról 499-re csúsztatta |
+| `picturepile` `version="1"` migráció | **kész** (68. szakasz) | értéktartó minden `version="2"` fájlra |
+| új csomópont: `scale = 1,0` | **ELVETVE** | a 69.1 két mérése; `multiexp`-nél viszont 1,0 marad (AI7, #1248) |
+| a `contact_sheet_cell_scale` elhagyása | **ELVETVE** | az előző következménye: az `y` ebből jön |
+| „a pontos képlet nyitott" megjegyzés | **törölve** | a 67. szakasz lezárta: a binárisban nincs képlet |
+
+Őr: `tests/collage/test_scale_atvitel_2923.py` — a docstring-hivatkozáson
+kívül mind a két mérést állítja (a `scale = 1,0` 200+ lapegységet mozdít az
+AI27 első során; a négy minta geometriája nem felcserélhető).

@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.442] – 2026-09-12
+
+### Belső
+
+- **Egy Picasával készült indexkép újramentése nem csúsztatja el a képeket**
+  (#2923). A kollázs-fájl egyik mérete eddig nyitott kérdésként állt a
+  kódban; a visszafejtés lezárta, és a mérés megmutatta, hogy amit a
+  program ma számol, az helyes. A javasolt egyszerűsítés minden sort
+  elmozdított volna, ezért nem vezettük be. A kép ettől ma nem változik.
+
 ## [0.8.441] – 2026-09-12
 
 ### Belső
