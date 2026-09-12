@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.440] – 2026-09-12
+
+### Belső
+
+- **Az `exit_nag` nyitott bináris kérdése lezárult** (#671). A teljes
+  Picasa-kódszakasz mérése bizonyította, hogy ez nem élő kilépési kapcsoló:
+  a build csak eltávolítja a jelzőtáblából, és sehol nem olvassa. Így a
+  PicasaPy kilépési viselkedésébe nem kerül fölösleges kompatibilitási ág.
+
 ## [0.8.439] – 2026-09-12
 
 ### Javítva
@@ -9223,4 +9232,3 @@ megbízhatóan, ezért a tartományt mondjuk ki, nem találgatunk (#1770).
   fut, ugyanúgy, ahogy az exportcélok pótlólagos betöltése is (#1667) —
   az ablak ezzel a mért idővel hamarabb látszik, a takarítás funkciója
   változatlan.
-
