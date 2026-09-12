@@ -7993,6 +7993,15 @@ A MŰVELET NEM VONHATÓ VISSZA.
 </context>
 <context>
     <name>EditorParamPanel</name>
+    <!-- #723: a Lágyítás és a Neon MÉRT feliratai (`filterdesc.xml`) -->
+    <message>
+        <source>Softness</source>
+        <translation>Lágyítás</translation>
+    </message>
+    <message>
+        <source>Neon Color</source>
+        <translation>Neonszín</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Apply</source>

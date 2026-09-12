@@ -33,6 +33,9 @@ Flickable {
         case "Inner Radius": return qsTr("Inner Radius")
         case "Strength": return qsTr("Strength")
         case "Intensity": return qsTr("Intensity")
+        //: #723: a Lágyítás és a Neon MÉRT feliratai
+        case "Softness": return qsTr("Softness")
+        case "Neon Color": return qsTr("Neon Color")
         case "Radius": return qsTr("Radius")
         case "Center X": return qsTr("Center X")
         case "Center Y": return qsTr("Center Y")

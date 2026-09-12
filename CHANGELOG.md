@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.435] – 2026-09-12
+
+### Javítva
+
+- **A Lágyítás és a Neon csúszkái azt állítják, amit a nevük ígér**
+  (#723). A Lágyításnál a második csúszka „Sugár" néven valójában a
+  fokozatot állította, a Neonnál pedig hiányzott a színválasztó, helyette
+  egy „Intenzitás" csúszka írta a fokozat helyét. Mostantól az eredeti
+  Picasa vezérlői állnak a panelen: Lágyítás és Fokozat, illetve
+  Neonszín és Fokozat.
+
 ## [0.8.434] – 2026-09-12
 
 ### Hozzáadva

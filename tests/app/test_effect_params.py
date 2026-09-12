@@ -327,8 +327,11 @@ class TestPicnikFocalPixelateAndMaskEffectsAreDeliberatelySkipped:
     def test_picnik_focal_pixelate_has_no_ui_effect_name(self):
         assert "picnikfocalpixelate" not in _EFFECT_NAMES
 
-    def test_soften_keeps_its_pre_516_controls(self):
-        # Soften MÁR volt vezérlős (#316); a #516 táblázat szerinti
-        # Impact/Fade+maszk átnevezés a maszk-eszköz híján KIMARADT
+    def test_soften_a_MERT_keszletet_hozza(self):
+        """#723: `_sldrImpact` → Softness és `_sldrFade` → Fade.
+
+        A korábbi `amount`/`radius` pár nem csak felirat-hiba volt: a lánc
+        a MÁSODIK rekeszt fokozatnak olvassa, tehát a „Radius" feliratú
+        csúszka a fokozatot állította."""
         params = effect_params("soften")
-        assert [p.key for p in params] == ["amount", "radius"]
+        assert [p.key for p in params] == ["impact", "fade"]

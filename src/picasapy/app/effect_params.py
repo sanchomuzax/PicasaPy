@@ -189,9 +189,16 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # --- 5. fül: művészi effektek — egyezők (nincs teendő, #516) ------------
     # Boost: Impact — a felirata viszont „Strength" (felülírás)
     "boost": (_p("strength", "Strength", 0.0, 100.0, 50.0),),
+    # Soften=1,Impact,Fade (#723): a katalógus korábban `amount`/`radius`
+    # párt hirdetett, a lánc viszont a MÁSODIK rekeszt FOKOZATNAK olvassa
+    # (`chain_glimmer_handlers.apply_soften_op`). A „Radius" feliratú
+    # csúszka tehát a fokozatot állította — nem felirat-hiba: a felhasználó
+    # MÁST állított, mint amit a felirat ígért. Az eredetiben
+    # (`filterdesc.xml`) `_sldrImpact` → Softness és `_sldrFade` → Fade áll,
+    # radius-csúszka nincs.
     "soften": (
-        _p("amount", "Amount", 0.0, 100.0, 50.0),
-        _p("radius", "Radius", 0.0, 100.0, 50.0),
+        _p("impact", "Softness", 0.0, 100.0, 50.0),
+        _p("fade", "Fade", 0.0, 100.0, 50.0),
     ),
     # FocalZoom=1,x,y,Impact,Radius,Hardness,Fade (#570/#600/#717): a
     # katalógus korábban csak az első két csúszkát tartotta, ÉS azokat
@@ -213,7 +220,14 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("brightness", "Brightness", 0.0, 200.0, 100.0),
         _p("color_mix", "Color Mix", 0.0, 100.0, 0.0),
     ),
-    "neon": (_p("intensity", "Intensity", 0.0, 100.0, 50.0),),
+    # Neon=1,Fade,Color (#723): az eredeti panelján egyetlen SZÍNMINTA
+    # (`_clrsw`, alap `0xff0000`, „Neon Color") és egy fokozat-csúszka van.
+    # A katalógus egy `intensity` csúszkát hirdetett, ami a lánc 0. rekeszét
+    # — vagyis a FOKOZATOT — írta, színválasztó pedig egyáltalán nem volt.
+    "neon": (
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
+        _color("color", "Neon Color", "#ff0000"),
+    ),
     "comicize": (
         _p("edge_strength", "Edge Strength", 0.0, 100.0, 20.0),
         _p("posterize", "Posterize", 0.0, 100.0, 50.0),
