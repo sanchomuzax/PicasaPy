@@ -2364,23 +2364,41 @@ marad érvényben — ez egybevág a `0x0090cf60` perem-jelölésével.
 ⇒ **A súlyok nem osztódnak újra: a fal mögötti tag helyére a közép megy.**
 Ezért nem mos át a simítás az éleken, és ezért marad az összeg mindig 16.
 
-#### ⚠️ Ami ebből még NINCS kiolvasva
-1. **A három lépték `n`-értékei.** A maszk `n² · 0x5555`, és ez 16 biten
-   csak `n = 1` mellett fér el hiánytalanul (`n = 2`-nél `0x15554`, amiből a
-   `movzx`-szel olvasott 16 bitre `0x5554` marad) — a lépték-sorozatot
-   tehát a hívó adja, és az **nincs kiolvasva**.
-2. A szomszéd-sorok **léptéke**: a négy sormutatót a hívó adja be
-   (`esp+0x28/0x34/0x3c/0x40`), a menet csak `ecx*4`-gyel indexel oszlopra —
-   a sorok közti távolság tehát a hívóban áll elő, és nincs kiolvasva.
+**6. ⭐ A három lépték: `n = 1, 2, 4`.** A `0x0090cd90` a lépték-számot
+**konstansként** adja be, és a `0x90c6b0` utolsó verem-argumentuma ugyanaz a
+szám — tehát a szomszédok távolsága IS a lépték:
 
-Ezek nélkül a mag NEM építhető be pixelhűen — a mai, mért Gauss-közelítés
-(`render/blur.py`, σ = 4,0 a tartományon kívül) marad, amíg ez a három
-megvan.
+| kör | fal-jelölés (`ecx`) | propagáció (`0x90cbe0`) | a két simító menet (verem-arg) |
+|---:|---:|---:|---:|
+| 1. | `1` (`0x0090ce65`) | — | `1`, `1` (`0x0090ceb9`, `0x0090cec3`) |
+| 2. | `2` (`0x0090ceda`) | `2` (`0x0090cee7`) | `2`, `2` (`0x0090cef5`, `0x0090cf01`) |
+| 3. | `4` (`0x0090cf18`) | `4` (`0x0090cf25`) | `4`, `4` (`0x0090cf33`, `0x0090cf3f`) |
+
+A két menet **felváltva** használja a két puffert (az `ebp`/`edi` cserélgetése
+az `ecx`/`edx` regiszterekben) — ez a szeparábilis pár, nem két azonos futás.
+Az első körben nincs propagáció: ott keletkezik az első fal-réteg.
+
+⇒ A fal-maszk így `1·0x5555`, `4·0x5555` (16 biten `0x5554`) és `16·0x5555`
+(16 biten `0x5550`) — egymásba ágazó bitkészletek, tehát a durvább lépték a
+finomabbnál kevesebb bitet vizsgál.
+
+#### ⚠️ Ami ebből még NINCS kiolvasva
+
+A **fal-bitek kiosztásának SZÁNDÉKA**: a `n² · 0x5555` maszkok 16 biten egymás
+részhalmazai (`0x5555` ⊃ `0x5554` ⊃ `0x5550`), és hogy ez tudatos hierarchia-e
+vagy a 16 bites csonkolás mellékhatása, a kódból nem dönthető el. A
+beépítéshez ez nem szükséges: a jelölő és a menet ugyanazt a maszkot használja,
+tehát a viselkedés reprodukálható.
+
+⇒ **A mag ezzel beépíthető**: minden bemenete kiolvasott szám. A mai, mért
+Gauss-közelítés (`render/blur.py`, σ = 4,0 a tartományon kívül) addig marad,
+amíg a beépítést a `referencia/blur-meres/` anyagán MÉRÉS nem igazolja — a
+jegy negyedik „Kész, ha" pontja.
 
 *Bizonyítottsági fok: **megerősített** a fal-bittérképre, a küszöb-képletre,
-a három léptékre, az öt tagú magra és a fal-ágra (helyi diszasszemblálás,
-minden lépés címmel) · **nyitott** a lépték-sorozat és a szomszéd-sorok
-léptéke.*
+a három léptékre (`1, 2, 4`), az öt tagú magra és a fal-ágra (helyi
+diszasszemblálás, minden lépés címmel) · **nyitott** csak a bitkiosztás
+szándéka, ami a beépítéshez nem kell.*
 
 A σ optimuma éles (3,90 → 0,650; 4,10 → 0,692), és minden más próbált mag
 rosszabb: a Picasa saját IIR-elmosója (`iir_blur`, a legjobb sugarán) 3,49;
@@ -3378,7 +3396,7 @@ végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
 
 | kérdés | jegy |
 |---|---|
-| a `blur` magjának fal-ága, lépték-sorozata és szomszéd-geometriája (a mag maga és a fal-bittérkép MEGVAN, 2026-09-12) | **#762** |
+| a `blur` natív magjának BEÉPÍTÉSE és mérése (a gépezet MEGVAN, 2026-09-12: fal-bittérkép · `4 : 3 : 3 : 3 : 3`/16 · `n = 1, 2, 4`) | **#762** |
 | az `autocolor` 3 × 3-as mátrixának összeállítása | **#759** |
 | az `enhance` keverés bevezetése a kódba | **#721** |
 | a `radblur` sugár-hányada: `0,009` (mért) vs `0,01` (dekompilátum) | #317 |
