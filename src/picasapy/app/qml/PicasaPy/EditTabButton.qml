@@ -20,6 +20,8 @@ import QtQuick.Controls
 // `activeTab`-ot, ahogy korábban a beágyazott komponens tette.
 Rectangle {
     id: tbtn
+    //: #885: a fül lenyomásra vált — a próbák ezt olvassák
+    readonly property bool lenyomasra: true
     //: a gazda EditorPanel — a kattintás ezen át állítja az aktív fület
     required property var panel
     required property int tabIndex
@@ -90,7 +92,10 @@ Rectangle {
         id: tabMouse
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: panel.activeTab = tbtn.tabIndex
+        //: #885: a szerkesztő-fülek LENYOMÁSRA váltanak az eredetiben
+        //: (`editpanel/tab1`…`tab5`, `Property mousedown 1`) — a fülváltás
+        //: nézetet vált, nem műveletet hajt végre.
+        onPressed: panel.activeTab = tbtn.tabIndex
     }
     ToolTip.text: tbtn.description !== "" ? tbtn.description : tbtn.label
     ToolTip.visible: tabMouse.containsMouse

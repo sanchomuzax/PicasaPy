@@ -111,6 +111,33 @@ Button {
     // periódust és a görbét nem. A választott 1600 ms oda-vissza,
     // `Easing.InOutSine` — visszafogott és egyenletes; ha egyszer valaki
     // lemér egy képernyőfelvételt, EZT a két számot kell cserélni.
+    //: #885: LENYOMÁSRA sül el, nem felengedésre.
+    //:
+    //: Az eredetiben 49 vezérlőn áll `Property mousedown 1` (a `respack.yt`
+    //: `.tre` leírásaiban), és a csoportosítás következetes: ami NÉZETET
+    //: VÁLT vagy MENÜT NYIT, az azonnal hat; ami MŰVELETET hajt végre
+    //: (Mentés, Mégse, Kollázs létrehozása), az a szabványos felengedésre.
+    //:
+    //: ⚠️ Ezért opt-in, nem alapértelmezés: a művelet-gomboknál a
+    //: „lenyomtam, de elhúztam, mégsem" visszavonhatóság a fontosabb.
+    property bool lenyomasra: false
+
+    //: A lenyomást SAJÁT egérterület veszi át, és el is nyeli: ha a
+    //: `Button` is látná, a felengedéskor MÁSODSZOR is elsülne a jelzés —
+    //: egy fülváltó kétszer váltana, egy léptető kettőt lépne.
+    MouseArea {
+        anchors.fill: parent
+        enabled: control.lenyomasra && control.enabled
+        visible: enabled
+        //: a hover a gombé marad (buboréksúgó, kiemelés)
+        hoverEnabled: false
+        acceptedButtons: Qt.LeftButton
+        onPressed: function (esemeny) {
+            esemeny.accepted = true
+            control.clicked()
+        }
+    }
+
     property bool throbbing: false
 
     //: Kattintás után a pulzálás leáll: a gomb elvégezte a dolgát.
