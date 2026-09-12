@@ -101,7 +101,12 @@ _MIN_SZO = 4
 #: egybetűs helyőrző címmel kiadott átnevezést, ugyanaznap viszont KÉTSZER
 #: blokkolta a jelenségről szóló PRÓZÁT, mert abban ott állt a csupasz alak.
 #: A kapu a szöveget fogta meg, a műveletet nem.
-_GH = r"(?:[\w.~-]*(?:/[\w.~-]+)*/)?gh(?:-bot)?"
+#: ⛔ **agent#32: a `codex-bot` és az `opencode-bot` is idetartozik.** A
+#: tulajdonos döntése szerint minden eszköz SAJÁT GitHub Appot kap, hogy
+#: látszódjon, melyik mit alkot — az őr viszont csak a `gh`/`gh-bot` alakot
+#: ismerte, tehát a Codexből nyitott jegyek címét NEM nézte volna meg. Ez
+#: már a harmadik névre kötött vakfolt ebben a projektben.
+_GH = r"(?:[\w.~-]*(?:/[\w.~-]+)*/)?(?:gh|gh-bot|codex-bot|opencode-bot)"
 
 
 def _jegycimek(cmd: str) -> list[str]:
