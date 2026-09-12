@@ -21,13 +21,22 @@ indoklás MEGDŐLT; a `picasa-native-filter-workers.md` 2.2-ben a #2868
 helyesbítette.)
 
 A megvalósítás **mégis** a dither NÉLKÜLI alakot futtatja (a natív
-`v >> 8` csonkolással), de már más okból: a bitre egyező zajhoz a
-képpont-bejárás SORRENDJE is kell, és az a `0x0090bc60` ciklusszerkezetéből
-nincs kimérve — magozás-egyezés önmagában nem elég. A #685 mérőszettjén a
-mai alak képenként 0,18–0,37 átlagos ΔE-t ad a valódi Picasa-kimenethez
-képest — a JPEG-újratömörítés saját zaja alatt, tehát a különbség nem
-látható. A dither megvalósítása külön jegy, aminek előfeltétele a bejárási
-sorrend mérése (#2926).
+`v >> 8` csonkolással) — de 2026-09-12 óta ez már **nem mérési hiány,
+hanem el nem végzett munka**. A bejárási sorrend azóta ki van mérve
+(#2926 → `picasa-native-filter-workers.md` **2.2/b** és **2.2/c**):
+sorfolytonos bejárás, képpontonként pontosan egy minta mindhárom
+csatornára, csempézés és szálindítás nélkül. Az előfeltétel tehát
+teljesült; a megvalósítás a **#3092**.
+
+A #685 mérőszettjén a mai alak képenként 0,18–0,37 átlagos ΔE-t ad a
+valódi Picasa-kimenethez képest — a JPEG-újratömörítés saját zaja alatt,
+tehát a különbség ma nem látható. A dither haszna nem is ez, hanem a
+**sávosodás** megszüntetése a széthúzott hisztogramon.
+
+⚠️ **Bitre egyezésre a #3092 sem törekszik:** a natív generátor állapota
+folyamat-globális (az index `0x00d67f74` a hívások közt tovább él), tehát
+ugyanannak a képnek a zaja attól is függ, mit dolgozott fel előtte a
+program.
 """
 
 from __future__ import annotations
