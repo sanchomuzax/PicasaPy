@@ -54,6 +54,12 @@ BLOKKOLANDO = [
     'gh issue create --title "Kollázs hiba"',
     # a szerkesztés ugyanúgy jegycím
     'gh issue edit 1276 --title "P1: a Klipek lap üres"',
+    # ⛔ agent#32: eszközönként KÜLÖN bot-burkoló. Az őr eddig csak a
+    # `gh`/`gh-bot` alakot ismerte, tehát a Codexből nyitott jegyek címét
+    # meg sem nézte volna — harmadik névre kötött vakfolt a projektben.
+    'codex-bot issue create --title "P1: a Klipek lap üres"',
+    '~/picasapy-agent/eszkozok/codex-bot issue create --title "Hisztogram"',
+    'opencode-bot issue edit 1276 --title "BLOKKOLT: a mentés elvész"',
 ]
 
 ATENGEDENDO = [
