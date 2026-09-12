@@ -314,7 +314,10 @@ Az „Egyszerűsített fanézet" nálunk **nem** a fa tömörítése, hanem:
 > `FolderHierarchyController.treeView` tartja (kizáró pár), az
 > „Egyszerűsített fanézet" mindkét belépési pontja élő. A 4. (a `watched`
 > szemantika), az 5–6. (gyökerek, fejlécfelirat) és a 7–8. (tartós
-> tárolás) továbbra is nyitott — **#1407**. Az 1. szakasz „MIT AD MA"
+> tárolás) továbbra is nyitott — **#1407**. *(2026-09-12: a 4. sor is KÉSZ
+> — az „Egyszerűsített fanézet" mostantól a figyelt mappák ágaira szűkíti a
+> fát, a mért `all`→`watched` gyökércsere szerint. Az 5–6. és a 8. sor
+> marad.)* Az 1. szakasz „MIT AD MA"
 > táblája a #1454 ELŐTTI állapotot rögzíti, azt szándékosan nem írtuk át.
 
 
@@ -323,7 +326,7 @@ Az „Egyszerűsített fanézet" nálunk **nem** a fa tömörítése, hanem:
 | 1 | `Nézet ▸ Mappanézet` = 3 szerkezeti tétel | **5 rendezési tétel** (a `Mappa ▸ Rendezés` másolata) | **KÉSZ (#1454)** |
 | 2 | Egyszerű ↔ Fa: kizáró pár | megvan (`FolderHierarchyView`) | **KÉSZ (#1454)** |
 | 3 | Egyszerűsített fanézet: **külön, tartós kapcsoló** | `simplified` property **nincs bekötve** | bekötve (#1454); a **tartósság** még nincs (#1407) |
-| 4 | „egyszerűsített" = a gyökér `all`→`watched` | `_simplify()` = útvonal-tömörítés | a szemantikát a mérthez igazítani |
+| 4 | „egyszerűsített" = a gyökér `all`→`watched` | a fa a FIGYELT mappák ágaira szűkül | **KÉSZ (#1407)** |
 | 5 | 4 gyökér a helyi menüben | **nincs** gyökér-fogalom | megépíteni |
 | 6 | fejléc: „Alapértelmezett nézet" / „Sajátgép" | nincs | megjeleníteni |
 | 7 | `SimplifiedHierarchy` azonnal tárolódik | nincs tárolva | beállításba |

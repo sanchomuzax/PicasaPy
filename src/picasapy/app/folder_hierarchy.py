@@ -116,13 +116,20 @@ def _freeze(raw: dict, parent_path: str) -> tuple[HierNode, ...]:
     return tuple(nodes)
 
 
+#: #1407: a mért szűrő — a két karakternél nem hosszabb bejegyzés kimarad
+#: (`0x0057430b cmp eax, 2` / `jbe`), tehát a puszta meghajtó-gyökerek
+#: (`C:`, `/`) nem lesznek ágak.
+_LEGROVIDEBB_GYOKER = 3
+
+
 def _simplify(node: HierNode) -> HierNode:
     """Egygyermekes, saját fotó nélküli köztes szintek összevonása.
 
-    Ez az „Egyszerűsített fanézet" (`SimplifiedHierarchy`): a
-    `/` → `mnt` → `photo` lánc egyetlen `/mnt/photo` sorrá válik, mert a
-    közbenső szinteken nincs se fotó, se elágazás — vagyis semmi olyan,
-    amit a felhasználó választhatna.
+    ⚠️ #1407: ez NEM az „Egyszerűsített fanézet" — az a fa HATÓKÖRÉT
+    szűkíti (`_watched_root`). Ez útvonal-tömörítés: a
+    `/` → `mnt` → `photo` lánc egyetlen `/mnt/photo` sorrá válik. A kettő
+    EGYÜTT megy: a szűkített fa ágain belül a tömörítés továbbra is
+    olvashatóbbá teszi a hosszú láncokat.
     """
     children = tuple(_simplify(child) for child in node.children)
     if len(children) == 1 and node.own == 0:
@@ -134,12 +141,18 @@ def _simplify(node: HierNode) -> HierNode:
     return replace(node, children=children)
 
 
-def build_hierarchy(folders, *, simplified: bool = False) -> HierNode:
+def build_hierarchy(
+    folders, *, simplified: bool = False, watched_roots=()
+) -> HierNode:
     """A virtuális nézet-gyökér a teljes mappafával.
 
     folders: `{"path": str, "count": int}` alakú elemek (a `name` mezőt
     nem használjuk — a fa a saját komponens-neveit rajzolja, mert a
     köztes szintek nincsenek benne a listában).
+
+    watched_roots: a FIGYELT mappák útvonalai. Az „Egyszerűsített
+    fanézet" ezekre szűkíti a fát (#1407) — ez a mért szemantika, nem az
+    útvonal-tömörítés.
     """
     raw: dict = {}
     for folder in folders:
@@ -158,10 +171,51 @@ def build_hierarchy(folders, *, simplified: bool = False) -> HierNode:
         children=children,
     )
     if simplified:
+        #: #1407: az eredetiben a `SimplifiedHierarchy = 1` az `all`
+        #: gyökeret `watched`-re cseréli (`0x0057517c`–`0x005751ec`),
+        #: vagyis a fa a FIGYELT MAPPÁK ágaira szűkül. Enélkül a mód csak
+        #: útvonal-tömörítés volt, ami sosem rejtett el mappát.
+        root = _watched_root(root, watched_roots)
         # A gyökér maga sosem olvad össze (ő a `ViewRoot::All` sor), csak
         # a gyermek-ágai rövidülnek.
         root = replace(root, children=tuple(_simplify(c) for c in root.children))
     return root
+
+
+def _keresd(node: HierNode, path: str) -> HierNode | None:
+    """A megadott útvonalú csomópont a fában, vagy `None`."""
+    if node.path == path:
+        return node
+    for child in node.children:
+        if path == child.path or path.startswith(child.path.rstrip("/") + "/"):
+            talalat = _keresd(child, path)
+            if talalat is not None:
+                return talalat
+    return None
+
+
+def _watched_root(root: HierNode, watched_roots) -> HierNode:
+    """A fa hatókörét a figyelt mappák ágaira szűkíti (#1407).
+
+    ⚠️ Üres listára a TELJES fa marad. Ha nem tudjuk, mi a figyelt mappa,
+    a szűkítés nem találgat: a felhasználó mappáit elrejteni rosszabb
+    kimenet, mint a szűkítés elmaradása."""
+    utak = [
+        str(ut) for ut in (watched_roots or ())
+        if len(str(ut)) >= _LEGROVIDEBB_GYOKER
+    ]
+    if not utak:
+        return root
+    agak: list[HierNode] = []
+    for ut in sorted(set(utak)):
+        csomopont = _keresd(root, ut.rstrip("/") or ut)
+        if csomopont is not None and csomopont is not root:
+            agak.append(csomopont)
+    if not agak:
+        return root
+    return replace(
+        root, children=tuple(agak), total=sum(ag.total for ag in agak)
+    )
 
 
 def expandable_paths(root: HierNode) -> frozenset[str]:
