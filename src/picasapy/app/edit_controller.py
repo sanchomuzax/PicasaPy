@@ -61,6 +61,7 @@ from picasapy.render.chain import (
     can_offer_filter_control,
 )
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
+from picasapy.render.registry import chain_flags
 from picasapy.render.registry import one_click_keys
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
@@ -2239,7 +2240,20 @@ class EditController(QObject, BackgroundWorkerMixin):
 
         Ezek az utak eleve a gyors, gyorsítótárazott lánc-prefixre épülnek
         (#140), és a húzás minden lépésénél friss képet kell adniuk: a
-        háttérszálra tolásuk csak késleltetést és villogást hozna."""
+        háttérszálra tolásuk csak késleltetést és villogást hozna.
+
+        #819: KIVÉVE, ha a láncban `slow` jelzős szűrő van. A regiszter 13
+        ilyet jelöl meg; ezek a felület szálán számolva akadoztatják az
+        ablakot (a #504 Lomója percekig is elfut). Ilyenkor a háttér-útra
+        térünk — a kép így csak a renderelés VÉGÉN frissül, de a felület
+        él, és a közös haladásjelző csík magától pörög."""
+        aktiv = session if session is not None else self._session
+        _teljes, lassu, _ujrameretez = chain_flags(
+            [op.name for op in aktiv.ops]
+        )
+        if lassu:
+            self._register_preview_async(session)
+            return
         self._preview_job += 1
         self._provider.register(**self._preview_request(session))
         self._bump_gpu_revision()
