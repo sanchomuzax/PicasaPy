@@ -15,6 +15,11 @@ import QtQuick.Layouts
 Window {
     id: backupWindow
     objectName: "backupDialog"
+    //: #3009: fut-e éppen másolás — ilyenkor látszik a haladás-sáv és a
+    //: Megszakítás gomb, és a Mentés gomb tiltott
+    property bool fut: false
+    property int keszFajl: 0
+    property int osszesFajl: 0
     title: qsTr("Back Up Pictures")
     modality: Qt.ApplicationModal
     width: 620
@@ -94,9 +99,23 @@ Window {
         function onHibatJelez(szoveg) { backupWindow.uzenet = szoveg }
         function onKeszletekValtoztak() { backupWindow.frissitsd() }
         function onFutasKesz(darab, bajt) {
+            backupWindow.fut = false
             backupWindow.uzenet = darab === 0
                 ? qsTr("Everything was already backed up.")
                 : qsTr("Backup complete: %1 file(s).").arg(darab)
+        }
+        //: #3009: a másolás háttérszálon megy, és végig beszél — az
+        //: eredeti is („Copying (%d/%d) files").
+        function onFutasIndult(osszes) {
+            backupWindow.fut = osszes > 0
+            backupWindow.osszesFajl = osszes
+            backupWindow.keszFajl = 0
+        }
+        function onHaladas(kesz, osszes) {
+            backupWindow.keszFajl = kesz
+            backupWindow.osszesFajl = osszes
+            backupWindow.uzenet =
+                qsTr("Copying (%1/%2) files").arg(kesz).arg(osszes)
         }
     }
 
@@ -258,6 +277,26 @@ Window {
             color: Theme.ink
         }
 
+        //: #3009: haladás-sáv — csak a másolás alatt látszik
+        Rectangle {
+            objectName: "backupProgressTrack"
+            visible: backupWindow.fut
+            Layout.fillWidth: true
+            Layout.preferredHeight: 6
+            radius: 3
+            color: Theme.chromeBorder
+            Rectangle {
+                objectName: "backupProgressFill"
+                height: parent.height
+                radius: parent.radius
+                color: Theme.selectionBlue
+                width: backupWindow.osszesFajl > 0
+                    ? parent.width * backupWindow.keszFajl
+                      / backupWindow.osszesFajl
+                    : 0
+            }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
@@ -287,8 +326,21 @@ Window {
             }
             Item { Layout.fillWidth: true }
             PicasaButton {
+                objectName: "backupCancelRun"
+                //: #3009: a megszakított mentés nem veszít el munkát — a
+                //: már átmásolt fájlok a nyilvántartásba kerülnek, a
+                //: következő futás pontosan a hiányzókat viszi.
+                visible: backupWindow.fut
+                text: qsTr("Stop")
+                onClicked: {
+                    if (typeof backupController !== "undefined"
+                            && backupController)
+                        backupController.szakitsdMeg()
+                }
+            }
+            PicasaButton {
                 objectName: "backupRun"
-                visible: !backupWindow.szerkesztes
+                visible: !backupWindow.szerkesztes && !backupWindow.fut
                 enabled: backupWindow.kivalasztott >= 0
                 text: qsTr("Back Up")
                 onClicked: {
