@@ -198,13 +198,41 @@ a fenti általános mondatot.
 a nem üres ág. A megvalósításunkhoz ez nem kell: a felsorolás lehetősége
 kizárva, az általános szöveg pedig ki van olvasva.
 
-### Az `exit_nag` kulcs
+### ✅ Az `exit_nag` nem élő kapcsoló, hanem eltávolított maradvány (#671,
+2026-09-12)
 
-Egy `exit_nag` beállításkulcs a `hosting`, `auto_update`, `new_album`,
-`watermark` társaságában él (`0x004092e0`, 93 bájt) — ez egy **induláskor
-felépített jelzőtábla**, amit az alkalmazás-inicializálás tölt fel
-(`0x00409250` ← `0x004039f0`). Nem tartozik hozzá saját szöveg, tehát nem
-párbeszéd, hanem **kapcsoló**. A pontos hatását ez a kör nem azonosította.
+Az `exit_nag` korábbi „jelzőtábla-elemként” való leírása túl erős volt. A
+`0x004092e0` két külön műveletet végez:
+
+- `0x00409340` **beszúr** egy név szerinti rekordot, és annak értékét 1-re
+  állítja (`[rekord+8] = 1`); ezt kapja az `auto_update`, `new_album`,
+  `new_collection`, `extended_filetypes`, `extended_filters`, `email_scanner`
+  és `hosting`;
+- `0x00409450` név szerint **megkeres és eltávolít** egy meglévő rekordot;
+  ezt hívja a `watermark`, majd az `exit_nag` nevével.
+
+A tábla közvetlenül előtte, a `0x00409250`-ben jön létre. Az ott hívott
+`0x004095c0` csak a `runtime\\defaults.ini` `[Track]` / `name` értékét olvassa
+be (a szállított fájlban `public`), a táblát nem tölti fel. Ezért az
+`exit_nag` törlése ebben a buildben már létrehozáskor is eredménytelen
+védelmi/takarító művelet.
+
+**Kimerítő negatív kontroll:** a darabolt, memóriakapus teljes `.text`-pászta
+**2 884 879 utasítást** vizsgált meg, 85,2 MiB csúcs-RSS-sel. Az
+`exit_nag` címére (`0x00c7f9fc`) pontosan **1** operandus mutat:
+`0x00409331 mov edx,0xc7f9fc`, közvetlenül a törlő hívás előtt. A pozitív
+kontrollként mért `watermark` címére **3** operandus mutatott: a törlés és két
+valódi exportfelületi használat (`0x00739266`, `0x00739dd4`).
+
+A közös név szerinti lekérdező (`0x00409530`) összes hívója is ellenőrizve:
+négy hívó függvényben öt hívási hely van, mindegyik közvetlen literált ad át
+— négyszer `hosting`, egyszer `buttonmgr:browse`. Dinamikus név és kilépési
+ág nincs közöttük.
+
+⇒ **Az `exit_nag`-nak ebben a Picasa 3.9 buildben nincs felhasználói hatása:**
+nem beállítás, nem dialóguskapu és nem élő kísérleti jelző, hanem egy
+kifejezetten eltávolított, névként bent maradt funkciómaradvány. A PicasaPy
+kilépési viselkedésébe nem kell átvenni.
 
 ## A „Ne kérdezzen újra." KÖZÖS jelölőnégyzet
 
@@ -352,10 +380,11 @@ kilépés pillanatában rögzül.)
 5. **Bezárás előtt a program sorban zárja a rétegeket**: először a mód-ablak,
    aztán a modális párbeszéd, csak aztán jönnek a kérdések.
 
-## Ami nyitva maradt
+## Korábban nyitott kérdések — lezárva
 
-- Az `exit_nag` kapcsoló pontos hatása (a jelzőtáblát megtaláltuk, a
-  felhasználóját nem). — **ÖRÖKÖLT, a munkasorban marad.**
+- ~~Az `exit_nag` kapcsoló pontos hatása.~~ **LEZÁRVA (2026-09-12):** nincs
+  hatása ebben a buildben; a program a nevet kizárólag a jelzőtáblából való
+  eltávolításhoz használja, olvasója nincs (részletes bizonyítás fent).
 - ~~Él-e még az `IDS_WARNCLOSEEDIT`.~~ **LEZÁRVA (2026-08-31):** él — a
   `CThumbUI::ConfirmAbandonModifiedEdit` kulccsal, „before proceeding?"
   szöveggel, a `0x005e45c0` szerkesztő-ágában; a cím nélküli
