@@ -378,7 +378,12 @@ class TestAKonyvtarValtozatlan:
         fiok = _elem(window, "rightDrawer")
         _kattints(window, _talca_gomb(window, lap), qt_app)
         panel = _elem(window, konyvtari)
-        assert _var(qt_app, lambda: panel.isVisible() and panel.width() > 0)
+        #: #3035: a fiók ANIMÁLVA tolódik be (400 ms), tehát a végleges
+        #: szélességet meg kell várni — különben a félúton mérnénk.
+        assert _var(
+            qt_app,
+            lambda: panel.isVisible() and abs(panel.width() - szelesseg) <= 1,
+        ), f"a(z) {konyvtari} nem érte el a végleges szélességét"
         assert _leszarmazottja(panel, fiok), (
             f"a(z) {konyvtari} kikerült a jobb fiókból"
         )
@@ -484,6 +489,13 @@ class TestAKonyvtarValtozatlan:
         window = qml_app[0]
         _kattints(window, _talca_gomb(window, "tags"), qt_app)
         elotte = _elem(window, "tagsPanel")
+        #: #3035: a betolás 400 ms-os animáció — a pillanatkép csak a
+        #: VÉGLEGES helyzetről érvényes, különben a mozgás közben mért
+        #: doboz sosem egyezne a visszatérés utánival.
+        fiok = _elem(window, "rightDrawer")
+        assert _var(qt_app, lambda: abs(fiok.width() - 280) <= 1), (
+            "a fiók nem érte el a végleges szélességét"
+        )
         elotte_doboz = _ablakban(elotte)
         _nezot_nyit(window, qt_app)
         assert _var(qt_app, lambda: elotte.isVisible() is False), (
@@ -493,9 +505,17 @@ class TestAKonyvtarValtozatlan:
         qt_app.processEvents()
         utana = _elem(window, "tagsPanel")
         assert utana is elotte, "a könyvtár fiókja újraépült"
-        assert _var(qt_app, lambda: _ablakban(utana) == elotte_doboz), (
-            f"a könyvtár fiókja elmozdult: {elotte_doboz} → {_ablakban(utana)}"
-        )
+        #: #3035: a doboz EGY KÉPPONTOS tűréssel egyezzen. A betolás
+        #: animáció, és az utolsó képkocka tört képponton állhat meg —
+        #: a jegy állítása az, hogy a fiók nem MOZDUL EL, nem az, hogy a
+        #: lebegőpontos érték bitre ugyanaz.
+        assert _var(
+            qt_app,
+            lambda: all(
+                abs(a - b) <= 1
+                for a, b in zip(_ablakban(utana), elotte_doboz, strict=True)
+            ),
+        ), f"a könyvtár fiókja elmozdult: {elotte_doboz} → {_ablakban(utana)}"
 
     def test_a_mainSplit_lathatosaga_valtozatlan(self, qml_app, qt_app):
         """A könyvtár hasábja a nézőben rejtve, visszatérve látható."""

@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtTest import QTest
 
 #: menütétel → panel, a #1773 négy lapja
 LAPOK = [
@@ -73,8 +74,18 @@ def _var_a_szelessegre(fiok, qt_app, vart, korok: int = 40) -> float:
     for _ in range(korok):
         if abs(fiok.property("width") - vart) <= 1:
             break
-        qt_app.processEvents()
+        QTest.qWait(30)
     return fiok.property("width")
+
+
+def _beallt(fiok, qt_app, korok: int = 40) -> float:
+    """Megvárja, amíg a fiók felveszi a MÉRT alapszélességet.
+
+    #3035 óta a be- és kitolás 400 ms-os animáció, tehát a nyitás után
+    azonnal mérve a félúton lévő értéket kapnánk. „Két egyforma minta"
+    alapon várni NEM elég: az animáció indulása előtt is két egyforma
+    mintát látnánk (a régi érték)."""
+    return _var_a_szelessegre(fiok, qt_app, ALAP_SZELESSEG, korok)
 
 
 def _nyisd(window, qt_app, menu_nev):
@@ -106,8 +117,12 @@ class TestEgyFiok:
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, menu)
         fiok = _gyerek(window, "rightDrawer")
-        assert fiok.property("width") == ALAP_SZELESSEG, (
-            f"a {panel} lapon a fiók {fiok.property('width')} széles, "
+        #: #3035: a szélesség ANIMÁLVA áll be, ezért a végállapotot
+        #: tűréssel mérjük — az animáció utolsó képkockája fél képponton
+        #: belül ér célba.
+        szelesseg = _beallt(fiok, qt_app)
+        assert abs(szelesseg - ALAP_SZELESSEG) <= 1, (
+            f"a {panel} lapon a fiók {szelesseg} széles, "
             f"nem {ALAP_SZELESSEG} — az eredetiben mind a négy azonos"
         )
 
@@ -118,12 +133,14 @@ class TestEgyFiok:
         próba azt tartja fenn, hogy egyetlen vászon maradt."""
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, LAPOK[0][0])
+        _beallt(_gyerek(window, "rightDrawer"), qt_app)
         tartalom = _gyerek(window, "rightDrawerContent")
-        assert tartalom.property("width") == TARTALOM_SZELESSEG
+        assert abs(tartalom.property("width") - TARTALOM_SZELESSEG) <= 1
         for menu, panel in LAPOK:
             _nyisd(window, qt_app, menu)
+            _beallt(_gyerek(window, "rightDrawer"), qt_app)
             elem = _gyerek(window, panel)
-            assert elem.property("width") == TARTALOM_SZELESSEG, (
+            assert abs(elem.property("width") - TARTALOM_SZELESSEG) <= 1, (
                 f"a {panel} szélessége {elem.property('width')}, a vászon "
                 f"{TARTALOM_SZELESSEG}"
             )
@@ -133,6 +150,7 @@ class TestAFejlec:
     def test_harminc_keppont_magas(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, LAPOK[0][0])
+        _beallt(_gyerek(window, "rightDrawer"), qt_app)
         fejlec = _gyerek(window, "rightDrawerHeader")
         assert fejlec.property("height") == FEJLEC_MAGASSAG
 
@@ -140,6 +158,7 @@ class TestAFejlec:
         """`m_centerXY` — nem balra, ahogy nálunk a panelek fejlécében volt."""
         window, _controller, _engine = qml_app
         _nyisd(window, qt_app, LAPOK[0][0])
+        _beallt(_gyerek(window, "rightDrawer"), qt_app)
         fejlec = _gyerek(window, "rightDrawerHeader")
         cim = _gyerek(window, "rightDrawerTitle")
         kozep = cim.property("x") + cim.property("width") / 2
@@ -226,7 +245,7 @@ class TestAKetSzelesseg:
         _nyisd(window, qt_app, LAPOK[0][0])
         fiok = self._kicsire(window, qt_app)
         assert fiok.property("visible") is True
-        assert fiok.property("width") == ALAP_SZELESSEG
+        assert abs(fiok.property("width") - ALAP_SZELESSEG) <= 1
 
         gomb = _gyerek(window, "rightDrawerSizeToggle")
         #: #3037: NÉGY kattintás, nem kettő. A hiba az volt, hogy a
@@ -242,10 +261,11 @@ class TestAKetSzelesseg:
             vart = nagy_vart if kor % 2 == 0 else ALAP_SZELESSEG
             latott.append(_var_a_szelessegre(fiok, qt_app, vart))
 
-        assert latott[1] == ALAP_SZELESSEG and latott[3] == ALAP_SZELESSEG, (
+        #: #3035: a szélesség animálva áll be, ezért tűréssel mérünk
+        assert all(abs(latott[i] - ALAP_SZELESSEG) <= 1 for i in (1, 3)), (
             f"a váltó nem vált vissza kicsire: a négy szélesség {latott}"
         )
-        assert latott[0] > ALAP_SZELESSEG and latott[2] > ALAP_SZELESSEG, (
+        assert all(latott[i] > ALAP_SZELESSEG + 1 for i in (0, 2)), (
             f"a váltó nem nagyít: a négy szélesség {latott}"
         )
 

@@ -26,6 +26,11 @@ Rectangle {
     //: panel nevét mutatja — ezért a hívó adja meg.
     property string cim: ""
 
+    //: #3035: a be/kitolás animációjának hossza. A mért érték 0,4 s
+    //: (`0x00cf4ce0`, az ág `0x009d7dc1`); a `thumbui.tre:700` kapcsolója
+    //: az `1`-es jelzővel kéri az animációt.
+    readonly property int animacioMs: 400
+
     //: a `size_toggle` állapota: kicsi (alap) vagy nagy fiók
     property bool nagy: false
     //: az ablak szélessége — a nagy állás ennek a 30 %-a (#2529)

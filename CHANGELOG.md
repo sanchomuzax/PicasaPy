@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.433] – 2026-09-12
+
+### Változott
+
+- **A jobb oldali fiók betolódik, nem ugrik** (#3035). A nyitás és a zárás
+  mostantól négytized másodperces mozgás, ahogy az eredeti Picasában, és a
+  könyvtár tartalma vele együtt mozdul. Csukott állapotban a fiók nem
+  foglal helyet.
+- **A fiók széle kattintható** (#3035): egy nem látszó sáv nyitja és zárja,
+  a Nézet menü melletti második belépési pontként.
+
 ## [0.8.432] – 2026-09-12
 
 ### Hozzáadva
