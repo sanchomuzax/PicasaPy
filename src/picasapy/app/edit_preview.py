@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QImage, QImageReader
+from PySide6.QtGui import QColorSpace, QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
@@ -172,6 +172,30 @@ class EditPreviewProvider(QQuickImageProvider):
         # A `requestImage` a Qt kép-betöltő szálán fut, ezért az érték a
         # meglévő (rövid tartású) `_lock` alatt cserélődik és olvasódik.
         self._display_mode = ""
+        # #1725: a `Színkezelés használata` — a forrás dekódolására hat
+        self._color_management = False
+
+    def set_color_management(self, enabled: bool) -> None:
+        """A `Színkezelés használata` állapota (#1725) — a FORRÁSRA hat.
+
+        A megjelenítési módtól eltérően ez a dekódolt forráskép tartalmát
+        változtatja, ezért a forrás- és a lánc-prefix gyorsítótárat is ki
+        kell üríteni: különben a váltás után a régi, át nem alakított tömb
+        maradna bent. (Az eredeti ugyanígy dobja el az előnézeti állapotot,
+        `0x005c966a`.)"""
+        enabled = bool(enabled)
+        with self._lock:
+            if enabled == self._color_management:
+                return
+            self._color_management = enabled
+            self._sources.clear()
+            self._prefix_cache = None
+
+    @property
+    def color_management(self) -> bool:
+        """Érvényesül-e a beágyazott ICC-profil a dekódolt forráson."""
+        with self._lock:
+            return self._color_management
 
     def set_display_mode(self, mode: str) -> None:
         """A megjelenítési mód beállítása (#1576) — csak a KÉPERNYŐRE hat.
@@ -457,7 +481,9 @@ class EditPreviewProvider(QQuickImageProvider):
         cserébe a két szál között nincs megosztott, zárral védendő állapot.
         """
         if not shared_cache:
-            return _decode_source(path, full_res=full_res)
+            return _decode_source(
+                path, full_res=full_res, color_managed=self.color_management
+            )
         cached = self._sources.get(key)
         #: #819: a kicsinyített és a teljes felbontású forrás NEM cserélhető
         #: fel — a negyedik mező mondja meg, melyik van a gyorsítótárban.
@@ -469,7 +495,9 @@ class EditPreviewProvider(QQuickImageProvider):
         ):
             source_array = cached[2]
         else:
-            source_array = _decode_source(path, full_res=full_res)
+            source_array = _decode_source(
+                path, full_res=full_res, color_managed=self.color_management
+            )
         # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
         # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
         # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
@@ -626,7 +654,9 @@ class EditPreviewProvider(QQuickImageProvider):
         return image
 
 
-def _decode_source(path: Path, *, full_res: bool = False) -> np.ndarray | None:
+def _decode_source(
+    path: Path, *, full_res: bool = False, color_managed: bool = False
+) -> np.ndarray | None:
     """A forráskép dekódolása RGB numpy tömbbé, előnézet-felbontásra korlátozva.
 
     QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza —
@@ -638,7 +668,14 @@ def _decode_source(path: Path, *, full_res: bool = False) -> np.ndarray | None:
     szűrőre `fullres` jelzőt ad — ezek csak teljes felbontáson adnak helyes
     eredményt, tehát a kicsinyített forráson futtatva a felhasználó MÁST
     látna, mint amit a mentett kép tartalmaz. A megjelenített előnézet
-    ettől függetlenül a korlátra kicsinyül (`_kicsinyitsd_a_megjelenitendot`)."""
+    ettől függetlenül a korlátra kicsinyül (`_kicsinyitsd_a_megjelenitendot`).
+
+    #1725: `color_managed=True` esetén a képbe **beágyazott ICC-profil**
+    érvényesül — a kép sRGB-be alakul (`QImage.convertToColorSpace`). Ez az
+    eredeti `Színkezelés használata` kapcsolójának mért jelentése: littleCMS
+    szabványos ICC-átalakítása, nem saját színtan (spec 5.12). Profil nélküli
+    vagy már sRGB képen ez no-op, a kikapcsolt állapot pedig — ahogy a
+    binárisban is — semmit nem tesz."""
     reader = QImageReader(str(path))
     reader.setAutoTransform(True)
     native = reader.size()
@@ -652,7 +689,24 @@ def _decode_source(path: Path, *, full_res: bool = False) -> np.ndarray | None:
     source = reader.read()
     if source.isNull():
         return None
+    if color_managed:
+        source = _srgb_be(source)
     return _qimage_to_rgb_array(source)
+
+
+def _srgb_be(kep: QImage) -> QImage:
+    """A beágyazott profillal jelölt kép sRGB-be alakítva (#1725).
+
+    Profil nélküli vagy már sRGB képnél változatlanul adja vissza — az
+    átalakítás így sosem „talál ki" színteret oda, ahol nincs.
+    """
+    szinter = kep.colorSpace()
+    srgb = QColorSpace(QColorSpace.NamedColorSpace.SRgb)
+    if not szinter.isValid() or szinter == srgb:
+        return kep
+    atalakitott = kep.copy()
+    atalakitott.convertToColorSpace(srgb)
+    return atalakitott
 
 
 def _megjelenitendo(tomb: np.ndarray, teljes_felbontas: bool) -> np.ndarray:

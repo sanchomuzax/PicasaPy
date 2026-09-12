@@ -725,6 +725,46 @@ checkable, és a pipa azon a soron jelenik meg.
 *Bizonyítottsági fok: **megerősített** minden állítás, ami mellett `0x…`
 cím áll (a függvénytörzsek szó szerinti tartalma); a menü-felirat ↔
 azonosító párosítás — **megerősített** (a tulajdonos képeivel, 2026-08-30).*
+
+#### ⭐ A MOTOR MEGVAN: a színkezelés **littleCMS**, a `+0x5c` a kapuja (2026-09-12, #1725)
+
+A kezelő (`0x005c95a0`) a színkezelés-objektum (`[0xd67920]`) **`+0x5c`**
+bájtjába írja a kapcsoló értékét. A mező **fogyasztói is megvannak**, és
+mindegyik ugyanazt teszi: ha a bájt nulla, a hívás **nem tesz semmit**.
+
+| függvény | méret | mit tesz | a kapu |
+|---|---:|---|---|
+| `0x00a3dbc0` | 58 | az objektum létrehozása (**100 bájt**, `0x0097c5d0` = allokátor, `0x00a3df50` = inicializáló) | – |
+| `0x00a3e3a0` | 71 | **profil megnyitása memóriából** (`0x00af3eb0`), a fogantyú a `[edi+4]`-be | `cmp byte [eax+0x5c], 0` → `0x00a3e3bd` |
+| `0x00a3e580` | 73 | **átalakítás felépítése/alkalmazása** (`0x00a3dc00` → `0x00a3e280` → `0x00a3e2e0`) | `cmp byte [eax+0x5c], 0` → `0x00a3e591` |
+| `0x00a3f110` | 86 | a profil felszabadítása, **ha nem az objektum `+0x60` gyorsítótárazott fogantyúja** (`0x00af1ee0`) | `+0x60` összevetés |
+
+**A motor azonosítva: littleCMS.** A profilnyitó (`0x00af3eb0`) a
+`0x00af34b0`-nel ellenőrzi a fejlécet, és annak a hibaszövege
+**`"not an ICC profile, invalid signature"`** (`0xce8584`); ugyanabban a
+modulban ott a **`"cmsWhitePointFromTemp: invalid temp"`** és a
+`"sRGB built-in"` (`0xce873c`, `0x00af4f30`). ⇒ A Picasa **nem saját
+színtan-kódot** futtat: beágyazott lcms-t használ, szabványos ICC-átalakítással.
+
+#### ⛳ Amit ez a TERMÉKNEK mond
+
+1. **A `Színkezelés használata` nem „valamilyen" színkorrekció**, hanem a
+   beágyazott ICC-profil **szabványos** átalakítása. Nálunk ugyanez a motor
+   elérhető (a Pillow `ImageCms` szintén littleCMS), tehát a viselkedés
+   **nem becslésből** épül.
+2. **A kapu egyetlen bájt**: kikapcsolt állapotban minden színkezelő hívás
+   no-op (`−1`-et ad vissza). A mi megvalósításunkban ugyanígy egyetlen
+   kapcsoló zárja a láncot, nem szórt feltételek.
+3. **A profil fogantyúja gyorsítótárazott** (`+0x60`): ugyanazt a profilt a
+   program nem nyitja újra. A mi oldalunkon ez a kép-gyorsítótár kulcsának
+   része lesz.
+4. ⚠️ **Az `icc_camera_to_tone_matrix` (3×3) ettől KÜLÖN út** — a nyers
+   kamerakép ága, nem a JPEG-é. Az, hogy hol szorzódik be, **nincs kimérve**;
+   a kapcsoló megvalósítása erre nem vár.
+
+*Bizonyítottsági fok: **megerősített** a kapu-bájtra, a négy fogyasztóra és
+a littleCMS-azonosításra (helyi diszasszemblálás + a modul hibaszövegei) ·
+**nincs mérve** a 3×3 mátrix beszorzási helye.*
 ## 6. Tárolás, alapértelmezés, indulási állapot
 
 **MÉRVE — a mód NEM tárolódik el sehol.** A `0x00575670` (az egyetlen

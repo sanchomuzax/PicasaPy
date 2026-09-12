@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.443] – 2026-09-12
+
+### Hozzáadva
+
+- **Nézet ▸ Színkezelés használata — mostantól működik** (#1725). Eddig
+  szürke, tehetetlen menüpont volt. Bekapcsolva a program figyelembe veszi
+  a képbe beágyazott színprofilt, tehát a fényképezőgép saját színterében
+  mentett kép a képernyőn is helyes színekkel jelenik meg. A kapcsoló
+  megmarad a következő indításig, és az eredetihez hűen alapból ki van
+  kapcsolva. A mentett és exportált kép változatlan: ez csak a képernyőre
+  hat.
+
 ## [0.8.442] – 2026-09-12
 
 ### Belső
