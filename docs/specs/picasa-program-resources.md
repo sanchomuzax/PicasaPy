@@ -452,10 +452,53 @@ egyszerű, little-endian `uint32` mezőkből áll, és minden mezője
 | `0x28` | u32 | **a családnév hossza** | = a rákövetkező sztring hossza, bájtra ✅ |
 | `0x2c` | bájtok | **a családnév** (`"Praxis Semi Bold/Heavy"`, `"HelveticaNeue MediumCond"`) | — |
 
-A név után **4 × `int16` rekordok** táblája következik
-(pl. `(98, 44, −2, −1)`, `(121, 44, −4, −1)`, `(85, 46, −1, −1)`) — a
-mintázat egy glyph-atlasz koordinátáira és igazítási eltolásaira vall, de
-**ez még nem bizonyított**; a rekordszerkezet pontos jelentése nyitott.
+#### ⛔ ÖNHELYESBÍTÉS (2026-09-12, #2943): a név utáni tábla KERNING-PÁROK táblája
+
+A szakasz korábban azt írta, hogy a név után „4 × `int16` rekordok" táblája
+következik, és ezt egy **glyph-atlasz** koordinátáinak vélte. **A tagolás
+rossz volt.** A rekord nem négy `int16`, hanem:
+
+| eltolás | típus | jelentés |
+|---|---|---|
+| `+0` | u16 | a **bal** karakter kódja |
+| `+2` | u16 | a **jobb** karakter kódja |
+| `+4` | **i32** | az alávágás (kerning) értéke, képpontban |
+
+A korábbi példa így olvasva: `(98, 44, −2, −1)` valójában
+`'b'` · `','` · **−2** — egy alávágási pár, nem atlasz-koordináta.
+
+**A bizonyíték a párok TARTALMA.** A `Praxis Semi Bold/Heavy-12-700`
+tábla eleje nyers bájtokban:
+
+```
+56 00  69 00  ff ff ff ff      'V' 'i'  −1
+79 00  2c 00  fd ff ff ff      'y' ','  −3
+74 00  66 00  ff ff ff ff      't' 'f'  −1
+57 00  65 00  ff ff ff ff      'W' 'e'  −1
+31 00  31 00  fe ff ff ff      '1' '1'  −2
+```
+
+Ezek a tipográfia **klasszikus alávágási párjai** (`Vi`, `y,`, `We`, `V,`,
+`TA`, `Wa`, `td`, `y.`, `OV`, `py`) — véletlen bájtcsoportosítás ilyet nem
+ad. A tábla a névtől (`0x2c + névhossz`) kezdődik.
+
+**Mért darabszámok** (a pásztázás ott áll meg, ahol a bájtok már nem
+karakterpárnak látszanak — ez a szám tehát **alsó korlát**):
+
+| fájl | a tábla | pár |
+|---|---|---:|
+| `Praxis Semi Bold-Heavy-12…700` | `0x42`–`0x3ea` | **117** |
+| `Praxis Semi Bold-Heavy-18…700` | `0x42`–`0xe02` | **440** |
+
+*Következtetés, nem mérés:* a nagyobb fokozat több párt hordoz,
+valószínűleg mert kis méretnél sok alávágás egész képpontra nullára
+kerekedik, és kimarad a táblából.
+
+⚠️ **Ami továbbra sem megfejtett:** a **karakterenkénti előrelépés
+(advance)**. A fejléc `0x18`-as eltolása (12 pt-nél 44016) egy tömörítettnek
+látszó blokkra mutat; a szélesség-vektor valószínűleg ott van, de nincs
+kiolvasva. A #2943 első teendője ezzel **félig** teljesült: a kerning-kérdés
+IGEN, a szélesség-kérdés nyitva.
 
 **Miért érdekes mégis:** a fájlkészlet önmagában megadja a Picasa felületének
 **hiteles tipográfiáját** — két család (`Praxis Semi Bold/Heavy` és
