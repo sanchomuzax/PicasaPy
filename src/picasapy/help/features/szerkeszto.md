@@ -28,6 +28,29 @@ jelöli — lásd [Effektek](effektek.md).
 
 Az effektek részletes listája: [Effektek](effektek.md).
 
+## A lassú effektek és az előnézet
+
+Tucatnyi effekt sokat számol: ilyen az **Élesítés**, a **Filmszemcse**,
+a **Ragyogás**, a **Képregény**, az **Árnyékvetés**, a **HDR-szerű**, a
+**Holga-szerű**, a **Lomo-szerű**, a **Neon**, az **Orton-szerű**, a
+**Ceruzarajz** és a **Poszterizálás**. Ezeknél az előnézet a
+**háttérben** készül el, nem abban a pillanatban, ahogy a csúszkát
+húzod:
+
+- **Az ablak közben használható marad**: a menük nyílnak, a csúszka
+  mozog, semmi nem fagy be.
+- A kép a számolás **végén** frissül. Addig az előző előnézet látszik —
+  ha nem történik semmi egy-két másodpercig, a program dolgozik, nem
+  akadt el.
+- Az alsó kék sávon **haladásjelzés** fut, amíg tart.
+
+Van, amelyik csak **teljes felbontáson** ad helyes eredményt — a
+szemcse, a képpontnagyítás és a fókusznagyítás mérete például a kép
+valódi méretéhez igazodik. Ezeket a program a kép eredeti méretén
+számolja ki, és csak utána kicsinyíti le a képernyőre, hogy az előnézet
+azt mutassa, ami a kimentett fájlba is kerül. Nagy képnél ez érezhetően
+lassabb.
+
 ## A jobb oldali fiók szerkesztés közben
 
 A **Címkék**, **Emberek**, **Helyek** és **Tulajdonságok** panel a

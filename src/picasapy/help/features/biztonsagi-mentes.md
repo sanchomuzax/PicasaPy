@@ -48,13 +48,27 @@ bántja**, csak a nyilvántartást szünteti meg.
 
 Válaszd ki a készletet a listában, majd **Mentés**.
 
-A program először **megszámolja**, hány fájl menne át, és ezt kiírja.
-Ha közben semmi nem változott, ezt az üzenetet kapod: „Minden el volt már
-mentve." A végén megmondja, hány fájl ment át.
+A program először **megszámolja**, hány fájl menne át, és ezt kiírja —
+azt is odaírja, **hány CD-re vagy DVD-re férne** ennyi adat. Ha közben
+semmi nem változott, ezt az üzenetet kapod: „Minden el volt már mentve."
+
+Másolás közben a gombok fölött **haladásjelző csík** fut, az üzenetben
+pedig a „Másolás (12/340) fájl" alakú számláló mutatja, hol tart. Az
+ablak közben **használható marad**: a másolás a háttérben megy, nem
+fagyasztja be a programot. A végén megmondja, hány fájl ment át.
+
+### Megszakítás
+
+Amíg a másolás tart, a **Mentés** gomb helyén **Megszakítás** áll. Erre
+kattintva a program az éppen futó fájl után abbahagyja.
+
+**A megszakítás nem veszít el munkát:** a már átmásolt fájlok bekerülnek
+a nyilvántartásba, tehát a következő futás pontosan a hiányzókkal
+folytatja.
 
 Csak a **sikeresen** átmásolt fájl kerül a nyilvántartásba. Ha a mentés
-félbeszakad — például megtelik a cél, vagy megszűnik a hálózati
-kapcsolat —, a következő futás pótolja a hiányzót.
+magától szakad félbe — például megtelik a cél, vagy megszűnik a hálózati
+kapcsolat —, a következő futás ugyanígy pótolja a hiányzót.
 
 ## Mi kerül a célmappába
 
@@ -70,4 +84,5 @@ kapcsolat —, a következő futás pótolja a hiányzót.
 
 Az eredeti Picasa CD-re és DVD-re is tudott menteni. A PicasaPy **nem ír
 lemezt** — a cél mindig egy mappa: külső meghajtó, pendrive vagy hálózati
-megosztás.
+megosztás. A lemezszám-becslés ezért csak tájékoztat arról, mekkora a
+mentésed; magát a lemezt más programmal kell megírnod.

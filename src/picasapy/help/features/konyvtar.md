@@ -23,8 +23,10 @@ válthatsz köztük:
 - **Egyszerű mappanézet** — egyetlen lapos lista, mindegyik mappa egy sor.
 - **Fanézet** — a mappák a lemezen elfoglalt helyük szerint, egymásba
   ágyazva.
-- **Egyszerűsített fanézet** — fanézet, de a csak-továbbvezető,
-  képet nem tartalmazó szintek összevonva. Ez a kapcsoló az almenü
+- **Egyszerűsített fanézet** — fanézet, de csak a **figyelt mappáid**
+  ágaival: ami azokon kívül esik, nem látszik. Az ágakon belül a
+  csak-továbbvezető, képet nem tartalmazó szintek össze is vonódnak, hogy
+  a hosszú útvonalak egyetlen sorba férjenek. Ez a kapcsoló az almenü
   **legalján** áll, elválasztva a másik kettőtől.
 
 Az első kettő között az eszköztár két kis nézetváltó gombjával is
@@ -36,6 +38,11 @@ elrejtőzik; a menüsorból ilyenkor is elérhető minden.
 
 A hasáb üres részére jobbgombbal kattintva az **Egyszerűsített fanézet**
 kapcsoló érhető el.
+
+> Ha a program még nem tudja, melyek a figyelt mappáid, az
+> Egyszerűsített fanézet a **teljes fát** hagyja meg — inkább mutat
+> többet, mint hogy elrejtse a mappáidat. A figyelt mappákat a
+> [Mappakezelőben](mappakezelo.md) állítod be.
 
 **Mindhárom beállítás megmarad a következő indításig.**
 

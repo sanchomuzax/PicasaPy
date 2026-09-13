@@ -2,9 +2,9 @@
 
 ## Mire van szükség
 
-A PicasaPy Python 3.12 vagy újabb változatot igényel, és a Qt 6 grafikus
-készletét használja. Linuxon és Windowson egyaránt fut; a fejlesztés
-Linuxon folyik, a windowsos futtatás kísérleti.
+A PicasaPy Linuxon és Windowson egyaránt fut. Windowson a telepítő
+mindent magával hoz; Linuxon Python 3.12 vagy újabb és a Qt 6 grafikus
+készlete kell hozzá.
 
 ### Linux (Debian, Raspberry Pi OS)
 
@@ -29,9 +29,21 @@ változat magával hozza). A négy `lib…` csomag a grafikus megjelenítéshez
 
 ### Windows
 
+**A rendes út a telepítő.** Minden kiadáshoz készül egy
+`PicasaPy-Setup-<verzió>.exe` fájl: letöltöd, elindítod, kész. **Pythont
+nem kell telepítened** — a program mindent magával hoz. A telepítő Start
+menü bejegyzést és — ha kéred — asztali ikont készít, és a Programok és
+szolgáltatások alól ugyanúgy eltávolítható, mint bármelyik más program.
+A telepítőt a projekt letöltési oldalán (Releases) találod.
+
+Ha inkább a forrásból futtatnád, ahhoz Python 3.12 vagy újabb kell, és a
+csomagok:
+
 ```powershell
 pip install PySide6 opencv-python pillow piexif watchdog
 ```
+
+A windowsos futtatás kísérleti: a fejlesztés Linuxon folyik.
 
 ## Indítás
 
@@ -102,11 +114,14 @@ nagyító, indexkép-méret, **Kollázs**, **Mozgófilm**, **Exportálás**,
 nagyítás három vezérlője.
 
 **Jobb oldali fiók** — a Címkék, Emberek, Helyek és Tulajdonságok panel.
-A Nézet menüből vagy a tálca gombjaival nyitható. **Egy** fiók van, közös
-fejléccel: a fejléc közepén annak a panelnek a neve áll, amelyik éppen
-látszik. Balra a **Váltás a kis és a nagy oldalpanel közt** gomb: a fiók
-keskeny és széles állás közt vált. Jobbra az **Oldalpanel bezárása**
-gomb.
+A Nézet menüből, a tálca gombjaival vagy a **Ctrl+0** billentyűvel
+nyitható, és **becsúszva** nyílik ki, illetve zárul be. Van egy negyedik
+út is: a fiók bal széle mentén — csukott fiók esetén az ablak jobb szélén
+— egy **nem látszó, keskeny sáv** húzódik, amire kattintva a fiók
+ki-be billen. **Egy** fiók van, közös fejléccel: a fejléc közepén annak
+a panelnek a neve áll, amelyik éppen látszik. Balra a **Váltás a kis és
+a nagy oldalpanel közt** gomb: a fiók keskeny és széles állás közt vált.
+Jobbra az **Oldalpanel bezárása** gomb.
 
 ## Hova kerülnek az adataid
 

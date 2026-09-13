@@ -4,6 +4,95 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-09-13
+
+**Két kép egymás mellett a nézőben**
+
+- A néző alsó sávjában három kis szegmens jelent meg. Az **Ugyanazon kép
+  megjelenítése kétszer** a szerkesztés összehasonlítására való: balra a
+  **szerkesztés előtti** kép, jobbra a mostani. A negyedik szegmenssel
+  (**Fókusz váltása a képek között**) váltasz a két oldal közt; az
+  aktívon **Kijelölve** felirat áll.
+- A **Két különböző kép megjelenítése** szegmens látszik, de **még nem
+  működik** — szándékosan tiltott, hogy ne tűnjön úgy, mintha elromlott
+  volna. Lásd [Nézegetés](features/nezegetes.md).
+
+**Színkezelés használata**
+
+- Új, működő kapcsoló a **Nézet** menüben: figyelembe veszi a képbe
+  beágyazott színprofilt (például az Adobe RGB-t), és eszerint alakítja
+  át a képet a képernyőre. Alapból ki van kapcsolva, és megmarad a
+  következő indításig. A képfájljaidhoz nem nyúl. Lásd
+  [Beállítások](features/beallitasok.md).
+- A **Mac gamma (1.6)** és a **Lineáris gamma (2.2)** megjelenítési mód
+  eddig egymás eredményét adta. Megjavult.
+
+**Egyszerűsített fanézet**
+
+- A **Nézet ▸ Mappanézet ▸ Egyszerűsített fanézet** mostantól tényleg
+  szűkít: csak a **figyelt mappáid** ágait mutatja, ahogy az eredeti
+  Picasa tette. Eddig csak a hosszú útvonalakat vonta össze, mappát sosem
+  rejtett el. Ha a program még nem tudja, melyek a figyelt mappáid, a
+  teljes fa marad. Lásd [A könyvtár](features/konyvtar.md).
+
+**Biztonsági mentés**
+
+- A másolás a **háttérben** fut: az ablak közben használható marad.
+- Haladásjelző csík és „Másolás (12/340) fájl" alakú számláló mutatja,
+  hol tart.
+- Új **Megszakítás** gomb. A megszakítás nem veszít el munkát: a
+  következő futás pontosan a hiányzókkal folytatja.
+- A mentés indításakor a program azt is kiírja, **hány CD-re vagy
+  DVD-re** férne az adat. Lemezt továbbra sem ír. Lásd [Képek biztonsági
+  mentése](features/biztonsagi-mentes.md).
+
+**Szerkesztő**
+
+- A sok számolást igénylő effektek (Élesítés, Filmszemcse, Ragyogás,
+  Képregény, Árnyékvetés, HDR-szerű, Holga-szerű, Lomo-szerű, Neon,
+  Orton-szerű, Ceruzarajz, Poszterizálás) mostantól **csúszkahúzás közben
+  is a háttérben** számolnak: az ablak nem fagy be, a kép a számolás
+  végén frissül, és az alsó kék sávon látszik, hogy dolgozik.
+- Az előnézet azoknál az effekteknél, amelyek csak teljes felbontáson
+  helyesek, a kép **eredeti méretén** készül el, és csak utána
+  kicsinyedik le — így azt látod, ami a kimentett fájlba is kerül.
+- A **Neon** effektnek **színválasztója** lett: te adod meg, milyen
+  színnel világítsanak a kontúrok. Eddig egy „Intenzitás" csúszka volt a
+  helyén, ami valójában a hatás erejét állította.
+- A **Lágyítás** két csúszkája a helyes nevet kapta (a lágyítás
+  erőssége és a hatás ereje). Az egyik csúszka eddig „Sugár" néven mást
+  állított, mint amit a felirata ígért. A csempe neve is **Lágyítás** — a
+  súgó eddig tévesen „Lágy fókusz"-ként írta.
+
+**Kollázs**
+
+- A **bepattintó forgatás-igazítás** (a bal oldali kis gombsor és a
+  **Forgatás igazítása** almenü) mostantól **minden elrendezésnél**
+  működik, nem csak a Képkupacnál — eddig a rácsos típusoknál szürke
+  volt. Lásd [Kollázs](features/kollazs.md).
+
+**Jobb oldali fiók**
+
+- A fiók **becsúszva** nyílik és záródik, csukott állapotban pedig
+  visszaadja a helyét a könyvtárnak.
+- A fiók széle mentén egy **nem látszó, keskeny sáv** is billenti — így
+  egérrel is nyitható-zárható, nem csak a menüből, a tálcáról vagy a
+  **Ctrl+0** billentyűvel.
+
+**Apróbb változás**
+
+- A nézetváltó gombok, az eszköztár szűrői, a szerkesztő fülei és a
+  néző léptető gombjai **a gomb lenyomásakor** hatnak, nem a felengedéskor
+  — ahogy az eredeti Picasában.
+
+**Telepítés Windowsra**
+
+- Minden kiadáshoz készül **telepítő** (`PicasaPy-Setup-<verzió>.exe`):
+  letöltöd, elindítod, kész — Pythont nem kell telepítened hozzá. Start
+  menü bejegyzést és kérésre asztali ikont készít, és a Programok és
+  szolgáltatások alól eltávolítható. Lásd [Első
+  lépések](getting-started.md).
+
 ## 2026-09-12
 
 **Képek biztonsági mentése — új fejezet**

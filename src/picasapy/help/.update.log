@@ -18,3 +18,4 @@
 2026-09-12T03:09:28+02:00 elokeszitve (66a71a378f14435d4740d2848c48bdba9f7bbde2 -> 9c56648): 235 erintett fajl a src/ alatt
 2026-09-12T03:28:13+02:00 a session nem valtoztatott a sugon (66a71a378f14435d4740d2848c48bdba9f7bbde2 -> 9c56648)
 2026-09-12T03:29:00+02:00 kezi utojatek: a "lezar" push-a NEGYEDSZER bukott non-fast-forward miatt (kozben a 0d3454d4 ment a main-re); rebase utan az 594753d1 felment. A sugo VALOJABAN frissult — 19 fajl —, tehat az "a session nem valtoztatott a sugon" sor FELREVEZETO. TOVABBA: a .last_documented_commit-ot a lezar a commit UTAN irja, ezert sosem kerul bele a commitba, a masnapi "elokeszit" pedig `git reset --hard origin/main`-nel visszaallitja a regi ertekre — emiatt indult a mai tartomany ujra 66a71a3-tol, es dokumentaltuk ujra a tegnapi napot is. Ez a commit kezzel viszi fel a 9c56648-at.
+2026-09-13T03:09:33+02:00 elokeszitve (9c56648f9a0457475b148554eca987bb619d8a0d -> 70a25be): 58 erintett fajl a src/ alatt

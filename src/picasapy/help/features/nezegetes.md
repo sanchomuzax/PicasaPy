@@ -17,14 +17,33 @@ A néző alján és szélein a következőket találod:
   négyzet akkor is ott marad, ha a sáv ki van kapcsolva — ez az út
   vissza.
 
-A néző **összehasonlító módot** is tud: megjelenítheted ugyanazt a képet
-kétszer, vagy két különböző képet egymás mellett.
-
 A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel).
 
 A képre jobbgombbal kattintva ugyanazok a parancsok érhetők el, mint a
 rácsban: forgatás, mentés, visszaállítás, elrejtés, keresés a lemezen,
 tulajdonságok, törlés a lemezről.
+
+## Két kép egymás mellett
+
+A néző alsó sávjában, a **Lejátszás** gomb előtt három kis szegmens áll
+egymás mellett. Ezek döntik el, hány kép látszik:
+
+| szegmens | mit csinál |
+|---|---|
+| **Csak egy kép megjelenítése** | a szokásos, egyképes nézet — ez az alapállás |
+| **Ugyanazon kép megjelenítése kétszer** | ugyanaz a kép kétszer: **balra a szerkesztés előtti**, jobbra a mostani állapot |
+| **Két különböző kép megjelenítése** | **még nem működik** — a szegmens látszik, de nem választható |
+
+Az **Ugyanazon kép megjelenítése kétszer** a szerkesztés
+összehasonlítására való: a bal oldalon a nyers fájl van, minden effekt
+és javítás nélkül, a jobb oldalon pedig az, amit éppen csinálsz belőle.
+Így egy pillantással látod, mennyit változott a kép.
+
+Ha két kép látszik, megjelenik mellettük egy negyedik szegmens is,
+**Fókusz váltása a képek között** — ezzel jelölöd ki, melyik oldal az
+aktív. Az aktív oldal felső sarkában **Kijelölve** felirat áll.
+
+Videónál a kettős nézet nem használható.
 
 ## Nagyítás a nézőben
 

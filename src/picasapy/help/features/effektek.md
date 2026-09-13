@@ -10,6 +10,10 @@ A csempe sarkában látható **kék jelvény** azt jelenti, hogy az az effekt
 **egy kattintással** hat: nincs mit állítani rajta, azonnal rákerül a
 képre.
 
+Néhány effektnek **színválasztója** is van a csúszkák mellett — például a
+**Neon**é, ahol te adod meg, milyen színnel világítsanak a kontúrok
+(alapból piros).
+
 A csempék kis előnézete a képed **mostani állapotát** mutatja: ha már
 tettél rá effektet — mondjuk fekete-fehérré alakítottad —, akkor minden
 csempe alapja is az, és a csempe csak a saját hatását teszi rá. Így
@@ -60,11 +64,11 @@ effekt a nyers fotóra.
 | Árnyékvetés | árnyék a kép mögé |
 | Fókusznagyítás | egy pont felnagyítása, sugaras elmosással |
 | Múzeumi matt | képkeret-szerű paszpartu |
-| Neon | világító kontúrok |
+| Neon | világító kontúrok, választható színben |
 | Ceruzarajz | ceruzavázlat hatás |
 | Képpontnagyítás | durva képpontokra bontás |
 | Polaroid | polaroid keret és színek |
-| Lágy fókusz | lágy fókusz (a 3. fültől eltérő beállításokkal) |
+| Lágyítás | lágy, elmosott kép — a **Lágyítás** és a **Fokozat** csúszkával |
 | Vignetta | sötétedő sarkok |
 
 ## További effektek (6. fül)

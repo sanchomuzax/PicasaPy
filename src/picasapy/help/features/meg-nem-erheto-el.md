@@ -26,10 +26,12 @@ fölöslegesen.
 - Szerkesztési vezérlők megjelenítése
 - Keresési opciók
 - Kis képek
-- Színkezelés használata
 - Időrend (Ctrl+5) — a nézet még nem készült el, ezért a menüpont és a
   billentyű is inaktív
 - Megjelenítési mód ▸ 16 bites (szemcsézett)
+
+(A **Színkezelés használata** kapcsoló viszont már **működik** — lásd
+[Beállítások](beallitasok.md).)
 
 **Mappa**
 
@@ -73,6 +75,14 @@ fölöslegesen.
 (A **Súgó - tartalom és tárgymutató** tétel és az **F1** billentyű ma
 már **működik**: ezt a súgót nyitja meg — lásd
 [A beépített súgó](sugo.md).)
+
+**A nézőben**
+
+- **Két különböző kép megjelenítése** — a néző alsó sávjában lévő
+  harmadik szegmens. Két *különböző* kép egymás mellé tétele még nem
+  készült el; ugyanannak a képnek a szerkesztés előtti és mostani
+  állapota viszont **megjeleníthető** egymás mellett, lásd
+  [Nézegetés](nezegetes.md).
 
 **Helyi menükben**
 

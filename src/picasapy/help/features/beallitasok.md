@@ -69,13 +69,31 @@ Ezek csak a képernyőn látszó képet módosítják; a fájljaidat nem érinti
 A választott mód mindenütt hat, ahol képet látsz: az indexképeken, a nagy
 nézőben és a **diavetítésben** is.
 
+## Színkezelés használata
+
+A **Nézet ▸ Színkezelés használata** kapcsolóval azt döntöd el,
+figyelembe vegye-e a program a képbe **beágyazott színprofilt**.
+
+Sok fényképezőgép és képszerkesztő beleírja a fájlba, milyen színteret
+használt — például Adobe RGB-t az sRGB helyett. Ha ezt senki nem veszi
+figyelembe, az ilyen kép fakónak vagy túl élénknek látszik. Bekapcsolva a
+PicasaPy a profil szerint alakítja át a képet a képernyőre.
+
+- Alapból **ki van kapcsolva**, és a választásod megmarad a következő
+  indításig.
+- A **nagy nézőben és a szerkesztőben** látszik a hatása; a képfájlodhoz
+  nem nyúl, és a kimentett képet sem változtatja meg.
+- Ha a képben nincs profil, vagy már eleve sRGB, semmi nem történik — a
+  legtöbb fényképezőgépes JPEG ilyen.
+- Átkapcsolás után a kép azonnal újraépül.
+
 ## Ami az ablakról megmarad
 
 A PicasaPy megjegyzi és a következő indításnál visszaállítja:
 
 - az ablak méretét és helyét (maximalizált állapotban is),
 - a bal hasáb szélességét,
-- a sötét témát és a nyelvet,
+- a sötét témát, a nyelvet és a **Színkezelés használata** kapcsolót,
 - a mappák és a bal hasáb rendezését,
 - az indexképek felirat-módját és a feliratsáv állapotát,
 - a bal hasáb három nézet-kapcsolóját: a **mappanézet módját**, az

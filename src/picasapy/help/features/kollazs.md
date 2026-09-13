@@ -71,14 +71,20 @@ A **Beállítások** fülön:
 - **Kijelölés törlése** (Ctrl+D) és **Az összes kijelölése** (Ctrl+A).
 - **Eltávolítás** (Del) — a kijelölt képek kivétele a kollázsból.
 
-> A forgatás **csak a Képkupacban** használható. A másik öt típusnál
-> (Mozaik, Képkockamozaik, Rács, Indexkép, Többszörös exponálás) a képek
-> helyét és állását az elrendezés adja: ott nincs forgató gyűrű, a bal
-> oldali forgató gombsor és a **Forgatás igazítása** almenü pedig szürke.
+> A **szabad** forgatás — a képen megjelenő forgató gyűrű, amivel
+> tetszőleges szögbe állítod a képet — **csak a Képkupacban** használható.
+> A másik öt típusnál (Mozaik, Képkockamozaik, Rács, Indexkép, Többszörös
+> exponálás) a képek helyét és állását az elrendezés adja, ezért ott nincs
+> gyűrű.
 >
-> A **Többszörös exponálásnál** a képek egymásra vetítve jelennek meg,
-> ezért ott nincs mit kijelölni: a vászon üres területére jobbgombbal
-> kattintva nem nyílik meg menü.
+> A **bepattintó igazítás** viszont mindenütt működik, ahol egyáltalán ki
+> tudsz jelölni képet: a bal oldali kis gombsorral és a **Forgatás
+> igazítása** almenüvel a rácsos elrendezésekben is egyenesbe vagy 90,
+> 180, 270 fokba fordíthatod a kijelölt képet.
+>
+> Egyedül a **Többszörös exponálásnál** nem: ott a képek egymásra vetítve
+> jelennek meg, ezért nincs mit kijelölni — a vászon üres területére
+> jobbgombbal kattintva nem is nyílik meg menü.
 
 ## Háttér
 
