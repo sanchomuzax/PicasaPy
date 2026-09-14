@@ -315,11 +315,24 @@ class TestEffectTileHeightsAreUniform:
         bottom = label.property("y") + label.property("height")
         assert bottom <= button.property("height") + 1, "a felirat kilóg a gombból"
 
-    def test_effect_label_matches_the_tool_tile_font_size(
+    def test_effect_label_is_not_larger_than_the_tool_tile_font_size(
         self, qml_engine, qt_app
     ):
         """#422: a felhasználó szerint a KISEBB a helyes — az effekt-csempe
-        felirata ugyanakkora legyen, mint az 1. fül eszköz-csempéié."""
+        felirata NEM lehet nagyobb az 1. fül eszköz-csempéinél.
+
+        ⚠️ **#2990: ez a próba korábban EGYENLŐSÉGET kötött ki**, pedig a
+        felhasználó szava nem az volt: *„az effekt-csempék felirata nagyobb
+        volt, mint az eszköz-csempéké — a kisebb a helyes."* Az egyenlőség a
+        #422 akkori MEGVALÓSÍTÁSA volt (mindkettő 10 képpont), nem maga a
+        követelmény.
+
+        A #2990 az eredeti ABSZOLÚT fokozatait vette át (`m_fxlabel` 11 <
+        `m_buttonfontCbelow` 12) — ez a követelményt teljesíti, az
+        egyenlőség-kikötés viszont buktatta volna. A reláció ezért `<=`; a
+        fordított irányt (csempefelirat NAGYOBB) továbbra is kizárja, mert
+        épp az volt a panasz. A pontos fokozatokat a
+        `test_felirat_fokozatok_2990.py` köti ki."""
         column = _load(qml_engine, self._QML)
         qt_app.processEvents()
         effect_label = column.findChild(QObject, "rovidLabel")
@@ -331,6 +344,6 @@ class TestEffectTileHeightsAreUniform:
         tile_label = panel.findChild(QObject, "editToolCropLabel")
         if tile_label is None:   # a csempe felirata nem kap saját objectName-t
             pytest.skip("az eszköz-csempe felirata nem érhető el objectName-en")
-        assert effect_label.property("font").pixelSize() == (
+        assert effect_label.property("font").pixelSize() <= (
             tile_label.property("font").pixelSize()
         )
