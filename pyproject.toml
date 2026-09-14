@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picasapy"
-version = "0.8.445"
+version = "0.8.446"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
@@ -23,6 +23,10 @@ dependencies = [
     "opencv-python-headless",
     "pillow",
     "piexif",
+    # #528: a nyers (RAW) fájlok dekódolása. A LibRaw kötése — ugyanannak a
+    # kódcsaládnak a mai tagja, amit az eredeti Picasa is beépített
+    # (`dcraw v9.19`, a sztring ott van a `Picasa3.exe`-ben).
+    "rawpy",
     "watchdog",
 ]
 
