@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.446] – 2026-09-14
+
+### Hozzáadva
+
+- **A fényképezőgépek nyers (RAW) fájljaiból végre megjelenik a kép**
+  (#528). A `.cr2`, `.nef`, `.arw`, `.dng` és a többi nyers fájlt eddig
+  felismertük — bekerültek a könyvtárba —, de sem a rácson, sem a nagy
+  nézetben nem látszott belőlük semmi, mert a használt képolvasónak nincs
+  nyers dekódere. Mostantól ugyanaz a dekóder-család dolgozza fel őket, amit
+  az eredeti Picasa is beépített, és a kész bélyegkép a tárba is bekerül,
+  tehát a második megnyitás már gyors. A mappák borítóképe is megjelenik, ha
+  nyers fájl. Ahol a fájl mégsem dekódolható, ott helyőrző látszik, és a
+  napló megmondja az okát — nem néma, üres kép.
+
 ## [0.8.445] – 2026-09-14
 
 ### Hozzáadva

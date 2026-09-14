@@ -26,6 +26,7 @@ from picasapy.cvimage import (
 )
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
+from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
 from picasapy.render import apply_filters
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
@@ -382,6 +383,11 @@ class ThumbnailCache:
         nagyobb, mint a sima thumbnailé). Alapból a cache saját mérete."""
         if source.suffix.lower() in VIDEO_EXTENSIONS:
             return _decode_video_frame(source)
+        if nyers_utvonal(source):
+            # #528: a nyers (RAW) fájlnak nincs `cv2` dekódere — a LibRaw-ra
+            # kell mennie. A célméretet átadjuk: ha a fájlban van beágyazott
+            # JPEG-előnézet, abból nagyságrenddel gyorsabb a bélyegkép.
+            return dekodol_nyerset(source, self._size if target is None else target)
         # #144: a forrást EGYSZER olvassuk be — a méret-próba és a dekódolás
         # ugyanabból a bájtpufferből dolgozik (korábban PIL Image.open +
         # np.fromfile kétszer nyitotta a fájlt, ami NAS-on drága).

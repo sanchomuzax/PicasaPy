@@ -100,12 +100,19 @@ IKON_MERET = 64
 def _olvasd_be(utvonal: Path):
     import cv2
 
-    # #1991: ékezetes néven a `cv2.imread(str(...))` Windowson némán
-    # `None`-t ad — a bájtokat magunk olvassuk be.
-    nyers = np.fromfile(str(utvonal), dtype=np.uint8)
-    if nyers.size == 0:
-        return None
-    kep = cv2.imdecode(nyers, cv2.IMREAD_COLOR)
+    from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
+
+    if nyers_utvonal(utvonal):
+        # #528: nyers (RAW) borítónak sincs `cv2` dekódere — enélkül a
+        # mappa ikonja néma szürke maradt.
+        kep = dekodol_nyerset(utvonal, IKON_MERET)
+    else:
+        # #1991: ékezetes néven a `cv2.imread(str(...))` Windowson némán
+        # `None`-t ad — a bájtokat magunk olvassuk be.
+        nyers = np.fromfile(str(utvonal), dtype=np.uint8)
+        if nyers.size == 0:
+            return None
+        kep = cv2.imdecode(nyers, cv2.IMREAD_COLOR)
     if kep is None:
         return None
     magassag, szelesseg = kep.shape[:2]

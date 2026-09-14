@@ -24,7 +24,10 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColorSpace, QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
+from picasapy.cvimage import scale_down
 from picasapy.ini.filters import FilterOp
+from picasapy.lazy_cv2 import cv2
+from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
@@ -676,6 +679,8 @@ def _decode_source(
     szabványos ICC-átalakítása, nem saját színtan (spec 5.12). Profil nélküli
     vagy már sRGB képen ez no-op, a kikapcsolt állapot pedig — ahogy a
     binárisban is — semmit nem tesz."""
+    if nyers_utvonal(path):
+        return _nyers_forras(path, full_res=full_res)
     reader = QImageReader(str(path))
     reader.setAutoTransform(True)
     native = reader.size()
@@ -692,6 +697,30 @@ def _decode_source(
     if color_managed:
         source = _srgb_be(source)
     return _qimage_to_rgb_array(source)
+
+
+def _nyers_forras(path: Path, *, full_res: bool) -> np.ndarray | None:
+    """Nyers (RAW) forrás → RGB tömb, az előnézet-korláttal (#528).
+
+    A `QImageReader`-nek nincs nyers beolvasója, tehát a nyers fájl ezen az
+    úton is külön dekódolót kíván (`picasapy.rawdecode`, LibRaw).
+
+    Két dolog szándékosan MARAD EL itt:
+
+    * **EXIF-orientáció** — a LibRaw a nyers fájl saját `flip` mezőjét már a
+      demozaikolás közben alkalmazza, tehát a `setAutoTransform` megfelelője
+      megvan; másodszor forgatni hiba lenne.
+    * **ICC-átalakítás** (`color_managed`) — a LibRaw kimenete alapból sRGB,
+      nincs mit átalakítani. A nyers fájlban nincs beégetett színtér, ezért a
+      #1725 kapcsolójának itt nincs mit érvényesítenie.
+    """
+    bgr = dekodol_nyerset(path)
+    if bgr is None:
+        return None
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    if full_res:
+        return rgb
+    return scale_down(rgb, _MAX_PREVIEW_EDGE)
 
 
 def _srgb_be(kep: QImage) -> QImage:
