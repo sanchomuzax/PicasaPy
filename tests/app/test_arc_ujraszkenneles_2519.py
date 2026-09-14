@@ -141,11 +141,25 @@ class TestMasodikMenet:
         )
 
         _run(ctl.scanFinished, ctl.scanForFaces)
+        # #2824: a MÁSODIK menet ugyanúgy bevárja a szálat, mint az első.
+        #
+        # ⚠️ Eddig itt fordítva volt a sorrend: a próba a hívásszámot
+        # ELŐBB állította, és csak azután várta be a háttérszálat. Az első
+        # menetnél a bevárás megelőzi az állítást — az aszimmetriának nem
+        # volt oka, viszont hagyott egy rést: a `scanFinished` a
+        # munkaszálról QUEUED kapcsolaton érkezik, tehát a jelzés
+        # kézbesítése és a szál TÉNYLEGES kifutása két külön pillanat.
+        # A bevárás ezt a rést zárja be.
+        #
+        # ⛔ Ez NEM diagnózis: a jegy `1 == 2` alakú bukását nem
+        # reprodukáltuk (14 helyi futás, terhelés alatt is zöld). Ez egy
+        # HIPOTÉZIS-KIZÁRÁS — a sorrendből eredő magyarázatot veszi le a
+        # listáról, hogy a következő CI-bukásnál kevesebb maradjon.
+        assert ctl.waitForBackgroundWorkers(5.0)
         assert len(detektor.calls) == 2, (
             "a megváltozott fotót ÚJRA meg kell vizsgálni — a régi eredmény "
             f"másik tartalomra vonatkozott (index: {_index_allapot(tmp_path)})"
         )
-        assert ctl.waitForBackgroundWorkers(5.0)
 
     def test_a_kizart_fotot_nem_vizsgalja(self, qt_app, tmp_path):
         """A `kizarva` jelölés az eredeti `facerect = 1`-ének megfelelője: a
