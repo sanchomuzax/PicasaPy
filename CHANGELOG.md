@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.452] – 2026-09-15
+
+### Belső
+
+- **A Picasából hozott arcok átvehetők** (#3002). A régi Picasa adatbázisában
+  tárolt, névvel ellátott arcok mostantól át tudnak kerülni a képek mellé
+  írt `.picasa.ini` fájlba — ott, ahol még nincs arcadat. Ahol már van, ott
+  a program hozzá sem nyúl, tehát semmi nem veszhet el. A funkcióhoz menüből
+  elérhető gomb még nem tartozik — az külön lépés.
+
 ## [0.8.451] – 2026-09-15
 
 ### Javítva
