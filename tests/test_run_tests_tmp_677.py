@@ -88,6 +88,12 @@ class TestBasetempAtadasa:
             volt_sajat_mappa.append(ut.exists())
             return 0
 
+        # #2848: a `main()` ÚJRASZÁMOLJA a szálszámot, és a CI-ben magától
+        # sorosra vált — a modulszintű érték önmagában nem elég. A
+        # párhuzamos módot a támogatott úton, KÉRÉSSEL kényszerítjük ki
+        # (a kifejezett kérés a CI-ben is nyer), különben ez a teszt a
+        # felhő-körben nem azt méri, amit a neve mond.
+        monkeypatch.setenv("PICASAPY_TESZT_PARHUZAM", "4")
         monkeypatch.setattr(run_tests, "_PARHUZAM", 4)
         monkeypatch.setattr(run_tests, "_run_pytest", _rogzit_pytest)
         monkeypatch.setattr(run_tests, "_takarits_regi_maradekot", lambda: None)
