@@ -6160,6 +6160,18 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Unable to play this video.</source>
         <translation>Ez a videó nem játszható le.</translation>
     </message>
+    <message>
+        <source>Create a new starting point</source>
+        <translation>Új kezdőpont beállítása</translation>
+    </message>
+    <message>
+        <source>Create a new ending point</source>
+        <translation>Új végpont beállítása</translation>
+    </message>
+    <message>
+        <source>Reset trim</source>
+        <translation>Vágás visszaállítása</translation>
+    </message>
 </context>
 <context>
     <name>startup</name>

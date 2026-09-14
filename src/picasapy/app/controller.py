@@ -45,6 +45,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
+from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
 from .collage_controller import CollageMixin
@@ -152,6 +153,7 @@ class AppController(
     TesztuzemMixin,
     AppearanceMixin,
     ColorManagementMixin,
+    MovieTrimMixin,
     LanguageMixin,
     # #1575: Nézet ▸ Megjelenítési mód — a tizenegy tagú kizáró
     # csoport állapota. A szelet nem perzisztens (mérve: az eredeti
