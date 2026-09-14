@@ -236,11 +236,49 @@ _KIHAGYOTT_APP_FAJLOK: dict[str, str] = {}
 #: MA SEM ismert, és négy egyidejű Qt-processz a négymagos gépet telíti. A
 #: kettő a mért felezés a kockázat nélkül.
 #:
-#: Miért nem érinti ezt a CI: a `ci.yml` **nem ezt a futtatót** használja,
-#: hanem darabonként közvetlenül a `pytest`-et (208. sor). Ez a szám tehát
-#: kizárólag a HELYI futásokra hat, és két védőháló is van rajta: a
-#: `_dontsd_el_a_parhuzamot` másik futás mellett magától sorosra vált
-#: (#1037), a `PICASAPY_TESZT_PARHUZAM=1` pedig bármikor visszaállítja.
+#: ⛔ **ÖNHELYESBÍTÉS (2026-09-14, #2848).** Itt eddig az állt, hogy „a
+#: `ci.yml` nem ezt a futtatót használja, hanem darabonként közvetlenül a
+#: `pytest`-et (208. sor)", tehát ez a szám csak a helyi futásokra hat.
+#: **Nem igaz.** A `ci.yml` a `teszt-darabok.yml`-t hívja platformonként, és
+#: annak „Run tests" lépése `python scripts/run_tests.py --shard N/4`-et fut
+#: — a #1262 óta (2026-08-23). A hivatkozott 208. sor a `ci.yml`-ben a
+#: DOKUMENTÁCIÓ-ŐRÖK lépése, nem a tesztmátrix.
+#:
+#: Következmény: a 2026-09-10-i emelés a CI-ben is kettő szálat kapcsolt be,
+#: pedig a párhuzamos CI-t a #1044 visszavonása (#988) megtiltotta, amíg a
+#: #988/#999 gyökérok nincs javítva. Ezért a `_dontsd_el_a_parhuzamot` a
+#: `CI` környezeti változóra **magától sorosra vált** (őr:
+#: `tests/tools/test_ci_parhuzam_2848.py`). Ez a szám innentől tényleg csak a
+#: HELYI futásokra hat — a kapu pedig ott van, ahol az indoklása is, nem a
+#: munkafolyamat `env:` blokkjában.
+#:
+#: A helyi védőhálók változatlanok: a `_dontsd_el_a_parhuzamot` másik futás
+#: mellett magától sorosra vált (#1037), a `PICASAPY_TESZT_PARHUZAM=1` pedig
+#: bármikor visszaállítja.
+#:
+#: ### A NÉGY szál kérdése LEZÁRVA — nem járható (2026-09-14, #2848)
+#:
+#: A jegy azt kérte, hogy a négyszálas windowsos összeomlás (0xC0000005)
+#: okát mérjük ki, vagy mondjuk ki, hogy az út nem járható. A válasz: **nem
+#: járható**, és ehhez nem is kellett négy szálra menni.
+#:
+#: A fenti önhelyesbítés miatt a CI négy napig KETTŐ szálon futott
+#: (2026-09-10 … 09-14), és ebben az állapotban a windows 1/4 darab
+#: **processz-szinten összeomlott** (2026-09-12, `0x...409`):
+#:
+#:   tests\app\test_projekt_mappa_figyeles_1123.py → exit 3221226505
+#:   Fatal Python error: _enter_buffered_busy: could not acquire lock for
+#:   <_io.BufferedWriter name='<stderr>'> at interpreter shutdown,
+#:   possibly due to daemon threads
+#:
+#: Az újrapróbálás UGYANÚGY elhasalt, tehát nem egyszeri zaj. A jelenség a
+#: #999 tárgya: a háttérszálak lebontása terhelés alatt. ⇒ Ha már KETTŐ szál
+#: is processz-halált hoz a felhő-futtatón, a NÉGY emelése a négymagos
+#: fejlesztői gépen nem védhető — a #1038 kettős alapértelmezése marad.
+#:
+#: ⚠️ Amit ez NEM állít: nem azonosítottuk a #1038 eredeti 0xC0000005-ét
+#: (más kilépőkód, más tesztfájl). A négy szál elutasításához erre nincs is
+#: szükség; a gyökérok a #999-en marad.
 _PARHUZAM = max(1, int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or 2)
 
 
@@ -420,16 +458,27 @@ def _futtatja_a_futtatot(parancssor: str) -> bool:
 
 
 def _dontsd_el_a_parhuzamot(
-    kert: str | None, alap: int, masik_fut: bool
+    kert: str | None, alap: int, masik_fut: bool, ci: bool = False
 ) -> tuple[int, str]:
     """Hány szálon fussunk, és MIÉRT — naplózható indoklással.
 
     A kért érték (környezeti változó) mindig nyer: aki explicit beállítja,
-    tudja, mit csinál. Automatikus visszalépés csak akkor van, ha nem kértek
-    semmit, és közben fut egy másik futás.
+    tudja, mit csinál. Automatikus visszalépés két esetben van: a CI-ben, és
+    ha nem kértek semmit, de fut egy másik futás.
+
+    ⛔ **A CI-ben SOROS, hacsak nem kérték kifejezetten (#2848).** A
+    gépen belüli párhuzamos CI-t a #1044 visszavonása (#988) megtiltotta,
+    amíg a #988/#999 gyökérok nincs javítva — a főágat pirosra vitte, ami
+    e-mailt küld a tulajdonosnak. A tilalom mégis kilyukadt: a helyi
+    alapértelmezés emelése (#1038, 2026-09-10) a CI-be is átszivárgott,
+    mert a #1262 óta (2026-08-23) a `teszt-darabok.yml` EZT a futtatót
+    hívja darabonként. A döntés ezért ide került, a `teszt-darabok.yml`
+    `env:` blokkja helyett: itt van az a kód, amelyik tudja, miért.
     """
     if kert:
         return alap, f"kérésre (PICASAPY_TESZT_PARHUZAM={kert})"
+    if ci and alap > 1:
+        return 1, "CI — a gépen belüli párhuzamosság tiltott (#2848/#1044)"
     if masik_fut and alap > 1:
         return 1, "MÁSIK tesztfuttatás is dolgozik a gépen — sorosra váltok"
     return alap, "alapértelmezés"
@@ -885,7 +934,10 @@ def _bejelentkezes() -> None:
     global _PARHUZAM
     masik = _masik_futas_pidjei()
     _PARHUZAM, indok = _dontsd_el_a_parhuzamot(
-        os.environ.get("PICASAPY_TESZT_PARHUZAM"), _PARHUZAM, bool(masik)
+        os.environ.get("PICASAPY_TESZT_PARHUZAM"),
+        _PARHUZAM,
+        bool(masik),
+        ci=bool(os.environ.get("CI")),
     )
     print(
         f"Futtatás: {_PARHUZAM} párhuzamos részfutás / {os.cpu_count()} mag "
