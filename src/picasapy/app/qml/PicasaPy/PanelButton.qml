@@ -30,8 +30,21 @@ Rectangle {
     //: legfeljebb ennyire zsugorodhat: olvashatatlanul kicsi szöveg helyett
     //: inkább vágunk (az eredeti `*_clip` konténereinek módja).
     property int minimumLabelPixelSize: Math.max(7, Theme.fontSize - 5)
-    //: #422: a felirat alap-fokozata (a `ToolTile`-lel azonos szint).
-    property int labelAlapFokozat: Theme.fontSize - 2
+    //: #2990: a felirat alap-fokozata a gomb SZEREPE szerint — az eredeti
+    //: `editpanel.tre` is így osztja a betű-makrókat:
+    //:
+    //:   bélyegképes csempe → `m_fxlabel`      11 px, félkövér
+    //:   sima gomb          → `m_buttonfontC`  12 px
+    //:
+    //: A `thumbSource` nem esetleges ismertetőjel: az eredetiben PONTOSAN a
+    //: bélyegképes `fxN` fészkek felirata kapja az `m_fxlabel`-t, a
+    //: `croprotatecrop`-féle sima gomboké az `m_buttonfontC`-t. A fokozatok
+    //: a `Theme`-ben élnek, itt csak a szerep dől el.
+    //:
+    //: Példányonként felülírható (a #2597 fokozat-illesztése ebből indul ki).
+    property int labelAlapFokozat: pbtn.thumbSource !== ""
+        ? Theme.tileLabelSize
+        : Theme.buttonLabelSize
     //: #815: a felirat BETŰKÖZE — MÉRVE, `fonttrack -1`. Ugyanez az érték
     //: minden érintett makróban: `m_fxlabel` (a 12 effekt-csempe felirata),
     //: `m_buttonfontC`, `m_buttonfontCbelow`, `m_buttonfontLC` (a panel

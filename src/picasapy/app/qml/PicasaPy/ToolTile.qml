@@ -103,12 +103,18 @@ Item {
         //: ARÁNY volt: a Qt betűtípus-metrikájának 13,64 képpontos
         //: sormagasságát szorozta, tehát 12–13 képpontot adott — a
         //: tulajdonos képernyőmentésén MÉRVE 13, az eredetiben 10.
-        //: A 10 nem becslés: a `m_fxlabel` erőforrás-makró
-        //: `fontleading 10`-et ír elő (`ui-audit-editor.md` 3.3).
+        //: A 10 nem becslés: az EZT AZ ELEMET leíró `m_buttonfontCbelow`
+        //: makró `fontleading 10`-et ír elő. *(#2990: korábban itt az
+        //: `m_fxlabel` volt megnevezve — a SORKÖZ értéke ugyanaz a 10
+        //: mindkettőben, tehát a szám jó volt, csak a hivatkozás mutatott a
+        //: másik makróra. Az eszköz-csempe címkéjét az `editpanel.tre`
+        //: névszerint a `m_buttonfontCbelow`-hoz köti: `editpanel/crop-label`.)*
         lineHeightMode: Text.FixedHeight
         lineHeight: Theme.lineLeading
         text: tile.label
-        font.pixelSize: Theme.fontSize - 2
+        //: #2990: `m_buttonfontCbelow` → fontsize 12. Az effekt-csempe
+        //: ennél KISEBB (11, `Theme.tileLabelSize`) — a #422 döntése.
+        font.pixelSize: Theme.buttonLabelSize
         color: Theme.textDark
     }
     MouseArea {

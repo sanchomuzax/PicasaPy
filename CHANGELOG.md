@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.447] – 2026-09-14
+
+### Megváltozott
+
+- **A szerkesztő feliratai az eredeti Picasa betűméreteit kapták** (#2990).
+  Eddig a panel minden felirata egyforma, 10 képpontos volt. Az eredetiben
+  az effekt-csempék felirata 11 képpontos, félkövér, a gomb- és
+  eszköz-csempe-feliratok pedig 12 képpontosak — most nálunk is így van. Az
+  effekt-csempék felirata továbbra is a kisebb a kettő közül, ahogy azt
+  korábban kérted.
+
 ## [0.8.446] – 2026-09-14
 
 ### Hozzáadva

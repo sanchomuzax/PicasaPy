@@ -388,6 +388,28 @@ QtObject {
     readonly property int headlineLargeSize: 28
 
     readonly property int fontSize: 12              // felület: 11–13 px
+
+    //: #2990: a SZERKESZTŐ-PANEL két felirat-fokozata, az eredeti ABSZOLÚT
+    //: értékeivel. A `fontmacros_win.tre` mérve:
+    //:
+    //:   `m_fxlabel`           fontsize **11**, fontweight **700**
+    //:                         → `editpanel/fxlabelN`, az effekt-csempék
+    //:   `m_buttonfontCbelow`  fontsize **12**, fontweight 400
+    //:                         → `editpanel/crop-label`, az eszköz-csempék
+    //:   `m_buttonfontC`       fontsize **12**, fontweight 400
+    //:                         → minden sima gombfelirat
+    //:
+    //: ⚠️ A két szám VISZONYA is követelmény, nem csak az értékük: a #422-ben
+    //: a felhasználó kimondta, hogy az effekt-csempe felirata NE legyen
+    //: nagyobb az eszköz-csempéénél. Az eredeti 11 < 12 ezt teljesíti — ha
+    //: valaha megcserélődnének, a panasz visszajönne. Őr:
+    //: `tests/app/qml_functional/test_felirat_fokozatok_2990.py`.
+    //:
+    //: Korábban mindkettő `fontSize - 2` = 10 volt (a #422 úgy tette őket
+    //: egyenlővé); a döntés azóta ITT él, nem elemenként beírva.
+    readonly property int tileLabelSize: 11
+    readonly property int buttonLabelSize: 12
+
     //: A TÖBBSOROS feliratok sorköze, képpontban — az eredeti Picasa
     //: `fontleading` tulajdonsága (#2494/#2567). Nem becslés és nem a Qt
     //: betűtípus-metrikája: a `fontmacros_win.tre` MINDKÉT ide tartozó
