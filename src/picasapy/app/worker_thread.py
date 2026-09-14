@@ -32,6 +32,7 @@ bejegyzést, különben a csík örökre pörögne."""
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import weakref
@@ -39,6 +40,8 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Protocol, runtime_checkable
 
 from .busy_registry import get_app_busy_registry
+
+_log = logging.getLogger(__name__)
 
 #: A `threading.Thread` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
 #: cserélje: `monkeypatch.setattr(worker_thread, "_Thread", …)`.
@@ -214,6 +217,43 @@ class BackgroundWorkerMixin:
         def _run() -> None:
             try:
                 target(*args, **(kwargs or {}))
+            except BaseException:  # noqa: BLE001 — ld. a hosszú indoklást
+                # ⛔ #1457: A KIEJTETT KIVÉTEL MEGÖLI A FOLYAMATOT.
+                #
+                # Ha a `target` kivétellel áll le, a `threading` alapértelmezett
+                # `excepthook`-ja a `sys.stderr`-re írja a visszakövetést. Ez
+                # rendes futás közben ártalmatlan — az értelmező LEÁLLÁSA
+                # közben viszont végzetes: a `stderr` pufferének zárja ilyenkor
+                # már nem szerezhető meg, és a CPython `Fatal Python error:
+                # _enter_buffered_busy`-val ABORTÁL.
+                #
+                # Ezt MÉRTÜK, nem feltételezzük. A `788877d6` main-futásán a
+                # windows 4/4 darab így halt meg, KÉTSZER egymás után (a
+                # futtató újrapróbálása sem fedte el), miközben MIND A HÉT
+                # teszt átment:
+                #
+                #     7 passed in 2.65s
+                #     Exception in thread picasapy-sync-dirty:
+                #     Fatal Python error: _enter_buffered_busy: could not
+                #       acquire lock for <_io.BufferedWriter name='<stderr>'>
+                #       at interpreter shutdown, possibly due to daemon threads
+                #     Python runtime state: finalizing
+                #
+                # Kilépőkód `3221226505` = `0xC0000409`, azaz windowsos
+                # fast-fail — pontosan az az alak, amit a #1457 hónapok óta
+                # „véletlenszerű összeomlásként" gyűjt. A hiba a tesztek UTÁN
+                # történik, ezért egyetlen állítás sem fogja meg.
+                #
+                # A naplózás azért biztonságosabb, mint a kiejtés: a
+                # `logging` a saját kezelőjén megy, és ha AZ nem megy (mert
+                # az értelmező már zár), a `logging` elnyeli — nem abortál.
+                # A hiba tehát nem tűnik el, csak nem viszi magával a
+                # folyamatot; a `raiseExceptions` kikapcsolására nincs
+                # szükség, mert a `logging` leállás közben magától csendes.
+                #
+                # ⚠️ Ez NEM elnémítás: eddig a kivétel a `stderr`-re ment és
+                # senki nem olvasta; mostantól a naplóba megy, szálnévvel.
+                _log.exception("háttérszál hibával állt le: %s", name or "?")
             finally:
                 # ⚠️ #999 — A SORREND ITT SZÁMÍT, ÉS KORÁBBAN FORDÍTVA VOLT.
                 #
