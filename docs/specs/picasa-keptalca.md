@@ -1350,3 +1350,90 @@ A megnyitott MAPPA valóban nem kapja meg a tokent (a fenti eltérés) — ez a
 bekötés után is így van, és szándékos: a mappanézetben szinte mindig üres a
 kép-kijelölés, ott a token a tálca mindennapi kinézetét írná át.
 
+
+## 23. ⛳ Mit MUTAT a túlcsordulás-konténer: FÜGGŐLEGES lista (2026-09-14, 305. kör, #2973)
+
+*Forrás: a kattintás-kezelő `0x005fe090`–`0x005fe11f`, a konténer
+`COverflowContainer` (RTTI-vtábla `0x00c9221c`), a hívott rés a vtábla
+`+0x38` = `0x005978f0`, az elrendezés `0x00597f80`, a `Property`-feldolgozó
+`0x00597549` (`cellwidth` → `+0x274`) és `0x00597611` (`cellheight` →
+`+0x278`), a `.tre` `outputlayout.tre:143–150`, a geometria
+`respack.yt:2171910`–`:2177925` és `:3237287`.*
+
+A 22. szakasz kimérte, hogy a „További…" **billenti** a konténert, de nem
+azt, hogy mit látni utána. Ez a szakasz azt adja meg.
+
+### 23.1 A kattintás két dolgot tesz — az egyik CACHE-ÜRÍTÉS
+
+```
+0x005fe0c2  cmp byte [morebutton+0x359], 0
+0x005fe0d3  sete al
+0x005fe0dd  mov byte [[főablak+0xea0]+0x264], al   ; a billentett állapot
+...
+0x005fe110  mov dword [overflowcontainer+0x268], 0xffffffff
+0x005fe11c  call [vtbl+0x38]                        ; = 0x005978f0
+```
+
+⛔ **HELYESBÍTÉS a 22. szakaszhoz:** a `[+0x268] = -1` **nem állapot**, hanem
+**az elrendezés gyorsítótárának érvénytelenítése**. Az elrendező a futás
+elején összeveti a mai gyerekszámot ezzel a mezővel
+(`0x005981ad cmp eax, [ebx+0x268]`), és egyezés esetén **kihagyja** az
+újraszámolást; a végén visszaírja a számot (`0x00598b1b`), mellé a
+`+0x26c` jelzőt és a `+0x270` szélességet. A `-1` sosem egyezhet valódi
+darabszámmal ⇒ **kényszerített újraszámolás**.
+
+### 23.2 A túlcsordulás FELISMERÉSE
+
+Az elrendező (`0x00597f80`) végigméri a gyerekeket (`vtbl+0x20` mindegyiken),
+és összegzi a szélességüket (`0x00598053 add edi, ecx`), majd összeveti a
+konténer saját szélességével (`0x00598061 cmp edi, eax`). Ha belefér, a
+rövid ág fut; ha nem, a `[+0x28c]` mező választ elrendezési stratégiát.
+
+### 23.3 ⭐ A VÁLASZ: a kifért gombok FÜGGŐLEGESEN kerülnek egymás alá
+
+A cellás ág (`0x005986b0`–`0x005988d3`) a gyerekenkénti előrelépést a
+`Property`-kből veszi: `cellwidth` → `+0x274` (`0x0059862c`), `cellheight`
+→ `+0x278` (`0x005987df`); ha a tulajdonság 0, a gyerek saját mérete lép
+életbe.
+
+A két halmozó a veremben áll, és **ez dönti el a kérdést**:
+
+| halmozó | hol áll be | változik-e a cikluson belül |
+|---|---|---|
+| **X** (`[esp+0x20]`) | `0x0059868e`–`0x0059869a`, a ciklus **előtt** | **NEM** — a ciklusban egyszer sem írják |
+| **Y** (`[esp+0x30]`) | `0x005986a4`, a ciklus előtt | **IGEN** — `0x00598858 fadd [esp+0x30]` **minden gyerekre** |
+
+A ciklus után a felhalmozott (X, Y) a `[konténer+0x298]` objektum
+befoglalójába megy (`+0x188`/`+0x18c`/`+0x190`/`+0x194`, `0x005988d7`-től),
+`or [ecx+8], 3` piszkos-jelzéssel.
+
+⇒ **Az X állandó, az Y gyerekenként nő: a gombok EGYMÁS ALÁ kerülnek, egy
+oszlopba.** Nem második sor, nem szélesedő sáv, nem görgetés.
+
+A `.tre` ehhez illeszkedik: `outputlayout/overflowcontainer: root` a
+dokumentum gyökere, és **mind a kilenc gomb a gyereke**, `Property cellwidth
+50` / `Property cellheight 52` mellett (`outputlayout.tre:143–150`).
+
+**Bizalmi fok: erős.** Maga az ág **megerősített** (a halmozók írásai
+kiolvasva); hogy a kimeneti sor EZT az ágat futtatja, **következtetés**: a
+`+0x274`/`+0x278` mezőt az elrendezőben **csak ez az ág olvassa**
+(`0x0059862c`, `0x005987df`), és a `.tre` épp ezt a két tulajdonságot
+állítja be a konténerre.
+
+### 23.4 A geometria — egy cella, kilenc egymásra tett gomb
+
+A `outputlayout` dokumentum tervezővászna **59 × 40**, és mind a kilenc gomb
+ugyanott áll: `(2, 2)–(57, 38)`, **55 × 36**. Tehát a respack **egy cellát**
+ír le, a tényleges elhelyezést futásidőben az elrendező végzi. A befogadó a
+könyvtárnézetben `thumbui/rect(0, outputlayout): outputs`, **x 373–797,
+y 480–509** ⇒ a sáv **424 × 29** a 800 × 534-es vásznon.
+
+### 23.5 ⛔ Amit ez NEM mond ki
+
+- **A `[+0x28c]` mező forrása** (melyik `Property` vagy kód állítja) nincs
+  kimérve — a mező eltolása túl általános a pásztázáshoz (161 író a
+  binárisban, több osztályból).
+- **A nyíló oszlop iránya** (lefelé vagy felfelé) és a takarása nincs mérve:
+  csak az, hogy az Y nő.
+- A `[főablak+0xea0]+0x264` billentett állapot **olvasóját** nem
+  azonosítottam; a `+0x264` eltolás ugyanolyan általános.
