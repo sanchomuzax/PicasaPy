@@ -6130,3 +6130,110 @@ név hasonlósága miatt ezt külön kimondom.
 docstringjének mintázása) **megbukott**: 52 kezelő vékony burkoló
 docstring nélkül, tehát a jelölés a hívott függvényen ül. Az egyetlen
 megbízható forrás a **fenti státusztábla**, és a fenti lista abból való.
+
+## ⛳ A `linblur` NEM érhető el a felületről — és a sugár a KORONG X-ÉBŐL jön (2026-09-14, 303. kör, #2772)
+
+*Forrás: a csempe-tábla `0x00c7e5a0` (36 rekord, újraolvasva), a kezelő-regiszter
+`0x00cd08f8`, a feldolgozó `0x008f99c0` (`0x008f99e7`, `0x008f9a40`,
+`0x008f9a4f`), a paraméter-olvasó `0x00750e20` (`[param+0x34]`, `[param+0x38]`),
+a konstans `0x00c72150` = 0,5.*
+
+A #2772 két dolgot kért: (1) derüljön ki, **hol érhető el** a „Lineáris
+homályosítás" a szerkesztőben, hogy a második korong-állás exportja
+kérhető legyen; (2) ennek alapján dőljön el, **függ-e a sugár a korong
+helyétől**. Mindkettő eldőlt — és a kért export **feleslegessé vált**.
+
+### 1. A `linblur`-nek NINCS csempéje — mutató-szintű bizonyíték
+
+Az effekt-csempék 36 rekordos táblája (`0x00c7e5a0`, 12 bájtos rekordok)
+**újra kiolvasva**: a 36. rekord után a `0x00c7e5a0 + 36·12` címen már
+idegen adat áll (`us-ascii` / `iso-8859-1`), tehát a tábla **pontosan 36
+rekord**, és a 45 token közt **nincs `linblur`** (kontroll: `radblur` és
+`Vignette` benne van).
+
+Ennél élesebb a **mutató-szintű** próba. A teljes kép-bájtokban megkeresve,
+hány helyről mutatnak a szűrőnév-sztringekre:
+
+| szűrő | a név címe | mutatók száma | honnan |
+|---|---|---:|---|
+| `radblur` | `0x00c94d34` | **2** | `0x00c7e5f4` (= a csempe-tábla 8. rekordja) **és** `0x00cd08d8` (kezelő-regiszter) |
+| `linblur` | `0x00cd0604` | **1** | `0x00cd08f8` — **csak** a kezelő-regiszter |
+| `dir_sharp` | `0x00cd05e4` | **1** | `0x00cd0928` — **csak** a kezelő-regiszter |
+
+⇒ A `linblur` a **kezelő-regiszterben** létezik (tehát egy `filters=`
+láncból lefut), de **egyetlen csempéhez sincs kötve**. Ugyanez az ujjlenyomat,
+mint a `dir_sharp`-é, amiről már tudtuk, hogy nem UI-szűrő.
+
+**A kezelő-regiszter rekordja** (16 bájt: név + három visszahívás):
+
+```
+0x00cd08f8  ->  "linblur"
+0x00cd08fc  ->  0x008f99c0   ; a FELDOLGOZÓ
+0x00cd0900  ->  0x008f9bf0   ; a HÚZÁS-ág
+0x00cd0904  ->  0
+```
+
+⛔ **Következmény: a „nyisd meg a hatást és exportálj egy másik
+korong-állást" kérés nem állítható vissza** — a felületen nincs hová
+kattintani. (Shift-változat sem: a kilenc Shift-pár mind a 36 rekordos
+tábla MÁSODIK tokenje, és a `linblur` ott sem szerepel.)
+
+### 2. A sugár = a korong X koordinátája, változtatás nélkül
+
+A feldolgozó (`0x008f99c0`) a paraméter-objektumból a `0x00750e20`-szal
+kiolvassa a korong két koordinátáját (`[param+0x34]`, `[param+0x38]`), majd:
+
+```
+0x008f99ec  fild [esi+8]          ; W
+0x008f99fc  fld  [0xc72150]       ; 0,5
+0x008f9a02  fmul st(1), st(0)     ; 0,5·W
+0x008f9a04  fld  [esp+0x10]       ; a korong X
+0x008f9a08  fld  st(0)            ; MÁSOLAT — ez marad a verem alján
+   ...                            ; 0,5·W·(1+x) -> egész (0x008f9a10)
+   ...                            ; 0,5·H·(1+y) -> egész (0x008f9a33)
+0x008f9a40  fstp dword [esp]      ; a MEGMARADT érték: a korong X
+0x008f9a4f  call 0x0090de10       ; a natív mag, harmadik veremargumentum
+```
+
+A `fld st(0)` másolata egyetlen `faddp`-vel fogy el, a második `ftol` után
+tehát az FPU-verem tetején **a korong X-e marad** — és épp ezt teszi a
+`fstp dword [esp]` a mag harmadik veremargumentumába. A korábban rögzített
+Ghidra-C szerint ez a `param_5`, és **a sugár közvetlenül ebből jön**.
+
+⇒ **A sugár NEM állandó: a korong X koordinátájával változik.** A
+`LINBLUR_MERT_SUGAR = 1,5` a `0,5; 0,5` korong-álláson mért érték, tehát
+**egyetlen pont** — a saját `iir_blur`-paraméterezésünkben.
+
+**Melléklelet, független megerősítés:** a feldolgozó **sehol nem olvassa a
+„Mennyiség" csúszkát** (a `0x00750e20` csak a `+0x34`/`+0x38` korong-mezőt
+veszi). Ez a #2736 mérésének (három bitre azonos export három
+Mennyiség-értékkel) **kódoldali** igazolása.
+
+### 2/b A mag a korong X-ét VÁLTOZATLANUL adja tovább — kétszer
+
+A natív mag (`0x0090de10`) a harmadik veremargumentumot betölti, és **mind a
+két** IIR-hívásnak **ugyanazt az egy értéket** adja át, mindkét irányra:
+
+```
+0x0090de9b  fld  dword [esp+0x1dc]   ; a harmadik veremargumentum (= a korong X)
+0x0090debe  fst  dword [esp+4]       ; 2. lebegő argumentum
+0x0090dec2  fstp dword [esp]         ; 1. lebegő argumentum
+0x0090dec6  call 0x009dd0d0          ; a KÖZÖS IIR-elmosó mag — ELSŐ menet
+0x0090decb  fld  dword [esp+0x1f8]   ; ugyanaz az érték újra
+0x0090def6  call 0x009dd0d0          ; MÁSODIK menet
+```
+
+⇒ **A natív sugár = a korong X-e, átalakítás nélkül, két egymás utáni
+menetben.** Nincs `W/100`, nincs `(Amount+1)`, nincs abszolútérték.
+
+### 3. ⛔ Amit ez NEM mond ki
+
+- **A natív két menet ↔ a mi egy menetünk nem ugyanaz a modell.** A mért
+  `1,5` a SAJÁT, egymenetes `iir_blur`-paraméterezésünkben áll; a natív
+  ugyanarra az álláson `0,5`-tel fut **kétszer**. A két alak egyetlen
+  ponton illeszkedik, a közöttük lévő megfeleltetés **nincs levezetve** —
+  a helyes terméki lépés a natív alak átvétele (sugár = korong X, két
+  menet), majd a ΔE újramérése a meglévő referencia-exporton.
+- **Az Y koordináta szerepe** a magban nincs kiolvasva (a feldolgozó csak a
+  két képpont-koordinátát számolja belőle).
+- A „súlytábla utolsó rekeszei" (a fenti 3. közelítés) változatlanul nyitva.
