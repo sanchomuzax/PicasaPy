@@ -416,3 +416,81 @@ pl. „Reverse Sort Order" vs. `Re&verse sort`), és az öt menüfájlban
 Alt-navigáció nem működött. A `PicasaMenuItem` saját `contentItem`-je emiatt
 sima `Text`-ről `IconLabel`-re cserélődött: az hozza a Qt mnemonik-tudatos
 címkéjét, különben az ampersand nyersen látszana a menüben.
+
+## B. ⛳ A helyi menük EGYETLEN menüből készülnek — kivonással (2026-09-14, 307. kör, #886)
+
+*Forrás: a belépési pont `0x005e7c20`–`0x005e7ca3`, a táblavezérelt építő
+`0x0056c5a0`, az első kapu ugrótáblája `0x0056e05c` + `0x0056e064`, a második
+diszpécseré `0x0056e09c` + `0x0056e0b4`, az ágak `0x0056c665` · `0x0056c67d` ·
+`0x0056c692` · `0x0056c6b3` · `0x0056c6d4` · `0x0056c6f8`, a törlő import
+`[0x00c408b0]`.*
+
+A #886 döntése után ez maradt nyitva: **melyik helyi menü melyik
+felületrészhez tartozik**. A válasz szerkezeti, és megfordítja a kérdést.
+
+### B.1 A lánc: 14 hívóhely → egy belépési pont → egy építő
+
+| lépés | cím | mérés |
+|---|---|---|
+| a felületrészek | 14 hívóhely | `call 0x005e7c20` |
+| a belépési pont | `0x005e7c20` | a **menüből** olvassa ki az azonosítót |
+| az építő | `0x0056c5a0` | **pontosan két** hívója van, az egyik a fenti (`0x005e7c99`) |
+
+A belépési pont nem kap kontextus-számot: a `[0x00c407bc]` importtal lekérdezi
+a menütétel adatait, és a **`wID` szóból** veszi az azonosítót
+(`0x005e7c8f movzx edx, word ptr [esp+0x2c]`), majd ezzel hívja az építőt.
+
+### B.2 Az építő KILENC azonosítót enged tovább
+
+Az első kapu (`0x0056c600`–`0x0056c62d`, ugrótábla `0x0056e05c`) a
+`0x70`–`0xa4` tartományból **ötöt** enged a menüépítő ágra — `0x70`, `0x77`,
+`0x8a`, `0x8b`, `0xa4` —, a többi 48 érték a kilépésre megy. Ezen felül
+külön ág van a `0xa6`, a `0x127`, a `0x13d` és a `−1` értékre.
+
+A második diszpécser (`0x0056c657`, ugrótábla `0x0056e09c`) **öt**
+kontextus-specifikus ágat és egy közöset ad:
+
+| ág | azonosító |
+|---|---|
+| `0x0056c665` | `0x77` |
+| `0x0056c67d` | `0xa6` |
+| `0x0056c692` | `0xa4` |
+| `0x0056c6b3` | `0x70` |
+| `0x0056c6d4` | `0x8a` |
+| `0x0056c6f8` | minden más (közös ág) — ide esik a `0x8b` is |
+
+### B.3 ⭐ A mechanizmus KIVONÓ, nem összeállító
+
+Mind az öt ág ugyanazt teszi: a **már meglévő** menüből **töröl** tételeket.
+A törlő a `[0x00c408b0]` import, három argumentummal — a `0x400` jelző a
+`MF_BYPOSITION`:
+
+| ág (azonosító) | törölt parancsazonosítók | törölt pozíció |
+|---|---|---|
+| `0x77` | `0x9d97` | `0x0e` |
+| `0xa6` | `0x9d97` | `0x15` |
+| `0xa4` | `0x9d96`, `0xa09f` | `0x14` |
+| `0x70` | `0x9d96`, `0xa09f` | `0x16` |
+| `0x8a` | `0x9d96`, `0xa09f` | `0x13` |
+
+⇒ **Az eredetiben nincs négy külön helyi menü.** Egy közös felugró menü van,
+és a kontextus azt szabja meg, **mit vesznek ki belőle**. A mi négy külön
+QML-menünk (`AlbumContextMenu`, `FolderContextMenu`, `CollectionContextMenu`,
+`FolderListContextMenu`) ezért **szerkezetileg** tér el — a tételkészletek
+karbantartása nálunk négy helyen történik, ott egy helyen plusz öt kivonás.
+
+### B.4 ⛔ Amit ez NEM mond ki
+
+- **A három parancsazonosító NEVE** (`0x9d96` = 40342, `0x9d97` = 40343,
+  `0xa09f` = 41119) nincs meg: a `Picasa3.exe`-ben **nincs `RT_MENU`
+  erőforrás** (az erőforrás-könyvtár típusai között a 4-es nem szerepel),
+  tehát a menü kódból épül, és a feliratok a szövegtárból, azonosító szerint
+  jönnek. A megnevezés útja: a `0x00730e65`, `0x007316b2`, `0x0073200c` és
+  `0x0073244c` helyeken a `MENUITEMINFO.wID`-be írt azonosítók köré épülő
+  `InsertMenuItem`-hívások felirat-forrása.
+- **Melyik felületrész melyik azonosítót adja:** a 14 hívóhely
+  (`0x0059606d`, `0x005d41f4`, `0x005d43a4`, `0x005e77b2`, `0x005e7b54`,
+  `0x005e7be5`, `0x005e7d44`, `0x00622381`, `0x0063840c`, `0x0063b56b`,
+  `0x0074626d`, `0x0082fbec`, `0x0082fcbb`, `0x0082fda9`) azonosítása
+  külön kör — az azonosító nem a hívó argumentuma, hanem a menütételből jön,
+  tehát a hívóhelyek menüépítő előzményét kell végigkövetni.
