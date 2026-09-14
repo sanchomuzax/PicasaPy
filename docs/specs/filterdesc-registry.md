@@ -5442,3 +5442,95 @@ effekt **igenis eljut az ini-be**, a maszkja nélkül.
 | visszatölthető-e a `.picasa.ini`-ből | ✅ **NEM** — következik a fentiből |
 | hány festhető maszkos effekt van | ✅ **ÖT**, két családban (a jegy kettőt mondott) |
 | tárolja-e a Picasa **máshol** (db3) | ⛔ **NYITOTT** — ezt a mérés nem zárja ki |
+
+## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
+
+*Forrás: `glimmer::GlowImageOperation::vftable` = `0x00cf0174` (RTTI), az
+attribútum-olvasó `0x00bb8c40`–`0x00bb8d8f`, a konstruktor `0x00bb8a60`–
+`0x00bb8ab0`, a névsztringek `0x00cbda84` · `0x00cf0144` · `0x00cefe84` ·
+`0x00cefe8c` · `0x00cf0150` · `0x00cafa3c` · `0x00cf015c` · `0x00cf0164`,
+a `filterdesc.xml` hat `GlowImageOperation` sora (`:788`, `:975`, `:1048`,
+`:1066`, `:1082`, `:1084`).*
+
+A #2948 kimérte, hogy a `Lomo` maradék **9,0–9,5 ΔE**-je nem a
+paraméterekben van. Ez a kör a kernelhez indult — és útközben olyat talált,
+ami az egész modellünket érinti.
+
+### 1. A művelet attribútum-térképe, teljesen
+
+Az olvasó (a vtábla **2.** rekesze) nyolc attribútumot ismer, mindegyiket egy
+8 bájtos mezőbe téve:
+
+| attribútum | mező | a literál címe |
+|---|---|---|
+| `color` | `+0x24` | `0x00cbda84` |
+| `glowalpha` | `+0x2c` | `0x00cf0144` |
+| `xblur` | `+0x34` | `0x00cefe84` |
+| `yblur` | `+0x3c` | `0x00cefe8c` |
+| `strength` | `+0x44` | `0x00cf0150` |
+| `quality` | `+0x4c` | `0x00cafa3c` |
+| **`inner`** | `+0x54` | `0x00cf015c` |
+| `knockout` | `+0x5c` | `0x00cf0164` |
+
+A vtábla **nyolc** rekeszes: a 9. szótól kezdve már ASCII adat áll
+(`MasterCurve`, `Exposure`, `Adjust…`), nem kód.
+
+### 2. ⛔ A `filterdesc.xml` `innerglow`-t ír — a bináris `inner`-t olvas
+
+A leíró mind a hat helyen `innerglow="true"`-t ad meg. A bináris viszont a
+**`inner`** literált keresi (`0x00cf015c`).
+
+**A teljes képfájlon, nyers bájtkereséssel** (az indextől függetlenül):
+
+| minta | első előfordulás |
+|---|---|
+| `innerglow` | **NINCS** |
+| `inner\0` | `0x00c8f79f` (kontroll: létezik) |
+| `knockout` | `0x00cf0164` (kontroll: a szomszéd attribútum) |
+
+⇒ **Az `innerglow` sztring sehol nem szerepel a `Picasa3.exe`-ben**, tehát a
+leíró attribútuma **nem illeszkedik semmire**, és némán elveszik.
+
+### 3. A konstruktor alapértéke: `inner = 0`
+
+A ktor (`0x00bb8a60`) minden mezőt kinulláz a `+0x04`-től a `+0x60`-ig
+(`0x00bb8aa4 mov dword [eax+0x54], ecx`, `ecx = 0`). Mivel az attribútum
+sosem illeszkedik, a mező **végig 0 marad**.
+
+⇒ **Az eredeti Picasa mind a hat `GlowImageOperation`-t `inner = false`
+móddal futtatja** — azaz **KÜLSŐ** ragyogásként, nem belsőként.
+
+### 4. Nálunk MA
+
+A `src/picasapy/render/glimmer_ops.py` `inner_glow()` docstringje szó
+szerint így kezdődik: „`GlowImageOperation(innerglow=true)`: a kép
+SZÉLÉTŐL befelé ható »izzás«" — vagyis a **belső** változatot valósítja meg,
+a `Lomo`, `Holga`, `NightVision`, `Matte`, `Vignette` és `MuseumMatte`
+láncában egyaránt. A sugarat a `clamp_glow_radius` 255-re vágja
+(`GLOW_RADIUS_MAX`), mert korlát nélkül az eltérés 41,8-ra nő.
+
+Ez megmagyarázza a #2982 táblázatának legfurcsább sorát is: az XML szerinti
+**896** képpontos sugár a mi kernelünkkel 8,897 → **23,819** ΔE-re rontott.
+Egy külső ragyogásnál a nagy sugár természetes; a belső modellünkben
+értelmetlen.
+
+### 5. ⛔ Amit ez NEM mond ki — és miért nem állítom, hogy ez a hiba oka
+
+**A megfejtett mechanizmus nem diagnosztizált ok.** Azt mértem, hogy az
+eredeti nem belső ragyogást futtat; azt **nem**, hogy a külső változatra
+átállva csökken-e a mért ΔE. Ezt egy fejlesztői kör méri le a
+`referencia/lomo/` hármason (ma 9,00 · 9,10 · 9,51), és a `Holga` sem
+romolhat (ma 1,55–4,01).
+
+Szintén nem mért:
+
+- **hol fogyasztják** a `+0x54` mezőt: a Glow osztály saját kódsávjában
+  (ktor, attribútum-olvasó, destruktor) egyetlen hely sem OLVASSA
+  értékként — a fogyasztó egy általános kiértékelő lehet, azt ez a kör nem
+  kereste meg;
+- **a képpont-menet**: a 8. rekesz (`0x00bc51d0`, 230 b) csak **gyár** — egy
+  16 bájtos objektumot foglal `0x00cf0f18` vtáblával és `[+0xc] = a
+  művelet`; a tényleges rajzolás annak a vtáblájában van;
+- **a `quality="3"` jelentése** ebben a műveletben (a `LocalContrast`-nál a
+  #1607 háromszoros dobozelmosást talált — itt nincs igazolva);
+- a `clamp_glow_radius` 255-ös korlátjának natív megfelelője.
