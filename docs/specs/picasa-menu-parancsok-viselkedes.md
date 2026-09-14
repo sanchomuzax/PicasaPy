@@ -5528,10 +5528,42 @@ burkolója a **`0x00404c30`** (`push 0xc7eb48` = `moving_database`,
 
 ### 8. HONNAN JÖN INDULÁSKOR
 
-A folyamatjelző burkolója a `0x00404c30`-on ül — a `.text` **alacsony**
-tartományában, ami indulási kódra vall. A szándék-tároló olvasója ezzel a
-függvénnyel egy hívóláncban lesz. ⛔ **Ez a következő gépi lépés:** a
-`0x00404c30` hívóinak felderítése, és onnan a kulcs.
+⛳ **MEGVAN (2026-09-15, 308. kör).** A szándék a **`Preferences`**
+tárolóban, az **`AppLocalDataPathCopy`** kulcs alatt áll — az élő útvonal
+neve `AppLocalDataPath`, a szándéké ugyanaz `Copy` utótaggal.
+
+A kulcsnévre a teljes `.text`-ben **pontosan két** kódbeli hivatkozás van
+(indextől független pásztázás; kontroll: az `AppLocalDataPath`-ra **hét**):
+
+| cím | szerep |
+|---|---|
+| `0x007d1936` | az **ÍRÓ** — a párbeszéd „Move on next restart" ága |
+| `0x00404d97` | az **OLVASÓ** — az indulási kód |
+
+Mindkét helyen ugyanaz a két push áll: `0xc7eafc` = `Preferences`,
+`0xc7eef0` = `AppLocalDataPathCopy`, majd a tároló-elérés
+(`call 0x00407630`).
+
+**Az író oldala** (`0x007d1900`): a `MoveDatabase::LocalDriveOnly`
+ellenőrzés UGYANEBBEN a függvényben van, tehát a **meghajtó-vizsgálat
+megelőzi a kulcs beírását** — a `0x007d1952 call 0x00407760` az értékadás.
+
+**Az olvasó oldala** (`0x00404d60`-tól): `0x00404db5 call 0x00407b50` →
+`test al, al` → `je 0x00405161`, azaz **ha a kulcs nincs beállítva, az
+indulás átugorja** az egész áthelyezést. Ha be van állítva, ugyanez a
+függvény hozza fel a `moving_database` folyamatjelzőt (`0x00404c30`), és a
+végén **az élő `AppLocalDataPath` kulcsot írja át** az új útvonalra
+(`0x00404fd3` / `0x00405007` az elérés, `0x00405025` az írás).
+
+⇒ A 295. kör következtetése („a `0x00404c30` indulási kód, a szándék-tároló
+olvasója vele egy hívóláncban lesz") **igazolódott**: a kettő **ugyanaz a
+függvény**.
+
+⛔ **Amit nem mértem:** hogy a sikeres áthelyezés **törli-e** az
+`AppLocalDataPathCopy` kulcsot. A vizsgált `0x00404df0`–`0x00405170`
+ablakban nincs rá törlés-hívás; ha nem törlődik, az „egyszer fut le"
+garanciát az adja, hogy a két kulcs egyenlővé válik — ez **nincs
+igazolva**.
 
 ### 9. Geometria
 
@@ -5546,12 +5578,13 @@ A `.fen` `width="fit"`, a `new_location` mező `25em`; a többi a
 | „Lomtár" | mindkét üzenet „send … to the **trash**" |
 | „csak helyi írható lemez" | `MoveDatabase::LocalDriveOnly` |
 
-### Nyitott kérdések mérlege (295.)
+### Nyitott kérdések mérlege (295. → 308.)
 
-`1 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
+`0 nyílt · 9 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva"`
 
-A nyílt: **hol tárolódik az áthelyezési szándék** — a megszerzés útja a 8.
-pontban megnevezve.
+A 295. kör egyetlen nyílt kérdése — **hol tárolódik az áthelyezési szándék**
+— a 308. körben lezárult: `Preferences\AppLocalDataPathCopy`, író
+`0x007d1936`, olvasó `0x00404d97`.
 
 *Forrás: `research/copy_Picasa_3_7/Picasa3/runtime/move_database.fen` és
 `moving_database.fen`; `referencia/stringres-en-hu.tsv:2038–2042` és
