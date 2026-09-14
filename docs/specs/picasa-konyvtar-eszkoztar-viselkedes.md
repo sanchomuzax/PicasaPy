@@ -49,25 +49,29 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
 ## 2. `newalbum` — Új album
 
 - **Kezelő:** `0x005eb810` (245 bájt).
-- **Mit csinál:**
-  1. Lekér egy `"Labels"` (`0xc7ec5c`) kulcs alatti értéket 6-os indexszel
-     (`call 0x00985ff0`) — feltehetően egy alapértelmezett albumnév-sablon
-     vagy címke-lista.
-  2. Egy objektum-metódussal (`0x00452a30`) és egy névgeneráló hívással
-     (`0x0055cf70`) előállít egy jelölt nevet.
-  3. **Próbál** azonnal létrehozni egy albumot (`call 0x006dc030(doc, name,
-     1, 0)` → `bool`). Ha ez **sikeres** (`al != 0`): tovább egy második
-     próbálkozásra (`0x0055d120`), és ha AZ is nullát ad vissza, a
-     függvény egyszerűen visszatér — **csendes létrehozás, dialógus
-     nélkül**.
-  4. Ha a gyors létrehozás **sikertelen** (`al == 0`): beállítja a
-     `+0x166` mezőn az 1-es "album létrehozás folyamatban" jelzőt, és
-     meghívja a `0x0065b840(doc, 0, 0, 1)` függvényt — ez nyitja meg az
-     **interaktív "Új album" tulajdonság-dialógust** (névbeírás).
-- **Emberi nyelven:** a gomb **megpróbál egy alapértelmezett nevű albumot
-  azonnal, dialógus nélkül létrehozni**; csak akkor jelenik meg a
-  névbekérő ablak, ha ez a gyors út valamiért nem sikerül (pl. már van
-  ilyen nevű album, vagy nincs kijelölt kép a gyors névhez).
+- **Mit csinál** (⚠️ a 302. kör három ponton HELYESBÍTETTE ezt a listát —
+  a levezetés a 6. szakaszban):
+  1. Felépít egy `"Labels"` sztringet (`0x00c7ec5c` a literál, a `mov eax,6`
+     a **hossza**, nem index), és ezzel kérdezi le a `[doc+0x2bc]`
+     kategória-nyilvántartást (`0x00452a30`) — a Picasában az albumok
+     belső neve „label".
+  2. A `0x0055cf70` **konstruktor** felépít egy album-leírót, és a nevét a
+     `IDS_DEFAULT_ALBUM_NAME` **szöveg-erőforrásból** tölti
+     (`0x0055cfb2 push 0x8a` = 138-as azonosító, `0x0055cfbf call
+     0x009ae710`) ⇒ a jelölt név **„Untitled" / „Névtelen"**.
+  3. **Próbál** azonnal létrehozni egy albumot (`call 0x006dc030(doc, leíró,
+     1, 0)` → `bool`). **Ha ez SIKERTELEN** (`al == 0`,
+     `0x005eb87e je 0x5eb8e7`): a függvény **azonnal a takarításra ugrik és
+     `0`-t ad vissza** — se jelző, se párbeszéd, se nézetfrissítés.
+  4. **Ha SIKERES:** `0x0055d120(leíró, 0, 0, 0)`. Ha ez album-objektumot
+     ad, a kezelő azzal tér vissza — kész. **Csak ha `0`-t ad**, akkor
+     állítja be a `+0x166` jelzőt és hívja a `0x0065b840(doc, 0, 0, 1)`-et,
+     majd a „Labels"-index alapján ír a `[doc+0xeb0]+0x30c` mezőbe.
+- **Emberi nyelven:** a gomb egy **„Névtelen" nevű albumot hoz létre
+  azonnal, párbeszéd nélkül** — és a binárisban ezen az úton **nincs
+  névbekérő ablak**. A `0x0065b840` nem párbeszéd, hanem a könyvtárnézet
+  frissítése (a `searchcontainer/*` elemeket kezeli), a `+0x166` pedig nem
+  „album készül" jelző, hanem egy **általános újrarajzolás-jelző**.
 - **Menüegyenérték:** **IGEN** — a `0x005cb990` menü-parancstáblában
   (a korábbi körben már feltárt View/Album parancs-diszpécser) van olyan
   ág, ami ugyanide, a `"thumbui/newalbum"` néven szimulált kattintáson
@@ -400,3 +404,109 @@ menüsáv-építő rekordjaiból.*
 - Hogy a webkamera-gomb kattintás-mechanikája bármiben eltérne a
   lebegő értesítősáv már ismert szingleton-mintájától — **nem tér el**,
   ugyanaz az `EnumWindows` + "wCPG" jelölő.
+
+## 6. ⛳ MEGVAN a jelölt albumnév — és három HELYESBÍTÉS a 2. szakaszhoz (2026-09-14, 302. kör, #2911)
+
+*Forrás: a kezelő `0x005eb810`–`0x005eb902`, a leíró-konstruktor
+`0x0055cf70`, a szöveg-erőforrás betöltője `0x009ae710`, a név azonosítója
+`0x00c8e44c` = `IDS_DEFAULT_ALBUM_NAME` (id `0x8a` = 138), a nézetfrissítő
+`0x0065b840`, a jelző egyetlen olvasója `0x004afcfd`.*
+
+A #2911 első teendője a jelölt NÉV forrásának kimérése volt — a 2. szakasz
+korábbi szövege „feltehetően"-t írt, és emiatt a terméki fele nem épült meg.
+A név megvan, és közben a szakasz három állítása megdőlt.
+
+### 6.1 A név: `IDS_DEFAULT_ALBUM_NAME` — „Untitled" / „Névtelen"
+
+```
+0x0055cfaa  push 0xc8e44c        ; "IDS_DEFAULT_ALBUM_NAME"
+0x0055cfb2  push 0x8a            ; = 138, a szöveg-erőforrás azonosítója
+0x0055cfbf  call 0x009ae710      ; LoadString-szerű betöltő (0x400 bájtos puffer)
+0x0055cfc4  mov edx, [ebp]       ; ebp = leíró+0x14 — ide kerül a név
+```
+
+A `0x009ae710` a `[ebp+8]` azonosítót és a `[ebp+0xc]` nevet veszi, és a
+`[0xc40784]` importon át tölti a szöveget. A szövegtárunkban ugyanez:
+
+| azonosító | angol | magyar |
+|---|---|---|
+| `IDS_DEFAULT_ALBUM_NAME` | `Untitled` | `Névtelen` |
+
+*(`referencia/stringres-en-hu.tsv:1513`, `referencia/i18n-hu/stringres.xml:411`.)*
+
+⇒ **A jelölt név nem generált és nem dátum-alapú: egyetlen, honosított
+felirat.** Az ütközés-kezelés (számozott utótag) ezen az úton **nincs** —
+a `0x0055cf70` a nevet változtatás nélkül veszi át.
+
+### 6.2 HELYESBÍTÉS 1 — a „`Labels` kulcs 6-os indexe" félreolvasás
+
+```
+0x005eb81b  push 0xc7ec5c        ; a literál: "Labels"
+0x005eb820  mov eax, 6           ; a HOSSZA (strlen), nem index
+0x005eb825  lea edi, [esp+0x58]  ; a cél sztring-objektum
+0x005eb839  call 0x00985ff0      ; sztring-konstruktor (mutató, hossz)
+```
+
+A `0x00985ff0` a bináris általános **sztring-konstruktora** (ugyanez az alak
+áll például a kollázs-írónál, `0x008347c1 push 0xc8979c` + `lea eax,[esi+7]`
+a hét betűs `"collage"`-hoz). Nincs tehát „6-os indexű érték": a `"Labels"`
+egy **kulcsnév**, amivel a `0x00452a30` a `[doc+0x2bc]` kategória-táblából
+kér indexet.
+
+### 6.3 HELYESBÍTÉS 2 — a `0x0065b840` NEM névbekérő párbeszéd
+
+A függvény a `searchcontainer/searchbutton` és a `searchcontainer/searchclr`
+elemekre hivatkozik (`referencia/binary-index/string_xrefs.csv`), és a
+negyedik argumentuma az, ami a `+0x166` jelzőt beállítja
+(`0x0065b85f mov byte [eax+0x166], 1`). ⇒ könyvtárnézet-frissítő, nem
+párbeszéd.
+
+És a **`0x006dc030` maga is meghívja** — a SIKER ágán, közvetlenül az
+`al = 1` visszatérés előtt:
+
+```
+0x006dc0f3  push 1 / push 0 / push 0 / push edi
+0x006dc0fa  call 0x0065b840
+0x006dc112  mov al, 1            ; -> true
+0x006dc120  ...                  ; a HAMIS ág: 0x6dc12b xor al,al, hívás nélkül
+```
+
+### 6.4 HELYESBÍTÉS 3 — az ágak SORRENDJE fordítva volt
+
+```
+0x005eb877  call 0x006dc030
+0x005eb87c  test al, al
+0x005eb87e  je 0x005eb8e7        ; SIKERTELEN -> egyenesen a takarításra, return 0
+0x005eb888  call 0x0055d120      ; SIKER -> a második lépés
+0x005eb891  je 0x005eb8ad        ; ha az 0-t ad -> jelző + 0x0065b840
+```
+
+⇒ A „csak kudarckor kérdez nevet" leírásnak **nincs bináris alapja**: a
+kudarc ága nem csinál semmit, a jelző + frissítés pedig a **siker** ágán fut.
+
+### 6.5 A `+0x166` jelző: általános újrarajzolás-kérés, egyetlen fogyasztóval
+
+Indextől független `.text`-pásztázás (`paszta.py`, kontroll: a
+`call 0x65b840` hívóhelyek száma **101**):
+
+| | darab |
+|---|---|
+| ÍRÓ (`mov byte [reg+0x166], 1`), a teljes felületről szétszórva | **62** |
+| OLVASÓ | **1** — `0x004afcfd cmp byte [esi+0x166], 0` |
+
+Az egyetlen olvasó a `0x004afcb0` tétlenségi rutin: ha a jelző (vagy a
+`+0x161` párja) áll, elvégzi a frissítést (`0x004afd1a call 0x004aae90`), és
+a végén **nullázza** (`0x004afd41 mov byte [esi+0x166], 0`). ⇒ a mező nem az
+albumkészítéshez tartozik; a 2. szakasz „album létrehozás folyamatban"
+elnevezése téves volt.
+
+### 6.6 ⛔ Amit ez NEM mond ki
+
+- **Mikor ad `0` a `0x0055d120`**, és mit jelent ez a felhasználónak: nincs
+  kimérve. A függvény a `[doc+0x2bc]` album-nyilvántartáson dolgozik
+  (undo-egyesítéssel, `]facealbum:%d` hivatkozással) — a vizsgálat horgonya
+  a `0x0055d183 call 0x004ada80` visszatérése.
+- **Mi történik két azonos nevű albummal:** a `0x0055cf70` nem számoz, de
+  hogy a `0x006dc030` elutasítja-e a duplikátumot, **nincs kimérve**.
+- A `[doc+0xeb0]+0x30c`-be írt „Labels"-index szerepe (kijelölés? görgetés?)
+  nincs megnevezve.
