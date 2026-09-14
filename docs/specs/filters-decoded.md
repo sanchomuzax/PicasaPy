@@ -4942,8 +4942,15 @@ VISSZAFEJTVE" szakaszban: `L = (77·kR + 151·kG + 28·kB) >> 8`,
 Kelvin = 6500 + 3700 · temp        temp ∈ [−1 … 1]  →  2800 K … 10200 K
 ```
 
-⚠️ **A `temp = 0` NEM azonosság:** az 55. bejegyzés (255, 249, 253)
-minimálisan meleg, tehát a mátrix egy hajszálnyit hűt.
+⚠️ **A `temp = 0` bejegyzése nem semleges:** az 55. tétel (255, 249, 253)
+minimálisan meleg, tehát a belőle épített mátrix hűtene egy hajszálnyit.
+
+⛔ **De a KIMENETEN ez nem látszik (helyesbítés, #956):** a hívó
+(`0x008f7ee0`) nullánál át is ugorja a hőmérséklet-ágat
+(`0x008f7fd7 fldz` … `0x008f7fe6 jnp 0x8f8062`), tehát a `temp = 0`
+**azonosság**. A kapu nélkül minden semleges `finetune2`-es kép némán
+elszíneződne: a nulla állás mátrixa mérve `(128,128,128)` →
+`(126,129,126)`.
 
 ### A neutrális pipetta UGYANEZ a gépezet
 
@@ -5029,8 +5036,31 @@ Kelvin-leképezésre (két független illeszkedés: 1000 K és 6500 K).
 A `0x00c7cf98` tábla mind a 130 kiolvasott bejegyzése egybevág a fenti hat
 mintával, és a `Kelvin = 1000 + 100·i` leképezéssel: `i = 0` → (255, 56, 0),
 `i = 55` → (255, 249, 253), `i = 92` → (202, 218, 255). A csúszka indexe
-`i = (int)(temp·37 + 55)`, **nulla felé csonkolva** (C-cast), tehát
-`temp = −1 → i = 18` (2800 K) és `temp = +1 → i = 92` (10200 K).
+`i = temp·37 + 55`, tehát `temp = −1 → i = 18` (2800 K) és
+`temp = +1 → i = 92` (10200 K).
+
+> ⛔ **HELYESBÍTÉS (2026-09-14, #956): a kerekítés NEM csonkolás.** Ez a
+> szakasz korábban „nulla felé csonkolva (C-cast)"-ot írt. A törzsben
+> (`0x0090e9d0`, 54 bájt) **nincs** vezérlőszó-állítás (`fnstcw` /
+> `or eax,0xc00`), tehát az `fistp` az x87 alapértelmezett módjában fut: a
+> **legközelebbi egészre**, döntetlennél a párosra. A fenti SAJÁT
+> index-táblánk is ezt igazolja — csonkolással `temp = +0,5` → 73 volna
+> (73,5), a tábla viszont **74**-et mond, és `temp = +0,8` → 84 helyett
+> **85**-öt. Ahol a Picasa a C-cast csonkolását akarja, ott a fordító
+> kiteszi a vezérlőszó-állítást (ld. a `contactsheet` elrendezőjét,
+> `0x0087bdd4`) — itt nincs kitéve.
+>
+> ⛔ **HELYESBÍTÉS 2: a `temp = 0` stádium EL SEM INDUL.** A lentebbi
+> „a `temp = 0` sem azonosság" megállapítás a TÁBLA bejegyzéséről igaz, a
+> KIMENETRŐL nem: a hívó (`0x008f7ee0`) nullával összehasonlít, és
+> egyezéskor átugorja a hőmérséklet-ágat
+> (`0x008f7fd7 fldz` … `0x008f7fe6 jnp 0x8f8062`); a `0x90e9d0` csak a nem
+> nulla ágon hívódik (kettő hívóhely: `0x8f8010`, `0x8f8051` — indextől
+> független pásztázás, kontroll a `0x90eda0` kilenc hívója).
+>
+> ⚠️ A „130 bejegyzés" a DOKUMENTÁLT szeletre vonatkozik: a tömb a
+> binárisban tovább tart (a minta a ~391. bejegyzésig ép), de a csúszka
+> csak a 18…92 tartományt címzi.
 
 **A modellt lemértük a mért színhőmérséklet-görbéken** (a valódi Picasa
 kimenetéből desztillált `measured_luts.json`, hat csúszkaállás):

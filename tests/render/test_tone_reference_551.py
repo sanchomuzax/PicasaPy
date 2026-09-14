@@ -67,12 +67,24 @@ HIBAKORLATOK: dict[str, float] = {
     # igaz: 0,74 és 0,55, mindkettő a saját zajszint közelében.
     "kompozit_mid": 1.1,  # 0,74 (zajszint 0,82)
     "kompozit_max": 0.9,  # 0,55 (zajszint 1,04)
-    "szinho_0": 3.2,  # 2,26
-    "szinho_10": 1.6,  # 1,12
-    "szinho_25": 0.8,  # 0,48
-    "szinho_75": 0.7,  # 0,38
-    "szinho_90": 0.8,  # 0,54
-    "szinho_100": 0.8,  # 0,54
+    # #956 — a színhőmérséklet a NATÍV útra állt (feketetest-tábla +
+    # autocolor-mátrix), ezért a korlátok újraszámolva.
+    #
+    # ⛔ **Ez a lap NEM dönti el a modellválasztást, és nem is döntheti el.**
+    # Csatorna-LUT-okat hasonlít, azok pedig szerkezetileg VAKOK a 3×3-as
+    # mátrix átlón kívüli tagjaira — épp ezért volt érvénytelen a #879
+    # verdiktje is, amivel a natív utat egyszer már elvetettük. A kérdést a
+    # KÉPPONTONKÉNTI mérés döntötte el (#956).
+    #
+    # Amit ez a lap ÉR: mind a hat hiba a saját eset JPEG-zajszintje ALATT
+    # marad, tehát a váltás egyik állásban sem visz mérhető romlást — és ha
+    # a tábla vagy az index elcsúszik, a szám azonnal kilóg.
+    "szinho_0": 3.4,  # 2,90 (zajszint 4,43) — a csatornaszorzós 2,26 volt
+    "szinho_10": 2.0,  # 1,67 (zajszint 2,63) — korábban 1,12
+    "szinho_25": 1.4,  # 1,15 (zajszint 1,27) — korábban 0,48
+    "szinho_75": 0.6,  # 0,36 (zajszint 0,88) — korábban 0,38
+    "szinho_90": 1.0,  # 0,79 (zajszint 1,05) — korábban 0,54
+    "szinho_100": 0.8,  # 0,62 (zajszint 1,11) — korábban 0,54
     "szinpalca": 4.5,  # 3,40
 }
 

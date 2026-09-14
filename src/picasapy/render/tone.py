@@ -26,6 +26,10 @@ from picasapy.render.curves import (
     lut_ramp,
     validate_image,
 )
+from picasapy.render.autocolor_matrix import (
+    apply_autocolor_matrix,
+    autocolor_matrix_16_16,
+)
 from picasapy.render.native_tone import apply_native_lut16, native_level_lut
 
 #: **Derítőfény (#575/#551).** A modell a NATÍV KÓDBÓL való, nem mérésből
@@ -86,11 +90,110 @@ FINETUNE_LEVEL_PARAM_MAX = 0.48
 #: natív alakhoz való hűség kedvéért van itt.
 _MIN_WHITE_POINT = 0.001
 
-#: **Színhőmérséklet (#551).** Csatornánkénti, KONSTANS szorzás (nem
-#: eltolás): a mérésen a világosság-függő változat sem javított rajta
-#: (5,00 vs 5,09 a leghidegebb állásban). A hideg irány jóval erősebb, mint
-#: a meleg — épp ezt hibázta el a korábbi közelítés (hideg 20,94 / meleg
-#: 4,43). A szorzókat a nem túlvezérelt pixelekre illesztettük.
+#: **A feketetest-tábla (#956).** A `Picasa3.exe` `0x00c7cf98` címén álló
+#: tömb, csomagolt `0x00RRGGBB` dwordökként; `Kelvin = 1000 + 100·i`, tehát
+#: az `i`-edik bejegyzés a `1000 + 100·i` kelvines feketetest színe.
+#:
+#: **Csak a 18…92 tartomány van itt**, mert a csúszka `[−1, 1]` tartománya
+#: pontosan ezt címzi (`i = round(temp·37 + 55)`), azaz **2800 K … 10200 K**.
+#: ⚠️ A tömb a binárisban ennél hosszabb (a 391. bejegyzésig tart a minta) —
+#: a jegy „130 elemű tábla" megfogalmazása a DOKUMENTÁLT szeletre vonatkozik,
+#: nem a tömb hosszára. A többi bejegyzést a hőmérséklet-csúszka nem éri el,
+#: ezért nem is másoljuk ide.
+#:
+#: A számok a binárisból vannak KIOLVASVA, nem Planck-sugárzásból számolva:
+#: egy korábbi kör számolt táblával mért, és az mást adott.
+FEKETETEST_TABLA: dict[int, tuple[int, int, int]] = {
+    18: (255, 173, 94),
+    19: (255, 177, 101),
+    20: (255, 180, 107),
+    21: (255, 184, 114),
+    22: (255, 187, 120),
+    23: (255, 190, 126),
+    24: (255, 193, 132),
+    25: (255, 196, 137),
+    26: (255, 199, 143),
+    27: (255, 201, 148),
+    28: (255, 204, 153),
+    29: (255, 206, 159),
+    30: (255, 209, 163),
+    31: (255, 211, 168),
+    32: (255, 213, 173),
+    33: (255, 215, 177),
+    34: (255, 217, 182),
+    35: (255, 219, 186),
+    36: (255, 221, 190),
+    37: (255, 223, 194),
+    38: (255, 225, 198),
+    39: (255, 227, 202),
+    40: (255, 228, 206),
+    41: (255, 230, 210),
+    42: (255, 232, 213),
+    43: (255, 233, 217),
+    44: (255, 235, 220),
+    45: (255, 236, 224),
+    46: (255, 238, 227),
+    47: (255, 239, 230),
+    48: (255, 240, 233),
+    49: (255, 242, 236),
+    50: (255, 243, 239),
+    51: (255, 244, 242),
+    52: (255, 245, 245),
+    53: (255, 246, 248),
+    54: (255, 248, 251),
+    55: (255, 249, 253),
+    56: (254, 249, 255),
+    57: (252, 247, 255),
+    58: (249, 246, 255),
+    59: (247, 245, 255),
+    60: (245, 243, 255),
+    61: (243, 242, 255),
+    62: (240, 241, 255),
+    63: (239, 240, 255),
+    64: (237, 239, 255),
+    65: (235, 238, 255),
+    66: (233, 237, 255),
+    67: (231, 236, 255),
+    68: (230, 235, 255),
+    69: (228, 234, 255),
+    70: (227, 233, 255),
+    71: (225, 232, 255),
+    72: (224, 231, 255),
+    73: (222, 230, 255),
+    74: (221, 230, 255),
+    75: (220, 229, 255),
+    76: (218, 228, 255),
+    77: (217, 227, 255),
+    78: (216, 227, 255),
+    79: (215, 226, 255),
+    80: (214, 225, 255),
+    81: (212, 225, 255),
+    82: (211, 224, 255),
+    83: (210, 223, 255),
+    84: (209, 223, 255),
+    85: (208, 222, 255),
+    86: (207, 221, 255),
+    87: (207, 221, 255),
+    88: (206, 220, 255),
+    89: (205, 220, 255),
+    90: (204, 219, 255),
+    91: (203, 219, 255),
+    92: (202, 218, 255),
+}
+
+#: **A GPU-ELŐNÉZET színhőmérséklet-KÖZELÍTÉSE (#551/#956).** Csatornánkénti,
+#: konstans szorzás, a mért állások között lineárisan interpolálva.
+#:
+#: ⚠️ **Ez KÖZELÍTÉS, nem a pontos út.** A pontos modell a natív
+#: feketetest-tábla + autocolor-mátrix (`apply_color_temperature`, #956); az
+#: a képpontonkénti méréssel mind a hat állásban jobb, a hideg végen
+#: négyszeresen. Ez a tábla azért MARAD MEG, mert a GPU-előnézet shaderje
+#: egyetlen uniformot kap, és egy 3×3-as mátrix oda nem fér be — a szorzók a
+#: gyors előnézethez elég közel járnak.
+#:
+#: Amit szerkezetileg NEM tud: kereszt-tagot előállítani. A natív művelet
+#: 3×3-as mátrix (`0x0090e9fd` → az autocolor alkalmazója), tehát a
+#: csatornánkénti alak a hideg végen 11,8 %-nyi átlón kívüli tagot hagy ki.
 _TEMPERATURE_KNOTS = (-1.0, -0.8, -0.5, 0.0, 0.5, 0.8, 1.0)
 _TEMPERATURE_GAINS = (
     (0.6580, 1.1102, 1.8713),
@@ -213,15 +316,105 @@ def apply_shadows(image: np.ndarray, strength: float) -> np.ndarray:
     return _apply_levels(image, 0.0, strength)
 
 
-def apply_color_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
-    """Színhőmérséklet (#551): csatornánkénti, mért KONSTANS szorzás.
+def feketetest_index(temperature: float) -> int:
+    """A csúszka állásából a feketetest-tábla indexe (#956).
 
-    A szorzókat a mért állások között lineárisan interpoláljuk; 0 =
-    változatlan. A hűtés lényegesen erősebb, mint a melegítés (ld. a
-    `_TEMPERATURE_GAINS` táblát).
+    A natív törzs (`0x0090e9d0`, 54 bájt):
+
+        fmul [0xcf47e0]   ; × 37,0
+        fadd [0xcf4610]   ; + 55,0
+        fistp [esp+0xc]   ; i
+
+    ⛔ **Az `fistp` a LEGKÖZELEBBI egészre kerekít, nem csonkol.** A törzsben
+    nincs vezérlőszó-állítás (`fnstcw` / `or 0xc00`), tehát az x87
+    alapértelmezett módja fut: legközelebbi egész, döntetlennél a páros. A
+    jegy és a spec `(int)` alakja ezen a ponton téves volt — a spec SAJÁT
+    mért index-táblája is a kerekítést igazolja (`+0,5` → 74, nem 73;
+    `+0,8` → 85, nem 84).
+
+    A csúszka `[−1, 1]` tartománya a 18…92 indexeket adja; a tartományon
+    kívüli értéket a végpontra szorítjuk, ahogy a felület is teszi.
+    """
+    clamped = _clamp(float(temperature), -1.0, 1.0)
+    # float32: a natív `fld dword` egyszeres pontosságban dolgozik
+    nyers = np.float32(np.float32(clamped) * np.float32(37.0) + np.float32(55.0))
+    # a `round` féltől-párosra kerekít — ugyanaz, mint az x87 alapmódja
+    return int(round(float(nyers)))
+
+
+def feketetest_szin(temperature: float) -> tuple[int, int, int]:
+    """A csúszka állásához tartozó feketetest-szín (R, G, B) — #956."""
+    return FEKETETEST_TABLA[feketetest_index(temperature)]
+
+
+def apply_color_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
+    """Színhőmérséklet (#956): feketetest-tábla + autocolor MÁTRIX.
+
+    A natív út: a csúszka állásából index lesz, az indexből egy
+    feketetest-szín (`0x00c7cf98`), és a képet ezzel **semlegesíti** az
+    `autocolor` 3×3-as mátrixa (`0x0090eda0`, #759).
+
+    ⚠️ **A művelet MÁTRIX, nem csatornánkénti szorzás.** Ez a hívás
+    szerkezetéből következik, nem statisztikai lelet: a kereszt-tag a hideg
+    végen 11,8 %, a meleg végen 3,2 %. Egy csatornánkénti modell ezt
+    **szerkezetileg** nem tudja előállítani — ezért volt érvénytelen az a
+    korábbi mérés (#879), amivel a natív utat elvetettük: csatorna-LUT-okhoz
+    hasonlított, amelyek maguk is vakok a mátrix átlón kívüli tagjaira.
+
+    ⛔ **`temperature = 0` AZONOSSÁG — a HÍVÓ kapuzza, nem a tábla.** A jegy
+    és a spec is azt írta, hogy a nulla állás sem azonosság, mert a tábla 55.
+    bejegyzése (255, 249, 253) maga sem semleges. A bejegyzésről ez igaz —
+    **de a stádium el sem indul nullánál.** A hívó (`0x008f7ee0`) a hívás
+    előtt összehasonlít nullával, és egyezéskor elugrik a hőmérséklet-ág
+    fölött:
+
+        0x008f7fd7  fldz
+        0x008f7fdd  fucom st(1)        ; temp ?= 0,0
+        0x008f7fe3  test  ah, 0x44
+        0x008f7fe6  jnp   0x8f8062     ; EGYENLŐSÉGKOR ide — a 0x90e9d0 kimarad
+        …
+        0x008f8010  call  0x90e9d0     ; csak a NEM nulla ágon
+
+    A kapu nélkül minden semleges `finetune2`-es kép némán elszíneződne: a
+    nulla állás mátrixa mérve `(128,128,128)` → `(126,129,126)`, ami sík
+    szürke felületen látszik. A hívóhelyeket indextől FÜGGETLEN pásztázás
+    adta (a `0x90e9d0`-nak kettő van: `0x8f8010`, `0x8f8051`; kontroll a
+    `0x90eda0` kilenc hívója).
+
+    A `_TEMPERATURE_GAINS` közelítés a GPU-előnézeté marad (ld. ott).
     """
     validate_image(image)
-    clamped = _clamp(temperature, -1.0, 1.0)
+    clamped = _clamp(float(temperature), -1.0, 1.0)
+    if clamped == 0.0:
+        # a natív hívó kapuja (`0x008f7fe6 jnp`): nulla állásnál a
+        # hőmérséklet-ág el sem indul
+        return image.copy()
+    piros, zold, kek = feketetest_szin(clamped)
+    matrix = autocolor_matrix_16_16(piros, zold, kek)
+    return apply_autocolor_matrix(image, matrix)
+
+
+def apply_color_temperature_gpu_kozelites(
+    image: np.ndarray, temperature: float
+) -> np.ndarray:
+    """A színhőmérséklet CSATORNÁNKÉNTI közelítése — csak a GPU-előnézetnek.
+
+    ⚠️ **Ez nem a pontos modell.** A pontos út az
+    `apply_color_temperature` (feketetest-tábla + 3×3-as autocolor-mátrix,
+    #956); a MENTETT kép mindig azon készül.
+
+    Miért van mégis szükség rá: a GPU-előnézet a teljes `finetune2` láncot
+    **egyetlen 256×1 RGB LUT-textúrával** futtatja, ami csak akkor
+    reprodukálja a CPU-utat, ha a lánc minden lépése csatornánként
+    független. A mátrix keveri a csatornákat, tehát LUT-ba nem fér —
+    kapcsoló nélkül a gyors előnézet elveszne. A közelítés hibája a rácson
+    nem látszik, a mentés pedig pontos.
+
+    A régi (a #551-ig egyetlen) modell: a `_TEMPERATURE_GAINS` szorzói a
+    mért állások között lineárisan interpolálva.
+    """
+    validate_image(image)
+    clamped = _clamp(float(temperature), -1.0, 1.0)
     if clamped == 0.0:
         return image.copy()
     gains = [
@@ -323,6 +516,7 @@ def apply_finetune2(
     shadows: float,
     neutral: tuple[int, int, int] | None,
     temperature: float,
+    szinhomerseklet_kozelitessel: bool = False,
 ) -> np.ndarray:
     """A `finetune2=1,p1,p2,p3,p4,p5` kompozit alkalmazása.
 
@@ -332,10 +526,17 @@ def apply_finetune2(
     A lépéssor a natív callback (`0x008f7ee0`) sorrendje: Derítőfény, majd
     a Kiemelések + Árnyékok EGYETLEN közös LUT-ban (#879), végül a szín-ág.
     Mindhárom lépés kimarad, ha a hozzá tartozó paraméter semleges.
+
+    `szinhomerseklet_kozelitessel`: **kizárólag a GPU-előnézet LUT-építője
+    állítja** (#956). Ilyenkor a hőmérséklet a csatornánkénti közelítéssel
+    megy, mert a pontos út 3×3-as mátrix, az pedig nem fér egy 256×1
+    LUT-textúrába. A MENTETT kép mindig a pontos úton készül.
     """
     validate_image(image)
     result = apply_fill(image, fill)
     result = _apply_levels(result, highlights, shadows)
     if neutral is not None:
         result = apply_neutral_pipette(result, neutral)
+    if szinhomerseklet_kozelitessel:
+        return apply_color_temperature_gpu_kozelites(result, temperature)
     return apply_color_temperature(result, temperature)
