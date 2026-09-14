@@ -58,9 +58,17 @@ class TestBuildFinetune2Lut:
         ],
     )
     def test_lut_matches_direct_cpu_render_on_real_image(self, kwargs):
-        """A LUT-alkalmazás (csatornánkénti textúra-mintavétel modellje)
-        PONTOSAN egyezik a közvetlen `apply_finetune2()`-vel egy nem-rámpa
-        (véletlen) képen — ez a parity-garancia lényege."""
+        """A LUT-alkalmazás PONTOSAN egyezik azzal a CPU-úttal, amit
+        reprodukálni hivatott — egy nem-rámpa (véletlen) képen.
+
+        ⚠️ **#956 óta a hőmérsékletnél ez nem a MENTÉSI út.** A mentés a
+        natív 3×3-as mátrixszal számol, ami keveri a csatornákat, tehát egy
+        csatornánkénti LUT-textúrába nem fér bele. Az előnézet ezért a
+        csatornánkénti KÖZELÍTÉSSEL megy
+        (`szinhomerseklet_kozelitessel=True`), és ez a próba azt köti ki,
+        hogy a LUT **azt** reprodukálja hibátlanul. Hogy a közelítés milyen
+        messze van a pontos úttól, azt a
+        `test_a_kozelites_elteresenek_KORLATJA` méri."""
         rng = np.random.default_rng(1234)
         image = rng.integers(0, 256, size=(17, 23, 3), dtype=np.uint8)
         lut = build_finetune2_lut(**kwargs)
@@ -72,8 +80,44 @@ class TestBuildFinetune2Lut:
             shadows=kwargs.get("shadows", 0.0),
             neutral=kwargs.get("neutral"),
             temperature=kwargs.get("temperature", 0.0),
+            szinhomerseklet_kozelitessel=True,
         )
         np.testing.assert_array_equal(via_lut, direct)
+
+    @pytest.mark.parametrize("temperature", [-0.6, -0.3, 0.1, 0.8])
+    def test_a_kozelites_elteresenek_KORLATJA(self, temperature):
+        """Mekkora a GPU-előnézet és a MENTETT kép eltérése (#956)?
+
+        A kérdés jogos: az előnézet közelítéssel megy, a mentés pontosan. A
+        próba nem elrejti ezt, hanem **számot ad rá**, hogy ha egyszer
+        megnő, akkor szóljon.
+
+        A 30-as korlát mért: a csatornánkénti közelítés a hideg végen hagyja
+        ki a legtöbbet (ott a mátrix átlón kívüli tagja 11,8 %). Az ÁTLAGOS
+        eltérés ennél nagyságrendekkel kisebb — az előnézet célja a gyors
+        visszajelzés, nem a végleges kép."""
+        rng = np.random.default_rng(99)
+        image = rng.integers(0, 256, size=(17, 23, 3), dtype=np.uint8)
+        kozelites = apply_finetune2(
+            image,
+            fill=0.0,
+            highlights=0.0,
+            shadows=0.0,
+            neutral=None,
+            temperature=temperature,
+            szinhomerseklet_kozelitessel=True,
+        ).astype(int)
+        pontos = apply_finetune2(
+            image,
+            fill=0.0,
+            highlights=0.0,
+            shadows=0.0,
+            neutral=None,
+            temperature=temperature,
+        ).astype(int)
+        elteres = np.abs(kozelites - pontos)
+        assert elteres.max() <= 30, f"a közelítés {elteres.max()} szintre tért el"
+        assert elteres.mean() <= 8, f"átlagos eltérés {elteres.mean():.2f}"
 
     @pytest.mark.parametrize("fill", [0.25, 1.0])
     def test_nonzero_fill_is_rejected(self, fill):

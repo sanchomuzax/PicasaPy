@@ -14,6 +14,7 @@ import pytest
 from picasapy.render.tone import (
     FINETUNE_LEVEL_PARAM_MAX,
     apply_color_temperature,
+    apply_color_temperature_gpu_kozelites,
     apply_fill,
     fill_lut,
     apply_finetune2,
@@ -182,18 +183,24 @@ class TestApplyColorTemperature:
         image = _uniform_image(128)
         np.testing.assert_array_equal(apply_color_temperature(image, 0.0), image)
 
-    def test_hutes_mert_szorzoi(self) -> None:
+    # ⚠️ #956: a két SZORZÓS próba a GPU-előnézet közelítésére költözött —
+    # az `apply_color_temperature` azóta a natív feketetest-tábla + 3×3-as
+    # autocolor-mátrix útján számol, ott a csatornánkénti szorzóknak nincs
+    # értelmük. A szorzók MAGUK érvényesek maradtak, csak a GPU-úton élnek,
+    # ezért a kikötésük is odaköltözött, nem veszett el.
+
+    def test_a_GPU_kozelites_hutes_mert_szorzoi(self) -> None:
         # #551, p5=−0,5: R 0,8956 · G 1,0225 · B 1,1739 (csatornánkénti
         # KONSTANS szorzás, nem eltolás)
-        result = apply_color_temperature(_uniform_image(128), -0.5)
+        result = apply_color_temperature_gpu_kozelites(_uniform_image(128), -0.5)
         assert abs(int(result[0, 0, 0]) - 128 * 0.8956) <= 1
         assert abs(int(result[0, 0, 1]) - 128 * 1.0225) <= 1
         assert abs(int(result[0, 0, 2]) - 128 * 1.1739) <= 1
 
-    def test_melegites_mert_szorzoi(self) -> None:
+    def test_a_GPU_kozelites_melegites_mert_szorzoi(self) -> None:
         # #551, p5=+1,0: R 1,0546 · G 0,9974 · B 0,8430 — a melegítés
         # lényegesen gyengébb, mint a hűtés
-        result = apply_color_temperature(_uniform_image(128), 1.0)
+        result = apply_color_temperature_gpu_kozelites(_uniform_image(128), 1.0)
         assert abs(int(result[0, 0, 0]) - 128 * 1.0546) <= 1
         assert abs(int(result[0, 0, 2]) - 128 * 0.8430) <= 1
 

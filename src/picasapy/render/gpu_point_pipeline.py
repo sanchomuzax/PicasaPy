@@ -110,6 +110,10 @@ def build_finetune2_lut(
         shadows=shadows,
         neutral=neutral,
         temperature=temperature,
+        # #956: a hőmérséklet PONTOS útja 3×3-as mátrix, az pedig nem fér
+        # egy csatornánkénti LUT-ba — az előnézet ezért a csatornánkénti
+        # közelítéssel megy. A MENTETT kép a pontos úton készül.
+        szinhomerseklet_kozelitessel=True,
     )
     return result[0]
 

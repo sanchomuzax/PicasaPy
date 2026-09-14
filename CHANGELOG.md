@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.448] – 2026-09-14
+
+### Megváltozott
+
+- **A színhőmérséklet-csúszka az eredeti Picasa saját modelljét követi**
+  (#956). Eddig három egyszerű szorzót használtunk a vörös, a zöld és a kék
+  csatornára. A visszafejtés megmutatta, hogy az eredeti ennél többet tesz: a
+  csúszka állásához kiválaszt egy izzószín-táblázatból egy színt (a csúszka
+  két vége 2800 és 10200 kelvinnek felel meg), és azzal egy teljes
+  színátalakítást végez — ami a csatornákat keveri is, nem csak külön-külön
+  erősíti. Ez leginkább a hideg végén látszik. A csúszka közepén, ahogy
+  eddig is, a kép változatlan marad. A szerkesztés közbeni gyors előnézet a
+  korábbi, egyszerűbb közelítéssel dolgozik — a mentett kép mindig a pontos
+  úton készül.
+
 ## [0.8.447] – 2026-09-14
 
 ### Megváltozott

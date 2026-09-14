@@ -20,10 +20,16 @@ súllyal** és **csak melegítéskor** mozdul; a fehérváltás pedig egy globá
 lekicsinyítés, amit a végén a pontos inverze visszaad — ez teremt fejteret,
 hogy a vörös emelése ne vágjon be.
 
-**Ez NEM a `finetune`/`finetune2` p5 színhőmérséklete.** Azt a #551 mérése
-alapján a `tone.apply_color_temperature` csatornánkénti konstans szorzói
-adják, és ott ez a natív képlet MÉRTEN rosszabbul illeszkedett — a két utat
-szándékosan nem vezetjük egy kulcsra.
+**Ez NEM a `finetune`/`finetune2` p5 színhőmérséklete.** A kettő két külön
+natív függvény, és a `finetune2`-é (`0x0090e9d0`) egészen más gépezet:
+feketetest-tábla (`0x00c7cf98`) + az autocolor 3×3-as mátrixa — azt a
+`tone.apply_color_temperature` valósítja meg (#956). A két utat szándékosan
+nem vezetjük egy kulcsra.
+
+*(#956 előtt itt az állt, hogy a `finetune2` p5-öt „csatornánkénti konstans
+szorzók" adják. Az azóta nem igaz: a szorzók a GPU-előnézet közelítésébe
+kerültek át. Az viszont továbbra is áll, hogy EZ a képlet a `colortemp`
+szűrőé, nem a `finetune2`-höz való.)*
 """
 
 from __future__ import annotations
