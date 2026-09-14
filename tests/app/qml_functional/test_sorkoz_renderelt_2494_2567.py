@@ -430,20 +430,52 @@ def test_a_csempefelirat_SORKOZE_a_mert_10(_panel_nezet):
 
 
 def test_a_gomb_felirat_SORKOZE_a_mert_10(_panel_nezet):
-    """A #2494 párja ugyanazzal a növekmény-méréssel."""
+    """A #2494 párja ugyanazzal a növekmény-méréssel.
+
+    ⚠️ **A növekmény CSAK AZONOS BETŰFOKOZATON tiszta sorköz** — ezt a
+    próba korábban hallgatólagosan feltette, és a windows-lábon el is
+    hasalt rajta (#2990 után: *„a gombfelirat sorköze 8.0 a mért 10
+    helyett"*).
+
+    A mechanizmus: a `PanelButton` rögzített magasságnál a fokozatot a
+    felirathoz illeszti (#2597), és az illesztés egyik ága a SZÖVEG
+    SZÉLESSÉGÉBŐL számol. A rövid, egysoros próba („Visszavonás") ezért
+    nagyobb fokozatot kaphat, mint a hosszú, kétsoros — és akkor a két
+    magasság különbsége már nem csak a sorközt tartalmazza, hanem a
+    **betű natúr magasságának különbségét** is. Linuxon ez nem jött elő
+    (mindkét próba 10-re illeszkedett), Windowson a magasabb betűmetrika
+    miatt igen: egysoros 12, kétsoros 10 ⇒ 10 − 2 = 8.
+
+    A javítás nem tűrés, hanem a zavaró tényező KIKAPCSOLÁSA: a mérés
+    idejére a gomb nem rögzített magasságú (`rogzitettMagassag = 0`), és
+    ilyenkor a `PanelButton` nem illeszt — mindkét próba az alap
+    fokozaton rajzolódik, tehát a különbség tiszta sorköz, minden
+    platformon. Az illesztésnek SAJÁT őre van (#2597), ez a lap a
+    SORKÖZT állítja. A próba külön ki is mondja, hogy a két fokozat
+    egyezik, így a módszer nem tud némán érvénytelenné válni."""
     view, root, qt_app = _panel_nezet
     panel = _child(root, "panel")
+    gomb = _child(root, "editUndoButton")
     cimke = _child(root, "editUndoButtonLabel")
+    gomb.setProperty("rogzitettMagassag", 0)
 
-    def _magassag(felirat: str) -> tuple[int, float]:
+    def _meres(felirat: str) -> tuple[int, float, int]:
         panel.setProperty("undoLabel", felirat)
         _var_a_kirajzolasra(view, qt_app)
-        return cimke.property("lineCount"), cimke.property("implicitHeight")
+        return (
+            cimke.property("lineCount"),
+            cimke.property("implicitHeight"),
+            cimke.property("font").pixelSize(),
+        )
 
-    egy_sor, egy_magas = _magassag("Visszavonás")
+    egy_sor, egy_magas, egy_fokozat = _meres("Visszavonás")
     assert egy_sor == 1
-    tobb_sor, tobb_magas = _magassag(KETSOROS_FELIRAT)
+    tobb_sor, tobb_magas, tobb_fokozat = _meres(KETSOROS_FELIRAT)
     assert tobb_sor >= 2
+    assert egy_fokozat == tobb_fokozat, (
+        f"a két próba MÁS fokozaton rajzolódott ({egy_fokozat} vs. "
+        f"{tobb_fokozat}) — a magasságkülönbség így nem tiszta sorköz"
+    )
 
     sorkoz = (tobb_magas - egy_magas) / (tobb_sor - egy_sor)
     assert sorkoz == MERT_SORKOZ, (
