@@ -1275,3 +1275,126 @@ mind a négy névre **3-3** találat jött.
 *Forrás: a nevek `0x00c96818`–`0x00c96874` között, egy folytonos
 névtáblában; a szétosztó `0x005de13b`–`0x005de41c`; a `.tre` oldala
 `throttle.tre` (38 sor).*
+
+## ⛳ A háttérművelet-jelző: gazda, megszakítás és geometria (2026-09-14, 304. kör, #3112)
+
+*Forrás: a szövegtár `IBackgroundNotify::*` négy kulcsa
+(`referencia/stringres-en-hu.tsv:1440–1443`), a megszakítás-kérdés
+`0x00631d40`–`0x00631e3e`, a konstruktor `0x004197b0`, a lezáró
+`0x004198a0`, a lekérdező `0x004198c0`, a `Cancel()` `0x00419970`, az
+állapotjelzés hívóhelyei `0x00404b99` és `0x004197a1`, a felület
+`activity.tre` + a `respack.yt` rétegfejlécei.*
+
+A #2966 megépítéséhez hiányzott, hogy MI a jelző gazdája, mit tesz a
+megszakítás, és hol ül pontosan. Mindhárom megvan, referencia-képernyőkép
+nélkül.
+
+### 1. Mit CSINÁL — a megszakítás valódi, nem látszat
+
+A háttérműveletek közös ősosztálya (konstruktor `0x004197b0`, vtábla
+`0x00c82988`) ezeket a mezőket tartja:
+
+| eltolás | mit tárol | kezdőérték (`0x004197b0`) |
+|---|---|---|
+| `+0x48` | a művelet eseménykezelője | a konstruktor argumentuma |
+| `+0x51` | **„megszakítást kértek"** jelző | `0` |
+| `+0x52` | „a záró értesítés még hátravan" | `1` |
+| `+0x54` | a felületi értesítő objektum | `0` (később kapja meg) |
+
+**A megerősítő párbeszéd** (`0x00631d40`) mind a négy feliratot a
+szövegtárból kéri (`0x00631d5e`, `0x00631db3`, `0x00631dd2`, `0x00631ded`),
+majd `0x00631e17`-nél megnyitja a párbeszédet. A két ág:
+
+```
+0x00631e1f  test al, al
+0x00631e23  mov byte [ebx+0x51], 1     ; IGEN  -> megszakítás kérve
+0x00631e32  mov byte [ebx+0x52], 0     ; NEM   -> csak a záró jelzés törlődik
+```
+
+⭐ **A jelzőt a munkavégző tényleg OLVASSA:** a lekérdező rutin
+(`0x004198c0`) a várakozás eredménye mellett a `+0x51`-et is vizsgálja
+(`0x0041991c cmp byte [esi+0x51], al`), és ha az áll, „van tennivaló"
+eredménnyel tér vissza. ⇒ **a megszakítás nem kozmetikai**: a
+munkaciklus a jelzőn keresztül értesül róla. A `Cancel()` metódus
+(`0x00419970`) ugyanezt a jelzőt állítja, miután a `+0x48` eseményt
+elsütötte.
+
+**A felületi értesítés** a `+0x54` objektum `vtbl+0x15c` rekeszén megy, egy
+számmal:
+
+| érték | hol | mit jelent |
+|---|---|---|
+| `0` | `0x00404b99` (közvetlenül egy `1,0`-s haladás-hívás után) | **indulás / megjelenés** |
+| `2` | `0x004197a1` és `0x004198af`, mindkét helyen a `+0x52` törlésével | **vég / eltűnés** |
+
+⛔ **Az `1`-es értékre nincs hívóhely ebben a három pontban** — hogy létezik-e
+köztes „haladás" állapot, **nincs kimérve**.
+
+### 2. A négy felirat — a magyar fordítás egyik sora GYANÚS
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `IBackgroundNotify::canceltitle` | Want to Cancel? | **Kilép?** |
+| `IBackgroundNotify::cancel` | Do you want to cancel this operation? | Megszakítja ezt a műveletet? |
+| `IBackgroundNotify::cancelyesbutton` | Cancel Operation | Művelet megszakítása |
+| `IBackgroundNotify::cancelnobutton` | Don't Cancel | Megszakítás mellőzése |
+
+⚠️ A címsor magyarul „Kilép?" — az angol „Want to Cancel?"-hez képest ez
+**más jelentés** (kilépés vs. megszakítás). A saját fordításunkban ezt nem
+kell átvenni.
+
+### 3. Az elem-készlet és a geometria — a `respack.yt`-ból
+
+*Forrás: `respack.yt:77330` (`docbounds`), `:77347` (`vbutton`), `:77364`
+(`base`), `:77381` (`spinner`), `:80144` (`spinnermask`), `:81437`
+(`thumbbounds`), `:81454` (`activitythumb`), `:3235550` (`thumbui/docbounds`),
+`:3262712` (`thumbui/clip(activity)`); a jelzők `activity.tre:1–18`.*
+
+A jelző **önálló dokumentum** (`activity/base: root`), amit a könyvtárnézet
+`activitycontainer` néven ágyaz be. Hat eleme van:
+
+| elem | x0 | y0 | x1 | y1 | méret | `.tre` jelzők |
+|---|---:|---:|---:|---:|---|---|
+| `activity/docbounds` | 0 | 0 | 35 | 28 | 35 × 28 | — |
+| `activity/base` | 0 | 0 | 35 | 28 | 35 × 28 | gyökér |
+| `activity/spinner` | 5 | 1 | 31 | 27 | **26 × 26** | `m_centerXY`, `m_hidden` |
+| `activity/spinnermask` | 0 | 0 | 35 | 28 | 35 × 28 | `m_centerXY` |
+| `activity/activitybutton` (`vbutton`) | 7 | 0 | 29 | 28 | **22 × 28** | `m_hidden` |
+| `activity/thumbbounds` (`rect`) | 0 | 0 | 35 | 28 | 35 × 28 | — |
+| `activity/activitythumb` (`bicubic`) | 0 | 0 | 35 | 28 | 35 × 28 | `m_centerXY`, `m_shadow`, `m_hidden` |
+
+**A helye a könyvtárnézetben:** a `thumbui` tervezővászna **800 × 534**, és a
+`thumbui/clip(activity): activitycontainer` réteg **x 760–795, y 5–33**.
+⇒ a jelző a **jobb felső sarokban** ül, a felső széltől **5**, a jobb széltől
+**5** képpontra, mérete **35 × 28**.
+
+⭐ **Három elem alapból REJTETT** (`m_hidden`): a pörgő, a gomb és a
+bélyegkép — csak a maszk és a keret látszik. ⇒ a jelző **nem üres helyet
+foglal**: a `spinnermask` és a `thumbbounds` mindig ott van, a tartalom
+jelenik meg.
+
+⭐ **Van bélyegkép-eleme** (`activitythumb`, bikubikus, árnyékkal): a jelző
+nem csak pörgőt mutat, hanem a feldolgozott elem képét is.
+
+### 4. Testvér-példányok — ugyanez a dokumentum három helyen
+
+*Forrás: `respack.yt:81752`–`:85893` (`activitycapture`), `:151238` és
+`:185217` (a két felvevő-panel), `:850491` (`editpanel/clip`), `:884285`
+(`editpanelactivity/docbounds`); a szűkített készlet `editpanelactivity.tre:1–9`.*
+
+| dokumentum | hol ágyazódik be |
+|---|---|
+| `activity` | `thumbui/clip(activity)` — a könyvtárnézet |
+| `activitycapture` | `capturemoviepanelpopup` és `canoncapturemoviepanelpopup` |
+| `editpanelactivity` | `editpanel/clip(editpanelactivity)` |
+
+Az `editpanelactivity` **szűkített**: csak `spinner` + `spinnermask`, se
+gomb, se bélyegkép. ⇒ a szerkesztőben a jelző **nem megszakítható**.
+
+### 5. ⛔ Amit ez NEM mond ki
+
+- **Az `1`-es állapot** (ha van) hívóhelye nincs meg.
+- **Melyik művelet regisztrálja magát** a jelzőre, nincs leltározva — a
+  `+0x54` írói adnák meg, azt ez a kör nem pásztázta végig.
+- A `spinner` rétegének **2763 bájtos** tartalma (fázisképek?) nincs
+  kibontva; az animáció ütemét nem mértük.
