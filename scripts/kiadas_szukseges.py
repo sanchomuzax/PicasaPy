@@ -65,6 +65,15 @@ _NEM_KIADHATO_FAJLOK = (
     ".editorconfig",
     #: #2060: az ast-grep gyökér-konfigurációja, a szabálykészletéhez tartozik.
     "sgconfig.yml",
+    #: A napi automata súgófrissítés két ÁLLAPOTFÁJLJA (picasapy-agent#35):
+    #: meddig jutott a dokumentálás, és a futás naplósora. A `src/` alatt
+    #: állnak, de nem viselkedés: a wheel sem csomagolja őket (a
+    #: `packages.find` MODULOKAT keres, nem pontfájlokat), és a felhasználó
+    #: semmit nem lát belőlük. A kapu mégis felhasználói mondatot követelt
+    #: rájuk — olyat, ami a naplóban hazugság lenne. Ugyanaz a hiba, mint a
+    #: `tools/`-nál (#1938) és az `.ast-grep/`-nél (#2060).
+    "src/picasapy/help/.last_documented_commit",
+    "src/picasapy/help/.update.log",
 )
 
 

@@ -157,3 +157,28 @@ def test_az_ast_grep_nem_jut_el_a_felhasznalohoz():
 def test_a_forras_valtozasa_tovabbra_is_kiadast_indokol():
     """Az előző teszt nem tompíthatja el az őrt."""
     assert ksz.erdemi_fajlok(["src/picasapy/render/effects.py"])
+
+
+def test_a_sugo_allapotfajljai_nem_jutnak_el_a_felhasznalohoz():
+    """A napi súgófrissítés két ÁLLAPOTFÁJLJA nem viselkedés (picasapy-agent#35).
+
+    A `.last_documented_commit` azt tartja, meddig jutott a dokumentálás, a
+    `.update.log` pedig a futás naplósora. Mindkettő a csővezeték saját
+    könyvelése: a wheel nem csomagolja (a `packages.find` moduloka keres, nem
+    pontfájlokat), és a felhasználó semmit nem lát belőlük.
+
+    A kapu mégis FELHASZNÁLÓI mondatot követelt rájuk, mert a `src/` alatt
+    állnak — a #3107 emiatt lett piros. Olyan mondatot kért, ami a naplóban
+    hazugság lenne; ugyanaz a hiba, mint a `tools/`-nál (#1938) és az
+    `.ast-grep/`-nél (#2060).
+    """
+    assert not ksz.erdemi_fajlok([
+        "src/picasapy/help/.last_documented_commit",
+        "src/picasapy/help/.update.log",
+    ])
+
+
+def test_a_sugo_SZOVEGE_tovabbra_is_kiadast_indokol():
+    """Az előző teszt nem tompíthatja el az őrt: a súgó TARTALMA a
+    felhasználóé, csak a csővezeték könyvelése nem az."""
+    assert ksz.erdemi_fajlok(["src/picasapy/help/loader.py"])
