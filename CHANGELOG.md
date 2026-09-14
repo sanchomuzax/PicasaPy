@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.451] – 2026-09-15
+
+### Javítva
+
+- **Egy háttérmunka hibája nem rántja magával az egész programot** (#1457).
+  Ha a képtár frissítését végző háttérmunka hibába futott, a hibaüzenet
+  kiírása bizonyos helyzetekben — jellemzően kilépés közben — magát a
+  programot állította le azonnal, magyarázat nélkül. Mostantól a hiba a
+  naplóba kerül (megnevezve, melyik munka és mi történt), a program pedig
+  fut tovább.
+
 ## [0.8.450] – 2026-09-14
 
 ### Megváltozott
