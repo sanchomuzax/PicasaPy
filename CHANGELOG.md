@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.450] – 2026-09-14
+
+### Megváltozott
+
+- **A nyomtatás haladás-jelzése nem lassítja a nyomtatást** (#3016). Az előző
+  változatban a program minden lap után visszaengedte a felülethez a
+  vezérlést, hogy a számláló frissüljön; a mérés szerint ez tizenkét lapnál
+  csaknem fél másodperccel megnyújtotta a munkát. Mostantól ritkábban, de
+  éppen elég sűrűn frissít: a számláló továbbra is minden lapnál lép, a
+  nyomtatás ideje viszont ugyanannyi, mint jelzés nélkül.
+
 ## [0.8.449] – 2026-09-14
 
 ### Hozzáadva

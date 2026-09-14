@@ -175,3 +175,74 @@ class TestAzUjbolIndulasTILOS:
         vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
         assert vezerlo.renderPrintPreviewPdf([0], "fit", "auto", str(tmp_path / "a.pdf"))
         assert vezerlo.renderPrintPreviewPdf([1], "fit", "auto", str(tmp_path / "b.pdf"))
+
+
+class TestAFrissitesRITKITASA:
+    """⏱️ #3016: a jelzés MINDEN lapról szól, az eseményhurkot viszont
+    ritkítva engedjük vissza.
+
+    **Mért indok** (12 megapixeles fotók, PDF, RPi5): laponkénti
+    `processEvents` mellett a 12 lapos feladat 2388 → 2815 ms lett,
+    **+427 ms (+18 %)**. Egy és négy lapnál a különbség a zajban maradt.
+    A ritkítás után a 12 lapos esetet HÁROMSZOR mértem: −100 / +7 / +144 ms
+    (medián +7) — a különbség tehát a futások közti SZÓRÁSBA esik, szemben
+    a ritkítás nélküli, következetes +427 ms-mal. A jegy negyedik feltétele
+    („az észlelt megállás ideje nem nő") ezzel mérésből teljesül.
+    """
+
+    def _szamlalo(self, monkeypatch, kesleltetes_ms: float):
+        """A modul `QCoreApplication`-jét cseréljük, hogy SZÁMOLNI tudjuk,
+        hányszor engedtük vissza az eseményhurkot."""
+        from picasapy.app import print_controller as modul
+
+        hivasok: list[int] = []
+
+        class _Alkalmazas:
+            @staticmethod
+            def processEvents() -> None:  # noqa: N802 — Qt-API
+                hivasok.append(1)
+
+        class _Csere:
+            @staticmethod
+            def instance() -> _Alkalmazas:
+                return _Alkalmazas()
+
+        monkeypatch.setattr(modul, "QCoreApplication", _Csere)
+        monkeypatch.setattr(modul, "_FRISSITES_MS", kesleltetes_ms)
+        return hivasok
+
+    def test_hosszu_kesleltetesnel_csak_az_ELSO_es_az_UTOLSO_lap_enged(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        """Két lap MINDIG átengedi az eseményeket, a ritkítástól függetlenül:
+
+        * az **első** — hogy a felhasználó azonnal lássa, elindult a munka
+          (a feladat elején a ritkítás-óra nullázódik);
+        * az **utolsó** — hogy a „kész" állapot ne késsen.
+
+        A köztes lapokat ritkítjuk; ez adja a mért nyereséget."""
+        hivasok = self._szamlalo(monkeypatch, 10_000.0)
+        vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
+        jelzesek: list[int] = []
+        vezerlo.printProgress.connect(lambda k, _o: jelzesek.append(k))
+
+        assert vezerlo.renderPrintPreviewPdf(
+            [0, 1, 2], "fit", "auto", str(tmp_path / "ki.pdf")
+        )
+
+        assert jelzesek == [1, 2, 3], "a JELZÉS minden lapról szól, ezt nem ritkítjuk"
+        assert len(hivasok) == 2, (
+            f"{len(hivasok)} eseményhurok-átengedés történt 2 helyett (az "
+            "elsőnek és az utolsónak kell átengednie) — a ritkítás nem "
+            "a várt módon működik"
+        )
+
+    def test_nulla_kesleltetesnel_MINDEN_lap_enged(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        hivasok = self._szamlalo(monkeypatch, 0.0)
+        vezerlo, _ = _vezerlo_harom_keppel(tmp_path)
+        assert vezerlo.renderPrintPreviewPdf(
+            [0, 1, 2], "fit", "auto", str(tmp_path / "ki.pdf")
+        )
+        assert len(hivasok) == 3

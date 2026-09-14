@@ -34,6 +34,7 @@ képenkénti tájolásváltás így nem lenne robosztus (ld. `_paint_pages`)."""
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -86,6 +87,19 @@ _log = logging.getLogger(__name__)
 # NEM ebben a körben készül el, ld. a modul docstringje)
 _MARGIN_MM = 5.0
 
+#: #3016: legfeljebb ennyente engedjük vissza az eseményhurkot a festés
+#: közben (ms). MÉRT szám, nem ízlés: a laponkénti `processEvents` a 12
+#: lapos, 12 megapixeles feladatot 2388 → 2815 ms-ra nyújtotta (+18 %). A
+#: 200 ms a szokásos UI-válaszidő-küszöb alatt marad (a felhasználó még
+#: „élőnek" látja a felületet), de tizenkét lapnál már csak néhányszor
+#: fizetjük meg az árat, nem tizenkétszer.
+#:
+#: A ritkítás UTÁN a 12 lapos esetet háromszor mértem: −100 / +7 / +144 ms
+#: (medián +7) — a különbség tehát a futások közti SZÓRÁSBA esik, szemben a
+#: ritkítás nélküli, KÖVETKEZETES +427 ms-mal. Ezzel teljesül a jegy
+#: negyedik feltétele: „az észlelt megállás ideje nem nő".
+_FRISSITES_MS = 200.0
+
 # #1819: az előnézeti lap felbontása. Nem nyomdai érték — csak annyi, hogy
 # a képernyőn éles legyen a legnagyobb nyomatméreten is (8×10 hüvelyk ×
 # 96 = 768×960 képpont), és a PNG még gyorsan elkészüljön.
@@ -133,6 +147,9 @@ class PrintController(QObject):
         #: `processEvents()`-et hív, tehát a felület KÖZBEN válaszol — ez a
         #: zár tartja távol a második, egyidejű feladatot.
         self._nyomtatas_folyamatban = False
+        #: #3016: mikor engedtük vissza utoljára az eseményhurkot
+        #: (monotonikus óra). A `_FRISSITES_MS` ritkítás alapja.
+        self._utolso_frissites = 0.0
         #: #1782: a nyomatméret TARTÓS — az eredetiben a
         #: `Preferences\PrintLastSize` őrzi két indítás közt. Ugyanaz a
         #: minta, mint a #1780-nál: amit „a művelethez tapad"-nak
@@ -774,6 +791,10 @@ class PrintController(QObject):
         nyilvantartas = get_app_busy_registry()
         nyilvantartas.begin()
         self._nyomtatas_folyamatban = True
+        # #3016: minden feladat SAJAT ritkitas-orat kap — igy az ELSO lap
+        # jelzese mindig azonnal kimegy (a felhasznalo lassa, hogy elindult),
+        # nem az elozo feladat ora-allasatol fugg
+        self._utolso_frissites = 0.0
         try:
             self._paint_pages(printer, images, mode, self._lap_kesz)
         except RuntimeError:
@@ -793,11 +814,26 @@ class PrintController(QObject):
         befagyna, és a haladás-jelzés csak a végén, egy csomóban érne
         oda. Az újbóli indítást a `_nyomtatas_folyamatban` zárja ki — ez a
         `processEvents` ára, és a `_run` kapuja fizeti meg.
+
+        ⏱️ **A jelzés MINDIG megy, a `processEvents` ritkítva** — mérve
+        (12 megapixeles fotók, PDF, RPi5): laponkénti `processEvents`
+        mellett a 12 lapos feladat 2388 → 2815 ms lett, **+427 ms (+18 %)**.
+        Egy lapnál és négynél a különbség a zajban maradt (+10 / −11 ms),
+        tehát az ár a lapszámmal nő. A `_FRISSITES_MS` ritkítás ezt vágja
+        vissza úgy, hogy a felület továbbra is a szokásos UI-válaszidőn
+        belül frissül. Az UTOLSÓ lap mindig átengedi az eseményeket, hogy a
+        „kész" állapot azonnal kimenjen.
         """
         self.printProgress.emit(kesz, ossz)
         app = QCoreApplication.instance()
-        if app is not None:
-            app.processEvents()
+        if app is None:
+            return
+        most = time.monotonic()
+        utolso = kesz >= ossz
+        if not utolso and (most - self._utolso_frissites) * 1000 < _FRISSITES_MS:
+            return
+        self._utolso_frissites = most
+        app.processEvents()
 
     @staticmethod
     def _sokszorozva(images: list[QImage], copies: int) -> list[QImage]:
