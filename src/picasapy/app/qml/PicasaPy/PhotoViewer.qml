@@ -1529,12 +1529,19 @@ Rectangle {
                     //: a modell ezredmásodpercre váltva adja, és a **−1
                     //: jelenti, hogy azon az oldalon nincs vágás** (a 0 a
                     //: nulla pontra állított kezdés lenne).
+                    //: ⚠️ A `revision` SZÁNDÉKOS kötés-függőség: a
+                    //: `movieTrimAt` sima slot-hívás, magától nem szól, ha a
+                    //: vágás mentése átírta a sort. Enélkül a `setin` után a
+                    //: lejátszó a RÉGI szakaszt tartaná, és a vágás csak
+                    //: átnavigálás után élne (a projekt itemAt/revision
+                    //: mintája, `LightboxFeed.qml`).
                     Binding {
                         target: videoLoader.item
                         property: "trimStartMs"
                         value: viewer.photosModel
-                               ? viewer.photosModel.movieTrimAt(
-                                     viewer.currentIndex).start : -1
+                               ? (viewer.photosModel.revision,
+                                  viewer.photosModel.movieTrimAt(
+                                      viewer.currentIndex).start) : -1
                         when: videoLoader.status === Loader.Ready
                               && viewer.isCurrentVideo
                     }
@@ -1542,10 +1549,28 @@ Rectangle {
                         target: videoLoader.item
                         property: "trimEndMs"
                         value: viewer.photosModel
-                               ? viewer.photosModel.movieTrimAt(
-                                     viewer.currentIndex).end : -1
+                               ? (viewer.photosModel.revision,
+                                  viewer.photosModel.movieTrimAt(
+                                      viewer.currentIndex).end) : -1
                         when: videoLoader.status === Loader.Ready
                               && viewer.isCurrentVideo
+                    }
+                    //: #1838: a vágás MENTÉSE — a lejátszó jelez, a vezérlő ír.
+                    //: A sor indexe itt ismert, a komponens nem is látja.
+                    Connections {
+                        target: videoLoader.item
+                        enabled: videoLoader.status === Loader.Ready
+                                 && viewer.isCurrentVideo
+                        ignoreUnknownSignals: true
+                        function onTrimRequested(startMs, endMs) {
+                            if (controller && controller.setMovieTrim !== undefined)
+                                controller.setMovieTrim(
+                                    viewer.currentIndex, startMs, endMs)
+                        }
+                        function onTrimResetRequested() {
+                            if (controller && controller.resetMovieTrim !== undefined)
+                                controller.resetMovieTrim(viewer.currentIndex)
+                        }
                     }
                     Text {
                         objectName: "videoUnavailableText"

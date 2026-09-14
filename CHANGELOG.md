@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.445] – 2026-09-14
+
+### Hozzáadva
+
+- **A videók vágása: kezdő- és végpont beállítható** (#1838). A videó
+  vezérlősávján három új gomb jelent meg: az egyikkel a jelenlegi képnél új
+  kezdőpontot, a másikkal új végpontot lehet kijelölni, a harmadikkal pedig a
+  vágás visszaállítható. A lejátszás ettől a kijelölt szakaszra szorítkozik.
+  A videófájlt ez nem alakítja át — a vágáspontok a mappa
+  `.picasa.ini`-jébe kerülnek, ugyanabba az alakba, amit az eredeti Picasa is
+  használ, tehát a két program ugyanazt a vágást látja. Ami korábban a
+  Picasában készült, azt érintetlenül megőrizzük.
+
 ## [0.8.444] – 2026-09-12
 
 ### Belső

@@ -17,12 +17,22 @@ Item {
     //: őket, és a `filters=` lánc `moviestart`/`movieend` tokenjében tárolja
     //: (100 ns-os egységben, ld. `ini/movie_trim.py`).
     //:
-    //: ⚠️ A vágás nálunk ma CSAK a lejátszásra hat: a fájlt nem alakítjuk át,
-    //: és a pontokat a felületen még nem lehet ÁLLÍTANI — az a #1838 további
-    //: része. Ami már most számít: egy Picasából örökölt klip a megfelelő
-    //: helyen indul és ott áll meg, nem a nyers fájl elején-végén.
+    //: ⚠️ A vágás nálunk CSAK a lejátszásra hat: a fájlt nem alakítjuk át.
+    //: A pontok viszont ÁLLÍTHATÓK (`setin`/`setout`/`reset_trim`), és a
+    //: `.picasa.ini` `filters=` láncába mennek vissza.
     property int trimStartMs: -1
     property int trimEndMs: -1
+
+    //: #1838: a vágás MENTÉSE. A komponens nem ír inifájlt — jelez, és a
+    //: gazda (`PhotoViewer`) hívja a vezérlő `setMovieTrim`/`resetMovieTrim`
+    //: slotját a sor indexével. A `-1` itt is „nincs vágás azon az oldalon".
+    //:
+    //: ⚠️ A helyi `trimStartMs`/`trimEndMs` SZÁNDÉKOSAN nem íródik át itt: a
+    //: két érték a modellből kötve jön, és csak SIKERES ini-írás után
+    //: frissül. Ha itt optimistán átírnánk, a felület egy írásvédett mappán
+    //: is mentettnek mutatná a vágást (#2497 tanulsága).
+    signal trimRequested(int startMs, int endMs)
+    signal trimResetRequested()
 
     readonly property bool trimmed: trimStartMs >= 0 || trimEndMs >= 0
     //: a lejátszható szakasz — a vágás nélküli oldalon a fájl határa
@@ -133,6 +143,38 @@ Item {
                     when: !seek.pressed
                     value: media.position
                 }
+            }
+            //: #1838: a három vágás-vezérlő, az eredeti sorrendjében
+            //: (`setin` · `setout` · `reset_trim`). A feliratok a nyomdai
+            //: vágásjelek: a be- és kimeneti pont szögletes zárójele.
+            PicasaButton {
+                objectName: "videoSetInButton"
+                Layout.preferredWidth: 30
+                text: "["
+                ToolTip.text: qsTr("Create a new starting point")
+                ToolTip.delay: Theme.tooltipDelay
+                ToolTip.visible: hovered
+                onClicked: player.trimRequested(media.position, player.trimEndMs)
+            }
+            PicasaButton {
+                objectName: "videoSetOutButton"
+                Layout.preferredWidth: 30
+                text: "]"
+                ToolTip.text: qsTr("Create a new ending point")
+                ToolTip.delay: Theme.tooltipDelay
+                ToolTip.visible: hovered
+                onClicked: player.trimRequested(player.trimStartMs, media.position)
+            }
+            PicasaButton {
+                objectName: "videoResetTrimButton"
+                Layout.preferredWidth: 30
+                text: "⟲"
+                //: vágás nélkül nincs mit visszaállítani — a gomb szürke
+                enabled: player.trimmed
+                ToolTip.text: qsTr("Reset trim")
+                ToolTip.delay: Theme.tooltipDelay
+                ToolTip.visible: hovered
+                onClicked: player.trimResetRequested()
             }
             Text {
                 objectName: "videoTimeLabel"
