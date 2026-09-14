@@ -126,9 +126,12 @@ class TestANyomtatasVALOBAN:
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, images, mode):
+        def figyelo(printer, images, mode, lap_kesz=None):
+            # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
+            # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
+            # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, images, mode)
+            return eredeti(printer, images, mode, lap_kesz)
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)
@@ -145,9 +148,12 @@ class TestANyomtatasVALOBAN:
         kapott: list[int] = []
         eredeti = PrintController._paint_pages
 
-        def figyelo(printer, images, mode):
+        def figyelo(printer, images, mode, lap_kesz=None):
+            # #3016: a rajzolo egy OPCIONALIS laponkenti visszahivast is kap
+            # — a dublornek at kell adnia, kulonben a haladas-jelzes nema
+            # marad, es a `_run` kapuja sem mérodne
             kapott.append(len(images))
-            return eredeti(printer, images, mode)
+            return eredeti(printer, images, mode, lap_kesz)
 
         monkeypatch.setattr(
             PrintController, "_paint_pages", staticmethod(figyelo)

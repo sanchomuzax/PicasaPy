@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.449] – 2026-09-14
+
+### Hozzáadva
+
+- **Nyomtatáskor látszik, hol tart** (#3016). Eddig a program a nyomtatás
+  idejére megállt, és semmi nem mutatta, hogy dolgozik-e még — több képnél ez
+  másodpercekig tartott. Mostantól a párbeszédben ott a „Nyomtatás: 2 / 12"
+  sor, laponként lépve, és az alsó sáv is jelzi a munkát. Ez a PDF-be
+  mentésre és a nyomtatóra küldésre egyaránt áll. A nyomtatás közben a
+  Nyomtatás gomb nem indít második feladatot.
+
 ## [0.8.448] – 2026-09-14
 
 ### Megváltozott

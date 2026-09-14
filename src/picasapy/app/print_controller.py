@@ -38,6 +38,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from PySide6.QtCore import (
+    QCoreApplication,
     QObject,
     QRectF,
     QSettings,
@@ -51,6 +52,7 @@ from PySide6.QtCore import QMarginsF
 from PySide6.QtGui import QFont, QImage, QPageLayout, QPageSize, QPainter
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
 
+from picasapy.app.busy_registry import get_app_busy_registry
 from picasapy.index import PhotoRecord
 from picasapy.printing.contact_sheet import (
     DEFAULT_COLUMNS,
@@ -96,6 +98,12 @@ class PrintController(QObject):
 
     printFinished = Signal(str)  # kimeneti fájl vagy nyomtató neve
     printFailed = Signal(str)
+    #: #3016: LAPONKÉNTI haladás — `(kész, összes)`. A #514 háttérszálas
+    #: javaslatát a mérés megdöntötte (12 MP-es fotók, PDF): a festés a
+    #: munka kétharmada, és a Qt festő-/nyomtató-API-ja a **GUI-szálhoz
+    #: kötött**, tehát nem tolható át. A megoldás ezért nem a szál, hanem a
+    #: VISSZAJELZÉS. A jelzés a festés KÖZBEN jön, nem a végén.
+    printProgress = Signal(int, int)
     #: #1472: a feladatból KIMARADT képek fájlneve. A `QImage` nem nyit meg
     #: videót és a legtöbb RAW-t — a rácsban viszont MINDKETTŐ látszik (a
     #: bélyegkép elkészül), és a képtálca nyomtatás-gombja rájuk is élő.
@@ -121,6 +129,10 @@ class PrintController(QObject):
         # #1072: a piszkozat-tilalom szövege és felismerése — közös a
         # `EmailController`-rel, ezért külön objektum (ld. ott a docstringet)
         self._draft_guard = CollageDraftGuard(self)
+        #: #3016: fut-e épp nyomtatási feladat. A haladás-jelzés
+        #: `processEvents()`-et hív, tehát a felület KÖZBEN válaszol — ez a
+        #: zár tartja távol a második, egyidejű feladatot.
+        self._nyomtatas_folyamatban = False
         #: #1782: a nyomatméret TARTÓS — az eredetiben a
         #: `Preferences\PrintLastSize` őrzi két indítás közt. Ugyanaz a
         #: minta, mint a #1780-nál: amit „a művelethez tapad"-nak
@@ -677,6 +689,13 @@ class PrintController(QObject):
         orientation: str,
         copies: int = 1,
     ) -> bool:
+        # #3016: ⛔ ÚJBÓLI INDÍTÁS TILOS. A haladás-jelzés kedvéért a festés
+        # ciklusa eseményeket pörget (`processEvents`), tehát a felhasználó
+        # a feladat KÖZBEN újra megnyomhatja a Nyomtatás gombot — két
+        # feladat viszont ugyanarra a festőre menne. A zár nem üzenetet ad:
+        # a második hívás egyszerűen nem indul el.
+        if self._nyomtatas_folyamatban:
+            return False
         paths = self._resolve_paths(rows)
         if not paths:
             self.printFailed.emit(self.tr("No pictures to print."))
@@ -749,13 +768,36 @@ class PrintController(QObject):
         # nyomtató). Amíg a vezérlő nem volt bekötve, ez senkit nem zavart;
         # QML-slotból viszont a kivétel NÉMÁN elvész (csak a naplóba kerül),
         # és a felhasználó egy néma párbeszédet néz. Jelzést kell kapnia.
+        # #3016/#505: a hosszú feladat a KÖZÖS haladásjelzőbe is
+        # bejelentkezik, hogy az alsó sáv animáljon — a `finally` zárja,
+        # hibára futó feladatnál is (különben a csík örökre pörögne).
+        nyilvantartas = get_app_busy_registry()
+        nyilvantartas.begin()
+        self._nyomtatas_folyamatban = True
         try:
-            self._paint_pages(printer, images, mode)
+            self._paint_pages(printer, images, mode, self._lap_kesz)
         except RuntimeError:
             _log.exception("nyomtatás: a feladat nem indítható")
             self.printFailed.emit(self.tr("The print job could not be started."))
             return False
+        finally:
+            self._nyomtatas_folyamatban = False
+            nyilvantartas.end()
         return True
+
+    def _lap_kesz(self, kesz: int, ossz: int) -> None:
+        """Egy lap megvan (#3016): jelzés + a felület továbbengedése.
+
+        ⚠️ A `processEvents()` nélkül a jelzésnek nincs értelme: a festés
+        végig a GUI-szálon fut, tehát a felület a feladat teljes idejére
+        befagyna, és a haladás-jelzés csak a végén, egy csomóban érne
+        oda. Az újbóli indítást a `_nyomtatas_folyamatban` zárja ki — ez a
+        `processEvents` ára, és a `_run` kapuja fizeti meg.
+        """
+        self.printProgress.emit(kesz, ossz)
+        app = QCoreApplication.instance()
+        if app is not None:
+            app.processEvents()
 
     @staticmethod
     def _sokszorozva(images: list[QImage], copies: int) -> list[QImage]:
@@ -893,11 +935,19 @@ class PrintController(QObject):
 
     @staticmethod
     def _paint_pages(
-        printer: QPrinter, images: Sequence[QImage], mode: PrintFitMode
+        printer: QPrinter,
+        images: Sequence[QImage],
+        mode: PrintFitMode,
+        lap_kesz: Callable[[int, int], None] | None = None,
     ) -> None:
+        """A lapok megfestése; `lap_kesz(kész, összes)` LAPONKÉNT (#3016).
+
+        A visszahívás alapértelmezésben `None` — a rajzolás így önmagában
+        is használható marad (teszt, előnézet), jelzés nélkül."""
         painter = QPainter()
         if not painter.begin(printer):
             raise RuntimeError("A nyomtatási feladat nem indítható")
+        ossz = len(images)
         try:
             margin_px = _MARGIN_MM / 25.4 * printer.resolution()
             for index, image in enumerate(images):
@@ -918,5 +968,7 @@ class PrintController(QObject):
                     placement.height,
                 )
                 painter.drawImage(target_rect, image)
+                if lap_kesz is not None:
+                    lap_kesz(index + 1, ossz)
         finally:
             painter.end()

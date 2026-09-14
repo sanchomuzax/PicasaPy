@@ -191,6 +191,10 @@ Window {
 
     property string lastError: ""
     property string lastResult: ""
+    // #3016: a haladás-jelzés állapota. `printTotalPages === 0` = nincs futó
+    // feladat (ilyenkor a sor sem látszik).
+    property int printDonePages: 0
+    property int printTotalPages: 0
     // a feladatból kimaradt képek nevei (videó/RAW: a `QImage` nem nyitja
     // meg őket, a rácsban viszont látszanak) — ld. `printSkipped`
     property var lastSkipped: []
@@ -285,13 +289,23 @@ Window {
         function onPrintFinished(target) {
             printWindow.lastError = ""
             printWindow.lastResult = target
+            // a feladat véget ért: a haladás-sor eltűnik
+            printWindow.printTotalPages = 0
+            printWindow.printDonePages = 0
         }
         function onPrintFailed(message) {
             printWindow.lastResult = ""
             printWindow.lastError = message
+            printWindow.printTotalPages = 0
+            printWindow.printDonePages = 0
         }
         function onPrintSkipped(names) {
             printWindow.lastSkipped = names
+        }
+        // #3016: laponkénti haladás a nyomtatás közben
+        function onPrintProgress(done, total) {
+            printWindow.printDonePages = done
+            printWindow.printTotalPages = total
         }
     }
 
@@ -706,6 +720,21 @@ Window {
             color: Theme.brandRed
             font.pixelSize: Theme.fontSize
             wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+
+        // #3016: LAPONKÉNTI haladás. A festés a GUI-szálon fut (a mérés
+        // szerint nem tolható háttérszálra: az a munka kétharmada, és a Qt
+        // festő-API-ja a GUI-szálhoz kötött), ezért a vezérlő laponként
+        // enged vissza a felületnek — enélkül a párbeszéd a feladat teljes
+        // idejére befagyna, és a felhasználó nem tudná, dolgozik-e még.
+        Text {
+            objectName: "printProgressText"
+            visible: printWindow.printTotalPages > 0
+            text: qsTr("Printing: %1 / %2")
+                .arg(printWindow.printDonePages).arg(printWindow.printTotalPages)
+            color: Theme.textDark
+            font.pixelSize: Theme.fontSize
             Layout.fillWidth: true
         }
 

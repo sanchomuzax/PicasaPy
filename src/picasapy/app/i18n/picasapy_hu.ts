@@ -405,6 +405,10 @@
         <translation>Kész: %1</translation>
     </message>
     <message>
+        <source>Printing: %1 / %2</source>
+        <translation>Nyomtatás: %1 / %2</translation>
+    </message>
+    <message>
         <source>Print</source>
         <translation>Nyomtatás</translation>
     </message>
