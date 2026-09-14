@@ -28,7 +28,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Slot
 
 from picasapy.ini import update_document
 from picasapy.ini.movie_trim import (
@@ -64,9 +64,13 @@ def _tick(ms: int, orzott: int | None) -> int | None:
 
 
 class MovieTrimMixin:
-    """`setMovieTrim` / `resetMovieTrim` — a `setin`/`setout`/`reset_trim` párja."""
+    """`setMovieTrim` / `resetMovieTrim` — a `setin`/`setout`/`reset_trim` párja.
 
-    movieTrimSaved = Signal(int)
+    ⚠️ SZÁNDÉKOSAN nincs „elmentve" jelzés. A felület a modellből olvassa a
+    vágást, és az `update_photo` `revision`-lépése már újraértékelteti a
+    kötéseket — egy külön jelzés bekötetlen maradna, azt pedig a
+    `scripts/check_dead_signals.py` (helyesen) visszautasítja.
+    """
 
     @Slot(int, int, int)
     def setMovieTrim(self, row: int, start_ms: int, end_ms: int) -> None:
@@ -120,7 +124,6 @@ class MovieTrimMixin:
 
         # A modell-sort CSAK a sikeres írás után frissítjük (#2497 tanulsága).
         self.photos.update_photo(felvetel.id, replace(felvetel, filters=uj_lanc or None))
-        self.movieTrimSaved.emit(row)
 
     def _vago_sor(self, row: int):
         """A sor felvétele, ha az egyáltalán vágható — különben `None`.
