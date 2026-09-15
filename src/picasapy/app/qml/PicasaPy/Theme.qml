@@ -72,15 +72,19 @@ QtObject {
     // ⚠️ A sötét módban a mért világos értékek nem használhatók (a panel
     // olvashatatlan lenne), ezért ott a saját króm-tónusaink állnak — a
     // VILÁGOS mód az, ami az eredetit követi.
-    // #901: a buboréksúgó KÉSLELTETÉSE egy helyen. Az eredeti értéke NINCS
-    // kiolvasva a binárisból (a jegy ezt kimondja), nálunk viszont eddig
-    // háromféle volt: 400 ms három helyen, 500 ms hatvanhaton, és sok helyen
-    // meg sem volt adva (a Qt alapértelmezése). A 400 → 500 egyesítés a
-    // TÖBBSÉGET követi, tehát a legkevesebb látható változással jár.
+    // #901: a buboréksúgó KÉSLELTETÉSE egy helyen. Nálunk eddig háromféle
+    // volt (400 ms három helyen, 500 ms hatvanhaton, és sok helyen meg sem
+    // adva); az egyesítés a többséget követte, 500-ra.
     //
-    // ⚠️ Ez a MI döntésünk, nem mérés. Ha az eredeti késleltetése egyszer
-    // kiolvasható lesz, EGY számot kell átírni.
-    readonly property int tooltipDelay: 500
+    // ✅ 2026-09-15: az EREDETI értéke KIMÉRVE — **600 ms**. A `ytToolTip`
+    // vtáblájának (`0x008909d4`) `+0x74` rekesze a `0x00a6de20`-ra megy, az
+    // időmérés `QueryPerformanceCounter`/`…Frequency`, és a küszöb a
+    // `0x00c7e304`-en tárolt `9a 99 19 3f` — IEEE-754 szerint
+    // `0,6000000238418579` másodperc. (Ugyanebben a sávban olvassa a
+    // `ShowTooltips` beállítást, `0x00a6e0fd`.)
+    //
+    // A korábbi komment ígérete szerint ez EGY szám átírása volt: 500 → 600.
+    readonly property int tooltipDelay: 600
 
     readonly property color listPanelBg: dark ? "#2e2e2e" : "#e8e8e8"
     readonly property color listPanelBorder: dark ? "#5a5a5a" : "#bababa"

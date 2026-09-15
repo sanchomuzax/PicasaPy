@@ -118,13 +118,25 @@ class TestEgysegesKesleltetes:
             "a `Theme.tooltipDelay` az egyetlen hely (#901)"
         )
 
-    def test_a_token_letezik_es_KIMONDJA_hogy_nem_meres(self):
+    def test_a_token_letezik_es_a_MERES_horgonyat_hozza(self):
+        """⚠️ Ez a próba MEGFORDULT (2026-09-15, #901).
+
+        Amíg az érték a MI döntésünk volt (500 ms), a próba azt követelte,
+        hogy a komment mondja ki: „nem mérés". Az eredeti késleltetése
+        azóta **kimérve** — 600 ms, a `0x00c7e304`-en tárolt `9a 99 19 3f`
+        (IEEE-754: 0,6000000238418579 s) —, tehát most a MÉRÉS HORGONYÁT
+        kell számon kérni. A saját döntést jelző mondat épp az, aminek
+        NEM szabad ott maradnia.
+        """
         forras = _forras("Theme.qml")
         assert "readonly property int tooltipDelay:" in forras
         kezd = forras.index("readonly property int tooltipDelay:")
-        elotte = forras[max(0, kezd - 800) : kezd]
-        assert "nem mérés" in elotte, (
-            "a token mellett nincs kimondva, hogy az érték a MI döntésünk"
+        elotte = forras[max(0, kezd - 1200) : kezd]
+        assert "0x00c7e304" in elotte, (
+            "a token mellett nincs ott a mérés horgonya (a küszöb címe)"
+        )
+        assert "nem mérés" not in elotte, (
+            "a komment még mindig saját döntésnek mondja a 600 ms-ot"
         )
 
 
