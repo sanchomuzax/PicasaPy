@@ -33,8 +33,13 @@ sosem tükrözött, a nulla pedig nem ír ki számot.
 forgat — `kép = forgat(tükröz(eredeti))`. Három független összeállító
 ugyanebben az alakban: `0x0042ef68`/`0x0042ef77`/`0x0042f02d`,
 `0x006b5047`/`0x006b5056`/`0x006b50ba`,
-`0x00805171`/`0x00805181`/`0x00805229`. A mi két hívóhelyünk ma fordítva
-teszi — a javítás a #3065.
+`0x00805171`/`0x00805181`/`0x00805229`.
+
+**A mi két hívóhelyünk a #3065 óta ezt követi**: az `export/exporter.py` és
+az `app/save_controller.py` egyaránt előbb tükröz. Az őr a KIMENETET méri
+(`tests/render/test_tukrozes_forgatas_sorrend_3065.py`), és kontrollal
+mondja ki, mely eseteken tér el egyáltalán a két sorrend: 0°/180°-nál, és
+mindkét tengelyre tükrözve a sorrend közömbös.
 """
 
 from __future__ import annotations
