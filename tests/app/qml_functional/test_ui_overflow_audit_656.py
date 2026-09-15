@@ -275,3 +275,65 @@ class TestValosSzerkesztoPanelEszkozModban:
         sertesek = find_overflows(root)
         ujak = subtract_allowlist(sertesek, load_allowlist())
         assert ujak == [], format_report(ujak)
+
+
+# --------------------------------------------------------------------------
+# A KOLLÁZS-PANEL lapjai — a 2. kiterjesztés (#656)
+# --------------------------------------------------------------------------
+#
+# ⭐ Miért épp ezek: az előző kör megmérte, hogy a kiterjesztés panelenként
+# két dolgot kíván — vezérlő-csonkot és a VALÓDI konténer-méretet —, és hogy
+# enélkül a riport zaj. Ez a három panel mindkettőt teljesíti:
+#
+# | panel | vezérlő nélkül | a VALÓDI méret | honnan |
+# |---|---|---|---|
+# | `CollageSettingsTab` | 0 figyelmeztetés | **266 × 351** | `CollagePanel.qml:169` |
+# | `CollageClipsTab` | 0 figyelmeztetés | **256 × 352** | `CollagePanel.qml:181` |
+# | `CollagePanelTabBar` | 0 figyelmeztetés | **276** széles | a `columnWidth` |
+#
+# A méretek a panelben KÉZZEL beírt, mért értékek (a bal oszlop
+# `columnWidth: 276`), nem a mi találgatásunk — tetszőleges ablakméretet
+# adni nekik félrevezető volna.
+#
+# ⛔ **Az ÁTFEDÉS-ellenőr itt NEM használható.** Valós panelen minden
+# `MouseArea` a saját tartalmán ül, minden háttér-`Rectangle` a szövege
+# alatt, és a kitöltő elrendezés a szülőjén — mérve 1…10 „sértés"
+# panelenként, mind jogos. A `find_overlaps` a SZINTETIKUS próbák eszköze
+# marad (ld. `TestAtfedesErzekeles`); valós felületre csak a
+# `find_overflows` megy.
+_KOLLAZS_LAPOK = [
+    ("CollageSettingsTab", 266, 351),
+    ("CollageClipsTab", 256, 352),
+    ("CollagePanelTabBar", 276, 30),
+]
+
+
+@pytest.mark.parametrize("komponens, szelesseg, magassag", _KOLLAZS_LAPOK)
+class TestKollazsPanelLapok:
+    """A kollázs-panel három, vezérlő nélkül is teljes lapja.
+
+    Ezek a `controller` tulajdonságukat üresen hagyva is felépülnek, és a
+    mérés a VALÓDI méretükön megy — tehát a talált sértések valódiak.
+    """
+
+    def test_nincs_uj_tulcsordulas(
+        self, qt_app, komponens, szelesseg, magassag
+    ):
+        from support.uiaudit_geometry import load_allowlist, subtract_allowlist
+
+        qml = f"""
+        import QtQuick
+        import QtQuick.Layouts
+        import PicasaPy 1.0
+        Item {{
+            objectName: "auditRoot"
+            {komponens} {{
+                objectName: "auditPanel"
+                anchors.fill: parent
+            }}
+        }}
+        """
+        root = _render(qt_app, qml, szelesseg, magassag)
+        sertesek = find_overflows(root)
+        ujak = subtract_allowlist(sertesek, load_allowlist())
+        assert ujak == [], format_report(ujak)

@@ -1,4 +1,13 @@
 {
-  "_megjegyzes": "Ismert, MÉG NEM JAVÍTOTT elrendezés-sértések (#656/1). Az őr csak az ÚJAKRA bukik el, hogy bevezethető legyen a meglévő hibák javítása nélkül. Minden bejegyzéshez tartozzon jegyszám; ha a jegy lezárul, a bejegyzést innen TÖRÖLNI kell, különben a regressziót elnyeli (#659). A lista MA ÜRES: a #778 (az eszköz-módok 10 képpontos alsó túlcsordulása) és a #779 (a vágás/retusálás/vörösszem vízszintes sorai) javítva.",
-  "sertesek": []
+  "_megjegyzes": "Ismert, MÉG NEM JAVÍTOTT elrendezés-sértések (#656/1). Az őr csak az ÚJAKRA bukik el, hogy bevezethető legyen a meglévő hibák javítása nélkül. Minden bejegyzéshez tartozzon jegyszám; ha a jegy lezárul, a bejegyzést innen TÖRÖLNI kell, különben a regressziót elnyeli (#659).",
+  "sertesek": [
+    {
+      "kind": "overflow",
+      "item": "collageDeleteClips",
+      "parent": "auditPanel",
+      "other": "",
+      "jegy": "#3201",
+      "megjegyzes": "A Klipek lap 256 képpont széles (CollagePanel.qml:181), a „–” gomb viszont x=234 + 28 = 262-ig ér ⇒ 6 képponttal kilóg. A testvér Beállítások lap 266 széles, és a bal oszlop is 276 (columnWidth) — a 256 a mi elírásunk. A javítás külön körben, mert a lap szélessége a klip-listát is méretezi."
+    }
+  ]
 }
