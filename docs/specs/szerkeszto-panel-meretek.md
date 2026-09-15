@@ -500,3 +500,68 @@ A Derítőfény-sor `backlight_container`-e **127 × 27** — pontosan egy
 
 *Bizonyítottsági fok: megerősített* (a `respack.yt` nyers rectjei; a
 `#` előtag a kikommentezés jelölése, ugyanúgy, mint a `.tre`-ben).
+
+---
+
+## ⛳ Az Alkalmaz/Mégse a KÉP FÖLÖTT lebeg — és egy CSÚSZKA is vele (2026-09-15, #3123)
+
+*Forrás: `referencia/tre-eroforrasok/editpanel.tre:21–33` és `:1044–1056`;
+a makrók `macros.tre:11–19`, `:53–81`, `:139`; a gomb-réteg mérete a
+`respack.yt`-ből (#3123 első köre).*
+
+A #3123 első köre kimérte, hogy a két gomb **saját, sötét rajzot** kap
+(82 × 28, kitöltés `#505050` alfa 229, keret `#CBCACA` alfa 229), és hogy a
+felirat fehér (`m_buttontypecolor3` = `FFFFFFFF` · `CCFFFFFF` · `FFFFFFFF`).
+Ez a szakasz a **helyüket** adja meg — a jegy 2. teendőjét.
+
+### A fa és a kényszerek
+
+```
+editpanel/tool_container: editpanel/preview     # a KÉP a szülő, nem a panel
+m_centerX                                       # XConstraint 0.5, 0.5, 0
+YConstraint 1, 1, -10                           # alul, 10 px-re a kép aljától
+m_hidden                                        # alapból rejtett
+
+  editpanel/tool_slider_container: editpanel/tool_container
+  m_offsetLTR                                   # bal+fent+jobb megtartva
+
+    toolslider/toolslider: editpanel/tool_slider_container
+    m_centerY
+    m_offsetLR
+    Property slider 0
+
+  editpanel/tool_cancel: editpanel/tool_container
+  m_buttontypecolor3 · m_offsetR · m_centerY
+  Property escapekey 1                          # az Esc EZT süti el
+
+  editpanel/tool_ok: editpanel/tool_container
+  m_buttontypecolor3 · m_offsetR · m_centerY
+```
+
+| makró | jelentése |
+|---|---|
+| `m_centerX` | `XConstraint 0.5, 0.5, 0` — vízszintesen középre |
+| `m_centerY` | `YConstraint 0.5, 0.5, 0` |
+| `m_offsetR` | `MaintainOffset right` — a jobb szélhez mért távolság marad |
+| `m_offsetLR` / `m_offsetLTR` | ugyanez bal+jobb, illetve bal+fent+jobb |
+
+### Amit ez kimond
+
+1. **A szülő az előnézeti KÉP** (`editpanel/preview`), nem a bal oldali
+   panel ⇒ a sáv a képen lebeg. Ezért működik rajta a sötét, áttetsző
+   háttér és a fehér felirat.
+2. **Vízszintesen középen, a kép aljától 10 képpontra.**
+3. ⭐ **A sávban egy CSÚSZKA is van** (`toolslider`, balra nyúlva, a két
+   gomb pedig jobbra igazodik). A jegy ezt nem említette: az eszközök
+   paramétere (pl. a retusálás ecsetmérete) ITT áll, nem a bal panelben.
+4. ⭐ **Az Esc a Mégse gombot süti el** (`Property escapekey 1`) — nem
+   külön billentyűkezelő.
+
+### ⛔ Amit a `.tre` NEM ad meg
+
+A sáv és a csúszka **abszolút mérete**. A `.tre` csak a kényszereket
+(viszonyokat) írja le; a konkrét szélesség/magasság a `respack.yt`
+rétegeiben van — onnan jött a gombok 82 × 28-as mérete is. A `MaintainOffset`
+jelzők azt mondják, mi marad fix átméretezéskor, nem azt, mennyi.
+
+*(Ez ismétlődő tanulság: a `.tre` a viszonyt adja, a respack a helyet.)*
