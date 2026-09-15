@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.453] – 2026-09-15
+
+### Javítva
+
+- **A diavetítés vezérlősávja nem tűnik el a kezed alól** (#2992). Eddig a
+  sáv egérmozgásra megjelent, de két és fél másodperc múlva magától
+  eltűnt — akkor is, ha éppen fölé vitted az egeret, hogy megnyomj egy
+  gombot. Mostantól amíg az egér a sávon van, ott is marad; amint elhagyod,
+  újraindul a visszaszámlálás.
+
 ## [0.8.452] – 2026-09-15
 
 ### Belső
