@@ -4556,6 +4556,12 @@ Biztosan törölni szeretné az összes (%1) elem helyét?</translation>
         <source>Switch focus between the pictures</source>
         <translation>Fókusz váltása a képek között</translation>
     </message>
+    <!-- #3014: `editpanel/swap_2up_layout` — a MÉRT hivatalos magyar
+         buboréksúgó (`docs/specs/ui-audit-editor.md` 2. táblája) -->
+    <message>
+        <source>Switch between horizontal and vertical layout</source>
+        <translation>Váltás a vízszintes és a függőleges elrendezés között</translation>
+    </message>
     <message>
         <source>Selected</source>
         <translation>Kijelölve</translation>

@@ -93,13 +93,14 @@ class TestASzegmensek:
             "a második kattintás elengedte az aktív szegmenst"
         )
 
-    def test_az_AB_szegmens_TILTOTT_de_ott_van(self, qml_app, qt_app):
-        """A #3014 hozza — addig látható, de nem használható. A néma
-        no-op rosszabb volna: a felhasználó nem tudná, hogy nem működik."""
+    def test_az_AB_szegmens_HASZNALHATO(self, qml_app, qt_app):
+        """#3014: a szegmens itt még tiltott volt („a #3014 hozza") — a
+        mód azóta megvan, tehát a tiltás elavult. A viselkedés őrei a
+        `test_ab_kettos_nezet_3014.py`-ban állnak."""
         window, _controller, _engine = qml_app
         _nezot_nyit(window, qt_app)
 
-        assert _gyerek(window, "viewerLayoutAb").property("enabled") is False
+        assert _gyerek(window, "viewerLayoutAb").property("enabled") is True
 
 
 class TestAMasodikKep:
