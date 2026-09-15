@@ -380,7 +380,17 @@ Item {
             width: 37
             height: 22
             padding: 0
-            horizontalPadding: 0
+            // ⚠️ A LEGSPECIFIKUSABB kitöltés-tulajdonságokkal (#656): a
+            // `padding`/`horizontalPadding` csak TARTALÉK érték, és a Windows
+            // natív Controls-stílusa explicit `leftPadding`/`rightPadding`-et
+            // ad, ami erősebb náluk. Emiatt ott a tartalom-terület 37 helyett
+            // 27 képpont lett, és a 31 képpontnál végződő ikon 4 képponttal
+            // kilógott — a `PicasaButton` ugyanezt a hibát már megkapta
+            // függőlegesen (ld. az ottani `topPadding`/`bottomPadding`
+            // indoklását). Linuxon egyik stílus sem teszi, ezért helyben
+            // láthatatlan.
+            leftPadding: 0
+            rightPadding: 0
             checkable: false
             checked: tab.orientation === "landscape"
             down: checked || pressed
@@ -413,7 +423,17 @@ Item {
             width: 37
             height: 22
             padding: 0
-            horizontalPadding: 0
+            // ⚠️ A LEGSPECIFIKUSABB kitöltés-tulajdonságokkal (#656): a
+            // `padding`/`horizontalPadding` csak TARTALÉK érték, és a Windows
+            // natív Controls-stílusa explicit `leftPadding`/`rightPadding`-et
+            // ad, ami erősebb náluk. Emiatt ott a tartalom-terület 37 helyett
+            // 27 képpont lett, és a 31 képpontnál végződő ikon 4 képponttal
+            // kilógott — a `PicasaButton` ugyanezt a hibát már megkapta
+            // függőlegesen (ld. az ottani `topPadding`/`bottomPadding`
+            // indoklását). Linuxon egyik stílus sem teszi, ezért helyben
+            // láthatatlan.
+            leftPadding: 0
+            rightPadding: 0
             checkable: false
             checked: tab.orientation === "portrait"
             down: checked || pressed
