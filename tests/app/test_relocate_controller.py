@@ -206,3 +206,153 @@ class TestBackgroundThreadTeardown:
         loop.exec()
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestRegiPeldanyLomtarba:
+    """#1402: a régi adatbázis és gyorsítótár a LOMTÁRBA megy.
+
+    A mért eredeti (`ID_MOVE_DATABASE` kilenc pontja) a régi példányt a
+    Lomtárba teszi; nálunk `unlink`/`rmtree` futott, tehát egy elrontott
+    áthelyezés után az adatbázis visszaállíthatatlanul eltűnt.
+    """
+
+    def test_a_vezerlo_a_lomtaras_takaritot_adja_at(self, tmp_path, monkeypatch):
+        """A vezérlő NEM a mag alapértelmezett (végleges) törlését hagyja."""
+        from picasapy.app import relocate_controller as modul
+
+        atadott = {}
+
+        def hamis_relocate(*args, **kwargs):
+            atadott.update(kwargs)
+            from picasapy.index.relocate import RelocationResult
+
+            kwargs["on_verified"](tmp_path / "uj")
+            return RelocationResult(new_root=tmp_path / "uj", old_cleanup_error=None)
+
+        monkeypatch.setattr(modul, "relocate_data_root", hamis_relocate)
+        vezerlo = modul.RelocateController(
+            tmp_path / "regi" / "index.db",
+            tmp_path / "regi" / "thumbs",
+            tmp_path / "config",
+        )
+        vezerlo._run_relocate(tmp_path / "uj", __import__("threading").Event())
+        assert atadott.get("delete_old") is modul._lomtarba
+
+    def test_lomtar_nelkul_a_regi_a_helyen_marad(self, tmp_path, monkeypatch):
+        """Ha nincs elérhető lomtár, NEM törlünk véglegesen a felhasználó
+        háta mögött — a takarító hibát jelez, a fájl a helyén marad."""
+        from picasapy.app import relocate_controller as modul
+        from picasapy.fileops.trash import TrashUnavailableError
+
+        fajl = tmp_path / "index.db"
+        fajl.write_bytes(b"adat")
+
+        def nincs_lomtar(_ut, **_kw):
+            raise TrashUnavailableError("írásvédett kötet")
+
+        monkeypatch.setattr(
+            "picasapy.fileops.trash.delete_to_trash", nincs_lomtar
+        )
+        import pytest
+
+        with pytest.raises(OSError) as hiba:
+            modul._lomtarba(fajl)
+        assert "Lomtárba" in str(hiba.value)
+        assert fajl.exists(), "a fájl eltűnt, pedig nem volt hova tenni"
+
+
+class TestEloEllenorzes:
+    """#1402: a cél ellenőrzése MEGELŐZI a műveletet.
+
+    A mért eredeti két feltételt ad: a cél **írható helyi merevlemez**
+    (`MoveDatabase::LocalDriveOnly` — „No changes will be made"), és
+    **üres** (`MoveDatabase::Failure` — „make sure the destination is
+    empty"). Elutasításnál semmihez nem nyúlunk.
+    """
+
+    def _vezerlo(self, tmp_path):
+        from picasapy.app.relocate_controller import RelocateController
+
+        return RelocateController(
+            tmp_path / "regi" / "index.db",
+            tmp_path / "regi" / "thumbs",
+            tmp_path / "config",
+        )
+
+    def test_nem_ures_celt_elutasit_es_NEM_indul(self, tmp_path, monkeypatch):
+        from picasapy.app import relocate_controller as modul
+
+        indult = []
+        monkeypatch.setattr(
+            modul.RelocateController,
+            "_start_background",
+            lambda self, *a, **k: indult.append(1),
+        )
+        cel = tmp_path / "cel"
+        cel.mkdir()
+        (cel / "valami.txt").write_text("nem üres")
+        vezerlo = self._vezerlo(tmp_path)
+        hibak = []
+        vezerlo.relocateFailed.connect(hibak.append)
+        vezerlo.startRelocate(str(cel))
+        assert indult == [], "elindult a másolás, pedig a cél nem üres"
+        assert len(hibak) == 1
+        assert "empty" in hibak[0] or "üres" in hibak[0]
+
+    def test_ures_celt_elfogad(self, tmp_path, monkeypatch):
+        from picasapy.app import relocate_controller as modul
+
+        indult = []
+        monkeypatch.setattr(
+            modul.RelocateController,
+            "_start_background",
+            lambda self, *a, **k: indult.append(1),
+        )
+        cel = tmp_path / "ures"
+        cel.mkdir()
+        vezerlo = self._vezerlo(tmp_path)
+        hibak = []
+        vezerlo.relocateFailed.connect(hibak.append)
+        vezerlo.startRelocate(str(cel))
+        assert hibak == []
+        assert indult == [1]
+
+    def test_halozati_celt_elutasit(self, tmp_path, monkeypatch):
+        from picasapy.app import relocate_controller as modul
+        from picasapy.perf import tesztuzem
+
+        monkeypatch.setattr(
+            tesztuzem, "tarolo_tipusa", lambda _ut: tesztuzem.TAROLO_HALOZATI
+        )
+        indult = []
+        monkeypatch.setattr(
+            modul.RelocateController,
+            "_start_background",
+            lambda self, *a, **k: indult.append(1),
+        )
+        cel = tmp_path / "halozat"
+        cel.mkdir()
+        vezerlo = self._vezerlo(tmp_path)
+        hibak = []
+        vezerlo.relocateFailed.connect(hibak.append)
+        vezerlo.startRelocate(str(cel))
+        assert indult == [], "hálózati célra is elindult a másolás"
+        assert len(hibak) == 1
+        assert "network" in hibak[0] or "hálózati" in hibak[0]
+
+    def test_a_meg_nem_letezo_mappa_rendben_van(self, tmp_path, monkeypatch):
+        """A mag létrehozza — a nem létező cél nem hiba."""
+        from picasapy.app import relocate_controller as modul
+
+        indult = []
+        monkeypatch.setattr(
+            modul.RelocateController,
+            "_start_background",
+            lambda self, *a, **k: indult.append(1),
+        )
+        vezerlo = self._vezerlo(tmp_path)
+        hibak = []
+        vezerlo.relocateFailed.connect(hibak.append)
+        vezerlo.startRelocate(str(tmp_path / "meg" / "nincs"))
+        assert hibak == []
+        assert indult == [1]

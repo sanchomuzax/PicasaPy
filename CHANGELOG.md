@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.482] – 2026-09-15
+
+### Javítva
+
+- **Az adatbázis áthelyezésekor a régi példány a Lomtárba kerül**, nem
+  törlődik véglegesen (#1402) — ahogy az eredeti Picasa is teszi. Ha nincs
+  elérhető Lomtár, a régi adatbázis a helyén marad, és a program ezt meg is
+  mondja: a hátunk mögött semmi nem tűnik el.
+- **Az áthelyezés célját már a művelet előtt ellenőrizzük**: a cél legyen
+  mappa, legyen üres, és ne legyen hálózati meghajtó. Elutasításnál semmihez
+  nem nyúlunk hozzá.
+
 ## [0.8.481] – 2026-09-15
 
 ### Hozzáadva

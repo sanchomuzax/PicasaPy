@@ -1089,6 +1089,21 @@
 <context>
     <name>RelocateController</name>
     <message>
+        <location filename="../relocate_controller.py"/>
+        <source>The chosen destination is not a folder.</source>
+        <translation>A kiválasztott cél nem mappa.</translation>
+    </message>
+    <message>
+        <location filename="../relocate_controller.py"/>
+        <source>The destination folder is not empty. Choose an empty folder and try again.</source>
+        <translation>A cél mappa nem üres. Válasszon üres mappát, és próbálja újra.</translation>
+    </message>
+    <message>
+        <location filename="../relocate_controller.py"/>
+        <source>The database cannot be moved to a network drive. Nothing has been changed.</source>
+        <translation>Az adatbázist nem lehet hálózati meghajtóra áthelyezni. Semmi nem változott.</translation>
+    </message>
+    <message>
         <source>Choose a new database location first.</source>
         <translation>Előbb válassza ki az adatbázis új helyét.</translation>
     </message>
