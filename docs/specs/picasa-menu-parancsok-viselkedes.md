@@ -2063,7 +2063,7 @@ tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
 
 ### 39.7 Nyitott kérdések mérlege (a 39. tételre)
 
-`0 nyílt · 5 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+`0 nyílt · 6 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
 
 | kérdés | állapot |
 |---|---|
@@ -2072,6 +2072,7 @@ tartomány diszasszemblálva ellenőrizve). Hogy MI tölti fel a tömböt,
 | mik az alapértékek | **LEZÁRVA** — 39.5, `.tre`-vel keresztmérve |
 | mi a különbség OK / Alkalmaz / Mégse közt | **LEZÁRVA** — 39.3 |
 | van-e felirata a `usefilename`-nek | **LEZÁRVA (helyesbítés)** — van, „Fájlnév" (39.4) |
+| mi a `bordersize` skálája | **LEZÁRVA** — `0 … 1024`, a csúszka `0 … 1`-ének 1024-szerese, **csonkolva** (39.9) |
 | **honnan jön a betűméret-lista tartalma** | **BLOKKOLT** — a `[panel+0x2b4]` tömböt a `0x0085d3c0` konstruktor nullázza, a `0x0085df30` olvassa; a feltöltés helye a mérésből nem derül ki. **Megszerzés:** a `0x0085df30` (2165 b) célzott dekompilációja, vagy a futó Picasa listájának leolvasása. **A megvalósítást nem blokkolja:** a `textsize` alapértéke (12) és a tárolás módja megvan. **Szűkítve (39.8/c, 2026-09-03):** a `.tre` és az `i18n\printoptionstext.xml` sem hordoz tételeket ⇒ a lista **futásidőben** töltődik. |
 
 ### 39.8 A FELIRAT-RÉTEG és a szegélycsúszka — az i18n XML-ből (2026-09-03)
@@ -2127,6 +2128,65 @@ Mindkettő **legfeljebb 7 sort** mutat, és **egyik sem hordoz tételeket**: sem
 betűtípusnév sem. ⇒ a 39.7 blokkolt kérdése („honnan jön a betűméret-lista")
 **két további forrásra nézve is negatív**: nem a felületleíróból és nem az
 i18n-fájlból. Marad a `0x0085df30` célzott dekompilációja.
+
+### 39.9 ⭐ A szegélycsúszka SKÁLÁJA — `0 … 1024` (2026-09-15, #1780)
+
+*Forrás: a panelépítő `0x0085dc30`–`0x0085dc5a` (betöltés) és a kezelő
+`0x0085e659`–`0x0085e68f` (visszaírás) · a két konstans a `.data`-ból
+kiolvasva.*
+
+A `bordersize` kulcs **nem közvetlenül** a csúszka értéke: a kettő között
+egy 1024-es skálázás áll, és a két irány a két konstanssal pontosan
+egymás inverze.
+
+| irány | hol | mit tesz |
+|---|---|---|
+| beállítás → csúszka | `0x0085dc46` | `csúszka = bordersize × ` **`0.0009765625`** (`0xcf3f68`) = `bordersize / 1024` |
+| csúszka → beállítás | `0x0085e65d` | `bordersize = csúszka × ` **`1024.0`** (`0xcf4218`) |
+
+⇒ **A `bordersize` értékkészlete `0 … 1024`**, a csúszka pedig a szokásos
+`0 … 1` normált vezérlő. Ez adja meg a `border_none_label` („Egyik sem") és
+a `border_max_label` („Maximális") két végét is.
+
+Az alapérték **10** (39.5) tehát a skála **~0,98 %**-án áll — vékony
+szegély, nem a közepe.
+
+#### (a) A visszaírás CSONKOL, nem kerekít — és ki is van mondva a kódban
+
+A `fistp` (`0x0085e67e`) **elé** a fordító kiteszi a vezérlőszó-állítást:
+
+```
+0x0085e668  fnstcw  word ptr [esp+0xc]      ; a régi mód elmentése
+0x0085e671  or      eax, 0xc00              ; kerekítés = NULLA FELÉ
+0x0085e67a  fldcw   word ptr [esp+0x10]
+0x0085e67e  fistp   qword ptr [esp+0x10]
+0x0085e68b  fldcw   word ptr [esp+0xc]      ; a régi mód visszaállítása
+```
+
+⇒ `bordersize = trunc(csúszka × 1024)`. Ez a C-cast mintája — pontosan az,
+aminek a **hiányából** a #956 arra következtetett, hogy a `0x0090e9d0`
+viszont a legközelebbi egészre kerekít. A két lelet egymást erősíti: ahol a
+Picasa csonkolást akar, ott **látszik** a vezérlőszó-állítás.
+
+#### (b) A csúszka NULLÁJA kapcsolja ki a szegély-opciókat
+
+Közvetlenül a visszaírás után (`0x0085e686`–`0x0085e694`):
+
+```
+cmp esi, ebx        ; esi = az új bordersize, ebx = 0
+sete al
+push eax
+call 0x9cd7e0       ; a `printoptions/border_options` csoport engedélyezése
+```
+
+⇒ A „nincs szegély" állapotot **maga a nulla csúszkaállás** jelenti; nem
+kell külön kikapcsoló. Fordítva is igaz: a betöltéskor, ha a `border`
+bájtja (`+0x271`) nulla, a csúszka **`fldz`**-vel nullára áll
+(`0x0085dc64`), függetlenül a tárolt `bordersize`-tól.
+
+⚠️ A `bordersize` tehát **megőrzi** a régi értéket kikapcsolt szegélynél is
+— a felület mutatja nullának. Aki a két mezőt egyben kezeli, elveszti a
+felhasználó korábbi vastagságát.
 
 #### (d) ⚠️ HIBÁS HIVATALOS SZÖVEG — ne vegyük át
 
