@@ -5751,3 +5751,74 @@ Szintén nem mért:
 - **a `quality="3"` jelentése** ebben a műveletben (a `LocalContrast`-nál a
   #1607 háromszoros dobozelmosást talált — itt nincs igazolva);
 - a `clamp_glow_radius` 255-ös korlátjának natív megfelelője.
+
+## ⛳⛳ A Glimmer EGY UTASÍTÁSGÉP — a műveleti osztályokban NINCS pixelmatematika (2026-09-15, #626)
+
+*Forrás: az RTTI-tábla mind a 34 `glimmer::…ImageOperation` vtáblája · a
+`.text` teljes pásztázása utasítás-vtábla írására.*
+
+### A lelet
+
+A leltár eddig úgy fogalmazott, hogy „a művelet dekompilálva / nincs
+dekompilálva", és 10-et számolt késznek ~30-ból. **Ez a tengely téves.**
+
+A Glimmernek **saját utasításkészlete** van — tizenhárom `Instruction`
+osztály, RTTI-vel:
+
+| utasítás | vtábla | mire való (a névből) |
+|---|---|---|
+| `ApplyInstruction` | `0x00cf0f18` | egy művelet alkalmazása |
+| `BlendInstruction` | `0x00cf0f00` | keverés |
+| `MaskInstruction` | `0x00cf0f6c`, `0x00cf0f84` | maszkolás |
+| `PartialMaskInstruction` | `0x00cf0f30` | részleges maszk |
+| `MaskWithSourceAlphaInstruction` | `0x00cf0f48` | maszk a forrás alfájával |
+| `DupeInstruction` | `0x00cf0d70` | verem: másolás |
+| `PopInstruction` | `0x00cf0f90` | verem: levétel |
+| `GetVarInstruction` | `0x00cf0d58` | változó olvasása |
+| `SetVarInstruction` | `0x00cf0d88` | változó írása |
+| `ClearVarInstruction` | `0x00cd0574` | változó törlése |
+| `NamedVarInstruction` | `0x00cd05bc` | névvel hivatkozott változó |
+| `OpInstruction` | `0x00cd058c` | művelet-utasítás |
+| `ReExecutingInstruction` | `0x00cf0f60` | ismételt végrehajtás |
+
+⇒ Verem (`Dupe`/`Pop`), változók (`Get`/`Set`/`Clear`/`Named`), kompozit
+műveletek (`Blend`, három maszk-fajta) és ismétlés. Ez **gépezet**, nem
+osztályonkénti képpontciklus.
+
+### A bizonyíték: MIND a 34 vtábla ugyanazt a két függvényt hívja
+
+A teljes `.text` pásztázva arra, hogy ki ír utasítás-vtáblát: **tíz**
+függvény. Ezek közül kettő minden műveleti osztály vtáblájában ott van:
+
+| függvény | mit épít | hány `…ImageOperation` vtáblában |
+|---|---|---:|
+| **`0x00bc4ae0`** | `Blend` · `Mask` · `MaskWithSourceAlpha` · `PartialMask` · `Pop` · `ReExecuting` | **33 / 34** |
+| `0x00bc51d0` | `ApplyInstruction` | 28 |
+
+A kivételek is beszédesek: az `ImageOperation` **alaposztály** (7 slot)
+egyiket sem tartalmazza; a `GetVarImageOperation` az `Apply` helyett a
+`0x00bbf810`-et (`GetVar`), a `Nested` és a `Tint` a `0x00bc12e0`-t
+(`Dupe`) viszi; az `EdgeDetectionB`, az `IR` és a `LocalContrast` pedig
+csak a `0x00bc4ae0`-t.
+
+⛔ **HELYESBÍTÉS a 2026-09-12-i megállapításhoz.** Az akkori kör a
+`0x00bc4ae0`-t (1660 b) „a vezérlőpontok beolvasása/tárolása"-ként írta le,
+mert nincs benne lebegőpontos utasítás. A funkció valójában **utasításokat
+gyárt** — hatféle `Instruction` vtábláját írja —, tehát **fordító**, nem
+adatolvasó. A KÖVETKEZTETÉS viszont állt: a pixelmatematika nem a műveleti
+osztályban van.
+
+### Amit ez a #626 leltárán változtat
+
+A kérdés nem az, hogy a ~30 műveletből hány van dekompilálva, hanem hogy a
+**tizenhárom utasítás** gépezete megvan-e. A műveleti osztályok csak
+**paraméterezik** az utasításokat.
+
+⇒ **A következő gépi lépés:** az `ApplyInstruction` végrehajtója (vtábla
+`0x00cf0f18`, öt slot: `0x00bd0ef0` · `0x00bd0ca0` · `0x00bd0cb0` ·
+`0x00bd0cc0` · `0x00bd0ee0`), és hogy a `0x00bc4ae0` milyen adatot ad át
+neki. Ez **egy** menet, ami után mind a 33 művelet ugyanazon a gépezeten
+olvasható.
+
+*Bizonyítottsági fok: **megerősített** — mind a 34 vtábla slotjai és a
+teljes `.text`-pásztázás; a kivételek is tételesen.*
