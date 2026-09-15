@@ -478,11 +478,80 @@ magasságára korlátozódik (`0x00531fe9`–`0x00531ffd`).
 kivágás arányának sejtette. A sikeres ág nem hivatkozik rá; a
 kivágás arányait a **3,0** és a **0,6** adja.
 
-⚠️ **Ami a kivágás UTÁN van, még nincs kimérve:** a kapott téglalappal a
-kód a `FUN_0056b5c0` (a kép megszerzése), a `FUN_006b0200`, majd két
-állapotváltás (`FUN_00579910` `2`-vel, `FUN_00744d00` `0xf`-fel) útján
-dolgozik tovább. Hogy ebből fájl, nyomtatási munka vagy szerkesztő-állapot
-lesz-e, **nincs mérve** — a #1401 harmadik kérdése ezen áll.
+### 24/b ⭐ A kimenet NYOMTATÁSI MUNKA — és a mérete `ePassport` (2026-09-15, #1401)
+
+A kivágás után következő lánc (`FUN_0056b5c0` → `FUN_006b0200` →
+`FUN_00579910(2)` → **`FUN_00744d00(0xf)`**) harmadik kérdése eldőlt: a
+**`FUN_00744d00`** sztringjei mondják ki, mi ez.
+
+| sztring | hol | mit árul el |
+|---|---|---|
+| `IDS_PRINT_PREP_MSG` · **`Preparing to print`** | `0x00744d00` | ez a **nyomtatási** út |
+| `outputlayout/pbutton` | `0x00744d00` | a **kimeneti elrendezés** panelé |
+
+⇒ **Az Útlevélkép nem fájlt ír és nem a szerkesztőbe visz: nyomtatási
+munkát készít elő.** A `FUN_00579910('editpanel/preview')` `2`-es
+argumentuma ezt megelőző nézetváltás.
+
+#### A `0xf` = `ytPrintSizes::ePassport` — az UGRÓTÁBLÁBÓL
+
+A `FUN_00775ce0` (510 b) a nyomtatási méretek NÉVTÁBLÁJA:
+`cmp eax, 0x11` / `jmp dword ptr [eax*4 + 0x775ee0]`. A **valódi**
+index↔név megfeleltetést az ugrótábla adja (fájleltolás `0x375ee0`):
+
+| index | kulcs | angol | **magyar** |
+|---:|---|---|---|
+| 0 | `eFullPage` | FullPage | Teljes oldal |
+| 1 | `e4x6` | 4 x 6 | — |
+| 2 | `e3x5` | 3.5 x 5 | — |
+| 3 | `e5x7` | 5 x 7 | — |
+| 4 | `e8x10` | 8 x 10 | — |
+| 5 | `eWallet` | Wallet | Zsebméret |
+| 6 | `e3x4` | 3 x 4 | — |
+| 7 | `e4x5` | 4 x 5 | — |
+| 8 | `e5x8cm` | 5 x 8 cm | — |
+| 9 | `e9x13cm` | 9 x 13 cm | — |
+| 10 | `e10x15cm` | 10 x 15 cm | — |
+| 11 | `e13x18cm` | 13 x 18 cm | — |
+| 12 | `e15x20cm` | 15 x 20 cm | — |
+| 13 | `e20x25cm` | 20 x 25 cm | — |
+| 14 | `eCDSize` | CD Cover Size | — |
+| **15** | **`ePassport`** | **Passport** | **Útlevél** |
+| 16 | `eContact` | Contact Sheet | — |
+| 17 | — | (alapeset: nincs név) | — |
+
+⇒ a `FUN_00744d00`-nak átadott **`0xf` pontosan az `ePassport`**.
+
+⛔ **A SZTRINGCÍM-SORREND FÉLREVEZET.** A `.rdata`-ban a `3 x 4` és a
+`4 x 5` a tábla VÉGÉN áll, és ott a `Passport` a 14. helyre esne. Az
+ugrótábla viszont a 6./7. helyre teszi őket, a `Passport`-ot pedig a
+15.-re. A szomszédosság itt sem bizonyíték — az **ugrótáblát** kell
+olvasni.
+
+#### A legördülő SORRENDJE is megvan — a `FUN_006e5d70` leképezésén át
+
+A nyomtatópanel (`0x00743700`) a listapozíciót **előbb átfordítja**
+(`mov eax, [edi]; call 0x6e5d70`, `0x0074380c`), és csak az eredményt adja
+a névtáblának. A `FUN_006e5d70` egy veremre épített, 16 elemű
+keresőtábla (`0x006e5d76`–`0x006e5ded`; `index ≥ 0x10` ⇒ `1`):
+
+| listapozíció | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | **14** | 15 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| enum | 5 | 2 | 1 | 3 | 4 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | **15** | 16 |
+| név | Wallet | 3.5 × 5 | 4 × 6 | 5 × 7 | 8 × 10 | 3 × 4 | 4 × 5 | 5 × 8 cm | 9 × 13 cm | 10 × 15 cm | 13 × 18 cm | 15 × 20 cm | 20 × 25 cm | CD | **Útlevél** | Indexkép |
+
+⇒ Két következmény: a **`FullPage` (0) NINCS a listában** — az külön mód —,
+és az **Útlevél a lista 15. eleme** (0-tól számolva a 14.).
+
+*Bizonyítottsági fok: **megerősített** — az ugrótábla és a keresőtábla is
+a `.rdata`/`.text` bájtjaiból olvasva, nem sorrendi következtetés.*
+
+#### Ami MÉG nincs mérve
+
+Az `ePassport` **fizikai mérete** (mm/hüvelyk) és a lapelrendezés. A
+névtábla csak nevet ad; a méretet a nyomtatási rajzoló (`0x00776180`,
+1085 b — ugyanaz, ami a #1780 szegély/felirat beállításait fogyasztja)
+vagy egy hozzá tartozó mérettábla adja. Ez a következő gépi lépés.
 
 ### 25. `ID_PICTURE_GEOUNTAG`
 
