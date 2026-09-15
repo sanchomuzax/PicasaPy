@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.471] – 2026-09-15
+
+### Hozzáadva
+
+- **A kettős nézetben a kijelölt oldal képe megy az albumba** (#3014).
+  Ez a válogatás lényege: két kép egymás mellett, a jobbikat egy
+  lépéssel albumba teszed. A „Kijelölve” jelvény mutatja, melyik oldalra
+  hat a parancs — a fókuszváltóval viheted át.
+
 ## [0.8.470] – 2026-09-15
 
 ### Hozzáadva

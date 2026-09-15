@@ -267,6 +267,19 @@ Rectangle {
     //: — ez a mód buboréksúgójának ígérete.
     property int masodikIndex: -1
 
+    //: #3014: a KIJELÖLT oldal rács-sora — a „Kijelölve" jelvény ezt
+    //: mutatja, és a válogató parancsok (albumba tétel) erre hatnak.
+    //: Egy kép módban mindig a jelenlegi kép.
+    //:
+    //: ⚠️ Csak a VÁLOGATÓ parancsok használják. A szerkesztő parancsai
+    //: (mentés, visszavonás, forgatás) továbbra is a `currentIndex`-en
+    //: dolgoznak: nálunk EGY szerkesztési állapot van, a bal oldal a
+    //: nyers fájlt mutatja. A második, önállóan szerkeszthető előnézet
+    //: (`editpanel/preview2`, 26 hivatkozás) külön jegy.
+    readonly property int aktivSor: (viewer.layoutMode !== "1up"
+                                     && viewer.aktivOldal === "bal")
+        ? viewer.abMasikSor : viewer.currentIndex
+
     //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
     //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
     readonly property int abMasikSor: viewer.layoutMode !== "ab"
@@ -2541,9 +2554,18 @@ Rectangle {
         onResetFacesRequested: viewer.resetFacesRequested()
 
         onBackToLibraryRequested: viewer.closed()
+        //: #3014: a KIJELÖLT oldal képe megy az albumba — ez a kettős
+        //: nézet válogató munkafolyamata (a jobbik képet egy lépéssel
+        //: albumba tenni). Egy kép módban változatlanul a jelenlegi.
+        //:
+        //: ⚠️ A jegy `TwoUpAddToAlbum` néven külön vezérlőt említett; a
+        //: binárisban ilyen sztring NINCS (a `TwoUp` minta mind a hat
+        //: találata a `swap_2up_*`/`Confirm2up*` család). Az eredetiben
+        //: tehát nincs külön gomb: a MEGLÉVŐ albumba tétel hat a
+        //: kijelölt oldalra, amit a „Kijelölve" jelvény mutat.
         onAddToAlbumRequested: function(token) {
             if (typeof controller !== "undefined" && controller)
-                controller.addRowsToAlbum([viewer.currentIndex], token)
+                controller.addRowsToAlbum([viewer.aktivSor], token)
         }
         onRotateRightRequested: {
             if (typeof controller !== "undefined" && controller

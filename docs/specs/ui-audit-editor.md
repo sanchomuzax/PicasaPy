@@ -2128,14 +2128,43 @@ megléte nem bizonyít élő vezérlőt — a felületleíró dönt.**
 
 | | eredeti (mért) | nálunk (mért) | teendő |
 |---|---|---|---|
-| a három mód | **egy szegmentált kapcsoló**, `uptarget`-tel | három külön `PicasaButton` (`PhotoViewer.qml:752`, `:761`, `:769`), **mind `enabled: false`** | szegmentált megjelenés; a kizárás `uptarget`-mintára |
-| sorrend | `only_1up` · `ab_2up` · `aa_2up` | **A · AB · AA** | ✅ **egyezik** |
-| alapértelmezés | `only_1up` (`setpressed 1`) | — (mind letiltva) | az „A" legyen az induló |
+| a három mód | **egy szegmentált kapcsoló**, `uptarget`-tel | **megvan** (`LayoutSegment.qml`, `uptarget`-szemantikával; #3013 + #3014) | ✅ |
+| sorrend | `only_1up` · `ab_2up` · `aa_2up` | **A · AB · AA** | ✅ (a #3013 fordítva rakta le a két 2-up szegmenst; a #3014 javította) |
+| alapértelmezés | `only_1up` (`setpressed 1`) | `layoutMode: "1up"` | ✅ |
 | buboréksúgók | **hivatalos magyar** (fent) | **angol** eredeti (`ToolTip.text: qsTr("View only one image")` stb.) | a magyar szöveg a `.ts`-be |
-| `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **nincs** (`grep` → 0) | két gomb, 2-up módban láthatóan |
-| „Kijelölve" jelvény | megvan, kétrészes háttérrel | **nincs** | az aktív oldal jelzése |
-| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **nincs** | a #367 párbeszédére ültetve |
+| `swap_2up_focus` · `swap_2up_layout` | megvan, **rejtett** amíg nincs 2-up | **megvan**, 2-up módban látszik (`viewerSwapFocus`, `viewerSwapLayout`) | ✅ |
+| „Kijelölve" jelvény | megvan, kétrészes háttérrel | **megvan** (`viewerFocusBadge`; a válogató parancsok is ezt követik) | a kétrészes háttér még hiányzik |
+| ütközés-párbeszéd | **négy** helyzet-gomb + „ne kérdezd" | **nincs** — és az ELŐFELTÉTELE sincs meg (ld. a 7. szakaszt) | előbb a második, önállóan szerkeszthető előnézet |
 | `wipe_2up_toggle` | **nincs a felületen** | nincs | **nem kell megépíteni** |
+
+
+### 7. ⭐ Az ütközés-párbeszéd ELŐFELTÉTELE: a második előnézet
+
+A párbeszéd akkor jelenik meg, amikor az `AA` mód **két külön szerkesztési
+állapotot** hozott létre ugyanazon a képen. Ez nálunk ma **nem fordulhat
+elő**: a második felület a nyers fájlt mutatja, szerkesztési állapot nélkül
+— egy kép, egy állapot.
+
+Az eredetinek viszont **teljes értékű második előnézete van**, saját
+geometria-kulcsokkal:
+
+| sztring | hivatkozás |
+|---|---|
+| `editpanel/previewclip2` | **26** függvény |
+| `editpanel/preview2` | 3 függvény (`0x00569650`, `0x005733f0`, `0x005e7830`) |
+| `preview2_x0`, `preview2_y0` | `0x00569720` |
+
+⇒ **A párbeszéd megépítése előtt a második előnézetnek kell önálló
+szerkesztési állapotot kapnia.** Aki előbb építi meg a párbeszédet, olyan
+kódot ad ki, ami sosem fut le.
+
+⛔ **És a `TwoUpAddToAlbum` nem létezik.** A #434 ezen a néven említett egy
+2-up albumba-tétel parancsot; a binárisban a `TwoUp` mintára **csak** a
+`swap_2up_*` és a `Confirm2up*` család van, `addtoalbum`-ra pedig egyetlen,
+általános `addToAlbum` sztring. Az eredetiben tehát nincs külön gomb: a
+MEGLÉVŐ albumba tétel hat a kijelölt oldalra, amit a `selection_label`
+jelvény mutat. *(Ugyanaz az osztály, mint a `wipe_2up_toggle`-nél: a név
+megléte — itt a hiánya — a felületleíróval együtt dönt.)*
 
 > *Bizonyítottsági fok: **megerősített*** — minden felirat a
 > `panel-feliratok-hu.tsv` / `stringres-en-hu.tsv` sorából, minden szerkezet a
