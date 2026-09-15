@@ -200,6 +200,20 @@ Rectangle {
     // a témában van (sötét témára is kell egy párja).
     readonly property color badgeBlue: "#379ffd"
     signal buttonClicked()
+
+    //: #885: LENYOMÁSRA sül el, nem felengedésre.
+    //:
+    //: Az eredetiben 49 vezérlőn áll `Property mousedown 1` (a `respack.yt`
+    //: `.tre` leírásaiban), és a csoportosítás következetes: ami NÉZETET
+    //: VÁLT, ÁLLAPOTOT KAPCSOL vagy MENÜT NYIT, az azonnal hat; ami
+    //: MŰVELETET hajt végre, az a szabványos felengedésre.
+    //:
+    //: ⚠️ Opt-in, és ennél a komponensnél ez különösen fontos: a
+    //: `PanelButton` viszi az effekt-csempéket és az `Alkalmaz`/`Mégse`
+    //: gombokat is — ott a „lenyomtam, de elhúztam, mégsem"
+    //: visszavonhatóság a fontosabb. A mintát a `PicasaButton` azonos
+    //: nevű kapcsolója adja.
+    property bool lenyomasra: false
     Layout.fillWidth: true
     // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
     // gombnál a kép + felirat együttes magassága számít, sima gombnál
@@ -564,7 +578,16 @@ Rectangle {
         id: pbtnMouse
         anchors.fill: parent
         hoverEnabled: pbtn.tooltip.length > 0
-        onClicked: pbtn.buttonClicked()
+        //: a lenyomást EGY egérterület veszi át, és bekapcsolt állapotban a
+        //: felengedés már nem sül el MÁSODSZOR — különben egy állapotkapcsoló
+        //: (félkövér be, majd rögtön ki) semmit sem tenne (#885)
+        onPressed: function (esemeny) {
+            if (pbtn.lenyomasra) {
+                esemeny.accepted = true
+                pbtn.buttonClicked()
+            }
+        }
+        onClicked: if (!pbtn.lenyomasra) pbtn.buttonClicked()
     }
     ToolTip.text: pbtn.tooltip
     ToolTip.visible: pbtn.tooltip.length > 0 && pbtnMouse.containsMouse
