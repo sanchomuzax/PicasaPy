@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picasapy"
-version = "0.8.484"
+version = "0.8.485"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
