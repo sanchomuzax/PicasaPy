@@ -62,6 +62,13 @@ kódtól).
 
 ## Ismert esetek
 
+- `docs/decisions/keresosav-webview-szuro-kimarad.md` (#839) — A keresősáv
+  NEGYEDIK szűrő-ikonja: az eredetiben ott a `webview` áll (csak a
+  webalbumba feltöltöttek), nálunk a **másodpéldány-szűrő**. Az eredeti a
+  másodpéldány-keresést NEM szűrő-ikonként hozza, hanem a keresési
+  beállítások felugró paneljében (`searchoptions/dupesearch`) — a mi
+  elhelyezésünk tehát tudatos hozzáadás, nem eltérés-hiba. A `webview`
+  kihagyásának indoklása a hivatkozott döntés-lapon.
 - `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#422, #571) — A
   szerkesztő 7 effekt-füle az eredeti 5 helyett: a 2–4. index az eredeti
   három effekt-fül, az 5. („további effektek", #422) és a 6. („Régi
