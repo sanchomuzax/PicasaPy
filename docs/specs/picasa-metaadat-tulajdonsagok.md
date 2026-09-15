@@ -535,10 +535,87 @@ MakerNote-mezőt hasonlítja hozzá). Ez a jegy következő lépése.
    bontva 592 nevet ad, ebből 147 kezdődik `Canon`-nal (a blokk utolsó neve
    épp a `Canon EF 50mm f/1.8`).
 
+### 9.7 ⛳ MEGVAN A BEOLVASÓ — és ELTOLJA a 9.4 rekordkiosztását (2026-09-16)
+
+*Forrás: `FUN_00a35a60` (800 b, a Canon-ág) és `FUN_00a35d80` (a Nikon-ág) — a
+két tábla bázisára a teljes fájlon **pontosan egy-egy** hivatkozás van
+(`0x00a35c79`, illetve `0x00a3636c`).*
+
+⛔ **HELYESBÍTÉS a 9.4-hez.** A rekordot ott a NÉV-mutatótól számoltam, mert a
+hivatkozások rácsa arra állt. A beolvasó viszont megmondja a valódi
+rekordkezdetet: a ciklus a **`0x00c79c98`**-tól indexel, azaz **4 bájttal
+korábbról**. A helyes kiosztás:
+
+```c
+struct CanonObjektiv {          // 24 bájt, kezdet: 0x00c79c98 (VA)
+    uint32_t lens_type;         // +0x00  a Canon MakerNote LensType-ja
+    const char *nev;            // +0x04  mutató a szövegblokkba
+    float  gyujto_min;          // +0x08  mm
+    float  gyujto_max;          // +0x0c  0.0f a FIX objektíveknél
+    float  rekesz_min;          // +0x10  f/
+    float  rekesz_max;          // +0x14  0.0f az ÁLLANDÓ rekesznél
+};
+```
+
+⭐ **Ezzel az azonosító MEGEGYEZIK a dokumentált `LensType`-pal** — a 9.4
+„három próbából +1 eltolás, a negyedik nem" bizonytalansága a saját 4 bájtos
+csúszásom volt:
+
+| `lens_type` | gyújtó | rekesz | név |
+|---:|---|---|---|
+| 1 | 50 mm | f/1.8 | `Canon EF 50mm f/1.8` |
+| 2 | 28 mm | f/2.8 | `Canon EF 28mm f/2.8` |
+| 3 | 135 mm | f/2.8 | `Canon EF 135mm f/2.8 Soft` |
+| 4 | 35–105 mm | f/3.5–4.5 | `Canon EF 35-105mm f/3.5-4.5 or Sigma Lens` |
+| 4 | 35–135 mm | f/4–5.6 | `Sigma UC Zoom 35-135mm f/4-5.6` |
+| 5 | 35–70 mm | f/3.5–4.5 | `Canon EF 35-70mm f/3.5-4.5` |
+
+A tábla **`lens_type` szerint rendezett** (1 … 489) — a beolvasó ki is
+használja.
+
+### 9.8 A keresés algoritmusa, utasításonként
+
+```asm
+0x00a35ba0  xor esi, esi                  ; rekord-index
+0x00a35ba2  xor ecx, ecx                  ; bájt-eltolás
+0x00a35ba4  mov eax, [ecx + 0xc79c98]     ; a rekord lens_type-ja
+0x00a35baa  cmp eax, edi                  ; edi = a MakerNote LensType-ja
+0x00a35bac  ja  <kilépés>                 ; RENDEZETT tábla: efölött nincs találat
+0x00a35bb2  jne <következő rekord>
+            ; csak EGYEZŐ azonosítónál: a négy float összevetése
+0x00a35bb8  fld dword ptr [ecx + 0xc79ca0] ; gyujto_min
+0x00a35bcc  sub eax, dword ptr [esp+0x28]  ; a BITMINTÁK egész különbsége
+0x00a35bd5  cmp eax, 8 / jae <következő>   ; tűrés: 8 ULP
+            ; … ugyanez a gyujto_max, rekesz_min, rekesz_max mezőre …
+0x00a35c71  ; találat
+0x00a35c73  lea edx, [esi + esi*2]
+0x00a35c76  mov edx, dword ptr [edx*8 + 0xc79c9c]  ; a NÉV (index × 24)
+0x00a35c4c  add ecx, 0x18 / add esi, 1
+0x00a35c52  cmp ecx, 0x1590               ; 5520 = 230 × 24
+```
+
+Három dolgot mond ki:
+
+1. ⭐ **A 230 × 24 méret a kódból is igazolt**: a ciklus felső korlátja
+   `0x1590` = **5520** = 230 × 24. A 9.4 mérése (a hivatkozások rácsa) és ez
+   független úton ugyanazt adja.
+2. **A kulcs kettős**: elsődlegesen a `LensType`, és az azonosítón OSZTOZÓ
+   rekordok közül a **gyújtótávolság/rekesz négyes** választ — ahogy a 9.4
+   sejtette, most bizonyítva.
+3. ⭐ **A float-egyezés nem pontos, hanem 8 ULP tűréssel megy**: a Picasa a két
+   `float` **bitmintáját** vonja ki egymásból egészként, és az abszolút
+   különbséget hasonlítja 8-hoz. Ez a mi átvételünkre is szabály — a `35.0f`-hez
+   képest az EXIF-ből jövő `34.999996f` még találat.
+
+⇒ **A jegy 2. „Kész, ha" pontja (a leképezés kulcsa) ezzel LEZÁRVA** mind a két
+ágon: Nikon = 8 bájtos `LensID`, Canon = `LensType` + a négyes 8 ULP-s
+egyezése.
+
 ### 9.6 Amit ez a jegynek ad
 
 * A Nikon-ág **azonnal átvehető**: **416** `{8 bájtos kulcs → név}` pár.
-* A Canon-ág **is átvehető**: 230 rekord, `{azonosító, gyújtó-tartomány,
-  rekesz-tartomány → név}`; az azonosító ütközését a számnégyes oldja fel.
+* A Canon-ág **is átvehető**: 230 rekord, `{lens_type, gyújtó-tartomány,
+  rekesz-tartomány → név}`; az azonosító ütközését a számnégyes oldja fel,
+  **8 ULP tűréssel** (ld. 9.8).
 * ⛔ A `383` szám a jegy törzsében **elavult**: a szövegblokk **592** nevet
   tartalmaz.
