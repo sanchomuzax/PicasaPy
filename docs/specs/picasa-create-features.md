@@ -3008,6 +3008,42 @@ Mindkettő ugyanúgy horgonyzott (`YConstraint 1,1,-20`, `m_centerX`), és az
 `Property itempadding 2 2 22 2` beállítással (a jobb oldali 22 képpont a
 legördülő-nyílnak).
 
+### 2/b/1 ⛳ Tételes összevetés a MAI felülettel (2026-09-15, #2992)
+
+A #2992 azt kérdezte, a **spec** vagy a **kutatás** volt-e hiányos, amiért a
+vetítő vezérlő-készlete hiányzik. **Egyik sem:** a fenti leltár teljes, és a
+#433 kutatása is átkerült ide. A hiány a **megvalósításban** volt — és azóta
+nagyrészt megszűnt.
+
+| a leltár eleme | nálunk (`SlideshowView.qml`) |
+|---|---|
+| `exit` | ✅ `slideshowExitButton` |
+| **`timeline`** | ❌ **nincs — és ez SZÁNDÉKOS** (ld. lent) |
+| `rotateleft` · `rotateright` | ✅ (`↺` · `↻`) |
+| `prev` · `auto` · `next` | ✅ (`◀` · `slideshowPlayButton` · `▶▶`) |
+| `star` | ✅ `slideshowStarButton` |
+| `transtype` (`popuplist`) | ✅ `slideshowTransitionBox` |
+| `captionbutton` (kétállású) | ✅ `slideshowCaptionModeButton` |
+| `dtclip` (`tpslabel` + `minusone` + `tps` + `plusone`) | ✅ `slideshowTimeBlock` |
+| **`minusone`/`plusone` `setautorepeat 1`** | ✅ **2026-09-15 óta** (`autoRepeat: true`) |
+| a sáv lebegése/elrejtése | ✅ `HoverHandler` + `slideshowHideTimer` |
+
+#### ⛔ Miért NINCS `timeline` gomb — és miért helyes így
+
+A gomb az **Időrend nézetre** ugrik, ami nálunk **nincs megépítve**: a
+menütétel is kifejezetten INAKTÍV (`PicasaMenuBar.qml:827`, „amíg a valódi
+Időrend nincs megépítve"), a nézet maga a **#24** hatóköre. Egy működő
+gomb, ami nem visz sehová, a #936 szabályába ütközne („a kattintható
+vezérlő, ami mást ad, mint amit ígér, rosszabb, mint a hiánya").
+
+⇒ A `timeline` gomb a **#24-gyel együtt** kerül be, nem előbb.
+
+#### ⚠️ Az ismétlés SEBESSÉGE nincs mérve
+
+A `.tre` csak a **jelzőt** adja (`setautorepeat 1`), a késleltetést és az
+ismétlési időt nem. A megvalósítás a Qt alapértelmezését használja
+(300 ms / 100 ms), és ezt a kód kommentje is kimondja — **nem mért érték**.
+
 *Bizonyítottsági fok: megerősített* (a `respack.yt` rétegtéglalapjai és a
 `.tre` kötések; a feliratok a `panel-feliratok-hu.tsv` magyar oszlopából).
 

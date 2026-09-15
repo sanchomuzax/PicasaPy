@@ -521,6 +521,14 @@ Rectangle {
                     width: 26
                     height: controlsRow.buttonHeight
                     text: "−"
+                    //: #2992: az eredeti `oneup/minusone`-ján ott a
+                    //: `Property setautorepeat 1` — a gomb NYOMVA TARTHATÓ
+                    //: (`picasa-create-features.md` 2/b). Enélkül 30 mp-re
+                    //: állítani 29 kattintás.
+                    //: ⚠️ Az ismétlés SEBESSÉGÉT a forrás nem adja meg (csak a
+                    //: jelzőt), ezért a Qt alapértelmezése marad — ez nem
+                    //: mért érték.
+                    autoRepeat: true
                     enabled: show.seconds > 1
                     onClicked: show.secondsChosen(show.seconds - 1)
                 }
@@ -539,6 +547,9 @@ Rectangle {
                     width: 26
                     height: controlsRow.buttonHeight
                     text: "+"
+                    //: #2992: `oneup/plusone` — ugyanaz az auto-ismétlés,
+                    //: mint a párjánál (ld. ott az indoklást).
+                    autoRepeat: true
                     enabled: show.seconds < 30
                     onClicked: show.secondsChosen(show.seconds + 1)
                 }

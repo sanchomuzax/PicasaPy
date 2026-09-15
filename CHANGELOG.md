@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.468] – 2026-09-15
+
+### Javítva
+
+- **A diavetítés megjelenítési ideje nyomva tartva állítható** (#2992). A
+  „+" és a „−" gomb eddig kattintásonként egy másodpercet lépett — 30
+  másodpercre állítani 29 kattintás volt. Mostantól nyomva tartva ismétel,
+  ahogy az eredeti Picasában.
+
 ## [0.8.467] – 2026-09-15
 
 ### Javítva
