@@ -5531,7 +5531,115 @@ effekt **igenis eljut az ini-be**, a maszkja nélkül.
 | foglal-e a maszk lánc-paramétert | ✅ **NEM** — `{_mctr.mask}` futásidejű objektum |
 | visszatölthető-e a `.picasa.ini`-ből | ✅ **NEM** — következik a fentiből |
 | hány festhető maszkos effekt van | ✅ **ÖT**, két családban (a jegy kettőt mondott) |
-| tárolja-e a Picasa **máshol** (db3) | ⛔ **NYITOTT** — ezt a mérés nem zárja ki |
+| tárolja-e a Picasa **máshol** (db3) | ✅ **NEM találtunk rá oszlopot** — ld. a következő szakaszt |
+| milyen az ecset FELÜLETE | ✅ **MEGVAN** — ld. a következő szakaszt |
+
+## ⛳ Az ecset-felület és a db3-tárolás — mindkettő mérve (2026-09-15, #1908)
+
+*Forrás: `filterdesc.xml:1279`; `referencia/tre-eroforrasok/editpanel.tre:501`,
+`:864`, `:866`, `:869`, `:961`, `:962`; `thumbui.tre:113`;
+`referencia/stringres-en-hu.tsv`; `referencia/i18n/cs/stringres.xml:1530`;
+`Picasa3.exe` `0x005d59f0` · `0x008e3bd0` · `0x008e3dd0` · `0x008fcfa0` ·
+`0x008fe9b0`; három valódi db3-telepítés a `research/testdata/` alatt.*
+
+### 1. A két család KÉT különböző ecset-felületet kap
+
+| befoglaló | mit deklarál az ecsethez | melyik szűrők |
+|---|---|---|
+| **`eff:PaintOnEffectBase`** | `_nBrushHardness="0.15"` **és** `<BrushSizeAndEraserButton id="_brshbtn" startValueFactor="0.03" maximumFactor="0.2"/>`; az értéke `_cxyBrush = {_brshbtn.value}` | `ReanimatedEyeColor` |
+| **`cnt:PaintEffectCanvas`** | **SEMMIT** — se ecsetméret, se keménység, se radír | `Boost`, `Pixelate`, `Soften`, `PicnikTint` |
+
+⇒ A jegy „ami mérve van" táblája (`_nBrushHardness`, `startValueFactor`,
+`maximumFactor`) **kizárólag a `PaintOnEffectBase`-re igaz**. A másik négy
+szűrőnél ezek az értékek **nincsenek** a leírásban: az ecsetet a kanavász
+adja, nem a szűrő.
+
+### 2. Az ecset vezérlői és feliratai
+
+A `BrushSizeAndEraserButton` **két** vezérlő egyben (méret + radír) — a
+kötéseit a szűrőmotor nevezi meg (`0x008e3bd0`, `0x008e3dd0`):
+
+| kötés | mi |
+|---|---|
+| `_brshbtn.value` | az ecsetméret |
+| `_brshbtn.selected` | ecset **vagy** radír van kiválasztva |
+| `_btnEraser.selected` | a radír-gomb állapota |
+| `brushAlpha`, `brushRotation` | az ecsetnyom átlátszósága és forgatása |
+
+| felirat-kulcs | EN | HU |
+|---|---|---|
+| `ImageFilters::BrushSize` · `CThumbUI::BrushSize` | *Brush Size* | **Ecsetméret** |
+| `CThumbUI::EraserSize` | *Eraser Size* | **Radír mérete** |
+| `ImageFilters::Eraser` | *Eraser* | **Radír** |
+| `ImageFilters::BlurXY` | *Color Brush* | **Színes ecset** |
+
+⚠️ **A `BlurXY` kulcs nem a nevét jelenti.** A kulcs *„Blur XY"-t* ígér, a
+szöveg viszont *„Color Brush"* — és ez **az eredetiben van így**, nem a mi
+táblánk hibája: a `referencia/i18n/cs/stringres.xml:1530` ugyanezen a
+kulcson *„Barevný štětec"*-et (= színes ecset) ad. Kulcsnévből tehát itt sem
+szabad jelentést következtetni.
+
+### 3. Az ecset MEGJELENÍTÉSE: kör alakú kurzor, a mérettel skálázva
+
+A `.tre` kimondja a teljes bekötést:
+
+```
+thumbui/circlecursor: root                                      (thumbui.tre:113)
+brushslider/scaleslider: root                                   (editpanel.tre:866)
+brushslider/thumb: brushslider/scaleslider                      (editpanel.tre:864)
+editpanel/brushslider_container: editpanel/retouch_well         (editpanel.tre:869)
+editpanel/eraserbutton: editpanel/editcontrol_well              (editpanel.tre:501)
+
+Handler dragscale thumbui/circlecursor brushslider/scaleslider 100      (:961)
+Handler retoucher thumbui/circlecursor brushslider/scaleslider
+        editpanel/refining_label editpanel/preview                      (:962)
+Property showtarget thumbui/circlecursor                                (:226)
+Property hidetarget thumbui/circlecursor                                (:899, :911)
+```
+
+⇒ **A mutató alakja egy kör** (`thumbui/circlecursor`), amelynek átmérőjét a
+**`brushslider/scaleslider`** csúszka állítja (`dragscale`-lel közvetlenül
+húzva is, `100`-as léptékkel), és amelyet a `showtarget`/`hidetarget`
+tulajdonság kapcsol be-ki. Nincs külön előnézeti réteg: a kör maga a
+visszajelzés.
+
+⚠️ **Hatókör:** ez a `.tre`-ben a **javítóecset** (`retouch_well`,
+`Handler retoucher`) bekötése. Hogy a festhető-maszkos szűrők UGYANEZT a
+csúszkát és kurzort kapják-e, vagy a szűrőmotor saját
+`BrushSizeAndEraserButton`-ja rajzol, a `.tre` nem mondja meg — a
+`_brshbtn` a `filterdesc.xml` oldalán él. **Ez marad nyitva**, és az
+átvételhez nem szükséges: mindkét olvasat ugyanazt a felületet írja le
+(kör alakú kurzor + méretcsúszka + radírgomb).
+
+### 4. A db3-tárolás: NEM találtunk maszk-oszlopot
+
+A 296. kör nyitva hagyott kérdése („tárolja-e a Picasa **máshol**, pl. a
+`db3`-ban") — a teljes oszlop-leltár **három, egymástól független valódi
+telepítésből**:
+
+| korpusz | fájl | maszk-gyanús oszlop |
+|---|---|---|
+| `research/testdata/Picasa2/db3` | 78 | **nincs** |
+| `research/testdata/Picasa2-arcok/Picasa2/db3` | 84 | **nincs** |
+| `research/testdata/1557-masolat-mentese/db3-utana/db3` | 84 | **nincs** |
+
+Egyik telepítésben sincs `mask`/`paint`/`brush` nevű `.pmp`, és a binárisban
+a `mask`/`brush` nevű sztringek **mind** a szűrőmotorban ülnek
+(`0x00bb31f0`–`0x00bcfff0`: `imageOperations:CircularGradientImageMask`,
+`TiledImageMask`, `PaintEffectCanvas`, `_mctr.mask`, `maskWithSourceAlpha`) —
+egyikük környékén sincs `.picasa.ini`, fájlútvonal vagy db3-oszlopnév.
+
+⛔ **A hatókört kimondom:** ez **korpusz-negatívum + a szűrőmotor
+sztringkészlete**, nem a bináris kimerítő pásztázása. A db3 oszlopnevei
+ugyanis **nincsenek egyetlen regisztrálóban**: a `0x004127c0` 37
+`imagedata`-oszlopot nevez meg, de a `crop64`, `tags`, `lat`, `geoview`,
+`avgcolor`, `suppress` és `text` **nincs** köztük, pedig mind a három
+korpuszban ott a fájljuk. Egy hiányzó oszlopnév tehát elvben átcsúszhat.
+**A bizonyíték ereje:** három független telepítés, nulla találat.
+
+⇒ **Termékdöntéshez elég:** a festett maszk **munkamenet-élettartamú**, ha a
+Picasát vesszük mintának. Saját tárolás bevezetése a mi döntésünk, és nem
+sérti az ini-kompatibilitást (a maszknak ott nincs mezője).
 
 ## ⛳⛳ A `GlowImageOperation` SOSEM fut belső ragyogásként — az `innerglow` attribútum nem létezik a binárisban (2026-09-14, 306. kör, #2982)
 
