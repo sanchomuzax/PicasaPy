@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.465] – 2026-09-15
+
+### Belső
+
+- **Előkészület a keretes képek helyes jelöléséhez** (#3166). A program
+  mostantól ki tudja számolni, hova kerül a fénykép a kereten belül, ha a
+  képre keretet, Polaroid-hatást vagy filmvászon-sávot teszünk. Magában ez
+  még **nem látszik semmin** — arra kell, hogy a következő lépésben a
+  vágás-keret és az arcok jelölése a keretes képen is a helyén maradjon.
+
 ## [0.8.464] – 2026-09-15
 
 ### Javítva
