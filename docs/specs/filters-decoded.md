@@ -6346,11 +6346,22 @@ A név-alapú keresés itt is vak lett volna.
 
 ### A megnevezett következő lépés
 
-A `CGenericFilter` vtábla **31. rekesze** (`+0x7c`, `0x008fc690`, 2320 b) a
-legnagyobb nem-parser metódus — a lánc futtatója ezt (vagy a szomszédait)
-hívja. A hívóhelyek `call [reg+0x7c]` alakra pásztázhatók, az
-argumentumszámmal szűrve (a virtuális hívóhely-szűrés bevált módszere). Ott
-látszik majd, hogy a futtató a lista SORRENDJÉBEN megy-e végig.
+⛔ **Egy jelölt már KIESETT.** A `+0x7c` rekesz (`0x008fc690`, 2320 b) a
+legnagyobb nem-parser metódus, ezért kézenfekvő volt „a lánc futtatójának"
+nézni — de a sztringjei (`triple`, `triple2`, `triple3`, `finetune`,
+`finetune2`, `colorfix`) szerint **név-szerinti elágazás** a tónus-családra,
+nem a futtató. *(A méret önmagában nem azonosít metódust.)*
+
+A `call [reg+0x7c]` bájtminta ezenfelül **nulla** találatot ad az egész
+binárisban — a fordító a szokásos `mov eax,[ecx] · mov edx,[eax+N] · call
+edx` alakot használja, tehát a virtuális hívóhelyeket csak ezzel a
+három-utasításos mintával lehet keresni, ismert pozitív kontrollal együtt
+(pl. a `0x005e7c33` `mov eax,[edx+0x24]` → `call eax`).
+
+A következő kör a **listát birtokló osztálytól** induljon: a
+`FUN_00907390` a tömböt `[ebp+0x48]` / `[ebp+0x4c]` alakban kapja, és a
+`FUN_00438820` tölti — annak az objektumnak az RTTI-je nevezi meg, ki
+futtatja a láncot.
 
 ### ⛔ Egy saját ellentmondás, amit ez a kör felszínre hozott
 
