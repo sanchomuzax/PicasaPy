@@ -1661,3 +1661,91 @@ feltöltő NEM a lista saját metódusai közt van — a `+0x30`-ra `1/5/6/7`
 immediate-et író függvényeket a teljes `.text`-en végigpásztázva egyetlen
 találat sem esett a `0x0040…–0x0080` app-tartományba nem-verem bázissal,
 tehát a rekord a **hívó vermén** épül, és onnan másolódik be.
+
+## ⛳ Az album-ugrás két nyitott részlete: a `fmod`-os előfeltétel MEGVAN, a `+0x20` alapértéke −1 (2026-09-15, 313. kör, #3143)
+
+*A 310. kör (fent) két kérdést hagyott nyitva: mi a sorrekord `+0x20` mezője,
+és mit mér a `prevalbum` 0,1/0,9-es előfeltétele. A második LEZÁRULT, az első
+szűkült — mindkettő mérve.*
+
+### 1. A `prevalbum` előfeltétele: a soron belüli görgetés TÖRTRÉSZE
+
+A lánc három lépése, mindegyik kiolvasva:
+
+```
+0x00578abc  call 0x0076a4b0      ; v0 = törtsor-pozíció (ld. lent)
+0x00578ac1  fld1                 ; 1.0
+0x00578ac3  call 0x00c29e1a      ; v = fmod(v0, 1.0)  -> a TÖRTRÉSZ
+0x00578ac8  fcomp [0x00c7dd30]   ; 0,1
+0x00578ad7  fcomp [0x00cf3ad8]   ; 0,9
+```
+
+**A `0x00c29e1a` = `fmod`, bizonyítva.** A stub (`mov edx, 0x00d49170; jmp …`)
+egy CRT-leíróra mutat, amelynek első mezője a **hosszal előtagolt `"fmod"`**
+név (`0x00d49170`: `04 'f' 'm' 'o' 'd'`), a `+0x10`-es mezője pedig a
+megvalósításra (`0x00c29e24`) — az pedig a klasszikus `fprem`-hurok
+(`0x00c29e2f fprem`, `0x00c29e3d jp`, `0x00c29e3f fstp st(1)`).
+
+**Mit ad a `0x0076a4b0`** (327 b): végigmegy a `[esi+0x30c]`-en álló, 16 bájtos
+téglalapokon (bal/fent/jobb/lent), megkeresi azt, amelyik a görgetési
+eltolást tartalmazza, és visszaadja
+
+```
+v0 = sorindex + min(1, (eltolás − sor_teteje) / sor_magassága)
+```
+
+(`0x0076a582`–`0x0076a5d8`; az eltolás a `[esi+0x150]`-ből és a paraméterből
+jön, `0x0076a4df`, egész értékre kerekítve a `0x00c29990` CRT-hívással).
+
+⇒ **`v` = mennyire van „belegörgetve" a nézet az aktuális sorba (0…1).**
+
+**A polaritás** (FPU-státuszból, `test ah,5; jp`): **`v ≤ 0,1` vagy `v ≥ 0,9`**
+esetén indul a fejléc-keresés; a **`0,1 < v < 0,9`** sávban helyette
+`0x006dcc40(CThumbUI)` fut.
+
+**Mit tesz a `0x006dcc40`** — a mért része: ugyanazt a nézetmodellt olvassa,
+mint a két album-ugró (`[this+0xeb0]`), és a **határsort** kéri le
+(`i = [nézet+0x320] + [nézet+0x2f8]`, ±0 nélkül; `0x006dcc57`–`0x006dcc5d`),
+ugyanazzal a `0x004ae4e0` lekérővel és ugyanazzal az alapértelmezett
+rekorddal (`mov dword [esp+0x58], 0xa`, `0x006dccc3`) ⇒ az **aktuális** sorra
+vonatkozik, nem a következő fejlécre.
+
+⇒ **A két gomb tehát nem tükörkép:** a „előző album" először a sor közepéről
+igazít, és csak a sor tetején/alján kezd fejlécet keresni. A „következő
+album"-nak nincs ilyen előfeltétele.
+
+### 2. A sorrekord `+0x20` mezője: alapértéke **−1**
+
+A rekordnak két konstruktora van, mindkettő kiolvasva:
+
+| konstruktor | mit állít |
+|---|---|
+| `0x004a06e0` (alap) | `[+0x00…+0x08] = 0xFF`, `[+0x09] = 0`, `[+0x0c] = [+0x10] = 0`, **`[+0x30] = 0x0A`** |
+| `0x004a0720` (paraméteres) | ugyanaz a bájtsor, `[+0x0c]`/`[+0x10]` a két sztring, `[+0x14]`, `[+0x18]`, `[+0x19]`, `[+0x1a] = 0`, `[+0x1c] = 0`, **`[+0x20] = −1`**, `[+0x24] = 0`, `[+0x30]` = a típus-argumentum |
+
+**Kontroll-mérés:** az alap-konstruktor `[+0x30] = 0x0A`-ja pontosan az az
+érték, amit a 310. kör a hívói veremrekeszében látott
+(`mov dword [esp+0x48], 0xa`, `0x0057898f`) — tehát a rekordot helyesen
+azonosítottam.
+
+⇒ A `+0x20` **alapértéke −1, nem 0**. Mivel az album-ugrás az 5/6/7 típusú
+fejléceket csak `+0x20 == 0` mellett fogadja el, ezek a fejlécek
+**alapértelmezés szerint NEM ugrási célok** — csak akkor azok, ha valaki a
+felépítés után kifejezetten 0-ra állítja a mezőt.
+
+### 3. Ami NYITVA marad
+
+1. **Ki állítja a `+0x20`-at 0-ra.** A paraméteres konstruktornak
+   **12 hívója** van, mind a `0x004b1acb`–`0x004b81fd` sávban (a lista-építő
+   modul); az elsőnek átnézett hívóban (`0x004b2ab4`) a konstruktor után csak
+   a `+0x0c`, `+0x14`, `+0x18`, `+0x1c` íródik, a `+0x20` nem. A megszerzés
+   útja: a maradék 11 hívóhely ugyanilyen átnézése — a rekord a veremben áll,
+   tehát a `+0x20` a `lea esi,[esp+N]` bázishoz képest `N+0x20`-on keresendő.
+2. **A `0x006dcc40` teljes viselkedése** (912 b): a fenti lekérés után
+   RTTI-s ágakon megy tovább (`0x006dcdb0 call 0x00c07db2`), és a függvény
+   sztringjei közt `thumbui/webwindow` és `about:blank` is van — ezek egy
+   MÁSIK ágé lehetnek. A megszerzés útja: a `0x006dc9a0` hívott függvény és a
+   `0x006dcdcd` / `0x006dcde9` virtuális hívások célja.
+
+*Forrás: `0x00578abc`, `0x00578ac3`, `0x00c29e1a`, `0x00d49170`, `0x00c29e24`,
+`0x0076a4b0`, `0x006dcc40`, `0x004a06e0`, `0x004a0720`.*
