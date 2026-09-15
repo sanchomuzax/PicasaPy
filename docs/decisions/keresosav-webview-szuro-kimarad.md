@@ -42,3 +42,13 @@ szolgáltatás hiányához kötött, nem a szűrő gondolatához.
 `docs/specs/ui-audit-mainwindow.md` → „A keresősáv teljes eleme-listája a
 forrásból" (a `searchcontainer.tre` 125 sora; a felületkód `0x00660c80` és
 `0x005d47e0` ugyanezt a hét azonosítót hivatkozza).
+
+## Kötés
+
+*Gépi mezők — a `scripts/check_decision_links.py` őre olvassa. Ha a
+megvalósítás átkerül máshova, ITT is vezesd át; az elárvult hivatkozás
+hamis biztonságérzetet ad.*
+
+- **Státusz:** ELFOGADVA
+- **Megvalósítja:** `src/picasapy/app/qml/PicasaPy/MainToolbar.qml`
+- **Őrzi:** `tests/app/qml_functional/test_szuro_sugok_839.py`
