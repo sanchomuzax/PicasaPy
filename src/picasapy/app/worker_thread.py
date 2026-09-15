@@ -198,6 +198,7 @@ class BackgroundWorkerMixin:
         args: Sequence[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
         name: str | None = None,
+        cancel: Callable[[], None] | None = None,
     ) -> threading.Thread:
         """Egy `target` HÁTTÉRSZÁLON indítása, nyilvántartva.
 
@@ -209,10 +210,22 @@ class BackgroundWorkerMixin:
         helyen történik — a hívó controllernek nem kell külön hívnia. A
         `begin()` a hívó (jellemzően GUI-) szálon fut, MIELŐTT a szál
         elindulna; az `end()` a `finally`-ben — kivétellel leálló munkánál
-        is, hogy a csík ne pörögjön örökre."""
+        is, hogy a csík ne pörögjön örökre.
+
+        #2966: a `cancel` egy leállító visszahívás. Ha meg van adva, a
+        munka MEGSZAKÍTHATÓKÉNT jelentkezik be, és a jobb-felső sarki
+        jelzőn megjelenik a megszakítás gombja. A visszahívás bármely
+        szálról hívódhat (a felhasználó a GUI-szálról kattint), ezért csak
+        jelzőt állítson (`threading.Event`), ne végezzen munkát."""
         workers = self._bg_worker_set()
         registry = get_app_busy_registry()
         registry.begin()
+        # #2966: ha a hívó adott leállítót, a munka a jobb-felső sarki
+        # jelzőn MEGSZAKÍTHATÓKÉNT jelenik meg. A bejelentkezés — a
+        # `begin()`-hez hasonlóan — a hívó szálán, a szálindítás ELŐTT
+        # történik, a kijelentkezés pedig ugyanabban a `finally`-ben, mint
+        # az `end()`: így a gomb sosem marad ott futó munka nélkül.
+        cancel_jegy = registry.register_cancel(cancel) if cancel is not None else None
 
         def _run() -> None:
             try:
@@ -274,6 +287,8 @@ class BackgroundWorkerMixin:
                 # esemény nem kerül bele —, csak két könyvelési sort tesz a
                 # szál UTOLSÓ Qt-hívása mögé.
                 try:
+                    if cancel_jegy is not None:
+                        registry.unregister_cancel(cancel_jegy)
                     registry.end()
                 finally:
                     workers.discard(thread)
@@ -295,6 +310,8 @@ class BackgroundWorkerMixin:
             workers.discard(thread)
             with _ALL_WORKERS_LOCK:
                 _ALL_WORKERS.discard(thread)
+            if cancel_jegy is not None:
+                registry.unregister_cancel(cancel_jegy)
             registry.end()
             raise
         return thread

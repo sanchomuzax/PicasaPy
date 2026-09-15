@@ -314,6 +314,10 @@ class AppController(
         # meglévő `busyChanged` jelzést váltja ki — a QML/tesztek felülete
         # (`controller.isWorking`/`busyChanged`) változatlan marad.
         get_app_busy_registry().visibleChanged.connect(self.busyChanged)
+        # #2966: a megszakíthatóság a saját jelzésén megy a QML felé
+        get_app_busy_registry().cancellableChanged.connect(
+            self.activityCancellableChanged
+        )
 
     def _get_settings(self) -> QSettings:
         """Lusta alapértelmezés: `QSettings("PicasaPy", "PicasaPy")`, hacsak

@@ -151,7 +151,12 @@ class ColorIndexMixin(BackgroundWorkerMixin):
         self._color_index_running = True
         try:
             self._start_background(
-                self._run_color_index, args=(stop_event,), name=_SZAL_NEV
+                self._run_color_index,
+                args=(stop_event,),
+                name=_SZAL_NEV,
+                # #2966: a jobb-felső sarki jelző gombja is leállítja —
+                # ugyanazt a jelzőt állítja, mint a sáv „Leállítás"-a
+                cancel=self.cancelColorIndex,
             )
         except BaseException:
             # ⚠️ #550/#1435/#1440 mintája: a `thread.start()` elbukhat

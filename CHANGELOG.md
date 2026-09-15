@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.479] – 2026-09-15
+
+### Hozzáadva
+
+- **Közös háttérművelet-jelző a jobb-felső sarokban, megszakítással** (#2966).
+  Az eredeti Picasa ugyanitt tartott egy kis jelzőt: alapból rejtve, és csak
+  háttérmunka közben jelent meg, pörgővel és egy gombbal, amivel a művelet
+  leállítható volt. Mostantól nálunk is: a jelző bármelyik háttérmunkára
+  magától megjelenik, és ha a munka leállítható, a gombja is — a leállítás
+  megerősítő kérdés után történik, és tényleg megállítja a munkát (az
+  indexelést és a színkeresés előkészítését is). A helye és a mérete az
+  eredetiből mért (35 × 28, felülről és jobbról 5 képpont).
+
 ## [0.8.478] – 2026-09-15
 
 ### Javítva

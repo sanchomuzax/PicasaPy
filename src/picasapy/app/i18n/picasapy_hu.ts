@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>ActivityBadge</name>
+    <message>
+        <location filename="../qml/PicasaPy/ActivityBadge.qml"/>
+        <source>Stop the background operation</source>
+        <translation>A háttérművelet leállítása</translation>
+    </message>
+</context>
+<context>
     <name>LightboxFeed</name>
     <message>
         <source>No photos found</source>
@@ -3842,6 +3850,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Stop the background operation</source>
+        <translation>A háttérművelet leállítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Do you want to stop the operation running in the background?</source>
+        <translation>Leállítja a háttérben futó műveletet?</translation>
+    </message>
     <!-- #754: a jobb fiók fejléc-címe — UGYANAZ a négy szöveg, mint a
          Nézet menü tételeié (a gyorsító és a billentyű-tipp nélkül) -->
     <message>

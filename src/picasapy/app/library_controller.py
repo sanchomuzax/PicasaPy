@@ -175,6 +175,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
     # #209: mappánkénti sync-haladás (mappa, kész, összes, új fotók) — a
     # worker-szálból emittálva; a Qt queued kapcsolattal hozza a GUI-szálra
     syncProgress = Signal(str, int, int, int)
+    #: #2966: a futó háttérmunka MEGSZAKÍTHATÓSÁGA változott — a
+    #: jobb-felső sarki jelző megszakítás-gombjának láthatósága erre köt.
+    activityCancellableChanged = Signal()
     # #209: a lebegő „Importálás" panel állapota változott
     importChanged = Signal()
     # #449: az első indítás kérdésének állapota (figyelt mappa lett/nem lett)
@@ -212,6 +215,26 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         Küszöbölt/minimális-láthatóságú érték (a nyilvántartás intézi, ne
         villogjon), nem a nyers "fut-e valami" jel."""
         return get_app_busy_registry().visible
+
+    @Property(bool, notify=activityCancellableChanged)
+    def activityCancellable(self):  # noqa: N802 — QML-property-stílus
+        """Leállítható-e a futó háttérmunka (#2966).
+
+        A jelző maga az `isWorking`-re látszik; a megszakítás GOMBJA erre.
+        A kettő szándékosan külön: a bélyegkép-betöltés például fut, de
+        nincs értelmes leállítója — ilyenkor a jelző pörög, gomb nélkül,
+        ahogy az eredeti szerkesztő-panel példánya is gomb nélküli
+        (`editpanelactivity`, #3112)."""
+        return get_app_busy_registry().cancellable
+
+    @Slot()
+    def cancelActivity(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """A futó, leállítható háttérmunkák megszakítása (#2966).
+
+        A jelző gombja hívja, a megerősítő kérdés IGEN ága után. Minden
+        bejelentkezett munkát leállít: a felhasználó a felületen egyetlen
+        „dolgozik" jelzést lát, tehát egyetlen kattintásra számít."""
+        get_app_busy_registry().request_cancel()
 
     @Slot(int)
     def _on_thumb_active(self, count: int) -> None:
@@ -348,6 +371,22 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if root not in events:
             events[root] = threading.Event()
         return events[root]
+
+    def cancelScan(self) -> None:  # noqa: N802 — a QML-stílusú nevekhez igazítva
+        """A futó indexelés/szinkron megszakítása (#2966).
+
+        A jobb-felső sarki jelző gombja hívja (a közös nyilvántartáson át).
+        A pásztázás-generáció léptetése a `_make_should_stop`-on keresztül
+        MINDEN futó pásztázást leállít a következő mappahatáron — és
+        SEMMILYEN tartós nyomot nem hagy: az ezután induló szinkron a friss
+        generációt veszi fel, tehát rendesen lefut. (A gyökerenkénti
+        leállítási jelző, `_cancel_event`, ehhez nem jó: az bent MARADNA, és
+        a mappát a következő körben is kihagyná.)
+
+        A már beindexelt mappák munkája nem vész el: a `sync_folder`
+        mappánként commitol."""
+        self._ensure_folder_manager_scan_state()
+        self._folder_scan_generation += 1
 
     def _make_should_stop(self, root: str):
         """Worker-oldali leállás-predikátum egy gyökérhez: igaz, ha a
@@ -1031,7 +1070,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin,
             # #430) — a busy-bejelentkezés is ITT, a mixinben történik
             # (ld. worker_thread.py)
-            self._start_background(worker, name="picasapy-sync-dirty")
+            self._start_background(
+                worker, name="picasapy-sync-dirty", cancel=self.cancelScan
+            )
         except BaseException:
             # ⚠️ #550/#1435 mintája: a `start()` elbukhat (`RuntimeError:
             # can't start new thread`), és akkor a `worker` — vele a
@@ -1299,7 +1340,9 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         # megváltozása vagy egy újonnan létrejött célmappa legkésőbb öt
         # perc múlva bekerül a tízmásodperces körbe.
         self._projekt_kimenet_cache = None
-        self._start_background(self._sync_worker, name="picasapy-sync-rescan")
+        self._start_background(
+            self._sync_worker, name="picasapy-sync-rescan", cancel=self.cancelScan
+        )
 
     def _sync_worker(self) -> None:
         """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a

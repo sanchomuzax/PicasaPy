@@ -38,8 +38,15 @@ szükség Lock-ra — csak a GUI-szál nyúl a `_active`/`_visible`/időzítő
 
 from __future__ import annotations
 
+import itertools
+import logging
+import threading
+from collections.abc import Callable
+
 import shiboken6
 from PySide6.QtCore import QObject, QTimer, Signal
+
+logger = logging.getLogger(__name__)
 
 #: Küszöb (ms): rövid műveletnél NE villanjon fel a csík. Néhány száz
 #: ezredmásodperces munka (egy gyors sync-tick, egy pár képes köteg) a
@@ -70,6 +77,11 @@ class AppBusyRegistry(QObject):
     #: property-i, NEM a nyers számlálóra.
     visibleChanged = Signal()
 
+    #: A MEGSZAKÍTHATÓSÁG változott (#2966): az imént jelentkezett be az
+    #: első leállítható munka, vagy az utolsó kijelentkezett. A jobb-felső
+    #: sarki jelző megszakítás-gombjának láthatósága erre köt.
+    cancellableChanged = Signal()
+
     # belső, szál-határon átmenő "kérés" jelzések (ld. modul docstring) —
     # a begin()/end() csak ezeket emitálja, a tényleges állapotváltás a
     # rájuk kötött _on_begin/_on_end slotban, a regisztrátum szálán fut.
@@ -91,6 +103,13 @@ class AppBusyRegistry(QObject):
         self._min_visible_timer.timeout.connect(self._on_min_visible_timeout)
         self._beginRequested.connect(self._on_begin)
         self._endRequested.connect(self._on_end)
+        # #2966: a leállítható munkák visszahívásai. A regisztráció a hívó
+        # (GUI-) szálon, a kijelentkezés a WORKER szálán történik (a
+        # `_start_background` `finally` ágán), ezért a szótárat zár védi —
+        # a `visible` állapottal ellentétben ide két szál is nyúl.
+        self._cancel_lock = threading.Lock()
+        self._cancel_callbacks: dict[int, Callable[[], None]] = {}
+        self._cancel_counter = itertools.count(1)
 
     @property
     def visible(self) -> bool:
@@ -149,6 +168,54 @@ class AppBusyRegistry(QObject):
         except RuntimeError:
             # az isValid óta szűnt meg — ld. fent
             return
+
+    # -- megszakítás-csatorna (#2966) ---------------------------------------
+
+    @property
+    def cancellable(self) -> bool:  # noqa: N802 — a projekt QML-stílusú property-nevei
+        """Van-e MOST legalább egy leállítható háttérmunka.
+
+        Ez FÜGGETLEN a `visible`-től: a küszöb/minimális láthatóság a
+        megjelenítés zajszűrése, a megszakíthatóság viszont tény. A
+        felület a kettő ÉS-ét mutatja (a jelző csak akkor látszik, ha
+        `visible`), de a nyilvántartás nem keveri össze őket."""
+        with self._cancel_lock:
+            return bool(self._cancel_callbacks)
+
+    def register_cancel(self, callback: Callable[[], None]) -> int:
+        """Egy leállítható munka bejelentkezése; a visszaadott jegy a
+        `unregister_cancel` bemenete. BÁRMELY szálról hívható."""
+        with self._cancel_lock:
+            jegy = next(self._cancel_counter)
+            self._cancel_callbacks[jegy] = callback
+            elso = len(self._cancel_callbacks) == 1
+        if elso:
+            self._emit_ha_el(self.cancellableChanged)
+        return jegy
+
+    def unregister_cancel(self, jegy: int) -> None:
+        """Egy leállítható munka kijelentkezése. A hiányzó jegy NEM hiba:
+        a `finally`-ág kétszer is lefuthat (újradobás, lebontás)."""
+        with self._cancel_lock:
+            self._cancel_callbacks.pop(jegy, None)
+            ures = not self._cancel_callbacks
+        if ures:
+            self._emit_ha_el(self.cancellableChanged)
+
+    def request_cancel(self) -> None:
+        """MINDEN futó, leállítható munka megszakítása.
+
+        A felhasználó egyetlen kattintással állítja le a hátteret, ezért
+        egy hibás leállító nem nyelheti el a többit: a kivételt naplózzuk
+        és megyünk tovább. A visszahívások a saját jelzőjüket állítják be
+        (esemény, `stop_event`), tehát gyorsak és szál-biztosak."""
+        with self._cancel_lock:
+            visszahivasok = list(self._cancel_callbacks.values())
+        for visszahivas in visszahivasok:
+            try:
+                visszahivas()
+            except Exception:  # noqa: BLE001 — a többi leállítót nem áldozzuk fel
+                logger.exception("#2966: egy megszakító visszahívás elbukott")
 
     # -- belső: MINDIG a regisztrátum szálán fut (ld. modul docstring) ------
 

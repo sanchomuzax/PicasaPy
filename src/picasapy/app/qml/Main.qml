@@ -2701,6 +2701,36 @@ ApplicationWindow {
         y: 56
     }
 
+    // #2966: KÖZÖS háttérművelet-jelző a jobb-felső sarokban. Alapból
+    // rejtve; bármelyik, a közös nyilvántartásba bejelentkezett háttérmunka
+    // futásakor magától megjelenik (`controller.isWorking`), és ha a munka
+    // leállítható, a gombja is (`controller.activityCancellable`).
+    ActivityBadge {
+        id: activityBadge
+        objectName: "activityBadge"
+        z: 95
+        // #305/#1572: null-őr — a controller a betöltés alatt lehet null
+        working: (controller && controller.isWorking !== undefined)
+            ? controller.isWorking : false
+        cancellable: (controller && controller.activityCancellable !== undefined)
+            ? controller.activityCancellable : false
+        // a mért hely: felülről 5, jobbról 5 képpont (#3112)
+        x: parent.width - width - 5
+        y: 5
+        onCancelRequested: activityCancelConfirm.ask()
+    }
+
+    //: #2966: a megszakítás megerősítése. Az eredeti címsora „Want to
+    //: Cancel?" volt — azt NEM vesszük át, a miénk a műveletről szól.
+    ConfirmDialog {
+        objectName: "activityCancelConfirm"
+        id: activityCancelConfirm
+        namePrefix: "activityCancel"
+        title: qsTr("Stop the background operation")
+        message: qsTr("Do you want to stop the operation running in the background?")
+        onConfirmed: controller.cancelActivity()
+    }
+
     // #425: lebegő „Csoportos szerkesztés" folyamat-panel — az
     // ImportProgressPanel mintájára, Mégse gombbal (megszakítható köteg)
     //: #1403: az XMP-arcírás folyamat-panelje — MEGSZAKÍTHATÓ, ahogy az
