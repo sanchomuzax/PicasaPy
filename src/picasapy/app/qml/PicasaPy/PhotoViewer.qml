@@ -257,6 +257,24 @@ Rectangle {
     property string layoutMode: "1up"
     //: melyik oldal az aktív — a „Kijelölve" jelvény ezt mutatja
     property string aktivOldal: "jobb"
+    //: #3014: `swap_2up_layout` — a két kép egymás MELLETT (hamis) vagy
+    //: egymás ALATT (igaz). Az ütközés-párbeszéd gombfeliratai is ezen
+    //: múlnak („Bal/Jobb" vs. „Fent/Lent"), ld. a spec 4. tábláját.
+    property bool fuggolegesElrendezes: false
+    //: #3014: AB módban a MÁSIK kép rács-sora. `-1` = még nincs külön
+    //: választva, ilyenkor a szomszédos kép jön (a filmszalag sorrendje
+    //: szerint), hogy a mód bekapcsolva azonnal KÉT KÜLÖNBÖZŐ képet adjon
+    //: — ez a mód buboréksúgójának ígérete.
+    property int masodikIndex: -1
+
+    //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
+    //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
+    readonly property int abMasikSor: viewer.layoutMode !== "ab"
+        ? viewer.currentIndex
+        : (viewer.masodikIndex >= 0
+           ? viewer.masodikIndex
+           : (viewer.hasNext() ? viewer.currentIndex + 1
+                               : Math.max(0, viewer.currentIndex - 1)))
 
     readonly property real zoomFactor: viewer.skalaErtekbol(viewer.zoomValue)
     readonly property string zoomMode:
@@ -765,23 +783,23 @@ Rectangle {
                         jel: "▭"
                         sugo: qsTr("Show only one picture")
                     }
-                    LayoutSegment {
-                        objectName: "viewerLayoutAa"
-                        nezo: viewer
-                        mod: "aa"
-                        jel: "▯▯"
-                        sugo: qsTr("Show the same picture twice")
-                    }
+                    //: #3014: a MÉRT sorrend `only_1up` · `ab_2up` ·
+                    //: `aa_2up` (a respack `LS`/`MS`/`RS` szegmensrajza,
+                    //: `docs/specs/ui-audit-editor.md` 1. táblája). A
+                    //: #3013 fordítva rakta le a két 2-up szegmenst.
                     LayoutSegment {
                         objectName: "viewerLayoutAb"
                         nezo: viewer
                         mod: "ab"
                         jel: "▯▮"
                         sugo: qsTr("Show two different pictures")
-                        //: a #3014 hozza — addig LÁTHATÓ, de tiltott: a
-                        //: néma no-op rosszabb volna, mert a felhasználó
-                        //: nem tudná, hogy nem működik
-                        enabled: false
+                    }
+                    LayoutSegment {
+                        objectName: "viewerLayoutAa"
+                        nezo: viewer
+                        mod: "aa"
+                        jel: "▯▯"
+                        sugo: qsTr("Show the same picture twice")
                     }
                 }
 
@@ -796,6 +814,20 @@ Rectangle {
                     function kattints() {
                         viewer.aktivOldal =
                             viewer.aktivOldal === "jobb" ? "bal" : "jobb"
+                    }
+                }
+
+                //: #3014: `swap_2up_layout` — szintén csak 2-up módban
+                //: (`editpanel.tre:1172`, `m_hidden` az alapállapot).
+                LayoutSegment {
+                    objectName: "viewerSwapLayout"
+                    nezo: viewer
+                    mod: ""
+                    jel: viewer.fuggolegesElrendezes ? "⬍" : "⬌"
+                    sugo: qsTr("Switch between horizontal and vertical layout")
+                    visible: viewer.layoutMode !== "1up"
+                    function kattints() {
+                        viewer.fuggolegesElrendezes = !viewer.fuggolegesElrendezes
                     }
                 }
 
@@ -886,7 +918,12 @@ Rectangle {
                         //: a rács-modell VALÓDI sora (a mappa-eltolással)
                         readonly property int racsSor: filmstrip.mappaKezdet + index
                         width: 42; height: 38
+                        //: #3014: AB módban MINDKÉT megjelenített kép
+                        //: kiemelést kap a filmszalagon — különben a
+                        //: felhasználó nem látja, honnan jön a másik fél.
                         color: racsSor === viewer.currentIndex
+                               || (viewer.layoutMode === "ab"
+                                   && racsSor === viewer.abMasikSor)
                                ? Theme.thumbSelection : "transparent"
                         Image {
                             anchors.fill: parent
@@ -905,7 +942,18 @@ Rectangle {
                             asynchronous: Qt.platform.pluginName !== "offscreen"
                         }
                         TapHandler {
-                            onTapped: viewer.currentIndex = parent.racsSor
+                            //: #3014: AB módban az AKTÍV oldal képét
+                            //: cseréljük — ez a válogató munkafolyamat
+                            //: lelke (a `swap_2up_focus` választja ki,
+                            //: melyik felet lapozzuk).
+                            onTapped: {
+                                if (viewer.layoutMode === "ab"
+                                        && viewer.aktivOldal === "bal") {
+                                    viewer.masodikIndex = parent.racsSor
+                                } else {
+                                    viewer.currentIndex = parent.racsSor
+                                }
+                            }
                         }
                     }
                 }
@@ -1361,13 +1409,32 @@ Rectangle {
                         objectName: "viewerImageElotte"
                         visible: viewer.layoutMode !== "1up"
                                  && !viewer.isCurrentVideo
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
+                        //: #3014: vízszintesen a BAL, függőlegesen a FELSŐ
+                        //: felet kapja — a `swap_2up_layout` ezt fordítja.
+                        //:
+                        //: ⚠️ Horgony helyett SZÁMOLT geometria: a
+                        //: `anchors.bottom: … ? undefined : parent.bottom`
+                        //: alakot a Qt nem bontja vissza, tehát függőleges
+                        //: elrendezésben a magasság-kötés néma no-op lett
+                        //: volna (mérve: a felső kép a teljes területet
+                        //: kapta, a két kép egymásra csúszott).
+                        x: 0
+                        y: 0
                         width: viewer.layoutMode === "1up"
-                            ? 0 : Math.floor((parent.width - 8) / 2)
+                            ? 0
+                            : (viewer.fuggolegesElrendezes
+                               ? parent.width
+                               : Math.floor((parent.width - 8) / 2))
+                        height: viewer.layoutMode === "1up"
+                            ? 0
+                            : (viewer.fuggolegesElrendezes
+                               ? Math.floor((parent.height - 8) / 2)
+                               : parent.height)
+                        //: #3014: AB módban itt a MÁSIK kép áll (nyers fájl,
+                        //: `filters=` lánc nélkül); „aa" módban változatlanul
+                        //: ugyanez a kép a szerkesztés ELŐTTI állapotában.
                         source: viewer.isCurrentVideo
-                            ? "" : viewer.urlAt(viewer.currentIndex)
+                            ? "" : viewer.urlAt(viewer.abMasikSor)
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true
@@ -1382,10 +1449,24 @@ Rectangle {
                         height: 18
                         radius: 2
                         color: Theme.selectionBlue
-                        anchors.top: parent.top
-                        anchors.left: viewer.aktivOldal === "bal"
+                        //: #3014: a jelvény az AKTÍV FELET jelöli — a
+                        //: `swap_2up_layout` állásától függően bal/jobb
+                        //: vagy fent/lent (a spec 4. táblájának négy
+                        //: helyzet-gombja ugyanezt a két tengelyt méri).
+                        anchors.top: viewer.fuggolegesElrendezes
+                            ? (viewer.aktivOldal === "bal"
+                               ? parent.top : undefined)
+                            : parent.top
+                        anchors.bottom: viewer.fuggolegesElrendezes
+                            && viewer.aktivOldal === "jobb"
+                            ? parent.bottom : undefined
+                        anchors.horizontalCenter: viewer.fuggolegesElrendezes
+                            ? parent.horizontalCenter : undefined
+                        anchors.left: !viewer.fuggolegesElrendezes
+                            && viewer.aktivOldal === "bal"
                             ? parent.left : undefined
-                        anchors.right: viewer.aktivOldal === "jobb"
+                        anchors.right: !viewer.fuggolegesElrendezes
+                            && viewer.aktivOldal === "jobb"
                             ? parent.right : undefined
                         Text {
                             id: jelvenySzoveg
@@ -1411,19 +1492,40 @@ Rectangle {
                         anchors.centerIn: parent
                         // #6: zoom + pásztázás — a skála az illesztett
                         // mérethez képest, az eltolás a pan-állapotból
+                        //
+                        //: #3014: 2-up módban a fő kép a MÁSIK felet kapja.
+                        //: A #3013 fél szélességet adott neki, de középre
+                        //: horgonyozva — így a két kép EGYMÁSRA csúszott. A
+                        //: fél elem középpontja a fél terület közepére kell:
+                        //: eltolás = (méret + rés) / 4.
                         anchors.horizontalCenterOffset: viewer.panX
+                            + (viewer.layoutMode === "1up"
+                               || viewer.fuggolegesElrendezes
+                               ? 0 : (photoArea.width + 8) / 4)
                         anchors.verticalCenterOffset: viewer.panY
+                            + (viewer.layoutMode !== "1up"
+                               && viewer.fuggolegesElrendezes
+                               ? (photoArea.height + 8) / 4 : 0)
                         scale: viewer.zoomFactor
                         transformOrigin: Item.Center
                         // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
                         //: #3013: 2-up módban a fő kép a JOBB felet kapja
                         //: (ez a „mai" állapot), egy képen a teljes terület
-                        width: iniSteps % 2
-                            ? photoArea.height
-                            : (viewer.layoutMode === "1up"
-                               ? photoArea.width
-                               : Math.floor((photoArea.width - 8) / 2))
-                        height: iniSteps % 2 ? photoArea.width : photoArea.height
+                        //: #3014: a fél oldal a `swap_2up_layout` állásától
+                        //: függ — vízszintesen a SZÉLESSÉG feleződik,
+                        //: függőlegesen a MAGASSÁG.
+                        readonly property real felSzelesseg:
+                            viewer.layoutMode === "1up"
+                                || viewer.fuggolegesElrendezes
+                            ? photoArea.width
+                            : Math.floor((photoArea.width - 8) / 2)
+                        readonly property real felMagassag:
+                            viewer.layoutMode !== "1up"
+                                && viewer.fuggolegesElrendezes
+                            ? Math.floor((photoArea.height - 8) / 2)
+                            : photoArea.height
+                        width: iniSteps % 2 ? felMagassag : felSzelesseg
+                        height: iniSteps % 2 ? felSzelesseg : felMagassag
                         rotation: iniSteps * 90
                         // nyitott szerkesztésnél a filters= láncot alkalmazó
                         // editpreview provider rendereli a képet (?rev=

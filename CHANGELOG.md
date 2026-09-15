@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.470] – 2026-09-15
+
+### Hozzáadva
+
+- **Kettős nézet: két különböző kép egymás mellett** (#3014). A nagy
+  nézetben mostantól működik az „AB" mód: két kép egyszerre, a
+  filmszalagról válogatva — a fókuszváltó dönti el, melyik felet
+  lapozod. Új gomb a vízszintes és a függőleges elrendezés között.
+
+### Javítva
+
+- **A kettős nézet két képe egymásra csúszott** (#3014). A fő kép fél
+  szélességet kapott, de a terület KÖZEPÉRE került, így rálógott a
+  másikra. Emellett a mód-kapcsoló három szegmense a mért sorrendbe
+  került (egy kép · két különböző · ugyanaz kétszer).
+
 ## [0.8.469] – 2026-09-15
 
 ### Hozzáadva
