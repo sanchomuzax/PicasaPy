@@ -247,6 +247,60 @@ Flickable {
             }
         }
 
+        // #1908: az ECSET vezérlője. Az eredetiben ez EGY elem
+        // (`BrushSizeAndEraserButton`): a csúszka az ecset átmérőjét
+        // állítja, a jelölő pedig radírra vált — ezért van a kettő
+        // egymás alatt, közös blokkban. A felirat a radír állásától
+        // függ: „Ecsetméret" vagy „Radír mérete" (mért feliratok).
+        //
+        // Csak akkor látszik, ha a nyitott effekt FESTHETŐ maszkkal
+        // dolgozik (Boost, Képpontnagyítás, Lágyítás, Árnyalás, Ghoul
+        // Eye) — ezt a vezérlő `paintMaskSupported`-je dönti el.
+        ColumnLayout {
+            id: ecsetBlokk
+            objectName: "effectParamBrushBlock"
+            Layout.fillWidth: true
+            Layout.topMargin: 6
+            spacing: 2
+            //: #305 null-őr: a QML-tesztek csonk editControllere nem ismeri
+            readonly property bool ecsetLathato:
+                (typeof editController !== "undefined" && editController
+                 && editController.paintMaskSupported !== undefined)
+                    ? editController.paintMaskSupported : false
+            readonly property bool radir:
+                (typeof editController !== "undefined" && editController
+                 && editController.paintEraser !== undefined)
+                    ? editController.paintEraser : false
+            visible: ecsetLathato
+
+            EditorSliderCaption {
+                objectName: "effectParamBrushLabel"
+                Layout.fillWidth: false
+                Layout.alignment: Qt.AlignHCenter
+                text: ecsetBlokk.radir ? qsTr("Eraser Size") : qsTr("Brush Size")
+            }
+            EditorSlider {
+                id: ecsetCsuszka
+                objectName: "effectParamBrushSlider"
+                Layout.fillWidth: true
+                from: 0.002
+                to: (typeof editController !== "undefined" && editController
+                     && editController.paintBrushMax !== undefined)
+                        ? editController.paintBrushMax : 0.2
+                value: (typeof editController !== "undefined" && editController
+                        && editController.paintBrushRatio !== undefined)
+                        ? editController.paintBrushRatio : 0.03
+                onMoved: editController.setPaintBrushRatio(ecsetCsuszka.value)
+            }
+            CheckBox {
+                id: radirJelolo
+                objectName: "effectParamEraserCheckbox"
+                text: qsTr("Eraser")
+                checked: ecsetBlokk.radir
+                onToggled: editController.setPaintEraser(radirJelolo.checked)
+            }
+        }
+
         // #700: a gombsor KÖZÉPRE igazítva, az eredeti ikonjaival. Az
         // eredetiben a két gomb a terület vízszintes közepéhez van kötve,
         // szimmetrikusan ±52 képponttal (`XConstraint 0.5, 0.5, ∓52`) —

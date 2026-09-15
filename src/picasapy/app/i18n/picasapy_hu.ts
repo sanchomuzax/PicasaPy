@@ -8455,6 +8455,18 @@ A MŰVELET NEM VONHATÓ VISSZA.
         <source>Pixel Size</source>
         <translation>Képpontméret</translation>
     </message>
+    <message>
+        <source>Brush Size</source>
+        <translation>Ecsetméret</translation>
+    </message>
+    <message>
+        <source>Eraser Size</source>
+        <translation>Radír mérete</translation>
+    </message>
+    <message>
+        <source>Eraser</source>
+        <translation>Radír</translation>
+    </message>
 </context>
 <context>
     <name>EditOverwriteDialog</name>

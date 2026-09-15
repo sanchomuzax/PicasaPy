@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.488] – 2026-09-16
+
+### Hozzáadva
+
+- **Megvan az ecset** (#1908). Az öt festhető effektnél (Felpörgetés,
+  Képpontnagyítás, Lágyítás, Árnyalás, Ghoul Eye) mostantól **rá lehet festeni
+  a képre**, hogy hol érvényesüljön a hatás: a mutató kör alakú, a méretét a
+  panel csúszkája állítja, és a **Radír** bejelölésével ugyanazzal a mozdulattal
+  lehet a befestett részt visszavenni. A maszk a szerkesztő-munkamenetben él, és
+  képváltásnál magától eldobódik — a `.picasa.ini`-be nem kerül bele.
+
 ## [0.8.487] – 2026-09-16
 
 ### Hozzáadva
