@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.460] – 2026-09-15
+
+### Javítva
+
+- **Három effektnél is megjelenik az ecset-figyelmeztetés** (#3055). Az
+  eredeti Picasában öt effektet lehet ecsettel, csak a kép egy részére
+  felfesteni; nálunk ecset még nincs, ezért ezek a teljes képre hatnak — és
+  erről a program szólni is szokott. Eddig viszont csak kettőnél szólt: a
+  Kiemelés (Boost), a Pixelesítés és a Lágyítás némán futott végig az egész
+  képen. Most mind az ötnél ott a jelzés.
+
 ## [0.8.459] – 2026-09-15
 
 ### Javítva
