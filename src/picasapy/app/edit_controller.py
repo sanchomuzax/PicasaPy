@@ -516,6 +516,33 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
             return dict(EMPTY_HISTOGRAM)
         return self._provider.histogram_for(self._photo_id)
 
+    @Property("QVariant", notify=revisionChanged)
+    def framePlacement(self):
+        """Hol van a FÉNYKÉP a keretezett előnézetben (#3166)?
+
+        A szerkesztő átfedő rétegei (vágás-téglalap, arckeretek) a kirajzolt
+        képre horgonyozódnak, és relatív `[0..1]` koordinátákkal dolgoznak —
+        keret-effekt esetén viszont a kirajzolt kép már a keretezett kimenet,
+        tehát ugyanaz a koordináta a KERETRE skálázódik. Ez a tulajdonság adja
+        meg a fénykép helyét a kimenetben; `None`, ha nincs keret a láncban
+        (a rétegek ilyenkor a mai módon a teljes téglalapot kapják).
+
+        A szög fokban, a renderelő előjelével — a QML `rotation`-je ennek a
+        NEGÁLTJA (ld. `PhotoViewer.qml`, `frameContentArea`).
+        """
+        if not self._photo_id:
+            return None
+        hely = self._provider.frame_placement(self._photo_id)
+        if hely is None or hely.erintetlen:
+            return None
+        return {
+            "kozepX": hely.kozep_x,
+            "kozepY": hely.kozep_y,
+            "szelesseg": hely.szelesseg,
+            "magassag": hely.magassag,
+            "szog": hely.szog,
+        }
+
     @Property(str, notify=revisionChanged)
     def cameraSummary(self) -> str:
         """Picasa-stílusú, egysoros gép-összefoglaló (#25) a hisztogram
