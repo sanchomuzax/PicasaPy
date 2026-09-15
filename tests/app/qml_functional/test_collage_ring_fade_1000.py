@@ -443,3 +443,92 @@ class TestATeljesLanc:
         assert gyuru.opacity() == pytest.approx(halvany, abs=1e-6), (
             "az eredeti alfa 1-ig halványít a 256-ból, nem 0-ig"
         )
+
+
+# --------------------------------------------------------------------------
+# 5. #1379 — a GYŰRŰ SAJÁT DOBOZA is találat
+# --------------------------------------------------------------------------
+class TestAGyuruSajatDoboza:
+    """A zár-kezelő (`0x007e6390`) a gyűrű HATÁROLÓ DOBOZÁRA vizsgál.
+
+    A spec 5.1/c kimérte: a `vtbl + 0x20` a `ytSelectionNode` saját
+    `[+0x188 … +0x194]` téglalapját adja, és ha a mutató benne van, a
+    gyűrű **teljes átlátszatlanságra** áll vissza (`edi = 0x100`).
+
+    ⇒ A forgató-méretező perem (r = 48…66) fölött állva a gyűrűnek akkor
+    is látszania kell, ha a kép + 12 képpontos zónából már kilógtunk —
+    ez a #1379 hibája.
+
+    ⚠️ A próbák a SZABÁLYT mérik (a 132 × 132-es, tengelypárhuzamos
+    doboz), nem a jegy „60 képes" esetét: ahhoz hatvan képes kollázs
+    kellene, és a `skip`-es próba nem őr. A jegy tünete a szabályból
+    következik — a kicsi csomópont kép-zónája szűkül, a gyűrű doboza nem.
+    """
+
+    @staticmethod
+    def _kozeptol(panel, index: int, dx_px: float, dy_px: float):
+        """A csomópont KÖZEPÉTŐL adott képpont-eltolás, ABLAK-tengelyen."""
+        csomopont = _csomopontok(panel.property("controller"))[index]
+        e = _egyseg(panel)
+        return _lap_pontra(
+            panel,
+            csomopont.center_x + dx_px / e,
+            csomopont.center_y + dy_px / e,
+        )
+
+    def test_a_dobozon_BELUL_igaz(self, controller):
+        """66 a fél-doboz; (60, 60) biztosan benne van."""
+        panel = _panel(controller)
+        view = panel.property("_view")
+        _kijelolve(controller, 0)
+        gyuru = _gyuru(panel)
+
+        _hover(view, self._kozeptol(panel, 0, 60.0, 60.0))
+
+        assert gyuru.property("gyuruDobozanBelul") is True
+        assert gyuru.property("shown") is True
+
+    def test_a_dobozon_KIVUL_hamis(self, controller):
+        """80 > 66 — a doboz szélén túl, a tengelyen."""
+        panel = _panel(controller)
+        view = panel.property("_view")
+        _kijelolve(controller, 0)
+        gyuru = _gyuru(panel)
+
+        _hover(view, self._kozeptol(panel, 0, 80.0, 0.0))
+
+        assert gyuru.property("gyuruDobozanBelul") is False
+
+    def test_a_doboz_TENGELYPARHUZAMOS_es_132_szeles(self, controller):
+        """A gyűrű mérete képernyő-egységben állandó, és nem forog a
+        képpel — a `hovered`-del ellentétben, ami visszaforgat a
+        csomópont saját rendszerébe."""
+        panel = _panel(controller)
+        gyuru = _gyuru(panel)
+        assert gyuru.property("width") == 132
+        assert gyuru.property("height") == 132
+
+    def test_a_lathatosag_a_KET_szabaly_unioja(self, controller):
+        panel = _panel(controller)
+        view = panel.property("_view")
+        _kijelolve(controller, 0)
+        gyuru = _gyuru(panel)
+
+        for dx, dy in ((60.0, 60.0), (80.0, 0.0), (0.0, 0.0)):
+            _hover(view, self._kozeptol(panel, 0, dx, dy))
+            assert gyuru.property("mutatoRajta") == (
+                gyuru.property("hovered") or gyuru.property("gyuruDobozanBelul")
+            ), f"az unió nem áll a ({dx}, {dy}) eltolásnál"
+
+    def test_kijeloles_NELKUL_a_doboz_sem_talal(self, controller):
+        """A rövidzár: nem kijelölt csomópont gyűrűje hozzá sem kötődik a
+        mutatóhoz (350 képnél ez a teljesítmény kérdése)."""
+        panel = _panel(controller)
+        view = panel.property("_view")
+        controller.setCollageSelection([])
+        QGuiApplication.instance().processEvents()
+        gyuru = _gyuru(panel)
+
+        _hover(view, self._kozeptol(panel, 0, 0.0, 0.0))
+
+        assert gyuru.property("gyuruDobozanBelul") is False

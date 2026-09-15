@@ -112,23 +112,9 @@ Item {
     //: jelölt csomópontok gyűrűi hozzá sem kötődnek a mutató helyéhez,
     //: tehát 350 képnél sem számol egérmozgásonként 350 kötés.
     //:
-    //: ⚠️ NYITOTT KÉRDÉS, MÉRÉSSEL (#1000). A találatvizsgálat a KÉPRE
-    //: megy, nem a gyűrűre — így írja le a spec 5.1/b („ha az egér a
-    //: csomópont fölött van"). Következmény: sok képnél a gyűrű 132
-    //: képpontos rajza TÚLLÓG a kép + 12 képpontos zónán, tehát a
-    //: forgató-méretező perem (r = 48…66) fölött állva a gyűrű
-    //: elhalványul. Mérve, 933 képpont széles lapon, Képkupac témával:
-    //:
-    //:     10 kép → 90 px | 30 kép → 67 px | 60 kép → 57 px | 120 kép → 49 px
-    //:     (a legkisebb csomópont fél-mérete + 12; a perem 57-nél van)
-    //:
-    //: Kb. 60 képtől a perem kikerül a zónából. Hogy az eredeti ilyenkor
-    //: mit tesz, NEM megállapított: a `RingNodeFadeLockHandler`
-    //: (`0x007e6390`) 1/2/3-as eseményágai csak részben feltártak, és a
-    //: 2/3 épp az egérmozgás — elképzelhető, hogy a gyűrű fölötti mozgás
-    //: állítja a zárat. Amíg ez nincs kimérve, NEM találunk ki hozzá
-    //: viselkedést: a kattintás egyébként működik (az `opacity` nem veszi
-    //: el az egeret), csak a rajz halványul.
+    //: ⚠️ Ez a KÉP doboza — a FADE-kezelő (`0x007e6220`) szabálya, a
+    //: spec 5.1/b szerint. A gyűrű saját dobozát a `gyuruDobozanBelul`
+    //: méri külön (#1379); a kettő UNIÓJA adja a láthatóságot.
     readonly property bool hovered: {
         if (!ring.ringExists || !ring.sheet || !ring.sheet.hoverActive)
             return false
@@ -142,6 +128,33 @@ Item {
                    <= ring.nodeHeight * ring.unit / 2 + ring.hoverTolerancePx
     }
 
+    //: #1379: a mutató a GYŰRŰ SAJÁT dobozán belül van-e.
+    //:
+    //: ⭐ A `RingNodeFadeLockHandler` (`0x007e6390`) egérmozgás-ága
+    //: kimérve (spec 5.1/c): a csomópont `vtbl + 0x20`-as HATÁROLÓ
+    //: DOBOZÁRA vizsgál — négy egész összehasonlítás (bal · fent · jobb ·
+    //: lent, `0x007e647a`–`0x007e64b5`) —, és ha a mutató BENNE van, a
+    //: gyűrűt **teljes átlátszatlanságra** animálja (`edi = 0x100`,
+    //: `0x007e64be`). A `ytSelectionNode` `vtbl + 0x20`-a a gyűrű saját
+    //: `[+0x188 … +0x194]` téglalapját adja vissza.
+    //:
+    //: ⇒ Aki a forgató-méretező peremen áll (r = 48…66), az a gyűrű
+    //: dobozán BELÜL van, tehát a gyűrű NEM halványul el — akkor sem, ha
+    //: a kép + 12 képpontos zónából már kilógott. Ez a #1379 hibája: 933
+    //: képpont széles lapon, Képkupac témával a kép-zóna fél-mérete 60
+    //: képnél már csak 57 képpont, a perem viszont 57-ig ér.
+    //:
+    //: ⚠️ A doboz TENGELYPÁRHUZAMOS és NEM forog a képpel: a gyűrű mérete
+    //: képernyő-egységben állandó (132 × 132), ahogy a rajza is.
+    readonly property bool gyuruDobozanBelul: {
+        if (!ring.ringExists || !ring.sheet || !ring.sheet.hoverActive)
+            return false
+        const dx = ring.sheet.hoverX - ring.centerX * ring.unit
+        const dy = ring.sheet.hoverY - ring.centerY * ring.unit
+        return Math.abs(dx) <= ring.width / 2
+            && Math.abs(dy) <= ring.height / 2
+    }
+
     //: A ZÁR (`RingNodeFadeLockHandler`, `0x007e6390`) — húzás közben.
     readonly property bool fadeLocked:
         ring.sheet ? ring.sheet.ringFadeLocked : false
@@ -153,12 +166,17 @@ Item {
         repeat: false
     }
 
+    //: #1379: a mutató „a gyűrűn van" — a kép-zóna VAGY a gyűrű doboza.
+    //: A két kezelő két külön szabálya (fade: kép + 12 px; zár: a gyűrű
+    //: saját doboza), a felület felé az uniójuk látszik.
+    readonly property bool mutatoRajta: ring.hovered || ring.gyuruDobozanBelul
+
     //: Látszik-e MOST. A késleltetés alatt még igen.
     readonly property bool shown:
-        ring.hovered || ring.fadeLocked || fadeDelay.running
+        ring.mutatoRajta || ring.fadeLocked || fadeDelay.running
 
-    onHoveredChanged: {
-        if (ring.hovered)
+    onMutatoRajtaChanged: {
+        if (ring.mutatoRajta)
             fadeDelay.stop()
         else if (!ring.fadeLocked)
             fadeDelay.restart()
@@ -167,7 +185,7 @@ Item {
     onFadeLockedChanged: {
         if (ring.fadeLocked)
             fadeDelay.stop()
-        else if (!ring.hovered)
+        else if (!ring.mutatoRajta)
             fadeDelay.restart()
     }
 

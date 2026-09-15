@@ -770,10 +770,22 @@ megállapított**, hogy a két kezelő (fade és zár) együtt milyen
 állapotgépet ad — ehhez a `0x007e6220` eseményágait is egyben kell
 olvasni.*
 
-**Amit a megvalósításunknak jelent (#1379):** a mi találatvizsgálatunk a
-KÉP dobozára + 12 képpontra megy, ezért ~60 képtől a perem kikerül a
-zónából, és a gyűrű elhalványul. Az eredeti szabálya más: a **gyűrű saját
-doboza** a mérce.
+**Amit a megvalósításunknak jelentett (#1379):** a mi találatvizsgálatunk
+a KÉP dobozára + 12 képpontra ment, ezért ~60 képtől a perem kikerült a
+zónából, és a gyűrű elhalványult.
+
+✅ **JAVÍTVA (2026-09-15, #1379).** A `CollageRing.qml` mostantól a KÉT
+kezelő szabályának **unióját** mutatja:
+
+| tulajdonság | a szabály | a natív forrás |
+|---|---|---|
+| `hovered` | a kép doboza + 12 px, a csomópont **elforgatott** rendszerében | fade-kezelő, `0x007e6220` |
+| `gyuruDobozanBelul` | a gyűrű **tengelypárhuzamos** 132 × 132-es doboza | zár-kezelő, `0x007e6390` |
+| `mutatoRajta` | a kettő **uniója** — ez viszi a láthatóságot | — |
+
+⚠️ A két doboz **más rendszerben** él: a képé a csomóponttal EGYÜTT forog,
+a gyűrűé nem (a gyűrű mérete képernyő-egységben állandó). Aki egyetlen
+találatvizsgálatba vonná össze őket, ferde képnél hibázna.
 
 ### 5.2 Mozgatás
 
