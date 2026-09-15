@@ -1527,8 +1527,10 @@ típuspásztázást „mindenhová" belelátná, itt is látnia kellett volna �
    `0x00c7dd30 = 0.1` és `0x00cf3ad8 = 0.9` (`0x00578ac8`–`0x00578ae2`). Az
    FPU-státusz szerint **v ≤ 0.1 vagy v ≥ 0.9 esetén** indul a fenti
    fejléc-keresés; a `0.1 < v < 0.9` sávban helyette `0x006dcc40(CThumbUI)`
-   fut. Hogy `v` mit mér, és mit csinál a `0x006dcc40`, ez a kör **nem mérte
-   ki** — nem becslés helyettesíti, hanem nyitott kérdés marad.
+   fut.
+   ✅ **Mindkettő azóta kimérve** (#3143) — ld. a következő szakaszt: a
+   küszöbhöz hasonlított érték `fmod(v, 1.0)`, és a `0x006dcc40` a
+   **webablakot** kezeli, nem görget.
 
 ---
 
@@ -1555,8 +1557,23 @@ if (r.bal < r.jobb && r.fent < r.lent && r.fent <= v_int && v_int <= r.lent) {
 }
 ```
 
-⇒ **`v` a nézet viszonyítási vonalának helye a JELENLEGI soron belül,
-`[0, 1]`-re normálva.**
+⇒ **`v` a nézet viszonyítási vonalának helye a JELENLEGI soron belül.**
+
+⛔ **HELYESBÍTÉS (#3143, 2. kör): a `FUN_0076a4b0` NEM `[0,1]`-re normált
+értéket ad.** A törzs a talált sor **indexét** is hozzáadja: `mov eax, ebx;
+mov [esp+0x10], eax; fild dword ptr [esp+0x10]` (`0x0076a582`–`0x0076a58a`),
+majd a végén `faddp st(1)` (`0x0076a5d6`). ⇒ **`v = sorindex +
+soron_belüli_hányad`**, tehát a `0.1`/`0.9` küszöb önmagában csak a nulladik
+sorban volna értelmes.
+
+⭐ **A hiányzó lépés a hívóban van, és mérve van: `fmod`.** A
+`fld1; call 0x00c29e1a` (`0x00578ac1`–`0x00578ac3`) a `_CIfmod` CRT-belső
+függvény — a `0x00c29e1a` egy 10 bájtos thunk
+(`mov edx, 0xd49170; jmp __cintrindisp2`), és a `0xd49170`-es diszpécser-tábla
+első eleme a hossz-előtagos **`"fmod"`** literál (`04 66 6d 6f 64`, fájloffszet
+`0x949170`). ⇒ a küszöbhöz hasonlított érték **`fmod(v, 1.0)`**, azaz `v`
+**törtrésze** — a sorindex kiesik, és a `0,1`/`0,9` küszöb minden soron
+ugyanazt jelenti.
 
 ### 2. ⇒ A feltétel jelentése: „sorhatáron állunk-e"
 
@@ -1573,11 +1590,28 @@ szakasz elejére visz, és csak ha már ott vagyunk, ugrik az előzőre. A
 `nextalbum`-nál ilyen feltétel **nincs** — a két gomb tehát **nem
 tükörkép**, és a másolásuk hibás volna.
 
-⚠️ **A `FUN_006dcc40` (912 b) pontos műveletét nem mondom ki.** Annyi
-mérve: a `CThumbUI`-t kapja, a `[ui+0xeb0]` objektum
-`[+0x320] + [+0x2f8]` összegéből indexet képez, `-1`-nél azonnal `0`-val
-tér vissza, és a `[+0x2c0]` listával dolgozik. Ez **összefér** a „görgess a
-jelenlegi sor elejére" olvasattal, de nem bizonyítja.
+⛔ **HELYESBÍTÉS (#3143, 2. kör): a `FUN_006dcc40` NEM görgetés.** A
+korábbi kör „összefér a »görgess a jelenlegi sor elejére« olvasattal"
+megjegyzése téves irányba mutatott; a törzs kimérve mást csinál:
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| index | `0x006dcc57`–`0x006dcc66` | `i = [ui+0xeb0]+0x320 + [ui+0xeb0]+0x2f8`; `i == −1` ⇒ azonnali `0` |
+| rekord | `0x006dcc7e`–`0x006dcccb` | a kimeneti rekordot `0xff`-fel tölti (`+0x00…+0x08`), a két sztringet **nullázza** (`+0x0c`, `+0x10`), majd `FUN_004ae4e0([ui+0x2c0], i, &rek)` |
+| **webablak** | `0x006dcd08` | `FUN_009c2fc0("thumbui/webwindow")` — ha nincs ilyen vezérlő, kilép |
+| böngésző | `0x006dcd73` | egy 16 bájtos objektumot hoz létre **`"about:blank"`** kezdőcímmel |
+| **ugyanaz a kapu** | `0x006dce03`–`0x006dce12` | `típus ∈ {6,7}` **ÉS** `rekord+0x20 == 0` |
+| szomszéd | `0x006dce19`–`0x006dce21` | `FUN_004ae6e0([ui+0x2c0], i, &rek)` |
+
+És a `FUN_004ae6e0` (360 b) a **következő** rekordot csak akkor adja vissza,
+ha annak `+0x10` sztringje **megegyezik** a jelenlegiével
+(`FUN_00987030`, `0x004ae78e`, a hamis ágon azonnali kilépés) — tehát a
+`+0x10` a sorok **csoportkulcsa**.
+
+⇒ A `0,1 … 0,9` sávban a `prevalbum` a **webablakot** kezeli a felül álló
+sor rekordja szerint, nem görget. A „zenelejátszó-viselkedés" olvasata
+**ennyiben helyesbítendő**: a feltétel igaz ága (a fejléc-keresés) áll, a
+hamis ága nem a jelenlegi szakasz elejére visz.
 
 ### 3. A sorrekord mezőkiosztása — a `+0x20` szomszédai
 
@@ -1587,15 +1621,43 @@ leolvasható róla:
 | eltolás | méret | megjegyzés |
 |---|---|---|
 | `+0x00`, `+0x04` | dword | |
-| **`+0x08`** | **word** | a **TÍPUS** (az ugrási feltétel `1`-et és `{5,6,7}`-et vizsgál) |
+| `+0x08` | **word** | (a másoló `mov dx, [esi+8]` alakban viszi) |
 | `+0x0c`, `+0x10` | dword | **hivatkozásszámlált sztring** (a másoló elengedi a régit) |
 | `+0x14` | dword | |
 | `+0x18`, `+0x19`, `+0x1a` | **bájt** | három logikai jelző |
 | `+0x1c` | dword | |
 | **`+0x20`** | **dword** | az ugrási cél kapuja (`== 0` ⇒ az 5/6/7 típus is cél) |
 | `+0x24`, `+0x28`, `+0x2c` | dword | |
+| **`+0x30`** | **dword** | a **TÍPUS** |
+| — | — | a rekord **teljes mérete 56 bájt** (`0x38`); a `+0x34` kitöltés |
 
-⛔ **A `+0x20` JELENTÉSE továbbra is nyitott.** A másoló sima dwordként
-viszi, a típusa (dword, nem sztring, nem bájt-jelző) az egyetlen új adat.
-A megszerzés útja változatlan: a `[lista+0x158]` tömböt **feltöltő**
-függvény — a lista a `CThumbUI+0x2c0`, a lekérő a `FUN_004ae4e0` (288 b).
+⛔ **HELYESBÍTÉS (#3143, 2. kör): a TÍPUS a `+0x30`, nem a `+0x08`.** A
+korábbi tábla a másoló első word-mozgatását vette típusnak, és a `+0x30`-at
+egyáltalán nem sorolta fel, pedig a másoló azt is átviszi
+(`0x004ae6ca`/`0x004ae6cf`). Három független mérés:
+
+1. `FUN_004ae6e0` a rekordot közvetlenül indexeli, és a típust a `+0x30`-on
+   olvassa: `mov ecx, [eax+0x30]; cmp ecx, 6; je …; cmp ecx, 7`
+   (`0x004ae74a`–`0x004ae755`);
+2. ugyanott a **következő** rekord típusa `[eax+0x68]`
+   (`0x004ae766`) — és `0x68 − 0x30 = 0x38 = 56`, azaz pontosan a lekérő
+   lépésköze (`0x004ae541`);
+3. a `FUN_006dcc40` verem-számtana: a kimeneti rekord az `esp+0x20`-on áll,
+   a `+0x20` mező vizsgálata `cmp dword ptr [esp+0x40], 0` (`0x006dce0d`),
+   a típusé pedig `[esp+0x50]` = rekord `+0x30` (`0x006dcdf6`, `0x006dce03`).
+
+⚠️ **Két külön „+0x20" van a képben** — ne keverd őket. A **LISTA** `+0x20`
+és `+0x24` mezője a konténer **újrabelépő zárja**: mindhárom listametódus
+(`0x004ae290`, `0x004ae4e0`, `0x004ae6e0`) ugyanazzal a prológussal indul —
+`call [0xc40284]` (a szál azonosítója), `[lista+0x20]`-hoz hasonlítás,
+egyezésnél `[lista+0x24]++`. A **REKORD** `+0x20`-a ettől független mező.
+
+⛔ **A rekord `+0x20`-ának JELENTÉSE továbbra is nyitott**, de a hatóköre
+szűkült: a `FUN_006dcc40` **ugyanazt a kaput** használja
+(`típus ∈ {6,7}` ÉS `rekord+0x20 == 0`, `0x006dce03`–`0x006dce12`), tehát a
+mező nem az ugrás sajátja. A megszerzés útja változatlan: a
+`[lista+0x158]` tömböt **feltöltő** függvény. ⛔ **Negatív lelet:** a
+feltöltő NEM a lista saját metódusai közt van — a `+0x30`-ra `1/5/6/7`
+immediate-et író függvényeket a teljes `.text`-en végigpásztázva egyetlen
+találat sem esett a `0x0040…–0x0080` app-tartományba nem-verem bázissal,
+tehát a rekord a **hívó vermén** épül, és onnan másolódik be.
