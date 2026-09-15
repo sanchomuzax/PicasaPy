@@ -507,6 +507,63 @@ IGEN, a szélesség-kérdés nyitva.
 (`alabel_buttfont_win` = Praxis Semi Bold/Heavy 12) a **teljes** listája, és a
 felületi hűséghez a glyph-adatok megfejtése nélkül is használható.
 
+#### A `0x24`-es mező MEGVAN: a kerning-párok DARABSZÁMA (2026-09-15, #2943)
+
+A fejléc-táblában a `0x24` eddig „családfüggő (125 / 173)" megjegyzéssel
+állt. Mérve **mind a 12 fájlon**: a mező **pontosan annyi**, ahány
+érvényes kerning-pár következik a név után.
+
+| fájl | `0x24` | beolvasott pár |
+|---|---:|---:|
+| `HelveticaNeue Condensed-20…400` | 125 | **125** |
+| `HelveticaNeue MediumCond-14…400` | 173 | **173** |
+| `HelveticaNeue MediumCond-28…400` | 173 | **173** |
+| `Praxis Semi Bold-Heavy-*…700` (12/13/14/16) | 117 | **117** |
+| `Praxis Semi Bold-Heavy-*…400` (11/12/14/18) | 440 | **440** |
+| `Praxis LT Regular-18…400` | 437 | 434 + 3 |
+
+*(A `LT Regular` három párja a plauzibilitás-szűrőmön kívül esik — a
+karakterkódjuk a 32…0x2fff tartományon kívüli —, nem ellenpélda.)*
+
+⇒ A korábbi „**alsó korlát**" darabszámok (117 és 440) ezzel **pontos
+értékké** váltak, és a tábla vége `0x2c + névhossz + 8 × [0x24]`.
+
+#### A `0x18`-as farok-blokk — ITT vannak a méretfüggő metrikák
+
+*Mérve: `0x18`-tól a fájl végéig tartó blokk mind a 12 fájlban.*
+
+| megfigyelés | szám |
+|---|---|
+| a blokk **hossza** | `8 × párok + K`, ahol **K = 6209…6216**, családonként állandó |
+| a hossz **pontméretre nem érzékeny** | `MediumCond-14` és `-28`: mindkettő **7600** |
+| a **tartalma** viszont igen | a 14 és 28 pt között **3243 / 7600** bájt eltér |
+| és **skálázódik** | a nem-nulla `u32` értékek **~63 %**-ára `v28 ≈ 2 × v14` |
+
+⇒ **A karakterenkénti előrelépés (advance) ebben a blokkban van** — a
+kétszeres arány mást nem magyarázna.
+
+⛔ **De NEM egyenletes tábla.** A vizsgált rekordszélességek
+(4 · 5 · 10 · 19 · 20 · 25 · 38 · 50 `u32`) **egyike sem** ad oszloponként
+tiszta skálázást: mindegyik ~60 % körül marad, és sok érték
+`0xFFFFFFFF`-ként olvasva `−1`, tehát a blokkban **előjeles és
+szentinel mezők keverednek**. A `MediumCond` farka 1900 `u32`, ami
+**nem osztható 256-tal**, tehát a blokk nem 256 glyph fix rekordja sem.
+
+⛔ **A farok eleje NEM a kerning-tábla másolata** (bájtra összevetve mind
+a 12 fájlon) — a `8 × párok` tag tehát méret-egybeesés vagy egy MÁS,
+páronkénti 8 bájtos szerkezet, nem ugyanaz az adat.
+
+#### A következő gépi lépés — megnevezve
+
+Nem újabb vak statisztika, hanem **az olvasó**: a `%s-%d-%f-%d-%d.ytf`
+fájlnév-formátumot a **`0x00a48770`** és a **`0x00a48ac0`** használja; az
+egyik a betöltő. Abból derül ki, hogyan lépked a program a farok-blokkon —
+és vele az advance-mező helye.
+
+*Bizonyítottsági fok: **megerősített** a `0x24` jelentésére (12 fájl) és a
+farok hosszképletére · **erős** arra, hogy a metrikák a farokban vannak (a
+kétszeres skálázás) · **cáfolt**, hogy a farok egyenletes rekordtábla.*
+
 ### 3.6 Egyéb runtime-fájlok — rövid jegyzetek
 
 | Fájl | Típus | Megjegyzés |
