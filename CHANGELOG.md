@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.474] – 2026-09-15
+
+### Javítva
+
+- **A Fókusznagyítás két csúszkája az eredeti nevét és tartományát kapta**
+  (#723). A „Suhanás” és a „Fókuszméret” eddig „Impact” és „Radius” néven
+  szerepelt, a fókuszméret pedig fix 10–100-as skálán mozgott. Mostantól a
+  skála a kép méretéhez igazodik — ahogy az eredeti Picasában —, és a
+  csúszka a tartomány közepén indul.
+
 ## [0.8.473] – 2026-09-15
 
 ### Hozzáadva
