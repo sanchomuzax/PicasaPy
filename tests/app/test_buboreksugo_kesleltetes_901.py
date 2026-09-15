@@ -108,3 +108,55 @@ class TestAMertDarabszam:
         ut = next(p for p in _qml_fajlok() if p.name == nev)
         szoveg = ut.read_text(encoding="utf-8")
         assert len(_TEXT.findall(szoveg)) == len(_EGYSEGES.findall(szoveg))
+
+
+class TestAMertKesleltetes:
+    """#901: az eredeti értéke KIMÉRVE — 600 ms.
+
+    | forrás | bizonyíték |
+    |---|---|
+    | `ytToolTip::vftable` | `0x008909d4`, a `+0x74` rekesz → `0x00a6de20` |
+    | az időmérés | `QueryPerformanceCounter` / `QueryPerformanceFrequency` |
+    | **a küszöb** | `0x00c7e304` = `9a 99 19 3f` = **0,6000000238418579 s** |
+
+    A korábbi érték (500 ms) a MI döntésünk volt — a `Theme.qml` kommentje
+    ezt ki is mondta, és megígérte, hogy egyetlen szám átírása lesz, ha a
+    mérés megvan. Ez a próba rögzíti, hogy megvan.
+    """
+
+    def test_a_kesleltetes_a_MERT_600_ms(self):
+        from pathlib import Path
+
+        import picasapy.app
+
+        theme = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "Theme.qml"
+        ).read_text(encoding="utf-8")
+        assert "readonly property int tooltipDelay: 600" in theme, (
+            "a buboréksúgó késleltetése nem a mért 600 ms"
+        )
+
+    def test_a_regi_SAJAT_ertek_mar_nincs_bent(self):
+        from pathlib import Path
+
+        import picasapy.app
+
+        theme = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "Theme.qml"
+        ).read_text(encoding="utf-8")
+        assert "tooltipDelay: 500" not in theme
+
+    def test_a_bizonyitek_horgonya_ott_van(self):
+        """A mért szám mellett álljon a CÍM is — különben a következő kör
+        nem tudja ellenőrizni, honnan jött."""
+        from pathlib import Path
+
+        import picasapy.app
+
+        theme = (
+            Path(picasapy.app.__file__).parent
+            / "qml" / "PicasaPy" / "Theme.qml"
+        ).read_text(encoding="utf-8")
+        assert "0x00c7e304" in theme

@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.478] – 2026-09-15
+
+### Javítva
+
+- **A buboréksúgók az eredeti Picasa várakozási idejével jelennek meg**
+  (#901). Eddig fél másodperc után bukkantak elő — ez a mi becslésünk
+  volt —, mostantól 0,6 másodperc után, ahogy az eredetiben.
+
 ## [0.8.477] – 2026-09-15
 
 ### Javítva
