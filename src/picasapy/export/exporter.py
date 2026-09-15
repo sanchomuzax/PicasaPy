@@ -371,8 +371,12 @@ def _export_one(
 
     image = _decode_image(source)
     image = _apply_filter_chain(image, ops)
-    image = _apply_rotation(image, item.rotate_steps)
+    # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (három
+    # független összeállító, `docs/specs/picasa-ini-format.md` „⛳ MEGVAN A
+    # SORREND”). A kettő nem kommutál: fölcserélve 90°/270° mellett a MÁSIK
+    # tengelyre tükröz.
     image = apply_flip(image, item.flip_flags)
+    image = _apply_rotation(image, item.rotate_steps)
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
     payload = _transfer_metadata(source, _encode_jpeg(image, settings, source))

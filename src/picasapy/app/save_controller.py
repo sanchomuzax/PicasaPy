@@ -82,10 +82,13 @@ def _render_for_save(
     image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError(f"Nem dekódolható kép: {path}")
+    # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (ld. az
+    # `export/exporter.py` azonos megjegyzését és a `render/flip.py`
+    # modul-docstringjét).
+    image = apply_flip(image, flip_flags)
     steps = int(rotate_steps or 0) % 4
     for _ in range(steps):
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-    image = apply_flip(image, flip_flags)
     ops = EditSession.from_value(filters).ops
     if not ops:
         return image

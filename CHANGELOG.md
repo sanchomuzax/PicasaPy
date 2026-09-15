@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.458] – 2026-09-15
+
+### Javítva
+
+- **Forgatás és tükrözés együtt: mostantól jó irányban áll a kép** (#3065).
+  Ha egy képen egyszerre volt elforgatás és tükrözés, a mentett és az
+  exportált fájl a rossz tengelyre tükrözve készült el — a hiba 90°-os és
+  270°-os állásnál látszott. Az eredeti Picasa előbb tükröz, utána forgat; mi
+  fordítva tettük. A képernyőn látott kép és a lemezre írt fájl így újra
+  egyezik.
+
 ## [0.8.457] – 2026-09-15
 
 ### Hozzáadva
