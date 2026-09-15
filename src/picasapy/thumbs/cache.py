@@ -430,6 +430,12 @@ def _open_video(source: Path) -> cv2.VideoCapture:
         return cv2.VideoCapture(str(source))
 
 
+#: #1838: a videó-megnyitás EGYETLEN útja a projektben. A képkocka-mentés
+#: (`app/frame_capture_controller.py`) ugyanezt használja — külön
+#: `VideoCapture`-hívás a #673 háttér-rögzítését kerülné meg.
+open_video = _open_video
+
+
 def _decode_video_frame(source: Path):
     """Az első dekódolható képkocka a videóból, vagy None.
 

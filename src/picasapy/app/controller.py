@@ -45,6 +45,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
+from .frame_capture_controller import FrameCaptureMixin
 from .movie_trim_controller import MovieTrimMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
@@ -154,6 +155,8 @@ class AppController(
     AppearanceMixin,
     ColorManagementMixin,
     MovieTrimMixin,
+    # #1838: a `capture_frame` — a vágás-szelet `_vago_sor` kapuját használja
+    FrameCaptureMixin,
     LanguageMixin,
     # #1575: Nézet ▸ Megjelenítési mód — a tizenegy tagú kizáró
     # csoport állapota. A szelet nem perzisztens (mérve: az eredeti

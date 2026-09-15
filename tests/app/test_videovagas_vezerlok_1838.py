@@ -80,3 +80,54 @@ class TestANezoKotiBe:
         kezd = _NEZO.index("function onTrimRequested(")
         blokk = _NEZO[max(0, kezd - 500) : kezd]
         assert "viewer.isCurrentVideo" in blokk
+
+
+class TestKepkockaGomb:
+    """#1838: a `movieeditpanel/capture_frame` — „Take Snapshot".
+
+    Ugyanaz a lánc, mint a vágásnál: a lejátszó JELEZ, a néző hívja a
+    vezérlőt a sor indexével. A komponenst a `QtMultimedia` miatt itt sem
+    tudjuk betölteni — a kötések SZÖVEGÉT mérjük (ld. a lap fejlécét).
+    """
+
+    def test_a_gomb_megvan(self):
+        assert 'objectName: "videoCaptureFrameButton"' in _LEJATSZO
+
+    def test_az_EPP_LATOTT_poziciot_adja_at(self):
+        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
+        blokk = _LEJATSZO[kezd : kezd + 600]
+        assert "player.captureFrameRequested(media.position)" in blokk
+
+    def test_a_buboreksugo_az_EREDETIE(self):
+        """`Tooltip(movieeditpanel/capture_frame)` — „Capture current frame"."""
+        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
+        blokk = _LEJATSZO[kezd : kezd + 600]
+        assert 'qsTr("Capture current frame")' in blokk
+
+    def test_a_visszaallitas_buboreksugoja_is_az_EREDETIE(self):
+        """A `reset_trim` súgója korábban saját fogalmazású volt („Reset
+        trim"); az eredeti szövege a `.tre`-ből olvasva más."""
+        assert (
+            'qsTr("Restore movie to its original length '
+            '(remove start and end points)")' in _LEJATSZO
+        )
+
+    def test_a_lejatszo_NEM_ir_fajlt(self):
+        """A komponens jelez; a dekódolás és az írás a vezérlőé."""
+        kezd = _LEJATSZO.index('objectName: "videoCaptureFrameButton"')
+        blokk = _LEJATSZO[kezd : kezd + 600]
+        assert "captureMovieFrame" not in blokk
+
+    def test_a_nezo_a_SOR_indexevel_hivja_a_vezerlot(self):
+        assert "function onCaptureFrameRequested(positionMs)" in _NEZO
+        kezd = _NEZO.index("function onCaptureFrameRequested(positionMs)")
+        blokk = _NEZO[kezd : kezd + 400]
+        assert "controller.captureMovieFrame(" in blokk
+        assert "viewer.currentIndex" in blokk
+
+    def test_a_vegeredmeny_MINDKET_agon_latszik(self):
+        """Siker és bukás is kap visszajelzést — a bukás nem lehet néma."""
+        assert "function onMovieFrameCaptured(path)" in _NEZO
+        assert "function onMovieFrameCaptureFailed()" in _NEZO
+        assert 'qsTr("Failed to capture frame")' in _NEZO
+        assert 'qsTr("Saved %1 to Captured Videos")' in _NEZO

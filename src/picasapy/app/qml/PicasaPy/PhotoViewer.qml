@@ -1686,7 +1686,57 @@ Rectangle {
                             if (controller && controller.resetMovieTrim !== undefined)
                                 controller.resetMovieTrim(viewer.currentIndex)
                         }
+                        //: #1838: a képkocka mentése — a vezérlő dekódol és ír
+                        function onCaptureFrameRequested(positionMs) {
+                            if (controller && controller.captureMovieFrame !== undefined)
+                                controller.captureMovieFrame(
+                                    viewer.currentIndex, positionMs)
+                        }
                     }
+                    //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy
+                    //: állapotszöveget adott (`CCaptureFrame::captureframeprog1..4`);
+                    //: a dekódolás nálunk annyira gyors, hogy a két köztes
+                    //: („Képkocka rögzítése…", „Mentés a Rögzített videoklipek
+                    //: albumba") felvillanna csak — a VÉGEREDMÉNYT mutatjuk,
+                    //: sikerre és bukásra egyaránt.
+                    Text {
+                        id: kepkockaJelzes
+                        objectName: "videoCaptureNotice"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 56
+                        visible: text !== ""
+                        color: "#e8e8e8"
+                        font.pixelSize: Theme.fontSize
+                        text: ""
+
+                        Timer {
+                            id: kepkockaJelzesIdozito
+                            interval: 4000
+                            onTriggered: kepkockaJelzes.text = ""
+                        }
+
+                        function mutasd(uzenet) {
+                            kepkockaJelzes.text = uzenet
+                            kepkockaJelzesIdozito.restart()
+                        }
+                    }
+
+                    Connections {
+                        target: controller
+                        ignoreUnknownSignals: true
+                        //: `CCaptureFrame::captureframeprog3`
+                        function onMovieFrameCaptured(path) {
+                            kepkockaJelzes.mutasd(
+                                qsTr("Saved %1 to Captured Videos").arg(
+                                    path.substring(path.lastIndexOf("/") + 1)))
+                        }
+                        //: `CCaptureFrame::captureframeprog4`
+                        function onMovieFrameCaptureFailed() {
+                            kepkockaJelzes.mutasd(qsTr("Failed to capture frame"))
+                        }
+                    }
+
                     Text {
                         objectName: "videoUnavailableText"
                         visible: viewer.isCurrentVideo
