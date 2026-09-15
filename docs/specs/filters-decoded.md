@@ -6561,3 +6561,81 @@ kellene halasztani őket.
   `FUN_0069f050` másik ágán vagy a hívóláncban feljebb).
 * Ez utóbbi kettő nélkül **nem mondom ki**, hogy a mi vágás-halasztásunk
   helyes-e — csak azt, hogy a keret-halasztásnak nincs megfelelője.
+
+## A Comicize statikus maszkja BEÉPÍTVE MÉRVE — három modell, mind rosszabb (2026-09-15, #2476)
+
+*Forrás: a `research/comicize-sweep/` **15 eredeti Picasa-exportja** (három
+csúszka × öt állás), a #1606 kontroll-módszerével. A mérce a **csempén belüli
+fázisprofil amplitúdója** (luma-szint): a képpontokat `(x mod tile, y mod tile)`
+rekeszekbe soroljuk, rekeszenként átlagolunk, és a profil szórását vesszük.
+A globális ΔE erre az effektre nem dönt (a jegy kimondja), de tájékoztatásul
+szerepel.*
+
+### A kiindulás (a mai kód)
+
+| | átlagos |amplitúdó-hiba| | átlag ΔE |
+|---|---:|---:|
+| **mai kód** (tónus-modulált pontSUGÁR, DARKEN) | **2,2502** | 3,1235 |
+
+A metrika reprodukálja a #1606 számait: a mi amplitúdónk `DotContrast = 50`-nél
+5,702 a referencia 3,767-e helyett, a `DotContrast`-válaszunk 0,578…10,912 a
+referencia 1,662…5,036-a helyett.
+
+### Amit a statikus maszk beépítése ADOTT
+
+A #2481 kör leletét (a maszk **állandó pontrács**, kétmegállós **lineáris**
+radiális rámpával) három kompozit-változatban építettem be, és mindegyiket
+végigmértem a pont/csempe arány teljes tartományán (0,20 … 2,50):
+
+| modell | legjobb arány | |hiba| | ΔE |
+|---|---:|---:|---:|
+| statikus maszk, **DARKEN** | 1,00 | 3,4235 | 2,4972 |
+| statikus maszk + ágankénti küszöbgörbe, **DARKEN** | 1,70 | 2,6638 | 2,8697 |
+| statikus maszk, **OVER** (a maszk a réteg alfája) | 0,55 | **0,9649** | 3,5501 |
+
+⛔ **Egyik sem építhető be.** A két DARKEN-változat a döntő metrikán
+**rosszabb** a mai kódnál (2,66 és 3,42 a 2,25 helyett): a raszter ~4×
+túl gyengére sikerül, mert a maszkolt tónus (átlag 239…253) csak ritkán megy
+a kép alá, tehát a `min()` elnyeli.
+
+### ⭐ A LELET: a kompozit módja a `DotContrast` IRÁNYÁBÓL eldől
+
+Az OVER-változat a döntő metrikán látszólag **2,3-szer jobb** (0,965 a 2,250
+helyett) — és a 15 esetből **tízet** gyakorlatilag pontosan eltalál:
+
+| tengely | eltérés a referenciától (arány 0,55) |
+|---|---|
+| `BlurXY` mind az 5 állása | −0,033 … +0,112 |
+| `DotFade` mind az 5 állása | −0,128 … +0,034 |
+| `DotContrast` | **fordított irány**: 6,837 → 1,361, a referencia 1,662 → 5,036 |
+
+A `DotContrast`-tengely **megfordul**, és ez nem a kompozit sorrendjén múlik: a
+„pont a görbézett tónus" és a „pont a sötétített kép" változat ugyanazt adja
+(6,850 → 1,346). Az ok a mester-görbe iránya, ami **mérve helyes**: a
+`filterdesc.xml` 791. sora szerint a térdpont `{x: 90 + DotContrast·1,5, y: 254}`,
+és a LUT átlaga `DotContrast`-tal tényleg csökken (192,4 → 144,0), azaz a tónus
+sötétedik.
+
+⇒ **OVER-kompozitban a fehér tónus is RAJZOL** (fehér pont a középszürke képen),
+ezért alacsony `DotContrast`-on ad nagy amplitúdót. A referencián viszont
+`DotContrast = 0`-nál a raszter majdnem eltűnik (1,662). **Ez bizonyítja, hogy a
+maszkolt réteg felvitele DARKEN-jellegű** (a fehér = nincs festék), és kizárja az
+OVER-t — függetlenül attól, hogy az OVER a többi tengelyen jobb számot ad.
+
+⚠️ Ezért az OVER 0,965-ös átlaga **nem javulás, hanem metrika-csapda**: két
+tengelyen pontos, a harmadikon rossz ELŐJELŰ.
+
+### Ami ezek után nyitva marad
+
+A maszk ALAKJA megvan (statikus, lineáris rámpa), a felvitel MÓDJA megvan
+(DARKEN). Ami hiányzik, az a **tónus → festékfedettség** átalakítás: mitől lesz
+a referencia amplitúdója 3,77, ha a maszk állandó. A mai kód ezt a pont
+sugarának modulálásával éri el — az mérve túl erős, de legalább a helyes
+nagyságrendben van.
+
+**A következő gépi lépés, megnevezve:** a csempe-paraméterstruktúra feltöltője.
+A rajzoló (`0x00bbaa90`) az `alphaMax`-ot és a négy `padding` mezőt az
+objektumból veszi (`[edi+0x10]`, `[edi+0x14]`, `[edi+0x18]`, `[edi+0x1c]`,
+`[edi+0x34]`); ezek alapértékét a feltöltő adja. Amíg ez nincs kiolvasva, a
+pont/csempe arány **szabad paraméter**, és a fenti mérés szerint semmilyen
+értéke nem hoz javulást — tehát nem hangolással kell folytatni.
