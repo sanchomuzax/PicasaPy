@@ -29,6 +29,7 @@ from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
 from picasapy.render import apply_filters, count_redeye_spots
+from picasapy.render.chain import halasztott_op
 from picasapy.render.registry import chain_flags
 from picasapy.render.display_modes import (
     apply_display_mode,
@@ -534,8 +535,20 @@ class EditPreviewProvider(QQuickImageProvider):
             return None
         if not ops:
             return source_array
-        prefix_array = self._cached_prefix(key, source_array, ops[:-1])
-        result_array, _skipped = apply_filters(prefix_array, ops[-1:])
+        # #3169: a HALASZTOTT opok (vágás + keretek) nem kerülhetnek a
+        # prefixbe. Az `apply_filters` a lánc végére teszi őket (#330); ha a
+        # prefix-hívás a SAJÁT végén alkalmazza a benne lévő keretet, az
+        # utolsó op már ARRA fut rá — és az előnézet eltér a mentett képtől
+        # (mérve: `crop64;Vignette` esetén 18,2 átlagos eltérés).
+        halasztott = tuple(op for op in ops if halasztott_op(op))
+        mag = tuple(op for op in ops if not halasztott_op(op))
+        if mag:
+            prefix_array = self._cached_prefix(key, source_array, mag[:-1])
+            zaro = mag[-1:] + halasztott
+        else:
+            prefix_array = source_array
+            zaro = halasztott
+        result_array, _skipped = apply_filters(prefix_array, zaro)
         return result_array
 
     def _cached_prefix(
