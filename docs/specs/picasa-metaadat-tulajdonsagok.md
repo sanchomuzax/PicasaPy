@@ -472,12 +472,73 @@ szomszédai **lebegőpontos számok**, nem azonosító-bájtok:
 **gyújtótávolság/rekesz** hármasból azonosít. A két tábla tehát **külön
 szerkezet**, és az átvételnek is kettőnek kell lennie.
 
-### 9.4 Amit ez a jegynek ad
+### 9.4 ⭐ A CANON rekord KIMÉRVE: 230 rekord, 24 bájt (2026-09-16)
 
-* A Nikon-ág **azonnal átvehető**: 417 `{8 bájtos kulcs → név}` pár,
-  bájtszintű kinyeréssel, találgatás nélkül.
-* A Canon-ág mezőkiosztása (hány mező, milyen sorrendben, mi az `1`)
-  **még nincs teljesen kimérve** — a rekordhatárt a szomszédos float-ok
-  alapján lehet megtalálni, de a rekordméret nincs igazolva.
-* ⛔ A `383` szám a jegy törzsében **elavult**: a helyes darabszám a
-  szövegblokkban **592**, a Nikon-táblában **417 rekord**.
+*A 9.3 nyitott pontja lezárva. Módszer: a szövegblokkra mutató MINDEN 4
+bájtos hivatkozás összegyűjtése a teljes fájlon (659 hely), majd a
+lépésközük szerinti szakaszolás — a rekordméretet így nem becsülni kell,
+hanem a hivatkozások rácsa adja.*
+
+A hivatkozások **két** összefüggő futamot adnak, és a lépésköz mondja meg a
+rekordalakot:
+
+| futam (fájl-offszet) | rekord | lépésköz | tábla |
+|---|---:|---:|---|
+| `0x00879c9c` … `0x0087b214` | **230** | **24 bájt** | Canon |
+| `0x0087b230` … `0x0087c5a4` | **416** | **12 bájt** | Nikon |
+
+A Canon-rekord kiosztása (minden mező a fájlból olvasva):
+
+```c
+struct CanonObjektiv {          // 24 bájt
+    const char *nev;            // +0x00  mutató a szövegblokkba
+    float  gyujto_min;          // +0x04  mm
+    float  gyujto_max;          // +0x08  mm — 0.0f a FIX objektíveknél
+    float  rekesz_min;          // +0x0c  f/
+    float  rekesz_max;          // +0x10  f/ — 0.0f az ÁLLANDÓ rekesznél
+    uint32_t azonosito;         // +0x14  0…489, ISMÉTLŐDHET
+};
+```
+
+Ellenőrzés (az első hat rekord, a float-ok visszaolvasva):
+
+| `azonosító` | gyújtó | rekesz | név |
+|---:|---|---|---|
+| 2 | 50 mm | f/1.8 | `Canon EF 50mm f/1.8` |
+| 3 | 28 mm | f/2.8 | `Canon EF 28mm f/2.8` |
+| 4 | 135 mm | f/2.8 | `Canon EF 135mm f/2.8 Soft` |
+| 4 | 35–105 mm | f/3.5–4.5 | `Canon EF 35-105mm f/3.5-4.5 or Sigma Lens` |
+| 5 | 35–135 mm | f/4–5.6 | `Sigma UC Zoom 35-135mm f/4-5.6` |
+| 6 | 35–70 mm | f/3.5–4.5 | `Canon EF 35-70mm f/3.5-4.5` |
+
+⇒ **A Canon-ág IS azonosító-alapú**, a 9.3 óvatos olvasatával szemben: van
+`azonosító` mező. A **gyújtótávolság/rekesz nem helyette, hanem MELLETTE**
+áll — 24 azonosító **ismétlődik** (a leggyakoribb nyolcszor), és ott a
+számnégyes választ a jelöltek közül. Ez pontosan az a szerkezet, amit a
+Canon `LensType` dokumentált viselkedése is mutat (egy azonosító több
+objektívet takarhat).
+
+⛔ **Amit ez NEM állít:** hogy az `azonosító` bájtra egyezik a dokumentált
+`LensType` értékkel. Négy próbából három `+1` eltolással illeszkedik
+(2↔1, 3↔2, 4↔3), a negyedik (a `35-105mm`) nem — tehát az egyezést **nem
+mondjuk ki**, és a mező jelentését a **beolvasó** fogja eldönteni (melyik
+MakerNote-mezőt hasonlítja hozzá). Ez a jegy következő lépése.
+
+### 9.5 Két HELYESBÍTÉS a 9.2-höz és 9.3-hoz
+
+1. **A Nikon tábla 416 rekord, nem 417.** A `0x0087c5b0`-on álló hivatkozás
+   NEM táblasor: utána közvetlenül az `ICC_PROFILE` sztring következik
+   (`70 AA CD 00 | 49 43 43 5F 50 52 4F 46 49 4C 45 00`), tehát az egy magában
+   álló mutató, nem `{név, 8 bájtos kulcs}` pár. Az utolsó valódi sor a
+   `0x0087c5a4`.
+2. **A `Canon`-kezdetű nevek száma 147, nem 146** — a szövegblokk NUL-ra
+   bontva 592 nevet ad, ebből 147 kezdődik `Canon`-nal (a blokk utolsó neve
+   épp a `Canon EF 50mm f/1.8`).
+
+### 9.6 Amit ez a jegynek ad
+
+* A Nikon-ág **azonnal átvehető**: **416** `{8 bájtos kulcs → név}` pár.
+* A Canon-ág **is átvehető**: 230 rekord, `{azonosító, gyújtó-tartomány,
+  rekesz-tartomány → név}`; az azonosító ütközését a számnégyes oldja fel.
+* ⛔ A `383` szám a jegy törzsében **elavult**: a szövegblokk **592** nevet
+  tartalmaz.
