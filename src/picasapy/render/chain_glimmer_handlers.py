@@ -258,6 +258,48 @@ def apply_reanimated_eye_color_op(image, op: FilterOp):
     return focal.apply_reanimated_eye_color(image, blur=_float_at(op, 0, 6.0), fade=_float_at(op, 1, 20.0))
 
 
+def alkalmazd_maszkkal(kulcs: str, image, op: FilterOp, mask):
+    """Egy festhető-maszkos effekt alkalmazása a MASZKON ÁT (#1908).
+
+    A mért szemantika (`filterdesc.xml` 1269–1295., #1605): a maszk a külső
+    `NestedImageOperation`-ön áll (`Mask="{_mctr.mask}"`), tehát az effekt a
+    TELJES képen lefut, és az eredménye a maszkon át kerül a képre:
+    `base·(1−mask) + effekt·mask`.
+
+    ⚠️ KIVÉTEL a `ReanimatedEyeColor`: annak a SAJÁT függvénye veszi a
+    maszkot (`glimmer_focal.apply_reanimated_eye_color(mask=…)`), mert ott a
+    maszk nem csak kompozit-súly — üres maszkkal az effekt azonosság (#688),
+    és a belső elmosás is a befestett területre szorul.
+    """
+    import numpy as np
+
+    from . import glimmer_ops as ops
+
+    if kulcs == "reanimatedeyecolor":
+        return focal.apply_reanimated_eye_color(
+            image,
+            blur=_float_at(op, 0, 6.0),
+            fade=_float_at(op, 1, 20.0),
+            mask=mask,
+        )
+    hatas = _HANDLERS_FESTHETO[kulcs](image, op)
+    sulyok = np.clip(np.asarray(mask, dtype=np.float32), 0.0, 1.0)
+    kevert = ops.masked_blend(
+        image.astype(np.float32), hatas.astype(np.float32), sulyok
+    )
+    return np.clip(np.rint(kevert), 0, 255).astype(np.uint8)
+
+
+#: A négy „sima" festhető effekt kezelője — az ötödik (`ReanimatedEyeColor`)
+#: a saját maszk-paraméterén megy, ld. `alkalmazd_maszkkal`.
+_HANDLERS_FESTHETO = {
+    "boost": apply_boost_op,
+    "pixelate": apply_pixelate_op,
+    "soften": apply_soften_op,
+    "picniktint": apply_picnik_tint_op,
+}
+
+
 #: Festhető (ecset-)maszkos effektek — a `chain.py` `apply_filters`-e
 #: ezekhez külön magyar figyelmeztetést fűz.
 #:
@@ -351,5 +393,6 @@ __all__ = [
     "PAINTABLE_MASK_WARNING_TEMPLATE",
     "EMPTY_MASK_DEFAULT_OPS",
     "EMPTY_MASK_WARNING_TEMPLATE",
+    "alkalmazd_maszkkal",
     "paintable_mask_warning",
 ]

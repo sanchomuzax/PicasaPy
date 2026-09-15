@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.487] – 2026-09-16
+
+### Hozzáadva
+
+- **Előkészítés: a festett ecset-maszk útja a szűrőláncon** (#1908). Öt effekt
+  (Felpörgetés, Képpontnagyítás, Lágyítás, Árnyalás, Ghoul Eye) az eredetiben
+  csak arra a területre hat, amit a felhasználó ecsettel befest — nálunk eddig
+  a teljes képre futott, a Ghoul Eye pedig sosem hatott. A renderelő mostantól
+  **tud maszkot fogadni**, és a maszkolt területen kívül a kép bitre
+  változatlan marad. ⚠️ Az ecset-eszköz maga még nincs meg, tehát a program
+  viselkedése ezzel a kiadással nem változik — ez a következő lépés alapja.
+
 ## [0.8.486] – 2026-09-16
 
 ### Javítva
