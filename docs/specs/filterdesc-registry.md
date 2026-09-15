@@ -5822,3 +5822,84 @@ olvasható.
 
 *Bizonyítottsági fok: **megerősített** — mind a 34 vtábla slotjai és a
 teljes `.text`-pásztázás; a kivételek is tételesen.*
+
+## ⛳⛳ Az `ApplyInstruction` végrehajtója — 40 bájtos veremelem, és HOL van a képpontciklus (2026-09-15, #626)
+
+*Forrás: `FUN_00bd0cc0` (538 b, az `ApplyInstruction` vtáblájának negyedik
+slotja) diszasszemblálása · mind a 34 `glimmer::…ImageOperation` vtábla
+6. és 8. slotjának megoszlása · `FUN_00bb7c80` (435 b) és `FUN_00bb9d20`
+(224 b) diszasszemblálása.*
+
+### A végrehajtó
+
+```
+0x00bd0cce  test dword ptr [esi + 4], 0xfffffffe   ; üres verem → -1
+0x00bd0d25  mov  eax, [esi + 4]
+0x00bd0d2a  shr  eax, 1                            ; elemszám
+0x00bd0d2c  lea  eax, [eax + eax*4]                ; ×5
+0x00bd0d2f  lea  eax, [ecx + eax*8 - 0x28]         ; ×8, −40 ⇒ a legfelső elem
+0x00bd0d33  mov  ecx, [edi + 0xc]                  ; a MŰVELET (ApplyInstruction+0x0c)
+0x00bd0d36  mov  edx, [ecx]                        ; a művelet vtáblája
+0x00bd0d42  mov  eax, [edx + 0x18]
+0x00bd0d45  call eax                               ; ← a művelet vtbl+0x18 slotja
+```
+
+Két mért tény:
+
+1. **A Glimmer-verem eleme 40 bájt** (`×5` majd `×8`, a legfelső elem
+   `−0x28`). A veremmélység a `+0x04` mező felső 31 bitje (`shr eax, 1`).
+2. Az `ApplyInstruction` a **`+0x0c`** mezőjében tartja a műveletet, és
+   annak **`vtbl + 0x18`** slotját (6. index) hívja.
+
+### A `vtbl+0x18` NEM osztályonkénti — CSALÁDONKÉNTI
+
+A 34 műveleti osztály 6. slotjában **22 különböző** cím áll, tehát a
+belépési pont osztálycsoportokra közös:
+
+| `vtbl+0x18` | osztályok |
+|---|---|
+| **`0x00bb7c80`** | `AdjustCurves` · `AutoFix` · `Exposure` · `GradientMap` · `HSVGradientMap` · `PaletteMap` · `TwoTone` |
+| `0x00bc16b0` | `BW` · `ColorMatrix` · `MultiplyColorMatrix` · `SimpleColorMatrix` |
+| `0x00bbf920` | `GetVar` · `Nested` · `Tint` |
+| `0x00c07709` | `Blend` · `ImageOperation` (alaposztály) |
+| 18 további cím | egy-egy osztály (`Blur`, `Border`, `Crop`, `DropShadow`, `EdgeDetectionB`, `EdgeDetectionSobel`, `Glow`, `IR`, `LocalContrast`, `Noise`, `Pixelate`, `QuantizePalette`, `RadialBlur`, `Resize`, `Rotate`, `Shader`, `Sharpen`, `SimpleBorder`) |
+
+⇒ A hét, `0x00bb7c80`-at osztó osztály pontosan a **képpontonként
+leképező színműveletek** — ez a készlet „LUT-családja".
+
+### A családi meghajtó és az osztály-specifikus slot
+
+`FUN_00bb7c80` (a hét színművelet közös `vtbl+0x18`-a):
+
+- `mov eax, 0x105c; call __alloca_probe` — **4188 bájt veremterület**;
+- `mov eax,[edi]; mov eax,[eax+0x20]; call eax` — visszahív a **saját
+  objektum `vtbl+0x20`** slotjára (8. index), ez az osztályonként eltérő
+  rész (34 osztályra **10** különböző cím);
+- ezután két puffer-leírót állít össze és a `FUN_00bcb2f0`-nak adja át,
+  végül `_free`-vel takarít.
+
+`AdjustCurvesImageOperation` `vtbl+0x20` = **`0x00bb9d20`**. Ez
+**paraméter-előkészítő**, nem képpontciklus: az objektum **`+0x40`,
+`+0x44`, `+0x48`, `+0x4c`** mezőit nézi, és mindegyik nem-nullára meghívja
+a `FUN_00bb9e00`-t egy **négyelemű, 24 bájtos lépésközű** helyi tömbbe
+(`[esp+0x18]`, `+0x30`, `+0x48`, `+0x60`), majd az egészet a
+`FUN_00bcd1e0`-nak adja. ⇒ **négy görbecsatorna** leírója (a
+`filterdesc` négy görbeparamétere: összevont + R + G + B), egyenként 24
+bájton. A törzsben egyetlen lebegőpontos átalakítás van (egy `double` →
+`float`, `0x00bb9d5d`), képpontciklus nincs.
+
+### Mit erősít meg, és mit finomít
+
+A #3206-ban rögzített következtetés — *„a pixelmatematika nem a műveleti
+osztályban van"* — **megerősítve**: a művelet osztály-specifikus slotja
+(`+0x20`) paramétert épít, a képpontokat a családi meghajtó (`+0x18`) és az
+alatta hívott `FUN_00bcb2f0` mozgatja. A **finomítás**: a `vtbl+0x18` nem
+egyetlen közös motor, hanem **családonkénti** belépési pont, és a művelet
+mégis részt vesz — a saját `+0x20` slotjával, paraméterezőként.
+
+⇒ **A következő gépi lépés:** a `FUN_00bcb2f0` (a két puffer-leíró
+fogyasztója) — ez a közös képpont-futószalag; és a `FUN_00bb9e00` 24 bájtos
+görbeleíró-alakja, amiből a vezérlőpont-interpoláció aritmetikája kiolvasható.
+
+*Bizonyítottsági fok: **megerősített** — diszasszemblált törzsek és a teljes
+vtábla-slot megoszlás; a családok tételesen felsorolva.*
