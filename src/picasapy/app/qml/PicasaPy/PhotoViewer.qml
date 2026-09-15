@@ -819,6 +819,10 @@ Rectangle {
                 //: #3013: `swap_2up_focus` — csak 2-up módban látszik
                 LayoutSegment {
                     objectName: "viewerSwapFocus"
+                    //: #885: a `.tre` `swap_2up_focus`-én NINCS `mousedown` —
+                    //: felengedésre sül el, a három elrendezés-váltóval
+                    //: ellentétben.
+                    lenyomasra: false
                     nezo: viewer
                     mod: ""
                     jel: "⇄"
@@ -834,6 +838,10 @@ Rectangle {
                 //: (`editpanel.tre:1172`, `m_hidden` az alapállapot).
                 LayoutSegment {
                     objectName: "viewerSwapLayout"
+                    //: #885: a `.tre` `swap_2up_layout`-én NINCS `mousedown` —
+                    //: felengedésre sül el, a három elrendezés-váltóval
+                    //: ellentétben.
+                    lenyomasra: false
                     nezo: viewer
                     mod: ""
                     jel: viewer.fuggolegesElrendezes ? "⬍" : "⬌"

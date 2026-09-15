@@ -491,3 +491,59 @@ class TestATalcasav:
                 f"a(z) {nev} MŰVELET-gomb lenyomásra sül el, pedig az "
                 "eredetiben nincs rajta `mousedown`"
             )
+
+
+class TestAzElrendezesValtok:
+    """#885: a kettős nézet háromállású kapcsolója LENYOMÁSRA vált.
+
+    A `.tre` a három szegmensre (`only_1up_toggle`, `ab_2up_toggle`,
+    `aa_2up_toggle`) `Property mousedown 1`-et ad — a KÉT swap-gombra
+    (`swap_2up_focus`, `swap_2up_layout`) **nem**. A közös komponens ezért
+    kapcsolható, és a kivételt a használó mondja ki.
+    """
+
+    def test_a_komponens_alapbol_LENYOMASRA_sul(self) -> None:
+        forras = (_QML / "PicasaPy" / "LayoutSegment.qml").read_text(
+            encoding="utf-8"
+        )
+        assert "property bool lenyomasra: true" in forras, (
+            "a három elrendezés-váltó az alapeset — az alapérték legyen a "
+            "lenyomásra sülés"
+        )
+        assert "onPressedChanged: if (pressed && szegmens.lenyomasra)" in forras
+
+    def test_felengedeskor_NEM_sul_el_masodszor(self) -> None:
+        """A `TapHandler` mindkét ága ki van kötve: ha lenyomásra sült, a
+        felengedés már nem hívja újra."""
+        forras = (_QML / "PicasaPy" / "LayoutSegment.qml").read_text(
+            encoding="utf-8"
+        )
+        assert "onTapped: if (!szegmens.lenyomasra)" in forras, (
+            "a felengedés-ág nincs kizárva — a szegmens kétszer hatna"
+        )
+
+    def test_a_ket_SWAP_gomb_felengedesre_marad(self) -> None:
+        """Mért kivétel: ezeken a `.tre`-ben nincs `mousedown`."""
+        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+            encoding="utf-8"
+        )
+        for nev in ("viewerSwapFocus", "viewerSwapLayout"):
+            kezd = forras.index(f'objectName: "{nev}"')
+            blokk = forras[kezd : kezd + 700]
+            assert "lenyomasra: false" in blokk, (
+                f"a(z) {nev} lenyomásra sül el, pedig a `.tre`-ben nincs "
+                "rajta `mousedown` (#885)"
+            )
+
+    def test_a_HAROM_valto_nem_kapcsolja_ki(self) -> None:
+        """Ellenpróba: a három elrendezés-váltón NINCS `lenyomasra: false`."""
+        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+            encoding="utf-8"
+        )
+        for nev in ("viewerLayoutOnly1up", "viewerLayoutAb", "viewerLayoutAa"):
+            kezd = forras.index(f'objectName: "{nev}"')
+            blokk = forras[kezd : kezd + 400]
+            assert "lenyomasra: false" not in blokk, (
+                f"a(z) {nev} felengedésre lett állítva, pedig `mousedown 1`-et "
+                "visel"
+            )

@@ -42,8 +42,20 @@ Rectangle {
         color: Theme.ink
     }
 
+    //: #885: LENYOMÁSRA sül el — a `.tre` a három elrendezés-váltóra
+    //: (`only_1up_toggle`, `ab_2up_toggle`, `aa_2up_toggle`) `Property
+    //: mousedown 1`-et ad; nézetváltás, tehát azonnal hat.
+    //:
+    //: ⚠️ KIVÉTEL, és ez is mért: a `swap_2up_focus` és a
+    //: `swap_2up_layout` elemen NINCS `mousedown` — azok felengedésre
+    //: sülnek el, ezért a használó `lenyomasra: false`-t ad.
+    property bool lenyomasra: true
+
     HoverHandler { id: lebegés }
-    TapHandler { onTapped: szegmens.kattints() }
+    TapHandler {
+        onPressedChanged: if (pressed && szegmens.lenyomasra) szegmens.kattints()
+        onTapped: if (!szegmens.lenyomasra) szegmens.kattints()
+    }
 
     ToolTip.text: szegmens.sugo
     ToolTip.visible: lebegés.hovered && szegmens.sugo !== ""
