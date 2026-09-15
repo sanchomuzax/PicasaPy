@@ -47,7 +47,8 @@ hivatkozik rá (csak az olvasó, `0x00832830`).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape, quoteattr
@@ -55,6 +56,19 @@ from xml.sax.saxutils import escape, quoteattr
 from .themes import BORDER_THEMES, COLLAGE_THEMES, DIMMED, NOBORDER, PICTUREPILE
 
 CXF_VERSION = 2
+
+#: ⚠️ A `version="1"` NEM „régi alak", hanem **migrálandó** alak (#3073). Az
+#: eredeti betöltő (`FUN_00834520`) kétszeres kapu mögött végigszorozza a
+#: csomópontok `scale`-jét, és utána `2`-t ír a fájlba — a szorzás tehát
+#: EGYSZERI, tartósított migráció. Ha migráció nélkül írnánk ki a `2`-t, a
+#: `scale`-ek kicsik maradnának, a fájl viszont azt állítaná, hogy át van
+#: alakítva: onnantól visszaállíthatatlan. Ld. `_migralt_nodes`.
+CXF_MIGRALANDO_VERSION = 1
+
+#: A migrációs tényező két rögzített szorzója (`0x0083466b` = 1024,0 és
+#: `0x00834671` = 0,33).
+_MIGRACIO_LAPEGYSEG = 1024.0
+_MIGRACIO_ALAPARANY = 0.33
 
 # A gyökér `format` attribútuma és a `CollageSpec` további alapértékei
 # (`0x008342b0`): oldalarány 4:3, háttér átlátszatlan fekete.
@@ -278,6 +292,47 @@ def _parse_node(element: ElementTree.Element) -> CxfNode:
         raise ValueError(f"Hibás `<node>` a .cxf-ben: {error}") from error
 
 
+def _migracios_tenyezo(darab: int) -> float:
+    """`1024 × 0,33 × min(1/√(√k − 1), 1)` — a `k` a csomópontok SZÁMA.
+
+    A tényező a natív ciklus ELŐTT készül el egyszer (`0x0083465f`–
+    `0x00834671`), és a ciklus MINDEN csomópontot ugyanazzal szoroz
+    (`0x00834681`–`0x008346a1`, 56 bájtos lépésköz).
+
+    ⚠️ Ez NEM a sorszám-alapú `pile_scale()`: az az elrendezéskor ad
+    képenként külön méretet. Itt a darabszám dönt — a `k` forrása a
+    `0x00834698 mov eax,[ebx+0x4c]` (a csomópont-tömb hossza).
+
+    `k <= 1`-nél a `√k − 1` nulla vagy negatív, tehát a hányados nem
+    értelmes; a natív `min(..., 1)` felső vágása miatt ilyenkor 1 az arány
+    (ugyanaz a kezelés, mint a `pile_scale`-ben)."""
+    belso = math.sqrt(darab) - 1.0
+    arany = 1.0 if belso <= 0.0 else min(1.0, 1.0 / math.sqrt(belso))
+    return _MIGRACIO_LAPEGYSEG * _MIGRACIO_ALAPARANY * arany
+
+
+def _migralt_nodes(
+    nodes: tuple[CxfNode, ...], version: int, theme: str
+) -> tuple[CxfNode, ...]:
+    """A `version="1"` → `2` migráció: a `scale`-ek egyszeri felszorzása.
+
+    **Kétszeresen kapuzott** (spec 68., #2593): `version == 1`
+    (`0x00834585`) ÉS `theme == picturepile` (`0x008345b3`, 12 bájtos
+    összehasonlítás). Bármelyik kapu bukása átugorja a ciklust
+    (`0x008346a3` pontosan a ciklus után van).
+
+    A `version` mezőt a hívó akkor is `CXF_VERSION`-re állítja, ha a
+    szorzás elmaradt: az író beégetve `2`-t ír (`0x00834801 push 2`), a
+    témától függetlenül. A `version` a FÁJL alakját jelöli, nem azt, hogy a
+    `scale`-eken futott-e a szorzás."""
+    if version != CXF_MIGRALANDO_VERSION or theme != PICTUREPILE or not nodes:
+        return nodes
+    tenyezo = _migracios_tenyezo(len(nodes))
+    return tuple(
+        replace(node, scale=node.scale * tenyezo) for node in nodes
+    )
+
+
 def loads(data: bytes | str) -> CxfProject:
     """`.cxf` bájtsorozat (vagy szöveg) beolvasása projektté."""
     try:
@@ -304,11 +359,17 @@ def loads(data: bytes | str) -> CxfProject:
         float(spacing_element.get("value", "0")) if spacing_element is not None else 0.0
     )
 
+    beolvasott_version = int(root.get("version", CXF_VERSION))
+    beolvasott_theme = root.get("theme", PICTUREPILE)
+    beolvasott_nodes = tuple(_parse_node(node) for node in root.findall("node"))
+
     return CxfProject(
-        version=int(root.get("version", CXF_VERSION)),
+        #: #3073: a fájl a betöltés UTÁN már a mai alakban van — a `version`
+        #: ezért mindig a mostani, ahogy az eredeti írója is teszi.
+        version=CXF_VERSION,
         aspect_ratio=root.get("format", DEFAULT_ASPECT_RATIO),
         orientation=root.get("orientation", "landscape"),
-        theme=root.get("theme", PICTUREPILE),
+        theme=beolvasott_theme,
         shadows=root.get("shadows", "0") == "1",
         captions=root.get("captions", "0") == "1",
         album_uid=root.get("albumUID", ""),
@@ -317,7 +378,9 @@ def loads(data: bytes | str) -> CxfProject:
         album_date=_text(root, "albumDate"),
         background=background,
         spacing=spacing,
-        nodes=tuple(_parse_node(node) for node in root.findall("node")),
+        nodes=_migralt_nodes(
+            beolvasott_nodes, beolvasott_version, beolvasott_theme
+        ),
     )
 
 

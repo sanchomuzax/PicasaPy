@@ -7028,7 +7028,7 @@ már megnevezte a leggyengébb láncszemet (az elrendező IDEIGLENES vektorba
 | a jegy pontja | állapot | miért |
 |---|---|---|
 | betöltött `.cxf`: a `scale` **változatlanul** megy vissza | **kész** (#2954, `node_scales`) | a 67. lánc beolvasási ága mérve; eddig a mentés 500-ról 499-re csúsztatta |
-| `picturepile` `version="1"` migráció | **kész** (68. szakasz) | értéktartó minden `version="2"` fájlra |
+| `picturepile` `version="1"` migráció | **kész** — kutatás: 68. szakasz · megvalósítás: **#3073** (`collage/cxf.py` `_migralt_nodes`, őr: `test_cxf_v1_migracio_3073.py`) | értéktartó minden `version="2"` fájlra; a `version="1"` egyszeri, kapuzott szorzást kap |
 | új csomópont: `scale = 1,0` | **ELVETVE** | a 69.1 két mérése; `multiexp`-nél viszont 1,0 marad (AI7, #1248) |
 | a `contact_sheet_cell_scale` elhagyása | **ELVETVE** | az előző következménye: az `y` ebből jön |
 | „a pontos képlet nyitott" megjegyzés | **törölve** | a 67. szakasz lezárta: a binárisban nincs képlet |
