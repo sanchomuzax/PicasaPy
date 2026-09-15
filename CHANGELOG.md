@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.459] – 2026-09-15
+
+### Javítva
+
+- **Lineáris homályosítás: az elmosás erőssége a korong helyétől függ**
+  (#3110). Eddig állandó erősséggel mostunk, mert a függést nem tudtuk
+  megmérni; a program belsejének elemzése azóta megmutatta, hogy az eredeti a
+  korong vízszintes helyzetéből veszi. A gyári álláson ez ugyanaz, mint
+  eddig — a különbség akkor látszik, ha a korongot oldalra húzod. ⚠️ Ennek
+  egy következménye is van: ha a korongot csak fel-le mozgatod (a
+  középvonalon hagyva), az effekt a mérés szerint nem mos — az eredeti is
+  így viselkedik.
+
 ## [0.8.458] – 2026-09-15
 
 ### Javítva
