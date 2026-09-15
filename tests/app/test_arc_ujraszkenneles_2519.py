@@ -126,7 +126,28 @@ class TestMasodikMenet:
         with _index_conn(tmp_path) as conn:
             from picasapy.index import sync_tree
 
-            sync_tree(conn, root)
+            # ⛔ #2824 GYÖKÉROK — `incremental=False` KELL ide.
+            #
+            # A `sync_tree` alapból inkrementális (#143): kihagyja azt a
+            # mappát, amelynek a MAPPA-mtime-ja egyezik a tárolt állapottal
+            # ÉS 2 másodpercnél (`_SKIP_SAFETY_NS`) régebbi. Egy fájl
+            # HELYBEN átírása viszont a mappa mtime-ját NEM mozdítja —
+            # tehát ha a próba lassabban fut, mint a védőablak, a mappa
+            # kimarad, és az index megtartja a RÉGI (mtime, méret) párost.
+            # A detektor ilyenkor joggal hagyja ki a fotót: `1 == 2`.
+            #
+            # Ez volt a jegy ingadozásának oka. A `68792531` main-futásán a
+            # windows 1/4 darab már a beszédes állítással bukott:
+            #   index=[('a.jpg', 1789433180369050100, 633)]
+            #   fájl=(mtime_ns=1789433183748655700, size=709)
+            # — a két mtime 3,4 másodpercre volt egymástól, tehát a mappa
+            # túllépte a 2 másodperces védőablakot. Linuxon a próba gyorsabb
+            # a 2 másodpercnél, ezért ott végig zöld volt.
+            #
+            # A próba nem az inkrementális kihagyást vizsgálja, hanem azt,
+            # hogy a MEGVÁLTOZOTT fotót újra megnézi-e a detektor — a
+            # teljes szinkron tehát a helyes eszköz, nem tűrés.
+            sync_tree(conn, root, incremental=False)
             conn.commit()
 
         # #2824: a MÁSODIK menet előfeltétele, hogy az index tényleg átvette
