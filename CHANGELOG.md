@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.469] – 2026-09-15
+
+### Hozzáadva
+
+- **A Picasa-adatbázisból behozott kulcsszavak és helyadatok bekerülnek a
+  fényképek mellé** (#2336). Az adatbázis olvasása eddig is kinyerte őket,
+  de nem volt, ami továbbadja: a tulajdonos mappájában 342 kép kulcsszava
+  és 219 kép helyadata állt így félúton. Mostantól a `.picasa.ini`-be
+  kerülnek — de **csak oda, ahol még nincs érték**, meglévő adatot az
+  átvétel soha nem ír felül.
+
 ## [0.8.468] – 2026-09-15
 
 ### Javítva
