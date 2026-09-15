@@ -873,6 +873,47 @@ A bizonyíték minden sornál ott van, mert a rövid feliratok véletlenül is e
 
 A QML `qsTr(...)` feliratai, amelyeknek nincs párja sem a `.tre` leltárban, sem a `stringres` szövegtárban. Ez **nem automatikusan hiba**: lehet jogos új funkció (pl. teljesítménymérő) vagy más szóhasználat — de **idegen elemet is jelezhet**, mint a #704-ben a „Kreatív”/„Effektek” fejlécsáv.
 
+### ⚠️ A lista egy része MÉRÉSI MŰTERMÉK — ne jelöld, ne javítsd (2026-09-15, #2921)
+
+Ez a szakasz az **angol** `qsTr()` forrásszöveget hasonlítja. Ha a **magyar
+fordításunk** viszont a mért hivatalos szöveg, akkor a felhasználó **helyes
+feliratot lát** — a tétel csak azért került ide, mert az angol forrást
+másképp fogalmaztuk.
+
+Mérve (`picasapy-agent/eszkozok/meres/felirat_magyar_parosito.py`):
+
+| csoport | darab | mit jelent |
+|---|---:|---|
+| a magyarja **hivatalos szöveg** | **43** (10%) | ⚠️ **műtermék** — a felirat helyes, csak az angol forrás a miénk |
+| nincs magyar fordítása | 58 | nem eldönthető ebből a mérésből |
+| a magyarja sem hivatalos | 348 | itt kezdődik a #2921 hármas besorolása |
+
+Példák a műtermék-csoportból:
+
+| a mi angol forrásunk | a mi magyarunk | a mért kulcs |
+|---|---|---|
+| `Rotate Right` | „Forgatás jobbra" | `AlbumPhoto::ID_PICTURE_ROTATECLOCKWISE` |
+| `Show Editing Controls` | „Szerkesztési vezérlők megjelenítése" | `eMenuView::ID_VIEW_EDIT` |
+| `Make a Gift CD...` | „Ajándék CD készítése…" | `eMenuCreate::ID_BURNCD` |
+| `Thumbnails Only` | „Kis képek" | `eMenuView::ID_VIEW_SMALL` |
+
+⇒ **Ezek NEM a mi többletünk**, és nem is „valódi eltérés" a felhasználó
+felé. A teendő rájuk az, hogy az **angol forrásszöveget** igazítsuk a
+mérthez — ettől a mérő megtalálja a párt, és a lista rövidül.
+
+### ⛔ A „szükséges segédszöveg" MIÉRT nem jelölendő
+
+A saját-funkció jelölő (#1187, a `vedett-sajat-funkciok.md` konvenciója) azt mondja ki: *ilyen funkció az
+eredetiben nincs*. A hibaüzenetek, üres-állapotok és megerősítő kérdések
+viszont **ugyanahhoz a funkcióhoz** tartoznak, ami az eredetiben is megvan
+— csak ott a helyzet nem áll elő (más platform, más adatút), ezért nincs rá
+szövege. Ha ezeket is azzal a jelölővel látnánk el, a jegyzék azt állítaná,
+hogy a funkció a miénk — ami nem igaz, és a következő kör ebből téves
+lefedettséget olvasna ki.
+
+⇒ A segédszöveg **marad jelöletlen**; a helye ez a szakasz, nem a
+`vedett-sajat-funkciok.md`.
+
 Összesen **449 felirat** 82 fájlban.
 
 ### `PicasaPy/PicasaMenuBar.qml` — 27
