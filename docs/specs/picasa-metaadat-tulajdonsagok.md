@@ -385,3 +385,99 @@ igazolja, hogy a `+0x04` mező IPTC-adathalmaz-szám.)*
   az `id` egyszerű, hézagmentes sorszám a tábla sorrendjében (0…175).
 - **Hogy a `0xe4` az EXIF-táblában volna** — a tábla `id`-je 175-nél véget
   ér; a 228-as az IPTC-táblában van.
+
+---
+
+## 9. ⛳ Az OBJEKTÍV-tábla: KÉT tábla, KÉT rekordalak (2026-09-15, #3121)
+
+*Forrás: `Picasa3.exe` 3.7 (10 160 456 bájt). A nevek szövegblokkja
+`0x008da958`–`0x008dfd0c` (fájl-offszet; VA = `+0x400000`), a Nikon
+mutató-tábla `0x00c7b230`–`0x00c7c5b0` (VA), a Canon-rekord példája
+`0x00c79c9c` (VA). Minden szám bájtszintű pásztázásból.*
+
+A #3121 első lépése a tábla **határainak és szerkezetének** kimérése volt —
+a jegy törzsében álló `383` ugyanis a korábbi kör SZŰRŐJÉNEK a darabszáma
+volt, nem a táblahossz.
+
+### 9.1 A nevek szövegblokkja — 592 név, nem 383
+
+| mérés | érték |
+|---|---|
+| tartomány (fájl-offszet) | `0x008da958` … `0x008dfd0c` |
+| méret | **21 428 bájt** |
+| nevek száma | **592** |
+| igazítás | **4 bájtos**, NUL-lezárt, folytonos |
+| a blokk ELŐTT | `.jpx` és függvénymutatók — más adat |
+| a blokk UTÁN | `{%d bytes}`, `BinaryMetadata::GetString` |
+
+Az első szó szerinti bontás megmutatja, mit hagyott ki a korábbi szűrő:
+
+| kezdőszó | db |
+|---|---:|
+| `Canon` | 146 |
+| `Sigma` | 139 |
+| `AF` | 73 |
+| `AF-S` | 65 |
+| `Tamron` | 63 |
+| `Tokina` | 35 |
+| `AF-I` | 16 |
+| `Carl` (Zeiss) | 9 |
+| `Cosina` | 7 |
+| `Nikkor` | 6 |
+| `Voigtlander` | 6 |
+| `IX-Nikkor` | 4 |
+
+⇒ A gyártónévvel KEZDŐDŐ mintára szűrő kör a **Nikon** neveit veszítette el
+(`AF`, `AF-S`, `AF-I`, `Nikkor`, `IX-Nikkor` = 164 név), plusz a Zeiss/Cosina/
+Voigtländer sort. *(Ismétlődő tanulság: a gyártó-előtagos szűrő a
+gyártófüggetlen névalakokat nem látja.)*
+
+### 9.2 ⭐ A NIKON tábla: `{ név-mutató, 8 bájtos LensID }` — 12 bájt/rekord
+
+A `0x00c7b230`-tól `0x00c7c5b0`-ig **417 rekord**, mindegyik 12 bájt:
+
+```c
+struct NikonObjektiv {          // 12 bájt
+    const char *nev;            // +0x00  mutató a szövegblokkba
+    uint8_t     lens_id[8];     // +0x04  a Nikon 8 bájtos LensID-je
+};
+```
+
+Példák (a `lens_id` bájtsorrendben):
+
+| név | `lens_id` |
+|---|---|
+| `TC-20E [II] or Sigma APO Tele Converter 2x EX…` | `2D 1C 36 00 06 00 3C 34` |
+| `Tamron SP AF 11-18mm f/4.5-5.6 Di II LD Asph…` | `37 1F 3C 00 06 00 30 30` |
+| `Tokina AT-X 124 AF PRO DX (AF 12-24mm f/4)` | `A0 80 3E 00 02 00 3F 38` |
+| `Sigma 4.5mm F2.8 EX DC HSM Circular Fisheye` | `80 5C 53 FE 06 84 24 24` |
+
+Ez **pontosan a Nikon MakerNote `LensID` alakja** (nyolc bájt), tehát a
+feloldás egyszerű kulcs-keresés.
+
+### 9.3 ⭐ A CANON rekord MÁS: számmezőkkel
+
+A `Canon EF 50mm f/1.8` nevére egyetlen mutató van (`0x00c79c9c`), és a
+szomszédai **lebegőpontos számok**, nem azonosító-bájtok:
+
+```
+0x00c79c98  00000001
+0x00c79c9c  00cdfcf8  -> "Canon EF 50mm f/1.8"
+0x00c79ca0  42480000  = 50.0f      (gyújtótávolság)
+0x00c79ca8  3fe66666  = 1.8f       (rekesz)
+0x00c79c94  42380000  = 46.0f
+```
+
+⇒ A Canon-oldal **nem** azonosító → név leképezés, hanem a
+**gyújtótávolság/rekesz** hármasból azonosít. A két tábla tehát **külön
+szerkezet**, és az átvételnek is kettőnek kell lennie.
+
+### 9.4 Amit ez a jegynek ad
+
+* A Nikon-ág **azonnal átvehető**: 417 `{8 bájtos kulcs → név}` pár,
+  bájtszintű kinyeréssel, találgatás nélkül.
+* A Canon-ág mezőkiosztása (hány mező, milyen sorrendben, mi az `1`)
+  **még nincs teljesen kimérve** — a rekordhatárt a szomszédos float-ok
+  alapján lehet megtalálni, de a rekordméret nincs igazolva.
+* ⛔ A `383` szám a jegy törzsében **elavult**: a helyes darabszám a
+  szövegblokkban **592**, a Nikon-táblában **417 rekord**.
