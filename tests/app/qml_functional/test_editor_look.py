@@ -290,10 +290,36 @@ class TestPanelButtonThumbnailPlaceholder:
         assert thumb is None or thumb.property("visible") is False
         button = root.findChild(QObject, "btn")
         label = root.findChild(QObject, "btnLabel")
-        # a régi képlet: max(24, felirat-magasság + 10)
+        # #3140: a képlet `max(24, felirat-magasság + 2)`. A kitöltés a #2494
+        # óta 2, nem 10 — ez a lap azt a változást nem követte, és ezért
+        # BUKOTT a fejlesztői gépen, miközben a CI-n zöld maradt:
+        #
+        #   itt   a felirat natúr sormagassága 17 ⇒ régi képlet 27, gomb 24
+        #   a CI-n ugyanez ~14              ⇒ régi képlet 24, gomb 24
+        #
+        # A gomb magassága tehát MINDKÉT platformon 24 (a padló) — nem a
+        # gomb volt platformfüggő, hanem a próba számolt elavult képlettel.
         assert button.property("height") == pytest.approx(
-            max(24, label.property("implicitHeight") + 10), abs=1
+            max(24, label.property("implicitHeight") + 2), abs=1
         )
+
+    def test_a_magassag_a_PADLON_all_a_betutol_fuggetlenul(self, qml_engine, qt_app):
+        """#3140: a lényegi állítás, betűmetrika nélkül.
+
+        A bélyegkép nélküli gomb magassága a 24 képpontos padló, amíg a
+        felirat natúr sormagassága 22 alatt van — és ez minden platformon
+        így van (a #2597 óta a rögzített magasságú hívók amúgy sem a betűtől
+        függenek). A fenti próba a KÉPLETET őrzi, ez a KÖVETKEZMÉNYT."""
+        root = self._make_button(qml_engine, thumb_source="")
+        qt_app.processEvents()
+        button = root.findChild(QObject, "btn")
+        label = root.findChild(QObject, "btnLabel")
+        natur = label.property("implicitHeight")
+        assert natur < 22, (
+            f"a felirat natúr sormagassága {natur} — 22 fölött a padló már "
+            "nem dominál, és ez a próba elveszti az értelmét"
+        )
+        assert button.property("height") == pytest.approx(24, abs=1)
 
     def test_thumb_source_shows_a_never_blank_placeholder_until_ready(
         self, qml_engine, qt_app
