@@ -467,11 +467,13 @@ A törlő a `[0x00c408b0]` import, három argumentummal — a `0x400` jelző a
 
 | ág (azonosító) | törölt parancsazonosítók | törölt pozíció |
 |---|---|---|
-| `0x77` | `0x9d97` | `0x0e` |
-| `0xa6` | `0x9d97` | `0x15` |
-| `0xa4` | `0x9d96`, `0xa09f` | `0x14` |
+| `0x77` | `0x9d97` *(Feltöltés a Google Fotókba… — ALBUM)* | `0x0e` |
+| `0xa6` | `0x9d97` *(ugyanaz)* | `0x15` |
+| `0xa4` | `0x9d96` *(Feltöltés… — a kijelölt KÉP)*, `0xa09f` *(Megtekintés online)* | `0x14` |
 | `0x70` | `0x9d96`, `0xa09f` | `0x16` |
 | `0x8a` | `0x9d96`, `0xa09f` | `0x13` |
+
+*(A nevek forrása és bizonyítéka: **B.5**.)*
 
 ⇒ **Az eredetiben nincs négy külön helyi menü.** Egy közös felugró menü van,
 és a kontextus azt szabja meg, **mit vesznek ki belőle**. A mi négy külön
@@ -494,3 +496,114 @@ karbantartása nálunk négy helyen történik, ott egy helyen plusz öt kivoná
   `0x0074626d`, `0x0082fbec`, `0x0082fcbb`, `0x0082fda9`) azonosítása
   külön kör — az azonosító nem a hívó argumentuma, hanem a menütételből jön,
   tehát a hívóhelyek menüépítő előzményét kell végigkövetni.
+
+*(Mindkét pont MÉRVE a **B.5**-ben: az első megvan, a második a hívóhely →
+menüépítő megfeleléssel együtt sem dőlt el — a jelölt magyarázat MEGDŐLT.)*
+
+### B.5 ⭐ A három törölt parancs NEVE — megvan (2026-09-15, #3124)
+
+#### A rekord-alak ebben az öt helyi-menü-építőben
+
+A helyi menük ugyanazzal a gépies sablonnal épülnek, mint a menüsor, de a
+rekord **más eltolásokkal**:
+
+| eltolás | tartalom |
+|---|---|
+| `+0x00` | felirat (a fordított sztring) |
+| `+0x04` | gyorsbillentyű-szöveg |
+| `+0x0c` | módosítómaszk (szó) |
+| **`+0x0e`** | **parancsazonosító (szó)** |
+| lépésköz | **`0x14`** |
+
+⚠️ **Ugyanaz a csúszás-csapda érvényes, mint a menüsornál** (#1409, a
+`picasa-menu-parancsok.csv` fejléce): a fordító a rekord mezőit a
+**KÖVETKEZŐ** rekord feliratának betöltése **után** írja ki, tehát a
+`push "<kulcs>"` és az utána álló `mov word ptr […], 0x…` **NEM tartozik
+össze**. A horgony itt is a rekord kezdőcíme: a `call <fordító>` UTÁNI
+`mov dword ptr [<REK>], eax`.
+
+**Kontroll (két, egymástól független ismert érték):**
+
+| kulcs | a fenti szabállyal kiolvasva | a `picasa-menu-parancsok.csv`-ben |
+|---|---|---|
+| `AlbumPhoto::ID_PICTURE_VIEW` | `0x9ca0` | `0x9ca0` ✅ |
+| `Album::ID_ALBUM_EDITCAPTIONS` | `0x9c69` | `0x9c69` ✅ |
+
+#### A három név
+
+| azonosító | felirat-kulcs | EN | HU | hol mérve |
+|---|---|---|---|---|
+| **`0x9d96`** (40342) | `Album::ID_UPLOAD_TO_LIGHTHOUSE` ⟋ `Album::ID_UPLOAD_TO_GOOGLE_PLUS_PHOTOS` | *Upload to &Picasa Web Albums…* ⟋ *Upload to Google &Photos…* | **Feltöltés a &Picasa Webalbumokba…** ⟋ **Feltöltés a Google Fotókba…** | `0x00730e65` (rek. `esp+0x1ec`) · `0x007316b2` (rek. `esp+0x1c4`) |
+| **`0x9d97`** (40343) | `Album::ID_UPLOAD_ALBUM_TO_LIGHTHOUSE` ⟋ `…_GOOGLE_PLUS_PHOTOS` | ugyanaz | ugyanaz | `0x0073200c` (rek. `esp+0x1c4`) · `0x0073244c` (rek. `esp+0xe4`) |
+| **`0xa09f`** (41119) | `CThumbUI::showinlh` | *View Online* | **Megtekintés online** | `0x0056c4c9` (`mov ecx, 0xa09f` a `0x00a6b120` tételhozzáfűző elé) |
+
+Három megjegyzés, amit ez kimond:
+
+1. **A `0x9d96` és a `0x9d97` ugyanaz a parancs, más hatókörrel**: az egyik a
+   kijelölt **képe(ke)t**, a másik a teljes **albumot** tölti fel. A felirat
+   mindkettőnél azonos, ezért pusztán a feliratból nem lettek volna
+   megkülönböztethetők.
+2. **A felirat futásidőben ágazik** (Lighthouse ⟋ Google+ Photos): ugyanaz a
+   rekord két felirat-kulcs közül kapja az egyiket, a `je` ág dönt
+   (`0x00730e03`, `0x007323f4`). A magyar szövegtár a `…GOOGLE_PLUS_PHOTOS`
+   és a `…ALBUM_TO_*` kulcsokat **azonos** magyar mondatra fordítja
+   (`Feltöltés a Google Fotókba…`); a „Picasa Webalbumok" csak a
+   `Album::ID_UPLOAD_TO_LIGHTHOUSE` kulcson marad meg.
+3. **A `0xa09f` másik sablonnal épül**: a `0x0056c450` (az *Online Actions*
+   almenü építője) nem rekord-tömböt tölt, hanem tételenként hív —
+   `push "<kulcs>" · mov eax, "<EN>" · call <fordító> · lea ecx, [tétel] ·
+   push ecx · mov ecx, <azonosító> · call 0x00a6b120`. Itt az azonosító és a
+   felirat **ugyanannak a hívásnak** az argumentuma, tehát nincs csúszás.
+   Ugyanez a blokk adja a szomszédait is: `0xa0b3` = `CThumbUI::copyurl`
+   (*Co&py URL*), `0xa0b4` = `CThumbUI::updateonline`
+   (*Update Online Photo*).
+
+⇒ **A kivonás értelme megvan:** az öt ág mindegyike az **online feltöltést**
+(és ahol van, a *Megtekintés online*-t) veszi ki a közös menüből — azokban a
+kontextusokban, ahol a kijelölt elem nem tölthető fel.
+
+#### A 14 hívóhely menüépítője — MEGVAN mind a 14
+
+| hívóhely | gazdafüggvény | menüépítő | az építő ELSŐ rekordja |
+|---|---|---|---|
+| `0x0059606d` | `0x00595fe0` | `0x007327a0` | `OneUp::ID_VIEWALBUM` = `0x9cc6` |
+| `0x005d41f4` | `0x005d3290` | `0x007325a0` | `Publish::ID_CHECKALL` = `0x9d40` |
+| `0x005d43a4` | `0x005d3290` | `0x00732160` | `Album::ID_ALBUM_EDITCAPTIONS` = `0x9c69` |
+| `0x005e77b2` | `0x005e7650` | `0x007319f0` | `Folder::ID_HIER_FOLDER_EXPAND` = `0x9dc0` |
+| `0x005e7b54` | `0x005e7830` | `0x00730790` | `AlbumPhoto::ID_PICTURE_VIEW` = `0x9ca0` |
+| `0x005e7be5` | `0x005e7830` | `0x007339a0` | `BtnConf::ID_TOOLS_BUTTONMGR` = `0x9daf` |
+| `0x005e7d44` | `0x005e7d10` | `0x00732ee0` | `AlbumPhoto::ID_PICTURE_VIEW` = `0x9ca0` |
+| `0x00622381` | `0x00622320` | `0x00734a80` | `MMFilm::ID_MAKEMOVIE_INSERT` = `0x137` |
+| `0x0063840c` | `0x00637fa0` | `0x00638990` | `PropertiesPanel::edit_keywords` (`push 0x9d2c`) |
+| `0x0063b56b` | `0x0063b430` | `0x00735480` | `Tags::ID_APPLYTHISTAGTOSELECTION` = `0xa0b8` |
+| `0x0074626d` | `0x00746170` | helyben épít (`0x00a6b120`) | — |
+| `0x0082fbec` | `0x0082fab0` | `0x007344b0` | `CollageS::ID_COLLAGE_REMOVE` = `0x9dd3` |
+| `0x0082fcbb` | `0x0082fc10` | `0x007347a0` | `CollageS::ID_COLLAGE_REMOVE` = `0x9dd3` |
+| `0x0082fda9` | `0x0082fce0` | `0x007348f0` | `CollageD::ID_COLLAGE_SELECT_ALL` = `0x9ddd` |
+
+#### ⛔ A kilenc kontextus-azonosító NEM dőlt el — és a jelölt magyarázat MEGDŐLT
+
+A kézenfekvő olvasat az volt, hogy a belépési pont (`0x005e7c20`) a felugró
+menü **első tételének** `wID`-jét olvassa ki, tehát a kilenc érték
+(`0x70`, `0x77`, `0x8a`, `0x8b`, `0xa4`, `0xa6`, `0x127`, `0x13d`, `−1`) az
+építők első rekordja volna. **A fenti táblázat ezt megcáfolja:** a 14 építő
+első rekordja `0x9c69`…`0x9ddd` és `0x137` — a kilenc érték közül **egyik
+sem** szerepel köztük.
+
+Amit a struktúra-olvasás ad: a `[0x00c407bc]` hívás előtt a program a `0x1c`-t
+és a `8`-at a *hívás előtti* `esp+0x24`, illetve `esp+0x28` rekeszbe írja, a
+kiolvasás pedig a hívás utáni `esp+0x2c`-ről történik. Ez **nem áll össze**
+szabványos `MENUITEMINFOW`-vá (annak `cbSize`-a `0x30`, a régi alaké `0x2c`;
+a `0x1c` egyiké sem), tehát **maga az import-azonosítás sem biztos**.
+
+⚠️ **Egy hamis nyom, hogy más ne járja újra:** mind a nyolc szám előfordul
+`mov eax, <érték>; ret` alakban a `0x00633210`-ben — de az egy **EXIF-címke
+név → szám** leképező (321 sztringje `ImageWidth`, `ExposureTime`, `FNumber`
+és társai). Kis konstansoknál a puszta bájtegyezés nem lelet.
+
+**A megnevezett következő lépés:** a `0x00c4xxxx` mutatótáblát induláskor egy
+feloldó tölti fel (ugyanaz a tábla adja a `[0x00c406f8]`-at, amit a 3. szakasz
+`GetKeyState`-ként azonosít). Ennek a feloldónak a név-táblájából kell
+kiolvasni, mi a `[0x00c407bc]` — utána a mezőeltolás újraszámolható, és a
+kilenc érték jelentése eldől.
+
