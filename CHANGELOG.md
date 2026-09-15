@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.473] – 2026-09-15
+
+### Hozzáadva
+
+- **A mozgófilm mellé projektfájl készül** (#3191). Eddig a kész videó
+  mellől hiányzott a szerkeszthető állapot: a filmet nem lehetett később
+  újranyitni. Mostantól a videó mellé `.mxf` projektfájl kerül — ez az
+  eredeti Picasa saját formátuma, a kollázs `.cxf`-jének megfelelője —,
+  benne a képek sorrendje, a diaidő és az átmenet hossza.
+
 ## [0.8.472] – 2026-09-15
 
 ### Javítva

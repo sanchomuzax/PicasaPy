@@ -54,6 +54,12 @@ from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_co
 from picasapy.app.collage_preview import CollagePreviewProvider
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
 from picasapy.movie import MovieSettings, export_movie
+from picasapy.movie.mxf import (
+    MxfAtmenet,
+    MxfForras,
+    MxfProjekt,
+    write_mxf,
+)
 
 from . import collage_output, collage_prefs
 from .formatting import to_local_path
@@ -405,6 +411,33 @@ class CreateMixin(BackgroundWorkerMixin):
             transition_seconds=min(_MAX_TRANSITION_S, seconds_per_photo / 3),
         )
 
+    @staticmethod
+    def _film_projekt(sources, settings) -> MxfProjekt:
+        """A film állapota `.mxf`-projektként (#3191).
+
+        Amit MA kitöltünk, az a mi modellünk: a diaidő, az átmenet hossza
+        és a képek sorrendje. A többi mért mező (zene, arc-film,
+        feliratozás, csoportosítás) a mi filmkészítőnkben még nem
+        állítható — azok az alapértéket kapják, és a formátum kimondottan
+        megengedi, hogy a diánkénti `trans` felülírja az album-szintű
+        `defaulttrans`-ot.
+        """
+        alap = MxfAtmenet(
+            advanceinterval=float(settings.seconds_per_photo),
+            transitiontime=float(settings.transition_seconds),
+        )
+        return MxfProjekt(
+            defaulttrans=alap,
+            atmenetek=tuple(
+                MxfAtmenet(
+                    advanceinterval=alap.advanceinterval,
+                    transitiontime=alap.transitiontime,
+                    forras=MxfForras(index=i, filename=str(ut)),
+                )
+                for i, ut in enumerate(sources)
+            ),
+        )
+
     @Slot(list, str, int, float)
     @Slot(list, str, int, float, int)
     def exportMovie(
@@ -475,6 +508,19 @@ class CreateMixin(BackgroundWorkerMixin):
                     self.tr("None of the selected pictures could be read.")
                 )
                 return
+            # #3191: a PROJEKTFÁJL a kimenet mellé. A kollázs ugyanezt
+            # teszi a `.cxf`-fel: enélkül a kirenderelt film mellől
+            # hiányzik a szerkeszthető állapot, és a szerkesztőben nem
+            # jelenhet meg a „Mozgófilm szerkesztése" gomb (#2114).
+            # Sosem dob: a projektfájl kudarca nem boríthatja a KÉSZ
+            # videót (ugyanaz az elv, mint az ini-érintésnél, #643).
+            try:
+                write_mxf(
+                    Path(report.target).with_suffix(".mxf"),
+                    self._film_projekt(report.used, settings),
+                )
+            except OSError as hiba:  # pragma: no cover - írásvédett cél
+                logger.warning("a film projektfájlja nem írható: %s", hiba)
             # #1539: az `.mp4` INDEXELT médiatípus (scanner/filetypes.py),
             # tehát a rácsra való — ugyanaz a helyzet, mint a kollázsnál.
             self.noteOutputWritten(str(report.target))
