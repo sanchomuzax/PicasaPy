@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.8.480] – 2026-09-15
+
+### Javítva
+
+- **A kollázs-panel két lapján kilógott a tartalom Windowson** (#656). A
+  tájkép/portré ikon 4 képponttal ért a gombja fölé, a Klipek lap
+  „Továbbiak..." feliratából pedig 3 képpont lógott ki a sorból — mindkettő
+  csak Windowson, ahol a rendszer gomb-stílusa és a szélesebb betűk másképp
+  osztják be a helyet. A gombok mért méretei nem változtak.
+
 ## [0.8.479] – 2026-09-15
 
 ### Hozzáadva

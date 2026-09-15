@@ -118,6 +118,14 @@ Item {
                 text: qsTr("Get more...")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
+                // ⚠️ #656: a felirat a MARADÉK helyre szorul, és inkább
+                // levágódik, mint kilógjon. A magyar „Továbbiak..." a
+                // szélesebb windowsos betűkkel 3 képponttal kilógott a
+                // sorból (a gomb mért szélessége 166, azt nem növeljük).
+                // A teljes jelentést a buboréksúgó adja.
+                width: Math.max(
+                    0, parent.width - parent.leftPadding - parent.spacing - 17)
+                elide: Text.ElideRight
             }
         }
         onClicked: tab.getMoreClipsRequested()
