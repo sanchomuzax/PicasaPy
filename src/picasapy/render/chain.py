@@ -775,7 +775,10 @@ def can_offer_filter_control(name: str) -> bool:
 
 
 def apply_filters(
-    image: np.ndarray, ops: tuple[FilterOp, ...]
+    image: np.ndarray,
+    ops: tuple[FilterOp, ...],
+    *,
+    paint_mask: np.ndarray | None = None,
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, autocontrast, fill, backlight,
@@ -894,6 +897,21 @@ def apply_filters(
                     MEASURED_NOT_RUNNING_WARNING_TEMPLATE.format(name=op.name)
                 )
             skipped.append(op.name)
+            continue
+        if key in glimmer.PAINTABLE_MASK_OPS and paint_mask is not None:
+            # #1908: a festett maszk MEGVAN — az effekt a maszkon át kerül a
+            # képre (`NestedImageOperation Mask=`, a mért szemantika). A
+            # „nincs ecset-eszköz" figyelmeztetés ilyenkor félrevezető
+            # lenne, ezért NEM megy ki.
+            op, op_warnings = validate_and_clamp_op(op)
+            range_warnings.extend(op_warnings)
+            try:
+                result = glimmer.alkalmazd_maszkkal(key, result, op, paint_mask)
+            except Exception:
+                _log.exception(
+                    "Filter-bejegyzés kihagyva (hibás paraméter): %s", op
+                )
+                skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
             # #381/#688: az ecset-maszk hiányzik — a `PicnikTint` és a
