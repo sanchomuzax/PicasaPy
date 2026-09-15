@@ -134,20 +134,18 @@ def atmeretez_masolatot(target: Path, hatar: int) -> bool:
     `False`-szal tér vissza — a másolat érintetlen marad."""
     if hatar <= 0:
         return False
-    import cv2
 
     from picasapy.collage.render import write_collage
-    from picasapy.cvimage import read_image_bytes, scale_down
+    from picasapy.cvimage import dekodolj_forrast, scale_down
 
     target = Path(target)
-    # ⚠️ A `read_image_bytes` a NYERS BÁJTOKAT adja (nem dekódolt képet) —
-    # a dekódolás a hívóé, `imdecode`-dal (a `thumbs/cache.py` mintája).
-    # A bájt-alapú út azért kell, mert a `cv2.imread` Windowson ékezetes
-    # útvonalon némán elhasal (#65).
-    bajtok = read_image_bytes(target)
-    if bajtok is None:
-        return False
-    kep = cv2.imdecode(bajtok, cv2.IMREAD_COLOR)
+    # ⚠️ A bájt-alapú út azért kell, mert a `cv2.imread` Windowson ékezetes
+    # útvonalon némán elhasal (#65) — ezt a közös belépő intézi.
+    #
+    # #3120: a `dekodolj_forrast` a NYERS (RAW) fájlokra is ad képet; a
+    # puszta `cv2.imdecode` némán `None`-t adott rájuk, és az importált
+    # nyers fájl „nem kép"-ként bukott el az ellenőrzésen.
+    kep = dekodolj_forrast(target)
     if kep is None or kep.ndim < 2:
         return False
     magassag, szelesseg = kep.shape[:2]

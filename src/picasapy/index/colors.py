@@ -233,15 +233,11 @@ def compute_photo_color(path: str | Path) -> tuple[int, tuple[str, ...]] | None:
     A 2×2-nél kisebb képnek nincs `avgcolor`-a (a Picasa sem számol
     ilyet) — ott a `0` sentinel áll, a színtokenek viszont a rasztertől
     függetlenül megvannak."""
-    from picasapy.cvimage import read_image_bytes, reduced_color_flag
+    from picasapy.cvimage import dekodolj_forrast
 
-    payload = read_image_bytes(Path(path))
-    if payload is None:
-        return None
-    import cv2
-
-    flag = reduced_color_flag(payload, 128)
-    image = cv2.imdecode(payload, flag)
+    #: #3120: a KÖZÖS belépőn megy — a `cv2.imdecode`-nak nincs nyers
+    #: dekódere, tehát a RAW fájlok kimaradtak a szín-indexből.
+    image = dekodolj_forrast(Path(path), goal=128)
     if image is None:
         return None
     tokens = classify_image(image, order="bgr")

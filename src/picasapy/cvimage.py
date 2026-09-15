@@ -20,6 +20,8 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
+from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
+
 
 # Nagy forráskép redukált (fél/negyed/nyolcad méretű) JPEG-dekódolása kíméli
 # a memóriát és nagyságrendet gyorsít; a legerősebb redukcióval kezdünk, és
@@ -76,6 +78,38 @@ def read_image_bytes(source: Path) -> np.ndarray | None:
     if payload.size == 0:
         return None
     return payload
+
+
+def dekodolj_forrast(
+    source: Path | str, goal: int | None = None
+) -> np.ndarray | None:
+    """Egy képfájl BGR tömbként — **nyers (RAW) fájlra is** (#3120).
+
+    Ez a közös belépő a képbetöltő helyeknek. A `cv2.imdecode`-nak nincs
+    nyers dekódere: a #528 előtt minden út néma `None`-t adott nyers
+    fájlra, a #528 óta pedig CSAK a megjelenítés (rács, néző, mappaborító)
+    ment a LibRaw-n. A többi kilenc hely — export, duplikátum-kereső,
+    szín-index, kollázs, film, webexport, mentés, arckeresés, import —
+    továbbra is a puszta `imdecode`-ot hívta.
+
+    ⚠️ **Ez nem regresszió volt, hanem sosem működött**: a #528 annyit
+    változtatott, hogy a felhasználó MOST MÁR LÁTJA a képet, tehát neki is
+    indul ezeknek a műveleteknek.
+
+    `goal` a kívánt leghosszabb oldal. JPEG-nél a redukált dekódolást
+    választja (`reduced_color_flag`), nyersnél a LibRaw fél-méretét — a
+    hívónak egyetlen felülete van rá.
+
+    `None`, ha a fájl hiányzik, üres, vagy nem dekódolható. A hívó ezt ma is
+    kezeli, tehát a viselkedés nem változik ott, ahol eddig sem volt kép."""
+    ut = Path(source)
+    if nyers_utvonal(ut):
+        return dekodol_nyerset(ut, goal)
+    payload = read_image_bytes(ut)
+    if payload is None:
+        return None
+    flag = reduced_color_flag(payload, goal) if goal else cv2.IMREAD_COLOR
+    return cv2.imdecode(payload, flag)
 
 
 def scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:

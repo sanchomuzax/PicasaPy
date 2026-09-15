@@ -76,6 +76,20 @@ def _render_for_save(
     renderelő-úton megy, mint az exportnál — a mentett fájl és a rácsban
     látott kép így egyezik.
     """
+    # ⛔ #3120: ez az EGYETLEN képbetöltő hely, amit SZÁNDÉKOSAN nem
+    # kötöttünk át a nyerset is ismerő `cvimage.dekodolj_forrast`-ra.
+    #
+    # A mentés a képet a SAJÁT HELYÉRE írja vissza (az eredetit a
+    # `.picasaoriginals`-ba téve). Nyers fájlnál ez nem megy: DNG/CR2/NEF
+    # írása nincs az OpenCV-ben, tehát az átkötés a legjobb esetben néma
+    # hibát, a legrosszabban SÉRÜLT FÁJLT adna a felhasználó nyers képe
+    # helyén. Ma ehelyett a dekódolás áll meg — a fájl érintetlen marad.
+    #
+    # Amit az eredeti tesz (a szerkesztést JPEG-ként a nyers MELLÉ menti),
+    # az a jegy szerint MÉRENDŐ, nem kitalálandó. Amíg nincs mérve, a
+    # biztonságos viselkedés a hibaüzenet.
+    #
+    # Őr: `tests/test_nyers_kozos_dekoder_3120.py::TestAMentesNEMIrRaNyerset`
     payload = read_image_bytes(path)
     if payload is None:
         raise ValueError(f"Üres vagy nem olvasható fájl: {path}")
