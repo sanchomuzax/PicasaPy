@@ -371,14 +371,35 @@ Rectangle {
 
     Timer {
         id: hideTimer
+        objectName: "slideshowHideTimer"
         interval: 2500
-        onTriggered: controlsBar.shown = false
+        //: #2992: a mutató alatt NEM rejtünk el. A lejáró időzítő így nem
+        //: kapja el a sávot épp akkor, amikor a felhasználó a gombot
+        //: célozza — az újraindítás a `slideshowControlsHover` dolga.
+        onTriggered: if (!savLebeges.hovered) controlsBar.shown = false
     }
 
     Rectangle {
         id: controlsBar
         objectName: "slideshowControls"
         property bool shown: false
+
+        //: ⛔ #2992: a sávnak SAJÁT lebegés-figyelő kell.
+        //:
+        //: A megjelenítő `MouseArea` a teljes vetítőt fedi, a sáv viszont
+        //: UTÁNA van deklarálva, tehát takarja. Amíg a mutató a sávon áll,
+        //: a `MouseArea` nem kap `positionChanged`-et — a `hideTimer`
+        //: lejár, és a sáv **eltűnik a kéz alól**. A tulajdonos szava a
+        //: jegyben: „egérmozgatásra nem jelenik meg a kis lejátszó, ami az
+        //: eredetiben ott van, FIXEN" — az „ott van, fixen" épp ezt írja
+        //: le: az eredetiben a sáv nem szökik el a mutató elől.
+        HoverHandler {
+            id: savLebeges
+            objectName: "slideshowControlsHover"
+            //: amikor a mutató elhagyja a sávot, az elrejtés újraindul —
+            //: enélkül a sáv a vetítés végéig kint maradna
+            onHoveredChanged: if (!hovered) hideTimer.restart()
+        }
         visible: opacity > 0
         opacity: shown ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
