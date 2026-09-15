@@ -6267,3 +6267,100 @@ menetben.** Nincs `W/100`, nincs `(Amount+1)`, nincs abszolútérték.
 - **Az Y koordináta szerepe** a magban nincs kiolvasva (a feldolgozó csak a
   két képpont-koordinátát számolja belőle).
 - A „súlytábla utolsó rekeszei" (a fenti 3. közelítés) változatlanul nyitva.
+
+---
+
+## ⛳ A lánc SZERKEZETE: szűrő-OBJEKTUMOK listája, öt külön kezelt névvel (2026-09-15, #3169)
+
+*Forrás: `CGenericFilter::vftable` = `0x00cd184c` (43 rekesz),
+`CImageFilterFactory::vftable` = `0x00c7f6c0`; a lánc-normalizáló
+`FUN_00438820` (2256 b, sztringjei `filters`, `enhance`); a nevesített
+tételek törlője `FUN_00907390` (934 b) és `FUN_00907f30` (1065 b); a
+`crop64` sztringje `0x00c80adc`.*
+
+### A kiváltó mérés: az élő előnézetünk ≠ a mentett képünk
+
+A #3169 azt mérte ki, hogy a szerkesztő lánc-prefix gyorsítótára
+(`edit_preview._render_cached`) **kettévágja** a láncot, és keret-effektnél
+más képet ad, mint a teljes lánc (`crop64;Vignette`: átlagos eltérés
+**18,2**). Hogy melyik a helyes, csak az eredeti sorrend-szabályából derül
+ki — ez a szakasz az arról szóló mérés.
+
+### A lánc: objektumok, nem szövegtokenek
+
+A `filters=` lánc a binárisban **`CGenericFilter` objektumok tömbje**
+(`[obj+0x48]` a mutatótömb, `[obj+0x4c]>>1` a darabszám), amiket a
+`CImageFilterFactory` gyárt. A név-specifikus feldolgozás a vtábla
+rekeszeiben ül — például a `crop64=1,%I64x` **olvasója** a `+0xa8`
+(`0x008fb120`, 3257 b), az **írója** a `+0x38` (`0x008fac40`, 1241 b).
+
+### ⭐ Öt név kap külön kezelést — pontosan az az öt, amit mi is így kezelünk
+
+A `FUN_00907390` végigmegy a tömbön, és **kiveszi** a tételt (a mögötte
+lévőket előre tolja, a darabszámot csökkenti), ha a neve:
+
+| név | sztring-cím |
+|---|---|
+| `crop64` | `0x00c80adc` |
+| `retouch` | `0x00c9688c` |
+| `redeye` | `0x00c9776c` |
+| `picnik` | `0x00c97f6c` |
+| `rot` | `0x00ca8258` |
+
+A `FUN_00438820` ezt a törlőt hívja, **majd friss `crop64`-tételt épít és
+HOZZÁFŰZ** a listához:
+
+```asm
+0x00438bcc  call 0x907390            ; a nevesített tételek törlése
+0x00438bd7  push 0xc80adc("crop64")  ; friss crop64-tétel
+0x00438c86  call 0x496440            ; hozzáfűzés a listához
+```
+
+⇒ **A `crop64` a normalizálás után a lánc VÉGÉN áll.** Ez egybevág a #1550
+olvasási szabályával („az utolsó `crop64` a hatályos"), és a mi
+`chain.py`-unk „vágás a nem-keret effektek után" viselkedésével sem
+ellentétes.
+
+⭐ **A mi `chain.py`-unk függetlenül ugyanezt az öt nevet kezeli külön**
+(`crop64` saját ág, a `_NOOP_MARKERS` a `redeye`/`retouch`/`picnik`
+családdal) — ezt a mi oldalunkon mérésből vezettük le, nem innen.
+
+### ⛔ Amit ez a mérés NEM dönt el
+
+1. **A keretek sorrendje.** A `Border`, `Polaroid`, `MuseumMatte`,
+   `DropShadow`, `Cinemascope`, `RoundedEdges` **nincs** a külön kezelt
+   nevek között ⇒ a lánc-normalizáló nem mozgatja őket. A mi
+   `_FRAME_EFFECTS`-halasztásunknak (#330) tehát itt **nincs megfelelője** —
+   ez erős jel arra, hogy az eredeti lánc-sorrendben futtatja a kereteket,
+   de **nem bizonyíték** a renderelési sorrendre.
+2. **Melyik út ez.** A `FUN_00438820` sztringjei (`filters`, `enhance`) a
+   lánc ÉPÍTÉSÉRE utalnak; hogy a RENDERELŐ is ezen a normalizált listán megy
+   végig, nincs mérve.
+3. **A régi láncok.** Az éles korpuszban van `enhance=1;crop64=1,…;
+   finetune2=1,…` alak, ahol a `crop64` a lánc KÖZEPÉN áll — vagy nem ezen az
+   úton keletkezett, vagy a normalizálás nem minden mentésnél fut.
+
+⚠️ **Melléklelet, kimondva:** a `crop64` sztringjére a sztring-xref index
+**nulla** találatot ad, a bájtszintű pásztázás viszont **29** hivatkozást.
+A név-alapú keresés itt is vak lett volna.
+
+### A megnevezett következő lépés
+
+A `CGenericFilter` vtábla **31. rekesze** (`+0x7c`, `0x008fc690`, 2320 b) a
+legnagyobb nem-parser metódus — a lánc futtatója ezt (vagy a szomszédait)
+hívja. A hívóhelyek `call [reg+0x7c]` alakra pásztázhatók, az
+argumentumszámmal szűrve (a virtuális hívóhely-szűrés bevált módszere). Ott
+látszik majd, hogy a futtató a lista SORRENDJÉBEN megy-e végig.
+
+### ⛔ Egy saját ellentmondás, amit ez a kör felszínre hozott
+
+| lap | mit állít a vágásról |
+|---|---|
+| `filters-decoded.md` **1. kör** (a lap legrégebbi szakasza) | a `filters=`-beli `crop64` „önmagában NEM vág", a vágást a külön `crop=rect64(...)` kulcs hajtja |
+| `picasa-ini-format.md` (2026-09-05) | a renderelő a **lánc `crop64` tokenjéből** veszi a vágást, és „ez egyezik az eredetivel" |
+
+A kettő nem fér meg egymás mellett. A fenti mérés a **lánc-tokenes** olvasat
+felé mutat (a `crop64` valódi lánc-tétel, saját osztály-viselkedéssel), de
+az 1. kör állítása **golden-exportokból** jött, tehát nem söpörhető félre
+mérés nélkül. **A feloldás a #3169 hatóköre**; addig egyik lapot sem
+írtam át.
