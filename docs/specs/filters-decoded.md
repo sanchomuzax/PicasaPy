@@ -6489,6 +6489,60 @@ hanem **a `/2` következetes alkalmazása minden használónál**, és utána
   előtt mind a hét használót végig kell mérni (a jegy ötödik „Kész, ha"
   pontja).
 
+### 5. ⛳ MEGVAN, hol van a 255 — és NEM vágás, hanem vágás + ellensúly (2026-09-15)
+
+*A 4. pont nyitott kérdése lezárva. Forrás: `FUN_00bb8f70` (a ragyogás
+futtatója) két hívóhelye és `FUN_00bb89b0` (166 b) teljes törzse; a
+konstansok a fájlból kiolvasva.*
+
+A futtató **tengelyenként egyszer** hívja ugyanazt a segédfüggvényt:
+
+| hívás | 1. argumentum | 2. argumentum |
+|---|---|---|
+| `0x00bb8fb1` | `[esp+0x214]` = **`xblur`** | `[ebp+0x08]`, `fild` + `fadd 4294967296.0` ⇒ **előjel nélküli egész** → a kép **szélessége** |
+| `0x00bb8fe7` | `[esp+0x218]` = **`yblur`** | `[ebp+0x0c]` ugyanígy ⇒ a kép **magassága** |
+
+⇒ Két tény azonnal: a korlát **tengelyenkénti** (a `Holga` anizotrop
+`0,5`/`0,4` párja külön megy át rajta), és a segédfüggvény **a kép
+méretét is megkapja** — tehát nem tiszta vágás, hanem méretfüggő átalakítás.
+
+**A 255 a törzsben** (`FUN_00bb89b0`), a `0xcf39d0` (double) és `0xcf3a00`
+(float) konstansokban:
+
+| cím | mit tesz |
+|---|---|
+| `0x00bb89b1`–`0x00bb89ce` | ha a blur **≤ 0**, `1e-05`-re állítja (`0xcf3a10`) — nulla sugárral nem számol |
+| `0x00bb89d2`–`0x00bb89de` | `100,0 + méret` (a `0xcf3a08` konstans) egy helyi értékbe |
+| `0x00bb89e1`–`0x00bb89e3` | egy tényező-hely **`1,0`**-ra áll (`fld1`) |
+| `0x00bb89e7`–`0x00bb89f4` | **összehasonlítás 255,0-tal** |
+| `0x00bb89f6`–`0x00bb8a04` | ha a blur **> 255**: a tényező-hely **`blur / 255`** lesz, a blur maga pedig **255,0** |
+| `0x00bb8a0e`–`0x00bb8a23` | a `100 + méret`, a tényező és a blur egy kifejezésbe áll össze (szorzás, kivonás, osztás) |
+| `0x00bb8a27`–`0x00bb8a44` | ha az eredmény **> 3,0** (`0xc49618` / `0xcf39f8`), még **3-mal osztódik** és visszaszorzódik |
+
+⭐ **A lelet:** a 255-ös határ **létezik a binárisban**, de a 255 fölötti
+részt **nem dobja el** — a `blur / 255` arány **tényezőként továbbmegy** a
+számításba. A 255 alatti esetben ez a tényező pontosan `1,0`, tehát ott a
+függvény a határ nélküli úttal azonos.
+
+⇒ **A mi `clamp_glow_radius`-unk (`min(x, 255)`) épp az ellensúlyt hagyja
+el.** Ez magyarázza a #2982 mérésének aszimmetriáját: a `Lomo` `xblur`-ja
+2560 × 1702-es képen **896** (tényező **3,51**), a `Holga`-é **640**
+(tényező **2,51**) és **512** — vagyis a Lomónál a legnagyobb az eldobott
+rész, és épp ott a legnagyobb a hiba (ΔE 21,47).
+
+### 6. Ami ezután is nyitva van — és miért nem szabad most kódot írni
+
+A függvény **pontos aritmetikája** nincs levezetve: a `100,0 + méret` tag és
+a `3,0`-s ág szerepe (átfutás-szám? maximális kernel? munkaterület-méret?)
+a veremsorrend miatt csak a teljes kifejezés felírásával dőlhet el.
+
+⛔ Emiatt a `/2`-t és a 450-et **most nem szabad konstansként beírni**: a
+450 illesztett szám, és a kód épp attól lenne „mérve", hogy a levezetés
+helyettesíti. A következő gépi lépés **a `FUN_00bb89b0` kifejezésének
+felírása** (a hét `fld`/`fxch`/`fdivrp` lépés végigszámolása), plusz annak
+ellenőrzése, hogy a hívó mit tesz a két visszatérési értékkel
+(`[esp+0x7c]`, `[esp+0x78]`) — abból jön ki a tényleges σ, tengelyenként.
+
 ---
 
 ## ⛳⛳ MEGVAN A FUTTATÓ: az eredeti a láncot SORRENDBEN futtatja, HAT nevet kihagyva (2026-09-15, #3169)
